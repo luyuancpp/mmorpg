@@ -1332,6 +1332,26 @@ tidb-phase1-and-launch-readiness.md §5.1 单行热点一行与 §7 L-12 已加�
 - EnterGame 账号目录自愈原为无锁 GET + 整块 SET，改为账号锁 + 锁内重读 + 整字节 CAS，提交点复核反向索引；
 - 运维 `RemovePlayersFromAccounts` 的实现改为同一把账号锁内原子摘孤儿并删反向索引（脚本可重发）。**它目前没有生产入口**：gRPC `LoginAdmin.RemovePlayersFromAccounts` 原是返回空成功的生成桩，已改为明确返回 Unimplemented，接线另开任务。
 
+**开服前复核**：本节结论不能直接沿用到开服，开服前由 AI 按 §12.2 对着当时的代码、部署与压测重做一遍（L-18）。
+
 **仍待负责人决定**：拆 Redis 与 HA 的排期；hash tag 改键与 §6.5 的冲突；读脚本拼键与就绪标记在 Cluster 下的改法（随 D1 围栏挪库）；账号目录落库位置；打开新号免冷读；单台 gate 连接上限如何让 login 知道；运维摘孤儿要不要接上 gRPC 入口。
 
 **Java 版**：没有映射层，归属区就是 `game.player.zone_id` 列，登录时按主键点查一次单库（`PlayerStore.findPlayer`），另读一次可降级的 Redis `game:location:{player_id}`；进程能多开，存储同样是单点，这是 Java 单库的既定设计（扩展要换分布式库，不在本轮）。选 gate 已同步为随机二选一（Java `PARITY.md` 末行）。对应 Java 版本号 0.1.0-SNAPSHOT。
+
+### 12.2 上线前复核步骤（负责人 2026-10-19 要求：开服前由 AI 再查一遍「登录取逻辑服 / 物理服是不是瓶颈、能不能水平扩展」）
+
+登记在 [tidb-phase1-and-launch-readiness.md](./tidb-phase1-and-launch-readiness.md) §7 L-18 与 `docs/ops/release-checklist.md` A.1。复核要对着**当时**的代码、部署和压测重做，不能照抄 §12.1：§12.1 写于开服前很久，当时当前登录路径没有任何压测覆盖，倍数全是推算。按 AGENTS §10.1，Claude 做静态核对与文档，压测与汇总交 Codex。
+
+1. **读路径有没有变**（静态核对，按函数名搜，不按行号）：
+   - login：`Login` 两条路径（HTTP 与 gate access_token）各自对 mapping Redis、核心 Redis、data_service、库的调用次数；`roleListWithCurrentHomeZone` 的补齐成本（缺外观时整份读 PlayerAllData、缺名时回源注册表）有没有被削减或变重；EnterGame 的 `RedirectOnEnterEnabled` 现网取值。
+   - data_service：`BatchGetPlayerHomeZone`、`GetPlayerHomeZoneAndMergeFence` 是否仍只读 mapping Redis；`RouteStore.Mode` 与 `ReadRequiresReady` 的现网取值（打开回源后，每次登录 / 进场在标记挂上前各打一条 SQL）。
+   - scene_manager：每次进场 / 换图的归属查询是否仍是 1 次 EVAL；go/db：每条读写任务的映射 MGET 次数。
+   - 新增的任何「每次登录都要做」的跨服务调用，都按「全服单份 / 每 zone / 每实例」三类归档。
+2. **存储拓扑有没有变**：`k8s_deploy.ps1` 里 login `Node.RedisClient`、data_service `MappingRedis`、scene_manager、go/db `Placement.Redis` 实际指向哪些实例；G4a（mapping 独立实例）、`redis-ha.yaml`、单元化 / Cluster 是否已落地；单实例的 `maxclients`、`maxmemory`、淘汰策略与 PVC。仍是全服单实例就仍然「不能水平扩」，结论不变。
+3. **db_first 是否已开**：开了的话核对 §12.1 更正第 2 条（WAITAOF 与读共用连接池）是否已改为独立连接池，没改就把「建角尖峰饿住登录 / 进场」列为开服风险。
+4. **gate 侧**：每 zone gate 台数（≥3 台随机二选一才有实际收益）；`login_gate_directory_reads_total{source}` 在压测里是否以 `cache` 为主；单台连接上限感知、死 gate 新鲜度过滤是否已做。
+5. **压测证据**（交 Codex，按 AGENTS §6 全流程，即 L-14）：
+   - 前置：`stress_summarize.ps1` 目前不汇总 data_service 归属查询、scene_manager 归属查询的耗时，也不汇总 mapping Redis 的 ops / CPU / 延迟；开服前要先补这几项，否则「是不是瓶颈」没有数据回答。
+   - 看：登录与进场速率的饱和点（不是爬坡斜率）、各阶段 p99、mapping 与核心 Redis 的 ops 与 CPU、`login_gate_directory_reads_total` 的 source 分布、gate 落点分布。
+   - 没有与 `prev-summary.txt` 的对比表，不下「是 / 不是瓶颈」的结论。
+6. **写回**：结论更新到 §12.1 两张表（状态列写复核日期），追加一条 PROGRESS（写明复核依据的 commit 与压测轮次），L-18 标为已复核；仍不能扩的环节列出要拍板的事项。Java 版同步核对（`game.player.zone_id` 单库点查、`GatePicker`），在 Java `PARITY.md` 记录结论。

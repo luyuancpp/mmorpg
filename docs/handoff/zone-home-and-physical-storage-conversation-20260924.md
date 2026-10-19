@@ -16,6 +16,7 @@
 - **当晚已落码（未编译、未测试，待 Codex 验证）**：login gate 目录 list-watch 缓存；选 gate 随机二选一（login 快路径与 scene_manager 跨 zone 重定向共用 `go/shared/gatepick`，重定向并补排空过滤；Java 版 `GatePicker` 同步）；K8s 与 compose 栈 login 的 DataServiceRpc 熔断打开；EnterGame 账号目录自愈加锁 + CAS + 提交点复核反向索引；运维 `RemovePlayersFromAccounts` 的实现改为账号锁内原子摘孤儿并删反向索引（目前没有生产入口，gRPC 桩已改为明确返回 Unimplemented）；若干过时文档数字加更正注。
 - **仍待负责人决定**：拆 Redis 与 HA、hash tag 改键、读脚本拼键的改法、账号目录落库位置、打开新号免冷读、单台 gate 连接上限怎么让 login 知道。见 §12.1 末尾。
 - **2026-10-19 补**：负责人授权只读核对客户端后确认，gate 上 access_token 那次 Login 的角色列表是 Unity 客户端选角 / 建角的唯一来源（HTTP 那份只打日志），不能去掉，服务端未改。见 §12.1。
+- **上线前要再查一遍**（负责人 2026-10-19 要求）：开服前由 AI 按 §12.2 的步骤重新回答「登录取逻辑服 / 物理服是不是瓶颈、能不能水平扩展」，登记为开服准备清单 L-18（`tidb-phase1-and-launch-readiness.md` §7）与发布清单 A.1。
 - **证据边界**：当前登录路径没有任何压测覆盖（最近的 R19 早于角色列表查归属与进场查归属），上述倍数都是推算。
 
 ## 2026-10-12 现状校准：逻辑归属与物理落点已经拆开(代码在、开关全关)

@@ -269,6 +269,8 @@ GitHub Actions 的 `release.yml` 覆盖其中 ③⑤(外加版本号、CHANGELOG
 
 #### A.1 代码 / 测试
 
+- [ ] (2026-10-19 增补)开服前由 AI 复核「登录取逻辑服 / 物理服是不是瓶颈、能不能水平扩展」:见 `docs/design/tidb-phase1-and-launch-readiness.md` §7 L-18 与 `player-route-mapping-durability-proposal.md` §12.2,结论写回文档后才算过这一项。
+
 - [ ] `mvn test` Java Gateway 全绿(当前 34/34)
 - [ ] `go build ./...` go-zero login + player_locator + scene_manager + data_service + db 全 EXIT=0
 - [ ] cpp gate / scene MSBuild Debug + Release 全过

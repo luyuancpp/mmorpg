@@ -121,6 +121,7 @@ ECS 改造交接见 [总索引](handoff/ecs-refactor/README.md);当前修正与�
 - [bag-service-srp-refactor.md](design/bag-service-srp-refactor.md) — Bag → BagService SRP Refactor (2026-03-26) · [EN](design/bag-service-srp-refactor_en.md) · [中文](design/bag-service-srp-refactor_zh.md)
 - [character-appearance-identity.md](design/character-appearance-identity.md) — 人物外观身份链
 - [chat-sensitive-word-filter.md](design/chat-sensitive-word-filter.md) — Chat Sensitive-Word Filter — Design (todo.md #68)
+- [configurable-templates.md](design/configurable-templates.md) — 战斗策略 / 活动 / 玩法模板可配置化(原子字典 + 模板 + 实例,含玩家自定义模板;设计稿,未落码,2026-10-19)
 - [equipment-attributes.md](design/equipment-attributes.md) — 装备属性系统(问道式:基础属性 + 蓝/粉/黄随机属性)
 - [equipment-enhance-inlay.md](design/equipment-enhance-inlay.md) — 装备强化与镶嵌(装备属性系统二期)
 - [exploit_loss_prevention.md](design/exploit_loss_prevention.md) — Exploit & Loss Prevention Systems (漏洞止损与回收系统) · [EN](design/exploit_loss_prevention_en.md) · [中文](design/exploit_loss_prevention_zh.md)
@@ -343,6 +344,7 @@ ECS 改造交接见 [总索引](handoff/ecs-refactor/README.md);当前修正与�
 - [handoff-launch-readiness-decisions-20261015.md](handoff/handoff-launch-readiness-decisions-20261015.md) — 交接:开服瓶颈负责人四项决定的收尾与验证(2026-10-15)
 - [handoff-orcontinue-closure-20260914.md](handoff/handoff-orcontinue-closure-20260914.md) — 交接：`Lookup*OrContinue` 修复收尾 + exporter-tests CI 复活
 - [handoff-tip-axis-and-port-20260903.md](handoff/handoff-tip-axis-and-port-20260903.md) — 交接清单：tip 码轴收尾 + 玄冥移植未开工项
+- [handoff-tip-fault-gateway-500-20261018.md](handoff/handoff-tip-fault-gateway-500-20261018.md) — 交接：两版 Java 网关按 fault 列回 500，补丁对账、验证证据与剩余验收
 - [placement-reverify-checklist-20261012.md](handoff/placement-reverify-checklist-20261012.md) — 玩家存储落点:当前 HEAD 复验清单(交 Codex)
 - [player-inbox-handoff-20261015.md](handoff/player-inbox-handoff-20261015.md) — 玩家持久收件箱：实现交接（2026-10-15）
 - [repo-layout-20261007.md](handoff/repo-layout-20261007.md) — 仓库目录整理:交接说明(2026-10-07)

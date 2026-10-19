@@ -2,7 +2,7 @@
 
 **状态**：已完成。Codex 完成 35.1 全量导表 + 三语言编译；本机完成二次复核并修掉 4 项遗留，导表器 73 passed、Go 全绿。证据见 §6 与 §6.2。
 2026-09-05 追加：故障分类收口到 `Tip.xlsx` 的 `fault` 列（§2.9），导表器 129 passed、Go 全绿，证据见 §6.3
-2026-10-18 追加：fault 列多生成一份 Java `TipFaults`，两版 Java 网关据此把 login 的 in-band 故障码回 500（§2.10），未编译、未测试
+2026-10-18 追加：fault 列多生成一份 Java `TipFaults`，两版 Java 网关据此把 login 的 in-band 故障码回 500（§2.10）；2026-10-19 验证进展与尚未通过项见交接文档
 **日期**：2026-09-03（§2.9 / §6.3 为 2026-09-05）
 **影响面**：`data/tip/Tip.xlsx`、4 张内嵌 tip ID 的业务表、导表器、三语言生成产物、`go/shared/serverbase`、guild / friend / match 的错误码常量
 
@@ -194,7 +194,7 @@ ServiceUnavailable        服务不可用      1
 
 ### 2.10 Java 网关也按 fault 列定性（2026-10-18）
 
-**状态**：已落码；导表产物已在工作区生成（`generated/code/java/tip/TipFaults.java` 与 `java/gateway_node` 部署副本逐字节一致，含 2021 / 2035 / 2036）；未编译、未测试，待 Codex 按交接步骤验证。
+**状态**：已落码并随 `e611b5d8d` 入库；正式服务端导表与导表器 147 项测试已有通过证据，Go 本轮验收和主仓 Java 网关测试通过。主仓示例 starter 在 Surefire 加载前失败，尚未执行该测试，后续验收已停止；不代表全部完成。补丁版本、输入 SHA 条件、两版 Java 结果与未验证项见 [交接文档](../handoff/handoff-tip-fault-gateway-500-20261018.md)。
 
 **问题**：2026-10-18 的第三方登录缺口修复（[third-party-login-end-to-end-design.md](./third-party-login-end-to-end-design.md) §三）让 login 对渠道故障、令牌签发失败、账号目录读 Redis 失败都回 in-band 故障码（`LoginAuthProviderUnavailable` / `LoginTokenIssueFailed` / `LoginRedisError` 等，fault=1）。login 侧的 `serverbase` 已经按 fault 列告警，但 Java 网关不认识码表，把所有 in-band 错误都回 `CODE_AUTH_REJECTED`(401) + `upstream_err=<tip>`：客户端拿到的是「凭证被拒、请重新认证」，而真实情况是「服务端出错、稍后重试」——微信挂了时让玩家反复重走 OAuth 毫无意义。
 
@@ -224,7 +224,7 @@ ServiceUnavailable        服务不可用      1
 | in-band 故障码（fault=1） | `401`，`upstream_err=<tip>` | **`500`**，`upstream_err=<tip>` |
 | 没有码、只有 message；本二进制不认识的码 | `401` | 不变 |
 
-客户端此前见到的 500 只有 `login_unavailable` / `internal_error` / `unknown_zone` 几种 message，现在 500 的 message 也可能是 `upstream_err=<tip>`。客户端应把 500 当「服务端出错、稍后重试」；保留 tip 码用于排障，当前客户端没有通用 tip 文案表，登录路径不解析该字符串。robot 把非 0、非排队一律当失败，不区分 401 / 500，不受影响。
+message 的取法没有变：上游只填 tip 码、没有参数文案时，通常为 `upstream_err=<tip>`；上游填了 `TipInfoMessage.parameters` 时，沿用各版网关既有的参数解析或拼接结果，并不保证始终是该字符串。客户端此前见到的 500 只有 `login_unavailable` / `internal_error` / `unknown_zone` 几种 message，现在 500 的 message 也可能是 `upstream_err=<tip>`。客户端应把 500 当「服务端出错、稍后重试」；保留 tip 码用于排障，当前客户端没有通用 tip 文案表，登录路径不解析该字符串。robot 把非 0、非排队一律当失败，不区分 401 / 500，不受影响。
 
 **客户端核对结果**（2026-10-18，只读，客户端仓 HEAD `5e2d4561`，未改客户端）：
 
@@ -232,7 +232,7 @@ ServiceUnavailable        服务不可用      1
 - HTTP 登录失败不清 token、不自动重试。当前客户端只走口令登录，没有接微信 / QQ；也不调用 `/api/refresh-token`（刷新走 gate TCP 消息）。所以这次改动对现有客户端只有一个效果：fault 码不再显示成「账号或密码错误」。
 - 剩余：500 的文案是「登录失败(upstream_err=2035)」这类技术串，没有「稍后重试」。补这一句文案的可选补丁已备好，打它需要客户端任务授权（AGENTS.md §9）。
 
-**第三方登录的「稍后重试」= 重新拉起渠道授权**：微信 code 一次性，2036 时 code 已被消费，2035 时也不能确定没被消费。所以客户端接微信后，收到 500 必须重新拉起微信授权拿新 code，不能原样重发旧的 `auth_token`。QQ 的 access_token 在有效期内可以重发。
+**第三方登录的「稍后重试」= 重新拉起渠道授权**：微信 code 一次性，2036 时 code 已被消费，2035 时也不能确定没被消费。第三方登录失败后的恢复流程统一重新拉起渠道：微信重新授权拿新 code，QQ 重新拉起渠道取得新凭据，再发起登录；不把旧 `auth_token` 原样重发作为恢复流程。这里约定的是客户端恢复策略，不表示 QQ access_token 也只能使用一次。口令登录不消耗渠道一次性凭证，可以用原凭证重试。
 
 **边界**：
 

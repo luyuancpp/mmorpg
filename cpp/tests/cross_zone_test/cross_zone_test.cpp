@@ -963,6 +963,15 @@ entt::entity MakeExitingPlayer(SessionId sessionAtExit, SessionId currentSession
     return player;
 }
 
+// 合法的新号父快照与login种子一致；让生命周期测试到达各自的继承/会话围栏。
+PlayerAllData IdentifiedPlayerLoadData(Guid playerId)
+{
+    PlayerAllData data;
+    data.mutable_player_database_data()->set_player_id(playerId);
+    data.mutable_player_database_1_data()->set_player_id(playerId);
+    return data;
+}
+
 // 与 SavePlayerToRedis 写盘时同一个形状:marshal + 两张子表的 player_id。
 bool MarshalAsSaved(entt::entity player, PlayerAllData& data)
 {
@@ -1705,7 +1714,7 @@ TEST(ExitReleaseEcs, LoadWithoutClearForItsEpochIsRefused)
     RegisterPendingEnter(/*ownerEpoch=*/5);
     const auto before = exit_release_stats::Read();
 
-    PlayerLifecycleSystem::HandlePlayerAsyncLoaded(kReleasePlayerId, PlayerAllData{});
+    PlayerLifecycleSystem::HandlePlayerAsyncLoaded(kReleasePlayerId, IdentifiedPlayerLoadData(kReleasePlayerId));
 
     EXPECT_EQ(PlayerLifecycleSystem::GetPendingEnterMap().count(kReleasePlayerId), 0u) << "待入场条目已擦掉";
     EXPECT_EQ(tlsEcs.playerList.count(kReleasePlayerId), 0u) << "没有建实体";
@@ -1717,7 +1726,7 @@ TEST(ExitReleaseEcs, RouteWithoutOwnerEpochStillWaitsForTheClear)
     // 复审 ownership-major:旧版路由(owner_epoch 0)以前跳过 A2′、闸门直接放行,上一任的 A1′ 标记因此存活。
     RegisterPendingEnter(/*ownerEpoch=*/0);
     const auto before = exit_release_stats::Read();
-    PlayerLifecycleSystem::HandlePlayerAsyncLoaded(kReleasePlayerId, PlayerAllData{});
+    PlayerLifecycleSystem::HandlePlayerAsyncLoaded(kReleasePlayerId, IdentifiedPlayerLoadData(kReleasePlayerId));
     EXPECT_EQ(PlayerLifecycleSystem::GetPendingEnterMap().count(kReleasePlayerId), 0u) << "没发过清理:拒建实体";
     EXPECT_EQ(tlsEcs.playerList.count(kReleasePlayerId), 0u);
     EXPECT_EQ(exit_release_stats::Read().inheritRefused, before.inheritRefused + 1);
@@ -1730,7 +1739,7 @@ TEST(ExitReleaseEcs, RouteWithoutOwnerEpochStillWaitsForTheClear)
     EXPECT_EQ(state.targetEpoch, 0u) << "针对\"路由不带 owner_epoch\"的那一种清理";
     EXPECT_EQ(state.phase, erm::InheritClearPhase::kRetryWait) << "照样发了(zone Redis 不可用 = 失败,等重发)";
     EXPECT_EQ(state.attemptsSent, 1u);
-    PlayerLifecycleSystem::HandlePlayerAsyncLoaded(kReleasePlayerId, PlayerAllData{});
+    PlayerLifecycleSystem::HandlePlayerAsyncLoaded(kReleasePlayerId, IdentifiedPlayerLoadData(kReleasePlayerId));
     ASSERT_EQ(pending.count(kReleasePlayerId), 1u) << "等清理期间保留载入结果,不建实体";
     EXPECT_NE(pending.at(kReleasePlayerId).inheritClear.stashedLoad, nullptr);
     EXPECT_EQ(tlsEcs.playerList.count(kReleasePlayerId), 0u);
@@ -1750,7 +1759,7 @@ TEST(ExitReleaseEcs, FailingClearKeepsTheLoadThenRefusesWhenExhausted)
         EXPECT_EQ(state.attemptsSent, 1u);
     }
 
-    PlayerLifecycleSystem::HandlePlayerAsyncLoaded(kReleasePlayerId, PlayerAllData{});
+    PlayerLifecycleSystem::HandlePlayerAsyncLoaded(kReleasePlayerId, IdentifiedPlayerLoadData(kReleasePlayerId));
     {
         auto& pending = PlayerLifecycleSystem::GetPendingEnterMap();
         ASSERT_EQ(pending.count(kReleasePlayerId), 1u) << "等重发期间保留载入结果(M10)";
@@ -5758,7 +5767,7 @@ TEST(EnterFenceEcs, LoadCallbackBindsNewestAdmitted)
         inheritClear.phase = erm::InheritClearPhase::kConfirmed;
     }
 
-    PlayerLifecycleSystem::HandlePlayerAsyncLoaded(kExitPlayerId, PlayerAllData{});
+    PlayerLifecycleSystem::HandlePlayerAsyncLoaded(kExitPlayerId, IdentifiedPlayerLoadData(kExitPlayerId));
 
     EXPECT_EQ(PendingEnter(), nullptr) << "待入场上下文已消费";
     ASSERT_EQ(tlsEcs.playerList.count(kExitPlayerId), 1u) << "建出了实体";

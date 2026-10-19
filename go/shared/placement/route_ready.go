@@ -178,7 +178,8 @@ func infoValue(info, field string) string {
 //   - 标记用 redis.pcall('GET'):键不是 string 类型时按「不存在」回 nil(与读方 MGET 口径一致),不让整段脚本报错;
 //   - 映射键用 MGET:非 string 类型回 nil,与今天各读方的 MGET 一致;
 //   - INFO 两段在 Lua 里用 string.match 取字段,只回传字段值,不回传整段文本;取不到回空串(Go 侧判 IdentityUnavailable);
-//   - 身份与数据在同一段脚本里取:同一进程、同一时刻,检查与使用之间没有窗口。
+//   - 身份与数据在同一段脚本里取:同一进程、同一时刻,检查与使用之间没有窗口;
+//   - unpack 受 Lua C 栈上限约束(约 8000 个元素),一次传的映射键要由调用方分块(批量读方按既有批上限,远小于它)。
 //
 // 未核实(规格 §2 M1):Redis 7.2 允许脚本调 INFO(INFO 不带 noscript 标志,仓库 third_party/redis 8.4 源码与 miniredis 命令表
 // 一致);真 Redis 用例取证。miniredis 不支持 INFO 的 server / replication 段,脚本的执行语义只能在真 Redis 上测。
@@ -464,18 +465,25 @@ func ClassifyMergeFenceMirrorReply(raw any) (MergeFenceMirrorOutcome, error) {
 	return MergeFenceMirrorOutcome(n), nil
 }
 
-// MergeFenceHolderEpoch 从持有者 JSON 里取 fence_epoch;取不到(不是 JSON 对象、没有该字段、不是非负整数)回 false。
-// 对账 leader 用它区分「本方案写的镜像」与「旧版 merge_zone 写的镜像」(后者不删,只告警)。
+// MergeFenceHolderEpoch 从持有者 JSON 里取 fence_epoch;取不到(不是 JSON 对象、没有该字段、不是 JSON 数字字面量
+// 表示的非负整数)回 false。对账 leader 用它区分「本方案写的镜像」与「旧版 merge_zone 写的镜像」(后者不删,只告警)。
+//
+// 先取原始字面量再判:json.Number 会接受带引号的 "7",而 MergeFenceMirrorSetScript 里 cjson 解出的是字符串、
+// type(...) ~= 'number',两边口径会分叉。这里只认不带引号的十进制整数字面量,与脚本一致。
 func MergeFenceHolderEpoch(raw string) (uint64, bool) {
 	var v struct {
-		FenceEpoch *json.Number `json:"fence_epoch"`
+		FenceEpoch json.RawMessage `json:"fence_epoch"`
 	}
-	dec := json.NewDecoder(strings.NewReader(raw))
-	dec.UseNumber()
-	if err := dec.Decode(&v); err != nil || v.FenceEpoch == nil {
+	if err := json.Unmarshal([]byte(raw), &v); err != nil || len(v.FenceEpoch) == 0 {
 		return 0, false
 	}
-	n, err := strconv.ParseUint(v.FenceEpoch.String(), 10, 64)
+	lit := string(v.FenceEpoch)
+	for i := 0; i < len(lit); i++ {
+		if lit[i] < '0' || lit[i] > '9' {
+			return 0, false
+		}
+	}
+	n, err := strconv.ParseUint(lit, 10, 64)
 	if err != nil {
 		return 0, false
 	}

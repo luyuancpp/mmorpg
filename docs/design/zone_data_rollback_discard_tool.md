@@ -1,585 +1,879 @@
 # 整 zone 回档清理工具 zone_rollback_discard 设计（R9）
 
-> **状态（2026-10-19）**：设计稿，**未落码**。负责人 2026-10-18 授权「按最标准的去做，数据一致性而且可水平扩展」，下文 7 项与三个小项据此拍板。预计改动本仓 **73 个文件**（新增约 52、修改约 21），超过 AGENTS §10.2 的 30 文件门槛，**落码前须负责人确认规模与分批**。两面对抗复核（数据一致性、水平扩展与运行）各提出 14 条意见，**尚未并入设计**，见 §6；落码第一步是先把它们并入。
+> **状态**:设计 v2(2026-10-19),已并入复核意见 —— 两面对抗复核 28 条逐条处置见 §6(原文移入附录 A),「维护围栏」「三个小项」两路代码核实结论并入 §1 / §2 各处(逐条落点见附录 B)。负责人已授权 73 文件规模、按 B1→B6 分批落码;**未落码**。
+> **规模变化**:并入复核意见与核实结论之后,总文件数由 v1 的 73 增至 **125**(新增 64、修改 59、删除 2;另有 Java 仓 `PARITY.md` 1 个不计入本仓),超过 80。增加原因:帮会资产分歧闸要把 `guildcheck` 迁到 shared 并新增调用方(+10)、merge_zone 的搬库 / 钉落点 / 回填与围栏配套(+10)、死信去重补齐 7 个写入点、回调结果码与真库用例(+10)、不可变计划 / 逐条分流隔离 / 写者租约 / 节流 / preflight 与 stopped 拆文件(+12)、探针剥离与 op=other 补测试和审计日志(+4)、scene_manager 节点键名改为 shared 单一来源(+2)、k8s_deploy 忘撤围栏提示(+2)、文档(+2);批次结构不变。按 AGENTS §10.2,规模扩大须负责人确认后再开 B1,见 §7。
+> 全文为静态阅读结论:没有编译、没有运行任何测试,待 Codex 验证。代码与文档冲突时以代码为准;引用行号以 2026-10-19 工作区(HEAD e611b5d8d)为准,落码时按锚点文字定位。
 >
-> 上游：回档语义裁决与脚本侧落码见 [zone_data_rollback.md](zone_data_rollback.md)「2026-10-18 修订」；工具契约见 `tools/scripts/k8s_zone_rollback.ps1` 文件头「zone_rollback_discard 契约」；交接见 [godb-pipeline-impl-handoff-20261015.md](../handoff/godb-pipeline-impl-handoff-20261015.md) §7.4。
+> 上游:回档语义裁决与脚本侧落码见 [zone_data_rollback.md](zone_data_rollback.md)「2026-10-18 修订」;工具契约见 `tools/scripts/k8s_zone_rollback.ps1` 文件头「zone_rollback_discard 契约」(B3 同批改写);交接见 [godb-pipeline-impl-handoff-20261015.md](../handoff/godb-pipeline-impl-handoff-20261015.md) §7.4;存盘围栏见 [db-write-fencing-mysql.md](db-write-fencing-mysql.md)(v0.4);合服见 [server_merge_design.md](server_merge_design.md) 与 `tools/merge_zone`。
 >
-> 调研缺口：维护围栏与三个小项的两路专项调研因认证错误（403）未跑完，下文相关决定由综合者依据另两路调研与代码作出，落码前应补一轮针对性核实。本文由设计工作流的输出整理而成，未经人工逐句改写。
+> 调研缺口(已补):v1 时「维护围栏」与「三个小项」两路专项调研因认证错误(403)未跑完;2026-10-19 已补跑两路只读代码核实,v1 中被证实的、需改的与漏掉的部分全部并入本文。
 
 ## 1. 决定
 
 | # | 决定 | 一句话理由 |
 |---|---|---|
-| #1 维护围栏 | 复用合服的广播围栏 `merge:in_progress:<zone>`(`placement.MergeFenceKey`),值为 `zone_rollback_discard:<rid>`,永久不设 TTL。同一段 Lua 里原子地再建 `player:save_barrier:maintenance:<zone>`=rid(`barrierrestore.MaintenanceKey`)。工具新增两个模式:`fence`(第 0 步 g:在 preflight 之后、zone-down 之前立围栏,并在有界时间内等他区在线的本 zone 玩家下线);`release`(Step 6b:按值 CAS 撤除)。他区在线的玩家「等下线,不踢」,超时退出码 5,围栏保留。 | 现网所有版本的 data_service(GetPlayerHomeZone 的 home_zone_merging、setPlayerZoneIfAbsentScript)、scene_manager(rejectHomeZoneMerging,不分腿)和 guild 都只看 EXISTS 就拦,不用改任何在线服务,滚动升级期间也生效。PITR 要几个小时,中间没有常驻进程续期,TTL 到期就是 fail-open,所以用永久键,先例是 barrierrestore Guard 的 routeGuardValue。不踢:仓库没有按归属 zone 踢人的通道,踢下线产生的退出存盘本来也要丢;「闸住入口、有界排空」就是标准的 drain 做法。 |
-| #2 纪元抬升 | 做。范围是本次 purge 要处理的玩家(rollback / torn / post_t_candidate)里停服时 owner_epoch>0 的那些。把 `player:<id>:owner_epoch` 和当前世代 topic 下两张围栏表的 `consumer:applied_epoch:<topic>:<id>:player_database(_1)` 抬到 C'=owner_stop+1,键缺失也建。在每个玩家删除的同一段 Lua 里先抬后删,只升不降,可重入。MySQL 行内围栏不抬。owner_stop 取自停服基线,并要求它就是所有 epoch 来源的最大值,否则判 owner_behind,归 blocked。 | 这就是 fencing token 的「撤销全部租约」。PITR 只退回了行围栏;C++ 父快照的 owner 等值比较(kSaveWithCommitBarrierLuaScript)和 go/db 的 guardOwnerEpoch(handleTask 对所有 write 生效,与 Fencing.Mode 无关)要同时抬,在途写(epoch = applied)才会被判 stale。回档不回退 Redis,计数器只经 INCR 前进,所以 +1 足够,不需要加余量 K。storage_elsewhere 不抬:它们的库不回退,严格世代下 saveoutbox 要用旧 epoch 补投被 Step 5 丢掉的写。 |
-| #3 屏障协议 | 协议世代不信操作者的声明,由事实判定。strict ⇔ Fencing.Mode=dual,且 `db:save_protocol:zone:<z>`=strict(saveoutbox.GenerationKey);legacy ⇔ Fencing.Mode=legacy、没有世代标记、64 个桶为空、屏障里没有 pending/outbox,并用 git 核对 login 镜像不含严格屏障。strict 放行:purge 先把屏障归档后删除,然后按 PITR 之后的 SQL 逐人重建三字段屏障。重建由工具自己实现,复用 shared/savebarrier、proto2mysql、authoritysql,不改 barrierrestore。(0,0) 改成 (C',1),与 AllowLegacy 同形状;torn、缺行、T 之后建角(owner>0)的玩家先物化骨架行再重建。「有 pending、无 ACK」的玩家:丢弃,逐人归档并写进报告,不重放。 | 严格屏障已是现行 C++ / login 的唯一协议,go/db 缺省也已是 dual(2026-10-18 存盘协议世代门禁),不支持 strict 的话,按现行代码部署的 zone 就回档不了。login 没有开关地检查屏障(parent_commit_barrier.go:110-111),只删不建会全员拒登。barrierrestore 的三个前提与回档冲突:要求合服围栏不存在、要求 64 桶全空、按 ≤1000 人的计划人工审定。重放等于方案 (B)。 |
-| #4 blocked 与 T 之后建角 | 归类穷举,兜底 unclassified。rollback / torn / post_t_candidate 照常 purge;storage_elsewhere / home_elsewhere 跳过,只报告;legacy_owned / owner_behind / frozen / moved_in_after_t / topology_unproven / foreign_home_storage_here / unclassified 一律 blocked(退出 6)。父快照、资产证据、屏障删除前,把 DUMP+PTTL 预写归档到报告目录,删除 Lua 里用 sha1hex(DUMP) 复核,不进 Redis 隔离区。T 之后建的角色以空骨架继续玩(legacy 走冷读骨架;strict 物化骨架行)。`-AcceptBlockedPlayers` 继续在入口拒绝。 | 没有权威的创建时间(player_database 没有 created_at,rollback_logic.go 的先例也是只报告不删),而且删角色要跨服务写。空骨架正是「T 时刻库里没有这一行」的忠实还原。共享 Redis 是 noeviction,隔离区会让缓存体积翻倍;归档到盘上同样保住证据。 |
-| #5 有效回档点 | 接受「回退点比 T 早一个消费延迟」为语义 A 的 RPO,不重放。dual 下用 fence_save_seq>>10 逐玩家度量实际回退点;任何一行的存盘时刻晚于 T+60s 即以 3 拒绝。ps1 打印 T 之后将被丢弃的消息条数。 | 重放就是语义 B。save_seq 的低位由毫秒时间推出,是唯一不依赖外部监控的逐玩家证据,顺带能发现 PITR 时间点不对。 |
-| #6 T 之后合入 / 迁入 | 证明不了早于 T 就一律 fail-closed,不设豁免。合服看 merge:merged_into 的 dst=本 zone:run_id 的开始时刻 ≥T 即 3;早于 T 的,还要合服清单里各写步骤都 Done 且 At≤T−1s。迁入本库(落点版本≥2、有效落点=本库)要搬库清单里 switched 且 At≤T−1s,否则 topology_unproven;本库没有行的直接判 moved_in_after_t。迁出的不需要证明,只跳过并报告。 | 合服时目标区可能在线(preflight.go:837 只查源区),copy 模式合入的玩家在 Redis 键形状上与原住民无法区分,拷行若晚于 T 会被静默清成空骨架。迁出的玩家数据不在被回退的库里,不需要证明。 |
-| #7 全部冷读 | 放弃 unchanged 优化,范围内的玩家一律删缓存、首登冷读。停服基线改成全部玩家表的分块校验和(pt-table-checksum 做法),外加本 zone 归属玩家的 owner_epoch 基线(64 分片 NDJSON)。冷读洪峰由网关 zone 令牌桶和 PreloadPool 承接。 | C++ 先写 Redis 父快照再发 DBTask,Step 5 丢掉的积压只存在于父快照里;「行没变」不等于「缓存不晚于 T」,正确性优先。分块校验和的大小与玩家数无关,可以按块并行、续算。 |
-| (a) 死信去重 | 在死信入队处按 (topic, 原始分区, seq=offset+1) 去重:新增 HASH `kafka:dead:index:<topic>`,与 LPUSH 同一段 Lua 做 HSETNX;moveClaimedRetryToDead 同样先判重。删除标记选「死信工具同步删标记」(L-04 第 2 批工具在 LREM 的同一段 Lua 里 HDEL),不选 LPOS 复核。副本数硬上界 = 每条消息 1 份;回档时死信索引与死信同一段 Lua 进隔离区。 | LPOS 是对一个恰好在事故期增长的列表做 O(N) 扫描;HSETNX 是 O(1) 且幂等,组提交整批重推也不会多出副本。 |
-| (b) IsEqual 与探针 | 剥离。在 PlayerLastPersistedSnapshotComp::Replace 里与 last_save_seq 一起 clear 两张子表的 stress_test_probe;快路径仍用 dirty_save::IsEqual,不深拷贝。下一轮压测复盘写明跳过率口径的变化。 | 探针是非业务元数据,与 last_save_seq 同类;观测手段不应改变被测行为,否则开探针的构建快路径永不命中,压测不代表生产。只在成功存盘后剥离一次,不在热路径上增加成本。 |
-| (c) op="other" 告警 | 补一条 DbTaskUnknownOp:`sum by (namespace)(increase(db_task_producer_partition_total{op="other"}[10m]))>0`,for 0m,warning。 | op 是封闭集合,出现 other 就是未知生产者或载荷损坏;这类任务在 go/db 按 unsupported op 失败(key_ordered_consumer.go:2863-2865),计数早已预建,现在只缺这条规则。 |
+| #1 维护围栏 | K1 = `placement.MergeFenceKey(z)`(`merge:in_progress:<z>`),值 `zone_rollback_discard:<rid>`,永久不设 TTL;K2 = `barrierrestore.MaintenanceKey(z)`(`player:save_barrier:maintenance:<z>`),值同为 `zone_rollback_discard:<rid>`,永久。K2 只用于与 save_barrier_restore 互斥,不算挡写手段(全仓只有 barrierrestore 读它)。工具新增 `fence`(第 0 步 g)、`release`(Step 6b)、`quarantine-drop` 三个模式。立栏后沉降 30s,按 `shared/scenenode` 的在线判据(Redis + etcd 注册表)有界排空他区在线的本 zone 玩家,不踢;超时或立栏后复核不过以 5 退出,围栏保留。**生效前提**(第 0 步 f、0g 前、stopped 前、inventory 前由 ps1 对全服复核):全部 zone 的 data-service 与 scene-manager 镜像都以 4493b3c9f 为祖先;全部 data-service 的 `RouteStore.Mode=redis`(`ReadRequiresReady=false`);全部 scene-manager 的 `AllowGateZoneAsHomeZone=false` 且配了 `DataServiceRpc`;runbook 写明回档窗口内冻结全服发布。**不挡的面**:他区 login 的 EnterGame 预加载冷读(任何版本 login 都不读 K1)、不带 GateId 的 EnterScene、没有 `player:zone` 映射的玩家、trade / mail / 收件箱对他区在线实体的资产投递、立栏瞬间的在途 EnterScene(靠沉降)。 | 所有读方只看键是否存在 / 值是否为 nil,不解析值,值改成 `zone_rollback_discard:<rid>` 既不误判也不放行(核实 1);旧镜像下 EnterScene 是 fail-open,所以「不改在线服务即全版本生效」不成立,改为全服镜像核对(核实需改 2)。PITR 要几个小时,中间没有常驻进程续期,TTL 到期即 fail-open,所以用永久键;barrierrestore 的永久键 + 非 JSON 值只是**格式先例**,它的 Guard 对 `redis-same-instance` 直接拒绝(route.go:197),不能当同实例下行为已验证的证据(核实需改 3)。不踢:仓库没有按归属 zone 踢人的通道,踢下线产生的退出存盘本来就要丢弃。 |
+| #2 纪元抬升与不可变计划 | 做。范围是 purge 处理的玩家(rollback / torn / post_t_candidate)里停服时 owner_epoch>0 的。`player:<id>:owner_epoch` 与当前世代 topic 下两张围栏表的 `consumer:applied_epoch:<topic>:<id>:player_database(_1)` 抬到 C'=owner_stop+1,键缺失也建;在每个玩家删除的同一段 Lua 里先抬后删,只升不降。U(p)、C'、V 与各键预期值只在 **inventory** 计算一次,写进不可变的逐人计划(`plan-s<NN>.ndjson`,SHA 记进清单);purge 与 verify 只判「当前状态 ∈ {计划前态, 计划后态}」,不再重算 U(p)。MySQL 行内围栏不抬。 | fencing token 的「撤销全部租约」:PITR 只退回了行围栏,C++ 父快照的 owner 等值比较与 go/db 的 guardOwnerEpoch 要同时抬,在途写才会判 stale。重算 U(p) 会把本工具自己写的 C' 当成外来证据,续跑与 verify 必然误判 owner_behind(复核 6.1.1)。 |
+| #3 屏障协议 | 协议世代由事实判定,并同时覆盖**现网**与 **Step 6 目标**:strict ⇔ 现网 `Fencing.Mode=dual` 且 `saveoutbox.GenerationKey(z)`=`strict`,并且目标 node 镜像提交的 `redis_client.h` 含 `kSaveWithCommitBarrierLuaScript`、目标 `-GoSvcTag` 提交含 `go/login/internal/logic/pkg/dataloader/parent_commit_barrier.go`、本机 `go/db/etc/db.yaml` 的有效 `Fencing.Mode` 为 dual;legacy 三项全反;现网与目标不一致即第 0 步拒绝。strict:purge 先把屏障归档后删除,P3 按 PITR 之后的 SQL 逐人重建三字段屏障;「有 pending、无 ACK」的丢弃并逐人记报告,不重放。 | login 无开关地检查屏障(parent_commit_barrier.go:110-111),只删不建会全员拒登;目标镜像协议与重建形状不一致时问题出在 Step 5 之后,没有退路(复核 6.1.4)。 |
+| #4 blocked 与 T 之后建角 | 归类穷举,兜底 unclassified;新增 torn_cross_table。foreign_home_storage_here、legacy_owned、frozen 与在途搬库**在停服之前**(preflight、fence、stopped)就硬拒,inventory 仍按 blocked 兜底。归档收窄到证据:屏障、资产提交证据全量归档,父快照只归档 strict 下带 pending / outbox 的;其余父快照只在 Lua 里算 `redis.sha1hex(GET)` 回传 40 字节,删除 Lua 复核,不用 DUMP。T 之后建的角色以空骨架继续玩;owner_stop>0 的 post_t_candidate 逐人列出并须确认文件放行。`-AcceptBlockedPlayers` 继续在入口拒绝。 | 这类玩家的写者不在本 zone 停服与围栏范围内,PITR 之后才发现时影子库已替换(复核 6.1.3、6.2.7);整 zone 父快照常驻无 TTL,全量 DUMP 等于整区导出(复核 6.2.2)。 |
+| #5 有效回档点 | 接受「回退点比 T 早一个消费延迟」为语义 A 的 RPO,不重放。dual 下按 `fence_save_seq>>10` 逐行度量:晚于 T+60s 的行 >20 即 3,1–20 行须确认文件逐行放行;停服基线里最后存盘落在 (T−15m, T] 的「见证行」PITR 之后必须逐字不变,否则 3(PITR 时间点不对);没有见证行且全表最大值早于 T−15m 须确认文件声明「T 前 15 分钟无存盘」。legacy 记 unknown。 | save_seq 不是时钟,单行离群不应卡死整区;只看上界发现不了 PITR 恢复过早(复核 6.1.6)。 |
+| #6 T 之后合入 / 迁入 | 证明不了早于 T 一律 fail-closed。读 `-topology-manifest-dir` 下所有 src 或 dst 含 Z 的合服 / 撤销 / 搬库清单:清单 `player_ids` 与 post_t_candidate 求交,命中即 moved_in_after_t;`merge:merged_into` 的 run_id 必须对上一份清单,否则 topology_unproven;合服开始时刻 ≥T 即 3,早于 T 要写步骤全部 Done 且 At≤T−1s;迁入本库要搬库清单 switched 且 At≤T−1s。 | copy 模式合入的玩家在键形状上与原住民无法区分,merged_into 被撤销或人工清理后只靠比例阈值会把他们静默清成空骨架(复核 6.1.5)。 |
+| #7 全部冷读 | 放弃 unchanged 优化,范围内玩家一律删缓存、首登冷读。停服基线 = 全部玩家表的分块校验和(块边界由 stopped 自适应确定并写进基线,inventory 按同一边界重算,各算一次)+ 本 zone 归属玩家的 owner 基线。inventory 要求恢复库 schema 通过 go/db 启动期同一份校验(`migrate.ProtoSource.Drift` 为空),否则先在恢复库执行 `go run ./cmd/migrate -f <db 配置> -command up` 再重跑 4a。冷读洪峰没有专门节流,只在 Step 7 观察(§5)。 | 「行没变」不等于「缓存不晚于 T」;Step 6 的 go/db 在缺列时本来就拒启(proto_sql/db.go assertSchemaUpToDate),骨架行只能按完整 proto 写(复核 6.1.7)。 |
+| #8 帮会资产分歧闸 | 新增。inventory 与 verify 对 purge 范围内全部玩家以 since=T_ms−300000 问 guild `GuildInternal.ListAppliedAssetOpsSince`(复用迁到 `go/shared/guildcheck` 的 `ListDivergences`,与 data_service 回档闸同口径),有分歧或不可证明即 blocked,只有确认文件逐条列出才放行,逐条写进报告作为补偿依据;查询失败按拒绝。trade 不在本批覆盖范围(§5、§7)。 | 仓库现行契约要求「任何回档在写玩家数据之前先问 guild」(rollback_logic.go:128-141);整区回档把钱包退回 T,guild 不回退,捐献类操作会凭空复制资产(复核 6.1.2)。 |
+| (a) 死信去重 | 去重字段 = 原始 v2 头 12 字节 (seq 8B BE‖partition 4B BE) 的 24 位小写 hex,毒消息按 (Offset+1, Partition) 编成同一形状;值 = 跨副本稳定指纹。HASH `kafka:dead:index:<topic>`。纯函数 `kafka.DeadDedupField(entry)` 是唯一推导入口,七个死信写入点里五个经去重脚本(判重命中也做一次会传播的 HSET),forward / requeue 两个 Lua 分支计 undeduplicable。重复副本不计 `db_task_dead_letter_total`。死信工具与人工删除必须在同一段 Lua 里按指纹 HDEL。上界限定为「带 (原始分区, seq) 的条目,每条 Kafka 消息至多一份」。 | HSETNX 判重是 O(1);整载荷 SHA1 不可行(捕获时刻、错误串、RetryCount 各副本不同,核实 A7);判重命中不传播写会让 WAITAOF 在首份未 fsync 时提前确认(核实 A3)。 |
+| (b) IsEqual 与探针 | 剥离。`PlayerLastPersistedSnapshotComp::Replace` 在 `clear_last_save_seq()` 之后,对**已存在**的子消息(`has_player_database_data()` / `has_player_database_1_data()`)各自 `clear_stress_test_probe()`;快路径仍用 `dirty_save::IsEqual`,不深拷贝。 | 开探针时快照侧带探针、新消息侧不带,快路径永不命中(核实 (b)3);`mutable_*()` 会在快照侧单边制造 presence,改变 MessageDifferencer 结果(核实 B3)。 |
+| (c) op="other" 告警 | 新增 `DbTaskUnknownOp`:`sum by (namespace) (increase(db_task_producer_partition_total{op="other"}[10m])) > 0`,for 0m,warning,放进 `db-task.partition-contract` 组;`observeProducerPartition` 对 op=other 不论 verdict 都限量打一条带 topic / partition / offset / kafkaKey / taskID / msgType 的日志。 | op 是封闭集合,other 即未知生产者或载荷损坏;现有日志定位不到生产者(核实 C1)。 |
 
 ## 2. 设计
 
-以下全部是静态阅读结论:没有编译、没有运行,待 Codex 验证。代码与文档冲突时以代码为准。路径都相对 D:/luyuan/xuanming-server-mmo-cpp。
+路径都相对 `D:/luyuan/xuanming-server-mmo-cpp`。
 
-══════════ 0. 全流程与各项衔接(一条时序) ══════════
-入口 E1–E4
-→ 0a–0f:preflight,只读。
-→ 【新】0g `fence`:立围栏,排空他区在线玩家。
-→ 1:zone-down。
-→ 1b:(i) 消费者;(ii) 静默;(iii) `stopped`(复核围栏,写分块基线与 owner 基线);(iv)。
-→ 3:PITR。
-→ 4a `inventory`:复核基线与 owner;三遍盘点,归类,拓扑证明,#5 度量,strict 可行性预检。
-→ 4a′:停服复核。
-→ 5:-ToLatest,记切点。
-→ 4b `purge`:
-  - P1 区级重试 / 死信族进 Redis 隔离区;
-  - P2 逐人一段 Lua:复核围栏 → 纪元抬升 → 删各族键 → ZREM;
-  - P3(只 strict)逐人做 SQL 规范化,并重建屏障。
-→ 5b:切点复核,`verify`。
-→ 6:zone-up。
-→ 【新】6b `release`:撤围栏。
-→ 7:清单。
+### 2.0 全流程(一条时序)
 
-几项的衔接关系:
-- 围栏(#1)在 0g 立起,一直保持到 6b 撤除。stopped / inventory / purge / verify 每个模式开头都复核「两把围栏键等于本 rid 且没有 TTL」;purge 的逐人 Lua 和 strict 的重建 Lua 把这两把键放进 KEYS,原子复核。
-- 纪元抬升(#2)只能在 Step 5 之后、该玩家的删除之前做:Step 5 之前还有中止路径,中止要保留 Kafka 积压;先删后抬会留下残留写者可以写回的窗口。所以做法是放进 P2 的同一段 Lua,先抬后删。
-- strict 的屏障重建(#3)用 C' 做 owner:先于 C' 重建的话,残留实体能写入更高的 pending。所以重建放在 P2 全部完成之后(P3)。
-- verify 最后统一核对三件事:owner 和两个 applied 都等于 C';屏障等于目标;各族键不存在。
+```
+入口 E1–E4(新增 E5:rid 不得含合服 run_id 形状的子串)
+→ 0a–0e(不变)
+→ 0f:deploy-facts Schema 3 → 全服围栏读方核对 → 目标协议核对 → run_id → 工具版本 → <tool> -mode preflight
+→ 写 entry-state
+→ 【新】0g:全服围栏读方复核 → <tool> -mode fence(ps1 起 etcd 端口转发)
+→ 1:zone-down
+→ 1b:(i) 消费者;(ii) 静默;(iii) 全服复核 → <tool> -mode stopped(etcd);(iv) LAG
+→ 3:PITR(恢复库 schema 落后时执行 go/db cmd/migrate -command up)
+→ 4a:全服复核 → <tool> -mode inventory(ps1 起 guild 端口转发)
+→ 4a′:停服复核
+→ 5:-ToLatest,记切点
+→ 4b:<tool> -mode purge
+     P1 区级重试 / 死信族:逐条解码,范围内进隔离区,其余回原处
+     P2 逐人一段 Lua:复核围栏与租约 → 状态∈{计划前态,计划后态} → 纪元抬升 → 删各族键 → ZREM
+     P3(只 strict)逐人 SQL 规范化并重建屏障
+→ 5b:切点复核 → <tool> -mode verify(guild)
+→ 6:zone-up(显式 -GoSvcTag)
+→ 【新】6b:<tool> -mode release
+→ 7:<tool> -mode release 复跑作断言(必须 0)→ 清单
+中止 / 放弃路径:原有提示末尾加 <tool> -mode release
+回档完结、人工复核隔离区之后:<tool> -mode quarantine-drop -confirm
+```
 
-══════════ 1. #1 zone 维护围栏 ══════════
-【证据】
-- 读方只看 EXISTS:
-  - data_service:routing/router.go:209,GetPlayerHomeZone 读 MergeFenceKey(home);:253 setPlayerZoneIfAbsentScript KEYS[2]=merge:in_progress:{home},拒绝新建角色;
-  - scene_manager:home_zone.go:176-199,rejectHomeZoneMerging「不分腿、不分首登 / 换图一律拒」,而且在第一次写 location / owner_epoch 之前就拒;
-  - guild:merge_fence.go:81;
-  - 契约:merge_zone/fence.go:7-28 与 route_ready.go:407-409 都写明「值的格式不是读方契约」。
-- 先例:barrierrestore 的 route.go:181/204-207 Guard,用永久的 merge:in_progress:<z>=`save_barrier_restore:<id>` 加 MaintenanceKey 当维护广播围栏。
-- 互斥:
-  - merge_zone 获取围栏用 SetNX(fence.go:147),撞上即拒;
-  - routetool 的 import / repair 只要 SCAN 到 merge:in_progress:* 就退出 3;
-  - db_first 的对账 leader 遇到不带 fence_epoch 的值不删、不覆盖(MergeFenceMirrorSetScript 回 2)。
-【键与值】
-- K1 = placement.MergeFenceKey(zone),值 `zone_rollback_discard:<rid>`;
-- K2 = barrierrestore.MaintenanceKey(zone),值 `<rid>`;
-- 两把键 PTTL 都是 -1,位于 go/db 的 RedisClient 实例。deploy-facts 已核对它与 MappingRedis / OwnerEpoch / Placement 同实例同 DB。
-【fence 模式】
-1. 先跑 preflight 的全部公共检查。
-2. 一段 Lua 获取围栏(仿 barrierrestore 的 guardScript):对 K1、K2 各自判断,不存在则 SET;已存在且值等于我方、PTTL=-1 则视为已持有(幂等);否则返回 `foreign fence` → 3。Lua 里还复核 INFO 的 run_id。
-3. 排空:H 遍 SCAN player:zone:* 加 MGET,取 home=本 zone 的玩家;再按批 MGET player:<id>:location 与 handoff。
-   - 用 decideLocationZone 的同一真值表区分陈旧与他区在线(scan.go 里重写一份,与 merge_zone 共用测试向量)。
-   - 得到「他区在线集合」后,每 15s 只对这个集合重读;集合为空后再做一次全量确认。
-   - 截止时间用单调时钟,`-drain-wait`(缺省 30m,上限 6h)。
-   - 超时:写 fence-drain.json(名单),以 5 退出,围栏保留。同一 rid 重跑会接着等;放弃则执行 `-mode release`,再走中止路径。
-【release 模式】
-- 一段 Lua 按值 CAS 删除 K1、K2:值不等于我方 → 3,什么都不删;不存在 → 0(幂等)。
-- 只在两个时机执行:Step 6 rollout 成功之后(6b),或中止路径的 zone-up 之后。
-【复核】
-- stopped / inventory 用 GET + PTTL 只读复核;
-- purge 与 strict 的写 Lua 把 K1、K2 放进 KEYS,原子复核;
-- 缺失或被改 → 3(写 Lua 返回 fence_lost)。
-【政策】
-- 等他区在线的玩家自然下线,不踢:
-  - 围栏保证这个集合只减不增:EnterScene 不分腿一律拒绝,新建角色被 setPlayerZoneIfAbsentScript 拒绝。
-  - 踢下线需要会话、gate 实例、target_instance_id 的寻址(login/internal/svc/gate_command.go),go/db 无法 import,而且踢下线产生的退出存盘本来就要被丢弃。
-- 副作用(写进 runbook):
-  - 围栏期间本 zone 归属玩家不能登录、不能换图,本 zone 不能建帮;
-  - 全服的 route_tool import / repair 暂停;
-  - 回档放弃而忘了 release,会把本 zone 钉死,所以新增一条告警(见 §8)。
+衔接关系:
 
-══════════ 2. #2 纪元抬升 ══════════
-【停服基线(stopped)】
-- 对本 zone 归属玩家(H 遍,加上 M 遍里有行且 home=本 zone 的玩家),按 pid%64 分片流式写 `owner-baseline-s<NN>.ndjson`,每行 {pid, owner}。
-- fingerprint-baseline.json 记下每个分片的 SHA-256。
-- 同一 rid 已有 phase=stopped 的基线就不覆盖。
-【U(p) 与目标(raise.go,纯函数)】
-- U(p) 取以下来源的最大值:
-  - owner_stop;
-  - 当前世代 topic(config.DbTaskTopicForGeneration)两表的 applied_epoch(kafka.AppliedEpochKey);
-  - 屏障里 pending / player_database / player_database_1 / outbox_version 的 epoch(savebarrier.Parse);
-  - 资产证据 asset_sql_commit 的版本(assetop 的版本即 savebarrier.Version);
-  - PITR 之后两表的 fence_owner_epoch。
-  这些 Redis 来源在停服之后不会变(围栏加停服),由「owner 未变」间接证明。
-- 判定:
-  - owner_stop==0 且 U>0 → owner_behind;
-  - owner_stop<U → owner_behind;
-  - owner_stop==MaxUint64 → unclassified(溢出);
-  - owner_stop==0 且 U==0 → 未铸造的号,不抬、不建键;
-  - 其余 C'=owner_stop+1。
-【inventory 复核】
-- 现读 owner 必须逐人等于基线;不在基线里却在范围内的玩家也算违例。违例 → 3,说明围栏漏了,此时中止路径还在。
-【抬升(P2 逐人 Lua 的前半段)】
-- KEYS 带 owner_epoch 和两个 applied_epoch。比较用导出的 kafka.LuaDecimalGreaterFn 按十进制精确比较,不用 tonumber。
-- 前置检查:
-  - 类型是 string、值是规范十进制、PTTL=-1;
-  - owner ∈ {owner_stop, C'},否则 owner_advanced;
-  - 每个 applied 只能是缺失、≤owner_stop 或 ==C',否则 applied_ahead。
-- 检查通过后 SET 三键为 C'。
-- 计数 raised / already。
-【verify】
-- 已处理的玩家:owner 与两个 applied 必须恰好等于 C'。更大说明 Step 6 之前有人铸造过 → 3。
-【不抬的】
-- MySQL 行围栏:legacy 不检查行围栏;dual 有 Redis 守卫在 SQL 之前拒。
-- 他区归属的玩家:不在围栏内,抬了会废黜他们正在线的实体。
-- storage_elsewhere:理由见决定表。
+- 围栏(#1)在 0g 立起,保持到 6b。stopped / inventory / purge / verify 开头都复核「K1、K2 恰为本 rid 的值且 PTTL=-1」;purge 的逐人 Lua 与 strict 的重建 Lua 把两把键放进 KEYS 原子复核。
+- 纪元抬升(#2)只能在 Step 5 之后、该玩家删除之前:Step 5 之前还有中止路径,中止要保留 Kafka 积压;先删后抬会留下残留写者写回的窗口。所以放进 P2 的同一段 Lua,先抬后删。
+- strict 的屏障重建(#3)用 C' 做 owner,放在 P2 全部结束之后(P3)。
+- 帮会分歧闸(#8)在 inventory 判一次、verify 再判一次;purge 不调 guild。
 
-══════════ 3. #3 屏障与协议世代 ══════════
-【判定(target.go)】
-- deploy-facts 的 FencingMode,加上 GET saveoutbox.GenerationKey(zone)(generation.go:37,值 GenerationStrict),加上 64 个桶的 ZCARD:
-  - dual + 标记==strict → strict;
-  - legacy + 标记缺失 + 桶全空 → legacy;
-  - 其余(dual 而没有标记、legacy 而有标记或桶非空、值未知)→ 3。
-- `-barrier-protocol` 必须等于判定结果,否则 3。
-- legacy 另由 ps1 做 git 核对(Get-TargetBarrierProtocol):login 镜像提交里没有 go/login/internal/logic/pkg/dataloader/parent_commit_barrier.go,node 镜像提交里 redis_client.h 不含 kSaveWithCommitBarrierLuaScript;判不出 → 拒。
-【legacy】
-- 工具绝不 HSET 屏障。屏障只允许出现 player_database / player_database_1 两个 ACK 字段,P2 里归档后删除。
-- 出现 pending / outbox_* 字段 → inventory 判 3(协议世代与 Redis 内容矛盾)。
-【strict:P2】
-- 屏障与父快照等一起「归档 + sha1 复核 + UNLINK」,并 ZREM 本人在桶里的成员。
-- 「有 pending、无 ACK」或带 outbox 字段的,在 purge-players 里逐人记 pending / 两个 ACK / outbox_version / outbox_topic / 处置结果,计 discarded_uncommitted_intents。
-- 不重放:按裁决 (A),T 时刻不在 MySQL 里的意图一律丢弃。归档满足 db-write-fencing-mysql.md:1555/1559 的「先保存、逐笔裁决」。
-【strict:P3,对每个已处理且 C'>0 的玩家(strict.go)】
-1. TiDB 强会话(authoritysql.Open(strong=true);本机 MySQL 显式 `-local-mysql`)。
-2. 一个事务里对 player_database / player_database_1 做 FOR UPDATE 读。按形状定目标版本 V:
+### 2.1 #1 zone 维护围栏
+
+**读方清单与判据(代码证实,订正 v1 的证据定位)**
+
+| 读方 | 位置 | 判据 |
+|---|---|---|
+| data_service 建号登记(redis 模式) | `routing/router.go`:211-225 `IsMergeInProgress`(:158)EXISTS 预检,读失败按封锁;提交点 `setPlayerZoneIfAbsentScript`(组键 :238,脚本 :289-299)EXISTS KEYS[2] 命中回 3 → `ErrZoneMergeInProgress`(码 22),`player:zone` 与 `player:placement` 都不写 | EXISTS |
+| data_service 建号登记(db_first) | `route_publish.go`:134-144 同一个 `IsMergeInProgress`;发布脚本 KEYS[4] 复核(`shared/placement/route.go`:294-317) | EXISTS |
+| data_service `GetPlayerHomeZone` RPC | `server/dataserviceserver.go`:159-172 → `Router.GetPlayerHomeZoneAndMergeFence`(router.go:371-432;Lua :390-399 用 ARGV 传前缀再拼 home,不经 `MergeFenceKey`;读失败回 -1 按封锁);`ReadRequiresReady=true` 时走 `route_read.go`:120-145,副本不可信时回源 SQL 会绕过 K1。`Router.GetPlayerHomeZone`(:326-335)不读围栏 | EXISTS |
+| scene_manager | `home_zone.go` `resolveHomeZone`(:110-179)→ `rejectHomeZoneMerging`(:194-200),回 `ErrHomeZoneMerging`=21,`reason=home_zone_merging`;调用点 `enterscenelogic.go`:441-445(跨区第一条腿)与 :600-614(第 3b 步:同区落点、重连、第二条腿),都在铸 epoch、写 location 之前 | 应答字段 |
+| guild | `internal/logic/merge_fence.go`:74-86 `RedisMergeFence`(EXISTS);:152-178 `RouteReadyMergeFence`(值非 nil 即封锁,nil 再 EXISTS,副本不可信当封锁)。被拒的是 Z 归属公会的全部写:建帮 guild_logic.go:236、退帮 :463、解散 :518、改公告 :588、经济 economy_logic.go:303-313、活动结算 activity_logic.go:420、历练开局 activity_trial.go:268-270 | EXISTS / 非 nil |
+| route_tool | `routetool/redisread.go`:74-93 `listActiveFences`(SCAN `merge:in_progress:*`);importer.go:18/:54、repair.go:22 只要有一把就退出 3 | 存在 |
+| merge_zone | `acquireMergeFence` 对 src、dst 各 SetNX(fence.go:103-166);`placementCASScript` EXISTS 命中回 3(placement_ops.go:501-515、:530-531);pin_placement.go:64-67 与 :98;relocate.go:278 与 :354;审计 `verifyFenceReleased`(audit_checks.go:531-557)EXISTS | EXISTS / SetNX |
+| barrierrestore | `recoveryKeys` 把 `MergeFenceKey` 放进 KEYS(restore.go:425-435),`restoreScript` 遇到即拒(scripts.go:20);`guardScript` / `mappingInspectScript`(route.go:210-241)要求 K1 恰为 `save_barrier_restore:<id>` 且 PTTL=-1 | 存在 / 精确值 |
+| db_first 对账 leader | `placement.MergeFenceMirrorSetScript`(route_ready.go:424-434)遇到非 JSON 值回 2,不覆盖 | 不覆盖 |
+
+不读 K1 的组件:`java/` 下无匹配;C++ 只认 scene_manager 错误码 21(player_lifecycle.h:1135、:1168);`go/login` 无匹配;trade 自己写明不读(tools/merge_zone/trade_step.go:29)。「值的格式不是读方契约」有代码原文为证:router.go:127-143、merge_fence.go:15-27、fence.go:23、route_ready.go:407-408。
+
+**与合服、barrierrestore 互斥**:merge_zone 对 src、dst 都 SetNX,以 Z 为源或目标的合服 / 撤销都撞上 K1 被拒;`releaseFenceScript` / `refreshFenceScript`(fence.go:72-85)只处理值里含本次 run_id 子串的键,正常情况下碰不到 K1;为杜绝子串巧合,E5 与工具入口拒绝含 `[0-9]+-[0-9]+-[0-9]{8}T[0-9]{6}Z-` 子串的 rid(`newRunID` 形状,fence.go:316-318)。barrierrestore 在 Z 上同样被挡,互斥双向。
+
+**同实例前提**:k8s_deploy.ps1:7415-7419 MappingRedis 固定 DB0,go/db 的 `Placement.Redis` 复用 RedisClient;`Get-DeployFactsProblems`(k8s_zone_rollback.ps1:1245、:1319)要求 MappingRedis.Host == RedisClient.Hosts 且 DB 为 0。Lua 里调 INFO 有在产先例:route_read.go:54-76 `getHomeZoneFenceReadyScript` 与 `placement.RouteReadyReadScript`;merge_fence.go:95-96 写明 miniredis 不支持 INFO 的 server / replication 段,相关用例只能在真 Redis 上测。
+
+**生效前提与最低提交(ps1 全服核对)**
+
+| 拦截面 | 最低提交 | 说明 |
+|---|---|---|
+| 进场(EnterScene) | data-service 与 scene-manager 都不早于 4493b3c9f(2026-09-29) | 更早的 data_service 不填 `home_zone_merging`,调用方读作 false(home_zone.go:175、dataserviceserver.go:142);发现键 `dataservice.rpc` 全局共用(k8s_deploy.ps1:7964-7966),任一 zone 的实例都可能应答 |
+| 建号 | EXISTS 预检不早于 11ba15a0f(2026-09-08);脚本内原子复核不早于 4493b3c9f | 4493b3c9f 已覆盖 |
+| guild | 建帮 11ba15a0f;经济 440fe26b6(2026-09-21);历练 284509ad0(2026-10-08) | **不核对**:guild 的拦截只是纵深防御,回档正确性由 #8 资产分歧闸保证 |
+| login / C++ / trade | 任何版本都不读 K1 | 列为不挡的面 |
+
+ps1 新增 `Read-GlobalFenceReaders`(只读 kubectl:`get deployment -A --field-selector metadata.name=data-service`、同法 `scene-manager`,`get configmap -A --field-selector metadata.name=go-svc-data-service-config` 与 `go-svc-scene-manager-config`)与纯函数 `Get-GlobalFenceReaderProblems`,逐 namespace 判:
+
+1. data-service、scene-manager 镜像 tag 必须是 git sha(digest 判不出即拒),且 `git merge-base --is-ancestor 4493b3c9f <sha>` 为真(本地没有该提交也判不出,拒);
+2. data-service 的 `RouteStore.Mode` 缺省或为 `redis`,`RouteStore.ReadRequiresReady` 缺省或为 false(config.go:384 的 Validate 已保证 redis 模式下它恒为 false,仍显式读出并要求为 false);
+3. scene-manager 的 `AllowGateZoneAsHomeZone` 缺省或为 false,且配了 `DataServiceRpc`(Etcd.Key 或 Endpoints 非空;home_zone.go:111-133 的 dev 旁路下 scene_manager 不经 data_service,围栏无效)。
+
+结果写 `<报告目录>/global-fence-readers-<阶段>.json`;第 0 步 f、0g 之前、stopped 之前、inventory 之前各读一次,任一不过即拒(防回档期间别的 zone 发布了旧镜像)。
+
+**能挡住的面**(前提成立时):home=Z 玩家所有带 GateId 的 EnterScene 在第一次写之前被拒;新建 home=Z 角色的映射登记被拒(redis 与 db_first 两档都原子拒绝);pin-placement 落在 Z 上被拒;relocate 跳过 home=Z 玩家,B3 之后冻结 CAS 还复核源落点与目标落点所在 zone 的围栏;`-backfill-home-zone` 在 B3 之后对 Z 被拒;Z 归属公会的写被拒;涉及 Z 的合服、撤销、barrierrestore 被拒;全服 route_tool import / repair / reconcile-from-cache 暂停。
+
+**挡不住的面与补法**
+
+| 面 | 现状 | 补法 |
+|---|---|---|
+| 他区 login 的 EnterGame | login 全程不读 K1。`entergamelogic.go`:425-435 先 `EnsurePlayerAllDataInRedisAsync`(读任务发往 login 所在 zone 的 topic,他区 go/db 用 `decideReadPlacement` 读 zone_Z_db),login 再用 `publishParentLoadScript` 写 `PlayerAllData:<pid>`(PX 24h,sync_loader.go:138);之后 `applyLoadedPlayerSession` 才写会话、绑 gate(:748-800),EnterScene 被 21 拒时会话照旧保留(:835-849);go/db 读路径 `publishDBReadResult` 用 SetNX + cacheTTL 回写子表缓存 | 冷读产物一律带 PTTL>0,scene 首次存盘的裸 SET 会去掉 TTL(new_player_seed.go:70)。P2 删除时 PTTL>0 的父快照 / 子表缓存不论内容一律归为「冷读产物」删除并计数;verify 对已处理玩家接受与计划后态一致的冷读产物(strict:父快照 `last_save_seq`==seq(V)、子表缓存行围栏==V;legacy:PTTL>0 即可,P2 之后的冷读只可能读到换库之后的数据),PTTL=-1 仍按违例。`player:session` 不作在线证明。login 侧加闸属于新代码,旧镜像无效,不在 R9 内(§7) |
+| 他区在线实体的跨服务资产写 | trade 资产通道按 `player:{id}:location` 直调玩家所在 scene(trade/internal/svc/assetchannel.go:33-37),mail / player_inbox 同类;guild 只按 `guild.zone_id` 判围栏 | 排空期间落到将被丢弃的存盘上。guild 由 #8 兜住;trade、mail、收件箱登记为残余风险(§5),排空时长计入窗口 |
+| foreign_home_storage_here、relocate / pin / backfill | 写者是他区 go/db,或离线工具不查 K1 | preflight、fence、stopped 硬拒;merge_zone 冻结 CAS 与回填加围栏(B3) |
+| 不带 GateId 的 EnterScene | 不查归属、不过围栏(enterscenelogic.go:592-599 自认的已知缺口) | runbook 声明前提「所有生产调用方都带 GateId」;登记残余风险 |
+| 立栏瞬间的在途 EnterScene | home_zone.go:142-178 先 RPC 读 merging,之后才铸 epoch、CAS location,location 的 Lua 不含 K1 | 立栏后沉降 30s(≥ HomeZoneLookupTimeoutMs 缺省 1500ms + EnterScene 处理上界;先例 rollback_logic.go:143-150 的 `guildSettleDelay`=30s);阻塞集合为空后再隔 30s 全量复扫 |
+| 没有 `player:zone` 映射的玩家 | home_zone.go:172-175 未映射按 gate zone 回落,不受围栏约束 | 本库有行而无映射 = legacy_owned,preflight 与 stopped 用只读 SQL 硬拒 |
+
+**与 data_service `RollbackFence` 契约的差距**:`svc/servicecontext.go`:92-105 规定 zone 级回档围栏须「阻断登录 / Scene 激活 / 旧 epoch 存盘」,并注明仓库尚无实现、生产注入 nil。K1 只覆盖 Scene 激活(带 GateId、前提成立时);不挡登录(冷读产物见上表);旧 epoch 存盘由 #2 纪元抬升挡住。本工具不实现、也不声称满足该接口。
+
+**键与值**
+
+- K1 = `placement.MergeFenceKey(zone)`,值 `zone_rollback_discard:<rid>`,PTTL=-1。
+- K2 = `barrierrestore.MaintenanceKey(zone)`(barrierrestore 已于 8b9592de3 入库,工具与它同属 go/db module,直接引用,另加一条钉死字面量 `player:save_barrier:maintenance:<z>` 的测试),值 `zone_rollback_discard:<rid>`,PTTL=-1。
+- 两把键与 MappingRedis / OwnerEpoch / Placement 同实例同 DB(deploy-facts 已核对)。
+
+**fence 模式(第 0 步 g;只依赖 Redis、etcd 与 preflight 落盘结果,不连 MySQL、不读 deploy-facts)**
+
+1. INFO 核对 run_id 与 cluster_enabled:0;取写者租约(§2.7)。
+2. 读 `<报告目录>/preflight.json`:pass=true、rid / zone / run_id 一致、取样时刻(Redis TIME)不早于 15 分钟,否则 3。
+3. 获取前只读预检:K1、K2 状态;准入(`merge:in_progress:*` 里值以 `zone_rollback_discard:` 开头的 zone 数,含本次,超过 `-max-concurrent-rollbacks` 即 3)。不过以 3 退出(什么都没写)。
+4. `fenceAcquireScript` 一段 Lua 获取(§2.4 Lua 契约):已持有即幂等;遇外人值或带 TTL 的同值以 3 退出。
+5. 沉降 30s(单调时钟)。
+6. 立栏后复核(Redis-only):foreign_home_storage_here、frozen 落点规则、合服标记规则(同 preflight)。不过 → 写 `fence-drain.json`(reason=post_acquire_recheck)以 5 退出,围栏保留。
+7. 排空:全量 H 遍(SCAN `player:zone:*` + MGET,取 home=Z)→ 按批读 location、handoff、load 集、death_at、scene zone,每轮取一次 etcd 注册表快照 → 按下面的判据得到阻塞集合 B(Online ∪ Undecided ∪ handoff 存在)。
+8. B 非空:每 15s 只重读 B;B 为空 → 再沉降 30s → 再全量 H 遍一次 → 仍为空即排空完成,写 `fence-drain.json`,以 0 退出。
+9. 截止 `-drain-wait`(缺省 30m,上限 6h,单调时钟):到期写 `fence-drain.json`(reason=drain_timeout)以 5 退出,围栏保留。同一 rid 整脚本重跑会从 preflight(K1 恰为本 rid 视为续跑)走到 0g 接着等;放弃则 `-mode release` 后走中止路径。月卡租约可顺延、挂机会话可以无限期在线,协议上没有自然上界,所以超时退出是必需的。
+
+`fence-drain.json`:`{rid, zone, reason, started_at, deadline, rounds, registry:{revision, cluster_id, trusted}, online:[…], stale_ignored:[…], undecided:[…], counts:{no_location, own_zone, awaiting_expired}}`,三类名单逐人附 `location_hex`、zone、node、update_time、load_present、load_card、death_at_present、registered_count、handoff_present 与判定依据。
+
+**他区在线判据(`go/shared/scenenode/liveness.go`,纯函数 `ClassifyLocation`,工具专用)**
+
+输入:location 原值、scene zone 反查值、Redis TIME 秒、目标 zone Z、`ZSCORE scene_nodes:zone:<zl>:load <node>`、`ZCARD` 同键、`EXISTS node:zone:<zl>:<node>:death_at`、etcd 注册表快照(`RegistrySnapshot`)。
+
+| 序 | 条件 | 判定 | 阻塞 |
+|---|---|---|---|
+| 1 | location 不存在 | NoLocation | 否 |
+| 2 | protobuf 解析失败 | Undecided | 是 |
+| 3 | zone_id≠0 取它;zone_id==0 按 `scene:<scene_id>:zone` 反查,查无或非法 | Undecided | 是 |
+| 4 | 解析出的 zone == Z(含 Z 自己 zone-down 留下的) | OwnZone | 否(由 stopped 的「Z 的 load 集为空」覆盖) |
+| 5 | node_id 为空(等待落点):now−update_time>300(`awaitingPlacementExpired` / `redirectTokenTTLSeconds`=300)| AwaitingExpired | 否 |
+| 5′ | node_id 为空且未过期 | Undecided | 是(围栏下第二条腿必被拒,300s 内必过期) |
+| 6 | 节点在 `scene_nodes:zone:<zl>:load` 里 | Online | 是 |
+| 7 | 该 zone 的 load 集 ZCARD==0,且 death_at 不存在 | StaleZoneGone | 否 |
+| 8 | 快照可信、该 (zone,node) 注册条数为 0,且 death_at 不存在 | StaleNodeGone | 否 |
+| 9 | 其余(death_at 仍在、快照不可信、Redis 读失败) | Undecided | 是 |
+
+- 「death_at 存在即判不出」:`node:zone:<z>:<n>:death_at` 只在节点死亡后 `NodeDeathMarkTTL`=10 分钟内存在;按 GO-6,节点摘出 load 集的前提是 death_at 已落地或已满一个屏障,所以「不在 load 集 + death_at 不存在」蕴含再入屏障已过,工具不必读 `SceneReentryBarrierSeconds`。
+- `RegistrySnapshot`:对 etcd 前缀 `scenenode.SceneNodeRpcPrefix`(`SceneNodeService.rpc/`)做一次 Get;跳过含 `/allocated/` 的键;其余每个值只解析 `zoneId` / `nodeId`,任一解析失败即整份快照 `Trusted=false`。与 `Watcher.parse` 不同,缺 grpcEndpoint 的注册也计入(死亡证明不能漏数);同一 (zone,node) 多条注册按存活。
+- scene_manager 不改用这个函数:它的 `playerLocationOwnerDead`(enterscenelogic.go:1005-1026)依赖进程内 etcd 视图与本地观察时刻(`isNodeGoneFromRegistry` / `localGoneBarrierBlocks`),语义更强、读不到 Redis 之外的东西也照样成立。两者共享的只有键名(§3 B1 把 `NodeLoadKeyFmt`、`NodeDeathAtKeyFmt`、`SceneZoneKeyFmt` 收成 shared 单一来源)。
+- `player:session` 不读:被 21 拒的玩家会话照样保留、Z 的 gate 还活着,会话证明不了「人在场景里」,键名也属 player_locator 私有。
+
+**release 模式(Step 6b;只依赖 Redis,参数只要 -redis / -redis-db / -redis-password-env / -expect-run-id / -zone / -rollback-id / -report-dir)**
+
+- 不读 deploy-facts、不连 MySQL、不比镜像:中止路径上影子库没换回、DSN 环境变量丢了、Step 6 换了 go/db 镜像,都不能卡住撤围栏(复核 6.2.9)。
+- 一段 `fenceReleaseScript`:K1、K2 按**整值相等**判属本 rid(不照抄 merge_zone 的 `string.find` 子串匹配),属我方的删除(带 TTL 的我方值同样删除,并记 `ttl_tampered`);外人值不碰。清单写 `fence_released_at`。
+- 返回:两把都恰为我方永久值并已删除 → 0;清单已记 released 且两把都不是我方值 → 0(幂等);其余(K1 或 K2 中途缺失、被改成外人值、被加了 TTL)→ 删掉仍属我方的那把,以 **7** 退出,报告写「围栏中途丢失」并列出各键现值;后续模式会以 fence_lost 拒绝。
+- 只在三个时机执行:Step 6 rollout 成功之后(6b);中止路径的 zone-up 之后;Step 7 复跑作断言。
+
+**复核**
+
+- stopped / inventory 用 GET + PTTL 只读复核;purge 与 strict 的写 Lua 把 K1、K2 放进 KEYS 原子复核;缺失或被改 → 3(写 Lua 返回 `fence_lost`)。
+
+**政策与副作用(写进 runbook)**
+
+- 等他区在线的本 zone 玩家自然下线,不踢。「他区在线集合只减不增」只在前提成立时、对带 GateId 的请求、过了沉降期之后成立。
+- 围栏期间与忘撤的影响:home=Z 玩家全部进不了场景(登录预加载照常执行、会话照样保留);Z 不能建号;Z 公会的全部写被拒,**guild 历练结果消费会全服卡住**:`trial_result_consumer.go`:20-37 的纪律 2 规定暂时性失败无限重调,Z 公会的一条结果撞上 ErrZoneMerging 后整个消费协程停在这条消息上(单副本时即全服),已登记的对局靠巡检器 420s 后兜底结算,未登记的要等到 release;全服 route_tool import / repair / reconcile-from-cache 暂停(merge-zone-runbook.md:917);涉及 Z 的合服、搬库、钉落点、barrierrestore 全部被拒。
+- 0g 沉降期 ps1 打印两条 PromQL 供操作者核对:`sum(increase(guild_trial_result_total{result="handler_retry"}[5m]))` 与 guild 结果消费组 lag;持续上涨即提示「历练结算已卡住,回档窗口越短越好」。只提示,不作闸门。
+- 告警分层:新规则 `SceneManagerHomeZoneFenceHeldTooLong`(§2.8);ps1 Step 7 复跑 release 必须 0;k8s_deploy zone-up 结束时只读 GET `merge:in_progress:<zoneId>`,值以 `zone_rollback_discard:` 开头即打印醒目 WARN 与 release 命令(Step 6 期间这条 WARN 属预期,文案写明);`guild_trial_result_total{result="handler_retry"}` 持续上涨作旁证。
+
+### 2.2 #2 纪元抬升与不可变计划
+
+**停服基线(stopped)**
+
+- 本 zone 归属玩家(H 遍,加上 M 遍里有行且 home=Z 的)按 `pid%64` 分片流式写 `stopped-players-s<NN>.ndjson`,每行 `{pid, owner, home_raw, placement_raw}`;`fingerprint-baseline.json` 记每个分片的 SHA-256。
+- 同一 rid 已有 phase=stopped 的基线不覆盖。
+
+**U(p)、C'、V(raise.go,纯函数;只在 inventory 首次计算)**
+
+- U(p) = max(owner_stop;当前世代 topic(`config.DbTaskTopicForGeneration`)两表的 applied_epoch(`kafka.AppliedEpochKey`);屏障 pending / player_database / player_database_1 / outbox_version 的 epoch(`savebarrier.Parse`);资产证据 asset_sql_commit 的版本;PITR 之后两表的 fence_owner_epoch)。这些 Redis 来源停服之后不变(围栏加停服),由「owner 未变」间接证明。
+- 判定:owner_stop==0 且 U>0 → owner_behind;owner_stop<U → owner_behind;owner_stop==MaxUint64 → unclassified;owner_stop==0 且 U==0 → 未铸造,不抬、不建键;其余 C'=owner_stop+1。
+
+**计划(plan.go)**
+
+- inventory 为每个 purge 类别的玩家写一行 `plan-s<NN>.ndjson`:`{pid, class, owner_stop, c_prime("" = 不抬), v(strict), home_raw, placement_raw, location_raw, applied:{player_database, player_database_1}, parent:{state: absent|scene|login_product, sha1}, asset_sql_commit:{sha1}, save_barrier:{sha1, fields}, row_fences:{表: [epoch, seq]}, bucket}`;`plan.json` 记各分片 SHA-256,清单字段 `plan_sha256` = sha256(plan.json)。
+- purge 第一轮开始后计划冻结:inventory 重跑时只校验现状 ∈ {计划前态, 计划后态} 且重新生成的计划与冻结计划逐字节相同,否则 3;不改写计划。
+- U(p) 不再在 purge / verify 重算,本工具写入的 applied==C'、屏障三字段==V、行围栏==V 不会被当成外来证据(复核 6.1.1)。
+
+**inventory 的 owner 复核**:现读 owner 必须逐人等于停服基线;不在基线里却在范围内的玩家也算违例 → 3(围栏漏了,此时中止路径还在)。
+
+**状态判定(purge 的逐人 Lua 与 verify 共用一张表)**
+
+| 状态 | owner | 两个 applied | 父快照 / 缓存 / 证据 | 屏障 |
+|---|---|---|---|---|
+| 计划前态 | == owner_stop | == 计划值(缺失即仍缺) | sha1 == 计划值,或已不存在,或 PTTL>0 冷读产物 | sha1 == 计划值 |
+| P2 后态 | == C' | == C' | 不存在或 PTTL>0 冷读产物 | 不存在 |
+| P3 后态(strict) | == C' | == C' | 不存在或与 V 一致的冷读产物 | HLEN=3、PTTL=-1、三字段 == V |
+
+c_prime 为空(未铸造)的玩家:owner 与 applied 恒为缺失。
+
+**抬升(P2 逐人 Lua 的前半段)**:比较一律用导出的 `kafka.LuaDecimalGreaterFn` 按十进制精确比较,不用 tonumber;前置检查:类型 string、规范十进制、PTTL=-1;owner ∈ {owner_stop, C'},否则 `owner_advanced`;每个 applied ∈ {计划值, C'},否则 `applied_ahead`;通过后 SET 三键为 C'。计数 raised / already。
+
+**不抬的**:MySQL 行围栏(legacy 不检查行围栏;dual 有 Redis 守卫在 SQL 之前拒);他区归属玩家;storage_elsewhere(它们的库不回退,严格世代下 saveoutbox 要用旧 epoch 补投被 Step 5 丢掉的写)。
+
+### 2.3 #3 屏障与协议世代
+
+**判定(target.go + ps1 `Get-TargetBarrierProtocol`)**
+
+- 现网:deploy-facts 的 FencingMode + `GET saveoutbox.GenerationKey(zone)`(值 `saveoutbox.GenerationStrict`)+ 64 个桶的 ZCARD:dual + 标记 strict → strict;legacy + 无标记 + 桶全空 → legacy;其余 → 3。
+- 目标(ps1,纯 git 读):node 取 `-NodeImage` 的 tag 提交,`git show <sha>:cpp/libs/engine/infra/storage/redis_client/redis_client.h` 是否含 `kSaveWithCommitBarrierLuaScript`;login / db 取 `-GoSvcTag`(B3 新增参数,留空 = `-NodeImage` 的 tag;Step 0b 与 Step 6 显式传同一值),`git cat-file -e <sha>:go/login/internal/logic/pkg/dataloader/parent_commit_barrier.go`;db 的 Fencing.Mode 取本机 `go/db/etc/db.yaml`(k8s_deploy.ps1 按工作树渲染 ConfigMap,缺省 dual)。三项全为严格 → strict;全不是 → legacy;混合或判不出 → 拒。
+- 现网与目标不一致 → 第 0 步拒绝,错误文本说明「先统一镜像协议再回档」。`-barrier-protocol` 必须等于判定结果,否则 3。
+
+**legacy**:工具绝不 HSET 屏障;屏障只允许出现 player_database / player_database_1 两个 ACK 字段,P2 归档后删除;出现 pending / outbox_* → inventory 判 3(protocol_contradiction)。
+
+**strict:P2**:屏障与资产证据「归档 + sha1 复核 + UNLINK」,ZREM 本人在桶里的成员;带 pending / outbox 的父快照另行归档;「有 pending、无 ACK」或带 outbox 字段的,在 `purge-players-p<N>.ndjson` 逐人记 pending / 两个 ACK / outbox_version / outbox_topic / 处置,计 `discarded_uncommitted_intents`。不重放:按裁决 (A),T 时刻不在 MySQL 里的意图一律丢弃;归档满足 db-write-fencing-mysql.md 的「先保存、逐笔裁决」。
+
+**strict:P3,对每个已处理且 C'>0 的玩家(strict.go)**
+
+1. TiDB 强会话(`authoritysql.Open(strong=true)`;本机 MySQL 显式 `-local-mysql`)。
+2. 一个事务里对 player_database / player_database_1 做 FOR UPDATE 读,按形状定 V:
    - 两行都在、围栏相等且非零 → V=该围栏,不写 SQL;
-   - 两行都是 (0,0) → V=(C',1),对两行做 UPDATE 围栏 CAS(条件 fence=(0,0),RowsAffected==1;与 barrierrestore 的 AllowLegacy 同形状);
-   - torn(缺一行,或两行围栏不同):V=现存行围栏的最大值,全零时取 (C',1)。缺的那张表用 proto2mysql 的 ExistsByPK+Insert 插入只有 player_id 和围栏 V 的空消息;围栏 ≠V 的行做 CAS 改围栏(只改围栏元数据,不碰资产列);
-   - 两行都缺(post_t_candidate 且 owner>0)→ V=(C',1),两表都插入骨架行。
+   - 两行都是 (0,0) → V=(C',1),两行做围栏 CAS(条件 fence=(0,0),RowsAffected==1;与 barrierrestore 的 AllowLegacy 同形状);
+   - torn(缺一行或两行围栏不同):先断言落后的那张表除 `player_id`、`stress_test_probe`、`fence_*` 外没有任何非默认业务列,否则判 **torn_cross_table**(blocked,inventory 预检阶段即判出);通过后 V=现存行围栏最大值,全零取 (C',1);缺的表用 proto2mysql 的 `ExistsByPK`+`Insert` 插入只有 player_id 与围栏 V 的空消息,围栏≠V 的行只 CAS 围栏元数据;
+   - 两行都缺(post_t_candidate 且 owner>0)→ V=(C',1),两表都插骨架行。
 3. 提交之后另开事务重锁重读,围栏必须等于 V。
-4. 跑一段 Lua。前置检查:run_id、K1/K2、owner==C'、父快照与子表缓存与证据与 handoff 都不存在、本人不在自己的桶里、屏障缺失或恰好是三个字段都等于 V 且 PTTL=-1。通过后 HSET pending / player_database / player_database_1 = V。
+4. 一段 `strictPublishScript`:前置检查租约、K1/K2、owner==C'、handoff 不存在、本人不在自己的桶里、屏障缺失或恰为三字段==V 且 PTTL=-1;父快照与子表缓存不存在,或 PTTL>0(冷读产物)→ 同段 UNLINK,PTTL=-1 → `cache_present`;通过后 HSET pending / player_database / player_database_1 = V。
 5. 回滚读事务。
-- 先提交 SQL,后发布 Redis:SQL 失败绝不发布 ACK。
-- 重跑幂等:CAS 和 Insert 的「已存在即重读」都会收敛,Lua 接受同值的三个字段。
-- 结果写进 strict-barrier-p<N>.ndjson。
-【为什么骨架行】
-- 严格协议的不变量是:owner≠0 ⇒ 要么「父快照加屏障」,要么「SQL 行围栏 == pending」(parent_commit_barrier.go:38-44、:110-111)。
-- 只写父快照骨架不可行:父快照有 TTL(publishParentLoadScript 带 PX),过期后冷读会因 SQL 缺行被拒。
-- 骨架行加 (C',1),等价于替玩家做一次「空角色首存」。scene 按 registration_timestamp==0 走新号分支,身份由 login 的 backfillPlayerIdentity 补齐,与 legacy 冷读骨架的语义一致。
-【inventory 的 strict 预检】
-- 只读地对范围内玩家做一遍 P3 的形状判定。主键不唯一、player_id 不符、围栏非规范、V 的 epoch 大于 C' → unclassified(strict_*),归 blocked。
-【不改 barrierrestore】
-- 它与回档有三处冲突:
-  - restoreScript(scripts.go:20)要求 merge 围栏不存在;
-  - :36-40 要求本 zone 64 个桶全空,而 storage_elsewhere 的合法成员会留在桶里;
-  - Plan 是按 ≤1000 人人工审定的流程。
-- 它是另一会话未跟踪的在途代码,所以只复用共享的 savebarrier / authoritysql / proto2mysql。K2 让 save_barrier_restore 无法与回档并发,这是有意的。
 
-══════════ 4. 回档工具:七个模式 ══════════
-【结构】
-- 薄 CLI:go/db/cmd/zone_rollback_discard/main.go。flag、-version、退出码映射在这一层。
-- 逻辑全部在 go/db/internal/zonerollback。
-- 依赖:go-redis(MaxRetries=-1,先例 save_barrier_restore/main.go:92)、authoritysql、proto2mysql、config.DbTaskTopicForGeneration,以及 §5 列出的键名导出。
-【公共参数(契约 :151-153 原样)】
-- 原有:-deploy-facts -zone -topic-generation -redis -redis-db [-redis-password-env] -expect-run-id -mysql-dsn-env -rollback-id -barrier-protocol -report-dir -mode。
-- 新增:-topology-manifest-dir、-workers(缺省 16,上限 64)、-timeout(缺省 8h)、-local-mysql。
-- 口令与 DSN 只从环境变量读,不进报告。
-【每个模式开头】
-- deploy-facts Schema 3:ZoneId / 世代 / 分区数一致,四路 Redis 同实例同 DB,RouteStoreMode=redis,协议判定见 §3。
-- Redis:INFO server 的 cluster_enabled:0,run_id==-expect-run-id。
-- MySQL:SELECT DATABASE()==placement.StoreDBName(zone)。
-- 玩家表 = 编译进二进制的 mysql_database_table.proto 里 OptionPrimaryKey=player_id 的消息,与 information_schema 里实际存在的表取交集(与 merge_zone 同口径);围栏表 = 带 fence_owner_epoch / fence_save_seq 列的表。
-- 除 preflight、fence 外,还要复核 K1/K2。
-【-version】
-- 恰好两行 commit=<40hex> 与 dirty=。读 -X main.buildCommit / main.buildDirty;没注入时回落 debug.ReadBuildInfo。
-【preflight(只读)】
-- 原契约的检查全部保留。
-- 删去「#1 落地前恒以 3 拒绝」,改为:K1/K2 不存在或已是本 rid。
-- 合服与 merged_into 的 zone 级规则(#6)。
-- 只靠 Redis 就能判出的拒绝,在这里先判一次。
-- 打印他区在线人数,只供参考。
-- 退出码 4 规则不变。
-【fence / release】见 §1。
-【stopped】
-1. 原契约的检查:scene_nodes:zone:<z>:load 为空(scenenode.NodeLoadKey);重试租约(-lease-wait,单调时钟);handoff(-handoff-wait ≥300s);他区在线即 3。
-2. 新增:K1/K2 复核;distributed:lock:kafka:ordering:<topic>: 前缀下没有存活的锁。
-3. 最后写基线:
-   - 每张玩家表按主键每 1000 行切块,块边界覆盖整个 uint64 空间;
-   - 每块在服务端算 COUNT(*) 与 BIT_XOR(CONV(SUBSTRING(MD5(CONCAT_WS('#',全部列,ISNULL 标记)),1,16),16,10)),列按 ORDINAL_POSITION 排、反引号转义;
-   - 加上 owner 基线(§2)。
-   - 先写 .partial,写完 rename 落盘;文件记 phase=stopped / rid / zone / Redis TIME / UTC。
-【inventory(只读,判定参数加 -report)】
-1. 读基线:缺失或 phase 不对 → 3。
-2. 按同一组块边界重算:全部块相同 → 3,除非 -acknowledge-no-post-t-writes;列清单不同 → 3。报告变化的块数与各表行数差。
-3. owner 复核(§2)。
-4. 三遍盘点(scan.go)与归类(classify.go,§6 真值表)。
-5. 拓扑证明(topology.go)。
-6. #5 度量:dual 下统计 fence_save_seq>>10 与 T 之差的最小 / 中位 / 最大;任一行 >T+60s → 3;legacy 记 effective_point=unknown(legacy)。
-7. post_t_candidate 或 home_elsewhere 占比 >-max-post-t-ratio(缺省 0.05,且人数 >20)→ 3。
-8. strict 预检。
-- 输出 inventory.json(各类人数、阈值、blocked 前 1000 名)和 inventory-<class>.ndjson,SHA 记进清单。
-- 有 blocked → 6。
-【purge(判定参数加 -confirm / -report)】
-1. 在进程内原样重跑 inventory 的全部判定,任一不过 → 3,什么都不写。
-   - 这次重跑接受「owner==C'、各族键已不存在」是上一轮留下的状态;判定以停服基线为准。
-2. HINCRBY 清单 pass_count 开新一轮 pass=N。
-3. P1 区级:用 SCAN(MATCH 规则见 §5)找出本 topic 的 ready / :p<n> / processing / instances / instance_mode、dead 和 dead index。
-   - 每个键一段 Lua:RENAMENX 到 rollback:quarantine:<zone>:<rid>:<N>:<原键>,同一段里 PEXPIRE(-quarantine-ttl,缺省 720h);
-   - guard 键 UNLINK;
-   - 目标已存在 → 1。
-4. P2 逐人(worker 池按 pid%64 分片):
-   a. pipeline 读 DUMP+PTTL 三族:父快照、asset_sql_commit、save_barrier。
-   b. 追加写 purge-archive-p<N>-s<NN>.ndjson(pid、key、pttl、dump_b64、sha1),每批 fsync,文件 0600,目录 0700。
-   c. 执行 purge_scripts.go 的逐人 Lua。KEYS 约 21 个:K1、K2、player:zone、player:placement、owner_epoch、两个 applied_epoch、location、handoff、父快照、各玩家表缓存、BagAllData / QuestAllData / MailAllData、sync_digest、asset_sql_commit、save_barrier、本人桶、清单。
-      - 全部检查先于第一次写:run_id;K1/K2;映射与落点逐字节等于盘点值(缺键即要求仍缺);location 逐字节等于盘点值;handoff 缺失;归档键的 sha1hex(DUMP) 等于 ARGV(为空则要求键不存在);legacy 下屏障不得有 pending / outbox;抬升的前置检查。
-      - 写:抬升;UNLINK 各族;ZREM 本人;HINCRBY 分族计数。
-   d. 追加 purge-players-p<N>.ndjson。
-5. P3(只 strict):P2 全部结束之后执行 §3。
-6. 写 purge.json(累计全部轮次);停止时与正常结束时都打印分族计数。
-【verify(判定参数加 -kafka-cut / -purge-report / -report,只读)】
-- 原契约的检查保留:
-  - 本 topic 各族为 0;
-  - 没有存活租约;
-  - consumer:applied:<topic>:* 用 kafka.ParseAppliedCursor 解析:v2 游标逐分区要求 seq≤切点,旧格式与各分区切点的最大值比较;
-  - 逐人复核删族的键都不存在。
-- 新增:
-  - owner 与两个 applied 都等于 C';
-  - K1/K2 仍在;
-  - legacy:屏障不存在,64 个桶为空;
-  - strict:屏障 HLEN=3、PTTL=-1,三个字段等于 V,两表行围栏等于 V;64 个桶里没有任何已处理玩家;
-  - 重跑归类,不能出现任何仍需删除的键族或 blocked 玩家。
-- 任一项不过 → 3。
+- 先提交 SQL,后发布 Redis:SQL 失败绝不发布 ACK。重跑幂等:CAS 与 Insert 的「已存在即重读」收敛,Lua 接受同值三字段。结果写 `strict-barrier-p<N>.ndjson`。
+- 骨架行按完整 proto 写:inventory 已要求恢复库 schema 通过 `migrate.ProtoSource.Drift`(§2.4)。
 
-══════════ 5. 键族处置表(键名全部出自导出函数,工具里不写字面量)══════════
+**为什么骨架行**:严格协议的不变量是 owner≠0 ⇒ 要么「父快照加屏障」,要么「SQL 行围栏 == pending」(parent_commit_barrier.go:38-44、:110-111);只写父快照骨架不可行(父快照有 TTL,过期后冷读因 SQL 缺行被拒)。骨架行加 (C',1) 等价于替玩家做一次「空角色首存」,scene 按 registration_timestamp==0 走新号分支,身份由 login 的 backfillPlayerIdentity 补齐,与 legacy 冷读骨架语义一致。
+
+**inventory 的 strict 预检**:只读地对范围内玩家做一遍 P3 形状判定。主键不唯一、player_id 不符、围栏非规范、V 的 epoch 大于 C' → unclassified(strict_*);torn 落后表带业务列 → torn_cross_table;都归 blocked。
+
+**不改 barrierrestore**:它的 restoreScript(scripts.go:20)要求合服围栏不存在、:36-40 要求 64 桶全空(storage_elsewhere 的合法成员会留在桶里)、Plan 是 ≤1000 人人工审定流程。K2 让 save_barrier_restore 无法与回档并发,这是有意的。
+
+### 2.4 回档工具:八个模式
+
+**结构**
+
+- 薄 CLI:`go/db/cmd/zone_rollback_discard/main.go`(flag、`-version`、退出码映射)。逻辑全部在 `go/db/internal/zonerollback`。
+- 依赖:go-redis(`MaxRetries=-1`,`PoolSize=workers+2`)、etcd clientv3(go/db 已直接依赖)、`shared/authoritysql`、proto2mysql、`db/internal/migrate`(`LoadColumns`、`ProtoSource.Drift`)、`config.DbTaskTopicForGeneration`、`shared/guildcheck`、`shared/scenenode`、`shared/playercache`、`shared/placement`、`barrierrestore.MaintenanceKey`,以及 §3 B1 的键名导出。
+
+**公共参数**(Get-DiscardToolArgs 拼,顺序固定)
+
+- 原有:`-deploy-facts -zone -topic-generation -redis -redis-db [-redis-password-env] -expect-run-id -mysql-dsn-env -rollback-id -barrier-protocol -report-dir -mode`。
+- 新增:`-topology-manifest-dir`、`-workers`(缺省 4,上限 8)、`-timeout`(缺省 8h)、`-local-mysql`、`-redis-keys-per-sec`(缺省 20000,上限 100000)、`-scan-count`(缺省 500)、`-max-inflight-bytes`(缺省 8MiB)、`-max-concurrent-rollbacks`(缺省 2,上限 4,含本次)。
+- 口令与 DSN 只从环境变量读,不进报告。rid 入口校验:`^[A-Za-z0-9_-]{1,96}$`,且不含 `[0-9]+-[0-9]+-[0-9]{8}T[0-9]{6}Z-` 子串。
+
+**每个模式开头**(release、quarantine-drop、fence 除外,见各自说明)
+
+- deploy-facts Schema 3:ZoneId / 世代 / 分区数一致,四路 Redis 同实例同 DB,RouteStoreMode=redis,协议判定见 §2.3。
+- Redis:INFO server 的 run_id == `-expect-run-id`,INFO cluster 的 cluster_enabled:0。
+- MySQL:`SELECT DATABASE()` == `placement.StoreDBName(zone)`。
+- 玩家表 = 编译进二进制的 mysql_database_table.proto 里 OptionPrimaryKey=player_id 的消息 ∩ information_schema 实际存在的表(与 merge_zone 同口径);围栏表 = 带 fence_owner_epoch / fence_save_seq 列的表。
+- 除 preflight 外复核 K1/K2;写模式先取写者租约。
+
+**-version**:恰好两行 `commit=<40hex>` 与 `dirty=<true|false>`;读 `-X main.buildCommit` / `main.buildDirty`,未注入时回落 `debug.ReadBuildInfo`。
+
+**preflight(停服前,只读;新增 `-target-time`)**
+
+- 原契约的检查全部保留(Redis 身份、各族键 TYPE、隔离区按续跑规则、zone 库可连、玩家表可读、退出码 4 规则)。
+- K1、K2 不存在,或恰为 `zone_rollback_discard:<本 rid>` 且 PTTL=-1(视为续跑)都放行;其它值以 3 拒绝。
+- 只读 Redis 即可判出的硬拒:foreign_home_storage_here(SCAN `player:placement:*`,`placement.Parse` + `EffectiveStorage`,有效落点=Z 且 `player:zone`≠Z 或缺失);frozen 落点规则(frozen 且 storage=Z → 拒;frozen 的 run_id 在拓扑清单目录里找不到清单,或清单 src / dst 含 Z → 拒);合服标记规则(`merge:merged_into:*` 里 dst=Z 的:run_id 开始时刻 ≥T → 拒;早于 T 的必须对上清单且写步骤全部 Done、At≤T−1s);拓扑清单目录里有 src 或 dst 含 Z、尚未走到 switched / aborted 的 relocate run → 拒;准入。
+- 只读 SQL:legacy_owned(本库有行而 `player:zone` 缺失)→ 拒。
+- 他区在线只报告(按 §2.1 判据,不连 etcd,需 etcd 才能定的一律计 undecided),不拒绝。
+- 写 `preflight.json`。
+
+**fence / release**:见 §2.1。
+
+**stopped(停服后,`-lease-wait / -handoff-wait / -fingerprint-baseline / -target-time / -etcd`)**
+
+1. 原契约检查:`scene_nodes:zone:<z>:load` 为空(`scenenode.NodeLoadKey`);本 topic 没有未过期的重试租约与 `distributed:lock:kafka:ordering:<topic>:` 前缀下的存活锁(`-lease-wait`,单调时钟截止);handoff 另按 `-handoff-wait`(≥300s)等待。
+2. K1/K2 复核;全服读方复核结果由 ps1 保证。
+3. 他区在线:按 §2.1 判据(带 etcd),任一 Online / Undecided → 3。
+4. foreign_home_storage_here、frozen、legacy_owned 复核(同 preflight)。
+5. 最后写基线:
+   - 每张玩家表按主键切块,块大小自适应(初始 1000 行,目标每块 0.5s,范围 100–100000 行),块边界覆盖整个 uint64 空间并写进基线;
+   - 每块在服务端算 `COUNT(*)` 与两段 128 位摘要:`BIT_XOR(CAST(CONV(SUBSTRING(r,1,16),16,10) AS UNSIGNED))`、`BIT_XOR(CAST(CONV(SUBSTRING(r,17,16),16,10) AS UNSIGNED))`,其中行摘要 `r = MD5(CONCAT(<逐列:IF(c IS NULL,'1','0'), MD5(CAST(c AS BINARY))>))`,列按 ORDINAL_POSITION 排、反引号转义;逐列定长 MD5 拼接,没有分隔符歧义;
+   - `stopped-players-s<NN>.ndjson`(§2.2);
+   - dual 下最后存盘落在 (T−15m, T] 的行写 `seq-witness.ndjson`(`{table, pid, fence_owner_epoch, fence_save_seq}`);
+   - 先写 .partial,写完 rename;文件记 phase=stopped / rid / zone / Redis TIME / UTC / 列清单。
+
+**inventory(PITR 之后,只读;判定参数 + `-report -guild-rpc -guild-check-budget`(缺省 30m))**
+
+1. 读基线(缺失或 phase 不对 → 3)。
+2. schema:恢复库对编译进二进制的 proto 跑 `migrate.LoadColumns` + `ProtoSource.Drift`,非空 → 3,错误文本给出 `go run ./cmd/migrate -f <db 配置> -command up`(只 ADD COLUMN)。
+3. 按基线块边界重算,列 = 基线列清单 ∩ 现列清单;列差异写进确认模板(`column_diff`)。全部块相同 → 3,除非 `-acknowledge-no-post-t-writes`。
+4. owner 复核(§2.2)。
+5. 三遍盘点(scan.go):H 用停服快照 + 逐人 MGET 复核映射(变了 → route_changed → 3);M 遍扫 Z 库全部玩家表主键;P 遍不再全量 SCAN(foreign / frozen 已在停服前硬拒,围栏期间新的钉落点与搬库冻结被 B3 挡住),对 M 遍的玩家逐人 MGET 落点。
+6. 归类(classify.go,§2.6)与拓扑证明(topology.go,§1 #6)。
+7. #5 度量:离群行(>T+60s)>20 → 3,1–20 → 确认模板 `seq_outliers`;见证行逐字比对,不同 → 3;无见证行且全表最大值 <T−15m → 确认模板 `quiet_before_t`;legacy 记 `effective_point=unknown(legacy)`。
+8. post_t_candidate 或 home_elsewhere 占比 > `-max-post-t-ratio`(缺省 0.05,且人数 >20)→ 3;owner_stop>0 的 post_t_candidate → 确认模板 `post_t_players`。
+9. strict 预检(§2.3)。
+10. 帮会资产分歧闸(asset_gate.go):对 purge 范围全部玩家以 since=T_ms−300000(与 data_service `GuildClockSkewMarginMs` 缺省同值)调 `guildcheck.New(guildpb.NewGuildInternalClient(conn)).ListDivergences`,总预算 `-guild-check-budget`;error(含 `ErrTooManyDivergences`、不可达)→ 3;`Divergences` 与 `UnprovablePlayerIDs` 进确认模板 `asset_divergences` / `asset_unprovable`;全文写 `asset-divergence.json`。
+11. 归档字节估算(屏障、资产证据与 strict 待归档父快照的 STRLEN / HSTRLEN 累加)> `-max-archive-bytes`(缺省 1GiB)或报告目录可用空间 → 3。
+12. 输出 `inventory.json`(各类人数、阈值、blocked 前 1000 名)、`inventory-<class>.ndjson`、`plan.json` 与 `plan-s<NN>.ndjson`、`acknowledge-template.json`;SHA 记进清单。
+13. 有 blocked → 6;确认模板非空而 `-acknowledge-file` 缺失或任一节与模板不逐字相同(规范 JSON)、或带了模板之外的节 → 6。
+
+**purge(判定参数 + `-confirm -report`)**
+
+1. 不再重跑全部判定:复核 K1/K2、租约、deploy-facts、`plan_sha256`、`-acknowledge-file` 与 inventory 时一致;任一不过 → 3,什么都不写。逐人状态在写 Lua 里原子判定。
+2. HINCRBY 清单 `pass_count` 开新一轮 pass=N。
+3. **P1 区级重试 / 死信族(quarantine.go,逐条分流)**
+   - 源键按已知键名枚举,不全量 SCAN:`RetryReadyKey(topic)`、`RetryPartitionReadyKeys(topic, PartitionCnt)`、`RetryLegacyProcessingKey(topic)`、`ZRANGE RetryInstancesKey(topic)` 登记的每个实例的 `RetryInstanceProcessingKey`、`RetryDeadKey(topic)`;另做一次 `SCAN MATCH EscapeRedisGlob("kafka:retry:processing:"+topic)+":*"` 兜孤儿实例(只认前缀逐字相同)。
+   - 每个源键 L:`RENAMENX L → rollback:quarantine:<z>:<rid>:<N>:staging:<L>`;再按批(≤100 条)从暂存键尾部取条目,在 Go 里解码玩家:v2 / 毒消息 / v1 / 裸载荷分别按 `unwrapRetryPayload` / 毒消息 JSON 的 Key / proto 解码取 task.Key。
+   - 计划里 purge 类别的玩家 → `rollback:quarantine:<z>:<rid>:<N>:<L>`(建键时同段 PEXPIRE `-quarantine-ttl`,缺省 720h);其余(范围外、解不出)→ 重试族回 `RetryReadyKey(topic)`(由 owner 实例按 v2 头重新分拣),死信回 `RetryDeadKey(topic)`;逐条写 `p1-routed-p<N>.ndjson`。
+   - 死信条目进隔离区时同段 Lua 把它在 `kafka:dead:index:<topic>` 里的字段(按 `kafka.DeadDedupField` 推导,指纹相同才动)HDEL 并 HSET 到 `rollback:quarantine:<z>:<rid>:<N>:kafka:dead:index:<topic>`;源死信列表为空时同段 DEL 源索引。
+   - `RetryInstancesKey` / `RetryInstanceModesKey` 整键 RENAMENX 进隔离区(实例已全部停止)。
+   - 暂存键在 quarantine 命名空间里,进程中断后同 rid 重跑先排空 `rollback:quarantine:<z>:<rid>:*:staging:*` 再开新键。目标键已存在(清单与隔离区不一致)→ 1。
+   - guard 键不碰(TTL 5 分钟,停服加 PITR 早已过期)。
+4. **P2 逐人(worker 池按 pid%64 分片)**
+   - pipeline 读三族证据现值:屏障、资产证据全量值(HGETALL),strict 下带 pending / outbox 的父快照全量值;其余父快照只在 Lua 里比 sha1。
+   - 追加写 `purge-archive-p<N>-s<NN>.ndjson`(`{pid, key, type, pttl, value_b64 | fields_b64, sha1}`),每批 fsync,文件 0600、目录 0700。
+   - 执行 `purgePlayerScript`(§2.4 Lua 契约);计划后态返回 already。
+   - 追加 `purge-players-p<N>.ndjson`;清单 `shard_done:<N>:<NN>` 只作同一 pass 内进程重启的跳过提示,新 pass 全量重扫。
+5. P3(只 strict):P2 全部分片结束之后执行 §2.3。
+6. `purge.json` 由清单与各 pass 的 ndjson 汇总生成(不依赖上一个进程写的文件);停止时与正常结束时都打印分族计数。
+
+**verify(判定参数 + `-kafka-cut -report -guild-rpc`,只读)**
+
+- 逐人对象 = 计划里 purge 类别的全部玩家(不再读 purge.json):状态必须是计划后态(legacy:P2 后态;strict 且 C'>0:P3 后态);冷读产物按 §2.1 规则接受并计数。
+- 区级:本 topic 各重试族与死信里只剩 `p1-routed` 记为保留的条目(逐条解码均为范围外);暂存键为空;实例登记与模式键不存在;guard 键两种显式模式 `kafka:retry:guard:claim:kafka:retry:processing:<转义 topic>:*` 与 `…:ack:…` 计数为 0;`consumer:applied:<topic>:*` 用 `kafka.ParseAppliedCursor` 解析,v2 游标逐分区 seq≤切点,旧格式与各分区切点的最大值比较。
+- legacy:64 个桶为空;strict:桶里没有任何已处理玩家,两表行围栏等于 V。
+- 全量 H 遍 SCAN 一次:出现计划之外的 home=Z 玩家 → 3。
+- 各玩家表 `COUNT(*)` == inventory 计数 + P3 插入的骨架行数。
+- K1/K2 仍在;帮会分歧闸重判一次,结果必须与确认文件逐字相同。
+- 任一项不过 → 3;写 `verify.json`,清单记 `verify_passed_at`。
+
+**quarantine-drop(人工复核之后;`-confirm`,只依赖 Redis)**
+
+- 前提:清单记有 `fence_released_at` 与 `verify_passed_at`;否则 3。
+- 按清单列出的隔离键逐个 UNLINK(大键异步释放),清单记 `quarantine_dropped_at`;清单本身保留(小 HASH,审计用)。PEXPIRE 720h 只作远期兜底。
+
+**Lua 契约(scripts.go / purge_scripts.go / quarantine.go / strict_scripts.go;KEYS 顺序由测试钉死)**
+
+- `leaseScript`:KEYS[1]=`rollback:quarantine:<z>:<rid>:lease`;ARGV[1]=token,ARGV[2]=期望 run_id,ARGV[3]=PX(60000)。先 INFO server 核对 run_id;键不存在则 `SET NX PX`,等于 token 则 PEXPIRE,否则 `lease_held`。每 20s 续期,失败即整体中止(1)。逐人 Lua 只核对 token,不再调 INFO。
+- `fenceAcquireScript`:KEYS = K1、K2、清单、租约;ARGV = 值、token、rid、zone、topic、世代。租约不符 → `lease_lost`;清单存在而 rid / zone / topic / 世代不一致或已有 `fence_released_at` → `foreign_fence`;K1、K2 各自:不存在 → SET(不带过期);恰为我方值且 PTTL=-1 → 已持有;否则 → `foreign_fence`。首次获取 HSET 清单字段并 `HSETNX fence_acquired_at <TIME>`。返回 1 获取 / 2 已持有。
+- `fenceReleaseScript`:语义见 §2.1;返回 0 已释放 / 1 刚释放 / 2 中途丢失。
+- `purgePlayerScript`:KEYS[1] K1,[2] K2,[3] 租约,[4] `player:zone:<pid>`,[5] `player:placement:<pid>`,[6] `player:<pid>:owner_epoch`,[7] `consumer:applied_epoch:<topic>:<pid>:player_database`,[8] 同 `player_database_1`,[9] `player:<pid>:location`,[10] `player:<pid>:handoff`,[11] `PlayerAllData:<pid>`,[12] `player:{<pid>}:asset_sql_commit`,[13] `player:{<pid>}:save_barrier`,[14] `player:save_pending:<z>:<pid%64>`,[15] `player:<pid>:sync_digest`,[16…] 各玩家表缓存 `<表>:<pid>` 与 `BagAllData` / `QuestAllData` / `MailAllData:<pid>`。ARGV:K1 值、token、home 原值、落点原值(空 = 必须不存在)、owner_stop、C'(空 = 不抬)、两个 applied 计划值、location 计划值、父快照 sha1 / 状态、资产证据 sha1、屏障 sha1、协议、V、pid 十进制。全部检查先于第一次写:租约;K1/K2;映射与落点逐字节等于计划值;location 等于计划值或已不存在;handoff 不存在;状态 ∈ {计划前态, 计划后态};证据 sha1(字符串 `redis.sha1hex(GET)`,HASH 按字段名排序后 `长度:字段长度:值` 拼接再 sha1)等于计划值,PTTL=-1 而不等 → `archive_mismatch`;legacy 下屏障不得有 pending / outbox(`protocol_contradiction`);抬升前置检查。写:抬升;UNLINK 各族(含 PTTL>0 冷读产物);ZREM 本人;返回分族计数。错误字:`lease_lost`、`fence_lost`、`route_changed`、`owner_advanced`、`applied_ahead`、`archive_mismatch`、`protocol_contradiction`。
+- `quarantineRouteScript`:KEYS = 暂存键、隔离目标、保留目标、租约,死信时另加源索引与隔离索引;ARGV = token,然后每条 `(期望条目字节, 去向 q|k, 字段, 指纹)`。逐条 `LINDEX 暂存 -1` 必须等于期望字节(否则 `staging_changed`),`RPOP` → `LPUSH` 去向;死信去 q 时迁移索引字段;最后源死信 LLEN==0 则 DEL 源索引。
+- `strictPublishScript`:见 §2.3 第 4 步。
+
+### 2.5 键族处置表(键名全部出自导出函数,工具里不写字面量)
+
 | 键族 | 定义处 | 处置 |
 |---|---|---|
-| PlayerAllData:<pid> | 新 shared/playercache.ParentKey | 归档、复核后 UNLINK |
-| <玩家表>:<pid>,以及 BagAllData / QuestAllData / MailAllData:<pid> | playercache.CacheKey / AuxCacheMsgTypes(写方 key_ordered_consumer.go:50 buildCacheKey,经 kafka.PlayerTableCacheKey 导出) | UNLINK,不归档 |
-| player:{pid}:asset_sql_commit | assetop.SQLCommitKey | 归档后 UNLINK(fencing §9.2 要求删) |
-| player:{pid}:save_barrier | savebarrier.Key | 归档后 UNLINK;strict 下 P3 重建,legacy 下绝不写 |
-| player:save_pending:<z>:<b> | 新 saveoutbox.PendingIndexKey / BucketOf | ZREM 本人 |
-| player:<pid>:sync_digest | playersync.Key | UNLINK |
-| player:<pid>:owner_epoch | ownerepoch.OwnerEpochKey | 只按 §2 抬升 |
-| consumer:applied_epoch:<topic>:<pid>:<表> | 新 kafka.AppliedEpochKey | 只按 §2 抬升 |
-| consumer:applied:<topic>:* | kafka.AppliedSeqKeyPrefix / ParseAppliedCursor | 不碰,verify 与切点比较 |
-| player:<pid>:handoff | ownerepoch.HandoffKey | 不碰,等待过期 |
-| player:<pid>:location | scenenode.LocationKey | 不碰,判在线 |
-| 重试族:ready、:p<n>、processing[:inst]、instances、instance_mode、kafka:dead:queue、新 kafka:dead:index | 新 kafka.Retry*Key / RetryDeadIndexKey | RENAMENX 进隔离区并 PEXPIRE |
-| kafka:retry:guard:* | kafka.RetryGuardKeyPrefix | UNLINK |
-| distributed:lock:kafka:ordering:<topic>:* | kafka.OrderingLockKeyPrefix | 只读,stopped 要求没有存活的锁 |
-| player:zone / placement / maprev、merge:merged_into:*、account:*、player_to_account:*、data_service blob、会话与锁 | placement.* | 只读 |
-| merge:in_progress:<z>、player:save_barrier:maintenance:<z> | placement.MergeFenceKey、barrierrestore.MaintenanceKey | 只由 fence / release 写 |
-| db:save_protocol:zone:<z> | saveoutbox.GenerationKey | 只读(合服 / 回档不动它) |
-| scene_nodes:zone:<z>:load | 新 scenenode.NodeLoadKey | 只读,stopped 要求为空 |
+| `PlayerAllData:<pid>` | 新 `shared/playercache.ParentKey` | sha1 复核后 UNLINK;strict 带 pending / outbox 的先归档 |
+| `<玩家表>:<pid>`、`BagAllData` / `QuestAllData` / `MailAllData:<pid>` | `playercache.CacheKey` / `AuxCacheMsgTypes`(与 go/db `buildCacheKey`、login `buildParentKey` 同口径,经 `kafka.PlayerTableCacheKey` 导出) | UNLINK,不归档 |
+| `player:{pid}:asset_sql_commit` | `assetop.SQLCommitKey` | 归档后 UNLINK |
+| `player:{pid}:save_barrier` | `savebarrier.Key` | 归档后 UNLINK;strict 下 P3 重建,legacy 下绝不写 |
+| `player:save_pending:<z>:<b>` | 新 `saveoutbox.PendingIndexKey` / `BucketOf` | ZREM 本人 |
+| `player:<pid>:sync_digest` | `playersync` 的键函数 | UNLINK |
+| `player:<pid>:owner_epoch` | `ownerepoch.OwnerEpochKey` | 只按 §2.2 抬升 |
+| `consumer:applied_epoch:<topic>:<pid>:<表>` | 新 `kafka.AppliedEpochKey` | 只按 §2.2 抬升 |
+| `consumer:applied:<topic>:*` | `kafka.AppliedSeqKeyPrefix` / `ParseAppliedCursor` | 不碰,verify 与切点比较 |
+| `player:<pid>:handoff` | `ownerepoch.HandoffKey` | 不碰,等待过期 |
+| `player:<pid>:location` | `scenenode.LocationKey` | 不碰,判在线 |
+| ready、`:p<n>`、processing[`:inst`] | 新 `kafka.Retry*Key` | P1 逐条分流:范围内进隔离区,其余回共享收件箱 |
+| `kafka:dead:queue:<topic>`、`kafka:dead:index:<topic>` | `kafka.RetryDeadKey`、新 `kafka.RetryDeadIndexKey` | P1 逐条分流,索引字段随条目迁移 |
+| `kafka:retry:instances:<topic>`、`kafka:retry:instance_mode:<topic>` | `kafka.RetryInstancesKey` / `RetryInstanceModesKey` | 整键进隔离区 |
+| `kafka:retry:guard:*` | `kafka.RetryGuardScanPatterns(topic)` | 不碰;verify 断言两种显式模式计数为 0 |
+| `distributed:lock:kafka:ordering:<topic>:*` | 新 `kafka.OrderingLockKeyPrefix` | 只读,stopped 要求没有存活的锁 |
+| `player:zone` / `placement` / `maprev`、`merge:merged_into:*`、`account:*`、`player_to_account:*`、data_service blob、会话与锁 | `placement.*` 等 | 只读 |
+| K1 `merge:in_progress:<z>`、K2 `player:save_barrier:maintenance:<z>` | `placement.MergeFenceKey`、`barrierrestore.MaintenanceKey` | 只由 fence / release 写 |
+| `db:save_protocol:zone:<z>` | `saveoutbox.GenerationKey` | 只读 |
+| `scene_nodes:zone:<z>:load`、`node:zone:<z>:<n>:death_at`、`scene:<id>:zone` | 新 `scenenode.NodeLoadKey` / `NodeDeathAtKey` / `SceneZoneKey` | 只读 |
+| `rollback:quarantine:<z>:<rid>:{manifest,lease,<N>:…,<N>:staging:…}` | zonerollback | 本工具写;quarantine-drop 释放数据键,清单保留 |
 
-SCAN 的 MATCH 一律是 EscapeRedisGlob(含 topic 的前缀) + 边界 + '*':按实例或按键的族边界是 ':',按分区 ready 是 ':p';只采纳前缀逐字相同的键;cursor 走到 0;任一页出错即 1。
+SCAN 的 MATCH 一律是 `EscapeRedisGlob(含 topic 的前缀) + 边界 + '*'`:按实例或按键的族边界是 `:`,按分区 ready 是 `:p`;只采纳前缀逐字相同的键;cursor 走到 0;页出错按 §2.7 有界重试同一 cursor,仍失败即 1。
 
-══════════ 6. 归类真值表(classify.go,纯函数 switch,Class 是带 kCount 的枚举加名字表)══════════
+### 2.6 归类真值表(classify.go,纯函数 switch;`Class` 是带 `classCount` 哨兵的枚举加名字表,测试断言名字表长度 == classCount)
+
 前置:映射与落点可解析;落点 frozen → frozen。
+
 | home | 有效落点 | 本库有行 | 落点版本 | 类别 |
 |---|---|---|---|---|
 | Z | Z | 齐且围栏一致 | ≤1 或无 | rollback |
 | Z | Z | 齐且围栏一致 | ≥2 | rollback,要求搬库证明,否则 topology_unproven |
-| Z | Z | 缺一张或围栏不一致 | — | torn(版本 ≥2 时同样要证明) |
-| Z | Z | 无 | ≤1 或无 | post_t_candidate |
+| Z | Z | 缺一张或围栏不一致 | — | torn(版本≥2 时同样要证明;落后表带业务列 → torn_cross_table) |
+| Z | Z | 无 | ≤1 或无 | post_t_candidate(命中拓扑清单 player_ids → moved_in_after_t) |
 | Z | Z | 无 | ≥2 | moved_in_after_t |
 | Z | ≠Z | 有或无 | — | storage_elsewhere(跳过) |
-| ≠Z | Z | 有或无 | — | foreign_home_storage_here(blocked:写者不在本 zone 围栏内) |
-| ≠Z | ≠Z | 有 | — | home_elsewhere(跳过,是冷副本) |
-| 缺 | — | 有 | — | legacy_owned(blocked,修复入口 merge_zone -backfill-home-zone) |
-- 归类后对 rollback / torn / post_t_candidate 再做 U(p) 判定,不过 → owner_behind(blocked,修复入口 fencing §9.1 epoch_raise)。
-- 其余畸形一律 unclassified。
+| ≠Z | Z | 有或无 | — | foreign_home_storage_here(blocked;停服前已硬拒,此处兜底) |
+| ≠Z | ≠Z | 有 | — | home_elsewhere(跳过,冷副本) |
+| 缺 | — | 有 | — | legacy_owned(blocked;停服前已硬拒,修复入口 merge_zone `-backfill-home-zone` 须在立栏之前跑) |
 
-══════════ 7. 水平扩展、并发与断点续跑 ══════════
-- 无全局单点:所有状态都带 zone 和 rid 前缀(隔离键、清单 rollback:quarantine:<z>:<rid>:manifest、报告目录),没有全局锁,多个 zone 可以并行回档。同一 zone 与合服的互斥靠 K1 的 SetNX 语义。
-- 分片与并发:
-  - 固定分片 shard=pid%64(与补投桶同模),写进清单;
-  - 盘点按 1000 一批:MGET、IN 列表、SCAN COUNT 1000;
-  - 写 Lua 按 pipeline 每批 200 条;
-  - worker 用 errgroup 加可取消的 ctx,任一 SCAN 页、SQL 或 Lua 出错就取消全部,落盘已有计数后以 1 退出;
-  - 分块校验和按块并行。
-  - 瓶颈是单 Redis 实例的单线程,所以只做进程内并发;分片规则已写进格式,以后加 `-shard i/n` 多进程不需要改格式。
-- 断点续跑:靠幂等重放,不靠持久化 SCAN cursor(Redis 重启后 cursor 的含义会变)。
-  - 每次 purge 开新一轮 pass 重扫全部范围:UNLINK 已删的键是空操作,RENAMENX 源键不在就跳过,抬升接受 ==C',P3 接受同值。
-  - 基线有 .partial 可续算;NDJSON 追加并 fsync,重复条目无害。
-  - 进程内存不保存任何关乎正确性的状态。
-- 超时:每次 Redis 调用 3s、每个 SQL 事务 5s,都用单调时钟截止;整体 -timeout;写操作 MaxRetries=-1,不在工具内重试,由同 rid 的整体重放负责。
+- 归类后对 rollback / torn / post_t_candidate 做 U(p) 判定,不过 → owner_behind(blocked,修复入口 fencing §9.1 epoch_raise)。
+- 其余畸形一律 unclassified。blocked = legacy_owned、owner_behind、frozen、moved_in_after_t、topology_unproven、foreign_home_storage_here、torn_cross_table、unclassified。
 
-══════════ 8. 失败语义与退出码 ══════════
-- 0:通过。
-- 1:出错,可能已做了一部分;修好后用同一 rid 重跑,幂等。
-- 3:拒绝,本次调用什么都没写。
-- 4:目标看起来没在用(只 preflight,-allow-empty-target 放行)。
-- 【新】5:只 fence 模式,围栏已立但排空超时。重跑继续等,或 release 后走中止路径。
-- 6:inventory 有 blocked。purge 重跑判定时遇到 blocked 返回 3。
-- 其它值按出错处理。
-- 写 Lua 的错误字(owner_advanced / applied_ahead / fence_lost / route_changed / archive_mismatch / protocol_contradiction)原样打印并写进报告。
-- Step 5 之后的失败只能向前,ps1 打印单步命令。
-- 新增告警(scene-manager-alerts.yaml):ZoneEntryFenceHeldTooLong,`sum by (namespace)(increase(enter_scene_rejected_total{reason="home_zone_merging"}[30m]))>0`,for 2h,warning。描述写明「合服或回档围栏超过 2h;回档已结束则执行 `-mode release`,不要手工 DEL」。
+### 2.7 水平扩展、并发、限速与断点续跑
 
-══════════ 9. 与 k8s_zone_rollback.ps1 契约对齐(需改契约的地方单列)══════════
-C1 新增模式 fence / release,沿用公共参数:fence 附加 -drain-wait;新增退出码 5;Get-DiscardToolExitMeaning 同步。
-C2 preflight:删去 :178「#1 落地前必须以 3 拒绝」,改为「K1/K2 不存在或已是本 rid」;新增 RouteStoreMode 与协议判定。
-C3 -barrier-protocol 接受 strict。删去 :1868 入口对 strict 的拒绝。Get-DeployFactsProblems:legacy⇔legacy、strict⇔dual;Schema 3 增加 RouteStoreMode(读自 go-svc-data-service-config 的 RouteStore.Mode,缺省 redis)。新增 Get-TargetBarrierProtocol,只用于 legacy 的 git 核对。
-C4 stopped::182「受影响玩家两表的行指纹」改为「全部玩家表的分块校验和 + 本 zone 归属玩家的 owner 基线」;增加排序锁检查与围栏复核。
-C5 inventory::185-187 的比较对象改为分块校验和;增加 owner 复核、新的类别与 blocked 列表、#5 度量、#6 证明、-max-post-t-ratio、strict 预检。
-C6 purge::195-196「绝不碰 consumer:applied*」改为「游标 consumer:applied:<topic>:* 不碰;owner_epoch 与本世代两表 applied_epoch 按抬升规则只升不降抬到 C'」;增加「删除前归档到报告目录」;strict 下工具写 SQL(两表围栏元数据 CAS 与骨架行)并重建三字段屏障;死信索引与死信一起隔离。
-C7 verify:增加 C'、围栏、strict 屏障与 SQL 围栏的核对;strict 下补投桶只要求不含已处理玩家。
-C8 公共参数增加 -topology-manifest-dir、-workers、-timeout、-local-mysql;判定参数($judgeArgs)增加 -max-post-t-ratio。
-C9 文件头 :17-18「owner_epoch 保留不动」改写。
-C10 「两张玩家表」改为「OptionPrimaryKey=player_id 的全部表 ∩ 实际存在的表」,围栏表另列。
-C11 流程:
-- 新增 0g:preflight 通过、写 entry-state 之后,Step 1 之前。
-- 新增 6b:Step 6 成功之后。
-- 中止与放弃路径的提示末尾加 `<tool> -mode release`。
-- Step 1b (ii) 失败文案改指 0g。
-- Step 7 清单增加:围栏已撤;staging / prod 的 -GatewayRateLimit 生效;冷读洪峰监控。
-- 新增只读函数:调用 kafka_offset_reset.ps1 -ToDatetime <T> 的 dry-run,与日志末端相减,打印 T 之后的消息条数(失败只告警)。
-- :415 / :1875 / :2498 的 blocked 文案改为新类别与各自的修复入口;-AcceptBlockedPlayers 继续在入口拒绝。
-C12 dev_tools.ps1 透传 -RollbackTopologyManifestDir / -RollbackMaxPostTRatio / -RollbackDrainWait。
-不改的契约:-version 的 40 位 main.buildCommit;rid 格式;隔离键名格式;续跑规则;MATCH 规则。
+- **无全局单点**:状态都带 zone 与 rid 前缀(隔离键、清单、租约、报告目录),多个 zone 可以并行回档;同一 zone 与合服互斥靠 K1 的 SetNX 语义;同一 rid 的写模式互斥靠写者租约(复核 6.1.11)。共享 Redis 是单实例,`-max-concurrent-rollbacks`(缺省 2)是容量准入,不是正确性锁。
+- **分片**:固定 shard=pid%64(与补投桶同模),写进计划与清单;以后加 `-shard i/n` 多进程只需按分片取租约,格式不变。
+- **Redis 限速**(复核 6.2.1):全局令牌桶按本次调用触及的键数计(MGET 的键数、Lua 的 #KEYS、SCAN 的 COUNT),缺省 20000/s;在途字节 ≤ `-max-inflight-bytes`;每秒一次 PING 测 RTT,滑动 p99>20ms 即暂停 200ms 起、翻倍至 5s,恢复后清零;SCAN COUNT 500、页间 ≥2ms;worker 缺省 4、上限 8;全量 SCAN 从 v1 的 12 次以上降到 7 次(preflight 2、fence 2〔H 与立栏后复核的 P〕、stopped 2、verify 1),inventory 与 purge 用停服快照加逐人 MGET。
+- **MySQL 限载**(复核 6.2.5):`SetMaxOpenConns(2)`;校验和单连接串行、块大小自适应;每块之前 `SHOW GLOBAL STATUS LIKE 'Threads_running'`>16 即暂停 1s 再查;TiDB 会话 `SET SESSION tidb_distsql_scan_concurrency = 1`;校验和只在 stopped 与 inventory 各算一次,块摘要写进 inventory.json,purge / verify 不重算。
+- **超时**:Redis 单次 = 2s + 5ms×本批键数,上限 10s;SQL 单块 30s、P3 事务 5s;整体 `-timeout`;一律单调时钟截止。
+- **有界重试**(复核 6.2.6):网络类错误(连接断开、超时、EOF;不含 Lua error_reply)对 SCAN(同一 cursor)、只读 SQL、逐人「读 → 归档 → Lua」最多重试 3 次,首次 100ms、×2、±20% 抖动;逻辑拒绝字即整体停。
+- **断点续跑**:靠幂等重放加计划状态判定,不靠持久化 SCAN cursor(Redis 重启后 cursor 含义会变)。每次 purge 开新一轮 pass:UNLINK 已删的键是空操作,RENAMENX 源键不在就跳过,暂存键先排空,逐人 Lua 接受计划后态,P3 接受同值;基线有 .partial 可续算;NDJSON 追加并 fsync,重复条目无害;进程内存不保存任何关乎正确性的状态(范围成员集合由计划文件推出)。
 
-══════════ 10. 小项实现 ══════════
-(a) 死信去重
-- 新文件 go/db/internal/kafka/dead_dedup.go:
-  - 字段 `<partition>:<seq>`:Kafka 源取 msg.Partition 与 msg.Offset+1;重试源取 task.originPartition 与 task.seq;
-  - deadEnqueueLua:`if redis.call('HSETNX',KEYS[2],ARGV[2],ARGV[3])==0 then return 0 end; redis.call('LPUSH',KEYS[1],ARGV[1]); return 1`。
-- durable_enqueue.go:
-  - submit 增加可选参数 dedupField;
-  - aofGroupEnqueue 的批里,dead 目标改用 EVAL,与其余 LPUSH 同一条粘连连接、同一个 pipeline,后面照旧 WAITAOF;网络错误整批重推时 HSETNX 幂等。
-- key_ordered_consumer.go:
-  - persistPoisonMessage(:3205)、quarantineOrderingConflict 的 Kafka 分支传字段;
-  - moveClaimedRetryToDead(:1569)的搬移脚本先 HSETNX:标记已存在就只 LREM processing,计 duplicate_dropped;
-  - 没有 seq / origin 的旧收据照旧直推,计 undeduplicable。
-- 指标 db_dead_letter_dedup_total{target,result},result 取 enqueued / duplicate_dropped / undeduplicable,启动时预建为 0。
-- 死信工具(L-04 第 2 批,未做)与人工处置必须在 LREM 的同一段 Lua 里 HDEL 标记。
-(b) 剥离探针
-- last_persisted_snapshot_comp.h 的 Replace:在 clear_last_save_seq() 之后加 mutable_player_database_data()->clear_stress_test_probe() 与 mutable_player_database_1_data()->clear_stress_test_probe()。
-- player_lifecycle.cpp:4275 的注释改为「探针在 Replace 里剥离」。
-- 快路径 :4276-4278 仍是 dirty_save::IsEqual。新消息在快路径判定时还没 Stamp(:4311-4312),所以两侧都不带探针。
-- 已核对读快照的各处只读账本字段:player_battle.cpp:351、asset_op_system.cpp:232/1137、player_inbox_system.cpp:513、player_lifecycle.cpp:3465/4333。IsPersistedPayloadCurrent 本来就两侧都剥。
-(c) op="other" 告警
-- db-task-partition-alerts.yaml 新增 DbTaskUnknownOp 一条规则(见决定表),描述:按 go/db 日志「unsupported op」和「DATA-ORDERING」找生产者。
-- 契约文档 :166 与 launch-todo 5.3.9 改为「已设」。
+### 2.8 失败语义、退出码与告警
 
-Java 版(AGENTS §12):不适用,Java 没有 Kafka 存盘链。Java 仓 PARITY.md 追加一行「不适用」。
+| 码 | 含义 |
+|---|---|
+| 0 | 通过 |
+| 1 | 出错,可能已做了一部分;修好后用同一 rid 重跑,幂等 |
+| 3 | 拒绝,本次调用什么都没写 |
+| 4 | 目标看起来没在用(只 preflight,`-allow-empty-target` 放行) |
+| 5 | 只 fence:围栏已立但未就绪(排空超时,或立栏后复核未过),围栏保留;同 rid 重跑接着等,或 release 后走中止路径 |
+| 6 | inventory 有 blocked,或确认文件缺失 / 不符;purge 遇到时返回 3 |
+| 7 | 只 release:围栏中途丢失(K1 / K2 在 release 之前已缺失、被改或被加 TTL);仍属我方的已删除,后续模式以 fence_lost 拒绝 |
 
-## 3. 落码批次（共 73 个文件）
+- 其它值按出错处理。写 Lua 的错误字原样打印并写进报告。逐人 Lua 出现逻辑拒绝字即停止整次运行:本次已写过任何东西 → 1,否则 → 3。Step 5 之后的失败只能向前,ps1 打印单步命令。
+- 新告警(scene-manager-alerts.yaml,`scene-manager.node-role-split` 组,紧随 `SceneManagerHomeZoneUnmappedTravel`):`SceneManagerHomeZoneFenceHeldTooLong`,`sum by (zone_id) (increase(scene_manager_enter_scene_rejected_total{reason="home_zone_merging"}[30m])) > 0`,for 2h,warning。描述写明:zone_id 是 **gate zone**,用 `GET merge:in_progress:*` 定位被封的是哪个 zone;值以 `zone_rollback_discard:` 开头 → 回档已结束则执行 `zone_rollback_discard -mode release`,值以 `save_barrier_restore:` 开头 → 由 barrierrestore 撤除,**都不得手工 DEL**;只有 JSON 值(merge_zone)按合服 runbook 处理。没有可复用的旧规则:deploy/ 下没有 home_zone_merging 或 merge fence 规则,也没有 redis_exporter(deploy/k8s/README.md:1151 标为未做);能复用的只有指标本身(metrics.go:121-124 注释写明「窗口外持续非 0 = 围栏键残留」)。
 
-### B1 共享键名导出(行为不变)（依赖：无）
+### 2.9 与 k8s_zone_rollback.ps1 契约对齐(B3 同批改文件头与实现)
 
-把工具要用的键名下沉或导出,只包一层,不改原函数,并用测试钉死字面量。
-- shared/playercache:ParentKey、CacheKey、AuxCacheMsgTypes。
-- shared/scenenode:NodeLoadKey;scene_manager 改为调用它。
-- kafka/keys_export.go:重试族、死信、死信索引(RetryDeadIndexKey 的权威定义)、AppliedSeqKeyPrefix、AppliedEpochKey、ParseAppliedCursor、PlayerTableCacheKey、OrderingLockKeyPrefix、EscapeRedisGlob、ScanMatch、LuaDecimalGreaterFn。
-- saveoutbox/keys_export.go:PendingIndexKey、BucketOf。
-不改 key_ordered_consumer.go、contract.go 这些他人在改的热文件。
+- **C1 模式与退出码**:`Get-DiscardToolArgs` 的 ValidateSet 加 `fence`、`release`、`quarantine-drop`,并按模式取公共参数子集(fence:`-redis -redis-db [-redis-password-env] -expect-run-id -zone -topic-generation -rollback-id -report-dir -topology-manifest-dir -max-concurrent-rollbacks`,外加 `-drain-wait -etcd`;release 与 quarantine-drop:`-redis -redis-db [-redis-password-env] -expect-run-id -zone -rollback-id -report-dir`,quarantine-drop 另加 `-confirm`;其余模式取全集);`Get-DiscardToolExitMeaning` 加 5、7;:172-174 现把 5 当出错,改为按上表解释。
+- **C2 preflight(:183-187)**:K1/K2 不存在,或恰为 `zone_rollback_discard:<本 rid>` 且 PTTL=-1(续跑)都放行,其它值以 3 拒绝;他区在线只报告、不拒绝;删除 :187「维护围栏落地之前必须以 3 拒绝」;新增停服前硬拒项(foreign_home_storage_here、frozen、合服标记、在途搬库、legacy_owned、准入)与 `-target-time`。
+- **C3 stopped(:188-193)**:「按 scene_hot_state.go 判据区分陈旧与他区在线」改为 §2.1 的存活判据(带 etcd);新增围栏复核、排序锁检查、foreign / frozen / legacy_owned 复核;基线改为分块校验和(自适应块、记边界)+ 停服玩家快照 + 见证行;新增 `-target-time -etcd`。
+- **C4 inventory(:194-196)**:比较对象改为分块校验和;新增 schema 校验、owner 复核、新类别与 blocked 列表、#5 度量、#6 证明、`-max-post-t-ratio`、strict 预检、帮会分歧闸、计划与确认模板;`-guild-rpc`。
+- **C5 purge(:197-207)**:「先原样重跑 inventory 的全部判定」改为「校验计划与确认文件,逐人状态在写 Lua 里原子判定」;P1 由整键改名改为逐条分流;「绝不碰 consumer:applied*」改为「游标 `consumer:applied:<topic>:*` 不碰;owner_epoch 与本世代两表 applied_epoch 按计划只升不降抬到 C'」;删除前只归档证据;strict 下工具写 SQL(两表围栏 CAS 与骨架行)并重建三字段屏障;purge.json 由清单与 ndjson 生成。
+- **C6 verify(:208-214)**:按计划后态逐人复核;区级只剩保留条目;guard 键显式模式;全量 H 遍;行数核对;帮会分歧闸复判;去掉 `-purge-report` 输入;新增 `-guild-rpc`。
+- **C7 协议与 deploy-facts**:`-barrier-protocol` 接受 strict,删去 :1914 入口对 strict 的拒绝;`Get-DeployFactsProblems` 改为 legacy ⇔ legacy、strict ⇔ dual;Schema 3 在 Schema 2 之上增加 `RouteStoreMode`、`RouteReadRequiresReady`(读自 go-svc-data-service-config,缺省 redis / false)、`SceneManagerAllowGateZoneAsHomeZone`、`SceneManagerDataServiceRpc`(读自 go-svc-scene-manager-config;`Get-DeploySnapshotKubectlArgs` 加 `configmap/go-svc-scene-manager-config`)、`DataServiceImage`、`SceneManagerImage`;新增 `Get-TargetBarrierProtocol`(§2.3)与参数 `-GoSvcTag`(Step 0b 与 Step 6 显式传入)。
+- **C8 全服围栏读方核对**:`Read-GlobalFenceReaders` / `Get-GlobalFenceReaderProblems`(§2.1),第 0 步 f、0g 之前、stopped 之前、inventory 之前各一次。
+- **C9 端口转发**:新增 `Start-InfraPortForward -Service <etcd|guild> -RemotePort <2379|50300>`(`kubectl port-forward -n <infra> svc/<名> :<端口>`,同一组 -KubeContext / -KubeConfig,等到 `Forwarding from 127.0.0.1:<端口>` 行,15s 超时)与 `Stop-InfraPortForward`(finally 中停止);fence、stopped 用 etcd,inventory、verify 用 guild。端口转发由脚本自己起,集群身份由 kubectl 上下文绑定,工具侧不再另做身份核对。
+- **C10 新参数**:`-TopologyManifestDir`、`-MaxPostTRatio`、`-DrainWait`、`-RollbackAcknowledgeFile`、`-GoSvcTag`、`-MaxConcurrentZoneRollbacks`;dev_tools.ps1 透传 `-RollbackTopologyManifestDir`、`-RollbackMaxPostTRatio`、`-RollbackDrainWait`、`-RollbackAcknowledgeFile`、`-RollbackGoSvcTag`、`-RollbackMaxConcurrentZoneRollbacks`。
+- **C11 流程**:新增 0g(preflight 通过、写 entry-state 之后,Step 1 之前)与 6b(Step 6 成功之后);Step 7 先复跑 `-mode release`(必须 0)再打印清单(围栏已撤、staging / prod 的 `-GatewayRateLimit` 生效、MySQL 负载与 Kafka lag、`quarantine-drop` 的时机);中止与放弃路径提示末尾加 `<tool> -mode release`;Step 1b (ii) 失败文案改指 0g;0g 打印 guild 历练 PromQL;T 之后消息条数估计(`kafka_offset_reset.ps1 -ToDatetime <T>` dry-run 与日志末端相减,失败只告警);:415 / :1875 / :2498 一带的 blocked 文案改为新类别与各自修复入口,`-AcceptBlockedPlayers` 继续在入口拒绝;文件头 :17-18「owner_epoch 保留不动」改写;「两张玩家表」改为「OptionPrimaryKey=player_id 的全部表 ∩ 实际存在的表」;入口 E5 校验 rid。
+- **C12 判定参数**(`$judgeArgs`):`-target-time -fingerprint-baseline [-acknowledge-no-post-t-writes] -max-post-t-ratio [-acknowledge-file]`,inventory / purge / verify 同一份。
+- **C13 k8s_deploy.ps1**:zone-up 结束时(非 DryRun)`Show-ZoneRollbackFenceWarning` 经 kubectl exec 进 redis-0 只读 GET(写法同 `Test-RedisLiveMaxClients`),读不到只告警。
+- 不改的契约:`-version` 的 40 位 `main.buildCommit`;rid 格式(只加子串禁令);隔离键名格式;续跑规则;MATCH 规则。
 
-文件：`D:/luyuan/xuanming-server-mmo-cpp/go/shared/playercache/keys.go`、`D:/luyuan/xuanming-server-mmo-cpp/go/shared/playercache/keys_test.go`、`D:/luyuan/xuanming-server-mmo-cpp/go/shared/scenenode/nodeload.go`、`D:/luyuan/xuanming-server-mmo-cpp/go/shared/scenenode/nodeload_test.go`、`D:/luyuan/xuanming-server-mmo-cpp/go/scene_manager/internal/logic/load_reporter.go`、`D:/luyuan/xuanming-server-mmo-cpp/go/db/internal/kafka/keys_export.go`、`D:/luyuan/xuanming-server-mmo-cpp/go/db/internal/kafka/keys_export_test.go`、`D:/luyuan/xuanming-server-mmo-cpp/go/db/internal/saveoutbox/keys_export.go`、`D:/luyuan/xuanming-server-mmo-cpp/go/db/internal/saveoutbox/keys_export_test.go`
+### 2.10 三个小项的实现
 
-### B2a 工具骨架、围栏与只读模式（依赖：B1）
+**(a) 死信去重**
 
-- CLI:flag、-version、退出码映射。
-- target:deploy-facts Schema 3、Redis 与 MySQL 身份、协议世代判定、玩家表发现。
-- fence:fence / release / 围栏复核 / 排空(#1)。
-- scan:M / H / P 三遍扫描与 location 判据。
-- fingerprint:分块校验和与 owner 基线。
-- report:原子落盘、NDJSON fsync、文件权限。
-- scripts:围栏与身份 Lua。
+- 去重字段与指纹(`go/db/internal/kafka/dead_dedup.go`,B1 先落纯函数,B4 接线):
+  - `DeadDedupField(entry []byte) (field, fingerprint string, ok bool)`:v2(首字节 0x02,长度≥13)→ field = `hex(entry[1:13])`,fingerprint = 对 `entry[13:]` 解出的 DBTask 置 `RetryCount=0` 后 `proto.MarshalOptions{Deterministic:true}` 的 sha1hex;毒消息(0x03)→ field = hex(BE64(Offset+1)‖BE32(Partition)),fingerprint = sha1hex(BE32(len(Key))‖Key‖Value);v1、裸载荷、解不开 → ok=false。代码里 seq 一律是 offset+1(key_ordered_consumer.go:2667-2669、wrapRetryPayload :995-1002)。
+  - 写入点、P1 隔离、死信工具共用这一个函数,保证「写进去的字段」与「从条目反推删除的字段」一致;L-04 计划给新条目加「原因 + 时间」信封之后,字段仍必须能从条目字节推出(db-task-store-unavailable-deferral.md §4.1 同批写明)。
+  - `RetryDeadIndexKey(topic)` = `kafka:dead:index:<topic>`,权威定义在 dead_dedup.go。
+- 去重脚本:
+  - `deadEnqueueScript`:KEYS[1] 死信列表,KEYS[2] 索引;ARGV[1] 条目,ARGV[2] 字段,ARGV[3] 指纹。先 TYPE 预检(列表 none|list、索引 none|hash,否则报错一条不动);LLEN==0 而索引存在 → DEL 索引(孤儿);`HGET`:等于指纹 → `HSET` 同值(判重命中也产生一次会传播的写,WAITAOF 才覆盖到首份)返回 2;否则 LPUSH,原值存在(字段被别的指纹占用)→ 不动标记返回 3(collision),不存在 → HSET 返回 1。
+  - `deadMoveScript`(收据搬进死信):KEYS[1] processing,KEYS[2] 死信,KEYS[3] 索引;ARGV 收据、替换载荷、字段('' = 不可去重)、指纹。TYPE 预检;收据不在 processing → 0;可去重且指纹命中 → HSET 同值、LREM 收据,返回 2;否则 LPUSH 替换载荷、LREM 收据,按有无旧值返回 3 / 1(先 LPUSH 后 LREM,保持现有安全性)。
+- 七个死信写入点(核实 A1):
+
+| # | 位置 | 处置 |
+|---|---|---|
+| ① | `persistPoisonMessage`(key_ordered_consumer.go:3205)入队层 | 入队层对 `DurableTargetDead` 用 `DeadDedupField(payload)` 自己推导字段,走 `deadEnqueueScript` |
+| ② | `quarantineOrderingConflict` Kafka 分支(:3180,`persistBeforeAck`)| 同 ① |
+| ③ | `deadLetterRetry`(:3130-3155) | 改走 `deadMoveScript`;返回 2 视为成功(现 `!moved` 当错误并打 DATA-LOSS,:3148-3150) |
+| ④ | `moveClaimedRetryToDead`(:1569;`parseClaimedRetry` 的畸形、预算用完、旧格式、分区越界四支) | 同 ③;这里没有 workerTask,字段只从替换载荷字节推导 |
+| ⑤ | `retryStrandedReceipts`(retry_stranded.go:121) | `strandedRetry` 增加 `dead bool`,死信目的地的重搬走 `deadMoveScript`;返回 2 时摘掉并计 duplicate_dropped,不调用 onMoved 里的死信计数 |
+| ⑥ | `forwardRetryScript`(retry_routing.go:459-500)legacy / invalid 两支 LPUSH KEYS[2] | 不去重,Go 侧按脚本回报的条数计 undeduplicable |
+| ⑦ | `requeuePartitionScript`(retry_routing.go:809-830,cmd/retry_requeue)非 v2 载荷进死信 | 同 ⑥ |
+
+- `directEnqueue`(WAITAOF 关闭时)对死信目标同样走 `deadEnqueueScript`;go-redis 内部重发 EVAL 幂等。
+- `aofGroupEnqueue`:批内死信目标改 EVAL,与其余 LPUSH 同一条粘连连接、同一个 pipeline,后面照旧 WAITAOF;份数不足走 `needPush=false` 分支只重发 WAITAOF(durable_enqueue.go:566-574),EVAL 只在 needPush 时发出;网络错误整批重推时判重命中分支照样产生传播写,WAITAOF 在新连接 / 新实例上也覆盖得到首份(核实 A3)。
+- 回调带结果码(核实 A6、A8):`durableEnqueue.submit` 签名不加 dedupField 参数,回调改为 `done func(enqueueOutcome, error)`,`enqueueOutcome` 取 `enqueueStored` / `enqueueDuplicate`;实现 `directEnqueue`、`aofGroupEnqueue`、`confirmingEnqueue`(rejoin_backoff.go:137)与测试里的 `holdingEnqueue`(durable_enqueue_test.go:276)同改;调用方只在 `enqueueStored` 时计 `db_task_dead_letter_total`(否则 `DbTaskDeadLetterAdded` 每个重新入组周期都会再响一次)。
+- 指标:`db_dead_letter_dedup_total{target,result}`,target ∈ {kafka, retry, route},result ∈ {enqueued, duplicate_dropped, collision, undeduplicable},启动时以 0 预建 12 条;`db_retry_queue_length{queue="dead_index"}`(`sampleRetryQueues`,store_failure.go:171-196,同一 pipeline 多一次 HLEN;`RetryQueueDeadIndex` 常量,标签集合保持封闭;stress_summarize 按精确字符串读其余四个值,不受影响)。
+- 告警(db-task-retry-alerts.yaml):新增 `DbTaskDeadIndexOrphans`:`max by (namespace) (db_retry_queue_length{queue="dead_index"}) > max by (namespace) (db_retry_queue_length{queue="dead"})`,for 30m,warning;新增 `DbTaskDeadLetterCollision`:`sum by (namespace) (increase(db_dead_letter_dedup_total{result="collision"}[10m])) > 0`,for 0m,warning;`DbTaskDeadLetterAdded` 描述(:109)加「不许单独 DEL / LREM 死信,否则标记残留、同一消息以后再也进不了死信;删除必须用同段 Lua 按指纹 HDEL」。
+- 文案:durable_enqueue.go:25-27 与 rejoin_backoff.go:19、:113 的「死信里的重复条目人工去重」改为「带 (原始分区, seq) 的条目每条 Kafka 消息至多一份;v1、裸载荷与补投器重发的不同 offset 不去重」。
+- offset 复用的主防线:`kafka_offset_reset.ps1`:432-437 已拒绝同名重建 db_task topic;剩下手工删 topic 或清 broker 而不 FLUSHALL 的路径由 collision 计数与告警暴露。
+- 合服后退役的源 topic:merge-zone-runbook 加一步——P4 确认源 topic 死信 LLEN==0 之后,用 runbook 给出的一句 EVAL(`if LLEN(dead)==0 then DEL index end`)原子删除残留索引。
+
+**(b) 剥离探针**
+
+- `last_persisted_snapshot_comp.h` 的 `Replace`:在 `snapshot->clear_last_save_seq();` 之后加 `if (snapshot->has_player_database_data()) snapshot->mutable_player_database_data()->clear_stress_test_probe();` 与 `if (snapshot->has_player_database_1_data()) snapshot->mutable_player_database_1_data()->clear_stress_test_probe();`;不得用 `mutable_stress_test_probe()->Clear()`(保留 presence)。生产中两个子消息都存在(MarshalPlayerForSave 两边都 set_player_id),目前不触发单边 presence。
+- 同步改注释:player_lifecycle.cpp 的 R2 注释(锚点「MUST run BEFORE stresstest_probe::Stamp*」,前提「只在写盘侧有探针」不完整,快照侧也带)与锚点「快路径是否剥离 stress_test_probe 待负责人定」一行(改为「快照侧在 Replace 里剥离」);last_persisted_snapshot_comp.h 文件头「holds the exact bytes」与 Replace 注释;player_lifecycle.h 锚点「player_database_1 的 stress_test_probe 剔掉」一段(:650-656)。
+- 快路径(锚点 `dirty_save::IsEqual(*message, *snap->snapshot)`)不改。新消息在比较时永远不带探针(Stamp 在快路径之后),剥离只会让「仅探针不同」判相等;全仓 C++ 没有代码读快照里的 stress_test_probe;`IsPersistedPayloadCurrent` 本来两侧都剥。探针仍起作用:NextSeq 只在真正盖章时推进,verifier 只比 MySQL 与缓存的 test_seq。
+- 影响面:deploy、tools/scripts、robot 配置都没有设置 `STRESS_TEST_PROBE`,常规压测(含 R20)关探针跑,跳过率与 DBTask 量不受影响;只影响手工开探针的 L3 数据一致性压测(data-consistency-stress-testing.md:252-263、375),复盘口径说明只针对这类压测。
+
+**(c) op="other" 告警**
+
+- db-task-partition-alerts.yaml 的 `db-task.partition-contract` 组新增 `DbTaskUnknownOp`(表达式见 §1),文件头 :5-8 补一句「op=other 由 DbTaskUnknownOp 报」。描述:按 go/db 日志 `[DATA-ORDERING] unknown producer op` 一行(带 topic / partition / offset / kafkaKey / taskID / msgType / op)找生产者;并行信号 `db_task_deferred_total{op="unknown"}`(store_failure.go:118-123)与约 3 次重试后的 `DbTaskDeadLetterAdded{reason="budget_exhausted"}`(处理路径:`runDBOp` 报 unsupported op,key_ordered_consumer.go:2865 → deferFailedTask → `parseClaimedRetry` 只放弃读,其余进死信)。
+- `observeProducerPartition`(producer_partition_audit.go):`op == ProducerPartitionOpOther` 时不论 verdict 都调新函数 `logProducerPartitionUnknownOp`,共用现有每进程 20 条的额度(下标 2)。合法生产者只发 read / write(C++ player_lifecycle.cpp 的 `set_op("write")`、login sync_loader.go:100 的 "read"、data_stress 的 "write")。
+
+### 2.11 Java 版
+
+不适用:Java 版没有 Kafka 存盘链与 go/db 键族。B6 在 Java 仓 `D:\luyuan\xuanming-server-mmo\PARITY.md` 追加一行「R9 zone_rollback_discard(含死信去重、探针剥离、op=other 告警):不适用」,本仓 PROGRESS 条目注明。
+
+## 3. 落码批次(共 125 个文件:新增 64、修改 59、删除 2;9 批)
+
+依赖:B1 → B2a → B2b → B2c → B2d;B3 的 ps1 部分依赖 B2a 定稿的 CLI 契约(参数名、模式、退出码),merge_zone 部分无依赖,可与 B2b–B2d 并行;B4 依赖 B1(`DeadDedupField`、`RetryDeadIndexKey`),与 B2 无文件重叠;B5 无依赖;B6 在 B2d、B3、B4、B5 落码并验证之后(文档以代码为准)。每批动手前 `git status` / `git diff` 核对目标文件归属,只做本项最小增量;截至 HEAD e611b5d8d,本设计涉及的文件工作区均干净。各批表头的「修改」若是本次前面批次新增的文件(B2c 的 integration_test.go、B2d 的 inventory.go / verify.go、B4 的 dead_dedup.go / dead_dedup_test.go),不重复计入总数。
+
+Codex 公共环境:`GOTOOLCHAIN=local`、`GOFLAGS=-mod=readonly`、`GOPROXY=https://goproxy.cn,direct`;真库用例自起一次性容器(Redis ≥7.2 且 `appendonly yes`、MySQL 8.x、TiDB 用 `deploy/docker-compose.tidb.yml`),不借用 codex-* 容器;任何 SKIP 不算通过;失败保留 `go test -v` 首个失败用例输出、ps1 的全部 [FAIL] 行、MSBuild 首个错误与真库容器日志,不改断言、不跳过测试、不连续自动重试。
+
+### B1 共享导出、纯函数与 guildcheck 迁移(行为不变;依赖:无;21 个)
+
+| 文件 | 类型 | 模块 | 内容 |
+|---|---|---|---|
+| go/shared/playercache/keys.go | 新增 | shared | `ParentKey`、`CacheKey`、`AuxCacheMsgTypes` |
+| go/shared/playercache/keys_test.go | 新增 | shared | 钉字面量 `PlayerAllData:<id>`,与 login `buildParentKey`、merge_zone `defaultCacheMsgTypes` 同口径 |
+| go/shared/scenenode/liveness.go | 新增 | shared | `NodeLoadKeyFmt`/`NodeLoadKey`、`NodeDeathAtKeyFmt`/`NodeDeathAtKey`、`SceneZoneKeyFmt`/`SceneZoneKey`;`LocationVerdict` 枚举与名字表;`ClassifyLocation`;`RegistrySnapshot` 与 `ReadRegistrySnapshot(ctx, *clientv3.Client)` |
+| go/shared/scenenode/liveness_test.go | 新增 | shared | §2.1 判据表逐行向量;快照解析 |
+| go/shared/guildcheck/guild_divergence.go | 新增 | shared | 自 data_service 原样迁入(包名不变) |
+| go/shared/guildcheck/guild_divergence_test.go | 新增 | shared | 原样迁入 |
+| go/data_service/internal/guildcheck/guild_divergence.go | 删除 | data_service | 迁出 |
+| go/data_service/internal/guildcheck/guild_divergence_test.go | 删除 | data_service | 迁出 |
+| go/data_service/internal/logic/rollback_logic.go | 修改 | data_service | import 改 `shared/guildcheck` |
+| go/data_service/internal/logic/rollback_recall_test.go | 修改 | data_service | 同上 |
+| go/data_service/internal/server/dataserviceserver.go | 修改 | data_service | 同上 |
+| go/data_service/internal/svc/servicecontext.go | 修改 | data_service | 同上 |
+| go/scene_manager/internal/logic/load_reporter.go | 修改 | scene_manager | `NodeLoadKeyFmt = scenenode.NodeLoadKeyFmt` |
+| go/scene_manager/internal/logic/reentry_barrier.go | 修改 | scene_manager | `NodeDeathAtKeyFmt = scenenode.NodeDeathAtKeyFmt` |
+| go/scene_manager/internal/logic/createscenelogic.go | 修改 | scene_manager | `SceneZoneKeyFmt = scenenode.SceneZoneKeyFmt` |
+| go/db/internal/kafka/keys_export.go | 新增 | go/db | `RetryReadyKey`、`RetryPartitionReadyKeyPrefix`、`RetryPartitionReadyKeys`、`RetryLegacyProcessingKey`、`RetryInstanceProcessingKey`、`RetryInstancesKey`、`RetryInstanceModesKey`、`RetryDeadKey`、`RetryGuardScanPatterns`、`AppliedSeqKeyPrefix`、`ParseAppliedCursor`(返回 partition / seq / hasPartition)、`AppliedEpochKey`、`PlayerTableCacheKey`、`OrderingLockKeyPrefix`、`EscapeRedisGlob`、`LuaDecimalGreaterFn`;只包一层,不改原函数 |
+| go/db/internal/kafka/keys_export_test.go | 新增 | go/db | 钉字面量;topic 边界 |
+| go/db/internal/kafka/dead_dedup.go | 新增 | go/db | `DeadDedupField`、`RetryDeadIndexKey`(纯函数) |
+| go/db/internal/kafka/dead_dedup_test.go | 新增 | go/db | 字段与指纹推导 |
+| go/db/internal/saveoutbox/keys_export.go | 新增 | go/db | `PendingIndexKey`、`BucketOf` |
+| go/db/internal/saveoutbox/keys_export_test.go | 新增 | go/db | 钉字面量与 `pid%BucketCount` |
+
+**交 Codex 的验证**
+
+- 工作目录 `go/shared`:`go vet ./playercache/ ./scenenode/ ./guildcheck/`;`go test -count=1 ./playercache/ ./scenenode/ ./guildcheck/`。
+- `go/data_service`:`go vet ./...`;`go test -count=1 ./internal/logic/... ./internal/server/... ./internal/svc/...`。
+- `go/scene_manager`:`go vet ./internal/logic/`;`go test -count=1 ./internal/logic/`。
+- `go/db`:`go vet ./internal/kafka/ ./internal/saveoutbox/`;`go test -count=1 -run 'KeysExport|DeadDedupField' ./internal/kafka/ ./internal/saveoutbox/`;再整包 `go test -count=1 ./internal/kafka/ ./internal/saveoutbox/`。
+- 仓库根:`rg -n "data_service/internal/guildcheck" go` 无输出。
+- 通过标准:vet 零告警;全部用例绿;原有用例无回归;rg 无输出。
+
+### B2a 工具骨架、围栏与只读模式(依赖:B1;22 个,全部新增,模块 go/db)
+
+| 文件 | 内容 |
+|---|---|
+| go/db/cmd/zone_rollback_discard/main.go | flag、`-version`、退出码映射、模式分派 |
+| go/db/cmd/zone_rollback_discard/main_test.go | `-version` 两行格式;未知模式;release 参数最小集 |
+| go/db/internal/zonerollback/target.go | deploy-facts Schema 3、Redis / MySQL 身份、现网协议判定、玩家表发现、rid 校验 |
+| go/db/internal/zonerollback/target_test.go | |
+| go/db/internal/zonerollback/preflight.go | preflight 模式;停服前硬拒项(foreign / frozen / 合服标记 / 在途搬库 / legacy_owned / 准入) |
+| go/db/internal/zonerollback/preflight_test.go | |
+| go/db/internal/zonerollback/fence.go | fence / release 模式、排空循环、`fence-drain.json` |
+| go/db/internal/zonerollback/fence_test.go | |
+| go/db/internal/zonerollback/stopped.go | stopped 模式 |
+| go/db/internal/zonerollback/stopped_test.go | |
+| go/db/internal/zonerollback/scan.go | H / M / P 扫描、限速 SCAN、location 批量读与判据调用 |
+| go/db/internal/zonerollback/scan_test.go | |
+| go/db/internal/zonerollback/fingerprint.go | 自适应分块校验和、停服玩家快照、见证行 |
+| go/db/internal/zonerollback/fingerprint_test.go | |
+| go/db/internal/zonerollback/report.go | 原子落盘、NDJSON fsync、权限、规范 JSON 比较(确认文件) |
+| go/db/internal/zonerollback/report_test.go | |
+| go/db/internal/zonerollback/scripts.go | `leaseScript`、`fenceAcquireScript`、`fenceReleaseScript` |
+| go/db/internal/zonerollback/throttle.go | 令牌桶、在途字节、PING 自适应退避、有界重试、按批超时 |
+| go/db/internal/zonerollback/throttle_test.go | |
+| go/db/internal/zonerollback/lease.go | 写者租约取得 / 续期 / 丢失中止 |
+| go/db/internal/zonerollback/lease_test.go | |
+| go/db/internal/zonerollback/integration_test.go | 真 Redis(INFO in Lua、租约、围栏)+ 真 MySQL(校验和) |
+
 本批实现 preflight、fence、release、stopped 四个模式。
 
-文件：`D:/luyuan/xuanming-server-mmo-cpp/go/db/cmd/zone_rollback_discard/main.go`、`D:/luyuan/xuanming-server-mmo-cpp/go/db/cmd/zone_rollback_discard/main_test.go`、`D:/luyuan/xuanming-server-mmo-cpp/go/db/internal/zonerollback/target.go`、`D:/luyuan/xuanming-server-mmo-cpp/go/db/internal/zonerollback/target_test.go`、`D:/luyuan/xuanming-server-mmo-cpp/go/db/internal/zonerollback/fence.go`、`D:/luyuan/xuanming-server-mmo-cpp/go/db/internal/zonerollback/fence_test.go`、`D:/luyuan/xuanming-server-mmo-cpp/go/db/internal/zonerollback/scan.go`、`D:/luyuan/xuanming-server-mmo-cpp/go/db/internal/zonerollback/scan_test.go`、`D:/luyuan/xuanming-server-mmo-cpp/go/db/internal/zonerollback/fingerprint.go`、`D:/luyuan/xuanming-server-mmo-cpp/go/db/internal/zonerollback/fingerprint_test.go`、`D:/luyuan/xuanming-server-mmo-cpp/go/db/internal/zonerollback/report.go`、`D:/luyuan/xuanming-server-mmo-cpp/go/db/internal/zonerollback/report_test.go`、`D:/luyuan/xuanming-server-mmo-cpp/go/db/internal/zonerollback/scripts.go`
+**交 Codex 的验证**(工作目录 `go/db`)
 
-### B2b 盘点:归类、拓扑证明与纪元目标（依赖：B2a）
+- `gofmt -l ./internal/zonerollback ./cmd/zone_rollback_discard` 无输出;`go vet ./internal/zonerollback/... ./cmd/zone_rollback_discard/...`。
+- `go test -count=1 -race ./internal/zonerollback/... ./cmd/zone_rollback_discard/...`。
+- 真库:`$env:ZONE_ROLLBACK_IT_REQUIRE='1'; $env:ZONE_ROLLBACK_IT_REDIS='127.0.0.1:<端口>'; $env:ZONE_ROLLBACK_IT_DSN='<一次性库 DSN,库名 zone_<id>_db>'; go test -count=1 -v -run 'Integration' ./internal/zonerollback/`(Redis 必须 DBSIZE=0)。
+- 通过标准:全部绿;`-v` 输出里没有 SKIP;gofmt 无输出。
 
-- classify:§6 真值表,带 kCount 的枚举加名字表。
-- topology:合服与搬库清单的最小只读镜像,run_id 解析,At≤T−1s 判定;testdata 与 merge_zone 共用样例。
-- raise:U(p)、C' 与 owner_behind 的纯函数。
-- inventory:基线比对、owner 复核、#5 度量、占比阈值、strict 只读预检,输出 inventory.json 与各类 ndjson。
+### B2b 盘点:归类、拓扑、纪元、计划与帮会分歧闸(依赖:B2a;14 个,全部新增,模块 go/db)
 
-文件：`D:/luyuan/xuanming-server-mmo-cpp/go/db/internal/zonerollback/classify.go`、`D:/luyuan/xuanming-server-mmo-cpp/go/db/internal/zonerollback/classify_test.go`、`D:/luyuan/xuanming-server-mmo-cpp/go/db/internal/zonerollback/topology.go`、`D:/luyuan/xuanming-server-mmo-cpp/go/db/internal/zonerollback/topology_test.go`、`D:/luyuan/xuanming-server-mmo-cpp/go/db/internal/zonerollback/testdata/merge_manifest_v1.json`、`D:/luyuan/xuanming-server-mmo-cpp/go/db/internal/zonerollback/testdata/relocate_manifest_v1.json`、`D:/luyuan/xuanming-server-mmo-cpp/go/db/internal/zonerollback/raise.go`、`D:/luyuan/xuanming-server-mmo-cpp/go/db/internal/zonerollback/raise_test.go`、`D:/luyuan/xuanming-server-mmo-cpp/go/db/internal/zonerollback/inventory.go`、`D:/luyuan/xuanming-server-mmo-cpp/go/db/internal/zonerollback/inventory_test.go`
+| 文件 | 内容 |
+|---|---|
+| go/db/internal/zonerollback/classify.go | §2.6 真值表,`Class` 枚举加 `classCount` 与名字表 |
+| go/db/internal/zonerollback/classify_test.go | |
+| go/db/internal/zonerollback/topology.go | 合服 / 撤销 / 搬库清单最小只读镜像、run_id 解析、player_ids 求交、At≤T−1s |
+| go/db/internal/zonerollback/topology_test.go | |
+| go/db/internal/zonerollback/testdata/merge_manifest_v1.json | 与 merge_zone `mergeManifest` v1 同形样例 |
+| go/db/internal/zonerollback/testdata/relocate_manifest_v1.json | 搬库清单样例 |
+| go/db/internal/zonerollback/raise.go | U(p)、C'、owner_behind 纯函数 |
+| go/db/internal/zonerollback/raise_test.go | |
+| go/db/internal/zonerollback/plan.go | 计划写入 / 读取 / 冻结校验、状态判定表 |
+| go/db/internal/zonerollback/plan_test.go | |
+| go/db/internal/zonerollback/asset_gate.go | `guildcheck` 调用、since 计算、确认模板节 |
+| go/db/internal/zonerollback/asset_gate_test.go | bufconn 假 GuildInternal |
+| go/db/internal/zonerollback/inventory.go | inventory 模式(含 schema 校验、#5、确认模板;strict 预检在 B2d 补) |
+| go/db/internal/zonerollback/inventory_test.go | |
 
-### B2c purge 与 verify(两种协议共用部分)（依赖：B2b）
+**交 Codex 的验证**(工作目录 `go/db`)
 
-- ledger:清单 HASH、轮次 pass、分族计数。
-- purge:P1 区级族隔离(含死信索引);P2 逐人归档,再执行逐人 Lua(围栏复核、纪元抬升、删族、ZREM、计数)。
-- verify:切点、C'、围栏、各族键不存在、重跑归类。
-- integration_test:环境变量门控的真 Redis 7.x 加 MySQL / TiDB 用例。
+- `gofmt -l ./internal/zonerollback` 无输出;`go vet ./internal/zonerollback/...`。
+- `go test -count=1 -race -run 'Classify|Topology|Raise|Plan|AssetGate|Inventory' ./internal/zonerollback/`;再整包 `go test -count=1 ./internal/zonerollback/... ./cmd/zone_rollback_discard/...`。
+- 真库:同 B2a 的环境变量,`go test -count=1 -v -run 'Integration' ./internal/zonerollback/`。
+- 通过标准:全部绿、无 SKIP。
+
+### B2c purge、verify 与隔离区(两种协议共用部分;依赖:B2b;10 个:新增 9、修改 1)
+
+| 文件 | 类型 | 内容 |
+|---|---|---|
+| go/db/internal/zonerollback/ledger.go | 新增 | 清单 HASH、pass、shard_done、分族计数、purge.json 汇总 |
+| go/db/internal/zonerollback/ledger_test.go | 新增 | |
+| go/db/internal/zonerollback/quarantine.go | 新增 | P1 逐条分流、`quarantineRouteScript`、quarantine-drop 模式 |
+| go/db/internal/zonerollback/quarantine_test.go | 新增 | |
+| go/db/internal/zonerollback/purge.go | 新增 | purge 模式(P1、P2) |
+| go/db/internal/zonerollback/purge_scripts.go | 新增 | `purgePlayerScript` |
+| go/db/internal/zonerollback/purge_test.go | 新增 | |
+| go/db/internal/zonerollback/verify.go | 新增 | verify 模式(legacy 部分) |
+| go/db/internal/zonerollback/verify_test.go | 新增 | |
+| go/db/internal/zonerollback/integration_test.go | 修改 | 加 purge / verify / 隔离区真库用例 |
+
 完成后 legacy 协议可用。
 
-文件：`D:/luyuan/xuanming-server-mmo-cpp/go/db/internal/zonerollback/ledger.go`、`D:/luyuan/xuanming-server-mmo-cpp/go/db/internal/zonerollback/ledger_test.go`、`D:/luyuan/xuanming-server-mmo-cpp/go/db/internal/zonerollback/purge.go`、`D:/luyuan/xuanming-server-mmo-cpp/go/db/internal/zonerollback/purge_scripts.go`、`D:/luyuan/xuanming-server-mmo-cpp/go/db/internal/zonerollback/purge_test.go`、`D:/luyuan/xuanming-server-mmo-cpp/go/db/internal/zonerollback/verify.go`、`D:/luyuan/xuanming-server-mmo-cpp/go/db/internal/zonerollback/verify_test.go`、`D:/luyuan/xuanming-server-mmo-cpp/go/db/internal/zonerollback/integration_test.go`
+**交 Codex 的验证**(工作目录 `go/db`)
 
-### B2d strict 屏障重建（依赖：B2c）
+- `gofmt -l ./internal/zonerollback` 无输出;`go vet ./internal/zonerollback/...`。
+- `go test -count=1 -race -run 'Ledger|Quarantine|Purge|Verify' ./internal/zonerollback/`;再整包。
+- 真库:同 B2a,`go test -count=1 -v -run 'Integration' ./internal/zonerollback/`。
+- 负载验收(压测环境,AGENTS §6 流程):在一个 ≥10 万玩家的 zone 上跑 purge,同时 robot 对其它 zone 持续登录;以 `stress_summarize.ps1` 输出对比 purge 前后其它 zone 的 entergame p99,上升不超过 20%。超过即把 `-redis-keys-per-sec` 缺省值减半后重测,结论写进 `docs/stress/`。
+- 通过标准:单测与真库全绿、无 SKIP;负载验收达标且有对比表。
 
-P3:TiDB 强会话下锁行读,做 SQL 规范化(两表围栏 CAS、torn 对齐、骨架行 proto2mysql Insert),提交后重锁复核,再用 Lua 发布三字段屏障。另在 verify 中加入 strict 屏障与 SQL 围栏的核对。不改 barrierrestore。
+### B2d strict 屏障重建(依赖:B2c;6 个:新增 4、修改 2)
 
-文件：`D:/luyuan/xuanming-server-mmo-cpp/go/db/internal/zonerollback/strict.go`、`D:/luyuan/xuanming-server-mmo-cpp/go/db/internal/zonerollback/strict_scripts.go`、`D:/luyuan/xuanming-server-mmo-cpp/go/db/internal/zonerollback/strict_test.go`、`D:/luyuan/xuanming-server-mmo-cpp/go/db/internal/zonerollback/strict_integration_test.go`
+| 文件 | 类型 | 内容 |
+|---|---|---|
+| go/db/internal/zonerollback/strict.go | 新增 | P3:SQL 规范化、torn_cross_table 断言、骨架行、重锁复核 |
+| go/db/internal/zonerollback/strict_scripts.go | 新增 | `strictPublishScript` |
+| go/db/internal/zonerollback/strict_test.go | 新增 | |
+| go/db/internal/zonerollback/strict_integration_test.go | 新增 | 真 TiDB / MySQL + 真 Redis;内联 login 的 `beginParentLoadScript` 文本做冷读对照 |
+| go/db/internal/zonerollback/inventory.go | 修改 | strict 只读预检 |
+| go/db/internal/zonerollback/verify.go | 修改 | strict 屏障与 SQL 围栏核对 |
 
-### B3 编排脚本与契约（依赖：B2a 的 CLI 契约定稿(可与 B2b–B2d 并行)）
+**交 Codex 的验证**(工作目录 `go/db`)
 
-k8s_zone_rollback.ps1 按 §9 的 C1–C11 修改:
-- 新增第 0 步 g 与 Step 6b;
-- deploy-facts Schema 3;
-- 放行 strict;
-- 新增 Get-TargetBarrierProtocol;
-- 新参数 -TopologyManifestDir、-MaxPostTRatio、-DrainWait;
-- 退出码 5;
-- 中止与放弃路径带 release;
-- blocked 文案;
-- T 之后消息条数估计;
-- Step 7 清单;
-- 文件头契约同步。
-另外 dev_tools 透传新参数,沙箱假工具认识 fence / release 与新参数,契约测试补齐。
+- `gofmt -l`、`go vet` 同上;`go test -count=1 -race -run 'Strict' ./internal/zonerollback/`;再整包。
+- 真库:MySQL 一遍(`ZONE_ROLLBACK_IT_DSN` 指 MySQL),TiDB 一遍(另加 `$env:ZONE_ROLLBACK_IT_REQUIRE_TIDB='1'`,DSN 指 docker-compose.tidb.yml 起的 TiDB),`go test -count=1 -v -run 'StrictIntegration|Integration' ./internal/zonerollback/`。
+- 通过标准:两种后端全绿、无 SKIP。**B2d 未通过真库验证之前,不得对现行部署执行 `-Apply`**。
 
-文件：`D:/luyuan/xuanming-server-mmo-cpp/tools/scripts/k8s_zone_rollback.ps1`、`D:/luyuan/xuanming-server-mmo-cpp/tools/scripts/tests/k8s_zone_rollback_discard.tests.ps1`、`D:/luyuan/xuanming-server-mmo-cpp/tools/scripts/tests/lib/k8s_zone_rollback_sandbox.ps1`、`D:/luyuan/xuanming-server-mmo-cpp/tools/scripts/dev_tools.ps1`
+### B3 编排脚本、部署脚本与 merge_zone 围栏配套(依赖:ps1 部分依赖 B2a 的 CLI 契约;16 个:新增 2、修改 14)
 
-### B4 小项 a:死信去重（依赖：B1(RetryDeadIndexKey);与 B2 无文件重叠,可并行;动手前与 go/db 其他在途会话核对热文件）
+| 文件 | 类型 | 模块 | 内容 |
+|---|---|---|---|
+| tools/scripts/k8s_zone_rollback.ps1 | 修改 | 运维脚本 | §2.9 C1–C12 与文件头契约 |
+| tools/scripts/tests/k8s_zone_rollback_discard.tests.ps1 | 修改 | 运维脚本测试 | 见 §4 B3 |
+| tools/scripts/tests/lib/k8s_zone_rollback_sandbox.ps1 | 修改 | 运维脚本测试 | 假工具认识新模式、退出码 5 / 7、新参数;假 kubectl 认识 port-forward 与全服 field-selector 查询 |
+| tools/scripts/dev_tools.ps1 | 修改 | 运维脚本 | 透传 C10 新参数 |
+| tools/scripts/k8s_deploy.ps1 | 修改 | 部署脚本 | C13 `Show-ZoneRollbackFenceWarning` |
+| tools/scripts/tests/k8s_deploy_contract.tests.ps1 | 修改 | 部署脚本测试 | 钉 zone-up 后的只读 GET 与 WARN 文案;DryRun 不执行 |
+| tools/merge_zone/fence.go | 修改 | merge_zone | 新纯函数 `describeFenceHolder(value)`:JSON → 原文案;`zone_rollback_discard:` → 「回档进行中,禁止 DEL,由 zone_rollback_discard -mode release 撤除」;`save_barrier_restore:` → 「存盘屏障恢复维护中,禁止 DEL」;其它 → 「未知持有者,禁止 DEL」;`acquireMergeFence` 撞围栏的报错(:155-157)改用它 |
+| tools/merge_zone/fence_test.go | 新增 | merge_zone | 四类值的文案 |
+| tools/merge_zone/audit_checks.go | 修改 | merge_zone | `verifyFenceReleased` 改 GET,按 `describeFenceHolder` 出文案(:550-551) |
+| tools/merge_zone/placement_ops.go | 修改 | merge_zone | `placementCAS.FenceZone` 改为 `FenceZones []uint32`(去重、去 0),Lua 对 KEYS[3..] 逐个 EXISTS,命中回 3 |
+| tools/merge_zone/placement_ops_test.go | 修改 | merge_zone | 多围栏 CAS |
+| tools/merge_zone/relocate.go | 修改 | merge_zone | 冻结 CAS(:278)`FenceZones = {rd.Home, 源落点 zone, 目标落点 zone}`;切换(:471)与解冻(:439)不加,保证在途 run 能收尾 |
+| tools/merge_zone/relocate_test.go | 修改 | merge_zone | 源 / 目标落点 zone 有围栏时冻结被拒 |
+| tools/merge_zone/pin_placement.go | 修改 | merge_zone | 字段改名跟随 `FenceZones` |
+| tools/merge_zone/backfill_home_zone.go | 修改 | merge_zone | :230 的 SetNX 改为一段 Lua:`EXISTS merge:in_progress:{zone}` 命中则不写并计 fenced,否则 `SET NX` |
+| tools/merge_zone/backfill_home_zone_test.go | 新增 | merge_zone | miniredis:围栏在时零写入 |
 
-- 新增 dead_dedup.go(Lua 与字段编码);
-- durable_enqueue 的 submit 增加 dedupField,dead 目标在组提交批里改用 EVAL;
-- key_ordered_consumer.go 三处调用点与 moveClaimedRetryToDead 先判重;
-- 新指标 db_dead_letter_dedup_total;
-- 告警描述改为「副本已有硬上界」。
+**交 Codex 的验证**
 
-文件：`D:/luyuan/xuanming-server-mmo-cpp/go/db/internal/kafka/dead_dedup.go`、`D:/luyuan/xuanming-server-mmo-cpp/go/db/internal/kafka/dead_dedup_test.go`、`D:/luyuan/xuanming-server-mmo-cpp/go/db/internal/kafka/durable_enqueue.go`、`D:/luyuan/xuanming-server-mmo-cpp/go/db/internal/kafka/durable_enqueue_test.go`、`D:/luyuan/xuanming-server-mmo-cpp/go/db/internal/kafka/key_ordered_consumer.go`、`D:/luyuan/xuanming-server-mmo-cpp/go/db/internal/metrics/metrics.go`、`D:/luyuan/xuanming-server-mmo-cpp/deploy/k8s/db-task-retry-alerts.yaml`
+- 仓库根逐个执行 `pwsh -NoProfile -NonInteractive -File tools/scripts/tests/<名>.tests.ps1`,名字为 `k8s_zone_rollback_discard`、`k8s_zone_rollback_gate_router_mode`(PATH 上要有 git)、`kafka_offset_reset_output_guard`、`dev_tools_kafka_offset_reset`、`k8s_deploy_contract`、`dev_tools_merge_zone_contract`;期望 fail=0。
+- dry-run 冒烟:`pwsh -File tools/scripts/k8s_zone_rollback.ps1 -ZoneName test1 -ZoneId 101 -TargetTime "2026-05-15T14:23:00Z" -NodeImage ghcr.io/luyuancpp/mmorpg-node:<40 位 sha>`;期望输出含 0g 的 `-mode fence`、6b 的 `-mode release`、Step 7 的 `-mode release`,打印的每一次工具调用都带 `-expect-run-id`,strict 不在入口被拒,打印的 deploy-facts 为 Schema 3,Step 0b / 6 都带 `-GoSvcTag`。
+- 工作目录 `tools/merge_zone`:`go vet ./...`;`go test -count=1 -run 'Fence|PlacementCAS|Relocate|Backfill|Pin' ./...`;再 `go test -count=1 ./...`。
+- 通过标准:ps1 fail=0;dry-run 期望全部出现;Go 全绿。
 
-### B5 小项 b、c:探针剥离与 op=other 告警（依赖：无(独立)）
+### B4 小项 a:死信去重(依赖:B1;15 个:新增 1、修改 14;另再次修改 B1 的 dead_dedup.go / dead_dedup_test.go)
 
-- Replace 时剥离两张子表的 stress_test_probe,并修正 player_lifecycle.cpp:4275 的注释;
-- save_seq_test.cpp 新增用例:探针快照与未 Stamp 的新消息比较相等,快路径命中;
-- 新增告警 DbTaskUnknownOp。
+| 文件 | 类型 | 模块 | 内容 |
+|---|---|---|---|
+| go/db/internal/kafka/durable_enqueue.go | 修改 | go/db | 死信目标走 `deadEnqueueScript`;回调结果码;文件头 :25-27 |
+| go/db/internal/kafka/durable_enqueue_test.go | 修改 | go/db | 11 处调用点改签名;判重用例 |
+| go/db/internal/kafka/key_ordered_consumer.go | 修改 | go/db | 写入点 ①–④;`deadMoveScript` 接线 |
+| go/db/internal/kafka/key_ordered_consumer_test.go | 修改 | go/db | `deadLetterRetry` 与 `moveClaimedRetryToDead` 判重 |
+| go/db/internal/kafka/rejoin_backoff.go | 修改 | go/db | `confirmingEnqueue` 回调签名;:19、:113 文案 |
+| go/db/internal/kafka/rejoin_backoff_test.go | 修改 | go/db | 2 处调用点 |
+| go/db/internal/kafka/retry_stranded.go | 修改 | go/db | `strandedRetry.dead`;死信重搬走去重脚本 |
+| go/db/internal/kafka/retry_stranded_test.go | 修改 | go/db | 返回 2 时摘除且不计死信 |
+| go/db/internal/kafka/retry_routing.go | 修改 | go/db | ⑥⑦ 计 undeduplicable |
+| go/db/internal/kafka/retry_routing_test.go | 修改 | go/db | 计数用例 |
+| go/db/internal/kafka/store_failure.go | 修改 | go/db | `sampleRetryQueues` 多一次 HLEN |
+| go/db/internal/kafka/dead_dedup_integration_test.go | 新增 | go/db | 真 Redis 7.2:WAITAOF 与传播 |
+| go/db/internal/metrics/metrics.go | 修改 | go/db | `db_dead_letter_dedup_total`、`RetryQueueDeadIndex` |
+| go/db/internal/metrics/metrics_test.go | 修改 | go/db | 预建序列(照 `TestRetryRoutingSeriesPrecreated`) |
+| deploy/k8s/db-task-retry-alerts.yaml | 修改 | 部署 | 两条新规则与 `DbTaskDeadLetterAdded` 描述 |
 
-文件：`D:/luyuan/xuanming-server-mmo-cpp/cpp/libs/services/scene/player/comp/last_persisted_snapshot_comp.h`、`D:/luyuan/xuanming-server-mmo-cpp/cpp/libs/services/scene/player/system/player_lifecycle.cpp`、`D:/luyuan/xuanming-server-mmo-cpp/cpp/tests/cross_zone_test/save_seq_test.cpp`、`D:/luyuan/xuanming-server-mmo-cpp/deploy/k8s/db-task-partition-alerts.yaml`
+**交 Codex 的验证**(工作目录 `go/db`)
 
-### B6 文档、告警描述与登记（依赖：B2d、B3、B4、B5 定稿之后(文档以代码为准)）
+- `go vet ./internal/kafka/ ./internal/metrics/`。
+- `go test -count=1 -race -run 'DeadDedup|DurableEnqueue|PoisonMessage|OrderingConflict|DeadLetterRetry|MoveClaimedRetryToDead|Stranded|ForwardRetry|RequeuePartition|RejoinBackoff' ./internal/kafka/`;再整包 `go test -count=1 ./internal/kafka/ ./internal/metrics/`。
+- 真库:`$env:GODB_IT_REQUIRE='1'; $env:GODB_REDIS_ITEST_ADDR='127.0.0.1:<端口>'; go test -count=1 -v -run 'DeadDedupIntegration' ./internal/kafka/`(Redis ≥7.2,`appendonly yes`、`appendfsync everysec`)。
+- 有 promtool 时 `promtool check rules deploy/k8s/db-task-retry-alerts.yaml`;没有则如实记「未跑」。
+- 通过标准:全部绿、无 SKIP;promtool 0 错误。
 
-- zone_data_rollback 三语版:「2026-10-18 修订」节写入 R9 的决定、流程表、键族表、残余风险。
-- db-write-fencing-mysql.md:§9.1 / §9.2 写回档抬升与删除证据,§7.3 / §14 第 22 条写探针剥离已定。
-- scene-owner-reentry-barrier.md 与 ownerepoch.go 包注释:登记维护期只升不降的运维写入方。
-- shared-redis-split-by-purpose.md:登记 rollback:quarantine:*、kafka:dead:index:*、维护围栏值与盘上归档。
-- db-retry-owner-routing.md §7.10:死信去重。
-- partition-contract 文档 :166。
-- launch-todo:6.5、5.3.9、:522。
-- merge-zone-runbook:回档围栏值,不得手工 DEL。
-- scene-manager-alerts.yaml:新增 ZoneEntryFenceHeldTooLong。
-- owner-epoch-alerts.yaml:注明 DbStaleOwnerWriteRejected 在回档后出现属于预期。
-- PROGRESS 追加条目,注明 Java 不适用。
+### B5 小项 b、c:探针剥离与 op=other(依赖:无;8 个,全部修改)
 
-文件：`D:/luyuan/xuanming-server-mmo-cpp/docs/design/zone_data_rollback.md`、`D:/luyuan/xuanming-server-mmo-cpp/docs/design/zone_data_rollback_en.md`、`D:/luyuan/xuanming-server-mmo-cpp/docs/design/zone_data_rollback_zh.md`、`D:/luyuan/xuanming-server-mmo-cpp/docs/design/db-write-fencing-mysql.md`、`D:/luyuan/xuanming-server-mmo-cpp/docs/design/scene-owner-reentry-barrier.md`、`D:/luyuan/xuanming-server-mmo-cpp/docs/design/shared-redis-split-by-purpose.md`、`D:/luyuan/xuanming-server-mmo-cpp/docs/design/db-retry-owner-routing.md`、`D:/luyuan/xuanming-server-mmo-cpp/docs/design/db-task-kafka-partition-contract.md`、`D:/luyuan/xuanming-server-mmo-cpp/docs/ops/godb-pipeline-launch-todo.md`、`D:/luyuan/xuanming-server-mmo-cpp/docs/ops/merge-zone-runbook.md`、`D:/luyuan/xuanming-server-mmo-cpp/deploy/k8s/scene-manager-alerts.yaml`、`D:/luyuan/xuanming-server-mmo-cpp/deploy/k8s/owner-epoch-alerts.yaml`、`D:/luyuan/xuanming-server-mmo-cpp/go/shared/ownerepoch/ownerepoch.go`、`D:/luyuan/xuanming-server-mmo-cpp/docs/PROGRESS.md`
+| 文件 | 模块 | 内容 |
+|---|---|---|
+| cpp/libs/services/scene/player/comp/last_persisted_snapshot_comp.h | C++ scene | `Replace` 带 has_ 守卫剥离;文件头与 Replace 注释 |
+| cpp/libs/services/scene/player/system/player_lifecycle.cpp | C++ scene | 只改注释(R2 一段与「快路径是否剥离」一行,按锚点) |
+| cpp/libs/services/scene/player/system/player_lifecycle.h | C++ scene | 注释 :650-656 |
+| cpp/tests/cross_zone_test/save_seq_test.cpp | C++ 测试 | `LastPersistedSnapshot.*` 单元用例 |
+| cpp/tests/cross_zone_test/db_task_dispatch_test.cpp | C++ 测试 | `DbTaskDispatchEcs` 夹具下的快路径用例 |
+| go/db/internal/kafka/producer_partition_audit.go | go/db | `logProducerPartitionUnknownOp` |
+| go/db/internal/kafka/producer_partition_audit_test.go | go/db | op=other 且 verdict=ok 也打一条;额度共用 |
+| deploy/k8s/db-task-partition-alerts.yaml | 部署 | `DbTaskUnknownOp`;文件头 :5-8 |
 
-## 4. 测试
+**交 Codex 的验证**
 
-Claude 不执行任何构建或测试(AGENTS §10.1)。下面的命令交给 Codex 或负责人执行,全部未运行。环境变量:GOTOOLCHAIN=local、GOFLAGS=-mod=readonly、GOPROXY=https://goproxy.cn,direct。
+- 仓库根:`pwsh -File tools/scripts/dev_tools.ps1 -Command cpp-node-stop`;`msbuild cpp\tests\cross_zone_test\cross_zone_test.vcxproj /m:1 /nr:false /p:Configuration=Debug /p:Platform=x64`(必须 /m:1,否则报假的 C1041 / LNK1104);`.\build\cpp\tests\cross_zone_test.exe --gtest_filter=SaveSeq*:LastPersistedSnapshot*:DbTaskDispatch*`。
+- `go/db`:`go test -count=1 -run 'ProducerPartition' ./internal/kafka/`。
+- 有 promtool 时 `promtool check rules deploy/k8s/db-task-partition-alerts.yaml`。
+- 通过标准:编译零错误;gtest PASS 汇总无失败;Go 绿;promtool 0 错误。
 
-【B1】
-- 在 go/shared 下:go vet ./playercache/ ./scenenode/;go test -count=1 ./playercache/ ./scenenode/。
-- 在 go/scene_manager 下:go build ./... 与 go test -count=1 ./internal/logic/。
-- 在 go/db 下:go test -count=1 -run 'KeysExport' ./internal/kafka/ ./internal/saveoutbox/。
-用例:
-- 按字面量钉死 PlayerAllData:<id>,并与 login buildParentKey、merge_zone defaultCacheMsgTypes 的口径一致;
-- topic 边界:db_task_zone_1 不得命中 db_task_zone_11 / db_task_zone_1_g2;
-- 含 glob 元字符的 topic 按字面匹配;
-- ParseAppliedCursor 的 v2 与旧格式;
-- PendingIndexKey 与 BucketOf;
-- NodeLoadKey 与原 NodeLoadKeyFmt 逐字相同。
+### B6 文档、告警与登记(依赖:B2d、B3、B4、B5;16 个,全部修改;另 Java 仓 1 个)
 
-【B2a–B2d】在 go/db 下:
-- 先跑 gofmt -l ./internal/zonerollback ./cmd/zone_rollback_discard 与 go vet 同范围;
-- 再跑 go test -count=1 ./internal/zonerollback/... ./cmd/zone_rollback_discard/...;
-- 真库门控:ZONE_ROLLBACK_REQUIRE_REDIS=1 ZONE_ROLLBACK_REDIS_ADDR=127.0.0.1:<自起 Redis 7.x 端口> ZONE_ROLLBACK_MYSQL_DSN=<自起一次性 mysql 或 TiDB> go test -count=1 -run 'Integration' ./internal/zonerollback/。不要借用 codex-* 容器;显示 SKIP 不算通过。
-用例:
-- 契约 :206-208 原有的全部用例:三种 topic 并存;glob 元字符;SCAN 第 2 页失败(退出 1、分族计数正确、同 rid 重跑结果一致);首轮 purge 之后源键再次出现(进下一轮 pass);-expect-run-id 不一致;-version 格式;stopped 遇到非 stopped 阶段的基线。
-- fence:
-  - 获取幂等;
-  - 遇到外人值(merge_zone 的 JSON 值、save_barrier_restore:<id>)→ 3;
-  - 有 TTL 的同值也算外人值;
-  - 排空:集合只减、超时退出 5 且围栏保留、重跑继续等;
-  - release 按值 CAS,外人值 → 3,键不存在 → 0;
-  - 围栏缺失时 stopped / inventory / purge / verify 都 → 3。
-- fingerprint:
-  - 块边界覆盖整个 uint64;
-  - NULL 与空串不同摘要;
-  - 列顺序变化 → 3;
-  - 全部块相同 → 3,带 acknowledge 时放行;
-  - .partial 可以续算。
-- raise:
-  - owner_stop==0 且其它来源 >0 → owner_behind;
-  - applied > owner → owner_behind;
-  - MaxUint64 溢出;
-  - 超过 2^53 的值与非规范十进制;
-  - 重跑幂等(owner==C');
-  - 维护期计数器前进 → owner_advanced;
-  - applied 缺键时建键;
-  - applied 超前 → applied_ahead。
-- classify:真值表逐格各一个用例,加兜底 unclassified;foreign_home_storage_here;frozen;落点版本 ≥2 的有证明与无证明。
-- topology:
-  - run_id 正则,src / dst 必须与 merged_into 一致;
-  - S≥T;
-  - 清单缺失、dry_run=true、同一 run_id 出现两份;
-  - At 按秒截断时减 1 秒比较;
-  - relocate switched 的 At 晚于 T。
-- inventory:
-  - post_t 占比阈值;
-  - #5:seq>>10 晚于 T+60s → 3,legacy 记 unknown;
-  - owner 与基线不同 → 3。
-- purge:
-  - 归档 sha1 不匹配(写者存活)→ 1;
-  - legacy 屏障带 pending → 3;
-  - 映射或 location 被改 → route_changed;
-  - 先抬后删的原子性:同一段 Lua 失败时零写入;
-  - 隔离 RENAMENX 撞上目标 → 1;
-  - 死信索引随死信一起隔离。
-- verify:C' 不等;游标超过切点;已处理玩家的键重新出现;legacy 补投桶非空。
-- strict:
-  - (0,0) 的两行 CAS 成 (C',1);
-  - torn 时缺行插入并对齐围栏;
-  - 两行都缺时插入骨架行;
-  - SQL 提交后、HSET 前崩溃,重跑收敛;
-  - 屏障已是同值三字段时幂等;
-  - 本人仍在桶里 → 拒;
-  - storage_elsewhere 的成员留在桶里不影响;
-  - 重建后用 login 的 beginParentLoadScript 跑一次冷读校验,必须通过(集成用例可以内联 login 的 Lua 文本做对照);
-  - SQL 失败时绝不发布 ACK。
+| 文件 | 内容 |
+|---|---|
+| docs/design/zone_data_rollback.md | 新增「2026-10-19 修订:R9 回档清理工具落地」:决定、流程表、键族表、挡不住的面、忘撤影响、发布冻结、RollbackFence 差距、残余风险 |
+| docs/design/zone_data_rollback_en.md | 同上(英文) |
+| docs/design/zone_data_rollback_zh.md | 同上 |
+| docs/design/db-write-fencing-mysql.md | §9.1 / §9.2 写回档抬升与删除证据;§7.3 与 §14 第 22 条改为「已定:剥离」;第 11 条核实结论改为「开探针时快照侧带探针、新消息侧不带,快路径永不命中」;§14 第 9 条死信工具由 go/db 线做 |
+| docs/design/scene-owner-reentry-barrier.md | 登记维护期只升不降的运维写入方 |
+| docs/design/shared-redis-split-by-purpose.md | 登记 `rollback:quarantine:*`、`kafka:dead:index:*`、维护围栏值、盘上归档 |
+| docs/design/db-retry-owner-routing.md | §7.10 死信去重(字段、指纹、七个写入点、结果码) |
+| docs/design/db-task-kafka-partition-contract.md | :166 改为「已设 DbTaskUnknownOp」 |
+| docs/design/db-task-store-unavailable-deferral.md | §4.1 死信工具契约:LREM / 重新入队时同段 Lua 按指纹 HDEL;信封后字段仍可推导 |
+| docs/ops/godb-pipeline-launch-todo.md | 6.5、5.3.9、:522;:133「未授权」改为 2026-10-16 已定由 go/db 线做 |
+| docs/ops/merge-zone-runbook.md | §3 消费者表(:150-157)补全 guild 全部写、route_tool、relocate、pin、barrierrestore;手工清理段(:162-167)加「值以 `zone_rollback_discard:` 或 `save_barrier_restore:` 开头的不得 DEL,由持有方工具撤除」;:677「trade 上架入口由合服围栏保证」更正为 trade 不读 K1(trade_step.go:29-31);:534 一带加死信不得单独删除;退役源 topic 的索引清理 EVAL |
+| deploy/k8s/scene-manager-alerts.yaml | `SceneManagerHomeZoneFenceHeldTooLong` |
+| deploy/k8s/owner-epoch-alerts.yaml | 注明 `DbStaleOwnerWriteRejected` 在回档后出现属于预期 |
+| go/shared/ownerepoch/ownerepoch.go | 包注释登记维护期运维写入方(只改注释) |
+| docs/design/zone_data_rollback_discard_tool.md | 文首状态改为「已落码」与各批验证结论 |
+| docs/PROGRESS.md | 追加条目,注明 Java 不适用 |
+| (Java 仓)D:/luyuan/xuanming-server-mmo/PARITY.md | 追加「不适用」一行 |
 
-【B3】在仓库根逐个执行 pwsh -NoProfile -NonInteractive -File tools/scripts/tests/<名>.tests.ps1,名字为:k8s_zone_rollback_discard、k8s_zone_rollback_gate_router_mode(PATH 上要有 git)、kafka_offset_reset_output_guard、dev_tools_kafka_offset_reset、k8s_deploy_contract、dev_tools_merge_zone_contract。期望 fail=0。
-dry-run 冒烟(命令见 zone_data_rollback.md:519)补充期望:
-- 输出里有 0g 的 `-mode fence` 与 6b 的 `-mode release`;
-- 七个模式都带 -expect-run-id;
-- strict 不再在入口被拒;
-- Schema 3 出现 RouteStoreMode。
+**交 Codex 的验证**
 
-【B4】在 go/db 下:
-- go test -count=1 -race -run 'DeadDedup|DurableEnqueue|PoisonMessage|MoveClaimedRetryToDead' ./internal/kafka/;
-- 然后整包 go test -count=1 ./internal/kafka/ 与 go test ./internal/metrics/。
-用例:
-- 同一 (partition, seq) 组提交重推两次,死信里只有 1 份;
-- 重试源副本进死信时被丢弃且计数;
-- 旧收据不判重;
-- WAITAOF 仍然覆盖 EVAL;
-- 指标序列预建为 0。
+- 仓库根:`python tools/scripts/gen_docs_index.py --check`(只比对、不整段重写);人工核对 zone_data_rollback 三语版「2026-10-19 修订」一节的条目一一对应。
+- 有 promtool 时 `promtool check rules deploy/k8s/scene-manager-alerts.yaml deploy/k8s/owner-epoch-alerts.yaml`。
+- `go/shared`:`go vet ./ownerepoch/`。
+- 通过标准:索引检查无差异;三语版一致;promtool 0 错误;vet 零告警。
 
-【B5】C++ 用 MSBuild 串行 /m:1:
-- 编 scene 相关库与 cross_zone_test;
-- 跑 cross_zone_test --gtest_filter=SaveSeq*:DbTaskDispatch*。新用例:Replace 一份带探针的 landed 之后,快照不再含探针;与未 Stamp 的新消息 IsEqual 为真。
-- 告警文件用 promtool check rules deploy/k8s/db-task-partition-alerts.yaml(如有 promtool)。
+## 4. 测试用例(按批)
 
-【B6】文档:python tools/scripts/gen_docs_index.py --check 只比对、不整段重写;另外人工核对 zone_data_rollback 三语版的一致性。
+Claude 不执行任何构建或测试(AGENTS §10.1),以下用例由落码批实现、交 Codex 运行。
 
-失败时保留 go test -v 首个失败用例的输出、ps1 的全部 [FAIL] 行,以及真库用例的容器日志。不得改断言、不得跳过测试。
+**B1**
 
-## 5. 风险
+- playercache:`PlayerAllData:<id>` 等字面量;与 login `buildParentKey`、merge_zone `defaultCacheMsgTypes` 口径一致。
+- keys_export:topic 边界(db_task_zone_1 不命中 db_task_zone_11 / db_task_zone_1_g2);glob 元字符按字面;`ParseAppliedCursor` 的 v2 与旧格式;guard 两种显式模式;`OrderingLockKeyPrefix` = `distributed:lock:kafka:ordering:<topic>:`。
+- saveoutbox:`PendingIndexKey` 与 `BucketOf`。
+- scenenode liveness:§2.1 判据表每一行至少一个向量;zone_id=0 反查成功 / 查无;death_at 存在时 StaleZoneGone 与 StaleNodeGone 都降为 Undecided;快照里一条值解析失败 → `Trusted=false`;缺 grpcEndpoint 的注册计入;同身份两条注册按存活;`NodeLoadKey` 等与 scene_manager 原格式逐字相同(scene_manager 侧由常量别名保证)。
+- dead_dedup:v2 字段 = 头 12 字节 hex;RetryCount 不同的两份副本指纹相同;毒消息 Offset=41、Partition=3 与 v2 (seq=42, p3) 字段相同、指纹不同;v1 / 裸载荷 / 截断载荷 ok=false;CapturedAt 与错误串不同的两份毒消息指纹相同。
+- guildcheck:迁移后原有用例原样通过。
 
-1. 全部是静态结论:没有编译,没有运行任何测试。miniredis 不支持 Lua 里调用 INFO / DUMP,这部分语义必须在真 Redis 7.x 上实测(RouteReadyReadScript 也标着「未核实」)。如果实测发现 DUMP 不能在脚本里用,改为对 GET / HGETALL 做规范化编码的 sha1。
-2. 围栏是永久键:回档放弃后忘了 release,本 zone 归属玩家会一直进不了场景、不能建帮,全服的 route_tool import / repair 也会暂停。靠新告警 ZoneEntryFenceHeldTooLong 和 runbook 兜底;另外,dev 单 zone 部署配 AllowGateZoneAsHomeZone=true 时,scene_manager 不经 data_service,围栏对它无效。
-3. 不踢人:挂机的访客可能让 0g 等到超时(退出 5)。主动按归属 zone 踢下线要另立一项,需要 login / gate 的命令通道。
-4. strict 下工具会写 MySQL:两表围栏元数据 CAS、torn 对齐、骨架行 INSERT。回档后的库与 T 时刻不再逐字节一致,只是语义等价于「T 时刻没有这一行 = 空骨架」。依赖 proto2mysql 对空消息的列编码与 go/db 写路径一致,要在真库上用 login 冷读核对。
-5. T 之后建的角色以原名变成新角色,T 之后的进度全部丢失;玩家看到的回退点比 T 早一个消费延迟。都是已接受的代价,需要运营对外说明。
-6. storage_elsewhere(home=本 zone,存储在别处):Step 5 会丢掉它们发往别库的在途写。strict 下由 saveoutbox 在 Step 6 之后补投(所以这些玩家不抬纪元);legacy 下没有补投,只能靠保留的父快照在下次存盘时写回——这是 Step 5 既有的性质,本批没有修。
-7. epoch=0 的写者挡不住:守卫判 legacy_zero 直接放行。只能靠围栏、停服检查和 DbOwnerEpochLegacyZero 告警兜底。停服之前已经过了守卫、正卡在 SQL 里的僵尸写,依赖 namespace 删除和 PITR 耗时远大于 SQL 超时。
-8. 跨服务状态不随回档回退:guild、mail、收件箱、trade、data_service 全局库。收件箱可能重投 T 之后已消费的条目。
-9. owner_behind 会让回档整体停在 4a,而它的修复入口 fencing §9.1 的 epoch_raise 还没实现。
-10. 规模:inventory / purge / verify 每次都要全量 SCAN player:zone:*,代价是 O(全服玩家数);分块校验和在停服后与 PITR 后各要全表读一遍,大 zone 是分钟到小时级。冷读洪峰的承载是估算,没有压测数据,不得据此下性能结论。
-11. 归档文件含玩家资产明文:报告目录必须受访问控制(run/* 已被 gitignore,文件 0600)。Redis 隔离区只放区级重试族,默认 TTL 720h。
-12. 热文件冲突:key_ordered_consumer.go、metrics.go、db-task-retry-alerts.yaml、scene-manager-alerts.yaml、dev_tools.ps1、player_lifecycle.cpp 目前都有他人未提交的改动。B4 / B5 / B6 动手前必须重新 git diff 分清归属,只做本项的最小增量。
-13. 两套版本号口径:-version 输出 40 位 main.buildCommit,与 shared/buildinfo 的 12 位规则不同,按契约实现。
-14. (b) 会改变压测里存盘跳过率与 DBTask 量的口径,下一轮压测与 R20 等历史基线不可比,复盘要写明(AGENTS §6)。
-15. (a) 动的是 go/db 热路径的入队层。人工删死信条目时如果不同时 HDEL 标记,同一消息以后再也进不了死信,所以 L-04 第 2 批工具必须遵守「同一段 Lua 删标记」。
-16. 不支持 Redis Cluster 和 RouteStore.Mode=db_first(以 3 拒绝,db_first 要另批设计)。G4a 拆分 Redis 实例之后,逐人 Lua 的原子性前提不成立,由第 0 步 f fail-closed。
-17. legacy 协议实际上只对应「go/db 是新镜像、C++ / login 还是旧镜像」的过渡部署。工具落地之后,能部署的镜像都属于严格世代,strict 才是主路径。B2d 未通过真库验证之前,不得对现行部署执行 -Apply。
+**B2a**
 
-## 6. 对抗复核意见（待并入，落码前处理）
+- 契约原有用例:三种 topic 并存;glob 元字符;SCAN 第 2 页失败(有界重试后仍失败 → 退出 1、分族计数正确、同 rid 重跑结果一致);`-expect-run-id` 不一致;`-version` 格式;stopped 遇到非 stopped 阶段的基线。
+- rid:合服 run_id 形状子串被拒;合法 rid 放行。
+- fence:获取幂等;外人值(merge_zone 的 JSON、`save_barrier_restore:<id>`、他 rid)→ 3 且零写入;带 TTL 的同值也算外人值;准入超限 → 3;preflight.json 过旧 / rid 不符 → 3;立栏后复核失败 → 5 且围栏保留;排空:集合只减、超时 → 5 且围栏保留、同 rid 重跑接着等;沉降:围栏写入前 1ms 通过检查、沉降期内才 CAS location 的玩家被首次全量扫描捕获;fence-drain.json 三类名单。
+- release:按整值 CAS;外人值不碰;K1 已缺失而 K2 为我方 → 删除 K2、返回 7、报告 fence_lost;我方值被加 TTL → 删除并返回 7;清单已 released 且两键都不在 → 0;MySQL 不可达、deploy-facts 缺失时 release 仍成功。
+- 租约:同 rid 第二个写进程拿不到租约 → 3;续期时 run_id 变了 → 中止 1;逐人 Lua 校验 token。
+- preflight:foreign_home_storage_here、frozen(storage=Z / 清单缺失 / 清单含 Z)、merged_into(≥T、无清单、步骤未 Done)、在途 relocate、legacy_owned 各自 → 3;他区在线只报告。
+- stopped:Z 的 load 集非空 → 3;Online / Undecided → 3;陈旧 location(zone 已空 / 节点已注销且 death_at 已过期)放行;存活排序锁等到截止 → 3;基线写见证行。
+- fingerprint:块边界覆盖整个 uint64;NULL 与空串、`a#b` 与 `a`+`#b` 摘要不同;自适应块大小在 0.5s 目标附近收敛;.partial 可续算。
+- throttle:令牌桶速率;PING p99 超阈值时暂停翻倍;网络错误重试 3 次带抖动,Lua error_reply 不重试。
+- 集成(真 Redis):INFO 在 Lua 里取 run_id;fence 键 PTTL=-1;miniredis 不能替代的用例都标在这里。
+
+**B2b**
+
+- classify:真值表逐格各一个用例,加兜底 unclassified;foreign_home_storage_here;frozen;落点版本≥2 有证明与无证明;torn_cross_table。
+- topology:run_id 正则与 src / dst 必须与 merged_into 一致;S≥T;清单缺失、`dry_run=true`、同一 run_id 两份;At 按秒截断时减 1 秒比较;relocate switched 的 At 晚于 T;清单 player_ids 与 post_t_candidate 求交命中 → moved_in_after_t。
+- raise:owner_stop==0 且其它来源>0 → owner_behind;applied>owner → owner_behind;MaxUint64 溢出;超过 2^53 的值与非规范十进制。
+- plan:计划冻结后 inventory 重跑生成不同计划 → 3;计划前态 / P2 后态 / P3 后态判定;P2 中途失败后重跑判定为可续;SQL 提交后、HSET 前崩溃的状态判定为可续。
+- asset_gate:since = T_ms−300000;分歧 → 确认模板;不可证明玩家 → 确认模板;guild 不可达 / 预算耗尽 / `ErrTooManyDivergences` → 3;确认文件逐字相同才放行。
+- inventory:schema Drift 非空 → 3 且文本含 migrate 命令;列差异进确认模板;post_t 占比阈值;离群 21 行 → 3,20 行 → 须确认;见证行不同 → 3;无见证行且最大值 <T−15m → 须确认;owner 与基线不同 → 3;归档估算超限 → 3;确认文件缺失 → 6;多出模板之外的节 → 6。
+
+**B2c**
+
+- quarantine:范围内条目进隔离键并带 TTL;storage_elsewhere 与解不出的条目回共享收件箱 / 原死信;死信索引字段随条目迁移、指纹不同不动;源死信清空时索引被 DEL;暂存键中途中断后重跑排空;目标键已存在 → 1;实例登记整键隔离。
+- purge:归档 sha1 不匹配(PTTL=-1,写者存活)→ archive_mismatch;PTTL>0 冷读产物不论内容删除并计数;legacy 屏障带 pending → protocol_contradiction;映射 / 落点 / location 被改 → route_changed;先抬后删的原子性:同一段 Lua 失败零写入;P2 中途失败后同 rid 重跑,已处理玩家判为计划后态(复核 6.1.1);shard_done 只在同一 pass 内跳过。
+- verify:C' 不等;游标超过切点;已处理玩家 PTTL=-1 的键重新出现;冷读产物被接受;区级出现范围内条目;计划之外的 home=Z 玩家;行数不符;legacy 补投桶非空;guild 复判结果与确认文件不同。
+- quarantine-drop:清单未记 released / verify 时 → 3;UNLINK 后清单保留。
+- 集成:真 Redis 上整条 legacy 链路(preflight → fence → stopped → inventory → purge → verify → release)。
+
+**B2d**
+
+- (0,0) 两行 CAS 成 (C',1);torn 时缺行插入并对齐围栏;torn 落后表带业务列 → torn_cross_table;两行都缺时插骨架行;SQL 提交后、HSET 前崩溃,重跑收敛(复核 6.1.1);屏障已是同值三字段时幂等;本人仍在桶里 → 拒;storage_elsewhere 的成员留在桶里不影响;P3 前出现的 PTTL>0 冷读产物被同段删除,PTTL=-1 → cache_present;重建后用 login 的 `beginParentLoadScript` 跑一次冷读校验必须通过;SQL 失败绝不发布 ACK;strict verify 在 P3 之后通过(不再误判 owner_behind)。
+
+**B3**
+
+- 契约测试:ValidateSet 含八个模式;退出码 5 / 7 的解释;preflight 对他区在线不拒绝、对续跑的 K1 放行;0g 位于 entry-state 之后、Step 1 之前;6b 位于 Step 6 之后;Step 7 复跑 release;中止与放弃文案含 release;strict 不在入口被拒;Schema 3 字段;`Get-TargetBarrierProtocol` 现网 / 目标不一致即拒(用假 git);`Get-GlobalFenceReaderProblems`:任一 zone 镜像早于 4493b3c9f、tag 为 digest、`RouteStore.Mode=db_first`、`AllowGateZoneAsHomeZone=true`、没配 `DataServiceRpc` 各自拒绝;`Start-InfraPortForward` 超时与清理;`-GoSvcTag` 传到 0b 与 Step 6;dev_tools 透传;rid 子串校验。
+- k8s_deploy 契约:zone-up 后只读 GET 与 WARN 文案;DryRun 不执行;读失败只告警。
+- merge_zone:`describeFenceHolder` 四类;`verifyFenceReleased` 文案;`placementCAS` 多围栏任一存在回 3;relocate 冻结在源 / 目标落点 zone 有围栏时被拒,切换与解冻不受影响;backfill 在围栏存在时零写入并计数。
+
+**B4**
+
+- 同一 (partition, seq) 组提交重推两次,死信里只有 1 份;重试源副本进死信时被丢弃,`db_task_dead_letter_total` 不增、`duplicate_dropped` 加 1;旧格式收据不判重、计 undeduplicable;forward / requeue 进死信计 undeduplicable;指纹冲突照常入队并计 collision;`deadLetterRetry` 返回 2 视为成功、不打 DATA-LOSS;stranded 重搬返回 2 摘除;LLEN==0 时孤儿索引被删;WRONGTYPE 预检时一条不动。
+- 集成(真 Redis 7.2):判重命中分支执行后 `INFO replication` 的 `master_repl_offset` 增加;连接 A 写入首份,连接 B 判重后 WAITAOF 返回的确认覆盖首份。
+- 指标:12 条 `db_dead_letter_dedup_total` 与 `queue="dead_index"` 序列预建为 0。
+
+**B5**
+
+- `LastPersistedSnapshot.ReplaceStripsProbeKeepsPresence`:Replace 之后两张子表 `has_stress_test_probe()` 为 false,两个子消息的 presence 不变,入参不被修改。
+- `LastPersistedSnapshot.ReplaceDoesNotCreateMissingSubMessage`:入参缺子消息时快照侧也缺。
+- `DbTaskDispatchEcs.FastPathHitsWhenLandedCarriesProbe`:手工构造带探针的落地消息走 `Replace`,第二次无改动存盘命中快路径(skipped 加 1)。
+- `DbTaskDispatchEcs.BusinessChangeStillWritesWithProbeSnapshot`:落地后改一个业务字段仍真写。
+- 现有按字节比快照的用例(db_task_dispatch_test.cpp:621 一带)不受影响。
+- producer_partition_audit:op=other 且 verdict=ok 也打一条,字段齐全;与不符日志共用额度。
+
+## 5. 风险(残余)
+
+1. 全部是静态结论:没有编译、没有运行任何测试。INFO in Lua、WAITAOF、HSET 同值传播只能在真 Redis 7.x 上验证。
+2. 围栏是永久键:放弃回档而忘了 release,home=Z 玩家一直进不了场景、Z 不能建号、Z 公会写全拒、历练结果消费全服卡住、route_tool 全服暂停。靠三层兜底(告警、Step 7 断言、zone-up WARN)与 runbook。
+3. 不踢人:挂机访客可能让 0g 等到超时(退出 5)。按归属 zone 踢下线要 login / gate 的命令通道,不在 R9 内。
+4. 不挡的面:他区 login 冷读(只产生 PTTL>0 产物,P2 / verify 已识别;PITR 期间对 Z 库有冷读负载);不带 GateId 的 EnterScene(前提「所有生产调用方都带 GateId」由 runbook 声明);trade、mail、收件箱对他区在线实体的资产投递落在将被丢弃的存盘上,**trade 没有分歧闸**(trade 尚无可证明的已应用流水查询与 write-ahead 清理水位,asset_op_repo.go:1244-1247);收件箱可能重投 T 之后已消费的条目。排空时长越长,这些面越大。
+5. 生效前提依赖人:回档窗口内冻结全服 data-service / scene-manager 发布写在 runbook,ps1 只在四个时点核对,两次核对之间的发布拦不住。
+6. strict 下工具会写 MySQL:两表围栏元数据 CAS、torn 对齐、骨架行 INSERT。回档后的库与 T 时刻不再逐字节一致,只是语义等价于「T 时刻没有这一行 = 空骨架」,依赖 proto2mysql 对空消息的列编码与 go/db 写路径一致,由 B2d 真库用例核对。
+7. T 之后建的角色以原名变成新角色,T 之后的进度全部丢失;玩家看到的回退点比 T 早一个消费延迟。已接受,运营须对外说明。
+8. storage_elsewhere:Step 5 丢掉它们发往别库的在途写。strict 下由 saveoutbox 在 Step 6 之后补投;legacy 下没有补投,只能靠保留的父快照在下次存盘时写回(Step 5 既有性质)。它们的重试收据经 P1 回到共享收件箱,Step 6 之后照常重试。
+9. epoch=0 的写者挡不住:守卫判 legacy_zero 直接放行,只能靠围栏、停服检查与 `DbOwnerEpochLegacyZero` 告警兜底;停服之前已过守卫、正卡在 SQL 里的僵尸写依赖 namespace 删除与 PITR 耗时远大于 SQL 超时。
+10. owner_behind 会让回档停在 4a,它的修复入口 fencing §9.1 epoch_raise 尚未实现。
+11. 规模:preflight、fence、stopped、verify 各要全量 SCAN(合计 7 次);分块校验和在停服后与 PITR 后各全表读一遍,大 zone 是分钟到小时级;冷读洪峰没有专门节流(k8s_deploy 没有按 zone 覆盖 `ZoneDefaultRps` 的参数),只在 Step 7 观察 MySQL 负载与 Kafka lag。没有压测数据之前不得据此下性能结论;B2c 的负载验收是唯一依据。
+12. 归档文件含玩家资产明文(屏障、资产证据、strict 待处理父快照):报告目录必须受访问控制(`run/*` 已被 gitignore,文件 0600、目录 0700)。
+13. 两套版本号口径:`-version` 输出 40 位 `main.buildCommit`,与 shared/buildinfo 的 12 位规则不同,按契约实现。
+14. (b) 只改变手工开探针的 L3 数据一致性压测的跳过率口径,常规压测不受影响;下一轮 L3 复盘写明。
+15. (a) 动的是 go/db 热路径的入队层。人工删死信条目若不同段按指纹 HDEL,同一消息以后再也进不了死信;`DbTaskDeadIndexOrphans` 告警与 runbook 兜底。手工删 topic 或清 broker 而不清 Redis 时 offset 复用,靠 collision 计数暴露。
+16. 不支持 Redis Cluster 与任何 zone 的 `RouteStore.Mode=db_first`(以 3 拒绝,db_first 另批设计)。Redis 按用途拆分之后逐人 Lua 的原子性前提不成立,由第 0 步 f fail-closed。
+17. legacy 协议实际只对应「go/db 是新镜像、C++ / login 还是旧镜像」的过渡部署;工具落地之后能部署的镜像都属严格世代,strict 才是主路径。B2d 未通过真库验证之前不得对现行部署执行 `-Apply`。
+18. 将来 db_first 对账 leader 上线后,`MergeFenceMirrorSetScript` 对 K1 回 2,注释写的是「不删,只告警」(route_ready.go:467-468),会产生告警噪声;届时在该告警描述里登记回档围栏值。
+
+## 6. 复核意见处置表
+
+原意见全文见附录 A。
+
+### 6.1 数据一致性面
+
+| 编号 | 结论 | 处置 | 落在 |
+|---|---|---|---|
+| 6.1.1 | 部分采纳 | 采纳不可变逐人计划、U(p) 只在 inventory 算一次、purge / verify 按「计划前态 / 计划后态」判定并补三个用例;不在清单里逐人记 p2_done / p3_done:逐人阶段由键状态(owner 与屏障组合)原子判定,避免清单随玩家数线性膨胀 | §1 #2;§2.2;§2.4 purge / verify;§4 B2b、B2c、B2d |
+| 6.1.2 | 部分采纳 | guild 分歧闸采纳:`guildcheck` 迁到 shared,inventory 与 verify 各判一次,确认文件放行;trade 不采纳:trade 没有可证明的已应用流水查询与清理水位,data_service 现行回档闸同样只覆盖 guild,登记残余风险并列为 R9 之外的立项 | §1 #8;§2.4;§3 B1、B2b;§5 第 4 条;§7 |
+| 6.1.3 | 采纳 | preflight / fence / stopped 硬拒 foreign_home_storage_here、frozen、在途搬库;merge_zone 冻结 CAS 加源 / 目标落点 zone 围栏,回填改 Lua 查围栏 | §1 #4;§2.1;§2.4 preflight;§3 B3 |
+| 6.1.4 | 采纳 | `Get-TargetBarrierProtocol` 同时核对 Step 6 目标(`-NodeImage`、新参数 `-GoSvcTag`、本机 db.yaml),现网与目标不一致第 0 步拒绝 | §1 #3;§2.3;§2.9 C7 |
+| 6.1.5 | 采纳 | 清单 player_ids 与 post_t_candidate 求交;merged_into 的 run_id 必须对上清单;owner_stop>0 的 post_t_candidate 须确认文件逐人放行 | §1 #6;§2.4 inventory;§2.6 |
+| 6.1.6 | 采纳 | 离群 ≤20 行确认放行、>20 拒;见证行下界判定 PITR 过早;无见证时 quiet_before_t 确认 | §1 #5;§2.4 stopped / inventory |
+| 6.1.7 | 部分采纳 | 列交集与列差异确认采纳;「P3 只写实际存在的列」不采纳:Step 6 的 go/db 缺列即拒启(proto_sql/db.go assertSchemaUpToDate),改为 inventory 要求恢复库通过同一份 Drift 校验,不过先跑 cmd/migrate up | §1 #7;§2.3;§2.4 inventory |
+| 6.1.8 | 部分采纳 | 载荷 SHA1 不采纳(各副本的捕获时刻、错误串、RetryCount 不同,正常重复会全判冲突);改为跨副本稳定指纹,冲突照常入队计 collision 并告警;删除必须同段 Lua 按指纹 HDEL(采纳);索引键名带 topic 实例标识不采纳:消费路径拿不到 topic 实例标识,同名重建已被 kafka_offset_reset.ps1 拒绝 | §1 (a);§2.10 (a);§3 B4 |
+| 6.1.9 | 采纳 | P1 逐条解码分流,范围外与解不出的回原处并逐条记报告,只有范围内条目进带 TTL 的隔离区,索引字段随条目迁移 | §2.4 purge P1;§2.5 |
+| 6.1.10 | 部分采纳 | merge_zone 撞围栏与审计文案按持有者区分(采纳);rid 拒绝合服 run_id 形状子串(采纳);K2 值加 `zone_rollback_discard:` 前缀(采纳);deploy-facts 记录 guild MergeMarkerRedis 不采纳:K8s 部署恒复制该段并改写 Host(k8s_deploy.ps1:6676-6682),回档流程只在 K8s 上跑 | §2.1;§2.9;§3 B3 |
+| 6.1.11 | 采纳 | 写者租约 `rollback:quarantine:<z>:<rid>:lease`;purge.json 由清单与 ndjson 生成,verify 以计划为逐人对象 | §2.4;§2.7 |
+| 6.1.12 | 部分采纳 | 「在途代码编译耦合」不成立:barrierrestore 与 saveoutbox/generation.go 已于 8b9592de3 入库,直接引用并加字面量测试;行号漂移成立,B5 按锚点文字定位 | §2.1 键与值;§2.10 (b);§3 B5 |
+| 6.1.13 | 采纳 | 立栏后沉降 30s,阻塞集合为空后再沉降 30s 全量复扫 | §2.1 fence 模式 |
+| 6.1.14 | 采纳 | torn_cross_table 断言;校验和改为逐列定长 MD5 拼接、两段 `CAST(... AS UNSIGNED)`,在真 TiDB 上验证 | §2.3;§2.4 stopped;§2.6;§3 B2a、B2d |
+
+### 6.2 水平扩展与运行面
+
+| 编号 | 结论 | 处置 | 落在 |
+|---|---|---|---|
+| 6.2.1 | 采纳 | 令牌桶、在途字节、worker 缺省 4 上限 8、PoolSize=workers+2、PING 自适应退避、SCAN COUNT 500;全量 SCAN 降到 7 次,inventory / purge 用停服快照加逐人 MGET;P1 按已知键名枚举;准入 `-max-concurrent-rollbacks`;压测环境负载验收写进 B2c | §2.4;§2.7;§3 B2c |
+| 6.2.2 | 部分采纳 | 归档收窄到证据、Lua 内算 sha1(且去掉 DUMP)、归档字节估算与上限(采纳);集群内 Job + PVC 与自动 RDB 留档不采纳:工具在集群外经端口转发运行是现行契约,收窄后归档量每人约百字节,BGSAVE 的 fork 会给全服登录路径带来延迟尖峰 | §1 #4;§2.4 inventory / purge |
+| 6.2.3 | 部分采纳 | 判据下沉 `go/shared/scenenode`(采纳);scene_manager 不改用它:其判死依赖进程内 etcd 视图与本地观察时刻,只共享键名;工具每轮读 etcd 注册表快照证明节点已注销 | §2.1 他区在线判据;§3 B1 |
+| 6.2.4 | 采纳 | 全服 data-service / scene-manager 镜像祖先核对、全服 `RouteStore.Mode=redis`、dev 旁路核对、runbook 冻结发布;四个时点复核 | §1 #1;§2.1;§2.9 C8 |
+| 6.2.5 | 采纳 | 单连接串行(连接池 ≤2)、自适应块、Threads_running 暂停、TiDB 扫描并发 1;校验和只在 stopped 与 inventory 各算一次 | §2.4;§2.7 |
+| 6.2.6 | 采纳 | 网络类错误有界重试 3 次带退避与抖动;shard_done 只作同 pass 提示;超时按批计算 | §2.7 |
+| 6.2.7 | 采纳 | 同 6.1.3;另把 backfill 改 Lua、在途 relocate 清单拒绝 | §2.4 preflight;§3 B3 |
+| 6.2.8 | 部分采纳 | 表达式与分组更正、规则名按仓库惯例为 `SceneManagerHomeZoneFenceHeldTooLong`、Step 7 复跑 release 断言、zone-up WARN(采纳);promtool 规则单测不采纳:仓库没有规则单测设施,改用 `promtool check rules` | §2.1 政策;§2.8;§2.9 C11、C13;§3 B3、B6 |
+| 6.2.9 | 采纳 | release 只依赖 Redis 与四个身份参数;fence 只依赖 Redis、etcd 与 preflight 结果 | §2.1 |
+| 6.2.10 | 采纳 | purge 不碰 guard 键;verify 只断言两种显式模式为 0 | §2.4 verify;§2.5 |
+| 6.2.11 | 部分采纳 | 新增 `-mode quarantine-drop`(UNLINK 异步释放)采纳;redis.yaml 打开 lazyfree-lazy-expire 不采纳:有 quarantine-drop 之后不需要改持久配置 | §2.4;§2.5 |
+| 6.2.12 | 部分采纳 | merge_zone 文案(采纳);route_tool 只对作用范围拒绝不采纳:全局暂停是 route_tool 现行设计,runbook 写明代价;RemapHomeZoneForMerge 残余风险不成立:2026-10-12 起 `dataserviceserver.go`:244-261 在鉴权之前一律回 FailedPrecondition + ErrCodeNotImplemented,实现已删除(router.go:579),ErrCodeMergeFenceMissing 不再产生(error_codes.go:97) | §2.1 政策;§3 B3、B6 |
+| 6.2.13 | 不采纳 | 前提已过时:barrierrestore 已于 8b9592de3 入库,工具与它同属 go/db module,直接引用 `MaintenanceKey` 并钉字面量,不必下沉 shared | §2.1 键与值 |
+| 6.2.14 | 部分采纳 | 删除「冷读洪峰由令牌桶承接」(采纳);Step 7 观察 MySQL 负载与 lag(采纳);Step 6 传低档 zone rps 不采纳:k8s_deploy.ps1 没有按 zone 覆盖 `ZoneDefaultRps` 的参数(`PeakShavingLaunchTier` 是常量表),新增参数属削峰功能,列为 R9 之外的立项 | §1 #7;§2.9 C11;§5 第 11 条;§7 |
+
+## 7. 需负责人另行拍板
+
+1. **规模**:并入复核意见与核实结论后,R9 由授权时的 73 个文件增至 125 个(批次结构 B1→B6 九批不变,增加原因见文首「规模变化」)。按 AGENTS §10.2,请确认按 125 文件规模开工 B1。
+
+R9 之外的后续立项(不阻塞 R9,记录备查):trade 回档分歧闸(trade 侧 `ListAppliedAssetOpsSince` 等价查询 + write-ahead 清理水位);k8s_deploy 按 zone 覆盖削峰档位的参数;guild 历练结果按 zone 停放消息;login 侧读 K1 的加闸;data_service `RollbackFence` 的跨服务实现;按归属 zone 踢下线的命令通道。
+
+## 附录 A 对抗复核意见原文(v1 §6,原样保留)
 
 ### 6.1 数据一致性面（结论：needs_changes）
 
@@ -699,3 +993,36 @@ dry-run 冒烟(命令见 zone_data_rollback.md:519)补充期望:
    - 证据：tools/scripts/k8s_deploy.ps1 削峰档位:ZoneDefaultRps=2000、ZoneDefaultBurst=5000,标注 pending stress-test validation;$script:LoginQueueMergeGateCleared=$false,登录排队不可用。mysql.yaml 注释「1 核仍是开服硬瓶颈」。设计 #7:范围内玩家一律删缓存、首登冷读。
    - 改法：ps1 Step 6 给回档 zone 传显式的低档 zone rps,作为重开档位,具体数值由 Codex 压测给出。Step 7 观察 MySQL 负载和 Kafka lag 后再逐级调高。没有压测数据之前,不写「冷读洪峰由令牌桶承接」。
 
+## 附录 B 两路代码核实结论并入索引
+
+| 核实条目 | 并入位置 |
+|---|---|
+| 围栏·证实 1 读方清单与判据 | §2.1 读方清单 |
+| 围栏·证实 2 能挡住的面 | §2.1 能挡住的面 |
+| 围栏·证实 3 与合服互斥 | §2.1 互斥 |
+| 围栏·证实 4 同实例前提 | §2.1 同实例前提 |
+| 围栏·证实 5 Lua 内 INFO 先例 | §2.1 同实例前提;§2.4 `leaseScript` |
+| 围栏·证实 6 被证实的复核意见 | §6 对应行 |
+| 围栏·需改 1 证据定位 | §2.1 读方清单 |
+| 围栏·需改 2 #1 理由 | §1 #1;§2.1 生效前提 |
+| 围栏·需改 3 barrierrestore 先例降格、K2 引用 | §1 #1;§2.1 键与值;§6.1.12、§6.2.13 |
+| 围栏·需改 4 K2 定位 | §1 #1;§2.1 键与值 |
+| 围栏·需改 5 guild 写全拒 | §2.1 读方清单与政策 |
+| 围栏·需改 6 「只减不增」前提 | §2.1 政策与挡不住的面 |
+| 围栏·需改 7 RemapHomeZoneForMerge 停用 | §6.2.12 |
+| 围栏·需改 8 guild MergeMarkerRedis | §6.1.10 |
+| 围栏·需改 9 ps1 契约冲突 | §2.9 C1–C3 |
+| 围栏·需改 10 判死不能照搬纯 Redis | §2.1 他区在线判据 |
+| 围栏·需改 11 无可复用告警 | §2.8 |
+| 围栏·需改 12 release 语义收紧 | §2.1 release;§2.8 退出码 7 |
+| 围栏·漏项 A1–A7 挡不住的面 | §2.1 挡不住的面;RollbackFence 差距 |
+| 围栏·漏项 B1–B6 误伤 | §2.1 政策;§3 B3、B6 |
+| 围栏·漏项 C1–C4 等下线的证明 | §2.1 fence 模式与他区在线判据 |
+| 围栏·漏项 D 新旧版本并存 | §2.1 生效前提与最低提交 |
+| 围栏·漏项 E 撤围栏与忘撤 | §2.1 政策;§2.8;§2.9 C11、C13 |
+| 小项·(a) 证实 1–8 | §1 (a);§2.10 (a) |
+| 小项·(a) 需改 A1–A9 | §2.10 (a) 写入点表、脚本、回调结果码、指标 |
+| 小项·(a) 漏项 1–6 | §2.10 (a);§3 B4;§4 B4 |
+| 小项·(b) 证实 1–7、需改 B1–B3、漏项 7–9 | §1 (b);§2.10 (b);§3 B5、B6;§4 B5 |
+| 小项·(c) 证实 1–4、需改 C1、漏项 10 | §1 (c);§2.10 (c);§3 B5 |
+| 小项·通用 11 Java 不适用 | §2.11 |

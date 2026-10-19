@@ -6605,8 +6605,10 @@ Test-Case 'D1 1b-3 guild:infra-up 带全局 Go 服务时 MergeMarkerRedis.Requir
     $onRun = Invoke-DeployDryRun -Arguments ($infraArgs + @('-RouteStoreMode', 'db_first', '-RouteReconcileArm', '-GuildRequireRouteReady')) -Env $BattleTestEnv
     foreach ($case in @(@{ Label = '缺省'; Run = $defaultRun; Expected = 'false' }, @{ Label = '-GuildRequireRouteReady'; Run = $onRun; Expected = 'true' })) {
         Assert-Equal -Expected 0 -Actual $case.Run.ExitCode -Because "$($case.Label) 的 infra-up DryRun 应当成功。输出: $($case.Run.Output)"
-        $block = Select-ManifestByName -Output $case.Run.Output -Name 'go-svc-guild-config'
-        Assert-True -Condition ($null -ne $block) -Because "$($case.Label):infra-up 带全局 Go 服务时应当生成 go-svc-guild-config"
+        # 按 kind 过滤:guild 的 Deployment / 迁移 Job 也引用这个 ConfigMap 名,Select-ManifestByName 只按名字取第一块。
+        $blocks = @(Get-ManifestBlocks -Output $case.Run.Output | Where-Object { $_ -match '(?m)^kind: ConfigMap\s*$' -and $_ -match '(?m)^  name:\s*go-svc-guild-config\s*$' })
+        Assert-Equal -Expected 1 -Actual $blocks.Count -Because "$($case.Label):infra-up 带全局 Go 服务时应当恰好生成一份 go-svc-guild-config"
+        $block = $blocks[0]
         $flat = ConvertTo-FlatManifest -Block $block
         Assert-Equal -Expected $case.Expected -Actual (Get-FlatValue -Flat $flat -KeyPath 'data.guild.yaml.MergeMarkerRedis.RequireRouteReady') -Because "$($case.Label):guild 读方门禁取参数"
         Assert-Equal -Expected 1 -Actual ([regex]::Matches($block, '(?m)^\s+RequireRouteReady:').Count) -Because "$($case.Label):guild ConfigMap 里 RequireRouteReady 只出现在 MergeMarkerRedis 段一处"

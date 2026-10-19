@@ -853,6 +853,7 @@ Phase 1 的逻辑库仍按 zone 分开，用按库过滤恢复就能表达「只
 | L-15 | P2 | 首日按地域多开 zone，按负载分流选区。db_task 的 10 个分区不能在线扩，要扩只能走离线换代（`db-task-kafka-partition-contract.md`） | 运营、部署 | 否 | 负责人 | — |
 | L-16 | P2 | 如果首日要开 `PinOnCreate`：遵守 placement §13 的顺序，先满足 D8、D1 两项前置 | Phase 2 | 是 | 负责人 | — |
 | L-17 | P2 | 条件性的两项：<br>• gate 单 IO 线程；<br>• 正式服若用口令登录：Argon2id 每进程只允许 2 个并发（`login.yaml:346-348`），而且 login 会连库（§2.7），存量门禁脚本要先处理（§4 #13） | gate、login | 否 | — | 实测 t_kdf |
+| L-18 | P1 | **上线前由 AI 复核（负责人 2026-10-19 要求）**：账号登录取逻辑服（home_zone）/ 物理服（storage_id）这条链路，届时是不是瓶颈、能不能水平扩展。按 [player-route-mapping-durability-proposal.md](./player-route-mapping-durability-proposal.md) §12.2「上线前复核步骤」逐条对照当时的代码、部署与压测重做一遍，不能沿用 2026-10-18 的结论（那时当前登录路径没有任何压测覆盖，倍数全是推算） | login、data_service、scene_manager、共享 Redis | 否 | 负责人 | §12.2 的结论写回 §12.1 表格并追加 PROGRESS；性能结论只认 L-14 的 `stress_summarize.ps1` 对比表 |
 
 **L-07 展开：全球审计管道**
 

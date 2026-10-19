@@ -174,8 +174,8 @@ curl -v -X POST http://${GATEWAY_HOST}:8081/api/login \
 ```
 
 **典型失败 + 排查**:Java 网关对 login 的 in-band 码按 `data/tip/Tip.xlsx` 的 `fault` 列定性:业务拒绝回 `code:401`,
-故障码回 `code:500`(2026-10-18 起,两版同批,见 `docs/design/tip-code-axis.md` §2.10);`message` 都是 `upstream_err=<tip 码>`
-(网关不回显 provider 的错误文本),HTTP 状态恒为 200。login 以 gRPC status 失败时,只有 UNAUTHENTICATED / PERMISSION_DENIED
+故障码回 `code:500`(2026-10-18 起,两版同批,见 `docs/design/tip-code-axis.md` §2.10);本节列出的故障通常以 `upstream_err=<tip 码>`
+作为 `message`(网关不回显 provider 的错误文本)。message 取法未改,上游带参数文案时沿用各版网关既有的解析或拼接结果。HTTP 状态恒为 200。login 以 gRPC status 失败时,只有 UNAUTHENTICATED / PERMISSION_DENIED
 回 401,其余回 500。具体原因看 login 日志 `Auth failed: type=... tip=... err=...`。
 
 | 现象 | 原因 | 解 |
@@ -185,7 +185,7 @@ curl -v -X POST http://${GATEWAY_HOST}:8081/api/login \
 | `500 upstream_err=2035` + 日志 `errcode=40125` / `40013` / `40164` | AppSecret / AppId 不对,或出口 IP 不在白名单(故障码,in-band 告警) | 核对 Secret 与开放平台白名单 |
 | `500 upstream_err=2035` + 日志 `unionid missing` | 应用没绑开放平台主体 / 没有 unionid 权限 | 见 §D.4 |
 | `500 upstream_err=2035` + 日志 `http status` / `http error` / `bad json` | 渠道不可达、非 2xx、应答不可解析 | 查出口网络与渠道状态 |
-| `500 upstream_err=2036` | token 签发失败(写 Redis 失败;第三方 code 已被消费) | 查 login 的 Redis;客户端需重新走 OAuth |
+| `500 upstream_err=2036` | token 签发失败(写 Redis 失败;微信 code 已被消费) | 查 login 的 Redis;重试前重新拉起渠道:微信拿新 code,QQ 取新凭据 |
 | `500 upstream_err=2021` / `2022` | 账号目录读 Redis 失败 / 记录损坏 | 查 login 的 Redis 与 `account:<account>` 键 |
 | `500 login_unavailable` | login.rpc 没起 / 网络不通 / 超时 | `docker ps`、`netstat -an`(找 50000 端口) |
 | login 起不来,panic 点名 `AuthProviders.*` | 配置门禁拒绝(未展开的 `${...}`、生产模式内联密钥、http Endpoint 等) | 按 §B 改配置 |
@@ -193,8 +193,8 @@ curl -v -X POST http://${GATEWAY_HOST}:8081/api/login \
 > 2035 / 2036 是 `kLoginAuthProviderUnavailable` / `kLoginTokenIssueFailed`(2026-10-18 新增,导表结果即 2035 / 2036,
 > 见 `data/tip/Tip.xlsx` 与 `generated/code/proto/tip/login_error_tip.proto`)。旧版本文的「`code:0` 但 access_token 空」
 > 已不会出现:HTTP 路径签发失败现在回 2036。原「网关对 in-band 故障仍回 401」的已知残留已于同日收口:故障码回 500,
-> 见 `docs/design/third-party-login-end-to-end-design.md` §三。客户端收到 500 + 2035 / 2036 时,微信要重新拉起授权拿新 code,
-> 不能原样重发旧 code。
+> 见 `docs/design/third-party-login-end-to-end-design.md` §三。客户端收到 500 + 2035 / 2036 时,恢复登录要重新拉起渠道:
+> 微信重新授权拿新 code,QQ 重新拉起渠道取新凭据,不把旧 `auth_token` 原样重发作为恢复流程。QQ token 可复用不等于恢复流程应复用。
 
 ### C.3 验证账号映射
 

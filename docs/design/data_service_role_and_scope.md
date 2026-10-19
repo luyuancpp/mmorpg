@@ -159,6 +159,7 @@ Kafka:
 ### 已澄清(不再是缺口)
 - C++ 审计 topic 已按 `AuditTopicGeneration` 生成带代号的名字，部署渲染的 data-service 配置也包含 `Kafka.TopicGeneration`；旧版“生产者仍发裸 topic”的待办已完成。换代仍需同步配置并按审计 topic 换代 runbook 排空旧代。
 - ~~表 proto `transaction_log` 没有 `zone_id` 字段,消费者收到的 `zone_id` 被丢弃~~ —— **已过时**:`rollback_database_table.proto` 的 `transaction_log` 已有 `uint32 zone_id = 15`,`store.txLogHasZoneColumn` 因此为 true,`InsertBatchIgnore` 的列序里带着 `zone_id`,`NewTransactionLogStore` 那条 Error 不会打。回归用例 `TestTransactionLogStore_TimestampSecAndZoneLand` 直接断言这一列真的落库。
+- **玩家数据路由失败一律回 ErrCodeRedis(1),不另分码**(2026-10-19 裁决):LoadPlayerData / SavePlayerData / SetPlayerField / DeletePlayerData / GetPlayerField 与 CreatePlayerSnapshot 第 3 步,在路由失败(映射缺席、值畸形、mapping Redis 故障或熔断、ReadRequiresReady 回源失败、zone 未配集群)时都回 1。理由:in-band 数据路径上「没有映射」分不清是不存在的 id,还是「有数据、映射丢了」的事故,只能 fail-closed 当故障;4 不在 FaultCodeSet 里,改成 4 会让 rpc_inband_fault 与 inband_fault_total 哑掉,还会和快照的「无数据」4 混在一起;30 在当前部署(DevRedis + RouteStore.Mode: redis)下不可达。原因只在 `[DataRoute] <op> player=<id>:` 的 ERROR 日志里。账本读(GetPlayerAssetOpLedger / GetPlayerInboxLedger)路由失败回 Unavailable,message 带原因,绝不 NotFound(login 的 homezone.IsUnmapped 与 player_inbox 的 isHomeZoneUnmapped 会把 NotFound 当「无映射→回退」)。合服围栏是例外:写路径回 22(规则拒绝),见「写门禁契约」。等 Regions 或 ReadRequiresReady=true 上线、且这些 RPC 有了真实调用方时,再按调用方需要评估独立码;届时须同时改 FaultCodeSet,以及 snapshot_logic / rollback_logic 里把 err 再折回 1 的地方。
 
 ## 玩家路由 `ClientForPlayer` 的分布式审计(2026-10-18)
 
@@ -169,24 +170,52 @@ Kafka:
 - `player:{id}:<field>` 键族只有 data_service 自己写(Save / SetField / 回档 / debug_import),不在游戏存档主链上(主链是 `PlayerAllData:{id}`)。`LoadPlayerData` 的生产调用方只有 GM 快照、快照 diff 和 debug_fetch,都不用返回的 Version。
 - `ClientForPlayer` 真正的生产用途是账本读:`persisted_player_database.go` 读 `PlayerAllData:<id>`,`asset_sql_commit.go` 读 `player:{id}:asset_sql_commit`,供 guild / trade / mail / player_inbox 使用。它们读的是 scene 和 go/db 写的键,正确性完全依赖配置同址。
 
-### 已整改(2026-10-19;未编译、未测试,待 Codex 验证)
-| 问题 | 改法 | 位置 |
-|------|------|------|
-| `LoadPlayerData` 先读字段、再单独 GET 版本,两步之间有存盘就返回「旧数据 + 新版本」,调用方据此 CAS 会覆盖别人的写 | 指定字段:版本键与字段键同一条 MGET。全量:先读版本再 SCAN,MGET 带上版本键,前后版本不同时回 SCAN 之前的版本(只会多一次伪冲突) | `internal/logic/data_logic.go` |
-| 锁释放沿用请求 ctx,请求超时/取消后释放命令发不出去,两把锁挂到 `PlayerLockTTLSec` | `lockReleaseContext`:`context.WithoutCancel` + 1s 超时;第二把锁失败时回滚第一把也走它 | `internal/routing/router.go` |
-| 账本读的正确性只靠 DevRedis 与 C++ zoneredis、go/db RedisClient 同址同库,仓库里没有守卫;漂移后账本读全是 Nil → found=false,fail-closed 但只丢活性、很难发现 | 契约测试钉住三者同址且都是 DB 0 | `tools/scripts/tests/k8s_deploy_contract.tests.ps1` |
-| 合服第 2 步拷 blob 只看 `-migrate-player-blobs`、与 pin/copy 模式无关;两端 data Redis 不同又不搬时,改映射后 `LoadPlayerData` 读到「成功、空数据、Version=0」 | merge_zone `checkDataRedisBlobFlags`:声明了不同的 `-source-data-redis` / `-target-data-redis`,却既没给 `-migrate-player-blobs` 也没给 `-skip-player-blob-migration` 时,写前拒跑;`player-storage-placement.md` 更正「copy 模式无条件拷 blob」的错误说法 | `tools/merge_zone/main.go` |
-| Regions 表里同一 zone 出现两次时后写静默覆盖先写(debug_fetch 却取先写),空地址、空 zone 不报错 | `config.ValidateRegions`,`NewRouter` 在非 dev 分支建集群客户端之前校验,不合法拒启 | `internal/config/config.go`、`internal/routing/router.go` |
+### 已整改(2026-10-19,两批)
+第一批 Codex 已跑过定向与全量单测(见 PROGRESS 同日 Codex 条目);第二批(下表标「二」)未编译、未测试,待 Codex 验证。
 
-### 仍待整改(设计中)
-1. 全量读与 `DeletePlayerData` 靠 `SCAN player:{id}:*` 找键。单机 DevRedis 上 hash tag 不收窄,要扫整个共享 Redis(轮数约 = 全库键数 / 100,服务端 go-zero 默认 2s 截断)。删除会连带删掉别的模块的 `player:{id}:save_barrier` / `player:{id}:asset_sql_commit`(HASH),Save / SetField 能用 SET 把它们覆盖成 string。
-2. 写路径(Save / SetField / Delete)不看合服围栏 `merge:in_progress:{zone}`,拿锁后也不复核映射。只在 Regions 跨集群合服时会丢写。
-3. 路由错误(映射缺失、回源失败、zone 未配置集群、熔断)全部折叠成 `ErrCodeRedis`,server 层只回码、丢掉错误文本。
+| 批 | 问题 | 改法 | 位置 |
+|----|------|------|------|
+| 一 | `LoadPlayerData` 先读字段、再单独 GET 版本,两步之间有存盘就返回「旧数据 + 新版本」,调用方据此 CAS 会覆盖别人的写 | 指定字段:版本键与字段键同一条 MGET。全量读第二批改走字段索引(见下一行);存量玩家的 SCAN 回退保留「先读版本、版本变了回旧版本」 | `internal/logic/data_logic.go` |
+| 一 | 锁释放沿用请求 ctx,请求超时/取消后释放命令发不出去,两把锁挂到 `PlayerLockTTLSec` | `lockReleaseContext`:`context.WithoutCancel` + 1s 超时;第二把锁失败时回滚第一把也走它 | `internal/routing/router.go` |
+| 一 | 账本读的正确性只靠 DevRedis 与 C++ zoneredis、go/db RedisClient 同址同库,仓库里没有守卫;漂移后账本读全是 Nil → found=false,fail-closed 但只丢活性、很难发现 | 契约测试钉住三者同址且都是 DB 0 | `tools/scripts/tests/k8s_deploy_contract.tests.ps1` |
+| 一 | 合服第 2 步拷 blob 只看 `-migrate-player-blobs`、与 pin/copy 模式无关;两端 data Redis 不同又不搬时,改映射后 `LoadPlayerData` 读到「成功、空数据、Version=0」 | merge_zone `checkDataRedisBlobFlags`:声明了不同的 `-source-data-redis` / `-target-data-redis`,却既没给 `-migrate-player-blobs` 也没给 `-skip-player-blob-migration` 时,写前拒跑;`player-storage-placement.md` 更正「copy 模式无条件拷 blob」的错误说法 | `tools/merge_zone/main.go` |
+| 一 | Regions 表里同一 zone 出现两次时后写静默覆盖先写(debug_fetch 却取先写),空地址、空 zone 不报错 | `config.ValidateRegions`,`NewRouter` 在非 dev 分支建集群客户端之前校验,不合法拒启 | `internal/config/config.go`、`internal/routing/router.go` |
+| 二 | 全量读与 `DeletePlayerData` 靠 `SCAN player:{id}:*` 找键,单机 DevRedis 上扫整个共享 Redis;删除连带删掉别的模块的 `save_barrier` / `asset_sql_commit`(HASH),Save / SetField 能把它们覆盖成 string(C++ 存盘随后对该玩家永久失败) | 字段索引 `player:{id}:__fields` + 保留名 + 写前 TYPE 校验 + 删除只删自有 string 键,见下文「字段索引与保留名」 | `internal/logic/data_logic.go`、`internal/metrics/metrics.go` |
+| 二 | 写路径不看合服围栏、拿锁后不复核映射(Regions 跨集群合服时会丢写) | 写门禁 `Router.AcquirePlayerWriteLock` + merge_zone 拷 blob 前查数据锁,见下文「写门禁契约」 | `internal/routing/router.go`、`internal/logic/data_logic.go`、`internal/logic/rollback_logic.go`、`tools/merge_zone/player_blob_migrate.go` |
+| 二 | 路由错误全部折叠成 `ErrCodeRedis`,server 层丢掉错误文本 | **码不改**(裁决见「已澄清」),只加原因日志:in-band 入口经 `clientForPlayer` / 写门禁记 `[DataRoute] <op> player=<id>:`,快照第 3 步同样记;账本 SQL 证据读的 Unavailable message 带原因 | `internal/logic/data_logic.go`、`snapshot_logic.go`、`asset_sql_commit.go` |
+| 二 | merge_zone `scanPlayerKeys` 在 `ForEachMaster` 的并发回调里无锁读写同一个 map / slice | 加 `sync.Mutex` | `tools/merge_zone/player_blob_migrate.go` |
+
+### 字段索引与保留名(2026-10-19;未编译、未测试,待验证)
+- **结构**:`player:{id}:__fields`(HASH,与 `__version` / `__lock` / 字段键同 `{id}` slot),成员 `<字段名>` = 空串,保留成员 `__version` = 戳(索引在哪个版本上完整)。
+- **三种状态与可信判据**:版本、索引都不存在 = 无数据;TYPE 为 hash 且 `GET(__version)` 存在且 `HGET(__fields,'__version')` 与之逐字节相等 = 可信;其余(存量老玩家、戳失效、有索引无版本)= 未索引。
+- **三段 Lua 的职责**:
+  - `saveFieldsScript`:所有可失败检查(版本键类型与格式 ≤18 位、锁 token、期望版本、索引类型、每个字段键必须是 none / string)都在第一条 SET 之前,字段键类型不对回 -2(InvalidRequest,零副作用);新玩家或索引可信时把本次字段名加进索引并把戳盖成新版本,否则不加名字、索引存在就 DEL。
+  - `loadAllFieldsScript`(只读):无数据回空;可信时一段脚本读完字段集合、值与版本(同一瞬间,返回的版本可直接 CAS);未索引回版本,Go 侧退回 SCAN。
+  - `deletePlayerFieldsScript`:校验 token;可信时按索引删,否则 Go 侧 SCAN 收候选后回退模式删;两种模式都只删 TYPE 为 string 的键。
+- **存量玩家**:永远走 SCAN 回退(成本等于以前),读路径不「收养」—— 这族键没有生产写者,存量集合不再增长;收养要在读路径写元数据,还有「删除后重存版本回到同一值」的 ABA 缺陷。收敛靠指标 `data_service_player_fields_enum_total{op,path}`:`path="legacy_scan"` 长期为 0 后,再另起一批把回退改成 fail-closed。
+- **保留名**:`__` 前缀、`save_barrier`、`asset_sql_commit`(键名取自 `shared/savebarrier`、`shared/assetop` 的规范键函数)。Load(指定字段)/ Save / SetField 回 InvalidRequest,GetField 回错误(server 折成 1,既有口径)。今后新增 `player:{%d}:` 花括号键必须同时登记(见 `shared-redis-split-by-purpose.md` 2026-10-19 增补)。
+- **删除边界**:`KeysDeleted` = 实际删掉的字段 string 键数 + 版本键(索引不计);别的模块的 HASH 与保留名不删;只由带外半截写造成的「有字段、无版本」残留在全量读里不可见、删除时也不删;`__` 前缀的老字段不读、不删。
+- **带外写者**:任何绕过 `saveFieldsScript` 直接改 `__version` 的工具(当前只有 `cmd/debug_import` 的 player 模式,见下文「仍未处理」),必须同时 `DEL player:{id}:__fields` 或改走 `SavePlayerData`,否则旧戳可能与被重置的版本巧合相等、把带外写的字段藏掉;`saveFieldsScript` 的「不维护就删索引」只能在下一次正常存盘时修复。
+- **滚动升级**:旧副本只 INCR、不维护戳,索引自动失效、读方退回 SCAN,不会漏读;旧副本的 `DeletePlayerData` 仍会连带删掉别家 HASH(旧缺陷),升级完成后消失。
+
+### 写门禁契约(2026-10-19;未编译、未测试,待验证)
+- **顺序**:`Router.AcquirePlayerWriteLock` = 预检(`GetPlayerHomeZoneAndMergeFence`,home 与围栏同一段 Lua / 同一条 SQL)→ 按 home 取数据客户端 → 两把锁 → **数据锁 SETNX 成功之后**复核。复核看到围栏、home 变了或读失败,先释放两把锁再拒绝。Save / SetField / Delete 唯一的拿锁入口;读路径(Load / GetField / 账本读)不拦,继续用 `ClientForPlayer`。
+- **为什么复核必须晚于数据锁**:提交脚本校验数据锁 token,merge_zone 拷 blob 前 `EXISTS` 的也是数据锁。复核晚于数据锁时,立围栏之后才拿到锁的写者复核必然看见围栏;立围栏之前拿到锁的写者,要么在锁有效期内提交(锁在,合服拷贝中止),要么锁过期后提交被 token 拒绝。复核若早于数据锁,写者可能在 merge_zone 查锁之后才拿到锁、在拷贝之后提交。
+- **码**:围栏 / home 变化 → `ErrCodeZoneMergeInProgress`(22,规则拒绝,零写入,不进 FaultCodeSet);锁冲突 → 2;其余(Regions 下映射缺席、Redis 故障、回源失败、zone 未配集群)→ 1。回档里 22 不算「走到写那一步」,不触发写后帮会复查。指标 `data_service_player_lock_total{outcome="merge_fenced"}`、`save_player_data_total{outcome="merge_fenced"|"type_conflict"}`;日志 `[PlayerWriteLock]` / `[DataRoute]`。
+- **dev 与 Regions**:围栏两种模式同口径(合服窗口内 src / dst 两个 zone 的写入一律拒绝)。dev 模式下映射缺席照常可写:数据位置不依赖映射,这类玩家也不可能在合服清单里(清单按 `player:zone` 收集,登记受同一道围栏约束),行为与引入门禁之前一致;Regions 下映射缺席照旧是故障。
+- **代价**:每次写多两次 mapping Redis 往返(ReadRequiresReady=true 时是两次就绪读,缓存不可信时两次库点查,`route_read_total{path="home_fence"}` 会混入写门禁的读);复核耗时计入 3s 锁 TTL,慢到锁过期时提交被拒成 LockConflict,只损活性。db_first 下 SQL 回源读 `zone_merge_fence`,merge_zone 目前只写 Redis 围栏,沿用「第 2 批落地前禁止 merge_zone 写模式」的冻结前提。
+- **部署**:merge_zone 的拷贝前查锁只有在所有 data_service 副本都含写门禁时才成立;Regions 下合服(含 unmerge)之前必须确认副本已全部升级。
+
+### 仍未处理
+- `cmd/debug_import` 的 player 模式仍裸写字段、把 `__version` 重置为 `"1"`、先写数据后登记映射,不维护字段索引(见上文「带外写者」)。该文件当前有其他会话的未提交改动,本批没有碰;修法是改走 `logic.SavePlayerData`(先登记映射再写,版本 INCR)或至少写前 `DEL player:{id}:__fields`。在修好之前不要对已有 data_service 数据的玩家重复导入。
+- 真 Redis 7.2 上的 Lua 行为(TYPE 的 `.ok`、`false` 占位、局部函数)只在 miniredis 上测过;Cluster 上「同 slot 的未声明键」也没实测。
 
 ### 启用 Regions(去掉 DevRedis)之前必须先处理
-- 上面「仍待整改」三项。
 - zone → 集群表只在启动时建一次、不热更新:改 zone 归属必须停写、搬完 `player:{id}:*`、所有副本同时换配置后再起,不能滚动改(见 `RegionConfig` 注释)。
-- 跨集群合服必须给全 `-source-data-redis` / `-target-data-redis`,并用 copy 模式加 `-migrate-player-blobs`。
+- 跨集群合服必须给全 `-source-data-redis` / `-target-data-redis`,并用 copy 模式加 `-migrate-player-blobs`;工具内拷贝遇到没有 `player:{id}:*` 键的清单玩家会整步中止,真实 zone 跑不通,目前只能带外搬,带外搬必须在立围栏之后、确认每名玩家的数据锁不在(或至少等 `PlayerLockTTLSec`)再搬。合服拷过去的玩家在目标端没有字段索引,走 SCAN 回退(Cluster 上按 slot 只扫单节点);要更快再做索引重建。
+- 合服前确认所有 data_service 副本都已含写门禁,旧副本不拦写。
+- 续跑时运维 DEL 围栏到重新立起之间写进源区的数据,第 2 步已标完成时不会被重拷。
+- 同前缀的 HASH 键(`save_barrier`、`asset_sql_commit`)不随 blob 拷贝。
 - `RouteStore.Mode=db_first` 之后,merge_zone 改映射仍只写 Redis、不写 `player_route`,目前只靠文档化的冻结窗口约束,工具里没有守卫。
 - unmerge 改回映射用的是 MGET + SET 而不是 CAS,目标集群里合服后写入的 blob 也不拷回。
 - 契约测试里 DevRedis 同址那条用例会先变红,要为 Regions 另写一条同址契约。
@@ -199,8 +228,8 @@ Kafka:
 - 客户端不能经 client_rpc_router 调 DataService(路由表 `ClientProtocol=false`,转发被拒)。
 
 ### 其余低优先级发现(未整改,记录备查)
-- merge_zone `scanPlayerKeys` 在 `ForEachMaster` 的并发回调里无锁读写同一个 map / slice;只有多主 Cluster 且该 slot 正在迁移时才可能触发。
 - `AcquirePlayerLock` 的 SET NX 与 `saveFieldsScript` 在回包丢失时会被 Redis 客户端自动重发,可能回假的 LockConflict(锁残留到 TTL)或假的 VersionMismatch(写入其实成功)。
 - `__version` 被 `DeletePlayerData` 删掉后从 0 重计,有 ABA;`expected_version=0` 跳过校验,首次存盘不受乐观锁保护。
-- `cmd/debug_import` 先裸写数据、后登记映射,并把 `__version` 重置为 1。
 - redis 模式下映射写入没有 WAITAOF,节点级崩溃可能丢掉合服最后一批映射改写,续跑时不复核。
+- 回档里 SavePlayerData 回 LockConflict(2) 也是零写入,但仍记成 writeAttempted=true,可能误触发写后复查、误报 29(本批只修了 22)。
+- `GetPlayerField` 的参数错误(保留名)被 server 折成 1,业务拒绝被多报成故障(既有口径)。

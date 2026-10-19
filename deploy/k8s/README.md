@@ -451,6 +451,12 @@ pwsh -File tools/scripts/dev_tools.ps1 -Command k8s-all-down -ZonesConfigPath de
     配了 host 就必须给 trusted proxies(preflight 报错,否则全体玩家共用一个限流桶,D91)。留空 host 不生成、也**不删除**已有 Ingress。
   - `-LoginDevPasswordAuth`(switch):集群内 login 的开发口令认证,**只允许 `-ReleaseProfile dev`**;共享口令读环境变量
     `MMORPG_LOGIN_DEV_PASSWORD_SHARED_SECRET`,经 Secret `login-dev-password` 注入,绝不进 ConfigMap。不传 = login 没有任何口令认证配置(fail-closed)。
+  - 第三方登录:`-LoginWeChatAppId` / `-LoginWeChatEndpoint` / `-LoginWeChatAllowOpenId`、`-LoginQQAppId` / `-LoginQQEndpoint` / `-LoginQQAllowOpenId`。
+    AppId 留空不启用,Endpoint 留空使用生产地址,AllowOpenId 才允许 unionid 缺失时使用 openid。微信密钥只从部署机环境变量
+    `MMORPG_LOGIN_WECHAT_APP_SECRET` 经 Secret `login-oauth` 注入。参数不粘滞,重新部署与 zone 回滚均须照传。
+  - `-ConfirmLoginAuthProviderChange`(switch):确认本次部署可关闭或改动已开启的第三方登录。未确认时,部署在任何写操作之前、回滚在第 0 步停服之前核对线上现状;
+    漏传 AppId / Endpoint / AllowOpenId、改 AppId 或现状判不出时拒绝,并提示照传参数。`-DryRun` 不读集群;存档重跑与确认开关的边界见
+    [微信 / QQ 沙盒手册](../../docs/ops/wechat-qq-sandbox-runbook.md) §B。
   - `-AllowDisruptiveSwitch`(switch):确认本次就是要切换形态或改客户端地址来源(整台 gate 踢人、在打的战斗作废)。
     不给时,只要会踢人的另一种形态在集群里存在,或现有 gate / battle 的入口形态与地址来源会被改写,部署就在任何写操作之前整条拒绝。只在维护窗口里显式加。
   - `-ConfirmRedisCoreRestart`(switch,2026-10-15 P0-E):确认本次 `infra-up` / 不带 `-SkipInfra` 的 `all-up` 可以重启共享 Redis(redis-0,全服登录中断并重放 AOF)。
@@ -470,14 +476,14 @@ pwsh -File tools/scripts/dev_tools.ps1 -Command k8s-all-down -ZonesConfigPath de
   - `dev_tools.ps1` 与 `k8s_image.ps1` 的 `-GateRouterMode`、`-GateServiceType` 与全部集群外入口参数一律**默认留空 = 不覆盖**,非空才透传
     (`-GateNodePortBase` 用 `-1` 表示未指定);默认值只留在 `k8s_deploy.ps1` 一处。本文「好友 friend」一节里"`dev_tools.ps1` 不透传 `-GateRouterMode`"的说法已作废。
   - `dev_tools.ps1` 的 `k8s-infra-up` / `k8s-zone-up` / `k8s-all-up` 透传全部参数。`k8s-zone-rollback` 转发 `-GateRouterMode`、gate / Ingress 这组、
-    `-GateServiceType`、`-RequireClientEndpoint`、`-LoginDevPasswordAuth`、`-AllowDisruptiveSwitch`、
+    `-GateServiceType`、`-RequireClientEndpoint`、`-LoginDevPasswordAuth`、第三方登录六参数与 `-ConfirmLoginAuthProviderChange`、`-AllowDisruptiveSwitch`、
     `-RollbackConfirmNoGatewayIngress`(转为回滚脚本的 `-ConfirmNoGatewayIngress`,`dev_tools.ps1:1602`;namespace 已删、第 0 步要求对 Ingress 表态时用,
     见 `docs/design/zone_data_rollback.md`「## 3. 整 Zone 灾难恢复级回档」下的「2026-09-29 修订」)、显式给的 `-ReleaseProfile` 与 `-KubeContext` / `-KubeConfig`,
     **不转发 `-BattleOrchestrator`**(zone 回滚不碰 battle 全局池)。以上为主要转发项,完整清单以 `dev_tools.ps1:1592-1617` 为准。
   - `k8s_image.ps1`(以及 `dev_tools.ps1` 的 `k8s-image-*` / `k8s-release-*`)只透传 gate / battle 侧 6 个参数(`-ClientEntryMode`、`-ClientPublicHost`、
     `-GateClientHostTemplate`、`-GateNodePortBase`、`-GateExternalTrafficPolicy`、`-BattleOrchestrator`),外加 `-GateRouterMode`、`-AllowDisruptiveSwitch`、
     `-RequireClientEndpoint`(经这条路只参与预检、不改写 login / scene_manager 的 ConfigMap,给了在入口打告警)。
-    `-Gateway*` 与 `-LoginDevPasswordAuth` 经 `k8s-image-*` / `k8s-release-*` **显式给了即报错**(`dev_tools.ps1:791-801`):`k8s_image.ps1` 不部署 Go / Java 服务,
+    `-Gateway*`、`-LoginDevPasswordAuth`、第三方登录六参数与 `-ConfirmLoginAuthProviderChange` 经 `k8s-image-*` / `k8s-release-*` **显式给了即报错**:`k8s_image.ps1` 不部署 Go / Java 服务,
     要用请走 `k8s-zone-up` / `k8s-all-up` 或直接调 `k8s_deploy.ps1`。`-BattleOrchestrator` 经这条路只对 `release-all`(不带 `-SkipInfra`)生效。
   - `-GateServiceType` 默认值统一为留空、跟随 `k8s_deploy.ps1`。行为变化只有一处:经 `k8s_image.ps1`、`-OpsProfile custom`、没显式给 `-GateServiceType` 时,
     由原来的 `LoadBalancer` 变为 `NodePort`(managed-cloud / bare-metal 两档由 `Apply-OpsProfileDefaults` 强制,不变)。`k8s_image.ps1` 默认

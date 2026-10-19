@@ -12071,3 +12071,125 @@ PROGRESS 一直没有条目)。上面 2026-09-21 条里"第 7–9 步未跑""修
 - Java0.1.0-SNAPSHOT 最终 SAVE 持久补偿 v4 私有候选已真实编译；首轮121项110通过、3失败、8条件跳过，首错和XML保留。3失败均为旧测试夹具未建正式新表/未显式模拟无待办；v5仅修两测试夹具并增加缺表拒启回归，生产代码相对v4零变化，27有效文件完整补丁仍待正式应用。将只补跑受影响两类，再从未执行的下游19模块续建；原SQL74通过/7条件跳过不当真TiDB验收。
 - 主仓 Java gateway/JDK23 已真实 clean package0，204通过/5条件跳过；root独立补充校验实际根META-INF/build-info，DCCD4044…89103，原包装postcheck错误收据保留，无需重跑209项。客户端没有本轮可见契约变更，历史44项按原输入保留。
 - 真实双区旧实例复活、延迟第二表ACK和跨区资产恰一次仍未运行，无实际 SourceReceipt；未开本轮基础设施，未暂停/终止他人进程，未提交/推送/打标签。人类已授权统一协调与最小修复并要求继续做完，root直接接修复与串行续验，无需再次等原写方交接。
+
+## 2026-10-19 Codex：客户端登录 500 交接复核与服务端说明补漏
+
+- **核对**：runbook §C.2 / §G.3 已将 2035 / 2036 / 2021 / 2022 的故障返回写为 JSON `code:500`；`tip-code-axis.md` §2.10 已明确微信失败重试须重新取 code，QQ 有效 access_token 可重发。本轮未重复应用既有补丁，未读取或修改独立客户端。
+- **补漏**：`auth-provider-framework.md` 仍写网关将所有 in-band 错误回 401，现改为两版均消费生成 `TipFaults`，故障回 500、其余回 401、HTTP 状态仍为 200；第三方登录设计、码轴设计及 `LoginService` 注释去掉「客户端按 tip 码选文案」的既成事实表述，明确当前客户端只按 JSON code 分支、没有通用 tip 文案表，tip 保留用于排障。只改文档和注释，无运行逻辑变化。
+- **客户端边界**：`client-login-500-text.patch` 仍是可选补丁，未获客户端修改任务授权，本轮未应用；生成物刷新时显式传 `-ProtoRoot` 的交接要求保留，未运行客户端生成或 Unity。
+- **Java 版**：0.1.0-SNAPSHOT；只读核对既有 `PARITY.md` 的登录故障映射行与 `docs/reference/mmorpg-client-contract-login.md` §11，均已有业务拒绝 401 / 故障 500 说明。本轮没有新增功能或契约变更，未改 Java 仓。
+- **验证范围**：本轮只做静态核对与差异检查，不执行构建、测试或压测；历史验证仍以各自原始回执为准。当前聊天无附着 PR，且本机无 gh 命令，未读取远端 PR / Issue；未提交、推送或打标签。
+
+## 2026-10-19 Codex：旧 gate kill switch 拒绝点前移当前源码验证通过
+
+- **范围与状态**：接续 killswitch-reject-before-auth 交接，验证旧 gate 凭据登录在认证前拒绝、HTTP 与 gate access_token 绑定继续放行、遥测 label 收敛，以及 qq 的认证故障映射仍保留。三补丁已由此前流程按约定顺序 check/apply（六步原生 0），代码已随 8b9592de3 入库；本轮没有重打补丁、修改业务或测试源码、重新生成协议、提交、推送或打标签。四个重叠文件当前改动均在主线，未覆盖任何既有工作。
+- **本轮实际运行**：Go 1.27.2 windows/amd64，进程级 GOTOOLCHAIN=local、GOFLAGS=-p=1 -mod=readonly、GOPROXY=off；本批六个 Go 文件 gofmt -l 退出 0 且零输出；go vet ./... 退出 0；定向回归 17 个顶层＋35 个子测试通过，0 失败/跳过；go test ./... -count=1 -timeout=120s -json 退出 0，519 个顶层＋375 个子测试通过，0 失败、4 个条件跳过，21 个有测试包通过，16 个无测试文件包不计成用例跳过；go build ./... 退出 0。关闭开关时回 2015、第三方认证器未调用、别人持有的账号锁原样保留，以及两种 gate 的 access_token 绑定均已实际通过，authFailureTip 及 qq 的七个错误语义用例也通过。
+- **跳过与边界**：四个原有可选集成用例分别缺真实 Kafka broker、只读 MySQL 密码账号、专用 Redis 夹具、SQL＋Redis 组合夹具；未设置这些环境门禁，未主动跳过断言或关闭 vet。未执行修复前红态、-race、实栈或压测；本条只关闭该 kill switch 修复的当前 Go 验证，不代替 qq 更大范围交接的 Java/K8s/隔离红态等验收。
+- **来源**：go/login、go/shared、go/proto 的 668 个 Go/module/yaml 输入首终 SHA 零变化。共享 HEAD 从 1fc103dce 被其他流程推进至 8767c5027，本轮未执行 commit，不能将整个仓库称为冻结源码树。原始 stdout、五步退出码、输入清单、测试逐项计数均在 build/verification/killswitch-current-20261019T075146222Z/（summary.json、test-counts.json）。原拒绝点 .md/.patch 在原 notes 位置及同名查找中均已不存在，无法重新计算原补丁 SHA；此前 patch-receipt.json 保留 78D746974C0B941FDA2777DF000DAD03042A0EBB206E600BB403F3B932B03B05，本轮没有改写或重新生成该补丁。
+- **Java 版**：对应 0.1.0-SNAPSHOT；本项不适用，Java 没有旧 gate 开关与按路径指标，原交接已有 PARITY 登记。本轮未修改或构建独立 Java 版，不宣称 Java 新验收。
+
+## 2026-10-19 Codex：第三方登录包装入口契约验收首轮停止（5/9 脚本，未全部验收）
+
+- **范围与现状**：按共享笔记 `login-auth-wrapper-codex-verify.md`，在仓库根目录用 `pwsh -NoProfile -NonInteractive -File` 顺序运行完整脚本，非 Pester。两份补丁 SHA256 前缀 `9206525d` / `c4eedb4c` 的最终内容已随 `e611b5d8d` 入库，交接中的“尚未提交”已过时；本聊天未创建提交、推送或标签。
+- **实际结果**：前四份均原生退出 0、fail=0：`k8s_login_auth_provider_guard` 39/39、`k8s_zone_rollback_gate_router_mode` 65/65、`k8s_zone_rollback_discard` 27/27、`k8s_client_entry_contract` 109/109。第五份 `k8s_deploy_contract` 原生退出 1，241 项中 239 通过、2 失败；本轮五份合计 481 项、479 通过、2 失败。未超时，未自动重试、未改断言。
+- **失败**：均为新增的 D1 1b-3 路由开关粘滞核对用例。纯函数用例传 `Mode=DB_FIRST` / `Arm=True`，期望 `DB_FIRST?/True?`，实际 `/`（测试源第 6712 行）；集群校验用例期望错误文本匹配 `线上取值认不出`，实际未匹配（第 6762 行）。这是本轮运行结果，尚未诊断根因或修改实现。
+- **停止与未运行**：依交接“不要自动重试，也不要改断言”和 AGENTS.md §10.2 停止，等待负责人决定后续修复与续验。剩余 `dev_tools_merge_zone_contract`、`k8s_migrate_gate`、`k8s_gate_drain`、`lobby_authority_render` 四份未运行。没有协议生成、C++/Go/Java 编译、实集群操作或压测。
+- **并行输入边界**：运行前 HEAD `1fc103dce`，结束后 `8767c5027`。212 个记录输入中 7 个出现并行变化，包括 `k8s_deploy.ps1`、两份 Redis 清单、K8s README、`k8s_route_tool.ps1` 及两份未执行脚本；测试目录文件前后哈希未变。被测部署脚本变化的原件已保存，不能把本轮结果当成修改后当前工作区的验收，也不能据此断定失败在当前版本仍存在。
+- **采集限制**：本聊天采集器未对齐子进程中文输出编码，保存的 stdout 中文有损；原件保持不动，原始字节未保留，不能恢复为完整运行原文。原生退出码及 ASCII total/pass/fail 完整；失败断言中文从哈希未变的测试源码补录到 `failure-source-supplement.txt`，明确标为源码补录，没有冒称恢复原始日志，也没有为修复日志而重跑失败测试。
+- **证据**：`build/verification/login-auth-wrapper-20261019T074508846Z/`：五份 stdout/stderr、`results.json`、`summary.json`、`failures.json`、源码补录、前后输入哈希及状态、并行部署提交差异。
+- **其余边界**：本聊天只保存证据并追加本条，未改部署脚本、测试、`docs/design/zone_data_rollback.md`、`deploy/k8s/README.md` 或 Java `PARITY.md`；这些共享文件的他人改动保留。Java 版不适用本次本仓部署工具包装入口验收，未运行 Java 测试。
+
+## 2026-10-19 登记：开服前由 AI 复核「登录取逻辑服 / 物理服是不是瓶颈、能不能水平扩展」（Claude，只改文档）
+
+- **负责人要求**：本会话关于登录取逻辑服 / 物理服的分析、改动与决定全部入文档；开服前要由 AI 再查一遍这个问题，不能沿用 2026-10-18 的结论。
+- **入文档情况**（本会话全部结论的落点）：分析与撞墙顺序、Cluster 阻塞点、对 §12 的更正、角色列表不去掉的核对与决定 → `docs/design/player-route-mapping-durability-proposal.md` §12.1；问答要点 → `docs/handoff/zone-home-and-physical-storage-conversation-20260924.md`「2026-10-18 续录」；gate 目录缓存与选 gate 规则 → `docs/design/gate-load-balancing-design.md`；改动、验证命令与 Java 状态 → 本文件 2026-10-18「login 登录吞吐」、2026-10-19「登录吞吐第二轮」「scene_manager 跨 zone 重定向……」「核对：gate 上 access_token 那次 Login……」「负责人决定：登录两份角色列表保持现状」各条；Java 对齐 → Java 仓 `PARITY.md` 末行。
+- **本条新增**：
+  - `docs/design/player-route-mapping-durability-proposal.md` 新增 §12.2「上线前复核步骤」：读路径、存储拓扑、db_first、gate 侧、压测证据、写回六步；§12.1 加「开服前复核」指针。
+  - `docs/design/tidb-phase1-and-launch-readiness.md` §7 开服准备清单新增 L-18（P1）。
+  - `docs/ops/release-checklist.md` A.1 加一条复核项。
+  - 对话续录加「上线前要再查一遍」。
+- **开服前要先补的前置**：`stress_summarize.ps1` 目前不汇总 data_service / scene_manager 的归属查询耗时与 mapping Redis 的 ops / CPU / 延迟，L-14 压测前要先补，否则 L-18 没有数据可答。
+- 无代码改动，不需要 Codex 验证。Java 版：L-18 复核时同步核对（§12.2 第 6 步）；对应 Java 版本号 0.1.0-SNAPSHOT。
+
+## 2026-10-19 全仓数据审计：修复状态汇总与上线前复查计划（Claude，只改文档）
+
+- **范围**：`docs/design/data-overwrite-rollback-audit-20261018.md` 文首加一行状态，新增两节。
+  - §7「修复与验证状态」：§2.1（含两个派生后续）、§2.2、§2.3 的修复，各自的设计 / 进度条目和 Codex 验证现状，统一汇总成一张表。§2.4、§2.5 尚未动手。
+  - §8「上线前复查计划」：结论是上线前需要再查，但不重复第一轮的分区查找。按顺序做五件事：
+    1. 验完已落的修复；
+    2. 修剩余的 medium；
+    3. 第二轮只读审计：增量对抗评审、补覆盖、复核 23 条 low、换视角连续查找、Java 版同类审计；
+    4. 运行期一致性压测，L2–L4；
+    5. 代码冻结后做一次增量审计。
+- **验证**：只改文档，没有代码改动，不需要交给 Codex。§2.2 的 7 步验证、§2.1 遗留的测试与真实环境演练，以及 `EnterFenceEcs.LoadCallbackBindsNewestAdmitted` 的夹具决策，都仍然待办，见审计 §7 / §8。
+- **Java 版（AGENTS §12）**：本条不涉及代码。§8 第 3 步把 Java 版同类审计列为上线前必做项，Java 仓库尚未审计。
+
+## 2026-10-19 Codex：第三方登录契约验收失败证据补记（未重跑）
+
+- 前条之后整理证据时，`k8s_deploy_contract.tests.ps1` 在停止后的快照之外又出现他人修改；“测试文件哈希未变”仅适用于运行前与停止时的两份哈希清单，不能延伸到补录时的当前源码。前条所列行号是当时位置，后续按用例名与断言锚点定位。
+- 已按 AST 锚点重新提取两条失败断言，保存停止后观察源码副本与哈希；`failure-source-supplement.txt`、`failures.json` 和 `summary.json` 明确标注它们是停止后源码观察，不是原始运行输出恢复，也不是整份运行源码快照。stdout/stderr 原件与 481 项、479 通过、2 失败及 5/9 脚本的结果保持不动。
+- 未重跑测试、未改源码或断言；本轮没有完成九份脚本或当前工作区验收。
+
+## 2026-10-19 D1 剩余批次续:第一波补齐与 1b-1 接线、1b-3 部署载体落码(Claude,未编译、未测试,待 Codex 验证)
+
+- **补齐**(上一条记的两个 403 失败代理已重跑完成):
+  - merge_zone SQL 写入层底座:`tools/merge_zone/route_store.go`(唯一写路由表的文件,开写前 P1–P5 探针、围栏获取 / 续期 / 释放与 `routeFenceGuard`、全部批原语)、`route_publish.go`(镜像 shared 的发布脚本 / 回复判定 / 镜像脚本,单连接 pipeline + WAITAOF、catchUp)、`route_mirror_test.go`(按源码逐字比对 shared)、`it_guard_test.go`(每个集成用例必须调 requireIT)、`main.go`(`-route-source` 必填等参数;**本波 db 源先一律拒绝**,下一波接好写入点后删)。**影响**:从这一版起 merge_zone 不带 `-route-source` 直接拒绝,dev_tools / runbook 命令要等下一波补参数。
+  - leader 库原语:`go/data_service/internal/store/route_reconcile.go`(R23–R30:库时钟租约、AdvanceReconcile 按水位键 / 世代判回档、FreezeByLeader、按片增量扫描、NewRouteLeaderID)及测试;`route_store_test.go` 的 AST 允许集合加该文件。
+- **1b-1 收尾接线**:`internal/routetool/rewarm.go`(新,单条 DEL 撤三把控制键、`-wait` 轮询新标记)、`auditor.go`(`-require-maprev`,新类别 redis_rev_behind)、`freeze.go`(unfreeze 的水位键下限与重置出口)、`routetoolcli/cli.go`;runbook §9.3 / §9.4 补用法。
+- **1b-3 部署载体**:`k8s_deploy.ps1` 新增 `-RouteStoreMode` / `-RouteReconcileArm` / `-RouteReadRequiresReady` / `-DbPlacementRequireRouteReady` / `-GuildRequireRouteReady` / `-ConfirmRouteSwitchChange`(缺省 redis / false;粘滞防翻转读全部 zone;非法组合拒绝;Redis 连接总账计入 leader 池)与契约测试 11 例;`deploy/k8s/data-service-route-alerts.yaml`(新,15 条);`tools/scripts/k8s_route_tool.ps1`(新,一次性 Job 入口)与测试;`deploy/k8s/manifests/go-svc/data-service-route-tool.yaml`(新);两份清库脚本在 FLUSHALL 前探测在任 leader;redis.yaml / redis-ha.yaml / docker-compose.yml 加 `--enable-debug-command no`(**redis.yaml 改了 Pod 模板,下次 infra-up 要带 `-ConfirmRedisCoreRestart`,放维护窗口**)。
+- **共享底座修正**:`MergeFenceHolderEpoch` 改为只认不带引号的整数字面量(原实现经 json.Number 会接受 `"7"`,与 Lua 判定分叉);route.go 两处过时注释加更正注。
+- **提醒**:部分文件已被本机自动保存提交 `1fc103dce` / `8767c5027` / `e611b5d8d` 收进(不是本会话提交的),Codex 以工作区为准。
+- **仍未做**:leader 主体(在跑)、merge_zone 各写入点、relocate / R8 / dev_tools 转发、全量评审与修复、提案 §13 与文档、PARITY。
+
+## 2026-10-19 Codex：登录故障 500 交接续验，Go 与本仓网关通过，starter 插件依赖阻断
+
+- **范围**：核对第三方登录 / tip fault 补丁与最新共享笔记；业务代码及 401→500 运维订正已随 e611b5d8d 入库，未重复打全补丁。共享补丁现为 18 文件、SHA256 9C6749A20CD49C5B5F265AED1E55FBB229BFB81DED85711A02A602305181B16B；补入缺失的重试、message 取法、正式交接文档与索引，保留他线文档和源码改动。未读取或修改客户端，未提交、推送、打标签。
+- **Go 实际证据**：隔离 overlay 只恢复目录读失败 transport error、HTTP 签发失败伪成功两处旧行为；两例分别命中预期断言 FAIL，原生 exit 1，非编译或超时失败。当前 7 例语义定向原生 exit 0；随后 go vet ./...、go build ./...、go test ./... -count=1 -timeout=180s -json 均原生 exit 0。全量 519 个顶层及 375 个子测试通过，0 失败，4 个真实依赖环境用例跳过（Kafka、只读 SQL、跨副本真实 Redis 配额及 SQL 装配）。各轮 login/shared/proto 输入首尾无漂移。定向测试后的外层打印发生 GBK 编码错误，原生成功回执及日志保留；仅修后续运行器 stdout 编码，未重跑成功项。
+- **本仓 Java 实际证据**：将当前原仓字节复制到隔离目录（均无 target），独立运行离线 Maven。gateway_node 全量 209 项中 204 通过、5 个 MySQL/TiDB 实库用例因环境条件跳过，0 失败/错误；其中 LoginServiceTest 69、RefreshTokenServiceTest 10、LoginEndpointIntegrationTest 8 全过。端点验证使用真实 Spring/MockMvc 与 mock gRPC，不是实际网络全栈冒烟。config_node 367 份 Java 源编译成功，无测试。构建前后私有输入与原仓来源均无漂移。
+- **停止点**：starter 的 DevLoginProfileGateTest 在 Surefire 3.5.4 加载时原生 exit 1；本机 Maven 缓存只有插件 JAR、没有其 POM 与 maven-surefire-common，缺 org/apache/maven/plugin/surefire/SurefireReportParameters。生产与测试源码已编译，但测试未开始。本轮没有自动重试、下载依赖或改版本，依 AGENTS.md §10.2 保留失败并等待决策；K8s 与真实全栈/渠道冒烟不在此失败后继续启动。
+- **导表与契约历史**：原正式服务端导表 42 表、11 部署、0 失败及 pytest 147 通过保留为历史证据。本轮未重跑生成；当前 Go/Java 45 故障码集合一致，三份 Java TipFaults 字节相同（ABAB951C…FA63B）。旧导表 214 输入中 5 个位序生成相关文件已有他线变化，不把旧结果扩大成当前全部导表器证据；本次 tip 相关源与产物一致。网关 fault 500 本身不修改客户端可见 proto 结构。
+- **独立 Java 版 0.1.0-SNAPSHOT**：已静态复核双源 ContractSync/fullcheck 成功回执，以及 login 四组 30 项、LoginHttpServiceTest 12 项历史通过证据；本次关键 107 输入与对应隔离构建快照相同。原全 reactor 因无关 trade/robot 测试失败的 exit 1 保留，不称整版全绿。另确认 SOURCE.properties 仍记 dirty 快照基线 8b9592de3，而该 Git 提交不含 TipFaults，CI sparse-checkout 也缺 generated/code/java/tip；clean Git 来源及 CI 闭环待修，未擅改同步产物或来源提交。
+- **证据**：build/verification/tip-fault-resume-20261019T075057587Z/summary.json、go-red.json、go-targeted.json 与编码附注、go-vet.json、go-build.json、go-all.json/log、java-main-gateway.json、java-main-config.json、java-main-starter.json/log、main-java-snapshots.json；历史证据索引见交接文档。本轮不宣称真实微信/QQ、完整 HTTP→gate、实库或压测通过。
+
+## 2026-10-19 Codex：旧 gate kill switch 红绿验证完成于固定输入，收尾发现共享依赖新变更待决
+
+- **范围与基线**：接手 `legacy-gate-killswitch-fix.md`。原 recursing-elion worktree 已是干净的 bf3c60632 旧基线；三补丁实际已按原顺序合入主仓，核心修复由后续提交保存，本聊天未重复 apply、未提交。现有三值分类、access_token 绑定豁免、认证前拒绝和有界指标标签均保留。
+- **可复用实测**：只读复核 `build/verification/tip-fault-resume-20261019T075057587Z/` 原件：`go vet ./...`、`go build ./...`、`go test ./... -count=1 -timeout=180s -json` 均 native 0。login 全量 519 个顶层、375 个子用例通过，0 失败、4 条外部环境条件跳过；本任务 clientplayerlogin/config 两包为 179 顶层、160 子用例通过，0 失败、0 跳过。没有重复开启这些已完成的绿测。
+- **本轮红灯**：Go 1.27.2 windows/amd64；只用私有 Go overlay 将拒绝规则恢复为所有 gate 请求受开关控制，真实源码与测试不改动。`TestLegacyGateLoginDisabled_GateAccessTokenLoginStillBindsSession` 的 fenced_gate=false/true 两个子例均在预期断言处因 tip 2015 失败，native 1，无超时。两种 gate 的新流程均能稳定复现原缺陷。红灯前后 672 项输入无漂移，且与上述三份绿色回执的前后清单逐项相同。
+- **格式边界**：本批六个 Go 文件格式正常。原交接的目录级 gofmt 仍列出两份既有、未修改的 createplayer_name_test.go/createplayer_seed.go，各只有一处注释中连续单引号被排成右双引号；差异保存在 existing-format.patch，本聊天未夹带格式化。
+- **停止条件**：最终来源核对时，其他会话已修改 `go/shared/placement/route.go`、`route_ready.go`，其中后者包含 MergeFenceHolderEpoch 的实际代码变化。独立汇总器在 `assert current == red_sources` 拒绝当前完整闭包；保留拒绝原件与 concurrent-dependency-change.patch，没有把旧绿灯冒称当前版本通过，也未自动重跑。已按 AGENTS.md §10.2 请求是否按最新依赖补验的决定。
+- **证据**：`go/login/build/verification/legacy-gate-killswitch-20261019T075258200Z/summary.json`、red-result.json、red.log、red-source-before.json、gofmt.log、existing-format.patch；原汇总器与拒绝保持不变。该 summary 明确 current_complete_closure_passed=false。旧助手重名、旧 Session API、令牌夹具挂起等历史失败不改判。
+- **Java 版**：0.1.0-SNAPSHOT，既有 PARITY 两行登记无此 kill switch/路径指标、不适用；本次未改 Java 代码。未运行真实栈或压测，未生成协议，未操作客户端，未提交/push/tag。
+## 2026-10-19 Codex：18 文件网关 fault 500 交接补丁核对与当前导表器验证
+
+- **补丁身份**：从 Windows Store Claude 的 side-session-notes 找到新版 18 文件补丁，SHA256 为 9C6749A20CD49C5B5F265AED1E55FBB229BFB81DED85711A02A602305181B16B；当前 notes 第 14 行已写 18 文件与对应 SHA 前缀。业务、测试、生成器与 CI 已在主线；没有重复 apply。另一验收聊天同期补齐 handoff-tip-fault-gateway-500-20261018.md、README 和设计 §2.10，本聊天保留其改动，仅在交接 §6 追加当前证据。
+- **当前实跑**：导表器 pytest -q 原生 0，147 通过、0 失败/错误/跳过（tests/133 + 根真实表冒烟14）。174 项已列输入首终 SHA 零漂移，测试未在 CWD 生成 tip/。在独立目录复制 state 后正规调用 generate_tip_enums，34 次逐字节对拍全部一致，覆盖 tip proto、state、文案、Go 两份副本及 Java 四份副本，45 个故障码的码值/组名/码名相同。没有重跑全量 protoc 或写真实生成树，不把纯 tip 对拍称为全量导表。
+- **复用证据**：独立只读复核本仓网关历史 clean package 原生 0，209 项中204通过/5环境条件跳过，本批87项全部通过；当前唯一源码差异严格确认为一句 Javadoc。同期外线 config_node 编367源原生0、无测试，372项来源SHA匹配。Java版0.1.0-SNAPSHOT本批login四类30项、LoginHttpServiceTest12项通过，适用来源条件以audit为准，不把全reactor失败改判成功。
+- **剩余**：starter 在Surefire依赖加载前失败的原件保留，本聊天未重试或补缓存；独立Java CI两份主源稀疏清单缺 generated/code/java/tip，SOURCE仍为旧提交加dirty来源，clean Git来源/CI闭环待修；真实HTTP全栈、微信/QQ联调与压测未验。不读取或修改独立客户端，不提交/push/tag。
+- **原件**：build/verification/tip-fault-gateway-500-current-20261019/{result.json,pytest.xml,pytest.log,tip-comparisons.json,inputs-before.json,inputs-after.json}；build/verification/tip-fault-audit-20261019/receipt.json。另一聊天本轮Go与Java续验详见 build/verification/tip-fault-resume-20261019T075057587Z/，本聊天未重复开启重型构建。
+
+## 2026-10-19 Codex：location 删除回档事故报告验证状态续核与 Java 对账
+
+- **范围**：接续事故报告交接，更新 `docs/ops/incident-location-delete-rollback-2026-10-18.md` 的状态、时间线、§6 验证表与 §7 遗留；`docs/README.md` 既有登记恰好一处，无需重复添加。本聊天未改业务或测试源码、生成产物，未重复启动构建、测试、服务、容器或故障演练；其他聊天的既有改动均保留，未提交、推送或打标签。
+- **复核已有运行原件**：`session-release-cover-acceptance-20261019T074117806Z/` 支持 scene_manager vet 原生 0、单轮定向 40 顶层加 15 子例通过、全量 444 顶层加 226 子例通过，0 失败/用例跳过。C++ 定向真实 55 项中 54 通过、1 失败，原生 1；§13 的 10 项通过不代表整组通过。失败为 `EnterFenceEcs.LoadCallbackBindsNewestAdmitted` 向回调传空存档，被双子表玩家身份校验拒绝；旧失败原件不改判，夹具修正后的重编、定向及 shuffle 全量仍待主协调续验。v6 的 game.sln 增量 Build 与独立 RPC Build 原生 0 已登记，报告删去“PROGRESS 尚未登记”及“C++ 测试未运行”的过时总述；不称全量 Rebuild。
+- **player_locator 后续原件**：`location-release-current-20261019/locator-20261019T075643529Z/` 的 vet 与全量均原生 0，全量 117 顶层加 18 子例通过，0 失败/跳过。独立逐键复核发现 `proof.json` 漏报 vet 期间 `go/shared/placement/route.go` 的 SHA 变化；两份保存正文精确匹配变化前后 SHA，只有两处注释更正，常量与函数体未变。全量测试步骤自己的 762 项首终输入无差异，实际运行计数独立重数一致；不沿用原 proof 的“全程来源零漂移”判断，不修改原回执。独立来源复核保存为 `build/verification/incident-location-status-20261019T0800Z/locator-provenance-review.json`。
+- **Java 版**：对应 0.1.0-SNAPSHOT；`PARITY.md` 追加三行，分别登记 `8b9592de3` 第一版、`e611b5d8d` 的 §12、`1fc103dce` 的 gate 补修；§13 既有行已在 Java `4054006` 提交，原文不变。仅静态核对位置与归属分离、登录请持有者让出、epoch 与当前绑定过滤的等价行为；本轮未构建/测试 Java、未运行 ContractSync，不把登记当作运行验收，也不宣称 Java 整体不会丢进度。新增三行保持未提交。
+- **本轮文档检查与边界**：两仓指定文档 `git diff --check` 原生 0，事故报告相对链接均存在，README 登记恰好一处；实际 Go JSONL 与 C++ XML 的计数再次独立核对。报告以纽约 2026-10-19 03:57 前已完成回执为截止，仅证明各回执列明的输入；不把并行变化中的当前全仓称为冻结来源。`routing_identity_test` 运行与真实环境故障演练仍无完成回执。
+
+## 2026-10-19 Codex：第三方登录包装入口首轮契约验证，部署 D1 两例失败后停止
+
+- **范围**：接续共享笔记 `login-auth-wrapper-codex-verify.md`；主补丁 SHA256 `9206525d…`、注释跟进 `c4eedb4c…` 均已在当前文件。按清单串行运行，PowerShell 7.6.5；没有重打补丁、协议生成、编译、真实集群操作或压测，本聊天未执行提交 / 推送 / 打标签。交接中的“都未提交”已部分过时：其他聊天在本轮期间把 HEAD 从 `1fc103dce` 推进到 `8767c5027`。
+- **实际结果**：`k8s_login_auth_provider_guard` 39/39、`k8s_zone_rollback_gate_router_mode` 65/65、`k8s_zone_rollback_discard` 27/27、`k8s_client_entry_contract` 109/109，四套原生退出码均为 0、fail=0。第五套 `k8s_deploy_contract` 原生退出 1，total=241 / pass=239 / fail=2；两条失败均为 D1 1b-3 粘滞核对。五套共 479 通过 / 2 失败；不能称九套全绿。
+- **失败证据**：未知线上写法 `DB_FIRST` / `True` 预期保留成 `DB_FIRST?/True?`，实际为 `/`；另一例预期“线上取值认不出”，实际只打印空的 `-RouteStoreMode` 线上值。只读 AST 确认 `k8s_deploy.ps1:6148` 的 `return "$raw?"` 把 `raw?` 作为完整变量名插值。建议改为 `return "${raw}?"`，尚未改码或改断言、没有动态重现和重试。`1fc103dce` 已含该行，生产脚本及共用库首终 SHA 一致；当前测试 diff 只改前一条 guild ConfigMap 选择，与两条失败不在同一用例。
+- **按交接停止**：交接 §2 写“不要自动重试，也不要改断言”，结合 AGENTS.md §10.2 的失败后等待决策，未运行余下 `dev_tools_merge_zone_contract`、`k8s_migrate_gate`、`k8s_gate_drain`、`lobby_authority_render`。等待负责人决定是否修复上述一行并续验。
+- **来源限制**：2057 个工作区脚本 / 配置 / 源码首终封存，另补封存 compose、生成 RPC registry 与两份 proto（四项均零漂移）。整轮有四路径并行变化：`tools/scripts/tests/k8s_deploy_contract.tests.ps1`、`go/shared/placement/route.go`、`route_ready.go`、`deploy/k8s/manifests/go-svc/data-service-route-tool.yaml`；不宣称全输入稳定。失败原件不改判，也不把失败归因给并行变化。
+- **文档**：仅补 `docs/design/zone_data_rollback.md` 照传参数表与 `deploy/k8s/README.md` 的六参数、密钥环境变量、确认开关、包装入口透传 / 拒绝口径；保留其他聊天内容。两文件 `git diff --check` 通过，独立只读复核无问题。
+- **Java 版**：0.1.0-SNAPSHOT；`PARITY.md:270` 已有本任务“部署工具不适用”的登记且在 Java HEAD，本轮不重复新增、不改 Java、不构建 Java。
+- **原件**：`build/verification/login-auth-wrapper-20261019/20261019T075314418Z/`，含五套完整日志、`suite-results.json`、原始 `summary.json`、`verification-status.json`、`failures.txt`、`diagnosis.json`、输入首终清单和文档补丁。失败命令与原生退出码保持原样。
+
+## 2026-10-19 Claude：混版本持久字段保护设计稿升到 v0.3（第二轮评审修订，未落码）
+
+- 对 v0.2 做第二轮只读对抗评审，发现 C3 必现误报（S-A）：实体首次存盘把 hash 的 schema_gen 抬到输出世代后，后续存盘的加载世代仍是旧值，被判倒退；enforce 下会全服丢在线进度。引导期全网世代为 1，这个问题被掩盖。
+- v0.3 修订：C3 只在一份数据的首次写入时比较加载世代，同版本重放跳过；hash 只升不降；增加模式参数；存储值异常视为倒退证据，不回 error；返回 3 走新回调（退出 / 交接 / 在线分派）；加载世代取两表最小值；C0 改为确定性进死信；补全冻结清单并增加字段级投影 option；Carry 组件改在手写 loader 里创建；新增 R5 与语义耦合守卫（带未知字段的物品不合堆、欠款不合并、纪元重置改为 Clear）；切 enforce 前必须在 staging 做一次真实升世代演练。明细见 docs/design/mixed-version-persist-field-protection.md §15。
+- 仍待负责人拍板：文档 §13 第 1–5 条（含不按“只写改动列”实现）。
+- 只读核对与设计，未改代码，未编译、未测试。Java 版 0.1.0-SNAPSHOT 状态不变：机制一、二待做，机制三不适用。

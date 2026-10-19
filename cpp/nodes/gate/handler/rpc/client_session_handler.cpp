@@ -103,7 +103,8 @@ static void ForwardSceneClientCallResult(SessionId sessionId, uint64_t incarnati
 }
 
 // 直连调用按发出时的会话交桥,不依赖服务端是否回显会话 metadata。
-static void ForwardDirectGrpcCallResult(SessionId sessionId, uint64_t incarnation, uint32_t messageId,
+static void ForwardDirectGrpcCallResult(SessionId sessionId, uint64_t incarnation,
+                                 const gate_rpc_reply_bridge::DirectClientCall &clientCall,
                                  const std::string &serializedSessionDetails, const GrpcCallOutcome &outcome,
                                  const google::protobuf::Message *reply)
 {
@@ -114,20 +115,21 @@ static void ForwardDirectGrpcCallResult(SessionId sessionId, uint64_t incarnatio
 	}
 	if (!outcome.ok() || reply == nullptr)
 	{
-		const auto &rpcMethodMetadata = gRpcMethodRegistry[messageId];
+		const auto &rpcMethodMetadata = gRpcMethodRegistry[clientCall.messageId];
 		const std::string rpcMethodName = std::string(rpcMethodMetadata.serviceName) + "." + rpcMethodMetadata.methodName;
 		gate_rpc_reply_bridge::NotifyCallFailure(rpcMethodName.c_str(), static_cast<int>(outcome.code), outcome.message,
-		                                        serializedSessionDetails.empty() ? nullptr : &serializedSessionDetails);
+		                                        serializedSessionDetails.empty() ? nullptr : &serializedSessionDetails,
+		                                        &clientCall);
 		return;
 	}
 	SessionDetails requestSessionDetails;
 	if (!requestSessionDetails.ParseFromString(serializedSessionDetails))
 	{
 		// 解析失败不能把默认的会话身份交给回包桥。
-		LOG_ERROR << "Invalid direct gRPC reply session metadata: message_id=" << messageId;
+		LOG_ERROR << "Invalid direct gRPC reply session metadata: message_id=" << clientCall.messageId;
 		return;
 	}
-	gate_rpc_reply_bridge::DeliverReply(requestSessionDetails, *reply);
+	gate_rpc_reply_bridge::DeliverReply(requestSessionDetails, *reply, &clientCall);
 }
 
 static std::optional<entt::entity> PickRandomNode(uint32_t nodeType)
@@ -972,9 +974,11 @@ void HandleGrpcNodeMessage(SessionId sessionId, const RpcClientMessagePtr &reque
 		}
 		rpcHandlerMeta.sender(
 			tlsNodeContextManager.GetRegistry(rpcHandlerMeta.targetNodeType), *node, *rpcHandlerMeta.requestProto,
-			[sessionId, incarnation = sessionIt->second.incarnation, messageId = request->message_id(), serializedSessionDetails](
-				const GrpcCallOutcome &outcome, const google::protobuf::Message *reply)
-			{ ForwardDirectGrpcCallResult(sessionId, incarnation, messageId, serializedSessionDetails, outcome, reply); },
+			// 捕获客户端信封的请求号:回包与失败回执都回显它,客户端按 id 认领(client-rpc-callback.md §3)。
+			[sessionId, incarnation = sessionIt->second.incarnation,
+			 clientCall = gate_rpc_reply_bridge::DirectClientCall{request->id(), request->message_id()},
+			 serializedSessionDetails](const GrpcCallOutcome &outcome, const google::protobuf::Message *reply)
+			{ ForwardDirectGrpcCallResult(sessionId, incarnation, clientCall, serializedSessionDetails, outcome, reply); },
 			options);
 	}
 }

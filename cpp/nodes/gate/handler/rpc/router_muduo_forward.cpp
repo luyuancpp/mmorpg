@@ -68,7 +68,7 @@ void SendForward(muduo_grpc::Channel &channel, const client_rpc_router::ForwardR
             {
                 gate_rpc_reply_bridge::NotifyCallFailure(kForwardMethodName,
                                                          static_cast<int>(result.status.code_value()),
-                                                         result.status.message(), &sentSessionDetails);
+                                                         result.status.message(), &sentSessionDetails, nullptr);
                 return;
             }
             MessageContent reply;
@@ -77,7 +77,7 @@ void SendForward(muduo_grpc::Channel &channel, const client_rpc_router::ForwardR
                 // 生成客户端应答解析失败同样报 INTERNAL 并走失败分支,这里保持一致。
                 gate_rpc_reply_bridge::NotifyCallFailure(
                     kForwardMethodName, static_cast<int>(muduo_grpc::StatusCode::kInternal),
-                    "failed to parse MessageContent from Forward response", &sentSessionDetails);
+                    "failed to parse MessageContent from Forward response", &sentSessionDetails, nullptr);
                 return;
             }
             // 按**响应头回显**的会话交成功桥(不是本地保存的那份)。
@@ -92,7 +92,7 @@ void SendForward(muduo_grpc::Channel &channel, const client_rpc_router::ForwardR
             {
                 return;
             }
-            gate_rpc_reply_bridge::DeliverReply(*replySession, reply);
+            gate_rpc_reply_bridge::DeliverReply(*replySession, reply, nullptr);
         });
 }
 

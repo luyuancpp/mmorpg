@@ -2,6 +2,7 @@
 
 > 2026-10-19 修订:按一轮只读事实核对(4 名核对员 + 每条独立复核,18 条成立、1 条被推翻)改正了提交状态、时间线、§3.5 / §4 的成因描述、
 > §5 的例外与填法、§6 的 C++ 构建结果和 §8 第 6 条。
+> 同日 Codex 续核:按已完成的原始回执更新 §6 / §7;补记 scene_manager 与 player_locator 的全量结果、C++ 定向失败及来源限制,补齐 Java 对账。
 
 - **日期**:2026-10-18 发现并落码修复,2026-10-19 复核与补修(时间为本地 -04:00)。
 - **级别**:P1(产品缺陷,默认配置可达的玩家进度丢失)。**线上影响:没有已知事故** —— 由只读审计发现,没有玩家报告,也没有在运行环境复现。
@@ -10,7 +11,7 @@
 - **状态**:修复已落码并已提交。第一版在 `8b9592de3`(2026-10-18 23:12);子会话的两项扩展(登录撞门请释放 §12、释放带覆盖身份 §13)
   在 `e611b5d8d`(2026-10-19 03:14);2026-10-19 静态复核后的 gate 补修(`IsRouteFromBeforeLeaveGame` 迟到过滤)与设计文档改正
   (回滚开关 `-1`)连同本文在 `1fc103dce`(2026-10-19 03:38)。均由用户提交。运行验证只完成了一部分:C++ 增量构建通过,
-  C++ 测试、player_locator 测试与真实故障演练都还没跑,见 §6。
+  scene_manager 与 player_locator 全量测试已有成功回执;C++ 定向 55 项中 54 项通过、1 项失败,`routing_identity_test` 与真实故障演练仍待验证,见 §6。
 - **设计**:[location-release-binding.md](../design/location-release-binding.md)(方案、不变量 R1–R6、时序走查、残余)。
 - **一句话**:玩家会话一结束(登出、断线租约到期、gate 崩溃),scene_manager 就删掉 `player:{id}:location`,不管持有这名玩家的 scene 节点
   有没有把内存落盘。location 一没,下一次进场按"首次落点"铸新 owner_epoch、不过换手门,新节点读到旧快照;旧节点之后的存盘被
@@ -46,7 +47,8 @@
 | 2026-10-14 | 入场会话栅栏落码,`scene-enter-session-fence.md` §7 把"LeaveGame / 租约到期的 LeaveScene"登记为待办(当时关注的是迟到的 LeaveScene 误删新登录的 location) |
 | 2026-10-16 | 进场链余项 b/c/d 落码:LeaveScene 带被删会话的身份,location 已属于更新的登录时不删。修好了"迟到的离场删掉新登录",没碰"删的时候持有者还没落盘" |
 | 2026-10-18 | 全仓只读审计发现本缺陷(§2.1),对抗复核成立。同日写设计、落码修复与回归测试;子会话补两项扩展(§12、§13)。当晚用户提交第一版 `8b9592de3`(23:12) |
-| 2026-10-19 | 用户提交 §12/§13 扩展 `e611b5d8d`(03:14)。多代理静态评审(范围:`8b9592de3` 加当时还没提交的 §12/§13 扩展)发现两处问题,补修(§5.6),gate 补修连同本文在 `1fc103dce`(03:38)提交。Codex 完成协议生成、六个 Go 服务编译与 scene_manager 受影响用例;C++ `game.sln` 增量 Build 03:22–03:38 原生 0(不是全量 Rebuild),C++ 测试未运行 |
+| 2026-10-19 | 用户提交 §12/§13 扩展 `e611b5d8d`(03:14)。多代理静态评审(范围:`8b9592de3` 加当时还没提交的 §12/§13 扩展)发现两处问题,补修(§5.6),gate 补修连同本文在 `1fc103dce`(03:38)提交。Codex 完成协议生成、六个 Go 服务编译与 scene_manager 受影响用例;C++ 构建驱动 03:22–03:38 完成 `game.sln` 增量 Build 与独立 RPC 工程 Build,均原生 0(不是全量 Rebuild,构建本身不运行 GTest) |
+| 2026-10-19 03:45–03:57 | scene_manager vet、定向及全量通过;03:47 的 C++ 定向 55 项中 54 通过、1 项夹具失败后停止,未运行 shuffle 全量;随后 player_locator vet 原生 0、全量 117 顶层加 18 子例通过。来源限制见 §6 |
 
 ## 3. 根因(逐环)
 
@@ -144,19 +146,33 @@ scene 此前被告知过一个非 0 的 epoch、而路由的 epoch 更大时,同
 "location 永久残留"不会回来:三条路径照旧调 LeaveScene 并进 at-least-once 重试,持有者活着时被请去释放,死了走死节点证据,
 都拿不到时上限兜底 —— location 只会晚删,不会不删(设计 §5)。
 
-## 6. 验证状态(截至 2026-10-19,以 `docs/PROGRESS.md` 同日 Codex 条目为准)
+## 6. 验证状态(截至 2026-10-19 03:57 已完成的回执,时间为 -04:00)
 
 | 项 | 状态 | 证据 |
 |---|---|---|
 | 协议生成(含 `session_ended=5`、`covered_*=6/7`) | 通过 | `build/verification/ownership-generation-current-20261019T043632035Z/` |
 | 六个 Go 服务编译(db、login、scene_manager、player_locator、client_rpc_router、data_service) | 通过 | `build/verification/owned-go-source-20261019T045438353Z/` |
-| scene_manager internal vet | 通过 | 同上条目 |
-| scene_manager 受影响用例 | 54 个唯一用例条目(39 个顶层用例 + 15 个子用例条目)分两轮取得成功记录,**不是单轮全绿**;首轮提前退出原因未定 | `ownership-sm-argumentlist-20261019T051125572Z/`、`...051445747Z/` |
-| player_locator 测试 | 无结果 | — |
-| C++ 编译 | 通过:`game.sln /t:Build` **增量**构建(不是全量 Rebuild),2026-10-19 03:22–03:38 原生退出 0;此前整解在与本修复无关的 gRPC 生成模板 C2679 处停过,已在模板修复并正规重新生成后越过。PROGRESS 截至本文修订时尚未登记这次结果 | `build/verification/grpc-muduo-codex-20261018-005135/cpp-prep/current-build-runs/root-r5-current-v6-20261019T072214799110Z/result.json` |
-| `cross_zone_test` / `routing_identity_test` 运行 | 无结果(EXE 已链接,GTest 未运行) | — |
-| 2026-10-19 gate 补修 | 已提交(`1fc103dce`);据上一行构建记录已编译链接;`routing_identity_test` 未运行 | 同上 |
+| scene_manager internal vet | 通过,原生 0 | `build/verification/session-release-cover-acceptance-20261019T074117806Z/01-go-vet.result.json` |
+| scene_manager 定向与全量 | 单轮定向 40 顶层加 15 子例通过;全量 444 顶层加 226 子例通过,0 失败、0 用例跳过,均原生 0。新增 `TestLeaveScene_PendingCoversLeaveRequestIdentityNotLocation` 实际通过 | 同目录 `02-go-targeted.result.json`、`03-go-full.result.json`、stdout 与 `summary.json` |
+| player_locator vet 与全量 | vet 原生 0;全量 117 顶层加 18 子例通过,0 失败、0 跳过,原生 0。全量步骤首终 762 项输入无差异;vet 期间有注释漂移,见下文 | `build/verification/location-release-current-20261019/locator-20261019T075643529Z/` 的 `01-vet-result.json`、`02-full-result.json`、JSONL 与输入清单 |
+| C++ 编译 | 通过:`game.sln /t:Build` **增量**构建及独立 `rpc_controller_test /t:Build`,03:22–03:38 构建驱动内均原生 0;不是全量 Rebuild,构建本身不运行 GTest。此前 gRPC 生成模板 C2679 失败原件保留,修复模板并正规生成后已越过;成功结果已登记 PROGRESS | `build/verification/grpc-muduo-codex-20261018-005135/cpp-prep/current-build-runs/root-r5-current-v6-20261019T072214799110Z/result.json` |
+| `cross_zone_test` 定向 | **整组失败**:55 项中 54 通过、1 失败、0 跳过,原生 1;§13 新增的 10 项通过。唯一失败为 `EnterFenceEcs.LoadCallbackBindsNewestAdmitted`;后续 shuffle 全量未运行 | `build/verification/session-release-cover-acceptance-20261019T074117806Z/04-cross-targeted.result.json`、XML、stdout 与 `summary.json` |
+| `routing_identity_test` 运行 | 未见运行回执(EXE 已链接) | — |
+| 2026-10-19 gate 补修 | 已提交(`1fc103dce`);据上述 v6 构建记录已编译链接;`routing_identity_test` 未运行 | 上述 C++ 构建的 `result.json` |
 | 真实环境故障演练(登出 / 租约到期 / gate 崩溃 / Redis 写失败) | 未开始 | — |
+
+`cross_zone_test` 的失败发生在当时 `cross_zone_test.cpp:5764`:用例向加载回调传入空 `PlayerAllData{}`,未填写两张子表的玩家 ID,
+日志为「父快照双表身份与当前玩家不符,拒绝载入」,所以 `playerList.count` 期望 1、实际 0。失败原件保持原判;
+修正合法测试夹具后仍须重编并续验,不能因 §13 新增项通过就把整组判绿。
+
+player_locator 的来源回执需单独说明:`proof.json` 写 `input_differences=[]`,但逐键比较原始清单发现 vet 期间
+`go/shared/placement/route.go` 从 `31E648949FFDC114…` 变为 `03CEC73F10D4D6ED…`。已保存的两份源码精确匹配这两个 SHA,
+逐字比较只有两处注释更正,常量和函数体未变。全量测试步骤自己的 762 项首终清单无差异。原回执不改写,
+不引用其全程零漂移判断;独立复核记录在 `build/verification/incident-location-status-20261019T0800Z/locator-provenance-review.json`。
+
+以上结果只绑定各回执列明的输入。scene_manager 与 C++ 定向运行的 15 项任务输入、761 项相关闭包在该轮无漂移,
+不代表并行变化中的当前全仓已冻结;C++ 后续夹具修改也不能沿用旧 EXE 的运行结果。旧 scene_manager 分轮 54 项记录保留为历史,
+不再作为最新运行状态。本聊天只读复核既有运行原件,未重复启动构建或测试。
 
 命令与通过标准见 `docs/PROGRESS.md` 的三条条目:「删 location 绑定持有者释放」「登录撞上未释放的持有者」「会话结束释放带覆盖身份」,
 以及 2026-10-19「静态评审复核两项修正」。
@@ -168,7 +184,7 @@ scene 此前被告知过一个非 0 的 epoch、而路由的 epoch 更大时,同
    `LateOldRouteAfterLeaveGameResetIsDroppedAndNotReplayedOnBind`、新增的 `NewLoginRouteBeforeBindAfterLeaveGameStillReplays` 与
    `LeaveGameRouteFilterYieldsToCharacterSwitchAndLegacyBind`、补了断言的 `LeaveGameResetThenRelogForwardsFreshRouteOnly`,以及既有 `SceneRoute*` /
    `SceneEntry*` / `LoginGeneration*` 不回归。
-2. **【待验证】** §6 表里所有未通过的项:player_locator 测试、`cross_zone_test` / `routing_identity_test` 运行、真实环境故障演练(登出 / 租约到期 /
+2. **【待验证】** §6 表里所有未通过的项:`cross_zone_test` 夹具修正后的重编与定向、shuffle 全量,`routing_identity_test` 运行,真实环境故障演练(登出 / 租约到期 /
    gate 崩溃 / Redis 写失败)。单测在代码里自行构造配置,不受 dev yaml 影响;真实环境演练必须在 scene_manager `AllowUnsafeCrossNodeHandoff: false`
    下跑 —— dev 默认配置(`go/scene_manager/etc/scene_manager_service.yaml` 为 true)会关掉 LeaveScene 的持有者释放检查,测不到修复。
 3. **【代价,有意】** 登出后约 2s 内的首次登录可能被既有清理屏障挡住(3023 重试);持有节点存盘卡住期间该玩家登不上,最长到 600s 上限。
@@ -177,9 +193,12 @@ scene 此前被告知过一个非 0 的 epoch、而路由的 epoch 更大时,同
 5. **【告警】** `forced` 与 `stale_owner_rejected_exiting` 都应恒 0;`pending` 的速率基线要上线后再定阈值。
 6. **【发布顺序】** proto 生成 → scene → player_locator → scene_manager → gate。关 scene 的 `SCENE_EXIT_RELEASE_MARK` 之前先把
    `LeaveSceneHolderReleaseWaitSeconds` 设为 `-1`。
-7. **【Java 版】** 不适用(结构不同):Java 的位置记录由持有 scene 唯一写入,归属靠库行 owner_epoch 夺权与让出,LeaveGame 时 gate 已向 scene 发
-   `PlayerLeave`(按 Java 仓 `PARITY.md` 核对)。本仓已提交(`8b9592de3` / `e611b5d8d` / `1fc103dce`);Java 仓 `PARITY.md` 目前只登记了 §13
-   (会话结束释放带覆盖身份)这一行,第一版修复、§12 登录撞门请释放与 `1fc103dce` 的 gate 补修还要补登记。
+7. **【Java 版】** 对应 `0.1.0-SNAPSHOT`,结构不同:Java 的位置记录由持有 scene 唯一写入,归属靠库行 owner_epoch 夺权与让出,
+   LeaveGame 时 gate 已向 scene 发 `PlayerLeave`。第一版的无条件删 location 触发链不适用;§12 登录请持有者让出、§13 旧请求与新归属隔离,
+   以及 gate 按当前绑定与 epoch 拒绝迟到改绑均已有等价行为。Java `PARITY.md` 的 §13 行已在 `4054006` 提交;
+   本轮另追加三行,分别对账 `8b9592de3`、`e611b5d8d` 的 §12 与 `1fc103dce` 的 gate 补修。本轮只做静态复核和登记,
+   未构建、未运行 Java 测试或 ContractSync。Java 租约过期夺权、最终写回失败或进程被 kill 的独立数据丢失边界仍存在,
+   见 Java `docs/design/architecture.md` §7;不把本次对账解释成 Java 整体不会回档。
 
 ## 8. 教训
 

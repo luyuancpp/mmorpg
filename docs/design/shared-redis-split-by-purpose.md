@@ -180,6 +180,12 @@ merge_zone 合服与撤销时会按玩家删缓存（`playerCacheKeys`）；清�
 > - 会话族新增 `player:gate_index:sessions:<gate 实例 uuid>`(SET)、`player:gate_index:gates`(SET)、`player:gate_index:ready`(PX 3.5 拍)、`player:gate_index:gen`、`player:gate_index:last_audit`、`player:gate_index:audit_cooldown`(EX,审计失败后的冷却)。写者是 player_locator 的三段会话 Lua 与会话对账 leader 的守卫脚本,读者只有对账。它们**必须与 `player:session` 同实例**(同一段 Lua 内原子维护),属于核心闭包。选主锁 `player_locator:session_reconciler:leader`(TTL 30s,shared/leader)同在核心。设计见 [player-locator-gate-session-index.md](player-locator-gate-session-index.md)。
 > - 更正上表会话族行的 TTL 列「断线后 session 带 PX」:会话键在任何路径下都没有 TTL。三段写 Lua 的调用方都传 0,rearm 还会 PERSIST,清理时机只由 `player:leases` 决定(见 `go/player_locator/internal/logic/setdisconnectinglogic.go` 的注释)。
 
+> **(2026-10-19 增补,data_service 字段索引与保留名,上表原文保留)**
+> - data_service 玩家数据族新增 `player:{id}:__fields`(HASH,data_service 字段索引):成员是字段名(值为空串),保留成员 `__version` 是戳;戳与 `player:{id}:__version` 逐字节相等时索引完整,全量读 / 删除按它一段 Lua 完成,否则退回 `SCAN player:{id}:*`。无 TTL,随 `DeletePlayerData` 删除,只由 `saveFieldsScript` 维护。设计见 [data_service_role_and_scope.md](data_service_role_and_scope.md)「字段索引与保留名」。
+> - data_service 的字段名保留:`__` 前缀、`save_barrier`、`asset_sql_commit`。用这些名字的 Load / Save / SetField / GetField 一律拒绝(InvalidRequest);写入时字段键已存在且不是 string 也零副作用拒绝。`DeletePlayerData` 只删自有 string 键,不再连带删掉 C++ 的 `player:{id}:save_barrier` 与 go/db 的 `player:{id}:asset_sql_commit`(此前会删,覆盖 save_barrier 后 C++ 存盘脚本对该玩家永久回 error_reply)。
+> - **规矩**:今后任何模块新增 `player:{%d}:` 花括号键,必须同时登记进 `go/data_service/internal/logic/data_logic.go` 的 `isReservedPlayerField`,否则 data_service 可能「抢注」同名字段把它写成 string。
+> - `player:{id}:owner_epoch`、`player:{id}:handoff`、`player:{id}:location`、`player:{id}:sync_digest` 的真实键名不带花括号,不在这个命名空间内,SCAN `player:{id}:*` 匹配不到它们。
+
 **G. 本稿不处理**:guild 私有键(DB 2,K8s 上未部署:`guild:v2:*`、`guild_rank:*`,见 `tools/merge_zone/guild_step.go:123-128`、`fence.go:239`);friend 私有键(FriendRedis 未配置时回落到共享库);match / chat 的集群键。
 
 ### 2.3 跨族原子性:哪些 Lua / MULTI 把几类键绑在一起

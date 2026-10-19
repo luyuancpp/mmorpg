@@ -2,6 +2,7 @@
 
 > 只读静态审计，**未编译、未运行**。对象是 2026-10-18 的工作区（包括其他会话尚未提交的改动）。
 > 本文只登记问题和修复方向，不包含任何代码修改。修复要按 AGENTS.md §10.1 交给 Codex 验证，并按 §12 同步 Java 版。
+> **2026-10-19 状态：** §2.1–§2.3 已修复，验证还没跑完；§2.4、§2.5 尚未动手。汇总见 §7，上线前的复查计划见 §8。
 
 ## 0. 结论
 
@@ -187,3 +188,53 @@
 
 - 工作流运行：`wf_f7c7b2f0-c42`。会话转录目录里的 `journal.jsonl` 保存每个代理的完整返回，包括查找员的触发时序和复核员给出的 文件:行 证据。
 - 本审计只读，未修改任何代码。
+
+## 7. 修复与验证状态（截至 2026-10-19）
+
+审计之后，2026-10-18 起开了 3 个修复会话，§2.1 的修复会话又派生出 2 个后续会话。代码均由 Claude 落进工作区，已随用户的工作区快照提交（`8b9592de3`、`e611b5d8d`、`1fc103dce`）。协议生成、编译、测试由 Codex 负责。下表"验证"一列以 `docs/PROGRESS.md` 里 Codex 的条目为准。
+
+| 审计项 | 修复内容 | 设计 / 进度条目 | 验证 |
+|---|---|---|---|
+| §2.1 删 location 与持有者释放绑定 | 只有拿到"持有者已释放"的证据才删 location，否则经 `ReleasePlayer.session_ended` 请持有节点释放，600s 后兜底强删；gate 收到 LeaveGame 时代发 ExitGame；`ApplyRoute` 补上 owner_epoch 维度；新增回档证据指标 | [location-release-binding.md](location-release-binding.md)；PROGRESS「删 location 绑定持有者释放」「静态评审复核两项修正」；事故报告 [incident-location-delete-rollback-2026-10-18.md](../ops/incident-location-delete-rollback-2026-10-18.md) | 已通过：协议生成、6 个 Go 服务编译、C++ 增量 Build。scene_manager 用例分两轮才取得成功记录，不算单轮全绿。未完成：player_locator 测试、`routing_identity_test` 与 `cross_zone_test` 运行、真实环境故障演练 |
+| └ 登录撞上未释放的持有者（设计 §12） | 换手门拒绝之前，同步请持有节点释放 | PROGRESS「登录撞上未释放的持有者」 | 同上，与 §2.1 一并验证 |
+| └ 迟到的会话结束释放带覆盖身份（设计 §13） | `ReleasePlayerRequest` 追加 `covered_session_id=6` / `covered_login_generation=7`；scene 按登录身份比对后再决定是否退出 | PROGRESS「会话结束释放带覆盖身份」 | scene_manager：vet、定向用例、全量 444 + 226 个用例通过。C++ 55 项中 54 项通过；`EnterFenceEcs.LoadCallbackBindsNewestAdmitted` 因测试夹具给的是空快照而失败，Codex 已备夹具补丁，待负责人决定 |
+| §2.2 go/db 协议世代门禁与补投上限 | 缺省改为 dual；legacy 由机器判定，有证据时拒绝启动；补投加首见宽限、指数退避、次数上限和终态 | [db-write-fencing-mysql.md](db-write-fencing-mysql.md) 文末附注；PROGRESS「存盘协议世代门禁与补投有界」 | **7 步验证都没跑。** 负责人确认尚未上线：首次上线直接用 dual 加严格屏障整批起步，混跑和降级相关的残余不构成阻塞 |
+| §2.3 `login_session` 键绑定 gate 实例与代次 | 键改为 `{gate_instance_id}:{incarnation}`，旧版 gate 走兼容键；gate 要求先 Login | [client-request-ordering.md](client-request-ordering.md) §7.2 第 2 条；PROGRESS「修跨账号登录态继承」 | Codex 已跑 login 两个相关包：249 通过，vet 与 build 通过。没有跑真实多 gate 环境 |
+| §2.4 战斗结算三处 | **未动手** | — | — |
+| §2.5 全球匹配、交易三处 | **未动手**（对应功能未开通） | — | — |
+| §3、§4 low 项 | 只有"存盘不保留未知字段"一项另出了设计稿：[mixed-version-persist-field-protection.md](mixed-version-persist-field-protection.md)，v0.2，未落码，待负责人拍板 | PROGRESS「新旧版本混跑的玩家持久字段保护设计稿 v0.2」 | — |
+
+## 8. 上线前复查计划（2026-10-19 建议）
+
+**结论：上线前需要再查。** 但不是把这次审计原样再跑一遍，而是补上本轮没覆盖到的部分。理由如下：
+
+- 本轮每个区域只派了一名查找员，跑一轮就停了，没有做到"连续几轮都查不出新问题才停"。§1 列出了未读完的代码段，23 条 low 也没有复核，尾部还有多少问题不知道。
+- 审计之后又落了大量新代码，修复本身也会引入新风险。例如 600s 兜底强删会退回旧行为，混版窗口里也会退回旧行为。这些新代码目前只做过静态评审。
+- 静态审计不能代替运行证据。§2.1 的真实环境故障演练还没开始，§2.2 的 7 步验证还没跑。
+- Java 版服务器仓库不在本轮范围内，而按 AGENTS §12，两个版本要一起上线。
+
+**建议顺序**（前一阶段不过，不开下一阶段）：
+
+1. **先把已落的修复验证完（Codex）。**
+   - §2.2 的 7 步验证。
+   - §2.1 遗留的测试：player_locator、`routing_identity_test`、`cross_zone_test`，以及夹具失败那一条。
+   - 真实环境故障演练：登出、租约到期、gate kill -9、Redis 对单节点写失败。演练时 scene_manager 必须设 `AllowUnsafeCrossNodeHandoff: false`，否则测不到修复。
+2. **修掉剩余的 medium。**
+   - §2.4 的 cpp-economy#0 默认就能触发，上线前必修。
+   - cpp-economy#1 在开收件箱消费之前修；social-match-battle#2 在开全球匹配之前修。
+   - §2.5 三项在对应功能开通前修，并作为该功能的开通门禁。
+3. **第二轮 AI 审计（只读）。** 换一种查法，不重复第一轮的分区查找：
+   - **增量对抗评审**：从本审计的基线（`bf3c60632`）到当时 HEAD，把所有涉及存盘、加载、会话、资产的改动，逐个按"会不会丢、会不会旧盖新、会不会复制"去推翻。
+   - **补覆盖**：把 §1 列出的未读段与各业务系统的持久组件写入口逐个读完。
+   - **复核** 23 条 low。
+   - **换视角连续查找**：每轮换一个视角，连续两轮没有新发现才停。视角包括：
+     - 按资产追踪：货币、物品、宠物、帮会资金的完整生命周期；
+     - 按故障：Redis 丢尾或主从切换、Kafka 重投、节点崩溃、时钟回拨、滚动升级混版；
+     - 按入口：每个 handler 与 RPC。
+   - **Java 版做同类审计**：在 Java 仓库执行，按该仓库的 `AGENTS.md`。
+4. **运行期一致性压测（Codex）。** 按 [data-consistency-stress-testing.md](data-consistency-stress-testing.md) 跑 L2 校验器、L3 机器人、L4 混沌（消费中途杀进程、Redis 故障切换、gate 与 battle 节点强杀），结论按 AGENTS §6 出对比表。
+5. **代码冻结后做最后一次增量审计。** 范围是从第 3 步的基线到发布提交的差异。
+
+**额度参考**（同账号实测，见会话记忆）：
+- 只读代理每个约占 5 小时窗口的 2.5%。本轮 10 个查找员加 5 个复核员，约用掉 640 万子代理 token。
+- 第 3 步预计要 20–40 个代理，需要分到多个额度窗口里跑。查找与复核分阶段进行：先只跑查找，再按剩余额度决定复核的粒度。

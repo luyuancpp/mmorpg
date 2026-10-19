@@ -62,9 +62,9 @@ login 侧的 in-band 码（2026-10-18 起，fault 列来自 `data/tip/Tip.xlsx`�
 | 账号目录读 Redis 失败 / 记录损坏（以前直接返回 gRPC 错误，网关映射成 401） | `kLoginRedisError` / `kLoginDataParseFailed` | 是 |
 | HTTP 路径 token 签发失败（以前回成功但不带 token，渠道 code 已被消费） | `kLoginTokenIssueFailed`（2036） | 是 |
 
-网关按 fault 列定性（2026-10-18 收口原「已知残留」）：导表器多生成一份与 `faults.go` 同源的 Java `TipFaults`，本仓 `LoginService` / `RefreshTokenService` 与 Java 版 `LoginHttpService` 据此把上表的故障码回 `CODE_INTERNAL`，其余 in-band 码仍回 `CODE_AUTH_REJECTED`；HTTP 状态仍是 200，message 不变，保留 tip 码用于排障。当前客户端只按 JSON `code` 分支，登录路径不解析 `upstream_err=<tip>`，也没有通用 tip 文案表。方案比较、版本偏斜与客户端核对项见 [tip-code-axis.md](./tip-code-axis.md) §2.10。连接目标、zone 路由与超时以 Gateway 的 LoginRpcClient 和 `application.yaml` 为准；旧提案中的 `gate.login.grpc-endpoint` / `retry` 配置不能直接复制使用。
+网关按 fault 列定性（2026-10-18 收口原「已知残留」）：导表器多生成一份与 `faults.go` 同源的 Java `TipFaults`，本仓 `LoginService` / `RefreshTokenService` 与 Java 版 `LoginHttpService` 据此把上表的故障码回 `CODE_INTERNAL`，其余 in-band 码仍回 `CODE_AUTH_REJECTED`；HTTP 状态仍是 200，message 的取法不变：无参数文案时通常为 `upstream_err=<tip>`，有 `TipInfoMessage.parameters` 时沿用各版网关既有的解析或拼接结果。保留 tip 码用于排障。当前客户端只按 JSON `code` 分支，登录路径不解析 `upstream_err=<tip>`，也没有通用 tip 文案表。方案比较、版本偏斜与客户端核对项见 [tip-code-axis.md](./tip-code-axis.md) §2.10。连接目标、zone 路由与超时以 Gateway 的 LoginRpcClient 和 `application.yaml` 为准；旧提案中的 `gate.login.grpc-endpoint` / `retry` 配置不能直接复制使用。
 
-客户端收到 500 + `upstream_err=2035` / `2036` 时，微信要重新拉起授权拿新 code，不能原样重发旧 code（2036 时 code 已被消费，2035 时也不能确定没被消费）；QQ 的 access_token 在有效期内可以重发。
+客户端收到 500 + `upstream_err=2035` / `2036` 后，恢复登录要重新拉起渠道：微信重新授权拿新 code（2036 时 code 已被消费，2035 时也不能确定没被消费），QQ 重新拉起渠道取得新凭据，不把旧 `auth_token` 原样重发作为恢复流程。QQ token 的可复用性不改变这里约定的恢复策略。
 
 ## 四、渠道联调与后续改造
 
@@ -178,12 +178,12 @@ POST /api/bind   { bind_type: "wechat", auth_token: <code> }
 | Java Gateway `/api/login` controller + DTO、grpc-java 客户端 | 已完成（LoginController / LoginService / LoginRpcClient） |
 | login.yaml 配置 WeChat / QQ（K8s Secret） | 已完成：`AppSecretEnv` + 启动期门禁；`k8s_deploy.ps1` 渲染 + Secret `login-oauth`（2026-10-18） |
 | loginlogic 自动注册分支对 wechat / qq 走通 | 已完成（账号目录 `account:<account>`，首次登录自动初始化） |
-| 单元测试：mock 渠道 HTTP、错误传播 | 已完成：`providers_test.go`、`providers_oauth_policy_test.go`、`provider_logging_test.go`、`login_error_semantics_test.go`、`auth_providers_test.go`（待 Codex 运行） |
+| 单元测试：mock 渠道 HTTP、错误传播 | 已落码；2026-10-19 Go 定向 7 项通过，全量 519 个顶层与 375 个子测试通过、4 个顶层环境条件跳过，旧行为两例精确断言红灯成立；证据与范围见 [交接文档](../handoff/handoff-tip-fault-gateway-500-20261018.md) |
 | 本地沙箱端到端（sandbox_mock） | 工具已有；linux 登录栈 QQ AppId 与 mock 不一致的问题已修（2026-10-18） |
 | 真实微信 / QQ 沙箱联调 → /api/login → /api/assign-gate → gate | **未做**，需要有真凭证的人按 runbook §C.2 执行 |
 | 单 zone 灰度 24 小时、全量开放 | 未做 |
 | `Auth.EnabledTypes` 灰度配置 | 不存在这个配置；按 zone 开关第三方登录仍是后续设计 |
-| 网关按 tip 故障列回 500（§三） | 已落码（两版同批，2026-10-18），导表产物已生成，未编译、未测试；客户端已只读核对，只按 `code` 分支，不受影响；500 的「稍后重试」文案补丁待客户端任务授权（见 [tip-code-axis.md](./tip-code-axis.md) §2.10） |
+| 网关按 tip 故障列回 500（§三） | 已落码（两版同批），导表与 147 项导表器测试已有证据；本轮主仓 gateway 204 项通过、5 项条件跳过，config_node 367 份源码编译通过且无测试；示例 starter 在 Surefire 加载前失败，后续验收停止。独立 Java 历史定向 42 项仅按输入 SHA 条件复用，不表示全 reactor 通过。详见 [交接文档](../handoff/handoff-tip-fault-gateway-500-20261018.md)；客户端可选文案补丁未打 |
 | UserBindings 账号合并表、Apple / Google Provider | 后续 |
 
 ---

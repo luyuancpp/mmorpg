@@ -263,6 +263,7 @@ pwsh -File tools/scripts/dev_tools.ps1 -Command k8s-zone-up \
 | 经 Ingress 对外 | `-GatewayIngressHost`、`-GatewayTrustedProxies`(及 `-GatewayIngressClassName` / `-GatewayIngressTlsSecret`) |
 | staging / prod | `-ReleaseProfile`(**留空 = 按 dev 档部署**:login 以 dev 模式、密钥回落占位值拉起,安全方向 fail-open);部署 Java 服务时还需环境变量 `MMORPG_GATEWAY_ADMIN_API_KEY`(Step 6 子进程继承);staging / prod 还需要 `MMORPG_LOGIN_QUEUE_TOKEN_SECRET`(排队缺省开;见 `deploy/k8s/README.md`)(2026-10-15 更正:登录排队合入门槛未清时各档排队都关,不要求该变量;见 `deploy/k8s/README.md`「登录排队的合入门槛」) |
 | dev 依赖开发口令登录 | `-LoginDevPasswordAuth`(照常透传到 Step 6,由 `k8s_deploy.ps1` 的 dev 档门禁把关;漏传则 login 没有任何认证配置,Step 7 冒烟登录失败) |
+| 已启用微信 / QQ 登录 | 按上次部署照传 `-LoginWeChatAppId` / `-LoginWeChatEndpoint` / `-LoginWeChatAllowOpenId`、`-LoginQQAppId` / `-LoginQQEndpoint` / `-LoginQQAllowOpenId`;微信还需部署机环境变量 `MMORPG_LOGIN_WECHAT_APP_SECRET`。`-Apply` 下第 0 步在停服之前核对 login ConfigMap 与 Secret,会关闭或改动已启用配置、或现状判不出时拒绝;确要变更加 `-ConfirmLoginAuthProviderChange`。存档重跑与确认开关的边界见 [微信 / QQ 沙盒手册](../ops/wechat-qq-sandbox-runbook.md) §B |
 | 指定集群 | `-KubeContext` / `-KubeConfig`:第 0 步、Step 1、Step 6 用同一集群。`dev_tools.ps1` 的回滚入口以前静默丢掉它们、回滚落到 kubectl 当前 context,现已转发 |
 
 - `-AllowDisruptiveSwitch` 只转给 Step 6,**不豁免第 0 步**;它只在 namespace 没删净、`k8s_deploy.ps1` 的集群现状预检真的触发时起作用。

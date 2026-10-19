@@ -48,7 +48,8 @@ const std::unordered_map<std::string, uint32_t> &ResponseTypeToMessageId()
 
 } // namespace
 
-void DeliverReply(const SessionDetails &sessionDetails, const ::google::protobuf::Message &reply)
+void DeliverReply(const SessionDetails &sessionDetails, const ::google::protobuf::Message &reply,
+                  const DirectClientCall *directCall)
 {
     // 路由 lane 的调用(gate_call_seq != 0)由 lane 认领:核对会话代次与队头、恰好一次下发,
     // 再发同一会话的下一条(docs/design/client-request-ordering.md §4.5)。
@@ -81,6 +82,17 @@ void DeliverReply(const SessionDetails &sessionDetails, const ::google::protobuf
         return;
     }
 
+    MessageContent wrapped;
+    wrapped.set_serialized_message(reply.SerializeAsString());
+    if (directCall != nullptr)
+    {
+        // 回显发出时的请求号与 message_id。多个方法共用同一响应类型(如 TeamResponse 被 11 个方法用),
+        // 按类型反查只能得到其中一个号;客户端按 id 认领,id 是关联的唯一依据。
+        wrapped.set_id(directCall->requestId);
+        wrapped.set_message_id(directCall->messageId);
+        GetGateCodec().send(clientConn, wrapped);
+        return;
+    }
     const std::string typeName(reply.GetDescriptor()->full_name());
     const auto &table = ResponseTypeToMessageId();
     const auto typeIt = table.find(typeName);
@@ -89,14 +101,12 @@ void DeliverReply(const SessionDetails &sessionDetails, const ::google::protobuf
         LOG_ERROR << "No message_id mapping for gRPC response type: " << typeName.c_str();
         return;
     }
-    MessageContent wrapped;
-    wrapped.set_serialized_message(reply.SerializeAsString());
     wrapped.set_message_id(typeIt->second);
     GetGateCodec().send(clientConn, wrapped);
 }
 
 void NotifyCallFailure(const char *method, int statusCode, const std::string &statusMessage,
-                       const std::string *rawSessionDetails)
+                       const std::string *rawSessionDetails, const DirectClientCall *directCall)
 {
     if (rawSessionDetails == nullptr)
     {
@@ -124,6 +134,12 @@ void NotifyCallFailure(const char *method, int statusCode, const std::string &st
     const auto it = tlsSessionManager.sessions().find(sessionDetails.session_id());
     if (it == tlsSessionManager.sessions().end())
     {
+        return;
+    }
+    if (directCall != nullptr)
+    {
+        // 直连模式:与 lane 的失败回执同形(带请求 id 与原 message_id 的 1003),客户端按 id 让这次调用失败。
+        gate_lane::SendEnvelope(it->second, directCall->requestId, directCall->messageId, kServiceUnavailable);
         return;
     }
     const auto clientConn = it->second.conn.lock();

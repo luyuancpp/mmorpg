@@ -33,6 +33,9 @@ func MapRevKey(playerID uint64) string {
 // (第 1b-2 批),用 SET NX 写;任何一方都可以按原值 compare-and-delete(RouteReadyCompareAndDeleteScript,撤掉信任是
 // fail-closed 的方向);route_tool unfreeze 只做 compare-and-set 改 generation、或 compare-and-delete 撤掉畸形 / 失效值。
 // 读方(第 3 批)只看「存在且非空」,不解析值。第 1b-1 批仍没有任何写者 SET 它。
+// 2026-10-19 更正(spec_D1_batch1b2_2_3.md §2 M1):上一句已作废。读方用 route_ready.go 的 RouteReadyReadScript
+// 在同一段 Lua 里取标记、本实例身份与映射键,经 VerifyRouteReady 判定:标记可解码且身份等于本实例才信任,
+// 只看「存在」会把重启 / 切主 / 旧备份恢复后留下的旧标记当真。写者是对账 leader 的 RouteReadyArmScript(带预热令牌)。
 const RouteReadyKey = "mapping:route:ready"
 
 // RouteReadyFormatVersion 是 RouteReadyMarker.V 当前的取值。字段只增不改名、解析时忽略未知字段,
@@ -232,9 +235,10 @@ func RouteFenceShard(playerID uint64, shards uint32) (uint32, error) {
 // 与 RouteFenceShard 无关:那是可配置的围栏分片数,只决定 W1 锁哪一个围栏行;两者同时出现的函数里不得同名。
 const RouteRowShards uint32 = 64
 
-// RouteRowShard 返回 player_route.route_shard。写者与读者都只能经它计算(tools/merge_zone 已经 import
-// shared/placement,第 2 批写库时直接调它,不得自己再写一份取模 —— 算错片的写者在 CHECK 不生效的库上
-// 能给同一个 player_id 写出两行,而按正确片点查的读者看不到另一行)。
+// RouteRowShard 返回 player_route.route_shard。写者与读者都只能经它计算,不得自己再写一份取模 —— 算错片的写者
+// 在 CHECK 不生效的库上能给同一个 player_id 写出两行,而按正确片点查的读者看不到另一行。
+// 2026-10-19 更正:tools/merge_zone **没有** import shared(独立 module,不改 go.mod),第 2 批在 route_publish.go 里
+// 镜像了本常量与取模,由 merge_zone 的 TestMirroredRouteScriptsMatchShared 按源码逐字比对,并在开写前跑 P4 / P5 探针。
 func RouteRowShard(playerID uint64) uint32 {
 	return uint32(playerID % uint64(RouteRowShards))
 }
