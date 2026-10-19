@@ -1042,6 +1042,2678 @@
     1
    ],
    "think_interval": 0
+  },
+  {
+   "attack_multiplier": 1.25,
+   "buff_percent": 0.0,
+   "cast_point": 0.0,
+   "category": "主动",
+   "channel_finish": 0,
+   "channel_think": 0,
+   "channel_time": 0,
+   "class_id": 1,
+   "cooldown_id": 0,
+   "cooldown_rounds": 0,
+   "cost_resource": [
+    {
+     "cost_resource_cost": 0,
+     "cost_resource_id": 0
+    },
+    {
+     "cost_resource_cost": 0,
+     "cost_resource_id": 0
+    },
+    {
+     "cost_resource_cost": 0,
+     "cost_resource_id": 0
+    },
+    {
+     "cost_resource_cost": 0,
+     "cost_resource_id": 0
+    }
+   ],
+   "damage": "10",
+   "damage_type": 1,
+   "description": "对1名敌人造成物理伤害。技能等级越高，伤害越高。",
+   "dispel_count": 0,
+   "execute_heal_bonus": 0.0,
+   "execute_heal_threshold": 0.0,
+   "heal_multiplier": 0.0,
+   "heal_per_level": 0.0,
+   "icon_key": "UI/Skills/1101",
+   "id": 1101,
+   "immediate": 0,
+   "initiative": 0,
+   "mana_percent": 0.03,
+   "max_range": 0.0,
+   "max_rank": 10,
+   "max_targets": 1,
+   "min_range": 0.0,
+   "name": "破阵惊锋",
+   "passive_percent": 0.0,
+   "range": 0.0,
+   "recovery_time": 0.0,
+   "require_target": 0,
+   "required_item": [
+    {
+     "required_item_type": 0,
+     "required_item_value": 0
+    },
+    {
+     "required_item_type": 0,
+     "required_item_value": 0
+    }
+   ],
+   "required_resource": [
+    {
+     "required_resource_type": 0,
+     "required_resource_value": 0
+    },
+    {
+     "required_resource_type": 0,
+     "required_resource_value": 0
+    }
+   ],
+   "required_status": 0,
+   "restore_mana_percent": 0.0,
+   "self_status": 0,
+   "skill_type": [
+    1
+   ],
+   "target_status": 0,
+   "target_team": 1,
+   "targeting_mode": [
+    1
+   ],
+   "think_interval": 0,
+   "unlock_level": 1
+  },
+  {
+   "attack_multiplier": 0.85,
+   "buff_percent": 0.0,
+   "cast_point": 0.0,
+   "category": "主动",
+   "channel_finish": 0,
+   "channel_think": 0,
+   "channel_time": 0,
+   "class_id": 1,
+   "cooldown_id": 0,
+   "cooldown_rounds": 1,
+   "cost_resource": [
+    {
+     "cost_resource_cost": 0,
+     "cost_resource_id": 0
+    },
+    {
+     "cost_resource_cost": 0,
+     "cost_resource_id": 0
+    },
+    {
+     "cost_resource_cost": 0,
+     "cost_resource_id": 0
+    },
+    {
+     "cost_resource_cost": 0,
+     "cost_resource_id": 0
+    }
+   ],
+   "damage": "10",
+   "damage_type": 1,
+   "description": "横戈扫阵，对选中敌人及其他敌方造成物理伤害，最多3个目标。技能等级越高，伤害越高。",
+   "dispel_count": 0,
+   "execute_heal_bonus": 0.0,
+   "execute_heal_threshold": 0.0,
+   "heal_multiplier": 0.0,
+   "heal_per_level": 0.0,
+   "icon_key": "UI/Skills/1102",
+   "id": 1102,
+   "immediate": 0,
+   "initiative": 0,
+   "mana_percent": 0.06,
+   "max_range": 0.0,
+   "max_rank": 10,
+   "max_targets": 3,
+   "min_range": 0.0,
+   "name": "横戈裂岳",
+   "passive_percent": 0.0,
+   "range": 0.0,
+   "recovery_time": 0.0,
+   "require_target": 0,
+   "required_item": [
+    {
+     "required_item_type": 0,
+     "required_item_value": 0
+    },
+    {
+     "required_item_type": 0,
+     "required_item_value": 0
+    }
+   ],
+   "required_resource": [
+    {
+     "required_resource_type": 0,
+     "required_resource_value": 0
+    },
+    {
+     "required_resource_type": 0,
+     "required_resource_value": 0
+    }
+   ],
+   "required_status": 0,
+   "restore_mana_percent": 0.0,
+   "self_status": 0,
+   "skill_type": [
+    1
+   ],
+   "target_status": 0,
+   "target_team": 1,
+   "targeting_mode": [
+    1
+   ],
+   "think_interval": 0,
+   "unlock_level": 10
+  },
+  {
+   "attack_multiplier": 0.0,
+   "buff_percent": 0.25,
+   "cast_point": 0.0,
+   "category": "主动",
+   "channel_finish": 0,
+   "channel_think": 0,
+   "channel_time": 0,
+   "class_id": 1,
+   "cooldown_id": 0,
+   "cooldown_rounds": 3,
+   "cost_resource": [
+    {
+     "cost_resource_cost": 0,
+     "cost_resource_id": 0
+    },
+    {
+     "cost_resource_cost": 0,
+     "cost_resource_id": 0
+    },
+    {
+     "cost_resource_cost": 0,
+     "cost_resource_id": 0
+    },
+    {
+     "cost_resource_cost": 0,
+     "cost_resource_id": 0
+    }
+   ],
+   "damage": "0",
+   "damage_type": 0,
+   "description": "提高自身防御，初阶提升25%，持续2回合；技能等级越高，增益越强。",
+   "dispel_count": 0,
+   "effect": [
+    11103
+   ],
+   "execute_heal_bonus": 0.0,
+   "execute_heal_threshold": 0.0,
+   "heal_multiplier": 0.0,
+   "heal_per_level": 0.0,
+   "icon_key": "UI/Skills/1103",
+   "id": 1103,
+   "immediate": 0,
+   "initiative": 0,
+   "mana_percent": 0.04,
+   "max_range": 0.0,
+   "max_rank": 10,
+   "max_targets": 1,
+   "min_range": 0.0,
+   "name": "赤甲镇关",
+   "passive_percent": 0.0,
+   "range": 0.0,
+   "recovery_time": 0.0,
+   "require_target": 0,
+   "required_item": [
+    {
+     "required_item_type": 0,
+     "required_item_value": 0
+    },
+    {
+     "required_item_type": 0,
+     "required_item_value": 0
+    }
+   ],
+   "required_resource": [
+    {
+     "required_resource_type": 0,
+     "required_resource_value": 0
+    },
+    {
+     "required_resource_type": 0,
+     "required_resource_value": 0
+    }
+   ],
+   "required_status": 0,
+   "restore_mana_percent": 0.0,
+   "self_status": 0,
+   "skill_type": [
+    1
+   ],
+   "target_status": 0,
+   "target_team": 3,
+   "think_interval": 0,
+   "unlock_level": 20
+  },
+  {
+   "attack_multiplier": 0.85,
+   "buff_percent": -0.15,
+   "cast_point": 0.0,
+   "category": "主动",
+   "channel_finish": 0,
+   "channel_think": 0,
+   "channel_time": 0,
+   "class_id": 1,
+   "cooldown_id": 0,
+   "cooldown_rounds": 3,
+   "cost_resource": [
+    {
+     "cost_resource_cost": 0,
+     "cost_resource_id": 0
+    },
+    {
+     "cost_resource_cost": 0,
+     "cost_resource_id": 0
+    },
+    {
+     "cost_resource_cost": 0,
+     "cost_resource_id": 0
+    },
+    {
+     "cost_resource_cost": 0,
+     "cost_resource_id": 0
+    }
+   ],
+   "damage": "10",
+   "damage_type": 1,
+   "description": "对1名敌人造成物理伤害，并降低其物伤，初阶降低15%，持续2回合；技能等级越高，伤害与减益越强。",
+   "dispel_count": 0,
+   "effect": [
+    11104
+   ],
+   "execute_heal_bonus": 0.0,
+   "execute_heal_threshold": 0.0,
+   "heal_multiplier": 0.0,
+   "heal_per_level": 0.0,
+   "icon_key": "UI/Skills/1104",
+   "id": 1104,
+   "immediate": 0,
+   "initiative": 0,
+   "mana_percent": 0.05,
+   "max_range": 0.0,
+   "max_rank": 10,
+   "max_targets": 1,
+   "min_range": 0.0,
+   "name": "戈鸣断势",
+   "passive_percent": 0.0,
+   "range": 0.0,
+   "recovery_time": 0.0,
+   "require_target": 0,
+   "required_item": [
+    {
+     "required_item_type": 0,
+     "required_item_value": 0
+    },
+    {
+     "required_item_type": 0,
+     "required_item_value": 0
+    }
+   ],
+   "required_resource": [
+    {
+     "required_resource_type": 0,
+     "required_resource_value": 0
+    },
+    {
+     "required_resource_type": 0,
+     "required_resource_value": 0
+    }
+   ],
+   "required_status": 0,
+   "restore_mana_percent": 0.0,
+   "self_status": 0,
+   "skill_type": [
+    1
+   ],
+   "target_status": 0,
+   "target_team": 1,
+   "targeting_mode": [
+    1
+   ],
+   "think_interval": 0,
+   "unlock_level": 30
+  },
+  {
+   "attack_multiplier": 1.8,
+   "buff_percent": 0.0,
+   "cast_point": 0.0,
+   "category": "主动",
+   "channel_finish": 0,
+   "channel_think": 0,
+   "channel_time": 0,
+   "class_id": 1,
+   "cooldown_id": 0,
+   "cooldown_rounds": 3,
+   "cost_resource": [
+    {
+     "cost_resource_cost": 0,
+     "cost_resource_id": 0
+    },
+    {
+     "cost_resource_cost": 0,
+     "cost_resource_id": 0
+    },
+    {
+     "cost_resource_cost": 0,
+     "cost_resource_id": 0
+    },
+    {
+     "cost_resource_cost": 0,
+     "cost_resource_id": 0
+    }
+   ],
+   "damage": "10",
+   "damage_type": 1,
+   "description": "聚拢战意，对1名敌人造成高额物理伤害。技能等级越高，伤害越高。",
+   "dispel_count": 0,
+   "execute_heal_bonus": 0.0,
+   "execute_heal_threshold": 0.0,
+   "heal_multiplier": 0.0,
+   "heal_per_level": 0.0,
+   "icon_key": "UI/Skills/1105",
+   "id": 1105,
+   "immediate": 0,
+   "initiative": 0,
+   "mana_percent": 0.1,
+   "max_range": 0.0,
+   "max_rank": 10,
+   "max_targets": 1,
+   "min_range": 0.0,
+   "name": "破军决胜",
+   "passive_percent": 0.0,
+   "range": 0.0,
+   "recovery_time": 0.0,
+   "require_target": 0,
+   "required_item": [
+    {
+     "required_item_type": 0,
+     "required_item_value": 0
+    },
+    {
+     "required_item_type": 0,
+     "required_item_value": 0
+    }
+   ],
+   "required_resource": [
+    {
+     "required_resource_type": 0,
+     "required_resource_value": 0
+    },
+    {
+     "required_resource_type": 0,
+     "required_resource_value": 0
+    }
+   ],
+   "required_status": 0,
+   "restore_mana_percent": 0.0,
+   "self_status": 0,
+   "skill_type": [
+    1
+   ],
+   "target_status": 0,
+   "target_team": 1,
+   "targeting_mode": [
+    1
+   ],
+   "think_interval": 0,
+   "unlock_level": 40
+  },
+  {
+   "attack_multiplier": 0.0,
+   "buff_percent": 0.0,
+   "cast_point": 0.0,
+   "category": "被动",
+   "channel_finish": 0,
+   "channel_think": 0,
+   "channel_time": 0,
+   "class_id": 1,
+   "cooldown_id": 0,
+   "cooldown_rounds": 0,
+   "cost_resource": [
+    {
+     "cost_resource_cost": 0,
+     "cost_resource_id": 0
+    },
+    {
+     "cost_resource_cost": 0,
+     "cost_resource_id": 0
+    },
+    {
+     "cost_resource_cost": 0,
+     "cost_resource_id": 0
+    },
+    {
+     "cost_resource_cost": 0,
+     "cost_resource_id": 0
+    }
+   ],
+   "damage": "0",
+   "damage_type": 0,
+   "description": "常驻提高自身防御；初阶提升8%，技能等级越高提升越多。",
+   "dispel_count": 0,
+   "execute_heal_bonus": 0.0,
+   "execute_heal_threshold": 0.0,
+   "heal_multiplier": 0.0,
+   "heal_per_level": 0.0,
+   "icon_key": "UI/Skills/1106",
+   "id": 1106,
+   "immediate": 0,
+   "initiative": 0,
+   "mana_percent": 0.0,
+   "max_range": 0.0,
+   "max_rank": 10,
+   "max_targets": 1,
+   "min_range": 0.0,
+   "name": "铁骨铸魂",
+   "passive_percent": 0.08,
+   "passive_stat": "defense",
+   "range": 0.0,
+   "recovery_time": 0.0,
+   "require_target": 0,
+   "required_item": [
+    {
+     "required_item_type": 0,
+     "required_item_value": 0
+    },
+    {
+     "required_item_type": 0,
+     "required_item_value": 0
+    }
+   ],
+   "required_resource": [
+    {
+     "required_resource_type": 0,
+     "required_resource_value": 0
+    },
+    {
+     "required_resource_type": 0,
+     "required_resource_value": 0
+    }
+   ],
+   "required_status": 0,
+   "restore_mana_percent": 0.0,
+   "self_status": 0,
+   "target_status": 0,
+   "target_team": 3,
+   "think_interval": 0,
+   "unlock_level": 1
+  },
+  {
+   "attack_multiplier": 0.0,
+   "buff_percent": 0.0,
+   "cast_point": 0.0,
+   "category": "被动",
+   "channel_finish": 0,
+   "channel_think": 0,
+   "channel_time": 0,
+   "class_id": 1,
+   "cooldown_id": 0,
+   "cooldown_rounds": 0,
+   "cost_resource": [
+    {
+     "cost_resource_cost": 0,
+     "cost_resource_id": 0
+    },
+    {
+     "cost_resource_cost": 0,
+     "cost_resource_id": 0
+    },
+    {
+     "cost_resource_cost": 0,
+     "cost_resource_id": 0
+    },
+    {
+     "cost_resource_cost": 0,
+     "cost_resource_id": 0
+    }
+   ],
+   "damage": "0",
+   "damage_type": 0,
+   "description": "常驻提高自身物伤；初阶提升6%，技能等级越高提升越多。",
+   "dispel_count": 0,
+   "execute_heal_bonus": 0.0,
+   "execute_heal_threshold": 0.0,
+   "heal_multiplier": 0.0,
+   "heal_per_level": 0.0,
+   "icon_key": "UI/Skills/1107",
+   "id": 1107,
+   "immediate": 0,
+   "initiative": 0,
+   "mana_percent": 0.0,
+   "max_range": 0.0,
+   "max_rank": 10,
+   "max_targets": 1,
+   "min_range": 0.0,
+   "name": "砺刃藏锋",
+   "passive_percent": 0.06,
+   "passive_stat": "physicalAttack",
+   "range": 0.0,
+   "recovery_time": 0.0,
+   "require_target": 0,
+   "required_item": [
+    {
+     "required_item_type": 0,
+     "required_item_value": 0
+    },
+    {
+     "required_item_type": 0,
+     "required_item_value": 0
+    }
+   ],
+   "required_resource": [
+    {
+     "required_resource_type": 0,
+     "required_resource_value": 0
+    },
+    {
+     "required_resource_type": 0,
+     "required_resource_value": 0
+    }
+   ],
+   "required_status": 0,
+   "restore_mana_percent": 0.0,
+   "self_status": 0,
+   "target_status": 0,
+   "target_team": 3,
+   "think_interval": 0,
+   "unlock_level": 20
+  },
+  {
+   "attack_multiplier": 0.0,
+   "buff_percent": 0.0,
+   "cast_point": 0.0,
+   "category": "被动",
+   "channel_finish": 0,
+   "channel_think": 0,
+   "channel_time": 0,
+   "class_id": 1,
+   "cooldown_id": 0,
+   "cooldown_rounds": 0,
+   "cost_resource": [
+    {
+     "cost_resource_cost": 0,
+     "cost_resource_id": 0
+    },
+    {
+     "cost_resource_cost": 0,
+     "cost_resource_id": 0
+    },
+    {
+     "cost_resource_cost": 0,
+     "cost_resource_id": 0
+    },
+    {
+     "cost_resource_cost": 0,
+     "cost_resource_id": 0
+    }
+   ],
+   "damage": "0",
+   "damage_type": 0,
+   "description": "常驻提高自身气血上限；初阶提升8%，技能等级越高提升越多。",
+   "dispel_count": 0,
+   "execute_heal_bonus": 0.0,
+   "execute_heal_threshold": 0.0,
+   "heal_multiplier": 0.0,
+   "heal_per_level": 0.0,
+   "icon_key": "UI/Skills/1108",
+   "id": 1108,
+   "immediate": 0,
+   "initiative": 0,
+   "mana_percent": 0.0,
+   "max_range": 0.0,
+   "max_rank": 10,
+   "max_targets": 1,
+   "min_range": 0.0,
+   "name": "百战归元",
+   "passive_percent": 0.08,
+   "passive_stat": "maxHp",
+   "range": 0.0,
+   "recovery_time": 0.0,
+   "require_target": 0,
+   "required_item": [
+    {
+     "required_item_type": 0,
+     "required_item_value": 0
+    },
+    {
+     "required_item_type": 0,
+     "required_item_value": 0
+    }
+   ],
+   "required_resource": [
+    {
+     "required_resource_type": 0,
+     "required_resource_value": 0
+    },
+    {
+     "required_resource_type": 0,
+     "required_resource_value": 0
+    }
+   ],
+   "required_status": 0,
+   "restore_mana_percent": 0.0,
+   "self_status": 0,
+   "target_status": 0,
+   "target_team": 3,
+   "think_interval": 0,
+   "unlock_level": 40
+  },
+  {
+   "attack_multiplier": 1.25,
+   "buff_percent": 0.0,
+   "cast_point": 0.0,
+   "category": "主动",
+   "channel_finish": 0,
+   "channel_think": 0,
+   "channel_time": 0,
+   "class_id": 2,
+   "cooldown_id": 0,
+   "cooldown_rounds": 0,
+   "cost_resource": [
+    {
+     "cost_resource_cost": 0,
+     "cost_resource_id": 0
+    },
+    {
+     "cost_resource_cost": 0,
+     "cost_resource_id": 0
+    },
+    {
+     "cost_resource_cost": 0,
+     "cost_resource_id": 0
+    },
+    {
+     "cost_resource_cost": 0,
+     "cost_resource_id": 0
+    }
+   ],
+   "damage": "10",
+   "damage_type": 0,
+   "description": "对1名敌人造成法术伤害。技能等级越高，伤害越高。",
+   "dispel_count": 0,
+   "execute_heal_bonus": 0.0,
+   "execute_heal_threshold": 0.0,
+   "heal_multiplier": 0.0,
+   "heal_per_level": 0.0,
+   "icon_key": "UI/Skills/1201",
+   "id": 1201,
+   "immediate": 0,
+   "initiative": 0,
+   "mana_percent": 0.03,
+   "max_range": 0.0,
+   "max_rank": 10,
+   "max_targets": 1,
+   "min_range": 0.0,
+   "name": "玄符落曜",
+   "passive_percent": 0.0,
+   "range": 0.0,
+   "recovery_time": 0.0,
+   "require_target": 0,
+   "required_item": [
+    {
+     "required_item_type": 0,
+     "required_item_value": 0
+    },
+    {
+     "required_item_type": 0,
+     "required_item_value": 0
+    }
+   ],
+   "required_resource": [
+    {
+     "required_resource_type": 0,
+     "required_resource_value": 0
+    },
+    {
+     "required_resource_type": 0,
+     "required_resource_value": 0
+    }
+   ],
+   "required_status": 0,
+   "restore_mana_percent": 0.0,
+   "self_status": 0,
+   "skill_type": [
+    1
+   ],
+   "target_status": 0,
+   "target_team": 1,
+   "targeting_mode": [
+    1
+   ],
+   "think_interval": 0,
+   "unlock_level": 1
+  },
+  {
+   "attack_multiplier": 0.85,
+   "buff_percent": 0.0,
+   "cast_point": 0.0,
+   "category": "主动",
+   "channel_finish": 0,
+   "channel_think": 0,
+   "channel_time": 0,
+   "class_id": 2,
+   "cooldown_id": 0,
+   "cooldown_rounds": 1,
+   "cost_resource": [
+    {
+     "cost_resource_cost": 0,
+     "cost_resource_id": 0
+    },
+    {
+     "cost_resource_cost": 0,
+     "cost_resource_id": 0
+    },
+    {
+     "cost_resource_cost": 0,
+     "cost_resource_id": 0
+    },
+    {
+     "cost_resource_cost": 0,
+     "cost_resource_id": 0
+    }
+   ],
+   "damage": "10",
+   "damage_type": 0,
+   "description": "布下雷阵，对选中敌人及其他敌方造成法术伤害，最多3个目标。技能等级越高，伤害越高。",
+   "dispel_count": 0,
+   "execute_heal_bonus": 0.0,
+   "execute_heal_threshold": 0.0,
+   "heal_multiplier": 0.0,
+   "heal_per_level": 0.0,
+   "icon_key": "UI/Skills/1202",
+   "id": 1202,
+   "immediate": 0,
+   "initiative": 0,
+   "mana_percent": 0.06,
+   "max_range": 0.0,
+   "max_rank": 10,
+   "max_targets": 3,
+   "min_range": 0.0,
+   "name": "紫霄雷阵",
+   "passive_percent": 0.0,
+   "range": 0.0,
+   "recovery_time": 0.0,
+   "require_target": 0,
+   "required_item": [
+    {
+     "required_item_type": 0,
+     "required_item_value": 0
+    },
+    {
+     "required_item_type": 0,
+     "required_item_value": 0
+    }
+   ],
+   "required_resource": [
+    {
+     "required_resource_type": 0,
+     "required_resource_value": 0
+    },
+    {
+     "required_resource_type": 0,
+     "required_resource_value": 0
+    }
+   ],
+   "required_status": 0,
+   "restore_mana_percent": 0.0,
+   "self_status": 0,
+   "skill_type": [
+    1
+   ],
+   "target_status": 0,
+   "target_team": 1,
+   "targeting_mode": [
+    1
+   ],
+   "think_interval": 0,
+   "unlock_level": 10
+  },
+  {
+   "attack_multiplier": 0.75,
+   "buff_percent": -0.2,
+   "cast_point": 0.0,
+   "category": "主动",
+   "channel_finish": 0,
+   "channel_think": 0,
+   "channel_time": 0,
+   "class_id": 2,
+   "cooldown_id": 0,
+   "cooldown_rounds": 3,
+   "cost_resource": [
+    {
+     "cost_resource_cost": 0,
+     "cost_resource_id": 0
+    },
+    {
+     "cost_resource_cost": 0,
+     "cost_resource_id": 0
+    },
+    {
+     "cost_resource_cost": 0,
+     "cost_resource_id": 0
+    },
+    {
+     "cost_resource_cost": 0,
+     "cost_resource_id": 0
+    }
+   ],
+   "damage": "10",
+   "damage_type": 0,
+   "description": "对1名敌人造成法术伤害，并降低其速度，初阶降低20%，持续2回合；减速从下一回合排序生效，技能等级越高效果越强。",
+   "dispel_count": 0,
+   "effect": [
+    11203
+   ],
+   "execute_heal_bonus": 0.0,
+   "execute_heal_threshold": 0.0,
+   "heal_multiplier": 0.0,
+   "heal_per_level": 0.0,
+   "icon_key": "UI/Skills/1203",
+   "id": 1203,
+   "immediate": 0,
+   "initiative": 0,
+   "mana_percent": 0.05,
+   "max_range": 0.0,
+   "max_rank": 10,
+   "max_targets": 1,
+   "min_range": 0.0,
+   "name": "寒星凝魄",
+   "passive_percent": 0.0,
+   "range": 0.0,
+   "recovery_time": 0.0,
+   "require_target": 0,
+   "required_item": [
+    {
+     "required_item_type": 0,
+     "required_item_value": 0
+    },
+    {
+     "required_item_type": 0,
+     "required_item_value": 0
+    }
+   ],
+   "required_resource": [
+    {
+     "required_resource_type": 0,
+     "required_resource_value": 0
+    },
+    {
+     "required_resource_type": 0,
+     "required_resource_value": 0
+    }
+   ],
+   "required_status": 0,
+   "restore_mana_percent": 0.0,
+   "self_status": 0,
+   "skill_type": [
+    1
+   ],
+   "target_status": 0,
+   "target_team": 1,
+   "targeting_mode": [
+    1
+   ],
+   "think_interval": 0,
+   "unlock_level": 20
+  },
+  {
+   "attack_multiplier": 0.0,
+   "buff_percent": 0.0,
+   "cast_point": 0.0,
+   "category": "主动",
+   "channel_finish": 0,
+   "channel_think": 0,
+   "channel_time": 0,
+   "class_id": 2,
+   "cooldown_id": 0,
+   "cooldown_rounds": 4,
+   "cost_resource": [
+    {
+     "cost_resource_cost": 0,
+     "cost_resource_id": 0
+    },
+    {
+     "cost_resource_cost": 0,
+     "cost_resource_id": 0
+    },
+    {
+     "cost_resource_cost": 0,
+     "cost_resource_id": 0
+    },
+    {
+     "cost_resource_cost": 0,
+     "cost_resource_id": 0
+    }
+   ],
+   "damage": "0",
+   "damage_type": 0,
+   "description": "凝神调息，恢复自身法力，初阶恢复20%最大法力；技能等级越高恢复越多，施放不消耗法力。",
+   "dispel_count": 0,
+   "execute_heal_bonus": 0.0,
+   "execute_heal_threshold": 0.0,
+   "heal_multiplier": 0.0,
+   "heal_per_level": 0.0,
+   "icon_key": "UI/Skills/1204",
+   "id": 1204,
+   "immediate": 0,
+   "initiative": 0,
+   "mana_percent": 0.0,
+   "max_range": 0.0,
+   "max_rank": 10,
+   "max_targets": 1,
+   "min_range": 0.0,
+   "name": "太虚澄心",
+   "passive_percent": 0.0,
+   "range": 0.0,
+   "recovery_time": 0.0,
+   "require_target": 0,
+   "required_item": [
+    {
+     "required_item_type": 0,
+     "required_item_value": 0
+    },
+    {
+     "required_item_type": 0,
+     "required_item_value": 0
+    }
+   ],
+   "required_resource": [
+    {
+     "required_resource_type": 0,
+     "required_resource_value": 0
+    },
+    {
+     "required_resource_type": 0,
+     "required_resource_value": 0
+    }
+   ],
+   "required_status": 0,
+   "restore_mana_percent": 0.2,
+   "self_status": 0,
+   "skill_type": [
+    1
+   ],
+   "target_status": 0,
+   "target_team": 3,
+   "think_interval": 0,
+   "unlock_level": 30
+  },
+  {
+   "attack_multiplier": 1.05,
+   "buff_percent": 0.0,
+   "cast_point": 0.0,
+   "category": "主动",
+   "channel_finish": 0,
+   "channel_think": 0,
+   "channel_time": 0,
+   "class_id": 2,
+   "cooldown_id": 0,
+   "cooldown_rounds": 4,
+   "cost_resource": [
+    {
+     "cost_resource_cost": 0,
+     "cost_resource_id": 0
+    },
+    {
+     "cost_resource_cost": 0,
+     "cost_resource_id": 0
+    },
+    {
+     "cost_resource_cost": 0,
+     "cost_resource_id": 0
+    },
+    {
+     "cost_resource_cost": 0,
+     "cost_resource_id": 0
+    }
+   ],
+   "damage": "10",
+   "damage_type": 0,
+   "description": "引动霄光，对选中敌人及其他敌方造成法术伤害，最多5个目标。技能等级越高，伤害越高。",
+   "dispel_count": 0,
+   "execute_heal_bonus": 0.0,
+   "execute_heal_threshold": 0.0,
+   "heal_multiplier": 0.0,
+   "heal_per_level": 0.0,
+   "icon_key": "UI/Skills/1205",
+   "id": 1205,
+   "immediate": 0,
+   "initiative": 0,
+   "mana_percent": 0.1,
+   "max_range": 0.0,
+   "max_rank": 10,
+   "max_targets": 5,
+   "min_range": 0.0,
+   "name": "九霄归墟",
+   "passive_percent": 0.0,
+   "range": 0.0,
+   "recovery_time": 0.0,
+   "require_target": 0,
+   "required_item": [
+    {
+     "required_item_type": 0,
+     "required_item_value": 0
+    },
+    {
+     "required_item_type": 0,
+     "required_item_value": 0
+    }
+   ],
+   "required_resource": [
+    {
+     "required_resource_type": 0,
+     "required_resource_value": 0
+    },
+    {
+     "required_resource_type": 0,
+     "required_resource_value": 0
+    }
+   ],
+   "required_status": 0,
+   "restore_mana_percent": 0.0,
+   "self_status": 0,
+   "skill_type": [
+    1
+   ],
+   "target_status": 0,
+   "target_team": 1,
+   "targeting_mode": [
+    1
+   ],
+   "think_interval": 0,
+   "unlock_level": 40
+  },
+  {
+   "attack_multiplier": 0.0,
+   "buff_percent": 0.0,
+   "cast_point": 0.0,
+   "category": "被动",
+   "channel_finish": 0,
+   "channel_think": 0,
+   "channel_time": 0,
+   "class_id": 2,
+   "cooldown_id": 0,
+   "cooldown_rounds": 0,
+   "cost_resource": [
+    {
+     "cost_resource_cost": 0,
+     "cost_resource_id": 0
+    },
+    {
+     "cost_resource_cost": 0,
+     "cost_resource_id": 0
+    },
+    {
+     "cost_resource_cost": 0,
+     "cost_resource_id": 0
+    },
+    {
+     "cost_resource_cost": 0,
+     "cost_resource_id": 0
+    }
+   ],
+   "damage": "0",
+   "damage_type": 0,
+   "description": "常驻提高自身法伤；初阶提升6%，技能等级越高提升越多。",
+   "dispel_count": 0,
+   "execute_heal_bonus": 0.0,
+   "execute_heal_threshold": 0.0,
+   "heal_multiplier": 0.0,
+   "heal_per_level": 0.0,
+   "icon_key": "UI/Skills/1206",
+   "id": 1206,
+   "immediate": 0,
+   "initiative": 0,
+   "mana_percent": 0.0,
+   "max_range": 0.0,
+   "max_rank": 10,
+   "max_targets": 1,
+   "min_range": 0.0,
+   "name": "灵台凝元",
+   "passive_percent": 0.06,
+   "passive_stat": "magicAttack",
+   "range": 0.0,
+   "recovery_time": 0.0,
+   "require_target": 0,
+   "required_item": [
+    {
+     "required_item_type": 0,
+     "required_item_value": 0
+    },
+    {
+     "required_item_type": 0,
+     "required_item_value": 0
+    }
+   ],
+   "required_resource": [
+    {
+     "required_resource_type": 0,
+     "required_resource_value": 0
+    },
+    {
+     "required_resource_type": 0,
+     "required_resource_value": 0
+    }
+   ],
+   "required_status": 0,
+   "restore_mana_percent": 0.0,
+   "self_status": 0,
+   "target_status": 0,
+   "target_team": 3,
+   "think_interval": 0,
+   "unlock_level": 1
+  },
+  {
+   "attack_multiplier": 0.0,
+   "buff_percent": 0.0,
+   "cast_point": 0.0,
+   "category": "被动",
+   "channel_finish": 0,
+   "channel_think": 0,
+   "channel_time": 0,
+   "class_id": 2,
+   "cooldown_id": 0,
+   "cooldown_rounds": 0,
+   "cost_resource": [
+    {
+     "cost_resource_cost": 0,
+     "cost_resource_id": 0
+    },
+    {
+     "cost_resource_cost": 0,
+     "cost_resource_id": 0
+    },
+    {
+     "cost_resource_cost": 0,
+     "cost_resource_id": 0
+    },
+    {
+     "cost_resource_cost": 0,
+     "cost_resource_id": 0
+    }
+   ],
+   "damage": "0",
+   "damage_type": 0,
+   "description": "常驻提高自身法力上限；初阶提升10%，技能等级越高提升越多。",
+   "dispel_count": 0,
+   "execute_heal_bonus": 0.0,
+   "execute_heal_threshold": 0.0,
+   "heal_multiplier": 0.0,
+   "heal_per_level": 0.0,
+   "icon_key": "UI/Skills/1207",
+   "id": 1207,
+   "immediate": 0,
+   "initiative": 0,
+   "mana_percent": 0.0,
+   "max_range": 0.0,
+   "max_rank": 10,
+   "max_targets": 1,
+   "min_range": 0.0,
+   "name": "玄脉通真",
+   "passive_percent": 0.1,
+   "passive_stat": "maxMp",
+   "range": 0.0,
+   "recovery_time": 0.0,
+   "require_target": 0,
+   "required_item": [
+    {
+     "required_item_type": 0,
+     "required_item_value": 0
+    },
+    {
+     "required_item_type": 0,
+     "required_item_value": 0
+    }
+   ],
+   "required_resource": [
+    {
+     "required_resource_type": 0,
+     "required_resource_value": 0
+    },
+    {
+     "required_resource_type": 0,
+     "required_resource_value": 0
+    }
+   ],
+   "required_status": 0,
+   "restore_mana_percent": 0.0,
+   "self_status": 0,
+   "target_status": 0,
+   "target_team": 3,
+   "think_interval": 0,
+   "unlock_level": 20
+  },
+  {
+   "attack_multiplier": 0.0,
+   "buff_percent": 0.0,
+   "cast_point": 0.0,
+   "category": "被动",
+   "channel_finish": 0,
+   "channel_think": 0,
+   "channel_time": 0,
+   "class_id": 2,
+   "cooldown_id": 0,
+   "cooldown_rounds": 0,
+   "cost_resource": [
+    {
+     "cost_resource_cost": 0,
+     "cost_resource_id": 0
+    },
+    {
+     "cost_resource_cost": 0,
+     "cost_resource_id": 0
+    },
+    {
+     "cost_resource_cost": 0,
+     "cost_resource_id": 0
+    },
+    {
+     "cost_resource_cost": 0,
+     "cost_resource_id": 0
+    }
+   ],
+   "damage": "0",
+   "damage_type": 0,
+   "description": "常驻提高自身防御；初阶提升6%，技能等级越高提升越多。",
+   "dispel_count": 0,
+   "execute_heal_bonus": 0.0,
+   "execute_heal_threshold": 0.0,
+   "heal_multiplier": 0.0,
+   "heal_per_level": 0.0,
+   "icon_key": "UI/Skills/1208",
+   "id": 1208,
+   "immediate": 0,
+   "initiative": 0,
+   "mana_percent": 0.0,
+   "max_range": 0.0,
+   "max_rank": 10,
+   "max_targets": 1,
+   "min_range": 0.0,
+   "name": "云篆护心",
+   "passive_percent": 0.06,
+   "passive_stat": "defense",
+   "range": 0.0,
+   "recovery_time": 0.0,
+   "require_target": 0,
+   "required_item": [
+    {
+     "required_item_type": 0,
+     "required_item_value": 0
+    },
+    {
+     "required_item_type": 0,
+     "required_item_value": 0
+    }
+   ],
+   "required_resource": [
+    {
+     "required_resource_type": 0,
+     "required_resource_value": 0
+    },
+    {
+     "required_resource_type": 0,
+     "required_resource_value": 0
+    }
+   ],
+   "required_status": 0,
+   "restore_mana_percent": 0.0,
+   "self_status": 0,
+   "target_status": 0,
+   "target_team": 3,
+   "think_interval": 0,
+   "unlock_level": 40
+  },
+  {
+   "attack_multiplier": 0.0,
+   "buff_percent": 0.0,
+   "cast_point": 0.0,
+   "category": "主动",
+   "channel_finish": 0,
+   "channel_think": 0,
+   "channel_time": 0,
+   "class_id": 3,
+   "cooldown_id": 0,
+   "cooldown_rounds": 0,
+   "cost_resource": [
+    {
+     "cost_resource_cost": 0,
+     "cost_resource_id": 0
+    },
+    {
+     "cost_resource_cost": 0,
+     "cost_resource_id": 0
+    },
+    {
+     "cost_resource_cost": 0,
+     "cost_resource_id": 0
+    },
+    {
+     "cost_resource_cost": 0,
+     "cost_resource_id": 0
+    }
+   ],
+   "damage": "0",
+   "damage_type": 0,
+   "description": "为1名存活友方恢复气血。技能等级越高，恢复量越高。",
+   "dispel_count": 0,
+   "execute_heal_bonus": 0.0,
+   "execute_heal_threshold": 0.0,
+   "heal_multiplier": 1.0,
+   "heal_per_level": 8.0,
+   "icon_key": "UI/Skills/1301",
+   "id": 1301,
+   "immediate": 0,
+   "initiative": 0,
+   "mana_percent": 0.03,
+   "max_range": 0.0,
+   "max_rank": 10,
+   "max_targets": 1,
+   "min_range": 0.0,
+   "name": "丹华续脉",
+   "passive_percent": 0.0,
+   "range": 0.0,
+   "recovery_time": 0.0,
+   "require_target": 0,
+   "required_item": [
+    {
+     "required_item_type": 0,
+     "required_item_value": 0
+    },
+    {
+     "required_item_type": 0,
+     "required_item_value": 0
+    }
+   ],
+   "required_resource": [
+    {
+     "required_resource_type": 0,
+     "required_resource_value": 0
+    },
+    {
+     "required_resource_type": 0,
+     "required_resource_value": 0
+    }
+   ],
+   "required_status": 0,
+   "restore_mana_percent": 0.0,
+   "self_status": 0,
+   "skill_type": [
+    1
+   ],
+   "target_status": 0,
+   "target_team": 2,
+   "targeting_mode": [
+    1
+   ],
+   "think_interval": 0,
+   "unlock_level": 1
+  },
+  {
+   "attack_multiplier": 0.0,
+   "buff_percent": 0.0,
+   "cast_point": 0.0,
+   "category": "主动",
+   "channel_finish": 0,
+   "channel_think": 0,
+   "channel_time": 0,
+   "class_id": 3,
+   "cooldown_id": 0,
+   "cooldown_rounds": 1,
+   "cost_resource": [
+    {
+     "cost_resource_cost": 0,
+     "cost_resource_id": 0
+    },
+    {
+     "cost_resource_cost": 0,
+     "cost_resource_id": 0
+    },
+    {
+     "cost_resource_cost": 0,
+     "cost_resource_id": 0
+    },
+    {
+     "cost_resource_cost": 0,
+     "cost_resource_id": 0
+    }
+   ],
+   "damage": "0",
+   "damage_type": 0,
+   "description": "为选中友方及气血比例较低的队友恢复气血，最多3个存活目标。技能等级越高，恢复量越高。",
+   "dispel_count": 0,
+   "execute_heal_bonus": 0.0,
+   "execute_heal_threshold": 0.0,
+   "heal_multiplier": 0.6,
+   "heal_per_level": 4.0,
+   "icon_key": "UI/Skills/1302",
+   "id": 1302,
+   "immediate": 0,
+   "initiative": 0,
+   "mana_percent": 0.06,
+   "max_range": 0.0,
+   "max_rank": 10,
+   "max_targets": 3,
+   "min_range": 0.0,
+   "name": "青莲润生",
+   "passive_percent": 0.0,
+   "range": 0.0,
+   "recovery_time": 0.0,
+   "require_target": 0,
+   "required_item": [
+    {
+     "required_item_type": 0,
+     "required_item_value": 0
+    },
+    {
+     "required_item_type": 0,
+     "required_item_value": 0
+    }
+   ],
+   "required_resource": [
+    {
+     "required_resource_type": 0,
+     "required_resource_value": 0
+    },
+    {
+     "required_resource_type": 0,
+     "required_resource_value": 0
+    }
+   ],
+   "required_status": 0,
+   "restore_mana_percent": 0.0,
+   "self_status": 0,
+   "skill_type": [
+    1
+   ],
+   "target_status": 0,
+   "target_team": 2,
+   "targeting_mode": [
+    1
+   ],
+   "think_interval": 0,
+   "unlock_level": 10
+  },
+  {
+   "attack_multiplier": 0.0,
+   "buff_percent": 0.0,
+   "cast_point": 0.0,
+   "category": "主动",
+   "channel_finish": 0,
+   "channel_think": 0,
+   "channel_time": 0,
+   "class_id": 3,
+   "cooldown_id": 0,
+   "cooldown_rounds": 2,
+   "cost_resource": [
+    {
+     "cost_resource_cost": 0,
+     "cost_resource_id": 0
+    },
+    {
+     "cost_resource_cost": 0,
+     "cost_resource_id": 0
+    },
+    {
+     "cost_resource_cost": 0,
+     "cost_resource_id": 0
+    },
+    {
+     "cost_resource_cost": 0,
+     "cost_resource_id": 0
+    }
+   ],
+   "damage": "0",
+   "damage_type": 0,
+   "description": "为1名存活友方恢复气血，并移除1个可驱散减益。技能等级越高，恢复量越高。",
+   "dispel_count": 1,
+   "execute_heal_bonus": 0.0,
+   "execute_heal_threshold": 0.0,
+   "heal_multiplier": 0.35,
+   "heal_per_level": 3.0,
+   "icon_key": "UI/Skills/1303",
+   "id": 1303,
+   "immediate": 0,
+   "initiative": 0,
+   "mana_percent": 0.05,
+   "max_range": 0.0,
+   "max_rank": 10,
+   "max_targets": 1,
+   "min_range": 0.0,
+   "name": "玉露涤尘",
+   "passive_percent": 0.0,
+   "range": 0.0,
+   "recovery_time": 0.0,
+   "require_target": 0,
+   "required_item": [
+    {
+     "required_item_type": 0,
+     "required_item_value": 0
+    },
+    {
+     "required_item_type": 0,
+     "required_item_value": 0
+    }
+   ],
+   "required_resource": [
+    {
+     "required_resource_type": 0,
+     "required_resource_value": 0
+    },
+    {
+     "required_resource_type": 0,
+     "required_resource_value": 0
+    }
+   ],
+   "required_status": 0,
+   "restore_mana_percent": 0.0,
+   "self_status": 0,
+   "skill_type": [
+    1
+   ],
+   "target_status": 0,
+   "target_team": 2,
+   "targeting_mode": [
+    1
+   ],
+   "think_interval": 0,
+   "unlock_level": 20
+  },
+  {
+   "attack_multiplier": 0.0,
+   "buff_percent": 0.2,
+   "cast_point": 0.0,
+   "category": "主动",
+   "channel_finish": 0,
+   "channel_think": 0,
+   "channel_time": 0,
+   "class_id": 3,
+   "cooldown_id": 0,
+   "cooldown_rounds": 3,
+   "cost_resource": [
+    {
+     "cost_resource_cost": 0,
+     "cost_resource_id": 0
+    },
+    {
+     "cost_resource_cost": 0,
+     "cost_resource_id": 0
+    },
+    {
+     "cost_resource_cost": 0,
+     "cost_resource_id": 0
+    },
+    {
+     "cost_resource_cost": 0,
+     "cost_resource_id": 0
+    }
+   ],
+   "damage": "0",
+   "damage_type": 0,
+   "description": "提高选中友方及其他友方的防御，最多3个存活目标；初阶提升20%，持续2回合，技能等级越高增益越强。",
+   "dispel_count": 0,
+   "effect": [
+    11304
+   ],
+   "execute_heal_bonus": 0.0,
+   "execute_heal_threshold": 0.0,
+   "heal_multiplier": 0.0,
+   "heal_per_level": 0.0,
+   "icon_key": "UI/Skills/1304",
+   "id": 1304,
+   "immediate": 0,
+   "initiative": 0,
+   "mana_percent": 0.06,
+   "max_range": 0.0,
+   "max_rank": 10,
+   "max_targets": 3,
+   "min_range": 0.0,
+   "name": "灵鼎护元",
+   "passive_percent": 0.0,
+   "range": 0.0,
+   "recovery_time": 0.0,
+   "require_target": 0,
+   "required_item": [
+    {
+     "required_item_type": 0,
+     "required_item_value": 0
+    },
+    {
+     "required_item_type": 0,
+     "required_item_value": 0
+    }
+   ],
+   "required_resource": [
+    {
+     "required_resource_type": 0,
+     "required_resource_value": 0
+    },
+    {
+     "required_resource_type": 0,
+     "required_resource_value": 0
+    }
+   ],
+   "required_status": 0,
+   "restore_mana_percent": 0.0,
+   "self_status": 0,
+   "skill_type": [
+    1
+   ],
+   "target_status": 0,
+   "target_team": 2,
+   "targeting_mode": [
+    1
+   ],
+   "think_interval": 0,
+   "unlock_level": 30
+  },
+  {
+   "attack_multiplier": 0.0,
+   "buff_percent": 0.0,
+   "cast_point": 0.0,
+   "category": "主动",
+   "channel_finish": 0,
+   "channel_think": 0,
+   "channel_time": 0,
+   "class_id": 3,
+   "cooldown_id": 0,
+   "cooldown_rounds": 3,
+   "cost_resource": [
+    {
+     "cost_resource_cost": 0,
+     "cost_resource_id": 0
+    },
+    {
+     "cost_resource_cost": 0,
+     "cost_resource_id": 0
+    },
+    {
+     "cost_resource_cost": 0,
+     "cost_resource_id": 0
+    },
+    {
+     "cost_resource_cost": 0,
+     "cost_resource_id": 0
+    }
+   ],
+   "damage": "0",
+   "damage_type": 0,
+   "description": "为1名存活友方大量恢复气血；施放前目标气血低于30%时，治疗额外提高30%。技能等级越高，恢复量越高；不能复活。",
+   "dispel_count": 0,
+   "execute_heal_bonus": 0.3,
+   "execute_heal_threshold": 0.3,
+   "heal_multiplier": 1.4,
+   "heal_per_level": 10.0,
+   "icon_key": "UI/Skills/1305",
+   "id": 1305,
+   "immediate": 0,
+   "initiative": 0,
+   "mana_percent": 0.1,
+   "max_range": 0.0,
+   "max_rank": 10,
+   "max_targets": 1,
+   "min_range": 0.0,
+   "name": "丹心返照",
+   "passive_percent": 0.0,
+   "range": 0.0,
+   "recovery_time": 0.0,
+   "require_target": 0,
+   "required_item": [
+    {
+     "required_item_type": 0,
+     "required_item_value": 0
+    },
+    {
+     "required_item_type": 0,
+     "required_item_value": 0
+    }
+   ],
+   "required_resource": [
+    {
+     "required_resource_type": 0,
+     "required_resource_value": 0
+    },
+    {
+     "required_resource_type": 0,
+     "required_resource_value": 0
+    }
+   ],
+   "required_status": 0,
+   "restore_mana_percent": 0.0,
+   "self_status": 0,
+   "skill_type": [
+    1
+   ],
+   "target_status": 0,
+   "target_team": 2,
+   "targeting_mode": [
+    1
+   ],
+   "think_interval": 0,
+   "unlock_level": 40
+  },
+  {
+   "attack_multiplier": 0.0,
+   "buff_percent": 0.0,
+   "cast_point": 0.0,
+   "category": "被动",
+   "channel_finish": 0,
+   "channel_think": 0,
+   "channel_time": 0,
+   "class_id": 3,
+   "cooldown_id": 0,
+   "cooldown_rounds": 0,
+   "cost_resource": [
+    {
+     "cost_resource_cost": 0,
+     "cost_resource_id": 0
+    },
+    {
+     "cost_resource_cost": 0,
+     "cost_resource_id": 0
+    },
+    {
+     "cost_resource_cost": 0,
+     "cost_resource_id": 0
+    },
+    {
+     "cost_resource_cost": 0,
+     "cost_resource_id": 0
+    }
+   ],
+   "damage": "0",
+   "damage_type": 0,
+   "description": "常驻提高自身造成的治疗量；初阶提升8%，技能等级越高提升越多。",
+   "dispel_count": 0,
+   "execute_heal_bonus": 0.0,
+   "execute_heal_threshold": 0.0,
+   "heal_multiplier": 0.0,
+   "heal_per_level": 0.0,
+   "icon_key": "UI/Skills/1306",
+   "id": 1306,
+   "immediate": 0,
+   "initiative": 0,
+   "mana_percent": 0.0,
+   "max_range": 0.0,
+   "max_rank": 10,
+   "max_targets": 1,
+   "min_range": 0.0,
+   "name": "悬壶济世",
+   "passive_percent": 0.08,
+   "passive_stat": "outgoingHeal",
+   "range": 0.0,
+   "recovery_time": 0.0,
+   "require_target": 0,
+   "required_item": [
+    {
+     "required_item_type": 0,
+     "required_item_value": 0
+    },
+    {
+     "required_item_type": 0,
+     "required_item_value": 0
+    }
+   ],
+   "required_resource": [
+    {
+     "required_resource_type": 0,
+     "required_resource_value": 0
+    },
+    {
+     "required_resource_type": 0,
+     "required_resource_value": 0
+    }
+   ],
+   "required_status": 0,
+   "restore_mana_percent": 0.0,
+   "self_status": 0,
+   "target_status": 0,
+   "target_team": 3,
+   "think_interval": 0,
+   "unlock_level": 1
+  },
+  {
+   "attack_multiplier": 0.0,
+   "buff_percent": 0.0,
+   "cast_point": 0.0,
+   "category": "被动",
+   "channel_finish": 0,
+   "channel_think": 0,
+   "channel_time": 0,
+   "class_id": 3,
+   "cooldown_id": 0,
+   "cooldown_rounds": 0,
+   "cost_resource": [
+    {
+     "cost_resource_cost": 0,
+     "cost_resource_id": 0
+    },
+    {
+     "cost_resource_cost": 0,
+     "cost_resource_id": 0
+    },
+    {
+     "cost_resource_cost": 0,
+     "cost_resource_id": 0
+    },
+    {
+     "cost_resource_cost": 0,
+     "cost_resource_id": 0
+    }
+   ],
+   "damage": "0",
+   "damage_type": 0,
+   "description": "常驻提高自身气血上限；初阶提升8%，技能等级越高提升越多。",
+   "dispel_count": 0,
+   "execute_heal_bonus": 0.0,
+   "execute_heal_threshold": 0.0,
+   "heal_multiplier": 0.0,
+   "heal_per_level": 0.0,
+   "icon_key": "UI/Skills/1307",
+   "id": 1307,
+   "immediate": 0,
+   "initiative": 0,
+   "mana_percent": 0.0,
+   "max_range": 0.0,
+   "max_rank": 10,
+   "max_targets": 1,
+   "min_range": 0.0,
+   "name": "碧落养元",
+   "passive_percent": 0.08,
+   "passive_stat": "maxHp",
+   "range": 0.0,
+   "recovery_time": 0.0,
+   "require_target": 0,
+   "required_item": [
+    {
+     "required_item_type": 0,
+     "required_item_value": 0
+    },
+    {
+     "required_item_type": 0,
+     "required_item_value": 0
+    }
+   ],
+   "required_resource": [
+    {
+     "required_resource_type": 0,
+     "required_resource_value": 0
+    },
+    {
+     "required_resource_type": 0,
+     "required_resource_value": 0
+    }
+   ],
+   "required_status": 0,
+   "restore_mana_percent": 0.0,
+   "self_status": 0,
+   "target_status": 0,
+   "target_team": 3,
+   "think_interval": 0,
+   "unlock_level": 20
+  },
+  {
+   "attack_multiplier": 0.0,
+   "buff_percent": 0.0,
+   "cast_point": 0.0,
+   "category": "被动",
+   "channel_finish": 0,
+   "channel_think": 0,
+   "channel_time": 0,
+   "class_id": 3,
+   "cooldown_id": 0,
+   "cooldown_rounds": 0,
+   "cost_resource": [
+    {
+     "cost_resource_cost": 0,
+     "cost_resource_id": 0
+    },
+    {
+     "cost_resource_cost": 0,
+     "cost_resource_id": 0
+    },
+    {
+     "cost_resource_cost": 0,
+     "cost_resource_id": 0
+    },
+    {
+     "cost_resource_cost": 0,
+     "cost_resource_id": 0
+    }
+   ],
+   "damage": "0",
+   "damage_type": 0,
+   "description": "常驻提高自身法力上限；初阶提升10%，技能等级越高提升越多。",
+   "dispel_count": 0,
+   "execute_heal_bonus": 0.0,
+   "execute_heal_threshold": 0.0,
+   "heal_multiplier": 0.0,
+   "heal_per_level": 0.0,
+   "icon_key": "UI/Skills/1308",
+   "id": 1308,
+   "immediate": 0,
+   "initiative": 0,
+   "mana_percent": 0.0,
+   "max_range": 0.0,
+   "max_rank": 10,
+   "max_targets": 1,
+   "min_range": 0.0,
+   "name": "清心抱朴",
+   "passive_percent": 0.1,
+   "passive_stat": "maxMp",
+   "range": 0.0,
+   "recovery_time": 0.0,
+   "require_target": 0,
+   "required_item": [
+    {
+     "required_item_type": 0,
+     "required_item_value": 0
+    },
+    {
+     "required_item_type": 0,
+     "required_item_value": 0
+    }
+   ],
+   "required_resource": [
+    {
+     "required_resource_type": 0,
+     "required_resource_value": 0
+    },
+    {
+     "required_resource_type": 0,
+     "required_resource_value": 0
+    }
+   ],
+   "required_status": 0,
+   "restore_mana_percent": 0.0,
+   "self_status": 0,
+   "target_status": 0,
+   "target_team": 3,
+   "think_interval": 0,
+   "unlock_level": 40
+  },
+  {
+   "attack_multiplier": 1.15,
+   "buff_percent": 0.0,
+   "cast_point": 0.0,
+   "category": "主动",
+   "channel_finish": 0,
+   "channel_think": 0,
+   "channel_time": 0,
+   "class_id": 4,
+   "cooldown_id": 0,
+   "cooldown_rounds": 0,
+   "cost_resource": [
+    {
+     "cost_resource_cost": 0,
+     "cost_resource_id": 0
+    },
+    {
+     "cost_resource_cost": 0,
+     "cost_resource_id": 0
+    },
+    {
+     "cost_resource_cost": 0,
+     "cost_resource_id": 0
+    },
+    {
+     "cost_resource_cost": 0,
+     "cost_resource_id": 0
+    }
+   ],
+   "damage": "10",
+   "damage_type": 1,
+   "description": "追风穿云，对1名敌人造成物理伤害。技能等级越高，伤害越高。",
+   "dispel_count": 0,
+   "execute_heal_bonus": 0.0,
+   "execute_heal_threshold": 0.0,
+   "heal_multiplier": 0.0,
+   "heal_per_level": 0.0,
+   "icon_key": "UI/Skills/1401",
+   "id": 1401,
+   "immediate": 0,
+   "initiative": 0,
+   "mana_percent": 0.03,
+   "max_range": 0.0,
+   "max_rank": 10,
+   "max_targets": 1,
+   "min_range": 0.0,
+   "name": "逐影穿云",
+   "passive_percent": 0.0,
+   "range": 0.0,
+   "recovery_time": 0.0,
+   "require_target": 0,
+   "required_item": [
+    {
+     "required_item_type": 0,
+     "required_item_value": 0
+    },
+    {
+     "required_item_type": 0,
+     "required_item_value": 0
+    }
+   ],
+   "required_resource": [
+    {
+     "required_resource_type": 0,
+     "required_resource_value": 0
+    },
+    {
+     "required_resource_type": 0,
+     "required_resource_value": 0
+    }
+   ],
+   "required_status": 0,
+   "restore_mana_percent": 0.0,
+   "self_status": 0,
+   "skill_type": [
+    1
+   ],
+   "target_status": 0,
+   "target_team": 1,
+   "targeting_mode": [
+    1
+   ],
+   "think_interval": 0,
+   "unlock_level": 1
+  },
+  {
+   "attack_multiplier": 0.75,
+   "buff_percent": 0.0,
+   "cast_point": 0.0,
+   "category": "主动",
+   "channel_finish": 0,
+   "channel_think": 0,
+   "channel_time": 0,
+   "class_id": 4,
+   "cooldown_id": 0,
+   "cooldown_rounds": 1,
+   "cost_resource": [
+    {
+     "cost_resource_cost": 0,
+     "cost_resource_id": 0
+    },
+    {
+     "cost_resource_cost": 0,
+     "cost_resource_id": 0
+    },
+    {
+     "cost_resource_cost": 0,
+     "cost_resource_id": 0
+    },
+    {
+     "cost_resource_cost": 0,
+     "cost_resource_id": 0
+    }
+   ],
+   "damage": "10",
+   "damage_type": 1,
+   "description": "回岚掠阵，对选中敌人及其他敌方造成物理伤害，最多3个目标。技能等级越高，伤害越高。",
+   "dispel_count": 0,
+   "execute_heal_bonus": 0.0,
+   "execute_heal_threshold": 0.0,
+   "heal_multiplier": 0.0,
+   "heal_per_level": 0.0,
+   "icon_key": "UI/Skills/1402",
+   "id": 1402,
+   "immediate": 0,
+   "initiative": 0,
+   "mana_percent": 0.06,
+   "max_range": 0.0,
+   "max_rank": 10,
+   "max_targets": 3,
+   "min_range": 0.0,
+   "name": "回岚掠阵",
+   "passive_percent": 0.0,
+   "range": 0.0,
+   "recovery_time": 0.0,
+   "require_target": 0,
+   "required_item": [
+    {
+     "required_item_type": 0,
+     "required_item_value": 0
+    },
+    {
+     "required_item_type": 0,
+     "required_item_value": 0
+    }
+   ],
+   "required_resource": [
+    {
+     "required_resource_type": 0,
+     "required_resource_value": 0
+    },
+    {
+     "required_resource_type": 0,
+     "required_resource_value": 0
+    }
+   ],
+   "required_status": 0,
+   "restore_mana_percent": 0.0,
+   "self_status": 0,
+   "skill_type": [
+    1
+   ],
+   "target_status": 0,
+   "target_team": 1,
+   "targeting_mode": [
+    1
+   ],
+   "think_interval": 0,
+   "unlock_level": 10
+  },
+  {
+   "attack_multiplier": 0.0,
+   "buff_percent": 0.25,
+   "cast_point": 0.0,
+   "category": "主动",
+   "channel_finish": 0,
+   "channel_think": 0,
+   "channel_time": 0,
+   "class_id": 4,
+   "cooldown_id": 0,
+   "cooldown_rounds": 2,
+   "cost_resource": [
+    {
+     "cost_resource_cost": 0,
+     "cost_resource_id": 0
+    },
+    {
+     "cost_resource_cost": 0,
+     "cost_resource_id": 0
+    },
+    {
+     "cost_resource_cost": 0,
+     "cost_resource_id": 0
+    },
+    {
+     "cost_resource_cost": 0,
+     "cost_resource_id": 0
+    }
+   ],
+   "damage": "0",
+   "damage_type": 0,
+   "description": "提高1名存活友方的速度，初阶提升25%，持续2回合；加速从下一回合排序生效，技能等级越高增益越强。",
+   "dispel_count": 0,
+   "effect": [
+    11403
+   ],
+   "execute_heal_bonus": 0.0,
+   "execute_heal_threshold": 0.0,
+   "heal_multiplier": 0.0,
+   "heal_per_level": 0.0,
+   "icon_key": "UI/Skills/1403",
+   "id": 1403,
+   "immediate": 0,
+   "initiative": 0,
+   "mana_percent": 0.04,
+   "max_range": 0.0,
+   "max_rank": 10,
+   "max_targets": 1,
+   "min_range": 0.0,
+   "name": "青羽催行",
+   "passive_percent": 0.0,
+   "range": 0.0,
+   "recovery_time": 0.0,
+   "require_target": 0,
+   "required_item": [
+    {
+     "required_item_type": 0,
+     "required_item_value": 0
+    },
+    {
+     "required_item_type": 0,
+     "required_item_value": 0
+    }
+   ],
+   "required_resource": [
+    {
+     "required_resource_type": 0,
+     "required_resource_value": 0
+    },
+    {
+     "required_resource_type": 0,
+     "required_resource_value": 0
+    }
+   ],
+   "required_status": 0,
+   "restore_mana_percent": 0.0,
+   "self_status": 0,
+   "skill_type": [
+    1
+   ],
+   "target_status": 0,
+   "target_team": 2,
+   "targeting_mode": [
+    1
+   ],
+   "think_interval": 0,
+   "unlock_level": 20
+  },
+  {
+   "attack_multiplier": 0.65,
+   "buff_percent": -0.25,
+   "cast_point": 0.0,
+   "category": "主动",
+   "channel_finish": 0,
+   "channel_think": 0,
+   "channel_time": 0,
+   "class_id": 4,
+   "cooldown_id": 0,
+   "cooldown_rounds": 3,
+   "cost_resource": [
+    {
+     "cost_resource_cost": 0,
+     "cost_resource_id": 0
+    },
+    {
+     "cost_resource_cost": 0,
+     "cost_resource_id": 0
+    },
+    {
+     "cost_resource_cost": 0,
+     "cost_resource_id": 0
+    },
+    {
+     "cost_resource_cost": 0,
+     "cost_resource_id": 0
+    }
+   ],
+   "damage": "10",
+   "damage_type": 1,
+   "description": "对1名敌人造成物理伤害，并降低其速度，初阶降低25%，持续2回合；减速从下一回合排序生效，技能等级越高效果越强。",
+   "dispel_count": 0,
+   "effect": [
+    11404
+   ],
+   "execute_heal_bonus": 0.0,
+   "execute_heal_threshold": 0.0,
+   "heal_multiplier": 0.0,
+   "heal_per_level": 0.0,
+   "icon_key": "UI/Skills/1404",
+   "id": 1404,
+   "immediate": 0,
+   "initiative": 0,
+   "mana_percent": 0.05,
+   "max_range": 0.0,
+   "max_rank": 10,
+   "max_targets": 1,
+   "min_range": 0.0,
+   "name": "缚岚止步",
+   "passive_percent": 0.0,
+   "range": 0.0,
+   "recovery_time": 0.0,
+   "require_target": 0,
+   "required_item": [
+    {
+     "required_item_type": 0,
+     "required_item_value": 0
+    },
+    {
+     "required_item_type": 0,
+     "required_item_value": 0
+    }
+   ],
+   "required_resource": [
+    {
+     "required_resource_type": 0,
+     "required_resource_value": 0
+    },
+    {
+     "required_resource_type": 0,
+     "required_resource_value": 0
+    }
+   ],
+   "required_status": 0,
+   "restore_mana_percent": 0.0,
+   "self_status": 0,
+   "skill_type": [
+    1
+   ],
+   "target_status": 0,
+   "target_team": 1,
+   "targeting_mode": [
+    1
+   ],
+   "think_interval": 0,
+   "unlock_level": 30
+  },
+  {
+   "attack_multiplier": 1.45,
+   "buff_percent": 0.0,
+   "cast_point": 0.0,
+   "category": "主动",
+   "channel_finish": 0,
+   "channel_think": 0,
+   "channel_time": 0,
+   "class_id": 4,
+   "cooldown_id": 0,
+   "cooldown_rounds": 3,
+   "cost_resource": [
+    {
+     "cost_resource_cost": 0,
+     "cost_resource_id": 0
+    },
+    {
+     "cost_resource_cost": 0,
+     "cost_resource_id": 0
+    },
+    {
+     "cost_resource_cost": 0,
+     "cost_resource_id": 0
+    },
+    {
+     "cost_resource_cost": 0,
+     "cost_resource_id": 0
+    }
+   ],
+   "damage": "10",
+   "damage_type": 1,
+   "description": "以先手优先级对1名敌人造成物理伤害；同优先级内仍按速度排序。技能等级越高，伤害越高。",
+   "dispel_count": 0,
+   "execute_heal_bonus": 0.0,
+   "execute_heal_threshold": 0.0,
+   "heal_multiplier": 0.0,
+   "heal_per_level": 0.0,
+   "icon_key": "UI/Skills/1405",
+   "id": 1405,
+   "immediate": 0,
+   "initiative": 1,
+   "mana_percent": 0.1,
+   "max_range": 0.0,
+   "max_rank": 10,
+   "max_targets": 1,
+   "min_range": 0.0,
+   "name": "长风先至",
+   "passive_percent": 0.0,
+   "range": 0.0,
+   "recovery_time": 0.0,
+   "require_target": 0,
+   "required_item": [
+    {
+     "required_item_type": 0,
+     "required_item_value": 0
+    },
+    {
+     "required_item_type": 0,
+     "required_item_value": 0
+    }
+   ],
+   "required_resource": [
+    {
+     "required_resource_type": 0,
+     "required_resource_value": 0
+    },
+    {
+     "required_resource_type": 0,
+     "required_resource_value": 0
+    }
+   ],
+   "required_status": 0,
+   "restore_mana_percent": 0.0,
+   "self_status": 0,
+   "skill_type": [
+    1
+   ],
+   "target_status": 0,
+   "target_team": 1,
+   "targeting_mode": [
+    1
+   ],
+   "think_interval": 0,
+   "unlock_level": 40
+  },
+  {
+   "attack_multiplier": 0.0,
+   "buff_percent": 0.0,
+   "cast_point": 0.0,
+   "category": "被动",
+   "channel_finish": 0,
+   "channel_think": 0,
+   "channel_time": 0,
+   "class_id": 4,
+   "cooldown_id": 0,
+   "cooldown_rounds": 0,
+   "cost_resource": [
+    {
+     "cost_resource_cost": 0,
+     "cost_resource_id": 0
+    },
+    {
+     "cost_resource_cost": 0,
+     "cost_resource_id": 0
+    },
+    {
+     "cost_resource_cost": 0,
+     "cost_resource_id": 0
+    },
+    {
+     "cost_resource_cost": 0,
+     "cost_resource_id": 0
+    }
+   ],
+   "damage": "0",
+   "damage_type": 0,
+   "description": "常驻提高自身暴击率；初阶增加5个百分点，技能等级越高提升越多。",
+   "dispel_count": 0,
+   "execute_heal_bonus": 0.0,
+   "execute_heal_threshold": 0.0,
+   "heal_multiplier": 0.0,
+   "heal_per_level": 0.0,
+   "icon_key": "UI/Skills/1406",
+   "id": 1406,
+   "immediate": 0,
+   "initiative": 0,
+   "mana_percent": 0.0,
+   "max_range": 0.0,
+   "max_rank": 10,
+   "max_targets": 1,
+   "min_range": 0.0,
+   "name": "听风识隙",
+   "passive_percent": 0.05,
+   "passive_stat": "crit",
+   "range": 0.0,
+   "recovery_time": 0.0,
+   "require_target": 0,
+   "required_item": [
+    {
+     "required_item_type": 0,
+     "required_item_value": 0
+    },
+    {
+     "required_item_type": 0,
+     "required_item_value": 0
+    }
+   ],
+   "required_resource": [
+    {
+     "required_resource_type": 0,
+     "required_resource_value": 0
+    },
+    {
+     "required_resource_type": 0,
+     "required_resource_value": 0
+    }
+   ],
+   "required_status": 0,
+   "restore_mana_percent": 0.0,
+   "self_status": 0,
+   "target_status": 0,
+   "target_team": 3,
+   "think_interval": 0,
+   "unlock_level": 1
+  },
+  {
+   "attack_multiplier": 0.0,
+   "buff_percent": 0.0,
+   "cast_point": 0.0,
+   "category": "被动",
+   "channel_finish": 0,
+   "channel_think": 0,
+   "channel_time": 0,
+   "class_id": 4,
+   "cooldown_id": 0,
+   "cooldown_rounds": 0,
+   "cost_resource": [
+    {
+     "cost_resource_cost": 0,
+     "cost_resource_id": 0
+    },
+    {
+     "cost_resource_cost": 0,
+     "cost_resource_id": 0
+    },
+    {
+     "cost_resource_cost": 0,
+     "cost_resource_id": 0
+    },
+    {
+     "cost_resource_cost": 0,
+     "cost_resource_id": 0
+    }
+   ],
+   "damage": "0",
+   "damage_type": 0,
+   "description": "常驻提高自身速度；初阶提升8%，技能等级越高提升越多。",
+   "dispel_count": 0,
+   "execute_heal_bonus": 0.0,
+   "execute_heal_threshold": 0.0,
+   "heal_multiplier": 0.0,
+   "heal_per_level": 0.0,
+   "icon_key": "UI/Skills/1407",
+   "id": 1407,
+   "immediate": 0,
+   "initiative": 0,
+   "mana_percent": 0.0,
+   "max_range": 0.0,
+   "max_rank": 10,
+   "max_targets": 1,
+   "min_range": 0.0,
+   "name": "流云轻身",
+   "passive_percent": 0.08,
+   "passive_stat": "speed",
+   "range": 0.0,
+   "recovery_time": 0.0,
+   "require_target": 0,
+   "required_item": [
+    {
+     "required_item_type": 0,
+     "required_item_value": 0
+    },
+    {
+     "required_item_type": 0,
+     "required_item_value": 0
+    }
+   ],
+   "required_resource": [
+    {
+     "required_resource_type": 0,
+     "required_resource_value": 0
+    },
+    {
+     "required_resource_type": 0,
+     "required_resource_value": 0
+    }
+   ],
+   "required_status": 0,
+   "restore_mana_percent": 0.0,
+   "self_status": 0,
+   "target_status": 0,
+   "target_team": 3,
+   "think_interval": 0,
+   "unlock_level": 20
+  },
+  {
+   "attack_multiplier": 0.0,
+   "buff_percent": 0.0,
+   "cast_point": 0.0,
+   "category": "被动",
+   "channel_finish": 0,
+   "channel_think": 0,
+   "channel_time": 0,
+   "class_id": 4,
+   "cooldown_id": 0,
+   "cooldown_rounds": 0,
+   "cost_resource": [
+    {
+     "cost_resource_cost": 0,
+     "cost_resource_id": 0
+    },
+    {
+     "cost_resource_cost": 0,
+     "cost_resource_id": 0
+    },
+    {
+     "cost_resource_cost": 0,
+     "cost_resource_id": 0
+    },
+    {
+     "cost_resource_cost": 0,
+     "cost_resource_id": 0
+    }
+   ],
+   "damage": "0",
+   "damage_type": 0,
+   "description": "常驻提高自身物伤；初阶提升5%，技能等级越高提升越多。",
+   "dispel_count": 0,
+   "execute_heal_bonus": 0.0,
+   "execute_heal_threshold": 0.0,
+   "heal_multiplier": 0.0,
+   "heal_per_level": 0.0,
+   "icon_key": "UI/Skills/1408",
+   "id": 1408,
+   "immediate": 0,
+   "initiative": 0,
+   "mana_percent": 0.0,
+   "max_range": 0.0,
+   "max_rank": 10,
+   "max_targets": 1,
+   "min_range": 0.0,
+   "name": "乘风蓄势",
+   "passive_percent": 0.05,
+   "passive_stat": "physicalAttack",
+   "range": 0.0,
+   "recovery_time": 0.0,
+   "require_target": 0,
+   "required_item": [
+    {
+     "required_item_type": 0,
+     "required_item_value": 0
+    },
+    {
+     "required_item_type": 0,
+     "required_item_value": 0
+    }
+   ],
+   "required_resource": [
+    {
+     "required_resource_type": 0,
+     "required_resource_value": 0
+    },
+    {
+     "required_resource_type": 0,
+     "required_resource_value": 0
+    }
+   ],
+   "required_status": 0,
+   "restore_mana_percent": 0.0,
+   "self_status": 0,
+   "target_status": 0,
+   "target_team": 3,
+   "think_interval": 0,
+   "unlock_level": 40
   }
  ]
 }

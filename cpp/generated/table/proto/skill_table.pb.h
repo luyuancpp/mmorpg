@@ -898,6 +898,10 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED SkillTable final : public ::google:
     kRequiredResourceFieldNumber = 22,
     kCostResourceFieldNumber = 23,
     kDamageFieldNumber = 20,
+    kNameFieldNumber = 27,
+    kDescriptionFieldNumber = 28,
+    kIconKeyFieldNumber = 29,
+    kCategoryFieldNumber = 30,
     kIdFieldNumber = 1,
     kRequireTargetFieldNumber = 4,
     kCastPointFieldNumber = 6,
@@ -916,6 +920,23 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED SkillTable final : public ::google:
     kCooldownIdFieldNumber = 19,
     kDamageTypeFieldNumber = 24,
     kAttackMultiplierFieldNumber = 25,
+    kClassIdFieldNumber = 26,
+    kUnlockLevelFieldNumber = 31,
+    kPassiveStatFieldNumber = 44,
+    kMaxRankFieldNumber = 32,
+    kTargetTeamFieldNumber = 33,
+    kManaPercentFieldNumber = 35,
+    kMaxTargetsFieldNumber = 34,
+    kCooldownRoundsFieldNumber = 36,
+    kHealMultiplierFieldNumber = 37,
+    kHealPerLevelFieldNumber = 38,
+    kExecuteHealThresholdFieldNumber = 39,
+    kExecuteHealBonusFieldNumber = 40,
+    kRestoreManaPercentFieldNumber = 41,
+    kDispelCountFieldNumber = 42,
+    kInitiativeFieldNumber = 43,
+    kPassivePercentFieldNumber = 45,
+    kBuffPercentFieldNumber = 46,
   };
   // repeated uint32 skill_type = 2;
   [[nodiscard]] int skill_type_size()
@@ -1053,6 +1074,66 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED SkillTable final : public ::google:
   const ::std::string& _internal_damage() const;
   PROTOBUF_ALWAYS_INLINE void _internal_set_damage(const ::std::string& value);
   ::std::string* PROTOBUF_NONNULL _internal_mutable_damage();
+
+  public:
+  // string name = 27;
+  void clear_name() ;
+  [[nodiscard]] const ::std::string& name() const;
+  template <typename Arg_ = const ::std::string&, typename... Args_>
+  void set_name(Arg_&& arg, Args_... args);
+  ::std::string* PROTOBUF_NONNULL mutable_name();
+  [[nodiscard]] ::std::string* PROTOBUF_NULLABLE release_name();
+  void set_allocated_name(::std::string* PROTOBUF_NULLABLE value);
+
+  private:
+  const ::std::string& _internal_name() const;
+  PROTOBUF_ALWAYS_INLINE void _internal_set_name(const ::std::string& value);
+  ::std::string* PROTOBUF_NONNULL _internal_mutable_name();
+
+  public:
+  // string description = 28;
+  void clear_description() ;
+  [[nodiscard]] const ::std::string& description() const;
+  template <typename Arg_ = const ::std::string&, typename... Args_>
+  void set_description(Arg_&& arg, Args_... args);
+  ::std::string* PROTOBUF_NONNULL mutable_description();
+  [[nodiscard]] ::std::string* PROTOBUF_NULLABLE release_description();
+  void set_allocated_description(::std::string* PROTOBUF_NULLABLE value);
+
+  private:
+  const ::std::string& _internal_description() const;
+  PROTOBUF_ALWAYS_INLINE void _internal_set_description(const ::std::string& value);
+  ::std::string* PROTOBUF_NONNULL _internal_mutable_description();
+
+  public:
+  // string icon_key = 29;
+  void clear_icon_key() ;
+  [[nodiscard]] const ::std::string& icon_key() const;
+  template <typename Arg_ = const ::std::string&, typename... Args_>
+  void set_icon_key(Arg_&& arg, Args_... args);
+  ::std::string* PROTOBUF_NONNULL mutable_icon_key();
+  [[nodiscard]] ::std::string* PROTOBUF_NULLABLE release_icon_key();
+  void set_allocated_icon_key(::std::string* PROTOBUF_NULLABLE value);
+
+  private:
+  const ::std::string& _internal_icon_key() const;
+  PROTOBUF_ALWAYS_INLINE void _internal_set_icon_key(const ::std::string& value);
+  ::std::string* PROTOBUF_NONNULL _internal_mutable_icon_key();
+
+  public:
+  // string category = 30;
+  void clear_category() ;
+  [[nodiscard]] const ::std::string& category() const;
+  template <typename Arg_ = const ::std::string&, typename... Args_>
+  void set_category(Arg_&& arg, Args_... args);
+  ::std::string* PROTOBUF_NONNULL mutable_category();
+  [[nodiscard]] ::std::string* PROTOBUF_NULLABLE release_category();
+  void set_allocated_category(::std::string* PROTOBUF_NULLABLE value);
+
+  private:
+  const ::std::string& _internal_category() const;
+  PROTOBUF_ALWAYS_INLINE void _internal_set_category(const ::std::string& value);
+  ::std::string* PROTOBUF_NONNULL _internal_mutable_category();
 
   public:
   // uint32 id = 1;
@@ -1235,13 +1316,188 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED SkillTable final : public ::google:
   void _internal_set_attack_multiplier(double value);
 
   public:
+  // uint32 class_id = 26;
+  void clear_class_id() ;
+  [[nodiscard]] ::uint32_t class_id() const;
+  void set_class_id(::uint32_t value);
+
+  private:
+  ::uint32_t _internal_class_id() const;
+  void _internal_set_class_id(::uint32_t value);
+
+  public:
+  // uint32 unlock_level = 31;
+  void clear_unlock_level() ;
+  [[nodiscard]] ::uint32_t unlock_level() const;
+  void set_unlock_level(::uint32_t value);
+
+  private:
+  ::uint32_t _internal_unlock_level() const;
+  void _internal_set_unlock_level(::uint32_t value);
+
+  public:
+  // string passive_stat = 44;
+  void clear_passive_stat() ;
+  [[nodiscard]] const ::std::string& passive_stat() const;
+  template <typename Arg_ = const ::std::string&, typename... Args_>
+  void set_passive_stat(Arg_&& arg, Args_... args);
+  ::std::string* PROTOBUF_NONNULL mutable_passive_stat();
+  [[nodiscard]] ::std::string* PROTOBUF_NULLABLE release_passive_stat();
+  void set_allocated_passive_stat(::std::string* PROTOBUF_NULLABLE value);
+
+  private:
+  const ::std::string& _internal_passive_stat() const;
+  PROTOBUF_ALWAYS_INLINE void _internal_set_passive_stat(const ::std::string& value);
+  ::std::string* PROTOBUF_NONNULL _internal_mutable_passive_stat();
+
+  public:
+  // uint32 max_rank = 32;
+  void clear_max_rank() ;
+  [[nodiscard]] ::uint32_t max_rank() const;
+  void set_max_rank(::uint32_t value);
+
+  private:
+  ::uint32_t _internal_max_rank() const;
+  void _internal_set_max_rank(::uint32_t value);
+
+  public:
+  // uint32 target_team = 33;
+  void clear_target_team() ;
+  [[nodiscard]] ::uint32_t target_team() const;
+  void set_target_team(::uint32_t value);
+
+  private:
+  ::uint32_t _internal_target_team() const;
+  void _internal_set_target_team(::uint32_t value);
+
+  public:
+  // double mana_percent = 35;
+  void clear_mana_percent() ;
+  [[nodiscard]] double mana_percent() const;
+  void set_mana_percent(double value);
+
+  private:
+  double _internal_mana_percent() const;
+  void _internal_set_mana_percent(double value);
+
+  public:
+  // uint32 max_targets = 34;
+  void clear_max_targets() ;
+  [[nodiscard]] ::uint32_t max_targets() const;
+  void set_max_targets(::uint32_t value);
+
+  private:
+  ::uint32_t _internal_max_targets() const;
+  void _internal_set_max_targets(::uint32_t value);
+
+  public:
+  // uint32 cooldown_rounds = 36;
+  void clear_cooldown_rounds() ;
+  [[nodiscard]] ::uint32_t cooldown_rounds() const;
+  void set_cooldown_rounds(::uint32_t value);
+
+  private:
+  ::uint32_t _internal_cooldown_rounds() const;
+  void _internal_set_cooldown_rounds(::uint32_t value);
+
+  public:
+  // double heal_multiplier = 37;
+  void clear_heal_multiplier() ;
+  [[nodiscard]] double heal_multiplier() const;
+  void set_heal_multiplier(double value);
+
+  private:
+  double _internal_heal_multiplier() const;
+  void _internal_set_heal_multiplier(double value);
+
+  public:
+  // double heal_per_level = 38;
+  void clear_heal_per_level() ;
+  [[nodiscard]] double heal_per_level() const;
+  void set_heal_per_level(double value);
+
+  private:
+  double _internal_heal_per_level() const;
+  void _internal_set_heal_per_level(double value);
+
+  public:
+  // double execute_heal_threshold = 39;
+  void clear_execute_heal_threshold() ;
+  [[nodiscard]] double execute_heal_threshold() const;
+  void set_execute_heal_threshold(double value);
+
+  private:
+  double _internal_execute_heal_threshold() const;
+  void _internal_set_execute_heal_threshold(double value);
+
+  public:
+  // double execute_heal_bonus = 40;
+  void clear_execute_heal_bonus() ;
+  [[nodiscard]] double execute_heal_bonus() const;
+  void set_execute_heal_bonus(double value);
+
+  private:
+  double _internal_execute_heal_bonus() const;
+  void _internal_set_execute_heal_bonus(double value);
+
+  public:
+  // double restore_mana_percent = 41;
+  void clear_restore_mana_percent() ;
+  [[nodiscard]] double restore_mana_percent() const;
+  void set_restore_mana_percent(double value);
+
+  private:
+  double _internal_restore_mana_percent() const;
+  void _internal_set_restore_mana_percent(double value);
+
+  public:
+  // uint32 dispel_count = 42;
+  void clear_dispel_count() ;
+  [[nodiscard]] ::uint32_t dispel_count() const;
+  void set_dispel_count(::uint32_t value);
+
+  private:
+  ::uint32_t _internal_dispel_count() const;
+  void _internal_set_dispel_count(::uint32_t value);
+
+  public:
+  // int32 initiative = 43;
+  void clear_initiative() ;
+  [[nodiscard]] ::int32_t initiative() const;
+  void set_initiative(::int32_t value);
+
+  private:
+  ::int32_t _internal_initiative() const;
+  void _internal_set_initiative(::int32_t value);
+
+  public:
+  // double passive_percent = 45;
+  void clear_passive_percent() ;
+  [[nodiscard]] double passive_percent() const;
+  void set_passive_percent(double value);
+
+  private:
+  double _internal_passive_percent() const;
+  void _internal_set_passive_percent(double value);
+
+  public:
+  // double buff_percent = 46;
+  void clear_buff_percent() ;
+  [[nodiscard]] double buff_percent() const;
+  void set_buff_percent(double value);
+
+  private:
+  double _internal_buff_percent() const;
+  void _internal_set_buff_percent(double value);
+
+  public:
   // @@protoc_insertion_point(class_scope:SkillTable)
  private:
   class _Internal;
   using ParseTableT_ =
-      ::google::protobuf::internal::TcParseTable<5, 25,
-                          3, 49,
-                          2>;
+      ::google::protobuf::internal::TcParseTable<5, 46,
+                          3, 108,
+                          7>;
   static constexpr ParseTableT_ InternalGenerateParseTable_(
       const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL class_data);
   friend class ::google::protobuf::internal::TcParser;
@@ -1266,7 +1522,7 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED SkillTable final : public ::google:
         ::google::protobuf::internal::InternalVisibility visibility,
         ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
         const SkillTable& from_msg);
-    ::google::protobuf::internal::HasBits<1> _has_bits_;
+    ::google::protobuf::internal::HasBits<2> _has_bits_;
     ::google::protobuf::internal::CachedSize _cached_size_;
     ::google::protobuf::RepeatedField<::uint32_t> skill_type_;
     ::google::protobuf::internal::CachedSize _skill_type_cached_byte_size_;
@@ -1278,6 +1534,10 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED SkillTable final : public ::google:
     ::google::protobuf::RepeatedPtrField< ::Skillrequired_resource > required_resource_;
     ::google::protobuf::RepeatedPtrField< ::Skillcost_resource > cost_resource_;
     ::google::protobuf::internal::ArenaStringPtr damage_;
+    ::google::protobuf::internal::ArenaStringPtr name_;
+    ::google::protobuf::internal::ArenaStringPtr description_;
+    ::google::protobuf::internal::ArenaStringPtr icon_key_;
+    ::google::protobuf::internal::ArenaStringPtr category_;
     ::uint32_t id_;
     ::uint32_t require_target_;
     double cast_point_;
@@ -1296,6 +1556,23 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED SkillTable final : public ::google:
     ::uint32_t cooldown_id_;
     ::uint32_t damage_type_;
     double attack_multiplier_;
+    ::uint32_t class_id_;
+    ::uint32_t unlock_level_;
+    ::google::protobuf::internal::ArenaStringPtr passive_stat_;
+    ::uint32_t max_rank_;
+    ::uint32_t target_team_;
+    double mana_percent_;
+    ::uint32_t max_targets_;
+    ::uint32_t cooldown_rounds_;
+    double heal_multiplier_;
+    double heal_per_level_;
+    double execute_heal_threshold_;
+    double execute_heal_bonus_;
+    double restore_mana_percent_;
+    ::uint32_t dispel_count_;
+    ::int32_t initiative_;
+    double passive_percent_;
+    double buff_percent_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
   union { Impl_ _impl_; };
@@ -1690,7 +1967,7 @@ inline void Skillcost_resource::_internal_set_cost_resource_cost(::uint32_t valu
 inline void SkillTable::clear_id() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.id_ = 0u;
-  ClearHasBit(_impl_._has_bits_[0], 0x00000080U);
+  ClearHasBit(_impl_._has_bits_[0], 0x00000800U);
 }
 inline ::uint32_t SkillTable::id() const {
   // @@protoc_insertion_point(field_get:SkillTable.id)
@@ -1698,7 +1975,7 @@ inline ::uint32_t SkillTable::id() const {
 }
 inline void SkillTable::set_id(::uint32_t value) {
   _internal_set_id(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00000080U);
+  SetHasBit(_impl_._has_bits_[0], 0x00000800U);
   // @@protoc_insertion_point(field_set:SkillTable.id)
 }
 inline ::uint32_t SkillTable::_internal_id() const {
@@ -1816,7 +2093,7 @@ SkillTable::_internal_mutable_targeting_mode() {
 inline void SkillTable::clear_require_target() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.require_target_ = 0u;
-  ClearHasBit(_impl_._has_bits_[0], 0x00000100U);
+  ClearHasBit(_impl_._has_bits_[0], 0x00001000U);
 }
 inline ::uint32_t SkillTable::require_target() const {
   // @@protoc_insertion_point(field_get:SkillTable.require_target)
@@ -1824,7 +2101,7 @@ inline ::uint32_t SkillTable::require_target() const {
 }
 inline void SkillTable::set_require_target(::uint32_t value) {
   _internal_set_require_target(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00000100U);
+  SetHasBit(_impl_._has_bits_[0], 0x00001000U);
   // @@protoc_insertion_point(field_set:SkillTable.require_target)
 }
 inline ::uint32_t SkillTable::_internal_require_target() const {
@@ -1840,7 +2117,7 @@ inline void SkillTable::_internal_set_require_target(::uint32_t value) {
 inline void SkillTable::clear_target_status() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.target_status_ = 0u;
-  ClearHasBit(_impl_._has_bits_[0], 0x00000400U);
+  ClearHasBit(_impl_._has_bits_[0], 0x00004000U);
 }
 inline ::uint32_t SkillTable::target_status() const {
   // @@protoc_insertion_point(field_get:SkillTable.target_status)
@@ -1848,7 +2125,7 @@ inline ::uint32_t SkillTable::target_status() const {
 }
 inline void SkillTable::set_target_status(::uint32_t value) {
   _internal_set_target_status(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00000400U);
+  SetHasBit(_impl_._has_bits_[0], 0x00004000U);
   // @@protoc_insertion_point(field_set:SkillTable.target_status)
 }
 inline ::uint32_t SkillTable::_internal_target_status() const {
@@ -1864,7 +2141,7 @@ inline void SkillTable::_internal_set_target_status(::uint32_t value) {
 inline void SkillTable::clear_cast_point() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.cast_point_ = 0;
-  ClearHasBit(_impl_._has_bits_[0], 0x00000200U);
+  ClearHasBit(_impl_._has_bits_[0], 0x00002000U);
 }
 inline double SkillTable::cast_point() const {
   // @@protoc_insertion_point(field_get:SkillTable.cast_point)
@@ -1872,7 +2149,7 @@ inline double SkillTable::cast_point() const {
 }
 inline void SkillTable::set_cast_point(double value) {
   _internal_set_cast_point(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00000200U);
+  SetHasBit(_impl_._has_bits_[0], 0x00002000U);
   // @@protoc_insertion_point(field_set:SkillTable.cast_point)
 }
 inline double SkillTable::_internal_cast_point() const {
@@ -1888,7 +2165,7 @@ inline void SkillTable::_internal_set_cast_point(double value) {
 inline void SkillTable::clear_recovery_time() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.recovery_time_ = 0;
-  ClearHasBit(_impl_._has_bits_[0], 0x00001000U);
+  ClearHasBit(_impl_._has_bits_[0], 0x00010000U);
 }
 inline double SkillTable::recovery_time() const {
   // @@protoc_insertion_point(field_get:SkillTable.recovery_time)
@@ -1896,7 +2173,7 @@ inline double SkillTable::recovery_time() const {
 }
 inline void SkillTable::set_recovery_time(double value) {
   _internal_set_recovery_time(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00001000U);
+  SetHasBit(_impl_._has_bits_[0], 0x00010000U);
   // @@protoc_insertion_point(field_set:SkillTable.recovery_time)
 }
 inline double SkillTable::_internal_recovery_time() const {
@@ -1912,7 +2189,7 @@ inline void SkillTable::_internal_set_recovery_time(double value) {
 inline void SkillTable::clear_immediate() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.immediate_ = 0u;
-  ClearHasBit(_impl_._has_bits_[0], 0x00000800U);
+  ClearHasBit(_impl_._has_bits_[0], 0x00008000U);
 }
 inline ::uint32_t SkillTable::immediate() const {
   // @@protoc_insertion_point(field_get:SkillTable.immediate)
@@ -1920,7 +2197,7 @@ inline ::uint32_t SkillTable::immediate() const {
 }
 inline void SkillTable::set_immediate(::uint32_t value) {
   _internal_set_immediate(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00000800U);
+  SetHasBit(_impl_._has_bits_[0], 0x00008000U);
   // @@protoc_insertion_point(field_set:SkillTable.immediate)
 }
 inline ::uint32_t SkillTable::_internal_immediate() const {
@@ -1987,7 +2264,7 @@ SkillTable::_internal_mutable_effect() {
 inline void SkillTable::clear_channel_think() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.channel_think_ = 0u;
-  ClearHasBit(_impl_._has_bits_[0], 0x00002000U);
+  ClearHasBit(_impl_._has_bits_[0], 0x00020000U);
 }
 inline ::uint32_t SkillTable::channel_think() const {
   // @@protoc_insertion_point(field_get:SkillTable.channel_think)
@@ -1995,7 +2272,7 @@ inline ::uint32_t SkillTable::channel_think() const {
 }
 inline void SkillTable::set_channel_think(::uint32_t value) {
   _internal_set_channel_think(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00002000U);
+  SetHasBit(_impl_._has_bits_[0], 0x00020000U);
   // @@protoc_insertion_point(field_set:SkillTable.channel_think)
 }
 inline ::uint32_t SkillTable::_internal_channel_think() const {
@@ -2011,7 +2288,7 @@ inline void SkillTable::_internal_set_channel_think(::uint32_t value) {
 inline void SkillTable::clear_channel_finish() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.channel_finish_ = 0u;
-  ClearHasBit(_impl_._has_bits_[0], 0x00004000U);
+  ClearHasBit(_impl_._has_bits_[0], 0x00040000U);
 }
 inline ::uint32_t SkillTable::channel_finish() const {
   // @@protoc_insertion_point(field_get:SkillTable.channel_finish)
@@ -2019,7 +2296,7 @@ inline ::uint32_t SkillTable::channel_finish() const {
 }
 inline void SkillTable::set_channel_finish(::uint32_t value) {
   _internal_set_channel_finish(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00004000U);
+  SetHasBit(_impl_._has_bits_[0], 0x00040000U);
   // @@protoc_insertion_point(field_set:SkillTable.channel_finish)
 }
 inline ::uint32_t SkillTable::_internal_channel_finish() const {
@@ -2035,7 +2312,7 @@ inline void SkillTable::_internal_set_channel_finish(::uint32_t value) {
 inline void SkillTable::clear_think_interval() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.think_interval_ = 0u;
-  ClearHasBit(_impl_._has_bits_[0], 0x00008000U);
+  ClearHasBit(_impl_._has_bits_[0], 0x00080000U);
 }
 inline ::uint32_t SkillTable::think_interval() const {
   // @@protoc_insertion_point(field_get:SkillTable.think_interval)
@@ -2043,7 +2320,7 @@ inline ::uint32_t SkillTable::think_interval() const {
 }
 inline void SkillTable::set_think_interval(::uint32_t value) {
   _internal_set_think_interval(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00008000U);
+  SetHasBit(_impl_._has_bits_[0], 0x00080000U);
   // @@protoc_insertion_point(field_set:SkillTable.think_interval)
 }
 inline ::uint32_t SkillTable::_internal_think_interval() const {
@@ -2059,7 +2336,7 @@ inline void SkillTable::_internal_set_think_interval(::uint32_t value) {
 inline void SkillTable::clear_channel_time() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.channel_time_ = 0u;
-  ClearHasBit(_impl_._has_bits_[0], 0x00010000U);
+  ClearHasBit(_impl_._has_bits_[0], 0x00100000U);
 }
 inline ::uint32_t SkillTable::channel_time() const {
   // @@protoc_insertion_point(field_get:SkillTable.channel_time)
@@ -2067,7 +2344,7 @@ inline ::uint32_t SkillTable::channel_time() const {
 }
 inline void SkillTable::set_channel_time(::uint32_t value) {
   _internal_set_channel_time(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00010000U);
+  SetHasBit(_impl_._has_bits_[0], 0x00100000U);
   // @@protoc_insertion_point(field_set:SkillTable.channel_time)
 }
 inline ::uint32_t SkillTable::_internal_channel_time() const {
@@ -2083,7 +2360,7 @@ inline void SkillTable::_internal_set_channel_time(::uint32_t value) {
 inline void SkillTable::clear_range() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.range_ = 0;
-  ClearHasBit(_impl_._has_bits_[0], 0x00020000U);
+  ClearHasBit(_impl_._has_bits_[0], 0x00200000U);
 }
 inline double SkillTable::range() const {
   // @@protoc_insertion_point(field_get:SkillTable.range)
@@ -2091,7 +2368,7 @@ inline double SkillTable::range() const {
 }
 inline void SkillTable::set_range(double value) {
   _internal_set_range(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00020000U);
+  SetHasBit(_impl_._has_bits_[0], 0x00200000U);
   // @@protoc_insertion_point(field_set:SkillTable.range)
 }
 inline double SkillTable::_internal_range() const {
@@ -2107,7 +2384,7 @@ inline void SkillTable::_internal_set_range(double value) {
 inline void SkillTable::clear_max_range() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.max_range_ = 0;
-  ClearHasBit(_impl_._has_bits_[0], 0x00040000U);
+  ClearHasBit(_impl_._has_bits_[0], 0x00400000U);
 }
 inline double SkillTable::max_range() const {
   // @@protoc_insertion_point(field_get:SkillTable.max_range)
@@ -2115,7 +2392,7 @@ inline double SkillTable::max_range() const {
 }
 inline void SkillTable::set_max_range(double value) {
   _internal_set_max_range(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00040000U);
+  SetHasBit(_impl_._has_bits_[0], 0x00400000U);
   // @@protoc_insertion_point(field_set:SkillTable.max_range)
 }
 inline double SkillTable::_internal_max_range() const {
@@ -2131,7 +2408,7 @@ inline void SkillTable::_internal_set_max_range(double value) {
 inline void SkillTable::clear_min_range() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.min_range_ = 0;
-  ClearHasBit(_impl_._has_bits_[0], 0x00080000U);
+  ClearHasBit(_impl_._has_bits_[0], 0x00800000U);
 }
 inline double SkillTable::min_range() const {
   // @@protoc_insertion_point(field_get:SkillTable.min_range)
@@ -2139,7 +2416,7 @@ inline double SkillTable::min_range() const {
 }
 inline void SkillTable::set_min_range(double value) {
   _internal_set_min_range(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00080000U);
+  SetHasBit(_impl_._has_bits_[0], 0x00800000U);
   // @@protoc_insertion_point(field_set:SkillTable.min_range)
 }
 inline double SkillTable::_internal_min_range() const {
@@ -2155,7 +2432,7 @@ inline void SkillTable::_internal_set_min_range(double value) {
 inline void SkillTable::clear_self_status() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.self_status_ = 0u;
-  ClearHasBit(_impl_._has_bits_[0], 0x00100000U);
+  ClearHasBit(_impl_._has_bits_[0], 0x01000000U);
 }
 inline ::uint32_t SkillTable::self_status() const {
   // @@protoc_insertion_point(field_get:SkillTable.self_status)
@@ -2163,7 +2440,7 @@ inline ::uint32_t SkillTable::self_status() const {
 }
 inline void SkillTable::set_self_status(::uint32_t value) {
   _internal_set_self_status(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00100000U);
+  SetHasBit(_impl_._has_bits_[0], 0x01000000U);
   // @@protoc_insertion_point(field_set:SkillTable.self_status)
 }
 inline ::uint32_t SkillTable::_internal_self_status() const {
@@ -2179,7 +2456,7 @@ inline void SkillTable::_internal_set_self_status(::uint32_t value) {
 inline void SkillTable::clear_required_status() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.required_status_ = 0u;
-  ClearHasBit(_impl_._has_bits_[0], 0x00200000U);
+  ClearHasBit(_impl_._has_bits_[0], 0x02000000U);
 }
 inline ::uint32_t SkillTable::required_status() const {
   // @@protoc_insertion_point(field_get:SkillTable.required_status)
@@ -2187,7 +2464,7 @@ inline ::uint32_t SkillTable::required_status() const {
 }
 inline void SkillTable::set_required_status(::uint32_t value) {
   _internal_set_required_status(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00200000U);
+  SetHasBit(_impl_._has_bits_[0], 0x02000000U);
   // @@protoc_insertion_point(field_set:SkillTable.required_status)
 }
 inline ::uint32_t SkillTable::_internal_required_status() const {
@@ -2203,7 +2480,7 @@ inline void SkillTable::_internal_set_required_status(::uint32_t value) {
 inline void SkillTable::clear_cooldown_id() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.cooldown_id_ = 0u;
-  ClearHasBit(_impl_._has_bits_[0], 0x00400000U);
+  ClearHasBit(_impl_._has_bits_[0], 0x04000000U);
 }
 inline ::uint32_t SkillTable::cooldown_id() const {
   // @@protoc_insertion_point(field_get:SkillTable.cooldown_id)
@@ -2211,7 +2488,7 @@ inline ::uint32_t SkillTable::cooldown_id() const {
 }
 inline void SkillTable::set_cooldown_id(::uint32_t value) {
   _internal_set_cooldown_id(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00400000U);
+  SetHasBit(_impl_._has_bits_[0], 0x04000000U);
   // @@protoc_insertion_point(field_set:SkillTable.cooldown_id)
 }
 inline ::uint32_t SkillTable::_internal_cooldown_id() const {
@@ -2291,7 +2568,7 @@ inline void SkillTable::set_allocated_damage(::std::string* PROTOBUF_NULLABLE va
 inline void SkillTable::clear_damage_type() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.damage_type_ = 0u;
-  ClearHasBit(_impl_._has_bits_[0], 0x00800000U);
+  ClearHasBit(_impl_._has_bits_[0], 0x08000000U);
 }
 inline ::uint32_t SkillTable::damage_type() const {
   // @@protoc_insertion_point(field_get:SkillTable.damage_type)
@@ -2299,7 +2576,7 @@ inline ::uint32_t SkillTable::damage_type() const {
 }
 inline void SkillTable::set_damage_type(::uint32_t value) {
   _internal_set_damage_type(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00800000U);
+  SetHasBit(_impl_._has_bits_[0], 0x08000000U);
   // @@protoc_insertion_point(field_set:SkillTable.damage_type)
 }
 inline ::uint32_t SkillTable::_internal_damage_type() const {
@@ -2315,7 +2592,7 @@ inline void SkillTable::_internal_set_damage_type(::uint32_t value) {
 inline void SkillTable::clear_attack_multiplier() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.attack_multiplier_ = 0;
-  ClearHasBit(_impl_._has_bits_[0], 0x01000000U);
+  ClearHasBit(_impl_._has_bits_[0], 0x10000000U);
 }
 inline double SkillTable::attack_multiplier() const {
   // @@protoc_insertion_point(field_get:SkillTable.attack_multiplier)
@@ -2323,7 +2600,7 @@ inline double SkillTable::attack_multiplier() const {
 }
 inline void SkillTable::set_attack_multiplier(double value) {
   _internal_set_attack_multiplier(value);
-  SetHasBit(_impl_._has_bits_[0], 0x01000000U);
+  SetHasBit(_impl_._has_bits_[0], 0x10000000U);
   // @@protoc_insertion_point(field_set:SkillTable.attack_multiplier)
 }
 inline double SkillTable::_internal_attack_multiplier() const {
@@ -2333,6 +2610,710 @@ inline double SkillTable::_internal_attack_multiplier() const {
 inline void SkillTable::_internal_set_attack_multiplier(double value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.attack_multiplier_ = value;
+}
+
+// uint32 class_id = 26;
+inline void SkillTable::clear_class_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.class_id_ = 0u;
+  ClearHasBit(_impl_._has_bits_[0], 0x20000000U);
+}
+inline ::uint32_t SkillTable::class_id() const {
+  // @@protoc_insertion_point(field_get:SkillTable.class_id)
+  return _internal_class_id();
+}
+inline void SkillTable::set_class_id(::uint32_t value) {
+  _internal_set_class_id(value);
+  SetHasBit(_impl_._has_bits_[0], 0x20000000U);
+  // @@protoc_insertion_point(field_set:SkillTable.class_id)
+}
+inline ::uint32_t SkillTable::_internal_class_id() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.class_id_;
+}
+inline void SkillTable::_internal_set_class_id(::uint32_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.class_id_ = value;
+}
+
+// string name = 27;
+inline void SkillTable::clear_name() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.name_.ClearToEmpty();
+  ClearHasBit(_impl_._has_bits_[0], 0x00000080U);
+}
+inline const ::std::string& SkillTable::name() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:SkillTable.name)
+  return _internal_name();
+}
+template <typename Arg_, typename... Args_>
+PROTOBUF_ALWAYS_INLINE void SkillTable::set_name(Arg_&& arg, Args_... args) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  SetHasBit(_impl_._has_bits_[0], 0x00000080U);
+  _impl_.name_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
+  // @@protoc_insertion_point(field_set:SkillTable.name)
+}
+inline ::std::string* PROTOBUF_NONNULL SkillTable::mutable_name()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  SetHasBit(_impl_._has_bits_[0], 0x00000080U);
+  ::std::string* _s = _internal_mutable_name();
+  // @@protoc_insertion_point(field_mutable:SkillTable.name)
+  return _s;
+}
+inline const ::std::string& SkillTable::_internal_name() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.name_.Get();
+}
+inline void SkillTable::_internal_set_name(const ::std::string& value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.name_.Set(value, GetArena());
+}
+inline ::std::string* PROTOBUF_NONNULL SkillTable::_internal_mutable_name() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  return _impl_.name_.Mutable( GetArena());
+}
+inline ::std::string* PROTOBUF_NULLABLE SkillTable::release_name() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:SkillTable.name)
+  if (!CheckHasBit(_impl_._has_bits_[0], 0x00000080U)) {
+    return nullptr;
+  }
+  ClearHasBit(_impl_._has_bits_[0], 0x00000080U);
+  auto* released = _impl_.name_.Release();
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString()) {
+    _impl_.name_.Set("", GetArena());
+  }
+  return released;
+}
+inline void SkillTable::set_allocated_name(::std::string* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (value != nullptr) {
+    SetHasBit(_impl_._has_bits_[0], 0x00000080U);
+  } else {
+    ClearHasBit(_impl_._has_bits_[0], 0x00000080U);
+  }
+  _impl_.name_.SetAllocated(value, GetArena());
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.name_.IsDefault()) {
+    _impl_.name_.Set("", GetArena());
+  }
+  // @@protoc_insertion_point(field_set_allocated:SkillTable.name)
+}
+
+// string description = 28;
+inline void SkillTable::clear_description() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.description_.ClearToEmpty();
+  ClearHasBit(_impl_._has_bits_[0], 0x00000100U);
+}
+inline const ::std::string& SkillTable::description() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:SkillTable.description)
+  return _internal_description();
+}
+template <typename Arg_, typename... Args_>
+PROTOBUF_ALWAYS_INLINE void SkillTable::set_description(Arg_&& arg, Args_... args) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  SetHasBit(_impl_._has_bits_[0], 0x00000100U);
+  _impl_.description_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
+  // @@protoc_insertion_point(field_set:SkillTable.description)
+}
+inline ::std::string* PROTOBUF_NONNULL SkillTable::mutable_description()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  SetHasBit(_impl_._has_bits_[0], 0x00000100U);
+  ::std::string* _s = _internal_mutable_description();
+  // @@protoc_insertion_point(field_mutable:SkillTable.description)
+  return _s;
+}
+inline const ::std::string& SkillTable::_internal_description() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.description_.Get();
+}
+inline void SkillTable::_internal_set_description(const ::std::string& value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.description_.Set(value, GetArena());
+}
+inline ::std::string* PROTOBUF_NONNULL SkillTable::_internal_mutable_description() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  return _impl_.description_.Mutable( GetArena());
+}
+inline ::std::string* PROTOBUF_NULLABLE SkillTable::release_description() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:SkillTable.description)
+  if (!CheckHasBit(_impl_._has_bits_[0], 0x00000100U)) {
+    return nullptr;
+  }
+  ClearHasBit(_impl_._has_bits_[0], 0x00000100U);
+  auto* released = _impl_.description_.Release();
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString()) {
+    _impl_.description_.Set("", GetArena());
+  }
+  return released;
+}
+inline void SkillTable::set_allocated_description(::std::string* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (value != nullptr) {
+    SetHasBit(_impl_._has_bits_[0], 0x00000100U);
+  } else {
+    ClearHasBit(_impl_._has_bits_[0], 0x00000100U);
+  }
+  _impl_.description_.SetAllocated(value, GetArena());
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.description_.IsDefault()) {
+    _impl_.description_.Set("", GetArena());
+  }
+  // @@protoc_insertion_point(field_set_allocated:SkillTable.description)
+}
+
+// string icon_key = 29;
+inline void SkillTable::clear_icon_key() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.icon_key_.ClearToEmpty();
+  ClearHasBit(_impl_._has_bits_[0], 0x00000200U);
+}
+inline const ::std::string& SkillTable::icon_key() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:SkillTable.icon_key)
+  return _internal_icon_key();
+}
+template <typename Arg_, typename... Args_>
+PROTOBUF_ALWAYS_INLINE void SkillTable::set_icon_key(Arg_&& arg, Args_... args) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  SetHasBit(_impl_._has_bits_[0], 0x00000200U);
+  _impl_.icon_key_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
+  // @@protoc_insertion_point(field_set:SkillTable.icon_key)
+}
+inline ::std::string* PROTOBUF_NONNULL SkillTable::mutable_icon_key()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  SetHasBit(_impl_._has_bits_[0], 0x00000200U);
+  ::std::string* _s = _internal_mutable_icon_key();
+  // @@protoc_insertion_point(field_mutable:SkillTable.icon_key)
+  return _s;
+}
+inline const ::std::string& SkillTable::_internal_icon_key() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.icon_key_.Get();
+}
+inline void SkillTable::_internal_set_icon_key(const ::std::string& value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.icon_key_.Set(value, GetArena());
+}
+inline ::std::string* PROTOBUF_NONNULL SkillTable::_internal_mutable_icon_key() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  return _impl_.icon_key_.Mutable( GetArena());
+}
+inline ::std::string* PROTOBUF_NULLABLE SkillTable::release_icon_key() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:SkillTable.icon_key)
+  if (!CheckHasBit(_impl_._has_bits_[0], 0x00000200U)) {
+    return nullptr;
+  }
+  ClearHasBit(_impl_._has_bits_[0], 0x00000200U);
+  auto* released = _impl_.icon_key_.Release();
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString()) {
+    _impl_.icon_key_.Set("", GetArena());
+  }
+  return released;
+}
+inline void SkillTable::set_allocated_icon_key(::std::string* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (value != nullptr) {
+    SetHasBit(_impl_._has_bits_[0], 0x00000200U);
+  } else {
+    ClearHasBit(_impl_._has_bits_[0], 0x00000200U);
+  }
+  _impl_.icon_key_.SetAllocated(value, GetArena());
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.icon_key_.IsDefault()) {
+    _impl_.icon_key_.Set("", GetArena());
+  }
+  // @@protoc_insertion_point(field_set_allocated:SkillTable.icon_key)
+}
+
+// string category = 30;
+inline void SkillTable::clear_category() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.category_.ClearToEmpty();
+  ClearHasBit(_impl_._has_bits_[0], 0x00000400U);
+}
+inline const ::std::string& SkillTable::category() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:SkillTable.category)
+  return _internal_category();
+}
+template <typename Arg_, typename... Args_>
+PROTOBUF_ALWAYS_INLINE void SkillTable::set_category(Arg_&& arg, Args_... args) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  SetHasBit(_impl_._has_bits_[0], 0x00000400U);
+  _impl_.category_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
+  // @@protoc_insertion_point(field_set:SkillTable.category)
+}
+inline ::std::string* PROTOBUF_NONNULL SkillTable::mutable_category()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  SetHasBit(_impl_._has_bits_[0], 0x00000400U);
+  ::std::string* _s = _internal_mutable_category();
+  // @@protoc_insertion_point(field_mutable:SkillTable.category)
+  return _s;
+}
+inline const ::std::string& SkillTable::_internal_category() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.category_.Get();
+}
+inline void SkillTable::_internal_set_category(const ::std::string& value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.category_.Set(value, GetArena());
+}
+inline ::std::string* PROTOBUF_NONNULL SkillTable::_internal_mutable_category() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  return _impl_.category_.Mutable( GetArena());
+}
+inline ::std::string* PROTOBUF_NULLABLE SkillTable::release_category() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:SkillTable.category)
+  if (!CheckHasBit(_impl_._has_bits_[0], 0x00000400U)) {
+    return nullptr;
+  }
+  ClearHasBit(_impl_._has_bits_[0], 0x00000400U);
+  auto* released = _impl_.category_.Release();
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString()) {
+    _impl_.category_.Set("", GetArena());
+  }
+  return released;
+}
+inline void SkillTable::set_allocated_category(::std::string* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (value != nullptr) {
+    SetHasBit(_impl_._has_bits_[0], 0x00000400U);
+  } else {
+    ClearHasBit(_impl_._has_bits_[0], 0x00000400U);
+  }
+  _impl_.category_.SetAllocated(value, GetArena());
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.category_.IsDefault()) {
+    _impl_.category_.Set("", GetArena());
+  }
+  // @@protoc_insertion_point(field_set_allocated:SkillTable.category)
+}
+
+// uint32 unlock_level = 31;
+inline void SkillTable::clear_unlock_level() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.unlock_level_ = 0u;
+  ClearHasBit(_impl_._has_bits_[0], 0x40000000U);
+}
+inline ::uint32_t SkillTable::unlock_level() const {
+  // @@protoc_insertion_point(field_get:SkillTable.unlock_level)
+  return _internal_unlock_level();
+}
+inline void SkillTable::set_unlock_level(::uint32_t value) {
+  _internal_set_unlock_level(value);
+  SetHasBit(_impl_._has_bits_[0], 0x40000000U);
+  // @@protoc_insertion_point(field_set:SkillTable.unlock_level)
+}
+inline ::uint32_t SkillTable::_internal_unlock_level() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.unlock_level_;
+}
+inline void SkillTable::_internal_set_unlock_level(::uint32_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.unlock_level_ = value;
+}
+
+// uint32 max_rank = 32;
+inline void SkillTable::clear_max_rank() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.max_rank_ = 0u;
+  ClearHasBit(_impl_._has_bits_[1], 0x00000001U);
+}
+inline ::uint32_t SkillTable::max_rank() const {
+  // @@protoc_insertion_point(field_get:SkillTable.max_rank)
+  return _internal_max_rank();
+}
+inline void SkillTable::set_max_rank(::uint32_t value) {
+  _internal_set_max_rank(value);
+  SetHasBit(_impl_._has_bits_[1], 0x00000001U);
+  // @@protoc_insertion_point(field_set:SkillTable.max_rank)
+}
+inline ::uint32_t SkillTable::_internal_max_rank() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.max_rank_;
+}
+inline void SkillTable::_internal_set_max_rank(::uint32_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.max_rank_ = value;
+}
+
+// uint32 target_team = 33;
+inline void SkillTable::clear_target_team() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.target_team_ = 0u;
+  ClearHasBit(_impl_._has_bits_[1], 0x00000002U);
+}
+inline ::uint32_t SkillTable::target_team() const {
+  // @@protoc_insertion_point(field_get:SkillTable.target_team)
+  return _internal_target_team();
+}
+inline void SkillTable::set_target_team(::uint32_t value) {
+  _internal_set_target_team(value);
+  SetHasBit(_impl_._has_bits_[1], 0x00000002U);
+  // @@protoc_insertion_point(field_set:SkillTable.target_team)
+}
+inline ::uint32_t SkillTable::_internal_target_team() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.target_team_;
+}
+inline void SkillTable::_internal_set_target_team(::uint32_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.target_team_ = value;
+}
+
+// uint32 max_targets = 34;
+inline void SkillTable::clear_max_targets() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.max_targets_ = 0u;
+  ClearHasBit(_impl_._has_bits_[1], 0x00000008U);
+}
+inline ::uint32_t SkillTable::max_targets() const {
+  // @@protoc_insertion_point(field_get:SkillTable.max_targets)
+  return _internal_max_targets();
+}
+inline void SkillTable::set_max_targets(::uint32_t value) {
+  _internal_set_max_targets(value);
+  SetHasBit(_impl_._has_bits_[1], 0x00000008U);
+  // @@protoc_insertion_point(field_set:SkillTable.max_targets)
+}
+inline ::uint32_t SkillTable::_internal_max_targets() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.max_targets_;
+}
+inline void SkillTable::_internal_set_max_targets(::uint32_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.max_targets_ = value;
+}
+
+// double mana_percent = 35;
+inline void SkillTable::clear_mana_percent() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.mana_percent_ = 0;
+  ClearHasBit(_impl_._has_bits_[1], 0x00000004U);
+}
+inline double SkillTable::mana_percent() const {
+  // @@protoc_insertion_point(field_get:SkillTable.mana_percent)
+  return _internal_mana_percent();
+}
+inline void SkillTable::set_mana_percent(double value) {
+  _internal_set_mana_percent(value);
+  SetHasBit(_impl_._has_bits_[1], 0x00000004U);
+  // @@protoc_insertion_point(field_set:SkillTable.mana_percent)
+}
+inline double SkillTable::_internal_mana_percent() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.mana_percent_;
+}
+inline void SkillTable::_internal_set_mana_percent(double value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.mana_percent_ = value;
+}
+
+// uint32 cooldown_rounds = 36;
+inline void SkillTable::clear_cooldown_rounds() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.cooldown_rounds_ = 0u;
+  ClearHasBit(_impl_._has_bits_[1], 0x00000010U);
+}
+inline ::uint32_t SkillTable::cooldown_rounds() const {
+  // @@protoc_insertion_point(field_get:SkillTable.cooldown_rounds)
+  return _internal_cooldown_rounds();
+}
+inline void SkillTable::set_cooldown_rounds(::uint32_t value) {
+  _internal_set_cooldown_rounds(value);
+  SetHasBit(_impl_._has_bits_[1], 0x00000010U);
+  // @@protoc_insertion_point(field_set:SkillTable.cooldown_rounds)
+}
+inline ::uint32_t SkillTable::_internal_cooldown_rounds() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.cooldown_rounds_;
+}
+inline void SkillTable::_internal_set_cooldown_rounds(::uint32_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.cooldown_rounds_ = value;
+}
+
+// double heal_multiplier = 37;
+inline void SkillTable::clear_heal_multiplier() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.heal_multiplier_ = 0;
+  ClearHasBit(_impl_._has_bits_[1], 0x00000020U);
+}
+inline double SkillTable::heal_multiplier() const {
+  // @@protoc_insertion_point(field_get:SkillTable.heal_multiplier)
+  return _internal_heal_multiplier();
+}
+inline void SkillTable::set_heal_multiplier(double value) {
+  _internal_set_heal_multiplier(value);
+  SetHasBit(_impl_._has_bits_[1], 0x00000020U);
+  // @@protoc_insertion_point(field_set:SkillTable.heal_multiplier)
+}
+inline double SkillTable::_internal_heal_multiplier() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.heal_multiplier_;
+}
+inline void SkillTable::_internal_set_heal_multiplier(double value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.heal_multiplier_ = value;
+}
+
+// double heal_per_level = 38;
+inline void SkillTable::clear_heal_per_level() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.heal_per_level_ = 0;
+  ClearHasBit(_impl_._has_bits_[1], 0x00000040U);
+}
+inline double SkillTable::heal_per_level() const {
+  // @@protoc_insertion_point(field_get:SkillTable.heal_per_level)
+  return _internal_heal_per_level();
+}
+inline void SkillTable::set_heal_per_level(double value) {
+  _internal_set_heal_per_level(value);
+  SetHasBit(_impl_._has_bits_[1], 0x00000040U);
+  // @@protoc_insertion_point(field_set:SkillTable.heal_per_level)
+}
+inline double SkillTable::_internal_heal_per_level() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.heal_per_level_;
+}
+inline void SkillTable::_internal_set_heal_per_level(double value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.heal_per_level_ = value;
+}
+
+// double execute_heal_threshold = 39;
+inline void SkillTable::clear_execute_heal_threshold() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.execute_heal_threshold_ = 0;
+  ClearHasBit(_impl_._has_bits_[1], 0x00000080U);
+}
+inline double SkillTable::execute_heal_threshold() const {
+  // @@protoc_insertion_point(field_get:SkillTable.execute_heal_threshold)
+  return _internal_execute_heal_threshold();
+}
+inline void SkillTable::set_execute_heal_threshold(double value) {
+  _internal_set_execute_heal_threshold(value);
+  SetHasBit(_impl_._has_bits_[1], 0x00000080U);
+  // @@protoc_insertion_point(field_set:SkillTable.execute_heal_threshold)
+}
+inline double SkillTable::_internal_execute_heal_threshold() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.execute_heal_threshold_;
+}
+inline void SkillTable::_internal_set_execute_heal_threshold(double value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.execute_heal_threshold_ = value;
+}
+
+// double execute_heal_bonus = 40;
+inline void SkillTable::clear_execute_heal_bonus() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.execute_heal_bonus_ = 0;
+  ClearHasBit(_impl_._has_bits_[1], 0x00000100U);
+}
+inline double SkillTable::execute_heal_bonus() const {
+  // @@protoc_insertion_point(field_get:SkillTable.execute_heal_bonus)
+  return _internal_execute_heal_bonus();
+}
+inline void SkillTable::set_execute_heal_bonus(double value) {
+  _internal_set_execute_heal_bonus(value);
+  SetHasBit(_impl_._has_bits_[1], 0x00000100U);
+  // @@protoc_insertion_point(field_set:SkillTable.execute_heal_bonus)
+}
+inline double SkillTable::_internal_execute_heal_bonus() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.execute_heal_bonus_;
+}
+inline void SkillTable::_internal_set_execute_heal_bonus(double value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.execute_heal_bonus_ = value;
+}
+
+// double restore_mana_percent = 41;
+inline void SkillTable::clear_restore_mana_percent() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.restore_mana_percent_ = 0;
+  ClearHasBit(_impl_._has_bits_[1], 0x00000200U);
+}
+inline double SkillTable::restore_mana_percent() const {
+  // @@protoc_insertion_point(field_get:SkillTable.restore_mana_percent)
+  return _internal_restore_mana_percent();
+}
+inline void SkillTable::set_restore_mana_percent(double value) {
+  _internal_set_restore_mana_percent(value);
+  SetHasBit(_impl_._has_bits_[1], 0x00000200U);
+  // @@protoc_insertion_point(field_set:SkillTable.restore_mana_percent)
+}
+inline double SkillTable::_internal_restore_mana_percent() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.restore_mana_percent_;
+}
+inline void SkillTable::_internal_set_restore_mana_percent(double value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.restore_mana_percent_ = value;
+}
+
+// uint32 dispel_count = 42;
+inline void SkillTable::clear_dispel_count() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.dispel_count_ = 0u;
+  ClearHasBit(_impl_._has_bits_[1], 0x00000400U);
+}
+inline ::uint32_t SkillTable::dispel_count() const {
+  // @@protoc_insertion_point(field_get:SkillTable.dispel_count)
+  return _internal_dispel_count();
+}
+inline void SkillTable::set_dispel_count(::uint32_t value) {
+  _internal_set_dispel_count(value);
+  SetHasBit(_impl_._has_bits_[1], 0x00000400U);
+  // @@protoc_insertion_point(field_set:SkillTable.dispel_count)
+}
+inline ::uint32_t SkillTable::_internal_dispel_count() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.dispel_count_;
+}
+inline void SkillTable::_internal_set_dispel_count(::uint32_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.dispel_count_ = value;
+}
+
+// int32 initiative = 43;
+inline void SkillTable::clear_initiative() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.initiative_ = 0;
+  ClearHasBit(_impl_._has_bits_[1], 0x00000800U);
+}
+inline ::int32_t SkillTable::initiative() const {
+  // @@protoc_insertion_point(field_get:SkillTable.initiative)
+  return _internal_initiative();
+}
+inline void SkillTable::set_initiative(::int32_t value) {
+  _internal_set_initiative(value);
+  SetHasBit(_impl_._has_bits_[1], 0x00000800U);
+  // @@protoc_insertion_point(field_set:SkillTable.initiative)
+}
+inline ::int32_t SkillTable::_internal_initiative() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.initiative_;
+}
+inline void SkillTable::_internal_set_initiative(::int32_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.initiative_ = value;
+}
+
+// string passive_stat = 44;
+inline void SkillTable::clear_passive_stat() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.passive_stat_.ClearToEmpty();
+  ClearHasBit(_impl_._has_bits_[0], 0x80000000U);
+}
+inline const ::std::string& SkillTable::passive_stat() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:SkillTable.passive_stat)
+  return _internal_passive_stat();
+}
+template <typename Arg_, typename... Args_>
+PROTOBUF_ALWAYS_INLINE void SkillTable::set_passive_stat(Arg_&& arg, Args_... args) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  SetHasBit(_impl_._has_bits_[0], 0x80000000U);
+  _impl_.passive_stat_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
+  // @@protoc_insertion_point(field_set:SkillTable.passive_stat)
+}
+inline ::std::string* PROTOBUF_NONNULL SkillTable::mutable_passive_stat()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  SetHasBit(_impl_._has_bits_[0], 0x80000000U);
+  ::std::string* _s = _internal_mutable_passive_stat();
+  // @@protoc_insertion_point(field_mutable:SkillTable.passive_stat)
+  return _s;
+}
+inline const ::std::string& SkillTable::_internal_passive_stat() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.passive_stat_.Get();
+}
+inline void SkillTable::_internal_set_passive_stat(const ::std::string& value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.passive_stat_.Set(value, GetArena());
+}
+inline ::std::string* PROTOBUF_NONNULL SkillTable::_internal_mutable_passive_stat() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  return _impl_.passive_stat_.Mutable( GetArena());
+}
+inline ::std::string* PROTOBUF_NULLABLE SkillTable::release_passive_stat() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:SkillTable.passive_stat)
+  if (!CheckHasBit(_impl_._has_bits_[0], 0x80000000U)) {
+    return nullptr;
+  }
+  ClearHasBit(_impl_._has_bits_[0], 0x80000000U);
+  auto* released = _impl_.passive_stat_.Release();
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString()) {
+    _impl_.passive_stat_.Set("", GetArena());
+  }
+  return released;
+}
+inline void SkillTable::set_allocated_passive_stat(::std::string* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (value != nullptr) {
+    SetHasBit(_impl_._has_bits_[0], 0x80000000U);
+  } else {
+    ClearHasBit(_impl_._has_bits_[0], 0x80000000U);
+  }
+  _impl_.passive_stat_.SetAllocated(value, GetArena());
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.passive_stat_.IsDefault()) {
+    _impl_.passive_stat_.Set("", GetArena());
+  }
+  // @@protoc_insertion_point(field_set_allocated:SkillTable.passive_stat)
+}
+
+// double passive_percent = 45;
+inline void SkillTable::clear_passive_percent() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.passive_percent_ = 0;
+  ClearHasBit(_impl_._has_bits_[1], 0x00001000U);
+}
+inline double SkillTable::passive_percent() const {
+  // @@protoc_insertion_point(field_get:SkillTable.passive_percent)
+  return _internal_passive_percent();
+}
+inline void SkillTable::set_passive_percent(double value) {
+  _internal_set_passive_percent(value);
+  SetHasBit(_impl_._has_bits_[1], 0x00001000U);
+  // @@protoc_insertion_point(field_set:SkillTable.passive_percent)
+}
+inline double SkillTable::_internal_passive_percent() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.passive_percent_;
+}
+inline void SkillTable::_internal_set_passive_percent(double value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.passive_percent_ = value;
+}
+
+// double buff_percent = 46;
+inline void SkillTable::clear_buff_percent() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.buff_percent_ = 0;
+  ClearHasBit(_impl_._has_bits_[1], 0x00002000U);
+}
+inline double SkillTable::buff_percent() const {
+  // @@protoc_insertion_point(field_get:SkillTable.buff_percent)
+  return _internal_buff_percent();
+}
+inline void SkillTable::set_buff_percent(double value) {
+  _internal_set_buff_percent(value);
+  SetHasBit(_impl_._has_bits_[1], 0x00002000U);
+  // @@protoc_insertion_point(field_set:SkillTable.buff_percent)
+}
+inline double SkillTable::_internal_buff_percent() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.buff_percent_;
+}
+inline void SkillTable::_internal_set_buff_percent(double value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.buff_percent_ = value;
 }
 
 // repeated .Skillrequired_item required_item = 21;

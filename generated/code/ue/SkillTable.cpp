@@ -119,6 +119,13 @@ static void SkillTableCheckNarrowedRow(const TSharedPtr<FJsonObject>& RowObject,
 	SkillTableCheckNarrowedField(RowObject, TEXT("required_status"), TEXT("required_status"), RowIndex, 2147483647.0, TEXT("uint32"));
 	SkillTableCheckNarrowedField(RowObject, TEXT("cooldown_id"), TEXT("cooldown_id"), RowIndex, 2147483647.0, TEXT("uint32"));
 	SkillTableCheckNarrowedField(RowObject, TEXT("damage_type"), TEXT("damage_type"), RowIndex, 2147483647.0, TEXT("uint32"));
+	SkillTableCheckNarrowedField(RowObject, TEXT("class_id"), TEXT("class_id"), RowIndex, 2147483647.0, TEXT("uint32"));
+	SkillTableCheckNarrowedField(RowObject, TEXT("unlock_level"), TEXT("unlock_level"), RowIndex, 2147483647.0, TEXT("uint32"));
+	SkillTableCheckNarrowedField(RowObject, TEXT("max_rank"), TEXT("max_rank"), RowIndex, 2147483647.0, TEXT("uint32"));
+	SkillTableCheckNarrowedField(RowObject, TEXT("target_team"), TEXT("target_team"), RowIndex, 2147483647.0, TEXT("uint32"));
+	SkillTableCheckNarrowedField(RowObject, TEXT("max_targets"), TEXT("max_targets"), RowIndex, 2147483647.0, TEXT("uint32"));
+	SkillTableCheckNarrowedField(RowObject, TEXT("cooldown_rounds"), TEXT("cooldown_rounds"), RowIndex, 2147483647.0, TEXT("uint32"));
+	SkillTableCheckNarrowedField(RowObject, TEXT("dispel_count"), TEXT("dispel_count"), RowIndex, 2147483647.0, TEXT("uint32"));
 	SkillTableCheckNarrowedField(RowObject, TEXT("skill_type"), TEXT("skill_type[]"), RowIndex, 2147483647.0, TEXT("uint32"));
 	SkillTableCheckNarrowedField(RowObject, TEXT("targeting_mode"), TEXT("targeting_mode[]"), RowIndex, 2147483647.0, TEXT("uint32"));
 	SkillTableCheckNarrowedField(RowObject, TEXT("effect"), TEXT("effect[]"), RowIndex, 2147483647.0, TEXT("uint32"));
