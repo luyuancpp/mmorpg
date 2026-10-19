@@ -109,7 +109,8 @@ namespace battle_settlement
 	{
 		kNoTarget,
 		kNotAcked,
-		// 探测连续「没问到」(空应答 / ERROR)到上限(ClassifyUndeterminedProbeRound)。不经 ClassifyUndelivered,
+		// 这一条记录累计「没问到」(空应答 / ERROR)的轮次到上限(ClassifyUndeterminedProbeRound;累计不清零,
+		// 问到的轮次另有 attempts 上限,所以条目寿命两头都有界)。不经 ClassifyUndelivered,
 		// 由调用方直接给出:这类轮次根本没走到 ClassifyRetry。
 		kProbeUndetermined,
 	};
@@ -245,7 +246,7 @@ namespace battle_settlement
 		kGiveUp, // 摘条目,metric=battle_settlement_undelivered reason=probe_undetermined
 	};
 
-	// undeterminedRounds 含本轮。maxRounds 为 0 是调用方缺陷:按立即放弃处理,保证有界。
+	// undeterminedRounds 是这一条目寿命内的累计轮数(含本轮,不因问到而清零)。maxRounds 为 0 是调用方缺陷:按立即放弃处理,保证有界。
 	inline UndeterminedProbeAction ClassifyUndeterminedProbeRound(const uint32_t undeterminedRounds,
 																   const uint32_t maxRounds)
 	{
@@ -326,6 +327,72 @@ namespace battle_settlement
 		default:
 			return LoginLockRead::kNoLock;
 		}
+	}
+
+	// 按锁重建冻结之前的裁决(2026-10-19,第二、三轮评审 P3)。登录重建 RestoreBattleFreezeOnLogin 与
+	// 迟到确认重建 RebuildBattleFreezeFromLock 共用。
+	enum class LockRebuildDecision : uint8_t
+	{
+		// 锁指向一场还没结算、也没被本实体判作废的战斗:按锁 + ctx 重建冻结。
+		kRebuild,
+		// 锁指向的这一局已在活账本里(已应用、还没落盘销账):不重建,改为推进销账。
+		kAdvanceAck,
+		// 锁指向本实体上 reaper 已按期限判作废(FIGHTING 到期)的那一局:不重建,补一次条件删锁。
+		// 只有删锁没落地(Redis 抖)才会再读到这把锁。重建会把玩家冻进已结束的战斗(最长约一个 reaper 节拍)、
+		// 推一次重连提示让客户端弹「战斗已结束」,还把锁续到「现在 + 60 秒」;删锁一直失败时这个回路没有硬上限。
+		// 读到它的路径不止一条:冻结到期补读没读到挂的复查、补应用另一局挂起结算之后的按锁重建、
+		// 登录挂的复查恰好赶上冻结到期 —— 守卫放在重建入口,一处盖住所有路径。
+		kSkipExpired,
+	};
+
+	// 顺序不能换:已应用 > 已作废 > 重建。
+	// 已应用必须排在已作废前面:作废之后删锁若没落地,迟到的结算会按锁匹配应用(ApplySettlement 的在线无组件分支),
+	// 而锁要留到这一局落盘销账才删(锁是「这一局还没完」的唯一跨进程证据)—— 这时补删锁会提前放开排队。
+	// expiredBattleId 为 0 = 本实体没有被判作废的局。
+	inline LockRebuildDecision ClassifyLockRebuild(const uint64_t lockBattleId, const uint64_t expiredBattleId,
+												   const bool appliedInLedger)
+	{
+		if (appliedInLedger)
+		{
+			return LockRebuildDecision::kAdvanceAck;
+		}
+		if (expiredBattleId != 0 && lockBattleId == expiredBattleId)
+		{
+			return LockRebuildDecision::kSkipExpired;
+		}
+		return LockRebuildDecision::kRebuild;
+	}
+
+	// reaper 节拍对一个复查标记怎么处理。
+	struct LoginRecheckEntryState
+	{
+		bool exitingOrNoIdentity = false; // 退出中(UnregisterPlayer)或没有 player_id
+		bool travelHandoffOrFrozen = false; // 跨 zone 冻结 / 交接中(结算此刻不可应用)
+		bool redisReady = false;
+	};
+
+	enum class LoginRecheckStep : uint8_t
+	{
+		kRun,  // 摘标记,按标记里的范围重跑;又没问到会重新挂上
+		kKeep, // 标记保留,本轮不跑
+		kDrop, // 摘标记,不重跑
+	};
+
+	// 顺序不能换:退出中 > 交接中 > Redis 不可用 > 重跑。
+	//  - 退出中视同离线:挂起结算留在 Redis,下次进场登录钩子重跑,与冻结到期补读跳过 UnregisterPlayer 同一口径;
+	//  - 交接中保留:这时重跑会在即将销毁的源实体上按锁重建冻结、推重连提示;交接完成随实体销毁,撤销则下个节拍再跑;
+	//  - Redis 不可用保留:恢复后的第一个节拍再跑。
+	inline LoginRecheckStep ClassifyLoginRecheckEntry(const LoginRecheckEntryState &state)
+	{
+		if (state.exitingOrNoIdentity)
+		{
+			return LoginRecheckStep::kDrop;
+		}
+		if (state.travelHandoffOrFrozen || !state.redisReady)
+		{
+			return LoginRecheckStep::kKeep;
+		}
+		return LoginRecheckStep::kRun;
 	}
 
 	// ---- 积压报数的纯计算 ----

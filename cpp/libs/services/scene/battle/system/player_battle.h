@@ -157,6 +157,7 @@ private:
 
 	// 按锁值匹配重建 FIGHTING 冻结(迟到确认 / 在线无组件路径):锁值==battleId 才读 ctx 重建
 	// InBattleComp、条件续期并覆写 ctx;deadlineMsHint 非 0 时覆盖 ctx 的 deadline。reason 只进日志。
+	// 与登录重建共用裁决 ClassifyLockRebuild:已应用推进销账;本实体已判作废的局不重建、补删锁(2026-10-19)。
 	static void RebuildBattleFreezeFromLock(entt::entity player, uint64_t playerId, uint64_t battleId,
 											uint64_t deadlineMsHint, const char* reason);
 
@@ -164,7 +165,12 @@ private:
 	// FIGHTING 时推重连提示(不要求 battle_node_id 已知)。只在无挂起结算且无 InBattleComp 时调用。
 	// 读不了锁(Redis 不可用 / 命令没发出去 / 空应答)记入登录复查;EVAL 的 ERROR 仍按无锁处理(既有取舍,
 	// 见 settlement_outbox.h 的 ClassifyLoginLockRead)。
+	// 锁指向本实体上 reaper 已判作废的那一局时不重建、补一次条件删锁(ClassifyLockRebuild,2026-10-19)。
 	static void RestoreBattleFreezeOnLogin(entt::entity player, uint64_t playerId);
+
+	// reaper 判定 FIGHTING 到期之后的收尾:记下这一局已作废(BattleFreezeExpiredComp)→ 条件删锁 + 摘冻结 →
+	// 对仍在本节点、不在退出中的实体补读一次待结算记录。从 reaper 循环里抽出来只为能单测;只由 reaper 调用。
+	static void ReleaseExpiredFightingFreeze(entt::entity player, uint64_t playerId, uint64_t battleId);
 
 	// 登录钩子第一步(读挂起结算 → 没有再按锁重建冻结)。OnPlayerEnterScene 与登录复查共用。
 	// 没问到时记入登录复查(player_battle.cpp 的 BattleLoginRecheckComp),不按锁重建。
@@ -177,4 +183,6 @@ private:
 
 	// 是否记着登录复查(只读;单测与排障用)。
 	static bool IsLoginRecheckPending(entt::entity player);
+	// 本实体上 reaper 最近判作废的 FIGHTING 局;没有返回 0(只读;单测与排障用)。
+	static uint64_t ExpiredFightingBattleId(entt::entity player);
 };
