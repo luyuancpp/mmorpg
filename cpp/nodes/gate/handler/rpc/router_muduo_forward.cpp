@@ -96,17 +96,4 @@ void SendForward(muduo_grpc::Channel &channel, const client_rpc_router::ForwardR
         });
 }
 
-bool AllChannelsIdle()
-{
-    auto &registry = tlsNodeContextManager.GetRegistry(eNodeType::ClientRpcRouterNodeService);
-    for (const auto &[entity, channel] : registry.view<MuduoGrpcChannelPtr>().each())
-    {
-        if (channel && channel->outstandingCalls() != 0)
-        {
-            return false;
-        }
-    }
-    return true;
-}
-
 } // namespace gate_router_muduo

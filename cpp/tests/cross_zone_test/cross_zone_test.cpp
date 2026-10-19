@@ -747,6 +747,7 @@ TEST(TravelOutcomeReset, NoRecordedEvidenceKeepsIncoming)
 #include "proto/common/component/asset_op_ledger_comp.pb.h"
 #include "proto/common/component/battle_settlement_ledger_comp.pb.h"
 #include "proto/common/component/player_inbox_ledger_comp.pb.h"
+#include "proto/common/component/player_mystery_merchant_comp.pb.h"
 #include "proto/common/component/player_comp.pb.h"         // UnregisterPlayer
 #include "proto/common/component/player_network_comp.pb.h" // PlayerSessionSnapshotComp
 #include "type_alias/player_session_type_alias.h"          // SessionMap
@@ -934,6 +935,7 @@ void CreatePersistedPlayerComps(entt::entity player)
     registry.emplace<PlayerAssetOpLedgerComp>(player);
     registry.emplace<BattleSettlementLedgerComp>(player);
     registry.emplace<PlayerInboxLedgerComp>(player);
+    registry.emplace<PlayerMysteryMerchantComp>(player);
     registry.emplace<CurrencyComp>(player);
     registry.emplace<PlayerCurrencyComp>(player);
 }
@@ -1788,6 +1790,7 @@ TEST(ExitReleaseEcs, FailingClearKeepsTheLoadThenRefusesWhenExhausted)
 #include "network/node_utils.h" // 节点身份由测试宿主安装,不属于线程 ECS 上下文
 #include "time/system/time.h"   // TimeSystem::NowMillisecondsUTC:在途换图组件的 sentAtMs
 #include "thread_context/node_context_manager.h" // 假 scene_manager 节点(StartTravelHandoff 的 SM 预检)
+#include "core/network/grpc_client_runtime.h"       // 假 scene_manager 节点的通道:MuduoGrpcChannelPtr / muduo_grpc::Channel / EventLoop
 
 namespace esr = enter_scene_reply;
 
@@ -1859,6 +1862,8 @@ TEST(EnterSceneReplyRoute, RouteNamesCoverEveryValue)
 // ── ECS 级接缝:直接驱动 PlayerLifecycleSystem::DispatchEnterSceneReply ──
 // 宿主里没有 zone Redis(tlsRedis.GetZoneRedis() 为空),除 ScopedFakeSceneManagerNode 存活期间(夹具自带 EventLoop)外也没有 EventLoop:ResolveTravelOutcome 判不清就保持冻结、
 // 计 verify_rearmed,看门狗挂不上(只打 WARN)。所以"应答进了交接裁决"的可观察结果是证据被记下 + verify_rearmed +1。
+// 例外:用了 ScopedFakeSceneManagerNode 的用例,夹具在测试线程自建 EventLoop,期间统计 / 冻结上限定时器会挂到它上面;
+// 控制它们的 static thread_local armed 置位后不复位,之后的用例即使有 loop 也不会再挂。现有用例都不依赖这些定时器。
 namespace
 {
 constexpr uint32_t kReplyTestZone = 7;
@@ -1913,7 +1918,9 @@ public:
     {
         auto& registry = tlsNodeContextManager.GetRegistry(eNodeType::SceneManagerNodeService);
         entity_ = registry.create();
-        registry.emplace<MuduoGrpcChannelPtr>(entity_, muduo_grpc::Channel::Create(loop_, "127.0.0.1", 1));
+        auto channel = muduo_grpc::Channel::Create(loop_, "127.0.0.1", 1);
+        EXPECT_NE(channel, nullptr);
+        registry.emplace<MuduoGrpcChannelPtr>(entity_, std::move(channel));
         registry.emplace<NodeInfo>(entity_);
     }
     ~ScopedFakeSceneManagerNode()

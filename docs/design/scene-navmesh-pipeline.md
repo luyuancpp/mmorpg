@@ -179,3 +179,61 @@ friend/guild 如有部署同样需要重编。仅复制新 JSON 给旧 Go 程序
   其中7条覆盖两种登录顺序、重复投递、跨图、同图换线和暂缺RPC连接后的重投恢复。
 
 - 正式客户端最终联机验收 PASS:2→3→4→1 四次服务端入场、三地日景/节庆与返城7张截图;各图出生误差、导航不一致和移动重定位均为0。服务端入场原始行、进程PID/启动时间、4图网格及BaseScene运行文件SHA256收在 `../tmp/festival-final-server-deployment-evidence.json/.log`。
+
+## 9. 2026-10-18 当前三张地图替换正式场景
+
+正式场景 1/2/3 改用客户端 `World/CurrentMaps20261009` 的主城、八仙岛、渔村。
+这些是当前已制作布局的先行接入,美术合同标为 `layout_preview`;
+300×300 米是本次接入尺度,不是容量设计验收结论。新导航只由各图的
+`walkmask.txt` 烘焙,不复用前述天墉/蓬莱/东海旧画面位图。
+
+| 场景 ID | 客户端 key | 正式导航文件 | Unity 出生 | 服务端出生 |
+|---|---|---|---|---|
+| 1 | main | main_scene.bin | (199,0,133) | (133,199,0) |
+| 2 | island | penglai_scene.bin | (195,0,173) | (173,195,0) |
+| 3 | village | donghai_scene.bin | (201,0,147) | (147,201,0) |
+
+导航文件名保留既有 BaseScene 路径契约;`penglai_scene.bin` 此后装的是八仙岛新图。
+源表 5–16 也引用 `main_scene.bin`,因此出生点一并采用新主城坐标,避免加载同一网格时
+其它表行的出生探针失败。场景 4、17–21 及其旧导航保持原样;当前客户端不开放无新资源地图。
+登录请求不携带存档场景 ID:login 的 `resolveEnterSceneRoute` 返回 sceneID=0,
+scene_manager 的 `resolveSceneForEnter(0,0,zone)` 从 World 第一行选择正式场景 1,
+因此旧账号正常登录由服务器进入新主城。跨区传送中已有的 pending 目标仍遵守既有票据规则。
+
+`tools/navmesh_baker/sync_current_maps.py` 维护可重复管线:
+
+1. 从同级客户端各图 `source.json` 核对场景 ID、世界矩形、位图与图片 SHA256、
+   22500 位长度/尾部零填充、可走格数及出生点;任何不一致先拒绝,不写正式文件。
+2. 从三份新位图烘焙,逐一验证出生点不需要吸附,并对最终 Detour 网格查询全部
+   22500 个格心。三图全部成功后才替换正式 bin 并修改 `data/BaseScene.xlsx`。
+3. 同步 `data/scene_nav_bin/current_maps/{main,island,village}/{source.json,walkmask.txt}`
+   作为跨语言合同产物,与客户端逐字节一致;Java ContractSync 复制到对应
+   `config-data/navmesh/current_maps/`。这些是派生产物,不可在服务端单独改图或改出生点。
+4. 按既有正式导表器生成 BaseScene JSON/PB 与 manifest;没有修改 schema 或手改生成表。
+   `--verify` 重新烘焙并比较 bin 全字节、合同副本、源表、生成 JSON 和清单中 JSON/PB 的 SHA。
+
+```powershell
+cmake -S tools/navmesh_baker -B tools/navmesh_baker/build
+cmake --build tools/navmesh_baker/build --config Release -- /m:1
+python tools/navmesh_baker/sync_current_maps.py
+# 按本机已有工具链运行正式导表器,不是手工编辑 generated/tables。
+python tools/data_table_exporter/run.py
+python tools/navmesh_baker/sync_current_maps.py --verify
+python -m unittest discover -s tools/navmesh_baker -p "test_*.py"
+```
+
+本次实际使用正规导表器的沙盒配置,只生成数据与用于二进制导表的 Python proto;
+源 schema 未变,其它语言代码无需重生成。核对只有 `basescene.json`、`basescene.pb`
+和 `manifest.json` 改变后采用这三个产物。最终先快进到服务端主干 `e4aee007f`,
+再从最新 45 张源表重新导出;44 张非 BaseScene 表和它们的清单条目与主干完全一致,
+manifest 从 28 升为 29,保留排行榜、邮件、装备增强等主干配置。
+三图分别 55/40/47 tile、6651/4018/4524 个可走格;67500 格心差异为 0。
+MSVC Release 烘焙器编译、13 项合同测试、重烘焙字节一致和 schema 索引检查通过。
+证据清单在 `data/scene_nav_bin/current_maps_20261009.json`,本机导表日志在
+`../tmp/current-map-server-20261018/export-latest.log`,采用对账在
+`export-latest-adoption.json`。schema 索引首次检查发现主干的 MessageLimiter 条数仍写 81,
+实际已有 87 行;按正式索引生成器更新该文档行后复查通过,未修改 MessageLimiter 源表。
+
+本次没有运行完整 scene/gate 服务或 Unity 联机验收:本机固件虚拟化关闭、Docker
+daemon 未运行,且 `bin/gate.exe`、`bin/scene.exe`、`bin/battle.exe` 缺失。
+上述 9/13 的联机成功记录属于旧地图,不能作为这次新地图的联机验收证据。

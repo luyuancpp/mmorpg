@@ -117,6 +117,9 @@
     <ClCompile Include="common\component\player_inbox_ledger_comp.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="common\component\player_mystery_merchant_comp.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
     <ClCompile Include="common\component\player_login_comp.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
@@ -256,6 +259,24 @@
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="friend\friend.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="rank\rank.grpc.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="rank\rank.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="mail\mail.grpc.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="mail\mail.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="mail\mail_admin.grpc.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="mail\mail_admin.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="guild\guild.grpc.pb.cc">
@@ -458,6 +479,9 @@
     <ClInclude Include="common\component\player_inbox_ledger_comp.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="common\component\player_mystery_merchant_comp.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
     <ClInclude Include="common\component\player_login_comp.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
@@ -597,6 +621,24 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="friend\friend.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="rank\rank.grpc.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="rank\rank.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="mail\mail.grpc.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="mail\mail.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="mail\mail_admin.grpc.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="mail\mail_admin.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="guild\guild.grpc.pb.h">
@@ -745,6 +787,8 @@
     <ClInclude Include="scene\player_mission.pb.h" />
     <ClCompile Include="scene\player_activity.pb.cc" />
     <ClInclude Include="scene\player_activity.pb.h" />
+    <ClCompile Include="scene\player_mystery_merchant.pb.cc" />
+    <ClInclude Include="scene\player_mystery_merchant.pb.h" />
   </ItemGroup>
   <ItemGroup Label="ProtoGeneratorSources">
     <ClCompile Include="battle\battle_data.grpc.pb.cc">

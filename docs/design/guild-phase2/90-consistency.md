@@ -335,6 +335,11 @@ S6 `ActivityDeps` 删 `Notifier`(用 `l.notify`),`OpIDs` 类型改 `data.OpIDMin
 
 guild:Deployment + ConfigMap(DSN 库 `mmorpg_guild`、appuser、`Schema.AutoMigrate=false`、`Timeout 4000`、`DataServiceRpc.Timeout 2000`、`AssetOp`、`MatchRpc`、`Activity`、`PlayerLocatorRedis` 指 SharedRedis)、`guild-migrate` Job(照 trade-migrate);密钥 `MMORPG_ASSET_OP_SECRET_GUILD/_TRADE`(`Resolve-InjectedSecret -MinLength 32`,注入 guild、trade、scene);NetworkPolicy(scene gRPC 只放 scene_manager/match/guild/trade;match gRPC 只放路由服与 guild);db migrate Job 先于 db/scene 滚动(`player_database` 上帮会两条新列,加上回合制战斗的 `settlement_ledger`、MySQL 行内围栏的 `fence_owner_epoch` / `fence_save_seq`、玩家收件箱的 `inbox_ledger` 共六条,另有 `player_database_1` 的围栏两条,见 G-03);data-service ConfigMap 的 BootstrapTags;mysql-init ConfigMap 含 `mmorpg_guild`;TiDB BR 按库恢复清单加 `mmorpg_guild`;scene 永不设 `MMORPG_ALLOW_CLIENT_GM`;告警规则上线(G-07,含 `deploy/k8s/owner-epoch-alerts.yaml`);**Loki ruler 接线**(挂载规则目录 + `alertmanager_url`;仓库里 ruler 已配 local 存储但未挂规则、未接告警),接上后把 `docs/ops/cross-zone-failure-test-runbook.md` §9 的三条 LogQL 转为规则(2026-09-21 B4c 补)。前置:B4c 已落地(D8;**2026-09-21 起为 [08](./08-save-owner-fence.md) §8.3 六条**)。
 
+> **2026-10-16 落地进度**(「消除单节点」会话,用户同日拍板 BK8s 全部做完;未编译、未测试):第一块(guild 清单 / ConfigMap / `guild-migrate` / 镜像 / 连接总账 /
+> data-service `GuildInternalRpc`)与第二块(`-AssetOps` 密钥注入 guild / trade / scene、`-NetworkPolicies` gRPC 口准入)已落码。NetworkPolicy 名单按 2026-10-16 的代码重排:
+> scene 放 scene_manager / match / player_inbox / guild / trade,match 放路由服 / guild / gate(`-GateRouterMode 0` 回退时直连),guild 放路由服 / data_service。
+> 其余各项(db migrate Job、scene 不设 `MMORPG_ALLOW_CLIENT_GM` 的契约断言、告警、Loki ruler、BR 清单)按批推进,进度见 `deploy/k8s/README.md`。
+
 ## G-06 proto-gen 容量
 
 累计新增服务方法约 27 个(B2 +9−1、B3a 3、B4a 3、B5a 5、B5d 2、B6a 5、B6b 1),加上聚宝斋、组队会话的新增。每次 proto-gen 记录生成的 `kMaxRpcMethodCount`;生成器报错就停下报告,不手改上限(S2 §5.6)。

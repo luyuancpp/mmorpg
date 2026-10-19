@@ -17,6 +17,7 @@ import (
 	"time"
 
 	"match/internal/config"
+	"match/internal/constants"
 	"match/internal/playercontract"
 
 	teampb "proto/team"
@@ -44,6 +45,8 @@ type gatherRun struct {
 }
 
 // fakeBattlePort 假票据域端口:按配置给人数 / 票据阻塞 / 建票失败者 / gather 结果,并记录每次调用。
+// 补位部分(EnqueueParty / CancelParty / PartyQueueState)是一份内存里的「谁持有哪支队伍的补位票」:
+// 入队成功就给名单里每个人记一张,撤单时整单抹掉,用法见 party_test.go。
 type fakeBattlePort struct {
 	mu          sync.Mutex
 	sizes       map[uint32]uint32
@@ -54,6 +57,127 @@ type fakeBattlePort struct {
 	checks      []uint64
 	ticketCalls []ticketCall
 	gathers     []gatherRun
+
+	party        map[uint64]fakePartyTicket // player_id → 补位票
+	enqueueFail  uint64                     // 非 0:EnqueueParty 回这个成员(已有票据)
+	enqueueErr   error                      // 非 nil:EnqueueParty 回 (0, err)
+	onEnqueue    func(call partyEnqueue)    // 入队成功后调用(在锁外),用来插入「入队期间名单变化」
+	stateErr     error                      // 非 nil:PartyQueueState 回 err
+	cancelErr    error                      // 非 nil:CancelParty 回 err 且不撤单(模拟主动撤单失败)
+	stateCalls   int                        // PartyQueueState 被调用的次数
+	stateDelay   time.Duration              // >0:PartyQueueState 先睡这么久再返回(模拟票据库慢;不看 ctx,与 go-redis 单次读一致)
+	enqueues     []partyEnqueue
+	partyCancels []partyCancel
+}
+
+type fakePartyTicket struct {
+	teamId     uint64
+	state      uint32
+	targetSize uint32
+	configId   uint32
+	queuedAtMs uint64
+	roster     []uint64
+}
+
+type partyEnqueue struct {
+	configId   uint32
+	targetSize uint32
+	teamId     uint64
+	roster     []uint64
+}
+
+type partyCancel struct {
+	teamId     uint64
+	candidates []uint64
+	keep       []uint64 // keepIfRoster:名单等于它的单不撤
+	reason     uint32
+	culprit    uint64
+	canceled   []uint64
+}
+
+const fakePartyQueuedAtMs uint64 = 1_700_000_123_000
+
+func (f *fakeBattlePort) EnqueueParty(_ context.Context, battleConfigId, targetSize uint32, teamId uint64,
+	roster []uint64, _ map[uint64]uint32,
+) (uint64, error) {
+	call := partyEnqueue{configId: battleConfigId, targetSize: targetSize, teamId: teamId, roster: append([]uint64(nil), roster...)}
+	f.mu.Lock()
+	f.enqueues = append(f.enqueues, call)
+	if f.enqueueFail != 0 || f.enqueueErr != nil {
+		failed, err := f.enqueueFail, f.enqueueErr
+		f.mu.Unlock()
+		return failed, err
+	}
+	if f.party == nil {
+		f.party = make(map[uint64]fakePartyTicket)
+	}
+	for _, pid := range roster {
+		f.party[pid] = fakePartyTicket{
+			teamId: teamId, state: constants.PartyQueueQueued, targetSize: targetSize, configId: battleConfigId,
+			queuedAtMs: fakePartyQueuedAtMs, roster: call.roster,
+		}
+	}
+	onEnqueue := f.onEnqueue
+	f.mu.Unlock()
+	if onEnqueue != nil {
+		onEnqueue(call)
+	}
+	return 0, nil
+}
+
+func (f *fakeBattlePort) CancelParty(_ context.Context, teamId uint64, candidates, keepIfRoster []uint64, reason uint32, culprit uint64) ([]uint64, error) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	call := partyCancel{
+		teamId: teamId, candidates: append([]uint64(nil), candidates...), keep: append([]uint64(nil), keepIfRoster...),
+		reason: reason, culprit: culprit,
+	}
+	if f.cancelErr != nil {
+		f.partyCancels = append(f.partyCancels, call)
+		return nil, f.cancelErr
+	}
+	for _, pid := range candidates {
+		ticket, ok := f.party[pid]
+		if !ok || ticket.teamId != teamId || ticket.state != constants.PartyQueueQueued {
+			continue
+		}
+		if len(keepIfRoster) > 0 && sameIdSet(ticket.roster, keepIfRoster) {
+			break
+		}
+		for _, member := range ticket.roster {
+			delete(f.party, member)
+		}
+		call.canceled = ticket.roster
+		break
+	}
+	f.partyCancels = append(f.partyCancels, call)
+	return call.canceled, nil
+}
+
+func (f *fakeBattlePort) stateReads() int {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	return f.stateCalls
+}
+
+func (f *fakeBattlePort) PartyQueueState(_ context.Context, playerId, teamId uint64) (uint32, uint32, uint32, uint64, error) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	f.stateCalls++
+	if f.stateDelay > 0 {
+		time.Sleep(f.stateDelay)
+	}
+	if f.stateErr != nil {
+		return constants.PartyQueueNone, 0, 0, 0, f.stateErr
+	}
+	ticket, ok := f.party[playerId]
+	if !ok || ticket.teamId != teamId {
+		return constants.PartyQueueNone, 0, 0, 0, nil
+	}
+	if ticket.state != constants.PartyQueueQueued {
+		return ticket.state, 0, 0, 0, nil
+	}
+	return ticket.state, ticket.targetSize, ticket.configId, ticket.queuedAtMs, nil
 }
 
 var _ BattleStarter = (*fakeBattlePort)(nil)
@@ -66,11 +190,13 @@ func (f *fakeBattlePort) TeamSizeFor(battleConfigId uint32) uint32 {
 
 func (f *fakeBattlePort) MatchLockTTLSeconds(int) int { return testLockSeconds }
 
+// TicketBlocked 真实实现里「持有有效的补位票」同样算在途,假端口照此:有补位票的人预检过不去。
 func (f *fakeBattlePort) TicketBlocked(_ context.Context, playerId uint64) (bool, error) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	f.checks = append(f.checks, playerId)
-	return f.blocked[playerId], nil
+	_, queued := f.party[playerId]
+	return f.blocked[playerId] || queued, nil
 }
 
 func (f *fakeBattlePort) CreateMatchedTickets(_ context.Context, battleConfigId uint32, teamId uint64,

@@ -26,7 +26,7 @@ import (
 //	challenge:target:{player_id}          锁    同一目标同时只挂一个待应答挑战
 //	spectate:*                            观战索引与互斥标记(§10.4),key 组装见 spectate.go
 //
-// 队列四类 key 共用 hash tag {mq} 落同一 slot(设计决策 D3 / §11):入队
+// 队列、评分、版本、全局写入序列、注册集与凑单锁共用 hash tag {mq} 落同一 slot(设计决策 D3 / §11):入队
 // SADD+RPUSH+ZADD 用一条 Lua 原子完成,主从异步复制的故障切换要丢一起丢,
 // "活跃队列 ⊆ 注册集"与"list 成员集 == zset 成员集"两条不变量不会被打破。
 // 队列 QPS 极低,单 slot 不是瓶颈(§6)。
@@ -57,12 +57,21 @@ import (
 // 改造前实例写下的旧格式队列 match:queue:*,搬进 MatchRedis。它只碰 match 自己的旧 key,
 // 不碰契约 key(cross-zone-matchmaking.md D2 的 2026-10-12 更正)。
 
-// matchQueueHashTag 队列相关 key 的 hash tag,三类 key 必须共用。
+// matchQueueHashTag 队列相关 key 的 hash tag,所有队列 Lua 的 key 必须共用。
 const matchQueueHashTag = "{mq}"
 
 // matchQueueIndexKey 活跃队列 key 注册集:JoinQueue 入队时 SADD,matcher 用
 // SMEMBERS 遍历替代 SCAN(集群下 SCAN 只扫一个分片)。空队列由 matcher 懒剔除。
 const matchQueueIndexKey = "match:" + matchQueueHashTag + ":index"
+
+// matchQueueVersionSequenceKey 给每次队列写入分配新版本。它与所有队列同 {mq} slot,
+// 全库只保留这一个无 TTL 的递增计数器;清空某条队列时不能删除它,否则旧撤单快照会遇到版本重用。
+// 该保护以 Redis 不丢失已确认的序列写入为前提,不覆盖故障切换导致计数器回退。
+const matchQueueVersionSequenceKey = "match:" + matchQueueHashTag + ":write_sequence"
+
+// queueVersionsKey 的 hash 记录 player_id → 最近一次 push 的版本;入队/回队与版本写入同一条 Lua。
+// 队列项摘出时删除对应字段,空队列回收时删除整张 hash。直接追加后缀保持原 {mq} slot。
+func queueVersionsKey(queueKey string) string { return queueKey + ":versions" }
 
 func matchQueueKey(mode int32, battleConfigId uint32) string {
 	return fmt.Sprintf("match:%s:queue:%d:%d", matchQueueHashTag, mode, battleConfigId)
@@ -133,7 +142,8 @@ func rankKeyForQueue(queueKey string) (string, error) {
 	return strings.Join(parts, ":"), nil
 }
 
-// matchRatingKey 玩家评分 hash(§11):字段 rating / games / updated_at_ms,
+// matchRatingKey 玩家评分 hash(§11):字段 rating / games / updated_at_ms / recent_battles,以及排行榜用的代际 rating_gen
+// (首次写入时 HSETNX,docs/design/leaderboard-system.md §2.4),
 // 无 TTL,按玩家分布(不带 {mq})。缺失即默认 defaultRating。
 func matchRatingKey(playerId uint64) string {
 	return fmt.Sprintf("match:rating:%d", playerId)
@@ -181,6 +191,17 @@ func parseQueueKey(queueKey string) (mode int32, config uint32, err error) {
 
 func matchTicketKey(playerId uint64) string {
 	return fmt.Sprintf("match:ticket:%d", playerId)
+}
+
+// matchPartyEndReasonKey / matchPartyEndNotifiedKey 一支队伍补位单「撤出队列」的两个短期标记
+// (SET NX + 短 TTL,见 party.go claimPartyEndReason / markPartyEndNotified):前者记下最先认定的撤单原因
+// (主动取消者是谁),后者保证全队只收到一条通知。单 key、按 party_id 分布,不进任何多 key Lua,集群安全。
+func matchPartyEndReasonKey(partyId string) string {
+	return "match:party:end:reason:" + partyId
+}
+
+func matchPartyEndNotifiedKey(partyId string) string {
+	return "match:party:end:notified:" + partyId
 }
 
 func challengeKey(challengeId uint64) string {

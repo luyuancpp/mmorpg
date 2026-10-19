@@ -3,7 +3,6 @@ package utils
 import (
 	"bytes"
 	"errors"
-	"io"
 	"io/fs"
 	"os"
 	"path/filepath"
@@ -176,7 +175,7 @@ func CopyFileIfChangedAsync(wg *sync.WaitGroup, inputPath, outputPath string) {
 		if err == nil && bytes.Equal(srcContent, dstContent) {
 			return
 		}
-		if err := os.WriteFile(outputPath, srcContent, 0644); err != nil {
+		if err := WriteFileIfChanged(outputPath, srcContent); err != nil {
 			logger.Global.Fatal("Failed to write destination file",
 				zap.String("dest_path", outputPath),
 				zap.Error(err),
@@ -208,22 +207,11 @@ func CopyFS(fsys fs.FS, targetDir string) error {
 }
 
 func copyFSFile(fsys fs.FS, srcPath, targetPath string) error {
-	srcFile, err := fsys.Open(srcPath)
+	content, err := fs.ReadFile(fsys, srcPath)
 	if err != nil {
 		return err
 	}
-	defer srcFile.Close()
-	srcInfo, err := srcFile.Stat()
-	if err != nil {
-		return err
-	}
-	destFile, err := os.OpenFile(targetPath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, srcInfo.Mode()&0777)
-	if err != nil {
-		return err
-	}
-	defer destFile.Close()
-	_, err = io.Copy(destFile, srcFile)
-	return err
+	return WriteFileIfChanged(targetPath, content)
 }
 
 // CopyLocalDir copies a local directory using CopyFS.

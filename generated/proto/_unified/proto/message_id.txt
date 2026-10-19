@@ -312,3 +312,6 @@
 311=PlayerLocatorGetSession
 312=PlayerLocatorSetDisconnecting
 313=PlayerLocatorReconnect
+314=SceneMysteryMerchantClientPlayerGetMysteryMerchantInfo
+315=SceneMysteryMerchantClientPlayerBuyMysteryMerchantGoods
+316=SceneMysteryMerchantClientPlayerNotifyMysteryMerchant

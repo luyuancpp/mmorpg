@@ -48,3 +48,8 @@ docs/PROGRESS.md merge=union
 # 补丁文件必须逐字节保留:内容是 CRLF 的 vcxproj diff,
 # 被 text=auto 归一成 LF 后在新 clone 上 git apply 必然失败。
 *.patch -text
+
+# 当前地图合同与客户端/Java逐字节对账,禁止checkout换行转换改变SHA。
+data/scene_nav_bin/current_maps/**/*.json -text
+data/scene_nav_bin/current_maps/**/walkmask.txt -text
+data/scene_nav_bin/current_maps_20261009.json -text

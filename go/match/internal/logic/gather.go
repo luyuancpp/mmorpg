@@ -205,7 +205,9 @@ func runGatherWithOptions(svcCtx *svc.ServiceContext, mode matchpb.MatchMode, ba
 				}
 				// 兜底队列 key(票据没有 queue_key 时才用,也是汇总日志里印的那个):回队首只发生在
 				// 队列凑单的组上,组大小就是那条队列的凑满人数,所以 PVE 人数档能还原出带人数段的 key。
-				requeueFront(svcCtx, queueKeyForJoin(mode, battleConfigId, uint32(len(members))), survivors, tickets)
+				// battleId 记进回队票据:这些人刚被这一局冻结过,解冻若丢了,matcher 要认得出那把残留的备战锁。
+				requeueFrontAfterBattle(svcCtx, queueKeyForJoin(mode, battleConfigId, uint32(len(members))),
+					survivors, tickets, battleId)
 			} else {
 				for _, pid := range members {
 					deleteTicketIfOwned(svcCtx, pid, tickets[pid])
@@ -465,6 +467,16 @@ func runGatherWithOptions(svcCtx *svc.ServiceContext, mode matchpb.MatchMode, ba
 	} else if withTickets {
 		for _, pid := range members {
 			markTicketReady(svcCtx, pid, tickets[pid], battleId)
+		}
+		if requeueOnFail {
+			// 队列凑出来的组里可能有队伍补位单:告诉 team 它们开局了(推一次视图,面板从「匹配中」归位)。
+			notifyPartiesStarted(svcCtx, members)
+		}
+	} else {
+		// 不带票据的入口(切磋):参战者若还挂着排队票据,立即退出排队。放在开局成功之后 ——
+		// 开局失败时排队原样保留,客户端那边的相位也还停在排队态,两边一致。
+		for _, pid := range members {
+			leaveQueueForOtherBattle(svcCtx, pid)
 		}
 	}
 

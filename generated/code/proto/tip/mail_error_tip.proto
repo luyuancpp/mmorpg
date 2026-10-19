@@ -27,4 +27,8 @@ enum mail_error {
 
   kMailAttachmentProtected = 17008;
 
+  kMailClaimNotOpen = 17009;
+
+  kMailAttachmentNotOpen = 17010;
+
 };

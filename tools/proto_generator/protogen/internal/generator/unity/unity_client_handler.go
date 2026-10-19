@@ -4,6 +4,7 @@
 package unity
 
 import (
+	"bytes"
 	"math"
 	"os"
 	"path/filepath"
@@ -14,6 +15,7 @@ import (
 
 	"protogen/internal"
 	_config "protogen/internal/config"
+	"protogen/internal/utils"
 	"protogen/logger"
 
 	"go.uber.org/zap"
@@ -156,12 +158,11 @@ func writeHandlerFile(filePath string, data handlerData) error {
 		return err
 	}
 
-	f, err := os.Create(filePath)
-	if err != nil {
+	var content bytes.Buffer
+	if err := tmpl.Execute(&content, data); err != nil {
 		return err
 	}
-	defer f.Close()
-	return tmpl.Execute(f, data)
+	return utils.WriteFileIfChanged(filePath, content.Bytes())
 }
 
 func writeRegistryFile(filePath string, entries []handlerData) error {
@@ -170,12 +171,11 @@ func writeRegistryFile(filePath string, entries []handlerData) error {
 		return err
 	}
 
-	f, err := os.Create(filePath)
-	if err != nil {
+	var content bytes.Buffer
+	if err := tmpl.Execute(&content, registryData{Entries: entries}); err != nil {
 		return err
 	}
-	defer f.Close()
-	return tmpl.Execute(f, registryData{Entries: entries})
+	return utils.WriteFileIfChanged(filePath, content.Bytes())
 }
 
 // isRelevantService keeps the same gating rule as the Go robot generator:

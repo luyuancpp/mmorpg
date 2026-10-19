@@ -306,3 +306,6 @@ const PlayerLocatorSetSessionMessageId = 310
 const PlayerLocatorGetSessionMessageId = 311
 const PlayerLocatorSetDisconnectingMessageId = 312
 const PlayerLocatorReconnectMessageId = 313
+const SceneMysteryMerchantClientPlayerGetMysteryMerchantInfoMessageId = 314
+const SceneMysteryMerchantClientPlayerBuyMysteryMerchantGoodsMessageId = 315
+const SceneMysteryMerchantClientPlayerNotifyMysteryMerchantMessageId = 316

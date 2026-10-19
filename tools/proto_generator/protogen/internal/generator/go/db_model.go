@@ -189,7 +189,7 @@ func GenerateMergedTableSQL(messageNames []string) error {
 		sqlFileName := _config.Global.FileExtensions.ModelSqlExtension
 		sqlPath := filepath.Join(sqlDir, sqlFileName)
 
-		if err := os.WriteFile(sqlPath, []byte(mergedSQL.String()), 0644); err != nil {
+		if err := utils2.WriteFileIfChanged(sqlPath, []byte(mergedSQL.String())); err != nil {
 			logger.Global.Error("Failed to write SQL file",
 				zap.String("sql_path", sqlPath),
 				zap.Error(err),
@@ -245,7 +245,7 @@ func writeMessageNamesToJSON(messages []string) error {
 	}
 
 	outputPath := _config.Global.Paths.TableGeneratorDir + _config.Global.Naming.DbTableListJson
-	if err := os.WriteFile(outputPath, data, 0644); err != nil {
+	if err := utils2.WriteFileIfChanged(outputPath, data); err != nil {
 		logger.Global.Error("Failed to write JSON config file",
 			zap.String("output_path", outputPath),
 			zap.Error(err),

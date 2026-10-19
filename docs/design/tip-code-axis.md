@@ -261,8 +261,9 @@ message 的取法没有变：上游只填 tip 码、没有参数文案时，通�
 | **guild**（原手写私有段 200-208） | — | 14000-14008 |
 | **friend**（原手写私有段 220-226） | — | 15000-15006 |
 | **match**（原从 1 开始撞号） | — | 16000-16019 |
+| **mail**（2026-10-15 新建组，移植批次 M1） | — | 17000-17007 |
 
-每组段宽 1000，当前余量 ≈980。`17000` 起为移植域预留（mail / chat / auction / trade / rank / dialogue / battle_result / grant），在 Tip.xlsx 末尾以注释占位。
+每组段宽 1000，当前余量 ≈980。`17000` 起为移植域预留（mail / chat / auction / trade / rank / dialogue / battle_result / grant），在 Tip.xlsx 末尾以注释占位；其中 mail 已于 2026-10-15 建组 `//mail_error base=17000 width=1000`（追加在表尾，见 [mail-system.md](./mail-system.md) §5.6 / §12.1），其余仍是注释占位。
 
 **重排对源码调用点是符号安全的**：源码调用点引用的是 `kSuccess` 这样的符号而不是字面量；表内的 20 个数字引用则已显式迁移并加生成前闸门。三语言产物一起重新生成，旧号→新号的 129 条映射记在 state 的 `legacy_ids` 里，供排查历史日志。
 

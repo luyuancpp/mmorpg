@@ -1,0 +1,29 @@
+# 现役 SQL 通用榜跨区冒烟，见 robot/rank_smoke_scenario.go。
+# board={type:1,scope:GLOBAL,period:all,generation:1}；跨区对局后等待score/achieved_ms对应新鲜快照。
+# 保留分页排序、跨区名字补全、未上榜self以及可选gate限流；不启动旧R2b Redis/Kafka写榜运行时。
+# 需match现役rank publisher、rank SQL、DataService名字读取及两区路由就绪，表及签名按现役go/rank/etc/rank.yaml配置。
+# 本轮仅适配源码，未运行冒烟或测试。
+
+gateway_addr: "http://127.0.0.1:8081" # Gateway HTTP endpoint(/api/assign-gate)
+zone_id: 1 # 本模式不用此字段选区(A / N 登 rank_smoke.zone_a,B 登 zone_b)
+robot_count: 3 # 语义占位:本模式固定 A / B / N 三个机器人
+account_fmt: "robot_%04d" # 保留骨架字段;本模式用固定账号 robot_9821 / 9822 / 9823
+password: "123456"
+skill_ids: [] # 战斗走服务端回合引擎 + 自动战斗,无需配置技能
+table_dir: "../generated/tables"
+action_interval: 3 # 本模式不跑场景 AI 循环,保留默认
+report_interval: 5
+
+mode: "rank-smoke"
+
+# 子开关(见 config.RankSmokeConfig / rank_smoke_scenario.go)
+rank_smoke:
+  zone_a: 1 # A、N 登录的 zone
+  zone_b: 2 # B 登录的 zone;必须与 zone_a 不同(跨区名字补全的前提)
+  request_interval_ms: 1100 # 同一机器人相邻读榜请求的最小间隔;gate 默认限流档 3 次 / 窗口
+  update_timeout_ms: 30000 # 等写榜的预算:match 发快照 → rank 消费都是异步的,含 Kafka 再均衡余量
+  rate_limit_check: false # MessageLimiter 按 rank 导表(5 次 / 秒)之后再打开
+  rate_limit_per_second: 5 # 与 data/MessageLimiter.xlsx 里 GetRankPage 那一行一致
+
+# 认证:password 模式(robot_ 前缀账号走 DevPasswordAuth)
+auth_type: "password"

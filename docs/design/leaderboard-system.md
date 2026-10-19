@@ -1,5 +1,8 @@
 # 排行榜(leaderboard / rank)v1 设计
 
+> **2026-10-19 主干合并口径**：现役为 SQL 权威的通用榜代次、封榜、快照及邮件奖励链，配置入口为 `go/rank/etc/rank.yaml`（DSNEnv、RequireTiDB、MaxOpenConns、MailRpc、Producers）。R2/R2b 的 Redis/Kafka 消费榜、redis-rank 和消费类告警保留为历史设计，不能与现役同时作为写者启用。全局服务登记、端口、冗余部署和失败可观测性继续保留。
+
+
 > **本文只是设计,未落码、未编译。** 本文不改任何 proto / yaml / 配表 / 代码;文中出现的文件改动全部是"将来那一批要改什么"的清单。
 > 日期:2026-09-20(同日经三视角评审回修一轮,见 §10)。前情:[`friend-handoff-20260920.md`](../handoff/friend-handoff-20260920.md) §4.2(leaderboard 一节)、§4.4(A 仓服务对照表中 `runtime/leaderboard` 一行)。
 > 约束来源:[`microservice-zone-contract-20260914.md`](microservice-zone-contract-20260914.md)(下称"契约")§3 / §4 / §6 / §7 / §8;[`xuanming-port-decisions-20260910.md`](xuanming-port-decisions-20260910.md) D-9 / D-11 / D-12 / D-13 / D-14;仓根 `AGENTS.md` §4 / §7 / §11。
@@ -19,6 +22,8 @@
 8. 验证清单
 9. 未核实项 / 拍板记录
 10. 评审记录
+11. 2026-10-15 三仓调用链核对与既有帮会榜读取快照
+12. 落码记录(R1p / R1 / R2a,2026-10-16)
 
 命名约定:**"leaderboard"是功能名,"rank"是工程名**。进程、目录、proto 包、端口登记一律用 `rank`(理由见 L-3:节点枚举已经叫 `RankNodeService = 13`,生成器靠目录名推节点类型)。
 
@@ -176,7 +181,8 @@
 - **写入 Lua**(单条,KEYS=[`lb:{rating}:z`, `lb:{rating}:v`],ARGV=[pid, rating_gen, games, rating_centi, compositeScore]):
   1. `HGET v pid` → 解出 `(ogen, ogames)`;若存在且 `(rating_gen, games) <= (ogen, ogames)`(字典序)→ 返回 0(**stale**:幂等重放 / 乱序旧事件 / 旧代际残留)。
   2. 若存在且 `rating_gen > ogen` → 本次记为 **gen_reset**(match 侧评分键丢过,新代际直接覆盖,不管 games 大小)。
-  3. **同分保留时间分量**:`ZSCORE z pid` 存在且 `floor(old / 2^32) == rating_centi` → **不改 ZSET**(保留"最初达到该分"的时间);否则 `ZADD z compositeScore pid`。这样 §3.3 的同分规则真正实现为"先达到该分者在前",而不是"最近一局更早者在前"(match 的 Lua 每局都无条件改 `updated_at_ms`,0 分下限钳住、Δ=0 的平局、|Δ|<0.005 都会出现"分没变、时间前移")。
+  3. **同代际且同分时保留时间分量**〔2026-10-16 落码更正:只在第 2 步没判为 gen_reset 时适用(同代际,或版本表里没有该玩家 —— 首次上榜或 §3.5 的只丢了版本表);
+  gen_reset 一律按新代际的时刻重写,见 §12.3 偏差第 8 条〕:`ZSCORE z pid` 存在且 `floor(old / 2^32) == rating_centi` → **不改 ZSET**(保留"最初达到该分"的时间);否则 `ZADD z compositeScore pid`。这样 §3.3 的同分规则真正实现为"先达到该分者在前",而不是"最近一局更早者在前"(match 的 Lua 每局都无条件改 `updated_at_ms`,0 分下限钳住、Δ=0 的平局、|Δ|<0.005 都会出现"分没变、时间前移")。
   4. `HSET v pid "<rating_gen>:<games>"` → 返回 1(written)或 3(gen_reset)。
   - Lua 里 `floor(old/2^32)` 在 double 下精确(score < 2^53)。
 - **幂等标记 TTL ≥ 保留期**(契约 §6):本设计的"标记"就是 `lb:{rating}:v`,无 TTL,天然满足。
@@ -227,9 +233,9 @@ compositeScore = rating_centi × 2^32 + (2^32 − 1 − (updated_sec − EPOCH))
 
 | 指标 | label | 用途 |
 |---|---|---|
-| `rank_write_total` | `outcome` ∈ written / stale(版本不新) / gen_reset(match 侧代际变了,覆盖写) / out_of_range / error | 写入健康;`stale` 比例反映重放 / 乱序程度;`gen_reset` 非零说明 match 评分键丢过(§3.5) |
+| `rank_write_total` | `outcome` ∈ written / stale(版本不新) / gen_reset(match 侧代际变了,覆盖写) / out_of_range / invalid(反序列化失败或快照字段为 0,永久跳过;2026-10-16 落码补,§12.3 偏差第 7 条) / malformed_version(某个玩家的版本值被手写坏,永久跳过;2026-10-17 补,同上) / error(瞬时写失败,每次失败的尝试记一次,重试不跳过) | 写入健康;`stale` 比例反映重放 / 乱序程度;`gen_reset` 非零说明 match 评分键丢过(§3.5)。⚠ Redis 变慢时 go-zero 客户端会重发已生效的写 Lua,重发那次读到新版本、记成 stale:此时 written / gen_reset 偏低、stale 偏高,只作趋势 |
 | `rank_consume_errors_total` | 无 | 消费失败(反序列化 / Redis 写失败)次数 |
-| `rank_last_consume_unixtime` | 无 | gauge,每**成功处理**一条消息写入 `time.Now().Unix()`;消费者卡死 / 再均衡卡住时它停住,告警①靠它 |
+| `rank_last_consume_unixtime` | 无 | gauge,每条消息处理到终态(写入 / stale / 永久跳过)写入 `time.Now().Unix()`,**消费循环启动时先写一次启动时刻**(2026-10-17 补,§12.3 偏差第 10 条);消费者卡死 / 再均衡卡住时它停住,告警①靠它 |
 | `rank_consume_lag_seconds` | 无 | `now − finished_at_ms`,榜的新鲜度。**只在收到消息时更新**,卡死时停在最后一次正常值,**不能**用来发现卡死 |
 | `rank_read_total` | `method`、`outcome` | 读路径 |
 | `rank_read_duration_seconds` | `method` | 读延迟 |
@@ -245,11 +251,12 @@ match 侧新增 `match_rating_snapshot_publish_total{outcome}`(ok / error;**按�
 | # | 名称 | 表达式(草案) | 级别 | 说明 |
 |---|---|---|---|---|
 | ① | RankConsumerStalled | `sum(increase(match_rating_snapshot_publish_total{outcome="ok"}[15m])) > 0 and (time() - max(rank_last_consume_unixtime)) > 900` | critical | **必须以"match 这 15 分钟确实发过"为前提**:只看 `time() - rank_last_consume_unixtime` 会在深夜没人打排位、或开关为 false 时误报。rank 看不到 match 的开关,用 match 的发布计数代替"开关打开且有流量" |
-| ② | RankWriteFailing | `sum(rate(rank_write_total{outcome=~"error\|out_of_range"}[5m])) > 0` | warning | out_of_range 理论上不可能出现,出现即 bug |
+| ② | RankWriteFailing | `sum(rate(rank_write_total{outcome="error"}[5m])) > 0`,`for: 10m` | warning | 只看瞬时的 error(RankRedis 不可达、写满):持续 10 分钟才报,一次抖动不报。〔2026-10-17 拆分:永久跳过的三档挪到 ②b,原因见 ②b〕 |
+| ②b | RankWriteSkipped | `sum(increase(rank_write_total{outcome=~"invalid\|out_of_range\|malformed_version"}[15m])) > 0 or sum(rank_write_total{outcome=~"invalid\|out_of_range\|malformed_version"} and on(instance) (time() - process_start_time_seconds) < 900) > 0`,`for: 0m` | warning | 永久跳过出现一次就报:out_of_range 理论上不可能出现,出现即 bug;invalid 是上游契约被破坏;malformed_version 是版本表被手写坏、要人修。跳过时 `rank_last_consume_unixtime` 照常前进,告警①看不见。写成 `rate > 0` + `for: 10m` 时,不足 5 分钟的一阵跳过永远满足不了 `for`(2026-10-17 复审补)。`or` 后半句补进程刚起的窗口:预建的 0 值序列只有在第一次被抓取之前没涨过才有用,新 Pod 起来几秒内就跳过的话第一个样本已是 1,`increase()` 看不到(2026-10-17 复审补) |
 | ③ | MatchRatingSnapshotPublishFailing | `sum(rate(match_rating_snapshot_publish_total{outcome="error"}[5m])) / sum(rate(match_rating_snapshot_publish_total[5m])) > 0.05` | warning | 发布失败会被重试吸收,持续 >5% 说明 Kafka 侧有问题 |
 | ④ | RankBoardShrunk | `max(rank_board_size) < 0.9 * max_over_time(max(rank_board_size)[1h:1m])` | critical | 榜只增不减(v1 无删除),缩水 = Redis 丢失 / 淘汰。注意 PromQL 子查询必须写 `[1h:1m]`,`[1h]` 对聚合结果是语法错误 |
 | ⑤ | RankReadFaults | `sum(rate(rank_read_total{outcome="fault"}[5m])) / sum(rate(rank_read_total[5m])) > 0.05` | warning | outcome 取值落码时与 `serverbase.TipVerdict` 的分类对齐 |
-| ⑥ | MatchRatingGenReset | `sum(increase(rank_write_total{outcome="gen_reset"}[15m])) > 0` | warning | match 评分键丢过;非压测环境出现即查 MatchRedis 的淘汰策略 |
+| ⑥ | MatchRatingGenReset | `sum(increase(rank_write_total{outcome="gen_reset"}[15m])) > 0 or sum(rank_write_total{outcome="gen_reset"} and on(instance) (time() - process_start_time_seconds) < 900) > 0` | warning | match 评分键丢过;非压测环境出现即查 MatchRedis 的淘汰策略。Redis 变慢时 gen_reset 可能被记成 stale(见 §3.6;那次连 ERROR 日志也不打),本条可能漏报 |
 
 ---
 
@@ -476,7 +483,7 @@ Claude 不跑任何构建 / 测试(`AGENTS.md §10.1`),以下由 Codex 执行。
 |---|---|---|---|
 | T1 | 版本比较:同一代际先写 games=5 再写 games=3 | 第二次返回 0,ZSET 分数仍是 games=5 那次的 | ⚠ 若测试只写一次或两次分数相同,"没被覆盖"无法区分;两次必须用**不同分数** |
 | T2 | 重放同一事件 | 返回 0,`rank_write_total{outcome="stale"}` +1 | — |
-| T3 | 同分决胜 | 两人 rating 相同、updated 早的排前 | ⚠ 若两人 player_id 的字节序恰好与时间序一致,测试恒绿;必须构造**早达到者的 id 字节序更大** |
+| T3 | 同分决胜 | 两人 rating 相同、updated 早的排前 | ⚠ ZREVRANGE 同分时按 member 字节序**倒序**(大的在前):若早达到者的 id 字节序更大,时间分量失效也照样排第一,测试恒绿。必须构造**早达到者的 id 字节序更小**(例如 `"10"` 对 `"9"`)〔2026-10-16 更正:原文写成"更大",是反的;`board_test.go` 按正确方向构造〕 |
 | T3′ | 分数不变的再写一局 | 玩家 A 在 t1 达到 1500.00,玩家 B 在 t2>t1 达到 1500.00;A 再写一次**同分**快照(games+1、updated_at 为 t3>t2)→ A 的名次**不下降**(仍在 B 前),`lb:{rating}:v` 里 A 的 games 已更新 | ⚠ 只写一次测不出;必须有第三方 B 的时间夹在中间,否则名次不变也可能是巧合 |
 | T4 | score 编码边界 | rating_centi = 2^21−1 且 sec = EPOCH 时解码回原值;2^21 被拒,`out_of_range` +1 | ⚠ 只测小数值时 float64 永远精确;必须测上界 |
 | T4b | rating_centi 精确解析(match 侧) | `"0.29"`→29、`"1516.29"`→151629、`"1523.45"`→152345、`"0.15"`→15、`"1500.00"`→150000;非法串 → error、不发布 | ⚠ 用 1500.00 这类整数值永远测不出截断;必须用 x.29 / x.15 这类二进制不可精确表示的小数 |
@@ -628,3 +635,169 @@ Go使用mail、rank实际仓储和服务的独立gRPC测试进程，由match的�
 汇总证据为 `build/rank-mail-chain-20261017/two-version-rank-mail-chain-proof-20261017.json`（SHA256 `0A5BC76B3DC3F6AB0B6EF562A42C3DB7D1B69AD7C21D4F7DCB2CAC1BCD4EB644`），关联Go、Java最终proof、原失败日志和清理记录；20个来源/产物/日志/XML文件已复核摘要。Go首次子进程AccessDenied发生在业务调用前，原EXE纯启动探针成功后单次重跑通过，未改安全配置；Java两次新增测试配置/编译错误修正后才重跑，未跳测试。自身随机数据库、Go夹具进程和JavaRPC端口已清理，未清共享数据。
 
 验收到奖励邮件持久可见为止；附件领取仍走scene资产与SQL证据链，不能把生成奖励邮件等同于资产到账。Go独立进程是装配生产RPC/仓储及Worker.Tick的测试夹具，并非完整成品main、注册中心、真实gate或战斗Kafka全进程链；该整链的奖励样本为货币，未覆盖物品奖励全链。客户端沿用既有协议及UI，本批无契约变化且未新跑Unity；个人到账SQL收据、归属与父快照围栏、跨区真实故障和容量不由本节替代。
+
+> 以下 R2b 记录保留旧 Redis/Kafka 榜的运维设计与验证历史；现役运行时为上面的 SQL 权威榜、封榜及邮件奖励链，不重新启用第二个评分写者。
+
+## 12. 落码记录(2026-10-16,Claude;Go 未编译、未跑任何 Go 测试)
+
+§11 写的"主仓没有 `go/rank`"到本节为止已不成立:R1p、R1、R2a 三批在分支 `feat/rank-r1` 上落码,合入 main 的提交号见 `docs/PROGRESS.md` 同日条目。
+R2b(部署登记、`rank-smoke`、告警文件、MessageLimiter)与 R3(客户端)在各自的分支上(见 §12.5),**不随本批进 main**,所以合入后 rank 不在任何服务目录里,
+`dev.bat` 的一键起服与 K8s 部署都不会碰它;`go/rank` 在 CI 排除清单里(要等 proto-gen 产物 `go/proto/rank` 入库)。
+
+**Java 版(AGENTS §12)**:待做。`rank.proto` 是客户端可见契约,两版要同批对齐;本机没有 Java 仓(`D:\luyuan\xuanming-server-mmo` 不存在),
+`PARITY.md` 未登记,交由 Java 版负责人按本节与 §4 的协议对齐。
+
+### 12.1 R1p 契约批
+
+- `proto/rank/rank.proto`(新,形状照 §4.2,`RankBoard` 不预留 GUILD,L-15);`proto/contracts/kafka/match_event.proto` 加 `PlayerRatingSnapshotEvent`(字段照 §2.4)。
+- `tools/proto_generator/protogen/etc/proto_gen.yaml` 与 `proto_gen.no-unity.yaml` 各加同样的 `rank:` domain_meta 块(只写 Go outputs,照 friend / mail);
+  team 块的客户端门禁注释改成"五行"(加 `proto/rank/rank.proto`)。
+- `tools/scripts/rank_postgen.py`(新):`verify` / `register-cpp` / `vendor-robot` / `all`,复用 `mail_postgen.py` 的通用机制,只描述 rank 的产物清单;
+  `tools/scripts/dev_tools.ps1` 的 `$ProtoGenPostHooks` 加 rank 一条,`proto-gen-run` 成功后自动跑 `register-cpp` 与 `vendor-robot`(幂等)。
+- **只对 `match_event.proto` 做了一次窄面 protoc 重生成**(R1 的 match 代码要用新事件类型,而 go/match 在服务目录里、不能等全量 proto-gen):
+  先用未改动的 proto 重生成一遍,确认与库里的产物逐字节一致,再生成新版本。产物:`go/proto/contracts/kafka/match_event.pb.go`、C++ 的
+  `match_event.pb.{cc,h}`,以及三份暂存副本(`generated/proto/_unified`、`db`、`login` 下的 `match_event.proto`,三份只差 `go_package`)。
+  **rank 自己的产物**(`go/proto/rank`、消息号、gate 白名单与路由表、robot / Unity 桩)**必须出自一次全量 proto-gen**,归构建方(§12.4)。
+
+### 12.2 R1 match 出口
+
+- `go/match/internal/logic/rating.go`:`ratingApplyScript` 两条分支统一返回 `{written, rating, games, updated_at_ms, rating_gen}`,开头 `HSETNX rating_gen`,
+  续写分支 `tonumber(HGET)`;`applyRatingDelta(..., strictSnapshot bool)` 返回 `ratingSnapshot`(rating_centi 按十进制字符串精确解析,games 双类型解析且拒 0);
+  `ratingSnapshotPublishFn` 接缝;全员写完之后、`Setex(appliedKey, done)` 之前一次批量发布,发布失败返回 error、标记保持 applying。
+- `go/match/internal/kafka/rating_snapshot.go`(新):消息构造(key = player_id 十进制串,value 是事件本体)、一次批量写(`SnapshotWriter` 接口)、
+  `EnsureRatingSnapshotTopic`(带显式保留期);参数守卫用哨兵错误(`ErrNoSnapshotWriter` / `ErrNoSnapshotBrokers` / `ErrInvalidSnapshotTopicSpec`)。
+- `go/match/internal/metrics/metrics.go`:`match_rating_snapshot_publish_total{outcome}`(按消息条数计)。
+- `go/match/internal/config/config.go`:`RatingSnapshotPublishEnabled`(默认 false)、`RatingSnapshotTopic`、`RatingSnapshotTopicPartitions`、
+  `RatingSnapshotRetentionHours`;`Validate` 先调内嵌 `RpcServerConf.Validate`(本方法会遮蔽它)。`go/match/etc/match_service.yaml` 同名四键。
+- `go/match/match_service.go`:`RatingEnabled=true` 时不论开关都声明快照 topic;开关打开时,结果消费者必须在 topic 声明成功**之后**才起
+  (共享 writer 开着 `AllowAutoTopicCreation`,声明失败期间发布会让 broker 按默认分区数自动建 topic,永久破坏 3 分区契约);两步串成一步、30s 后台重试。
+- K8s:`k8s_deploy.ps1 -MatchRatingSnapshotPublish 0|1`(不粘滞,缺省 "0"),取值写进 match Pod 模板注解 `mmorpg.io/rating-snapshot-publish`
+  (翻值必然滚动 match;ConfigMap 只在启动时读);本次不部署全局 Go 服务却显式传它时告警。`dev_tools.ps1` 的 k8s-infra-up / k8s-all-up 同名参数透传。
+  `deploy/k8s/README.md` 保留期表加一行 + 新小节「排行榜评分快照开关」;契约测试与客户端入口契约测试相应补断言。
+- 测试:`rating_snapshot_test.go`(logic,miniredis + 替身,不连 Kafka:T4b、T10、T13、部分写入不发布、开关两态)、`kafka/rating_snapshot_test.go`、
+  `config/config_test.go`(新,含"conf.Load 会调 Validate")。
+
+**与本文设计的偏差**:
+
+1. **`strictSnapshot`**:开关关闭时快照字段解析失败只记日志、评分入账照旧(**入账路径**与 R1 之前一致,§2.4"开关 false 时行为与旧版逐字一致"指的是这条路径;
+   进程层面仍有两处不同:`rating_gen` 字段照常补写,快照 topic 照常在后台声明);
+   开关打开时解析失败返回 error、走重试,不发布半截快照。
+2. **topic 声明与结果消费者的先后**(§2.4 只写了"两边都 Ensure"):见上面 `match_service.go` 一条,R1 评审时补上。
+3. **K8s 开关进 Pod 模板注解**(§5.4 只写了参数):只改 ConfigMap 时 apply 是 no-op、match 不滚动,开关 / 回滚都不生效。
+   - **开关关闭时快照 topic 只在后台声明**(复审补):不在 gRPC 起服之前同步试 —— Kafka 建得了连却不回包时一次 admin 调用最坏几十秒,叠在结果消费者的
+     启动之后会把起服推迟一倍、被 liveness 杀掉;开关关着时没有任何东西等这个 topic。开关打开时仍同步先声明(防 broker 自动建错分区)。
+
+### 12.3 R2a rank 服务(读 + 写)
+
+`go/rank/` 全部新建:`go.mod` / `go.sum`(起步取自 go/mail 去掉 MySQL 一支,构建方 tidy 收敛)、`etc/rank.yaml`、`rank.go` + `rank_test.go`、
+`internal/{config,constants,session,lifecycle,data,metrics,logic,kafka,svc,server}`。
+
+- **读**:`GetRankPage` = 会话取"我"(D-9)→ 榜类型校验 → 页码 / 页长钳制(0→1、0→20、>50→50)→ 一条只读 Lua(ZCARD + ZREVRANGE + HMGET 版本 + ZREVRANK + ZSCORE,
+  越界钳到末页)→ 一页 + self 一次 `BatchGetPlayerName`(800ms,fail-open,`rank_name_lookup_total`)。无会话 / 未知榜 → kInvalidParameter 且**不查 Redis**;
+  读榜失败 → kServiceUnavailable(fault)。拦截器链 grpcstats → killswitch → session → serverbase,三个守链测试 + 坏会话头 + NodeInfo + 横幅。
+- **写**:`internal/kafka` 消费 `match-rating-snapshot`(组 `rank-rating`,新组从最早;`EnsureTopics` 传 `RetentionMs: -1`,只校验分区)。写 Lua 按 (rating_gen, games)
+  字典序取新;同代际同分不改时间分量;代际变大覆盖(gen_reset)。终态分类:写入 / stale / gen_reset 提交;反序列化失败、快照非法、越界、单个玩家的版本值被手写坏
+  → 永久错误,计数、跳过并提交;其余写错误(RankRedis 不可达、整键类型错)→ 指数退避(200ms 起,封顶 30s)无限重试、不跳过,停机打断时不提交。
+  Kafka 起不来时降级为告警 + 30s 后台重试,读路径照常服务。
+- **存储**:`RankRedis`(独立句柄)没配时回落共享库并 WARN(§3.5,线上必须独立 noeviction 实例);键 `lb:{rating}:z` / `lb:{rating}:v`;
+  score = rating_centi << 32 + (2^32 − 1 − (秒 − snowflake.Epoch)),上限 2^53 − 1。
+- **指标**:§3.6 全表;`rank_board_size` 每副本 30s 采样一次,**刻意不预建 0 值**(单副本重启时先报 0 会让 RankBoardShrunk 误报)。
+
+**与本文设计的偏差**:
+
+4. **文件布局**:§7 列的 `internal/data/read.go` / `write.go` 合成了 `board.go`(读写两段 Lua 共用键与解码),`get_rank_page_test.go` 之外另有
+   `consumer_test.go`;`internal/svc` 与 `internal/kafka` 是 §7 没列但必需的装配 / 消费包。
+5. **永久错误多了"版本值被手写坏"一类**(`data.ErrMalformedVersion`):只坏一个成员时跳过,不卡整个分区;整键类型错(WRONGTYPE)不归这类,卡住等人修。
+6. **瞬时写错误不跳过**(match 的结果消费者是重试 3 次后跳过):投影消费者跳过 = 这条快照要等该玩家下一局才自愈,而 Redis 宕机期间每条都会被跳过;
+   卡住由 RankConsumerStalled 告警兜着。
+7. **`rank_write_total` 多两档 `invalid` / `malformed_version`**(§3.6 原表没有):反序列化失败与快照字段为 0 记 `invalid`;某个玩家的版本值被手写坏记
+   `malformed_version`(2026-10-17 复审改:原先记 `error`,与瞬时写失败混在一起,告警分不出"跳过了一条"与"Redis 一直写不进")。三类永久跳过由告警 ②b
+   出现一次就报(跳过会推进 `rank_last_consume_unixtime`,只靠告警①看不见),瞬时的 `error` 由告警②持续 10 分钟才报。
+8. **gen_reset 一律按新代际的时刻重写时间分量**(§3.2 第 3 步原文没限定"同代际"):旧代际的"达到时刻"属于评分键丢失前的历史,新代际从这一刻重新算。
+9. **停机时有上限地等消费 goroutine 离组**(复审补):不等的话进程先退出、broker 收不到离组,其余副本要等会话超时(30s)才接管分区。
+   上限取 min(4s, 从开始收尾算起的截止点 − 当前),截止点 = HardTimeout − FinishTimeout − 2s:消费者从 ctx 取消起就与注销、排空并行退出,
+   前两步用满时 wait 不再阻塞,串行最坏仍在 24s 硬截止之内(`consumer_handle_test.go` 钉住)。后台重试在声明 topic 期间遇上停机时不再建 reader 入组
+   (admin 调用不认 ctx;建 reader 会立刻 JoinGroup、触发全组再均衡)。
+10. **`rank_last_consume_unixtime` 在消费循环启动时先写一次**(2026-10-17 复审补,照 mail 的 sweep 指标):不写的话新进程在第一条消息之前一直是 0,
+   安静期里滚动发布一次(两个副本都换掉),`max()` 就从 0 起算,告警①在 match 15 分钟内发过快照时误报 critical;写了之后,起来就卡住或一直没起来的
+   消费者照样在 15 分钟后被报出来。
+
+**本批实际跑过的**(Claude 执行,如实):全部 `.go` 过 gofmt;改动的 `.ps1` 过 `Parser::ParseFile`;`rank_postgen.py` 在 scratchpad 的仿真目录里连跑两次
+(第二次零改动,幂等);`match_event.proto` 窄面重生成前的基线逐字节一致。变基到 `1af63ad54c`(邮件启用链合入后)之后重跑:
+`k8s_deploy_contract.tests.ps1` 178/178 全过(主干 177 条 + 本批的快照开关 1 条);`k8s_client_entry_contract.tests.ps1` 102 条中 92 过,
+失败的 10 条在同一提交 `1af63ad54c` 的干净检出上逐条相同(gate 入口 / nodePort / Ingress 与 dev_tools 透传 DbConsumerGroup,既有,与本批无关)。
+**Go(go/match、go/rank)一行未编译、未跑任何 Go 测试**。
+
+### 12.4 给构建方的顺序(前一步不过不做下一步)
+
+1. **一次全量 proto-gen**(先 `proto-gen-build` 再 `proto-gen-run`;与邮件 M1 的 proto-gen 可以是同一次):生成后钩子自动跑
+   `rank_postgen.py register-cpp` / `vendor-robot`;再手动 `python tools/scripts/rank_postgen.py verify`,必须全过(恰好 1 个 rank 消息号、路由表 1 条
+   `RankNodeService` 客户端协议、`PlayerRatingSnapshotEvent` 有事件号)。核对 `match_event.pb.go` 与本批窄面生成的版本逐字节相同。提交全部产物。
+2. `cd go/match; go vet ./... ; go build ./... ; go test -count=1 ./...`(T4b、T10、T13 与 config 用例;SKIP 数必须为 0)。
+3. `cd go/rank; go mod tidy; go vet ./... ; go build ./... ; go test -count=1 ./...`(T1–T9、T11、T12 与消费者 / 读路径 / 配置 / 守链用例;miniredis,不连外部依赖)。
+   tidy 后直接依赖块里不应出现 `github.com/redis/go-redis/v9`。都过了之后删掉 `.github/workflows/go-modules-ci.yml` 里 `go/rank` 那条排除。
+4. 脚本测试(仓库根目录):`k8s_deploy_contract.tests.ps1`(match 开关注解、ConfigMap)、`k8s_client_entry_contract.tests.ps1`(dev_tools 透传);
+   通过标准:除 §12.3 末尾"本批实际跑过的"登记的既有失败外全绿。
+5. R2b 之前不要把 rank 写进任何服务目录(那是 R2b 的事,届时照邮件 M1d 的两提交做法)。
+
+失败时保留:proto-gen 输出与 `git status`;`go test -v` 全文;`rank_postgen.py verify` 输出。
+
+### 12.5 R2b / R3:在分支上,等 proto-gen 之后合入
+
+〔2026-10-17 更新:proto-gen 已由构建方完成(`5778ccae92`),R2b 与 R3 均已合入 main,见 §12.6 的合入记录。〕
+
+与邮件 M1d 同一做法(`docs/design/mail-system.md` §12.3「为什么拆成两个提交」):rank 一旦写进 `go_services.ps1` / `go_svc_image.ps1` / `k8s_deploy.ps1`
+的服务目录,所有不带 `-Services` 的一键构建都会编 `go/rank`,而它在 `go/proto/rank` 入库之前一定编不过;客户端的 `RankClient` 引用的
+`MessageIds.GetRankPage` 也要等服务端 proto-gen 之后由 `gen_messageids.ps1` 生成。所以:
+
+- **服务端分支 `feat/rank-r2b-enable`**:服务目录登记(本机 / 镜像 / K8s 全局池 + 专用 noeviction Redis `redis-rank`)、`deploy/k8s/manifests/go-svc/rank.yaml`、
+  `deploy/k8s/manifests/infra/redis-rank.yaml`、`deploy/k8s/rank-alerts.yaml`、`start_game.ps1`、robot `rank-smoke`(场景 + 配置 + 模式登记)、
+  `tools/scripts/rank_xlsx_patch.py`(MessageLimiter 5 次 / 秒,proto-gen 之后跑)、契约测试、README / AGENTS、CI 收回 `go/rank` 排除条目。
+  文件清单、合入顺序与验证命令随该分支的提交写在本节之后的 §12.6。
+- **客户端分支 `feat/rank-r3`**(客户端仓):第一个提交只收录 `rank.proto` 并生成 `Rank.cs`(服务端 main 有 `proto/rank/rank.proto` 之后即可合入客户端 main);
+  第二个提交是 `gen_messageids.ps1` 白名单、`RankClient`、论剑榜窗口与入口(左栏 `论剑榜 [K]`)、EditMode 测试,要等服务端 proto-gen 之后
+  重跑 `gen_messageids.ps1` 生成 `MessageIds.GetRankPage` 再合入。
+  〔2026-10-17 更新:两个提交都已合入客户端 main(`ca8ee046`;第二个提交补上 gen_messageids 生成的常量后以 `04012dd3` 合入)。评审后入口挪到左栏帮会入口右侧
+  (左栏 y 288–468 是任务追踪面板),客户端按 gate 的整秒限流窗口本地节流(0.4s 间隔、2.5s 内最多 5 次,同 TeamClient),被限频(1008)时退避、不自动重试。〕
+
+### 12.6 R2b 部署登记(2026-10-17 合入 main;robot 未编译、rank-smoke 未跑)
+
+**改了什么**:
+
+- 本机:`go_services.ps1` 目录条目(Tier 1,`AllowMultiInstance`;双 zone 时两份 rank 同属一个消费组、写同一个共享 Redis,分摊分区);
+  `go_svc_image.ps1` 镜像条目 `mmorpg-rank`(只有 replace proto / shared,不改 Dockerfile);`start_game.ps1` 可选服务(只在缺 exe 时跳过,零 MySQL 没有库预检;
+  不是命令主题生产者,不进 `Test-UsesKafkaCommandContract`)、单独启动行。
+- K8s:`manifests/go-svc/rank.yaml`(2 副本滚动 + PDB + 反亲和 + POD_IP)、`manifests/infra/redis-rank.yaml`(专用 noeviction + AOF,§3.5;复用可选 Secret `redis-auth`,
+  不写 PDB)、`rank-alerts.yaml`(§3.7 七条,含 2026-10-17 拆出的 ②b `RankWriteSkipped`);`k8s_deploy.ps1`:目录条目(`Global`,无 MigrateJob)、路由服预算表 `RankNodeService`、ConfigMap 生成器
+  (值镜像 `go/rank/etc/rank.yaml`,staging / prod 固定 `Mode: pro`;**只写 `RankRedis` 不写共享 Redis 段**;快照 topic 名与分区数和 `match_service.yaml` 不一致即拒绝部署)、
+  基础设施清单加 `redis-rank.yaml`(排在共享 Redis 之后)、Redis 连接总账注明 rank 不连共享库。
+- robot:`rank_smoke_scenario.go` + `etc/rank_smoke.yaml`(§8.2 的 A / B / N 三账号流程)、`config.RankSmokeConfig`(含 validate 与缺省值)、模式白名单与 `main.go` 分发、README 一行。
+- `tools/scripts/rank_xlsx_patch.py`:给 `GetRankPage` 在 `data/MessageLimiter.xlsx` 登记每秒 5 次(复用 `mail_xlsx_patch.py` 的并发安全写表机制;proto-gen 之前跑会在写任何文件之前中止)。
+- 测试:`k8s_deploy_contract.tests.ps1` 加 6 条(部署形态、ConfigMap 镜像与 topic 契约、staging 的 `Mode` 与 `RankRedis.Pass`、redis-rank 形态与先后、镜像名与端口三处一致、
+  告警引用的指标名都已注册、`RankWriteSkipped` 覆盖永久跳过三档且 for 0m、`RankWriteFailing` 只看持续的 error);`go_services_stop.tests.ps1` 加 rank 的停机时限。
+  **端口不写字面量**:测试一律从 `go/rank/etc/rank.yaml` 取端口去核对 manifest / ConfigMap / 两份目录。
+- 文档与 CI:`deploy/k8s/README.md`「排行榜 rank」一节、`deploy/k8s/AGENTS.md` 一条;`deploy-config-tests.yml` 路径过滤加
+  `go/rank/internal/metrics/**` 与 `go/match/internal/metrics/**`(告警指标名用例直接读这两个文件)。
+
+**合入记录**(2026-10-17):构建方完成 §12.4(`5778ccae92`:含 rank 的全量 proto-gen,GetRankPage = 275;`rank_postgen.py verify`;
+go/match、go/rank、robot 的 build / vet / test 全过;CI 收回 go/rank)之后,原先"等 proto-gen"的理由不复存在,本批直接合入 main:
+- 变基到 main 后由编译级静态核对抓到并修掉一处 robot 编译错误(生成的消息号是无类型常量,绑定到变量时推成 int,四处要 uint32 的地方编不过);
+- `rank_xlsx_patch.py message-limiter` 已执行(MessageLimiter 新增 id=275 一行 —— 第 87 条数据、表格第 92 行 —— 每秒 5 次 / tip 1000,幂等复跑报 ALREADY CURRENT),
+  导出物用导表器的沙盒模式生成(对仓库只读):先证明未改动时 1262 个产物与仓内逐字节一致、内容不同 0 个,改表后与基线相比只有
+  `generated/tables/messagelimiter.json`、`messagelimiter.pb`、`manifest.json`(version 27 → 28)三个文件变化,只拷回这三个;
+- 客户端两个提交都已进客户端 main(`ca8ee046`、`04012dd3`,后者含 gen_messageids 生成的 `MessageIds.GetRankPage`)。
+
+**还要构建方做的**(前一步不过不做下一步):
+
+1. robot:`cd robot; go vet -mod=vendor ./... ; go build -mod=vendor ./... ; go test -mod=vendor -count=1 ./config/...`(模式白名单用例会核对 `rank-smoke` 已放行);
+   go/rank 复跑一次(`eaa41b7e24` 改了指标语义:启动先写最后消费时刻、版本值坏了单独记 malformed_version)。
+2. 脚本测试复跑(仓库根目录):`k8s_deploy_contract.tests.ps1`(全过,含本批 6 条)、`go_services_stop`、`go_services_ports`、`start_game_command_contract`、
+   `k8s_migrate_gate` 与主干同结果;`k8s_client_entry_contract.tests.ps1` 只允许主干既有的那 1 条 `DbConsumerGroup` 失败(构建方 10-17 已修掉其余 9 条)。
+3. 本机冒烟(两区栈、路由服模式,前置条件全写在 `robot/etc/rank_smoke.yaml` 文件头):本机把 `go/match/etc/match_service.yaml` 的 `RatingSnapshotPublishEnabled` 临时改成 true
+   并重启 match(**跑完改回、不要提交**),`start_game.ps1` 起栈后 rank 横幅显示 `consumer: topic=match-rating-snapshot ... group=rank-rating`;
+   `robot.exe -c etc/rank_smoke.yaml` 退出码 0、日志有 `RANK_SMOKE_OK`。MessageLimiter 已配,可把 `rate_limit_check` 打开再跑一遍;
+   gate 要用导过表之后的配置重载 MessageLimiter。
+4. 客户端:Unity EditMode 跑 `RankClientTests`(Unity 之外已实跑 23/23,见客户端提交说明)→ 主城截图目视入口位置(左栏帮会右侧)与窗口。
+5. K8s:按 `deploy/k8s/README.md`「排行榜 rank」的上线顺序 —— 先 `-MatchRatingSnapshotPublish 0` 部署 rank 与 redis-rank,两个 Pod Ready 后再用 `1` 重跑 `infra-up`。
+
+失败时保留:脚本测试全文;robot 冒烟日志里 `RANK_SMOKE_FAIL` 那一行与 rank / match 的日志。

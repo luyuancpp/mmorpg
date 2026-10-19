@@ -109,6 +109,9 @@ namespace battle_settlement
 	{
 		kNoTarget,
 		kNotAcked,
+		// 探测连续「没问到」(空应答 / ERROR)到上限(ClassifyUndeterminedProbeRound)。不经 ClassifyUndelivered,
+		// 由调用方直接给出:这类轮次根本没走到 ClassifyRetry。
+		kProbeUndetermined,
 	};
 
 	inline UndeliveredReason ClassifyUndelivered(const RetryInput &exhaustedRound)
@@ -124,8 +127,205 @@ namespace battle_settlement
 			return "no_target";
 		case UndeliveredReason::kNotAcked:
 			return "not_acked";
+		case UndeliveredReason::kProbeUndetermined:
+			return "probe_undetermined";
 		}
 		return "unknown";
+	}
+
+	// ---- zone Redis 应答的形状:空应答 / ERROR 不是业务结论(2026-10-16) ----
+	//
+	// hiredis 在连接断开或被释放时,把所有在途命令的回调以空应答(redisReply* == nullptr)调用一次。
+	// Redis 主切换时代理掐连接、存活探测 15 秒没有应答就摘连接(thread_context/redis_manager.h「存活契约」)、
+	// 停机 Shutdown 都会触发。空应答的意思是「这次没问到」:命令可能执行了,也可能没执行。
+	// 它不是 NIL(键不存在),更不是「已销账」「没有挂起结算」「没有锁」这类结论。
+	// ERROR 应答也一样:读命令收到 ERROR 什么都没告诉我们;写脚本收到 ERROR 时前半段可能已经执行
+	// (Redis 不回滚 Lua),同样不能断定「没写进去」。
+	// 下面的判定函数只认形状,不碰 hiredis 类型;从 redisReply 换算成形状的唯一适配在 settlement_reply_shape.h。
+	enum class ReplyShape : uint8_t
+	{
+		kNoReply, // 空应答:连接断开 / 被释放 / 停机
+		kNil,
+		kString,
+		kStatus,
+		kInteger,
+		kArray,
+		kError,
+		kOther, // RESP3 的 double / bool / map 等,本仓的调用点都不该收到
+	};
+
+	inline const char *ReplyShapeName(const ReplyShape shape)
+	{
+		switch (shape)
+		{
+		case ReplyShape::kNoReply:
+			return "no_reply";
+		case ReplyShape::kNil:
+			return "nil";
+		case ReplyShape::kString:
+			return "string";
+		case ReplyShape::kStatus:
+			return "status";
+		case ReplyShape::kInteger:
+			return "integer";
+		case ReplyShape::kArray:
+			return "array";
+		case ReplyShape::kError:
+			return "error";
+		case ReplyShape::kOther:
+			return "other";
+		}
+		return "unknown";
+	}
+
+	// 发件箱第一跳:读伴生 id 键(GET battle:settlement:pending:id:{player_id})探测销账。
+	enum class AckProbeVerdict : uint8_t
+	{
+		// NIL:scene 已销账,或者记录从来没落库(落库应答没确认时也会登记进发件箱,见 ClassifyPersistReply);
+		// STRING 但不等于本局:玩家已经打完下一场,单槽被那一局覆盖。两者对 battle 是同一件事:不必再投。
+		kAcknowledged,
+		// STRING 且等于本局:还没销账,进第二跳。
+		kStillOurs,
+		// 空应答 / ERROR / 意外类型:本轮什么都没问到。调用方本轮直接返回,不摘条目、不消耗次数 ——
+		// 与 RetryPendingSettlements「探测不了销账就不能判定」同一原则。
+		// 以前这里把空应答当成「已销账」并删条目:一次断线就让在线玩家收不到重投,只能等下次登录。
+		kUndetermined,
+	};
+
+	// pendingIdValue 只在 shape == kString 时有意义。比较按十进制字符串逐字节(伴生 id 键只由本头的脚本以 %llu 写入)。
+	inline AckProbeVerdict ClassifyAckProbe(const ReplyShape shape, const std::string_view pendingIdValue,
+											const uint64_t battleId)
+	{
+		switch (shape)
+		{
+		case ReplyShape::kNil:
+			return AckProbeVerdict::kAcknowledged;
+		case ReplyShape::kString:
+		{
+			char ours[20]; // uint64 十进制最多 20 位,to_chars 不会失败
+			const auto formatted = std::to_chars(ours, ours + sizeof(ours), battleId);
+			const std::string_view oursView(ours, static_cast<size_t>(formatted.ptr - ours));
+			return pendingIdValue == oursView ? AckProbeVerdict::kStillOurs : AckProbeVerdict::kAcknowledged;
+		}
+		default:
+			return AckProbeVerdict::kUndetermined;
+		}
+	}
+
+	inline const char *AckProbeVerdictName(const AckProbeVerdict verdict)
+	{
+		switch (verdict)
+		{
+		case AckProbeVerdict::kAcknowledged:
+			return "acknowledged";
+		case AckProbeVerdict::kStillOurs:
+			return "still_ours";
+		case AckProbeVerdict::kUndetermined:
+			return "undetermined";
+		}
+		return "unknown";
+	}
+
+	// 发件箱第二跳:读 player:{id}:location 的应答能不能拿来下「有没有目标」的结论。
+	// 只有 NIL(玩家不在任何场景)与 STRING(有位置记录,内容由调用方解析)算问到了;
+	// STRING 解析不出 node_id 仍按「无目标」处理(数据问题,不是没问到)。
+	// 空应答 / ERROR / 意外类型返回 false:调用方在 ClassifyRetry 之前返回,不消耗次数。
+	// 以前这里走 kSkipNoTarget 并 ++attempts:一次断线白烧一轮重投,耗尽时还会误记成 reason=no_target。
+	inline bool IsLocationReplyDecisive(const ReplyShape shape)
+	{
+		return shape == ReplyShape::kNil || shape == ReplyShape::kString;
+	}
+
+	// 「没问到」的轮次不消耗重投次数,但单独计数、单独设上限(AGENTS §11.3 重试必须有上限):
+	// 持续 ERROR 时(口令轮换后 NOAUTH、ACL 拒绝、长时间 LOADING)不设上限的话,每局结算都进发件箱、永远到不了
+	// 次数用尽,payload 随对局数无界增长,也永远不响 undelivered。摘条目不丢数据:记录若已落库仍在,登录钩子兜底。
+	enum class UndeterminedProbeAction : uint8_t
+	{
+		kWaitNextRound,
+		kGiveUp, // 摘条目,metric=battle_settlement_undelivered reason=probe_undetermined
+	};
+
+	// undeterminedRounds 含本轮。maxRounds 为 0 是调用方缺陷:按立即放弃处理,保证有界。
+	inline UndeterminedProbeAction ClassifyUndeterminedProbeRound(const uint32_t undeterminedRounds,
+																   const uint32_t maxRounds)
+	{
+		return undeterminedRounds >= maxRounds ? UndeterminedProbeAction::kGiveUp
+											   : UndeterminedProbeAction::kWaitNextRound;
+	}
+
+	// 「先落库、后投递」的写入(battle 结算的 kSetPendingSettlementScript、活动局结果的 SET)回来之后的结论。
+	enum class PersistVerdict : uint8_t
+	{
+		// 应答就是这条命令成功时的形状(EVAL 脚本 return 1 → 整数;SET → 状态 OK)。
+		kStored,
+		// 空应答 / ERROR / 意外形状:记录可能落了,也可能没落(空应答时命令可能已执行;脚本 ERROR 时前半段可能已执行)。
+		kUnconfirmed,
+	};
+
+	// 两种结论的后续动作**相同**:投递一次 + 登记发件箱;kUnconfirmed 只多打一条 ..._not_durable。
+	// 登记是安全的:发件箱每轮先探测记录(结算 GET 伴生 id 键、活动局 EXISTS),记录不在就按已送达摘掉,
+	// 记录在就按原字节重投。以前空应答 / ERROR 时只投一次、不登记:记录其实落了而投递又丢了的话,
+	// 在线玩家要等到下次登录才拿到奖励。
+	inline PersistVerdict ClassifyPersistReply(const ReplyShape actual, const ReplyShape expectedOnSuccess)
+	{
+		return actual == expectedOnSuccess && actual != ReplyShape::kNoReply ? PersistVerdict::kStored
+																			  : PersistVerdict::kUnconfirmed;
+	}
+
+	// ---- scene 登录钩子对待结算记录与战斗锁的读数判定 ----
+	//
+	// OnPlayerEnterScene 先 GET 待结算记录,没有才读 battle:lock + ctx 重建冻结(player_battle.cpp)。
+	// 两步都要分清「没有」与「没问到」:没问到时把玩家记入登录复查,由 scene reaper 的节拍重跑整个第一步,
+	// 复查完成前不按锁重建冻结(重建依赖「确实没有挂起结算」这个前提)。
+	enum class LoginPendingRead : uint8_t
+	{
+		kNoPending, // NIL:没有挂起结算,接着读锁
+		kPending,   // STRING:有挂起结算,解析后补应用
+		// 空应答 / ERROR / 意外类型:没问到。以前空应答与 NIL 走同一分支,当成「没有挂起结算」去按锁重建,
+		// 这一次登录就漏掉了补发奖励(记录不过期,要等下一次登录;玩家一直在线就一直拿不到)。
+		// ERROR 也进复查(与下面读锁时「ERROR 按无锁」相反):读不到挂起结算就不知道锁指向的那一局结束没有,
+		// 锁要等落盘销账才删,按锁重建可能把玩家冻进一场已经结算、奖励还躺在记录里的战斗 —— 与登录钩子读到坏记录时
+		// 刻意不按锁重建是同一个理由。代价:GET 持续 ERROR(只可能是键被改坏或鉴权异常)时每 30 秒复查一次,
+		// 冻结一直不重建。
+		kRecheck,
+	};
+
+	inline LoginPendingRead ClassifyLoginPendingRead(const ReplyShape shape)
+	{
+		switch (shape)
+		{
+		case ReplyShape::kNil:
+			return LoginPendingRead::kNoPending;
+		case ReplyShape::kString:
+			return LoginPendingRead::kPending;
+		default:
+			return LoginPendingRead::kRecheck;
+		}
+	}
+
+	// 登录重建读锁(player_battle.cpp 的 kGetLockAndCtxScript:锁不在返回 nil,在则返回数组)。
+	enum class LoginLockRead : uint8_t
+	{
+		kNoLock,  // NIL,以及 ERROR / 意外类型(见下)
+		kLock,    // 数组:{锁值, ctx 或 nil, TTL}
+		kRecheck, // 空应答:没问到,记入登录复查
+	};
+
+	// 只有空应答进复查。ERROR 按「无锁」是既有取舍,这里保留:锁是咨询性的(权威是 InBattleComp),
+	// EVAL 收到 ERROR 是服务端答复了但拒绝执行;把它也改成复查会让脚本层面的持续性错误变成每 30 秒一次的无尽重试。
+	// 代价:ERROR 那一次登录不重建冻结,战斗闸(资产通道、收件箱 requiresOutOfBattle)在战斗剩余时间里看不到这场战斗,
+	// 直到结算到达(按锁匹配应用)或玩家下次进场。空应答不同:它只说明连接断了,断线恢复后一定问得到,值得重试。
+	inline LoginLockRead ClassifyLoginLockRead(const ReplyShape shape)
+	{
+		switch (shape)
+		{
+		case ReplyShape::kArray:
+			return LoginLockRead::kLock;
+		case ReplyShape::kNoReply:
+			return LoginLockRead::kRecheck;
+		default:
+			return LoginLockRead::kNoLock;
+		}
 	}
 
 	// ---- 积压报数的纯计算 ----

@@ -114,7 +114,7 @@ message MailAssetOpRecord {
   option (OptionTableName) = "mail_asset_op";
   option (OptionPrimaryKey) = "op_id";
   option (OptionUniqueKey) = "player_id,stream,stream_epoch,seq";
-  option (OptionIndex) = "status,next_attempt_ms;player_id,stream,stream_epoch,status,seq;player_id,mail_id,claim_version";
+  option (OptionIndex) = "status,next_attempt_ms;player_id,stream,stream_epoch,status,seq;player_id,mail_id,claim_version;mail_id,status";
   option (OptionTiDBNonclusteredPK) = true;
   option (OptionTiDBShardRowIDBits) = 4;
   option (OptionTiDBPreSplitRegions) = 4;

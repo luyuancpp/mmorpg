@@ -24,6 +24,9 @@
 // 玩家收件箱消费端账本(player-inbox-service.md §4.4):与资产账本同一条不变量(IB-3 ≡ I3),
 // 处置效果(CurrencyComp.blocked_types / debts)与账本必须同记录、同一次落盘。
 #include "proto/common/component/player_inbox_ledger_comp.pb.h"
+// 神秘商人的个人限购记录(docs/design/mystery-merchant.md §5.3):与上面几本账本同一条不变量 I3,
+// 必须与 currency / bag_component 同记录同一次落盘。
+#include "proto/common/component/player_mystery_merchant_comp.pb.h"
 #include "asset_op_ledger.h"
 #include "asset_op_system.h"
 #include "player/comp/player_inbox_runtime_comp.h" // PlayerInboxLedgerInvalidComp
@@ -162,6 +165,10 @@ void PlayerDatabaseMessageFieldsUnmarshal(entt::entity player, const player_data
 				  << " reason=" << err << "; ledger corrupted, inbox consumption disabled for this player";
 		tlsEcs.actorRegistry.emplace_or_replace<PlayerInboxLedgerInvalidComp>(player);
 	}
+	// 神秘商人限购记录跟着同一条 player_database 行回来。不做校验、不阻断登录:记录只跨一轮,
+	// 轮次号对不上时读写两侧都按「空」处理(mystery_merchant_rules.h),坏数据最多影响当前这一轮。
+	// 必须在这里 emplace:购买路径用 try_get 且缺组件即拒绝,不会现造一份空记录来放行。
+	tlsEcs.actorRegistry.emplace<PlayerMysteryMerchantComp>(player, message.mystery_merchant());
 	tlsEcs.actorRegistry.emplace<CurrencyComp>(player, message.currency());
 	// 补缴欠款(debts)是 PlayerCurrencyComp 的运行时结构,持久化载体是
 	// CurrencyComp.debts。这一对 LoadFromProto/SaveToProto 之前从未被调用过 ——
@@ -204,6 +211,9 @@ bool PlayerDatabaseMessageFieldsMarshal(entt::entity player, player_database& me
 		FindPersistedComp<BattleSettlementLedgerComp>(player, "BattleSettlementLedgerComp", missing);
 	// 收件箱账本缺失同样整份拒存:补一本空账本落盘,会让已执行过的挂欠款在下次投递时被判成"没见过"再挂一次。
 	const auto* inboxLedger = FindPersistedComp<PlayerInboxLedgerComp>(player, "PlayerInboxLedgerComp", missing);
+	// 限购记录缺失同样整份拒存:补一份空记录落盘,等于把这一轮已经买过的名额清零。
+	const auto* mysteryMerchant =
+		FindPersistedComp<PlayerMysteryMerchantComp>(player, "PlayerMysteryMerchantComp", missing);
 	const auto* currency = FindPersistedComp<CurrencyComp>(player, "CurrencyComp", missing);
 	const auto* currencyRuntime = FindPersistedComp<PlayerCurrencyComp>(player, "PlayerCurrencyComp", missing);
 	if (!missing.empty())
@@ -240,6 +250,8 @@ bool PlayerDatabaseMessageFieldsMarshal(entt::entity player, player_database& me
 	// 同一次 Marshal。位置同样必须在下面那对 currency CopyFrom / SaveToProto **之外**:那一对的先后决定
 	// 欠款会不会被抹掉,任何新写入都不夹进它们中间。
 	message.mutable_inbox_ledger()->CopyFrom(*inboxLedger);
+	// 神秘商人限购记录:与上面几本账本同理由(不变量 I3),位置同样在下面那对 currency CopyFrom / SaveToProto 之外。
+	message.mutable_mystery_merchant()->CopyFrom(*mysteryMerchant);
 	message.mutable_currency()->CopyFrom(*currency);
 	// 必须在 CopyFrom 之后:CopyFrom 会覆盖整个 currency 子消息(含 debts),
 	// 反序会把刚写进去的欠款抹掉。

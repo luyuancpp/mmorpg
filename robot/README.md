@@ -26,9 +26,14 @@ cd robot && go run . -c etc/robot.yaml     # 直接运行
 | `attribute-smoke`、`pet-smoke` | 属性加点、宠物 |
 | `equip-smoke`、`equip-forge-smoke` | 装备随机属性与穿脱;装备强化、宝石镶嵌与取下(两条冒烟各用各的账号,强化不可逆) |
 | `chat-smoke`、`friend-smoke`、`guild-smoke`、`team-smoke`、`trade-smoke` | 聊天、好友、帮会、组队、交易 |
+| `mail-smoke` | 邮件:直连 MailAdmin 发系统 / 定向 / 带附件三封,两区读信、删信、领取未开放与 S2C 方法不可调(`etc/mail_smoke.yaml`;mail 与 robot 要拿到同一个 `MMORPG_MAIL_ADMIN_TOKEN`,取法见该文件头) |
+| `rank-smoke` | 排行榜:两区各一人跨区打一局 1V1,轮询到写榜后核分数方向、名次、跨区名字补全与未上榜的 self;可选核 gate 限流(`etc/rank_smoke.yaml`;前提是本机 match 打开评分快照发布,见该文件头) |
+| `team-backfill-smoke` | 队伍补位匹配:2 人队选「凑满 3 人」+ 1 个路人单排,验证队员取消 / 名单变化整队退出、补位成组同场开战(`etc/team_backfill_smoke.yaml`) |
+| `team-follow-smoke` | 组队跟随:入队即被带到队长身边、可见性重建、双向移动广播;`client_follower: true` 时由机器人当队长、真实客户端当队员,验走路跟随 |
 | `travel-smoke` | 跨区场景传送往返 |
 | `channel-smoke` | 玩家主动切线:列出分线、切到同图另一条线、冷却与拒绝(地图只有 1 条线时打印 SKIP,不算失败) |
 | `sync-smoke` | 落地恢复的按域版本摘要:登录取摘要、好友申请只让对应域 +1、短重连后摘要原样延续、实体就绪前发请求不致崩溃(跨区落地腿可选,缺省关) |
+| `merchant-smoke` | 神秘商人:查到他在哪条线、切过去、走到旁边、购买、限购与各种拒绝(商人不在场时打印 SKIP,不算失败) |
 | `currency-crash-snapshot` | 货币崩溃窗口验证用的单次登录快照 |
 
 每种模式在 `etc/` 下都有对应的配置样例。

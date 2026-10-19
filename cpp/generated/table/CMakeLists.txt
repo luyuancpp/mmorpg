@@ -91,6 +91,10 @@ set(SOURCE_FILES
     code/equipgem_table.cpp
     code/equipgem_table_fk.cpp
     code/equipgemsocket_table.cpp
+    code/mysterymerchantgoods_table.cpp
+    code/mysterymerchantgoods_table_fk.cpp
+    code/mysterymerchantrule_table.cpp
+    code/mysterymerchantspot_table.cpp
     code/item_table_fk.cpp
     code/attributerule_table.cpp
     code/reward_table.cpp
@@ -157,10 +161,15 @@ set(SOURCE_FILES
     proto/tip/pet_error_tip.pb.cc
     proto/tip/equip_error_tip.pb.cc
     proto/tip/player_inbox_error_tip.pb.cc
+    proto/mysterymerchantgoods_table.pb.cc
+    proto/mysterymerchantrule_table.pb.cc
+    proto/mysterymerchantspot_table.pb.cc
+    proto/tip/mystery_merchant_error_tip.pb.cc
     proto/tip/common_error_tip.pb.cc
     proto/tip/cross_server_error_tip.pb.cc
     proto/tip/entity_error_tip.pb.cc
     proto/tip/friend_error_tip.pb.cc
+    proto/tip/mail_error_tip.pb.cc
     proto/tip/guild_error_tip.pb.cc
     proto/tip/login_error_tip.pb.cc
     proto/tip/match_error_tip.pb.cc

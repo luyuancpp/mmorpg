@@ -1030,13 +1030,6 @@ void Decide(AssetOpRpc rpc, const ::AssetOpRequest& request, ::AssetOpResponse& 
 		RejectAndRecord(player, *ledgerComp, request, kAssetInvalidBundle, nowMs, response);
 		return;
 	}
-	if ((request.bundle().items_size() > 0 || request.bundle().item_uuids_size() > 0 || request.bundle().item_instances_size() > 0) && tlsEcs.actorRegistry.try_get<PlayerBagsComp>(player) == nullptr)
-	{
-		LOG_WARN << "[AssetOp] Player lacks PlayerBagsComp(still loading) player_id=" << request.player_id();
-		Answer(response, ASSET_OP_OUTCOME_RETRY, kAssetPlayerNotHere);
-		return;
-	}
-
 	// 8. 包内容校验(确定性失败 → 记 REJECTED,免得 Go 无限重投同一个坏包)
 	if (request.stream() != ASSET_OP_STREAM_TRADE_DEBIT && request.stream() != ASSET_OP_STREAM_TRADE_CREDIT &&
 		(request.bundle().item_uuids_size() > 0 || request.bundle().item_instances_size() > 0 || request.bundle().pet_id() != 0 || request.bundle().has_pet_instance()))
@@ -1049,6 +1042,13 @@ void Decide(AssetOpRpc rpc, const ::AssetOpRequest& request, ::AssetOpResponse& 
 		LOG_WARN << "[AssetOp] Invalid payload rpc=" << RpcName(rpc) << " player_id=" << request.player_id()
 				 << " seq=" << request.seq() << " why=" << why;
 		RejectAndRecord(player, *ledgerComp, request, kAssetInvalidBundle, nowMs, response);
+		return;
+	}
+	// 坏包必须先记终局拒绝；合法交易托管的 Debit 与 Credit 都可能需要背包，不能仅保留旧单币种 Debit 的假设。
+	if ((request.bundle().items_size() > 0 || request.bundle().item_uuids_size() > 0 || request.bundle().item_instances_size() > 0) && tlsEcs.actorRegistry.try_get<PlayerBagsComp>(player) == nullptr)
+	{
+		LOG_WARN << "[AssetOp] Player lacks PlayerBagsComp(still loading) player_id=" << request.player_id();
+		Answer(response, ASSET_OP_OUTCOME_RETRY, kAssetPlayerNotHere);
 		return;
 	}
 

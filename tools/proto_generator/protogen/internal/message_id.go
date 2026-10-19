@@ -116,51 +116,17 @@ func NewConstantsWriter(constants []string, filePath string) *ConstantsWriter {
 
 // Write writes the constants to the specified file path.
 func (cw *ConstantsWriter) Write() error {
-	dir := filepath.Dir(cw.FilePath)
-	if err := os.MkdirAll(dir, 0755); err != nil {
-		logger.Global.Fatal("Failed to create constants directory",
+	var content strings.Builder
+	content.WriteString("package game\n\n")
+	for _, c := range cw.Constants {
+		content.WriteString(c + "\n")
+	}
+	if err := utils.WriteFileIfChanged(cw.FilePath, []byte(content.String())); err != nil {
+		logger.Global.Fatal("Failed to write constants file",
 			zap.String("file_path", cw.FilePath),
 			zap.Error(err),
 		)
 		return err
-	}
-
-	file, err := os.Create(cw.FilePath)
-	if err != nil {
-		logger.Global.Fatal("Failed to create constants file",
-			zap.String("file_path", cw.FilePath),
-			zap.Error(err),
-		)
-	}
-	defer file.Close()
-
-	writer := bufio.NewWriter(file)
-
-	_, err = writer.WriteString("package game\n\n")
-	if err != nil {
-		logger.Global.Fatal("Failed to write package name to constants file",
-			zap.String("file_path", cw.FilePath),
-			zap.Error(err),
-		)
-	}
-
-	for _, c := range cw.Constants {
-		_, err := writer.WriteString(c + "\n")
-		if err != nil {
-			logger.Global.Fatal("Failed to write constant to file",
-				zap.String("file_path", cw.FilePath),
-				zap.String("constant", c),
-				zap.Error(err),
-			)
-		}
-	}
-
-	err = writer.Flush()
-	if err != nil {
-		logger.Global.Fatal("Failed to flush constants file buffer",
-			zap.String("file_path", cw.FilePath),
-			zap.Error(err),
-		)
 	}
 
 	logger.Global.Info("Constants file written",

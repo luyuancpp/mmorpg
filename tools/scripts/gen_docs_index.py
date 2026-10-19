@@ -37,7 +37,7 @@ DESIGN_RULES = [
         "robot-*", "login-test-anti-stuck-system.md", "data-consistency-stress-testing.md",
     ]),
     ("玩家数据与存储", [
-        "reliable-player-inbox-*", "player-inbox-service.md",
+        "reliable-player-inbox-*", "player-inbox-service.md", "landing-recovery-*",
         "player-async-save-loss-windows.md", "player-storage-placement.md",
         "player-route-mapping-*",
         "new-player-*",
@@ -59,7 +59,7 @@ DESIGN_RULES = [
         "server_merge_design.md", "server-merge-gap-fixes.md", "merge-zone-overhaul-*",
         "single_player_rollback*", "zone_data_rollback*", "microservice-zone-contract-*",
     ]),
-    ("战斗", ["turn-*", "battle-*", "pve-*", "session-extractability-mmo-slg.md"]),
+    ("战斗", ["turn-*", "battle-*", "pve-*", "team-backfill-*", "session-extractability-mmo-slg.md"]),
     ("接入层:网关、gate 与登录", [
         "gate-*", "gate_*", "client-access-band-routing.md", "client-rpc-router.md",
         "client-request-ordering.md",
@@ -78,11 +78,12 @@ DESIGN_RULES = [
         "leaderboard-system.md", "jubaozhai-market.md", "chat-sensitive-word-filter.md",
         "character-appearance-identity.md", "activity_maintenance_auto_shift.md",
         "exploit_loss_prevention*", "player-attribute-allocation.md", "player-pet.md",
-        "player-features-ui.md", "equipment-*",
+        "player-features-ui.md", "equipment-*", "mystery-merchant.md",
     ]),
     ("基础设施与中间件", [
         "kafka-*", "infra-reconnect-overview.md", "go-zero-rpc-timeout-fix.md",
-        "grpc-client-deadline-failure-callback.md", "muduo-timer-cancellation-hazards.md",
+        "grpc-client-deadline-failure-callback.md", "grpc-muduo-transport.md",
+        "muduo-timer-cancellation-hazards.md",
         "muduo-rpc-*", "player-handler-deferred-reply.md",
         "hashed-timing-wheel.md", "double-buffer-queue-optimizations.md",
         "distributed-tracing.md", "error-reporting.md", "traffic-statistics-design.md",

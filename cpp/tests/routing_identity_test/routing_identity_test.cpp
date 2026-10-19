@@ -7,10 +7,12 @@
 #include <cstdio>
 #include <cstring>
 #include <iterator>
+#include <limits>
 #include <memory>
 #include <optional>
 #include <set>
 #include <string>
+#include <string_view>
 #include <tuple>
 #include <utility>
 #include <vector>
@@ -19,6 +21,7 @@
 #include "network/broadcast_target_codec.h"
 #include "node/system/node/node_util.h"
 #include "services/battle/settlement/settlement_outbox.h"
+#include "services/battle/settlement/settlement_reply_shape.h"
 #include "services/gate/session/system/session_identity_fence.h"
 #include "thread_context/node_context_manager.h"
 
@@ -484,6 +487,175 @@ TEST(SettlementOutbox, PendingRecordKeysAreDistinctAndPlayerScoped)
 	// 伴生键必须是 blob 键的独立命名空间,不能是它的前缀(否则 SCAN/DEL 会互相波及)。
 	EXPECT_EQ(idKey.rfind("battle:settlement:pending:id:", 0), 0u);
 	EXPECT_NE(blobKey.rfind("battle:settlement:pending:id:", 0), 0u);
+}
+
+// ===========================================================================
+// 2026-10-16:zone Redis 空应答 / ERROR 不是业务结论
+// ===========================================================================
+//
+// hiredis 在连接断开或被释放时(主切换掐连接、存活探测摘连接、停机)把在途命令的回调以空应答调用一次。
+// 下面每条用例对应一个曾把空应答当结论的调用点,改坏任意一条判定都会在这里红。
+
+namespace
+{
+	using battle_settlement::ReplyShape;
+
+	redisReply MakeReply(const int type, const char *text = nullptr)
+	{
+		redisReply reply{};
+		reply.type = type;
+		if (text != nullptr)
+		{
+			reply.str = const_cast<char *>(text);
+			reply.len = std::strlen(text);
+		}
+		return reply;
+	}
+} // namespace
+
+// 适配层:空应答必须映射成 kNoReply,绝不能与 NIL 混为一谈 —— 后者是「键不存在」这个结论。
+TEST(SettlementReplyShape, NullReplyIsNoReplyNotNil)
+{
+	EXPECT_EQ(battle_settlement::ReplyShapeOf(nullptr), ReplyShape::kNoReply);
+	EXPECT_TRUE(battle_settlement::ReplyText(nullptr).empty());
+
+	auto nil = MakeReply(REDIS_REPLY_NIL);
+	auto str = MakeReply(REDIS_REPLY_STRING, "701");
+	auto status = MakeReply(REDIS_REPLY_STATUS, "OK");
+	auto integer = MakeReply(REDIS_REPLY_INTEGER);
+	auto array = MakeReply(REDIS_REPLY_ARRAY);
+	auto error = MakeReply(REDIS_REPLY_ERROR, "LOADING Redis is loading the dataset in memory");
+	auto dbl = MakeReply(REDIS_REPLY_DOUBLE);
+	EXPECT_EQ(battle_settlement::ReplyShapeOf(&nil), ReplyShape::kNil);
+	EXPECT_EQ(battle_settlement::ReplyShapeOf(&str), ReplyShape::kString);
+	EXPECT_EQ(battle_settlement::ReplyShapeOf(&status), ReplyShape::kStatus);
+	EXPECT_EQ(battle_settlement::ReplyShapeOf(&integer), ReplyShape::kInteger);
+	EXPECT_EQ(battle_settlement::ReplyShapeOf(&array), ReplyShape::kArray);
+	EXPECT_EQ(battle_settlement::ReplyShapeOf(&error), ReplyShape::kError);
+	EXPECT_EQ(battle_settlement::ReplyShapeOf(&dbl), ReplyShape::kOther);
+
+	EXPECT_EQ(battle_settlement::ReplyText(&str), std::string_view("701"));
+	EXPECT_EQ(battle_settlement::ReplyText(&error), std::string_view("LOADING Redis is loading the dataset in memory"));
+	EXPECT_TRUE(battle_settlement::ReplyText(&nil).empty());
+	EXPECT_TRUE(battle_settlement::ReplyText(&integer).empty());
+}
+
+// 缺陷 1(高):发件箱第一跳把空应答 / ERROR 当成「已销账」并删条目。一次断线,在线玩家就收不到重投。
+TEST(SettlementOutbox, AckProbeWithoutUsableReplyIsUndeterminedNotAcknowledged)
+{
+	for (const auto shape : {ReplyShape::kNoReply, ReplyShape::kError, ReplyShape::kStatus, ReplyShape::kInteger,
+							 ReplyShape::kArray, ReplyShape::kOther})
+	{
+		EXPECT_EQ(battle_settlement::ClassifyAckProbe(shape, "", 701), battle_settlement::AckProbeVerdict::kUndetermined)
+			<< battle_settlement::ReplyShapeName(shape);
+		// 即使文本恰好等于本局 id,形状不对也不能下结论。
+		EXPECT_EQ(battle_settlement::ClassifyAckProbe(shape, "701", 701), battle_settlement::AckProbeVerdict::kUndetermined)
+			<< battle_settlement::ReplyShapeName(shape);
+	}
+}
+
+// 只有 NIL,或 STRING 且不等于本局,才算销账;STRING 且等于本局才进第二跳。比较是十进制字符串逐字节。
+TEST(SettlementOutbox, AckProbeOnlyNilOrForeignIdCountsAsAcknowledged)
+{
+	using battle_settlement::AckProbeVerdict;
+	EXPECT_EQ(battle_settlement::ClassifyAckProbe(ReplyShape::kNil, "", 701), AckProbeVerdict::kAcknowledged);
+	EXPECT_EQ(battle_settlement::ClassifyAckProbe(ReplyShape::kString, "702", 701), AckProbeVerdict::kAcknowledged);
+	EXPECT_EQ(battle_settlement::ClassifyAckProbe(ReplyShape::kString, "0701", 701), AckProbeVerdict::kAcknowledged);
+	EXPECT_EQ(battle_settlement::ClassifyAckProbe(ReplyShape::kString, "", 701), AckProbeVerdict::kAcknowledged);
+	EXPECT_EQ(battle_settlement::ClassifyAckProbe(ReplyShape::kString, "701", 701), AckProbeVerdict::kStillOurs);
+	EXPECT_EQ(battle_settlement::ClassifyAckProbe(ReplyShape::kString, "18446744073709551615",
+												  std::numeric_limits<uint64_t>::max()),
+			  AckProbeVerdict::kStillOurs);
+}
+
+// 调用点实际走的是「适配 + 判定」这条链:空应答进来,结论必须是 undetermined。
+TEST(SettlementOutbox, AckProbeChainTreatsHiredisNullCallbackAsUndetermined)
+{
+	using battle_settlement::AckProbeVerdict;
+	const redisReply *disconnected = nullptr;
+	EXPECT_EQ(battle_settlement::ClassifyAckProbe(battle_settlement::ReplyShapeOf(disconnected),
+												  battle_settlement::ReplyText(disconnected), 701),
+			  AckProbeVerdict::kUndetermined);
+	auto ours = MakeReply(REDIS_REPLY_STRING, "701");
+	EXPECT_EQ(battle_settlement::ClassifyAckProbe(battle_settlement::ReplyShapeOf(&ours),
+												  battle_settlement::ReplyText(&ours), 701),
+			  AckProbeVerdict::kStillOurs);
+	auto noAuth = MakeReply(REDIS_REPLY_ERROR, "NOAUTH Authentication required.");
+	EXPECT_EQ(battle_settlement::ClassifyAckProbe(battle_settlement::ReplyShapeOf(&noAuth),
+												  battle_settlement::ReplyText(&noAuth), 701),
+			  AckProbeVerdict::kUndetermined);
+}
+
+// 缺陷 2(中):第二跳读位置拿到空应答 / ERROR 时走 kSkipNoTarget 并 ++attempts,白烧一轮;
+// 耗尽时还会误记成 reason=no_target。没问到就不能进 ClassifyRetry。
+TEST(SettlementOutbox, LocationReadWithoutUsableReplyIsNotADecision)
+{
+	EXPECT_FALSE(battle_settlement::IsLocationReplyDecisive(ReplyShape::kNoReply));
+	EXPECT_FALSE(battle_settlement::IsLocationReplyDecisive(ReplyShape::kError));
+	EXPECT_FALSE(battle_settlement::IsLocationReplyDecisive(ReplyShape::kInteger));
+	EXPECT_FALSE(battle_settlement::IsLocationReplyDecisive(ReplyShape::kOther));
+	// NIL = 玩家不在任何场景(真的无目标);STRING = 有位置记录(内容解析失败仍按无目标)。
+	EXPECT_TRUE(battle_settlement::IsLocationReplyDecisive(ReplyShape::kNil));
+	EXPECT_TRUE(battle_settlement::IsLocationReplyDecisive(ReplyShape::kString));
+}
+
+// 「没问到」不消耗重投次数,但单独有上限:持续 ERROR 时不设上限,发件箱随对局数无界增长、永远不响 undelivered。
+TEST(SettlementOutbox, UndeterminedProbeRoundsAreBoundedSeparately)
+{
+	using battle_settlement::UndeterminedProbeAction;
+	EXPECT_EQ(battle_settlement::ClassifyUndeterminedProbeRound(1, 60), UndeterminedProbeAction::kWaitNextRound);
+	EXPECT_EQ(battle_settlement::ClassifyUndeterminedProbeRound(59, 60), UndeterminedProbeAction::kWaitNextRound);
+	EXPECT_EQ(battle_settlement::ClassifyUndeterminedProbeRound(60, 60), UndeterminedProbeAction::kGiveUp);
+	EXPECT_EQ(battle_settlement::ClassifyUndeterminedProbeRound(61, 60), UndeterminedProbeAction::kGiveUp);
+	// 上限配成 0 是调用方缺陷:立即放弃,保证有界。
+	EXPECT_EQ(battle_settlement::ClassifyUndeterminedProbeRound(1, 0), UndeterminedProbeAction::kGiveUp);
+	EXPECT_STREQ(battle_settlement::UndeliveredReasonName(battle_settlement::UndeliveredReason::kProbeUndetermined),
+				 "probe_undetermined");
+}
+
+// 缺陷 5 / 6(中 / 中低):落库应答没确认时只投一次、不进发件箱。没确认 ≠ 没落库,结论只能是 kUnconfirmed,
+// 调用点据此照样登记发件箱(结算 EVAL 成功是整数,活动局 SET 成功是状态 OK)。
+TEST(SettlementOutbox, PersistReplyWithoutConfirmationIsUnconfirmedNotFailed)
+{
+	using battle_settlement::PersistVerdict;
+	EXPECT_EQ(battle_settlement::ClassifyPersistReply(ReplyShape::kInteger, ReplyShape::kInteger), PersistVerdict::kStored);
+	EXPECT_EQ(battle_settlement::ClassifyPersistReply(ReplyShape::kStatus, ReplyShape::kStatus), PersistVerdict::kStored);
+	for (const auto actual : {ReplyShape::kNoReply, ReplyShape::kError, ReplyShape::kNil, ReplyShape::kString,
+							  ReplyShape::kArray, ReplyShape::kOther})
+	{
+		EXPECT_EQ(battle_settlement::ClassifyPersistReply(actual, ReplyShape::kInteger), PersistVerdict::kUnconfirmed)
+			<< battle_settlement::ReplyShapeName(actual);
+	}
+	EXPECT_EQ(battle_settlement::ClassifyPersistReply(ReplyShape::kInteger, ReplyShape::kStatus), PersistVerdict::kUnconfirmed);
+	// 防呆:空应答永远不是「成功形状」,哪怕调用方把期望形状写错成 kNoReply。
+	EXPECT_EQ(battle_settlement::ClassifyPersistReply(ReplyShape::kNoReply, ReplyShape::kNoReply), PersistVerdict::kUnconfirmed);
+}
+
+// 缺陷 3(高):scene 登录钩子把空应答与 NIL 一起当「没有挂起结算」,转去按锁重建 —— 这次登录漏补发奖励。
+TEST(SettlementLoginHook, PendingReadWithoutUsableReplyIsRecheckNotNoPending)
+{
+	using battle_settlement::LoginPendingRead;
+	EXPECT_EQ(battle_settlement::ClassifyLoginPendingRead(ReplyShape::kNil), LoginPendingRead::kNoPending);
+	EXPECT_EQ(battle_settlement::ClassifyLoginPendingRead(ReplyShape::kString), LoginPendingRead::kPending);
+	for (const auto shape : {ReplyShape::kNoReply, ReplyShape::kError, ReplyShape::kStatus, ReplyShape::kInteger,
+							 ReplyShape::kArray, ReplyShape::kOther})
+	{
+		EXPECT_EQ(battle_settlement::ClassifyLoginPendingRead(shape), LoginPendingRead::kRecheck)
+			<< battle_settlement::ReplyShapeName(shape);
+	}
+	EXPECT_EQ(battle_settlement::ClassifyLoginPendingRead(battle_settlement::ReplyShapeOf(nullptr)),
+			  LoginPendingRead::kRecheck);
+}
+
+// 缺陷 4(中低):登录重建读锁把空应答当「无锁」,战斗闸失效。空应答进复查;ERROR 按无锁是既有取舍(保留)。
+TEST(SettlementLoginHook, LockReadNoReplyIsRecheckWhileErrorKeepsLegacyNoLock)
+{
+	using battle_settlement::LoginLockRead;
+	EXPECT_EQ(battle_settlement::ClassifyLoginLockRead(ReplyShape::kNoReply), LoginLockRead::kRecheck);
+	EXPECT_EQ(battle_settlement::ClassifyLoginLockRead(ReplyShape::kArray), LoginLockRead::kLock);
+	EXPECT_EQ(battle_settlement::ClassifyLoginLockRead(ReplyShape::kNil), LoginLockRead::kNoLock);
+	EXPECT_EQ(battle_settlement::ClassifyLoginLockRead(ReplyShape::kError), LoginLockRead::kNoLock);
+	EXPECT_EQ(battle_settlement::ClassifyLoginLockRead(ReplyShape::kOther), LoginLockRead::kNoLock);
 }
 
 // 覆盖真实入场所需的会话状态和转发副作用,不依赖网络或全局节点注册。

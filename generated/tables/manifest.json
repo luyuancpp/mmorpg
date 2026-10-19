@@ -1,13 +1,13 @@
 {
   "schema_version": 1,
-  "version": 25,
-  "content_digest": "35871b3ef881057588085eb675908d575f2ed5fd872dc85e485287d7c587be60",
-  "generated_at": "2026-10-13T14:07:53Z",
+  "version": 29,
+  "content_digest": "371978b56b23acae05f14a6826bbcc8372af0dd6d9eebce12298873f34d664ea",
+  "generated_at": "2026-10-19T02:52:48Z",
   "source_rev": {
-    "commit": "6e212616bfbf337ef0c179cd4553cf9325da883d",
+    "commit": "e4aee007f11fa6d13f47bf2e2dfb955e6289c098",
     "data_dirty": true
   },
-  "table_count": 42,
+  "table_count": 45,
   "tables": [
     {
       "name": "ActivitySchedule",
@@ -198,21 +198,21 @@
       "rows": 21,
       "source": {
         "file": "BaseScene.xlsx",
-        "size": 5508,
-        "sha256": "e3059a357a6dd2817078727fd5b5e001de353d69061be22ec0c87afd068a0e7b"
+        "size": 5519,
+        "sha256": "17142d3be150bf92041fab2523c85c1b145c5c47168af46c17c89800208073bb"
       },
       "artifacts": [
         {
           "kind": "json",
           "file": "basescene.json",
           "size": 2927,
-          "sha256": "1eac53654ef1a29b98f56f3c781e0ff4fd8a7c45c5895a597ee387110862c426"
+          "sha256": "5abbc27307221c5347a48a527dcb7725a8481815c79a8cce4c93aaa717a02485"
         },
         {
           "kind": "binary",
           "file": "basescene.pb",
           "size": 1219,
-          "sha256": "0b5edb5b943e738bea7acb31c15896e9ce4ec8ef8d4f7314f5b9b9e55927fc97"
+          "sha256": "13e645420fecc53bf95f708450906f7f683a669ab8c7f8d9c3b5cc5008b3ce39"
         }
       ]
     },
@@ -678,24 +678,24 @@
     },
     {
       "name": "MessageLimiter",
-      "rows": 81,
+      "rows": 87,
       "source": {
         "file": "MessageLimiter.xlsx",
-        "size": 6290,
-        "sha256": "0512a4c10f77e8fbf1d2bd25c9903f0a03cd8e5f548416f53d48183ddfcf26cc"
+        "size": 6394,
+        "sha256": "23f620ca2fbad84aa870670374f4505596a6c03aa9e14b50689ccfaac28b520c"
       },
       "artifacts": [
         {
           "kind": "json",
           "file": "messagelimiter.json",
-          "size": 7234,
-          "sha256": "6730b0e189b4239858ebe59e34a4e851653f686712c7fe75dda92c2edcdbc660"
+          "size": 7769,
+          "sha256": "3d39b753435e51876750c7a3e39da79a0bf8e8b528e3b9433069d6ae77407995"
         },
         {
           "kind": "binary",
           "file": "messagelimiter.pb",
-          "size": 953,
-          "sha256": "b23550b73676d1c9197614bf08adc9a6251530717ea9582c7b7c58319265acdc"
+          "size": 1025,
+          "sha256": "83487f29e81ca87e6e0babcf4573e759f3298aab73cf55377e92ca1e74245a76"
         }
       ]
     },
@@ -765,6 +765,75 @@
           "file": "monster.pb",
           "size": 396,
           "sha256": "ea9cd6c871c57f871060cc0722072d6c008e941bd6767a8dadc1e53887c86888"
+        }
+      ]
+    },
+    {
+      "name": "MysteryMerchantGoods",
+      "rows": 12,
+      "source": {
+        "file": "MysteryMerchantGoods.xlsx",
+        "size": 5846,
+        "sha256": "dae118bc28c816778490077b02c4bc573bc7066db34b83f843c1856c69d11e4a"
+      },
+      "artifacts": [
+        {
+          "kind": "json",
+          "file": "mysterymerchantgoods.json",
+          "size": 1910,
+          "sha256": "306cfbdae16eeb5bc65913caaacc9620271b93c5c5e38e42b6ac3e0bf91736b7"
+        },
+        {
+          "kind": "binary",
+          "file": "mysterymerchantgoods.pb",
+          "size": 304,
+          "sha256": "01ad6ccf78d984372ac0dc6375cc8363f63df259bd259a9198a59deeaca3696a"
+        }
+      ]
+    },
+    {
+      "name": "MysteryMerchantRule",
+      "rows": 1,
+      "source": {
+        "file": "MysteryMerchantRule.xlsx",
+        "size": 5420,
+        "sha256": "6d407d92337ebcc76002fb2a8fe2dc53000e78f519580cfe991763b753b05737"
+      },
+      "artifacts": [
+        {
+          "kind": "json",
+          "file": "mysterymerchantrule.json",
+          "size": 265,
+          "sha256": "898547e83ba91dcf724ad34659cf06ac35bb4acc3fd43b29a2c257862546e584"
+        },
+        {
+          "kind": "binary",
+          "file": "mysterymerchantrule.pb",
+          "size": 54,
+          "sha256": "aaff379f7094ccc041ca77f5319abcf4e622b06c162727217585248df1b35cfa"
+        }
+      ]
+    },
+    {
+      "name": "MysteryMerchantSpot",
+      "rows": 6,
+      "source": {
+        "file": "MysteryMerchantSpot.xlsx",
+        "size": 5370,
+        "sha256": "05427b3bc455cfb4c7647a33047a794af48067c1f20eb6484022fc78b9bb697c"
+      },
+      "artifacts": [
+        {
+          "kind": "json",
+          "file": "mysterymerchantspot.json",
+          "size": 819,
+          "sha256": "56efa7627de774d3c9452c719dbedb9643d447c3e5405aa443b3394b419f1bc5"
+        },
+        {
+          "kind": "binary",
+          "file": "mysterymerchantspot.pb",
+          "size": 341,
+          "sha256": "b4a12c60ae23b84a10b1ce9a45f97f8bbb088d1cd136e1ec6fa7ccc5ff4fad37"
         }
       ]
     },

@@ -60,6 +60,7 @@
 // 待结算记录的 Redis key / Lua 契约(R07)。battle 侧写、scene 侧读与销账,
 // 两端必须用**同一份**常量 —— 手抄两遍就是等着某天改一处漏一处。
 #include "services/battle/settlement/settlement_outbox.h"
+#include "services/battle/settlement/settlement_reply_shape.h"
 // 战斗配表指纹(七张战斗表确定性序列化 sha256,随快照携带给 match/battle 比对)。
 #include "services/battle/data/battle_table_fingerprint.h"
 
@@ -148,6 +149,36 @@ namespace
 	{
 		uint32_t gateSessionId = 0;
 	};
+
+	// 登录复查标记(2026-10-16):登录钩子第一步(读待结算记录,没有再读锁重建冻结)「没问到」的玩家。
+	// 没问到 = 空应答(连接断开 / 被释放:主切换掐连接、存活探测摘连接)、读待结算记录时的 ERROR、
+	// 命令没发出去,或者当时 Redis 根本不可用。它不能当成结论:
+	//   - 当成「没有挂起结算」→ 这次登录漏补发奖励(记录不过期,但要等下一次登录;一直在线就一直拿不到);
+	//   - 当成「没有锁」→ 战斗在途却不重建冻结,战斗闸(资产通道、收件箱 requiresOutOfBattle)放行。
+	// 标记之后由 reaper 节拍(RunLoginRechecks,30 秒)在 Redis 可用时重跑整个第一步;复查完成前不按锁重建冻结
+	// (重建依赖「确实没有挂起结算」这个前提)。重跑之前先摘标记,这一轮又没问到就重新挂上,所以同一玩家同一时刻
+	// 最多一条复查在途。
+	// 纯运行时标记:不入库(实体重建时登录钩子本来就会重跑),随实体销毁。唯一写入口 MarkLoginRecheck,
+	// 唯一消费口 RunLoginRechecks。没有用 Redis 重连回调触发:那是 RedisSystem 独占的单槽,复查等一个 reaper 节拍足够。
+	struct BattleLoginRecheckComp
+	{
+	};
+
+	void MarkLoginRecheck(entt::entity player, const uint64_t playerId, const char* reason)
+	{
+		if (!tlsEcs.actorRegistry.valid(player))
+		{
+			return;
+		}
+		LOG_WARN << "[PlayerBattle] metric=battle_login_recheck_scheduled player_id=" << playerId << " reason=" << reason
+				 << ",login battle check could not reach a conclusion;pending settlement and freeze restore deferred to the next reaper tick";
+		// 此处延迟创建(按需状态的唯一写入口,docs/design/ecs-component-access-rules.md)。
+		// 空标记类型取不出引用,不用 get_or_emplace。
+		if (!tlsEcs.actorRegistry.any_of<BattleLoginRecheckComp>(player))
+		{
+			tlsEcs.actorRegistry.emplace<BattleLoginRecheckComp>(player);
+		}
+	}
 
 	// 当前大厅会话号;无会话快照(已断线、实体仍在)时返回 0。
 	uint32_t CurrentGateSessionId(entt::entity player)
@@ -1563,14 +1594,13 @@ void PlayerBattleSystem::RestoreBattleFreezeOnLogin(entt::entity player, const u
 {
 	if (!RedisReady())
 	{
+		// 读不了锁不等于没有锁:记入登录复查(BattleLoginRecheckComp 的说明)。以前直接 return,
+		// 战斗在途时这次登录就不重建冻结,战斗闸看不到这场战斗。
+		MarkLoginRecheck(player, playerId, "lock_read_redis_disconnected");
 		return;
 	}
-	tlsRedis.GetZoneRedis()->command(
+	const int rc = tlsRedis.GetZoneRedis()->command(
 		[player, playerId](hiredis::Hiredis*, redisReply* reply) {
-			if (reply == nullptr || reply->type != REDIS_REPLY_ARRAY)
-			{
-				return; // 锁不在 = 没有战斗在途(EVAL 错误也按无锁处理,锁本身是咨询性的)
-			}
 			if (!tlsEcs.actorRegistry.valid(player) || tlsEcs.GetPlayerId(player) != playerId)
 			{
 				return;
@@ -1578,6 +1608,19 @@ void PlayerBattleSystem::RestoreBattleFreezeOnLogin(entt::entity player, const u
 			if (tlsEcs.actorRegistry.any_of<InBattleComp>(player))
 			{
 				return; // 重连路径组件仍在 / 登录后已备战新局:不动
+			}
+			switch (battle_settlement::ClassifyLoginLockRead(battle_settlement::ReplyShapeOf(reply)))
+			{
+			case battle_settlement::LoginLockRead::kRecheck:
+				// 空应答:连接断了,锁在不在不知道。以前与 NIL 一起按「无锁」return,战斗闸就此失效。
+				MarkLoginRecheck(player, playerId, "lock_read_no_reply");
+				return;
+			case battle_settlement::LoginLockRead::kNoLock:
+				// 锁不在 = 没有战斗在途。EVAL 的 ERROR 也按无锁处理:既有取舍,锁本身是咨询性的
+				// (代价见 settlement_outbox.h 的 ClassifyLoginLockRead)。
+				return;
+			case battle_settlement::LoginLockRead::kLock:
+				break;
 			}
 			std::string lockValue;
 			if (!ReplyElementToString(reply, 0, lockValue))
@@ -1649,6 +1692,11 @@ void PlayerBattleSystem::RestoreBattleFreezeOnLogin(entt::entity player, const u
 		},
 		(std::string("EVAL %s 2 ") + kBattleLockKeyFmt + " " + kBattleCtxKeyFmt).c_str(),
 		kGetLockAndCtxScript, playerId, playerId);
+	if (rc != REDIS_OK)
+	{
+		// 命令没发出去时回调永远不会来:与 Redis 不可用同样记入复查。
+		MarkLoginRecheck(player, playerId, "lock_read_not_sent");
+	}
 }
 
 bool PlayerBattleSystem::ApplySettlementToEntity(entt::entity player, const ::BattleSettlementData& settlement,
@@ -2069,10 +2117,15 @@ void PlayerBattleSystem::ApplyPendingSettlement(entt::entity player, const ::Bat
 
 void PlayerBattleSystem::RecoverPendingSettlementAfterFreezeExpiry(entt::entity player, const uint64_t playerId)
 {
+	// 「没读到」(Redis 不可用 / 空应答 / ERROR / 意外类型 / 命令没发出去)都记入登录复查(BattleLoginRecheckComp 的说明):
+	// 这是到期后唯一一次主动补读(battle 发件箱已停止重投),以前只留痕、等下次进场,在线玩家就一直拿不到奖励。
+	// 复查重跑的是登录钩子第一步:有记录照样走 ApplyPendingSettlement,没有记录再按锁重建
+	// (锁已由 reaper 在这次补读之前条件删掉;删锁也没落地时会按锁重建一次,随后的节拍再按期限作废,与这段时间内重登一致)。
 	if (!RedisReady())
 	{
 		LOG_WARN << "[PlayerBattle] Pending settlement recovery after freeze expiry skipped(Redis disconnected), player_id="
-				 << playerId << "(pending settlement retained;login hook will apply it on next scene entry)";
+				 << playerId << "(pending settlement retained;login recheck scheduled)";
+		MarkLoginRecheck(player, playerId, "freeze_expiry_pending_read_redis_disconnected");
 		return;
 	}
 	// entt::entity 用 init-capture(MSVC C3495,见 copilot-instructions)。
@@ -2084,25 +2137,22 @@ void PlayerBattleSystem::RecoverPendingSettlementAfterFreezeExpiry(entt::entity 
 			{
 				return;
 			}
-			if (reply != nullptr && reply->type == REDIS_REPLY_NIL)
+			const auto shape = battle_settlement::ReplyShapeOf(reply);
+			switch (battle_settlement::ClassifyLoginPendingRead(shape))
 			{
+			case battle_settlement::LoginPendingRead::kNoPending:
 				// 没有待结算记录:只解冻,与改造前一致。
 				return;
-			}
-			if (reply == nullptr || reply->type == REDIS_REPLY_ERROR)
-			{
-				// 读失败不能当成"没有记录"吞掉:这是到期后唯一一次补读机会(battle 发件箱已停止重投),
-				// 必须留下痕迹,才分得清"没有记录"与"没读到"。
+			case battle_settlement::LoginPendingRead::kRecheck:
+				// 读失败不能当成"没有记录"吞掉:留下痕迹分清"没有记录"与"没读到",并记入登录复查。
 				LOG_WARN << "[PlayerBattle] Pending settlement read failed during freeze-expiry recovery, player_id=" << playerId
-						 << " err=" << (reply != nullptr && reply->str != nullptr ? reply->str : "no reply(Redis disconnected)")
-						 << "(pending settlement retained;login hook will apply it on next scene entry)";
+						 << " reply=" << battle_settlement::ReplyShapeName(shape)
+						 << " err=" << std::string(battle_settlement::ReplyText(reply))
+						 << "(pending settlement retained;login recheck scheduled)";
+				MarkLoginRecheck(player, playerId, "freeze_expiry_pending_read_unusable_reply");
 				return;
-			}
-			if (reply->type != REDIS_REPLY_STRING)
-			{
-				LOG_ERROR << "[PlayerBattle] Pending settlement read returned unexpected reply type=" << reply->type
-						  << " during freeze-expiry recovery, player_id=" << playerId << "(left for the login hook)";
-				return;
+			case battle_settlement::LoginPendingRead::kPending:
+				break;
 			}
 			if (reply->len > static_cast<size_t>(std::numeric_limits<int>::max()))
 			{
@@ -2125,9 +2175,10 @@ void PlayerBattleSystem::RecoverPendingSettlementAfterFreezeExpiry(entt::entity 
 		(std::string("GET ") + kPendingSettlementKeyFmt).c_str(), playerId);
 	if (ret != REDIS_OK)
 	{
-		// 命令没发出去时回调永远不会被调:就地留痕,pending 照旧留给登录钩子。
+		// 命令没发出去时回调永远不会被调:就地留痕并记入登录复查。
 		LOG_WARN << "[PlayerBattle] Pending settlement recovery after freeze expiry not sent, player_id=" << playerId
-				 << " ret=" << ret << "(pending settlement retained;login hook will apply it on next scene entry)";
+				 << " ret=" << ret << "(pending settlement retained;login recheck scheduled)";
+		MarkLoginRecheck(player, playerId, "freeze_expiry_pending_read_not_sent");
 	}
 }
 
@@ -2153,6 +2204,127 @@ void PlayerBattleSystem::NotifyBattleReconnectToClient(entt::entity player)
 			 << " battle_node_id=" << inBattle->battle_node_id();
 }
 
+void PlayerBattleSystem::CheckPendingSettlementOnEnter(entt::entity player, const uint64_t playerId)
+{
+	if (!RedisReady())
+	{
+		// 以前只打一条 WARN、等下一次登录:玩家一直在线就一直拿不到挂起结算,战斗在途时冻结也不重建。
+		MarkLoginRecheck(player, playerId, "pending_read_redis_disconnected");
+		return;
+	}
+	const int rc = tlsRedis.GetZoneRedis()->command(
+		[player, playerId](hiredis::Hiredis*, redisReply* reply) {
+			if (!tlsEcs.actorRegistry.valid(player) || tlsEcs.GetPlayerId(player) != playerId)
+			{
+				// 回调期间实体已销毁/复用:留着 pending,下次登录再应用
+				return;
+			}
+			const auto shape = battle_settlement::ReplyShapeOf(reply);
+			switch (battle_settlement::ClassifyLoginPendingRead(shape))
+			{
+			case battle_settlement::LoginPendingRead::kRecheck:
+				// 空应答 / ERROR / 意外类型:没问到。以前与 NIL 走同一分支,当成「没有挂起结算」去按锁重建 ——
+				// 这次登录就漏补发奖励。复查完成前不调 RestoreBattleFreezeOnLogin(重建依赖「确实没有挂起结算」)。
+				MarkLoginRecheck(player, playerId,
+								 shape == battle_settlement::ReplyShape::kNoReply ? "pending_read_no_reply"
+																				  : "pending_read_unusable_reply");
+				return;
+			case battle_settlement::LoginPendingRead::kNoPending:
+				// 无挂起结算 -> 查锁重建(重连路径组件仍在时函数内部直接跳过)
+				if (!tlsEcs.actorRegistry.any_of<InBattleComp>(player))
+				{
+					RestoreBattleFreezeOnLogin(player, playerId);
+				}
+				return;
+			case battle_settlement::LoginPendingRead::kPending:
+				break;
+			}
+			if (reply->len > static_cast<size_t>(std::numeric_limits<int>::max()))
+			{
+				LOG_ERROR << "[PlayerBattle] Pending settlement payload too large, player_id=" << playerId;
+				return;
+			}
+			::BattleSettlementEvent event;
+			if (!event.ParseFromArray(reply->str, static_cast<int>(reply->len)))
+			{
+				LOG_ERROR << "[PlayerBattle] Pending settlement parse failed;invalid data removed, player_id=" << playerId;
+				if (RedisReady())
+				{
+					// 脏数据解不出 battle_id,无从条件删;两键连同积压索引成员一起无条件删
+					// (kDeleteCorruptPendingSettlementScript 的说明)。记录不再过期,不删就永远躺在那里。
+					tlsRedis.GetZoneRedis()->command(
+						[](hiredis::Hiredis*, redisReply*) {},
+						(std::string("EVAL %s 3 ") + kPendingSettlementKeyFmt + " " +
+						 kPendingSettlementIdKeyFmt + " " + kPendingSettlementIndexKey + " %llu").c_str(),
+						battle_settlement::kDeleteCorruptPendingSettlementScript, playerId, playerId, playerId);
+				}
+				// 这里**不**按锁重建:锁多半正属于这条坏记录的那一局(已结束、从没应用、账本里没有),
+				// 重建会把玩家冻进一场已结束的战斗并让客户端去重连不存在的房间(第二轮评审 w0zw729x1 #1)。
+				// 锁留给 TTL 过期;真有另一局在途时,它的结算/迟到确认会按锁匹配路径重建。
+				return;
+			}
+			ApplyPendingSettlement(player, event);
+		},
+		(std::string("GET ") + kPendingSettlementKeyFmt).c_str(), playerId);
+	if (rc != REDIS_OK)
+	{
+		// 命令没发出去时回调永远不会来:与 Redis 不可用同样记入复查。
+		MarkLoginRecheck(player, playerId, "pending_read_not_sent");
+	}
+}
+
+void PlayerBattleSystem::RunLoginRechecks()
+{
+	auto view = tlsEcs.actorRegistry.view<BattleLoginRecheckComp>();
+	if (view.size() == 0)
+	{
+		return;
+	}
+	const bool redisReady = RedisReady();
+	size_t deferred = 0;
+	// 先收集再处理:CheckPendingSettlementOnEnter 可能当场重新挂标记(命令没发出去),边遍历边改视图会失效迭代器。
+	std::vector<entt::entity> due(view.begin(), view.end());
+	for (const auto entity : due)
+	{
+		const uint64_t playerId = tlsEcs.GetPlayerId(entity);
+		if (playerId == 0 || tlsEcs.actorRegistry.any_of<UnregisterPlayer>(entity))
+		{
+			// 退出中的实体视同离线(与 RecoverPendingSettlementAfterFreezeExpiry 同一口径):摘标记不补读,
+			// 挂起结算留在 Redis,下次进场登录钩子重跑。
+			tlsEcs.actorRegistry.remove<BattleLoginRecheckComp>(entity);
+			LOG_INFO << "[PlayerBattle] Login battle recheck dropped: player is exiting, player_id=" << playerId;
+			continue;
+		}
+		if (!IsSettlementApplicable(entity))
+		{
+			// 跨 zone 冻结 / 交接中:标记保留,本轮不跑。这时重跑会在即将销毁的源实体上按锁重建冻结、给客户端推重连提示
+			// (有挂起结算时应用也会被拒)。交接完成实体随之销毁,目的地进场时登录钩子重跑;交接撤销则下一个节拍再跑。
+			continue;
+		}
+		if (!redisReady)
+		{
+			// Redis 仍不可用:标记保留,恢复后的第一个节拍再跑。
+			++deferred;
+			continue;
+		}
+		// 先摘标记再重跑:这一轮又没问到会重新挂上,同一玩家同一时刻最多一条复查在途。
+		tlsEcs.actorRegistry.remove<BattleLoginRecheckComp>(entity);
+		LOG_WARN << "[PlayerBattle] metric=battle_login_recheck_run player_id=" << playerId
+				 << ",rerunning login pending-settlement check and freeze restore";
+		CheckPendingSettlementOnEnter(entity, playerId);
+	}
+	if (deferred != 0)
+	{
+		// 只打一条汇总,不按玩家刷屏。
+		LOG_WARN << "[PlayerBattle] Login battle rechecks deferred(Redis disconnected), pending=" << deferred;
+	}
+}
+
+bool PlayerBattleSystem::IsLoginRecheckPending(entt::entity player)
+{
+	return tlsEcs.actorRegistry.valid(player) && tlsEcs.actorRegistry.any_of<BattleLoginRecheckComp>(player);
+}
+
 void PlayerBattleSystem::OnPlayerEnterScene(entt::entity player, uint32_t enterGsType)
 {
 	if (!tlsEcs.actorRegistry.valid(player))
@@ -2172,57 +2344,9 @@ void PlayerBattleSystem::OnPlayerEnterScene(entt::entity player, uint32_t enterG
 	//    两步必须串在同一条回调链上:挂起结算应用后,销账/续锁命令要排在读锁之前(同连接 FIFO)。
 	//    锁在结算应用后一直留到落盘销账(ReleaseFreezeKeepLock),所以按锁重建前还要查账本:
 	//    锁指向已应用的局就不重建(RestoreBattleFreezeOnLogin / RebuildBattleFreezeFromLock 内)。
-	if (RedisReady())
-	{
-		tlsRedis.GetZoneRedis()->command(
-			[player, playerId](hiredis::Hiredis*, redisReply* reply) {
-				if (!tlsEcs.actorRegistry.valid(player) || tlsEcs.GetPlayerId(player) != playerId)
-				{
-					// 回调期间实体已销毁/复用:留着 pending,下次登录再应用
-					return;
-				}
-				if (reply == nullptr || reply->type != REDIS_REPLY_STRING)
-				{
-					// 无挂起结算 -> 查锁重建(重连路径组件仍在时函数内部直接跳过)
-					if (!tlsEcs.actorRegistry.any_of<InBattleComp>(player))
-					{
-						RestoreBattleFreezeOnLogin(player, playerId);
-					}
-					return;
-				}
-				if (reply->len > static_cast<size_t>(std::numeric_limits<int>::max()))
-				{
-					LOG_ERROR << "[PlayerBattle] Pending settlement payload too large, player_id=" << playerId;
-					return;
-				}
-				::BattleSettlementEvent event;
-				if (!event.ParseFromArray(reply->str, static_cast<int>(reply->len)))
-				{
-					LOG_ERROR << "[PlayerBattle] Pending settlement parse failed;invalid data removed, player_id=" << playerId;
-					if (RedisReady())
-					{
-						// 脏数据解不出 battle_id,无从条件删;两键连同积压索引成员一起无条件删
-						// (kDeleteCorruptPendingSettlementScript 的说明)。记录不再过期,不删就永远躺在那里。
-						tlsRedis.GetZoneRedis()->command(
-							[](hiredis::Hiredis*, redisReply*) {},
-							(std::string("EVAL %s 3 ") + kPendingSettlementKeyFmt + " " +
-							 kPendingSettlementIdKeyFmt + " " + kPendingSettlementIndexKey + " %llu").c_str(),
-							battle_settlement::kDeleteCorruptPendingSettlementScript, playerId, playerId, playerId);
-					}
-					// 这里**不**按锁重建:锁多半正属于这条坏记录的那一局(已结束、从没应用、账本里没有),
-					// 重建会把玩家冻进一场已结束的战斗并让客户端去重连不存在的房间(第二轮评审 w0zw729x1 #1)。
-					// 锁留给 TTL 过期;真有另一局在途时,它的结算/迟到确认会按锁匹配路径重建。
-					return;
-				}
-				ApplyPendingSettlement(player, event);
-			},
-			(std::string("GET ") + kPendingSettlementKeyFmt).c_str(), playerId);
-	}
-	else
-	{
-		LOG_WARN << "[PlayerBattle] Pending settlement check skipped(Redis disconnected), player_id=" << playerId
-				 << "(battle:lock remains;queueing is still blocked;retry on next login)";
-	}
+	//    任一步「没问到」(空应答 / 读记录时的 ERROR / 命令没发出去 / Redis 不可用)都不当结论:
+	//    记入登录复查,reaper 节拍在 Redis 可用时重跑这一步(BattleLoginRecheckComp 的说明)。
+	CheckPendingSettlementOnEnter(player, playerId);
 
 	// 2) 战斗中换了会话:实体仍存活且 InBattleComp 为 FIGHTING -> 提示客户端补签重连(turn-based §22 D72)
 	//    (完整下线再登录的提示走上面的 RestoreBattleFreezeOnLogin 回调)。
@@ -2354,6 +2478,10 @@ void PlayerBattleSystem::StartReaper(muduo::net::EventLoop* loop)
 		{
 			AckSettlementPending(ack.playerId, ack.battleId);
 		}
+
+		// 第三遍:登录钩子「没问到」的玩家重跑登录检查(BattleLoginRecheckComp 的说明)。
+		// 排在前两遍之后:同一条连接 FIFO,补读与销账命令先于这里的读数到达 Redis。
+		RunLoginRechecks();
 	});
 	gReaperActive = true;
 

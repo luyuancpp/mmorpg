@@ -1,0 +1,47 @@
+syntax = "proto3";
+
+// MysteryMerchantRule 表的权威 schema。源表 data/MysteryMerchantRule.xlsx。
+//
+// 本文件不参与 protoc 编译,也不进任何语言的构建;导表器直接文本解析它。
+// 字段号只增不改、删字段用 reserved(data/AGENTS.md)。
+//
+// 导表报"这些权威 schema 没有对应的源表:MysteryMerchantRule"= 源表还没生成(schema 与 xlsx 必须成对):
+// 先跑 python tools/scripts/mystery_merchant_xlsx_patch.py new-tables。
+//
+// 神秘商人的单行全局规则(与 PetRule / AttributeRule 同套路:只取第一行)。
+// 设计文档 docs/design/mystery-merchant.md §3.1。
+//
+// 谁读哪几列:
+//   - go/scene_manager(调度者):interval_seconds / stay_seconds / shelf_size / weight_discount*;
+//   - C++ scene(执行购买):interact_range。
+// 启动校验见各列注释里的取值范围:scene_manager 校验不过时**只停掉神秘商人的调度**(记 Error 与指标),
+// 不影响场景管理本身。
+
+package mmorpg.cfgtable.v1;
+
+import "cfg_options.proto";
+
+message MysteryMerchantRuleTable {
+  option (cfg_sheet)       = "MysteryMerchantRule";
+  option (cfg_source_file) = "MysteryMerchantRule.xlsx";
+  option (cfg_primary_key) = "id";
+
+  // 规则行 id(固定 1)
+  uint32 id = 1;
+  // 两次出现的间隔秒(60..86400);出现时刻对齐到它的整数倍,3600 = 每个整点
+  uint32 interval_seconds = 2;
+  // 每次停留秒(30..interval_seconds);等于间隔 = 一直在场、只是每轮换线换货
+  uint32 stay_seconds = 3;
+  // 每轮上架几件(1..32);商品池不够时有几件上几件
+  uint32 shelf_size = 4;
+  // 掷到 6 折的权重(>=0);三档权重之和必须 >0
+  uint32 weight_discount60 = 5;
+  // 掷到 5 折的权重(>=0)
+  uint32 weight_discount50 = 6;
+  // 掷到 4 折的权重(>=0)
+  uint32 weight_discount40 = 7;
+  // 购买时允许离商人多远(服务器坐标单位,1..100)
+  uint32 interact_range = 8;
+  // 说明
+  string desc = 9;
+}

@@ -42,6 +42,9 @@ on:
       - "go/login/internal/logic/pkg/loginqueue/dispatcher.go"
       - "go/login/internal/logic/pkg/loginqueue/queue.go"
       - "go/login/internal/svc/servicecontext.go"
+      - "go/mail/internal/metrics/**"
+      - "go/rank/internal/metrics/**"
+      - "go/match/internal/metrics/**"
       - "java/gateway_node/src/main/java/com/game/gateway/ratelimit/RateLimitProperties.java"
       - ".github/workflows/deploy-config-tests.yml"
       - "deploy/k8s/Dockerfile*"
@@ -77,6 +80,12 @@ on:
       - "go/login/internal/logic/pkg/loginqueue/dispatcher.go"
       - "go/login/internal/logic/pkg/loginqueue/queue.go"
       - "go/login/internal/svc/servicecontext.go"
+      # 邮件告警的指标名核对用例(k8s_deploy_contract.tests.ps1「mail-alerts.yaml」)直接读 metrics.go 拼指标全名:
+      # 只改这里把指标改了名,告警会静默失效,不重跑就看不出来
+      - "go/mail/internal/metrics/**"
+      # 排行榜告警同理(「rank-alerts.yaml」用例):rank_* 读 go/rank 的 metrics.go,match_rating_snapshot_* 读 go/match 的
+      - "go/rank/internal/metrics/**"
+      - "go/match/internal/metrics/**"
       - "java/gateway_node/src/main/java/com/game/gateway/ratelimit/RateLimitProperties.java"
       - ".github/workflows/deploy-config-tests.yml"
       # 镜像构建输入:版本注入 / OCI label / 构建上下文排除规则改了,发布契约测试要重跑

@@ -14,6 +14,7 @@
 
 #include "grpc_client/data_service/data_service_grpc_client.h"
 #include "modules/id_segment/guid_segment_registry.h"
+#include "muduo_grpc/channel.h"
 #include "node/system/grpc_call_deadline.h"
 #include "node/system/node/muduo_grpc_channel_slot.h"
 #include "node/system/node/node.h"

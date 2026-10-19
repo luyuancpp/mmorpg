@@ -4,6 +4,8 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+
+	pb "shared/generated/pb/table"
 )
 
 // configDir resolves the path to generated/tables/ relative to the repo root.
@@ -43,6 +45,17 @@ func loadAllTables(t *testing.T) {
 	LoadTables(dir, false)
 }
 
+// 现有配表夹具中每个 id 恰好一行；管理器的正式契约允许主键重复。
+// 组件与重载测试先校验夹具形状，再取行，不能把多值接口当成单值接口。
+func singleMultiKeyFixtureRow(t *testing.T, mgr *TestMultiKeyTableManager, id uint32) *pb.TestMultiKeyTable {
+	t.Helper()
+	rows := mgr.FindAllById(id)
+	if len(rows) != 1 || rows[0] == nil {
+		t.Fatalf("expected exactly one non-nil fixture row for id=%d, got %v", id, rows)
+	}
+	return rows[0]
+}
+
 // ---------------------------------------------------------------------------
 // Load + Iterate
 // ---------------------------------------------------------------------------
@@ -75,7 +88,7 @@ func TestLoadAndIterateTestMultiKeyTable(t *testing.T) {
 func TestMultiKeyFindByStringKey(t *testing.T) {
 	loadAllTables(t)
 	mgr := TestMultiKeyTableManagerInstance
-	row, ok := mgr.FindByString_key("aa")
+	row, ok := mgr.FindByStringKey("aa")
 	if !ok || row == nil {
 		t.Fatal("expected to find row by string_key 'aa'")
 	}
@@ -87,7 +100,7 @@ func TestMultiKeyFindByStringKey(t *testing.T) {
 func TestMultiKeyFindByUint32Key(t *testing.T) {
 	loadAllTables(t)
 	mgr := TestMultiKeyTableManagerInstance
-	row, ok := mgr.FindByUint32_key(14)
+	row, ok := mgr.FindByUint32Key(14)
 	if !ok || row == nil {
 		t.Fatal("expected to find row by uint32_key 14")
 	}
@@ -99,7 +112,7 @@ func TestMultiKeyFindByUint32Key(t *testing.T) {
 func TestMultiKeyFindByInt32Key(t *testing.T) {
 	loadAllTables(t)
 	mgr := TestMultiKeyTableManagerInstance
-	row, ok := mgr.FindByInt32_key(8)
+	row, ok := mgr.FindByInt32Key(8)
 	if !ok || row == nil {
 		t.Fatal("expected to find row by int32_key 8")
 	}
@@ -137,7 +150,7 @@ func TestBuffSubBuffIndex(t *testing.T) {
 	mgr := BuffTableManagerInstance
 	for _, row := range mgr.FindAll() {
 		for _, val := range row.SubBuff {
-			indexed := mgr.FindBySub_buffIndex(val)
+			indexed := mgr.FindBySubBuffIndex(val)
 			found := false
 			for _, r := range indexed {
 				if r.Id == row.Id {
@@ -159,10 +172,7 @@ func TestBuffSubBuffIndex(t *testing.T) {
 func TestScalarCompFromRow(t *testing.T) {
 	loadAllTables(t)
 	mgr := TestMultiKeyTableManagerInstance
-	row, ok := mgr.FindById(1)
-	if !ok || row == nil {
-		t.Fatal("row id=1 not found")
-	}
+	row := singleMultiKeyFixtureRow(t, mgr, 1)
 
 	idComp := MakeTestMultiKeyIdComp(row)
 	if idComp.Value != 1 {
@@ -188,10 +198,7 @@ func TestScalarCompFromRow(t *testing.T) {
 func TestRepeatedCompSlice(t *testing.T) {
 	loadAllTables(t)
 	mgr := TestMultiKeyTableManagerInstance
-	row, ok := mgr.FindById(2)
-	if !ok || row == nil {
-		t.Fatal("row id=2 not found")
-	}
+	row := singleMultiKeyFixtureRow(t, mgr, 2)
 
 	effectComp := MakeTestMultiKeyEffectComp(row)
 	if len(effectComp.Values) != len(row.Effect) {
@@ -228,10 +235,7 @@ func TestReloadDoesNotAccumulateData(t *testing.T) {
 	}
 
 	// Data should still be accessible.
-	row, ok := mgr.FindById(1)
-	if !ok || row == nil {
-		t.Fatal("row id=1 not found after reload")
-	}
+	row := singleMultiKeyFixtureRow(t, mgr, 1)
 	if row.Id != 1 {
 		t.Errorf("expected id=1, got %d", row.Id)
 	}
@@ -241,20 +245,14 @@ func TestReloadReplacesOldPointers(t *testing.T) {
 	loadAllTables(t)
 	mgr := TestMultiKeyTableManagerInstance
 
-	rowBefore, ok := mgr.FindById(1)
-	if !ok || rowBefore == nil {
-		t.Fatal("row id=1 not found before reload")
-	}
+	rowBefore := singleMultiKeyFixtureRow(t, mgr, 1)
 
 	dir := configDir(t)
 	if err := mgr.Load(dir, false); err != nil {
 		t.Fatalf("reload failed: %v", err)
 	}
 
-	rowAfter, ok := mgr.FindById(1)
-	if !ok || rowAfter == nil {
-		t.Fatal("row id=1 not found after reload")
-	}
+	rowAfter := singleMultiKeyFixtureRow(t, mgr, 1)
 
 	if rowBefore == rowAfter {
 		t.Error("reload should produce a new snapshot (different pointers)")
@@ -274,7 +272,7 @@ func TestReloadMultiKeyIndicesConsistent(t *testing.T) {
 	_ = mgr.Load(dir, false)
 
 	// Multi-key lookup should still work.
-	rows := mgr.FindByM_uint32_key(17)
+	rows := mgr.FindByMUint32Key(17)
 	if len(rows) == 0 {
 		t.Log("no rows with m_uint32_key=17 (may be expected depending on data)")
 	}
@@ -284,5 +282,36 @@ func TestReloadMultiKeyIndicesConsistent(t *testing.T) {
 	_ = mgr.Load(dir, false)
 	if mgr.Count() != countBefore {
 		t.Errorf("count changed after 3rd reload: %d -> %d", countBefore, mgr.Count())
+	}
+}
+
+// 可重复主键必须返回全部匹配行，缺失主键必须返回空结果。
+func TestMultiKeyFindAllByIdReturnsAllRows(t *testing.T) {
+	dir := t.TempDir()
+	fixture := `{"data":[
+ {"id":7,"string_key":"first","uint32_key":101,"int32_key":1},
+ {"id":7,"string_key":"second","uint32_key":102,"int32_key":2},
+ {"id":8,"string_key":"third","uint32_key":103,"int32_key":3}
+]}`
+	if err := os.WriteFile(filepath.Join(dir, "testmultikey.json"), []byte(fixture), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	mgr := NewTestMultiKeyTableManager()
+	if err := mgr.Load(dir, false); err != nil {
+		t.Fatalf("load duplicate-id fixture: %v", err)
+	}
+	rows := mgr.FindAllById(7)
+	if len(rows) != 2 {
+		t.Fatalf("expected both rows for id=7, got %d", len(rows))
+	}
+	if rows[0].Id != 7 || rows[1].Id != 7 || rows[0].StringKey != "first" || rows[1].StringKey != "second" {
+		t.Fatalf("duplicate-id rows must preserve table order, got %v", rows)
+	}
+	other := mgr.FindAllById(8)
+	if len(other) != 1 || other[0].StringKey != "third" {
+		t.Fatalf("expected only the row for id=8, got %v", other)
+	}
+	if missing := mgr.FindAllById(99); len(missing) != 0 {
+		t.Fatalf("expected no rows for missing id=99, got %v", missing)
 	}
 }

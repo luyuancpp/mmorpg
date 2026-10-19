@@ -179,7 +179,13 @@ func OpenMySQL(ctx context.Context, c config.MySQLConf) (*sql.DB, error) {
 	if err != nil {
 		return nil, err
 	}
-	return authoritysql.Open(ctx, dsn, data.DatabaseName, c.RequiresTiDB(), c.MaxOpenConn)
+	maxOpen, maxIdle := c.EffectivePool()
+	db, err := authoritysql.Open(ctx, dsn, data.DatabaseName, c.RequiresTiDB(), maxOpen)
+	if err != nil {
+		return nil, err
+	}
+	db.SetMaxIdleConns(maxIdle)
+	return db, nil
 }
 
 // OpenSchemaMySQL 只用于启动检查与显式迁移，不能交给在线仓储。

@@ -182,6 +182,13 @@ func main() {
 		return
 	}
 
+	// Equip-forge-topup 模式:给一个开发账号补强化石 / 宝石 / 银两后退出,好在真实客户端里点强化与镶嵌
+	// (游戏里没有这些东西的产出,客户端也没有 GM 发物入口)。见 equip_forge_topup_scenario.go 与 etc/equip_forge_topup.yaml。
+	if cfg.Mode == "equip-forge-topup" {
+		RunEquipForgeTopup(cfg)
+		return
+	}
+
 	// Chat-smoke 模式:两个机器人做「全局聊天 go/chat v1」端到端冒烟
 	// (A/B 分登两个 zone → WORLD 发 + 拉 → PRIVATE 发 + 拉 → chat 侧超长拒绝 → 同 request_id 幂等)。
 	// 见 chat_smoke_scenario.go 与 zone 接入契约 v1 §9 冒烟段;前置条件写在 etc/chat_smoke.yaml 文件头。
@@ -214,6 +221,21 @@ func main() {
 		return
 	}
 
+	// Team-follow-smoke 模式:两个机器人做「组队跟随 v1.1」服务端部分的端到端冒烟
+	// (队长走开 → 入队即被瞬移到队长身边 → 可见性重建 → 双向移动广播 → 解散)。
+	// 见 team_follow_smoke_scenario.go 与 docs/design/team-system.md「组队跟随 v1.1」;前置条件写在 etc/team_follow_smoke.yaml 文件头。
+	if cfg.Mode == "team-follow-smoke" {
+		RunTeamFollowSmoke(cfg)
+		return
+	}
+
+	// 队伍补位匹配:A、B 组队选「凑满 3 人」,C 单排同一副本的 3 人档,验证队员取消 / 名单变化整队退出、
+	// 补位成组同场开战。见 team_backfill_smoke_scenario.go 与 docs/design/team-backfill-matching.md §7.3。
+	if cfg.Mode == "team-backfill-smoke" {
+		RunTeamBackfillSmoke(cfg)
+		return
+	}
+
 	// Travel-smoke 模式:单机器人做「跨 zone 场景传送」往返端到端冒烟
 	// (登 home_zone → 非法目标被拒 → TravelToZone{visit_zone} → 跟随 msg 124 严格重登 → 访客区断言 → TravelToZone{home_zone} → 回家不回档)。
 	// 本模式会用「按 player_id 选角、绝不自动建角」的严格重登覆盖上面注册的通用重登(本模式独占进程,覆盖是安全的)。
@@ -229,6 +251,24 @@ func main() {
 	// 见 friend_smoke_scenario.go 与 docs/design/friend-port-20260918.md;前置条件写在 etc/friend_smoke.yaml 文件头。
 	if cfg.Mode == "friend-smoke" {
 		RunFriendSmoke(cfg)
+		return
+	}
+
+	// Mail-smoke 模式:两个机器人做「全局邮件 go/mail」端到端冒烟
+	// (R 与 O 分登两个 zone → 直连 MailAdmin 发系统 / 定向 / 带附件三封 + 同键重放 → 两区都看到系统邮件、只有 R 看到定向邮件
+	//  → 新信推送(弱断言)→ 读信减未读 → 别人读不到 → 领取未开放 → 带附件的删不掉、无附件的可重复删 → S2C 方法与 MailAdmin 对客户端不可调)。
+	// 见 mail_smoke_scenario.go 与 docs/design/mail-system.md §10 ⑦;前置条件(含 MMORPG_MAIL_ADMIN_TOKEN)写在 etc/mail_smoke.yaml 文件头。
+	if cfg.Mode == "mail-smoke" {
+		RunMailSmoke(cfg)
+		return
+	}
+
+	// Rank-smoke 模式:三个机器人做「全服排行榜 go/rank」端到端冒烟
+	// (A、N 登 zone_a、B 登 zone_b → A、B 各读一次榜 → A、B 跨区打一局 1V1 → 轮询到两人都新记一局
+	//  → 分数方向 / 名次先后 / 跨区名字补全 / 页形状 / 未上榜的 self.rank = 0 →(可选)gate 限流)。
+	// 见 rank_smoke_scenario.go 与 docs/design/leaderboard-system.md §8.2;前置条件(含 match 的快照发布开关)写在 etc/rank_smoke.yaml 文件头。
+	if cfg.Mode == "rank-smoke" {
+		RunRankSmoke(cfg)
 		return
 	}
 
@@ -256,6 +296,16 @@ func main() {
 	// 见 sync_smoke_scenario.go 与 docs/design/landing-recovery-sync-digest.md §10 第 6 步;前置条件写在 etc/sync_smoke.yaml 文件头。
 	if cfg.Mode == "sync-smoke" {
 		RunSyncSmoke(cfg)
+		return
+	}
+
+	// merchant-smoke: 单机器人神秘商人冒烟
+	// (登录 → 查询商人在哪条线 → 不在同线就切过去 → 走到站位旁 → 份数 0 / 旧轮次 / 报价对不上被拒
+	//  → GM 加钱后买 1 份并核对余额、背包、已购数 → 买到限购上限后再买被拒)。
+	// 商人不在场 / 不在机器人所在的地图 / 本轮已买满时打印 MERCHANT_SMOKE_SKIP 并以退出码 0 结束。
+	// 见 mystery_merchant_smoke_scenario.go 与 docs/design/mystery-merchant.md;前置条件写在 etc/merchant_smoke.yaml 文件头。
+	if cfg.Mode == "merchant-smoke" {
+		RunMerchantSmoke(cfg)
 		return
 	}
 

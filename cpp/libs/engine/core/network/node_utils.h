@@ -33,7 +33,8 @@ uint32_t GetZoneId();
 //   实例内存里的状态(请求去重、owner_epoch、交接标记都在 Redis),换实例不影响正确性。
 // - 副作用:对每个挂了通道的候选调一次 GetState(tryToConnect=true),把 IDLE 的通道踢去重连;
 //   落到兜底级时可能写一行告警日志。
-// - 只在节点主循环线程调用(读 thread_local 注册表,告警节流状态也是 thread_local);不在 per-tick 路径上。
+// - 只在节点主循环线程调用(读 thread_local 注册表,告警节流状态也是 thread_local;
+//   muduo_grpc::Channel::GetState 还断言在通道所属 loop 线程);不在 per-tick 路径上。
 entt::entity GetSceneManagerEntity(Guid playerId);
 
 namespace scene_manager_selector

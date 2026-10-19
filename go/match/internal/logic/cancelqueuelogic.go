@@ -6,6 +6,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
+	"match/internal/constants"
 	"match/internal/svc"
 
 	base "proto/common/base"
@@ -38,6 +39,7 @@ func NewCancelQueueLogic(ctx context.Context, svcCtx *svc.ServiceContext) *Cance
 //     删票是带 ticket id 且要求仍为 queued 的 Lua CAS(ticketCancelScript):
 //     读票与删票之间 matcher 可能已把他弹出推进 matched,无条件 DEL 会让
 //     "取消太迟"只停留在 Go 侧的一次读,玩家在"取消成功"后仍被冻结进战斗。
+//   - 队伍补位票(票据带 party_id):本人取消成功后整单一起退出(cancelParty)。
 func (l *CancelQueueLogic) CancelQueue(in *matchpb.CancelQueueRequest) (*base.Empty, error) {
 	playerId := authoritativePlayerID(l.ctx, in.PlayerId)
 	if playerId == 0 {
@@ -85,6 +87,19 @@ func (l *CancelQueueLogic) CancelQueue(in *matchpb.CancelQueueRequest) (*base.Em
 	if !deleted {
 		// 读票之后被 matcher 弹出(matched)或已被替换:取消太迟,凑单在途。
 		l.Infof("[match] CancelQueue too late; ticket was popped or replaced after read player=%d ticket=%s", playerId, ticket.Ticket)
+		return &base.Empty{}, nil
+	}
+	if ticket.PartyId != "" {
+		// 队伍补位票(team-backfill-matching.md §4.3):任何一名队员取消 = 整单退出匹配。自己的票已经按上面的
+		// queued CAS 删掉(「取消太迟」的判定仍落在本人票据上),这里撤其余队员的票、把全单从 list 摘掉并通知 team。
+		// 与弹组并发:matcher 推进 matched 时会发现本人票据缺失,整单不进 gather(requeueFront 的完整性规则)。
+		// 撤其余人之前先登记原因:此刻 matcher 可能正扫到这一单(自己的票已删 → 判不完整),或正在对这一单
+		// 逐人推进 matched(队友的票已 matched → 取消对他「太迟」,由 matcher 回队首时收尾并通知)。
+		// 不论最后由谁通知,全队看到的都是「某某取消了匹配」,而不是「队员未就绪」。
+		claimPartyEndReason(l.svcCtx, ticket.PartyId, constants.PartyEndCanceled, playerId)
+		members := cancelParty(l.svcCtx, ticket, constants.PartyEndCanceled, playerId)
+		l.Infof("[match] Party backfill cancelled by member player=%d team=%d config=%d queue=%s members=%v",
+			playerId, ticket.TeamId, ticket.Config, ticket.QueueKey, members)
 		return &base.Empty{}, nil
 	}
 	// 出队用票据里记录的 QueueKey(决策 D4);改 key 格式前写的旧票据没有

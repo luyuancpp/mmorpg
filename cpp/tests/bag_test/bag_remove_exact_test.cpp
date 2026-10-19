@@ -197,6 +197,7 @@ TEST_F(BagRemoveExactTest, DeductsExactlyTheRequestedAmountAndLogsOncePerDrained
 	EXPECT_EQ(2u, bag.OccupiedGridCount());
 	EXPECT_EQ(nullptr, bag.GetItemCompByGuid(kGuidA));
 	EXPECT_EQ(kInvalidU32Id, bag.GetItemPosByGuid(kGuidA));
+	EXPECT_EQ(2u, bag.GridSlotCount());
 	EXPECT_EQ(nullptr, bag.GetItemCompByPos(0));
 	EXPECT_EQ(1u, bag.GetItemPosByGuid(kGuidB));
 	EXPECT_EQ(before.at(kGuidC), Capture(bag).at(kGuidC))
@@ -232,6 +233,7 @@ TEST_F(BagRemoveExactTest, DeductsEveryConfigOfAMultiConfigRequest)
 	}
 	EXPECT_EQ(0u, bag.GetItemPosByGuid(kGuidA));
 	EXPECT_EQ(4u, bag.GetItemPosByGuid(kGuidE));
+	EXPECT_EQ(2u, bag.GridSlotCount());
 	EXPECT_TRUE(bag.IsLayerConsistent());
 }
 

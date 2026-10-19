@@ -25,6 +25,8 @@ import (
 	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/proto"
 	base "proto/common/base"
+	"shared/grpcstats"
+	"shared/killswitch"
 	"shared/noderegistry"
 	"shared/serverbase"
 )
@@ -33,6 +35,7 @@ type Config struct {
 	zrpc.RpcServerConf
 	ZoneId            uint32             `json:"ZoneId,default=1"`
 	MetricsListenAddr string             `json:"MetricsListenAddr"`
+	KillSwitchPrefix  string             `json:"KillSwitchPrefix,optional"`
 	AdvertiseHost     string             `json:"AdvertiseHost,optional"`
 	DSNEnv            string             `json:"DSNEnv"`
 	RequireTiDB       bool               `json:"RequireTiDB,default=true"`
@@ -104,6 +107,11 @@ func Guard(clientMethods map[string]bool, budget time.Duration) grpc.UnaryServer
 
 // Serve先监听再注册NodeInfo；返回前注销、关闭入口并有界等待在途处理。
 func Serve(ctx context.Context, c Config, nodeType base.ENodeType, clients map[string]bool, register func(*grpc.Server)) (runErr error) {
+	ctx, cancelServe := context.WithCancel(ctx)
+	defer cancelServe()
+	kill := killswitch.New(killswitch.Config{Prefix: c.KillSwitchPrefix})
+	traffic := grpcstats.New(grpcstats.Options{})
+	defer traffic.Disable()
 	// 使用仓库统一go-zero服务；NodeInfo由下面的单一注册生命周期负责，
 	// 禁止框架再写一套纯endpoint的Etcd发布键。
 	rpcConfig := c.RpcServerConf
@@ -129,7 +137,7 @@ func Serve(ctx context.Context, c Config, nodeType base.ENodeType, clients map[s
 		return err
 	}
 	framework.AddOptions(grpc.MaxRecvMsgSize(4 << 20))
-	framework.AddUnaryInterceptors(Guard(clients, time.Duration(c.Timeout-500)*time.Millisecond), serverbase.UnaryInterceptor(serverbase.Options{}))
+	framework.AddUnaryInterceptors(Guard(clients, time.Duration(c.Timeout-500)*time.Millisecond), traffic.UnaryServerInterceptor(), kill.UnaryServerInterceptor(), serverbase.UnaryInterceptor(serverbase.Options{}))
 	done := make(chan error, 1)
 	go func() {
 		var failure error
@@ -205,6 +213,7 @@ func Serve(ctx context.Context, c Config, nodeType base.ENodeType, clients map[s
 	if err != nil {
 		return err
 	}
+	kill.Start(ctx, etcd)
 	host, portText, err := net.SplitHostPort(c.ListenOn)
 	if err != nil {
 		return err

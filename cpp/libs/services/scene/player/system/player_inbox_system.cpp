@@ -18,6 +18,7 @@
 #include "engine/core/type_define/player_guid_comp.h"
 #include "core/network/grpc_call_types.h"          // kGrpcStatusUnimplemented
 #include "grpc_client/player_inbox/player_inbox_grpc_client.h"
+#include "muduo_grpc/channel.h"                 // 选点读 muduo_grpc::Channel::GetState / ConnectivityState
 #include "network/node_utils.h"                 // GetNodeInfo:Fetch 带上本节点 node_id(只用于对端日志)
 #include "node/system/grpc_call_deadline.h"     // 在途超时从 PlayerInboxNodeService 的 gRPC deadline 派生
 #include "node/system/node/muduo_grpc_channel_slot.h"

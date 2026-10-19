@@ -300,6 +300,7 @@ namespace teampb {
 enum TeamMatchState : int {
   TEAM_MATCH_STATE_IDLE = 0,
   TEAM_MATCH_STATE_STARTING = 1,
+  TEAM_MATCH_STATE_QUEUED = 2,
   TeamMatchState_INT_MIN_SENTINEL_DO_NOT_USE_ =
       ::std::numeric_limits<::int32_t>::min(),
   TeamMatchState_INT_MAX_SENTINEL_DO_NOT_USE_ =
@@ -310,11 +311,11 @@ extern const uint32_t TeamMatchState_internal_data_[];
 inline constexpr TeamMatchState TeamMatchState_MIN =
     static_cast<TeamMatchState>(0);
 inline constexpr TeamMatchState TeamMatchState_MAX =
-    static_cast<TeamMatchState>(1);
+    static_cast<TeamMatchState>(2);
 [[nodiscard]] inline bool TeamMatchState_IsValid(int value) {
-  return 0 <= value && value <= 1;
+  return 0 <= value && value <= 2;
 }
-inline constexpr int TeamMatchState_ARRAYSIZE = 1 + 1;
+inline constexpr int TeamMatchState_ARRAYSIZE = 2 + 1;
 [[nodiscard]] const ::google::protobuf::EnumDescriptor* PROTOBUF_NONNULL
 TeamMatchState_descriptor();
 [[nodiscard]] inline auto ProtobufInternalGetEnumDescriptor(TeamMatchState) {
@@ -329,7 +330,7 @@ template <typename T>
 }
 template <>
 [[nodiscard]] inline const ::std::string& TeamMatchState_Name(TeamMatchState value) {
-  return ::google::protobuf::internal::NameOfDenseEnum<TeamMatchState_descriptor, 0, 1>(
+  return ::google::protobuf::internal::NameOfDenseEnum<TeamMatchState_descriptor, 0, 2>(
       static_cast<int>(value));
 }
 [[nodiscard]] inline bool TeamMatchState_Parse(
@@ -353,6 +354,8 @@ enum TeamChangeReason : int {
   TEAM_CHANGE_REASON_MATCH_ENDED = 12,
   TEAM_CHANGE_REASON_MATCH_FAILED = 13,
   TEAM_CHANGE_REASON_HEALED = 14,
+  TEAM_CHANGE_REASON_MATCH_QUEUED = 15,
+  TEAM_CHANGE_REASON_MATCH_QUEUE_CANCELED = 16,
   TeamChangeReason_INT_MIN_SENTINEL_DO_NOT_USE_ =
       ::std::numeric_limits<::int32_t>::min(),
   TeamChangeReason_INT_MAX_SENTINEL_DO_NOT_USE_ =
@@ -363,11 +366,11 @@ extern const uint32_t TeamChangeReason_internal_data_[];
 inline constexpr TeamChangeReason TeamChangeReason_MIN =
     static_cast<TeamChangeReason>(0);
 inline constexpr TeamChangeReason TeamChangeReason_MAX =
-    static_cast<TeamChangeReason>(14);
+    static_cast<TeamChangeReason>(16);
 [[nodiscard]] inline bool TeamChangeReason_IsValid(int value) {
-  return 0 <= value && value <= 14;
+  return 0 <= value && value <= 16;
 }
-inline constexpr int TeamChangeReason_ARRAYSIZE = 14 + 1;
+inline constexpr int TeamChangeReason_ARRAYSIZE = 16 + 1;
 [[nodiscard]] const ::google::protobuf::EnumDescriptor* PROTOBUF_NONNULL
 TeamChangeReason_descriptor();
 [[nodiscard]] inline auto ProtobufInternalGetEnumDescriptor(TeamChangeReason) {
@@ -382,7 +385,7 @@ template <typename T>
 }
 template <>
 [[nodiscard]] inline const ::std::string& TeamChangeReason_Name(TeamChangeReason value) {
-  return ::google::protobuf::internal::NameOfDenseEnum<TeamChangeReason_descriptor, 0, 14>(
+  return ::google::protobuf::internal::NameOfDenseEnum<TeamChangeReason_descriptor, 0, 16>(
       static_cast<int>(value));
 }
 [[nodiscard]] inline bool TeamChangeReason_Parse(
@@ -2312,6 +2315,7 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED StartTeamMatchRequest final : publi
     kRequestIdFieldNumber = 3,
     kExpectedTeamIdFieldNumber = 2,
     kBattleConfigIdFieldNumber = 1,
+    kTargetTeamSizeFieldNumber = 4,
   };
   // string request_id = 3;
   void clear_request_id() ;
@@ -2348,11 +2352,21 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED StartTeamMatchRequest final : publi
   void _internal_set_battle_config_id(::uint32_t value);
 
   public:
+  // uint32 target_team_size = 4;
+  void clear_target_team_size() ;
+  [[nodiscard]] ::uint32_t target_team_size() const;
+  void set_target_team_size(::uint32_t value);
+
+  private:
+  ::uint32_t _internal_target_team_size() const;
+  void _internal_set_target_team_size(::uint32_t value);
+
+  public:
   // @@protoc_insertion_point(class_scope:teampb.StartTeamMatchRequest)
  private:
   class _Internal;
   using ParseTableT_ =
-      ::google::protobuf::internal::TcParseTable<2, 3,
+      ::google::protobuf::internal::TcParseTable<2, 4,
                           0, 47,
                           2>;
   static constexpr ParseTableT_ InternalGenerateParseTable_(
@@ -2384,6 +2398,7 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED StartTeamMatchRequest final : publi
     ::google::protobuf::internal::ArenaStringPtr request_id_;
     ::uint64_t expected_team_id_;
     ::uint32_t battle_config_id_;
+    ::uint32_t target_team_size_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
   union { Impl_ _impl_; };
@@ -3744,6 +3759,7 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED GetMyTeamRequest final : public ::g
   enum : int {
     kMatchRequestIdFieldNumber = 2,
     kNotifyOnlineFieldNumber = 1,
+    kRegroupFieldNumber = 3,
   };
   // string match_request_id = 2;
   void clear_match_request_id() ;
@@ -3770,11 +3786,21 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED GetMyTeamRequest final : public ::g
   void _internal_set_notify_online(bool value);
 
   public:
+  // bool regroup = 3;
+  void clear_regroup() ;
+  [[nodiscard]] bool regroup() const;
+  void set_regroup(bool value);
+
+  private:
+  bool _internal_regroup() const;
+  void _internal_set_regroup(bool value);
+
+  public:
   // @@protoc_insertion_point(class_scope:teampb.GetMyTeamRequest)
  private:
   class _Internal;
   using ParseTableT_ =
-      ::google::protobuf::internal::TcParseTable<1, 2,
+      ::google::protobuf::internal::TcParseTable<2, 3,
                           0, 48,
                           2>;
   static constexpr ParseTableT_ InternalGenerateParseTable_(
@@ -3805,6 +3831,7 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED GetMyTeamRequest final : public ::g
     ::google::protobuf::internal::CachedSize _cached_size_;
     ::google::protobuf::internal::ArenaStringPtr match_request_id_;
     bool notify_online_;
+    bool regroup_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
   union { Impl_ _impl_; };
@@ -5599,6 +5626,10 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED TeamView final : public ::google::p
     kMatchStateFieldNumber = 7,
     kApplicationCountFieldNumber = 11,
     kServerTimeMsFieldNumber = 12,
+    kMatchQueuedAtMsFieldNumber = 14,
+    kMatchTargetSizeFieldNumber = 13,
+    kMatchBattleConfigIdFieldNumber = 15,
+    kMatchFillSupportedFieldNumber = 16,
   };
   // repeated .teampb.TeamMemberView members = 8;
   [[nodiscard]] int members_size()
@@ -5753,11 +5784,51 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED TeamView final : public ::google::p
   void _internal_set_server_time_ms(::uint64_t value);
 
   public:
+  // uint64 match_queued_at_ms = 14;
+  void clear_match_queued_at_ms() ;
+  [[nodiscard]] ::uint64_t match_queued_at_ms() const;
+  void set_match_queued_at_ms(::uint64_t value);
+
+  private:
+  ::uint64_t _internal_match_queued_at_ms() const;
+  void _internal_set_match_queued_at_ms(::uint64_t value);
+
+  public:
+  // uint32 match_target_size = 13;
+  void clear_match_target_size() ;
+  [[nodiscard]] ::uint32_t match_target_size() const;
+  void set_match_target_size(::uint32_t value);
+
+  private:
+  ::uint32_t _internal_match_target_size() const;
+  void _internal_set_match_target_size(::uint32_t value);
+
+  public:
+  // uint32 match_battle_config_id = 15;
+  void clear_match_battle_config_id() ;
+  [[nodiscard]] ::uint32_t match_battle_config_id() const;
+  void set_match_battle_config_id(::uint32_t value);
+
+  private:
+  ::uint32_t _internal_match_battle_config_id() const;
+  void _internal_set_match_battle_config_id(::uint32_t value);
+
+  public:
+  // bool match_fill_supported = 16;
+  void clear_match_fill_supported() ;
+  [[nodiscard]] bool match_fill_supported() const;
+  void set_match_fill_supported(bool value);
+
+  private:
+  bool _internal_match_fill_supported() const;
+  void _internal_set_match_fill_supported(bool value);
+
+  public:
   // @@protoc_insertion_point(class_scope:teampb.TeamView)
  private:
   class _Internal;
   using ParseTableT_ =
-      ::google::protobuf::internal::TcParseTable<4, 12,
+      ::google::protobuf::internal::TcParseTable<4, 16,
                           3, 0,
                           2>;
   static constexpr ParseTableT_ InternalGenerateParseTable_(
@@ -5798,6 +5869,10 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED TeamView final : public ::google::p
     int match_state_;
     ::uint32_t application_count_;
     ::uint64_t server_time_ms_;
+    ::uint64_t match_queued_at_ms_;
+    ::uint32_t match_target_size_;
+    ::uint32_t match_battle_config_id_;
+    bool match_fill_supported_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
   union { Impl_ _impl_; };
@@ -6865,6 +6940,30 @@ inline void GetMyTeamRequest::set_allocated_match_request_id(::std::string* PROT
   // @@protoc_insertion_point(field_set_allocated:teampb.GetMyTeamRequest.match_request_id)
 }
 
+// bool regroup = 3;
+inline void GetMyTeamRequest::clear_regroup() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.regroup_ = false;
+  ClearHasBit(_impl_._has_bits_[0], 0x00000004U);
+}
+inline bool GetMyTeamRequest::regroup() const {
+  // @@protoc_insertion_point(field_get:teampb.GetMyTeamRequest.regroup)
+  return _internal_regroup();
+}
+inline void GetMyTeamRequest::set_regroup(bool value) {
+  _internal_set_regroup(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000004U);
+  // @@protoc_insertion_point(field_set:teampb.GetMyTeamRequest.regroup)
+}
+inline bool GetMyTeamRequest::_internal_regroup() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.regroup_;
+}
+inline void GetMyTeamRequest::_internal_set_regroup(bool value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.regroup_ = value;
+}
+
 // -------------------------------------------------------------------
 
 // ApplyJoinTeamRequest
@@ -7351,6 +7450,30 @@ inline void StartTeamMatchRequest::set_allocated_request_id(::std::string* PROTO
     _impl_.request_id_.Set("", GetArena());
   }
   // @@protoc_insertion_point(field_set_allocated:teampb.StartTeamMatchRequest.request_id)
+}
+
+// uint32 target_team_size = 4;
+inline void StartTeamMatchRequest::clear_target_team_size() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.target_team_size_ = 0u;
+  ClearHasBit(_impl_._has_bits_[0], 0x00000008U);
+}
+inline ::uint32_t StartTeamMatchRequest::target_team_size() const {
+  // @@protoc_insertion_point(field_get:teampb.StartTeamMatchRequest.target_team_size)
+  return _internal_target_team_size();
+}
+inline void StartTeamMatchRequest::set_target_team_size(::uint32_t value) {
+  _internal_set_target_team_size(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000008U);
+  // @@protoc_insertion_point(field_set:teampb.StartTeamMatchRequest.target_team_size)
+}
+inline ::uint32_t StartTeamMatchRequest::_internal_target_team_size() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.target_team_size_;
+}
+inline void StartTeamMatchRequest::_internal_set_target_team_size(::uint32_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.target_team_size_ = value;
 }
 
 // -------------------------------------------------------------------
@@ -9167,6 +9290,102 @@ inline ::uint64_t TeamView::_internal_server_time_ms() const {
 inline void TeamView::_internal_set_server_time_ms(::uint64_t value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.server_time_ms_ = value;
+}
+
+// uint32 match_target_size = 13;
+inline void TeamView::clear_match_target_size() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.match_target_size_ = 0u;
+  ClearHasBit(_impl_._has_bits_[0], 0x00002000U);
+}
+inline ::uint32_t TeamView::match_target_size() const {
+  // @@protoc_insertion_point(field_get:teampb.TeamView.match_target_size)
+  return _internal_match_target_size();
+}
+inline void TeamView::set_match_target_size(::uint32_t value) {
+  _internal_set_match_target_size(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00002000U);
+  // @@protoc_insertion_point(field_set:teampb.TeamView.match_target_size)
+}
+inline ::uint32_t TeamView::_internal_match_target_size() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.match_target_size_;
+}
+inline void TeamView::_internal_set_match_target_size(::uint32_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.match_target_size_ = value;
+}
+
+// uint64 match_queued_at_ms = 14;
+inline void TeamView::clear_match_queued_at_ms() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.match_queued_at_ms_ = ::uint64_t{0u};
+  ClearHasBit(_impl_._has_bits_[0], 0x00001000U);
+}
+inline ::uint64_t TeamView::match_queued_at_ms() const {
+  // @@protoc_insertion_point(field_get:teampb.TeamView.match_queued_at_ms)
+  return _internal_match_queued_at_ms();
+}
+inline void TeamView::set_match_queued_at_ms(::uint64_t value) {
+  _internal_set_match_queued_at_ms(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00001000U);
+  // @@protoc_insertion_point(field_set:teampb.TeamView.match_queued_at_ms)
+}
+inline ::uint64_t TeamView::_internal_match_queued_at_ms() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.match_queued_at_ms_;
+}
+inline void TeamView::_internal_set_match_queued_at_ms(::uint64_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.match_queued_at_ms_ = value;
+}
+
+// uint32 match_battle_config_id = 15;
+inline void TeamView::clear_match_battle_config_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.match_battle_config_id_ = 0u;
+  ClearHasBit(_impl_._has_bits_[0], 0x00004000U);
+}
+inline ::uint32_t TeamView::match_battle_config_id() const {
+  // @@protoc_insertion_point(field_get:teampb.TeamView.match_battle_config_id)
+  return _internal_match_battle_config_id();
+}
+inline void TeamView::set_match_battle_config_id(::uint32_t value) {
+  _internal_set_match_battle_config_id(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00004000U);
+  // @@protoc_insertion_point(field_set:teampb.TeamView.match_battle_config_id)
+}
+inline ::uint32_t TeamView::_internal_match_battle_config_id() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.match_battle_config_id_;
+}
+inline void TeamView::_internal_set_match_battle_config_id(::uint32_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.match_battle_config_id_ = value;
+}
+
+// bool match_fill_supported = 16;
+inline void TeamView::clear_match_fill_supported() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.match_fill_supported_ = false;
+  ClearHasBit(_impl_._has_bits_[0], 0x00008000U);
+}
+inline bool TeamView::match_fill_supported() const {
+  // @@protoc_insertion_point(field_get:teampb.TeamView.match_fill_supported)
+  return _internal_match_fill_supported();
+}
+inline void TeamView::set_match_fill_supported(bool value) {
+  _internal_set_match_fill_supported(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00008000U);
+  // @@protoc_insertion_point(field_set:teampb.TeamView.match_fill_supported)
+}
+inline bool TeamView::_internal_match_fill_supported() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.match_fill_supported_;
+}
+inline void TeamView::_internal_set_match_fill_supported(bool value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.match_fill_supported_ = value;
 }
 
 // -------------------------------------------------------------------

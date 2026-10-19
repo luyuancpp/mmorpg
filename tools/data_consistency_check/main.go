@@ -53,12 +53,13 @@ import (
 // CheckResult is one row in the consistency report.
 //
 // Severity policy:
-//   info  — observation, no action needed
-//   warn  — pre-existing data quality issue (orphans, abandoned tombstones)
-//   block — active inconsistency that will cause player-visible bugs
-//           (e.g. guild row pointing to a non-existent zone after merge)
-//   fail  — 检查没能跑完(依赖读失败),结论未知;与 block 一样让进程退出 1。
-//           「读失败」绝不折算成孤儿或通过(2026-10-18,spec_D1_batch1b2_2_3.md §5.5)。
+//
+//	info  — observation, no action needed
+//	warn  — pre-existing data quality issue (orphans, abandoned tombstones)
+//	block — active inconsistency that will cause player-visible bugs
+//	        (e.g. guild row pointing to a non-existent zone after merge)
+//	fail  — 检查没能跑完(依赖读失败),结论未知;与 block 一样让进程退出 1。
+//	        「读失败」绝不折算成孤儿或通过(2026-10-18,spec_D1_batch1b2_2_3.md §5.5)。
 type CheckResult struct {
 	Name        string
 	Severity    string // "info" / "warn" / "block" / "fail"
@@ -88,7 +89,11 @@ type runConfig struct {
 	// 本文件 2026-05-23 的教训就是「优雅降级」把没跑的检查读成了干净通过。
 	friendDB *sql.DB
 	// routes 是玩家归属的读法:-route-db-dsn 给了是 player_route(db 口径),否则是 mapping Redis(redis 口径)。
-	routes     routeSource
+	routes routeSource
+	// mailDB 是邮件独占库 mmorpg_mail 的连接(docs/design/mail-system.md §7.4,D-14)。理由与 friendDB 逐条相同:
+	// -mysql-dsn 那个库里没有 mail 的表;单独一个 DSN 让运维能指到别处(TiDB 迁移期两个库不一定同实例),
+	// 也能在还没部署 mail 的环境里显式不配。nil = 没连上或没配,checkMailSystemStateOrphans 报 warn「NOT CHECKED」。
+	mailDB     *sql.DB
 	knownZones map[uint32]struct{} // zones we expect to be live
 	// guildSchema: the guild service's own database (-guild-schema). Guild
 	// tables moved out of the default DSN database into mmorpg_guild, so
@@ -106,6 +111,10 @@ func main() {
 	// 此时 friend 那条检查报 warn「NOT CHECKED」,不会伪装成通过。
 	friendDSN := flag.String("friend-mysql-dsn", "root:@tcp(127.0.0.1:3306)/mmorpg_friend?charset=utf8mb4&parseTime=true&loc=Local",
 		"MySQL DSN for the friend-only database (go/friend forces MySQL.DBName=mmorpg_friend). Empty = skip the friend check and report it as NOT CHECKED")
+	// mail 住独占库 mmorpg_mail(D-14,go/mail 的 config.Validate 断言 DBName == mmorpg_mail)。缺省值与 friend 同形,只换库名;
+	// 置空 = 显式声明「本环境没有 mail」,mail 那条检查报 warn「NOT CHECKED」。
+	mailDSN := flag.String("mail-mysql-dsn", "root:@tcp(127.0.0.1:3306)/mmorpg_mail?charset=utf8mb4&parseTime=true&loc=Local",
+		"SQL DSN for the current M2/M3 mail-only database (same target as mail DSNEnv). Empty = skip the mail check and report it as NOT CHECKED")
 	redisAddr := flag.String("redis-addr", "127.0.0.1:6379", "Mapping redis address (player:zone:* keys)")
 	redisPwd := flag.String("redis-password", "", "Mapping redis password")
 	redisDB := flag.Int("redis-db", 0, "Mapping redis DB number")
@@ -140,9 +149,9 @@ func main() {
 		log.Fatalf("mysql ping: %v", err)
 	}
 
-	// friend 库的连接:连不上**不** Fatal。它只喂一条检查,为它放弃另外三条不划算;
+	// friend 库的连接:连不上**不** Fatal。它只喂一条检查,为它放弃另外四条不划算;
 	// 检查本身会把「没查成」如实报成 warn。这与主库的 log.Fatalf 口径不同是刻意的 ——
-	// 主库挂了四条检查全跑不了,那才是真的没结果。
+	// 主库挂了五条检查全跑不了,那才是真的没结果。
 	var friendDB *sql.DB
 	if *friendDSN != "" {
 		fdb, err := sql.Open("mysql", *friendDSN)
@@ -154,6 +163,22 @@ func main() {
 				log.Printf("ERROR: friend mysql ping: %v — the friend check will report NOT CHECKED", err)
 			} else {
 				friendDB = fdb
+			}
+		}
+	}
+
+	// mail 库的连接:与 friend 同一口径,连不上不 Fatal,由那条检查如实报 NOT CHECKED。
+	var mailDB *sql.DB
+	if *mailDSN != "" {
+		mdb, err := sql.Open("mysql", *mailDSN)
+		if err != nil {
+			log.Printf("ERROR: mail mysql open: %v — the mail check will report NOT CHECKED", err)
+		} else {
+			defer mdb.Close()
+			if err := mdb.PingContext(ctx); err != nil {
+				log.Printf("ERROR: mail mysql ping: %v — the mail check will report NOT CHECKED", err)
+			} else {
+				mailDB = mdb
 			}
 		}
 	}
@@ -225,7 +250,7 @@ func main() {
 	}
 	log.Printf("Live zones: %v", sortedKeys(knownZones))
 
-	cfg := runConfig{db: db, mappingDB: rdb, friendDB: friendDB, routes: routes, knownZones: knownZones, guildSchema: *guildSchema}
+	cfg := runConfig{db: db, mappingDB: rdb, friendDB: friendDB, routes: routes, mailDB: mailDB, knownZones: knownZones, guildSchema: *guildSchema}
 
 	// ── run checks ───────────────────────────────────────────────
 	//
@@ -233,13 +258,15 @@ func main() {
 	// runner included `checkMailRecipientOrphans` against a non-existent
 	// `mail` table — the missing-table error path silently returned
 	// "info: not present" and operators read the run as clean. Removed.
-	// The four checks below all exercise schema that actually exists
-	// (`guild`, `guild_rank:zone:*` Redis keys, `user_accounts`, `friend`).
+	// The five checks below all exercise schema that actually exists
+	// (`guild`, `guild_rank:zone:*` Redis keys, `user_accounts`, `friend`,
+	// and since 2026-10-16 go/mail's `mail_system_state` / `mail_system`).
 	checks := []func(context.Context, runConfig) CheckResult{
 		checkGuildZoneFK,
 		checkGuildRankZoneOrphans,
 		checkPlayerHomeZoneVsAccount,
 		checkFriendOrphans,
+		checkMailSystemStateOrphans,
 	}
 	results := make([]CheckResult, 0, len(checks)+1)
 	results = append(results, shape)
@@ -520,12 +547,75 @@ func friendCheckFailed(r CheckResult, why string) CheckResult {
 	return r
 }
 
-// checkMailRecipientOrphans was removed 2026-05-23. The `mail` table
-// does not exist in this codebase (verified against deploy/mysql-init/
-// and go/db/model/mysql_database_table.sql); mail-as-a-service has not
-// been built yet. The earlier function silently degraded to "info: table
-// not present" which read as a clean pass. When mail Go service ships,
-// re-add a sibling check; until then the absence keeps reports honest.
+// checkMailSystemStateOrphans — mail_state 里 mail_id 在 mail_message 中不存在的行
+// (docs/design/mail-system.md §7.4 / D-14 §9;§10 ⑧ 判的是这一行 bad == 0)。
+//
+// 现役 M2/M3 状态引用 mail_message.mail_id；清理顺序必须先处理状态与资产意图。
+// 出现孤儿只能是绕过服务直接写库,或删除顺序被改坏。孤儿 state 行玩家看不到(读路径以系统行为准),
+// 所以 > 0 报 warn 而不是 block;但它没有任何自动清理路径(唯一的清理索引就是 mail_id),要人工处理。
+//
+// 2026-05-23 删掉的旧 checkMailRecipientOrphans(收件人是否存在)**刻意不加回**:mail 不校验收件人是否存在
+// (proto/mail/mail_admin.proto:发给不存在的 id 只是一封没人看的信),那条检查查的不是一个不变量。
+//
+// 句柄缺失 / 表读不了 / 查询失败一律报 warn「NOT CHECKED」,不报 info(理由同 checkFriendOrphans)。
+//
+// **计数单位是 mail_id,不是 state 行**:mail_state 的行数 ≈ 读过或删过系统邮件的玩家数 × 有效系统邮件数
+// (上限 MaxActiveSystemMails),大服可到上亿行;逐行 NOT EXISTS 要把整个索引扫一遍,单项预算 60s 内跑不完就只能报
+// NOT CHECKED,§10 ⑧ 永远拿不到 bad=0。先 DISTINCT mail_id(查询仍受工具上下文预算约束,不承诺M1索引仍存在,
+// 结果至多是历史系统邮件封数的量级)再对 mail_message 主键做反连接,所以 TotalCount = state 引用到的不同 mail_id 数,
+// BadCount = 其中在 mail_message 里已不存在的个数。要某个孤儿 id 的残留行数,拿样例 id 按同一索引点查即可。
+func checkMailSystemStateOrphans(ctx context.Context, cfg runConfig) CheckResult {
+	r := CheckResult{Name: "mail_state.mail_id"}
+	if cfg.mailDB == nil {
+		r.Severity = "warn"
+		r.SampleNotes = "NOT CHECKED: no mmorpg_mail handle (-mail-mysql-dsn empty or unreachable)"
+		return r
+	}
+	const distinctIDs = "(SELECT DISTINCT mail_id FROM mail_state) d"
+	const orphanFilter = " WHERE NOT EXISTS (SELECT 1 FROM mail_message m WHERE m.mail_id = d.mail_id)"
+	if err := cfg.mailDB.QueryRowContext(ctx, "SELECT COUNT(*) FROM "+distinctIDs).Scan(&r.TotalCount); err != nil {
+		r.Severity = "warn"
+		r.SampleNotes = fmt.Sprintf("NOT CHECKED: mail_state unreadable in mmorpg_mail: %v "+
+			"(表由 go/schemamigrate 建:mail -f etc/mail.yaml -migrate)", err)
+		return r
+	}
+	if err := cfg.mailDB.QueryRowContext(ctx, "SELECT COUNT(*) FROM "+distinctIDs+orphanFilter).Scan(&r.BadCount); err != nil {
+		r.Severity = "warn"
+		r.SampleNotes = fmt.Sprintf("NOT CHECKED: orphan count query failed: %v", err)
+		return r
+	}
+	if r.BadCount == 0 {
+		r.Severity = "info"
+		r.SampleNotes = fmt.Sprintf("0 orphan mail_id among %d distinct ids referenced by state rows", r.TotalCount)
+		return r
+	}
+	r.Severity = "warn"
+	// 样例只取前几个 mail_id,帮运维定位是哪封系统邮件的残留;查样例失败不影响计数结论,但要如实写出来(不给一个看似完整的空列表)。
+	r.SampleNotes = fmt.Sprintf("%d mail_id referenced by mail_state are missing from mail_message (e.g. [%s]) — no automatic cleanup path, investigate writes that bypassed go/mail",
+		r.BadCount, mailOrphanSamples(ctx, cfg.mailDB, "SELECT d.mail_id FROM "+distinctIDs+orphanFilter+" ORDER BY d.mail_id LIMIT 5"))
+	return r
+}
+
+// mailOrphanSamples 跑样例查询,返回逗号分隔的 id;查询、扫描或迭代失败时返回带原因的说明,不静默给出半截列表。
+func mailOrphanSamples(ctx context.Context, db *sql.DB, query string) string {
+	rows, err := db.QueryContext(ctx, query)
+	if err != nil {
+		return fmt.Sprintf("samples unavailable: %v", err)
+	}
+	defer rows.Close()
+	samples := make([]string, 0, 5)
+	for rows.Next() {
+		var id uint64
+		if err := rows.Scan(&id); err != nil {
+			return fmt.Sprintf("samples unavailable: scan: %v", err)
+		}
+		samples = append(samples, strconv.FormatUint(id, 10))
+	}
+	if err := rows.Err(); err != nil {
+		return fmt.Sprintf("samples unavailable: %v", err)
+	}
+	return strings.Join(samples, ",")
+}
 
 // printReport renders a markdown-ish table to stdout.
 // Returns the number of block- and fail-severity rows so main can exit non-zero.

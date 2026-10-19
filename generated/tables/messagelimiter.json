@@ -485,6 +485,42 @@
    "max_requests": 5,
    "time_window": 1,
    "tip_message": 1000
+  },
+  {
+   "id": 273,
+   "max_requests": 5,
+   "time_window": 1,
+   "tip_message": 1000
+  },
+  {
+   "id": 269,
+   "max_requests": 10,
+   "time_window": 1,
+   "tip_message": 1000
+  },
+  {
+   "id": 274,
+   "max_requests": 3,
+   "time_window": 1,
+   "tip_message": 1000
+  },
+  {
+   "id": 267,
+   "max_requests": 3,
+   "time_window": 1,
+   "tip_message": 1000
+  },
+  {
+   "id": 270,
+   "max_requests": 3,
+   "time_window": 1,
+   "tip_message": 1000
+  },
+  {
+   "id": 275,
+   "max_requests": 5,
+   "time_window": 1,
+   "tip_message": 1000
   }
  ]
 }

@@ -1,6 +1,7 @@
 package _go
 
 import (
+	"bytes"
 	"os"
 	"path/filepath"
 	"strings"
@@ -10,6 +11,7 @@ import (
 
 	"protogen/internal"
 	_config "protogen/internal/config"
+	"protogen/internal/utils"
 	"protogen/logger"
 
 	"go.uber.org/zap"
@@ -108,15 +110,6 @@ func generateHandlerFile(fileName, handlerName, responseType, importDir string) 
 		logger.Global.Fatal("Failed to generate handler file: file path is empty")
 	}
 
-	file, err := os.Create(fileName)
-	if err != nil {
-		logger.Global.Fatal("Failed to create handler file",
-			zap.String("file_name", fileName),
-			zap.Error(err),
-		)
-	}
-	defer file.Close()
-
 	tmpl, err := template.ParseFiles("internal/template/robot_handler.go.tmpl")
 	if err != nil {
 		logger.Global.Fatal("Failed to parse handler template",
@@ -137,7 +130,11 @@ func generateHandlerFile(fileName, handlerName, responseType, importDir string) 
 		zap.String("response_type", responseType),
 	)
 
-	return tmpl.Execute(file, data)
+	var content bytes.Buffer
+	if err := tmpl.Execute(&content, data); err != nil {
+		return err
+	}
+	return utils.WriteFileIfChanged(fileName, content.Bytes())
 }
 
 // fileExists checks if a file already exists.

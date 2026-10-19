@@ -117,6 +117,9 @@ set(SOURCE_FILES
     player/system/player_attribute.cpp
     player/system/player_pet.cpp
     player/system/player_equip.cpp
+    # 神秘商人(docs/design/mystery-merchant.md §5):读记录、公告、查询、购买。
+    # 纯规则头 mystery_merchant_rules.h 与 player_mystery_merchant.h 不需要登记(CMake 只列编译单元)。
+    player/system/player_mystery_merchant.cpp
     player/system/player_tip.cpp
     player/system/stress_test_probe.cpp
     player/system/bag_marshal.cpp

@@ -7,9 +7,9 @@
     运行日志：run/logs/game-launcher。服务在后台运行，关闭启动窗口不影响服务。
 .PARAMETER GateRouterMode
     gate 的客户端 RPC 路由模式（环境变量 GATE_CLIENT_RPC_ROUTER，cpp/nodes/gate/gate_router_mode.h），
-    默认 '1' = 开：gate 只连 client_rpc_router，登录 / 匹配 / 聊天 / 帮会 / 好友 / 聚宝斋都经路由服转发。
-    '0' = 回退到旧的逐服务直连：**直连模式下 chat / guild / friend / trade 不可达**——gate 直连白名单（cpp/nodes/gate/main.cpp）里没有
-    Chat / Guild / Friend / Trade，进程照样在跑，但任何玩家的这些请求都到不了它们（docs/design/client-rpc-router.md D34）。
+    默认 '1' = 开：gate 只连 client_rpc_router，登录 / 匹配 / 聊天 / 帮会 / 好友 / 聚宝斋 / 邮件 / 排行榜都经路由服转发。
+    '0' = 回退到旧的逐服务直连：**直连模式下 chat / guild / friend / trade / mail / rank 不可达**——gate 直连白名单（cpp/nodes/gate/main.cpp）里没有
+    Chat / Guild / Friend / Trade / Mail / Rank，进程照样在跑，但任何玩家的这些请求都到不了它们（docs/design/client-rpc-router.md D34）。
     只用于排障回退，回退前先 killswitch 关这些方法并公告。
     战斗与本开关无关：两种模式下战斗都只走客户端 ↔ battle 直连，gate 不再中继战斗（turn-based §22 D66）。
     翻转落在部署层、不改 C++ 默认值：gate 进程启动时读一次该变量并缓存，所以只对本次新拉起的 gate 生效；
@@ -397,7 +397,7 @@ try {
         if (-not (Test-Path -LiteralPath (Join-Path $serverRoot "bin/$node.exe"))) { throw "缺少 bin/$node.exe。" }
     }
     $domainRequiredEnvs = @{
-        mail = @('MMORPG_MAIL_SQL_DSN','MAIL_PRODUCER_SECRET_ADMIN','MAIL_PRODUCER_SECRET_RANK','MAIL_PRODUCER_SECRET_GUILD')
+        mail = @('MMORPG_MAIL_SQL_DSN','MAIL_PRODUCER_SECRET_ADMIN','MAIL_PRODUCER_SECRET_RANK','MAIL_PRODUCER_SECRET_GUILD','MMORPG_ASSET_OP_SECRET_MAIL')
         rank = @('MMORPG_RANK_SQL_DSN','MAIL_PRODUCER_SECRET_RANK','RANK_PRODUCER_SECRET_MATCH','RANK_PRODUCER_SECRET_ADMIN')
     }
     foreach ($domain in @('mail','rank')) {
@@ -408,7 +408,7 @@ try {
             $skippedServices += $domain
         }
     }
-    if (-not $ClientPath) { $ClientPath = Join-Path (Split-Path -Parent $serverRoot) 'tmp/showcase_player/mmorpg.exe' }
+    if (-not $ClientPath) { $ClientPath = Join-Path (Split-Path -Parent $serverRoot) 'mmorpg-client/Builds/showcase_player/mmorpg.exe' }
     $ClientPath = [IO.Path]::GetFullPath($ClientPath)
     if ($OpenClient -and -not (Test-Path -LiteralPath $ClientPath -PathType Leaf)) { throw "找不到游戏客户端：$ClientPath，可用 -ClientPath 指定。" }
     if (-not $env:LOGIN_DEV_PASSWORD_SHARED_SECRET) {
@@ -584,13 +584,7 @@ try {
                 Write-Host '  Rerun this startup script after creating the database.'
             }
         }
-        Write-Step '3/6 Start persistence services'
-        # 命令生产者(含 friend / guild 推送)由 dev_tools 子进程继承与 C++ 消费者相同的契约。
-        $env:KAFKA_COMMAND_TOPIC_PARTITIONS = [string]$kafkaContract.Partitions
-        $env:KAFKA_COMMAND_TOPIC_GENERATION = [string]$kafkaContract.Generation
-        $goRecords = Repair-PidRecords 'go_services.pid.json'
-        $cppRecords = Repair-PidRecords 'cpp_nodes.pid.json' -Cpp
-        $running = @(Get-CimInstance Win32_Process | Where-Object { $_.ExecutablePath -and $_.ExecutablePath.StartsWith($serverRoot + '\',[StringComparison]::OrdinalIgnoreCase) })
+        # mail/rank 的 DSN 可能指向独立 TiDB；不探测本机默认 MySQL，真实连接与结构由现役服务 fail-closed 校验。
         foreach ($item in $running) {
             Assert-RunningCommandContract $item
             $name = [IO.Path]::GetFileNameWithoutExtension($item.Name)
@@ -629,7 +623,7 @@ try {
         if ($GateRouterMode -eq '1') {
             Write-Host '  gate routing mode: GATE_CLIENT_RPC_ROUTER=1 (forward through client_rpc_router; battle uses direct battle connections only)'
         } else {
-            Write-Host '  gate routing mode: GATE_CLIENT_RPC_ROUTER=0 (direct mode: chat / guild / friend / trade are unreachable; battle still uses direct battle connections)' -ForegroundColor Yellow
+            Write-Host '  gate routing mode: GATE_CLIENT_RPC_ROUTER=0 (direct mode: chat / guild / friend / trade / mail / rank are unreachable; battle still uses direct battle connections)' -ForegroundColor Yellow
         }
         Invoke-Dev 'gate' @('-Command','cpp-node-start','-CppNodes','gate','-GateCount','1','-SceneCount','0','-BattleCount','0','-Zone','1','-NodeIp','loopback')
         Assert-NodeStartup 'gate'

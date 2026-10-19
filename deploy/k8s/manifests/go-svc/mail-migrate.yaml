@@ -1,3 +1,4 @@
+# 现役配置以服务 YAML 为源；不恢复历史 M1 表、AdminToken 或 Redis 权威榜运行时。
 # 与常驻实例使用同一配置及DSN。只迁结构，不读取producer/资产密钥。
 apiVersion: batch/v1
 kind: Job

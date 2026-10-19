@@ -18,6 +18,8 @@ import (
 	clientv3 "go.etcd.io/etcd/client/v3"
 	"google.golang.org/grpc"
 	"mail/internal/data"
+	"mail/internal/maintenance"
+	"mail/internal/metrics"
 	"mail/internal/notify"
 	"mail/internal/server"
 	assetpb "proto/common/asset"
@@ -36,10 +38,12 @@ import (
 
 type config struct {
 	domainhost.Config
-	SharedRedisAddr        string   `json:"SharedRedisAddr"`
-	SharedRedisPasswordEnv string   `json:"SharedRedisPasswordEnv,optional"`
-	AssetSecretEnv         string   `json:"AssetSecretEnv"`
-	KafkaBrokers           []string `json:"KafkaBrokers"`
+	Mail                   data.Limits        `json:"Mail"`
+	Sweep                  maintenance.Config `json:"Sweep"`
+	SharedRedisAddr        string             `json:"SharedRedisAddr"`
+	SharedRedisPasswordEnv string             `json:"SharedRedisPasswordEnv,optional"`
+	AssetSecretEnv         string             `json:"AssetSecretEnv"`
+	KafkaBrokers           []string           `json:"KafkaBrokers"`
 }
 
 var errManualSchema = errors.New("领域结构需人工处理")
@@ -65,6 +69,14 @@ func main() {
 	}
 }
 func run(c config, migrate bool) error {
+	c.Mail = c.Mail.Defaults()
+	c.Sweep = c.Sweep.Defaults()
+	if err := c.Mail.Validate(); err != nil {
+		return err
+	}
+	if err := c.Sweep.Validate(); err != nil {
+		return err
+	}
 	if err := c.Validate(); err != nil {
 		return err
 	}
@@ -131,6 +143,10 @@ func run(c config, migrate bool) error {
 	}
 	defer ids.Close()
 	repo := data.New(db, ids.IDs["mail"].Next, ids.IDs["mail_asset_op"].Next, func(id uint32) bool { _, ok := tables.ItemTableManagerInstance.FindById(id); return ok }, "mmorpg_guild")
+	if err := repo.ConfigureLimits(c.Mail); err != nil {
+		return err
+	}
+	metrics.Register()
 	sharedRedis := redis.NewClient(&redis.Options{Addr: c.SharedRedisAddr, Password: os.Getenv(c.SharedRedisPasswordEnv), PoolSize: 8, MaxActiveConns: 8, MaxRetries: -1, DialerRetries: 1, DialTimeout: time.Second, ReadTimeout: 300 * time.Millisecond, WriteTimeout: 300 * time.Millisecond, PoolTimeout: 300 * time.Millisecond, ContextTimeoutEnabled: true})
 	defer sharedRedis.Close()
 	check, cancelCheck := context.WithTimeout(ctx, time.Second)
@@ -173,13 +189,15 @@ func run(c config, migrate bool) error {
 	workerCtx, cancelWorkers := context.WithCancel(ctx)
 	watchDone := make(chan struct{})
 	loopDone := make(chan struct{})
+	sweepDone := make(chan struct{})
 	go func() { defer close(watchDone); watcher.Run(workerCtx, etcd) }()
 	go func() { defer close(loopDone); loop.Run(workerCtx) }()
+	go func() { defer close(sweepDone); maintenance.Run(workerCtx, repo, c.Sweep) }()
 	defer func() {
 		cancelWorkers()
 		budget := time.NewTimer(4 * time.Second)
 		defer budget.Stop()
-		for _, done := range []<-chan struct{}{watchDone, loopDone} {
+		for _, done := range []<-chan struct{}{watchDone, loopDone, sweepDone} {
 			select {
 			case <-done:
 			case <-budget.C:

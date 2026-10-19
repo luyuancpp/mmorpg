@@ -201,7 +201,7 @@ param(
 	# gate 的客户端 RPC 路由模式:写进 gate Deployment 的环境变量 GATE_CLIENT_RPC_ROUTER
 	# (cpp/nodes/gate/gate_router_mode.h;docs/design/client-rpc-router.md D34)。
 	#   "1" = gate 只连路由服 client-rpc-router,chat / friend / trade 等只承诺路由模式的服务经它可达
-	#         (guild / team 等没登记进 $GoSvcCatalogue 的服务,K8s 上本来就不部署,与本开关无关);
+	#         (team 等没登记进 $GoSvcCatalogue 的服务,K8s 上本来就不部署,与本开关无关;guild 自 2026-10-16 起登记,是全局池);
 	#   "0" = 旧的逐服务直连,只作回退:chat / friend / trade 不可达(gate 直连白名单里没有它们)。
 	# 两种模式下战斗都只走客户端 ↔ battle 直连,gate 不中继战斗(turn-based §22 D66),所以本开关与战斗无关。
 	# **默认 "1"**(turn-based §22 D75,2026-09-29 用户拍板):豁免 D-12 / D36 / D37 的前提①
@@ -394,6 +394,44 @@ param(
 	# 模板没变时给了也不会重启(它是许可,不是指令);DryRun 不查集群。不粘滞;dev_tools.ps1 / k8s_image.ps1 只在被指定时透传。
 	# 名字沿用 docs/design/shared-redis-split-by-purpose.md(G4a)§4.2 的规划,语义按 P0-E 放宽为「模板有变化就要确认」。
 	[switch]$ConfirmRedisCoreRestart,
+	# 通用资产通道(帮会捐献 / 商店兑换、聚宝斋上架;docs/design/guild-phase2/04-asset-channel.md §4.32、90-consistency.md G-05)。
+	# off(默认):guild / trade 的 ConfigMap 写 AssetOp.Enabled: false,不建签名密钥 Secret,guild / trade / scene 都不注入密钥。
+	# on:两把签名密钥从环境变量 MMORPG_ASSET_OP_SECRET_GUILD / _TRADE 读入(各档位都没有回落值;≥32 字节、不含空白、两把不同、
+	#     也不与其它口令相同),写成 Secret asset-op-secret-guild / asset-op-secret-trade,经 secretKeyRef 注入 guild(只 GUILD)、
+	#     trade(只 TRADE)与 scene(两把都要,验签);guild / trade 的 AssetOp.Enabled 写 true(trade 同时补齐落地恢复与 Cleanup* 键)。
+	# 前提:必须同时 -NetworkPolicies on(scene 的 gRPC 口只放行资产调用方,G-05);08-save-owner-fence.md §8.3 的六条门禁是运行期验证,脚本核不了;
+	#       已知风险 K1(单写者只在 30s 重连租约内成立)同样是任何共享环境打开资产通道的前置(原 trade ConfigMap 注释的口径)。
+	# 顺序:打开 = 先逐 zone 跑 zone-up -AssetOps on(scene 先拿到验签密钥),再 infra-up -AssetOps on(调用方开始签名);
+	#       关闭 = 先 infra-up -AssetOps off,再逐 zone off;换密钥 = 先关、换值、再按打开的顺序开。
+	#       非 DryRun 时按双方 Pod 模板上的密钥指纹核对集群现状(Assert-AssetOpClusterConsistency),顺序反了在任何写操作之前拒绝。
+	# 切换会改 scene 的 Pod 模板(env + 指纹注解),整个 zone 的 scene 滚动一遍 = 在线玩家被换节点,只在维护窗口里切。
+	# 不粘滞:以 on 运行的环境,下一次部署(含包装入口、k8s_zone_rollback.ps1 Step 6)不传就落回 off;调用方还开着时 zone-up 会被拒。
+	[ValidateSet("off", "on")]
+	[string]$AssetOps = "off",
+	# scene / guild / match 的 gRPC 口准入(NetworkPolicy,G-05)。off(默认):不生成,并删掉本脚本以前建的同名策略(不粘滞)。
+	# on:每个被保护的工作负载一份 NetworkPolicy($script:GrpcAllowLists):工作负载清单里**声明了的**其它端口(节点口 / metrics /
+	#   日志 sidecar)照常对任何来源开放,只有 gRPC 口限定来源(任意 namespace 里 app 标签在名单里的 Pod);没声明的端口一律不通。
+	#   scene(zone namespace,50000):scene-manager / match / player-inbox / guild / trade / mail;
+	#   guild(infra,50300):client-rpc-router / data-service;
+	#   match(infra,50500):client-rpc-router / guild / gate(gate 只在 -GateRouterMode 0 回退时直连 match)。
+	# 名单按 2026-10-16 的代码整理(调用点见 deploy/k8s/README.md「gRPC 口准入与资产通道」);新增调用方要同时改名单,否则开了就断。
+	# 需要集群网络插件支持 NetworkPolicy(Calico / Cilium 等);不支持的插件上策略不生效(不断流,也不设防)。
+	[ValidateSet("off", "on")]
+	[string]$NetworkPolicies = "off",
+	# 排行榜评分快照的发布开关(docs/design/leaderboard-system.md §2.4 / §5.4,L-20;参数形态 2026-09-20 用户拍板,§9.1#7)。
+	# 写进 match ConfigMap 的 RatingSnapshotPublishEnabled,**不镜像** go/match/etc/match_service.yaml(仓内那一行只管本地,默认 false),
+	# 写法照 trade 的 AssetOp.Enabled:所有档位都由本参数给值。
+	#   "0"(默认):match 不发快照,评分入账路径与排行榜上线前一致(rating_gen 字段照常补写,快照 topic 照常在后台声明,分区不一致只记错误日志、不影响评分);
+	#   "1":一局评分入账后,把全员当前评分发到 match-rating-snapshot(key = player_id),rank 消费写榜。
+	# 这是排行榜上线的**唯一闸门**:rank 消费者就绪之后,才用 "1" 重跑 infra-up;回滚 = 用 "0" 重跑,评分链不受影响,榜停止更新但仍可读。
+	# 取值同时写进 match Pod 模板的注解 mmorpg.io/rating-snapshot-publish,所以翻值必然让 match 滚动重启(ConfigMap 只在启动时读)。
+	# 快照 topic 在 RatingEnabled=true 时由 match 启动声明(保留期只由 match 声明,分区数 match 与 rank 共同校验);
+	# 开关为 "1" 时 match 先声明成功才起结果消费者,不会让 broker 按默认分区数自动建 topic。
+	# 不粘滞(与 -AssetOps 同一口径):以 "1" 运行的环境,下一次 infra-up / all-up 不传就落回 "0"(榜停止更新),
+	# 部署输出会打一行本次取值;dev_tools.ps1 的 k8s-infra-up / k8s-all-up 同名参数留空不透传 = 落回 "0"。
+	# 本次不部署全局 Go 服务(zone-up、-SkipGoSvc、没给 -GoSvcRegistry)时显式传它没有效果,写路径入口会告警。
+	[ValidateSet("0", "1")]
+	[string]$MatchRatingSnapshotPublish = "0",
 
 	[switch]$SkipInfra,
 	[switch]$SkipGoSvc,
@@ -491,6 +529,34 @@ $script:PlayerInboxAdminTokenSecretKey = "admin-token"
 $script:PlayerInboxAdminTokenEnv = "PLAYER_INBOX_ADMIN_TOKEN"
 # 由 Initialize-InjectedSecrets 解析(只在本次部署全局 Go 服务时)。
 $script:PlayerInboxAdminToken = ""
+# 邮件现役管理请求使用生产者分用途签名；密钥由domain-service-secrets注入。
+# 通用资产通道签名密钥(-AssetOps,见参数处说明)。每个调用方一个单键 Secret,键名统一 secret;环境变量名与
+# C++ asset_op_auth.cpp 的 kAssetOpCallerRules、go/guild 与 go/trade 的 svc.AssetOpSecretEnv 逐字一致。
+# 指纹注解(Get-InjectedSecretFingerprint,以 Secret 名做域分隔)同时写在调用方(guild / trade)与 scene 的 Pod 模板上:
+# 一是只换密钥时 Pod 也会滚动,二是跨命令核对两边拿的是不是同一把(Assert-AssetOpClusterConsistency)。没有注解 = 那一侧没开。
+$script:AssetOpsOn = ($AssetOps -eq 'on')
+$script:NetworkPoliciesOn = ($NetworkPolicies -eq 'on')
+$script:AssetOpSecretKey = 'secret'
+$script:AssetOpCallers = [ordered]@{
+	guild = [pscustomobject]@{ Env = 'MMORPG_ASSET_OP_SECRET_GUILD'; SecretName = 'asset-op-secret-guild'; HashAnnotation = 'mmorpg.io/asset-op-secret-guild-hash' }
+	trade = [pscustomobject]@{ Env = 'MMORPG_ASSET_OP_SECRET_TRADE'; SecretName = 'asset-op-secret-trade'; HashAnnotation = 'mmorpg.io/asset-op-secret-trade-hash' }
+}
+# guild.yaml / trade.yaml 的 Pod 模板里各有一行指纹注解占位:on 时换成指纹,off 时整行删掉(模板与引入开关之前逐字相同,不触发滚动)。
+$script:AssetOpSecretHashPlaceholder = 'PLACEHOLDER_ASSET_OP_SECRET_HASH'
+# 由 Initialize-InjectedSecrets 解析(-AssetOps on 时),键 = 调用方(guild / trade)。
+$script:AssetOpSecrets = @{}
+# gRPC 口准入名单(-NetworkPolicies on)。单一来源:生成器、契约测试与 README 都对照这张表。gRPC 口:scene = RPC_PORT + 30000,
+# guild / match = $GoSvcCatalogue 的 Port。2026-10-16 按代码整理的调用方(谁会拨这个 gRPC 口):
+#   scene:scene_manager(go/scene_manager scene_node_client)、match(go/match node_watcher)、player_inbox(go/player_inbox notify)、
+#          guild / trade(go/shared/assetop 资产通道)。gate ↔ scene 走 muduo 节点口(RPC_PORT),battle → scene 走 Kafka 命令,
+#          client-rpc-router 的路由表里没有 SceneNodeService,都不经 scene 的 gRPC 口。
+#   guild:client-rpc-router(路由表 GuildNodeService)、data_service(GuildInternalRpc,回档帮会闸);match 的历练结果走 Kafka。
+#   match:client-rpc-router(路由表 MatchNodeService)、guild(MatchRpc,历练开战)、gate(只在 -GateRouterMode 0 时直连)。
+# 名单是 app 标签;运维工具(如 go/guild/cmd/assetopfix)要在名单内的 Pod 里跑,或临时关掉策略。
+$script:GrpcAllowLists = [ordered]@{
+	scene = [pscustomobject]@{ PolicyName = 'scene-grpc-allowlist'; TargetApps = @('scene', 'scene-world', 'scene-instance'); AllowedApps = @('scene-manager', 'match', 'player-inbox', 'guild', 'trade', 'mail') }
+	match = [pscustomobject]@{ PolicyName = 'match-grpc-allowlist'; TargetApps = @('match'); AllowedApps = @('client-rpc-router', 'guild', 'gate') }
+}
 # 共享 Redis 口令(MMORPG_REDIS_PASSWORD),由 Initialize-InjectedSecrets 解析:dev 档未注入时是空串。$null = 还没解析,
 # C++ 节点配置的生成器(Get-CppZoneRedisPassword)据此拒绝生成,不把「没解析」当成「没口令」写出空串。
 $script:RedisPassword = $null
@@ -862,6 +928,330 @@ function Initialize-InjectedSecrets {
 			}
 		}
 	}
+
+	# 邮件运维使用 serviceauth 的 admin 生产者签名；值由现役 domain-service-secrets 注入，不新建 M1 token。
+
+	# 通用资产通道签名密钥(-AssetOps on,见参数处说明)。各档位都没有回落值:同一把密钥要在 infra-up(guild / trade 签名)与每一次
+	# zone-up(scene 验签)之间保持同值,生成器替运维随机出一个值只会让两次运行对不上。本机 dev 的随机值(lib/assetop_dev_secret.ps1)
+	# 只给本机进程用,部署链不读它。报错只点环境变量名,不回显值。
+	$script:AssetOpSecrets = @{}
+	if ($script:AssetOpsOn) {
+		foreach ($caller in $script:AssetOpCallers.Keys) {
+			$spec = $script:AssetOpCallers[$caller]
+			$value = Resolve-InjectedSecret -EnvName $spec.Env -DevFallback "" -ReleaseProfile $ReleaseProfile `
+				-Purpose "通用资产通道签名密钥(调用方 $caller)" -MinLength 32
+			Assert-AssetOpSecretShape -EnvName $spec.Env -Value $value
+			$script:AssetOpSecrets[$caller] = $value
+		}
+		if ($script:AssetOpSecrets['guild'] -ceq $script:AssetOpSecrets['trade']) {
+			throw "MMORPG_ASSET_OP_SECRET_GUILD 必须与 MMORPG_ASSET_OP_SECRET_TRADE 不同:每个调用方一把密钥(不变量 I6),同值等于任何一方都能冒充另一方签资产指令。"
+		}
+		$otherSecrets = @(
+			@{ Env = 'MMORPG_GATE_TOKEN_SECRET'; Value = $script:GateTokenSecret }
+			@{ Env = 'MMORPG_INTERNAL_AUTH_SECRET'; Value = $script:InternalAuthSecret }
+			@{ Env = 'MMORPG_MYSQL_PASSWORD'; Value = $script:MysqlPassword }
+			@{ Env = 'MMORPG_REDIS_PASSWORD'; Value = $script:RedisPassword }
+			@{ Env = 'MMORPG_GATEWAY_DB_PASSWORD'; Value = $script:GatewayDbPassword }
+			@{ Env = 'MMORPG_GATEWAY_ADMIN_API_KEY'; Value = $script:GatewayAdminApiKey }
+			@{ Env = 'MMORPG_PLAYER_INBOX_ADMIN_TOKEN'; Value = $script:PlayerInboxAdminToken }
+			@{ Env = 'MAIL_PRODUCER_SECRET_ADMIN'; Value = [Environment]::GetEnvironmentVariable('MAIL_PRODUCER_SECRET_ADMIN') }
+			@{ Env = 'MMORPG_LOGIN_QUEUE_TOKEN_SECRET'; Value = $script:LoginQueueTokenSecret }
+			@{ Env = 'MMORPG_LOGIN_DEV_PASSWORD_SHARED_SECRET'; Value = $script:LoginDevPasswordSecret }
+			@{ Env = 'MMORPG_BATTLE_TOKEN_SECRET'; Value = [System.Environment]::GetEnvironmentVariable('MMORPG_BATTLE_TOKEN_SECRET') }
+		)
+		foreach ($caller in $script:AssetOpCallers.Keys) {
+			foreach ($other in $otherSecrets) {
+				if (-not [string]::IsNullOrEmpty($other.Value) -and $script:AssetOpSecrets[$caller] -ceq $other.Value) {
+					throw "$($script:AssetOpCallers[$caller].Env) 必须与 $($other.Env) 不同:资产签名密钥不得跨用途复用,泄露一处就等于两处同时失守。"
+				}
+			}
+		}
+	}
+}
+
+<#
+.SYNOPSIS
+	资产通道签名密钥的形状检查(纯函数,契约测试按 AST 抽出直接调用)。报错只点环境变量名,不回显值。
+
+.DESCRIPTION
+	- 空:-AssetOps on 却没注入(dev 档 Resolve-InjectedSecret 不 throw,在这里拦);
+	- 含任何空白:Go 侧(assetop.NewSigner)按 Unicode 空白 TrimSpace、C++ 侧(VerifyAssetOpAuth)按 ASCII TrimAscii,遇到 NBSP 一类字符
+	  两边算出的 HMAC 就分家,表现是每一次资产 RPC 都回 27008 且日志里没有线索(lib/assetop_dev_secret.ps1 头注释),干脆不收;
+	- 短于 32 字节:与 go/shared/assetop.MinSecretLen、C++ kAssetOpAuthMinSecretBytes 同值,短了 guild / trade 带着 Enabled=true 拒启。
+	  dev 档 Resolve-InjectedSecret 不查长度,所以各档位都在这里再查一次。
+#>
+function Assert-AssetOpSecretShape {
+	param(
+		[Parameter(Mandatory = $true)][string]$EnvName,
+		[Parameter(Mandatory = $true)][AllowEmptyString()][AllowNull()][string]$Value
+	)
+
+	if ([string]::IsNullOrEmpty($Value)) {
+		throw "-AssetOps on 需要环境变量 ${EnvName}(通用资产通道签名密钥,≥32 字节),当前未设置,拒绝部署。各档位都没有回落值:同一把密钥要在 infra-up 与每一次 zone-up 之间保持同值。"
+	}
+	if ($Value -match '\s') {
+		throw "环境变量 $EnvName 含空白字符:Go 与 C++ 两侧去空白的口径不同,含空白的密钥会让验签静默分家(每一次资产 RPC 回 27008),拒绝部署。"
+	}
+	if ($Value.Length -lt 32) {
+		throw "环境变量 $EnvName 长度 $($Value.Length) < 32:guild / trade 对资产签名密钥要求至少 32 字节(assetop.MinSecretLen),带着 Enabled=true 会拒启。"
+	}
+}
+
+# 本次要写进 Pod 模板的资产密钥指纹:off = 空表(不写注解);on = 调用方 → 指纹(guild / trade 与 scene 用同一个值)。
+function Get-AssetOpDesiredHashes {
+	$hashes = [ordered]@{}
+	if ($script:AssetOpsOn) {
+		foreach ($caller in $script:AssetOpCallers.Keys) {
+			$spec = $script:AssetOpCallers[$caller]
+			$hashes[$caller] = Get-InjectedSecretFingerprint -SecretName $spec.SecretName -Value $script:AssetOpSecrets[$caller]
+		}
+	}
+	return $hashes
+}
+
+# 签名方(调用方)与验签方(scene)的指纹相容性(纯函数,契约测试直接喂值)。空串 / $null = 那一侧没开(没有指纹注解)。
+#   ok                         调用方没开,或两边指纹相同
+#   scene-off-while-caller-on  调用方开着而 scene 没开:该 zone 的每一次资产 RPC 都会被 scene 拒绝
+#   key-mismatch               两边都开但指纹不同:密钥不是同一把,同样每一次都被拒
+function Get-AssetOpConsistencyVerdict {
+	param(
+		[AllowNull()][AllowEmptyString()][string]$CallerHash,
+		[AllowNull()][AllowEmptyString()][string]$SceneHash
+	)
+
+	if ([string]::IsNullOrEmpty($CallerHash)) { return 'ok' }
+	if ([string]::IsNullOrEmpty($SceneHash)) { return 'scene-off-while-caller-on' }
+	if ($CallerHash -cne $SceneHash) { return 'key-mismatch' }
+	return 'ok'
+}
+
+# 线上 Deployment 的 Pod 模板注解值;Deployment 或注解不存在返回 $null。查询失败 fail-closed(throw)。
+function Get-LiveDeploymentPodAnnotation {
+	param(
+		[Parameter(Mandatory = $true)][string]$Namespace,
+		[Parameter(Mandatory = $true)][string]$Name,
+		[Parameter(Mandatory = $true)][string]$Key
+	)
+
+	$result = Invoke-ClientEntryKubectl -KubectlArgs @('get', 'deployment', $Name, '-n', $Namespace, '--ignore-not-found', '-o', 'json') `
+		-KubeContext $KubeContext -KubeConfig $KubeConfig -CaptureOutput -AllowFailure
+	if ($result.ExitCode -ne 0) {
+		throw "查询线上 Deployment $Name 失败(namespace=$Namespace,exit $($result.ExitCode)):$($result.Stderr)。fail-closed:不知道现状就无法判断资产通道两侧是否对得上。"
+	}
+	if ([string]::IsNullOrWhiteSpace($result.Stdout)) { return $null }
+	$document = $result.Stdout | ConvertFrom-Json
+	$annotations = $document.spec.template.metadata.annotations
+	if ($null -eq $annotations) { return $null }
+	$property = $annotations.PSObject.Properties[$Key]
+	if ($null -eq $property) { return $null }
+	return [string]$property.Value
+}
+
+# 全部 namespace 里副本数 > 0 的 scene 工作负载(Deployment;集群注册了 Agones 时含 Fleet)及其 Pod 模板注解。查询失败 fail-closed。
+function Get-LiveSceneWorkloads {
+	$selector = 'app in (' + ($script:GrpcAllowLists['scene'].TargetApps -join ',') + ')'
+	$workloads = @()
+	$result = Invoke-ClientEntryKubectl -KubectlArgs @('get', 'deployments', '--all-namespaces', '-l', $selector, '-o', 'json') `
+		-KubeContext $KubeContext -KubeConfig $KubeConfig -CaptureOutput -AllowFailure
+	if ($result.ExitCode -ne 0) {
+		throw "查询线上 scene Deployment 失败(exit $($result.ExitCode)):$($result.Stderr)。fail-closed:不知道 scene 是否已拿到验签密钥,就不打开调用方。"
+	}
+	foreach ($item in @(($result.Stdout | ConvertFrom-Json).items)) {
+		$replicas = if ($null -eq $item.spec.replicas) { 1 } else { [int]$item.spec.replicas }
+		$workloads += [pscustomobject]@{ Kind = 'Deployment'; Namespace = $item.metadata.namespace; Name = $item.metadata.name; Replicas = $replicas; Annotations = $item.spec.template.metadata.annotations }
+	}
+	if (Test-AgonesFleetCrdPresent -KubeContext $KubeContext -KubeConfig $KubeConfig) {
+		$fleetResult = Invoke-ClientEntryKubectl -KubectlArgs @('get', 'fleets.agones.dev', '--all-namespaces', '-l', $selector, '-o', 'json') `
+			-KubeContext $KubeContext -KubeConfig $KubeConfig -CaptureOutput -AllowFailure
+		if ($fleetResult.ExitCode -ne 0) {
+			throw "查询线上 scene Fleet 失败(exit $($fleetResult.ExitCode)):$($fleetResult.Stderr)。fail-closed。"
+		}
+		foreach ($item in @(($fleetResult.Stdout | ConvertFrom-Json).items)) {
+			$replicas = if ($null -eq $item.spec.replicas) { 1 } else { [int]$item.spec.replicas }
+			# Fleet → GameServer 模板 → Pod 模板,注解在第二层 template 的 metadata 上(New-SceneFleetYaml)。
+			$workloads += [pscustomobject]@{ Kind = 'Fleet'; Namespace = $item.metadata.namespace; Name = $item.metadata.name; Replicas = $replicas; Annotations = $item.spec.template.spec.template.metadata.annotations }
+		}
+	}
+	return @($workloads | Where-Object { $_.Replicas -gt 0 })
+}
+
+<#
+.SYNOPSIS
+	-AssetOps 的跨命令一致性(写路径入口、密钥解析之后、任何写操作之前;DryRun 不查集群)。
+
+.DESCRIPTION
+	签名方(guild / trade,infra-up 部署)与验签方(scene,zone-up 部署)分属两条命令,两边的开关与密钥必须对得上,否则每一次资产 RPC
+	都回 27008(AssetAuthFailed),日志里没有「密钥不匹配」的线索(密钥值不进日志)。依据是双方 Pod 模板上的密钥指纹注解:
+	  - zone-up(以及带 -SkipInfra 的 all-up):读 infra namespace 里 guild / trade 的 Deployment。调用方开着而本次 scene 不开,
+	    或两边指纹不同 → 拒绝(Get-AssetOpConsistencyVerdict);
+	  - infra-up 且本次打开、确实部署全局 Go 服务:读全部 namespace 里副本数 > 0 的 scene 工作负载,有任何一个没拿到同一把密钥 → 拒绝;
+	  - 不带 -SkipInfra 的 all-up 不查:同一次运行里 infra 与每个 zone 用同一组开关与密钥重新部署。调用方先开,zone 部署完之前的资产 RPC
+	    会被拒、留在 PENDING 由重投补上,不丢东西。
+#>
+function Assert-AssetOpClusterConsistency {
+	$zoneSide = ($Command -eq 'zone-up') -or ($Command -eq 'all-up' -and $SkipInfra)
+	$infraSide = ($Command -eq 'infra-up') -and $script:AssetOpsOn -and (Test-GlobalGoSvcDeployed)
+	if (-not $zoneSide -and -not $infraSide) { return }
+	if ($DryRun) {
+		Write-Host "[dry-run] AssetOps cluster consistency check skipped (no cluster access)"
+		return
+	}
+
+	$desired = Get-AssetOpDesiredHashes
+	if ($zoneSide) {
+		foreach ($caller in $script:AssetOpCallers.Keys) {
+			$spec = $script:AssetOpCallers[$caller]
+			$live = Get-LiveDeploymentPodAnnotation -Namespace $InfraNamespace -Name $caller -Key $spec.HashAnnotation
+			$verdict = Get-AssetOpConsistencyVerdict -CallerHash $live -SceneHash $desired[$caller]
+			if ($verdict -eq 'scene-off-while-caller-on') {
+				throw "$caller 的资产通道还开着(namespace $InfraNamespace 的 Deployment $caller 带签名密钥指纹),本次却不给 scene 注入验签密钥(-AssetOps off):这个 zone 的每一次资产 RPC 都会被 scene 拒绝。先 infra-up -AssetOps off 关掉调用方,或本次照传 -AssetOps on -NetworkPolicies on 与同一组密钥。"
+			}
+			if ($verdict -eq 'key-mismatch') {
+				throw "本次给 scene 的 $($spec.Env) 与线上 $caller 正在用的签名密钥不同(Pod 模板指纹对不上):scene 验签会全部失败。换密钥按「先 infra-up -AssetOps off、换值、再逐 zone 与 infra 打开」(deploy/k8s/README.md「gRPC 口准入与资产通道」)。"
+			}
+		}
+	}
+	if ($infraSide) {
+		$missing = @()
+		foreach ($workload in Get-LiveSceneWorkloads) {
+			foreach ($caller in $script:AssetOpCallers.Keys) {
+				$key = $script:AssetOpCallers[$caller].HashAnnotation
+				$sceneHash = $null
+				if ($null -ne $workload.Annotations -and $null -ne $workload.Annotations.PSObject.Properties[$key]) {
+					$sceneHash = [string]$workload.Annotations.PSObject.Properties[$key].Value
+				}
+				if ((Get-AssetOpConsistencyVerdict -CallerHash $desired[$caller] -SceneHash $sceneHash) -ne 'ok') {
+					$missing += "$($workload.Namespace)/$($workload.Kind)/$($workload.Name)($caller)"
+				}
+			}
+		}
+		if ($missing.Count -gt 0) {
+			throw ("-AssetOps on:以下 scene 工作负载还没拿到同一把验签密钥,先对它们所在的 zone 跑 zone-up -AssetOps on -NetworkPolicies on(同一组密钥),再打开调用方:`n  - " + ($missing -join "`n  - "))
+		}
+	}
+}
+
+# -AssetOps / -NetworkPolicies 的组合校验(写路径入口,密钥解析之前):打一行本次取值;资产通道打开而 scene 的 gRPC 口不设防时拒绝。
+function Assert-AssetOpsSwitchPreflight {
+	Write-Host "AssetOps: $AssetOps NetworkPolicies: $NetworkPolicies"
+	if ($script:AssetOpsOn -and -not $script:NetworkPoliciesOn) {
+		throw "-AssetOps on 必须同时 -NetworkPolicies on:资产指令只靠签名防伪,scene 的 gRPC 口还要只放行资产调用方(docs/design/guild-phase2/90-consistency.md G-05)。zone-up 与 infra-up 都要两个一起传。"
+	}
+}
+
+# scene 验签要的两把资产密钥 env(-AssetOps on)。-ItemIndent = 列表项「- name:」所在缩进,-Step = 一级缩进单位
+# (Deployment 模板用制表符、Fleet 模板用空格,两边各传各的)。
+function New-SceneAssetOpEnvLines {
+	param(
+		[Parameter(Mandatory = $true)][string]$ItemIndent,
+		[Parameter(Mandatory = $true)][string]$Step
+	)
+
+	$lines = @()
+	foreach ($caller in $script:AssetOpCallers.Keys) {
+		$spec = $script:AssetOpCallers[$caller]
+		$lines += "${ItemIndent}- name: $($spec.Env)"
+		$lines += "${ItemIndent}  valueFrom:"
+		$lines += "${ItemIndent}${Step}secretKeyRef:"
+		$lines += "${ItemIndent}${Step}  name: $($spec.SecretName)"
+		$lines += "${ItemIndent}${Step}  key: $($script:AssetOpSecretKey)"
+	}
+	return $lines
+}
+
+# 清单文本里声明的全部 containerPort(去重、升序;纯函数)。
+function Get-ManifestContainerPorts {
+	param([Parameter(Mandatory = $true)][string]$ManifestContent)
+
+	$ports = @()
+	foreach ($match in [regex]::Matches($ManifestContent, '(?m)^[ \t]*(?:-[ \t]+)?containerPort:[ \t]*(\d+)[ \t]*\r?$')) {
+		$ports += [int]$match.Groups[1].Value
+	}
+	return @($ports | Sort-Object -Unique)
+}
+
+<#
+.SYNOPSIS
+	gRPC 口准入的 NetworkPolicy(纯函数,-NetworkPolicies on)。
+
+.DESCRIPTION
+	一旦有策略选中某个 Pod,它的入站就只剩「本节点来的连接(kubelet 探针)」与策略 ingress 里列出的,所以 -OpenTcpPorts 必须覆盖
+	工作负载清单里声明的其它全部端口(调用方从清单里抽,契约测试逐个核对),gRPC 口单独一条只放行 -AllowedApps(任意 namespace)。
+	刻意不用 endPort 端口区间:不支持 endPort 的网络插件会只认起始端口,其余端口全部被拦。
+#>
+function New-GrpcAllowListNetworkPolicyYaml {
+	param(
+		[Parameter(Mandatory = $true)][string]$PolicyName,
+		[Parameter(Mandatory = $true)][string[]]$TargetApps,
+		[Parameter(Mandatory = $true)][int]$GrpcPort,
+		[Parameter(Mandatory = $true)][AllowEmptyCollection()][int[]]$OpenTcpPorts,
+		[Parameter(Mandatory = $true)][string[]]$AllowedApps
+	)
+
+	if ($GrpcPort -lt 1 -or $GrpcPort -gt 65535) {
+		throw "内部错误:NetworkPolicy $PolicyName 的 gRPC 端口 $GrpcPort 越界。"
+	}
+	$open = @($OpenTcpPorts | Sort-Object -Unique)
+	if ($open -contains $GrpcPort) {
+		throw "内部错误:NetworkPolicy $PolicyName 的 gRPC 端口 $GrpcPort 同时出现在对所有来源开放的端口里,名单形同虚设。"
+	}
+	foreach ($port in $open) {
+		if ($port -lt 1 -or $port -gt 65535) { throw "内部错误:NetworkPolicy $PolicyName 的开放端口 $port 越界。" }
+	}
+	$lines = @(
+		'apiVersion: networking.k8s.io/v1',
+		'kind: NetworkPolicy',
+		'metadata:',
+		"  name: $PolicyName",
+		'  labels:',
+		'    mmorpg.io/managed-by: k8s_deploy.ps1',
+		'spec:',
+		'  podSelector:',
+		'    matchExpressions:',
+		'      - key: app',
+		'        operator: In',
+		"        values: [$($TargetApps -join ', ')]",
+		'  policyTypes:',
+		'    - Ingress',
+		'  ingress:'
+	)
+	if ($open.Count -gt 0) {
+		$lines += '    # 清单里声明的其它端口(节点口 / metrics / 日志 sidecar):任何来源照常可达'
+		$lines += '    - ports:'
+		foreach ($port in $open) {
+			$lines += '        - protocol: TCP'
+			$lines += "          port: $port"
+		}
+	}
+	$lines += "    # gRPC 口 ${GrpcPort}:只放行名单里的工作负载(任意 namespace)"
+	$lines += '    - from:'
+	$lines += '        - namespaceSelector: {}'
+	$lines += '          podSelector:'
+	$lines += '            matchExpressions:'
+	$lines += '              - key: app'
+	$lines += '                operator: In'
+	$lines += "                values: [$($AllowedApps -join ', ')]"
+	$lines += '      ports:'
+	$lines += '        - protocol: TCP'
+	$lines += "          port: $GrpcPort"
+	return ($lines -join "`n")
+}
+
+# scene 的 gRPC 口准入策略(zone namespace)。开放端口 = scene 的节点口 + 日志 sidecar 声明的端口(开 sidecar 时);
+# gRPC 口 = 节点口 + 30000(node_allocator.cpp kGrpcPortOffset,与 New-NodeDeploymentYaml 同一推导)。
+function New-SceneGrpcNetworkPolicyYaml {
+	param(
+		[Parameter(Mandatory = $true)][int]$SceneRpcPort,
+		[Parameter(Mandatory = $true)][string]$CurrentZoneName
+	)
+
+	$spec = $script:GrpcAllowLists['scene']
+	$open = @($SceneRpcPort)
+	if ($script:CppLogSidecarEnabled) {
+		$open += Get-ManifestContainerPorts -ManifestContent (New-CppLogSidecarContainerYaml -ItemIndent '  ' -CurrentZoneName $CurrentZoneName -AsNativeSidecar)
+	}
+	return New-GrpcAllowListNetworkPolicyYaml -PolicyName $spec.PolicyName -TargetApps $spec.TargetApps -GrpcPort ($SceneRpcPort + 30000) `
+		-OpenTcpPorts $open -AllowedApps $spec.AllowedApps
 }
 
 # ─────────────────────────────────────────────────────────────────
@@ -1248,7 +1638,8 @@ function Get-GrpcClientDeadlineBudgetViolations {
 	  LoginNodeService           ← go/login/etc/login.yaml(gate 直连模式)
 	  PlayerInboxNodeService     ← go/player_inbox/etc/player_inbox.yaml(scene 调 FetchItems / AckItems;
 	                                PlayerInboxAdmin 的方法同端口同 Timeout,C++ 不调用)
-	Battle / Etcd 没有 Go 服务端超时,不在表里;chat / friend / guild / team / trade 不在 C++ 节点白名单里,只经路由服到达。
+	Battle / Etcd 没有 Go 服务端超时,不在表里;chat / friend / guild / team / trade / mail / rank 不在 C++ 节点白名单里,只经路由服到达
+	(mail 的 MailAdmin 是运维直连,同样没有 C++ 调用方)。
 	比对的是服务 yaml:scene-manager / match / 路由服 / login 的 go-svc ConfigMap 都从它镜像 Timeout
 	(New-GoSvcConfigMapYaml);data-service 的 ConfigMap 不写 Timeout(= go-zero 默认 2000)—— 生成物同样满足
 	这条不等式,由契约测试另外钉住(防镜像被改回常数、ConfigMap 键改名)。
@@ -1434,7 +1825,7 @@ function Assert-RouterForwardBudget {
 # ─────────────────────────────────────────────────────────────────
 # MySQL 连接总账(G2b;docs/PROGRESS.md 2026-10-12「落点多库连接拓扑核算」)
 # ─────────────────────────────────────────────────────────────────
-# 所有 zone 的 go/db、data_service、Java gateway 与全局的 friend、trade、player-inbox 共用 infra namespace 里同一台 MySQL。
+# 所有 zone 的 go/db、data_service、Java gateway 与全局的 friend、trade、player-inbox、guild、mail 共用 infra namespace 里同一台 MySQL。
 # 以前每个服务各写一句「要算进 max_connections」,没有任何地方把它们加起来。这里把这笔账写成可执行的函数:
 # 输入全部来自权威文件,写路径打印一行,契约测试钉住「规划峰值 ≤ max_connections」。
 # Get-MysqlConnectionPlan / Get-MysqlMaxConnectionsFromManifest / Get-ManifestDeploymentReplicas /
@@ -1499,8 +1890,8 @@ function Get-MysqlMaxConnectionsFromManifest {
 	读一份 manifest 里 Deployment 的副本数。文件缺席、或两格缩进的 replicas: 不是恰好出现一次即 throw。
 
 .DESCRIPTION
-	两格缩进 = Deployment 顶层 spec 下的那一行。总账用到的六份 manifest(go-svc 的 db / data-service / friend / trade /
-	player-inbox、java-svc 的 gateway)各只有一个 Deployment;以后某份里多出第二个带 replicas 的工作负载,这里会拒绝而不是随便取一个。
+	两格缩进 = Deployment 顶层 spec 下的那一行。总账用到的八份 manifest(go-svc 的 db / data-service / friend / trade /
+	player-inbox / guild / mail、java-svc 的 gateway)各只有一个 Deployment;以后某份里多出第二个带 replicas 的工作负载,这里会拒绝而不是随便取一个。
 #>
 function Get-ManifestDeploymentReplicas {
 	param(
@@ -1560,6 +1951,16 @@ function Get-MysqlConnectionLedgerInputs {
 		# 会话级 RC + 锁等待 1s),池上限取服务 yaml 的 MySQL.MaxOpenConn,player-inbox ConfigMap 从同一个键镜像。
 		PlayerInboxReplicas   = Get-ManifestDeploymentReplicas -RelativePath 'deploy/k8s/manifests/go-svc/player-inbox.yaml'
 		PlayerInboxMaxOpen    = Get-AuthoritativeScalar -RelativePath 'go/player_inbox/etc/player_inbox.yaml' -KeyPath 'MySQL.MaxOpenConn'
+		# 帮会(2026-10-16 起有 K8s 清单):独占库 mmorpg_guild 一个池,上限取服务 yaml 的 MySQL.MaxOpenConn(以前不设 = 不限,同批补上),
+		# guild ConfigMap 从同一个键镜像。
+		GuildReplicas         = Get-ManifestDeploymentReplicas -RelativePath 'deploy/k8s/manifests/go-svc/guild.yaml'
+		GuildMaxOpen          = Get-AuthoritativeScalar -RelativePath 'go/guild/etc/guild.yaml' -KeyPath 'MySQL.MaxOpenConn'
+		# 邮件(docs/design/mail-system.md §7):独占库 mmorpg_mail 一个池,上限取服务 yaml 的 MySQL.MaxOpenConn,mail ConfigMap 从同一个键镜像。
+		# 加入后规划档峰值 1780 → 1860,超过旧的 max_connections 1800,同批把它调到 2100(manifests/infra/mysql.yaml 的说明)。
+		MailReplicas          = Get-ManifestDeploymentReplicas -RelativePath 'deploy/k8s/manifests/go-svc/mail.yaml'
+		MailMaxOpen           = Get-AuthoritativeScalar -RelativePath 'go/mail/etc/mail.yaml' -KeyPath 'MaxOpenConns'
+		RankReplicas          = Get-ManifestDeploymentReplicas -RelativePath 'deploy/k8s/manifests/go-svc/rank.yaml'
+		RankMaxOpen           = Get-AuthoritativeScalar -RelativePath 'go/rank/etc/rank.yaml' -KeyPath 'MaxOpenConns'
 	}
 }
 
@@ -1573,9 +1974,9 @@ function Get-MysqlConnectionLedgerInputs {
 	  db 每实例 = DbHomeMaxOpen + E_z × DbZoneStoreMaxOpen + E_n × DbNonZoneStoreMaxOpen
 	  ds 每实例 = DsAuditStorePools × DsAuditMaxOpen + DsPlayerNameMaxOpen (+ DsRouteMaxOpen,F 为真时)
 	  每 zone   = 各自副本数 × (db、ds、gateway 每实例)之和
-	  全局      = friend、trade 与 player-inbox 的副本数 × 池上限
+	  全局      = friend、trade、player-inbox、guild 与 mail 的副本数 × 池上限
 	  稳态      = Z × 每 zone + 全局
-	  滚动余量  = R × (db + ds + gateway + friend + trade + player-inbox 每实例)
+	  滚动余量  = R × (db + ds + gateway + friend + trade + player-inbox + guild + mail 每实例)
 	  峰值      = 稳态 + 滚动余量 + 运维余量
 	纯函数,不读文件;输入不是正整数、形态参数越界即 throw(fail-closed:不替你猜一个连接数)。
 #>
@@ -1593,7 +1994,7 @@ function Get-MysqlConnectionLedger {
 	$required = @('MaxConnections', 'DbReplicas', 'DbHomeMaxOpen', 'DbZoneStoreMaxOpen', 'DbNonZoneStoreMaxOpen',
 		'DsReplicas', 'DsAuditStorePools', 'DsAuditMaxOpen', 'DsPlayerNameMaxOpen', 'DsRouteMaxOpen',
 		'GatewayReplicas', 'GatewayMaxPool', 'FriendReplicas', 'FriendMaxOpen', 'TradeReplicas', 'TradeMaxOpen',
-		'PlayerInboxReplicas', 'PlayerInboxMaxOpen')
+		'PlayerInboxReplicas', 'PlayerInboxMaxOpen', 'GuildReplicas', 'GuildMaxOpen', 'MailReplicas', 'MailMaxOpen', 'RankReplicas', 'RankMaxOpen')
 	$v = @{}
 	foreach ($key in $required) {
 		$n = 0
@@ -1611,12 +2012,14 @@ function Get-MysqlConnectionLedger {
 	$gatewayPerInstance = $v.GatewayMaxPool
 	$perZone = $v.DbReplicas * $dbPerInstance + $v.DsReplicas * $dsPerInstance + $v.GatewayReplicas * $gatewayPerInstance
 	# 变量名不用 $global:它是作用域修饰符的名字,读的人会以为在写全局作用域。
-	$globalPools = $v.FriendReplicas * $v.FriendMaxOpen + $v.TradeReplicas * $v.TradeMaxOpen + $v.PlayerInboxReplicas * $v.PlayerInboxMaxOpen
+	$globalPools = $v.FriendReplicas * $v.FriendMaxOpen + $v.TradeReplicas * $v.TradeMaxOpen + $v.PlayerInboxReplicas * $v.PlayerInboxMaxOpen +
+		$v.GuildReplicas * $v.GuildMaxOpen + $v.MailReplicas * $v.MailMaxOpen + $v.RankReplicas * $v.RankMaxOpen
 	$steady = $ZoneCount * $perZone + $globalPools
-	# 一个 zone 的三个 Deployment 与三个全局 Deployment 各多 RolloutExtraPodsPerDeployment 个实例
+	# 一个 zone 的三个 Deployment 与五个全局 Deployment(friend / trade / player-inbox / guild / mail)各多 RolloutExtraPodsPerDeployment 个实例
 	# (maxSurge 1 的新 Pod + 仍在优雅退出的旧 Pod;K8s 默认 25% 在 2 副本时 maxSurge 也是 1)。
 	# all-up 不带 -WaitReady 时各 zone 的滚动会重叠,不在这个余量里。
-	$surge = $RolloutExtraPodsPerDeployment * ($dbPerInstance + $dsPerInstance + $gatewayPerInstance + $v.FriendMaxOpen + $v.TradeMaxOpen + $v.PlayerInboxMaxOpen)
+	$surge = $RolloutExtraPodsPerDeployment * ($dbPerInstance + $dsPerInstance + $gatewayPerInstance + $v.FriendMaxOpen + $v.TradeMaxOpen + $v.PlayerInboxMaxOpen +
+		$v.GuildMaxOpen + $v.MailMaxOpen + $v.RankMaxOpen)
 	$peak = $steady + $surge + $OpsReserve
 	return [ordered]@{
 		DbPerInstance = $dbPerInstance; DsPerInstance = $dsPerInstance; GatewayPerInstance = $gatewayPerInstance
@@ -2030,6 +2433,7 @@ function Get-RedisPoolMirror {
 	不计入(写在这里,接上时加一行):
 	  - client-rpc-router:不连 Redis;
 	  - match 的 MatchRedis、chat 的 ChatRedis:K8s 上指向 redis-match-cluster,是另一套实例;
+	  - rank:现役 SQL 权威榜不连接 Redis，不计共享 Redis 总账；旧 R2b 专用 Redis 不部署。
 	  - login 的 PasswordAuth 失败配额池(auth_init.go passwordQuotaRedisOptions,PoolSize 4)与 SaToken 客户端:K8s 的 login ConfigMap
 	    不写这两段;启用 PasswordAuth 后每个 login 副本 +4;
 	  - 探针、运维 redis-cli 与一次性工具:进规划档的 OpsReserve。
@@ -2855,11 +3259,188 @@ function Get-RedisHaScriptsDigest {
 	return ((($bytes | ForEach-Object { $_.ToString('x2') }) -join '').Substring(0, 16))
 }
 
+# ─────────────────────────────────────────────────────────────────
+# 共享 Redis 的拓扑:单实例(redis.yaml)或高可用(redis-ha.yaml)
+# (docs/design/no-single-node-horizontal-scaling-20261001.md §5;deploy/k8s/README.md「共享 Redis:高可用形态」)
+# ─────────────────────────────────────────────────────────────────
+# 高可用形态 = 1 主 2 从 + 每个 redis Pod 一个哨兵容器 + 2 个 haproxy 入口代理。Service redis 的名字与 ClusterIP 不变,
+# 只是 selector 从 redis Pod 换成代理;代理只把连接交给「自己答 role:master、且多数哨兵认它是主」的节点。
+# 所有客户端(C++ / Go / Java)零改动,仍连 redis.<infra>:6379。故障转移、滚动更新、整体停机再拉起、从单实例原地切换,
+# 2026-10-08 都在本机 kind 的隔离命名空间里实测过(数字见设计文档 §5)。
+# Get-RedisTopologyFor / Get-RedisTopologyChangeVerdict / Get-RedisHaLimits / Get-RedisHaScriptsDigest /
+# Assert-RedisPasswordSentinelSafe 是纯函数,契约测试按 AST 抽出直接调用;Get-RedisTopology 读脚本参数,
+# Assert-RedisTopologyChangeIsSafe 读集群(DryRun 不查,一律当全新集群)。
+
+# 代理 Pod 模板上的脚本摘要占位(redis-ha.yaml 的 Deployment redis-proxy),由 Apply-Infra 换成 Get-RedisHaScriptsDigest 的结果。
+$script:RedisHaScriptsDigestPlaceholder = '__REDIS_HA_SCRIPTS_DIGEST__'
+
+# 副本数 → 拓扑(纯函数)。只认 1 和 3:哨兵要凑多数派,两个节点挂一个就没有多数派,比单实例还脆;
+# 更多副本没有收益(读写都只走主),还会拖慢每次滚动。
+function Get-RedisTopologyFor {
+	param([Parameter(Mandatory = $true)][int]$Replicas)
+
+	if ($Replicas -ne 1 -and $Replicas -ne 3) {
+		throw "共享 Redis 的副本数只能是 1(单实例,redis.yaml)或 3(1 主 2 从 + 哨兵 + 代理,redis-ha.yaml),实际 $Replicas。两个节点的哨兵多数派挂一个就没了,比单实例还脆。"
+	}
+	$ha = ($Replicas -eq 3)
+	return [pscustomobject]@{
+		Replicas            = $Replicas
+		HighAvailability    = $ha
+		Manifest            = if ($ha) { 'redis-ha.yaml' } else { 'redis.yaml' }
+		PodManagementPolicy = if ($ha) { 'Parallel' } else { 'OrderedReady' }
+	}
+}
+
+# 按命令行与档位解析出本次部署的 Redis 拓扑。-RedisReplicas 0(缺省)= 按档位,判据与 Get-KafkaTopology 相同。
+function Get-RedisTopology {
+	$replicas = $RedisReplicas
+	if ($replicas -le 0) {
+		$replicas = if ($ReleaseProfile -ne 'dev' -or $OpsProfile -ne 'custom') { 3 } else { 1 }
+	}
+	return Get-RedisTopologyFor -Replicas $replicas
+}
+
+# 线上 sts/redis 的副本数 → 目标副本数,这次变更算哪一类(纯函数,契约测试直接喂值;写法同 Get-KafkaTopologyChangeVerdict):
+#   absent     线上没有 sts/redis(全新集群)
+#   unchanged  副本数不变
+#   upgrade    1 → 3:单实例原地切高可用。redis-0 带着 PVC 上的数据以主身份回来,redis-1 / redis-2 新建后从它全量同步
+#   refuse     其余一律拒绝 —— 3 → 1(主可能在 redis-1 / redis-2 上,缩到只剩 redis-0 = 丢掉主上的最新数据),
+#              以及线上是 0 / 2 这类本脚本从不产生的数量(不知道它经历过什么,不猜)
+function Get-RedisTopologyChangeVerdict {
+	param(
+		[AllowNull()]$LiveReplicas,
+		[Parameter(Mandatory = $true)][int]$DesiredReplicas
+	)
+
+	if ($null -eq $LiveReplicas) { return 'absent' }
+	$live = [int]$LiveReplicas
+	if ($live -eq $DesiredReplicas) { return 'unchanged' }
+	if ($live -eq 1 -and $DesiredReplicas -eq 3) { return 'upgrade' }
+	return 'refuse'
+}
+
+# apply 共享 Redis 之前调用(Apply-Infra 里,早于任何写操作)。拒绝的变更直接 throw;返回判定,upgrade 时 Apply-Infra 要先
+# 「只删 StatefulSet 对象、留下 Pod 与 PVC」(podManagementPolicy 创建后不可改,见 Apply-Infra 的 redis 分支)。
+function Assert-RedisTopologyChangeIsSafe {
+	param([Parameter(Mandatory = $true)]$Topology)
+
+	$live = Get-LiveStatefulSetReplicas -Namespace $InfraNamespace -Name 'redis'
+	$verdict = Get-RedisTopologyChangeVerdict -LiveReplicas $live -DesiredReplicas $Topology.Replicas
+	if ($verdict -eq 'upgrade') {
+		Write-Warning "[RedisTopology]Upgrade:shared Redis 1 -> 3 (single instance -> primary + 2 replicas + sentinels + 2 proxies). redis-0 restarts with its data and becomes the primary; redis-1 / redis-2 full-sync from it; Service redis switches to the proxies. Logins in all zones are interrupted while redis-0 restarts (maintenance window, needs -ConfirmRedisCoreRestart)."
+	}
+	if ($verdict -ne 'refuse') { return $verdict }
+	throw @"
+拒绝变更共享 Redis 的形态:线上 sts/redis 有 $live 个副本 → 目标 $($Topology.Replicas) 个(namespace=$InfraNamespace)。
+只支持 1 → 3(单实例原地切高可用)。3 → 1 不能原地做:主可能在 redis-1 / redis-2 上,缩到只剩 redis-0 会丢掉主上的最新数据;
+线上是 0 / 2 这类本脚本从不产生的副本数时,不知道它经历过什么,也不猜。本次未做任何写操作。
+确实要回到单实例:先在维护窗口里把主切回 redis-0(redis-cli -p 26379 SENTINEL FAILOVER mymaster,直到哨兵答 redis-0),
+停写后按 deploy/k8s/README.md「共享 Redis:高可用形态」的回退步骤做;只是这次不想改形态,显式传 -RedisReplicas $live。
+"@
+}
+
+# 高可用形态下口令的额外字符集限制(纯函数)。双引号、反斜杠与控制字符已由 Assert-RedisPasswordYamlSafe 拒绝;
+# 这里再拒绝空白与单引号:哨兵把口令**原样、不加引号**写回它自己的配置文件(sentinel auth-pass / sentinel-pass,Redis 自身的行为),
+# 下次重启按配置语法读回时,空白会把口令拆成两段、引号会被当成引号 —— 报 "Unbalanced quotes" 起不来(2026-10-08 实测)。
+# 报错只点变量名,不回显值。空串放行(dev 档不认证)。
+function Assert-RedisPasswordSentinelSafe {
+	param([AllowEmptyString()][AllowNull()][string]$Password)
+
+	if ([string]::IsNullOrEmpty($Password)) { return }
+	if ($Password -match "[\s']") {
+		throw "MMORPG_REDIS_PASSWORD 含空白或单引号:共享 Redis 的高可用形态(-RedisReplicas 3)里,哨兵会把口令原样、不加引号地写回它自己的配置文件,下次重启读不回来。请换一个只含字母、数字与 ._~@%+=:,^- 之类符号的口令。"
+	}
+}
+
+<#
+.SYNOPSIS
+	从 redis-ha.yaml 读连接上限并核对:PROXY_MAXCONN × (代理副本数 + maxSurge) + 预留 ≤ MAXCLIENTS,且 MAXCLIENTS 与 redis.yaml 同值。
+
+.DESCRIPTION
+	为什么要让代理先到线:Redis 一旦到线,代理对它的健康检查连接也会被拒,连续两次失败就把它判下线、踢掉全部会话,
+	客户端一起重连又撞线 —— 小故障被放大成全服断线;代理到线只是新连接排队。所以代理全部副本(含滚动时多出的那个)
+	加起来也不能把 Redis 用满,留出的预留给复制、哨兵、代理健康检查、探针与运维 redis-cli。
+	MAXCLIENTS 必须与 redis.yaml 相同:Redis 连接总账(Get-RedisConnectionLedgerInputs)只从 redis.yaml 读,两种形态共用一份账。
+	纯函数(不读文件):找不到恰好一处取值、Deployment redis-proxy 的 replicas / maxSurge 不是恰好一处、或不等式不成立即 throw。
+#>
+function Get-RedisHaLimits {
+	param(
+		[Parameter(Mandatory = $true)][string]$ManifestContent,
+		[Parameter(Mandatory = $true)][int]$SingleInstanceMaxClients
+	)
+
+	# 预留名额:复制 2 条、哨兵每个对主 / 对每个从各 2 条、两个代理的健康检查、探针与运维 redis-cli。估计值,取得宽裕。
+	$reserved = 1000
+	$text = $ManifestContent -replace "`r`n", "`n"
+	$readOne = {
+		param([string]$Name)
+		$found = [regex]::Matches($text, "(?m)^[ \t]*$Name=(\d+)[ \t]*$")
+		if ($found.Count -ne 1) {
+			throw "redis-ha.yaml:$Name=<数字> 应恰好出现 1 次,实际 $($found.Count) 次(fail-closed:不替你猜连接上限)"
+		}
+		$value = 0
+		if (-not [int]::TryParse($found[0].Groups[1].Value, [ref]$value) -or $value -le 0) {
+			throw "redis-ha.yaml:$Name='$($found[0].Groups[1].Value)' 必须是正整数"
+		}
+		return $value
+	}
+	$maxClients = & $readOne 'MAXCLIENTS'
+	$proxyMaxConn = & $readOne 'PROXY_MAXCONN'
+
+	$proxyDocs = @(($text -split '(?m)^---[ \t]*$') | Where-Object { $_ -cmatch '(?m)^kind:[ \t]*Deployment[ \t]*$' -and $_ -cmatch '(?m)^  name:[ \t]*redis-proxy[ \t]*$' })
+	if ($proxyDocs.Count -ne 1) {
+		throw "redis-ha.yaml:kind: Deployment、metadata.name 为 redis-proxy 的文档应恰好 1 份,实际 $($proxyDocs.Count) 份"
+	}
+	$replicaMatches = [regex]::Matches($proxyDocs[0], '(?m)^  replicas:[ \t]*(\d+)[ \t]*$')
+	$surgeMatches = [regex]::Matches($proxyDocs[0], '(?m)^[ \t]+maxSurge:[ \t]*(\d+)[ \t]*$')
+	if ($replicaMatches.Count -ne 1 -or $surgeMatches.Count -ne 1) {
+		throw "redis-ha.yaml:Deployment redis-proxy 的 spec.replicas 与 maxSurge 应各恰好一处(整数),实际 $($replicaMatches.Count) / $($surgeMatches.Count) 处"
+	}
+	$proxyReplicas = [int]$replicaMatches[0].Groups[1].Value
+	$proxyMaxSurge = [int]$surgeMatches[0].Groups[1].Value
+
+	if ($maxClients -ne $SingleInstanceMaxClients) {
+		throw "redis-ha.yaml 的 MAXCLIENTS=$maxClients 与 redis.yaml 的 $SingleInstanceMaxClients 不同:两种形态共用一份 Redis 连接总账(只从 redis.yaml 读),必须同值。"
+	}
+	$proxyTotal = $proxyMaxConn * ($proxyReplicas + $proxyMaxSurge)
+	if ($proxyTotal + $reserved -gt $maxClients) {
+		throw "redis-ha.yaml:PROXY_MAXCONN=$proxyMaxConn × (代理副本 $proxyReplicas + maxSurge $proxyMaxSurge) + 预留 $reserved = $($proxyTotal + $reserved) 超过 MAXCLIENTS=$maxClients。代理必须比 Redis 先到线(否则到线时代理的健康检查失败、踢掉全部会话),调小 PROXY_MAXCONN 或在维护窗口调大两份清单的 MAXCLIENTS。"
+	}
+	return [pscustomobject]@{
+		MaxClients    = $maxClients
+		ProxyMaxConn  = $proxyMaxConn
+		ProxyReplicas = $proxyReplicas
+		ProxyMaxSurge = $proxyMaxSurge
+		Reserved      = $reserved
+		ProxyTotal    = $proxyTotal
+	}
+}
+
+# 脚本 ConfigMap(redis-ha-scripts)内容的摘要,取 SHA-256 前 16 位(纯函数)。写进代理的 Pod 模板注解:代理只在启动时
+# 按脚本生成配置,内容一变模板就变、Deployment 自动滚动。整块文档原样参与(只统一换行),脚本里的注释改了也会滚动 ——
+# 代理是无状态的,多滚一次只是客户端重连一次,比漏滚一次(新脚本不生效)便宜。
+function Get-RedisHaScriptsDigest {
+	param([Parameter(Mandatory = $true)][string]$ManifestContent)
+
+	$documents = @(($ManifestContent -replace "`r`n", "`n") -split '(?m)^---[ \t]*$')
+	$configMaps = @($documents | Where-Object { $_ -cmatch '(?m)^kind:[ \t]*ConfigMap[ \t]*$' -and $_ -cmatch '(?m)^  name:[ \t]*redis-ha-scripts[ \t]*$' })
+	if ($configMaps.Count -ne 1) {
+		throw "redis-ha.yaml:kind: ConfigMap、metadata.name 为 redis-ha-scripts 的文档应恰好 1 份,实际 $($configMaps.Count) 份"
+	}
+	$sha256 = [System.Security.Cryptography.SHA256]::Create()
+	try {
+		$bytes = $sha256.ComputeHash([System.Text.Encoding]::UTF8.GetBytes($configMaps[0].Trim()))
+	}
+	finally {
+		$sha256.Dispose()
+	}
+	return ((($bytes | ForEach-Object { $_.ToString('x2') }) -join '').Substring(0, 16))
+}
+
 # Go micro-service catalogue: name → { configMapName, manifestFile, port, configFlag, configFileName }
 #   Global = $true 的条目是**全局池**服务:只在 infra-up / all-up 的基础设施阶段部署到
 #   $InfraNamespace 一次,zone-up 跳过(见 Apply-GlobalGoSvcManifests)。
 $GoSvcCatalogue = @{
-	guild = @{ ConfigMap = "go-svc-guild-config"; Manifest = "guild.yaml"; Port = 50300; ConfigFlag = "-f"; ConfigFile = "guild.yaml"; ImageName = "mmorpg-guild"; Global = $true; MigrateJob = "guild-migrate.yaml" }
 	mail = @{ ConfigMap = "go-svc-mail-config"; Manifest = "mail.yaml"; Port = 50900; ConfigFlag = "-f"; ConfigFile = "mail.yaml"; ImageName = "mmorpg-mail"; Global = $true; MigrateJob = "mail-migrate.yaml" }
 	rank = @{ ConfigMap = "go-svc-rank-config"; Manifest = "rank.yaml"; Port = 51100; ConfigFlag = "-f"; ConfigFile = "rank.yaml"; ImageName = "mmorpg-rank"; Global = $true; MigrateJob = "rank-migrate.yaml" }
 	db              = @{ ConfigMap = "go-svc-db-config";              Manifest = "db.yaml";              Port = 6000;  ConfigFlag = "-f";              ConfigFile = "db.yaml";                    ImageName = "mmorpg-db" }
@@ -2907,6 +3488,24 @@ $GoSvcCatalogue = @{
 	# 表由 MigrateJob 登记的 player-inbox-migrate Job 建(Apply-OneGoSvc 在 ConfigMap 之后、Deployment 之前跑它)。
 	# 运维口令 PlayerInbox.AdminToken 只经 Secret 进容器(见 $script:PlayerInboxAdminTokenSecretName 处的说明)。
 	"player-inbox"  = @{ ConfigMap = "go-svc-player-inbox-config";    Manifest = "player-inbox.yaml";    Port = 50950; ConfigFlag = "-f";              ConfigFile = "player_inbox.yaml";             ImageName = "mmorpg-player-inbox"; Global = $true; MigrateJob = "player-inbox-migrate.yaml" }
+	# 帮会 guild(docs/design/guild-phase2/;K8s 上线批 BK8s = 90-consistency.md G-05,2026-10-16):帮会天然跨 zone,是全局池(Global),
+	# 与 trade / friend 同放 infra namespace 一份。客户端只经 gate → client-rpc-router 可达(路由服按 GuildNodeService.rpc/ 前缀发现,
+	# guild 刻意不写 go-zero 的 Etcd.Key,D-13);data-service 的回档帮会闸按 Service 名 guild.<infra>:50300 直连(GuildInternalRpc)。
+	# 端口 50300 / metrics 9220 与 go/guild/etc/guild.yaml、go_services.ps1 一致;ImageName 与 go_svc_image.ps1 的 guild 条目一致。
+	# 独占库 mmorpg_guild(D-14):库由 infra-up 的 mysql-init-sql(deploy/mysql-init/00_init_zone_dbs.sql)预建;
+	# 表由 MigrateJob 登记的 guild-migrate Job 建(Apply-OneGoSvc 在 ConfigMap 之后、Deployment 之前跑它)。
+	# 邮件 mail(docs/design/mail-system.md;M1d,2026-10-16):邮件按全局唯一的 player_id / 号段 id 存,是全局池(Global),infra namespace 一份。
+	# 客户端只经 gate → client-rpc-router 可达(路由服按 MailNodeService.rpc/ 前缀发现,mail 的 go-zero Etcd.Key 留空,D-13);
+	# `-GateRouterMode 0` 时部署得起来但玩家够不着(与 chat / friend / trade 同口径)。MailAdmin(发件)由运维直连 Service mail:50900。
+	# 端口 50900 / metrics 9240 与 go/mail/etc/mail.yaml、go_services.ps1 一致;ImageName 与 go_svc_image.ps1 的 mail 条目一致。
+	# 独占库 mmorpg_mail(D-14):库由 infra-up 的 mysql-init-sql(deploy/mysql-init/00_init_zone_dbs.sql)预建;
+	# 表由 MigrateJob 登记的 mail-migrate Job 建(Apply-OneGoSvc 在 ConfigMap 之后、Deployment 之前跑它)。
+	# 运维使用 MAIL_PRODUCER_SECRET_ADMIN 的请求签名，密钥由现役 domain-service-secrets 注入。
+	# 排行榜 rank(docs/design/leaderboard-system.md §5.4;R2b):榜按全局唯一的 player_id 存,是全局池(Global),infra namespace 一份。
+	# 客户端只经 gate → client-rpc-router 可达(路由服按 RankNodeService.rpc/ 前缀发现,rank 的 go-zero Etcd.Key 留空,D-13);
+	# `-GateRouterMode 0` 时部署得起来但玩家够不着(与 chat / friend / mail 同口径)。端口与 go/rank/etc/rank.yaml、go_services.ps1 一致;
+	# 现役 rank 使用 SQL 权威代次及 rank-migrate，奖励经 mail 发放；不启用历史 Redis 写榜 runtime。
+	# 写分只经 match 的评分快照:match 的 -MatchRatingSnapshotPublish 默认 0,不打开时 rank 起得来、榜可读但不更新(上线顺序见设计 §12.6)。
 }
 
 # 目录里非全局(= 随 zone 部署)的服务名。两处 zone 循环共用,避免各写一遍过滤条件。
@@ -3100,7 +3699,8 @@ function Assert-KafkaTopologyChangeIsSafe {
 # 迁移窗口里 auto-create 出来的 per-node topic gate-<id> / scene-<id>、game-events)
 # 一律 ≥ 2 × 900s;$KafkaDbTaskRetentionMs 按"能容忍多长的 DB 故障"给,不是按 poll 间隔给。
 # 有自己契约的 topic 不吃这两个值:审计 topic 30 天(data_service.yaml)、
-# 控制面命令 topic 1 小时(kafka-topic-init)、match-results 7 天(match 侧常量)。
+# 控制面命令 topic 1 小时(kafka-topic-init)、match-results 7 天(match 侧常量)、
+# match-rating-snapshot 7 天(match_service.yaml 的 RatingSnapshotRetentionHours,只由 match 声明)。
 function Apply-KafkaProfileDefaults {
 	switch ($KafkaProfile) {
 		"dev" {
@@ -4895,8 +5495,8 @@ $($gameConfig -split "`r?`n" | ForEach-Object { "    $_" } | Out-String)
 
 function Get-SceneAssetSecretEnvLines {
 	param([string]$Indent)
-	# Secret须在scene所在namespace预先配置，值与全局域服务一致；不把密钥值写进ConfigMap。
 	foreach ($caller in @('guild', 'trade', 'mail')) {
+		if ($script:AssetOpsOn -and $caller -ne 'mail') { continue }
 		"${Indent}- name: MMORPG_ASSET_OP_SECRET_$($caller.ToUpperInvariant())"
 		"${Indent}  valueFrom: {secretKeyRef: {name: domain-service-secrets, key: asset-${caller}, optional: true}}"
 	}
@@ -4935,7 +5535,8 @@ function New-NodeDeploymentYaml {
 		$sidecarVolumeBlock = "`n" + (New-CppLogSidecarVolumeYaml -ItemIndent "        ")
 	}
 	# Pod 模板注解:sidecar 配置指纹(开 sidecar 时)+ zone Redis 口令指纹(有口令时),同一个 annotations: 段,列位置同上(6 / 8)。
-	$podAnnotationBlock = New-CppPodAnnotationBlock -KeyIndent "      "
+	# scene(SceneNodeType ≥ 0)在 -AssetOps on 时另带两条资产密钥指纹,见 New-CppPodAnnotationBlock。
+	$podAnnotationBlock = New-CppPodAnnotationBlock -KeyIndent "      " -SceneAssetOp:($SceneNodeType -ge 0)
 
 	# 用数组逐行拼,最后 join 换行。
 	# 旧写法是 `$block += @"..."@` 连续追加两个 here-string —— here-string 内容不含
@@ -4947,6 +5548,11 @@ function New-NodeDeploymentYaml {
 		$extraEnvLines += "`t`t`t- name: SCENE_NODE_TYPE"
 		$extraEnvLines += "`t`t`t  value: `"$SceneNodeType`""
 		$extraEnvLines += @(Get-SceneAssetSecretEnvLines -Indent "`t`t`t")
+	}
+	# 资产通道验签密钥(-AssetOps on,只给 scene):guild / trade 两把都要,值经 Secret 注入(secretKeyRef 不写 optional,
+	# Secret 由 Apply-Zone 先于 scene 建好)。off 时不写,模板与引入开关之前逐字相同。
+	if ($SceneNodeType -ge 0 -and $script:AssetOpsOn) {
+		$extraEnvLines += New-SceneAssetOpEnvLines -ItemIndent "`t`t`t" -Step "`t"
 	}
 	# 发号槽本地缓存目录(见顶部 $SnowflakeCacheDir),下面 volumes 在同一路径挂 emptyDir。
 	# gate / scene 共用本模板:只有 scene 启用 SnowflakeSlotClient 会写它,gate 收到这个环境变量
@@ -5518,7 +6124,7 @@ function New-SceneFleetYaml {
 		$gameServerContainerLine = "      container: $FleetName`n"
 	}
 	# Pod 模板注解(sidecar 配置指纹 + zone Redis 口令指纹),同 New-NodeDeploymentYaml;Fleet 的 Pod 模板 metadata 子键在第 10 列。
-	$podAnnotationBlock = New-CppPodAnnotationBlock -KeyIndent "          "
+	$podAnnotationBlock = New-CppPodAnnotationBlock -KeyIndent "          " -SceneAssetOp
 
 	$countersBlock = ""
 	if ($AgonesHighDensity) {
@@ -5536,7 +6142,9 @@ function New-SceneFleetYaml {
 "@
 	}
 
-	$sceneAssetEnvBlock = (Get-SceneAssetSecretEnvLines -Indent '                ') -join "`n"
+	$sceneAssetEnvLines = @(Get-SceneAssetSecretEnvLines -Indent '                ')
+	if ($script:AssetOpsOn) { $sceneAssetEnvLines += @(New-SceneAssetOpEnvLines -ItemIndent (' ' * 16) -Step '    ') }
+	$sceneAssetEnvBlock = $sceneAssetEnvLines -join "`n"
 	# GRPC_SERVER_MAX_POLLERS 已退役(grpc-muduo-transport.md §15.11),Fleet 不再注入。
 
 	return @"
@@ -5792,7 +6400,12 @@ spec:
 	ConvertTo-ClientEntryPodAnnotationBlock(值加双引号:12 位十六进制可能全是数字或形如 1e5,裸写会被解析成数字,API server 拒收)。
 #>
 function New-CppPodAnnotationBlock {
-	param([Parameter(Mandatory = $true)][string]$KeyIndent)
+	param(
+		[Parameter(Mandatory = $true)][string]$KeyIndent,
+		# scene 的 Pod 模板:-AssetOps on 时追加两条资产密钥指纹($script:AssetOpCallers 的 HashAnnotation),
+		# 只换密钥也会滚动,并供 Assert-AssetOpClusterConsistency 跨命令核对。off 时不写,注解段与引入开关之前逐字相同。
+		[switch]$SceneAssetOp
+	)
 
 	$annotations = [ordered]@{}
 	if ($script:CppLogSidecarEnabled) {
@@ -5800,6 +6413,10 @@ function New-CppPodAnnotationBlock {
 	}
 	$zoneRedisAuth = Get-CppZoneRedisAuthAnnotations
 	foreach ($key in $zoneRedisAuth.Keys) { $annotations[$key] = $zoneRedisAuth[$key] }
+	if ($SceneAssetOp -and $script:AssetOpsOn) {
+		$assetOpHashes = Get-AssetOpDesiredHashes
+		foreach ($caller in $assetOpHashes.Keys) { $annotations[$script:AssetOpCallers[$caller].HashAnnotation] = $assetOpHashes[$caller] }
+	}
 	return ConvertTo-ClientEntryPodAnnotationBlock -Annotations $annotations -KeyIndent $KeyIndent
 }
 
@@ -7665,6 +8282,8 @@ function New-GoSvcConfigMapYaml {
 	# 组队(team-system.md §D.1):跨区开关与 data_service 客户端的超时 / NonBlock 从服务 yaml 取。
 	# NonBlock 必须为 true(data-service 没起不能拖垮 match 起服),Go 侧也会强制;这里照抄 yaml 便于一眼核对。
 	$matchTeamAllowCrossZone     = Get-AuthoritativeScalar -RelativePath $matchYaml -KeyPath 'Team.AllowCrossZone'
+	# 队伍补位匹配的应急开关(team-backfill-matching.md §4.6):不渲染的话 Pod 里永远是缺省值,开关按不动。
+	$matchTeamFillQueueDisabled  = Get-AuthoritativeScalar -RelativePath $matchYaml -KeyPath 'Team.FillQueueDisabled'
 	$matchDataServiceRpcTimeout  = Get-AuthoritativeScalar -RelativePath $matchYaml -KeyPath 'DataServiceRpc.Timeout'
 	$matchDataServiceRpcNonBlock = Get-AuthoritativeScalar -RelativePath $matchYaml -KeyPath 'DataServiceRpc.NonBlock'
 	# MatchedTicketTTLSeconds 是本轮新增项(cross-zone-matchmaking.md D5,Go 侧缺省 30)。
@@ -7675,6 +8294,12 @@ function New-GoSvcConfigMapYaml {
 	if ($matchMatchedTicketTTL.Found) {
 		$matchMatchedTicketTTLLine = "MatchedTicketTTLSeconds: $($matchMatchedTicketTTL.Value)"
 	}
+	# 排行榜评分快照(docs/design/leaderboard-system.md §2.4 / §5.4):开关由参数 -MatchRatingSnapshotPublish 给值、不镜像服务 yaml;
+	# topic 名 / 分区数 / 保留期从服务 yaml 取(分区数是与 rank 共享的不可变契约,保留期只由 match 声明)。
+	$matchRatingSnapshotPublishEnabled  = if ($MatchRatingSnapshotPublish -eq '1') { 'true' } else { 'false' }
+	$matchRatingSnapshotTopic           = Get-AuthoritativeScalar -RelativePath $matchYaml -KeyPath 'RatingSnapshotTopic'
+	$matchRatingSnapshotTopicPartitions = Get-AuthoritativeScalar -RelativePath $matchYaml -KeyPath 'RatingSnapshotTopicPartitions'
+	$matchRatingSnapshotRetentionHours  = Get-AuthoritativeScalar -RelativePath $matchYaml -KeyPath 'RatingSnapshotRetentionHours'
 	# MatchRedis:六个 StatefulSet pod 的 headless DNS 逗号串,go-zero 的 cluster 客户端按逗号拆
 	# (core/stores/redis/redisclustermanager.go splitClusterAddrs)。
 	$matchRedisClusterHosts = @(0..5 | ForEach-Object { "redis-match-cluster-$_.redis-match-cluster.${InfraNamespace}.svc.cluster.local:6379" }) -join ','
@@ -7789,6 +8414,23 @@ function New-GoSvcConfigMapYaml {
 			$tradeMode        = Get-AuthoritativeScalar -RelativePath $tradeYaml -KeyPath 'Mode'
 			$tradeAutoMigrate = Get-AuthoritativeScalar -RelativePath $tradeYaml -KeyPath 'Schema.AutoMigrate'
 		}
+	}
+	# 资产通道段(-AssetOps):off 时只写 Enabled: false 与 SecretEnv 两行(与开关引入之前逐字相同);on 时整块从服务 yaml 原样搬运、
+	# 只把第一层 Enabled 改成 true(go/trade/etc/trade.yaml 注释:打开 K8s 通道要把落地恢复与 Cleanup* 键连同 Enabled=true 一起补进 ConfigMap)。
+	# SecretEnv 必须是部署侧注入的那个变量名,否则 trade 读不到密钥、带着 Enabled=true 拒启。
+	$tradeAssetOpBlock = "AssetOp:`n  Enabled: false`n  SecretEnv: $($script:AssetOpCallers['trade'].Env)"
+	if ($SvcName -eq 'trade' -and $script:AssetOpsOn) {
+		$tradeSecretEnv = Get-AuthoritativeScalar -RelativePath $tradeYaml -KeyPath 'AssetOp.SecretEnv'
+		if ($tradeSecretEnv -cne $script:AssetOpCallers['trade'].Env) {
+			throw "生成 trade ConfigMap 失败:$tradeYaml 的 AssetOp.SecretEnv=$tradeSecretEnv,而部署侧注入的是 $($script:AssetOpCallers['trade'].Env)(trade 会读不到密钥而拒启)"
+		}
+		$tradeAssetOpLines = @((Get-AuthoritativeYamlBlock -RelativePath $tradeYaml -Key 'AssetOp') -split "`r?`n")
+		$tradeEnabledHits = @(for ($i = 0; $i -lt $tradeAssetOpLines.Count; $i++) { if ($tradeAssetOpLines[$i] -match '^  Enabled:') { $i } })
+		if ($tradeEnabledHits.Count -ne 1) {
+			throw "生成 trade ConfigMap 失败:$tradeYaml 的 AssetOp 块里两格缩进的 Enabled 应恰好 1 行,实际 $($tradeEnabledHits.Count) 行"
+		}
+		$tradeAssetOpLines[$tradeEnabledHits[0]] = '  Enabled: true'
+		$tradeAssetOpBlock = $tradeAssetOpLines -join "`n"
 	}
 
 	# 好友 friend 的契约值:键名与 go/friend/etc/friend.yaml、go/friend/internal/config 逐字一致,值只从服务 yaml 取
@@ -7914,6 +8556,8 @@ function New-GoSvcConfigMapYaml {
 			$playerInboxAutoMigrate = Get-AuthoritativeScalar -RelativePath $playerInboxYaml -KeyPath 'Schema.AutoMigrate'
 		}
 	}
+
+	# mail/rank 沿用下方服务 YAML 整体镜像；容量、Sweep、签名与 SQL 配置保持单一事实源。
 
 	$mysqlUser = $script:MysqlUser
 	$mysqlPassword = $script:MysqlPassword
@@ -8063,6 +8707,10 @@ function New-GoSvcConfigMapYaml {
 			$source = $source -replace '(?m)^AdvertiseHost:.*$', 'AdvertiseHost: ""'
 			$authorityMode = if ($ReleaseProfile -eq 'dev') { 'dev' } else { 'pro' }
 			$source = $source -replace '(?m)^Mode:.*$', "Mode: $authorityMode"
+            if ($ReleaseProfile -ne 'dev') {
+                $source = $source -replace '(?m)^AutoMigrate:.*$', 'AutoMigrate: false'
+                $source = $source -replace '(?m)^RequireTiDB:.*$', 'RequireTiDB: true'
+            }
 			$source = $source -replace '(?m)^ZoneId:.*$', "ZoneId: $CurrentZoneId"
 			$source = $source -replace '(?m)^MetricsListenAddr:.*$', 'MetricsListenAddr: 0.0.0.0:9240'
 			$source = $source -replace '127.0.0.1:2379', "etcd.${InfraNamespace}:2379"
@@ -8078,6 +8726,10 @@ function New-GoSvcConfigMapYaml {
 			$source = $source -replace '(?m)^AdvertiseHost:.*$', 'AdvertiseHost: ""'
 			$authorityMode = if ($ReleaseProfile -eq 'dev') { 'dev' } else { 'pro' }
 			$source = $source -replace '(?m)^Mode:.*$', "Mode: $authorityMode"
+            if ($ReleaseProfile -ne 'dev') {
+                $source = $source -replace '(?m)^AutoMigrate:.*$', 'AutoMigrate: false'
+                $source = $source -replace '(?m)^RequireTiDB:.*$', 'RequireTiDB: true'
+            }
 			$source = $source -replace '(?m)^ZoneId:.*$', "ZoneId: $CurrentZoneId"
 			$source = $source -replace '(?m)^MetricsListenAddr:.*$', 'MetricsListenAddr: 0.0.0.0:9250'
 			$source = $source -replace '127.0.0.1:2379', "etcd.${InfraNamespace}:2379"
@@ -8272,6 +8924,21 @@ RouteStore:
     ArmReadyMarker: $($dsRouteSettings.ArmReadyMarker)
 # 与 manifest 的 9260 端口、prometheus 注解一致。多副本之后要能按 Pod 看消费者是否在跑。
 MetricsListenAddr: ":9260"
+# 回档的帮会资产闸(07-rollback-fail-closed.md §7.5.5):回档写任何玩家数据之前先问 guild「这些玩家自快照以来有没有已应用的帮会资产操作」。
+# 不写这一段 = 回档一律被拒。guild 是全局池,按 Service 名直连(guild 刻意不写 go-zero Etcd.Key,按 etcd 找不到它;§7.11-U10)。
+# NonBlock:guild 不在线不得阻塞 data-service 启动;Breaker 关:本链路不重试、一次失败即整体拒绝,熔断器帮不上忙。
+GuildInternalRpc:
+  Endpoints:
+    - "guild.${InfraNamespace}:50300"
+  Timeout: ${dsGuildInternalTimeout}
+  NonBlock: true
+  Middlewares:
+    Breaker: false
+GuildClockSkewMarginMs: ${dsGuildClockSkewMarginMs}
+GuildCheckBudgetSeconds: ${dsGuildCheckBudgetSeconds}
+# 三个 Rollback* 的服务端超时,从服务 yaml 原样搬运(取值推导见那份文件)。部署门禁逐条核对:这三个方法 C++ 从不调用
+# (Get-GrpcClientMethodsNotCalledFromCpp),所以可以高于 C++ 的 deadline。
+${dsMethodTimeoutsBlock}
 # id_segment 行播种策略(见生成器注释):dev = 服务 yaml 的值;staging/prod = false,缺行不自动播种,
 # 由人核对消费侧最大号后处理(README「恢复全局库前须先核对 id_segment.max_id」)。
 # BootstrapTags 与服务 yaml / DefaultIdSegmentBootstrapTags 同一份清单:迁移(AutoMigrate / -migrate)
@@ -8593,8 +9260,10 @@ ${matchMatchedTicketTTLLine}
 # 组队整队开战也按它判副本人数上限,未配置的 id 回 TeamDungeonNotOpen。
 ${matchPveTeamSizeBlock}
 # 组队(docs/design/team-system.md §D.1)。AllowCrossZone 切换要重启所有 match 实例(J-13a)。
+# FillQueueDisabled 是队伍补位匹配的应急开关(docs/design/team-backfill-matching.md §4.6),同样要重启所有实例。
 Team:
   AllowCrossZone: ${matchTeamAllowCrossZone}
+  FillQueueDisabled: ${matchTeamFillQueueDisabled}
 # data_service 客户端:team 用 BatchGetPlayerHomeZone 查玩家 home zone,调用失败 fail-closed。
 # Etcd 指向集群 etcd,Key 与 data-service 自身注册一致(同 login 模板)。
 DataServiceRpc:
@@ -8606,6 +9275,14 @@ DataServiceRpc:
   NonBlock: ${matchDataServiceRpcNonBlock}
   Middlewares:
     Breaker: false
+# 排行榜评分快照(docs/design/leaderboard-system.md §2.4):RatingSnapshotPublishEnabled 来自 k8s_deploy.ps1 -MatchRatingSnapshotPublish
+# (默认 "0" → false,是排行榜上线的唯一闸门),**不镜像** go/match/etc/match_service.yaml;其余三项从服务 yaml 取。
+# RatingEnabled=true 时 topic 不论开关都在 match 启动时 Ensure;保留期只由 match 声明(rank 侧 Ensure 传 -1 不改写)。
+# 分区数与 broker 不一致时 match 记错误日志并每 30s 后台重试、进程照常运行(开关为 1 时评分入账一起停住,不会带着错分区发快照)。
+RatingSnapshotPublishEnabled: ${matchRatingSnapshotPublishEnabled}
+RatingSnapshotTopic: ${matchRatingSnapshotTopic}
+RatingSnapshotTopicPartitions: ${matchRatingSnapshotTopicPartitions}
+RatingSnapshotRetentionHours: ${matchRatingSnapshotRetentionHours}
 # 与 match.yaml 里的 metrics 容器端口一致
 MetricsListenAddr: ":9170"
 "@
@@ -9805,6 +10482,16 @@ function Apply-OneGoSvc {
 		Apply-LoginOAuthSecret -Namespace $Namespace
 	}
 
+	# match 的排行榜快照开关(-MatchRatingSnapshotPublish)写进 Pod 模板注解:ConfigMap 只在进程启动时读,开关值必须改变模板,
+	# 翻值才会滚动 match。走 manifest 里的占位而不是 Add-PodTemplateAnnotation(match.yaml 的 Pod 模板已有 prometheus 注解段)。
+	# 条件里服务名判断留在 -and 左边的同一理由:k8s_migrate_gate.tests.ps1 按 AST 单独抽出本函数跑别的服务。
+	if ($SvcName -eq 'match') {
+		if (-not $manifestContent.Contains('PLACEHOLDER_MATCH_RATING_SNAPSHOT_PUBLISH')) {
+			throw "服务 $SvcName 的 manifest 缺少占位 PLACEHOLDER_MATCH_RATING_SNAPSHOT_PUBLISH(Pod 模板注解 mmorpg.io/rating-snapshot-publish):没有它,只翻 -MatchRatingSnapshotPublish 时 match 不会滚动,开关不生效。"
+		}
+		$manifestContent = $manifestContent.Replace('PLACEHOLDER_MATCH_RATING_SNAPSHOT_PUBLISH', $MatchRatingSnapshotPublish)
+	}
+
 	# player-inbox 运维口令(见 $script:PlayerInboxAdminTokenSecretName 处的说明):先本地渲染,再建 Secret,与上面 login 同一顺序。
 	#   - 口令已解析:env PLAYER_INBOX_ADMIN_TOKEN 经 secretKeyRef 注入(不写 optional,Secret 缺失的 Pod 卡在
 	#     CreateContainerConfigError,而不是带着空口令起来);Pod 模板上的口令指纹占位换成指纹,口令一变即滚动;
@@ -9830,6 +10517,50 @@ function Apply-OneGoSvc {
 		}
 	}
 
+	# mail 的 DSN、生产者密钥与资产密钥已在现役 manifest 的 secretKeyRef 中声明。
+
+	# 通用资产通道(-AssetOps,见参数处说明):guild / trade 各自只拿自己那把签名密钥。先本地渲染,再建 Secret(与上面 player-inbox 同一顺序)。
+	#   - on:env 经 secretKeyRef 注入(不写 optional),Pod 模板上的指纹占位换成指纹;
+	#   - off:不注入、不建 Secret,指纹占位整行删掉(Pod 模板与引入开关之前逐字相同,不触发滚动)。
+	# 指纹走 manifest 里的占位而不是 Add-PodTemplateAnnotation:两份 manifest 的 Pod 模板都已有 prometheus 注解段。
+	# 条件里服务名判断留在 -and / -or 左边(理由同上:k8s_migrate_gate.tests.ps1 按 AST 单独抽出本函数跑 trade)。
+	$isAssetOpCaller = ($SvcName -eq 'guild' -or $SvcName -eq 'trade')
+	if ($isAssetOpCaller) {
+		$assetOpSpec = $script:AssetOpCallers[$SvcName]
+		$assetOpPlaceholderLine = '(?m)^[ \t]*' + [regex]::Escape($assetOpSpec.HashAnnotation) + ':[ \t]*"' + [regex]::Escape($script:AssetOpSecretHashPlaceholder) + '"[ \t]*\r?\n'
+		if ([regex]::Matches($manifestContent, $assetOpPlaceholderLine).Count -ne 1) {
+			throw "服务 $SvcName 的 manifest 应当恰好有一行资产密钥指纹占位 $($assetOpSpec.HashAnnotation): `"$($script:AssetOpSecretHashPlaceholder)`"(Pod 模板注解):没有它,只换密钥时 Pod 不会滚动,跨命令核对也无从判断这一侧开没开。"
+		}
+		if ($script:AssetOpsOn) {
+			if ($SvcName -eq 'guild') {
+				$manifestContent = $manifestContent.Replace('name: domain-service-secrets, key: asset-guild', "name: $($assetOpSpec.SecretName), key: $($script:AssetOpSecretKey)")
+			} else {
+				$manifestContent = Add-GoSvcSecretEnv -SvcName $SvcName -ManifestContent $manifestContent `
+					-EnvName $assetOpSpec.Env -SecretName $assetOpSpec.SecretName -SecretKey $script:AssetOpSecretKey
+			}
+			$manifestContent = $manifestContent.Replace($script:AssetOpSecretHashPlaceholder,
+				(Get-InjectedSecretFingerprint -SecretName $assetOpSpec.SecretName -Value $script:AssetOpSecrets[$SvcName]))
+			Apply-InjectedSecret -Namespace $Namespace -Name $assetOpSpec.SecretName -Key $script:AssetOpSecretKey `
+				-Value $script:AssetOpSecrets[$SvcName] -AppLabel $SvcName
+		}
+		else {
+			$manifestContent = [regex]::Replace($manifestContent, $assetOpPlaceholderLine, '')
+		}
+	}
+
+	# gRPC 口准入(-NetworkPolicies on,只 guild / match):开放端口取本服务 manifest 里声明的其它全部 containerPort,gRPC 口取目录的 Port。
+	# 先渲染(形状不对在写操作之前 throw),在 Deployment 之前 apply。
+	$grpcPolicyYaml = $null
+	if (($SvcName -eq 'guild' -or $SvcName -eq 'match') -and $script:NetworkPoliciesOn) {
+		$grpcAllowList = $script:GrpcAllowLists[$SvcName]
+		$declaredPorts = Get-ManifestContainerPorts -ManifestContent $manifestContent
+		if ($declaredPorts -notcontains [int]$info.Port) {
+			throw "服务 $SvcName 的 manifest 没有声明 gRPC 端口 $($info.Port)(`$GoSvcCatalogue 的 Port):NetworkPolicy 会保护一个它根本不监听的口。"
+		}
+		$grpcPolicyYaml = New-GrpcAllowListNetworkPolicyYaml -PolicyName $grpcAllowList.PolicyName -TargetApps $grpcAllowList.TargetApps `
+			-GrpcPort ([int]$info.Port) -OpenTcpPorts @($declaredPorts | Where-Object { $_ -ne [int]$info.Port }) -AllowedApps $grpcAllowList.AllowedApps
+	}
+
 	# Apply ConfigMap
 	$cmYaml = New-GoSvcConfigMapYaml -SvcName $SvcName -CurrentZoneId $CurrentZoneId -CurrentClusterId $CurrentClusterId
 	Invoke-KubectlWithInputFile -Args @("apply", "-n", $Namespace) -InputContent $cmYaml
@@ -9839,6 +10570,10 @@ function Apply-OneGoSvc {
 	# Job 没 Complete 就 throw,Deployment 不 apply。
 	if ($info.MigrateJob) {
 		Apply-GoSvcMigrateJob -SvcName $SvcName -Namespace $Namespace -SvcImage $svcImage -PullPolicy $svcPullPolicy
+	}
+
+	if ($null -ne $grpcPolicyYaml) {
+		Invoke-KubectlWithInputFile -Args @("apply", "-n", $Namespace) -InputContent $grpcPolicyYaml
 	}
 
 	Invoke-KubectlWithInputFile -Args @("apply", "-n", $Namespace) -InputContent $manifestContent
@@ -9860,12 +10595,21 @@ function Apply-OneGoSvc {
 		# 不粘滞 —— 上次带口令部署过、这次没带,运维接口随新 Pod 一起停用。
 		Invoke-Kubectl -Args @("delete", "secret", $script:PlayerInboxAdminTokenSecretName, "-n", $Namespace, "--ignore-not-found")
 	}
+	if ($isAssetOpCaller -and -not $script:AssetOpsOn) {
+		# 资产通道关着:新 Deployment 不再引用签名密钥,删掉残留(放在 Deployment apply 之后,理由同上;不粘滞)。
+		Invoke-Kubectl -Args @("delete", "secret", $script:AssetOpCallers[$SvcName].SecretName, "-n", $Namespace, "--ignore-not-found")
+	}
+	if (($SvcName -eq 'guild' -or $SvcName -eq 'match') -and -not $script:NetworkPoliciesOn) {
+		# 准入策略关着:删掉以前开着时留下的同名策略(删策略只会放开流量,放在哪里都不断流)。
+		Invoke-Kubectl -Args @("delete", "networkpolicy", $script:GrpcAllowLists[$SvcName].PolicyName, "-n", $Namespace, "--ignore-not-found")
+	}
 
 	Write-Host "  [applied] $SvcName -> $svcImage (port $($info.Port) pullPolicy=$svcPullPolicy)"
 }
 
-# 全局池 Go 服务(目录里 Global = $true,目前是 match / chat / client-rpc-router / trade / friend / player-inbox):部署到 $InfraNamespace 一次。
-# trade / friend / player-inbox 各带一个 MigrateJob(共三个 Job):trade-migrate / friend-migrate / player-inbox-migrate 在 Apply-OneGoSvc 里先于各自的 Deployment 跑
+# 全局池 Go 服务(目录里 Global = $true,目前是 match / chat / client-rpc-router / trade / friend / player-inbox / guild / mail / rank):部署到 $InfraNamespace 一次。
+# trade / friend / player-inbox / guild / mail 各带一个 MigrateJob(共五个 Job):trade-migrate / friend-migrate / player-inbox-migrate /
+# guild-migrate / mail-migrate 在 Apply-OneGoSvc 里先于各自的 Deployment 跑
 # (staging/prod 恒等 Complete,dev 仅 -WaitReady 下等;D-14 第 4 条)。
 # 由 Apply-Infra 调用,所以 infra-up / all-up 都会带上;zone-up 不碰它。
 function Apply-GlobalGoSvcManifests {
@@ -10486,12 +11230,27 @@ function Apply-Zone {
 		Invoke-KubectlWithInputFile -Args @("apply", "-n", $namespace) -InputContent $gateYaml
 	}
 
+	# scene 的 gRPC 口准入与资产验签密钥(-NetworkPolicies / -AssetOps,见参数处说明),都先于 scene 工作负载落地:
+	# 验签密钥的 secretKeyRef 不写 optional,Secret 缺失的 Pod 卡在 CreateContainerConfigError;策略先到,新 Pod 从第一秒起就受保护。
+	$sceneRpcPort = 20000
+	if ($script:NetworkPoliciesOn) {
+		Invoke-KubectlWithInputFile -Args @("apply", "-n", $namespace) `
+			-InputContent (New-SceneGrpcNetworkPolicyYaml -SceneRpcPort $sceneRpcPort -CurrentZoneName $CurrentZoneName)
+	}
+	if ($script:AssetOpsOn) {
+		foreach ($caller in $script:AssetOpCallers.Keys) {
+			$assetOpSpec = $script:AssetOpCallers[$caller]
+			Apply-InjectedSecret -Namespace $namespace -Name $assetOpSpec.SecretName -Key $script:AssetOpSecretKey `
+				-Value $script:AssetOpSecrets[$caller] -AppLabel 'scene'
+		}
+	}
+
 	foreach ($scenePool in $scenePlan) {
 		if ($SceneOrchestrator -eq "agones") {
 			$sceneYaml = New-SceneFleetYaml `
 				-FleetName $scenePool.Name `
 				-Replicas $scenePool.Replicas `
-				-RpcPort 20000 `
+				-RpcPort $sceneRpcPort `
 				-StartCommand "./scene" `
 				-ConfigMapName $configMapName `
 				-SceneNodeType $scenePool.SceneNodeType `
@@ -10503,7 +11262,7 @@ function Apply-Zone {
 			$sceneYaml = New-NodeDeploymentYaml `
 				-NodeName $scenePool.Name `
 				-Replicas $scenePool.Replicas `
-				-RpcPort 20000 `
+				-RpcPort $sceneRpcPort `
 				-StartCommand "./scene" `
 				-ConfigMapName $configMapName `
 				-SceneNodeType $scenePool.SceneNodeType `
@@ -10522,6 +11281,15 @@ function Apply-Zone {
 				-ZoneLabel $CurrentZoneName `
 				-ZoneIdLabel $CurrentZoneId
 			Invoke-KubectlWithInputFile -Args @("apply", "-n", $namespace) -InputContent $autoscalerYaml
+		}
+	}
+	# 关着的开关不粘滞:删掉以前开着时留下的策略与验签密钥(放在 scene apply 之后,新模板已不再引用 Secret)。
+	if (-not $script:NetworkPoliciesOn) {
+		Invoke-Kubectl -Args @("delete", "networkpolicy", $script:GrpcAllowLists['scene'].PolicyName, "-n", $namespace, "--ignore-not-found")
+	}
+	if (-not $script:AssetOpsOn) {
+		foreach ($caller in $script:AssetOpCallers.Keys) {
+			Invoke-Kubectl -Args @("delete", "secret", $script:AssetOpCallers[$caller].SecretName, "-n", $namespace, "--ignore-not-found")
 		}
 	}
 
@@ -10619,11 +11387,13 @@ function Get-InfraZoneIds {
 	仓库里 00_init_zone_dbs.sql 顺带建的 testdb 只服务本地 compose 的
 	go/data_service/etc/data_service.yaml,在 K8s 上是一个没人用的空库,无害。
 
-	新全局服务的独占库(port-decisions D-14 第 5 条,目前是聚宝斋 trade 的 mmorpg_trade、好友 friend 的 mmorpg_friend 与玩家收件箱
-	player-inbox 的 mmorpg_player_inbox)**只登记在 00_init_zone_dbs.sql**,由上面的循环原样带进本 ConfigMap;这里**不要**再生成第二份建库 sql。
+	新全局服务的独占库(port-decisions D-14 第 5 条,目前是聚宝斋 trade 的 mmorpg_trade、好友 friend 的 mmorpg_friend、玩家收件箱
+	player-inbox 的 mmorpg_player_inbox、帮会 guild 的 mmorpg_guild 与邮件 mail 的 mmorpg_mail)**只登记在 00_init_zone_dbs.sql**,
+	由上面的循环原样带进本 ConfigMap;这里**不要**再生成第二份建库 sql。
 	02_k8s_global_db.sql 是因为本地(testdb)与 K8s(mmorpg_global)库名不同才单独生成的,不是范式。
 	表不在 initdb 里建:trade 的表由 manifests/go-svc/trade-migrate.yaml、friend 的表由 manifests/go-svc/friend-migrate.yaml、
-	player-inbox 的表由 manifests/go-svc/player-inbox-migrate.yaml 这三个 Job 建(Apply-GoSvcMigrateJob)。
+	player-inbox 的表由 manifests/go-svc/player-inbox-migrate.yaml、guild 的表由 guild-migrate.yaml、mail 的表由 mail-migrate.yaml
+	这几个 Job 建(Apply-GoSvcMigrateJob)。
 
 	注意 initdb 只在数据目录为空的首次启动执行,PVC 已有数据时改 sql 不会重跑
 	(见 mysql.yaml 里 mysql-init 卷的注释)。
@@ -11140,8 +11910,9 @@ function Show-InfraStatus {
 	# `kubectl drain` 会挂在 etcd / kafka 上(kafka 的 PDB 是 minAvailable: 1,不允许自愿驱逐)。
 	# job:kafka-topic-init(审计 + 控制面命令 topic 预建)的 COMPLETIONS 0/1 = 分区契约没建成,
 	# scene 起来前必须先看它。
-	# job 一栏同样列出建表 Job trade-migrate / friend-migrate / player-inbox-migrate(D-14):失败须核对 status.conditions(Failed/FailureTarget),
-	# 看 `kubectl -n <infra> logs job/trade-migrate`(或 `job/friend-migrate`、`job/player-inbox-migrate`);删除前须确认该 Job UID 所属 Pod 均终态,ACTIVE=0 本身不代表安全。
+	# job 一栏同样列出建表 Job trade-migrate / friend-migrate / player-inbox-migrate / guild-migrate / mail-migrate(D-14):失败须核对
+	# status.conditions(Failed/FailureTarget),看 `kubectl -n <infra> logs job/trade-migrate`(或 `job/friend-migrate`、`job/player-inbox-migrate`、
+	# `job/guild-migrate`、`job/mail-migrate`);删除前须确认该 Job UID 所属 Pod 均终态,ACTIVE=0 本身不代表安全。
 	# cronjob:etcd-compact(etcd MVCC 压缩,P0-C)的 LAST SCHEDULE,加上 job 一栏里 etcd-compact-<时间戳> 的失败记录,
 	# 是目前唯一能看到压缩停了的地方(仓库里还没有 etcd 的抓取与告警);处置见 docs/ops/etcd-maintenance-runbook.md。
 	Invoke-Kubectl -Args @("get", "deploy,sts,po,pvc,pdb,job,cronjob,svc,cm", "-n", $InfraNamespace) -AllowFailure
@@ -11205,7 +11976,19 @@ if ($Command -in @("zone-up", "all-up", "infra-up")) {
 	# (限流阈值、排队容量不在 1..uint32),或 go/login/etc/login.yaml 缺 Queue.* 镜像键。排在密钥解析之前:
 	# 缺 MMORPG_LOGIN_QUEUE_TOKEN_SECRET 被拒时,输出里已经有「login_queue=on」这一行可对照。
 	Show-PeakShavingPlan
+	# -AssetOps / -NetworkPolicies 的组合校验(资产通道打开必须同时设 gRPC 口准入),排在密钥解析之前:报的是组合原因而不是「缺环境变量」。
+	Assert-AssetOpsSwitchPreflight
+	# 排行榜评分快照开关(-MatchRatingSnapshotPublish,不粘滞):只在本次部署全局 Go 服务(match 在其中)时打一行本次取值,
+	# 「榜为什么停更」先对照这一行。只打印、不阻断。本次不部署全局 Go 服务却显式传了它:参数没有效果,告警而不是静默接受。
+	if (Test-GlobalGoSvcDeployed) {
+		Write-Host "MatchRatingSnapshotPublish: $MatchRatingSnapshotPublish (match RatingSnapshotPublishEnabled; leaderboard snapshots are published only when 1; the value is in the match pod template, so a change rolls match)"
+	}
+	elseif ($PSBoundParameters.ContainsKey('MatchRatingSnapshotPublish')) {
+		Write-Warning "-MatchRatingSnapshotPublish $MatchRatingSnapshotPublish has no effect: this run does not deploy global Go services (match). Use infra-up / all-up with -GoSvcRegistry and without -SkipGoSvc."
+	}
 	Initialize-InjectedSecrets
+	# 资产通道签名方(guild / trade)与验签方(scene)的跨命令核对:顺序反了、密钥对不上就在任何写操作之前拒绝(只读 kubectl;DryRun 跳过)。
+	Assert-AssetOpClusterConsistency
 	# C++ gRPC deadline ≥ 目标 Go 服务 zrpc Timeout + 2000(上游比下游宽)。放在任何集群写操作之前:
 	# 不成立就整条拒绝,不留半截部署(见 Assert-GrpcClientDeadlineBudget)。
 	Assert-GrpcClientDeadlineBudget

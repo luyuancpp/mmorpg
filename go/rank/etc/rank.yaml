@@ -26,3 +26,5 @@ Log:
   ServiceName: rank
   Mode: console
   Level: info
+
+KillSwitchPrefix: /mmorpg/killswitch/

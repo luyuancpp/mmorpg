@@ -1,0 +1,160 @@
+# Prometheus alert rules for the leaderboard service(排行榜,go/rank)与它在 match 侧的写入口(评分快照发布)。
+#
+# 来源:docs/design/leaderboard-system.md §3.6(指标)、§3.7(告警)、§3.5(持久性与恢复 runbook)。
+#
+# Install as a PrometheusRule CR (kube-prometheus stack),与 mail-alerts.yaml / player-inbox-alerts.yaml 同法:
+#   kubectl apply -n observability -f deploy/k8s/rank-alerts.yaml
+#
+# Scrape prerequisites:
+#   - manifests/go-svc/rank.yaml 与 match.yaml 的 Pod 都带 prometheus.io/scrape 注解,metrics 端口见各自 manifest(ConfigMap 的 MetricsListenAddr);
+#     集群里要有 ServiceMonitor / PodMonitor(或按注解抓取的 job)指向它们,否则本文件的规则一条都不会触发。
+#
+# 聚合口径:
+#   - rank 多副本各自采样 / 各自消费分区 → gauge 一律 max() 聚合(rank_last_consume_unixtime:只要有一个副本还在推进就不算卡死;
+#     rank_board_size:每个副本都 ZCARD 同一个键);计数器 sum(increase / rate(...)) 跨副本求和;
+#   - label 只用有限枚举,不用 player_id(AGENTS §9);
+#   - rank 的 CounterVec 在进程启动时按封闭集合预建 0 值序列(internal/metrics 的 Register):只要第一次被抓取时还没涨过,
+#     increase(...) 就能看见第一次增长。新 Pod 起来几秒内(第一次抓取之前)就涨了的,第一个样本已不是 0,increase() 看不到 ——
+#     "出现一次就报"的规则(RankWriteSkipped / MatchRatingGenReset)因此另加一句:进程起来不到 15 分钟且计数非 0 也报
+#     (and on(instance) process_start_time_seconds,client_golang 默认 registry 自带的进程指标)。
+#     rank_board_size **刻意不预建 0**(第一次采样成功才出现),否则单副本重启会让 RankBoardShrunk 误报。
+#
+# 没有 rank Pod 时(还没部署 / 全部下线)这些序列都不存在,规则既不触发也不报错 —— 进程存活由 Deployment / 探针告警负责,本文件不覆盖。
+#
+# Severity conventions(与 scene-manager-alerts.yaml 相同):
+#   critical = pager, someone wakes up
+#   warning  = next-business-hours channel
+#   info     = dashboard annotation / trend signal
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: rank-alerts
+  labels:
+    app: rank
+    prometheus: kube-prometheus
+    role: alert-rules
+spec:
+  groups:
+    - name: rank.consume
+      interval: 60s
+      rules:
+        # ① 消费者卡死。**必须以"match 这 15 分钟确实发过"为前提**:只看 time() - rank_last_consume_unixtime 会在深夜没人打排位、
+        # 或 match 的发布开关为 0 时误报(rank 看不到 match 的开关,用 match 的发布成功计数代替"开关打开且有流量")。
+        # rank_last_consume_unixtime 每处理到终态一条消息就写(含跳过的坏消息),消费循环启动时也先写一次启动时刻(滚动发布后不从 0 起算),
+        # 所以它停住只可能是消费循环卡住 / 再均衡卡住 / 写榜一直失败在退避重试(那种情况 ② 也会同时响),或消费者根本没起来。
+        - alert: RankConsumerStalled
+          expr: |
+            sum(increase(match_rating_snapshot_publish_total{outcome="ok"}[15m])) > 0
+            and
+            (time() - max(rank_last_consume_unixtime)) > 900
+          for: 5m
+          labels:
+            severity: critical
+          annotations:
+            summary: "排行榜 15 分钟没有消费到 match 发出的评分快照"
+            description: >-
+              match 过去 15 分钟发布过评分快照,但所有 rank 副本的 rank_last_consume_unixtime 都已停住超过 15 分钟,榜不再更新。
+              查 rank 日志里 "[rank] Rating snapshot consumer" 与 "Failed to write rating snapshot" 的最后几行、
+              消费组 lag(kafka-consumer-groups.sh --describe --group rank-rating)、redis-rank 是否可写(写满时 noeviction 会拒写)。
+
+        # ② 写榜持续失败。只看瞬时的 error:RankRedis 写报错(连接、maxmemory 写满、AOF);消费者对它退避重试、不跳过,
+        # 每次失败的尝试记一次,所以持续 10 分钟才报,一次抖动不报。永久跳过的几档在 ②b。
+        - alert: RankWriteFailing
+          expr: |
+            sum(rate(rank_write_total{outcome="error"}[5m])) > 0
+          for: 10m
+          labels:
+            severity: warning
+          annotations:
+            summary: "排行榜写入持续失败"
+            description: >-
+              过去 5 分钟 rank_write_total{outcome="error"} 的速率约 {{ $value | printf "%.2f" }}/s,写榜在退避重试、榜停更。
+              先查 redis-rank(连接、maxmemory 写满、AOF),再看 rank 日志里 "Failed to write rating snapshot" 的报错。
+
+        # ②b 有消息被永久跳过:出现一次就报。invalid = 反序列化失败或快照字段违反 match 的对外承诺(player_id / games / rating_gen 为 0),
+        # 是 match 侧缺陷;out_of_range = 分数 / 时间超出编码范围,理论上不可能,出现即缺陷;malformed_version = 版本表里某个玩家的值
+        # 被手写坏,要人修。跳过会推进 rank_last_consume_unixtime,① 看不见;写成 rate > 0 + for 10m 时,不足 5 分钟的一阵跳过永远触发不了。
+        # 后半句补进程刚起的窗口(见文件头):新 Pod 第一次被抓取之前就跳过的,increase() 看不到。
+        - alert: RankWriteSkipped
+          expr: |
+            sum(increase(rank_write_total{outcome=~"invalid|out_of_range|malformed_version"}[15m])) > 0
+            or
+            sum(rank_write_total{outcome=~"invalid|out_of_range|malformed_version"} and on(instance) (time() - process_start_time_seconds) < 900) > 0
+          for: 0m
+          labels:
+            severity: warning
+          annotations:
+            summary: "排行榜有评分快照被永久跳过"
+            description: >-
+              过去 15 分钟约 {{ $value | printf "%.0f" }} 条评分快照被永久跳过(invalid / out_of_range / malformed_version),这些玩家的榜上条目
+              要等下一局才会更新。按 rank 日志里 "rejected permanently" / "Failed to deserialize rating snapshot" 的 player / battle /
+              offset 去 match 侧查评分 hash;malformed_version 在 redis-rank 上删掉坏掉的那一个成员(HDEL lb:{rating}:v <player_id>),
+              该玩家下一局的快照会按"版本表里没有该玩家"重新写入(设计 §3.2)。
+
+        # ⑥ match 评分键丢过(被淘汰 / 清空后重建了代际):rank 按新代际覆盖旧条目,榜与评分重新一致。
+        # 非压测环境出现即查 MatchRedis 的淘汰策略;压测前 FLUSHALL 时按 §3.5 的运维规则同时 DEL 两个榜键。
+        - alert: MatchRatingGenReset
+          expr: |
+            sum(increase(rank_write_total{outcome="gen_reset"}[15m])) > 0
+            or
+            sum(rank_write_total{outcome="gen_reset"} and on(instance) (time() - process_start_time_seconds) < 900) > 0
+          for: 0m
+          labels:
+            severity: warning
+          annotations:
+            summary: "match 评分键被重建过(rating_gen 变大)"
+            description: >-
+              过去 15 分钟 rank 看到约 {{ $value | printf "%.0f" }} 次代际重置:这些玩家在 match 侧的评分 hash 丢过、回到了初始分。
+              查 MatchRedis(redis-match-cluster)的 maxmemory-policy 与内存水位;若是人为清空,按 docs/design/leaderboard-system.md §3.5 同步清榜。
+
+    - name: rank.publish
+      interval: 60s
+      rules:
+        # ③ match 发布快照失败率。发布失败会被 match 的结果重试吸收(标记保持 applying → 续写路径重发),持续 > 5% 说明 Kafka 侧有问题。
+        - alert: MatchRatingSnapshotPublishFailing
+          expr: |
+            sum(rate(match_rating_snapshot_publish_total{outcome="error"}[5m]))
+            /
+            sum(rate(match_rating_snapshot_publish_total[5m])) > 0.05
+          for: 10m
+          labels:
+            severity: warning
+          annotations:
+            summary: "match 评分快照发布失败率超过 5%"
+            description: >-
+              过去 5 分钟 match_rating_snapshot_publish_total 的 error 占比约 {{ $value | humanizePercentage }}。
+              查 match 日志里 "rating snapshot" 的发布错误与 Kafka broker 状态(topic match-rating-snapshot)。
+
+    - name: rank.board
+      interval: 60s
+      rules:
+        # ④ 榜只增不减(v1 无删除),缩水 = redis-rank 丢数据 / 被清空。PromQL 子查询必须写 [1h:1m]:[1h] 对聚合结果是语法错误。
+        - alert: RankBoardShrunk
+          expr: |
+            max(rank_board_size) < 0.9 * max_over_time(max(rank_board_size)[1h:1m])
+          for: 5m
+          labels:
+            severity: critical
+          annotations:
+            summary: "排行榜条目数比 1 小时内的最大值少了 10% 以上"
+            description: >-
+              rank_board_size 当前约 {{ $value | printf "%.0f" }},明显低于 1 小时内的峰值。榜只增不减,缩水说明 redis-rank 丢了数据。
+              恢复走 docs/design/leaderboard-system.md §3.5 的 offset 重放 runbook(先确认两个榜键一起清空,再停消费者、重置 rank-rating 到 earliest)。
+
+    - name: rank.read
+      interval: 60s
+      rules:
+        # ⑤ 读路径故障率。fault = 读榜失败回 kServiceUnavailable(Tip.xlsx 的 fault 列);rejected(无会话 / 未知榜)不算。
+        - alert: RankReadFaults
+          expr: |
+            sum(rate(rank_read_total{outcome="fault"}[5m]))
+            /
+            sum(rate(rank_read_total[5m])) > 0.05
+          for: 10m
+          labels:
+            severity: warning
+          annotations:
+            summary: "排行榜读请求故障率超过 5%"
+            description: >-
+              过去 5 分钟 GetRankPage 的故障占比约 {{ $value | humanizePercentage }}。查 rank 日志里 "board read failed" 与 redis-rank 的可达性。

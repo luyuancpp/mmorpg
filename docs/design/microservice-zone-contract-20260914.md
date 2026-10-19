@@ -276,7 +276,8 @@ func AllocationKey(prefix string, nodeType, nodeId uint32) string
 - **端口五处一致(50700)**:go_services 的 Port / 本地 yaml 的 ListenOn / k8s 的 Port / ConfigMap 的 ListenOn / manifest 的 Service、containerPort 与探针。本地写 `127.0.0.1:50700`,K8s 写 `0.0.0.0:50700`。
   - 为什么:任何一处不一致,表现都是「Pod Ready 但探针或路由连不上」。
   - 本地 zone 2 按 `ZonePortShift` 1000 位移到 51700,落进已观测的 Windows 保留区 51573-51872,由 `Resolve-BindablePort` 自动上挪。
-- **指标端口分工**:9101 login / 9150 scene_manager / 9160 db / 9170 match / 9180 friend / 9190 player_locator / 9200 路由服 / **9210 chat** / 9220 guild。
+- **指标端口分工**:9101 login / 9150 scene_manager / 9160 db / 9170 match / 9180 friend / 9190 player_locator / 9200 路由服 / **9210 chat** / 9220 guild / 9230 trade / 9240 mail / 9260 data_service / 9270 player_inbox(9250 预留给排行榜 rank,docs/design/leaderboard-system.md §5.1)。
+  - 2026-10-16 随邮件 M1d 按 `go/*/etc` 与各 manifest 逐个核对后补全(9230 / 9260 / 9270 早已在用,本表漏登)。9101 login、9190 player_locator、9220 guild 是嵌套的 `Prometheus.Port` 写法,其余是顶层 `MetricsListenAddr`。
   - 必须是顶层单行 `MetricsListenAddr: ":9210"`,因为 `-Zone` 的端口位移正则只认这个形状。
 - **启动横幅**:main 打印 `=====` 框住的 `CHAT SERVICE STARTED SUCCESSFULLY`(`go/chat/chat.go:127`)。`go_services.ps1` 靠这行字判就绪(`go_services.ps1:472`),并要求在 TierReadySeconds 内进入 TCP LISTEN。
 - **yaml 锚点**:

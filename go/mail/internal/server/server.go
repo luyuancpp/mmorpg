@@ -9,6 +9,7 @@ import (
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/proto"
 	"mail/internal/data"
+	"mail/internal/metrics"
 	base "proto/common/base"
 	mailpb "proto/mail"
 	"shared/assetop"
@@ -132,14 +133,46 @@ func (s *Server) ClearReadMails(ctx context.Context, _ *mailpb.ClearReadMailsReq
 	return &mailpb.ClearReadMailsResponse{ErrorMessage: rejection(err), DeletedMailIds: deleted, ProtectedMailIds: protected}, nil
 }
 func (s *Server) send(ctx context.Context, method string, kind mailpb.MailKind, in *mailpb.SendMailRequest) (*mailpb.SendMailResponse, error) {
+	methodLabel := metrics.MethodSendPersonal
+	if kind == mailpb.MailKind_MAIL_KIND_SYSTEM {
+		methodLabel = metrics.MethodSendSystem
+	}
+	if kind == mailpb.MailKind_MAIL_KIND_GUILD {
+		methodLabel = metrics.MethodSendGuild
+	}
 	caller, err := s.caller(ctx, method, in)
 	if err != nil {
+		metrics.ObserveAdminSend(methodLabel, metrics.SenderUnknown, metrics.OutcomeDenied)
 		return nil, err
+	}
+	sender := metrics.SenderUnknown
+	switch caller {
+	case "admin":
+		sender = metrics.SenderOpsTool
+	case "rank":
+		sender = metrics.SenderRank
+	case "guild":
+		sender = metrics.SenderGuild
+	case "trade":
+		sender = metrics.SenderTrade
+	case "battle":
+		sender = metrics.SenderBattle
 	}
 	result, err := s.repo.Send(ctx, caller, kind, in)
 	if err != nil {
-		return &mailpb.SendMailResponse{ErrorMessage: rejection(err)}, nil
+		tip := rejection(err)
+		outcome := metrics.OutcomeRejected
+		if tip.GetId() == uint32(table.CommonError_kServiceUnavailable) {
+			outcome = metrics.OutcomeFault
+		}
+		metrics.ObserveAdminSend(methodLabel, sender, outcome)
+		return &mailpb.SendMailResponse{ErrorMessage: tip}, nil
 	}
+	outcome := metrics.OutcomeOK
+	if result.Duplicated {
+		outcome = metrics.OutcomeDuplicated
+	}
+	metrics.ObserveAdminSend(methodLabel, sender, outcome)
 	// Repo.Send已经提交；提示只触发客户端重拉，不参与发件成功或领取结局。
 	if kind == mailpb.MailKind_MAIL_KIND_PERSONAL && !result.Duplicated && s.reminder != nil {
 		s.reminder.Personal(ctx, in.RecipientPlayerId, result.MailId)

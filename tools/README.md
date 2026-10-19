@@ -11,7 +11,7 @@
 | [`scripts/`](scripts/) | PowerShell、Shell、Python | 工程脚本:启动、构建、部署、发布、压测 |
 | `merge_zone/` | Go | 合服与玩家搬库工具 |
 | `data_consistency_check/` | Go | 跨区数据交叉引用巡检 |
-| `navmesh_baker/` | C++ | 场景导航网格烘焙(Recast) |
+| `navmesh_baker/` | C++ / Python | 场景导航烘焙(Recast);`sync_current_maps.py` 从客户端新地图合同同步正式网格/源表并支持 `--verify` |
 | `battle_art_gen/` | Go | 战斗美术素材的程序化生成 |
 | `dev/` | — | [mprocs](https://github.com/pvolok/mprocs) 的进程面板配置 |
 | `patches/` | — | 对第三方子模块的本地补丁 |

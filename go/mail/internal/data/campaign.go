@@ -62,7 +62,7 @@ func (r *Repo) createCampaign(ctx context.Context, caller string, kind mailpb.Ma
 		if e = tx.QueryRowContext(ctx, "SELECT COUNT(*) FROM mail_message WHERE owner_player_id=0 AND kind IN (0,2,3) AND expire_ms>?", now).Scan(&active); e != nil {
 			return e
 		}
-		if active >= 100 {
+		if active >= uint64(r.limits.Defaults().MaxActiveSystemMails) {
 			return ErrBoxFull
 		}
 		// kind=0仅保留全频道共享的发件幂等键；可见查询明确排除它。

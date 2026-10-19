@@ -35,21 +35,22 @@ static constexpr ::_pbi::MessageGlobalsBase* PROTOBUF_NONNULL const* PROTOBUF_NU
     file_message_globals = nullptr;
 const char descriptor_table_protodef_mail_5ferror_5ftip_2eproto[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
     protodesc_cold) = {
-    "\n\024mail_error_tip.proto*\214\002\n\nmail_error\022\021\n"
+    "\n\024mail_error_tip.proto*\303\002\n\nmail_error\022\021\n"
     "\rkMail_errorOK\020\000\022\023\n\rkMailNotFound\020\350\204\001\022\022\n"
     "\014kMailExpired\020\351\204\001\022\033\n\025kMailRecipientBoxFu"
     "ll\020\352\204\001\022\034\n\026kMailAttachmentInvalid\020\353\204\001\022\032\n\024"
     "kMailRequestConflict\020\354\204\001\022\032\n\024kMailSystemM"
     "ailLimit\020\355\204\001\022\027\n\021kMailClaimPending\020\356\204\001\022\026\n"
     "\020kMailClaimManual\020\357\204\001\022\036\n\030kMailAttachment"
-    "Protected\020\360\204\001B$\n\016com.game.tableZ\022generat"
-    "ed/pb/tableb\006proto3"
+    "Protected\020\360\204\001\022\027\n\021kMailClaimNotOpen\020\361\204\001\022\034"
+    "\n\026kMailAttachmentNotOpen\020\362\204\001B$\n\016com.game"
+    ".tableZ\022generated/pb/tableb\006proto3"
 };
 static ::absl::once_flag descriptor_table_mail_5ferror_5ftip_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_mail_5ferror_5ftip_2eproto = {
     false,
     false,
-    339,
+    394,
     descriptor_table_protodef_mail_5ferror_5ftip_2eproto,
     "mail_error_tip.proto",
     &descriptor_table_mail_5ferror_5ftip_2eproto_once,
@@ -68,7 +69,7 @@ mail_error_descriptor() {
   return file_level_enum_descriptors_mail_5ferror_5ftip_2eproto[0];
 }
 PROTOBUF_CONSTINIT const uint32_t mail_error_internal_data_[] = {
-    65536u, 589824u, 17005u, 17003u, 17007u, 17001u, 17004u, 17006u, 17008u, 17000u, 17002u, };
+    65536u, 720896u, 17007u, 17003u, 17009u, 17001u, 17005u, 17008u, 17010u, 17000u, 17002u, 17004u, 17006u, };
 // @@protoc_insertion_point(namespace_scope)
 namespace google {
 namespace protobuf {

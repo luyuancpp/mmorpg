@@ -39,6 +39,9 @@ type Config struct {
 	// 单机器人玩家主动切线冒烟(见 channel_smoke_scenario.go / ChannelSmoke 块);
 	// "sync-smoke" — 落地恢复的按域版本摘要冒烟(见 sync_smoke_scenario.go / SyncSmoke 块)；
 	// "asset-arrival-prepare" — 本机专用角色的正式 RPC 资产准备与有界保活。
+	// "sync-smoke" — 落地恢复的按域版本摘要冒烟(见 sync_smoke_scenario.go / SyncSmoke 块);
+	// "merchant-smoke" — 单机器人神秘商人冒烟(见 mystery_merchant_smoke_scenario.go / MerchantSmoke 块);
+	// "equip-forge-topup" — 给一个开发账号补强化石 / 宝石 / 银两,好在真实客户端里点强化与镶嵌(见 EquipForgeTopup 块)。
 	Mode string `yaml:"mode"`
 
 	// FeaturesSmoke only uses an explicitly selected existing account/character.
@@ -67,8 +70,20 @@ type Config struct {
 	// FriendSmoke 是 "friend-smoke" 模式的子开关(见 FriendSmokeConfig / friend_smoke_scenario.go)。
 	FriendSmoke FriendSmokeConfig `yaml:"friend_smoke"`
 
+	// MailSmoke 是 "mail-smoke" 模式的子开关(见 MailSmokeConfig / mail_smoke_scenario.go)。
+	MailSmoke MailSmokeConfig `yaml:"mail_smoke"`
+
+	// RankSmoke 是 "rank-smoke" 模式的子开关(见 RankSmokeConfig / rank_smoke_scenario.go)。
+	RankSmoke RankSmokeConfig `yaml:"rank_smoke"`
+
 	// TeamSmoke 是 "team-smoke" 模式的子开关(见 TeamSmokeConfig / team_smoke_scenario.go)。
 	TeamSmoke TeamSmokeConfig `yaml:"team_smoke"`
+
+	// TeamFollowSmoke 是 "team-follow-smoke" 模式的子开关(见 TeamFollowSmokeConfig / team_follow_smoke_scenario.go)。
+	TeamFollowSmoke TeamFollowSmokeConfig `yaml:"team_follow_smoke"`
+
+	// TeamBackfillSmoke 是 "team-backfill-smoke" 模式的子开关(见 TeamBackfillSmokeConfig / team_backfill_smoke_scenario.go)。
+	TeamBackfillSmoke TeamBackfillSmokeConfig `yaml:"team_backfill_smoke"`
 
 	// TravelSmoke 是 "travel-smoke" 模式的子开关(见 TravelSmokeConfig / travel_smoke_scenario.go)。
 	TravelSmoke TravelSmokeConfig `yaml:"travel_smoke"`
@@ -80,6 +95,13 @@ type Config struct {
 	// SyncSmoke 是 "sync-smoke" 模式的子开关(见 SyncSmokeConfig / sync_smoke_scenario.go)。
 	// 整块可缺省:缺省不做跨 zone 腿。
 	SyncSmoke SyncSmokeConfig `yaml:"sync_smoke"`
+
+	// MerchantSmoke 是 "merchant-smoke" 模式的子开关(见 MerchantSmokeConfig / mystery_merchant_smoke_scenario.go)。
+	// 整块可缺省。
+	MerchantSmoke MerchantSmokeConfig `yaml:"merchant_smoke"`
+
+	// EquipForgeTopup 是 "equip-forge-topup" 模式的子开关(见 EquipForgeTopupConfig / equip_forge_topup_scenario.go)。
+	EquipForgeTopup EquipForgeTopupConfig `yaml:"equip_forge_topup"`
 
 	// CurrencyCrash configures the "currency-crash-snapshot" mode used by
 	// docs/notes/currency-crash-window-verification.md. Driven by an external
@@ -406,6 +428,29 @@ type FriendSmokeConfig struct {
 	PushTimeoutMs int `yaml:"push_timeout_ms"`
 }
 
+// MailSmokeConfig 配置 "mail-smoke" 模式(docs/design/mail-system.md §10 ⑦)。
+//
+// 旁观者 O 登 zone_a;cross_zone=true 时收件人 R 登 zone_b(否则也登 zone_a)。客户端请求全部经 gate → client_rpc_router
+// (mail 只承诺路由服模式可达,D-12);发件经 gRPC 直连 MailAdmin(admin_addr),令牌取自环境变量 MMORPG_MAIL_ADMIN_TOKEN,不进 yaml。
+type MailSmokeConfig struct {
+	CrossZone bool `yaml:"cross_zone"`
+
+	// ZoneA 必须非 0:0 会被 server-list 自动选区顶掉,两个机器人可能落进同一个 zone,跨区推送的结论就不成立了。
+	ZoneA uint32 `yaml:"zone_a"`
+	// ZoneB 仅 cross_zone=true 时使用,必须非 0 且与 ZoneA 不同。
+	ZoneB uint32 `yaml:"zone_b"`
+
+	// AdminAddr 是 mail 的 gRPC 监听地址(host:port),缺省 127.0.0.1:50900。
+	// mail 是全局服务、只有一份,直接写地址,不走 etcd 发现、也不做 zone 端口位移(同 trade-smoke)。
+	AdminAddr string `yaml:"admin_addr"`
+
+	// RequestIntervalMs 是同一机器人相邻两个经 gate 的请求的最小间隔,缺省 1100(推导见 chat_smoke_scenario.go)。
+	RequestIntervalMs int `yaml:"request_interval_ms"`
+
+	// PushTimeoutMs 是等一条 NotifyMailEvent 的预算,缺省 10000。推送是**弱断言**:超时只打印 push_received=false,不算失败。
+	PushTimeoutMs int `yaml:"push_timeout_ms"`
+}
+
 func (c *TradeSmokeConfig) validate() error {
 	if c.ZoneA == 0 {
 		return fmt.Errorf("zone_a must be set (non-zero)")
@@ -421,6 +466,72 @@ func (c *TradeSmokeConfig) validate() error {
 	}
 	if c.RequestIntervalMs <= 0 {
 		return fmt.Errorf("request_interval_ms must be > 0 (got %d)", c.RequestIntervalMs)
+	}
+	if !c.CrossZone {
+		return nil
+	}
+	if c.ZoneB == 0 {
+		return fmt.Errorf("zone_b must be set (non-zero) when cross_zone is true")
+	}
+	if c.ZoneA == c.ZoneB {
+		return fmt.Errorf("zone_a and zone_b must differ when cross_zone is true (got %d)", c.ZoneA)
+	}
+	return nil
+}
+
+// RankSmokeConfig 配置 "rank-smoke" 模式(docs/design/leaderboard-system.md §8.2)。
+//
+// A、N 登 zone_a,B 登 zone_b(必须不同:跨区名字补全是本冒烟要验的一条)。A、B 跨区打一局 1V1,
+// 读榜请求全部经 gate → client_rpc_router(rank 只承诺路由服模式可达,D-12)。
+type RankSmokeConfig struct {
+	// ZoneA / ZoneB 必须非 0 且不同:0 会被 server-list 自动选区顶掉,两个机器人可能落进同一个 zone。
+	ZoneA uint32 `yaml:"zone_a"`
+	ZoneB uint32 `yaml:"zone_b"`
+
+	// RequestIntervalMs 是同一机器人相邻两次读榜的最小间隔,缺省 1100(gate 默认限流档 3 次 / 窗口,推导见 chat_smoke_scenario.go)。
+	RequestIntervalMs int `yaml:"request_interval_ms"`
+
+	// UpdateTimeoutMs 是打完一局之后等榜更新的预算,缺省 30000(match 发快照 → rank 消费都是异步的,含 Kafka 再均衡余量)。
+	UpdateTimeoutMs int `yaml:"update_timeout_ms"`
+
+	// RateLimitCheck 打开时,N 在一个窗口内连发 RateLimitPerSecond + 1 次读榜,断言最后一次被 gate 限流。
+	// 只在 data/MessageLimiter.xlsx 按 rank 导过表(tools/scripts/rank_xlsx_patch.py)之后打开。
+	RateLimitCheck bool `yaml:"rate_limit_check"`
+	// RateLimitPerSecond 与 MessageLimiter 里 GetRankPage 那一行的每秒次数一致,缺省 5。
+	RateLimitPerSecond int `yaml:"rate_limit_per_second"`
+}
+
+func (c *RankSmokeConfig) validate() error {
+	if c.ZoneA == 0 || c.ZoneB == 0 {
+		return fmt.Errorf("zone_a and zone_b must both be set (non-zero) (got %d / %d)", c.ZoneA, c.ZoneB)
+	}
+	if c.ZoneA == c.ZoneB {
+		return fmt.Errorf("zone_a and zone_b must differ (got %d): cross-zone name lookup is part of the smoke", c.ZoneA)
+	}
+	if c.RequestIntervalMs <= 0 {
+		return fmt.Errorf("request_interval_ms must be > 0 (got %d)", c.RequestIntervalMs)
+	}
+	if c.UpdateTimeoutMs <= 0 {
+		return fmt.Errorf("update_timeout_ms must be > 0 (got %d)", c.UpdateTimeoutMs)
+	}
+	if c.RateLimitCheck && c.RateLimitPerSecond <= 0 {
+		return fmt.Errorf("rate_limit_per_second must be > 0 when rate_limit_check is true (got %d)", c.RateLimitPerSecond)
+	}
+	return nil
+}
+
+func (c *MailSmokeConfig) validate() error {
+	if c.ZoneA == 0 {
+		return fmt.Errorf("zone_a must be set (non-zero)")
+	}
+	if c.AdminAddr == "" {
+		return fmt.Errorf("admin_addr must be set")
+	}
+	if c.RequestIntervalMs <= 0 {
+		return fmt.Errorf("request_interval_ms must be > 0 (got %d)", c.RequestIntervalMs)
+	}
+	if c.PushTimeoutMs <= 0 {
+		return fmt.Errorf("push_timeout_ms must be > 0 (got %d)", c.PushTimeoutMs)
 	}
 	if !c.CrossZone {
 		return nil
@@ -479,6 +590,25 @@ type TeamSmokeConfig struct {
 	FollowSceneConfigIds []uint32 `yaml:"follow_scene_config_ids"`
 }
 
+// TeamBackfillSmokeConfig 配置 "team-backfill-smoke" 模式(docs/design/team-backfill-matching.md §7.3):
+// 三个机器人 A(队长)、B(队员)、C(路人)都登 zone;A、B 组队选「凑满 3 人」,C 单排同一副本的 3 人档。
+type TeamBackfillSmokeConfig struct {
+	// Zone 必须非 0:三人要在同一个 zone(0 会被 server-list 自动选区顶掉,不保证三人同区)。
+	Zone uint32 `yaml:"zone"`
+	// BattleConfigId 是补位开战用的 DungeonTable id,必须非 0,且 match 的 PveTeamSizeByConfigId 里它的人数上限 ≥ 3。
+	BattleConfigId uint32 `yaml:"battle_config_id"`
+}
+
+func (c *TeamBackfillSmokeConfig) validate() error {
+	if c.Zone == 0 {
+		return fmt.Errorf("zone must be set (non-zero)")
+	}
+	if c.BattleConfigId == 0 {
+		return fmt.Errorf("battle_config_id must be set (non-zero)")
+	}
+	return nil
+}
+
 // teamSmokeMinFollowSceneConfigs 是换图候选的最少个数(见 FollowSceneConfigIds 注释)。
 const teamSmokeMinFollowSceneConfigs = 3
 
@@ -516,6 +646,17 @@ func (c *TeamSmokeConfig) validate() error {
 		return fmt.Errorf("zone_a and zone_b must differ when cross_zone is true (got %d)", c.ZoneA)
 	}
 	return nil
+}
+
+// TeamFollowSmokeConfig 配置 "team-follow-smoke" 模式(docs/design/team-system.md「组队跟随 v1.1」)。
+//
+// 缺省(client_follower=false)两个机器人验服务端:入队即归队、可见性重建、双向移动广播。
+// client_follower=true 改跑「真实客户端跟随」验收:机器人 B 入队后下线、把账号让给真实客户端(DevAutoPilot 登录同一账号),
+// 机器人 A 当队长按脚本走路,从 B 的移动广播里量出它有没有跟在身后。
+type TeamFollowSmokeConfig struct {
+	ClientFollower bool `yaml:"client_follower"`
+	// ClientWaitSeconds 是等真实客户端登录并出现在队长视野里的预算(秒);0 = 240(播放器冷启动较慢)。
+	ClientWaitSeconds int `yaml:"client_wait_seconds"`
 }
 
 // TravelSmokeConfig 配置 "travel-smoke" 模式(docs/design/cross-zone-scene-travel.md §5 阶段 3)。
@@ -635,6 +776,22 @@ func (c *SyncSmokeConfig) validate(homeZone uint32) error {
 	return nil
 }
 
+// MerchantSmokeConfig 配置 "merchant-smoke" 模式(docs/design/mystery-merchant.md §9)。
+//
+// 单机器人登顶层 zone_id → 查询神秘商人 → 不在同一条线就切过去 → 走到站位旁 → 负例 → GM 加钱 → 购买 → 买到限购上限。
+type MerchantSmokeConfig struct {
+	// ArriveTimeoutSeconds 是切到商人所在线时等 NotifyEnterScene 的上限,缺省 20(含义同 ChannelSmokeConfig 的同名字段)。
+	ArriveTimeoutSeconds int `yaml:"arrive_timeout_seconds"`
+}
+
+func (c *MerchantSmokeConfig) validate() error {
+	if c.ArriveTimeoutSeconds <= 0 || c.ArriveTimeoutSeconds > channelSmokeMaxArriveTimeoutSeconds {
+		return fmt.Errorf("arrive_timeout_seconds must be in 1..%d (got %d)",
+			channelSmokeMaxArriveTimeoutSeconds, c.ArriveTimeoutSeconds)
+	}
+	return nil
+}
+
 type LLMConfig struct {
 	Enabled  bool   `yaml:"enabled"`
 	Endpoint string `yaml:"endpoint"` // e.g. "http://localhost:11434/v1/chat/completions"
@@ -658,10 +815,18 @@ func Load(path string) (*Config, error) {
 		// trade-smoke 缺省:trade 本地 gRPC 端口 50800;间隔 1100ms 适配 gate 默认限流档。
 		TradeSmoke:  TradeSmokeConfig{AdminAddr: "127.0.0.1:50800", RequestIntervalMs: 1100},
 		FriendSmoke: FriendSmokeConfig{RequestIntervalMs: 1100, PushTimeoutMs: 10000},
+		// mail-smoke 缺省:mail 本地 gRPC 端口 50900;间隔 / 推送预算同 friend-smoke。
+		MailSmoke: MailSmokeConfig{AdminAddr: "127.0.0.1:50900", RequestIntervalMs: 1100, PushTimeoutMs: 10000},
+		// rank-smoke 缺省:读榜间隔同 friend-smoke;等写榜 30s;限流断言默认关(MessageLimiter 按 rank 导表之后再开)。
+		RankSmoke: RankSmokeConfig{RequestIntervalMs: 1100, UpdateTimeoutMs: 30000, RateLimitPerSecond: 5},
 		// travel-smoke 缺省:停留 35s,大于 login 断线租约 30s(见 TravelSmokeConfig.DwellSeconds)。
 		TravelSmoke: TravelSmokeConfig{DwellSeconds: 35},
 		// channel-smoke 缺省:等到达 20s(同节点切线毫秒级,留足余量);冷却验证最多等 60s(服务端缺省冷却 10s)。
 		ChannelSmoke: ChannelSmokeConfig{ArriveTimeoutSeconds: 20, MaxCooldownWaitSeconds: 60},
+		// merchant-smoke 缺省:切到商人所在线时等到达 20s。
+		MerchantSmoke: MerchantSmokeConfig{ArriveTimeoutSeconds: 20},
+		// equip-forge-topup 缺省补给 equip-forge-smoke 用的那个账号。
+		EquipForgeTopup: EquipForgeTopupConfig{Account: "robot_9104"},
 	}
 	if err := yaml.Unmarshal(data, cfg); err != nil {
 		return nil, err
@@ -702,10 +867,10 @@ func (c *Config) validate() error {
 		return fmt.Errorf("account_fmt must be set")
 	}
 	switch c.Mode {
-	case "", "stress", "login-test", "data-stress", "currency-crash-snapshot", "battle-smoke", "attribute-smoke", "pet-smoke", "equip-smoke", "equip-forge-smoke", "chat-smoke", "guild-smoke", "trade-smoke", "team-smoke", "travel-smoke", "friend-smoke", "channel-smoke", "ordering-smoke", "sync-smoke", "asset-arrival-prepare":
+	case "", "stress", "login-test", "data-stress", "currency-crash-snapshot", "battle-smoke", "attribute-smoke", "pet-smoke", "equip-smoke", "equip-forge-smoke", "chat-smoke", "guild-smoke", "trade-smoke", "team-smoke", "team-follow-smoke", "team-backfill-smoke", "travel-smoke", "friend-smoke", "mail-smoke", "rank-smoke", "channel-smoke", "ordering-smoke", "sync-smoke", "features-smoke", "merchant-smoke", "equip-forge-topup", "asset-arrival-prepare":
 		// valid
 	default:
-		return fmt.Errorf("unknown mode %q (expected stress, login-test, data-stress, currency-crash-snapshot, battle-smoke, attribute-smoke, pet-smoke, equip-smoke, equip-forge-smoke, chat-smoke, guild-smoke, trade-smoke, team-smoke, travel-smoke, friend-smoke, channel-smoke, ordering-smoke, sync-smoke, or asset-arrival-prepare)", c.Mode)
+		return fmt.Errorf("unknown mode %q (expected stress, login-test, data-stress, currency-crash-snapshot, battle-smoke, attribute-smoke, pet-smoke, equip-smoke, equip-forge-smoke, chat-smoke, guild-smoke, trade-smoke, team-smoke, team-follow-smoke, team-backfill-smoke, travel-smoke, friend-smoke, mail-smoke, rank-smoke, channel-smoke, ordering-smoke, sync-smoke, features-smoke, merchant-smoke, equip-forge-topup, or asset-arrival-prepare)", c.Mode)
 	}
 	if c.Mode == "asset-arrival-prepare" {
 		return c.ValidateAssetArrivalPrepare()
@@ -738,6 +903,21 @@ func (c *Config) validate() error {
 			return fmt.Errorf("friend_smoke: %w", err)
 		}
 	}
+	if c.Mode == "mail-smoke" {
+		if err := c.MailSmoke.validate(); err != nil {
+			return fmt.Errorf("mail_smoke: %w", err)
+		}
+	}
+	if c.Mode == "rank-smoke" {
+		if err := c.RankSmoke.validate(); err != nil {
+			return fmt.Errorf("rank_smoke: %w", err)
+		}
+	}
+	if c.Mode == "team-backfill-smoke" {
+		if err := c.TeamBackfillSmoke.validate(); err != nil {
+			return fmt.Errorf("team_backfill_smoke: %w", err)
+		}
+	}
 	if c.Mode == "team-smoke" {
 		if err := c.TeamSmoke.validate(); err != nil {
 			return fmt.Errorf("team_smoke: %w", err)
@@ -756,6 +936,16 @@ func (c *Config) validate() error {
 	if c.Mode == "sync-smoke" {
 		if err := c.SyncSmoke.validate(c.ZoneID); err != nil {
 			return fmt.Errorf("sync_smoke: %w", err)
+		}
+	}
+	if c.Mode == "merchant-smoke" {
+		if err := c.MerchantSmoke.validate(); err != nil {
+			return fmt.Errorf("merchant_smoke: %w", err)
+		}
+	}
+	if c.Mode == "equip-forge-topup" {
+		if err := c.EquipForgeTopup.Validate(); err != nil {
+			return fmt.Errorf("equip_forge_topup: %w", err)
 		}
 	}
 	return nil
@@ -825,4 +1015,48 @@ func (c *Config) LoadTables() {
 		}
 		c.SkillIDs = valid
 	}
+}
+
+// EquipForgeTopupMaxCount 是一项物品单次能发的上限,与 GmGrantItem 的单次上限(equip-forge-smoke 的 equipForgeGrantMaxCount)一致。
+const EquipForgeTopupMaxCount = 99
+
+// EquipForgeTopupConfig 配置 "equip-forge-topup" 模式(docs/design/equipment-enhance-inlay.md §11.6):
+// 用 GM 指令给一个开发账号补强化石 / 宝石 / 银两,然后退出。游戏里没有这些东西的产出,客户端也没有 GM 发物入口,
+// 想在真实客户端里点一次强化 / 镶嵌,得先跑它。只发东西,不强化、不镶嵌、不改别的。
+type EquipForgeTopupConfig struct {
+	// Account 是要补货的账号,缺省 robot_9104(equip-forge-smoke 用的那个)。
+	// 必须以 robot_ 开头:login 侧只对这个前缀走开发期密码认证。账号没有角色时自动建角。
+	Account string `yaml:"account"`
+	// Gold 是要加的银两(kCurrencyGold),0 = 不加。
+	Gold int64 `yaml:"gold"`
+	// Items 是要发的物品,每项 config_id + 数量(1..EquipForgeTopupMaxCount);同一个 config 可以写多项。
+	Items []EquipForgeTopupItem `yaml:"items"`
+}
+
+// EquipForgeTopupItem 是 EquipForgeTopupConfig.Items 的一项。
+type EquipForgeTopupItem struct {
+	ConfigId uint32 `yaml:"config_id"`
+	Count    uint32 `yaml:"count"`
+}
+
+// Validate 在发任何东西之前把配置错误拦下来(导出,好让 package main 的用例直接测)。
+func (c *EquipForgeTopupConfig) Validate() error {
+	if !strings.HasPrefix(c.Account, "robot_") {
+		return fmt.Errorf("account must start with robot_ (got %q): login 只对这个前缀走开发期密码认证", c.Account)
+	}
+	if c.Gold < 0 {
+		return fmt.Errorf("gold must be >= 0 (got %d)", c.Gold)
+	}
+	if c.Gold == 0 && len(c.Items) == 0 {
+		return fmt.Errorf("nothing to grant: set gold and/or items")
+	}
+	for i, item := range c.Items {
+		if item.ConfigId == 0 {
+			return fmt.Errorf("items[%d].config_id must be set", i)
+		}
+		if item.Count == 0 || item.Count > EquipForgeTopupMaxCount {
+			return fmt.Errorf("items[%d].count must be in 1..%d (got %d)", i, EquipForgeTopupMaxCount, item.Count)
+		}
+	}
+	return nil
 }

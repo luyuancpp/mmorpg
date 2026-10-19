@@ -465,7 +465,9 @@
         "MailSystemMailLimit": 17005,
         "MailClaimPending": 17006,
         "MailClaimManual": 17007,
-        "MailAttachmentProtected": 17008
+        "MailAttachmentProtected": 17008,
+        "MailClaimNotOpen": 17009,
+        "MailAttachmentNotOpen": 17010
       }
     },
     "rank_error": {
@@ -476,6 +478,24 @@
         "RankGenerationClosed": 21001,
         "RankRequestConflict": 21002,
         "RankSettlementPending": 21003
+      }
+    },
+    "mystery_merchant_error": {
+      "base": 30000,
+      "width": 1000,
+      "ids": {
+        "MysteryMerchantNotPresent": 30000,
+        "MysteryMerchantNotHere": 30001,
+        "MysteryMerchantTooFar": 30002,
+        "MysteryMerchantShelfChanged": 30003,
+        "MysteryMerchantLimitReached": 30004,
+        "MysteryMerchantCurrencyNotEnough": 30005,
+        "MysteryMerchantBagFull": 30006,
+        "MysteryMerchantInBattle": 30007,
+        "MysteryMerchantFrozen": 30008,
+        "MysteryMerchantInvalidCount": 30009,
+        "MysteryMerchantItemBlocked": 30010,
+        "MysteryMerchantInternalError": 30011
       }
     }
   },

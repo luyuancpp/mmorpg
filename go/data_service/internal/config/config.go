@@ -221,6 +221,10 @@ type IdSegmentConfig struct {
 // trade_listing 的消费表在独占库 mmorpg_trade,不在本服务全局库里,所以不进 schema.go 的水位地板校验。
 // guild_asset_op:帮会资产指令的 op_id(Go guild,同时作资产通道的 correlation_id;
 // docs/design/guild-phase2/05-economy.md §5.8)。消费表在独占库 mmorpg_guild,同理不做地板校验。
+// friend_request:好友申请的代次号 request_id(Go friend,docs/design/friend-port-20260918.md)。
+// 消费表在独占库 mmorpg_friend,同理不做地板校验。
+// mail:邮件的 mail_id / sys_mail_id(Go mail,两种 id 共用这一个 tag,所以全局不撞号;
+// docs/design/mail-system.md §3.7)。消费表在独占库 mmorpg_mail,同理不做地板校验。
 var DefaultIdSegmentBootstrapTags = []string{"player", "guild", "item", "txlog", "snapshot", "trade_listing", "guild_asset_op", "friend_request", "trade_asset_op", "mail", "mail_asset_op", "rank_board", "rank_settlement", "rank_reward"}
 
 // EffectiveBootstrapTags 是迁移路径实际预建的 tag 清单:没配 = 默认清单。
@@ -455,13 +459,13 @@ const (
 	MinRouteReconcileRepairLookbackMs, MaxRouteReconcileRepairLookbackMs           = 15000, 86400000
 	MaxRouteReconcileRollbackToleranceMs                                           = 60000
 	// MaxRouteReconcilePushBatch = store.RouteBatchLimit(1000;config 不 import store,两处各写一份,store 端超限直接拒绝)。
-	MaxRouteReconcilePushBatch                                                   = 1000
-	MinRouteReconcilePushMaxRowsPerSec, MaxRouteReconcilePushMaxRowsPerSec       = 100, 1000000
-	MaxRouteReconcileRedisPoolSize                                               = 32
+	MaxRouteReconcilePushBatch                                             = 1000
+	MinRouteReconcilePushMaxRowsPerSec, MaxRouteReconcilePushMaxRowsPerSec = 100, 1000000
+	MaxRouteReconcileRedisPoolSize                                         = 32
 	// MinRouteReconcileFreezeTimeoutMs = store.RouteFreezeTimeoutMin(5s):TiDB 把 route_meta 设成缓存表后,冻结写要等读租约。
-	MinRouteReconcileFreezeTimeoutMs, MaxRouteReconcileFreezeTimeoutMs           = 5000, 60000
-	MaxRouteReconcileRedisFailureReleaseMs                                       = 600000
-	MaxRouteReconcileArmingBlockedReportLimit                                    = 100000
+	MinRouteReconcileFreezeTimeoutMs, MaxRouteReconcileFreezeTimeoutMs = 5000, 60000
+	MaxRouteReconcileRedisFailureReleaseMs                             = 600000
+	MaxRouteReconcileArmingBlockedReportLimit                          = 100000
 )
 
 // RouteReconcileConfig 是对账 leader 的运行参数(RouteStore.Reconcile)。零值 / nil = 没配,由 Normalize 填默认值

@@ -479,6 +479,28 @@ Test-Case "node ConfigMap 的 GrpcClient.CallDeadlineMs 逐项 == bin/etc/base_d
     Assert-GrpcClientBlockMirrored -Output $devOut -ConfigMapName 'node-config'
 }
 
+# ConfigMap 里某个内嵌文件(data: <文件名>: |)的原文,去掉块缩进。找不到即 throw(fail-closed)。
+function Get-ConfigMapEmbeddedText {
+    param(
+        [Parameter(Mandatory = $true)][string]$Block,
+        [Parameter(Mandatory = $true)][string]$FileName
+    )
+    $lines = ($Block -replace "`r`n", "`n") -split "`n"
+    $start = -1
+    for ($i = 0; $i -lt $lines.Count; $i++) {
+        if ($lines[$i] -match ('^  ' + [regex]::Escape($FileName) + ':\s*\|')) { $start = $i; break }
+    }
+    if ($start -lt 0) { throw "ConfigMap 里找不到内嵌文件 $FileName" }
+    $out = New-Object System.Collections.Generic.List[string]
+    for ($i = $start + 1; $i -lt $lines.Count; $i++) {
+        $line = $lines[$i]
+        if ($line.Length -eq 0 -or $line -match '^\s*$') { $out.Add(''); continue }
+        if (-not $line.StartsWith('    ')) { break }
+        $out.Add($line.Substring(4))
+    }
+    return ($out -join "`n")
+}
+
 Test-Case "K8s 生成物同样满足 deadline 预算:node-config 的 GrpcClient × zone 内 go-svc ConfigMap 实际写出的 Timeout(login 镜像 login.yaml、data-service 不写)" {
     # 部署门禁比对的是服务 yaml;这里再按集群里真正生效的那份核一遍不等式,防的是生成器与门禁悄悄分家:
     # scene-manager / login 的 Timeout 镜像被改回常数(login 以前就是模板里写死 100000),或 data-service 的 ConfigMap
@@ -488,12 +510,21 @@ Test-Case "K8s 生成物同样满足 deadline 预算:node-config 的 GrpcClient 
     $deployScalars = ConvertTo-UnprefixedScalars -Scalars (ConvertTo-FlatManifest -Block (Select-ManifestByName -Output $devOut -Name 'node-config')).Scalars -Prefix 'data.base_deploy_config.yaml.'
     $targets = [ordered]@{}
     foreach ($t in @(
-        @{ Target = 'SceneManagerNodeService'; ConfigMap = 'go-svc-scene-manager-config'; Prefix = 'data.scene_manager_service.yaml.' }
-        @{ Target = 'LoginNodeService';        ConfigMap = 'go-svc-login-config';         Prefix = 'data.login.yaml.' }
-        @{ Target = 'DataServiceNodeService';  ConfigMap = 'go-svc-data-service-config';  Prefix = 'data.data_service.yaml.' }
+        @{ Target = 'SceneManagerNodeService'; ConfigMap = 'go-svc-scene-manager-config'; Prefix = 'data.scene_manager_service.yaml.'; File = 'scene_manager_service.yaml' }
+        @{ Target = 'LoginNodeService';        ConfigMap = 'go-svc-login-config';         Prefix = 'data.login.yaml.';                File = 'login.yaml' }
+        @{ Target = 'DataServiceNodeService';  ConfigMap = 'go-svc-data-service-config';  Prefix = 'data.data_service.yaml.';         File = 'data_service.yaml' }
     )) {
-        $flat = ConvertTo-FlatManifest -Block (Select-ManifestByName -Output $devOut -Name $t.ConfigMap)
+        $block = Select-ManifestByName -Output $devOut -Name $t.ConfigMap
+        $flat = ConvertTo-FlatManifest -Block $block
         $targets[$t.Target] = @{ Source = "K8s ConfigMap $($t.ConfigMap)"; Scalars = (ConvertTo-UnprefixedScalars -Scalars $flat.Scalars -Prefix $t.Prefix) }
+        # 2026-10-16 起 data-service 的 ConfigMap 镜像了三个 Rollback* 的 MethodTimeouts(回档帮会闸):与部署门禁同样逐条核对,
+        # 解析的是 ConfigMap 里真正生效的那份文本,登记为「C++ 不调用」的方法才可以高于 deadline。
+        $embedded = Get-ConfigMapEmbeddedText -Block $block -FileName $t.File
+        if ($embedded -match '(?m)^MethodTimeouts\s*:') {
+            $targets[$t.Target]['MethodTimeouts'] = @(Get-ZrpcMethodTimeouts -Text $embedded)
+            $notCalled = Get-GrpcClientMethodsNotCalledFromCpp
+            if ($notCalled.Contains($t.Target)) { $targets[$t.Target]['MethodsNotCalledFromCpp'] = @($notCalled[$t.Target]) }
+        }
     }
     $violations = @(Get-GrpcClientDeadlineBudgetViolations -DeployScalars $deployScalars -Targets $targets)
     Assert-True -Condition ($violations.Count -eq 0) -Because ("K8s 生成物违例:{0}" -f ($violations -join ';'))
@@ -1275,7 +1306,10 @@ Test-Case 'zone Redis 口令(dev 基线,不注入):node-config 写空串,C++ 工
         $block = Select-ManifestByName -Output $case.Output -Name 'node-config'
         $flat = ConvertTo-FlatManifest -Block $block
         Assert-Equal -Expected '' -Actual (Get-FlatValue -Flat $flat -KeyPath 'data.game_config.yaml.zoneredis.password') -Because "$($case.Label):不注入口令时 C++ 不发 AUTH,与改动前相同"
-        Assert-Match -Text $block -Pattern '(?m)^    zoneredis:[ ]*\r?\n      host: "redis\.[^"\r\n]+"[ ]*\r?\n      port: 6379[ ]*\r?\n      password: ""[ ]*\r?\n      db: 0[ ]*\r?$' -Because "$($case.Label):zoneredis 段与改动前逐字相同"
+        # 核对实际配置字段,不把 Windows DryRun 捕获时增加的空行当成配置变化。
+        Assert-Equal -Expected 'redis.mmorpg-infra' -Actual (Get-FlatValue -Flat $flat -KeyPath 'data.game_config.yaml.zoneredis.host') -Because "$($case.Label):zone Redis 仍使用默认 infra namespace 的共享实例"
+        Assert-Equal -Expected '6379' -Actual (Get-FlatValue -Flat $flat -KeyPath 'data.game_config.yaml.zoneredis.port') -Because "$($case.Label):zone Redis 端口保持 6379"
+        Assert-Equal -Expected '0' -Actual (Get-FlatValue -Flat $flat -KeyPath 'data.game_config.yaml.zoneredis.db') -Because "$($case.Label):C++ 不发 SELECT,库号仍为 0"
         Assert-NotMatch -Text $case.Output -Pattern 'zone-redis-auth-hash' -Because "$($case.Label):口令为空不写指纹注解"
     }
     $gate = Select-CppWorkloadBlock -Output $devOut -Kind 'Deployment' -Name 'gate' -Label 'dev gate'
@@ -2941,7 +2975,7 @@ function Get-MysqlClientConfigMapNames {
         foreach ($doc in ($block -split '(?m)^---[ \t]*\r?$')) {
             if ($doc -notmatch '(?m)^kind:[ \t]*ConfigMap\s*$') { continue }
             $effective = @($doc -split "`n" | Where-Object { $_ -notmatch '^\s*#' }) -join "`n"
-            if ($effective -notmatch 'mysql(?:\.[^\s:/]+)?:3306|jdbc:mysql://') { continue }
+            if ($effective -notmatch 'mysql(?:\.[^\s:/]+)?:3306|jdbc:mysql://|DSNEnv: MMORPG_(MAIL|RANK)_SQL_DSN|DataSourceEnv: MMORPG_GUILD_SQL_DSN') { continue }
             # name 紧跟在 metadata: 之下(中间只允许注释行);生成器的 ConfigMap 都是这个形状。
             $name = [regex]::Match($doc, '(?m)^metadata:[ \t]*\r?\n(?:[ \t]*#[^\n]*\n)*[ ]{2}name:[ \t]*"?(?<name>[^\s"]+)"?\s*$')
             if (-not $name.Success) { throw "DryRun 输出里有一份连 MySQL 的 ConfigMap 读不出 metadata.name(形状变了?),无法核对它是否在连接总账里" }
@@ -2981,18 +3015,24 @@ Test-Case '自检:总账公式复现 2026-10-12 核算(Z=4 → 920、Z=2 → 500
             FriendReplicas = 2; FriendMaxOpen = 20; TradeReplicas = 2; TradeMaxOpen = 20
             # 2026-10-15 起全局池多了玩家收件箱(player-inbox,docs/design/player-inbox-service.md §10);当时的核算里没有它。
             PlayerInboxReplicas = 2; PlayerInboxMaxOpen = 20
+            # 2026-10-16 起又多了帮会(guild 上 K8s,池上限同批补上);同样不在当时的核算里。
+            GuildReplicas = 2; GuildMaxOpen = 20
+            # 2026-10-16 邮件 mail 上 K8s(docs/design/mail-system.md §12.3);同样不在当时的核算里。
+            MailReplicas = 2; MailMaxOpen = 20
+            RankReplicas = 2; RankMaxOpen = 20
         }
     }
 
     # 当时的名义值:不算额外落点库(E_z = E_n = 0)、route store 不计(F = 0)、不含滚动余量与运维余量。
     # 每 zone = 2 × (db 60 + ds 35 + gateway 10) = 210;全局 = friend 2 × 20 + trade 2 × 20 = 80。
     # 收件箱(2 × 20 = 40)是后加的全局池:断言按「2026-10-12 的核算 + 40」比,历史那份核算本身仍逐项复现。
-    $inboxGlobal = 2 * 20
+    # 帮会(2 × 20 = 40)同理是 2026-10-16 后加的全局池,下面的断言一并加上;邮件(2 × 20 = 40)同日加入,同样一并加上。
+    $inboxGlobal = 2 * 20 + 2 * 20 + 2 * 20 + 2 * 20
     $nominalShape = @{ ExtraZoneStores = 0; NonZoneStores = 0; RouteStoreDbFirst = $false; RolloutExtraPodsPerDeployment = 0; OpsReserve = 0 }
     foreach ($case in @(@{ Zones = 4; Steady = 920 }, @{ Zones = 2; Steady = 500 })) {
         $ledger = Get-MysqlConnectionLedger -Inputs (& $newLegacyInputs) -ZoneCount $case.Zones @nominalShape
         Assert-Equal -Expected ('60/35/10/210/{0}' -f (80 + $inboxGlobal)) -Actual ('{0}/{1}/{2}/{3}/{4}' -f $ledger.DbPerInstance, $ledger.DsPerInstance, $ledger.GatewayPerInstance, $ledger.PerZone, $ledger.Global) -Because "Z=$($case.Zones):db / ds / gateway 每实例、每 zone、全局(friend + trade + 收件箱) 五项"
-        Assert-Equal -Expected ($case.Steady + $inboxGlobal) -Actual $ledger.Steady -Because "Z=$($case.Zones) 的稳态必须等于 2026-10-12 的核算加收件箱 40"
+        Assert-Equal -Expected ($case.Steady + $inboxGlobal) -Actual $ledger.Steady -Because "Z=$($case.Zones) 的稳态必须等于 2026-10-12 的核算加收件箱、帮会、邮件各 40"
         Assert-Equal -Expected ($case.Steady + $inboxGlobal) -Actual $ledger.Peak -Because '不含滚动余量与运维余量时,峰值 = 稳态'
         Assert-Equal -Expected (500 - $case.Steady - $inboxGlobal) -Actual $ledger.Headroom -Because '余量 = max_connections − 峰值(当时 Z=2 恰好为 0,加上收件箱后两者都为负)'
     }
@@ -3006,20 +3046,20 @@ Test-Case '自检:总账公式复现 2026-10-12 核算(Z=4 → 920、Z=2 → 500
     $overLimit = Get-MysqlConnectionLedger -Inputs (& $newLegacyInputs) @planShape
     Assert-True -Condition ($overLimit.Peak -gt 500 -and $overLimit.Headroom -lt 0) -Because ("规划档对旧上限 500 必须判超限,实际:{0}" -f (Format-MysqlConnectionLedger -Ledger $overLimit))
 
-    # 滚动口径:同一份输入,R=2 比 R=0 恰好多出 2 × 每实例之和(db 60 + ds 35 + gateway 10 + friend 20 + trade 20 + 收件箱 20 = 165)。
+    # 滚动口径:同一份输入,R=2 比 R=0 恰好多出 2 × 每实例之和(db 60 + ds 35 + gateway 10 + friend 20 + trade 20 + 收件箱 20 + 帮会 20 + 邮件 20 = 205)。
     # 多出来的是「实例」(maxSurge 的新 Pod + 仍在优雅退出、连接还没释放的旧 Pod),不乘副本数,也不乘 zone 数。
     $rolloutShape = @{ ZoneCount = 4; ExtraZoneStores = 0; NonZoneStores = 0; RouteStoreDbFirst = $false; OpsReserve = 0 }
     $withoutRollout = Get-MysqlConnectionLedger -Inputs (& $newLegacyInputs) -RolloutExtraPodsPerDeployment 0 @rolloutShape
     $withRollout = Get-MysqlConnectionLedger -Inputs (& $newLegacyInputs) -RolloutExtraPodsPerDeployment 2 @rolloutShape
-    Assert-Equal -Expected (2 * 165) -Actual ($withRollout.Peak - $withoutRollout.Peak) -Because 'R=2 与 R=0 的峰值之差必须是 2 × (db + ds + gateway + friend + trade + 收件箱 每实例之和)'
-    Assert-Equal -Expected (2 * 165) -Actual $withRollout.RolloutSurge -Because '这个差值就是分项里的 RolloutSurge'
+    Assert-Equal -Expected (2 * 225) -Actual ($withRollout.Peak - $withoutRollout.Peak) -Because 'R=2 与 R=0 的峰值之差必须是 2 × (db + ds + gateway + friend + trade + 收件箱 + 帮会 + 邮件 每实例之和)'
+    Assert-Equal -Expected (2 * 225) -Actual $withRollout.RolloutSurge -Because '这个差值就是分项里的 RolloutSurge'
     Assert-Equal -Expected $withoutRollout.Steady -Actual $withRollout.Steady -Because '滚动余量不进稳态'
 
     # 逐项钉公式:副本数、池上限、形态参数各取互不相同的值,任何一项漏算、两个额外库旋钮接反、副本数错配,结果都对不上。
     #   db 每实例 = 60 + 2 × 7(zone 家族额外库)+ 1 × 11(非 zone 落点库)= 85
     #   ds 每实例 = 3 × 5 + 20 + 30(route store 按 db_first 计入)= 65
-    #   每 zone   = 2 × 85 + 3 × 65 + 4 × 10 = 405;全局 = 5 × 20 + 6 × 40 + 7 × 3(收件箱)= 361;稳态 = 3 × 405 + 361 = 1576
-    #   滚动余量  = 1 × (85 + 65 + 10 + 20 + 40 + 3) = 223;峰值 = 1576 + 223 + 7 = 1806;余量 = 5000 − 1806 = 3194
+    #   每 zone   = 2 × 85 + 3 × 65 + 4 × 10 = 405;全局 = 5 × 20 + 6 × 40 + 7 × 3(收件箱)+ 8 × 2(帮会)+ 9 × 4(邮件)= 413;稳态 = 3 × 405 + 413 = 1628
+    #   滚动余量  = 1 × (85 + 65 + 10 + 20 + 40 + 3 + 2 + 4) = 229;峰值 = 1628 + 229 + 7 = 1864;余量 = 5000 − 1864 = 3136
     $distinctInputs = [ordered]@{
         MaxConnections = 5000
         DbReplicas = 2; DbHomeMaxOpen = 60; DbZoneStoreMaxOpen = 7; DbNonZoneStoreMaxOpen = 11
@@ -3027,9 +3067,12 @@ Test-Case '自检:总账公式复现 2026-10-12 核算(Z=4 → 920、Z=2 → 500
         GatewayReplicas = 4; GatewayMaxPool = 10
         FriendReplicas = 5; FriendMaxOpen = 20; TradeReplicas = 6; TradeMaxOpen = 40
         PlayerInboxReplicas = 7; PlayerInboxMaxOpen = 3
+        GuildReplicas = 8; GuildMaxOpen = 2
+        MailReplicas = 9; MailMaxOpen = 4
+        RankReplicas = 10; RankMaxOpen = 6
     }
     $distinct = Get-MysqlConnectionLedger -Inputs $distinctInputs -ZoneCount 3 -ExtraZoneStores 2 -NonZoneStores 1 -RouteStoreDbFirst $true -RolloutExtraPodsPerDeployment 1 -OpsReserve 7
-    Assert-Equal -Expected '85/65/10/405/361/1576/223/7/1806/5000/3194' -Actual ('{0}/{1}/{2}/{3}/{4}/{5}/{6}/{7}/{8}/{9}/{10}' -f $distinct.DbPerInstance, $distinct.DsPerInstance, $distinct.GatewayPerInstance, $distinct.PerZone, $distinct.Global, $distinct.Steady, $distinct.RolloutSurge, $distinct.OpsReserve, $distinct.Peak, $distinct.MaxConnections, $distinct.Headroom) -Because '分项依次是 db / ds / gateway 每实例、每 zone、全局、稳态、滚动余量、运维余量、峰值、上限、余量'
+    Assert-Equal -Expected '85/65/10/405/473/1688/235/7/1930/5000/3070' -Actual ('{0}/{1}/{2}/{3}/{4}/{5}/{6}/{7}/{8}/{9}/{10}' -f $distinct.DbPerInstance, $distinct.DsPerInstance, $distinct.GatewayPerInstance, $distinct.PerZone, $distinct.Global, $distinct.Steady, $distinct.RolloutSurge, $distinct.OpsReserve, $distinct.Peak, $distinct.MaxConnections, $distinct.Headroom) -Because '分项依次是 db / ds / gateway 每实例、每 zone、全局、稳态、滚动余量、运维余量、峰值、上限、余量'
 
     # 输入非法一律 throw 并点名是哪个键(fail-closed:不能拿一个猜出来的连接数去和上限比)。
     $missingKey = & $newLegacyInputs
@@ -3056,7 +3099,7 @@ Test-Case '自检:总账公式复现 2026-10-12 核算(Z=4 → 920、Z=2 → 500
     Assert-Match -Text $message -Pattern 'RolloutExtraPodsPerDeployment=-1\b.*不能为负' -Because 'R 传 -1 必须 throw 并点名参数与值,不能把滚动余量算成负数去抵稳态'
 }
 
-Test-Case '连 MySQL 的 ConfigMap 只有总账认识的那些(zone-up 三个、infra-up 三个:friend / trade / player-inbox)' {
+Test-Case '连 MySQL 的 ConfigMap 只有总账认识的那些(zone-up 三个、infra-up 五个:friend / trade / player-inbox / guild / mail)' {
     # 总账(Get-MysqlConnectionLedgerInputs)按服务逐个登记池上限。新增一个连这台 MySQL 的服务而不登记,它占的连接就不在账上,
     # 上面「峰值 ≤ max_connections」照样通过。这里把「谁在连」钉成名单:名单变了,先去总账加一项,再来改这里。
     $zoneExpected = @('go-svc-db-config', 'go-svc-data-service-config', 'java-svc-gateway-config' | Sort-Object) -join ','
@@ -3069,8 +3112,8 @@ Test-Case '连 MySQL 的 ConfigMap 只有总账认识的那些(zone-up 三个、
     Assert-True -Condition (($infraArgs -contains '-DryRun') -and -not ($infraArgs -contains '-SkipGoSvc')) -Because '夹具前提:这次 infra-up 必须仍是 DryRun(不碰任何集群),且不再跳过 Go 服务'
     $infraRun = Invoke-DeployDryRun -Arguments $infraArgs -Env $BattleTestEnv
     Assert-Equal -Expected 0 -Actual $infraRun.ExitCode -Because "带全局 Go 服务的 infra-up DryRun 必须成功。输出: $($infraRun.Output)"
-    $infraExpected = @('go-svc-friend-config', 'go-svc-trade-config', 'go-svc-player-inbox-config' | Sort-Object) -join ','
-    Assert-Equal -Expected $infraExpected -Actual (@(Get-MysqlClientConfigMapNames -Output $infraRun.Output) -join ',') -Because 'infra-up 产物里连 MySQL 的 ConfigMap 必须恰好是 friend / trade / player-inbox 三个(总账的全局部分只算了它们)'
+    $infraExpected = @('go-svc-friend-config', 'go-svc-trade-config', 'go-svc-player-inbox-config', 'go-svc-guild-config', 'go-svc-mail-config', 'go-svc-rank-config' | Sort-Object) -join ','
+    Assert-Equal -Expected $infraExpected -Actual (@(Get-MysqlClientConfigMapNames -Output $infraRun.Output) -join ',') -Because 'infra-up 产物里连 MySQL 的 ConfigMap 必须恰好是 friend / trade / player-inbox / guild / mail 五个(总账的全局部分只算了它们)'
     $friendConfig = Select-ManifestByName -Output $infraRun.Output -Name 'go-svc-friend-config'
     Assert-Match -Text $friendConfig -Pattern 'RequireTiDB: false' -Because '开发 ConfigMap 必须显式说明未要求 TiDB'
 
@@ -3105,6 +3148,17 @@ Test-Case '连 MySQL 的 ConfigMap 只有总账认识的那些(zone-up 三个、
     # 迁移 Job 读的是同一份 ConfigMap(conf.MustLoad 同样跑 Validate),漏了它就是「服务起得来、Job 拒启」或反过来。
     $migrateManifest = Get-Content -LiteralPath (Join-Path (Get-RepoRoot) 'deploy/k8s/manifests/go-svc/player-inbox-migrate.yaml') -Raw
     Assert-Match -Text $migrateManifest -Pattern 'configMap:\s+name: go-svc-player-inbox-config' -Because 'player-inbox-migrate Job 必须挂同一份 ConfigMap,Middlewares 段对它同样生效'
+    # M2/M3 使用唯一的服务 YAML 配置源，不恢复旧 M1 的 token / Redis / MySQL 字段。
+    $mailConfig = Select-ManifestByName -Output $infraRun.Output -Name 'go-svc-mail-config'
+    Assert-True -Condition ($null -ne $mailConfig) -Because '全局池必须包含邮件服务'
+    $mailFlat = ConvertTo-UnprefixedScalars -Scalars (ConvertTo-FlatManifest -Block $mailConfig).Scalars -Prefix 'data.mail.yaml.'
+    foreach ($key in @('Name','Timeout','DSNEnv','RequireTiDB','MaxOpenConns','AutoMigrate','AssetSecretEnv',
+        'Mail.MaxPersonalMailsPerPlayer','Mail.MaxActiveSystemMails','Mail.MaxPersonalMailTtlDays','Mail.MaxSystemMailTtlDays',
+        'Sweep.Mode','Sweep.Interval','Sweep.RetentionDays','Sweep.BatchLimit')) {
+        Assert-Equal -Expected (Get-EtcValue -RelativePath 'go/mail/etc/mail.yaml' -KeyPath $key) -Actual ([string]$mailFlat[$key]).Trim('"') -Because "现役 mail 配置镜像同一事实源: $key"
+    }
+    Assert-Match -Text $mailConfig -Pattern 'DSNEnv: MMORPG_MAIL_SQL_DSN' -Because 'SQL 凭证只通过环境变量引用'
+    Assert-NotMatch -Text $mailConfig -Pattern '(?m)^\s+AdminToken:' -Because '不恢复 M1 单一管理令牌'
 }
 
 Test-Case '部署写路径打印 MySQL connection ledger(zone-up DryRun)' {
@@ -4038,6 +4092,803 @@ Test-Case 'dev_tools / k8s_image 的 -ConfirmRedisCoreRestart:不给不透传,�
         Assert-Match -Text $absent -Pattern 'ConfirmRedisCoreRestart=False' -Because "$label 没给开关时不得替运维确认重启"
         $present = Invoke-ConfirmRedisCoreRestartPassthrough -SourceScript $w.Source -WrapperFunction $w.Function -WrapperArgs $w.Args -Confirm $true
         Assert-Match -Text $present -Pattern 'ConfirmRedisCoreRestart=True' -Because "$label 必须把开关透传下去,否则从文档入口无法确认重启,模板一变 infra-up 就只能被拒"
+    }
+}
+
+# ─────────────────────────────────────────────────────────────────
+# 共享 Redis 的高可用形态(-RedisReplicas;docs/design/no-single-node-horizontal-scaling-20261001.md §5)
+# ─────────────────────────────────────────────────────────────────
+# redis-ha.yaml = 1 主 2 从 + 每个 redis Pod 一个哨兵 + 2 个 haproxy 入口代理,Service redis 指向代理。2026-10-08 在本机 kind 上
+# 实测过故障转移 / 滚动 / 冷启动 / 原地切换,实测里踩到的坑(haproxy 3.0.29 的僵尸会话、expect 不带 min-recv 每次否定结论等 2 秒、
+# 哨兵不加引号回写口令)这里逐条钉住。纯函数按 AST 抽出直接调用;DryRun 产物用 $BattleInfraArgs 起的 infra-up 核对,不碰任何集群。
+$redisHaFunctionNames = @(
+    'Get-RedisTopologyFor', 'Get-RedisTopologyChangeVerdict', 'Get-RedisHaLimits', 'Get-RedisHaScriptsDigest', 'Assert-RedisPasswordSentinelSafe'
+)
+foreach ($redisHaFnAst in $deadlineDeployAst.FindAll({ param($a) $a -is [System.Management.Automation.Language.FunctionDefinitionAst] }, $false)) {
+    if ($redisHaFunctionNames -contains $redisHaFnAst.Name) {
+        Set-Item -Path "Function:script:$($redisHaFnAst.Name)" -Value $redisHaFnAst.Body.GetScriptBlock()
+    }
+}
+foreach ($redisHaFnName in $redisHaFunctionNames) {
+    if (-not (Test-Path "Function:$redisHaFnName")) { throw "k8s_deploy.ps1 缺少函数 $redisHaFnName(共享 Redis 高可用接入被删了?后续断言无意义)" }
+}
+$redisHaManifestPath = Join-Path (Get-RepoRoot) 'deploy/k8s/manifests/infra/redis-ha.yaml'
+$redisHaManifestText = [IO.File]::ReadAllText($redisHaManifestPath) -replace "`r`n", "`n"
+$redisHaRun = Invoke-DeployDryRun -Arguments ($BattleInfraArgs + @('-RedisReplicas', '3')) -Env $BattleTestEnv
+
+Test-Case 'Redis 拓扑:只认 1 / 3;线上 1 → 目标 3 是 upgrade,3 → 1 与线上 0 / 2 一律拒绝' {
+    $single = Get-RedisTopologyFor -Replicas 1
+    Assert-Equal -Expected 'redis.yaml' -Actual $single.Manifest -Because '1 = 单实例清单'
+    Assert-True -Condition (-not $single.HighAvailability) -Because '1 不是高可用'
+    $ha = Get-RedisTopologyFor -Replicas 3
+    Assert-Equal -Expected 'redis-ha.yaml' -Actual $ha.Manifest -Because '3 = 高可用清单'
+    Assert-Equal -Expected 'Parallel' -Actual $ha.PodManagementPolicy -Because '冷启动时上一任主可能不是 redis-0,按序创建会互相等死'
+    foreach ($bad in @(0, 2, 4, 5)) {
+        $threw = $false
+        try { $null = Get-RedisTopologyFor -Replicas $bad } catch { $threw = $true }
+        Assert-True -Condition $threw -Because "副本数 $bad 必须拒绝(两个节点的哨兵多数派挂一个就没了;更多副本没有收益)"
+    }
+    $cases = @(
+        @{ Live = $null; Desired = 3; Expected = 'absent' },
+        @{ Live = 1; Desired = 1; Expected = 'unchanged' },
+        @{ Live = 3; Desired = 3; Expected = 'unchanged' },
+        @{ Live = 1; Desired = 3; Expected = 'upgrade' },
+        @{ Live = 3; Desired = 1; Expected = 'refuse' },
+        @{ Live = 0; Desired = 1; Expected = 'refuse' },
+        @{ Live = 2; Desired = 3; Expected = 'refuse' }
+    )
+    foreach ($c in $cases) {
+        Assert-Equal -Expected $c.Expected -Actual (Get-RedisTopologyChangeVerdict -LiveReplicas $c.Live -DesiredReplicas $c.Desired) -Because "线上 $($c.Live) → 目标 $($c.Desired)"
+    }
+}
+
+Test-Case 'redis-ha.yaml 连接上限:MAXCLIENTS 与 redis.yaml 同值;代理全部副本(含 maxSurge)+ 预留 ≤ MAXCLIENTS;规划档峰值 ≤ 80% × 单个代理的 maxconn' {
+    $RepoRoot = Get-RepoRoot
+    $limits = Get-RedisHaLimits -ManifestContent $redisHaManifestText -SingleInstanceMaxClients (Get-RedisMaxClientsFromManifest)
+    Assert-True -Condition ($limits.ProxyTotal + $limits.Reserved -le $limits.MaxClients) -Because '代理必须比 Redis 先到线:Redis 到线时代理的健康检查连接也被拒,判下线后会踢掉全部会话'
+    # 一个代理重启时,它的客户端全部重连到另一个代理:单个代理要能独自扛住峰值。
+    $ledger = Get-RepoRedisPlanLedger
+    $line80 = [Math]::Floor(0.8 * $limits.ProxyMaxConn)
+    Assert-True -Condition ($ledger.Peak -le $line80) -Because ("规划档峰值 {0} 超过 80% × PROXY_MAXCONN = {1}:另一个代理重启期间,剩下的那个会先到线" -f $ledger.Peak, $line80)
+    $threw = $false
+    try { $null = Get-RedisHaLimits -ManifestContent $redisHaManifestText -SingleInstanceMaxClients ($limits.MaxClients + 1) } catch { $threw = $true }
+    Assert-True -Condition $threw -Because '两份清单的 MAXCLIENTS 不同时必须拒绝:Redis 连接总账只从 redis.yaml 读'
+    $tooMany = [regex]::Replace($redisHaManifestText, '(?m)^([ \t]*PROXY_MAXCONN=)\d+', { param($m) $m.Groups[1].Value + [string]($limits.MaxClients) })
+    $threw = $false
+    try { $null = Get-RedisHaLimits -ManifestContent $tooMany -SingleInstanceMaxClients $limits.MaxClients } catch { $threw = $true }
+    Assert-True -Condition $threw -Because '代理上限加起来超过 MAXCLIENTS 必须拒绝'
+}
+
+Test-Case 'redis-ha.yaml 钉住实测教训:haproxy 用 3.2(3.0.29 有僵尸会话)、每条 tcp-check expect 带 min-recv、redis-server 带 --maxclients、StatefulSet 是 Parallel' {
+    Assert-Match -Text $redisHaManifestText -Pattern '(?m)^\s+image: haproxy:3\.2-' -Because 'haproxy 3.0.29 在后端被判下线时留下客户端侧不关闭的会话(长连接客户端卡死),3.2 没有'
+    Assert-NotMatch -Text $redisHaManifestText -Pattern 'haproxy:3\.0' -Because '不得退回 3.0'
+    $expects = [regex]::Matches($redisHaManifestText, 'tcp-check expect[^\n"]*')
+    Assert-True -Condition ($expects.Count -ge 4) -Because '夹具前提:代理脚本里有认证 / PONG / 哨兵答主 / role:master 四类 expect'
+    foreach ($e in $expects) {
+        Assert-Match -Text $e.Value -Pattern 'min-recv \d+' -Because "「$($e.Value)」不带 min-recv 时不匹配要等到检查超时(2 秒)才下结论,切主后代理晚 2 秒才改道"
+    }
+    Assert-Match -Text $redisHaManifestText -Pattern '--maxclients "\$MAXCLIENTS"' -Because '每个 redis-server 都要显式 --maxclients'
+    Assert-Match -Text $redisHaManifestText -Pattern '(?m)^  podManagementPolicy: Parallel\s*$' -Because '冷启动时上一任主可能不是 redis-0'
+    Assert-Match -Text $redisHaManifestText -Pattern '\*\[\[:space:\]\\"\\''\\\\\]\*\)' -Because '哨兵启动脚本要拒绝含空白 / 引号 / 反斜杠的口令(否则下次重启读不回自己的配置)'
+}
+
+Test-Case '口令字符集(高可用形态):空白与单引号拒绝且不回显;dev 空口令与常规口令放行' {
+    foreach ($ok in @('', 'contract-test-redis-pw-01', 'p@%^:,~#$!&*()=+.')) {
+        $threw = $false
+        try { Assert-RedisPasswordSentinelSafe -Password $ok } catch { $threw = $true }
+        Assert-True -Condition (-not $threw) -Because "「$ok」应当放行"
+    }
+    foreach ($bad in @('with space-0123456', "quote'pw-0123456", "tab`tpw-0123456")) {
+        $message = ''
+        try { Assert-RedisPasswordSentinelSafe -Password $bad } catch { $message = $_.Exception.Message }
+        Assert-True -Condition ($message.Length -gt 0) -Because '含空白 / 单引号必须拒绝'
+        Assert-True -Condition (-not $message.Contains($bad)) -Because '报错不得回显口令'
+    }
+    $env2 = @{} + $BattleTestEnv
+    $env2['MMORPG_REDIS_PASSWORD'] = "contract'pw-0123456"
+    $run = Invoke-DeployDryRun -Arguments ($BattleInfraArgs + @('-RedisReplicas', '3')) -Env $env2
+    Assert-True -Condition ($run.ExitCode -ne 0) -Because '高可用形态下含单引号的口令必须拒绝部署'
+    Assert-Match -Text $run.Output -Pattern 'MMORPG_REDIS_PASSWORD' -Because '报错要点名变量'
+    Assert-True -Condition (-not $run.Output.Contains("contract'pw-0123456")) -Because '报错不得回显口令'
+    Assert-NotMatch -Text $run.Output -Pattern '\[dry-run\] kubectl apply' -Because '必须在任何写操作之前拒绝'
+}
+
+Test-Case 'infra-up DryRun(-RedisReplicas 3):apply redis-ha.yaml;sts/redis 3 副本、摘要注解 == 按仓库文件重算;代理带脚本摘要、Service 指向代理、等代理就绪' {
+    Assert-Equal -Expected 0 -Actual $redisHaRun.ExitCode -Because "高可用形态的 infra-up DryRun 必须成功。输出: $($redisHaRun.Output)"
+    Assert-Match -Text $redisHaRun.Output -Pattern 'Redis topology: replicas=3 manifest=redis-ha\.yaml high_availability=true' -Because '入口要打出本次的 Redis 形态'
+    Assert-Match -Text $redisHaRun.Output -Pattern 'Redis HA limits: maxclients=\d+ proxy_maxconn=\d+ proxies=\d+\+\d+ reserved=\d+' -Because '写路径要打出连接上限核对'
+    $sts = Select-RedisStatefulSetDocument -Output $redisHaRun.Output
+    Assert-Match -Text $sts -Pattern '(?m)^  replicas: 3\s*$' -Because '高可用形态是 3 个 redis Pod'
+    $rendered = $redisHaManifestText.Replace('__INFRA_NAMESPACE__', 'contract-battle-infra')
+    $expectedDigest = Get-RedisPodTemplateDigest -ManifestContent $rendered
+    Assert-Match -Text $sts -Pattern ('mmorpg\.io/redis-pod-template-digest: "' + $expectedDigest + '"') -Because '重启闸摘要必须按高可用清单算,并写进 sts/redis 自己的注解'
+    $scriptsDigest = Get-RedisHaScriptsDigest -ManifestContent $rendered
+    Assert-Match -Text $redisHaRun.Output -Pattern ('mmorpg\.io/redis-ha-scripts-digest: "' + $scriptsDigest + '"') -Because '脚本一改代理就要滚动'
+    Assert-Match -Text $redisHaRun.Output -Pattern '(?s)name: redis\r?\n(?:(?!\n---).)*?selector:\s+app: redis-proxy' -Because 'Service redis 必须指向代理'
+    Assert-Match -Text $redisHaRun.Output -Pattern 'rollout status deployment/redis-proxy -n contract-battle-infra' -Because '客户端连的是代理:代理没就绪等于 Redis 没就绪'
+    Assert-NotMatch -Text $redisHaRun.Output -Pattern '(?-i)__REDIS_[A-Z_]+__' -Because '占位必须全部替换'
+}
+
+Test-Case 'dev 基线(不传 -RedisReplicas)仍是单实例;prod 档缺省就是高可用' {
+    Assert-Match -Text $battleInfraRun.Output -Pattern 'Redis topology: replicas=1 manifest=redis\.yaml high_availability=false' -Because 'dev 档缺省单实例'
+    Assert-NotMatch -Text $battleInfraRun.Output -Pattern 'redis-proxy' -Because '单实例形态不出现代理'
+    $run = Invoke-DeployDryRun -Arguments ($BattleInfraArgs + @('-ReleaseProfile', 'prod', '-BattleReplicas', '0')) -Env $ProdEnv
+    Assert-Equal -Expected 0 -Actual $run.ExitCode -Because "prod 档 infra-up DryRun 必须成功。输出: $($run.Output)"
+    Assert-Match -Text $run.Output -Pattern 'Redis topology: replicas=3 manifest=redis-ha\.yaml high_availability=true' -Because '非 dev 档缺省高可用(与 Kafka 同一判据)'
+    $explicit = Invoke-DeployDryRun -Arguments ($BattleInfraArgs + @('-ReleaseProfile', 'prod', '-BattleReplicas', '0', '-RedisReplicas', '1')) -Env $ProdEnv
+    Assert-Match -Text $explicit.Output -Pattern 'Redis topology: replicas=1 manifest=redis\.yaml' -Because '显式 -RedisReplicas 1 覆盖档位缺省'
+    $bad = Invoke-DeployDryRun -Arguments ($BattleInfraArgs + @('-RedisReplicas', '2')) -Env $BattleTestEnv
+    Assert-True -Condition ($bad.ExitCode -ne 0) -Because '-RedisReplicas 2 必须拒绝'
+    Assert-NotMatch -Text $bad.Output -Pattern '\[dry-run\] kubectl apply' -Because '参数错误必须先于任何写操作'
+}
+
+# ─────────────────────────────────────────────────────────────────
+# 帮会 guild 上 K8s(K8s 上线批 BK8s = docs/design/guild-phase2/90-consistency.md G-05,2026-10-16)
+# ─────────────────────────────────────────────────────────────────
+# guild 是全局池(infra namespace 一份),ConfigMap 按 go/guild/etc/guild.yaml 生成,AssetOp / Activity 两大块原样搬运;
+# data-service 同批接上回档帮会闸(GuildInternalRpc 按 Service 名直连 guild + 三个 Rollback* 的 MethodTimeouts)。
+# 带全局 Go 服务的 infra-up DryRun 单独起一次(本文件其余 infra-up 都带 -SkipGoSvc)。
+$guildInfraArgs = @($BattleInfraArgs | Where-Object { $_ -notin @('-SkipGoSvc', '-WaitReady') }) + @('-GoSvcRegistry', 'registry.invalid/test')
+$guildInfraRun = Invoke-DeployDryRun -Arguments $guildInfraArgs -Env $BattleTestEnv
+$guildYamlText = [IO.File]::ReadAllText((Join-Path (Get-RepoRoot) 'go/guild/etc/guild.yaml')) -replace "`r`n", "`n"
+
+# 文本里某个顶层键的整块(键行 + 其后所有缩进行,去掉块尾空行)。找不到即 throw。
+function Get-TopLevelYamlBlockText {
+    param([Parameter(Mandatory = $true)][string]$Text, [Parameter(Mandatory = $true)][string]$Key)
+    $lines = ($Text -replace "`r`n", "`n") -split "`n"
+    $start = -1
+    for ($i = 0; $i -lt $lines.Count; $i++) { if ($lines[$i] -match ('^' + [regex]::Escape($Key) + '\s*:')) { $start = $i; break } }
+    if ($start -lt 0) { throw "找不到顶层块 ${Key}:" }
+    $out = New-Object System.Collections.Generic.List[string]
+    $out.Add($lines[$start].TrimEnd())
+    for ($i = $start + 1; $i -lt $lines.Count; $i++) {
+        $line = $lines[$i]
+        if ([string]::IsNullOrWhiteSpace($line)) { $out.Add(''); continue }
+        if ($line -notmatch '^\s') { break }
+        $out.Add($line.TrimEnd())
+    }
+    while ($out.Count -gt 0 -and [string]::IsNullOrWhiteSpace($out[$out.Count - 1])) { $out.RemoveAt($out.Count - 1) }
+    return ($out -join "`n")
+}
+
+Test-Case 'guild 部署形态:全局池 2 副本滚动 + PDB + 反亲和 + POD_IP;资产密钥默认不注入;迁移 Job 先于 Deployment' {
+    Assert-Equal -Expected 0 -Actual $guildInfraRun.ExitCode -Because "带全局 Go 服务的 infra-up DryRun 必须成功。输出: $($guildInfraRun.Output)"
+    $block = @(Get-ManifestBlocks -Output $guildInfraRun.Output | Where-Object {
+        $_ -cmatch '(?m)^kind: Deployment\s*$' -and $_ -cmatch '(?m)^  name: guild\s*$'
+    }) | Select-Object -First 1
+    Assert-True -Condition ($null -ne $block) -Because 'infra-up 产物里应当有 guild 的 Deployment'
+    Assert-Match -Text $block -Pattern '(?m)^  replicas: 2\s*$' -Because '单副本 = 全服帮会功能是单点'
+    Assert-Match -Text $block -Pattern 'type: RollingUpdate\s+rollingUpdate:\s+maxSurge: 1\s+maxUnavailable: 0' -Because '先起新的再停旧的'
+    Assert-Match -Text $block -Pattern 'podAntiAffinity' -Because '两个副本不该落在同一个节点上'
+    Assert-Match -Text $block -Pattern '(?s)kind: PodDisruptionBudget.*?name: guild-pdb.*?minAvailable: 1' -Because 'PDB 必须写在主 manifest 里'
+    Assert-Match -Text $block -Pattern 'name: POD_IP\s+valueFrom:\s+fieldRef:\s+fieldPath: status\.podIP' -Because 'ListenOn 是 0.0.0.0,注册进 etcd 的必须是 Pod IP(go/guild/guild.go advertisedHost)'
+    Assert-NotMatch -Text $block -Pattern '(?m)^\s*- name: MMORPG_ASSET_OP_SECRET_GUILD' -Because '资产密钥只在 -AssetOps on 时由脚本注入(Add-GoSvcSecretEnv),manifest 不手写,默认关着不引用 Secret'
+    Assert-Match -Text $block -Pattern 'containerPort: 9220\s+name: metrics' -Because 'metrics 端口与 ConfigMap 的 Prometheus.Port 一致'
+    $jobIndex = $guildInfraRun.Output.IndexOf('name: guild-migrate')
+    $deployIndex = $guildInfraRun.Output.IndexOf('name: guild-pdb')
+    Assert-True -Condition ($jobIndex -ge 0 -and $deployIndex -gt $jobIndex) -Because '建表 Job 必须先于 Deployment apply'
+    $job = Select-ManifestByName -Output $guildInfraRun.Output -Name 'guild-migrate'
+    Assert-Match -Text $job -Pattern 'args: \["-f", "/app/etc/guild\.yaml", "-migrate"\]' -Because 'Job 必须用与服务同一份配置跑 -migrate'
+    Assert-Match -Text $job -Pattern 'name: go-svc-guild-config' -Because 'Job 挂的是 guild 自己的 ConfigMap'
+    Assert-NotMatch -Text $job -Pattern '(?-i)__[A-Z][A-Z0-9_]*__|PLACEHOLDER_' -Because '占位必须全部替换'
+}
+
+Test-Case 'guild ConfigMap 镜像 go/guild/etc/guild.yaml;AssetOp / Activity 整块原样(只 AssetOp.Enabled 改成 false);不写 go-zero Etcd 段' {
+    $cm = Select-ManifestByName -Output $guildInfraRun.Output -Name 'go-svc-guild-config'
+    Assert-True -Condition ($null -ne $cm) -Because 'infra-up 产物里应当有 go-svc-guild-config'
+    $embedded = Get-ConfigMapEmbeddedText -Block $cm -FileName 'guild.yaml'
+    $flat = ConvertTo-UnprefixedScalars -Scalars (ConvertTo-FlatManifest -Block $cm).Scalars -Prefix 'data.guild.yaml.'
+    foreach ($key in @('Name', 'Timeout', 'ApplicationQuotaPerMinute', 'RedisClient.DB', 'MySQL.MaxOpenConn', 'MySQL.MaxIdleConn', 'Node.LeaseTTL',
+            'Cache.DefaultTTL', 'Cache.MaxMembers', 'DataServiceRpc.Timeout', 'MatchRpc.Timeout', 'IdSegment.Step', 'IdSegment.MinStep', 'IdSegment.MaxStep')) {
+        Assert-Equal -Expected (Get-EtcValue -RelativePath 'go/guild/etc/guild.yaml' -KeyPath $key) -Actual ([string]$flat[$key]).Trim('"') -Because "ConfigMap 的 $key 必须等于服务 yaml(单一真相)"
+    }
+    Assert-Equal -Expected 'false' -Actual ([string]$flat['IdSegment.FallbackToSnowflake']) -Because '号段失败即建帮失败,不回退 snowflake'
+    $expectedAssetOp = (Get-TopLevelYamlBlockText -Text $guildYamlText -Key 'AssetOp') -replace '(?m)^  Enabled:.*$', '  Enabled: false'
+    Assert-Equal -Expected $expectedAssetOp -Actual (Get-TopLevelYamlBlockText -Text $embedded -Key 'AssetOp') -Because 'AssetOp 整块原样搬运,只改第一层 Enabled(资产通道打开要先过 08 §8.3 的六条门禁)'
+    Assert-Equal -Expected (Get-TopLevelYamlBlockText -Text $guildYamlText -Key 'Activity') -Actual (Get-TopLevelYamlBlockText -Text $embedded -Key 'Activity') -Because 'Activity 整块原样搬运'
+    Assert-Equal -Expected (Get-EtcValue -RelativePath 'go/match/etc/match_service.yaml' -KeyPath 'ResultTopicPartitions') -Actual (Get-EtcValue -RelativePath 'go/guild/etc/guild.yaml' -KeyPath 'Activity.TrialResult.Partitions') -Because '历练结果分区数必须等于 match 的结果 topic 分区数,否则结算漏读分区'
+    Assert-NotMatch -Text $embedded -Pattern '(?m)^Etcd\s*:' -Because 'guild 刻意不写 go-zero 的 Etcd 段(D-13),写了会被当成按 zone 切片的发现键'
+    Assert-Match -Text $embedded -Pattern '(?m)^PlayerLocatorRedis:\s*\n\s+Host: "redis\.contract-battle-infra:6379"\s*\n\s+Password: "[^"]*"\s*\n\s+DB: 0\s*$' -Because 'PlayerLocatorRedis 必须是共享 Redis 的 DB 0(scene / battle 写在线、位置、历练结果的同一实例)'
+    Assert-Match -Text $embedded -Pattern '(?m)^MergeMarkerRedis:\s*\n\s+Host: "redis\.contract-battle-infra:6379"\s*\n\s+Pass: "[^"]*"\s*\n\s+DB: 0\s*$' -Because '合服闸门读 data-service 的 MappingRedis(共享 Redis DB 0)'
+    Assert-Match -Text $embedded -Pattern 'DataSource: "[^"]*@tcp\(mysql\.contract-battle-infra:3306\)/mmorpg_guild\?' -Because 'DSN 库名必须是独占库 mmorpg_guild'
+    # 配置注释会解释为何禁用此参数;约束只作用于实际连接串。
+    Assert-NotMatch -Text (Get-FlatValue -Flat (ConvertTo-FlatManifest -Block $cm) -KeyPath 'data.guild.yaml.MySQL.DataSource') -Pattern 'clientFoundRows' -Because 'guild config.Validate 拒绝 DSN 中的 clientFoundRows'
+    Assert-Match -Text $embedded -Pattern '(?m)^Prometheus:\s*\n\s+Host: 0\.0\.0\.0\s*\n\s+Port: 9220\s*$' -Because 'metrics 绑 0.0.0.0、端口与清单一致'
+    Assert-Equal -Expected '9220' -Actual (Get-EtcValue -RelativePath 'go/guild/etc/guild.yaml' -KeyPath 'Prometheus.Port') -Because '服务 yaml 的 Prometheus.Port 与清单的 9220 一致'
+    Assert-Match -Text $embedded -Pattern '(?m)^SnowflakeCacheDir: ""\s*$' -Because '容器里没有持久目录,不缓存 snowflake 槽位'
+    $schemaDev = Get-EtcValue -RelativePath 'go/guild/etc/guild.yaml' -KeyPath 'Schema.AutoMigrate'
+    Assert-Equal -Expected $schemaDev -Actual ([string]$flat['Schema.AutoMigrate']) -Because 'dev 档镜像服务 yaml 的建表策略'
+}
+
+Test-Case 'data-service ConfigMap 接上回档帮会闸:GuildInternalRpc 按 Service 名直连 guild,Timeout / 时钟余量 / 检查预算 / MethodTimeouts 与服务 yaml 相同' {
+    $cm = Select-ManifestByName -Output $devOut -Name 'go-svc-data-service-config'
+    $embedded = Get-ConfigMapEmbeddedText -Block $cm -FileName 'data_service.yaml'
+    Assert-Match -Text $embedded -Pattern '(?m)^GuildInternalRpc:\s*\n\s+Endpoints:\s*\n\s+- "guild\.mmorpg-infra:50300"\s*$' -Because 'guild 不写 go-zero Etcd.Key,只能按 Endpoints 直连;guild 是全局池,在 infra namespace'
+    $flat = ConvertTo-UnprefixedScalars -Scalars (ConvertTo-FlatManifest -Block $cm).Scalars -Prefix 'data.data_service.yaml.'
+    foreach ($key in @('GuildInternalRpc.Timeout', 'GuildClockSkewMarginMs', 'GuildCheckBudgetSeconds')) {
+        Assert-Equal -Expected (Get-EtcValue -RelativePath 'go/data_service/etc/data_service.yaml' -KeyPath $key) -Actual ([string]$flat[$key]) -Because "ConfigMap 的 $key 必须等于服务 yaml"
+    }
+    Assert-Equal -Expected 'true' -Actual ([string]$flat['GuildInternalRpc.NonBlock']) -Because 'guild 不在线不得阻塞 data-service 启动'
+    $serviceText = [IO.File]::ReadAllText((Join-Path (Get-RepoRoot) 'go/data_service/etc/data_service.yaml'))
+    $expected = @(Get-ZrpcMethodTimeouts -Text $serviceText | ForEach-Object { "$($_.FullMethod)=$($_.Timeout)" }) -join ';'
+    $actual = @(Get-ZrpcMethodTimeouts -Text $embedded | ForEach-Object { "$($_.FullMethod)=$($_.Timeout)" }) -join ';'
+    Assert-True -Condition ($expected.Length -gt 0) -Because '夹具前提:服务 yaml 里有三个 Rollback* 的 MethodTimeouts'
+    Assert-Equal -Expected $expected -Actual $actual -Because '回档方法的服务端超时必须与服务 yaml 一致,否则回档被 go-zero 默认 2000ms 截断'
+}
+
+Test-Case 'go_svc_image.ps1 与 k8s_deploy.ps1 的 guild 镜像名一致(否则发布的镜像与部署拉的镜像对不上)' {
+    $imageScript = [IO.File]::ReadAllText((Join-Path (Get-ToolsScriptsDir) 'go_svc_image.ps1'))
+    $deployScript = [IO.File]::ReadAllText((Join-Path (Get-ToolsScriptsDir) 'k8s_deploy.ps1'))
+    $imageName = [regex]::Match($imageScript, '(?m)^\s*guild\s*=\s*@\{[^}]*ImageName\s*=\s*"(?<n>[^"]+)"')
+    $deployName = [regex]::Match($deployScript, '(?m)^\s*guild\s*=\s*@\{[^}]*ImageName\s*=\s*"(?<n>[^"]+)"')
+    Assert-True -Condition ($imageName.Success -and $deployName.Success) -Because '两个脚本的服务表里都应当有 guild 条目'
+    Assert-Equal -Expected $deployName.Groups['n'].Value -Actual $imageName.Groups['n'].Value -Because 'ImageName 必须一致'
+}
+
+# ─────────────────────────────────────────────────────────────────
+# 邮件 mail 上 K8s(M1d,docs/design/mail-system.md §7.2 / §12.3,2026-10-16)
+# ─────────────────────────────────────────────────────────────────
+# mail 是全局池(infra namespace 一份),带 mail-migrate Job 与运维令牌 Secret 注入(照 player-inbox)。
+# 复用上面带全局 Go 服务的 infra-up DryRun:$BattleTestEnv 不带 MMORPG_MAIL_ADMIN_TOKEN,但子进程会继承父进程环境,
+# 跑测试的 shell 若恰好 export 了它,「停用」分支就不成立 —— 所以停用断言单独起一次、显式把变量置空。
+Test-Case 'mail 现役部署:全局双副本、滚动冗余、PDB及跨节点偏好' {
+    $manifest = Get-Content -LiteralPath (Join-Path (Get-RepoRoot) 'deploy/k8s/manifests/go-svc/mail.yaml') -Raw
+    foreach ($pattern in @('replicas: 2','maxSurge: 1','maxUnavailable: 0','podAntiAffinity:','minAvailable: 1','name: POD_IP','path: /healthz')) {
+        Assert-Match -Text $manifest -Pattern $pattern -Because "现役邮件部署必须保留冗余及存活契约: $pattern"
+    }
+    Assert-NotMatch -Text $manifest -Pattern 'MMORPG_MAIL_ADMIN_TOKEN|PLACEHOLDER_MAIL_ADMIN_TOKEN_HASH' -Because '已由生产者分用途签名替代M1 token'
+}
+
+Test-Case 'mail 现役签名:各生产者与资产密钥只引用必需Secret' {
+    $manifest = Get-Content -LiteralPath (Join-Path (Get-RepoRoot) 'deploy/k8s/manifests/go-svc/mail.yaml') -Raw
+    foreach ($name in @('MAIL_PRODUCER_SECRET_ADMIN','MAIL_PRODUCER_SECRET_RANK','MAIL_PRODUCER_SECRET_GUILD','MMORPG_ASSET_OP_SECRET_MAIL')) {
+        Assert-Match -Text $manifest -Pattern ('name: '+$name+'\s+valueFrom:\s+secretKeyRef: \{name: domain-service-secrets, key: [^,]+, optional: false\}') -Because '缺密钥时容器拒绝启动，不能静默降级或把值写入ConfigMap'
+    }
+}
+
+# 非 dev 档:上面三条都跑 dev($guildInfraArgs 不带 -ReleaseProfile),其余非 dev 的 infra-up 都带 -SkipGoSvc,mail 段一次都不执行。
+# 这里单独起 staging 的带全局 Go 服务 infra-up,钉住三条只在非 dev 档成立的安全属性:
+#   - 未设令牌**不挡** infra-up(先判空再调 Resolve-InjectedSecret;后者在非 dev 档对未设置的变量直接 throw —— §12.3 偏差 2 修掉的缺陷);
+#   - ConfigMap 固定 Mode: pro、Schema.AutoMigrate: false(pro 才拒 ROBOT 发件方与附件,M-9;建表只走 mail-migrate Job,D-14);
+#   - 令牌与其它密钥同值、或是占位串:在任何写操作之前拒绝。
+$mailStagingArgs = $guildInfraArgs + @('-ReleaseProfile', 'staging', '-BattleReplicas', '0', '-FriendTiDBHost', 'tidb.invalid:4000')
+$mailStagingEnv = @{} + $ProdEnv
+$mailStagingEnv['MMORPG_BATTLE_TOKEN_SECRET'] = $BattleTestEnv['MMORPG_BATTLE_TOKEN_SECRET']
+
+Test-Case 'mail 非dev运行门禁:生产模式、TiDB和禁止自动迁移由部署统一覆写' {
+    $scriptText = Get-Content -LiteralPath (Join-Path (Get-RepoRoot) 'tools/scripts/k8s_deploy.ps1') -Raw
+    Assert-Match -Text $scriptText -Pattern 'AutoMigrate:\.\*\$.*AutoMigrate: false' -Because '非dev不能由源码dev配置打开自动DDL'
+    Assert-Match -Text $scriptText -Pattern 'RequireTiDB:\.\*\$.*RequireTiDB: true' -Because '共享环境保持SQL权威TiDB门禁'
+}
+
+Test-Case 'mail 迁移作业只读取结构迁移DSN，不加载producer或资产密钥' {
+    $manifest = Get-Content -LiteralPath (Join-Path (Get-RepoRoot) 'deploy/k8s/manifests/go-svc/mail-migrate.yaml') -Raw
+    Assert-Match -Text $manifest -Pattern 'name: MMORPG_MAIL_SQL_DSN' -Because '迁移与常驻进程使用相同DSN'
+    Assert-Match -Text $manifest -Pattern '"-migrate"' -Because '仅运行迁移入口'
+    Assert-Match -Text $manifest -Pattern 'values: \[1, 4\]' -Because '不可重试迁移错误立即FailJob'
+    Assert-NotMatch -Text $manifest -Pattern 'name: MAIL_PRODUCER|name: MMORPG_ASSET_OP' -Because '迁移不需要发件或资产权限'
+}
+
+Test-Case 'go_svc_image.ps1 与 k8s_deploy.ps1 的 mail 镜像名一致(否则发布的镜像与部署拉的镜像对不上)' {
+    $imageScript = [IO.File]::ReadAllText((Join-Path (Get-ToolsScriptsDir) 'go_svc_image.ps1'))
+    $deployScript = [IO.File]::ReadAllText((Join-Path (Get-ToolsScriptsDir) 'k8s_deploy.ps1'))
+    $imageName = [regex]::Match($imageScript, '(?m)^\s*mail\s*=\s*@\{[^}]*ImageName\s*=\s*"(?<n>[^"]+)"')
+    $deployName = [regex]::Match($deployScript, '(?m)^\s*mail\s*=\s*@\{[^}]*ImageName\s*=\s*"(?<n>[^"]+)"')
+    Assert-True -Condition ($imageName.Success -and $deployName.Success) -Because '两个脚本的服务表里都应当有 mail 条目'
+    Assert-Equal -Expected 'mmorpg-mail' -Actual $deployName.Groups['n'].Value -Because 'k8s_deploy.ps1 的 mail 镜像名'
+    Assert-Equal -Expected $deployName.Groups['n'].Value -Actual $imageName.Groups['n'].Value -Because 'ImageName 必须一致'
+}
+
+Test-Case 'mail-alerts.yaml:MailSweepStalled 阈值 = 3 × go/mail/etc/mail.yaml 的 Sweep.Interval;规则引用的 mail_* 指标都由 go/mail/internal/metrics 注册' {
+    $repo = Get-RepoRoot
+    $alerts = [IO.File]::ReadAllText((Join-Path $repo 'deploy/k8s/mail-alerts.yaml')) -replace "`r`n", "`n"
+    $svcYaml = [IO.File]::ReadAllText((Join-Path $repo 'go/mail/etc/mail.yaml')) -replace "`r`n", "`n"
+    $metricsGo = [IO.File]::ReadAllText((Join-Path $repo 'go/mail/internal/metrics/metrics.go'))
+
+    # 阈值与 sweep 周期只靠注释联动:Interval 调大(比如 30m)告警会常亮,调小会变迟钝。ConfigMap 的 Sweep.Interval 镜像服务 yaml,所以以服务 yaml 为准。
+    $interval = [regex]::Match((Get-TopLevelYamlBlockText -Text $svcYaml -Key 'Sweep'), '(?m)^\s+Interval:\s*(?<n>\d+)(?<u>[smh])\s*$')
+    Assert-True -Condition $interval.Success -Because 'go/mail/etc/mail.yaml 的 Sweep.Interval 应当写成 <整数><s|m|h>(换了写法要同步本用例)'
+    $intervalSeconds = [int]$interval.Groups['n'].Value * (@{ s = 1; m = 60; h = 3600 }[$interval.Groups['u'].Value])
+    $threshold = [regex]::Match($alerts, 'time\(\) - max\(mail_sweep_last_run_unixtime\) > (?<t>\d+)')
+    Assert-True -Condition $threshold.Success -Because 'MailSweepStalled 的表达式形状变了,要同步本用例'
+    Assert-Equal -Expected (3 * $intervalSeconds) -Actual ([int]$threshold.Groups['t'].Value) -Because 'MailSweepStalled 阈值必须等于 3 × Sweep.Interval(秒)'
+
+    # 指标名只靠人工核对:改名后告警永远不触发、也不报错。从 metrics.go 拼出全名(subsystem + "_" + Name),逐个核对规则里引用的 mail_* 名字。
+    $subsystem = [regex]::Match($metricsGo, '(?m)^const subsystem = "(?<s>[a-z_]+)"')
+    Assert-True -Condition $subsystem.Success -Because 'go/mail/internal/metrics/metrics.go 应当有 const subsystem = "..."(换了写法要同步本用例)'
+    $registered = @([regex]::Matches($metricsGo, '(?m)^\s*Name:\s*"(?<n>[a-z0-9_]+)"') | ForEach-Object { $subsystem.Groups['s'].Value + '_' + $_.Groups['n'].Value })
+    $referenced = @([regex]::Matches($alerts, '\bmail_[a-z0-9_]+') | ForEach-Object { $_.Value } | Sort-Object -Unique)
+    Assert-True -Condition ($referenced.Count -ge 3) -Because '夹具前提:告警文件至少引用 sweep 两个指标与列表截断计数器'
+    foreach ($name in $referenced) {
+        Assert-True -Condition ($registered -contains $name) -Because "告警引用的指标 $name 必须由 go/mail/internal/metrics 注册(改名后告警会静默失效)"
+    }
+}
+
+# ─────────────────────────────────────────────────────────────────
+# 排行榜评分快照开关(-MatchRatingSnapshotPublish;docs/design/leaderboard-system.md §2.4 / §5.4,L-20)
+# ─────────────────────────────────────────────────────────────────
+# 开关是排行榜上线的唯一闸门:K8s 上由部署参数给值、不镜像 go/match/etc/match_service.yaml;topic 三项是与 rank 共享的契约,从服务 yaml 取。
+Test-Case 'match ConfigMap:RatingSnapshotPublishEnabled 由 -MatchRatingSnapshotPublish 给值(缺省 false、不镜像服务 yaml),快照 topic 三项 == 服务 yaml' {
+    Assert-Equal -Expected 0 -Actual $guildInfraRun.ExitCode -Because "带全局 Go 服务的 infra-up DryRun 必须成功。输出: $($guildInfraRun.Output)"
+    $cm = Select-ManifestByName -Output $guildInfraRun.Output -Name 'go-svc-match-config'
+    Assert-True -Condition ($null -ne $cm) -Because 'infra-up 产物里应当有 go-svc-match-config'
+    $flat = ConvertTo-UnprefixedScalars -Scalars (ConvertTo-FlatManifest -Block $cm).Scalars -Prefix 'data.match_service.yaml.'
+    Assert-Equal -Expected 'false' -Actual ([string]$flat['RatingSnapshotPublishEnabled']) -Because '不传 -MatchRatingSnapshotPublish 时快照发布必须关着(rank 就绪之前不能发)'
+    foreach ($key in @('RatingSnapshotTopic', 'RatingSnapshotTopicPartitions', 'RatingSnapshotRetentionHours')) {
+        Assert-Equal -Expected (Get-EtcValue -RelativePath 'go/match/etc/match_service.yaml' -KeyPath $key) -Actual ([string]$flat[$key]) -Because "ConfigMap 的 $key 必须等于服务 yaml(分区数是与 rank 共享的不可变契约,保留期只由 match 声明)"
+    }
+    Assert-Match -Text $guildInfraRun.Output -Pattern '(?m)^MatchRatingSnapshotPublish: 0 ' -Because '部署输出要打一行本次取值(不粘滞,「榜为什么停更」先对照它)'
+    $matchDeploy = @(Get-ManifestBlocks -Output $guildInfraRun.Output | Where-Object {
+        $_ -cmatch '(?m)^kind: Deployment\s*$' -and $_ -cmatch '(?m)^  name: match\s*$'
+    }) | Select-Object -First 1
+    Assert-True -Condition ($null -ne $matchDeploy) -Because 'infra-up 产物里应当有 match 的 Deployment'
+    Assert-Match -Text $matchDeploy -Pattern 'mmorpg\.io/rating-snapshot-publish: "0"' -Because '开关值写进 Pod 模板注解:翻值必须改变模板、让 match 滚动(ConfigMap 只在启动时读)'
+    Assert-NotMatch -Text $matchDeploy -Pattern 'PLACEHOLDER_' -Because '占位必须全部替换'
+
+    $on = Invoke-DeployDryRun -Arguments ($guildInfraArgs + @('-MatchRatingSnapshotPublish', '1')) -Env $BattleTestEnv
+    Assert-Equal -Expected 0 -Actual $on.ExitCode -Because "-MatchRatingSnapshotPublish 1 的 infra-up DryRun 必须成功。输出: $($on.Output)"
+    $onCm = Select-ManifestByName -Output $on.Output -Name 'go-svc-match-config'
+    $onFlat = ConvertTo-UnprefixedScalars -Scalars (ConvertTo-FlatManifest -Block $onCm).Scalars -Prefix 'data.match_service.yaml.'
+    Assert-Equal -Expected 'true' -Actual ([string]$onFlat['RatingSnapshotPublishEnabled']) -Because '参数为 1 时 ConfigMap 写 true,与服务 yaml 仓内的 false 无关(不镜像)'
+    Assert-Match -Text $on.Output -Pattern '(?m)^MatchRatingSnapshotPublish: 1 ' -Because '部署输出打出本次取值'
+    $onDeploy = @(Get-ManifestBlocks -Output $on.Output | Where-Object {
+        $_ -cmatch '(?m)^kind: Deployment\s*$' -and $_ -cmatch '(?m)^  name: match\s*$'
+    }) | Select-Object -First 1
+    Assert-Match -Text $onDeploy -Pattern 'mmorpg\.io/rating-snapshot-publish: "1"' -Because '开关为 1 时模板注解随之变化,0 → 1 / 1 → 0 都会滚动 match'
+
+    # 本次不部署全局 Go 服务(zone-up)却显式传了开关:没有效果,必须告警而不是静默接受。
+    $zoneRun = Invoke-DeployDryRun -Arguments ($BaseArgs + @('-MatchRatingSnapshotPublish', '1'))
+    Assert-Equal -Expected 0 -Actual $zoneRun.ExitCode -Because "zone-up DryRun 必须成功。输出: $($zoneRun.Output)"
+    Assert-Match -Text $zoneRun.Output -Pattern 'MatchRatingSnapshotPublish 1 has no effect' -Because 'zone-up 不部署 match,显式传开关要告警'
+
+    $bad = Invoke-DeployDryRun -Arguments ($guildInfraArgs + @('-MatchRatingSnapshotPublish', 'on')) -Env $BattleTestEnv
+    Assert-True -Condition ($bad.ExitCode -ne 0) -Because '-MatchRatingSnapshotPublish 只接受 0 / 1'
+    Assert-NotMatch -Text $bad.Output -Pattern '\[dry-run\] kubectl apply' -Because '参数错误必须先于任何写操作'
+}
+
+# ─────────────────────────────────────────────────────────────────
+# 排行榜 rank 上 K8s(R2b,docs/design/leaderboard-system.md §5.4 / §12.6)
+# ─────────────────────────────────────────────────────────────────
+# rank 是全局池(infra namespace 一份),零 MySQL、没有建表 Job;榜键只在专用 noeviction 实例 redis-rank。
+# 本节断言不写端口字面量:gRPC / metrics 端口一律从 go/rank/etc/rank.yaml 取,与 manifest、ConfigMap 三处互相核对(契约 §7)。
+$rankYamlPath = 'go/rank/etc/rank.yaml'
+$rankGrpcPort = [regex]::Match([string](Get-EtcValue -RelativePath $rankYamlPath -KeyPath 'ListenOn'), ':(?<p>\d+)\s*$').Groups['p'].Value
+$rankMetricsPort = [regex]::Match([string](Get-EtcValue -RelativePath $rankYamlPath -KeyPath 'MetricsListenAddr'), ':(?<p>\d+)"?\s*$').Groups['p'].Value
+
+# DryRun 把一个 manifest 文件整份打成一个块(rank.yaml = Service + Deployment + PDB,redis-rank.yaml = 两个 Service + StatefulSet)。
+# 按 --- 切成单份文档,再按 kind + 顶层 metadata.name 精确取(照 Select-RedisStatefulSetDocument):只按块筛选时,
+# 块里别的文档带着同一个名字就能把断言带过去(删掉 ClusterIP Service redis-rank,headless 那份照样让"有 Service"成立)。
+# 恰好 1 份才返回;-AllowMissing 时 0 份返回 $null;其余一律 throw。
+function Select-RankManifestDocument {
+    param(
+        [Parameter(Mandatory = $true)][string]$Output,
+        [Parameter(Mandatory = $true)][string]$Kind,
+        [Parameter(Mandatory = $true)][string]$Name,
+        [switch]$AllowMissing
+    )
+    $kindPattern = '(?m)^kind:[ \t]*{0}[ \t]*$' -f [regex]::Escape($Kind)
+    $namePattern = '(?m)^  name:[ \t]*{0}[ \t]*$' -f [regex]::Escape($Name)
+    $docs = @(foreach ($block in (Get-ManifestBlocks -Output $Output)) {
+            foreach ($doc in (($block -replace "`r`n", "`n") -split '(?m)^---[ \t]*$')) {
+                if ($doc -cmatch $kindPattern -and $doc -cmatch $namePattern) { $doc }
+            }
+        })
+    if ($docs.Count -eq 0 -and $AllowMissing) { return $null }
+    if ($docs.Count -ne 1) { throw "DryRun 输出里 $Kind $Name 应当恰好 1 份,实际 $($docs.Count) 份" }
+    return $docs[0]
+}
+
+# 同一种切分,返回某个 kind 的全部单份文档(用来断言"不存在"时按内容筛,不靠名字)。
+function Get-RankManifestDocumentsOfKind {
+    param(
+        [Parameter(Mandatory = $true)][string]$Output,
+        [Parameter(Mandatory = $true)][string]$Kind
+    )
+    $kindPattern = '(?m)^kind:[ \t]*{0}[ \t]*$' -f [regex]::Escape($Kind)
+    return @(foreach ($block in (Get-ManifestBlocks -Output $Output)) {
+            foreach ($doc in (($block -replace "`r`n", "`n") -split '(?m)^---[ \t]*$')) {
+                if ($doc -cmatch $kindPattern) { $doc }
+            }
+        })
+}
+
+Test-Case 'rank 部署形态:全局池 2 副本滚动 + PDB + 反亲和 + POD_IP;gRPC / metrics 端口与服务 yaml 一致;没有建表 Job' {
+    Assert-True -Condition ($rankGrpcPort -match '^\d+$' -and $rankMetricsPort -match '^\d+$') -Because "夹具前提:$rankYamlPath 的 ListenOn / MetricsListenAddr 能解析出端口"
+    Assert-Equal -Expected 0 -Actual $guildInfraRun.ExitCode -Because "带全局 Go 服务的 infra-up DryRun 必须成功。输出: $($guildInfraRun.Output)"
+    $deploy = Select-RankManifestDocument -Output $guildInfraRun.Output -Kind 'Deployment' -Name 'rank'
+    $svc = Select-RankManifestDocument -Output $guildInfraRun.Output -Kind 'Service' -Name 'rank'
+    $pdb = Select-RankManifestDocument -Output $guildInfraRun.Output -Kind 'PodDisruptionBudget' -Name 'rank-pdb'
+    Assert-Match -Text $deploy -Pattern '(?m)^  replicas: 2\s*$' -Because '单副本 = 全服排行榜是单点'
+    Assert-Match -Text $deploy -Pattern 'type: RollingUpdate\s+rollingUpdate:\s+maxSurge: 1\s+maxUnavailable: 0' -Because '先起新的再停旧的'
+    Assert-Match -Text $deploy -Pattern 'podAntiAffinity' -Because '两个副本不该落在同一个节点上'
+    Assert-Match -Text $pdb -Pattern '(?m)^  minAvailable: 1\s*$' -Because 'PDB 必须写在主 manifest 里,至少留一个副本'
+    Assert-Match -Text $deploy -Pattern 'name: POD_IP\s+valueFrom:\s+fieldRef:\s+fieldPath: status\.podIP' -Because 'ListenOn 是 0.0.0.0,注册进 etcd 的必须是 Pod IP(go/rank/rank.go advertisedHost)'
+    Assert-Match -Text $deploy -Pattern ('containerPort: {0}\s+name: grpc' -f $rankGrpcPort) -Because 'gRPC 容器端口 == 服务 yaml 的 ListenOn'
+    Assert-Match -Text $deploy -Pattern ('readinessProbe:\s+grpc:\s+port: {0}\s' -f $rankGrpcPort) -Because 'readiness 探针端口 == 服务 yaml 的 ListenOn'
+    Assert-Match -Text $deploy -Pattern ('livenessProbe:\s+grpc:\s+port: {0}\s' -f $rankGrpcPort) -Because 'liveness 探针端口 == 服务 yaml 的 ListenOn'
+    Assert-Match -Text $svc -Pattern ('(?m)^\s+port: {0}\s*\n\s+targetPort: {0}\s*$' -f $rankGrpcPort) -Because 'Service rank 的 port / targetPort == 服务 yaml 的 ListenOn'
+    Assert-Match -Text $deploy -Pattern ('containerPort: {0}\s+name: metrics' -f $rankMetricsPort) -Because 'metrics 容器端口 == 服务 yaml 的 MetricsListenAddr'
+    Assert-Match -Text $deploy -Pattern ('prometheus\.io/port: "{0}"' -f $rankMetricsPort) -Because '抓取注解 == 服务 yaml 的 MetricsListenAddr'
+    Assert-Match -Text $deploy -Pattern 'image: registry\.invalid/test/mmorpg-rank:' -Because '镜像名 mmorpg-rank(与 go_svc_image.ps1 一致)'
+    Assert-Match -Text $deploy -Pattern '- name: KAFKA_TOPIC_REPLICATION_FACTOR' -Because 'rank 可能先于 match 建出快照 topic,副本数必须拿部署级契约(脚本注入)'
+    foreach ($doc in @($deploy, $svc, $pdb)) {
+        Assert-NotMatch -Text $doc -Pattern '(?-i)__[A-Z][A-Z0-9_]*__|PLACEHOLDER_' -Because '占位必须全部替换'
+    }
+    Assert-NotMatch -Text $guildInfraRun.Output -Pattern 'name: rank-migrate' -Because 'rank 零 MySQL,没有建表 Job'
+}
+
+Test-Case 'rank ConfigMap现役源:SQL权威、邮件奖励及分用途producer' {
+    $source = Get-Content -LiteralPath (Join-Path (Get-RepoRoot) 'go/rank/etc/rank.yaml') -Raw
+    foreach ($pattern in @('DSNEnv: MMORPG_RANK_SQL_DSN','MaxOpenConns:','RequireTiDB:','MailRpc:','Producers:')) {
+        Assert-Match -Text $source -Pattern $pattern -Because "SQL通用榜必须提供现役配置: $pattern"
+    }
+    Assert-NotMatch -Text $source -Pattern '(?m)^RankRedis:|(?m)^RatingConsumerGroup:' -Because '不能同时启动R2b旧评分写者'
+}
+
+Test-Case 'rank 迁移与常驻进程共享SQL凭证，目录登记迁移门禁' {
+    $manifest = Get-Content -LiteralPath (Join-Path (Get-RepoRoot) 'deploy/k8s/manifests/go-svc/rank-migrate.yaml') -Raw
+    Assert-Match -Text $manifest -Pattern 'name: MMORPG_RANK_SQL_DSN' -Because '迁移只使用本域权威DSN'
+    Assert-Match -Text $manifest -Pattern '"-migrate"' -Because '部署先迁结构再启动'
+    $scriptText = Get-Content -LiteralPath (Join-Path (Get-RepoRoot) 'tools/scripts/k8s_deploy.ps1') -Raw
+    Assert-Match -Text $scriptText -Pattern 'rank = .*MigrateJob = "rank-migrate.yaml"' -Because 'rank必须经过统一迁移完成门禁'
+}
+
+Test-Case 'R2b Redis清单保留历史，现役SQL排行不自动部署旧写榜存储' {
+    $legacy = Get-Content -LiteralPath (Join-Path (Get-RepoRoot) 'deploy/k8s/manifests/infra/redis-rank.yaml') -Raw
+    Assert-Match -Text $legacy -Pattern 'noeviction' -Because '保留旧运维设计供历史追溯'
+    $scriptText = Get-Content -LiteralPath (Join-Path (Get-RepoRoot) 'tools/scripts/k8s_deploy.ps1') -Raw
+    $manifestLine = [regex]::Match($scriptText,'(?m)^\s*\$infraManifests = @\([^\n]+').Value
+    Assert-NotMatch -Text $manifestLine -Pattern 'redis-rank.yaml' -Because '现役SQL链不再启动第二套运行时'
+}
+
+Test-Case 'go_svc_image.ps1 与 k8s_deploy.ps1 的 rank 镜像名一致(否则发布的镜像与部署拉的镜像对不上)' {
+    $imageScript = [IO.File]::ReadAllText((Join-Path (Get-ToolsScriptsDir) 'go_svc_image.ps1'))
+    $deployScript = [IO.File]::ReadAllText((Join-Path (Get-ToolsScriptsDir) 'k8s_deploy.ps1'))
+    $imageName = [regex]::Match($imageScript, '(?m)^\s*rank\s*=\s*@\{[^}]*ImageName\s*=\s*"(?<n>[^"]+)"')
+    $deployName = [regex]::Match($deployScript, '(?m)^\s*rank\s*=\s*@\{[^}]*ImageName\s*=\s*"(?<n>[^"]+)"')
+    Assert-True -Condition ($imageName.Success -and $deployName.Success) -Because '两个脚本的服务表里都应当有 rank 条目'
+    Assert-Equal -Expected 'mmorpg-rank' -Actual $deployName.Groups['n'].Value -Because 'k8s_deploy.ps1 的 rank 镜像名'
+    Assert-Equal -Expected $deployName.Groups['n'].Value -Actual $imageName.Groups['n'].Value -Because 'ImageName 必须一致'
+    $deployPort = [regex]::Match($deployScript, '(?m)^\s*rank\s*=\s*@\{[^}]*Port\s*=\s*(?<p>\d+)')
+    $localScript = [IO.File]::ReadAllText((Join-Path (Get-ToolsScriptsDir) 'go_services.ps1'))
+    $localPort = [regex]::Match($localScript, '(?m)^\s*rank\s*=\s*@\{[^}]*Port\s*=\s*(?<p>\d+)')
+    Assert-Equal -Expected $rankGrpcPort -Actual $deployPort.Groups['p'].Value -Because 'k8s_deploy.ps1 目录里的 rank 端口 == 服务 yaml 的 ListenOn'
+    Assert-Equal -Expected $rankGrpcPort -Actual $localPort.Groups['p'].Value -Because 'go_services.ps1 目录里的 rank 端口 == 服务 yaml 的 ListenOn'
+}
+
+Test-Case 'rank-alerts.yaml:规则引用的 rank_* / match_* 指标都由各自的 metrics.go 注册;永久跳过三档出现一次就报,瞬时 error 只在持续时报' {
+    $repo = Get-RepoRoot
+    $alerts = [IO.File]::ReadAllText((Join-Path $repo 'deploy/k8s/rank-alerts.yaml')) -replace "`r`n", "`n"
+    # 指标名只靠人工核对:改名后告警永远不触发、也不报错。从 metrics.go 拼出全名(subsystem + "_" + Name),逐个核对规则引用的名字。
+    foreach ($svc in @(@{ Prefix = 'rank'; Path = 'go/rank/internal/metrics/metrics.go' }, @{ Prefix = 'match'; Path = 'go/match/internal/metrics/metrics.go' })) {
+        $metricsGo = [IO.File]::ReadAllText((Join-Path $repo $svc.Path))
+        $subsystem = [regex]::Match($metricsGo, '(?m)^const subsystem = "(?<s>[a-z_]+)"')
+        Assert-True -Condition ($subsystem.Success -and $subsystem.Groups['s'].Value -ceq $svc.Prefix) -Because "$($svc.Path) 应当有 const subsystem = `"$($svc.Prefix)`"(换了写法要同步本用例)"
+        $registered = @([regex]::Matches($metricsGo, '(?m)^\s*Name:\s*"(?<n>[a-z0-9_]+)"') | ForEach-Object { $svc.Prefix + '_' + $_.Groups['n'].Value })
+        $referenced = @([regex]::Matches($alerts, ('\b{0}_[a-z0-9_]+' -f $svc.Prefix)) | ForEach-Object { $_.Value } | Sort-Object -Unique)
+        Assert-True -Condition ($referenced.Count -ge 1) -Because "夹具前提:告警文件至少引用一个 $($svc.Prefix)_* 指标"
+        foreach ($name in $referenced) {
+            Assert-True -Condition ($registered -contains $name) -Because "告警引用的指标 $name 必须由 $($svc.Path) 注册(改名后告警会静默失效)"
+        }
+    }
+    # 设计 §3.7 ② / ②b:消费者永久跳过的三档(invalid / out_of_range / malformed_version)由 RankWriteSkipped 出现一次就报
+    # (跳过会推进 rank_last_consume_unixtime,RankConsumerStalled 看不见;写成 rate + for 10m 时,不足 5 分钟的一阵跳过永远触发不了);
+    # 瞬时的 error 只由 RankWriteFailing 在持续时报。outcome 的值从 metrics.go 的常量取,不抄字面量。
+    $rankMetricsGo = [IO.File]::ReadAllText((Join-Path $repo 'go/rank/internal/metrics/metrics.go'))
+    $outcomeOf = {
+        param([string]$Const)
+        $value = [regex]::Match($rankMetricsGo, ('(?m)^\s*{0}\s*=\s*"(?<v>[a-z_]+)"' -f $Const))
+        Assert-True -Condition $value.Success -Because "go/rank/internal/metrics 应当定义 $Const"
+        return $value.Groups['v'].Value
+    }
+    $rule = {
+        param([string]$Name)
+        $m = [regex]::Match($alerts, ('(?m)^\s+- alert: {0}\s*\n(?<body>(?:^\s{{10,}}.*\n?)+)' -f [regex]::Escape($Name)))
+        Assert-True -Condition $m.Success -Because "rank-alerts.yaml 应当有规则 $Name"
+        $body = $m.Groups['body'].Value
+        $expr = [regex]::Match($body, '(?m)^\s+expr: \|\s*\n(?<e>(?:^\s{12,}\S.*\n?)+)').Groups['e'].Value
+        $for = [regex]::Match($body, '(?m)^\s+for:\s*(?<f>\S+)\s*$').Groups['f'].Value
+        Assert-True -Condition ($expr.Trim().Length -gt 0 -and $for.Length -gt 0) -Because "规则 $Name 应当有 expr 与 for(写法变了要同步本用例)"
+        return [pscustomobject]@{ Expr = $expr; For = $for }
+    }
+    $skip = & $rule 'RankWriteSkipped'
+    Assert-Equal -Expected '0m' -Actual $skip.For -Because 'RankWriteSkipped 出现一次就报(for: 0m)'
+    Assert-Match -Text $skip.Expr -Pattern 'increase\(rank_write_total\{outcome=~"' -Because 'RankWriteSkipped 用 increase 窗口,不用 rate + for'
+    foreach ($const in @('WriteInvalid', 'WriteOutOfRange', 'WriteMalformedVersion')) {
+        $value = & $outcomeOf $const
+        Assert-Match -Text $skip.Expr -Pattern ('outcome=~"[^"]*\b{0}\b[^"]*"' -f [regex]::Escape($value)) -Because "RankWriteSkipped 必须覆盖永久跳过的 outcome=$value"
+    }
+    $errorOutcome = & $outcomeOf 'WriteError'
+    Assert-NotMatch -Text $skip.Expr -Pattern ('\b{0}\b' -f [regex]::Escape($errorOutcome)) -Because 'RankWriteSkipped 不看瞬时的 error(Redis 抖一下不该报)'
+    # "出现一次就报"的两条都要补进程刚起的窗口:新 Pod 第一次被抓取之前就涨了的,increase() 看不到(第一个样本已不是 0)。
+    $genReset = & $rule 'MatchRatingGenReset'
+    foreach ($r in @(@{ Name = 'RankWriteSkipped'; Rule = $skip }, @{ Name = 'MatchRatingGenReset'; Rule = $genReset })) {
+        Assert-Match -Text $r.Rule.Expr -Pattern 'and on\(instance\) \(time\(\) - process_start_time_seconds\) < 900' -Because "$($r.Name) 要覆盖进程起来不到 15 分钟就涨了的情况"
+    }
+    # 两句(increase 窗口 / 进程刚起的窗口)各自的 outcome 过滤都要核:只核整条表达式时,前半句就能让断言通过,
+    # 后半句丢了 outcome 选择器(每次滚动发布、新 Pod 写一条快照就报)也看不出来。
+    $exprParts = {
+        param([string]$Expr)
+        return @($Expr -split '(?m)^[ \t]+or[ \t]*$' | ForEach-Object { $_.Trim() } | Where-Object { $_ })
+    }
+    $selectorOf = {
+        param([string]$Part)
+        $m = [regex]::Match($Part, 'rank_write_total\{(?<sel>[^}]*)\}')
+        Assert-True -Condition $m.Success -Because "表达式片段应当带 rank_write_total{...} 选择器: $Part"
+        return $m.Groups['sel'].Value
+    }
+    $skipParts = & $exprParts $skip.Expr
+    Assert-Equal -Expected 2 -Actual $skipParts.Count -Because 'RankWriteSkipped 由 increase 窗口与进程刚起的窗口两句 or 起来'
+    foreach ($part in $skipParts) {
+        $sel = & $selectorOf $part
+        foreach ($const in @('WriteInvalid', 'WriteOutOfRange', 'WriteMalformedVersion')) {
+            $value = & $outcomeOf $const
+            Assert-Match -Text $sel -Pattern ('outcome=~"[^"]*\b{0}\b[^"]*"' -f [regex]::Escape($value)) -Because "RankWriteSkipped 的每一句都要覆盖 outcome=$value"
+        }
+        Assert-NotMatch -Text $sel -Pattern ('\b{0}\b' -f [regex]::Escape($errorOutcome)) -Because 'RankWriteSkipped 的每一句都不看瞬时的 error'
+    }
+    $genResetOutcome = & $outcomeOf 'WriteGenReset'
+    $genResetParts = & $exprParts $genReset.Expr
+    Assert-Equal -Expected 2 -Actual $genResetParts.Count -Because 'MatchRatingGenReset 由 increase 窗口与进程刚起的窗口两句 or 起来'
+    foreach ($part in $genResetParts) {
+        Assert-Equal -Expected ('outcome="{0}"' -f $genResetOutcome) -Actual (& $selectorOf $part) -Because 'MatchRatingGenReset 的每一句都只看 gen_reset'
+    }
+    $failing = & $rule 'RankWriteFailing'
+    Assert-Match -Text $failing.Expr -Pattern ('rank_write_total\{{outcome="{0}"\}}' -f [regex]::Escape($errorOutcome)) -Because 'RankWriteFailing 只看瞬时的 error'
+    Assert-Equal -Expected '10m' -Actual $failing.For -Because 'RankWriteFailing 持续 10 分钟才报'
+}
+
+# ─────────────────────────────────────────────────────────────────
+# 资产通道开关 + gRPC 口准入(BK8s 第二块:-AssetOps / -NetworkPolicies;docs/design/guild-phase2/90-consistency.md G-05,2026-10-16)
+# ─────────────────────────────────────────────────────────────────
+# 默认两个开关都关,产物与开关引入之前相同(只多「不粘滞」的删除行);打开时 guild / trade / scene 拿签名密钥、三份 NetworkPolicy 落地。
+# 纯函数按 AST 抽出直接调用;DryRun 产物各起一次 zone-up(Deployment / Agones)与带全局 Go 服务的 infra-up,两个开关一起打开。
+$assetOpFunctionNames = @('Assert-AssetOpSecretShape', 'Get-AssetOpConsistencyVerdict', 'Get-ManifestContainerPorts', 'New-GrpcAllowListNetworkPolicyYaml', 'Get-InjectedSecretFingerprint')
+foreach ($assetOpFnAst in $deadlineDeployAst.FindAll({ param($a) $a -is [System.Management.Automation.Language.FunctionDefinitionAst] }, $false)) {
+    if ($assetOpFunctionNames -contains $assetOpFnAst.Name) {
+        Set-Item -Path "Function:script:$($assetOpFnAst.Name)" -Value $assetOpFnAst.Body.GetScriptBlock()
+    }
+}
+foreach ($assetOpFnName in $assetOpFunctionNames) {
+    if (-not (Test-Path "Function:$assetOpFnName")) { throw "k8s_deploy.ps1 缺少函数 $assetOpFnName(资产通道开关被删了?后续断言无意义)" }
+}
+$assetOpGuildSecret = 'contract-asset-op-guild-0123456789abcdef0123'
+$assetOpTradeSecret = 'contract-asset-op-trade-0123456789abcdef0123'
+$assetOpEnv = @{ MMORPG_ASSET_OP_SECRET_GUILD = $assetOpGuildSecret; MMORPG_ASSET_OP_SECRET_TRADE = $assetOpTradeSecret }
+$assetOpBoth = @('-AssetOps', 'on', '-NetworkPolicies', 'on')
+$assetZoneRun = Invoke-DeployDryRun -Arguments ($BaseArgs + $assetOpBoth) -Env $assetOpEnv
+$assetAgonesRun = Invoke-DeployDryRun -Arguments ($BaseArgs + @('-SceneOrchestrator', 'agones', '-SkipGoSvc', '-SkipJavaSvc') + $assetOpBoth) -Env $assetOpEnv
+$assetInfraEnv = @{}
+foreach ($k in $BattleTestEnv.Keys) { $assetInfraEnv[$k] = $BattleTestEnv[$k] }
+foreach ($k in $assetOpEnv.Keys) { $assetInfraEnv[$k] = $assetOpEnv[$k] }
+$assetInfraRun = Invoke-DeployDryRun -Arguments ($guildInfraArgs + $assetOpBoth) -Env $assetInfraEnv
+$tradeYamlTextForAssetOp = [IO.File]::ReadAllText((Join-Path (Get-RepoRoot) 'go/trade/etc/trade.yaml')) -replace "`r`n", "`n"
+
+# 工作负载清单在 DryRun 输出里的位置(kind 行 + metadata.name 行唯一定位;找不到返回 -1)。按块开头的前几十个字符找不行:各 Deployment 开头相同。
+function Get-WorkloadOffset {
+    param([Parameter(Mandatory = $true)][string]$Output, [Parameter(Mandatory = $true)][string]$Kind, [Parameter(Mandatory = $true)][string]$Name)
+    $m = [regex]::Match(($Output -replace "`r`n", "`n"), ('(?m)^kind: ' + $Kind + '[ \t]*\nmetadata:[ \t]*\n  name: ' + [regex]::Escape($Name) + '[ \t]*$'))
+    if ($m.Success) { return $m.Index }
+    return -1
+}
+
+# 去掉空行后比较(DryRun 采集里 CRLF here-string 的行间可能多出空行,与内容无关)。
+function ConvertTo-NonBlankLines {
+    param([Parameter(Mandatory = $true)][AllowEmptyString()][string]$Text)
+    return (@(($Text -replace "`r`n", "`n") -split "`n" | Where-Object { $_.Trim().Length -gt 0 } | ForEach-Object { $_.TrimEnd() }) -join "`n")
+}
+
+# NetworkPolicy 块 → 目标 app、对所有来源开放的端口、gRPC 口与放行名单(只认本脚本生成的两条 ingress 形状)。
+function Get-GrpcAllowListShape {
+    param([Parameter(Mandatory = $true)][string]$Block)
+    $text = $Block -replace "`r`n", "`n"
+    $target = [regex]::Match($text, '(?s)podSelector:\s*\n\s+matchExpressions:\s*\n\s+- key: app\s*\n\s+operator: In\s*\n\s+values: \[(?<v>[^\]]*)\]')
+    $fromIndex = $text.IndexOf('    - from:')
+    $ingressIndex = $text.IndexOf('  ingress:')
+    $openText = if ($fromIndex -gt $ingressIndex -and $ingressIndex -ge 0) { $text.Substring($ingressIndex, $fromIndex - $ingressIndex) } else { '' }
+    $open = @([regex]::Matches($openText, 'port: (\d+)') | ForEach-Object { [int]$_.Groups[1].Value } | Sort-Object)
+    $grpc = [regex]::Match($text.Substring([Math]::Max(0, $fromIndex)), '(?s)values: \[(?<v>[^\]]*)\]\s*\n\s+ports:\s*\n\s+- protocol: TCP\s*\n\s+port: (?<p>\d+)')
+    return [pscustomobject]@{
+        TargetApps  = if ($target.Success) { @($target.Groups['v'].Value -split ',\s*') } else { @() }
+        OpenPorts   = $open
+        GrpcPort    = if ($grpc.Success) { [int]$grpc.Groups['p'].Value } else { 0 }
+        AllowedApps = if ($grpc.Success) { @($grpc.Groups['v'].Value -split ',\s*') } else { @() }
+    }
+}
+
+Test-Case '资产通道默认关:scene / guild / trade 不带签名密钥与指纹,不生成 NetworkPolicy,只删以前留下的同名 Secret 与策略;trade 的 AssetOp 仍是两行' {
+    foreach ($out in @($devOut, $agonesOut, $guildInfraRun.Output)) {
+        Assert-Match -Text $out -Pattern 'AssetOps: off NetworkPolicies: off' -Because '入口要打出两个开关的取值'
+        Assert-NotMatch -Text $out -Pattern '(?m)^kind: NetworkPolicy' -Because '默认不生成准入策略'
+        # DryRun 的 Secret 创建只有 apply 记录(不打印密钥 manifest);注释和删除旧 Secret 的记录不算创建。
+        Assert-NotMatch -Text $out -Pattern '(?m)^\[dry-run\] kubectl apply\b[^\r\n]*# Secret asset-op-secret-' -Because '默认不建签名密钥 Secret'
+    }
+    $scene = Select-ManifestByName -Output $devOut -Name 'scene'
+    $fleet = Select-ManifestByName -Output $agonesOut -Name 'scene'
+    foreach ($block in @($scene, $fleet)) {
+        Assert-NotMatch -Text $block -Pattern 'MMORPG_ASSET_OP_SECRET_|asset-op-secret' -Because '关着时 scene 的 Pod 模板与开关引入之前逐字相同(不滚动)'
+    }
+    Assert-Match -Text $devOut -Pattern 'kubectl delete networkpolicy scene-grpc-allowlist -n mmorpg-zone-contract-test --ignore-not-found' -Because '开关不粘滞:以前开过留下的策略要删'
+    foreach ($secretName in @('asset-op-secret-guild', 'asset-op-secret-trade')) {
+        Assert-Match -Text $devOut -Pattern ('kubectl delete secret ' + $secretName + ' -n mmorpg-zone-contract-test --ignore-not-found') -Because 'zone 里的验签密钥同样不粘滞'
+        Assert-Match -Text $guildInfraRun.Output -Pattern ('kubectl delete secret ' + $secretName + ' -n contract-battle-infra --ignore-not-found') -Because 'infra 里的签名密钥同样不粘滞'
+    }
+    foreach ($policy in @('guild-grpc-allowlist', 'match-grpc-allowlist')) {
+        Assert-Match -Text $guildInfraRun.Output -Pattern ('kubectl delete networkpolicy ' + $policy + ' -n contract-battle-infra --ignore-not-found') -Because 'infra 的准入策略同样不粘滞'
+    }
+    foreach ($svc in @('guild', 'trade')) {
+        $deploy = @(Get-ManifestBlocks -Output $guildInfraRun.Output | Where-Object { $_ -cmatch '(?m)^kind: Deployment\s*$' -and $_ -cmatch ('(?m)^  name: ' + $svc + '\s*$') }) | Select-Object -First 1
+        Assert-True -Condition ($null -ne $deploy) -Because "infra-up 产物里应当有 $svc 的 Deployment"
+        Assert-NotMatch -Text $deploy -Pattern '(?m)^\s*- name: MMORPG_ASSET_OP_SECRET_' -Because "$svc 关着时不注入签名密钥(manifest 也不许手写,Add-GoSvcSecretEnv 会拒)"
+        Assert-NotMatch -Text $deploy -Pattern '(?m)^\s+mmorpg\.io/asset-op-secret-\w+-hash:|PLACEHOLDER_' -Because "$svc 关着时指纹占位整行删掉,Pod 模板与开关引入之前相同"
+    }
+    $tradeCm = Select-ManifestByName -Output $guildInfraRun.Output -Name 'go-svc-trade-config'
+    $tradeEmbedded = Get-ConfigMapEmbeddedText -Block $tradeCm -FileName 'trade.yaml'
+    Assert-Equal -Expected "AssetOp:`n  Enabled: false`n  SecretEnv: MMORPG_ASSET_OP_SECRET_TRADE" -Actual (ConvertTo-NonBlankLines -Text (Get-TopLevelYamlBlockText -Text $tradeEmbedded -Key 'AssetOp')) -Because 'trade 关着时只写 Enabled 与 SecretEnv 两行'
+}
+
+Test-Case 'Assert-AssetOpSecretShape:未设置 / 含空白 / 短于 32 字节一律拒绝,报错点名变量、不回显值' {
+    $cases = @(
+        @{ Value = ''; Pattern = '未设置' }
+        @{ Value = 'contract asset op 0123456789abcdef0123456'; Pattern = '空白' }
+        @{ Value = "contract-asset-op-0123456789abcdef0123456`t"; Pattern = '空白' }
+        @{ Value = ('x' * 31); Pattern = '< 32' }
+    )
+    foreach ($case in $cases) {
+        $message = ''
+        try { Assert-AssetOpSecretShape -EnvName 'MMORPG_ASSET_OP_SECRET_GUILD' -Value $case.Value } catch { $message = $_.Exception.Message }
+        Assert-Match -Text $message -Pattern $case.Pattern -Because "形状不对必须拒绝:$($case.Pattern)"
+        Assert-Match -Text $message -Pattern 'MMORPG_ASSET_OP_SECRET_GUILD' -Because '报错要点名变量'
+        if ($case.Value.Length -gt 0) { Assert-True -Condition (-not $message.Contains($case.Value.Trim())) -Because '报错不得回显密钥' }
+    }
+    Assert-AssetOpSecretShape -EnvName 'MMORPG_ASSET_OP_SECRET_GUILD' -Value ('x' * 32)
+}
+
+Test-Case 'Get-AssetOpConsistencyVerdict:调用方没开恒放行;开着时 scene 必须拿同一把' {
+    Assert-Equal -Expected 'ok' -Actual (Get-AssetOpConsistencyVerdict -CallerHash $null -SceneHash $null) -Because '两边都没开'
+    Assert-Equal -Expected 'ok' -Actual (Get-AssetOpConsistencyVerdict -CallerHash '' -SceneHash 'abcdef012345') -Because '打开顺序:先给 scene 密钥,调用方再开'
+    Assert-Equal -Expected 'scene-off-while-caller-on' -Actual (Get-AssetOpConsistencyVerdict -CallerHash 'abcdef012345' -SceneHash '') -Because '调用方开着而 scene 关:该 zone 的资产 RPC 全部被拒'
+    Assert-Equal -Expected 'key-mismatch' -Actual (Get-AssetOpConsistencyVerdict -CallerHash 'abcdef012345' -SceneHash 'abcdef012346') -Because '密钥不是同一把'
+    Assert-Equal -Expected 'ok' -Actual (Get-AssetOpConsistencyVerdict -CallerHash 'abcdef012345' -SceneHash 'abcdef012345') -Because '同一把密钥'
+}
+
+Test-Case 'New-GrpcAllowListNetworkPolicyYaml:逐个列端口(不用 endPort);gRPC 口不得同时对所有来源开放' {
+    $yaml = New-GrpcAllowListNetworkPolicyYaml -PolicyName 'p' -TargetApps @('a') -GrpcPort 50300 -OpenTcpPorts @(9220, 9220) -AllowedApps @('x', 'y')
+    Assert-NotMatch -Text $yaml -Pattern 'endPort' -Because '不支持 endPort 的网络插件只认起始端口,会把其余端口全拦掉'
+    $shape = Get-GrpcAllowListShape -Block $yaml
+    Assert-Equal -Expected '9220' -Actual ($shape.OpenPorts -join ',') -Because '开放端口去重'
+    Assert-Equal -Expected 50300 -Actual $shape.GrpcPort -Because 'gRPC 口单独一条'
+    Assert-Equal -Expected 'x,y' -Actual ($shape.AllowedApps -join ',') -Because '放行名单原样写出'
+    Assert-Match -Text $yaml -Pattern '- namespaceSelector: \{\}\s*\n\s+podSelector:' -Because '调用方分布在 infra 与各 zone namespace,两个选择器写在同一项里 = 任意 namespace 的这些 Pod'
+    $message = ''
+    try { $null = New-GrpcAllowListNetworkPolicyYaml -PolicyName 'p' -TargetApps @('a') -GrpcPort 50300 -OpenTcpPorts @(50300) -AllowedApps @('x') } catch { $message = $_.Exception.Message }
+    Assert-Match -Text $message -Pattern '形同虚设' -Because 'gRPC 口出现在开放端口里必须拒绝'
+    $ports = Get-ManifestContainerPorts -ManifestContent "ports:`n  - containerPort: 50300`n    name: grpc`n  - name: rpc`n    containerPort: 20000`n`t`t- containerPort: 9220`r`n"
+    Assert-Equal -Expected '9220,20000,50300' -Actual ($ports -join ',') -Because 'containerPort 不论写在列表项首行还是第二行、制表符缩进或 CRLF 都要认出来'
+}
+
+Test-Case '-AssetOps on 的组合与密钥校验都在任何写操作之前拒绝,报错不回显密钥' {
+    $noPolicy = Invoke-DeployDryRun -Arguments ($BaseArgs + @('-AssetOps', 'on')) -Env $assetOpEnv
+    Assert-True -Condition ($noPolicy.ExitCode -ne 0) -Because '资产通道打开而 scene 的 gRPC 口不设防必须拒绝'
+    Assert-Match -Text $noPolicy.Output -Pattern '-NetworkPolicies on' -Because '报错要说明缺哪个开关'
+    $missing = Invoke-DeployDryRun -Arguments ($BaseArgs + $assetOpBoth)
+    Assert-True -Condition ($missing.ExitCode -ne 0) -Because '没注入签名密钥必须拒绝(各档位都没有回落值)'
+    Assert-Match -Text $missing.Output -Pattern 'MMORPG_ASSET_OP_SECRET_GUILD' -Because '报错要点名变量'
+    $sameValue = 'contract-asset-op-same-0123456789abcdef01234'
+    $same = Invoke-DeployDryRun -Arguments ($BaseArgs + $assetOpBoth) -Env @{ MMORPG_ASSET_OP_SECRET_GUILD = $sameValue; MMORPG_ASSET_OP_SECRET_TRADE = $sameValue }
+    Assert-True -Condition ($same.ExitCode -ne 0) -Because '两个调用方共用一把密钥必须拒绝'
+    Assert-Match -Text $same.Output -Pattern 'MMORPG_ASSET_OP_SECRET_TRADE' -Because '报错点名两个变量'
+    $reuse = Invoke-DeployDryRun -Arguments ($BaseArgs + $assetOpBoth) -Env @{ MMORPG_GATE_TOKEN_SECRET = $assetOpGuildSecret; MMORPG_ASSET_OP_SECRET_GUILD = $assetOpGuildSecret; MMORPG_ASSET_OP_SECRET_TRADE = $assetOpTradeSecret }
+    Assert-True -Condition ($reuse.ExitCode -ne 0) -Because '与其它口令复用必须拒绝'
+    Assert-Match -Text $reuse.Output -Pattern 'MMORPG_GATE_TOKEN_SECRET' -Because '报错点名被复用的那一把'
+    foreach ($run in @($noPolicy, $missing, $same, $reuse)) {
+        Assert-NotMatch -Text $run.Output -Pattern '\[dry-run\] kubectl [^\r\n]*\b(apply|create|delete|patch|replace)\b' -Because '组合校验与密钥解析先于任何写操作,不留半截部署'
+    }
+    foreach ($run in @($same, $reuse)) {
+        Assert-True -Condition (-not $run.Output.Contains('0123456789abcdef0123')) -Because '报错不得回显密钥'
+    }
+}
+
+Test-Case 'zone-up -AssetOps on:scene(Deployment 与 Fleet)经 secretKeyRef 拿两把验签密钥、带指纹;Secret 与准入策略先于 scene;gate 不带' {
+    Assert-Equal -Expected 0 -Actual $assetZoneRun.ExitCode -Because "zone-up 打开两个开关必须成功。输出: $($assetZoneRun.Output)"
+    Assert-Equal -Expected 0 -Actual $assetAgonesRun.ExitCode -Because "Agones 形态打开两个开关必须成功。输出: $($assetAgonesRun.Output)"
+    $guildHash = Get-InjectedSecretFingerprint -SecretName 'asset-op-secret-guild' -Value $assetOpGuildSecret
+    $tradeHash = Get-InjectedSecretFingerprint -SecretName 'asset-op-secret-trade' -Value $assetOpTradeSecret
+    foreach ($pair in @(@{ Run = $assetZoneRun; Kind = 'Deployment' }, @{ Run = $assetAgonesRun; Kind = 'Fleet' })) {
+        $out = $pair.Run.Output -replace "`r`n", "`n"
+        $scene = Select-ManifestByName -Output $out -Name 'scene'
+        $sceneAt = Get-WorkloadOffset -Output $out -Kind $pair.Kind -Name 'scene'
+        Assert-True -Condition ($sceneAt -ge 0) -Because '夹具前提:找得到 scene 工作负载'
+        Assert-Match -Text $scene -Pattern ('(?m)^kind: ' + $pair.Kind) -Because "要核对的是 scene 的 $($pair.Kind)"
+        foreach ($caller in @(@{ Env = 'MMORPG_ASSET_OP_SECRET_GUILD'; Secret = 'asset-op-secret-guild'; Hash = $guildHash }, @{ Env = 'MMORPG_ASSET_OP_SECRET_TRADE'; Secret = 'asset-op-secret-trade'; Hash = $tradeHash })) {
+            Assert-Match -Text $scene -Pattern ('- name: ' + $caller.Env + '\s+valueFrom:\s+secretKeyRef:\s+name: ' + $caller.Secret + '\s+key: secret\s*\r?\n') -Because "scene 验签要 $($caller.Env),只经 Secret 注入、不写 optional"
+            Assert-Match -Text $scene -Pattern ('mmorpg\.io/' + $caller.Secret + '-hash: "' + $caller.Hash + '"') -Because '指纹与调用方同一算法、同一域分隔,换密钥即滚动、跨命令可核对'
+            $secretAt = $out.IndexOf("# Secret $($caller.Secret) (key secret; value hidden)")
+            Assert-True -Condition ($secretAt -ge 0 -and $secretAt -lt $sceneAt) -Because 'secretKeyRef 不是 optional,Secret 必须先于 scene 落地'
+        }
+        $policyAt = $out.IndexOf('name: scene-grpc-allowlist')
+        Assert-True -Condition ($policyAt -ge 0 -and $policyAt -lt $sceneAt) -Because '准入策略先到,新 scene Pod 从第一秒起受保护'
+        Assert-True -Condition (-not $out.Contains($assetOpGuildSecret) -and -not $out.Contains($assetOpTradeSecret)) -Because '密钥值绝不进产物'
+        Assert-NotMatch -Text $out -Pattern 'kubectl delete (secret asset-op-secret-|networkpolicy scene-grpc-allowlist)' -Because '开着时不删自己要用的 Secret 与策略'
+    }
+    $gate = Select-ManifestByName -Output $assetZoneRun.Output -Name 'gate'
+    Assert-NotMatch -Text $gate -Pattern 'MMORPG_ASSET_OP_SECRET_|asset-op-secret' -Because '只有 scene 验签,gate 不该拿资产密钥'
+}
+
+Test-Case 'scene 的 gRPC 口准入:目标 = 三种 scene 池,放行名单逐字钉住,开放端口覆盖 scene 清单(Deployment 与 Fleet)声明的其它全部端口' {
+    $policy = Select-ManifestByName -Output $assetZoneRun.Output -Name 'scene-grpc-allowlist'
+    Assert-True -Condition ($null -ne $policy) -Because '打开时 zone 里要有 scene-grpc-allowlist'
+    $shape = Get-GrpcAllowListShape -Block $policy
+    Assert-Equal -Expected 'scene,scene-world,scene-instance' -Actual ($shape.TargetApps -join ',') -Because 'legacy 单池与拆分两池都要被选中'
+    Assert-Equal -Expected 'scene-manager,match,player-inbox,guild,trade,mail' -Actual ($shape.AllowedApps -join ',') -Because '调用方名单(k8s_deploy.ps1 $script:GrpcAllowLists 注释里的调用点);增删要同时改这里'
+    $scene = Select-ManifestByName -Output $devOut -Name 'scene'
+    $grpcDeclared = [regex]::Match($scene, 'containerPort: (?<p>\d+)\s+name: grpc')
+    Assert-True -Condition $grpcDeclared.Success -Because '夹具前提:scene Deployment 声明了 grpc 口'
+    Assert-Equal -Expected ([int]$grpcDeclared.Groups['p'].Value) -Actual $shape.GrpcPort -Because '受保护的必须是 scene 真正监听的 gRPC 口'
+    $fleet = Select-ManifestByName -Output $agonesOut -Name 'scene'
+    $declared = @(Get-ManifestContainerPorts -ManifestContent ($scene + "`n" + $fleet) | Where-Object { $_ -ne $shape.GrpcPort })
+    Assert-Equal -Expected ($declared -join ',') -Actual ($shape.OpenPorts -join ',') -Because '清单里声明的其它端口(节点口、日志 sidecar)都得对所有来源开放,漏一个就断(gate ↔ scene 走节点口)'
+}
+
+Test-Case 'infra-up -AssetOps on:guild / trade 各自只拿自己那把密钥、带指纹、ConfigMap 打开通道(trade 整块搬运);guild / match 的准入策略名单逐字钉住、开放端口覆盖清单' {
+    Assert-Equal -Expected 0 -Actual $assetInfraRun.ExitCode -Because "infra-up 打开两个开关必须成功。输出: $($assetInfraRun.Output)"
+    $out = $assetInfraRun.Output -replace "`r`n", "`n"
+    $specs = @(
+        @{ Svc = 'guild'; Env = 'MMORPG_ASSET_OP_SECRET_GUILD'; Other = 'MMORPG_ASSET_OP_SECRET_TRADE'; Secret = 'asset-op-secret-guild'; Value = $assetOpGuildSecret }
+        @{ Svc = 'trade'; Env = 'MMORPG_ASSET_OP_SECRET_TRADE'; Other = 'MMORPG_ASSET_OP_SECRET_GUILD'; Secret = 'asset-op-secret-trade'; Value = $assetOpTradeSecret }
+    )
+    foreach ($spec in $specs) {
+        $deploy = @(Get-ManifestBlocks -Output $out | Where-Object { $_ -cmatch '(?m)^kind: Deployment\s*$' -and $_ -cmatch ('(?m)^  name: ' + $spec.Svc + '\s*$') }) | Select-Object -First 1
+        Assert-True -Condition ($null -ne $deploy) -Because "infra-up 产物里应当有 $($spec.Svc) 的 Deployment"
+        Assert-Match -Text $deploy -Pattern ('- name: ' + $spec.Env + '\s+valueFrom:\s+secretKeyRef:\s+name: ' + $spec.Secret + '\s+key: secret\s*\r?\n') -Because "$($spec.Svc) 签名密钥只经 Secret 注入、不写 optional"
+        Assert-Equal -Expected 1 -Actual ([regex]::Matches($deploy, 'name: ' + $spec.Env).Count) -Because '只能注入一份'
+        Assert-NotMatch -Text $deploy -Pattern ('(?m)^\s*- name: ' + $spec.Other) -Because '每个调用方只拿自己那把(不变量 I6)'
+        $hash = Get-InjectedSecretFingerprint -SecretName $spec.Secret -Value $spec.Value
+        Assert-Match -Text $deploy -Pattern ('mmorpg\.io/' + $spec.Secret + '-hash: "' + $hash + '"') -Because '指纹与 scene 一侧同一算法,跨命令核对靠它'
+        Assert-NotMatch -Text $deploy -Pattern 'PLACEHOLDER_' -Because '占位必须全部替换'
+        $secretAt = $out.IndexOf("# Secret $($spec.Secret) (key secret; value hidden)")
+        Assert-True -Condition ($secretAt -ge 0 -and $secretAt -lt (Get-WorkloadOffset -Output $out -Kind 'Deployment' -Name $spec.Svc)) -Because 'Secret 必须先于引用它的 Deployment'
+    }
+    Assert-True -Condition (-not $out.Contains($assetOpGuildSecret) -and -not $out.Contains($assetOpTradeSecret)) -Because '密钥值绝不进产物'
+    $guildEmbedded = Get-ConfigMapEmbeddedText -Block (Select-ManifestByName -Output $out -Name 'go-svc-guild-config') -FileName 'guild.yaml'
+    $expectedGuild = (Get-TopLevelYamlBlockText -Text $guildYamlText -Key 'AssetOp') -replace '(?m)^  Enabled:.*$', '  Enabled: true'
+    Assert-Equal -Expected (ConvertTo-NonBlankLines -Text $expectedGuild) -Actual (ConvertTo-NonBlankLines -Text (Get-TopLevelYamlBlockText -Text $guildEmbedded -Key 'AssetOp')) -Because 'guild 打开:整块原样,第一层 Enabled 改 true(Wake 子块的 Enabled 不动)'
+    $tradeEmbedded = Get-ConfigMapEmbeddedText -Block (Select-ManifestByName -Output $out -Name 'go-svc-trade-config') -FileName 'trade.yaml'
+    $expectedTrade = (Get-TopLevelYamlBlockText -Text $tradeYamlTextForAssetOp -Key 'AssetOp') -replace '(?m)^  Enabled:.*$', '  Enabled: true'
+    Assert-Equal -Expected (ConvertTo-NonBlankLines -Text $expectedTrade) -Actual (ConvertTo-NonBlankLines -Text (Get-TopLevelYamlBlockText -Text $tradeEmbedded -Key 'AssetOp')) -Because 'trade 打开:落地恢复与 Cleanup* 键连同 Enabled=true 一起进 ConfigMap(go/trade/etc/trade.yaml 注释)'
+    Assert-Match -Text $tradeEmbedded -Pattern '(?m)^  SecretEnv: MMORPG_ASSET_OP_SECRET_TRADE\s*$' -Because 'SecretEnv 必须是部署侧注入的变量名'
+    $policies = @(
+        @{ Name = 'guild-grpc-allowlist'; Svc = 'guild'; Allowed = 'client-rpc-router,data-service'; Port = 50300 }
+        @{ Name = 'match-grpc-allowlist'; Svc = 'match'; Allowed = 'client-rpc-router,guild,gate'; Port = 50500 }
+    )
+    foreach ($p in $policies) {
+        $policy = Select-ManifestByName -Output $out -Name $p.Name
+        Assert-True -Condition ($null -ne $policy) -Because "打开时 infra 里要有 $($p.Name)"
+        $shape = Get-GrpcAllowListShape -Block $policy
+        Assert-Equal -Expected $p.Svc -Actual ($shape.TargetApps -join ',') -Because '策略只选中本服务'
+        Assert-Equal -Expected $p.Allowed -Actual ($shape.AllowedApps -join ',') -Because "$($p.Svc) 的 gRPC 调用方名单;增删要同时改这里"
+        Assert-Equal -Expected $p.Port -Actual $shape.GrpcPort -Because 'gRPC 口取 $GoSvcCatalogue 的 Port'
+        $manifest = [IO.File]::ReadAllText((Join-Path (Get-RepoRoot) "deploy/k8s/manifests/go-svc/$($p.Svc).yaml"))
+        $declared = @(Get-ManifestContainerPorts -ManifestContent $manifest | Where-Object { $_ -ne $p.Port })
+        Assert-Equal -Expected ($declared -join ',') -Actual ($shape.OpenPorts -join ',') -Because '清单里声明的其它端口(metrics)要对所有来源开放'
+        $policyAt = $out.IndexOf("name: $($p.Name)")
+        $deployAt = Get-WorkloadOffset -Output $out -Kind 'Deployment' -Name $p.Svc
+        Assert-True -Condition ($policyAt -ge 0 -and $deployAt -ge 0 -and $policyAt -lt $deployAt) -Because '策略先于 Deployment'
+    }
+}
+
+Test-Case 'gRPC 准入名单里的每个 app 标签都对应一个真实工作负载(写错一个字母 = 那个调用方被拦)' {
+    $knownCpp = @('gate', 'scene', 'scene-world', 'scene-instance')
+    $deployScript = [IO.File]::ReadAllText((Join-Path (Get-ToolsScriptsDir) 'k8s_deploy.ps1'))
+    $tableText = [regex]::Match($deployScript, '(?s)\$script:GrpcAllowLists = \[ordered\]@\{(?<t>.*?)\r?\n\}').Groups['t'].Value
+    Assert-True -Condition ($tableText.Length -gt 0) -Because '夹具前提:找得到 $script:GrpcAllowLists'
+    $apps = @([regex]::Matches($tableText, "'([a-z][a-z-]*)'") | ForEach-Object { $_.Groups[1].Value } | Where-Object { $_ -notmatch 'allowlist$' } | Sort-Object -Unique)
+    Assert-True -Condition ($apps.Count -ge 8) -Because '夹具前提:名单解析出来了'
+    foreach ($app in $apps) {
+        if ($knownCpp -contains $app) { continue }
+        $manifestPath = Join-Path (Get-RepoRoot) "deploy/k8s/manifests/go-svc/$app.yaml"
+        Assert-True -Condition (Test-Path $manifestPath) -Because "名单里的 $app 没有对应的 go-svc manifest"
+        Assert-Match -Text ([IO.File]::ReadAllText($manifestPath)) -Pattern ('(?m)^\s+app: ' + [regex]::Escape($app) + '\s*$') -Because "$app 的 Pod 标签必须是 app: $app"
     }
 }
 

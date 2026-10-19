@@ -1379,12 +1379,12 @@ constexpr player_database::ParseTableT_ player_database::InternalGenerateParseTa
     {
       PROTOBUF_FIELD_OFFSET(player_database, _impl_._has_bits_),
       0, // no _extensions_
-      21, 248,  // max_field_number, fast_idx_mask
+      22, 248,  // max_field_number, fast_idx_mask
       offsetof(ParseTableT_, field_lookup_table),
-      4292870144,  // skipmap
+      4290772992,  // skipmap
       offsetof(ParseTableT_, field_entries),
-      21,  // num_field_entries
-      17,  // num_aux_entries
+      22,  // num_field_entries
+      18,  // num_aux_entries
       offsetof(ParseTableT_, aux_entries),
       class_data,
       nullptr,  // post_loop_handler
@@ -1395,8 +1395,8 @@ constexpr player_database::ParseTableT_ player_database::InternalGenerateParseTa
     }, {{
       {::_pbi::TcParser::MiniParse, {}},
       // uint64 player_id = 1;
-      {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(player_database, _impl_.player_id_), 17>(),
-       {8, 17, 0,
+      {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(player_database, _impl_.player_id_), 18>(),
+       {8, 18, 0,
         PROTOBUF_FIELD_OFFSET(player_database, _impl_.player_id_)}},
       // .Transform transform = 2;
       {::_pbi::TcParser::FastMtS1,
@@ -1464,11 +1464,11 @@ constexpr player_database::ParseTableT_ player_database::InternalGenerateParseTa
         PROTOBUF_FIELD_OFFSET(player_database, _impl_.settlement_ledger_)}},
       // uint64 fence_owner_epoch = 18;
       {::_pbi::TcParser::FastV64S2,
-       {400, 18, 0,
+       {400, 19, 0,
         PROTOBUF_FIELD_OFFSET(player_database, _impl_.fence_owner_epoch_)}},
       // uint64 fence_save_seq = 19;
       {::_pbi::TcParser::FastV64S2,
-       {408, 19, 0,
+       {408, 20, 0,
         PROTOBUF_FIELD_OFFSET(player_database, _impl_.fence_save_seq_)}},
       // .PlayerInboxLedgerComp inbox_ledger = 20;
       {::_pbi::TcParser::FastMtS2,
@@ -1476,9 +1476,12 @@ constexpr player_database::ParseTableT_ player_database::InternalGenerateParseTa
         PROTOBUF_FIELD_OFFSET(player_database, _impl_.inbox_ledger_)}},
       // uint32 persist_schema_gen = 21;
       {::_pbi::TcParser::FastV32S2,
-       {424, 20, 0,
+       {424, 21, 0,
         PROTOBUF_FIELD_OFFSET(player_database, _impl_.persist_schema_gen_)}},
-      {::_pbi::TcParser::MiniParse, {}},
+      // .PlayerMysteryMerchantComp mystery_merchant = 22;
+      {::_pbi::TcParser::FastMtS2,
+       {434, 17, 17,
+        PROTOBUF_FIELD_OFFSET(player_database, _impl_.mystery_merchant_)}},
       {::_pbi::TcParser::MiniParse, {}},
       {::_pbi::TcParser::MiniParse, {}},
       {::_pbi::TcParser::MiniParse, {}},
@@ -1492,7 +1495,7 @@ constexpr player_database::ParseTableT_ player_database::InternalGenerateParseTa
       65535, 65535
     }}, {{
       // uint64 player_id = 1;
-      {PROTOBUF_FIELD_OFFSET(player_database, _impl_.player_id_), _Internal::kHasBitsOffset + 17, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
+      {PROTOBUF_FIELD_OFFSET(player_database, _impl_.player_id_), _Internal::kHasBitsOffset + 18, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
       // .Transform transform = 2;
       {PROTOBUF_FIELD_OFFSET(player_database, _impl_.transform_), _Internal::kHasBitsOffset + 0, 0, (0 | ::_fl::kFcOptional | ::_fl::kMessage | ::_fl::kTvTable)},
       // .PlayerUint64Comp uint64_pb_component = 3;
@@ -1526,13 +1529,15 @@ constexpr player_database::ParseTableT_ player_database::InternalGenerateParseTa
       // .BattleSettlementLedgerComp settlement_ledger = 17;
       {PROTOBUF_FIELD_OFFSET(player_database, _impl_.settlement_ledger_), _Internal::kHasBitsOffset + 15, 15, (0 | ::_fl::kFcOptional | ::_fl::kMessage | ::_fl::kTvTable)},
       // uint64 fence_owner_epoch = 18;
-      {PROTOBUF_FIELD_OFFSET(player_database, _impl_.fence_owner_epoch_), _Internal::kHasBitsOffset + 18, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
+      {PROTOBUF_FIELD_OFFSET(player_database, _impl_.fence_owner_epoch_), _Internal::kHasBitsOffset + 19, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
       // uint64 fence_save_seq = 19;
-      {PROTOBUF_FIELD_OFFSET(player_database, _impl_.fence_save_seq_), _Internal::kHasBitsOffset + 19, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
+      {PROTOBUF_FIELD_OFFSET(player_database, _impl_.fence_save_seq_), _Internal::kHasBitsOffset + 20, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
       // .PlayerInboxLedgerComp inbox_ledger = 20;
       {PROTOBUF_FIELD_OFFSET(player_database, _impl_.inbox_ledger_), _Internal::kHasBitsOffset + 16, 16, (0 | ::_fl::kFcOptional | ::_fl::kMessage | ::_fl::kTvTable)},
       // uint32 persist_schema_gen = 21;
-      {PROTOBUF_FIELD_OFFSET(player_database, _impl_.persist_schema_gen_), _Internal::kHasBitsOffset + 20, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
+      {PROTOBUF_FIELD_OFFSET(player_database, _impl_.persist_schema_gen_), _Internal::kHasBitsOffset + 21, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
+      // .PlayerMysteryMerchantComp mystery_merchant = 22;
+      {PROTOBUF_FIELD_OFFSET(player_database, _impl_.mystery_merchant_), _Internal::kHasBitsOffset + 17, 17, (0 | ::_fl::kFcOptional | ::_fl::kMessage | ::_fl::kTvTable)},
     }},
     {{
         #ifndef PROTOBUF_MESSAGE_GLOBALS
@@ -1620,6 +1625,11 @@ constexpr player_database::ParseTableT_ player_database::InternalGenerateParseTa
         #else
         {::_pbi::FieldAuxMessageGlobals(), &::PlayerInboxLedgerComp_globals_},
         #endif
+        #ifndef PROTOBUF_MESSAGE_GLOBALS
+        {::_pbi::TcParser::GetTable<::PlayerMysteryMerchantComp>()},
+        #else
+        {::_pbi::FieldAuxMessageGlobals(), &::PlayerMysteryMerchantComp_globals_},
+        #endif
     }},
     {{
     }},
@@ -1648,6 +1658,7 @@ inline constexpr player_database::Impl_::Impl_(
         asset_op_ledger_{nullptr},
         settlement_ledger_{nullptr},
         inbox_ledger_{nullptr},
+        mystery_merchant_{nullptr},
         player_id_{::uint64_t{0u}},
         fence_owner_epoch_{::uint64_t{0u}},
         fence_save_seq_{::uint64_t{0u}},
@@ -1817,7 +1828,7 @@ const ::uint32_t
         0,
         0x081, // bitmap
         PROTOBUF_FIELD_OFFSET(::player_database, _impl_._has_bits_),
-        24, // hasbit index offset
+        25, // hasbit index offset
         PROTOBUF_FIELD_OFFSET(::player_database, _impl_.player_id_),
         PROTOBUF_FIELD_OFFSET(::player_database, _impl_.transform_),
         PROTOBUF_FIELD_OFFSET(::player_database, _impl_.uint64_pb_component_),
@@ -1839,7 +1850,8 @@ const ::uint32_t
         PROTOBUF_FIELD_OFFSET(::player_database, _impl_.fence_save_seq_),
         PROTOBUF_FIELD_OFFSET(::player_database, _impl_.inbox_ledger_),
         PROTOBUF_FIELD_OFFSET(::player_database, _impl_.persist_schema_gen_),
-        17,
+        PROTOBUF_FIELD_OFFSET(::player_database, _impl_.mystery_merchant_),
+        18,
         0,
         1,
         2,
@@ -1856,10 +1868,11 @@ const ::uint32_t
         13,
         14,
         15,
-        18,
         19,
-        16,
         20,
+        16,
+        21,
+        17,
         0x081, // bitmap
         PROTOBUF_FIELD_OFFSET(::player_database_1, _impl_._has_bits_),
         8, // hasbit index offset
@@ -1885,7 +1898,7 @@ static const ::_pbi::MigrationSchema
         {51, sizeof(::account_share_database)},
         {56, sizeof(::player_centre_database)},
         {63, sizeof(::player_database)},
-        {108, sizeof(::player_database_1)},
+        {110, sizeof(::player_database_1)},
 };
 static const ::_pbi::MessageGlobalsBase* PROTOBUF_NONNULL const
     file_message_globals[] = {
@@ -1909,71 +1922,74 @@ const char descriptor_table_protodef_proto_2fcommon_2fdatabase_2fmysql_5fdatabas
     "_settlement_ledger_comp.proto\0325proto/com"
     "mon/component/player_inbox_ledger_comp.p"
     "roto\0322proto/common/component/player_attr"
-    "ibute_comp.proto\032,proto/common/component"
-    "/player_pet_comp.proto\032.proto/common/com"
-    "ponent/player_scene_comp.proto\032\'proto/co"
-    "mmon/component/actor_comp.proto\032(proto/c"
-    "ommon/component/player_comp.proto\032.proto"
-    "/common/component/player_skill_comp.prot"
-    "o\032*proto/common/component/currency_comp."
-    "proto\032/proto/common/database/bag_quest_m"
-    "ail_data.proto\"\204\001\n\004user\022\n\n\002id\030\001 \001(\004\022\024\n\014d"
-    "isplay_name\030\002 \001(\t\022\020\n\010is_guest\030\003 \001(\010\022\023\n\013c"
-    "reate_time\030\004 \001(\004\022\022\n\nlast_login\030\005 \001(\004:\037\212\222"
-    "\364\001\004user\222\222\364\001\002id\332\222\364\001\nlast_login\"\230\001\n\nuser_o"
-    "auth\022\017\n\007user_id\030\001 \001(\004\022\020\n\010provider\030\002 \001(\t\022"
-    "\023\n\013provider_id\030\003 \001(\t\022\023\n\013create_time\030\004 \001("
-    "\004:=\212\222\364\001\nuser_oauth\222\222\364\001\020user_id,provider\342"
-    "\222\364\001\024provider,provider_id\"h\n\nuser_phone\022\017"
-    "\n\007user_id\030\001 \001(\004\022\r\n\005phone\030\002 \001(\t\022\023\n\013create"
-    "_time\030\003 \001(\004:%\212\222\364\001\nuser_phone\222\222\364\001\007user_id"
-    "\342\222\364\001\005phone\"c\n\ruser_password\022\017\n\007user_id\030\001"
-    " \001(\004\022\014\n\004hash\030\002 \001(\t\022\023\n\013create_time\030\003 \001(\004:"
-    "\036\212\222\364\001\ruser_password\222\222\364\001\007user_id\"\204\001\n\ruser"
-    "_accounts\022\017\n\007account\030\001 \001(\t\022\020\n\010password\030\002"
-    " \001(\t\0220\n\016simple_players\030\003 \001(\0132\030.AccountSi"
-    "mplePlayerList:\036\212\222\364\001\ruser_accounts\222\222\364\001\007a"
-    "ccount\"R\n\026account_share_database\022\017\n\007acco"
-    "unt\030\001 \001(\t:\'\212\222\364\001\026account_share_database\222\222"
-    "\364\001\007account\"\240\001\n\026player_centre_database\022\021\n"
-    "\tplayer_id\030\001 \001(\004\022+\n\nscene_info\030\002 \001(\0132\027.P"
-    "layerSceneContextComp:F\212\222\364\001\026player_centr"
-    "e_database\222\222\364\001\tplayer_id\262\222\364\001\tplayer_id\250\223"
-    "\364\001\001\260\223\364\001\004\270\223\364\001\004\"\300\007\n\017player_database\022\021\n\tpla"
-    "yer_id\030\001 \001(\004\022\035\n\ttransform\030\002 \001(\0132\n.Transf"
-    "orm\022.\n\023uint64_pb_component\030\003 \001(\0132\021.Playe"
-    "rUint64Comp\022(\n\nskill_list\030\004 \001(\0132\024.Player"
-    "SkillListComp\022.\n\023uint32_pb_component\030\005 \001"
-    "(\0132\021.PlayerUint32Comp\0229\n\034derived_attribu"
-    "tes_component\030\006 \001(\0132\023.BaseAttributesComp"
-    "\022#\n\017level_component\030\007 \001(\0132\n.LevelComp\022\037\n"
-    "\010currency\030\010 \001(\0132\r.CurrencyComp\0228\n\021stress"
-    "_test_probe\030\t \001(\0132\026.PlayerStressTestProb"
-    "eB\005\300\376\244\002\001\0221\n\013merge_state\030\n \001(\0132\025.PlayerMe"
-    "rgeStateCompB\005\300\376\244\002\001\0221\n\023attribute_compone"
-    "nt\030\013 \001(\0132\024.PlayerAttributeComp\022%\n\rpet_co"
-    "mponent\030\014 \001(\0132\016.PlayerPetComp\022\"\n\rbag_com"
-    "ponent\030\r \001(\0132\013.BagAllData\022(\n\021mission_com"
-    "ponent\030\016 \001(\0132\r.QuestAllData\022-\n\021profile_c"
-    "omponent\030\017 \001(\0132\022.PlayerProfileComp\0221\n\017as"
-    "set_op_ledger\030\020 \001(\0132\030.PlayerAssetOpLedge"
-    "rComp\0226\n\021settlement_ledger\030\021 \001(\0132\033.Battl"
-    "eSettlementLedgerComp\022\031\n\021fence_owner_epo"
-    "ch\030\022 \001(\004\022\026\n\016fence_save_seq\030\023 \001(\004\022,\n\014inbo"
-    "x_ledger\030\024 \001(\0132\026.PlayerInboxLedgerComp\022\032"
-    "\n\022persist_schema_gen\030\025 \001(\r:D\212\222\364\001\017player_"
-    "database\222\222\364\001\tplayer_id\262\222\364\001\tplayer_id\350\222\364\001"
-    "\001\250\223\364\001\001\260\223\364\001\004\270\223\364\001\004\"\367\001\n\021player_database_1\022\021"
-    "\n\tplayer_id\030\001 \001(\004\0228\n\021stress_test_probe\030\002"
-    " \001(\0132\026.PlayerStressTestProbeB\005\300\376\244\002\001\022\031\n\021f"
-    "ence_owner_epoch\030\003 \001(\004\022\026\n\016fence_save_seq"
-    "\030\004 \001(\004\022\032\n\022persist_schema_gen\030\005 \001(\r:F\212\222\364\001"
-    "\021player_database_1\222\222\364\001\tplayer_id\262\222\364\001\tpla"
-    "yer_id\350\222\364\001\001\250\223\364\001\001\260\223\364\001\004\270\223\364\001\004B\021Z\017common/dat"
-    "abaseb\006proto3"
+    "ibute_comp.proto\0329proto/common/component"
+    "/player_mystery_merchant_comp.proto\032,pro"
+    "to/common/component/player_pet_comp.prot"
+    "o\032.proto/common/component/player_scene_c"
+    "omp.proto\032\'proto/common/component/actor_"
+    "comp.proto\032(proto/common/component/playe"
+    "r_comp.proto\032.proto/common/component/pla"
+    "yer_skill_comp.proto\032*proto/common/compo"
+    "nent/currency_comp.proto\032/proto/common/d"
+    "atabase/bag_quest_mail_data.proto\"\204\001\n\004us"
+    "er\022\n\n\002id\030\001 \001(\004\022\024\n\014display_name\030\002 \001(\t\022\020\n\010"
+    "is_guest\030\003 \001(\010\022\023\n\013create_time\030\004 \001(\004\022\022\n\nl"
+    "ast_login\030\005 \001(\004:\037\212\222\364\001\004user\222\222\364\001\002id\332\222\364\001\nla"
+    "st_login\"\230\001\n\nuser_oauth\022\017\n\007user_id\030\001 \001(\004"
+    "\022\020\n\010provider\030\002 \001(\t\022\023\n\013provider_id\030\003 \001(\t\022"
+    "\023\n\013create_time\030\004 \001(\004:=\212\222\364\001\nuser_oauth\222\222\364"
+    "\001\020user_id,provider\342\222\364\001\024provider,provider"
+    "_id\"h\n\nuser_phone\022\017\n\007user_id\030\001 \001(\004\022\r\n\005ph"
+    "one\030\002 \001(\t\022\023\n\013create_time\030\003 \001(\004:%\212\222\364\001\nuse"
+    "r_phone\222\222\364\001\007user_id\342\222\364\001\005phone\"c\n\ruser_pa"
+    "ssword\022\017\n\007user_id\030\001 \001(\004\022\014\n\004hash\030\002 \001(\t\022\023\n"
+    "\013create_time\030\003 \001(\004:\036\212\222\364\001\ruser_password\222\222"
+    "\364\001\007user_id\"\204\001\n\ruser_accounts\022\017\n\007account\030"
+    "\001 \001(\t\022\020\n\010password\030\002 \001(\t\0220\n\016simple_player"
+    "s\030\003 \001(\0132\030.AccountSimplePlayerList:\036\212\222\364\001\r"
+    "user_accounts\222\222\364\001\007account\"R\n\026account_sha"
+    "re_database\022\017\n\007account\030\001 \001(\t:\'\212\222\364\001\026accou"
+    "nt_share_database\222\222\364\001\007account\"\240\001\n\026player"
+    "_centre_database\022\021\n\tplayer_id\030\001 \001(\004\022+\n\ns"
+    "cene_info\030\002 \001(\0132\027.PlayerSceneContextComp"
+    ":F\212\222\364\001\026player_centre_database\222\222\364\001\tplayer"
+    "_id\262\222\364\001\tplayer_id\250\223\364\001\001\260\223\364\001\004\270\223\364\001\004\"\366\007\n\017pla"
+    "yer_database\022\021\n\tplayer_id\030\001 \001(\004\022\035\n\ttrans"
+    "form\030\002 \001(\0132\n.Transform\022.\n\023uint64_pb_comp"
+    "onent\030\003 \001(\0132\021.PlayerUint64Comp\022(\n\nskill_"
+    "list\030\004 \001(\0132\024.PlayerSkillListComp\022.\n\023uint"
+    "32_pb_component\030\005 \001(\0132\021.PlayerUint32Comp"
+    "\0229\n\034derived_attributes_component\030\006 \001(\0132\023"
+    ".BaseAttributesComp\022#\n\017level_component\030\007"
+    " \001(\0132\n.LevelComp\022\037\n\010currency\030\010 \001(\0132\r.Cur"
+    "rencyComp\0228\n\021stress_test_probe\030\t \001(\0132\026.P"
+    "layerStressTestProbeB\005\300\376\244\002\001\0221\n\013merge_sta"
+    "te\030\n \001(\0132\025.PlayerMergeStateCompB\005\300\376\244\002\001\0221"
+    "\n\023attribute_component\030\013 \001(\0132\024.PlayerAttr"
+    "ibuteComp\022%\n\rpet_component\030\014 \001(\0132\016.Playe"
+    "rPetComp\022\"\n\rbag_component\030\r \001(\0132\013.BagAll"
+    "Data\022(\n\021mission_component\030\016 \001(\0132\r.QuestA"
+    "llData\022-\n\021profile_component\030\017 \001(\0132\022.Play"
+    "erProfileComp\0221\n\017asset_op_ledger\030\020 \001(\0132\030"
+    ".PlayerAssetOpLedgerComp\0226\n\021settlement_l"
+    "edger\030\021 \001(\0132\033.BattleSettlementLedgerComp"
+    "\022\031\n\021fence_owner_epoch\030\022 \001(\004\022\026\n\016fence_sav"
+    "e_seq\030\023 \001(\004\022,\n\014inbox_ledger\030\024 \001(\0132\026.Play"
+    "erInboxLedgerComp\022\032\n\022persist_schema_gen\030"
+    "\025 \001(\r\0224\n\020mystery_merchant\030\026 \001(\0132\032.Player"
+    "MysteryMerchantComp:D\212\222\364\001\017player_databas"
+    "e\222\222\364\001\tplayer_id\262\222\364\001\tplayer_id\350\222\364\001\001\250\223\364\001\001\260"
+    "\223\364\001\004\270\223\364\001\004\"\367\001\n\021player_database_1\022\021\n\tplaye"
+    "r_id\030\001 \001(\004\0228\n\021stress_test_probe\030\002 \001(\0132\026."
+    "PlayerStressTestProbeB\005\300\376\244\002\001\022\031\n\021fence_ow"
+    "ner_epoch\030\003 \001(\004\022\026\n\016fence_save_seq\030\004 \001(\004\022"
+    "\032\n\022persist_schema_gen\030\005 \001(\r:F\212\222\364\001\021player"
+    "_database_1\222\222\364\001\tplayer_id\262\222\364\001\tplayer_id\350"
+    "\222\364\001\001\250\223\364\001\001\260\223\364\001\004\270\223\364\001\004B\021Z\017common/databaseb\006"
+    "proto3"
 };
 static const ::_pbi::DescriptorTable* PROTOBUF_NONNULL const
-    descriptor_table_proto_2fcommon_2fdatabase_2fmysql_5fdatabase_5ftable_2eproto_deps[13] = {
+    descriptor_table_proto_2fcommon_2fdatabase_2fmysql_5fdatabase_5ftable_2eproto_deps[14] = {
         &::descriptor_table_proto_2fcommon_2fbase_2fuser_5faccounts_2eproto,
         &::descriptor_table_proto_2fcommon_2fcomponent_2factor_5fcomp_2eproto,
         &::descriptor_table_proto_2fcommon_2fcomponent_2fasset_5fop_5fledger_5fcomp_2eproto,
@@ -1982,6 +1998,7 @@ static const ::_pbi::DescriptorTable* PROTOBUF_NONNULL const
         &::descriptor_table_proto_2fcommon_2fcomponent_2fplayer_5fattribute_5fcomp_2eproto,
         &::descriptor_table_proto_2fcommon_2fcomponent_2fplayer_5fcomp_2eproto,
         &::descriptor_table_proto_2fcommon_2fcomponent_2fplayer_5finbox_5fledger_5fcomp_2eproto,
+        &::descriptor_table_proto_2fcommon_2fcomponent_2fplayer_5fmystery_5fmerchant_5fcomp_2eproto,
         &::descriptor_table_proto_2fcommon_2fcomponent_2fplayer_5fpet_5fcomp_2eproto,
         &::descriptor_table_proto_2fcommon_2fcomponent_2fplayer_5fscene_5fcomp_2eproto,
         &::descriptor_table_proto_2fcommon_2fcomponent_2fplayer_5fskill_5fcomp_2eproto,
@@ -1992,12 +2009,12 @@ static ::absl::once_flag descriptor_table_proto_2fcommon_2fdatabase_2fmysql_5fda
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fcommon_2fdatabase_2fmysql_5fdatabase_5ftable_2eproto = {
     false,
     false,
-    2773,
+    2886,
     descriptor_table_protodef_proto_2fcommon_2fdatabase_2fmysql_5fdatabase_5ftable_2eproto,
     "proto/common/database/mysql_database_table.proto",
     &descriptor_table_proto_2fcommon_2fdatabase_2fmysql_5fdatabase_5ftable_2eproto_once,
     descriptor_table_proto_2fcommon_2fdatabase_2fmysql_5fdatabase_5ftable_2eproto_deps,
-    13,
+    14,
     9,
     schemas,
     file_message_globals,
@@ -4055,6 +4072,11 @@ void player_database::clear_inbox_ledger() {
   if (_impl_.inbox_ledger_ != nullptr) _impl_.inbox_ledger_->Clear();
   ClearHasBit(_impl_._has_bits_[0], 0x00010000U);
 }
+void player_database::clear_mystery_merchant() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (_impl_.mystery_merchant_ != nullptr) _impl_.mystery_merchant_->Clear();
+  ClearHasBit(_impl_._has_bits_[0], 0x00020000U);
+}
 player_database::player_database(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
 #if defined(PROTOBUF_CUSTOM_VTABLE)
     : ::google::protobuf::Message(arena, player_database_get_class_data()) {
@@ -4137,6 +4159,9 @@ player_database::player_database(
   _impl_.inbox_ledger_ = (CheckHasBit(cached_has_bits, 0x00010000U))
                 ? ::google::protobuf::Message::CopyConstruct(arena, *from._impl_.inbox_ledger_)
                 : nullptr;
+  _impl_.mystery_merchant_ = (CheckHasBit(cached_has_bits, 0x00020000U))
+                ? ::google::protobuf::Message::CopyConstruct(arena, *from._impl_.mystery_merchant_)
+                : nullptr;
   ::memcpy(reinterpret_cast<char*>(&_impl_) +
                offsetof(Impl_, player_id_),
            reinterpret_cast<const char*>(&from._impl_) +
@@ -4189,6 +4214,7 @@ inline void player_database::SharedDtor(MessageLite& self) {
   delete this_._impl_.asset_op_ledger_;
   delete this_._impl_.settlement_ledger_;
   delete this_._impl_.inbox_ledger_;
+  delete this_._impl_.mystery_merchant_;
   this_._impl_.~Impl_();
 }
 
@@ -4294,11 +4320,17 @@ PROTOBUF_NOINLINE void player_database::Clear() {
       _impl_.settlement_ledger_->Clear();
     }
   }
-  if (CheckHasBit(cached_has_bits, 0x00010000U)) {
-    ABSL_DCHECK(_impl_.inbox_ledger_ != nullptr);
-    _impl_.inbox_ledger_->Clear();
+  if (BatchCheckHasBit(cached_has_bits, 0x00030000U)) {
+    if (CheckHasBit(cached_has_bits, 0x00010000U)) {
+      ABSL_DCHECK(_impl_.inbox_ledger_ != nullptr);
+      _impl_.inbox_ledger_->Clear();
+    }
+    if (CheckHasBit(cached_has_bits, 0x00020000U)) {
+      ABSL_DCHECK(_impl_.mystery_merchant_ != nullptr);
+      _impl_.mystery_merchant_->Clear();
+    }
   }
-  if (BatchCheckHasBit(cached_has_bits, 0x001e0000U)) {
+  if (BatchCheckHasBit(cached_has_bits, 0x003c0000U)) {
     ::memset(&_impl_.player_id_, 0, static_cast<::size_t>(
         reinterpret_cast<char*>(&_impl_.persist_schema_gen_) -
         reinterpret_cast<char*>(&_impl_.player_id_)) + sizeof(_impl_.persist_schema_gen_));
@@ -4327,7 +4359,7 @@ PROTOBUF_NOINLINE void player_database::Clear() {
 
   cached_has_bits = this_._impl_._has_bits_[0];
   // uint64 player_id = 1;
-  if (CheckHasBit(cached_has_bits, 0x00020000U)) {
+  if (CheckHasBit(cached_has_bits, 0x00040000U)) {
     if (this_._internal_player_id() != 0) {
       target = stream->EnsureSpace(target);
       target = ::_pbi::WireFormatLite::WriteUInt64ToArray(
@@ -4448,7 +4480,7 @@ PROTOBUF_NOINLINE void player_database::Clear() {
   }
 
   // uint64 fence_owner_epoch = 18;
-  if (CheckHasBit(cached_has_bits, 0x00040000U)) {
+  if (CheckHasBit(cached_has_bits, 0x00080000U)) {
     if (this_._internal_fence_owner_epoch() != 0) {
       target = stream->EnsureSpace(target);
       target = ::_pbi::WireFormatLite::WriteUInt64ToArray(
@@ -4457,7 +4489,7 @@ PROTOBUF_NOINLINE void player_database::Clear() {
   }
 
   // uint64 fence_save_seq = 19;
-  if (CheckHasBit(cached_has_bits, 0x00080000U)) {
+  if (CheckHasBit(cached_has_bits, 0x00100000U)) {
     if (this_._internal_fence_save_seq() != 0) {
       target = stream->EnsureSpace(target);
       target = ::_pbi::WireFormatLite::WriteUInt64ToArray(
@@ -4473,12 +4505,19 @@ PROTOBUF_NOINLINE void player_database::Clear() {
   }
 
   // uint32 persist_schema_gen = 21;
-  if (CheckHasBit(cached_has_bits, 0x00100000U)) {
+  if (CheckHasBit(cached_has_bits, 0x00200000U)) {
     if (this_._internal_persist_schema_gen() != 0) {
       target = stream->EnsureSpace(target);
       target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
           21, this_._internal_persist_schema_gen(), target);
     }
+  }
+
+  // .PlayerMysteryMerchantComp mystery_merchant = 22;
+  if (CheckHasBit(cached_has_bits, 0x00020000U)) {
+    target = ::google::protobuf::internal::WireFormatLite::InternalWriteMessage(
+        22, *this_._impl_.mystery_merchant_, this_._impl_.mystery_merchant_->GetCachedSize(), target,
+        stream);
   }
 
   if (ABSL_PREDICT_FALSE(this_._internal_metadata_.have_unknown_fields())) {
@@ -4590,35 +4629,40 @@ PROTOBUF_NOINLINE void player_database::Clear() {
                     ::google::protobuf::internal::WireFormatLite::MessageSize(*this_._impl_.settlement_ledger_);
     }
   }
-  if (BatchCheckHasBit(cached_has_bits, 0x001f0000U)) {
+  if (BatchCheckHasBit(cached_has_bits, 0x003f0000U)) {
     // .PlayerInboxLedgerComp inbox_ledger = 20;
     if (CheckHasBit(cached_has_bits, 0x00010000U)) {
       total_size += 2 +
                     ::google::protobuf::internal::WireFormatLite::MessageSize(*this_._impl_.inbox_ledger_);
     }
-    // uint64 player_id = 1;
+    // .PlayerMysteryMerchantComp mystery_merchant = 22;
     if (CheckHasBit(cached_has_bits, 0x00020000U)) {
+      total_size += 2 +
+                    ::google::protobuf::internal::WireFormatLite::MessageSize(*this_._impl_.mystery_merchant_);
+    }
+    // uint64 player_id = 1;
+    if (CheckHasBit(cached_has_bits, 0x00040000U)) {
       if (this_._internal_player_id() != 0) {
         total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(
             this_._internal_player_id());
       }
     }
     // uint64 fence_owner_epoch = 18;
-    if (CheckHasBit(cached_has_bits, 0x00040000U)) {
+    if (CheckHasBit(cached_has_bits, 0x00080000U)) {
       if (this_._internal_fence_owner_epoch() != 0) {
         total_size += 2 + ::_pbi::WireFormatLite::UInt64Size(
                                         this_._internal_fence_owner_epoch());
       }
     }
     // uint64 fence_save_seq = 19;
-    if (CheckHasBit(cached_has_bits, 0x00080000U)) {
+    if (CheckHasBit(cached_has_bits, 0x00100000U)) {
       if (this_._internal_fence_save_seq() != 0) {
         total_size += 2 + ::_pbi::WireFormatLite::UInt64Size(
                                         this_._internal_fence_save_seq());
       }
     }
     // uint32 persist_schema_gen = 21;
-    if (CheckHasBit(cached_has_bits, 0x00100000U)) {
+    if (CheckHasBit(cached_has_bits, 0x00200000U)) {
       if (this_._internal_persist_schema_gen() != 0) {
         total_size += 2 + ::_pbi::WireFormatLite::UInt32Size(
                                         this_._internal_persist_schema_gen());
@@ -4775,7 +4819,7 @@ void player_database::MergeImpl(::google::protobuf::MessageLite& to_msg,
       }
     }
   }
-  if (BatchCheckHasBit(cached_has_bits, 0x001f0000U)) {
+  if (BatchCheckHasBit(cached_has_bits, 0x003f0000U)) {
     if (CheckHasBit(cached_has_bits, 0x00010000U)) {
       ABSL_DCHECK(from._impl_.inbox_ledger_ != nullptr);
       if (_this->_impl_.inbox_ledger_ == nullptr) {
@@ -4785,21 +4829,29 @@ void player_database::MergeImpl(::google::protobuf::MessageLite& to_msg,
       }
     }
     if (CheckHasBit(cached_has_bits, 0x00020000U)) {
+      ABSL_DCHECK(from._impl_.mystery_merchant_ != nullptr);
+      if (_this->_impl_.mystery_merchant_ == nullptr) {
+        _this->_impl_.mystery_merchant_ = ::google::protobuf::Message::CopyConstruct(arena, *from._impl_.mystery_merchant_);
+      } else {
+        _this->_impl_.mystery_merchant_->MergeFrom(*from._impl_.mystery_merchant_);
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00040000U)) {
       if (from._internal_player_id() != 0) {
         _this->_impl_.player_id_ = from._impl_.player_id_;
       }
     }
-    if (CheckHasBit(cached_has_bits, 0x00040000U)) {
+    if (CheckHasBit(cached_has_bits, 0x00080000U)) {
       if (from._internal_fence_owner_epoch() != 0) {
         _this->_impl_.fence_owner_epoch_ = from._impl_.fence_owner_epoch_;
       }
     }
-    if (CheckHasBit(cached_has_bits, 0x00080000U)) {
+    if (CheckHasBit(cached_has_bits, 0x00100000U)) {
       if (from._internal_fence_save_seq() != 0) {
         _this->_impl_.fence_save_seq_ = from._impl_.fence_save_seq_;
       }
     }
-    if (CheckHasBit(cached_has_bits, 0x00100000U)) {
+    if (CheckHasBit(cached_has_bits, 0x00200000U)) {
       if (from._internal_persist_schema_gen() != 0) {
         _this->_impl_.persist_schema_gen_ = from._impl_.persist_schema_gen_;
       }

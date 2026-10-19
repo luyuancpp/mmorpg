@@ -38,7 +38,6 @@ import (
 	"math"
 	"os"
 	"sort"
-	"strconv"
 	"strings"
 	"time"
 
@@ -575,16 +574,7 @@ func RunEquipForgeSmoke(cfg *config.Config) {
 // 唯独「登哪个账号」借不了 —— openEquipSmokeSession 把账号写死成 equipSmokeAccount,而两条冒烟必须分号
 // (见 equipForgeAccount)。
 func openEquipForgeSession(cfg *config.Config, stats *metrics.Stats) (*equipSmokeSession, error) {
-	host, portStr, tokenPayload, tokenSig, err := resolveGateAddrLocal(cfg)
-	if err != nil {
-		return nil, fmt.Errorf("resolve gate: %w", err)
-	}
-	port, _ := strconv.Atoi(portStr)
-	gc, player, err := prepareBehaviorClient(host, port, equipForgeAccount, cfg.Password, stats, tokenPayload, tokenSig)
-	if err != nil {
-		return nil, fmt.Errorf("account=%s: %w", equipForgeAccount, err)
-	}
-	return &equipSmokeSession{gc: gc, player: player, stats: stats, lastSent: make(map[uint32]time.Time)}, nil
+	return openEquipSessionAs(cfg, stats, equipForgeAccount)
 }
 
 // equipForgeRelogin 下线后用同一账号重新登录进场,返回新会话(旧会话此后不可再用)。

@@ -32,7 +32,4 @@ namespace gate_router_muduo
 void SendForward(muduo_grpc::Channel &channel, const client_rpc_router::ForwardRequest &request,
                  const std::string &sessionDetailsBin);
 
-// 所有路由服通道上都没有未完成的调用(关机排空用:断线通知发出并拿到结果之后,才允许清掉通道)。
-bool AllChannelsIdle();
-
 } // namespace gate_router_muduo

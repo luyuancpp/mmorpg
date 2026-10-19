@@ -33,6 +33,7 @@ var (
 type NextID func(context.Context) (uint64, error)
 
 type Repo struct {
+	limits         Limits
 	db             *sql.DB
 	mailIDs, opIDs NextID
 	exists         func(uint32) bool
@@ -158,11 +159,17 @@ func (r *Repo) Send(ctx context.Context, caller string, kind mailpb.MailKind, in
 		return nil, err
 	}
 	now := uint64(r.now().UnixMilli())
+	limits := r.limits.Defaults()
+	ttlDays := limits.MaxSystemMailTtlDays
+	if kind == mailpb.MailKind_MAIL_KIND_PERSONAL {
+		ttlDays = limits.MaxPersonalMailTtlDays
+	}
+	ttlMs := uint64(ttlDays) * 86400000
 	expire := in.ExpireMs
 	if expire == 0 {
-		expire = now + 30*86400000
+		expire = now + ttlMs
 	}
-	if expire <= now || expire-now > 30*86400000 {
+	if expire <= now || expire-now > ttlMs {
 		return nil, ErrInvalid
 	}
 	if (kind == mailpb.MailKind_MAIL_KIND_SYSTEM || kind == mailpb.MailKind_MAIL_KIND_GUILD) && hasAttachments(payload) {
@@ -224,7 +231,7 @@ func (r *Repo) Send(ctx context.Context, caller string, kind mailpb.MailKind, in
 			if e := tx.QueryRowContext(ctx, "SELECT COUNT(*) FROM mail_message m JOIN mail_state s ON s.mail_id=m.mail_id AND s.player_id=m.owner_player_id WHERE m.owner_player_id=? AND s.deleted_ms=0 AND (m.expire_ms>? OR s.claim_state NOT IN (0,1,3))", in.RecipientPlayerId, now).Scan(&count); e != nil {
 				return e
 			}
-			if count >= 200 {
+			if count >= uint64(limits.MaxPersonalMailsPerPlayer) {
 				return ErrBoxFull
 			}
 		}
@@ -233,7 +240,7 @@ func (r *Repo) Send(ctx context.Context, caller string, kind mailpb.MailKind, in
 			if e := tx.QueryRowContext(ctx, "SELECT COUNT(*) FROM mail_message WHERE kind IN (0,2,3) AND owner_player_id=0 AND expire_ms>?", now).Scan(&count); e != nil {
 				return e
 			}
-			if count >= 100 {
+			if count >= uint64(limits.MaxActiveSystemMails) {
 				return ErrBoxFull
 			}
 		}

@@ -541,9 +541,9 @@ TEST(BagTest, DelItem)
     EXPECT_EQ(0, bag.GetTotalItemCount(kNonStack2));
     EXPECT_EQ(0, bag.GetTotalItemCount(kStack11));
 
-    // 扣空即退役实例和槽位，不能留下可被后续发放误复用的空壳。
-    EXPECT_EQ(0, bag.OccupiedGridCount());
-    EXPECT_EQ(0, bag.GridSlotCount());
+    // 扣空立即成对释放实例与槽位，不留下需要额外整理的零数量物品。
+    EXPECT_EQ(0u, bag.OccupiedGridCount());
+    EXPECT_EQ(0u, bag.GridSlotCount());
     for (uint32_t p : {0u, 1u, 2u, 3u, 4u})
     {
         EXPECT_EQ(nullptr, bag.GetItemCompByPos(p));
@@ -2575,7 +2575,8 @@ TEST(BagTest, LayerConsistencyPredicateActuallyDetectsBreakage)
     auto injected = std::make_unique<FlatLayout>(kDefaultCapacity);
     bag.SetLayout(std::move(injected));
 
-    EXPECT_EQ(kSuccess, bag.AddItem(MakeItem(kNonStack1)));
+    bag.InsertItemForRestore(257001, kNonStack1, 1, 0);
+    ASSERT_EQ(layout, &bag.Layout());
     ASSERT_TRUE(bag.IsLayerConsistent());
     ASSERT_EQ(1u, bag.GridSlotCount());
 
@@ -3855,6 +3856,7 @@ TEST(GuidSourcePolicyTest, SnapshotIsSkippedUntilItsOwnKindHasARange)
     tlsEcs.actorRegistry.emplace<PlayerAssetOpLedgerComp>(player);
     tlsEcs.actorRegistry.emplace<BattleSettlementLedgerComp>(player);
     tlsEcs.actorRegistry.emplace<PlayerInboxLedgerComp>(player); // 经 mysql_database_table.pb.h 可见
+    tlsEcs.actorRegistry.emplace<PlayerMysteryMerchantComp>(player); // 同上,经 mysql_database_table.pb.h 可见
     tlsEcs.actorRegistry.emplace<CurrencyComp>(player);
     tlsEcs.actorRegistry.emplace<PlayerCurrencyComp>(player);
 

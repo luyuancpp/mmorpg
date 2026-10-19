@@ -5,6 +5,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"mail/internal/metrics"
 	"strconv"
 	"time"
 
@@ -45,10 +46,16 @@ func (n *Notifier) Personal(ctx context.Context, player, mail uint64) {
 	result, err := n.publish(ctx, player, mail)
 	if err != nil {
 		outcomes.WithLabelValues("error").Inc()
+		metrics.ObservePush(metrics.PushError)
 		logx.WithContext(ctx).Errorf("[mail] 提醒未发布，权威邮件已保留 failure=%T", err)
 		return
 	}
 	outcomes.WithLabelValues(result).Inc()
+	if result == "sent" {
+		metrics.ObservePush(metrics.PushOK)
+	} else {
+		metrics.ObservePush(metrics.PushOffline)
+	}
 }
 func (n *Notifier) publish(ctx context.Context, player, mail uint64) (string, error) {
 	if n == nil || n.Redis == nil || n.Publisher == nil || player == 0 || mail == 0 {

@@ -1,0 +1,34 @@
+# 现役 M2/M3 邮件两区冒烟，见 robot/mail_smoke_scenario.go。
+# 系统纯文本及两封个人邮件使用 SendMailRequest + serviceauth admin 签名；同键重放须返回原 mail_id。
+# 读取 MailView 并按 next_before_mail_id/limit 翻页；确认跨区可见性、未读变化、S2C来源拒绝及内部方法不可经gate调用。
+# 附件先验证未领取删除保护，再通过 scene 资产通道真实领取到 CLAIMED，重复领取必须保持同一 asset_op_id；领取后可删。
+# 前置：两区路由、data_service、现役 mail SQL/TiDB与表迁移、scene资产通道、同代gate命令主题以及邮件MessageLimiter均就绪。
+# mail 与 robot 共享 MAIL_PRODUCER_SECRET_ADMIN（>=32字节）；mail还需其余Producers密钥及MMORPG_ASSET_OP_SECRET_MAIL。
+# 本机可加载工具库：. ..\tools\scripts\lib\mail_admin_dev_token.ps1; Initialize-MailAdminDevToken | Out-Null
+# 工具只加载本机admin签名密钥；不得将其作为生产配置，也不使用旧M1 metadata token。
+# robot_9811首次建角于zone_b，robot_9812首次建角于zone_a；从robot目录运行并同步正规生成与vendor。
+# 实跑有发件/领取副作用；本轮合并仅适配源码，未执行此冒烟。
+
+gateway_addr: "http://127.0.0.1:8081" # Gateway HTTP endpoint(/api/assign-gate)
+zone_id: 1 # 本模式不用此字段选区(O 登 mail_smoke.zone_a,R 登 zone_b)
+robot_count: 2 # 语义占位:本模式固定 R / O 两个机器人
+account_fmt: "robot_%04d" # 保留骨架字段;本模式用固定账号 robot_9811(收件人)/ robot_9812(旁观者)
+password: "123456"
+skill_ids: [] # 本模式不放技能
+table_dir: "../generated/tables"
+action_interval: 3 # 本模式不跑场景 AI 循环,保留默认
+report_interval: 5
+
+mode: "mail-smoke"
+
+# 子开关(见 config.MailSmokeConfig / mail_smoke_scenario.go)
+mail_smoke:
+  cross_zone: true # false = R 也登 zone_a,跳过 gate 不同的断言(同区弱验收,证明不了跨区推送)
+  zone_a: 1 # 旁观者 O 登录的 zone
+  zone_b: 2 # 收件人 R 登录的 zone;cross_zone=true 时必须与 zone_a 不同
+  admin_addr: "127.0.0.1:50900" # mail gRPC 地址,发件经它直连 MailAdmin(不带会话 metadata;令牌见文件头前置 6)
+  request_interval_ms: 1100 # 同一机器人相邻请求最小间隔;gate 默认限流档 3 次 / 窗口(窗口按秒粒度,实际 1~2s)
+  push_timeout_ms: 10000 # 等一条 NotifyMailEvent 的预算;推送多走一跳 Kafka,给得比 RPC 宽
+
+# 认证:password 模式(robot_ 前缀账号走 DevPasswordAuth)
+auth_type: "password"

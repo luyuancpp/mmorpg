@@ -258,18 +258,73 @@ pwsh -NoProfile -File tools/scripts/tests/k8s_deploy_contract.tests.ps1
 kind 上:`zone-up` 后 `data-service-migrate` Job Complete、两个 Pod Ready;`kubectl delete pod` 其中一个,期间 robot 建角(要领 PlayerId 号段)
 与 scene 重启(要领首个 GUID 号段)都不受影响;把 MySQL 停掉再重启一个 data-service Pod,它应当 CrashLoop(拒启)而不是带病 Ready。
 
-## 5. 共享 Redis:单实例 → 高可用(待做)
+## 5. 共享 Redis:单实例 → 高可用(哨兵主从 + 入口代理;清单已在 kind 实测,脚本接入已落码、契约测试未运行)
 
 约束:C++ 侧 hiredis 没有集群客户端;`player:session:{id}` 等跨运行时契约 key 多方共写。
-方向待定(Sentinel 主从切换 vs. 按用途拆库后分别集群化),需要先盘点所有客户端的连接方式。
 
-> 2026-10-14 注:本节的后续设计已转到 [shared-redis-split-by-purpose.md](./shared-redis-split-by-purpose.md)(G4a,按用途拆共享 Redis,只出设计、未落码),以那份为准。[容量模型](./capacity-model-hok-scale.md) §4.2 判定「按用途拆」只够到 S1,在 S3 目标下要改为集群化或单元化,修订项见 [交接](../handoff/handoff-launch-readiness-and-d1-20261013.md) §4 第 5 项。
+> 2026-10-14 注(别的会话):「按用途拆」的后续设计在 [shared-redis-split-by-purpose.md](./shared-redis-split-by-purpose.md)(G4a,只出设计、未落码)。[容量模型](./capacity-model-hok-scale.md) §4.2 判定「按用途拆」只够到 S1,在 S3 目标下要改为集群化或单元化,修订项见 [交接](../handoff/handoff-launch-readiness-and-d1-20261013.md) §4 第 5 项。
+>
+> **两件事的关系(2026-10-16)**:本节解决的是**可用性**(主挂了几秒内自动切换,不再是单点),「按用途拆」解决的是**容量与爆炸半径**,两者正交。
+> G4a 设计稿第 8 行写明「不做哨兵 HA,HA 是后续项(§13)」,§13 第 13 条把「新实例是否也用 redis-ha 形态、补上 `-RedisReplicas` 的 apply 路径」列为后续 ——
+> 本节补的正是这条 apply 路径。将来按用途拆出的每个实例可以各自选单实例或高可用形态(清单按同样写法复制一份,对象名换掉即可)。
+
+### 5.1 做法
+
+- 清单 `deploy/k8s/manifests/infra/redis-ha.yaml`(2026-10-08 写成并实测):StatefulSet `redis` 3 个 Pod(每个 = redis 容器 + 哨兵容器),Deployment `redis-proxy`(haproxy 3.2 ×2),
+  Service `redis` 名字与 ClusterIP 不变、selector 改指代理。代理只把连接交给「自己答 `role:master` 且至少 2 个哨兵认它是主」的节点,节点失格时掐断它上面的已有连接。
+  客户端零改动。设计取舍(为什么不让客户端找哨兵、不上 Cluster、为什么要代理先到线、停机钩子的无损交接、崩溃后不以主身份重放 AOF)写在清单文件头与
+  [deploy/k8s/README.md](../../deploy/k8s/README.md)「共享 Redis:高可用形态」。
+- 部署脚本接入(2026-10-16):`k8s_deploy.ps1 -RedisReplicas`,0 = 按档位(与 `-KafkaBrokers` 同一判据:非 dev / 非 custom → 3,其余 1),只接受 0 / 1 / 3。
+  `Apply-Infra` 在任何写操作之前:拓扑变更闸(`Get-RedisTopologyChangeVerdict`:1 → 3 放行,3 → 1 与线上 0 / 2 拒绝)→ 高可用前置(口令字符集 `Assert-RedisPasswordSentinelSafe`、
+  连接上限不等式 `Get-RedisHaLimits`)→ P0-E 的重启闸(摘要按所选清单算)。1 → 3 时先 `delete statefulset redis --cascade=orphan`(`podManagementPolicy` 不可改),再 apply;
+  代理 Pod 模板带脚本 ConfigMap 的摘要(脚本一改代理就滚动);`-WaitReady` 额外等 `redis-proxy`。
+- 连接上限(P0-E 的接入前置):`MAXCLIENTS` 写进 redis 的 Pod 模板且与 `redis.yaml` 同值(连接总账只读那一份);代理每副本 `PROXY_MAXCONN=13000`,
+  生成期核对 `PROXY_MAXCONN ×(2 + 1)+ 1000 ≤ 40000` —— 让代理先到线,Redis 到线会让代理的健康检查失败、踢掉全部会话。
+
+### 5.2 实测(2026-10-08,本机 kind 单节点,隔离命名空间)
+
+滚动重启全部节点:1~3 次写超时、零丢失;正常删主:约 2.5 秒挂起、零丢失;SIGKILL 主进程:约 6.7 秒、4 次零丢失;防火墙黑洞主的网络:约 6 秒、零丢失;
+整体停机再拉起(上一任主不是 redis-0):约 6 秒、数据完整;从单实例原地切换:约 25 秒、ClusterIP 不变、数据完整;带口令全部复测通过。
+实测里修掉的问题(都已进清单、都有契约测试钉住):haproxy 3.0.29 的僵尸会话(换 3.2)、`tcp-check expect` 缺 `min-recv`、停机钩子先暂停写入再交接、
+冷启动多等哨兵多数意见、哨兵不加引号回写口令(口令字符集限制)。**2026-10-16 加的连接上限改动(Pod 模板里的 `MAXCLIENTS` / `PROXY_MAXCONN`)没有在 kind 上复测**:
+当时本机 Docker Desktop 没在运行;配置生成在本机用同一份脚本跑过、语法与产物核对过。
+
+### 5.3 限制与未做
+
+- 主从复制是异步的,主崩溃可能丢最后毫秒级的写;三个 Pod 同时坏两个时只读、不能自动切主;代理多一跳(未压测)。
+- 3 → 1 只能手工回退(README 有步骤)。`-RedisReplicas` 不经 `dev_tools.ps1` / `k8s_image.ps1` 透传(同 `-KafkaBrokers`)。
+- 没在真实多节点集群上做过网络分区与整机故障;大数据量下 1 → 3 的全量同步耗时未知(`rollout status` 等待上限 180 秒)。
+- C++ 侧:口令认证已由别的会话补上(P0-A,`redis_manager.cpp` 每条新连接先 AUTH、失败 fail-closed);高可用形态下主切换由代理掐断连接、C++ 走既有重连。
+  **残余风险**:代理 Pod 所在机器整机消失时,C++ 那条连接收不到 FIN / RST,原先会一直挂着(该进程的 Redis 读写全部卡住)直到进程重启。
+  Redis 节点所在机器消失不受影响(代理会掐断客户端侧)。**2026-10-16 已补,10-17 Codex 在合并后的 main 上编译 + 单次测试通过**(Windows Debug|x64;
+  `RedisManagerLiveness` 5 例与 `RedisManagerAuth` 10 例全过,未跑 `--gtest_repeat` 稳定性、未在真实多节点集群上演练整机消失):`RedisManager` 加了应用层存活探测 ——
+  每 5 秒对已移交给业务的连接发一条 PING,15 秒无应答就摘下连接、走既有重连,最迟约 20 秒判定;契约见 `redis_manager.h` Connect 注释「存活契约」。
+  没开 TCP keepalive:连接上有未确认的数据时内核不发 keepalive 探测,恰好覆盖不到这个场景(理由见 `docs/PROGRESS.md` 同日条目)。
+  摘下时在途命令以空应答结束,与主切换掐连接相同;把空应答当成业务结论的那几处调用方已由后续修复(PROGRESS「zone Redis 空应答 / ERROR 不再被当成业务结论」条)
+  改掉,同样在 10-17 那轮回归里编译测试通过。
+
+### 5.4 验证(交 Codex)
+
+```
+pwsh -NoProfile -File tools/scripts/tests/k8s_deploy_contract.tests.ps1      # 新增 6 条 Redis 高可用用例,原有 Redis 用例不应受影响
+pwsh -NoProfile -File tools/scripts/tests/redis_maxclients_contract.tests.ps1
+```
+
+真实集群:staging 上按 README「切换」步骤做一次 1 → 3,再做删主 Pod、杀主进程两项,用 robot 登录压测看中断时长与丢写。
 
 ## 6. MySQL:单实例 → TiDB(方向已定,待做)
 
 见 `docs/design/global-data-layer-tidb-decision.md`。deploy 里目前没有任何 TiDB 清单。
 
-## 7. guild 的 K8s 清单(待做,等帮会二期最后一批落定)
+## 7. guild 的 K8s 清单(第一、二块已落码:部署本体、资产通道与 gRPC 口准入;BK8s 其余块按批推进)
+
+> 2026-10-16:帮会二期全部批次 10-09 已进主干,用户同日拍板「BK8s 全部做完」(`docs/design/guild-phase2/90-consistency.md` G-05 原写「单独授权」)。
+> 第一块已落码:`manifests/go-svc/guild.yaml`(全局池 2 副本)+ `guild-migrate.yaml` + ConfigMap 生成 + 镜像登记 + 两本连接总账 + data-service 的回档帮会闸,
+> 并修了两处 go/guild 代码问题(注册地址取 `ListenOn` 在 K8s 上是 0.0.0.0;MySQL 池不设上限)。说明见 `deploy/k8s/README.md`「帮会 guild」。
+> 第二块已落码:`-AssetOps`(签名密钥注入 guild / trade / scene,`AssetOp.Enabled` 跟随开关,跨命令指纹核对)与 `-NetworkPolicies`(scene / guild / match 的 gRPC 口准入),
+> 两者默认 off,见 `deploy/k8s/README.md`「gRPC 口准入与资产通道」。
+> 后续块:告警与 Loki ruler、db migrate Job。以下为 10-01 的原约束,保留备查。
+
 
 帮会二期会话 2026-10-01 答复:清单归本线补;ConfigMap 要等它通知 B6b-srv2 落完再照最终的 `guild.yaml` 写。
 约束:全局服务(Etcd 显式 `Key: ""`)、2 副本标注「未验证」、`PlayerLocatorRedis` 指共享库、AssetOp 密钥走 Secret、

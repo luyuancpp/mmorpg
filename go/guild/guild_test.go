@@ -403,3 +403,21 @@ func TestReportLinesFormatsAllSections(t *testing.T) {
 		t.Fatalf("三段格式不符: %v", lines)
 	}
 }
+
+// TestAdvertisedHost(2026-10-16,K8s 上线批):写进 NodeInfo 的地址必须对外可拨。K8s 上 ListenOn 是 0.0.0.0,
+// 原样写进去路由服拨不通;清单经 downward API 注入 POD_IP,优先用它。
+func TestAdvertisedHost(t *testing.T) {
+	t.Setenv("POD_IP", "10.1.2.3")
+	if got := advertisedHost("0.0.0.0"); got != "10.1.2.3" {
+		t.Fatalf("有 POD_IP 时应通告它,得到 %q", got)
+	}
+	t.Setenv("POD_IP", "")
+	if got := advertisedHost("127.0.0.1"); got != "127.0.0.1" {
+		t.Fatalf("ListenOn 是具体地址时原样通告,得到 %q", got)
+	}
+	for _, unspecified := range []string{"0.0.0.0", "::", ""} {
+		if got := advertisedHost(unspecified); isUnspecifiedHost(got) {
+			t.Fatalf("ListenOn=%q 时不得通告「监听所有网卡」的地址,得到 %q", unspecified, got)
+		}
+	}
+}

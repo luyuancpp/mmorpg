@@ -23,6 +23,7 @@
 #include "proto/common/component/asset_op_ledger_comp.pb.h"
 #include "proto/common/component/battle_settlement_ledger_comp.pb.h"
 #include "proto/common/component/player_inbox_ledger_comp.pb.h"
+#include "proto/common/component/player_mystery_merchant_comp.pb.h"
 #include "proto/common/component/player_comp.pb.h"  // PlayerProfileComp
 #include "proto/common/component/player_login_comp.pb.h"
 #include "proto/common/component/player_network_comp.pb.h"
@@ -143,6 +144,7 @@ void CompletePersistedComps(entt::entity player)
     EmplaceIfAbsent<PlayerAssetOpLedgerComp>(player);
     EmplaceIfAbsent<BattleSettlementLedgerComp>(player);
     EmplaceIfAbsent<PlayerInboxLedgerComp>(player);
+    EmplaceIfAbsent<PlayerMysteryMerchantComp>(player);
     EmplaceIfAbsent<CurrencyComp>(player);
     EmplaceIfAbsent<PlayerCurrencyComp>(player);
 }
@@ -615,6 +617,7 @@ TEST_F(PlayerFeaturePersistenceTest, MarshalRefusesWhenAnyPersistedComponentIsMi
     ExpectMarshalRefusedWithout<PlayerAssetOpLedgerComp>("PlayerAssetOpLedgerComp");
     ExpectMarshalRefusedWithout<BattleSettlementLedgerComp>("BattleSettlementLedgerComp");
     ExpectMarshalRefusedWithout<PlayerInboxLedgerComp>("PlayerInboxLedgerComp");
+    ExpectMarshalRefusedWithout<PlayerMysteryMerchantComp>("PlayerMysteryMerchantComp");
     ExpectMarshalRefusedWithout<CurrencyComp>("CurrencyComp");
     ExpectMarshalRefusedWithout<PlayerCurrencyComp>("PlayerCurrencyComp");
 }

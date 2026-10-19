@@ -114,6 +114,9 @@ $GoBinDir   = Join-Path $RepoRoot "bin\go_services"
 # guild 用 MMORPG_ASSET_OP_SECRET_GUILD 签名、scene 用同名变量验签,值必须一致,否则每一次资产 RPC
 # 都回 27008(AssetAuthFailed)。密钥值不写进仓库,见该文件的说明;用法见 Start-ServiceInstance。
 . (Join-Path $ScriptDir "lib\assetop_dev_secret.ps1")
+# 邮件 MailAdmin admin 生产者签名密钥(docs/design/mail-system.md §2.3)的本机开发值来源:只注入给 mail,用法见 Start-ServiceInstance。
+# 令牌值不写进仓库,见该文件的说明(run/secrets/mail-admin-producer-dev.env;robot / mailadmin CLI 在自己的 shell 里按同一文件取值)。
+. (Join-Path $ScriptDir "lib\mail_admin_dev_token.ps1")
 
 # ── Service catalogue ────────────────────────────────────────────────
 # Order matters: infrastructure-layer services first, then domain services.
@@ -132,7 +135,8 @@ $GoBinDir   = Join-Path $RepoRoot "bin\go_services"
 #               upgrades / hot updates / canary releases are unaffected).
 #               Tier 0 = infra-adjacent (db, data_service)
 #               Tier 1 = scene_manager (depended by player_locator), client_rpc_router (gate 的唯一 gRPC 目标),
-#                        chat (只依赖 etcd + Redis,经路由服可达)
+#                        chat (只依赖 etcd + Redis,经路由服可达),以及 trade / friend / player_inbox / mail / rank 等全局服务
+#                        (依赖 Tier 0 的 data_service 号段 / 归属区查询时都是 NonBlock 拨号)
 #               Tier 2 = player_locator (depended by login)
 #               Tier 3 = login (top of the dial chain)
 #   StopTimeoutSeconds  可选。stop 时 Ctrl+C 之后等该服务自行退出的秒数,超时强杀进程树;不写取 25
@@ -221,6 +225,7 @@ $ServiceCatalogue = [ordered]@{
     # Windows 保留区间内。player_inbox.yaml 形状须满足本脚本 -Zone 改写:顶层单行 ListenOn / MetricsListenAddr、顶层 ZoneId
     # 写在所有嵌套段之前;自己的 Etcd.Key 是空串(D-13),DataServiceRpc.Etcd.Key: dataservice.rpc 会被加 .z<N>(照 trade)。
     player_inbox      = @{ Dir = "player_inbox"; Entry = "player_inbox.go"; Port = 50950; Desc = "Player Inbox (玩家持久收件箱,scene 直连)"; ConfigFlag = "-f"; ConfigFile = "etc/player_inbox.yaml"; AllowMultiInstance = $true; Tier = 1 }
+    # mail/rank 已按上面的现役条目登记：SQL/TiDB DSN、分用途生产者签名及全局语义；不恢复M1运行时。
 }
 
 # Derived per-instance config files live here so the source tree stays clean.
@@ -713,12 +718,23 @@ function Start-ServiceInstance {
     # 仅限本机 dev:预发 / 生产的密钥由部署侧注入(k8s_deploy.ps1 Resolve-InjectedSecret -MinLength 32)。
     $injectAssetOpSecret = ($Name -eq 'guild')
     $prevAssetOpSecrets = $null
+    # MailAdmin admin 生产者签名密钥(docs/design/mail-system.md §2.3):**只对 mail 注入、只给这一把**;值取自 run/secrets/mail-admin-producer-dev.env
+    # (lib 首次随机生成,与本机 robot mail-smoke / cmd/mailadmin 读同一份),只在没设时兜底、不回显值、finally 里还原。
+    # 仅限本机 dev:预发 / 生产由 k8s_deploy.ps1 经 Secret domain-service-secrets 的 mail-producer-admin 注入,部署链从不调用这里。
+    # lib 函数只在 mail 分支里调用:go_services_ports.tests.ps1 按 AST 只加载本文件的函数(不执行顶层 dot-source)再起 chat / trade,
+    # 无条件调用会让那些用例报「命令未找到」。
+    $injectMailAdminToken = ($Name -eq 'mail')
+    $prevMailAdminToken = $null
     try {
         if ($injectAssetOpSecret) {
             # Backup 必须在 try 之内:Initialize 抛错时环境变量可能已被改了一半,放在外面就进不了 finally。
             $prevAssetOpSecrets = Backup-AssetOpDevSecrets
             Initialize-AssetOpDevSecrets -RepoRoot $RepoRoot | Out-Null
             Remove-Item Env:MMORPG_ASSET_OP_SECRET_TRADE -ErrorAction SilentlyContinue
+        }
+        if ($injectMailAdminToken) {
+            $prevMailAdminToken = Backup-MailAdminDevToken
+            Initialize-MailAdminDevToken -RepoRoot $RepoRoot | Out-Null
         }
 
         # 下面两处 Start-Process 必须保持每个实例一个独立(隐藏)控制台:-WindowStyle Hidden,且不得加 -NoNewWindow。
@@ -756,6 +772,7 @@ function Start-ServiceInstance {
     } finally {
         # 没注入过就没什么可还原的($prevAssetOpSecrets 仍是 $null);还原同时把摘掉的 trade 那把放回去。
         if ($injectAssetOpSecret) { Restore-AssetOpDevSecrets $prevAssetOpSecrets }
+        if ($injectMailAdminToken) { Restore-MailAdminDevToken $prevMailAdminToken }
     }
 
     $entry = [pscustomobject]@{

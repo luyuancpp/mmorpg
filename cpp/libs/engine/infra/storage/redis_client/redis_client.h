@@ -414,9 +414,14 @@ public:
 		}
 	}
 
-	// Call ONLY from the Redis reconnect callback. Migrates in-flight loads
-	// (whose callbacks will never fire post-disconnect) into the retry queue,
-	// re-issues every pending load immediately, and re-flushes pending saves.
+	// Call ONLY from the Redis reconnect callback. Re-issues every pending load
+	// immediately and re-flushes pending saves.
+	//
+	// 断线时 hiredis 会先把旧连接上所有在途命令的回调以空应答调用一次(连接断开 / 被释放都是如此),
+	// 所以到这里时,在途 GET 通常已由 OnLoaded 放回 pending_retry_queue_,在途存盘已由 OnSaved 放回
+	// pending_save_queue_。下面把 loading_queue_ / saving_queue_ 里剩下的条目也挪过去,只是兜底
+	// (回调确实没来的情形);旧连接迟到的回调会被 OnLoaded / OnSaved 开头的在途比对当作陈旧回调丢弃。
+	// (2026-10-16 前这里的注释写的是「断线后在途回调不会再来」,与 hiredis 的实际行为不符。)
 	void OnReconnected()
 	{
 		if (!hiredis_ || !hiredis_->connected())
@@ -424,7 +429,6 @@ public:
 			return;
 		}
 
-		// A disconnected async command will not reliably deliver its callback.
 		// Move each in-flight save back to pending, unless Save() already placed a
 		// newer full snapshot for the same key there. Full snapshots are
 		// superseding, so retaining the newest pending value is sufficient.
@@ -1018,13 +1022,30 @@ private:
 		}
 		loading_queue_.erase(inFlight);
 
-		if (!reply || reply->type == REDIS_REPLY_ERROR)
+		if (!reply)
 		{
-			const std::string errorDetail = reply == nullptr
-				? " (null reply)"
-				: std::string(" err=") + (reply->str != nullptr
-					? std::string(reply->str, reply->len)
-					: std::string("<missing error text>"));
+			// 空应答 = 连接断开 / 被释放时 hiredis 对在途命令的一次性回调(主切换掐连接、存活探测摘连接、停机):
+			// GET 可能执行了也可能没执行,这不是「读失败」的结论。GET 只读、可以重发,所以放回重试队列,
+			// 不计 NIL 重试次数;重连后 OnReconnected 立刻重发,之后由周期定时器兜底 —— 与 AsyncLoad 在未连接时
+			// 排队是同一语义。以前这里直接 FailLoad(RedisError),玩家被踢回登录界面,只能手动重登(只影响活性)。
+			// 同 key 已有排队项(断线期间又调过 AsyncLoad)时保留那一项,只把重试次数抬到两者较大者,
+			// 免得 NIL 退避预算被外部重触发重置(与 AsyncLoad 合并排队项的规则一致)。
+			LOG_WARN << "Redis GET got no reply (connection lost) for key: " << element->redis_key
+					 << ", requeued for retry after reconnect";
+			element->next_retry_at = std::chrono::steady_clock::now();
+			const auto [queued, inserted] = pending_retry_queue_.try_emplace(element->redis_key, element);
+			if (!inserted && queued->second->retry_count < element->retry_count)
+			{
+				queued->second->retry_count = element->retry_count;
+			}
+			return;
+		}
+		if (reply->type == REDIS_REPLY_ERROR)
+		{
+			// ERROR 是服务端的答复(WRONGTYPE 等),重发也是同一个答复:照旧 fail-closed。
+			const std::string errorDetail = std::string(" err=") + (reply->str != nullptr
+				? std::string(reply->str, reply->len)
+				: std::string("<missing error text>"));
 			LOG_ERROR << "Redis GET error for key: " << element->redis_key
 					  << errorDetail;
 			FailLoad(element, LoadFailureReason::RedisError);

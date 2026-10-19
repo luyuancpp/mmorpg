@@ -27,6 +27,9 @@
     <ClCompile Include="db\db_grpc_client.cpp" />
     <ClCompile Include="etcd\etcd_grpc_client.cpp" />
     <ClCompile Include="friend\friend_grpc_client.cpp" />
+    <ClCompile Include="rank\rank_grpc_client.cpp" />
+    <ClCompile Include="mail\mail_grpc_client.cpp" />
+    <ClCompile Include="mail\mail_admin_grpc_client.cpp" />
     <ClCompile Include="grpc_init_client.cpp" />
     <ClCompile Include="guild\guild_grpc_client.cpp" />
     <ClCompile Include="guild\guild_internal_grpc_client.cpp" />
@@ -50,6 +53,9 @@
     <ClInclude Include="db\db_grpc_client.h" />
     <ClInclude Include="etcd\etcd_grpc_client.h" />
     <ClInclude Include="friend\friend_grpc_client.h" />
+    <ClInclude Include="rank\rank_grpc_client.h" />
+    <ClInclude Include="mail\mail_grpc_client.h" />
+    <ClInclude Include="mail\mail_admin_grpc_client.h" />
     <ClInclude Include="grpc_init_client.h" />
     <ClInclude Include="guild\guild_grpc_client.h" />
     <ClInclude Include="guild\guild_internal_grpc_client.h" />

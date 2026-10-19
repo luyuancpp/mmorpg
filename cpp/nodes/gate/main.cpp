@@ -15,6 +15,9 @@
 #include "handler/rpc/client_session_handler.h"
 #include "handler/rpc/client_request_lane.h"
 #include "handler/rpc/router_muduo_forward.h"
+#include "muduo_grpc/channel.h"
+#include "node/system/node/muduo_grpc_channel_slot.h"
+#include "thread_context/node_context_manager.h"
 #include "gate_codec.h"
 #include "gate_router_mode.h"
 #include "gate_security.h"
@@ -177,6 +180,23 @@ namespace
         }
     };
 
+    // 所有节点类型上的 gRPC 通道都没有未完成的调用(关机排空用:断线通知发出并拿到结果之后,才允许清掉通道)。
+    // 路由模式下通知走路由服通道,直连模式走 login 通道;两者都在这里,不按模式区分。
+    bool AllGrpcChannelsIdle()
+    {
+        for (auto &registry : tlsNodeContextManager.GetAllRegistries())
+        {
+            for (const auto &[entity, channel] : registry.view<MuduoGrpcChannelPtr>().each())
+            {
+                if (channel && channel->outstandingCalls() != 0)
+                {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
 } // namespace
 
 int main(int argc, char *argv[])
@@ -297,15 +317,15 @@ int main(int argc, char *argv[])
                 }
                 LOG_INFO << "All client sessions disconnected.";
             };
-            // 路由模式:关机阶段 0(node.cpp FinalizeShutdownInLoop)会同步清掉所有 gRPC 通道。gate 没有 gRPC server,
+            // 关机阶段 0(node.cpp FinalizeShutdownInLoop)会同步清掉全部 gRPC 通道。gate 没有 gRPC server,
             // beforeShutdown 之后同一调用栈就会走到 Finalize,而被 forceClose 的会话要到下一轮才进断线处理 ——
-            // 那时通道已经没了,经路由服的 Login.Disconnect 通知发不出去,login 侧会话停在 ONLINE。所以路由模式下先等
-            // beforeShutdown 关掉的会话都走完断线处理、路由通道上没有在途调用,再放行 Finalize;节点的 15s 排空预算兜底。
-            // 只等 beforeShutdown 当时的那批会话被移除;但「路由通道无在途调用」不区分调用属于谁,关机期间新连进来
-            // 的会话的请求同样会推迟放行,上限仍是 15s 预算。
-            // 直连模式不加这道等待,行为与改前一致:断线处理时阶段 0 已清掉 login 通道,PickRandomNode 选不到 login,
-            // 断线通知不发(改前官方路径在阶段 0 把 CQ 标成 closing,同样选不到),由 login 侧租约兜底;直连路径随 D61 删除。
-            if (routerMode)
+            // 那时通道已经没了,Login.Disconnect 通知发不出去,login 侧会话停在 ONLINE。所以先等 beforeShutdown
+            // 关掉的会话都走完断线处理、gRPC 通道上没有在途调用,再放行 Finalize;节点的 15s 排空预算兜底(gate 调用的
+            // deadline 最长 12s,在途调用必然先结束)。只等 beforeShutdown 当时的那批会话被移除;但「通道无在途调用」
+            // 不区分调用属于谁,关机期间新连进来的会话的请求同样会推迟放行,上限仍是 15s 预算。
+            // 第 3 批(docs/design/grpc-muduo-transport.md §14)以前这道等待只在 GATE_ROUTER_TRANSPORT=muduo_h2 时装,
+            // 官方客户端路径保持旧行为(Finalize 时封住 CQ 写入口,随后的通知同样发不出去)。传输只剩一种之后不再按
+            // 模式区分:直连模式(默认,通知走 login 通道)与路由模式(走路由服通道)都等。
             {
                 auto closingSessions = std::make_shared<std::vector<SessionId>>();
                 node.SetBeforeShutdown([disconnectAllClients, closingSessions](Node &n)
@@ -325,11 +345,7 @@ int main(int argc, char *argv[])
                             return false;
                         }
                     }
-                    return gate_router_muduo::AllChannelsIdle(); });
-            }
-            else
-            {
-                node.SetBeforeShutdown(disconnectAllClients);
+                    return AllGrpcChannelsIdle(); });
             }
             node.SetOnConflictShutdown([disconnectAllClients](Node &n, NodeIdConflictReason)
                                        { disconnectAllClients(n); });

@@ -1,0 +1,121 @@
+{
+ "data": [
+  {
+   "currency_type": 0,
+   "id": 1,
+   "item_count": 10,
+   "item_id": 10,
+   "limit_count": 5,
+   "name": "回血丹",
+   "price": 400,
+   "weight": 100
+  },
+  {
+   "currency_type": 0,
+   "id": 2,
+   "item_count": 10,
+   "item_id": 11,
+   "limit_count": 5,
+   "name": "回蓝丹",
+   "price": 400,
+   "weight": 100
+  },
+  {
+   "currency_type": 0,
+   "id": 3,
+   "item_count": 5,
+   "item_id": 15,
+   "limit_count": 5,
+   "name": "培元丹",
+   "price": 300,
+   "weight": 100
+  },
+  {
+   "currency_type": 0,
+   "id": 4,
+   "item_count": 5,
+   "item_id": 16,
+   "limit_count": 5,
+   "name": "回灵散",
+   "price": 300,
+   "weight": 100
+  },
+  {
+   "currency_type": 0,
+   "id": 5,
+   "item_count": 1,
+   "item_id": 17,
+   "limit_count": 3,
+   "name": "精炼石",
+   "price": 800,
+   "weight": 80
+  },
+  {
+   "currency_type": 0,
+   "id": 6,
+   "item_count": 1,
+   "item_id": 18,
+   "limit_count": 3,
+   "name": "修行秘录残页",
+   "price": 1500,
+   "weight": 60
+  },
+  {
+   "currency_type": 0,
+   "id": 7,
+   "item_count": 10,
+   "item_id": 20,
+   "limit_count": 3,
+   "name": "灵兽口粮",
+   "price": 1000,
+   "weight": 80
+  },
+  {
+   "currency_type": 0,
+   "id": 8,
+   "item_count": 1,
+   "item_id": 12,
+   "limit_count": 1,
+   "name": "玄铁护符",
+   "price": 6000,
+   "weight": 30
+  },
+  {
+   "currency_type": 0,
+   "id": 9,
+   "item_count": 1,
+   "item_id": 13,
+   "limit_count": 1,
+   "name": "藏经阁手札",
+   "price": 12000,
+   "weight": 20
+  },
+  {
+   "currency_type": 0,
+   "id": 10,
+   "item_count": 1,
+   "item_id": 1102,
+   "limit_count": 1,
+   "price": 5000,
+   "weight": 40
+  },
+  {
+   "currency_type": 0,
+   "id": 11,
+   "item_count": 1,
+   "item_id": 1302,
+   "limit_count": 1,
+   "price": 4000,
+   "weight": 40
+  },
+  {
+   "currency_type": 0,
+   "id": 12,
+   "item_count": 1,
+   "item_id": 1103,
+   "limit_count": 1,
+   "price": 20000,
+   "weight": 15
+  }
+ ]
+}

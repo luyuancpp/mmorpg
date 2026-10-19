@@ -179,6 +179,27 @@ WorldChannelCountByConfId:
 #   BusyPercent: 60
 #   DirectoryRefreshSeconds: 2
 
+# --- 神秘商人调度(docs/design/mystery-merchant.md §4.4) ---------------------------
+#
+# 整块可以不写:默认启用。领导者每 TickSeconds 秒看一眼,到了新的一轮就在可进的分线里随机挑一条、
+# 掷出货架,写进 Redis(mystery_merchant:zone:{zone});scene 节点只读它。
+# 玩法数值(每隔多久出现、停留多久、上架几件、6 / 5 / 4 折的权重)在 MysteryMerchantRule 配置表里,不在这里。
+#
+#   Disabled                 (false) true = 不调度神秘商人;已经排好的那一轮到点自然结束。
+#   TickSeconds              (5)     调度循环的周期(秒),钳到 [1, 60]。决定「整点之后最晚几秒出现」。
+#   IntervalSecondsOverride  (0)     覆盖规则表的出现间隔(秒)。0 = 以表为准。**只用于联调 / 冒烟。**
+#   StaySecondsOverride      (0)     覆盖规则表的停留时长(秒)。0 = 以表为准。**只用于联调 / 冒烟。**
+#   SpotIdOverride           (0)     把商人钉在 MysteryMerchantSpot 表的这一个站位上。0 = 照常随机。**只用于联调 / 冒烟。**
+#
+# 本地想马上看到商人:把下面五行的注释去掉(每两分钟换一轮、一直在场、固定站在出生点旁),重启 scene_manager;
+# 看完记得改回去 —— 这三个覆盖值不该出现在生产配置里。robot 的 merchant-smoke 也要求这样配。
+#
+# MysteryMerchant:
+#   Disabled: false
+#   IntervalSecondsOverride: 120
+#   StaySecondsOverride: 120
+#   SpotIdOverride: 1
+
 # --- Node role routing --------------------------------------------------------
 #
 # StrictNodeTypeSeparation:

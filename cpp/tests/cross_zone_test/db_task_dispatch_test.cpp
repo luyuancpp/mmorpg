@@ -23,6 +23,7 @@
 #include "proto/common/component/asset_op_ledger_comp.pb.h"
 #include "proto/common/component/battle_settlement_ledger_comp.pb.h"
 #include "proto/common/component/player_inbox_ledger_comp.pb.h"
+#include "proto/common/component/player_mystery_merchant_comp.pb.h"
 #include "proto/common/component/currency_comp.pb.h"
 #include "proto/common/component/player_attribute_comp.pb.h"
 #include "proto/common/component/player_comp.pb.h"         // UnregisterPlayer
@@ -500,6 +501,7 @@ void CreatePersistedPlayerComps(entt::entity player)
     registry.emplace<PlayerAssetOpLedgerComp>(player);
     registry.emplace<BattleSettlementLedgerComp>(player);
     registry.emplace<PlayerInboxLedgerComp>(player);
+    registry.emplace<PlayerMysteryMerchantComp>(player);
     registry.emplace<CurrencyComp>(player);
     registry.emplace<PlayerCurrencyComp>(player);
 }

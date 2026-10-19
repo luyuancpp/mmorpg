@@ -166,6 +166,7 @@
     <ClCompile Include="bag_java_parity_test.cpp" />
     <ClCompile Include="player_equip_test.cpp" />
     <ClCompile Include="player_equip_attribute_test.cpp" />
+    <ClCompile Include="player_mystery_merchant_test.cpp" />
     <ClCompile Include="player_feature_snapshot_test.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

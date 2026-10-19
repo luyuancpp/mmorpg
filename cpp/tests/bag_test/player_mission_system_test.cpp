@@ -221,6 +221,11 @@ TEST_F(PlayerMissionSystemTest, SegmentTailCannotPartiallyGrantReward) {
     bag_marshal::Marshal(player, unchanged);
     EXPECT_EQ(before.SerializeAsString(), unchanged.SerializeAsString());
     EXPECT_TRUE(Missions().IsClaimable(12));
+    ASSERT_TRUE(ArmMissionTestItemSegment(500002, 500006));
+    ASSERT_EQ(kSuccess, PlayerMissionSystem::ClaimReward(player, 0, 12));
+    EXPECT_EQ(4u, ItemCount());
+    EXPECT_FALSE(Missions().IsClaimable(12));
+    Inventory().ForEachItem([](Guid guid, const ItemComp&) { EXPECT_GE(guid, 500002u); });
 }
 
 TEST_F(PlayerMissionSystemTest, MissingRewardConfigurationDoesNotConsumeClaim) {
@@ -285,16 +290,15 @@ TEST_F(PlayerMissionSystemTest, OrderedDuplicateTargetsRequireSeparateFacts) {
     EXPECT_TRUE(Missions().IsClaimable(2));
 }
 
-TEST_F(PlayerMissionSystemTest, HugeProgressSaturatesAndTruncatedProgressCannotComplete) {
-    const auto* row = MissionTableManager::Instance().FindByIdSilent(7).first;
-    ASSERT_NE(nullptr, row);
-    auto& mutableRow = *const_cast<MissionTable*>(row);
-    ScopedTestRestore restore(mutableRow);
-    // 此例测进度规则，不自动接取同类型后续任务来占用截断进度用例的名额。
-    mutableRow.clear_next_mission_id();
+TEST_F(PlayerMissionSystemTest, HugeProgressSaturatesAndStartsNextMissionSynchronously) {
     ASSERT_EQ(kSuccess, PlayerMissionSystem::Accept(player, 0, 7, 1000));
     Progress(1, std::numeric_limits<uint32_t>::max());
     EXPECT_TRUE(Missions().IsComplete(7));
+    EXPECT_TRUE(Missions().IsAccepted(8));
+}
+
+TEST_F(PlayerMissionSystemTest, TruncatedProgressCannotComplete) {
+    // 独立玩家夹具避免上一条完成后的同步任务链占用相同任务类型。
     ASSERT_EQ(kSuccess, AcceptForRuleTest(1));
     auto& active = (*Missions().GetMutableMissionList().mutable_missions())[1];
     active.mutable_progress()->RemoveLast();
@@ -636,7 +640,8 @@ TEST_F(PlayerMissionSystemTest, PartiallyFilledStacksUseExactBatchGuidBudgetWith
     BagAllData unchanged;
     bag_marshal::Marshal(player, unchanged);
     EXPECT_EQ(before.SerializeAsString(), unchanged.SerializeAsString());
-    ASSERT_TRUE(ArmMissionTestItemSegment(500000, 500002));
+    // 失败中已取出的号作废，补段不能复用它。
+    ASSERT_TRUE(ArmMissionTestItemSegment(500001, 500003));
     ASSERT_EQ(kSuccess, PlayerMissionSystem::ClaimReward(player, 0, 12));
     EXPECT_EQ(4000u, ItemCount());
     EXPECT_EQ(0u, tlsGuidSegmentRegistry.Get(GuidKind::kItem).Available());

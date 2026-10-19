@@ -40,6 +40,10 @@
     <ClInclude Include="service_metadata\db_service_metadata.h" />
     <ClInclude Include="service_metadata\etcd_service_metadata.h" />
     <ClInclude Include="service_metadata\friend_service_metadata.h" />
+    <ClInclude Include="service_metadata\rank_service_metadata.h" />
+    <ClInclude Include="service_metadata\rank_admin_service_metadata.h" />
+    <ClInclude Include="service_metadata\mail_service_metadata.h" />
+    <ClInclude Include="service_metadata\mail_admin_service_metadata.h" />
     <ClInclude Include="service_metadata\client_player_common_service_metadata.h" />
     <ClInclude Include="service_metadata\s2s_player_scene_service_metadata.h" />
     <ClInclude Include="service_metadata\player_lifecycle_service_metadata.h" />

@@ -145,6 +145,10 @@ try {
         Reset-TestState
         Assert-Equal 35 (Get-GracefulStopSeconds -Info $ServiceCatalogue['db']) '真实目录里 db 的时限'
         Assert-Equal 25 (Get-GracefulStopSeconds -Info $ServiceCatalogue['chat']) '未写时限的服务取默认值'
+        Assert-True ($ServiceCatalogue.Contains('mail')) '真实目录里有 mail 条目(邮件 M1d 启用)'
+        Assert-Equal 25 (Get-GracefulStopSeconds -Info $ServiceCatalogue['mail']) 'mail 不写时限,默认 25s 盖住它的 24s 硬截止'
+        Assert-True ($ServiceCatalogue.Contains('rank')) '真实目录里有 rank 条目(排行榜 R2b 启用)'
+        Assert-Equal 25 (Get-GracefulStopSeconds -Info $ServiceCatalogue['rank']) 'rank 不写时限,默认 25s 盖住它的 24s 硬截止'
         Assert-Equal 25 (Get-GracefulStopSeconds -Info $null) '目录里找不到服务时取默认值'
         $script:Processes[101] = 'running'
         $script:Processes[102] = 'running'

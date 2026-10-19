@@ -7,6 +7,7 @@ import "proto/common/component/asset_op_ledger_comp.proto";
 import "proto/common/component/battle_settlement_ledger_comp.proto";
 import "proto/common/component/player_inbox_ledger_comp.proto";
 import "proto/common/component/player_attribute_comp.proto";
+import "proto/common/component/player_mystery_merchant_comp.proto";
 import "proto/common/component/player_pet_comp.proto";
 import "proto/common/component/player_scene_comp.proto";
 import "proto/common/component/actor_comp.proto";
@@ -174,8 +175,13 @@ message player_database
   // 由 scene 存盘时盖章 max(本二进制世代, 加载世代);go/db 据此判定超前延后 / 倒退拒写(§6.2)。
   // 0 = 未盖戳(机制上线前写入或 login 新号种子),所有比较先按 1 处理。世代号由 proto 生成器按
   // proto/persist_schema_gen.txt 发放,不要手写数字。与 player_database_1 的同名字段同值。
-  // 按加列纪律取 20 之后的下一个空闲号 21,声明在末尾、不留空洞;下一个新字段从 22 起。
+  // 按加列纪律取 20 之后的下一个空闲号 21,声明在末尾、不留空洞。
   uint32 persist_schema_gen = 21;
+  // 神秘商人的个人限购记录(docs/design/mystery-merchant.md §5.3)。与上面几本账本同一条不变量 I3:
+  // 必须与 currency / bag_component 同记录同一次落盘 —— 「钱、货、已购数」要么一起在盘上,要么一起回档,
+  // 否则回档后会出现「货没了名额却用掉了」或「货还在名额却清零可再买」。
+  // 与覆盖世代合并后取下一个空闲号 22；项目尚未上线，下一个新字段从 23 起。
+  PlayerMysteryMerchantComp mystery_merchant = 22;
 }
 
 message player_database_1

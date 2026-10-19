@@ -29,16 +29,17 @@ else
 	return 0
 end`
 
-// pruneQueueScript 空队列懒剔除(KEYS=[index, queue, rank],ARGV=[queueKey]):
+// pruneQueueScript 空队列懒剔除(KEYS=[index, queue, rank, versions],ARGV=[queueKey]):
 // LLEN==0 且 list key 不存在才 SREM;此时评分镜像若还有成员就是孤儿(每条改
 // list 的 Lua 都同步改镜像,list 为空镜像必空;例外只有异常数据),顺手 DEL 掉,
 // 剔除后 LLEN==0 且 ZCARD==0 成立。判定与剔除放同一条 Lua —— 分开做的话
 // JoinQueue 的 SADD+RPUSH+ZADD 若恰好落在 EXISTS 与 SREM 之间,刚登记的队列会被
-// 立刻摘掉;三 key 同 {mq} slot,集群下可用。幂等,多实例重复执行无害。
+// 立刻摘掉;四 key 同 {mq} slot,集群下可用。版本 hash 一并清理,全局写入序列不删除,避免 ABA。
 const pruneQueueScript = `if redis.call("LLEN", KEYS[2]) == 0 and redis.call("EXISTS", KEYS[2]) == 0 then
 	if redis.call("ZCARD", KEYS[3]) > 0 then
 		redis.call("DEL", KEYS[3])
 	end
+	redis.call("DEL", KEYS[4])
 	return redis.call("SREM", KEYS[1], ARGV[1])
 end
 return 0`
@@ -79,6 +80,24 @@ const starvedAnchorWarnInterval = 10 * time.Second
 var lastUnmatchableQueueWarnNs sync.Map
 
 const unmatchableQueueWarnInterval = 10 * time.Second
+
+// "人数够却凑不出恰好凑满的组合"日志的限频状态:queueKey → 上次记录 UnixNano,见 warnNoExactCombination。
+var lastNoCombinationWarnNs sync.Map
+
+// "补位单向 team 复核读不到"告警的限频状态:queueKey → 上次告警 UnixNano,见 warnPartyCheckFailed。
+var lastPartyCheckWarnNs sync.Map
+
+// warnPartyCheckFailed 补位单复核读不到时记一条限频(每队列 10s)Error 日志。复核出错的单只是本轮搁置,
+// matcher 每 500ms 一轮;不限频会刷满日志,不记又会让「这一单永远不成组」无人知晓。
+func warnPartyCheckFailed(queueKey string, teamId uint64, err error) {
+	now := time.Now().UnixNano()
+	if last, ok := lastPartyCheckWarnNs.Load(queueKey); ok && now-last.(int64) < int64(unmatchableQueueWarnInterval) {
+		return
+	}
+	lastPartyCheckWarnNs.Store(queueKey, now)
+	logx.Errorf("[matcher] Failed to verify party with team service; deferring party this round queue=%s team=%d: %v",
+		queueKey, teamId, err)
+}
 
 // warnUnmatchableQueue 对"没有凑满人数配置 / 人数档超出副本上限"的队列记一条限频(每队列 10s)
 // Error 日志。人数档让这种队列变成一次普通的运维操作(把副本上限调低)就能留下,matcher 每 500ms
@@ -327,7 +346,13 @@ func matchQueueOnce(svcCtx *svc.ServiceContext, queueKey string) {
 
 	// 持锁期间可以连续凑多组(队列深度允许时),摊薄扫描开销。
 	matchedTTL := matchedTicketTTLFor(svcCtx, required)
+	// 凑单锁不续期:连续凑多组时每组都有多次 Redis 往返(补位单还要向 team 复核),
+	// 用掉锁时长的一半就收手,剩下的留给下一轮,不让锁在弹组中途过期。
+	holdDeadline := time.Now().Add(time.Duration(lockTTL) * time.Second / 2)
 	for {
+		if time.Now().After(holdDeadline) {
+			return
+		}
 		members, tickets, ok := popGroup(svcCtx, queueKey, required)
 		if !ok {
 			return
@@ -387,7 +412,7 @@ func pruneEmptyQueue(svcCtx *svc.ServiceContext, queueKey string, modeName strin
 		logx.Errorf("[matcher] Failed to remove empty queue %s: %v", queueKey, err)
 		return
 	}
-	removed, err := svcCtx.MatchRedis.Eval(pruneQueueScript, []string{matchQueueIndexKey, queueKey, rankKey}, queueKey)
+	removed, err := svcCtx.MatchRedis.Eval(pruneQueueScript, []string{matchQueueIndexKey, queueKey, rankKey, queueVersionsKey(queueKey)}, queueKey)
 	if err != nil {
 		logx.Errorf("[matcher] Failed to remove empty queue %s: %v", queueKey, err)
 		return
@@ -498,6 +523,9 @@ type groupPicker struct {
 	entries  []queueEntry
 	tickets  map[uint64]*queueTicket // 已校验通过的成员票据
 	dropped  map[int]bool            // 已从队列剔除 / 判定无效的快照下标
+	// deferred 本轮搁置的成员(player_id → 票据):票据有效、但带着上一局开局失败没清掉的备战锁。
+	// 不删票、不摘 list,只是本轮不进组;补位单里有这样的成员时整单本轮不可用(见 party_match.go)。
+	deferred map[uint64]*queueTicket
 }
 
 // validate 校验一个队列成员并缓存结果:ticket 必须存在且处于 queued 态(取消
@@ -519,6 +547,10 @@ func (p *groupPicker) validate(idx int) (bool, error) {
 	if _, ok := p.tickets[e.playerId]; ok {
 		return true, nil
 	}
+	if _, deferred := p.deferred[e.playerId]; deferred {
+		// 本轮已经判过「搁置」:评分队列里每个锚点都会把他当候选再问一遍,不重读、不重复打日志。
+		return false, nil
+	}
 	ticket, err := loadTicket(p.svcCtx, e.playerId)
 	if err != nil {
 		return false, fmt.Errorf("读 ticket 失败 player=%d: %w", e.playerId, err)
@@ -539,11 +571,20 @@ func (p *groupPicker) validate(idx int) (bool, error) {
 		p.drop(idx)
 		return false, nil
 	}
-	locked, err := isPlayerBattleLocked(p.svcCtx, e.playerId)
+	lockValue, err := playerBattleLockValue(p.svcCtx, e.playerId)
 	if err != nil {
 		return false, fmt.Errorf("查战斗锁失败 player=%d: %w", e.playerId, err)
 	}
-	if locked {
+	switch classifyBattleLock(lockValue, ticket) {
+	case battleLockResidual:
+		// 锁里的 battle_id 就是他上一局开局失败的那一场:scene 侧的解冻丢了(CancelBattlePrepare 超时 /
+		// scene 的 Redis 抖动),锁会留到自己过期(备战期限 + 60s)。这不是「他进了别的战斗」,删票会把
+		// 无辜的人踢出队列 —— 对补位单更是连带整队。本轮搁置,等锁消失。
+		logx.Infof("[matcher] Queue member still holds the prepare lock of the battle that just failed; deferring this round player=%d queue=%s battle=%d",
+			e.playerId, p.queueKey, ticket.LastFailedBattleId)
+		p.deferred[e.playerId] = ticket
+		return false, nil
+	case battleLockOther:
 		logx.Infof("[matcher] Queue member already in battle; removing member and ticket player=%d", e.playerId)
 		deleteTicket(p.svcCtx, e.playerId)
 		p.drop(idx)
@@ -566,8 +607,9 @@ func (p *groupPicker) drop(idx int) {
 	p.dropped[idx] = true
 	e := p.entries[idx]
 	if e.playerId == 0 {
-		// 非法成员:ZSET 里不会有它,单独 LREM。
-		if _, err := p.svcCtx.MatchRedis.Lrem(p.queueKey, 0, e.raw); err != nil {
+		// 旧队列迁移会照搬非法原始值,其评分与版本镜像也必须随 list 一起清理。
+		if _, err := p.svcCtx.MatchRedis.Eval(removeQueueMembersScript,
+			[]string{p.queueKey, p.rankKey, queueVersionsKey(p.queueKey)}, "0", e.raw); err != nil {
 			logx.Errorf("[matcher] Failed to remove invalid member %q: %v", e.raw, err)
 		}
 		return
@@ -583,8 +625,9 @@ func (p *groupPicker) drop(idx int) {
 //  1. 一条 Lua 读队列前缀(等待序)与评分镜像 score;
 //  2. 锚点按等待序逐个尝试(队首优先):容差 tol = ratingToleranceFor(锚点已等秒数),
 //     候选 = 前缀里评分落在 [anchor±tol] 的其他成员,按与锚点分差升序、同分按
-//     等待先后取 required-1 个;PVE 组队不看评分(tol=∞),纯等待序;rated 模式
-//     锚点已等 ≥ RatingToleranceMaxWaitSeconds 时也 tol=∞(终态兜底,不永久饥饿);
+//     等待先后取 required-1 个;rated 模式锚点已等 ≥ RatingToleranceMaxWaitSeconds 时
+//     tol=∞(终态兜底,不永久饥饿);PVE 组队不看评分,不走锚点算法,由 popUnits 按等待序凑单位
+//     (队伍补位单不可拆,见 party_match.go);
 //  3. 票据 / battle:lock 校验在 Go 侧,无效者当场摘掉、继续找下一个候选;
 //     候选不足 → 该锚点继续等(队列不动),换下一个锚点;曲线已饱和仍凑不到的
 //     锚点记限频日志,本轮最久的饥饿等待上报 starved_anchor_wait_seconds;
@@ -618,6 +661,13 @@ func popGroup(svcCtx *svc.ServiceContext, queueKey string, required uint32) ([]u
 		entries:  entries,
 		tickets:  make(map[uint64]*queueTicket, required),
 		dropped:  make(map[int]bool),
+		deferred: make(map[uint64]*queueTicket),
+	}
+	if !p.rated {
+		// 非评分队列(PVE 人数档 / 旧格式 PVE_TEAM 队列)不看评分,按「单位」凑满:单人是 1 人单位,
+		// 队伍补位单是不可拆的 k 人单位(party_match.go,team-backfill-matching.md §4.2)。
+		// 没有补位单时结果与下面的锚点算法在 tol=∞ 时相同:等待序里前 required 个有效成员。
+		return p.popUnits(required, configName)
 	}
 
 	// 饥饿观测:本轮凑不到候选的锚点里等得最久的秒数(-1 = 没有);曲线饱和秒数

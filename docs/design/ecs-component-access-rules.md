@@ -60,6 +60,7 @@ entt uses a **sparse-set** storage model. Each component type has its own packed
 | `AttributeDirtyFlagsComp` | `ActorAttributeCalculatorSystem::MarkAttributeForUpdate`,首次标脏时 | 重算消费后摘除;冻结时保留待处理 |
 | `PlayerAnomalyWindowComp` | `AnomalyDetector::WindowForWrite`,合法玩家首次记收益时 | 实体销毁自然清理;查询不创建,无效句柄不记录 |
 | 生成的各 `*DirtyMaskComp` | `Set*AttrDirtyBit`,先校验位范围与实体再标脏 | 有接收者时消费后摘除;接收者为空保留 |
+| `BattleLoginRecheckComp`(`player_battle.cpp` 内部空标记) | `MarkLoginRecheck`,登录钩子读挂起结算 / 读战斗锁没问到时(空应答、读记录 ERROR、命令没发出去、Redis 不可用;2026-10-16) | reaper 的 `RunLoginRechecks` 在 Redis 可用时摘除并重跑登录检查,又没问到就重新挂上;实体销毁自然清理 |
 
 `PlayerMirrorCreateInFlightComp`(2026-10-15)也是按需状态:只由 `PlayerSceneSystem::RequestEnterMirrorScene` 在发 CreateScene 之前创建,由该次调用的完成回调 `HandleMirrorCreateDone` 按令牌摘除;`IsSceneChangeBusy` 只读它,缺失或过 TTL 表示没有建镜像在途。完成回调按令牌认领后仍须复核相同 TTL;过期或 UTC 回拨只摘该令牌的槽并丢弃,不得推提示或自动进场,也不得摘掉新令牌。普通换图、交接、退出提交或权威落点成功时也主动摘掉旧镜像组件,永久取消旧请求的提示/自动进场资格,避免 UTC 回拨后恢复让它复活。
 

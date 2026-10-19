@@ -76,7 +76,8 @@ public final class TipFaults {
             new Fault(27007, "asset_error", "AssetPartialApplied"),
             new Fault(27008, "asset_error", "AssetAuthFailed"),
             new Fault(28010, "equip_error", "EquipInternalError"),
-            new Fault(29014, "player_inbox_error", "PlayerInboxStoreUnavailable")
+            new Fault(29014, "player_inbox_error", "PlayerInboxStoreUnavailable"),
+            new Fault(30011, "mystery_merchant_error", "MysteryMerchantInternalError")
     );
 
     /** 由 FAULTS 派生,不单独生成第二份字面量。 */

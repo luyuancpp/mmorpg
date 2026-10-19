@@ -36,6 +36,7 @@
 #include "proto/common/component/battle_settlement_ledger_comp.pb.h"
 #include "proto/common/component/player_inbox_ledger_comp.pb.h"
 #include "proto/common/component/player_attribute_comp.pb.h"
+#include "proto/common/component/player_mystery_merchant_comp.pb.h"
 #include "proto/common/component/player_pet_comp.pb.h"
 #include "proto/common/component/player_scene_comp.pb.h"
 #include "proto/common/component/actor_comp.pb.h"
@@ -2196,6 +2197,7 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED player_database final : public ::go
     kAssetOpLedgerFieldNumber = 16,
     kSettlementLedgerFieldNumber = 17,
     kInboxLedgerFieldNumber = 20,
+    kMysteryMerchantFieldNumber = 22,
     kPlayerIdFieldNumber = 1,
     kFenceOwnerEpochFieldNumber = 18,
     kFenceSaveSeqFieldNumber = 19,
@@ -2473,6 +2475,22 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED player_database final : public ::go
   ::PlayerInboxLedgerComp* PROTOBUF_NONNULL _internal_mutable_inbox_ledger();
 
   public:
+  // .PlayerMysteryMerchantComp mystery_merchant = 22;
+  [[nodiscard]] bool has_mystery_merchant()
+      const;
+  void clear_mystery_merchant() ;
+  [[nodiscard]] const ::PlayerMysteryMerchantComp& mystery_merchant() const;
+  [[nodiscard]] ::PlayerMysteryMerchantComp* PROTOBUF_NULLABLE release_mystery_merchant();
+  ::PlayerMysteryMerchantComp* PROTOBUF_NONNULL mutable_mystery_merchant();
+  void set_allocated_mystery_merchant(::PlayerMysteryMerchantComp* PROTOBUF_NULLABLE value);
+  void unsafe_arena_set_allocated_mystery_merchant(::PlayerMysteryMerchantComp* PROTOBUF_NULLABLE value);
+  ::PlayerMysteryMerchantComp* PROTOBUF_NULLABLE unsafe_arena_release_mystery_merchant();
+
+  private:
+  const ::PlayerMysteryMerchantComp& _internal_mystery_merchant() const;
+  ::PlayerMysteryMerchantComp* PROTOBUF_NONNULL _internal_mutable_mystery_merchant();
+
+  public:
   // uint64 player_id = 1;
   void clear_player_id() ;
   [[nodiscard]] ::uint64_t player_id() const;
@@ -2517,8 +2535,8 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED player_database final : public ::go
  private:
   class _Internal;
   using ParseTableT_ =
-      ::google::protobuf::internal::TcParseTable<5, 21,
-                          17, 0,
+      ::google::protobuf::internal::TcParseTable<5, 22,
+                          18, 0,
                           2>;
   static constexpr ParseTableT_ InternalGenerateParseTable_(
       const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL class_data);
@@ -2563,6 +2581,7 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED player_database final : public ::go
     ::PlayerAssetOpLedgerComp* PROTOBUF_NULLABLE asset_op_ledger_;
     ::BattleSettlementLedgerComp* PROTOBUF_NULLABLE settlement_ledger_;
     ::PlayerInboxLedgerComp* PROTOBUF_NULLABLE inbox_ledger_;
+    ::PlayerMysteryMerchantComp* PROTOBUF_NULLABLE mystery_merchant_;
     ::uint64_t player_id_;
     ::uint64_t fence_owner_epoch_;
     ::uint64_t fence_save_seq_;
@@ -3583,7 +3602,7 @@ inline void player_centre_database::set_allocated_scene_info(::PlayerSceneContex
 inline void player_database::clear_player_id() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.player_id_ = ::uint64_t{0u};
-  ClearHasBit(_impl_._has_bits_[0], 0x00020000U);
+  ClearHasBit(_impl_._has_bits_[0], 0x00040000U);
 }
 inline ::uint64_t player_database::player_id() const {
   // @@protoc_insertion_point(field_get:player_database.player_id)
@@ -3591,7 +3610,7 @@ inline ::uint64_t player_database::player_id() const {
 }
 inline void player_database::set_player_id(::uint64_t value) {
   _internal_set_player_id(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00020000U);
+  SetHasBit(_impl_._has_bits_[0], 0x00040000U);
   // @@protoc_insertion_point(field_set:player_database.player_id)
 }
 inline ::uint64_t player_database::_internal_player_id() const {
@@ -5095,7 +5114,7 @@ inline void player_database::set_allocated_settlement_ledger(::BattleSettlementL
 inline void player_database::clear_fence_owner_epoch() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.fence_owner_epoch_ = ::uint64_t{0u};
-  ClearHasBit(_impl_._has_bits_[0], 0x00040000U);
+  ClearHasBit(_impl_._has_bits_[0], 0x00080000U);
 }
 inline ::uint64_t player_database::fence_owner_epoch() const {
   // @@protoc_insertion_point(field_get:player_database.fence_owner_epoch)
@@ -5103,7 +5122,7 @@ inline ::uint64_t player_database::fence_owner_epoch() const {
 }
 inline void player_database::set_fence_owner_epoch(::uint64_t value) {
   _internal_set_fence_owner_epoch(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00040000U);
+  SetHasBit(_impl_._has_bits_[0], 0x00080000U);
   // @@protoc_insertion_point(field_set:player_database.fence_owner_epoch)
 }
 inline ::uint64_t player_database::_internal_fence_owner_epoch() const {
@@ -5119,7 +5138,7 @@ inline void player_database::_internal_set_fence_owner_epoch(::uint64_t value) {
 inline void player_database::clear_fence_save_seq() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.fence_save_seq_ = ::uint64_t{0u};
-  ClearHasBit(_impl_._has_bits_[0], 0x00080000U);
+  ClearHasBit(_impl_._has_bits_[0], 0x00100000U);
 }
 inline ::uint64_t player_database::fence_save_seq() const {
   // @@protoc_insertion_point(field_get:player_database.fence_save_seq)
@@ -5127,7 +5146,7 @@ inline ::uint64_t player_database::fence_save_seq() const {
 }
 inline void player_database::set_fence_save_seq(::uint64_t value) {
   _internal_set_fence_save_seq(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00080000U);
+  SetHasBit(_impl_._has_bits_[0], 0x00100000U);
   // @@protoc_insertion_point(field_set:player_database.fence_save_seq)
 }
 inline ::uint64_t player_database::_internal_fence_save_seq() const {
@@ -5236,7 +5255,7 @@ inline void player_database::set_allocated_inbox_ledger(::PlayerInboxLedgerComp*
 inline void player_database::clear_persist_schema_gen() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.persist_schema_gen_ = 0u;
-  ClearHasBit(_impl_._has_bits_[0], 0x00100000U);
+  ClearHasBit(_impl_._has_bits_[0], 0x00200000U);
 }
 inline ::uint32_t player_database::persist_schema_gen() const {
   // @@protoc_insertion_point(field_get:player_database.persist_schema_gen)
@@ -5244,7 +5263,7 @@ inline ::uint32_t player_database::persist_schema_gen() const {
 }
 inline void player_database::set_persist_schema_gen(::uint32_t value) {
   _internal_set_persist_schema_gen(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00100000U);
+  SetHasBit(_impl_._has_bits_[0], 0x00200000U);
   // @@protoc_insertion_point(field_set:player_database.persist_schema_gen)
 }
 inline ::uint32_t player_database::_internal_persist_schema_gen() const {
@@ -5254,6 +5273,99 @@ inline ::uint32_t player_database::_internal_persist_schema_gen() const {
 inline void player_database::_internal_set_persist_schema_gen(::uint32_t value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.persist_schema_gen_ = value;
+}
+
+// .PlayerMysteryMerchantComp mystery_merchant = 22;
+inline bool player_database::has_mystery_merchant() const {
+  bool value = CheckHasBit(_impl_._has_bits_[0], 0x00020000U);
+  PROTOBUF_ASSUME(!value || _impl_.mystery_merchant_ != nullptr);
+  return value;
+}
+inline const ::PlayerMysteryMerchantComp& player_database::_internal_mystery_merchant() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  const ::PlayerMysteryMerchantComp* p = _impl_.mystery_merchant_;
+  return p != nullptr ? *p : *::google::protobuf::internal::MessageGlobalsBase::ToDefaultInstance<::PlayerMysteryMerchantComp>(&::PlayerMysteryMerchantComp_globals_);
+}
+inline const ::PlayerMysteryMerchantComp& player_database::mystery_merchant() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:player_database.mystery_merchant)
+  return _internal_mystery_merchant();
+}
+inline void player_database::unsafe_arena_set_allocated_mystery_merchant(
+    ::PlayerMysteryMerchantComp* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (GetArena() == nullptr) {
+    delete reinterpret_cast<::google::protobuf::MessageLite*>(_impl_.mystery_merchant_);
+  }
+  _impl_.mystery_merchant_ = reinterpret_cast<::PlayerMysteryMerchantComp*>(value);
+  if (value != nullptr) {
+    SetHasBit(_impl_._has_bits_[0], 0x00020000U);
+  } else {
+    ClearHasBit(_impl_._has_bits_[0], 0x00020000U);
+  }
+  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:player_database.mystery_merchant)
+}
+inline ::PlayerMysteryMerchantComp* PROTOBUF_NULLABLE player_database::release_mystery_merchant() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+
+  ClearHasBit(_impl_._has_bits_[0], 0x00020000U);
+  ::PlayerMysteryMerchantComp* released = _impl_.mystery_merchant_;
+  _impl_.mystery_merchant_ = nullptr;
+  if (::google::protobuf::internal::DebugHardenForceCopyInRelease()) {
+    auto* old = reinterpret_cast<::google::protobuf::MessageLite*>(released);
+    released = ::google::protobuf::internal::DuplicateIfNonNull(released);
+    if (GetArena() == nullptr) {
+      delete old;
+    }
+  } else {
+    if (GetArena() != nullptr) {
+      released = ::google::protobuf::internal::DuplicateIfNonNull(released);
+    }
+  }
+  return released;
+}
+inline ::PlayerMysteryMerchantComp* PROTOBUF_NULLABLE player_database::unsafe_arena_release_mystery_merchant() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:player_database.mystery_merchant)
+
+  ClearHasBit(_impl_._has_bits_[0], 0x00020000U);
+  ::PlayerMysteryMerchantComp* temp = _impl_.mystery_merchant_;
+  _impl_.mystery_merchant_ = nullptr;
+  return temp;
+}
+inline ::PlayerMysteryMerchantComp* PROTOBUF_NONNULL player_database::_internal_mutable_mystery_merchant() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (_impl_.mystery_merchant_ == nullptr) {
+    auto* p = ::google::protobuf::Message::DefaultConstruct<::PlayerMysteryMerchantComp>(GetArena());
+    _impl_.mystery_merchant_ = reinterpret_cast<::PlayerMysteryMerchantComp*>(p);
+  }
+  return _impl_.mystery_merchant_;
+}
+inline ::PlayerMysteryMerchantComp* PROTOBUF_NONNULL player_database::mutable_mystery_merchant()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  SetHasBit(_impl_._has_bits_[0], 0x00020000U);
+  ::PlayerMysteryMerchantComp* _msg = _internal_mutable_mystery_merchant();
+  // @@protoc_insertion_point(field_mutable:player_database.mystery_merchant)
+  return _msg;
+}
+inline void player_database::set_allocated_mystery_merchant(::PlayerMysteryMerchantComp* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::Arena* message_arena = GetArena();
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (message_arena == nullptr) {
+    delete reinterpret_cast<::google::protobuf::MessageLite*>(_impl_.mystery_merchant_);
+  }
+
+  if (value != nullptr) {
+    ::google::protobuf::Arena* submessage_arena = reinterpret_cast<::google::protobuf::Message*>(value)->GetArena();
+    if (message_arena != submessage_arena) {
+      value = ::google::protobuf::internal::GetOwnedMessage(message_arena, value, submessage_arena);
+    }
+    SetHasBit(_impl_._has_bits_[0], 0x00020000U);
+  } else {
+    ClearHasBit(_impl_._has_bits_[0], 0x00020000U);
+  }
+
+  _impl_.mystery_merchant_ = reinterpret_cast<::PlayerMysteryMerchantComp*>(value);
+  // @@protoc_insertion_point(field_set_allocated:player_database.mystery_merchant)
 }
 
 // -------------------------------------------------------------------

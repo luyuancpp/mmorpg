@@ -149,7 +149,10 @@ protected:
         EXPECT_EQ(nullptr, bag.GetItemCompByGuid(kGuidB));
         EXPECT_EQ(kInvalidSlot, bag.GetItemPosByGuid(kGuidB));
         EXPECT_EQ(2u, bag.OccupiedGridCount());
+        EXPECT_EQ(nullptr, bag.GetItemCompByPos(0));
         EXPECT_EQ(3u, StackSize(bag, kGuidC));
+        EXPECT_EQ(1u, bag.GetItemPosByGuid(kGuidC));
+        EXPECT_EQ(2u, bag.GetItemPosByGuid(kGuidA));
         EXPECT_TRUE(bag.IsLayerConsistent());
     }
 };
@@ -220,6 +223,23 @@ TEST_F(BagSelectionOrderTest, DrainWithoutReceiptUsesTheSameSlotOrder)
     EXPECT_TRUE(bag.IsLayerConsistent());
 }
 
+TEST_F(BagSelectionOrderTest, DrainSkipsEmptyStackWithoutReceipt)
+{
+    Bag bag;
+    bag.InsertItemForRestore(kGuidA, kStackConfig, 1, 0, 1);
+    // 加载已拒绝零堆；这里专门注入内存损坏，验证抽取不把空堆写入回执。
+    ASSERT_NE(nullptr, bag.GetItemCompByGuid(kGuidA));
+    bag.GetItemCompByGuid(kGuidA)->set_size(0);
+    bag.InsertItemForRestore(kGuidB, kStackConfig, 5, 1, 2);
+    std::vector<DrainedInstance> drained;
+    ASSERT_EQ(kSuccess, bag.RemoveItemsClamped({{kStackConfig, 3}}, &drained));
+    ASSERT_EQ(1u, drained.size());
+    EXPECT_EQ(kGuidB, drained[0].guid);
+    EXPECT_EQ(3u, drained[0].amount);
+    EXPECT_EQ(0u, StackSize(bag, kGuidA));
+    EXPECT_EQ(2u, StackSize(bag, kGuidB));
+}
+
 TEST_F(BagSelectionOrderTest, MergeKeepsEarliestAcquiredStackAndRetiresLaterOnes)
 {
     Bag bag;
@@ -235,6 +255,26 @@ TEST_F(BagSelectionOrderTest, MergeKeepsEarliestAcquiredStackAndRetiresLaterOnes
     EXPECT_EQ(kStackConfig, destroyed[0].configId);
     EXPECT_EQ(0u, destroyed[0].size);
     EXPECT_TRUE(bag.IsLayerConsistent());
+}
+
+TEST_F(BagSelectionOrderTest, MergeNeverPicksAnEmptyStackAsSurvivor)
+{
+    Bag bag;
+    bag.InsertItemForRestore(kGuidC, kStackConfig, 4, 2, 3);
+    bag.InsertItemForRestore(kGuidB, kStackConfig, 3, 1, 2);
+    bag.InsertItemForRestore(kGuidA, kStackConfig, 1, 0, 1);
+    // 负向夹具绕过加载的零堆过滤，保留对整理幸存者选择与空堆回收的覆盖。
+    ASSERT_NE(nullptr, bag.GetItemCompByGuid(kGuidA));
+    bag.GetItemCompByGuid(kGuidA)->set_size(0);
+    std::vector<DestroyedInstance> destroyed;
+    ASSERT_TRUE(bag.MergeAndCompact(&destroyed, CompactPolicy::kMergeOnly));
+    EXPECT_EQ(7u, StackSize(bag, kGuidB));
+    EXPECT_EQ(1u, bag.GetItemPosByGuid(kGuidB));
+    ASSERT_EQ(2u, destroyed.size());
+    EXPECT_EQ(kGuidA, destroyed[0].guid);
+    EXPECT_EQ(kGuidC, destroyed[1].guid);
+    EXPECT_EQ(nullptr, bag.GetItemCompByGuid(kGuidA));
+    EXPECT_EQ(nullptr, bag.GetItemCompByGuid(kGuidC));
 }
 
 TEST_F(BagSelectionOrderTest, ReorderBreaksTiesByAcquireOrder)

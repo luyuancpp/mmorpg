@@ -88,6 +88,12 @@
     # 这两条路上显式给了即在任何副作用之前拒绝,不静默吞掉。
     [ValidateSet("", "keep", "zone", "legacy")]
     [string]$DbConsumerGroup = "",
+    # 排行榜评分快照发布开关(k8s-infra-up / k8s-all-up),透传给 k8s_deploy.ps1 -MatchRatingSnapshotPublish(docs/design/leaderboard-system.md §5.4)。
+    # 默认留空 = 不透传,由 k8s_deploy.ps1 的默认值 "0" 接管(写法同 -GateRouterMode)。⚠ 那边**不粘滞**:以 "1" 运行的环境用本入口
+    # 发版却不传,会落回 "0"、榜停止更新(部署输出有一行 MatchRatingSnapshotPublish: 0)。k8s-release-*(k8s_image.ps1)不部署全局
+    # Go 服务、碰不到 match,不转发它。
+    [ValidateSet("", "0", "1")]
+    [string]$MatchRatingSnapshotPublish = "",
     # 集群外客户端入口,透传给 k8s_deploy.ps1(k8s-infra-up / k8s-zone-up / k8s-all-up)、k8s_image.ps1(k8s-release-*)
     # 或 k8s_zone_rollback.ps1(k8s-zone-rollback,由它的 Step 6 转给 k8s-zone-up),语义见 k8s_deploy.ps1 同名参数与
     # docs/design/k8s-client-entry.md(集群外入口 D80 / D88 / D89 / D91)。
@@ -612,6 +618,56 @@ function Invoke-ProtoGenRun {
     }
 }
 
+# 生成器不会把**新域**的 C++ 产物登记进工程文件(CMakeLists.txt / *.vcxproj / *.vcxproj.filters),也不会同步 robot/vendor。
+# 新域第一次生成时漏了这两步,C++ 要到全量 msbuild 链接期才报 LNK2019,robot(-mod=vendor)直接编不过 ——
+# 而做统一重生成的人未必读过那个域的设计文档。所以挂在 proto-gen-run 成功之后自动跑,不靠人记。
+# 每个钩子都幂等:已登记 / 已同步时零改动;该域本次没有 C++ 产物(比如用的配置不含它)时整条跳过。
+# 新增一个这样的域 = 在 $ProtoGenPostHooks 里加一项(脚本照 tools/scripts/mail_postgen.py 的子命令约定)。
+$ProtoGenPostHooks = @(
+    @{ Domain = "mail"; Script = "tools\scripts\mail_postgen.py"; Marker = "cpp\generated\proto\mail"; Commands = @("register-cpp", "vendor-robot") }
+    # 排行榜 rank(docs/design/leaderboard-system.md §5.3):新域,同一个问题;rank_postgen.py 复用 mail_postgen.py 的登记机制。
+    @{ Domain = "rank"; Script = "tools\scripts\rank_postgen.py"; Marker = "cpp\generated\proto\rank"; Commands = @("register-cpp", "vendor-robot") }
+)
+
+# 钩子用的 Python 3:与 dev.bat :export 同一顺序(PYTHON_EXE → py -3 → python)。每个候选都实跑一次,
+# 能跑通且是 3.x 才算 —— WindowsApps 下的应用商店占位程序会以 9009 失败,不会被选中。返回解释器的绝对路径,找不到返回 $null。
+function Resolve-ProtoGenHookPython {
+    $candidates = @()
+    if (-not [string]::IsNullOrWhiteSpace($env:PYTHON_EXE)) { $candidates += @{ Exe = $env:PYTHON_EXE.Trim('"'); Args = @() } }
+    $candidates += @{ Exe = "py"; Args = @("-3") }
+    $candidates += @{ Exe = "python"; Args = @() }
+    foreach ($candidate in $candidates) {
+        if ($null -eq (Get-Command $candidate.Exe -ErrorAction SilentlyContinue)) { continue }
+        $probe = & $candidate.Exe @($candidate.Args) -c "import sys; sys.exit(1) if sys.version_info.major != 3 else print(sys.executable)" 2>$null
+        if ($LASTEXITCODE -eq 0 -and $probe) {
+            return ([string]($probe | Select-Object -Last 1)).Trim()
+        }
+    }
+    return $null
+}
+
+function Invoke-ProtoGenPostHooks {
+    foreach ($hook in $ProtoGenPostHooks) {
+        $marker = Join-Path $RepoRoot $hook.Marker
+        if (-not (Test-Path -LiteralPath $marker)) { continue }
+        $script = Join-Path $RepoRoot $hook.Script
+        if (-not (Test-Path -LiteralPath $script)) {
+            throw "$($hook.Domain) 的生成后钩子脚本不存在:$script(生成物已产出,但登记 / vendor 同步无法完成)"
+        }
+        $python = Resolve-ProtoGenHookPython
+        if ($null -eq $python) {
+            throw "找不到可用的 Python 3(PYTHON_EXE / py -3 / python 都不行):$($hook.Domain) 的生成物已产出,必须运行 $script $($hook.Commands -join ' / ') 完成工程登记与 robot vendor 同步"
+        }
+        foreach ($subcommand in $hook.Commands) {
+            Write-Host "[proto-gen post-hook] $($hook.Domain): $subcommand"
+            & $python $script $subcommand
+            if ($LASTEXITCODE -ne 0) {
+                throw "$($hook.Domain) 的生成后钩子 $subcommand 失败(退出码 $LASTEXITCODE);生成物已产出但登记 / 同步未完成,修好后单独重跑:python $script $subcommand"
+            }
+        }
+    }
+}
+
 function Invoke-Tree {
     $TreeScript = Join-Path $ScriptDir "tree.ps1"
     if (-not (Test-Path $TreeScript)) {
@@ -787,6 +843,10 @@ function Invoke-K8sDeploy {
     # 同上:留空不传,由 k8s_deploy.ps1 的默认值(keep)接管。
     if (-not [string]::IsNullOrWhiteSpace($DbConsumerGroup)) {
         $args.DbConsumerGroup = $DbConsumerGroup
+    }
+    # 同上:留空不传,由 k8s_deploy.ps1 的默认值("0")接管。
+    if (-not [string]::IsNullOrWhiteSpace($MatchRatingSnapshotPublish)) {
+        $args.MatchRatingSnapshotPublish = $MatchRatingSnapshotPublish
     }
     # 集群外入口参数同一口径:字符串非空才传,GateNodePortBase 非 -1 才传,switch 只在被指定时传。
     # 不抽成共用函数:契约测试按 AST 单独取出本函数执行,依赖外部函数会让它找不到命令。
@@ -1574,9 +1634,9 @@ Proto-gen naming docs:
 switch ($Command) {
     "help" { Invoke-Help }
     "pbgen-build" { Invoke-ProtoGenBuild }
-    "pbgen-run" { Invoke-ProtoGenRun }
+    "pbgen-run" { Invoke-ProtoGenRun; Invoke-ProtoGenPostHooks }
     "proto-gen-build" { Invoke-ProtoGenBuild }
-    "proto-gen-run" { Invoke-ProtoGenRun }
+    "proto-gen-run" { Invoke-ProtoGenRun; Invoke-ProtoGenPostHooks }
     "tree" { Invoke-Tree }
     "naming-audit" { Invoke-NamingAudit }
     "naming-apply" { Invoke-NamingApply }

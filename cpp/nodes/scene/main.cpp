@@ -14,6 +14,7 @@
 #include "player/system/player_lifecycle.h"
 #include "player/system/player_equip.h"
 #include "player/system/player_inbox_system.h"
+#include "player/system/player_mystery_merchant.h"
 #include "battle/system/player_battle.h"
 #include "services/battle/data/battle_table_fingerprint.h"
 #include "proto/contracts/kafka/scene_command.pb.h"
@@ -69,6 +70,8 @@ namespace
                 // 一定早于第一笔入包流量(玩家加载 / 掉落 / 邮件 / GM 发物)。漏装的后果是新装备
                 // 永远没有随机属性,且没有任何报错。
                 PlayerEquipSystem::InstallItemInitializer();
+                // 神秘商人用到的三张表(规则 / 商品 / 站位)核一遍,问题打进启动日志;不阻断启动。
+                PlayerMysteryMerchantSystem::ValidateTables();
             }
         };
         using KafkaCommandType = contracts::kafka::SceneCommand;
@@ -152,6 +155,7 @@ int main(int argc, char *argv[])
 			// 下次落地时由账本补确认(设计 §7.7)。
 			context->playerInboxTimer.Cancel();
 			PlayerBattleSystem::StopReaper();
+			PlayerMysteryMerchantSystem::Stop();
 			tlsRedisSystem.BeginShutdown();
 
             auto view = tlsEcs.actorRegistry.view<Player>();
@@ -352,6 +356,9 @@ int main(int argc, char *argv[])
             // 玩家持久收件箱的 tick(docs/design/player-inbox-service.md §7.4):每秒处理到期的检查、在线兜底、
             // 等落盘与补确认。不进 DependencyGate(IB-7):收件箱没连上时 tick 只会按退避记一次延后。
             context->playerInboxTimer.RunEvery(PlayerInboxSystem::kTickIntervalSec, PlayerInboxSystem::Tick);
+            // 神秘商人:每 5 秒从 zone Redis 读一次「这一轮商人在哪、卖什么」(scene_manager 写入),
+            // 读到新的一轮就向本节点玩家发出现公告(docs/design/mystery-merchant.md §5.1)。不进 20FPS World::Update。
+            PlayerMysteryMerchantSystem::Start(n.GetLoop());
 
             // 号段首段是启动硬依赖:每个启用的种类领到第一段 [lo, hi) 之前不放玩家进来 ——
             // 拾取 / 交易流水 / 快照都要铸永久 guid,没段时一律 fail-closed(kInvalidGuid),

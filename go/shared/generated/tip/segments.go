@@ -43,7 +43,7 @@ var Segments = []Segment{
 	{Domain: "guild", Group: "guild_error", Base: 14000, Width: 1000, Lo: 14000, Hi: 14041, Count: 42},
 	{Domain: "friend", Group: "friend_error", Base: 15000, Width: 1000, Lo: 15000, Hi: 15009, Count: 10},
 	{Domain: "match", Group: "match_error", Base: 16000, Width: 1000, Lo: 16000, Hi: 16020, Count: 21},
-	{Domain: "mail", Group: "mail_error", Base: 17000, Width: 1000, Lo: 17000, Hi: 17008, Count: 9},
+	{Domain: "mail", Group: "mail_error", Base: 17000, Width: 1000, Lo: 17000, Hi: 17010, Count: 11},
 	{Domain: "trade", Group: "trade_error", Base: 20000, Width: 1000, Lo: 20000, Hi: 20015, Count: 16},
 	{Domain: "rank", Group: "rank_error", Base: 21000, Width: 1000, Lo: 21000, Hi: 21003, Count: 4},
 	{Domain: "attribute", Group: "attribute_error", Base: 25000, Width: 1000, Lo: 25000, Hi: 25014, Count: 15},
@@ -51,6 +51,7 @@ var Segments = []Segment{
 	{Domain: "asset", Group: "asset_error", Base: 27000, Width: 1000, Lo: 27000, Hi: 27008, Count: 9},
 	{Domain: "equip", Group: "equip_error", Base: 28000, Width: 1000, Lo: 28000, Hi: 28021, Count: 22},
 	{Domain: "player_inbox", Group: "player_inbox_error", Base: 29000, Width: 1000, Lo: 29000, Hi: 29014, Count: 15},
+	{Domain: "mystery_merchant", Group: "mystery_merchant_error", Base: 30000, Width: 1000, Lo: 30000, Hi: 30011, Count: 12},
 }
 
 // DomainOf 返回码所属的域名。不属于任何已声明段时返回空串。

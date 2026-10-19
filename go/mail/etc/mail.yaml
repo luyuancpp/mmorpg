@@ -26,3 +26,15 @@ Log:
   ServiceName: mail
   Mode: console
   Level: info
+
+KillSwitchPrefix: /mmorpg/killswitch/
+Mail:
+  MaxPersonalMailsPerPlayer: 200
+  MaxActiveSystemMails: 100
+  MaxPersonalMailTtlDays: 30
+  MaxSystemMailTtlDays: 30
+Sweep:
+  Mode: report_only
+  Interval: 5m
+  RetentionDays: 7
+  BatchLimit: 1000

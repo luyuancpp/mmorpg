@@ -34,6 +34,7 @@
     <ClCompile Include="common\asset\asset_op.pb.cc" />
     <ClCompile Include="common\component\asset_op_ledger_comp.pb.cc" />
     <ClCompile Include="common\component\battle_settlement_ledger_comp.pb.cc" />
+    <ClCompile Include="common\component\player_mystery_merchant_comp.pb.cc" />
     <ClCompile Include="common\component\battle_comp.pb.cc" />
     <ClCompile Include="common\event\battle_event.pb.cc" />
     <ClCompile Include="common\event\team_event.pb.cc" />
@@ -111,6 +112,12 @@
     <ClCompile Include="etcd\version.pb.cc" />
     <ClCompile Include="friend\friend.grpc.pb.cc" />
     <ClCompile Include="friend\friend.pb.cc" />
+    <ClCompile Include="rank\rank.grpc.pb.cc" />
+    <ClCompile Include="rank\rank.pb.cc" />
+    <ClCompile Include="mail\mail.grpc.pb.cc" />
+    <ClCompile Include="mail\mail.pb.cc" />
+    <ClCompile Include="mail\mail_admin.grpc.pb.cc" />
+    <ClCompile Include="mail\mail_admin.pb.cc" />
     <ClCompile Include="gate\gate_service.pb.cc" />
     <ClCompile Include="guild\guild.grpc.pb.cc" />
     <ClCompile Include="guild\guild.pb.cc" />
@@ -174,6 +181,7 @@
     <ClInclude Include="common\component\actor_comp.pb.h" />
     <ClInclude Include="common\component\asset_op_ledger_comp.pb.h" />
     <ClInclude Include="common\component\battle_settlement_ledger_comp.pb.h" />
+    <ClInclude Include="common\component\player_mystery_merchant_comp.pb.h" />
     <ClInclude Include="common\component\buff_comp.pb.h" />
     <ClInclude Include="common\component\base_comp.pb.h" />
     <ClInclude Include="common\component\currency_comp.pb.h" />
@@ -229,6 +237,12 @@
     <ClInclude Include="etcd\version.pb.h" />
     <ClInclude Include="friend\friend.grpc.pb.h" />
     <ClInclude Include="friend\friend.pb.h" />
+    <ClInclude Include="rank\rank.grpc.pb.h" />
+    <ClInclude Include="rank\rank.pb.h" />
+    <ClInclude Include="mail\mail.grpc.pb.h" />
+    <ClInclude Include="mail\mail.pb.h" />
+    <ClInclude Include="mail\mail_admin.grpc.pb.h" />
+    <ClInclude Include="mail\mail_admin.pb.h" />
     <ClInclude Include="gate\gate_service.pb.h" />
     <ClInclude Include="guild\guild.grpc.pb.h" />
     <ClInclude Include="guild\guild.pb.h" />
@@ -422,6 +436,8 @@
     <ClInclude Include="scene\player_mission.pb.h" />
     <ClCompile Include="scene\player_activity.pb.cc" />
     <ClInclude Include="scene\player_activity.pb.h" />
+    <ClCompile Include="scene\player_mystery_merchant.pb.cc" />
+    <ClInclude Include="scene\player_mystery_merchant.pb.h" />
     <ClInclude Include="battle\battle_data.pb.h" />
     <ClInclude Include="battle\battle_data.grpc.pb.h" />
     <ClInclude Include="battle\battle_node.pb.h" />

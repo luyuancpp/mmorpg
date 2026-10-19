@@ -1,0 +1,36 @@
+
+syntax = "proto3";
+
+option go_package = "generated/pb/table";
+
+option java_package = "com.game.table";
+
+
+enum mystery_merchant_error {
+  kMystery_merchant_errorOK = 0;
+
+  kMysteryMerchantNotPresent = 30000;
+
+  kMysteryMerchantNotHere = 30001;
+
+  kMysteryMerchantTooFar = 30002;
+
+  kMysteryMerchantShelfChanged = 30003;
+
+  kMysteryMerchantLimitReached = 30004;
+
+  kMysteryMerchantCurrencyNotEnough = 30005;
+
+  kMysteryMerchantBagFull = 30006;
+
+  kMysteryMerchantInBattle = 30007;
+
+  kMysteryMerchantFrozen = 30008;
+
+  kMysteryMerchantInvalidCount = 30009;
+
+  kMysteryMerchantItemBlocked = 30010;
+
+  kMysteryMerchantInternalError = 30011;
+
+};

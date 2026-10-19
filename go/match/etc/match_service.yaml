@@ -137,6 +137,17 @@ ResultTopic: match-results
 ResultTopicPartitions: 3
 # 消费组:多实例同组分摊分区,每条结果只被一个实例消费。
 ResultConsumerGroup: match-rating
+# ---- 排行榜评分快照(docs/design/leaderboard-system.md §2.4)----
+# 一局评分入账后,把全员的当前评分快照发到 RatingSnapshotTopic(key = player_id),rank 消费它写榜。
+# RatingSnapshotPublishEnabled 是排行榜上线的**唯一闸门**,仓内默认 false:rank 部署好之后再翻 true 滚动重启;
+# 回滚 = 翻回 false(评分链不受影响,榜停止更新但仍可读)。K8s 上不镜像本行,由 k8s_deploy.ps1 -MatchRatingSnapshotPublish 给值。
+# 本地冒烟(rank-smoke)时临时改成 true,跑完改回,**不要提交**这一改动。
+RatingSnapshotPublishEnabled: false
+# topic 全局无 zone 段;分区数是不可变契约(改要"代号 +1"换 topic);保留期**只由 match 声明**(rank 不改写),
+# 也是排行榜丢失后 offset 重放的恢复窗口(7 天,与 match-results 对齐)。不论开关如何,启动时都会声明这个 topic。
+RatingSnapshotTopic: match-rating-snapshot
+RatingSnapshotTopicPartitions: 3
+RatingSnapshotRetentionHours: 168
 # 容差曲线 tol = min(Max, Base + floor(等待秒 / StepSeconds) × StepDelta):
 # 100 起、每 5s 放宽 100、上限 1000。PVE 组队不看评分(容差 ∞,纯等待序)。
 RatingToleranceBase: 100
@@ -157,8 +168,13 @@ RatingDrawRoundCap: 300
 # AllowCrossZone:是否允许不同 home zone 的玩家同队。默认 false:申请 / 审批 / 邀请 / 接受邀请
 #   比对对方 home zone 与队伍 zone,不一致回 TeamCrossZoneDenied。从 true 改回 false 只拦新增。
 #   靠改这里 + 重启所有 match 实例切换;混跑窗口看 team_cross_zone_allowed gauge(J-13a)。
+# FillQueueDisabled:关闭队伍补位匹配(docs/design/team-backfill-matching.md §4.6)。默认 false = 开放。
+#   置 true 并重启所有 match 实例后:带「目标人数 > 当前人数」的整队开战回 TeamDungeonNotOpen,
+#   客户端不再给出目标人数选项;已经在队列里的补位单不受影响(照常可取消、可成组),直接开战不受影响。
+#   混跑窗口看 team_fill_queue_disabled gauge。
 Team:
   AllowCrossZone: false
+  FillQueueDisabled: false
 
 # data_service gRPC 客户端(etcd 发现):team 用 BatchGetPlayerHomeZone 查玩家 home zone,
 # 查询失败组队 fail-closed(TeamInternal),查不到映射回 TeamHomeZoneUnknown。

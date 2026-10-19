@@ -50,7 +50,7 @@ func LocationKey(playerId uint64) string {
 	return fmt.Sprintf("player:%d:location", playerId)
 }
 
-// BattleLockKey 返回 C++ scene 写的战斗锁键;match 只做咨询性 Exists。
+// BattleLockKey 返回 C++ scene 写的战斗锁键(值是 battle_id);match 只做咨询性读取(IsBattleLocked / BattleLockValue)。
 func BattleLockKey(playerId uint64) string {
 	return fmt.Sprintf("battle:lock:%d", playerId)
 }
@@ -118,6 +118,17 @@ func IsBattleLocked(ctx context.Context, svcCtx *svc.ServiceContext, playerId ui
 		return true, fmt.Errorf("查询 battle:lock 失败: %w", err)
 	}
 	return ok, nil
+}
+
+// BattleLockValue 读 battle:lock:{player_id} 的值:scene 写的 battle_id,没有锁返回空串。
+// 一次读同时回答「在不在战斗里」和「是哪一局」,给需要区分这两件事的调用方用(matcher 校验排队成员)。
+// 与 IsBattleLocked 一样只是咨询;Redis 出错返回 err,由调用方 fail-closed。
+func BattleLockValue(ctx context.Context, svcCtx *svc.ServiceContext, playerId uint64) (string, error) {
+	value, err := svcCtx.SharedRedis.GetCtx(ctx, BattleLockKey(playerId))
+	if err != nil {
+		return "", fmt.Errorf("读 battle:lock 失败: %w", err)
+	}
+	return value, nil
 }
 
 // PushToPlayer 把 S2C 消息经 Kafka gate-cmd_g<N> 的 gate_node_id % P 号分区推给玩家客户端

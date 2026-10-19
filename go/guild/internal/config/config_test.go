@@ -323,6 +323,34 @@ func TestValidateRejectsClientFoundRows(t *testing.T) {
 	}
 }
 
+// TestValidateMySQLPool(K8s 上线批 BK8s):连接池上限不写取缺省值;写了必须为正、空闲不超过上限。
+// 以前不设上限 = database/sql 不限,MySQL 连接总账无从记账。
+func TestValidateMySQLPool(t *testing.T) {
+	c := loadMinimal(t)
+	c.MySQL.MaxOpenConn, c.MySQL.MaxIdleConn = 0, 0
+	if err := c.Validate(); err != nil {
+		t.Fatalf("不写池参数应通过(取缺省值): %v", err)
+	}
+	if open, idle := c.MySQL.EffectivePool(); open != DefaultMySQLMaxOpenConn || idle != DefaultMySQLMaxIdleConn {
+		t.Fatalf("缺省池参数 = %d / %d,期望 %d / %d", open, idle, DefaultMySQLMaxOpenConn, DefaultMySQLMaxIdleConn)
+	}
+
+	c.MySQL.MaxOpenConn, c.MySQL.MaxIdleConn = 30, 10
+	if err := c.Validate(); err != nil {
+		t.Fatalf("30 / 10 应通过: %v", err)
+	}
+	if open, idle := c.MySQL.EffectivePool(); open != 30 || idle != 10 {
+		t.Fatalf("显式池参数 = %d / %d,期望 30 / 10", open, idle)
+	}
+
+	for _, tc := range []struct{ open, idle int }{{-1, 0}, {0, -1}, {4, 5}, {3, 0}} {
+		c.MySQL.MaxOpenConn, c.MySQL.MaxIdleConn = tc.open, tc.idle
+		if err := c.Validate(); err == nil || !strings.Contains(err.Error(), "MySQL.Max") {
+			t.Fatalf("MaxOpenConn=%d MaxIdleConn=%d 必须拒启,得到 %v", tc.open, tc.idle, err)
+		}
+	}
+}
+
 func TestEtcYamlPassesValidate(t *testing.T) {
 	var c Config
 	if err := conf.Load("../../etc/guild.yaml", &c); err != nil {
@@ -339,6 +367,9 @@ func TestEtcYamlPassesValidate(t *testing.T) {
 	}
 	if got := c.RequestBudget(); got != 3500*time.Millisecond {
 		t.Errorf("RequestBudget = %v,期望 3500ms", got)
+	}
+	if c.MySQL.MaxOpenConn != 20 || c.MySQL.MaxIdleConn != 5 {
+		t.Errorf("MySQL 池参数 = %d / %d,期望 20 / 5(K8s ConfigMap 与 MySQL 连接总账都镜像这两个键)", c.MySQL.MaxOpenConn, c.MySQL.MaxIdleConn)
 	}
 }
 

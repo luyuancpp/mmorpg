@@ -64,6 +64,10 @@ MySQL:
   RequireTiDB: false
   MaxOpenConn: 20
   DataSource: "appuser:apppass123@tcp(127.0.0.1:3306)/mmorpg_guild?charset=utf8mb4&parseTime=true&loc=Local"
+  # 连接池上限(每个副本)。不写 = 20 / 5;MaxIdleConn ≤ MaxOpenConn。K8s ConfigMap 从这两个键镜像,
+  # MySQL 连接总账(k8s_deploy.ps1 Get-MysqlConnectionLedger)按 MaxOpenConn × 副本数记账。
+  MaxOpenConn: 20
+  MaxIdleConn: 5
 
 # 建表策略(D-14 §4):不写或 true = 启动时 schemamigrate.Up(GET_LOCK 串行,锁忙重试 3 次);
 # false = 只跑只读 Plan,不干净就拒绝启动,并提示 `guild -f etc/guild.yaml -migrate`。K8s 非 dev 档固定 false。

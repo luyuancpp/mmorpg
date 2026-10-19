@@ -110,9 +110,30 @@ function Reset-MigrateFixture {
     $script:PlayerInboxAdminTokenSecretKey = 'admin-token'
     $script:PlayerInboxAdminTokenEnv = 'PLAYER_INBOX_ADMIN_TOKEN'
     $script:PlayerInboxAdminToken = ''
+    # mail(邮件,D-14 独占库 mmorpg_mail)是第五个带 MigrateJob 的服务,另带运维令牌的 Secret 注入(docs/design/mail-system.md §7.2,
+    # 照 player-inbox)。令牌相关的脚本级变量在 k8s_deploy.ps1 顶层赋值,AST 只抽函数,这里照抄一份;默认未注入。
+    # 单独一条赋值(理由同上面 friend:两边都只做追加时,3-way 合并的冲突面最小)。
+    $script:GoSvcCatalogue['mail'] = @{
+        ConfigMap = 'go-svc-mail-config'; Manifest = 'mail.yaml'; MigrateJob = 'mail-migrate.yaml'
+        ConfigFile = 'mail.yaml'; ImageName = 'mmorpg-mail'; Port = 50900; Global = $true
+    }
+    $script:MailAdminTokenSecretName = 'mail-admin-auth'
+    $script:MailAdminTokenSecretKey = 'token'
+    $script:MailAdminTokenEnv = 'MMORPG_MAIL_ADMIN_TOKEN'
+    $script:MailAdminToken = ''
     foreach ($name in @('Add-GoSvcSecretEnv', 'Get-InjectedSecretFingerprint')) {
         Restore-ProductionFunction $name
     }
+    # 通用资产通道(-AssetOps,trade 是调用方之一):同样是 k8s_deploy.ps1 顶层赋值的脚本级变量,照抄一份;默认关(= 不传 -AssetOps)。
+    $script:AssetOpsOn = $false
+    $script:NetworkPoliciesOn = $false
+    $script:AssetOpSecretKey = 'secret'
+    $script:AssetOpCallers = [ordered]@{
+        guild = [pscustomobject]@{ Env = 'MMORPG_ASSET_OP_SECRET_GUILD'; SecretName = 'asset-op-secret-guild'; HashAnnotation = 'mmorpg.io/asset-op-secret-guild-hash' }
+        trade = [pscustomobject]@{ Env = 'MMORPG_ASSET_OP_SECRET_TRADE'; SecretName = 'asset-op-secret-trade'; HashAnnotation = 'mmorpg.io/asset-op-secret-trade-hash' }
+    }
+    $script:AssetOpSecretHashPlaceholder = 'PLACEHOLDER_ASSET_OP_SECRET_HASH'
+    $script:AssetOpSecrets = @{}
     Set-Item Function:script:Apply-InjectedSecret {
         param($Namespace, $Name, $Key, $Value, $AppLabel)
         $script:Events.Add("apply:Secret:$Name")
@@ -271,10 +292,99 @@ Test-Case 'player-inbox 注入运维口令:先建 Secret 再 apply Deployment,en
     Assert-NotMatch -Text $content -Pattern 'PLACEHOLDER_' -Because '注入不能打乱原有占位替换'
 }
 
+# mail(邮件,全局库 mmorpg_mail)走同一条门禁(docs/design/mail-system.md §7.2 ④)。用真 manifest 跑,顺带钉住 mail.yaml / mail-migrate.yaml
+# 两个文件都在、占位全部可替换(含令牌指纹占位)。未注入令牌时:不注入 env、不建 Secret,指纹写 disabled,Deployment 之后删残留 Secret。
+Test-Case 'mail 的迁移门禁与 trade 同链路,未注入运维令牌时不建 Secret' {
+    Reset-MigrateFixture
+    $script:JobAbsentBeforeApply = $true
+    Apply-OneGoSvc -SvcName 'mail' -Namespace audit-infra -CurrentZoneId 0 -CurrentClusterId 0
+    $events = @($script:Events)
+    Assert-True -Condition ([Array]::IndexOf($events, 'apply:ConfigMap') -lt [Array]::IndexOf($events, 'apply:Job')) -Because 'mail-migrate Job 要读取先前创建的 ConfigMap'
+    Assert-True -Condition ([Array]::IndexOf($events, 'apply:Job') -lt [Array]::IndexOf($events, 'apply:Deployment')) -Because 'staging/prod 的 Schema.AutoMigrate=false,表没建出来 mail 会拒启,迁移必须先于 Deployment'
+    Assert-True -Condition ($events -contains 'query:Job') -Because '放行必须来自 Job 查询结果'
+    Assert-True -Condition (-not ($events | Where-Object { $_ -like 'apply:Secret:*' })) -Because '未注入令牌时不能建出一个空令牌的 Secret'
+    # 模拟层把所有 delete 都记成 delete:Job;未注入令牌时 Deployment 之后还要再删一次残留 Secret(不粘滞)。
+    $deployAt = [Array]::IndexOf($events, 'apply:Deployment')
+    Assert-True -Condition ([Array]::LastIndexOf($events, 'delete:Job') -gt $deployAt) -Because '残留 Secret 必须在 Deployment apply 之后删(否则新 Pod 卡 CreateContainerConfigError)'
+    $content = $script:DeploymentContent
+    Assert-NotMatch -Text $content -Pattern 'PLACEHOLDER_' -Because '镜像、拉取策略与令牌指纹占位都必须被替换'
+    Assert-Match -Text $content -Pattern 'mmorpg.io/mail-admin-token-hash: "disabled"' -Because '未注入令牌时指纹写 disabled,注入后模板必然变化、触发滚动'
+    Assert-NotMatch -Text $content -Pattern 'name: MMORPG_MAIL_ADMIN_TOKEN' -Because '未注入令牌时不能引用一个不存在的 Secret(Pod 会卡在 CreateContainerConfigError)'
+    Assert-Match -Text $content -Pattern '(?m)^  replicas: 2\s*$' -Because 'MySQL / Redis 连接总账按两副本计'
+    Assert-Match -Text $content -Pattern 'name: mail-pdb' -Because 'PDB 随主 manifest 一起 apply'
+}
+
+Test-Case 'mail 注入运维令牌:建表门禁之后、Deployment 之前建 Secret,env 走 secretKeyRef,令牌值不进 manifest' {
+    Reset-MigrateFixture
+    $script:JobAbsentBeforeApply = $true
+    $token = 'audit-only-mail-admin-token-0123456789abcdef'
+    $script:MailAdminToken = $token
+    Apply-OneGoSvc -SvcName 'mail' -Namespace audit-infra -CurrentZoneId 0 -CurrentClusterId 0
+    $events = @($script:Events)
+    $secretAt = [Array]::IndexOf($events, 'apply:Secret:mail-admin-auth')
+    Assert-True -Condition ($secretAt -ge 0) -Because '令牌已解析时必须建 Secret'
+    Assert-True -Condition ([Array]::IndexOf($events, 'apply:Job') -lt $secretAt) -Because '建表门禁失败时 Secret 必须保持旧值(否则旧 Pod 重启读到新令牌,副本间令牌不一致)'
+    Assert-True -Condition ($secretAt -lt [Array]::IndexOf($events, 'apply:Deployment')) -Because 'secretKeyRef 不是 optional,Secret 必须先于引用它的 Deployment'
+    $content = $script:DeploymentContent
+    Assert-Match -Text $content -Pattern '- name: MMORPG_MAIL_ADMIN_TOKEN\s+valueFrom:\s+secretKeyRef:\s+name: mail-admin-auth\s+key: token' -Because '令牌只经 Secret 进容器,变量名与 go/mail 的 AdminTokenEnv 一致'
+    Assert-Equal -Expected 1 -Actual ([regex]::Matches($content, 'name: MMORPG_MAIL_ADMIN_TOKEN').Count) -Because '只能注入一份'
+    Assert-Match -Text $content -Pattern 'mmorpg.io/mail-admin-token-hash: "[0-9a-f]{12}"' -Because '模板带令牌指纹,轮换令牌即滚动'
+    Assert-True -Condition (-not $content.Contains($token)) -Because '令牌值绝不能出现在 manifest 里'
+    Assert-NotMatch -Text $content -Pattern 'PLACEHOLDER_' -Because '注入不能打乱原有占位替换'
+}
+
+
+foreach ($profile in @('staging', 'prod')) {
+    Test-Case "mail $profile 建表失败:不写令牌 Secret,不 apply Deployment" {
+        Reset-MigrateFixture
+        $script:ReleaseProfile = $profile
+        $script:JobAbsentBeforeApply = $true
+        $script:AfterApplyCondition = 'Failed'
+        $script:MailAdminToken = 'audit-only-mail-admin-token-0123456789abcdef'
+        $failure = Get-ThrownMessage { Apply-OneGoSvc -SvcName 'mail' -Namespace audit-infra -CurrentZoneId 0 -CurrentClusterId 0 }
+        Assert-Match -Text $failure -Pattern 'mail-migrate.*failed' -Because '必须报告迁移失败,而不是其它模拟或参数错误'
+        Assert-True -Condition ($script:Events -contains 'apply:Job') -Because '负向用例必须真正走到新 Job 的 apply'
+        Assert-True -Condition ($script:Events -notcontains 'apply:Secret:mail-admin-auth') -Because '门禁失败时令牌 Secret 不得被覆盖(轮换令牌时旧 Pod 重启会读到新值)'
+        Assert-True -Condition ($script:Events -notcontains 'apply:Deployment') -Because '失败后不得部署服务'
+    }
+}
+
+# trade 是通用资产通道的调用方之一(-AssetOps):关着时指纹占位整行删掉、不注入密钥;打开时与 player-inbox 同一顺序(先 Secret 后 Deployment)。
+Test-Case 'trade 资产通道关着:指纹占位整行删掉,不引用签名密钥,不建 Secret' {
+    Reset-MigrateFixture
+    $script:JobAbsentBeforeApply = $true
+    Apply-OneGoSvc -SvcName trade -Namespace audit-infra -CurrentZoneId 0 -CurrentClusterId 0
+    $content = $script:DeploymentContent
+    # 清单注释会说明打开通道时的注解和环境变量;这里只检查生效字段,仍拒绝残留占位与任何签名密钥引用。
+    $effectiveContent = (($content -split '\r?\n') | Where-Object { $_ -notmatch '^\s*#' }) -join "`n"
+    Assert-NotMatch -Text $effectiveContent -Pattern '(?m)^[ \t]+["'']?mmorpg\.io/asset-op-secret-trade-hash["'']?[ \t]*:' -Because '关着时 Pod 模板不能保留密钥指纹注解,避免触发滚动'
+    Assert-NotMatch -Text $effectiveContent -Pattern 'PLACEHOLDER_' -Because '生效清单不能残留未替换占位'
+    Assert-NotMatch -Text $effectiveContent -Pattern '(?m)^[ \t]*-[ \t]+name:[ \t]*["'']?MMORPG_ASSET_OP_SECRET_TRADE["'']?[ \t]*(?:#.*)?$' -Because '关着时不能注入签名密钥环境变量'
+    Assert-NotMatch -Text $effectiveContent -Pattern '(?m)^[ \t]+name:[ \t]*["'']?asset-op-secret-trade["'']?[ \t]*(?:#.*)?$' -Because '关着时不能引用一个不存在的签名密钥 Secret'
+    Assert-True -Condition (-not ($script:Events | Where-Object { $_ -like 'apply:Secret:*' })) -Because '关着时不建 Secret'
+}
+
+Test-Case 'trade 资产通道打开:先建 Secret 再 apply Deployment,env 走 secretKeyRef,模板带指纹,密钥值不进 manifest' {
+    Reset-MigrateFixture
+    $script:JobAbsentBeforeApply = $true
+    $secret = 'audit-only-asset-op-trade-secret-0123456789abcdef'
+    $script:AssetOpsOn = $true
+    $script:AssetOpSecrets = @{ trade = $secret }
+    Apply-OneGoSvc -SvcName trade -Namespace audit-infra -CurrentZoneId 0 -CurrentClusterId 0
+    $events = @($script:Events)
+    $secretAt = [Array]::IndexOf($events, 'apply:Secret:asset-op-secret-trade')
+    Assert-True -Condition ($secretAt -ge 0) -Because '打开时必须建 Secret'
+    Assert-True -Condition ($secretAt -lt [Array]::IndexOf($events, 'apply:Deployment')) -Because 'secretKeyRef 不是 optional,Secret 必须先于 Deployment'
+    $content = $script:DeploymentContent
+    Assert-Match -Text $content -Pattern '- name: MMORPG_ASSET_OP_SECRET_TRADE\s+valueFrom:\s+secretKeyRef:\s+name: asset-op-secret-trade\s+key: secret' -Because '签名密钥只经 Secret 进容器'
+    Assert-Match -Text $content -Pattern 'mmorpg.io/asset-op-secret-trade-hash: "[0-9a-f]{12}"' -Because '模板带指纹,换密钥即滚动'
+    Assert-True -Condition (-not $content.Contains($secret)) -Because '密钥值绝不能出现在 manifest 里'
+    Assert-NotMatch -Text $content -Pattern 'PLACEHOLDER_' -Because '注入不能打乱原有占位替换'
+}
 
 # 控制面命令 topic 契约(KAFKA_COMMAND_TOPIC_*)统一注入。背景:go/shared/kafkacmd 不配这两个变量就回落到 256 / 1,
 # 而 C++ gate / scene 消费的是 base_deploy_config.yaml 的代号,不一致时 Go 发给 gate / scene 的命令静默丢失。
-foreach ($svc in @('trade', 'friend', 'player-inbox')) {
+foreach ($svc in @('trade', 'friend', 'player-inbox', 'mail')) {
     Test-Case "$svc 的 Deployment 带上注入的命令 topic 契约,且只有一份" {
         Reset-MigrateFixture
         $script:JobAbsentBeforeApply = $true

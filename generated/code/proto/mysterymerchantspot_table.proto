@@ -1,0 +1,22 @@
+
+syntax = "proto3";
+
+option go_package = "generated/pb/table";
+
+option java_package = "com.game.table";
+option java_outer_classname = "MysteryMerchantSpotTableOuterClass";
+option java_multiple_files = true;
+
+
+message MysteryMerchantSpotTable {
+	uint32 id = 1;
+	uint32 scene_config_id = 2;
+	double x = 3;
+	double y = 4;
+	double z = 5;
+	string desc = 6;
+}
+
+message MysteryMerchantSpotTableData {
+	repeated MysteryMerchantSpotTable data = 1;
+}

@@ -1,3 +1,4 @@
+# 现役配置以服务 YAML 为源；不恢复历史 M1 表、AdminToken 或 Redis 权威榜运行时。
 # SQL榜代次/封榜/奖励意图权威；两副本共享SQL并靠逐行租约投递邮件。
 apiVersion: v1
 kind: Service
@@ -16,6 +17,9 @@ metadata:
   labels: {app: rank, tier: go-svc}
 spec:
   replicas: 2
+  strategy:
+    type: RollingUpdate
+    rollingUpdate: {maxSurge: 1, maxUnavailable: 0}
   selector:
     matchLabels: {app: rank}
   template:
@@ -27,6 +31,14 @@ spec:
         prometheus.io/path: /metrics
     spec:
       terminationGracePeriodSeconds: 35
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchLabels: {app: rank}
+                topologyKey: kubernetes.io/hostname
       containers:
         - name: rank
           image: PLACEHOLDER_IMAGE

@@ -1,0 +1,68 @@
+# merchant-smoke 配置:单机器人对「神秘商人」做端到端冒烟
+# (docs/design/mystery-merchant.md §2 协议 / §5 购买流程;场景实现见 robot/mystery_merchant_smoke_scenario.go)
+#
+# 流程:M1 登录进场
+#       → M2 查询:GetMysteryMerchantInfo;商人在场则校验 scene_id / channel_no / 站位 / 时间窗
+#       → M3 不在同一条线就 EnterScene 切过去,再查一次:here == true、货架非空、每件折后价 == ceil(原价 × 折扣 / 100)
+#       → M4 MoveStop 上报站位旁 1 个单位的点
+#       → M5 负例:份数 0 → kMysteryMerchantInvalidCount;旧轮次,以及报价四项(单价 / 货币 / 物品 / 每份数量)
+#            各错一处 → kMysteryMerchantShelfChanged
+#       → M6 GM 加银两后买 1 份:bought_count +1、余额 == 加钱后 − 单价、背包里有这件物品
+#       → M7 把剩余名额一次买完,再买 1 份 → kMysteryMerchantLimitReached
+#       → M8 再查一次:bought_count == limit_count。
+#
+# 前置(缺一条就会失败或跳过,原因写进 MERCHANT_SMOKE_FAIL 的 reason / MERCHANT_SMOKE_SKIP):
+#   1. 三张新表与新提示码已导表、proto-gen 已跑、scene / gate / scene_manager / robot 都用新产物重编过
+#      (顺序见 docs/design/mystery-merchant.md §9)。gate 必须重编:客户端消息白名单是生成物,
+#      不认识新消息号的 gate 会把 250 / 251 当非法包丢掉(表现为 M2 等不到应答)。
+#   2. zone 库已迁移:player_database 多了一列 mystery_merchant(go/db 缺列会拒绝启动):
+#        cd go/db && go run ./cmd/migrate up        # 退出码 4 = 已是最新,不是失败
+#   3. scene_manager 的 etc/scene_manager_service.yaml 里把 MysteryMerchant 块的注释去掉并重启:
+#        MysteryMerchant:
+#          Disabled: false
+#          IntervalSecondsOverride: 120   # 每两分钟一轮
+#          StaySecondsOverride: 120       # 停留 = 间隔:商人一直在场
+#          SpotIdOverride: 1              # 钉在出生点旁的站位(MysteryMerchantSpot id 1)
+#      - 不配前两行:按表是「整点出现、停留 30 分钟」,每小时有一半时间商人不在,本冒烟会打印
+#        MERCHANT_SMOKE_SKIP reason=merchant_away 并以退出码 0 结束;
+#      - 不配第三行:商人会随机落到六个站位之一,机器人只会直线上报一个点,远处的站位中间隔着建筑,
+#        M5 / M6 会报「太远」。
+#      看完记得改回去:这三个覆盖值不该出现在生产配置里。
+#   4. scene_manager 有实例当上领导者,且分线目录在发布(神秘商人从目录里挑线):
+#      ChannelSwitch.DirectoryRefreshSeconds 不能是负数。启动后最多等 5 秒(一拍)就会排出第一轮。
+#   5. scene 与 gate 以 dev / test 模式运行(M6 用 GM 指令加银两;prod 模式下 gate 直接拒绝,见 cpp/nodes/gate/SECURITY.md)。
+#   6. robot_9901 不在任何队伍里(队员切线后会被同节点的队长拉回,M3 会报「进了别的场景」)。
+#      前缀必须是 robot_ 才会命中 login 侧 DevPasswordAuth。
+#   7. 从 robot/ 目录运行(table_dir 是相对路径)。
+#
+# 用法(robot/ 目录下):
+#   .\robot.exe -c etc/merchant_smoke.yaml
+# 退出码 0 = 全部断言通过(日志有 MERCHANT_SMOKE_OK player_id=… 一行),或前置条件不满足而跳过
+#   (MERCHANT_SMOKE_SKIP reason=merchant_away / merchant_on_another_map / all_bought);
+# 退出码 1 = 任一步失败(MERCHANT_SMOKE_FAIL step=… reason=…)。每步通过另有一行 [merchant-smoke] PASS step=…。
+# 跑一轮约 20 秒。
+#
+# 可重复运行:限购按「每人每件每轮」记在玩家存档里。同一轮里跑第二遍时,上一遍买满的那件会被跳过、改买下一件;
+#   货架上每件都买满了就打印 MERCHANT_SMOKE_SKIP reason=all_bought —— 等下一轮(按上面的配置是两分钟)再跑。
+#   每跑一遍会给 robot_9901 加 100000 银两并留下买到的物品;背包满了会在 M6 报 kMysteryMerchantBagFull,
+#   那时换个账号或清库。
+# 撞上换轮:冒烟跑到一半恰好换了一轮,购买会被拒(kMysteryMerchantShelfChanged),失败原因里会写明 "hit a round change",重跑即可;
+#   经常撞上就把 IntervalSecondsOverride / StaySecondsOverride 一起调大。
+# 两条线的环境才能验到「切到商人所在的线」;只有 1 条线时商人必然在机器人所在的线,M3 不切线(其余照常验证)。
+
+gateway_addr: "http://127.0.0.1:8081" # Gateway HTTP endpoint(/api/assign-gate)
+zone_id: 1 # 目标 zone
+robot_count: 1 # 语义占位:本模式固定单机器人
+account_fmt: "robot_%04d" # 保留骨架字段;本模式用固定账号 robot_9901
+password: "123456"
+skill_ids: [] # 本模式不放技能
+table_dir: "../generated/tables"
+action_interval: 3 # 本模式不跑场景 AI 循环,保留默认
+report_interval: 5
+
+mode: "merchant-smoke"
+
+merchant_smoke:
+  arrive_timeout_seconds: 20 # 切到商人所在线时等 NotifyEnterScene 的上限;同节点毫秒级,跨节点交接更久
+
+auth_type: "password"

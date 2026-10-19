@@ -289,7 +289,7 @@ func TestQueueMirrorStaysConsistentAcrossOperations(t *testing.T) {
 	assertQueueMirrorConsistent(t, mr, queue1v1)
 
 	// 重复项:同一玩家两份,弹组把两份一起摘掉。
-	require.NoError(t, enqueueAtomic(svcCtx, queue1v1, 11503, 2000))
+	mr.Push(queue1v1, "11503") // 人工构造遗留重复项;生产入队现在会去重。
 	setPlayerLocation(t, mr, 11504, 1)
 	setRating(t, mr, 11504, 2000)
 	require.Zero(t, joinQueue1v1(t, svcCtx, 11504).ErrorCode)

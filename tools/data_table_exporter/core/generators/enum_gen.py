@@ -363,8 +363,12 @@ def _parse_tip_sheet(ws) -> dict[str, dict]:
     fault_col = _locate_fault_column(ws)
     fault_letter = get_column_letter(fault_col + 1)
 
-    for row_idx in range(_TIP_DATA_BEGIN_ROW, (ws.max_row or _TIP_DATA_BEGIN_ROW) + 1):
-        cells = ws[row_idx]
+    # 合法 xlsx 可以不写 worksheet dimension；顺序读取到文件末尾，不能把
+    # read_only 下未知的 max_row 当成只有元数据行，否则会漏掉后续整组错误码。
+    for row_idx, cells in enumerate(ws.iter_rows(min_row=_TIP_DATA_BEGIN_ROW),
+                                    start=_TIP_DATA_BEGIN_ROW):
+        if not cells:
+            continue
         val = cells[0].value
         fault_raw = cells[fault_col].value if fault_col < len(cells) else None
         if val is None or not str(val).strip():

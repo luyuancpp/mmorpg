@@ -55,6 +55,7 @@ set(SOURCE_FILES
     common/asset/asset_op.pb.cc
     common/component/asset_op_ledger_comp.pb.cc
     common/component/battle_settlement_ledger_comp.pb.cc
+    common/component/player_mystery_merchant_comp.pb.cc
     common/component/battle_comp.pb.cc
     common/event/battle_event.pb.cc
     common/event/team_event.pb.cc
@@ -132,6 +133,12 @@ set(SOURCE_FILES
     etcd/version.pb.cc
     friend/friend.grpc.pb.cc
     friend/friend.pb.cc
+    rank/rank.grpc.pb.cc
+    rank/rank.pb.cc
+    mail/mail.grpc.pb.cc
+    mail/mail.pb.cc
+    mail/mail_admin.grpc.pb.cc
+    mail/mail_admin.pb.cc
     gate/gate_service.pb.cc
     guild/guild.grpc.pb.cc
     guild/guild.pb.cc
@@ -175,6 +182,7 @@ set(SOURCE_FILES
     scene/player_bag.pb.cc
     scene/player_mission.pb.cc
     scene/player_activity.pb.cc
+    scene/player_mystery_merchant.pb.cc
     common/base/service_call_auth.pb.cc
     friend/friend_table.grpc.pb.cc
     friend/friend_table.pb.cc

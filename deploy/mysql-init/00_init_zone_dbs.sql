@@ -82,6 +82,8 @@ GRANT ALL PRIVILEGES ON `mmorpg_friend`.* TO 'appuser'@'%';
 CREATE DATABASE IF NOT EXISTS mmorpg_player_inbox DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 GRANT ALL PRIVILEGES ON `mmorpg_player_inbox`.* TO 'appuser'@'%';
 
+-- 邮件和排行榜只在此预建独占库及授权；现役 M2/M3 表由服务 -migrate 创建。
+-- 已初始化 PVC 不会重跑 initdb，必须在维护窗口补建与授权，不能依靠重新发布恢复。
 -- 新服务只在此处预建独占库，业务表仍由各服务 -migrate 创建。
 CREATE DATABASE IF NOT EXISTS mmorpg_mail DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 GRANT ALL PRIVILEGES ON `mmorpg_mail`.* TO 'appuser'@'%';

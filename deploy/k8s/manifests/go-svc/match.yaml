@@ -45,6 +45,10 @@ spec:
         prometheus.io/scrape: "true"
         prometheus.io/port: "9170"
         prometheus.io/path: "/metrics"
+        # 排行榜评分快照发布开关的当前值("0" / "1"),由 k8s_deploy.ps1 的 Apply-OneGoSvc 按 -MatchRatingSnapshotPublish 替换占位。
+        # ConfigMap 只在进程启动时读:没有这一行,只翻开关时 Pod 模板不变、apply 是 no-op,match 不滚动,开关 / 回滚都不生效,
+        # 之后某个 Pod 被驱逐重启时还会出现"一半实例在发"的半开状态。不要手改这一行,也不要绕过脚本直接 apply 本文件。
+        mmorpg.io/rating-snapshot-publish: "PLACEHOLDER_MATCH_RATING_SNAPSHOT_PUBLISH"
     spec:
       affinity:
         podAntiAffinity:

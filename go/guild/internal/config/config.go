@@ -592,7 +592,7 @@ func (c *Config) Validate() error {
 	if !c.MySQL.RequiresTiDB() && c.Mode != service.DevMode && c.Mode != service.TestMode {
 		return errors.New("生产帮会权威库不得关闭TiDB门禁")
 	}
-	if c.MySQL.MaxOpenConn < 1 || c.MySQL.MaxOpenConn > 128 {
+	if maxOpen, _ := c.MySQL.EffectivePool(); maxOpen < 1 || maxOpen > 128 {
 		return errors.New("MySQL.MaxOpenConn 必须在 [1, 128] 内")
 	}
 	// 连接池上限:负数没有合法含义(0 = go-redis 缺省 10 × GOMAXPROCS),见 RedisConf.PoolSize。
@@ -644,6 +644,13 @@ func (c *Config) Validate() error {
 	// 让"配置写的"与"实际生效的"不一致暴露在部署时,而不是被静默改写、日后有人照着配置去排障。
 	if dsn.ClientFoundRows {
 		return errors.New("MySQL.DataSource 不得设置 clientFoundRows=true:帮会计数 upsert 以 RowsAffected=0 判定已达上限,开启后会多发奖励(原文含口令,不打印)")
+	}
+	if c.MySQL.MaxOpenConn < 0 || c.MySQL.MaxIdleConn < 0 {
+		return fmt.Errorf("MySQL.MaxOpenConn(%d)/ MaxIdleConn(%d)不得为负(0 = 取缺省值 %d / %d)",
+			c.MySQL.MaxOpenConn, c.MySQL.MaxIdleConn, DefaultMySQLMaxOpenConn, DefaultMySQLMaxIdleConn)
+	}
+	if maxOpen, maxIdle := c.MySQL.EffectivePool(); maxIdle > maxOpen {
+		return fmt.Errorf("MySQL.MaxIdleConn(生效值 %d)不得大于 MaxOpenConn(生效值 %d)", maxIdle, maxOpen)
 	}
 
 	// 资产通道(B5b)。关着时一概不查,见 AssetOpConf 的说明。
@@ -729,9 +736,27 @@ type MySQLConf struct {
 	// 缺省开启全局权威库门禁；旧MySQL仅可在dev/test显式关闭。
 	RequireTiDB *bool `json:",optional"`
 	MaxOpenConn int   `json:",default=20"`
+	MaxIdleConn int   `json:",optional"`
 }
 
 func (c MySQLConf) RequiresTiDB() bool { return c.RequireTiDB == nil || *c.RequireTiDB }
+
+// 连接池预算与部署总账共用，强会话初始化仍由 authoritysql 负责。
+const (
+	DefaultMySQLMaxOpenConn = 20
+	DefaultMySQLMaxIdleConn = 5
+)
+
+func (m MySQLConf) EffectivePool() (maxOpen, maxIdle int) {
+	maxOpen, maxIdle = m.MaxOpenConn, m.MaxIdleConn
+	if maxOpen == 0 {
+		maxOpen = DefaultMySQLMaxOpenConn
+	}
+	if maxIdle == 0 {
+		maxIdle = DefaultMySQLMaxIdleConn
+	}
+	return
+}
 
 type NodeConf struct {
 	ZoneId   uint32 `json:"ZoneId"`

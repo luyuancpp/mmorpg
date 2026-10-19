@@ -12,6 +12,7 @@ import (
 
 	"go.uber.org/zap"
 	_config "protogen/internal/config"
+	"protogen/internal/utils"
 	"protogen/logger"
 )
 
@@ -89,7 +90,7 @@ func syncCppBuildProjects(protoRoot, outputRoot string) error {
 	}
 	// 所有清单先校验成功，再写入；不因某个清单形状错误只完成半套登记。
 	for _, item := range updates {
-		if err := os.WriteFile(item.path, []byte(item.text), 0644); err != nil {
+		if err := utils.WriteFileIfChanged(item.path, []byte(item.text)); err != nil {
 			return err
 		}
 	}

@@ -91,6 +91,7 @@ set(SOURCE_FILES
     handler/grpc/scene_node_service.cpp
     main.cpp
     id_segment_bootstrap.cpp
+    handler/rpc/player/player_mystery_merchant_handler.cpp
     handler/rpc/player/player_bag_handler.cpp
     handler/rpc/player/player_mission_handler.cpp
     handler/rpc/player/player_activity_handler.cpp

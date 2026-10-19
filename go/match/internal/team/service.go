@@ -5,10 +5,11 @@ import (
 	"errors"
 	"sort"
 	"strconv"
+	"sync/atomic"
 	"time"
 
-	"match/generated/pb/game"
 	"match/internal/authority"
+	"match/internal/constants"
 	"match/internal/metrics"
 	"match/internal/playercontract"
 	"match/internal/svc"
@@ -63,6 +64,22 @@ type BattleStarter interface {
 		roster []uint64, zones map[uint64]uint32) (map[uint64]string, uint64)
 	// RunGather 同步执行一次整队 gather(roster 原序;失败时实现方已全员删票),返回是否开局成功。
 	RunGather(battleConfigId uint32, roster []uint64, tickets map[uint64]string) bool
+
+	// ---- 队伍补位匹配(docs/design/team-backfill-matching.md;原因码 / 状态码见 constants.Party*) ----
+
+	// EnqueueParty 整队进 targetSize 人数档的队列等补位:逐人建 queued 补位票 + 一条 Lua 整单入队。
+	// (0, nil) = 已入队;否则实现方已回滚本次写下的票:(pid, _) = 该成员已有票据或给他建票出错,(0, err) = 其它故障。
+	// 前置条件:len(roster) < targetSize ≤ TeamSizeFor(battleConfigId)。
+	EnqueueParty(ctx context.Context, battleConfigId, targetSize uint32, teamId uint64,
+		roster []uint64, zones map[uint64]uint32) (uint64, error)
+	// CancelParty 撤掉 teamId 仍在排的补位单(candidates 里任何一人持有本队的 queued 补位票即可定位整单),
+	// 返回被撤那一单的名单;没有在排的单返回 (nil, nil)。keepIfRoster 非空时,那一单的名单若恰好等于它就不撤
+	// (名单变化的撤单是异步的:传提交后的成员集合,迟到执行不误杀按新名单重新入队的单)。
+	// reason = PartyEndNone 时静默,否则实现方回调 PartyEnded。
+	CancelParty(ctx context.Context, teamId uint64, candidates, keepIfRoster []uint64, reason uint32, culprit uint64) ([]uint64, error)
+	// PartyQueueState playerId 是否正随 teamId 在补位:返回 (PartyQueue*, 目标人数, 副本, 入队时刻毫秒, err),
+	// 后三项只在 Queued 时有值。
+	PartyQueueState(ctx context.Context, playerId, teamId uint64) (uint32, uint32, uint32, uint64, error)
 }
 
 // afterPreflightHook 测试缝(生产恒为 nil):StartTeamMatch 每轮预检通过之后、开战锁提交之前调用,
@@ -93,6 +110,10 @@ type Service struct {
 	starter   BattleStarter
 	// syncDigest 名册提交后 bump 落地摘要(syncdigest.go);nil 时 bump 是无操作。
 	syncDigest *playersync.Bumper
+
+	// queueStateBreakerUntil 视图装饰读票的熔断截止时刻(UnixNano;0 = 未熔断),见 decorateQueueState。
+	// Service 其余部分无可变状态;这一项是原子读写。
+	queueStateBreakerUntil atomic.Int64
 }
 
 // NewService 装配组队服务。
@@ -143,7 +164,8 @@ func (s *Service) CreateTeam(ctx context.Context, caller uint64, _ *teampb.Creat
 	return resp
 }
 
-// GetMyTeam 自由读 + 过期清理 / 惰性转让;没变化但 TTL 不足时续期;notify_online 时推给其他在线队员。
+// GetMyTeam 自由读 + 过期清理 / 惰性转让;没变化但 TTL 不足时续期;notify_online 时推给其他在线队员;
+// regroup 时请求归队(见 publishRegroup)。
 func (s *Service) GetMyTeam(ctx context.Context, caller uint64, in *teampb.GetMyTeamRequest) *teampb.TeamResponse {
 	resp := s.getMyTeam(ctx, caller, in)
 	if s.svcCtx.Authority != nil && in.MatchRequestId != "" {
@@ -186,6 +208,9 @@ func (s *Service) getMyTeam(ctx context.Context, caller uint64, in *teampb.GetMy
 			}
 			s.publishOnline(caller, team.GetTeamId(), members)
 		}
+	}
+	if in.GetRegroup() {
+		s.publishRegroup(caller, resp.GetTeam())
 	}
 	return resp
 }
@@ -367,6 +392,9 @@ func (s *Service) DisbandTeam(ctx context.Context, caller uint64, in *teampb.Dis
 //     推给全员的 MATCH_FAILED 带同一个 tip;
 //  8. 后台 gather → EndMatch(ok) → 推 MATCH_ENDED / MATCH_FAILED;
 //  9. 回包 = 加锁提交构建的视图(match_state=STARTING)。
+//
+// 补位分支(target_team_size 大于当前人数,docs/design/team-backfill-matching.md §4.1):第 1–5 步相同,
+// 之后不加开战锁,改走 startBackfill —— 整队进人数档队列,回包是 QUEUED 视图;凑满后由 matcher 开局。
 func (s *Service) StartTeamMatch(ctx context.Context, caller uint64, in *teampb.StartTeamMatchRequest) *teampb.TeamResponse {
 	log := logx.WithContext(ctx)
 	if s.svcCtx.Authority != nil {
@@ -393,6 +421,7 @@ func (s *Service) StartTeamMatch(ctx context.Context, caller uint64, in *teampb.
 		return s.matchReject(ctx, caller, ErrInternal, 0, nil)
 	}
 	configId := in.GetBattleConfigId()
+	targetSize := in.GetTargetTeamSize()
 	bind := BindCaller(caller, in.GetExpectedTeamId())
 	for round := 0; round < matchStartRounds && ctx.Err() == nil; round++ {
 		res, err := s.store.Mutate(ctx, bind, RefreshOp(caller))
@@ -415,16 +444,37 @@ func (s *Service) StartTeamMatch(ctx context.Context, caller uint64, in *teampb.
 		if code := CheckMatchStart(rec, caller, snap.NowMs); code != 0 {
 			return s.matchReject(ctx, caller, code, 0, &snap)
 		}
-		if code := CheckMatchTeamSize(rec, s.starter.TeamSizeFor(configId)); code != 0 {
+		limit := s.starter.TeamSizeFor(configId)
+		if code := CheckMatchTeamSize(rec, limit); code != 0 {
 			return s.matchReject(ctx, caller, code, 0, &snap)
+		}
+		// 目标人数(team-backfill-matching.md §3.2):0 或等于当前人数 = 直接开战;大于当前人数 = 进队列补位;
+		// 小于当前人数或超过副本上限 → 人数不符。
+		memberCount := uint32(len(rec.GetMembers()))
+		backfill := targetSize > memberCount
+		if targetSize != 0 && (targetSize < memberCount || targetSize > limit) {
+			return s.matchReject(ctx, caller, ErrSizeExceeded, 0, &snap)
+		}
+		if backfill && (s.svcCtx.Config.Team.FillQueueDisabled || s.svcCtx.Authority != nil) {
+			return s.matchReject(ctx, caller, ErrDungeonNotOpen, 0, &snap)
 		}
 		roster := MatchRoster(rec)
 		zones, code, param := s.preflightMatch(ctx, roster)
 		if code != 0 {
+			// 本队已经在补位(或刚凑满、开局在途)时再点开战:预检会在票据项上拦下(名单第一个就是队长自己),
+			// 按「进行中」回 TeamInMatch + 当前视图,与开战锁有效时同口径,而不是「队长自己没准备好」。
+			// 判定放在预检之后是有意的:预检里的票据自愈(TicketBlocked)要先跑 —— 残留的半撤补位票在那里被清掉,
+			// 若一上来就按票据回 InMatch,持有残留票的队长会永远开不了战。
+			if code == ErrMemberNotReady && s.callerInPartyQueue(ctx, caller, snap.TeamId) {
+				return s.matchReject(ctx, caller, ErrInMatch, 0, &snap)
+			}
 			return s.matchReject(ctx, caller, code, param, &snap)
 		}
 		if hook := afterPreflightHook; hook != nil {
 			hook(snap.TeamId, roster)
+		}
+		if backfill {
+			return s.startBackfill(ctx, caller, configId, targetSize, &snap, roster, zones)
 		}
 
 		token := uuid.NewString()
@@ -458,6 +508,17 @@ func (s *Service) StartTeamMatch(ctx context.Context, caller uint64, in *teampb.
 		return s.launchMatch(ctx, caller, configId, lock.Commit, token, lockTTL, zones, in)
 	}
 	return s.matchReject(ctx, caller, ErrStateChanged, 0, nil)
+}
+
+// callerInPartyQueue 调用者是否持有本队的补位票(在排或已凑满弹出)。读不到按「不是」处理:
+// 调用方原样返回预检的拒绝原因,不会因此放行。
+func (s *Service) callerInPartyQueue(ctx context.Context, caller, teamId uint64) bool {
+	state, _, _, _, err := s.starter.PartyQueueState(ctx, caller, teamId)
+	if err != nil {
+		logx.WithContext(ctx).Errorf("[team] StartTeamMatch failed to read party queue state player=%d team=%d: %v", caller, teamId, err)
+		return false
+	}
+	return state != constants.PartyQueueNone
 }
 
 // preflightMatch 逐成员只读预检(§E.1 第 5 步,按 roster 顺序,fail-closed)。
@@ -672,15 +733,7 @@ func (s *Service) pushMatchView(teamId uint64, roster []uint64, reason teampb.Te
 	if snap.Record == nil {
 		return
 	}
-	dc := s.presence.loadDisplay(ctx, rosterIds(snap.Record))
-	for _, pid := range MemberIds(snap.Record) {
-		view, ok := viewFromMembers(snap, pid, dc)
-		if !ok {
-			continue
-		}
-		s.push(ctx, pid, uint32(game.ClientPlayerTeamNotifyTeamSnapshotMessageId), pushKindSnapshot,
-			&teampb.TeamSnapshotS2C{Team: view, Reason: reason, Tip: tip})
-	}
+	s.pushMembersSnapshot(ctx, snap, MemberIds(snap.Record), reason, 0, tip)
 }
 
 // matchReject StartTeamMatch 的同步失败出口:记 team_match_total(按 tip 码表定性,不手写故障集合)
@@ -782,6 +835,13 @@ func (s *Service) commitResponse(ctx context.Context, caller uint64, c *CommitRe
 		dc = s.presence.loadDisplay(ctx, rosterIds(c.Decision.Record))
 	}
 	view, _ := viewFromCommit(c, caller, dc)
+	if rosterChanged(c) {
+		// 改了成员集合的提交必然让本队的补位单撤出(cancelPartyOnRosterChange,后台执行):
+		// 这类回包不做匹配态装饰,免得把一张马上就要删的票显示成「匹配中」;能力位照标。
+		s.markFillSupported(view)
+	} else {
+		s.decorateQueueState(ctx, caller, view)
+	}
 	return &teampb.TeamResponse{Team: view}
 }
 
@@ -819,7 +879,11 @@ func (s *Service) snapshotView(ctx context.Context, snap *Snapshot) (*teampb.Tea
 	if snap.PlayerTeamId != 0 {
 		dc = s.presence.loadDisplay(ctx, rosterIds(snap.Record))
 	}
-	return viewFromSnapshot(snap, dc)
+	view, ok := viewFromSnapshot(snap, dc)
+	if ok {
+		s.decorateQueueState(ctx, snap.PlayerId, view)
+	}
+	return view, ok
 }
 
 // readSelf 调用者自由读;失败时返回现成的失败回包(不带视图)。
