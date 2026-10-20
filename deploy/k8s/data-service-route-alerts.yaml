@@ -16,6 +16,7 @@
 #       go/db:db_route_ready_gate(进程级就绪闸 0/1)、db_route_ready_verdict_total{verdict}、db_placement_guard_total{op,outcome="route_not_ready"}
 #       data_service:data_service_route_read_total{path,result}、data_service_route_ready_verdict_total{verdict}
 #       guild:guild_route_ready_verdict_total{verdict}
+#       三个读方的 verdict 取值相同:placement 的 7 个结论(shared/placement.RouteReadyVerdictNames)加 script_error(读脚本执行失败)
 #
 # Install as a PrometheusRule CR (kube-prometheus stack),与 owner-epoch-alerts.yaml 同法:
 #   kubectl apply -n observability -f deploy/k8s/data-service-route-alerts.yaml
@@ -230,8 +231,9 @@ spec:
     - name: data-service.route-readers
       interval: 30s
       rules:
-        # go/db 的进程级就绪闸关着:存盘消费暂停(不取新消息、不 ack、不推重试队列),Kafka lag 在涨。
-        # 只在 Placement.RequireRouteReady=true 之后有序列。
+        # go/db 的进程级就绪闸关着:存盘消费暂停(不从 Kafka 取新消息、不 ack,重试循环不分拣也不认领),Kafka lag 在涨。
+        # 闸关上那一刻已经派进 worker 的任务不再看闸,会逐条判成 route_not_ready 进重试队列(量级见 GoDbRouteNotReadyDeferrals);
+        # 之后不再有新的入队。只在 Placement.RequireRouteReady=true 之后有序列。
         - alert: GoDbRouteGateClosed
           expr: |
             min by (namespace) (db_route_ready_gate) == 0
@@ -241,11 +243,25 @@ spec:
           annotations:
             summary: "{{ $labels.namespace }} 的 go/db 就绪闸关着,存盘消费已暂停"
             description: >-
-              mapping Redis 的副本 5 分钟没有被判可信(标记不在、身份不符、不是主,或读脚本执行失败),go/db 停止取 Kafka 消息,
-              玩家存盘在 Kafka 里积压(不丢)。按 db_route_ready_verdict_total{verdict} 看是哪一种;同时看 DataServiceRouteReadyMissing /
-              DataServiceRouteNoLeader。紧急回退:先把本 zone 的 Placement.RequireRouteReady 改回 false 并滚动 db(先读方、后写方)。
+              mapping Redis 的副本 5 分钟没有被判可信,或 go/db 读不了就绪标记,go/db 停止取 Kafka 消息,玩家存盘在 Kafka 里积压(不丢)。
+              先分原因:看 db_route_ready_verdict_total{verdict} 哪一项在涨。script_error = go/db 自己执行读脚本失败(ACL 不放行
+              EVALSHA / INFO、超时、连不上 mapping Redis),去看 go/db 日志 `route ready gate` 行的 state=script_error err=…;
+              其余(absent / identity_mismatch / not_master 等)是副本不可信的结论。同时看 DataServiceRouteReadyMissing /
+              DataServiceRouteNoLeader、现任 leader 的 data_service_route_ready_selfcheck{verdict} 与
+              data_service_route_reconcile_event_total{event="task_started"}(全量预热是否在跑)。
+              不要先关 Placement.RequireRouteReady:verdict 是 absent / identity_mismatch,或 leader 正在全量预热时,映射缓存不完整,
+              关掉开关后 go/db 退回两键 MGET,缺键会被当成「没有落点」落到 home / 本 zone 的库,已搬库或已合服 pin、键还没预热到的玩家
+              会被静默写进错库。这时闸关着就是安全状态,只能等预热完、标记挂上;要止损就停掉本 zone 的 go/db(lag 同样留在 Kafka)。
+              只有确认映射缓存完整(标记已挂、现任 leader 的 data_service_route_ready_selfcheck{verdict="trusted"} 为 1,只是 go/db 这一侧
+              读脚本出错)时,才按 runbook §9.4「rewarm」一节写的回退顺序(先读方、后写方)关本 zone 的读方开关并滚动 db。
 
-        # 闸放行之后逐条任务仍判不可信、按 route_not_ready 延后:量级应只限于闸刷新间隔内的在途任务;持续出现说明闸与逐条判不一致。
+        # 逐条任务判不可信、按 route_not_ready 延后。闸关着时不取新任务,来源只有两类:
+        #   - 闸关上那一刻已经派进 worker 的任务(每分区 taskCh 1000 条 + SubShardCount×256 条子 shard 缓冲;按 etc/db.yaml 的
+        #     10 分区 × (1000 + 8×256) 约 3 万条)与重试循环当拍正在认领的那一条。积压追赶期这一批会在闸关后几秒内一次性涌入:
+        #     Kafka 来源的带整条 DBTask(含 Body)经 WAITAOF 组提交进主 Redis 重试队列,写不耗预算、读耗预算 —— 估主 Redis
+        #     内存与 AOF 时要按通道深度算,不是按一个刷新间隔算。本条与 GoDbRouteGateClosed 一起响时先按那条处理。
+        #   - 闸刚放行、逐条读却判不可信的竞态(落在一个刷新间隔内)。
+        # 闸开着却持续出现,说明闸与逐条判不一致。
         - alert: GoDbRouteNotReadyDeferrals
           expr: |
             sum by (namespace, op) (rate(db_placement_guard_total{outcome="route_not_ready"}[5m])) > 0
@@ -281,6 +297,6 @@ spec:
           annotations:
             summary: "guild 合服闸门持续读到不可信的 mapping Redis 副本({{ $labels.verdict }})"
             description: >-
-              每秒约 {{ $value | printf "%.2f" }} 次。经闸门的公会写全部按「合服中」拒绝。read_error = 读脚本执行失败;
+              每秒约 {{ $value | printf "%.2f" }} 次。经闸门的公会写全部按「合服中」拒绝。script_error = 读脚本执行失败(与 go/db、data_service 同名);
               其余 verdict 的含义同 go/db。紧急回退:把 guild ConfigMap 的 MergeMarkerRedis.RequireRouteReady 改回 false
               (k8s_deploy.ps1 不带 -GuildRequireRouteReady 重跑 infra-up,粘滞核对要加 -ConfirmRouteSwitchChange)并滚动 guild。

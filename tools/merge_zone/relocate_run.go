@@ -50,6 +50,15 @@ type relocateRouteStore interface {
 	ReadRoutes(ctx context.Context, ids []uint64) (map[uint64]mergeRouteRow, error)
 	// RelocateCAS 一个事务做完一批 CAS(≤ routeWriteBatchLimit 个、player_id 不重复);出错时一条都没提交。
 	RelocateCAS(ctx context.Context, ops []placementCAS) ([]routeCASResult, error)
+	// RequireWritable 是写开关预检:route_meta.writable != 1(映射写者被冻结,回档恢复进行中)即返回包着 errRouteNotWritable
+	// 的 error,读不到开关同样报错。普通一致读,与每个写事务的第一句同一判据;只是预检,提交点仍由 RelocateCAS 事务内复核。
+	RequireWritable(ctx context.Context) error
+}
+
+// RequireWritable 是 relocateRouteStore 与 storage-audit(storageAuditRouteAuthority)用的写开关预检(requireRouteWritable,
+// 事务外普通读)。写在这里而不是 route_store.go:只有搬库读路径与 storage-audit 需要它,写事务自己在事务内读开关。
+func (s *mergeRouteStore) RequireWritable(ctx context.Context) error {
+	return requireRouteWritable(ctx, s.db)
 }
 
 // relocateRoutePublisher 是 sqlRelocatePlacements 用到的发布原语(生产 *routePublisher,route_publish.go;单测注入假 Redis)。
@@ -71,6 +80,8 @@ type relocateRoutePublisher interface {
 //     冻结态的行比规格多做一步:不论缓存是否已是这一版,一律发布 + WAITAOF(同值写回 maprev,WAITAOF 覆盖此刻已在缓存里的
 //     状态)。catch-up 对「已是这一版」的行不再确认,把落盘确认交给当时的发布者 —— 而那个发布者可能正是本工具上一次没确认成
 //     的那一次(EVAL 已执行、WAITAOF 份数不足);redis-ha 下随后切主,被提升的副本上就没有这次冻结。冻结行每批至多一批人,代价小。
+//     有行要发布时先查写开关(RequireWritable):route_meta.writable != 1 即返回包着 errRouteNotWritable 的 error、不发布 ——
+//     与对账 leader「冻结后不推送」一致,随后的 CAS 也必然被拒(R8-5)。
 //   - cas:每 routeWriteBatchLimit 个一个事务(RelocateCAS:事务内比对编码后的当前值 / home / 围栏 63 号片,写列、rev + 1,
 //     稳定态 version 不回退),提交后把写成的行发布 + WAITAOF。**只有确认了的才回 Written**;发布确认不了时按接口约定返回
 //     「与 ops 同序的前缀结果 + error」,前缀截在本批第一个写成的 op 之前(之前的非 Written 结局是确定的,可以给);
@@ -95,6 +106,17 @@ func (p sqlRelocatePlacements) read(ctx context.Context, ids []uint64) ([]placem
 	if p.readOnly || len(publishable) == 0 {
 		return out, nil
 	}
+	// 发布之前先看写开关(R8-5):冻结期间(回档恢复,runbook §9.4)对账 leader 停止推送,本工具也不往缓存回填库值 ——
+	// 这时库可能是落后的那一份;随后的 CAS 反正会被 RelocateCAS 事务内的同一判据拒绝,这里提前 fail-closed、一个结果都不给。
+	if err := p.store.RequireWritable(ctx); err != nil {
+		if errors.Is(err, errRouteNotWritable) {
+			return nil, fmt.Errorf("the route DB refuses route writes, so the state of %d players was NOT published to the mapping Redis "+
+				"(nothing was decided or written): the route writers are frozen for a rollback recovery — follow runbook §9.4 "+
+				"(freeze → reconcile-from-cache → audit → unfreeze) and re-run only after unfreeze: %w", len(publishable), err)
+		}
+		return nil, fmt.Errorf("check route_meta.writable before publishing the route DB state of %d players "+
+			"(nothing was published, decided or written): %w", len(publishable), err)
+	}
 	var frozen, others []mergeRouteRow
 	for _, row := range publishable {
 		if row.FrozenRunID != "" {
@@ -106,16 +128,31 @@ func (p sqlRelocatePlacements) read(ctx context.Context, ids []uint64) ([]placem
 	if len(others) > 0 {
 		if _, err := p.pub.catchUpRoutes(ctx, others); err != nil {
 			return nil, fmt.Errorf("publish the route DB state of %d players to the mapping Redis before acting on it "+
-				"(nothing was decided or written; re-run once the mapping Redis confirms writes): %w", len(others), err)
+				"(nothing was decided or written; re-run once the mapping Redis confirms writes%s): %w", len(others),
+				routePublishRollbackHint(err), err)
 		}
 	}
 	if len(frozen) > 0 {
 		if _, err := p.pub.publishRoutes(ctx, frozen); err != nil {
 			return nil, fmt.Errorf("confirm the frozen placements of %d players in the mapping Redis before acting on them "+
-				"(nothing was decided or written; re-run once the mapping Redis confirms writes): %w", len(frozen), err)
+				"(nothing was decided or written; re-run once the mapping Redis confirms writes%s): %w", len(frozen),
+				routePublishRollbackHint(err), err)
 		}
 	}
 	return out, nil
+}
+
+// routePublishRollbackHint 是发布被确定性拒绝(errRoutePublishRejected)时补进搬库错误文案的回档提示(R8-5,只改文案,
+// 拒绝的判据不变);其余错误返回空串。被拒的行若缓存 rev 比本次发布的库 rev 新、且 data_service 报了写者冻结,
+// 说明全局库被回档过,原样重跑没有用。正常运行中另一个写者在「读库」与「MGET」之间提交并发布也会让缓存 rev 更新,
+// 所以只给提示、不据此断言回档(不改 decideRouteCatchUp 的口径)。
+func routePublishRollbackHint(err error) string {
+	if !errors.Is(err, errRoutePublishRejected) {
+		return ""
+	}
+	return "; if a rejected row shows a cached rev ahead of the rev being published and data_service_route_writable is 0 " +
+		"(or data_service_route_reconcile_event_total{event=~\"freeze_.*\"} rose), the route DB was rolled back — " +
+		"follow runbook §9.4 instead of re-running"
 }
 
 // readDB 读库并按 ids 顺序编码。publishable 是本次读到、可以发布的行(去重;库里没有的、两列都为 NULL 的、落点三列不自洽的
@@ -179,8 +216,8 @@ func (p sqlRelocatePlacements) cas(ctx context.Context, ops []placementCAS) ([]p
 					out = append(out, res.placementCASResult)
 				}
 				return out, fmt.Errorf("publish %d placement change(s) committed in the route DB but NOT confirmed in the mapping Redis "+
-					"(go/db still sees the previous placement, which stays safe; a resume publishes them before acting on them): %w",
-					len(written), err)
+					"(go/db still sees the previous placement, which stays safe; a resume publishes them before acting on them%s): %w",
+					len(written), routePublishRollbackHint(err), err)
 			}
 		}
 		for _, res := range results {
@@ -192,8 +229,8 @@ func (p sqlRelocatePlacements) cas(ctx context.Context, ops []placementCAS) ([]p
 
 // relocateRouteBackend 是按 -route-source 选出的搬库落点读写(规格 §6.3 W11 / R8)。
 type relocateRouteBackend struct {
-	places relocatePlacements // R1 / R5 / 解冻 / 撤销,以及 R0 的逐人读
-	reads  routeReadSide      // R0 的整库枚举(-relocate-player-ids 留空时)
+	places relocatePlacements // R1 / R5 / 解冻 / 撤销(db 源下读之前先发布确认)
+	reads  routeReadSide      // R0 的整库枚举(-relocate-player-ids 留空时)与逐人读(只读、不发布)
 	store  *mergeRouteStore   // 非 nil ⇔ -route-source=db;调用方 Close
 }
 
@@ -634,8 +671,10 @@ func runRelocateEntry(o options) {
 			todo = append(todo, p.PlayerID)
 		}
 	}
-	// 与 R1 同一个读(规格 §13.3 第 6 条:R0 以前绕过了接缝直读 Redis)。db 源下读到的行先发布确认(dry-run 不发布)。
-	reads, err := backend.places.read(ctx, todo)
+	// 与 R1 同一口径的读,不发布(规格 §13.3 第 6 条:R0 以前绕过了接缝直读 Redis;db 源读库、redis 源读 mapping Redis,
+	// 值串与 R1 的读逐字节相同)。这里的结果只用来补查 home zone 的能力标记和 dry-run 预览,依赖缓存的决定都在引擎
+	// freeze() / abort() 的那次 read 里,发布确认只在那里做 —— R0 因此在清单落盘之前一个字节都不写(R8-7)。
+	reads, err := backend.reads.placements(ctx, todo)
 	if err != nil {
 		log.Fatalf("R0: read placements: %v", err)
 	}
@@ -705,10 +744,17 @@ func runRelocateEntry(o options) {
 	}
 	log.Printf("=== Relocate %s → %s: %s ===", srcSchema, dstSchema, m.relocSummary())
 	if runErr != nil {
+		// db 源多一句(R8-8):R1 冻结已在库里提交、发布没确认的那批人,缓存还是未冻结,go/db 照写 S —— 他们的数据也还没拷,
+		// 所以「nothing is lost」仍然成立;续跑先确认冻结再拷。redis 源文案逐字不变。
+		dbNote := ""
+		if backend.source() == routeSourceDB {
+			dbNote = "; players whose freeze was committed in the route DB but not confirmed in the mapping Redis are still written " +
+				"to S by go/db and were not copied (the resume confirms their freeze before copying)"
+		}
 		log.Fatalf("relocate stopped: %v. Players frozen by run_id=%s stay frozen (go/db defers their writes, nothing is lost; "+
 			"db_placement_guard_total{outcome=\"frozen_deferred\"} keeps rising): resume with the same command, or give up with "+
 			"-mode relocate-abort -manifest-path %s -apply. With -route-source=db a change committed in the route DB but not "+
-			"confirmed in the mapping Redis is published by the resume before it is acted on", runErr, m.RunID, manifestPath)
+			"confirmed in the mapping Redis is published by the resume before it is acted on%s", runErr, m.RunID, manifestPath, dbNote)
 	}
 	reportRelocateOutcome(m, manifestPath)
 }

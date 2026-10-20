@@ -717,13 +717,16 @@ func playerCacheKeys(pid uint64, tables []string) []string {
 
 // playerCacheKeysKeepBarrier 是前向 copy 合服的删除清单:playerCacheKeys 去掉 save_barrier(2026-10-20 修复,r2-mz#1)。
 //
-// 为什么前向 copy 合服可以保留屏障(复核结论,前提逐条见 docs/design/db-write-fencing-mysql.md 文末同日附注):
+// 为什么前向 copy 合服可以保留屏障(复核结论;前提逐条见 docs/design/db-write-fencing-mysql.md §9.3 与文末「上线状态」
+// 之前的「2026-10-20 第二轮审计修复(r2-mz#1)」附注):
 //   - 屏障键 player:{id}:save_barrier 不带 zone,与父快照、owner_epoch 同在共享核心 Redis(本工具的 -notice-redis,
 //     login 的 beginParentLoad 要求三者同实例)。合服后目标区 login 读的就是这同一把键。
 //   - P3 / P4 要求源区 Kafka、重试队列与 64 个补投桶全部排空;补投索引只在两表 SQL ACK 都等于 pending 时才回收,
 //     所以通过 P4 时每名源区玩家的屏障都是稳态:pending == player_database ACK == player_database_1 ACK == 源库两行的行内围栏。
 //   - 步骤 1 按列名逐列拷两表整行(含 fence_owner_epoch / fence_save_seq / persist_schema_gen),目标库两行的围栏与源库逐字节相同,
 //     原 pending 与两表 ACK 对目标库的行同样成立;login 冷加载在目标库读到的正是这两行。
+//   - hash 里 C++ 严格屏障写的 schema_gen / schema_writer 随整把键原样保留:合服后新加载实体的令牌必然不同,
+//     首次存盘照常做一次世代比较,这是期望行为;行内 persist_schema_gen 也随行拷过去,比较结论与合服前相同。
 //
 // 删掉它反而让曾进过场景(owner_epoch≠0)的被拷玩家全部卡在「历史玩家父快照与提交屏障缺失」(fail-closed,但整批无法登录)。
 // 资产 SQL 提交证据照删:删它的方向安全(只让资产待办多等一次存盘),理由见 assetSQLCommitKey。

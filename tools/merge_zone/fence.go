@@ -250,14 +250,16 @@ func (f *mergeFence) refuseAndRelease(format string, args ...any) {
 //
 //   - 获取:一个库事务写满两区全部分片 → 提交 → 两区镜像各一次 EVAL + WAITAOF(同一连接)→ **镜像确认之后**才返回,调用方
 //     才收集清单(库已封锁而镜像未写的那一刻,W1 已在库内拦住,但 scene_manager / guild 还看不见)。镜像写不成 → 先清库、
-//     再按完整值删已写的镜像,返回错误(本次什么都没写)。
-//   - 续期:routeFenceGuard 每 ttl/3 一次,受影响行数不足 = 确定失权。每个写步骤每批之前查 check():失权、本地截止时刻
+//     再按完整值删已写的镜像,返回错误(本次什么都没写)。-take-over-fence 接手时例外:接手之后的任何失败都不释放(见下)。
+//   - 续期:routeFenceGuard 每 min(ttl/3, 30s) 一次(routeFenceRenewMaxInterval),受影响行数不足 = 确定失权。每个写步骤每批之前查 check():失权、本地截止时刻
 //     (最后一次成功续期 + ttl − 60s)已过、或镜像里出现更大的 fence_epoch,即中止、退出非 0。writeContext 派生的 ctx 同时
 //     被看门狗取消,批内与本文件改不到的步骤(拷行、热状态、公告打标)的下一条命令随之失败 —— 失权之后不再写任何东西
 //     (Redis 围栏的续期失败只打 WARN)。
 //   - 释放:先清库(只清本次 run_id 的分片),再按完整值 compare-and-delete 镜像;删镜像失败由对账 leader 按库删(多留只会多封锁)。
 //   - 续跑接手(-take-over-fence <run_id>):写到一半中止时库围栏故意保留(routeFenceKeptAbortMessage);续跑在一个库事务里把它
-//     从旧 run_id 接到本次(TakeOverFence),两区一刻不解封;镜像按更大的 fence_epoch 覆盖旧值。
+//     从旧 run_id 接到本次(TakeOverFence),两区一刻不解封;镜像按更大的 fence_epoch 覆盖旧值。接手的前提是上一次已写到一半,
+//     所以接手事务结果不明、接手之后镜像没确认,都**不释放**库围栏(释放 = 在半合服 / 半撤销状态下解封),只报出围栏此刻归谁、
+//     怎么续跑;接手事务在库里核对 zone 对、清单路径,且每个 zone 要么 64 片全接、要么一片不接(route_store.go acquireFence)。
 
 // runFence 是一次持围栏运行(合服 / 撤销)手里的围栏:redis 源是 *mergeFence(今天的 Redis 围栏,逐字不变),
 // db 源是 *routeMergeFence(库围栏 + 镜像)。
@@ -296,6 +298,11 @@ type routeFenceMirror interface {
 // routeFenceWatchInterval 是写 ctx 看门狗查 check() 的间隔。每批之前另有显式 check;看门狗只兜「批内」与改不到的步骤,
 // 本地截止时刻本身比库里的过期时刻提前 60s,1s 的轮询延迟落在这段余量里。
 const routeFenceWatchInterval = time.Second
+
+// routeFenceReleaseTimeout 是释放库围栏(与获取失败后的清理)的时限。路由库的 DSN 没有读写超时(routeDBDSN 只钉隔离级别、锁等待与
+// sql_mode,全局钉超时会改变所有路由库操作),库网络黑洞时释放会卡到内核放弃重传(十几分钟);超时走释放的 WARN 分支 ——
+// 围栏按库时钟到期,镜像随后由对账 leader 按库删。
+const routeFenceReleaseTimeout = 30 * time.Second
 
 // routeFenceParams 是获取一次运行围栏的入参(merge / unmerge 共用)。
 type routeFenceParams struct {
@@ -385,21 +392,47 @@ func acquireRouteFence(ctx context.Context, store routeFenceStore, mirror routeF
 		grant, err = store.AcquireFence(ctx, req)
 	}
 	if err != nil {
+		// Held / InvalidArgument:事务没写,围栏原样(别人的,或 -take-over-fence 点名的那一次的)。
+		if errors.Is(err, errRouteFenceHeld) || errors.Is(err, errRouteInvalidArgument) {
+			return nil, err
+		}
+		// 接手:唯一的例外「COMMIT 已生效而回包丢了」意味着围栏已归本次,而两区正处在上一次留下的半截状态 —— 绝不按本次 run_id
+		// 清理(清掉 = 在半合服 / 半撤销状态下解封)。围栏此刻归谁,由运维查库确认后再接手。
+		if p.takeOverRunID != "" {
+			return nil, fmt.Errorf("接手事务结果不确定:zone %v 的 zone_merge_fence(shard=63)此刻归 run_id=%s(接手没提交)或 run_id=%s"+
+				"(提交已生效、回包丢了);围栏未释放,两区在库里仍封锁。查 zone_merge_fence(shard=63)的 run_id 后,用原命令(-manifest-path %s)"+
+				"加 -take-over-fence <库里那个 run_id> 重跑: %w", zones, p.takeOverRunID, p.runID, p.manifestPath, err)
+		}
 		// 获取是一个库事务,失败时通常什么都没写;唯一的例外是 COMMIT 已生效而回包丢了 —— 按本次 run_id 清一次
-		// (只碰本次的分片,别人的围栏不受影响)。
-		if !errors.Is(err, errRouteFenceHeld) && !errors.Is(err, errRouteInvalidArgument) {
-			if _, rerr := store.ReleaseFence(context.Background(), zones, p.runID); rerr != nil {
-				log.Printf("WARN: merge fence acquisition failed and the cleanup release of run_id=%s failed too (%v); "+
-					"if the acquisition did commit, the fence expires by the DB clock", p.runID, rerr)
-			}
+		// (只碰本次的分片,别人的围栏不受影响)。清理有时限(routeFenceReleaseTimeout):库网络黑洞时不卡住退出。
+		cctx, cancel := context.WithTimeout(context.Background(), routeFenceReleaseTimeout)
+		_, rerr := store.ReleaseFence(cctx, zones, p.runID)
+		cancel()
+		if rerr != nil {
+			log.Printf("WARN: merge fence acquisition failed and the cleanup release of run_id=%s failed too (%v); "+
+				"if the acquisition did commit, the fence expires by the DB clock", p.runID, rerr)
 		}
 		return nil, err
 	}
 	f.mu.Lock()
 	f.grant, f.held = grant, true
 	f.mu.Unlock()
+	// keepTakenOver 是接手之后失败的出口:库围栏已在本次 run_id 名下,两区处在上一次留下的半截状态 —— 不释放、保留在库里
+	// (held 置 false:这个句柄不再释放它;调用方随后非零退出,不走 defer)。镜像没确认的那一区,scene_manager / guild 可能还看着旧值或
+	// 看不见,W1 已在库内拦住,对账 leader 按库补镜像。非接手的获取照旧先清库、再删已写的镜像(本次什么都没写)。
+	keepTakenOver := func(what string, cause error) error {
+		f.mu.Lock()
+		f.held = false
+		f.mu.Unlock()
+		return fmt.Errorf("库围栏已由 run_id=%s 从 run_id=%s 接手并保留(zone_merge_fence zones=%v fence_epoch=%d expires_at_ms=%d),但%s;"+
+			"两区在库里仍封锁,对账 leader 会按库补镜像。排除原因(镜像:恢复 mapping Redis 及其副本的连通)后,用原命令(-manifest-path %s)"+
+			"加 -take-over-fence %s 重跑: %w", p.runID, p.takeOverRunID, zones, grant.Epoch, grant.ExpiresAtMs, what, p.manifestPath, p.runID, cause)
+	}
 	for _, zone := range zones {
 		if err := mirror.setFenceMirror(ctx, zone, grant.HolderJSON, grant.Epoch, grant.ExpiresAtMs); err != nil {
+			if p.takeOverRunID != "" {
+				return nil, keepTakenOver(fmt.Sprintf("镜像 %s 未确认", mergeFenceKey(zone)), err)
+			}
 			f.release(context.Background())
 			return nil, fmt.Errorf("merge fence mirror %s not confirmed, so the fence was released again in zone_merge_fence "+
 				"(this run wrote nothing): %w", mergeFenceKey(zone), err)
@@ -407,6 +440,9 @@ func acquireRouteFence(ctx context.Context, store routeFenceStore, mirror routeF
 	}
 	guard, err := newRouteFenceGuard(store, zones, p.runID, ttl, acquiredAt)
 	if err != nil {
+		if p.takeOverRunID != "" {
+			return nil, keepTakenOver("续期守卫装配失败", err)
+		}
 		f.release(context.Background())
 		return nil, err
 	}
@@ -432,7 +468,9 @@ func (f *routeMergeFence) dryRunCheck(ctx context.Context, p routeFenceParams, t
 			log.Printf("[DRY-RUN] would take over the merge fence of zone %d from run_id=%s (-take-over-fence) and mirror it to %s",
 				zone, st.RunID, mergeFenceKey(zone))
 		case st.Active && st.RunID != p.runID:
-			return fmt.Errorf("another merge is already fencing zone %d in zone_merge_fence: run_id=%s holder=%s", zone, st.RunID, st.HolderJSON)
+			return fmt.Errorf("another merge is already fencing zone %d in zone_merge_fence: run_id=%s holder=%s (if run %s is no longer "+
+				"running, re-run the same command — same -manifest-path — with -take-over-fence %s; otherwise wait for it to finish or "+
+				"for its expires_at_ms)", zone, st.RunID, st.HolderJSON, st.RunID, st.RunID)
 		default:
 			log.Printf("[DRY-RUN] would acquire the merge fence of zone %d in zone_merge_fence (%d shards, ttl=%s) and mirror it to %s",
 				zone, routeFenceShards, ttl, mergeFenceKey(zone))
@@ -516,10 +554,13 @@ func (f *routeMergeFence) watch(watchCtx context.Context, cancel context.CancelC
 }
 
 // release 先停看门狗与续期,再清库(只清本次 run_id 的分片),最后对清掉了全部分片的 zone 按完整值删镜像。可重复调用。
+// 清库与删镜像合计不超过 routeFenceReleaseTimeout(调用方多传 context.Background()):超时走下面的 WARN 分支,围栏按库时钟到期。
 func (f *routeMergeFence) release(ctx context.Context) {
 	if f == nil {
 		return
 	}
+	ctx, cancel := context.WithTimeout(ctx, routeFenceReleaseTimeout)
+	defer cancel()
 	f.mu.Lock()
 	held, guard, stop := f.held, f.guard, f.stopWatch
 	f.held, f.stopWatch = false, nil
@@ -586,9 +627,11 @@ func (f *routeMergeFence) refuseAndRelease(format string, args ...any) {
 
 // routeFenceKeptAbortMessage 是 db 源「写到一半中止、围栏故意留着」的中止文案(fenceKeptAbortMessage 的库围栏版。那一份的
 // 「GET / DEL 镜像再重跑」在 db 源下是错的:库里的围栏才是真源,删镜像只会让 scene_manager / guild 提前放行,重跑照样被库拒绝)。
-// lost 非 nil = 本次运行已失去围栏(续期确定失权 / 本地截止时刻已过 / 镜像里出现更大的 fence_epoch):围栏可能已归别人,
-// 文案改成「先查清是谁接手」,不给接手指引。
-func routeFenceKeptAbortMessage(cause string, op fencedOp, src, dst uint32, runID string, lost error) string {
+// lost 非 nil = 本次运行已失去围栏(续期确定失权 / 本地截止时刻已过 / 镜像里出现更大的 fence_epoch / 批事务内的 fencing token
+// 复核已判失权,见 routeFenceAbortLost):围栏可能已归别人,文案改成「先查清是谁接手」,不给接手指引。
+// manifestPath 是本次实际用的清单路径(合服没给 -manifest-path 时是带时间戳的缺省路径):续跑必须指回同一份清单,文案原样打出来 ——
+// 落到新路径的续跑会被当成首跑(接手事务按 holder_json 的 manifest_path 也会拒绝它)。
+func routeFenceKeptAbortMessage(cause string, op fencedOp, src, dst uint32, runID, manifestPath string, lost error) string {
 	if lost != nil {
 		return fmt.Sprintf("%s。本次运行已失去合服围栏(run_id=%s):%v。已停止一切写入(未完成的步骤没有标记完成)。"+
 			"zone %d / %d 的围栏此刻可能已归另一次运行:先查 zone_merge_fence(shard=63)的 run_id 与 holder_json 是谁、"+
@@ -601,11 +644,26 @@ func routeFenceKeptAbortMessage(cause string, op fencedOp, src, dst uint32, runI
 		"(1) 按上面的原因排除故障(锁冲突:查 SHOW ENGINE INNODB STATUS 与 information_schema.innodb_trx 里的长事务;"+
 		"Redis 失败:先恢复 mapping Redis 的连通);"+
 		"(2) 确认没有存活的 merge_zone 进程;"+
-		"(3) 立即用原命令加 -take-over-fence %s 重跑(%s)—— 工具在一个库事务里把围栏从 %s 接到新的 run_id 上,两区一刻不解封;"+
+		"(3) 立即用原命令(-manifest-path %s)加 -take-over-fence %s 重跑(%s)—— 工具在一个库事务里把围栏从 %s 接到新的 run_id 上,两区一刻不解封;"+
 		"旧进程若其实还活着,它的下一批映射写入会被库拒绝。"+
 		"不加 -take-over-fence 直接重跑会被拒(\"merge fence is held by another run\"),直到库时钟过了 expires_at_ms;"+
 		"不要手工 DEL 镜像:库里的围栏才是真源,删镜像只会让 scene_manager / guild 提前放行",
-		cause, src, dst, mergeFenceKey(src), mergeFenceKey(dst), runID, why, runID, rerun, runID)
+		cause, src, dst, mergeFenceKey(src), mergeFenceKey(dst), runID, why, manifestPath, runID, rerun, runID)
+}
+
+// routeFenceAbortLost 选出 db 源中止文案的 lost 参数(纯函数):本地判据 check(续期确定失权 / 本地截止时刻 / 镜像更大 epoch)
+// 非 nil 就用它;本地仍判持有时,取本步骤带回的错误里第一个 errRouteFenceLost —— 批事务内的 fencing token 复核(requireFenceHeld)
+// 比续期更早发现「围栏已归别人」(被接手而本地下一次续期还没到),这时文案不能再说「仍归本次、对自己 -take-over-fence」。
+func routeFenceAbortLost(check error, errs ...error) error {
+	if check != nil {
+		return check
+	}
+	for _, err := range errs {
+		if err != nil && errors.Is(err, errRouteFenceLost) {
+			return err
+		}
+	}
+	return nil
 }
 
 // checkTakeOverFenceFlag 是 -take-over-fence 的前置校验(纯函数):只用于 -route-source=db 的 -mode merge / unmerge

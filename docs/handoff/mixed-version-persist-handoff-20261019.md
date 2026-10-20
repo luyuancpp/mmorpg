@@ -475,3 +475,67 @@ Java 仓 `PARITY.md` 已补登一行「Java 待做」（§9 要求的那一行�
 
 复核还确认了这些没有问题（摘要）：A–E 没有确定的编译缺陷；规划与提交铸号数在各种组合下相等；越界包类型往返字节稳定、重新还原清干净、容量下标不错位；技能的五条消费路径都只认生效的项。以上都来自读码，没有编译。
 
+## 11. 续：§5.2 修订、第 3b 批与第 4 批落码（2026-10-19 ~ 10-20，另一个接手会话）
+
+> 本节由「混合版本持久化交接文档」会话追加（只追加，不改上文）。§2 的状态表以 §10、本节为准：3b、4 已落码，**均未编译、未测试**。代码已随用户的工作区快照 `c35e1133d` / `10fa5d939` 入库，之后的少量修正可能仍在工作区，以 `git status` 为准。
+
+### 11.1 §5.2 改为写方令牌（设计 v0.6）
+
+§3.2 第 1 条给的 (a) / (b) 经接手会话取证都不成立（取证要点见设计 §15 v0.6 的方案表）：
+- (a) 的前提"同一 owner_epoch 只对应一个加载实体"两头都不成立：同一实体会换代次（退出保留期间重登铸出 E+1 又派回本节点复用实体；B5 采纳 E+2），换代后第一次存盘确定误报；同一代次也会先后加载出两个实体（同落点重连时上一个实体已退出销毁、废黜后回流、同号新进程接替），漏检。
+- (b) 分不出"首存已提交、回包丢失、随后被排队值顶替"：被丢弃的元素不执行任何回调。
+- 中间方案 (a′)（实体基线世代）还有一个残余竞态：首存已提交但回包丢失、同时换到 E+1 并排队了新值，基线没被证实抬高，误报后 enforce 下永久存不进盘。
+
+采纳 (a″) **写方令牌**：每个加载实体一个随机 UUID 令牌（`PlayerPersistWriterComp`，存盘写入口懒建，实体销毁即作废），随屏障写进 hash 的 `schema_writer`；Lua 只在 `schema_writer ≠ ARGV[11]` 且不是同版本重放时比较，`ARGV[9]` 永远是真实加载世代，C++ 不维护任何"首存"状态。逐情形结论见设计 §5.2 表。交接 §3.2 第 2–4 条（C3 放在末尾、模式归一化、无日志告警通路）都按原写法落实。
+
+### 11.2 第 3b 批（C++ C3、配置与部署）
+
+- `redis_client.h`：严格 Lua 改为 11 参（`ARGV[8]` 输出世代、`ARGV[9]` 加载世代、`ARGV[10]` 模式、`ARGV[11]` 令牌），新增 `num_gt`；参数校验先于任何写；C3 排在 owner（返回 0）、版本倒退、同版本冲突之后；倒退时 warn 照写返回 2、enforce 一个键都不写返回 3；写入时同一个 `HSET` 写 `schema_gen = max(存储值, ARGV[8])`（损坏取 `ARGV[8]`）与 `schema_writer`。`RedisSaveSchemaGen` + `IsValidRedisSaveSchemaWriter`，`SaveWithCommitBarrier` 入队前同口径校验；`Element` 带 `schema_*` 四个字段，所有重发路径发同一组参数；`OnSaved`：2 是提交证据并先调计数回调，3 不重试、不准入，排队值 guard 与令牌都相同才丢（否则照发、不回调，与 0 分支共用 `IssuePendingWithNewerGuard`），2 / 3 只对屏障元素有含义。
+- scene：调用点传输出世代（统一入口盖的戳）、加载世代（`LoadedSchemaGen`）、模式、令牌；`HandlePlayerSaveSchemaWarned`（计数 + `metric=persist_schema_regression where=redis mode=warn` 日志）、`HandlePlayerSaveSchemaRejected`（退出中 `DestroyDeposedPlayer`、交接标记未发 `AbortTravelHandoff`、其余保留实体）；`persist_schema_stats` 与 `redis.cpp` 的 30 秒 `[PersistSchema]` 汇总。
+- 配置：`BaseDeployConfig.persist_schema_regression_mode = 23`；`persist_schema_regression_mode.h` 归一化（缺键 / 空串 = warn，其余非法 LOG_FATAL）；`bin/etc/base_deploy_config.yaml` 默认 `warn`；`k8s_deploy.ps1` node 与 login 两份 ConfigMap 镜像并在生成期只认两个字面量；契约测试两条；`start_game.ps1` 启动前校验两份 yaml。
+- `go/db/internal/barrierrestore/scripts.go` 字段白名单接受 `schema_writer`（另一个会话同时在同一脚本改了 r2-mz#1 的空落点分支，两处互不重叠）+ 单测。
+- 测试：`currency_test` 新增 `RedisCommitBarrierSchemaGenAgainstRealRedis`（真 Redis，C3 全部判定）、`RedisCommitBarrierSchemaWarnedIsCommitEvidence`、`RedisSchemaRepliesOnNonBarrierSavesAreNotEvidence`、`RedisCommitBarrierSchemaRejectedDiscardsSameOwnerHooks`、`RedisCommitBarrierSchemaRejectedIssuesPendingWithNewerGuard`、`RedisCommitBarrierSchemaRejectedIssuesPendingFromAnotherWriter`、`RedisCommitBarrierCarriesAndValidatesSchemaArguments`、`PersistSchemaRegressionModeNormalization`；改写 `RedisCommitBarrierErrorsNeverAdmitSql`（坏回包改用 4）、`RedisSaveScriptsTouchOnlyDeclaredKeys`（字面量白名单）、`RedisCommitBarrierSemanticsAgainstRealRedis`（11 参，别名用例断言 `keys must differ`）、`PlayerSqlTasksRequireParentCommitSourceContract`（调用文本）以及全部 `SaveWithCommitBarrier` 调用点。`cross_zone_test` 新增 `ExitPersistEcs.SchemaRejectOnExitingPlayerDiscardsWithoutReleaseMark`、`SchemaRejectDuringHandoffBeforeMarkAbortsHandoff`、`SchemaRejectOnOnlinePlayerKeepsEntity`、`SchemaWarnOnlyCountsAndGonePlayerIsNoop`。`barrierrestore` 新增 `TestSchemaGenRestoreAcceptsAndKeepsSchemaWriter`。
+- 运维：`deploy/k8s/README.md`「玩家持久 schema 世代」补 C3 / C4 / 切 enforce 三条；C3 只有 LogQL 值班固定查询（Loki ruler 未接线，**告警未配**）。
+
+### 11.3 第 4 批（login C4）
+
+由一个落码代理按 §3.3 实现，两路评审（契约、测试）发现 3 条低危，修复代理撞额度没跑，由本会话核实后修正：
+- `beginParentLoad` 脚本追加 `schema_gen` 原文与存在标记（第 4、5 个元素，长度检查改为 5）：字段存在但为空串按**损坏**判，与 scene C3、`save_barrier_restore` 同一口径（评审第 1 条）。
+- C4 在身份、水位、种子校验之后、只在快路径判；warn 计数放行，enforce 返回错误走现有失败路径（不新增 tip）。新增用例钉住这个顺序：水位不符 / 身份不符时返回原错误、计数不变（评审第 3 条）。
+- `login_persist_schema_regression_total{reason=regression|malformed, mode=warn|enforce}`；`PrimePersistSchemaRegressionMetrics` 在 `login.go` 紧挨 `PrimeEnterGameMetrics` 预置 4 条序列，`increase` 能抓到第一次（评审第 2 条）。告警 `LoginPersistSchemaRegression` 加在 `deploy/k8s/persist-schema-alerts.yaml` 的 `login.persist-schema` 组。
+- 配置：`config.go` 字段 + `persist_schema_regression.go` 归一化（严格匹配，非法值 `login.go` 启动即 panic 拒绝）；`go/login/etc/login.yaml` 与 `deploy/login-stack.linux/login.yaml` 都写 `warn`。
+- 测试：见设计 §10 与本节 §11.4 的清单；种子不盖戳（`TestNewPlayerSeedStaysUnstamped`）、backfill 往返保留四层未知字段与两表戳（`TestBackfillPlayerIdentity_PreservesUnknownFieldsAndSchemaStamps`）。
+
+### 11.4 待 Codex 验证（照抄执行；在 §5、§10.4 之外追加）
+
+通用约定同 §5。**顺序有依赖**：proto 必须先生成，否则 C++ 找不到 `persist_schema_regression_mode()`。
+
+1. 仓库根：`pwsh -File tools/scripts/dev_tools.ps1 -Command proto-gen-run -ConfigPath tools/proto_generator/protogen/etc/proto_gen.no-unity.yaml`（只多了 `BaseDeployConfig` 字段 23；生成器源码没变，不需要 `proto-gen-build`）。通过标准：退出 0，生成的 `config.pb.*` 出现 `persist_schema_regression_mode`。
+2. C++：按 §5.2 第 1 步编 `game.sln`（`/m:1`，输出 Tee 到 `build/verification/persist-3b/game-sln.build.log`），再：
+
+   ```
+   pwsh tools/scripts/run_cpp_tests.ps1 -Build -Filter currency_test -LogDir build/verification/persist-3b
+   pwsh tools/scripts/run_cpp_tests.ps1 -Build -Filter cross_zone_test -LogDir build/verification/persist-3b
+   ```
+
+   通过标准：gtest 全绿，§11.2 列出的新用例在列且通过（真 Redis 用例在没有 `MMORPG_TEST_REDIS_ADDR` 时是 SKIPPED，见第 3 步）。
+3. 真 Redis（必跑，C3 的判定只在这里验证）：自起一次性 Redis，设 `MMORPG_TEST_REDIS_ADDR=127.0.0.1:<port>` 后单独跑 currency_test 的 `--gtest_filter=*AgainstRealRedis*`。**7.2 与 8.10.x 各跑一轮**（K8s 钉 7.2，本地 compose 与 Java 版是 8.10.x），日志里记 `redis_version`。通过标准：`RedisCommitBarrierSemanticsAgainstRealRedis`、`RedisCommitBarrierSchemaGenAgainstRealRedis` 两轮都 PASS 且不是 SKIPPED。
+4. Go：
+   - 工作目录 `go/login`：`go build ./...`；`go vet ./internal/config/... ./internal/logic/pkg/dataloader/... ./internal/logic/clientplayerlogin/...`；`go test -count=1 ./...`。
+   - 工作目录 `go/db`：`go test -count=1 ./internal/barrierrestore/`。
+   - `dataloader` 的用例沿用它们现有的 Redis 夹具。通过标准：全部退出 0，且这些用例在列并 PASS：`TestParentFastPathPersistSchemaRegression`、`TestParentFastPathMalformedBarrierSchemaGenIsRegressionEvidence`（含空串）、`TestParentSchemaRegressionCheckRunsAfterIdentityAndWatermark`、`TestPrimePersistSchemaRegressionMetricsExposesAllSeries`、`TestColdLoadSkipsPersistSchemaRegression`、`TestColdRecoveryUnderEnforceDoesNotJudgeSchemaGen`、`TestEnsurePlayerAllDataPassesConfiguredRegressionMode`、`TestNewPlayerSeedStaysUnstamped`、`TestBackfillPlayerIdentity_PreservesUnknownFieldsAndSchemaStamps`、config 包四条（`TestParsePersistSchemaRegressionMode` 等）、`TestSchemaGenRestoreAcceptsAndKeepsSchemaWriter`。
+5. PowerShell：`pwsh -NoProfile -NonInteractive -File tools/scripts/tests/k8s_deploy_contract.tests.ps1`，fail=0；新增 / 改动的用例名含「PersistSchemaRegressionMode」与「login ConfigMap 的 Timeout/Node/Locker/Kafka 关键值」。工作区里 `k8s_deploy.ps1` 与该测试有别的会话的大量改动，失败先归因。可选：`promtool check rules` 校验 `deploy/k8s/persist-schema-alerts.yaml` 的 spec。
+6. 失败时：C++ 首个错误若不在本节或 §7 / §10.5 的文件里，报给对应会话；真 Redis 用例失败保留整段 gtest 输出与 Redis 版本，不改断言。
+
+### 11.5 仍未做 / 未决
+
+- **切 enforce 前须拍板**：`save_barrier_restore` 的 `schema_gen` 取两行最大值且不降，与 C3 / C4 取最小值冲突，恢复后的玩家会被判倒退（设计 §13 第 8 条，有推荐改法）。本批没改那个工具。
+- 首存在途时排队的后继、首存被顶替、同落点重连在同一代次下重载等异步时序没有端到端单测宿主；判定本身由真 Redis 用例逐条覆盖，端到端靠设计 §8.1 第 5 步的 staging 真实升世代演练。
+- C3 的告警只有 LogQL 值班查询，Loki ruler 接线归上线批 BK8s。
+- 可选项（§3.3 末）没做：go/db 能力心跳带世代号、`k8s_deploy.ps1` 发布 scene 前的只读预检。
+- Java 版：`PARITY.md` 那一行由 §10 的会话登记；写方令牌的口径追加在那一行的备注里（Java 不用 Redis 父屏障，令牌规则只作为"判断上一次写方是不是本次加载实体"的参考）。
+
+### 11.6 本节文件清单
+
+- 新增：`cpp/libs/engine/config/persist_schema_regression_mode.h`、`cpp/libs/services/scene/player/comp/player_persist_writer_comp.h`、`go/login/internal/config/persist_schema_regression.go` 及 `_test.go`。
+- 修改：`proto/common/base/config.proto`、`cpp/libs/engine/config/config.cpp`、`cpp/libs/engine/infra/storage/redis_client/redis_client.h`、`cpp/libs/services/scene/player/system/player_lifecycle.{h,cpp}`、`cpp/libs/services/scene/core/system/redis.cpp`、`cpp/tests/currency_test/currency_test.cpp`、`cpp/tests/cross_zone_test/cross_zone_test.cpp`、`bin/etc/base_deploy_config.yaml`、`tools/scripts/{k8s_deploy.ps1,start_game.ps1,tests/k8s_deploy_contract.tests.ps1}`、`go/db/internal/barrierrestore/{scripts.go,schema_gen_test.go}`、`go/login/{login.go,etc/login.yaml,internal/config/config.go}`、`go/login/internal/logic/pkg/dataloader/{parent_commit_barrier.go,parent_commit_barrier_test.go,ensure_player_all_data_async.go,metrics.go}`、`go/login/internal/logic/clientplayerlogin/player_identity_backfill_test.go`、`deploy/login-stack.linux/login.yaml`、`deploy/k8s/{README.md,persist-schema-alerts.yaml}`、设计稿（§0、§5.1–§5.4、§7、§9、§10、§13 第 8 条、§15 v0.6）、本文。

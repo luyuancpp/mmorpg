@@ -39,6 +39,7 @@ import (
 	"log"
 	"math"
 	"math/rand/v2"
+	"path/filepath"
 	"sort"
 	"strconv"
 	"strings"
@@ -89,6 +90,11 @@ const (
 	routeFenceLocalSafety = 60 * time.Second
 	// routeFenceRetryWait 是续期遇到 1205 / 网络错误后的重试间隔。
 	routeFenceRetryWait = 5 * time.Second
+	// routeFenceRenewMaxInterval 是续期间隔的上限:interval = min(ttl/3, 它)。被 -take-over-fence 接手而其实还活着的旧进程,
+	// 映射批次立刻被库按 fencing token 拒绝,但不碰映射的步骤(拷行、帮会、交易、榜单、热状态)只靠下一次续期失败才停 ——
+	// 按 ttl/3(≥20 分钟)两边会交错写这么久,压到 30s 量级。每次续期是 128 行 UPDATE 加两次镜像 EVAL + WAITAOF,开销可忽略;
+	// 本地截止时刻(最后一次成功续期 + ttl − 60s)不变。
+	routeFenceRenewMaxInterval = 30 * time.Second
 	// mysqlErrCheckConstraintViolated 3819:探针 P4 期望收到的那一个。
 	mysqlErrCheckConstraintViolated = 3819
 	// mysqlErrTableAccessDenied 1142:账号对表没有该权限(P4 / P5 要 player_route 的 INSERT 权限)。
@@ -187,9 +193,9 @@ const (
 	// 围栏:一个分片行在不在(事务外一致读,只为少发一次 ODKU)。实参:zone、shard。
 	routeFenceShardExistsSQL = "SELECT 1 FROM zone_merge_fence WHERE zone_id = ? AND shard = ?"
 	// 围栏:按 shard 升序锁一个 zone 的全部分片(获取用)。active 为 NULL(run_id 非空而 expires_at_ms 为 NULL,
-	// 只有 CHECK 不生效时可能)按生效处理。实参:zone、分片数(64)。
+	// 只有 CHECK 不生效时可能)按生效处理。src_zone / dst_zone 给接手核对被接手分片的 zone 对(TakeOverFence)。实参:zone、分片数(64)。
 	routeLockFenceAllSQL = "SELECT shard, run_id, (run_id IS NOT NULL AND expires_at_ms > " + routeDBNowMsSQL + ") AS active," +
-		" fence_epoch, holder_json FROM zone_merge_fence WHERE zone_id = ? AND shard < ? ORDER BY shard FOR UPDATE"
+		" fence_epoch, holder_json, src_zone, dst_zone FROM zone_merge_fence WHERE zone_id = ? AND shard < ? ORDER BY shard FOR UPDATE"
 	// 围栏:获取 —— 把一个 zone 的全部分片写成本次运行。实参:run_id、purpose、src、dst、expires_at_ms、holder_json、
 	// fence_epoch、zone、分片数(64)。fence_epoch 严格变大,所以受影响行数恒为 64(不依赖「值没变」的口径)。
 	routeAcquireFenceSQL = "UPDATE zone_merge_fence SET run_id = ?, purpose = ?, src_zone = ?, dst_zone = ?, expires_at_ms = ?," +
@@ -1074,6 +1080,8 @@ type routeFenceShardState struct {
 	active     bool
 	epoch      uint64
 	holderJSON string
+	// srcZone / dstZone 是分片上记着的 zone 对(0 = NULL,即未封锁)。
+	srcZone, dstZone uint32
 }
 
 // lockAllFenceShards 按 shard 升序锁一个 zone 的全部 64 片。少一行(或多出 / 乱序)一律 errRouteFenceRowMissing / errRouteInvariant。
@@ -1089,11 +1097,16 @@ func lockAllFenceShards(ctx context.Context, tx *sql.Tx, zone uint32) ([]routeFe
 		var run, holder sql.NullString
 		var active sql.Null[int64]
 		var epoch uint64
-		if err := rows.Scan(&shard, &run, &active, &epoch, &holder); err != nil {
+		var srcZone, dstZone sql.Null[uint64]
+		if err := rows.Scan(&shard, &run, &active, &epoch, &holder, &srcZone, &dstZone); err != nil {
 			return nil, fmt.Errorf("lock zone_merge_fence zone %d: %w", zone, err)
 		}
 		if shard != uint64(len(out)) {
 			return nil, fmt.Errorf("%w: zone_merge_fence zone %d returned shard %d at position %d", errRouteInvariant, zone, shard, len(out))
+		}
+		if srcZone.V > math.MaxUint32 || dstZone.V > math.MaxUint32 {
+			return nil, fmt.Errorf("%w: zone_merge_fence zone %d shard %d has src_zone=%d dst_zone=%d", errRouteInvariant, zone, shard,
+				srcZone.V, dstZone.V)
 		}
 		out = append(out, routeFenceShardState{
 			shard:      uint32(shard),
@@ -1101,6 +1114,8 @@ func lockAllFenceShards(ctx context.Context, tx *sql.Tx, zone uint32) ([]routeFe
 			active:     !active.Valid || active.V != 0,
 			epoch:      epoch,
 			holderJSON: holder.String,
+			srcZone:    uint32(srcZone.V),
+			dstZone:    uint32(dstZone.V),
 		})
 	}
 	if err := rows.Err(); err != nil {

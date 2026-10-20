@@ -325,6 +325,65 @@ func TestRealDBManuallyResolvedLegsAdvanceContracts(t *testing.T) {
 	require.Zero(t, opCount(t, e, 52, 4))
 }
 
+// 人工判定"实例扣款已成功"时 outbox 行没有托管原件(ResolveManually 不写 escrow_snapshot;自动路径缺原件根本不终结)。
+// 合同必须在记下结局时就隔离为人工,不能先上架、等买家付了款才在发货时撞错,把第二个玩家的钱也压进人工单。
+func TestRealDBManualAppliedInstanceDebitWithoutOriginalIsQuarantined(t *testing.T) {
+	e := realDBEngine(t)
+	ctx := context.Background()
+	e.Policy.AllowInstances = true
+	offer, err := e.CreateConsignment(ctx, 81, &tradepb.CreateConsignmentRequest{ClientRequestId: "manual-instance-01",
+		Assets: &tradepb.TradeAssetSelection{ItemUuids: []uint64{77}}, CurrencyType: 1, Price: 50, DurationMs: 3_600_000})
+	require.NoError(t, err)
+	tick(t, e)
+	_, w := state(t, e, offer.CommerceId)
+	debit := leg(w, "seller_debit")
+	require.NotNil(t, debit)
+	ok, err := assetop.ResolveManually(ctx, e.Repo.Ops, assetop.ManualResolution{
+		OpID: debit.OpId, Final: assetop.StatusApplied, Operator: "ops-regression", Reason: "scene 流水显示已扣出",
+	}, nil, time.Now)
+	require.NoError(t, err)
+	require.True(t, ok)
+
+	tick(t, e)
+	r, w := state(t, e, offer.CommerceId)
+	require.Equal(t, Manual, r.Status, "没有托管原件就不能上架")
+	require.Equal(t, "manual", w.Stage)
+	require.Zero(t, opCount(t, e, 81, 4), "隔离不发出任何退回")
+	require.False(t, dueIDs(t, e)[offer.CommerceId])
+	_, err = e.Mutate(ctx, 82, offer.CommerceId, "buy", "manual-instance-buy-1")
+	require.ErrorIs(t, err, ErrConflict, "隔离后的寄售不接受购买")
+}
+
+// bid_ready 的出价还没被拍品接受,拍品不引用它。拍品行缺失(或解不开)时这条出价按不合格原币退回,
+// 不能像以前那样每轮返回错误、冻结的钱永远退不回来;退款腿只建一次。
+func TestRealDBReadyBidWithMissingLotIsRefundedOnce(t *testing.T) {
+	e := realDBEngine(t)
+	ctx := context.Background()
+	now := e.now()
+	sel := &tradepb.TradeAssetSelection{CurrencyType: 1, CurrencyAmount: 60}
+	raw, err := proto.MarshalOptions{Deterministic: true}.Marshal(&tradepb.TradeCommerceWorkflow{Stage: "bid_ready", SellerAssets: sel,
+		Legs: []*tradepb.TradeCommerceLeg{{Role: "bid_debit", PlayerId: 71, Stream: 3, Bundle: Bundle(sel), OpId: 424242, Outcome: 2}}})
+	require.NoError(t, err)
+	bid := &tradepb.TradeCommerceRecord{CommerceId: 900101, RequestKey: "orphan-ready-bid", RequestDigest: []byte{3}, Kind: BidKind,
+		Status: Escrowing, SellerPlayerId: 71, ParentId: 999999, UnitPrice: 60, CurrencyType: 1,
+		CreatedMs: now - 1000, UpdatedMs: now - 1000, Version: 1, WorkflowProto: raw}
+	require.NoError(t, e.Repo.Tx(ctx, func(tx *sql.Tx) error { return e.Repo.Insert(ctx, tx, bid) }))
+
+	tick(t, e)
+	r, w := state(t, e, bid.CommerceId)
+	require.Equal(t, "bid_refund", w.Stage)
+	require.Equal(t, CancelPending, r.Status)
+	for i := 0; i < 3; i++ {
+		tick(t, e)
+	}
+	_, w = state(t, e, bid.CommerceId)
+	require.Equal(t, "return", w.Stage)
+	refund := leg(w, "bid_return")
+	require.NotNil(t, refund)
+	require.EqualValues(t, 60, refund.Bundle.Currencies[0].Amount)
+	require.Equal(t, 1, opCount(t, e, 71, 4), "原币退款只建一次")
+}
+
 // 持有中的竞价在拍品结算前无事可做。修复前它的 updated_ms 不变、每轮都排在 Due 队头,
 // 有出价的在拍拍品数一到 Due 上限,Due 就只回这些行,拍品自己也推进不了。
 func TestRealDBHeldBidWaitsOutsideDueHead(t *testing.T) {
@@ -434,4 +493,38 @@ func TestRealDBReceiptAckPagesPastStuckHead(t *testing.T) {
 	after := applier.attempts()
 	require.Greater(t, len(after), before)
 	require.Equal(t, uint64(1), after[before], "到表尾后从头轮转")
+}
+
+// 一行收据 ACK 的 payload 解不开时,修复前 AckDue 整页报错、游标停在它前面,全服收据 ACK 停摆。
+// 现在跳过这一行,同页其余 ACK 照常尝试,Tick 不报错;坏行原样留在表里等人工(不清 receipt_ack_pending)。
+func TestRealDBReceiptAckSkipsUndecodablePayload(t *testing.T) {
+	e := realDBEngine(t)
+	ctx := context.Background()
+	applier := &recordingApplier{}
+	e.Applier = applier
+	e.Ledger = emptyLedger{}
+	good, err := proto.Marshal(&assetpb.AssetBundle{Items: []*assetpb.ItemGrant{{ConfigId: 10, Count: 1}}})
+	require.NoError(t, err)
+	now := e.now()
+	for i := 1; i <= 3; i++ {
+		payload := good
+		if i == 1 {
+			payload = []byte{0xff, 0xff, 0xff}
+		}
+		rec := &tradepb.TradeAssetOpRecord{OpId: uint64(i), PlayerId: 62, Stream: uint32(assetpb.AssetOpStream_ASSET_OP_STREAM_TRADE_DEBIT),
+			StreamEpoch: 1, Seq: uint64(i), Kind: tradepb.TradeAssetOpKind_TRADE_ASSET_OP_KIND_ESCROW_DEBIT,
+			Status: tradepb.TradeAssetOpStatus_TRADE_ASSET_OP_STATUS_APPLIED, Durable: true, ReceiptAckPending: true,
+			RefKind: tradepb.TradeAssetOpRefKind_TRADE_ASSET_OP_REF_KIND_ORDER, RefId: 1, Payload: payload,
+			NextAttemptMs: now, CreatedMs: now, UpdatedMs: now}
+		require.NoError(t, e.Repo.Tx(ctx, func(tx *sql.Tx) error { return e.Repo.Ops.InsertOp(ctx, tx, rec) }))
+	}
+
+	tick(t, e)
+	seen := applier.distinct()
+	require.False(t, seen[1], "解不开的 payload 不发 ACK")
+	require.True(t, seen[2], "坏行不能挡住同页后面的 ACK")
+	require.True(t, seen[3])
+	var pending bool
+	require.NoError(t, e.Repo.DB.QueryRow("SELECT receipt_ack_pending FROM trade_asset_op WHERE op_id=1").Scan(&pending))
+	require.True(t, pending, "坏行保留 ACK 待办,等人工")
 }

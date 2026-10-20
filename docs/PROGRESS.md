@@ -13751,3 +13751,55 @@ PROGRESS 一直没有条目)。上面 2026-09-21 条里"第 7–9 步未跑""修
   4. `go test ./internal/kafka/ ./internal/config/ ./internal/metrics/ -count=1` 全量,既有失败逐个点名归因。
   5. 红跑(可选,不回退主仓代码,禁止 stash / reset):建临时 worktree 检出 `9a9390035`,只拷入当前的 `route_ready_gate_shutdown_test.go`,跑 `-run 'RouteReadyGateClosingWakesIdleClaim'`。期望 FAIL,报 `the refresh that closes the gate must wake the idle claim`。用完删掉临时 worktree。
 - **Java 版(AGENTS §12)**:不适用。这是 go/db 内部的 Kafka 消费停机与读方门禁实现,不涉及客户端契约。对应 Java 版本号无,不登记 PARITY。
+
+## 2026-10-20 跨 zone 传送交接收尾核对:代码已无遗留,文档与告警注释订正(Claude,只改文档与注释,未编译、未测试)
+
+- **起因**:负责人贴来 09-19 / 09-21 两段跨 zone 交接会话的记录(上一会话因额度中断),问"做完了吗,没做完就继续做"。记录里的提交号(`e6b174712`、`595df64a3`、`9cef7b2ec`、`703d409ad` 等)是 10-12 历史改写之前的旧号,本仓已查不到。对应内容在新历史里是 `440fe26b6`、`586849bed`、`d01ca5099`(2026-09-21)。
+- **核对方式**:一条只读工作流。按 C++ / Go 与部署 / 文档 / 客户端分 4 路逐条核对,每路配 1 名反驳者复核,最后由完备性批评者查漏。对照的是 HEAD 代码和 PROGRESS 里已有的 Codex 回执。Go 那一路的反驳者和批评者第一次撞上会话额度,10-20 续跑。
+- **结论**:
+  - 贴的那一轮(Z1、A′、GO-5、epoch==0 铸造)早已进 main;之后的 §13 第二轮、GO-2、CPP-3 也都在 main。本线没有"还没落的码"。
+  - 客户端修复都在客户端 `origin/main` 上,包括 CL-1…CL-8 与重定向 `PlayerId` 为 0 的修复(本机跟踪引用 `d6338af1`)。
+  - 单测已绿,但跑的是合并前的源码:
+    - `cross_zone_test` 313/313、`routing_identity_test` 113/113;
+    - `go/scene_manager` 444 个顶层用例加 226 个子例,`go/login` 519 个顶层用例加 375 个子例;
+    - `rpc_controller_test` 80 项、0 失败。
+  - HEAD 没有构建证据。`c35e1133d` 带进了 `HandlePlayerSaveSchemaRejected`:退出中的实体被拒存时不存盘销毁,交接还没写标记时走 `AbortTravelHandoff`。这需要跨 zone 线复审。
+  - 剩余工作分三类(只差运行 / 要负责人拍板 / 归别的线或文件在途),清单写在 `docs/handoff/handoff-crosszone-20260920.md` 文件头的「2026-10-20 现状」。
+- **本次改动(都只改文档与注释,不改行为)**:
+  - `docs/design/guild-phase2/04-asset-channel.md`::29、:300、:335 与 C6 四处原先以已删的迁移包和 `HandleCrossZoneTransfer` 作论据,现按现行交接路径重写。C6 的结论不变,理由换成:先冻结再存盘;交接存盘是同 key 的最新值;标记在存盘落地后才写;目标节点载入的是同一份数据。同时写明了前提 CZ-2 与强制存盘分支没有单测这个证据缺口。按 09-21 的约定,这份替换文本本应经帮会会话交负责人;帮会二期已于 10-09 收口,这次由本线直接改,**请负责人过目**。
+  - `docs/design/cross-zone-scene-travel.md`:
+    - §13 开头与 §12.6 加了验证状态回填;
+    - 订正 §12.8 引用计数(45 行 / 26 个文件)和 GO-3 新字段号(从 10 起);
+    - §13.6 的用例数改为 27 + 10,另批注已消解的两条残余(`Call` 读 `Connected`、Tianyong asmdef);
+    - 订正 §13.8 文件表里 `ReconcileRelocateOnReentry` 的位置,以及 §13.4 的 promtool 规则数(25 条);
+    - §12.5.6 的客户端行号改为按名字查。
+  - `docs/handoff/handoff-crosszone-20260920.md`:
+    - 文件头新增「2026-10-20 现状」一屏版;
+    - 4K 审图 PNG 改为实测数字(34 张,约 543 MB)并列出三种做法;
+    - 订正 GO-3 字段号,补 `docs/notes` 的 3 处残留;
+    - `player_migration_event.proto` 改为按当前生成器核过的完整删除清单:事件号转墓碑不平移;不可整删 `ChangeSceneInfoComp`,因为 `s2s_player_scene.proto` 还在用。
+  - `docs/ops/cross-zone-failure-test-runbook.md` 升到 v2.9:
+    - 补登 10-18 `e7bb46070` / `8b9592de3` 两次没进 Changelog 的正文改动;
+    - 回填验证状态,写明 10-17 那次严格往返 1/1 只覆盖 robot 部分,不能记成基线 PASS;
+    - 场景 Z 补上 `HandlePlayerSaveSchemaRejected` 的观测点;
+    - §0 行号改为按注释原文 grep。
+  - 状态行回填单测证据:`scene-enter-session-fence.md`、`scene-enter-chain-residuals.md`。
+  - 过期描述加带日期的批注或更正:`docs/notes/NOTES_en.md` / `NOTES_zh.md` 的 #127、`currency-crash-window-verification.md`、`handoff-backlog-2026-09-05.md` 附录 A、`node-id-overhaul-qa-20260908.md`、`ecs-refactor/batch4-external-id.md` 两处、`stress-1zone-45k-2026-05-30-gate-kafka-consumer.md`。
+  - `deploy/k8s/scene-manager-alerts.yaml` 与 `go/scene_manager/internal/metrics/metrics.go`,只改注释:
+    - 两个旧提交号补上新号 `0e26844b5` / `f3f08e2ad`;
+    - reason 清单补注 `home_zone_merging` / `session_stale` / `session_conflict`;
+    - `SceneManagerHomeZoneUnmappedTravel` 注解里的日志原文改为英文化后的 `[home-zone] Cross-zone travel rejected`。
+  - 告警表达式一处没动。
+- **提交情况**:上面的改动在编辑过程中被 10-20 的两个保存提交 `c35e1133d`(03:08)与 `10fa5d939`(03:20)一并带进了 main,本机跟踪引用显示已与 `origin/main` 一致。这两个提交不是本会话做的。本条及其后的小修如果还没被带走,按路径提交即可。
+- **刻意没碰**(文件被别的会话在途改动占着,或归属不在本线):
+  - `player_battle.cpp` 的过时注释,归 Battle 线;
+  - robot travel-smoke 预算,归 robot 属主;
+  - `SendTipAndKickToClient` 的 DRY 收敛;
+  - `handleWatchEvent` 同键换 zone 时不写 `death_at`;
+  - proto 删除与 proto 注释:要整树 regen,而 `proto/common/base/config.proto` 在途;
+  - 所有客户端改动:按 AGENTS §9 需要授权。
+- **Codex 验证**:
+  1. 本条的改动只涉及文档与注释。只需 `gofmt -l go/scene_manager/internal/metrics/metrics.go` 无输出,以及对上述文件跑 `git diff --check c63b22dca -- <文件>` 无报错。
+  2. 可选:抽出 `deploy/k8s/scene-manager-alerts.yaml` 的 `spec.groups`,跑 `promtool check rules`,期望 `SUCCESS: 25 rules found`。这份文件至今没有 promtool 证据。
+  3. 跨 zone 主线的待跑项见交接说明「2026-10-20 现状」第 1 类。
+- **Java 版(AGENTS §12)**:不适用。只改服务端文档与注释,不涉及客户端契约。对应 Java 版本号无,不登记 PARITY。Java 侧跨 zone 各项的登记现状(`PARITY.md`:跨 zone 传送「Java 进行中」、CPP-3「Java 待做」等)归 Java 线。

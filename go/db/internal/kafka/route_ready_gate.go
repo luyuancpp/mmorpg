@@ -7,9 +7,15 @@ package kafka
 //     只有 Trusted 才按读到的值选库(lookupReady);否则返回 errRouteNotReady —— 不可信时值与缺键都不可信,
 //     缺键绝不解释为「没有落点」,也绝不回落到本进程 zone 的库。
 //   - 进程级就绪闸(调度,routeReadyGate):每 RouteReadyGateIntervalMs 用读脚本(不带映射键)刷新一次 verdict;不是 Trusted
-//     时消费循环不从 claim 取新消息、重试循环不分拣也不认领 —— 不 ack、不往 Redis 重试队列推,消息留在 Kafka(lag 增长由
-//     既有告警覆盖),每次刷新之后复查。闸只决定「取不取新任务」,不替逐条判:闸刚放行、逐条判不可信的竞态走
-//     errRouteNotReady 的延后(写不耗预算、读耗预算),量级限于一个刷新间隔内的在途任务。
+//     时消费循环不从 claim 取新消息、重试循环不分拣也不认领 —— 新任务不 ack、不往 Redis 重试队列推,消息留在 Kafka(lag
+//     增长由既有告警覆盖),每次刷新之后复查。闸只决定「取不取新任务」,不替逐条判,已经派进 worker 的任务不再看闸。
+//     走 errRouteNotReady 延后(写不耗预算、读耗预算)的有两类:
+//       ① 闸关上那一刻已在 worker 里的任务:每分区 taskCh 1000 条 + SubShardCount×256 条子 shard 缓冲(buildWorker),
+//          加上重试循环当拍正在认领的那一条(内层循环每认领一条前看一次闸)。积压追赶期这是通道深度量级(按 etc/db.yaml 的
+//          10 分区 × (1000 + 8×256) 约 3 万条),不是「一个刷新间隔内的在途任务」:Kafka 来源的带整条 DBTask(含 Body)经
+//          persistBeforeAck 的 WAITAOF 组提交进主 Redis 重试队列,估主 Redis 内存与 AOF 时按这个量级算。要做到这批也不入队,
+//          得让 worker 在 handleTask 之前等闸,会改停机排空(drainClaimForShutdown)与 claim 收尾语义,需单独设计,本批不做;
+//       ② 闸刚放行、逐条判不可信的竞态,落在一个刷新间隔之内。
 //
 // Placement.RequireRouteReady=false(缺省)时 placementRouter.ready 与 KeyOrderedKafkaConsumer.routeGate 都是 nil:
 // lookup 仍是 MGET 两键,消费循环与重试循环的闸检查恒放行,两个新指标不注册 —— 行为与引入之前相同。

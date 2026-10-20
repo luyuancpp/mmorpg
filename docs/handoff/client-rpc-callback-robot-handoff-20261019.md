@@ -217,4 +217,4 @@
 - 规模:每组「实现 → 语义评审 → 中高级发现逐条对抗复核 → 修复」,与第一批相同(第一批 5 组共 14 个代理、约 250 万子代理 token)。按波开,每波开之前看 5 小时与周额度;周额度高于 90% 就不开。
 - 实现代理提示里带续做说明(先 `git diff` 看现状、在半截基础上补完),并点名 §4、§8.1 与第一批已迁好的参照(friend / mail / travel / ordering)。
 - 用户会不定期整批快照提交:评审代理要用 `git diff <迁移前提交> -- <文件>` 看改动,不要只用 `git diff`;10-20 的补评审就因为改动已入库而重开过一次。
-- 冒烟:attribute / pet / equip / equip_forge / features / currency_crash_window / chat / battle / battle_cross_zone 各自的 `etc/*.yaml`,通过标准与 §2 的全局标准相同。
+- 冒烟(`robot/etc/` 下,10-20 核对过文件存在):`attribute_smoke`、`pet_smoke`、`equip_smoke`、`equip_forge_smoke`、`equip_forge_topup`、`chat_smoke`、`battle_smoke`、`battle_smoke_cross_zone`、`robot.currency-crash.yaml`(currency-crash-snapshot 模式)、`robot.behavioral.yaml`(stress 模式 + behavioral profile,覆盖 `main.go` 的 ListSkills 等待)。login-test、features-smoke、asset-arrival-prepare 没有入库的 yaml,要用对应的 `mode:` 另写不入库的本地配置。通过标准与 §2 的全局标准相同。

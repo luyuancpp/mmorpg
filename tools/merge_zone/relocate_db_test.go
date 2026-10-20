@@ -33,6 +33,9 @@ type memRouteDB struct {
 	casSizes []int
 	casErr   error
 	readErr  error
+	// writableErr 是 RequireWritable 的应答(nil = 可写);writableChecks 记下它被调了几次。
+	writableErr    error
+	writableChecks int
 	// afterCAS 可选:每次 RelocateCAS 提交之后调用(模拟「提交之后、发布之前」发生的事)。
 	afterCAS func()
 }
@@ -154,6 +157,11 @@ func (d *memRouteDB) ScanByStorage(_ context.Context, storage uint32, after rout
 
 func (d *memRouteDB) ReadFence(_ context.Context, zone uint32) (routeFenceState, error) {
 	return d.fences[zone], nil
+}
+
+func (d *memRouteDB) RequireWritable(context.Context) error {
+	d.writableChecks++
+	return d.writableErr
 }
 
 // ── mapping Redis 替身(挂在 fakeRouteRedis 上)───────────────────────────────
@@ -389,6 +397,90 @@ func TestSQLRelocateRead_ReadOnlyDoesNotPublish(t *testing.T) {
 	op := placementCAS{PlayerID: 1, ExpectAbsent: true, ExpectHome: "901", NewValue: frozenValue(relocTestS, 1, relocTestRun)}
 	if _, err := p.cas(context.Background(), []placementCAS{op}); err == nil {
 		t.Fatal("a read-only backend must refuse CAS")
+	}
+}
+
+// TestSQLRelocateRead_FrozenWritersRefuseToPublish(R8-5):route_meta.writable != 1(回档恢复中)时 read 不发布、一个结果都不给,
+// 错误包着 errRouteNotWritable 并指向 runbook §9.4;读不到开关同样不发布、原因原样带出。没有可发布的行、dry-run 不查开关。
+func TestSQLRelocateRead_FrozenWritersRefuseToPublish(t *testing.T) {
+	db := newMemRouteDB(relocDBHomeRow(1, 1))
+	db.writableErr = fmt.Errorf("%w (writable=0)", errRouteNotWritable)
+	cache := newMemRouteCache()
+	p, f := newMemRelocatePlacements(t, db, cache)
+
+	reads, err := p.read(context.Background(), []uint64{1})
+	if !errors.Is(err, errRouteNotWritable) || reads != nil || !strings.Contains(err.Error(), "runbook §9.4") {
+		t.Fatalf("frozen writers: (%v, %v), want (nil, errRouteNotWritable naming runbook §9.4)", reads, err)
+	}
+	if f.pipelineCount() != 0 || len(f.singles) != 0 || len(cache.kv) != 0 {
+		t.Fatalf("a frozen route DB was published: %d pipelines, %d commands, cache %v", f.pipelineCount(), len(f.singles), cache.kv)
+	}
+
+	db.writableErr = errors.New("read route_meta.writable: connection refused")
+	if _, err := p.read(context.Background(), []uint64{1}); err == nil || errors.Is(err, errRouteNotWritable) ||
+		!strings.Contains(err.Error(), "connection refused") || f.pipelineCount() != 0 {
+		t.Fatalf("unreadable switch = %v, want the cause and no publish", err)
+	}
+
+	// 没有可发布的行(库里没有这名玩家)与 dry-run:不查开关,照常读。
+	db.writableChecks = 0
+	if reads, err := p.read(context.Background(), []uint64{2}); err != nil || reads[0].HomePresent || reads[0].RecordPresent {
+		t.Fatalf("nothing to publish = (%+v, %v), want a plain absent read", reads, err)
+	}
+	p.readOnly = true
+	if reads, err := p.read(context.Background(), []uint64{1}); err != nil || !reads[0].HomePresent {
+		t.Fatalf("dry-run read while frozen = (%+v, %v)", reads, err)
+	}
+	if db.writableChecks != 0 {
+		t.Fatalf("writable was checked %d times without anything to publish", db.writableChecks)
+	}
+
+	// 解冻之后照常先发布再交出结果。
+	p.readOnly = false
+	db.writableErr = nil
+	if _, err := p.read(context.Background(), []uint64{1}); err != nil || cache.cached(1) != "901|-|1" {
+		t.Fatalf("after unfreeze: err=%v cache=%s, want home published at rev 1", err, cache.cached(1))
+	}
+	if db.writableChecks != 1 {
+		t.Fatalf("writable checks = %d, want 1 (once, before the publish)", db.writableChecks)
+	}
+}
+
+// TestSQLRelocate_PublishRejectionNamesTheRollbackRunbook(R8-5 文案):发布被确定性拒绝时,read 与 cas 的错误都带上回档提示
+// (指向 runbook §9.4);WAITAOF 确认不了之类的非拒绝错误不带。
+func TestSQLRelocate_PublishRejectionNamesTheRollbackRunbook(t *testing.T) {
+	if got := routePublishRollbackHint(fmt.Errorf("%w: conflict", errRoutePublishRejected)); !strings.Contains(got, "runbook §9.4") {
+		t.Fatalf("hint for a rejection = %q, want the rollback runbook", got)
+	}
+	if got := routePublishRollbackHint(errRoutePublishNotDurable); got != "" {
+		t.Fatalf("hint for a non-rejection = %q, want none", got)
+	}
+
+	// read:缓存比库新、值不同,冻结行的确认发布被拒。
+	row := mergeRouteRow{PlayerID: 1, HomeZone: relocTestS, StorageID: relocTestS, PlacementVersion: 1, FrozenRunID: relocTestRun, Rev: 2}
+	cache := newMemRouteCache()
+	cache.seed(mergeRouteRow{PlayerID: 1, HomeZone: relocTestS, StorageID: relocTestT, PlacementVersion: 2, Rev: 7})
+	p, _ := newMemRelocatePlacements(t, newMemRouteDB(row), cache)
+	if _, err := p.read(context.Background(), []uint64{1}); !errors.Is(err, errRoutePublishRejected) || !strings.Contains(err.Error(), "runbook §9.4") {
+		t.Fatalf("rejected read = %v, want errRoutePublishRejected with the rollback hint", err)
+	}
+
+	// cas:提交之后的发布被拒(缓存 rev 领先、值不同)。
+	db := newMemRouteDB(relocDBHomeRow(2, 1))
+	cache = newMemRouteCache()
+	cache.seed(mergeRouteRow{PlayerID: 2, HomeZone: relocTestS, StorageID: relocTestT, PlacementVersion: 2, Rev: 9})
+	p, _ = newMemRelocatePlacements(t, db, cache)
+	op := placementCAS{PlayerID: 2, ExpectAbsent: true, ExpectHome: "901", NewValue: frozenValue(relocTestS, 1, relocTestRun)}
+	if _, err := p.cas(context.Background(), []placementCAS{op}); !errors.Is(err, errRoutePublishRejected) || !strings.Contains(err.Error(), "runbook §9.4") {
+		t.Fatalf("rejected cas publish = %v, want errRoutePublishRejected with the rollback hint", err)
+	}
+
+	// 非拒绝(WAITAOF 份数不足):不带提示。
+	cache = newMemRouteCache()
+	cache.acks = []any{int64(0), int64(0)}
+	p, _ = newMemRelocatePlacements(t, newMemRouteDB(relocDBHomeRow(3, 1)), cache)
+	if _, err := p.read(context.Background(), []uint64{3}); !errors.Is(err, errRoutePublishNotDurable) || strings.Contains(err.Error(), "runbook §9.4") {
+		t.Fatalf("not durable read = %v, want errRoutePublishNotDurable without the rollback hint", err)
 	}
 }
 

@@ -13,6 +13,10 @@ package main
 //
 // owner_epoch 为 0 或不存在的人(从没进过场景)不要求屏障,只计数。读失败一律 INFRA(没查成,不是通过)。
 // 键与版本格式都是镜像字面量(本模块是独立 go.mod,不引 shared),单测钉住。
+//
+// 屏障 hash 只按 pending 与两表 ACK 三个字段判,不按字段集合判:C++ 严格屏障写的 schema_gen(覆盖世代)/ schema_writer
+// (写方令牌,docs/design/mixed-version-persist-field-protection.md §5.2)与 go/db 的 outbox_* 都是合法字段,前向 copy
+// 合服原样保留,这里不读也不拒。login 冷加载同样只读这三个字段(schema_gen 只在父快照快路径上比较)。
 
 import (
 	"context"

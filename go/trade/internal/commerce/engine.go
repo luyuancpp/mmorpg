@@ -712,8 +712,9 @@ func (e *Engine) advance(ctx context.Context, old *tradepb.TradeCommerceRecord) 
 				}
 			}
 			// 已扣出的托管迟早要原样转给对方或退回(Transfer),在记下结局的这一刻就核对它转得动。
-			// 人工终结为 APPLIED 的实例扣款没有托管原件(ResolveManually 不写 escrow_snapshot):不在这里拦,
-			// 寄售 / 拍品会照常上架,等买家付了款才在发货时判错,把第二个玩家的钱也一起压进人工单。
+			// 典型是人工终结为 APPLIED 的实例扣款:ResolveManually 不写 escrow_snapshot,自动路径缺原件则根本不终结
+			// (assetop escrowAwaitsReceipt)。若不在这里拦,寄售 / 拍品会照常上架,等买家付了款才在发货时判错,
+			// 把第二个玩家的钱也一起压进人工单;在这里拦则只隔离卖家这一份托管。
 			if l.Stream == 3 && applied(l) {
 				if _, err := Transfer(l.Bundle, l.Snapshot); err != nil {
 					return corrupt(fmt.Errorf("腿 %s op_id=%d 已扣出但托管原件不可转交(%s 终局): %w", l.Role, l.OpId, out.Source(), err))
