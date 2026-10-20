@@ -1,9 +1,12 @@
 #include <gtest/gtest.h>
 #include <google/protobuf/unknown_field_set.h>
 
+#include <cstddef>
 #include <cstdint>
+#include <iterator>
 #include <limits>
 #include <map>
+#include <set>
 #include <string>
 #include <vector>
 
@@ -140,6 +143,9 @@ TEST(BattleResultActivity, ActivityResultKeyMatchesGuildContract)
 
 namespace
 {
+    // 落库前置条件要覆盖的成员(与 MakeSettlementSourceResult 的两名成员一致)。
+    std::set<uint64_t> StagingMembers() { return {92, 93}; }
+
     // 结果发送的前置条件是成员的个人结算已全部写进 pending(审计 social-match-battle#2)。
     // 只测发送 / 回执状态机的用例先把这一步走完。
     void MarkPersonalSettlementsDurable(turnbattle::ResultCommit& commit)
@@ -147,13 +153,13 @@ namespace
         const auto instant = turnbattle::ResultCommit::Clock::time_point{};
         const auto attempt = commit.BeginStaging(instant);
         ASSERT_NE(attempt, 0u);
-        ASSERT_TRUE(commit.FinishStaging(attempt, true, instant));
+        ASSERT_TRUE(commit.FinishStaging(attempt, commit.UnstagedMembers(), instant));
     }
 }
 
 TEST(BattleResultCommit, UnknownCannotReleaseTerminalOrChangeOriginalBytes)
 {
-    turnbattle::ResultCommit commit("original-result-with-first-finished-at");
+    turnbattle::ResultCommit commit("original-result-with-first-finished-at", StagingMembers());
     MarkPersonalSettlementsDurable(commit);
     const auto start = turnbattle::ResultCommit::Clock::time_point{};
     ASSERT_TRUE(commit.Begin(7, start));
@@ -174,7 +180,7 @@ TEST(BattleResultCommit, UnknownCannotReleaseTerminalOrChangeOriginalBytes)
 
 TEST(BattleResultCommit, FailedAdmissionUsesMonotonicBoundedBackoff)
 {
-    turnbattle::ResultCommit commit("same-bytes");
+    turnbattle::ResultCommit commit("same-bytes", StagingMembers());
     MarkPersonalSettlementsDurable(commit);
     auto current = turnbattle::ResultCommit::Clock::time_point{};
     const uint32_t delays[]{1,2,4,8,16,30,30};
@@ -259,7 +265,7 @@ TEST(BattleResultCommit, FullSourcePreservesAllAssetsAndFixedBytesAfterUnknownAc
     EXPECT_EQ(event.settlements(1).player_id(), 93u);
     EXPECT_EQ(event.settlements(1).battle_id(), 851u);
     EXPECT_EQ(event.settlements(1).outcome(), ::BATTLE_OUTCOME_DRAW);
-    turnbattle::ResultCommit commit(event.SerializeAsString());
+    turnbattle::ResultCommit commit(event.SerializeAsString(), StagingMembers());
     MarkPersonalSettlementsDurable(commit);
     source.at(1).set_gold_gain(99999);
     event.mutable_settlements(0)->clear_items_gained();
@@ -329,7 +335,7 @@ TEST(BattleResultCommit, OversizedCompleteSourceNeverPublishesATruncatedRecord)
 // 失败的一轮按有界退避重来;过期轮次的迟到回复不能放行。
 TEST(BattleResultCommit, ResultIsNeverSentBeforePersonalSettlementsAreDurable)
 {
-    turnbattle::ResultCommit commit("result-with-personal-settlements");
+    turnbattle::ResultCommit commit("result-with-personal-settlements", StagingMembers());
     const auto start = turnbattle::ResultCommit::Clock::time_point{};
     EXPECT_FALSE(commit.PersonalSettlementsDurable());
     EXPECT_FALSE(commit.CanSend(start));
@@ -338,21 +344,21 @@ TEST(BattleResultCommit, ResultIsNeverSentBeforePersonalSettlementsAreDurable)
     const auto first = commit.BeginStaging(start);
     ASSERT_NE(first, 0u);
     EXPECT_EQ(commit.BeginStaging(start), 0u);  // 同一时刻最多一轮在途
-    EXPECT_FALSE(commit.FinishStaging(first, false, start));  // 有成员没写进去
+    EXPECT_FALSE(commit.FinishStaging(first, {}, start));  // 有成员没写进去
     EXPECT_FALSE(commit.CanSend(start + std::chrono::hours(1)));
     EXPECT_EQ(commit.BeginStaging(start + std::chrono::seconds(1) - std::chrono::milliseconds(1)), 0u);
 
     const auto second = commit.BeginStaging(start + std::chrono::seconds(1));
     ASSERT_NE(second, 0u);
     EXPECT_NE(second, first);
-    EXPECT_FALSE(commit.FinishStaging(first, true, start + std::chrono::seconds(1)));  // 过期轮次
+    EXPECT_FALSE(commit.FinishStaging(first, StagingMembers(), start + std::chrono::seconds(1)));  // 过期轮次
     EXPECT_FALSE(commit.PersonalSettlementsDurable());
     EXPECT_FALSE(commit.Begin(1, start + std::chrono::seconds(1)));
 
-    EXPECT_TRUE(commit.FinishStaging(second, true, start + std::chrono::seconds(1)));
+    EXPECT_TRUE(commit.FinishStaging(second, StagingMembers(), start + std::chrono::seconds(1)));
     EXPECT_TRUE(commit.PersonalSettlementsDurable());
     EXPECT_EQ(commit.BeginStaging(start + std::chrono::seconds(2)), 0u);  // 已落库不再重写
-    EXPECT_FALSE(commit.FinishStaging(second, true, start + std::chrono::seconds(2)));
+    EXPECT_FALSE(commit.FinishStaging(second, StagingMembers(), start + std::chrono::seconds(2)));
     EXPECT_TRUE(commit.Begin(1, start + std::chrono::seconds(1)));
     EXPECT_EQ(commit.Payload(), "result-with-personal-settlements");
 }
@@ -360,18 +366,114 @@ TEST(BattleResultCommit, ResultIsNeverSentBeforePersonalSettlementsAreDurable)
 // 落库失败的退避与投递同一口径:1、2、4…30 秒封顶,单调不减。
 TEST(BattleResultCommit, FailedStagingUsesMonotonicBoundedBackoff)
 {
-    turnbattle::ResultCommit commit("same-bytes");
+    turnbattle::ResultCommit commit("same-bytes", StagingMembers());
     auto current = turnbattle::ResultCommit::Clock::time_point{};
     const uint32_t delays[]{1, 2, 4, 8, 16, 30, 30};
+    // 这里只看退避,轮次必须还没到上限(上限见 StagingStopsAtRoundCapWithoutReleasingResult)。
+    ASSERT_LT(std::size(delays), static_cast<std::size_t>(turnbattle::kMaxStagingRounds));
     for (const auto seconds : delays)
     {
         const auto attempt = commit.BeginStaging(current);
         ASSERT_NE(attempt, 0u);
-        EXPECT_FALSE(commit.FinishStaging(attempt, false, current));
+        EXPECT_FALSE(commit.FinishStaging(attempt, {}, current));
         EXPECT_EQ(commit.BeginStaging(current + std::chrono::seconds(seconds) - std::chrono::milliseconds(1)), 0u);
         current += std::chrono::seconds(seconds);
         EXPECT_FALSE(commit.CanSend(current));
     }
+}
+
+// 审计 r2-battle#1(data-overwrite-rollback-audit-r2-20261019.md §3.3)。修复前,一轮里只要有一名成员没拿到确认,
+// 下一轮就对全部成员再写一遍 pending:第 1 轮已写进去、随后被 scene 应用并销账(删 pending 与锁、摘账本)的成员,
+// pending 复活,下次登录重复发奖。修复后按成员记结论,后续轮次只写没落定的成员。
+TEST(BattleResultCommit, StagingRetryRewritesOnlyMembersWithoutConfirmation)
+{
+    turnbattle::ResultCommit commit("result", StagingMembers());
+    const auto start = turnbattle::ResultCommit::Clock::time_point{};
+    const auto first = commit.BeginStaging(start);
+    ASSERT_NE(first, 0u);
+    EXPECT_EQ(commit.UnstagedMembers(), (std::set<uint64_t>{92, 93}));
+    // A(92)写进去;B(93)回 ERROR / 空应答 / 命令没发出
+    EXPECT_FALSE(commit.FinishStaging(first, {92}, start));
+    EXPECT_EQ(commit.UnstagedMembers(), (std::set<uint64_t>{93}));  // 修复前第 2 轮会把 92 一起重写
+    EXPECT_FALSE(commit.CanSend(start + std::chrono::hours(1)));
+
+    const auto second = commit.BeginStaging(start + std::chrono::seconds(1));
+    ASSERT_NE(second, 0u);
+    EXPECT_EQ(commit.UnstagedMembers(), (std::set<uint64_t>{93}));
+    // 已落定成员重复上报、陌生 id 都不改变结论
+    EXPECT_FALSE(commit.FinishStaging(second, {92, 777}, start + std::chrono::seconds(1)));
+    EXPECT_EQ(commit.UnstagedMembers(), (std::set<uint64_t>{93}));
+    EXPECT_FALSE(commit.PersonalSettlementsDurable());
+
+    const auto third = commit.BeginStaging(start + std::chrono::seconds(3));  // 第 2 次失败后退避 2s
+    ASSERT_NE(third, 0u);
+    EXPECT_TRUE(commit.FinishStaging(third, {93}, start + std::chrono::seconds(3)));
+    EXPECT_TRUE(commit.PersonalSettlementsDurable());
+    EXPECT_TRUE(commit.UnstagedMembers().empty());
+    EXPECT_TRUE(commit.CanSend(start + std::chrono::seconds(3)));
+}
+
+// 审计 r2-battle#4(同文 §3.4)。修复前落库轮次没有上限,持续 ERROR 时房间永久滞留并反复重写。
+// 修复后最多 kMaxStagingRounds 轮;到上限不再开新轮,也不放行发送(放弃落库直接发结果会退回 social-match-battle#2),
+// 已落定的成员不因用尽回到待写集合。
+TEST(BattleResultCommit, StagingStopsAtRoundCapWithoutReleasingResult)
+{
+    turnbattle::ResultCommit commit("result", StagingMembers());
+    auto current = turnbattle::ResultCommit::Clock::time_point{};
+    for (uint32_t round = 1; round <= turnbattle::kMaxStagingRounds; ++round)
+    {
+        EXPECT_FALSE(commit.StagingExhausted()) << "round " << round;
+        const auto attempt = commit.BeginStaging(current);
+        ASSERT_NE(attempt, 0u) << "round " << round;
+        // 第 1 轮 92 落定,此后 93 一直失败
+        EXPECT_FALSE(commit.FinishStaging(attempt, round == 1 ? std::set<uint64_t>{92} : std::set<uint64_t>{}, current));
+        current += std::chrono::seconds(30);  // 不短于封顶退避
+    }
+    EXPECT_TRUE(commit.StagingExhausted());
+    EXPECT_EQ(commit.StagingFailures(), turnbattle::kMaxStagingRounds);
+    EXPECT_EQ(commit.UnstagedMembers(), (std::set<uint64_t>{93}));
+    const auto later = current + std::chrono::hours(24);
+    EXPECT_EQ(commit.BeginStaging(later), 0u);
+    EXPECT_FALSE(commit.PersonalSettlementsDurable());
+    EXPECT_FALSE(commit.CanSend(later));
+    EXPECT_FALSE(commit.Begin(1, later));
+}
+
+// 过期轮次与重复回调不改状态:不移出成员、不计失败、不放行。
+TEST(BattleResultCommit, StaleStagingReplyChangesNothing)
+{
+    turnbattle::ResultCommit commit("result", StagingMembers());
+    const auto start = turnbattle::ResultCommit::Clock::time_point{};
+    const auto first = commit.BeginStaging(start);
+    ASSERT_NE(first, 0u);
+    EXPECT_FALSE(commit.FinishStaging(first + 1, StagingMembers(), start));  // 编号不符
+    EXPECT_FALSE(commit.FinishStaging(0, StagingMembers(), start));
+    EXPECT_EQ(commit.UnstagedMembers(), StagingMembers());
+    EXPECT_EQ(commit.StagingFailures(), 0u);
+    EXPECT_EQ(commit.BeginStaging(start), 0u);  // 本轮仍在途
+
+    EXPECT_FALSE(commit.FinishStaging(first, {}, start));
+    EXPECT_EQ(commit.StagingFailures(), 1u);
+    // 第 1 轮已收口,它的回复再来一次也不改状态
+    EXPECT_FALSE(commit.FinishStaging(first, StagingMembers(), start + std::chrono::seconds(1)));
+    EXPECT_EQ(commit.UnstagedMembers(), StagingMembers());
+    EXPECT_EQ(commit.StagingFailures(), 1u);
+    EXPECT_FALSE(commit.PersonalSettlementsDurable());
+
+    const auto second = commit.BeginStaging(start + std::chrono::seconds(1));
+    ASSERT_NE(second, 0u);
+    EXPECT_NE(second, first);
+}
+
+// 没有成员的提交(序列化失败、成员对不上时的「终局未知」占位)永远不放行。
+TEST(BattleResultCommit, CommitWithoutStagingMembersNeverReleases)
+{
+    turnbattle::ResultCommit commit(std::string{});
+    const auto start = turnbattle::ResultCommit::Clock::time_point{};
+    EXPECT_EQ(commit.BeginStaging(start), 0u);
+    EXPECT_FALSE(commit.PersonalSettlementsDurable());
+    EXPECT_FALSE(commit.CanSend(start + std::chrono::hours(1)));
+    EXPECT_FALSE(commit.Begin(1, start + std::chrono::hours(1)));
 }
 
 // 落库的字节与回执后派发的字节是同一份:都取自冻结后的结果原件,逐人一条 BattleSettlementEvent。

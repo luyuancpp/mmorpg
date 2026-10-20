@@ -200,7 +200,10 @@ func NewServiceContext(configPath string) (*svc.ServiceContext, func(), error) {
 				store.OpenRouteStoreHint(configPath, err), err)
 		}
 		routeStore = rs
-		routerOpts = append(routerOpts, routing.WithRouteStore(rs))
+		// 同一个实例同时作写入点与回源读者(与服务的 svc.routeRouterOptions 一致):db_first 下 R7 GetAllPlayerIDsInZone
+		// 一律读库,没有回源读者就直接 ErrRouteReadUnavailable(debug_fetch 的按 zone 枚举会报错);
+		// ReadRequiresReady=true 时 R2 / R3 / R6 的回源同理。
+		routerOpts = append(routerOpts, routing.WithRouteStore(rs), routing.WithRouteReader(rs))
 	}
 
 	svcCtx := &svc.ServiceContext{

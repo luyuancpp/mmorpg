@@ -4,7 +4,8 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"sort"
+
+	"github.com/luyuancpp/proto2mysql"
 )
 
 // 仅供同目录 store_test 包(真库集成用例)使用的只读出口;_test.go 文件不进生产二进制。
@@ -134,17 +135,17 @@ const PlayerRouteBootstrapDDLForTest = playerRouteBootstrapDDL
 // (真 TiDB 用例按它断言预切后的 Region 数,不写字面量)。
 const RouteTiDBPrefixSplitPointsForTest = routeTiDBPrefixSplitPoints
 
-// BootstrapRouteTablesOnlyForTest 只建路由表(按表名排序执行 routeTableShapes 那几张的 bootstrap DDL),
+// BootstrapRouteTablesOnlyForTest 只建路由表(按 routeTableMessages 的顺序——即表名升序——执行它们的 bootstrap DDL),
 // 再跑 ensureRouteTables(形状守卫 + 种两张单行表的行)。给真 TiDB 用例用:全局库的整套迁移在 TiDB 上会因
 // player_snapshot 的可空唯一键失败,用不了 NewMigratedDB。
 func BootstrapRouteTablesOnlyForTest(ctx context.Context, db *sql.DB, dbName string) error {
-	names := make([]string, 0, len(routeTableShapes))
-	for name := range routeTableShapes {
-		names = append(names, name)
-	}
-	sort.Strings(names)
-	for _, name := range names {
-		if _, err := db.ExecContext(ctx, bootstrapTables[name]); err != nil {
+	for _, m := range routeTableMessages() {
+		name, _ := proto2mysql.TableNameFromDescriptor(m.ProtoReflect().Descriptor())
+		ddl, ok := bootstrapTables[name]
+		if !ok {
+			return fmt.Errorf("route table %s has no bootstrap DDL", name)
+		}
+		if _, err := db.ExecContext(ctx, ddl); err != nil {
 			return fmt.Errorf("bootstrap route table %s: %w", name, err)
 		}
 	}

@@ -10,7 +10,7 @@
 #include "modules/audit/audit_topic.h"
 #include "modules/id_segment/guid_segment_registry.h"
 #include "node_config_manager.h"
-#include "services/scene/player/system/player_data_loader.h"
+#include "services/scene/player/system/player_persist_marshal.h"
 #include "proto/common/database/mysql_database_table.pb.h"
 #include "proto/common/database/player_cache.pb.h"
 
@@ -32,8 +32,10 @@ uint64_t SnapshotSystem::CaptureAndSend(entt::entity player, SnapshotTrigger tri
 
     // ── Marshal player state ─────────────────────────────────────────────
     // 放在领 snapshot_id 之前:校验不过就不消耗号段。
+    // 与存盘同一个拼装入口:快照里同样带着两表顶层的未知字段与持久 schema 世代
+    // (docs/design/mixed-version-persist-field-protection.md §4.2 L6)。
     PlayerAllData allData;
-    if (!PlayerAllDataMessageFieldsMarshal(player, allData))
+    if (!player_persist::MarshalPlayerForPersist(player, playerId, allData))
     {
         // 持久化组件缺失(marshal 已打 ERROR 写明缺哪个)。快照是回滚的依据,
         // 带着零值货币 / 空账本的快照一旦被 GM 回滚采用,就是把玩家资产清零。宁可少一条,fail-closed。
@@ -41,8 +43,6 @@ uint64_t SnapshotSystem::CaptureAndSend(entt::entity player, SnapshotTrigger tri
                   << playerId << " trigger=" << static_cast<int>(trigger);
         return 0;
     }
-    allData.mutable_player_database_data()->set_player_id(playerId);
-    allData.mutable_player_database_1_data()->set_player_id(playerId);
 
     std::string dbBlob;
     if (!allData.player_database_data().SerializeToString(&dbBlob))

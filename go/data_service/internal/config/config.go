@@ -50,7 +50,7 @@ type Config struct {
 	MetricsListenAddr string `json:",optional"`
 
 	// Schema 控制全局库(SnapshotMySQL)各表的建表/补列路径:proto 驱动的五张(其中 id_segment、player_name
-	// 走手写 bootstrap DDL)+ 还没有 proto、同样走手写 DDL 的路由表(player_route 等),见 internal/store/schema.go。
+	// 走手写 bootstrap DDL)+ 同样走手写 DDL、proto 只作列漂移守卫的路由表(player_route 等),见 internal/store/schema.go。
 	// 整段可缺失,缺失语义见 SchemaConfig.AutoMigrate 与 ShouldAutoMigrate。
 	Schema SchemaConfig `json:",optional"`
 
@@ -261,9 +261,10 @@ const RouteStoreModeRedis = "redis"
 // RouteStoreModeDBFirst:先在全局库 player_route 提交(store.RouteStore.RegisterHome),再按 maprev
 // set-if-newer 发布到 mapping Redis 并等 WAITAOF 确认落盘(routing/route_publish.go)。
 //
-// **第 1a 批只能在冻结窗口内打开**:merge_zone 在第 2 批之前仍只写 Redis、从不写 zone_merge_fence,
-// 库内合服围栏恒不生效;从任一副本切到 db_first 起到第 2 批落地为止,禁止 merge_zone 任何写模式
-// (merge / unmerge / relocate / pin-placement / backfill)。提交点的围栏复核靠发布脚本里的 merge:in_progress。
+// 切换顺序见 proposal §13.4(P1 冻结窗口 + 导入 + 审计 → P2 切 db_first → P3 Arm → P4 新版 merge_zone → P5 读方)。
+// 第 2 批起 merge_zone 以 -route-source=db 库先写,并在 zone_merge_fence 持有围栏;W1 在库内锁围栏分片复核,发布脚本
+// KEYS[4] 的 merge:in_progress 是围栏的镜像(merge_zone 写、对账 leader 按库对账),作为发布时的第二道复核。
+// 旧版 merge_zone 二进制直写 Redis、不写库,P4 起禁用。
 const RouteStoreModeDBFirst = "db_first"
 
 // RouteStore 段各键的默认值(Normalize 照抄这一份;etc/data_service.yaml 写的就是它们)。
@@ -646,8 +647,9 @@ type SchemaConfig struct {
 	// 其中 id_segment 与 player_name 两张走 schema.go 的手写 bootstrap DDL
 	// (proto2mysql 把 string 渲染成 MEDIUMTEXT,TEXT 列上建不了唯一键),
 	// 迁移对它们只做列漂移校验。
-	// 另有还没有 proto 的路由表(player_route / zone_merge_fence / zone_merged_into / route_meta / route_reconcile,
-	// 2026-10-12 映射持久化第 1a 批与 G1a 热点修复)同样走手写 DDL,迁移只守列名与主键,并种 route_meta / route_reconcile(id=1)。
+	// 另有路由表(player_route / zone_merge_fence / zone_merged_into / route_meta / route_reconcile,
+	// 2026-10-12 映射持久化第 1a 批与 G1a 热点修复)同样走手写 DDL,迁移按各自的 proto 只守列名与主键,
+	// 并种 route_meta / route_reconcile(id=1)。
 	// **redis 模式也依赖它们**:这一步失败时快照 / 流水 / 号段 / 名字四个 store 一并不装配(规格 g.3 第 8 条)。
 	//
 	// 生产必须显式设 false:存量大表上的 ALTER 会持有 MDL,阻塞期间所有 GM 回滚/流水查询停摆,

@@ -27,7 +27,7 @@ package main
 //	任一步失败 → `TEAM_SMOKE_FAIL step=… reason=…`,退出码 1。
 //
 // 与 guild-smoke 的同与不同:
-//   - 请求/回包:同 guild_smoke_scenario.go,按消息号在本场景的 RecvLoop 回调里认领回包,信封拒绝与业务 tip 分开断言;
+//   - 请求/回包:同 guild_smoke_scenario.go,经 smokeCaller 按请求号(MessageContent.id)认领回包,信封拒绝与业务 tip 分开断言;
 //   - 推送:组队、换场景、战斗推送都按到达顺序留底(pushes),每步在触发动作**之前**记下标 mark,
 //     之后从 mark 起扫描 —— 推送先于等待到达也不会漏,上一步的推送也不会被这一步误认;
 //   - 战斗:不复用 gameobject.Player 的 WaitBattleStart/WaitBattleEnd/WaitBattleAssigned。那几组信号是
@@ -119,7 +119,7 @@ type teamSmokeResponse interface {
 	GetErrorMessage() *base.TipInfoMessage
 }
 
-// teamSmokePush 是一条留底的推送(或非组队请求的回包,如 JoinQueue / EnterSceneC2S)。
+// teamSmokePush 是一条留底的推送(或换场景 EnterSceneC2S 的 id = 0 回包,只用于诊断,见 enterSceneRejection)。
 type teamSmokePush struct {
 	messageId   uint32
 	envelopeTip uint32 // gate / 路由服信封拒绝(body 为空);推送恒为 0
@@ -136,11 +136,12 @@ type teamSmokeBot struct {
 	player  *gameobject.Player
 	stats   *metrics.Stats
 
+	// caller 发组队请求与排队请求(matchCall)并只等它自己的回包(按请求号认领,见 smoke_rpc_call.go)。
+	caller *smokeCaller
+
 	// RecvLoop goroutine 写、场景流程读,mu 保护。
-	mu       sync.Mutex
-	replies  map[uint32]*base.MessageContent // 组队请求消息号 → 本次请求发出后收到的第一个回包
-	gateTips []uint32                        // 本次请求期间收到的 SendTipToClient
-	pushes   []teamSmokePush                 // 本会话留底的推送,按到达顺序;只追加
+	mu     sync.Mutex
+	pushes []teamSmokePush // 本会话留底的推送,按到达顺序;只追加
 
 	// 只由"当前驱动这个机器人的那一个 goroutine"读写(主流程,或战斗期间该机器人自己的参战 goroutine)。
 	lastRequestAt time.Time
@@ -605,7 +606,7 @@ func teamSmokeLogin(cfg *config.Config, name, account string, stats *metrics.Sta
 		gc:      gc,
 		player:  gameobject.NewPlayer(gc.PlayerId),
 		stats:   stats,
-		replies: make(map[uint32]*base.MessageContent),
+		caller:  newSmokeCaller(gc, stats, account, teamSmokeRpcTimeout, errTeamSmokeTimeout),
 	}
 	gameobject.PlayerList.Set(gc.PlayerId, bot.player)
 	go gc.RecvLoop(bot.onMessage)
@@ -622,19 +623,16 @@ func teamSmokeLogin(cfg *config.Config, name, account string, stats *metrics.Sta
 }
 
 // onMessage:
-//   - 组队请求的回包(含信封拒绝)由本场景按消息号认领,不再分发;
+//   - 组队请求与排队请求(JoinQueue / CancelQueue / GetQueueStatus)的回包(含信封拒绝)带请求号,由 GameClient
+//     交给 caller,不会到这里;同号却 id = 0 的记一行后丢弃;
 //   - 组队推送只留底,不再分发(本场景是唯一消费者);
-//   - 换场景、战斗、JoinQueue 消息留底后仍交给通用分发,让 gameobject.Player 的场景信息等状态照常更新;
-//   - gate 的 SendTipToClient 记下来供快速失败。
+//   - 换场景、战斗消息留底后仍交给通用分发,让 gameobject.Player 的场景信息等状态照常更新;
+//   - gate 的 SendTipToClient 交给 caller 供快速失败。
 func (b *teamSmokeBot) onMessage(client *pkg.GameClient, msg *base.MessageContent) {
 	b.stats.MsgRecv()
 	messageId := msg.GetMessageId()
-	if teamSmokeIsTeamRequest(messageId) {
-		b.mu.Lock()
-		if _, seen := b.replies[messageId]; !seen {
-			b.replies[messageId] = msg
-		}
-		b.mu.Unlock()
+	if teamSmokeIsTeamRequest(messageId) || teamSmokeIsQueueRequest(messageId) {
+		smokeDropUncorrelatedReply(b.account, msg)
 		return
 	}
 	if teamSmokeIsRecordedMessage(messageId) {
@@ -650,12 +648,7 @@ func (b *teamSmokeBot) onMessage(client *pkg.GameClient, msg *base.MessageConten
 		}
 	}
 	if messageId == game.SceneClientPlayerCommonSendTipToClientMessageId {
-		var tipInfo base.TipInfoMessage
-		if err := proto.Unmarshal(msg.GetSerializedMessage(), &tipInfo); err == nil && tipInfo.GetId() != 0 {
-			b.mu.Lock()
-			b.gateTips = append(b.gateTips, tipInfo.GetId())
-			b.mu.Unlock()
-		}
+		b.caller.onGateTipMessage(msg)
 	}
 	handler.MessageBodyHandler(client, msg)
 }
@@ -667,7 +660,9 @@ func (b *teamSmokeBot) pace() {
 	}
 }
 
-// send 经大厅连接发一个不按消息号认领回包的请求(换场景、JoinQueue;SetAutoBattle 只能走直连,见 finishBattleOn)。
+// send 经大厅连接发一个不关联回包的请求(id = 0)。只用于不等自己回包的请求:换场景(等的是 NotifyEnterScene 推送,
+// id = 0 的回包按消息号留底只供 enterSceneRejection 诊断)与 team-follow-smoke 的移动上报(scene TCP 上的单向消息)。
+// 要等回包的请求走 call / matchCall(按请求号认领);SetAutoBattle 只能走直连,见 finishBattleOn。
 func (b *teamSmokeBot) send(messageId uint32, request proto.Message) error {
 	b.pace()
 	if err := b.gc.SendRequest(messageId, request); err != nil {
@@ -685,48 +680,13 @@ func (b *teamSmokeBot) mark() int {
 	return len(b.pushes)
 }
 
-// call 发一个组队请求并等同消息号的第一个回包。
+// call 发一个组队 / 排队请求并只等它自己的回包(smokeCaller.call;排队请求经 matchCall 进来)。
 // 返回的 envelopeTip 非 0 表示 gate / 路由服级拒绝(信封 error_message,body 为空),此时 response 未填充;
 // 为 0 时 response 已解码。gate 推 kServiceUnavailable 或超时返回 error。
 func (b *teamSmokeBot) call(messageId uint32, request, response proto.Message) (envelopeTip uint32, err error) {
 	b.pace()
-	b.mu.Lock()
-	delete(b.replies, messageId)
-	b.gateTips = nil
-	b.mu.Unlock()
-
-	if err := b.gc.SendRequest(messageId, request); err != nil {
-		return 0, fmt.Errorf("send message_id=%d account=%s: %w", messageId, b.account, err)
-	}
 	b.lastRequestAt = time.Now()
-	b.stats.MsgSent()
-
-	deadline := time.Now().Add(teamSmokeRpcTimeout)
-	for time.Now().Before(deadline) {
-		b.mu.Lock()
-		reply := b.replies[messageId]
-		gateUnavailable := false
-		for _, tip := range b.gateTips {
-			gateUnavailable = gateUnavailable || tip == tipTeamServiceUnavailable
-		}
-		b.mu.Unlock()
-
-		if reply != nil {
-			if tip := reply.GetErrorMessage().GetId(); tip != 0 {
-				return tip, nil
-			}
-			if err := proto.Unmarshal(reply.GetSerializedMessage(), response); err != nil {
-				return 0, fmt.Errorf("decode message_id=%d: %w", messageId, err)
-			}
-			return 0, nil
-		}
-		if gateUnavailable {
-			return 0, fmt.Errorf("gate SendTipToClient tip=%d(gate 选不到路由服实例,或未以 GATE_CLIENT_RPC_ROUTER=1 启动)",
-				tipTeamServiceUnavailable)
-		}
-		time.Sleep(teamSmokePollInterval)
-	}
-	return 0, fmt.Errorf("message_id=%d account=%s %w(%s)", messageId, b.account, errTeamSmokeTimeout, teamSmokeRpcTimeout)
+	return b.caller.call(messageId, request, response)
 }
 
 // rpc 发请求并返回业务 tip(响应体 error_message.id,0 = 受理)。
@@ -742,6 +702,23 @@ func (b *teamSmokeBot) rpc(messageId uint32, request proto.Message, response tea
 			messageId, b.account, envelopeTip, tipTeamServiceUnavailable)
 	}
 	return response.GetErrorMessage().GetId(), nil
+}
+
+// matchCall 发一个排队请求(MatchService 的 JoinQueue / CancelQueue / GetQueueStatus)并只等它自己的回包。
+// 信封拒绝与超时一律 error(超时包裹 errTeamSmokeTimeout);返回 nil 时 response 已解码,业务拒绝码由调用方读响应体。
+//
+// MatchService 按文件路由选项经路由服 / 直连 gRPC 到 match,不走 scene TCP:CancelQueue 的响应虽是 Empty,
+// gate 照样回一个带请求号的包(路由服无条件回,直连经 rpc_reply_bridge 回显请求号),所以能用 call 等。
+// scene TCP 路径上响应为 Empty 的方法是单向的,不能这样等(docs/handoff/client-rpc-callback-robot-handoff-20261019.md §4)。
+func (b *teamSmokeBot) matchCall(messageId uint32, request, response proto.Message) error {
+	envelopeTip, err := b.call(messageId, request, response)
+	if err != nil {
+		return err
+	}
+	if envelopeTip != 0 {
+		return fmt.Errorf("message_id=%d account=%s 信封拒绝 tip=%d", messageId, b.account, envelopeTip)
+	}
+	return nil
 }
 
 // expect 发请求并断言业务 tip 等于 want。
@@ -851,18 +828,15 @@ func (b *teamSmokeBot) enterSceneRejection(since int) uint32 {
 func (b *teamSmokeBot) startSoloBattle(battleConfigId, zoneId uint32) (int, uint64, error) {
 	deadline := time.Now().Add(teamSmokeSettleTimeout)
 	for {
+		// mark 必须在发 JoinQueue 之前:受理后的 BattleAssigned / BattleStart 推送可能先于回包到达。
 		since := b.mark()
-		if err := b.send(game.MatchServiceJoinQueueMessageId, &match.JoinQueueRequest{
+		resp := &match.JoinQueueResponse{}
+		if err := b.matchCall(game.MatchServiceJoinQueueMessageId, &match.JoinQueueRequest{
 			PlayerId:       b.gc.PlayerId,
 			Mode:           match.MatchMode_MATCH_MODE_PVE_SOLO,
 			BattleConfigId: battleConfigId,
 			ZoneId:         zoneId,
-		}); err != nil {
-			return 0, 0, err
-		}
-		resp, err := teamSmokeWaitPush(b, since, game.MatchServiceJoinQueueMessageId, teamSmokeRpcTimeout,
-			func() *match.JoinQueueResponse { return &match.JoinQueueResponse{} }, nil)
-		if err != nil {
+		}, resp); err != nil {
 			return 0, 0, fmt.Errorf("%s JoinQueue(PVE_SOLO): %w", b.name, err)
 		}
 		if resp.GetErrorCode() == 0 && resp.GetErrorMessage().GetId() == 0 {
@@ -989,6 +963,7 @@ func (b *teamSmokeBot) waitBattleStart(since int) (*battle.BattleStartS2C, error
 
 // teamSmokeWaitPush 从下标 since 起按到达顺序扫描 bot 的留底推送,返回第一条消息号为 messageId 且满足 pred
 // (nil = 任意)的推送;信封拒绝直接返回 error。超时返回包裹 errTeamSmokeTimeout 的 error。
+// 只用于等推送(id = 0):请求的回包带请求号、不进留底,要等回包走 call / matchCall。
 func teamSmokeWaitPush[T proto.Message](bot *teamSmokeBot, since int, messageId uint32, timeout time.Duration,
 	newMsg func() T, pred func(T) bool) (T, error) {
 	var zero T
@@ -1169,7 +1144,7 @@ func teamSmokeTeamBattle(leader *teamSmokeBot, tid uint64, battleConfigId uint32
 // 纯函数
 // ---------------------------------------------------------------------------
 
-// teamSmokeIsTeamRequest:12 个请求 RPC 的回包按消息号认领。
+// teamSmokeIsTeamRequest:12 个组队请求 RPC。它们的回包经 smokeCaller 按请求号认领;onMessage 只拦下同号却 id = 0 的。
 func teamSmokeIsTeamRequest(messageId uint32) bool {
 	switch messageId {
 	case game.ClientPlayerTeamCreateTeamMessageId,
@@ -1200,8 +1175,20 @@ func teamSmokeIsTeamPush(messageId uint32) bool {
 	return false
 }
 
-// teamSmokeIsRecordedMessage:需要按到达顺序留底的消息(组队推送 + 换场景 + 战斗 + 排队相关回包)。
-// CancelQueue / GetQueueStatus 回包是 team-backfill-smoke 用的(team_backfill_smoke_scenario.go)。
+// teamSmokeIsQueueRequest:经 matchCall 发的 3 个排队 RPC(startSoloBattle 与 team_backfill_smoke_scenario.go 用)。
+// 它们的回包经 smokeCaller 按请求号认领;onMessage 只拦下同号却 id = 0 的。
+func teamSmokeIsQueueRequest(messageId uint32) bool {
+	switch messageId {
+	case game.MatchServiceJoinQueueMessageId,
+		game.MatchServiceCancelQueueMessageId,
+		game.MatchServiceGetQueueStatusMessageId:
+		return true
+	}
+	return false
+}
+
+// teamSmokeIsRecordedMessage:需要按到达顺序留底的消息(组队推送 + 换场景 + 战斗)。
+// EnterSceneC2S 的回包随 send 以 id = 0 回来,留底只供 enterSceneRejection 诊断;
 // 战斗里的 NotifyBattleAssigned 是 connectBattle 按 battle_id 找直连落点用的。
 func teamSmokeIsRecordedMessage(messageId uint32) bool {
 	if teamSmokeIsTeamPush(messageId) {
@@ -1213,10 +1200,7 @@ func teamSmokeIsRecordedMessage(messageId uint32) bool {
 		game.BattleClientPlayerNotifyBattleAssignedMessageId,
 		game.BattleClientPlayerNotifyBattleStartMessageId,
 		game.BattleClientPlayerNotifyTurnResultMessageId,
-		game.BattleClientPlayerNotifyBattleEndMessageId,
-		game.MatchServiceJoinQueueMessageId,
-		game.MatchServiceCancelQueueMessageId,
-		game.MatchServiceGetQueueStatusMessageId:
+		game.BattleClientPlayerNotifyBattleEndMessageId:
 		return true
 	}
 	return false

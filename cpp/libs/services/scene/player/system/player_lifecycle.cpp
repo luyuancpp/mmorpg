@@ -23,6 +23,8 @@
 #include "player/comp/last_persisted_snapshot_comp.h"
 #include "player/comp/player_frozen_comp.h"
 #include "player/comp/player_ownership_comp.h"
+#include "player/comp/player_persist_writer_comp.h" // 严格屏障写方令牌(混版本持久字段保护 §5.2)
+#include "engine/config/persist_schema_regression_mode.h"
 #include "player/comp/player_save_seq_floor_comp.h" // 存盘序号的个人下限(db-write-fencing-mysql.md §7.2)
 #include "core/system/id_generator.h"              // tlsIdGeneratorManager.saveSeq:进程级存盘序号发号器
 #include "player/system/save_seq.h"
@@ -32,6 +34,7 @@
 #include "player/system/handoff_mark_withdraw.h"
 #include "player/system/handoff_sql_barrier.h"
 #include "player/system/player_data_loader.h"
+#include "player/system/player_persist_marshal.h"
 #include "player/system/player_inbox_system.h" // FinishExitAfterPersist:销毁前尽力补发收件箱 Ack(评审 M4)
 #include "player/system/release_fence.h" // HandleReleaseFromSceneManager 的纯判定与计数
 #include "engine/core/type_define/type_define.h"
@@ -791,8 +794,9 @@ namespace
 		}
 	}
 
-	// 存盘要写的那份 PlayerAllData:marshal 全部字段,再补两张子表的 player_id(生成的 marshal 不填)。
-	// SavePlayerToRedisImpl 与退出分支的收敛比对共用,保证"比的"与"写的"是同一个形状。
+	// 存盘要写的那份 PlayerAllData:统一入口 player_persist::MarshalPlayerForPersist 拼装全部字段、补两张子表的
+	// player_id,并盖持久 schema 世代(docs/design/mixed-version-persist-field-protection.md §4.2)。
+	// SavePlayerToRedisImpl 与退出分支的收敛比对共用,保证"比的"与"写的"是同一个形状;盖戳在快路径比较之前完成。
 	// 不打压测探针:探针只在真正写盘的路径上打(见 SavePlayerToRedisImpl)。
 	// 也不写存盘元数据(db-write-fencing-mysql.md §7.2、§7.3):last_save_seq 由 SavePlayerToRedisImpl 在快路径判定之后
 	// 才发号写入(快路径比较时两侧都不带它);两张子表 body 里的 fence_owner_epoch / fence_save_seq 恒为 0,由 go/db 按
@@ -800,13 +804,35 @@ namespace
 	// 返回 false = 持久化组件缺失(marshal 已打 ERROR 写明缺哪个),不得写盘或用于收敛判定。
 	bool MarshalPlayerForSave(entt::entity player, Guid playerId, PlayerAllData &out)
 	{
-		if (!PlayerAllDataMessageFieldsMarshal(player, out))
+		return player_persist::MarshalPlayerForPersist(player, playerId, out);
+	}
+
+	// 严格屏障 C3 的模式(ARGV[10])。readBaseDeployConfig 读入时已归一化(非法值拒绝启动),这里只会见到
+	// "warn" / "enforce";单测宿主不读部署配置时是空串,同样归一化为 warn。仍非法只可能是内存被改坏:按缺省 warn
+	// 写并打 ERROR —— 若改成拒存,整节点都存不进盘,比漏一次告警更糟。
+	std::string PersistSchemaRegressionModeForSave()
+	{
+		const std::string &raw = tlsNodeConfigManager.GetBaseDeployConfig().persist_schema_regression_mode();
+		const auto mode = persist_schema_regression_mode::Normalize(raw);
+		if (!mode)
 		{
-			return false;
+			LOG_ERROR << "[SavePlayerToRedis] invalid persist_schema_regression_mode '" << raw
+					  << "' at save time; using warn (config loader should have refused to start)";
+			return std::string(persist_schema_regression_mode::kWarn);
 		}
-		out.mutable_player_database_data()->set_player_id(playerId);
-		out.mutable_player_database_1_data()->set_player_id(playerId);
-		return true;
+		return std::string(*mode);
+	}
+
+	// 严格屏障的写方令牌(ARGV[11]):本实体第一次走严格屏障存盘时生成,之后不变(player_persist_writer_comp.h)。
+	// 运行时派生数据,存盘写入口懒建。
+	const std::string &PersistWriterToken(entt::entity player)
+	{
+		auto &writer = tlsEcs.actorRegistry.get_or_emplace<PlayerPersistWriterComp>(player);
+		if (writer.token.empty())
+		{
+			writer.token = player_persist_writer::NewToken();
+		}
+		return writer.token;
 	}
 
 	// 为一次确定要写的存盘发 save_seq(db-write-fencing-mysql.md §7.2)。进程级发号器 Next;该玩家挂着个人下限
@@ -4497,9 +4523,17 @@ PlayerLifecycleSystem::SaveResult PlayerLifecycleSystem::SavePlayerToRedisImpl(
 		const std::string seqText = std::to_string(saveSeq);
 		const std::string version = std::string(20 - epochText.size(), '0') + epochText + ":" +
 			std::string(20 - seqText.size(), '0') + seqText;
+		// 覆盖世代校验 C3 的参数(docs/design/mixed-version-persist-field-protection.md §5.2):
+		// 输出世代就是统一入口刚盖在两张表上的戳;加载世代取两表加载戳的最小值(marshal 已成功,Carry 组件必在,
+		// 万一缺失按 0 交给 SaveWithCommitBarrier 拒绝);模式读部署配置;写方令牌按实体懒建、实体生命期内不变。
+		RedisSaveSchemaGen schemaGen;
+		schemaGen.output_gen = message->player_database_data().persist_schema_gen();
+		schemaGen.load_gen = player_persist::LoadedSchemaGen(player).value_or(0);
+		schemaGen.mode = PersistSchemaRegressionModeForSave();
+		schemaGen.writer = PersistWriterToken(player);
 		if (!tlsRedisSystem.GetPlayerDataRedis()->SaveWithCommitBarrier(message, playerId,
 			player_ownership::OwnerEpochRedisKey(playerId), epochText,
-			"player:{" + playerIdStr + "}:save_barrier", version, commitIntent, std::move(publishDbTasks)))
+			"player:{" + playerIdStr + "}:save_barrier", version, commitIntent, schemaGen, std::move(publishDbTasks)))
 		{
 			return SaveResult::kRejected;
 		}
@@ -4576,6 +4610,49 @@ void PlayerLifecycleSystem::HandlePlayerSaveRejected(Guid playerId, const std::s
 			  << " (metric=stale_owner_write_rejected" << (exiting ? " stale_owner_rejected_exiting" : "") << ")";
 
 	DestroyDeposedPlayer(playerId, "stale_owner_write_rejected");
+}
+
+void PlayerLifecycleSystem::HandlePlayerSaveSchemaWarned(Guid playerId, const std::string &redisKey)
+{
+	persist_schema_stats::IncRegressionWarned();
+	// 逐次一行,LogQL 按 metric=persist_schema_regression 计数(C++ 节点没有 Prometheus 出口)。正常应恒 0:
+	// 非 0 说明这名玩家加载到的数据比屏障记录的世代旧(链路上某一跳截断过),warn 模式下照写了。
+	LOG_ERROR << "[PersistSchema] save committed although the loaded data is older than the recorded schema generation"
+			  << " for player " << playerId << " key=" << redisKey
+			  << " (metric=persist_schema_regression where=redis mode=warn)";
+}
+
+void PlayerLifecycleSystem::HandlePlayerSaveSchemaRejected(Guid playerId, const std::string &redisKey,
+														   const std::string &guardExpected)
+{
+	persist_schema_stats::IncRegressionRejected();
+	const auto playerEntity = tlsEcs.GetPlayer(playerId);
+	const bool alive = tlsEcs.actorRegistry.valid(playerEntity);
+	const bool exiting = alive && tlsEcs.actorRegistry.any_of<UnregisterPlayer>(playerEntity);
+	const auto *travel = alive ? tlsEcs.actorRegistry.try_get<PlayerTravelHandoffComp>(playerEntity) : nullptr;
+	LOG_ERROR << "[PersistSchema] save refused: the loaded data is older than the recorded schema generation"
+			  << " for player " << playerId << " key=" << redisKey << " owner_epoch=" << guardExpected
+			  << " alive=" << alive << " exiting=" << exiting << " handoff_pending=" << (travel != nullptr)
+			  << " -- nothing written, this session's progress is not persisted"
+			  << " (metric=persist_schema_regression where=redis mode=enforce)";
+	if (!alive)
+	{
+		return; // 实体已经没了(另一条收尾路径先到),无可分派
+	}
+	if (exiting)
+	{
+		// 退出存盘被拒就不会有落地回调,退出永远收不了尾。与"持久组件缺失拒存"同一处置:不存盘丢弃。
+		DestroyDeposedPlayer(playerId, "exit_save_refused_persist_schema");
+		return;
+	}
+	if (travel != nullptr && travel->requestedAtMs == 0)
+	{
+		// 交接在等这次存盘落地才写标记;标记还没写、SET 还没发,解冻是安全的(不变量 I0)。
+		AbortTravelHandoff(playerId, "handoff save refused by persist schema regression check");
+		return;
+	}
+	// 在线:保留实体,本次不落盘。之后每次存盘仍会被比较、仍会被拒(本实体从未写成屏障,令牌不会被记下)。
+	// 标记已发出的交接不会走到这里:那之后 SavePlayerToRedisImpl 一律跳过存盘。
 }
 
 void PlayerLifecycleSystem::DestroyDeposedPlayer(Guid playerId, const char *reasonTag, bool routine)

@@ -43,11 +43,12 @@ package main
 //     同一消息号在当前与上一整秒内合计最多 3 次(真实时间 1~2 秒,持续速率约 1.5 次/秒,不是「每秒 3 次」)。
 //     同一机器人相邻请求至少隔 syncSmokeRequestSpacing,两次 253 之间至少隔 syncSmokeDigestSpacing(> 1 秒:每个整秒至多 1 次,
 //     判定时缓冲区至多 2 条,永不触发),节奏跨重连保留,S6 探针也走同一节流;
-//   - 好友消息号必须在通用分发之前全部认领(friendSmokeIsFriendMessage):信封拒绝落进通用分发会被解成
-//     全零响应,看上去像 tip=0 受理;
+//   - 好友请求与 TravelToZone 走 gc.Call,回包按请求号认领(docs/design/client-rpc-callback.md §6),不进留底、
+//     不经 onMessage;好友消息号上 id = 0 的消息仍须在通用分发之前全部拦下(friendSmokeIsFriendMessage):
+//     信封拒绝落进通用分发会被解成全零响应,看上去像 tip=0 受理;
 //   - 留底与重定向进度直接复用 travel-smoke 的类型(travelSmokeRecord / travelSmokeProgress),跨 zone 腿用
-//     travelSmokeScanHop 扫传送窗口、travelSmokeStrictRelogin 严格重登 —— 传送链路的完整断言归 travel-smoke,
-//     这里只做落地判据(player_id 不变、票据 zone == 目标、gate 换了)。
+//     travelSmokeStartTravel 发请求、travelSmokeScanHop 判传送窗口、travelSmokeStrictRelogin 严格重登 ——
+//     传送链路的完整断言归 travel-smoke,这里只做落地判据(player_id 不变、票据 zone == 目标、gate 换了)。
 
 import (
 	"context"
@@ -124,6 +125,9 @@ var (
 // errSyncSmokeNotBumpedYet:摘要相对基线没有任何变化(g 也没变)。S3 据此在预算内重取,而不是立刻判失败。
 var errSyncSmokeNotBumpedYet = errors.New("摘要相对基线没有任何变化")
 
+// errSyncSmokeTimeout 是好友请求等回包超时的哨兵(smokeCaller 的 timeoutErr),拼进失败原因。
+var errSyncSmokeTimeout = errors.New("got no reply within")
+
 // S6 探针的结局。取决于时序的只记录;与时序无关的硬判定见 syncSmokeJudgeProbe。
 const (
 	syncSmokeProbeDropped            = "dropped"             // 窗口内既没有 254 也没有信封拒绝:scene 丢弃了请求(设计 §4.2 的预期)
@@ -175,6 +179,10 @@ type syncSmokeBot struct {
 	mu       sync.Mutex
 	records  []travelSmokeRecord
 	progress travelSmokeProgress
+	// caller 发好友请求并只等本次请求的回包(smoke_rpc_call.go)。它绑定一个 GameClient:重定向只换内部连接、
+	// gc 不变,caller 照用;reconnect 换了新的 GameClient,caller 随之重建。主流程是唯一写者,写时持 mu;
+	// onMessage(RecvLoop)持 mu 读;主流程自己读不加锁。
+	caller *smokeCaller
 
 	// 以下只由主流程读写。跨重连保留:保守起见不假设换连接就换了限流窗口。
 	lastRequestAt time.Time
@@ -461,6 +469,7 @@ func syncSmokeLogin(cfg *config.Config, account string, strictRelogin bool, stat
 		player:     gameobject.NewPlayer(gc.PlayerId),
 		stats:      stats,
 		homePlayer: gc.PlayerId,
+		caller:     newSmokeCaller(gc, stats, account, syncSmokeRpcTimeout, errSyncSmokeTimeout),
 	}
 	if strictRelogin {
 		// 覆盖 main.go 注册的通用重登(它在角色列表为空时会自动建角),理由同 travel-smoke。
@@ -578,6 +587,9 @@ func (b *syncSmokeBot) reconnect(cfg *config.Config, graceful bool, afterEnterGa
 	enteredGameAt := time.Now()
 
 	b.gc = gc
+	b.mu.Lock()
+	b.caller = newSmokeCaller(gc, b.stats, b.account, syncSmokeRpcTimeout, errSyncSmokeTimeout)
+	b.mu.Unlock()
 	// WaitSceneReady 由 sync.Once 关闭,每次进场都要一个新的 Player,否则会被上一次进场提前放行。
 	b.player = gameobject.NewPlayer(b.homePlayer)
 	gameobject.PlayerList.Set(b.homePlayer, b.player)
@@ -607,26 +619,26 @@ func (b *syncSmokeBot) relogin(gc *pkg.GameClient) error {
 	return err
 }
 
-// syncSmokeIsRecorded:本场景按到达顺序留底的消息号。
+// syncSmokeIsRecorded:本场景按到达顺序留底的消息号:推送,以及单向请求 253 的信封拒绝。
+// 请求-响应调用(好友请求、TravelToZone)的回包按请求号交给各自的 Call,不进留底。
 func syncSmokeIsRecorded(messageId uint32) bool {
-	if friendSmokeIsFriendMessage(messageId) {
-		return true
-	}
 	switch messageId {
 	case game.SceneSceneClientPlayerGetSyncDigestMessageId, // 应答类型是 Empty、scene 不回包;留底只为看见 gate 的信封拒绝
 		game.SceneSceneClientPlayerNotifySyncDigestMessageId,
 		game.SceneSceneClientPlayerNotifyEnterSceneMessageId,
 		game.SceneClientPlayerCommonSendTipToClientMessageId,
 		game.SceneClientPlayerCommonKickPlayerMessageId,
-		game.SceneClientPlayerCommonRedirectToGateMessageId,
-		travelToZoneMessageId:
+		game.SceneClientPlayerCommonRedirectToGateMessageId:
 		return true
 	}
 	return false
 }
 
 // onMessage:先留底,再分发。
-//   - 好友消息号由本场景认领,不进通用分发(见 friendSmokeIsFriendMessage 的注释);
+//   - 好友请求与 TravelToZone 的回包带请求号,由 GameClient 交给 caller / 在途的那次 TravelToZone 调用,不会到这里。
+//     这些消息号上 id = 0 的消息说明服务端没回显请求号,交给 smokeDropUncorrelatedReply 丢弃;好友推送
+//     NotifyFriendEvent 本场景不消费,直接丢掉。两者都不进通用分发(见 friendSmokeIsFriendMessage 的注释);
+//   - gate 的 SendTipToClient 交给 caller:kServiceUnavailable 让正在等的好友请求立刻失败;
 //   - 其余无条件转发:NotifyEnterScene 靠通用 handler 放行 WaitSceneReady;msg 124 在转发里同步跑完整个搬迁
 //     (pkg.FollowRedirect);
 //   - 转发时**绝不能持有 b.mu**:严格重登(b.relogin)要拿 b.mu,FollowRedirect 末尾的 ReplayDeferred 还会在同一个
@@ -634,6 +646,13 @@ func syncSmokeIsRecorded(messageId uint32) bool {
 func (b *syncSmokeBot) onMessage(client *pkg.GameClient, msg *base.MessageContent) {
 	b.stats.MsgRecv()
 	messageId := msg.GetMessageId()
+	if messageId == game.ClientPlayerFriendNotifyFriendEventMessageId {
+		return
+	}
+	if friendSmokeIsFriendMessage(messageId) || messageId == travelToZoneMessageId {
+		smokeDropUncorrelatedReply(b.account, msg)
+		return
+	}
 	if syncSmokeIsRecorded(messageId) {
 		b.mu.Lock()
 		b.records = append(b.records, travelSmokeRecord{
@@ -643,8 +662,11 @@ func (b *syncSmokeBot) onMessage(client *pkg.GameClient, msg *base.MessageConten
 		})
 		b.mu.Unlock()
 	}
-	if friendSmokeIsFriendMessage(messageId) {
-		return
+	if messageId == game.SceneClientPlayerCommonSendTipToClientMessageId {
+		b.mu.Lock()
+		caller := b.caller
+		b.mu.Unlock()
+		caller.onGateTipMessage(msg)
 	}
 
 	handler.MessageBodyHandler(client, msg)
@@ -678,11 +700,17 @@ func (b *syncSmokeBot) gateAddr() string {
 	return net.JoinHostPort(ip, strconv.Itoa(port))
 }
 
-// send 按节奏(syncSmokeRequestSpacing)发一个请求。
-func (b *syncSmokeBot) send(messageId uint32, request proto.Message) error {
+// pace 让出与上一个请求(任意消息号)的最小间隔 syncSmokeRequestSpacing。调用方在发出后更新 lastRequestAt。
+func (b *syncSmokeBot) pace() {
 	if wait := syncSmokeRequestSpacing - time.Since(b.lastRequestAt); wait > 0 {
 		time.Sleep(wait)
 	}
+}
+
+// send 按节奏发一个不关联回包的请求(ClientRequest.id = 0)。只用于单向的 GetSyncDigest(253):
+// 应答类型是 Empty,scene TCP 路径上不回包,用 Call 必然超时;请求-响应调用走 friendRpc / travelSmokeStartTravel。
+func (b *syncSmokeBot) send(messageId uint32, request proto.Message) error {
+	b.pace()
 	if err := b.gc.SendRequest(messageId, request); err != nil {
 		return fmt.Errorf("send message_id=%d account=%s: %w", messageId, b.account, err)
 	}
@@ -762,41 +790,23 @@ func (b *syncSmokeBot) fetchDigest() (syncSmokeDigest, error) {
 	return digest, nil
 }
 
-// friendRpc 发一个好友请求并等同消息号的第一个回包,返回业务 tip(响应体 error_message.id,0 = 受理)。
+// friendRpc 按节奏发一个好友请求并只等它自己的回包(smokeCaller.call,按请求号认领),
+// 返回业务 tip(响应体 error_message.id,0 = 受理)。
 // 信封拒绝、gate 推 kServiceUnavailable、超时一律 error:它们说明请求没到 friend 业务逻辑,不能当成 friend 给的码去断言。
+// 只由主流程调用(CallSync 禁止在 RecvLoop goroutine 上调用)。
 func (b *syncSmokeBot) friendRpc(messageId uint32, request proto.Message, response friendResponse) (uint32, error) {
-	since, _ := b.mark()
-	if err := b.send(messageId, request); err != nil {
+	b.pace()
+	b.lastRequestAt = time.Now()
+	envelopeTip, err := b.caller.call(messageId, request, response)
+	if err != nil {
 		return 0, err
 	}
-	deadline := time.Now().Add(syncSmokeRpcTimeout)
-	for {
-		records, _ := b.snapshot(since)
-		for _, r := range records {
-			switch r.messageId {
-			case messageId:
-				if r.envelopeTip != 0 {
-					return 0, fmt.Errorf("message_id=%d account=%s was rejected by the gate / router envelope tip=%d%s: the request never reached friend "+
-						"(is the gate started with GATE_CLIENT_RPC_ROUTER=1, and are client_rpc_router and friend running?)",
-						messageId, b.account, r.envelopeTip, syncSmokeTipHint(messageId, r.envelopeTip))
-				}
-				if err := proto.Unmarshal(r.body, response); err != nil {
-					return 0, fmt.Errorf("decode message_id=%d: %w", messageId, err)
-				}
-				return response.GetErrorMessage().GetId(), nil
-			case game.SceneClientPlayerCommonSendTipToClientMessageId:
-				var tipInfo base.TipInfoMessage
-				if err := proto.Unmarshal(r.body, &tipInfo); err == nil && tipInfo.GetId() == tipSyncServiceUnavailable {
-					return 0, fmt.Errorf("gate SendTipToClient tip=%d (the gate found no routing service instance, or was not started with GATE_CLIENT_RPC_ROUTER=1)",
-						tipInfo.GetId())
-				}
-			}
-		}
-		if !time.Now().Before(deadline) {
-			return 0, fmt.Errorf("message_id=%d account=%s got no reply within %s", messageId, b.account, syncSmokeRpcTimeout)
-		}
-		time.Sleep(syncSmokePollInterval)
+	if envelopeTip != 0 {
+		return 0, fmt.Errorf("message_id=%d account=%s was rejected by the gate / router envelope tip=%d%s: the request never reached friend "+
+			"(is the gate started with GATE_CLIENT_RPC_ROUTER=1, and are client_rpc_router and friend running?)",
+			messageId, b.account, envelopeTip, syncSmokeTipHint(messageId, envelopeTip))
 	}
+	return response.GetErrorMessage().GetId(), nil
 }
 
 // syncSmokePreclean 把 A、B 之间的好友关系恢复成「不是好友、B 没拉黑 A、A 的收件箱里没有 B 的待处理申请」,
@@ -887,18 +897,23 @@ func (b *syncSmokeBot) pendingRequestIDsFrom(from uint64) ([]uint64, error) {
 
 // travelTo 发起一次跨 zone 传送并等到落地:msg 124 → 严格重登成功 → 排在 124 之后的 NotifyEnterScene;
 // 再做最小落地断言(verifyHop)。传送链路的完整断言归 travel-smoke。
+// TravelToZone 经 travelSmokeStartTravel 用 gc.Call 异步发出,认领窗口与整跳预算相同;回包可有可无,
+// 每圈连同留底交给 travelSmokeScanHop(回包带拒绝码立即失败;124 之后以 ErrRPCDisconnected 收场属正常)。
 // 轮询里不能调 gc.RedirectHops():它与 FollowRedirect 抢同一把 redirectMu,搬迁进行中会一直阻塞到结束。
 func (b *syncSmokeBot) travelTo(targetZone, sceneConfigId uint32) error {
 	prevGate := b.gateAddr()
+	b.pace()
 	since, before := b.mark()
-	if err := b.send(travelToZoneMessageId, newTravelToZoneRequest(targetZone, sceneConfigId)); err != nil {
-		return fmt.Errorf("TravelToZone{zone=%d}: %w", targetZone, err)
+	call, err := travelSmokeStartTravel(b.gc, b.stats, targetZone, sceneConfigId, syncSmokeRedirectTimeout)
+	if err != nil {
+		return fmt.Errorf("TravelToZone{zone=%d}: send message_id=%d account=%s: %w", targetZone, travelToZoneMessageId, b.account, err)
 	}
+	b.lastRequestAt = time.Now()
 
 	deadline := time.Now().Add(syncSmokeRedirectTimeout)
 	for {
 		records, progress := b.snapshot(since)
-		scan, err := travelSmokeScanHop(records)
+		scan, err := travelSmokeScanHop(call.snapshot(), records)
 		if err != nil {
 			return fmt.Errorf("TravelToZone{zone=%d}: %w", targetZone, err)
 		}

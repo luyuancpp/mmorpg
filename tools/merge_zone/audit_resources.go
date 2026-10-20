@@ -124,6 +124,25 @@ type auditConfig struct {
 	// 与 tradeSchema 同一口径:经同一个 -mysql-dsn 以「库名.表名」访问,flag 只为集成测试
 	// 的一次性库留口子(否则集成测试只能去动真实的 mmorpg_friend)。
 	friendSchema string
+	// routeSource 是 -route-source(db / redis;决定是否跑 verify:route_cache)。
+	routeSource string
+	// routes:映射的读方(D1 第 2 批,规格 §6.3 R8)。-route-source=redis 读 mapping Redis(今天的口径),db 读全局库。
+	// nil = 读方没装成(mapping Redis 连不上 / 库打不开 / 库与 Redis 不成对,原因在 routeErr),依赖它的检查一律报 INFRA。
+	routes   routeReadSide
+	routeErr error
+	// routeDB:-route-source=db 时的全局库(只读);redis 源为 nil。verify:route_cache 与库里的围栏复核用它。
+	routeDB routeDBReader
+}
+
+// routeReads 返回映射读方;没装成时返回原因(调用方报 INFRA,不能当作「没有玩家」)。
+func (c auditConfig) routeReads() (routeReadSide, error) {
+	switch {
+	case c.routes != nil:
+		return c.routes, nil
+	case c.routeErr != nil:
+		return nil, c.routeErr
+	}
+	return nil, errors.New("no route read side (mapping Redis unreachable, or the route source was not set up)")
 }
 
 // verifyManifest 返回 -verify-merged 逐 id 核对用的清单;没有可用清单时返回原因(调用方报 INFRA)。
@@ -174,6 +193,9 @@ type auditEntryParams struct {
 	skipGuild          bool
 	guildSchema        string
 	friendSchema       string
+	// route 是 -route-source 与路由库参数(main 装配,routeEntryOptionsOf;DSN 含口令,不进日志)。
+	// source 为空 = 装配层没传:映射相关检查报 INFRA(exit 2),绝不默认成某一种来源。
+	route routeEntryOptions
 }
 
 // firstNonEmpty returns a if non-empty, else b. Avoids a one-line helper
@@ -264,6 +286,21 @@ func runAuditEntry(p auditEntryParams) {
 		guildSchema:        p.guildSchema,
 		friendSchema:       p.friendSchema,
 	}
+	// 映射读方(规格 §6.3 R8):db 源一律读全局库;开库前先核对库与 mapping Redis 成对(§13.3 第 3 条)。
+	// 装不成不整个退出:其余检查照跑,依赖映射的检查报 INFRA,整个审计以 exit 2 结束(结论不可信)。
+	cfg.routeSource = p.route.source
+	routes, routeStore, rerr := openRouteReadSide(ctx, p.route, mapRdb, "audit")
+	if rerr != nil {
+		cfg.routeErr = fmt.Errorf("route source %q: %w", p.route.source, rerr)
+		log.Printf("ERROR: %v — the mapping-backed checks will report INFRA", cfg.routeErr)
+	} else {
+		cfg.routes = routes
+		if routeStore != nil {
+			defer routeStore.Close()
+			cfg.routeDB = routeStore
+		}
+		log.Printf("route mapping is read from %s", routes.source())
+	}
 	if p.verifyMerged {
 		// 读不出不整个退出:其余断言照跑,逐 id 那两条报 INFRA,整个审计以 exit 2 结束(结论不可信)。
 		cfg.manifest, cfg.manifestErr = loadVerifyManifest(p.manifestPath, p.src, p.dst)
@@ -348,9 +385,15 @@ func runAuditMode(ctx context.Context, cfg auditConfig) []ResourceAudit {
 			verifyGuildRankZSets,
 			verifyTradeMarketZoneDrained, // trade_listing.market_zone=src 必须为 0(trade_step.go)
 			verifyManifestRows,           // 清单里每个玩家的主数据行在该在的库里(A6,取代 verify:target_zone_rows)
+			verifySaveBarriers,           // owner_epoch≠0 的清单玩家屏障已提交且等于两表行内围栏(r2-mz#1,save_barrier_verify.go)
 			verifySourceHotStateGone,
 			verifyFenceReleased,
 		)
+		// -route-source=db:库是真源,还要证明 mapping Redis 里清单玩家的那一份与库逐字节一致(rev 相等、值相同),
+		// dst 开服之前读方看到的才是库里的结论(规格 §6.3 R8、P-6)。redis 源没有第二份可比,不跑、不出这一行。
+		if cfg.routeSource == routeSourceDB {
+			auditors = append(auditors, verifyRouteCache)
+		}
 	} else {
 		// 合服前门禁:每一条都能真的拦住 -apply。
 		auditors = append(auditors,

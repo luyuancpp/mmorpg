@@ -12,7 +12,7 @@
 
 ---
 
-## 0. TL;DR — 九件不能搞错的事
+## 0. TL;DR — 十件不能搞错的事
 
 1. **第一次合服之前,`-MergeBackfillZone` 必须对 source 和 target 各跑一遍**(§4)。存量玩家历史上没有 `player:zone:{id}` 映射,没有映射的玩家**不会被合过去**。工具的守卫会拒绝(源库任何一行没有映射即拒),但拒绝发生在维护窗口里就是浪费停服时间。
 2. **Redis 库号不能猜**(§2)。mapping = **DB 0**,guild = DB 2,login / shared / scene = DB 0。friend 已不占 Redis 库。写错库不会报错,只会静默无效。
@@ -23,6 +23,7 @@
 7. **回滚的第一手段是 `merge-zone-unmerge -MergeManifestPath`**(§10),**不是**备份还原。`RollbackPlayer` 当前**不可用**(§10.2)。
 8. **`k8s-zone-down` 会删掉整个 zone namespace**(`k8s_deploy.ps1::Remove-Zone` → `kubectl delete namespace mmorpg-zone-<name>`)。「保留 source namespace 7 天以备回滚」**做不到**;回滚靠清单 + infra 命名空间里的 MySQL / Redis 备份。
 9. **合服窗口内,home 在 src 或 dst 的玩家从任何 zone 都进不了场**(scene_manager 回可重试码 21,A16)。窗口外 `scene_manager_enter_scene_rejected_total{reason="home_zone_merging"}` 持续非 0 = 围栏没清干净(§3)。
+10. **映射来源必填,不推断**(§15):除 `merge-zone-capability-check` 外每个 merge-zone 命令都要带 `<ROUTE_ARGS>` —— data_service 已是 db_first 时 `-MergeZoneRouteSource db -MergeZoneRouteDbDsn $env:MERGE_ZONE_ROUTE_DB_DSN`,否则 `-MergeZoneRouteSource redis`。选错的一边会写错库;工具开写前核对库与 mapping Redis 是否成对,不成对即拒绝。P4 之后**禁用旧版 merge_zone 二进制**。
 
 ---
 
@@ -139,7 +140,7 @@
 | **谁写** | 只有 `tools/merge_zone`(merge 与 unmerge 两种模式都写)。`SETNX`:已经有别人的围栏就**拒绝启动**,并把对方的 JSON 打出来 |
 | **什么时候写** | 合服在 P1 / R / C 之后、**收集玩家之前**立围栏(A2),所以收集与预检都在围栏之下 |
 | **TTL** | `-timeout + 30m`,下限 1 小时。默认 `-timeout=2h` ⇒ **TTL 2h30m**。后台 goroutine 每 `ttl/3` 续期一次 |
-| **谁清** | 分三种情况:<br>① **正常结束**:显式 DEL。Lua 先比对 `run_id` 再删,不会误删接手者的围栏。<br>② **首跑时,立围栏之后、清单落盘之前被拒绝**(守卫、P2~P7、公会重名、落点扫描、合走标记等):本次什么都没写,工具**正常释放围栏**后 exit 1,日志 `this run wrote nothing and its merge fence was released`。修好原因后直接重跑。<br>③ **清单落盘之后失败**(步骤 1~6、清单写盘),以及**续跑时在清单落盘之前被拒绝**(见下方说明):**围栏保留**在本次 run_id 上,文案带 `LEFT IN PLACE`,并打印续跑指引:确认没有存活的 merge_zone 进程 → `GET merge:in_progress:<SRC>` 核对 run_id 与中止日志一致 → `DEL merge:in_progress:<SRC> merge:in_progress:<DST>` → 立即用原命令(同一个 `-MergeManifestPath`)重跑。<br>TTL 是进程被 kill 时的兜底,不是正常清除手段 |
+| **谁清** | 分三种情况:<br>① **正常结束**:显式 DEL。Lua 先比对 `run_id` 再删,不会误删接手者的围栏。<br>② **首跑时,立围栏之后、清单落盘之前被拒绝**(守卫、P2~P7、公会重名、落点扫描、合走标记等):本次什么都没写,工具**正常释放围栏**后 exit 1,日志 `this run wrote nothing and its merge fence was released`。修好原因后直接重跑。<br>③ **清单落盘之后失败**(步骤 1~6、清单写盘),以及**续跑时在清单落盘之前被拒绝**(见下方说明):**围栏保留**在本次 run_id 上,文案带 `LEFT IN PLACE`,并打印续跑指引:确认没有存活的 merge_zone 进程 → `GET merge:in_progress:<SRC>` 核对 run_id 与中止日志一致 → `DEL merge:in_progress:<SRC> merge:in_progress:<DST>` → 立即用原命令(同一个 `-MergeManifestPath`)重跑。<br>**以上 GET / DEL 只适用于 `-MergeZoneRouteSource redis`**。db 源(§15)下围栏的真源是全局库 `zone_merge_fence`,`merge:in_progress:*` 只是镜像:DEL 镜像只会让 scene_manager / guild 提前放行,重跑照样被库拒绝(`merge fence is held by another run`)。db 源的 ③ 改为:确认没有存活进程 → 原命令加 `-MergeZoneTakeOverFence <中止日志里的 run_id>` 重跑,工具在一个库事务里把围栏接到新 run_id,两区一刻不解封(§15.4)。<br>TTL 是进程被 kill 时的兜底,不是正常清除手段 |
 | **dry-run** | **不写**围栏,但会检查是否撞上别人的;撞上就拒绝 |
 
 > **续跑与半撤销时的拒绝保留围栏**(2026-09-28 修复,未经运行验证):
@@ -159,12 +160,14 @@
 另外,搬库(§14.2)的冻结 CAS 与钉落点(§14.1)都会检查围栏,与合服互斥。
 
 **开服前必查**:`merge-zone-audit -VerifyMerged` 的 `verify:merge_fence`。围栏没清干净,data_service 会永久拒绝建号,guild 会永久拒绝建帮,**这两个 zone 的玩家会永久进不了场**。
-**手动清理**(仅当确认没有任何 merge_zone 进程存活):
+**手动清理**(仅当确认没有任何 merge_zone 进程存活;**只适用于 `-MergeZoneRouteSource redis`**):
 
 ```bash
 redis-cli -h <mapping-redis> -n 0 GET merge:in_progress:<SRC>   # 先看是谁的、什么时候起的
 redis-cli -h <mapping-redis> -n 0 DEL merge:in_progress:<SRC> merge:in_progress:<DST>
 ```
+
+db 源(§15)下**不要手工 DEL 镜像,也不要手工 `UPDATE zone_merge_fence`**:库里的围栏才是真源,镜像由工具与对账 leader 按库维护(库里不生效的镜像 leader 会按完整值删掉)。先只读查库:`SELECT zone_id, run_id, expires_at_ms, fence_epoch, holder_json FROM zone_merge_fence WHERE zone_id IN (<SRC>, <DST>) AND shard = 63`,然后:要续跑 → 原命令加 `-MergeZoneTakeOverFence <run_id>`(§15.4);要撤掉这次合服 → `merge-zone-unmerge` 同一份清单、加 `-MergeZoneTakeOverFence <run_id>`(§10.1);两者都不做 → 等库时钟过了 `expires_at_ms` 自然解封(默认 TTL 2h30m),期间两个 zone 保持封锁。
 
 ---
 
@@ -176,10 +179,12 @@ redis-cli -h <mapping-redis> -n 0 DEL merge:in_progress:<SRC> merge:in_progress:
 
 ```powershell
 # source 与 target 各跑一遍;先 -DryRun 看 would_create,再去掉 -DryRun 落地
-pwsh -File tools/scripts/dev_tools.ps1 -Command merge-zone -MergeBackfillZone <SRC_ID> -DryRun
-pwsh -File tools/scripts/dev_tools.ps1 -Command merge-zone -MergeBackfillZone <SRC_ID>
-pwsh -File tools/scripts/dev_tools.ps1 -Command merge-zone -MergeBackfillZone <DST_ID> -DryRun
-pwsh -File tools/scripts/dev_tools.ps1 -Command merge-zone -MergeBackfillZone <DST_ID>
+# <ROUTE_ARGS> = 映射来源,必填、没有缺省值(§15.1):db_first 环境写 -MergeZoneRouteSource db -MergeZoneRouteDbDsn $env:MERGE_ZONE_ROUTE_DB_DSN,
+#                仍是 redis 模式的环境写 -MergeZoneRouteSource redis。下文所有 merge-zone 命令(capability-check 除外)同此。
+pwsh -File tools/scripts/dev_tools.ps1 -Command merge-zone -MergeBackfillZone <SRC_ID> <ROUTE_ARGS> -DryRun
+pwsh -File tools/scripts/dev_tools.ps1 -Command merge-zone -MergeBackfillZone <SRC_ID> <ROUTE_ARGS>
+pwsh -File tools/scripts/dev_tools.ps1 -Command merge-zone -MergeBackfillZone <DST_ID> <ROUTE_ARGS> -DryRun
+pwsh -File tools/scripts/dev_tools.ps1 -Command merge-zone -MergeBackfillZone <DST_ID> <ROUTE_ARGS>
 ```
 
 期望输出:
@@ -401,8 +406,10 @@ T-1 时两个区都在线:有活节点、有会话、有队伍、还在建号。
 
 ```powershell
 pwsh -File tools/scripts/dev_tools.ps1 -Command merge-zone-audit `
-  -MergeSourceZone <SRC_ID> -MergeTargetZone <DST_ID>
+  -MergeSourceZone <SRC_ID> -MergeTargetZone <DST_ID> `
+  <ROUTE_ARGS>
 # K8s 未部署 guild 再加 -MergeSkipGuildMySql -MergeSkipGuildRank
+# <ROUTE_ARGS> 见 §4 / §15.1;db 源下枚举源区玩家读全局库 player_route,库与 mapping Redis 不成对即 INFRA(exit 2)
 ```
 
 输出是一张 markdown 表:`sev | resource | src_count | dst_count | unique_scope | conflicts | notes`。
@@ -439,6 +446,7 @@ pwsh -File tools/scripts/dev_tools.ps1 -Command merge-zone `
   -MergeSourceZone <SRC_ID> -MergeTargetZone <DST_ID> `
   -MergeDbCapabilityZones <全部在跑的 zone,例 1,2,3> `
   -MergeKafkaConsumerGroupsCmd <path\to\kafka-consumer-groups.bat> -MergeKafkaBootstrap <broker:9092> `
+  <ROUTE_ARGS> `
   -DryRun
 # copy 模式加 -MergePlayerRowsMode copy;K8s 未部署 guild 加 -MergeSkipGuildMySql -MergeSkipGuildRank
 ```
@@ -578,6 +586,7 @@ pwsh -File tools/scripts/dev_tools.ps1 -Command merge-zone `
   -MergeDbCapabilityZones <此刻 go/db 仍在跑的其他 zone,不含 SRC / DST;没有就写 none(§5.1)> `
   -MergeManifestPath <repo>\merge_<SRC>_to_<DST>.json `
   -MergeKafkaConsumerGroupsCmd <path> -MergeKafkaBootstrap <broker:9092> `
+  <ROUTE_ARGS> `
   -DryRun
 # copy 模式加 -MergePlayerRowsMode copy;K8s 未部署 guild 加 -MergeSkipGuildMySql -MergeSkipGuildRank
 ```
@@ -601,8 +610,10 @@ pwsh -File tools/scripts/dev_tools.ps1 -Command merge-zone `
   -MergeDbCapabilityZones <与 4.1 同一份:仍在跑的其他 zone,不含 SRC / DST;没有就写 none> `
   -MergeManifestPath <repo>\merge_<SRC>_to_<DST>.json `
   -MergeKafkaConsumerGroupsCmd <path> -MergeKafkaBootstrap <broker:9092> `
+  <ROUTE_ARGS> `
   -MergeClearSourceHotState
 # 不带 -DryRun 即 -apply(dev_tools.ps1 二选一转发,不存在「两个都不给」)
+# <ROUTE_ARGS> 必须与 4.1 同一份;db 源下每批「库先提交 → 发布 + WAITAOF」,任一批确认不了即中止、退出非 0(§15.3)
 # copy 模式加 -MergePlayerRowsMode copy;多 data Redis 集群部署只能 copy,并再加:
 #   -MergeMigratePlayerBlobs -MergeSourceDataRedis <addrs> -MergeTargetDataRedis <addrs>
 # K8s 未部署 guild 加 -MergeSkipGuildMySql -MergeSkipGuildRank
@@ -652,8 +663,10 @@ Manifest: <path> — keep it: -verify-merged -manifest-path <path> (-expected-sr
 pwsh -File tools/scripts/dev_tools.ps1 -Command merge-zone-audit `
   -MergeSourceZone <SRC_ID> -MergeTargetZone <DST_ID> `
   -MergeExpectedSrcPlayers <N> -VerifyMerged `
-  -MergeManifestPath <repo>\merge_<SRC>_to_<DST>.json
+  -MergeManifestPath <repo>\merge_<SRC>_to_<DST>.json `
+  <ROUTE_ARGS>
 # K8s 未部署 guild 加 -MergeSkipGuildMySql -MergeSkipGuildRank(guild_zone / guild_rank 两行报 SKIPPED,见下)
+# db 源下多一行 verify:route_cache(清单玩家缓存与库逐人一致),不过不许进 Step 6(§15.2)
 ```
 
 没有 `-MergeManifestPath` 时 ps1 直接报错;清单缺失或是 dry-run 预览时,工具把相关断言报 INFRA(exit 2)。
@@ -667,7 +680,10 @@ pwsh -File tools/scripts/dev_tools.ps1 -Command merge-zone-audit `
 | `verify:guild_rank` | `guild_rank:zone:{src}` 不存在;且 `ZCARD guild_rank:zone:{dst}` == `COUNT(guild WHERE zone_id=dst)` | block(同上) |
 | `verify:trade_listing` | `SELECT COUNT(*) FROM mmorpg_trade.trade_listing WHERE market_zone=src` == 0 | block(加 `-MergeSkipTradeMySql` 时为 warn "NOT VERIFIED",不算通过) |
 | `verify:source_hot_state` | 源区 scene_manager 键已清空 | warn(不影响数据正确性) |
-| `verify:merge_fence` | `merge:in_progress:{src|dst}` **都不存在** | block |
+| `verify:merge_fence` | `merge:in_progress:{src|dst}` **都不存在**;db 源下另要求库里 `zone_merge_fence` 的 src / dst 围栏都已释放(库是真源,镜像只是副本) | block |
+| `verify:route_cache` | **只在 `-MergeZoneRouteSource db` 时出现**:清单里每一个玩家在 mapping Redis 里的 `player:maprev` 等于库里 `player_route.rev`,`player:zone` / `player:placement` 等于库值的编码(库里为 NULL 的缓存里也必须不存在);缓存 rev 比库新同样算不一致 | block(不一致不许开服,§15.2) |
+
+db 源下 `verify:mapping_src` / `verify:manifest_mapping` / `verify:manifest_rows` 读的是全局库 `player_route`(真源),不是 mapping Redis;两者是否一致由 `verify:route_cache` 单独回答。
 
 旧版的 `verify:target_zone_rows`(目标库总行数 >= N)已删除:总行数里有目标区原住民,漏拷几个照样过线。它由 `verify:manifest_rows` 逐 id 取代。
 
@@ -870,7 +886,7 @@ stdout 只有一行:`route_import dry_run=… players_scanned=… inserted=… m
 
 1. **冻结窗口**:从任一 data_service 副本切到 db_first 起,到映射持久化第 2 批落地为止,禁止 merge_zone 一切写模式(§12 同一条);
 2. 上面的 P1 做完:真导入退出码 0,audit 退出码 0;
-3. mapping Redis 是 `noeviction` + `appendonly yes`、版本 ≥ 7.2;按拓扑填 `RouteStore.WaitAOFNumLocal` / `WaitAOFNumReplicas`(redis-ha 档 NumReplicas 写 1)。db_first 装配 route store 之前,data_service 会按这两项发一次 `WAITAOF`(timeout = `WaitAOFTimeoutMs`)做能力探针:报错(appendonly 关着、Redis < 7.2)或确认份数不足(NumReplicas 写了 1 而没有副本)就不装配,日志里有 `route store not assembled ... cannot confirm AOF durability`,K8s(`Store.Required=true`)直接拒启 —— 不把配置错误留到每一次建角;
+3. mapping Redis 是 `noeviction` + `appendonly yes`、版本 ≥ 7.2;按拓扑填 `RouteStore.WaitAOFNumLocal` / `WaitAOFNumReplicas`(redis-ha 档 NumReplicas 写 1)。(2026-10-19 补,未运行、待 Codex 验证)K8s 上这两项不手填:`k8s_deploy.ps1` 生成 data-service ConfigMap 时 NumLocal 固定 1,NumReplicas 按共享 Redis 的形态渲染 —— 高可用档(`-RedisReplicas 3`,`redis-ha.yaml`;staging / prod 档缺省)为 1,单实例(`redis.yaml`)为 0;go/db ConfigMap 的 `ServerConfig.RedisClient.WaitAOFNumReplicas` 同源同值(`Get-RouteStoreWaitAOFNumReplicas`)。以写路径入口那行 `Redis topology: ... waitaof_replicas=<0|1>` 为准;zone-up 没给 `-RedisReplicas` 时跟随线上 `sts/redis` 的副本数。本机 compose 与单实例一律 0(仓库 `go/data_service/etc/data_service.yaml`、`go/db/etc/db.yaml` 保持 0,写 1 会因等不到副本被启动探针拒启)。单实例切到高可用之后,要对每个 zone 重跑 zone-up 并 `rollout restart deploy/db` 与 `deploy/data-service`(只改 ConfigMap 不会滚动它们),NumReplicas 才变成 1。db_first 装配 route store 之前,data_service 会按这两项发一次 `WAITAOF`(timeout = `WaitAOFTimeoutMs`)做能力探针:报错(appendonly 关着、Redis < 7.2)或确认份数不足(NumReplicas 写了 1 而没有副本)就不装配,日志里有 `route store not assembled ... cannot confirm AOF durability`,K8s(`Store.Required=true`)直接拒启 —— 不把配置错误留到每一次建角;
 4. 建角压测已出 W1 p99 与「发布未确认率」的对比表(AGENTS.md §6),负责人拍板。「发布未确认率」看 `data_service_route_publish_total` 的 `not_durable` **加上** `error`:WAITAOF 回复形状不对是确定性错误、不重试,计在 `error` 而不是 `not_durable`;
 5. 切换后看启动日志里那条 `WARN RouteStore.Mode=db_first: ...`;全部副本切完,再导入一次(`-dry-run=false -allow-db-first`,小批量)、再审计一次(提案 §7 P3)。db_first 下 audit 可能长期因 `db_only_unpublished` 非 0,P3 的「audit 为 0」要等第 1b 批。
 
@@ -996,12 +1012,16 @@ K8s 下全局库与 zone 库在同一个 mysql 实例,zone 回档(`docs/design/z
 pwsh -File tools/scripts/dev_tools.ps1 -Command merge-zone-unmerge `
   -MergeManifestPath <repo>\merge_<SRC>_to_<DST>.json `
   -MergeDbCapabilityZones <此刻 go/db 仍在跑的其他 zone,不含 SRC / DST;没有就写 none> `
-  -MergeKafkaConsumerGroupsCmd <path> -MergeKafkaBootstrap <broker:9092> -DryRun
+  -MergeKafkaConsumerGroupsCmd <path> -MergeKafkaBootstrap <broker:9092> `
+  <ROUTE_ARGS> -DryRun
 
 pwsh -File tools/scripts/dev_tools.ps1 -Command merge-zone-unmerge `
   -MergeManifestPath <repo>\merge_<SRC>_to_<DST>.json `
   -MergeDbCapabilityZones <与 dry-run 同一份> `
-  -MergeKafkaConsumerGroupsCmd <path> -MergeKafkaBootstrap <broker:9092>
+  -MergeKafkaConsumerGroupsCmd <path> -MergeKafkaBootstrap <broker:9092> `
+  <ROUTE_ARGS>
+# <ROUTE_ARGS> 必须与当初合服时同一份(§15.1);P4 之后用旧二进制撤销 = 直写 Redis,禁止(§15.5)
+# db 源下撤销写到一半中止(LEFT IN PLACE):同一命令加 -MergeZoneTakeOverFence <中止日志里的 run_id> 重跑(§15.4),不要 DEL 镜像
 # Kafka 门禁也可用 -MergeAssumeKafkaDrained(进复盘);两者都不给会在 P3 被拒
 # -MergeDbCapabilityZones:清单是 pin 模式时必填(没有缺省值,可 none),不给在围栏之前就被拒;copy 模式可不给,给了就查
 # K8s 未部署 guild 加 -MergeSkipGuildMySql -MergeSkipGuildRank(与合服时同一组开关)
@@ -1120,17 +1140,20 @@ S   清单玩家不得有冻结的落点记录(与搬库互斥);有「落点记�
 
 | 操作 | 命令 |
 |---|---|
-| **回填(前置,每 zone 一次)** | `dev_tools.ps1 -Command merge-zone -MergeBackfillZone <id> [-DryRun]` |
-| pre-merge 审计 | `dev_tools.ps1 -Command merge-zone-audit -MergeSourceZone <s> -MergeTargetZone <d>` |
-| dry-run 合服 | `dev_tools.ps1 -Command merge-zone -MergeSourceZone <s> -MergeTargetZone <d> -MergeDbCapabilityZones <zones\|none> -MergeManifestPath <file> -DryRun` |
-| 正式合服 | `dev_tools.ps1 -Command merge-zone -MergeSourceZone <s> -MergeTargetZone <d> -MergeExpectedSrcPlayers <n> -MergeDbCapabilityZones <zones\|none> -MergeManifestPath <file> -MergeKafkaConsumerGroupsCmd <p> -MergeKafkaBootstrap <b> [-MergePlayerRowsMode copy]` |
-| **能力标记核对(dst zone-up 之后、开服之前)** | `dev_tools.ps1 -Command merge-zone-capability-check -MergeDbCapabilityZones <zones>`(exit 0 / 1 / 2 = present / missing / unreadable) |
-| 合服后验证 | `dev_tools.ps1 -Command merge-zone-audit -MergeSourceZone <s> -MergeTargetZone <d> -MergeExpectedSrcPlayers <n> -VerifyMerged -MergeManifestPath <file>` |
-| **撤销一次合服** | `dev_tools.ps1 -Command merge-zone-unmerge -MergeManifestPath <file> (-MergeKafkaConsumerGroupsCmd <p> -MergeKafkaBootstrap <b> \| -MergeAssumeKafkaDrained) -MergeDbCapabilityZones <zones\|none>(pin 清单必填) [-DryRun]` |
-| 批量钉落点 | `dev_tools.ps1 -Command merge-zone-pin-placement -MergePinPlacementZone <z> [-DryRun]` |
-| 搬库 | `dev_tools.ps1 -Command merge-zone-relocate -MergeRelocateSourceStorage <S> -MergeRelocateTargetStorage <T> -MergeDbCapabilityZones <全部在跑 zone,不接受 none> [-MergeRelocatePlayerIds a,b] [-MergeRelocateBatchSize n] [-MergeRelocateLockWait 150s] [-MergeManifestPath f] [-DryRun]` |
-| 放弃搬库 | `dev_tools.ps1 -Command merge-zone-relocate-abort -MergeManifestPath <f> [-DryRun]` |
-| 落点库审计 | `dev_tools.ps1 -Command merge-zone-storage-audit -MergeAuditStorage <id>` |
+| **映射来源 `<ROUTE_ARGS>`(下列 merge-zone 命令都要带,capability-check 除外;§15.1)** | db_first:`-MergeZoneRouteSource db -MergeZoneRouteDbDsn $env:MERGE_ZONE_ROUTE_DB_DSN [-MergeZoneWaitAofReplicas 1(redis-ha)]`;仍是 redis 模式:`-MergeZoneRouteSource redis` |
+| **回填(前置,每 zone 一次)** | `dev_tools.ps1 -Command merge-zone -MergeBackfillZone <id> <ROUTE_ARGS> [-DryRun]` |
+| pre-merge 审计 | `dev_tools.ps1 -Command merge-zone-audit -MergeSourceZone <s> -MergeTargetZone <d> <ROUTE_ARGS>` |
+| dry-run 合服 | `dev_tools.ps1 -Command merge-zone -MergeSourceZone <s> -MergeTargetZone <d> -MergeDbCapabilityZones <zones\|none> -MergeManifestPath <file> <ROUTE_ARGS> -DryRun` |
+| 正式合服 | `dev_tools.ps1 -Command merge-zone -MergeSourceZone <s> -MergeTargetZone <d> -MergeExpectedSrcPlayers <n> -MergeDbCapabilityZones <zones\|none> -MergeManifestPath <file> -MergeKafkaConsumerGroupsCmd <p> -MergeKafkaBootstrap <b> <ROUTE_ARGS> [-MergePlayerRowsMode copy]` |
+| **能力标记核对(dst zone-up 之后、开服之前)** | `dev_tools.ps1 -Command merge-zone-capability-check -MergeDbCapabilityZones <zones>`(exit 0 / 1 / 2 = present / missing / unreadable;不读写映射,不带 `<ROUTE_ARGS>`) |
+| 合服后验证 | `dev_tools.ps1 -Command merge-zone-audit -MergeSourceZone <s> -MergeTargetZone <d> -MergeExpectedSrcPlayers <n> -VerifyMerged -MergeManifestPath <file> <ROUTE_ARGS>`(db 源多一行 `verify:route_cache`) |
+| **撤销一次合服** | `dev_tools.ps1 -Command merge-zone-unmerge -MergeManifestPath <file> (-MergeKafkaConsumerGroupsCmd <p> -MergeKafkaBootstrap <b> \| -MergeAssumeKafkaDrained) -MergeDbCapabilityZones <zones\|none>(pin 清单必填) <ROUTE_ARGS> [-DryRun]` |
+| **db 源中止后续跑(围栏 LEFT IN PLACE)** | 原合服 / 撤销命令(同一清单、同一 `<ROUTE_ARGS>`)加 `-MergeZoneTakeOverFence <中止日志里的 run_id>`(先确认那次运行的进程已不在;§15.4)。redis 源仍按 §3 ③ GET / DEL |
+| 批量钉落点 | `dev_tools.ps1 -Command merge-zone-pin-placement -MergePinPlacementZone <z> <ROUTE_ARGS> [-DryRun]` |
+| 搬库 | `dev_tools.ps1 -Command merge-zone-relocate -MergeRelocateSourceStorage <S> -MergeRelocateTargetStorage <T> -MergeDbCapabilityZones <全部在跑 zone,不接受 none> <ROUTE_ARGS> [-MergeRelocatePlayerIds a,b] [-MergeRelocateBatchSize n] [-MergeRelocateLockWait 150s] [-MergeManifestPath f] [-DryRun]` |
+| 放弃搬库 | `dev_tools.ps1 -Command merge-zone-relocate-abort -MergeManifestPath <f> <ROUTE_ARGS> [-DryRun]` |
+| 落点库审计 | `dev_tools.ps1 -Command merge-zone-storage-audit -MergeAuditStorage <id> <ROUTE_ARGS>` |
+| 映射运维(K8s 一次性 Job) | `pwsh -NoProfile -Command "& ./tools/scripts/dev_tools.ps1 -Command k8s-route-tool -ZoneName <name> -RouteToolArgs @('audit') -KubeContext <ctx>"`(转 `tools/scripts/k8s_route_tool.ps1`,退出码原样:0 / 1 / 2 / 3;用法见 §9.4) |
 | 预建落点库 | `go/db` 目录:`go run ./cmd/migrate -f <db.yaml> -storage-id <id> -command up -create-database`(§14.5) |
 | zone-down(**会删 namespace**) | `dev_tools.ps1 -Command k8s-zone-down -ZoneName <name>` |
 | zone-up | `dev_tools.ps1 -Command k8s-zone-up -ZoneName <name> -ZoneId <id> -WaitReady`(2026-09-29:照传该 zone 上一次部署的 `-GateRouterMode` / 集群外入口 / Ingress / `-ReleaseProfile` 参数,见 §8 Step 6) |
@@ -1232,8 +1255,9 @@ merge-zone 与 merge-zone-unmerge:
 给 home==N 且没有落点记录的玩家钉 `"{N}:1"`。有效落点不变,**在线执行安全**,幂等,不要求能力标记。
 
 ```powershell
-pwsh -File tools/scripts/dev_tools.ps1 -Command merge-zone-pin-placement -MergePinPlacementZone <N> -DryRun
-pwsh -File tools/scripts/dev_tools.ps1 -Command merge-zone-pin-placement -MergePinPlacementZone <N>
+pwsh -File tools/scripts/dev_tools.ps1 -Command merge-zone-pin-placement -MergePinPlacementZone <N> <ROUTE_ARGS> -DryRun
+pwsh -File tools/scripts/dev_tools.ps1 -Command merge-zone-pin-placement -MergePinPlacementZone <N> <ROUTE_ARGS>
+# <ROUTE_ARGS> 见 §4 / §15.1
 ```
 
 期望输出:
@@ -1264,14 +1288,15 @@ pwsh -File tools/scripts/dev_tools.ps1 -Command merge-zone-pin-placement -MergeP
 pwsh -File tools/scripts/dev_tools.ps1 -Command merge-zone-relocate `
   -MergeRelocateSourceStorage <S> -MergeRelocateTargetStorage <T> `
   -MergeDbCapabilityZones <全部在跑的 zone,例 1,2,3> `
-  -MergeManifestPath <repo>\relocate_<S>_to_<T>.json -DryRun
+  -MergeManifestPath <repo>\relocate_<S>_to_<T>.json <ROUTE_ARGS> -DryRun
 
 pwsh -File tools/scripts/dev_tools.ps1 -Command merge-zone-relocate `
   -MergeRelocateSourceStorage <S> -MergeRelocateTargetStorage <T> `
   -MergeDbCapabilityZones <全部在跑的 zone> `
-  -MergeManifestPath <repo>\relocate_<S>_to_<T>.json
+  -MergeManifestPath <repo>\relocate_<S>_to_<T>.json <ROUTE_ARGS>
 # 只搬部分人:-MergeRelocatePlayerIds a,b,c;批大小 -MergeRelocateBatchSize(默认 100);
 # 等锁上限 -MergeRelocateLockWait(默认 150s,略大于 go/db 排序锁 TTL 2m)
+# <ROUTE_ARGS> 见 §4 / §15.1;续跑与 relocate-abort 必须用同一份(db 源下冻结 / 切换先写库,再发布 + WAITAOF,见 §15.3)
 ```
 
 不给 `-MergeRelocatePlayerIds` = 整库搬:落点记录指向 S 的人,加上 S 为 zone 库时无记录且 home==S 的人。枚举的是扫描那一刻的集合,期间新钉到 S 的人要再跑一次。
@@ -1290,8 +1315,8 @@ pwsh -File tools/scripts/dev_tools.ps1 -Command merge-zone-relocate `
 - 否则 exit 1,列出 `cas_failed` / `unfrozen` / `skipped` 的人数与样本。修好原因后,用**新的** `-MergeManifestPath` 另起一次(终态不会被续跑重做)。
 - 经 dev_tools 跑时退出码原样透传(§7.1)。
 
-**工具中途崩溃**:冻结值带 run_id 留在 Redis,这些玩家的存盘持续延后、不会丢,`frozen_deferred` 上涨。二选一:
-- **续跑**:用**同一条命令、同一个 `-MergeManifestPath`** 重跑。清单每批在 R1 后、R5 后各落盘一次,可能落后于 Redis,续跑会从 Redis 认领本 run 的冻结值与已切换值。
+**工具中途崩溃**:冻结值带 run_id 留在 Redis(db 源下同时留在库里 `player_route.frozen_run_id`),这些玩家的存盘持续延后、不会丢,`frozen_deferred` 上涨。二选一:
+- **续跑**:用**同一条命令、同一个 `-MergeManifestPath`** 重跑。清单每批在 R1 后、R5 后各落盘一次,可能落后于 Redis,续跑会从 Redis 认领本 run 的冻结值与已切换值;db 源下从**库**认领(mapping Redis 丢了也认得出),认领之前先把库值发布到 mapping Redis 并 WAITAOF 确认(§15.3)。
 - **放弃**:见 §14.3。
 
 **搬完之后**:
@@ -1306,8 +1331,9 @@ pwsh -File tools/scripts/dev_tools.ps1 -Command merge-zone-relocate `
 
 ```powershell
 # 先确认那次 relocate 进程已经退出:两者会改写同一份清单
-pwsh -File tools/scripts/dev_tools.ps1 -Command merge-zone-relocate-abort -MergeManifestPath <relocate 清单> -DryRun
-pwsh -File tools/scripts/dev_tools.ps1 -Command merge-zone-relocate-abort -MergeManifestPath <relocate 清单>
+pwsh -File tools/scripts/dev_tools.ps1 -Command merge-zone-relocate-abort -MergeManifestPath <relocate 清单> <ROUTE_ARGS> -DryRun
+pwsh -File tools/scripts/dev_tools.ps1 -Command merge-zone-relocate-abort -MergeManifestPath <relocate 清单> <ROUTE_ARGS>
+# <ROUTE_ARGS> 与那次 relocate 同一份;db 源下 dry-run 只读库、不发布
 ```
 
 - 中途失败直接重跑,解冻是幂等的。
@@ -1318,17 +1344,20 @@ pwsh -File tools/scripts/dev_tools.ps1 -Command merge-zone-relocate-abort -Merge
 只读。报告有效落点仍为 N 的玩家,以及 N 库里的冷副本、无主行、畸形行,并给出能否退役的结论。
 
 ```powershell
-pwsh -File tools/scripts/dev_tools.ps1 -Command merge-zone-storage-audit -MergeAuditStorage <N>
+pwsh -File tools/scripts/dev_tools.ps1 -Command merge-zone-storage-audit -MergeAuditStorage <N> <ROUTE_ARGS>
+# db 源下映射一律读全局库 player_route(决定库能否退役,不按缓存下结论);库与 mapping Redis 不成对 = exit 2
 ```
 
 ```
-=== Storage audit for storage N (mapping=<addr> db=0) — read-only ===
+=== Storage audit for storage N (route-source=<db|redis> mapping=<addr> db=0) — read-only ===
+route mapping is read from <db|redis>
 storage N: effective=E (by_record=… incl. frozen=…, by_home=…) | player_database rows=… (live=… cold_copies=… unmapped=… unreadable=…) | malformed_records=…
 RETIREMENT CHECK: nothing routes to storage N any more; its R rows are cold copies.
 ```
 
 - 退出码:查成为 0(结论看最后一行),基础设施失败为 2(`Storage audit could not complete`)。
 - **退役 `zone_N_db` / 落点库的前提**:结论为 `RETIREMENT CHECK: nothing routes to storage N`,且 `unmapped` 与 `unreadable` 都为 0,且全库 `malformed_records` 为 0。任何一条不满足都 `NOT SAFE`,逐条列出原因。
+- db 源(`-MergeZoneRouteSource db`)下映射一律读全局库 `player_route`,`malformed_records` 的范围是「`storage_id = N`、或 `home_zone = N` 且无 `storage_id`、但落点列不自洽」的行(库里 `storage_id` 是一列,指向别处的行与 N 无关);redis 源下仍是全 mapping 里解不出的记录。**db_first 环境退役一个库只认 db 源的结论**:缓存可能落后或丢键,按它说「没人指向」不可信。
 - 只看锚表 `player_database`。
 
 ### 14.5 预建落点库(含 Phase 2 全局库)
@@ -1357,8 +1386,87 @@ go run ./cmd/migrate -f <db.yaml 副本> -storage-id 1000000 -command up -create
 
 ---
 
+## 15. 第 2 批之后的合服 / 搬库(全局库为映射真源)
+
+> **状态**:D1 第 2 批(规格 [spec_D1_batch1b2_2_3.md](../handoff/launch-readiness-20261013/spec_D1_batch1b2_2_3.md) §6、§13.3),**代码已落码,未编译、未测试**(AGENTS.md §10.1,待 Codex 验证)。适用于 data_service 已切 `RouteStore.Mode=db_first` 的环境,即提案 §13.4 的 **P4 之后**。P4 之前(全部 data_service 仍是 `Mode=redis`)照旧走 redis 源,本节只有 15.1 的必填参数与 15.5 的禁令适用。
+
+### 15.1 映射来源 `<ROUTE_ARGS>`:必填、没有缺省值、不从 yaml 推断
+
+除 `merge-zone-capability-check`(只读能力标记)之外,**每个** merge-zone 命令都必须带:
+
+| 环境 | `<ROUTE_ARGS>` |
+|---|---|
+| data_service 已是 `RouteStore.Mode=db_first`(P2 之后) | `-MergeZoneRouteSource db -MergeZoneRouteDbDsn $env:MERGE_ZONE_ROUTE_DB_DSN`;redis-ha 档再加 `-MergeZoneWaitAofReplicas 1` |
+| 全部 data_service 仍是 `Mode=redis` | `-MergeZoneRouteSource redis`(不带 DSN,带了工具拒绝) |
+
+- 缺了 dev_tools 在调用工具之前点名拒绝;直接跑二进制时工具同样拒绝(`-route-source is required and has no default`)。**不推断**:本机 `data_service.yaml` 与线上部署可以是两种模式,猜错的一边会写错库 —— db_first 环境里直写 Redis 会写出库不知道的缓存值,redis 环境里写库则缓存与读方根本不认。
+- DSN 指全局库(dev `testdb`,K8s `mmorpg_global`),含口令:放环境变量再引用,不写进命令历史与工单。工具把会话钉成 READ-COMMITTED、`innodb_lock_wait_timeout=1`,开写前跑与 data_service 同判据的探针(隔离级别、TiDB 悲观事务、`route_meta` 行、`chk_route_shard` 生效且模数 64;探针在必然回滚的事务里试插行,不留数据)。
+- WAITAOF:`-MergeZoneWaitAofLocal`(缺省 1)、`-MergeZoneWaitAofReplicas`(缺省 0,redis-ha 写 1)、`-MergeZoneWaitAofTimeoutMs`(缺省 1500,上限 2000)。mapping Redis 必须 `appendonly yes` 且 ≥ 7.2,否则第一批发布就以 `WAITAOF … rejected` 失败。
+- **成对核对**:开写前工具在同一个 mapping Redis 上读 `mapping:route:watermark`(对账 leader 维护的水位键)。db 源要求它存在、可解码、世代等于 `-MergeZoneRouteDbDsn` 所指库的 `route_meta.generation`;redis 源见到它就拒绝。只读的 audit / storage-audit 同样核对,不成对报 INFRA / exit 2。
+
+### 15.2 成对核对或 `verify:route_cache` 不过怎么办
+
+| 报错 | 含义 | 怎么办 |
+|---|---|---|
+| `mapping:route:watermark is missing`(db 源) | 这个 mapping Redis 上没有 db_first 的对账 leader 在维护:data_service 还没切 db_first,或 `-MergeMappingRedisAddr` 指到了别的实例,或 leader 刚起 | 核对 data_service 的 `RouteStore.Mode` 与 `data_service_route_reconcile_leader`(全服恰好一个 1);在**同一个**地址上 `GET mapping:route:watermark`;等 leader 一拍再试。**不要手工 SET 这把键** |
+| `generation … != route_meta.generation` | Redis 与 DSN 不是一对:DSN 指错库,或 mapping 地址指错实例 | 改参数。**不要手工改水位键**:它是库回档检测(M3)的依据 |
+| `… exists on this mapping Redis`(redis 源) | 这个 Redis 已归 db_first 管 | 改用 db 源。**不要 DEL 水位键**(那等于关掉回档检测) |
+| `has a newer format version` | 水位键是更新版本写的 | 换新版 merge_zone |
+| `verify:route_cache` block | 清单玩家的缓存与库不一致(发布丢了、Redis 切主 / 从旧快照恢复、或有绕过脚本的写者) | **不开 dst**。等 leader 增量推送一轮后重跑 `-VerifyMerged`;仍不一致就用同一份清单重跑写这批的那一步(发布幂等,已提交的行走「已是目标」分支重新发布),再验。查 leader 的推送冲突计数;**不要手改 Redis** |
+
+### 15.3 写入顺序与「发布确认不了」
+
+- 每批:库事务(先确认 `route_meta.writable=1`,再锁本次相关 zone 的 63 号围栏片并核对 run_id 与库时钟,再按聚簇键锁玩家行)→ COMMIT → 同一连接 pipeline 发布 + `WAITAOF` → **全员确认之后**才算这一批完成、才推进依赖步骤。
+- 任一批发布确认不了(WAITAOF 份数不足、连不上、缓存冲突):工具中止、退出非 0,报文写明「committed … NOT confirmed」。库里已提交的状态被读方晚看到是安全的(提交即安全,规格 §6.3)。处置:修好 mapping Redis 后**用同一条命令、同一份清单重跑**;已提交的行走幂等分支重新发布。
+- `route_meta.writable != 1`:映射写者被冻结(全局库回档恢复流程,§9.4),所有写都被拒;等 unfreeze 之后再跑,不要绕过。
+- 搬库(§14.2):冻结 / 切换 / 解冻都是「库先提交 → 发布确认 → 才算写成」。
+  - R1 冻结已提交、发布没确认:引擎停在 R1、**不进 R2**(R2 等的是 go/db 看到冻结,而 go/db 看的是缓存)。续跑先把库里的冻结发布并 WAITAOF 确认 —— 缓存显示已冻结也照样再确认一次 —— 之后才等锁、拷贝。
+  - mapping Redis 整体丢失(FLUSHALL、空实例重启):续跑按库里 `player_route.frozen_run_id` 认领本次冻结的人(清单落后也认得出),先补发布再继续;不需要先等 leader 预热。
+  - R5 切换已提交、发布没确认:缓存停在 R1 已确认的冻结态,go/db 延后写,安全;续跑认领已切换并补发布。
+  - dry-run(含 relocate-abort 的 dry-run)只读库、不发布、不写任何东西。
+
+### 15.4 中止之后怎么续跑:围栏保留(`-MergeZoneTakeOverFence`)与围栏失权
+
+先看中止报文属于哪一种:有 `LEFT IN PLACE` 且没有 `merge fence lost` = **围栏保留**(下面第一段);有 `本次运行已失去合服围栏` / `merge fence lost` = **围栏失权**(第二段)。两种都不要手工 DEL `merge:in_progress:*`(§3)。
+
+**围栏保留(写到一半中止,库围栏故意留在原 run_id 上)**:每次运行的 run_id 都是新生成的,原样重跑会被库拒绝(`merge fence is held by another run`),直到库时钟过了 `expires_at_ms`。按报文里的续跑步骤:
+
+1. 按报文原因排除故障(锁冲突查 `SHOW ENGINE INNODB STATUS` 与 `information_schema.innodb_trx` 的长事务;Redis 失败先恢复 mapping Redis 连通)。
+2. 确认那次运行的 merge_zone 进程已经不在(本机 / 跳板机 / Job 都查)。**对一个还在运行的 run_id 接手是错的**:旧进程的下一批映射写入会被库拒绝,但它已经发出的非映射写(拷行、帮会、交易)与新进程交错。
+3. 只读核对库里的持有者与报文一致:`SELECT zone_id, run_id, expires_at_ms, fence_epoch FROM zone_merge_fence WHERE zone_id IN (<SRC>, <DST>) AND shard = 63`。
+4. 用**原命令**(同一份 `-MergeManifestPath`、同一份 `<ROUTE_ARGS>`)加 `-MergeZoneTakeOverFence <报文里的 run_id>` 重跑;撤销中止的同理,`merge-zone-unmerge` 加同一个开关:
+
+```powershell
+pwsh -File tools/scripts/dev_tools.ps1 -Command merge-zone -MergeSourceZone <SRC> -MergeTargetZone <DST> `
+  -MergeManifestPath <原清单> -MergeDbCapabilityZones <同原命令> <ROUTE_ARGS> `
+  -MergeZoneTakeOverFence <run_id>
+```
+
+- 工具在**一个**库事务里把两区全部 64 片从旧 run_id 接到本次 run_id(`fence_epoch + 1`),两区在库里一刻不解封;镜像按更大的 `fence_epoch` 覆盖旧值并 WAITAOF 确认之后才继续。日志 `merge fence taken over in zone_merge_fence from run_id=…`。
+- 第三个 run_id 持有任何一片(有人在跑另一次合服 / 撤销)仍拒绝,**停下来查清楚**。库里那次围栏已过期 / 已释放时,这个开关不起作用,按普通获取处理。
+- 适用范围由工具判:只 `merge-zone` / `merge-zone-unmerge`、只 `-MergeZoneRouteSource db`、值必须是合法 run_id 且不同于本次;其余命令给了即拒绝(`-take-over-fence only applies to …`)。redis 源仍按 §3 ③ 的 GET / DEL 流程。
+- `-DryRun` 加这个开关只读预判,日志 `[DRY-RUN] would take over the merge fence of zone …`,不写库、不写镜像。
+
+**围栏失权(续期确定失败或本地截止已过)**:
+
+- 续期判据(规格 §13.3 第 4 条):本地截止 = 上次续期成功 + TTL − 60s;续期改到的行数少于「64 × zone 数」= **确定失权**。失权或超过本地截止后,工具停止**一切**写步骤(含不碰映射的 player_blob / guild / trade),退出非 0,报文含 `merge fence lost`。续期遇到 1205 / 网络错误只 WARN 并退避重试,不算失权;每批事务里的「run_id 是本次 ∧ 库时钟未过期」复核才是权威判据。
+- 处置(以工具实际报文为准):
+  1. 确认那个 merge_zone 进程已经退出。
+  2. 查库里的围栏(只读):`SELECT zone_id, run_id, expires_at_ms, fence_epoch FROM zone_merge_fence WHERE zone_id IN (<SRC>, <DST>) AND shard = 63`。
+  3. 被**另一个** run_id 持有且未过期:有人在跑另一次合服 / 撤销,**停下来查清楚**,不要续跑,**也不要对它用 `-MergeZoneTakeOverFence`**(失权报文因此不给接手指引)。
+  4. 已过期或已释放、且没有别人持有:用**同一条命令、同一份 `-MergeManifestPath`**(同一份 `<ROUTE_ARGS>`,不加 `-MergeZoneTakeOverFence`)重跑。工具以新的 run_id 重新拿围栏(`fence_epoch + 1`),已提交的批次走幂等分支重新发布,未完成的批次接着做。
+  5. 失权期间 mapping Redis 里的围栏镜像可能已过期消失:续跑重新拿围栏后先写镜像并 WAITAOF,才收集 / 推进,读镜像的 scene_manager / guild 随之重新封锁。
+
+### 15.5 P4 之后禁用旧二进制
+
+- 第 2 批之前的 merge_zone 直写 mapping Redis、不碰 `player:maprev`、不写库;对账 leader 按 `updated_at_ms` 扫库,**看不见**它写的东西,缓存与库会静默分叉(提案 §8.3 第 1 条)。它写的围栏镜像不带 `fence_epoch`,leader 记 `foreign_fence` 并告警、但不删。
+- 规矩:P4 起**只经 `dev_tools.ps1` 跑当前 HEAD 编出的 merge_zone**;清掉本机与跳板机上的旧编译产物。经新 dev_tools 跑旧二进制会以 `flag provided but not defined: -route-source` 失败 —— 这是 dev_tools 这条路上唯一的机械防线;直接手跑旧二进制没有防线,只能靠纪律与 `foreign_fence` 告警。
+- 误跑了旧二进制:立刻停,不开服;用新二进制跑 `merge-zone-audit -VerifyMerged <ROUTE_ARGS>`,`verify:route_cache` 会列出分叉的玩家。库仍是旧二进制运行之前的状态(它没写库):**不要手工改 Redis 去「对齐」**,升级给负责人,按提案 §8.3 决定是用新二进制按库重做,还是把旧二进制的结论补进库。
+
 ## 修订历史
 
+- **2026-10-19(D1 收尾:库围栏续跑接手;代码未编译、未测试,待 Codex 验证)**:dev_tools 新增 `-MergeZoneTakeOverFence <run_id>`(转 merge_zone 的 `-take-over-fence`)。§3「谁清」③ 与「手动清理」写明 GET / DEL 镜像只适用于 redis 源,db 源改用该开关续跑(或撤销、或等库时钟过期),不手工改镜像与 `zone_merge_fence`;§15.4 改为「围栏保留 / 围栏失权」两段,前者给出接手步骤与命令,后者更正「以清单里的 run_id 重新拿围栏」为「以新的 run_id」;§10.1 补 db 源撤销中止的续跑一行,并把「旧二进制撤销」的引用改指 §15.5;§13 加一行。
+- **2026-10-19(映射持久化第 2 批:搬库库接缝、R8 读方、`verify:route_cache`、dev_tools 必填转发;代码未编译、未测试,待 Codex 验证)**:merge-zone 系列(capability-check 除外)的命令一律补 `<ROUTE_ARGS>`(§4、§7.1、§7.2、§8 Step 4 / 5、§10.1、§13、§14.1–§14.4);§0 加第 10 条;§8 Step 5 断言表加 `verify:route_cache` 与库里围栏复核;§14.2 续跑说明补「db 源从库认领」;§14.4 补 db 源的 `malformed_records` 口径;新增 §15(必填映射来源与成对核对、核对失败处置、写入顺序与发布确认不了、续期失权中止后的续跑、P4 之后禁用旧二进制);§13 加 `k8s-route-tool` 一行。
 - **2026-10-18(映射持久化第 1b-1 批修复评审,代码未编译、未测试)**:§9.4 退出码表之后加更正注:redis 模式下误跑 / 演练的 `freeze` 用 `unfreeze -confirm-audited -cache-was-not-verified-acknowledged` 撤销(不连 mapping Redis、最低水位 0),不要手写 `UPDATE route_meta`;恢复流程第 0 步加更正注:db_first 下回档步骤 3 仍须清掉本 zone 的玩家缓存,只能选择性清、保留全局键,载体登记为第 1b-3 批前置,在那之前 db_first 下 K8s 的 zone 回档不可执行;第 3 步补「只有落点」的孤儿行(`missing_in_redis`,不被 `-frozen-recovery` 豁免)的来历与处置。
 - **2026-10-18(映射持久化第 1b-1 批同步,代码未编译、未测试)**:§9.3「在哪跑」、「db_first 下 Redis 整体丢失」与 tidb-prepare 的 K8s 一条加更正注(入口已并进主程序 `-route-tool`);新增 §9.4:K8s 上默认用一次性 Job / Pod 跑 route-tool(exec 只限 dry-run 或小库,512Mi 内存风险)、`freeze` / `reconcile-from-cache` / `audit -frozen-recovery` / `unfreeze` 的退出码、全局库回档后的恢复流程(没有可信就绪标记时 unfreeze 拒绝,先按 §9.2 清单核对再显式确认)。设计见 [player-route-mapping-durability-proposal.md](../design/player-route-mapping-durability-proposal.md) §11.2「第 1b-1 批」。
 - **2026-10-16(存盘管线 ③ 消费组按 zone 拆分与 ④ 按分区重试键同步;代码已落码,未编译、未测试,待 Codex 验证)**:§2.3 消费组改为「zone 组 `db_rpc_consumer_group_z{zone}` + legacy 候选,只认唯一权威组,两组都有位点先 `-FinalizeHandoff`」,dev_tools 不再缺省转发 `-kafka-group`(`-MergeKafkaGroup` 只用于显式覆盖,世代号仍现读);§5 P3 / P4 两行、§7.1 `kafka_db_task_queues` 行、§8 Step 2 命令块(describe 改 zone 组,补 `kafka:retry:queue:db_task_zone_<src>:p*` 的 SCAN 与 LLEN)、§12「已闭合」一行、§13 `-MergeKafkaGroup` / `-MergeKafkaTopicGeneration` 两行同步。设计见 [db-consumer-group-per-zone.md](../design/db-consumer-group-per-zone.md) §7。

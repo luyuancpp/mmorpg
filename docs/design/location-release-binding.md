@@ -56,8 +56,10 @@ location 不在,scene_manager 按"首次落点"处理 —— 铸造新 epoch、�
   还持有该玩家在当前 owner_epoch(记 E)下**未落盘**的状态:
   1. `player:{id}:handoff` 的标记 epoch == E(A1′ 退出标记、交接标记、改派标记、本文的凭证标记都满足"E 代状态已落盘、
      写标记者不再写 E");
-  2. location 的持有节点确认已死且再入屏障已过,或整 zone 已无节点(与 EnterScene 死节点接管同一判据
-     `playerLocationOwnerDead` / `playerLocationOwnerGone`);
+  2. location 的持有节点在 etcd 注册表里正面消失且再入屏障已过(`playerLocationOwnerDead`,与 EnterScene 死节点接管同一判据)。
+     **不认**"zone 负载集为空"(`playerLocationOwnerGone` 修复前的判据;EnterScene 的陈旧位置判定同日也改为要求注册表正面证据,见 §14.5):
+     负载键丢失 / 被淘汰时 ZCARD 读作 0、ZSCORE 为空、也没有 death_at,会把活着的持有节点判死,每次登出都立刻删 location
+     (第二轮审计 r2-sm#3,2026-10-19 起,见 §14);
   3. location 没有持有者(`node_id` 为空的等待落点)。
 
   例外(沿用旧行为删除并计数):E == 0(存量玩家,存盘本来不带 CAS,epoch 守卫保护不到);dev 旁路
@@ -84,7 +86,7 @@ location 不在,scene_manager 按"首次落点"处理 —— 铸造新 epoch、�
 | 1 | 功能关闭或 dev 旁路 | `disabled` | 原文 CAS 删除(旧行为) |
 | 2 | E == 0(owner_epoch 键与 location 记的 epoch 都为 0) | `legacy_epoch0` | 原文 CAS 删除 |
 | 3 | location `node_id` 为空 | `no_holder` | 原文 CAS 删除 |
-| 4 | 持有节点已死 / zone 已无节点 | `owner_dead` | 原文 CAS 删除 |
+| 4 | 持有节点在注册表里正面消失且屏障已过(只认 `playerLocationOwnerDead`,r2-sm#3) | `owner_dead` | 原文 CAS 删除 |
 | 5 | 标记 epoch == E | `released` | "released" 模式删除(R2);Lua 复核不过 → 按第 6 行处理 |
 | 6a | 其余,等待未超限,身份 `deleted` | `pending` | 保留 location;异步派发 `ReleasePlayer{E, session_ended}`;回 `FailedPrecondition` |
 | 6b | 其余,等待未超限,身份 `legacy` | `pending_unproven` | 保留 location;不派发;回 `FailedPrecondition` |
@@ -97,6 +99,11 @@ location 不在,scene_manager 按"首次落点"处理 —— 铸造新 epoch、�
 - `FailedPrecondition` 不是故障:go-zero 的熔断不计它;player_locator 据此识别"等持有者释放"(§3.4)。
 - 等待计时:`player:{id}:leave_release_wait = "{E}:{node}:{sid}:{gen}:{first_ms}"`,EX = 上限 + 600s。第一次拒绝时写入,
   location 的 (E, 节点, 登录身份) 变了就重置;删除成功后尽力删掉。读写失败按"刚开始等"处理(不会因此提前 forced)。
+  `first_ms` 与"已等多久"都取 **Redis 服务端时钟**:读、比 scope、登记在同一段 Lua(`luaNoteLeaveReleaseWait`,脚本里 `TIME`)
+  里完成,不读任何 scene_manager 副本的墙钟(第二轮审计 r2-sm#2,2026-10-19 起;语义见 §3.6)。
+- 释放判定的计数(`scene_manager_leave_holder_release_total` 的删除类取值)与 `forced` 的 ERROR 只在删除 Lua 真正删掉
+  (返回 1)之后记;返回 0 / -1(已被别的调用删掉 / 已被并发 EnterScene 改写)时这一次什么都没删,只打一行 INFO,不计
+  (第二轮审计 r2-sm#1)。等待类(`pending` / `pending_unproven`)照旧在每次回拒时计。
 - 派发 `dispatchSessionEndedRelease`:后台协程,单发 1s 截止,不在内部重试 —— 下一次 LeaveScene 重试会再派发。包级钩子
   `sessionEndedReleaseDispatcher` 只为单测同步断言。
 
@@ -161,6 +168,35 @@ scene 侧 `PlayerLifecycleSystem::HandleSessionEndedRelease(playerId, expectedOw
 残余:旧版 login(代次 0)与重排同时出现、新登录的路由先于 Bind 到达时会被丢,这次登录等到客户端超时重连;登录代次键丢失
 且 login 实例时钟偏差使新代次不大于旧值时同理(fence §3.2 已登记的时钟窗口)。
 
+**旧链的 Bind 晚于 LeaveGame 到达**(第二轮审计 r2-gate#1,2026-10-19 复核成立后补):上面只按代次认旧链有缝。EnterGame 已被
+login 受理、它的 Bind(gE)还在 Kafka 里时客户端就发了 LeaveGame,gate 收包重置记下的是旧代次 g0;随后 Bind(gE) 与路由(gE)
+代次都大于 g0,被当成新登录收下:Bind 把登录类型挂回会话、保留重置标记,路由带着登录类型转发到旧节点 X 并清掉标记。之后
+session_ended 释放退掉 X 上的实体、location 被删;同一连接再 EnterGame(gF) 时 Bind 先到,按这条旧路由带 E 补发到 X,而
+scene_manager 铸了 E+1 落到 Y(幽灵实体,或 X 回 3023 并耗掉登录类型)。修法(只改 gate):
+
+1. **在客户端再次 EnterGame 之前,一律是旧链**。login 只在处理 EnterGame 时发 Bind(`entergamelogic.go` `SendBindSessionToGate`
+   是唯一调用点),所以重置之后、本连接下一次 EnterGame 收包之前到达的 Bind / 路由不可能属于新登录,不看代次、不看角色全部丢。
+   `DispatchClientRpcMessage` 在与 LeaveGame 同一个收包点对 `ClientPlayerLoginEnterGame(26)` 调 `gate_scene_entry::OnClientEnterGame`
+   置 `enterGameSentAfterLeave`;按收包顺序置位,路由模式下 lane 里排在 LeaveGame 之前的 EnterGame 不会把它置上。
+   `BindSessionEventHandler` 新增 `IsBindFromBeforeLeaveGame`,在 `ApplyLoginBinding` 之前丢旧链 Bind(以前 Bind 不过滤)。
+2. **之后按代次认,且代次跟着丢弃抬高**。被离开的那条链记成 (`playerIdAtReset`, `loginGenerationAtReset`):重置时取会话当时的
+   角色与代次;会话那时还没绑角色(第一次登录就回选角)时取第一条被丢弃事件的角色。每丢一条旧链事件就把它的代次记进去
+   (`NoteDroppedFromBeforeLeaveGame`,只抬不降、只收同一角色),同一条旧链在客户端再次 EnterGame 之后才到的兄弟事件(Bind 与
+   路由是两条独立事件,路由要等 scene_manager 处理完,常更晚)仍被认出。另加一条:比会话已见过的本角色更新登录的代次旧的
+   同角色事件也是旧链(新登录的 Bind 先到、旧链路由后到)。角色不同的代次不可比,不在这里判。重复 LeaveGame 时只抬不覆盖。
+   安全性:被丢的事件在客户端再次 EnterGame 之前就已由 login 发出,它的代次必然小于下一次登录铸出的代次(fence G1)。
+3. **没有采用审计建议的"LeaveGame 回包时再按 login 侧代次重置一次"**:LeaveGame 的回包是客户端可见的 `LoginEmptyResponse`,
+   带代次要改客户端契约(AGENTS §12 两版同批);而只在 lane 有在途 EnterGame 时延后 / 拒绝 LeaveGame 盖不住 login 的后台链
+   (EnterGame 的回包早于 Bind 发出)。1、2 两条只改 gate 内部状态。
+
+被丢弃的旧链 Bind / 路由不进会话,旧节点 X 收不到这次进场,不建实体;scene_manager 那边 location 指向 X,LeaveScene 照 §3.2
+请 X 按会话结束释放,X 不持有 → 写凭证(§3.3 第 2 条)→ 下一拍删 location,或下一次登录过换手门拿到凭证放行。
+
+残余:旧链的 Bind 与路由**都**晚于客户端下一次 EnterGame 收包、又早于新登录的任何 Bind / 路由到达时,代次比任何已知值都大,
+认不出,退回修复前的行为。要 Kafka 消费延迟超过"LeaveGame 回包 → 玩家再点进入 → gate 收包"的整个往返;scene 侧的入场
+栅栏与 owner CAS 仍把损失限制在旧节点上的幽灵实体与毫秒级操作丢失。彻底收口需要 login 把"被离开的那条链的代次"交给 gate
+(LeaveGame 回包或单独的 gate 命令),属客户端契约 / 跨服务改动,未做。
+
 **ApplyRoute 第 4 条**(load-handover#0):`SessionInfo` 新增 `forwardedOwnerEpoch` = 上一次实际转发给 scene 的
 `PlayerEnterGameNodeRequest.owner_epoch`。`sceneId != 0`、`forwardedOwnerEpoch != 0`(scene 此前被告知过一个 epoch)且路由
 epoch **大于** `forwardedOwnerEpoch` 时,以 LOGIN_NONE(0) 转发一次;转发成功后记下这次带出的 epoch。
@@ -180,11 +216,17 @@ epoch **大于** `forwardedOwnerEpoch` 时,以 LOGIN_NONE(0) 转发一次;转发
 已等时长)。这是 AGENTS §11.3 允许的、带日志与指标的 fail-open:比修复前"立刻删"严格得多,只把回档留给持续 10 分钟拿不到
 释放证据的情形。`forced` 正常应恒 0,出现即查。
 
+**时钟语义**(第二轮审计 r2-sm#2,2026-10-19 起):等待时长 = Redis 服务端 `TIME` − 计时键里的 `first_ms`,两者都由同一个 Redis
+时钟给出。以前用各 scene_manager 副本自己的墙钟:副本 A 写下 `first_ms`、时钟快 Δ 的副本 B 来算,就多算 Δ,提前 forced;NTP
+跳变同理。现在副本间偏差不再进入判定;剩下的只有 Redis 服务端自身的时钟跳变 —— 往回跳时等待时长钳在 0(只会多等),往前跳
+会提前 forced,与任何单一时钟的跳变同一量级,不另设防。脚本里调 `TIME`:Redis 5+ 按效果复制脚本,非确定性命令合法(部署是
+Redis 7)。脚本出错时按"刚开始等"返回 0,只会多等。
+
 ### 3.7 指标
 
 | 指标 | 位置 | 含义 |
 |---|---|---|
-| `scene_manager_leave_holder_release_total{verdict}` | scene_manager | §3.2 判定表的结论;`pending` 是登出 / 断线后的正常短暂态,`forced` 应恒 0 |
+| `scene_manager_leave_holder_release_total{verdict}` | scene_manager | §3.2 判定表的结论;`pending` 是登出 / 断线后的正常短暂态,`forced` 应恒 0。删除类取值只在真正删掉时计(r2-sm#1),告警 `SceneManagerLeaveReleaseForced` 不再因并发改写误报 |
 | `stale_owner_rejected_exiting` | scene `[OwnerEpoch]` WARN 行 | owner CAS 拒绝时实体正在退出 = 这次退出的存盘从未落地、内存差额被丢弃。**回档的直接证据**,应恒 0 |
 | `session_ended` / `credential_*` | scene `[ReleaseFence]` 行 | 会话结束释放的次数、凭证判定分布与条件写结果 |
 
@@ -281,6 +323,7 @@ epoch **大于** `forwardedOwnerEpoch` 时,以 LOGIN_NONE(0) 转发一次;转发
 | **Bind 先到按旧路由补发,随后同节点新 epoch** | `SceneRouteEntry.BindReplayThenSameNodeNewerEpochIsForwarded` |
 | LeaveGame 重置后迟到的旧路由被丢、Bind 不补发;新登录路由先于 Bind 照常;换角色 / 旧版 Bind 退回常规 | `SceneRouteEntry.LateOldRouteAfterLeaveGameResetIsDroppedAndNotReplayedOnBind`、`..._NewLoginRouteBeforeBindAfterLeaveGameStillReplays`、`..._LeaveGameRouteFilterYieldsToCharacterSwitchAndLegacyBind` |
 | 第 4 条边界:同 epoch / 更旧 / 0 不转发 | `SceneRouteEntry.SameNodeSameOrOlderEpochStaysDeduped`、`..._ZeroEpochRouteNeverForwardsByEpoch` |
+| 第二轮审计修复的回归用例 | 见 §14.2 |
 
 ## 9. 改动清单
 
@@ -601,3 +644,110 @@ binding_skip_conflict`;后两项有增长时整行升 WARN(`release_fence::Bindi
 也就是说,本仓靠覆盖身份补上的那一层(同一代下区分两次登录),在 Java 里由「每次登录都换代」直接给出。结论:**已有等价行为(结构不同)**,
 Java 不改。本次 proto 改动只在服务端内部,不涉及客户端契约;Java 仓在本仓提交后跑 `ContractSync` 同步 `proto/` 副本,
 `PARITY.md` 待本仓提交后登记一行。
+
+## 14. 第二轮审计修复(2026-10-19)
+
+- 来源:[data-overwrite-rollback-audit-r2-20261019.md](data-overwrite-rollback-audit-r2-20261019.md) §3.1 / §3.2 对本文修复的复核,
+  四条:r2-gate#1、r2-sm#3、r2-sm#1、r2-sm#2。
+- 状态:四条都对照当前代码复核成立,已修;代码与回归用例落在工作区,**未编译、未测试,待 Codex 验证**(命令见
+  `docs/PROGRESS.md` 2026-10-19「location 释放绑定第二轮审计修复」条目)。不改 proto、不改 Redis 键格式(计时键的值格式不变)。
+
+### 14.1 复核与修法
+
+| 编号 | 复核 | 修法 | 代码 |
+|---|---|---|---|
+| r2-gate#1 | 成立。LeaveGame 先于本次登录的 Bind 到达时,重置记下的是旧代次,旧链的 Bind / 路由代次更大、照常收下 | 客户端再次 EnterGame 之前到达的 Bind / 路由一律丢;之后按被离开的那条链(角色 + 随丢弃抬高的代次)与会话已见过的更新登录认旧链(§3.5) | `session_info_comp.h`(`enterGameSentAfterLeave` / `playerIdAtReset`)、`scene_route_helper.h`(`ResetSceneRoute`、`NoteEnterGameRequested`、`IsLoginGenerationSupersededSinceLeave`、`IsRouteFromBeforeLeaveGame`、`IsBindFromBeforeLeaveGame`、`NoteDroppedFromBeforeLeaveGame`)、`gate_event_handler.cpp`(RoutePlayer / BindSession 守护段)、`scene_entry_dispatch.{h,cpp}`(`OnClientEnterGame`)、`client_session_handler.cpp`(EnterGame 收包钩子) |
+| r2-sm#3 | 成立。负载键缺失时 `playerLocationOwnerGone` 对活节点返回 true,LeaveScene 按 `owner_dead` 立刻删 | 释放证据 2 只认 `playerLocationOwnerDead`(etcd 注册表正面消失 + 屏障);EnterScene 的陈旧位置判定本批不动(同日另批修,§14.5) | `leavescenelogic.go` `judgeHolderRelease` |
+| r2-sm#1 | 成立。计数与 forced ERROR 在删除 Lua 结果出来之前就记 | 移到 `outcome == deleted` 之后;没删成只打 INFO | `leavescenelogic.go` `LeaveScene` 尾部 |
+| r2-sm#2 | 成立。`first_ms` 与求差用各副本墙钟 | 读、比 scope、登记、求差合进一段 Lua,时钟取 Redis `TIME`(§3.6 时钟语义) | `leave_release.go` `luaNoteLeaveReleaseWait` / `noteLeaveReleaseWait`(删了 `parseLeaveReleaseWait`) |
+
+为什么 r2-sm#3 不会把"location 永久残留"带回来(§5):真正下线的 zone(合服后源区)在 etcd 里同样已注销,走 `playerLocationOwnerDead`
+照样立刻删;注册表未同步、或节点还在注册表里而负载键丢了这类拿不准的情形,落到 §3.6 的等待上限(只伤活性,不回档)。
+
+### 14.2 回归用例(先写用例、再修)
+
+| 缺陷 | 用例 | 旧实现下的表现 |
+|---|---|---|
+| r2-sm#3 | `TestLeaveScene_MissingLoadSetIsNotOwnerDead`(注册表里有节点 10、负载键整键丢失 → pending、location 保留);另一面 `TestLeaveScene_OwnerGoneFromRegistryDeletes`(注册表已同步且没有节点 10 → owner_dead 立刻删) | 前者判 owner_dead、location 被删 |
+| r2-sm#1 | `TestLeaveScene_ReleaseVerdictCountedOnlyWhenDeleted`(forced 判定后 location 被并发改写 → superseded;released 判定后已被删掉 → already_gone;两者计数都不动、人数不扣) | forced / released 各多计 1 |
+| r2-sm#2 | `TestLeaveScene_WaitTimerUsesRedisClockNotReplicaClock`(Redis 时钟比本进程慢 1 小时、按 Redis 只等了 30s → pending;Redis 走过上限后才 forced);`TestNoteLeaveReleaseWait_UsesRedisClock`(登记与求差都取 Redis 时钟、不重写起点、回拨钳 0、scope 变或值坏重新登记) | 前者按本进程墙钟算出 1h30s、立刻 forced |
+| r2-gate#1 | `SceneRouteEntry.OldChainBindArrivingAfterLeaveGameIsDroppedAndNeverReplayed`(审计原文步骤);`..._OldChainRouteArrivingAfterNextEnterGameIsStillDropped`(两种到达顺序);`..._RouteOlderThanNewLoginBindIsDroppedWhileResetPending`;`..._LeftChainGenerationDoesNotBlockAnotherCharacter`;`..._RepeatedLeaveGameKeepsRaisedLeftChainGeneration` | 第一条:旧路由连同登录类型转发到 X,重登时再按它带旧 epoch 补发 |
+
+`leave_release_test.go` 里原有的计时用例(`..._WaitBudgetExceededForcesDelete`、`..._WaitTimerDoesNotCarryAcrossLocations`)改为定死
+miniredis 的服务端时钟(`mr.SetTime`),不再依赖真实墙钟;`routing_identity_test.cpp` 里原有的 LeaveGame 用例按生产调用序补上
+"客户端再次 EnterGame"(`NoteEnterGameRequested`),断言不变。
+
+### 14.3 残余
+
+- r2-gate#1:旧链的 Bind 与路由都晚于客户端下一次 EnterGame 收包、又早于新登录的任何事件到达时认不出(§3.5 末段)。
+- r2-sm#2:Redis 服务端时钟往前跳变仍会提前 forced(单一时钟,§3.6)。
+- r2-sm#3:EnterScene 的陈旧位置判定(`playerLocationOwnerGone`,换手门放行)当时仍认"zone 负载集为空",负载键丢失的那一拍里同样会
+  误判。它不在本批四条之内,也不是本文修复引入的(第二轮审计把它记为"本来就用同一判据")。**同日另批复核成立并已修**(未编译、未测试),见 §14.5。
+
+### 14.4 Java 版(AGENTS §12)
+
+- r2-sm#3 / r2-sm#1 / r2-sm#2:**不适用**。Java 版没有 scene_manager 的 LeaveScene 释放判定、负载集判死与等待计时(§11:位置记录由持有
+  归属的 scene 唯一写入,归属靠库行 `owner_epoch` 夺权)。
+- r2-gate#1:**不适用,结构上不可达**(2026-10-19 只读核对 Java HEAD `0e4a613`,未改代码、未构建;Java 没有待做项,
+  `PARITY.md` 不登记)。本仓的缺陷前提是绑定与登录应答分走两条路:login 先回 EnterGame,再经 Kafka 发
+  BindSession,路由由 scene_manager 另发。Java 的会话绑定只有一个来源,就是同一会话那次 EnterGame 的 login 同步应答里的
+  `EnterScene` 指令,没有异步 Bind,也没有 scene_manager 到 gate 的路由事件。
+  - gate 对每个会话的 login 调用严格串行:`game-gate/.../session/ClientDispatcher.java` `onRequest` 把 LeaveGame 排进 `s.pending`,
+    `drain` 只在 `!s.inFlight` 时取下一条,`onLoginCompleted` 先回包、再 `applyDirectives`。所以 LeaveGame 到达 login 时,EnterGame
+    的绑定已经挂上会话;login 的 `LeaveGameHandler` 按 `SessionContext.player_id` 回 `UnbindPlayer`,gate `unbindPlayer` 发
+    `PlayerLeave{voluntary}` 并清空 (节点, 链路代次, 玩家, epoch)。
+  - EnterGame 调用在 gate 超时(Dubbo 5 s)时,迟到应答由 Dubbo 消费端丢弃,到不了 gate(`EnterGameHandler` 类注释「时间预算」),
+    不存在迟到的旧绑定。
+  - LeaveGame 之后源 scene 的迟到帧都要与当前绑定的 (节点, 链路代次, 玩家, epoch) 比对:`PlayerTransfer` 失配时只带围栏放弃
+    to_epoch、不改绑,`PlayerEnterResult` / `PlayerKicked` 直接丢弃;同一连接再进游戏时 login 夺到新 epoch,旧帧仍按 epoch 失配丢弃。
+  - scene 侧:加载中收到 PlayerLeave,`SceneWorld.onPlayerLeave` 取消进场、释放归属;加载返回时 `finishPlayerLoaded` 发现 pending
+    已被换掉就丢弃,旧实例不会按旧 epoch 重建。
+  - 结论:不会把已回选角的客户端拉回旧场景,也不会让旧实例按旧 epoch 重建,Java 不改。Java 已知的残余不属于本条:EnterGame 在
+    gate 超时后,login 已夺到的归属没有持有者,要等 `OWNER_LEASE` 到期才能再进,只影响活性。
+- 本批不涉及客户端契约(没有 proto / tip / 配置表改动)。
+
+### 14.5 EnterScene 陈旧位置判定补注册表正面证据(r2-sm#3 同源,2026-10-19 另批)
+
+- 来源:§14.3 登记的 r2-sm#3 同源残余。状态:复核成立,已修;代码与回归用例落在工作区,**未编译、未测试,待 Codex 验证**
+  (命令见 `docs/PROGRESS.md` 2026-10-19「EnterScene 陈旧位置判定补注册表正面证据」条目)。不改 proto、Redis 键与指标。
+- 调用点:`playerLocationOwnerGone` 全仓只有一处调用(`enterscenelogic.go` 读完 location、落点身份裁决之后,`playerLocationOwnerDead`
+  之前)。返回 true 时清空 currentLoc / currentLocRaw / currentZoneID,之后各分支都按"没有位置记录"走。逐个入口看「负载键整键丢失
+  (ZCARD=0、ZSCORE 为空、无 death_at),持有节点却还活着、还在注册表里」的那一拍:
+
+| 入口形态 | 旧实现 | 结论 |
+|---|---|---|
+| 从别区 gate 登录、不指定去向(ZoneId=0、SceneId=0;访客断线后经本区 gate 重登、gate 崩溃后换 gate) | 位置被过滤,不再按 GO-5 跟随位置的 zone,去向回落 gate zone;gate zone 有活节点就**直接落点、铸造 E+1**、发路由,不给持有节点发 ReleasePlayer | **误放行,回档**:持有节点之后带 E 的周期 / 退出存盘全被 owner CAS 拒、实体自毁,未落盘的进度丢失 |
+| 已连到别区 gate、显式落到该区(ZoneId = 目标、带 SceneId / 地图) | 跳过跨节点换手门,同样铸造 E+1 | 同上,误放行 |
+| scene 发起的跨 zone 传送第一条腿(gate zone = 持有 zone) | 位置被过滤,跨区重定向按"只送连接"放行(不写等待落点、不铸造)。源 scene 发请求前已存盘并写出交接标记(StartTravelHandoff),收到 Redirect 后销毁实体 | 不丢数据(源端已落盘);但没写等待落点、去向不随票据,语义偏离 |
+| 同 zone(持有 zone 就是 gate / 目标 zone) | 位置被过滤,但同一 zone 负载集为空,`resolveScene` 与频道预占都按"节点不在负载集"拒(ErrNoAvailableNode) | 不铸造,只伤活性 |
+| 等待落点(node_id 为空)所在 zone 负载键丢失 | 位置被过滤,未映射归属的玩家改按 gate zone 回落(3b 旁路) | 没有持有者,不回档 |
+
+- 修法(`enterscenelogic.go` `playerLocationOwnerGone`、`load_reporter.go` 新增 `isZoneGoneFromRegistry`):先要 etcd 注册表的正面证据,
+  即本副本已完成首次全量同步、且注册表镜像里该 zone 一个场景节点都没有;再加本副本观察屏障(`localGoneBarrierBlocks`,与 OwnerDead
+  同口径);原来三条(负载集为空、`IsNodeAlive` 为假、death_at 屏障)保留。负载键丢了而节点还在注册表时返回 false,位置照常有效:登录按
+  GO-5 跟随它的 zone 只送连接;同 zone / 显式落点走换手门(18 → §12 登录撞持有者的释放请求 → 标记 → 放行)。
+- 为什么不直接改成只认 `playerLocationOwnerDead`:有持有节点的位置,新判据不弱于 OwnerDead 的全部条件(zone 里一个注册都没有,
+  就推出该节点不在注册表、也不存在身份歧义),放行面是 OwnerDead 的子集,安全性与 LeaveScene 一侧相同。保留单独函数是为了口径:
+  整 zone 下线不计 `dead_owner_takeover`、不还旧场景人数,屏障计数记在 `stale_location`;等待落点(node_id 为空,OwnerDead 恒为假)
+  在下线 zone 的旧行为也不变。删掉它会把合服残留计进单节点接管指标,还会改变未映射玩家的 3b 旁路,超出本条范围。
+- 合服后源区永久下线仍放行:源区节点都已从 etcd 注销,`isZoneGoneFromRegistry` 为真,其余条件与修复前相同。副本刚启动、注册表还没同步完
+  的几秒里拿不到证据,按换手门 18 暂拒,上游重试即可。
+- 回归用例(`go/scene_manager/internal/logic/enter_stale_location_test.go`):
+  - `TestEnterScene_MissingLoadSetWhileZoneRegisteredKeepsHandoffGate`:node 10 在注册表、zone 1 负载键整键不存在,显式落到 zone 2 → 18,
+    location 原文、owner_epoch 1、人数都不变,不发路由。旧实现:放行并铸造 2。
+  - `TestEnterScene_LoginOverMissingLoadSetDecidedByRegistry`:不指定去向,从 zone 2 gate 登录。「源区节点仍在注册表」→ 只送连接回 zone 1,
+    不改 location、不铸造(旧实现:在 zone 2 落点、铸造 2);「源区已从注册表注销」→ 在 gate zone 落点并铸造 2(合服放行)。
+  - `TestPlayerLocationOwnerGone_RequiresZoneGoneFromRegistry`:注册表未同步、zone 里还有别的注册节点、本地观察在屏障内、负载集还有成员、
+    death_at 刚写入,各自不放行;条件齐备时放行,且同一时刻 OwnerDead 也放行。
+  - 既有用例按新前提补注册表状态,断言不变:`seedStaleLocationFromZone1` 改为摆出"zone 1 已从注册表注销"(覆盖 `TestEnterScene_StaleLocation*`
+    三条);`TestEnterScene_ExistingLocationCrossZoneRejectedWhileOldNodeAliveThenRedirectsOnceZoneDead` 开头注册 node 10,整 zone 下线时注销与
+    ZREM 一起做。
+- 残余:
+  - 判据依赖 `knownNodes` 是全服注册表镜像(scene_manager 现在 watch 所有 zone 的前缀)。将来 watch 收窄到本 zone(容量模型 A1)时,别的
+    zone 会恒判"没有节点",跨 zone 的陈旧位置又只剩负载集一条证据;收窄前必须先改成按 zone 查注册表(`isZoneGoneFromRegistry` 注释已写明)。
+    `playerLocationOwnerDead` 用的 `isNodeGoneFromRegistry` 有同样的依赖。
+  - 注册内容解析失败的节点不进 `knownNodes`:一个 zone 的注册全部解析失败、负载集又为空时仍判下线(与 `isNodeGoneFromRegistry` 同一盲区;
+    这类节点也不会被派场景)。
+- Java 版(AGENTS §12):**不适用(结构不同)**。Java 的位置记录(`game-discovery/.../location/PlayerLocationDirectory.java`)只由持有归属的
+  scene 写、带 TTL,被接管或停服时不动记录,由新持有者覆盖或按 TTL 消失;没有 scene_manager 侧的首次落点铸造,也没有按 zone 负载集判下线、
+  过滤陈旧位置的路径(本次只读 grep 了 Java 主代码,未构建)。Java 没有待做项,`PARITY.md` 不登记。

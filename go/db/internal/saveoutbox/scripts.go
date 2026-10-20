@@ -12,13 +12,15 @@ import (
 //   - 首次看到某版本只登记(outbox_attempt_version / outbox_attempts=0)，FirstReplayAfter 之后才第一次补投，
 //     给正常 Kafka 投递留时间，不在消费积压时把每笔存盘都再投一遍；
 //   - 第 n 次补投后等待 min(RetryAfter·2^(n-1), MaxRetryAfter)+抖动；达到 MaxAttempts 后不再补投(返回 4，转告警)；
+//     次数只在两条任务都经 broker 确认后计(confirmAttemptScript)，broker 不可用不会把意图耗到 exhausted(r2-db#1)；
 //   - go/db 把该版本判为确定性拒写时写 outbox_terminal，补投见到即停止(返回 3)；
-//   - go/db 最近 InflightWindow 内把该玩家的写延后进重试(outbox_retry_ms)时只推迟、不计次数(返回 6)。
+//   - go/db 最近 InflightWindow 内把该玩家的写延后进重试(outbox_retry_ms)时只推迟、不计次数(返回 6)；
+//     戳超过 now+InflightWindow 视为写戳实例时钟超前，截掉不认(r2-db#3)。
 //
 // 终态、耗尽、损坏的意图都保留原字节与索引成员，按 RecheckAfter 复查；新版本存盘(C++ 改写 outbox_version)或两表 ACK 齐全
 // 才离开这些状态。这些字段只由 go/db 读写；C++ 父快照 Lua、login 冷加载只读各自的固定字段，不受影响。
 //
-// 返回：0=未到期或已被其他 worker 推迟；1=取得原始意图与本次尝试序号；2=两表已提交并清理；-1=损坏或缺意图，保留；
+// 返回：0=未到期或已被其他 worker 推迟；1=取得原始意图与认领时的已计次数；2=两表已提交并清理；-1=损坏或缺意图，保留；
 // 3=终态(附原因)；4=已达尝试上限(附次数)；5=首次登记，未补投；6=有在途重试，推迟。
 var claimScript = redis.NewScript(savebarrier.LuaVersionHelpers + `
 local h, q = KEYS[1], KEYS[2]
@@ -83,13 +85,34 @@ for i = 1, n do
     if delay >= cap then break end
 end
 if delay > cap then delay = cap end
-if v[12] and #v[12] <= 16 and string.match(v[12], '^%d+$') and now - tonumber(v[12]) < window then
-    redis.call('ZADD', q, now + delay + jitter, ARGV[1])
-    return {6}
+if v[12] then
+    local stamp = #v[12] <= 16 and string.match(v[12], '^%d+$') and tonumber(v[12])
+    if not stamp or stamp > now + window then
+        -- 格式不对或远在未来(写戳实例的时钟超前):按非法截掉，推迟上限因此是两个窗口(r2-db#3)。
+        redis.call('HDEL', h, 'outbox_retry_ms')
+    elseif now - stamp < window then
+        redis.call('ZADD', q, now + delay + jitter, ARGV[1])
+        return {6}
+    end
 end
-redis.call('HSET', h, 'outbox_attempts', tostring(n + 1))
+-- 这里不计次：两条任务都经 broker 确认后才由 confirmAttemptScript 计一次(r2-db#1)。
+-- 先按本次尝试的退避推迟索引，充当跨实例的认领租期。
 redis.call('ZADD', q, now + delay + jitter, ARGV[1])
-return {1, v[4], v[5], v[6], v[7], n + 1}
+return {1, v[4], v[5], v[6], v[7], n}
+`)
+
+// 本次补投两条任务都已 broker 确认(或意图本身不合法、重投也不会变好)时计一次。
+// 只在仍是同一版本、计数仍是认领时读到的值时 +1：并发认领或新版本存盘都会让它落空，不重复计、不串版本。
+// KEYS[1]=barrier；ARGV=[版本, 认领时的已计次数]。
+var confirmAttemptScript = redis.NewScript(`
+if #ARGV[2] == 0 or #ARGV[2] > 4 or not string.match(ARGV[2], '^%d+$') then return redis.error_reply('save outbox attempt argument') end
+local t = redis.call('TYPE', KEYS[1]).ok
+if t == 'none' then return 0 end
+if t ~= 'hash' then return redis.error_reply('save outbox attempt barrier type') end
+if redis.call('HGET', KEYS[1], 'outbox_attempt_version') ~= ARGV[1]
+    or redis.call('HGET', KEYS[1], 'outbox_attempts') ~= ARGV[2] then return 0 end
+redis.call('HSET', KEYS[1], 'outbox_attempts', tostring(tonumber(ARGV[2]) + 1))
+return 1
 `)
 
 var postponeInvalidMemberScript = redis.NewScript(`
@@ -130,15 +153,15 @@ redis.call('HSET', KEYS[1], 'outbox_terminal', ARGV[1], 'outbox_terminal_reason'
 return 1
 `)
 
-// go/db 消费侧每次把该玩家的严格写延后进重试时调用：只在仍有未完成意图时记下时刻(取较大值，容忍实例间时钟偏差)。
+// go/db 消费侧每次把该玩家的严格写延后进重试时调用：只在仍有未完成意图时记下时刻，最后一次写入为准。
+// 不取较大值(r2-db#3)：时钟超前的实例写下的未来时刻不能一直盖住之后正确的时刻；实例间正常的小偏差只让窗口略长或略短，
+// 远在未来的值由认领脚本按非法截掉。
 var noteRetryScript = redis.NewScript(`
 if #ARGV[1] == 0 or #ARGV[1] > 16 or not string.match(ARGV[1], '^%d+$') then return redis.error_reply('save outbox retry stamp argument') end
 local t = redis.call('TYPE', KEYS[1]).ok
 if t == 'none' then return 0 end
 if t ~= 'hash' then return redis.error_reply('save outbox retry stamp barrier type') end
 if not redis.call('HGET', KEYS[1], 'outbox_version') then return 0 end
-local old = redis.call('HGET', KEYS[1], 'outbox_retry_ms')
-if old and #old <= 16 and string.match(old, '^%d+$') and tonumber(old) >= tonumber(ARGV[1]) then return 1 end
 redis.call('HSET', KEYS[1], 'outbox_retry_ms', ARGV[1])
 return 1
 `)

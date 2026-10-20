@@ -116,7 +116,9 @@ GitHub Actions 的 `release.yml` 覆盖其中 ③⑤(外加版本号、CHANGELOG
   ```
   部署沿用 `k8s_deploy.ps1` / `k8s_image.ps1` 的既有命令,`-ReleaseProfile prod`,镜像参数统一用本版本 tag:`-NodeImage <registry>/mmorpg-node:vX.Y.Z-<12位commit>`、`-GoSvcRegistry <registry> -GoSvcTag vX.Y.Z-<12位commit>`、`-JavaSvcRegistry <registry> -JavaSvcTag vX.Y.Z-<12位commit>`。部署前后按 §3.2 核对 digest。
   部署核对完成后,查看 §6 有没有本版本对应的一次性项(2026-10-16 增补)。
+  带新持久字段的版本(2026-10-20 增补,审计 r2-ps#1):首次上线之后,发布前先跑 `git diff <线上版本提交> <本版本提交> -- proto/persist_schema_gen.txt`。出现新增字段行(`<世代>=<消息>#<字段号> …`)时,台账的 `state` 行必须已是 `state=active`(§6.2);仍是 `state=bootstrap` 就停止发布,先做完 §6.2。原因:引导期内新增字段都记世代 1,旧 go/db 与新 scene 世代号相同,go/db 的世代校验拦不住,旧 go/db 会静默丢掉新列或读成旧值,见 [mixed-version-persist-field-protection.md](../design/mixed-version-persist-field-protection.md) §8.1 第 6 条。首次上线本身不受此限。
   首次发布含 B0-4(C++ 节点 fd 上限不够就拒启)的版本之前,先按 [gate-kernel-tuning-runbook.md](gate-kernel-tuning-runbook.md) §3.1「上线前置」第 1 步,读各集群各节点池的容器 nofile 硬限并记进 PROGRESS;硬限不够时先处理再发布。拒启的影响面按工作负载形态不同(单副本 battle hostPort 会整体停服),回滚另有 external gate 删 Pod 等额外步骤,见同节「紧急回退」(2026-10-18 增补)。
+  共享 Redis 单实例 → 高可用(2026-10-19 增补;部署脚本改动未运行、待 Codex 验证,尚未在任何真实 staging / prod 集群上切换过):staging / prod 首次以缺省档跑 `infra-up`(或不带 `-SkipInfra` 的 `all-up`)时,`-RedisReplicas` 缺省按档位解析为 3,而线上还是单实例,脚本判定 1 → 3(`[RedisTopology]Upgrade:`)。这是一次全服登录中断:在维护窗口里做,先停写,带 `-ConfirmRedisCoreRestart`(没带就在任何写操作之前拒绝),口令不得含空白或单引号;步骤与回退见 [deploy/k8s/README.md](../../deploy/k8s/README.md)「共享 Redis:高可用形态」→「切换与回退」。切完对**每个 zone** 重跑 `zone-up`(WAITAOF 副本份数随之变为 1,入口行 `Redis topology: ... waitaof_replicas=1`),并在各 zone namespace 里 `kubectl rollout restart deploy/db` 与 `deploy/data-service`(只改 ConfigMap 不会滚动它们)。还没切的环境照常发 zone 版本:zone 写路径没给 `-RedisReplicas` 时跟随线上 `sts/redis` 的副本数,显式值与线上不同会被拒绝。
 
 ### 2.2 在 GitHub Actions 上出包(`.github/workflows/release.yml`)
 
@@ -215,7 +217,7 @@ GitHub Actions 的 `release.yml` 覆盖其中 ③⑤(外加版本号、CHANGELOG
 ### 6.1 清理共享核心 Redis 里的存量 `dirty_keys_set`(2026-10-16 增补)
 
 - **背景**:含 2026-10-16 落码提交(提交号待提交后回填)的 C++ scene 镜像,两段存盘 Lua 不再 `SADD` 全服单键 `dirty_keys_set`;没换镜像的 scene 实例仍在写。这个键全仓没有读者、没有 TTL,只随「累计存过盘的玩家数」增长;新版本不再写它,旧版本写下的存量要一次性删掉。新旧版本混跑与回滚都无害(旧二进制只是继续写一个没人读的键),所以清理不是发版的前置条件,但必须在下面的门禁之后做。依据见 [capacity-model-hok-scale.md](../design/capacity-model-hok-scale.md) A0-4、[shared-redis-split-by-purpose.md](../design/shared-redis-split-by-purpose.md) §2.5 第 1 条。
-- **对象**:C++ `zoneredis` 指向的共享核心 Redis 的 DB 0(C++ 不发 `SELECT`)。K8s 上是 `<InfraNamespace>` 里的 StatefulSet `redis`(Pod `redis-0`,Service `redis.<InfraNamespace>:6379`);届时若已换成别的实例,以 `k8s_deploy.ps1` 生成的 zoneredis 配置为准。若届时已切到 `deploy/k8s/manifests/infra/redis-ha.yaml`(1 主 2 从 + 哨兵,2026-10-15 时尚未接入部署路径),`redis-0` 不一定是主:在从库上 `UNLINK` 会报 `READONLY`,`OBJECT IDLETIME` 也只反映那个从库上的访问。所以进 Pod 后先跑下面的 ⓪ `ROLE`,不是 master 就换到 `ROLE` 为 master 的那个 `redis-N` 上重来(两份清单里 Redis 容器都叫 `redis`)。
+- **对象**:C++ `zoneredis` 指向的共享核心 Redis 的 DB 0(C++ 不发 `SELECT`)。K8s 上是 `<InfraNamespace>` 里的 StatefulSet `redis`(Pod `redis-0`,Service `redis.<InfraNamespace>:6379`);届时若已换成别的实例,以 `k8s_deploy.ps1` 生成的 zoneredis 配置为准。若届时已切到 `deploy/k8s/manifests/infra/redis-ha.yaml`(1 主 2 从 + 哨兵 + haproxy 代理;2026-10-15 时尚未接入部署路径,2026-10-16 起由 `k8s_deploy.ps1 -RedisReplicas` 接入,staging / prod 档缺省即此形态,接入改动未运行、待 Codex 验证),`redis-0` 不一定是主:在从库上 `UNLINK` 会报 `READONLY`,`OBJECT IDLETIME` 也只反映那个从库上的访问。所以进 Pod 后先跑下面的 ⓪ `ROLE`,不是 master 就换到 `ROLE` 为 master 的那个 `redis-N` 上重来(两份清单里 Redis 容器都叫 `redis`)。
 - [ ] **门禁:版本盘点**(必须先过,不能用 `OBJECT IDLETIME` 代替,原因见下一条)。确认**所有** scene 实例都已换成含该改动的镜像,包括 Agones 里仍是 `Allocated` 的旧 GameServer(它们不随 Fleet 滚动立即退出,会继续写这个键):
   ```powershell
   # scene 的 Pod:Deployment 与 Agones 两种编排的 Pod 都带 app=<scene 池名>;每个容器按「容器名=imageID」列出
@@ -249,6 +251,15 @@ GitHub Actions 的 `release.yml` 覆盖其中 ③⑤(外加版本号、CHANGELOG
 - **兜底**:托管 Redis 禁用或改名了 `UNLINK` 时,循环执行 `SPOP dirty_keys_set 1000`,批与批之间短暂停顿,直到 `SCARD` 为 0;不要用 `SSCAN` + `SREM` 全量遍历。
 - **恢复后重做**:之后若从清理前的 AOF / RDB 备份恢复了这个 Redis(K8s 上是 PVC + appendonly),存量键会跟着回来,恢复后重做 ⓪、②~⑥ 与 24 小时复查。scene 镜像回滚到不含改动的版本也会把键重新建起来(无害),再次升级后同样重做版本盘点与 ②~⑥。
 - **预期与记录**:`INFO memory` 的 `used_memory` 下降;RSS 不一定立刻回落(jemalloc)。把环境、时间、③④ 的读数和两次 `EXISTS` 结果记进 `docs/PROGRESS.md`。此前的规模与内存数字都是推算,以这里的读数为准。
+
+### 6.2 首次上线后:关闭持久 schema 引导期,台账切到 `active`(2026-10-20 增补,审计 r2-ps#1)
+
+- **背景**:台账 `proto/persist_schema_gen.txt` 的 `state=bootstrap` 期间,生成器把新增持久字段一律记为世代 1。上线后台账若仍是 `bootstrap`,第一次带新持久列的滚动发布里,新旧二进制世代号相同、认识的字段集合不同,go/db 的 C1 / C1b / C2 都拦不住:旧 go/db 会把新列静默丢掉或读成旧值,scene 随后把它写成零值或旧值。新列若是限购或幂等账本,就会重复发放。推导见 [mixed-version-persist-field-protection.md](../design/mixed-version-persist-field-protection.md) §8.1 第 6 条。
+- **时机**:首次上线(go/db 以 dual + 严格提交屏障整批起步)之后、**第一次发布带新持久字段的版本之前**。只做一次;台账不能从 `active` 改回 `bootstrap`,生成器会拒绝。
+- [ ] **① 逐个 zone 关闭引导期**:按 [deploy/k8s/README.md](../../deploy/k8s/README.md)「玩家持久 schema 世代」的「关闭引导期」执行(负责人执行;先确认全部 go/db Pod 上 `db_persist_schema_unstamped_write_total` 持续一个完整存盘周期不再增长,再写 `db:persist_schema:bootstrap_closed:zone:<zone>` = `closed`,`db_persist_schema_bootstrap_closed` 变为 1 即生效)。
+- [ ] **② 主干上把台账切到 `active`**:全部 zone 都做完 ① 之后,由负责人在主干提交里把 `proto/persist_schema_gen.txt` 的 `state=bootstrap` 改为 `state=active`(只改这一行),再按 AGENTS.md §4 跑一次 proto 生成(Codex 执行),确认生成通过、台账其余行不变。此后每次出现新增字段的生成运行都会追加一个新世代。
+- [ ] **③ 记录**:在 `docs/PROGRESS.md` 记一条:各 zone 关闭引导期的时间、`state=active` 的提交号。
+- **门禁**:② 完成之前,不得发布任何新增持久字段的版本(§2.1 ⑦ 的台账比对)。机器门禁暂缺(生成器或发布预检都还不检查台账状态与上线状态的关系),目前只靠这一条人工核对。
 
 ---
 

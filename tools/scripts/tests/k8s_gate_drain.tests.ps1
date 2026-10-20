@@ -612,6 +612,11 @@ Test-Case 'Redis 走 login 配置的地址,密码只经目标 Pod 的环境变�
     Assert-Match -Text $exec[9] -Pattern 'REDISCLI_AUTH=\$REDIS_PASSWORD' -Because '密码取自 Pod 自己的 Secret 环境变量'
     Assert-Match -Text $exec[9] -Pattern 'if \[ -n "\$REDIS_PASSWORD" \]' -Because '空密码时不能设 REDISCLI_AUTH(会发 AUTH "")'
     Assert-Match -Text $exec[9] -Pattern '--no-raw' -Because 'nil 与空串必须可区分'
+    # 失败提示两种形态都写:单实例要 hairpin,高可用经 redis-proxy、不涉及 hairpin(不把运维引向错误的排查方向)。
+    $hint = Get-GateDrainRedisFailureHint -Login $context.Login
+    Assert-Match -Text $hint -Pattern 'hairpin' -Because '单实例形态下 exec 落在 Service 背后的同一个 Pod'
+    Assert-Match -Text $hint -Pattern 'redis-proxy[^。]*不涉及 hairpin' -Because '高可用形态下 Service redis 指向代理,失败多半是代理此刻没有可路由的主'
+    Assert-Match -Text $hint -Pattern 'statefulset/redis' -Because '提示里的 exec 目标与实际一致'
     Assert-True -Condition (($exec -join ' ') -notmatch 'p#ss' -and ($exec -notcontains '-a')) -Because 'login 配置里的密码不能出现在本机命令行'
 }
 

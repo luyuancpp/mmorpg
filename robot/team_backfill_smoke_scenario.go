@@ -18,9 +18,9 @@ package main
 //	全过 → 日志一行 `TEAM_BACKFILL_SMOKE_OK team_id=… battle_id=… player_a=… player_b=… player_c=…`,退出码 0;
 //	任一步失败 → `TEAM_BACKFILL_SMOKE_FAIL step=… reason=…`,退出码 1。
 //
-// 复用 team_smoke_scenario.go 的 teamSmokeBot:登录进场、按消息号认领组队回包、推送按到达顺序留底(每步在触发动作
-// 之前 mark,之后从 mark 起扫描)、战斗直连与自动战斗。排队相关的回包(JoinQueue / CancelQueue / GetQueueStatus)
-// 同样留底,用 teamSmokeWaitPush 按消息号取。
+// 复用 team_smoke_scenario.go 的 teamSmokeBot:登录进场、经 smokeCaller 按请求号认领组队回包、推送按到达顺序留底(每步在触发动作
+// 之前 mark,之后从 mark 起扫描)、战斗直连与自动战斗。排队请求(JoinQueue / CancelQueue / GetQueueStatus)
+// 同样经 smokeCaller 按请求号认领回包(teamSmokeBot.matchCall),不进留底。
 
 import (
 	"fmt"
@@ -225,18 +225,15 @@ func RunTeamBackfillSmoke(cfg *config.Config) {
 	if _, err := backfillStartQueue(a, tid, sc.BattleConfigId); err != nil {
 		fail("P4-start", "%v", err)
 	}
-	if err := c.send(game.MatchServiceJoinQueueMessageId, &match.JoinQueueRequest{
+	// C 的推送扫描起点 marks[2] 已在 A 发起之前记下:成组后的 BattleAssigned / BattleStart 可能先于 JoinQueue 回包到达。
+	joinResp := &match.JoinQueueResponse{}
+	if err := c.matchCall(game.MatchServiceJoinQueueMessageId, &match.JoinQueueRequest{
 		PlayerId:       c.gc.PlayerId,
 		Mode:           match.MatchMode_MATCH_MODE_PVE_TEAM,
 		BattleConfigId: sc.BattleConfigId,
 		TeamSize:       backfillSmokeTargetSize,
 		ZoneId:         sc.Zone,
-	}); err != nil {
-		fail("P4-solo-join", "%v", err)
-	}
-	joinResp, err := teamSmokeWaitPush(c, marks[2], game.MatchServiceJoinQueueMessageId, teamSmokeRpcTimeout,
-		func() *match.JoinQueueResponse { return &match.JoinQueueResponse{} }, nil)
-	if err != nil {
+	}, joinResp); err != nil {
 		fail("P4-solo-join", "%v", err)
 	}
 	if joinResp.GetErrorCode() != 0 || joinResp.GetErrorMessage().GetId() != 0 {
@@ -361,13 +358,9 @@ func backfillStartQueue(leader *teamSmokeBot, tid uint64, battleConfigId uint32)
 }
 
 // backfillCancelQueue 发 CancelQueue(票据留空:服务端按本人身份撤;持补位票时撤整单),等回包。
+// 响应是 Empty:经路由服 / 直连 gRPC 时 gate 照样回一个带请求号的包(见 matchCall 注释)。
 func backfillCancelQueue(bot *teamSmokeBot) error {
-	since := bot.mark()
-	if err := bot.send(game.MatchServiceCancelQueueMessageId, &match.CancelQueueRequest{PlayerId: bot.gc.PlayerId}); err != nil {
-		return err
-	}
-	if _, err := teamSmokeWaitPush(bot, since, game.MatchServiceCancelQueueMessageId, teamSmokeRpcTimeout,
-		func() *base.Empty { return &base.Empty{} }, nil); err != nil {
+	if err := bot.matchCall(game.MatchServiceCancelQueueMessageId, &match.CancelQueueRequest{PlayerId: bot.gc.PlayerId}, &base.Empty{}); err != nil {
 		return fmt.Errorf("%s CancelQueue: %w", bot.name, err)
 	}
 	return nil
@@ -378,13 +371,8 @@ func backfillCancelQueue(bot *teamSmokeBot) error {
 func backfillExpectQueueState(bot *teamSmokeBot, want match.QueueState, wait time.Duration) error {
 	deadline := time.Now().Add(wait)
 	for {
-		since := bot.mark()
-		if err := bot.send(game.MatchServiceGetQueueStatusMessageId, &match.GetQueueStatusRequest{PlayerId: bot.gc.PlayerId}); err != nil {
-			return err
-		}
-		resp, err := teamSmokeWaitPush(bot, since, game.MatchServiceGetQueueStatusMessageId, teamSmokeRpcTimeout,
-			func() *match.GetQueueStatusResponse { return &match.GetQueueStatusResponse{} }, nil)
-		if err != nil {
+		resp := &match.GetQueueStatusResponse{}
+		if err := bot.matchCall(game.MatchServiceGetQueueStatusMessageId, &match.GetQueueStatusRequest{PlayerId: bot.gc.PlayerId}, resp); err != nil {
 			return fmt.Errorf("%s GetQueueStatus: %w", bot.name, err)
 		}
 		if resp.GetState() == want {

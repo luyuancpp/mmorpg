@@ -12,7 +12,8 @@ package main
 //
 // 落盘时机:每批两次(R1 冻结之后、R5 切换之后),整份原子重写(writeJSONAtomic)。崩溃留下的「清单落后于
 // Redis」由续跑的 R1 认领(见 relocate.go 的 decideFreeze):本次 run_id 的冻结值认回冻结态,v+1 的目标值认回
-// 已切换。所以清单只需要在冻结之前记下版本号 v。
+// 已切换。所以清单只需要在冻结之前记下版本号 v。-route-source=db 时认领的依据是全局库 player_route(frozen_run_id
+// 在库里,mapping Redis 整体丢失也认得出),认领之前先把库值发布到 mapping Redis 并确认(relocate_run.go 的 sqlRelocatePlacements)。
 
 import (
 	"encoding/json"
@@ -88,8 +89,12 @@ type relocateManifest struct {
 	// DryRun:dry-run 写出的预览(<path>.dryrun.json),只给人看,任何模式都拒读。
 	DryRun bool `json:"dry_run,omitempty"`
 	// Aborted:-mode relocate-abort 跑过。之后不能再续跑(要搬就用新清单另起一次)。
-	Aborted bool             `json:"aborted,omitempty"`
-	Players []relocatePlayer `json:"players"`
+	Aborted bool `json:"aborted,omitempty"`
+	// RouteSource:写这份清单的运行用的映射来源(-route-source db|redis,D1 第 2 批)。续跑与 relocate-abort 必须同一个来源
+	// (checkManifestRouteSource):冻结 / 切换写在哪一边,认领与解冻就只能在哪一边做 —— 换来源续跑会把本次的冻结当成
+	// 「不是本次冻结的」,或在另一边写出与真源分叉的落点。本字段之前写的清单没有它 = redis。新增字段不升 relocate_version。
+	RouteSource string           `json:"route_source,omitempty"`
+	Players     []relocatePlayer `json:"players"`
 }
 
 func newRelocateManifest(runID string, s, t uint32, generation uint32, tables []string, players []uint64,

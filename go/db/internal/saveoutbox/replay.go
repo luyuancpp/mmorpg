@@ -103,14 +103,16 @@ type Replay struct {
 	cfg     Config
 	now     func() time.Time
 	// jitter 返回本次排程附加的抖动；同一故障里大量意图同时到期时错开重投。
-	jitter  func() time.Duration
-	bucket  uint64
-	results *prometheus.CounterVec
+	jitter func() time.Duration
+	bucket uint64
+	// publishPausedUntil：上一次 broker 发布失败后整个补投器暂停到这一刻(r2-db#1)。只由 Tick 的调用者读写。
+	publishPausedUntil time.Time
+	results            *prometheus.CounterVec
 }
 
 // 结果 label 是封闭集合，启动时以 0 建出全部序列。
 var replayResults = []string{"published", "completed", "migrated", "conflict", "invalid", "redis_error", "publish_error",
-	"observed", "inflight_deferred", "terminal", "exhausted", "store_cooldown", "legacy_alive"}
+	"observed", "inflight_deferred", "terminal", "exhausted", "store_cooldown", "legacy_alive", "publish_paused"}
 
 func New(rc, mapping redis.Cmdable, pub Publisher, health StoreHealth, cfg Config, reg prometheus.Registerer) (*Replay, error) {
 	if rc == nil || mapping == nil || pub == nil {
@@ -165,6 +167,11 @@ func (r *Replay) Tick(ctx context.Context) (int, error) {
 	defer cancel()
 	bucket := r.bucket
 	r.bucket = (r.bucket + 1) % BucketCount
+	// broker 刚发布失败:整拍跳过 RetryAfter,不在 Kafka 故障期间逐拍认领、推迟别的意图并刷 ERROR(r2-db#1)。
+	if r.now().Before(r.publishPausedUntil) {
+		r.results.WithLabelValues("publish_paused").Inc()
+		return 0, nil
+	}
 	// 主库冷却期间投出去的任务只会在选库处被挡回、各自开一条重试链；整拍跳过，不消耗尝试次数。
 	if r.health != nil && r.health.CoolingDown(r.cfg.ZoneID) {
 		r.results.WithLabelValues("store_cooldown").Inc()
@@ -250,20 +257,27 @@ func (r *Replay) Tick(ctx context.Context) (int, error) {
 		default:
 			return published, fmt.Errorf("save outbox 未知认领结局 %d", code)
 		}
-		in, err := decodeIntent(reply)
+		in, attempts, err := decodeIntent(reply)
 		if err != nil {
 			r.results.WithLabelValues("invalid").Inc()
 			continue
 		}
+		// 意图本身不合法时重投也不会变好:照样计一次,按次数走到 exhausted 并告警,而不是每个退避周期报一次错直到永远。
 		zone, err := validateIntent(playerID, in)
 		if err != nil {
 			r.results.WithLabelValues("invalid").Inc()
 			logx.Errorf("[SaveOutbox] 存盘意图身份不合法，保留待核对: %v", err)
+			if err := r.consumeAttempt(ctx, playerID, in.version, attempts); err != nil {
+				return published, err
+			}
 			continue
 		}
 		if in.topic != topicFor(zone, r.cfg.TopicGeneration) {
 			r.results.WithLabelValues("invalid").Inc()
 			logx.Errorf("[SaveOutbox] 原topic世代未在当前配置放行，保留意图；切换世代前必须排空")
+			if err := r.consumeAttempt(ctx, playerID, in.version, attempts); err != nil {
+				return published, err
+			}
 			continue
 		}
 		if zone != r.cfg.ZoneID {
@@ -271,6 +285,9 @@ func (r *Replay) Tick(ctx context.Context) (int, error) {
 			if err != nil || home != strconv.FormatUint(uint64(zone), 10) {
 				r.results.WithLabelValues("invalid").Inc()
 				logx.Errorf("[SaveOutbox] 跨zone索引迁移缺少匹配的权威home_zone，原意图保留")
+				if err := r.consumeAttempt(ctx, playerID, in.version, attempts); err != nil {
+					return published, err
+				}
 				continue
 			}
 			moved, err := migrateScript.Run(ctx, r.rc, []string{savebarrier.Key(playerID), index, pendingIndexKey(zone, bucket)}, id, in.version, in.topic).Int64()
@@ -287,28 +304,46 @@ func (r *Replay) Tick(ctx context.Context) (int, error) {
 		}
 		for _, payload := range []string{in.first, in.second} {
 			if err := r.pub.Publish(ctx, in.topic, id, []byte(payload)); err != nil {
+				// 不计次(r2-db#1):broker 故障与意图本身无关,恢复后必须还能投。认领时已按本次退避推迟了该意图。
 				r.results.WithLabelValues("publish_error").Inc()
-				return published, errors.New("save outbox Kafka确认失败，原任务保留")
+				r.publishPausedUntil = r.now().Add(r.cfg.RetryAfter)
+				return published, errors.New("save outbox Kafka确认失败，原任务保留，补投暂停一个退避周期")
 			}
 			published++
 			r.results.WithLabelValues("published").Inc()
+		}
+		if err := r.consumeAttempt(ctx, playerID, in.version, attempts); err != nil {
+			return published, err
 		}
 	}
 	return published, nil
 }
 
-// decodeIntent 解析认领脚本结局 1 的 {1, 版本, topic, 两条任务, 本次尝试序号}；序号只用于日志与测试，不参与投递。
-func decodeIntent(reply []interface{}) (intent, error) {
+// consumeAttempt 在两条任务都经 broker 确认(或意图本身不合法)后计一次。版本或计数已变(并发认领、新版本存盘)时落空，不算错误。
+func (r *Replay) consumeAttempt(ctx context.Context, playerID uint64, version string, attempts int64) error {
+	if err := confirmAttemptScript.Run(ctx, r.rc, []string{savebarrier.Key(playerID)}, version, strconv.FormatInt(attempts, 10)).Err(); err != nil {
+		r.results.WithLabelValues("redis_error").Inc()
+		return errors.New("save outbox 补投计次失败；本次至多多投一次")
+	}
+	return nil
+}
+
+// decodeIntent 解析认领脚本结局 1 的 {1, 版本, topic, 两条任务, 认领时的已计次数}；次数只用于 consumeAttempt 的比较，不参与投递。
+func decodeIntent(reply []interface{}) (intent, int64, error) {
 	if len(reply) != 6 {
-		return intent{}, errors.New("存盘意图返回字段不完整")
+		return intent{}, 0, errors.New("存盘意图返回字段不完整")
 	}
 	fields := make([]string, 4)
 	for i := range fields {
 		var ok bool
 		fields[i], ok = reply[i+1].(string)
 		if !ok {
-			return intent{}, errors.New("存盘意图返回字段类型不合法")
+			return intent{}, 0, errors.New("存盘意图返回字段类型不合法")
 		}
 	}
-	return intent{version: fields[0], topic: fields[1], first: fields[2], second: fields[3]}, nil
+	attempts, ok := reply[5].(int64)
+	if !ok || attempts < 0 {
+		return intent{}, 0, errors.New("存盘意图返回次数不合法")
+	}
+	return intent{version: fields[0], topic: fields[1], first: fields[2], second: fields[3]}, attempts, nil
 }

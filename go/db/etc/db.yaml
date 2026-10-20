@@ -136,7 +136,9 @@ ServerConfig:
     # Kafka 位点提交之前,入队的这份副本是任务唯一的副本:组提交 LPUSH 之后发 WAITAOF,确认不足就不提交位点
     # (fail-closed,该 claim 失败、消息重投,靠 seq 游标幂等)。确认走专用小连接池(每实例 2 条),不占上面的 PoolSize。
     # 启动时先探一次 WAITAOF,失败拒启:需要 Redis >= 7.2 且 appendonly yes(本机 compose 与 K8s 的 redis 都已开 AOF)。
-    # 只有确实没开 AOF 的环境才把两项都写 0(关闭确认,启动打一行 ERROR);redis-ha(有副本)接入时 NumReplicas 写 1。
+    # 只有确实没开 AOF 的环境才把两项都写 0(关闭确认,启动打一行 ERROR)。NumReplicas:K8s 上由 k8s_deploy.ps1 按共享 Redis
+    # 形态渲染(单实例 0、高可用 1,与 data-service 的 RouteStore 同一个函数),本文件保持 0 给本机 compose 单实例:
+    # 写 1 本机 go/db 的启动探针等不到副本而拒启。
     # K8s 上改值后必须 rollout restart。
     WaitAOFNumLocal: 1     # 0 | 1;不写 = 1
     WaitAOFNumReplicas: 0  # [0, 16];不写 = 0

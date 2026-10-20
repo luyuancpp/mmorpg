@@ -64,6 +64,41 @@ func collectPlayerIDsWithHomeZone(ctx context.Context, rdb *redis.Client, zone u
 	return sortedUint64(out), nil
 }
 
+// collectPlayerIDsWithHomeZoneDB 是 collectPlayerIDsWithHomeZone 的库版(R8,-route-source=db):按 home_zone 键集翻页读完
+// player_route(idx_route_home,ScanByHome 逐行校验),返回升序去重的 player_id。翻页游标是聚簇键 (route_shard, player_id),
+// 与返回值的 player_id 顺序不同,所以最后统一排序。
+func collectPlayerIDsWithHomeZoneDB(ctx context.Context, db routeDBOps, zone uint32) ([]uint64, error) {
+	var out []uint64
+	err := scanZoneHomeRows(ctx, db, zone, func(page []mergeRouteRow) error {
+		for _, row := range page {
+			out = append(out, row.PlayerID)
+		}
+		return nil
+	})
+	if err != nil {
+		return nil, fmt.Errorf("scan player_route by home_zone=%d: %w", zone, err)
+	}
+	return sortedUint64(out), nil
+}
+
+// scanZoneHomeRows 按 home_zone 键集翻页一致读 player_route(idx_route_home),每页交给 visit;一页不足 routeReadBatchLimit 即翻完。
+func scanZoneHomeRows(ctx context.Context, db routeDBOps, zone uint32, visit func(page []mergeRouteRow) error) error {
+	after := routeScanCursor{}
+	for {
+		page, err := db.ScanByHome(ctx, zone, after, routeReadBatchLimit)
+		if err != nil {
+			return err
+		}
+		if err := visit(page); err != nil {
+			return err
+		}
+		if len(page) < routeReadBatchLimit {
+			return nil
+		}
+		after = routeCursorOf(page[len(page)-1].PlayerID)
+	}
+}
+
 // mappingScanCount 是 mapping Redis 上 SCAN 的批量,也是按 id 分批 MGET / CAS 的批量
 // (readPlayerZones、remapPlayerMapping、restoreMappingForIDs 共用),各处耗时可比。
 const mappingScanCount = 500

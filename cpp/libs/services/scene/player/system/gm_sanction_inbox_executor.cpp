@@ -62,6 +62,11 @@ namespace
 		return PlayerInboxExecResult{PlayerInboxExecKind::kDefer, 0};
 	}
 
+	PlayerInboxExecResult VersionSkew()
+	{
+		return PlayerInboxExecResult{PlayerInboxExecKind::kVersionSkew, 0};
+	}
+
 	// 两种封锁类型共用同一个载荷,解码与币种校验也相同;成功时把币种交回调用方。
 	bool DecodeGainPayload(const std::string &payload, uint32_t &currencyType)
 	{
@@ -120,6 +125,19 @@ PlayerInboxExecResult GmSanctionInboxExecutor::AttachCurrencyDebt(entt::entity p
 	if (!HasCurrencyState(player, "AttachCurrencyDebt"))
 	{
 		return Deferred();
+	}
+	// 同币种的既有欠款带着本版本不认识的字段:AttachDebt 会拒绝合并(混版本保护,
+	// docs/design/mixed-version-persist-field-protection.md §4.4)。这是版本错位,不是确定性拒绝 ——
+	// 记成 REJECTED 这笔 GM 欠款就永远不会再挂了(player-inbox-service.md §7.6「版本错位绝不能当成终态的 REJECTED」)。
+	// 回 kVersionSkew 而不是 kDefer:这种错位会在会话内消失(那笔欠款被 AddCurrency 还清删除),DEFER 的本地续做
+	// 看不到服务端之后挂的 VOID,会把已作废的处置挂上并报 APPLIED(评审 L1)。kVersionSkew 让收件箱停用本域、
+	// 下次落地重拉:已作废就记 SKIPPED,落到新版本节点就正常挂。
+	// 在调用原语之前用只读谓词判,不拿原语的通用返回码 kFeatureUnavailable 反推。
+	if (CurrencySystem::DebtCarriesUnknownFields(player, static_cast<CurrencyType>(decoded.currency_type())))
+	{
+		LOG_WARN << "[PlayerInbox] AttachCurrencyDebt version skew: existing debt carries fields unknown to this version"
+				 << " player_id=" << tlsEcs.GetPlayerId(player) << " currency_type=" << decoded.currency_type();
+		return VersionSkew();
 	}
 	return FromTip(CurrencySystem::AttachDebt(player, static_cast<CurrencyType>(decoded.currency_type()),
 											  static_cast<int64_t>(decoded.owe_amount()), decoded.reason(),

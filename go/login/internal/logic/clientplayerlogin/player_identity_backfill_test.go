@@ -13,6 +13,7 @@ import (
 	"github.com/panjf2000/ants/v2"
 	"github.com/redis/go-redis/v9"
 	"google.golang.org/grpc"
+	"google.golang.org/protobuf/encoding/protowire"
 	"google.golang.org/protobuf/proto"
 
 	"login/internal/config"
@@ -248,6 +249,78 @@ func TestBackfillPlayerIdentity_LiveSessionSkipsWrite(t *testing.T) {
 				t.Fatal("blob rewritten while a live session / location still owns the data")
 			}
 		})
+	}
+}
+
+// 身份补齐只改身份字段:父快照里本版本不认识的字段(各层未知字段)与两张表的持久 schema 世代戳
+// 必须原样保留(docs/design/mixed-version-persist-field-protection.md §5.4:backfill 不改逻辑,Go 原样保留)。
+// 丢了未知字段 = 截断新版本 scene 写下的数据;丢了或改了戳 = 下一跳按错误的加载世代判定或盖戳。
+func TestBackfillPlayerIdentity_PreservesUnknownFieldsAndSchemaStamps(t *testing.T) {
+	l, rdb, _, _ := newIdentityBackfillHarness(t, &dbpb.PlayerDatabase{PlayerId: identityPlayerID})
+	unknownField := func(num protowire.Number, v uint64) []byte {
+		return protowire.AppendVarint(protowire.AppendTag(nil, num, protowire.VarintType), v)
+	}
+	topUnknown := unknownField(1000001, 11)
+	rowUnknown := unknownField(1000002, 22)
+	row1Unknown := unknownField(1000003, 33)
+	profileUnknown := unknownField(1000004, 44)
+
+	parent := &dbpb.PlayerAllData{
+		PlayerDatabaseData: &dbpb.PlayerDatabase{
+			PlayerId:         identityPlayerID,
+			PersistSchemaGen: 7,
+			// 只带未知字段的身份组件:backfill 往里补名字时,这一层的未知字段也得留着。
+			ProfileComponent: &comppb.PlayerProfileComp{},
+		},
+		PlayerDatabase_1Data: &dbpb.PlayerDatabase_1{PlayerId: identityPlayerID, PersistSchemaGen: 6},
+	}
+	parent.ProtoReflect().SetUnknown(topUnknown)
+	parent.PlayerDatabaseData.ProtoReflect().SetUnknown(rowUnknown)
+	parent.PlayerDatabase_1Data.ProtoReflect().SetUnknown(row1Unknown)
+	parent.PlayerDatabaseData.ProfileComponent.ProtoReflect().SetUnknown(profileUnknown)
+	seeded, err := proto.Marshal(parent)
+	if err != nil {
+		t.Fatalf("marshal parent with unknown fields: %v", err)
+	}
+	if err := rdb.Set(context.Background(), identityBlobKey(), seeded, time.Hour).Err(); err != nil {
+		t.Fatalf("seed parent with unknown fields: %v", err)
+	}
+
+	if err := l.backfillPlayerIdentity(context.Background(), nil, identityState(3, "云中君")); err != nil {
+		t.Fatalf("backfillPlayerIdentity: %v", err)
+	}
+
+	raw, player := readIdentityBlob(t, rdb)
+	if bytes.Equal(raw, seeded) {
+		t.Fatal("backfill did not write; the round trip is not exercised")
+	}
+	if player.GetUint32PbComponent().GetClass() != 3 || player.GetProfileComponent().GetName() != "云中君" {
+		t.Fatalf("identity not filled: class=%d name=%q",
+			player.GetUint32PbComponent().GetClass(), player.GetProfileComponent().GetName())
+	}
+	after := &dbpb.PlayerAllData{}
+	if err := proto.Unmarshal(raw, after); err != nil {
+		t.Fatalf("unmarshal backfilled parent: %v", err)
+	}
+	for name, tc := range map[string]struct{ got, want []byte }{
+		"PlayerAllData":                     {after.ProtoReflect().GetUnknown(), topUnknown},
+		"player_database":                   {after.GetPlayerDatabaseData().ProtoReflect().GetUnknown(), rowUnknown},
+		"player_database_1":                 {after.GetPlayerDatabase_1Data().ProtoReflect().GetUnknown(), row1Unknown},
+		"player_database.profile_component": {after.GetPlayerDatabaseData().GetProfileComponent().ProtoReflect().GetUnknown(), profileUnknown},
+	} {
+		if !bytes.Equal(tc.got, tc.want) {
+			t.Errorf("%s unknown fields = %x, want %x (backfill must carry them through unchanged)", name, tc.got, tc.want)
+		}
+	}
+	if got := after.GetPlayerDatabaseData().GetPersistSchemaGen(); got != 7 {
+		t.Errorf("player_database persist_schema_gen = %d, want 7 kept", got)
+	}
+	if got := after.GetPlayerDatabase_1Data().GetPersistSchemaGen(); got != 6 {
+		t.Errorf("player_database_1 persist_schema_gen = %d, want 6 kept", got)
+	}
+	// backfill 不碰 player_database_1:整张表(含未知字段,proto.Equal 会比较它们)逐字段不变。
+	if !proto.Equal(after.GetPlayerDatabase_1Data(), parent.GetPlayerDatabase_1Data()) {
+		t.Errorf("player_database_1 changed: got %v, want %v", after.GetPlayerDatabase_1Data(), parent.GetPlayerDatabase_1Data())
 	}
 }
 

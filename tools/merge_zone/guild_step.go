@@ -200,6 +200,13 @@ func assertNoGuildNameCollision(ctx context.Context, db *sql.DB, schema string, 
 // 清单之外的源区公会(清单落盘之后经内部 / GM 路径建的)原地不动,由调用方改写后用 countGuildsInZone
 // 复查并拒绝继续(见 merge_run.go 步骤 3)。重跑幂等:已经改过的行不再满足 zone_id = src。
 func migrateGuildZone(ctx context.Context, db *sql.DB, schema string, guildIDs []uint64, src, dst uint32, dryRun bool) (int64, error) {
+	return migrateGuildZoneGated(ctx, db, schema, guildIDs, src, dst, dryRun, nil)
+}
+
+// migrateGuildZoneGated 同 migrateGuildZone,另在每个 guild_id 的单行事务之前查 gate(-route-source=db 的围栏失权判据,
+// 规格 §6.3「不碰映射的步骤每批之前查失权」;nil = 不查,即 migrateGuildZone 的行为)。gate 非 nil 错误即停,已改的行留在 dst。
+func migrateGuildZoneGated(ctx context.Context, db *sql.DB, schema string, guildIDs []uint64, src, dst uint32, dryRun bool,
+	gate writeGate) (int64, error) {
 	table := guildQualified(schema, guildTable)
 	if dryRun {
 		n, err := countGuildsInZoneAmong(ctx, db, schema, guildIDs, src)
@@ -210,7 +217,7 @@ func migrateGuildZone(ctx context.Context, db *sql.DB, schema string, guildIDs [
 			src, dst, n, len(guildIDs), table)
 		return n, nil
 	}
-	return rewriteZoneByPrimaryKey(ctx, db, table, guildPKColumn, guildZoneColumn, guildIDs, src, dst)
+	return rewriteZoneByPrimaryKey(ctx, db, table, guildPKColumn, guildZoneColumn, guildIDs, src, dst, gate)
 }
 
 // restoreGuildZone 是撤销:把清单 guildIDs 里当前 zone_id = dst 的公会改回 src,锁序与 migrateGuildZone
@@ -218,6 +225,12 @@ func migrateGuildZone(ctx context.Context, db *sql.DB, schema string, guildIDs [
 // 不在清单里的(目标区原住民)与已经不在 dst 的(去了第三个 zone,不是这次合服造成的)一律不动。
 // dry-run 数出「会被改回」的行数但不写。
 func restoreGuildZone(ctx context.Context, db *sql.DB, schema string, guildIDs []uint64, src, dst uint32, dryRun bool) (int64, error) {
+	return restoreGuildZoneGated(ctx, db, schema, guildIDs, src, dst, dryRun, nil)
+}
+
+// restoreGuildZoneGated 同 restoreGuildZone,另在每个 guild_id 的单行事务之前查 gate(见 migrateGuildZoneGated)。
+func restoreGuildZoneGated(ctx context.Context, db *sql.DB, schema string, guildIDs []uint64, src, dst uint32, dryRun bool,
+	gate writeGate) (int64, error) {
 	table := guildQualified(schema, guildTable)
 	if dryRun {
 		n, err := countGuildsInZoneAmong(ctx, db, schema, guildIDs, dst)
@@ -227,7 +240,7 @@ func restoreGuildZone(ctx context.Context, db *sql.DB, schema string, guildIDs [
 		log.Printf("[DRY-RUN] Would restore zone_id=%d on %d of %d manifest guilds in %s", src, n, len(guildIDs), table)
 		return n, nil
 	}
-	return rewriteZoneByPrimaryKey(ctx, db, table, guildPKColumn, guildZoneColumn, guildIDs, dst, src)
+	return rewriteZoneByPrimaryKey(ctx, db, table, guildPKColumn, guildZoneColumn, guildIDs, dst, src, gate)
 }
 
 // countGuildsInZone 数 zone_id = zone 的公会。步骤 3 改写后的复查用;非锁定读(RC 下每条语句一个新快照)。

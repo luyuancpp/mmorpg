@@ -5,9 +5,11 @@ import (
 	"errors"
 	"net"
 	"reflect"
+	"strings"
 	"testing"
 
 	"data_service/internal/config"
+	"data_service/internal/routereconcile"
 	"data_service/internal/routing"
 	"data_service/internal/store"
 
@@ -72,19 +74,155 @@ func TestMissingStoresReportsPlayerRouteOnlyUnderDBFirst(t *testing.T) {
 		return c
 	}
 
+	// 第 1b-2 批起 db_first 缺省还要求对账 leader(Reconcile.Enabled 没配 = true):这里的 ServiceContext 都没有 leader,
+	// 所以 db_first 的期望末尾多一项 route_reconciler;leader 自己的判定见 TestMissingStoresReportsRouteReconcilerOnlyWhenEnabled。
 	cases := []struct {
 		name string
 		ctx  *ServiceContext
 		want []string
 	}{
-		{"db_first without route store", fourReady(withMode(config.RouteStoreModeDBFirst), nil), []string{"player_route"}},
-		{"db_first with route store", fourReady(withMode(config.RouteStoreModeDBFirst), stubPlayerRouteStore{}), nil},
+		{"db_first without route store", fourReady(withMode(config.RouteStoreModeDBFirst), nil), []string{"player_route", "route_reconciler"}},
+		{"db_first with route store", fourReady(withMode(config.RouteStoreModeDBFirst), stubPlayerRouteStore{}), []string{"route_reconciler"}},
 		{"redis without route store", fourReady(withMode(config.RouteStoreModeRedis), nil), nil},
 		// 空 Mode = 没写 RouteStore 段(Normalize 之前的形态):等同 redis,同样不能算缺。
 		{"empty mode without route store", fourReady(withMode(""), nil), nil},
-		// 五项都缺时 player_route 排在四个老 store 之后,告警比对的顺序不变。
+		// 全缺时 player_route、route_reconciler 依次排在四个老 store 之后,告警比对的顺序不变。
 		{"db_first with nothing assembled", &ServiceContext{Config: withMode(config.RouteStoreModeDBFirst)},
-			[]string{"snapshot", "transaction_log", "id_segment", "player_name", "player_route"}},
+			[]string{"snapshot", "transaction_log", "id_segment", "player_name", "player_route", "route_reconciler"}},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			if got := tc.ctx.MissingStores(); !reflect.DeepEqual(got, tc.want) {
+				t.Fatalf("MissingStores() = %v, want %v", got, tc.want)
+			}
+		})
+	}
+}
+
+// ── 对账 leader 的装配(第 1b-2 批,规格 spec_D1_batch1b2_2_3.md §4.2「构造失败只打 ERROR」)──────────────
+
+// stubReconcileStore / stubReconcileCache 只为让 newRouteReconciler 装配成功:嵌入接口本身(零值)即满足接口,
+// 构造不连接、不起 goroutine,方法从不会被调用(调到就是测试写错了,nil 接口会当场 panic)。Close 写实:装配失败的分支会关 cache。
+type stubReconcileStore struct{ routereconcile.Store }
+
+type stubReconcileCache struct {
+	routereconcile.Cache
+	closed *int
+}
+
+func (c stubReconcileCache) Close() error {
+	if c.closed != nil {
+		*c.closed++
+	}
+	return nil
+}
+
+// reconcileTestConfig 返回 Normalize 过的配置(NewServiceContext 交给 newRouteReconciler 的就是这个形态)。
+func reconcileTestConfig(mode string, enabled *bool, arm bool) config.Config {
+	var c config.Config
+	c.RouteStore = config.RouteStoreConfig{Mode: mode}
+	c.RouteStore.Reconcile.Enabled = enabled
+	c.RouteStore.Reconcile.ArmReadyMarker = arm
+	c.RouteStore = c.RouteStore.Normalize()
+	return c
+}
+
+// TestNewRouteReconcilerOnlyWhenEnabled:redis 模式与急停(Enabled=false)不构造、不建 Redis 客户端、不是错误;db_first 而
+// route store 没装配起来、mapping Redis 不合用(Type=cluster)、leader 标识生成失败一律报错(调用方据此不装配,MissingStores 上报);
+// 装配成功时不连接,leader 标识带本机名(取不到用 unknown),ArmReadyMarker 透传。
+func TestNewRouteReconcilerOnlyWhenEnabled(t *testing.T) {
+	built, closed := 0, 0
+	deps := routeReconcilerDeps{
+		newCache: func(redis.RedisConf, config.RouteStoreConfig) (routereconcile.Cache, error) {
+			built++
+			return stubReconcileCache{closed: &closed}, nil
+		},
+		hostname: func() (string, error) { return "ds-0", nil },
+		random:   strings.NewReader(strings.Repeat("r", 64)),
+	}
+	off := false
+
+	for name, c := range map[string]config.Config{
+		"redis mode":             reconcileTestConfig(config.RouteStoreModeRedis, nil, false),
+		"db_first Enabled=false": reconcileTestConfig(config.RouteStoreModeDBFirst, &off, false),
+	} {
+		if r, err := newRouteReconciler(c, stubReconcileStore{}, deps); r != nil || err != nil || built != 0 {
+			t.Fatalf("%s: reconciler=%v err=%v built=%d, want nothing built and no error", name, r, err, built)
+		}
+	}
+
+	dbFirst := reconcileTestConfig(config.RouteStoreModeDBFirst, nil, false)
+	if r, err := newRouteReconciler(dbFirst, nil, deps); r != nil || err == nil || built != 0 {
+		t.Fatalf("db_first without a route store: reconciler=%v err=%v built=%d, want an error before building the redis client", r, err, built)
+	}
+
+	r, err := newRouteReconciler(reconcileTestConfig(config.RouteStoreModeDBFirst, nil, true), stubReconcileStore{}, deps)
+	if err != nil || r == nil {
+		t.Fatalf("db_first: reconciler=%v err=%v", r, err)
+	}
+	if !strings.HasPrefix(r.LeaderID(), "route_leader@ds-0:") || !r.ArmEnabled() || built != 1 || closed != 0 {
+		t.Fatalf("leader_id=%q arm=%t built=%d closed=%d", r.LeaderID(), r.ArmEnabled(), built, closed)
+	}
+
+	deps.hostname = func() (string, error) { return "", errors.New("no hostname") }
+	if r, err := newRouteReconciler(dbFirst, stubReconcileStore{}, deps); err != nil || r == nil || !strings.HasPrefix(r.LeaderID(), "route_leader@unknown:") {
+		t.Fatalf("a missing hostname must not refuse: reconciler=%v err=%v", r, err)
+	}
+
+	cluster := dbFirst
+	cluster.MappingRedis = redis.RedisConf{Host: closedLoopbackAddr(t), Type: redis.ClusterType}
+	if r, err := newRouteReconciler(cluster, stubReconcileStore{}, productionRouteReconcilerDeps()); r != nil || err == nil {
+		t.Fatalf("a cluster mapping redis must be refused: reconciler=%v err=%v", r, err)
+	}
+	node := dbFirst
+	node.MappingRedis = redis.RedisConf{Host: closedLoopbackAddr(t), Type: redis.NodeType}
+	if r, err := newRouteReconciler(node, stubReconcileStore{}, productionRouteReconcilerDeps()); r == nil || err != nil {
+		t.Fatalf("the production deps must assemble without connecting: reconciler=%v err=%v", r, err)
+	}
+
+	deps.random = strings.NewReader("") // leader 标识的随机后缀读不出
+	if r, err := newRouteReconciler(dbFirst, stubReconcileStore{}, deps); r != nil || err == nil || closed != 1 {
+		t.Fatalf("a failing random source: reconciler=%v err=%v closed=%d, want an error and the built client closed", r, err, closed)
+	}
+}
+
+// TestMissingStoresReportsRouteReconcilerOnlyWhenEnabled:route_reconciler 只在 ReconcileEnabled(db_first 且 Enabled 不是 false)
+// 时必需;redis 模式、急停都不算缺(回归:redis 模式下 MissingStores 仍不含 player_route)。顺序固定在 player_route 之后。
+func TestMissingStoresReportsRouteReconcilerOnlyWhenEnabled(t *testing.T) {
+	off := false
+	deps := routeReconcilerDeps{
+		newCache: func(redis.RedisConf, config.RouteStoreConfig) (routereconcile.Cache, error) {
+			return stubReconcileCache{}, nil
+		},
+		hostname: func() (string, error) { return "ds-1", nil },
+		random:   strings.NewReader(strings.Repeat("s", 16)),
+	}
+	rec, err := newRouteReconciler(reconcileTestConfig(config.RouteStoreModeDBFirst, nil, false), stubReconcileStore{}, deps)
+	if err != nil || rec == nil {
+		t.Fatalf("setup: %v", err)
+	}
+	ready := func(c config.Config, route PlayerRouteStore, r *routereconcile.Reconciler) *ServiceContext {
+		return &ServiceContext{
+			Config:           c,
+			SnapshotStore:    stubSnapshotStore{},
+			TxLogStore:       stubTxLogStore{},
+			IdSegmentStore:   stubIdSegmentStore{},
+			PlayerNameStore:  stubPlayerNameStore{},
+			PlayerRouteStore: route,
+			RouteReconciler:  r,
+		}
+	}
+	dbFirst := reconcileTestConfig(config.RouteStoreModeDBFirst, nil, false)
+	cases := []struct {
+		name string
+		ctx  *ServiceContext
+		want []string
+	}{
+		{"db_first with route store and reconciler", ready(dbFirst, stubPlayerRouteStore{}, rec), nil},
+		{"db_first with route store, reconciler missing", ready(dbFirst, stubPlayerRouteStore{}, nil), []string{"route_reconciler"}},
+		{"db_first with both missing", ready(dbFirst, nil, nil), []string{"player_route", "route_reconciler"}},
+		{"db_first Enabled=false", ready(reconcileTestConfig(config.RouteStoreModeDBFirst, &off, false), stubPlayerRouteStore{}, nil), nil},
+		{"redis mode", ready(reconcileTestConfig(config.RouteStoreModeRedis, nil, false), nil, nil), nil},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {

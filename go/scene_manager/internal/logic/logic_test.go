@@ -688,6 +688,10 @@ func TestEnterScene_ExistingLocationCrossZoneRejectedWhileOldNodeAliveThenRedire
 	mr.Set(fmt.Sprintf(InstancePlayerCountKey, oldScene), "5")
 	// 旧 zone 的属主节点仍在负载集里 = 它可能还在写这名玩家 → 必须拒绝。
 	mr.ZAdd(nodeLoadKey(1), 0, "10")
+	// etcd 注册表里它也还在(租约未到期);下面整 zone 下线时注册与负载集一起消失。
+	resetRegistryMirrorForTest(t)
+	forgetNodeGoneObservationForTest(t, 1, "10")
+	registerKnownNodeForTest(t, "SceneNodeService.rpc/z1-10", 1, "10")
 	require.NoError(t, UpdatePlayerLocation(ctx, sc, playerID, oldScene, "10", 1))
 
 	logic := NewEnterSceneLogic(ctx, sc)
@@ -719,8 +723,9 @@ func TestEnterScene_ExistingLocationCrossZoneRejectedWhileOldNodeAliveThenRedire
 	assert.Equal(t, oldScene, loc.SceneId)
 	assert.Equal(t, uint32(1), loc.ZoneId)
 
-	// 旧 zone 整体下线(负载集空、节点不在集内、无 death_at 屏障):陈旧位置
+	// 旧 zone 整体下线(注册表里已无节点、负载集空、节点不在集内、无 death_at 屏障):陈旧位置
 	// 不再能证明有人在写,第一条腿必须放行到重定向。
+	unregisterKnownNodeForTest("SceneNodeService.rpc/z1-10")
 	mr.ZRem(nodeLoadKey(1), "10")
 	resp, err = logic.EnterScene(request)
 	require.NoError(t, err)
@@ -784,10 +789,12 @@ func TestEnterScene_ZoneScopedNodeIDCollisionStillRejectedWhileOldNodeAlive(t *t
 }
 
 // seedStaleLocationFromZone1 摆出「玩家位置指向 zone 1 的 node 10 / oldScene,
-// 目标是 zone 2 的 targetID(node 10)」这组共用夹具;zone 1 的负载集由各用例
-// 自己决定是活着、空着还是坏掉。
+// 目标是 zone 2 的 targetID(node 10)」这组共用夹具;zone 1 在 etcd 注册表里已没有
+// 任何节点(源区已下线,陈旧位置判定的正面证据),负载集由各用例自己决定是活着、
+// 空着还是坏掉。注册表还有节点、只是负载键丢失的情形见 enter_stale_location_test.go。
 func seedStaleLocationFromZone1(t *testing.T, sc *svc.ServiceContext, mr *miniredis.Miniredis, playerID, oldScene, targetID uint64) {
 	t.Helper()
+	markZoneGoneFromRegistryForTest(t, 1, "10")
 	mr.Set(fmt.Sprintf(SceneNodeKeyFmt, targetID), "10")
 	mr.Set(fmt.Sprintf(SceneZoneKeyFmt, targetID), "2")
 	mr.Set(fmt.Sprintf(InstancePlayerCountKey, targetID), "3")

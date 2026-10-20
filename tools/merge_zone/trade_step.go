@@ -180,10 +180,17 @@ func tradeResidualAbortMessage(rows int64, manifestListings int, left int64, src
 // 由调用方改写后复查源区计数来拒绝继续(见 merge_run.go 步骤 3b)。
 // 重跑幂等:已经改过的行不再满足 market_zone = src。
 func migrateTradeMarketZone(ctx context.Context, db *sql.DB, schema string, ids []uint64, src, dst uint32, dryRun bool) (int64, error) {
+	return migrateTradeMarketZoneGated(ctx, db, schema, ids, src, dst, dryRun, nil)
+}
+
+// migrateTradeMarketZoneGated 同 migrateTradeMarketZone,另在每个 listing_id 的单行事务之前查 gate(-route-source=db 的围栏
+// 失权判据,规格 §6.3「不碰映射的步骤每批之前查失权」;nil = 不查,即 migrateTradeMarketZone 的行为)。
+func migrateTradeMarketZoneGated(ctx context.Context, db *sql.DB, schema string, ids []uint64, src, dst uint32, dryRun bool,
+	gate writeGate) (int64, error) {
 	table := tradeListingQualified(schema)
 	if !dryRun {
 		// 错误原样上抛:rewriteZoneByPrimaryKey 已带表.列、方向、出错主键与已改行数,再包一层只会把它们重复一遍。
-		return rewriteZoneByPrimaryKey(ctx, db, table, tradeListingPKColumn, tradeMarketZoneColumn, ids, src, dst)
+		return rewriteZoneByPrimaryKey(ctx, db, table, tradeListingPKColumn, tradeMarketZoneColumn, ids, src, dst, gate)
 	}
 	total, err := countListingsInZoneAmong(ctx, db, schema, ids, src)
 	if err != nil {
@@ -214,6 +221,12 @@ func countListingsInZoneAmong(ctx context.Context, db *sql.DB, schema string, id
 // 不在清单里的(目标区原住民)与已经不在 dst 的(去了第三个 zone,不是这次合服造成的)
 // 一律不动。dry-run 数出「会被改回」的行数但不写。
 func restoreTradeMarketZone(ctx context.Context, db *sql.DB, schema string, ids []uint64, src, dst uint32, dryRun bool) (int, error) {
+	return restoreTradeMarketZoneGated(ctx, db, schema, ids, src, dst, dryRun, nil)
+}
+
+// restoreTradeMarketZoneGated 同 restoreTradeMarketZone,另在每个 listing_id 的单行事务之前查 gate(见 migrateTradeMarketZoneGated)。
+func restoreTradeMarketZoneGated(ctx context.Context, db *sql.DB, schema string, ids []uint64, src, dst uint32, dryRun bool,
+	gate writeGate) (int, error) {
 	if len(ids) == 0 {
 		return 0, nil
 	}
@@ -221,7 +234,7 @@ func restoreTradeMarketZone(ctx context.Context, db *sql.DB, schema string, ids 
 	if !dryRun {
 		// 与改写同一个点更新函数(锁序见 rewriteZoneByPrimaryKey),方向反过来:dst → src。
 		// 错误原样上抛,理由同 migrateTradeMarketZone。
-		total, err := rewriteZoneByPrimaryKey(ctx, db, table, tradeListingPKColumn, tradeMarketZoneColumn, ids, dst, src)
+		total, err := rewriteZoneByPrimaryKey(ctx, db, table, tradeListingPKColumn, tradeMarketZoneColumn, ids, dst, src, gate)
 		return int(total), err
 	}
 	total, err := countListingsInZoneAmong(ctx, db, schema, ids, dst)

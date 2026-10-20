@@ -95,23 +95,29 @@ func WatchPersistBootstrap(ctx context.Context, rc redis.Cmdable, zone uint32) {
 			return
 		case <-ticker.C:
 		}
-		if persistBootstrapClosed.Load() {
-			continue
-		}
 		stepCtx, cancel := context.WithTimeout(ctx, persistBootstrapRecheckInterval)
-		closed, err := readPersistBootstrapClosed(stepCtx, rc, zone)
+		err := refreshPersistBootstrap(stepCtx, rc, zone)
 		cancel()
-		if err != nil {
-			if ctx.Err() == nil {
-				logx.Errorf("[PersistSchema] 引导关闭标记复查失败,维持引导期开放,下一拍重试: %v", err)
-			}
-			continue
-		}
-		if closed {
-			setPersistBootstrapClosed(true)
-			logx.Infof("[PersistSchema] zone=%d 引导期已关闭:此后未盖戳的玩家表写进死信(persist_unstamped)", zone)
+		if err != nil && ctx.Err() == nil {
+			logx.Errorf("[PersistSchema] 引导关闭标记复查失败,维持当前状态,下一拍重试: %v", err)
 		}
 	}
+}
+
+// refreshPersistBootstrap 是复查的一拍,单独拆出来便于不依赖墙钟地测试。已关闭时不再读 Redis。
+func refreshPersistBootstrap(ctx context.Context, rc redis.Cmdable, zone uint32) error {
+	if persistBootstrapClosed.Load() {
+		return nil
+	}
+	closed, err := readPersistBootstrapClosed(ctx, rc, zone)
+	if err != nil {
+		return err
+	}
+	if closed {
+		setPersistBootstrapClosed(true)
+		logx.Infof("[PersistSchema] zone=%d 引导期已关闭:此后未盖戳的玩家表写进死信(persist_unstamped)", zone)
+	}
+	return nil
 }
 
 func setPersistBootstrapClosed(closed bool) {

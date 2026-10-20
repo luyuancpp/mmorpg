@@ -419,7 +419,7 @@ func TestRunDBOp_ObservesSQLStage(t *testing.T) {
 }
 
 func TestRunDBOpRejectedOutcomesAreHealthyAndNeverPublish(t *testing.T) {
-	for _, kind := range []string{writeOlder, writeStaleOwner, writeLegacyAfterSeq} {
+	for _, kind := range []string{writeOlder, writeStaleOwner, writeLegacyAfterSeq, writeSchemaRegression} {
 		t.Run(kind, func(t *testing.T) {
 			f := newRunDBOpFixture(t)
 			task := f.task("write")

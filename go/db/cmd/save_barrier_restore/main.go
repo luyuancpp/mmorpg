@@ -29,7 +29,7 @@ type options struct {
 	zone                                                                                         uint
 	redisDB                                                                                      int
 	routingMode                                                                                  string
-	writersStopped, queuesDrained, allowLegacy, localMySQL                                       bool
+	writersStopped, queuesDrained, allowLegacy, localMySQL, allowHomeFallback                    bool
 	mappingAddr, mappingPasswordEnv, routeSchema                                                 string
 	mappingDB                                                                                    int
 }
@@ -56,6 +56,7 @@ func main() {
 	flag.BoolVar(&o.writersStopped, "writers-stopped", false, "声明 scene/login/DB、scene_manager等归属发号者、路由/回填/迁移工具均已停且不能复活")
 	flag.BoolVar(&o.queuesDrained, "queues-drained", false, "声明全部 Kafka 世代、retry、processing、dead 已审定排空")
 	flag.BoolVar(&o.allowLegacy, "allow-legacy", false, "仅 plan：允许将历史零围栏双表元数据迁到现有 owner/seq1")
+	flag.BoolVar(&o.allowHomeFallback, "allow-home-fallback", false, "仅 plan：允许无落点记录、home 等于 -zone 的玩家按本区 zone 库恢复(copy 合服/撤销后)；写进计划")
 	flag.BoolVar(&o.localMySQL, "local-mysql", false, "仅本地 MySQL 验证；默认必须是 TiDB 强读会话")
 	flag.Parse()
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
@@ -93,6 +94,7 @@ func run(ctx context.Context, o options, out, errOut io.Writer) int {
 	defer rc.Close()
 	r := barrierrestore.Restorer{Redis: rc, RoutingMode: o.routingMode, LocalMySQL: o.localMySQL, RouteSchema: o.routeSchema}
 	r.AuditedOwnerUpperBound = o.auditedOwnerUpperBound
+	r.AllowHomeFallback = o.allowHomeFallback // 只影响 plan;apply 以计划为准(validateOptions 拒绝 apply 带它)
 	if o.mappingAddr != "" || o.redisDB != 0 {
 		addr, password := o.mappingAddr, os.Getenv(o.mappingPasswordEnv)
 		if addr == "" {
@@ -171,7 +173,7 @@ func validateOptions(o options) error {
 		return errors.New("必须先停旧写者、阻止自动复活并审定全部 Kafka/retry/dead 排空；工具无法代替此停写门禁")
 	}
 	if o.mode == "guard" {
-		if o.routingMode == barrierrestore.RoutingModeRedis || o.planFile != "" || o.planSHA != "" || o.players != "" || o.allowLegacy {
+		if o.routingMode == barrierrestore.RoutingModeRedis || o.planFile != "" || o.planSHA != "" || o.players != "" || o.allowLegacy || o.allowHomeFallback {
 			return errors.New("guard 仅建立跨接缝维护闸，不接受计划或资产选项")
 		}
 		return nil
@@ -188,7 +190,7 @@ func validateOptions(o options) error {
 	if o.mode == "plan" && (o.players == "" || o.planSHA != "") {
 		return errors.New("plan 必须指定玩家集合，不接受旧计划摘要")
 	}
-	if o.mode == "apply" && (o.planSHA == "" || o.players != "" || o.allowLegacy) {
+	if o.mode == "apply" && (o.planSHA == "" || o.players != "" || o.allowLegacy || o.allowHomeFallback) {
 		return errors.New("apply 必须提供计划摘要，玩家与迁移选项只能取自审定计划")
 	}
 	return nil

@@ -2,14 +2,18 @@ package svc
 
 import (
 	"context"
+	"crypto/rand"
 	"database/sql"
 	"errors"
+	"fmt"
+	"io"
 	"os"
 	"time"
 
 	"data_service/internal/config"
 	"data_service/internal/guildcheck"
 	"data_service/internal/metrics"
+	"data_service/internal/routereconcile"
 	"data_service/internal/routing"
 	"data_service/internal/store"
 
@@ -18,6 +22,7 @@ import (
 	"shared/sqlpoolstats"
 
 	"github.com/zeromicro/go-zero/core/logx"
+	"github.com/zeromicro/go-zero/core/stores/redis"
 	"github.com/zeromicro/go-zero/zrpc"
 )
 
@@ -118,6 +123,11 @@ type ServiceContext struct {
 	// MissingStores 留一份引用)。nil = redis 模式,或 db_first 但没装配起来(此时 RegisterPlayerZone fail-closed)。
 	PlayerRouteStore PlayerRouteStore
 
+	// RouteReconciler 是 db_first 下的对账 leader(D1 第 1b-2 批,internal/routereconcile)。nil = redis 模式、
+	// Reconcile.Enabled=false,或没装配起来(后者 MissingStores 带上 "route_reconciler",Store.Required=true 时 main 拒启)。
+	// 构造时不开连接、不起 goroutine;由 main 启停(Start / stop,关停顺序见 data_service.go),Close 不管它。
+	RouteReconciler *routereconcile.Reconciler
+
 	// GuildDivergence 是回档闸问 guild 的接缝(docs/design/guild-phase2/07-rollback-fail-closed.md §7.5.1)。
 	//
 	// ⚠ **nil = 未配置 = 三个 Rollback* 一律拒绝**(ErrCodeRollbackGuildCheckFailed,零写入,放行无效)。
@@ -157,6 +167,9 @@ func MySQLConfigOf(c config.Config) store.MySQLConfig {
 // MissingStores 返回没装配起来的 MySQL store 的名字(固定顺序);全部就绪时返回 nil。
 // main 在 Store.Required=true 时据此拒绝启动(见 config.StoreConfig)。
 // player_route 只在 RouteStore.Mode=db_first 时才是必需的:redis 模式根本不装配它,不能算缺。
+// route_reconciler(对账 leader)只在 RouteStore.ReconcileEnabled()(db_first 且 Reconcile.Enabled 不是 false)时才是必需的
+// (核实意见 should「构造失败只打 ERROR」:所有副本因同一原因装不起来时,既不补发孤儿行、也不做回档检测,指标上也看不出来);
+// player_route 缺席时它必然也缺,两项各自上报。
 func (s *ServiceContext) MissingStores() []string {
 	var missing []string
 	if s.SnapshotStore == nil {
@@ -173,6 +186,9 @@ func (s *ServiceContext) MissingStores() []string {
 	}
 	if s.Config.RouteStore.DBFirst() && s.PlayerRouteStore == nil {
 		missing = append(missing, "player_route")
+	}
+	if s.Config.RouteStore.ReconcileEnabled() && s.RouteReconciler == nil {
+		missing = append(missing, "route_reconciler")
 	}
 	return missing
 }
@@ -262,7 +278,27 @@ func NewServiceContext(c config.Config) *ServiceContext {
 	// 映射提交点的库(docs/design/player-route-mapping-durability-proposal.md §4,第 1a 批):只在 db_first 时装配。
 	// 失败只记 ERROR、保持 nil:RegisterPlayerZone 届时 fail-closed(ErrRouteStore),Store.Required=true 时
 	// MissingStores 带上 "player_route",main 拒启。
-	playerRouteStore := newPlayerRouteStore(c, mysqlCfg, schemaReady)
+	//
+	// 同一个 *store.RouteStore 交给两个消费方:PlayerRouteStore(Router 的写入点与回源读者)与对账 leader(routereconcile.Store)。
+	// 两处都在判空之后才赋给接口(规格 d 节「nil 接口陷阱」:把 nil 的 *store.RouteStore 直接转成接口,就是「非 nil 接口包着 nil 指针」,
+	// 判空拦不住、调用即 panic)。
+	routeStore := newPlayerRouteStore(c, mysqlCfg, schemaReady)
+	var (
+		playerRouteStore PlayerRouteStore
+		reconcileStore   routereconcile.Store
+	)
+	if routeStore != nil {
+		playerRouteStore = routeStore
+		reconcileStore = routeStore
+	}
+
+	// 对账 leader(D1 第 1b-2 批):只在 ReconcileEnabled(db_first 且 Reconcile.Enabled 不是 false)时构造;构造不开连接。
+	// 失败只记 ERROR、保持 nil;Store.Required=true 时 MissingStores 带上 "route_reconciler",main 拒启(核实意见 should)。
+	routeReconciler, err := newRouteReconciler(c, reconcileStore, productionRouteReconcilerDeps())
+	if err != nil {
+		logx.Errorf("[ServiceContext] route reconcile leader not assembled (no orphan-row republish, no rollback detection, "+
+			"no fence mirror reconciliation; Store.Required=true refuses to start): %v", err)
+	}
 
 	// Optional: login admin gRPC client for orphan account cleanup during rollback
 	var loginClient loginpb.LoginAdminClient
@@ -272,9 +308,8 @@ func NewServiceContext(c config.Config) *ServiceContext {
 		logx.Info("[ServiceContext] login admin RPC client connected")
 	}
 
-	// 只有 store 非 nil 时才注入(规格 d 节「nil 接口陷阱」):newPlayerRouteStore 的失败分支返回字面量 nil,
-	// 这里的判空才可靠;若改成先赋给 *store.RouteStore 再转接口,就会得到「非 nil 接口包着 nil 指针」,
-	// 路由器的判空拦不住、调用即 panic。第 3 批起同一个实例也作为回源读者注入(routeRouterOptions)。
+	// 只有 store 非 nil 时才注入(规格 d 节「nil 接口陷阱」):playerRouteStore 只在 routeStore 非 nil 时才被赋值(见上),
+	// 这里的判空才可靠。第 3 批起同一个实例也作为回源读者注入(routeRouterOptions)。
 	routerOpts := routeRouterOptions(playerRouteStore)
 
 	// 第 3 批读方门禁的指标只在开关打开时预置(理由同 metrics.PrimeRoute;开关只许 db_first,Validate 已钉住)。
@@ -290,9 +325,72 @@ func NewServiceContext(c config.Config) *ServiceContext {
 		IdSegmentStore:   idSegmentStore,
 		PlayerNameStore:  playerNameStore,
 		PlayerRouteStore: playerRouteStore,
+		RouteReconciler:  routeReconciler,
 		LoginAdminClient: loginClient,
 		GuildDivergence:  newGuildDivergenceChecker(c),
 	}
+}
+
+// routeReconcilerDeps 是 newRouteReconciler 的外部依赖(单测接缝):mapping Redis 客户端的构造、本机名、预热令牌与 leader 标识的随机源。
+// 生产值见 productionRouteReconcilerDeps;单测注入假实现,不连 Redis、不碰环境。
+type routeReconcilerDeps struct {
+	newCache func(mapping redis.RedisConf, rc config.RouteStoreConfig) (routereconcile.Cache, error)
+	hostname func() (string, error)
+	random   io.Reader
+}
+
+// productionRouteReconcilerDeps:独立 go-redis 客户端(routereconcile.NewRedisCache,不经 go-zero 熔断器)、os.Hostname、crypto/rand。
+func productionRouteReconcilerDeps() routeReconcilerDeps {
+	return routeReconcilerDeps{
+		newCache: func(mapping redis.RedisConf, rc config.RouteStoreConfig) (routereconcile.Cache, error) {
+			// 先判错再转接口:NewRedisCache 失败时回的是 nil 的 *RedisCache,直接 return 会包出非 nil 接口。
+			cache, err := routereconcile.NewRedisCache(mapping, rc)
+			if err != nil {
+				return nil, err
+			}
+			return cache, nil
+		},
+		hostname: os.Hostname,
+		random:   rand.Reader,
+	}
+}
+
+// newRouteReconciler 装配对账 leader(纯装配,不开连接、不起 goroutine;svc 单测的接缝,核实意见 should)。
+//   - 不要求 leader(redis 模式、Reconcile.Enabled=false)→ (nil, nil):不是错误,MissingStores 也不算它缺;
+//   - 要求 leader 而 route store 没装配起来(rs 为 nil)、mapping Redis 配置不合用(Type 不是 node 等)、leader 标识生成失败
+//     → (nil, error):调用方只记 ERROR,MissingStores 带上 "route_reconciler"。
+//
+// c.RouteStore 必须是 Normalize 过的(NewServiceContext 里已经做了);rs 为 nil 时必须是字面量 nil 接口。
+func newRouteReconciler(c config.Config, rs routereconcile.Store, deps routeReconcilerDeps) (*routereconcile.Reconciler, error) {
+	if !c.RouteStore.ReconcileEnabled() {
+		return nil, nil
+	}
+	if rs == nil {
+		return nil, errors.New("RouteStore.Mode=db_first but the route store (player_route) is not assembled; see the route store error above")
+	}
+	cache, err := deps.newCache(c.MappingRedis, c.RouteStore)
+	if err != nil {
+		return nil, fmt.Errorf("mapping redis client for the reconcile leader: %w", err)
+	}
+	host, err := deps.hostname()
+	if err != nil {
+		// 取不到主机名不拒启:leader 标识里的 host 用 "unknown",随机后缀仍保证副本之间不同名。
+		logx.Errorf("[ServiceContext] os.Hostname failed, the route reconcile leader id falls back to unknown: %v", err)
+		host = ""
+	}
+	leaderID, err := store.NewRouteLeaderID(host, deps.random)
+	if err != nil {
+		_ = cache.Close()
+		return nil, fmt.Errorf("route reconcile leader id: %w", err)
+	}
+	r, err := routereconcile.New(c.RouteStore, routereconcile.Deps{Store: rs, Cache: cache, LeaderID: leaderID, Random: deps.random})
+	if err != nil {
+		_ = cache.Close()
+		return nil, err
+	}
+	logx.Infof("[ServiceContext] route reconcile leader assembled: leader_id=%s arm_ready_marker=%t (starts with the service)",
+		leaderID, r.ArmEnabled())
+	return r, nil
 }
 
 // newPlayerRouteStore 装配 db_first 的库内提交点。redis 模式、启动期迁移失败(schemaReady=false)、
@@ -302,8 +400,9 @@ func NewServiceContext(c config.Config) *ServiceContext {
 // 连接参数用全局库(MySQLConfigOf),池大小覆盖为 RouteStore 段的值 —— route store 的会话变量(RC + 锁等待 1s)
 // 不能带给别的 store,所以它总是自己开池(store.NewRouteStore)。写者标识 "data_service@{hostname}" 写进
 // player_route.updated_by,排障时能看出是哪个副本写的;hostname 取不到时 NewRouteWriterID 用 "unknown"。
-// 返回值是接口:只在成功时把 *store.RouteStore 赋进去,失败分支一律返回字面量 nil(不会包出 nil 指针)。
-func newPlayerRouteStore(c config.Config, mysqlCfg store.MySQLConfig, schemaReady bool) PlayerRouteStore {
+// 返回具体类型(失败为 nil):同一个实例要交给 PlayerRouteStore 与对账 leader 两个接口,调用方判空之后再分别赋值
+// (第 1b-2 批起;此前返回接口,判空口径不变)。
+func newPlayerRouteStore(c config.Config, mysqlCfg store.MySQLConfig, schemaReady bool) *store.RouteStore {
 	if !c.RouteStore.DBFirst() {
 		return nil
 	}

@@ -18,9 +18,15 @@ package main
 //
 // 不要求能力标记:钉的值等于 home,旧版 go/db(按本进程 zone 选库)对这些人选到的仍是同一个库。
 // 扫描期间新建的号可能漏掉:先打开 login 的 PinOnCreate 再跑本模式;漏掉的重跑一次即可(幂等)。
+//
+// -route-source=db(W10,规格 §6.3、§13.3 第 5 条):每批 ≤ 200 人一个库事务(PinZonePlacementBatch:zone 的 63 号片围栏未生效 →
+// 库里没有该 zone 的合走标记 → home = N 且无落点的行按键集游标 `route_shard > ? OR (route_shard = ? AND player_id > ?)` 加锁 →
+// 钉)→ 提交 → 本批发布 + WAITAOF → 下一批;最后对 home = N 且记录已是 "{N}:1" 的行做一遍 catch-up(库 rev 领先缓存的先发布确认),
+// 上一次运行提交了却没发布成的钉,重跑时由它补上(加锁扫描只挑还没钉的行,看不见它们)。钉的值等于 home,早晚可见都安全。
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 	"strconv"
@@ -37,17 +43,24 @@ type pinPlacementEntryParams struct {
 	mappingDB   int
 	dryRun      bool
 	timeout     time.Duration
+	// route 是 -route-source 与路由库参数(main 装配,routeEntryOptionsOf)。
+	route routeEntryOptions
 }
 
 func runPinPlacementEntry(p pinPlacementEntryParams) {
 	ctx, cancel := context.WithTimeout(context.Background(), p.timeout)
 	defer cancel()
-	log.Printf("=== Pin placement \"%d:1\" for players with home_zone=%d and no record (dry-run=%v, mapping=%s db=%d) ===",
-		p.zone, p.zone, p.dryRun, p.mappingAddr, p.mappingDB)
+	log.Printf("=== Pin placement \"%d:1\" for players with home_zone=%d and no record (dry-run=%v, mapping=%s db=%d, route-source=%s) ===",
+		p.zone, p.zone, p.dryRun, p.mappingAddr, p.mappingDB, p.route.source)
 	mapRdb := mustDial(ctx, "mapping", p.mappingAddr, p.mappingPwd, p.mappingDB)
 	defer mapRdb.Close()
+	rb, err := openRunRouteBackend(ctx, p.route, mapRdb, newToolRunID("pin", p.zone, time.Now()))
+	if err != nil {
+		log.Fatalf("pin-placement: route source: %v", err)
+	}
+	defer rb.Close()
 
-	rep, err := pinZonePlacements(ctx, mapRdb, p.zone, p.dryRun)
+	rep, err := stepPinZonePlacements(ctx, rb, mapRdb, p.zone, p.dryRun)
 	if err != nil {
 		log.Fatalf("pin-placement: %v (progress: %s)", err, rep)
 	}
@@ -123,6 +136,94 @@ func pinZonePlacements(ctx context.Context, rdb *redis.Client, zone uint32, dryR
 	if rep.AnomalyCount > 0 {
 		return rep, fmt.Errorf("%d players could not be pinned (first: %v)", rep.AnomalyCount, rep.Anomalies)
 	}
+	return rep, nil
+}
+
+// stepPinZonePlacements 按源分派 -mode pin-placement:rb == nil → pinZonePlacements(Redis,逐字不变);否则 pinZonePlacementsDB。
+func stepPinZonePlacements(ctx context.Context, rb *routeBackend, rdb *redis.Client, zone uint32, dryRun bool) (pinReport, error) {
+	if rb == nil {
+		return pinZonePlacements(ctx, rdb, zone, dryRun)
+	}
+	return pinZonePlacementsDB(ctx, rb, zone, routePinZoneBatchLimit, dryRun)
+}
+
+// pinZonePlacementsDB 是 pinZonePlacements 的库版(W10,见文件头)。limit 是每批人数(生产 routePinZoneBatchLimit;
+// 集成用例传小值证键集翻页跨片)。
+//
+// 前置(只读,先于任何写):zone 的围栏生效或库里有该 zone 的合走标记即拒绝;每个批事务在库里再复核一次,那才是权威判据 ——
+// 中途有合服立起围栏,下一批回 errRouteZoneFenced,整轮停下(已钉的不回退,合完再重跑,幂等)。
+func pinZonePlacementsDB(ctx context.Context, rb *routeBackend, zone uint32, limit int, dryRun bool) (pinReport, error) {
+	var rep pinReport
+	fs, err := rb.db.ReadFence(ctx, zone)
+	if err != nil {
+		return rep, fmt.Errorf("cannot prove zone %d is not being merged: %w", zone, err)
+	}
+	if fs.Active {
+		return rep, fmt.Errorf("zone %d is being merged (zone_merge_fence run_id=%s): pin after the merge finishes", zone, fs.RunID)
+	}
+	if dst, run, found, err := rb.db.ReadMergedInto(ctx, zone); err != nil {
+		return rep, fmt.Errorf("cannot prove zone %d was not merged away: %w", zone, err)
+	} else if found {
+		return rep, fmt.Errorf("zone %d was merged away (zone_merged_into: dst %d run_id %s): players still mapped to it are stragglers of "+
+			"that merge — handle them first instead of pinning them to a retired zone database", zone, dst, run)
+	}
+	pinValue := stableValue(zone, 1)
+	if dryRun {
+		err := scanZoneHomeRows(ctx, rb.db, zone, func(page []mergeRouteRow) error {
+			for _, row := range page {
+				rep.Candidates++
+				rec, err := row.placementValue()
+				if err != nil {
+					return err
+				}
+				countPinVerdict(&rep, decidePin(rec, row.homeValue(), zone))
+			}
+			return nil
+		})
+		return rep, err
+	}
+	after := routeScanCursor{}
+	for {
+		res, next, done, err := rb.db.PinZonePlacementBatch(ctx, zone, after, limit)
+		if err != nil {
+			if errors.Is(err, errRouteZoneFenced) {
+				return rep, fmt.Errorf("zone %d entered a merge while pinning: stopped — re-run after the merge (pinning is idempotent): %w", zone, err)
+			}
+			return rep, err
+		}
+		rep.Candidates += len(res.Target)
+		rep.Pinned += res.Changed
+		if _, err := rb.pub.publishRoutes(ctx, res.Target); err != nil {
+			return rep, fmt.Errorf("a pin batch of %d players committed in player_route but its publish failed — re-run (the final "+
+				"catch-up republishes rows that are already pinned): %w", len(res.Target), err)
+		}
+		if done {
+			break
+		}
+		after = next
+	}
+	// 收尾 catch-up:home = zone 且记录已是 "{zone}:1" 的行(本次与以前钉的;建角 PinOnCreate 钉的也在其中),缓存落后的先发布确认。
+	var pinned []mergeRouteRow
+	if err := scanZoneHomeRows(ctx, rb.db, zone, func(page []mergeRouteRow) error {
+		for _, row := range page {
+			rec, err := row.placementValue()
+			if err != nil {
+				return err
+			}
+			if rec == pinValue {
+				pinned = append(pinned, row)
+			}
+		}
+		return nil
+	}); err != nil {
+		return rep, fmt.Errorf("catch-up scan of zone %d: %w", zone, err)
+	}
+	cu, err := rb.pub.catchUpRoutes(ctx, pinned)
+	if err != nil {
+		return rep, fmt.Errorf("catch-up publish of %d rows pinned to %q: %w", len(pinned), pinValue, err)
+	}
+	log.Printf("pin-placement: catch-up over %d rows pinned to %q: %d already current in the mapping Redis, %s",
+		len(pinned), pinValue, cu.Current, cu.Published)
 	return rep, nil
 }
 

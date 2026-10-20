@@ -170,7 +170,9 @@
      - 未编译、未测试，待用户编译。
 3. **C4**：**2026-10-16 已定**（§2.4 遗留第 1 条）。围栏接手方已把收件箱列为 epoch-raise 的取 max 来源，写进围栏设计 v0.4 的 §9.1 与 §14 第 5、20 条。收件箱侧剩的事：设计 §11.1 C4 与 runbook §7 按 v0.4 的口径订正（第 C 批做）；GetSummary 的 `max_fence_epoch` 语义保持不变。
 4. **对抗式评审**：一致性 / 并发、仓库契合、运维 / 安全三个视角，重点看 Fetch / Ack 事务、seq 分配、围栏、账本落盘与 Ack 的时序。按用户约定，评审只看语义与运行期，不做编译可行性的静态评审。**2026-10-16 已做完**，结论见 §6：1 条 high、7 条 medium、14 条 low，其中 5 项待拍板，其余待修。**2026-10-17 ~ 18 已按拍板分 A / B / C 三批修完**，状态见 §6.4；全部未编译、未测试。
-5. **Java 版**（AGENTS §12）：Java 仓 `D:\luyuan\xuanming-server-mmo`，按设计 §12 新建 `game-inbox` 模块与 scene 的 `InboxHooks`。PARITY 已登记「Java 待做」一行。Java 仓允许 Claude 自己编译和测试。
+5. **Java 版**（AGENTS §12）：Java 仓 `D:\luyuan\xuanming-server-mmo`，按设计 §12 新建 `game-inbox` 模块与 scene 的 `InboxHooks`。PARITY 已登记「Java 待做」一行。Java 仓允许 Claude 自己编译和测试。**2026-10-19 起转为待办**：进度与剩余事项见 [todo_zh.md](../notes/todo_zh.md) 第 293 条。
+   - **已有进度**（全部在 Java 仓工作区，未提交）：契约已一致；game-inbox 模块已写完，能编译但没写测试；game-scene 侧已写，还没编译。
+   - **剩余**：SceneNode 装配、回档时保留账本、守卫登记、补测试、改文档（PARITY 收件箱行实际在第 171 行）、跑全量构建。
 6. **文档收尾**：设计稿附录 E 与 §11 按实际落码回填（附录 E 的 `.gitignore` 口径见 §2.2 第 3 条；设计状态行 :3 仍写「未落码」）；PROGRESS 追加实现条目，并注明 Java 版本号。Java 仓 `PARITY.md:168` 的 mmorpg 列与备注已过期（仍写「未提交，设计定稿，未落码」「D13 待确认」），做 Java 版时一并更新。 **2026-10-17 ~ 18 第 C 批已做大半**：设计稿（含附录 E、§11 回填与新增附录 F）、runbook、Java 仓 PARITY.md 第 168 行都已订正。剩下的是 PROGRESS 实现条目，在 Codex 验证之后补上 Java 版本号。
 7. **第 5 批（开放外部生产方）的前置**：先修死锁审计 #23 第 1 条（`ensureStream`），并同批订正设计 §6.2 第 6 步的消环论证（§2.2 末尾）；#23 第 2 条（`ClearNotifyDue`）等 TiDB Phase 1 复核的结论。Java 版的入箱实现照修好后的口径写，不要照抄现在的 `ensureStream`。
 

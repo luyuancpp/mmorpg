@@ -140,10 +140,8 @@ type tradeSmokeBot struct {
 	// 吃 gate 默认档 3 次 / 窗口,按秒粒度淘汰,1.1s 间隔下缓冲区至多 2 条(推导见 chat_smoke_scenario.go)。
 	requestSpacing time.Duration
 
-	// RecvLoop goroutine 写、场景主流程读,mu 保护。
-	mu       sync.Mutex
-	replies  map[uint32]*base.MessageContent // trade 消息号 → 本次请求发出后收到的第一个回包
-	gateTips []uint32                        // 本次请求期间收到的 SendTipToClient
+	// caller 发请求并只等它自己的回包(按请求号认领,见 smoke_rpc_call.go)。
+	caller *smokeCaller
 
 	lastRequestAt time.Time // 仅主流程读写
 }
@@ -564,7 +562,7 @@ func tradeSmokeLogin(cfg *config.Config, account string, spacing time.Duration, 
 		player:         gameobject.NewPlayer(gc.PlayerId),
 		stats:          stats,
 		requestSpacing: spacing,
-		replies:        make(map[uint32]*base.MessageContent),
+		caller:         newSmokeCaller(gc, stats, account, tradeSmokeRpcTimeout, errTradeSmokeTimeout),
 	}
 	gameobject.PlayerList.Set(gc.PlayerId, bot.player)
 	go gc.RecvLoop(bot.onMessage)
@@ -580,76 +578,33 @@ func tradeSmokeLogin(cfg *config.Config, account string, spacing time.Duration, 
 	return bot, nil
 }
 
-// onMessage:trade 消息号的回包(含信封拒绝)由本场景认领;gate 的 SendTipToClient 记下来供快速失败;其余交给通用分发。
+// onMessage:trade 请求的回包(含信封拒绝)带请求号,由 GameClient 交给 caller,不会到这里;
+// gate 的 SendTipToClient 交给 caller 供快速失败;其余交给通用分发。
 //
-// 必须在分发前认领**全部**五个 trade 消息号:ClientPlayerJubaozhai 服务名含 "ClientPlayer",
+// 必须在分发前拦下**全部**五个 trade 消息号(同号却 id = 0 的记一行后丢弃):ClientPlayerJubaozhai 服务名含 "ClientPlayer",
 // 生成器会给它产出 robot handler stub 并登记进 message_body_handler.go;信封拒绝(body 为空)
 // 一旦落进 MessageBodyHandler 会被解成全零响应,看上去像 tip=0 受理。
 func (b *tradeSmokeBot) onMessage(client *pkg.GameClient, msg *base.MessageContent) {
 	b.stats.MsgRecv()
 	if tradeSmokeIsTradeMessage(msg.GetMessageId()) {
-		b.mu.Lock()
-		if _, seen := b.replies[msg.GetMessageId()]; !seen {
-			b.replies[msg.GetMessageId()] = msg
-		}
-		b.mu.Unlock()
+		smokeDropUncorrelatedReply(b.account, msg)
 		return
 	}
 	if msg.GetMessageId() == game.SceneClientPlayerCommonSendTipToClientMessageId {
-		var tipInfo base.TipInfoMessage
-		if err := proto.Unmarshal(msg.GetSerializedMessage(), &tipInfo); err == nil && tipInfo.GetId() != 0 {
-			b.mu.Lock()
-			b.gateTips = append(b.gateTips, tipInfo.GetId())
-			b.mu.Unlock()
-		}
+		b.caller.onGateTipMessage(msg)
 	}
 	handler.MessageBodyHandler(client, msg)
 }
 
-// call 发一个 trade 请求并等同消息号的第一个回包。
+// call 发一个 trade 请求并只等它自己的回包(smokeCaller.call)。
 // 返回的 envelopeTip 非 0 表示 gate / 路由服级拒绝(信封 error_message,body 为空),此时 response 未填充;
 // 为 0 时 response 已解码。gate 推 kServiceUnavailable 返回 error;超时返回包裹 errTradeSmokeTimeout 的 error。
 func (b *tradeSmokeBot) call(messageId uint32, request, response proto.Message) (envelopeTip uint32, err error) {
 	if wait := b.requestSpacing - time.Since(b.lastRequestAt); wait > 0 {
 		time.Sleep(wait)
 	}
-	b.mu.Lock()
-	delete(b.replies, messageId)
-	b.gateTips = nil
-	b.mu.Unlock()
-
-	if err := b.gc.SendRequest(messageId, request); err != nil {
-		return 0, fmt.Errorf("send message_id=%d: %w", messageId, err)
-	}
 	b.lastRequestAt = time.Now()
-	b.stats.MsgSent()
-
-	deadline := time.Now().Add(tradeSmokeRpcTimeout)
-	for time.Now().Before(deadline) {
-		b.mu.Lock()
-		reply := b.replies[messageId]
-		gateUnavailable := false
-		for _, tip := range b.gateTips {
-			gateUnavailable = gateUnavailable || tip == tipTradeServiceUnavailable
-		}
-		b.mu.Unlock()
-
-		if reply != nil {
-			if tip := reply.GetErrorMessage().GetId(); tip != 0 {
-				return tip, nil
-			}
-			if err := proto.Unmarshal(reply.GetSerializedMessage(), response); err != nil {
-				return 0, fmt.Errorf("decode message_id=%d: %w", messageId, err)
-			}
-			return 0, nil
-		}
-		if gateUnavailable {
-			return 0, fmt.Errorf("gate SendTipToClient tip=%d(gate 选不到路由服实例,或未以 GATE_CLIENT_RPC_ROUTER=1 启动)",
-				tipTradeServiceUnavailable)
-		}
-		time.Sleep(50 * time.Millisecond)
-	}
-	return 0, fmt.Errorf("message_id=%d account=%s %w(%s)", messageId, b.account, errTradeSmokeTimeout, tradeSmokeRpcTimeout)
+	return b.caller.call(messageId, request, response)
 }
 
 // rpc 发请求并返回业务 tip(响应体 error_message.id,0 = 受理)。

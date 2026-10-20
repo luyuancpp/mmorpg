@@ -700,20 +700,40 @@ func assetSQLCommitKey(pidStr string) string {
 }
 
 // 与 go/shared/savebarrier.Key 镜像；不保留可能指向回档前 SQL 的 ACK。
+//
+// 2026-10-20 修复(r2-mz#1):只有**撤销**(unmerge)与 PITR 这类「玩家改读另一份 SQL」的操作删它;前向 copy 合服不删,
+// 理由见 playerCacheKeysKeepBarrier。
 func playerSaveBarrierKey(pidStr string) string {
 	return "player:{" + pidStr + "}:save_barrier"
 }
 
-// playerCacheKeys 列出一名玩家在**共享 DB 0**上合服 / 撤销时必须删掉的全部键:login / go/db 的缓存键,
-// 加上资产 SQL 提交证据键(assetSQLCommitKey)。
+// playerCacheKeys 列出一名玩家在**共享 DB 0**上撤销时必须删掉的全部键:login / go/db 的缓存键,
+// 加上资产 SQL 提交证据键(assetSQLCommitKey)与父快照提交屏障(playerSaveBarrierKey)。
 // tables 传入实际发现的玩家表名(它们同时也是 MsgType),这样以后 proto
 // 加表时缓存失效自动跟上,不需要再改这里。
 func playerCacheKeys(pid uint64, tables []string) []string {
+	return append(playerCacheKeysKeepBarrier(pid, tables), playerSaveBarrierKey(strconv.FormatUint(pid, 10)))
+}
+
+// playerCacheKeysKeepBarrier 是前向 copy 合服的删除清单:playerCacheKeys 去掉 save_barrier(2026-10-20 修复,r2-mz#1)。
+//
+// 为什么前向 copy 合服可以保留屏障(复核结论,前提逐条见 docs/design/db-write-fencing-mysql.md 文末同日附注):
+//   - 屏障键 player:{id}:save_barrier 不带 zone,与父快照、owner_epoch 同在共享核心 Redis(本工具的 -notice-redis,
+//     login 的 beginParentLoad 要求三者同实例)。合服后目标区 login 读的就是这同一把键。
+//   - P3 / P4 要求源区 Kafka、重试队列与 64 个补投桶全部排空;补投索引只在两表 SQL ACK 都等于 pending 时才回收,
+//     所以通过 P4 时每名源区玩家的屏障都是稳态:pending == player_database ACK == player_database_1 ACK == 源库两行的行内围栏。
+//   - 步骤 1 按列名逐列拷两表整行(含 fence_owner_epoch / fence_save_seq / persist_schema_gen),目标库两行的围栏与源库逐字节相同,
+//     原 pending 与两表 ACK 对目标库的行同样成立;login 冷加载在目标库读到的正是这两行。
+//
+// 删掉它反而让曾进过场景(owner_epoch≠0)的被拷玩家全部卡在「历史玩家父快照与提交屏障缺失」(fail-closed,但整批无法登录)。
+// 资产 SQL 提交证据照删:删它的方向安全(只让资产待办多等一次存盘),理由见 assetSQLCommitKey。
+// -verify-merged 的 verify:save_barrier 逐人核对上面的前提(save_barrier_verify.go)。
+func playerCacheKeysKeepBarrier(pid uint64, tables []string) []string {
 	pidStr := strconv.FormatUint(pid, 10)
 	names := make([]string, 0, len(defaultCacheMsgTypes)+len(tables))
 	names = append(names, defaultCacheMsgTypes...)
 	names = append(names, tables...)
-	out := make([]string, 0, len(names)+2)
+	out := make([]string, 0, len(names)+2) // +2:资产 SQL 提交证据,以及 playerCacheKeys 追加的父快照屏障
 	seen := make(map[string]struct{}, len(names))
 	for _, n := range names {
 		if _, dup := seen[n]; dup {
@@ -722,21 +742,46 @@ func playerCacheKeys(pid uint64, tables []string) []string {
 		seen[n] = struct{}{}
 		out = append(out, n+":"+pidStr)
 	}
-	return append(out, assetSQLCommitKey(pidStr), playerSaveBarrierKey(pidStr))
+	return append(out, assetSQLCommitKey(pidStr))
 }
 
-// invalidatePlayerCaches 删掉这批玩家在 DB 0 上的 go/db + login 缓存,以及资产 SQL 提交证据键。
+// invalidatePlayerCaches 删掉这批玩家在 DB 0 上的 go/db + login 缓存、资产 SQL 提交证据键与父快照提交屏障(撤销用)。
 //
 // 为什么必须删:这些键**不带 zone**,是全服共享的一份。合服前它们装的是从
 // zone_src_db 读出来的内容;合服后玩家归属 dst,但只要键还在,login 的
 // EnsurePlayerAllDataInRedisAsync 命中缓存就直接返回,永远不会去 dst 库读。
 // 更糟的情况是 TTL 内玩家的存盘先落到 dst 库,再被这份旧缓存覆盖回去。
-// 证据键的理由见 assetSQLCommitKey。
+// 证据键的理由见 assetSQLCommitKey。屏障:撤销后玩家改读源库,合服后在目标库提交的 ACK 不再对应他要读的行;
+// 删掉之后须保持维护闸、用 save_barrier_restore 从源库重建(docs/ops/merge-zone-runbook.md §10.1)才能放流。
 func invalidatePlayerCaches(
 	ctx context.Context,
 	rdb *redis.Client,
 	ids []uint64,
 	tables []string,
+	dryRun bool,
+) (int, error) {
+	return deletePlayerKeys(ctx, rdb, ids, tables, playerCacheKeys, dryRun)
+}
+
+// invalidatePlayerCachesKeepBarrier 是前向 copy 合服的缓存失效:与 invalidatePlayerCaches 同一组缓存与证据键,
+// 但保留 save_barrier(2026-10-20 修复,r2-mz#1,理由见 playerCacheKeysKeepBarrier)。
+func invalidatePlayerCachesKeepBarrier(
+	ctx context.Context,
+	rdb *redis.Client,
+	ids []uint64,
+	tables []string,
+	dryRun bool,
+) (int, error) {
+	return deletePlayerKeys(ctx, rdb, ids, tables, playerCacheKeysKeepBarrier, dryRun)
+}
+
+// deletePlayerKeys 按 keysFor 给出的每人键清单分批 DEL(每批 200 人一条 pipeline),返回实际删掉的键数(dry-run 为清单键数)。
+func deletePlayerKeys(
+	ctx context.Context,
+	rdb *redis.Client,
+	ids []uint64,
+	tables []string,
+	keysFor func(pid uint64, tables []string) []string,
 	dryRun bool,
 ) (int, error) {
 	if rdb == nil || len(ids) == 0 {
@@ -746,7 +791,7 @@ func invalidatePlayerCaches(
 	for _, batch := range chunkUint64(ids, 200) {
 		keys := make([]string, 0, len(batch)*(len(defaultCacheMsgTypes)+len(tables)+2)) // +2:资产 SQL 提交证据与父快照屏障
 		for _, pid := range batch {
-			keys = append(keys, playerCacheKeys(pid, tables)...)
+			keys = append(keys, keysFor(pid, tables)...)
 		}
 		if dryRun {
 			deleted += len(keys)

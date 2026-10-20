@@ -39,6 +39,7 @@
 | CZ-8 | **目标 zone 识别访客**:重定向票据 `GateTokenPayload` 增加 `player_id` 与 `target_zone_id`(绑定持票者,顺手堵掉"持票者可冒用"的既有缺口);目标 zone 的 login `EnterGame` 看到票据 `target_zone_id == 本 zone` 时**不按 home_zone 弹回**,直接 `EnterScene(ZoneId=本 zone)`;票据 TTL 内未落地则视为传送失败,下次登录按 Offline-Return 规则回家 | 消除重定向乒乓;访客身份有据可查 |
 | CZ-9 | **回家 = 同一条链反向**(`TravelToZone{target=home_zone}`);离线 / 崩溃后按 enter-scene-zone-routing.md Offline-Return:干净登出回家,崩溃遗留的异 zone location 由 CZ-4 的 handoff 标记决定能否直接接管(标记齐则放行、否则运维清理 —— *2026-09-19 起"否则运维清理"已被 §11.5 的属主已死自动接管取代;仍需人工介入的边界见 §12.3 GO-3 / GO-5,手工删 location 的安全前提见 enter-scene-zone-routing.md*) | 不新增第二套回家机制 |
 | CZ-10 | **不搬 mail**:mail 走独立 Go 服务(cross-zone-readiness-audit §3.3 决策 6);该服务存在前,访客在目标 zone 收不到邮件提醒,写进已知限制 | 不把 MailAllData 临时塞进 PlayerAllData 再拆 |
+> **(2026-10-19 指向注,CZ-2 原文保留)** 负责人 2026-10-17 拍板核心走「单元化 + 单元内 Redis Cluster 按 `{player_id}` 分片」,CZ-2 的「生产 Redis 物理共享」改写为「逻辑单一、物理按 `{player_id}` 分片」:同一玩家的契约键只有一个权威存储(所在单元核心 Cluster 里该玩家的 slot),一名玩家同一时刻只属于一个单元,跨单元按「转区」处理。改写内容与待拍板项见 [shared-redis-split-by-purpose.md](shared-redis-split-by-purpose.md) §20.1、§25.2 第 20 条(纯设计,第 4 批未落码)。**第 4 批落码之前,CZ-2 照旧有效**;正文里「不支持 Redis Cluster」「物理共享单库」等说法同此。
 
 ## 4. 数据流
 

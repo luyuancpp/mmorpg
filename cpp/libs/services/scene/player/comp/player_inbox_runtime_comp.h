@@ -68,6 +68,8 @@ enum class PlayerInboxHaltReason : uint8_t
 	kLedgerWrite,      // 记账前置被破坏(分类说未见、记账却拒绝)
 	kAckAnomaly,       // Ack 结果为 CONFLICT / UNKNOWN_SEQ / NOT_DELIVERED / SKIP_NOT_REQUESTED / MISMATCH,
 	                   // 或整次 Ack 回 kInvalidParameter(报告列表不合法,重发不会变)
+	kVersionSkew,      // 执行器回 kVersionSkew:认识类型,但本二进制不能安全执行这一条(混版本保护,
+	                   // 例如同币种欠款带本版本不认识的字段)。不记账、不确认这一条,下次落地重拉
 	kCount
 };
 
@@ -134,7 +136,7 @@ static_assert(std::size(kPlayerInboxDeferReasonNames) == static_cast<std::size_t
 
 inline constexpr const char *kPlayerInboxHaltReasonNames[] = {
 	"none", "epoch_required", "epoch_ahead", "unknown_type", "replay_mismatch",
-	"batch_malformed", "ledger_write", "ack_anomaly"};
+	"batch_malformed", "ledger_write", "ack_anomaly", "version_skew"};
 static_assert(std::size(kPlayerInboxHaltReasonNames) == static_cast<std::size_t>(PlayerInboxHaltReason::kCount),
 			  "停用原因名字表与 PlayerInboxHaltReason 脱节");
 

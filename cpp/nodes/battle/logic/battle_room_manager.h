@@ -187,6 +187,9 @@ public:
     // 停机收尾:全部房间作废(不结算;观众收 ABORTED,关闭房间直连),供 SetBeforeShutdown 调用。
     // 例外是等结果回执的确认模式房间:它的个人结算在结果发出之前已写进 pending,清房不删 pending,
     // 结果无论是否最终到达 broker,都由 scene 登录钩子 / 冻结到期补读应用(审计 social-match-battle#2)。
+    // 还在落库或落库轮次已用尽的房间同样清掉:已落定成员的 pending 留着照常应用,没落定的成员这一局按作废处理
+    // (scene reaper 按 deadline 解冻),结果不发 —— 同局成员不对称,是审计 r2-battle#2 的既有残余。
+    // 轮次用尽的房间不会自然消失,节点因此排不空;值班按 staging_exhausted 告警排除 Redis 故障后,删除该 Pod 走这里收尾。
     // 调用方必须在同一个 loop 任务里先关建房准入闸(BattleNodeImpl::CloseAdmission):gRPC 排空
     // 期间已收完的 CreateBattle 仍会派发(等许可的回调也可能排在关闸之后),不关闸它们会在作废之后照常建房。关闸之后房间表
     // 保持为空,AddObserver / IssueBattleTicket 因房间不存在自然被拒(kEntityIsNull / kInvalidParameter)。
@@ -309,13 +312,18 @@ private:
     void PumpResultCommits();
     void StopResultCommits();
     // 结果第一次发往 broker 之前,把全部成员的个人结算写进 R07 pending(审计 social-match-battle#2)。
-    // 由 PumpResultCommits 驱动,每轮对每名成员各 EVAL 一次 kSetPendingSettlementScript,回复到齐后
-    // 经 OnPersonalSettlementsStaged 交给 ResultCommit::FinishStaging;没落完不发结果。
-    // Redis 未连上时不开新一轮(不消耗退避),等下一次 pump。与本地模式不同,这里不降级为「不落库直接发」:
+    // 由 PumpResultCommits 驱动,每轮只对还没落定的成员(ResultCommit::UnstagedMembers)各 EVAL 一次
+    // kStagePendingSettlementOnceScript,回复到齐后经 OnPersonalSettlementsStaged 交给 ResultCommit::FinishStaging;
+    // 没落完不发结果。已落定的成员不再重写:scene 可能已应用并销账,重写会让 pending 复活(审计 r2-battle#1)。
+    // Redis 未连上时不开新一轮(不消耗退避与轮次),等下一次 pump。与本地模式不同,这里不降级为「不落库直接发」:
     // 不落库就发,恰好重现停机 / 崩溃丢个人结算的缺陷。
     void StagePersonalSettlements(BattleRoom &room, turnbattle::ResultCommit::Clock::time_point now);
-    // 一轮落库的回复全部到齐。房间已不在(停机清房)或轮次过期时丢弃;已写下的 pending 留给 scene 裁决。
-    void OnPersonalSettlementsStaged(uint64_t battleId, uint64_t attempt, bool allStored);
+    // 一轮落库的回复全部到齐。settledMembers = 本轮拿到确定结论的成员(StageVerdict 前三种)。
+    // 房间已不在(停机清房)或轮次过期时丢弃;已写下的 pending 留给 scene 裁决。
+    // 全部落定:删本局落库标记(fire-and-forget)。轮次用尽(turnbattle::kMaxStagingRounds,审计 r2-battle#4):
+    // 打一条 metric=battle_personal_settlement_staging_exhausted,房间移出 resultRooms_ 不再 pump,
+    // 但**保留在房间表里**(终局未知:结果不发、DestroyBattle 不作废、新行动照旧拒绝),直到停机 AbortAllRooms。
+    void OnPersonalSettlementsStaged(uint64_t battleId, uint64_t attempt, std::set<uint64_t> settledMembers);
 
     void BroadcastTurnResult(const BattleRoom &room, const ::TurnResultS2C &result);
 

@@ -213,6 +213,9 @@ type options struct {
 	waitAOFLocal     int
 	waitAOFReplicas  int
 	waitAOFTimeoutMs int
+	// takeOverFenceRunID 是 -take-over-fence:-route-source=db 的 merge / unmerge 续跑时接手该 run_id 留在库里的围栏
+	// (checkTakeOverFenceFlag 校验;语义见 fence.go「-route-source=db:库围栏」)。
+	takeOverFenceRunID string
 }
 
 func main() {
@@ -364,6 +367,10 @@ func main() {
 		"-route-source=db: WAITAOF numreplicas after each publish batch (single instance 0, redis-ha 1)")
 	flag.IntVar(&o.waitAOFTimeoutMs, "waitaof-timeout-ms", 1500,
 		"-route-source=db: WAITAOF timeout per attempt in milliseconds (1..2000; 0 would block forever)")
+	flag.StringVar(&o.takeOverFenceRunID, "take-over-fence", "",
+		"-route-source=db, -mode merge / unmerge only: resume after an abort by taking over the merge fence that the aborted run "+
+			"<run_id> left in zone_merge_fence, in one DB transaction (the zones are never unfenced). Pass the run_id printed by the "+
+			"abort message, and only after confirming that no merge_zone process of that run is alive")
 
 	flag.Parse()
 	o.sourceZone = uint32(*srcZone)
@@ -393,11 +400,13 @@ func main() {
 	}
 	o.capSpec = capSpec
 
-	// -route-source 没有缺省值:读写映射的模式都必须显式选(规格 §13.3 第 3 条)。db 路径本波还没接进各写入点,先拒绝。
+	// -route-source 没有缺省值:读写映射的模式都必须显式选(规格 §13.3 第 3 条)。读写映射的模式都已接好 db 源(W5–W12 与 R8 读方;
+	// 第一波的 refuseUnwiredDBRouteSource 已删除);库与 mapping Redis 是否成对在各入口连上之后核对(openRunRouteBackend /
+	// openRelocateRouteBackend / openRouteReadSide)。
 	if err := checkRouteSourceFlags(o); err != nil {
 		fail("%v", err)
 	}
-	if err := refuseUnwiredDBRouteSource(o); err != nil {
+	if err := checkTakeOverFenceFlag(o); err != nil {
 		fail("%v", err)
 	}
 	if routeSourceRequired(o) && o.routeSource == routeSourceRedis {
@@ -420,6 +429,7 @@ func main() {
 			mappingPwd:  o.mappingPwd,
 			mappingDB:   o.mappingDB,
 			dryRun:      o.dryRun,
+			route:       routeEntryOptionsOf(o),
 		})
 		return
 	}
@@ -440,6 +450,7 @@ func main() {
 			mappingDB:   o.mappingDB,
 			dryRun:      o.dryRun,
 			timeout:     o.timeout,
+			route:       routeEntryOptionsOf(o),
 		})
 		return
 
@@ -495,6 +506,7 @@ func main() {
 			mappingPwd:  o.mappingPwd,
 			mappingDB:   o.mappingDB,
 			timeout:     o.timeout,
+			route:       routeEntryOptionsOf(o),
 		})
 		return
 	}
@@ -559,6 +571,7 @@ func main() {
 			skipGuild:    o.skipGuild && o.skipRank,
 			guildSchema:  o.guildSchema,
 			friendSchema: o.friendSchema,
+			route:        routeEntryOptionsOf(o),
 		})
 		return
 
@@ -708,17 +721,6 @@ func checkRouteSourceFlags(o options) error {
 	default:
 		return fmt.Errorf("-route-source %q: want db or redis", o.routeSource)
 	}
-}
-
-// refuseUnwiredDBRouteSource 在 SQL 写入层接进各写入点之前拒绝 -route-source=db(D1 第 2 批分两波落码,本波只有
-// route_store.go / route_publish.go 的底座)。不拒绝的话 db 模式会照旧直写 Redis —— 在 db_first 部署里写出库不知道的缓存值,
-// 正是 -route-source 要防的错库。下一波把各写入点接到底座上时删除本函数及其调用。
-func refuseUnwiredDBRouteSource(o options) error {
-	if routeSourceRequired(o) && o.routeSource == routeSourceDB {
-		return fmt.Errorf("-route-source=db is not wired into the merge_zone flows in this build yet (D1 batch 2 lands in two " +
-			"waves); do not run this build against a db_first deployment")
-	}
-	return nil
 }
 
 // uint32Flag 把 flag.Uint 的值收窄成 uint32;超出范围直接拒绝 —— 截断会把人指到另一个 zone / 落点库。

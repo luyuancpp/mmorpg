@@ -86,6 +86,15 @@ func main() {
 	}
 	config.ActiveSecrets = secrets
 
+	// 持久 schema 倒退判定(C4)的模式同样在任何外部连接之前校验:缺键 / 空串按 warn,
+	// 只认 warn / enforce,其余拒绝启动 —— 拼错的 enforce 静默按 warn 跑,比起不来更危险
+	// (docs/design/mixed-version-persist-field-protection.md §5.1;切 enforce 的条件见 §8.1 第 5 步)。
+	regressionMode, err := config.ParsePersistSchemaRegressionMode(config.AppConfig.PersistSchemaRegressionMode)
+	if err != nil {
+		panic(fmt.Sprintf("持久 schema 倒退判定模式配置不合格,拒绝启动: %v", err))
+	}
+	logx.Infof("persist schema regression check (C4) mode=%s", regressionMode)
+
 	// Derive zone-specific Kafka topic from ZoneId
 	config.AppConfig.Kafka.Topic = config.DbTaskTopicForGeneration(
 		config.AppConfig.Node.ZoneId, config.AppConfig.Kafka.TopicGeneration)

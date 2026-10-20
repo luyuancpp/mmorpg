@@ -53,6 +53,26 @@ func TestSchemaGenRestoreSQLMaximumAndExistingFloor(t *testing.T) {
 	}
 }
 
+// C++ 严格屏障会在 hash 里写写方令牌 schema_writer(混版本持久字段保护 §5.2)。恢复必须接受它、原样保留,
+// 否则任何经过新版 scene 存盘的玩家都无法恢复屏障。
+func TestSchemaGenRestoreAcceptsAndKeepsSchemaWriter(t *testing.T) {
+	r, store, cache := fixture(t, "8", "90")
+	store.rows[0][4], store.rows[1][4] = []byte("4"), []byte("7")
+	version := savebarrier.Version(8, 90)
+	const writer = "3f2504e0-4f89-41d3-9a0c-0305e82c3301"
+	cache.HSet(savebarrier.Key(7), "pending", version, "player_database", version, "player_database_1", version,
+		"schema_gen", "9", "schema_writer", writer)
+	plan := prepare(t, r, false)
+	for attempt := 0; attempt < 2; attempt++ {
+		require.NoError(t, r.ApplyOne(context.Background(), plan, 0))
+		fields, err := r.Redis.HGetAll(context.Background(), savebarrier.Key(7)).Result()
+		require.NoError(t, err)
+		require.Equal(t, map[string]string{"pending": version, "player_database": version, "player_database_1": version,
+			"schema_gen": "9", "schema_writer": writer}, fields)
+	}
+	require.Zero(t, store.commits)
+}
+
 func TestSchemaGenRejectsInvalidRedisFieldsWithoutWrites(t *testing.T) {
 	for _, tc := range []struct{ field, value string }{
 		{"schema_gen", ""}, {"schema_gen", "0"}, {"schema_gen", "01"},

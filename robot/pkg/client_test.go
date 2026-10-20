@@ -540,12 +540,15 @@ func TestCallDoneExactlyOnceUnderConcurrentOutcomes(t *testing.T) {
 			}
 		}(c)
 	}
+	closed := make(chan struct{})
 	go func() {
+		defer close(closed)
 		time.Sleep(2 * time.Millisecond)
 		h.gc.Close()
 	}()
 
 	issuers.Wait()
+	<-closed
 	allDone := make(chan struct{})
 	go func() { pending.Wait(); close(allDone) }()
 	select {
@@ -565,5 +568,94 @@ func TestCallDoneExactlyOnceUnderConcurrentOutcomes(t *testing.T) {
 		if n != 1 {
 			t.Fatalf("call %d completed %d times, want 1", key, n)
 		}
+	}
+}
+
+// CallSyncThen:回包先在派发它的 goroutine 上交给 onReply,再唤醒调用方。deliver 是同步的,
+// 它返回时 onReply 必须已经跑完 —— 这就证明 onReply 跑在收包 goroutine 上、早于 CallSyncThen 返回。
+func TestCallSyncThenRunsOnReplyOnDeliveringGoroutineBeforeReturning(t *testing.T) {
+	h := newCallHarness(t)
+	var got outcomes
+	type syncResult struct {
+		reply *base.MessageContent
+		err   error
+	}
+	resultCh := make(chan syncResult, 1)
+	go func() {
+		reply, err := h.gc.CallSyncThen(context.Background(), 63, &base.Empty{}, 5*time.Second, got.done)
+		resultCh <- syncResult{reply, err}
+	}()
+	req := h.nextSent(t)
+	h.gc.deliver((&pushRecorder{}).onMessage, replyTo(req, "then"))
+
+	if o := got.only(t); o.err != nil || string(o.reply.GetSerializedMessage()) != "then" {
+		t.Fatalf("onReply got (%+v, %v), want reply \"then\"", o.reply, o.err)
+	}
+	select {
+	case r := <-resultCh:
+		if r.err != nil || string(r.reply.GetSerializedMessage()) != "then" {
+			t.Fatalf("CallSyncThen = (%+v, %v), want reply \"then\"", r.reply, r.err)
+		}
+	case <-time.After(5 * time.Second):
+		t.Fatal("CallSyncThen did not return within 5s after its reply was delivered")
+	}
+	if n := got.count(); n != 1 {
+		t.Fatalf("onReply called %d times, want 1", n)
+	}
+}
+
+// 信封错误也是回包:onReply 收到那条信封与 *ServerTipError,调用方自己决定要不要执行副作用。
+func TestCallSyncThenPassesEnvelopeErrorToOnReply(t *testing.T) {
+	h := newCallHarness(t)
+	var got outcomes
+	errCh := make(chan error, 1)
+	go func() {
+		_, err := h.gc.CallSyncThen(context.Background(), 64, &base.Empty{}, 5*time.Second, got.done)
+		errCh <- err
+	}()
+	req := h.nextSent(t)
+	h.gc.deliver((&pushRecorder{}).onMessage, &base.MessageContent{
+		Id: req.GetId(), MessageId: req.GetMessageId(), ErrorMessage: &base.TipInfoMessage{Id: 1003}})
+
+	o := got.only(t)
+	var tipErr *ServerTipError
+	if !errors.As(o.err, &tipErr) || tipErr.Tip != 1003 || o.reply.GetErrorMessage().GetId() != 1003 {
+		t.Fatalf("onReply got (%+v, %v), want the envelope with ServerTipError{1003}", o.reply, o.err)
+	}
+	select {
+	case err := <-errCh:
+		if !errors.As(err, &tipErr) || tipErr.Tip != 1003 {
+			t.Fatalf("CallSyncThen err = %v, want ServerTipError{1003}", err)
+		}
+	case <-time.After(5 * time.Second):
+		t.Fatal("CallSyncThen did not return within 5s after its envelope was delivered")
+	}
+}
+
+// 没有回包的结局(超时)不调 onReply;之后到达的回包按迟到丢弃,同样不调。
+func TestCallSyncThenSkipsOnReplyWhenNoReplyArrives(t *testing.T) {
+	h := newCallHarness(t)
+	var got outcomes
+	errCh := make(chan error, 1)
+	go func() {
+		_, err := h.gc.CallSyncThen(context.Background(), 65, &base.Empty{}, 5*time.Second, got.done)
+		errCh <- err
+	}()
+	req := h.nextSent(t)
+	h.timer(t, 0).fire()
+	select {
+	case err := <-errCh:
+		if !errors.Is(err, ErrRPCTimeout) {
+			t.Fatalf("CallSyncThen err = %v, want ErrRPCTimeout", err)
+		}
+	case <-time.After(5 * time.Second):
+		t.Fatal("CallSyncThen did not return within 5s after its timer fired")
+	}
+	h.gc.deliver((&pushRecorder{}).onMessage, replyTo(req, "late"))
+	if n := got.count(); n != 0 {
+		t.Fatalf("onReply called %d times, want 0", n)
+	}
+	if h.gc.LateReplies() != 1 {
+		t.Fatalf("late replies = %d, want 1", h.gc.LateReplies())
 	}
 }

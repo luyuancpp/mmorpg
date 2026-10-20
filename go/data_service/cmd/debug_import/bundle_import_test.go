@@ -9,6 +9,7 @@ import (
 	"data_service/cmd/debugutil"
 	databasepb "proto/common/database"
 
+	"shared/generated/persistschema"
 	"shared/ownerepoch"
 	"shared/savebarrier"
 	"shared/scenenode"
@@ -104,6 +105,33 @@ func TestBuildImportPlanRejectsForeignRow(t *testing.T) {
 	b.MySQL.Tables[0].Row = rawValue(t, &databasepb.PlayerDatabase{PlayerId: 1})
 	if _, err := buildImportPlan(b, sourceSQL); err == nil || !strings.Contains(err.Error(), "player_id") {
 		t.Fatalf("foreign row accepted: %v", err)
+	}
+}
+
+// 行的持久 schema 世代高于本工具时拒绝导入:本工具写不出新世代的列,还会原样拷走声称完整的戳(混版本设计 §5.4)。
+func TestBuildImportPlanRejectsNewerPersistSchemaGen(t *testing.T) {
+	newer := uint32(persistschema.Gen) + 1
+
+	sqlBundle := testBundle(t, false)
+	sqlBundle.MySQL.Tables[1].Row = rawValue(t, &databasepb.PlayerDatabase_1{PlayerId: bundlePlayer, FenceOwnerEpoch: 6, FenceSaveSeq: 50, PersistSchemaGen: newer})
+	if _, err := buildImportPlan(sqlBundle, sourceSQL); err == nil || !strings.Contains(err.Error(), "持久 schema 世代") {
+		t.Fatalf("SQL 行世代超前必须拒绝: %v", err)
+	}
+
+	parentBundle := testBundle(t, false)
+	parent := &databasepb.PlayerAllData{
+		PlayerDatabaseData:   &databasepb.PlayerDatabase{PlayerId: bundlePlayer, PersistSchemaGen: newer},
+		PlayerDatabase_1Data: &databasepb.PlayerDatabase_1{PlayerId: bundlePlayer},
+	}
+	parentBundle.Redis = append(parentBundle.Redis, debugutil.RedisEntry{Key: debugutil.ParentKey(bundlePlayer), Type: "string", Value: rawValue(t, parent)})
+	if _, err := buildImportPlan(parentBundle, sourceRedisParent); err == nil || !strings.Contains(err.Error(), "持久 schema 世代") {
+		t.Fatalf("父快照世代超前必须拒绝: %v", err)
+	}
+
+	current := testBundle(t, false)
+	current.MySQL.Tables[0].Row = rawValue(t, &databasepb.PlayerDatabase{PlayerId: bundlePlayer, FenceOwnerEpoch: 6, FenceSaveSeq: 50, PersistSchemaGen: persistschema.Gen})
+	if _, err := buildImportPlan(current, sourceSQL); err != nil {
+		t.Fatalf("本工具世代的行应可导入: %v", err)
 	}
 }
 

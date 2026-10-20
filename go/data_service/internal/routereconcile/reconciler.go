@@ -367,7 +367,9 @@ type Reconciler struct {
 
 	evictedBaseline int64
 	baselineSet     bool
-	sawControlKeys  bool
+	// baselineIdentity 是取基线时的 Redis 身份:evicted_keys 是每个进程自己的累计值,身份变了基线就要重取。
+	baselineIdentity placement.RedisInstanceIdentity
+	sawControlKeys   bool
 
 	// vi 是「已验证身份」:这份副本被确认对应的 Redis 实例身份(追平完成、标记身份相符、挂标记成功时置)。
 	vi        *placement.RedisInstanceIdentity
@@ -1171,9 +1173,7 @@ func (r *Reconciler) tick(ctx context.Context) string {
 		return r.onRedisFailure(ctx, now, "read control keys", err)
 	}
 	r.redisFailSince = time.Time{}
-	if !r.baselineSet && p.EvictedKeys >= 0 {
-		r.evictedBaseline, r.baselineSet = p.EvictedKeys, true
-	}
+	r.takeEvictedBaseline(p)
 	if r.pendingCvm != nil && r.pendingCvmIdentity != p.Identity {
 		logx.Errorf("[RouteReconcile] redis identity changed since the last task finished (run_id %s → %s); its cache_verified_ms is discarded",
 			r.pendingCvmIdentity.RunID, p.Identity.RunID)
@@ -1424,6 +1424,7 @@ func (r *Reconciler) checkControlKeysWiped(ctl Control, p Probe) {
 	r.pendingOverflow = false
 	r.baselineSet = p.EvictedKeys >= 0
 	r.evictedBaseline = max(p.EvictedKeys, 0)
+	r.baselineIdentity = p.Identity
 	if r.running != nil && r.running.task.phase.tokened() {
 		r.running.abort("control keys wiped")
 	}
@@ -1593,6 +1594,21 @@ func (r *Reconciler) advanceWatermarkKey(ctx context.Context, wm watermarkState,
 	case !ok:
 		logx.Infof("[RouteReconcile] %s changed under us; retried next tick", placement.RouteWatermarkKey)
 	}
+}
+
+// takeEvictedBaseline 取 evicted_keys 的基线(规格 §4.2「挂标记被拒后无限预热」:基线记在 leader 内存,换届时以新 leader
+// 首拍读到的值为基线,淘汰类原因在身份变化后解除)。本任期首拍、或 Redis 身份变了(新进程 / 被提升的副本:计数器是那个进程
+// 自己的累计值,和旧基线不可比)时取这一拍的值;同一实例上基线不动,计数器比它大 = 本任期内发生过淘汰。取不到(-1)时不取,
+// evictionState 按「取不到」fail-closed。
+func (r *Reconciler) takeEvictedBaseline(p Probe) {
+	if p.EvictedKeys < 0 || (r.baselineSet && r.baselineIdentity == p.Identity) {
+		return
+	}
+	if r.baselineSet {
+		logx.Infof("[RouteReconcile] redis identity changed (run_id %s → %s): evicted_keys baseline %d → %d",
+			r.baselineIdentity.RunID, p.Identity.RunID, r.evictedBaseline, p.EvictedKeys)
+	}
+	r.evictedBaseline, r.baselineSet, r.baselineIdentity = p.EvictedKeys, true, p.Identity
 }
 
 // evictionState:bad = 淘汰可能发生(策略不是 noeviction)或已经发生(evicted_keys 比基线大、或取不到);

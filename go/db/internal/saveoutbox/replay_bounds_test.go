@@ -137,7 +137,7 @@ func TestTerminalStopsReplayUntilNewerVersion(t *testing.T) {
 	require.Zero(t, rc.ZCard(ctx, pendingIndexKey(1, 0)).Val())
 }
 
-// 终态与在途标记只给已有意图的屏障打,绝不凭空创建 save_barrier;在途时刻取较大值。
+// 终态与在途标记只给已有意图的屏障打,绝不凭空创建 save_barrier;在途时刻以最后一次写入为准(r2-db#3,不再取较大值)。
 func TestConsumerNotesNeverCreateBarrier(t *testing.T) {
 	rc := fixtureRedis(t)
 	ctx := context.Background()
@@ -155,7 +155,7 @@ func TestConsumerNotesNeverCreateBarrier(t *testing.T) {
 	storeIntent(t, rc, fixtureID, 1, testIntent(t, fixtureID, 7, 10, 1))
 	require.NoError(t, NoteRetryDeferred(ctx, rc, fixtureID, time.UnixMilli(fixtureNowMs)))
 	require.NoError(t, NoteRetryDeferred(ctx, rc, fixtureID, time.UnixMilli(fixtureNowMs-5_000)))
-	require.Equal(t, strconv.FormatInt(fixtureNowMs, 10), rc.HGet(ctx, savebarrier.Key(fixtureID), fieldRetryStamp).Val(), "取较大值")
+	require.Equal(t, strconv.FormatInt(fixtureNowMs-5_000, 10), rc.HGet(ctx, savebarrier.Key(fixtureID), fieldRetryStamp).Val(), "最后一次写入为准")
 }
 
 // 本 key 已有在途重试时只推迟、不计次数;窗口过后照常补投。

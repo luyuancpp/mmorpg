@@ -39,7 +39,7 @@ import (
 //   - 已在负载集里的成员保留旧分;
 //   - 不在负载集里的节点用 ZADD NX 以哨兵分(nodeLoadScoreUnknown)加入。**不能因为读失败扣下成员资格**:
 //     负载集成员资格就是存活信号 —— IsNodeAlive 把「不在负载集」当作唯一的死亡证据,
-//     playerLocationOwnerGone 把 ZCARD==0 当作整 zone 已死、可以绕过交接门,world_rebalance 用 ZSCORE
+//     playerLocationOwnerGone 把 ZCARD==0 当作整 zone 已死的条件之一(另须 etcd 注册表里该 zone 已无节点),world_rebalance 用 ZSCORE
 //     判存活。Redis 丢了成员(或节点刚注册)时若因计数读失败就不加回去,活节点会被判死,在老属主仍在存盘时
 //     放行改派 / 接管,即双写 / 回档。哨兵分让它在选点里排到最后,下一拍读成功后自然纠正。
 //

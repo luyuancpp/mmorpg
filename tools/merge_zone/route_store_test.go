@@ -690,19 +690,6 @@ func TestRouteSourceFlags(t *testing.T) {
 	}
 }
 
-// TestRefuseUnwiredDBRouteSource:本波 db 路径还没接进各写入点,读写映射的模式一律拒绝 db;redis 与不读写映射的模式不受影响。
-func TestRefuseUnwiredDBRouteSource(t *testing.T) {
-	if err := refuseUnwiredDBRouteSource(options{mode: "merge", routeSource: routeSourceDB}); err == nil {
-		t.Fatal("-route-source=db must be refused until the flows are wired")
-	}
-	if err := refuseUnwiredDBRouteSource(options{mode: "merge", routeSource: routeSourceRedis}); err != nil {
-		t.Fatalf("redis: %v", err)
-	}
-	if err := refuseUnwiredDBRouteSource(options{mode: modeCapabilityCheck, routeSource: routeSourceDB}); err != nil {
-		t.Fatalf("capability-check does not touch the mapping: %v", err)
-	}
-}
-
 func TestNewMergeRouteWriter(t *testing.T) {
 	if got := newMergeRouteWriter("host-1", testRouteRun); got != "merge_zone@host-1:"+testRouteRun {
 		t.Fatalf("writer = %q", got)
@@ -877,6 +864,44 @@ func TestAcquireFence_RefusesAnotherLiveHolderAllowsTheSameRun(t *testing.T) {
 	bad.TTL = time.Minute
 	if _, err := st.AcquireFence(context.Background(), bad); !errors.Is(err, errRouteInvalidArgument) {
 		t.Fatalf("short ttl error = %v", err)
+	}
+}
+
+// TestTakeOverFence_OnlyThePreviousRunIsTakenOver:接手与获取同一个事务形状,只多放行「生效且 run_id == previousRunID」的分片;
+// 第三个 run_id 生效照样 errRouteFenceHeld;previousRunID 不合法 / 等于本次直接拒绝、一条语句都不发。
+func TestTakeOverFence_OnlyThePreviousRunIsTakenOver(t *testing.T) {
+	const prev = "101-102-20261018T000000Z-0ld0ld00"
+	st, f := newFakeRouteSQLStore(t, routeScript{}.
+		on("ENSURE_FENCE", rsAffected(0)).
+		on("WRITABLE", rsOne()).
+		on("LOCK_FENCE_ALL", rsFenceAll(prev, true, 5), rsFenceAll(prev, true, 5)).
+		on("NOW", rsRows([]driver.Value{int64(1_760_000_000_000)})).
+		on("ACQUIRE", rsAffected(64), rsAffected(64)))
+	grant, err := st.TakeOverFence(context.Background(), testFenceAcquire(testRouteRun), prev)
+	if err != nil || grant.Epoch != 6 {
+		t.Fatalf("take over = (%+v, %v), want epoch 6", grant, err)
+	}
+	assertRouteLabels(t, f, "ENSURE_FENCE", "BEGIN", "WRITABLE", "LOCK_FENCE_ALL", "LOCK_FENCE_ALL", "NOW", "ACQUIRE", "ACQUIRE", "COMMIT")
+	assertRouteArgs(t, f.callsOf("ACQUIRE")[0], testRouteRun, routeFencePurposeMerge, uint64(101), uint64(102),
+		grant.ExpiresAtMs, grant.HolderJSON, uint64(6), uint64(101), uint64(64))
+
+	st, f = newFakeRouteSQLStore(t, routeScript{}.
+		on("ENSURE_FENCE", rsAffected(0)).
+		on("WRITABLE", rsOne()).
+		on("LOCK_FENCE_ALL", rsFenceAll("third-run", true, 5)))
+	if _, err := st.TakeOverFence(context.Background(), testFenceAcquire(testRouteRun), prev); !errors.Is(err, errRouteFenceHeld) {
+		t.Fatalf("a third run's live fence: error = %v, want errRouteFenceHeld", err)
+	}
+	assertRouteLabels(t, f, "ENSURE_FENCE", "BEGIN", "WRITABLE", "LOCK_FENCE_ALL", "ROLLBACK")
+
+	for _, bad := range []string{"", testRouteRun, "bad run"} {
+		st, f = newFakeRouteSQLStore(t, routeScript{})
+		if _, err := st.TakeOverFence(context.Background(), testFenceAcquire(testRouteRun), bad); !errors.Is(err, errRouteInvalidArgument) {
+			t.Fatalf("previous run %q: error = %v, want errRouteInvalidArgument", bad, err)
+		}
+		if got := f.labels(); len(got) != 0 {
+			t.Fatalf("previous run %q sent statements %v", bad, got)
+		}
 	}
 }
 

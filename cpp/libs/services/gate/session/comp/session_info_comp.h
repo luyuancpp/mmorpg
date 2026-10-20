@@ -65,11 +65,21 @@ struct SessionInfo
 	// (docs/design/location-release-binding.md §3.5,审计 load-handover#0)。只由 ApplyRoute 在转发成功后写,ResetSceneRoute 清零。
 	uint64_t forwardedOwnerEpoch{0};
 	// 客户端 LeaveGame 之后、下一次登录真正把进场交给 scene 之前为 true(location-release-binding.md §3.5 R5)。
-	// 期间到达的、属于 LeaveGame 之前那条登录链的路由(登录代次为 0 或不大于 loginGenerationAtReset)一律丢弃,不进会话:
-	// 不丢的话它会重新填上 lastSceneRoute,下一次 BindSession 就按这条旧路由、带着旧 epoch 补发。
-	// 写入只经 scene_route_helper.h:ResetSceneRoute 置位并记下代次;ApplyRoute 转发成功、ApplyLoginBinding 换角色或收到
-	// 不带代次的旧版 Bind 时清除。
+	// 期间到达的、属于 LeaveGame 之前那条登录链的 Bind / 路由一律丢弃,不进会话:不丢的话它会重新填上 lastSceneRoute,
+	// 下一次 BindSession 就按这条旧路由、带着旧 epoch 补发。判据见 scene_route_helper.h IsRouteFromBeforeLeaveGame /
+	// IsBindFromBeforeLeaveGame:
+	//   - enterGameSentAfterLeave 为 false(重置之后客户端还没在这条连接上发过 EnterGame):login 只在处理 EnterGame 时发 Bind,
+	//     这段时间里到达的 Bind / 路由只可能来自旧链,不看代次一律丢(第二轮审计 r2-gate#1:旧链的 Bind 晚于 LeaveGame 到达时,
+	//     它的代次大于重置时记下的值,单靠代次拦不住);
+	//   - 之后按代次认:属于 playerIdAtReset、代次不大于 loginGenerationAtReset,或比会话已见过的本角色更新登录旧的,是旧链。
+	// playerIdAtReset / loginGenerationAtReset 是"被离开的那条登录链"的角色与最高代次:重置时取会话当时的值;会话那时还没绑角色
+	// (Bind 还在路上就 LeaveGame)时取第一条被丢弃的旧链 Bind / 路由带来的;被丢弃的旧链 Bind / 路由只把代次往上抬
+	// (NoteDroppedFromBeforeLeaveGame),让同一条旧链在客户端再次 EnterGame 之后才到的兄弟事件仍被认出。
+	// 写入只经 scene_route_helper.h:ResetSceneRoute 置位并记下身份;NoteEnterGameRequested 置 enterGameSentAfterLeave;
+	// ApplyRoute 转发成功、ApplyLoginBinding 换角色或收到不带代次的旧版 Bind 时清除 sceneRouteResetPending。
 	bool sceneRouteResetPending{false};
+	bool enterGameSentAfterLeave{false};
+	Guid playerIdAtReset{kInvalidGuid};
 	uint64_t loginGenerationAtReset{0};
 
 	// 登录代次(docs/design/scene-enter-session-fence.md §4):本会话、本角色见过的最高代次。来源是

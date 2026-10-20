@@ -12,6 +12,7 @@
 #include <vector>
 
 #include <google/protobuf/descriptor.h>
+#include <google/protobuf/unknown_field_set.h>
 
 #include "engine/core/type_define/player_guid_comp.h"
 #include "modules/currency/comp/player_currency_comp.h"
@@ -183,6 +184,44 @@ TEST_F(GmSanctionInboxExecutorTest, AttachCurrencyDebtOverflowIsRejectedWithPrim
 	EXPECT_EQ(std::numeric_limits<uint64_t>::max() - 5, debt.owed);
 }
 
+// ── 版本错位(混版本保护)────────────────────────────────────────────────────
+
+// 同币种的既有欠款带着本版本不认识的字段(新版本写下的):AttachDebt 不会合并,执行器报版本错位,
+// 不能记成终态 REJECTED —— 那样这笔 GM 欠款以后再也不会挂上(docs/design/mixed-version-persist-field-protection.md §4.4,
+// player-inbox-service.md §7.6)。也不是 DEFER:错位会在会话内消失,本地续做会越过服务端之后挂的 VOID(评审 L1);
+// 收件箱据 kVersionSkew 停用本域、下次落地重拉(见 PlayerInboxSystemTest 的同名场景)。别的币种不受影响。
+TEST_F(GmSanctionInboxExecutorTest, AttachCurrencyDebtReportsVersionSkewWhenExistingDebtCarriesUnknownFields)
+{
+	constexpr int kFutureField = 9999; // 本版本不认识的字段号
+	CurrencyComp persisted;
+	auto *entry = persisted.add_debts();
+	entry->set_currency_type(kGold);
+	entry->set_owed(500);
+	entry->mutable_unknown_fields()->AddVarint(kFutureField, 7);
+	auto &runtime = tlsEcs.actorRegistry.get<PlayerCurrencyComp>(player_);
+	runtime.LoadFromProto(persisted);
+	ASSERT_TRUE(CurrencySystem::DebtCarriesUnknownFields(player_, kCurrencyGold));
+
+	const auto skewed = GmSanctionInboxExecutor::AttachCurrencyDebt(player_, DebtPayload(kGold, 100));
+	EXPECT_EQ(PlayerInboxExecKind::kVersionSkew, skewed.kind) << "版本错位绝不能当成终态的 REJECTED,也不走 DEFER 的本地续做";
+	ASSERT_NE(nullptr, GoldDebt());
+	EXPECT_EQ(500u, GoldDebt()->owed) << "版本错位路径不改欠款";
+
+	CurrencyComp saved;
+	ASSERT_TRUE(runtime.SaveToProto(saved));
+	ASSERT_EQ(1, saved.debts_size());
+	ASSERT_EQ(1, saved.debts(0).unknown_fields().field_count()) << "未知字段原样保留";
+	EXPECT_EQ(kFutureField, saved.debts(0).unknown_fields().field(0).number());
+	EXPECT_EQ(7u, saved.debts(0).unknown_fields().field(0).varint());
+
+	const uint32_t diamond = static_cast<uint32_t>(kCurrencyDiamond);
+	EXPECT_FALSE(CurrencySystem::DebtCarriesUnknownFields(player_, kCurrencyDiamond));
+	EXPECT_EQ(PlayerInboxExecKind::kApplied,
+			  GmSanctionInboxExecutor::AttachCurrencyDebt(player_, DebtPayload(diamond, 100)).kind)
+		<< "另一币种的欠款没有携带未知字段,照常挂";
+	EXPECT_EQ(100u, runtime.debts.at(diamond).owed);
+}
+
 // ── 加载不变量被破坏 ────────────────────────────────────────────────────────
 
 TEST_F(GmSanctionInboxExecutorTest, MissingCurrencyComponentsDeferWithoutSideEffects)
@@ -197,6 +236,7 @@ TEST_F(GmSanctionInboxExecutorTest, MissingCurrencyComponentsDeferWithoutSideEff
 			  GmSanctionInboxExecutor::AttachCurrencyDebt(player_, DebtPayload(kGold, 100)).kind);
 
 	EXPECT_EQ(0, tlsEcs.actorRegistry.get<CurrencyComp>(player_).blocked_types_size());
+	EXPECT_FALSE(CurrencySystem::DebtCarriesUnknownFields(player_, kCurrencyGold)) << "缺组件时只读谓词返回 false";
 	EXPECT_FALSE(tlsEcs.actorRegistry.all_of<PlayerCurrencyComp>(player_)) << "执行器只取不建";
 
 	// 载荷本身坏掉时,确定性拒绝优先于"缺组件"(纯校验先跑)。

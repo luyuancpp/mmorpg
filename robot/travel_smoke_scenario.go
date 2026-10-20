@@ -34,8 +34,11 @@ package main
 //     124 把人送回家,机器人会乖乖跟随,表面上"传送成功"。所以每一跳都要断言票据 zone 与 gate 地址,
 //     并且一次传送窗口内出现第二个 124 直接判失败。
 //
-// TravelToZone 的回包是**可选**的:124 一到,SwapConn 就关旧连接,之后才从旧 gate 发出的回包会丢。
-// 只能当"到了且 tip != 0 就立即失败",不能当必需条件。
+// 请求-响应调用(TravelToZone、金币读写)一律走 gc.Call,回包按请求号认领,不进留底、不经通用分发
+// (docs/design/client-rpc-callback.md §6);留底只收推送(124 / NotifyEnterScene / SendTipToClient / KickPlayer / MoveAck)。
+//
+// TravelToZone 的回包是**可选**的:124 一到,SwapConn 就关旧连接并让旧连接上的这次调用以 pkg.ErrRPCDisconnected 收场,
+// 之后才从旧 gate 发出的回包收不到。只能当"到了且 tip != 0 就立即失败",不能当必需条件;ErrRPCDisconnected 是正常路径。
 //
 // tip 码一律不写数字(AGENTS.md §7 不变量 5)。正向流程不需要任何 tip 常量;负向只断言 tip != 0,
 // 这样不依赖还没导出的 kZoneTravel* 枚举名,日志里打印的是服务器回来的运行时值。
@@ -110,6 +113,9 @@ const (
 	travelSmokeProbeCoord = 100000.0
 )
 
+// errTravelSmokeTimeout 是金币读写等回包超时的哨兵(smokeCaller 的 timeoutErr),拼进失败原因。
+var errTravelSmokeTimeout = errors.New("no reply within")
+
 // travelSmokeRecord 是一条留底消息。
 type travelSmokeRecord struct {
 	messageId uint32
@@ -150,10 +156,62 @@ type travelSmokeScan struct {
 	hop *travelSmokeHop
 	// arrived 表示 124 之后已见到 NotifyEnterScene。
 	arrived bool
-	// replySeen 表示 TravelToZone 的回包赶在旧连接关闭前到了(可选,只用于诊断)。
+	// replySeen 表示 TravelToZone 的回包(含信封拒绝)赶在旧连接被换掉之前到了。取自那次调用的结局
+	// (travelSmokeReplyOutcome),不是留底;可选,只用于诊断。
 	replySeen bool
 	// lateTips 是 124 之后收到的 SendTipToClient(不判失败,超时诊断时带上)。
 	lateTips []uint32
+}
+
+// travelSmokeReplyOutcome 是一次 TravelToZone 调用的结局快照。settled=false 表示还没有结局;
+// 有结局时 reply / err 的形状同 pkg.GameClient.Call 的 done:(回包, nil)、(信封, *pkg.ServerTipError)、(nil, 其余错误)。
+type travelSmokeReplyOutcome struct {
+	settled bool
+	reply   *base.MessageContent
+	err     error
+}
+
+// travelSmokeTravelCall 是在途的一次 TravelToZone。传送等待不能阻塞在回包上:回包可有可无,而 124 / 重登 /
+// NotifyEnterScene 要同时盯着。所以用 gc.Call 异步登记,done 把结局写进来,等待循环每圈取一次快照。
+// done 跑在 RecvLoop / 定时器 / SwapConn 所在的 goroutine 上,只写结局,不阻塞;mu 只保护 outcome。
+type travelSmokeTravelCall struct {
+	mu      sync.Mutex
+	outcome travelSmokeReplyOutcome
+}
+
+func (c *travelSmokeTravelCall) settle(reply *base.MessageContent, err error) {
+	c.mu.Lock()
+	c.outcome = travelSmokeReplyOutcome{settled: true, reply: reply, err: err}
+	c.mu.Unlock()
+}
+
+// snapshot 返回当前结局。结局只写一次(Call 的 done 恰好一次),之后的快照都相同。
+func (c *travelSmokeTravelCall) snapshot() travelSmokeReplyOutcome {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	return c.outcome
+}
+
+// travelSmokeStartTravel 用 gc.Call 发一次 TravelToZone 并立刻返回在途调用,travel-smoke 与 sync-smoke 共用。
+// timeout 是回包的认领窗口:到期仍无回包,调用以 pkg.ErrRPCTimeout 收场,之后到达的回包由 GameClient 按迟到丢弃;
+// 传送等待要在整个落地窗口里都认得回包,调用方传那个窗口。
+// 本地没发出时返回 error(done 已在 Call 返回前同步写入 pkg.ErrRPCNotSent)。
+// 计数:确认发出后计 MsgSent;回包(含信封拒绝)到达时在 done 里计 MsgRecv —— 它不经过场景的 onMessage。
+// 调用方负责请求节流。
+func travelSmokeStartTravel(gc *pkg.GameClient, stats *metrics.Stats, targetZone, sceneConfigId uint32, timeout time.Duration) (*travelSmokeTravelCall, error) {
+	call := &travelSmokeTravelCall{}
+	gc.Call(travelToZoneMessageId, newTravelToZoneRequest(targetZone, sceneConfigId), timeout,
+		func(reply *base.MessageContent, err error) {
+			if reply != nil {
+				stats.MsgRecv()
+			}
+			call.settle(reply, err)
+		})
+	if outcome := call.snapshot(); outcome.settled && errors.Is(outcome.err, pkg.ErrRPCNotSent) {
+		return nil, outcome.err
+	}
+	stats.MsgSent()
+	return call, nil
 }
 
 // travelSmokeBot 是本场景唯一的机器人会话。
@@ -233,7 +291,7 @@ func RunTravelSmoke(cfg *config.Config) {
 	if err != nil {
 		// 这是全程第一条 GM 指令,环境没放行 GM 时就死在这里。2026-10-15 起 gate 的 GM 闸拒绝回带请求 id 的信封
 		// (message_id = GmAddCurrency,tip = kFeatureUnavailable 1006;client-request-ordering.md O6),
-		// replyRejection 会把它单独报成「gate GM 闸拒绝」;以前只推一条 23 号 tip,表现是等回包超时。
+		// travelSmokeReplyRejection 会把它单独报成「gate GM 闸拒绝」;以前只推一条 23 号 tip,表现是等回包超时。
 		fail("home-gold-seed", "%v (an envelope tip 1006 from the gate GM guard means the home-zone gate GATE_RUN_MODE is not dev)", err)
 	}
 	if gold != goldHome {
@@ -434,16 +492,25 @@ func travelSmokeLogin(cfg *config.Config, account string, stats *metrics.Stats) 
 	return bot, nil
 }
 
-// travelSmokeIsRecorded:本场景按到达顺序留底的消息号。
+// travelSmokeIsRecorded:本场景按到达顺序留底的消息号,全是推送。
+// 请求-响应调用(TravelToZone、金币读写)的回包按请求号交给各自的 Call,不进留底(见 travelSmokeIsCallReply)。
 func travelSmokeIsRecorded(messageId uint32) bool {
 	switch messageId {
-	case travelToZoneMessageId,
-		game.SceneClientPlayerCommonRedirectToGateMessageId,
+	case game.SceneClientPlayerCommonRedirectToGateMessageId,
 		game.SceneSceneClientPlayerNotifyEnterSceneMessageId,
 		game.SceneClientPlayerCommonSendTipToClientMessageId,
 		game.SceneClientPlayerCommonKickPlayerMessageId,
-		game.SceneMovementClientPlayerNotifyMoveAckMessageId,
-		// 金币读写的回包:共享 helper 把"被拒"读成余额 0,要靠留底里的原始回包分辨(见 replyRejection)。
+		game.SceneMovementClientPlayerNotifyMoveAckMessageId:
+		return true
+	}
+	return false
+}
+
+// travelSmokeIsCallReply:本场景用 gc.Call 发出的请求消息号。它们的回包带请求号、不会走到 onMessage;
+// 走到 onMessage 的(id = 0)说明服务端没回显请求号,只能丢弃。
+func travelSmokeIsCallReply(messageId uint32) bool {
+	switch messageId {
+	case travelToZoneMessageId,
 		game.SceneCurrencyClientPlayerGetCurrencyListMessageId,
 		game.SceneCurrencyClientPlayerGmAddCurrencyMessageId:
 		return true
@@ -451,14 +518,20 @@ func travelSmokeIsRecorded(messageId uint32) bool {
 	return false
 }
 
-// onMessage:先留底,再**无条件**转发给通用分发。
-//   - 无条件转发:金币读写(readGoldBalance / gmAddGold)靠 handler 更新 gameobject.Player 才等得到结果;
-//     msg 124 也是在转发里同步完成整个搬迁(pkg.FollowRedirect),期间 RecvLoop goroutine 一直被占用。
+// onMessage:推送先留底,再转发给通用分发。
+//   - 请求消息号上 id = 0 的消息(travelSmokeIsCallReply)交给 smokeDropUncorrelatedReply 丢弃,不进通用分发:
+//     信封拒绝落进生成的 handler 会被解成全零响应,看上去像受理;对应的那次调用将以超时收场。
+//   - 其余无条件转发:NotifyEnterScene 靠通用 handler 放行首登的 WaitSceneReady;msg 124 在转发里同步完成整个搬迁
+//     (pkg.FollowRedirect),期间 RecvLoop goroutine 一直被占用。
 //   - 转发时**绝不能持有 b.mu**:FollowRedirect 末尾的 ReplayDeferred 会在同一个 goroutine 里重入本函数
 //     (补投新 zone 的 NotifyEnterScene),持锁转发就是自锁。严格重登(b.relogin)也在这条调用链里拿 b.mu。
 func (b *travelSmokeBot) onMessage(client *pkg.GameClient, msg *base.MessageContent) {
 	b.stats.MsgRecv()
 	messageId := msg.GetMessageId()
+	if travelSmokeIsCallReply(messageId) {
+		smokeDropUncorrelatedReply(b.account, msg)
+		return
+	}
 	if travelSmokeIsRecorded(messageId) {
 		b.mu.Lock()
 		b.records = append(b.records, travelSmokeRecord{
@@ -553,7 +626,8 @@ func (b *travelSmokeBot) pace() {
 	}
 }
 
-// send 按节奏发一个请求。
+// send 按节奏发一个不关联回包的请求(ClientRequest.id = 0)。只用于单向消息(移动上报,应答类型是 Empty,
+// scene TCP 路径上不回包);请求-响应调用走 call / travelSmokeStartTravel。
 func (b *travelSmokeBot) send(messageId uint32, request proto.Message) error {
 	b.pace()
 	if err := b.gc.SendRequest(messageId, request); err != nil {
@@ -564,43 +638,55 @@ func (b *travelSmokeBot) send(messageId uint32, request proto.Message) error {
 	return nil
 }
 
-// readGold / addGold 复用 currency_crash_window_scenario.go 的请求 / 等待对(它们每次调用都会复位各自的
-// ready 通道,可以反复调),套上本场景的请求节奏,再补一道"被拒就是失败"。前提是 onMessage 把回包转给了通用分发。
+// call 按节奏发一个请求-响应调用,只等本次请求自己的回包(smokeCaller.call;超时包裹 errTravelSmokeTimeout)。
+// 返回值同 smokeCaller.call:envelopeTip 非 0 = gate 信封拒绝,此时 response 未填充;为 0 时 response 已解码。
+// 节奏沿用改造前的金币读写:相邻请求的间隔从上一次调用返回时起算(比从发出时起算更保守)。
 //
-// 为什么要补:共享 helper 分不清"余额是 0"和"请求被拒"——GetCurrencyList 的 handler 在回包带 error_message 时
-// 记一份空列表,Player.GetCurrencyValue 对"列表已到、槽位缺失"回 (0, true),于是 readGoldBalance 回 (0, nil);
-// gate 信封拒绝(限流)时回包体为空,解出来同样是空列表 / balance_after=0。本场景的断言全建立在余额上,
-// 把拒绝读成 0 会让失败原因指错方向(出发值为 0 的那一瞬间还会直接放过)。
-// 不改共享 helper:别的冒烟依赖它现在的语义;这里从自己的留底里看原始回包。
+// 每次现建 smokeCaller 而不做成字段:ownership_fault_fullstack_test.go 用结构体字面量构造 travelSmokeBot,
+// 加字段就得同步改那边;本场景也不接 gate kServiceUnavailable 的快速失败(scene 链路的拒绝走带请求号的信封),
+// smokeCaller 没有要跨调用保留的状态。只由主流程调用,不得在 RecvLoop goroutine 上调用(CallSync 的约束)。
+func (b *travelSmokeBot) call(messageId uint32, request, response proto.Message) (uint32, error) {
+	b.pace()
+	caller := newSmokeCaller(b.gc, b.stats, b.account, travelSmokeRpcTimeout, errTravelSmokeTimeout)
+	envelopeTip, err := caller.call(messageId, request, response)
+	b.lastRequestAt = time.Now()
+	return envelopeTip, err
+}
+
+// readGold / addGold 读 / 加金币:只等本次请求自己的回包(按请求号认领)并直接解回包,被拒一律是失败
+// (gate 信封拒绝与回包体 tip 非 0,判定见 travelSmokeReplyRejection)。
+//
+// 为什么不用 currency_crash_window_scenario.go 的 readGoldBalance / gmAddGold:它们等的是生成 handler 写进
+// gameobject.Player 的就绪通道,分不清"余额是 0"和"请求被拒"——GetCurrencyList 的 handler 在回包带 error_message 时
+// 记一份空列表,读出来是 (0, nil);gate 信封拒绝(限流)时回包体为空,解出来同样是空列表 / balance_after=0。
+// 本场景的断言全建立在余额上,把拒绝读成 0 会让失败原因指错方向(出发值为 0 的那一瞬间还会直接放过)。
+// 它们也不认请求号,上一次超时请求的迟到回包会被当成本次结果。共享 helper 别的冒烟还在用,不改。
 //
 // 不按"列表为空 / 长度不足"判失败:新号还没有任何货币记录时,空列表是合法回包(T1 的第一次读就是它)。
 // 需要非 0 的地方由调用点拿余额与期望值比。
 func (b *travelSmokeBot) readGold() (uint64, error) {
-	b.pace()
-	since, _ := b.mark()
-	balance, err := readGoldBalance(b.gc, b.player, b.stats, travelSmokeRpcTimeout)
-	b.lastRequestAt = time.Now()
-	if err != nil {
-		return 0, err
+	response := &scene.GetCurrencyListResponse{}
+	envelopeTip, err := b.call(game.SceneCurrencyClientPlayerGetCurrencyListMessageId, &scene.GetCurrencyListRequest{}, response)
+	if err == nil {
+		err = travelSmokeReplyRejection(envelopeTip, response)
 	}
-	if err := b.replyRejection(since, game.SceneCurrencyClientPlayerGetCurrencyListMessageId, &scene.GetCurrencyListResponse{}); err != nil {
+	if err != nil {
 		return 0, fmt.Errorf("GetCurrencyList: %w", err)
 	}
-	return balance, nil
+	return travelSmokeGold(response), nil
 }
 
 func (b *travelSmokeBot) addGold(amount int64) (uint64, error) {
-	b.pace()
-	since, _ := b.mark()
-	balance, err := gmAddGold(b.gc, b.player, b.stats, amount, travelSmokeRpcTimeout)
-	b.lastRequestAt = time.Now()
-	if err != nil {
-		return 0, err
+	response := &scene.GmAddCurrencyResponse{}
+	envelopeTip, err := b.call(game.SceneCurrencyClientPlayerGmAddCurrencyMessageId,
+		&scene.GmAddCurrencyRequest{CurrencyType: currencyTypeGold, Amount: amount}, response)
+	if err == nil {
+		err = travelSmokeReplyRejection(envelopeTip, response)
 	}
-	if err := b.replyRejection(since, game.SceneCurrencyClientPlayerGmAddCurrencyMessageId, &scene.GmAddCurrencyResponse{}); err != nil {
+	if err != nil {
 		return 0, fmt.Errorf("GmAddCurrency{amount=%d}: %w", amount, err)
 	}
-	return balance, nil
+	return response.GetBalanceAfter(), nil
 }
 
 // travelSmokeTipReply 是带 error_message 的回包(请求 / 响应型 RPC 的回包都长这样)。
@@ -609,33 +695,29 @@ type travelSmokeTipReply interface {
 	GetErrorMessage() *base.TipInfoMessage
 }
 
-// replyRejection 在共享 helper 已经等到回包之后调用:从 since 之后的留底里取最后一条 messageId 的回包,
-// 被拒(gate 信封 tip 或回包体 tip 非 0)就返回 error。reply 只是解码用的空壳,由调用方给出具体类型。
-//
-// 回包此刻一定已经在留底里:onMessage 先追加留底、再转发给通用分发,而 helper 等的 ready 通道是在转发里才关的。
-// 取最后一条而不是第一条:上一次请求超时后迟到的回包也可能落在 since 之后,离现在最近的那条才是本次的。
-func (b *travelSmokeBot) replyRejection(since int, messageId uint32, reply travelSmokeTipReply) error {
-	records, _ := b.snapshot(since)
-	for i := len(records) - 1; i >= 0; i-- {
-		r := records[i]
-		if r.messageId != messageId {
-			continue
-		}
-		if r.envelopeTip == uint32(tiptable.CommonError_kFeatureUnavailable) {
-			return fmt.Errorf("被 gate 的 GM 闸拒绝 tip=%d(请求没到 scene:gate 的 GATE_RUN_MODE 不是 dev)", r.envelopeTip)
-		}
-		if r.envelopeTip != 0 {
-			return fmt.Errorf("被 gate 信封拒绝 tip=%d(请求没到 scene:多半是被限流了,检查 travelSmokeRequestSpacing)", r.envelopeTip)
-		}
-		if err := proto.Unmarshal(r.body, reply); err != nil {
-			return fmt.Errorf("decode reply(message_id=%d): %w", messageId, err)
-		}
-		if tip := reply.GetErrorMessage().GetId(); tip != 0 {
-			return fmt.Errorf("scene 业务拒绝 tip=%d(常见:跨 zone 冻结闸 / 货币封禁;GmAddCurrency 还可能是 scene 的 GM 闸 —— SCENE_RUN_MODE 不是 dev)", tip)
-		}
-		return nil
+// travelSmokeReplyRejection 判一次请求-响应调用是否被拒:envelopeTip 是 gate 信封拒绝码(非 0 时 reply 未填充),
+// reply 是已解码的回包体。被拒返回 error,受理返回 nil。
+func travelSmokeReplyRejection(envelopeTip uint32, reply travelSmokeTipReply) error {
+	if envelopeTip == uint32(tiptable.CommonError_kFeatureUnavailable) {
+		return fmt.Errorf("被 gate 的 GM 闸拒绝 tip=%d(请求没到 scene:gate 的 GATE_RUN_MODE 不是 dev)", envelopeTip)
 	}
-	return fmt.Errorf("helper 已等到回包,留底里却没有 message_id=%d(travelSmokeIsRecorded 漏登记了这个消息号?)", messageId)
+	if envelopeTip != 0 {
+		return fmt.Errorf("被 gate 信封拒绝 tip=%d(请求没到 scene:多半是被限流了,检查 travelSmokeRequestSpacing)", envelopeTip)
+	}
+	if tip := reply.GetErrorMessage().GetId(); tip != 0 {
+		return fmt.Errorf("scene 业务拒绝 tip=%d(常见:跨 zone 冻结闸 / 货币封禁;GmAddCurrency 还可能是 scene 的 GM 闸 —— SCENE_RUN_MODE 不是 dev)", tip)
+	}
+	return nil
+}
+
+// travelSmokeGold 取 GetCurrencyList 回包里金币槽的值。槽位越界(新号没有货币记录、repeated 比槽位短)按 0,
+// 与改造前经 gameobject.Player.GetCurrencyValue 读出的值一致。
+func travelSmokeGold(response *scene.GetCurrencyListResponse) uint64 {
+	values := response.GetCurrency().GetValues()
+	if int(currencyTypeGold) >= len(values) {
+		return 0
+	}
+	return values[currencyTypeGold]
 }
 
 // gateAddr 返回当前连着的 gate("ip:port";重定向后是新 zone 的 gate)。
@@ -676,20 +758,22 @@ func (b *travelSmokeBot) countSince(since int, messageId uint32) int {
 // travelTo 发起一次传送并等到"人已经在目标 zone 的场景里":
 // msg 124 → 严格重登成功 → 排在 124 之后的 NotifyEnterScene。返回这一跳的证据,断言由 verifyArrival 做。
 //
+// TravelToZone 用 gc.Call 异步发出(travelSmokeStartTravel),认领窗口与整跳预算相同;回包可有可无,
+// 每圈连同留底一起交给 travelSmokeScanHop:回包带拒绝码立即失败,124 之后旧连接上的调用以 ErrRPCDisconnected 收场属正常。
 // 轮询里不能调 gc.RedirectHops():它与 FollowRedirect 抢同一把 redirectMu,搬迁进行中会一直阻塞到结束。
 func (b *travelSmokeBot) travelTo(targetZone, sceneConfigId uint32) (*travelSmokeHop, error) {
 	b.pace()
 	since, before := b.mark()
-	if err := b.gc.SendRequest(travelToZoneMessageId, newTravelToZoneRequest(targetZone, sceneConfigId)); err != nil {
+	call, err := travelSmokeStartTravel(b.gc, b.stats, targetZone, sceneConfigId, travelSmokeRedirectTimeout)
+	if err != nil {
 		return nil, fmt.Errorf("send TravelToZone{zone=%d}: %w", targetZone, err)
 	}
 	b.lastRequestAt = time.Now()
-	b.stats.MsgSent()
 
 	deadline := time.Now().Add(travelSmokeRedirectTimeout)
 	for {
 		records, progress := b.snapshot(since)
-		scan, err := travelSmokeScanHop(records)
+		scan, err := travelSmokeScanHop(call.snapshot(), records)
 		if err != nil {
 			return nil, fmt.Errorf("TravelToZone{zone=%d}: %w", targetZone, err)
 		}
@@ -739,25 +823,17 @@ func (b *travelSmokeBot) describeTimeout(scan travelSmokeScan, progress, before 
 		travelSmokeRedirectTimeout, scan.replySeen, redirectSeen, reloginStarted, reloginDone, scan.arrived, b.gateAddr(), scan.lateTips, hint)
 }
 
-// travelSmokeScanHop 按到达顺序扫一遍传送窗口内的留底。返回 error 表示可以立刻判这一跳失败。
-func travelSmokeScanHop(records []travelSmokeRecord) (travelSmokeScan, error) {
+// travelSmokeScanHop 判一跳传送窗口的现状:先看 TravelToZone 调用的结局(reply,判据见 travelSmokeJudgeTravelReply),
+// 再按到达顺序扫窗口内的留底。返回 error 表示可以立刻判这一跳失败。
+func travelSmokeScanHop(reply travelSmokeReplyOutcome, records []travelSmokeRecord) (travelSmokeScan, error) {
 	var scan travelSmokeScan
+	seen, err := travelSmokeJudgeTravelReply(reply)
+	scan.replySeen = seen
+	if err != nil {
+		return scan, err
+	}
 	for _, r := range records {
 		switch r.messageId {
-		case travelToZoneMessageId:
-			// 回包是可选的(124 一到旧连接就关),但到了且带拒绝码就立即失败。
-			scan.replySeen = true
-			if r.envelopeTip != 0 {
-				return scan, fmt.Errorf("gate 信封拒绝 tip=%d(请求没到 scene:gate 没换上认识该消息号的新二进制,或被限流)", r.envelopeTip)
-			}
-			tip, err := travelToZoneRejectTip(r.body)
-			if err != nil {
-				return scan, fmt.Errorf("decode TravelToZoneResponse: %w", err)
-			}
-			if tip != 0 {
-				return scan, fmt.Errorf("scene 同步拒绝 tip=%d(战斗 / 组队在途、已有传送在途、目标 zone 非法等 CZ-6 校验)", tip)
-			}
-
 		case game.SceneClientPlayerCommonSendTipToClientMessageId:
 			var tip base.TipInfoMessage
 			if err := proto.Unmarshal(r.body, &tip); err != nil || tip.GetId() == 0 {
@@ -799,6 +875,36 @@ func travelSmokeScanHop(records []travelSmokeRecord) (travelSmokeScan, error) {
 		}
 	}
 	return scan, nil
+}
+
+// travelSmokeJudgeTravelReply 把传送等待期间 TravelToZone 调用的结局翻成判据。seen 表示回包(含信封拒绝)到了;
+// err 非 nil 表示可以立刻判这一跳失败。
+//
+// 回包是可选的,下列都不算失败,落地与否由留底里的 124 / NotifyEnterScene 决定:还没有结局;
+// pkg.ErrRPCDisconnected(124 一到 SwapConn 就让旧连接上的在途调用以它收场,回包从此收不到 —— 正常路径);
+// pkg.ErrRPCTimeout(认领窗口内没回包)。回包带拒绝码(信封或回包体)、回包体解不开、其余错误立即失败。
+func travelSmokeJudgeTravelReply(reply travelSmokeReplyOutcome) (seen bool, err error) {
+	if !reply.settled {
+		return false, nil
+	}
+	var tipErr *pkg.ServerTipError
+	switch {
+	case reply.err == nil:
+		tip, decodeErr := travelToZoneRejectTip(reply.reply.GetSerializedMessage())
+		if decodeErr != nil {
+			return true, fmt.Errorf("decode TravelToZoneResponse: %w", decodeErr)
+		}
+		if tip != 0 {
+			return true, fmt.Errorf("scene 同步拒绝 tip=%d(战斗 / 组队在途、已有传送在途、目标 zone 非法等 CZ-6 校验)", tip)
+		}
+		return true, nil
+	case errors.As(reply.err, &tipErr):
+		return true, fmt.Errorf("gate 信封拒绝 tip=%d(请求没到 scene:gate 没换上认识该消息号的新二进制,或被限流)", tipErr.Tip)
+	case errors.Is(reply.err, pkg.ErrRPCDisconnected), errors.Is(reply.err, pkg.ErrRPCTimeout):
+		return false, nil
+	default:
+		return false, fmt.Errorf("TravelToZone call failed: %w", reply.err)
+	}
 }
 
 // travelSmokeDecodeRedirect 解 msg 124 与它带的票据。
@@ -881,44 +987,59 @@ func (b *travelSmokeBot) verifyUndisturbed(since int, wantGate string) error {
 }
 
 // expectTravelRejected 发一个必须被**同步**拒绝的传送请求,返回服务器给的拒绝码(只保证 != 0,不与任何常量比较)。
-// 没有重定向发生,旧连接不会关,所以这里的回包是必需的(与 travelTo 相反)。
+// 没有重定向发生,旧连接不会关,所以这里的回包是必需的(与 travelTo 相反):按请求号认领,认领窗口
+// travelSmokeRpcTimeout 内没回包即失败。
+//
+// 用 gc.Call 异步发出而不是阻塞等回包:等待期间还要盯着留底里的 msg 124。每圈先取调用结局、再数 124 ——
+// 124 的留底在 FollowRedirect 换连接之前追加,所以结局是 ErrRPCDisconnected 时这一圈一定数得到它,报的是重定向。
+// 被受理的回包先于 124 到达时报「回包 tip=0」,与改造前按到达顺序判的结论相同。
 func (b *travelSmokeBot) expectTravelRejected(targetZone, sceneConfigId uint32) (uint32, error) {
 	b.pace()
 	since, _ := b.mark()
-	if err := b.gc.SendRequest(travelToZoneMessageId, newTravelToZoneRequest(targetZone, sceneConfigId)); err != nil {
+	call, err := travelSmokeStartTravel(b.gc, b.stats, targetZone, sceneConfigId, travelSmokeRpcTimeout)
+	if err != nil {
 		return 0, fmt.Errorf("send TravelToZone{zone=%d}: %w", targetZone, err)
 	}
 	b.lastRequestAt = time.Now()
-	b.stats.MsgSent()
 
-	deadline := time.Now().Add(travelSmokeRpcTimeout)
+	// 不另设截止时间:Call 的定时器保证结局在 travelSmokeRpcTimeout 内一定写入。
 	for {
-		records, _ := b.snapshot(since)
-		for _, r := range records {
-			switch r.messageId {
-			case game.SceneClientPlayerCommonRedirectToGateMessageId:
-				return 0, fmt.Errorf("TravelToZone{zone=%d} 本该被拒,却触发了 msg 124 重定向", targetZone)
-			case travelToZoneMessageId:
-				if r.envelopeTip != 0 {
-					return 0, fmt.Errorf("TravelToZone{zone=%d} 被 gate 信封拒绝 tip=%d:请求没到 scene,不能算业务拒绝"+
-						"(gate 没换上认识该消息号的新二进制,或被限流)", targetZone, r.envelopeTip)
-				}
-				tip, err := travelToZoneRejectTip(r.body)
-				if err != nil {
-					return 0, fmt.Errorf("decode TravelToZoneResponse: %w", err)
-				}
-				if tip == 0 {
-					return 0, fmt.Errorf("TravelToZone{zone=%d} 回包 tip=0（被受理了）：scene 没校验目标 zone，"+
-						"或 handler 没把拒绝码写进 response->error_message", targetZone)
-				}
-				return tip, nil
-			}
+		reply := call.snapshot()
+		if b.countSince(since, game.SceneClientPlayerCommonRedirectToGateMessageId) > 0 {
+			return 0, fmt.Errorf("TravelToZone{zone=%d} 本该被拒,却触发了 msg 124 重定向", targetZone)
 		}
-		if !time.Now().Before(deadline) {
-			return 0, fmt.Errorf("TravelToZone{zone=%d} %s 内没有回包(同步拒绝必须有回包;gate / scene 没换新二进制?)",
-				targetZone, travelSmokeRpcTimeout)
+		if reply.settled {
+			return travelSmokeJudgeRejection(targetZone, reply)
 		}
 		time.Sleep(travelSmokePollInterval)
+	}
+}
+
+// travelSmokeJudgeRejection 判 expectTravelRejected 那次调用的结局:回包体拒绝码非 0 才通过并返回该码;
+// 受理(tip=0)、信封拒绝(请求没到 scene)、认领窗口内没回包、其余错误都返回 error。reply 必须已有结局。
+func travelSmokeJudgeRejection(targetZone uint32, reply travelSmokeReplyOutcome) (uint32, error) {
+	var tipErr *pkg.ServerTipError
+	switch {
+	case !reply.settled:
+		return 0, fmt.Errorf("TravelToZone{zone=%d}: judged before the call settled (caller bug)", targetZone)
+	case reply.err == nil:
+		tip, err := travelToZoneRejectTip(reply.reply.GetSerializedMessage())
+		if err != nil {
+			return 0, fmt.Errorf("decode TravelToZoneResponse: %w", err)
+		}
+		if tip == 0 {
+			return 0, fmt.Errorf("TravelToZone{zone=%d} 回包 tip=0（被受理了）：scene 没校验目标 zone，"+
+				"或 handler 没把拒绝码写进 response->error_message", targetZone)
+		}
+		return tip, nil
+	case errors.As(reply.err, &tipErr):
+		return 0, fmt.Errorf("TravelToZone{zone=%d} 被 gate 信封拒绝 tip=%d:请求没到 scene,不能算业务拒绝"+
+			"(gate 没换上认识该消息号的新二进制,或被限流)", targetZone, tipErr.Tip)
+	case errors.Is(reply.err, pkg.ErrRPCTimeout):
+		return 0, fmt.Errorf("TravelToZone{zone=%d} %s 内没有回包(同步拒绝必须有回包;gate / scene 没换新二进制?)",
+			targetZone, travelSmokeRpcTimeout)
+	default:
+		return 0, fmt.Errorf("TravelToZone{zone=%d}: %w", targetZone, reply.err)
 	}
 }
 

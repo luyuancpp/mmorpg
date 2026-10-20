@@ -90,38 +90,64 @@ inline constexpr bool CreationReceiptExpired(uint64_t expiryMs,uint64_t nowMs,bo
 {
     return expiryMs < nowMs && !roomExists;
 }
+
+// 个人结算落库的轮次上限(审计 r2-battle#4,AGENTS §11.3 重试必须有上限)。
+// 只数真正开出去的轮：Redis 未连上时调用方不开轮，不计在内(与 Redis 不可用时等恢复的既有口径一致)。
+// 配合 1→30s 退避：前 5 次失败共等 31s，之后每轮 30s；第 24 轮失败时距第 1 轮约 571s(约 9.5 分钟)，
+// 远大于一次主从切换。持续 ERROR(OOM、NOAUTH/ACL、键类型错)到这里收手，不再无限重写。
+// 到上限不放行发送：放弃落库直接发结果会退回 social-match-battle#2 的原缺陷。
+inline constexpr uint32_t kMaxStagingRounds = 24;
+
 // 单逻辑线程所有。载荷一经计算不可改；只有本次关联号的 all ACK 能放行终局。
 //
 // 发送的前置条件(审计 social-match-battle#2)：载荷里全部成员的个人结算已写进 R07 pending。
 // 在这之前 CanSend 恒为假。这样结果一旦可能到达 broker，battle 进程无论在回执前停机还是崩溃，
 // 个人结算都已有耐久副本，由 scene 登录钩子 / 冻结到期补读应用，不依赖本进程活到回执。
-// 落库按轮进行：BeginStaging 发号，调用方对全部成员各写一次，回复到齐后 FinishStaging 一次。
-// 失败按与投递相同的有界退避重来；过期轮次(attempt 不符)的迟到回复不改状态。
+// 落库按轮进行：BeginStaging 发号，调用方对 UnstagedMembers() 各写一次，回复到齐后 FinishStaging 一次。
+// 按成员记结论(审计 r2-battle#1)：拿到确定结论的成员移出待写集合，后续轮次只重写其余成员。
+// 已写进去的成员 scene 可能随时应用并销账(删 pending 与锁、摘账本)，再写一次 pending 就会复活，
+// 玩家下次登录重复领奖。结论未知的成员(空应答 / ERROR / 命令没发出)下一轮照写，
+// 「命令其实执行过」由落库脚本自己判出来(settlement_outbox.h 的 kStagePendingSettlementOnceScript)。
+// 失败按与投递相同的有界退避重来，最多 kMaxStagingRounds 轮；到上限后终局保持未知，CanSend 恒为假。
+// 过期轮次(attempt 不符)的迟到回复不改状态。
 class ResultCommit
 {
 public:
     using Clock = std::chrono::steady_clock;
-    explicit ResultCommit(std::string payload) : payload_(std::move(payload)) {}
+    // stagingMembers：落库前置条件要覆盖的成员(确认模式 = 全部参战者)。为空时永远不放行(fail-closed)，
+    // 只给序列化失败、成员对不上这类「终局未知」的占位用。
+    explicit ResultCommit(std::string payload, std::set<uint64_t> stagingMembers = {})
+        : payload_(std::move(payload)), unstaged_(std::move(stagingMembers)) {}
     const std::string& Payload() const { return payload_; }
     bool Confirmed() const { return confirmed_; }
     bool InFlight() const { return inFlight_ != 0; }
     uint32_t Failures() const { return failures_; }
     bool PersonalSettlementsDurable() const { return staged_; }
-    // 开一轮落库，返回本轮编号；已落库、上一轮还在途或仍在退避期时返回 0。
+    // 还没拿到确定结论的成员。本轮在途期间(BeginStaging 之后、FinishStaging 之前)不变。
+    const std::set<uint64_t>& UnstagedMembers() const { return unstaged_; }
+    uint32_t StagingFailures() const { return stagingFailures_; }
+    // 落库轮次已到上限：不再开新轮，结果不发，终局保持未知。
+    bool StagingExhausted() const { return stagingExhausted_; }
+    // 开一轮落库，返回本轮编号；已落库、轮次已用尽、没有待写成员、上一轮还在途或仍在退避期时返回 0。
     uint64_t BeginStaging(Clock::time_point now)
     {
-        if (staged_ || stagingAttempt_ != 0 || now < stagingRetryAt_) return 0;
+        if (staged_ || stagingExhausted_ || unstaged_.empty() || stagingAttempt_ != 0 || now < stagingRetryAt_)
+            return 0;
         stagingAttempt_ = ++stagingSeq_;
         return stagingAttempt_;
     }
-    // 本轮全部成员的落库回复到齐后调用一次；返回 true 表示此后允许发送。
-    bool FinishStaging(uint64_t attempt, bool allStored, Clock::time_point now)
+    // 本轮全部成员的落库回复到齐后调用一次。settledMembers = 本轮拿到确定结论(本次写入 / 本局早先已写 /
+    // 已被别的局取代)的成员，只把它们移出待写集合；不在待写集合里的 id 忽略。按值接收：调用方传
+    // UnstagedMembers() 本身时也不会边遍历边删。返回 true 表示全部成员已落定，此后允许发送。
+    bool FinishStaging(uint64_t attempt, std::set<uint64_t> settledMembers, Clock::time_point now)
     {
         if (attempt == 0 || attempt != stagingAttempt_ || staged_) return false;
         stagingAttempt_ = 0;
-        if (allStored) { staged_ = true; return true; }
+        for (const auto member : settledMembers) unstaged_.erase(member);
+        if (unstaged_.empty()) { staged_ = true; return true; }
         stagingRetryAt_ = now + BackoffAfter(stagingFailures_);
         if (stagingFailures_ != UINT32_MAX) ++stagingFailures_;
+        if (stagingFailures_ >= kMaxStagingRounds) stagingExhausted_ = true;
         return false;
     }
     bool CanSend(Clock::time_point now) const { return staged_ && !confirmed_ && !InFlight() && now >= retryAt_; }
@@ -153,6 +179,8 @@ private:
     bool confirmed_ = false;
     Clock::time_point retryAt_{};
     bool staged_ = false;
+    std::set<uint64_t> unstaged_;
+    bool stagingExhausted_ = false;
     uint64_t stagingAttempt_ = 0;
     uint64_t stagingSeq_ = 0;
     uint32_t stagingFailures_ = 0;

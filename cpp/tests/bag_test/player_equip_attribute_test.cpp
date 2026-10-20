@@ -67,6 +67,7 @@
 #include "services/scene/player/system/equip_attribute_rules.h"
 #include "services/scene/player/system/player_attribute.h"
 #include "services/scene/player/system/player_data_loader.h"
+#include "services/scene/player/comp/player_persist_carry_comp.h"
 #include "services/scene/player/system/player_equip.h"
 #include "services/scene/player/system/player_mission.h"
 #include "table/code/attributeallocratio_table.h"
@@ -946,6 +947,9 @@ protected:
 		EmplaceIfAbsent<BattleSettlementLedgerComp>(entity);
 		EmplaceIfAbsent<PlayerInboxLedgerComp>(entity);
 		EmplaceIfAbsent<PlayerMysteryMerchantComp>(entity);
+		// 两表顶层未知字段的载体(混版本持久字段保护 §4.2 L1),生产里由两张表的 Unmarshal 创建。
+		EmplaceIfAbsent<PlayerDatabaseCarryComp>(entity);
+		EmplaceIfAbsent<PlayerDatabase1CarryComp>(entity);
 	}
 
 	template <typename Comp>

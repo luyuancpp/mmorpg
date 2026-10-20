@@ -5,6 +5,8 @@
 #include <fstream>
 #include <functional>
 #include <cstdint>
+#include <string>
+#include <google/protobuf/unknown_field_set.h>
 #include "combat/skill/system/skill.h"
 #include "actor/actor_net_id.h"
 #include "core/system/id_generator.h"
@@ -1051,21 +1053,46 @@ TEST(PlayerSkillSystemTest, RegisterPlayerDoesNotCreateMissingSkillList)
     tlsEcs.actorRegistry.destroy(player);
 }
 
-TEST(PlayerSkillSystemTest, SanitizeSkillListRemovesUnknownAndDuplicateSkills)
+// 本版本技能表查不到的技能(1001,例如新版本才加的技能,回滚后旧表里没有)保留在列表里、存盘原样写回,
+// 但不生效:HasSkill 答"没有"。0 与重复项照旧去掉(docs/design/mixed-version-persist-field-protection.md §12,第 5 批)。
+TEST(PlayerSkillSystemTest, SanitizeSkillListKeepsUnknownSkillsInactiveAndRemovesDuplicates)
 {
     entt::entity player = CreateSkillActor();
     auto &skillList = tlsEcs.actorRegistry.get_or_emplace<PlayerSkillListComp>(player);
+    ASSERT_TRUE(SkillTableManager::Instance().Exists(1));
+    ASSERT_FALSE(SkillTableManager::Instance().Exists(1001)) << "fixture: 1001 must be missing from SkillTable";
 
     skillList.add_skill_list()->set_skill_table_id(1);
     skillList.add_skill_list()->set_skill_table_id(1001);
+    skillList.add_skill_list()->set_skill_table_id(0);
     skillList.add_skill_list()->set_skill_table_id(1);
+    skillList.add_skill_list()->set_skill_table_id(1001);
 
     PlayerSkillSystem::SanitizeSkillList(player);
 
-    ASSERT_EQ(skillList.skill_list_size(), 1);
+    ASSERT_EQ(skillList.skill_list_size(), 2) << "only 0 and duplicates are removed";
     EXPECT_EQ(skillList.skill_list(0).skill_table_id(), 1);
+    EXPECT_EQ(skillList.skill_list(1).skill_table_id(), 1001) << "unknown skill is kept, not deleted";
     EXPECT_TRUE(PlayerSkillSystem::HasSkill(player, 1));
-    EXPECT_FALSE(PlayerSkillSystem::HasSkill(player, 1001));
+    EXPECT_FALSE(PlayerSkillSystem::HasSkill(player, 1001)) << "kept but inactive";
+    EXPECT_TRUE(PlayerSkillSystem::IsActiveSkill(1));
+    EXPECT_FALSE(PlayerSkillSystem::IsActiveSkill(1001));
+    EXPECT_FALSE(PlayerSkillSystem::IsActiveSkill(0));
+}
+
+// 列表里只有已知技能时不整体替换:组件本层未知字段与逐条技能都原样不动。
+TEST(PlayerSkillSystemTest, SanitizeSkillListLeavesACleanListUntouched)
+{
+    entt::entity player = CreateSkillActor();
+    auto &skillList = tlsEcs.actorRegistry.get_or_emplace<PlayerSkillListComp>(player);
+    skillList.add_skill_list()->set_skill_table_id(1);
+    skillList.add_skill_list()->set_skill_table_id(1001); // 查不到表:保留,不算"要改"
+    skillList.mutable_unknown_fields()->AddVarint(412345, 3);
+    const std::string before = skillList.SerializeAsString();
+
+    PlayerSkillSystem::SanitizeSkillList(player);
+
+    EXPECT_EQ(before, skillList.SerializeAsString());
 }
 
 // Main function

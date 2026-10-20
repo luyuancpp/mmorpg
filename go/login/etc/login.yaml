@@ -287,6 +287,16 @@ Placement:
 NewPlayerSeed:
   Enabled: false
 
+# 持久 schema 世代倒退判定(C4,docs/design/mixed-version-persist-field-protection.md §5.1)。
+# EnterGame 命中 PlayerAllData 父快照(快路径)时,父快照两张表的覆盖世代取最小值(0 按 1),
+# 低于 player:{id}:save_barrier 里 scene 记录的 schema_gen、或 schema_gen 损坏,即判定数据可能被截断。
+#   warn    = 照常进游戏,只计数 login_persist_schema_regression_total 并打日志(引导期默认);
+#   enforce = 本次 EnterGame 失败,客户端收到固定的 kEnterSceneFailed(不新增 tip)。
+# 不写或写空串按 warn;写成其他任何值 login 拒绝启动。
+# 切到 enforce 的条件(设计 §8.1 第 5 步):staging 真实升世代演练中倒退计数为 0,
+# 且线上 warn 观察期内计数也为 0;两条都满足之前保持 warn。
+PersistSchemaRegressionMode: warn
+
 # ─────────────────────────────────────────────────────────────────────────
 # HMAC 密钥治理(见 internal/config/secrets.go 包注释)
 #

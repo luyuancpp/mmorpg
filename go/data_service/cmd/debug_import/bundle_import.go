@@ -17,6 +17,7 @@ import (
 	databasepb "proto/common/database"
 
 	"shared/assetop"
+	"shared/generated/persistschema"
 	"shared/ownerepoch"
 	"shared/placement"
 	"shared/savebarrier"
@@ -164,6 +165,12 @@ func buildImportPlan(b *debugutil.Bundle, source string) (*importPlan, error) {
 		if id := playerIDOf(msg); id != b.PlayerID {
 			return nil, fmt.Errorf("表 %s 的 player_id=%d 与导出包 player_id=%d 不符", name, id, b.PlayerID)
 		}
+		// 混版本保护(docs/design/mixed-version-persist-field-protection.md §5.4):行的持久 schema 世代高于本工具时,
+		// 本工具不认识新世代的列,写库时会把它们丢掉,却原样拷走声称完整的世代戳 —— 导入结果对后来者「说谎」。
+		if gen := persistSchemaGenOf(msg); gen > uint64(persistschema.Gen) {
+			return nil, fmt.Errorf("表 %s 的持久 schema 世代 %d 高于本工具的 %d;用不低于该世代的 debug_import 重新导入",
+				name, gen, persistschema.Gen)
+		}
 		plan.rows = append(plan.rows, planRow{table: name, msg: msg})
 	}
 
@@ -278,6 +285,15 @@ func bundleSQLRows(b *debugutil.Bundle) (map[string]proto.Message, error) {
 
 func playerIDOf(msg proto.Message) uint64 {
 	fd := msg.ProtoReflect().Descriptor().Fields().ByName("player_id")
+	if fd == nil {
+		return 0
+	}
+	return msg.ProtoReflect().Get(fd).Uint()
+}
+
+// persistSchemaGenOf 读玩家表的覆盖世代;没有这个字段的表返回 0(按未盖戳处理,不拦)。
+func persistSchemaGenOf(msg proto.Message) uint64 {
+	fd := msg.ProtoReflect().Descriptor().Fields().ByName("persist_schema_gen")
 	if fd == nil {
 		return 0
 	}

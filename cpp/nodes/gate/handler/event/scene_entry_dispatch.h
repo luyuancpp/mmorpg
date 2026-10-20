@@ -59,6 +59,11 @@ void OnLoginTypeBound(SessionId sessionId, SessionInfo &session, Clock::time_poi
 // 之后同一连接上的进场只由新的路由事件驱动,不按 LeaveGame 之前的旧路由补发。会话没绑 scene 时只清状态。不会 erase 会话。
 void OnClientLeaveGame(SessionId sessionId, SessionInfo &session);
 
+// 客户端 EnterGame 到达 gate、转发给 login 之前调用(与 OnClientLeaveGame 同一个收包点):记下"LeaveGame 之后客户端已再次请求进场",
+// 从此 login 才可能为本连接发出新一次登录的 Bind 与路由;在这之前到达的一律按 LeaveGame 之前那条登录链丢弃
+// (gate_scene_route::NoteEnterGameRequested,location-release-binding.md §3.5,第二轮审计 r2-gate#1)。只改会话标志,不转发、不 erase。
+void OnClientEnterGame(SessionId sessionId, SessionInfo &session);
+
 // scene 握手成功应答(conn 是应答所走的出站连接):核对它就是该节点 RpcClient 的当前连接后盖章,
 // 并把以该节点为目标的欠账提前到下一轮扫描(不在应答处理器里同步转发)。
 void OnSceneLinkHandshaken(const muduo::net::TcpConnectionPtr &conn, const std::string &nodeUuid, Clock::time_point now);

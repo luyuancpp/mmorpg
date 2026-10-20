@@ -3,6 +3,8 @@
 #include <muduo/base/Logging.h>
 #include <node_config_manager.h>
 
+#include "persist_schema_regression_mode.h"
+
 namespace
 {
 // Returns a non-empty environment value, or nullptr when the variable is
@@ -140,6 +142,23 @@ bool readBaseDeployConfig(const std::string &filename, BaseDeployConfig &baseCon
 	if (root["DbTaskTopicGeneration"])
 	{
 		baseConfig.set_db_task_topic_generation(root["DbTaskTopicGeneration"].as<uint32_t>());
+	}
+
+	// 严格提交屏障 C3 的模式(见 config.proto persist_schema_regression_mode / persist_schema_regression_mode.h)。
+	// 在这里一次性归一化:缺键 / 空串 = warn;warn / enforce 原样;其余拒绝启动。运行期只会见到两个字面量,
+	// 非法值不会进 Lua 的 ARGV[10](那会让脚本返回 error_reply、OnSaved 无限重试,全服存不进盘)。
+	{
+		const std::string rawMode = root["PersistSchemaRegressionMode"]
+										? root["PersistSchemaRegressionMode"].as<std::string>()
+										: std::string();
+		const auto mode = persist_schema_regression_mode::Normalize(rawMode);
+		if (!mode)
+		{
+			LOG_FATAL << "readBaseDeployConfig: PersistSchemaRegressionMode must be 'warn' or 'enforce' (or absent = warn), got '"
+					  << rawMode << "' in " << filename;
+			return false; // LOG_FATAL 已 abort;这一行只为不在 nullopt 上解引用
+		}
+		baseConfig.set_persist_schema_regression_mode(std::string(*mode));
 	}
 
 	// 永久 guid 号段(见 config.proto IdSegmentConfig):一种 GUID 一块配置,按 Kind 名字

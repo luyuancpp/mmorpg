@@ -1,6 +1,6 @@
 # 客户端请求自带回调:按请求号认领回包,生成类型化调用桩取代每消息 Handler
 
-> 状态:**运行时与服务端前提已实施,未编译、未测试,待 Codex 验证**(2026-10-19,Claude)。生成器改造(§5)与 robot 改造(§6)只出细则,由 Codex 实施。
+> 状态:**运行时与服务端前提已实施,未编译、未测试,待 Codex 验证**(2026-10-19,Claude)。生成器改造(§5)只出细则,由 Codex 实施;robot 运行时(§6)已由 Claude 实施(§6.1),同样未编译、未测试。
 > 任务来源:用户 2026-10-19「客户端也改成 RPC 回调,用上 muduo 的消息 id,每次 request 自己塞回调函数,不用专门的 Handler;Handler 是工具生成的,生成部分出细节给 Codex,你按最标准的来」。
 > 「muduo 的消息 id」即 muduo `RpcMessage.id`:每次调用一个调用号,对端原样回显,调用方按它找回自己的回调。节点间 RPC0 已按此改造(`muduo-rpc-channel.md`);客户端信封早就有同位字段 `ClientRequest.id` / `MessageContent.id`(`proto/common/base/message.proto:11-17,133-140`),本次让两端都把它用成唯一的关联依据。
 > 事实核对基线:本仓 `1fc103dce`,客户端仓 `09c6ccea`,Java 仓 `4054006`。只读摸底工作流 `wf_fcd259cb-0bb`(5 个视角),结论与证据见附录 A。
@@ -68,7 +68,9 @@
 
 `client-request-ordering.md` §4.1 订正注里「直连失败桥拿不到客户端请求 id」的前提已在 2026-10-17 改为每次调用回调后不成立,本次据此收口;该文档追加了补注。
 
-**Java 版**(AGENTS §12):gate 各路径(login 应答 / 失败、其它后端、lane 满、排队超时、闸门、转发 scene)都已回显 id(`ClientDispatcher.java:557,569,630-665,798-817,1471-1477`),battle 直连同样(`BattleFrames.java:41-56`),**无需改动**。Java 的静默丢弃(gate 不跟踪已转给 scene 的请求、scene 侧会话不符等)与本仓 R1 同性质:客户端以 Timeout 收场。PARITY 登记待用户同意跨仓写入后补一行(§8)。
+**Java 版**(AGENTS §12):gate 各路径(login 应答 / 失败、其它后端、lane 满、排队超时、闸门、转发 scene)都已回显 id(`ClientDispatcher.java:557,569,630-665,798-817,1471-1477`),battle 直连同样(`BattleFrames.java:41-56`),回显这一点无需改动。Java 的静默丢弃(gate 不跟踪已转给 scene 的请求、scene 侧会话不符等)与本仓 R1 同性质:客户端以 Timeout 收场。PARITY 登记待用户同意跨仓写入后补一行(§8)。
+
+> 2026-10-19 复核订正(`wf_447ef09d-9bf`):「Java 无需改动」只对「回显 id」成立。Java gate 对**应答类型为 Empty** 的后端方法(match 的 148 CancelQueue,以及 154 / 156 两个推送占位)在 tip 为 0 时**不回包**(`ClientDispatcher.java:645-652` `replyToClient`,依据是 Java match-spec §8.1 / M4,`MessageRoutesTest`、`MatchBackendForwardingTest` 与 game-robot 的 `BattleSmokeScenario` 第 3 步都钉住了这一点);C++ 两种模式都回(路由服 `forwardlogic.go:186-191` 无条件回,直连经本次改动回带 id 的空包)。于是连 Java 服务端时 Unity 非全局取消排队(`BattleClient.cs` `_net.Call(CancelQueue, …, Empty.Parser, …)`)的回调只能 15s 超时、弹「取消排队失败:rpc timeout」——这不是本次改造引入的(改前客户端同样等不到回包),但它违反 §2.1「请求-响应恰好一个回包」,也是两版客户端可见行为的分歧。见 §7 R6,待用户拍板。
 
 ## 4. Unity 客户端改动(已实施,客户端仓,未提交)
 
@@ -80,13 +82,15 @@
 | `Assets/Scripts/Net/BattleDirectLink.cs` | 实现 `IRpcChannel`;待回表换成 `OutstandingCalls`;`CallMethod` + 旧 `Call` 适配(错误串不变,`link: ` 前缀);单向发 `id = 0` |
 | `Assets/Tests/EditMode/Net/OutstandingCallsTests.cs`(新) | 9 条:请求号、按 id 不按 FIFO、id 0 不认领、信封错误、超时后回包为迟到、FailAll 重入、回调异常隔离、Remove、类型化解析 |
 | `Assets/Tests/EditMode/Tianyong/ActorWorldFoundationTests.cs` | 移动类回执改 `id = 0`;新增「迟到回包不派发给同号推送处理器」断言 |
+| 复核修复(2026-10-19,§10) | `GameClient.DisconnectInternal`:拆连接抛异常(`catch` 里先 `FailAll` 再 `throw`)或断线订阅者抛异常(通知外包 `try/finally`)时,在途调用仍立刻以 `"disconnected"` 收场;`BattleDirectLink`:`OpenConnection` / `RestartWithReissue` 拆旧连接后立即 `FailPending("connection_replaced")`,`Finish` 兜底 `FailPending(reason)`;新增构造参数 `onCallbackException`,`GameClient` 接到 `LogError`(两条连接的回调异常都报红);测试:`OutstandingCallsTests` 与两个战斗测试类加 `[TearDown]` 断言回调里没有被吞掉的异常,新增 `BattleDirectLinkTests.Call_FailsImmediately_WhenNewAssignmentReplacesTheConnection` |
 
 行为变化(上线前需知,项目未上线,`project-not-launched`):
 
 1. 单向消息(移动、SceneInfoC2S、GetSyncDigest、战斗直连单向)改发 `id = 0`;服务端对 id 无特殊处理(已核对 gate / 路由服 / battle,Java 只透传)。
 2. 断线时在途调用在 `DisconnectInternal` 末尾**同步**以 `"disconnected"` 失败(改前是各协程下一帧发现);顺序仍是「先断线通知、后调用失败」。换连接(`AdoptGate`)时旧连接的在途调用同样以 `"disconnected"` 失败,`ZoneTravelClient` 据此判传送已交接的逻辑不变。
-3. 回调抛出的异常被捕获并记 `[rpc] callback threw`(大厅)/「回调异常」(直连),不再沿收包派发上抛中断同批后续帧。
+3. 回调抛出的异常被捕获并记错误级日志(大厅 `[rpc] callback threw`、直连 `[battle-direct] callback threw`,都走 `LogError`),不再沿收包派发上抛中断同批后续帧。**改前** onResponse 抛异常会被同一个 try 转成 `onError("parse response: …")`,等于同一次调用先成功、又报失败;改后不再补调 onError。
 4. ReleaseSkill 改为请求-响应:被拒时记 `[skill] ReleaseSkill … rejected: tip=N`;未连接时记一行 NotSent(改前静默)。
+5. 战斗直连换局(新分配包 / 对另一局补签)时,旧连接上的在途调用立即以 `"link: connection_replaced"` 失败(改前要等 15s 超时,或被新局之后的断线顶着失败)。上层按 `TransportErrorPrefix` 判传输层失败,这一类判断不变;`SpectateClient` 的 StopWatchBattle 失败提示不看局号,换局瞬间仍会弹一次「退出观战失败」,只是从 15s 后提前到当场。
 
 ## 5. 生成器改造细则(交给 Codex 实施)
 
@@ -220,7 +224,7 @@ namespace MmorpgClient.Net.Generated
 
 核对命令:`rg -n "Handler\.MessageId|HandlerRegistry" Assets --glob '*.cs' --glob '!Assets/Scripts/Proto/Generated/**'` 结果为空。注释里提到 `HandlerRegistry` 的三处(`GameClient.cs` 重定向处理器注释、`LandingSyncClient.cs:175`、`SceneChannelClient.cs:239`)改为说明「推送注册以 OnNotify / `<Service>Rpc.On<Method>` 为准」。
 
-## 6. robot 运行时改造细则(交给 Codex 或下一会话,未实施)
+## 6. robot 运行时改造细则(第 1–3、5、6 条与第 4 步首批已实施,见 §6.1;未编译)
 
 `robot/pkg/client.go`:
 
@@ -233,6 +237,43 @@ namespace MmorpgClient.Net.Generated
 5. vendored muduo 不 close `incoming`、`Send` 吞错(`vendor/.../connection.go:251-266`、`client.go:31-36`):断线只能靠 `Close`/`SwapConn` 与超时兜底,不要写依赖 `Recv` 报错的分支。
 6. 单测:`pkg/client_test.go` 增加按 id 认领、乱序回包、超时后迟到回包丢弃、Close 失败全部、done 恰好一次(`-race`)。
 
+### 6.1 实施记录(2026-10-19,Claude,未编译、未测试)
+
+**运行时**(`robot/pkg/client.go`):
+
+- `SendRequest` 改发 `Id = 0`,旧场景照常按 message_id 收回包。
+- 新增 `Call(messageId, body, timeout, done)` / `CallSync(ctx, messageId, body, timeout)` / `LateReplies()`,错误值 `ErrRPCNotSent` / `ErrRPCTimeout` / `ErrRPCDisconnected` / `*ServerTipError{Tip}`。done 的形状:成功 `(reply, nil)`;信封错误 `(reply, *ServerTipError)`,reply 是那条信封;其余 `(nil, err)`。
+- 在途表 `calls map[uint64]*outstandingCall` 由 `callMu` 保护;请求号由 `seq` 发放,从 1 起、跳过 0;每项记下发出它的 muduo 连接。超时用 `time.AfterFunc`。摘表成功者才回调,所以回包、定时器、断线、ctx 取消并发时 done 仍恰好一次;回调都在放锁之后调用。
+- 本地未发出(没有连接、已 Close、序列化失败、`timeout <= 0`)在 `Call` 返回前同步以 `ErrRPCNotSent` 完成。`done == nil` 是编程错误,直接 panic。
+- 收包统一走 `deliver`:`mc.Id ≠ 0` 认领;认领不到的计 `lateReplies`,记 `[rpc] late reply dropped` 后丢弃,不交给 onMessage。`mc.Id = 0` 交给 onMessage。`RecvLoop`、暂存补投(`replayDeferredMessages`)都经它派发;同步握手用的 `RecvOne` 读到 `id ≠ 0` 时就地认领,然后继续读。
+- `Close`:先让全部在途调用以 `ErrRPCDisconnected` 失败,并置终态,之后的 `Call` 一律 NotSent;再关连接。之所以先失败调用,是因为 muduo 的 `Close` 黑洞地址下可能阻塞到拨号 OS 超时。`SwapConn`:换上新连接后,只让旧连接上的在途调用失败,再关旧连接。startCall 在 `callMu` 内取连接快照并登记,所以换连接前后没有漏网的调用。
+- `CallSync` 的注释写明禁止在 RecvLoop goroutine 上调用;`pkg/redirect.go` 的 `ReloginFunc` 注释同步写明重登录只能用 `SendRequest + RecvOne`。
+- 测试替身注入点 `transmit` / `afterFunc` 是未导出字段,nil 时走生产实现。
+
+**单测**(`robot/pkg/client_test.go`,14 条新用例):SendRequest 发 id 0;同号两调用按 id 认领;跨号乱序回包;信封错误;id 0 同号消息交 onMessage 且不认领;超时后迟到回包丢弃并计数;回包后定时器回调竞争不重复回调;Close 按请求序失败全部、之后 NotSent、关闭前请求的回包算迟到;SwapConn 只失败旧连接上的调用;无连接 / 零超时 NotSent;CallSync 成功;CallSync 以 ctx 取消原因完成且迟到回包丢弃;ctx 已结束不发送;400 次调用在真实定时器、重复回包、ctx 取消与 Close 并发下每个 done 恰好一次(配合 `-race`)。定时器用手动替身,只有并发用例用真实定时器,而且其断言不依赖先后。muduo 连接接本机监听端口,只为让 `Close` / `SwapConn` 走真实路径。
+
+**场景迁移(第 4 步首批)**:新增 `robot/smoke_rpc_call.go`。其中 `smokeCaller.call` 取代 friend / guild / team / trade 四份相同的「按消息号认领 + 50ms 轮询」循环,返回形状不变:`(envelopeTip, err)`,超时仍包裹各场景自己的哨兵(`errFriendSmokeTimeout` 等)。gate 推 `SendTipToClient(kServiceUnavailable)` 时,经 `context.WithCancelCause` 立刻中止当前等待,报错文案不变。onMessage 中:
+
+- 拦下请求消息号且 `id = 0` 的消息(`smokeDropUncorrelatedReply` 记一行后丢弃)。正常回包带请求号,不会走到这里;出现这种消息说明服务端没回显请求号,例如直连模式下的 gate 不含 §3 的修复。
+- 删掉各 bot 的 `replies` / `gateTips` 字段,friend 删掉 `awaiting`。friend 第 6 步对推送号本身发请求,现在靠 id 区分回包与推送。
+- 请求回包不再经过 onMessage,`MsgRecv` 改由 `smokeCaller` 在收到回包时计数。
+
+`team_follow_smoke_scenario.go` 构造 `teamSmokeBot` 的地方改为注入 `caller`。它的留底只消费推送,不受影响。
+
+**迁移进度**:
+
+| 状态 | 场景 / 帮助函数 |
+|---|---|
+| 已迁(Call) | friend / guild(含 guild_economy、guild_activity 经同一 `call`)/ team(含 team_follow、team_backfill 复用的 `teamSmokeBot.call`)/ trade |
+| 待迁:同形 call(有 awaiting 兜底) | `mail_smoke_scenario.go`、`rank_smoke_scenario.go`(10-19 合入主干,本轮范围外)|
+| 待迁:其余等待帮助函数 | chat / channel / ordering / travel / sync / currency_crash_window / battle_smoke(大厅侧)/ battle_direct_conn / team 的 `send`(换场景、JoinQueue)/ mystery_merchant / data_stress / `logic/ai/robot_ai.go` |
+| 最后迁:依赖生成 handler 副作用 | pet / attribute / features / equip(状态序号等待) |
+| 不迁 | 登录与重定向重登录的同步握手(`login.go`、`login_test_scenarios.go`、`main.go`、`pkg/redirect.go`):跑在 RecvLoop 前或 RecvLoop 上,只能 `SendRequest + RecvOne` |
+
+逐处待迁清单(带行号)、按等待对象的重新归类(chat / currency_crash_window / battle_smoke 大厅侧 / channel requestSceneInfo 实属「依赖生成 handler 副作用」)与迁移陷阱见 [robot 交接](../handoff/client-rpc-callback-robot-handoff-20261019.md) §5;以那里为准。
+
+**未覆盖**:`smokeCaller` 没有单测,靠四个冒烟验证。muduo 被对端断开后会静默重拨,在途调用只能以超时收场(第 5 条)。
+
 ## 7. 残余与后续
 
 - **R1 scene 派发前早退不回包**(`scene_handler.cpp` 11 处 `return`,RPC0 照常回 RESPONSE 但无 `message_content`,gate 丢弃,`client_session_handler.cpp:95-98`):客户端以 15s Timeout 收场。建议 gate 在「RPC 成功但无 message_content 且内层响应非 Empty」时回带 id 的 1003;两版同批(Java scene 侧同类静默丢弃 `ClientRequestHandler.java:195-242`)。客户端可见行为变化,需用户拍板。
@@ -240,10 +281,11 @@ namespace MmorpgClient.Net.Generated
 - **R3 `IBattleTransport` 与 `IRpcChannel` 并存**:16 个实现与约 60 个调用点未迁,`ToLegacyError` 是唯一桥。迁完后删 `Call(onResponse, onError)` 与 `ParseCallLevelTip` 一类字符串解析。
 - **R4 推送号进了 gate 上行白名单**(`service_register_info.go:537,555-557` 的 `IsClientMessageId` 不按方向):§5.1 的 option 落地后,生成白名单时排除 `PUSH` 与 `SERVER_ONLY`(`Disconnect` 由 gate 合成,不经白名单),把方向约束收到服务端。改 gate 白名单是服务端行为变化,与 §5 分开做。
 - **R5 `MessageIds.cs` 手写白名单**:见 §5.3 末条。
+- **R6 Java gate 对 Empty 应答的后端请求成功不回包**(§3 复核订正):建议 Java `replyToClient` 改为「`request.getId() != 0` 就恰好回一个包(Empty 回空 body),id 为 0 才不回」,与 C++ 与 §2.1 一致;连带改 `MessageRoutesTest`、`MatchBackendForwardingTest`、game-robot `BattleSmokeScenario` / `BattleCrossZoneScenario` / `RobotOptions` 里「148 不回包」的断言与说明,以及 Java `architecture.md:109,971` 与 match-spec §8.1 / M4,PARITY 登记一行。客户端 `BattleClient.SendGlobalCancellation` 的注释已改为只描述 Java 现状。属于 Java 侧客户端可见契约变更,待用户拍板。
 
 ## 8. 双版本与对账
 
-- 客户端契约变化只有两条:单向消息改发 `id = 0`;回包按 id 认领(两版服务端都已回显,无需改)。Java 版服务端**已满足**,本仓服务端补齐直连模式一处。
+- 客户端契约变化只有两条:单向消息改发 `id = 0`;回包按 id 认领(两版服务端都已回显,无需改)。回显这一点 Java 版服务端**已满足**,本仓服务端补齐直连模式一处;「Empty 应答也恰好回一个包」Java 尚不满足,见 §7 R6。
 - PARITY:建议在 Java 仓 `PARITY.md` 登记一行「客户端请求号关联:C++ gate 直连模式回包 / 失败回显 id(本次)↔ Java gate 已满足(`ClientDispatcher` 全路径回显)」,跨仓写入待用户同意;另 `PARITY.md:170`(「ClientForward 不带关联号,Java 待做」)已过时,`node_link.proto:120` 早有 `request_id`,一并订正。
 
 ## 9. 给 Codex 的验证步骤
@@ -253,10 +295,22 @@ namespace MmorpgClient.Net.Generated
 1. **服务端 gate**(本仓根目录):`msbuild game.sln /m:1 /p:Configuration=Debug /p:Platform=x64`(必须串行 `/m:1`)。期望 gate 工程编过;改动只在 `cpp/nodes/gate/handler/rpc/{rpc_reply_bridge.h,rpc_reply_bridge.cpp,client_session_handler.cpp,router_muduo_forward.cpp}`。
 2. **Unity EditMode**(客户端仓 `D:\luyuan\mmorpg-client`,Unity 6000.6.0f1):
    `Unity.exe -batchmode -nographics -projectPath D:\luyuan\mmorpg-client -runTests -testPlatform EditMode -testResults <scratch>\editmode.xml -logFile <scratch>\editmode.log`
-   通过标准:全部 EditMode 通过,重点 `MmorpgClient.Tests.EditMode.Net.OutstandingCallsTests`(9 条)、`ActorWorldFoundationTests.MovementEmptyReplies_AreConsumedWithoutFourHertzUnhandledLogs`、`BattleDirectLinkTests`、`DirectRoutingBattleTransportTests`(错误串不变)。失败保留 xml 与 log 中 `error CS` / 失败用例段落。
+   通过标准:全部 EditMode 通过,重点 `MmorpgClient.Tests.EditMode.Net.OutstandingCallsTests`(9 条,TearDown 断言回调无异常)、`ActorWorldFoundationTests.MovementEmptyReplies_AreConsumedWithoutFourHertzUnhandledLogs`、`BattleDirectLinkTests`(含新增 `Call_FailsImmediately_WhenNewAssignmentReplacesTheConnection`)、`DirectRoutingBattleTransportTests`(错误串不变;两类都在 TearDown 断言回调无异常)。失败保留 xml 与 log 中 `error CS` / 失败用例段落。
 3. **生成器(§5)**:实施后在 `tools/proto_generator/protogen` 下 `go test ./...`;再 `pwsh -File tools/scripts/dev_tools.ps1 -Command proto-gen-build`、`pwsh -File tools/scripts/dev_tools.ps1 -Command proto-gen-run`(默认配置,写客户端仓;本任务已获客户端授权)。期望:客户端仓 `Net/Generated/Handlers/` 与 `HandlerRegistry.cs` 消失,`Net/Generated/Rpc/*.cs` + `.meta` 出现;本仓除 proto option 标注带来的生成物外无意外 diff;再跑一次生成为零 diff。之后按 §5.6 迁移引用,重跑第 2 步。
 4. **冒烟**(直连模式与路由模式各一次;直连 = gate 进程不设 `GATE_CLIENT_RPC_ROUTER`):`pwsh -File tools/run_crosszone_pair.ps1`(客户端仓)走完登录 → 建角 → 进场 → 传送;客户端日志里 `[rpc] late reply dropped` 为 0、没有 `rpc timeout`;直连模式下 Login / CreatePlayer / EnterGame 回包的 `MessageContent.id` 非 0(gate TRACE 或客户端日志可见)。
-5. robot(§6)实施后:`cd robot; go build -mod=vendor ./...; go vet -mod=vendor ./...; go test -mod=vendor -race ./pkg/...`,再跑 friend / guild / team / trade 冒烟。
+5. robot(§6,已实施):在 `robot/` 下依次执行 `go build -mod=vendor ./...`、`go vet -mod=vendor ./...`、`go test -mod=vendor -race ./pkg/...`,再执行 `go test -mod=vendor ./...`,确认主包既有单测不受影响。通过标准:全绿;`-race` 无 DATA RACE;`TestCallDoneExactlyOnceUnderConcurrentOutcomes` 不超时。随后跑四个冒烟。前置条件见各自 yaml 文件头与设计文档,包括两区 gate 以 `GATE_CLIENT_RPC_ROUTER=1` 启动、对应服务就绪。gate 须是含 §3 修复的新编译版,否则直连模式的回包不带请求号。在 `robot/` 下执行:`.\robot.exe -c etc/friend_smoke.yaml`、`etc/guild_smoke.yaml`、`etc/team_smoke.yaml`、`etc/trade_smoke.yaml`;改了构造的 `etc/team_follow_smoke.yaml` 可选加跑。通过标准:各自输出 `*_SMOKE_OK` 并退出 0;日志里 `reply without request id dropped` 与 `[rpc] late reply dropped` 都为 0(trade 第 2 步的超时是 gate 丢弃请求,本就不会有回包)。失败时保留 robot 输出中的 `*_SMOKE_FAIL step=… reason=…` 行,以及同窗口的 gate、路由服日志。
+
+## 10. 语义复核记录(2026-10-19,`wf_447ef09d-9bf`)
+
+3 个维度查找(大厅 GameClient / 共享在途表与战斗直连 / gate 直连回显与 Java 对照),每条发现 2 个复核者尝试驳倒;共 5 条,0 条被驳倒。大厅维度没有发现问题。
+
+| # | 发现 | 级别 | 处理 |
+|---|---|---|---|
+| 1 | 直连换局 / 对另一局补签只拆连接、不让在途调用失败,旧调用等 15s 或被新局的断线顶着失败(改造前即如此,本次统一没收口) | minor | 已修(§4 复核修复行、行为变化 5);`Finish` 一处复核者认为实际不可达,仍加兜底 |
+| 2 | `DisconnectInternal` 的 `FailAll` 不在异常安全位置:拆连接或断线订阅者抛异常时,在途调用拖到 15s 变成 `"rpc timeout"`(业务把它当另一种失败) | minor | 已修(`catch` + `try/finally`,不重排原有拆连接代码) |
+| 3 | 直连在途表的回调异常只记 info 日志,与大厅的 `LogError` 不一致;改前 onResponse 异常会变成玩家可见的 onError | minor | 已修(`onCallbackException` 接 `LogError`);行为变化 3 写明不再补调 onError |
+| 4 | 回调里的 `Assert.Fail` 被在途表捕获,Unity 内置 NUnit 3.5 不记录被捕获的断言,「恰好一次」类护栏形同虚设 | minor | 已修(三个测试类 `[TearDown]` 断言回调异常列表为空) |
+| 5 | Java gate 对 Empty 应答的后端请求成功不回包,连 Java 时 CancelQueue 回调只能超时;§3「Java 无需改动」不成立 | major(复核者之一建议 minor~major) | 文档订正(§3、§7 R6、§8);客户端注释订正;Java 改动待用户拍板 |
 
 ## 附录 A:摸底结论摘要(`wf_fcd259cb-0bb`)
 

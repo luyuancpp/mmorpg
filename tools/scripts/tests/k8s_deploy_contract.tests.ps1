@@ -167,12 +167,16 @@ Test-Case "login ConfigMap 的 Timeout/Node/Locker/Kafka 关键值 == go/login/e
         @{ Gen = 'data.login.yaml.Kafka.PartitionCnt';     Etc = 'Kafka.PartitionCnt' }
         @{ Gen = 'data.login.yaml.Kafka.InitialPartition'; Etc = 'Kafka.InitialPartition' }
         @{ Gen = 'data.login.yaml.Kafka.TopicGeneration';  Etc = 'Kafka.TopicGeneration' }
+        # 混版本持久字段保护 C4 的模式:不镜像 = Go 读到空串按 warn,仓库切 enforce 时集群里悄悄不生效。
+        @{ Gen = 'data.login.yaml.PersistSchemaRegressionMode'; Etc = 'PersistSchemaRegressionMode' }
     )
     foreach ($p in $pairs) {
         $expected = Get-EtcValue -RelativePath 'go/login/etc/login.yaml' -KeyPath $p.Etc
         $actual = Get-FlatValue -Flat $flat -KeyPath $p.Gen
         Assert-Equal -Expected $expected -Actual $actual -Because "$($p.Etc) 必须与 go/login/etc/login.yaml 一致"
     }
+    $mode = Get-FlatValue -Flat $flat -KeyPath 'data.login.yaml.PersistSchemaRegressionMode'
+    Assert-True -Condition ($mode -ceq 'warn' -or $mode -ceq 'enforce') -Because "login 只认 warn / enforce,其余值启动即拒(当前 '$mode')"
 }
 
 Test-Case "player-locator ConfigMap 的 LeaseTTL == go/player_locator/etc/player_locator.yaml" {
@@ -965,6 +969,17 @@ Test-Case "node ConfigMap 的 DbTaskTopicGeneration 必须与 go/db、go/login �
     Assert-Equal -Expected $dbAuthoritative -Actual $loginAuthoritative -Because "login 与 db 读写同一组 db_task topic,换代必须同一次改"
     $dbFlat = ConvertTo-FlatManifest -Block (Select-ManifestByName -Output $devOut -Name "go-svc-db-config")
     Assert-Equal -Expected $v -Actual (Get-FlatValue -Flat $dbFlat -KeyPath 'data.db.yaml.ServerConfig.Kafka.TopicGeneration') -Because "node 与 go-svc-db 两份 ConfigMap 必须从同一个键派生"
+}
+
+Test-Case "node ConfigMap 的 PersistSchemaRegressionMode == bin/etc/base_deploy_config.yaml,且只能是 warn / enforce" {
+    # 混版本持久字段保护:scene 严格提交屏障 C3 的模式(docs/design/mixed-version-persist-field-protection.md §5.2)。
+    # node ConfigMap 整目录遮蔽镜像里的 bin/etc:不写这一键 C++ 按 warn,仓库切到 enforce 时集群里悄悄不生效;
+    # 写成两个字面量以外的值,config.cpp::readBaseDeployConfig 会拒绝启动(那比悄悄不生效更好,但应在生成期就拦下)。
+    $flat = ConvertTo-FlatManifest -Block (Select-ManifestByName -Output $devOut -Name "node-config")
+    $v = Get-FlatValue -Flat $flat -KeyPath 'data.base_deploy_config.yaml.PersistSchemaRegressionMode'
+    $authoritative = Get-EtcValue -RelativePath 'bin/etc/base_deploy_config.yaml' -KeyPath 'PersistSchemaRegressionMode'
+    Assert-Equal -Expected $authoritative -Actual $v -Because "C3 模式必须从 bin/etc/base_deploy_config.yaml 镜像,不能留可漂移的副本"
+    Assert-True -Condition ($v -ceq 'warn' -or $v -ceq 'enforce') -Because "C++ 只认 warn / enforce(当前 '$v')"
 }
 
 Test-Case "data-service 的 MappingRedis 不写 DB 键;go/db 读落点记录的 Redis 必须与它同址且为 DB 0" {
@@ -3445,7 +3460,9 @@ Test-Case 'mysql-connection-alerts.yaml:PrometheusRule 形状,额外库数阈值
 # $devOut(zone-up)/ $battleInfraRun(infra-up)核对;包装入口的透传照上面 GateRouterMode 的做法。全部不碰任何集群。
 $redisLedgerFunctionNames = @(
     'Get-RedisConnectionPlan', 'Get-RedisMaxClientsFromManifest', 'Get-RedisPoolMirror', 'Assert-DbOwnerEpochRedisDeployment', 'Get-RedisConnectionLedgerInputs', 'Get-RedisConnectionLedger',
-    'Get-RedisPodTemplateDigest', 'Get-RedisCoreRestartVerdict', 'Assert-RedisCoreRestartConfirmed', 'Get-LiveRedisCoreTemplateDigest'
+    'Get-RedisPodTemplateDigest', 'Get-RedisCoreRestartVerdict', 'Assert-RedisCoreRestartConfirmed', 'Get-LiveRedisCoreTemplateDigest',
+    # 没有 sts 与旧 Deployment 时再查孤儿 redis-<n> Pod(2026-10-19,半截的 1 → 3 切换不再被当成全新集群)。
+    'Get-LiveRedisOrphanPodOrdinals'
 )
 foreach ($redisLedgerFnAst in $deadlineDeployAst.FindAll({ param($a) $a -is [System.Management.Automation.Language.FunctionDefinitionAst] }, $false)) {
     if ($redisLedgerFunctionNames -contains $redisLedgerFnAst.Name) {
@@ -3831,6 +3848,11 @@ Test-Case '重启闸纯判定:线上不存在 → absent(放行),只剩旧 Deplo
         }
         Assert-Equal -Expected $case.Verdict -Actual $verdict -Because "线上存在=$($case.Exists) 旧 Deployment=$($case.Legacy) 注解=$liveText → 本次 $($case.Desired):没有注解按「要确认」处理(P0-E 之前部署的实例,第一次 apply 一定重启);只剩旧 Deployment 时 apply 会删它(停机、数据不迁移),同样要确认"
     }
+    # 孤儿 Pod(2026-10-19):没有 sts、没有旧 Deployment,但 redis-<n> Pod 仍在服务 → orphan-pods(要确认);旧 Deployment 优先;有 sts 时不看。
+    Assert-Equal -Expected 'orphan-pods' -Actual (Get-RedisCoreRestartVerdict -LiveExists $false -LiveDigest '' -DesiredDigest 'abcdef0123456789' -OrphanPodCount 1) -Because '1 → 3 切换在 orphan 删除之后失败、重跑时不能当成全新集群放行'
+    Assert-Equal -Expected 'legacy-deployment' -Actual (Get-RedisCoreRestartVerdict -LiveExists $false -LiveDigest '' -DesiredDigest 'abcdef0123456789' -LegacyDeployment $true -OrphanPodCount 1) -Because '旧 Deployment 的切换走它自己的分支'
+    Assert-Equal -Expected 'absent' -Actual (Get-RedisCoreRestartVerdict -LiveExists $false -LiveDigest '' -DesiredDigest 'abcdef0123456789' -OrphanPodCount 0) -Because '三样都没有才是全新集群'
+    Assert-Equal -Expected 'unchanged' -Actual (Get-RedisCoreRestartVerdict -LiveExists $true -LiveDigest 'abcdef0123456789' -DesiredDigest 'abcdef0123456789' -OrphanPodCount 3) -Because '有 sts 时孤儿计数不参与判定'
 }
 
 Test-Case '负向:重启闸要确认时 throw,错误写明「apply 会重启 redis-0,全服登录中断并重放 AOF」并点名 -ConfirmRedisCoreRestart;给了开关只告警放行;DryRun 不查集群' {
@@ -3922,7 +3944,7 @@ Test-Case '重启闸读线上(Get-LiveRedisCoreTemplateDigest):kubectl 失败一
     function kubectl {
         $line = $args -join ' '
         $kubectlCalls.Add($line)
-        $reply = if ($line -match '\bstatefulset\b') { $fake.Sts } elseif ($line -match '\bdeployment\b') { $fake.Deploy } else { throw "假 kubectl:意料之外的调用 kubectl $line" }
+        $reply = if ($line -match '\bstatefulset\b') { $fake.Sts } elseif ($line -match '\bdeployment\b') { $fake.Deploy } elseif ($line -match '\bget pods\b') { $fake.Pods } else { throw "假 kubectl:意料之外的调用 kubectl $line" }
         $global:LASTEXITCODE = [int]$reply.Exit
         return $reply.Out
     }
@@ -3947,10 +3969,25 @@ Test-Case '重启闸读线上(Get-LiveRedisCoreTemplateDigest):kubectl 失败一
         $live = Get-LiveRedisCoreTemplateDigest -Namespace 'contract-ns'
         Assert-True -Condition (-not $live.Exists -and $live.LegacyDeployment) -Because '线上只剩旧 Deployment redis 时必须报 LegacyDeployment,不能当成全新集群'
 
-        # 两样都没有 → 全新集群。
-        $fake = @{ Sts = @{ Exit = 0; Out = '' }; Deploy = @{ Exit = 0; Out = '' } }
+        Assert-NotMatch -Text ($kubectlCalls -join "`n") -Pattern 'get pods' -Because '只剩旧 Deployment 时不查孤儿 Pod(它的 Pod 名字不是 redis-<n>,切换走 legacy 分支)'
+
+        # 三样都没有 → 全新集群。
+        $fake = @{ Sts = @{ Exit = 0; Out = '' }; Deploy = @{ Exit = 0; Out = '' }; Pods = @{ Exit = 0; Out = '' } }
+        $kubectlCalls.Clear()
         $live = Get-LiveRedisCoreTemplateDigest -Namespace 'contract-ns'
-        Assert-True -Condition (-not $live.Exists -and -not $live.LegacyDeployment) -Because '两样都没有才是全新集群'
+        Assert-True -Condition (-not $live.Exists -and -not $live.LegacyDeployment -and @($live.OrphanPods).Count -eq 0) -Because '三样都没有才是全新集群'
+        Assert-Match -Text ($kubectlCalls -join "`n") -Pattern 'get pods -n contract-ns -l app=redis --ignore-not-found -o name' -Because '没有 sts 与旧 Deployment 时要再查孤儿 redis Pod'
+
+        # 没有 sts 与旧 Deployment,但有孤儿 redis-0(1 → 3 切换在 orphan 删除之后失败):报出孤儿序号;代理 Pod 与旧 Deployment 形态的名字不计。
+        $fake = @{ Sts = @{ Exit = 0; Out = '' }; Deploy = @{ Exit = 0; Out = '' }; Pods = @{ Exit = 0; Out = "pod/redis-0`npod/redis-7d9f8c-abcde" } }
+        $live = Get-LiveRedisCoreTemplateDigest -Namespace 'contract-ns'
+        Assert-Equal -Expected '0' -Actual (@($live.OrphanPods) -join ',') -Because '只认 StatefulSet 形态的 redis-<n>'
+
+        # 查孤儿 Pod 失败:同样 throw。
+        $fake = @{ Sts = @{ Exit = 0; Out = '' }; Deploy = @{ Exit = 0; Out = '' }; Pods = @{ Exit = 1; Out = '' } }
+        $message = ''
+        try { Get-LiveRedisCoreTemplateDigest -Namespace 'contract-ns' | Out-Null } catch { $message = $_.Exception.Message }
+        Assert-Match -Text $message -Pattern '查询线上 redis Pod 失败' -Because '查不到不等于没有孤儿 Pod(fail-closed)'
 
         # 有 sts:读出注解里的摘要,不查 Deployment。
         $fake = @{ Sts = @{ Exit = 0; Out = $stsJson }; Deploy = @{ Exit = 1; Out = '' } }
@@ -4041,7 +4078,8 @@ Test-Case 'Apply-Infra 只读一次 redis.yaml:过闸算摘要、循环里 apply
             if ($node -isnot [System.Management.Automation.Language.IfStatementAst] -or $null -eq $node.ElseClause) { continue }
             $condition = $node.Clauses[0].Item1.Extent.Text
             $inElse = $read.Extent.StartOffset -ge $node.ElseClause.Extent.StartOffset -and $read.Extent.EndOffset -le $node.ElseClause.Extent.EndOffset
-            if ($inElse -and $condition -match 'redis\.yaml' -and $condition -match '\$redisManifestRendered') { $guarded = $true; break }
+            # 2026-10-19 起分支条件是「所选 Redis 清单」($manifest -eq $redisTopology.Manifest,redis.yaml 或 redis-ha.yaml)。
+            if ($inElse -and ($condition -match 'redis\.yaml' -or $condition -match '\$redisTopology\.Manifest') -and $condition -match '\$redisManifestRendered') { $guarded = $true; break }
         }
         Assert-True -Condition $guarded -Because "循环里的 $($read.Extent.Text) 必须只在「不是 redis.yaml 或开头没读到它」的 else 分支里执行,否则 redis.yaml 会被重读"
     }
@@ -4102,7 +4140,12 @@ Test-Case 'dev_tools / k8s_image 的 -ConfirmRedisCoreRestart:不给不透传,�
 # 实测过故障转移 / 滚动 / 冷启动 / 原地切换,实测里踩到的坑(haproxy 3.0.29 的僵尸会话、expect 不带 min-recv 每次否定结论等 2 秒、
 # 哨兵不加引号回写口令)这里逐条钉住。纯函数按 AST 抽出直接调用;DryRun 产物用 $BattleInfraArgs 起的 infra-up 核对,不碰任何集群。
 $redisHaFunctionNames = @(
-    'Get-RedisTopologyFor', 'Get-RedisTopologyChangeVerdict', 'Get-RedisHaLimits', 'Get-RedisHaScriptsDigest', 'Assert-RedisPasswordSentinelSafe'
+    'Get-RedisTopologyFor', 'Get-RedisTopologyChangeVerdict', 'Get-RedisHaLimits', 'Get-RedisHaScriptsDigest', 'Assert-RedisPasswordSentinelSafe',
+    # 2026-10-19 接入补齐:zone 写路径跟随线上、WAITAOF 副本份数与拓扑同源(读脚本参数的几个按动态作用域在用例里给值)。
+    'Get-MappingRedisTopologyFor', 'Get-RedisZoneTopologyDecision', 'Get-RedisTopology', 'Get-MappingRedisTopology',
+    'Resolve-RedisTopologyFromLive', 'Get-RouteStoreWaitAOFNumReplicas', 'Get-RedisReplicasFromOrphanOrdinals',
+    # 拒绝文本按线上读数的来源写(sts / 孤儿 Pod),副本数不是 1 / 3 时不给传不进去的参数建议。
+    'Format-RedisLiveShape', 'Get-RedisLiveShapeManualFix', 'Assert-RedisTopologyChangeIsSafe'
 )
 foreach ($redisHaFnAst in $deadlineDeployAst.FindAll({ param($a) $a -is [System.Management.Automation.Language.FunctionDefinitionAst] }, $false)) {
     if ($redisHaFunctionNames -contains $redisHaFnAst.Name) {
@@ -4220,6 +4263,280 @@ Test-Case 'dev 基线(不传 -RedisReplicas)仍是单实例;prod 档缺省就是
     $bad = Invoke-DeployDryRun -Arguments ($BattleInfraArgs + @('-RedisReplicas', '2')) -Env $BattleTestEnv
     Assert-True -Condition ($bad.ExitCode -ne 0) -Because '-RedisReplicas 2 必须拒绝'
     Assert-NotMatch -Text $bad.Output -Pattern '\[dry-run\] kubectl apply' -Because '参数错误必须先于任何写操作'
+}
+
+Test-Case 'zone 写路径的 Redis 拓扑判定:没给 -RedisReplicas 跟随线上 1 / 3;显式值与线上不同、线上 0 / 2 拒绝;线上没有 sts 照本次解析' {
+    Assert-Equal -Expected 'single' -Actual (Get-MappingRedisTopologyFor -Topology (Get-RedisTopologyFor -Replicas 1)) -Because '1 = 单实例(WAITAOF 不等副本)'
+    Assert-Equal -Expected 'ha' -Actual (Get-MappingRedisTopologyFor -Topology (Get-RedisTopologyFor -Replicas 3)) -Because '3 = 高可用(WAITAOF 等 1 个副本)'
+    $cases = @(
+        @{ Live = $null; Requested = 0; Resolved = 3; Expected = 'resolved'; Why = 'infra 还没部署,不替 infra-up 判断' },
+        @{ Live = 3; Requested = 0; Resolved = 3; Expected = 'resolved'; Why = '线上与档位缺省一致' },
+        @{ Live = 1; Requested = 1; Resolved = 1; Expected = 'resolved'; Why = '显式值与线上一致' },
+        @{ Live = 1; Requested = 0; Resolved = 3; Expected = 'live'; Why = 'staging / prod 还在单实例上:没给参数就跟随线上,zone 回滚 Step 6 照常可用' },
+        @{ Live = 3; Requested = 0; Resolved = 1; Expected = 'live'; Why = 'dev 档上手工切过高可用:跟随线上,不把 WAITAOF 降回 0' },
+        @{ Live = 1; Requested = 3; Resolved = 3; Expected = 'refuse'; Why = '显式 3 而线上 1:WAITAOF 写 1 没有副本可等,go/db 拒启' },
+        @{ Live = 3; Requested = 1; Resolved = 1; Expected = 'refuse'; Why = '显式 1 而线上 3:WAITAOF 写 0,切主时静默丢已确认写入' },
+        @{ Live = 2; Requested = 0; Resolved = 3; Expected = 'refuse'; Why = '线上 2 个副本不是本脚本产生的形态,不猜' },
+        @{ Live = 0; Requested = 0; Resolved = 1; Expected = 'refuse'; Why = '线上 0 个副本不是本脚本产生的形态,不猜' }
+    )
+    foreach ($c in $cases) {
+        Assert-Equal -Expected $c.Expected -Actual (Get-RedisZoneTopologyDecision -LiveReplicas $c.Live -RequestedReplicas $c.Requested -ResolvedReplicas $c.Resolved) -Because "线上 $($c.Live) / 参数 $($c.Requested) / 解析 $($c.Resolved):$($c.Why)"
+    }
+}
+
+Test-Case 'Resolve-RedisTopologyFromLive:prod 档没给参数遇到线上单实例 → 改按单实例渲染 WAITAOF 0 并打一行;显式 3 → 拒绝且不改状态;线上没有 sts → 不变' {
+    # 读集群那一步(Get-LiveStatefulSetReplicas)在这里给替身,其余按动态作用域读本用例里的同名变量。不起 kubectl。
+    $InfraNamespace = 'contract-redis-follow'
+    $Command = 'zone-up'
+    $ReleaseProfile = 'prod'
+    $OpsProfile = 'custom'
+    $stubLive = [pscustomobject]@{ Replicas = 1; Source = 'sts'; Ordinals = @() }
+    # 读集群的 Get-LiveRedisReplicas(一次读数:sts 副本数,sts 不在时按孤儿 Pod 推算)给替身。
+    function Get-LiveRedisReplicas { return $stubLive }
+    try {
+        $script:RedisReplicasFollowedLive = $null
+        $RedisReplicas = 0
+        Assert-Equal -Expected 'ha' -Actual (Get-MappingRedisTopology) -Because '夹具前提:prod 档缺省高可用'
+        $out = (Resolve-RedisTopologyFromLive 6>&1 | Out-String)
+        Assert-Match -Text $out -Pattern 'Redis topology: following live statefulset/redis replicas=1 \(profile default was 3; -RedisReplicas not given\)[^\r\n]*waitaof_replicas=0' -Because '跟随线上要打一行,带上档位缺省与 WAITAOF 副本份数'
+        Assert-Equal -Expected 1 -Actual $script:RedisReplicasFollowedLive -Because '跟随的线上值记在脚本级变量里,供随后的渲染使用'
+        Assert-Equal -Expected 'single' -Actual (Get-MappingRedisTopology) -Because '跟随线上之后 data-service / go/db 的 WAITAOF 按单实例渲染'
+        Assert-Equal -Expected 0 -Actual (Get-RouteStoreWaitAOFNumReplicas -Topology (Get-MappingRedisTopology)) -Because '单实例没有副本可等'
+
+        $script:RedisReplicasFollowedLive = $null
+        $RedisReplicas = 3
+        $message = ''
+        try { Resolve-RedisTopologyFromLive 6>$null } catch { $message = $_.Exception.Message }
+        Assert-Match -Text $message -Pattern '形态与线上不一致' -Because '显式值与线上不同必须拒绝'
+        Assert-Match -Text $message -Pattern '本次未做任何写操作' -Because '拒绝发生在写路径入口,早于任何写操作'
+        Assert-True -Condition ($null -eq $script:RedisReplicasFollowedLive) -Because '拒绝时不得记下跟随值'
+
+        Assert-Match -Text $message -Pattern '去掉 -RedisReplicas\(跟随线上\)或传 -RedisReplicas 1' -Because '线上是 1 / 3 时给出能执行的处置'
+
+        $RedisReplicas = 0
+        $stubLive = [pscustomobject]@{ Replicas = $null; Source = 'none'; Ordinals = @() }
+        Resolve-RedisTopologyFromLive 6>$null
+        Assert-True -Condition ($null -eq $script:RedisReplicasFollowedLive) -Because '线上没有 sts/redis 也没有孤儿 Pod 时照本次解析,不跟随'
+        Assert-Equal -Expected 'ha' -Actual (Get-MappingRedisTopology) -Because '没有跟随时仍按档位缺省'
+
+        # 孤儿 Pod 读数:序号连续(只剩 redis-0)时跟随并写明来源;缺号时拒绝,不说「sts/redis 有 N 个副本」,不建议传不进去的 -RedisReplicas。
+        $stubLive = [pscustomobject]@{ Replicas = 1; Source = 'orphan-pods'; Ordinals = @(0) }
+        $out = (Resolve-RedisTopologyFromLive 6>&1 | Out-String)
+        Assert-Match -Text $out -Pattern 'following live orphan redis pods redis-0 \(statefulset/redis absent\) replicas=1' -Because '跟随孤儿 Pod 时写明来源'
+        $script:RedisReplicasFollowedLive = $null
+        $stubLive = [pscustomobject]@{ Replicas = -1; Source = 'orphan-pods'; Ordinals = @(1, 2) }
+        $message = ''
+        try { Resolve-RedisTopologyFromLive 6>$null } catch { $message = $_.Exception.Message }
+        Assert-Match -Text $message -Pattern '没有 statefulset/redis,但带 app=redis 的孤儿 Pod redis-1, redis-2 仍在' -Because '点名孤儿 Pod'
+        Assert-Match -Text $message -Pattern '序号不连续' -Because '说明推算不出形态'
+        Assert-NotMatch -Text $message -Pattern '-RedisReplicas -1|传 -RedisReplicas|sts/redis 有' -Because '参数只认 0 / 1 / 3,不能建议传线上值;sts 不在时不说它有几个副本'
+        Assert-Match -Text $message -Pattern '只剩 redis-0\(单实例\)或 redis-0\.\.2 齐全' -Because '给出人工整理的处置'
+    }
+    finally {
+        $script:RedisReplicasFollowedLive = $null
+    }
+}
+
+Test-Case '拓扑变更闸(Assert-RedisTopologyChangeIsSafe)的拒绝文本按读数来源写:sts 3 → 1 建议传 -RedisReplicas 3;3 个孤儿 → 1 提示回退第 2 步没删干净;孤儿缺号与 sts 2 个副本只给人工整理;孤儿 redis-0 → 3 判 upgrade' {
+    $InfraNamespace = 'contract-redis-topology'
+    $single = Get-RedisTopologyFor -Replicas 1
+    $ha = Get-RedisTopologyFor -Replicas 3
+    function Get-LiveRedisReplicas { return $stubLive }
+    $refusal = {
+        param($Topology)
+        $m = ''
+        try { $null = Assert-RedisTopologyChangeIsSafe -Topology $Topology 3>$null } catch { $m = $_.Exception.Message }
+        return $m
+    }
+
+    $stubLive = [pscustomobject]@{ Replicas = 3; Source = 'sts'; Ordinals = @() }
+    $message = & $refusal $single
+    Assert-Match -Text $message -Pattern '线上statefulset/redis 有 3 个副本 → 目标 1 个' -Because 'sts 在时照实写副本数'
+    Assert-Match -Text $message -Pattern '显式传 -RedisReplicas 3' -Because '线上是合法形态时给出「不改形态」的参数'
+
+    $stubLive = [pscustomobject]@{ Replicas = 3; Source = 'orphan-pods'; Ordinals = @(0, 1, 2) }
+    $message = & $refusal $single
+    Assert-Match -Text $message -Pattern '孤儿 Pod redis-0, redis-1, redis-2 仍在' -Because '点名孤儿 Pod'
+    Assert-Match -Text $message -Pattern '第 2 步还没删干净 pod/redis-1、pod/redis-2' -Because '3 个孤儿而目标 1 多半是回退做到一半'
+    Assert-NotMatch -Text $message -Pattern '传 -RedisReplicas 3' -Because '照这个参数重跑会把高可用对象建回来,与回退目标相反'
+
+    foreach ($stub in @(
+            [pscustomobject]@{ Replicas = -1; Source = 'orphan-pods'; Ordinals = @(0, 2) },
+            [pscustomobject]@{ Replicas = 2; Source = 'orphan-pods'; Ordinals = @(0, 1) },
+            [pscustomobject]@{ Replicas = 2; Source = 'sts'; Ordinals = @() }
+        )) {
+        $stubLive = $stub
+        $message = & $refusal $ha
+        Assert-True -Condition ($message.Length -gt 0) -Because "线上 $($stub.Source) $($stub.Replicas) 必须拒绝"
+        Assert-NotMatch -Text $message -Pattern '传 -RedisReplicas' -Because "线上 $($stub.Source) $($stub.Replicas):-RedisReplicas 只认 0 / 1 / 3,不能建议传线上值"
+        Assert-Match -Text $message -Pattern 'kubectl scale 回 1 或 3' -Because '只给人工整理的处置'
+    }
+
+    $stubLive = [pscustomobject]@{ Replicas = 1; Source = 'orphan-pods'; Ordinals = @(0) }
+    Assert-Equal -Expected 'upgrade' -Actual (Assert-RedisTopologyChangeIsSafe -Topology $ha 3>$null) -Because '1 → 3 在 orphan 删除之后失败,重跑仍按 upgrade'
+}
+
+Test-Case '孤儿 redis Pod 推算线上副本数:0..n-1 连续 → n;缺号 → -1(拒绝);没有 → $null;配上变更判定:半截 1 → 3 重跑仍是 upgrade,只剩 redis-0 回到单实例是 unchanged,3 个孤儿回到单实例照样拒绝' {
+    Assert-True -Condition ($null -eq (Get-RedisReplicasFromOrphanOrdinals -Ordinals @())) -Because '没有孤儿 Pod = 真的不存在'
+    Assert-Equal -Expected 1 -Actual (Get-RedisReplicasFromOrphanOrdinals -Ordinals @(0)) -Because '只剩 redis-0'
+    Assert-Equal -Expected 3 -Actual (Get-RedisReplicasFromOrphanOrdinals -Ordinals @(2, 0, 1)) -Because '序号连续,顺序无关'
+    Assert-Equal -Expected -1 -Actual (Get-RedisReplicasFromOrphanOrdinals -Ordinals @(1)) -Because '只剩 redis-1:不是本脚本产生的形态'
+    Assert-Equal -Expected -1 -Actual (Get-RedisReplicasFromOrphanOrdinals -Ordinals @(0, 2)) -Because '中间缺号:不猜'
+    Assert-Equal -Expected 'upgrade' -Actual (Get-RedisTopologyChangeVerdict -LiveReplicas (Get-RedisReplicasFromOrphanOrdinals -Ordinals @(0)) -DesiredReplicas 3) -Because '1 → 3 在 orphan 删除之后失败,重跑仍按 upgrade(orphan 删除带 --ignore-not-found,再做一次是空操作)'
+    Assert-Equal -Expected 'unchanged' -Actual (Get-RedisTopologyChangeVerdict -LiveReplicas (Get-RedisReplicasFromOrphanOrdinals -Ordinals @(0)) -DesiredReplicas 1) -Because 'README 高可用 → 单实例回退的第 3 步:只剩 redis-0'
+    Assert-Equal -Expected 'refuse' -Actual (Get-RedisTopologyChangeVerdict -LiveReplicas (Get-RedisReplicasFromOrphanOrdinals -Ordinals @(0, 1, 2)) -DesiredReplicas 1) -Because '先 orphan 再 apply 单实例,不能绕过 3 → 1 的拒绝'
+    Assert-Equal -Expected 'refuse' -Actual (Get-RedisTopologyChangeVerdict -LiveReplicas (Get-RedisReplicasFromOrphanOrdinals -Ordinals @(0, 2)) -DesiredReplicas 3) -Because '序号认不出时拒绝'
+    $live = $deadlineDeployAst.Find({ param($a) $a -is [System.Management.Automation.Language.FunctionDefinitionAst] -and $a.Name -eq 'Get-LiveRedisReplicas' }, $true)
+    Assert-True -Condition ($null -ne $live -and $live.Body.Extent.Text -match 'Get-LiveRedisOrphanPodOrdinals' -and $live.Body.Extent.Text -match 'Get-RedisReplicasFromOrphanOrdinals') -Because 'sts 不在时按孤儿 Pod 推算'
+    foreach ($caller in @('Assert-RedisTopologyChangeIsSafe', 'Resolve-RedisTopologyFromLive')) {
+        $fn = $deadlineDeployAst.Find({ param($a) $a -is [System.Management.Automation.Language.FunctionDefinitionAst] -and $a.Name -eq $caller }, $true)
+        Assert-True -Condition ($null -ne $fn -and $fn.Body.Extent.Text -match '\bGet-LiveRedisReplicas\b' -and $fn.Body.Extent.Text -notmatch 'Get-LiveStatefulSetReplicas') -Because "$caller 必须经 Get-LiveRedisReplicas 读线上(半截切换不能当成全新集群)"
+    }
+}
+
+Test-Case '重启闸 orphan-pods:没有 sts 与旧 Deployment 但孤儿 redis Pod 仍在服务时拒绝、点名 Pod 与 -ConfirmRedisCoreRestart;给了开关只告警放行' {
+    $InfraNamespace = 'contract-redis-gate-orphan'
+    $stubLive = [pscustomobject]@{ Exists = $false; Digest = ''; LegacyDeployment = $false; OrphanPods = @(0) }
+    function Get-LiveRedisCoreTemplateDigest {
+        param([string]$Namespace)
+        return $stubLive
+    }
+    $DryRun = $false
+    $ConfirmRedisCoreRestart = $false
+    $message = ''
+    try { Assert-RedisCoreRestartConfirmed -DesiredDigest 'abcdef0123456789' } catch { $message = $_.Exception.Message }
+    Assert-Match -Text $message -Pattern 'Pod redis-0 仍在服务' -Because '拒绝文本要点名孤儿 Pod'
+    Assert-Match -Text $message -Pattern '-ConfirmRedisCoreRestart' -Because '拒绝文本必须点名确认开关'
+    Assert-Match -Text $message -Pattern '本次未做任何写操作' -Because '闸在 Apply-Infra 的任何写操作之前'
+    $ConfirmRedisCoreRestart = $true
+    $warning = (Assert-RedisCoreRestartConfirmed -DesiredDigest 'abcdef0123456789' 3>&1 | Out-String)
+    Assert-Match -Text $warning -Pattern '\[RedisCoreRestart\]Confirmed:[^\n]*orphan pods redis-0' -Because '给了开关放行,告警写明收养孤儿 Pod'
+}
+
+Test-Case '重启闸 -RollingHandover(线上与本次都是高可用):拒绝文本写「逐个滚动重启 3 个 redis Pod」并点名 -ConfirmRedisCoreRestart;给了开关只告警放行;不传时仍是单实例文本' {
+    $InfraNamespace = 'contract-redis-gate-ha'
+    $desired = 'abcdef0123456789'
+    $stubLive = [pscustomobject]@{ Exists = $true; Digest = '0000000000000000' }
+    function Get-LiveRedisCoreTemplateDigest {
+        param([string]$Namespace)
+        return $stubLive
+    }
+    $DryRun = $false
+    $ConfirmRedisCoreRestart = $false
+    $message = ''
+    try { Assert-RedisCoreRestartConfirmed -DesiredDigest $desired -RollingHandover } catch { $message = $_.Exception.Message }
+    Assert-Match -Text $message -Pattern '逐个滚动重启 3 个 redis Pod' -Because '高可用形态下模板变化 = 逐个滚动,每个先交接主,不是「重启 redis-0、重放 AOF」'
+    Assert-NotMatch -Text $message -Pattern '重放 AOF' -Because '高可用形态的拒绝文本不能沿用单实例的后果描述'
+    Assert-Match -Text $message -Pattern '-ConfirmRedisCoreRestart' -Because '拒绝文本必须点名确认开关'
+    Assert-Match -Text $message -Pattern '本次未做任何写操作' -Because '闸在 Apply-Infra 的任何写操作之前'
+    $message = ''
+    try { Assert-RedisCoreRestartConfirmed -DesiredDigest $desired } catch { $message = $_.Exception.Message }
+    Assert-Match -Text $message -Pattern 'apply 会重启 redis-0,全服登录中断并重放 AOF' -Because '不传 -RollingHandover(单实例、1 → 3 切换)仍是 redis-0 带着全服重启'
+    $ConfirmRedisCoreRestart = $true
+    $warning = (Assert-RedisCoreRestartConfirmed -DesiredDigest $desired -RollingHandover 3>&1 | Out-String)
+    Assert-Match -Text $warning -Pattern '\[RedisCoreRestart\]Confirmed:[^\n]*rolls the 3 redis pods one at a time' -Because '给了开关放行,告警写明是逐个滚动'
+}
+
+Test-Case 'Apply-Infra 的共享 Redis 顺序(AST):拓扑变更闸 → 高可用前置 → 重启闸(高可用且线上不变时 -RollingHandover)→ 第一个写操作;orphan 删除只在 upgrade 分支;部署后核对 -Nodes 取拓扑副本数' {
+    $applyInfra = $deadlineDeployAst.Find({ param($a) $a -is [System.Management.Automation.Language.FunctionDefinitionAst] -and $a.Name -eq 'Apply-Infra' }, $true)
+    $commands = @($applyInfra.Body.FindAll({ param($a) $a -is [System.Management.Automation.Language.CommandAst] }, $true))
+    $firstOf = {
+        param([string]$Name)
+        $found = @($commands | Where-Object { $_.GetCommandName() -eq $Name } | Sort-Object { $_.Extent.StartOffset })
+        if ($found.Count -eq 0) { throw "Apply-Infra 里找不到 $Name" }
+        return $found[0]
+    }
+    $topologyGate = & $firstOf 'Assert-RedisTopologyChangeIsSafe'
+    $sentinelSafe = & $firstOf 'Assert-RedisPasswordSentinelSafe'
+    $haLimits = & $firstOf 'Get-RedisHaLimits'
+    $restartGate = & $firstOf 'Assert-RedisCoreRestartConfirmed'
+    $ensureNs = & $firstOf 'Ensure-Namespace'
+    Assert-True -Condition ($topologyGate.Extent.StartOffset -lt $sentinelSafe.Extent.StartOffset -and $sentinelSafe.Extent.StartOffset -lt $restartGate.Extent.StartOffset -and $haLimits.Extent.StartOffset -lt $restartGate.Extent.StartOffset) -Because '拓扑变更闸、口令字符集、连接上限不等式都要先于重启闸'
+    Assert-True -Condition ($restartGate.Extent.StartOffset -lt $ensureNs.Extent.StartOffset) -Because '三道检查都要先于第一个写操作(Ensure-Namespace)'
+    Assert-Match -Text $restartGate.Extent.Text -Pattern '-RollingHandover:\(\$redisTopology\.HighAvailability -and \$redisTopologyVerdict -eq ''unchanged''\)' -Because '只有线上与本次都是高可用时才换成滚动交接的说法;1 → 3 仍是 redis-0 重启'
+    $orphan = @($commands | Where-Object { $_.GetCommandName() -eq 'Invoke-Kubectl' -and $_.Extent.Text -match '--cascade=orphan' })
+    Assert-Equal -Expected 1 -Actual $orphan.Count -Because 'Apply-Infra 里只有一处 orphan 删除'
+    $guarded = $false
+    for ($node = $orphan[0].Parent; $null -ne $node; $node = $node.Parent) {
+        if ($node -is [System.Management.Automation.Language.IfStatementAst] -and $node.Clauses[0].Item1.Extent.Text -match '\$redisTopologyVerdict -eq ''upgrade''') { $guarded = $true; break }
+    }
+    Assert-True -Condition $guarded -Because 'orphan 删除 sts/redis 只能在 1 → 3(upgrade)分支里'
+    Assert-True -Condition ($orphan[0].Extent.StartOffset -gt $restartGate.Extent.StartOffset) -Because '重启闸必须在 orphan 删除之前读线上摘要,否则切换会落进「全新集群」的放行分支'
+    $liveChecks = @($commands | Where-Object { $_.GetCommandName() -eq 'Test-RedisLiveMaxClients' })
+    Assert-True -Condition ($liveChecks.Count -ge 1) -Because '夹具前提:-WaitReady 时有部署后核对'
+    foreach ($check in $liveChecks) {
+        Assert-Match -Text $check.Extent.Text -Pattern '-Nodes \$redisTopology\.Replicas' -Because '高可用形态每个节点都要核 maxclients(任何一个从都可能变成主)'
+    }
+}
+
+Test-Case '写路径门禁(AST):zone 写路径部署 zone Go 服务时先 Resolve-RedisTopologyFromLive,再打开关计划行与 Redis 总账;不经 Get-RedisTopology 之外的地方定拓扑' {
+    $gates = @($deadlineDeployAst.EndBlock.Statements | Where-Object { $_ -is [System.Management.Automation.Language.IfStatementAst] -and $_.Clauses[0].Item1.Extent.Text -match '^\$Command\s+-in\s+@\(\s*"zone-up"\s*,\s*"all-up"\s*,\s*"infra-up"\s*\)$' })
+    Assert-Equal -Expected 1 -Actual $gates.Count -Because '夹具前提:恰好一个写路径门禁块'
+    $gate = $gates[0]
+    $calls = @($gate.FindAll({ param($a) $a -is [System.Management.Automation.Language.CommandAst] }, $true))
+    $resolve = @($calls | Where-Object { $_.GetCommandName() -eq 'Resolve-RedisTopologyFromLive' })
+    Assert-Equal -Expected 1 -Actual $resolve.Count -Because '写路径门禁里恰好一次 Resolve-RedisTopologyFromLive'
+    $parentIf = $resolve[0].Parent
+    while ($null -ne $parentIf -and $parentIf -isnot [System.Management.Automation.Language.IfStatementAst]) { $parentIf = $parentIf.Parent }
+    Assert-True -Condition ($null -ne $parentIf -and $parentIf.Clauses[0].Item1.Extent.Text -match 'Test-ZoneDbDeployed' -and $parentIf.Clauses[0].Item1.Extent.Text -match 'SkipInfra') -Because '只在 zone-up / all-up -SkipInfra 且部署 zone Go 服务(渲染 WAITAOF)时查线上'
+    foreach ($later in @('Assert-RouteSwitchPreflight', 'Write-RedisConnectionLedger')) {
+        $c = @($calls | Where-Object { $_.GetCommandName() -eq $later })
+        Assert-True -Condition ($c.Count -ge 1 -and $resolve[0].Extent.StartOffset -lt $c[0].Extent.StartOffset) -Because "跟随线上必须先于 $later(它打印 / 计算的拓扑要是跟随之后的)"
+    }
+    $topologyFn = $deadlineDeployAst.Find({ param($a) $a -is [System.Management.Automation.Language.FunctionDefinitionAst] -and $a.Name -eq 'Get-RedisTopology' }, $true)
+    Assert-Match -Text $topologyFn.Body.Extent.Text -Pattern '\$script:RedisReplicasFollowedLive' -Because 'Get-RedisTopology 要认跟随线上记下的值'
+}
+
+Test-Case 'prod 档 zone-up DryRun(缺省高可用):打 Redis proxy ledger 一行(单个代理扛全部客户端的水位),不越线不告警;dev 档单实例不打' {
+    $RepoRoot = Get-RepoRoot
+    $limits = Get-RedisHaLimits -ManifestContent $redisHaManifestText -SingleInstanceMaxClients (Get-RedisMaxClientsFromManifest)
+    $warnAt = [int][Math]::Floor($limits.ProxyMaxConn * (Get-RedisConnectionPlan).WarnRatio)
+    Assert-Match -Text $prodRun.Output -Pattern ('Redis proxy ledger: proxy_maxconn=' + $limits.ProxyMaxConn + ' proxies=' + $limits.ProxyReplicas + '\+' + $limits.ProxyMaxSurge + ' warn_at=' + $warnAt + ' ') -Because '高可用形态的总账要再按单个代理的 PROXY_MAXCONN 算一次水位'
+    Assert-NotMatch -Text $prodRun.Output -Pattern '\[RedisConnectionLedger\]OverProxyWarnRatio:' -Because '规划档与本次部署都在单个代理的 80% 水位以内'
+    Assert-NotMatch -Text $devOut -Pattern 'Redis proxy ledger:' -Because 'dev 档缺省单实例,没有代理'
+    Assert-Match -Text $prodRun.Output -Pattern 'Redis topology: replicas=3 manifest=redis-ha\.yaml high_availability=true waitaof_replicas=1' -Because '入口一行带上 WAITAOF 副本份数'
+}
+
+# 包装入口透传 -RedisReplicas:做法同上面 -ConfirmRedisCoreRestart 的透传用例,只从 AST 取出透传函数,下游换成只打印参数的假脚本。
+function Invoke-RedisReplicasPassthrough {
+    param(
+        [Parameter(Mandatory = $true)][string]$SourceScript,
+        [Parameter(Mandatory = $true)][string]$WrapperFunction,
+        [Parameter(Mandatory = $true)][hashtable]$WrapperArgs,
+        [Parameter(Mandatory = $true)][int]$Replicas
+    )
+    $fakeDir = Join-Path ([IO.Path]::GetTempPath()) ('mmorpg-redis-replicas-passthrough-' + [guid]::NewGuid().ToString('N'))
+    New-Item -ItemType Directory -Path $fakeDir | Out-Null
+    try {
+        $fakeBody = 'param([int]$RedisReplicas = -1) "RedisReplicas=$RedisReplicas"'
+        foreach ($downstream in @('k8s_deploy.ps1', 'k8s_image.ps1')) {
+            Set-Content -LiteralPath (Join-Path $fakeDir $downstream) -Value $fakeBody -Encoding utf8
+        }
+        $ScriptDir = $fakeDir
+        $RedisReplicas = $Replicas
+        function Get-ImageRef { return 'registry.invalid/test/mmorpg-node:0123456789ab' }
+        . ([scriptblock]::Create((Get-ToolScriptFunctionText -ScriptName $SourceScript -FunctionName $WrapperFunction)))
+        return (& $WrapperFunction @WrapperArgs | Out-String)
+    }
+    finally {
+        Remove-Item -LiteralPath $fakeDir -Recurse -Force -ErrorAction SilentlyContinue
+    }
+}
+
+Test-Case 'dev_tools / k8s_image 的 -RedisReplicas:0 不透传(下游按档位 / 跟随线上),非 0 原样透传' {
+    $wrappers = @(
+        @{ Source = 'dev_tools.ps1'; Function = 'Invoke-K8sDeploy'; Args = @{ K8sCommand = 'infra-up' } },
+        @{ Source = 'dev_tools.ps1'; Function = 'Invoke-K8sDeploy'; Args = @{ K8sCommand = 'zone-up' } },
+        @{ Source = 'dev_tools.ps1'; Function = 'Invoke-K8sImage'; Args = @{ ImageCommand = 'release-all' } },
+        @{ Source = 'k8s_image.ps1'; Function = 'Invoke-K8sDeploy'; Args = @{ DeployCommand = 'all-up' } }
+    )
+    foreach ($w in $wrappers) {
+        $label = "$($w.Source) $($w.Function) $(@($w.Args.Values) -join ' ')"
+        $absent = Invoke-RedisReplicasPassthrough -SourceScript $w.Source -WrapperFunction $w.Function -WrapperArgs $w.Args -Replicas 0
+        Assert-Match -Text $absent -Pattern 'RedisReplicas=-1' -Because "$label 没给时不得替运维定形态(0 也不传,下游按档位或跟随线上)"
+        $present = Invoke-RedisReplicasPassthrough -SourceScript $w.Source -WrapperFunction $w.Function -WrapperArgs $w.Args -Replicas 3
+        Assert-Match -Text $present -Pattern 'RedisReplicas=3' -Because "$label 必须把 -RedisReplicas 透传下去,否则从文档入口无法在 dev 档试高可用或做 1 → 3 切换"
+    }
 }
 
 # ─────────────────────────────────────────────────────────────────
@@ -7106,12 +7423,18 @@ Test-Case '④ zone-up DryRun:db ConfigMap 的 Kafka.RetryRouting 与 RedisClien
     # 四个键在 db.yaml 里必须显式写出(Get-AuthoritativeScalar 查不到即 throw,基线 DryRun 就会失败):这里先核前提再比对。
     $flat = ConvertTo-FlatManifest -Block (Select-ManifestByName -Output $devOut -Name 'go-svc-db-config')
     # Fencing 两个滚动开关与 RequireTiDB 的实际后端门禁同一口径镜像,一并核对。
-    foreach ($keyPath in @('ServerConfig.Kafka.RetryRouting', 'ServerConfig.RedisClient.WaitAOFNumLocal', 'ServerConfig.RedisClient.WaitAOFNumReplicas', 'ServerConfig.RedisClient.WaitAOFTimeoutMs', 'ServerConfig.Fencing.Mode', 'ServerConfig.Fencing.EpochOverride', 'ServerConfig.Database.RequireTiDB')) {
+    foreach ($keyPath in @('ServerConfig.Kafka.RetryRouting', 'ServerConfig.RedisClient.WaitAOFNumLocal', 'ServerConfig.RedisClient.WaitAOFTimeoutMs', 'ServerConfig.Fencing.Mode', 'ServerConfig.Fencing.EpochOverride', 'ServerConfig.Database.RequireTiDB')) {
         $expected = Get-EtcValue -RelativePath $S1DbYaml -KeyPath $keyPath
         Assert-True -Condition (-not [string]::IsNullOrWhiteSpace($expected)) -Because "前提:$S1DbYaml 必须显式写出 $keyPath 的值(不写 = go/db 代码默认值,ConfigMap 镜像不出来)"
         $actual = Get-FlatValue -Flat $flat -KeyPath ('data.db.yaml.' + $keyPath)
         Assert-Equal -Expected $expected -Actual $actual -Because "go-svc-db-config 的 $keyPath 必须与 $S1DbYaml 一致(生成器不得自带常数)"
     }
+    # WaitAOFNumReplicas 例外(2026-10-19 redis-ha 接入):按共享 Redis 的形态渲染(与 data-service 同一个 Get-RouteStoreWaitAOFNumReplicas),
+    # 不镜像 db.yaml —— db.yaml 那一项给本机 compose 单实例用,必须保持 0(写 1 本机 go/db 启动探针等不到副本而拒启),但仍须显式写出。
+    Assert-Equal -Expected '0' -Actual (Get-EtcValue -RelativePath $S1DbYaml -KeyPath 'ServerConfig.RedisClient.WaitAOFNumReplicas') -Because "$S1DbYaml 的 WaitAOFNumReplicas 给本机单实例用,保持 0"
+    Assert-Equal -Expected '0' -Actual (Get-FlatValue -Flat $flat -KeyPath 'data.db.yaml.ServerConfig.RedisClient.WaitAOFNumReplicas') -Because 'dev 档缺省单实例(redis.yaml),db 的 WAITAOF 不等副本'
+    $prodDbFlat = ConvertTo-FlatManifest -Block (Select-ManifestByName -Output $prodRun.Output -Name 'go-svc-db-config')
+    Assert-Equal -Expected '1' -Actual (Get-FlatValue -Flat $prodDbFlat -KeyPath 'data.db.yaml.ServerConfig.RedisClient.WaitAOFNumReplicas') -Because 'prod 档缺省高可用(redis-ha.yaml),db 的 WAITAOF 等 1 个副本(与 data-service 同源)'
 }
 
 Test-Case '围栏部署:OwnerEpochRedis 缺省复用主池;显式独立池未登记总账前拒绝部署' {
@@ -7313,7 +7636,8 @@ Test-Case 'D1 1b-3 缺省产物(dev / prod):RouteStore 段 Mode redis、ReadRequ
     $mysqlTier = [int](Get-EtcValue -RelativePath 'go/data_service/etc/data_service.yaml' -KeyPath 'RouteStore.FenceShards')
     Assert-Equal -Expected 16 -Actual $mysqlTier -Because 'MySQL 档 16(服务 yaml 就是 MySQL 档,提案 §11.2 的连带修正);TiDB 档 64 等 TiDB Phase 1 再补'
     $waitTimeout = Get-EtcValue -RelativePath 'go/data_service/etc/data_service.yaml' -KeyPath 'RouteStore.WaitAOFTimeoutMs'
-    foreach ($case in @(@{ Label = 'dev'; Output = $devOut }, @{ Label = 'prod'; Output = $prodRun.Output })) {
+    # WaitAOFNumReplicas 按共享 Redis 形态:dev 档缺省单实例 0,prod 档缺省高可用 1(2026-10-19 redis-ha 接入)。
+    foreach ($case in @(@{ Label = 'dev'; Output = $devOut; Replicas = '0' }, @{ Label = 'prod'; Output = $prodRun.Output; Replicas = '1' })) {
         $flat = ConvertTo-FlatManifest -Block (Select-ManifestByName -Output $case.Output -Name 'go-svc-data-service-config')
         $p = 'data.data_service.yaml.RouteStore.'
         Assert-Equal -Expected 'redis' -Actual (Get-FlatValue -Flat $flat -KeyPath "${p}Mode") -Because "$($case.Label):不带 -RouteStoreMode 时与今天逐字相同"
@@ -7326,12 +7650,13 @@ Test-Case 'D1 1b-3 缺省产物(dev / prod):RouteStore 段 Mode redis、ReadRequ
         Assert-Equal -Expected $mysqlTier -Actual $fence -Because "$($case.Label):K8s 的全局库是 MySQL,FenceShards 取 MySQL 档值"
         Assert-Match -Text (Get-FlatValue -Flat $flat -KeyPath 'data.data_service.yaml.SnapshotMySQL.Host') -Pattern '^mysql\.' -Because "$($case.Label):FenceShards 取 MySQL 档的前提 —— 全局库是 infra 的 MySQL(换成 TiDB 时这条先红,逼着补 TiDB 档)"
         Assert-Equal -Expected '1' -Actual (Get-FlatValue -Flat $flat -KeyPath "${p}WaitAOFNumLocal") -Because "$($case.Label):redis.yaml 开着 AOF,本地落盘确认 1"
-        Assert-Equal -Expected '0' -Actual (Get-FlatValue -Flat $flat -KeyPath "${p}WaitAOFNumReplicas") -Because "$($case.Label):单实例 redis.yaml 没有副本,写 0(接入 redis-ha 后写 1)"
+        Assert-Equal -Expected $case.Replicas -Actual (Get-FlatValue -Flat $flat -KeyPath "${p}WaitAOFNumReplicas") -Because "$($case.Label):单实例 redis.yaml 写 0,高可用 redis-ha.yaml 写 1"
         Assert-Equal -Expected $waitTimeout -Actual (Get-FlatValue -Flat $flat -KeyPath "${p}WaitAOFTimeoutMs") -Because "$($case.Label):WAITAOF 超时镜像服务 yaml"
         $dbFlat = ConvertTo-FlatManifest -Block (Select-ManifestByName -Output $case.Output -Name 'go-svc-db-config')
         Assert-Equal -Expected 'false' -Actual (Get-FlatValue -Flat $dbFlat -KeyPath 'data.db.yaml.Placement.RequireRouteReady') -Because "$($case.Label):go/db 读方门禁缺省关"
     }
     Assert-Match -Text $devOut -Pattern ('Route switches: mode=redis arm=false read_requires_ready=false db_require_route_ready=false guild_require_route_ready=false fence_shards=' + $mysqlTier + '\(mysql\) waitaof=1/0/' + $waitTimeout + 'ms redis_topology=single ') -Because '写路径入口打一行开关计划'
+    Assert-Match -Text $prodRun.Output -Pattern ('Route switches: [^\r\n]*waitaof=1/1/' + $waitTimeout + 'ms redis_topology=ha ') -Because 'prod 档缺省高可用,开关计划行的拓扑与副本份数随之变'
     Assert-Match -Text $devOut -Pattern '\[dry-run\] Skipping D1 route switch sticky check' -Because 'DryRun 不读集群,粘滞核对只打一行说明'
 }
 
@@ -7419,23 +7744,19 @@ Test-Case 'D1 1b-3 组合门禁:Get-RouteSwitchParamErrors 逐项;DryRun 下 Arm
     Assert-True -Condition ($commandSwitches.Count -eq 1 -and $calls[0].Extent.StartOffset -lt $commandSwitches[0].Extent.StartOffset) -Because 'Assert-RouteSwitchPreflight 必须先于 switch ($Command)(写操作都在它的分支里)'
 }
 
-Test-Case 'D1 1b-3 mapping Redis 拓扑:$script:MappingRedisTopology 是 single ⇔ Apply-Infra 只 apply redis.yaml、不 apply redis-ha.yaml;single → WaitAOFNumReplicas 0,ha → 1,其余 throw' {
+Test-Case 'D1 1b-3 mapping Redis 拓扑:与 Apply-Infra 选清单同源(Get-RedisTopology),不另存常量;single → WaitAOFNumReplicas 0,ha → 1,其余 throw' {
+    # 2026-10-19 redis-ha 接入:以前的 $script:MappingRedisTopology 常量删掉,改由 Get-MappingRedisTopology 每次从 Get-RedisTopology 现取。
     $topologyAssign = @($deadlineDeployAst.FindAll({ param($a) $a -is [System.Management.Automation.Language.AssignmentStatementAst] -and $a.Left.Extent.Text -eq '$script:MappingRedisTopology' }, $true))
-    Assert-Equal -Expected 1 -Actual $topologyAssign.Count -Because '$script:MappingRedisTopology 只能有一处赋值'
-    $topology = $topologyAssign[0].Right.Extent.Text.Trim().Trim("'", '"')
+    Assert-Equal -Expected 0 -Actual $topologyAssign.Count -Because '不得再有 $script:MappingRedisTopology 常量:拓扑只从 Get-RedisTopology 推出,与 Apply-Infra 选清单同一处'
+    $mappingFn = $deadlineDeployAst.Find({ param($a) $a -is [System.Management.Automation.Language.FunctionDefinitionAst] -and $a.Name -eq 'Get-MappingRedisTopology' }, $true)
+    Assert-True -Condition ($null -ne $mappingFn -and $mappingFn.Body.Extent.Text -match 'Get-RedisTopology\b') -Because 'Get-MappingRedisTopology 必须从 Get-RedisTopology 推出'
     # 只看 `=` 赋值(初值表);`+=` 追加的是 loki.yaml 这类条件项,与 Redis 拓扑无关。
     $infraAssign = @($deadlineDeployAst.FindAll({ param($a) $a -is [System.Management.Automation.Language.AssignmentStatementAst] -and $a.Left.Extent.Text -eq '$infraManifests' -and $a.Operator -eq [System.Management.Automation.Language.TokenKind]::Equals }, $true))
     Assert-Equal -Expected 1 -Actual $infraAssign.Count -Because 'Apply-Infra 里 $infraManifests 的初值表只能有一处'
     $manifests = $infraAssign[0].Right.Extent.Text
-    $hasSingle = $manifests -match '"redis\.yaml"'
-    $hasHa = $manifests -match 'redis-ha\.yaml'
-    if ($topology -ceq 'single') {
-        Assert-True -Condition ($hasSingle -and -not $hasHa) -Because "拓扑写 single,Apply-Infra 就必须只 apply redis.yaml(实际 $manifests);接入 redis-ha 时把 `$script:MappingRedisTopology 改成 ha"
-    }
-    else {
-        Assert-Equal -Expected 'ha' -Actual $topology -Because '拓扑只能是 single / ha'
-        Assert-True -Condition $hasHa -Because "拓扑写 ha,Apply-Infra 就必须 apply redis-ha.yaml(实际 $manifests)"
-    }
+    Assert-True -Condition ($manifests -match '\$redisTopology\.Manifest' -and $manifests -notmatch 'redis(-ha)?\.yaml') -Because "Apply-Infra 的共享 Redis 清单只能取自 `$redisTopology.Manifest(实际 $manifests)"
+    $applyInfra = $deadlineDeployAst.Find({ param($a) $a -is [System.Management.Automation.Language.FunctionDefinitionAst] -and $a.Name -eq 'Apply-Infra' }, $true)
+    Assert-Match -Text $applyInfra.Body.Extent.Text -Pattern '\$redisTopology\s*=\s*Get-RedisTopology\b' -Because 'Apply-Infra 的拓扑与 WAITAOF 渲染同一个来源'
     Assert-Equal -Expected 0 -Actual (Get-RouteStoreWaitAOFNumReplicas -Topology 'single') -Because '单实例没有副本可等'
     Assert-Equal -Expected 1 -Actual (Get-RouteStoreWaitAOFNumReplicas -Topology 'ha') -Because 'redis-ha 等一个副本落盘(哨兵切主时被提升的副本上要有这次写)'
     $message = ''

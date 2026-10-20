@@ -35,7 +35,9 @@
 #include "services/scene/combat/skill/comp/skill_comp.h"
 #include "services/scene/player/comp/last_persisted_snapshot_comp.h"
 #include "services/scene/player/system/player_data_loader.h"
+#include "services/scene/player/comp/player_persist_carry_comp.h"
 #include "services/scene/player/system/player_lifecycle.h"
+#include "services/scene/player/system/player_persist_marshal.h"
 #include "services/scene/actor/action_state/constants/actor_state.h"
 #include "services/scene/actor/attribute/comp/actor_attribute_comp.h"
 #include "services/scene/actor/attribute/system/actor_attribute_calculator.h"
@@ -147,6 +149,9 @@ void CompletePersistedComps(entt::entity player)
     EmplaceIfAbsent<PlayerMysteryMerchantComp>(player);
     EmplaceIfAbsent<CurrencyComp>(player);
     EmplaceIfAbsent<PlayerCurrencyComp>(player);
+    // 两表顶层未知字段的载体(混版本持久字段保护 §4.2 L1),生产里由两张表的 Unmarshal 创建。
+    EmplaceIfAbsent<PlayerDatabaseCarryComp>(player);
+    EmplaceIfAbsent<PlayerDatabase1CarryComp>(player);
 }
 
 
@@ -620,6 +625,9 @@ TEST_F(PlayerFeaturePersistenceTest, MarshalRefusesWhenAnyPersistedComponentIsMi
     ExpectMarshalRefusedWithout<PlayerMysteryMerchantComp>("PlayerMysteryMerchantComp");
     ExpectMarshalRefusedWithout<CurrencyComp>("CurrencyComp");
     ExpectMarshalRefusedWithout<PlayerCurrencyComp>("PlayerCurrencyComp");
+    // 两表顶层未知字段的载体(混版本持久字段保护 §4.2 L1):缺了同样整份拒绝,补空等于抹掉新版本写进来的整列。
+    ExpectMarshalRefusedWithout<PlayerDatabaseCarryComp>("PlayerDatabaseCarryComp");
+    ExpectMarshalRefusedWithout<PlayerDatabase1CarryComp>("PlayerDatabase1CarryComp");
 }
 
 // F059 落到存盘入口:组件不全的玩家在脏比较与写 Redis / 发 DBTask 之前就被拒绝(返回 false = 没写盘),
@@ -631,10 +639,9 @@ TEST_F(PlayerFeaturePersistenceTest, SaveRefusesIncompletePlayerBeforeTouchingRe
 {
     const auto player = StockedPlayer();
     PlayerAllData persisted;
-    ASSERT_TRUE(PlayerAllDataMessageFieldsMarshal(player, persisted));
-    // 与 SavePlayerToRedis 比对时同一个形状:两张子表补 player_id。
-    persisted.mutable_player_database_data()->set_player_id(kPlayerId);
-    persisted.mutable_player_database_1_data()->set_player_id(kPlayerId);
+    // 与 SavePlayerToRedis 比对时同一个形状:走同一个统一存盘入口(补两张子表的 player_id、盖持久 schema 世代)。
+    // 不盖戳的话脏比较必然判「不同」,回归时会走到空的 Redis 客户端,而不是落在下面那条干净的断言上。
+    ASSERT_TRUE(player_persist::MarshalPlayerForPersist(player, kPlayerId, persisted));
     auto& previousSnapshot = tlsEcs.actorRegistry.emplace<PlayerLastPersistedSnapshotComp>(player);
     previousSnapshot.Replace(persisted);
     const auto persistedBytes = previousSnapshot.snapshot->SerializeAsString();

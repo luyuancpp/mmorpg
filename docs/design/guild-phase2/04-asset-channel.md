@@ -26,7 +26,7 @@
 | SceneNodeGrpc 在路由表里 `ClientProtocol: false`,客户端调不到 | `go/client_rpc_router/generated/pb/game/route_table.go:119` |
 | 玩家查找 `tlsEcs.playerList.find(playerId)` | `scene_node_service.cpp:130` |
 | `player_database` 已用到字段 14,下一个空闲 15(B3a 的 `PlayerProfileComp` 也要一个,谁先落谁拿 15) | `mysql_database_table.proto:107-130` |
-| 存盘三处接线:`PlayerDatabaseMessageFieldsUnmarshal/Marshal`;跨 zone 迁移在 `HandleCrossZoneTransfer` 里**当场** `PlayerAllDataMessageFieldsMarshal` | `player_database_loader.cpp:75-130`;`player_data_loader.h:12-19`;`player_lifecycle.cpp:843-846` |
+| 存盘三处接线:`PlayerDatabaseMessageFieldsUnmarshal/Marshal`;跨 zone 迁移在 `HandleCrossZoneTransfer` 里**当场** `PlayerAllDataMessageFieldsMarshal`。**2026-10-20 更正**:`HandleCrossZoneTransfer` 与整条迁移包链已随 CZ-1 下线(`cpp/` 下已无定义),现在只剩前两处接线。跨 zone 传送与同 zone 跨节点换图都走归属交接:`StartTravelHandoff` 先挂 `PlayerFrozenComp`,再走普通 `SavePlayerToRedis`;这次存盘落地后,由 `BeginTravelHandoff` 写 handoff 标记;目标节点在 `HandlePlayerAsyncLoaded` 里从 Redis 载入同一份 `PlayerAllData`,走同一个 Unmarshal。见 cross-zone-scene-travel.md §11.3、§13.2 | `player_database_loader.cpp:75-130`;`player_data_loader.h:12-19`;`player_lifecycle.cpp:843-846`(更正后这几行已不是迁移代码,按函数名 `StartTravelHandoff` / `BeginTravelHandoff` / `HandlePlayerAsyncLoaded` 查) |
 | `SavePlayerToRedis` 与上次落盘快照相等时返回 false 且**不会**有回调;写盘时 Redis 保存 + Kafka DBTask(发送失败只打日志) | `player_lifecycle.cpp:1259-1268,1277,1309-1314` |
 | 同一 key 只有一个写在途;更新的整份快照覆盖旧的;只有最新值成功才回调 `save_callback_` | `redis_client.h:152-160,574-590` |
 | 存盘失败只通知不更新快照(快照仍是旧值) | `player_lifecycle.cpp:154-183` |
@@ -298,6 +298,7 @@ std::string ValidateAssetOpLedger(const PlayerAssetOpLedgerComp&);
   `message.mutable_asset_op_ledger()->CopyFrom(tlsEcs.actorRegistry.get_or_emplace<PlayerAssetOpLedgerComp>(player));`
   (存盘路径非逐帧,沿用本函数现有 get_or_emplace 写法。)
 - **跨 zone 快照**:`HandleCrossZoneTransfer` 走 `PlayerAllDataMessageFieldsMarshal → PlayerDatabaseMessageFieldsMarshal`(`player_lifecycle.cpp:843-846`),目的地走同一 Unmarshal,**无需额外改动**。
+  **2026-10-20 更正**:这条路径已删。跨 zone 不再有专门的快照,交接时那次存盘就是普通的 `SavePlayerToRedis → PlayerDatabaseMessageFieldsMarshal`;目的地经 `HandlePlayerAsyncLoaded` 走同一个 Unmarshal。"无需额外改动"的结论不变。
 - **登录 / 同 zone 换节点 / 回档加载**:全部经 `PlayerDatabaseMessageFieldsUnmarshal`,同样无需额外改动。
 
 ## 4.6 durable 确认
@@ -332,7 +333,7 @@ return wrote
 |---|---|---|
 | 正常在线 | 回原结局 + IsDurable | 未 durable 且距上次请求 ≥500ms |
 | `UnregisterPlayer`(退出存盘在途) | 回原结局 + IsDurable | 不触发:退出存盘的 marshal 晚于任何已记账的改动,回调在 `FinishExitAfterPersist` 之前更新快照(见下) |
-| `PlayerFrozenComp`(跨 zone) | 回原结局 + IsDurable | 不触发:冻结后本端再写 Redis 无意义,真相已随迁移包走 |
+| `PlayerFrozenComp`(跨 zone) | 回原结局 + IsDurable | 不触发:冻结后本端再写 Redis 无意义,真相已随迁移包走。**2026-10-20 更正**:迁移包已删,"不触发"的理由改为三点。① 冻结当刻 `StartTravelHandoff` 已发起一次交接存盘;它是同 key 的最新值,包含冻结时的内存。② 标记发出后,源端 `SavePlayerToRedis` 一律跳过(`requestedAtMs != 0`)。③ 交接未成而中止时,源端解冻,回到"正常在线"一行。见下表 C6 |
 
 **快照更新顺序**:`HandlePlayerAsyncSaved` 在 `FinishExitAfterPersist`(:306)之后才 `snap.Replace`(:315-319),实体被销毁时快照也随之消失。这不影响正确性:实体没了,Go 下次拿到的是 NOT_HERE;玩家重新上线后已见 seq 在账本里,但新实体没有快照,于是触发一次存盘,回调后 durable=true。**本批不改 HandlePlayerAsyncSaved。**
 
@@ -349,7 +350,7 @@ return wrote
 | C3 | 响应丢失 / Go 进程崩溃 | reconcile 按行重投,同 C2 ✓ |
 | C4 | Go 终结事务提交失败 | 行仍 PENDING → 重投 → 同结局 → 再终结;终结以 `status=PENDING` 做 CAS,重复无效 ✓ |
 | C5 | durable 之后 Redis 丢数据(FLUSH/主从切换)回退到 MySQL 旧值 | 资产与账本一起回退,Go 已终结 → 该笔可能重复。与全部玩家数据同级的基础设施风险;缓解:Redis AOF + 交易流水 `correlation_id=op_id` 可对账。文档化接受 |
-| C6 | 跨 zone:最后一次存盘在途时应用了指令 | 迁移包在冻结当刻整份 marshal(:843-846);冻结后本端拒绝一切改动。于是"迁移包 ⊇ 源端任何快照",目的地账本不会落后于 Go 已看到的 durable ✓ |
+| C6 | 跨 zone:最后一次存盘在途时应用了指令 | 迁移包在冻结当刻整份 marshal(:843-846);冻结后本端拒绝一切改动。于是"迁移包 ⊇ 源端任何快照",目的地账本不会落后于 Go 已看到的 durable ✓ **2026-10-20 更正**:迁移包和 :843-846 的当场 marshal 已随 CZ-1 下线,上面的论证没有依据了。结论仍成立,理由换成以下四步(按函数名查 `player_lifecycle.cpp`):① `StartTravelHandoff` 先挂 `PlayerFrozenComp` 再存盘。冻结后,未见的 seq 一律回 RETRY `kAssetFrozen`(`asset_op_system.cpp` 改动闸门,`PlayerFrozenComp` 与 `PlayerTravelHandoffComp` 任一在就拦;`player_mutability.h` 的 `IsPlayerMutable` 也把这两种状态判为不可改),所以冻结后资产通道不再应用新指令。② 交接存盘是同 key 的最新值。快路径判定"盘上已是同一份",但同 key 还有未落地的存盘时,会强制做一次真实存盘(计数 `handoff_fastpath_forced`)。同 key 只对最新值发布完成回调,因此这次存盘 ⊇ 源端任何已报 durable 的快照(交接骨架 I1)。③ handoff 标记只在这次存盘落地后由 `BeginTravelHandoff` 写;标记发出后源端不再存盘。之后交接未成时走"tip + 踢线 + 不存盘销毁"收口(cross-zone-scene-travel.md §13.2),这时 Redis 里的交接存盘已经 ⊇ 冻结内存,账本不丢。④ 目标节点从同一份 Redis `PlayerAllData` 载入,所以目的地账本不会落后于 Go 已看到的 durable ✓。<br>前提与残余:(a) 依赖 CZ-2「生产 Redis 物理共享」。负责人 2026-10-17 已把它改写为"逻辑单一、物理按 `{player_id}` 分片"(shared-redis-split-by-purpose.md §20.1,第 4 批未落码)。落码之前 CZ-2 照旧有效;落码后单元内同一玩家仍只有一个权威 slot,结论不变;跨单元按转区处理,另议。(b) Redis 丢数据仍归 C5。(c) SET 发出前中止的,源端解冻、仍是属主,回到 C1–C3。(d) 证据缺口:② 的强制存盘分支没有单测覆盖(`cross_zone_test.cpp` 宿主里 `HasUnsettledPlayerSave` 恒为 false),只能靠代码审查和 runbook 场景 H 实跑,而场景 H 还没跑过 |
 | C7 | 同 zone 换节点(ReleasePlayer) | 旧节点挂 `UnregisterPlayer` 后改动回 RETRY;退出存盘覆盖账本;新节点从 Redis 加载 ✓ |
 | C8 | Abort 与 Debit 同时发给同一玩家 | 同节点在 loop 线程串行,账本保证二者只有一个成立;跨节点只在单写者被破坏时才可能。I1 只在 player_locator 30s 租约内成立,租约外见 C14 ✓(租约内) |
 | C9 | REJECTED(或中止占位)未 durable 就终结,随后 scene 崩溃 | 若 Go 此时已终结,旧副本租约过期后重发的请求落到新进程,见 kUnseen → APPLIED,但 Go 的行已是 REJECTED → 玩家资产被扣却无对侧账。**所以 I4 要求 REJECTED 也必须 durable**,代价只是拒绝场景多一次重查 |

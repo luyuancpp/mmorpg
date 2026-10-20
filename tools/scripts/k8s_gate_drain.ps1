@@ -43,9 +43,10 @@
     退出码:0 = 完成(含 -DryRun,以及未带 -DeletePod 到 drained 为止);1 = 出错中止(输出里说明标记现状);
     3 = 结束时留下了需要人工清理的排空标记(输出里有 DEL 指引;删 Pod 后新 Pod 是否就绪也在输出里)。
 
-    依赖:etcdctl / redis-cli 在 kubectl exec 进 login 所连 Service 背后的 Pod 后,按 login 配置里的
-    Service 地址连回同一个 Service(hairpin)。CNI / kube-proxy 不支持 hairpin 时读写都会失败,方向是
-    fail-closed(读不到就不写、不删)。
+    依赖:etcdctl 在 kubectl exec 进 login 所连 etcd Service 背后的 Pod 后,按 login 配置里的 Service 地址连回同一个
+    Service(hairpin);redis-cli 在 kubectl exec 进与 Redis Service 同名的 StatefulSet(statefulset/redis 的 redis 容器)后,
+    同样按 Service 地址连 —— 单实例形态下 Service 背后就是这个 Pod(hairpin),高可用形态(redis-ha.yaml)下 Service 指向
+    redis-proxy、经代理落到主,不涉及 hairpin。读写失败的方向都是 fail-closed(读不到就不写、不删)。
 
     所有 kubectl 调用都有 HTTP 超时与进程级截止;轮询共用单调时钟的总预算。
     kind 上务必显式传 -KubeContext kind-mmorpg(本机默认 current-context 是别的集群)。
@@ -289,7 +290,7 @@ function ConvertFrom-GoDurationSeconds {
 }
 
 # 把 login 配置里的集群内地址 <service>.<namespace>[.svc[.cluster.local]]:<port> 拆开。
-# 本脚本 exec 进该 Service 背后的 Pod 去跑 etcdctl / redis-cli,所以只接受这种形状;
+# 本脚本 exec 进 etcd Service 背后的 Pod 跑 etcdctl、exec 进与 Redis Service 同名的 StatefulSet 跑 redis-cli,所以只接受这种形状;
 # IP、集群外域名、不带 namespace 的短名一律拒绝 —— 推不出 Service 就不猜。
 function Split-ClusterServiceHost {
     param(
@@ -534,15 +535,22 @@ function ConvertFrom-GateEtcdRecords {
     return ,$records.ToArray()
 }
 
-# exec 进 Service 背后的 Pod(Redis:同名 StatefulSet 的 Pod)再按 Service 地址连回(hairpin)失败时附在错误后面的提示。
-# 刻意不自动回落 127.0.0.1:回落后连的是 exec 恰好落到的那个 Pod,多副本时不一定是 login 用的那一个(高可用形态下可能是从)。
+# etcd:exec 进 Service 背后的 Pod 再按 Service 地址连回(hairpin)失败时附在错误后面的提示。
+# 刻意不自动回落 127.0.0.1:回落后连的是 exec 恰好落到的那个 Pod,多副本时不一定是 login 用的那一个。
 function Get-GateDrainHairpinHint {
-    param(
-        [Parameter(Mandatory = $true)]$Target,
-        [string]$ExecTarget = ''
-    )
-    if ([string]::IsNullOrEmpty($ExecTarget)) { $ExecTarget = "svc/$($Target.Service)" }
-    return "(若是连接失败 / 超时:本脚本 exec 进 $ExecTarget 后按 login 配置里的 $($Target.Endpoint) 连回同一 Service,集群的 CNI / kube-proxy 须支持 hairpin)"
+    param([Parameter(Mandatory = $true)]$Target)
+    return "(若是连接失败 / 超时:本脚本 exec 进 svc/$($Target.Service) 后按 login 配置里的 $($Target.Endpoint) 连回同一 Service,集群的 CNI / kube-proxy 须支持 hairpin)"
+}
+
+# Redis 命令失败时附在错误后面的提示。两种形态的原因不同,静态写全,不为了选一句再多查一次集群(错误路径保持简单;RBAC 也不一定允许读 Deployment):
+# 单实例形态下 exec 落在 Service redis 背后的同一个 Pod,要 hairpin;高可用形态下 Service redis 指向 redis-proxy,不涉及 hairpin,
+# 连接被立即关闭多半是代理此刻没有可路由的主(切主中、哨兵没有多数)或代理没就绪。排查命令引用 README(带口令时要 REDISCLI_AUTH),不在这里内联。
+function Get-GateDrainRedisFailureHint {
+    param([Parameter(Mandatory = $true)]$Login)
+    return ("(若是连接失败 / 被关闭 / 超时:本脚本 exec 进 $(Get-GateDrainRedisExecTarget -Login $Login) 的 redis 容器后按 login 配置里的 $($Login.Redis.Endpoint) 连。" +
+        "单实例形态下 Service redis 背后就是这个 Pod,集群的 CNI / kube-proxy 须支持 hairpin;" +
+        "高可用形态下 Service redis 指向 redis-proxy,不涉及 hairpin,连接被立即关闭多半是代理此刻没有可路由的主(切主中或哨兵没有多数)或代理没就绪," +
+        "按 deploy/k8s/README.md「共享 Redis:高可用形态 → 运维」查代理的 show servers state 与三个哨兵的 get-master-addr-by-name;exec 本身失败先看 statefulset/redis 的 Pod 状态)")
 }
 
 # exec 进 login 所连 etcd 的 Service 背后的 Pod,用它自带的 etcdctl 按 login 配置里的同一地址读 gate 前缀。
@@ -671,7 +679,7 @@ function Invoke-GateDrainRedisChecked {
     $contract = Get-GateDrainContract
     $result = Invoke-GateDrainRedis -Login $Login -Command $Command -TimeoutSeconds $contract.CallTimeoutSeconds
     if ($result.TimedOut -or $result.ExitCode -ne 0) {
-        throw "$What 失败(exit=$($result.ExitCode),timedOut=$($result.TimedOut)):$(Get-GateDrainErrorTail $result.ErrorOutput) $(Get-GateDrainHairpinHint -Target $Login.Redis -ExecTarget (Get-GateDrainRedisExecTarget -Login $Login))"
+        throw "$What 失败(exit=$($result.ExitCode),timedOut=$($result.TimedOut)):$(Get-GateDrainErrorTail $result.ErrorOutput) $(Get-GateDrainRedisFailureHint -Login $Login)"
     }
     $text = [string]$result.Output
     if ($text -match '(?m)^\s*(\d+\)\s*)?\(error\)') { throw "$What 失败:$(Get-GateDrainErrorTail $text)" }

@@ -70,6 +70,7 @@ void GateEventHandler::RoutePlayerEventHandler(const contracts::kafka::RoutePlay
     // 客户端 LeaveGame 之后、下一次登录进场之前到达的、属于 LeaveGame 之前那条登录链的路由:在写任何会话字段之前丢弃
     // (scene_route_helper.h IsRouteFromBeforeLeaveGame,docs/design/location-release-binding.md §3.5 R5)。
     // 不丢的话它会重新填上 lastSceneRoute / ownerEpoch,下一次 BindSession 按这条旧路由、带旧 epoch 补发。
+    // 丢弃时把它的代次记进被离开的那条链,同一条旧链在客户端再次 EnterGame 之后才到的 Bind 仍被认出(第二轮审计 r2-gate#1)。
     if (gate_scene_route::IsRouteFromBeforeLeaveGame(session, event.player_id(), event.login_generation()))
     {
         LOG_INFO << "RoutePlayer: dropped a route issued before the client left the game, session_id=" << sessionId
@@ -78,7 +79,9 @@ void GateEventHandler::RoutePlayerEventHandler(const contracts::kafka::RoutePlay
                  << " scene_id=" << event.scene_id()
                  << " owner_epoch=" << event.owner_epoch()
                  << " route_login_generation=" << event.login_generation()
+                 << " enter_game_sent_after_leave=" << session.enterGameSentAfterLeave
                  << " login_generation_at_leave=" << session.loginGenerationAtReset;
+        gate_scene_route::NoteDroppedFromBeforeLeaveGame(session, event.player_id(), event.login_generation());
         return;
     }
 
@@ -240,6 +243,22 @@ void GateEventHandler::BindSessionEventHandler(const contracts::kafka::BindSessi
     }
 
     auto &session = it->second;
+
+    // 客户端 LeaveGame 之后到达的、属于 LeaveGame 之前那条登录链的 Bind(login 后台链在 LeaveGame 之前就发出、还在 Kafka 里):
+    // 在写任何会话字段之前丢弃(scene_route_helper.h IsBindFromBeforeLeaveGame,location-release-binding.md §3.5 R5,
+    // 第二轮审计 r2-gate#1)。不丢的话它把登录类型挂回会话、把代次抬到旧链的值,旧链随后到达的路由就被当成新登录的路由,
+    // 带着登录类型转发到旧节点。丢弃时把代次记进被离开的那条链,同一条旧链之后才到的路由仍被认出。
+    if (gate_scene_route::IsBindFromBeforeLeaveGame(session, playerId, event.login_generation()))
+    {
+        LOG_INFO << "BindSession: dropped a bind issued before the client left the game, session_id=" << sessionId
+                 << " player_id=" << playerId
+                 << " enter_gs_type=" << enterGsType
+                 << " bind_login_generation=" << event.login_generation()
+                 << " enter_game_sent_after_leave=" << session.enterGameSentAfterLeave
+                 << " login_generation_at_leave=" << session.loginGenerationAtReset;
+        gate_scene_route::NoteDroppedFromBeforeLeaveGame(session, playerId, event.login_generation());
+        return;
+    }
 
     // 角色、会话版本号、登录代次与登录类型先落进会话(scene_route_helper.h ApplyLoginBinding),再交给 CPP-2
     // 的欠账逻辑(scene_entry_dispatch.cpp OnLoginTypeBound)。代次必须在它之前写:它会同步按最近一次路由补发,

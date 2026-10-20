@@ -26,8 +26,9 @@ package main
 //
 // 与其它冒烟不一样、不照做就会假绿或误报的三件事:
 //   - 43 的应答类型是 Empty(scene 不回包),数据走 31 推送。31 由通用 handler 记到 gameobject.Player
-//     (SetSceneInfoPush,带自增序号),本场景按序号等"这次请求带回来的那一份";其余消息(63 的回包、79、23、34,
-//     以及 gate 对 43 的信封拒绝)按到达顺序留底,每步在发请求**之前**记下标 mark、之后从 mark 起扫描 ——
+//     (SetSceneInfoPush,带自增序号),本场景按序号等"这次请求带回来的那一份"。63 有同步应答,经 call 发出、
+//     只按请求号认领(docs/design/client-rpc-callback.md §6),不进留底;79、23、34 以及 gate 对 43 的信封拒绝
+//     (43 以 id = 0 发出,拒绝同样 id = 0)按到达顺序留底,每步在发请求**之前**记下标 mark、之后从 mark 起扫描 ——
 //     上一步的推送不会被这一步误认;
 //   - 切线受理后的失败没有细分码:scene_manager 的任何拒绝(满 / 回收中 / 冷却)在 scene 侧一律变成
 //     kEnterSceneFailed(设计文档 §3.3)。所以 C6 只能断言"被拒",分不出是不是因为冷却;C4 被拒时若目录有冷却,
@@ -88,7 +89,7 @@ const (
 	// C6:做"冷却期内被拒"断言所需的最小剩余冷却。剩得更少时请求可能在冷却过期后才到 scene_manager、
 	// 被正常放行,断言会误报;此时跳过这条子断言(打 SKIP),只验"过期后能切回"。
 	channelSmokeCooldownMinRemaining = 2 * time.Second
-	// 留底扫描的轮询粒度。
+	// 留底扫描(推送 / 43 的信封拒绝)的轮询粒度。
 	channelSmokePollInterval = 50 * time.Millisecond
 )
 
@@ -104,10 +105,16 @@ var (
 // 单列成哨兵是因为两处调用方要补的说明不同(等到达 vs 等冷却的拒绝)。
 var errChannelSmokeNoOutcome = errors.New("在等待窗口内既没有收到 NotifyEnterScene 也没有收到失败 tip")
 
+// errChannelSmokeRpcTimeout 是 caller 的超时哨兵:有同步应答的请求在 channelSmokeRpcTimeout 内没等到带本次请求号的回包。
+// 调用方按它 errors.Is,换成各自原有的报错文案。
+var errChannelSmokeRpcTimeout = errors.New("等回包超时")
+
 // channelSmokeRecord 是一条留底消息。
 type channelSmokeRecord struct {
 	messageId uint32
-	// gate 级拒绝(限流 / 不认识的消息号)走信封 MessageContent.error_message,此时 body 为空;推送恒为 0。
+	// gate 级拒绝(限流 / 超长 / GM 闸 / scene 未就绪)走信封 MessageContent.error_message,此时 body 为空;
+	// 白名单外的消息号 gate 直接丢弃、不回包,只能等到超时;推送恒为 0。
+	// 留底里只有 SceneInfoC2S(43,以 id = 0 发出)的拒绝会带它;经 call 发出的请求,拒绝信封带请求号、交给 caller。
 	envelopeTip uint32
 	body        []byte
 }
@@ -119,6 +126,10 @@ type channelSmokeBot struct {
 	gc      *pkg.GameClient
 	player  *gameobject.Player
 	stats   *metrics.Stats
+
+	// caller 发有同步应答的请求并只等它自己的回包(按请求号认领,见 smoke_rpc_call.go);
+	// merchant-smoke 的查询 / 购买 / GM 加钱经同一个 caller。只由主流程调用。
+	caller *smokeCaller
 
 	// RecvLoop goroutine 写、主流程读,mu 保护。records 只追加。
 	mu      sync.Mutex
@@ -369,7 +380,8 @@ func RunChannelSmoke(cfg *config.Config) {
 }
 
 // channelSmokeLogin 走完 AssignGate → 连接 → 登录 → 进场,并挂上本场景自己的 RecvLoop 回调。
-// 与 teamSmokeLogin 同形;不走 prepareBehaviorClient:它的回调不留底,本场景要按到达顺序扫描回包与推送。
+// 与 teamSmokeLogin 同形;不走 prepareBehaviorClient:它的回调不留底,本场景要按到达顺序扫描推送
+// (同步应答由 caller 按请求号认领,不经留底)。
 func channelSmokeLogin(cfg *config.Config, account string, stats *metrics.Stats) (*channelSmokeBot, error) {
 	host, portStr, tokenPayload, tokenSig, err := resolveGateAddrLocal(cfg)
 	if err != nil {
@@ -394,6 +406,7 @@ func channelSmokeLogin(cfg *config.Config, account string, stats *metrics.Stats)
 		gc:      gc,
 		player:  gameobject.NewPlayer(gc.PlayerId),
 		stats:   stats,
+		caller:  newSmokeCaller(gc, stats, account, channelSmokeRpcTimeout, errChannelSmokeRpcTimeout),
 	}
 	gameobject.PlayerList.Set(gc.PlayerId, bot.player)
 	go gc.RecvLoop(bot.onMessage)
@@ -409,33 +422,51 @@ func channelSmokeLogin(cfg *config.Config, account string, stats *metrics.Stats)
 	return bot, nil
 }
 
-// channelSmokeIsRecorded:本场景按到达顺序留底的消息号。
+// channelSmokeIsCallMessage:经 call 发出、回包只按请求号认领的请求消息号(恰好回一个包的方法)。
+// 这些号上 id = 0 的消息不是本场景的回包,onMessage 丢弃它们。
+func channelSmokeIsCallMessage(messageId uint32) bool {
+	if messageId == game.SceneSceneClientPlayerEnterSceneMessageId {
+		return true
+	}
+	// merchant-smoke 复用本文件的机器人会话,它经 call 发的请求消息号由它自己登记(mystery_merchant_smoke_scenario.go)。
+	return merchantSmokeIsCallMessage(messageId)
+}
+
+// channelSmokeIsRecorded:本场景按到达顺序留底的消息号(推送,以及以 id = 0 发出的 SceneInfoC2S 的信封拒绝)。
 // NotifySceneInfo(31)不在其中:它由通用 handler 记到 Player 上,按序号等(见 requestSceneInfo)。
+// EnterScene(63)也不在其中:它的同步应答带请求号,由 caller 认领,不会到 onMessage。
 func channelSmokeIsRecorded(messageId uint32) bool {
 	switch messageId {
 	case game.SceneSceneClientPlayerSceneInfoC2SMessageId, // 应答类型是 Empty、scene 不回包;留底只为看见 gate 的信封拒绝(限流)
-		game.SceneSceneClientPlayerEnterSceneMessageId,
 		game.SceneSceneClientPlayerNotifyEnterSceneMessageId,
 		game.SceneClientPlayerCommonSendTipToClientMessageId,
 		game.SceneClientPlayerCommonKickPlayerMessageId:
 		return true
 	}
-	// merchant-smoke 复用本文件的机器人会话,它另外要看的消息号由它自己登记(mystery_merchant_smoke_scenario.go)。
+	// merchant-smoke 另外要看的推送由它自己登记(mystery_merchant_smoke_scenario.go)。
 	// 其中神秘商人的出现公告是发给全体在线玩家的,channel-smoke 运行期间也可能收到;多留底不影响本场景的断言 ——
 	// 本文件里每一处读留底的地方都是按消息号挑自己要的那几种,别的条目一律跳过。
 	return merchantSmokeIsRecorded(messageId)
 }
 
-// onMessage:先留底,再转发给通用分发 —— NotifyEnterScene 更新 Player 的当前场景、
+// onMessage:推送(与 43 的信封拒绝)先留底,再转发给通用分发 —— NotifyEnterScene 更新 Player 的当前场景、
 // NotifySceneInfo 把目录记到 Player 上,都靠通用 handler。
 //
-// 唯一不转发的是 EnterScene(63)的同步应答。它的通用 handler(logic/handler/scene_scene_client_player_enter_scene.go)
-// gate 信封拒绝时 body 为空，通用 handler 会误打 "enter scene accepted"。
-// 本场景按 error_message.id 自己判（requestEnterScene），
-// 不转发不丢任何状态。
+// 经 call 发出的请求(EnterScene,以及 merchant-smoke 的查询 / 购买 / GM 加钱),回包带请求号,由 GameClient
+// 直接交给 caller,不会到这里,也就不进留底、不跑生成的 handler(本场景不依赖它们写的任何 Player 状态,
+// 应答一律由调用方自己解码)。这些号上 id = 0 的消息说明服务端没回显请求号,交 smokeDropUncorrelatedReply 丢弃,
+// 不交通用分发:信封拒绝(body 为空)落进 MessageBodyHandler 会被解成全零响应,EnterScene 的通用 handler
+// (logic/handler/scene_scene_client_player_enter_scene.go)还会误打 "enter scene accepted"。
+//
+// 不把 SendTipToClient 交给 caller.onGateTipMessage:gate 只在 gRPC 转发失败时推 kServiceUnavailable
+// (rpc_reply_bridge.cpp),本场景的请求都走 scene TCP 路径,拒绝一律是带请求号的信封。
 func (b *channelSmokeBot) onMessage(client *pkg.GameClient, msg *base.MessageContent) {
 	b.stats.MsgRecv()
 	messageId := msg.GetMessageId()
+	if channelSmokeIsCallMessage(messageId) {
+		smokeDropUncorrelatedReply(b.account, msg)
+		return
+	}
 	if channelSmokeIsRecorded(messageId) {
 		b.mu.Lock()
 		b.records = append(b.records, channelSmokeRecord{
@@ -444,9 +475,6 @@ func (b *channelSmokeBot) onMessage(client *pkg.GameClient, msg *base.MessageCon
 			body:        msg.GetSerializedMessage(),
 		})
 		b.mu.Unlock()
-	}
-	if messageId == game.SceneSceneClientPlayerEnterSceneMessageId {
-		return
 	}
 	handler.MessageBodyHandler(client, msg)
 }
@@ -468,7 +496,9 @@ func (b *channelSmokeBot) snapshot(since int) []channelSmokeRecord {
 	return append([]channelSmokeRecord(nil), b.records[since:]...)
 }
 
-// send 按节奏(channelSmokeRequestSpacing)发一个请求。
+// send 按节奏(channelSmokeRequestSpacing)发一个不关联回包的请求(id = 0)。
+// 只给应答类型为 Empty 的单向方法用(SceneInfoC2S、MoveStop):scene 对它们不回包,结果要从推送里等。
+// 有同步应答的请求走 call。
 func (b *channelSmokeBot) send(messageId uint32, request proto.Message) error {
 	if wait := channelSmokeRequestSpacing - time.Since(b.lastRequestAt); wait > 0 {
 		time.Sleep(wait)
@@ -479,6 +509,21 @@ func (b *channelSmokeBot) send(messageId uint32, request proto.Message) error {
 	b.lastRequestAt = time.Now()
 	b.stats.MsgSent()
 	return nil
+}
+
+// call 按节奏(与 send 共用 channelSmokeRequestSpacing)发一个有同步应答的请求,并只等它自己的回包
+// (smokeCaller.call,按 MessageContent.id 认领;上一次超时请求的迟到回包由 GameClient 计数后丢弃,不会被当成本次结果)。
+//
+// 返回的 envelopeTip 非 0 表示 gate 级拒绝(信封 error_message,body 为空:限流 / GM 闸 / 找不到节点 / scene 未就绪),
+// 此时 response 未填充;为 0 时 response 已解码。超时返回包裹 errChannelSmokeRpcTimeout 的 error。
+// 只用于恰好回一个包的方法;应答类型为 Empty 的方法 scene 不回包,用它必然超时,走 send。
+// 禁止在 RecvLoop goroutine 上调用(smokeCaller 底下是 CallSync)。
+func (b *channelSmokeBot) call(messageId uint32, request, response proto.Message) (envelopeTip uint32, err error) {
+	if wait := channelSmokeRequestSpacing - time.Since(b.lastRequestAt); wait > 0 {
+		time.Sleep(wait)
+	}
+	b.lastRequestAt = time.Now()
+	return b.caller.call(messageId, request, response)
 }
 
 // requestSceneInfo 发一次 SceneInfoC2S(43)并等它带回的 NotifySceneInfo(31)。
@@ -554,39 +599,30 @@ func (b *channelSmokeBot) fetchDirectory() (*scene.SceneInfoS2C, error) {
 	}
 }
 
-// requestEnterScene 发 EnterScene(63){scene_config_id, scene_id} 并等同步应答,返回(本次请求的扫描起点, 同步应答的 tip)。
-// tip == 0 只表示"已受理",不代表已到达(设计文档 §3.1)。
+// requestEnterScene 发 EnterScene(63){scene_config_id, scene_id} 并只等它自己的同步应答(call,按请求号认领),
+// 返回(本次请求之后的推送扫描起点, 同步应答的 tip)。
+// tip == 0 只表示"已受理",不代表已到达(设计文档 §3.1);到达与受理后的失败都是推送,调用方从扫描起点等(waitSwitchOutcome)。
 // gate 信封拒绝与等不到应答一律 error:它们说明请求没到 scene 的业务逻辑,不能当成 scene 给的码去断言。
 func (b *channelSmokeBot) requestEnterScene(sceneConfigId uint32, sceneId uint64) (int, uint32, error) {
+	// 扫描起点必须在发请求之前取:受理后的 NotifyEnterScene / SendTipToClient 紧跟应答到达,
+	// 可能在 call 返回之前就已留底。
 	since := b.mark()
-	if err := b.send(game.SceneSceneClientPlayerEnterSceneMessageId, &scene.EnterSceneC2SRequest{
+	var response scene.EnterSceneC2SResponse
+	envelopeTip, err := b.call(game.SceneSceneClientPlayerEnterSceneMessageId, &scene.EnterSceneC2SRequest{
 		SceneInfo: &scene.SceneInfoComp{SceneConfigId: sceneConfigId, SceneId: sceneId},
-	}); err != nil {
-		return since, 0, err
+	}, &response)
+	if errors.Is(err, errChannelSmokeRpcTimeout) {
+		return since, 0, fmt.Errorf("EnterScene{scene_config_id=%d scene_id=%d} 发出后 %s 内没有同步应答(gate / scene 没在跑?)",
+			sceneConfigId, sceneId, channelSmokeRpcTimeout)
 	}
-
-	deadline := time.Now().Add(channelSmokeRpcTimeout)
-	for {
-		for _, r := range b.snapshot(since) {
-			if r.messageId != game.SceneSceneClientPlayerEnterSceneMessageId {
-				continue
-			}
-			if r.envelopeTip != 0 {
-				return since, 0, fmt.Errorf("EnterScene{scene_config_id=%d scene_id=%d} 被 gate 信封拒绝 tip=%d%s:请求没到 scene",
-					sceneConfigId, sceneId, r.envelopeTip, channelSmokeTipHint(r.envelopeTip))
-			}
-			var response scene.EnterSceneC2SResponse
-			if err := proto.Unmarshal(r.body, &response); err != nil {
-				return since, 0, fmt.Errorf("decode EnterSceneC2SResponse: %w", err)
-			}
-			return since, response.GetErrorMessage().GetId(), nil
-		}
-		if !time.Now().Before(deadline) {
-			return since, 0, fmt.Errorf("EnterScene{scene_config_id=%d scene_id=%d} 发出后 %s 内没有同步应答(gate / scene 没在跑?)",
-				sceneConfigId, sceneId, channelSmokeRpcTimeout)
-		}
-		time.Sleep(channelSmokePollInterval)
+	if err != nil {
+		return since, 0, fmt.Errorf("EnterScene{scene_config_id=%d scene_id=%d}: %w", sceneConfigId, sceneId, err)
 	}
+	if envelopeTip != 0 {
+		return since, 0, fmt.Errorf("EnterScene{scene_config_id=%d scene_id=%d} 被 gate 信封拒绝 tip=%d%s:请求没到 scene",
+			sceneConfigId, sceneId, envelopeTip, channelSmokeTipHint(envelopeTip))
+	}
+	return since, response.GetErrorMessage().GetId(), nil
 }
 
 // waitSwitchOutcome 从 since 起按到达顺序扫描,返回一次**已受理**的切线请求的结局:

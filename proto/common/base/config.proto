@@ -164,6 +164,14 @@ message BaseDeployConfig {
     // 换代后 scene 仍写旧代 topic,存盘静默积压在一个已排空、没人消费的 topic 里。
     // 换代流程见 docs/design/db-task-kafka-partition-contract.md;设计见 player-storage-placement.md §7。
     uint32 db_task_topic_generation = 22;
+
+    // 混版本持久字段保护:严格提交屏障 C3 的模式(docs/design/mixed-version-persist-field-protection.md §5.2)。
+    // 只认 "warn" / "enforce":warn 照写并计数,enforce 拒写、本次在线进度不落盘。
+    // readBaseDeployConfig 读入时归一化(cpp/libs/engine/config/persist_schema_regression_mode.h):
+    // 缺键 / 空串 = "warn"(proto3 无 presence,存量 yaml 不写也能起);其余非法值拒绝启动。
+    // 运行期这里只会是两个字面量之一,原样作为严格屏障 Lua 的 ARGV[10]。
+    // 切 enforce 的放行条件见设计 §8.1 第 5 步;k8s 侧由 k8s_deploy.ps1 从 bin/etc/base_deploy_config.yaml 镜像。
+    string persist_schema_regression_mode = 23;
 }
 
 // Game config

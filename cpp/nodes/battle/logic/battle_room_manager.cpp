@@ -1365,7 +1365,10 @@ void BattleRoomManager::BeginResultCommit(BattleRoom& room, const ::eBattleOutco
         room.resultCommit.emplace(std::string{});
         return;
     }
-    room.resultCommit.emplace(std::move(payload));
+    // 落库前置条件按成员记(审计 r2-battle#1):成员集合 = 个人结算字节的键,上面已核对与房间成员一一对应。
+    std::set<uint64_t> stagingMembers;
+    for (const auto& [playerId, bytes] : room.personalSettlementPayloads) stagingMembers.insert(playerId);
+    room.resultCommit.emplace(std::move(payload), std::move(stagingMembers));
     resultRooms_.insert(room.battleId);
     if (!resultListenerInstalled_)
     {
@@ -1417,6 +1420,7 @@ void BattleRoomManager::PumpResultCommits()
         if (!room || !room->resultCommit) { resultRooms_.erase(battleId); continue; }
         const auto instant = turnbattle::ResultCommit::Clock::now();
         // 个人结算没落完 pending 之前不发结果(ResultCommit 的发送前置条件,CanSend 同样把关)。
+        // 落库轮次用尽的房间由 OnPersonalSettlementsStaged 移出 resultRooms_,不会再走到这里。
         if (!room->resultCommit->PersonalSettlementsDurable())
         {
             StagePersonalSettlements(*room, instant);
@@ -1456,62 +1460,125 @@ void BattleRoomManager::StagePersonalSettlements(BattleRoom &room, const turnbat
     // 本节点开始往积压索引里写了,报数定时器随之常驻(与 DispatchSettlementDurably 同口径)。
     EnsureSettlementBacklogReporter();
 
+    // 本轮只写还没落定的成员(审计 r2-battle#1):上一轮已写进去的成员,scene 可能已经应用并销账
+    // (删 pending 与锁、摘账本),再写一次 pending 就会复活,玩家下次登录重复领奖。
+    // 集合在本轮回复到齐之前不变(ResultCommit 的约定)。这里抄一份遍历:最后一名成员同步失败(命令没发出)时,
+    // onReply 会当场经 FinishStaging 改写待写集合,遍历副本不受影响。
+    const std::set<uint64_t> members = room.resultCommit->UnstagedMembers();
+
     // 本轮回复计数。回调只捕获值与 weak_ptr<自己>(AGENTS.md §11.7);房间按 battle_id 重查。
     struct StagingRound
     {
         std::size_t remaining = 0;
-        bool allStored = true;
+        std::set<uint64_t> settled; // 本轮拿到确定结论(写入 / 本局早先已写 / 已被别的局取代)的成员
     };
     const auto round = std::make_shared<StagingRound>();
-    round->remaining = room.personalSettlementPayloads.size();
+    round->remaining = members.size();
     const uint64_t battleId = room.battleId;
     const uint64_t enqueuedAtMs = TimeSystem::NowMillisecondsUTC();
-    const auto onReply = [weakSelf = WeakSelf(), round, battleId, attempt](const bool stored)
+    const auto onReply = [weakSelf = WeakSelf(), round, battleId, attempt](const uint64_t playerId, const bool settled)
     {
-        round->allStored = round->allStored && stored;
+        if (settled) round->settled.insert(playerId);
         if (--round->remaining != 0) return;
-        if (const auto self = weakSelf.lock()) self->OnPersonalSettlementsStaged(battleId, attempt, round->allStored);
+        if (const auto self = weakSelf.lock())
+            self->OnPersonalSettlementsStaged(battleId, attempt, std::move(round->settled));
     };
-    for (const auto &[member, payload] : room.personalSettlementPayloads)
+    for (const uint64_t playerId : members)
     {
-        const uint64_t playerId = member;  // 结构化绑定不进 lambda 捕获,先拷一份
-        // 与本地模式同一条脚本:两键 SET(不过期)+ 进积压索引(kSetPendingSettlementScript 的说明)。
+        const auto payload = room.personalSettlementPayloads.find(playerId);
+        if (payload == room.personalSettlementPayloads.end())
+        {
+            // BeginResultCommit 已核对成员与字节一一对应,走到这里是程序缺陷:按未落定计,本轮照常收口。
+            LOG_ERROR << "metric=battle_personal_settlement_stage_failed battle_id=" << battleId
+                      << " player_id=" << playerId << ",personal settlement bytes missing;result publish waits";
+            onReply(playerId, false);
+            continue;
+        }
+        // 标记 + 锁判定 + 两键 SET(不过期)+ 进积压索引,一条 Lua(kStagePendingSettlementOnceScript 的说明)。
         const int rc = tlsRedis.GetZoneRedis()->command(
             [onReply, battleId, playerId](hiredis::Hiredis *, redisReply *reply)
             {
-                const bool stored = reply != nullptr && reply->type != REDIS_REPLY_ERROR;
-                if (!stored)
+                const auto shape = battle_settlement::ReplyShapeOf(reply);
+                const auto verdict = battle_settlement::ClassifyStageReply(
+                    shape, shape == battle_settlement::ReplyShape::kInteger ? reply->integer : 0);
+                switch (verdict)
                 {
+                case battle_settlement::StageVerdict::kStored:
+                    break;
+                case battle_settlement::StageVerdict::kAlreadyStored:
+                    // 上一轮的应答丢了或报了 ERROR,命令其实执行了;pending 此刻在不在都不重写(可能已被销账)。
+                    LOG_WARN << "metric=battle_personal_settlement_already_staged battle_id=" << battleId
+                             << " player_id=" << playerId << ",an earlier round had written it;not rewritten";
+                    break;
+                case battle_settlement::StageVerdict::kSuperseded:
+                    LOG_WARN << "metric=battle_personal_settlement_superseded battle_id=" << battleId
+                             << " player_id=" << playerId
+                             << ",battle lock held by another battle;pending not written(scene discards this settlement on every path)";
+                    break;
+                case battle_settlement::StageVerdict::kUnconfirmed:
                     LOG_ERROR << "metric=battle_personal_settlement_stage_failed battle_id=" << battleId
-                              << " player_id=" << playerId << ",pending write failed;result publish waits for retry";
+                              << " player_id=" << playerId << " reply=" << battle_settlement::ReplyShapeName(shape)
+                              << " redis_error=" << std::string(battle_settlement::ReplyText(reply))
+                              << ",pending write unconfirmed;only this member is retried next round";
+                    break;
                 }
-                onReply(stored);
+                onReply(playerId, battle_settlement::IsStageSettled(verdict));
             },
-            (std::string("EVAL %s 3 ") + battle_settlement::kPendingSettlementKeyFmt + " " +
-             battle_settlement::kPendingSettlementIdKeyFmt + " " + battle_settlement::kPendingSettlementIndexKey +
-             " %b %llu %llu %llu")
+            (std::string("EVAL %s 5 ") + battle_settlement::kPendingSettlementKeyFmt + " " +
+             battle_settlement::kPendingSettlementIdKeyFmt + " " + battle_settlement::kPendingSettlementIndexKey + " " +
+             battle_settlement::kBattleLockKeyFmt + " " + battle_settlement::kStagedSettlementMembersKeyFmt +
+             " %b %llu %llu %llu %u")
                 .c_str(),
-            battle_settlement::kSetPendingSettlementScript, playerId, playerId,
-            payload.data(), payload.size(), battleId, enqueuedAtMs, playerId);
+            battle_settlement::kStagePendingSettlementOnceScript, playerId, playerId, playerId, battleId,
+            payload->second.data(), payload->second.size(), battleId, enqueuedAtMs, playerId,
+            static_cast<unsigned>(battle_settlement::kStagedSettlementMembersTtlSec));
         if (rc != REDIS_OK)
         {
-            // 命令没发出去时回调永远不会被调:就地计一次失败,本轮仍按到齐收口。
+            // 命令没发出去时回调永远不会被调:就地计一次未落定,本轮仍按到齐收口。
             LOG_ERROR << "metric=battle_personal_settlement_stage_failed battle_id=" << battleId
                       << " player_id=" << playerId << " rc=" << rc << ",pending write not sent;result publish waits for retry";
-            onReply(false);
+            onReply(playerId, false);
         }
     }
 }
 
-void BattleRoomManager::OnPersonalSettlementsStaged(const uint64_t battleId, const uint64_t attempt, const bool allStored)
+void BattleRoomManager::OnPersonalSettlementsStaged(const uint64_t battleId, const uint64_t attempt,
+                                                    std::set<uint64_t> settledMembers)
 {
     auto *room = FindRoom(battleId);
     if (room == nullptr || !room->resultCommit) return;
-    if (room->resultCommit->FinishStaging(attempt, allStored, turnbattle::ResultCommit::Clock::now()))
+    auto &commit = *room->resultCommit;
+    if (commit.FinishStaging(attempt, std::move(settledMembers), turnbattle::ResultCommit::Clock::now()))
     {
         // 发送交给下一次 pump(50ms 定时器仍在转:房间还在 resultRooms_ 里)。
         LOG_INFO << "battle personal settlements durable before result publish: battle_id=" << battleId
                  << " players=" << room->personalSettlementPayloads.size();
+        // 落库标记只在落库轮次之间有用(kStagedSettlementMembersKeyFmt 的说明),此后不会再有下一轮。
+        // fire-and-forget:删不掉就随 TTL 过期。
+        if (RedisReady())
+        {
+            tlsRedis.GetZoneRedis()->command([](hiredis::Hiredis *, redisReply *) {},
+                                             (std::string("DEL ") + battle_settlement::kStagedSettlementMembersKeyFmt).c_str(),
+                                             battleId);
+        }
+        return;
+    }
+    // 轮次用尽(审计 r2-battle#4):不再开新轮,也不放弃落库直接发结果(那会退回 social-match-battle#2)。
+    // 终局保持未知:房间移出 resultRooms_ 不再 pump,但留在房间表里 —— 结果不发、DestroyBattle 不作废、
+    // 新行动照旧拒绝,直到停机 AbortAllRooms(说明见头文件 AbortAllRooms)。只在移出那一刻响一次。
+    if (commit.StagingExhausted() && resultRooms_.erase(battleId) != 0)
+    {
+        LOG_ERROR << "metric=battle_personal_settlement_staging_exhausted battle_id=" << battleId
+                  << " rounds=" << commit.StagingFailures()
+                  << " members=" << room->personalSettlementPayloads.size()
+                  << " unstaged=" << commit.UnstagedMembers().size()
+                  << ";terminal remains unknown,result not published,room retained until node shutdown";
+        for (const auto playerId : commit.UnstagedMembers())
+        {
+            LOG_ERROR << "battle personal settlement not staged after staging exhausted: battle_id=" << battleId
+                      << " player_id=" << playerId
+                      << ",pending write never confirmed(it exists only if a round with a lost reply had executed)";
+        }
     }
 }
 
@@ -1728,6 +1795,8 @@ void BattleRoomManager::AbortAllRooms(const std::string &reason)
         // 不结算:战斗作废,scene reaper 按 InBattleComp.deadline_ms 解冻(§3.2)。
         // 等结果回执的房间例外:个人结算在结果发出之前已写进 pending,这里不动它。框架随后 flush producer,
         // 结果可能到达 broker;无论到没到,scene 都会在登录钩子 / 冻结到期补读时应用(审计 social-match-battle#2)。
+        // 还在落库或落库轮次已用尽(r2-battle#4)的房间同样清掉:结果从未发出,已落定成员的 pending 照常应用,
+        // 没落定的成员按作废处理(同局不对称,r2-battle#2 残余)。本局落库标记随 TTL 过期。
         // 停机作废无胜负:观众收 ABORTED + ONGOING
         if (!room->resultCommit)
             NotifySpectateEndAndClose(*room, ::SPECTATE_END_BATTLE_ABORTED, ::BATTLE_OUTCOME_ONGOING);

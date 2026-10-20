@@ -162,15 +162,40 @@ func TestMarkerReleasesEpoch(t *testing.T) {
 	assert.False(t, markerReleasesEpoch("0:1", 0), "epoch 0 不认任何标记")
 }
 
-func TestParseLeaveReleaseWait(t *testing.T) {
-	scope, firstMs, ok := parseLeaveReleaseWait("3:10:11:42:1700000000123")
-	require.True(t, ok)
-	assert.Equal(t, "3:10:11:42", scope)
-	assert.Equal(t, int64(1700000000123), firstMs)
-	for _, bad := range []string{"", "nocolon", "3:10:11:42:", "3:10:11:42:x", "3:10:11:42:0", ":5"} {
-		_, _, ok := parseLeaveReleaseWait(bad)
-		assert.False(t, ok, "应判非法: %q", bad)
-	}
+// leaveReleaseRedisNow 是用例给 miniredis 定的服务端时钟(脚本里的 TIME)。等待计时只读 Redis 的时钟(第二轮审计 r2-sm#2),
+// 定死它之后计时类用例不依赖真实墙钟。
+var leaveReleaseRedisNow = time.UnixMilli(1_790_000_000_000)
+
+// 等待计时的起点与"已等多久"都取 Redis 服务端时钟(r2-sm#2):第一次登记写 Redis 的 now,之后按 Redis 的 now 求差;
+// 已登记的不重写起点;Redis 时钟回拨钳在 0;scope 变了或值坏了重新登记。
+func TestNoteLeaveReleaseWait_UsesRedisClock(t *testing.T) {
+	sc, mr := newTestSvcCtx(t, "")
+	const playerID = uint64(8315)
+	key := leaveReleaseWaitKey(playerID)
+	const scope = "3:10:11:42"
+	budget := 60 * time.Second
+	t0 := leaveReleaseRedisNow
+	startedAt := func(at time.Time, s string) string { return s + ":" + strconv.FormatInt(at.UnixMilli(), 10) }
+
+	mr.SetTime(t0)
+	assert.Equal(t, time.Duration(0), noteLeaveReleaseWait(sc, playerID, scope, budget), "第一次见到:登记并返回 0")
+	assert.Equal(t, startedAt(t0, scope), leaveCasValue(t, mr, key), "起点写 Redis 的时钟")
+	assert.Equal(t, budget+leaveReleaseWaitKeyMargin, mr.TTL(key))
+
+	mr.SetTime(t0.Add(30*time.Second + 250*time.Millisecond))
+	assert.Equal(t, 30*time.Second+250*time.Millisecond, noteLeaveReleaseWait(sc, playerID, scope, budget))
+	assert.Equal(t, startedAt(t0, scope), leaveCasValue(t, mr, key), "已登记的不重写起点")
+
+	mr.SetTime(t0.Add(-time.Minute))
+	assert.Equal(t, time.Duration(0), noteLeaveReleaseWait(sc, playerID, scope, budget), "Redis 时钟回拨:钳 0,只会多等")
+
+	mr.SetTime(t0.Add(time.Minute))
+	assert.Equal(t, time.Duration(0), noteLeaveReleaseWait(sc, playerID, "4:10:11:42", budget), "scope 变了:重新登记")
+	assert.Equal(t, startedAt(t0.Add(time.Minute), "4:10:11:42"), leaveCasValue(t, mr, key))
+
+	require.NoError(t, mr.Set(key, "garbage"))
+	assert.Equal(t, time.Duration(0), noteLeaveReleaseWait(sc, playerID, scope, budget), "值坏了:按刚开始等重新登记")
+	assert.Equal(t, startedAt(t0.Add(time.Minute), scope), leaveCasValue(t, mr, key))
 }
 
 // 核心回归(审计 §2.1):持有节点还没释放 → location 原样保留、人数不动、回 FailedPrecondition,并请持有节点按会话结束释放,
@@ -444,7 +469,8 @@ func TestLeaveScene_WaitBudgetExceededForcesDelete(t *testing.T) {
 	)
 	leaveReleaseSeed(t, mr, playerID, sceneID, "10", 3)
 	loc := &scene_manager.PlayerLocation{SessionId: 11, LoginGeneration: identGenA, NodeId: "10"}
-	firstMs := time.Now().Add(-61 * time.Second).UnixMilli()
+	mr.SetTime(leaveReleaseRedisNow)
+	firstMs := leaveReleaseRedisNow.Add(-61 * time.Second).UnixMilli()
 	require.NoError(t, mr.Set(leaveReleaseWaitKey(playerID),
 		leaveReleaseWaitScope(3, loc)+":"+strconv.FormatInt(firstMs, 10)))
 	before := leaveReleaseCount(t, "forced")
@@ -468,12 +494,173 @@ func TestLeaveScene_WaitTimerDoesNotCarryAcrossLocations(t *testing.T) {
 	)
 	raw := leaveReleaseSeed(t, mr, playerID, sceneID, "10", 3)
 	oldScope := leaveReleaseWaitScope(2, &scene_manager.PlayerLocation{SessionId: 11, LoginGeneration: identGenA, NodeId: "10"})
+	mr.SetTime(leaveReleaseRedisNow)
 	require.NoError(t, mr.Set(leaveReleaseWaitKey(playerID),
-		oldScope+":"+strconv.FormatInt(time.Now().Add(-time.Hour).UnixMilli(), 10)))
+		oldScope+":"+strconv.FormatInt(leaveReleaseRedisNow.Add(-time.Hour).UnixMilli(), 10)))
 
 	_, err := NewLeaveSceneLogic(context.Background(), sc).LeaveScene(leaveReleaseRequest(playerID, sceneID))
 	requireHolderReleasePending(t, err)
 	assert.Equal(t, raw, leaveCasValue(t, mr, getPlayerLocationKey(playerID)), "别的 location 留下的计时不得触发 forced")
+}
+
+// 第二轮审计 r2-sm#2:等待计时以前用各 scene_manager 副本自己的墙钟。时钟慢的副本写下起点,时钟快的副本来算,刚等了几十秒
+// 就被算成"等满"、forced 删 location。现在起点与差值都取 Redis 的时钟。本用例把 Redis 时钟定在本进程墙钟 1 小时之前
+// (等价于"写起点的副本比本副本慢 1 小时"):Redis 上只过了 30s,就只算 30s。旧实现拿 time.Now() 去减,会算出 1h30s 并 forced。
+func TestLeaveScene_WaitTimerUsesRedisClockNotReplicaClock(t *testing.T) {
+	sc, mr := newTestSvcCtx(t, "")
+	sc.Config.LeaveSceneHolderReleaseWaitSeconds = 60
+	calls := installLeaveReleaseRecorder(t)
+	const (
+		playerID = uint64(8316)
+		sceneID  = uint64(9416)
+	)
+	raw := leaveReleaseSeed(t, mr, playerID, sceneID, "10", 3)
+	redisNow := time.Now().Add(-time.Hour).Truncate(time.Millisecond)
+	mr.SetTime(redisNow)
+	loc := &scene_manager.PlayerLocation{SessionId: 11, LoginGeneration: identGenA, NodeId: "10"}
+	require.NoError(t, mr.Set(leaveReleaseWaitKey(playerID),
+		leaveReleaseWaitScope(3, loc)+":"+strconv.FormatInt(redisNow.Add(-30*time.Second).UnixMilli(), 10)))
+	forcedBefore := leaveReleaseCount(t, "forced")
+
+	_, err := NewLeaveSceneLogic(context.Background(), sc).LeaveScene(leaveReleaseRequest(playerID, sceneID))
+	requireHolderReleasePending(t, err)
+	assert.Equal(t, raw, leaveCasValue(t, mr, getPlayerLocationKey(playerID)), "按 Redis 时钟只等了 30s,不得 forced")
+	assert.Equal(t, forcedBefore, leaveReleaseCount(t, "forced"))
+	assert.Len(t, calls(), 1, "仍在等:照样请持有节点释放")
+
+	// Redis 时钟走过上限之后才 forced。
+	mr.SetTime(redisNow.Add(31 * time.Second))
+	_, err = NewLeaveSceneLogic(context.Background(), sc).LeaveScene(leaveReleaseRequest(playerID, sceneID))
+	require.NoError(t, err)
+	assert.False(t, mr.Exists(getPlayerLocationKey(playerID)))
+	assert.Equal(t, forcedBefore+1, leaveReleaseCount(t, "forced"))
+}
+
+// 第二轮审计 r2-sm#3:zone 负载集的键丢了(过期 / 淘汰 / 误删),持有节点其实活着、仍在 etcd 注册表里。旧实现把
+// playerLocationOwnerGone(ZCARD == 0、ZSCORE 不在、没有 death_at)当成"整个 zone 已死",按 owner_dead 立刻删 location;
+// 下一次进场按首次落点铸新 epoch,回到 §2.1 的回档路径。持有节点已死只认 etcd 注册表里的正面消失。
+func TestLeaveScene_MissingLoadSetIsNotOwnerDead(t *testing.T) {
+	clearKnownNodesForTest()
+	t.Cleanup(clearKnownNodesForTest)
+	sc, mr := newTestSvcCtx(t, "")
+	calls := installLeaveReleaseRecorder(t)
+	const (
+		playerID = uint64(8317)
+		sceneID  = uint64(9417)
+	)
+	raw := leaveReleaseSeed(t, mr, playerID, sceneID, "10", 3)
+	// 持有节点的租约还活着(etcd 注册表已同步且有它),但负载集整键丢失。
+	markKnownNodesSyncedForTest(t)
+	registerKnownNodeForTest(t, "SceneNodeService.rpc/leave-release-10", testZoneId, "10")
+	mr.Del(nodeLoadKey(testZoneId))
+	ownerDeadBefore := leaveReleaseCount(t, "owner_dead")
+
+	_, err := NewLeaveSceneLogic(context.Background(), sc).LeaveScene(leaveReleaseRequest(playerID, sceneID))
+	requireHolderReleasePending(t, err)
+	assert.Equal(t, raw, leaveCasValue(t, mr, getPlayerLocationKey(playerID)), "持有节点仍在注册表里:不得按已死删除")
+	assert.Equal(t, "2", leaveCasValue(t, mr, fmt.Sprintf(InstancePlayerCountKey, sceneID)))
+	assert.Equal(t, ownerDeadBefore, leaveReleaseCount(t, "owner_dead"))
+	assert.Len(t, calls(), 1, "按未释放处理,请持有节点释放")
+}
+
+// r2-sm#3 的另一面:正面死亡证据照样立刻删,真正下线的 zone(合服后源区)不会被拖到等待上限。etcd 注册表已同步且没有
+// 节点 "10"、负载集里也没有它、没有 death_at → owner_dead。
+func TestLeaveScene_OwnerGoneFromRegistryDeletes(t *testing.T) {
+	clearKnownNodesForTest()
+	t.Cleanup(clearKnownNodesForTest)
+	sc, mr := newTestSvcCtx(t, "")
+	calls := installLeaveReleaseRecorder(t)
+	const (
+		playerID = uint64(8318)
+		sceneID  = uint64(9418)
+	)
+	leaveReleaseSeed(t, mr, playerID, sceneID, "10", 3)
+	markKnownNodesSyncedForTest(t)
+	mr.Del(nodeLoadKey(testZoneId))
+	before := leaveReleaseCount(t, "owner_dead")
+
+	_, err := NewLeaveSceneLogic(context.Background(), sc).LeaveScene(leaveReleaseRequest(playerID, sceneID))
+	require.NoError(t, err)
+	assert.False(t, mr.Exists(getPlayerLocationKey(playerID)))
+	assert.Equal(t, "1", leaveCasValue(t, mr, fmt.Sprintf(InstancePlayerCountKey, sceneID)))
+	assert.Empty(t, calls())
+	assert.Equal(t, before+1, leaveReleaseCount(t, "owner_dead"))
+}
+
+// 第二轮审计 r2-sm#1:释放判定计数(scene_manager_leave_holder_release_total)与 forced 的 ERROR 只记真正删掉的那一次。
+// 判定之后、删除 Lua 之前 location 被并发改写(EnterScene 写了新落点 → superseded)或已被别的调用删掉(already_gone),
+// 这一次什么都没删,不得计数。旧实现在删除之前就计,SceneManagerLeaveReleaseForced 会在没有任何 fail-open 删除时误报。
+func TestLeaveScene_ReleaseVerdictCountedOnlyWhenDeleted(t *testing.T) {
+	// 并发 EnterScene 写下的新落点:节点 20、owner_epoch 4、更新的登录身份。
+	newerRaw := func(sceneID uint64) string {
+		return leaveCasLocationRaw(t, &scene_manager.PlayerLocation{
+			SceneId: sceneID, NodeId: "20", ZoneId: testZoneId, OwnerEpoch: 4, UpdateTime: 200,
+			SessionId: 22, LoginGeneration: identGenB,
+		})
+	}
+	cases := []struct {
+		name     string
+		playerID uint64
+		sceneID  uint64
+		verdict  string
+		// arrange 摆出判定所需的证据 / 计时;race 在删除 Lua 执行前改动 location。
+		arrange func(t *testing.T, mr *miniredis.Miniredis, playerID uint64)
+		race    func(mr *miniredis.Miniredis, locKey string, sceneID uint64)
+		// wantLoc 是用例结束时 location 应有的原文("" = 不存在)。
+		wantLoc func(sceneID uint64) string
+	}{
+		{
+			name: "forced then superseded", playerID: 8319, sceneID: 9419, verdict: "forced",
+			arrange: func(t *testing.T, mr *miniredis.Miniredis, playerID uint64) {
+				mr.SetTime(leaveReleaseRedisNow)
+				loc := &scene_manager.PlayerLocation{SessionId: 11, LoginGeneration: identGenA, NodeId: "10"}
+				require.NoError(t, mr.Set(leaveReleaseWaitKey(playerID), leaveReleaseWaitScope(3, loc)+":"+
+					strconv.FormatInt(leaveReleaseRedisNow.Add(-61*time.Second).UnixMilli(), 10)))
+			},
+			race: func(mr *miniredis.Miniredis, locKey string, sceneID uint64) {
+				_ = mr.Set(locKey, newerRaw(sceneID))
+			},
+			wantLoc: newerRaw,
+		},
+		{
+			name: "released then already gone", playerID: 8320, sceneID: 9420, verdict: "released",
+			arrange: func(t *testing.T, mr *miniredis.Miniredis, playerID uint64) {
+				require.NoError(t, mr.Set(ownerepoch.HandoffKey(playerID), "3:1700000000000"))
+			},
+			race:    func(mr *miniredis.Miniredis, locKey string, _ uint64) { mr.Del(locKey) },
+			wantLoc: func(uint64) string { return "" },
+		},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			sc, mr := newTestSvcCtx(t, "")
+			sc.Config.LeaveSceneHolderReleaseWaitSeconds = 60
+			installLeaveReleaseRecorder(t)
+			leaveReleaseSeed(t, mr, tc.playerID, tc.sceneID, "10", 3)
+			tc.arrange(t, mr, tc.playerID)
+			locKey := getPlayerLocationKey(tc.playerID)
+
+			// 钩子只在第一次碰到 location 键的 EVAL / EVALSHA(即删除 Lua)时改动 location,做法同
+			// TestLeaveScene_MarkerWithdrawnBeforeDeleteKeepsLocation。
+			var fired atomic.Bool
+			mr.Server().SetPreHook(func(_ *server.Peer, cmd string, args ...string) bool {
+				if (cmd != "EVAL" && cmd != "EVALSHA") || !slices.Contains(args, locKey) || !fired.CompareAndSwap(false, true) {
+					return false
+				}
+				tc.race(mr, locKey, tc.sceneID)
+				return false
+			})
+			t.Cleanup(func() { mr.Server().SetPreHook(nil) })
+			before := leaveReleaseCount(t, tc.verdict)
+
+			_, err := NewLeaveSceneLogic(context.Background(), sc).LeaveScene(leaveReleaseRequest(tc.playerID, tc.sceneID))
+			require.True(t, fired.Load(), "钩子没触发,用例空转")
+			require.NoError(t, err, "没删成也不是故障:location 已被别人处理")
+			assert.Equal(t, tc.wantLoc(tc.sceneID), leaveCasValue(t, mr, locKey))
+			assert.Equal(t, "2", leaveCasValue(t, mr, fmt.Sprintf(InstancePlayerCountKey, tc.sceneID)), "这一次没删,不扣人数")
+			assert.Equal(t, before, leaveReleaseCount(t, tc.verdict), "这一次没删,不计 %s", tc.verdict)
+		})
+	}
 }
 
 // 审计 §2.1「LeaveGame 后快速重登」:location 因持有者未释放而保留期间,被派到别的节点的登录走换手门(18),而不是按首次落点

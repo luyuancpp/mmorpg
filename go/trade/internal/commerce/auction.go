@@ -69,10 +69,13 @@ func (e *Engine) acceptBid(ctx context.Context, bidID uint64) error {
 			return err
 		}
 		eligible := lw.Stage == "lot_open" && !lw.CancelRequested && lot.ExpiresMs > now && bid.UnitPrice >= lot.UnitPrice && (lw.HighestBid == 0 || lw.MinimumIncrement <= math.MaxInt64-lw.HighestBid && bid.UnitPrice >= lw.HighestBid+lw.MinimumIncrement)
+		// 截止判定用库时钟(多副本同一把尺);updated_ms 用引擎时钟,与其它 Save 一致 —— 它是 Due 的调度键,
+		// Due 按引擎时钟取到期行,库时钟领先时用它写 updated_ms 会让刚改好的行晚到期(2026-10-20)。
+		saveMs := e.now()
 		if !eligible {
 			bw.Stage = "bid_refund"
 			bid.Status = CancelPending
-			return e.Repo.Save(ctx, tx, bid, bw, now)
+			return e.Repo.Save(ctx, tx, bid, bw, saveMs)
 		}
 		if lw.WinningBidId != 0 {
 			old, err := e.Repo.Lock(ctx, tx, lw.WinningBidId)
@@ -88,7 +91,7 @@ func (e *Engine) acceptBid(ctx context.Context, bidID uint64) error {
 			}
 			ow.Stage = "bid_refund"
 			old.Status = CancelPending
-			if err := e.Repo.Save(ctx, tx, old, ow, now); err != nil {
+			if err := e.Repo.Save(ctx, tx, old, ow, saveMs); err != nil {
 				return err
 			}
 		}
@@ -98,9 +101,9 @@ func (e *Engine) acceptBid(ctx context.Context, bidID uint64) error {
 		lw.BuyerAssets = bw.SellerAssets
 		lot.BuyerPlayerId = bid.SellerPlayerId
 		bw.Stage = "bid_held"
-		if err := e.Repo.Save(ctx, tx, lot, lw, now); err != nil {
+		if err := e.Repo.Save(ctx, tx, lot, lw, saveMs); err != nil {
 			return err
 		}
-		return e.Repo.Save(ctx, tx, bid, bw, now)
+		return e.Repo.Save(ctx, tx, bid, bw, saveMs)
 	})
 }

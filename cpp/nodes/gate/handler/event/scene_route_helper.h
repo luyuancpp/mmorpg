@@ -136,9 +136,11 @@ bool ApplyRoute(SessionInfo& session, const uint64_t targetSceneId, const SceneN
 // 之前的旧路由补发(旧路由的 epoch 已过时,补发出去会让旧节点按旧代复用 / 载入实体);等新路由到达再一起转发。
 // 保留 playerId / loginGeneration / sessionVersion:下一次 BindSession 按既有规则处理(换角取新值、同角色取 max)。
 // 欠账的索引(scene_entry_dispatch.cpp 的 tlsSessionsWithPendingEntry)由调用方摘;漏摘也无害,扫描找不到欠账会自己删索引。
-// 同时置位 sceneRouteResetPending 并记下此刻的登录代次:LeaveGame 之前那条登录链发出的路由可能晚于本次重置才到
-// (已在 Kafka 里的跨节点换图、路由模式下仍在 lane 里的 EnterGame),它们由 IsRouteFromBeforeLeaveGame 认出、在路由入口丢弃,
-// 不能重新填上 lastSceneRoute。
+// 同时置位 sceneRouteResetPending、记下被离开的那条登录链的角色与代次:LeaveGame 之前那条登录链发出的 Bind / 路由可能晚于
+// 本次重置才到(已在 Kafka 里的跨节点换图、login 后台链还没发完的 Bind、路由模式下仍在 lane 里的 EnterGame),它们由
+// IsRouteFromBeforeLeaveGame / IsBindFromBeforeLeaveGame 认出、在入口丢弃,不能重新填上 lastSceneRoute。
+// 上一次重置还没被下一次进场消化(选角界面重复点 LeaveGame,或重登还没进场又回选角)且仍是同一角色时,旧链身份只抬高不覆盖:
+// 丢弃旧链事件时抬上去的代次(NoteDroppedFromBeforeLeaveGame)不能被会话上可能更低的代次冲掉。
 inline void ResetSceneRoute(SessionInfo& session)
 {
     session.SetNodeEntity(common::base::SceneNodeService, entt::null);
@@ -149,19 +151,55 @@ inline void ResetSceneRoute(SessionInfo& session)
     session.homeZoneId = 0;
     session.ownerEpoch = 0;
     session.forwardedOwnerEpoch = 0;
+    const bool samePendingReset = session.sceneRouteResetPending &&
+                                  (session.playerId == kInvalidGuid || session.playerId == session.playerIdAtReset);
+    if (!samePendingReset)
+    {
+        session.playerIdAtReset = session.playerId;
+        session.loginGenerationAtReset = 0;
+    }
+    session.loginGenerationAtReset = (std::max)(session.loginGenerationAtReset, session.loginGeneration);
     session.sceneRouteResetPending = true;
-    session.loginGenerationAtReset = session.loginGeneration;
+    session.enterGameSentAfterLeave = false;
+}
+
+// 客户端在这条连接上发出 EnterGame(gate 收包、转发给 login 之前,gate_scene_entry::OnClientEnterGame)。LeaveGame 重置之后,
+// 只有这之后 login 才可能为本连接发出新一次登录的 Bind 与路由(login 只在处理 EnterGame 时发 Bind,
+// entergamelogic.go SendBindSessionToGate);在这之前到达的一律属于 LeaveGame 之前那条登录链。
+// 按收包顺序置位(与 LeaveGame 的重置同一个点),路由模式下 lane 里排在 LeaveGame 之前的 EnterGame 不会把它置上。
+inline void NoteEnterGameRequested(SessionInfo& session)
+{
+    session.enterGameSentAfterLeave = true;
+}
+
+// 代次 gen(事件带的玩家 playerId,0 = 没带)在 LeaveGame 重置之后是不是已被取代:属于被离开的那条登录链(角色是
+// playerIdAtReset、代次不大于 loginGenerationAtReset),或比会话已见过的本角色更新的登录旧。代次同一角色单调
+// (scene-enter-session-fence.md G1),不同角色的代次互不可比,所以两条都先核对角色。
+inline bool IsLoginGenerationSupersededSinceLeave(const SessionInfo& session, const Guid playerId, const uint64_t gen)
+{
+    const bool ofLeftChainPlayer =
+        session.playerIdAtReset != kInvalidGuid && (playerId == 0 || playerId == session.playerIdAtReset);
+    if (ofLeftChainPlayer && gen <= session.loginGenerationAtReset)
+    {
+        return true;
+    }
+    const bool ofSessionPlayer = session.playerId != kInvalidGuid && (playerId == 0 || playerId == session.playerId);
+    return ofSessionPlayer && gen < session.loginGeneration;
 }
 
 // LeaveGame 重置之后到达的路由是不是属于重置之前那条登录链(location-release-binding.md §3.5 R5)。是 → 调用方在写任何会话
-// 字段之前丢弃它(RoutePlayerEventHandler),不调 ApplyRouteIdentity、不进 OnRouteDecision。不丢的话,它虽然不会被转发
-// (会话已没有场景、也没有登录类型),却会重新填上 lastSceneRoute 与 ownerEpoch,下一次 BindSession 就按这条旧路由、带着旧
-// epoch 补发,让一个已被释放(甚至已发过凭证)的旧节点按旧代重新载入玩家。
-// 判据只看登录代次:LeaveGame 之后的下一次登录在 login 侧铸出更大的代次(scene-enter-session-fence.md G1),它的路由带的是
-// 新代次;重置之前那条链的路由与 scene 自发的路由带旧代次或 0。只在重置之后、下一次进场之前生效;属于别的角色的路由不在这里
-// 判(AttemptPendingSceneEntry 的玩家围栏与 EntryForLateLoginBinding 的角色核对已经挡住它们)。
+// 字段之前丢弃它(RoutePlayerEventHandler),不调 ApplyRouteIdentity、不进 OnRouteDecision,并调 NoteDroppedFromBeforeLeaveGame。
+// 不丢的话,它虽然不会被转发(会话已没有场景、也没有登录类型),却会重新填上 lastSceneRoute 与 ownerEpoch,下一次 BindSession
+// 就按这条旧路由、带着旧 epoch 补发,让一个已被释放(甚至已发过凭证)的旧节点按旧代重新载入玩家。
+//   - 重置之后客户端还没发过 EnterGame:一律是旧链(见 NoteEnterGameRequested)。只靠代次判会漏掉"旧链的 Bind 晚于 LeaveGame
+//     到达":它的代次大于重置时记下的值,会被当成新登录收下并清掉重置标记,随后旧链的路由照常转发到旧节点(第二轮审计 r2-gate#1)。
+//   - 之后:代次为 0(scene 自发的换图 / 旧版)是旧链 —— 会话上没有任何角色在游戏里,它没有合法用途;否则按
+//     IsLoginGenerationSupersededSinceLeave。属于别的角色、代次不可比的路由放行(AttemptPendingSceneEntry 的玩家围栏与
+//     EntryForLateLoginBinding 的角色核对挡住它们)。
 // 这是对 fence §4"gate 不据代次丢路由"的有意例外:那条规则防的是"重登失败后仍在游戏里的换图路由被吞掉",而 LeaveGame 之后
 // 玩家已经不在游戏里,旧链的路由没有任何合法用途。
+// 残余:旧链的 Bind 与路由**都**晚于客户端下一次 EnterGame 到达、且早于新登录的任何 Bind / 路由时认不出(代次比任何已知值都大)。
+// 要等 Kafka 消费延迟超过"LeaveGame 回包 → 玩家再点进入"的整个往返,见 location-release-binding.md §3.5。
 inline bool IsRouteFromBeforeLeaveGame(const SessionInfo& session, const Guid routePlayerId,
                                        const uint64_t routeLoginGeneration)
 {
@@ -169,11 +207,54 @@ inline bool IsRouteFromBeforeLeaveGame(const SessionInfo& session, const Guid ro
     {
         return false;
     }
-    if (routePlayerId != 0 && session.playerId != kInvalidGuid && routePlayerId != session.playerId)
+    if (!session.enterGameSentAfterLeave)
+    {
+        return true;
+    }
+    return routeLoginGeneration == 0 ||
+           IsLoginGenerationSupersededSinceLeave(session, routePlayerId, routeLoginGeneration);
+}
+
+// LeaveGame 重置之后到达的 BindSession 是不是属于重置之前那条登录链。是 → 调用方(BindSessionEventHandler)在 ApplyLoginBinding
+// 之前丢弃它,并调 NoteDroppedFromBeforeLeaveGame。不丢的话它会把登录类型挂回会话、把会话代次抬到旧链的值并(代次大于重置时
+// 的值时)保留重置标记,旧链随后到达的路由就被当成新登录的路由带着登录类型转发到旧节点(第二轮审计 r2-gate#1)。
+// 与路由同一判据,只有两处不同:不带代次(0)的是旧版 login,分不出新旧,交给 ApplyLoginBinding 退回常规处理;Bind 总带玩家。
+inline bool IsBindFromBeforeLeaveGame(const SessionInfo& session, const Guid playerId, const uint64_t loginGeneration)
+{
+    if (!session.sceneRouteResetPending)
     {
         return false;
     }
-    return routeLoginGeneration == 0 || routeLoginGeneration <= session.loginGenerationAtReset;
+    if (!session.enterGameSentAfterLeave)
+    {
+        return true;
+    }
+    return loginGeneration != 0 && IsLoginGenerationSupersededSinceLeave(session, playerId, loginGeneration);
+}
+
+// 丢弃了一条旧链的 Bind / 路由之后调用:把它的代次记进被离开的那条登录链,让同一条旧链在客户端再次 EnterGame 之后才到的兄弟事件
+// (Bind 与路由是两条独立的 Kafka 事件,路由要等 scene_manager 处理完才发,常常更晚)仍被代次认出。
+// 只记能确定角色的:被离开的链角色未知(会话重置时还没绑角色)时取这条事件的角色;已知时只收同一角色的(0 = 没带玩家,按同一角色)。
+// 代次只抬不降。安全性:这条事件在客户端再次 EnterGame 之前就已被 login 发出,它的代次必然小于下一次登录铸出的代次(G1)。
+inline void NoteDroppedFromBeforeLeaveGame(SessionInfo& session, const Guid playerId, const uint64_t loginGeneration)
+{
+    if (loginGeneration == 0)
+    {
+        return;
+    }
+    if (session.playerIdAtReset == kInvalidGuid)
+    {
+        if (playerId == 0 || playerId == kInvalidGuid)
+        {
+            return;
+        }
+        session.playerIdAtReset = playerId;
+    }
+    else if (playerId != 0 && playerId != session.playerIdAtReset)
+    {
+        return;
+    }
+    session.loginGenerationAtReset = (std::max)(session.loginGenerationAtReset, loginGeneration);
 }
 
 // ---------------------------------------------------------------------------

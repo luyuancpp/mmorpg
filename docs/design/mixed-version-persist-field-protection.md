@@ -1,6 +1,6 @@
 # 新旧版本混跑时的玩家持久字段保护
 
-> **状态**：设计稿 v0.4（2026-10-19，Claude）。经两轮只读对抗评审：v0.1 被推翻三处核心做法，v0.2 又发现一个必现的误报（S-A）以及若干缺口，v0.3 已按两轮结论修订。负责人 2026-10-19 通过 §13 第 1–5 条，第 1 批已落码。v0.4 回写第 1 批实施中的调整（§15）。**第 1 批未编译、未测试，待 Codex 验证**（AGENTS.md §10.1）；第 2 批及以后未开工。
+> **状态**：设计稿 v0.6（2026-10-19，Claude）。经两轮只读对抗评审：v0.1 被推翻三处核心做法，v0.2 又发现一个必现的误报（S-A）以及若干缺口，v0.3 已按两轮结论修订。负责人 2026-10-19 通过 §13 第 1–5 条。v0.4 回写第 1 批实施中的调整，v0.5 回写第 3a 批的调整，v0.6 把 C3 的"只比第一次写入"改为写方令牌并随第 3b / 4 批落码（§5.2、§15）。各批实施状态见 §9 表前的「实施状态」。
 > **起因**：2026-10-18 核对灰度 / 不停服 / 金丝雀时发现，新旧版本混跑会丢玩家持久字段。负责人 2026-10-19 要求先补三件事：①存盘保留不认识的字段；②Redis 父快照记录写方版本并校验；③go/db 只写改动列。先出设计。
 > **范围**：玩家数据链，即 C++ scene 内存 → Redis 父快照 `PlayerAllData:{id}` → Kafka `db_task_zone_*` → go/db → MySQL 两张玩家表；外加 login 冷加载、回档快照、离线工具这些旁路。guild、mail、trade 各自的库表，以及客户端契约，不在本文范围内（§12）。
 > **证据口径**：[C] 表示对照 2026-10-19 工作区代码读过；[I] 表示推断。相关文件正被其他会话修改，行号会漂移，所以正文以函数名为主。
@@ -19,7 +19,7 @@
      - 一个通用的**往返一致性测试**机械地守住这条规则。
      - 有一类语义耦合，"跟着对象走"也挡不住：合堆、等价判定、逻辑重置、跨实体引用。对这类情况，旧版代码对"带着未知字段的对象"拒绝执行这些操作（§4.4）。
    - **机制二 · 覆盖世代校验**：
-     - Redis 严格提交屏障**只在同一份数据的第一次写入时**比较"加载时世代 ≥ 已记录世代"，重放请求跳过比较；hash 只升不降。
+     - Redis 严格提交屏障**只在上一次屏障写入不是本实体写的时候**（hash 里的写方令牌与本实体不同）比较"加载时世代 ≥ 已记录世代"，同版本重放跳过比较；hash 只升不降（§5.2，v0.6）。
      - login 加载时做同样的门禁。
      - 违反就判定"链路上有人截断过数据"，fail-closed。
    - **机制三 · go/db 不写写方不认识的列**：
@@ -239,8 +239,8 @@ v0.1 的做法是在实体上保存加载原件，存盘时按身份键把原件
 
 | 操作 | 现状 [C] | 守卫 |
 |---|---|---|
-| 合堆、等价判定 | `ItemStore::CanStack` 只判断 `has_equip`；`ApplyStackFill` / `MergePartialStacks` 按配置合堆。`ItemEntry` 的 TODO 里已规划 bound_state、expire_at | 如果任一方 `ItemComp` 带有未知字段，`CanStack` 返回 false。旧版不会把带新属性（比如绑定、限时）的物品并进普通堆 |
-| 合并 | `AttachDebt` 会把新欠款并进已有欠款 | 已有欠款带未知字段时，`AttachDebt` 按 fail-closed 返回失败（GM 操作返回错误），不做合并 |
+| 合堆、等价判定 | `ItemStore::CanStack` 只判断 `has_equip`；`ApplyStackFill` / `MergePartialStacks` 按配置合堆。`ItemEntry` 的 TODO 里已规划 bound_state、expire_at | 如果任一方 `ItemComp` 带有未知字段，`CanStack` 返回 false。旧版不会把带新属性（比如绑定、限时）的物品并进普通堆。判定只有一份（`ItemStore::IsIndependentInstance`，公开）：包内既有堆的空余估算与整理、传入物品一侧 `Bag::AddItems` 的规划分流、宝石拆卸的静默预检（直接调 `CanStack`）都用它，预检、规划与提交不分叉（后两处为第 3a′ 批） |
+| 合并 | `AttachDebt` 会把新欠款并进已有欠款 | 已有欠款带未知字段时，`AttachDebt` 按 fail-closed 返回失败，不做合并。这是版本错位，不是确定性拒绝：调用方必须延后，等玩家落到新版本节点再挂，不得记成终态拒绝。调用方用只读谓词 `CurrencySystem::DebtCarriesUnknownFields` 先判，不拿通用返回码反推；收件箱执行器命中即回 `kDefer`（第 3a′ 批） |
 | 逻辑重置 | `ResetAssetOpStreamForEpoch` 逐字段清空 | 改为 `Clear()` 后重设（§4.2 L7） |
 
 跨实体引用（比如新列按 pet_id 引用宠物，而旧代码能按同一个 pet_id 恢复宠物）没有通用守卫。归入 R5：只能引用永不复用的实例 ID，否则按不可携带处理。
@@ -257,43 +257,58 @@ v0.1 的做法是在实体上保存加载原件，存盘时按身份键把原件
 
 | 点 | 位置 | 条件 | 动作 | 观测 |
 |---|---|---|---|---|
-| C3 | C++ 严格提交屏障 Lua | 这份数据的**第一次写入**（§5.2）、且不是同版本重放时，加载世代 < hash 里的 `schema_gen`，或者存储值已损坏 | warn：照写，返回 2；enforce：拒写，返回 3 | C++ 日志行 `metric=persist_schema_regression where=redis`，用 LogQL 告警（C++ 节点没有 Prometheus 出口） |
+| C3 | C++ 严格提交屏障 Lua | 上一次屏障写入不是本实体写的（hash 的 `schema_writer` ≠ 本实体令牌，§5.2）、且不是同版本重放时，加载世代 < hash 里的 `schema_gen`，或者存储值已损坏 | warn：照写，返回 2；enforce：拒写，返回 3 | C++ 日志行 `metric=persist_schema_regression where=redis`，LogQL 固定查询（C++ 节点没有 Prometheus 出口；ruler 未接线，告警未配） |
 | C4 | login `beginParentLoad` 快路径 | 父快照的加载世代 < hash 里的 `schema_gen` | warn：照常 EnterGame，计数；enforce：`beginParentLoad` 返回错误。走现有失败路径，经 `notifyEnterGameFailed` 推送固定的 `kEnterSceneFailed`，**不新增 tip**。按现行契约，失败原因不外发给客户端（评审核实） | `login_persist_schema_regression_total` |
 | C0 / C1 / C1b / C2 | go/db | 见 §6.2 | 延后 / 死信 / 读失败 | `db_task_deferred_total{reason}`、死信原因 |
 
 ### 5.2 Redis 严格提交屏障
 
-**C3 只比较"一份数据的第一次写入"**（修复评审 S-A）。
+> **v0.6 修订（2026-10-19，第 3b 批落码）**：v0.3–v0.5 的"实体只在第一次存盘里传真实加载世代、之后 `ARGV[9] = ARGV[8]`"被交接核对推翻（首存在途时排队的后继必误报、首存被顶替时漏比较、"回包丢失后重发的一定是同一元素"不成立）；改为本节的**写方令牌**。取舍与被否决的方案见 §15 v0.6。
 
-v0.2 要求每次存盘都满足"加载世代 ≥ hash"，而写入成功后 hash 会被抬到输出世代。于是新版 scene 接手旧戳数据后，从第二次存盘起每次都会被判为倒退；enforce 模式下就是全服丢进度。
+**C3 只在"上一次屏障写入不是本实体写的"时比较**（修复评审 S-A）。
 
-修正：
-- 实体只在**它发起的第一次存盘**里，把真实的加载世代作为 `ARGV[9]` 传给脚本；
-- 一旦发起过存盘，此后的 `ARGV[9]` 一律等于本次的输出世代 `ARGV[8]`。因为之后它写入的数据，基底就是它自己的上一次写入。
+v0.2 要求每次存盘都满足"加载世代 ≥ hash"，而写入成功后 hash 会被抬到输出世代。于是新版 scene 接手旧戳数据后，从第二次存盘起每次都会被判为倒退；enforce 模式下就是全服丢进度。要比较的只有"接手别人写的数据"那一刻，那也正是截断可能被引入的地方。问题是怎么认出"上一次是我写的"：
 
-这样只有"接手别人写的数据"的那一刻才会被比较，这也正是截断可能被引入的地方。
+- **不能用 C++ 侧的"第一次存盘"标记**：屏障的参数在入队时定死，首存 A 在途时排进的 B 带着入队时的值；A 未证实提交就被顶替（排队值顶替、ERROR / 空应答后的 `QueueSaveForRetry`、`OnReconnected`、在途时新值覆盖排队值、owner 拒绝后 guard 不同的排队值直接发）时，被丢弃的元素不执行任何回调，C++ 分不出 A 是"已提交但回包丢了"还是"没提交"。
+- **不能用 owner 代次（pending 的 owner 前缀）**：同一个实体会换代次（退出保留期间玩家重登铸出 E+1 又派回本节点复用实体、B5 回滚采纳 E+2），同一个代次也会先后加载出两个实体（同落点重连时上一个实体已退出销毁、废黜后回流、节点崩溃后同号新进程接替）。前者会确定误报（kGen > L 时 enforce 下每次返回 3），后者会漏检。
 
-重放的情况：提交其实已经成功，只是回包丢了，`OnReconnected` 重发同一个元素。这时会走现有的同版本重放分支（`pending == ARGV[3]`，且父快照字节相同），**跳过 C3**，返回 1。
+**规则**：每个加载实体生成一个全局唯一的**写方令牌**（随机 UUID 文本，存在实体的运行时组件 `PlayerPersistWriterComp` 里，存盘写入口懒建，实体销毁即作废；不用 entt 实体号或"节点 + 玩家"这类能被再次加载复现的值）。严格屏障每次写入都把令牌记进 hash 的 `schema_writer`；脚本只在 `schema_writer ≠ ARGV[11]` 时比较。于是：
+
+| 情形 | 令牌 | 结果 |
+|---|---|---|
+| 新实体（任何来源的加载）的第一次写入 | 与 hash 不同 | 比较真实加载世代 `ARGV[9]`，`ARGV[9]` 永远是真实加载世代，C++ 不维护任何"首存"状态 |
+| 本实体的后续写入；首存在途时排队的后继；换了 owner 代次之后的写入 | 相同 | 跳过 |
+| 首存已提交、回包丢失，随后被任意代次的排队值顶替 | 相同（A 已把令牌写进去） | 跳过 |
+| 首存未提交就被顶替 | 不同（A 没写成） | 后继照样比较真实加载世代，与 A 本该做的比较一致 |
+| enforce 拒绝（返回 3） | 不写令牌 | 下一次仍比较、仍拒 |
+| 机制前或 3b 前的旧二进制写过屏障 | 旧二进制不写令牌，残留的旧令牌只属于已被取代的实体 | 新实体令牌必然不同，照常比较 |
+
+**同版本重放**（`pending == ARGV[3]`，且父快照与投递意图字节相同）显式跳过 C3、返回 1：现有脚本的同版本分支不提前返回，会落到写入。
+
+**C3 在脚本里的位置**：放在参数校验、owner ≠ `ARGV[2]` 返回 0、pending 比 `ARGV[3]` 新报错、同版本冲突报错**之后**。已被废黜的旧持有者必须拿到 0（走 `DestroyDeposedPlayer`），不能先拿到 3。
 
 | 项 | 规则 |
 |---|---|
-| 参数 | 由 7 个增加到 10 个：`ARGV[8]` 输出世代，`ARGV[9]` 加载世代（规则见上），`ARGV[10]` 模式，取 `warn` 或 `enforce`。旧二进制自带旧版脚本源码，只发 7 个参数，不受影响（`ScriptSlot` 按源码计算 SHA） |
+| 参数 | 由 7 个增加到 11 个：`ARGV[8]` 输出世代（两表戳），`ARGV[9]` 本实体的加载世代，`ARGV[10]` 模式（`warn` / `enforce`），`ARGV[11]` 写方令牌。旧二进制自带旧版脚本源码，只发 7 个参数，不受影响（`ScriptSlot` 按源码计算 SHA）。11 个参数随元素走，重试、NOSCRIPT 重发、`OnReconnected` 都发同一组 |
 | 比较 | 新增函数 `num_gt`：先比长度，再按字节比较。现有的 `gt` 只适用于等长字符串 |
-| 存储值异常 | hash 里的 `schema_gen` 格式损坏时，视为倒退证据，按模式返回 2 或 3，**不返回 error_reply**。返回 error_reply 会让 `OnSaved` 无限重试，这名玩家就永远存不了盘（评审 M-B） |
-| 参数异常 | 参数不合法时，仍然返回 error_reply。这是 C++ 的编程错误，会被单测拦住 |
-| 写入 | 只要写入成功（无论 warn 还是 enforce），在同一个 `HSET` 里写 `schema_gen = max(存储值, ARGV[8])`。**只升不降**，否则 warn 模式下低世代写方会把 hash 拉低，截断就此被洗白（评审 M-A） |
-| 返回值处理 | `OnSaved`（`redis_client.h`）对屏障元素：返回 1 或 2 都算提交证据，触发 `publishDbTasks` 与 `save_callback_`；返回 2 另打计数日志。返回 3 不重试、不触发提交钩子，同一个 key 的排队值一并丢弃，走**新增的回调**。这个回调不能复用 `HandlePlayerSaveRejected`：它会按 epoch 重存而无限循环，或者按"废黜"处理，语义都不对。新回调在 `core/system/redis.cpp` 接线：退出中走 `DestroyDeposedPlayer`；交接中走 `AbortTravelHandoff`；其余情况保留实体、打日志、本次不落盘 |
-| 模式配置 | `BaseDeployConfig` 新增 `persist_schema_regression_mode`，默认 `warn`。改动面：`config.cpp` 读取、`bin/etc/base_deploy_config.yaml`、`k8s_deploy.ps1` 的 ConfigMap 及其契约测试、`start_game.ps1`。login 用 `login.yaml` 里的同名项 |
+| 存储值异常 | hash 里的 `schema_gen` 不是规范十进制 uint32（空串、`0`、前导零、超界、非数字）时，视为倒退证据，按模式返回 2 或 3，**不返回 error_reply**。返回 error_reply 会让 `OnSaved` 无限重试，这名玩家就永远存不了盘（评审 M-B）。warn 下写入值取 `ARGV[8]` |
+| 不比较 | hash 不存在，或没有 `schema_gen` 字段（机制前的存量玩家、merge_zone 删过 hash、恢复工具未写、本地 debug_import） |
+| 参数异常 | 世代不是 1..4294967295、`ARGV[9] > ARGV[8]`、模式不是两个字面量、令牌为空 / 超过 64 字节 / 含字母数字与 `:` `-` 以外的字符：返回 error_reply。这是 C++ 的编程错误：`SaveWithCommitBarrier` 入队前用同一口径校验并返回 false，单测钉住 |
+| 写入 | 只要写入成功（返回 1 或 2），在同一个 `HSET` 里写 `schema_gen = max(存储值, ARGV[8])` 与 `schema_writer = ARGV[11]`。**只升不降**，否则 warn 模式下低世代写方会把 hash 拉低，截断就此被洗白（评审 M-A）。返回 3 时一个键都不动 |
+| 返回值处理 | `OnSaved`（`redis_client.h`）对屏障元素：返回 1 或 2 都算提交证据，触发 `publishDbTasks` 与 `save_callback_`；返回 2 先同步调一次计数回调（`SetSaveSchemaWarnedCallback`）。返回 3 不重试、不触发提交钩子、不发布 `save_callback_`；同 key 排队值的 guard 与被拒的相同就一并丢弃，不同就照发、不回调（同 0 分支，两者共用 `IssuePendingWithNewerGuard`）；走**新增的回调** `SetSaveSchemaRejectedCallback`。2 / 3 只对屏障元素有含义，其余路径收到仍是坏回包、按失败重试。新回调不能复用 `HandlePlayerSaveRejected`：它会按 epoch 重存而无限循环，或者按"废黜"处理，语义都不对。`core/system/redis.cpp` 接到 `PlayerLifecycleSystem::HandlePlayerSaveSchemaRejected`：退出中走 `DestroyDeposedPlayer`；交接中且标记未发（`requestedAtMs == 0`）走 `AbortTravelHandoff`；其余情况保留实体、打日志、本次不落盘 |
+| 模式配置 | `BaseDeployConfig.persist_schema_regression_mode`（部署键 `PersistSchemaRegressionMode`）。`readBaseDeployConfig` 读入时归一化：缺键或空串 = `warn`，`warn` / `enforce` 原样，其余拒绝启动（LOG_FATAL）；`ARGV[10]` 只会是两个字面量。仓库默认 `warn`。`k8s_deploy.ps1` 从 `bin/etc/base_deploy_config.yaml` 镜像进 node ConfigMap 并在生成期校验，契约测试钉住；`start_game.ps1` 启动前校验。login 用 `login.yaml` 的同名键（§5.1 C4），两边分别切换 |
+| 观测 | C++ 节点没有 Prometheus 出口。逐次一条 `metric=persist_schema_regression where=redis mode=warn|enforce` 的 ERROR 日志（含玩家号、key），另由 `redis.cpp` 每 30 秒汇总一行 `[PersistSchema] regression_warned=N regression_rejected=M`（有计数才打）。Loki ruler 尚未接线（`deploy/k8s/owner-epoch-alerts.yaml` 同一现状），LogQL 写成值班固定查询（`deploy/k8s/README.md`「玩家持久 schema 世代」），**告警规则未配** |
+| 恢复工具 | `save_barrier_restore` 的字段白名单接受 `schema_writer`，不解释也不改写它：恢复要求停写、父缓存已不在，旧令牌只属于已不存在的实体 |
 
 **enforce 模式的代价**：被判倒退的玩家，本次在线进度不会落盘。按 §5.3 的推导，合法流程不会触发；触发了就说明数据已经被截断。此时宁可不写，也不能让截断的数据去覆盖 SQL。
 
 ### 5.3 为什么合法流程不会触发 C3 / C4 [C/I]
 
-- **第一次写入的加载世代来自父快照**：
+- **会被比较的写入（令牌不同）的加载世代来自父快照**：
   - 父快照最近一次是 scene 写的：加载世代 = 那次的输出世代 = hash 值。
   - 最近一次是 login 冷加载写的：它要求两表 SQL ACK 和行围栏都等于 pending（`parent_commit_barrier.go`），所以 SQL 行里已经包含最近一次 scene 写入，行戳 ≥ hash。
   - 最近一次是 login backfill 写的：Go 原样保留，戳不变。
-- **后续写入的加载世代等于输出世代**，而 hash ≤ 输出世代（只升不降，且都由这个实体写入）。
+- **本实体之后的写入不比较**：hash 的令牌就是它自己的，基底是它自己的上一次写入（v0.6 起不再要求"后续写入的 `ARGV[9]` 等于输出世代"）。
 - **新号种子**：hash 还不存在，不比较。
 - **引导期**：0 按 1 处理，存量数据都是 1。
 
@@ -382,8 +397,11 @@ v0.2 要求每次存盘都满足"加载世代 ≥ hash"，而写入成功后 has
 | 场景 | 结果 |
 |---|---|
 | 新版 scene(6) → 新版 go/db(6) | 整行写，行戳为 6 |
-| 新版 scene(6) **接手戳为 5 的数据，并连续存盘多次** | 第一次：加载世代 5，hash 为 5 或不存在，通过，hash 升到 6。之后每次：`ARGV[9]` 等于 6，等于 hash，通过（这一行是修复 S-A 的回归用例） |
-| 第一次存盘已提交，但回包丢失后重发 | 走同版本重放分支，跳过 C3，返回 1 |
+| 新版 scene(6) **接手戳为 5 的数据，并连续存盘多次** | 第一次：令牌不同，加载世代 5，hash 为 5 或不存在，通过，hash 升到 6、记下令牌。之后每次：令牌相同，不比较，通过（这一行是修复 S-A 的回归用例） |
+| 同上，期间实体换了 owner 代次（E→E+1 复用实体、B5 采纳） | 令牌随实体保留，不比较，通过 |
+| 第一次存盘已提交，但回包丢失后重发同一元素 | 走同版本重放分支，跳过 C3，返回 1 |
+| 第一次存盘已提交、回包丢失，随后被排队值顶替（任意代次） | 令牌已被第一次写入记下，不比较，通过 |
+| 同一代次先后加载出第二个实体（同落点重连、废黜后回流、同号新进程接替） | 新实体令牌不同，照常比较它的真实加载世代 |
 | 旧版 scene(5) 接手戳为 6 的数据 → 新版 go/db(6) | 对象内携带 `X` 和 `y`；输出世代 6，`s = G`，整行写，数据不丢 |
 | 旧版 scene(5) 接手戳为 5 的数据 → 新版 go/db(6) | `s = 5`，`r ≤ 5`，整行写；`X` 写为零值，因为它从来没被写过 |
 | 新版 scene(6) → 旧版 go/db(5) | C1 延后并告警，等新版 go/db 处理 |
@@ -407,6 +425,9 @@ v0.2 要求每次存盘都满足"加载世代 ≥ hash"，而写入成功后 has
    - scene：开启携带、盖戳，C3 / C4 用 warn 模式。
 4. **判定全网已无机制前的写方**：只看 go/db 侧原值为 0 的写 body 计数。这个计数归零，并持续一个完整的存盘周期后，由负责人逐个 zone 写入引导关闭标记（开启 C0），再去掉台账上的"引导中"标记。
 5. **切到 enforce 之前**，必须先在 staging 上做一次**真实升世代**的演练：加一个测试用的持久字段，让 gen 升到 2；然后用新旧两套二进制按 §7 的矩阵混跑，重点验证"新版接手旧戳数据并连续存盘"和"回包丢失后重放"两项。演练中 C3 / C4 的倒退计数为 0，并且线上 warn 模式观察期内计数也为 0，才能切到 enforce。
+6. **首次上线之后，台账必须在第一次带新持久字段的发布之前切到 `active`**（2026-10-20 补，审计 r2-ps#1）。引导期内新增字段一律并入世代 1，所以「同为世代 1」的两个二进制，认识的持久字段集合可以不同；C1 / C1b / C2 只比世代号，看不出这种差别。上线后台账若仍是 `bootstrap`，第一次带新持久列 F 的滚动发布里：新 scene 的存盘戳仍为 1，落到不认识 F 的旧 go/db 上 C1 不拦，`tx.Save` 只写认识的列，F 停在旧值照常 ACK；冷加载落到旧 go/db 时只 SELECT 认识的列，C2 不拦，父快照缺 F，scene 再存盘就把 F 写成零值或旧值。F 若是限购或幂等账本，就会重复发放。项目尚未上线，首次上线整批起步不触发；上线后第一次带新持久列的发布即可触发。
+   - 人工门禁写在 [release-checklist.md](../ops/release-checklist.md) §6.2（关闭引导期后由负责人改台账 `state`）与 §2.1 ⑦（发布前比对台账，有新增字段行而仍是 `bootstrap` 就停止发布）。
+   - 机器门禁暂缺，记为待办。可选做法：生成器在世代号之外再产出持久字段集合指纹，go/db 遇到「世代相同、指纹不同」时延后或失败；或由发布预检比对线上版本与待发布版本的台账。
 
 ### 8.2 此后每次升世代
 
@@ -421,7 +442,7 @@ v0.2 要求每次存盘都满足"加载世代 ≥ hash"，而写入成功后 has
 | 对象 | 能否回滚 | 说明 |
 |---|---|---|
 | login | 可以回滚到任何一个带本机制的版本 | Go 原样保留 |
-| scene | **有条件** | 对象内携带保证未知字段不丢。但**持久值域扩展**不在台账里：比如新增包类型后回滚，旧版 `bag_marshal::Unmarshal` 会丢掉越界物品；新增技能后回滚，`SanitizeSkillList` 会删掉表里查不到的技能。§12 的这两处修好之前，发布单必须写明本版本"没有扩展持久值域"，否则不能回滚 scene |
+| scene | **有条件** | 对象内携带保证未知字段不丢。但**持久值域扩展**不在台账里：比如新增包类型后回滚，旧版 `bag_marshal::Unmarshal` 会丢掉越界物品；新增技能后回滚，`SanitizeSkillList` 会删掉表里查不到的技能。§12 的这两处已在第 5 批落码（越界包类型原样携带、查不到表的技能保留但不生效），**未编译、未验证**；能回滚到的旧版本还必须本身带着第 5 批。在 Codex 验证通过、且回滚目标版本含第 5 批之前，发布单仍须写明本版本"没有扩展持久值域"，否则不能回滚 scene。其他持久值域（例如新物品配置、新任务、新宠物）是否也会被旧版删掉，见 §12 待核对行 |
 | go/db | 只能回滚到世代 ≥ 数据最高戳的版本 | 回滚得更低会卡住存盘和冷加载，但不丢数据，处置方式是升回去 |
 | 回到机制上线前的二进制 | 禁止 | 引导期关闭后，C0 与 C3 / C4 会兜底 |
 
@@ -441,14 +462,40 @@ v0.2 要求每次存盘都满足"加载世代 ≥ hash"，而写入成功后 has
 
 ## 9. 分批实施（每批 < 30 个文件，AGENTS §10.2）
 
+**实施状态（2026-10-19）：**
+- **第 1 批：已验证。** Codex 已跑正式 `proto-gen-build` 和 no-unity `proto-gen-run`，台账写入世代 1 的基线（引导期内其他会话新加的 `player_database#22` 也已并入世代 1）；生成器持久 schema 单测通过；本地库迁移出两表 `persist_schema_gen`（`int unsigned`，默认 0）。证据见 `build/verification/enter-game-smoke-20261019-044832/`。
+- **第 2 批：主体已落码，go/db 模块构建通过，单测未跑。** C0 / C1 / C1b / C2、延后与死信原因、引导期标记与复查、指标都在 `go/db/internal/kafka/persist_schema.go` 及其接线处；同一份 Codex 构建记录里 go/db 模块原生退出 0，输入清单含该文件。后续补齐（Claude，未编译、未测试）：
+  - `persist_schema_test.go` 单测，以及 C1b 真库集成用例 `TestIntegrationPlayerSQLRejectsPersistSchemaRegression`；
+  - `data_stress` 盖戳、`debug_import` 世代前置检查；
+  - `deploy/k8s/persist-schema-alerts.yaml` 与 `deploy/k8s/README.md` 运维小节。
+
+  `save_barrier_restore` 接受 `schema_gen` 字段、并按两行 SQL 世代的最大值重建屏障，这部分由 Codex 在 `da0f1822c` 完成。
+- **第 3a 批：已落码，未编译、未测试（Claude，2026-10-19）。** 待 Codex 按下面「Codex 验证」一列执行：
+  - 载体与统一入口：`unknown_field_carry.h`（engine/core/utils/proto）、两个 Carry 组件（`player_persist_carry_comp.h`，在两张表的手写 Unmarshal 里创建）、`player_persist_marshal.h`（统一入口，只有头文件）；存盘的 `MarshalPlayerForSave` 与回档快照 `SnapshotSystem::CaptureAndSend` 都改为调用它，两表盖戳 max(本二进制世代, 两表加载世代的最小值)；
+  - 对象内携带：欠款 `CurrencyDebt.unknownFields`（`SaveToProto` 改为返回 bool，解析失败整份拒存）、`MissionListComp` 本层未知字段（重复 scope 只取首份）、`SanitizeSkillList` 替换前并回组件本层未知字段；
+  - 守卫：`ResetAssetOpStreamForEpoch` 改为 `Clear()` 后重设流号与纪元（清掉的字段与旧写法一致，包括回执）；`ItemStore::IsIndependentInstance` 统一 `CanStack`、reserve 侧空余估算、整理合并三处判定；`AttachDebt` 遇到带未知字段的既有欠款返回 `kFeatureUnavailable`，不合并；
+  - 测试：新增 `cpp/tests/bag_test/persist_round_trip_test.cpp`（注入、两跳往返、覆盖率断言、复用输出不翻倍、盖戳三种组合、缺载体拒存）；`bag_instance_data_test.cpp` 补带未知字段实例的合堆用例，`asset_op_ledger_test.cpp` 补纪元重置清未知字段用例，`currency_test.cpp` 补欠款携带与合并守卫用例；手搭实体的测试补齐两个 Carry 组件或改走统一入口（`bag_test`、`player_feature_persistence_test`、`player_equip_attribute_test`、`cross_zone_test`、`db_task_dispatch_test`、`save_seq_test`）。
+  - **已知缺陷（交接前只读核对发现，均经对抗复核）**，列为第 3a′ 批，详见 [交接 §3.1](../handoff/mixed-version-persist-handoff-20261019.md)：
+    - 收件箱执行器把 `AttachDebt` 的版本错位拒绝记成终态 REJECTED（应回 `kDefer`）；
+    - `Bag::AddItems` 规划仍只按 `has_equip()` 分流，与提交侧判定不一致；
+    - 宝石拆卸预检 `HasStackWithRoom` 判据未跟上。
+- **第 3a′ 批：已落码，未编译、未测试（Claude，2026-10-19）。** 三条缺陷各自修正并配用例：
+  - `CurrencySystem::DebtCarriesUnknownFields`（只读谓词，`AttachDebt` 与执行器共用）；`GmSanctionInboxExecutor::AttachCurrencyDebt` 命中回 `kDefer`；用例 `GmSanctionInboxExecutorTest.AttachCurrencyDebtDefersWhenExistingDebtCarriesUnknownFields`，`CurrencyTest.AttachDebtRefusesToMergeIntoDebtWithUnknownFields` 补谓词断言；`player-inbox-service.md` §7.6 同步；
+  - `ItemStore::IsIndependentInstance` 改为公开，`Bag::AddItems` 规划按它分流；用例 `BagInstanceDataTest.AddItemsPlansIncomingInstancesCarryingUnknownFieldsAsSeparate`；
+  - 宝石拆卸预检 `HasStackWithRoom` 改为直接调 `ItemStore::CanStack`；用例 `PlayerEquipTest.RemoveGemPrecheckSkipsAStackCarryingUnknownFields`（用日志出口探针确认没有走到容器层的调用栈分支）。
+- **第 5 批：已落码，未编译、未测试（Claude，2026-10-19）。** 见 §12 两行：
+  - 越界包类型：`PlayerBagsComp::unsupportedBagTypes` 携带 bag_type ≥ `kBagTypeCount` 的整份 `ItemEntry` 与下标 ≥ `kBagTypeCount` 的容量，`bag_marshal::Unmarshal` 整体重填、`Marshal` 原样追加；用例 `CrossZoneBagMarshal.UnmarshalCarriesOutOfRangeBagTypeVerbatim`（原 `UnmarshalDropsOutOfRangeBagType` 改写）；
+  - 查不到表的技能：`SanitizeSkillList` 只去 0 与重复项，查不到表的保留；新增 `PlayerSkillSystem::IsActiveSkill`，`HasSkill`、`ListSkills` 下发只认生效的项，战斗快照原本就跳过查不到表的项；`ReleaseSkill` 原本先按表拒。用例 `PlayerSkillSystemTest.SanitizeSkillListKeepsUnknownSkillsInactiveAndRemovesDuplicates`（原 `SanitizeSkillListRemovesUnknownAndDuplicateSkills` 改写）、`SanitizeSkillListLeavesACleanListUntouched`。`ListSkills` 的过滤没有单测（处理器不在任何测试工程里）。
+- **第 3b、4 批：未开工（2026-10-19 起由另一会话接手）。** 3b 开工前先修订 §5.2（见该节开头的提示）。
+
 | 批 | 内容 | 主要改动 | Codex 验证 |
 |---|---|---|---|
 | 1 | 台账；生成器（发号、冻结和投影检查、R2 / R3、"引导中"标记）；两个 option 及其标注；两张表的戳字段；生成常量与清单 | `proto/db/proto_option.proto`、各持久 proto 的标注、`proto/persist_schema_gen.txt`、`tools/proto_generator/protogen/internal/...`（新增生成器及测试）、生成产物 | 先 `proto-gen-build`，再 `proto-gen-run -ConfigPath tools/proto_generator/protogen/etc/proto_gen.no-unity.yaml`；protogen 跑 `go test ./...`；最后完整编译 C++ 与全部 Go module。生成的 .pb 文件如果超过 30 个，先按 §10.2 报告 |
 | 2 | go/db：C0 / C1 / C1b / C2 及其接线，新的延后原因和死信原因，指标、告警、引导期标记，日志限速；cmd/migrate 的 DDL；save_barrier_restore、debug_import、data_stress 的配套改动 | `go/db/internal/kafka/{player_row_fence,key_ordered_consumer,store_failure,placement_route}.go`、`go/db/db.go`、`go/db/internal/metrics`、`go/db/internal/barrierrestore/scripts.go`、`go/data_service/cmd/debug_import`、`deploy/k8s/persist-schema-alerts.yaml`、测试 | go/db 与 data_service 跑 `go test ./...`、`go vet`；真库集成测试（自起一次性 MySQL / TiDB） |
 | 3a | C++ 携带：两个 Carry 组件（在手写 loader 里创建）、统一入口、欠款与任务列表的携带、`SanitizeSkillList` 保留顶层未知字段、`ResetAssetOpStreamForEpoch` 改为 `Clear()`、§4.4 的两个守卫、回档快照改入口、盖戳、往返一致性测试与全组件夹具、受影响测试的修正 | `services/scene/player/{comp,system}/...`、`modules/currency/...`、`mission_marshal.cpp`、`player_skill.cpp`、`asset_op_ledger.cpp`、`modules/bag/item_store.cpp`、`snapshot_system.cpp`、bag_test 及 §4.3 列出的测试、vcxproj / CMakeLists。文件可能接近 30 个，必要时把守卫拆成 3a′ | `game.sln` 串行 `/m:1` 完整编译；新测试和所有存盘相关单测 |
-| 3b | C++ 校验：严格屏障 Lua 增加到 10 个参数、`num_gt`、返回值 2 / 3、`OnSaved` 的处理与新回调（`core/system/redis.cpp`）、首次写入加载世代的传递、`BaseDeployConfig` 及部署渲染 | `redis_client.h`、`core/system/redis.cpp`、`player_lifecycle.cpp`、`currency_test.cpp`（现有用例断言"返回 2 是坏回包"、字面量白名单、以 7 个参数直接 EVAL 的真 Redis 用例、调用文本契约，这几处都要改写）、`base_deploy_config` 的 proto / `config.cpp` / yaml、`k8s_deploy.ps1` 及其契约测试、`start_game.ps1` | `game.sln` 完整编译；Redis 脚本测试；k8s_deploy 契约测试 |
+| 3b | C++ 校验：严格屏障 Lua 增加到 11 个参数、`num_gt`、写方令牌（v0.6）、返回值 2 / 3、`OnSaved` 的处理与新回调（`core/system/redis.cpp`）、`BaseDeployConfig` 及部署渲染、`save_barrier_restore` 字段白名单 | `redis_client.h`、`core/system/redis.cpp`、`player_lifecycle.cpp`、`currency_test.cpp`（现有用例断言"返回 2 是坏回包"、字面量白名单、以 7 个参数直接 EVAL 的真 Redis 用例、调用文本契约，这几处都要改写）、`base_deploy_config` 的 proto / `config.cpp` / yaml、`k8s_deploy.ps1` 及其契约测试、`start_game.ps1` | `game.sln` 完整编译；Redis 脚本测试；k8s_deploy 契约测试 |
 | 4 | login：C4（`beginParentLoad` 增加第 4 个返回元素并比较）、种子保持不盖戳的测试、backfill 往返测试、`login.yaml`；可选的能力心跳与部署预检；运维手册 | `go/login/internal/logic/pkg/dataloader/...`、`go/login/etc/login.yaml`、`deploy/k8s/README.md` | login 跑 `go test ./...`、`go vet` |
-| 5 | §12 中持久值域的两个删数据点（这是 scene 无条件回滚的前提） | `player_skill.cpp`、`bag_marshal.cpp` 及测试 | 同 3a |
+| 5 | §12 中持久值域的两个删数据点（这是 scene 无条件回滚的前提） | `player_skill.{h,cpp}`、`player_skill_handler.cpp`（`ListSkills`）、`bag_marshal.{h,cpp}`、`modules/bag/comp/player_bags_comp.h`；测试 `cross_zone_test.cpp`、`skill_test.cpp`、`persist_round_trip_test.cpp`（注释） | 同 3a，另跑 `skill_test` |
 
 每批完成后在 `docs/PROGRESS.md` 追加一条，并注明 Java 版的状态（§11）。
 
@@ -464,15 +511,18 @@ v0.2 要求每次存盘都满足"加载世代 ≥ hash"，而写入成功后 has
 - `AttachDebt` 守卫：已有欠款带未知字段时，返回失败。
 - `ResetAssetOpStreamForEpoch` 之后，未知字段为空。
 - 两张表的顶层未知字段往返后保留；加载世代取两表的 min，输出世代取 max；同一份数据连续存两次，第二次命中快路径。
-- 严格屏障 Lua：
+- 严格屏障 Lua（真 Redis，`RedisCommitBarrierSchemaGenAgainstRealRedis`）：
   - `num_gt` 的边界：9 对 10、10 对 9、1 对 19、相等；
-  - hash 不存在 / 没有 `schema_gen` / 值损坏；
-  - 首次写入时倒退：warn 返回 2，enforce 返回 3；
-  - **同一实体连续两次存盘**都通过（S-A 回归）；
-  - **回包丢失后重发**走重放分支，返回 1；
+  - hash 不存在 / 没有 `schema_gen` / 值损坏（空串、`0`、前导零、超界、非数字）；
+  - 新实体（令牌不同）倒退：warn 返回 2 并照写，enforce 返回 3 且父快照、pending、意图、令牌、世代都不动，再发仍返回 3；
+  - **同一实体连续存盘**、**同一实体换 owner 代次后存盘**都通过（S-A 回归，覆盖 E→E+1 复用与 B5 采纳）；
+  - **回包丢失后重发同一元素**走重放分支，即使令牌被换、记录值更高也返回 1；
+  - 已被废黜的持有者先拿 0，不先拿 3；
   - warn 模式下 hash 只升不降；
-  - 参数个数不对时报错。
-- `OnSaved` 与新回调在退出中、交接中、在线三种状态下的分派。
+  - 参数非法（世代越界或前导零、加载 > 输出、模式大小写错、令牌空 / 超长 / 非法字符）报 `SAVE_BARRIER invalid schema argument` 且不改任何键；参数个数不对报错；别名键用例改为 11 参并断言 `keys must differ`。
+- `OnSaved`（无连接单测）：返回 2 是提交证据且计数回调先于提交钩子；返回 3 不重试、不准入、丢同 guard 排队值、走 C3 回调而非废黜回调；返回 3 时 guard 不同的排队值照发不回调；非屏障元素收到 2 / 3 按坏回包重试；`SaveWithCommitBarrier` 入队前拒绝非法覆盖世代参数，合法参数随元素携带；令牌生成器产物合法且每次不同；模式归一化。
+- 新回调在退出中、交接中（标记未发）、在线三种状态下的分派，以及 warn 只计数、实体已不在时为空操作（`cross_zone_test` 的 `ExitPersistEcs.Schema*`）。
+- 尚无单测、靠 §8.1 第 5 步演练覆盖的：首存在途时排队的后继、首存被顶替（未提交 / 已提交回包丢失）、同落点重连在同一代次下重载——这些都由"令牌是否相同"一条规则决定，Lua 用例已逐一覆盖判定本身，端到端的异步时序没有单测宿主。
 
 **Go（2 / 4）**：
 - C0：引导期关闭后，`s = 0` 进死信。
@@ -507,8 +557,8 @@ v0.2 要求每次存盘都满足"加载世代 ≥ hash"，而写入成功后 has
 
 | 问题 | 现状 [C] | 建议 |
 |---|---|---|
-| 持久值域：旧配置表删掉新技能 | `SanitizeSkillList` 删除表里查不到的技能 | 第 5 批：保留，但不生效 |
-| 持久值域：越界的包类型 | `bag_marshal::Unmarshal` 丢弃越界条目；`capacities` 只输出 `kBagTypeCount` 个 | 第 5 批：越界条目保留，原样存回 |
+| 持久值域：旧配置表删掉新技能 | `SanitizeSkillList` 删除表里查不到的技能 | **第 5 批已落码（未编译）**：保留，但不生效（`PlayerSkillSystem::IsActiveSkill`；`HasSkill`、`ListSkills`、战斗快照、`ReleaseSkill` 都只认生效的项） |
+| 持久值域：越界的包类型 | `bag_marshal::Unmarshal` 丢弃越界条目；`capacities` 只输出 `kBagTypeCount` 个 | **第 5 批已落码（未编译）**：越界条目与多出的容量存进 `PlayerBagsComp::unsupportedBagTypes`，原样存回；本版本的玩法看不到也不碰它们 |
 | 收件箱、资产通道载荷的新字段 | 旧版执行器会忽略新字段，记为 APPLIED | 给载荷加版本号，或执行器遇到未知字段时 fail-closed；开启收件箱消费之前必须修 |
 | Kafka 控制面命令 | 遇到未知事件直接丢弃 | 新增事件类型时配发件箱或重投机制 |
 | guild、mail、trade 的库表 | 未核对 | 按本文的不变量逐个评估 |
@@ -596,6 +646,39 @@ v0.2 要求每次存盘都满足"加载世代 ≥ hash"，而写入成功后 has
 | 引导期 | 新增字段并入世代 1，不阻断开发 | 世代号依旧不超过 1，目的不变；生成器拒绝阻断会卡住其他会话正在做的持久字段 |
 | 台账格式 | 逐字段记录，不再用基线哈希 | 逐字段才能判断改类型、删字段、复用字段号 |
 | 可携带集合 | 只从玩家表、以及玩家表到达不了的冻结根出发 | 深处冻结类型作为根只为受 R1 约束，不应成为往返测试的覆盖对象 |
+
+### v0.5（第 3a 批落码，2026-10-19）
+
+| 项 | 调整 | 原因 |
+|---|---|---|
+| 统一入口 | 只有头文件 `player_persist_marshal.h`，没有 `.cpp` | 调用方分属 scene 与 modules 两个库；放在头文件里不用在两边工程登记源文件，也不新增库间依赖（它转调的 `PlayerAllDataMessageFieldsMarshal` 本来就是头文件内联） |
+| `MissionListComp`（L3） | 运行时本来就是 PB；`Unmarshal` 照旧逐 map 合并已知字段，只额外并入首份 scope 的本层未知字段 | 整份替换会破坏重复 scope「首份获胜」的合并语义；本层其余字段（`type`、旧位图）由 Marshal 重写，不需要携带 |
+| 合堆守卫（§4.4） | 判定收进 `ItemStore::IsIndependentInstance`（`has_equip()` 或带未知字段），`CanStack`、`MeasureFreeRoomPerConfig`、`IsMergeCandidate` 共用 | 预检与提交各写一份判定会分叉：reserve 比 commit 乐观，就是「预检通过、写到一半放不下」 |
+| 欠款携带（L2） | `PlayerCurrencyComp::SaveToProto` 改为 `[[nodiscard]] bool` | 携带的字节解析失败（只可能是内存被破坏）时必须整份拒存，不能写出缺字段的欠款 |
+| 往返测试注入 | map 字段走重复字段的反射视图；注入后先序列化再解析，模拟新版本写下的字节 | protobuf 35 的 map 迭代器反射接口不对外；走字节才是「新字段落进各层 UnknownFieldSet」的真实场景 |
+
+### v0.6（C3 改为写方令牌；第 3b / 4 批落码，2026-10-19）
+
+交接核对（[交接 §3.2](../handoff/mixed-version-persist-handoff-20261019.md)）与接手会话的只读取证（owner_epoch 的铸造与复用、OnSaved 的全部顶替路径，带行号）共同推翻了 v0.3 的"只比第一次写入"。逐个方案的结论：
+
+| 方案 | 做法 | 结论 |
+|---|---|---|
+| v0.3 原文 | C++ 只在第一次存盘传真实加载世代，之后 `ARGV[9] = ARGV[8]` | 否决。以"首存已落地"为标记：首存在途时排进的后继带着真实加载世代，首存落地后被判倒退，enforce 下永久存不进盘（S-A 重现）。以"已发起"为标记：首存未提交就被顶替时一次都没比较。"回包丢失后重发的一定是同一元素"不成立：有排队值时发出的是新版本 |
+| (a) owner 前缀 | C++ 一律传真实加载世代；脚本只在 pending 的 owner 前缀 ≠ `ARGV[2]` 时比较 | 否决。前提"同一 owner_epoch 只对应一个加载实体"两头都不成立：同一实体会换代次（退出保留期间重登铸出 E+1 又派回本节点复用实体、B5 采纳 E+2），换代后第一次存盘拿真实加载世代去比自己抬高过的 hash，确定误报；同一代次也会先后加载出两个实体，漏检 |
+| (b) C++ 状态机 | "仍需比较"挂在元素上、顶替时继承、发送时求值 | 否决。被丢弃的元素不执行任何回调，C++ 分不出"首存已提交但回包丢失、随后被顶替"，后继继承"仍需比较"就误报 |
+| (a′) 实体基线世代 | 保留 owner 前缀规则；`ARGV[9]` 改为实体基线（初值加载世代，本实体有元素被证实提交后抬到输出世代） | 否决。首存已提交但回包丢失、同时实体换到 E+1 并排队了新值：基线没被证实抬高，新值拿加载世代比较被抬高的 hash，误报；enforce 下此后每次都没有证实提交，永久存不进盘。另需按发送时求值的共享基线单元，复杂度高 |
+| **(a″) 写方令牌（采纳）** | 每个加载实体一个全局唯一令牌，随屏障写进 hash 的 `schema_writer`；脚本只在令牌不同时比较，`ARGV[9]` 永远是真实加载世代 | 上面所有情形都由"上一次屏障写入是不是本实体写的"一条规则判对（§5.2 表）。C++ 不维护首存状态，不依赖回包。代价：hash 多一个字段，`save_barrier_restore` 的字段白名单同步接受它；ARGV 增加到 11 个；字面量白名单单测同步 |
+
+其余落码时定下的细节：
+
+| 项 | 调整 | 原因 |
+|---|---|---|
+| 令牌取值 | 随机 UUID 文本，实体第一次走严格屏障存盘时在写入口懒建（`PlayerPersistWriterComp`，运行时派生数据） | 令牌不能被"同节点同玩家再加载一次"复现：entt 实体号会回收，"节点 + 玩家"在同落点重连时相同 |
+| 同版本重放 | 脚本里显式 `pending ~= ARGV[3]` 才比较 | 现有同版本分支不提前返回，会落到写入 |
+| 模式归一化 | 读配置时一次性归一化，非法值 LOG_FATAL 拒绝启动；存盘点再归一化一次只为单测宿主（空串），仍非法按 warn 并打 ERROR | 非法字面量进 `ARGV[10]` 会让脚本返回 error_reply、`OnSaved` 无限重试，全服存不进盘；运行期改成拒存同样是全节点存不进盘 |
+| 入队前校验 | `SaveWithCommitBarrier` 用与 Lua 同口径的校验拒绝非法覆盖世代参数（返回 false = 本次存盘拒绝） | 同上：不能让参数错误变成无限重试 |
+| 返回 3 的排队值处置 | 与 owner 拒绝（0）共用 `IssuePendingWithNewerGuard` | 两处语义相同，分开写会分叉 |
+| 观测 | 逐次 ERROR 日志带 `metric=persist_schema_regression`，30 秒汇总 `[PersistSchema]`；LogQL 写成值班固定查询，**不宣称告警已配** | Loki ruler 未接线（归上线批 BK8s），与 `[OwnerEpoch]` 同一先例 |
 
 ### v0.3（第二轮评审）
 

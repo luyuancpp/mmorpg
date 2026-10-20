@@ -39,6 +39,13 @@ func tiDBEngine(t *testing.T) *Engine {
 		}
 		t.Skip("未配置隔离TiDB")
 	}
+	return openEngineDB(t, dsn, true)
+}
+
+// openEngineDB 在 dsn 指向的实例上新建随机库、按 proto 建表并装配 Engine;用例结束删库。
+// requireTiDB=false 给一次性 MySQL 用(tick_isolation_db_test.go 的 realDBEngine):会话仍固定 RC,只是不设 TiDB 专用变量。
+func openEngineDB(t *testing.T, dsn string, requireTiDB bool) *Engine {
+	t.Helper()
 	cfg, err := mysql.ParseDSN(dsn)
 	require.NoError(t, err)
 	cfg.DBName = ""
@@ -58,14 +65,14 @@ func tiDBEngine(t *testing.T) *Engine {
 	cfg.DBName = name
 	// TiDB 建表/预切 Region 可能超过运行池的 5s socket 预算。迁移使用正式独立迁移池，
 	// 完成后关闭；状态机仍使用原运行池及其业务超时，不因测试建表放宽资产请求预算。
-	migrationDB, err := authoritysql.OpenForMigration(context.Background(), cfg.FormatDSN(), name, true)
+	migrationDB, err := authoritysql.OpenForMigration(context.Background(), cfg.FormatDSN(), name, requireTiDB)
 	require.NoError(t, err)
 	t.Cleanup(func() { require.NoError(t, migrationDB.Close()) })
 	report, err := schemamigrate.Up(context.Background(), migrationDB, schemamigrate.Options{Database: name, Tables: data.Tables()})
 	require.NoError(t, err)
 	require.Empty(t, report.Manual)
 	require.NoError(t, migrationDB.Close())
-	db, err := authoritysql.Open(context.Background(), cfg.FormatDSN(), name, true, 12)
+	db, err := authoritysql.Open(context.Background(), cfg.FormatDSN(), name, requireTiDB, 12)
 	require.NoError(t, err)
 	t.Cleanup(func() { require.NoError(t, db.Close()) })
 	ops, err := data.NewAssetOpRepo(db, 3*time.Second)

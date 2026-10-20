@@ -643,9 +643,11 @@ uint32_t Bag::AddItems(const std::vector<InitItemParam> &itemsToAdd,
 		{
 			return PrintStackAndReturnError(kBagAddItemInvalidParam);
 		}
-		// 已带实例数据的物品不能合堆；单独计实例数，不拿普通材料的空余抵扣它。
-		auto &units = item.has_equip() ? separateInstances[item.config_id()] : stackUnits[item.config_id()];
-		const auto added = item.has_equip() ? ItemStore::StacksNeededFor(item.size(), maxStack) : item.size();
+		// 独立实例（已带实例数据，或带着本版本不认识的字段）不能合堆；单独计实例数，不拿普通材料的空余抵扣它。
+		// 判据必须与提交侧 CanStack 同一个（ItemStore::IsIndependentInstance），否则规划少铸号、提交时号不够。
+		const bool independent = ItemStore::IsIndependentInstance(item);
+		auto &units = independent ? separateInstances[item.config_id()] : stackUnits[item.config_id()];
+		const auto added = independent ? ItemStore::StacksNeededFor(item.size(), maxStack) : item.size();
 		if (added > std::numeric_limits<uint32_t>::max() - units)
 		{
 			return PrintStackAndReturnError(kBagAddItemInvalidParam);

@@ -175,6 +175,16 @@ function Get-LocalKafkaContract {
         )
     }
 }
+# 混版本持久字段保护的倒退判定模式（scene C3 读 base_deploy_config，login C4 读 login.yaml）。
+# 只认 warn / enforce，缺键或空串按 warn；其余值 scene 与 login 都会拒绝启动，这里提前拦下，免得起到一半才失败。
+function Assert-PersistSchemaRegressionModes {
+    foreach ($entry in @{'bin/etc/base_deploy_config.yaml'='PersistSchemaRegressionMode';'go/login/etc/login.yaml'='PersistSchemaRegressionMode'}.GetEnumerator()) {
+        $value = Get-YamlScalar -Path (Join-Path $serverRoot $entry.Key) -KeyPath $entry.Value
+        if ($value.Found -and -not [string]::IsNullOrEmpty($value.Value) -and $value.Value -cne 'warn' -and $value.Value -cne 'enforce') {
+            throw "$($entry.Key) 的 $($entry.Value) 只能是 warn 或 enforce（当前 '$($value.Value)'），未启动任何服务。"
+        }
+    }
+}
 function Assert-LocalKafkaTopic($Spec) {
     $topic = $Spec.Name
     # Kafka 管理命令需要启动 JVM；本机同时编译时可能超过 60 秒，只延长等待、不放宽契约校验。
@@ -375,6 +385,7 @@ try {
     Write-Step '1/6 Check the local game runtime environment'
     . (Join-Path $PSScriptRoot 'lib/release_common.ps1')
     $kafkaContract = Get-LocalKafkaContract
+    Assert-PersistSchemaRegressionModes
     $script:docker = Find-Program 'docker.exe' @((Join-Path $env:LOCALAPPDATA 'Programs/DockerDesktop/resources/bin/docker.exe'),(Join-Path $env:ProgramFiles 'Docker/Docker/resources/bin/docker.exe'))
     $desktop = Find-Program 'Docker Desktop.exe' @((Join-Path $env:LOCALAPPDATA 'Programs/DockerDesktop/Docker Desktop.exe'),(Join-Path $env:ProgramFiles 'Docker/Docker/Docker Desktop.exe'))
     $java = Find-Program 'java.exe' @($(if ($env:JAVA_HOME) { Join-Path $env:JAVA_HOME 'bin/java.exe' }))

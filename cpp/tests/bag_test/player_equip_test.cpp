@@ -26,6 +26,7 @@
 #include "engine/core/type_define/player_guid_comp.h"
 
 #include <cstdint>
+#include <cstdio>
 #include <functional>
 #include <iterator>
 #include <limits>
@@ -33,11 +34,15 @@
 #include <memory>
 #include <set>
 #include <string>
+#include <string_view>
 #include <utility>
 #include <vector>
 
+#include <google/protobuf/unknown_field_set.h>
+
 #include "../../nodes/scene/handler/rpc/player/player_bag_handler.h"
 #include "../../nodes/scene/handler/rpc/player/player_gm_guard.h"
+#include "engine/core/error_handling/error_handling.h"
 #include "engine/core/type_define/type_define.h"
 #include "modules/bag/bag_service.h"
 #include "modules/bag/bag_system.h"
@@ -76,6 +81,7 @@
 #include "table/proto/tip/common_error_tip.pb.h"
 #include "table/proto/tip/equip_error_tip.pb.h"
 #include "thread_context/ecs_context.h"
+#include "muduo/base/Logging.h" // Logger::setOutput:数容器层不足分支留下的调用栈(见 StackTraceDumpProbe)
 
 namespace
 {
@@ -3416,6 +3422,81 @@ TEST_F(PlayerEquipTest, RemoveGemIsRefusedWhenEveryStackOfThatGemIsFull)
 
 	EXPECT_EQ(kEquipGemBagFull, PlayerEquipSystem::RemoveGem(player, kGuidA, kWeaponAttackSocket));
 	ExpectForgeUnchanged(before);
+}
+
+// 容器层的不足分支经 PrintStackAndReturnError 打「Stack trace (error code: …)」再加一段调用栈。
+// 照 player_equip_attribute_test.cpp 的 PanelPushProbe:临时接管 muduo 日志出口,数这句原文出现了几次。
+// 原文在 engine/core/error_handling/error_handling.h;那边改了措辞,用例开头的校准断言(直接打一次必须恰好数到 1)
+// 会先红,不会把「没走到容器层」和「数不到」混为一谈。
+const char *const kStackTraceDump = "Stack trace (error code: ";
+int gStackTraceDumps = 0;
+
+void EchoLogToStdout(const char *msg, int len)
+{
+	std::fwrite(msg, 1, static_cast<std::size_t>(len), stdout);
+}
+
+void CountStackTraceDumps(const char *msg, int len)
+{
+	if (std::string_view(msg, static_cast<std::size_t>(len)).find(kStackTraceDump) != std::string_view::npos)
+	{
+		++gStackTraceDumps;
+	}
+	EchoLogToStdout(msg, len);
+}
+
+// 作用域守卫:构造时接管日志出口并清零,析构时还给 stdout(用例中途 ASSERT 退出也会还)。
+class StackTraceDumpProbe
+{
+public:
+	StackTraceDumpProbe()
+	{
+		gStackTraceDumps = 0;
+		muduo::Logger::setOutput(CountStackTraceDumps);
+	}
+	~StackTraceDumpProbe() { muduo::Logger::setOutput(EchoLogToStdout); }
+	StackTraceDumpProbe(const StackTraceDumpProbe &) = delete;
+	StackTraceDumpProbe &operator=(const StackTraceDumpProbe &) = delete;
+
+	int Count() const { return gStackTraceDumps; }
+	void Reset() { gStackTraceDumps = 0; }
+};
+
+// 混版本保护(docs/design/mixed-version-persist-field-protection.md §4.4):人物背包没有空格,唯一没满的同种宝石堆
+// 带着本版本不认识的字段 —— 容器层不会把退回的宝石并进这种堆。静默预检必须与容器层同一个判据(ItemStore::CanStack),
+// 在预检就答「背包已满」;放行到发放那一步,返回码虽然也映射成同一个码,却会先打一条 ERROR + 调用栈。
+TEST_F(PlayerEquipTest, RemoveGemPrecheckSkipsAStackCarryingUnknownFields)
+{
+	ItemComp weapon = MakeRolledInstance(kGuidA, kWeaponL1);
+	AddGem(weapon, kWeaponAttackSocket, kAttackGem);
+	ASSERT_EQ(kSuccess, Equipment().PutInstance(weapon, kWeaponSlot));
+	constexpr int kNewerVersionFieldNumber = 412345; // 本版本不认识的字段号
+	ItemComp gemsFromNewerVersion;
+	gemsFromNewerVersion.set_item_id(kGuidGemA);
+	gemsFromNewerVersion.set_config_id(kAttackGem);
+	gemsFromNewerVersion.set_size(5);
+	gemsFromNewerVersion.mutable_unknown_fields()->AddVarint(kNewerVersionFieldNumber, 1);
+	Inventory().RestoreItems({{gemsFromNewerVersion, 0}});
+	Inventory().SetCapacityForRestore(1);
+	ASSERT_TRUE(Inventory().IsFull());
+	const auto *gemItemRow = ItemRowOrNull(kAttackGem);
+	ASSERT_NE(nullptr, gemItemRow);
+	ASSERT_LT(5u, gemItemRow->max_stack_size()) << "这一堆按数量还塞得下,只是带着未知字段";
+	const ForgeState before = CaptureForge();
+
+	StackTraceDumpProbe probe;
+	(void)PrintStackAndReturnError(kEquipGemBagFull, 1);
+	ASSERT_EQ(1, probe.Count()) << "校准:探针必须数得到容器层不足分支打的那句原文";
+	probe.Reset();
+
+	EXPECT_EQ(kEquipGemBagFull, PlayerEquipSystem::RemoveGem(player, kGuidA, kWeaponAttackSocket));
+	EXPECT_EQ(0, probe.Count()) << "静默预检就该拒绝;走到 BagService::AddItems 才拒会打 ERROR + 调用栈";
+	ExpectForgeUnchanged(before);
+	const ItemComp *kept = Inventory().GetItemCompByGuid(kGuidGemA);
+	ASSERT_NE(nullptr, kept);
+	EXPECT_EQ(5u, kept->size());
+	ASSERT_EQ(1, kept->unknown_fields().field_count()) << "未知字段原样留在那一堆上";
+	EXPECT_EQ(kNewerVersionFieldNumber, kept->unknown_fields().field(0).number());
 }
 
 // 脏数据:同一个孔上有两条记录。退回的是第一条那颗,两条都清掉(第二条不退物,只留日志);

@@ -42,10 +42,17 @@ void Unmarshal(entt::entity player, const QuestAllData& in) {
     auto& container = tlsEcs.actorRegistry.get_or_emplace<MissionsContainerComp>(player);
     container.map.clear();
     if (in.scoped_state_present() || !in.scopes().empty()) {
+        std::set<uint32_t> seenScopes;
         for (const auto& scope : in.scopes()) {
             // 重复 scope 合并保留状态；同 ID 的首份活动进度获胜，不重置成后续默认值。
             auto& missions = container.GetOrCreate(scope.scope());
             auto& list = missions.GetMutableMissionList();
+            // MissionListComp 本层的未知字段(新版本加的字段)随运行时列表携带,存盘时由 Marshal 的 CopyFrom 原样带回
+            // (docs/design/mixed-version-persist-field-protection.md §4.2 L3)。只取首份:与「首份获胜」同口径,
+            // 重复 scope 再并一次会让重复字段翻倍。
+            if (seenScopes.insert(scope.scope()).second) {
+                list.mutable_unknown_fields()->MergeFrom(scope.mission_list().unknown_fields());
+            }
             list.set_type(scope.scope());
             for (const auto& [id, mission] : scope.mission_list().missions())
                 list.mutable_missions()->insert({id, mission});

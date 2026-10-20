@@ -104,6 +104,8 @@ C++ 侧 `cpp/libs/engine/infra/storage/redis_client/redis_client.h` 基于 hired
 | D13 | **`PrepareBattleRequest.prepare_deadline_ms` = now + 本组 matched TTL**(`matchedTicketTTLFor(组人数)`,2 人 30s / 5 人 48s / 10 人 78s;**(2026-09-29 更正)现为 1 / 2 / 5 / 10 人 = 42 / 48 / 66 / 96s**,公式见 D5 更正);`deadline_ms` 语义不变(战斗作废期限) | §5 "已冻结成员受 `battle:lock` 窗口约束"的二期项落地(match 侧):备战期限与票据 matched TTL 同一窗口,弹组实例在 gather 中崩溃时,未冻结者靠票据过期、已冻结者靠 scene 在 PREPARING 态按该期限解冻并收窄锁 EX,两边同一时刻放行。scene 侧读取该字段的实现见 turn-based-battle-server.md 对应条目;旧版 scene 忽略该字段(0/未知 = 沿用 `deadline_ms`),向后兼容 |
 | D14 | **配表指纹比对**:scene 在 `PrepareBattleResponse.table_fingerprint` 回报本节点六张战斗表内容指纹(解析后确定性序列化的 sha256 前 16 字节 hex),match 收齐全员后比对;**全员非空且两两一致**才写进 `CreateBattleRequest.table_fingerprint`(battle 再与自身核对)。不一致或部分为空按 `TableFingerprintMode`(`off`/`warn`/`enforce`,默认 `warn`):`off` 不比对不透传;`warn` 只记 Error 日志 + `match_table_fingerprint_mismatch_total{mode}`,照常开局、不透传;`enforce` 视为 prepare 失败走既有补偿(已冻结者逐个解冻,肇事者出局删票,幸存者回队首),肇事者 = 与多数派不一致者(多数派只在非空指纹里选,平票取弹出序靠前者;全员皆空记第一位) | §10 "配表版本一致性"落地:灰度/回滚会让同一场战斗按不同数值表入场,快照与判定各按各的表算。灰度期用 `warn` 看指标确认各 zone 表版本对齐后再切 `enforce`;`enforce` 下不回报指纹的旧版 scene 会被一律拒绝,所以它不是默认值 |
 
+> **(2026-10-19 指向注,D12 原文保留)** 负责人 2026-10-17 拍板核心走「单元化 + 单元内 Redis Cluster 按 `{player_id}` 分片」,D12 的「SharedRedis 必须是全服单一实例」改写为「逻辑单一、物理按 `{player_id}` 分片」:同一玩家的契约键(含 `player:{id}:location`、`player:session:{id}`、`battle:lock:{id}`)只有一个权威存储,即所在单元核心 Cluster 里该玩家的 slot;跨玩家的多键操作要拆开。改写内容与待拍板项见 [shared-redis-split-by-purpose.md](shared-redis-split-by-purpose.md) §20.1、§20.5、§25.2 第 20 条(纯设计,第 4 批未落码)。**第 4 批落码之前,D12 照旧有效。**
+
 ---
 
 ## 3. 架构与数据流(2 zone 示例)
@@ -574,3 +576,16 @@ Go 全球启动在 matcher 和 RPC 准入之前同步核对结果 topic，独立
   - pending 每玩家单槽，下一局覆盖上一局（turn-battle-gap-closure.md §9.3 残余）。
   - battle 节点的 Redis / Kafka 编排没有单测接缝。停机与崩溃场景只有纯状态机单测，以及 PROGRESS 同日条目里的可选冒烟步骤。
 - **Java 版**（0.1.0-SNAPSHOT）：只读核实，`BattleRoomServiceImpl` 同样在回执后才落 pending，`abortAll` 不派发，**待做**。
+
+**2026-10-19 修复：落库重试只写没落定的成员，轮次设上限**（第二轮审计 r2-battle#1、r2-battle#4，见 [data-overwrite-rollback-audit-r2-20261019.md](data-overwrite-rollback-audit-r2-20261019.md) §3.3、§3.4；C++，未编译、未测试，待 Codex 验证）
+
+- **r2-battle#1（上一段修复的缺陷）**：落库重试轮原来对全部成员无条件 SET。第 1 轮已写进去、随后被 scene 应用并销账的成员，pending 复活，下次登录重复领奖。
+  - `ResultCommit` 按成员记结论。`UnstagedMembers` 只剩没拿到确定结论的成员，`FinishStaging` 只移出本轮落定的成员，后续轮次只写其余成员。
+  - 结论未知（空应答、ERROR、命令没发出）的成员下一轮照写。命令其实执行过的情形，由新脚本 `kStagePendingSettlementOnceScript` 判出：同一条 Lua 先查本局落库标记 `battle:settlement:staged:{battle_id}`（SET，成员为 player_id），标记在就返回 2、不重写。标记与 pending 两键在同一条脚本里写下，销账不碰它。全部落定后 battle 立即删除标记；停机、崩溃、轮次用尽留下的 24 小时后过期。
+  - 没有采用「`battle:lock == battle_id` 才写、锁不在按已收尾」。全球模式下锁在落库前就可能合法缺席：续期没落地时战斗中途自然过期；整场期限到时 scene reaper 先条件删锁；重试轮拖过期限 + 60s。按已收尾处理会静默丢掉合法结算。所以锁不在时照写，与改造前一致。只有锁属于别的局时不写（返回 3）：scene 每条路径本来都会丢弃这一局的结算，再写只会让旧局覆盖新局的单槽 pending。
+- **r2-battle#4**：落库轮次上限 `kMaxStagingRounds = 24`，只数 Redis 连得上时开出的轮，配合 1→30s 退避约 9.5 分钟。
+  - 到上限后不放弃落库直接发结果（那会退回上一段的原缺陷），终局保持未知。打一次 `metric=battle_personal_settlement_staging_exhausted`，并逐个列出没落定的成员。
+  - 房间移出提交 pump，但留在房间表里：结果不发、DestroyBattle 不作废、新行动照旧拒绝。
+  - 节点因此不会自然排空。值班排除 zone Redis 故障后删除该 Pod，由 `AbortAllRooms` 清房：已落定成员照常应用，没落定的按作废处理，与 r2-battle#2 是同一个残余。值班查询登记在 `deploy/k8s/asset-channel-alerts.yaml` 文件头。
+- **残余**：battle 节点单边连不上 Redis 超过 24 小时，标记会过期；按命令粒度的 ACL 误配置（放行 SET、拒绝 SADD）；Redis 主从异步复制丢掉已确认的写，与销账丢失同属既有一类。
+- **Java 版**：确认模式落库尚未实现（见上一段「待做」），实现时要同时满足这两条。

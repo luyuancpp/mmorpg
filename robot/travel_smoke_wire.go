@@ -1,6 +1,7 @@
 package main
 
-// travel-smoke 的「线上符号」隔离层:本文件是 robot 里**唯一**引用 TravelToZone 生成物的地方。
+// travel-smoke 的「线上符号」隔离层:本文件是 robot 生产代码里**唯一**引用 TravelToZone 生成物的地方
+// (单测 sync_smoke_scenario_test.go 构造回包体时直接用 scene.TravelToZoneResponse;那时 regen 早已落地)。
 //
 // 为什么单独一个文件:下面三个符号要等阶段 2 的 proto regen 才存在 ——
 //

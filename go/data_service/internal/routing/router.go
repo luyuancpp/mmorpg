@@ -386,9 +386,11 @@ func (r *Router) GetPlayerHomeZoneAndMergeFence(ctx context.Context, playerID ui
 // fence 取 EXISTS 的结果(0/1),围栏读失败时为 mergeFenceUnreadable(-1)。
 //
 // 围栏键在脚本里由 ARGV[1](前缀,取自 mergeFenceKeyPrefix)拼上 home 值得到,不在 KEYS 里 ——
-// 事先不知道 home 就没法声明它。这只在单实例上成立:mapping Redis 是 go-zero 的 node 类型
-// (恒 DB 0,见 router_integration_test.go),不是 Cluster;将来若换成 Cluster,未声明键会跨 slot,
-// 那时 EXISTS 报错,会走 pcall 的失败分支(按合服处理 → 拒绝进场),不会静默放行。
+// 事先不知道 home 就没法声明它。今天 mapping Redis 是 go-zero 的 node 类型(恒 DB 0,见 router_integration_test.go),
+// 不是 Cluster。将来若换成 Cluster,围栏键一般与映射键不同 slot;本脚本无 shebang,是 EVAL 兼容模式(带 SCRIPT_ALLOW_CROSS_SLOT):
+// 围栏键的 slot 在本节点时**静默放行**,EXISTS 读到的就是本节点上的真围栏键;在别的节点时报 "non local key",
+// 走 pcall 的失败分支(按合服处理 → 拒绝进场)。两种情形都不会把已立的围栏读成不存在,但「跨 slot 必报错」并不成立
+// (data_service 侧的实测见 logic 包 TestRealRedisClusterUndeclaredKeys)。
 const getHomeZoneAndMergeFenceScript = `
 local home = redis.call('GET', KEYS[1])
 if not home then

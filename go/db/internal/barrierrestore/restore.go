@@ -30,6 +30,10 @@ const RoutingModeSplit = "redis-split"
 const RoutingModeDBFirst = "db_first"
 
 // Plan 只包含身份与摘要。它不是停写证明，执行时仍须独立维持维护窗口。
+//
+// AllowHomeFallback(2026-10-20 修复，r2-mz#1)：显式允许「没有落点记录、home == Zone、Schema 就是本区 zone 库」的玩家
+// 按 go/db 的有效落点规则(记录 ?? home 的 zone 库)回退，不再要求先钉稳定落点；copy 合服 / 撤销后的玩家天然如此。
+// 只在计划阶段由运维开启并随计划进 SHA-256；缺省 false 时行为与之前完全一致，旧计划照常可读。见 homeZoneFallback。
 type Plan struct {
 	Format                 string   `json:"format"`
 	Schema                 string   `json:"schema"`
@@ -44,6 +48,7 @@ type Plan struct {
 	MappingDB              int      `json:"mapping_db,omitempty"`
 	RouteSchema            string   `json:"route_schema,omitempty"`
 	AuditedOwnerUpperBound string   `json:"audited_owner_upper_bound,omitempty"`
+	AllowHomeFallback      bool     `json:"allow_home_fallback,omitempty"`
 	Players                []Player `json:"players"`
 }
 
@@ -69,6 +74,8 @@ type Restorer struct {
 	MappingRedis           *redis.Client
 	RouteSchema            string
 	AuditedOwnerUpperBound string
+	// AllowHomeFallback 只由 Prepare 读取并写进计划(Plan.AllowHomeFallback);执行以审定计划为准,CLI 在 apply 模式拒绝该开关。
+	AllowHomeFallback bool
 }
 
 // 首版只恢复 home zone 自己的 zone 库。异区钉落点/player_store 必须另验权威 placement，不能猜。
@@ -145,6 +152,7 @@ func positive(raw string) (uint64, error) {
 // Prepare 在两行点锁下生成计划，只读业务数据；不写 SQL、Redis 或资产明文。
 func (r Restorer) Prepare(ctx context.Context, schema string, zone uint32, maintenanceID string, ids []string, allowLegacy bool) (Plan, error) {
 	p := Plan{Format: Format, Schema: schema, Zone: zone, MaintenanceID: maintenanceID, AllowLegacy: allowLegacy, RedisAddr: r.Redis.Options().Addr, RedisDB: r.Redis.Options().DB, RoutingMode: r.RoutingMode, LocalMySQL: r.LocalMySQL}
+	p.AllowHomeFallback = r.AllowHomeFallback
 	if r.MappingRedis != nil || r.RouteSchema != "" || r.RoutingMode != RoutingModeRedis || schema != fmt.Sprintf("zone_%d_db", zone) || p.RedisDB != 0 || r.AuditedOwnerUpperBound != "" {
 		p.Format, p.RouteSchema = FormatV2, r.RouteSchema
 		p.AuditedOwnerUpperBound = r.AuditedOwnerUpperBound
@@ -427,16 +435,32 @@ func match(want Player, current [2]sqlRow) error {
 	return nil
 }
 
-func validRoute(zone uint32, home, raw string) error {
+func validRoute(zone uint32, home, raw string, allowHomeFallback bool) error {
 	homeZone, present, err := placement.ParseHomeZone(home)
 	if err != nil || !present || homeZone != zone || home != strconv.FormatUint(uint64(zone), 10) {
 		return errors.New("玩家 home zone 与计划不符")
+	}
+	if homeZoneFallback(allowHomeFallback, raw) {
+		// v1 的 schema 已由 validTarget 钉为 zone_<home>_db,正是 go/db 给无记录玩家选的库;发布时 Lua 再原子复核记录仍不存在。
+		return nil
 	}
 	rec, err := placement.Parse(raw)
 	if err != nil || rec.Frozen || rec.StorageID != zone || rec.Encode() != raw {
 		return errors.New("玩家不在本区稳定落点，须走有权威路由证明的维护流程")
 	}
 	return nil
+}
+
+// homeZoneFallback 报告这名玩家是否按「无落点记录 → home 的 zone 库」恢复(2026-10-20 修复，r2-mz#1)。
+//
+// 只在计划显式允许且落点原值为空时成立；调用方另行保证 home == 计划 zone、schema 的库号 == home。放宽的边界：
+//   - 与 go/db 选库同一规则(placement.EffectiveStorage：记录 ?? home)，恢复出的屏障指向的正是运行期冷加载要读的两行；
+//     有记录的玩家(钉落点、搬库、pin 合服)仍走原来的稳定落点校验，不受影响。
+//   - 屏障只按当前 SQL 两行的围栏重建，不会把任何旧屏障恢复回来：已有屏障仍须与目标版本逐字段相同，否则照旧拒绝。
+//   - 现有原子校验一条不少：永久维护标记、owner、home 原值、无合服围栏、缓存 / 证据 / 交接标记不存在、64 桶为空；
+//     同实例时落点记录「仍不存在」在写屏障的同一段 Lua 里复核(scripts.go),拆实例时由 mapping 维护检查前后各核一次。
+func homeZoneFallback(allow bool, rawPlacement string) bool {
+	return allow && rawPlacement == ""
 }
 
 func MaintenanceKey(zone uint32) string {

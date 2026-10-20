@@ -268,7 +268,7 @@ grpcurl -plaintext -import-path . -proto proto/player_inbox/player_inbox_admin.p
 | 日志 | 级别 | 含义 | 处置 |
 |---|---|---|---|
 | `metric=inbox_replay_mismatch` | critical | 回放核对失败(IB-9):账本环里同 seq 记的是另一个 request_id(`ledger_request_id=`)。该玩家该域停用,每次落地都会再停 | §5.2 B |
-| `metric=inbox_halted` | warning | 该玩家该域停用,`reason=` 给出原因(`unknown_type` / `replay_mismatch` / `ack_anomaly` 等)。停用对当前实体一直有效,实体重建(重新登录,或换到别的节点)后才重拉 | 按 `reason`:§5.2 / §5.1 |
+| `metric=inbox_halted` | warning | 该玩家该域停用,`reason=` 给出原因(`unknown_type` / `replay_mismatch` / `ack_anomaly` / `version_skew` 等)。停用对当前实体一直有效,实体重建(重新登录,或换到别的节点)后才重拉 | 按 `reason`:§5.2 / §5.1 |
 | `metric=inbox_unknown_type` | warning | scene 不认识这个类型或指令(新类型先于 scene 支持被加进白名单),停在这一条,不记 REJECTED | §5.2 A |
 | `metric=inbox_ack_anomaly` | warning | scene 收到异常 Ack 回包(结果异常,或服务端回 InvalidParameter),停用该域 | §5.1 |
 | `metric=inbox_ledger_invalid` | warning | 该玩家已落盘账本结构校验不过,收件箱全部域停用 | §10.4 |
@@ -310,6 +310,14 @@ scene 对一条投递的判定顺序是:先按账本分类,只有新条目才看
      玩家下次登录时 scene 按「新条目 + VOID」记 SKIPPED,停用解除,后面的条目照常执行。
 3. 用 `LookupByRequest` 确认终态:`state=VOIDED`、`finalized_by=CONSUMER`。还是 PENDING 就是玩家还没再登录。
 - 日志里是 `directive=` 而不是 `msg_type=`:scene 不认识这个指令值,只会来自版本错位,升级 scene。
+
+**A′. 版本错位**(`metric=inbox_halted reason=version_skew`,前一行 ERROR `Executor reported version skew` 带 `seq` / `type` / `request_id`;2026-10-19 起)
+
+scene 认识这个类型,但本版本不能安全执行这一条。v1 只有一个来源:挂欠款时,玩家同币种的既有欠款带着本版本不认识的字段(更新版本的 scene 写下的,见 `mixed-version-persist-field-protection.md` §4.4)。
+只会出现在新旧 scene 混跑(滚动发布、金丝雀、回滚)期间。这一条不记账、不确认,已定的前缀照常确认,行留在收件箱 PENDING。
+1. 不要作废它,它是合法处置。把 scene 的滚动发布走完,或回滚到同一版本;玩家下次落到认识这些字段的节点时照常执行。
+2. 确实不要它了:同 A 第 2 条,普通模式 `VoidItem`。玩家下次登录时按「新条目 + VOID」记 SKIPPED。
+3. 全网都已是同一版本却还在出现:说明数据里有本版本不认识的欠款字段而又没有更新的版本在跑(例如回滚到了更旧的版本),按 scene 版本与发布单查,不要手改存档。
 
 **B. MISMATCH**(`metric=inbox_replay_mismatch` + `metric=inbox_halted reason=replay_mismatch`,或 Ack MISMATCH 之后的 `reason=ack_anomaly`)
 

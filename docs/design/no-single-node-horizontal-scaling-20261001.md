@@ -267,6 +267,8 @@ kind 上:`zone-up` 后 `data-service-migrate` Job Complete、两个 Pod Ready;`k
 > **两件事的关系(2026-10-16)**:本节解决的是**可用性**(主挂了几秒内自动切换,不再是单点),「按用途拆」解决的是**容量与爆炸半径**,两者正交。
 > G4a 设计稿第 8 行写明「不做哨兵 HA,HA 是后续项(§13)」,§13 第 13 条把「新实例是否也用 redis-ha 形态、补上 `-RedisReplicas` 的 apply 路径」列为后续 ——
 > 本节补的正是这条 apply 路径。将来按用途拆出的每个实例可以各自选单实例或高可用形态(清单按同样写法复制一份,对象名换掉即可)。
+>
+> **(2026-10-19 指向注,上两段原文保留)** 上面「要改为集群化或单元化、修订项见交接 §4 第 5 项」已有结论:G4a 修订已完成,见 [shared-redis-split-by-purpose.md](./shared-redis-split-by-purpose.md) 2026-10-18 修订稿 §16~§26(纯设计,各批未落码)。核心路线由负责人 2026-10-17 拍板为「单元化 + 单元内 Redis Cluster 按 `{player_id}` 分片」,两者叠加;新分批见该稿 §24。本节开头的约束「C++ 侧 hiredis 没有集群客户端」在第 4 批之前仍成立,第 4 批要先接 C++ 集群客户端或支持 MOVED / ASK(该稿 §20.6)。
 
 ### 5.1 做法
 
@@ -280,6 +282,25 @@ kind 上:`zone-up` 后 `data-service-migrate` Job Complete、两个 Pod Ready;`k
   代理 Pod 模板带脚本 ConfigMap 的摘要(脚本一改代理就滚动);`-WaitReady` 额外等 `redis-proxy`。
 - 连接上限(P0-E 的接入前置):`MAXCLIENTS` 写进 redis 的 Pod 模板且与 `redis.yaml` 同值(连接总账只读那一份);代理每副本 `PROXY_MAXCONN=13000`,
   生成期核对 `PROXY_MAXCONN ×(2 + 1)+ 1000 ≤ 40000` —— 让代理先到线,Redis 到线会让代理的健康检查失败、踢掉全部会话。
+- **2026-10-19 补齐**(在 origin `43284eb0b` 的 10-16 接入之上;已落码,**未运行**:契约测试未跑、未在 kind 复测,待 Codex 验证):
+  - **WAITAOF 副本份数按拓扑,两处同源**:常量 `$script:MappingRedisTopology` 删掉,改为函数 `Get-MappingRedisTopology`(每次从 `Get-RedisTopology` 现取)。
+    data-service 的 `RouteStore.WaitAOFNumReplicas` 与 go/db 的 `ServerConfig.RedisClient.WaitAOFNumReplicas` 两处 ConfigMap 都经同一个 `Get-RouteStoreWaitAOFNumReplicas` 渲染:单实例 0、高可用 1。
+    go/db 的 `WaitAOFNumLocal` / `WaitAOFTimeoutMs` 仍镜像 `go/db/etc/db.yaml`;`db.yaml` 与 `go/data_service/etc/data_service.yaml` 的 `WaitAOFNumReplicas` 保持 0
+    (本机 compose 单实例用;写 1 会让本机 go/db 的 WAITAOF 启动探针等不到副本而拒启),K8s 上由部署脚本按拓扑写。
+  - **zone 写路径跟随线上**:`zone-up`、`all-up -SkipInfra` 部署 zone Go 服务且非 DryRun 时,`Resolve-RedisTopologyFromLive` 先读线上 `sts/redis` 的副本数(早于任何写操作):
+    没给 `-RedisReplicas` 就跟随线上(打一行 `Redis topology: following live statefulset/redis replicas=...`),显式值与线上不同即拒绝,线上 0 / 2 拒绝,线上没有 sts 照本次解析;DryRun 不查集群。
+    目的:staging / prod 还在单实例时,`zone-up` 与 zone 回滚的 Step 6 照常可用,WAITAOF 渲染始终与线上一致。
+    脚本入口(早于写路径门禁)打一行 `Redis topology: replicas=<1|3> manifest=<redis.yaml|redis-ha.yaml> high_availability=<true|false> waitaof_replicas=<0|1>`。
+  - **重启闸**:闸在 orphan 删除之前读线上摘要,所以 1 → 3 照样要求 `-ConfirmRedisCoreRestart`;线上与本次都是高可用时传 `-RollingHandover`,
+    拒绝 / 告警文本改为「逐个滚动重启 3 个 redis Pod,每个先交接主」(单实例与 1 → 3 仍按「重启 redis-0、重放 AOF」措辞)。
+  - **代理总账**:高可用形态的 Redis 连接总账额外打一行 `Redis proxy ledger: proxy_maxconn=13000 proxies=2+1 warn_at=10400 ...`;
+    规划档或本次峰值超过 80% × 单个代理的 `PROXY_MAXCONN` 时打 `[RedisConnectionLedger]OverProxyWarnRatio` 告警,只告警不阻断(一个代理不在时,它的客户端全部重连到另一个)。
+  - **逐节点核对**:`-WaitReady` 部署后的 maxclients 核对改为 `Test-RedisLiveMaxClients -Nodes <副本数>`,高可用形态逐个核 redis-0..2。
+  - **包装入口透传**:`dev_tools.ps1` / `k8s_image.ps1` 新增 `-RedisReplicas`,非 0 才透传(0 = 下游按档位,zone 写路径跟随线上)。
+  - **gate 排空的 exec 目标**:`k8s_gate_drain.ps1` 的 Redis 命令不再 `exec svc/redis`(高可用形态下 Service redis 指向 haproxy,代理镜像没有 redis-cli),
+    改为 `exec statefulset/redis -c redis`(任一 redis 节点 Pod 的 redis 容器);`-h` 仍是 login 配置里的 Service 地址,经代理落到主。
+  - **切换后的手工步骤**:单实例 → 高可用之后,对每个 zone 重跑 `zone-up`(WAITAOF 副本份数变 1),再在各 zone namespace 里
+    `kubectl rollout restart deploy/db` 与 `deploy/data-service`(只改 ConfigMap 不会滚动它们)。
 
 ### 5.2 实测(2026-10-08,本机 kind 单节点,隔离命名空间)
 
@@ -292,7 +313,10 @@ kind 上:`zone-up` 后 `data-service-migrate` Job Complete、两个 Pod Ready;`k
 ### 5.3 限制与未做
 
 - 主从复制是异步的,主崩溃可能丢最后毫秒级的写;三个 Pod 同时坏两个时只读、不能自动切主;代理多一跳(未压测)。
-- 3 → 1 只能手工回退(README 有步骤)。`-RedisReplicas` 不经 `dev_tools.ps1` / `k8s_image.ps1` 透传(同 `-KafkaBrokers`)。
+- WAITAOF 的代价(2026-10-19,高可用形态下 db / data-service 等 1 个副本确认;推导自配置,未运行):上一条「坏两个时只读」由 `min-replicas-to-write 1` 拒写;
+  此外切主后几秒内新主身边还没有从时 WAITAOF 确认失败(go/db 消息重投、data-service 提交失败重试),这段时间里刚启动的 go/db 会被 WAITAOF 启动探针拒启。
+  只有走 WAITAOF 的写有副本确认,C++ 存盘、会话等其余写仍是异步复制。
+- 3 → 1 只能手工回退(README 有步骤)。`-RedisReplicas` 2026-10-19 起经 `dev_tools.ps1` / `k8s_image.ps1` 透传,非 0 才透传(0 = 下游按档位,zone 写路径跟随线上)。
 - 没在真实多节点集群上做过网络分区与整机故障;大数据量下 1 → 3 的全量同步耗时未知(`rollout status` 等待上限 180 秒)。
 - C++ 侧:口令认证已由别的会话补上(P0-A,`redis_manager.cpp` 每条新连接先 AUTH、失败 fail-closed);高可用形态下主切换由代理掐断连接、C++ 走既有重连。
   **残余风险**:代理 Pod 所在机器整机消失时,C++ 那条连接收不到 FIN / RST,原先会一直挂着(该进程的 Redis 读写全部卡住)直到进程重启。
@@ -309,6 +333,20 @@ kind 上:`zone-up` 后 `data-service-migrate` Job Complete、两个 Pod Ready;`k
 pwsh -NoProfile -File tools/scripts/tests/k8s_deploy_contract.tests.ps1      # 新增 6 条 Redis 高可用用例,原有 Redis 用例不应受影响
 pwsh -NoProfile -File tools/scripts/tests/redis_maxclients_contract.tests.ps1
 ```
+
+2026-10-19 补齐后(均**未运行**,待 Codex):
+
+```
+pwsh -NoProfile -File tools/scripts/tests/k8s_deploy_contract.tests.ps1
+pwsh -NoProfile -File tools/scripts/tests/redis_maxclients_contract.tests.ps1
+pwsh -NoProfile -File tools/scripts/tests/k8s_gate_drain.tests.ps1
+pwsh -NoProfile -File tools/scripts/k8s_deploy.ps1 -Command infra-up -DryRun -SkipPreflight -SkipGoSvc -SkipJavaSvc -RedisReplicas 3 -InfraNamespace contract-ha -NodeImage registry.invalid/test/mmorpg-node:0123456789ab
+```
+
+- `k8s_deploy_contract.tests.ps1`:origin 的 6 条高可用用例之外,新增 zone 写路径拓扑判定、跟随线上(`Resolve-RedisTopologyFromLive`)、`-RollingHandover` 文本、
+  `Apply-Infra` 的共享 Redis 顺序(AST)、写路径门禁顺序(AST)、prod 档代理总账行、包装入口透传 `-RedisReplicas`;改了 db / data-service 的 WAITAOF 用例(prod 档期望 1)与 mapping 拓扑用例。
+- `redis_maxclients_contract.tests.ps1`:新增 T6(高可用 `MAXCLIENTS` 与 `redis.yaml` 同值)、T7(`PROXY_MAXCONN`)。
+- `k8s_gate_drain.tests.ps1`:exec 目标断言改为 `statefulset/redis -c redis`。
 
 真实集群:staging 上按 README「切换」步骤做一次 1 → 3,再做删主 Pod、杀主进程两项,用 robot 登录压测看中断时长与丢写。
 

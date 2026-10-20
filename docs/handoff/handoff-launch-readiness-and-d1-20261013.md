@@ -58,7 +58,11 @@
 >
 > **2026-10-18 收尾**:本线的代码已全部落码(未编译、未测试,交 Codex)。**只剩 G4a 修订稿**:实现代理遇到 403 认证错误失败,没有改任何文件,续做说明与交 Codex 的总顺序见 PROGRESS「2026-10-18 开服线收尾:代码全部落完,剩 G4a 修订稿」。D1 的 1b-2 及之后归「D1 玩家归属与存储持久化」会话。
 >
+> **2026-10-19**:本线剩余工作已移交新账号,以 [handoff-launch-line-remaining-20261019.md](handoff-launch-line-remaining-20261019.md) 为准。
+>
 > **会话产物位置**:原会话的 scratchpad 在本机临时目录,新会话读不到。需要的规格都已复制到 [launch-readiness-20261013/](launch-readiness-20261013/)。
+>
+> **2026-10-18 G4a 修订稿已完成(§4 第 5 项)**:只改文档,不改代码。[shared-redis-split-by-purpose.md](../design/shared-redis-split-by-purpose.md) 按 2000 万口径与负责人 10-17 拍板的「单元化 + 单元内 Redis Cluster 按 `{player_id}` 分片」修订:文首加修订注,§1~§15 逐处加更正注,新增 §16~§26。`spec_G4a_revision_scout.md` 核实意见的三条 must 已落实;db-write-fencing 令牌发布脚本的硬依赖登记在 §18.7,二选一的拍板列在 §25.2。修订稿经两视角评审与逐条核实后修复。新出现的拍板项见该稿 §25.2 标「2026-10-18 新增」的条目,以及 PROGRESS「2026-10-18 G4a 拆 Redis 设计稿修订」条目。本线 §4 第 5 项至此结案。
 
 ## 0. 一句话
 

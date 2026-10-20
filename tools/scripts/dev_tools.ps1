@@ -1,6 +1,6 @@
 ﻿param(
     [Parameter(Mandatory = $true)]
-    [ValidateSet("help", "pbgen-build", "pbgen-run", "proto-gen-build", "proto-gen-run", "tree", "naming-audit", "naming-apply", "third-party-grpc-build", "no-raw-pointer-setup", "iwyu-run", "k8s-infra-up", "k8s-infra-down", "k8s-infra-status", "k8s-zone-up", "k8s-zone-down", "k8s-zone-status", "k8s-zone-rollback", "k8s-all-up", "k8s-all-down", "k8s-all-status", "k8s-build-all", "k8s-exposure-preflight", "k8s-stage-runtime", "k8s-image-preflight", "k8s-build-image", "k8s-push-image", "k8s-release-zone", "k8s-release-all", "go-svc-start", "go-svc-start-exe", "go-svc-stop", "go-svc-status", "go-svc-list", "go-svc-build", "go-svc-build-images", "go-svc-push-images", "java-svc-build-image", "java-svc-push-image", "cpp-node-start", "cpp-node-stop", "cpp-node-status", "cpp-node-list", "dev-start", "dev-start-exe", "dev-start-zones", "dev-stop", "dev-status", "dev-robot-zones", "merge-zone", "merge-zone-audit", "merge-zone-unmerge", "merge-zone-relocate", "merge-zone-relocate-abort", "merge-zone-pin-placement", "merge-zone-storage-audit", "merge-zone-capability-check", "kafka-offset-reset", "git-stats")]
+    [ValidateSet("help", "pbgen-build", "pbgen-run", "proto-gen-build", "proto-gen-run", "tree", "naming-audit", "naming-apply", "third-party-grpc-build", "no-raw-pointer-setup", "iwyu-run", "k8s-infra-up", "k8s-infra-down", "k8s-infra-status", "k8s-zone-up", "k8s-zone-down", "k8s-zone-status", "k8s-zone-rollback", "k8s-all-up", "k8s-all-down", "k8s-all-status", "k8s-build-all", "k8s-exposure-preflight", "k8s-stage-runtime", "k8s-image-preflight", "k8s-build-image", "k8s-push-image", "k8s-release-zone", "k8s-release-all", "k8s-route-tool", "go-svc-start", "go-svc-start-exe", "go-svc-stop", "go-svc-status", "go-svc-list", "go-svc-build", "go-svc-build-images", "go-svc-push-images", "java-svc-build-image", "java-svc-push-image", "cpp-node-start", "cpp-node-stop", "cpp-node-status", "cpp-node-list", "dev-start", "dev-start-exe", "dev-start-zones", "dev-stop", "dev-status", "dev-robot-zones", "merge-zone", "merge-zone-audit", "merge-zone-unmerge", "merge-zone-relocate", "merge-zone-relocate-abort", "merge-zone-pin-placement", "merge-zone-storage-audit", "merge-zone-capability-check", "kafka-offset-reset", "git-stats")]
     [string]$Command,
 
     [string]$ConfigPath = "",
@@ -397,7 +397,53 @@
     [string]$LoginQQAppId = "",
     [string]$LoginQQEndpoint = "",
     [switch]$LoginQQAllowOpenId,
-    [switch]$ConfirmLoginAuthProviderChange
+    [switch]$ConfirmLoginAuthProviderChange,
+    # ── merge-zone 系列的映射来源(D1 第 2 批,docs/handoff/launch-readiness-20261013/spec_D1_batch1b2_2_3.md §13.3 第 3 条)──
+    # 转给 tools/merge_zone 的 -route-source / -route-db-dsn / -waitaof-local / -waitaof-replicas / -waitaof-timeout-ms。
+    # **没有缺省值,也不从 data_service.yaml 推断**:除 merge-zone-capability-check(不读写映射)外的每个 merge-zone 命令都必须显式给
+    # -MergeZoneRouteSource db|redis,缺了在调用工具之前点名拒绝。推断不可靠:本机 yaml 与线上部署可以是两种模式,猜错的一边
+    # 会写错库(db_first 环境里直写 Redis 写出库不知道的值;redis 环境里写库则缓存根本不认)。
+    #   db    data_service 已是 RouteStore.Mode=db_first:必须同时给 -MergeZoneRouteDbDsn(全局库 DSN,dev testdb / K8s mmorpg_global;
+    #         含口令,建议从环境变量取,例如 -MergeZoneRouteDbDsn $env:MERGE_ZONE_ROUTE_DB_DSN,不进 shell 历史)。
+    #   redis 只在全部 data_service 仍是 RouteStore.Mode=redis 时用;不接受 -MergeZoneRouteDbDsn(由工具拒绝)。
+    # 工具开写前还会核对库与 mapping Redis 是否成对(mapping:route:watermark),不成对即拒绝。
+    # WAITAOF 三项 -1 = 不转发,用工具缺省(1 / 0 / 1500ms);redis-ha 档把 -MergeZoneWaitAofReplicas 设为 1。
+    # 追加在参数块末尾,理由同上(字符串参数按声明顺序占位置)。
+    [ValidateSet("", "db", "redis")]
+    [string]$MergeZoneRouteSource = "",
+    [string]$MergeZoneRouteDbDsn = "",
+    [int]$MergeZoneWaitAofLocal = -1,
+    [int]$MergeZoneWaitAofReplicas = -1,
+    [int]$MergeZoneWaitAofTimeoutMs = -1,
+    # ── k8s-route-tool(D1 第 1b-3 批,§13.4 第 3 条)──
+    # 转给 tools/scripts/k8s_route_tool.ps1:-RouteToolArgs 原样转给它的同名参数(子命令与参数,第一项是子命令;含 '-' 开头的项
+    # 请用 -Command 形式传数组);-RouteToolReportDir / -RouteToolTimeoutSeconds / -RouteToolImage 去掉 RouteTool 前缀转给
+    # -ReportDir / -TimeoutSeconds / -Image,留空 / 0 不转发(默认值只在 k8s_route_tool.ps1 一处)。zone 与集群取本脚本的
+    # -ZoneName / -NamespacePrefix / -KubeContext / -KubeConfig,-DryRun 同名转发。退出码原样透传(route-tool 容器的 0 / 1 / 2 / 3)。
+    [string[]]$RouteToolArgs = @(),
+    [string]$RouteToolReportDir = "",
+    [int]$RouteToolTimeoutSeconds = 0,
+    [string]$RouteToolImage = "",
+    # ── merge-zone / merge-zone-unmerge 续跑接手库围栏(D1 第 2 批)──
+    # 转给 tools/merge_zone 的 -take-over-fence <run_id>。-MergeZoneRouteSource db 下,写到一半中止的合服 / 撤销会把库围栏
+    # (zone_merge_fence)故意留着,中止文案给出 run_id;确认那次运行的进程已不在之后,原命令加 -MergeZoneTakeOverFence <run_id>
+    # 重跑,工具在一个库事务里把围栏接到新 run_id,两区一刻不解封(docs/ops/merge-zone-runbook.md §15.4)。db 源下不要再
+    # 「DEL merge:in_progress 键后重跑」:库里的围栏才是真源。留空不转发;适用范围由工具判(经 Get-MergeRouteSourceArgs 转发)。
+    # 追加在参数块末尾,理由同上(字符串参数按声明顺序占位置)。
+    [string]$MergeZoneTakeOverFence = "",
+    # ── D1 映射开关,透传给 k8s_deploy.ps1 同名参数(k8s-infra-up / k8s-zone-up / k8s-all-up)──
+    # 语义、组合门禁与粘滞核对(线上现状与本次参数不一致且没带 -ConfirmRouteSwitchChange 即拒绝)都只在 k8s_deploy.ps1 一处,
+    # 本入口只透传:-RouteStoreMode 非空才传,五个 switch 只在被指定时传,默认值只留在下游(redis / false)。
+    # 集群切 db_first 之后,经本入口部署必须照传线上现状(粘滞核对的报错给出照传串),否则在任何写操作之前被拒。
+    # k8s_image.ps1 不部署 Go 服务,k8s-image-* / k8s-release-* 显式给了即拒绝。k8s-zone-rollback 的 Step 6 透传由回滚脚本负责(R9)。
+    # 追加在参数块末尾,理由同上(字符串参数按声明顺序占位置)。
+    [ValidateSet("", "redis", "db_first")]
+    [string]$RouteStoreMode = "",
+    [switch]$RouteReconcileArm,
+    [switch]$RouteReadRequiresReady,
+    [switch]$DbPlacementRequireRouteReady,
+    [switch]$GuildRequireRouteReady,
+    [switch]$ConfirmRouteSwitchChange
 )
 
 $ErrorActionPreference = "Stop"
@@ -870,6 +916,14 @@ function Invoke-K8sDeploy {
     if (-not [string]::IsNullOrWhiteSpace($LoginQQEndpoint)) { $args.LoginQQEndpoint = $LoginQQEndpoint }
     if ($LoginQQAllowOpenId) { $args.LoginQQAllowOpenId = $true }
     if ($ConfirmLoginAuthProviderChange) { $args.ConfirmLoginAuthProviderChange = $true }
+    # D1 映射开关同一口径:字符串非空才传,switch 只在被指定时传。组合门禁与粘滞核对只在 k8s_deploy.ps1
+    # (Assert-RouteSwitchPreflight / Assert-RouteSwitchClusterState),本函数只透传,不复制规则。
+    if (-not [string]::IsNullOrWhiteSpace($RouteStoreMode)) { $args.RouteStoreMode = $RouteStoreMode }
+    if ($RouteReconcileArm) { $args.RouteReconcileArm = $true }
+    if ($RouteReadRequiresReady) { $args.RouteReadRequiresReady = $true }
+    if ($DbPlacementRequireRouteReady) { $args.DbPlacementRequireRouteReady = $true }
+    if ($GuildRequireRouteReady) { $args.GuildRequireRouteReady = $true }
+    if ($ConfirmRouteSwitchChange) { $args.ConfirmRouteSwitchChange = $true }
     if (-not [string]::IsNullOrWhiteSpace($RequireClientEndpoint)) { $args.RequireClientEndpoint = $RequireClientEndpoint }
     if ($AllowDisruptiveSwitch) { $args.AllowDisruptiveSwitch = $true }
     # 共享 Redis 重启闸的确认(P0-E),同一口径:switch 只在被指定时传。
@@ -1016,6 +1070,13 @@ function Invoke-K8sImage {
     if (-not [string]::IsNullOrWhiteSpace($LoginQQEndpoint)) { $notForwarded += '-LoginQQEndpoint' }
     if ($LoginQQAllowOpenId) { $notForwarded += '-LoginQQAllowOpenId' }
     if ($ConfirmLoginAuthProviderChange) { $notForwarded += '-ConfirmLoginAuthProviderChange' }
+    # D1 映射开关只作用于 Go 服务的 ConfigMap,k8s_image.ps1 不部署 Go 服务。
+    if (-not [string]::IsNullOrWhiteSpace($RouteStoreMode)) { $notForwarded += '-RouteStoreMode' }
+    if ($RouteReconcileArm) { $notForwarded += '-RouteReconcileArm' }
+    if ($RouteReadRequiresReady) { $notForwarded += '-RouteReadRequiresReady' }
+    if ($DbPlacementRequireRouteReady) { $notForwarded += '-DbPlacementRequireRouteReady' }
+    if ($GuildRequireRouteReady) { $notForwarded += '-GuildRequireRouteReady' }
+    if ($ConfirmRouteSwitchChange) { $notForwarded += '-ConfirmRouteSwitchChange' }
     if ($notForwarded.Count -gt 0) {
         throw "k8s-image-* / k8s-release-* 不支持 $($notForwarded -join ', '):k8s_image.ps1 不部署 Go / Java 服务,也不支持 Agones 高密度 / FleetAutoscaler。请改用 k8s-infra-up / k8s-zone-up / k8s-all-up(直接调 k8s_deploy.ps1)。"
     }
@@ -1263,6 +1324,32 @@ function Get-MergeKafkaGateArgs {
     return $a
 }
 
+# Get-MergeRouteSourceArgs 组装映射来源的 flag(D1 第 2 批,规格 §13.3 第 3 条):-route-source 必填、没有缺省值、**不从 yaml 推断**;
+# db 时 -route-db-dsn 必填。只拒绝「缺了工具必然拒绝」的两条,其余(redis 配 DSN、WAITAOF 取值范围、库与 Redis 是否成对)
+# 一律留给工具判,不在 ps1 里复制第二份规则。merge-zone-capability-check 不读写映射,不调用本函数。
+# DSN 含口令:只进参数数组,不 Write-Host。返回数组,调用方用 @(...) 接。
+function Get-MergeRouteSourceArgs {
+    param([Parameter(Mandatory = $true)][string]$MergeCommand)
+    if ($MergeZoneRouteSource -eq "") {
+        throw ("$MergeCommand requires -MergeZoneRouteSource db|redis (there is no default and it is never inferred from data_service.yaml): " +
+               "'db' when data_service runs RouteStore.Mode=db_first (also pass -MergeZoneRouteDbDsn <global DB DSN>), " +
+               "'redis' only while every data_service still runs RouteStore.Mode=redis (docs/ops/merge-zone-runbook.md §15)")
+    }
+    $a = @("-route-source", $MergeZoneRouteSource)
+    if ($MergeZoneRouteSource -eq "db" -and $MergeZoneRouteDbDsn -eq "") {
+        throw ("$MergeCommand -MergeZoneRouteSource db requires -MergeZoneRouteDbDsn <DSN of the global DB that holds player_route " +
+               "(dev: testdb, K8s: mmorpg_global)>; pass it from an environment variable, e.g. -MergeZoneRouteDbDsn `$env:MERGE_ZONE_ROUTE_DB_DSN")
+    }
+    if ($MergeZoneRouteDbDsn -ne "")      { $a += @("-route-db-dsn", $MergeZoneRouteDbDsn) }
+    if ($MergeZoneWaitAofLocal -ge 0)     { $a += @("-waitaof-local", $MergeZoneWaitAofLocal) }
+    if ($MergeZoneWaitAofReplicas -ge 0)  { $a += @("-waitaof-replicas", $MergeZoneWaitAofReplicas) }
+    if ($MergeZoneWaitAofTimeoutMs -ge 0) { $a += @("-waitaof-timeout-ms", $MergeZoneWaitAofTimeoutMs) }
+    # -take-over-fence 是库围栏的续跑接手:适用范围(只 merge / unmerge、只 db 源、run_id 形状)只由工具判,这里原样转发,
+    # 给到别的命令时工具会点名拒绝,而不是被 ps1 静默丢掉。
+    if ($MergeZoneTakeOverFence -ne "")   { $a += @("-take-over-fence", $MergeZoneTakeOverFence) }
+    return $a
+}
+
 # Resolve-MergeFullPath 把清单路径按**调用者的**当前目录转成绝对路径。
 # 必须在 Push-Location 进 tools/merge_zone 之前调用:清单是续跑 / 撤销 / 复核 / 放弃搬库的唯一凭据,
 # 相对路径一旦按切换后的目录解释,就会在另一个地方新建一份空清单(= 把续跑当成全新的一次)。
@@ -1292,7 +1379,8 @@ function Get-MergeZoneCommandArgs {
             # 存量 player:zone 回填(合服前置,每个 zone 各跑一次)。合服之后源区带 merge:merged_into
             # 标记,工具会拒绝对它回填(否则映射丢失时会把人钉回源区,A10)。
             if ($MergeBackfillZone -gt 0) {
-                return @("run", ".", "-backfill-home-zone", "-zone", $MergeBackfillZone) + @(Get-MergeZoneArgs) + @($intent)
+                return @("run", ".", "-backfill-home-zone", "-zone", $MergeBackfillZone) + @(Get-MergeZoneArgs) +
+                       @(Get-MergeRouteSourceArgs -MergeCommand "merge-zone") + @($intent)
             }
             if ($MergeSourceZone -le 0 -or $MergeTargetZone -le 0) {
                 throw "merge-zone requires -MergeSourceZone <id> and -MergeTargetZone <id> (or -MergeBackfillZone <id> for the backfill mode)"
@@ -1315,6 +1403,7 @@ function Get-MergeZoneCommandArgs {
                        "-MergeDbCapabilityZones <dst> before opening it (runbook §5.1 / §8 Step 6)")
             }
             $a += @(Get-MergeZoneArgs)
+            $a += @(Get-MergeRouteSourceArgs -MergeCommand "merge-zone")
             # 模式只在显式给出时转发:留空 = 工具默认 pin,默认值只在工具里定义一处。能力标记 zone 给了就原样转发。
             if ($MergePlayerRowsMode -ne "")    { $a += @("-player-rows-mode", $MergePlayerRowsMode) }
             if ($MergeDbCapabilityZones -ne "") { $a += @("-db-capability-zones", $MergeDbCapabilityZones) }
@@ -1333,6 +1422,7 @@ function Get-MergeZoneCommandArgs {
             if (-not (Test-Path -LiteralPath $manifest)) { throw "manifest not found: $manifest" }
             $a = @("run", ".", "-mode", "unmerge", "-manifest-path", $manifest)
             $a += @(Get-MergeZoneArgs)
+            $a += @(Get-MergeRouteSourceArgs -MergeCommand "merge-zone-unmerge")
             # 清单是 pin 模式时工具要求 -db-capability-zones(没有缺省值,可 none),copy 撤销给了才查。
             # 模式只在清单里,这里不读清单复制那条规则:给了就转发,没给时提示,由工具按清单拒绝。
             if ($MergeDbCapabilityZones -ne "") { $a += @("-db-capability-zones", $MergeDbCapabilityZones) }
@@ -1356,6 +1446,8 @@ function Get-MergeZoneCommandArgs {
                 "-target-zone", $MergeTargetZone
             )
             $a += @(Get-MergeZoneArgs)
+            # 审计也要:db 源下映射相关检查读库,合服后验证多一行 verify:route_cache(缓存与库逐人一致)。
+            $a += @(Get-MergeRouteSourceArgs -MergeCommand "merge-zone-audit")
             if ($VerifyMerged) {
                 # 合服后复核逐 id 核对清单玩家(A6),工具在没有清单时拒绝;这里先点名 ps1 参数报错。
                 # 清单存在性不在这里查:清单缺失 / 是 dry-run 预览由工具报 INFRA(exit 2),退出码语义以工具为准。
@@ -1372,6 +1464,7 @@ function Get-MergeZoneCommandArgs {
             }
             $a = @("run", ".", "-mode", "pin-placement", "-zone", $MergePinPlacementZone)
             $a += @(Get-MergeZoneArgs)
+            $a += @(Get-MergeRouteSourceArgs -MergeCommand "merge-zone-pin-placement")
             $a += $intent
             return $a
         }
@@ -1401,6 +1494,7 @@ function Get-MergeZoneCommandArgs {
             # 公共参数里的 -kafka-topic-generation 决定 R2 等的排序锁键(db_task_zone_<home>[_g<gen>]),
             # 现读 db.yaml;-table-list-json 决定搬哪些玩家表;-notice-redis-* 是排序锁所在的共享 DB 0。
             $a += @(Get-MergeZoneArgs)
+            $a += @(Get-MergeRouteSourceArgs -MergeCommand "merge-zone-relocate")
             $a += $intent
             return $a
         }
@@ -1415,6 +1509,7 @@ function Get-MergeZoneCommandArgs {
             if ($MergeRelocateTargetStorage -gt 0) { $a += @("-relocate-target-storage", $MergeRelocateTargetStorage) }
             if ($MergeRelocateBatchSize -gt 0)     { $a += @("-relocate-batch-size", $MergeRelocateBatchSize) }
             $a += @(Get-MergeZoneArgs)
+            $a += @(Get-MergeRouteSourceArgs -MergeCommand "merge-zone-relocate-abort")
             $a += $intent
             return $a
         }
@@ -1423,6 +1518,10 @@ function Get-MergeZoneCommandArgs {
             # 合服后 dst zone-up、开服之前必跑(runbook §8 Step 6)。none 由工具拒绝。
             if ($MergeDbCapabilityZones -eq "") {
                 throw "merge-zone-capability-check requires -MergeDbCapabilityZones <zone ids to check>, e.g. the merge target right after its zone-up"
+            }
+            # 本命令不读写映射、不持围栏,不调用 Get-MergeRouteSourceArgs:给了 -MergeZoneTakeOverFence 就拒绝,不静默丢掉。
+            if ($MergeZoneTakeOverFence -ne "") {
+                throw "merge-zone-capability-check does not hold a merge fence; -MergeZoneTakeOverFence only applies to merge-zone / merge-zone-unmerge"
             }
             $a = @("run", ".", "-mode", "capability-check", "-db-capability-zones", $MergeDbCapabilityZones)
             $a += @(Get-MergeZoneArgs)
@@ -1435,6 +1534,8 @@ function Get-MergeZoneCommandArgs {
             # 只读模式,工具不要求 -dry-run / -apply,所以这里不转发写意图。
             $a = @("run", ".", "-mode", "storage-audit", "-storage", $MergeAuditStorage)
             $a += @(Get-MergeZoneArgs)
+            # 决定库能否退役:db 源下一律读库,不按缓存下结论。
+            $a += @(Get-MergeRouteSourceArgs -MergeCommand "merge-zone-storage-audit")
             return $a
         }
         default { throw "Get-MergeZoneCommandArgs: unknown merge command '$MergeCommand'" }
@@ -1491,6 +1592,37 @@ function Invoke-MergeZoneGo {
         Remove-Item -LiteralPath $exe -Force -ErrorAction SilentlyContinue
     }
     exit $code
+}
+
+# Get-K8sRouteToolArgs 组装 tools/scripts/k8s_route_tool.ps1 的 hashtable 参数(D1 第 1b-3 批,§13.4 第 3 条)。
+# 必须 hashtable splatting:数组 splatting 按位置绑定(与 k8s-zone-rollback 同一个坑)。参数名与 k8s_route_tool.ps1 的 param 块
+# 逐字相同(契约测试按 AST 钉住);留空 / 0 / 未指定的不放,默认值只在 k8s_route_tool.ps1 一处。子命令与参数的形状
+# (第一项是已知子命令、不许带 -f / -route-tool 等)由 k8s_route_tool.ps1 的入口校验判,这里不复制规则。
+function Get-K8sRouteToolArgs {
+    $rtArgs = @{
+        ZoneName        = $ZoneName
+        RouteToolArgs   = @($RouteToolArgs)
+        NamespacePrefix = $NamespacePrefix
+    }
+    if ($RouteToolReportDir -ne "")                    { $rtArgs.ReportDir = $RouteToolReportDir }
+    if ($RouteToolTimeoutSeconds -gt 0)                { $rtArgs.TimeoutSeconds = $RouteToolTimeoutSeconds }
+    if ($RouteToolImage -ne "")                        { $rtArgs.Image = $RouteToolImage }
+    if ($DryRun)                                       { $rtArgs.DryRun = $true }
+    if (-not [string]::IsNullOrWhiteSpace($KubeContext)) { $rtArgs.KubeContext = $KubeContext }
+    if (-not [string]::IsNullOrWhiteSpace($KubeConfig))  { $rtArgs.KubeConfig = $KubeConfig }
+    return $rtArgs
+}
+
+# Invoke-K8sRouteTool 调 k8s_route_tool.ps1 并**以它的退出码结束当前脚本**:route-tool 容器的 0 干净 / 1 要人工处理 / 2 失败 /
+# 3 有生效的合服围栏,必须原样到达调用方(`pwsh -File dev_tools.ps1 ...` 在脚本正常结束时进程退出码恒为 0,见 Invoke-MergeZoneGo)。
+function Invoke-K8sRouteTool {
+    if (@($RouteToolArgs).Count -eq 0) {
+        throw "k8s-route-tool requires -RouteToolArgs <subcommand and its arguments>, e.g. -RouteToolArgs @('audit', '-frozen-recovery') (use the -Command form of pwsh for arrays)"
+    }
+    $rtArgs = Get-K8sRouteToolArgs
+    $global:LASTEXITCODE = 0
+    & (Join-Path $ScriptDir "k8s_route_tool.ps1") @rtArgs
+    exit $LASTEXITCODE
 }
 
 function Invoke-Help {
@@ -1557,14 +1689,38 @@ Other common commands:
         Manage shared infrastructure (etcd/redis/kafka/mysql) in the mmorpg-infra namespace.
     -Command k8s-zone-up | k8s-zone-down | k8s-zone-status
     -Command k8s-all-up | k8s-all-down | k8s-all-status
+        k8s-infra-up / k8s-zone-up / k8s-all-up pass the D1 route switches through to
+        k8s_deploy.ps1 unchanged: [-RouteStoreMode redis|db_first] [-RouteReconcileArm]
+        [-RouteReadRequiresReady] [-DbPlacementRequireRouteReady] [-GuildRequireRouteReady]
+        [-ConfirmRouteSwitchChange]. They are sticky: once the cluster runs db_first, pass the
+        live values (the refusal prints them) or the deploy is refused before any write.
     -Command k8s-exposure-preflight
     -Command k8s-stage-runtime
     -Command k8s-image-preflight | k8s-build-image | k8s-push-image | k8s-release-zone | k8s-release-all
+    -Command k8s-route-tool -ZoneName <zone> -RouteToolArgs @('<subcommand>', ...) [-RouteToolTimeoutSeconds <s>]
+            [-RouteToolImage <image>] [-RouteToolReportDir <dir>] [-DryRun] [-KubeContext <ctx>]
+        Run data_service's route-tool (import-from-redis / audit / freeze / reconcile-from-cache /
+        unfreeze / tidb-prepare / rewarm) as a one-off K8s Job via tools/scripts/k8s_route_tool.ps1;
+        exits with the container's code (0 clean / 1 needs attention / 2 failed / 3 merge fence held).
 
 Zone merge (合服) commands — full SOP: docs/ops/merge-zone-runbook.md
     Every merge-zone* command exits with merge_zone's own exit code (the
     tool is built then run directly, not via `go run`). If merge_zone fails
     to build, nothing runs and the exit code is 2.
+    Every merge-zone* command except merge-zone-capability-check REQUIRES
+    -MergeZoneRouteSource db|redis (no default, never inferred from yaml):
+        db    data_service runs RouteStore.Mode=db_first; also pass
+              -MergeZoneRouteDbDsn <global DB DSN> (from an env var) and, on
+              redis-ha, -MergeZoneWaitAofReplicas 1.
+        redis only while every data_service still runs RouteStore.Mode=redis.
+    The tool refuses when the route DB and the mapping Redis are not a pair
+    (mapping:route:watermark). Runbook §15.
+    -MergeZoneTakeOverFence <run_id> (merge-zone / merge-zone-unmerge with
+    -MergeZoneRouteSource db only): resume a run that aborted mid-write and
+    left its DB merge fence in place, after confirming that run's process
+    is gone; the fence moves to the new run in one DB transaction. Do NOT
+    DEL merge:in_progress:* under db: the DB fence is the source of truth.
+    Runbook §15.4.
     -Command merge-zone -MergeBackfillZone <id> [-DryRun]
         PREREQUISITE, run once per existing zone BEFORE the first ever merge:
         seeds player:zone:{id} (SET NX) from zone_<id>_db.player_database.
@@ -1662,6 +1818,7 @@ switch ($Command) {
     "k8s-push-image" { Invoke-K8sImage -ImageCommand "push-image" }
     "k8s-release-zone" { Invoke-K8sImage -ImageCommand "release-zone" }
     "k8s-release-all" { Invoke-K8sImage -ImageCommand "release-all" }
+    "k8s-route-tool" { Invoke-K8sRouteTool }
     "go-svc-start"  { & (Join-Path $ScriptDir "go_services.ps1") -Command start  -Services $GoServices -Counts $GoCounts -PortStride $GoPortStride -NoTier:$NoTier -TierReadySeconds $TierReadySeconds -Zone $Zone -ZonePortShift $ZonePortShift }
     "go-svc-start-exe"  { & (Join-Path $ScriptDir "go_services.ps1") -Command start-exe  -Services $GoServices -Counts $GoCounts -PortStride $GoPortStride -NoTier:$NoTier -TierReadySeconds $TierReadySeconds -Zone $Zone -ZonePortShift $ZonePortShift }
     "go-svc-stop"   { & (Join-Path $ScriptDir "go_services.ps1") -Command stop   -Services $GoServices }

@@ -480,6 +480,7 @@ type fenceSaveResult struct {
 - **判据为什么正确**：已落库 epoch 只记录被铸造过、并且有写带着它落了库的值；计数器只升不降（铸造与回滚都用 INCR，`ownerepoch.go` 包注释）。正常运行时任何被铸造的 epoch 都 ≤ 计数器，所以无论两次读的先后顺序如何，都不可能出现「计数器 < 已落库 epoch」。出现就说明计数器倒退了。
 - **残余**：计数器重新追过已落库 epoch 之后，探测失效，倒退期间发出的写与僵尸写无法区分。探测只是检测手段，处置与根治见 §9.1。
 - **依赖**：探测要求 go/db 能读到 owner_epoch 所在的 Redis。今天 go/db 的 Redis 客户端与 scene_manager 是同一个核心实例（本地 `db.yaml` 与 `scene_manager_service.yaml` 都是 127.0.0.1:6379，K8s 的 db RedisClient 也是核心实例）[C]。G4a 拆分第 2 批计划把 `consumer:applied_epoch:*` 迁到 redis-mapping、owner_epoch 留在核心实例（`shared-redis-split-by-purpose.md`），拆分后 go/db 要单独配一个指向核心实例的客户端。**已定**（§14 第 19 条）：go/db 新增只读客户端 `OwnerEpochRedis`，只做 `GET owner_epoch`，`epoch_raise` 共用它；未配置时回落到现有 `RedisClient`（今天两者是同一实例）。两份设计都要登记这条依赖；同时登记 §6.2 令牌发布脚本在拆分后跨实例的问题（§6.4）。
+  - **（2026-10-19 指向注，上条原文保留）** 「`consumer:applied_epoch:*` 迁到 redis-mapping」已被 G4a 2026-10-18 修订稿 §18 取代：控制面改为按 zone 组分实例 `redis-dbctl-g<N>`，不再并入 redis-mapping。该稿 §18.7 盘点了 go/db 三个句柄承载的键全集：`RedisClient` 今天还承载令牌发布脚本、`save_barrier` ACK 与补投工作器，必须就是核心实例；第 2 批要先把它拆成控制面与核心两个句柄（该稿 §25.2 第 2 条）。本条 `OwnerEpochRedis` 的依赖照旧成立，已登记在该稿 §18.7。
 - 不采用「`dual` 下 Redis 守卫判 stale 一律进死信」：真僵尸与迟到的退出存盘（K1）本来就是这道守卫的设计对象，全部进死信会把整行载荷堆进 noeviction 的共享 Redis，告警一直是噪声，而且仍然分不出哪条是计数器倒退（§15）。
 
 ### 5.2 游标判过期时让 epoch 说话（G3）
@@ -713,6 +714,7 @@ go/db 盖过围栏的消息原样进缓存，所以缓存值（序列化的 `pla
   - 值封装是单键，不需要 hash tag。
   - §6.2 的脚本同时访问排序锁键、子表缓存键与资产证据键（证据键已用 `{player_id}` 作 tag）；§5.5 的推进脚本同时访问排序锁键、游标键和已落库 epoch 键。今天主 Redis 是单实例，没有问题。按 `{player_id}` 分片后，这些键必须落在同一个 tag 下；排序锁键的改名还要与 `tools/merge_zone/relocate.go` 里的锁键镜像同批改。瓶颈文档 §6.5 的分片修订要把这两条约束算进去。
 - **与 G4a 按用途拆分的冲突**（v0.4 新登记，§14 第 19 条）：G4a 拆分第 2 批让 go/db 的 `RedisClient`（排序锁在这里）指向 redis-mapping，新句柄 `CacheRedis`（子表缓存在这里）留在核心实例（`shared-redis-split-by-purpose.md` §3.2.3）。令牌发布脚本要在同一段 Lua 里读排序锁、写子表缓存与证据，键分到两个实例后无法原子执行。解法二选一：第 2 批之前把缓存栅栏换成本节的值封装（单键，不依赖锁），或让排序锁、子表缓存、证据键留在同一实例。G4a 第 2 批要等这一条解决后才能切；§5.5 的推进脚本三把键都去 redis-mapping，不受影响。G4a 稿要登记这条依赖。
+  - **（2026-10-19 指向注，上条原文保留）** G4a 稿已登记这条依赖，见 `shared-redis-split-by-purpose.md` §18.7。按 2026-10-18 修订稿：排序锁所在的控制面改去 zone 组实例 `redis-dbctl-g<N>`（§18），不再是 redis-mapping；子表缓存去 redis-cache（§19，必做）；令牌发布脚本自 2026-10-17 起还写 `save_barrier` ACK。第 2、3 批的硬前置写成二选一（A 值封装；B 排序锁、子表缓存、证据、`save_barrier` 同实例，Cluster 下同 slot），列为该稿 §25.2 第 1 条待拍板；选 A 时证据与屏障 ACK 是否仍要核令牌，由本线裁决。上句「§5.5 的推进脚本三把键都去 redis-mapping」同此改为：三把键随控制面去组实例，上 Cluster 时同 tag（该稿 §21.6）。
 
 ### 6.5 缓存与读结果各自保证什么
 
@@ -1059,6 +1061,8 @@ F-5（§1.2）的成立条件就是上表第 2、5 行：没有旧二进制，�
 | 手工删除个别 `player:{id}:owner_epoch` 键 | 是（从 0 起）| 否 | Redis 守卫 | 死信（§5.1 探测）| 玩家离线时 location 已删，同节点补种走不到，铸造得到 1 |
 | G4a 拆分后核心实例单独回档（**未来**）| 是 | 否（`applied_epoch` 已迁到 redis-mapping）| Redis 守卫 | 死信（§5.1 探测）| `shared-redis-split-by-purpose.md` 的拆分第 2 批；今天两者在同一实例，不成立 |
 | `k8s_zone_rollback.ps1` 带 `-ConfirmFlushSharedRedis` 的 FLUSHDB | 与 FLUSHALL 相同 | | | | 它清的是共享实例的 DB 0，所有 zone 的账号目录一起没。这本身就是事故 |
+
+> **（2026-10-19 指向注，上表原文保留）** 「G4a 拆分后核心实例单独回档」一行的前提按 G4a 2026-10-18 修订稿改为：`applied_epoch` 随控制面迁到 zone 组实例 `redis-dbctl-g<N>`（`shared-redis-split-by-purpose.md` §18），不是 redis-mapping；本行结论（计数器倒退、`applied_epoch` 不同步倒退、在 Redis 守卫被拒）不变。拆分稿的回档 runbook 按 §14 第 19 条引用本节与 §9.2，已登记为该稿 §18.7 硬依赖第 4 条。
 
 备份恢复、AOF 丢尾、主从切换丢尾都只丢末尾一段，计数器与 `applied_epoch` 在恢复点上一致；真正让 `applied_epoch` 高于计数器的，是恢复后仍在流动的高 epoch 在途写，所以「在 Redis 守卫被拒」这一行只在恢复时玩家在线时出现。
 
@@ -1617,7 +1621,7 @@ DBTask TopicGeneration 换代的排空集合同时包含旧代 Kafka、retry 与
 |---|---|---|
 | `outbox_attempt_version` / `outbox_attempts` | 补投器 | 该版本已补投的次数 |
 | `outbox_terminal` / `outbox_terminal_reason` | go/db 消费侧 | 该版本已被确定性拒写 |
-| `outbox_retry_ms` | go/db 消费侧 | 最近一次把该玩家的严格写延后进重试的毫秒时刻（取较大值） |
+| `outbox_retry_ms` | go/db 消费侧 | 最近一次把该玩家的严格写延后进重试的毫秒时刻（最后一次写入为准；2026-10-19 前取较大值，见下文 r2 修复） |
 
 - 两表 ACK 齐全时，补投器把这些字段与 4 个 `outbox_*` 意图字段一并删除，屏障回到 pending 加两表 ACK 三个字段。`barrierrestore` 的 `HLEN==3` 判定不受影响。
 - C++ 父快照 Lua 与 login 冷加载只读各自的固定字段，不受新字段影响。
@@ -1654,6 +1658,30 @@ DBTask TopicGeneration 换代的排空集合同时包含旧代 Kafka、retry 与
   - `kafka/player_row_fence_mode_test.go`（空串改为 `dual`）；
   - `tools/scripts/tests/k8s_zone_rollback_discard.tests.ps1`（Fencing 缺省改为 `dual`）。
 - **Java 版**：不适用。Java 不经 Kafka / go/db 落库，没有父快照提交屏障与补投器（AGENTS §12）。
+
+**2026-10-19 第二轮审计修复（r2-db#1、r2-db#3，Claude，未编译、未测试，待 Codex 验证）**
+
+来源：[data-overwrite-rollback-audit-r2-20261019.md](data-overwrite-rollback-audit-r2-20261019.md) §3.1、§3.2。两条都先对照代码复核，确认成立后才修。上文第 3、5 条与字段表以本段为准。
+
+- **r2-db#1：补投把发布失败也计次。**
+  - 问题：旧认领脚本先把 `outbox_attempts+1`，再交出意图，`Publish` 失败也不回退。Kafka 生产持续不可用约 21 分钟后，意图停在 exhausted；恢复后没有路径重置计数，实体已销毁的玩家会卡在登录。
+  - 计次规则：认领只按本次退避推迟索引（充当跨实例租期），不再计次。两条任务都经 broker 确认后，由 `confirmAttemptScript` 计一次，而且只在版本与计数仍等于认领时读到的值时 +1，并发认领和新版本存盘都不会重复计或串版本。只确认了一条也不计。
+  - 发布失败：整个补投器暂停 `RetryAfter`，计 `publish_paused`。这样不会在 broker 故障期间逐拍认领、推迟其他意图并刷 ERROR。
+  - 意图本身不合法（身份不符、topic 世代未放行、跨 zone 迁移缺权威 home_zone）仍计次。重投不会让它变好，所以照样走到 exhausted 并告警。
+  - 修复后 exhausted 只来自「broker 已确认，但两表 ACK 迟迟不齐」，即消费侧问题；告警 `DbSaveOutboxExhausted` 的归因随之成立。
+- **r2-db#3：在途戳取较大值，且用本机时钟。**
+  - 问题：时钟超前 Δ 的实例写下的戳，会把补投推迟约 Δ+窗口且不计次；之后正确的时刻也覆盖不了它。
+  - 写入：`noteRetryScript` 改为最后一次写入为准。
+  - 认领：戳超过 `now + InflightWindow`，或格式不对，都按非法截掉（HDEL）后照常判定。单个未来戳造成的推迟上限因此是两个窗口（缺省 4 分钟）。
+  - 没有改用 Redis TIME：调度分数用的是 go/db 时钟，在途比较改用 Redis 时钟只会换成 Redis 与 go/db 之间的偏差，截断已经给出上界。
+  - 「C++ 写新版本不清戳」维持不改：戳按玩家计，表示该玩家的写仍有重试链在途，新版本此时补投同样会被挡回。截断后它的影响也有上界。
+- **r2-db#2**（legacy 存活暂停挡不住已发到 Kafka 的旧补投副本）只在 dual→legacy 降级或混跑时出现。按下段「上线状态」，上线前不阻塞，本批不改代码。上线后若要降级，§8.6 的步骤需补「该 zone 的 db_task topic 积压为 0」。
+- **测试**：
+  - 回归用例 `saveoutbox/replay_r2_regression_test.go`：发布失败不计次且恢复后照常补投、部分确认不计次、发布失败暂停、非法意图仍计次、超前戳截断、窗口内未来戳仍推迟、在途戳最后写入为准。
+  - 除「非法意图仍计次」「窗口内未来戳仍推迟」两条护栏外，其余五条只用改动前就有的接口写成，可在旧代码上先跑出红。
+  - `replay_bounds_test.go` 的「取较大值」断言改为最后一次写入为准。
+- **指标**：`db_save_outbox_total{result}` 新增 `publish_paused`。
+- **Java 版**：不适用，理由同上。
 
 **上线状态（负责人 2026-10-18 确认：尚未上线）**
 

@@ -1682,6 +1682,10 @@ TEST(SceneRouteEntry, LeaveGameResetThenRelogForwardsFreshRouteOnly)
     EXPECT_EQ(0u, session.forwardedOwnerEpoch);
     EXPECT_EQ(42u, session.playerId) << "角色绑定照旧保留,下一次 BindSession 按既有规则处理";
     EXPECT_EQ(kReloginGeneration - 1, session.loginGeneration) << "代次只抬高,不随 LeaveGame 清零";
+    EXPECT_TRUE(session.sceneRouteResetPending);
+    EXPECT_FALSE(session.enterGameSentAfterLeave);
+    EXPECT_EQ(42u, session.playerIdAtReset) << "被离开的那条登录链属于会话当时的角色";
+    EXPECT_EQ(kReloginGeneration - 1, session.loginGenerationAtReset);
 
     std::vector<EpochStampedForward> calls;
     auto resolve = [](const uint32_t) { return std::optional<entt::entity>{entt::entity{12}}; };
@@ -1691,7 +1695,9 @@ TEST(SceneRouteEntry, LeaveGameResetThenRelogForwardsFreshRouteOnly)
         return SceneForwardResult::kSent;
     };
 
-    // 重登的 BindSession 先到:没有旧路由可补发。
+    // 客户端在同一连接上再次 EnterGame(gate 收包时记下),之后重登的 BindSession 先到:没有旧路由可补发。
+    gate_scene_route::NoteEnterGameRequested(session);
+    ASSERT_FALSE(gate_scene_route::IsBindFromBeforeLeaveGame(session, 42, kReloginGeneration));
     ASSERT_TRUE(gate_scene_route::ApplyLoginBinding(session, 42, 3, kReloginGeneration, kReloginEnterType));
     EXPECT_FALSE(gate_scene_route::EntryForLateLoginBinding(session, kT0).has_value())
         << "不得按 LeaveGame 之前的旧路由(旧 epoch)补发";
@@ -1720,7 +1726,12 @@ TEST(SceneRouteEntry, LateOldRouteAfterLeaveGameResetIsDroppedAndNotReplayedOnBi
     ASSERT_TRUE(session.sceneRouteResetPending);
     EXPECT_EQ(kReloginGeneration - 1, session.loginGenerationAtReset);
 
-    // 旧链的路由(代次不大于重置时的值)与 scene 自发的路由(0)都认作 LeaveGame 之前的;新登录的路由不是。
+    // 客户端再次 EnterGame 之前:任何路由都只可能来自旧链(第二轮审计 r2-gate#1),代次再新、别的角色的也丢。
+    EXPECT_TRUE(gate_scene_route::IsRouteFromBeforeLeaveGame(session, 42, kReloginGeneration));
+    EXPECT_TRUE(gate_scene_route::IsRouteFromBeforeLeaveGame(session, 43, kReloginGeneration - 1));
+    gate_scene_route::NoteEnterGameRequested(session);
+
+    // 之后按代次认:旧链的路由(代次不大于重置时的值)与 scene 自发的路由(0)都认作 LeaveGame 之前的;新登录的路由不是。
     EXPECT_TRUE(gate_scene_route::IsRouteFromBeforeLeaveGame(session, 42, kReloginGeneration - 1));
     EXPECT_TRUE(gate_scene_route::IsRouteFromBeforeLeaveGame(session, 42, kReloginGeneration - 2));
     EXPECT_TRUE(gate_scene_route::IsRouteFromBeforeLeaveGame(session, 42, 0));
@@ -1761,6 +1772,7 @@ TEST(SceneRouteEntry, NewLoginRouteBeforeBindAfterLeaveGameStillReplays)
 {
     SessionInfo session = SessionInGameAtEpoch();
     gate_scene_route::ResetSceneRoute(session);
+    gate_scene_route::NoteEnterGameRequested(session); // 新登录的路由只可能在客户端再次 EnterGame 之后出现
     std::vector<EpochStampedForward> calls;
     auto resolve = [](const uint32_t) { return std::optional<entt::entity>{entt::entity{12}}; };
     auto forward = [&](const uint32_t enterType, const entt::entity, const uint64_t)
@@ -1790,15 +1802,216 @@ TEST(SceneRouteEntry, LeaveGameRouteFilterYieldsToCharacterSwitchAndLegacyBind)
 {
     SessionInfo switched = SessionInGameAtEpoch();
     gate_scene_route::ResetSceneRoute(switched);
+    gate_scene_route::NoteEnterGameRequested(switched);
+    ASSERT_FALSE(gate_scene_route::IsBindFromBeforeLeaveGame(switched, 77, kReloginGeneration - 100))
+        << "别的角色的 Bind:代次不可比,不按被离开的那条链判";
     ASSERT_TRUE(gate_scene_route::ApplyLoginBinding(switched, 77, 1, kReloginGeneration - 100, kReloginEnterType));
     EXPECT_FALSE(switched.sceneRouteResetPending) << "另一个角色的代次序列与重置时记下的值无关";
     EXPECT_FALSE(gate_scene_route::IsRouteFromBeforeLeaveGame(switched, 77, kReloginGeneration - 100));
 
     SessionInfo legacy = SessionInGameAtEpoch();
     gate_scene_route::ResetSceneRoute(legacy);
+    gate_scene_route::NoteEnterGameRequested(legacy);
+    ASSERT_FALSE(gate_scene_route::IsBindFromBeforeLeaveGame(legacy, 42, /*loginGeneration=*/0))
+        << "旧版 login 的 Bind 不带代次:不丢,交给 ApplyLoginBinding 退回常规处理";
     ASSERT_TRUE(gate_scene_route::ApplyLoginBinding(legacy, 42, 3, /*loginGeneration=*/0, kReloginEnterType));
     EXPECT_FALSE(legacy.sceneRouteResetPending) << "旧版 login 不铸代次:分不出新旧,不拦";
     EXPECT_FALSE(gate_scene_route::IsRouteFromBeforeLeaveGame(legacy, 42, 0));
+}
+
+// ---------------------------------------------------------------------------
+// 第二轮审计 r2-gate#1(data-overwrite-rollback-audit-r2-20261019.md §3.1):LeaveGame 先于本次登录的 Bind 到达 gate。
+// 下面的 GateEventReplay 按生产入口的调用序复现 RoutePlayerEventHandler / BindSessionEventHandler(gate_event_handler.cpp)
+// 与 OnRouteDecision / OnLoginTypeBound(scene_entry_dispatch.cpp)里的纯逻辑:先判旧链(丢弃时记代次),再写会话、建欠账、尝试转发。
+// 节点 X = node_id 3(实体 12),节点 Y = node_id 5(实体 15)。
+// ---------------------------------------------------------------------------
+
+namespace
+{
+    constexpr uint32_t kNodeX = 3;
+    constexpr uint32_t kNodeY = 5;
+    constexpr entt::entity kNodeXEntity{12};
+    constexpr entt::entity kNodeYEntity{15};
+
+    // (enterType, 目标节点实体, 转发那一刻会话上的 ownerEpoch)
+    using NodeStampedForward = std::tuple<uint32_t, entt::entity, uint64_t>;
+
+    struct GateEventReplay
+    {
+        SessionInfo session;
+        std::vector<NodeStampedForward> forwards;
+
+        // 返回 true = 按 LeaveGame 之前的旧链丢弃。
+        bool DeliverBind(const Guid playerId, const uint64_t loginGeneration, const uint32_t enterGsType)
+        {
+            if (gate_scene_route::IsBindFromBeforeLeaveGame(session, playerId, loginGeneration))
+            {
+                gate_scene_route::NoteDroppedFromBeforeLeaveGame(session, playerId, loginGeneration);
+                return true;
+            }
+            if (gate_scene_route::ApplyLoginBinding(session, playerId, 3, loginGeneration, enterGsType))
+            {
+                if (!session.pendingSceneEntry.has_value())
+                {
+                    auto entry = gate_scene_route::EntryForLateLoginBinding(session, kT0);
+                    if (!entry.has_value())
+                    {
+                        return false;
+                    }
+                    session.pendingSceneEntry = *entry;
+                }
+                Attempt();
+            }
+            return false;
+        }
+
+        bool DeliverRoute(const Guid playerId, const uint64_t loginGeneration, const uint64_t ownerEpoch,
+                          const uint32_t nodeId, const uint64_t sceneId)
+        {
+            if (gate_scene_route::IsRouteFromBeforeLeaveGame(session, playerId, loginGeneration))
+            {
+                gate_scene_route::NoteDroppedFromBeforeLeaveGame(session, playerId, loginGeneration);
+                return true;
+            }
+            gate_scene_route::ApplyRouteIdentity(session, playerId, 1, ownerEpoch, loginGeneration);
+            const SceneRouteTarget target{playerId, nodeId, sceneId};
+            session.lastSceneRoute = target;
+            session.pendingSceneEntry = gate_scene_route::BeginPendingSceneEntry(target, kT0);
+            Attempt();
+            return false;
+        }
+
+        void Attempt()
+        {
+            auto resolve = [](const uint32_t nodeId)
+            {
+                return std::optional<entt::entity>{nodeId == kNodeX ? kNodeXEntity : kNodeYEntity};
+            };
+            auto forward = [this](const uint32_t enterType, const entt::entity node, const uint64_t)
+            {
+                forwards.emplace_back(enterType, node, session.ownerEpoch);
+                return SceneForwardResult::kSent;
+            };
+            gate_scene_route::AttemptPendingSceneEntry(session, kT0, resolve, forward);
+        }
+    };
+
+    constexpr uint64_t kLeftChainGeneration = kReloginGeneration - 1; // gE:LeaveGame 时 Bind 还在 Kafka 里的那次登录
+    constexpr uint64_t kNextLoginGeneration = kReloginGeneration;     // gF:同一连接上的下一次登录
+} // namespace
+
+// 审计原文的步骤:① EnterGame 已受理、Bind(gE) 还在 Kafka 里,客户端发 LeaveGame,gate 收包即重置,记下的是旧代次。② Bind(gE)
+// 到达、随后路由(gE → X、epoch E)到达。旧实现只按代次认旧链:gE 大于重置时的值,两条都被当成新登录收下,登录类型挂回会话、
+// 旧路由被转发到 X;③ session_ended 释放把 X 上的实体退掉、location 删掉;④ 同一连接再 EnterGame(gF),Bind 先到就按这条旧路由
+// 带 E 补发到 X,而 scene_manager 铸了 E+1 落到 Y。修复后:客户端再次 EnterGame 之前到达的 Bind / 路由一律是旧链,丢弃。
+TEST(SceneRouteEntry, OldChainBindArrivingAfterLeaveGameIsDroppedAndNeverReplayed)
+{
+    GateEventReplay gate; // 本连接第一次登录:Bind 还没到,gate 还不知道角色,代次为 0
+    gate_scene_route::NoteEnterGameRequested(gate.session); // ① EnterGame(gE) 收包
+    gate_scene_route::ResetSceneRoute(gate.session);        // ① LeaveGame 收包
+    EXPECT_EQ(0u, gate.session.loginGenerationAtReset) << "重置时还没见过 gE:单靠代次拦不住旧链";
+
+    // ② 旧链的 Bind 与路由:客户端还没再次 EnterGame,一律丢弃,会话一个字段都不写。
+    EXPECT_TRUE(gate.DeliverBind(42, kLeftChainGeneration, kReloginEnterType));
+    EXPECT_TRUE(gate.DeliverRoute(42, kLeftChainGeneration, kEpochBeforeRelogin, kNodeX, 1001));
+    EXPECT_TRUE(gate.forwards.empty()) << "旧实现在这里把旧路由连同登录类型转发到 X";
+    EXPECT_EQ(0u, gate.session.lastSceneRoute.sceneId);
+    EXPECT_EQ(0u, gate.session.pendingEnterGsType);
+    EXPECT_EQ(0u, gate.session.ownerEpoch);
+    EXPECT_EQ(kInvalidGuid, gate.session.playerId) << "丢弃的 Bind 不绑角色";
+    EXPECT_TRUE(gate.session.sceneRouteResetPending);
+    EXPECT_EQ(42u, gate.session.playerIdAtReset) << "被离开的那条链的角色取自第一条被丢弃的事件";
+    EXPECT_EQ(kLeftChainGeneration, gate.session.loginGenerationAtReset);
+
+    // ④ 同一连接再次 EnterGame(gF):Bind 先到,没有旧路由可补发;新路由(Y、E+1)到达后带登录类型转发一次。
+    gate_scene_route::NoteEnterGameRequested(gate.session);
+    EXPECT_FALSE(gate.DeliverBind(42, kNextLoginGeneration, kReloginEnterType));
+    EXPECT_TRUE(gate.forwards.empty()) << "不得按旧路由带旧 epoch 补发到 X";
+    EXPECT_FALSE(gate.DeliverRoute(42, kNextLoginGeneration, kEpochAfterRelogin, kNodeY, 2002));
+    EXPECT_EQ((std::vector<NodeStampedForward>{{kReloginEnterType, kNodeYEntity, kEpochAfterRelogin}}), gate.forwards);
+    EXPECT_FALSE(gate.session.sceneRouteResetPending);
+}
+
+// 同一条旧链的 Bind 与路由是两条独立事件,路由要等 scene_manager 处理完才发、常常更晚:Bind 在客户端再次 EnterGame 之前被丢、
+// 路由在之后才到时,丢 Bind 时记下的代次仍把它认出来(两种到达顺序:新登录的 Bind 之前 / 之后)。
+TEST(SceneRouteEntry, OldChainRouteArrivingAfterNextEnterGameIsStillDropped)
+{
+    for (const bool newBindFirst : {false, true})
+    {
+        SCOPED_TRACE(newBindFirst ? "新登录的 Bind 先于旧链路由" : "旧链路由先于新登录的 Bind");
+        GateEventReplay gate;
+        gate.session = SessionInGameAtEpoch(); // 这条连接此前已在游戏里(代次 gE-1)
+        gate.session.loginGeneration = kLeftChainGeneration - 1;
+        gate_scene_route::NoteEnterGameRequested(gate.session); // 同连接重登 EnterGame(gE)
+        gate_scene_route::ResetSceneRoute(gate.session);        // LeaveGame:Bind(gE) 还在路上
+        ASSERT_TRUE(gate.DeliverBind(42, kLeftChainGeneration, kReloginEnterType));
+        EXPECT_EQ(kLeftChainGeneration, gate.session.loginGenerationAtReset) << "丢弃的旧链 Bind 把代次抬上去";
+
+        gate_scene_route::NoteEnterGameRequested(gate.session); // EnterGame(gF)
+        if (newBindFirst)
+        {
+            EXPECT_FALSE(gate.DeliverBind(42, kNextLoginGeneration, kReloginEnterType));
+        }
+        EXPECT_TRUE(gate.DeliverRoute(42, kLeftChainGeneration, kEpochBeforeRelogin, kNodeX, 1001))
+            << "代次不大于被离开的那条链:旧链";
+        if (!newBindFirst)
+        {
+            EXPECT_FALSE(gate.DeliverBind(42, kNextLoginGeneration, kReloginEnterType));
+        }
+        EXPECT_TRUE(gate.forwards.empty());
+        EXPECT_FALSE(gate.DeliverRoute(42, kNextLoginGeneration, kEpochAfterRelogin, kNodeY, 2002));
+        EXPECT_EQ((std::vector<NodeStampedForward>{{kReloginEnterType, kNodeYEntity, kEpochAfterRelogin}}), gate.forwards);
+    }
+}
+
+// 新登录的 Bind 已到(会话代次 = gF)之后,代次更小的同角色路由属于更早的一次登录,即使丢 Bind 时没能记下它的代次也认得出。
+TEST(SceneRouteEntry, RouteOlderThanNewLoginBindIsDroppedWhileResetPending)
+{
+    GateEventReplay gate;
+    gate.session = SessionInGameAtEpoch();
+    gate_scene_route::ResetSceneRoute(gate.session); // 记下会话当时的代次 kReloginGeneration - 1
+    gate_scene_route::NoteEnterGameRequested(gate.session);
+    ASSERT_FALSE(gate.DeliverBind(42, kNextLoginGeneration + 10, kReloginEnterType));
+    EXPECT_TRUE(gate.DeliverRoute(42, kNextLoginGeneration, kEpochBeforeRelogin, kNodeX, 1001))
+        << "比会话已见过的本角色登录旧:旧链";
+    EXPECT_FALSE(gate.DeliverRoute(43, kNextLoginGeneration, kEpochBeforeRelogin, kNodeX, 1001))
+        << "别的角色的代次不可比:不在这里判(由玩家围栏挡住)";
+}
+
+// 第一次登录被离开(重置时 gate 还不知道角色),下一次换了角色、而且新角色的代次更小:不能拿旧角色的代次去拦新角色。
+TEST(SceneRouteEntry, LeftChainGenerationDoesNotBlockAnotherCharacter)
+{
+    GateEventReplay gate;
+    gate_scene_route::NoteEnterGameRequested(gate.session);
+    gate_scene_route::ResetSceneRoute(gate.session);
+    ASSERT_TRUE(gate.DeliverBind(42, kLeftChainGeneration, kReloginEnterType)); // 角色 42 的旧链
+
+    gate_scene_route::NoteEnterGameRequested(gate.session);
+    constexpr uint64_t kOtherCharacterGeneration = kLeftChainGeneration - 500;
+    EXPECT_FALSE(gate.DeliverBind(77, kOtherCharacterGeneration, kReloginEnterType));
+    EXPECT_TRUE(gate.DeliverRoute(42, kLeftChainGeneration, kEpochBeforeRelogin, kNodeX, 1001))
+        << "角色 42 旧链迟到的路由照样丢";
+    EXPECT_FALSE(gate.DeliverRoute(77, kOtherCharacterGeneration, kEpochAfterRelogin, kNodeY, 2002));
+    EXPECT_EQ((std::vector<NodeStampedForward>{{kReloginEnterType, kNodeYEntity, kEpochAfterRelogin}}), gate.forwards);
+}
+
+// 选角界面重复点 LeaveGame:第二次重置不能把丢弃旧链事件时抬上去的代次冲回会话上更低的值。
+TEST(SceneRouteEntry, RepeatedLeaveGameKeepsRaisedLeftChainGeneration)
+{
+    GateEventReplay gate;
+    gate.session = SessionInGameAtEpoch();
+    gate_scene_route::NoteEnterGameRequested(gate.session);
+    gate_scene_route::ResetSceneRoute(gate.session);
+    ASSERT_TRUE(gate.DeliverBind(42, kNextLoginGeneration, kReloginEnterType));
+    ASSERT_EQ(kNextLoginGeneration, gate.session.loginGenerationAtReset);
+
+    gate_scene_route::ResetSceneRoute(gate.session); // 再点一次 LeaveGame
+    EXPECT_EQ(kNextLoginGeneration, gate.session.loginGenerationAtReset);
+    EXPECT_EQ(42u, gate.session.playerIdAtReset);
+
+    gate_scene_route::NoteEnterGameRequested(gate.session);
+    EXPECT_TRUE(gate.DeliverRoute(42, kNextLoginGeneration, kEpochBeforeRelogin, kNodeX, 1001));
+    EXPECT_TRUE(gate.forwards.empty());
 }
 
 // ===========================================================================

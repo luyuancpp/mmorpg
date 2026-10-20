@@ -1739,7 +1739,9 @@ $WrapperPairs = @(
     @{ Source = 'dev_tools.ps1'; Function = 'Invoke-K8sDeploy'; Downstream = 'k8s_deploy.ps1'
         Forwarded = $ClientEntryWrapperKeys + @('GatewayIngressHost', 'GatewayIngressClassName', 'GatewayIngressTlsSecret', 'GatewayTrustedProxies', 'LoginDevPasswordAuth', 'GateRouterMode', 'DbConsumerGroup',
             # login 第三方登录(微信 / QQ)与它的防误关确认开关:不粘滞,包装入口漏传 = 重新部署时关掉或改掉线上第三方登录。
-            'LoginWeChatAppId', 'LoginWeChatEndpoint', 'LoginWeChatAllowOpenId', 'LoginQQAppId', 'LoginQQEndpoint', 'LoginQQAllowOpenId', 'ConfirmLoginAuthProviderChange') },
+            'LoginWeChatAppId', 'LoginWeChatEndpoint', 'LoginWeChatAllowOpenId', 'LoginQQAppId', 'LoginQQEndpoint', 'LoginQQAllowOpenId', 'ConfirmLoginAuthProviderChange',
+            # D1 映射开关与它的粘滞确认开关:k8s_deploy 读线上现状防翻转,包装入口漏传 = 集群切 db_first 之后经本入口的部署一律被拒。
+            'RouteStoreMode', 'RouteReconcileArm', 'RouteReadRequiresReady', 'DbPlacementRequireRouteReady', 'GuildRequireRouteReady', 'ConfirmRouteSwitchChange') },
     @{ Source = 'dev_tools.ps1'; Function = 'Invoke-K8sImage'; Downstream = 'k8s_image.ps1'; Forwarded = $ClientEntryWrapperKeys + @('GateRouterMode') },
     @{ Source = 'k8s_image.ps1'; Function = 'Invoke-K8sDeploy'; Downstream = 'k8s_deploy.ps1'; Forwarded = $ClientEntryWrapperKeys + @('GateRouterMode') }
 )

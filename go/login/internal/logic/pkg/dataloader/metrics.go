@@ -123,6 +123,28 @@ var (
 			"Result: success | failed | timeout.",
 		Labels: []string{"result"},
 	})
+
+	// persistSchemaRegressionTotal 计 C4(docs/design/mixed-version-persist-field-protection.md §5.1):
+	// 父快照快路径上加载世代低于 save_barrier 记录的 schema_gen(reason=regression),
+	// 或 schema_gen 存储值损坏(reason=malformed)。mode=warn 照常入场,mode=enforce 本次 EnterGame 失败。
+	// 合法流程恒为 0(设计 §5.3),任何增长都要按 §8.4 的 PersistSchemaRegression 处置。
+	// 名字不跟本包的 dataloader_preload 前缀:它是设计里约定的告警名。不带 player_id(高基数)。
+	// 序列在第一次判定倒退时才出现,告警表达式按「不存在 = 0」写。
+	persistSchemaRegressionTotal = metric.NewCounterVec(&metric.CounterVecOpts{
+		Namespace: "login",
+		Subsystem: "",
+		Name:      "persist_schema_regression_total",
+		Help: "EnterGame parent-snapshot fast-path loads whose persist schema generation is below the " +
+			"save barrier's recorded schema_gen (reason=regression) or whose recorded schema_gen is malformed " +
+			"(reason=malformed). mode=warn admits the load, mode=enforce fails the EnterGame. Expected to stay 0.",
+		Labels: []string{"reason", "mode"},
+	})
+)
+
+// login_persist_schema_regression_total 的 reason 取值,集合封闭。
+const (
+	schemaRegressionReasonRegression = "regression"
+	schemaRegressionReasonMalformed  = "malformed"
 )
 
 const (

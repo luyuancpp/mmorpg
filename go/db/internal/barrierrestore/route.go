@@ -67,15 +67,17 @@ func validatePlannedRoute(p Plan, row Player) error {
 		if row.RouteGeneration != "" || row.RouteWatermark != "" || row.RouteRevision != "" {
 			return errors.New("v1 不接受 SQL 路由证明")
 		}
-		return validRoute(p.Zone, row.HomeZone, row.Placement)
+		return validRoute(p.Zone, row.HomeZone, row.Placement, p.AllowHomeFallback)
 	}
 	if row.HomeZone != strconv.FormatUint(uint64(p.Zone), 10) {
 		return errors.New("home zone 偏离计划")
 	}
 	storage, _ := placement.StorageIDFromDBName(p.Schema)
 	if row.Placement == "" {
-		if p.RoutingMode != RoutingModeDBFirst || storage != p.Zone {
-			return errors.New("仅 db_first 本区空落点可按 home 回退")
+		// db_first 由被锁的 SQL 路由行证明「无落点」;Redis 权威路由只在计划显式允许时按 home 回退(homeZoneFallback,
+		// 2026-10-20 修复 r2-mz#1),两者都只限本区 zone 库。
+		if storage != p.Zone || (p.RoutingMode != RoutingModeDBFirst && !homeZoneFallback(p.AllowHomeFallback, row.Placement)) {
+			return errors.New("仅 db_first 或计划显式允许 home 回退的本区空落点可按 home 回退")
 		}
 	} else {
 		rec, err := placement.Parse(row.Placement)
@@ -117,9 +119,18 @@ func (r Restorer) lockRoute(ctx context.Context, tx *sql.Tx, p Plan, id string) 
 		if err != nil {
 			return row, errors.New("权威 home zone 映射缺失或不可读")
 		}
-		row.Placement, err = r.mapping().Get(ctx, placement.Key(pid)).Result()
-		if err != nil {
+		raw, err := r.mapping().Get(ctx, placement.Key(pid)).Result()
+		switch {
+		case errors.Is(err, redis.Nil) && p.AllowHomeFallback:
+			// 键不存在 = 无落点记录,按 home 回退(homeZoneFallback);发布前后仍原子复核它不存在。
+			row.Placement = ""
+		case err != nil:
 			return row, errors.New("显式 placement 映射缺失或不可读")
+		case raw == "" && p.AllowHomeFallback:
+			// 键存在但值为空串:go/db 按畸形记录 fail-closed,不能混同「无记录」。
+			return row, errors.New("placement 映射值为空串，按畸形记录拒绝")
+		default:
+			row.Placement = raw
 		}
 		return row, validatePlannedRoute(p, row)
 	}

@@ -26,12 +26,15 @@ type recordingPublisher struct {
 	tasks  []publishedTask
 	failAt int
 	hook   func()
+	// calls 计所有调用(含失败)，用来断言暂停期间没有再碰 broker。
+	calls int
 }
 
 func (p *recordingPublisher) Publish(ctx context.Context, topic, key string, body []byte) error {
 	if err := ctx.Err(); err != nil {
 		return err
 	}
+	p.calls++
 	if p.hook != nil {
 		p.hook()
 	}

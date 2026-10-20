@@ -376,7 +376,7 @@ pwsh -File tools/scripts/k8s_gate_drain.ps1 -ZoneName <zone> -Ordinal <i> -Delet
 - `reason=deadline` 时打醒目警告:这台 gate 上还有玩家,删 Pod 会让他们断线重连。
 - 取消排空:在 login 所连的 Redis 上执行 `DEL gate:<id>:draining gate:<id>:drained`。
 - **脚本不做缩容**。直接 scale StatefulSet 之后,要等旧 node_id 的 etcd 记录消失,再手工 `DEL gate:<id>:draining gate:<id>:drained`。不清的话,因为 node_id 全局唯一、按最小空闲号复用,而 login 的 Redis 跨 zone 共用,之后拿到这个 node_id 的 gate(可能在任意 zone)在 TTL 内分不到玩家。
-- 依赖:脚本 `kubectl exec` 进 `svc/etcd` 背后的 Pod、`statefulset/redis` 的 redis 容器(2026-10-19 起;共享 Redis 高可用形态下 `svc/redis` 指向 haproxy 代理,代理镜像没有 redis-cli),再按 login 配置里的 Service 地址连回同一个 Service(高可用形态下经代理落到主),需要 pods/exec 权限,也依赖集群支持 hairpin 流量。Redis 若用 ACL 禁了 EVAL,脚本会 fail-closed 拒绝。这三项都要在 kind 上顺带验证。
+- 依赖:脚本 `kubectl exec` 进 `svc/etcd` 背后的 Pod、`statefulset/redis` 的 redis 容器(2026-10-19 起;共享 Redis 高可用形态下 `svc/redis` 指向 haproxy 代理,代理镜像没有 redis-cli),再按 login 配置里的 Service 地址连回同一个 Service(高可用形态下经代理落到主),需要 pods/exec 权限;etcd 与单实例 Redis 依赖集群支持 hairpin 流量,高可用 Redis 经 redis-proxy、不涉及 hairpin(脚本的失败提示两种形态都写)。Redis 若用 ACL 禁了 EVAL,脚本会 fail-closed 拒绝。这三项都要在 kind 上顺带验证。
 
 ### GateDrain 配置与 Deadline 约束
 
@@ -593,7 +593,7 @@ pwsh tools/scripts/k8s_deploy.ps1 -Command zone-up -ZoneName e2e -ZoneId 101 `
 - h. **排空**。`pwsh tools/scripts/k8s_gate_drain.ps1 -ZoneName e2e -Ordinal 1 -DeletePod -KubeContext kind-mmorpg -KubeConfig $kc`,期望:
   - login 不再把新玩家分到 gate-1;出现 drained 标记;Pod 被重建;标记被清除;退出码 0。
   - drained 只在 gate-1 在线数降到 0,或标记满 25 分钟后才出现。验收前先让 robot 断开 gate-1,或预留 25 分钟。
-  - 顺带验证三件事:原子 Lua 在 redis:7.2 上的真实回复(OK、(nil)、`NO_UNDRAINED_PEER`、`(integer) -1`);`exec svc/redis`、`exec svc/etcd` 之后的 hairpin 连通;对单副本 zone 执行时被拒绝(可用 `-DryRun` 验)。
+  - 顺带验证三件事:原子 Lua 在 redis:7.2 上的真实回复(OK、(nil)、`NO_UNDRAINED_PEER`、`(integer) -1`);`exec statefulset/redis -c redis`、`exec svc/etcd` 之后的 hairpin 连通(2026-10-19 起 Redis 不再 exec `svc/redis`:共享 Redis 高可用形态下 Service redis 指向 haproxy 代理,代理镜像没有 redis-cli;改进任一 redis 节点 Pod 的 redis 容器,仍按 login 配置里的 Service 地址连回、经代理落到主,与上面「依赖」一条一致;未在 kind 复测);对单副本 zone 执行时被拒绝(可用 `-DryRun` 验)。
 
 ### 阶段 B:装 Agones(battle Fleet)
 
@@ -747,7 +747,7 @@ Agones 段 7000–7009 → 7100–7109;前置条件新增端口预检、「先�
   - 回滚时显式给了与现状不同的 `-ClientEntryMode`,不需要 `-AllowDisruptiveSwitch` 就会切换:namespace 已删,显式值即决定。
 - **nodePort 跨 zone 重叠**:分多次 zone-up 时靠 apiserver 的 `--dry-run=server` 分配检查拦截,需在 kind 上实测。podip 切 external 时,本 namespace 残留的 gate-entry 如果恰好占着段内端口,会被误拒。
 - **排空脚本**:
-  - 依赖 pods/exec、hairpin 与 Redis EVAL;
+  - 依赖 pods/exec、hairpin(etcd 与单实例 Redis;高可用 Redis 经 redis-proxy,不涉及)与 Redis EVAL;
   - `Select-GateDrainPeers` 是 login 候选规则的第二份拷贝,由测试钉住 Go 源码文本;
   - 等待期间遇到进程租约短暂丢失后重注册,会被判为进程消失,撤回标记并中止。
 - **battle**:

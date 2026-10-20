@@ -28,6 +28,11 @@
 #   info    : count_over_time({app="scene"} |= "metric=battle_settlement_freeze_expiry_pending_hit" [1h]) > 0(在线补读命中,观察用)
 #   critical: count_over_time({app="battle"} |= "metric=battle_activity_result_not_durable" [10m]) > 0
 #   critical: count_over_time({app="battle"} |= "metric=battle_activity_result_serialize_failed" [10m]) > 0
+#   critical: count_over_time({app="battle"} |= "metric=battle_personal_settlement_staging_exhausted" [10m]) > 0
+#             全球对局发结果之前的个人结算落库轮次用尽(审计 r2-battle#4,cross-zone-matchmaking.md §13.6):
+#             结果不发、房间留在节点上,节点不会自然排空。每房间只响一次,同一行带 battle_id;
+#             紧随其后的 "not staged after staging exhausted" 行列出没落库的成员。先排除 zone Redis 故障
+#             (OOM / NOAUTH / ACL / 键类型错),再删除该 battle Pod,停机收尾 AbortAllRooms 清房。
 #
 # Severity conventions(与 scene-manager-alerts.yaml 相同):
 #   critical = pager, someone wakes up

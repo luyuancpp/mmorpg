@@ -186,6 +186,16 @@ AuditTopicGeneration: 1
 # K8s 上 node ConfigMap 里的这一键由 k8s_deploy.ps1 从 go/db/etc/db.yaml 镜像生成(不抄这份)。
 DbTaskTopicGeneration: 1
 
+# 混版本持久字段保护:scene 严格提交屏障 C3 的模式(docs/design/mixed-version-persist-field-protection.md §5.2)。
+# 只认 warn / enforce(区分大小写):
+#   warn    判定为截断(加载世代 < 屏障记录的世代)时照写、计数、打日志,不拦截;
+#   enforce 拒写,该玩家本次在线进度不落盘(宁可不写,也不让截断的数据覆盖 SQL)。
+# 缺键 / 空串 = warn;其余值 scene / gate / battle 拒绝启动(config.cpp::readBaseDeployConfig)。
+# 切 enforce 的前提(设计 §8.1 第 5 步):staging 真实升世代演练中 C3 / C4 倒退计数为 0,且线上 warn 观察期计数也为 0。
+# login 侧 C4 用 go/login/etc/login.yaml 的同名键,两边分别切换。
+# K8s 上 node ConfigMap 里的这一键由 k8s_deploy.ps1 从本文件镜像生成。
+PersistSchemaRegressionMode: warn
+
 # 集群号(0..31):部署级常量,运维一次性设定,策划不碰。只有 Go 的 snowflake 槽位协议
 # (login-player / guild / scene-manager / match)消费它,作为 17 位 worker 字段的高 5 位;
 # C++ 侧 2026-09-08 起没有消费者(scene 的永久 guid 走号段,不编码集群),这里只是同一份口径。

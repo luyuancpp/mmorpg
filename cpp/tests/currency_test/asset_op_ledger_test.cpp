@@ -729,6 +729,22 @@ TEST(AssetOpLedgerTest, LedgerResetForEpochClearsEverything) {
     EXPECT_TRUE(ValidateAssetOpLedger(comp).empty()) << ValidateAssetOpLedger(comp);
 }
 
+// 混版本持久字段保护 §4.2 L7:新版本给流账本加的纪元内状态(本版本不认识,落在未知字段里)随纪元一起清掉,
+// 不能跨纪元存活、把旧纪元的状态带进新纪元。回执同属纪元内状态,一并清空;流号原样保留。
+TEST(AssetOpLedgerTest, LedgerResetForEpochDropsUnknownFieldsAndReceipts) {
+    PlayerAssetOpLedgerComp comp = BuildValidComp();
+    auto& ledger = *comp.mutable_streams(0);
+    ledger.mutable_unknown_fields()->AddVarint(412345, 42);
+    ledger.add_receipts()->set_seq(1);
+    ResetAssetOpStreamForEpoch(ledger, 777);
+
+    EXPECT_TRUE(ledger.unknown_fields().empty()) << "未知字段跨纪元存活";
+    EXPECT_EQ(ledger.receipts_size(), 0);
+    EXPECT_EQ(ledger.stream(), kStream);
+    EXPECT_EQ(ledger.stream_epoch(), 777u);
+    EXPECT_TRUE(ValidateAssetOpLedger(comp).empty()) << ValidateAssetOpLedger(comp);
+}
+
 // ---------------------------------------------------------------------------
 // I5 守卫的机器证明:未决 seq 永远在窗口内,新分配的 seq 永远不超跳号上限
 // ---------------------------------------------------------------------------

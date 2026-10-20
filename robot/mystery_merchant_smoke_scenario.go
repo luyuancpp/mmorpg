@@ -30,10 +30,13 @@ package main
 //   - 一轮的时长要比跑一遍冒烟(约 20 秒)长得多:轮次在 M3 与 M7 之间切换会让购买被拒(kMysteryMerchantShelfChanged),
 //     本场景遇到这种情况会明确报「撞上换轮」,重跑即可。
 //
-// 传输层直接复用 channel-smoke 的机器人会话(channelSmokeBot:登录、按节奏发送、按到达顺序留底、切线),
-// 本文件只多登记了自己要看的几个消息号(channelSmokeIsRecorded 里有一行转到 merchantSmokeIsRecorded)。
+// 传输层直接复用 channel-smoke 的机器人会话(channelSmokeBot:登录、按节奏发送、有同步应答的请求经 call
+// 按请求号认领回包、推送按到达顺序留底、切线)。本文件只多登记两类消息号:经 call 发的请求
+// (merchantSmokeIsCallMessage,由 channelSmokeIsCallMessage 转调,供 onMessage 丢弃不带请求号的同号消息),
+// 以及要留底的推送(merchantSmokeIsRecorded,由 channelSmokeIsRecorded 转调)。
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"time"
@@ -73,46 +76,41 @@ var (
 	tipMerchantNotHere      = uint32(tiptable.MysteryMerchantError_kMysteryMerchantNotHere)
 )
 
-// merchantSmokeIsRecorded:本场景额外要按到达顺序留底的消息号(由 channelSmokeIsRecorded 转调)。
-func merchantSmokeIsRecorded(messageId uint32) bool {
+// merchantSmokeIsCallMessage:本场景经 call 发出、回包只按请求号认领的请求消息号(由 channelSmokeIsCallMessage 转调)。
+// 三者的应答类型都不是 Empty,scene 恰好回一个带请求号的包(scene_handler.cpp ProcessClientPlayerMessage;
+// scene 派发前早退时 gate 回带请求号的 1003 信封(docs/design/client-rpc-callback.md §7 R1),merchantCall 按信封拒绝报错)。
+func merchantSmokeIsCallMessage(messageId uint32) bool {
 	switch messageId {
 	case game.SceneMysteryMerchantClientPlayerGetMysteryMerchantInfoMessageId,
 		game.SceneMysteryMerchantClientPlayerBuyMysteryMerchantGoodsMessageId,
-		game.SceneMysteryMerchantClientPlayerNotifyMysteryMerchantMessageId,
 		game.SceneCurrencyClientPlayerGmAddCurrencyMessageId:
 		return true
 	}
 	return false
 }
 
-// merchantCall 发一个请求并等它的同步应答,解到 response 里。
+// merchantSmokeIsRecorded:本场景额外要按到达顺序留底的推送(由 channelSmokeIsRecorded 转调)。
+func merchantSmokeIsRecorded(messageId uint32) bool {
+	return messageId == game.SceneMysteryMerchantClientPlayerNotifyMysteryMerchantMessageId
+}
+
+// merchantCall 按节奏发一个请求并只等它自己的同步应答(channelSmokeBot.call,按请求号认领),解到 response 里。
 // gate 信封拒绝(限流 / GM 指令在非 dev 环境被拦)与等不到应答一律 error:它们说明请求没到 scene 的业务逻辑。
+// 回包不经 onMessage,生成的 handler 不会跑;调用方只读这里解出的 response。
 func (b *channelSmokeBot) merchantCall(messageId uint32, request, response proto.Message) error {
-	since := b.mark()
-	if err := b.send(messageId, request); err != nil {
+	envelopeTip, err := b.call(messageId, request, response)
+	if errors.Is(err, errChannelSmokeRpcTimeout) {
+		return fmt.Errorf("message_id=%d 发出后 %s 内没有应答(scene 没换上带神秘商人的新版?gate 的客户端消息白名单没重新生成?)",
+			messageId, channelSmokeRpcTimeout)
+	}
+	if err != nil {
 		return err
 	}
-	deadline := time.Now().Add(channelSmokeRpcTimeout)
-	for {
-		for _, r := range b.snapshot(since) {
-			if r.messageId != messageId {
-				continue
-			}
-			if r.envelopeTip != 0 {
-				return fmt.Errorf("message_id=%d 被 gate 信封拒绝 tip=%d%s:请求没到 scene",
-					messageId, r.envelopeTip, channelSmokeTipHint(r.envelopeTip))
-			}
-			if err := proto.Unmarshal(r.body, response); err != nil {
-				return fmt.Errorf("decode response of message_id=%d: %w", messageId, err)
-			}
-			return nil
-		}
-		if !time.Now().Before(deadline) {
-			return fmt.Errorf("message_id=%d 发出后 %s 内没有应答(scene 没换上带神秘商人的新版?gate 的客户端消息白名单没重新生成?)",
-				messageId, channelSmokeRpcTimeout)
-		}
-		time.Sleep(channelSmokePollInterval)
+	if envelopeTip != 0 {
+		return fmt.Errorf("message_id=%d 被 gate 信封拒绝 tip=%d%s:请求没到 scene",
+			messageId, envelopeTip, channelSmokeTipHint(envelopeTip))
 	}
+	return nil
 }
 
 func (b *channelSmokeBot) merchantInfo() (*scene.MysteryMerchantInfo, error) {

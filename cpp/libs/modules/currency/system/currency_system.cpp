@@ -354,6 +354,20 @@ uint32_t CurrencySystem::AttachDebt(entt::entity player, CurrencyType type, int6
         return kInvalidParameter;
     }
 
+    // 混版本保护(docs/design/mixed-version-persist-field-protection.md §4.4):已有欠款带着本版本不认识的字段时不合并。
+    // 新字段的含义可能依赖这笔欠款的金额或来源(例如利息、分期),旧代码把新的一笔并进去,两者就对不上了。
+    // 本原语只负责 fail-closed 拒绝、不合并。这是版本错位,不是确定性拒绝:调用方必须先用
+    // DebtCarriesUnknownFields 判定,按版本错位处理(不执行、不记终态拒绝,之后重新取一次处置再判),
+    // 不能按本地副本原地重试 —— 这笔欠款在会话内可能被还清删除,错位随之消失,而那条处置可能已被作废
+    // (收件箱执行器 GmSanctionInboxExecutor::AttachCurrencyDebt 回 kVersionSkew,收件箱停用本域、下次落地重拉)。
+    if (DebtCarriesUnknownFields(player, type))
+    {
+        LOG_ERROR << "CurrencySystem::AttachDebt: existing debt carries fields unknown to this version, refusing to merge"
+                  << " CurrencyType=" << static_cast<uint32_t>(type)
+                  << " entity=" << entt::to_integral(player);
+        return kFeatureUnavailable;
+    }
+
     auto &debt = comp->debts[static_cast<uint32_t>(type)];
     if (debt.owed > std::numeric_limits<uint64_t>::max() - debtToAdd)
     {
@@ -379,6 +393,21 @@ uint32_t CurrencySystem::AttachDebt(entt::entity player, CurrencyType type, int6
              << " CurrencyType=" << static_cast<uint32_t>(type)
              << " entity=" << entt::to_integral(player);
     return kSuccess;
+}
+
+bool CurrencySystem::DebtCarriesUnknownFields(entt::entity player, CurrencyType type)
+{
+    if (!IsKnownCurrencyType(type))
+    {
+        return false;
+    }
+    const auto *comp = tlsEcs.actorRegistry.try_get<PlayerCurrencyComp>(player);
+    if (comp == nullptr)
+    {
+        return false;
+    }
+    const auto existing = comp->debts.find(static_cast<uint32_t>(type));
+    return existing != comp->debts.end() && !existing->second.unknownFields.empty();
 }
 
 // ---------------------------------------------------------------------------

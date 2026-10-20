@@ -11,6 +11,7 @@
 #include "modules/bag/bag_profile_registry.h"
 #include "modules/bag/comp/player_bags_comp.h"
 #include "modules/currency/comp/player_currency_comp.h"
+#include "services/scene/player/comp/player_persist_carry_comp.h"
 #include "modules/mission/comp/mission_comp.h"
 #include "modules/id_segment/guid_segment_registry.h"
 #include "player/system/player_pet.h"
@@ -3859,6 +3860,8 @@ TEST(GuidSourcePolicyTest, SnapshotIsSkippedUntilItsOwnKindHasARange)
     tlsEcs.actorRegistry.emplace<PlayerMysteryMerchantComp>(player); // 同上,经 mysql_database_table.pb.h 可见
     tlsEcs.actorRegistry.emplace<CurrencyComp>(player);
     tlsEcs.actorRegistry.emplace<PlayerCurrencyComp>(player);
+    tlsEcs.actorRegistry.emplace<PlayerDatabaseCarryComp>(player);
+    tlsEcs.actorRegistry.emplace<PlayerDatabase1CarryComp>(player);
 
     EXPECT_EQ(0u, SnapshotSystem::CaptureAndSend(player, SNAPSHOT_LOGIN)) << "没 snapshot_id 就跳过这条快照";
     auto s = snap.client().GetStats();

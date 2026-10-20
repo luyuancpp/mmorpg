@@ -3,7 +3,11 @@
 package logic
 
 // 集成测试:玩家字段键族 player:{id}:<field> 的三段 Lua(saveFieldsScript / loadAllFieldsScript /
-// deletePlayerFieldsScript)打**真 Redis 7.2**。
+// deletePlayerFieldsScript)打**真 Redis**。
+//
+// 版本要跑两轮:K8s 清单(deploy/k8s/manifests/infra/redis*.yaml)钉 redis:7.2;本地 deploy/docker-compose.yml 的主 Redis
+// 是 redis:latest(2026-10-19 本机镜像为 8.10.2),Java 版也钉 redis:8.10.2。用例本身不判版本,只在 -v 输出里记
+// redis_version 作为证据,两轮都要全 PASS 才算覆盖。
 //
 // 为什么 miniredis 单测不够:miniredis 的 Lua 是 gopher-lua 仿真,下面三处与真 Redis 未必一致,而三段脚本恰好依赖它们:
 //   - TYPE 的状态回复在 Lua 里是不是 {ok = '<type>'} 表 —— 脚本全靠 .ok 判类型;
@@ -11,13 +15,18 @@ package logic
 //     go-redis v9 缺省 RESP3;脚本内缺省 RESP2,Redis 按脚本侧协议把 false 转成 null,decodeLoadAllReply 只认 nil / string;
 //   - INCR 对 "007" 这类前导零串:真 Redis 拒绝,miniredis 接受。守卫若晚于 SET,就会留下「字段已写、版本没涨」的半截写。
 //
-// 跑法(一次性容器,不借别的会话的容器):
+// 跑法(一次性容器,不借别的会话的容器;$img 先取 redis:7.2,再取 redis:8.10.2 各跑一轮):
 //
-//	docker run --rm -d -p 6390:6379 --name ds-it-fields redis:7.2 --appendonly yes
-//	$env:DATA_SERVICE_IT_REDIS_HOST='127.0.0.1:6390'; go test -tags=integration ./internal/logic/ -run RealRedis -count=1 -v
-//	docker stop ds-it-fields
+//	docker run --rm -d -p 6390:6379 --name ds-it-fields $img --appendonly yes
+//	docker run --rm -d -p 7001-7003:7001-7003 --name ds-it-cluster $img sh -c '<见 TestRealRedisClusterUndeclaredKeys>'
+//	(集群用例自己等每个种子节点 cluster_state:ok,最多 30 秒;超时先看 docker logs ds-it-cluster)
+//	$env:DATA_SERVICE_IT_REDIS_HOST='127.0.0.1:6390'
+//	$env:DATA_SERVICE_IT_REDIS_CLUSTER_ADDRS='127.0.0.1:7001,127.0.0.1:7002,127.0.0.1:7003'
+//	go test -tags=integration ./internal/logic/ -run RealRedis -count=1 -v
+//	docker stop ds-it-fields ds-it-cluster
 //
-// 只读 DATA_SERVICE_IT_REDIS_HOST:未设置就 Skip,**不回落**到 etc/data_service.yaml 的开发库;设置了却连不上直接失败。
+// 单实例用例只读 DATA_SERVICE_IT_REDIS_HOST,Cluster 用例只读 DATA_SERVICE_IT_REDIS_CLUSTER_ADDRS:未设置就 Skip,
+// **不回落**到 etc/data_service.yaml 的开发库;设置了却连不上(或集群没就绪)直接失败。
 // 玩家 id 从 9900000000001 起,每个用例各占几个、互不重叠。跑前 SCAN player:{id}:* 非空或 lock:player:<id> 已存在就 Skip
 // (不是本用例建的键,一个都不碰);跑后只删这些 id 的 player:{id}:* 与 lock:player:<id>,绝不 FLUSHDB。
 // DevRedis 与 MappingRedis 都指向这台 Redis(同 newTestSvcCtx),两边都在 DB 0;玩家不登记映射,dev 模式照常可写,
@@ -31,6 +40,7 @@ import (
 	"strconv"
 	"strings"
 	"testing"
+	"time"
 
 	"data_service/internal/config"
 	"data_service/internal/constants"
@@ -48,6 +58,8 @@ import (
 
 const (
 	envRealRedisHost = "DATA_SERVICE_IT_REDIS_HOST"
+	// envRealRedisClusterAddrs 是逗号分隔的 Cluster 种子地址,只给 TestRealRedisClusterUndeclaredKeys 用。
+	envRealRedisClusterAddrs = "DATA_SERVICE_IT_REDIS_CLUSTER_ADDRS"
 	// realRedisPlayerBase 往上依次分给各用例(见每个用例开头),新增用例接着往后排。
 	realRedisPlayerBase uint64 = 9900000000001
 	// realRedisLockToken 是直接调脚本时手工放进数据锁的 token:绕过 Router 拿锁,只为看脚本的原始返回值。
@@ -126,12 +138,17 @@ func redisVersionLine(info string) string {
 	return "redis_version unknown"
 }
 
-// scanKeys 枚举 player:{pid}:*(花括号在 SCAN 的 glob 里是字面量),排序去重。
 func (rc *realRedisCtx) scanKeys(pid uint64) ([]string, error) {
+	return scanRealRedisPlayerKeys(rc.raw, pid)
+}
+
+// scanRealRedisPlayerKeys 枚举 player:{pid}:*(花括号在 SCAN 的 glob 里是字面量),排序去重。
+// 用例自己的前置检查 / 清理 / 快照用它,不借被测的 scanPlayerKeys。Cluster 上 go-redis 按 pattern 的 hash tag 只发往该 slot 的主节点。
+func scanRealRedisPlayerKeys(c goredis.Cmdable, pid uint64) ([]string, error) {
 	seen := make(map[string]struct{})
 	var cursor uint64
 	for {
-		batch, next, err := rc.raw.Scan(context.Background(), cursor, playerKeyPrefix(pid)+"*", 100).Result()
+		batch, next, err := c.Scan(context.Background(), cursor, playerKeyPrefix(pid)+"*", 100).Result()
 		if err != nil {
 			return nil, err
 		}
@@ -418,10 +435,11 @@ func TestRealRedisLoadAllMissingValueKeepsPairs(t *testing.T) {
 // 3. 戳与 GET(__version) 逐字节相等。saveFieldsScript 的戳取 INCR 之后 GET 出来的串,不用 Lua 数字转串:
 // Redis 内嵌的 Lua 5.1 tostring 用 %.14g,15 位版本 123456789012346 会写成 "1.2345678901235e+14",戳与版本永不相等,
 // 索引从此恒不可信(退化成每次 SCAN,不报错)。15 位仍在 2^53 以内,INCR 回到 Lua 的整数不丢精度,返回值可以精确断言。
+// 守卫上界(15 位最大值 999999999999999)也走一遍:INCR 后是 16 位的 10^15,tostring 会写成 "1e+15"。
 func TestRealRedisStampMatchesVersionBytes(t *testing.T) {
 	ctx := context.Background()
-	pidNew, pidBig := realRedisPlayerBase+2, realRedisPlayerBase+3
-	rc := newRealRedisCtx(t, pidNew, pidBig)
+	pidNew, pidBig, pidMax := realRedisPlayerBase+2, realRedisPlayerBase+3, realRedisPlayerBase+16
+	rc := newRealRedisCtx(t, pidNew, pidBig, pidMax)
 
 	mustSave(t, rc.svc, pidNew, map[string][]byte{"bag": []byte("b1")})
 	rc.requireStampMatchesVersion(t, pidNew, "1")
@@ -452,6 +470,29 @@ func TestRealRedisStampMatchesVersionBytes(t *testing.T) {
 	assert.Zero(t, rec.count("scan"), "戳可信,全量读应走索引")
 	assert.Equal(t, bigVersion+1, resp.Version)
 	assert.Equal(t, map[string][]byte{"bag": []byte("b1")}, resp.Data)
+
+	// 守卫上界:当前版本 999999999999999 照常存盘,NewVersion 精确为 10^15,戳逐字节相等,全量读仍走索引。
+	// 16 位的 10^15 再存盘会被拒,见 TestRealRedisSaveRefusalsHaveNoSideEffects 的 version_1000000000000000。
+	const maxVersion uint64 = 999999999999999
+	maxStr := strconv.FormatUint(maxVersion, 10)
+	rc.set(t, playerField(pidMax, "bag"), "b0")
+	rc.set(t, versionKey(pidMax), maxStr)
+	rc.hset(t, fieldIndexKey(pidMax), "bag", "")
+	rc.hset(t, fieldIndexKey(pidMax), fieldIndexStampField, maxStr)
+
+	saved, err = SavePlayerData(ctx, rc.svc, &SavePlayerDataReq{
+		PlayerID: pidMax, Data: map[string][]byte{"bag": []byte("b1")}, ExpectedVersion: maxVersion,
+	})
+	require.NoError(t, err)
+	require.Equal(t, constants.ErrCodeOK, saved.ErrorCode)
+	assert.Equal(t, maxVersion+1, saved.NewVersion)
+	rc.requireStampMatchesVersion(t, pidMax, "1000000000000000")
+
+	rec.reset()
+	resp = rc.loadAll(t, pidMax)
+	assert.Zero(t, rec.count("scan"), "戳可信,全量读应走索引")
+	assert.Equal(t, maxVersion+1, resp.Version)
+	assert.Equal(t, map[string][]byte{"bag": []byte("b1")}, resp.Data)
 }
 
 // 4. saveFieldsScript 的拒绝分支零副作用。Lua 出错不回滚已执行的写,所以可失败的检查必须全在第一条 SET 之前:
@@ -460,18 +501,25 @@ func TestRealRedisSaveRefusalsHaveNoSideEffects(t *testing.T) {
 	ctx := context.Background()
 	pidConflict, pidIndexStr := realRedisPlayerBase+4, realRedisPlayerBase+5
 	badVersions := []struct {
+		pid     uint64
 		version string
-		// incrRejected:真 Redis 的 INCR 也拒绝它。19 位数 INCR 接受(< 2^63),守卫按 ≤18 位拒绝是为了 INCR 永不溢出。
+		// expected 是存盘带的 ExpectedVersion(0 = 跳过 CAS)。
+		expected uint64
+		// incrRejected:真 Redis 的 INCR 也拒绝它。其余几个 INCR 照常接受(都 < 2^63),守卫拒绝它们是因为超过 15 位:
+		// 版本在 Lua 里是 double,只在 2^53 以内精确(见 saveFieldsScript 注释)。
 		incrRejected bool
 	}{
-		{"abc", true},
-		{"007", true}, // 重点:真 Redis 的 INCR 拒绝前导零串,miniredis 接受
-		{"00", true},
-		{"1234567890123456789", false},
+		{realRedisPlayerBase + 6, "abc", 0, true},
+		{realRedisPlayerBase + 7, "007", 0, true}, // 重点:真 Redis 的 INCR 拒绝前导零串,miniredis 接受
+		{realRedisPlayerBase + 8, "00", 0, true},
+		{realRedisPlayerBase + 9, "1234567890123456789", 0, false},
+		// 2^53+1 带过期一格的 ExpectedVersion=2^53:两者经 tonumber 都舍入成 2^53。旧守卫(≤18 位)放行它,CAS 误判相等、字段被写。
+		{realRedisPlayerBase + 14, "9007199254740993", 9007199254740992, false},
+		{realRedisPlayerBase + 15, "1000000000000000", 0, false}, // 10^15:超出 15 位上限的最小值
 	}
 	pids := []uint64{pidConflict, pidIndexStr}
-	for i := range badVersions {
-		pids = append(pids, realRedisPlayerBase+6+uint64(i))
+	for _, c := range badVersions {
+		pids = append(pids, c.pid)
 	}
 	rc := newRealRedisCtx(t, pids...)
 
@@ -528,8 +576,8 @@ func TestRealRedisSaveRefusalsHaveNoSideEffects(t *testing.T) {
 		rc.requireValue(t, fieldIndexKey(pid), "not-a-hash")
 	})
 
-	for i, c := range badVersions {
-		pid := realRedisPlayerBase + 6 + uint64(i)
+	for _, c := range badVersions {
+		pid := c.pid
 		t.Run("version_"+c.version, func(t *testing.T) {
 			rc.set(t, versionKey(pid), c.version)
 			if c.incrRejected {
@@ -539,7 +587,7 @@ func TestRealRedisSaveRefusalsHaveNoSideEffects(t *testing.T) {
 			}
 
 			saved, err := SavePlayerData(ctx, rc.svc, &SavePlayerDataReq{
-				PlayerID: pid, Data: map[string][]byte{"bag": []byte("v")},
+				PlayerID: pid, Data: map[string][]byte{"bag": []byte("v")}, ExpectedVersion: c.expected,
 			})
 			require.Error(t, err)
 			assert.Equal(t, constants.ErrCodeRedis, saved.ErrorCode)
@@ -733,4 +781,180 @@ func TestRealRedisLegacyPlayerEndToEnd(t *testing.T) {
 	assert.False(t, rc.exists(t, routing.PlayerDataLockKey(pid)))
 	assert.False(t, rc.exists(t, realRedisMappingLockKey(pid)))
 	assert.Equal(t, map[string]string{savebarrier.Key(pid): "hash"}, rc.keyTypes(t, pid))
+}
+
+// 7. Redis Cluster 上的未声明键。loadAllFieldsScript / deletePlayerFieldsScript 按索引里的名字拼出字段键,没在 KEYS 里声明;
+// 它们与 KEYS 同 {id} slot,Redis 7 Cluster 放行。这里在三主集群上直接跑脚本层 helper(saveFieldsAtomic /
+// loadAllPlayerFields / deletePlayerFieldsAtomic / scanPlayerKeys),不经 Router:Regions 模式还要 mapping Redis 与映射登记,
+// 与本条要钉的 Redis 行为无关。SCAN 回退也在这里走一遍:go-redis 按 hash tag 把 SCAN 只发往该 slot 的主节点,
+// 随后的 MGET 同 slot,不会 CROSSSLOT。
+//
+// 顺带钉住「跨 slot」的真实边界(script.c 的 scriptVerifyClusterState / scriptPrepareForRun,7.2 与 unstable 源码一致):无 shebang 的 EVAL
+// 是兼容模式,带 SCRIPT_ALLOW_CROSS_SLOT —— 跨 slot 但仍在本节点的未声明键**静默放行**,只有落在别的节点才报
+// "non local key"。所以键格式错拼成别的 slot 时报不报错,取决于那个 slot 恰好在哪个节点;一致性只能靠 hash tag 本身。
+//
+// 集群(一次性,单容器三进程,三主无副本;announce 127.0.0.1 让宿主机经端口映射直连每个节点):
+//
+//	docker run --rm -d -p 7001-7003:7001-7003 --name ds-it-cluster $img sh -c 'for p in 7001 7002 7003; do redis-server --port $p --cluster-enabled yes --cluster-config-file nodes-$p.conf --cluster-announce-ip 127.0.0.1 --protected-mode no --daemonize yes; done; sleep 2; redis-cli --cluster create 127.0.0.1:7001 127.0.0.1:7002 127.0.0.1:7003 --cluster-replicas 0 --cluster-yes; tail -f /dev/null'
+func TestRealRedisClusterUndeclaredKeys(t *testing.T) {
+	addrs := os.Getenv(envRealRedisClusterAddrs)
+	if addrs == "" {
+		t.Skipf("%s 未设置:本用例只打显式指定的一次性 Cluster", envRealRedisClusterAddrs)
+	}
+	ctx := context.Background()
+	seeds := strings.Split(addrs, ",")
+	for i := range seeds {
+		seeds[i] = strings.TrimSpace(seeds[i])
+	}
+	// 就绪判断不经 ClusterClient:它把第一次 CLUSTER SLOTS 的结果缓存起来(ClusterStateReloadInterval 缺省 10s,到期也只异步重载),
+	// 集群还没组好时缓存到的空表会让下面的 Eventually 白等到超时;缓存到半张表时 MasterForKey 对表外的 slot 随机挑节点,
+	// 「同节点 / 别的节点」会分错,跨 slot 探针的假失败会被误读成 Redis 改了规则。所以先用单节点客户端逐个等到
+	// cluster_state:ok(缺省 require-full-coverage 下即该节点看到 16384 个 slot 全覆盖),再建集群客户端。
+	require.Eventually(t, func() bool {
+		for _, addr := range seeds {
+			node := goredis.NewClient(&goredis.Options{Addr: addr})
+			info, err := node.ClusterInfo(ctx).Result()
+			_ = node.Close()
+			if err != nil || !strings.Contains(info, "cluster_state:ok") {
+				return false
+			}
+		}
+		return true
+	}, 30*time.Second, 200*time.Millisecond, "%s=%s:集群没有就绪(有节点的 cluster_state 不是 ok)", envRealRedisClusterAddrs, addrs)
+	cluster := goredis.NewClusterClient(&goredis.ClusterOptions{Addrs: seeds})
+	t.Cleanup(func() { _ = cluster.Close() })
+	slots, err := cluster.ClusterSlots(ctx).Result()
+	require.NoError(t, err)
+	masters := make(map[string]struct{})
+	covered := 0
+	for _, s := range slots {
+		covered += s.End - s.Start + 1
+		if len(s.Nodes) > 0 {
+			masters[s.Nodes[0].Addr] = struct{}{}
+		}
+	}
+	require.Equal(t, 16384, covered, "CLUSTER SLOTS 不是全覆盖:客户端拿到的拓扑不完整,下面按节点挑 id 不可信")
+	require.GreaterOrEqual(t, len(masters), 2, "至少要两个主节点,才分得出同节点跨 slot 与跨节点")
+	if info, err := cluster.Info(ctx, "server").Result(); err == nil {
+		t.Logf("real redis cluster %s (%d masters): %s", addrs, len(masters), redisVersionLine(info))
+	}
+
+	masterOf := func(pid uint64) string {
+		t.Helper()
+		node, err := cluster.MasterForKey(ctx, versionKey(pid))
+		require.NoError(t, err)
+		return node.Options().Addr
+	}
+	slotOf := func(pid uint64) int64 {
+		t.Helper()
+		slot, err := cluster.ClusterKeySlot(ctx, versionKey(pid)).Result()
+		require.NoError(t, err)
+		return slot
+	}
+	// pid 走已索引流程与跨 slot 探针,legacyPid 走 SCAN 回退;sameNodePid / otherNodePid 只当「别的 slot」:
+	// 前者与 pid 同节点不同 slot,后者在别的节点。slot 分布由集群决定,从 base+22 起找第一个满足条件的 id。
+	pid, legacyPid := realRedisPlayerBase+20, realRedisPlayerBase+21
+	home := masterOf(pid)
+	var sameNodePid, otherNodePid uint64
+	for cand := realRedisPlayerBase + 22; cand < realRedisPlayerBase+2000 && (sameNodePid == 0 || otherNodePid == 0); cand++ {
+		if masterOf(cand) != home {
+			if otherNodePid == 0 {
+				otherNodePid = cand
+			}
+		} else if sameNodePid == 0 && slotOf(cand) != slotOf(pid) {
+			sameNodePid = cand
+		}
+	}
+	require.NotZero(t, sameNodePid, "找不到与 pid 同节点、不同 slot 的 id")
+	require.NotZero(t, otherNodePid, "找不到落在别的节点的 id")
+
+	pids := []uint64{pid, legacyPid, sameNodePid, otherNodePid}
+	for _, p := range pids {
+		keys, err := scanRealRedisPlayerKeys(cluster, p)
+		require.NoError(t, err)
+		if len(keys) > 0 {
+			t.Skipf("玩家 %d 已有 %d 个键(如 %s):不是本用例建的,不碰", p, len(keys), keys[0])
+		}
+	}
+	// 前置检查通过之后才登记清理。一名玩家的键同 slot,一条 DEL 不会 CROSSSLOT。
+	t.Cleanup(func() {
+		for _, p := range pids {
+			keys, err := scanRealRedisPlayerKeys(cluster, p)
+			if err != nil {
+				t.Errorf("cleanup player %d: scan: %v", p, err)
+				continue
+			}
+			if len(keys) == 0 {
+				continue
+			}
+			if err := cluster.Del(context.Background(), keys...).Err(); err != nil {
+				t.Errorf("cleanup player %d: del: %v", p, err)
+			}
+		}
+	})
+	rec := &cmdRecorder{}
+	cluster.AddHook(rec)
+
+	// 已索引:存盘的键全部声明;全量读的 GET 与删除的 TYPE / DEL 打的是同 slot 的未声明键。
+	require.NoError(t, cluster.Set(ctx, routing.PlayerDataLockKey(pid), realRedisLockToken, 0).Err())
+	status, ver, err := saveFieldsAtomic(ctx, cluster, pid, realRedisLockToken, 0, bytesMap(map[string]string{"bag": "b", "attr": "a"}))
+	require.NoError(t, err)
+	require.Equal(t, saveFieldsOK, status)
+	require.Equal(t, uint64(1), ver)
+	rec.reset()
+	data, ver, err := loadAllPlayerFields(ctx, cluster, pid)
+	require.NoError(t, err, "同 slot 的未声明键必须放行")
+	assert.Equal(t, bytesMap(map[string]string{"bag": "b", "attr": "a"}), data)
+	assert.Equal(t, uint64(1), ver)
+	assert.Zero(t, rec.count("scan"), "索引可信,不应 SCAN")
+
+	// 跨 slot 探针:同一段全量读脚本,KEYS 仍是 pid 的,ARGV[1] 换成别的玩家的前缀。
+	require.NoError(t, cluster.Set(ctx, playerField(sameNodePid, "bag"), "foreign", 0).Err())
+	loadAllKeys := []string{versionKey(pid), fieldIndexKey(pid)}
+	res, err := cluster.Eval(ctx, loadAllFieldsScript, loadAllKeys, playerKeyPrefix(sameNodePid)).Result()
+	require.NoError(t, err, "同节点跨 slot:EVAL 兼容模式放行,不报错")
+	reply, err := decodeLoadAllReply(pid, res)
+	require.NoError(t, err)
+	assert.Equal(t, loadAllIndexed, reply.kind)
+	assert.Equal(t, bytesMap(map[string]string{"bag": "foreign"}), reply.data, "读到的是别的 slot 里别的玩家的键,且没有任何报错")
+	_, err = cluster.Eval(ctx, loadAllFieldsScript, loadAllKeys, playerKeyPrefix(otherNodePid)).Result()
+	require.Error(t, err, "跨节点的未声明键必须报错,不能静默")
+	assert.Contains(t, err.Error(), "non local key")
+
+	n, err := deletePlayerFieldsAtomic(ctx, cluster, pid, realRedisLockToken, nil, false)
+	require.NoError(t, err)
+	assert.Equal(t, int64(3), n) // bag / attr + 版本
+	keys, err := scanRealRedisPlayerKeys(cluster, pid)
+	require.NoError(t, err)
+	assert.Equal(t, []string{routing.PlayerDataLockKey(pid)}, keys, "只剩手工放的数据锁")
+
+	// 未索引(存量玩家):脚本回退信号 → SCAN 收键(按 hash tag 路由)→ MGET 同 slot → 回退模式删。
+	for name, val := range map[string]string{"bag": "b", "attr": "a"} {
+		require.NoError(t, cluster.Set(ctx, playerField(legacyPid, name), val, 0).Err())
+	}
+	require.NoError(t, cluster.Set(ctx, versionKey(legacyPid), "5", 0).Err())
+	require.NoError(t, cluster.HSet(ctx, savebarrier.Key(legacyPid), "pending", "keep").Err())
+	require.NoError(t, cluster.Set(ctx, routing.PlayerDataLockKey(legacyPid), realRedisLockToken, 0).Err())
+	rec.reset()
+	data, ver, err = loadAllPlayerFields(ctx, cluster, legacyPid)
+	require.NoError(t, err)
+	assert.Equal(t, bytesMap(map[string]string{"bag": "b", "attr": "a"}), data)
+	assert.Equal(t, uint64(5), ver)
+	assert.Positive(t, rec.count("scan"), "未索引,应退回 SCAN")
+
+	n, err = deletePlayerFieldsAtomic(ctx, cluster, legacyPid, realRedisLockToken, nil, false)
+	require.NoError(t, err)
+	assert.Equal(t, deleteFieldsNeedScan, n)
+	candidates, err := scanPlayerKeys(ctx, cluster, legacyPid)
+	require.NoError(t, err)
+	assert.ElementsMatch(t, []string{
+		playerField(legacyPid, "bag"), playerField(legacyPid, "attr"), versionKey(legacyPid),
+		savebarrier.Key(legacyPid), routing.PlayerDataLockKey(legacyPid),
+	}, candidates, "Cluster 上的 SCAN 必须收全这名玩家的键")
+	n, err = deletePlayerFieldsAtomic(ctx, cluster, legacyPid, realRedisLockToken, candidates, true)
+	require.NoError(t, err)
+	assert.Equal(t, int64(3), n) // bag / attr + 版本;别家 HASH 与锁不删
+	keys, err = scanRealRedisPlayerKeys(cluster, legacyPid)
+	require.NoError(t, err)
+	assert.ElementsMatch(t, []string{savebarrier.Key(legacyPid), routing.PlayerDataLockKey(legacyPid)}, keys)
 }

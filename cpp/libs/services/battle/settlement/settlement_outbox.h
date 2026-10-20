@@ -272,6 +272,59 @@ namespace battle_settlement
 																			  : PersistVerdict::kUnconfirmed;
 	}
 
+	// 确认模式(全球对局)发结果之前的个人结算落库(kStagePendingSettlementOnceScript)回来之后的结论
+	// (审计 r2-battle#1,2026-10-19)。前三种是「该成员已落定」,ResultCommit 把他移出待写集合、后续轮次不再写;
+	// 只有 kUnconfirmed 下一轮重写。
+	enum class StageVerdict : uint8_t
+	{
+		kStored,        // 脚本返回 1:本次写入
+		kAlreadyStored, // 脚本返回 2:本局早先已为该成员写过 —— 上一轮的应答丢了或报了 ERROR,命令其实执行了。不重写
+		kSuperseded,    // 脚本返回 3:锁属于别的局,这一局对该成员已被取代。不写,免得旧局覆盖新局的单槽 pending
+		// 空应答 / ERROR / 意外形状或取值:不知道写没写。下一轮重写是安全的:命令若其实执行过,脚本会返回 2。
+		kUnconfirmed,
+	};
+
+	// integer 只在 shape == kInteger 时有意义。
+	inline StageVerdict ClassifyStageReply(const ReplyShape shape, const int64_t integer)
+	{
+		if (shape != ReplyShape::kInteger)
+		{
+			return StageVerdict::kUnconfirmed;
+		}
+		switch (integer)
+		{
+		case 1:
+			return StageVerdict::kStored;
+		case 2:
+			return StageVerdict::kAlreadyStored;
+		case 3:
+			return StageVerdict::kSuperseded;
+		default:
+			return StageVerdict::kUnconfirmed;
+		}
+	}
+
+	inline bool IsStageSettled(const StageVerdict verdict)
+	{
+		return verdict != StageVerdict::kUnconfirmed;
+	}
+
+	inline const char *StageVerdictName(const StageVerdict verdict)
+	{
+		switch (verdict)
+		{
+		case StageVerdict::kStored:
+			return "stored";
+		case StageVerdict::kAlreadyStored:
+			return "already_stored";
+		case StageVerdict::kSuperseded:
+			return "superseded";
+		case StageVerdict::kUnconfirmed:
+			return "unconfirmed";
+		}
+		return "unknown";
+	}
+
 	// ---- scene 登录钩子对待结算记录与战斗锁的读数判定 ----
 	//
 	// OnPlayerEnterScene 先 GET 待结算记录,没有才读 battle:lock + ctx 重建冻结(player_battle.cpp)。
@@ -422,6 +475,8 @@ namespace battle_settlement
 	inline constexpr char kPendingSettlementIndexKey[] = "battle:settlement:pending:index";
 
 	// battle 落库(两键不过期 + 进积压索引),一条 Lua 原子完成。
+	// 只给本地(非确认)模式用:每名成员只写这一次、不重写。确认模式的分轮落库会重写结论未知的成员,
+	// 改用下面的 kStagePendingSettlementOnceScript(审计 r2-battle#1)。
 	// KEYS[1]=blob 键,KEYS[2]=id 键,KEYS[3]=积压索引;
 	// ARGV[1]=blob,ARGV[2]=battle_id,ARGV[3]=now_ms(写入方 Unix 毫秒),ARGV[4]=player_id。
 	// now 由调用方传入而不是在 Lua 里取 TIME:脚本保持确定性;各节点墙钟偏差是秒级,对以天计的年龄报数无影响。
@@ -447,6 +502,62 @@ namespace battle_settlement
 		"redis.call('SET', KEYS[2], ARGV[2]) "
 		"redis.call('SET', KEYS[3], ARGV[1]) "
 		"redis.call('ZADD', KEYS[4], ARGV[3], ARGV[4]) "
+		"return 1";
+
+	// 战斗锁键(scene PrepareBattle 写,值 = 十进制 battle_id,带 TTL)。确认模式落库读它判「已被别的局取代」。
+	// scene 的 player_battle.cpp 引用本常量;player_team.cpp 组队跟随链里还有一份同字面量的本地常量(既有)。
+	inline constexpr char kBattleLockKeyFmt[] = "battle:lock:%llu";
+
+	// 确认模式落库标记:SET,member = 十进制 player_id,每局一个键(按 battle_id)。
+	// 只表达「本局已经为这名成员写过 pending」:与 pending 两键在同一条脚本里写下,之后没有任何脚本摘成员
+	// (销账脚本不碰它),所以销账之后它仍能证明「写过」。
+	// 寿命:只在落库轮次之间有用。全部成员落定后 battle 立即 DEL(不会再有下一轮);停机、崩溃、轮次用尽时留下的
+	// 随 TTL 过期。TTL 必须活过「上一轮结论未知 → 下一轮」的间隔:Redis 连得上时轮次用尽前最多约 9.5 分钟
+	// (ResultCommit 的 kMaxStagingRounds),能把间隔拉长的只有 battle 节点单边连不上 Redis(连不上时不开轮)。
+	// 取 24 小时;单边断连超过 24 小时不在保证范围内。
+	// 前缀与按玩家的 pending 两键、积压索引都不同,不会被它们的格式撞上。
+	inline constexpr char kStagedSettlementMembersKeyFmt[] = "battle:settlement:staged:%llu";
+	inline constexpr uint32_t kStagedSettlementMembersTtlSec = 86400;
+
+	// 确认模式(全球对局)发结果之前的个人结算落库,一条 Lua 原子完成(审计 r2-battle#1,2026-10-19)。
+	// KEYS[1]=pending blob,KEYS[2]=pending:id,KEYS[3]=积压索引,KEYS[4]=battle:lock,KEYS[5]=本局落库标记;
+	// ARGV[1]=blob,ARGV[2]=battle_id,ARGV[3]=now_ms,ARGV[4]=player_id,ARGV[5]=标记 TTL 秒。
+	// 返回 1 = 本次写入,2 = 本局早先已为该成员写过(不重写),3 = 锁属于别的局(不写)。结论见 ClassifyStageReply。
+	//
+	// 为什么需要它:确认模式按轮落库。原来每轮对全部成员无条件 SET,一轮里只要有一人没拿到确认,下一轮就把所有人
+	// 重写一遍 —— 已被 scene 应用并销账的成员 pending 复活,账本条目已随销账摘除,下次登录整笔再发一次。
+	// ResultCommit 现在只重写结论未知的成员;但「未知」(空应答、脚本 ERROR)可能是命令其实执行了、scene 随后
+	// 也应用并销账了。这一类由标记判出来,返回 2,不重写。
+	//
+	// 为什么不只看锁(「锁 == battle_id 才写,锁不在按已收尾」):全球确认模式下锁在落库之前就可能合法缺席,
+	// 锁不在证明不了「已销账」:
+	//   - 锁由 scene PrepareBattle 写,TTL = 备战期限 + 60s;CreateBattle 确认后 ConfirmBattle 才条件续到正式期限 + 60s。
+	//     续期是 fire-and-forget(Redis 断开时跳过、EVAL 失败只打日志、离线玩家 deadline 为 0 时跳过),
+	//     没续上时锁会在战斗进行中自然过期;
+	//   - 整场期限到时,scene reaper(30s 一拍)按同一个 deadline 条件删锁,与 battle 的强制平局几乎同时;
+	//     reaper 先删时,强制平局的落库(尤其是退避之后的重试轮)看不到锁;
+	//   - 重试轮拖过正式期限 + 60s 时,锁自然过期。
+	// 这些情形按「已收尾」处理会把合法结算静默丢掉(与 scene 侧 StorePendingSettlementIfLockMatch 注释里
+	// 「离线结算常晚于锁到达」是同一个结论)。所以锁不在时照写,与改造前一致;只有锁属于别的局才不写 ——
+	// 那一局能拿到锁,说明这一局要么已销账、要么已被判废,scene 每条路径都会丢弃这一局的结算
+	// (锁值不符丢弃、离线暂存返回 2 后销账),再写只会让旧局覆盖新局的单槽 pending。
+	//
+	// 顺序:先判标记,再判锁,两键 SET 之后才写标记,ZADD 放最后。
+	//   - 标记写在两键之后,标记在就说明两键已写。OOM 只在第一条写之前判一次(之后的写为保原子性放行),
+	//     NOAUTH、READONLY、MISCONF 都在第一条写之前失败,所以不会出现「两键写了、标记没写」。
+	//     按命令粒度的 ACL 误配置(放行 SET、拒绝 SADD)是例外,不在保证范围内;
+	//   - ZADD 放最后:积压索引被写坏(键类型错)时 ZADD 报 WRONGTYPE,脚本回 ERROR,但两键与标记已落,
+	//     下一轮读到标记返回 2,落库照常收口;索引只影响报数。
+	// pending 两键照旧不带 TTL(landing-recovery §7),EXPIRE 只作用在标记上。
+	inline constexpr char kStagePendingSettlementOnceScript[] =
+		"if redis.call('SISMEMBER', KEYS[5], ARGV[4]) == 1 then return 2 end "
+		"local lock = redis.call('GET', KEYS[4]) "
+		"if lock and lock ~= ARGV[2] then return 3 end "
+		"redis.call('SET', KEYS[1], ARGV[1]) "
+		"redis.call('SET', KEYS[2], ARGV[2]) "
+		"redis.call('SADD', KEYS[5], ARGV[4]) "
+		"redis.call('EXPIRE', KEYS[5], ARGV[5]) "
+		"redis.call('ZADD', KEYS[3], ARGV[3], ARGV[4]) "
 		"return 1";
 
 	// scene 落盘确认后的销账 + 放锁,一条 Lua 原子完成(= 给 battle 侧发件箱的 ACK)。

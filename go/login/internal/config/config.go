@@ -110,6 +110,12 @@ type Config struct {
 	// (docs/design/new-player-first-enter-no-cold-read.md)。整块可缺省,缺省 = 关 = 与本功能之前逐字节相同。
 	NewPlayerSeed NewPlayerSeedConf `json:"NewPlayerSeed,optional"`
 
+	// PersistSchemaRegressionMode 是 EnterGame 父快照快路径上持久 schema 世代倒退判定(C4)的模式
+	// (docs/design/mixed-version-persist-field-protection.md §5.1)。取值 warn / enforce;
+	// 缺键或空串按 warn,其余取值启动期拒绝(ParsePersistSchemaRegressionMode,login.go)。
+	// 运行期只读归一化之后的结果,不要直接比较这个字符串。
+	PersistSchemaRegressionMode string `json:"PersistSchemaRegressionMode,optional"`
+
 	// RequireClientEndpoint 控制下发 gate 地址时是否**必须**用 gate 自报的客户端可达地址
 	// (NodeInfo.client_endpoint,集群外入口 D78/D79,规则见 shared/clientendpoint.Select)。
 	//

@@ -364,6 +364,7 @@
 - 整批一个 Lua,或把判定规则写进 Lua:前者长时间阻塞登录同步路径也在用的 Redis,后者造出两份真相。
 - 缓存落点省 MGET、把复核挪到 SQL 之前、做了条件写后删复核:违反 player-storage-placement.md 的 P-3 与 §6.3。
 - 为 Redis Cluster 改 hash tag 键名:破坏滚动升级兼容与 merge_zone 的锁键镜像。
+  - **(2026-10-19 指向注,上条原文保留)** 本条不再作为否决理由:负责人 2026-10-13 已定 Redis 分片 hash tag「以按 player_id 分片为准」(PROGRESS「2026-10-14 存盘管线接手」条目 §5 拍板记录第 16 条),2026-10-17 又拍板核心走「单元化 + 单元内 Redis Cluster 按 `{player_id}` 分片」。上面两点改为分片迁移必须满足的约束:排序锁改名与 `tools/merge_zone/relocate.go` 的 `orderingLockKey` 镜像同批改;核心闭包键改名不做双读,走停写切换或版本门禁([shared-redis-split-by-purpose.md](shared-redis-split-by-purpose.md) §20.7)。分片时还要算进 db-write-fencing-mysql.md §6.4 的同 tag 约束:令牌发布脚本里的排序锁、子表缓存、资产证据与 `save_barrier` 同 tag(若该稿 §18.7 选 A 值封装,缓存可以脱离);围栏 §5.5 推进脚本里的排序锁、游标、已落库 epoch 同 tag。详见该稿 §20、§21.6(纯设计,未落码)。
 
 ### 6.6 proto2mysql 条件写原语(2026-10-13,已推分支,未验证)
 

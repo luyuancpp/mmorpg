@@ -14,9 +14,14 @@ import (
 
 	"google.golang.org/protobuf/proto"
 
+	"proto/common/base"
+	"proto/common/component"
 	friendpb "proto/friend"
 	"proto/scene"
 	"robot/generated/pb/game"
+	"robot/pkg"
+
+	tiptable "shared/generated/pb/table"
 )
 
 const (
@@ -571,5 +576,202 @@ func TestSyncSmokeDescribeIsDeterministic(t *testing.T) {
 	changes := []syncSmokeDomainChange{{domain: syncTestFriendRequest, before: 3, after: 4}}
 	if got, want := syncSmokeDescribeChanges(changes), "[FRIEND_REQUEST 3->4]"; got != want {
 		t.Fatalf("got %q, want %q", got, want)
+	}
+}
+
+// ---------------------------------------------------------------------------
+// travel-smoke 与 sync-smoke 共用的传送判据,以及 travel-smoke 的金币回包判定。
+// travel-smoke 没有自己的单测文件,这些纯函数的单测放在这里。
+// ---------------------------------------------------------------------------
+
+// travelTestReply 构造一条成功形状的回包(body 序列化进 serialized_message)。
+func travelTestReply(t *testing.T, body proto.Message) *base.MessageContent {
+	t.Helper()
+	raw, err := proto.Marshal(body)
+	if err != nil {
+		t.Fatalf("marshal: %v", err)
+	}
+	return &base.MessageContent{SerializedMessage: raw}
+}
+
+// travelTestSettled 构造一份已有结局的 TravelToZone 调用快照。
+func travelTestSettled(reply *base.MessageContent, err error) travelSmokeReplyOutcome {
+	return travelSmokeReplyOutcome{settled: true, reply: reply, err: err}
+}
+
+// 传送等待里回包是可选的:没结局、旧连接被换掉、认领窗口超时都不能判失败;回包带拒绝码才立即失败。
+func TestTravelSmokeJudgeTravelReply(t *testing.T) {
+	accepted := travelTestReply(t, &scene.TravelToZoneResponse{})
+	rejected := travelTestReply(t, &scene.TravelToZoneResponse{ErrorMessage: &base.TipInfoMessage{Id: 7}})
+	envelope := &base.MessageContent{ErrorMessage: &base.TipInfoMessage{Id: tipSyncRateLimited}}
+	undecodable := &base.MessageContent{SerializedMessage: []byte{0xff, 0xff, 0xff}}
+
+	cases := []struct {
+		name     string
+		reply    travelSmokeReplyOutcome
+		wantSeen bool
+		wantErr  string // 空 = 应放行
+	}{
+		{"not settled yet", travelSmokeReplyOutcome{}, false, ""},
+		{"accepted", travelTestSettled(accepted, nil), true, ""},
+		// 124 一到 SwapConn 就让旧连接上的在途调用以 ErrRPCDisconnected 收场:正常路径。
+		{"old connection swapped", travelTestSettled(nil, pkg.ErrRPCDisconnected), false, ""},
+		{"no reply within the claim window", travelTestSettled(nil, pkg.ErrRPCTimeout), false, ""},
+		{"rejected in the reply body", travelTestSettled(rejected, nil), true, "scene 同步拒绝 tip=7"},
+		{"envelope rejection", travelTestSettled(envelope, &pkg.ServerTipError{Tip: tipSyncRateLimited}), true,
+			fmt.Sprintf("gate 信封拒绝 tip=%d", tipSyncRateLimited)},
+		{"undecodable reply body", travelTestSettled(undecodable, nil), true, "decode TravelToZoneResponse"},
+		{"not sent", travelTestSettled(nil, fmt.Errorf("%w: game client has no connection", pkg.ErrRPCNotSent)), false,
+			"TravelToZone call failed"},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			seen, err := travelSmokeJudgeTravelReply(c.reply)
+			if seen != c.wantSeen {
+				t.Fatalf("seen=%t, want %t", seen, c.wantSeen)
+			}
+			if c.wantErr == "" {
+				if err != nil {
+					t.Fatalf("unexpected error: %v", err)
+				}
+				return
+			}
+			if err == nil {
+				t.Fatal("expected an error")
+			}
+			if !strings.Contains(err.Error(), c.wantErr) {
+				t.Fatalf("error %q does not mention %q", err, c.wantErr)
+			}
+		})
+	}
+}
+
+// travelSmokeScanHop 先判回包结局再扫留底:replySeen 取自结局;回包被拒时即便留底里已有 124 与进场也判失败。
+func TestTravelSmokeScanHopUsesCallOutcome(t *testing.T) {
+	redirect := syncTestRecord(t, game.SceneClientPlayerCommonRedirectToGateMessageId, 0,
+		&scene.RedirectToGateNotify{TargetIp: "127.0.0.1", TargetPort: 7001})
+	enter := syncTestRecord(t, game.SceneSceneClientPlayerNotifyEnterSceneMessageId, 0,
+		&scene.EnterSceneS2C{SceneInfo: &scene.SceneInfoComp{SceneConfigId: 3}})
+	accepted := travelTestReply(t, &scene.TravelToZoneResponse{})
+	rejected := travelTestReply(t, &scene.TravelToZoneResponse{ErrorMessage: &base.TipInfoMessage{Id: 7}})
+
+	scan, err := travelSmokeScanHop(travelTestSettled(nil, pkg.ErrRPCDisconnected), []travelSmokeRecord{redirect, enter})
+	if err != nil {
+		t.Fatalf("swapped-out call with redirect and arrival must pass, got: %v", err)
+	}
+	if scan.replySeen || scan.hop == nil || !scan.arrived || scan.hop.sceneConfigId != 3 {
+		t.Fatalf("got replySeen=%t hop=%v arrived=%t, want replySeen=false, a hop with scene_config_id=3 and arrived=true",
+			scan.replySeen, scan.hop, scan.arrived)
+	}
+
+	scan, err = travelSmokeScanHop(travelTestSettled(accepted, nil), nil)
+	if err != nil || !scan.replySeen || scan.hop != nil {
+		t.Fatalf("accepted reply without redirect yet: got replySeen=%t hop=%v err=%v, want replySeen=true, no hop, no error",
+			scan.replySeen, scan.hop, err)
+	}
+
+	scan, err = travelSmokeScanHop(travelTestSettled(rejected, nil), []travelSmokeRecord{redirect, enter})
+	if err == nil || !strings.Contains(err.Error(), "scene 同步拒绝 tip=7") {
+		t.Fatalf("rejected reply must fail the hop, got err=%v", err)
+	}
+	if !scan.replySeen {
+		t.Fatal("a rejected reply still counts as seen")
+	}
+
+	// 受理之后、124 之前的 SendTipToClient 是异步失败通知,与回包结局无关,照旧立即失败。
+	tip := syncTestRecord(t, game.SceneClientPlayerCommonSendTipToClientMessageId, 0, &base.TipInfoMessage{Id: 9})
+	if _, err := travelSmokeScanHop(travelTestSettled(accepted, nil), []travelSmokeRecord{tip}); err == nil ||
+		!strings.Contains(err.Error(), "受理后失败") {
+		t.Fatalf("a tip before msg 124 must fail the hop, got err=%v", err)
+	}
+}
+
+// expectTravelRejected 要求同步拒绝:只有回包体拒绝码非 0 才通过;受理、信封拒绝、没回包、断线都失败。
+func TestTravelSmokeJudgeRejection(t *testing.T) {
+	const zone uint32 = 0
+	rejected := travelTestReply(t, &scene.TravelToZoneResponse{ErrorMessage: &base.TipInfoMessage{Id: 7}})
+	accepted := travelTestReply(t, &scene.TravelToZoneResponse{})
+	envelope := &base.MessageContent{ErrorMessage: &base.TipInfoMessage{Id: tipSyncRateLimited}}
+
+	tip, err := travelSmokeJudgeRejection(zone, travelTestSettled(rejected, nil))
+	if err != nil || tip != 7 {
+		t.Fatalf("rejected reply: got tip=%d err=%v, want tip=7 and no error", tip, err)
+	}
+
+	fail := []struct {
+		name    string
+		reply   travelSmokeReplyOutcome
+		wantErr string
+	}{
+		{"accepted", travelTestSettled(accepted, nil), "tip=0"},
+		{"envelope rejection is not a business rejection", travelTestSettled(envelope, &pkg.ServerTipError{Tip: tipSyncRateLimited}),
+			fmt.Sprintf("被 gate 信封拒绝 tip=%d", tipSyncRateLimited)},
+		{"no reply", travelTestSettled(nil, pkg.ErrRPCTimeout), "内没有回包"},
+		{"disconnected", travelTestSettled(nil, pkg.ErrRPCDisconnected), pkg.ErrRPCDisconnected.Error()},
+		{"not settled", travelSmokeReplyOutcome{}, "caller bug"},
+	}
+	for _, c := range fail {
+		t.Run(c.name, func(t *testing.T) {
+			tip, err := travelSmokeJudgeRejection(zone, c.reply)
+			if err == nil {
+				t.Fatalf("expected an error, got tip=%d", tip)
+			}
+			if !strings.Contains(err.Error(), c.wantErr) {
+				t.Fatalf("error %q does not mention %q", err, c.wantErr)
+			}
+		})
+	}
+}
+
+// 金币读写的回包:gate GM 闸、其余信封拒绝、回包体业务拒绝各自报出可辨认的原因;受理放行。
+func TestTravelSmokeReplyRejection(t *testing.T) {
+	gmGuard := uint32(tiptable.CommonError_kFeatureUnavailable)
+	cases := []struct {
+		name        string
+		envelopeTip uint32
+		reply       travelSmokeTipReply
+		wantErr     string // 空 = 应放行
+	}{
+		{"accepted", 0, &scene.GmAddCurrencyResponse{BalanceAfter: 18}, ""},
+		{"gate GM guard", gmGuard, &scene.GmAddCurrencyResponse{}, "GM 闸拒绝"},
+		{"other envelope rejection", tipSyncRateLimited, &scene.GetCurrencyListResponse{}, "被 gate 信封拒绝"},
+		{"business rejection", 0, &scene.GetCurrencyListResponse{ErrorMessage: &base.TipInfoMessage{Id: 9}}, "scene 业务拒绝 tip=9"},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			err := travelSmokeReplyRejection(c.envelopeTip, c.reply)
+			if c.wantErr == "" {
+				if err != nil {
+					t.Fatalf("unexpected error: %v", err)
+				}
+				return
+			}
+			if err == nil {
+				t.Fatal("expected an error")
+			}
+			if !strings.Contains(err.Error(), c.wantErr) {
+				t.Fatalf("error %q does not mention %q", err, c.wantErr)
+			}
+		})
+	}
+}
+
+// 金币槽越界按 0(新号没有任何货币记录时空列表是合法回包),与改造前经 Player.GetCurrencyValue 读出的值一致。
+func TestTravelSmokeGold(t *testing.T) {
+	cases := []struct {
+		name     string
+		response *scene.GetCurrencyListResponse
+		want     uint64
+	}{
+		{"no currency comp", &scene.GetCurrencyListResponse{}, 0},
+		{"empty values", &scene.GetCurrencyListResponse{Currency: &component.CurrencyComp{}}, 0},
+		{"gold slot present", &scene.GetCurrencyListResponse{Currency: &component.CurrencyComp{Values: []uint64{42, 5}}}, 42},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			if got := travelSmokeGold(c.response); got != c.want {
+				t.Fatalf("got %d, want %d", got, c.want)
+			}
+		})
 	}
 }

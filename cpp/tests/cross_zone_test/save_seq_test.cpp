@@ -13,6 +13,8 @@
 #include "player/system/db_task_dispatch_system.h"
 #include "player/system/dirty_save_stats.h"
 #include "player/system/player_data_loader.h"
+#include "player/system/player_persist_marshal.h"
+#include "player/comp/player_persist_carry_comp.h"
 #include "player/system/player_lifecycle.h"
 #include "player/system/save_seq.h"
 #include "player/system/save_seq_floor.h"
@@ -299,8 +301,13 @@ void CreatePersistedPlayerComps(entt::entity player)
     registry.emplace<PlayerAssetOpLedgerComp>(player);
     registry.emplace<BattleSettlementLedgerComp>(player);
     registry.emplace<PlayerInboxLedgerComp>(player);
+    // 神秘商人限购记录是 2026-10-19 新增的持久组件,这份清单当时漏了;缺它 marshal 会整份拒存。
+    registry.emplace<PlayerMysteryMerchantComp>(player);
     registry.emplace<CurrencyComp>(player);
     registry.emplace<PlayerCurrencyComp>(player);
+    // 两表顶层未知字段的载体(混版本持久字段保护 §4.2 L1),生产里由两张表的 Unmarshal 创建。
+    registry.emplace<PlayerDatabaseCarryComp>(player);
+    registry.emplace<PlayerDatabase1CarryComp>(player);
 }
 
 // 在线(未退出、无交接)的玩家:落地回调只更新快照,不走退出 / 交接分支。
@@ -313,16 +320,11 @@ entt::entity MakeOnlinePlayer()
     return player;
 }
 
-// 与 SavePlayerToRedis 快路径比较时的新消息同一个形状:marshal + 两张子表的 player_id,不带 last_save_seq。
+// 与 SavePlayerToRedis 快路径比较时的新消息同一个形状:走同一个统一入口(拼装 + player_id + 持久 schema 世代),
+// 不带 last_save_seq。
 bool MarshalAsFresh(entt::entity player, PlayerAllData& data)
 {
-    if (!PlayerAllDataMessageFieldsMarshal(player, data))
-    {
-        return false;
-    }
-    data.mutable_player_database_data()->set_player_id(kSaveSeqPlayerId);
-    data.mutable_player_database_1_data()->set_player_id(kSaveSeqPlayerId);
-    return true;
+    return player_persist::MarshalPlayerForPersist(player, kSaveSeqPlayerId, data);
 }
 
 class SaveSeqEcsFixture : public ::testing::Test

@@ -401,6 +401,18 @@ void OnClientLeaveGame(const SessionId sessionId, SessionInfo &session)
     }
 }
 
+void OnClientEnterGame(const SessionId sessionId, SessionInfo &session)
+{
+    if (session.sceneRouteResetPending && !session.enterGameSentAfterLeave)
+    {
+        // 每次"回选角之后再进"一条,量级同 OnClientLeaveGame 的日志。
+        LOG_INFO << "[SceneEntry] client EnterGame after LeaveGame: accepting routes of the new login from now on, session_id="
+                 << sessionId << " player_id=" << session.playerId
+                 << " login_generation_at_leave=" << session.loginGenerationAtReset;
+    }
+    gate_scene_route::NoteEnterGameRequested(session);
+}
+
 void OnSceneLinkHandshaken(const muduo::net::TcpConnectionPtr &conn, const std::string &nodeUuid,
                            const Clock::time_point now)
 {

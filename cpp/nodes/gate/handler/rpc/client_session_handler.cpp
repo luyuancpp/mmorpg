@@ -2,6 +2,7 @@
 #include "client_request_lane.h"
 #include "login_admission.h"
 #include "rpc_reply_bridge.h"
+#include "scene_client_call_reply.h"
 
 #include <algorithm>
 #include <cassert>
@@ -69,6 +70,8 @@ constexpr std::chrono::milliseconds kGateToSceneClientCallTimeout{12000};
 
 // scene 对一条客户端消息的回包 / 失败落到客户端(docs/design/muduo-rpc-channel.md §8.1)。
 // 会话按 (session_id, 会话代次) 复核:session_id 被新连接复用之后,旧会话迟到的回包不得写进新会话的 socket。
+// 只由 HandleTcpNodeMessage 为内层响应非 Empty 的请求-响应类消息登记,RPC0 保证每次调用恰好回调一次,
+// 所以下面三种处置(原样下发 / 1003 信封 / 不下发)对同一请求恰好发生一次,判定见 scene_client_call_reply.h。
 static void ForwardSceneClientCallResult(SessionId sessionId, uint64_t incarnation, uint64_t clientRequestId,
 										 uint32_t innerMessageId, const RpcStatus &status,
 										 const std::shared_ptr<ProcessClientPlayerMessageResponse> &response)
@@ -77,6 +80,16 @@ static void ForwardSceneClientCallResult(SessionId sessionId, uint64_t incarnati
 	if (session == nullptr)
 	{
 		return; // 会话已关闭或号已复用:没有客户端可回(断线后的回包本来就无处可去)
+	}
+	using gate_scene_client_reply::Disposition;
+	const Disposition disposition = gate_scene_client_reply::Decide(status, response.get(), clientRequestId);
+	if (disposition == Disposition::kForwardContent)
+	{
+		if (const auto clientConn = session->conn.lock())
+		{
+			GetGateCodec().send(clientConn, response->message_content());
+		}
+		return;
 	}
 	if (!status.ok())
 	{
@@ -89,16 +102,23 @@ static void ForwardSceneClientCallResult(SessionId sessionId, uint64_t incarnati
 					 << ", remote_error=" << status.remoteError() << ", message_id=" << innerMessageId
 					 << ", failed_total=" << failedCount;
 		}
+	}
+	else
+	{
+		// scene 派发前早退、应答里没有 message_content(docs/design/client-rpc-callback.md §7 R1):请求确定未执行。
+		// 请求号非 0 回带请求 id 的 1003,客户端不必干等 15s 超时;请求号为 0 没法关联,维持不下发。
+		// 早退的具体原因与会话在 scene 自己的日志里,这里只留趋势(每 1024 次一条)。
+		static uint64_t noContentCount = 0;
+		if ((noContentCount++ & 0x3FF) == 0)
+		{
+			LOG_WARN << "[TCP Node] scene reply has no message content (sampled): message_id=" << innerMessageId
+					 << ", envelope_sent=" << (disposition == Disposition::kServiceUnavailableEnvelope)
+					 << ", no_content_total=" << noContentCount;
+		}
+	}
+	if (disposition == Disposition::kServiceUnavailableEnvelope)
+	{
 		gate_lane::SendEnvelope(*session, clientRequestId, innerMessageId, kServiceUnavailable);
-		return;
-	}
-	if (!response->has_message_content())
-	{
-		return; // scene 早返回、没有应答内容:与改造前一致,不下发
-	}
-	if (const auto clientConn = session->conn.lock())
-	{
-		GetGateCodec().send(clientConn, response->message_content());
 	}
 }
 
@@ -1144,6 +1164,13 @@ void GateClientSessionHandler::DispatchClientRpcMessage(const muduo::net::TcpCon
 	if (request->message_id() == ClientPlayerLoginLeaveGameMessageId)
 	{
 		gate_scene_entry::OnClientLeaveGame(sessionId, session);
+	}
+	// 客户端 EnterGame:同一个收包点记下"LeaveGame 之后已再次请求进场"。在这之前到达 gate 的 Bind / 路由只可能属于 LeaveGame
+	// 之前那条登录链(login 只在处理 EnterGame 时发 Bind),一律丢弃;按收包顺序记,路由模式下 lane 里排在 LeaveGame 之前的
+	// EnterGame 不会被误当成新的一次(第二轮审计 r2-gate#1,location-release-binding.md §3.5)。
+	else if (request->message_id() == ClientPlayerLoginEnterGameMessageId)
+	{
+		gate_scene_entry::OnClientEnterGame(sessionId, session);
 	}
 
 	if (messageInfo.protocol == PROTOCOL_TCP)
