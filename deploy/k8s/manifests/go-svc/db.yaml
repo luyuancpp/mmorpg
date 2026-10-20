@@ -28,10 +28,19 @@ spec:
   # (分区在实例间独占分配),写任务靠跨实例的 ordering lock + applied 游标保证同一个 key 不乱序、不回退。
   # 有效并行度的上限是分区数(Kafka.PartitionCnt,现为 10),副本超过它没有意义。
   # 不要给它配 HPA:sarama 是 eager rebalance,每次成员变化全员暂停几秒。
+  # K8s 上每 zone 一个消费组(db_rpc_consumer_group_z<ZoneId>,k8s_deploy.ps1 -DbConsumerGroup zone 切组之后),再平衡只影响本 zone;
+  # 还没切组的 zone 仍在共享的 db_rpc_consumer_group 里,成员变化会让所有 zone 一起再平衡。切组期间对方组的再平衡见
+  # docs/design/db-consumer-group-per-zone.md。
   # MySQL 连接预算:每个实例最多 MaxOpenConn(60)条,外加每个额外落点库 8 条(Placement.ZoneStore* / NonZoneStore*);
   # 按 zone 数 × 副本数计入共用 MySQL 的总账,公式与规划见 tools/scripts/k8s_deploy.ps1 Get-MysqlConnectionLedger
   # (滚动发布时每个 Deployment 按多 2 个实例计:maxSurge 的新 Pod + 仍在优雅退出、连接未释放的旧 Pod)。
   replicas: 2
+  # minReadySeconds(G6):readinessProbe 只探 gRPC 端口,不反映这个 Pod 是否已经入组、拿到分区。
+  # 新 Pod Ready 之后再等 20s 才算可用、才开始停旧 Pod,留出一次 eager 再平衡的时间:其它成员靠心跳发现新成员
+  # (HeartbeatIntervalMs 3s),撤销 claim 时排空在途任务最多 10s(claimDrainTimeout)。
+  # 新 Pod Ready 后很快崩溃的不会被算作可用,滚动随之停住,旧 Pod 不会被停掉。
+  # 这个字段属于 Deployment spec、不在 Pod 模板里:改它不触发 Pod 重建,在下一次滚动时生效。
+  minReadySeconds: 20
   # 先起新的、Ready 之后再停旧的。以前没写 strategy,默认滚动策略在 1 副本时同样是先起后停 ——
   # 也就是说"单实例"在每次发布的重叠期本来就不成立;现在显式写出来,并且重叠是安全的。
   strategy:
@@ -54,6 +63,10 @@ spec:
         prometheus.io/scrape: "true"
         prometheus.io/port: "9160"
         prometheus.io/path: "/metrics"
+        # 下面两条由 k8s_deploy.ps1 Apply-OneGoSvc 按本 zone 的消费组计划替换(有效组名;交接对方组,没有写 none),见 docs/design/db-consumer-group-per-zone.md §4。
+        # 消费组键只在 ConfigMap 里、进程只在启动时读:组名或交接对方组一变,模板随之变化,只改 ConfigMap 也会触发 db 滚动。占位缺失时脚本拒绝部署 db。
+        mmorpg.io/db-consumer-group: "PLACEHOLDER_DB_CONSUMER_GROUP"
+        mmorpg.io/db-group-handoff-from: "PLACEHOLDER_DB_GROUP_HANDOFF_FROM"
     spec:
       affinity:
         podAntiAffinity:
@@ -104,8 +117,13 @@ spec:
             limits:
               cpu: 500m
               memory: 512Mi
-      # preStop 5s + 消费排空最多 10s + 把没做完的重试收据还回 ready(最多 5s)+ 余量。
-      # 超时被 SIGKILL 也不丢:收据留在本实例的 processing 列表里,租约过期后由另一个实例回收。
+      # 停机预算(go/db KeyOrderedKafkaConsumer.Stop 的顺序,docs/design/db-task-pipeline-bottlenecks.md G6):
+      # preStop 5s + 撤拉取后排空在途任务 ≤10s(另留 5s 会话释放余量;超时会先取消 worker 再离组,
+      # 没标记的位点由新属主从已提交位点重放)+ 离组 + 等 worker 退出(在途的写 SQL 不被取消,
+      # 受业务池 30s 读超时约束,通常为毫秒级)+ 把本实例没做完的重试收据还回 ready ≤5s
+      # +(仅交接形状)收掉交接闸:等守望 goroutine 退出,最多一次在途查询(至多建一次 admin 连接、发两次查询,网络超时各 5s)。
+      # 超出 45s 的部分由 SIGKILL 截断,也不丢:收据留在本实例的 processing 列表里,租约过期后由另一个实例回收;
+      # 被截断的写所持的排序锁留到 TTL 过期,这期间该玩家的存盘排队等锁。截断在收交接闸这一步时无害:收据已经归还。
       terminationGracePeriodSeconds: 45
       volumes:
         - name: svc-config

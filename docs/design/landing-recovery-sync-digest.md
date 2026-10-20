@@ -1,9 +1,10 @@
 # 落地恢复：按域版本摘要、场景侧待办唤醒与超窗处置（2026-10-14）
 
-> **状态**：设计稿 v1.0（2026-10-14，Claude），用户已授权落码。**未落码、未编译、未测试**（AGENTS.md §10.1）。
+> **状态**：v1.1（2026-10-16）。代码已按本文落码并随用户快照入库，**未编译、未测试**（AGENTS.md §10.1）。
+> 剩余工作与验证顺序见交接 [handoff-landing-recovery-and-fencing-20261016.md](../handoff/handoff-landing-recovery-and-fencing-20261016.md)，主要是三件事：客户端复核与 UI 绑定、robot 冒烟复核、进场链余项 a–e。
 > **上游**：[reliable-player-inbox-20261014.md](reliable-player-inbox-20261014.md) §5.2 的第 1 项「落地恢复」与第 4 项「超窗处置与对账」；[cross-zone-scene-travel.md](cross-zone-scene-travel.md) §7（传送窗口内全局推送丢失、客户端落地主动拉）；[guild-phase2/04-asset-channel.md](guild-phase2/04-asset-channel.md)（资产通道不变量 I1–I10）。
 > **用户决定（2026-10-14）**：范围含落地恢复、超窗处置与对账；授权改客户端 `../mmorpg-client`；**Java 版只登记待做**（偏离 AGENTS §12「客户端契约两版同批改」，由用户明确决定，见 §11）；资产长期离线采用「停放 + 落地唤醒 + 日对账 + 180 天自动放弃并退回帮会侧限购与帮贡」；战斗结算待办「去掉到期删除」。
-> **分工**：进场门禁（登录代次）归「旧入场请求覆盖新会话问题」会话（[scene-enter-session-fence.md](scene-enter-session-fence.md)）；统一玩家收件箱服务归「玩家收件箱服务设计」会话，它作为本摘要的一个域接入（§3.3）；MySQL 行内围栏另见 [db-write-fencing-mysql.md](db-write-fencing-mysql.md)。
+> **分工**：进场门禁（登录代次）归「旧入场请求覆盖新会话问题」会话（[scene-enter-session-fence.md](scene-enter-session-fence.md)）；统一玩家收件箱服务归「玩家收件箱服务设计」会话，v1 不接入本摘要（用户拍板 D4），将来接入届时另行拍板（§3.3）；MySQL 行内围栏另见 [db-write-fencing-mysql.md](db-write-fencing-mysql.md)。
 > **证据口径**：[C] 读代码确认（工作区，2026-10-14）；[D] 文档记载；[I] 推断。行号会漂移，以函数名为准。
 
 ---
@@ -43,7 +44,7 @@
 ### 1.3 不在范围内
 
 - 进场门禁（登录代次）：另一会话负责。本设计的挂点放在它之后（§5.1）。
-- 统一玩家收件箱服务：另一会话负责，作为一个域接入（§3.3）。
+- 统一玩家收件箱服务：另一会话负责，v1 不接入本摘要（用户拍板 D4）；将来接入届时另行拍板，下发时必须过滤（§3.3）。
 - scene 自己持有的数据（背包、货币、宠物、属性、任务）不进摘要：它们在进场时由 scene 加载为权威数据，客户端在打开面板时拉取（§3.4）。
 - 聊天私聊：没有「最近会话」接口，进摘要也无从拉起；保持「7 天历史，按会话拉取」的尽力而为口径。
 - 邮件：`go/mail` 尚未落码。邮件 M1 落地时按 §3.3 追加一个域。
@@ -185,7 +186,7 @@ message SyncDigestS2C {
 ```
 
 - 消息号由生成器发号（AGENTS §3），手写代码只引用生成常量。
-- `GetSyncDigest` 必须在 `MessageLimiter` 表加一行（不加会落到默认档，每秒约 3 次，超限计非法包，累计 50 次断线 [C]）。档位与 `SceneInfoC2S` 同档；发号之后由 Codex 按方法名查号追加，不手写数字。
+- 限流：负责人 2026-10-16 拍板 `GetSyncDigest` **不加 `MessageLimiter` 行，接受默认档**（`SceneInfoC2S` 自己也不在表里，原定的「同 43 号同档」本就等于默认档）。默认档按会话、按消息号计数，同一消息号在当前与上一整秒内合计最多 3 次（真实时间窗 1~2 秒，持续约 1.5 次/秒），超限计非法包、累计 50 次断线 [C]。客户端单飞加 15 秒起的退避、robot 冒烟 1.1 秒间隔都远在其下。
 - 返回 Empty 的 handler 没有应答错误字段。所有失败都推一条 `status = UNAVAILABLE` 的 `NotifySyncDigest`，让客户端结束等待；请求级全局 tip 已移除，不能借下一条非 Empty 请求传递拒绝码。
 
 ### 4.2 scene 实现
@@ -207,15 +208,17 @@ message SyncDigestS2C {
 新增纯数据类 `LandingSyncClient`（`Assets/Scripts/Game/Sync/`，不依赖 UnityEngine），由 `GameClient` 构造并在 `Tick` 里驱动：
 
 1. **落地判定**沿用仓库现有的身份观测模式：`(PlayerId, GateConnectionIdentity)` 变化，且 `InGame && IsGateReady` 为真，即一次落地。这一个判据覆盖首登、手动重登（客户端没有自动重连）、跨 zone 重定向的第二条腿 [C]（`GameClient.cs` `EnterGameAndWaitScene`、`RedirectFlow`）。同 zone 换图连接不变，不算落地。
-2. **单飞请求**：发 `GetSyncDigest` 之前先置在途标志（`GameClient.Tick` 会在 `Call` 的等待循环里重入 [C]）；等 `NotifySyncDigest`，15 秒超时；失败按 15 / 30 / 60 秒封顶退避。每次请求带 `(playerId, 连接身份, 序号)` 戳，丢弃旧落地的迟到回包。
-3. **比对**：本地缓存按 player_id 分键存于 PlayerPrefs（`mmorpg.syncdigest.{playerId}`，只存 `g` 与各域计数，不存 secret）。
+2. **单飞请求**：发 `GetSyncDigest` 之前先置在途标志（`GameClient.Tick` 会在 `Call` 的等待循环里重入 [C]）；等 `NotifySyncDigest`，15 秒超时；失败按 15 / 30 / 60 秒封顶退避。丢弃旧落地迟到回包的实际机制（2026-10-16 按实现订正，原稿的「序号戳」已删）：推送只在「本次落地已发过请求、尚未拿到摘要、连接引用一致」时才被采纳；新连接上无法区分来源的迟到推送，由「已发请求数 > 已收推送数时本次全量拉」兜住；gate 拒绝的请求按「已收一条推送」计数，避免下一次落地无谓全量拉。
+3. **比对**：本地缓存按 gateway 与 player_id 分键存于 PlayerPrefs（`mmorpg.syncdigest.{gateway 短哈希}.{playerId}`，只存 `g` 与各域计数，不存 secret）。gateway 命名空间只隔离不同环境；同一 gateway 清库后 player_id 被重新发号，仍靠 `g` 变化触发全量拉。
    - `status = UNAVAILABLE` 或 `generation` 与缓存不同 → 所有已注册域标脏，并清空该玩家的缓存计数（`g` 改记为新值）。
    - 否则逐域比较，计数不等或本地没有记录即标脏。
 4. **拉取与推进**：标脏的域通知其消费者拉取；消费者拉取成功后回调 `Ack(domain, versionReadAtLanding)`，此时才把该域的缓存版本写成摘要里的值（L-2）。拉取失败保留脏标，下次落地或打开面板时再拉。
 5. **消费者**（第一期）：
-   - `FRIEND_REQUEST`：新增 `FriendInboxClient`（`Assets/Scripts/Game/Social/`），拉 `GetPendingRequests`，暴露 pending 数；同时作为 `NotifyFriendEvent` 的唯一注册点（推送只置脏、回源拉）。`FRIEND_LIST` / `FRIEND_BLOCK` 暂无客户端面板，不注册消费者（这两个域每次落地都会是「脏」的，代价为零，因为没人拉）。
-   - `GUILD*`：`GuildClient` 增加公开的排队刷新入口；`GuildUiRoot` 在窗口隐藏时也要消费摘要触发的首次刷新（目前只在可见时 Drain [C]）。
-   - `TEAM*`：`TeamClient` 已在每次落地拉取 [C]，拉取成功后回调 `Ack`，不改其触发方式。
+   以下为 2026-10-16 按实现订正后的现状（接线由 `LandingSyncBindings.Bind*` 完成，三个 UI 宿主 `TeamUiRoot` / `SocialUiRoot` / `GuildUiRoot` 在创建域客户端时 Bind、销毁前 Dispose）：
+   - `FRIEND_REQUEST`：复用现有 `FriendClient`（没有新增 `FriendInboxClient`），标脏时排队拉 `GetPendingRequests`，成功后 Ack。界面上目前没有 pending 数角标，后台拉回的数据要等玩家打开申请窗口才看得到；加「只来自拉回内容」的角标属于另立项。`FRIEND_LIST` / `FRIEND_BLOCK` 暂无客户端面板，不注册消费者（这两个域每次落地都会是「脏」的，代价为零，因为没人拉）。
+   - `GUILD` / `GUILD_APPLICATION`：后台主动拉（窗口隐藏、非战斗时也消费）。`GUILD` 拉 `GetPlayerGuild`；这次读取同时为 `GUILD_APPLICATION` 取票，结果是「在帮」时一并确认（入帮即删光本人申请），不在帮时由 `ListMyGuildApplications` 确认。
+   - `GUILD_ECONOMY` / `GUILD_ACTIVITY`：**只被动确认**——不主动拉，玩家进经济页、活动页时的自动拉取顺带 Ack；`ECONOMY` 要捐献选项与商店两次读取都在摘要之后成功才确认。理由：窗口外没有任何显示，后台拉只增加请求，且 `GuildClient.Request` 的传输失败会让客户端进入需重登的隔离态。
+   - `TEAM*`：`TeamClient` 已在每次落地拉取 [C]，只做被动确认（读取发出晚于摘要且成功时 Ack），不改其触发方式。
 6. **测试**：`Assets/Tests/EditMode/Net/LandingSyncClientTests.cs`，自带假 transport（照 `TeamFakeTransport`）与内存 store：首登全拉、`g` 变化全拉、只拉变化的域、拉取失败不推进、连续两次落地丢旧回包、摘要失败退避、`UNAVAILABLE` 全拉、身份变化复位。
 
 ### 4.4 先读后拉的竞态
@@ -439,7 +442,7 @@ battle / scene 进程没有 Prometheus 端点 [C]，结算类信号只有结构�
 | D1 | scene 摘要读取与唤醒发布 | `proto/scene/player_scene.proto`；新：`cpp/libs/services/scene/player/system/player_landing.{h,cpp}`、`cpp/libs/services/scene/player/comp/player_landing_comp.h`；`cpp/nodes/scene/handler/rpc/player/player_scene_handler.cpp`（守护段）；新测试工程 `cpp/tests/player_landing_test/` | 无 |
 | D2 | 战斗结算保留期 | `cpp/libs/services/battle/settlement/settlement_outbox.h`、`cpp/nodes/battle/logic/battle_room_manager.{h,cpp}`、`cpp/libs/services/scene/battle/system/player_battle.{h,cpp}` | D1 的 `PublishAssetWake` 声明 |
 | D3 | 挂点与工程登记 | `player_lifecycle.cpp` 一行、`cpp/libs/services/scene/{scene.vcxproj,.filters,CMakeLists.txt}`、`game.sln`（测试工程） | **进场门禁会话落地之后** |
-| E | 客户端 | `../mmorpg-client`：新 `Game/Sync/{LandingSyncClient,SyncDigestStore}.cs`、`Game/Social/FriendInboxClient.cs`；改 `GameClient.cs`（构造 + Tick + 推送注册）、`Game/Guild/GuildClient.cs`、`UI/Ugui/Guild/GuildUiRoot.cs`、`Game/Team/TeamClient.cs`（Ack）；新测试 | D1 生成之后才能编译 |
+| E | 客户端 | `../mmorpg-client`：新 `Game/Sync/{LandingSyncClient,SyncDigestStore}.cs`（`FriendInboxClient` 未做，复用 `FriendClient`，见 §4.3 第 5 条）；2026-10-16 补三个 UI 宿主的 Bind 与 `BindGuild`；改 `GameClient.cs`（构造 + Tick + 推送注册）、`Game/Guild/GuildClient.cs`、`UI/Ugui/Guild/GuildUiRoot.cs`、`Game/Team/TeamClient.cs`（Ack）；新测试 | D1 生成之后才能编译 |
 | F | robot 冒烟 | 新：`robot/sync_smoke_scenario.go`（+纯函数测试）、`robot/etc/sync_smoke.yaml`、两个 handler 桩；改：`robot/main.go`、`robot/config/config.go`、`robot/README.md` | D1 生成之后 |
 | G | 告警与文档 | 新：`deploy/k8s/asset-channel-alerts.yaml`；改：本文、`guild-phase2/04-asset-channel.md`（追加唤醒 / 停放 / 放弃）、`shared-redis-split-by-purpose.md` §2.2（追加键族）、`reliable-player-inbox-20261014.md`（追加入口）、`docs/README.md`、`docs/PROGRESS.md`；Java 仓 `PARITY.md` 登记待做 | — |
 
@@ -465,7 +468,7 @@ battle / scene 进程没有 Prometheus 端点 [C]，结算类信号只有结构�
      - `player_scene_handler.{h,cpp}` 出现两个新方法，守护段内的手写代码原样保留、不重复；
      - guild / trade 的 db proto 生成物出现 ABANDONED 与 `last_send_ms`；
      - `go/proto/scene/player_scene.pb.go` 出现 `SyncDomain_SYNC_DOMAIN_*`。
-2. **限流表**：按方法名查 `SceneSceneClientPlayerGetSyncDigest` 的号，在 `data/MessageLimiter.xlsx` 追加一行，档位同 `SceneInfoC2S`；跑导表器。
+2. **限流表**：不需要（2026-10-16 拍板接受默认档，见 §4.1），不跑导表器。
 3. **Go**（各模块目录，`GOTOOLCHAIN=local`）：
    - `go/shared`：`go test ./playersync/... ./assetop/... ./assetopwake/...`
    - `go/friend`：`go test ./internal/logic/...`
@@ -493,6 +496,7 @@ battle / scene 进程没有 Prometheus 端点 [C]，结算类信号只有结构�
 6. **联机冒烟**：`dev-start` 之后：
    - 跑 `robot -c etc/sync_smoke.yaml`，期望输出 `SYNC_SMOKE_OK`。场景：登录取摘要 → 好友申请让对方某域 +1 → 对方再取只变该域 → 短重连后 `g` 不变；
    - 再跑既有 `friend-smoke`、`travel-smoke` 回归。
+   - 双 zone 环境（`dev-start-zones -Zones 1,2`，跑 `travel-smoke` 时本来就要起）下，用一份 `sync_smoke.cross_zone=true`、`visit_zone=2` 的配置副本再跑一次，期望 `SYNC_SMOKE_OK ... cross_zone=checked`；前提是 `robot_9911` 首次在 `zone_id` 建角。不要直接改受跟踪的 `etc/sync_smoke.yaml`。
 7. **资产唤醒**（需 guild 资产通道开启）：
    - 机器人离线时发起一笔兑换，行进入 PENDING；
    - 机器人登录后 5 秒内终结，日志可见 `assetop_wake_total{result="woke"}`。
@@ -503,7 +507,7 @@ battle / scene 进程没有 Prometheus 端点 [C]，结算类信号只有结构�
 
 ## 11. 双版本（AGENTS §12）
 
-- **客户端可见契约变化**：`player_scene.proto` 新增 `SyncDomain`、`SyncDigestStatus`、`SyncDigestEntry`、`GetSyncDigestRequest`、`SyncDigestS2C` 与两个 RPC，以及一行限流配置。
+- **客户端可见契约变化**：`player_scene.proto` 新增 `SyncDomain`、`SyncDigestStatus`、`SyncDigestEntry`、`GetSyncDigestRequest`、`SyncDigestS2C` 与两个 RPC（限流沿用默认档，不加配置行）。
 - **用户决定 Java 版只登记待做**。这偏离了「客户端契约两版同批改」。代价是：在 Java 版补齐之前，连到 Java 服的客户端发 `GetSyncDigest` 会得不到 `NotifySyncDigest`，超时后按「摘要失败」退避并全量拉。功能退化为每次落地全量拉，不会出错。客户端第 2 步的超时与退避就是这条退化路径。
 - 在 Java 仓 `PARITY.md` 登记一行：本批提交 ↔ Java 待做，写明上面的退化行为。
 - 服务端内部改动（唤醒、停放、放弃、结算保留期、告警）不涉及契约，Java 版按自己的存储实现。ABANDONED 不透出到客户端。
@@ -527,3 +531,4 @@ battle / scene 进程没有 Prometheus 端点 [C]，结算类信号只有结构�
    - `deploy/k8s/asset-channel-alerts.yaml` 头部那条 `oldest_age_s > 86400` 的 LogQL 只作值班参考，不转成规则。
 10. **team 的调用者总被 bump**：申请人、拒绝邀请者这类不是成员的调用者，GetMyTeam 的结果其实没变，也会 bump `TEAM`。代价只是多拉一次。
 11. **D2 编译依赖 D1 的 proto 生成**：`player_battle.cpp` 引入了 `player_landing.h`，而后者依赖 `player_scene.pb.h`。proto 生成之前，scene 库与 bag_test 编不过。两批本来就一起验证，不再另拆窄头。
+12. **帮会后台拉取扩大了隔离态的暴露面**：`GuildClient.Request` 一次传输超时（未断线）就会置 `RequiresReconnect`，直到真实断线才解除，玩家开窗看到「请重新登录角色后再试」。隔离是正确性所需（FIFO 回包无法区分超时后才到的旧回包）。后台只拉 `GUILD` / `GUILD_APPLICATION`，且只在该域变了时拉，暴露面已收窄；联机验证要专门观察集中落地（全服重连、帮会服务变慢）后是否有客户端进入隔离态。若出现，把这两个域也改成只被动确认（只删 `BindGuild` 里两行注册）。

@@ -25,6 +25,39 @@
 >   - `RouteStore.FenceShards` 的 TiDB 档 64 没有配置载体。这是实现方登记的延后,不是负责人拍板;切 db_first 前要补进 ConfigMap。
 > - **提交状态**:10-15「按最标准」及之后补缺口的改动,一部分已被别的会话的整区快照带进 HEAD,其余仍在工作区。以各 PROGRESS 条目的文件清单为准。**全部未编译、未测试。**
 >
+> **2026-10-15 晚,续**:上面「仍待负责人定」的前四条,负责人已让「按最标准修复」,均已落码。剩余的评审、修复与验证移交 [handoff-launch-readiness-decisions-20261015.md](handoff-launch-readiness-decisions-20261015.md),以那份为准。本文 §4 第 5、7~10 项仍归本文。
+>
+> **2026-10-16**:
+> - 全局单点交接 10-16 的订正把五项改派回本线:会话对账按 gate 建索引、删 `dirty_keys_set`、task:result 分频道、nofile、scene_manager 只读本 zone。这与本文 §4 第 7 项「归全局单点交接」的说法相反,以那份订正为准。
+> - 这五项、D1 第 1b 批、G4a 修订(第 5 项)与过时注释(第 10 项)都已出调研规格,附核实意见,文件名为 `launch-readiness-20261013/spec_B0-*.md`、`spec_D1_batch1b_scout.md`、`spec_G4a_revision_scout.md`。**未落码**。
+> - 逐项结论、11 条待拍板与推荐顺序见 [PROGRESS.md](../PROGRESS.md)「2026-10-16 开服线剩余工作调研」。
+> - 不依赖拍板、可以先落的四项:B0-2、过时注释、B0-5、D1 1b-1。
+> - **同日落码**(全部未编译、未测试;各项条目见 PROGRESS 同日):
+>   - B0-2「删除 C++ 存盘 Lua 的全服键 dirty_keys_set 写入」:写入已在代码中删除,全部 scene 换成新镜像前生产仍在写;存量清理口径在 `docs/ops/release-checklist.md` §6.1,执行环境与时间待负责人定(待拍板第 11 项)。
+>   - 第 10 项「共享 Redis 淘汰策略过时注释更正」:go 下实为 10 处,另有 k8s_deploy.ps1、deploy/k8s/README.md 各 1 处,共 12 处;已改 9 处,`go/match/etc/match_service.yaml`、k8s_deploy.ps1、README 3 处待对应会话收尾,建议文案在该条目里。
+>   - B0-5「scene_manager 负载刷新」:用「领导者按 zone 批量刷新 + 登记集合替代 SCAN」缓解;字面的「每个副本只读本 zone」、按 zone 选主和 watch 收窄仍归 A1。
+>   - D1 1b-1 另起一批做。
+>
+> **2026-10-17**:
+> - 负责人拍板四项:核心 Redis 走「单元化 + 单元内 Cluster 分片」;B0-3 授权超过 30 文件,先用 PUBLISH,分两批;B0-1 的索引在会话 Lua 里原子维护;其余按推荐(B0-4 加豁免开关、缺省拒启;1b-2 单标记、容差 0;dirty_keys_set 清理暂不执行)。
+> - 因周额度到 91% 暂停。**剩余工作的顺序与 1b-1 的指定修法**见 PROGRESS「2026-10-17 开服线:负责人拍板四项 + 剩余工作移交」。
+> - 给新会话的开场指令(可直接复制):
+>   ```
+>   请接手 docs/handoff/handoff-launch-readiness-and-d1-20261013.md(先读文首 10-16、10-17 两段)与 docs/PROGRESS.md「2026-10-17 开服线:负责人拍板四项 + 剩余工作移交」。
+>   按该条目「剩余工作」的顺序做,从 D1 1b-1 开始;规格在 docs/handoff/launch-readiness-20261013/,每份后半是核实意见,落码前必须吸收。
+>   编译、测试、proto 生成交给 Codex:你只改代码和文档,不派编译可行性评审,每项给出验证命令。工作区多会话并行:动手前 git diff 分清改动归属,不 git add -A、不提交。
+>   每批开工前先 get_usage,按「代理数 × 5%」估算 5 小时额度,不够就分批。每完成一项在 PROGRESS 末尾追加条目并写明 Java 状态。
+>   ```
+>
+> **2026-10-18**(第一波落码,全部未编译、未测试,待 Codex 验证;各项条目见 PROGRESS 同日):
+> - B0-3 task:result 分频道**第 1 批**:proto `reply_instance = 10`、`go/shared/taskresult`、login 双订并填回复目标、login 送达计数、发送失败时撤销登记。权威验证命令在 [spec_B0-3_task_result_channel.md](launch-readiness-20261013/spec_B0-3_task_result_channel.md) 文末「# 第 1 批交付(2026-10-18)」。第 2 批(go/db 按回复目标发布、go/db 指标与独立告警文件)未开工,开工前先向 go/db 接手线和围栏线要 key_ordered_consumer.go 的空档。
+> - (2026-10-18)B0-3 task:result 分频道**第 2 批**已落码,未编译、未测试:go/db 按 reply_instance 定向发布(只发一次,空或不合法回落旧频道)、`db_task_result_notify_total{target,result}`、独立告警 `deploy/k8s/task-result-notify-alerts.yaml`、stress_summarize 2g 段。上一行「第 2 批未开工」同此更正。上线前先逐 zone 判别 login 是否已是第 1 批,已是的 zone 改为按 zone 金丝雀 go/db。权威验证命令和上线顺序第 0 步在 [spec_B0-3_task_result_channel.md](launch-readiness-20261013/spec_B0-3_task_result_channel.md) 文末「# 第 2 批交付(2026-10-18)」。
+> - D1 映射持久化 **1b-1**(§4 第 8 项的第一步):route_tool 并进主程序 `data_service -f <yaml> -route-tool <子命令>`;新增 freeze / reconcile-from-cache / unfreeze 与 audit `-frozen-recovery`;store 加冻结 / 解冻 / 反向修库原语;就绪标记的值格式与 CAS / CAD 脚本;顺带修正发布「pipeline 没执行」的分类。同日修复评审:发布用例的测试钩子只拦发布 EVAL(第一版会让测试进程整个退出,修复前红要重取);redis 模式下可用 `unfreeze -confirm-audited -cache-was-not-verified-acknowledged` 撤销误跑的 freeze;标记先只解 v;修库不再把库里有值的列清成 NULL。db_first 下 K8s 的 zone 回档在 1b-3 的选择性缓存清理落地前不可执行。详见提案 §11.2「第 1b-1 批」(含「修复评审」)与 runbook §9.4。1b-2(对账 leader)、1b-3(K8s 载体、Job 清单、告警、清库脚本防护、回档选择性清理)未开始。
+> - B0-4 nofile:gate / scene / battle 在 `Node::Initialize` 自抬 RLIMIT_NOFILE 软限,不够时缺省拒启,运维豁免为 `NODE_OPEN_FILE_LIMIT_MODE=warn`;warn 代价大,gate / battle 的应急首选是调低准入上限。**发布带它的镜像前**,必须先读各集群各节点池的容器 nofile 硬限并记进 PROGRESS:单副本 battle hostPort 拒启会整体停服。读法、按形态的影响面与回退见 `docs/ops/gate-kernel-tuning-runbook.md` §3.1。
+> - B0-1 会话对账按 gate 建索引:索引在三段会话 Lua 里与会话写入原子维护;对账改为全服单 leader(连续 3 拍失败会主动让位),配就绪标记租约与 Redis 侧代次、持久化的审计时机和每拍预算,不再 SCAN 全键空间;同日按核实意见补了单键错误隔离、扫描页重试与 run_id 核对、Stalled 告警口径。设计见 [player-locator-gate-session-index.md](../design/player-locator-gate-session-index.md)。**告警生效前置**:k8s_deploy.ps1 的 player-locator ConfigMap 要补 Prometheus 段(manifest 已加注解与 9190 端口,两者须同批发布),见 PROGRESS 同日 B0-1 条目。
+>
+> **2026-10-18 收尾**:本线的代码已全部落码(未编译、未测试,交 Codex)。**只剩 G4a 修订稿**:实现代理遇到 403 认证错误失败,没有改任何文件,续做说明与交 Codex 的总顺序见 PROGRESS「2026-10-18 开服线收尾:代码全部落完,剩 G4a 修订稿」。D1 的 1b-2 及之后归「D1 玩家归属与存储持久化」会话。
+>
 > **会话产物位置**:原会话的 scratchpad 在本机临时目录,新会话读不到。需要的规格都已复制到 [launch-readiness-20261013/](launch-readiness-20261013/)。
 
 ## 0. 一句话

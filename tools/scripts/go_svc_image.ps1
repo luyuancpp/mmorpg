@@ -139,6 +139,9 @@ $DockerCommand = Resolve-ReleaseDockerCommand
 
 # Service catalogue: name → { Dir (in go/), Entry (.go file), ImageName }
 $Catalogue = [ordered]@{
+    guild = @{ Dir = "guild"; Entry = "guild.go"; ImageName = "mmorpg-guild" }
+    mail = @{ Dir = "mail"; Entry = "mail.go"; ImageName = "mmorpg-mail" }
+    rank = @{ Dir = "rank"; Entry = "rank.go"; ImageName = "mmorpg-rank" }
     db              = @{ Dir = "db";              Entry = "db.go";                  ImageName = "mmorpg-db" }
     "data-service"  = @{ Dir = "data_service";    Entry = "data_service.go";         ImageName = "mmorpg-data-service" }
     login           = @{ Dir = "login";           Entry = "login.go";               ImageName = "mmorpg-login" }

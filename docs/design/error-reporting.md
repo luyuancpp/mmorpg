@@ -106,7 +106,8 @@ Add a `Record()` call alongside every existing LOG_ERROR-on-error site:
 
 - `error_handling_system.h::SendErrorToClient` — already logs context
   via #70/#125; mirror that into the buffer with `tag="rpc_reject"`
-  and `error_code=err`.
+  and `error_code=err`. (2026-10-16: removed. Its only caller was the
+  retired `Scene.InvokePlayerService`, see `muduo-rpc-channel.md` §20.3.)
 - `game_channel.cpp::HandleResponseMessage` RPC_ERROR branch +
   `SendErrorResponse` — `tag="rpc_error_in"` / `"rpc_error_out"`.
 - `return_define.h` macros — too noisy on every call site; SKIP. The

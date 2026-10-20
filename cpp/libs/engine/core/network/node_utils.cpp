@@ -1,6 +1,5 @@
 #include "node_utils.h"
 #include "grpc_client_runtime.h"
-#include <atomic>
 #include <chrono>
 #include <cstddef>
 #include <cstdint>
@@ -13,19 +12,17 @@
 
 namespace
 {
-// 这里只发布所属对象的地址;内容与引用寿命仍由 loop 线程归属和停机排空保证。
-std::atomic<const NodeInfo *> localNodeInfo{nullptr};
+const NodeInfo *localNodeInfo = nullptr;
 }
 
-const NodeInfo *InstallLocalNodeInfo(const NodeInfo *info)
+void InstallLocalNodeInfo(const NodeInfo *info)
 {
-	return localNodeInfo.exchange(info, std::memory_order_acq_rel);
+	localNodeInfo = info;
 }
 
 const NodeInfo &GetNodeInfo()
 {
-	const auto *info = localNodeInfo.load(std::memory_order_acquire);
-	return info != nullptr ? *info : NodeInfo::default_instance();
+	return localNodeInfo != nullptr ? *localNodeInfo : NodeInfo::default_instance();
 }
 
 uint32_t GetZoneId()
@@ -42,37 +39,54 @@ namespace
 	//   ③a 挂了通道、状态为 TRANSIENT_FAILURE / SHUTDOWN
 	//   ③b 没挂通道
 	//
-	// 底线:注册表里只要有一个 SceneManager 实体就一定挑出一个,与旧实现(playerId % 已注册实例数)一样,
-	// 只在注册表为空时返回 null。分级只做"有更好的选择时避开坏通道",不新增 null 窗口 —— 调用方拿到 null
-	// 走的是立即失败分支,它们比"挑一个坏实例、让那次调用失败"更伤:跨 zone 交接在 handoff 标记 SET 已发出后
+	// 底线:注册表里只要有一个挂着未关闭通道的 SceneManager 实例(发现即建通道,建不成不留实体,生产上就是每个已发现的
+	// 实例)就一定挑出一个,与旧实现(playerId % 已注册实例数)一样,只在没有这样的实例时返回 null。
+	// 分级只做"有更好的选择时避开坏通道",不新增 null 窗口 —— 调用方拿到 null 走的是立即失败分支,它们比
+	// "挑一个坏实例、让那次调用失败"更伤:跨 zone 交接在 handoff 标记 SET 已发出后
 	// 拿不到 SceneManager 只能 ConcludeHandoffAfterMarkSent(销毁 + 踢线重登);而挑一个坏实例,那次调用以
-	// UNAVAILABLE 进失败处理器(grpc-client-deadline-failure-callback.md §5)或由 30s 看门狗收尾,
+	// UNAVAILABLE 完成每次调用回调(grpc-client-deadline-failure-callback.md §12),或由 30s 看门狗收尾,
 	// 这正是改造前的行为。
+	//
+	// 状态取自 muduo_grpc::Channel(docs/design/grpc-muduo-transport.md §5):IDLE = 没有连接;CONNECTING = 正在建 TCP、
+	// 等对端首个 SETTINGS,单次尝试上限 connect_timeout(20s);READY = 收到对端 SETTINGS;TRANSIENT_FAILURE = 本次尝试
+	// 失败、按 1s × 1.6(±20%)封顶 120s 退避,期间新调用立即失败;SHUTDOWN = 通道已析构。
 	//
 	// 为什么 ② 算可用,而不是像 PickReadyDataServiceNode 那样只认 READY:
 	// - 只认 READY 会在两种正常情形下一个都挑不到:
-	//   1) 通道刚建好时在 CONNECTING。ConnectToGrpcNode 建好即 GetState(true) 预连,收到服务端首个 SETTINGS
-	//      才转 READY(grpc-muduo-transport.md §5),发现实例后的头一个往返里一个 READY 都没有;
-	//   2) READY 的连接断开(对端重启、GOAWAY、网络闪断)后通道回 IDLE,下一次调用或 GetState(true) 才重连
-	//      (与 pick_first 一致)。旧官方通道「空闲 30 分钟回 IDLE」已随第 3 批消失(§14.2),这一条仍在。
-	//   号段传输只认 READY 没事,因为它的调用方按退避重试;SceneManager 的调用方不能拿"刚启动 / 连接刚断"
+	//   1) 刚发现的实例。ConnectToGrpcNode 建通道即 GetState(true) 预连,收到对端 SETTINGS 之前一直是 CONNECTING;
+	//   2) 连接没了、通道回 IDLE。READY 连接断开(含收到对端 GOAWAY 后退役)都回 IDLE,下一次调用或 GetState(true)
+	//      才重连。go-zero 服务端 MaxConnectionIdle = 5min,没有在途调用满 5 分钟的连接会被 GOAWAY 关掉(设计 §4.5),
+	//      所以一阵子没人换图后各实例都是 IDLE。这个 IDLE 来自服务端:通道自己没有空闲超时,业务通道也不发周期
+	//      keepalive(§4.4),而 keepalive 本来也挡不住 MaxConnectionIdle(它只看在途调用)。
+	//   号段传输只认 READY 没事,因为它的调用方按退避重试;SceneManager 的调用方不能拿"刚启动 / 夜里没人换图"
 	//   当失败。
 	//
-	// 为什么 ③a 排在 ② 之后:实例崩溃后连接断开,通道先回 IDLE;这里的 GetState(true) 把它踢去重连,对端拒连
-	// (或建连超时)就进 TRANSIENT_FAILURE,并且 muduo_grpc::Channel 在退避重连期间对外一直报 TRANSIENT_FAILURE、
-	// 不会回报 CONNECTING,直到真的连上(muduo_grpc/channel.cpp 的 OnBackoffTimer,与 pick_first 一致)。这个状态下
-	// 的调用立即以 UNAVAILABLE 失败(Channel::Dispatch,不做 wait_for_ready),有 ①② 时挑它等于白白失败;
-	// etcd 租约 60s 到期前死实例仍在注册表里,这正是要避开的窗口。只有 ①② 全空时才兜底挑它,结果与改造前相同。
+	// 为什么 ③a 排在 ② 之后:实例崩溃后连接断开,通道回 IDLE;这里的 GetState(true) 把它踢去重连(返回时已是
+	// CONNECTING)。对端拒连后通道进 TRANSIENT_FAILURE,退避期间后台重连也一直报 TRANSIENT_FAILURE、不回报
+	// CONNECTING,直到真的连上(muduo_grpc/channel.cpp 的 OnBackoffTimer,与官方 pick_first 相同)。这个状态下的调用
+	// 立即以 UNAVAILABLE 失败(不 wait_for_ready),有 ①② 时挑它等于白白失败;etcd 租约 60s 到期前死实例仍在注册表里,
+	// 这正是要避开的窗口。只有 ①② 全空时才兜底挑它,结果与改造前相同。
+	// SHUTDOWN 只在通道析构时出现,生产适配层又先经 HasUsableGrpcClient 滤掉,实际到不了这里;纯选择器仍把它归入 ③a,
+	// 五态全覆盖。
 	//
 	// 纯选择器仍能描述无通道输入，供独立排序用例使用；生产适配层只传有完整传输的候选。
 	// 无通道实体与真实连接暂时不可达不是同一状态：前者立即拒绝，后者仍走原有失败回调。
 	// 入站握手同时拒绝纯 gRPC 类型，防止其按 uuid 抢占出站实体。
 	//
-	// 残余窗口:实例刚崩、还没被踢过时它显示 IDLE。只有在一个 READY 都没有时它才可能被挑中,那一次请求
-	// 以 UNAVAILABLE 走失败处理器,之后它就是 TRANSIENT_FAILURE。对端主机整个消失(没有 RST)时,重连要等到
-	// 连接超时(ChannelOptions::connectTimeout,默认 20s),这段时间它停在 CONNECTING,同样排在 READY 之后。
-	// muduo 的「连接失败」回调落地前(grpc-muduo-transport.md §5「已知差异」、§14.1),对端拒连也是这样:
-	// muduo Connector 在内部静默重试,要等到连接超时才进 TRANSIENT_FAILURE。
+	// 残余窗口:
+	// - 实例刚崩、还没被踢过时它显示 IDLE,被踢起后到拒连报上来之前显示 CONNECTING,都在 ②。有 READY 实例就轮不到它;
+	//   一个 READY 都没有时(例如空闲 GOAWAY 后刚被踢起来)它可能被挑中,那次调用排队等连接。拒连经 muduo 的连接失败
+	//   回调(LOCAL DELTA,设计 §14.3)报给 Http2Transport,下一轮关闭,通道随即进 TRANSIENT_FAILURE、排队调用以
+	//   UNAVAILABLE 完成每次调用回调,与官方 pick_first 相同。该回调在 Windows 上对拒连报哪些 poll 事件尚未实测(§14.3);
+	//   万一没报上来,拒连会一直显示 CONNECTING 直到 connect_timeout(20s),表现同下一条。
+	// - 对端主机整个消失(没有 RST)时,要等 connect_timeout(20s;系统 SYN 超时更早就以它为准),这段时间它停在
+	//   CONNECTING,同样排在 READY 之后。一个 READY 都没有时被挑中的调用排队等连接,自己的截止时间先到就以
+	//   DEADLINE_EXCEEDED 结束(SceneManager 的 deadline 10s,短于 20s,通常是这种),连接超时先到才以 UNAVAILABLE
+	//   结束,都以非 OK 完成每次调用回调、同属"结果未知"(PlayerLifecycleSystem::DispatchEnterSceneTransportFailure 只记录 code,不按它分支)。
+	//   官方通道的单次连接上限同为 20s,这一条与改造前相同。
+	// - 对端主机在连接 READY 时静默消失:业务通道没有周期 ping,要等某个调用截止、且这条连接自该调用发出后一帧未收,
+	//   才发 PING 探测(§4.4),keepalive_timeout(20s)内无 ACK 才断开回 IDLE;此前它一直是 READY、照常分到玩家。
+	//   旧官方通道靠 30s 周期 ping 在无调用时也能发现,新通道必须有调用超时才会发现;etcd 租约 60s 到期摘除兜底。
 	enum class SelectionTier : uint8_t
 	{
 		kReady,               // ①
@@ -162,12 +176,13 @@ namespace
 	}
 
 	// 落到 ③a / ③b 时的告警:说明此刻没有任何能用的 SceneManager 通道,本次调用多半以 UNAVAILABLE 失败
-	// (③b 只出现在纯函数用例里:生产适配层不传无通道实体;真发给无通道实体,生成的 Send 也只是本地 UNAVAILABLE)。
-	// 全挂期间每次换图都会走到这里,所以要节流:每 10s 最多一行,期间压掉的次数带在下一行里,排障时仍能看出频率。
+	// (生产适配层不传无通道候选,③b 只出现在纯选择器用例里;万一对无通道实体发送,生成层同样本地以 UNAVAILABLE
+	// 异步失败)。全挂期间每次换图都会走到这里,所以要节流:每 10s 最多一行,期间压掉的次数带在下一行里,
+	// 排障时仍能看出频率。
 	//
 	// 线程模型:GetSceneManagerEntity 读的是 thread_local 的 tlsNodeContextManager,只在拥有它的节点主循环线程上
-	// 调用(调用方都是 scene 主循环里的换图 / 跨 zone 交接 / 组队跟随 / RPC 应答处理;gRPC 应答由 muduo_grpc::Channel
-	// 在通道所属的主循环上 queueInLoop 投递,见 muduo_grpc/channel.h)。节流状态与注册表同样做成 thread_local,
+	// 调用(调用方都是 scene 主循环里的换图 / 跨 zone 交接 / 组队跟随 / RPC 应答处理;gRPC 应答由节点实体上的
+	// muduo_grpc 通道在节点 EventLoop 上经 queueInLoop 投递,同样在这个线程)。节流状态与注册表同样做成 thread_local,
 	// 不需要锁;每个进程只有这一个线程调它,"每线程 10s 一行"就是"每进程 10s 一行"。
 	// 用 steady_clock:节流间隔不能受墙钟跳变影响。
 	constexpr auto kLastResortWarnInterval = std::chrono::seconds(10);
@@ -259,15 +274,13 @@ entt::entity GetSceneManagerEntity(Guid playerId)
 		{
 			continue;
 		}
-		scene_manager_selector::Candidate candidate{entity};
-		if (const auto channel = FindGrpcChannel(smRegistry, entity); channel != nullptr)
-		{
-			candidate.channelState = channel->GetState(/*tryToConnect=*/true);
-		}
-		else
+		const auto channel = FindGrpcChannel(smRegistry, entity);
+		if (!channel)
 		{
 			continue;
 		}
+		scene_manager_selector::Candidate candidate{entity};
+		candidate.channelState = channel->GetState(/*tryToConnect=*/true);
 		candidates.push_back(candidate);
 	}
 

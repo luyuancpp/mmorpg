@@ -20,7 +20,7 @@
 不是「一个 Scene 一个 GameServer」。理由:
 
 1. **Scene 是进程内的 entt 实体,不是进程**。`CreateScene` 只是
-   `sceneRegistry.create()` + 挂 `SceneInfoComp` / `ScenePlayers`
+   `sceneRegistry.create()` + 挂 `SceneInfoComp`
    (`cpp/nodes/scene/handler/grpc/scene_node_service.cpp`)。让 Agones 为每个
    实体拉一个 Pod,等于把微秒级操作换成秒级调度。
 2. **镜像 Scene 必须与源 Scene 共置**。`docs/design/scene-creation-architecture.md`
@@ -109,11 +109,16 @@ Ready
 ### 4.1 两条硬约束
 
 **(a) 不能先建房间再异步 allocate。**
-`SceneNodeGrpcImpl::CreateScene` 在 `runInLoop` **之前**调
-`AcquireCreatePermitBlocking()`,拿不到 Allocated 就直接返回
-`grpc::StatusCode::UNAVAILABLE`,一个实体都不创建。`CreateSceneResponse`
+`SceneNodeGrpcImpl::CreateScene` 必须先拿到 Allocated 许可才进 `HandleCreateScene`,
+拿不到就直接返回 `UNAVAILABLE "agones allocate not confirmed"`,一个实体都不创建。`CreateSceneResponse`
 里没有错误字段(`proto/scene/scene.proto`),非 OK 的 gRPC 状态是唯一能让
 SceneManager 知道"这次失败了、该回滚"的诚实手段。
+
+> 2026-10-16(第 4 批,代码未编译,待 Codex 验证):gRPC 服务端改为跑在 EventLoop 上的 `muduo_grpc::Server`,
+> 许可改在守护段 `grpc.CreateScene.guard` 里用 `AcquireAllocationPermitAsync(loop, cb)` 取,结果经 `queueInLoop`
+> 回到 loop 后才 `Proceed()`;「先许可、后建实体」这条约束不变(见 [grpc-muduo-transport.md](grpc-muduo-transport.md)
+> §15.8.4、§15.9)。第 4 批之前的写法是在 gRPC 线程上、`runInLoop` **之前**调 `AcquireCreatePermitBlocking()`
+> (2026-09-29 改名为 `AcquireAllocationPermitBlocking`)。
 
 **(b) HTTP 绝不进 muduo EventLoop。**
 `docs/design/scene-node-threading-model.md` 的决策是单线程 EventLoop 跑
@@ -122,29 +127,30 @@ RPC + Kafka + `World::Update()`(33ms 帧)。一次 HTTP 抖动进去就是整帧
 
 | 调用方 | 所在线程 | 用哪个 gate |
 |---|---|---|
-| `SceneNodeGrpcImpl::CreateScene` | gRPC 线程池 | `AcquireCreatePermitBlocking()`,有界等待(默认 3s) |
-| `SceneHandler::CreateScene`(legacy muduo RPC) | **EventLoop** | `AcquireCreatePermitNonBlocking()`,立刻返回 false + 踢一次异步 allocate |
+| `SceneNodeGrpcImpl::CreateScene`(gRPC 守护段) | **EventLoop**(第 4 批起;此前是 gRPC 线程池) | `AcquireAllocationPermitAsync(loop, cb)`,有界等待(默认 3s),结果一律在该 loop 线程上回调(当场判定与 worker 裁决经 `queueInLoop` 投递,等待超时由该 loop 的定时器就地裁决为拒绝);此前是 `AcquireCreatePermitBlocking()` |
+| `SceneHandler::CreateScene`(legacy muduo RPC) | **EventLoop** | `AcquireAllocationPermitNonBlocking()`(旧名 `AcquireCreatePermitNonBlocking`),立刻返回 false + 踢一次异步 allocate |
 
-所有 HTTP 都在 lifecycle worker 线程上跑。gRPC 线程阻塞的是条件变量,不是 socket。
+所有 HTTP 都在 lifecycle worker 线程上跑。EventLoop 上的两条路径都不等待:gRPC 守护段登记异步等待者后立即返回,
+RPC0 路径当场拒绝。(第 4 批之前 gRPC 线程阻塞在条件变量上,不是 socket。)`AcquireAllocationPermitBlocking`
+保留,只给非 EventLoop 线程和测试用。
 
 这不是"用定时器掩盖时序问题":到期后不假设成功,而是**拒绝这次创建**让调用方
 重查权威后重试 —— 有界、有出口、fail-closed。
 
 ### 4.2 房间计数的唯一来源
 
-计数挂在 `SceneEventHandler::OnSceneCreatedHandler` / `OnSceneDestroyedHandler`
-(`cpp/nodes/scene/handler/event/scene_event_handler.cpp`)。
+计数只在场景域的 `SceneLifecycle::CreateScene` / `DestroyScene`
+(`cpp/libs/services/scene/world/scene_lifecycle.cpp`) 中直接调用 `OnUnitCreated` / `OnUnitDestroyed`。
 
-选这里而不是两个 RPC handler,是因为 gRPC 路径和 legacy 路径**都**只在实体
-真的建出来/真的存在时才 `dispatcher.trigger()`:幂等命中、参数校验失败、
-「销毁一个不存在的 Scene」全部提前 return。于是天然满足:
+gRPC 与 muduo RPC 入口都先做各自校验和幂等查找，再委托同一场景生命周期函数；
+只有实体实际创建、或完成住户排空并实际销毁时才记账。必需记账不依赖 dispatcher 订阅，因此满足：
 
 - 重复 CreateScene 不重复计数
 - Destroy 不存在的 Scene 不减计数
 - 创建失败不增加计数
 
-`SceneLifecycle` 内部再用 `unordered_set<entity>` 按 key 幂等一次,所以即使
-将来有第三条路径重复触发事件,计数也不会错、更不会为负。所有计数操作在同一把
+`GameServerLifecycle` 内部再用 `unordered_set<uint64_t>` 按 key 幂等一次,所以即使
+将来有第三条路径重复调用计数接口,计数也不会错、更不会为负。所有计数操作在同一把
 互斥锁下,可从任意线程调用。
 
 ### 4.3 在途创建 permit 与零房间收口
@@ -156,7 +162,7 @@ gate 成功后到 EventLoop 真正完成实体创建之间存在排队窗口。�
 "allocate 成功但没建出实体"的情况。
 
 worker 真正发 `/ready` 前先把本地状态切成 `ReturningToReady`;此时新创建不能
-复用旧的 Allocated 判断。阻塞路径等待 `/ready -> /allocate` 完成,非阻塞路径
+复用旧的 Allocated 判断。阻塞路径与异步路径(第 4 批起 gRPC 守护段所用)等待 `/ready -> /allocate` 完成,非阻塞路径
 立即 fail-closed 并预挂一次 allocate。这样 sidecar 与本地状态不会因 HTTP
 在途竞态而分叉。
 
@@ -363,8 +369,8 @@ RBAC 见 `deploy/k8s/manifests/go-svc/scene-manager-agones-rbac.yaml`:
 |---|---|
 | `cpp/nodes/scene/agones/agones_rest_client.{h,cpp}` | 可注入 HTTP 传输层 + libcurl 实现 + Agones REST 端点封装 + 环境变量解析 —— **2026-09-29 已迁到 `cpp/libs/engine/infra/agones/agones_rest_client.{h,cpp}`,旧文件已删** |
 | `cpp/nodes/scene/agones/agones_scene_lifecycle.{h,cpp}` | 状态机、lifecycle worker、房间计数、allocate 前置门 —— **2026-09-29 已迁为 `cpp/libs/engine/infra/agones/agones_gameserver_lifecycle.{h,cpp}`(`GameServerLifecycle`),旧文件已删;新增文件见 §12.6** |
-| `cpp/nodes/scene/handler/event/scene_event_handler.cpp` | 房间计数唯一接入点 |
-| `cpp/nodes/scene/handler/grpc/scene_node_service.cpp` | gRPC 路径的阻塞式 allocate 门 + idle 收口 |
+| `cpp/libs/services/scene/world/scene_lifecycle.cpp` | 场景创建 / 销毁与房间计数唯一接入点 |
+| `cpp/nodes/scene/handler/grpc/scene_node_service.cpp` | gRPC 路径的 allocate 门 + idle 收口(2026-10-16 第 4 批起改为守护段 `grpc.CreateScene.guard` 里的异步许可,不再阻塞) |
 | `cpp/nodes/scene/handler/rpc/scene_handler.cpp` | legacy muduo RPC 路径的非阻塞 allocate 门 |
 | `cpp/nodes/scene/main.cpp` | `SetAfterStart` 起生命周期,`SetBeforeShutdown` + loop 退出后停并 join |
 | `cpp/tests/agones_lifecycle_test/` | 24 个状态机单测(含在途 permit/回 Ready/停止态竞态;注入 fake transport,不需要 sidecar) —— 2026-09-29 磁盘上 `TEST(` 共 51 个(工程名不变),见 §12.7 |
@@ -410,13 +416,13 @@ zlib、hiredis、yaml-cpp 均按 `/MDd` 构建;Debug 的 `/WHOLEARCHIVE` 也必�
 |---|---|
 | `cpp/nodes/scene/agones/agones_rest_client.{h,cpp}` | `cpp/libs/engine/infra/agones/agones_rest_client.{h,cpp}` |
 | `cpp/nodes/scene/agones/agones_scene_lifecycle.{h,cpp}`,类 `SceneLifecycle` | `cpp/libs/engine/infra/agones/agones_gameserver_lifecycle.{h,cpp}`,类 `agones::GameServerLifecycle` |
-| `CreatePermit` / `AcquireCreatePermitBlocking` / `AcquireCreatePermitNonBlocking` | `AllocationPermit` / `AcquireAllocationPermitBlocking` / `AcquireAllocationPermitNonBlocking`(`agones_gameserver_lifecycle.h:123-169`) |
+| `CreatePermit` / `AcquireCreatePermitBlocking` / `AcquireCreatePermitNonBlocking` | `AllocationPermit` / `AcquireAllocationPermitBlocking` / `AcquireAllocationPermitNonBlocking`(`agones_gameserver_lifecycle.h:123-169`);2026-10-16 第 4 批新增 `AcquireAllocationPermitAsync`,EventLoop 上的 gRPC 守护段改用它,Blocking 只给非 EventLoop 线程与测试 |
 | `OnSceneCreated` / `OnSceneDestroyed` / `SceneCount` | `OnUnitCreated` / `OnUnitDestroyed` / `UnitCount`(`:176-194`;单元 = scene 的房间实体或 battle 的 battle_id) |
 | (无) | 新增 `agones_gameserver_status.{h,cpp}`(`ParseGameServer` / `ParseGameServerLabels`,用 protobuf `Struct` 解析,兼容 `object_meta` 与 `objectMeta`)、`agones_client_endpoint_source.{h,cpp}`(Agones 地址来源) |
 
 - 旧目录与 4 个旧文件已删除(未用 `git mv`,新建 + 删除,构建清单同步);构建登记改在 `infra.vcxproj` / `infra.vcxproj.filters` / infra `CMakeLists.txt`,
   scene 的 vcxproj 与 CMake 移除了旧条目。`AllocationPermit` 持有 `GameServerLifecycle&` 引用(不再是裸指针成员)。
-- scene 调用点只改名:`scene_node_service.cpp:251` 阻塞许可、`scene_handler.cpp:869` 非阻塞许可、`scene_event_handler.cpp:44/54` 单元计数、
+- scene 调用点只改名:`scene_node_service.cpp:251` 阻塞许可、`scene_handler.cpp:869` 非阻塞许可、单元计数现收口到 `world/scene_lifecycle.cpp` 的创建 / 销毁入口、
   `scene/main.cpp:286-291` 以默认 `LifecycleOptions{}` 启动。
 - libcurl 边界不变(§5):infra 与 battle 的 Linux 构建定义 `MMORPG_AGONES_CURL` 并链接系统 curl;Windows 不定义,`MakeDefaultHttpTransport()` 返回 nullptr → `StartDisabled`。
 
@@ -435,10 +441,10 @@ zlib、hiredis、yaml-cpp 均按 `/MDd` 构建;Debug 的 `/WHOLEARCHIVE` 也必�
 | 客户端地址 | 不涉及 | external 时 `CLIENT_ENDPOINT_SOURCE=agones`:构造期经 THooks `ClientEndpointSourceFactory`(`battle/main.cpp:228-232`)读 sidecar `status.address` + `status.ports[client]`,在发布 etcd 之前自报 `client_endpoint`;podip 时 `none` |
 | 排空标签 | 不开 | `mmorpg.io/drain`(`battle/main.cpp:45` `kAgonesDrainLabelKey`),Fleet `allocationOverflow.labels` 同值 |
 | EventLoop 心跳 | 不开(D84 后续项) | 开:`requireLoopHeartbeat=true`,EventLoop 每 1s `TouchLoopHeartbeat()`(`battle/main.cpp:85-86`、`:319`) |
-| 单元 | scene 实体(`SceneEventHandler`) | battle_id:所有插表 / 删表路径收口到 `BattleRoomManager::EmplaceRoom` / `EraseRoom`(房间表 `battle_room_table.h`),回调转发 `OnUnitCreated/OnUnitDestroyed`(`battle/main.cpp:279-281`) |
+| 单元 | scene 实体（`SceneLifecycle` 直接记账） | battle_id:所有插表 / 删表路径收口到 `BattleRoomManager::EmplaceRoom` / `EraseRoom`(房间表 `battle_room_table.h`),回调转发 `OnUnitCreated/OnUnitDestroyed`(`battle/main.cpp:279-281`) |
 | 许可拒绝的出口 | gRPC `UNAVAILABLE`(§4.1) | gRPC `UNAVAILABLE "battle_not_allocatable"`(`battle_node.cpp:15-19`);match 遇到它不发 DestroyBattle、换一个没试过的节点重试一次(D82) |
 | 进程级准入闸 | 无 | `battle_admission_gate.h`:SetAfterStart 完成前、停机开始后的 CreateBattle 也回 `battle_not_allocatable`(启动窗口与停机窗口) |
-| 停机 | Stop 并 join | CloseAdmission → AbortAllRooms → DisconnectAll → lifecycle `Stop()`,**不调** `/shutdown`(`battle/main.cpp:342-350`);单元归零可能让 worker 在 Stop 前发一次 `/ready`,Stop 至多等一次 HTTP 超时(2s) |
+| 停机 | Stop 并 join | CloseAdmission → AbortAllRooms → DisconnectAll → lifecycle `Stop()`,**不调** `/shutdown`(`battle/main.cpp:342-367`);单元归零可能让 worker 在 Stop 前发一次 `/ready`,Stop 经取消令牌中止它(以及在途的 `/allocate`、`/health`、`GET /gameserver` 等可放弃请求),不等满超时,通常毫秒级、最坏约 1s(libcurl 空闲期进度回调粒度);唯一例外是 Stop 之前已 `RequestShutdown()` 的 `/shutdown`:不中止,worker 退出前恰好发出一次(单次尝试、不重试),Stop 最多多等 `timeouts.total`(默认 2s)。Stop 之后不再签发任何许可(阻塞 / 异步等待方一律拒绝,即使 worker 已写入 Allocated)(2026-10-17) |
 | Fleet health | `-AgonesHealth*` 默认 30 / 10 / 3 | 复用同三个参数;initialDelaySeconds 不够覆盖 battle 启动最坏耗时(地址来源 ≤60s + 初始化余量 20s + `/ready` 重试约 53s + 首次 health 2s,合计 135s;默认 period 10 × threshold 3 时下限 105s,`lib/k8s_client_entry.ps1:543`、`:560-564`)时由 `Resolve-BattleFleetHealth`(`lib/k8s_client_entry.ps1:553`)抬高并打说明 |
 | 驱逐 | 按原模板 | `eviction.safe: Never`;Fleet `scheduling: Packed` |
 

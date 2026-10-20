@@ -7,7 +7,6 @@
 #include <utility>
 
 #include "muduo/base/Logging.h"
-#include "muduo/net/EventLoop.h"
 
 #include "core/utils/encode/base64.h"
 #include "muduo_grpc/channel.h"
@@ -29,15 +28,15 @@ namespace gate_router_muduo
 namespace
 {
 
-// 与生成客户端的 client_rpc_router::kClientRpcRouterForwardGrpcPath 逐字一致(/<proto package>.<Service>/<Method>)。
+// 与生成客户端的 client_rpc_router::kClientRpcRouterForwardGrpcPath 逐字一致(proto package client_rpc_router,线上契约)。
 constexpr char kForwardPath[] = "/client_rpc_router.ClientRpcRouter/Forward";
-// 与生成客户端 GrpcCallFailure.method 同形,两条路径的失败日志可以对照。
+// 与生成客户端日志里的 <Service>.<Method> 同形,两条出站路径的失败日志可以对照。
 constexpr char kForwardMethodName[] = "ClientRpcRouter.Forward";
 
 void LogMissingSessionEchoSampled()
 {
     // 路由服对成功与信封错误都会在响应头回显 x-session-detail-bin(client-rpc-router.md D30);
-    // 缺了说明对端不是预期的路由服版本。生成客户端的全局处理器在这里静默丢包,这里多留一行采样证据。
+    // 缺了说明对端不是预期的路由服版本,这里留一行采样证据。
     static uint64_t missingCount = 0;
     if ((missingCount++ & 0x3FF) == 0)
     {
@@ -57,7 +56,7 @@ void SendForward(muduo_grpc::Channel &channel, const client_rpc_router::ForwardR
     call.deadline = std::chrono::steady_clock::now() +
                     grpc_call_deadline::Get(eNodeType::ClientRpcRouterNodeService);
     // 应用层值 = 标准 base64(带 padding)的 SessionDetails 原始字节 —— 与生成客户端
-    // grpc_async_client.cpp.tmpl 里的 Base64Encode 同一层;线上的 -bin 编码由传输层再做一层。
+    // (grpc_async_client.cpp.tmpl 的 Start<Svc><Method>Call)的 Base64Encode 同一层;线上的 -bin 编码由传输层再做一层。
     // 两层都不能省(§4.2);字节本身原样转发,不解析、不重新序列化(路由 lane 的字段要原值往返)。
     call.metadata.emplace_back(kSessionBinMetaKey, Base64Encode(sessionDetailsBin));
 
@@ -69,19 +68,19 @@ void SendForward(muduo_grpc::Channel &channel, const client_rpc_router::ForwardR
             {
                 gate_rpc_reply_bridge::NotifyCallFailure(kForwardMethodName,
                                                          static_cast<int>(result.status.code_value()),
-                                                         result.status.message(), &sentSessionDetails);
+                                                         result.status.message(), &sentSessionDetails, nullptr);
                 return;
             }
             MessageContent reply;
             if (!reply.ParseFromString(result.response))
             {
-                // 生成客户端反序列化失败时报 INTERNAL 并走失败分支(与官方 gRPC 一致),这里保持一致。
+                // 生成客户端应答解析失败同样报 INTERNAL 并走失败分支,这里保持一致。
                 gate_rpc_reply_bridge::NotifyCallFailure(
                     kForwardMethodName, static_cast<int>(muduo_grpc::StatusCode::kInternal),
-                    "failed to parse MessageContent from Forward response", &sentSessionDetails);
+                    "failed to parse MessageContent from Forward response", &sentSessionDetails, nullptr);
                 return;
             }
-            // 与生成客户端的全局处理器一致:按**响应头回显**的会话交成功桥(不是本地保存的那份)。
+            // 按**响应头回显**的会话交成功桥(不是本地保存的那份)。
             const std::string *echoed = muduo_grpc::FindMetadata(result.initialMetadata, kSessionBinMetaKey);
             if (echoed == nullptr)
             {
@@ -93,7 +92,7 @@ void SendForward(muduo_grpc::Channel &channel, const client_rpc_router::ForwardR
             {
                 return;
             }
-            gate_rpc_reply_bridge::DeliverReply(*replySession, reply);
+            gate_rpc_reply_bridge::DeliverReply(*replySession, reply, nullptr);
         });
 }
 

@@ -400,8 +400,9 @@ func newEnterWiringHarness(t *testing.T, players []*pbbase.AccountSimplePlayer, 
 	config.AppConfig.Locker.PlayerLockTTL = 120
 	config.AppConfig.Account.CacheExpire = time.Hour
 
-	ctx := ctxkeys.WithSessionDetails(context.Background(), &pbbase.SessionDetails{SessionId: enterWiringSessionID})
-	if err := loginsession.Save(ctx, rdb, enterWiringSessionID, enterWiringAccount); err != nil {
+	details := &pbbase.SessionDetails{SessionId: enterWiringSessionID}
+	ctx := ctxkeys.WithSessionDetails(context.Background(), details)
+	if err := loginsession.Save(ctx, rdb, loginsession.RefOf(details), enterWiringAccount); err != nil {
 		t.Fatalf("seed session: %v", err)
 	}
 	accountBlob, err := proto.Marshal(&dbpb.UserAccounts{
@@ -414,7 +415,8 @@ func newEnterWiringHarness(t *testing.T, players []*pbbase.AccountSimplePlayer, 
 		t.Fatalf("seed account blob: %v", err)
 	}
 	playerBlob, err := proto.Marshal(&dbpb.PlayerAllData{
-		PlayerDatabaseData: &dbpb.PlayerDatabase{PlayerId: identityPlayerID},
+		PlayerDatabaseData:   &dbpb.PlayerDatabase{PlayerId: identityPlayerID},
+		PlayerDatabase_1Data: &dbpb.PlayerDatabase_1{PlayerId: identityPlayerID},
 	})
 	if err != nil {
 		t.Fatalf("marshal player blob: %v", err)

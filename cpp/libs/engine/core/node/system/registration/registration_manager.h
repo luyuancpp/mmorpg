@@ -6,8 +6,6 @@
 
 #include <entt/src/entt/entity/registry.hpp>
 
-#include "network/codec/dispatcher.h"   // MessagePtr
-
 class NodeHandshakeRequest;
 class NodeHandshakeResponse;
 class RpcClient;
@@ -39,7 +37,7 @@ private:
 	static void SendHandshake(uint32_t nodeType, const std::weak_ptr<RpcClient>& weakClient);
 	void OnHandshakeCallDone(uint32_t nodeType, const std::weak_ptr<RpcClient>& weakClient,
 	                         const std::weak_ptr<muduo::net::TcpConnection>& weakConn,
-	                         const RpcStatus& status, const MessagePtr& response) const;
+	                         const RpcStatus& status, const std::shared_ptr<NodeHandshakeResponse>& response) const;
 	void OnHandshakeSucceeded(entt::registry& registry, entt::entity entity, uint32_t nodeType,
 	                          const NodeHandshakeResponse& response, const muduo::net::TcpConnectionPtr& conn) const;
 

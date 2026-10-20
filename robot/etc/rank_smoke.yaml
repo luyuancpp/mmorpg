@@ -1,34 +1,8 @@
-# rank-smoke 配置:两个机器人跨区打一局 1V1,验证排行榜整条写榜链与读榜(docs/design/leaderboard-system.md §8.2)
-#
-# 流程(与 rank_smoke_scenario.go 文件头的步骤编号一致):
-#   0. A(robot_9821)登 zone_a、B(robot_9822)登 zone_b、N(robot_9823,从不排位)登 zone_a;断言 A、B **当前连着的** gate 不同
-#   1. A、B 各读一次榜,记下"打之前"的 self(未上榜时 rank = 0;N 到第 4 步才读)
-#   2. A、B 双双 JoinQueue(1V1),自动战斗打到终局(复用 battle-smoke cross_zone 的参战流程);断言两人在同一场对局
-#   3. 在 update_timeout_ms 内轮询,直到 A、B 都"新记了一局"(之前在榜 → games 恰好 +1;之前不在榜 → 上榜)
-#   4. 断言:胜负分明且两人之前都在榜时恰好一人涨分;分数高者名次靠前;B 读 A 所在那一页能看到 A 且名字非空(跨区名字补全);
-#      页内名次连续、分数不增;N 未上榜时 self.rank = 0、无 tip、entries 照常返回
-#   5. (可选,rate_limit_check: true)N 在一个窗口内连发 rate_limit_per_second + 1 次,最后一次被 gate 限流
-#
-# 前置(缺一条就会失败,原因写进 RANK_SMOKE_FAIL 的 reason):
-#   1. 两区栈、路由服模式:照 docs/design/mail-system.md §12.3「给构建方的顺序」第 5 步起两区(zone 1 用 start_game.ps1;
-#      zone 2 照 docs/handoff/friend-handoff-20260920.md「第 9 步」前置第 10 条单独补起,GATE_CLIENT_RPC_ROUTER=1)。
-#      rank 只承诺路由服模式可达(D-12)。rank 全服一份即可;两区各起一份也行(同一消费组分摊分区)。
-#   2. match 的 **RatingEnabled 与 RatingSnapshotPublishEnabled 都为 true**:仓内 go/match/etc/match_service.yaml 的发布开关默认 false,
-#      冒烟前在本机改成 true 并重启 match,**跑完改回、不要提交**(§5.4)。不改的话第 3 步会以 board-update 超时失败。
-#   3. battle 节点在跑(1V1 要真打一局);跨区 1V1 期间不要有别的机器人 / 玩家在排 1V1,否则 A、B 可能分别匹配到别人。
-#   4. rank 能读写榜:本机 RankRedis 回落共享 Redis(启动日志有 WARN,本地可以);rank 的 Kafka.Brokers 指向本机 broker。
-#   5. proto 已按 rank 重生成(rank_postgen.py verify 全过)并同步进 robot/vendor;gate、client_rpc_router 已换上同一次生成的二进制。
-#   6. MessageLimiter 按 rank 导过表之前:保持 request_interval_ms ≥ 1100(gate 默认档 3 次 / 窗口),rate_limit_check 保持 false。
-#   7. 账号归属区:robot_9821、robot_9823 首次在 zone_a 建角,robot_9822 首次在 zone_b 建角(归属区在建角时登记,之后不随登录区变化);
-#      robot_9823 永远不要拿去排位(它是"确定不在榜上"的会话)。不用 97xx / 9801 / 9811-9812 / 99xx / 95xx(别的冒烟在用)。
-#   8. 从 robot/ 目录运行(table_dir 是相对路径)。
-#
-# 用法(robot/ 目录下):
-#   go build -mod=vendor -o robot.exe .      # 旧 robot.exe 的模式白名单里没有 rank-smoke,会以 unknown mode 退出
-#   .\robot.exe -c etc/rank_smoke.yaml
-# 退出码 0 = 全部断言通过(日志有 RANK_SMOKE_OK … 一行);退出码 1 = 任一步失败(RANK_SMOKE_FAIL step=… reason=…)。
-#
-# 可重复运行:每轮都是新的一局,games 只增不减,不做预清理(清榜要按设计 §3.5 的 runbook,冒烟不碰)。
+# 现役 SQL 通用榜跨区冒烟，见 robot/rank_smoke_scenario.go。
+# board={type:1,scope:GLOBAL,period:all,generation:1}；跨区对局后等待score/achieved_ms对应新鲜快照。
+# 保留分页排序、跨区名字补全、未上榜self以及可选gate限流；不启动旧R2b Redis/Kafka写榜运行时。
+# 需match现役rank publisher、rank SQL、DataService名字读取及两区路由就绪，表及签名按现役go/rank/etc/rank.yaml配置。
+# 本轮仅适配源码，未运行冒烟或测试。
 
 gateway_addr: "http://127.0.0.1:8081" # Gateway HTTP endpoint(/api/assign-gate)
 zone_id: 1 # 本模式不用此字段选区(A / N 登 rank_smoke.zone_a,B 登 zone_b)

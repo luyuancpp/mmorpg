@@ -113,11 +113,16 @@ func SetSession(ctx context.Context, plClient plpb.PlayerLocatorClient, session 
 }
 
 // SetSessionDisconnecting marks the session as disconnecting with a 30s lease via player_locator.
-func SetSessionDisconnecting(ctx context.Context, plClient plpb.PlayerLocatorClient, playerID uint64, sessionID uint32) error {
+//
+// gateInstanceID 是发起断线的 gate 实例 uuid(SessionDetails.gate_instance_id,或入场链 state 里的同一个值)。
+// player_locator 在它与会话记录的实例号都非空且不等时,按旧实例迟到的上报忽略;空 = 不校验
+// (docs/design/scene-enter-chain-residuals.md §6)。
+func SetSessionDisconnecting(ctx context.Context, plClient plpb.PlayerLocatorClient, playerID uint64, sessionID uint32, gateInstanceID string) error {
 	_, err := plClient.SetDisconnecting(ctx, &plpb.SetDisconnectingRequest{
 		PlayerId:        playerID,
 		SessionId:       sessionID,
 		LeaseTtlSeconds: 30,
+		GateInstanceId:  gateInstanceID,
 	})
 	if err != nil {
 		return fmt.Errorf("player_locator SetDisconnecting: %w", err)
@@ -154,7 +159,13 @@ func Reconnect(ctx context.Context, plClient plpb.PlayerLocatorClient, playerID 
 
 // DeleteSession removes only the exact Gate session that issued LeaveGame.
 // A delayed request from a replaced connection is intentionally a successful no-op.
-func DeleteSession(ctx context.Context, plClient plpb.PlayerLocatorClient, playerID uint64, expectedSessionID uint32) error {
+//
+// expectedGateInstanceID 是发起登出的 gate 实例 uuid,原样随 MarkOffline 下发;空 = 旧口径,locator 不比较。
+// 实例号**不做本地预检**:本地只按会话号挡掉常见的「被替换连接迟到的登出」,同号跨实例交给 player_locator
+// 在 GET 到的同一份字节上原子判定,并在那里打 Info、计 player_locator_stale_gate_instance_total{op="mark_offline"}。
+// 本地也比的话会先短路,locator 的日志与计数只在 GetSession 与 locator GET 之间记录被改写时才走得到,
+// LeaveGame 这一面就观测不到了。代价是罕见的同号跨实例多一次 RPC(docs/design/scene-enter-chain-residuals.md §6.2)。
+func DeleteSession(ctx context.Context, plClient plpb.PlayerLocatorClient, playerID uint64, expectedSessionID uint32, expectedGateInstanceID string) error {
 	current, err := GetSession(ctx, plClient, playerID)
 	if err != nil {
 		return err
@@ -167,6 +178,7 @@ func DeleteSession(ctx context.Context, plClient plpb.PlayerLocatorClient, playe
 		PlayerId:               playerID,
 		ExpectedSessionId:      expectedSessionID,
 		ExpectedSessionVersion: current.SessionVersion,
+		ExpectedGateInstanceId: expectedGateInstanceID,
 	})
 	if err != nil {
 		return fmt.Errorf("player_locator MarkOffline: %w", err)

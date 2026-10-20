@@ -13,7 +13,9 @@ import (
 	"testing"
 	"time"
 
+	db_config "db/internal/config"
 	"db/internal/metrics"
+	dbpb "proto/common/database"
 
 	"github.com/IBM/sarama"
 	"github.com/prometheus/client_golang/prometheus"
@@ -21,6 +23,38 @@ import (
 	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/proto"
 )
+
+func TestBlobGuardFallbackAndInitKeepColumnBudget(t *testing.T) {
+	assertDefaults := func(gotMaxColumn, gotMaxRow, gotLedger, gotPlayerRow int64) {
+		t.Helper()
+		if gotMaxColumn != 256<<10 || gotMaxRow != 1<<20 || gotLedger != 1<<20 || gotPlayerRow != 0 {
+			t.Fatalf("默认保护闸预算不一致: 全局列=%d 全局行=%d 账本列=%d 玩家行=%d", gotMaxColumn, gotMaxRow, gotLedger, gotPlayerRow)
+		}
+	}
+	initial := blobGuard.Limits()
+	assertDefaults(initial.MaxColumnBytes, initial.MaxRowBytes,
+		initial.PerTable["player_database"].ColumnBytes["asset_op_ledger"], initial.PerTable["player_database"].MaxRowBytes)
+	old := blobGuard
+	t.Cleanup(func() { blobGuard = old })
+	InitBlobGuard(db_config.BlobGuardConfig{})
+	initialized := blobGuard.Limits()
+	assertDefaults(initialized.MaxColumnBytes, initialized.MaxRowBytes,
+		initialized.PerTable["player_database"].ColumnBytes["asset_op_ledger"], initialized.PerTable["player_database"].MaxRowBytes)
+	measured, err := blobGuard.Check("player_database", &dbpb.PlayerDatabase{PlayerId: 1})
+	if err != nil || measured.RowLimit != 1<<20 {
+		t.Fatalf("账本列放宽后仍须执行原 1 MiB 整行预算: %+v err=%v", measured, err)
+	}
+	input := db_config.BlobGuardConfig{PerTable: map[string]db_config.BlobTableLimit{
+		"player_database": {MaxRowBytes: 777777, ColumnBytes: map[string]int64{"asset_op_ledger": 555555}},
+	}}
+	InitBlobGuard(input)
+	input.PerTable["player_database"].ColumnBytes["asset_op_ledger"] = 1
+	configured := blobGuard.Limits()
+	if configured.PerTable["player_database"].MaxRowBytes != 777777 ||
+		configured.PerTable["player_database"].ColumnBytes["asset_op_ledger"] != 555555 || configured.MaxColumnBytes != 256<<10 {
+		t.Fatalf("Init 必须保留列覆盖并与输入配置隔离: %+v", configured)
+	}
+}
 
 // metricSample 返回 family 里 label 恰好等于 labels 的那条序列:直方图返回 (count, sum),计数器 / 仪表返回 (value, 0)。
 // 序列不存在时返回 (0, 0) —— 直方图在第一次 Observe 之前没有序列。
@@ -101,7 +135,7 @@ func orderingGuardCounts(t *testing.T) map[string]float64 {
 	return out
 }
 
-// 一条 Kafka 来源的写(带 owner_epoch、seq>0、不走离线扩容)走完 handleTask 的成功路径:11 个 step 在 op=write 下各记一次。
+// 一条 Kafka 来源的写(带 owner_epoch、seq>0、不走离线扩容)走完 handleTask 的成功路径:9 个常规 step 各记一次，3 个条件 step 不记。
 // 这条用例同时钉住「每个往返只记一次」:任何一步被记两次(例如挂了 Hook 又在调用点计时)都会让差值变成 2。
 func TestRedisSteps_KafkaWriteObservesEachStepOnce(t *testing.T) {
 	w, _, h := newTestWorker(t, 0)
@@ -115,8 +149,13 @@ func TestRedisSteps_KafkaWriteObservesEachStepOnce(t *testing.T) {
 
 	require.Len(t, h.callsForKey(key), 1, "the write must reach SQL")
 	require.Equal(t, []int64{9}, session.marked(), "the write must complete and ACK")
+	conditional := map[string]bool{metrics.RedisStepOwnerEpochProbe: true, metrics.RedisStepLeaseVerify: true, metrics.RedisStepCacheSet: true}
 	for _, step := range metrics.RedisSteps {
-		assert.Equalf(t, before[step]+1, after[step], "step %s must be observed exactly once for one write", step)
+		want := before[step]
+		if !conditional[step] {
+			want++
+		}
+		assert.Equalf(t, want, after[step], "step %s observed count", step)
 	}
 }
 
@@ -260,9 +299,20 @@ func TestStages_QueueWaitTaskTotalKafkaE2E(t *testing.T) {
 	kafkaTask.enqueuedAt = now.Add(-time.Second)
 	run("kafka task with enqueue time", kafkaTask, sample{queue: 1, total: 1, e2e: 1})
 
-	// 没有 kafkaMsg 的任务(重试源同样没有):不进 kafka_e2e;没有 enqueuedAt:不进 queue_wait。
+	// 没有 kafkaMsg 的任务:不进 kafka_e2e;没有 enqueuedAt:不进 queue_wait。
 	run("task without kafka message or enqueue time", makeWriteTask(t, 9721, placementTestMsgType, 10),
 		sample{queue: 0, total: 1, e2e: 0})
+
+	// 真正的重试源:经生产的 consumeOneRetryTask 认领(fromRetry、enqueuedAt 由认领时赋值、没有 kafkaMsg)。
+	// queue_wait 只看 enqueuedAt 非零、不看时长,结果与墙钟无关。
+	require.NoError(t, saveToRetryQueue(w.ctx, w.redisClient, w.retryQueueKey,
+		makeWriteTask(t, 9724, placementTestMsgType, 10).dbTask, 10, 0))
+	retryTask := claimRetry(t, w)
+	require.NotNil(t, retryTask)
+	require.True(t, retryTask.fromRetry)
+	require.Nil(t, retryTask.kafkaMsg, "retry-origin tasks carry no Kafka message")
+	require.False(t, retryTask.enqueuedAt.IsZero(), "claiming a retry stamps its enqueue time")
+	run("retry task", retryTask, sample{queue: 1, total: 1, e2e: 0})
 
 	run("kafka task without CreateTime", kafkaWriteTaskAt(t, w, 9722, 10, time.Time{}), sample{queue: 0, total: 1, e2e: 0})
 

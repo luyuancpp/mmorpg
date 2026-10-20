@@ -10,4 +10,6 @@ public:
 
 	void GmGracefulShutdown(::google::protobuf::RpcController* controller,  const ::GmGracefulShutdownRequest* request, ::GmGracefulShutdownResponse* response, ::google::protobuf::Closure* done) override;
 
+	void GmDescribeEntity(::google::protobuf::RpcController* controller,  const ::GmDescribeEntityRequest* request, ::GmDescribeEntityResponse* response, ::google::protobuf::Closure* done) override;
+
 };

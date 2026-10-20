@@ -1,0 +1,246 @@
+syntax = "proto3";
+option go_package = "robot/proto/battle";
+
+import "proto/common/component/actor_comp.proto";
+import "proto/common/component/actor_attribute_state_comp.proto";
+
+// 回合制战斗共享数据结构(快照/行动/事件/结算)。
+// 设计依据:docs/design/turn-based-battle-server.md §4。
+// 类型纪律:battle_id/player_id/buff_id 为 uint64;table_id/session_id/回合数为 uint32;
+// 时间戳为 uint64 毫秒;属性 uint64(宪法 §4)。
+
+// ---- 路由信息:battle 节点出站消息(Kafka)所需的全部定位数据,快照携带,battle 不查 etcd ----
+message BattleRouting {
+  uint32 session_id = 1;
+  uint32 gate_node_id = 2;
+  string gate_instance_id = 3;   // gate 实例 UUID(GateCommand.target_instance_id 防僵尸)
+  uint32 scene_node_id = 4;
+  string scene_instance_id = 5;  // scene 实例 UUID(SceneCommand.target_instance_id 防僵尸)
+  uint32 zone_id = 6;
+}
+
+// ---- 参战 buff(时间维度已换算为回合,见设计文档 §5.1 换算策略) ----
+message BattleBuffEntry {
+  uint64 buff_id = 1;        // buff 实例 SnowFlake id
+  uint32 buff_table_id = 2;  // BuffTable 表 id
+  uint32 layer = 3;          // 叠层数
+  uint32 remain_rounds = 4;  // 剩余回合(0 = 无限持续)
+  uint64 caster_id = 5;
+}
+
+// ---- 战斗内道具副本 ----
+message BattleItemEntry {
+  uint32 item_table_id = 1;
+  uint64 count = 2;
+}
+
+// ---- 玩家战斗快照:scene 在 PrepareBattle 时构建,是战斗内玩家数据的唯一来源 ----
+message BattlePlayerSnapshot {
+  uint64 player_id = 1;
+  string player_name = 2;
+  uint32 level = 3;
+  BaseAttributesComp base_attributes = 4;  // 含 speed(出手序)
+  uint64 max_health = 5;
+  uint64 max_mana = 6;
+  repeated uint32 skill_table_ids = 7;     // 战斗可用技能(SkillTable id)
+  repeated BattleBuffEntry buffs = 8;      // 参战时携带的持续 buff
+  repeated BattleItemEntry items = 9;      // 战斗可用消耗品数量副本
+  BattleRouting routing = 10;
+  uint32 team_index = 11;                  // 0 = A 方(进攻),1 = B 方
+  string table_fingerprint = 12;           // 出快照的 scene 节点的战斗配表指纹(与 PrepareBattleResponse.table_fingerprint 同值)
+  uint64 physical_attack = 13;             // 二级属性(属性加点系统):物伤,scene 侧由 DerivedAttributes 填;引擎 InitPlayers 直接透传给 BattleActorState
+  uint64 magic_attack = 14;                // 法伤
+  uint64 defense = 15;                     // 防御
+  // 出战宝宝(宝宝系统,player-pet.md §5):与主人同队的独立行动单位。
+  // 核心线同时只能带 1 只,repeated 是为了二期多宠不改 wire。
+  repeated BattlePetSnapshot pets = 16;
+  string appearance_id = 17; // 与主城、选角一致的玩家外观身份。
+  uint32 class_id = 18;
+  uint32 gender = 19;
+  // 战斗类属性的装备加成(必杀 / 连击 / 反击 / 反震 / 抗性等,equipment-attributes.md §3.3)。
+  // scene 侧原样拷自 DerivedAttributesComp.combat;不带 = 全 0 = 引擎行为与装备系统落地前逐位一致。
+  CombatAttributes combat = 20;
+}
+
+// ---- 宝宝战斗快照:与主人同队、独立行动的战斗单位(设计文档 player-pet.md §5)----
+// 属性口径与玩家快照逐项对齐:base_attributes 带 speed(出手序)与当前 HP/MP,
+// max_* 与物伤/法伤/防御来自 PetSystem 现算的二级属性。
+message BattlePetSnapshot {
+  // 宝宝的永久 id(scene 从 item 号段取)。**不是**局内 actor_id:号段改造后 player_id 与
+  // pet_id 都从 1 起发,直接当 actor_id 会让 N 号玩家与 N 号宝宝同号。引擎给宝宝另发
+  // kPetActorIdBase 段的局内号,真实 pet_id 存进 BattleActorState.pet_id,结算回写只认它。
+  uint64 pet_id = 1;
+  uint64 owner_player_id = 2;     // 主人;决定队伍与结算归属
+  string pet_name = 3;
+  uint32 pet_table_id = 4;
+  uint32 level = 5;
+  BaseAttributesComp base_attributes = 6;
+  uint64 max_health = 7;
+  uint64 max_mana = 8;
+  uint64 physical_attack = 9;
+  uint64 magic_attack = 10;
+  uint64 defense = 11;
+  repeated uint32 skill_table_ids = 12;
+}
+
+// ---- 战斗单位运行时状态(玩家与怪物统一;引擎状态用 proto 承载,宪法 §3) ----
+enum eBattleActorType {
+  BATTLE_ACTOR_TYPE_NONE = 0;
+  BATTLE_ACTOR_TYPE_PLAYER = 1;
+  BATTLE_ACTOR_TYPE_MONSTER = 2;
+  BATTLE_ACTOR_TYPE_PET = 3;     // 宝宝:与主人同队,无客户端行动权,由默认行动路径代打
+}
+
+message BattleActorState {
+  uint64 actor_id = 1;              // 玩家 = player_id;怪物 / 宝宝 = 引擎局内序号(bit63 打标,见 kEngineLocalActorIdFlag)
+  eBattleActorType actor_type = 2;
+  uint32 team_index = 3;
+  string name = 4;
+  uint32 level = 5;
+  BaseAttributesComp attributes = 6;
+  uint64 max_health = 7;
+  uint64 max_mana = 8;
+  bool is_dead = 9;
+  bool is_defending = 10;           // 本回合防御(受伤减半)
+  bool fled = 11;                   // 已逃离战斗
+  repeated BattleBuffEntry buffs = 12;
+  repeated uint32 skill_table_ids = 13;
+  uint32 monster_table_id = 14;     // 仅怪物有效(MonsterTable id)
+  map<uint32, uint32> skill_cooldown_rounds = 15; // skill_table_id -> 剩余冷却回合
+  bool is_auto = 16;                // 自动战斗(挂机):回合内视为已就绪,结算时按默认行动出手
+  uint32 formation_slot = 17;       // 阵位 0-9:0-4 前排(左→右),5-9 后排;演出站位用,不参与判定
+  uint64 physical_attack = 18;      // 物伤(来自快照;怪物 0)
+  uint64 magic_attack = 19;         // 法伤(来自快照;怪物 0)
+  uint64 defense = 20;              // 防御(来自快照;怪物 0)
+  uint64 owner_player_id = 21;      // 仅宝宝有效:主人 player_id(结算按它归属到主人名下)
+  uint32 pet_table_id = 22;         // 仅宝宝有效(Pet 表 id)
+  uint64 pet_id = 23;               // 仅宝宝有效:真实 pet_id(结算回写认它;actor_id 是引擎局内号)
+  string appearance_id = 24; // 玩家来自快照；重连/观战保持同一身份。
+  uint32 class_id = 25;
+  uint32 gender = 26;
+  // 战斗类属性的装备加成(来自快照;怪物 / 宝宝全 0)。只供引擎判定用:
+  // 下发给客户端的状态快照里会被清空,不暴露对手的装备概率。
+  CombatAttributes combat = 27;
+}
+
+// ---- 玩家行动指令 ----
+enum eBattleActionType {
+  BATTLE_ACTION_NONE = 0;
+  BATTLE_ACTION_ATTACK = 1;  // 普攻
+  BATTLE_ACTION_SKILL = 2;
+  BATTLE_ACTION_DEFEND = 3;  // 防御:本回合受伤减半
+  BATTLE_ACTION_ITEM = 4;    // 使用战斗道具(从快照副本扣,结算回写)
+  BATTLE_ACTION_FLEE = 5;    // 逃跑(PVE 可用;成功率基于速度差)
+}
+
+message BattleAction {
+  eBattleActionType action_type = 1;
+  uint32 skill_table_id = 2;  // SKILL 时有效
+  uint64 target_id = 3;       // ATTACK/SKILL/ITEM 的目标
+  uint32 item_table_id = 4;   // ITEM 时有效
+}
+
+// ---- 回合结算事件(客户端按序播表现;确定性事件流,观战/回放的载体) ----
+enum eBattleEventType {
+  BATTLE_EVENT_NONE = 0;
+  BATTLE_EVENT_ATTACK = 1;       // 普攻出手
+  BATTLE_EVENT_SKILL = 2;        // 技能施放
+  BATTLE_EVENT_DAMAGE = 3;       // 伤害结算
+  BATTLE_EVENT_HEAL = 4;
+  BATTLE_EVENT_BUFF_ADD = 5;
+  BATTLE_EVENT_BUFF_REMOVE = 6;
+  BATTLE_EVENT_BUFF_TICK = 7;    // 周期效果(回合末)
+  BATTLE_EVENT_DEATH = 8;
+  BATTLE_EVENT_DEFEND = 9;
+  BATTLE_EVENT_ITEM = 10;
+  BATTLE_EVENT_FLEE = 11;        // 逃跑尝试(success 标记结果)
+  BATTLE_EVENT_MISS = 12;      // 未命中/闪避(演出:目标头顶"闪");value=0
+  BATTLE_EVENT_BLOCK = 13;     // 格挡(预留,一期不产出)
+  BATTLE_EVENT_MANA = 14;      // 法力变化:value=变化绝对值,is_negative 由 target_health_after 之外的 mana_after 表达
+  BATTLE_EVENT_RESIST = 15;    // 异常状态被抵抗:source=施加者,target=抵抗者,buff_table_id=被抵抗的 buff;老客户端忽略
+}
+
+// 一段伤害 / 出手是怎么来的(equipment-attributes.md §4.5)。0 = 普通,老客户端不读也不影响演出。
+enum eBattleHitKind {
+  BATTLE_HIT_NORMAL = 0;
+  BATTLE_HIT_COMBO = 1;    // 连击追加段(与首段同 group_id,hit_index 递增)
+  BATTLE_HIT_COUNTER = 2;  // 反击(受击者还手的 ATTACK / DAMAGE)
+  BATTLE_HIT_REFLECT = 3;  // 反震(DAMAGE:source=受击者,target=出手者)
+}
+
+message BattleEventItem {
+  eBattleEventType event_type = 1;
+  uint64 source_id = 2;
+  uint64 target_id = 3;
+  uint32 skill_table_id = 4;
+  uint32 buff_table_id = 5;
+  uint64 value = 6;               // 伤害/治疗数值
+  bool is_critical = 7;
+  bool success = 8;               // FLEE 等布尔结果
+  uint64 target_health_after = 9; // 目标结算后 HP(客户端免推算)
+  uint32 item_table_id = 10;
+  uint32 group_id = 11;             // 同一次行动/施法内的事件共用(演出:群攻多目标同一拍);每次行动递增
+  uint32 hit_index = 12;            // 多段攻击的段序(0 起)
+  uint64 target_mana_after = 13;    // 目标结算后法力(BATTLE_EVENT_MANA 与技能耗蓝演出用)
+  eBattleHitKind hit_kind = 14;     // 连击 / 反击 / 反震标注;普通出手为 0
+}
+
+// ---- 胜负 ----
+enum eBattleOutcome {
+  BATTLE_OUTCOME_ONGOING = 0;
+  BATTLE_OUTCOME_SIDE_A_WIN = 1; // team_index 0 胜
+  BATTLE_OUTCOME_SIDE_B_WIN = 2;
+  BATTLE_OUTCOME_DRAW = 3;       // 回合打满等平局情形(PVE 中进攻方判负走 SIDE_B_WIN)
+}
+
+// ---- 单个玩家的结算数据(battle -> scene,scene 是唯一应用者) ----
+message BattleMonsterDefeat {
+  uint32 monster_config_id = 1;
+  uint32 count = 2;
+}
+
+message BattleSettlementData {
+  uint64 battle_id = 1;
+  uint64 player_id = 2;
+  eBattleOutcome outcome = 3;
+  uint32 player_team_index = 4;
+  uint64 health = 5;              // 战后终值,由 scene 回写
+  uint64 mana = 6;
+  uint64 exp_gain = 7;
+  uint64 gold_gain = 8;
+  repeated BattleItemEntry items_consumed = 9;  // scene 按实际持有校验扣除(防刷,不足按 0)
+  repeated BattleItemEntry items_gained = 10;   // 掉落
+  bool is_dead = 11;
+  bool fled = 12;
+  uint32 total_rounds = 13;
+  repeated BattlePetSettlementData pets = 14;  // 该玩家出战宝宝的战后终值(scene 回写实例)
+  // battle 根据真实阵亡怪物生成，scene 用于任务进度；客户端不能上报。
+  repeated BattleMonsterDefeat defeated_monsters = 15;
+}
+
+// ---- 出战宝宝的结算数据(随主人的 BattleSettlementData 一起回 scene)----
+message BattlePetSettlementData {
+  uint64 pet_id = 1;
+  uint64 health = 2;   // 战后终值
+  uint64 mana = 3;
+  bool is_dead = 4;
+}
+
+// ---- 活动对局上下文(帮会同道历练,docs/design/guild-phase2/06-activities.md §6.17) ----
+// 流向:guild 组装 → match MatchInternal.StartActivityBattle 校验后原样放进 CreateBattleRequest.activity_context
+//       → battle 存进房间、结算时原样回显进 contracts.kafka.BattleResultEvent.activity_context → guild 消费结算。
+// battle / scene 不解释其中任何业务字段(只看 kind 是否为 NONE 来决定是否走持久化结果通道,§6.19)。
+// 本段只在文件末尾追加(属性会话也在改本文件)。
+enum eBattleActivityKind {
+  BATTLE_ACTIVITY_KIND_NONE = 0;          // 普通对局:不回显上下文,结果事件照旧只发一次
+  BATTLE_ACTIVITY_KIND_GUILD_TRIAL = 1;   // 帮会同道历练:go/guild 以消费组 guild-trial 消费 match-results 结算
+}
+
+message BattleActivityContext {
+  eBattleActivityKind kind = 1;     // 非 NONE 才是活动对局;match 拒绝 NONE(INVALID_ARGUMENT)
+  uint64 guild_id = 2;              // 发起帮会(SnowFlake 17-bit 布局);guild 写、guild 读
+  uint32 activity_id = 3;           // GuildActivity 表 id;guild 写、guild 读
+  uint32 period_key = 4;            // 确认开战时的游戏日键 YYYYMMDD(gameday.DayKey,UTC+8 05:00 换日),用于个人每日次数
+  uint64 initiator_player_id = 5;   // 发起人;match 校验它等于 StartActivityBattleRequest.member_player_ids[0]
+  uint32 guild_period_key = 6;      // 确认开战时的帮会期键(activity.GuildPeriodKey;历练即游戏日),用于每日计资金胜场上限
+}

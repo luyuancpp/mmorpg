@@ -12,20 +12,17 @@
 #include "node/system/node/node_entry.h"
 #include "node/system/etcd/etcd_transport.h"
 #include "handler/rpc/gate_service_handler.h"
-#include "handler/rpc/client_message_processor.h"
+#include "handler/rpc/client_session_handler.h"
 #include "handler/rpc/client_request_lane.h"
+#include "handler/rpc/router_muduo_forward.h"
 #include "muduo_grpc/channel.h"
 #include "node/system/node/muduo_grpc_channel_slot.h"
 #include "thread_context/node_context_manager.h"
-#include "handler/rpc/rpc_reply_bridge.h"
 #include "gate_codec.h"
 #include "gate_router_mode.h"
-#include "gate_router_transport.h"
 #include "gate_security.h"
 #include "gate_version.h"
 #include "node_config_manager.h"
-#include "grpc_client/grpc_init_client.h"
-#include "session/system/session.h"
 #include "session/manager/session_manager.h"
 #include "network/network_utils.h"
 #include "proto/common/base/session.pb.h"
@@ -38,6 +35,7 @@
 #include "handler/event/scene_entry_dispatch.h"
 
 #include <chrono>
+#include <cstdlib>
 #include <string>
 #include <unordered_map>
 #include <utility>
@@ -143,7 +141,7 @@ namespace
     {
         ProtobufDispatcher protobufDispatcher;
         ProtobufCodec codec;
-        RpcClientSessionHandler rpcClientHandler;
+        GateClientSessionHandler clientSessionHandler;
         DependencyGate dependencyGate;
         TimerTaskComp playerCountReportTimer;
         // CPP-2 进场转发欠账的到期补发(handler/event/scene_entry_dispatch.cpp)。回调不捕获任何对象;
@@ -168,7 +166,7 @@ namespace
             conn->forceClose(); }),
               codec([this](const TcpConnectionPtr &conn, const MessagePtr &msg, Timestamp ts)
                     { protobufDispatcher.onProtobufMessage(conn, msg, ts); }),
-              rpcClientHandler(codec, protobufDispatcher)
+              clientSessionHandler(codec, protobufDispatcher)
         {
         }
     };
@@ -213,7 +211,7 @@ int main(int argc, char *argv[])
     // Gate's outbound connections, by transport:
     //   * SceneNodeService — muduo TCP RPC (in-zone Gate↔Scene messaging).
     //   * LoginNodeService / SceneManagerNodeService — gRPC, dispatched via
-    //     PickRandomNode in client_message_processor (msg_id=48 login,
+    //     PickRandomNode in client_session_handler (msg_id=48 login,
     //     scene-manager redirects, etc.). They MUST appear in the whitelist
     //     so ConnectAllNodes / AddServiceNode wire them into the local
     //     entt::registry; otherwise PickRandomNode finds an empty registry
@@ -290,26 +288,18 @@ int main(int argc, char *argv[])
                                                             std::chrono::steady_clock::now());
                 });
 
-            // gate → 路由服的传输只剩 muduo_h2(docs/design/grpc-muduo-transport.md §14.1):通道由 NodeConnector
-            // 在服务发现时直接建,这里不再装工厂。GATE_ROUTER_TRANSPORT 只为兼容旧部署保留,显式设成 grpc 或
-            // 不认识的值都打一条 WARN 后照旧走 muduo_h2(与 NODE_ETCD_TRANSPORT 同一处理)。
+            // GATE_ROUTER_TRANSPORT 已失效(docs/design/grpc-muduo-transport.md §14.1):官方 gRPC 客户端随第 3 批删除,
+            // 所有出站 gRPC 都走 muduo_h2:节点通道(路由服、直连模式的业务服务)由 NodeConnector::ConnectToGrpcNode 统一建,
+            // etcd 走 MuduoEtcdTransport。
+            // 只为兼容旧部署留这一处检查:不设或 muduo_h2 静默;其余值(含旧默认 grpc)打 WARN —— 设成 grpc 的部署以为
+            // 自己还在官方实现上,必须让人看见它已被忽略。与路由模式开关 GATE_CLIENT_RPC_ROUTER(业务拓扑)是两回事。
+            if (const char *rawTransport = std::getenv("GATE_ROUTER_TRANSPORT"))
             {
-                const auto &transport = gate_router_transport::ResolveOnce();
-                if (!transport.recognized)
+                const std::string transport = token_security::ToLowerAscii(token_security::TrimAscii(rawTransport));
+                if (!transport.empty() && transport != "muduo_h2")
                 {
-                    LOG_WARN << "Unknown " << gate_router_transport::kTransportEnv << "='" << transport.raw
-                             << "'; using muduo_h2";
-                }
-                else if (transport.transport == gate_router_transport::Transport::kOfficialGrpc && !transport.raw.empty())
-                {
-                    LOG_WARN << gate_router_transport::kTransportEnv
-                             << "=grpc is obsolete: the official gRPC client runtime was removed; using muduo_h2";
-                }
-                if (routerMode)
-                {
-                    LOG_INFO << "gate router transport="
-                             << gate_router_transport::TransportName(gate_router_transport::Transport::kMuduoH2)
-                             << " (muduo_grpc over nghttp2)";
+                    LOG_WARN << "GATE_ROUTER_TRANSPORT='" << rawTransport
+                             << "' is ignored: the official gRPC client was removed; all outbound gRPC uses muduo_h2.";
                 }
             }
 
@@ -362,30 +352,6 @@ int main(int argc, char *argv[])
 
             InitGateCodec(context.codec);
 
-            // gRPC response -> client TCP bridge(生成客户端的全局成功回调;第 3 批起生成客户端走 muduo_grpc,docs/design/grpc-muduo-transport.md §14)。
-            //
-            // 回包怎样落到客户端(路由 lane 认领、MessageContent 原样下发、其余类型包一层)只有一份实现:
-            // handler/rpc/rpc_reply_bridge.cpp。路由服 Forward 的手写路径(router_muduo_forward.cpp)调的是同一个函数,
-            // 直连与路由两种拓扑对客户端的可见行为因此逐条相同(docs/design/grpc-muduo-transport.md §8)。
-            SetIfEmptyHandler([](const GrpcReplyContext &ctx, const ::google::protobuf::Message &reply)
-                              {
-                auto sd = GetSessionDetailsByReplyContext(ctx);
-                if (!sd) return;
-                gate_rpc_reply_bridge::DeliverReply(*sd, reply); });
-
-            // gRPC 调用失败 -> 客户端(docs/design/grpc-client-deadline-failure-callback.md §5 #8/#9)。
-            //
-            // 失败时服务端没有回写 initial metadata,按 GetSessionDetailsByReplyContext 找会话的路走不通;
-            // 会话从本次**发出**的 x-session-detail-bin 找回(生成的客户端保存了 Send 传入的原值,未经 Base64)。
-            // 回 kServiceUnavailable 而不是具体业务码:传输失败 = 结果未知,下游可能已经执行(有副作用的 C2S
-            // 靠 Go 侧幂等键兜重试)。采样日志、路由 lane 认领、找会话回 tip 的细节同样只在 rpc_reply_bridge 里。
-            SetIfEmptyFailedHandler([](const GrpcCallFailure &failure, const ::google::protobuf::Message & /*request*/)
-                                    {
-                gate_rpc_reply_bridge::NotifyCallFailure(failure.method,
-                                                         static_cast<int>(failure.code()),
-                                                         failure.message(),
-                                                         failure.FindSentMetadata(kSessionBinMetaKey)); });
-
             // Post-startup: attach client TCP callbacks + initialize session ID generator.
             // Override connection/message callbacks BEFORE WaitAndRun so that any
             // client connecting while dependencies are still pending gets the correct
@@ -420,7 +386,7 @@ int main(int argc, char *argv[])
 
                         n.GetTcpServer().setConnectionCallback(
                             [&context](const TcpConnectionPtr& conn) {
-                                context.rpcClientHandler.OnConnection(conn);
+                                context.clientSessionHandler.OnConnection(conn);
                             });
                         n.GetTcpServer().setMessageCallback(
                             [&context](const TcpConnectionPtr& conn, muduo::net::Buffer* buf, Timestamp ts) {

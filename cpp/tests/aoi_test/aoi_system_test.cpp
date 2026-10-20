@@ -24,7 +24,6 @@
 #include "player/system/player_team.h"
 #include "proto/common/component/actor_comp.pb.h"
 #include "proto/common/component/team_comp.pb.h"
-#include "modules/scene/scene_events.h"
 #include "modules/scene/comp/scene_comp.h"
 
 #include "engine/core/type_define/type_define.h"
@@ -37,8 +36,7 @@ extern const Point kDefaultSize(20.0, 20.0);
 extern const Point kOrigin(0.0, 0.0);
 extern const auto kHexLayout = Layout(layout_flat, kDefaultSize, kOrigin);
 
-// AoiSystem 的 S2C 发送缓冲是函数内 static thread_local(不再挂在 GlobalEntity 上),
-// 测试无需预先往 globalRegistry 注册任何消息组件。
+// AoiSystem 的 S2C 发送缓冲是 aoi.cpp 内的函数内 static thread_local,测试无需预置。
 
 // 夹具显式模拟角色创建边界，查询和 AOI 更新不会代为补建身份。
 static entt::entity CreateAoiActor()
@@ -330,7 +328,7 @@ TEST_F(AoiVisibilityTest, EntitiesWithinRangeEnterEachOthersAoiList)
 }
 
 // Two entities at the same position see each other, then after one leaves
-// the scene via BeforeLeaveSceneHandler it is removed from the other's AoiList.
+// the scene via OnLeaveScene it is removed from the other's AoiList.
 TEST_F(AoiVisibilityTest, EntityRemovedFromAoiListAfterLeavingScene)
 {
     // Place both at origin so they see each other.
@@ -345,9 +343,7 @@ TEST_F(AoiVisibilityTest, EntityRemovedFromAoiListAfterLeavingScene)
     ASSERT_TRUE(IsInAoiList(entity2, entity1));
 
     // entity2 leaves the scene.
-    BeforeLeaveScene leaveEvent;
-    leaveEvent.actor = entity2;
-    AoiSystem::BeforeLeaveSceneHandler(leaveEvent);
+    AoiSystem::OnLeaveScene(entity2);
 
     // entity1 should no longer list entity2.
     EXPECT_FALSE(IsInAoiList(entity1, entity2))
@@ -437,8 +433,8 @@ TEST_F(AoiVisibilityTest, ResetEntityVisibilityKeepsPinnedEntriesOnBothSides)
     ASSERT_TRUE(IsInAoiList(entity1, entity2));
     ASSERT_TRUE(IsInAoiList(entity2, entity1));
 
-    ASSERT_TRUE(InterestSystem::PinAoiEntity(entity1, entity2));
-    ASSERT_TRUE(InterestSystem::PinAoiEntity(entity2, entity1));
+    ASSERT_TRUE(InterestSystem::AddAoiEntity(entity1, entity2, AoiPriority::kPinned));
+    ASSERT_TRUE(InterestSystem::AddAoiEntity(entity2, entity1, AoiPriority::kPinned));
 
     location2.set_x(500);
     location2.set_y(500);
@@ -480,7 +476,7 @@ TEST_F(AoiVisibilityTest, FirstEntryAfterResetKeepsPinnedEntries)
     location2.set_x(0);
     location2.set_y(0);
     AoiSystem::Update(0.0);
-    ASSERT_TRUE(InterestSystem::PinAoiEntity(entity2, entity1));
+    ASSERT_TRUE(InterestSystem::AddAoiEntity(entity2, entity1, AoiPriority::kPinned));
 
     location2.set_x(500);
     location2.set_y(500);
@@ -492,17 +488,15 @@ TEST_F(AoiVisibilityTest, FirstEntryAfterResetKeepsPinnedEntries)
 }
 
 // 离场路径对场景格子表只读/摘除。表缺失时按空表处理,不得补建。
-// 修复前 BeforeLeaveSceneHandler 对场景实体 get_or_emplace<SceneGridListComp>,会重新挂出一张空表。
-TEST_F(AoiVisibilityTest, BeforeLeaveSceneDoesNotRecreateMissingGridList)
+// 修复前 OnLeaveScene 对场景实体 get_or_emplace<SceneGridListComp>,会重新挂出一张空表。
+TEST_F(AoiVisibilityTest, LeaveSceneDoesNotRecreateMissingGridList)
 {
     AoiSystem::Update(0.0);
     ASSERT_TRUE(tlsEcs.actorRegistry.any_of<Hex>(entity1));
 
     tlsEcs.sceneRegistry.remove<SceneGridListComp>(sceneEntity);
 
-    BeforeLeaveScene leaveEvent;
-    leaveEvent.actor = entity1;
-    AoiSystem::BeforeLeaveSceneHandler(leaveEvent);
+    AoiSystem::OnLeaveScene(entity1);
 
     EXPECT_FALSE(tlsEcs.sceneRegistry.any_of<SceneGridListComp>(sceneEntity));
 }
@@ -583,95 +577,6 @@ TEST_F(AoiPriorityTest, CapacityEvictsLowestPriority)
     EXPECT_TRUE(comp->Contains(teammateEntity));
 }
 
-// PinAoiEntity adds at kPinned priority.
-TEST_F(AoiPriorityTest, PinAddsAtPinnedPriority)
-{
-    auto watcher = SpawnAt(0, 0);
-    auto target  = SpawnAt(100, 100);  // Far away — would not be added by grid scan.
-
-    EXPECT_TRUE(InterestSystem::PinAoiEntity(watcher, target));
-    auto* comp = tlsEcs.actorRegistry.try_get<AoiListComp>(watcher);
-    ASSERT_NE(comp, nullptr);
-    EXPECT_TRUE(comp->Contains(target));
-    EXPECT_EQ(comp->entries.at(target).priority, AoiPriority::kPinned);
-}
-
-TEST_F(AoiPriorityTest, UnpinOutOfRangeRemovesImmediately)
-{
-    auto watcher = SpawnAt(0, 0);
-    auto target  = SpawnAt(1000, 1000);
-    AoiSystem::Update(0);
-
-    ASSERT_TRUE(AoiSystem::PinAoiEntity(watcher, target));
-    AoiSystem::UnpinAoiEntity(watcher, target);
-
-    auto* comp = tlsEcs.actorRegistry.try_get<AoiListComp>(watcher);
-    ASSERT_NE(comp, nullptr);
-    EXPECT_FALSE(comp->Contains(target));
-}
-
-TEST_F(AoiPriorityTest, UnpinNearbyRestoresNormalPriority)
-{
-    const auto watcher = SpawnAt(0, 0);
-    const auto target = SpawnAt(1, 0);
-    AoiSystem::Update(0);
-    ASSERT_TRUE(AoiSystem::PinAoiEntity(watcher, target));
-    AoiSystem::UnpinAoiEntity(watcher, target);
-    const auto* comp = tlsEcs.actorRegistry.try_get<AoiListComp>(watcher);
-    ASSERT_NE(nullptr, comp);
-    ASSERT_TRUE(comp->Contains(target));
-    EXPECT_EQ(comp->entries.at(target).priority, AoiPriority::kNormal);
-}
-
-TEST_F(AoiPriorityTest, UnpinNearbyTeammateRestoresTeamPriority)
-{
-    const auto watcher = SpawnAt(0, 0);
-    const auto target = SpawnAt(1, 0);
-    tlsEcs.actorRegistry.emplace<TeamId>(watcher).set_team_id(42);
-    tlsEcs.actorRegistry.emplace<TeamId>(target).set_team_id(42);
-    AoiSystem::Update(0);
-    ASSERT_TRUE(AoiSystem::PinAoiEntity(watcher, target));
-    AoiSystem::UnpinAoiEntity(watcher, target);
-    const auto* comp = tlsEcs.actorRegistry.try_get<AoiListComp>(watcher);
-    ASSERT_NE(nullptr, comp);
-    ASSERT_TRUE(comp->Contains(target));
-    EXPECT_EQ(AoiPriority::kTeammate, comp->entries.at(target).priority);
-}
-
-TEST_F(AoiPriorityTest, UnpinDoesNotKeepNearbyStealthedTargetVisible)
-{
-    const auto watcher = SpawnAt(0, 0);
-    const auto target = SpawnAt(1, 0);
-    AoiSystem::Update(0);
-    ASSERT_TRUE(AoiSystem::PinAoiEntity(watcher, target));
-    tlsEcs.actorRegistry.emplace<StealthedTagComp>(target);
-    AoiSystem::UnpinAoiEntity(watcher, target);
-    const auto* comp = tlsEcs.actorRegistry.try_get<AoiListComp>(watcher);
-    ASSERT_NE(nullptr, comp);
-    EXPECT_FALSE(comp->Contains(target));
-}
-
-// Pinned entries are NOT removed when the observer moves to a different grid.
-TEST_F(AoiPriorityTest, PinnedEntitySurvivesGridLeave)
-{
-    auto watcher = SpawnAt(0, 0);
-    auto target  = SpawnAt(5, 0);  // Close — will enter via grid.
-
-    AoiSystem::Update(0.0);
-
-    // Now pin the target.
-    InterestSystem::PinAoiEntity(watcher, target);
-
-    // Move watcher far away so target falls out of grid range.
-    auto& t = tlsEcs.actorRegistry.get<Transform>(watcher);
-    t.mutable_location()->set_x(500);
-    t.mutable_location()->set_y(500);
-    AoiSystem::Update(0.0);
-
-    // Target should still be in watcher's list because it's pinned.
-    EXPECT_TRUE(IsInAoiList(watcher, target));
-}
-
 // Teammates get kTeammate priority when both have the same TeamId.
 TEST_F(AoiPriorityTest, TeammatesGetHigherPriority)
 {
@@ -692,7 +597,7 @@ TEST_F(AoiPriorityTest, TeammatesGetHigherPriority)
     EXPECT_EQ(comp->entries.at(player2).priority, AoiPriority::kTeammate);
 }
 
-// 直接写入口与 Pin 都允许尚未入格的活 actor,第一次真实插入时创建兴趣表。
+// 直接写入口允许尚未入格的活 actor,第一次真实插入时创建兴趣表。
 TEST_F(AoiPriorityTest, AddAoiEntityCreatesInterestListBeforeGridEntry)
 {
     auto watcher = SpawnAt(0, 0);
@@ -704,15 +609,6 @@ TEST_F(AoiPriorityTest, AddAoiEntityCreatesInterestListBeforeGridEntry)
     EXPECT_FALSE(tlsEcs.actorRegistry.any_of<AoiListComp>(target));
 }
 
-TEST_F(AoiPriorityTest, PinAoiEntityCreatesInterestListThroughWriteEntry)
-{
-    const auto watcher = SpawnAt(0, 0);
-    const auto target = SpawnAt(500, 500);
-    ASSERT_TRUE(InterestSystem::PinAoiEntity(watcher, target));
-    const auto* comp = tlsEcs.actorRegistry.try_get<AoiListComp>(watcher);
-    ASSERT_NE(comp, nullptr);
-    EXPECT_EQ(comp->entries.at(target).priority, AoiPriority::kPinned);
-}
 
 TEST_F(AoiPriorityTest, AbsentInterestListReadsAndRemovalDoNotCreateIt)
 {
@@ -720,7 +616,6 @@ TEST_F(AoiPriorityTest, AbsentInterestListReadsAndRemovalDoNotCreateIt)
     const auto target = SpawnAt(5, 0);
     EXPECT_FALSE(IsInAoiList(watcher, target));
     InterestSystem::RemoveAoiEntity(watcher, target);
-    AoiSystem::UnpinAoiEntity(watcher, target);
     InterestSystem::UpgradePriority(watcher, target, AoiPriority::kPinned);
     InterestSystem::DowngradePriority(watcher, target, AoiPriority::kPinned, AoiPriority::kNormal);
     EXPECT_FALSE(tlsEcs.actorRegistry.any_of<AoiListComp>(watcher));
@@ -1127,7 +1022,7 @@ TEST_F(AoiTeammateRefreshTest, LeaveDowngradesBothDirectionsButKeepsPinned)
     AoiSystem::Update(0.0);
     ASSERT_EQ(PriorityOf(leaver, mateB), AoiPriority::kTeammate);
     ASSERT_EQ(PriorityOf(mateB, leaver), AoiPriority::kTeammate);
-    ASSERT_TRUE(InterestSystem::PinAoiEntity(leaver, mateC));
+    ASSERT_TRUE(InterestSystem::AddAoiEntity(leaver, mateC, AoiPriority::kPinned));
     ASSERT_EQ(PriorityOf(leaver, mateC), AoiPriority::kPinned);
 
     SetTeam(leaver, 0);

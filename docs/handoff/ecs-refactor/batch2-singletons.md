@@ -420,3 +420,7 @@ NodeInfo 已移为 Node 成员，服务发现改由 ServiceDiscoveryManager 的 
 新增/适配节点身份跨 Clear、默认实例、安装恢复、跨线程同一地址、快照去重/移除/边界与请求拒绝回归。atomic 仅发布身份地址，不承诺内容并发和引用寿命；跨线程用例在 owner 固定且无并发写时读取。生成层不再转移全局 tip，旧生成头的空 TRANSFER 宏暂留，统一重生成后删除。
 
 与 S 子批证据区别：当前 EcsContext 布局和测试已继续变化，先前 5/5 不代表本版本通过。未执行本批最终生成、构建和测试；完整回执、静态证据、Java 0.1.0-SNAPSHOT 的不适用边界及恢复验证顺序见 [总回执 §7](README.md)。
+
+### 2026-10-16 第6批更正（保留以上历史回执）
+
+“旧 getter 对照 2/5 失败”对应 globalRegistry 时期的旧断言，当前四条会话索引形状用例对基线同样通过，已删除。会话索引不进 registry 由 globalRegistry 删除在编译期守住；保留 ContextClearDropsBothIndexesAndAllowsNewSession 验证清理。NodeInfo 门面删除 atomic 与两个越界于线程契约的用例，空 TRANSFER_ERROR_MESSAGE 宏已删除；完整运行证据见第6批最终回执。

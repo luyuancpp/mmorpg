@@ -77,6 +77,9 @@ func (l *RequestBattleTicketLogic) RequestBattleTicket(in *battlepb.RequestBattl
 		}, nil
 	}
 	playerId := detail.GetPlayerId()
+	if l.svcCtx.Authority != nil {
+		return globalRequestBattleTicket(l.ctx, l.svcCtx, playerId, in.GetBattleId())
+	}
 
 	record, err := loadSpectateBattle(l.svcCtx, in.GetBattleId())
 	if err != nil {

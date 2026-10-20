@@ -118,7 +118,7 @@
 
 【保留部分的约束（写进 S0 规范，S1 机械守住）】
 - 唯一创建点：组件只在原型工厂或加载时创建；按需创建的可选组件只能由所属模块的写路径显式 try_get + emplace。
-- 组件是纯数据：不继承、不嵌 registry。TimerTaskComp 是唯一例外，必须写 in_place_delete。
+- 组件是纯数据、不嵌 registry。TimerTaskComp 可搬移，in_place_delete 只为指针稳定、不是正确性前提；具名容器组件允许继承 std 容器，不提供从基类容器到组件类型的转换（见 ecs-component-access-rules.md）。
 - 类型即语义：不用基础类型或 std 别名当组件。
 - 实体句柄不出进程（第 4 批）。
 - 不在两个实体的组件之间共享所有权。

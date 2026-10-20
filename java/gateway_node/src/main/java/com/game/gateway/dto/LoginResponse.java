@@ -12,9 +12,10 @@ import java.util.List;
  *   <li>code = 0   — success: tokens & player list populated.</li>
  *   <li>code = 100 — QUEUEING: client should retry after {@code retryAfterMs}.</li>
  *   <li>code = 101 — QUEUE_TIMEOUT: hard stop, advise the player.</li>
- *   <li>code = 401 — auth rejected (e.g. WeChat code expired).</li>
+ *   <li>code = 401 — auth rejected (e.g. WeChat code expired); message = {@code upstream_err=<tip>} for login's in-band rejections.</li>
  *   <li>code = 429 — rate-limited (IP cap / account cooldown).</li>
- *   <li>code = 500 — internal error.</li>
+ *   <li>code = 500 — internal error: login unavailable, or a login in-band tip that Tip.xlsx marks as fault
+ *       (message still {@code upstream_err=<tip>}; see LoginService#httpCodeForUpstreamTip).</li>
  * </ul>
  *
  * <p>{@code retryAfterMs} / {@code queuePos} are only meaningful when code=100.

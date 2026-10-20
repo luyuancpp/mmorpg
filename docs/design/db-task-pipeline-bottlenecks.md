@@ -146,20 +146,37 @@
 | # | 严重度 | 缺口 | 后果 | 修法 |
 |---|---|---|---|---|
 | G0 | 严重 | login 生产者在 Kafka 选主时自锁:持 `p.mu` 调 `markPartitionUnavailable` 再加同一把锁 | Kafka broker 重启/选主时 login 读档全部挂起,只能重启 login | **已修**(§7) |
-| G1 | 严重 | MySQL 写无条件整行覆盖,存储侧没有栅栏 | 静默回档,不自愈,无告警 | 根治:`(owner_epoch, save_seq)` 条件写;治标:SQL 读写超时、ctx 随租约取消、缓存回写挪到 verify 之后、续租失败退避重试 |
+| G1 | 严重 | MySQL 写无条件整行覆盖,存储侧没有栅栏 | 静默回档,不自愈,无告警 | 根治:`(owner_epoch, save_seq)` 条件写;治标:SQL 读写超时、ctx 随租约取消、缓存回写挪到 verify 之后、续租失败退避重试(治标已落码,未编译未测试,见 §7) |
 | G2 | 严重 | 死信没有消费者;重试豁免太窄(1040、未知 MsgType、MySQL 重启都会耗尽 3 次) | 存盘不落库,父键一丢就是回档 | 修复项 ② 批 A;死信告警与重放工具 |
 | G3 | 高 | 先判 seq 后判 epoch | 新主的写在重试队列时,老主迟到写先落库并推进游标,MySQL 停在老主状态 [I] | 按 `(epoch, seq)` 字典序比较,与 G1 同批 |
 | G4 | 高 | 重试不绑分区属主;读不拿锁且无条件写子表缓存;读写不同分区 | 子表缓存被旧值覆盖(TTL 3600 秒) | 修复项 ①④;缓存改 CAS 写 |
 | G5 | 中 | 游标/epoch 缺键放行;游标可能倒退;两张子表不原子 | 旧版本重新通过守卫 | Lua 取最大值单调推进(纯 SETNX 会让游标推不动) |
-| G6 | 中(可用性) | 共用消费组;Stop 先 cancel 导致必等 10 秒;readiness 不反映入组 | 所有 zone 暂停;冷登录可能失败 | 修复项 ③;Stop 改成先撤拉取再等 worker;minReadySeconds |
+| G6 | 中(可用性) | 共用消费组;Stop 先 cancel 导致必等 10 秒;readiness 不反映入组 | 所有 zone 暂停;冷登录可能失败 | 修复项 ③;Stop 改成先撤拉取再等 worker;minReadySeconds(治标已落码,未编译未测试,见 §7;`minReadySeconds: 20` 已进 `deploy/k8s/manifests/go-svc/db.yaml`,随 `e76f6f747` 入库,下一次 db 滚动时生效) |
 | G7 | 中 | 停机路径没有自动化测试;两副本改动未编译 | 结论只是静态推断 | Codex 按 no-single-node-horizontal-scaling-20261001.md §3.5 做双实例杀进程、kind 删 Pod 实测 |
 | G8 | 中 | gate 滚动断会话;没有运行时版本握手 | 违背"玩家在线不受影响" | gate 单独设计;发版说明写最低可混跑版本 |
-| G9 | 低 | go_services.ps1 用 `Stop-Process -Force` 停进程(:879) | 本机停 db 等同崩溃 | 先发 Ctrl+C,超时再强杀 |
+| G9 | 低 | go_services.ps1 用 `Stop-Process -Force` 停进程(旧版 `tools/scripts/go_services.ps1` 的 `Invoke-Stop`) | 本机停 db 等同崩溃 | 先发 Ctrl+C,超时再强杀(治标已落码,未编译未测试,见 §7) |
 
 **条件写的两个要点 [I]:**
 - `save_seq` 必须由 C++ 生产端按玩家单调发号,不能用分区 offset(游标按分区记、换代后 offset 重置、读写本不同分区)。
 - 只带 `owner_epoch` 不够:僵尸实例与新属主用的是同一个 epoch。Java 版的 `WHERE owner_epoch=?`(PROGRESS.md:7169)对这种情况推断同样无效,待 Java 侧核实。
 - 治标措施撤不回已进入 MySQL 的语句,不能当栅栏。
+
+**G6 停机顺序:Stop 五步与 ③④ 隐式互等(2026-10-16 补,未编译、未测试,待 Codex 验证):**
+- 五步(`KeyOrderedKafkaConsumer.Stop`,S4 落码):① 撤拉取(关 `pullStop`)→ ② 等消费循环退出:各 claim 把已派发的任务做完并标记(`drainClaimForShutdown`,每个 claim 最多 `shutdownDrainTimeout` 10s),sarama 释放会话时最后一次提交位点,本步上限 10s + `consumerShutdownGrace` 5s → ③ 离组(`consumer.Close`)→ ④ 取消 worker 并等退出 → ⑤ 归还重试收据、收掉交接闸。R2 合入后追加 ⑥ `enqueuer.close()`。原则是先提交、后离组。
+- 缺口 [C]:sarama v1.43.1 的 `Close` 经 `leave()` 要拿 `consumerGroup.lock`;`Consume` 从入口持有这把锁,直到会话 `release` 返回;`release` 依次等全部 ConsumeClaim 返回 → Cleanup → `offsets.Close`(最后一次提交)→ 停心跳。修前 ConsumeClaim 的派发 select 没有撤拉取一路:worker 通道(容量 1000)满时,只能等 worker 腾出槽位,或者等 `w.ctx` 取消(也就是 `c.ctx`,第④步才取消)。停机时 claimCtx 又不随会话取消。MySQL 卡住时每条语句可能等满 30s 读超时,于是 ② 等满 15s 超时 → ③ 的 Close 等锁 → 会话等 claim → claim 等 ④,而 ④ 排在 ③ 之后。这不算严格死锁,但实际会一直拖到 45s SIGKILL,④⑤ 都不执行:重试收据没归还,要等租约过期才被回收。
+- 修法有三处,都在 KOC。
+  - 主修:派发 select 加撤拉取一路,用 `claimAcker.untrack` 只摘掉手里这条没派发出去的消息,然后走 `drainClaimForShutdown`。这条消息一定在 `order` 末尾:track 只在 claim 自己的 goroutine 里按 offset 递增追加,压缩保留尾部。不能用 `fail`,因为它会取消 claimCtx,把已派发在途任务的位点一起作废。被摘掉的这条和它之后的消息,由下一任属主从已提交位点重放。
+  - 辅修:② 超时分支里先 `c.cancel()` 再走 ③,解开会话里只认 `c.ctx` 的等待:毒消息落 DLQ、`drainClaimForShutdown` 的 consumerDone 一路。这样仍是先提交、后离组,因为 leave 要等会话释放完才拿得到锁。写 SQL 的 ctx 来自排序锁租约,不受影响;SQL 之后的复核、发布、游标推进会失败延后,效果与 ④ 相同,只是提前了。正常路径(② 按时结束)不提前取消。
+  - 补修(R1 语义复核):消息通道关闭分支的排空 select 补撤拉取一路,`session.Context().Done()` 与 `yieldDone` 两路先判撤拉取,再走原来的 `drainAfterStop`,写法与顶层 select 相同。sarama v1.43.1 的分区消费者遇到 `ErrOffsetOutOfRange` 会自行关闭消息通道,会话还在。修前这时停机,Stop ① 取消 consumeCtx 带出的会话取消被当成再平衡:`acker.stop` 作废已完成的位点,再等满 `claimDrainTimeout`。这既不符合「已派发的做完并标记」,也突破了「每个 claim 最多 `shutdownDrainTimeout`」。撤拉取之前已经按再平衡或失败收尾的 claim 仍走原路径,最多等 `claimDrainTimeout`。
+- 与 R2(S1 修订稿 §1.6、§1.7、§3)的接缝 [I]:R2 的租约 acquire 是非阻塞登记,不在辅修要解开的等待之列。R2 把 `drainClaimForShutdown` 的 `acker.wait()` 换成 `claimDrained(acker, lease)` 时,必须保留 consumerDone 和 `shutdownDrainTimeout` 计时器两路:`lease.idle()` 与入队层的异步确认都不随 `c.ctx` 取消(入队层第⑥步才关),只能靠排空时限兜底。两路都没有时,③④ 互等会在 R2 里重新出现。
+- 剩余风险 [I]:
+  - sarama 自身的网络调用(提交、心跳、JoinGroup、LeaveGroup)慢时,Close 照样要等,只受它的 Net 超时(默认 30s)和 `terminationGracePeriodSeconds: 45` 兜底,不受我们控制;
+  - ④ 要等在途写 SQL 的读超时;②③④ 累加可能超过 45s,超出部分由 SIGKILL 截断,没标记的位点由新属主重放。
+- 另一处缺口(未修,建议单独立项):`routeToSubShard` 在 `subShardCount ≤ 1` 时对子 shard 通道做阻塞发送,没有 `w.ctx` 出口。④ 取消之后,如果子 shard 先退出而通道已满,路由会永久阻塞,`c.wg.Wait` 随之挂住。生产 `SubShardCount: 8`(go/db/etc/db.yaml)碰不到。
+- 回归测试在 `go/db/internal/kafka/consumer_shutdown_test.go`,替身 `fakeConsumerGroup` 已按 sarama 的锁语义改写:Consume 持锁直到会话释放,Close 先关 closed 再拿锁。
+  - claimAcker:`TestClaimAcker_UntrackRemovesOnlyUndispatchedTail`、`TestClaimAcker_UntrackConcurrentWithAck`;
+  - ConsumeClaim:`TestConsumeClaim_ShutdownWhileDispatchBlockedUntracks`、`…DispatchBlockedReturnsWithinDrainTimeout`、`…DrainStopsWhenWorkersCanceled`、`…DrainIgnoresHandoffYield`、`…WhileDrainingClosedMessagesMarks`、`…WhileDrainingClosedMessagesReturnsWithinDrainTimeout`(后两条用 `probedSession` / `probedClaim` 计 select 求值次数,确定地停在关闭分支的排空 select 上);
+  - Stop:`TestStop_FullWorkerQueueDoesNotStallLeave`、`TestStop_DrainTimeoutCancelsWorkersBeforeLeave`、`TestStop_WhileHandoffGateWaitingReturnsPromptly`、`TestStop_MemberWithoutClaimsReturnsPromptly`。
 
 ### 4.5 缺口修好之前的发版操作
 
@@ -196,6 +213,7 @@
 ### 5.2 落地顺序
 
 1. **第 0 批(已落码,待验证):** 子 shard、G0、⓪、汇总脚本修复;另需把 Kafka 镜像从 `apache/kafka:latest` 钉到具体版本(未做)。
+   - 2026-10-16 更新:Kafka 镜像已钉版(③ PR-A,2026-10-15 落码,未验证):`deploy/docker-compose.yml` 两处、`deploy/k8s/manifests/infra/kafka.yaml`、`kafka-topic-init.yaml` 四处都是 `apache/kafka:4.3.1@sha256:77e3df9054047a88b520d0cc46e16696d3b22022e1d580aeccd2632df6532837`;上线前的 V0 核对与升级步骤见 `deploy/k8s/README.md`「镜像钉版本」。
 2. **第 1 批(正确性):** ① 与 ② 批 A,并行开发、串行合入。分别对应"读到旧档"和"丢存盘",都不依赖条件写,也不需要换代 topic。
 3. **第 2 批:** ③。拆组后每次 go/db 发布只停本 zone,后续各批的滚动都受益;共享组下 ④ 的 owner 模式会因任一 zone 再平衡而全服出现重试撤回尖峰。
 4. **第 3 批:** ④(a)(c)。
@@ -241,6 +259,8 @@
 
 新旧并存安全:读不推进游标、不拿排序锁、不进 epoch 守卫,写的分区函数没变,混跑只会单调变好。覆盖范围:子表缓存还在时 login 根本不发读(ensure_player_all_data_async.go:82-87);访客与合服后跨 topic 的读写不在覆盖范围。
 
+2026-10-16 落码说明(① 已落码,未编译、未测试,待 Codex 验证):契约、两侧实现、告警与滚动步骤以 [db-task-kafka-partition-contract.md](db-task-kafka-partition-contract.md)「分区函数契约」「滚动对齐步骤与观测」为准,与上表的差异:第 1 步改用 Kafka 镜像自带的 console consumer 只读抽样(kcat 的 `%s` 会被载荷换行打断,只能用来核对分区),离线复核用 `TestDBTaskPartitionAuditDump`;第 4 步的 go/db 观测随下一次例行 go/db 发版上,不再绑 ②A;C++ 可选批也已落码(显式 `consistent_random`、`DbTaskKafkaKey`、golden 测试),随下次 scene / battle 例行发版;读规则告警等 login 全部滚完再 apply。屏障的五个缺口与放大效应见契约文档「屏障覆盖范围与剩余缺口」。
+
 **② 1040 延后与连接预算(未经独立复核)**
 - 批 A:handler 返回 error,识别 1040、1203、ErrBadConn、ErrInvalidConn、net.Error 并包成 errStoreConnUnavailable;写任务豁免重试预算、读任务照常消耗;新增 `db_task_deferred_total{reason}`;导出 DBStats(go/db、data_service 5 个池、friend、trade);同批加"重试队列持续增长""deferred 持续大于 0"告警。
 - 批 B:go/db 主池按 ceil(10/2)×8 推导为 40,访客池 4/1,名字池 8/2,gateway Hikari 4/1;部署前 `Assert-MySqlConnectionBudget` 门禁。Z=2、E=1 时:稳态 364 + 单 zone 滚动增量 71 + 预留 30 = 465 ≤ 500。
@@ -255,6 +275,11 @@
 - 回档:组判定挪到 Step 0;merge_zone 只认唯一权威组(原来的"多组取最小 LAG"是 fail-open)。
 - 上线:发布带闸二进制、配置不变(记录 rebalance_gap 基线)→ 发布脚本工具 → 金丝雀 zone 切组(冻结其它 zone 发布;看 seeded=10、conflict=0、gap<15 秒、播种值等于切换前 CURRENT-OFFSET)→ 浸泡 24 小时并做一次 delete pod → 其余 zone 每天切 1–2 个。回滚:单 zone 反向交接。
 - 如实说明:闸 + 守望做不到绝对互斥,兜底靠按 topic 的游标;"没有重叠就没有并发写者"要等 ① 落地后才成立。
+- 2026-10-16 落码说明(③ 已落码,未编译、未测试,待 Codex 验证;设计、决策表与 runbook 以 [db-consumer-group-per-zone.md](db-consumer-group-per-zone.md) 为准)。相对原方案的四处偏离:
+  - **最终形状 + 必填键证明**(取代 OCI label 等镜像能力校验):go-svc-db-config 只有四种形状——最终形状 `GroupID: "G"`(任何二进制都能起),交接形状 `ConsumerGroup` + `GroupHandoffFrom`、不写 `GroupID`(交接闸之前的二进制把 `GroupID` 当必填,在 `conf.MustLoad` 就拒启);回档 Step 6、全新 namespace、收尾之后的 keep 都只渲染最终形状。
+  - **收尾后去掉 `GroupHandoffFrom`**:`kafka_offset_reset.ps1 -FinalizeHandoff` 删掉旧组在本 topic 的位点之后,以 keep 再跑一次 zone-up,`k8s_deploy.ps1` 读到「交接形状 + 对方组已无位点」就渲染最终形状(source=handoff-finalized),db 滚动一次;收尾之后进程里没有交接闸,不再依赖 legacy 组的 coordinator。
+  - **运行时 R7 保留**:两组在同一分区都有位点且对方更大时闸不放(`wait_own_behind_peer`,告警 `DbConsumerGroupHandoffOwnBehindPeer`),作为手工部署、旧脚本的纵深防御;部署期由 `k8s_deploy.ps1` 读 Kafka 事实(`Read-DbGroupTopicFacts`,`kubectl exec` 进 kafka-0)做 F2 / F4 的拒绝。
+  - **回档永远落 zone 组**:`k8s_zone_rollback.ps1` 删掉 Step 2 的等待循环,Step 5 重置 zone 组并用 `-RetireGroup` 删 legacy 组在本 topic 的位点,Step 6 固定 `-DbConsumerGroup zone`,落到 final(Z)。
 
 **④ 重试只交给分区属主**
 - 属主表:claim 的 ctx 还活着就是属主;新增 `kafka:retry:queue:{topic}:p{N}`,分拣用单条 Lua;`RetryRouting` 开关(shared/owner);"认领之后、执行之前"的每个出口都要原子搬走收据。
@@ -377,6 +402,39 @@ pwsh -File tools/scripts/test_stress_summarize.ps1
 
 通过标准:新增用例全绿,包内既有用例无新增失败。login 的回归用例在改动前的代码上应当以"deadlocked"超时失败;需要红/绿证据时,在临时 worktree 里只回退 key_ordered_producer.go 跑一次,不要动当前工作区。
 
+### S4 落码(G1 治标与 go/db 小项)
+
+> 2026-10-16 补。状态:**已落码,未编译、未测试,待 Codex 验证**。go/db 部分随 `de4960bee` 入库(其后 R1 语义复核的补修——§4.4「G6 停机顺序」那三处与对应用例——以及 R2(④)对 KOC、`store_failure.go` 等同批文件的改动,随 `e76f6f747` 入库);
+> 脚本随 `a7c510d65` / `0f6690604` 入库;`deploy/k8s/manifests/go-svc/db.yaml` 的 `minReadySeconds: 20` 与 `deploy/k8s/db-task-retry-alerts.yaml` 的 `db-task.ordering-lease` 组随 `e76f6f747` 入库。
+> 规格:`docs/handoff/godb-pipeline-impl-20261015/S4-g1-and-small-items-spec.md`(没有单独复核);落码阶段 A3 因额度中断没有报告,由 R1 对照代码核实补完。验证与上线清单见[上线待做](../ops/godb-pipeline-launch-todo.md) §4。
+
+| 项 | 文件 / 符号 | 要点 |
+|---|---|---|
+| G1 ① 业务池超时 | `go/db/internal/logic/pkg/proto_sql/db.go` 的 `newServiceMysqlConfig`(L-04 已做) | 本项不改代码,只补单测(上线待做 §2.3 第 9、10 条) |
+| G1 ② SQL 接 ctx | KOC 的 `handleDBWriteOp` / `handleDBReadOp` 改用 `store.WithContext(ctx)` | `dbOpHandler` 签名不变;写的 ctx 来自租约,读的 ctx 随 claim |
+| G1 ③ 核锁前移 | KOC 的 `runDBOp` | 写任务固定顺序:`beginSQL` → handler → `finish` →(sqlCtx 未被本进程取消才 `reportStoreResult`)→ 落库后复核 `confirm` → 核锁 `verify` → `publishDBOpResult`;`handleTask` 里原来那段 verify 删除。`markAppliedSeq` / `markAppliedOwnerEpoch` 的调用与顺序不变 |
+| G1 ④ 续租有界退避 | `go/db/internal/kafka/ordering_lease.go` 的 `orderingLease.watch` | 本地单调时钟截止时间 = validUntil − `orderingLeaseSafetyMargin`(30s);首次 500ms、逐次翻倍、封顶 5s、±20% 抖动;单次 3s;每轮故障最多 10 次;用尽记 `renew_exhausted`,到截止记 `renew_deadline`,发现易主立即 `owner_changed`;刻意不监听 worker ctx |
+| G1 ⑤ 释放计数 | 同文件 `releaseOrderingLock` | `db_ordering_lock_release_total{outcome=released\|not_owner\|error\|skipped_sql_abandoned}`;not_owner 打 ERROR「ordering lock already expired or taken over at release; MySQL may hold an older snapshot until the next save」 |
+| G1 告警 | `deploy/k8s/db-task-retry-alerts.yaml` 组 `db-task.ordering-lease` | `DbOrderingLockReleasedNotOwned`(critical,`increase(db_ordering_lock_release_total{outcome="not_owner"}[10m]) > 0`);`DbOrderingLeaseLost`(warning,按 reason:`owner_changed` / `renew_exhausted` / `renew_deadline` / `verify_error`);`db_ordering_lease_renew_retry_total` 只进看板 |
+| margin 自检 | `ordering_lease.go` 的 `leaseMarginCoversLockWaits`,在 `NewKeyOrderedKafkaConsumer` 里调用 | 两个会话锁等待之和 + 5s 超过 30s margin,或任一值 ≤0(关闭)时打 ERROR,不拒启 |
+| G6 停机顺序 | KOC 的 `Stop` / `stop` | R2(④)合入后为六步:① 撤拉取 ② 等消费循环退出 ③ 离组 ④ 取消 worker 并等退出 ⑤ 归还重试收据、收掉交接闸 ⑥ `c.enqueuer().close()`。② 超时的处理与 ③④ 互等的修法见 §4.4「G6 停机顺序」 |
+| G6 minReadySeconds | `deploy/k8s/manifests/go-svc/db.yaml` | `minReadySeconds: 20`;属于 Deployment spec,改它不触发 Pod 重建,下一次滚动生效;`terminationGracePeriodSeconds` 仍为 45 |
+| G9 优雅停 | `tools/scripts/go_services.ps1` 的 `Invoke-Stop`(`Send-ConsoleCtrlC` / `Wait-ProcessExit` / `Stop-ProcessTree`) | 先对全部目标发 Ctrl+C,再按剩余时间逐个等(db 35s,其余 25s,`-StopTimeoutSeconds` 可覆盖),超时或发不出去时 `taskkill /T /F` 强杀进程树;`-ForceStop` 走旧行为;启动不得加 `-NoNewWindow` |
+| 测量打点 | `go/db/internal/metrics/pipeline.go`;`db_task_stage_seconds` 新 stage | `db_task_redis_step_seconds{op,step}`(11 个 step,`RedisSteps`)、`db_ordering_guard_total{outcome}`、`db_subshard_batch_size`、`db_redis_pool_*`(共享 client 只导出一份);stage 新增 `sql` / `task_total` / `queue_wait` / `kafka_e2e`;`stress_summarize.ps1` 新增 2d「DB write path」、2e「DB Redis steps」、2f「DB retry routing」三段 |
+| Lua tonumber | KOC 的 `luaDecimalGreaterFn` / `luaMarkAppliedEpoch` | applied_epoch 改为十进制串比较(先比长度再逐字节),uint64 全范围精确;Redis 里的值格式不变;条件写要比较 uint64 时复用它 |
+| 过时注释 | `placement_route.go`、`proto_sql/store_registry.go`、`migrate/plan.go`(含 `plan_test.go`) | REPLACE / ODKU 改为 proto2mysql Save 的实际语句链(按主键 UPDATE → 0 行再 INSERT → 1062 再 UPDATE);保留「无主键会追加新行」 |
+| L-04 单测 | `l04_deferral_test.go`、`run_db_op_test.go`、`proto_sql/service_pool_test.go`、`metrics_test.go` | 上线待做 §2.3 的 11 条,用例对照见那里 |
+
+三句语义,任何改动都不要回退:
+1. **不是栅栏**:撤不回已经进了 MySQL 的语句。go-sql-driver 取消 ctx 只关客户端连接、不发 KILL QUERY;`owner_changed` 时锁已不归本实例,窗口只是缩小。根治靠条件写([db-write-fencing-mysql.md](db-write-fencing-mysql.md))。
+2. **只有失租才取消写 SQL**:写 SQL 的 ctx 由 `beginSQL` 交出(以 `context.Background` 为父、`WithCancelCause` 派生),只在 `setLost` 时取消;claim 收回、进程停机、worker ctx 取消都不取消正在跑的写 SQL——取消之后锁随任务释放,而服务端可能还在执行它,晚于别的实例的新版本提交就是回档。不用带 deadline 的 ctx:`context.DeadlineExceeded` 会被 storeerr 归成 conn_lost,误触发冷却。
+3. **在途取消后锁留给 TTL**:SQL 在途时因失租被取消的(`sqlAbandoned`),`releaseOrderingLock` 不删锁、计 `skipped_sql_abandoned`,留给 2 分钟 TTL;该玩家这段时间的写报 `errOrderingLockBusy` 排队,不耗预算。
+
+A3 落码相对规格的三处偏离(以代码为准):
+1. **Consume 用随撤拉取取消的 consumeCtx**(KOC `Start` 的消费循环):`consumeCtx` 派生自 `c.ctx`,Stop 第①步关 `pullStop` 时取消,交接闸 `await` 与 `Consume` 都用它。规格只让循环条件判 `pullStopped()`、Consume 仍用 `c.ctx`;那样交接闸前的等待会卡住 Stop,没分到分区的成员(副本数多于分区数)要等满 ② 的超时。停机时 claim 的收尾不看会话 ctx(`drainClaimForShutdown`),先提交、后离组不变(用例 `TestStop_WhileHandoffGateWaitingReturnsPromptly`、`TestStop_MemberWithoutClaimsReturnsPromptly`)。
+2. **`runDBOp` 在 sqlCtx 已取消时返回 `context.Cause(sqlCtx)`**:handler 失败且 SQL 的 ctx 已被本进程取消时,返回 `fmt.Errorf("%w (SQL error: %v)", context.Cause(sqlCtx), handlerErr)`——写即包着 `errOrderingLeaseLost` 的失租错误,原错误只作文本附上、不进错误链。驱动这时常给出「连接已关」一类错误,带着 storeerr 标记原样返回会被记成 conn_lost、写还会豁免重试预算。规格只写了「sqlCtx 未取消才 reportStoreResult」与「handlerErr 非空时返回」。
+3. **`errOrderingLeaseLost` 的文本改为 "ordering lock ownership lost"**(`go/db/internal/kafka/store_failure.go`,原文是 "ordering lock ownership lost after DB write"):失租现在可能发生在 SQL 之前、之中或之后,续租放弃、本地截止时间已过、核锁发现易主都用它;规格只要求改注释。按 `errors.Is` 判断的调用方不受影响,按旧文本 grep 日志的要去掉 "after DB write"。
+
 ---
 
 ## 8. 未核实项
@@ -385,7 +443,9 @@ pwsh -File tools/scripts/test_stress_summarize.ps1
 - ~~proto2mysql 的 Save 实际是 REPLACE 还是 INSERT…ODKU~~ 已核实(2026-10-13,proto2mysql v0.2.0 源码):都不是。Save 是「按完整主键 UPDATE → 0 行则 INSERT → 1062 则重试 UPDATE → 仍 0 行则 FOR UPDATE 归类」,1~4 条语句,没有版本条件。store_registry.go:294 与 migrate/plan.go:177 的说法都过时。
 - go-sql-driver 默认超时;客户端断开后 MySQL 是否仍执行已排队的语句;Redis 的 appendfsync 实际值;topic 实际保留期。
 - `--reset-offsets` 对非 Empty 组在钉死的 Kafka 版本上的退出码;`--delete-offsets` 的成功条件。
+  - 2026-10-16 更新:版本已钉 `apache/kafka:4.3.1`,这两项改为「待 Codex 在 4.3.1 上核实(V3)」,清单与回填位置见 db-consumer-group-per-zone.md §11 与[上线待做](../ops/godb-pipeline-launch-todo.md) §6。
 - 生产 C++ 是否全部走 CRC32(等 ① 第 1 步的 kcat 抽样);librdkafka 子模块本机未检出,golden 表要 Codex 双向复核。
+  - 2026-10-16 更新:源码静态核对已闭合(db_task 只有 `SavePlayerToRedisImpl` 一个生产点,`createProducer` 显式钉 `consistent_random`);线上分布改由 console consumer 只读抽样证实;子模块在 C1 落码时已检出;golden 表改为 Go `crc32`、sarama、librdkafka 三方机械复核(契约文档「golden 向量」)。
 - be6b4ab1d 双副本基线从没运行过;线上实际镜像与副本数未知。
 - ② 整体没有经过独立复核;MySQL 每条连接内存、Hikari 默认值未核实。
 - 假设值:guild 在 TiDB 上每笔事务 20–30ms;单 zone 峰值约 2000 task/s。

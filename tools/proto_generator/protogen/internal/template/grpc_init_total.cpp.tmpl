@@ -2,47 +2,15 @@
 
 #include <chrono>
 #include <cstdint>
-#include <functional>
-#include <google/protobuf/message.h>
 #include <proto/common/base/node.pb.h>
 #include <proto/common/base/common.pb.h>
 
 {{ range .GrpcFiles }}
-{{/* 空 package 时不能包 namespace:`namespace  {}` 是匿名命名空间,跨编译单元不可见,
-     会导致 LNK2019(先例:battle 域 proto 无 package)。空则落全局命名空间,
-     与引用侧生成的 `::SetXxxHandler` 全局限定一致。*/}}
+{{/* 无 package 时保持全局声明,与其他编译单元的定义一致。 */}}
 {{if .CppPackage}}namespace {{.CppPackage}} {{"{"}}{{end}}
-    void Set{{.FileBaseNameCamel}}Handler(const std::function<void(const GrpcReplyContext&, const ::google::protobuf::Message& reply)>& handler);
-    void Set{{.FileBaseNameCamel}}IfEmptyHandler(const std::function<void(const GrpcReplyContext&, const ::google::protobuf::Message& reply)>& handler);
-    void Set{{.FileBaseNameCamel}}FailedHandler(const std::function<void(const GrpcCallFailure&, const ::google::protobuf::Message& request)>& handler);
-    void Set{{.FileBaseNameCamel}}IfEmptyFailedHandler(const std::function<void(const GrpcCallFailure&, const ::google::protobuf::Message& request)>& handler);
     void Set{{.FileBaseNameCamel}}CallDeadline(std::chrono::milliseconds deadline);
 {{if .CppPackage}}{{"}"}}{{end}}
 {{ end }}
-
-void SetIfEmptyHandler(const std::function<void(const GrpcReplyContext&, const ::google::protobuf::Message& reply)>& handler){
-{{ range .GrpcFiles }}
-    {{.CppPackage}}::Set{{.FileBaseNameCamel}}IfEmptyHandler(handler);
-{{ end }}
-}
-
-void SetHandler(const std::function<void(const GrpcReplyContext&, const ::google::protobuf::Message& reply)>& handler){
-{{ range .GrpcFiles }}
-    {{.CppPackage}}::Set{{.FileBaseNameCamel}}Handler(handler);
-{{ end }}
-}
-
-void SetIfEmptyFailedHandler(const std::function<void(const GrpcCallFailure&, const ::google::protobuf::Message& request)>& handler){
-{{ range .GrpcFiles }}
-    {{.CppPackage}}::Set{{.FileBaseNameCamel}}IfEmptyFailedHandler(handler);
-{{ end }}
-}
-
-void SetFailedHandler(const std::function<void(const GrpcCallFailure&, const ::google::protobuf::Message& request)>& handler){
-{{ range .GrpcFiles }}
-    {{.CppPackage}}::Set{{.FileBaseNameCamel}}FailedHandler(handler);
-{{ end }}
-}
 
 {{/* 同一节点类型可能有多个 gRPC 文件(battle_node + player_battle):互相独立的 if,不能写成 else if。 */}}
 void SetGrpcCallDeadline(uint32_t nodeType, std::chrono::milliseconds deadline){

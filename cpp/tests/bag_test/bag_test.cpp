@@ -1,4 +1,5 @@
 #include <gtest/gtest.h>
+#include <google/protobuf/unknown_field_set.h>
 #include "engine/core/type_define/player_guid_comp.h"
 
 #include "engine/core/type_define/type_define.h"
@@ -1955,7 +1956,7 @@ TEST(EvictionPolicyTest, EvictingTheMergeTargetStillLandsEverything)
     EXPECT_TRUE(bag.IsLayerConsistent());
 }
 
-// 同一场景走批量路径(ReserveBatch)。
+// 同一场景走批量路径(AddItems 批量入口)。
 TEST(EvictionPolicyTest, EvictingTheMergeTargetInABatchStillLandsEverything)
 {
     Bag bag;
@@ -2567,12 +2568,11 @@ TEST(BagTest, LayerConsistencyHoldsAcrossEveryMutator)
 //   ① 加固:缩容被拒绝,容量不变、仍一致;
 //   ② 谓词:绕过 Bag、直接在自己注入的布局上缩容(FlatLayout::Resize 不设防),必须报得出来。
 // 布局要在空包时注入(SetLayout 对非空包会拒绝,见 SetLayoutRefusedWhileBagHoldsItems),
-// 还原入口不替换布局；不能跨 AddItem 的候选提交保留布局借用。
+// 成功入包会提交候选布局，测试观察引用只能从当前 Bag::Layout() 重新取得。
 TEST(BagTest, LayerConsistencyPredicateActuallyDetectsBreakage)
 {
     Bag bag;
     auto injected = std::make_unique<FlatLayout>(kDefaultCapacity);
-    FlatLayout* layout = injected.get();
     bag.SetLayout(std::move(injected));
 
     bag.InsertItemForRestore(257001, kNonStack1, 1, 0);
@@ -2587,12 +2587,13 @@ TEST(BagTest, LayerConsistencyPredicateActuallyDetectsBreakage)
     EXPECT_TRUE(bag.IsLayerConsistent());
 
     // ② 在布局层硬造"容量 0,却还占着 1 个槽位":谓词必须真的发现得了
-    layout->Resize(0);
+    auto& layout = const_cast<IContainerLayout&>(bag.Layout());
+    layout.Resize(0);
     EXPECT_FALSE(bag.IsLayerConsistent())
         << "谓词必须真的发现得了不一致,否则 AssertLayerConsistency 只是个摆设";
 
     // 复原,别让一个故意弄坏的对象带着不一致走完析构
-    layout->Resize(kDefaultCapacity);
+    layout.Resize(kDefaultCapacity);
     EXPECT_TRUE(bag.IsLayerConsistent());
 }
 
@@ -2734,7 +2735,7 @@ TEST(BagServiceSortTest, AutoTidyPathDoesNotReorder)
 // 本文件所有铸号型用例都经 ItemStore::MintGuid → tlsGuidSegmentRegistry.Get(kItem) 取号,
 // 所以 main() 先给 item 种类装一个进程级假传输并投一段大范围(ArmBaselineItemSegment);
 // 下面动 item 实例的用例都用 ScopedItemSegmentOverride,退出时恢复基线。
-// 唯一例外是文件最后的 BagSegmentNotReadyTest:它把 item 实例置为"永远领不到段"且不恢复。
+// BagSegmentNotReadyTest 也在每例结束时恢复基线，不依赖声明或执行顺序。
 // ---------------------------------------------------------------------------
 namespace
 {
@@ -3112,11 +3113,11 @@ TEST_F(PetTradeAssetTest, RestoreKeepsIdentityWhenOwnerLevelIsLower)
     EXPECT_EQ(85u, restored.level()) << "还原不按新主人等级重定级";
     EXPECT_EQ(kCreatedAt, restored.created_at()) << "不盖新的获得时间";
     EXPECT_EQ(12345u, restored.aptitude().at(dimensionId)) << "资质不重掷";
-    // 跨等级"不收敛"口径:还原这一刻保留加点分布(下一次重算仍会按现有口径清池,J-O2)。
+    // 成长属于实例，换低级主人不能删除既有加点。
     EXPECT_EQ(7u, restored.allocated().at(dimensionId));
 }
 
-TEST_F(PetTradeAssetTest, RestoreClampsTamperedCurrentHealth)
+TEST_F(PetTradeAssetTest, RestoreDoesNotNormalizeExistingCurrentHealth)
 {
     PushPet(900001, 20);
     PetInstance snapshot;
@@ -3125,18 +3126,15 @@ TEST_F(PetTradeAssetTest, RestoreClampsTamperedCurrentHealth)
 
     ASSERT_EQ(kSuccess, PetSystem::RestorePetFromSnapshot(player, snapshot));
     ASSERT_EQ(1, Comp().pets_size());
-    EXPECT_LT(Comp().pets(0).health(), std::numeric_limits<uint64_t>::max())
-        << "托管期快照写坏时不能凭空抬高血上限";
+    EXPECT_EQ(snapshot.SerializeAsString(), Comp().pets(0).SerializeAsString())
+        << "还原只移动已有实例；畸形请求由资产入口在副作用前拒绝";
 }
 
-TEST_F(PetTradeAssetTest, RestoreClampsTamperedLevelToTheSpeciesCap)
+TEST_F(PetTradeAssetTest, RestoreKeepsFullSnapshotIncludingGrowthAndUnknownFieldsAcrossConfigCap)
 {
-    // 被改大的 level 不能靠"按快照自己算上限再夹"挡住:上限会跟着一起变大,那一夹是恒等式。
-    // 所以还原必须先把 level 夹回 PetTable.level_cap,再算 HP/MP 上限。
+    // 当前cap不能代表卖家托管前的cap；移动时必须保留既有成长，不按新配置重铸。
     const auto *row = PetTableManager::Instance().FindByIdSilent(petTableId).first;
     ASSERT_NE(nullptr, row);
-    if (row->level_cap() == 0)
-        GTEST_SKIP() << "该 PetTable 行没配 level_cap,本用例无从验证(缺配时按约定不夹)";
 
     PushPet(900001, 20);
     PetInstance snapshot;
@@ -3144,26 +3142,15 @@ TEST_F(PetTradeAssetTest, RestoreClampsTamperedLevelToTheSpeciesCap)
     snapshot.set_level(row->level_cap() + 900);
     snapshot.set_health(std::numeric_limits<uint64_t>::max());
     snapshot.set_mana(std::numeric_limits<uint64_t>::max());
+    snapshot.add_skill_table_ids(1234);
+    snapshot.GetReflection()->MutableUnknownFields(&snapshot)->AddLengthDelimited(1001, "未来完整实例字段");
 
     ASSERT_EQ(kSuccess, PetSystem::RestorePetFromSnapshot(player, snapshot));
     ASSERT_EQ(1, Comp().pets_size());
-    const auto &restored = Comp().pets(0);
-    EXPECT_EQ(row->level_cap(), restored.level()) << "超出种类上限的等级必须被夹回";
-    const uint64_t tamperedHealth = restored.health();
-    const uint64_t tamperedMana = restored.mana();
-    EXPECT_LT(tamperedHealth, std::numeric_limits<uint64_t>::max()) << "当前血必须被夹";
-
-    // 对照组:同一只宝宝,快照等级恰好等于上限。血上限必须按**夹后**等级算,
-    // 所以两次还原得到的当前血必须**相等**;不相等就说明夹血时用的还是被篡改的等级。
-    Comp().mutable_pets()->Clear();
-    PetInstance control = snapshot;
-    control.set_level(row->level_cap());
-    ASSERT_EQ(kSuccess, PetSystem::RestorePetFromSnapshot(player, control));
-    ASSERT_EQ(1, Comp().pets_size());
-    EXPECT_EQ(tamperedHealth, Comp().pets(0).health())
-        << "篡改等级抬高了血上限:夹 HP 用的是快照自带的等级,而不是夹回上限后的等级";
-    EXPECT_EQ(tamperedMana, Comp().pets(0).mana())
-        << "篡改等级抬高了蓝上限:同上";
+    EXPECT_EQ(snapshot.SerializeAsString(), Comp().pets(0).SerializeAsString());
+    PlayerPetComp reloaded;
+    ASSERT_TRUE(reloaded.ParseFromString(Comp().SerializeAsString()));
+    EXPECT_EQ(snapshot.SerializeAsString(), reloaded.pets(0).SerializeAsString());
 }
 
 TEST_F(PetTradeAssetTest, RestoreRefusesDuplicatePetId)
@@ -3516,7 +3503,7 @@ TEST(GuidSegmentClientTest, LateResponseAfterTimeoutIsUsedAndSurplusIsDropped)
     EXPECT_EQ(20u, rest.back());
 }
 
-// 传输失败(生成的 gRPC 客户端在 status 非 OK 时回调失败处理器)立即按退避重试,不必等 fetchTimeout;
+// 传输失败(生成的 gRPC 客户端以非 OK 完成每次调用回调)立即按退避重试,不必等 fetchTimeout;
 // 本次发送挂着的 fetchTimeout 随后开火时已不在途,不得再记一次失败。修复前生成客户端对非 OK 只打日志,
 // 失败只能靠 fetchTimeout 发现(docs/design/grpc-client-deadline-failure-callback.md §5 #7)。
 TEST(GuidSegmentClientTest, TransportFailureRetriesWithoutWaitingForFetchTimeout)
@@ -3707,7 +3694,7 @@ TEST(GuidSegmentRegistryTest, KindsAreIsolatedItemExhaustionDoesNotTouchTxLog)
     ASSERT_EQ(3u, Drain(item.item(), 3).size());
     Guid g = kInvalidGuid;
     EXPECT_FALSE(item.item().TryNext(g)) << "item 两段都空";
-    EXPECT_FALSE(ItemStore::CanMintGuid());
+    EXPECT_FALSE((tlsGuidSegmentRegistry.Get(GuidKind::kItem).Available() > 0));
     EXPECT_FALSE(tlsGuidSegmentRegistry.AllEnabledReady());
     EXPECT_EQ("item", tlsGuidSegmentRegistry.DescribeNotReady());
 
@@ -3741,9 +3728,8 @@ TEST(GuidSourcePolicyTest, ItemSegmentReadyMintsFromRangeThroughTheBag)
     item.item().Warm();
     item.item().OnResponse(0, 1000, 1010);
 
-    EXPECT_TRUE(ItemStore::CanMintGuid());
-    EXPECT_TRUE(ItemStore::CanMintGuids(10));
-    EXPECT_FALSE(ItemStore::CanMintGuids(11)) << "库存只有 10 个";
+    EXPECT_TRUE((tlsGuidSegmentRegistry.Get(GuidKind::kItem).Available() > 0));
+    EXPECT_EQ(10u, tlsGuidSegmentRegistry.Get(GuidKind::kItem).Available());
     EXPECT_EQ(1000u, ItemStore::MintGuid());
 
     Bag bag;
@@ -3760,7 +3746,7 @@ TEST(GuidSourcePolicyTest, ItemSegmentNotReadyFailsClosedWithNoFallback)
     ScopedItemSegmentOverride item(10);
     // 未领到首段(生产里启动期由 DependencyGate 挡玩家;运行期 = 两段耗尽且续段失败)
 
-    EXPECT_FALSE(ItemStore::CanMintGuid()) << "没有发号源";
+    EXPECT_FALSE((tlsGuidSegmentRegistry.Get(GuidKind::kItem).Available() > 0)) << "没有发号源";
     EXPECT_EQ(kInvalidGuid, ItemStore::MintGuid()) << "没有 snowflake 回退:只能是哨兵";
     EXPECT_GE(item.item().GetStats().unavailable, 1u) << "确实问过 item 号段并被拒";
 
@@ -3785,7 +3771,7 @@ TEST(GuidSourcePolicyTest, ItemKindDisabledFailsClosedToo)
     auto &item = tlsGuidSegmentRegistry.Get(GuidKind::kItem);
     item.Reset();
     EXPECT_FALSE(item.IsEnabled());
-    EXPECT_FALSE(ItemStore::CanMintGuid());
+    EXPECT_FALSE((tlsGuidSegmentRegistry.Get(GuidKind::kItem).Available() > 0));
     EXPECT_EQ(kInvalidGuid, ItemStore::MintGuid());
 
     Bag bag;
@@ -3794,7 +3780,7 @@ TEST(GuidSourcePolicyTest, ItemKindDisabledFailsClosedToo)
     EXPECT_EQ(0u, bag.OccupiedGridCount());
 
     ASSERT_TRUE(ArmBaselineItemSegment());
-    EXPECT_TRUE(ItemStore::CanMintGuid());
+    EXPECT_TRUE((tlsGuidSegmentRegistry.Get(GuidKind::kItem).Available() > 0));
 }
 
 TEST(GuidSourcePolicyTest, BatchLargerThanRemainingSegmentIsRefusedBeforeAnyWrite)
@@ -3805,21 +3791,22 @@ TEST(GuidSourcePolicyTest, BatchLargerThanRemainingSegmentIsRefusedBeforeAnyWrit
 
     Bag bag;
     bag.ExpandCapacity(kDefaultCapacity);
-    // 5 件不可叠加要 5 个号:库存 3 个,必须在写第一件之前整体拒绝,不能写 3 件后中途铸出哨兵
+    // 候选事务允许签发号作废，但玩家实例、布局与回执绝不能部分提交。
     EXPECT_EQ(kBagAddItemInvalidParam, bag.AddItem(MakeItem(kNonStack1, 5)));
     EXPECT_EQ(0u, bag.OccupiedGridCount());
     EXPECT_EQ(0u, bag.GridSlotCount());
     EXPECT_TRUE(bag.IsLayerConsistent());
-
-    // 候选提交允许未发布的预留号作废；补入新段后仍能整批成功，不能复用作废号。
+    EXPECT_EQ(3u, item.item().GetStats().issued);
     EXPECT_EQ(0u, item.item().Available());
+
+    // 续段不复用已经签发而作废的 1、2、3。
     item.item().OnResponse(0, 4, 7);
-    ASSERT_EQ(kSuccess, bag.AddItem(MakeItem(kNonStack1, 3)));
+    EXPECT_EQ(kSuccess, bag.AddItem(MakeItem(kNonStack1, 3)));
     EXPECT_EQ(3u, bag.OccupiedGridCount());
-    for (const Guid guid : {1u, 2u, 3u}) EXPECT_EQ(nullptr, bag.GetItemCompByGuid(guid));
-    for (const Guid guid : {4u, 5u, 6u}) EXPECT_NE(nullptr, bag.GetItemCompByGuid(guid));
+    for (const Guid guid : {Guid{1}, Guid{2}, Guid{3}}) EXPECT_EQ(nullptr, bag.GetItemCompByGuid(guid));
+    for (const Guid guid : {Guid{4}, Guid{5}, Guid{6}}) EXPECT_NE(nullptr, bag.GetItemCompByGuid(guid));
     EXPECT_TRUE(bag.IsLayerConsistent());
-    EXPECT_FALSE(ItemStore::CanMintGuid()) << "库存用光、下一段没到";
+    EXPECT_FALSE((tlsGuidSegmentRegistry.Get(GuidKind::kItem).Available() > 0)) << "库存用光、下一段没到";
 }
 
 TEST(GuidSourcePolicyTest, TxLogFailsClosedUntilItsOwnKindHasARange)
@@ -3836,7 +3823,7 @@ TEST(GuidSourcePolicyTest, TxLogFailsClosedUntilItsOwnKindHasARange)
     EXPECT_EQ(1u, tx.transport.requests.size()) << "拒发的同时催起续段";
     EXPECT_EQ("txlog", tx.transport.requests[0].bizTag);
     // item 种类不受影响(各自的实例),也没人拿 item 的号去当 tx_id
-    EXPECT_TRUE(ItemStore::CanMintGuid());
+    EXPECT_TRUE((tlsGuidSegmentRegistry.Get(GuidKind::kItem).Available() > 0));
     EXPECT_EQ(baselineRequests, BaselineTransport().requests.size()) << "没人拿 item 的号去当 tx_id";
 
     tx.client().OnResponse(0, 1, 11);
@@ -3890,30 +3877,33 @@ TEST(GuidSourcePolicyTest, SnapshotIsSkippedUntilItsOwnKindHasARange)
     tlsEcs.actorRegistry.destroy(player);
 }
 
-// ⚠️ 本套件必须保持在**文件最后**:它把 item 号段实例置为"启用但永远领不到段"并**不再恢复**
-// (对应生产里"两段耗尽而 data_service 一直没回来";没有 snowflake 回退可走),在它后面
-// 声明的任何铸号型用例都会被连坐挂掉。(gtest 默认按声明序执行;请勿对本文件开 --gtest_shuffle。)
+// 每例独立模拟"启用但永远领不到段"，结束即恢复基线；筛选、乱序和其它文件不受污染。
 //
 // 钉住的契约:发号源不可用时,铸号型入包必须在**改动任何背包状态之前**整体拒绝 ——
 // 绝不能把 kInvalidGuid 哨兵当 item_id 写进背包持久化;而不需要铸号的路径(纯并堆)不受影响。
 // 修复前:AddItem 会静默插入一件 guid=0 的物品。
 namespace
 {
-    void MakeItemSegmentUnavailableForRestOfProcess()
+    class BagSegmentNotReadyTest : public testing::Test
     {
-        static FakeSegmentTransport starved; // 请求都"发出去了",但永远没有响应
-        auto &item = tlsGuidSegmentRegistry.Get(GuidKind::kItem);
-        item.Reset();
-        SegClient::Options o;
-        o.kindName = "item";
-        o.initialStep = 10;
-        EXPECT_TRUE(item.Enable(o, starved.Send(), starved.Schedule(), starved.Clock()));
-        item.Warm();
-        EXPECT_FALSE(item.IsReady());
-    }
+    protected:
+        void SetUp() override
+        {
+            auto &item = tlsGuidSegmentRegistry.Get(GuidKind::kItem);
+            item.Reset();
+            SegClient::Options options;
+            options.kindName = "item";
+            options.initialStep = 10;
+            ASSERT_TRUE(item.Enable(options, starved.Send(), starved.Schedule(), starved.Clock()));
+            item.Warm();
+            ASSERT_FALSE(item.IsReady());
+        }
+        void TearDown() override { EXPECT_TRUE(ArmBaselineItemSegment()); }
+        FakeSegmentTransport starved;
+    };
 } // namespace
 
-TEST(BagSegmentNotReadyTest, MintingPathsFailClosedWhileMergeStillWorks)
+TEST_F(BagSegmentNotReadyTest, MintingPathsFailClosedWhileMergeStillWorks)
 {
     // 堆叠上限从表读(kStack10 的 10 是 config_id,不是上限),所有数量按它推导,不硬编码。
     const uint32_t maxStack = MaxStack(kStack10);
@@ -3923,11 +3913,10 @@ TEST(BagSegmentNotReadyTest, MintingPathsFailClosedWhileMergeStillWorks)
     bag.ExpandCapacity(kBagMaxCapacity);
 
     // 铺底:一堆差 3 满(留出"能并 2 还剩 1 空位"的余量)。
-    EXPECT_EQ(kSuccess, bag.AddItem(MakeItem(kStack10, maxStack - 3)));
+    bag.InsertItemForRestore(910001, kStack10, maxStack - 3, 0);
     EXPECT_EQ(1, bag.OccupiedGridCount());
 
-    MakeItemSegmentUnavailableForRestOfProcess();
-    ASSERT_FALSE(ItemStore::CanMintGuid());
+    ASSERT_FALSE((tlsGuidSegmentRegistry.Get(GuidKind::kItem).Available() > 0));
 
     // ① 纯并堆不铸号:发号源没了也必须照常成功(门的作用域只限"会铸号"的路径)。并 2,还剩 1 空位。
     EXPECT_EQ(kSuccess, bag.AddItem(MakeItem(kStack10, 2)));
@@ -3946,8 +3935,6 @@ TEST(BagSegmentNotReadyTest, MintingPathsFailClosedWhileMergeStillWorks)
     EXPECT_EQ(1, bag.OccupiedGridCount());
 }
 
-// 必须排在上面那条之后:本组用例依赖 item 号段已经被置为不可用。
-//
 // 钉住的契约:发号源不可用时,**批量入包整批拒绝**,一件都不许落地。
 // 关键在于批次里混了"不铸号就能完成"的项和"必须铸号"的项 —— 逐件把关时,
 // 前者会先成功写进去,等轮到后者才失败,于是留下半批。邮件附件是这条路径的
@@ -3955,9 +3942,9 @@ TEST(BagSegmentNotReadyTest, MintingPathsFailClosedWhileMergeStillWorks)
 //
 // 铺底用 InsertItemForRestore:它用调用方给的 guid,不铸号,所以发号源没了之后
 // 仍然可用 —— 否则根本没法把背包摆成需要的初始状态。
-TEST(BagSegmentNotReadyTest, VectorBatchRejectsWholeBatchWhenAnyPieceNeedsMinting)
+TEST_F(BagSegmentNotReadyTest, VectorBatchRejectsWholeBatchWhenAnyPieceNeedsMinting)
 {
-    ASSERT_FALSE(ItemStore::CanMintGuid()) << "本用例依赖前一条用例已把 item 号段置为不可用";
+    ASSERT_FALSE((tlsGuidSegmentRegistry.Get(GuidKind::kItem).Available() > 0)) << "本例夹具独立禁用发号源";
 
     const uint32_t maxStack10 = MaxStack(kStack10);
     ASSERT_GE(maxStack10, 4u) << "用例前提:该物品堆叠上限至少 4";
@@ -3986,9 +3973,9 @@ TEST(BagSegmentNotReadyTest, VectorBatchRejectsWholeBatchWhenAnyPieceNeedsMintin
 // 所以"没有预检时会不会留下半批"取决于哈希序 —— 那正是必须有整批预检的理由:
 // 否则同一份数据在不同构建下表现不一样,是个 heisenbug。有了预检,下面的断言
 // 才是确定成立的。
-TEST(BagSegmentNotReadyTest, CountMapBatchRejectsWholeBatchWhenMintingUnavailable)
+TEST_F(BagSegmentNotReadyTest, CountMapBatchRejectsWholeBatchWhenMintingUnavailable)
 {
-    ASSERT_FALSE(ItemStore::CanMintGuid());
+    ASSERT_FALSE((tlsGuidSegmentRegistry.Get(GuidKind::kItem).Available() > 0));
 
     const uint32_t maxStack10 = MaxStack(kStack10);
     ASSERT_GE(maxStack10, 4u);
@@ -4017,9 +4004,9 @@ TEST(BagSegmentNotReadyTest, CountMapBatchRejectsWholeBatchWhenMintingUnavailabl
 // 三处同病(AddNonStackableItem / AddStackableItem / 两个 AddItems),已全部
 // 把预检提到 reserve 之前。这条用例钉住结果:**被预检拒绝的批次,不该付出
 // 任何代价。**
-TEST(BagSegmentNotReadyTest, EvictionNeverHappensBeforeAPureCheckCanRefuse)
+TEST_F(BagSegmentNotReadyTest, EvictionNeverHappensBeforeAPureCheckCanRefuse)
 {
-    ASSERT_FALSE(ItemStore::CanMintGuid()) << "本用例依赖前面的用例已把 item 号段置为不可用";
+    ASSERT_FALSE((tlsGuidSegmentRegistry.Get(GuidKind::kItem).Available() > 0)) << "本例夹具独立禁用发号源";
 
     Bag bag;
     bag.SetProfile(BagProfile::Temporary(2)); // 会淘汰的包
@@ -4037,7 +4024,7 @@ TEST(BagSegmentNotReadyTest, EvictionNeverHappensBeforeAPureCheckCanRefuse)
     EXPECT_NE(nullptr, bag.GetItemCompByGuid(920002));
     EXPECT_EQ(2u, bag.OccupiedGridCount());
 
-    // 批量路径同样:PlanInstances + 铸号预检都在 ReserveBatch 之前。
+    // 批量路径同样：最终规划与铸号都在任何修改之前。
     ItemCountMap batch;
     batch[kNonStack1] = 1;
     evicted.clear();
@@ -4050,9 +4037,9 @@ TEST(BagSegmentNotReadyTest, EvictionNeverHappensBeforeAPureCheckCanRefuse)
 
 // 第二轮审计补的覆盖:上一条只走了 AddNonStackableItem 与 ItemCountMap 重载。
 // 可叠加溢出路径的铸号预检也必须在腾位之前。
-TEST(BagSegmentNotReadyTest, StackableSpillNeverEvictsWhenSegmentIsUnavailable)
+TEST_F(BagSegmentNotReadyTest, StackableSpillNeverEvictsWhenSegmentIsUnavailable)
 {
-    ASSERT_FALSE(ItemStore::CanMintGuid()) << "本用例依赖前面的用例已把 item 号段置为不可用";
+    ASSERT_FALSE((tlsGuidSegmentRegistry.Get(GuidKind::kItem).Available() > 0)) << "本例夹具独立禁用发号源";
     const uint32_t maxStack10 = MaxStack(kStack10);
 
     Bag bag;
@@ -4067,13 +4054,10 @@ TEST(BagSegmentNotReadyTest, StackableSpillNeverEvictsWhenSegmentIsUnavailable)
     EXPECT_EQ(maxStack10, bag.GetItemCompByGuid(930001)->size());
 }
 
-// vector 重载的三种形状:需铸号拒绝 / 全预设可按最终规划淘汰 / 全预设且放得下。
-TEST(BagSegmentNotReadyTest, VectorBatchEvictsOnlyWhenNoMintingIsNeeded)
+// vector 重载三种形状：需铸号则拒且不腾位 / 全预设、需腾位则按 FIFO 淘汰且不铸号 / 全预设且放得下则不淘汰。
+TEST_F(BagSegmentNotReadyTest, VectorBatchMintsOnlyWhatTheFinalPlanNeedsWhenSegmentIsUnavailable)
 {
-    // 自己建立未领段状态,退出时恢复基线,单独运行也不依赖其他用例。
-    ScopedItemSegmentOverride item;
-    item.item().Warm();
-    ASSERT_FALSE(ItemStore::CanMintGuid());
+    ASSERT_FALSE((tlsGuidSegmentRegistry.Get(GuidKind::kItem).Available() > 0)) << "本例夹具独立禁用发号源";
 
     Bag bag;
     bag.SetProfile(BagProfile::Temporary(2));
@@ -4088,9 +4072,10 @@ TEST(BagSegmentNotReadyTest, VectorBatchEvictsOnlyWhenNoMintingIsNeeded)
               bag.AddItems(std::vector<InitItemParam>{MakeItem(kNonStack1, 1)}, &evicted));
     EXPECT_TRUE(evicted.empty());
 
-    // ② 最终淘汰规划完成后无需铸号：候选内腾位并原子发布，不误伤预设实例。
+    // ② 最终规划无需铸号，按 FIFO 淘汰；淘汰后才需铸号见 BagJavaParityTest.PostEvictionMintFailure。
     InitItemParam preassigned = MakeItem(kNonStack1, 1);
     preassigned.itemPBComp.set_item_id(940003);
+    evicted.clear();
     EXPECT_EQ(kSuccess,
               bag.AddItems(std::vector<InitItemParam>{preassigned}, &evicted));
     ASSERT_EQ(1u, evicted.size());
@@ -4101,11 +4086,12 @@ TEST(BagSegmentNotReadyTest, VectorBatchEvictsOnlyWhenNoMintingIsNeeded)
     EXPECT_NE(nullptr, bag.GetItemCompByGuid(940003));
     EXPECT_TRUE(bag.IsLayerConsistent());
 
-    // ③ 对照:全部预设 guid 且放得下 —— 照常成功,不误伤邮件附件的典型形状。
-    evicted.clear();
-    preassigned.itemPBComp.set_item_id(940004);
+    // ③ 全部预设 guid 且放得下，不淘汰。
+    InitItemParam another = MakeItem(kNonStack1, 1);
+    another.itemPBComp.set_item_id(940004);
     bag.SetCapacityForRestore(3);
-    EXPECT_EQ(kSuccess, bag.AddItems(std::vector<InitItemParam>{preassigned}, &evicted));
+    evicted.clear();
+    EXPECT_EQ(kSuccess, bag.AddItems(std::vector<InitItemParam>{another}, &evicted));
     EXPECT_TRUE(evicted.empty());
     EXPECT_EQ(3u, bag.OccupiedGridCount());
     EXPECT_NE(nullptr, bag.GetItemCompByGuid(940004));

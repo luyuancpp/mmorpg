@@ -512,6 +512,7 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED StartActivityBattleRequest final : 
   enum : int {
     kMemberPlayerIdsFieldNumber = 2,
     kActivityContextFieldNumber = 3,
+    kRequestIdFieldNumber = 4,
     kBattleConfigIdFieldNumber = 1,
   };
   // repeated uint64 member_player_ids = 2;
@@ -550,6 +551,16 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED StartActivityBattleRequest final : 
   ::BattleActivityContext* PROTOBUF_NONNULL _internal_mutable_activity_context();
 
   public:
+  // uint64 request_id = 4;
+  void clear_request_id() ;
+  [[nodiscard]] ::uint64_t request_id() const;
+  void set_request_id(::uint64_t value);
+
+  private:
+  ::uint64_t _internal_request_id() const;
+  void _internal_set_request_id(::uint64_t value);
+
+  public:
   // uint32 battle_config_id = 1;
   void clear_battle_config_id() ;
   [[nodiscard]] ::uint32_t battle_config_id() const;
@@ -564,7 +575,7 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED StartActivityBattleRequest final : 
  private:
   class _Internal;
   using ParseTableT_ =
-      ::google::protobuf::internal::TcParseTable<2, 3,
+      ::google::protobuf::internal::TcParseTable<2, 4,
                           1, 0,
                           2>;
   static constexpr ParseTableT_ InternalGenerateParseTable_(
@@ -596,6 +607,7 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED StartActivityBattleRequest final : 
     ::google::protobuf::RepeatedField<::uint64_t> member_player_ids_;
     ::google::protobuf::internal::CachedSize _member_player_ids_cached_byte_size_;
     ::BattleActivityContext* PROTOBUF_NULLABLE activity_context_;
+    ::uint64_t request_id_;
     ::uint32_t battle_config_id_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
@@ -623,7 +635,7 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED StartActivityBattleRequest final : 
 inline void StartActivityBattleRequest::clear_battle_config_id() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.battle_config_id_ = 0u;
-  ClearHasBit(_impl_._has_bits_[0], 0x00000004U);
+  ClearHasBit(_impl_._has_bits_[0], 0x00000008U);
 }
 inline ::uint32_t StartActivityBattleRequest::battle_config_id() const {
   // @@protoc_insertion_point(field_get:match.StartActivityBattleRequest.battle_config_id)
@@ -631,7 +643,7 @@ inline ::uint32_t StartActivityBattleRequest::battle_config_id() const {
 }
 inline void StartActivityBattleRequest::set_battle_config_id(::uint32_t value) {
   _internal_set_battle_config_id(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00000004U);
+  SetHasBit(_impl_._has_bits_[0], 0x00000008U);
   // @@protoc_insertion_point(field_set:match.StartActivityBattleRequest.battle_config_id)
 }
 inline ::uint32_t StartActivityBattleRequest::_internal_battle_config_id() const {
@@ -785,6 +797,30 @@ inline void StartActivityBattleRequest::set_allocated_activity_context(::BattleA
 
   _impl_.activity_context_ = reinterpret_cast<::BattleActivityContext*>(value);
   // @@protoc_insertion_point(field_set_allocated:match.StartActivityBattleRequest.activity_context)
+}
+
+// uint64 request_id = 4;
+inline void StartActivityBattleRequest::clear_request_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.request_id_ = ::uint64_t{0u};
+  ClearHasBit(_impl_._has_bits_[0], 0x00000004U);
+}
+inline ::uint64_t StartActivityBattleRequest::request_id() const {
+  // @@protoc_insertion_point(field_get:match.StartActivityBattleRequest.request_id)
+  return _internal_request_id();
+}
+inline void StartActivityBattleRequest::set_request_id(::uint64_t value) {
+  _internal_set_request_id(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000004U);
+  // @@protoc_insertion_point(field_set:match.StartActivityBattleRequest.request_id)
+}
+inline ::uint64_t StartActivityBattleRequest::_internal_request_id() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.request_id_;
+}
+inline void StartActivityBattleRequest::_internal_set_request_id(::uint64_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.request_id_ = value;
 }
 
 // -------------------------------------------------------------------

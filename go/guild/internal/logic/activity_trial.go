@@ -734,6 +734,7 @@ func callTrialMatch(ctx context.Context, d *ActivityDeps, lobby *data.TrialLobby
 	callCtx, cancel := context.WithTimeout(ctx, budget)
 	defer cancel()
 	resp, err := d.Match.StartActivityBattle(callCtx, &matchpb.StartActivityBattleRequest{
+		RequestId: lobby.LobbyID,
 		BattleConfigId:  dungeonID,
 		MemberPlayerIds: slices.Clone(lobby.Roster),
 		ActivityContext: &battlepb.BattleActivityContext{

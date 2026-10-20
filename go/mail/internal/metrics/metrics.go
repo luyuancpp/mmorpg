@@ -11,16 +11,10 @@
 package metrics
 
 import (
-	"context"
-	"net/http"
 	"sync"
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
-	"github.com/zeromicro/go-zero/core/logx"
-
-	"shared/safego"
 )
 
 // subsystem 决定指标名前缀:mail_admin_send_total / mail_push_total / …改它等于改全部指标名。
@@ -30,6 +24,7 @@ const subsystem = "mail"
 const (
 	MethodSendPersonal = "send_personal"
 	MethodSendSystem   = "send_system"
+	MethodSendGuild    = "send_guild"
 )
 
 // MailAdmin 发件的 sender_kind label(与 mail_admin.proto 的 MailSenderKind 对应;未知值一律记 unknown,不拿数字当 label)。
@@ -37,6 +32,10 @@ const (
 	SenderOpsTool = "ops_tool"
 	SenderRobot   = "robot"
 	SenderUnknown = "unknown"
+	SenderRank    = "rank"
+	SenderGuild   = "guild"
+	SenderTrade   = "trade"
+	SenderBattle  = "battle"
 )
 
 // MailAdmin 发件的 outcome label(设计 §2.5):
@@ -59,7 +58,7 @@ const (
 	PushError        = "error"         // 推送通道未配置、Kafka 写失败、组包失败
 )
 
-// sweep 的 table label:sweep 物理删的三张表。mail_box 守卫行不清理(行数 ≤ 被发过定向邮件的玩家数,设计 §3.4)。
+// sweep沿用告警label：personal/system分别对应M2 mail_message中的个人/纯文本广播，system_state对应mail_state；不是M1物理表名。
 const (
 	TablePersonal    = "mail_personal"
 	TableSystem      = "mail_system"
@@ -76,7 +75,7 @@ var (
 	adminSendTotal = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Subsystem: subsystem,
 		Name:      "admin_send_total",
-		Help:      "MailAdmin send calls by method (send_personal|send_system), sender_kind (ops_tool|robot|unknown) and outcome (ok|duplicated|rejected|fault|denied).",
+		Help:      "MailAdmin send calls by method (send_personal|send_system|send_guild), sender_kind (ops_tool|robot|unknown|rank|guild|trade|battle) and outcome (ok|duplicated|rejected|fault|denied).",
 	}, []string{"method", "sender_kind", "outcome"})
 
 	pushTotal = prometheus.NewCounterVec(prometheus.CounterOpts{
@@ -88,7 +87,7 @@ var (
 	claimShortCircuitTotal = prometheus.NewCounter(prometheus.CounterOpts{
 		Subsystem: subsystem,
 		Name:      "claim_short_circuit_total",
-		Help:      "ClaimMailAttachments calls answered with MailClaimNotOpen in M1 (claiming is not open yet).",
+		Help:      "Legacy M1 short-circuit counter; canonical M2 claim path never increments it.",
 	})
 
 	listTruncatedTotal = prometheus.NewCounter(prometheus.CounterOpts{
@@ -178,8 +177,8 @@ func Register() {
 			sweepInvalidRows,
 			sweepLastRunUnixtime,
 		)
-		for _, method := range []string{MethodSendPersonal, MethodSendSystem} {
-			for _, sender := range []string{SenderOpsTool, SenderRobot, SenderUnknown} {
+		for _, method := range []string{MethodSendPersonal, MethodSendSystem, MethodSendGuild} {
+			for _, sender := range []string{SenderOpsTool, SenderRobot, SenderUnknown, SenderRank, SenderGuild, SenderTrade, SenderBattle} {
 				for _, outcome := range []string{OutcomeOK, OutcomeDuplicated, OutcomeRejected, OutcomeFault, OutcomeDenied} {
 					adminSendTotal.WithLabelValues(method, sender, outcome)
 				}
@@ -198,35 +197,4 @@ func Register() {
 	})
 }
 
-// Start 启动 Prometheus /metrics 端点并返回关闭函数;addr 为空则不启动,返回空操作。
-//
-// 端点是"起不来也要让进程活着"的辅助设施:ListenAndServe 失败只打日志,不 panic(本机多副本撞端口很常见)。
-// 注册只做一次:Start 被重复调用不会 panic。关闭函数有界(1s),供 lifecycle 的 CloseResources 调用。
-func Start(addr string) (stop func()) {
-	if addr == "" {
-		logx.Info("[mail] MetricsListenAddr empty; Prometheus /metrics endpoint disabled")
-		return func() {}
-	}
-	Register()
-	mux := http.NewServeMux()
-	mux.Handle("/metrics", promhttp.Handler())
-	srv := &http.Server{
-		Addr:    addr,
-		Handler: mux,
-		// ReadHeaderTimeout 防慢速请求占着连接不放。
-		ReadHeaderTimeout: 5 * time.Second,
-	}
-	safego.Go("mail.metrics_http", func() {
-		logx.Infof("[mail] Prometheus /metrics listening on %s", addr)
-		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			logx.Errorf("[mail] metrics HTTP server exited: %v", err)
-		}
-	})
-	return func() {
-		ctx, cancel := context.WithTimeout(context.Background(), time.Second)
-		defer cancel()
-		if err := srv.Shutdown(ctx); err != nil {
-			logx.Errorf("[mail] metrics HTTP server shutdown: %v", err)
-		}
-	}
-}
+// HTTP端点与有界关闭只由shared/domainhost提供，不再启动第二套metrics服务器。

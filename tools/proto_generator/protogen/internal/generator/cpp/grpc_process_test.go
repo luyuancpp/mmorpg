@@ -123,14 +123,9 @@ func TestGrpcInitTemplateSupportsMultipleServicesForSameNodeType(t *testing.T) {
 			t.Fatalf("rendered grpc init must not contain %q any more", forbidden)
 		}
 	}
-	for _, replySetter := range []string{"void SetIfEmptyHandler(", "void SetHandler("} {
-		if !strings.Contains(functionOutput(replySetter), "const GrpcReplyContext&") {
-			t.Fatalf("%s must take the transport-neutral GrpcReplyContext", replySetter)
-		}
-	}
-	for _, failureSetter := range []string{"void SetIfEmptyFailedHandler(", "void SetFailedHandler("} {
-		if !strings.Contains(functionOutput(failureSetter), "const GrpcCallFailure&") {
-			t.Fatalf("%s must take GrpcCallFailure", failureSetter)
+	for _, forbidden := range []string{"SetIfEmpty", "GrpcReplyContext", "GrpcCallFailure", "void SetHandler(", "void SetFailedHandler("} {
+		if strings.Contains(output, forbidden) {
+			t.Fatalf("生成客户端已删除全局入口 %q", forbidden)
 		}
 	}
 }
@@ -187,14 +182,20 @@ func TestGrpcAsyncClientTemplatesUseMuduoChannelAndRejectStreaming(t *testing.T)
 	}
 
 	header := render("grpc_async_client.h.tmpl")
+	if !strings.Contains(header, "void SendSceneManagerEnterScene(entt::registry& registry, entt::entity nodeEntity, const ::scene_manager::EnterSceneRequest& request, GrpcDone<::scene_manager::EnterSceneResponse> done, const GrpcCallOptions& options = {});") {
+		t.Fatal("unary 方法必须声明带必填完成回调的 typed 入口")
+	}
+	if strings.Contains(header, "const ::scene_manager::EnterSceneRequest& request);") {
+		t.Fatal("不得保留不带完成回调的 typed 重载")
+	}
 	if !strings.Contains(header, `kSceneManagerEnterSceneGrpcPath = "/scene_manager.SceneManager/EnterScene"`) {
 		t.Fatal("unary method must carry the wire :path /<package>.<Service>/<Method>")
 	}
 	if strings.Contains(header, "AsyncSceneManagerWatchHandler") {
 		t.Fatal("streaming methods must not get a generated client handler")
 	}
-	if !strings.Contains(header, "void SendSceneManagerWatch(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message") {
-		t.Fatal("streaming methods keep the Message& Send overload for gRpcMethodRegistry")
+	if strings.Contains(header, "void SendSceneManagerWatch(") {
+		t.Fatal("流式方法不得生成 Send")
 	}
 	for _, forbidden := range []string{".grpc.pb.h", "ClientContext", "CompletionQueue", "StubPtr"} {
 		if strings.Contains(header, forbidden) {
@@ -202,12 +203,50 @@ func TestGrpcAsyncClientTemplatesUseMuduoChannelAndRejectStreaming(t *testing.T)
 		}
 	}
 
+	if !strings.Contains(header, "void SendSceneManagerEnterSceneErased(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, GrpcMessageDone done, const GrpcCallOptions& options);") {
+		t.Fatal("unary 方法缺少显式完成回调的类型擦除入口")
+	}
+	if strings.Contains(header, "SendSceneManagerWatchErased") {
+		t.Fatal("流式方法不得生成类型擦除入口")
+	}
+
 	source := render("grpc_async_client.cpp.tmpl")
+	if !strings.Contains(source, "GetDescriptor() != ::scene_manager::EnterSceneRequest::descriptor()") {
+		t.Fatal("类型擦除入口必须先校验请求动态类型")
+	}
+	if !strings.Contains(source, "dynamic_cast<const ::scene_manager::EnterSceneRequest*>(&message)") ||
+		!strings.Contains(source, "nodeEntity, *typedRequest, options.metadata, options.deadline,") ||
+		strings.Contains(source, "static_cast<const ::scene_manager::EnterSceneRequest&>(message)") {
+		t.Fatal("descriptor 相同也必须核对真实 C++ 类型,不得把 DynamicMessage 静态转成生成类")
+	}
 	if !strings.Contains(source, "channel->StartUnaryCall(") || !strings.Contains(source, "Base64Encode(value)") {
 		t.Fatal("unary calls must go through muduo_grpc::Channel and keep the application-level Base64 layer")
 	}
-	if !strings.Contains(source, "is a streaming method; the generated client does not support it") {
-		t.Fatal("streaming Send overloads must reject loudly")
+	if strings.Contains(source, "void SendSceneManagerWatch(") {
+		t.Fatal("流式方法不得生成发送桩")
+	}
+	for _, forbidden := range []string{"AsyncSceneManager", "GrpcReplyContext", "GrpcCallFailure", "sentMetadata", "call->request", "metaKeys", "metaValues"} {
+		if strings.Contains(header, forbidden) || strings.Contains(source, forbidden) {
+			t.Fatalf("已删除客户端旧机制 %q", forbidden)
+		}
+	}
+	start := strings.Index(source, "void StartSceneManagerEnterSceneCall(")
+	if start < 0 {
+		t.Fatal("缺少统一调用入口")
+	}
+	end := strings.Index(source[start:], "\nvoid SendSceneManagerEnterScene(")
+	if end < 0 {
+		t.Fatal("缺少统一调用入口的结束边界")
+	}
+	body := source[start : start+end]
+	serialized := strings.Index(body, "request.SerializeToString(&unaryRequest.message)")
+	queued := strings.Index(body, "QueueLocalSceneManagerEnterSceneFailure(")
+	sent := strings.Index(body, "channel->StartUnaryCall(")
+	if serialized < 0 || queued < 0 || sent < 0 || serialized > queued || serialized > sent {
+		t.Fatal("共享请求必须先同步序列化,再排本地完成或交给通道")
+	}
+	if !strings.Contains(body, "requires a done callback") || !strings.Contains(body, "[done = std::move(done)]") {
+		t.Fatal("完成回调必填且独立持有,不得保留请求原型")
 	}
 	for _, forbidden := range []string{"CompletionQueue", "PrepareAsync", "object_pool", "GrpcTag"} {
 		if strings.Contains(source, forbidden) {

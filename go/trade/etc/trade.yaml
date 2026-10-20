@@ -1,8 +1,8 @@
 # 聚宝斋 trade 服务配置(docs/design/jubaozhai-market.md;契约 microservice-zone-contract-20260914 §2/§3/§4/§7;D-14)
 # 全局服务:全服一份、多副本;客户端只经 gate → 路由服到达(路由模式)。
 # 本文件的键名与 internal/config/config.go 的 json tag 逐字一致;k8s_deploy.ps1 的 trade ConfigMap 里写出来的键也逐字一致,
-# 但 ConfigMap 刻意不镜像 AssetOp 段的落地恢复与终态行清理键(只写 Enabled 与 SecretEnv),理由与打开通道时要补的内容
-# 见 internal/config/config.go 的包头注释。
+# ConfigMap 已镜像完整 AssetOp / Commerce / Mall 参数；生产要求显式 TiDB 地址、global 和资产通道。
+# 本地 dev 的旧只读目录配置不代表全球交易已启用；细节见 internal/config/config.go 包头注释。
 Name: trade.rpc
 ListenOn: 127.0.0.1:50800
 
@@ -114,6 +114,11 @@ SharedRedis:
   Host: 127.0.0.1:6379
   Password: ""
   DB: 0
+  # go-redis 连接池上限(P0-E 第 3 批,共享 Redis 连接总账)。0 / 不写 = go-redis 缺省 10 × GOMAXPROCS,
+  # 随 CPU limit 漂移(本机 Windows 上是 10 × 核数);负数 config.Validate 拒启。20 = K8s 上 GOMAXPROCS 按 2 时的缺省值。
+  # 落地唤醒的 Pub/Sub 连接不占池名额。tools/scripts/k8s_deploy.ps1 把它镜像进 trade ConfigMap(要求正整数),
+  # Redis 连接总账读同一个键:改它看部署时打印的 "Redis connection ledger" 一行。
+  PoolSize: 20
 
 # ---- 通用资产通道开关(guild-phase2/04-asset-channel.md §S4)----
 # **默认关闭,整段缺失也是关闭**(go-zero 不给缺席的 optional 嵌套段回填 default)。
@@ -150,6 +155,13 @@ SharedRedis:
 AssetOp:
   Enabled: false
   SecretEnv: MMORPG_ASSET_OP_SECRET_TRADE
+  # 资产 SQL 提交证据开关(docs/design/db-write-fencing-mysql.md §6.6 / §8.7)。不写或 false = HEAD 口径:在线按 scene
+  # 回包的 durable 终结,离线读账本与自动放弃读 Redis 父键 blob。true = 终结只认 go/db 发布的 SQL 提交证据,
+  # 自动放弃要 blob 与证据都确认未见。
+  # !! trade 是全服服务:只有它会投递到的 zone 全部已切 go/db Fencing.Mode=dual、已上新版 C++,并观察到证据在持续发布
+  # 之后才打开;打开前接受「已离线、尚无证据的玩家待办要等他再次存盘」。下面 Commerce 白名单或 Mall.URL 非空时
+  # 必须打开(合同终结只认 SQL 证据,config.Validate 拒启)。回退顺序:先改回 false,再把 zone 切回 legacy 或回退 C++。
+  RequireSQLCommit: false
   # 离线停放档(§6.1):连续投递 5 次仍"玩家没有位置"的行改为约 30 分钟一次(±20%),玩家上线由落地唤醒立刻处理。
   # OfflineAfterAttempts=0 关闭停放档;OfflineBackoffMs 必须在 [60000(重投退避封顶), 86400000] 内。
   OfflineAfterAttempts: 5
@@ -177,3 +189,15 @@ AssetOp:
   CleanupEnabled: true
   CleanupIntervalMinutes: 10
   TerminalRetentionDays: 30
+
+# 发布前配置真实服务端白名单与可读名称；空名单拒绝交易任何模板。
+Commerce:
+  ItemConfigs: []
+  ItemTitles: {}
+  PetConfigs: []
+  CurrencyTypes: []
+  AllowInstances: false
+Mall:
+  URL: ""
+  GatewaySecretEnv: COMMERCE_GATEWAY_SECRET
+  DeliverySecretEnv: COMMERCE_DELIVERY_SECRET

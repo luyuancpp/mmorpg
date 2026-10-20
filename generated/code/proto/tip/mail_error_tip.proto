@@ -9,20 +9,26 @@ option java_package = "com.game.table";
 enum mail_error {
   kMail_errorOK = 0;
 
-  kMailClaimNotOpen = 17000;
+  kMailNotFound = 17000;
 
-  kMailNotFound = 17001;
+  kMailExpired = 17001;
 
-  kMailExpired = 17002;
+  kMailRecipientBoxFull = 17002;
 
-  kMailRecipientBoxFull = 17003;
+  kMailAttachmentInvalid = 17003;
 
-  kMailAttachmentNotOpen = 17004;
+  kMailRequestConflict = 17004;
 
-  kMailAttachmentInvalid = 17005;
+  kMailSystemMailLimit = 17005;
 
-  kMailRequestConflict = 17006;
+  kMailClaimPending = 17006;
 
-  kMailSystemMailLimit = 17007;
+  kMailClaimManual = 17007;
+
+  kMailAttachmentProtected = 17008;
+
+  kMailClaimNotOpen = 17009;
+
+  kMailAttachmentNotOpen = 17010;
 
 };

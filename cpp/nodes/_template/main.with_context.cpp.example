@@ -4,6 +4,7 @@
 #include "node/system/node/node_entry.h"
 
 #include "handler/rpc/your_node_handler.h"
+#include "handler/event/your_node_kafka_command_router.h"
 #include "proto/contracts/kafka/your_node_command.pb.h"
 
 using namespace muduo;
@@ -18,6 +19,12 @@ struct YourNodeRuntimeContext {
 
 struct YourNodeHooks {
     using KafkaCommandType = contracts::kafka::YourNodeCommand;
+    // 必须显式指定生成的节点白名单路由,由路由直接调用 handler。
+    // 新节点没有入口时,先在 protogen event_ingress.go 添加入口枚举与文件位置规则再生成。
+    static void DispatchKafkaCommand(const std::string& topic, const KafkaCommandType& command)
+    {
+        DispatchYourNodeKafkaCommand(topic, command);
+    }
 };
 
 } // namespace

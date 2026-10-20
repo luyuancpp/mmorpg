@@ -3,7 +3,8 @@
 // 会话路由 lane 的纯逻辑核心(docs/design/client-request-ordering.md §4)。
 //
 // gate 对同一会话经路由服转发的 gRPC 类请求按收包顺序单飞:上一条观察到完成(成功回包 / 失败回调 /
-// 路由服节点摘除 / 本地截止到期)之后才发下一条。不同会话之间互不影响;路由服与业务服保持无状态、随机分配。
+// 本地截止到期;路由服节点摘除经 ~Channel 的 UNAVAILABLE 走失败回调)之后才发下一条。不同会话之间互不影响;
+// 路由服与业务服保持无状态、随机分配。
 //
 // 本文件只依赖 STL(含同样只依赖 STL 的 engine/core utils/data_structures/inflight_index.h):不认识连接、gRPC、ECS,也不读时钟(时刻由调用方传入),所以单测可以脱离引擎直接编译
 // (cpp/nodes/gate/tests/router_lane_test.cpp)。装配与副作用(发送、回执、日志)在
@@ -131,14 +132,20 @@ private:
 // 进程级在途索引:按 gate 序号认领,保证每个调用恰好被处理一次;另带一个按截止时刻排序的过期堆。
 // Call 由调用方定义,必须有 `SteadyTime expiresAt` 成员。
 //
-// 为什么要过期堆:官方 CompletionQueue 时代,路由服节点被摘除时在途调用既不会触发成功回调也不会触发失败回调
-// (client-access-band-routing.md F29)。第 3 批改走 muduo_grpc 后 ~Channel 会以 UNAVAILABLE 补投失败
-// (grpc-muduo-transport.md §14),过期堆留作兜底:任何一条回调丢失时,队头卡住而客户端在等回包、不会再发新请求,
-// 纯惰性清理永远触发不到,所以必须有主动扫描(client-request-ordering.md §4.5)。
+// 为什么要过期堆:最初是为了官方 gRPC 下的 F29(client-access-band-routing.md)—— 路由服节点摘除时实体上的
+// 完成队列随之析构,在途调用既不触发成功回调也不触发失败回调。第 3 批起传输换成 muduo_grpc
+// (docs/design/grpc-muduo-transport.md §14):节点摘除时 ~Channel 以 UNAVAILABLE 投递在途调用的失败回调,
+// 截止到期由通道自己报 DEADLINE_EXCEEDED,完成回调恰好一次,F29 这条理由已不成立。
+// 现在它兜的是「调用的完成没被 lane 认领」:一是传输层「恰好一次」契约出缺陷、回调丢了;二是回调到了但认领不了 ——
+// 路由服的成功回包缺 x-session-detail-bin 回显、回显解析失败或不带 gate_call_seq(版本不符,见 router_muduo_forward.cpp
+// 的 LogMissingSessionEchoSampled)。两种情况下队头都会卡住,而客户端在等回包、不会再发新请求,纯惰性清理永远触发
+// 不到(client-request-ordering.md §4.5),主动扫描是会话能继续往下走的唯一兜底。正常运行时扫描不应摘出任何调用;
+// router_lane_expired 增长时先对照「no x-session-detail-bin echo」那条 WARN。
 //
 // 实现已上移到 engine/core(utils/data_structures/inflight_index.h),与节点间 RPC0 的 RpcChannel::outstandings_
 // 共用同一份(docs/design/muduo-rpc-channel.md §4.4)。语义不变:Insert 拒收 0 与重复;Extract 恰好一次;
-// 过期堆惰性删除;ExtractIf 遍历摘除。SteadyTime / CallSeq 与引擎的 InflightSteadyTime / InflightCallId 是同一类型。
+// 过期堆惰性删除。SteadyTime / CallSeq 与引擎的 InflightSteadyTime / InflightCallId 是同一类型。
+// (按路由服实体批量摘除的 ExtractIf 已删:节点摘除改由 ~Channel 的 UNAVAILABLE 失败回调逐条认领,见 client_request_lane.h。)
 template <typename Call>
 using InflightIndex = ::InflightIndex<Call>;
 

@@ -4,12 +4,14 @@ import (
 	"context"
 	"strconv"
 	"testing"
+	"time"
 
 	"data_service/internal/config"
 
 	"shared/placement"
 
 	"github.com/alicebob/miniredis/v2"
+	goredis "github.com/redis/go-redis/v9"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/zeromicro/go-zero/core/stores/redis"
@@ -522,4 +524,57 @@ func TestReleasePlayerLock_WrongTokenDoesNotUnlock(t *testing.T) {
 	_, ok3, err := r.AcquirePlayerLock(ctx, client, 456)
 	assert.NoError(t, err)
 	assert.True(t, ok3)
+}
+
+// TestReleasePlayerLock_CanceledContextStillReleases:释放跑在 data_logic 的 defer 里,那时请求 ctx 多半已超时或取消。
+// 沿用它释放时 go-redis 取连接前就回 context.Canceled,两把锁只能等 PlayerLockTTLSec 过期。
+func TestReleasePlayerLock_CanceledContextStillReleases(t *testing.T) {
+	r, mr := newTestRouter(t)
+	client, err := r.ClientForZone(1)
+	require.NoError(t, err)
+
+	token, ok, err := r.AcquirePlayerLock(context.Background(), client, 789)
+	require.NoError(t, err)
+	require.True(t, ok)
+
+	canceled, cancel := context.WithCancel(context.Background())
+	cancel()
+	require.NoError(t, r.ReleasePlayerLock(canceled, client, 789, token))
+
+	assert.False(t, mr.Exists(PlayerDataLockKey(789)), "data-side lock must be released even with a canceled ctx")
+	assert.False(t, mr.Exists(mappingPlayerLockKey(789)), "mapping-side lock must be released even with a canceled ctx")
+	_, ok, err = r.AcquirePlayerLock(context.Background(), client, 789)
+	require.NoError(t, err)
+	assert.True(t, ok, "lock must be re-acquirable right away, not after the TTL")
+}
+
+// cancelOnSetNXClient 在数据侧 SETNX 之前取消请求 ctx,模拟「mapping 锁已拿到、第二把锁之前请求超时」。
+type cancelOnSetNXClient struct {
+	*goredis.Client
+	cancel context.CancelFunc
+}
+
+func (c *cancelOnSetNXClient) SetNX(ctx context.Context, key string, value interface{}, expiration time.Duration) *goredis.BoolCmd {
+	c.cancel()
+	return c.Client.SetNX(ctx, key, value, expiration)
+}
+
+// TestAcquirePlayerLock_CanceledBeforeDataLockReleasesMappingLock:第二把锁因 ctx 取消而失败时,
+// 回滚第一把锁不能再用这个已取消的 ctx,否则 mapping 锁留到 TTL 过期。
+func TestAcquirePlayerLock_CanceledBeforeDataLockReleasesMappingLock(t *testing.T) {
+	r, mr := newTestRouter(t)
+	client, err := r.ClientForZone(1)
+	require.NoError(t, err)
+	devClient, ok := client.(*goredis.Client)
+	require.Truef(t, ok, "dev 模式下 ClientForZone 应返回 *goredis.Client,实际 %T", client)
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	token, ok, err := r.AcquirePlayerLock(ctx, &cancelOnSetNXClient{Client: devClient, cancel: cancel}, 790)
+	require.ErrorIs(t, err, context.Canceled)
+	assert.False(t, ok)
+	assert.Empty(t, token)
+
+	assert.False(t, mr.Exists(mappingPlayerLockKey(790)), "mapping-side lock must be rolled back even though ctx is canceled")
+	assert.False(t, mr.Exists(PlayerDataLockKey(790)))
 }

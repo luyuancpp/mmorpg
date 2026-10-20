@@ -24,40 +24,49 @@ const (
 type MailError int32
 
 const (
-	MailError_kMail_errorOK          MailError = 0
-	MailError_kMailClaimNotOpen      MailError = 17000
-	MailError_kMailNotFound          MailError = 17001
-	MailError_kMailExpired           MailError = 17002
-	MailError_kMailRecipientBoxFull  MailError = 17003
-	MailError_kMailAttachmentNotOpen MailError = 17004
-	MailError_kMailAttachmentInvalid MailError = 17005
-	MailError_kMailRequestConflict   MailError = 17006
-	MailError_kMailSystemMailLimit   MailError = 17007
+	MailError_kMail_errorOK            MailError = 0
+	MailError_kMailNotFound            MailError = 17000
+	MailError_kMailExpired             MailError = 17001
+	MailError_kMailRecipientBoxFull    MailError = 17002
+	MailError_kMailAttachmentInvalid   MailError = 17003
+	MailError_kMailRequestConflict     MailError = 17004
+	MailError_kMailSystemMailLimit     MailError = 17005
+	MailError_kMailClaimPending        MailError = 17006
+	MailError_kMailClaimManual         MailError = 17007
+	MailError_kMailAttachmentProtected MailError = 17008
+	MailError_kMailClaimNotOpen        MailError = 17009
+	MailError_kMailAttachmentNotOpen   MailError = 17010
 )
 
 // Enum value maps for MailError.
 var (
 	MailError_name = map[int32]string{
 		0:     "kMail_errorOK",
-		17000: "kMailClaimNotOpen",
-		17001: "kMailNotFound",
-		17002: "kMailExpired",
-		17003: "kMailRecipientBoxFull",
-		17004: "kMailAttachmentNotOpen",
-		17005: "kMailAttachmentInvalid",
-		17006: "kMailRequestConflict",
-		17007: "kMailSystemMailLimit",
+		17000: "kMailNotFound",
+		17001: "kMailExpired",
+		17002: "kMailRecipientBoxFull",
+		17003: "kMailAttachmentInvalid",
+		17004: "kMailRequestConflict",
+		17005: "kMailSystemMailLimit",
+		17006: "kMailClaimPending",
+		17007: "kMailClaimManual",
+		17008: "kMailAttachmentProtected",
+		17009: "kMailClaimNotOpen",
+		17010: "kMailAttachmentNotOpen",
 	}
 	MailError_value = map[string]int32{
-		"kMail_errorOK":          0,
-		"kMailClaimNotOpen":      17000,
-		"kMailNotFound":          17001,
-		"kMailExpired":           17002,
-		"kMailRecipientBoxFull":  17003,
-		"kMailAttachmentNotOpen": 17004,
-		"kMailAttachmentInvalid": 17005,
-		"kMailRequestConflict":   17006,
-		"kMailSystemMailLimit":   17007,
+		"kMail_errorOK":            0,
+		"kMailNotFound":            17000,
+		"kMailExpired":             17001,
+		"kMailRecipientBoxFull":    17002,
+		"kMailAttachmentInvalid":   17003,
+		"kMailRequestConflict":     17004,
+		"kMailSystemMailLimit":     17005,
+		"kMailClaimPending":        17006,
+		"kMailClaimManual":         17007,
+		"kMailAttachmentProtected": 17008,
+		"kMailClaimNotOpen":        17009,
+		"kMailAttachmentNotOpen":   17010,
 	}
 )
 
@@ -92,18 +101,21 @@ var File_mail_error_tip_proto protoreflect.FileDescriptor
 
 const file_mail_error_tip_proto_rawDesc = "" +
 	"\n" +
-	"\x14mail_error_tip.proto*\xf2\x01\n" +
+	"\x14mail_error_tip.proto*\xc3\x02\n" +
 	"\n" +
 	"mail_error\x12\x11\n" +
-	"\rkMail_errorOK\x10\x00\x12\x17\n" +
-	"\x11kMailClaimNotOpen\x10\xe8\x84\x01\x12\x13\n" +
-	"\rkMailNotFound\x10\xe9\x84\x01\x12\x12\n" +
-	"\fkMailExpired\x10\xea\x84\x01\x12\x1b\n" +
-	"\x15kMailRecipientBoxFull\x10\xeb\x84\x01\x12\x1c\n" +
-	"\x16kMailAttachmentNotOpen\x10\xec\x84\x01\x12\x1c\n" +
-	"\x16kMailAttachmentInvalid\x10\xed\x84\x01\x12\x1a\n" +
-	"\x14kMailRequestConflict\x10\xee\x84\x01\x12\x1a\n" +
-	"\x14kMailSystemMailLimit\x10\xef\x84\x01B$\n" +
+	"\rkMail_errorOK\x10\x00\x12\x13\n" +
+	"\rkMailNotFound\x10\xe8\x84\x01\x12\x12\n" +
+	"\fkMailExpired\x10\xe9\x84\x01\x12\x1b\n" +
+	"\x15kMailRecipientBoxFull\x10\xea\x84\x01\x12\x1c\n" +
+	"\x16kMailAttachmentInvalid\x10\xeb\x84\x01\x12\x1a\n" +
+	"\x14kMailRequestConflict\x10\xec\x84\x01\x12\x1a\n" +
+	"\x14kMailSystemMailLimit\x10\xed\x84\x01\x12\x17\n" +
+	"\x11kMailClaimPending\x10\xee\x84\x01\x12\x16\n" +
+	"\x10kMailClaimManual\x10\xef\x84\x01\x12\x1e\n" +
+	"\x18kMailAttachmentProtected\x10\xf0\x84\x01\x12\x17\n" +
+	"\x11kMailClaimNotOpen\x10\xf1\x84\x01\x12\x1c\n" +
+	"\x16kMailAttachmentNotOpen\x10\xf2\x84\x01B$\n" +
 	"\x0ecom.game.tableZ\x12generated/pb/tableb\x06proto3"
 
 var (

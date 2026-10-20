@@ -2,6 +2,7 @@ package svc
 
 import (
 	"context"
+	"errors"
 	"net"
 	"reflect"
 	"testing"
@@ -10,6 +11,7 @@ import (
 	"data_service/internal/routing"
 	"data_service/internal/store"
 
+	"github.com/alicebob/miniredis/v2"
 	"github.com/zeromicro/go-zero/core/stores/redis"
 )
 
@@ -29,14 +31,26 @@ type stubTxLogStore struct{ TransactionLogStore }
 type stubIdSegmentStore struct{ IdSegmentStore }
 type stubPlayerNameStore struct{ PlayerNameStore }
 
-// stubPlayerRouteStore 是 PlayerRouteStore 的最小实现(RegisterHome + Close),不嵌入接口:
-// 两个方法都写实,以免哪天 MissingStores 之外的路径误调它时 nil 接口 panic 掩盖真正的问题。
+// stubPlayerRouteStore 是 PlayerRouteStore 的最小实现(RegisterHome + 第 3 批的三个回源读 + Close),不嵌入接口:
+// 方法都写实,以免哪天 MissingStores 之外的路径误调它时 nil 接口 panic 掩盖真正的问题。
 type stubPlayerRouteStore struct{}
 
 func (stubPlayerRouteStore) RegisterHome(context.Context, store.RouteRegisterRequest) (store.RouteRegisterResult, error) {
 	return store.RouteRegisterResult{}, nil
 }
+func (stubPlayerRouteStore) GetHomeAndFence(context.Context, uint64) (store.RouteHomeFence, error) {
+	return store.RouteHomeFence{}, nil
+}
+func (stubPlayerRouteStore) GetRoutes(context.Context, []uint64) (map[uint64]store.RouteRow, error) {
+	return map[uint64]store.RouteRow{}, nil
+}
+func (stubPlayerRouteStore) ScanRoutesByHome(context.Context, uint32, store.RouteScanCursor, int) ([]store.RouteRow, error) {
+	return nil, nil
+}
 func (stubPlayerRouteStore) Close() error { return nil }
+
+// 接口一变,编译期先炸:装配处把 *store.RouteStore 直接当 PlayerRouteStore 用(写入点 + 回源读者 + Close)。
+var _ PlayerRouteStore = (*store.RouteStore)(nil)
 
 // db_first 下 player_route 是必需的:K8s 各档 Store.Required=true,它缺席时 main 必须拒启 ——
 // 这条是"db_first 装配失败即拒启"的唯一判据(规格 d 节 MissingStores)。redis 模式根本不装配它,
@@ -117,4 +131,82 @@ func closedLoopbackAddr(t *testing.T) string {
 		t.Fatalf("close listener: %v", err)
 	}
 	return addr
+}
+
+// ── 第 3 批读方门禁的装配(规格 §5.2、§13.2 第 2 条)──────────────────────────────
+
+// countingRouteReader 记 ScanRoutesByHome 被调了几次:用来证明 routeRouterOptions 给的选项真的把回源读者装进了 Router。
+type countingRouteReader struct {
+	stubPlayerRouteStore
+	scans int
+}
+
+func (c *countingRouteReader) ScanRoutesByHome(context.Context, uint32, store.RouteScanCursor, int) ([]store.RouteRow, error) {
+	c.scans++
+	return nil, nil
+}
+
+// TestRouteRouterOptionsInjectsStoreAsWriterAndReader:装配好的 route store 同时作为写入点与回源读者注入 Router;
+// 没装配(nil)时一个选项都不给(不包出「非 nil 接口包着 nil 指针」)。注入效果用 db_first 下的 R7 观察:
+// GetAllPlayerIDsInZone 一律读库,读者在就走它,读者不在就 fail-closed。
+func TestRouteRouterOptionsInjectsStoreAsWriterAndReader(t *testing.T) {
+	if got := routeRouterOptions(nil); got != nil {
+		t.Fatalf("a nil route store must yield no router options, got %d", len(got))
+	}
+
+	mr := miniredis.RunT(t)
+	var c config.Config
+	c.MappingRedis = redis.RedisConf{Host: mr.Addr(), Type: "node"}
+	// 保持非 dev 的合法路由配置;R7 应只读注入的 store,不访问数据 Redis 集群。
+	c.Regions = []config.RegionConfig{{Id: 1, Zones: []uint32{7}, Redis: config.RedisClusterConfig{Addrs: []string{mr.Addr()}}}}
+	c.PlayerLockTTLSec = 3
+	zero := 0
+	c.RouteStore = config.RouteStoreConfig{Mode: config.RouteStoreModeDBFirst, WaitAOFNumLocal: &zero, WaitAOFNumReplicas: &zero}
+
+	reader := &countingRouteReader{}
+	opts := routeRouterOptions(reader)
+	if len(opts) != 2 {
+		t.Fatalf("an assembled route store must be injected as both writer and reader, got %d options", len(opts))
+	}
+	r := routing.NewRouter(c, opts...)
+	t.Cleanup(r.Close)
+	if _, err := r.GetAllPlayerIDsInZone(context.Background(), 7); err != nil {
+		t.Fatalf("R7 with an injected reader: %v", err)
+	}
+	if reader.scans != 1 {
+		t.Fatalf("R7 must read through the injected route reader, scans=%d", reader.scans)
+	}
+
+	bare := routing.NewRouter(c, routeRouterOptions(nil)...)
+	t.Cleanup(bare.Close)
+	if _, err := bare.GetAllPlayerIDsInZone(context.Background(), 7); !errors.Is(err, routing.ErrRouteReadUnavailable) {
+		t.Fatalf("db_first without a route reader must fail closed with ErrRouteReadUnavailable, got %v", err)
+	}
+}
+
+// TestProbeRouteReadyReadAtStartup:开关关着时不碰 mapping Redis(连不上的地址也放行);开关打开时读脚本跑不起来
+// (miniredis 不支持 INFO server,即「INFO 在脚本里不可用」;或连不上)一律回 false,newPlayerRouteStore 随之不装配
+// route store —— 在开库之前就返回(MySQLConfig 是零值,碰库会是另一种失败)。
+func TestProbeRouteReadyReadAtStartup(t *testing.T) {
+	var c config.Config
+	c.MappingRedis = redis.RedisConf{Host: closedLoopbackAddr(t), Type: "node"}
+	zero := 0
+	c.RouteStore = config.RouteStoreConfig{Mode: config.RouteStoreModeDBFirst, WaitAOFNumLocal: &zero, WaitAOFNumReplicas: &zero}.Normalize()
+	if !probeRouteReadyReadAtStartup(c) {
+		t.Fatal("ReadRequiresReady=false must skip the probe entirely")
+	}
+
+	c.RouteStore.ReadRequiresReady = true
+	if probeRouteReadyReadAtStartup(c) {
+		t.Fatal("an unreachable mapping redis must fail the route ready read probe")
+	}
+
+	mr := miniredis.RunT(t)
+	c.MappingRedis = redis.RedisConf{Host: mr.Addr(), Type: "node"}
+	if probeRouteReadyReadAtStartup(c) {
+		t.Fatal("a mapping redis that rejects INFO inside scripts must fail the probe")
+	}
+	if got := newPlayerRouteStore(c, store.MySQLConfig{}, true); got != nil {
+		t.Fatalf("route store must not be assembled when the route ready read probe fails, got %T", got)
+	}
 }

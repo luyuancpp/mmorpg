@@ -209,6 +209,27 @@ func TestSourceZonePatternsAndFixedKeys(t *testing.T) {
 	}
 }
 
+// scene_manager:zones 是与 go/scene_manager/internal/logic/zone_registry.go 共享的跨 module 契约:
+// 键名与成员写法(zone 十进制)两边各自钉死。它不得落进上面任何按源 zone 前缀清理的模式。
+func TestSourceZoneRegistryMember(t *testing.T) {
+	if sceneManagerZonesKey != "scene_manager:zones" {
+		t.Fatalf("sceneManagerZonesKey = %q", sceneManagerZonesKey)
+	}
+	if got := sourceZoneRegistryMember(102); got != "102" {
+		t.Fatalf("sourceZoneRegistryMember(102) = %q, want \"102\"", got)
+	}
+	for _, p := range sourceZoneScanPatterns(102) {
+		if strings.HasPrefix(sceneManagerZonesKey, strings.TrimSuffix(p, "*")) {
+			t.Errorf("registry key must not match source-zone pattern %q", p)
+		}
+	}
+	var rep hotStateClearReport
+	rep.ZoneRegistryFound, rep.ZoneRegistryRemoved = 1, 1
+	if s := rep.String(); !strings.Contains(s, "zone_registry(found=1 removed=1)") {
+		t.Errorf("the registry step must show up in the report: %s", s)
+	}
+}
+
 func TestBackfillPlanBatch(t *testing.T) {
 	var rep backfillReport
 	ids := []uint64{1, 2, 3, 4}

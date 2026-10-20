@@ -31,7 +31,7 @@ const (
 	AssetOpStream_ASSET_OP_STREAM_GUILD_CREDIT  AssetOpStream = 2 // guild 独占
 	AssetOpStream_ASSET_OP_STREAM_TRADE_DEBIT   AssetOpStream = 3 // trade 独占(聚宝斋 P2)
 	AssetOpStream_ASSET_OP_STREAM_TRADE_CREDIT  AssetOpStream = 4 // trade 独占(聚宝斋 P2)
-	AssetOpStream_ASSET_OP_STREAM_SYSTEM_CREDIT AssetOpStream = 5 // 预留:邮件/GM 发物(D1)
+	AssetOpStream_ASSET_OP_STREAM_SYSTEM_CREDIT AssetOpStream = 5 // mail独占；榜奖等生产者通过可信邮件意图发放
 )
 
 // Enum value maps for AssetOpStream.
@@ -269,7 +269,11 @@ type AssetBundle struct {
 	// 可叠加物品按 config_id + count 走 items 字段,不进本字段。
 	ItemUuids []uint64 `protobuf:"varint,3,rep,packed,name=item_uuids,json=itemUuids,proto3" json:"item_uuids,omitempty"`
 	// 按 guid 扣出/入账一只宝宝;0 = 不涉及宝宝。同样已进签名串(`;p=` 段),见上。
-	PetId         uint64 `protobuf:"varint,4,opt,name=pet_id,json=petId,proto3" json:"pet_id,omitempty"`
+	PetId uint64 `protobuf:"varint,4,opt,name=pet_id,json=petId,proto3" json:"pet_id,omitempty"`
+	// 已有实例过户。instance_proto 是原有 ItemComp/PetInstance 的完整序列化字节，
+	// 不复制属性结构，保留未知字段；目标背包重新分配布局和入包序号。
+	ItemInstances []*AssetItemInstance `protobuf:"bytes,5,rep,name=item_instances,json=itemInstances,proto3" json:"item_instances,omitempty"`
+	PetInstance   *AssetPetInstance    `protobuf:"bytes,6,opt,name=pet_instance,json=petInstance,proto3" json:"pet_instance,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -332,11 +336,25 @@ func (x *AssetBundle) GetPetId() uint64 {
 	return 0
 }
 
+func (x *AssetBundle) GetItemInstances() []*AssetItemInstance {
+	if x != nil {
+		return x.ItemInstances
+	}
+	return nil
+}
+
+func (x *AssetBundle) GetPetInstance() *AssetPetInstance {
+	if x != nil {
+		return x.PetInstance
+	}
+	return nil
+}
+
 // 调用方签名(§4.32,不变量 I9)。放在消息体里:生成的 gRPC 包装读不到 metadata
 // (grpc_handler_gen.go:125 把 context 参数注释掉了)。
 type AssetOpAuth struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Caller        string                 `protobuf:"bytes,1,opt,name=caller,proto3" json:"caller,omitempty"`                                 // "guild" / "trade";按流白名单
+	Caller        string                 `protobuf:"bytes,1,opt,name=caller,proto3" json:"caller,omitempty"`                                 // "guild" / "trade" / "mail";按流独占白名单
 	TimestampMs   uint64                 `protobuf:"varint,2,opt,name=timestamp_ms,json=timestampMs,proto3" json:"timestamp_ms,omitempty"`   // 签名时刻;与 scene 时钟偏差须 <= 300000
 	SignatureHex  string                 `protobuf:"bytes,3,opt,name=signature_hex,json=signatureHex,proto3" json:"signature_hex,omitempty"` // lowercase-hex(HMAC-SHA256(调用方密钥, canonical))
 	unknownFields protoimpl.UnknownFields
@@ -494,26 +512,15 @@ func (x *AssetOpRequest) GetAuth() *AssetOpAuth {
 	return nil
 }
 
-// ---- 聚宝斋 P2 追加(帮会不使用)----
-//
-// **当前状态:纯预留,v1 既不填也不读。**(2026-09-19 跨包审稿 minor)
-// 下面三个 message 与 AssetOpResponse.snapshot 至今**零写者、零读者**:scene 侧
-// 没有任何 mutable_snapshot(...) 调用,Go 侧 assetop / trade 也没有 GetSnapshot(...)。
-// 留着是为了把字段号先钉死(§4.3.1「扩展一律追加」),不是"对账快照已经可用"。
-// 解锁条件:canonical 的 `;u=;p=` 两段已于 2026-09-19 补齐,剩下的是 scene 的填充与
-// trade 的读取(随 P3 托管一起落)。**在那之前谁都不要按"响应里已经
-// 有库存快照"去接线** —— 读到的一定是空 message,而空 message 与"本次没动任何
-// 库存"在 proto3 上不可区分,静默走错分支。
-//
-// 快照用的两个精简形状:本文件必须是叶子包(见文件头),不能 import
-// bag_quest_mail_data.proto 的 ItemEntry / player_pet_comp.proto 的 PetInstance。
-// 只取交易展示与对账需要的字段;pos / bag_type / allocated / aptitude 等
-// 持久化细节不进快照,scene 填充时从对应组件里取同名字段即可。
+// 交易完整实例快照：scene扣出时提取原件并和结局同记录持久化，
+// 重查仍返回原件；trade在自己的SQL事务保存快照后才发送可靠ACK释放。
+// 帮会不使用。叶子包不得反向依赖组件；完整成长与未知字段保留在instance_proto。
 type AssetItemInstance struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	ItemUuid      uint64                 `protobuf:"varint,1,opt,name=item_uuid,json=itemUuid,proto3" json:"item_uuid,omitempty"`    // 与 ItemEntry.item_uuid 同源(SnowFlake guid)
-	ConfigId      uint32                 `protobuf:"varint,2,opt,name=config_id,json=configId,proto3" json:"config_id,omitempty"`    // ItemTable id
-	StackSize     uint32                 `protobuf:"varint,3,opt,name=stack_size,json=stackSize,proto3" json:"stack_size,omitempty"` // 不可叠加物品恒为 1
+	ItemUuid      uint64                 `protobuf:"varint,1,opt,name=item_uuid,json=itemUuid,proto3" json:"item_uuid,omitempty"`               // 与 ItemComp.item_id 同源的运行时实例ID，不凭字段名选择号源解析器
+	ConfigId      uint32                 `protobuf:"varint,2,opt,name=config_id,json=configId,proto3" json:"config_id,omitempty"`               // ItemTable id
+	StackSize     uint32                 `protobuf:"varint,3,opt,name=stack_size,json=stackSize,proto3" json:"stack_size,omitempty"`            // 不可叠加物品恒为 1
+	InstanceProto []byte                 `protobuf:"bytes,4,opt,name=instance_proto,json=instanceProto,proto3" json:"instance_proto,omitempty"` // 完整 ItemComp；三个身份字段必须与内部值一致
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -569,12 +576,20 @@ func (x *AssetItemInstance) GetStackSize() uint32 {
 	return 0
 }
 
+func (x *AssetItemInstance) GetInstanceProto() []byte {
+	if x != nil {
+		return x.InstanceProto
+	}
+	return nil
+}
+
 type AssetPetInstance struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	PetId         uint64                 `protobuf:"varint,1,opt,name=pet_id,json=petId,proto3" json:"pet_id,omitempty"`                  // 与 PetInstance.pet_id 同源(SnowFlake guid)
-	PetTableId    uint32                 `protobuf:"varint,2,opt,name=pet_table_id,json=petTableId,proto3" json:"pet_table_id,omitempty"` // Pet 表 id
-	Name          string                 `protobuf:"bytes,3,opt,name=name,proto3" json:"name,omitempty"`                                  // 玩家自定义名;空 = 用 PetTable.name
-	Level         uint32                 `protobuf:"varint,4,opt,name=level,proto3" json:"level,omitempty"`                               // 成交时的等级快照,只为展示
+	PetId         uint64                 `protobuf:"varint,1,opt,name=pet_id,json=petId,proto3" json:"pet_id,omitempty"`                        // 与 PetInstance.pet_id 同源(SnowFlake guid)
+	PetTableId    uint32                 `protobuf:"varint,2,opt,name=pet_table_id,json=petTableId,proto3" json:"pet_table_id,omitempty"`       // Pet 表 id
+	Name          string                 `protobuf:"bytes,3,opt,name=name,proto3" json:"name,omitempty"`                                        // 玩家自定义名;空 = 用 PetTable.name
+	Level         uint32                 `protobuf:"varint,4,opt,name=level,proto3" json:"level,omitempty"`                                     // 成交时的等级快照,只为展示
+	InstanceProto []byte                 `protobuf:"bytes,5,opt,name=instance_proto,json=instanceProto,proto3" json:"instance_proto,omitempty"` // 完整 PetInstance；身份字段必须与内部值一致
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -637,9 +652,15 @@ func (x *AssetPetInstance) GetLevel() uint32 {
 	return 0
 }
 
-// 【P2 预留,v1 不填不读】这一次指令实际动到的那份库存。将来交易侧用它做
-// "寄售快照 / 收货确认"的展示与对账;帮会的 Debit/Credit 永远不填此字段
-// (填充只会发生在 TRADE_* 流上)。解锁条件见上面那段。
+func (x *AssetPetInstance) GetInstanceProto() []byte {
+	if x != nil {
+		return x.InstanceProto
+	}
+	return nil
+}
+
+// 本次已有实例的托管原件；与原始不可变bundle共同描述完整交易条款。
+// 帮会的 Debit/Credit 不填此字段，不能把空快照解释为资产已到账。
 type AssetSnapshot struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// 本次扣出(Debit)或入账(Credit)的物品条目。
@@ -782,6 +803,76 @@ func (x *AssetOpResponse) GetSnapshot() *AssetSnapshot {
 	return nil
 }
 
+// go/db 在玩家资产与账本的同一 SQL 行提交后发布的提交证据。
+// Redis 只缓存证据：丢失时继续等待重投，不得退回使用 scene 的 Redis 快照作到账确认。
+type PlayerAssetSQLCommit struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	PlayerId      uint64                 `protobuf:"varint,1,opt,name=player_id,json=playerId,proto3" json:"player_id,omitempty"`
+	OwnerEpoch    uint64                 `protobuf:"varint,2,opt,name=owner_epoch,json=ownerEpoch,proto3" json:"owner_epoch,omitempty"`
+	SaveSeq       uint64                 `protobuf:"varint,3,opt,name=save_seq,json=saveSeq,proto3" json:"save_seq,omitempty"`
+	LedgerProto   []byte                 `protobuf:"bytes,4,opt,name=ledger_proto,json=ledgerProto,proto3" json:"ledger_proto,omitempty"` // PlayerAssetOpLedgerComp，避免 asset/component 包循环
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *PlayerAssetSQLCommit) Reset() {
+	*x = PlayerAssetSQLCommit{}
+	mi := &file_proto_common_asset_asset_op_proto_msgTypes[9]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *PlayerAssetSQLCommit) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*PlayerAssetSQLCommit) ProtoMessage() {}
+
+func (x *PlayerAssetSQLCommit) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_common_asset_asset_op_proto_msgTypes[9]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use PlayerAssetSQLCommit.ProtoReflect.Descriptor instead.
+func (*PlayerAssetSQLCommit) Descriptor() ([]byte, []int) {
+	return file_proto_common_asset_asset_op_proto_rawDescGZIP(), []int{9}
+}
+
+func (x *PlayerAssetSQLCommit) GetPlayerId() uint64 {
+	if x != nil {
+		return x.PlayerId
+	}
+	return 0
+}
+
+func (x *PlayerAssetSQLCommit) GetOwnerEpoch() uint64 {
+	if x != nil {
+		return x.OwnerEpoch
+	}
+	return 0
+}
+
+func (x *PlayerAssetSQLCommit) GetSaveSeq() uint64 {
+	if x != nil {
+		return x.SaveSeq
+	}
+	return 0
+}
+
+func (x *PlayerAssetSQLCommit) GetLedgerProto() []byte {
+	if x != nil {
+		return x.LedgerProto
+	}
+	return nil
+}
+
 var File_proto_common_asset_asset_op_proto protoreflect.FileDescriptor
 
 const file_proto_common_asset_asset_op_proto_rawDesc = "" +
@@ -792,7 +883,7 @@ const file_proto_common_asset_asset_op_proto_rawDesc = "" +
 	"\x06amount\x18\x02 \x01(\x04R\x06amount\">\n" +
 	"\tItemGrant\x12\x1b\n" +
 	"\tconfig_id\x18\x01 \x01(\rR\bconfigId\x12\x14\n" +
-	"\x05count\x18\x02 \x01(\rR\x05count\"\x96\x01\n" +
+	"\x05count\x18\x02 \x01(\rR\x05count\"\x87\x02\n" +
 	"\vAssetBundle\x12/\n" +
 	"\n" +
 	"currencies\x18\x01 \x03(\v2\x0f.CurrencyAmountR\n" +
@@ -801,7 +892,9 @@ const file_proto_common_asset_asset_op_proto_rawDesc = "" +
 	".ItemGrantR\x05items\x12\x1d\n" +
 	"\n" +
 	"item_uuids\x18\x03 \x03(\x04R\titemUuids\x12\x15\n" +
-	"\x06pet_id\x18\x04 \x01(\x04R\x05petId\"m\n" +
+	"\x06pet_id\x18\x04 \x01(\x04R\x05petId\x129\n" +
+	"\x0eitem_instances\x18\x05 \x03(\v2\x12.AssetItemInstanceR\ritemInstances\x124\n" +
+	"\fpet_instance\x18\x06 \x01(\v2\x11.AssetPetInstanceR\vpetInstance\"m\n" +
 	"\vAssetOpAuth\x12\x16\n" +
 	"\x06caller\x18\x01 \x01(\tR\x06caller\x12!\n" +
 	"\ftimestamp_ms\x18\x02 \x01(\x04R\vtimestampMs\x12#\n" +
@@ -814,18 +907,20 @@ const file_proto_common_asset_asset_op_proto_rawDesc = "" +
 	"\atx_type\x18\x05 \x01(\rR\x06txType\x12$\n" +
 	"\x06bundle\x18\x06 \x01(\v2\f.AssetBundleR\x06bundle\x12!\n" +
 	"\fstream_epoch\x18\a \x01(\x04R\vstreamEpoch\x12 \n" +
-	"\x04auth\x18\b \x01(\v2\f.AssetOpAuthR\x04auth\"l\n" +
+	"\x04auth\x18\b \x01(\v2\f.AssetOpAuthR\x04auth\"\x93\x01\n" +
 	"\x11AssetItemInstance\x12\x1b\n" +
 	"\titem_uuid\x18\x01 \x01(\x04R\bitemUuid\x12\x1b\n" +
 	"\tconfig_id\x18\x02 \x01(\rR\bconfigId\x12\x1d\n" +
 	"\n" +
-	"stack_size\x18\x03 \x01(\rR\tstackSize\"u\n" +
+	"stack_size\x18\x03 \x01(\rR\tstackSize\x12%\n" +
+	"\x0einstance_proto\x18\x04 \x01(\fR\rinstanceProto\"\x9c\x01\n" +
 	"\x10AssetPetInstance\x12\x15\n" +
 	"\x06pet_id\x18\x01 \x01(\x04R\x05petId\x12 \n" +
 	"\fpet_table_id\x18\x02 \x01(\rR\n" +
 	"petTableId\x12\x12\n" +
 	"\x04name\x18\x03 \x01(\tR\x04name\x12\x14\n" +
-	"\x05level\x18\x04 \x01(\rR\x05level\"\x8b\x01\n" +
+	"\x05level\x18\x04 \x01(\rR\x05level\x12%\n" +
+	"\x0einstance_proto\x18\x05 \x01(\fR\rinstanceProto\"\x8b\x01\n" +
 	"\rAssetSnapshot\x12(\n" +
 	"\x05items\x18\x01 \x03(\v2\x12.AssetItemInstanceR\x05items\x12#\n" +
 	"\x03pet\x18\x02 \x01(\v2\x11.AssetPetInstanceR\x03pet\x12+\n" +
@@ -835,7 +930,13 @@ const file_proto_common_asset_asset_op_proto_rawDesc = "" +
 	"\x06reason\x18\x02 \x01(\v2\x0f.TipInfoMessageR\x06reason\x12\x18\n" +
 	"\adurable\x18\x03 \x01(\bR\adurable\x12\x18\n" +
 	"\apartial\x18\x04 \x01(\bR\apartial\x12*\n" +
-	"\bsnapshot\x18\x05 \x01(\v2\x0e.AssetSnapshotR\bsnapshot*\xd9\x01\n" +
+	"\bsnapshot\x18\x05 \x01(\v2\x0e.AssetSnapshotR\bsnapshot\"\x92\x01\n" +
+	"\x14PlayerAssetSQLCommit\x12\x1b\n" +
+	"\tplayer_id\x18\x01 \x01(\x04R\bplayerId\x12\x1f\n" +
+	"\vowner_epoch\x18\x02 \x01(\x04R\n" +
+	"ownerEpoch\x12\x19\n" +
+	"\bsave_seq\x18\x03 \x01(\x04R\asaveSeq\x12!\n" +
+	"\fledger_proto\x18\x04 \x01(\fR\vledgerProto*\xd9\x01\n" +
 	"\rAssetOpStream\x12\x1f\n" +
 	"\x1bASSET_OP_STREAM_UNSPECIFIED\x10\x00\x12\x1f\n" +
 	"\x1bASSET_OP_STREAM_GUILD_DEBIT\x10\x01\x12 \n" +
@@ -863,38 +964,41 @@ func file_proto_common_asset_asset_op_proto_rawDescGZIP() []byte {
 }
 
 var file_proto_common_asset_asset_op_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
-var file_proto_common_asset_asset_op_proto_msgTypes = make([]protoimpl.MessageInfo, 9)
+var file_proto_common_asset_asset_op_proto_msgTypes = make([]protoimpl.MessageInfo, 10)
 var file_proto_common_asset_asset_op_proto_goTypes = []any{
-	(AssetOpStream)(0),          // 0: AssetOpStream
-	(AssetOpOutcome)(0),         // 1: AssetOpOutcome
-	(*CurrencyAmount)(nil),      // 2: CurrencyAmount
-	(*ItemGrant)(nil),           // 3: ItemGrant
-	(*AssetBundle)(nil),         // 4: AssetBundle
-	(*AssetOpAuth)(nil),         // 5: AssetOpAuth
-	(*AssetOpRequest)(nil),      // 6: AssetOpRequest
-	(*AssetItemInstance)(nil),   // 7: AssetItemInstance
-	(*AssetPetInstance)(nil),    // 8: AssetPetInstance
-	(*AssetSnapshot)(nil),       // 9: AssetSnapshot
-	(*AssetOpResponse)(nil),     // 10: AssetOpResponse
-	(*base.TipInfoMessage)(nil), // 11: TipInfoMessage
+	(AssetOpStream)(0),           // 0: AssetOpStream
+	(AssetOpOutcome)(0),          // 1: AssetOpOutcome
+	(*CurrencyAmount)(nil),       // 2: CurrencyAmount
+	(*ItemGrant)(nil),            // 3: ItemGrant
+	(*AssetBundle)(nil),          // 4: AssetBundle
+	(*AssetOpAuth)(nil),          // 5: AssetOpAuth
+	(*AssetOpRequest)(nil),       // 6: AssetOpRequest
+	(*AssetItemInstance)(nil),    // 7: AssetItemInstance
+	(*AssetPetInstance)(nil),     // 8: AssetPetInstance
+	(*AssetSnapshot)(nil),        // 9: AssetSnapshot
+	(*AssetOpResponse)(nil),      // 10: AssetOpResponse
+	(*PlayerAssetSQLCommit)(nil), // 11: PlayerAssetSQLCommit
+	(*base.TipInfoMessage)(nil),  // 12: TipInfoMessage
 }
 var file_proto_common_asset_asset_op_proto_depIdxs = []int32{
 	2,  // 0: AssetBundle.currencies:type_name -> CurrencyAmount
 	3,  // 1: AssetBundle.items:type_name -> ItemGrant
-	0,  // 2: AssetOpRequest.stream:type_name -> AssetOpStream
-	4,  // 3: AssetOpRequest.bundle:type_name -> AssetBundle
-	5,  // 4: AssetOpRequest.auth:type_name -> AssetOpAuth
-	7,  // 5: AssetSnapshot.items:type_name -> AssetItemInstance
-	8,  // 6: AssetSnapshot.pet:type_name -> AssetPetInstance
-	2,  // 7: AssetSnapshot.currency:type_name -> CurrencyAmount
-	1,  // 8: AssetOpResponse.outcome:type_name -> AssetOpOutcome
-	11, // 9: AssetOpResponse.reason:type_name -> TipInfoMessage
-	9,  // 10: AssetOpResponse.snapshot:type_name -> AssetSnapshot
-	11, // [11:11] is the sub-list for method output_type
-	11, // [11:11] is the sub-list for method input_type
-	11, // [11:11] is the sub-list for extension type_name
-	11, // [11:11] is the sub-list for extension extendee
-	0,  // [0:11] is the sub-list for field type_name
+	7,  // 2: AssetBundle.item_instances:type_name -> AssetItemInstance
+	8,  // 3: AssetBundle.pet_instance:type_name -> AssetPetInstance
+	0,  // 4: AssetOpRequest.stream:type_name -> AssetOpStream
+	4,  // 5: AssetOpRequest.bundle:type_name -> AssetBundle
+	5,  // 6: AssetOpRequest.auth:type_name -> AssetOpAuth
+	7,  // 7: AssetSnapshot.items:type_name -> AssetItemInstance
+	8,  // 8: AssetSnapshot.pet:type_name -> AssetPetInstance
+	2,  // 9: AssetSnapshot.currency:type_name -> CurrencyAmount
+	1,  // 10: AssetOpResponse.outcome:type_name -> AssetOpOutcome
+	12, // 11: AssetOpResponse.reason:type_name -> TipInfoMessage
+	9,  // 12: AssetOpResponse.snapshot:type_name -> AssetSnapshot
+	13, // [13:13] is the sub-list for method output_type
+	13, // [13:13] is the sub-list for method input_type
+	13, // [13:13] is the sub-list for extension type_name
+	13, // [13:13] is the sub-list for extension extendee
+	0,  // [0:13] is the sub-list for field type_name
 }
 
 func init() { file_proto_common_asset_asset_op_proto_init() }
@@ -908,7 +1012,7 @@ func file_proto_common_asset_asset_op_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_proto_common_asset_asset_op_proto_rawDesc), len(file_proto_common_asset_asset_op_proto_rawDesc)),
 			NumEnums:      2,
-			NumMessages:   9,
+			NumMessages:   10,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

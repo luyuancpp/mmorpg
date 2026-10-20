@@ -1,21 +1,30 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
+    <ClCompile Include="address.cpp" />
     <ClCompile Include="channel.cpp" />
     <ClCompile Include="client_session.cpp" />
     <ClCompile Include="grpc_timeout.cpp" />
     <ClCompile Include="http2_transport.cpp" />
     <ClCompile Include="message_framing.cpp" />
     <ClCompile Include="metadata.cpp" />
+    <ClCompile Include="method_table.cpp" />
+    <ClCompile Include="server.cpp" />
+    <ClCompile Include="server_session.cpp" />
     <ClCompile Include="status.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="address.h" />
     <ClInclude Include="channel.h" />
     <ClInclude Include="client_session.h" />
     <ClInclude Include="grpc_timeout.h" />
     <ClInclude Include="http2_transport.h" />
     <ClInclude Include="message_framing.h" />
     <ClInclude Include="metadata.h" />
+    <ClInclude Include="method_table.h" />
+    <ClInclude Include="server.h" />
+    <ClInclude Include="server_call.h" />
+    <ClInclude Include="server_session.h" />
     <ClInclude Include="status.h" />
   </ItemGroup>
 </Project>

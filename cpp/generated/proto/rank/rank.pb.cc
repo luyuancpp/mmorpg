@@ -29,11 +29,17 @@ namespace _fl = ::google::protobuf::internal::field_layout;
 namespace {
 PROTOBUF_CONSTINIT ::google::protobuf::internal::ReflectionData
     file_reflection_data[] = {
-        // ::rankpb::GetRankPageRequest
+        // ::rankpb::RankBoardKey
         {&::_pbi::kDescriptorMethods, &::descriptor_table_proto_2frank_2frank_2eproto, /* tracker*/ nullptr,},
         // ::rankpb::RankEntry
         {&::_pbi::kDescriptorMethods, &::descriptor_table_proto_2frank_2frank_2eproto, /* tracker*/ nullptr,},
+        // ::rankpb::GetRankPageRequest
+        {&::_pbi::kDescriptorMethods, &::descriptor_table_proto_2frank_2frank_2eproto, /* tracker*/ nullptr,},
         // ::rankpb::GetRankPageResponse
+        {&::_pbi::kDescriptorMethods, &::descriptor_table_proto_2frank_2frank_2eproto, /* tracker*/ nullptr,},
+        // ::rankpb::GetRankAroundRequest
+        {&::_pbi::kDescriptorMethods, &::descriptor_table_proto_2frank_2frank_2eproto, /* tracker*/ nullptr,},
+        // ::rankpb::GetRankAroundResponse
         {&::_pbi::kDescriptorMethods, &::descriptor_table_proto_2frank_2frank_2eproto, /* tracker*/ nullptr,},
 };
 }  // namespace
@@ -66,45 +72,45 @@ constexpr RankEntry::ParseTableT_ RankEntry::InternalGenerateParseTable_(const :
       #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
     }, {{
       {::_pbi::TcParser::MiniParse, {}},
-      // uint32 rank = 1;
-      {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(RankEntry, _impl_.rank_), 2>(),
-       {8, 2, 0,
+      // uint64 rank = 1;
+      {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(RankEntry, _impl_.rank_), 1>(),
+       {8, 1, 0,
         PROTOBUF_FIELD_OFFSET(RankEntry, _impl_.rank_)}},
-      // uint64 player_id = 2;
-      {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(RankEntry, _impl_.player_id_), 1>(),
-       {16, 1, 0,
-        PROTOBUF_FIELD_OFFSET(RankEntry, _impl_.player_id_)}},
-      // string name = 3;
+      // uint64 entity_id = 2;
+      {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(RankEntry, _impl_.entity_id_), 2>(),
+       {16, 2, 0,
+        PROTOBUF_FIELD_OFFSET(RankEntry, _impl_.entity_id_)}},
+      // int64 score = 3;
+      {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(RankEntry, _impl_.score_), 3>(),
+       {24, 3, 0,
+        PROTOBUF_FIELD_OFFSET(RankEntry, _impl_.score_)}},
+      // uint64 achieved_ms = 4;
+      {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(RankEntry, _impl_.achieved_ms_), 4>(),
+       {32, 4, 0,
+        PROTOBUF_FIELD_OFFSET(RankEntry, _impl_.achieved_ms_)}},
+      // string name = 5;
       {::_pbi::TcParser::FastUS1,
-       {26, 0, 0,
+       {42, 0, 0,
         PROTOBUF_FIELD_OFFSET(RankEntry, _impl_.name_)}},
-      // uint32 rating_centi = 4;
-      {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(RankEntry, _impl_.rating_centi_), 3>(),
-       {32, 3, 0,
-        PROTOBUF_FIELD_OFFSET(RankEntry, _impl_.rating_centi_)}},
-      // uint64 games = 5;
-      {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(RankEntry, _impl_.games_), 4>(),
-       {40, 4, 0,
-        PROTOBUF_FIELD_OFFSET(RankEntry, _impl_.games_)}},
       {::_pbi::TcParser::MiniParse, {}},
       {::_pbi::TcParser::MiniParse, {}},
     }}, {{
       65535, 65535
     }}, {{
-      // uint32 rank = 1;
-      {PROTOBUF_FIELD_OFFSET(RankEntry, _impl_.rank_), _Internal::kHasBitsOffset + 2, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
-      // uint64 player_id = 2;
-      {PROTOBUF_FIELD_OFFSET(RankEntry, _impl_.player_id_), _Internal::kHasBitsOffset + 1, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
-      // string name = 3;
+      // uint64 rank = 1;
+      {PROTOBUF_FIELD_OFFSET(RankEntry, _impl_.rank_), _Internal::kHasBitsOffset + 1, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
+      // uint64 entity_id = 2;
+      {PROTOBUF_FIELD_OFFSET(RankEntry, _impl_.entity_id_), _Internal::kHasBitsOffset + 2, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
+      // int64 score = 3;
+      {PROTOBUF_FIELD_OFFSET(RankEntry, _impl_.score_), _Internal::kHasBitsOffset + 3, 0, (0 | ::_fl::kFcOptional | ::_fl::kInt64)},
+      // uint64 achieved_ms = 4;
+      {PROTOBUF_FIELD_OFFSET(RankEntry, _impl_.achieved_ms_), _Internal::kHasBitsOffset + 4, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
+      // string name = 5;
       {PROTOBUF_FIELD_OFFSET(RankEntry, _impl_.name_), _Internal::kHasBitsOffset + 0, 0, (0 | ::_fl::kFcOptional | ::_fl::kUtf8String | ::_fl::kRepAString)},
-      // uint32 rating_centi = 4;
-      {PROTOBUF_FIELD_OFFSET(RankEntry, _impl_.rating_centi_), _Internal::kHasBitsOffset + 3, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
-      // uint64 games = 5;
-      {PROTOBUF_FIELD_OFFSET(RankEntry, _impl_.games_), _Internal::kHasBitsOffset + 4, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
     }},
     // no aux_entries
     {{
-      "\20\0\0\4\0\0\0\0"
+      "\20\0\0\0\0\4\0\0"
       "rankpb.RankEntry"
       "name"
     }},
@@ -119,10 +125,10 @@ inline constexpr RankEntry::Impl_::Impl_(
         name_(
             &::google::protobuf::internal::fixed_address_empty_string,
             ::_pbi::ConstantInitialized()),
-        player_id_{::uint64_t{0u}},
-        rank_{0u},
-        rating_centi_{0u},
-        games_{::uint64_t{0u}} {}
+        rank_{::uint64_t{0u}},
+        entity_id_{::uint64_t{0u}},
+        score_{::int64_t{0}},
+        achieved_ms_{::uint64_t{0u}} {}
 
 template <typename>
 constexpr RankEntry::RankEntry(::_pbi::ConstantInitialized,
@@ -216,72 +222,93 @@ const ::_pbi::ClassData* RankEntry_get_class_data() {
 }
 }  // namespace
 #endif  // PROTOBUF_CUSTOM_VTABLE
-class GetRankPageRequest::_Internal {
+class RankBoardKey::_Internal {
  public:
-  using HasBits = decltype(::std::declval<GetRankPageRequest>()._impl_._has_bits_);
+  using HasBits = decltype(::std::declval<RankBoardKey>()._impl_._has_bits_);
   static constexpr ::int32_t kHasBitsOffset =
-      8 * PROTOBUF_FIELD_OFFSET(GetRankPageRequest, _impl_._has_bits_);
+      8 * PROTOBUF_FIELD_OFFSET(RankBoardKey, _impl_._has_bits_);
 };
 
-constexpr GetRankPageRequest::ParseTableT_ GetRankPageRequest::InternalGenerateParseTable_(const ::_pbi::ClassData* class_data) {
+constexpr RankBoardKey::ParseTableT_ RankBoardKey::InternalGenerateParseTable_(const ::_pbi::ClassData* class_data) {
   return ParseTableT_{
     {
-      PROTOBUF_FIELD_OFFSET(GetRankPageRequest, _impl_._has_bits_),
+      PROTOBUF_FIELD_OFFSET(RankBoardKey, _impl_._has_bits_),
       0, // no _extensions_
-      3, 24,  // max_field_number, fast_idx_mask
+      5, 56,  // max_field_number, fast_idx_mask
       offsetof(ParseTableT_, field_lookup_table),
-      4294967288,  // skipmap
+      4294967264,  // skipmap
       offsetof(ParseTableT_, field_entries),
-      3,  // num_field_entries
+      5,  // num_field_entries
       0,  // num_aux_entries
       offsetof(ParseTableT_, field_names),  // no aux_entries
       class_data,
       nullptr,  // post_loop_handler
       ::_pbi::TcParser::GenericFallback,  // fallback
       #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
-      ::_pbi::TcParser::GetTable<::rankpb::GetRankPageRequest>(),  // to_prefetch
+      ::_pbi::TcParser::GetTable<::rankpb::RankBoardKey>(),  // to_prefetch
       #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
     }, {{
       {::_pbi::TcParser::MiniParse, {}},
-      // .rankpb.RankBoard board = 1;
-      {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(GetRankPageRequest, _impl_.board_), 0>(),
-       {8, 0, 0,
-        PROTOBUF_FIELD_OFFSET(GetRankPageRequest, _impl_.board_)}},
-      // uint32 page = 2;
-      {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(GetRankPageRequest, _impl_.page_), 1>(),
-       {16, 1, 0,
-        PROTOBUF_FIELD_OFFSET(GetRankPageRequest, _impl_.page_)}},
-      // uint32 page_size = 3;
-      {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(GetRankPageRequest, _impl_.page_size_), 2>(),
-       {24, 2, 0,
-        PROTOBUF_FIELD_OFFSET(GetRankPageRequest, _impl_.page_size_)}},
+      // uint32 board_type = 1;
+      {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(RankBoardKey, _impl_.board_type_), 1>(),
+       {8, 1, 0,
+        PROTOBUF_FIELD_OFFSET(RankBoardKey, _impl_.board_type_)}},
+      // .rankpb.RankScope scope = 2;
+      {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(RankBoardKey, _impl_.scope_), 2>(),
+       {16, 2, 0,
+        PROTOBUF_FIELD_OFFSET(RankBoardKey, _impl_.scope_)}},
+      // uint64 scope_id = 3;
+      {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(RankBoardKey, _impl_.scope_id_), 3>(),
+       {24, 3, 0,
+        PROTOBUF_FIELD_OFFSET(RankBoardKey, _impl_.scope_id_)}},
+      // string period = 4;
+      {::_pbi::TcParser::FastUS1,
+       {34, 0, 0,
+        PROTOBUF_FIELD_OFFSET(RankBoardKey, _impl_.period_)}},
+      // uint64 generation = 5;
+      {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(RankBoardKey, _impl_.generation_), 4>(),
+       {40, 4, 0,
+        PROTOBUF_FIELD_OFFSET(RankBoardKey, _impl_.generation_)}},
+      {::_pbi::TcParser::MiniParse, {}},
+      {::_pbi::TcParser::MiniParse, {}},
     }}, {{
       65535, 65535
     }}, {{
-      // .rankpb.RankBoard board = 1;
-      {PROTOBUF_FIELD_OFFSET(GetRankPageRequest, _impl_.board_), _Internal::kHasBitsOffset + 0, 0, (0 | ::_fl::kFcOptional | ::_fl::kOpenEnum)},
-      // uint32 page = 2;
-      {PROTOBUF_FIELD_OFFSET(GetRankPageRequest, _impl_.page_), _Internal::kHasBitsOffset + 1, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
-      // uint32 page_size = 3;
-      {PROTOBUF_FIELD_OFFSET(GetRankPageRequest, _impl_.page_size_), _Internal::kHasBitsOffset + 2, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
+      // uint32 board_type = 1;
+      {PROTOBUF_FIELD_OFFSET(RankBoardKey, _impl_.board_type_), _Internal::kHasBitsOffset + 1, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
+      // .rankpb.RankScope scope = 2;
+      {PROTOBUF_FIELD_OFFSET(RankBoardKey, _impl_.scope_), _Internal::kHasBitsOffset + 2, 0, (0 | ::_fl::kFcOptional | ::_fl::kOpenEnum)},
+      // uint64 scope_id = 3;
+      {PROTOBUF_FIELD_OFFSET(RankBoardKey, _impl_.scope_id_), _Internal::kHasBitsOffset + 3, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
+      // string period = 4;
+      {PROTOBUF_FIELD_OFFSET(RankBoardKey, _impl_.period_), _Internal::kHasBitsOffset + 0, 0, (0 | ::_fl::kFcOptional | ::_fl::kUtf8String | ::_fl::kRepAString)},
+      // uint64 generation = 5;
+      {PROTOBUF_FIELD_OFFSET(RankBoardKey, _impl_.generation_), _Internal::kHasBitsOffset + 4, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
     }},
     // no aux_entries
     {{
+      "\23\0\0\0\6\0\0\0"
+      "rankpb.RankBoardKey"
+      "period"
     }},
   };
 }
 
 
-inline constexpr GetRankPageRequest::Impl_::Impl_(
+inline constexpr RankBoardKey::Impl_::Impl_(
     [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
     ::_pbi::ConstantInitialized) noexcept
       : _cached_size_{0},
-        board_{static_cast< ::rankpb::RankBoard >(0)},
-        page_{0u},
-        page_size_{0u} {}
+        period_(
+            &::google::protobuf::internal::fixed_address_empty_string,
+            ::_pbi::ConstantInitialized()),
+        board_type_{0u},
+        scope_{static_cast< ::rankpb::RankScope >(0)},
+        scope_id_{::uint64_t{0u}},
+        generation_{::uint64_t{0u}} {}
 
 template <typename>
-constexpr GetRankPageRequest::GetRankPageRequest(::_pbi::ConstantInitialized,
+constexpr RankBoardKey::RankBoardKey(::_pbi::ConstantInitialized,
                        const ::_pbi::ClassData* PROTOBUF_NONNULL class_data)
     : ::google::protobuf::Message(
 #if defined(PROTOBUF_CUSTOM_VTABLE)
@@ -290,15 +317,15 @@ constexpr GetRankPageRequest::GetRankPageRequest(::_pbi::ConstantInitialized,
           ),
       _impl_(internal_visibility(), ::_pbi::ConstantInitialized()) {
 }
-inline void* PROTOBUF_NONNULL GetRankPageRequest::PlacementNew_(
+inline void* PROTOBUF_NONNULL RankBoardKey::PlacementNew_(
     const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
     ::google::protobuf::Arena* PROTOBUF_NULLABLE arena) {
-  return ::new (mem) GetRankPageRequest(arena);
+  return ::new (mem) RankBoardKey(arena);
 }
-constexpr auto GetRankPageRequest::InternalNewImpl_() {
-  return ::google::protobuf::internal::MessageCreator::ZeroInit(sizeof(GetRankPageRequest), alignof(GetRankPageRequest));
+constexpr auto RankBoardKey::InternalNewImpl_() {
+  return ::google::protobuf::internal::MessageCreator::CopyInit(sizeof(RankBoardKey), alignof(RankBoardKey));
 }
-constexpr auto GetRankPageRequest::InternalGenerateClassData_(
+constexpr auto RankBoardKey::InternalGenerateClassData_(
     const MessageLite& prototype,
     const ::google::protobuf::internal::TcParseTableBase* tc_table) {
   return ::google::protobuf::internal::ClassDataFull{
@@ -310,14 +337,14 @@ constexpr auto GetRankPageRequest::InternalGenerateClassData_(
           tc_table,
 #endif
           nullptr,  // IsInitialized
-          &GetRankPageRequest::MergeImpl,
-          ::google::protobuf::Message::GetNewImpl<GetRankPageRequest>(),
+          &RankBoardKey::MergeImpl,
+          ::google::protobuf::Message::GetNewImpl<RankBoardKey>(),
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-          &GetRankPageRequest::SharedDtor,
-          ::google::protobuf::Message::GetClearImpl<GetRankPageRequest>(), &GetRankPageRequest::ByteSizeLong,
-              &GetRankPageRequest::_InternalSerialize,
+          &RankBoardKey::SharedDtor,
+          ::google::protobuf::Message::GetClearImpl<RankBoardKey>(), &RankBoardKey::ByteSizeLong,
+              &RankBoardKey::_InternalSerialize,
 #endif  // PROTOBUF_CUSTOM_VTABLE
-          PROTOBUF_FIELD_OFFSET(GetRankPageRequest, _impl_._cached_size_),
+          PROTOBUF_FIELD_OFFSET(RankBoardKey, _impl_._cached_size_),
           false,
       },
 #ifdef PROTOBUF_MESSAGE_GLOBALS
@@ -329,45 +356,45 @@ constexpr auto GetRankPageRequest::InternalGenerateClassData_(
 #endif  // PROTOBUF_MESSAGE_GLOBALS
   };
 }
-struct GetRankPageRequestGlobalsTypeInternal : ::_pbi::MessageGlobalsBase {
-  constexpr GetRankPageRequestGlobalsTypeInternal()
+struct RankBoardKeyGlobalsTypeInternal : ::_pbi::MessageGlobalsBase {
+  constexpr RankBoardKeyGlobalsTypeInternal()
       :
 #ifndef PROTOBUF_MESSAGE_GLOBALS
         _default(::_pbi::ConstantInitialized{},
-                 GetRankPageRequest_class_data_.base())
+                 RankBoardKey_class_data_.base())
 #else   // !PROTOBUF_MESSAGE_GLOBALS
-        MessageGlobalsBase(GetRankPageRequest::InternalGenerateClassData_(
-            _default, &GetRankPageRequest_globals_._table.header)),
+        MessageGlobalsBase(RankBoardKey::InternalGenerateClassData_(
+            _default, &RankBoardKey_globals_._table.header)),
         _default(::_pbi::ConstantInitialized{}, GetClassData()),
-        _table(::_pbi::PrivateAccess::GenerateParseTable<GetRankPageRequest>(
+        _table(::_pbi::PrivateAccess::GenerateParseTable<RankBoardKey>(
             GetClassData()))
 #endif  // PROTOBUF_MESSAGE_GLOBALS
   {
   }
-  ~GetRankPageRequestGlobalsTypeInternal() {}
+  ~RankBoardKeyGlobalsTypeInternal() {}
   union {
-    alignas(::_pbi::kMaxMessageAlignment) GetRankPageRequest _default;
+    alignas(::_pbi::kMaxMessageAlignment) RankBoardKey _default;
   };
 #ifdef PROTOBUF_MESSAGE_GLOBALS
-  decltype(::_pbi::PrivateAccess::GenerateParseTable<GetRankPageRequest>(
+  decltype(::_pbi::PrivateAccess::GenerateParseTable<RankBoardKey>(
       ::std::declval<const ::_pbi::ClassData*>())) _table;
 #endif
 };
 #ifdef PROTOBUF_MESSAGE_GLOBALS
-static_assert(PROTOBUF_FIELD_OFFSET(GetRankPageRequestGlobalsTypeInternal, _default) ==
+static_assert(PROTOBUF_FIELD_OFFSET(RankBoardKeyGlobalsTypeInternal, _default) ==
               ::_pbi::MessageGlobalsBase::OffsetToDefault());
 #endif  // PROTOBUF_MESSAGE_GLOBALS
 
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
-    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 PROTOBUF_MESSAGE_GLOBALS_CONST GetRankPageRequestGlobalsTypeInternal GetRankPageRequest_globals_
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 PROTOBUF_MESSAGE_GLOBALS_CONST RankBoardKeyGlobalsTypeInternal RankBoardKey_globals_
         PROTOBUF_MESSAGE_GLOBALS_SECTION(.data.rel.ro);
 #if defined(PROTOBUF_CUSTOM_VTABLE)
 namespace {
-const ::_pbi::ClassData* GetRankPageRequest_get_class_data() {
+const ::_pbi::ClassData* RankBoardKey_get_class_data() {
 #ifdef PROTOBUF_MESSAGE_GLOBALS
-  return GetRankPageRequest_globals_.GetClassData();
+  return RankBoardKey_globals_.GetClassData();
 #else
-  return GetRankPageRequest_class_data_.base();
+  return RankBoardKey_class_data_.base();
 #endif  // PROTOBUF_MESSAGE_GLOBALS
 }
 }  // namespace
@@ -384,12 +411,12 @@ constexpr GetRankPageResponse::ParseTableT_ GetRankPageResponse::InternalGenerat
     {
       PROTOBUF_FIELD_OFFSET(GetRankPageResponse, _impl_._has_bits_),
       0, // no _extensions_
-      7, 56,  // max_field_number, fast_idx_mask
+      9, 120,  // max_field_number, fast_idx_mask
       offsetof(ParseTableT_, field_lookup_table),
-      4294967168,  // skipmap
+      4294966784,  // skipmap
       offsetof(ParseTableT_, field_entries),
-      7,  // num_field_entries
-      3,  // num_aux_entries
+      9,  // num_field_entries
+      4,  // num_aux_entries
       offsetof(ParseTableT_, aux_entries),
       class_data,
       nullptr,  // post_loop_handler
@@ -403,53 +430,76 @@ constexpr GetRankPageResponse::ParseTableT_ GetRankPageResponse::InternalGenerat
       {::_pbi::TcParser::FastMtS1,
        {10, 1, 0,
         PROTOBUF_FIELD_OFFSET(GetRankPageResponse, _impl_.error_message_)}},
-      // repeated .rankpb.RankEntry entries = 2;
-      {::_pbi::TcParser::FastMtR1,
-       {18, 0, 1,
-        PROTOBUF_FIELD_OFFSET(GetRankPageResponse, _impl_.entries_)}},
-      // uint32 total_count = 3;
-      {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(GetRankPageResponse, _impl_.total_count_), 3>(),
-       {24, 3, 0,
-        PROTOBUF_FIELD_OFFSET(GetRankPageResponse, _impl_.total_count_)}},
-      // uint32 page = 4;
-      {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(GetRankPageResponse, _impl_.page_), 4>(),
-       {32, 4, 0,
-        PROTOBUF_FIELD_OFFSET(GetRankPageResponse, _impl_.page_)}},
-      // uint32 page_size = 5;
-      {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(GetRankPageResponse, _impl_.page_size_), 5>(),
-       {40, 5, 0,
-        PROTOBUF_FIELD_OFFSET(GetRankPageResponse, _impl_.page_size_)}},
-      // uint32 page_count = 6;
-      {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(GetRankPageResponse, _impl_.page_count_), 6>(),
-       {48, 6, 0,
-        PROTOBUF_FIELD_OFFSET(GetRankPageResponse, _impl_.page_count_)}},
-      // .rankpb.RankEntry self = 7;
+      // .rankpb.RankBoardKey board = 2;
       {::_pbi::TcParser::FastMtS1,
-       {58, 2, 2,
+       {18, 2, 1,
+        PROTOBUF_FIELD_OFFSET(GetRankPageResponse, _impl_.board_)}},
+      // repeated .rankpb.RankEntry entries = 3;
+      {::_pbi::TcParser::FastMtR1,
+       {26, 0, 2,
+        PROTOBUF_FIELD_OFFSET(GetRankPageResponse, _impl_.entries_)}},
+      // uint64 total_count = 4;
+      {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(GetRankPageResponse, _impl_.total_count_), 4>(),
+       {32, 4, 0,
+        PROTOBUF_FIELD_OFFSET(GetRankPageResponse, _impl_.total_count_)}},
+      // uint32 page = 5;
+      {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(GetRankPageResponse, _impl_.page_), 5>(),
+       {40, 5, 0,
+        PROTOBUF_FIELD_OFFSET(GetRankPageResponse, _impl_.page_)}},
+      // uint32 page_size = 6;
+      {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(GetRankPageResponse, _impl_.page_size_), 6>(),
+       {48, 6, 0,
+        PROTOBUF_FIELD_OFFSET(GetRankPageResponse, _impl_.page_size_)}},
+      // uint64 page_count = 7;
+      {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(GetRankPageResponse, _impl_.page_count_), 7>(),
+       {56, 7, 0,
+        PROTOBUF_FIELD_OFFSET(GetRankPageResponse, _impl_.page_count_)}},
+      // .rankpb.RankEntry self = 8;
+      {::_pbi::TcParser::FastMtS1,
+       {66, 3, 3,
         PROTOBUF_FIELD_OFFSET(GetRankPageResponse, _impl_.self_)}},
+      // .rankpb.RankGenerationState state = 9;
+      {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(GetRankPageResponse, _impl_.state_), 8>(),
+       {72, 8, 0,
+        PROTOBUF_FIELD_OFFSET(GetRankPageResponse, _impl_.state_)}},
+      {::_pbi::TcParser::MiniParse, {}},
+      {::_pbi::TcParser::MiniParse, {}},
+      {::_pbi::TcParser::MiniParse, {}},
+      {::_pbi::TcParser::MiniParse, {}},
+      {::_pbi::TcParser::MiniParse, {}},
+      {::_pbi::TcParser::MiniParse, {}},
     }}, {{
       65535, 65535
     }}, {{
       // .TipInfoMessage error_message = 1;
       {PROTOBUF_FIELD_OFFSET(GetRankPageResponse, _impl_.error_message_), _Internal::kHasBitsOffset + 1, 0, (0 | ::_fl::kFcOptional | ::_fl::kMessage | ::_fl::kTvTable)},
-      // repeated .rankpb.RankEntry entries = 2;
-      {PROTOBUF_FIELD_OFFSET(GetRankPageResponse, _impl_.entries_), _Internal::kHasBitsOffset + 0, 1, (0 | ::_fl::kFcRepeated | ::_fl::kMessage | ::_fl::kTvTable)},
-      // uint32 total_count = 3;
-      {PROTOBUF_FIELD_OFFSET(GetRankPageResponse, _impl_.total_count_), _Internal::kHasBitsOffset + 3, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
-      // uint32 page = 4;
-      {PROTOBUF_FIELD_OFFSET(GetRankPageResponse, _impl_.page_), _Internal::kHasBitsOffset + 4, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
-      // uint32 page_size = 5;
-      {PROTOBUF_FIELD_OFFSET(GetRankPageResponse, _impl_.page_size_), _Internal::kHasBitsOffset + 5, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
-      // uint32 page_count = 6;
-      {PROTOBUF_FIELD_OFFSET(GetRankPageResponse, _impl_.page_count_), _Internal::kHasBitsOffset + 6, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
-      // .rankpb.RankEntry self = 7;
-      {PROTOBUF_FIELD_OFFSET(GetRankPageResponse, _impl_.self_), _Internal::kHasBitsOffset + 2, 2, (0 | ::_fl::kFcOptional | ::_fl::kMessage | ::_fl::kTvTable)},
+      // .rankpb.RankBoardKey board = 2;
+      {PROTOBUF_FIELD_OFFSET(GetRankPageResponse, _impl_.board_), _Internal::kHasBitsOffset + 2, 1, (0 | ::_fl::kFcOptional | ::_fl::kMessage | ::_fl::kTvTable)},
+      // repeated .rankpb.RankEntry entries = 3;
+      {PROTOBUF_FIELD_OFFSET(GetRankPageResponse, _impl_.entries_), _Internal::kHasBitsOffset + 0, 2, (0 | ::_fl::kFcRepeated | ::_fl::kMessage | ::_fl::kTvTable)},
+      // uint64 total_count = 4;
+      {PROTOBUF_FIELD_OFFSET(GetRankPageResponse, _impl_.total_count_), _Internal::kHasBitsOffset + 4, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
+      // uint32 page = 5;
+      {PROTOBUF_FIELD_OFFSET(GetRankPageResponse, _impl_.page_), _Internal::kHasBitsOffset + 5, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
+      // uint32 page_size = 6;
+      {PROTOBUF_FIELD_OFFSET(GetRankPageResponse, _impl_.page_size_), _Internal::kHasBitsOffset + 6, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
+      // uint64 page_count = 7;
+      {PROTOBUF_FIELD_OFFSET(GetRankPageResponse, _impl_.page_count_), _Internal::kHasBitsOffset + 7, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
+      // .rankpb.RankEntry self = 8;
+      {PROTOBUF_FIELD_OFFSET(GetRankPageResponse, _impl_.self_), _Internal::kHasBitsOffset + 3, 3, (0 | ::_fl::kFcOptional | ::_fl::kMessage | ::_fl::kTvTable)},
+      // .rankpb.RankGenerationState state = 9;
+      {PROTOBUF_FIELD_OFFSET(GetRankPageResponse, _impl_.state_), _Internal::kHasBitsOffset + 8, 0, (0 | ::_fl::kFcOptional | ::_fl::kOpenEnum)},
     }},
     {{
         #ifndef PROTOBUF_MESSAGE_GLOBALS
         {::_pbi::TcParser::GetTable<::TipInfoMessage>()},
         #else
         {::_pbi::FieldAuxMessageGlobals(), &::TipInfoMessage_globals_},
+        #endif
+        #ifndef PROTOBUF_MESSAGE_GLOBALS
+        {::_pbi::TcParser::GetTable<::rankpb::RankBoardKey>()},
+        #else
+        {::_pbi::FieldAuxMessageGlobals(), &::rankpb::RankBoardKey_globals_},
         #endif
         #ifndef PROTOBUF_MESSAGE_GLOBALS
         {::_pbi::TcParser::GetTable<::rankpb::RankEntry>()},
@@ -478,11 +528,13 @@ inline constexpr GetRankPageResponse::Impl_::Impl_(
          }
         ,
         error_message_{nullptr},
+        board_{nullptr},
         self_{nullptr},
-        total_count_{0u},
+        total_count_{::uint64_t{0u}},
         page_{0u},
         page_size_{0u},
-        page_count_{0u} {}
+        page_count_{::uint64_t{0u}},
+        state_{static_cast< ::rankpb::RankGenerationState >(0)} {}
 
 template <typename>
 constexpr GetRankPageResponse::GetRankPageResponse(::_pbi::ConstantInitialized,
@@ -525,7 +577,7 @@ constexpr auto GetRankPageResponse::InternalGenerateClassData_(
           false,
       },
 #ifdef PROTOBUF_MESSAGE_GLOBALS
-      &file_reflection_data[2],
+      &file_reflection_data[3],
 #else   // !PROTOBUF_MESSAGE_GLOBALS
       &::_pbi::kDescriptorMethods,
       &descriptor_table_proto_2frank_2frank_2eproto,
@@ -576,14 +628,543 @@ const ::_pbi::ClassData* GetRankPageResponse_get_class_data() {
 }
 }  // namespace
 #endif  // PROTOBUF_CUSTOM_VTABLE
+class GetRankPageRequest::_Internal {
+ public:
+  using HasBits = decltype(::std::declval<GetRankPageRequest>()._impl_._has_bits_);
+  static constexpr ::int32_t kHasBitsOffset =
+      8 * PROTOBUF_FIELD_OFFSET(GetRankPageRequest, _impl_._has_bits_);
+};
+
+constexpr GetRankPageRequest::ParseTableT_ GetRankPageRequest::InternalGenerateParseTable_(const ::_pbi::ClassData* class_data) {
+  return ParseTableT_{
+    {
+      PROTOBUF_FIELD_OFFSET(GetRankPageRequest, _impl_._has_bits_),
+      0, // no _extensions_
+      3, 24,  // max_field_number, fast_idx_mask
+      offsetof(ParseTableT_, field_lookup_table),
+      4294967288,  // skipmap
+      offsetof(ParseTableT_, field_entries),
+      3,  // num_field_entries
+      1,  // num_aux_entries
+      offsetof(ParseTableT_, aux_entries),
+      class_data,
+      nullptr,  // post_loop_handler
+      ::_pbi::TcParser::GenericFallback,  // fallback
+      #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
+      ::_pbi::TcParser::GetTable<::rankpb::GetRankPageRequest>(),  // to_prefetch
+      #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
+    }, {{
+      {::_pbi::TcParser::MiniParse, {}},
+      // .rankpb.RankBoardKey board = 1;
+      {::_pbi::TcParser::FastMtS1,
+       {10, 0, 0,
+        PROTOBUF_FIELD_OFFSET(GetRankPageRequest, _impl_.board_)}},
+      // uint32 page = 2;
+      {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(GetRankPageRequest, _impl_.page_), 1>(),
+       {16, 1, 0,
+        PROTOBUF_FIELD_OFFSET(GetRankPageRequest, _impl_.page_)}},
+      // uint32 page_size = 3;
+      {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(GetRankPageRequest, _impl_.page_size_), 2>(),
+       {24, 2, 0,
+        PROTOBUF_FIELD_OFFSET(GetRankPageRequest, _impl_.page_size_)}},
+    }}, {{
+      65535, 65535
+    }}, {{
+      // .rankpb.RankBoardKey board = 1;
+      {PROTOBUF_FIELD_OFFSET(GetRankPageRequest, _impl_.board_), _Internal::kHasBitsOffset + 0, 0, (0 | ::_fl::kFcOptional | ::_fl::kMessage | ::_fl::kTvTable)},
+      // uint32 page = 2;
+      {PROTOBUF_FIELD_OFFSET(GetRankPageRequest, _impl_.page_), _Internal::kHasBitsOffset + 1, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
+      // uint32 page_size = 3;
+      {PROTOBUF_FIELD_OFFSET(GetRankPageRequest, _impl_.page_size_), _Internal::kHasBitsOffset + 2, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
+    }},
+    {{
+        #ifndef PROTOBUF_MESSAGE_GLOBALS
+        {::_pbi::TcParser::GetTable<::rankpb::RankBoardKey>()},
+        #else
+        {::_pbi::FieldAuxMessageGlobals(), &::rankpb::RankBoardKey_globals_},
+        #endif
+    }},
+    {{
+    }},
+  };
+}
+
+
+inline constexpr GetRankPageRequest::Impl_::Impl_(
+    [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
+    ::_pbi::ConstantInitialized) noexcept
+      : _cached_size_{0},
+        board_{nullptr},
+        page_{0u},
+        page_size_{0u} {}
+
+template <typename>
+constexpr GetRankPageRequest::GetRankPageRequest(::_pbi::ConstantInitialized,
+                       const ::_pbi::ClassData* PROTOBUF_NONNULL class_data)
+    : ::google::protobuf::Message(
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+          class_data
+#endif  // PROTOBUF_CUSTOM_VTABLE
+          ),
+      _impl_(internal_visibility(), ::_pbi::ConstantInitialized()) {
+}
+inline void* PROTOBUF_NONNULL GetRankPageRequest::PlacementNew_(
+    const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena) {
+  return ::new (mem) GetRankPageRequest(arena);
+}
+constexpr auto GetRankPageRequest::InternalNewImpl_() {
+  return ::google::protobuf::internal::MessageCreator::ZeroInit(sizeof(GetRankPageRequest), alignof(GetRankPageRequest));
+}
+constexpr auto GetRankPageRequest::InternalGenerateClassData_(
+    const MessageLite& prototype,
+    const ::google::protobuf::internal::TcParseTableBase* tc_table) {
+  return ::google::protobuf::internal::ClassDataFull{
+      ::google::protobuf::internal::ClassData{
+          &prototype,
+#ifndef PROTOBUF_MESSAGE_GLOBALS
+          &_table_.header,
+#else
+          tc_table,
+#endif
+          nullptr,  // IsInitialized
+          &GetRankPageRequest::MergeImpl,
+          ::google::protobuf::Message::GetNewImpl<GetRankPageRequest>(),
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+          &GetRankPageRequest::SharedDtor,
+          ::google::protobuf::Message::GetClearImpl<GetRankPageRequest>(), &GetRankPageRequest::ByteSizeLong,
+              &GetRankPageRequest::_InternalSerialize,
+#endif  // PROTOBUF_CUSTOM_VTABLE
+          PROTOBUF_FIELD_OFFSET(GetRankPageRequest, _impl_._cached_size_),
+          false,
+      },
+#ifdef PROTOBUF_MESSAGE_GLOBALS
+      &file_reflection_data[2],
+#else   // !PROTOBUF_MESSAGE_GLOBALS
+      &::_pbi::kDescriptorMethods,
+      &descriptor_table_proto_2frank_2frank_2eproto,
+      nullptr,  // tracker
+#endif  // PROTOBUF_MESSAGE_GLOBALS
+  };
+}
+struct GetRankPageRequestGlobalsTypeInternal : ::_pbi::MessageGlobalsBase {
+  constexpr GetRankPageRequestGlobalsTypeInternal()
+      :
+#ifndef PROTOBUF_MESSAGE_GLOBALS
+        _default(::_pbi::ConstantInitialized{},
+                 GetRankPageRequest_class_data_.base())
+#else   // !PROTOBUF_MESSAGE_GLOBALS
+        MessageGlobalsBase(GetRankPageRequest::InternalGenerateClassData_(
+            _default, &GetRankPageRequest_globals_._table.header)),
+        _default(::_pbi::ConstantInitialized{}, GetClassData()),
+        _table(::_pbi::PrivateAccess::GenerateParseTable<GetRankPageRequest>(
+            GetClassData()))
+#endif  // PROTOBUF_MESSAGE_GLOBALS
+  {
+  }
+  ~GetRankPageRequestGlobalsTypeInternal() {}
+  union {
+    alignas(::_pbi::kMaxMessageAlignment) GetRankPageRequest _default;
+  };
+#ifdef PROTOBUF_MESSAGE_GLOBALS
+  decltype(::_pbi::PrivateAccess::GenerateParseTable<GetRankPageRequest>(
+      ::std::declval<const ::_pbi::ClassData*>())) _table;
+#endif
+};
+#ifdef PROTOBUF_MESSAGE_GLOBALS
+static_assert(PROTOBUF_FIELD_OFFSET(GetRankPageRequestGlobalsTypeInternal, _default) ==
+              ::_pbi::MessageGlobalsBase::OffsetToDefault());
+#endif  // PROTOBUF_MESSAGE_GLOBALS
+
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 PROTOBUF_MESSAGE_GLOBALS_CONST GetRankPageRequestGlobalsTypeInternal GetRankPageRequest_globals_
+        PROTOBUF_MESSAGE_GLOBALS_SECTION(.data.rel.ro);
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+namespace {
+const ::_pbi::ClassData* GetRankPageRequest_get_class_data() {
+#ifdef PROTOBUF_MESSAGE_GLOBALS
+  return GetRankPageRequest_globals_.GetClassData();
+#else
+  return GetRankPageRequest_class_data_.base();
+#endif  // PROTOBUF_MESSAGE_GLOBALS
+}
+}  // namespace
+#endif  // PROTOBUF_CUSTOM_VTABLE
+class GetRankAroundResponse::_Internal {
+ public:
+  using HasBits = decltype(::std::declval<GetRankAroundResponse>()._impl_._has_bits_);
+  static constexpr ::int32_t kHasBitsOffset =
+      8 * PROTOBUF_FIELD_OFFSET(GetRankAroundResponse, _impl_._has_bits_);
+};
+
+constexpr GetRankAroundResponse::ParseTableT_ GetRankAroundResponse::InternalGenerateParseTable_(const ::_pbi::ClassData* class_data) {
+  return ParseTableT_{
+    {
+      PROTOBUF_FIELD_OFFSET(GetRankAroundResponse, _impl_._has_bits_),
+      0, // no _extensions_
+      4, 24,  // max_field_number, fast_idx_mask
+      offsetof(ParseTableT_, field_lookup_table),
+      4294967280,  // skipmap
+      offsetof(ParseTableT_, field_entries),
+      4,  // num_field_entries
+      4,  // num_aux_entries
+      offsetof(ParseTableT_, aux_entries),
+      class_data,
+      nullptr,  // post_loop_handler
+      ::_pbi::TcParser::GenericFallback,  // fallback
+      #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
+      ::_pbi::TcParser::GetTable<::rankpb::GetRankAroundResponse>(),  // to_prefetch
+      #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
+    }, {{
+      // .rankpb.RankEntry self = 4;
+      {::_pbi::TcParser::FastMtS1,
+       {34, 3, 3,
+        PROTOBUF_FIELD_OFFSET(GetRankAroundResponse, _impl_.self_)}},
+      // .TipInfoMessage error_message = 1;
+      {::_pbi::TcParser::FastMtS1,
+       {10, 1, 0,
+        PROTOBUF_FIELD_OFFSET(GetRankAroundResponse, _impl_.error_message_)}},
+      // .rankpb.RankBoardKey board = 2;
+      {::_pbi::TcParser::FastMtS1,
+       {18, 2, 1,
+        PROTOBUF_FIELD_OFFSET(GetRankAroundResponse, _impl_.board_)}},
+      // repeated .rankpb.RankEntry entries = 3;
+      {::_pbi::TcParser::FastMtR1,
+       {26, 0, 2,
+        PROTOBUF_FIELD_OFFSET(GetRankAroundResponse, _impl_.entries_)}},
+    }}, {{
+      65535, 65535
+    }}, {{
+      // .TipInfoMessage error_message = 1;
+      {PROTOBUF_FIELD_OFFSET(GetRankAroundResponse, _impl_.error_message_), _Internal::kHasBitsOffset + 1, 0, (0 | ::_fl::kFcOptional | ::_fl::kMessage | ::_fl::kTvTable)},
+      // .rankpb.RankBoardKey board = 2;
+      {PROTOBUF_FIELD_OFFSET(GetRankAroundResponse, _impl_.board_), _Internal::kHasBitsOffset + 2, 1, (0 | ::_fl::kFcOptional | ::_fl::kMessage | ::_fl::kTvTable)},
+      // repeated .rankpb.RankEntry entries = 3;
+      {PROTOBUF_FIELD_OFFSET(GetRankAroundResponse, _impl_.entries_), _Internal::kHasBitsOffset + 0, 2, (0 | ::_fl::kFcRepeated | ::_fl::kMessage | ::_fl::kTvTable)},
+      // .rankpb.RankEntry self = 4;
+      {PROTOBUF_FIELD_OFFSET(GetRankAroundResponse, _impl_.self_), _Internal::kHasBitsOffset + 3, 3, (0 | ::_fl::kFcOptional | ::_fl::kMessage | ::_fl::kTvTable)},
+    }},
+    {{
+        #ifndef PROTOBUF_MESSAGE_GLOBALS
+        {::_pbi::TcParser::GetTable<::TipInfoMessage>()},
+        #else
+        {::_pbi::FieldAuxMessageGlobals(), &::TipInfoMessage_globals_},
+        #endif
+        #ifndef PROTOBUF_MESSAGE_GLOBALS
+        {::_pbi::TcParser::GetTable<::rankpb::RankBoardKey>()},
+        #else
+        {::_pbi::FieldAuxMessageGlobals(), &::rankpb::RankBoardKey_globals_},
+        #endif
+        #ifndef PROTOBUF_MESSAGE_GLOBALS
+        {::_pbi::TcParser::GetTable<::rankpb::RankEntry>()},
+        #else
+        {::_pbi::FieldAuxMessageGlobals(), &::rankpb::RankEntry_globals_},
+        #endif
+        #ifndef PROTOBUF_MESSAGE_GLOBALS
+        {::_pbi::TcParser::GetTable<::rankpb::RankEntry>()},
+        #else
+        {::_pbi::FieldAuxMessageGlobals(), &::rankpb::RankEntry_globals_},
+        #endif
+    }},
+    {{
+    }},
+  };
+}
+
+
+inline constexpr GetRankAroundResponse::Impl_::Impl_(
+    [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
+    ::_pbi::ConstantInitialized) noexcept
+      : _cached_size_{0},
+        entries_ { visibility, ::_pbi::InternalMetadataOffset::Build<
+            ::rankpb::GetRankAroundResponse,
+            PROTOBUF_FIELD_OFFSET(::rankpb::GetRankAroundResponse, _impl_.entries_)>()
+         }
+        ,
+        error_message_{nullptr},
+        board_{nullptr},
+        self_{nullptr} {}
+
+template <typename>
+constexpr GetRankAroundResponse::GetRankAroundResponse(::_pbi::ConstantInitialized,
+                       const ::_pbi::ClassData* PROTOBUF_NONNULL class_data)
+    : ::google::protobuf::Message(
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+          class_data
+#endif  // PROTOBUF_CUSTOM_VTABLE
+          ),
+      _impl_(internal_visibility(), ::_pbi::ConstantInitialized()) {
+}
+inline void* PROTOBUF_NONNULL GetRankAroundResponse::PlacementNew_(
+    const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena) {
+  return ::new (mem) GetRankAroundResponse(arena);
+}
+constexpr auto GetRankAroundResponse::InternalNewImpl_() {
+  return ::google::protobuf::internal::MessageCreator::CopyInit(sizeof(GetRankAroundResponse), alignof(GetRankAroundResponse));
+}
+constexpr auto GetRankAroundResponse::InternalGenerateClassData_(
+    const MessageLite& prototype,
+    const ::google::protobuf::internal::TcParseTableBase* tc_table) {
+  return ::google::protobuf::internal::ClassDataFull{
+      ::google::protobuf::internal::ClassData{
+          &prototype,
+#ifndef PROTOBUF_MESSAGE_GLOBALS
+          &_table_.header,
+#else
+          tc_table,
+#endif
+          nullptr,  // IsInitialized
+          &GetRankAroundResponse::MergeImpl,
+          ::google::protobuf::Message::GetNewImpl<GetRankAroundResponse>(),
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+          &GetRankAroundResponse::SharedDtor,
+          ::google::protobuf::Message::GetClearImpl<GetRankAroundResponse>(), &GetRankAroundResponse::ByteSizeLong,
+              &GetRankAroundResponse::_InternalSerialize,
+#endif  // PROTOBUF_CUSTOM_VTABLE
+          PROTOBUF_FIELD_OFFSET(GetRankAroundResponse, _impl_._cached_size_),
+          false,
+      },
+#ifdef PROTOBUF_MESSAGE_GLOBALS
+      &file_reflection_data[5],
+#else   // !PROTOBUF_MESSAGE_GLOBALS
+      &::_pbi::kDescriptorMethods,
+      &descriptor_table_proto_2frank_2frank_2eproto,
+      nullptr,  // tracker
+#endif  // PROTOBUF_MESSAGE_GLOBALS
+  };
+}
+struct GetRankAroundResponseGlobalsTypeInternal : ::_pbi::MessageGlobalsBase {
+  constexpr GetRankAroundResponseGlobalsTypeInternal()
+      :
+#ifndef PROTOBUF_MESSAGE_GLOBALS
+        _default(::_pbi::ConstantInitialized{},
+                 GetRankAroundResponse_class_data_.base())
+#else   // !PROTOBUF_MESSAGE_GLOBALS
+        MessageGlobalsBase(GetRankAroundResponse::InternalGenerateClassData_(
+            _default, &GetRankAroundResponse_globals_._table.header)),
+        _default(::_pbi::ConstantInitialized{}, GetClassData()),
+        _table(::_pbi::PrivateAccess::GenerateParseTable<GetRankAroundResponse>(
+            GetClassData()))
+#endif  // PROTOBUF_MESSAGE_GLOBALS
+  {
+  }
+  ~GetRankAroundResponseGlobalsTypeInternal() {}
+  union {
+    alignas(::_pbi::kMaxMessageAlignment) GetRankAroundResponse _default;
+  };
+#ifdef PROTOBUF_MESSAGE_GLOBALS
+  decltype(::_pbi::PrivateAccess::GenerateParseTable<GetRankAroundResponse>(
+      ::std::declval<const ::_pbi::ClassData*>())) _table;
+#endif
+};
+#ifdef PROTOBUF_MESSAGE_GLOBALS
+static_assert(PROTOBUF_FIELD_OFFSET(GetRankAroundResponseGlobalsTypeInternal, _default) ==
+              ::_pbi::MessageGlobalsBase::OffsetToDefault());
+#endif  // PROTOBUF_MESSAGE_GLOBALS
+
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 PROTOBUF_MESSAGE_GLOBALS_CONST GetRankAroundResponseGlobalsTypeInternal GetRankAroundResponse_globals_
+        PROTOBUF_MESSAGE_GLOBALS_SECTION(.data.rel.ro);
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+namespace {
+const ::_pbi::ClassData* GetRankAroundResponse_get_class_data() {
+#ifdef PROTOBUF_MESSAGE_GLOBALS
+  return GetRankAroundResponse_globals_.GetClassData();
+#else
+  return GetRankAroundResponse_class_data_.base();
+#endif  // PROTOBUF_MESSAGE_GLOBALS
+}
+}  // namespace
+#endif  // PROTOBUF_CUSTOM_VTABLE
+class GetRankAroundRequest::_Internal {
+ public:
+  using HasBits = decltype(::std::declval<GetRankAroundRequest>()._impl_._has_bits_);
+  static constexpr ::int32_t kHasBitsOffset =
+      8 * PROTOBUF_FIELD_OFFSET(GetRankAroundRequest, _impl_._has_bits_);
+};
+
+constexpr GetRankAroundRequest::ParseTableT_ GetRankAroundRequest::InternalGenerateParseTable_(const ::_pbi::ClassData* class_data) {
+  return ParseTableT_{
+    {
+      PROTOBUF_FIELD_OFFSET(GetRankAroundRequest, _impl_._has_bits_),
+      0, // no _extensions_
+      2, 8,  // max_field_number, fast_idx_mask
+      offsetof(ParseTableT_, field_lookup_table),
+      4294967292,  // skipmap
+      offsetof(ParseTableT_, field_entries),
+      2,  // num_field_entries
+      1,  // num_aux_entries
+      offsetof(ParseTableT_, aux_entries),
+      class_data,
+      nullptr,  // post_loop_handler
+      ::_pbi::TcParser::GenericFallback,  // fallback
+      #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
+      ::_pbi::TcParser::GetTable<::rankpb::GetRankAroundRequest>(),  // to_prefetch
+      #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
+    }, {{
+      // uint32 radius = 2;
+      {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(GetRankAroundRequest, _impl_.radius_), 1>(),
+       {16, 1, 0,
+        PROTOBUF_FIELD_OFFSET(GetRankAroundRequest, _impl_.radius_)}},
+      // .rankpb.RankBoardKey board = 1;
+      {::_pbi::TcParser::FastMtS1,
+       {10, 0, 0,
+        PROTOBUF_FIELD_OFFSET(GetRankAroundRequest, _impl_.board_)}},
+    }}, {{
+      65535, 65535
+    }}, {{
+      // .rankpb.RankBoardKey board = 1;
+      {PROTOBUF_FIELD_OFFSET(GetRankAroundRequest, _impl_.board_), _Internal::kHasBitsOffset + 0, 0, (0 | ::_fl::kFcOptional | ::_fl::kMessage | ::_fl::kTvTable)},
+      // uint32 radius = 2;
+      {PROTOBUF_FIELD_OFFSET(GetRankAroundRequest, _impl_.radius_), _Internal::kHasBitsOffset + 1, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
+    }},
+    {{
+        #ifndef PROTOBUF_MESSAGE_GLOBALS
+        {::_pbi::TcParser::GetTable<::rankpb::RankBoardKey>()},
+        #else
+        {::_pbi::FieldAuxMessageGlobals(), &::rankpb::RankBoardKey_globals_},
+        #endif
+    }},
+    {{
+    }},
+  };
+}
+
+
+inline constexpr GetRankAroundRequest::Impl_::Impl_(
+    [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
+    ::_pbi::ConstantInitialized) noexcept
+      : _cached_size_{0},
+        board_{nullptr},
+        radius_{0u} {}
+
+template <typename>
+constexpr GetRankAroundRequest::GetRankAroundRequest(::_pbi::ConstantInitialized,
+                       const ::_pbi::ClassData* PROTOBUF_NONNULL class_data)
+    : ::google::protobuf::Message(
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+          class_data
+#endif  // PROTOBUF_CUSTOM_VTABLE
+          ),
+      _impl_(internal_visibility(), ::_pbi::ConstantInitialized()) {
+}
+inline void* PROTOBUF_NONNULL GetRankAroundRequest::PlacementNew_(
+    const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena) {
+  return ::new (mem) GetRankAroundRequest(arena);
+}
+constexpr auto GetRankAroundRequest::InternalNewImpl_() {
+  return ::google::protobuf::internal::MessageCreator::ZeroInit(sizeof(GetRankAroundRequest), alignof(GetRankAroundRequest));
+}
+constexpr auto GetRankAroundRequest::InternalGenerateClassData_(
+    const MessageLite& prototype,
+    const ::google::protobuf::internal::TcParseTableBase* tc_table) {
+  return ::google::protobuf::internal::ClassDataFull{
+      ::google::protobuf::internal::ClassData{
+          &prototype,
+#ifndef PROTOBUF_MESSAGE_GLOBALS
+          &_table_.header,
+#else
+          tc_table,
+#endif
+          nullptr,  // IsInitialized
+          &GetRankAroundRequest::MergeImpl,
+          ::google::protobuf::Message::GetNewImpl<GetRankAroundRequest>(),
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+          &GetRankAroundRequest::SharedDtor,
+          ::google::protobuf::Message::GetClearImpl<GetRankAroundRequest>(), &GetRankAroundRequest::ByteSizeLong,
+              &GetRankAroundRequest::_InternalSerialize,
+#endif  // PROTOBUF_CUSTOM_VTABLE
+          PROTOBUF_FIELD_OFFSET(GetRankAroundRequest, _impl_._cached_size_),
+          false,
+      },
+#ifdef PROTOBUF_MESSAGE_GLOBALS
+      &file_reflection_data[4],
+#else   // !PROTOBUF_MESSAGE_GLOBALS
+      &::_pbi::kDescriptorMethods,
+      &descriptor_table_proto_2frank_2frank_2eproto,
+      nullptr,  // tracker
+#endif  // PROTOBUF_MESSAGE_GLOBALS
+  };
+}
+struct GetRankAroundRequestGlobalsTypeInternal : ::_pbi::MessageGlobalsBase {
+  constexpr GetRankAroundRequestGlobalsTypeInternal()
+      :
+#ifndef PROTOBUF_MESSAGE_GLOBALS
+        _default(::_pbi::ConstantInitialized{},
+                 GetRankAroundRequest_class_data_.base())
+#else   // !PROTOBUF_MESSAGE_GLOBALS
+        MessageGlobalsBase(GetRankAroundRequest::InternalGenerateClassData_(
+            _default, &GetRankAroundRequest_globals_._table.header)),
+        _default(::_pbi::ConstantInitialized{}, GetClassData()),
+        _table(::_pbi::PrivateAccess::GenerateParseTable<GetRankAroundRequest>(
+            GetClassData()))
+#endif  // PROTOBUF_MESSAGE_GLOBALS
+  {
+  }
+  ~GetRankAroundRequestGlobalsTypeInternal() {}
+  union {
+    alignas(::_pbi::kMaxMessageAlignment) GetRankAroundRequest _default;
+  };
+#ifdef PROTOBUF_MESSAGE_GLOBALS
+  decltype(::_pbi::PrivateAccess::GenerateParseTable<GetRankAroundRequest>(
+      ::std::declval<const ::_pbi::ClassData*>())) _table;
+#endif
+};
+#ifdef PROTOBUF_MESSAGE_GLOBALS
+static_assert(PROTOBUF_FIELD_OFFSET(GetRankAroundRequestGlobalsTypeInternal, _default) ==
+              ::_pbi::MessageGlobalsBase::OffsetToDefault());
+#endif  // PROTOBUF_MESSAGE_GLOBALS
+
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 PROTOBUF_MESSAGE_GLOBALS_CONST GetRankAroundRequestGlobalsTypeInternal GetRankAroundRequest_globals_
+        PROTOBUF_MESSAGE_GLOBALS_SECTION(.data.rel.ro);
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+namespace {
+const ::_pbi::ClassData* GetRankAroundRequest_get_class_data() {
+#ifdef PROTOBUF_MESSAGE_GLOBALS
+  return GetRankAroundRequest_globals_.GetClassData();
+#else
+  return GetRankAroundRequest_class_data_.base();
+#endif  // PROTOBUF_MESSAGE_GLOBALS
+}
+}  // namespace
+#endif  // PROTOBUF_CUSTOM_VTABLE
 }  // namespace rankpb
 static const ::_pb::EnumDescriptor* PROTOBUF_NONNULL
-    file_level_enum_descriptors_proto_2frank_2frank_2eproto[1];
+    file_level_enum_descriptors_proto_2frank_2frank_2eproto[2];
 static constexpr const ::_pb::ServiceDescriptor* PROTOBUF_NONNULL* PROTOBUF_NULLABLE
     file_level_service_descriptors_proto_2frank_2frank_2eproto = nullptr;
 const ::uint32_t
     TableStruct_proto_2frank_2frank_2eproto::offsets[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
         protodesc_cold) = {
+        0x081, // bitmap
+        PROTOBUF_FIELD_OFFSET(::rankpb::RankBoardKey, _impl_._has_bits_),
+        8, // hasbit index offset
+        PROTOBUF_FIELD_OFFSET(::rankpb::RankBoardKey, _impl_.board_type_),
+        PROTOBUF_FIELD_OFFSET(::rankpb::RankBoardKey, _impl_.scope_),
+        PROTOBUF_FIELD_OFFSET(::rankpb::RankBoardKey, _impl_.scope_id_),
+        PROTOBUF_FIELD_OFFSET(::rankpb::RankBoardKey, _impl_.period_),
+        PROTOBUF_FIELD_OFFSET(::rankpb::RankBoardKey, _impl_.generation_),
+        1,
+        2,
+        3,
+        0,
+        4,
+        0x081, // bitmap
+        PROTOBUF_FIELD_OFFSET(::rankpb::RankEntry, _impl_._has_bits_),
+        8, // hasbit index offset
+        PROTOBUF_FIELD_OFFSET(::rankpb::RankEntry, _impl_.rank_),
+        PROTOBUF_FIELD_OFFSET(::rankpb::RankEntry, _impl_.entity_id_),
+        PROTOBUF_FIELD_OFFSET(::rankpb::RankEntry, _impl_.score_),
+        PROTOBUF_FIELD_OFFSET(::rankpb::RankEntry, _impl_.achieved_ms_),
+        PROTOBUF_FIELD_OFFSET(::rankpb::RankEntry, _impl_.name_),
+        1,
+        2,
+        3,
+        4,
+        0,
         0x081, // bitmap
         PROTOBUF_FIELD_OFFSET(::rankpb::GetRankPageRequest, _impl_._has_bits_),
         6, // hasbit index offset
@@ -594,69 +1175,101 @@ const ::uint32_t
         1,
         2,
         0x081, // bitmap
-        PROTOBUF_FIELD_OFFSET(::rankpb::RankEntry, _impl_._has_bits_),
-        8, // hasbit index offset
-        PROTOBUF_FIELD_OFFSET(::rankpb::RankEntry, _impl_.rank_),
-        PROTOBUF_FIELD_OFFSET(::rankpb::RankEntry, _impl_.player_id_),
-        PROTOBUF_FIELD_OFFSET(::rankpb::RankEntry, _impl_.name_),
-        PROTOBUF_FIELD_OFFSET(::rankpb::RankEntry, _impl_.rating_centi_),
-        PROTOBUF_FIELD_OFFSET(::rankpb::RankEntry, _impl_.games_),
-        2,
-        1,
-        0,
-        3,
-        4,
-        0x081, // bitmap
         PROTOBUF_FIELD_OFFSET(::rankpb::GetRankPageResponse, _impl_._has_bits_),
-        10, // hasbit index offset
+        12, // hasbit index offset
         PROTOBUF_FIELD_OFFSET(::rankpb::GetRankPageResponse, _impl_.error_message_),
+        PROTOBUF_FIELD_OFFSET(::rankpb::GetRankPageResponse, _impl_.board_),
         PROTOBUF_FIELD_OFFSET(::rankpb::GetRankPageResponse, _impl_.entries_),
         PROTOBUF_FIELD_OFFSET(::rankpb::GetRankPageResponse, _impl_.total_count_),
         PROTOBUF_FIELD_OFFSET(::rankpb::GetRankPageResponse, _impl_.page_),
         PROTOBUF_FIELD_OFFSET(::rankpb::GetRankPageResponse, _impl_.page_size_),
         PROTOBUF_FIELD_OFFSET(::rankpb::GetRankPageResponse, _impl_.page_count_),
         PROTOBUF_FIELD_OFFSET(::rankpb::GetRankPageResponse, _impl_.self_),
+        PROTOBUF_FIELD_OFFSET(::rankpb::GetRankPageResponse, _impl_.state_),
         1,
+        2,
         0,
-        3,
         4,
         5,
         6,
+        7,
+        3,
+        8,
+        0x081, // bitmap
+        PROTOBUF_FIELD_OFFSET(::rankpb::GetRankAroundRequest, _impl_._has_bits_),
+        5, // hasbit index offset
+        PROTOBUF_FIELD_OFFSET(::rankpb::GetRankAroundRequest, _impl_.board_),
+        PROTOBUF_FIELD_OFFSET(::rankpb::GetRankAroundRequest, _impl_.radius_),
+        0,
+        1,
+        0x081, // bitmap
+        PROTOBUF_FIELD_OFFSET(::rankpb::GetRankAroundResponse, _impl_._has_bits_),
+        7, // hasbit index offset
+        PROTOBUF_FIELD_OFFSET(::rankpb::GetRankAroundResponse, _impl_.error_message_),
+        PROTOBUF_FIELD_OFFSET(::rankpb::GetRankAroundResponse, _impl_.board_),
+        PROTOBUF_FIELD_OFFSET(::rankpb::GetRankAroundResponse, _impl_.entries_),
+        PROTOBUF_FIELD_OFFSET(::rankpb::GetRankAroundResponse, _impl_.self_),
+        1,
         2,
+        0,
+        3,
 };
 
 static const ::_pbi::MigrationSchema
     schemas[] ABSL_ATTRIBUTE_SECTION_VARIABLE(protodesc_cold) = {
-        {0, sizeof(::rankpb::GetRankPageRequest)},
-        {9, sizeof(::rankpb::RankEntry)},
-        {22, sizeof(::rankpb::GetRankPageResponse)},
+        {0, sizeof(::rankpb::RankBoardKey)},
+        {13, sizeof(::rankpb::RankEntry)},
+        {26, sizeof(::rankpb::GetRankPageRequest)},
+        {35, sizeof(::rankpb::GetRankPageResponse)},
+        {56, sizeof(::rankpb::GetRankAroundRequest)},
+        {63, sizeof(::rankpb::GetRankAroundResponse)},
 };
 static const ::_pbi::MessageGlobalsBase* PROTOBUF_NONNULL const
     file_message_globals[] = {
-        &::rankpb::GetRankPageRequest_globals_,
+        &::rankpb::RankBoardKey_globals_,
         &::rankpb::RankEntry_globals_,
+        &::rankpb::GetRankPageRequest_globals_,
         &::rankpb::GetRankPageResponse_globals_,
+        &::rankpb::GetRankAroundRequest_globals_,
+        &::rankpb::GetRankAroundResponse_globals_,
 };
 const char descriptor_table_protodef_proto_2frank_2frank_2eproto[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
     protodesc_cold) = {
     "\n\025proto/rank/rank.proto\022\006rankpb\032\033proto/d"
     "b/proto_option.proto\032\033proto/common/base/"
-    "tip.proto\"W\n\022GetRankPageRequest\022 \n\005board"
-    "\030\001 \001(\0162\021.rankpb.RankBoard\022\014\n\004page\030\002 \001(\r\022"
-    "\021\n\tpage_size\030\003 \001(\r\"_\n\tRankEntry\022\014\n\004rank\030"
-    "\001 \001(\r\022\021\n\tplayer_id\030\002 \001(\004\022\014\n\004name\030\003 \001(\t\022\024"
-    "\n\014rating_centi\030\004 \001(\r\022\r\n\005games\030\005 \001(\004\"\314\001\n\023"
-    "GetRankPageResponse\022&\n\rerror_message\030\001 \001"
-    "(\0132\017.TipInfoMessage\022\"\n\007entries\030\002 \003(\0132\021.r"
-    "ankpb.RankEntry\022\023\n\013total_count\030\003 \001(\r\022\014\n\004"
-    "page\030\004 \001(\r\022\021\n\tpage_size\030\005 \001(\r\022\022\n\npage_co"
-    "unt\030\006 \001(\r\022\037\n\004self\030\007 \001(\0132\021.rankpb.RankEnt"
-    "ry*D\n\tRankBoard\022\032\n\026RANK_BOARD_UNSPECIFIE"
-    "D\020\000\022\033\n\027RANK_BOARD_MATCH_RATING\020\0012a\n\020Clie"
-    "ntPlayerRank\022F\n\013GetRankPage\022\032.rankpb.Get"
-    "RankPageRequest\032\033.rankpb.GetRankPageResp"
-    "onse\032\005\210\250\303\001\001B\030Z\017rank/proto/rank\200\001\000\230\324a\022b\006p"
-    "roto3"
+    "tip.proto\"z\n\014RankBoardKey\022\022\n\nboard_type\030"
+    "\001 \001(\r\022 \n\005scope\030\002 \001(\0162\021.rankpb.RankScope\022"
+    "\020\n\010scope_id\030\003 \001(\004\022\016\n\006period\030\004 \001(\t\022\022\n\ngen"
+    "eration\030\005 \001(\004\"^\n\tRankEntry\022\014\n\004rank\030\001 \001(\004"
+    "\022\021\n\tentity_id\030\002 \001(\004\022\r\n\005score\030\003 \001(\003\022\023\n\013ac"
+    "hieved_ms\030\004 \001(\004\022\014\n\004name\030\005 \001(\t\"Z\n\022GetRank"
+    "PageRequest\022#\n\005board\030\001 \001(\0132\024.rankpb.Rank"
+    "BoardKey\022\014\n\004page\030\002 \001(\r\022\021\n\tpage_size\030\003 \001("
+    "\r\"\235\002\n\023GetRankPageResponse\022&\n\rerror_messa"
+    "ge\030\001 \001(\0132\017.TipInfoMessage\022#\n\005board\030\002 \001(\013"
+    "2\024.rankpb.RankBoardKey\022\"\n\007entries\030\003 \003(\0132"
+    "\021.rankpb.RankEntry\022\023\n\013total_count\030\004 \001(\004\022"
+    "\014\n\004page\030\005 \001(\r\022\021\n\tpage_size\030\006 \001(\r\022\022\n\npage"
+    "_count\030\007 \001(\004\022\037\n\004self\030\010 \001(\0132\021.rankpb.Rank"
+    "Entry\022*\n\005state\030\t \001(\0162\033.rankpb.RankGenera"
+    "tionState\"K\n\024GetRankAroundRequest\022#\n\005boa"
+    "rd\030\001 \001(\0132\024.rankpb.RankBoardKey\022\016\n\006radius"
+    "\030\002 \001(\r\"\251\001\n\025GetRankAroundResponse\022&\n\rerro"
+    "r_message\030\001 \001(\0132\017.TipInfoMessage\022#\n\005boar"
+    "d\030\002 \001(\0132\024.rankpb.RankBoardKey\022\"\n\007entries"
+    "\030\003 \003(\0132\021.rankpb.RankEntry\022\037\n\004self\030\004 \001(\0132"
+    "\021.rankpb.RankEntry*\204\001\n\tRankScope\022\032\n\026RANK"
+    "_SCOPE_UNSPECIFIED\020\000\022\025\n\021RANK_SCOPE_GLOBA"
+    "L\020\001\022\024\n\020RANK_SCOPE_GUILD\020\002\022\027\n\023RANK_SCOPE_"
+    "INSTANCE\020\003\022\025\n\021RANK_SCOPE_CUSTOM\020\004*l\n\023Ran"
+    "kGenerationState\022\037\n\033RANK_GENERATION_UNSP"
+    "ECIFIED\020\000\022\030\n\024RANK_GENERATION_OPEN\020\001\022\032\n\026R"
+    "ANK_GENERATION_SEALED\020\0022\257\001\n\020ClientPlayer"
+    "Rank\022F\n\013GetRankPage\022\032.rankpb.GetRankPage"
+    "Request\032\033.rankpb.GetRankPageResponse\022L\n\r"
+    "GetRankAround\022\034.rankpb.GetRankAroundRequ"
+    "est\032\035.rankpb.GetRankAroundResponse\032\005\210\250\303\001"
+    "\001B\025Z\017rank/proto/rank\230\324a\022b\006proto3"
 };
 static const ::_pbi::DescriptorTable* PROTOBUF_NONNULL const
     descriptor_table_proto_2frank_2frank_2eproto_deps[2] = {
@@ -667,13 +1280,13 @@ static ::absl::once_flag descriptor_table_proto_2frank_2frank_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2frank_2frank_2eproto = {
     false,
     false,
-    685,
+    1392,
     descriptor_table_protodef_proto_2frank_2frank_2eproto,
     "proto/rank/rank.proto",
     &descriptor_table_proto_2frank_2frank_2eproto_once,
     descriptor_table_proto_2frank_2frank_2eproto_deps,
     2,
-    3,
+    6,
     schemas,
     file_message_globals,
     TableStruct_proto_2frank_2frank_2eproto::offsets,
@@ -682,148 +1295,200 @@ PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2frank_2
 };
 namespace rankpb {
 [[nodiscard]] const ::google::protobuf::EnumDescriptor* PROTOBUF_NONNULL
-RankBoard_descriptor() {
+RankScope_descriptor() {
   ::google::protobuf::internal::AssignDescriptors(&descriptor_table_proto_2frank_2frank_2eproto);
   return file_level_enum_descriptors_proto_2frank_2frank_2eproto[0];
 }
-PROTOBUF_CONSTINIT const uint32_t RankBoard_internal_data_[] = {
-    131072u, 0u, };
+PROTOBUF_CONSTINIT const uint32_t RankScope_internal_data_[] = {
+    327680u, 0u, };
+[[nodiscard]] const ::google::protobuf::EnumDescriptor* PROTOBUF_NONNULL
+RankGenerationState_descriptor() {
+  ::google::protobuf::internal::AssignDescriptors(&descriptor_table_proto_2frank_2frank_2eproto);
+  return file_level_enum_descriptors_proto_2frank_2frank_2eproto[1];
+}
+PROTOBUF_CONSTINIT const uint32_t RankGenerationState_internal_data_[] = {
+    196608u, 0u, };
 // ===================================================================
 
-GetRankPageRequest::GetRankPageRequest(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+RankBoardKey::RankBoardKey(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-    : ::google::protobuf::Message(arena, GetRankPageRequest_get_class_data()) {
+    : ::google::protobuf::Message(arena, RankBoardKey_get_class_data()) {
 #else   // PROTOBUF_CUSTOM_VTABLE
     : ::google::protobuf::Message(arena) {
 #endif  // PROTOBUF_CUSTOM_VTABLE
   SharedCtor(arena);
-  // @@protoc_insertion_point(arena_constructor:rankpb.GetRankPageRequest)
+  // @@protoc_insertion_point(arena_constructor:rankpb.RankBoardKey)
 }
-GetRankPageRequest::GetRankPageRequest(
-    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const GetRankPageRequest& from)
+PROTOBUF_NDEBUG_INLINE RankBoardKey::Impl_::Impl_(
+    [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
+    [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
+    [[maybe_unused]] const ::rankpb::RankBoardKey& from_msg)
+      : _has_bits_{from._has_bits_},
+        _cached_size_{0},
+        period_(arena, from.period_) {}
+
+RankBoardKey::RankBoardKey(
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena,
+    const RankBoardKey& from)
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-    : ::google::protobuf::Message(arena, GetRankPageRequest_get_class_data()),
+    : ::google::protobuf::Message(arena, RankBoardKey_get_class_data()) {
+
 #else   // PROTOBUF_CUSTOM_VTABLE
-    : ::google::protobuf::Message(arena),
+    : ::google::protobuf::Message(arena) {
 #endif  // PROTOBUF_CUSTOM_VTABLE
-      _impl_(from._impl_) {
+  RankBoardKey* const _this = this;
+  (void)_this;
   _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
       from._internal_metadata_);
+  new (&_impl_) Impl_(internal_visibility(), arena, from._impl_, from);
+  ::memcpy(reinterpret_cast<char*>(&_impl_) +
+               offsetof(Impl_, board_type_),
+           reinterpret_cast<const char*>(&from._impl_) +
+               offsetof(Impl_, board_type_),
+           offsetof(Impl_, generation_) -
+               offsetof(Impl_, board_type_) +
+               sizeof(Impl_::generation_));
+
+  // @@protoc_insertion_point(copy_constructor:rankpb.RankBoardKey)
 }
-PROTOBUF_NDEBUG_INLINE GetRankPageRequest::Impl_::Impl_(
+PROTOBUF_NDEBUG_INLINE RankBoardKey::Impl_::Impl_(
     [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
     [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
-      : _cached_size_{0} {}
+      : _cached_size_{0},
+        period_(arena) {}
 
-inline void GetRankPageRequest::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
+inline void RankBoardKey::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
   new (&_impl_) Impl_(internal_visibility(), arena);
   ::memset(reinterpret_cast<char*>(&_impl_) +
-               offsetof(Impl_, board_),
+               offsetof(Impl_, board_type_),
            0,
-           offsetof(Impl_, page_size_) -
-               offsetof(Impl_, board_) +
-               sizeof(Impl_::page_size_));
+           offsetof(Impl_, generation_) -
+               offsetof(Impl_, board_type_) +
+               sizeof(Impl_::generation_));
 }
-GetRankPageRequest::~GetRankPageRequest() {
-  // @@protoc_insertion_point(destructor:rankpb.GetRankPageRequest)
+RankBoardKey::~RankBoardKey() {
+  // @@protoc_insertion_point(destructor:rankpb.RankBoardKey)
   SharedDtor(*this);
 }
-inline void GetRankPageRequest::SharedDtor(MessageLite& self) {
-  GetRankPageRequest& this_ = static_cast<GetRankPageRequest&>(self);
+inline void RankBoardKey::SharedDtor(MessageLite& self) {
+  RankBoardKey& this_ = static_cast<RankBoardKey&>(self);
   if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
     this_.CheckHasBitConsistency();
   }
   this_._internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
   ABSL_DCHECK(this_.GetArena() == nullptr);
+  this_._impl_.period_.Destroy();
   this_._impl_.~Impl_();
 }
 
 #ifndef PROTOBUF_MESSAGE_GLOBALS
 PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const
-    ::google::protobuf::internal::ClassDataFull GetRankPageRequest_class_data_ =
-        GetRankPageRequest::InternalGenerateClassData_(GetRankPageRequest_globals_._default);
+    ::google::protobuf::internal::ClassDataFull RankBoardKey_class_data_ =
+        RankBoardKey::InternalGenerateClassData_(RankBoardKey_globals_._default);
 
 PROTOBUF_ATTRIBUTE_WEAK const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
-GetRankPageRequest::GetClassData() const {
-  ::google::protobuf::internal::PrefetchToLocalCache(&GetRankPageRequest_class_data_);
-  ::google::protobuf::internal::PrefetchToLocalCache(GetRankPageRequest_class_data_.tc_table);
-  return GetRankPageRequest_class_data_.base();
+RankBoardKey::GetClassData() const {
+  ::google::protobuf::internal::PrefetchToLocalCache(&RankBoardKey_class_data_);
+  ::google::protobuf::internal::PrefetchToLocalCache(RankBoardKey_class_data_.tc_table);
+  return RankBoardKey_class_data_.base();
 }
 #else
 PROTOBUF_ATTRIBUTE_WEAK const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
-GetRankPageRequest::GetClassData() const {
-  ::google::protobuf::internal::PrefetchToLocalCache(&GetRankPageRequest_globals_);
+RankBoardKey::GetClassData() const {
+  ::google::protobuf::internal::PrefetchToLocalCache(&RankBoardKey_globals_);
   ::google::protobuf::internal::PrefetchToLocalCache(
-      ::google::protobuf::internal::MessageGlobalsBase::ToParseTableBase(&GetRankPageRequest_globals_));
-  return GetRankPageRequest_globals_.GetClassData();
+      ::google::protobuf::internal::MessageGlobalsBase::ToParseTableBase(&RankBoardKey_globals_));
+  return RankBoardKey_globals_.GetClassData();
 }
 #endif  // !PROTOBUF_MESSAGE_GLOBALS
 #ifndef PROTOBUF_MESSAGE_GLOBALS
 PROTOBUF_CONSTINIT
-PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const GetRankPageRequest::ParseTableT_
-    GetRankPageRequest::_table_ =
-        GetRankPageRequest::InternalGenerateParseTable_(GetRankPageRequest_class_data_.base());
+PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const RankBoardKey::ParseTableT_
+    RankBoardKey::_table_ =
+        RankBoardKey::InternalGenerateParseTable_(RankBoardKey_class_data_.base());
 #endif  // !PROTOBUF_MESSAGE_GLOBALS
-PROTOBUF_NOINLINE void GetRankPageRequest::Clear() {
-// @@protoc_insertion_point(message_clear_start:rankpb.GetRankPageRequest)
+PROTOBUF_NOINLINE void RankBoardKey::Clear() {
+// @@protoc_insertion_point(message_clear_start:rankpb.RankBoardKey)
   ::google::protobuf::internal::TSanWrite(&_impl_);
   ::uint32_t cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
   (void) cached_has_bits;
 
   cached_has_bits = _impl_._has_bits_[0];
-  if (BatchCheckHasBit(cached_has_bits, 0x00000007U)) {
-    ::memset(&_impl_.board_, 0, static_cast<::size_t>(
-        reinterpret_cast<char*>(&_impl_.page_size_) -
-        reinterpret_cast<char*>(&_impl_.board_)) + sizeof(_impl_.page_size_));
+  if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+    _impl_.period_.ClearNonDefaultToEmpty();
+  }
+  if (BatchCheckHasBit(cached_has_bits, 0x0000001eU)) {
+    ::memset(&_impl_.board_type_, 0, static_cast<::size_t>(
+        reinterpret_cast<char*>(&_impl_.generation_) -
+        reinterpret_cast<char*>(&_impl_.board_type_)) + sizeof(_impl_.generation_));
   }
   _impl_._has_bits_.Clear();
   _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
 }
 
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-::uint8_t* PROTOBUF_NONNULL GetRankPageRequest::_InternalSerialize(
+::uint8_t* PROTOBUF_NONNULL RankBoardKey::_InternalSerialize(
     const ::google::protobuf::MessageLite& base, ::uint8_t* PROTOBUF_NONNULL target,
     ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) {
-  const GetRankPageRequest& this_ = static_cast<const GetRankPageRequest&>(base);
+  const RankBoardKey& this_ = static_cast<const RankBoardKey&>(base);
 #else   // PROTOBUF_CUSTOM_VTABLE
-::uint8_t* PROTOBUF_NONNULL GetRankPageRequest::_InternalSerialize(
+::uint8_t* PROTOBUF_NONNULL RankBoardKey::_InternalSerialize(
     ::uint8_t* PROTOBUF_NONNULL target,
     ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
-  const GetRankPageRequest& this_ = *this;
+  const RankBoardKey& this_ = *this;
 #endif  // PROTOBUF_CUSTOM_VTABLE
   if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
     this_.CheckHasBitConsistency();
   }
-  // @@protoc_insertion_point(serialize_to_array_start:rankpb.GetRankPageRequest)
+  // @@protoc_insertion_point(serialize_to_array_start:rankpb.RankBoardKey)
   ::uint32_t cached_has_bits = 0;
   (void)cached_has_bits;
 
   cached_has_bits = this_._impl_._has_bits_[0];
-  // .rankpb.RankBoard board = 1;
-  if (CheckHasBit(cached_has_bits, 0x00000001U)) {
-    if (this_._internal_board() != 0) {
+  // uint32 board_type = 1;
+  if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+    if (this_._internal_board_type() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
+          1, this_._internal_board_type(), target);
+    }
+  }
+
+  // .rankpb.RankScope scope = 2;
+  if (CheckHasBit(cached_has_bits, 0x00000004U)) {
+    if (this_._internal_scope() != 0) {
       target = stream->EnsureSpace(target);
       target = ::_pbi::WireFormatLite::WriteEnumToArray(
-          1, this_._internal_board(), target);
+          2, this_._internal_scope(), target);
     }
   }
 
-  // uint32 page = 2;
-  if (CheckHasBit(cached_has_bits, 0x00000002U)) {
-    if (this_._internal_page() != 0) {
+  // uint64 scope_id = 3;
+  if (CheckHasBit(cached_has_bits, 0x00000008U)) {
+    if (this_._internal_scope_id() != 0) {
       target = stream->EnsureSpace(target);
-      target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
-          2, this_._internal_page(), target);
+      target = ::_pbi::WireFormatLite::WriteUInt64ToArray(
+          3, this_._internal_scope_id(), target);
     }
   }
 
-  // uint32 page_size = 3;
-  if (CheckHasBit(cached_has_bits, 0x00000004U)) {
-    if (this_._internal_page_size() != 0) {
+  // string period = 4;
+  if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+    if (!this_._internal_period().empty()) {
+      const ::std::string& _s = this_._internal_period();
+      ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
+          _s.data(), static_cast<int>(_s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "rankpb.RankBoardKey.period");
+      target = stream->WriteStringMaybeAliased(4, _s, target);
+    }
+  }
+
+  // uint64 generation = 5;
+  if (CheckHasBit(cached_has_bits, 0x00000010U)) {
+    if (this_._internal_generation() != 0) {
       target = stream->EnsureSpace(target);
-      target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
-          3, this_._internal_page_size(), target);
+      target = ::_pbi::WireFormatLite::WriteUInt64ToArray(
+          5, this_._internal_generation(), target);
     }
   }
 
@@ -832,18 +1497,18 @@ PROTOBUF_NOINLINE void GetRankPageRequest::Clear() {
         ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
             this_._internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
   }
-  // @@protoc_insertion_point(serialize_to_array_end:rankpb.GetRankPageRequest)
+  // @@protoc_insertion_point(serialize_to_array_end:rankpb.RankBoardKey)
   return target;
 }
 
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-::size_t GetRankPageRequest::ByteSizeLong(const MessageLite& base) {
-  const GetRankPageRequest& this_ = static_cast<const GetRankPageRequest&>(base);
+::size_t RankBoardKey::ByteSizeLong(const MessageLite& base) {
+  const RankBoardKey& this_ = static_cast<const RankBoardKey&>(base);
 #else   // PROTOBUF_CUSTOM_VTABLE
-::size_t GetRankPageRequest::ByteSizeLong() const {
-  const GetRankPageRequest& this_ = *this;
+::size_t RankBoardKey::ByteSizeLong() const {
+  const RankBoardKey& this_ = *this;
 #endif  // PROTOBUF_CUSTOM_VTABLE
-  // @@protoc_insertion_point(message_byte_size_start:rankpb.GetRankPageRequest)
+  // @@protoc_insertion_point(message_byte_size_start:rankpb.RankBoardKey)
   ::size_t total_size = 0;
 
   ::uint32_t cached_has_bits = 0;
@@ -852,26 +1517,40 @@ PROTOBUF_NOINLINE void GetRankPageRequest::Clear() {
 
   ::_pbi::Prefetch5LinesFrom7Lines(&this_);
   cached_has_bits = this_._impl_._has_bits_[0];
-  if (BatchCheckHasBit(cached_has_bits, 0x00000007U)) {
-    // .rankpb.RankBoard board = 1;
+  if (BatchCheckHasBit(cached_has_bits, 0x0000001fU)) {
+    // string period = 4;
     if (CheckHasBit(cached_has_bits, 0x00000001U)) {
-      if (this_._internal_board() != 0) {
-        total_size += 1 +
-                      ::_pbi::WireFormatLite::EnumSize(this_._internal_board());
+      if (!this_._internal_period().empty()) {
+        total_size += 1 + ::google::protobuf::internal::WireFormatLite::StringSize(
+                                        this_._internal_period());
       }
     }
-    // uint32 page = 2;
+    // uint32 board_type = 1;
     if (CheckHasBit(cached_has_bits, 0x00000002U)) {
-      if (this_._internal_page() != 0) {
+      if (this_._internal_board_type() != 0) {
         total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
-            this_._internal_page());
+            this_._internal_board_type());
       }
     }
-    // uint32 page_size = 3;
+    // .rankpb.RankScope scope = 2;
     if (CheckHasBit(cached_has_bits, 0x00000004U)) {
-      if (this_._internal_page_size() != 0) {
-        total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
-            this_._internal_page_size());
+      if (this_._internal_scope() != 0) {
+        total_size += 1 +
+                      ::_pbi::WireFormatLite::EnumSize(this_._internal_scope());
+      }
+    }
+    // uint64 scope_id = 3;
+    if (CheckHasBit(cached_has_bits, 0x00000008U)) {
+      if (this_._internal_scope_id() != 0) {
+        total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(
+            this_._internal_scope_id());
+      }
+    }
+    // uint64 generation = 5;
+    if (CheckHasBit(cached_has_bits, 0x00000010U)) {
+      if (this_._internal_generation() != 0) {
+        total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(
+            this_._internal_generation());
       }
     }
   }
@@ -879,33 +1558,47 @@ PROTOBUF_NOINLINE void GetRankPageRequest::Clear() {
                                              &this_._impl_._cached_size_);
 }
 
-void GetRankPageRequest::MergeImpl(::google::protobuf::MessageLite& to_msg,
+void RankBoardKey::MergeImpl(::google::protobuf::MessageLite& to_msg,
                       const ::google::protobuf::MessageLite& from_msg) {
-   auto* const _this = static_cast<GetRankPageRequest*>(&to_msg);
-  auto& from = static_cast<const GetRankPageRequest&>(from_msg);
+   auto* const _this = static_cast<RankBoardKey*>(&to_msg);
+  auto& from = static_cast<const RankBoardKey&>(from_msg);
   if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
     from.CheckHasBitConsistency();
   }
-  // @@protoc_insertion_point(class_specific_merge_from_start:rankpb.GetRankPageRequest)
+  // @@protoc_insertion_point(class_specific_merge_from_start:rankpb.RankBoardKey)
   ABSL_DCHECK_NE(&from, _this);
   ::uint32_t cached_has_bits = 0;
   (void)cached_has_bits;
 
   cached_has_bits = from._impl_._has_bits_[0];
-  if (BatchCheckHasBit(cached_has_bits, 0x00000007U)) {
+  if (BatchCheckHasBit(cached_has_bits, 0x0000001fU)) {
     if (CheckHasBit(cached_has_bits, 0x00000001U)) {
-      if (from._internal_board() != 0) {
-        _this->_impl_.board_ = from._impl_.board_;
+      if (!from._internal_period().empty()) {
+        _this->_internal_set_period(from._internal_period());
+      } else {
+        if (_this->_impl_.period_.IsDefault()) {
+          _this->_internal_set_period("");
+        }
       }
     }
     if (CheckHasBit(cached_has_bits, 0x00000002U)) {
-      if (from._internal_page() != 0) {
-        _this->_impl_.page_ = from._impl_.page_;
+      if (from._internal_board_type() != 0) {
+        _this->_impl_.board_type_ = from._impl_.board_type_;
       }
     }
     if (CheckHasBit(cached_has_bits, 0x00000004U)) {
-      if (from._internal_page_size() != 0) {
-        _this->_impl_.page_size_ = from._impl_.page_size_;
+      if (from._internal_scope() != 0) {
+        _this->_impl_.scope_ = from._impl_.scope_;
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000008U)) {
+      if (from._internal_scope_id() != 0) {
+        _this->_impl_.scope_id_ = from._impl_.scope_id_;
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000010U)) {
+      if (from._internal_generation() != 0) {
+        _this->_impl_.generation_ = from._impl_.generation_;
       }
     }
   }
@@ -914,27 +1607,30 @@ void GetRankPageRequest::MergeImpl(::google::protobuf::MessageLite& to_msg,
       from._internal_metadata_);
 }
 
-void GetRankPageRequest::CopyFrom(const GetRankPageRequest& from) {
-  // @@protoc_insertion_point(class_specific_copy_from_start:rankpb.GetRankPageRequest)
+void RankBoardKey::CopyFrom(const RankBoardKey& from) {
+  // @@protoc_insertion_point(class_specific_copy_from_start:rankpb.RankBoardKey)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
 }
 
 
-void GetRankPageRequest::InternalSwap(GetRankPageRequest* PROTOBUF_RESTRICT PROTOBUF_NONNULL other) {
+void RankBoardKey::InternalSwap(RankBoardKey* PROTOBUF_RESTRICT PROTOBUF_NONNULL other) {
   using ::std::swap;
+  auto* arena = GetArena();
+  ABSL_DCHECK_EQ(arena, other->GetArena());
   _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
+  ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.period_, &other->_impl_.period_, arena);
   ::google::protobuf::internal::memswap<
-      PROTOBUF_FIELD_OFFSET(GetRankPageRequest, _impl_.page_size_)
-      + sizeof(GetRankPageRequest::_impl_.page_size_)
-      - PROTOBUF_FIELD_OFFSET(GetRankPageRequest, _impl_.board_)>(
-          reinterpret_cast<char*>(&_impl_.board_),
-          reinterpret_cast<char*>(&other->_impl_.board_));
+      PROTOBUF_FIELD_OFFSET(RankBoardKey, _impl_.generation_)
+      + sizeof(RankBoardKey::_impl_.generation_)
+      - PROTOBUF_FIELD_OFFSET(RankBoardKey, _impl_.board_type_)>(
+          reinterpret_cast<char*>(&_impl_.board_type_),
+          reinterpret_cast<char*>(&other->_impl_.board_type_));
 }
 
-::google::protobuf::Metadata GetRankPageRequest::GetMetadata() const {
+::google::protobuf::Metadata RankBoardKey::GetMetadata() const {
   return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
 }
 // ===================================================================
@@ -971,12 +1667,12 @@ RankEntry::RankEntry(
       from._internal_metadata_);
   new (&_impl_) Impl_(internal_visibility(), arena, from._impl_, from);
   ::memcpy(reinterpret_cast<char*>(&_impl_) +
-               offsetof(Impl_, player_id_),
+               offsetof(Impl_, rank_),
            reinterpret_cast<const char*>(&from._impl_) +
-               offsetof(Impl_, player_id_),
-           offsetof(Impl_, games_) -
-               offsetof(Impl_, player_id_) +
-               sizeof(Impl_::games_));
+               offsetof(Impl_, rank_),
+           offsetof(Impl_, achieved_ms_) -
+               offsetof(Impl_, rank_) +
+               sizeof(Impl_::achieved_ms_));
 
   // @@protoc_insertion_point(copy_constructor:rankpb.RankEntry)
 }
@@ -989,11 +1685,11 @@ PROTOBUF_NDEBUG_INLINE RankEntry::Impl_::Impl_(
 inline void RankEntry::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
   new (&_impl_) Impl_(internal_visibility(), arena);
   ::memset(reinterpret_cast<char*>(&_impl_) +
-               offsetof(Impl_, player_id_),
+               offsetof(Impl_, rank_),
            0,
-           offsetof(Impl_, games_) -
-               offsetof(Impl_, player_id_) +
-               sizeof(Impl_::games_));
+           offsetof(Impl_, achieved_ms_) -
+               offsetof(Impl_, rank_) +
+               sizeof(Impl_::achieved_ms_));
 }
 RankEntry::~RankEntry() {
   // @@protoc_insertion_point(destructor:rankpb.RankEntry)
@@ -1048,9 +1744,9 @@ PROTOBUF_NOINLINE void RankEntry::Clear() {
     _impl_.name_.ClearNonDefaultToEmpty();
   }
   if (BatchCheckHasBit(cached_has_bits, 0x0000001eU)) {
-    ::memset(&_impl_.player_id_, 0, static_cast<::size_t>(
-        reinterpret_cast<char*>(&_impl_.games_) -
-        reinterpret_cast<char*>(&_impl_.player_id_)) + sizeof(_impl_.games_));
+    ::memset(&_impl_.rank_, 0, static_cast<::size_t>(
+        reinterpret_cast<char*>(&_impl_.achieved_ms_) -
+        reinterpret_cast<char*>(&_impl_.rank_)) + sizeof(_impl_.achieved_ms_));
   }
   _impl_._has_bits_.Clear();
   _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
@@ -1075,49 +1771,49 @@ PROTOBUF_NOINLINE void RankEntry::Clear() {
   (void)cached_has_bits;
 
   cached_has_bits = this_._impl_._has_bits_[0];
-  // uint32 rank = 1;
-  if (CheckHasBit(cached_has_bits, 0x00000004U)) {
+  // uint64 rank = 1;
+  if (CheckHasBit(cached_has_bits, 0x00000002U)) {
     if (this_._internal_rank() != 0) {
       target = stream->EnsureSpace(target);
-      target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
+      target = ::_pbi::WireFormatLite::WriteUInt64ToArray(
           1, this_._internal_rank(), target);
     }
   }
 
-  // uint64 player_id = 2;
-  if (CheckHasBit(cached_has_bits, 0x00000002U)) {
-    if (this_._internal_player_id() != 0) {
+  // uint64 entity_id = 2;
+  if (CheckHasBit(cached_has_bits, 0x00000004U)) {
+    if (this_._internal_entity_id() != 0) {
       target = stream->EnsureSpace(target);
       target = ::_pbi::WireFormatLite::WriteUInt64ToArray(
-          2, this_._internal_player_id(), target);
+          2, this_._internal_entity_id(), target);
     }
   }
 
-  // string name = 3;
+  // int64 score = 3;
+  if (CheckHasBit(cached_has_bits, 0x00000008U)) {
+    if (this_._internal_score() != 0) {
+      target =
+          ::google::protobuf::internal::WireFormatLite::WriteInt64ToArrayWithField<3>(
+              stream, this_._internal_score(), target);
+    }
+  }
+
+  // uint64 achieved_ms = 4;
+  if (CheckHasBit(cached_has_bits, 0x00000010U)) {
+    if (this_._internal_achieved_ms() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteUInt64ToArray(
+          4, this_._internal_achieved_ms(), target);
+    }
+  }
+
+  // string name = 5;
   if (CheckHasBit(cached_has_bits, 0x00000001U)) {
     if (!this_._internal_name().empty()) {
       const ::std::string& _s = this_._internal_name();
       ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
           _s.data(), static_cast<int>(_s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "rankpb.RankEntry.name");
-      target = stream->WriteStringMaybeAliased(3, _s, target);
-    }
-  }
-
-  // uint32 rating_centi = 4;
-  if (CheckHasBit(cached_has_bits, 0x00000008U)) {
-    if (this_._internal_rating_centi() != 0) {
-      target = stream->EnsureSpace(target);
-      target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
-          4, this_._internal_rating_centi(), target);
-    }
-  }
-
-  // uint64 games = 5;
-  if (CheckHasBit(cached_has_bits, 0x00000010U)) {
-    if (this_._internal_games() != 0) {
-      target = stream->EnsureSpace(target);
-      target = ::_pbi::WireFormatLite::WriteUInt64ToArray(
-          5, this_._internal_games(), target);
+      target = stream->WriteStringMaybeAliased(5, _s, target);
     }
   }
 
@@ -1147,39 +1843,39 @@ PROTOBUF_NOINLINE void RankEntry::Clear() {
   ::_pbi::Prefetch5LinesFrom7Lines(&this_);
   cached_has_bits = this_._impl_._has_bits_[0];
   if (BatchCheckHasBit(cached_has_bits, 0x0000001fU)) {
-    // string name = 3;
+    // string name = 5;
     if (CheckHasBit(cached_has_bits, 0x00000001U)) {
       if (!this_._internal_name().empty()) {
         total_size += 1 + ::google::protobuf::internal::WireFormatLite::StringSize(
                                         this_._internal_name());
       }
     }
-    // uint64 player_id = 2;
+    // uint64 rank = 1;
     if (CheckHasBit(cached_has_bits, 0x00000002U)) {
-      if (this_._internal_player_id() != 0) {
-        total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(
-            this_._internal_player_id());
-      }
-    }
-    // uint32 rank = 1;
-    if (CheckHasBit(cached_has_bits, 0x00000004U)) {
       if (this_._internal_rank() != 0) {
-        total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
+        total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(
             this_._internal_rank());
       }
     }
-    // uint32 rating_centi = 4;
-    if (CheckHasBit(cached_has_bits, 0x00000008U)) {
-      if (this_._internal_rating_centi() != 0) {
-        total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
-            this_._internal_rating_centi());
+    // uint64 entity_id = 2;
+    if (CheckHasBit(cached_has_bits, 0x00000004U)) {
+      if (this_._internal_entity_id() != 0) {
+        total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(
+            this_._internal_entity_id());
       }
     }
-    // uint64 games = 5;
+    // int64 score = 3;
+    if (CheckHasBit(cached_has_bits, 0x00000008U)) {
+      if (this_._internal_score() != 0) {
+        total_size += ::_pbi::WireFormatLite::Int64SizePlusOne(
+            this_._internal_score());
+      }
+    }
+    // uint64 achieved_ms = 4;
     if (CheckHasBit(cached_has_bits, 0x00000010U)) {
-      if (this_._internal_games() != 0) {
+      if (this_._internal_achieved_ms() != 0) {
         total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(
-            this_._internal_games());
+            this_._internal_achieved_ms());
       }
     }
   }
@@ -1211,23 +1907,23 @@ void RankEntry::MergeImpl(::google::protobuf::MessageLite& to_msg,
       }
     }
     if (CheckHasBit(cached_has_bits, 0x00000002U)) {
-      if (from._internal_player_id() != 0) {
-        _this->_impl_.player_id_ = from._impl_.player_id_;
-      }
-    }
-    if (CheckHasBit(cached_has_bits, 0x00000004U)) {
       if (from._internal_rank() != 0) {
         _this->_impl_.rank_ = from._impl_.rank_;
       }
     }
+    if (CheckHasBit(cached_has_bits, 0x00000004U)) {
+      if (from._internal_entity_id() != 0) {
+        _this->_impl_.entity_id_ = from._impl_.entity_id_;
+      }
+    }
     if (CheckHasBit(cached_has_bits, 0x00000008U)) {
-      if (from._internal_rating_centi() != 0) {
-        _this->_impl_.rating_centi_ = from._impl_.rating_centi_;
+      if (from._internal_score() != 0) {
+        _this->_impl_.score_ = from._impl_.score_;
       }
     }
     if (CheckHasBit(cached_has_bits, 0x00000010U)) {
-      if (from._internal_games() != 0) {
-        _this->_impl_.games_ = from._impl_.games_;
+      if (from._internal_achieved_ms() != 0) {
+        _this->_impl_.achieved_ms_ = from._impl_.achieved_ms_;
       }
     }
   }
@@ -1252,14 +1948,292 @@ void RankEntry::InternalSwap(RankEntry* PROTOBUF_RESTRICT PROTOBUF_NONNULL other
   swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
   ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.name_, &other->_impl_.name_, arena);
   ::google::protobuf::internal::memswap<
-      PROTOBUF_FIELD_OFFSET(RankEntry, _impl_.games_)
-      + sizeof(RankEntry::_impl_.games_)
-      - PROTOBUF_FIELD_OFFSET(RankEntry, _impl_.player_id_)>(
-          reinterpret_cast<char*>(&_impl_.player_id_),
-          reinterpret_cast<char*>(&other->_impl_.player_id_));
+      PROTOBUF_FIELD_OFFSET(RankEntry, _impl_.achieved_ms_)
+      + sizeof(RankEntry::_impl_.achieved_ms_)
+      - PROTOBUF_FIELD_OFFSET(RankEntry, _impl_.rank_)>(
+          reinterpret_cast<char*>(&_impl_.rank_),
+          reinterpret_cast<char*>(&other->_impl_.rank_));
 }
 
 ::google::protobuf::Metadata RankEntry::GetMetadata() const {
+  return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
+}
+// ===================================================================
+
+GetRankPageRequest::GetRankPageRequest(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, GetRankPageRequest_get_class_data()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  SharedCtor(arena);
+  // @@protoc_insertion_point(arena_constructor:rankpb.GetRankPageRequest)
+}
+PROTOBUF_NDEBUG_INLINE GetRankPageRequest::Impl_::Impl_(
+    [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
+    [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
+    [[maybe_unused]] const ::rankpb::GetRankPageRequest& from_msg)
+      : _has_bits_{from._has_bits_},
+        _cached_size_{0} {}
+
+GetRankPageRequest::GetRankPageRequest(
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena,
+    const GetRankPageRequest& from)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, GetRankPageRequest_get_class_data()) {
+
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  GetRankPageRequest* const _this = this;
+  (void)_this;
+  _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+  new (&_impl_) Impl_(internal_visibility(), arena, from._impl_, from);
+  ::uint32_t cached_has_bits = _impl_._has_bits_[0];
+  _impl_.board_ = (CheckHasBit(cached_has_bits, 0x00000001U))
+                ? ::google::protobuf::Message::CopyConstruct(arena, *from._impl_.board_)
+                : nullptr;
+  ::memcpy(reinterpret_cast<char*>(&_impl_) +
+               offsetof(Impl_, page_),
+           reinterpret_cast<const char*>(&from._impl_) +
+               offsetof(Impl_, page_),
+           offsetof(Impl_, page_size_) -
+               offsetof(Impl_, page_) +
+               sizeof(Impl_::page_size_));
+
+  // @@protoc_insertion_point(copy_constructor:rankpb.GetRankPageRequest)
+}
+PROTOBUF_NDEBUG_INLINE GetRankPageRequest::Impl_::Impl_(
+    [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
+    [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+      : _cached_size_{0} {}
+
+inline void GetRankPageRequest::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
+  new (&_impl_) Impl_(internal_visibility(), arena);
+  ::memset(reinterpret_cast<char*>(&_impl_) +
+               offsetof(Impl_, board_),
+           0,
+           offsetof(Impl_, page_size_) -
+               offsetof(Impl_, board_) +
+               sizeof(Impl_::page_size_));
+}
+GetRankPageRequest::~GetRankPageRequest() {
+  // @@protoc_insertion_point(destructor:rankpb.GetRankPageRequest)
+  SharedDtor(*this);
+}
+inline void GetRankPageRequest::SharedDtor(MessageLite& self) {
+  GetRankPageRequest& this_ = static_cast<GetRankPageRequest&>(self);
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    this_.CheckHasBitConsistency();
+  }
+  this_._internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
+  ABSL_DCHECK(this_.GetArena() == nullptr);
+  delete this_._impl_.board_;
+  this_._impl_.~Impl_();
+}
+
+#ifndef PROTOBUF_MESSAGE_GLOBALS
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const
+    ::google::protobuf::internal::ClassDataFull GetRankPageRequest_class_data_ =
+        GetRankPageRequest::InternalGenerateClassData_(GetRankPageRequest_globals_._default);
+
+PROTOBUF_ATTRIBUTE_WEAK const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
+GetRankPageRequest::GetClassData() const {
+  ::google::protobuf::internal::PrefetchToLocalCache(&GetRankPageRequest_class_data_);
+  ::google::protobuf::internal::PrefetchToLocalCache(GetRankPageRequest_class_data_.tc_table);
+  return GetRankPageRequest_class_data_.base();
+}
+#else
+PROTOBUF_ATTRIBUTE_WEAK const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
+GetRankPageRequest::GetClassData() const {
+  ::google::protobuf::internal::PrefetchToLocalCache(&GetRankPageRequest_globals_);
+  ::google::protobuf::internal::PrefetchToLocalCache(
+      ::google::protobuf::internal::MessageGlobalsBase::ToParseTableBase(&GetRankPageRequest_globals_));
+  return GetRankPageRequest_globals_.GetClassData();
+}
+#endif  // !PROTOBUF_MESSAGE_GLOBALS
+#ifndef PROTOBUF_MESSAGE_GLOBALS
+PROTOBUF_CONSTINIT
+PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const GetRankPageRequest::ParseTableT_
+    GetRankPageRequest::_table_ =
+        GetRankPageRequest::InternalGenerateParseTable_(GetRankPageRequest_class_data_.base());
+#endif  // !PROTOBUF_MESSAGE_GLOBALS
+PROTOBUF_NOINLINE void GetRankPageRequest::Clear() {
+// @@protoc_insertion_point(message_clear_start:rankpb.GetRankPageRequest)
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  cached_has_bits = _impl_._has_bits_[0];
+  if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+    ABSL_DCHECK(_impl_.board_ != nullptr);
+    _impl_.board_->Clear();
+  }
+  if (BatchCheckHasBit(cached_has_bits, 0x00000006U)) {
+    ::memset(&_impl_.page_, 0, static_cast<::size_t>(
+        reinterpret_cast<char*>(&_impl_.page_size_) -
+        reinterpret_cast<char*>(&_impl_.page_)) + sizeof(_impl_.page_size_));
+  }
+  _impl_._has_bits_.Clear();
+  _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::uint8_t* PROTOBUF_NONNULL GetRankPageRequest::_InternalSerialize(
+    const ::google::protobuf::MessageLite& base, ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) {
+  const GetRankPageRequest& this_ = static_cast<const GetRankPageRequest&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::uint8_t* PROTOBUF_NONNULL GetRankPageRequest::_InternalSerialize(
+    ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
+  const GetRankPageRequest& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    this_.CheckHasBitConsistency();
+  }
+  // @@protoc_insertion_point(serialize_to_array_start:rankpb.GetRankPageRequest)
+  ::uint32_t cached_has_bits = 0;
+  (void)cached_has_bits;
+
+  cached_has_bits = this_._impl_._has_bits_[0];
+  // .rankpb.RankBoardKey board = 1;
+  if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+    target = ::google::protobuf::internal::WireFormatLite::InternalWriteMessage(
+        1, *this_._impl_.board_, this_._impl_.board_->GetCachedSize(), target,
+        stream);
+  }
+
+  // uint32 page = 2;
+  if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+    if (this_._internal_page() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
+          2, this_._internal_page(), target);
+    }
+  }
+
+  // uint32 page_size = 3;
+  if (CheckHasBit(cached_has_bits, 0x00000004U)) {
+    if (this_._internal_page_size() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
+          3, this_._internal_page_size(), target);
+    }
+  }
+
+  if (ABSL_PREDICT_FALSE(this_._internal_metadata_.have_unknown_fields())) {
+    target =
+        ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
+            this_._internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
+  }
+  // @@protoc_insertion_point(serialize_to_array_end:rankpb.GetRankPageRequest)
+  return target;
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::size_t GetRankPageRequest::ByteSizeLong(const MessageLite& base) {
+  const GetRankPageRequest& this_ = static_cast<const GetRankPageRequest&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::size_t GetRankPageRequest::ByteSizeLong() const {
+  const GetRankPageRequest& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  // @@protoc_insertion_point(message_byte_size_start:rankpb.GetRankPageRequest)
+  ::size_t total_size = 0;
+
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void)cached_has_bits;
+
+  ::_pbi::Prefetch5LinesFrom7Lines(&this_);
+  cached_has_bits = this_._impl_._has_bits_[0];
+  if (BatchCheckHasBit(cached_has_bits, 0x00000007U)) {
+    // .rankpb.RankBoardKey board = 1;
+    if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+      total_size += 1 +
+                    ::google::protobuf::internal::WireFormatLite::MessageSize(*this_._impl_.board_);
+    }
+    // uint32 page = 2;
+    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      if (this_._internal_page() != 0) {
+        total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
+            this_._internal_page());
+      }
+    }
+    // uint32 page_size = 3;
+    if (CheckHasBit(cached_has_bits, 0x00000004U)) {
+      if (this_._internal_page_size() != 0) {
+        total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
+            this_._internal_page_size());
+      }
+    }
+  }
+  return this_.MaybeComputeUnknownFieldsSize(total_size,
+                                             &this_._impl_._cached_size_);
+}
+
+void GetRankPageRequest::MergeImpl(::google::protobuf::MessageLite& to_msg,
+                      const ::google::protobuf::MessageLite& from_msg) {
+   auto* const _this = static_cast<GetRankPageRequest*>(&to_msg);
+  auto& from = static_cast<const GetRankPageRequest&>(from_msg);
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    from.CheckHasBitConsistency();
+  }
+  ::google::protobuf::Arena* arena = _this->GetArena();
+  // @@protoc_insertion_point(class_specific_merge_from_start:rankpb.GetRankPageRequest)
+  ABSL_DCHECK_NE(&from, _this);
+  ::uint32_t cached_has_bits = 0;
+  (void)cached_has_bits;
+
+  cached_has_bits = from._impl_._has_bits_[0];
+  if (BatchCheckHasBit(cached_has_bits, 0x00000007U)) {
+    if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+      ABSL_DCHECK(from._impl_.board_ != nullptr);
+      if (_this->_impl_.board_ == nullptr) {
+        _this->_impl_.board_ = ::google::protobuf::Message::CopyConstruct(arena, *from._impl_.board_);
+      } else {
+        _this->_impl_.board_->MergeFrom(*from._impl_.board_);
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      if (from._internal_page() != 0) {
+        _this->_impl_.page_ = from._impl_.page_;
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000004U)) {
+      if (from._internal_page_size() != 0) {
+        _this->_impl_.page_size_ = from._impl_.page_size_;
+      }
+    }
+  }
+  _this->_impl_._has_bits_[0] |= cached_has_bits;
+  _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+}
+
+void GetRankPageRequest::CopyFrom(const GetRankPageRequest& from) {
+  // @@protoc_insertion_point(class_specific_copy_from_start:rankpb.GetRankPageRequest)
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+
+void GetRankPageRequest::InternalSwap(GetRankPageRequest* PROTOBUF_RESTRICT PROTOBUF_NONNULL other) {
+  using ::std::swap;
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
+  swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
+  ::google::protobuf::internal::memswap<
+      PROTOBUF_FIELD_OFFSET(GetRankPageRequest, _impl_.page_size_)
+      + sizeof(GetRankPageRequest::_impl_.page_size_)
+      - PROTOBUF_FIELD_OFFSET(GetRankPageRequest, _impl_.board_)>(
+          reinterpret_cast<char*>(&_impl_.board_),
+          reinterpret_cast<char*>(&other->_impl_.board_));
+}
+
+::google::protobuf::Metadata GetRankPageRequest::GetMetadata() const {
   return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
 }
 // ===================================================================
@@ -1310,16 +2284,19 @@ GetRankPageResponse::GetRankPageResponse(
   _impl_.error_message_ = (CheckHasBit(cached_has_bits, 0x00000002U))
                 ? ::google::protobuf::Message::CopyConstruct(arena, *from._impl_.error_message_)
                 : nullptr;
-  _impl_.self_ = (CheckHasBit(cached_has_bits, 0x00000004U))
+  _impl_.board_ = (CheckHasBit(cached_has_bits, 0x00000004U))
+                ? ::google::protobuf::Message::CopyConstruct(arena, *from._impl_.board_)
+                : nullptr;
+  _impl_.self_ = (CheckHasBit(cached_has_bits, 0x00000008U))
                 ? ::google::protobuf::Message::CopyConstruct(arena, *from._impl_.self_)
                 : nullptr;
   ::memcpy(reinterpret_cast<char*>(&_impl_) +
                offsetof(Impl_, total_count_),
            reinterpret_cast<const char*>(&from._impl_) +
                offsetof(Impl_, total_count_),
-           offsetof(Impl_, page_count_) -
+           offsetof(Impl_, state_) -
                offsetof(Impl_, total_count_) +
-               sizeof(Impl_::page_count_));
+               sizeof(Impl_::state_));
 
   // @@protoc_insertion_point(copy_constructor:rankpb.GetRankPageResponse)
 }
@@ -1338,9 +2315,9 @@ inline void GetRankPageResponse::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE aren
   ::memset(reinterpret_cast<char*>(&_impl_) +
                offsetof(Impl_, error_message_),
            0,
-           offsetof(Impl_, page_count_) -
+           offsetof(Impl_, state_) -
                offsetof(Impl_, error_message_) +
-               sizeof(Impl_::page_count_));
+               sizeof(Impl_::state_));
 }
 GetRankPageResponse::~GetRankPageResponse() {
   // @@protoc_insertion_point(destructor:rankpb.GetRankPageResponse)
@@ -1354,6 +2331,7 @@ inline void GetRankPageResponse::SharedDtor(MessageLite& self) {
   this_._internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
   ABSL_DCHECK(this_.GetArena() == nullptr);
   delete this_._impl_.error_message_;
+  delete this_._impl_.board_;
   delete this_._impl_.self_;
   this_._impl_.~Impl_();
 }
@@ -1392,7 +2370,7 @@ PROTOBUF_NOINLINE void GetRankPageResponse::Clear() {
   (void) cached_has_bits;
 
   cached_has_bits = _impl_._has_bits_[0];
-  if (BatchCheckHasBit(cached_has_bits, 0x00000007U)) {
+  if (BatchCheckHasBit(cached_has_bits, 0x0000000fU)) {
     if (CheckHasBit(cached_has_bits, 0x00000001U)) {
       _impl_.entries_.Clear();
     }
@@ -1401,15 +2379,20 @@ PROTOBUF_NOINLINE void GetRankPageResponse::Clear() {
       _impl_.error_message_->Clear();
     }
     if (CheckHasBit(cached_has_bits, 0x00000004U)) {
+      ABSL_DCHECK(_impl_.board_ != nullptr);
+      _impl_.board_->Clear();
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000008U)) {
       ABSL_DCHECK(_impl_.self_ != nullptr);
       _impl_.self_->Clear();
     }
   }
-  if (BatchCheckHasBit(cached_has_bits, 0x00000078U)) {
+  if (BatchCheckHasBit(cached_has_bits, 0x000000f0U)) {
     ::memset(&_impl_.total_count_, 0, static_cast<::size_t>(
         reinterpret_cast<char*>(&_impl_.page_count_) -
         reinterpret_cast<char*>(&_impl_.total_count_)) + sizeof(_impl_.page_count_));
   }
+  _impl_.state_ = 0;
   _impl_._has_bits_.Clear();
   _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
 }
@@ -1440,7 +2423,14 @@ PROTOBUF_NOINLINE void GetRankPageResponse::Clear() {
         stream);
   }
 
-  // repeated .rankpb.RankEntry entries = 2;
+  // .rankpb.RankBoardKey board = 2;
+  if (CheckHasBit(cached_has_bits, 0x00000004U)) {
+    target = ::google::protobuf::internal::WireFormatLite::InternalWriteMessage(
+        2, *this_._impl_.board_, this_._impl_.board_->GetCachedSize(), target,
+        stream);
+  }
+
+  // repeated .rankpb.RankEntry entries = 3;
   if (CheckHasBit(cached_has_bits, 0x00000001U)) {
     for (unsigned i = 0, n = static_cast<unsigned>(
                              this_._internal_entries_size());
@@ -1448,52 +2438,61 @@ PROTOBUF_NOINLINE void GetRankPageResponse::Clear() {
       const auto& repfield = this_._internal_entries().Get(i);
       target =
           ::google::protobuf::internal::WireFormatLite::InternalWriteMessage(
-              2, repfield, repfield.GetCachedSize(),
+              3, repfield, repfield.GetCachedSize(),
               target, stream);
     }
   }
 
-  // uint32 total_count = 3;
-  if (CheckHasBit(cached_has_bits, 0x00000008U)) {
+  // uint64 total_count = 4;
+  if (CheckHasBit(cached_has_bits, 0x00000010U)) {
     if (this_._internal_total_count() != 0) {
       target = stream->EnsureSpace(target);
-      target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
-          3, this_._internal_total_count(), target);
+      target = ::_pbi::WireFormatLite::WriteUInt64ToArray(
+          4, this_._internal_total_count(), target);
     }
   }
 
-  // uint32 page = 4;
-  if (CheckHasBit(cached_has_bits, 0x00000010U)) {
+  // uint32 page = 5;
+  if (CheckHasBit(cached_has_bits, 0x00000020U)) {
     if (this_._internal_page() != 0) {
       target = stream->EnsureSpace(target);
       target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
-          4, this_._internal_page(), target);
+          5, this_._internal_page(), target);
     }
   }
 
-  // uint32 page_size = 5;
-  if (CheckHasBit(cached_has_bits, 0x00000020U)) {
+  // uint32 page_size = 6;
+  if (CheckHasBit(cached_has_bits, 0x00000040U)) {
     if (this_._internal_page_size() != 0) {
       target = stream->EnsureSpace(target);
       target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
-          5, this_._internal_page_size(), target);
+          6, this_._internal_page_size(), target);
     }
   }
 
-  // uint32 page_count = 6;
-  if (CheckHasBit(cached_has_bits, 0x00000040U)) {
+  // uint64 page_count = 7;
+  if (CheckHasBit(cached_has_bits, 0x00000080U)) {
     if (this_._internal_page_count() != 0) {
       target = stream->EnsureSpace(target);
-      target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
-          6, this_._internal_page_count(), target);
+      target = ::_pbi::WireFormatLite::WriteUInt64ToArray(
+          7, this_._internal_page_count(), target);
     }
   }
 
-  // .rankpb.RankEntry self = 7;
-  if (CheckHasBit(cached_has_bits, 0x00000004U)) {
+  // .rankpb.RankEntry self = 8;
+  if (CheckHasBit(cached_has_bits, 0x00000008U)) {
     target = ::google::protobuf::internal::WireFormatLite::InternalWriteMessage(
-        7, *this_._impl_.self_, this_._impl_.self_->GetCachedSize(), target,
+        8, *this_._impl_.self_, this_._impl_.self_->GetCachedSize(), target,
         stream);
+  }
+
+  // .rankpb.RankGenerationState state = 9;
+  if (CheckHasBit(cached_has_bits, 0x00000100U)) {
+    if (this_._internal_state() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteEnumToArray(
+          9, this_._internal_state(), target);
+    }
   }
 
   if (ABSL_PREDICT_FALSE(this_._internal_metadata_.have_unknown_fields())) {
@@ -1521,8 +2520,8 @@ PROTOBUF_NOINLINE void GetRankPageResponse::Clear() {
 
   ::_pbi::Prefetch5LinesFrom7Lines(&this_);
   cached_has_bits = this_._impl_._has_bits_[0];
-  if (BatchCheckHasBit(cached_has_bits, 0x0000007fU)) {
-    // repeated .rankpb.RankEntry entries = 2;
+  if (BatchCheckHasBit(cached_has_bits, 0x000000ffU)) {
+    // repeated .rankpb.RankEntry entries = 3;
     if (CheckHasBit(cached_has_bits, 0x00000001U)) {
       total_size += 1UL * this_._internal_entries_size();
       for (const auto& msg : this_._internal_entries()) {
@@ -1534,37 +2533,51 @@ PROTOBUF_NOINLINE void GetRankPageResponse::Clear() {
       total_size += 1 +
                     ::google::protobuf::internal::WireFormatLite::MessageSize(*this_._impl_.error_message_);
     }
-    // .rankpb.RankEntry self = 7;
+    // .rankpb.RankBoardKey board = 2;
     if (CheckHasBit(cached_has_bits, 0x00000004U)) {
+      total_size += 1 +
+                    ::google::protobuf::internal::WireFormatLite::MessageSize(*this_._impl_.board_);
+    }
+    // .rankpb.RankEntry self = 8;
+    if (CheckHasBit(cached_has_bits, 0x00000008U)) {
       total_size += 1 +
                     ::google::protobuf::internal::WireFormatLite::MessageSize(*this_._impl_.self_);
     }
-    // uint32 total_count = 3;
-    if (CheckHasBit(cached_has_bits, 0x00000008U)) {
+    // uint64 total_count = 4;
+    if (CheckHasBit(cached_has_bits, 0x00000010U)) {
       if (this_._internal_total_count() != 0) {
-        total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
+        total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(
             this_._internal_total_count());
       }
     }
-    // uint32 page = 4;
-    if (CheckHasBit(cached_has_bits, 0x00000010U)) {
+    // uint32 page = 5;
+    if (CheckHasBit(cached_has_bits, 0x00000020U)) {
       if (this_._internal_page() != 0) {
         total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
             this_._internal_page());
       }
     }
-    // uint32 page_size = 5;
-    if (CheckHasBit(cached_has_bits, 0x00000020U)) {
+    // uint32 page_size = 6;
+    if (CheckHasBit(cached_has_bits, 0x00000040U)) {
       if (this_._internal_page_size() != 0) {
         total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
             this_._internal_page_size());
       }
     }
-    // uint32 page_count = 6;
-    if (CheckHasBit(cached_has_bits, 0x00000040U)) {
+    // uint64 page_count = 7;
+    if (CheckHasBit(cached_has_bits, 0x00000080U)) {
       if (this_._internal_page_count() != 0) {
-        total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
+        total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(
             this_._internal_page_count());
+      }
+    }
+  }
+   {
+    // .rankpb.RankGenerationState state = 9;
+    if (CheckHasBit(cached_has_bits, 0x00000100U)) {
+      if (this_._internal_state() != 0) {
+        total_size += 1 +
+                      ::_pbi::WireFormatLite::EnumSize(this_._internal_state());
       }
     }
   }
@@ -1586,7 +2599,7 @@ void GetRankPageResponse::MergeImpl(::google::protobuf::MessageLite& to_msg,
   (void)cached_has_bits;
 
   cached_has_bits = from._impl_._has_bits_[0];
-  if (BatchCheckHasBit(cached_has_bits, 0x0000007fU)) {
+  if (BatchCheckHasBit(cached_has_bits, 0x000000ffU)) {
     if (CheckHasBit(cached_has_bits, 0x00000001U)) {
       _this->_internal_mutable_entries()->InternalMergeFromWithArena(
           ::google::protobuf::MessageLite::internal_visibility(), arena,
@@ -1601,6 +2614,14 @@ void GetRankPageResponse::MergeImpl(::google::protobuf::MessageLite& to_msg,
       }
     }
     if (CheckHasBit(cached_has_bits, 0x00000004U)) {
+      ABSL_DCHECK(from._impl_.board_ != nullptr);
+      if (_this->_impl_.board_ == nullptr) {
+        _this->_impl_.board_ = ::google::protobuf::Message::CopyConstruct(arena, *from._impl_.board_);
+      } else {
+        _this->_impl_.board_->MergeFrom(*from._impl_.board_);
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000008U)) {
       ABSL_DCHECK(from._impl_.self_ != nullptr);
       if (_this->_impl_.self_ == nullptr) {
         _this->_impl_.self_ = ::google::protobuf::Message::CopyConstruct(arena, *from._impl_.self_);
@@ -1608,25 +2629,30 @@ void GetRankPageResponse::MergeImpl(::google::protobuf::MessageLite& to_msg,
         _this->_impl_.self_->MergeFrom(*from._impl_.self_);
       }
     }
-    if (CheckHasBit(cached_has_bits, 0x00000008U)) {
+    if (CheckHasBit(cached_has_bits, 0x00000010U)) {
       if (from._internal_total_count() != 0) {
         _this->_impl_.total_count_ = from._impl_.total_count_;
       }
     }
-    if (CheckHasBit(cached_has_bits, 0x00000010U)) {
+    if (CheckHasBit(cached_has_bits, 0x00000020U)) {
       if (from._internal_page() != 0) {
         _this->_impl_.page_ = from._impl_.page_;
       }
     }
-    if (CheckHasBit(cached_has_bits, 0x00000020U)) {
+    if (CheckHasBit(cached_has_bits, 0x00000040U)) {
       if (from._internal_page_size() != 0) {
         _this->_impl_.page_size_ = from._impl_.page_size_;
       }
     }
-    if (CheckHasBit(cached_has_bits, 0x00000040U)) {
+    if (CheckHasBit(cached_has_bits, 0x00000080U)) {
       if (from._internal_page_count() != 0) {
         _this->_impl_.page_count_ = from._impl_.page_count_;
       }
+    }
+  }
+  if (CheckHasBit(cached_has_bits, 0x00000100U)) {
+    if (from._internal_state() != 0) {
+      _this->_impl_.state_ = from._impl_.state_;
     }
   }
   _this->_impl_._has_bits_[0] |= cached_has_bits;
@@ -1648,14 +2674,589 @@ void GetRankPageResponse::InternalSwap(GetRankPageResponse* PROTOBUF_RESTRICT PR
   swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
   _impl_.entries_.InternalSwap(&other->_impl_.entries_);
   ::google::protobuf::internal::memswap<
-      PROTOBUF_FIELD_OFFSET(GetRankPageResponse, _impl_.page_count_)
-      + sizeof(GetRankPageResponse::_impl_.page_count_)
+      PROTOBUF_FIELD_OFFSET(GetRankPageResponse, _impl_.state_)
+      + sizeof(GetRankPageResponse::_impl_.state_)
       - PROTOBUF_FIELD_OFFSET(GetRankPageResponse, _impl_.error_message_)>(
           reinterpret_cast<char*>(&_impl_.error_message_),
           reinterpret_cast<char*>(&other->_impl_.error_message_));
 }
 
 ::google::protobuf::Metadata GetRankPageResponse::GetMetadata() const {
+  return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
+}
+// ===================================================================
+
+GetRankAroundRequest::GetRankAroundRequest(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, GetRankAroundRequest_get_class_data()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  SharedCtor(arena);
+  // @@protoc_insertion_point(arena_constructor:rankpb.GetRankAroundRequest)
+}
+PROTOBUF_NDEBUG_INLINE GetRankAroundRequest::Impl_::Impl_(
+    [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
+    [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
+    [[maybe_unused]] const ::rankpb::GetRankAroundRequest& from_msg)
+      : _has_bits_{from._has_bits_},
+        _cached_size_{0} {}
+
+GetRankAroundRequest::GetRankAroundRequest(
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena,
+    const GetRankAroundRequest& from)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, GetRankAroundRequest_get_class_data()) {
+
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  GetRankAroundRequest* const _this = this;
+  (void)_this;
+  _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+  new (&_impl_) Impl_(internal_visibility(), arena, from._impl_, from);
+  ::uint32_t cached_has_bits = _impl_._has_bits_[0];
+  _impl_.board_ = (CheckHasBit(cached_has_bits, 0x00000001U))
+                ? ::google::protobuf::Message::CopyConstruct(arena, *from._impl_.board_)
+                : nullptr;
+  _impl_.radius_ = from._impl_.radius_;
+
+  // @@protoc_insertion_point(copy_constructor:rankpb.GetRankAroundRequest)
+}
+PROTOBUF_NDEBUG_INLINE GetRankAroundRequest::Impl_::Impl_(
+    [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
+    [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+      : _cached_size_{0} {}
+
+inline void GetRankAroundRequest::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
+  new (&_impl_) Impl_(internal_visibility(), arena);
+  ::memset(reinterpret_cast<char*>(&_impl_) +
+               offsetof(Impl_, board_),
+           0,
+           offsetof(Impl_, radius_) -
+               offsetof(Impl_, board_) +
+               sizeof(Impl_::radius_));
+}
+GetRankAroundRequest::~GetRankAroundRequest() {
+  // @@protoc_insertion_point(destructor:rankpb.GetRankAroundRequest)
+  SharedDtor(*this);
+}
+inline void GetRankAroundRequest::SharedDtor(MessageLite& self) {
+  GetRankAroundRequest& this_ = static_cast<GetRankAroundRequest&>(self);
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    this_.CheckHasBitConsistency();
+  }
+  this_._internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
+  ABSL_DCHECK(this_.GetArena() == nullptr);
+  delete this_._impl_.board_;
+  this_._impl_.~Impl_();
+}
+
+#ifndef PROTOBUF_MESSAGE_GLOBALS
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const
+    ::google::protobuf::internal::ClassDataFull GetRankAroundRequest_class_data_ =
+        GetRankAroundRequest::InternalGenerateClassData_(GetRankAroundRequest_globals_._default);
+
+PROTOBUF_ATTRIBUTE_WEAK const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
+GetRankAroundRequest::GetClassData() const {
+  ::google::protobuf::internal::PrefetchToLocalCache(&GetRankAroundRequest_class_data_);
+  ::google::protobuf::internal::PrefetchToLocalCache(GetRankAroundRequest_class_data_.tc_table);
+  return GetRankAroundRequest_class_data_.base();
+}
+#else
+PROTOBUF_ATTRIBUTE_WEAK const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
+GetRankAroundRequest::GetClassData() const {
+  ::google::protobuf::internal::PrefetchToLocalCache(&GetRankAroundRequest_globals_);
+  ::google::protobuf::internal::PrefetchToLocalCache(
+      ::google::protobuf::internal::MessageGlobalsBase::ToParseTableBase(&GetRankAroundRequest_globals_));
+  return GetRankAroundRequest_globals_.GetClassData();
+}
+#endif  // !PROTOBUF_MESSAGE_GLOBALS
+#ifndef PROTOBUF_MESSAGE_GLOBALS
+PROTOBUF_CONSTINIT
+PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const GetRankAroundRequest::ParseTableT_
+    GetRankAroundRequest::_table_ =
+        GetRankAroundRequest::InternalGenerateParseTable_(GetRankAroundRequest_class_data_.base());
+#endif  // !PROTOBUF_MESSAGE_GLOBALS
+PROTOBUF_NOINLINE void GetRankAroundRequest::Clear() {
+// @@protoc_insertion_point(message_clear_start:rankpb.GetRankAroundRequest)
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  cached_has_bits = _impl_._has_bits_[0];
+  if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+    ABSL_DCHECK(_impl_.board_ != nullptr);
+    _impl_.board_->Clear();
+  }
+  _impl_.radius_ = 0u;
+  _impl_._has_bits_.Clear();
+  _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::uint8_t* PROTOBUF_NONNULL GetRankAroundRequest::_InternalSerialize(
+    const ::google::protobuf::MessageLite& base, ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) {
+  const GetRankAroundRequest& this_ = static_cast<const GetRankAroundRequest&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::uint8_t* PROTOBUF_NONNULL GetRankAroundRequest::_InternalSerialize(
+    ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
+  const GetRankAroundRequest& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    this_.CheckHasBitConsistency();
+  }
+  // @@protoc_insertion_point(serialize_to_array_start:rankpb.GetRankAroundRequest)
+  ::uint32_t cached_has_bits = 0;
+  (void)cached_has_bits;
+
+  cached_has_bits = this_._impl_._has_bits_[0];
+  // .rankpb.RankBoardKey board = 1;
+  if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+    target = ::google::protobuf::internal::WireFormatLite::InternalWriteMessage(
+        1, *this_._impl_.board_, this_._impl_.board_->GetCachedSize(), target,
+        stream);
+  }
+
+  // uint32 radius = 2;
+  if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+    if (this_._internal_radius() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
+          2, this_._internal_radius(), target);
+    }
+  }
+
+  if (ABSL_PREDICT_FALSE(this_._internal_metadata_.have_unknown_fields())) {
+    target =
+        ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
+            this_._internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
+  }
+  // @@protoc_insertion_point(serialize_to_array_end:rankpb.GetRankAroundRequest)
+  return target;
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::size_t GetRankAroundRequest::ByteSizeLong(const MessageLite& base) {
+  const GetRankAroundRequest& this_ = static_cast<const GetRankAroundRequest&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::size_t GetRankAroundRequest::ByteSizeLong() const {
+  const GetRankAroundRequest& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  // @@protoc_insertion_point(message_byte_size_start:rankpb.GetRankAroundRequest)
+  ::size_t total_size = 0;
+
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void)cached_has_bits;
+
+  ::_pbi::Prefetch5LinesFrom7Lines(&this_);
+  cached_has_bits = this_._impl_._has_bits_[0];
+  if (BatchCheckHasBit(cached_has_bits, 0x00000003U)) {
+    // .rankpb.RankBoardKey board = 1;
+    if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+      total_size += 1 +
+                    ::google::protobuf::internal::WireFormatLite::MessageSize(*this_._impl_.board_);
+    }
+    // uint32 radius = 2;
+    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      if (this_._internal_radius() != 0) {
+        total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
+            this_._internal_radius());
+      }
+    }
+  }
+  return this_.MaybeComputeUnknownFieldsSize(total_size,
+                                             &this_._impl_._cached_size_);
+}
+
+void GetRankAroundRequest::MergeImpl(::google::protobuf::MessageLite& to_msg,
+                      const ::google::protobuf::MessageLite& from_msg) {
+   auto* const _this = static_cast<GetRankAroundRequest*>(&to_msg);
+  auto& from = static_cast<const GetRankAroundRequest&>(from_msg);
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    from.CheckHasBitConsistency();
+  }
+  ::google::protobuf::Arena* arena = _this->GetArena();
+  // @@protoc_insertion_point(class_specific_merge_from_start:rankpb.GetRankAroundRequest)
+  ABSL_DCHECK_NE(&from, _this);
+  ::uint32_t cached_has_bits = 0;
+  (void)cached_has_bits;
+
+  cached_has_bits = from._impl_._has_bits_[0];
+  if (BatchCheckHasBit(cached_has_bits, 0x00000003U)) {
+    if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+      ABSL_DCHECK(from._impl_.board_ != nullptr);
+      if (_this->_impl_.board_ == nullptr) {
+        _this->_impl_.board_ = ::google::protobuf::Message::CopyConstruct(arena, *from._impl_.board_);
+      } else {
+        _this->_impl_.board_->MergeFrom(*from._impl_.board_);
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      if (from._internal_radius() != 0) {
+        _this->_impl_.radius_ = from._impl_.radius_;
+      }
+    }
+  }
+  _this->_impl_._has_bits_[0] |= cached_has_bits;
+  _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+}
+
+void GetRankAroundRequest::CopyFrom(const GetRankAroundRequest& from) {
+  // @@protoc_insertion_point(class_specific_copy_from_start:rankpb.GetRankAroundRequest)
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+
+void GetRankAroundRequest::InternalSwap(GetRankAroundRequest* PROTOBUF_RESTRICT PROTOBUF_NONNULL other) {
+  using ::std::swap;
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
+  swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
+  ::google::protobuf::internal::memswap<
+      PROTOBUF_FIELD_OFFSET(GetRankAroundRequest, _impl_.radius_)
+      + sizeof(GetRankAroundRequest::_impl_.radius_)
+      - PROTOBUF_FIELD_OFFSET(GetRankAroundRequest, _impl_.board_)>(
+          reinterpret_cast<char*>(&_impl_.board_),
+          reinterpret_cast<char*>(&other->_impl_.board_));
+}
+
+::google::protobuf::Metadata GetRankAroundRequest::GetMetadata() const {
+  return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
+}
+// ===================================================================
+
+void GetRankAroundResponse::clear_error_message() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (_impl_.error_message_ != nullptr) _impl_.error_message_->Clear();
+  ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
+}
+GetRankAroundResponse::GetRankAroundResponse(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, GetRankAroundResponse_get_class_data()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  SharedCtor(arena);
+  // @@protoc_insertion_point(arena_constructor:rankpb.GetRankAroundResponse)
+}
+PROTOBUF_NDEBUG_INLINE GetRankAroundResponse::Impl_::Impl_(
+    [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
+    [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
+    [[maybe_unused]] const ::rankpb::GetRankAroundResponse& from_msg)
+      : _has_bits_{from._has_bits_},
+        _cached_size_{0},
+        entries_ {
+          visibility, ::_pbi::InternalMetadataOffset::Build<
+              ::rankpb::GetRankAroundResponse,
+              PROTOBUF_FIELD_OFFSET(::rankpb::GetRankAroundResponse, _impl_.entries_)>()
+          , from.entries_
+        }
+     {}
+
+GetRankAroundResponse::GetRankAroundResponse(
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena,
+    const GetRankAroundResponse& from)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, GetRankAroundResponse_get_class_data()) {
+
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  GetRankAroundResponse* const _this = this;
+  (void)_this;
+  _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+  new (&_impl_) Impl_(internal_visibility(), arena, from._impl_, from);
+  ::uint32_t cached_has_bits = _impl_._has_bits_[0];
+  _impl_.error_message_ = (CheckHasBit(cached_has_bits, 0x00000002U))
+                ? ::google::protobuf::Message::CopyConstruct(arena, *from._impl_.error_message_)
+                : nullptr;
+  _impl_.board_ = (CheckHasBit(cached_has_bits, 0x00000004U))
+                ? ::google::protobuf::Message::CopyConstruct(arena, *from._impl_.board_)
+                : nullptr;
+  _impl_.self_ = (CheckHasBit(cached_has_bits, 0x00000008U))
+                ? ::google::protobuf::Message::CopyConstruct(arena, *from._impl_.self_)
+                : nullptr;
+
+  // @@protoc_insertion_point(copy_constructor:rankpb.GetRankAroundResponse)
+}
+PROTOBUF_NDEBUG_INLINE GetRankAroundResponse::Impl_::Impl_(
+    [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
+    [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+      : _cached_size_{0},
+        entries_ { visibility, ::_pbi::InternalMetadataOffset::Build<
+            ::rankpb::GetRankAroundResponse,
+            PROTOBUF_FIELD_OFFSET(::rankpb::GetRankAroundResponse, _impl_.entries_)>()
+         }
+     {}
+
+inline void GetRankAroundResponse::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
+  new (&_impl_) Impl_(internal_visibility(), arena);
+  ::memset(reinterpret_cast<char*>(&_impl_) +
+               offsetof(Impl_, error_message_),
+           0,
+           offsetof(Impl_, self_) -
+               offsetof(Impl_, error_message_) +
+               sizeof(Impl_::self_));
+}
+GetRankAroundResponse::~GetRankAroundResponse() {
+  // @@protoc_insertion_point(destructor:rankpb.GetRankAroundResponse)
+  SharedDtor(*this);
+}
+inline void GetRankAroundResponse::SharedDtor(MessageLite& self) {
+  GetRankAroundResponse& this_ = static_cast<GetRankAroundResponse&>(self);
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    this_.CheckHasBitConsistency();
+  }
+  this_._internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
+  ABSL_DCHECK(this_.GetArena() == nullptr);
+  delete this_._impl_.error_message_;
+  delete this_._impl_.board_;
+  delete this_._impl_.self_;
+  this_._impl_.~Impl_();
+}
+
+#ifndef PROTOBUF_MESSAGE_GLOBALS
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const
+    ::google::protobuf::internal::ClassDataFull GetRankAroundResponse_class_data_ =
+        GetRankAroundResponse::InternalGenerateClassData_(GetRankAroundResponse_globals_._default);
+
+PROTOBUF_ATTRIBUTE_WEAK const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
+GetRankAroundResponse::GetClassData() const {
+  ::google::protobuf::internal::PrefetchToLocalCache(&GetRankAroundResponse_class_data_);
+  ::google::protobuf::internal::PrefetchToLocalCache(GetRankAroundResponse_class_data_.tc_table);
+  return GetRankAroundResponse_class_data_.base();
+}
+#else
+PROTOBUF_ATTRIBUTE_WEAK const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
+GetRankAroundResponse::GetClassData() const {
+  ::google::protobuf::internal::PrefetchToLocalCache(&GetRankAroundResponse_globals_);
+  ::google::protobuf::internal::PrefetchToLocalCache(
+      ::google::protobuf::internal::MessageGlobalsBase::ToParseTableBase(&GetRankAroundResponse_globals_));
+  return GetRankAroundResponse_globals_.GetClassData();
+}
+#endif  // !PROTOBUF_MESSAGE_GLOBALS
+#ifndef PROTOBUF_MESSAGE_GLOBALS
+PROTOBUF_CONSTINIT
+PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const GetRankAroundResponse::ParseTableT_
+    GetRankAroundResponse::_table_ =
+        GetRankAroundResponse::InternalGenerateParseTable_(GetRankAroundResponse_class_data_.base());
+#endif  // !PROTOBUF_MESSAGE_GLOBALS
+PROTOBUF_NOINLINE void GetRankAroundResponse::Clear() {
+// @@protoc_insertion_point(message_clear_start:rankpb.GetRankAroundResponse)
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  cached_has_bits = _impl_._has_bits_[0];
+  if (BatchCheckHasBit(cached_has_bits, 0x0000000fU)) {
+    if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+      _impl_.entries_.Clear();
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      ABSL_DCHECK(_impl_.error_message_ != nullptr);
+      _impl_.error_message_->Clear();
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000004U)) {
+      ABSL_DCHECK(_impl_.board_ != nullptr);
+      _impl_.board_->Clear();
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000008U)) {
+      ABSL_DCHECK(_impl_.self_ != nullptr);
+      _impl_.self_->Clear();
+    }
+  }
+  _impl_._has_bits_.Clear();
+  _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::uint8_t* PROTOBUF_NONNULL GetRankAroundResponse::_InternalSerialize(
+    const ::google::protobuf::MessageLite& base, ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) {
+  const GetRankAroundResponse& this_ = static_cast<const GetRankAroundResponse&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::uint8_t* PROTOBUF_NONNULL GetRankAroundResponse::_InternalSerialize(
+    ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
+  const GetRankAroundResponse& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    this_.CheckHasBitConsistency();
+  }
+  // @@protoc_insertion_point(serialize_to_array_start:rankpb.GetRankAroundResponse)
+  ::uint32_t cached_has_bits = 0;
+  (void)cached_has_bits;
+
+  cached_has_bits = this_._impl_._has_bits_[0];
+  // .TipInfoMessage error_message = 1;
+  if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+    target = ::google::protobuf::internal::WireFormatLite::InternalWriteMessage(
+        1, *this_._impl_.error_message_, this_._impl_.error_message_->GetCachedSize(), target,
+        stream);
+  }
+
+  // .rankpb.RankBoardKey board = 2;
+  if (CheckHasBit(cached_has_bits, 0x00000004U)) {
+    target = ::google::protobuf::internal::WireFormatLite::InternalWriteMessage(
+        2, *this_._impl_.board_, this_._impl_.board_->GetCachedSize(), target,
+        stream);
+  }
+
+  // repeated .rankpb.RankEntry entries = 3;
+  if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+    for (unsigned i = 0, n = static_cast<unsigned>(
+                             this_._internal_entries_size());
+         i < n; i++) {
+      const auto& repfield = this_._internal_entries().Get(i);
+      target =
+          ::google::protobuf::internal::WireFormatLite::InternalWriteMessage(
+              3, repfield, repfield.GetCachedSize(),
+              target, stream);
+    }
+  }
+
+  // .rankpb.RankEntry self = 4;
+  if (CheckHasBit(cached_has_bits, 0x00000008U)) {
+    target = ::google::protobuf::internal::WireFormatLite::InternalWriteMessage(
+        4, *this_._impl_.self_, this_._impl_.self_->GetCachedSize(), target,
+        stream);
+  }
+
+  if (ABSL_PREDICT_FALSE(this_._internal_metadata_.have_unknown_fields())) {
+    target =
+        ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
+            this_._internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
+  }
+  // @@protoc_insertion_point(serialize_to_array_end:rankpb.GetRankAroundResponse)
+  return target;
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::size_t GetRankAroundResponse::ByteSizeLong(const MessageLite& base) {
+  const GetRankAroundResponse& this_ = static_cast<const GetRankAroundResponse&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::size_t GetRankAroundResponse::ByteSizeLong() const {
+  const GetRankAroundResponse& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  // @@protoc_insertion_point(message_byte_size_start:rankpb.GetRankAroundResponse)
+  ::size_t total_size = 0;
+
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void)cached_has_bits;
+
+  ::_pbi::Prefetch5LinesFrom7Lines(&this_);
+  cached_has_bits = this_._impl_._has_bits_[0];
+  if (BatchCheckHasBit(cached_has_bits, 0x0000000fU)) {
+    // repeated .rankpb.RankEntry entries = 3;
+    if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+      total_size += 1UL * this_._internal_entries_size();
+      for (const auto& msg : this_._internal_entries()) {
+        total_size += ::google::protobuf::internal::WireFormatLite::MessageSize(msg);
+      }
+    }
+    // .TipInfoMessage error_message = 1;
+    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      total_size += 1 +
+                    ::google::protobuf::internal::WireFormatLite::MessageSize(*this_._impl_.error_message_);
+    }
+    // .rankpb.RankBoardKey board = 2;
+    if (CheckHasBit(cached_has_bits, 0x00000004U)) {
+      total_size += 1 +
+                    ::google::protobuf::internal::WireFormatLite::MessageSize(*this_._impl_.board_);
+    }
+    // .rankpb.RankEntry self = 4;
+    if (CheckHasBit(cached_has_bits, 0x00000008U)) {
+      total_size += 1 +
+                    ::google::protobuf::internal::WireFormatLite::MessageSize(*this_._impl_.self_);
+    }
+  }
+  return this_.MaybeComputeUnknownFieldsSize(total_size,
+                                             &this_._impl_._cached_size_);
+}
+
+void GetRankAroundResponse::MergeImpl(::google::protobuf::MessageLite& to_msg,
+                      const ::google::protobuf::MessageLite& from_msg) {
+   auto* const _this = static_cast<GetRankAroundResponse*>(&to_msg);
+  auto& from = static_cast<const GetRankAroundResponse&>(from_msg);
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    from.CheckHasBitConsistency();
+  }
+  ::google::protobuf::Arena* arena = _this->GetArena();
+  // @@protoc_insertion_point(class_specific_merge_from_start:rankpb.GetRankAroundResponse)
+  ABSL_DCHECK_NE(&from, _this);
+  ::uint32_t cached_has_bits = 0;
+  (void)cached_has_bits;
+
+  cached_has_bits = from._impl_._has_bits_[0];
+  if (BatchCheckHasBit(cached_has_bits, 0x0000000fU)) {
+    if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+      _this->_internal_mutable_entries()->InternalMergeFromWithArena(
+          ::google::protobuf::MessageLite::internal_visibility(), arena,
+          from._internal_entries());
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      ABSL_DCHECK(from._impl_.error_message_ != nullptr);
+      if (_this->_impl_.error_message_ == nullptr) {
+        _this->_impl_.error_message_ = ::google::protobuf::Message::CopyConstruct(arena, *from._impl_.error_message_);
+      } else {
+        _this->_impl_.error_message_->MergeFrom(*from._impl_.error_message_);
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000004U)) {
+      ABSL_DCHECK(from._impl_.board_ != nullptr);
+      if (_this->_impl_.board_ == nullptr) {
+        _this->_impl_.board_ = ::google::protobuf::Message::CopyConstruct(arena, *from._impl_.board_);
+      } else {
+        _this->_impl_.board_->MergeFrom(*from._impl_.board_);
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000008U)) {
+      ABSL_DCHECK(from._impl_.self_ != nullptr);
+      if (_this->_impl_.self_ == nullptr) {
+        _this->_impl_.self_ = ::google::protobuf::Message::CopyConstruct(arena, *from._impl_.self_);
+      } else {
+        _this->_impl_.self_->MergeFrom(*from._impl_.self_);
+      }
+    }
+  }
+  _this->_impl_._has_bits_[0] |= cached_has_bits;
+  _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+}
+
+void GetRankAroundResponse::CopyFrom(const GetRankAroundResponse& from) {
+  // @@protoc_insertion_point(class_specific_copy_from_start:rankpb.GetRankAroundResponse)
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+
+void GetRankAroundResponse::InternalSwap(GetRankAroundResponse* PROTOBUF_RESTRICT PROTOBUF_NONNULL other) {
+  using ::std::swap;
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
+  swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
+  _impl_.entries_.InternalSwap(&other->_impl_.entries_);
+  ::google::protobuf::internal::memswap<
+      PROTOBUF_FIELD_OFFSET(GetRankAroundResponse, _impl_.self_)
+      + sizeof(GetRankAroundResponse::_impl_.self_)
+      - PROTOBUF_FIELD_OFFSET(GetRankAroundResponse, _impl_.error_message_)>(
+          reinterpret_cast<char*>(&_impl_.error_message_),
+          reinterpret_cast<char*>(&other->_impl_.error_message_));
+}
+
+::google::protobuf::Metadata GetRankAroundResponse::GetMetadata() const {
   return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
 }
 // @@protoc_insertion_point(namespace_scope)

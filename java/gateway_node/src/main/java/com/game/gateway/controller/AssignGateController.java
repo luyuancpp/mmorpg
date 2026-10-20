@@ -51,7 +51,8 @@ public class AssignGateController {
         // 带 queue_token 的重入照样过 zone 桶与 IP 桶,只跳过账号冷却。gateway 验不了 token(密钥在 login),
         // 也不知道 login 排队开没开 —— 排队关着时 login 对带 token 的请求直接走快速通道签票,无条件放行 =
         // 任意伪造一个字段就绕过整个限流。持有 token 的客户端按契约轮询 /api/queue-status(不限流);带 token
-        // 重调 assign-gate 只作为 queue-status 本身失败(网络错误 / 5xx)后的恢复手段,偶尔多扣一个令牌可以接受。
+        // 重调 assign-gate 只作为 queue-status 本身失败(网络错误 / HTTP 非 200 / code=500;503 zone_* 与 404 是终态,
+        // 不重入)后的恢复手段,偶尔多扣一个令牌可以接受。
         // 重入在这里被挡住(code=100 ratelimit 或 429)时客户端回到 queue-status 轮询,不退避重调本接口,
         // 契约见 AssignGateRequest#queueToken。冷却要跳过:恢复重入常在 5s 窗口内,会被自己挡住。
         boolean reentry = req.getQueueToken() != null && !req.getQueueToken().isBlank();

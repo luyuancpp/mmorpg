@@ -11,6 +11,7 @@ import (
 	"github.com/redis/go-redis/v9"
 
 	"player_locator/internal/svc"
+	pb "proto/player_locator"
 )
 
 // 所有会话生命周期变更都比较完整的 protobuf 字节。protobuf 中同时包含
@@ -26,6 +27,15 @@ const (
 	replaceSessionCleanupPending replaceSessionResult = 2
 )
 
+// 会话按 gate 建的索引(player:gate_index:*)在下面三段会话 Lua 里与会话写入原子维护
+// (docs/design/player-locator-gate-session-index.md):
+//  1. 索引键与成员都由 Go 从「CAS 的 expected 字节解出的旧会话」和「即将写入的新会话」推导(indexedGate)。
+//     整字节 CAS 保证提交时 Redis 里的就是 expected,推导与提交之间没有窗口。
+//  2. 不变量 I1:会话 ONLINE 且 gate_instance_id 非空 ⇔ player_id 在该 gate 的索引里。
+//  3. 空串 KEYS 是「这一侧没有索引」的哨兵,脚本以 ~= "" 守卫,永不写入名为 "" 的键。
+//  4. commitLeaseExpiry / rearm / claim / renew / ack / enqueue 这几段**刻意不碰索引**:它们只处理
+//     DISCONNECTING 或已删的会话(handleLeaseExpiry 在 commit 前已在 Go 侧校验 State==DISCONNECTING),
+//     这些会话本来就不在索引里。不要往这些脚本里补 SREM —— 那会让索引维护散落到不需要它的路径上。
 var replaceSessionAndCancelLeaseScript = redis.NewScript(`
 local current = redis.call("GET", KEYS[1])
 if ARGV[1] == "missing" then
@@ -53,6 +63,15 @@ redis.call("ZREM", KEYS[2], ARGV[5])
 redis.call("ZREM", KEYS[3], ARGV[5])
 redis.call("HDEL", KEYS[4], ARGV[5])
 redis.call("HDEL", KEYS[5], ARGV[5])
+-- 索引:KEYS[6]=旧会话的索引键或 "",KEYS[7]=新会话的索引键或 "",KEYS[8]=登记集,ARGV[6]=新 gate uuid 或 ""。
+-- 同一 gate 上顶号时 KEYS[6]==KEYS[7]:跳过 SREM 只 SADD。顺序不能改成先 SADD 再 SREM,
+-- 那会把同 gate 顶号的成员删掉(TestGateIndex_ReplaceLoginOnSameGateKeepsMember 钉住)。
+-- missing 模式在登记任何清理前返回 2、CAS 失败返回 0,这两条早退路径都不碰索引。
+if KEYS[6] ~= "" and KEYS[6] ~= KEYS[7] then redis.call("SREM", KEYS[6], ARGV[5]) end
+if KEYS[7] ~= "" then
+    redis.call("SADD", KEYS[7], ARGV[5])
+    redis.call("SADD", KEYS[8], ARGV[6])
+end
 return 1
 `)
 
@@ -69,6 +88,8 @@ redis.call("ZADD", KEYS[2], ARGV[4], ARGV[5])
 redis.call("ZREM", KEYS[3], ARGV[5])
 redis.call("HDEL", KEYS[4], ARGV[5])
 redis.call("HDEL", KEYS[5], ARGV[5])
+-- 索引:KEYS[6]=旧会话(ONLINE)的索引键或 ""。转成 DISCONNECTING 后不再是任何 gate 的成员。
+if KEYS[6] ~= "" then redis.call("SREM", KEYS[6], ARGV[5]) end
 return 1
 `)
 
@@ -85,6 +106,8 @@ redis.call("ZREM", KEYS[3], ARGV[3])
 redis.call("ZREM", KEYS[4], ARGV[3])
 redis.call("HDEL", KEYS[5], ARGV[3])
 redis.call("HDEL", KEYS[6], ARGV[3])
+-- 索引:KEYS[7]=被删会话的索引键或 ""。
+if KEYS[7] ~= "" then redis.call("SREM", KEYS[7], ARGV[3]) end
 return 1
 `)
 
@@ -207,17 +230,20 @@ redis.call("HSET", KEYS[3], ARGV[2], ARGV[3])
 return 1
 `)
 
+// readyAt 是这条清理最早被 LeaseMonitor 领走的时刻(ready ZSET 的分数,unix 秒)。等持有者释放时由调用方延后
+// (docs/design/location-release-binding.md §3.4),其余情形传 time.Now()。
 func enqueueOfflineCleanup(
 	ctx context.Context,
 	svcCtx *svc.ServiceContext,
 	playerID uint64,
 	payload []byte,
+	readyAt time.Time,
 ) (bool, error) {
 	result, err := enqueueOfflineCleanupScript.Run(
 		ctx,
 		svcCtx.RedisClient,
 		[]string{sessionKey(playerID), LeaseZSetKey, leaseClaimPayloadHashKey},
-		time.Now().Unix(),
+		readyAt.Unix(),
 		strconv.FormatUint(playerID, 10),
 		payload,
 	).Int()
@@ -234,6 +260,9 @@ func sessionLifecycleKeys(playerID uint64) []string {
 	}
 }
 
+// replaceSessionAndCancelLease 以整字节 CAS 写入会话并撤销 lease 簿记,同一段 Lua 内维护 gate 索引。
+// previous 是 expected 字节解出的旧会话(missing 模式下为 nil),next 是 updated 字节对应的新会话;
+// 两者只用来推导索引键,调用方必须保证它们与 expected / updated 一一对应。
 func replaceSessionAndCancelLease(
 	ctx context.Context,
 	svcCtx *svc.ServiceContext,
@@ -241,29 +270,67 @@ func replaceSessionAndCancelLease(
 	expected []byte,
 	updated []byte,
 	ttl time.Duration,
+	previous *pb.PlayerSession,
+	next *pb.PlayerSession,
 ) (replaceSessionResult, error) {
 	mode := "present"
 	if expected == nil {
 		mode = "missing"
 	}
+	nextGate := indexedGate(next)
+	keys := append(sessionLifecycleKeys(playerID),
+		gateSessionIndexKey(indexedGate(previous)),
+		gateSessionIndexKey(nextGate),
+		GateIndexRegistryKey,
+	)
 	result, err := replaceSessionAndCancelLeaseScript.Run(
 		ctx,
 		svcCtx.RedisClient,
-		sessionLifecycleKeys(playerID),
+		keys,
 		mode,
 		expected,
 		updated,
 		ttl.Milliseconds(),
 		strconv.FormatUint(playerID, 10),
+		nextGate,
 	).Int()
 	return replaceSessionResult(result), err
 }
 
+// transitionToDisconnecting 是 ONLINE → DISCONNECTING 的唯一提交点(SetDisconnecting 与会话对账共用):
+// 整字节 CAS 写入 updated、ZADD 断线租约(deadline 为 unix 秒)、撤销旧 claim,并把玩家摘出旧 gate 的索引。
+// previous 是 expected 字节解出的旧会话。返回 false = 会话已被改写,CAS 未生效。
+func transitionToDisconnecting(
+	ctx context.Context,
+	svcCtx *svc.ServiceContext,
+	playerID uint64,
+	expected []byte,
+	updated []byte,
+	deadlineUnix int64,
+	previous *pb.PlayerSession,
+) (bool, error) {
+	keys := append(sessionLifecycleKeys(playerID), gateSessionIndexKey(indexedGate(previous)))
+	swapped, err := setDisconnectingScript.Run(
+		ctx,
+		svcCtx.RedisClient,
+		keys,
+		expected,
+		updated,
+		0,
+		deadlineUnix,
+		strconv.FormatUint(playerID, 10),
+	).Int()
+	return swapped == 1, err
+}
+
+// deleteSessionIfUnchanged 整字节 CAS 删除会话及其簿记;current 是 expected 字节解出的会话(missing 模式下为 nil),
+// 只用来推导要摘除的索引成员。
 func deleteSessionIfUnchanged(
 	ctx context.Context,
 	svcCtx *svc.ServiceContext,
 	playerID uint64,
 	expected []byte,
+	current *pb.PlayerSession,
 ) (bool, error) {
 	mode := "present"
 	if expected == nil {
@@ -276,6 +343,7 @@ func deleteSessionIfUnchanged(
 		LeaseProcessingZSetKey,
 		leaseClaimTokenHashKey,
 		leaseClaimPayloadHashKey,
+		gateSessionIndexKey(indexedGate(current)),
 	}
 	result, err := deleteSessionIfUnchangedScript.Run(
 		ctx,

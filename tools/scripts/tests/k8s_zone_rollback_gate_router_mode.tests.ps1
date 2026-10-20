@@ -32,12 +32,21 @@
         go/db/etc/db.yaml(读不到即拒);回档一律落到 zone 组 —— Step 5 带 Group=<基名>_z<id>、RetireGroup=<基名>、Partitions,
         Step 6 带 -DbConsumerGroup zone;Step 2 排空等待已删除;第 0 步 c 的 LAG 快照只告警、只计本 topic;第 0 步 d 在
         zone 组没有位点时以 dry-run 预演 Step 5,预演失败或 describe 判不出都在停服之前拒绝;-KafkaGroup 与 legacy 组相同时入口即拒。
+      - R7 复核(2026-10-17):topic 按 db.yaml 的 TopicGeneration 推导,显式 -KafkaTopic 与推导值不同即入口拒绝;第 0 步 e 按 Step 6 的路径
+        (kubectl exec 进 kafka-0,同一 -KubeContext、dev_tools.ps1 默认 infra namespace)预读两组位点,读不到或与本机 CLI 不一致都在停服之前拒绝。
+      - 回档丢弃语义(负责人 2026-10-17 裁决「丢弃 TargetTime 之后的写」,2026-10-18 落码):Step 5 与第 0 步 d 一律 -ToLatest、不再带 ToDatetime;
+        -Apply 的调用顺序固定为 第 0 步 f 工具预检 → Step 1(及 namespace 已删检查)→ 1b(工具 stopped、--state、两次日志末端)→ PITR →
+        4a 盘点 → Step 5(记切点)→ 4b 丢弃 → 5b(切点复核 + 工具 verify)→ Step 6;各步的拒绝分别落在停服前 / PITR 前 / Step 5 前 / Step 6 前;
+        blocked 玩家与 -AcceptBlockedPlayers 待负责人裁决,fail-closed;dev_tools.ps1 的新透传参数给了才转发。
+        回档复核修正(同日):1b 内先 Kafka 两项、后工具 stopped(停服基线最后取,[1]);inventory / purge / verify 同一组判定参数([2]);
+        盘点之后、Step 5 之前复核 namespace 与 zone 组([8]);中止 / 放弃路径的 zone-up 不带 -DbConsumerGroup([9]);入口决定存档 entry-state.json([10]);
+        dev_tools 透传 -RollbackAllowEmptyTarget / -RollbackAcknowledgeNoPostTWrites([11])。
       - dev_tools.ps1 的 k8s-zone-rollback 入口:全部入口参数与 -KubeContext / -KubeConfig 真正转到回滚脚本
         (以前 -KubeContext 被静默吞掉,回滚落到 kubectl 当前 context);-AllowDisruptiveSwitch 同样转给回滚脚本,
         由它只透传到 Step 6、不下传 Step 1;Invoke-K8sImage 拒绝 -LoginDevPasswordAuth(k8s_image.ps1 不部署 login),
         -RequireClientEndpoint 原样透传给 k8s_image.ps1(只参与 k8s_deploy.ps1 的组合预检,不改写 login / scene_manager 的 ConfigMap)。
 
-    子进程用例走 dry-run(不带 -Apply):脚本只打印每一步要执行的命令,不调 kubectl / redis-cli / kafka 工具。
+    子进程用例走 dry-run(不带 -Apply):脚本只打印每一步要执行的命令,不调 kubectl / kafka 工具 / 回档工具。
     Step 6 在打印前就把透传写进 $upArgs,所以打印出来的那一行就是 -Apply 时真正传下去的参数。
     仍显式带 -SkipMySqlPause:Step 3 的 Read-Host 目前只在 -Apply 下出现,带上它是防止以后 dry-run
     也停在交互提示上,把 `pwsh -File` 子进程挂死。
@@ -294,204 +303,9 @@ function New-KubectlReply {
     return @{ ExitCode = 0; Output = ($list | ConvertTo-Json -Depth 30) }
 }
 
-<#
-.SYNOPSIS
-    在进程内的沙箱里跑一遍 k8s_zone_rollback.ps1,返回 @{ Error; Output; KubectlCalls; DevToolsCalls; DevToolsBound; KafkaCliCalls; KafkaResetBound }。
-
-.DESCRIPTION
-    预检只在 -Apply 下读集群,子进程 dry-run 覆盖不到,所以在进程内跑:沙箱是 <tmp>/<guid>/tools/scripts(被测脚本、
-    真 lib/release_common.ps1、lib/k8s_client_entry.ps1、lib/kafka_consumer_groups.ps1 与假的 dev_tools.ps1 / kafka_offset_reset.ps1 /
-    k8s_deploy.ps1),外加 <tmp>/<guid>/go/db/etc/db.yaml(缺省拷仓库那份):被测脚本在入口按 <脚本目录>/../.. 读它推导消费组名与分区数,
-    读不到就拒绝。kubectl 与 kafka-consumer-groups.sh 用本函数作用域里的同名函数顶替(函数先于外部命令解析,被测脚本在
-    子作用域里按动态作用域找到它们)。于是即使预检有 bug 没拦住,-Apply 的每一步也只落在假下游上:
-      第 0 步静态预检 / Step 1 / Step 6 → 假 dev_tools.ps1(记下命令与收到的 GateRouterMode,另记一行全部具名参数;
-      带 -DryRun 的调用记成 "<命令>/dry-run",与 Step 6 的真实调用区分开);
-      第 0 步 c / d → 假 kafka-consumer-groups.sh(缺省对每个组回「组不存在」,-KafkaCliOutput 可注入输出或异常);
-      第 0 步 d 的预演与 Step 5 → 假 kafka_offset_reset.ps1(每次调用记一行具名参数);Step 3 → -SkipMySqlPause;
-      Step 4 → 不给 -RedisHost 即跳过。
-    不碰任何集群、Redis、Kafka。DevToolsCalls 按调用顺序;DevToolsBound 每次调用一行 "<命令> 参数=值;…"
-    (按参数名排序,不含 Command 与 DryRun);KafkaResetBound 每次调用一行 "参数=值;…"(按参数名排序)。
-
-.PARAMETER KafkaCliOutput
-    假 kafka-consumer-groups.sh 的回应:@{ Lines; ExitCode } 对每次调用都原样返回;@{ Throw = <消息> } 模拟 CLI 不在 PATH;
-    缺省 = 对 --group 后面的组回 "Error: Consumer group '<g>' does not exist."(从未切过组的 zone 的常态)。
-
-.PARAMETER KafkaResetDryRunExit
-    假 kafka_offset_reset.ps1 在不带 -Apply 的调用(第 0 步 d 的预演)上的退出码;0 = 成功。
-
-.PARAMETER DbYamlContent
-    给了就用它作沙箱里的 go/db/etc/db.yaml,不拷仓库那份;-OmitDbYaml 则不放这个文件。
-
-.PARAMETER DryRunFailure
-    假 dev_tools.ps1 在 -DryRun 调用上的失败方式:none = 成功;throw = 抛出 -DryRunFailMessage(k8s_deploy.ps1 的惯例);
-    exit = 打印 -DryRunFailMessage 后以退出码 3 结束。
-
-.PARAMETER DeployDefault
-    '0' / '1' = 只含参数块的假 k8s_deploy.ps1(预检按语法树读它的默认值,真被执行就抛);
-    'real' = 复制真 k8s_deploy.ps1,同样只供预检读默认值。
-
-.PARAMETER DeployEntryDefault
-    假 k8s_deploy.ps1 里 -ClientEntryMode 的默认值('real' 时不用)。
-
-.PARAMETER KubectlReply
-    假 kubectl 的回应:@{ ExitCode; Output },或 @{ Throw = <消息> } 模拟 kubectl 不在 PATH。
-    默认就是 Throw:不该读集群的用例一旦读了,KubectlCalls 会记下来。
-
-.PARAMETER ExtraArgs
-    额外传给被测脚本的具名参数(集群外入口参数、-KubeContext 等)。
-#>
-function Invoke-RollbackInSandbox {
-    param(
-        [Parameter(Mandatory = $true)][ValidateSet('0', '1', 'real')][string]$DeployDefault,
-        [ValidateSet('podip', 'external')][string]$DeployEntryDefault = 'podip',
-        [hashtable]$KubectlReply = @{ Throw = '本用例不该读集群' },
-        [AllowEmptyString()][string]$GateRouterMode = '',
-        [hashtable]$ExtraArgs = @{},
-        [ValidateSet('none', 'throw', 'exit')][string]$DryRunFailure = 'none',
-        [string]$DryRunFailMessage = 'k8s_deploy.ps1 静态预检失败(假)',
-        [hashtable]$KafkaCliOutput = @{},
-        [int]$KafkaResetDryRunExit = 0,
-        [string[]]$DbYamlContent = $null,
-        [switch]$OmitDbYaml,
-        [switch]$Apply
-    )
-
-    # 沙箱是一棵最小的仓库树:被测脚本按 <脚本目录>/../.. 找 go/db/etc/db.yaml。
-    $sandboxRoot = Join-Path ([IO.Path]::GetTempPath()) ('mmorpg-rollback-preflight-' + [guid]::NewGuid().ToString('N'))
-    $sandboxDir = Join-Path $sandboxRoot 'tools' 'scripts'
-    New-Item -ItemType Directory -Path (Join-Path $sandboxDir 'lib') -Force | Out-Null
-    try {
-        $toolsDir = Get-ToolsScriptsDir
-        Copy-Item -LiteralPath (Join-Path $toolsDir 'k8s_zone_rollback.ps1') -Destination $sandboxDir
-        Copy-Item -LiteralPath (Join-Path $toolsDir 'lib' 'release_common.ps1') -Destination (Join-Path $sandboxDir 'lib')
-        # 被测脚本在 $ErrorActionPreference = "Stop" 下 dot-source 它(取 Get-ClientEntryContract);不拷则启动即终止,沙箱用例全部跑不到被测逻辑。
-        Copy-Item -LiteralPath (Join-Path $toolsDir 'lib' 'k8s_client_entry.ps1') -Destination (Join-Path $sandboxDir 'lib')
-        # 同上:第 0 步 c / d 用它解析 describe 输出。
-        Copy-Item -LiteralPath (Join-Path $toolsDir 'lib' 'kafka_consumer_groups.ps1') -Destination (Join-Path $sandboxDir 'lib')
-        if (-not $OmitDbYaml) {
-            $dbYamlDir = Join-Path $sandboxRoot 'go' 'db' 'etc'
-            New-Item -ItemType Directory -Path $dbYamlDir -Force | Out-Null
-            if ($null -ne $DbYamlContent) {
-                Set-Content -LiteralPath (Join-Path $dbYamlDir 'db.yaml') -Encoding utf8 -Value $DbYamlContent
-            }
-            else {
-                Copy-Item -LiteralPath (Join-Path (Get-RepoRoot) 'go' 'db' 'etc' 'db.yaml') -Destination $dbYamlDir
-            }
-        }
-        if ($DeployDefault -eq 'real') {
-            Copy-Item -LiteralPath (Join-Path $toolsDir 'k8s_deploy.ps1') -Destination $sandboxDir
-        }
-        else {
-            Set-Content -LiteralPath (Join-Path $sandboxDir 'k8s_deploy.ps1') -Encoding utf8 -Value @(
-                'param(',
-                '    [ValidateSet("0", "1")]',
-                ('    [string]$GateRouterMode = "{0}",' -f $DeployDefault),
-                '    [ValidateSet("podip", "external")]',
-                ('    [string]$ClientEntryMode = "{0}"' -f $DeployEntryDefault),
-                ')',
-                'throw "假 k8s_deploy.ps1 只供预检读默认值,不该被执行"'
-            )
-        }
-        # 假 dev_tools.ps1 声明第 0 步静态预检 / Step 1 / Step 6 可能传的全部参数并关掉位置绑定:简单脚本里未声明的参数名会让
-        # 它后面的值按位置落到别的参数上,记账就错了;以后被测脚本多传一个参数,这里直接报「找不到参数」而不是静默错位。
-        $devToolsRecord = Join-Path $sandboxDir 'dev_tools.calls.txt'
-        $devToolsBound = Join-Path $sandboxDir 'dev_tools.bound.txt'
-        $fakeDevTools = @'
-[CmdletBinding(PositionalBinding = $false)]
-param($Command, $ZoneName, $ZoneId, $NodeImage, $NamespacePrefix, [switch]$WaitReady, $GateRouterMode = "<unset>", $ReleaseProfile,
-    $ClientEntryMode, $ClientPublicHost, $GateClientHostTemplate, $GateNodePortBase, $GateExternalTrafficPolicy, $GateServiceType,
-    $RequireClientEndpoint, [switch]$LoginDevPasswordAuth, [switch]$AllowDisruptiveSwitch, $GatewayIngressHost, $GatewayIngressClassName,
-    $GatewayIngressTlsSecret, $GatewayTrustedProxies, $KubeContext, $KubeConfig, $DbConsumerGroup, [switch]$DryRun)
-$label = if ($DryRun) { "$Command/dry-run" } else { $Command }
-Add-Content -LiteralPath '__CALLS__' -Encoding utf8 -Value "$label GateRouterMode=$GateRouterMode"
-$boundParameters = $PSBoundParameters
-$bound = @($boundParameters.Keys | Where-Object { $_ -notin @('Command', 'DryRun') } | Sort-Object | ForEach-Object { "$_=$($boundParameters[$_])" }) -join ';'
-Add-Content -LiteralPath '__BOUND__' -Encoding utf8 -Value "$label $bound"
-if ($DryRun) { __DRYRUN_FAIL__ }
-exit 0
-'@
-        $failMessage = $DryRunFailMessage.Replace("'", "''")
-        $dryRunFailCode = switch ($DryRunFailure) {
-            'throw' { "throw '$failMessage'" }
-            'exit' { "Write-Host '$failMessage'; exit 3" }
-            default { '' }
-        }
-        $fakeDevTools = $fakeDevTools.Replace('__CALLS__', $devToolsRecord.Replace("'", "''")).Replace('__BOUND__', $devToolsBound.Replace("'", "''")).Replace('__DRYRUN_FAIL__', $dryRunFailCode)
-        Set-Content -LiteralPath (Join-Path $sandboxDir 'dev_tools.ps1') -Encoding utf8 -Value $fakeDevTools
-        # 假 kafka_offset_reset.ps1 同样声明全部参数并关掉位置绑定:数组 splatting 之类的错位会直接报错,而不是静默记错账。
-        $kafkaResetBound = Join-Path $sandboxDir 'kafka_offset_reset.bound.txt'
-        $fakeKafkaReset = @'
-[CmdletBinding(PositionalBinding = $false)]
-param($BootstrapServer, $Group, $RetireGroup, $Topic, $ToDatetime, [switch]$ToEarliest, [switch]$ToLatest, [switch]$DeleteAndRecreateTopic,
-    [switch]$FinalizeHandoff, $Partitions, $ReplicationFactor, $KafkaBin, [switch]$Apply)
-$boundParameters = $PSBoundParameters
-$bound = @($boundParameters.Keys | Sort-Object | ForEach-Object { "$_=$($boundParameters[$_])" }) -join ';'
-Add-Content -LiteralPath '__RESET__' -Encoding utf8 -Value $bound
-if (-not $Apply -and __DRYRUN_EXIT__ -ne 0) { Write-Host 'fake kafka_offset_reset: incomplete reset plan'; exit __DRYRUN_EXIT__ }
-exit 0
-'@
-        $fakeKafkaReset = $fakeKafkaReset.Replace('__RESET__', $kafkaResetBound.Replace("'", "''")).Replace('__DRYRUN_EXIT__', [string]$KafkaResetDryRunExit)
-        Set-Content -LiteralPath (Join-Path $sandboxDir 'kafka_offset_reset.ps1') -Encoding utf8 -Value $fakeKafkaReset
-
-        $fakeKubectlCalls = [System.Collections.Generic.List[string]]::new()
-        function kubectl {
-            $fakeKubectlCalls.Add(($args -join ' '))
-            if ($KubectlReply.ContainsKey('Throw')) {
-                throw [System.Management.Automation.CommandNotFoundException]::new($KubectlReply.Throw)
-            }
-            $global:LASTEXITCODE = $KubectlReply.ExitCode
-            return $KubectlReply.Output
-        }
-        $fakeKafkaCliCalls = [System.Collections.Generic.List[string]]::new()
-        Set-Item -Path 'Function:kafka-consumer-groups.sh' -Value {
-            $fakeKafkaCliCalls.Add(($args -join ' '))
-            if ($KafkaCliOutput.ContainsKey('Throw')) {
-                throw [System.Management.Automation.CommandNotFoundException]::new($KafkaCliOutput.Throw)
-            }
-            if ($KafkaCliOutput.ContainsKey('Lines')) {
-                $global:LASTEXITCODE = if ($KafkaCliOutput.ContainsKey('ExitCode')) { $KafkaCliOutput.ExitCode } else { 0 }
-                return $KafkaCliOutput.Lines
-            }
-            $argList = @($args | ForEach-Object { "$_" })
-            $groupIndex = [array]::IndexOf($argList, '--group')
-            $groupName = if ($groupIndex -ge 0 -and $groupIndex + 1 -lt $argList.Count) { $argList[$groupIndex + 1] } else { '?' }
-            $global:LASTEXITCODE = 0
-            return "Error: Consumer group '$groupName' does not exist."
-        }
-
-        $rollbackArgs = @{
-            ZoneName             = 'contract-test'
-            ZoneId               = 101
-            TargetTime           = '2026-05-15T14:23:00Z'
-            NodeImage            = 'ghcr.io/luyuancpp/mmorpg-node:0123456789ab'
-            SkipMySqlPause       = $true
-        }
-        if ($GateRouterMode -ne '') { $rollbackArgs.GateRouterMode = $GateRouterMode }
-        foreach ($key in $ExtraArgs.Keys) { $rollbackArgs[$key] = $ExtraArgs[$key] }
-        if ($Apply) { $rollbackArgs.Apply = $true }
-
-        $captured = [System.Text.StringBuilder]::new()
-        $errorText = $null
-        try {
-            & (Join-Path $sandboxDir 'k8s_zone_rollback.ps1') @rollbackArgs *>&1 | ForEach-Object { [void]$captured.AppendLine("$_") }
-        }
-        catch {
-            $errorText = $_.Exception.Message
-        }
-        return [pscustomobject]@{
-            Error           = $errorText
-            Output          = $captured.ToString()
-            KubectlCalls    = @($fakeKubectlCalls)
-            DevToolsCalls   = @(if (Test-Path -LiteralPath $devToolsRecord) { Get-Content -LiteralPath $devToolsRecord -Encoding utf8 })
-            DevToolsBound   = @(if (Test-Path -LiteralPath $devToolsBound) { Get-Content -LiteralPath $devToolsBound -Encoding utf8 })
-            KafkaCliCalls   = @($fakeKafkaCliCalls)
-            KafkaResetBound = @(if (Test-Path -LiteralPath $kafkaResetBound) { Get-Content -LiteralPath $kafkaResetBound -Encoding utf8 })
-        }
-    }
-    finally {
-        Remove-Item -LiteralPath $sandboxRoot -Recurse -Force -ErrorAction SilentlyContinue
-    }
-}
+# 进程内沙箱 Invoke-RollbackInSandbox(与 k8s_zone_rollback_discard.tests.ps1 共用一份):每一步都落在假下游上,
+# 不碰任何集群、Redis、Kafka、MySQL;参数与返回值见 lib/k8s_zone_rollback_sandbox.ps1。
+. "$PSScriptRoot/lib/k8s_zone_rollback_sandbox.ps1"
 
 <#
 .SYNOPSIS
@@ -784,7 +598,7 @@ Test-Case '前提:仓库 go/db/etc/db.yaml 的 GroupID 基名与 PartitionCnt �
     Assert-Match -Text $DbPartitionCnt -Pattern '^[1-9]\d*$' -Because 'Step 5 按它逐分区复核位点,必须是正整数'
 }
 
-Test-Case '-Apply 全程通过:Step 5 重置 zone 组并退役 legacy 组位点,Step 6 显式 -DbConsumerGroup zone,不再有 Step 2 排空' {
+Test-Case '-Apply 全程通过:Step 5 把 zone 组拨到日志末端(-ToLatest)并退役 legacy 组位点,Step 6 显式 -DbConsumerGroup zone,不再有 Step 2 排空' {
     $run = Invoke-RollbackInSandbox -Apply -DeployDefault '1' -GateRouterMode '1' -ExtraArgs $KafkaCaseArgs
     Assert-True -Condition ($null -eq $run.Error) -Because "全流程不该失败。错误: $($run.Error)"
     foreach ($command in @('k8s-zone-up/dry-run', 'k8s-zone-up')) {
@@ -793,9 +607,11 @@ Test-Case '-Apply 全程通过:Step 5 重置 zone 组并退役 legacy 组位点,
     Assert-NotMatch -Text (Get-BoundLine -Run $run -Command 'k8s-zone-down') -Pattern 'DbConsumerGroup' -Because 'zone-down 与消费组无关,不传'
     Assert-True -Condition ($run.KafkaResetBound.Count -ge 1) -Because "Step 5 必须真正调 kafka_offset_reset.ps1。实际: $($run.KafkaResetBound -join ' | ')"
     $step5 = $run.KafkaResetBound[-1]
-    foreach ($pair in @("Group=$ZoneGroup", "RetireGroup=$DbGroupBase", "Partitions=$DbPartitionCnt", 'ToDatetime=2026-05-15T14:23:00Z', 'Apply=True', "Topic=$SandboxTopic")) {
+    foreach ($pair in @("Group=$ZoneGroup", "RetireGroup=$DbGroupBase", "Partitions=$DbPartitionCnt", 'ToLatest=True', 'Apply=True', "Topic=$SandboxTopic")) {
         Assert-BoundPair -Line $step5 -Pair $pair -Because "Step 5 必须带 ${pair}:重置 zone 组(Empty,重置能生效),逐分区复核后再删 legacy 组在本 topic 上的位点"
     }
+    # 负责人 2026-10-17 裁决「丢弃 TargetTime 之后的写」:拨回 T 会让 [T, 停服] 之间从未落库的积压照常写进 PITR 之后的 MySQL。
+    Assert-NotMatch -Text $step5 -Pattern '(^|;)ToDatetime=' -Because 'Step 5 不再按 TargetTime 拨位点,只拨到日志末端'
     Assert-NotMatch -Text $run.Output -Pattern 'Step 2: drain|waiting for LAG|proceeding anyway' -Because 'zone-down 之后等 LAG 排空必然超时,Step 2 已删除'
 }
 
@@ -804,9 +620,10 @@ Test-Case 'zone 组不存在:第 0 步 d 先以 dry-run 预演 Step 5(不带 -Ap
     Assert-True -Condition ($null -eq $run.Error) -Because "预演成功时全流程不该失败。错误: $($run.Error)"
     Assert-Equal -Expected 2 -Actual $run.KafkaResetBound.Count -Because "第 0 步 d 预演一次、Step 5 执行一次。实际: $($run.KafkaResetBound -join ' | ')"
     $rehearsal = $run.KafkaResetBound[0]
-    foreach ($pair in @("Group=$ZoneGroup", "Partitions=$DbPartitionCnt", 'ToDatetime=2026-05-15T14:23:00Z')) {
+    foreach ($pair in @("Group=$ZoneGroup", "Partitions=$DbPartitionCnt", 'ToLatest=True')) {
         Assert-BoundPair -Line $rehearsal -Pair $pair -Because "预演必须用 Step 5 的同一组重置参数($pair)"
     }
+    Assert-NotMatch -Text $rehearsal -Pattern '(^|;)ToDatetime=' -Because '预演与 Step 5 一样拨到日志末端,不再带 TargetTime'
     Assert-NotMatch -Text $rehearsal -Pattern '(^|;)(Apply|RetireGroup)=' -Because '预演只能是 dry-run,且不能删任何位点'
     Assert-True -Condition (@($run.KafkaCliCalls | Where-Object { $_ -match "--describe --group $([regex]::Escape($ZoneGroup))(\s|$)" }).Count -ge 1) -Because '预演前要先 describe zone 组,判断它在本 topic 上有没有位点'
 }
@@ -891,9 +708,526 @@ Test-Case '子进程 dry-run:Step 5 打印 zone 组与 RetireGroup,Step 6 带 -D
     Assert-Match -Text $step5[0] -Pattern ('(^|\s)-Group ' + [regex]::Escape($ZoneGroup) + '(\s|$)') -Because 'Step 5 重置的是 zone 组'
     Assert-Match -Text $step5[0] -Pattern ('(^|\s)-RetireGroup ' + [regex]::Escape($DbGroupBase) + '(\s|$)') -Because 'Step 5 退役 legacy 组在本 topic 上的位点'
     Assert-Match -Text $step5[0] -Pattern "(^|\s)-Partitions $DbPartitionCnt(\s|$)" -Because 'Step 5 按 db.yaml 的分区数逐分区复核'
+    Assert-Match -Text $step5[0] -Pattern '(^|\s)-ToLatest(\s|$)' -Because 'Step 5 把 zone 组拨到日志末端(负责人 2026-10-17 裁决:丢弃 TargetTime 之后的写)'
+    Assert-NotMatch -Text $step5[0] -Pattern '-ToDatetime' -Because 'Step 5 不再拨回 TargetTime'
     Assert-Match -Text (Get-ZoneUpArgsLine -Output $run.Output) -Pattern '(^|\s)-DbConsumerGroup zone(\s|$)' -Because 'Step 6 显式落到 zone 组'
     Assert-Match -Text $run.Output -Pattern ("group=" + [regex]::Escape($ZoneGroup) + " retire=" + [regex]::Escape($DbGroupBase) + '(\s|$)') -Because '摘要要写明重置哪个组、退役哪个组'
     Assert-NotMatch -Text $run.Output -Pattern 'Step 2: drain' -Because 'Step 2 已删除'
+}
+
+# ─────────────────────────────────────────────────────────────────
+# R7 复核(2026-10-17):[6] topic 世代号从 db.yaml 推导;[2] 第 0 步 e 按 Step 6 的访问路径预读 Kafka 位点
+# ─────────────────────────────────────────────────────────────────
+
+Test-Case '[6] TopicGeneration 2:第 0 步 d 与 Step 5 都作用在 <topic>_g2;显式 -KafkaTopic 与推导值不同即入口拒绝;世代号缺失 / 非法同样拒绝' {
+    $gen2 = @('ServerConfig:', '  Kafka:', '    GroupID: "custom_db_group"', '    TopicGeneration: 2', '    PartitionCnt: 4')
+    $run = Invoke-RollbackInSandbox -Apply -DeployDefault '1' -GateRouterMode '1' -ExtraArgs $KafkaCaseArgs -DbYamlContent $gen2
+    Assert-True -Condition ($null -eq $run.Error) -Because "TopicGeneration 2 下全流程不该失败。错误: $($run.Error)"
+    Assert-Equal -Expected 2 -Actual $run.KafkaResetBound.Count -Because "第 0 步 d 预演一次、Step 5 执行一次。实际: $($run.KafkaResetBound -join ' | ')"
+    foreach ($line in $run.KafkaResetBound) {
+        Assert-BoundPair -Line $line -Pair 'Topic=db_task_zone_101_g2' -Because '世代号 > 1 时真实 topic 带 _g<gen>,与 Step 6 的 k8s_deploy.ps1 读的是同一个'
+    }
+    Assert-Match -Text $run.Output -Pattern 'topic=db_task_zone_101_g2(\s|$)' -Because '摘要要写明推导出的 topic'
+
+    $same = Invoke-RollbackInSandbox -Apply -DeployDefault '1' -GateRouterMode '1' -ExtraArgs (@{ KafkaTopic = 'db_task_zone_101_g2' } + $KafkaCaseArgs) -DbYamlContent $gen2
+    Assert-True -Condition ($null -eq $same.Error) -Because "显式 -KafkaTopic 等于推导值时放行。错误: $($same.Error)"
+
+    $stale = Invoke-RollbackInSandbox -Apply -DeployDefault '1' -GateRouterMode '1' -ExtraArgs (@{ KafkaTopic = 'db_task_zone_101' } + $KafkaCaseArgs) -DbYamlContent $gen2
+    Assert-True -Condition ($null -ne $stale.Error) -Because '沿用旧命令传了上一代 topic,必须拒绝:Step 5 会重置旧 topic,真实 topic 上的位点不动'
+    Assert-Match -Text $stale.Error -Pattern '-KafkaTopic db_task_zone_101 与按 go/db/etc/db\.yaml\(TopicGeneration=2\)推导的 db_task_zone_101_g2 不一致' -Because '错误文本要点明两个 topic'
+    Assert-Equal -Expected 0 -Actual ($stale.DevToolsCalls.Count + $stale.KafkaCliCalls.Count + $stale.KafkaExecCalls.Count + $stale.KafkaResetBound.Count) -Because '入口校验早于任何步骤与读 Kafka'
+
+    foreach ($case in @(
+            @{ Label = '缺 TopicGeneration'; Lines = @('ServerConfig:', '  Kafka:', '    GroupID: "custom_db_group"', '    PartitionCnt: 4') }
+            @{ Label = 'TopicGeneration 为负'; Lines = @('ServerConfig:', '  Kafka:', '    GroupID: "custom_db_group"', '    TopicGeneration: -1', '    PartitionCnt: 4') }
+            @{ Label = 'TopicGeneration 不是整数'; Lines = @('ServerConfig:', '  Kafka:', '    GroupID: "custom_db_group"', '    TopicGeneration: abc', '    PartitionCnt: 4') }
+        )) {
+        $bad = Invoke-RollbackInSandbox -Apply -DeployDefault '1' -GateRouterMode '1' -ExtraArgs $KafkaCaseArgs -DbYamlContent $case.Lines
+        Assert-True -Condition ($null -ne $bad.Error) -Because "$($case.Label):拼不出 topic 名必须拒绝(fail-closed)"
+        Assert-Match -Text $bad.Error -Pattern 'ServerConfig\.Kafka\.TopicGeneration' -Because "$($case.Label):错误文本要点明读不到哪个键"
+        Assert-Equal -Expected 0 -Actual $bad.DevToolsCalls.Count -Because "$($case.Label):入口校验早于任何步骤"
+    }
+}
+
+Test-Case '[2] 第 0 步 e:停服之前按 Step 6 的路径(kubectl exec 进 kafka-0,同一 context、dev_tools 默认 infra namespace)读两组位点' {
+    $run = Invoke-RollbackInSandbox -Apply -DeployDefault '1' -GateRouterMode '1' -ExtraArgs (@{ KubeContext = 'kind-mmorpg' } + $KafkaCaseArgs)
+    Assert-True -Condition ($null -eq $run.Error) -Because "两条路径一致时不该被拦。错误: $($run.Error)"
+    Assert-Equal -Expected 2 -Actual $run.KafkaExecCalls.Count -Because "zone 组与 legacy 组各 exec 一次。实际: $($run.KafkaExecCalls -join ' | ')"
+    foreach ($pair in @(@{ Index = 0; Group = $ZoneGroup }, @{ Index = 1; Group = $DbGroupBase })) {
+        $want = "--context kind-mmorpg exec -n contract-infra kafka-0 -c kafka -- /bin/sh -c KAFKA_HEAP_OPTS='-Xms16m -Xmx64m' /opt/kafka/bin/kafka-consumer-groups.sh --bootstrap-server localhost:9092 --describe --group $($pair.Group)"
+        Assert-Equal -Expected $want -Actual $run.KafkaExecCalls[$pair.Index] -Because '与 k8s_deploy.ps1 Read-DbGroupTopicFacts 同一条命令(lib Get-DbGroupDescribeExecArgs)、同一 -KubeContext、dev_tools.ps1 默认的 infra namespace'
+    }
+    $factsAt = $run.Output.IndexOf('Step 6 Kafka facts readable')
+    $stopAt = $run.Output.IndexOf('Step 1: k8s-zone-down')
+    Assert-True -Condition ($factsAt -ge 0 -and $stopAt -gt $factsAt) -Because '第 0 步 e 必须在 Step 1 停服之前'
+}
+
+Test-Case '[2] 第 0 步 e:exec 读不到(缺 pods/exec、kafka-0 未就绪)或与本机 CLI 不一致,都在停服之前拒绝,Step 5 不执行' {
+    $forbidden = @{ Lines = @('Error from server (Forbidden): pods "kafka-0" is forbidden: User "deployer" cannot create resource "pods/exec" in API group ""'); ExitCode = 1 }
+    $run = Invoke-RollbackInSandbox -Apply -DeployDefault '1' -GateRouterMode '1' -ExtraArgs $KafkaCaseArgs -KafkaExecOutput $forbidden
+    Assert-RefusedBeforeStop -Run $run -Label 'exec Forbidden' -HintPattern 'pods/exec'
+    Assert-Match -Text $run.Error -Pattern 'Step 6' -Because '错误文本要说明这是 Step 6 将走的路径'
+    Assert-Equal -Expected 0 -Actual @($run.KafkaResetBound | Where-Object { $_ -match '(^|;)Apply=True(;|$)' }).Count -Because 'Step 5 不能执行'
+
+    # exec 里 zone 组在本 topic 上有位点,本机 CLI(缺省)说组不存在:两条路径指向的不是同一个 Kafka。
+    $header = 'GROUP  TOPIC  PARTITION  CURRENT-OFFSET  LOG-END-OFFSET  LAG  CONSUMER-ID  HOST  CLIENT-ID'
+    $other = @{ Lines = @($header, "$ZoneGroup  $SandboxTopic  0  10  15  5  -  -  -"); ExitCode = 0 }
+    $mismatch = Invoke-RollbackInSandbox -Apply -DeployDefault '1' -GateRouterMode '1' -ExtraArgs $KafkaCaseArgs -KafkaExecOutput $other
+    Assert-RefusedBeforeStop -Run $mismatch -Label '两条路径不一致' -HintPattern '两条访问路径看到的 Kafka 不一致'
+    Assert-Match -Text $mismatch.Error -Pattern ([regex]::Escape("消费组 $ZoneGroup 在 $SandboxTopic 上:kafka-0 里读到 offsets,本机 CLI 读到 missing")) -Because '要逐组列出两边的结论'
+    Assert-Equal -Expected 0 -Actual @($mismatch.KafkaResetBound | Where-Object { $_ -match '(^|;)Apply=True(;|$)' }).Count -Because 'Step 5 不能执行'
+
+    $unreadable = Invoke-RollbackInSandbox -Apply -DeployDefault '1' -GateRouterMode '1' -ExtraArgs $KafkaCaseArgs -DevToolsInfraNamespaceDefault ''
+    Assert-RefusedBeforeStop -Run $unreadable -Label 'dev_tools 默认 infra namespace 读不出' -HintPattern '-InfraNamespace 默认值'
+    Assert-Equal -Expected 0 -Actual $unreadable.KafkaExecCalls.Count -Because '不知道去哪个 namespace 就不 exec'
+}
+
+Test-Case '[2] 第 0 步 e:dry-run 只预告 exec 命令,不执行;子进程 dry-run 读得出真 dev_tools.ps1 的默认 infra namespace' {
+    $run = Invoke-RollbackInSandbox -DeployDefault '1' -GateRouterMode '1' -ExtraArgs $KafkaCaseArgs
+    Assert-True -Condition ($null -eq $run.Error) -Because "dry-run 不该失败。错误: $($run.Error)"
+    Assert-Equal -Expected 0 -Actual $run.KafkaExecCalls.Count -Because 'dry-run 不读集群'
+    foreach ($group in @($ZoneGroup, $DbGroupBase)) {
+        Assert-Match -Text $run.Output -Pattern ("kubectl exec -n contract-infra kafka-0 -c kafka -- /bin/sh -c '[^\r\n]*--describe --group " + [regex]::Escape($group) + "'(\r?\n|$)") -Because "dry-run 要预告 -Apply 时对 $group 的 exec，完整 shell 参数必须带引号且组名精确到行尾"
+    }
+    $sub = Invoke-RollbackDryRun
+    Assert-Equal -Expected 0 -Actual $sub.ExitCode -Because "子进程 dry-run 不该失败。输出: $($sub.Output)"
+    Assert-Match -Text $sub.Output -Pattern 'kubectl exec -n [A-Za-z0-9.-]+ kafka-0 -c kafka -- ' -Because '真 dev_tools.ps1 的 -InfraNamespace 默认值必须能按语法树读成字面常量,否则 -Apply 永远在第 0 步 e 被拒'
+    Assert-NotMatch -Text $sub.Output -Pattern '<unreadable>' -Because '同上'
+}
+
+# ─────────────────────────────────────────────────────────────────
+# 回档丢弃语义(负责人 2026-10-17 裁决:丢弃 TargetTime 之后的写;2026-10-18 落码,回档丢弃语义对抗复核修正版):
+# 第 0 步 f 回档工具预检 → Step 1 → 1b 停服后核对 → Step 3 → 4a 盘点 → Step 5 -ToLatest(记切点)→ 4b 丢弃 → 5b 复核 → Step 6
+# ─────────────────────────────────────────────────────────────────
+
+# 回档工具各次调用的模式序列(DiscardCalls 每行 "<模式> <argv>")。
+function Get-DiscardModes {
+    param([Parameter(Mandatory = $true)]$Run)
+    return @($Run.DiscardCalls | ForEach-Object { ($_ -split ' ', 2)[0] })
+}
+
+# 某个模式那一次调用的 argv(恰好一次)。
+function Get-DiscardArgv {
+    param([Parameter(Mandatory = $true)]$Run, [Parameter(Mandatory = $true)][string]$Mode)
+    $lines = @($Run.DiscardCalls | Where-Object { $_ -like "$Mode *" })
+    Assert-Equal -Expected 1 -Actual $lines.Count -Because "回档工具 $Mode 应当恰被调一次(实际: $($Run.DiscardCalls -join ' | '))"
+    return $lines[0]
+}
+
+<#
+.SYNOPSIS
+    断言这次运行在 Step 1b 被拒:zone 已停服(Step 1 执行过),PITR 提示没出现,4a / 4b / 5b、Step 5 -Apply、Step 6 一个都没执行。
+#>
+function Assert-RefusedBeforePitr {
+    param(
+        [Parameter(Mandatory = $true)]$Run,
+        [Parameter(Mandatory = $true)][string]$Label,
+        [Parameter(Mandatory = $true)][string]$HintPattern
+    )
+    Assert-True -Condition ($null -ne $Run.Error) -Because "${Label}:必须拒绝。输出: $($Run.Output)"
+    Assert-Match -Text $Run.Error -Pattern 'zone 已停服,尚未 PITR,尚未改动 Redis / Kafka' -Because "${Label}:错误文本要写明此刻的状态"
+    Assert-Match -Text $Run.Error -Pattern $HintPattern -Because "${Label}:错误文本要带上拒绝的原因"
+    Assert-Match -Text $Run.Error -Pattern '-RollbackId z101-' -Because "${Label}:要给出用同一 rid 整脚本重跑的做法"
+    Assert-Match -Text $Run.Error -Pattern '放弃回档' -Because "${Label}:要给出放弃回档(直接 zone-up)的做法"
+    Assert-NotMatch -Text $Run.Output -Pattern 'Step 3: MySQL Point-in-Time Recovery' -Because "${Label}:拒绝必须在 PITR 提示之前"
+    Assert-Equal -Expected 'k8s-zone-up/dry-run GateRouterMode=1|k8s-zone-down GateRouterMode=<unset>' -Actual ($Run.DevToolsCalls -join '|') -Because "${Label}:停服已发生,Step 6 不该执行"
+    $late = @(Get-DiscardModes -Run $Run | Where-Object { $_ -in @('inventory', 'purge', 'verify') })
+    Assert-Equal -Expected 0 -Actual $late.Count -Because "${Label}:盘点、丢弃、复核都不该执行(实际: $($Run.DiscardCalls -join ' | '))"
+    Assert-Equal -Expected 0 -Actual @($Run.KafkaResetBound | Where-Object { $_ -match '(^|;)Apply=True(;|$)' }).Count -Because "${Label}:Step 5 不能执行"
+}
+
+$CutHeader = 'GROUP  TOPIC  PARTITION  CURRENT-OFFSET  LOG-END-OFFSET  LAG  CONSUMER-ID  HOST  CLIENT-ID'
+
+Test-Case '(f) -Apply 全程:调用顺序固定为 预检 → 停服 → 1b → PITR → 盘点 → 停服复核 → Step 5 → 丢弃 → 复核 → Step 6,不碰 redis-cli、不 FLUSHDB' {
+    $run = Invoke-RollbackInSandbox -Apply -DeployDefault '1' -GateRouterMode '1' -ExtraArgs $KafkaCaseArgs
+    Assert-True -Condition ($null -eq $run.Error) -Because "全流程不该失败。错误: $($run.Error)"
+    Assert-Equal -Expected 'preflight|stopped|inventory|purge|verify' -Actual ((Get-DiscardModes -Run $run) -join '|') -Because '回档工具的五个模式各一次,顺序固定'
+    # 回档复核 [1]:Step 1b 先证明 Kafka 上没有消费者、日志末端不动(sleep 在两次读之间),工具 stopped 才写停服基线;
+    # 回档复核 [4][5]:第 0 步 f 先读 go/db Redis 的 run_id、核对工具构建提交,再跑 preflight。
+    $order = @('kubectl:snapshot', 'kubectl:redis', 'tool:version', 'tool:preflight', 'dev_tools:k8s-zone-down', 'kubectl:namespace', ('kafka-cg:' + $ZoneGroup + ':state'),
+        'sleep', 'tool:stopped', 'tool:inventory', 'reset:apply', 'tool:purge', 'tool:verify', 'dev_tools:k8s-zone-up')
+    Assert-True -Condition ($order -ccontains ('kafka-cg:' + $ZoneGroup + ':state') -and -not ($order -ccontains 'kafka-cg:')) -Because '时间线判据必须包含完整消费组状态事件，不能被数组逗号拆成三个元素'
+    $positions = @($order | ForEach-Object { Get-TimelineIndex -Timeline $run.Timeline -Event $_ })
+    for ($i = 0; $i -lt $order.Count; $i++) {
+        Assert-True -Condition ($positions[$i] -ge 0) -Because "时间线里必须有 $($order[$i])(实际: $($run.Timeline -join ' > '))"
+        if ($i -gt 0) {
+            Assert-True -Condition ($positions[$i - 1] -lt $positions[$i]) -Because "$($order[$i - 1]) 必须早于 $($order[$i]):Step 5 记下切点之后才丢弃 Redis(对抗复核 [4]),停服之前完成全部只读预检,停服基线在确认没有写者之后才取(实际: $($run.Timeline -join ' > '))"
+        }
+    }
+    # 回档复核 [8]:盘点之后、Step 5 之前再读一次 namespace 与 zone 组 --state。
+    $inventoryAt = Get-TimelineIndex -Timeline $run.Timeline -Event 'tool:inventory'
+    $resetAt = Get-TimelineIndex -Timeline $run.Timeline -Event 'reset:apply'
+    foreach ($event in @('kubectl:namespace', ('kafka-cg:' + $ZoneGroup + ':state'))) {
+        $last = [array]::LastIndexOf([string[]]$run.Timeline, $event)
+        Assert-True -Condition ($last -gt $inventoryAt -and $last -lt $resetAt) -Because "$event 必须在盘点之后、Step 5 之前再复核一次(实际: $($run.Timeline -join ' > '))"
+    }
+    Assert-Equal -Expected 2 -Actual $run.NamespaceCalls.Count -Because 'Step 1 之后一次、Step 5 之前一次'
+    $pitrAt = $run.Output.IndexOf('Step 3: MySQL Point-in-Time Recovery')
+    $inventoryAt = $run.Output.IndexOf('fake zone_rollback_discard: mode=inventory')
+    Assert-True -Condition ($pitrAt -ge 0 -and $inventoryAt -gt $pitrAt) -Because '盘点在 PITR 之后(按 PITR 之后的库归类)'
+    Assert-Equal -Expected 2 -Actual $run.LeoCalls.Count -Because 'Step 1b 读两次日志末端'
+    Assert-Equal -Expected 1 -Actual $run.SleepCalls.Count -Because '两次读之间只等一次'
+    Assert-Match -Text $run.SleepCalls[0] -Pattern '(^|\s)300(\s|$)' -Because '静默窗口缺省 300s(不低于 librdkafka message.timeout.ms)'
+    Assert-Equal -Expected 2 -Actual $run.PostResetDescribes -Because 'Step 5 之后读一次切点、5b 再读一次'
+    $expectedCut = (@(0..([int]$DbPartitionCnt - 1)) | ForEach-Object { "$_=$(1000 + $_)" }) -join ','
+    Assert-Match -Text (Get-DiscardArgv -Run $run -Mode 'verify') -Pattern ("-kafka-cut " + [regex]::Escape($expectedCut) + '(\s|$)') -Because '5b 把 Step 5 的切点交给工具 verify'
+    Assert-Match -Text $run.ReportFiles['kafka-cut.json'] -Pattern ([regex]::Escape($expectedCut)) -Because '切点(丢弃水位)要落盘,以后的重置不得越过它'
+    Assert-Equal -Expected 0 -Actual $run.RedisCliCalls.Count -Because '回档不再直接调 redis-cli'
+    Assert-NotMatch -Text $run.Output -Pattern 'FLUSHDB' -Because '回档里不再有 FLUSHDB'
+    Assert-Match -Text $run.Output -Pattern 'Rollback complete' -Because '全流程走完'
+}
+
+Test-Case '(f) 回档工具的公共参数:每次调用都带 zone / 世代 / rid / 屏障协议 / Redis / DSN 变量名,工具进程看得到 DSN 变量' {
+    $run = Invoke-RollbackInSandbox -Apply -DeployDefault '1' -GateRouterMode '1' -ExtraArgs (@{ RollbackId = 'z101-contract' } + $KafkaCaseArgs)
+    Assert-True -Condition ($null -eq $run.Error) -Because "全流程不该失败。错误: $($run.Error)"
+    foreach ($line in $run.DiscardCalls) {
+        foreach ($pattern in @('-zone 101(\s|$)', '-topic-generation \d+(\s|$)', '-rollback-id z101-contract(\s|$)', '-barrier-protocol legacy(\s|$)',
+                '-redis 127\.0\.0\.1:6379(\s|$)', '-redis-db 0(\s|$)', '-mysql-dsn-env MMORPG_CONTRACT_ROLLBACK_DSN(\s|$)', '-deploy-facts [^\r\n]*deploy-facts\.json(\s|$)',
+                "-expect-run-id $([regex]::Escape($script:RollbackSandboxRedisRunId))(\s|$)")) {
+            Assert-Match -Text $line -Pattern $pattern -Because "回档工具的每次调用都要带公共参数($pattern):$line"
+        }
+    }
+    $judge = '-target-time 2026-05-15T14:23:00Z -fingerprint-baseline [^\r\n]*fingerprint-baseline\.json'
+    Assert-Match -Text (Get-DiscardArgv -Run $run -Mode 'stopped') -Pattern '-lease-wait 90s -handoff-wait 300s -fingerprint-baseline [^\r\n]*fingerprint-baseline\.json(\s|$)' -Because '租约与 handoff 分别计时,handoff 不低于 HandoffTTL 300s;停服基线由 stopped 写(回档复核 [1])'
+    Assert-NotMatch -Text (Get-DiscardArgv -Run $run -Mode 'preflight') -Pattern 'fingerprint-baseline' -Because 'preflight 在停服之前,go/db 仍在落库,那时的基线没有意义,不再写基线(回档复核 [1])'
+    Assert-Match -Text (Get-DiscardArgv -Run $run -Mode 'inventory') -Pattern "-mode inventory $judge -report [^\r\n]*inventory\.json" -Because '盘点要知道 TargetTime、与停服基线比较并写报告'
+    Assert-Match -Text (Get-DiscardArgv -Run $run -Mode 'purge') -Pattern "-mode purge $judge -confirm -report [^\r\n]*purge\.json" -Because '丢弃与盘点用同一组判定参数(回档复核 [2]),且必须显式 -confirm'
+    Assert-Match -Text (Get-DiscardArgv -Run $run -Mode 'verify') -Pattern "-mode verify $judge -kafka-cut \S+ -purge-report [^\r\n]*purge\.json -report [^\r\n]*verify\.json" -Because 'verify 同一组判定参数,并逐个复核 purge.json 里处理过的玩家(回档复核 [6])'
+    Assert-NotMatch -Text ($run.DiscardCalls -join "`n") -Pattern 'acknowledge-no-post-t-writes' -Because '没给 -AcknowledgeNoPostTWrites 就不带'
+    Assert-Equal -Expected 1 -Actual $run.VersionCalls.Count -Because '第 0 步 f 核对一次工具的构建提交(回档复核 [5])'
+    Assert-Equal -Expected 1 -Actual $run.RedisExecCalls.Count -Because '第 0 步 f 读一次 go/db Redis 的 run_id(回档复核 [4])'
+    Assert-True -Condition (@($run.DiscardEnv | Where-Object { $_ -match 'MMORPG_CONTRACT_ROLLBACK_DSN=set$' }).Count -eq 5) -Because "DSN 只经环境变量交给工具,五次调用都看得到(实际: $($run.DiscardEnv -join ' | '))"
+    Assert-NotMatch -Text ($run.DiscardCalls -join "`n") -Pattern 'contract:dsn@tcp' -Because 'DSN 本身不上命令行'
+}
+
+Test-Case '(a) 第 0 步 f:回档工具 preflight 返回 1 / 4 → 停服之前拒绝,dev_tools 只跑过静态预检' {
+    foreach ($code in @(1, 4)) {
+        $run = Invoke-RollbackInSandbox -Apply -DeployDefault '1' -GateRouterMode '1' -ExtraArgs $KafkaCaseArgs -DiscardExit @{ preflight = $code }
+        Assert-RefusedBeforeStop -Run $run -Label "preflight 退出码 $code" -HintPattern "preflight 以退出码 $code"
+        Assert-Equal -Expected 'preflight' -Actual ((Get-DiscardModes -Run $run) -join '|') -Because "preflight 退出码 ${code}:回档工具只跑过 preflight"
+        Assert-Equal -Expected 0 -Actual $run.NamespaceCalls.Count -Because "preflight 退出码 ${code}:没有停服,也就没有 namespace 检查"
+        if ($code -eq 4) {
+            Assert-Match -Text $run.Error -Pattern '-AllowEmptyTarget' -Because '目标看起来没在用时要说明怎么处理'
+        }
+    }
+    $allowed = Invoke-RollbackInSandbox -Apply -DeployDefault '1' -GateRouterMode '1' -ExtraArgs (@{ AllowEmptyTarget = $true } + $KafkaCaseArgs)
+    Assert-True -Condition ($null -eq $allowed.Error) -Because "带 -AllowEmptyTarget 不该失败。错误: $($allowed.Error)"
+    Assert-Match -Text (Get-DiscardArgv -Run $allowed -Mode 'preflight') -Pattern '-mode preflight -allow-empty-target(\s|$)' -Because '-AllowEmptyTarget 只交给 preflight'
+    Assert-NotMatch -Text (Get-DiscardArgv -Run $allowed -Mode 'stopped') -Pattern 'allow-empty-target' -Because '其它模式不带它'
+}
+
+Test-Case '(b) Step 1b:stopped 返回 3、zone 组 Stable、legacy 组本 topic 仍有成员、两次日志末端不同,都在 PITR 提示之前拒绝' {
+    $stopped = Invoke-RollbackInSandbox -Apply -DeployDefault '1' -GateRouterMode '1' -ExtraArgs $KafkaCaseArgs -DiscardExit @{ stopped = 3 }
+    Assert-RefusedBeforePitr -Run $stopped -Label 'stopped 退出码 3' -HintPattern 'stopped 以退出码 3'
+    # 回档复核 [1]:stopped 最后一步写停服基线,必须在 Kafka 两项(消费者、两次日志末端)证明没有写者之后才调。
+    Assert-Equal -Expected 2 -Actual $stopped.LeoCalls.Count -Because 'stopped 排在静默窗口之后:两次日志末端先读完'
+    Assert-True -Condition ((Get-TimelineIndex -Timeline $stopped.Timeline -Event 'sleep') -lt (Get-TimelineIndex -Timeline $stopped.Timeline -Event 'tool:stopped')) -Because "静默窗口早于工具 stopped(实际: $($stopped.Timeline -join ' > '))"
+    # 回档复核 [9]:放弃回档的 zone-up 不带 -DbConsumerGroup(keep),不用 Step 6 的显式 zone。
+    Assert-Match -Text $stopped.Error -Pattern '放弃回档[^\r\n]*pwsh -File tools/scripts/dev_tools\.ps1 [^\r\n]*-Command k8s-zone-up' -Because '要给出放弃回档时的 zone-up 命令'
+    Assert-NotMatch -Text $stopped.Error -Pattern '-DbConsumerGroup zone' -Because '放弃回档时显式 zone 会把仍在 legacy 组上的 zone 渲染成交接形状,没有交接闸的镜像起不来'
+
+    $stableLines = @('GROUP  COORDINATOR (ID)  ASSIGNMENT-STRATEGY  STATE  #MEMBERS', "$ZoneGroup  kafka-0.kafka:9092 (0)  range  Stable  2")
+    $stable = Invoke-RollbackInSandbox -Apply -DeployDefault '1' -GateRouterMode '1' -ExtraArgs $KafkaCaseArgs -KafkaStateOutput @{ $ZoneGroup = @{ Lines = $stableLines; ExitCode = 0 } }
+    Assert-RefusedBeforePitr -Run $stable -Label 'zone 组 Stable' -HintPattern '状态是 Stable'
+
+    $badState = Invoke-RollbackInSandbox -Apply -DeployDefault '1' -GateRouterMode '1' -ExtraArgs $KafkaCaseArgs -KafkaStateOutput @{ $ZoneGroup = @{ Lines = @('WARN something unexpected'); ExitCode = 0 } }
+    Assert-RefusedBeforePitr -Run $badState -Label '--state 判不出' -HintPattern '判不出'
+
+    # legacy 组在本 topic 上仍有成员(别的 zone 的旧组 db 实例订阅了本 topic)。同一份行也回给第 0 步,zone 组因此被判为已有位点。
+    $assigned = @("Consumer group '$DbGroupBase' has members.", $CutHeader, "$DbGroupBase  $SandboxTopic  0  10  12  2  consumer-db-1-abc  /10.0.0.7  consumer-db-1")
+    $legacy = Invoke-RollbackInSandbox -Apply -DeployDefault '1' -GateRouterMode '1' -ExtraArgs $KafkaCaseArgs -KafkaCliOutput @{ Lines = $assigned; ExitCode = 0 }
+    Assert-RefusedBeforePitr -Run $legacy -Label 'legacy 组仍有成员' -HintPattern 'consumer-db-1-abc'
+
+    $moving = Invoke-RollbackInSandbox -Apply -DeployDefault '1' -GateRouterMode '1' -ExtraArgs $KafkaCaseArgs -LeoChanges
+    Assert-RefusedBeforePitr -Run $moving -Label '日志末端仍在前进' -HintPattern '分区 0:日志末端从 1000 变为 1001'
+    Assert-Equal -Expected 2 -Actual $moving.LeoCalls.Count -Because '读两次才判得出'
+}
+
+Test-Case '(b) Step 1 之后 namespace 仍在(Remove-Zone 吞掉了删除失败):在 1b 之前拒绝' {
+    $run = Invoke-RollbackInSandbox -Apply -DeployDefault '1' -GateRouterMode '1' -ExtraArgs $KafkaCaseArgs `
+        -NamespaceReply @{ ExitCode = 0; Output = "namespace/$SandboxNamespace" }
+    Assert-True -Condition ($null -ne $run.Error) -Because '写者可能还活着,必须拒绝'
+    Assert-Match -Text $run.Error -Pattern 'namespace mmorpg-zone-contract-test 仍在' -Because '错误文本要点明 namespace 还在'
+    Assert-Equal -Expected 'preflight' -Actual ((Get-DiscardModes -Run $run) -join '|') -Because 'Step 1b 的 stopped 不该执行'
+    Assert-Equal -Expected 0 -Actual $run.LeoCalls.Count -Because 'Step 1b 不该执行'
+}
+
+Test-Case '(c) 4a 盘点出 blocked 玩家(退出码 6):停在 Step 5 之前,不丢弃、不拨位点、不拉起;-AcceptBlockedPlayers 待裁决,入口即拒' {
+    $run = Invoke-RollbackInSandbox -Apply -DeployDefault '1' -GateRouterMode '1' -ExtraArgs $KafkaCaseArgs -DiscardExit @{ inventory = 6 }
+    Assert-True -Condition ($null -ne $run.Error) -Because 'blocked 玩家的处置待负责人裁决,必须拒绝'
+    Assert-Match -Text $run.Error -Pattern '在 Step 4a 拒绝继续:zone 已停服、MySQL 已 PITR,Redis 与 Kafka 尚未改动' -Because '错误文本要写明此刻的状态'
+    Assert-Match -Text $run.Error -Pattern '裁决\(#4\)' -Because '要点明这是待裁决事项'
+    Assert-Match -Text $run.Error -Pattern '中止路径' -Because '要给出换回原库、直接 zone-up 的中止路径'
+    # 回档复核 [9]:中止路径的 zone-up 与 Step 6 同一份参数,只去掉 -DbConsumerGroup(keep)。
+    Assert-Match -Text $run.Error -Pattern '中止路径[^\r\n]*pwsh -File tools/scripts/dev_tools\.ps1 [^\r\n]*-Command k8s-zone-up' -Because '中止路径要给出可直接执行的 zone-up 命令'
+    Assert-NotMatch -Text $run.Error -Pattern '-DbConsumerGroup zone' -Because '中止时显式 zone 会把回档前还在 legacy 组上的 zone 渲染成交接形状,不是安全退路'
+    Assert-Match -Text $run.Output -Pattern 'run zone-up WITHOUT -DbConsumerGroup \(keep\)' -Because 'Step 3 的中止提示同一口径'
+    Assert-Equal -Expected 'preflight|stopped|inventory' -Actual ((Get-DiscardModes -Run $run) -join '|') -Because 'purge / verify 不该执行'
+    Assert-Equal -Expected 0 -Actual @($run.KafkaResetBound | Where-Object { $_ -match '(^|;)Apply=True(;|$)' }).Count -Because 'Step 5 不能执行:Kafka 一动就没有中止路径了'
+    Assert-Equal -Expected 0 -Actual @($run.DevToolsCalls | Where-Object { $_ -like 'k8s-zone-up GateRouterMode=*' }).Count -Because 'Step 6 不该执行'
+
+    $other = Invoke-RollbackInSandbox -Apply -DeployDefault '1' -GateRouterMode '1' -ExtraArgs $KafkaCaseArgs -DiscardExit @{ inventory = 3 }
+    Assert-Match -Text $other.Error -Pattern 'inventory 以退出码 3' -Because '其它非 0 同样拒绝,并带上退出码'
+    Assert-Equal -Expected 0 -Actual @($other.KafkaResetBound | Where-Object { $_ -match '(^|;)Apply=True(;|$)' }).Count -Because 'Step 5 不能执行'
+
+    $accept = Invoke-RollbackInSandbox -Apply -DeployDefault '1' -GateRouterMode '1' -ExtraArgs (@{ AcceptBlockedPlayers = 2 } + $KafkaCaseArgs)
+    Assert-Match -Text $accept.Error -Pattern '-AcceptBlockedPlayers 待负责人裁决\(#4\)' -Because '带 blocked 玩家继续是待裁决事项,fail-closed'
+    Assert-Equal -Expected 0 -Actual ($accept.DevToolsCalls.Count + $accept.DiscardCalls.Count + $accept.SnapshotCalls.Count + $accept.KafkaCliCalls.Count) -Because '入口即拒,没有任何下游调用'
+}
+
+Test-Case '(d) 4b purge 返回 1:Step 5 已执行、5b 与 Step 6 不执行,错误里给出同一 rid 的单步重跑命令' {
+    $run = Invoke-RollbackInSandbox -Apply -DeployDefault '1' -GateRouterMode '1' -ExtraArgs (@{ RollbackId = 'z101-contract' } + $KafkaCaseArgs) -DiscardExit @{ purge = 1 }
+    Assert-True -Condition ($null -ne $run.Error) -Because 'purge 失败必须拒绝继续'
+    Assert-Match -Text $run.Error -Pattern '在 Step 4b 失败' -Because '错误文本要点明失败的步骤'
+    Assert-Match -Text $run.Error -Pattern '只能向前' -Because 'Step 5 已丢弃积压,不能再换回原库'
+    Assert-Match -Text $run.Error -Pattern 'Step 4b:[^\r\n]*-rollback-id z101-contract[^\r\n]*-mode purge -target-time [^\r\n]*-confirm' -Because '要给出同一 rid 的 4b 重跑命令(与 4a 同一组判定参数)'
+    Assert-Match -Text $run.Error -Pattern 'Step 6:pwsh -File tools/scripts/dev_tools\.ps1 [^\r\n]*-Command k8s-zone-up' -Because '要给出 Step 6 的单步命令'
+    Assert-Equal -Expected 1 -Actual @($run.KafkaResetBound | Where-Object { $_ -match '(^|;)Apply=True(;|$)' }).Count -Because '新顺序下 Step 5 先于 4b(对抗复核 [4])'
+    Assert-Equal -Expected 'preflight|stopped|inventory|purge' -Actual ((Get-DiscardModes -Run $run) -join '|') -Because 'verify 不该执行'
+    Assert-Equal -Expected 0 -Actual @($run.DevToolsCalls | Where-Object { $_ -like 'k8s-zone-up GateRouterMode=*' }).Count -Because 'Step 6 不该执行'
+}
+
+Test-Case '(e) Step 5 之后又有消息写入:切点读到 LAG > 0 时不丢弃;5b 读到 LAG > 0 时不拉起' {
+    $atCut = Invoke-RollbackInSandbox -Apply -DeployDefault '1' -GateRouterMode '1' -ExtraArgs $KafkaCaseArgs -PostResetLag @(2)
+    Assert-Match -Text $atCut.Error -Pattern 'Step 5 之后又有消息写入' -Because '刚拨完位点就有 LAG,说明还有生产者'
+    Assert-Equal -Expected 'preflight|stopped|inventory' -Actual ((Get-DiscardModes -Run $atCut) -join '|') -Because '切点都记不下,purge 不该执行'
+
+    $at5b = Invoke-RollbackInSandbox -Apply -DeployDefault '1' -GateRouterMode '1' -ExtraArgs $KafkaCaseArgs -PostResetLag @(0, 3)
+    Assert-Match -Text $at5b.Error -Pattern '在 Step 5b 拒绝继续\(Step 6 之前\)' -Because '切点之后有写入,Step 6 之前拒绝'
+    Assert-Match -Text $at5b.Error -Pattern '分区 0:CURRENT-OFFSET 1000 不等于 LOG-END-OFFSET 1003' -Because '要列出越过切点的分区'
+    Assert-Equal -Expected 'preflight|stopped|inventory|purge' -Actual ((Get-DiscardModes -Run $at5b) -join '|') -Because 'verify 不该执行'
+    Assert-Equal -Expected 0 -Actual @($at5b.DevToolsCalls | Where-Object { $_ -like 'k8s-zone-up GateRouterMode=*' }).Count -Because 'Step 6 不该执行'
+
+    $verify = Invoke-RollbackInSandbox -Apply -DeployDefault '1' -GateRouterMode '1' -ExtraArgs $KafkaCaseArgs -DiscardExit @{ verify = 1 }
+    Assert-Match -Text $verify.Error -Pattern 'verify 以退出码 1' -Because '工具 verify 失败同样在 Step 6 之前拒绝'
+    Assert-Equal -Expected 0 -Actual @($verify.DevToolsCalls | Where-Object { $_ -like 'k8s-zone-up GateRouterMode=*' }).Count -Because 'Step 6 不该执行'
+}
+
+# ─────────────────────────────────────────────────────────────────
+# 回档复核修正(2026-10-18):[2] 判定参数共用、[8] Step 5 之前复核停服状态、[10] 入口决定存档
+# ([0][4][5] 的部署事实、Redis 实例身份与工具版本见 k8s_zone_rollback_discard.tests.ps1)
+# ─────────────────────────────────────────────────────────────────
+
+Test-Case '[2] -AcknowledgeNoPostTWrites:inventory / purge / verify 与打印出来的 4b 单步命令都带 -acknowledge-no-post-t-writes,preflight / stopped 不带' {
+    $failed = Invoke-RollbackInSandbox -Apply -DeployDefault '1' -GateRouterMode '1' -ExtraArgs (@{ AcknowledgeNoPostTWrites = $true; RollbackId = 'z101-ack' } + $KafkaCaseArgs) -DiscardExit @{ purge = 1 }
+    Assert-Match -Text $failed.Error -Pattern 'Step 4b:[^\r\n]*-mode purge [^\r\n]*-acknowledge-no-post-t-writes[^\r\n]*-confirm' -Because '打印出来的 4b 单步命令必须与 4a 同一组判定参数,否则 Step 5 之后照它重跑必然退出 3'
+    foreach ($mode in @('inventory', 'purge')) {
+        Assert-Match -Text (Get-DiscardArgv -Run $failed -Mode $mode) -Pattern '-acknowledge-no-post-t-writes(\s|$)' -Because "$mode 必须带上开关:purge 原样重跑 inventory 的判定"
+    }
+    foreach ($mode in @('preflight', 'stopped')) {
+        Assert-NotMatch -Text (Get-DiscardArgv -Run $failed -Mode $mode) -Pattern 'acknowledge-no-post-t-writes' -Because "$mode 不做行指纹判定,不带它"
+    }
+    $full = Invoke-RollbackInSandbox -Apply -DeployDefault '1' -GateRouterMode '1' -ExtraArgs (@{ AcknowledgeNoPostTWrites = $true } + $KafkaCaseArgs)
+    Assert-True -Condition ($null -eq $full.Error) -Because "带 -AcknowledgeNoPostTWrites 的全流程不该失败。错误: $($full.Error)"
+    Assert-Match -Text (Get-DiscardArgv -Run $full -Mode 'verify') -Pattern '-acknowledge-no-post-t-writes(\s|$)' -Because 'verify 重跑盘点归类,同一组判定参数'
+    Assert-Match -Text $full.ReportFiles['run-log.jsonl'] -Pattern '"acknowledgeNoPostTWrites":true' -Because '运行记录要写明本次放过了「没有任何玩家变化」'
+}
+
+Test-Case '[8] Step 5 之前复核停服状态:PITR 期间 namespace 被重建 / 读不到、zone 组又活跃、legacy 组又有成员,都在 reset:apply 之前拒绝' {
+    $stableLines = @('GROUP  COORDINATOR (ID)  ASSIGNMENT-STRATEGY  STATE  #MEMBERS', "$ZoneGroup  kafka-0.kafka:9092 (0)  range  Stable  1")
+    $cases = @(
+        @{ Label = 'namespace 被重建'; Extra = @{ NamespaceReplyAfterInventory = @{ ExitCode = 0; Output = "namespace/$SandboxNamespace" } }; Pattern = 'namespace mmorpg-zone-contract-test 仍在' },
+        @{ Label = 'namespace 读不到'; Extra = @{ NamespaceReplyAfterInventory = @{ ExitCode = 1; Output = 'Error from server (Forbidden): namespaces is forbidden' } }; Pattern = '读不到 namespace mmorpg-zone-contract-test 是否已删除' },
+        @{ Label = 'zone 组又活跃'; Extra = @{ KafkaStateOutputAfterInventory = @{ $ZoneGroup = @{ Lines = $stableLines; ExitCode = 0 } } }; Pattern = '状态是 Stable' }
+    )
+    foreach ($c in $cases) {
+        $sandboxArgs = @{ Apply = $true; DeployDefault = '1'; GateRouterMode = '1'; ExtraArgs = $KafkaCaseArgs } + $c.Extra
+        $run = Invoke-RollbackInSandbox @sandboxArgs
+        Assert-True -Condition ($null -ne $run.Error) -Because "$($c.Label):必须在 Step 5 之前拒绝。输出: $($run.Output)"
+        Assert-Match -Text $run.Error -Pattern '在 Step 5 之前拒绝继续:zone 已停服、MySQL 已 PITR,Redis 与 Kafka 尚未改动' -Because "$($c.Label):错误文本要写明此刻的状态"
+        Assert-Match -Text $run.Error -Pattern $c.Pattern -Because "$($c.Label):错误文本要带上原因"
+        Assert-Match -Text $run.Error -Pattern '中止路径' -Because "$($c.Label):Kafka 与 Redis 都没动,给出中止路径"
+        Assert-Equal -Expected 0 -Actual @($run.KafkaResetBound | Where-Object { $_ -match '(^|;)Apply=True(;|$)' }).Count -Because "$($c.Label):Step 5 不能执行"
+        Assert-Equal -Expected 'preflight|stopped|inventory' -Actual ((Get-DiscardModes -Run $run) -join '|') -Because "$($c.Label):purge / verify 不该执行"
+        Assert-Equal -Expected 0 -Actual @($run.DevToolsCalls | Where-Object { $_ -like 'k8s-zone-up GateRouterMode=*' }).Count -Because "$($c.Label):Step 6 不该执行"
+    }
+    # legacy 组在本 topic 上又有成员走的是同一个 Get-KafkaTopicConsumerProblems(CONSUMER-ID 列),判定已在 (b) 覆盖;这里只钉复核的时机。
+}
+
+Test-Case '[10] 入口决定存档:首次 -Apply 在 Step 1 之前写 entry-state.json;同一 rid 重跑、namespace 已删时沿用存档核对留空项,显式值与存档不同即停服之前拒绝' {
+    $live = New-KubectlReply -GateEnv (New-RouterModeEnv -Value '1')
+    $first = Invoke-RollbackInSandbox -Apply -DeployDefault '1' -KubectlReply $live -ExtraArgs @{ RollbackId = 'z101-entry' }
+    Assert-True -Condition ($null -eq $first.Error) -Because "首次运行不该失败。错误: $($first.Error)"
+    $saved = $first.ReportFiles['entry-state.json']
+    Assert-True -Condition (-not [string]::IsNullOrWhiteSpace($saved)) -Because '首次 -Apply 要把入口决定落盘'
+    foreach ($pair in @('"GateRouterMode": "1"', '"ClientEntryMode": "podip"', '"GatewayIngress": "(none)"')) {
+        Assert-Match -Text $saved -Pattern ([regex]::Escape($pair)) -Because "入口决定要记下 $pair(留空项取核对过的集群现状)"
+    }
+    $entryAt = $first.Output.IndexOf('entry decision saved to')
+    Assert-True -Condition ($entryAt -ge 0 -and $entryAt -lt $first.Output.IndexOf('Step 1: k8s-zone-down')) -Because '存档必须在 Step 1 之前写(第 0 步全部通过之后)'
+
+    $gone = New-KubectlReply -Items @()
+    $seed = @{ 'entry-state.json' = $saved; 'deploy-facts.json' = $first.ReportFiles['deploy-facts.json'] }
+    $reused = Invoke-RollbackInSandbox -Apply -DeployDefault '1' -KubectlReply $gone -ExtraArgs @{ RollbackId = 'z101-entry' } -SeedReportFiles $seed -SnapshotReply @{ ExitCode = 0; Output = '' }
+    Assert-True -Condition ($null -eq $reused.Error) -Because "namespace 已删时留空项按存档的集群现状核对,不再要操作者凭记忆重传。错误: $($reused.Error)"
+    Assert-Match -Text $reused.Output -Pattern 'checking against the cluster state saved by the same -RollbackId' -Because '要写明这次核对用的是存档'
+
+    $explicitSame = Invoke-RollbackInSandbox -Apply -DeployDefault '1' -GateRouterMode '1' -KubectlReply $gone -SeedReportFiles $seed -SnapshotReply @{ ExitCode = 0; Output = '' } `
+        -ExtraArgs @{ RollbackId = 'z101-entry'; ClientEntryMode = 'podip'; ConfirmNoGatewayIngress = $true }
+    Assert-True -Condition ($null -eq $explicitSame.Error) -Because "首次留空、重跑显式传同值,判为相同。错误: $($explicitSame.Error)"
+
+    $changed = Invoke-RollbackInSandbox -Apply -DeployDefault '1' -GateRouterMode '0' -KubectlReply $gone -ExtraArgs @{ RollbackId = 'z101-entry' } -SeedReportFiles $seed -SnapshotReply @{ ExitCode = 0; Output = '' }
+    Assert-RefusedBeforeStop -Run $changed -Label '重跑换了路由模式' -HintPattern '与同一 rollback-id 的存档 [^\r\n]*entry-state\.json 不同'
+    Assert-Match -Text $changed.Error -Pattern "GateRouterMode:存档 '1',本次 '0'" -Because '要逐项列出差异'
+    Assert-Match -Text $changed.Error -Pattern '-GateRouterMode 1 -ClientEntryMode podip -ConfirmNoGatewayIngress' -Because '要打印存档里的入口参数,照传即可'
+
+    $noSaved = Invoke-RollbackInSandbox -Apply -DeployDefault '1' -KubectlReply $gone -ExtraArgs @{ RollbackId = 'z101-entry-none' }
+    Assert-RefusedBeforeStop -Run $noSaved -Label '没有存档、namespace 已删'
+    Assert-Match -Text $noSaved.Error -Pattern '当前模式为 \(读不到\)' -Because '没有存档时照旧判为读不到(fail-closed)'
+}
+
+# ─────────────────────────────────────────────────────────────────
+# 第 0 步 a:login 第三方登录(微信 / QQ)的防误关(-Apply,沙箱)
+# Step 1 连 login ConfigMap 与 Secret login-oauth 一起删,k8s_deploy.ps1 自己的防误关闸在 Step 6 面对空 namespace,
+# 所以回滚脚本在停服之前按同一份判据(lib Get-LoginAuthProviderDrift)核对。入口三项一律显式,不读 gate / Ingress,
+# 只看第三方登录这一道。线上的 AuthProviders 段按 k8s_deploy.ps1 New-LoginAuthProvidersYaml 的形状手写
+# (生成器与解析器口径一致由 k8s_login_auth_provider_guard.tests.ps1 的往返用例钉住)。
+# ─────────────────────────────────────────────────────────────────
+
+$LoginAuthQuietEntry = @{ ClientEntryMode = 'podip'; ConfirmNoGatewayIngress = $true }
+$LoginAuthLiveYaml = @(
+    'AuthProviders:',
+    '  WeChat:',
+    '    AppId: "wx0123456789abcdef"',
+    '    AppSecretEnv: "LOGIN_WECHAT_APP_SECRET"',
+    '    RequireUnionId: false',
+    '    Endpoint: "https://wechat-mock.contract.test:18090"',
+    '  QQ:',
+    '    AppId: "100000001"'
+) -join "`n"
+$LoginAuthLiveConfigMap = New-RollbackLoginConfigMapReply -AuthProvidersYaml $LoginAuthLiveYaml
+$LoginAuthLiveSecret = @{ ExitCode = 0; Output = 'secret/login-oauth' }
+# 照传线上现状的那组参数(与 $LoginAuthLiveYaml 一一对应)。
+$LoginAuthKeepArgs = @{ LoginWeChatAppId = 'wx0123456789abcdef'; LoginWeChatEndpoint = 'https://wechat-mock.contract.test:18090'; LoginWeChatAllowOpenId = $true; LoginQQAppId = '100000001' }
+$LoginAuthKeepText = '-LoginWeChatAppId wx0123456789abcdef -LoginWeChatEndpoint https://wechat-mock.contract.test:18090 -LoginWeChatAllowOpenId -LoginQQAppId 100000001'
+
+Test-Case '-Apply 第三方登录防误关:线上开着微信 + QQ,本次漏传 → 停服之前、静态预检之前拒绝并给出照传参数串;照传后放行,静态预检与 Step 6 收到同一组 -Login*' {
+    $run = Invoke-RollbackInSandbox -Apply -DeployDefault '1' -GateRouterMode '1' -ExtraArgs $LoginAuthQuietEntry `
+        -LoginConfigMapReply $LoginAuthLiveConfigMap -LoginOAuthSecretReply $LoginAuthLiveSecret
+    Assert-RefusedBeforeStop -Run $run -Label '漏传第三方登录' -HintPattern ('要保持现状请照传 ' + [regex]::Escape($LoginAuthKeepText))
+    Assert-Match -Text $run.Error -Pattern '线上已开 AuthProviders\.WeChat,本次没给 -LoginWeChatAppId[^\r\n]*并删除 Secret login-oauth' -Because '要写明漏传会关掉微信并删掉 Secret'
+    Assert-Match -Text $run.Error -Pattern '线上已开 AuthProviders\.QQ,本次没给 -LoginQQAppId' -Because 'QQ 同样逐项列出'
+    Assert-Match -Text $run.Error -Pattern '确认要关闭或改动,加 -ConfirmLoginAuthProviderChange' -Because '要告诉操作者确要关闭时怎么继续'
+    Assert-Equal -Expected 0 -Actual $run.DevToolsCalls.Count -Because '防误关只读两次 kubectl,排在要完整渲染 zone-up 的静态预检之前(便宜的先拒)'
+    Assert-Equal -Expected 0 -Actual $run.KubectlCalls.Count -Because '入口三项都显式,gate / Ingress 那次 kubectl 不该发生'
+    Assert-Equal -Expected 2 -Actual $run.LoginAuthCalls.Count -Because '只读 login ConfigMap 与 Secret 是否存在各一次'
+    $configMapCall = @($run.LoginAuthCalls | Where-Object { $_ -match '(^| )go-svc-login-config( |$)' })
+    $secretCall = @($run.LoginAuthCalls | Where-Object { $_ -match '(^| )login-oauth( |$)' })
+    Assert-Equal -Expected 1 -Actual $configMapCall.Count -Because '读一次 login ConfigMap'
+    Assert-Match -Text $configMapCall[0] -Pattern ('^get configmap go-svc-login-config -n ' + [regex]::Escape($SandboxNamespace) + ' --ignore-not-found -o json$') -Because 'ConfigMap 只读、读本 zone namespace'
+    Assert-Equal -Expected 1 -Actual $secretCall.Count -Because '读一次 Secret 是否存在'
+    Assert-Match -Text $secretCall[0] -Pattern ('^get secret login-oauth -n ' + [regex]::Escape($SandboxNamespace) + ' --ignore-not-found -o name$') -Because 'Secret 只用 -o name 探测存在性,绝不 -o json / yaml 读出密钥值'
+    Assert-NotMatch -Text ($run.Output + $run.Error) -Pattern 'contract-login-secret-never-read' -Because 'login ConfigMap 里别的值不进输出'
+
+    $extra = $LoginAuthQuietEntry + $LoginAuthKeepArgs + @{ RollbackId = 'z101-login-keep' }
+    $passed = Invoke-RollbackInSandbox -Apply -DeployDefault '1' -GateRouterMode '1' -ExtraArgs $extra -LoginConfigMapReply $LoginAuthLiveConfigMap -LoginOAuthSecretReply $LoginAuthLiveSecret
+    Assert-True -Condition ($null -eq $passed.Error) -Because "照传线上现状必须放行。错误: $($passed.Error)"
+    Assert-Match -Text $passed.Output -Pattern ('login WeChat / QQ login: live state matches this run''s -Login\* arguments \(' + [regex]::Escape($LoginAuthKeepText) + '\)') -Because '放行时要写明核对通过'
+    $up = Get-BoundLine -Run $passed -Command 'k8s-zone-up'
+    $dry = Get-BoundLine -Run $passed -Command 'k8s-zone-up/dry-run'
+    foreach ($pair in @('LoginWeChatAppId=wx0123456789abcdef', 'LoginWeChatEndpoint=https://wechat-mock.contract.test:18090', 'LoginWeChatAllowOpenId=True', 'LoginQQAppId=100000001')) {
+        Assert-Match -Text $up -Pattern ('(^| |;)' + [regex]::Escape($pair) + '(;|$)') -Because "Step 6 必须收到 $pair(不粘滞,漏一个就关掉或改掉第三方登录)"
+    }
+    Assert-NotMatch -Text $up -Pattern 'LoginQQEndpoint|LoginQQAllowOpenId|ConfirmLoginAuthProviderChange' -Because '没给的不转发:默认值只在 k8s_deploy.ps1 一处'
+    Assert-Equal -Expected ($up -replace '^\S+ ', '') -Actual ($dry -replace '^\S+ ', '') -Because '静态预检的就是 Step 6 将要执行的那一份(给了 -LoginWeChatAppId 时它会要求 MMORPG_LOGIN_WECHAT_APP_SECRET)'
+    $down = Get-BoundLine -Run $passed -Command 'k8s-zone-down'
+    Assert-NotMatch -Text $down -Pattern 'Login(WeChat|QQ)|ConfirmLogin' -Because 'Step 1 只删 namespace,不传第三方登录参数'
+    $saved = $passed.ReportFiles['entry-state.json']
+    foreach ($pair in @('"LoginWeChatAppId": "wx0123456789abcdef"', '"LoginWeChatAllowOpenId": "true"', '"LoginQQAppId": "100000001"', '"ConfirmLoginAuthProviderChange": ""', '"OAuthSecretPresent": true')) {
+        Assert-Match -Text $saved -Pattern ([regex]::Escape($pair)) -Because "入口决定存档要记下 $pair(同一 rid 重跑以它为准)"
+    }
+    Assert-Match -Text $saved -Pattern '"LoginAuthState"' -Because '核对过的 login 第三方登录现状随存档落盘'
+    Assert-NotMatch -Text $saved -Pattern 'contract-login-secret-never-read' -Because '存档只记 AuthProviders 的公开值与 Secret 在不在,不记 ConfigMap 里别的值'
+}
+
+Test-Case '-Apply 第三方登录防误关:AppId 照传而漏传 Endpoint / AllowOpenId 同样拒绝;-ConfirmLoginAuthProviderChange 不读线上、放行并只透传到 Step 6' {
+    $partial = Invoke-RollbackInSandbox -Apply -DeployDefault '1' -GateRouterMode '1' `
+        -ExtraArgs ($LoginAuthQuietEntry + @{ LoginWeChatAppId = 'wx0123456789abcdef'; LoginQQAppId = '100000001' }) `
+        -LoginConfigMapReply $LoginAuthLiveConfigMap -LoginOAuthSecretReply $LoginAuthLiveSecret
+    Assert-RefusedBeforeStop -Run $partial -Label '漏传 Endpoint / AllowOpenId' -HintPattern '-ConfirmLoginAuthProviderChange'
+    Assert-Match -Text $partial.Error -Pattern 'AuthProviders\.WeChat\.Endpoint:线上指向自定义 Endpoint\(沙箱\),本次没给 -LoginWeChatEndpoint 会改连生产地址' -Because '漏传 Endpoint 会把沙箱改连生产'
+    Assert-Match -Text $partial.Error -Pattern 'AuthProviders\.WeChat\.RequireUnionId:线上 RequireUnionId: false[^\r\n]*没给 -LoginWeChatAllowOpenId 会翻回 true' -Because '漏传 AllowOpenId 会让拿不到 unionid 的玩家登录失败'
+    Assert-NotMatch -Text $partial.Error -Pattern 'AuthProviders\.QQ' -Because 'QQ 与线上一致,不该列为问题'
+
+    $confirmed = Invoke-RollbackInSandbox -Apply -DeployDefault '1' -GateRouterMode '1' -ExtraArgs ($LoginAuthQuietEntry + @{ ConfirmLoginAuthProviderChange = $true }) `
+        -LoginConfigMapReply $LoginAuthLiveConfigMap -LoginOAuthSecretReply $LoginAuthLiveSecret
+    Assert-True -Condition ($null -eq $confirmed.Error) -Because "显式确认按本次参数重建,必须放行。错误: $($confirmed.Error)"
+    Assert-Equal -Expected 0 -Actual $confirmed.LoginAuthCalls.Count -Because '显式确认后不读线上 login ConfigMap / Secret(地位同 -ConfirmNoGatewayIngress)'
+    Assert-Match -Text $confirmed.Output -Pattern 'Explicit -ConfirmLoginAuthProviderChange' -Because '输出要写明本次没有核对线上第三方登录'
+    $up = Get-BoundLine -Run $confirmed -Command 'k8s-zone-up'
+    Assert-Match -Text $up -Pattern '(^| |;)ConfirmLoginAuthProviderChange=True(;|$)' -Because 'namespace 没删净时 k8s_deploy.ps1 的防误关闸同样要放行,确认开关透传到 Step 6'
+    Assert-NotMatch -Text $up -Pattern 'LoginWeChat|LoginQQ' -Because '没给的不转发'
+    Assert-NotMatch -Text (Get-BoundLine -Run $confirmed -Command 'k8s-zone-down') -Pattern 'ConfirmLogin' -Because 'Step 1 不传确认开关'
+}
+
+Test-Case '-Apply 第三方登录防误关:读不到(kubectl 失败 / 不可用)、namespace 里没有 login ConfigMap 且无存档、AuthProviders 认不出,都判不出 → 停服之前拒绝' {
+    $cases = @(
+        @{ Label = 'kubectl 以非 0 退出'; Reply = @{ ExitCode = 1; Output = 'Error from server (Forbidden): configmaps "go-svc-login-config" is forbidden' }; Hint = '读不到 namespace [^\r\n]* 里 login 第三方登录的线上现状' },
+        @{ Label = 'kubectl 不可用'; Reply = @{ Throw = "The term 'kubectl' is not recognized" }; Hint = '读不到 namespace [^\r\n]* 里 login 第三方登录的线上现状' },
+        @{ Label = 'login ConfigMap 不在、没有存档'; Reply = (New-RollbackLoginConfigMapReply -Absent); Hint = '同一 rid 的存档里也没有 login 的线上现状,判不出回滚前有没有开微信 / QQ 登录' },
+        @{ Label = 'AuthProviders 是 flow 写法'; Reply = (New-RollbackLoginConfigMapReply -AuthProvidersYaml 'AuthProviders: { WeChat: { AppId: "wx1" } }'); Hint = 'AuthProviders 段认不出' }
+    )
+    foreach ($c in $cases) {
+        $run = Invoke-RollbackInSandbox -Apply -DeployDefault '1' -GateRouterMode '1' -ExtraArgs $LoginAuthQuietEntry -LoginConfigMapReply $c.Reply
+        Assert-RefusedBeforeStop -Run $run -Label $c.Label -HintPattern $c.Hint
+        Assert-Match -Text $run.Error -Pattern '-ConfirmLoginAuthProviderChange' -Because "$($c.Label):判不出时要告诉操作者确认后怎么继续"
+        Assert-Equal -Expected 0 -Actual $run.DevToolsCalls.Count -Because "$($c.Label):拒绝早于静态预检"
+    }
+}
+
+Test-Case '[10] 第三方登录现状随入口决定存档:同一 rid 重跑、namespace 里已没有 login ConfigMap 时按存档核对;照传放行,漏传按存档差异拒绝' {
+    $first = Invoke-RollbackInSandbox -Apply -DeployDefault '1' -GateRouterMode '1' -ExtraArgs ($LoginAuthQuietEntry + $LoginAuthKeepArgs + @{ RollbackId = 'z101-login-rerun' }) `
+        -LoginConfigMapReply $LoginAuthLiveConfigMap -LoginOAuthSecretReply $LoginAuthLiveSecret
+    Assert-True -Condition ($null -eq $first.Error) -Because "首次运行不该失败。错误: $($first.Error)"
+    $seed = @{ 'entry-state.json' = $first.ReportFiles['entry-state.json']; 'deploy-facts.json' = $first.ReportFiles['deploy-facts.json'] }
+    $goneConfigMap = New-RollbackLoginConfigMapReply -Absent
+
+    $rerun = Invoke-RollbackInSandbox -Apply -DeployDefault '1' -GateRouterMode '1' -ExtraArgs ($LoginAuthQuietEntry + $LoginAuthKeepArgs + @{ RollbackId = 'z101-login-rerun' }) `
+        -SeedReportFiles $seed -SnapshotReply @{ ExitCode = 0; Output = '' } -LoginConfigMapReply $goneConfigMap
+    Assert-True -Condition ($null -eq $rerun.Error) -Because "namespace 已删时按存档的现状核对,照传即放行。错误: $($rerun.Error)"
+    Assert-Match -Text $rerun.Output -Pattern 'checking against the login state saved by the same -RollbackId' -Because '要写明这次核对用的是存档'
+
+    $missing = Invoke-RollbackInSandbox -Apply -DeployDefault '1' -GateRouterMode '1' -ExtraArgs ($LoginAuthQuietEntry + @{ RollbackId = 'z101-login-rerun' }) `
+        -SeedReportFiles $seed -SnapshotReply @{ ExitCode = 0; Output = '' } -LoginConfigMapReply $goneConfigMap
+    Assert-RefusedBeforeStop -Run $missing -Label '重跑漏传第三方登录' -HintPattern '与同一 rollback-id 的存档 [^\r\n]*entry-state\.json 不同'
+    Assert-Match -Text $missing.Error -Pattern "LoginWeChatAppId:存档 'wx0123456789abcdef',本次 ''" -Because '要逐项列出差异'
+    Assert-Match -Text $missing.Error -Pattern ([regex]::Escape($LoginAuthKeepText)) -Because '要打印存档里的第三方登录参数,照传即可'
+    Assert-Match -Text $first.ReportFiles['entry-state.json'] -Pattern '"Schema": 2' -Because '带第三方登录现状的存档是 Schema 2'
+}
+
+Test-Case '[10] 第三方登录接入之前写的存档(Schema 1,没有 LoginAuthState 与 -Login* 键):入口决定不按存档比第三方登录,由防误关核对决定,不会互相卡死' {
+    # 手写一份接入之前的存档:入口三项与本用例的显式值一致,没有任何第三方登录字段。
+    $oldArchive = @(
+        '{',
+        '  "Schema": 1,',
+        '  "RollbackId": "z101-login-old",',
+        '  "Namespace": "mmorpg-zone-contract-test",',
+        '  "CapturedAtUtc": "2026-10-18T00:00:00.0000000Z",',
+        '  "ClusterState": null,',
+        '  "Decision": { "GateRouterMode": "1", "ClientEntryMode": "podip", "GatewayIngress": "(none)" }',
+        '}'
+    ) -join "`n"
+    $seed = @{ 'entry-state.json' = $oldArchive }
+    $goneConfigMap = New-RollbackLoginConfigMapReply -Absent
+
+    $refused = Invoke-RollbackInSandbox -Apply -DeployDefault '1' -GateRouterMode '1' -ExtraArgs ($LoginAuthQuietEntry + $LoginAuthKeepArgs + @{ RollbackId = 'z101-login-old' }) `
+        -SeedReportFiles $seed -LoginConfigMapReply $goneConfigMap
+    Assert-RefusedBeforeStop -Run $refused -Label '旧存档、login ConfigMap 已删、没确认' -HintPattern '同一 rid 的存档里也没有 login 的线上现状'
+    Assert-NotMatch -Text $refused.Error -Pattern '与同一 rollback-id 的存档 [^\r\n]*不同' -Because '旧存档没记过第三方登录,照传的 -Login* 不能被判为与存档不同'
+    Assert-Match -Text $refused.Output -Pattern 'predates the login WeChat / QQ check' -Because '要写明这份存档不比第三方登录'
+
+    $confirmed = Invoke-RollbackInSandbox -Apply -DeployDefault '1' -GateRouterMode '1' `
+        -ExtraArgs ($LoginAuthQuietEntry + $LoginAuthKeepArgs + @{ RollbackId = 'z101-login-old'; ConfirmLoginAuthProviderChange = $true }) `
+        -SeedReportFiles $seed -LoginConfigMapReply $goneConfigMap
+    Assert-True -Condition ($null -eq $confirmed.Error) -Because "照传并确认后必须放行(报错里给的出路要走得通)。错误: $($confirmed.Error)"
+    $up = Get-BoundLine -Run $confirmed -Command 'k8s-zone-up'
+    Assert-Match -Text $up -Pattern '(^| |;)LoginWeChatAppId=wx0123456789abcdef(;|$)' -Because 'Step 6 照传第三方登录参数'
+    Assert-Match -Text $up -Pattern '(^| |;)ConfirmLoginAuthProviderChange=True(;|$)' -Because '确认开关透传到 Step 6'
+    Assert-Equal -Expected $oldArchive.Trim() -Actual ([string]$confirmed.ReportFiles['entry-state.json']).Trim() -Because '同一 rid 已有存档时不覆盖'
+
+    $liveKept = Invoke-RollbackInSandbox -Apply -DeployDefault '1' -GateRouterMode '1' -ExtraArgs ($LoginAuthQuietEntry + $LoginAuthKeepArgs + @{ RollbackId = 'z101-login-old' }) `
+        -SeedReportFiles $seed -LoginConfigMapReply $LoginAuthLiveConfigMap -LoginOAuthSecretReply $LoginAuthLiveSecret
+    Assert-True -Condition ($null -eq $liveKept.Error) -Because "namespace 还在、照传线上现状时,旧存档不能让照传被判为不同。错误: $($liveKept.Error)"
 }
 
 # ─────────────────────────────────────────────────────────────────
@@ -926,6 +1260,33 @@ Test-Case '负向:-ConfirmNoGatewayIngress 与 -GatewayIngressHost 互斥,在入
     Assert-True -Condition ($run.ExitCode -ne 0) -Because "两种相反的显式决定必须在入口被拒。输出: $($run.Output)"
     Assert-Match -Text $run.Output -Pattern '互斥' -Because '错误文本要写明二者互斥,不能把其他执行错误误判为入口校验'
     Assert-NotMatch -Text $run.Output -Pattern 'Step 1:' -Because '入口校验必须先于任何步骤'
+}
+
+Test-Case '第三方登录 -Login* / -ConfirmLoginAuthProviderChange:给了只透传到 Step 6(不进 zone-down),不给不透传;dry-run 预告 -Apply 会读 login ConfigMap 与 Secret 是否存在' {
+    $run = Invoke-RollbackDryRun -ExtraArguments @('-LoginWeChatAppId', 'wx0123456789abcdef', '-LoginWeChatEndpoint', 'https://wechat-mock.contract.test:18090',
+        '-LoginWeChatAllowOpenId', '-LoginQQAppId', '100000001', '-LoginQQEndpoint', 'https://qq-mock.contract.test', '-LoginQQAllowOpenId')
+    Assert-Equal -Expected 0 -Actual $run.ExitCode -Because "显式第三方登录参数的 dry-run 不该失败。输出: $($run.Output)"
+    $line = Get-ZoneUpArgsLine -Output $run.Output
+    foreach ($pattern in @('-LoginWeChatAppId wx0123456789abcdef', '-LoginWeChatEndpoint https://wechat-mock\.contract\.test:18090', '-LoginWeChatAllowOpenId True',
+            '-LoginQQAppId 100000001', '-LoginQQEndpoint https://qq-mock\.contract\.test', '-LoginQQAllowOpenId True')) {
+        Assert-Match -Text $line -Pattern "(^|\s)$pattern(\s|$)" -Because '第三方登录不粘滞,回滚漏掉任何一个 Step 6 就关掉或改掉它'
+    }
+    Assert-NotMatch -Text $line -Pattern 'ConfirmLoginAuthProviderChange' -Because '没给的确认开关不能出现在 Step 6'
+    $downLine = @([regex]::Matches($run.Output, '(?m)^[ \t]*dev_tools\.ps1 [^\r\n]*k8s-zone-down[^\r\n]*') | ForEach-Object { $_.Value })
+    Assert-Equal -Expected 1 -Actual $downLine.Count -Because "dry-run 输出里应当恰有一行 Step 1 参数。输出: $($run.Output)"
+    Assert-NotMatch -Text $downLine[0] -Pattern 'Login(WeChat|QQ)|ConfirmLogin' -Because 'zone-down 只删 namespace,不传第三方登录参数'
+    Assert-Match -Text $run.Output -Pattern 'kubectl get configmap go-svc-login-config -n mmorpg-zone-contract-test --ignore-not-found -o json; kubectl get secret login-oauth -n mmorpg-zone-contract-test --ignore-not-found -o name' -Because 'dry-run 要预告 -Apply 时读的 login ConfigMap 与 Secret(只用 -o name 探测存在性)'
+    Assert-Match -Text $run.Output -Pattern 'login 3rd\s*:\s*WeChat -LoginWeChatAppId wx0123456789abcdef' -Because '摘要区要写明 Step 6 以哪组第三方登录参数重建 login'
+
+    $unset = Invoke-RollbackDryRun
+    Assert-NotMatch -Text (Get-ZoneUpArgsLine -Output $unset.Output) -Pattern 'LoginWeChat|LoginQQ|ConfirmLogin' -Because '留空不透传:默认值只在 k8s_deploy.ps1 一处'
+    Assert-Match -Text $unset.Output -Pattern 'login 3rd\s*:[^\r\n]*-Apply checks the live login ConfigMap' -Because '留空时摘要区要提醒 -Apply 会先核对线上第三方登录'
+
+    $confirm = Invoke-RollbackDryRun -ExtraArguments @('-ConfirmLoginAuthProviderChange')
+    Assert-Equal -Expected 0 -Actual $confirm.ExitCode -Because "显式确认的 dry-run 不该失败。输出: $($confirm.Output)"
+    Assert-Match -Text (Get-ZoneUpArgsLine -Output $confirm.Output) -Pattern '(^|\s)-ConfirmLoginAuthProviderChange True(\s|$)' -Because '确认开关透传到 Step 6'
+    Assert-Match -Text $confirm.Output -Pattern 'Explicit -ConfirmLoginAuthProviderChange' -Because '显式确认时要写明不核对线上'
+    Assert-NotMatch -Text $confirm.Output -Pattern 'kubectl get configmap go-svc-login-config' -Because '显式确认后不预告、也不读 login ConfigMap'
 }
 
 # ─────────────────────────────────────────────────────────────────
@@ -980,6 +1341,21 @@ Test-Case 'dev_tools k8s-zone-rollback:-LoginDevPasswordAuth、-RollbackConfirmN
     Assert-Match -Text (Get-ZoneUpArgsLine -Output $staging.Output) -Pattern '(^|\s)-ReleaseProfile staging(\s|$)' -Because '以前这里静默吞掉 -ReleaseProfile,Step 6 恒为 dev 档(安全方向的 fail-open)'
 }
 
+Test-Case 'dev_tools k8s-zone-rollback:第三方登录 -Login* 与 -ConfirmLoginAuthProviderChange 非空 / 被指定才转给回滚脚本,由它透传到 Step 6' {
+    $run = Invoke-DevToolsRollbackDryRun -ExtraArguments @('-LoginWeChatAppId', 'wx0123456789abcdef', '-LoginWeChatEndpoint', 'https://wechat-mock.contract.test:18090',
+        '-LoginWeChatAllowOpenId', '-LoginQQAppId', '100000001', '-LoginQQEndpoint', 'https://qq-mock.contract.test', '-LoginQQAllowOpenId', '-ConfirmLoginAuthProviderChange')
+    Assert-Equal -Expected 0 -Actual $run.ExitCode -Because "经 dev_tools.ps1 的回滚 dry-run 不该失败。输出: $($run.Output)"
+    Assert-Match -Text $run.Output -Pattern 'k8s-zone-rollback \(DRY-RUN\)' -Because '不带 -RollbackApply 必须是 dry-run'
+    $line = Get-ZoneUpArgsLine -Output $run.Output
+    foreach ($pattern in @('-LoginWeChatAppId wx0123456789abcdef', '-LoginWeChatEndpoint https://wechat-mock\.contract\.test:18090', '-LoginWeChatAllowOpenId True',
+            '-LoginQQAppId 100000001', '-LoginQQEndpoint https://qq-mock\.contract\.test', '-LoginQQAllowOpenId True', '-ConfirmLoginAuthProviderChange True')) {
+        Assert-Match -Text $line -Pattern "(^|\s)$pattern(\s|$)" -Because 'dev_tools.ps1 必须把第三方登录参数原样转给回滚脚本,不能静默吞掉(漏一个,回滚后的 login 就关掉或改掉它)'
+    }
+    $unset = Invoke-DevToolsRollbackDryRun
+    Assert-Equal -Expected 0 -Actual $unset.ExitCode -Because "不给第三方登录参数的回滚 dry-run 不该失败。输出: $($unset.Output)"
+    Assert-NotMatch -Text (Get-ZoneUpArgsLine -Output $unset.Output) -Pattern 'LoginWeChat|LoginQQ|ConfirmLogin' -Because '留空不转发:dev_tools.ps1 的空串 / 未指定开关不能冒充显式值'
+}
+
 Test-Case 'dev_tools k8s-zone-rollback:-AllowDisruptiveSwitch 转给回滚脚本,只透传到 Step 6、不下传 Step 1' {
     # 以前 dev_tools.ps1 在这里拒绝该开关;现在同一口径透传(dev_tools.ps1 的 k8s-zone-rollback 分支),由回滚脚本只转给 Step 6:
     # 它只在 namespace 没删净、k8s_deploy.ps1 的集群现状闸真的触发时起作用,不豁免第 0 步的停服前核对。
@@ -1005,6 +1381,42 @@ Test-Case 'dev_tools k8s-zone-rollback:消费组留空由回滚脚本按 db.yaml
     $explicit = Invoke-DevToolsRollbackDryRun -ExtraArguments @('-RollbackKafkaGroup', 'zone_override', '-RollbackKafkaLegacyGroup', 'legacy_override')
     Assert-Equal -Expected 0 -Actual $explicit.ExitCode -Because "显式组名的 dry-run 不该失败。输出: $($explicit.Output)"
     Assert-Match -Text $explicit.Output -Pattern 'group=zone_override retire=legacy_override(\s|$)' -Because '显式值必须原样转给回滚脚本'
+}
+
+Test-Case '(g) dev_tools k8s-zone-rollback:回档丢弃语义的新参数给了才转发、各一次;没给就不转发' {
+    $forwarded = Invoke-DevToolsRollbackDryRun -ExtraArguments @(
+        '-RollbackMySqlDsnEnv', 'CONTRACT_DSN_ENV', '-RollbackRedisPasswordEnv', 'CONTRACT_REDIS_PW_ENV',
+        '-RollbackDiscardTool', 'C:/tools/zone_rollback_discard.exe', '-RollbackBarrierProtocol', 'legacy',
+        '-RollbackId', 'z101-forwarded', '-RollbackQuiesceSeconds', '420', '-RollbackPitrRestoredTo', '2026-05-15T14:23:00Z',
+        '-RollbackAllowEmptyTarget', '-RollbackAcknowledgeNoPostTWrites')
+    Assert-Equal -Expected 0 -Actual $forwarded.ExitCode -Because "带新参数的 dry-run 不该失败。输出: $($forwarded.Output)"
+    # 回档复核 [11]:以前经本入口走不到这两条路径。-AllowEmptyTarget 只交给 preflight,-AcknowledgeNoPostTWrites 进判定参数(4a / 4b / 5b)。
+    Assert-Match -Text $forwarded.Output -Pattern '-mode preflight -allow-empty-target(\s|$)' -Because '-RollbackAllowEmptyTarget 必须转给回滚脚本的 -AllowEmptyTarget'
+    foreach ($mode in @('inventory', 'purge', 'verify')) {
+        Assert-Match -Text $forwarded.Output -Pattern "-mode $mode [^\r\n]*-acknowledge-no-post-t-writes(\s|$)" -Because "-RollbackAcknowledgeNoPostTWrites 必须转给回滚脚本,$mode 一并带上"
+    }
+    $preflightLine = @([regex]::Matches($forwarded.Output, '(?m)^[ \t]*Discard tool preflight: [^\r\n]*') | ForEach-Object { $_.Value })
+    Assert-Equal -Expected 1 -Actual $preflightLine.Count -Because "dry-run 要预告第 0 步 f 的工具命令。输出: $($forwarded.Output)"
+    foreach ($pattern in @('Discard tool preflight: C:/tools/zone_rollback_discard\.exe ', '-mysql-dsn-env CONTRACT_DSN_ENV(\s|$)', '-redis-password-env CONTRACT_REDIS_PW_ENV(\s|$)',
+            '-rollback-id z101-forwarded(\s|$)', '-barrier-protocol legacy(\s|$)')) {
+        Assert-Match -Text $preflightLine[0] -Pattern $pattern -Because "dev_tools.ps1 必须把对应参数转给回滚脚本($pattern)"
+    }
+    Assert-Equal -Expected 1 -Actual ([regex]::Matches($preflightLine[0], '-rollback-id ').Count) -Because '只转发一次'
+    Assert-Match -Text $forwarded.Output -Pattern 'quiesce=420s(\s|$)' -Because '-RollbackQuiesceSeconds 必须转给回滚脚本'
+    Assert-Match -Text $forwarded.Output -Pattern 'pitr\s*:\s*-PitrRestoredTo 2026-05-15T14:23:00Z' -Because '-RollbackPitrRestoredTo 必须转给回滚脚本'
+
+    $plain = Invoke-DevToolsRollbackDryRun
+    Assert-Equal -Expected 0 -Actual $plain.ExitCode -Because "不带新参数的 dry-run 不该失败。输出: $($plain.Output)"
+    Assert-Match -Text $plain.Output -Pattern 'Discard tool preflight: <zone_rollback_discard> ' -Because '没给工具就打印占位符'
+    Assert-NotMatch -Text $plain.Output -Pattern '-redis-password-env' -Because '没给口令变量名就不转发(Redis 没开认证)'
+    Assert-NotMatch -Text $plain.Output -Pattern 'allow-empty-target|acknowledge-no-post-t-writes' -Because '两个开关没给就不转发'
+    Assert-Match -Text $plain.Output -Pattern 'quiesce=300s(\s|$)' -Because '没给就用回滚脚本自己的缺省值(默认值只在一处)'
+    Assert-Match -Text $plain.Output -Pattern 'rollback id : z101-20260515T142300Z-\d{8}T\d{6}Z ' -Because '没给 -RollbackId 时由回滚脚本生成'
+
+    $blocked = Invoke-DevToolsRollbackDryRun -ExtraArguments @('-RollbackAcceptBlockedPlayers', '3')
+    Assert-True -Condition ($blocked.ExitCode -ne 0) -Because "-RollbackAcceptBlockedPlayers 转给回滚脚本后在入口被拒(待负责人裁决 #4)。输出: $($blocked.Output)"
+    Assert-Match -Text $blocked.Output -Pattern 'AcceptBlockedPlayers 待负责人裁决' -Because '拒绝来自回滚脚本自己的说明,证明参数确实转发到了'
+    Assert-NotMatch -Text $blocked.Output -Pattern 'Step 1:' -Because '入口即拒'
 }
 
 # dev_tools.ps1 Invoke-K8sImage:按 AST 取出函数,$ScriptDir 指到假 k8s_image.ps1 所在的临时目录(照 k8s_deploy_contract.tests.ps1)。
@@ -1064,6 +1476,24 @@ Test-Case 'dev_tools Invoke-K8sImage:-LoginDevPasswordAuth 在调 k8s_image.ps1 
     $forward = Invoke-DevToolsK8sImageWith -Variables @{ RequireClientEndpoint = 'true' }
     Assert-True -Condition ($null -eq $forward.Error -and $forward.DownstreamCalled) -Because "-RequireClientEndpoint 不再拒绝,必须调到 k8s_image.ps1。错误: $($forward.Error)"
     Assert-Match -Text $forward.DownstreamArgs -Pattern '(^|\s)-RequireClientEndpoint:?\s*true(\s|$)' -Because 'dev_tools.ps1 必须把 -RequireClientEndpoint 原样透传给 k8s_image.ps1,不能静默吞掉'
+}
+
+Test-Case 'dev_tools Invoke-K8sImage:第三方登录 -Login* 与 -ConfirmLoginAuthProviderChange 在调 k8s_image.ps1 之前逐个拒绝(k8s_image.ps1 不部署 login)' {
+    $control = Invoke-DevToolsK8sImageWith -Variables @{}
+    Assert-True -Condition ($null -eq $control.Error -and $control.DownstreamCalled) -Because "对照组必须调到假 k8s_image.ps1。错误: $($control.Error)"
+    Assert-NotMatch -Text $control.DownstreamArgs -Pattern 'LoginWeChat|LoginQQ|ConfirmLogin' -Because '没给就不出现在下游参数里'
+    $cases = @(
+        @{ LoginWeChatAppId = 'wx0123456789abcdef' }, @{ LoginWeChatEndpoint = 'https://wechat-mock.contract.test' }, @{ LoginWeChatAllowOpenId = $true },
+        @{ LoginQQAppId = '100000001' }, @{ LoginQQEndpoint = 'https://qq-mock.contract.test' }, @{ LoginQQAllowOpenId = $true },
+        @{ ConfirmLoginAuthProviderChange = $true }
+    )
+    foreach ($variables in $cases) {
+        $name = @($variables.Keys)[0]
+        $reject = Invoke-DevToolsK8sImageWith -Variables $variables
+        Assert-True -Condition ($null -ne $reject.Error) -Because "-$name 经 k8s-release-* 不生效(k8s_image.ps1 不部署 login),显式给了必须拒绝而不是静默吞掉"
+        Assert-Match -Text $reject.Error -Pattern "k8s-image-\* / k8s-release-\* 不支持 [^:]*-$name(,|:)" -Because "错误文本必须点名 -$name"
+        Assert-True -Condition (-not $reject.DownstreamCalled) -Because "-${name}:拒绝必须早于调用 k8s_image.ps1(镜像构建与推送都在那边)"
+    }
 }
 
 exit (Complete-TestRun -SuiteName 'k8s_zone_rollback 透传与停服前预检')

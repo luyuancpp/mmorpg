@@ -35,11 +35,6 @@ void WriteLocation(Vector3& dst, const Location& src)
 	dst.set_z(src.z());
 }
 
-uint64_t GuidForLog(const entt::entity player)
-{
-	const auto* g = tlsEcs.actorRegistry.try_get<PlayerGuidComp>(player);
-	return g ? g->value : 0;
-}
 
 }  // namespace
 
@@ -98,8 +93,14 @@ bool SceneSpawnSystem::EnsureValidEnterLocation(
 		return false;
 	}
 	const uint32_t sceneConfigId = sceneInfo->scene_config_id();
-	auto& transform = tlsEcs.actorRegistry.get_or_emplace<Transform>(player);
-	const Location current = ToLocation(transform.location());
+	auto* transform = tlsEcs.actorRegistry.try_get<Transform>(player);
+	if (transform == nullptr)
+	{
+		LOG_ERROR << "[SceneSpawn] 加载不变量被破坏：缺少 Transform，无法校验入场位置，player_id="
+				  << tlsEcs.GetPlayerId(player);
+		return false;
+	}
+	const Location current = ToLocation(transform->location());
 
 	NavComp* nav = SceneNavManager::Instance().Get(sceneConfigId);
 	Location accepted = current;
@@ -124,10 +125,10 @@ bool SceneSpawnSystem::EnsureValidEnterLocation(
 		{
 			accepted = ResolveSpawnOnMesh(nav, sceneConfigId);
 			relocated = true;
-			reason = IsUnsetLocation(transform.location()) ? "unset (0,0,0)" : "off navmesh";
+			reason = IsUnsetLocation(transform->location()) ? "unset (0,0,0)" : "off navmesh";
 		}
 	}
-	else if (IsUnsetLocation(transform.location()))
+	else if (IsUnsetLocation(transform->location()))
 	{
 		// 场景无导航(fail-open)时无法判合法性,只修"从未落位"的默认值。
 		accepted = ResolveSpawnOnMesh(nullptr, sceneConfigId);
@@ -135,12 +136,12 @@ bool SceneSpawnSystem::EnsureValidEnterLocation(
 		reason = "unset (0,0,0), scene has no navmesh";
 	}
 
-	WriteLocation(*transform.mutable_location(), accepted);
+	WriteLocation(*transform->mutable_location(), accepted);
 	SetActorBaseAttributesS2CAttrDirtyBit(player, ActorBaseAttributesS2C::kTransformFieldNumber);
 
 	if (relocated)
 	{
-		LOG_INFO << "EnterScene spawn: player " << GuidForLog(player)
+		LOG_INFO << "EnterScene spawn: player " << tlsEcs.GetPlayerId(player)
 				 << " scene_config_id=" << sceneConfigId
 				 << " location (" << current.x() << "," << current.y() << "," << current.z()
 				 << ") " << reason << " -> spawn ("

@@ -194,9 +194,10 @@ TEST_F(BagRemoveExactTest, DeductsExactlyTheRequestedAmountAndLogsOncePerDrained
 	EXPECT_EQ(2u, bag.GetTotalItemCount(kMaterial)) << "exactly 6 gone, no more and no less";
 	EXPECT_EQ(2u, LogAttempts() - logsBefore)
 		<< "one entry per drained instance: a deduction spanning two stacks leaves two";
-	EXPECT_EQ(2u, bag.OccupiedGridCount()) << "扣光的实例与槽位立即释放";
-	EXPECT_EQ(2u, bag.GridSlotCount());
+	EXPECT_EQ(2u, bag.OccupiedGridCount());
 	EXPECT_EQ(nullptr, bag.GetItemCompByGuid(kGuidA));
+	EXPECT_EQ(kInvalidU32Id, bag.GetItemPosByGuid(kGuidA));
+	EXPECT_EQ(2u, bag.GridSlotCount());
 	EXPECT_EQ(nullptr, bag.GetItemCompByPos(0));
 	EXPECT_EQ(1u, bag.GetItemPosByGuid(kGuidB));
 	EXPECT_EQ(before.at(kGuidC), Capture(bag).at(kGuidC))
@@ -224,12 +225,15 @@ TEST_F(BagRemoveExactTest, DeductsEveryConfigOfAMultiConfigRequest)
 	EXPECT_EQ(1u, bag.GetTotalItemCount(kPlainNonStack));
 	// 1(一堆里扣 2)+ 1(另一种整堆抽光)+ 2(不可叠加的两件各一条)。
 	EXPECT_EQ(4u, LogAttempts() - logsBefore);
-	EXPECT_EQ(2u, bag.OccupiedGridCount()) << "只保留未扣光的两件实例";
+	EXPECT_EQ(2u, bag.OccupiedGridCount());
+	for (const Guid guid : {kGuidB, kGuidC, kGuidD})
+	{
+		EXPECT_EQ(nullptr, bag.GetItemCompByGuid(guid));
+		EXPECT_EQ(kInvalidU32Id, bag.GetItemPosByGuid(guid));
+	}
+	EXPECT_EQ(0u, bag.GetItemPosByGuid(kGuidA));
+	EXPECT_EQ(4u, bag.GetItemPosByGuid(kGuidE));
 	EXPECT_EQ(2u, bag.GridSlotCount());
-	EXPECT_EQ(nullptr, bag.GetItemCompByGuid(kGuidB));
-	EXPECT_EQ(nullptr, bag.GetItemCompByGuid(kGuidC));
-	EXPECT_EQ(nullptr, bag.GetItemCompByGuid(kGuidD));
-	EXPECT_EQ(4u, bag.GetItemPosByGuid(kGuidE)) << "扣除不重排幸存实例";
 	EXPECT_TRUE(bag.IsLayerConsistent());
 }
 
@@ -452,7 +456,7 @@ TEST_F(BagRemoveExactTest, EquipInstancesAreDrainedLikeAnyOtherConfig)
 	forged.set_config_id(kEquipConfig);
 	forged.set_size(1);
 	forged.mutable_equip()->set_enhance_level(7);
-	bag.InsertItemForRestore(forged, 0);
+	bag.RestoreItems({{forged, 0}});
 	const uint64_t logsBefore = LogAttempts();
 
 	const ItemCountMap request{{kEquipConfig, 1}};

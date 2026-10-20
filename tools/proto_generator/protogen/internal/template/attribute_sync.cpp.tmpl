@@ -31,23 +31,27 @@ void {{ .MessageName }}SyncAttributesCore(entt::entity entity, uint32_t message_
     {{- if .Fields }}
     {{- range .Fields }}
 
+    {{- if not (or (eq .FieldName "entity_id") (eq .FieldName "player_id")) }}
     if (dirtyMaskComp->dirtyMask.test({{ $.CppClass }}::k{{ .CamelFieldName }}FieldNumber))
     {
-        {{- if or (eq .FieldName "entity_id") (eq .FieldName "player_id") }}
-        auto* fieldValue = actorRegistry.try_get<PlayerGuidComp>(entity);
-        if (fieldValue != nullptr) {
-            syncMsg.set_{{ .FieldName }}(fieldValue->value);
-            hasDirtyField = true;
-        }
-        {{- else }}
         auto* fieldComponent = actorRegistry.try_get<{{ .FieldType }}>(entity);
         if (fieldComponent != nullptr) {
             syncMsg.mutable_{{ .FieldName }}()->CopyFrom(*fieldComponent);
             hasDirtyField = true;
         }
-        {{- end }}
-        dirtyMaskComp->dirtyMask.reset({{ $.CppClass }}::k{{ .CamelFieldName }}FieldNumber);
     }
+    {{- end }}
+    {{- end }}
+
+    // 主体标识随实际数据发送，本身不触发一帧增量。
+    {{- range .Fields }}
+    {{- if or (eq .FieldName "entity_id") (eq .FieldName "player_id") }}
+    if (hasDirtyField) {
+        if (const auto* guid = actorRegistry.try_get<PlayerGuidComp>(entity)) {
+            syncMsg.set_{{ .FieldName }}(guid->value);
+        }
+    }
+    {{- end }}
     {{- end }}
     {{- end }}
 

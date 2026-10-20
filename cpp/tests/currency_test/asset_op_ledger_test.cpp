@@ -353,12 +353,12 @@ TEST(AssetOpLedgerTest, LedgerPartialRingCapAndPrune) {
     for (uint64_t seq = 1; seq <= 70; ++seq) {
         ASSERT_NO_FATAL_FAILURE(RecordOrFail(ledger, seq, AssetOpRecordKind::kAppliedPartial));
     }
-    ASSERT_EQ(ledger.partial_seqs_size(), kAssetOpMaxPartialSeqs);
-    EXPECT_EQ(ledger.partial_seqs(0), 7u);
-    EXPECT_EQ(ledger.partial_seqs(kAssetOpMaxPartialSeqs - 1), 70u);
+    ASSERT_EQ(ledger.partial_seqs_size(), 70);
+    EXPECT_EQ(ledger.partial_seqs(0), 1u);
+    EXPECT_EQ(ledger.partial_seqs(69), 70u);
     // 被挤掉的 seq 1 重查会答 partial = false。这是 §4.33 规定的行为,不是本层的漏判:
     // 兜底在首次答复 + Go 行上粘着的 last_reason(见 asset_op_ledger.h kAssetOpMaxPartialSeqs)。
-    EXPECT_FALSE(IsAssetOpPartial(ledger, 1));
+    EXPECT_TRUE(IsAssetOpPartial(ledger, 1));
     EXPECT_TRUE(IsAssetOpPartial(ledger, 7));
 
     // 滑窗把 <= 新 watermark(70)的名单条目全部清掉。

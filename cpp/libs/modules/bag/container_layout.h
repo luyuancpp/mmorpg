@@ -1,6 +1,8 @@
 ﻿#pragma once
 
+#include <cassert>
 #include <memory>
+#include <typeinfo>
 #include <unordered_map>
 #include <vector>
 
@@ -58,7 +60,7 @@ public:
     virtual ~IContainerLayout() = default;
 
     // 事务候选必须保留完整动态类型、容量、几何与占用，且修改副本不影响原对象。
-    // 改变布局行为的派生类必须覆盖本接口，禁止把派生类型切片成父类。
+    // 改变布局行为的派生类必须覆盖本接口；FlatLayout::Clone 会在 Debug 下断言动态类型。
     [[nodiscard]] virtual std::unique_ptr<IContainerLayout> Clone() const = 0;
 
     // ── 容量 ──────────────────────────────────────────────────────────
@@ -149,6 +151,7 @@ public:
     explicit FlatLayout(std::size_t capacity) : capacity_(capacity) {}
     [[nodiscard]] std::unique_ptr<IContainerLayout> Clone() const override
     {
+        assert(typeid(*this) == typeid(FlatLayout) && "FlatLayout 的派生类必须自己覆盖 Clone");
         return std::make_unique<FlatLayout>(*this);
     }
 

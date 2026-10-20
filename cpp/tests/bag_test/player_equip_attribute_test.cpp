@@ -63,10 +63,12 @@
 #include "proto/common/component/player_pet_comp.pb.h"
 #include "proto/common/component/player_skill_comp.pb.h"
 #include "proto/scene/player_attribute.pb.h"
+#include "services/scene/player/system/bag_marshal.h"
 #include "services/scene/player/system/equip_attribute_rules.h"
 #include "services/scene/player/system/player_attribute.h"
 #include "services/scene/player/system/player_data_loader.h"
 #include "services/scene/player/system/player_equip.h"
+#include "services/scene/player/system/player_mission.h"
 #include "table/code/attributeallocratio_table.h"
 #include "table/code/attributedimension_table.h"
 #include "table/code/attributepool_table.h"
@@ -1769,7 +1771,7 @@ TEST_F(PlayerEquipAttributeTest, ReloadFromTheDatabaseRecordRecomputesTheEquipme
 	const auto restored = tlsEcs.actorRegistry.create();
 	players.push_back(restored);
 	tlsEcs.actorRegistry.emplace<PlayerGuidComp>(restored, kPlayerIdBase + players.size());
-	PlayerAllDataMessageFieldsUnMarshal(restored, coldSnapshot);
+	PlayerAllDataMessageFieldsUnmarshal(restored, coldSnapshot);
 
 	const auto *bags = tlsEcs.actorRegistry.try_get<PlayerBagsComp>(restored);
 	ASSERT_NE(nullptr, bags);
@@ -1787,6 +1789,49 @@ TEST_F(PlayerEquipAttributeTest, ReloadFromTheDatabaseRecordRecomputesTheEquipme
 	ExpectCombat(expectedCombat, derived->combat());
 	EXPECT_EQ(Base(player).health(), base->health())
 		<< "the bag must be restored before attributes are initialised, or geared players lose health on login";
+	EXPECT_EQ(Base(player).mana(), base->mana());
+}
+
+// 旧快照只有顶层背包时，也必须先恢复装备再重算派生属性，保留当前气血与法力。
+TEST_F(PlayerEquipAttributeTest, LegacyTopLevelBagReloadRecomputesTheEquipmentBonus)
+{
+	ASSERT_NO_FATAL_FAILURE(WearCombatSet(player));
+	ASSERT_NO_FATAL_FAILURE(TakeOff(player, kGuidClothes));
+	ItemComp clothes = MakeVitalityClothes(kGuidClothes);
+	AddAffix(clothes, kAttrAllPrimary, kBlue, 8, 2);
+	ASSERT_NO_FATAL_FAILURE(Wear(player, clothes));
+	ASSERT_EQ(Derived(player).max_health(), Base(player).health());
+	ASSERT_GT(Derived(player).max_health(), NoGearBaseline().maxHealth);
+
+	CompletePersistedComps(player);
+	PlayerAllData saved;
+	ASSERT_TRUE(PlayerAllDataMessageFieldsMarshal(player, saved));
+	ASSERT_TRUE(saved.has_bag_data());
+	saved.mutable_player_database_data()->clear_bag_component();
+	PlayerAllData parsed;
+	ASSERT_TRUE(parsed.ParseFromString(saved.SerializeAsString()));
+	ASSERT_FALSE(parsed.player_database_data().has_bag_component());
+
+	const auto restored = tlsEcs.actorRegistry.create();
+	players.push_back(restored);
+	tlsEcs.actorRegistry.emplace<PlayerGuidComp>(restored, kPlayerIdBase + players.size());
+	PlayerAllDataMessageFieldsUnmarshal(restored, parsed);
+
+	const auto *bags = tlsEcs.actorRegistry.try_get<PlayerBagsComp>(restored);
+	ASSERT_NE(nullptr, bags);
+	ASSERT_EQ(4u, bags->bags[kEquipment].OccupiedGridCount());
+	const auto *derived = tlsEcs.actorRegistry.try_get<DerivedAttributesComp>(restored);
+	const auto *base = tlsEcs.actorRegistry.try_get<BaseAttributesComp>(restored);
+	ASSERT_NE(nullptr, derived);
+	ASSERT_NE(nullptr, base);
+
+	ExpectSix(ReadSix(Derived(player)), ReadSix(*derived));
+	CombatValues expectedCombat = kCombatSet;
+	expectedCombat.resistSleep = 0;
+	expectedCombat.resistForget = 0;
+	expectedCombat.resistConfusion = 0;
+	ExpectCombat(expectedCombat, derived->combat());
+	EXPECT_EQ(Base(player).health(), base->health());
 	EXPECT_EQ(Base(player).mana(), base->mana());
 }
 
@@ -2506,7 +2551,7 @@ TEST_F(PlayerEquipAttributeTest, ReloadFromTheDatabaseRecordRecomputesEnhanceAnd
 	const auto restored = tlsEcs.actorRegistry.create();
 	players.push_back(restored);
 	tlsEcs.actorRegistry.emplace<PlayerGuidComp>(restored, kPlayerIdBase + players.size());
-	PlayerAllDataMessageFieldsUnMarshal(restored, coldSnapshot);
+	PlayerAllDataMessageFieldsUnmarshal(restored, coldSnapshot);
 
 	const auto *bags = tlsEcs.actorRegistry.try_get<PlayerBagsComp>(restored);
 	ASSERT_NE(nullptr, bags);
@@ -2739,6 +2784,29 @@ TEST_F(PlayerEquipAttributeTest, GmSetLevelRejectsAnEntityWithoutALevelComponent
 	ASSERT_TRUE(playerlevel::IsValidLevel(10));
 	EXPECT_EQ(kServiceUnavailable, PlayerAttributeSystem::GmSetLevel(entity, 10));
 	EXPECT_FALSE(tlsEcs.actorRegistry.all_of<LevelComp>(entity));
+}
+
+TEST_F(PlayerEquipAttributeTest, GmSetLevelRecalculatesDerivedAttributesWithoutEventWiring)
+{
+	constexpr uint32_t newLevel = kLevel + 1;
+	ASSERT_TRUE(playerlevel::IsValidLevel(newLevel));
+	tlsEcs.actorRegistry.emplace<PlayerPetComp>(player);
+	ASSERT_EQ(kSuccess, PlayerMissionSystem::Initialize(player));
+	const auto oldMax = tlsEcs.actorRegistry.get<DerivedAttributesComp>(player).max_health();
+
+	ASSERT_EQ(kSuccess, PlayerAttributeSystem::GmSetLevel(player, newLevel));
+
+	const auto derivedAfter = tlsEcs.actorRegistry.get<DerivedAttributesComp>(player);
+	EXPECT_GT(derivedAfter.max_health(), oldMax);
+	AttributePanelInfo panel;
+	ASSERT_EQ(kSuccess, PlayerAttributeSystem::BuildPanel(player, panel));
+	EXPECT_EQ(newLevel, panel.level());
+	PlayerAttributeSystem::Recalculate(player, RecalcReason::kLevelChanged);
+	EXPECT_EQ(derivedAfter.SerializeAsString(),
+		tlsEcs.actorRegistry.get<DerivedAttributesComp>(player).SerializeAsString());
+	AttributePanelInfo recalculated;
+	ASSERT_EQ(kSuccess, PlayerAttributeSystem::BuildPanel(player, recalculated));
+	EXPECT_EQ(panel.derived().SerializeAsString(), recalculated.derived().SerializeAsString());
 }
 
 // 面板接口的另外两种结果:实体无效 → kEntityIsNull;走完加载的玩家 → kSuccess 且面板有内容。

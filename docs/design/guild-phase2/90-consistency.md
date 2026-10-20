@@ -368,7 +368,7 @@ guild:Deployment + ConfigMap(DSN 库 `mmorpg_guild`、appuser、`Schema.AutoMigr
 | `proto/message_id.txt` 与各服务生成号(196–200 未提交) | 聚宝斋、组队 | proto-gen 前确认对方号已提交;生成后 diff 只允许本批新增 |
 | `Tip.xlsx`、`MessageLimiter.xlsx`(二进制无法合并) | 聚宝斋 | 任一时刻只允许一方有未提交修改;本批提交后才交给下一方 |
 | `transaction_log.proto` TransactionType | 聚宝斋 | 只在末尾追加,代码引用生成常量;S4 的 24–26、S5 的 27 以生成结果为准 |
-| `cpp/generated/table` 工程文件、`scene.vcxproj`、`player_database_loader.cpp` | 多方未提交 | 只合并;每次 proto-gen 后核对 `scene_node_service.cpp` 仍含 `AcquireCreatePermitBlocking`(所有批次,不止 B4a/B5a) |
+| `cpp/generated/table` 工程文件、`scene.vcxproj`、`player_database_loader.cpp` | 多方未提交 | 只合并;每次 proto-gen 后核对 `scene_node_service.cpp` 仍含 `AcquireCreatePermitBlocking`(所有批次,不止 B4a/B5a;2026-10-16 起核对对象改为 `AcquireAllocationPermitAsync`,Agones 块在 `grpc.CreateScene.guard` 守护段里,见 grpc-muduo-transport.md §15.14 第 3 步) |
 | `go/guild/internal/svc/servicecontext.go`、`gen_messageids.ps1`、`robot/vendor` | 多方 | 只改本节段落;vendor 规则见 Y-10 |
 | `battle_data.proto`、`gather.go` | 属性、组队 | B6b-srv1 只在末尾追加 / 只加包装函数 |
 | MSBuild | 所有会话 | 同一时刻一个构建方,`/m:1` |

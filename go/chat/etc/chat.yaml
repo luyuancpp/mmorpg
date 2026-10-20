@@ -41,7 +41,10 @@ Redis:
 # 全部单 key 操作,Redis Cluster 安全。本地集群样例 = docker compose --profile redis-cluster
 # (6 节点 3 主 3 从,与 match 的 MatchRedis 同一套);Host 逗号分隔种子地址,Type 必须是 cluster。
 # 整段删掉即回落到上面的共享库,启动时打 WARN 并在横幅打印 shared-fallback 落点 ——
-# 只允许本地单库形态:共享库是 allkeys-lfu,聊天历史会被当缓存淘汰。
+# 只允许本地单库形态。2026-10-12 起本地 compose 的共享库也改为 noeviction(K8s 的共享库一直是),但聊天历史
+#   带 TTL(缺省 7 天、每次写入续期;每频道只留最近 200 条,私聊键数随会话对数增长),回落后仍与契约 key
+#   争内存:共享库设了 maxmemory 时(本地 compose 是 8gb)写满会连带拒写契约 key;若共享库被配成 volatile-*
+#   淘汰型,全部带 TTL 的 chat:* 键(历史、限流、幂等)会被优先淘汰。
 # ⚠ staging/prod 必须指向独立实例且 maxmemory-policy=noeviction(历史 LIST 是这类数据的唯一副本)。
 ChatRedis:
   Host: 127.0.0.1:7000,127.0.0.1:7001,127.0.0.1:7002,127.0.0.1:7003,127.0.0.1:7004,127.0.0.1:7005

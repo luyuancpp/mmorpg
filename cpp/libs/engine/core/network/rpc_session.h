@@ -20,19 +20,17 @@
 // 只存 weak(AGENTS §11.7):channel 归连接所有(RpcServer 存进 conn 的 context),连接 DOWN 后
 // channel 随 context 清空而析构,这里 lock 失败即视为「对端不可达」。RpcServer 的 DOWN 分支会顺手把本组件摘掉
 // (NodeUtils::RemoveRpcSessionsBoundTo),那只是记录卫生,不是释放的前提。
+//
+// conn 必须非空,否则构造即 LOG_FATAL(fail-fast,见 LoopOf)。
 class RpcSession
 {
 public:
     explicit RpcSession(const muduo::net::TcpConnectionPtr& conn,
         const std::string& uuid)
         : connection(conn),
-          node_uuid(uuid)
+          node_uuid(uuid),
+          loop_(LoopOf(conn, uuid))
     {
-        if (!conn)
-        {
-            return;
-        }
-        loop_ = std::ref(*conn->getLoop());
         // 只有 RpcServer 会在 context 里放 RpcChannelPtr;别的连接(或 context 为空)时 channel 为空,调用一律 kNotSent。
         if (const auto* channel = boost::any_cast<RpcChannelPtr>(&conn->getContext()); channel != nullptr)
         {
@@ -108,19 +106,27 @@ public:
     std::weak_ptr<muduo::net::TcpConnection> connection;
 
 private:
+    // 空连接 = 调用方的 bug(唯一生产构造点 registration_manager tryRegister 在入口已判空),构造即 LOG_FATAL。
+    // 不再容忍:旧实现在连接为空时把 loop_ 留空,之后 channel 不在时 CallMethod 没有 loop 可投递 kNotSent,
+    // done 被就地丢弃 —— 违反 RpcChannel::CallMethod「done 恰好一次、永不同步」的契约,调用方的失败路径永远不跑。
+    static muduo::net::EventLoop& LoopOf(const muduo::net::TcpConnectionPtr& conn, const std::string& uuid)
+    {
+        if (!conn)
+        {
+            LOG_FATAL << "[RpcChannel] RpcSession requires a non-null connection: node_uuid=" << uuid;
+        }
+        return *conn->getLoop();
+    }
+
+    // loop_ 自构造起必有值,所以本地失败一律经 loop 以 kNotSent 投递(恰好一次、不同步执行)。
     void FailNotConnected(uint32_t messageId, ClientDoneCallback done) const
     {
-        if (!loop_)
-        {
-            // 构造时连接就为空(只有测试会这样):没有 loop 可投递,只能就地丢弃。正式路径不会走到。
-            LOG_ERROR << "[RpcChannel] RpcSession without loop dropped a call: message_id=" << messageId;
-            return;
-        }
-        RpcChannel::FailNotSent(loop_->get(), messageId, std::move(done), "session channel gone", node_uuid);
+        RpcChannel::FailNotSent(loop_.get(), messageId, std::move(done), "session channel gone", node_uuid);
     }
 
     std::weak_ptr<RpcChannel> channel_;
     std::string node_uuid;
-    // 连接所在的 loop:channel 已不在时用它投递 kNotSent。引用不是指针(no-raw-pointer-member)。
-    std::optional<std::reference_wrapper<muduo::net::EventLoop>> loop_;
+    // 连接所在的 loop:channel 已不在时用它投递 kNotSent。引用不是指针(no-raw-pointer-member);
+    // reference_wrapper 可拷贝 / 移动赋值,entt 存储删除时的 swap-and-pop(std::exchange 移动赋值)照常可用。
+    std::reference_wrapper<muduo::net::EventLoop> loop_;
 };

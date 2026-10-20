@@ -451,6 +451,19 @@ func TestTrialConsumer_RunEnsuresTopicThenConsumesAndCloses(t *testing.T) {
 	assert.Contains(t, logs.String(), "历练结果消费者启动 topic=match-results group=guild-trial")
 }
 
+func TestTrialConsumer_GlobalTopicCannotCreateSingleReplica(t *testing.T) {
+	logtest.Discard(t)
+	h := newConsumerHarness(t)
+	h.consumer.cfg.RequireDurability = true
+	h.consumer.ensureTopics = func(_ []string, specs []kafkautil.TopicSpec) error {
+		require.Len(t, specs, 1)
+		assert.True(t, specs[0].RequireDurability)
+		assert.GreaterOrEqual(t, specs[0].ReplicaFactor, int16(3))
+		return nil
+	}
+	require.NoError(t, h.consumer.ensureTopicWithin(h.ctx))
+}
+
 // Kafka 未就绪 / 分区数不符:每 30s 重试,不放弃;成功之前不建 reader。确保 topic 时 panic 同样只算一次失败。
 func TestTrialConsumer_RunRetriesTopicSetupEveryThirtySeconds(t *testing.T) {
 	logtest.Discard(t)

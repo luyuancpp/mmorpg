@@ -4,21 +4,10 @@
 ///<<< BEGIN WRITING YOUR CODE
 #include "battle/system/player_battle.h"
 ///<<< END WRITING YOUR CODE
-void BattleEventHandler::Register()
-{
-    tlsEcs.dispatcher.sink<BattleSettlementEvent>().connect<&BattleEventHandler::BattleSettlementEventHandler>();
-    tlsEcs.dispatcher.sink<BattleConfirmedEvent>().connect<&BattleEventHandler::BattleConfirmedEventHandler>();
-}
-
-void BattleEventHandler::UnRegister()
-{
-    tlsEcs.dispatcher.sink<BattleSettlementEvent>().disconnect<&BattleEventHandler::BattleSettlementEventHandler>();
-    tlsEcs.dispatcher.sink<BattleConfirmedEvent>().disconnect<&BattleEventHandler::BattleConfirmedEventHandler>();
-}
 void BattleEventHandler::BattleSettlementEventHandler(const BattleSettlementEvent& event)
 {
 ///<<< BEGIN WRITING YOUR CODE
-    // battle --Kafka SceneCommand{DispatchEvent}--> DispatchProtoEvent 进程内分发到此(loop 线程)。
+    // battle --Kafka SceneCommand{DispatchEvent}--> DispatchSceneKafkaCommand 白名单解包后直接调用此 handler(loop 线程)。
     // scene 是结算的唯一应用者:battle_id 匹配校验、离线 pending 暂存、锁清理与
     // 客户端通知全部在 PlayerBattleSystem::ApplySettlement 内闭环。
     PlayerBattleSystem::ApplySettlement(event);

@@ -52,8 +52,12 @@ from mail_postgen import (  # noqa: E402  通用机制,见文件头
     rel,
 )
 
-CLIENT_METHODS = ("GetRankPage",)
-GO_PROTO_FILES = ("rank.pb.go", "rank_grpc.pb.go")
+CLIENT_METHODS = ("GetRankPage", "GetRankAround")
+ADMIN_METHODS = ("OpenRankGeneration", "SubmitRankScores", "FreezeRankGeneration", "RemoveRankEntry", "DeleteRankGeneration")
+PROTO_STEMS = ("rank", "rank_admin", "rank_table")
+GRPC_CLIENT_STEMS = ("rank", "rank_admin")
+GO_PROTO_FILES = ("rank.pb.go", "rank_grpc.pb.go", "rank_admin.pb.go", "rank_admin_grpc.pb.go", "rank_table.pb.go")
+TIP_GO_FILE = "rank_error_tip.pb.go"
 SNAPSHOT_EVENT = "PlayerRatingSnapshotEvent"
 
 
@@ -64,7 +68,7 @@ SNAPSHOT_EVENT = "PlayerRatingSnapshotEvent"
 def cmd_verify(_dry_run: bool) -> None:
     problems: list[str] = []
     ids = load_message_ids()
-    wanted = ["ClientPlayerRank" + m for m in CLIENT_METHODS]
+    wanted = ["ClientPlayerRank" + m for m in CLIENT_METHODS] + ["RankAdmin" + m for m in ADMIN_METHODS]
     missing = [k for k in wanted if k not in ids]
     if missing:
         problems.append(f"proto/message_id.txt 缺 {missing}(含 rank 的全量 proto-gen 没跑或没跑完)")
@@ -93,8 +97,9 @@ def cmd_verify(_dry_run: bool) -> None:
             continue
         if "ENodeType_RankNodeService" not in line:
             problems.append(f"{rel(route)} 的 {key} 目标节点不是 RankNodeService(proto 目录必须叫 proto/rank/,设计 §4.1):{line.strip()}")
-        if "ClientProtocol: true" not in line:
-            problems.append(f"{rel(route)} 的 {key} 应为 ClientProtocol: true:{line.strip()}")
+        client_protocol = "true" if key.startswith("ClientPlayerRank") else "false"
+        if f"ClientProtocol: {client_protocol}" not in line:
+            problems.append(f"{rel(route)} 的 {key} 应为 ClientProtocol: {client_protocol}:{line.strip()}")
 
     go_dir = REPO / "go" / "proto" / "rank"
     for name in GO_PROTO_FILES:
@@ -132,7 +137,7 @@ def cmd_verify(_dry_run: bool) -> None:
             print("  - " + p)
         sys.exit(1)
     print("[OK] rank message IDs: " + ", ".join(f"{k}={ids[k]}" for k in wanted))
-    print("[OK] route table: GetRankPage is a client protocol targeting RankNodeService; Go bindings present;"
+    print("[OK] route table: client and admin methods target RankNodeService with separate admission; Go bindings present;"
           f" {SNAPSHOT_EVENT} has an event id.")
 
 
@@ -140,9 +145,26 @@ def cmd_verify(_dry_run: bool) -> None:
 # register-cpp
 # ════════════════════════════════════════════════════════════════════════════
 
+def plan_table(edits: list[ProjectEdit], missing: list[str]) -> None:
+    base = "cpp/generated/table"
+    cc = present_files(base, ["proto/tip/rank_error_tip.pb.cc"], missing)
+    h = present_files(base, ["proto/tip/rank_error_tip.pb.h"], missing)
+    e = ProjectEdit(base + "/CMakeLists.txt")
+    e.plan(["    proto/tip/friend_error_tip.pb.cc"], [cmake_entry(p) for p in cc])
+    edits.append(e)
+    e = ProjectEdit(base + "/table.vcxproj")
+    e.plan([compile_line("proto/tip/friend_error_tip.pb.cc")], [compile_entry(p) for p in cc])
+    e.plan([include_line("proto/tip/friend_error_tip.pb.h")], [include_entry(p) for p in h])
+    edits.append(e)
+    e = ProjectEdit(base + "/table.vcxproj.filters")
+    e.plan(filter_lines("ClCompile", "proto/tip/friend_error_tip.pb.cc", SRC), [filter_entry("ClCompile", p, SRC) for p in cc])
+    e.plan(filter_lines("ClInclude", "proto/tip/friend_error_tip.pb.h", HDR), [filter_entry("ClInclude", p, HDR) for p in h])
+    edits.append(e)
+
+
 def plan_proto(edits: list[ProjectEdit], missing: list[str]) -> None:
     base = "cpp/generated/proto"
-    stems = ["rank/rank.grpc.pb", "rank/rank.pb"]
+    stems = [f"rank/{name}{suffix}" for name in PROTO_STEMS for suffix in (".pb", ".grpc.pb")]
     files = present_files(base, [s + ".cc" for s in stems] + [s + ".h" for s in stems], missing)
     cc = [f for f in files if f.endswith(".cc")]
     h = [f for f in files if f.endswith(".h")]
@@ -163,7 +185,7 @@ def plan_proto(edits: list[ProjectEdit], missing: list[str]) -> None:
 
 def plan_grpc_client(edits: list[ProjectEdit], missing: list[str]) -> None:
     base = "cpp/generated/grpc_client"
-    stems = ["rank/rank_grpc_client"]
+    stems = [f"rank/{name}_grpc_client" for name in GRPC_CLIENT_STEMS]
     files = present_files(base, [s + ".cpp" for s in stems] + [s + ".h" for s in stems], missing)
     cpp = [f for f in files if f.endswith(".cpp")]
     h = [f for f in files if f.endswith(".h")]
@@ -179,7 +201,7 @@ def plan_grpc_client(edits: list[ProjectEdit], missing: list[str]) -> None:
 
 def plan_rpc(edits: list[ProjectEdit], missing: list[str]) -> None:
     base = "cpp/generated/rpc"
-    h = present_files(base, ["service_metadata/rank_service_metadata.h"], missing)
+    h = present_files(base, [f"service_metadata/{name}_service_metadata.h" for name in GRPC_CLIENT_STEMS], missing)
     e = ProjectEdit(base + "/rpc.vcxproj")
     e.plan([include_line("service_metadata/friend_service_metadata.h")], [include_entry(p) for p in h])
     edits.append(e)
@@ -190,11 +212,14 @@ def plan_rpc(edits: list[ProjectEdit], missing: list[str]) -> None:
 
 def unexpected_rank_outputs() -> list[str]:
     """cpp/generated 下属于 rank 域、但本脚本不认识的产物(生成器模板变了才会出现)。"""
-    known = {"cpp/generated/rpc/service_metadata/rank_service_metadata.h"}
-    for suffix in (".pb.cc", ".pb.h", ".grpc.pb.cc", ".grpc.pb.h"):
-        known.add(f"cpp/generated/proto/rank/rank{suffix}")
-    for suffix in ("_grpc_client.cpp", "_grpc_client.h"):
-        known.add(f"cpp/generated/grpc_client/rank/rank{suffix}")
+    known = {f"cpp/generated/rpc/service_metadata/{name}_service_metadata.h" for name in GRPC_CLIENT_STEMS}
+    known.update({"cpp/generated/table/proto/tip/rank_error_tip.pb.cc", "cpp/generated/table/proto/tip/rank_error_tip.pb.h"})
+    for name in PROTO_STEMS:
+        for suffix in (".pb.cc", ".pb.h", ".grpc.pb.cc", ".grpc.pb.h"):
+            known.add(f"cpp/generated/proto/rank/{name}{suffix}")
+    for name in GRPC_CLIENT_STEMS:
+        for suffix in ("_grpc_client.cpp", "_grpc_client.h"):
+            known.add(f"cpp/generated/grpc_client/rank/{name}{suffix}")
     found = []
     for p in (REPO / "cpp" / "generated").rglob("*"):
         if not p.is_file():
@@ -211,6 +236,7 @@ def cmd_register_cpp(dry_run: bool, allow_missing: bool = False, allow_unknown: 
     """两阶段:先在内存里算出全部登记、核对缺文件 / 未知产物 / 锚点,全部通过才写盘 —— 中途失败不会留下半套登记。"""
     missing: list[str] = []
     edits: list[ProjectEdit] = []
+    plan_table(edits, missing)
     plan_proto(edits, missing)
     plan_grpc_client(edits, missing)
     plan_rpc(edits, missing)
@@ -243,6 +269,8 @@ def cmd_vendor_robot(dry_run: bool) -> None:
     src_dir = REPO / "go" / "proto" / "rank"
     dst_dir = REPO / "robot" / "vendor" / "proto" / "rank"
     pairs = [(src_dir / n, dst_dir / n) for n in GO_PROTO_FILES]
+    pairs.append((REPO / "go" / "shared" / "generated" / "pb" / "table" / TIP_GO_FILE,
+                  REPO / "robot" / "vendor" / "shared" / "generated" / "pb" / "table" / TIP_GO_FILE))
     for src, _dst in pairs:
         if not src.is_file():
             fail(f"缺 {rel(src)} —— 先跑全量 proto-gen。未写任何文件。")

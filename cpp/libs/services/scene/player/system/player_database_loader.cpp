@@ -3,6 +3,7 @@
 #include "engine/core/type_define/player_guid_comp.h"
 
 #include "thread_context/ecs_context.h"
+#include "utils/registry/describe_entity.h"
 #include "proto/common/database/mysql_database_table.pb.h"
 #include "proto/common/component/player_comp.pb.h"  // PlayerProfileComp(角色名只读副本)
 #include "modules/bag/comp/player_bags_comp.h"       // 存盘前确认背包组件在场(bag_marshal 对缺组件输出空记录)
@@ -157,8 +158,11 @@ void PlayerDatabaseMessageFieldsUnmarshal(entt::entity player, const player_data
 	// 不改写原数据 —— 拿坏账本继续记账会让不幂等的挂欠款被重复执行(设计 §8 #19)。
 	auto& inboxLedger = tlsEcs.actorRegistry.emplace<PlayerInboxLedgerComp>(player, message.inbox_ledger());
 	if (auto err = player_inbox_rules::ValidateLedger(inboxLedger); !err.empty()) {
-		LOG_ERROR << "[PlayerInbox] Ledger corrupted;inbox consumption disabled for player player_id=" << message.player_id()
-				  << " reason=" << err;
+		// metric= 标记供日志告警(评审 L13):这名玩家的处置会一直不执行,而表面上与离线无异。这一行每次加载只打一次,
+		// 告警靠前置闸按同一标记周期性补打的 WARN(source=apply_gate)持续亮着,节拍对齐 [10m] 窗口
+		// (player_inbox_rules::kStuckWarnEveryFailures,评审 F3)。修复时不要清空账本重建:那会让已执行过的处置再执行一次。
+		LOG_ERROR << "[PlayerInbox] metric=inbox_ledger_invalid source=loader player_id=" << message.player_id()
+				  << " reason=" << err << "; ledger corrupted, inbox consumption disabled for this player";
 		tlsEcs.actorRegistry.emplace_or_replace<PlayerInboxLedgerInvalidComp>(player);
 	}
 	// 神秘商人限购记录跟着同一条 player_database 行回来。不做校验、不阻断登录:记录只跨一轮,
@@ -217,7 +221,8 @@ bool PlayerDatabaseMessageFieldsMarshal(entt::entity player, player_database& me
 		const auto* guid = tlsEcs.actorRegistry.try_get<PlayerGuidComp>(player);
 		LOG_ERROR << "[PlayerSave] Persisted component(s) missing, refusing to marshal player_database"
 				  << " (load invariant broken; nothing is written): entity=" << entt::to_integral(player)
-				  << " player_id=" << (guid != nullptr ? guid->value : kInvalidGuid) << " missing=" << missing;
+				  << " player_id=" << (guid != nullptr ? guid->value : kInvalidGuid) << " missing=" << missing
+				  << " " << DescribeEntity(tlsEcs.actorRegistry, player);
 		return false;
 	}
 

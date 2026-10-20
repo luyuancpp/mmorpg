@@ -483,8 +483,10 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED DBTask final : public ::google::pro
     kMsgTypeFieldNumber = 4,
     kBodyFieldNumber = 5,
     kTaskIdFieldNumber = 6,
+    kReplyInstanceFieldNumber = 10,
     kKeyFieldNumber = 1,
     kOwnerEpochFieldNumber = 8,
+    kSaveSeqFieldNumber = 9,
     kRetryCountFieldNumber = 7,
   };
   // string where_case = 2;
@@ -562,6 +564,21 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED DBTask final : public ::google::pro
   ::std::string* PROTOBUF_NONNULL _internal_mutable_task_id();
 
   public:
+  // string reply_instance = 10;
+  void clear_reply_instance() ;
+  [[nodiscard]] const ::std::string& reply_instance() const;
+  template <typename Arg_ = const ::std::string&, typename... Args_>
+  void set_reply_instance(Arg_&& arg, Args_... args);
+  ::std::string* PROTOBUF_NONNULL mutable_reply_instance();
+  [[nodiscard]] ::std::string* PROTOBUF_NULLABLE release_reply_instance();
+  void set_allocated_reply_instance(::std::string* PROTOBUF_NULLABLE value);
+
+  private:
+  const ::std::string& _internal_reply_instance() const;
+  PROTOBUF_ALWAYS_INLINE void _internal_set_reply_instance(const ::std::string& value);
+  ::std::string* PROTOBUF_NONNULL _internal_mutable_reply_instance();
+
+  public:
   // uint64 key = 1;
   void clear_key() ;
   [[nodiscard]] ::uint64_t key() const;
@@ -582,6 +599,16 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED DBTask final : public ::google::pro
   void _internal_set_owner_epoch(::uint64_t value);
 
   public:
+  // uint64 save_seq = 9;
+  void clear_save_seq() ;
+  [[nodiscard]] ::uint64_t save_seq() const;
+  void set_save_seq(::uint64_t value);
+
+  private:
+  ::uint64_t _internal_save_seq() const;
+  void _internal_set_save_seq(::uint64_t value);
+
+  public:
   // int32 retry_count = 7;
   void clear_retry_count() ;
   [[nodiscard]] ::int32_t retry_count() const;
@@ -596,8 +623,8 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED DBTask final : public ::google::pro
  private:
   class _Internal;
   using ParseTableT_ =
-      ::google::protobuf::internal::TcParseTable<3, 8,
-                          0, 57,
+      ::google::protobuf::internal::TcParseTable<4, 10,
+                          0, 71,
                           2>;
   static constexpr ParseTableT_ InternalGenerateParseTable_(
       const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL class_data);
@@ -630,8 +657,10 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED DBTask final : public ::google::pro
     ::google::protobuf::internal::ArenaStringPtr msg_type_;
     ::google::protobuf::internal::ArenaStringPtr body_;
     ::google::protobuf::internal::ArenaStringPtr task_id_;
+    ::google::protobuf::internal::ArenaStringPtr reply_instance_;
     ::uint64_t key_;
     ::uint64_t owner_epoch_;
+    ::uint64_t save_seq_;
     ::int32_t retry_count_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
@@ -659,7 +688,7 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED DBTask final : public ::google::pro
 inline void DBTask::clear_key() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.key_ = ::uint64_t{0u};
-  ClearHasBit(_impl_._has_bits_[0], 0x00000020U);
+  ClearHasBit(_impl_._has_bits_[0], 0x00000040U);
 }
 inline ::uint64_t DBTask::key() const {
   // @@protoc_insertion_point(field_get:taskpb.DBTask.key)
@@ -667,7 +696,7 @@ inline ::uint64_t DBTask::key() const {
 }
 inline void DBTask::set_key(::uint64_t value) {
   _internal_set_key(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00000020U);
+  SetHasBit(_impl_._has_bits_[0], 0x00000040U);
   // @@protoc_insertion_point(field_set:taskpb.DBTask.key)
 }
 inline ::uint64_t DBTask::_internal_key() const {
@@ -1003,7 +1032,7 @@ inline void DBTask::set_allocated_task_id(::std::string* PROTOBUF_NULLABLE value
 inline void DBTask::clear_retry_count() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.retry_count_ = 0;
-  ClearHasBit(_impl_._has_bits_[0], 0x00000080U);
+  ClearHasBit(_impl_._has_bits_[0], 0x00000200U);
 }
 inline ::int32_t DBTask::retry_count() const {
   // @@protoc_insertion_point(field_get:taskpb.DBTask.retry_count)
@@ -1011,7 +1040,7 @@ inline ::int32_t DBTask::retry_count() const {
 }
 inline void DBTask::set_retry_count(::int32_t value) {
   _internal_set_retry_count(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00000080U);
+  SetHasBit(_impl_._has_bits_[0], 0x00000200U);
   // @@protoc_insertion_point(field_set:taskpb.DBTask.retry_count)
 }
 inline ::int32_t DBTask::_internal_retry_count() const {
@@ -1027,7 +1056,7 @@ inline void DBTask::_internal_set_retry_count(::int32_t value) {
 inline void DBTask::clear_owner_epoch() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.owner_epoch_ = ::uint64_t{0u};
-  ClearHasBit(_impl_._has_bits_[0], 0x00000040U);
+  ClearHasBit(_impl_._has_bits_[0], 0x00000080U);
 }
 inline ::uint64_t DBTask::owner_epoch() const {
   // @@protoc_insertion_point(field_get:taskpb.DBTask.owner_epoch)
@@ -1035,7 +1064,7 @@ inline ::uint64_t DBTask::owner_epoch() const {
 }
 inline void DBTask::set_owner_epoch(::uint64_t value) {
   _internal_set_owner_epoch(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00000040U);
+  SetHasBit(_impl_._has_bits_[0], 0x00000080U);
   // @@protoc_insertion_point(field_set:taskpb.DBTask.owner_epoch)
 }
 inline ::uint64_t DBTask::_internal_owner_epoch() const {
@@ -1045,6 +1074,94 @@ inline ::uint64_t DBTask::_internal_owner_epoch() const {
 inline void DBTask::_internal_set_owner_epoch(::uint64_t value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.owner_epoch_ = value;
+}
+
+// uint64 save_seq = 9;
+inline void DBTask::clear_save_seq() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.save_seq_ = ::uint64_t{0u};
+  ClearHasBit(_impl_._has_bits_[0], 0x00000100U);
+}
+inline ::uint64_t DBTask::save_seq() const {
+  // @@protoc_insertion_point(field_get:taskpb.DBTask.save_seq)
+  return _internal_save_seq();
+}
+inline void DBTask::set_save_seq(::uint64_t value) {
+  _internal_set_save_seq(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000100U);
+  // @@protoc_insertion_point(field_set:taskpb.DBTask.save_seq)
+}
+inline ::uint64_t DBTask::_internal_save_seq() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.save_seq_;
+}
+inline void DBTask::_internal_set_save_seq(::uint64_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.save_seq_ = value;
+}
+
+// string reply_instance = 10;
+inline void DBTask::clear_reply_instance() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.reply_instance_.ClearToEmpty();
+  ClearHasBit(_impl_._has_bits_[0], 0x00000020U);
+}
+inline const ::std::string& DBTask::reply_instance() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:taskpb.DBTask.reply_instance)
+  return _internal_reply_instance();
+}
+template <typename Arg_, typename... Args_>
+PROTOBUF_ALWAYS_INLINE void DBTask::set_reply_instance(Arg_&& arg, Args_... args) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  SetHasBit(_impl_._has_bits_[0], 0x00000020U);
+  _impl_.reply_instance_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
+  // @@protoc_insertion_point(field_set:taskpb.DBTask.reply_instance)
+}
+inline ::std::string* PROTOBUF_NONNULL DBTask::mutable_reply_instance()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  SetHasBit(_impl_._has_bits_[0], 0x00000020U);
+  ::std::string* _s = _internal_mutable_reply_instance();
+  // @@protoc_insertion_point(field_mutable:taskpb.DBTask.reply_instance)
+  return _s;
+}
+inline const ::std::string& DBTask::_internal_reply_instance() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.reply_instance_.Get();
+}
+inline void DBTask::_internal_set_reply_instance(const ::std::string& value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.reply_instance_.Set(value, GetArena());
+}
+inline ::std::string* PROTOBUF_NONNULL DBTask::_internal_mutable_reply_instance() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  return _impl_.reply_instance_.Mutable( GetArena());
+}
+inline ::std::string* PROTOBUF_NULLABLE DBTask::release_reply_instance() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:taskpb.DBTask.reply_instance)
+  if (!CheckHasBit(_impl_._has_bits_[0], 0x00000020U)) {
+    return nullptr;
+  }
+  ClearHasBit(_impl_._has_bits_[0], 0x00000020U);
+  auto* released = _impl_.reply_instance_.Release();
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString()) {
+    _impl_.reply_instance_.Set("", GetArena());
+  }
+  return released;
+}
+inline void DBTask::set_allocated_reply_instance(::std::string* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (value != nullptr) {
+    SetHasBit(_impl_._has_bits_[0], 0x00000020U);
+  } else {
+    ClearHasBit(_impl_._has_bits_[0], 0x00000020U);
+  }
+  _impl_.reply_instance_.SetAllocated(value, GetArena());
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.reply_instance_.IsDefault()) {
+    _impl_.reply_instance_.Set("", GetArena());
+  }
+  // @@protoc_insertion_point(field_set_allocated:taskpb.DBTask.reply_instance)
 }
 
 // -------------------------------------------------------------------

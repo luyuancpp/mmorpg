@@ -509,6 +509,9 @@ type MarkOfflineRequest struct {
 	PlayerId               uint64                 `protobuf:"varint,1,opt,name=player_id,json=playerId,proto3" json:"player_id,omitempty"`
 	ExpectedSessionId      uint32                 `protobuf:"varint,2,opt,name=expected_session_id,json=expectedSessionId,proto3" json:"expected_session_id,omitempty"`
 	ExpectedSessionVersion uint32                 `protobuf:"varint,3,opt,name=expected_session_version,json=expectedSessionVersion,proto3" json:"expected_session_version,omitempty"`
+	// 语义同 SetDisconnectingRequest.gate_instance_id:请求与会话记录的实例号都非空且不等时,
+	// 判为旧实例迟到的登出,忽略(不删会话、不调 LeaveScene);空 = 旧版 login,不校验。
+	ExpectedGateInstanceId string `protobuf:"bytes,4,opt,name=expected_gate_instance_id,json=expectedGateInstanceId,proto3" json:"expected_gate_instance_id,omitempty"`
 	unknownFields          protoimpl.UnknownFields
 	sizeCache              protoimpl.SizeCache
 }
@@ -564,14 +567,24 @@ func (x *MarkOfflineRequest) GetExpectedSessionVersion() uint32 {
 	return 0
 }
 
+func (x *MarkOfflineRequest) GetExpectedGateInstanceId() string {
+	if x != nil {
+		return x.ExpectedGateInstanceId
+	}
+	return ""
+}
+
 // Disconnect request: mark DISCONNECTING + start TTL lease
 type SetDisconnectingRequest struct {
 	state           protoimpl.MessageState `protogen:"open.v1"`
 	PlayerId        uint64                 `protobuf:"varint,1,opt,name=player_id,json=playerId,proto3" json:"player_id,omitempty"`
 	SessionId       uint32                 `protobuf:"varint,2,opt,name=session_id,json=sessionId,proto3" json:"session_id,omitempty"`
 	LeaseTtlSeconds uint32                 `protobuf:"varint,3,opt,name=lease_ttl_seconds,json=leaseTtlSeconds,proto3" json:"lease_ttl_seconds,omitempty"` // Default 30s
-	unknownFields   protoimpl.UnknownFields
-	sizeCache       protoimpl.SizeCache
+	// 发起断线的 gate 实例 uuid(SessionDetails.gate_instance_id)。请求与会话记录的实例号都非空且不等时,
+	// 判为旧实例迟到的上报,忽略;空 = 旧版 login,不校验(docs/design/scene-enter-chain-residuals.md §6)。
+	GateInstanceId string `protobuf:"bytes,4,opt,name=gate_instance_id,json=gateInstanceId,proto3" json:"gate_instance_id,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
 }
 
 func (x *SetDisconnectingRequest) Reset() {
@@ -623,6 +636,13 @@ func (x *SetDisconnectingRequest) GetLeaseTtlSeconds() uint32 {
 		return x.LeaseTtlSeconds
 	}
 	return 0
+}
+
+func (x *SetDisconnectingRequest) GetGateInstanceId() string {
+	if x != nil {
+		return x.GateInstanceId
+	}
+	return ""
 }
 
 // Reconnect request: cancel lease, restore ONLINE
@@ -919,16 +939,18 @@ const file_proto_player_locator_player_locator_proto_rawDesc = "" +
 	"\tplayer_id\x18\x01 \x01(\x04R\bplayerId\"b\n" +
 	"\x12GetSessionResponse\x126\n" +
 	"\asession\x18\x01 \x01(\v2\x1c.playerlocator.PlayerSessionR\asession\x12\x14\n" +
-	"\x05found\x18\x02 \x01(\bR\x05found\"\x9b\x01\n" +
+	"\x05found\x18\x02 \x01(\bR\x05found\"\xd6\x01\n" +
 	"\x12MarkOfflineRequest\x12\x1b\n" +
 	"\tplayer_id\x18\x01 \x01(\x04R\bplayerId\x12.\n" +
 	"\x13expected_session_id\x18\x02 \x01(\rR\x11expectedSessionId\x128\n" +
-	"\x18expected_session_version\x18\x03 \x01(\rR\x16expectedSessionVersion\"\x81\x01\n" +
+	"\x18expected_session_version\x18\x03 \x01(\rR\x16expectedSessionVersion\x129\n" +
+	"\x19expected_gate_instance_id\x18\x04 \x01(\tR\x16expectedGateInstanceId\"\xab\x01\n" +
 	"\x17SetDisconnectingRequest\x12\x1b\n" +
 	"\tplayer_id\x18\x01 \x01(\x04R\bplayerId\x12\x1d\n" +
 	"\n" +
 	"session_id\x18\x02 \x01(\rR\tsessionId\x12*\n" +
-	"\x11lease_ttl_seconds\x18\x03 \x01(\rR\x0fleaseTtlSeconds\"\xbf\x02\n" +
+	"\x11lease_ttl_seconds\x18\x03 \x01(\rR\x0fleaseTtlSeconds\x12(\n" +
+	"\x10gate_instance_id\x18\x04 \x01(\tR\x0egateInstanceId\"\xbf\x02\n" +
 	"\x10ReconnectRequest\x12\x1b\n" +
 	"\tplayer_id\x18\x01 \x01(\x04R\bplayerId\x12$\n" +
 	"\x0enew_session_id\x18\x02 \x01(\rR\fnewSessionId\x12\x17\n" +

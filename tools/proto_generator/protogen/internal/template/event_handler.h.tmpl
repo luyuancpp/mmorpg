@@ -5,12 +5,6 @@
 class {{ .ClassName }}
 {
 public:
-    static void Register();
-
-    static void UnRegister();
-{{- if .EventMessages }}
-
-{{- end }}
 {{- range .EventMessages }}
     static void {{ .HandlerName }}(const {{ .QualifiedName }}& event);
 {{- if .IsLast }}

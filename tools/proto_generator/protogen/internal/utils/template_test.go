@@ -16,7 +16,7 @@ func B() {
 }
 `
 
-	got := engine.Execute("normalize-spacing-exec", templateContent, nil)
+	got := engine.RenderOrExit("normalize-spacing-render-or-exit", templateContent, nil)
 	if strings.Contains(got, "\n\n\n") {
 		t.Fatalf("expected at most one blank line between blocks, got: %q", got)
 	}
@@ -24,20 +24,20 @@ func B() {
 		t.Fatalf("expected one blank line between functions, got: %q", got)
 	}
 
-	gotMust, err := engine.MustExecute("normalize-spacing-must", templateContent, nil)
+	rendered, err := engine.Render("normalize-spacing-render", templateContent, nil)
 	if err != nil {
-		t.Fatalf("MustExecute returned error: %v", err)
+		t.Fatalf("Render 返回错误: %v", err)
 	}
-	if strings.Contains(gotMust, "\n\n\n") {
-		t.Fatalf("expected at most one blank line between blocks, got: %q", gotMust)
+	if strings.Contains(rendered, "\n\n\n") {
+		t.Fatalf("expected at most one blank line between blocks, got: %q", rendered)
 	}
 }
 
 func TestTemplateEngineCachesByTemplateContent(t *testing.T) {
 	engine := NewTemplateEngine()
 
-	first := engine.Execute("same-name", `{{.Value}}`, map[string]string{"Value": "first"})
-	second := engine.Execute("same-name", `prefix-{{.Value}}`, map[string]string{"Value": "second"})
+	first := engine.RenderOrExit("same-name", `{{.Value}}`, map[string]string{"Value": "first"})
+	second := engine.RenderOrExit("same-name", `prefix-{{.Value}}`, map[string]string{"Value": "second"})
 
 	if first != "first" {
 		t.Fatalf("unexpected first render: %q", first)

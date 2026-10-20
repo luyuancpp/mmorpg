@@ -169,8 +169,11 @@ bool KafkaManager::Shutdown(std::chrono::milliseconds producerFlushTimeout) {
 		LOG_INFO << "KafkaManager has been shut down; producer queue drained.";
 	}
 	else {
+		// tracked = 其中带关联号、还在等逐条回执的条数(scene 的 DBTask)。KafkaProducer 析构时那行
+		// "producer destroyed with N tracked messages" 发生在线程退出、Node 已析构之后,Linux 上写不进日志文件,
+		// 这里趁日志还活着先报一次。
 		LOG_ERROR << "KafkaManager shut down with producer messages still in flight. pending="
-			<< PendingProducerMessages();
+			<< PendingProducerMessages() << " tracked=" << KafkaProducer::Instance().trackedInFlight();
 	}
 	return shutdownResult_;
 }

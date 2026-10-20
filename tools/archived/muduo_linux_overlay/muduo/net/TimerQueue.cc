@@ -10,12 +10,18 @@
 // LOCAL OVERLAY -- copied over third_party/muduo-linux/muduo/net/TimerQueue.cc
 // by tools/archived/setup_dependencies.sh before muduo is configured.
 //
-// Verbatim upstream except for one guard in handleRead(), marked LOCAL DELTA
-// below: a timer cancelled by an earlier callback in the same expired batch
-// must not run, because cancelling almost always means its owner is being
-// destroyed. Windows already carries this fix
+// Verbatim upstream except for the blocks marked LOCAL DELTA below.
+//
+// (1) One guard in handleRead(): a timer cancelled by an earlier callback in
+// the same expired batch must not run, because cancelling almost always means
+// its owner is being destroyed. Windows already carries this fix
 // (cpp/libs/engine/muduo_windows/src/muduo/net/TimerQueue.cc, commit e137bd658);
 // this is the Linux half, which was missing.
+//
+// (2) 定时器改按单调时钟到期(与 Windows 同一改动):monotonicNow() / monotonicFromWall()
+// 的实现;howMuchTimeFromNow() 与 handleRead() 的 now 改取单调读数;reset() 不再用
+// valid() 判断"还有没有下一个"。声明在同目录 TimerQueue.h 覆盖件,调用方换算在同目录
+// EventLoop.cc 覆盖件 —— 三个文件必须一起生效,单独覆盖任何一个都会让时钟域错配。
 //
 // It lives here rather than in the submodule because third_party/muduo-linux
 // is chenshuo/muduo -- only its *pointer* is committed, so an edit to its
@@ -40,6 +46,8 @@
 #include <sys/timerfd.h>
 #include <unistd.h>
 
+#include <chrono>  // LOCAL DELTA (2)
+
 namespace muduo
 {
 namespace net
@@ -59,8 +67,9 @@ int createTimerfd()
 }
 struct timespec howMuchTimeFromNow(Timestamp when)
 {
+  // LOCAL DELTA (2):when 在单调域,剩余时长也按单调时钟算(timerfd 本身就是 CLOCK_MONOTONIC、按相对时长上弦)。
   int64_t microseconds = when.microSecondsSinceEpoch()
-                         - Timestamp::now().microSecondsSinceEpoch();
+                         - TimerQueue::monotonicNow().microSecondsSinceEpoch();
   if (microseconds < 100)
   {
     microseconds = 100;
@@ -77,7 +86,8 @@ void readTimerfd(int timerfd, Timestamp now)
 {
   uint64_t howmany;
   ssize_t n = ::read(timerfd, &howmany, sizeof howmany);
-  LOG_TRACE << "TimerQueue::handleRead() " << howmany << " at " << now.toString();
+  // LOCAL DELTA (2):now 是单调读数(秒.微秒,原点约为开机时刻),不是日期。
+  LOG_TRACE << "TimerQueue::handleRead() " << howmany << " at monotonic " << now.toString();
   if (n != sizeof howmany)
   {
     LOG_ERROR << "TimerQueue::handleRead() reads " << n << " bytes instead of 8";
@@ -106,6 +116,19 @@ void resetTimerfd(int timerfd, Timestamp expiration)
 using namespace muduo;
 using namespace muduo::net;
 using namespace muduo::net::detail;
+
+// LOCAL DELTA (2):单调时钟读数与墙钟换算,语义见 TimerQueue.h。
+Timestamp TimerQueue::monotonicNow()
+{
+  const auto sinceOrigin = std::chrono::steady_clock::now().time_since_epoch();
+  return Timestamp(std::chrono::duration_cast<std::chrono::microseconds>(sinceOrigin).count());
+}
+
+Timestamp TimerQueue::monotonicFromWall(Timestamp wallTime, Timestamp wallNow, Timestamp monoNow)
+{
+  const int64_t offset = wallTime.microSecondsSinceEpoch() - wallNow.microSecondsSinceEpoch();
+  return Timestamp(monoNow.microSecondsSinceEpoch() + offset);
+}
 
 TimerQueue::TimerQueue(EventLoop* loop)
   : loop_(loop),
@@ -182,7 +205,8 @@ void TimerQueue::cancelInLoop(TimerId timerId)
 void TimerQueue::handleRead()
 {
   loop_->assertInLoopThread();
-  Timestamp now(Timestamp::now());
+  // LOCAL DELTA (2):到期判断(getExpired)与重复定时器的下一次到期(reset → Timer::restart)都按单调 now。
+  Timestamp now(monotonicNow());
   readTimerfd(timerfd_, now);
 
   std::vector<Entry> expired = getExpired(now);
@@ -192,7 +216,7 @@ void TimerQueue::handleRead()
   // safe to callback outside critical section
   for (const Entry& it : expired)
   {
-    // LOCAL DELTA (the only change from upstream in this file).
+    // LOCAL DELTA (1).
     //
     // getExpired() already removed this batch from activeTimers_, so a
     // cancel() issued by an earlier callback in this same batch cannot take
@@ -246,8 +270,6 @@ std::vector<TimerQueue::Entry> TimerQueue::getExpired(Timestamp now)
 
 void TimerQueue::reset(const std::vector<Entry>& expired, Timestamp now)
 {
-  Timestamp nextExpire;
-
   for (const Entry& it : expired)
   {
     ActiveTimer timer(it.second, it.second->sequence());
@@ -264,14 +286,11 @@ void TimerQueue::reset(const std::vector<Entry>& expired, Timestamp now)
     }
   }
 
+  // LOCAL DELTA (2):上游用 nextExpire.valid()(> 0)判断"还有没有下一个"。单调域的到期时刻可以 <= 0
+  // (很久以前的墙钟时刻换算而来),valid() 不再等价于"队列非空",直接看队列。
   if (!timers_.empty())
   {
-    nextExpire = timers_.begin()->second->expiration();
-  }
-
-  if (nextExpire.valid())
-  {
-    resetTimerfd(timerfd_, nextExpire);
+    resetTimerfd(timerfd_, timers_.begin()->second->expiration());
   }
 }
 

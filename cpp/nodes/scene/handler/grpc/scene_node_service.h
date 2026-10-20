@@ -1,59 +1,58 @@
 #pragma once
 
-#include <grpcpp/grpcpp.h>
+#include <memory>
+#include <string_view>
 #include <muduo/net/EventLoop.h>
-#include "proto/scene_manager/scene_node_service.grpc.pb.h"
-
+#include "muduo_grpc/method_table.h"
+#include "network/grpc_unary_call.h"
+#include "proto/scene_manager/scene_node_service.pb.h"
 ///<<< BEGIN WRITING YOUR CODE: grpc.header.includes
 ///<<< END WRITING YOUR CODE
 
-// 由 proto 工具生成 SceneNodeGrpc 的 gRPC 骨架；自定义代码只写在守护段内。
-// gRPC 线程通过 runInLoop + promise/future 等待事件循环完成请求。
-// Handle* 在事件循环执行，不做阻塞 I/O；业务错误经响应字段返回。
-// 投递前段在 gRPC 线程运行，可取得准入许可并提前返回非 OK。
-// loop 内段在 Handle* 前复核状态：将 dispatchStatus 设为非 OK 即跳过业务委托。
-// 完成后段在 gRPC 线程运行；许可与捕获的栈引用存活到 future.get() 完成。
-class SceneNodeGrpcImpl final : public scene_node::SceneNodeGrpc::Service
+// 由 proto 工具生成 SceneNodeGrpc 的 gRPC 服务端骨架(muduo_grpc,docs/design/grpc-muduo-transport.md §15);自定义代码只写在守护段内。
+// 全部在节点 EventLoop 线程执行,不创建线程。每个 RPC:解析请求 → <M>()(守护段 grpc.<M>.guard)→ Handle<M>(同步)→ 回包。
+// 守护段:同步拒绝写 `call->Reject(status); return;`;异步决定时先发起异步操作再 `return;`,在回调里调
+// `call->Proceed()` 或 `call->Reject(...)`。回调只捕获 call 与 weak 引用,不得捕获 this(AGENTS §11.7)。
+// 要活到业务完成的对象(如 Agones 许可)作为回调参数,活到 Proceed() 返回即可(Handle* 同步)。不得阻塞;业务错误经响应字段返回。
+class SceneNodeGrpcImpl final : public muduo_grpc::Service
 {
 public:
     explicit SceneNodeGrpcImpl(muduo::net::EventLoop& loop);
     ///<<< BEGIN WRITING YOUR CODE: grpc.header.public
     ///<<< END WRITING YOUR CODE
 
-    grpc::Status CreateScene(grpc::ServerContext* context,
-        const ::CreateSceneRequest* request,
-        ::CreateSceneResponse* response) override;
+    // 方法表(按 :path 精确路由)。处理函数捕获 this:本对象必须活过注册它的 Node。
+    void RegisterMethods(muduo_grpc::MethodTable& table) override;
 
-    grpc::Status DestroyScene(grpc::ServerContext* context,
-        const ::DestroySceneRequest* request,
-        ::Empty* response) override;
-
-    grpc::Status ReleasePlayer(grpc::ServerContext* context,
-        const ::scene_node::ReleasePlayerRequest* request,
-        ::Empty* response) override;
-
-    grpc::Status PrepareBattle(grpc::ServerContext* context,
-        const ::PrepareBattleRequest* request,
-        ::PrepareBattleResponse* response) override;
-
-    grpc::Status CancelBattlePrepare(grpc::ServerContext* context,
-        const ::CancelBattlePrepareRequest* request,
-        ::Empty* response) override;
-
-    grpc::Status AssetDebit(grpc::ServerContext* context,
-        const ::AssetOpRequest* request,
-        ::AssetOpResponse* response) override;
-
-    grpc::Status AssetAbortDebit(grpc::ServerContext* context,
-        const ::AssetOpRequest* request,
-        ::AssetOpResponse* response) override;
-
-    grpc::Status AssetCredit(grpc::ServerContext* context,
-        const ::AssetOpRequest* request,
-        ::AssetOpResponse* response) override;
+    static constexpr std::string_view kCreateScenePath = "/scene_node.SceneNodeGrpc/CreateScene";
+    static constexpr std::string_view kDestroyScenePath = "/scene_node.SceneNodeGrpc/DestroyScene";
+    static constexpr std::string_view kReleasePlayerPath = "/scene_node.SceneNodeGrpc/ReleasePlayer";
+    static constexpr std::string_view kPrepareBattlePath = "/scene_node.SceneNodeGrpc/PrepareBattle";
+    static constexpr std::string_view kCancelBattlePreparePath = "/scene_node.SceneNodeGrpc/CancelBattlePrepare";
+    static constexpr std::string_view kAssetDebitPath = "/scene_node.SceneNodeGrpc/AssetDebit";
+    static constexpr std::string_view kAssetAbortDebitPath = "/scene_node.SceneNodeGrpc/AssetAbortDebit";
+    static constexpr std::string_view kAssetCreditPath = "/scene_node.SceneNodeGrpc/AssetCredit";
+    static constexpr std::string_view kAssetAckReceiptPath = "/scene_node.SceneNodeGrpc/AssetAckReceipt";
 
 private:
-    // 业务委托在事件循环线程执行，gRPC 线程同步等待完成。
+    using CreateSceneCall = GrpcUnaryCall<::CreateSceneRequest, ::CreateSceneResponse>;
+    using DestroySceneCall = GrpcUnaryCall<::DestroySceneRequest, ::Empty>;
+    using ReleasePlayerCall = GrpcUnaryCall<::scene_node::ReleasePlayerRequest, ::Empty>;
+    using PrepareBattleCall = GrpcUnaryCall<::PrepareBattleRequest, ::PrepareBattleResponse>;
+    using CancelBattlePrepareCall = GrpcUnaryCall<::CancelBattlePrepareRequest, ::Empty>;
+    using AssetDebitCall = GrpcUnaryCall<::AssetOpRequest, ::AssetOpResponse>;
+    using AssetAbortDebitCall = GrpcUnaryCall<::AssetOpRequest, ::AssetOpResponse>;
+    using AssetCreditCall = GrpcUnaryCall<::AssetOpRequest, ::AssetOpResponse>;
+    using AssetAckReceiptCall = GrpcUnaryCall<::AssetOpRequest, ::AssetOpResponse>;
+    void CreateScene(const std::shared_ptr<CreateSceneCall>& call);
+    void DestroyScene(const std::shared_ptr<DestroySceneCall>& call);
+    void ReleasePlayer(const std::shared_ptr<ReleasePlayerCall>& call);
+    void PrepareBattle(const std::shared_ptr<PrepareBattleCall>& call);
+    void CancelBattlePrepare(const std::shared_ptr<CancelBattlePrepareCall>& call);
+    void AssetDebit(const std::shared_ptr<AssetDebitCall>& call);
+    void AssetAbortDebit(const std::shared_ptr<AssetAbortDebitCall>& call);
+    void AssetCredit(const std::shared_ptr<AssetCreditCall>& call);
+    void AssetAckReceipt(const std::shared_ptr<AssetAckReceiptCall>& call);
     static void HandleCreateScene(const ::CreateSceneRequest* request, ::CreateSceneResponse* response);
     static void HandleDestroyScene(const ::DestroySceneRequest* request);
     static void HandleReleasePlayer(const ::scene_node::ReleasePlayerRequest* request);
@@ -62,7 +61,7 @@ private:
     static void HandleAssetDebit(const ::AssetOpRequest* request, ::AssetOpResponse* response);
     static void HandleAssetAbortDebit(const ::AssetOpRequest* request, ::AssetOpResponse* response);
     static void HandleAssetCredit(const ::AssetOpRequest* request, ::AssetOpResponse* response);
-
+    static void HandleAssetAckReceipt(const ::AssetOpRequest* request, ::AssetOpResponse* response);
     muduo::net::EventLoop& loop_;
     ///<<< BEGIN WRITING YOUR CODE: grpc.header.private
     ///<<< END WRITING YOUR CODE

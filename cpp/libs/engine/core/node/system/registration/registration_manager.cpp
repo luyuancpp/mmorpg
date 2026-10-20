@@ -1,5 +1,6 @@
 #include "registration_manager.h"
 #include <chrono>
+#include <type_traits>
 #include <table/proto/tip/common_error_tip.pb.h>
 #include <time/comp/timer_task_comp.h>
 #include "node/system/node/node_util.h"
@@ -17,13 +18,46 @@
 
 namespace
 {
-uint32_t kNodeTypeToMessageId[eNodeType_ARRAYSIZE] = {
-	0,
-	0,
-	0,
-	SceneNodeHandshakeMessageId,
-	GateNodeHandshakeMessageId
-};
+// 两类节点的握手方法请求 / 响应同型:SendHandshake 与 OnHandshakeCallDone 只写一份,不按节点类型分叉。
+static_assert(std::is_same_v<SceneNodeHandshakeRpc::Request, GateNodeHandshakeRpc::Request> &&
+                  std::is_same_v<SceneNodeHandshakeRpc::Response, GateNodeHandshakeRpc::Response>,
+              "Scene / Gate NodeHandshake must share request and response types");
+
+// 节点类型 → 该类节点的 RPC0 握手方法 tag(muduo-rpc-channel.md §10):有握手入口就以 fn(Tag{}) 调用并返回 true,
+// 其余类型(纯 gRPC 服务、未知值)返回 false、不调用 fn。它也是「哪些节点类型有 RPC0 握手入口」的唯一来源:
+//   - 出站:gate 拨 scene,SendHandshake 走 Scene 项(当前没有节点向 gate 拨 TCP,Gate 项在出站侧不可达);
+//   - 入站:scene 收 gate 的握手时,OnNodeHandshake 经 IsHandshakeNodeType 靠 Gate 项放行 —— Gate 项不能删。
+template <typename Fn>
+constexpr bool VisitHandshakeRpc(uint32_t nodeType, Fn&& fn)
+{
+	switch (static_cast<eNodeType>(nodeType))
+	{
+	case eNodeType::SceneNodeService:
+		fn(SceneNodeHandshakeRpc{});
+		return true;
+	case eNodeType::GateNodeService:
+		fn(GateNodeHandshakeRpc{});
+		return true;
+	default:
+		return false;
+	}
+}
+
+// 出站握手方法号的编译期回归防护。SendHandshake → typed CallMethod → OnHandshakeCallDone 这条路径单测走不到
+// (握手 0.5s 后才由定时器发出,完成回调要经 gNode,单测进程里没有 Node),只有联调看得到。
+// 若上面两项的 tag 写反,gate 会向 scene 发 Gate.NodeHandshake:scene 没有 Gate 服务,回 NO_SERVICE(kRemoteRejected),
+// gate 落进重试分支每 0.5s 重发、永不成功,而单测全绿。这里拿各服务自己生成的消息号常量核对,在编译期拦下。
+// 放行 / 拒绝集合由 rpc_client_lifecycle_test 的 HandshakeTypeWhitelistAdmitsSceneAndGate / InboundHandshakeRejects... 守。
+constexpr uint32_t HandshakeMessageIdOf(uint32_t nodeType)
+{
+	uint32_t messageId = 0;
+	VisitHandshakeRpc(nodeType, [&messageId]<typename Method>(Method) { messageId = Method::kMessageId; });
+	return messageId;
+}
+static_assert(HandshakeMessageIdOf(static_cast<uint32_t>(eNodeType::SceneNodeService)) == SceneNodeHandshakeMessageId,
+              "a Scene peer must be sent Scene.NodeHandshake");
+static_assert(HandshakeMessageIdOf(static_cast<uint32_t>(eNodeType::GateNodeService)) == GateNodeHandshakeMessageId,
+              "a Gate peer must be sent Gate.NodeHandshake");
 
 // CPP-2:TCP 连上 0.5s 后才发握手,失败 / 超时同样按 0.5s 节奏重试(约 2 次/s)。
 constexpr double kHandshakeRetryDelaySeconds = 0.5;
@@ -32,7 +66,7 @@ constexpr std::chrono::milliseconds kNodeHandshakeCallTimeout{3000};
 
 bool IsHandshakeNodeType(uint32_t nodeType)
 {
-	return nodeType < eNodeType_ARRAYSIZE && kNodeTypeToMessageId[nodeType] != 0;
+	return VisitHandshakeRpc(nodeType, [](auto) {});
 }
 } // namespace
 
@@ -66,23 +100,32 @@ void NodeHandshakeManager::ScheduleHandshake(entt::registry& registry, entt::ent
 void NodeHandshakeManager::SendHandshake(uint32_t nodeType, const std::weak_ptr<RpcClient>& weakClient) {
 	const auto client = weakClient.lock();
 	if (!client || !client->connected()) {
-		return;   // 等下一次 UP:OnConnected2TcpServerEvent 会重新 TryRegisterNodeSession
+		return;   // 重连 UP 经 RpcClient 的连接观察者重新 TryRegisterNodeSession
 	}
 	NodeHandshakeRequest req;
 	*req.mutable_self_node() = GetNodeInfo();
 	std::weak_ptr<muduo::net::TcpConnection> weakConn = client->GetConnection();
+	// 按对端类型取握手方法 tag 做 typed 调用:请求 / 响应类型在编译期钉住,发起时再按注册表核对一次。
 	// 回调只捕获值与 weak;不捕获 this(它可能在关机阶段经 queueInLoop 执行)。
-	client->CallMethod(
-		kNodeTypeToMessageId[nodeType], req,
-		[nodeType, weakClient, weakConn](const RpcStatus& status, const MessagePtr& response) {
-			gNode->GetNodeRegistrationManager().OnHandshakeCallDone(nodeType, weakClient, weakConn, status, response);
-		},
-		RpcCallOptions{kNodeHandshakeCallTimeout});
+	const bool hasHandshakeRpc = VisitHandshakeRpc(nodeType, [&]<typename Method>(Method) {
+		client->CallMethod<Method>(
+			req,
+			[nodeType, weakClient, weakConn](const RpcStatus& status,
+			                                 const std::shared_ptr<NodeHandshakeResponse>& response) {
+				gNode->GetNodeRegistrationManager().OnHandshakeCallDone(nodeType, weakClient, weakConn, status, response);
+			},
+			RpcCallOptions{kNodeHandshakeCallTimeout});
+	});
+	if (!hasHandshakeRpc) {
+		// 只有经 IsHandshakeNodeType 放行的类型才会排到这里,正常不可达;不静默吞掉。
+		LOG_ERROR << "Node handshake not sent: node_type=" << nodeType << " has no RPC0 handshake method";
+	}
 }
 
 void NodeHandshakeManager::OnHandshakeCallDone(uint32_t nodeType, const std::weak_ptr<RpcClient>& weakClient,
                                                const std::weak_ptr<muduo::net::TcpConnection>& weakConn,
-                                               const RpcStatus& status, const MessagePtr& response) const {
+                                               const RpcStatus& status,
+                                               const std::shared_ptr<NodeHandshakeResponse>& response) const {
 	const auto client = weakClient.lock();
 	if (!client) {
 		return;   // 节点已摘除
@@ -124,12 +167,9 @@ void NodeHandshakeManager::OnHandshakeCallDone(uint32_t nodeType, const std::wea
 		}
 	}
 
-	if (response == nullptr || response->GetDescriptor() != NodeHandshakeResponse::descriptor()) {
-		LOG_ERROR << "Node handshake reply has unexpected type, retrying: peer=" << client->peer_addr().toIpPort();
-		ScheduleHandshake(registry, entity, nodeType, client);
-		return;
-	}
-	const auto& reply = static_cast<const NodeHandshakeResponse&>(*response);
+	// status.ok() ⇔ response 非空(rpc_channel.h ClientDoneCallback 契约 (a)),且类型就是 NodeHandshakeResponse:
+	// typed 调用发起时已核对注册表的响应类型,应答按它解析;解析失败以 kInvalidResponse 落在上面 default 分支重试。
+	const NodeHandshakeResponse& reply = *response;
 	LOG_TRACE << "Node registration response: " << reply.DebugString();
 	if (reply.error_message().id() != kCommon_errorOK) {
 		LOG_TRACE << "Registration failed: " << reply.DebugString();

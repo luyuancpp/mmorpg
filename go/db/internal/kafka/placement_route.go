@@ -41,6 +41,10 @@ var (
 	errPlacementStoreUnavailable = errors.New("task deferred because its placement store is unavailable")
 	// errPlacementMoved:落库后复核发现路由变了(或写遇到冻结),本次结果作废重试,不耗重试次数(§6.3)。
 	errPlacementMoved = errors.New("placement changed between store selection and the post-write recheck")
+	// errRouteNotReady:Placement.RequireRouteReady=true 时 mapping Redis 的副本不可信(就绪标记不在 / 畸形 / 身份不是本次读
+	// 所在的主实例,spec_D1_batch1b2_2_3.md §2 M1、§5.1),读到的值与缺键都不能拿来选库。选库时写延后不耗预算、读耗预算
+	// (retryBudgetExempt);复核时包进 errPlacementMoved 按「路由变了」重试。具体 verdict 见 routeNotReadyError。
+	errRouteNotReady = errors.New("task deferred because the mapping Redis replica is not trusted (route ready marker)")
 )
 
 // StoreResolver 按落点编号给出已打开的库(生产实现是 proto_sql.StoreRegistry)。
@@ -58,6 +62,9 @@ type placementRouter struct {
 	zone     uint32
 	required bool
 	stores   StoreResolver
+	// ready 非 nil 即 Placement.RequireRouteReady=true(D1 第 3 批,route_ready_gate.go):lookup 改用就绪读脚本,
+	// 只有 Trusted 才把读到的两把键交给 parsePlacementSnapshot。nil(缺省)时 lookup 与引入之前相同(MGET 两键)。
+	ready routeReadyReader
 }
 
 // placementSnapshot 是一次 MGET 读到的两把键。
@@ -87,7 +94,11 @@ func (s placementSnapshot) String() string {
 // lookup 一次 MGET 读 player:placement:{key} 与 player:zone:{key}。
 // 查询失败或任一值畸形都返回错误,调用方 fail-closed —— 畸形**不得**当作缺席:缺席会让玩家回落
 // home_zone / 本进程 zone 选库,正是落点记录要防的错库写。
+// Placement.RequireRouteReady=true 时改走 lookupReady(route_ready_gate.go):副本不可信返回 errRouteNotReady。
 func (r *placementRouter) lookup(ctx context.Context, key uint64) (placementSnapshot, error) {
+	if r.ready != nil {
+		return r.lookupReady(ctx, key)
+	}
 	vals, err := r.rc.MGet(ctx, placement.Key(key), placement.HomeZoneKey(key)).Result()
 	if err != nil {
 		return placementSnapshot{}, fmt.Errorf("MGET placement/home_zone for key %d: %w", key, err)
@@ -245,6 +256,14 @@ func (r *placementRoute) confirm(ctx context.Context) error {
 	recheckStart := time.Now()
 	current, err := r.router.lookup(ctx, r.key)
 	metrics.ObserveRedisStep(r.op, metrics.RedisStepPlacementRecheck, time.Since(recheckStart))
+	if err != nil && errors.Is(err, errRouteNotReady) {
+		// 副本在选库之后变得不可信(Redis 重启 / 切主 / 标记被撤,规格 §5.1「落库后复核」列):确认不了这笔 SQL 落在
+		// 真源上,按「路由变了」作废重试 —— 包进 errPlacementMoved,读写都不耗预算;延后原因记 route_not_ready。
+		metrics.CountPlacementGuard(r.op, metrics.PlacementRouteNotReady)
+		noteRouteNotReady(r.op, routeNotReadyAtRecheck, err)
+		return fmt.Errorf("%w: %w: key=%d op=%s executed_on_storage=%d selected{%s}",
+			errPlacementMoved, err, r.key, r.op, r.storageID, r.selected)
+	}
 	if err != nil {
 		metrics.CountPlacementGuard(r.op, metrics.PlacementLookupError)
 		return fmt.Errorf("placement recheck unavailable: %w", err)
@@ -275,6 +294,17 @@ func (w *worker) routeTask(task *workerTask, dbTask *db_proto.DBTask) (*placemen
 	lookupStart := time.Now()
 	snap, err := router.lookup(w.ctx, dbTask.Key)
 	metrics.ObserveRedisStep(op, metrics.RedisStepPlacementLookup, time.Since(lookupStart))
+	if err != nil && errors.Is(err, errRouteNotReady) {
+		// 副本不可信(规格 §5.1):不选库、不碰 MySQL,缺键绝不当「没有落点」回落 home_zone / 本进程 zone。
+		// 写延后不耗预算、读耗预算(retryBudgetExempt)。就绪闸关着时取不到新任务,走到这里的是闸刷新间隔内的在途任务
+		// 与闸刚放行时的竞态,与冻结同口径只打 DEBUG,每分钟一条 INFO 汇总(noteRouteNotReady)。
+		metrics.CountPlacementGuard(op, metrics.PlacementRouteNotReady)
+		noteRouteNotReady(op, routeNotReadyAtLookup, err)
+		logx.Debugf("placement route not ready, task deferred: key=%d taskID=%s msgType=%s op=%s err=%v",
+			dbTask.Key, dbTask.TaskId, dbTask.MsgType, op, err)
+		w.deferFailedTask(task, dbTask, fmt.Errorf("placement lookup: key=%d msgType=%s: %w", dbTask.Key, dbTask.MsgType, err))
+		return nil, false
+	}
 	if err != nil {
 		metrics.CountPlacementGuard(op, metrics.PlacementLookupError)
 		w.deferFailedTask(task, dbTask, fmt.Errorf("placement lookup failed: %w", err))
@@ -350,7 +380,7 @@ func (w *worker) failReadTask(task *workerTask, dbTask *db_proto.DBTask, reason 
 func (w *worker) failRead(task *workerTask, dbTask *db_proto.DBTask, reason string, quiet bool) {
 	if dbTask.TaskId != "" {
 		failure := &db_proto.TaskResult{Success: false, Error: reason}
-		if err := publishTaskResult(w.ctx, w.redisClient, dbTask.TaskId, failure); err != nil {
+		if err := publishTaskResult(w.ctx, w.redisClient, dbTask, failure); err != nil {
 			w.deferFailedTask(task, dbTask, fmt.Errorf("publish placement failure result: %w", err))
 			return
 		}
@@ -383,6 +413,10 @@ func (w *worker) failRead(task *workerTask, dbTask *db_proto.DBTask, reason stri
 //
 // SQL 调用点打了存储侧标记的错误(storeerr:连接数满、连接断开、只读、忙)同样只对写豁免(L-04 §3.3)。
 // 只认标记,不对 cause 跑类型判断:Redis 侧的超时也是 net.Error,不能算成存储不可用。
+//
+// 选库时 mapping Redis 的副本不可信(errRouteNotReady,D1 第 3 批 §5.1)同理只对写豁免:写耗预算会把完好的存盘推进死信;
+// 读照常耗预算,用完按既有语义静默丢弃(store_failure.go 的 abandonClaimedReadRetry,§13.2 第 4 条)。复核时的不可信
+// 包在 errPlacementMoved 里,走第一格,读写都豁免。
 func retryBudgetExempt(dbTask *db_proto.DBTask, cause error) bool {
 	switch {
 	case errors.Is(cause, errOrderingLockBusy),
@@ -390,7 +424,11 @@ func retryBudgetExempt(dbTask *db_proto.DBTask, cause error) bool {
 		errors.Is(cause, errPlacementMoved):
 		return true
 	case errors.Is(cause, errPlacementStoreUnavailable),
+		errors.Is(cause, errRouteNotReady),
+		errors.Is(cause, errSchemaTooNew),
 		storeerr.KindOf(cause) != storeerr.KindNone:
+		// errSchemaTooNew(C1,persist_schema.go):写方世代高于本实例,等新版实例来处理;耗预算会把完好的存盘推进死信。
+		// 读的世代超前(C2)在 handleTask 里直接回失败回执,不会走到这里。
 		return dbTask.Op == "write"
 	}
 	return false

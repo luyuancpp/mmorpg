@@ -3,27 +3,16 @@
 #include "muduo/base/Logging.h"
 #include "table/code/buff_table.h"
 #include "table/proto/buff_table.pb.h"
+#include "proto/common/component/actor_comp.pb.h"
 #include "proto/common/component/actor_attribute_state_comp.pb.h"
-#include "actor/attribute/constants/actor_state_attribute_calculator_constants.h"
-#include "actor/attribute/system/actor_attribute_calculator.h"
 #include "combat/buff/comp/buff_comp.h"
 #include "combat/buff/constants/buff.h"
 #include <thread_context/ecs_context.h>
 
 void ModifierBuffImplSystem::OnBuffStart(entt::entity parent, BuffEntry& buff, const BuffTable* buffTable) {
-    if (buffTable && IsMovementSpeedBuff(buffTable)) {
-        ActorAttributeCalculatorSystem::MarkAttributeForUpdate(parent, kMoveSpeed);
-    }
-}
-
-void ModifierBuffImplSystem::OnBuffRefresh(entt::entity parent, uint32_t buffTableId,
-    const SkillContextPtrComp& abilityContext, BuffEntry& buffComp) {
 }
 
 void ModifierBuffImplSystem::OnBuffRemove(const entt::entity parent, BuffEntry& buff, const BuffTable* buffTable) {
-    if (buffTable && IsMovementSpeedBuff(buffTable)) {
-        ActorAttributeCalculatorSystem::MarkAttributeForUpdate(parent, kMoveSpeed);
-    }
 }
 
 void ModifierBuffImplSystem::OnBuffDestroy(entt::entity parent, BuffEntry& buff, const BuffTable* buffTable) {
@@ -78,9 +67,3 @@ void ModifierBuffImplSystem::OnIntervalThink(entt::entity parent, BuffEntry& buf
 void ModifierBuffImplSystem::OnSkillHit(entt::entity caster, entt::entity target)
 {
 }
-
-bool ModifierBuffImplSystem::IsMovementSpeedBuff(const BuffTable* buffTable) {
-    return buffTable->buff_type() == kBuffTypeMovementSpeedReduction || 
-           buffTable->buff_type() == kBuffTypeMovementSpeedBoost;
-}
-

@@ -230,7 +230,7 @@ const testSessionIsolationParam = "transaction_isolation=%27READ-COMMITTED%27"
 
 // withProductionSessionIsolation 让测试连接池与生产同一个会话隔离级别。
 //
-// 不补的话,DSN 里没写这一项时自动提交语句(ensure 的补行、Unblock / sweep 的 DELETE)会落在服务器全局默认的
+// 不补的话,DSN 里没写这一项时自动提交语句(ensure 的补行、sweep 的 DELETE)会落在服务器全局默认的
 // REPEATABLE-READ 上 —— 测的就不是生产的锁行为了:RR 多出来的间隙锁 / next-key 锁既可能制造生产里不存在的死锁,
 // 也可能掩盖只在 RC 下出现的问题。验收人自己在 DSN 里显式写了 transaction_isolation 时尊重他的写法,不覆盖。
 func withProductionSessionIsolation(dsn string) string {

@@ -25,10 +25,10 @@ namespace mailpb {
 static const char* ClientPlayerMail_method_names[] = {
   "/mailpb.ClientPlayerMail/ListMails",
   "/mailpb.ClientPlayerMail/ReadMail",
-  "/mailpb.ClientPlayerMail/DeleteMails",
-  "/mailpb.ClientPlayerMail/DeleteReadMails",
   "/mailpb.ClientPlayerMail/ClaimMailAttachments",
-  "/mailpb.ClientPlayerMail/NotifyMailEvent",
+  "/mailpb.ClientPlayerMail/DeleteMails",
+  "/mailpb.ClientPlayerMail/ClearReadMails",
+  "/mailpb.ClientPlayerMail/NotifyMailChanged",
 };
 
 std::unique_ptr< ClientPlayerMail::Stub> ClientPlayerMail::NewStub(const std::shared_ptr< ::grpc::ChannelInterface>& channel, const ::grpc::StubOptions& options) {
@@ -40,10 +40,10 @@ std::unique_ptr< ClientPlayerMail::Stub> ClientPlayerMail::NewStub(const std::sh
 ClientPlayerMail::Stub::Stub(const std::shared_ptr< ::grpc::ChannelInterface>& channel, const ::grpc::StubOptions& options)
   : channel_(channel), rpcmethod_ListMails_(ClientPlayerMail_method_names[0], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
   , rpcmethod_ReadMail_(ClientPlayerMail_method_names[1], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
-  , rpcmethod_DeleteMails_(ClientPlayerMail_method_names[2], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
-  , rpcmethod_DeleteReadMails_(ClientPlayerMail_method_names[3], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
-  , rpcmethod_ClaimMailAttachments_(ClientPlayerMail_method_names[4], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
-  , rpcmethod_NotifyMailEvent_(ClientPlayerMail_method_names[5], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
+  , rpcmethod_ClaimMailAttachments_(ClientPlayerMail_method_names[2], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
+  , rpcmethod_DeleteMails_(ClientPlayerMail_method_names[3], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
+  , rpcmethod_ClearReadMails_(ClientPlayerMail_method_names[4], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
+  , rpcmethod_NotifyMailChanged_(ClientPlayerMail_method_names[5], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
   {}
 
 ::grpc::Status ClientPlayerMail::Stub::ListMails(::grpc::ClientContext* context, const ::mailpb::ListMailsRequest& request, ::mailpb::ListMailsResponse* response) {
@@ -92,52 +92,6 @@ void ClientPlayerMail::Stub::async::ReadMail(::grpc::ClientContext* context, con
   return result;
 }
 
-::grpc::Status ClientPlayerMail::Stub::DeleteMails(::grpc::ClientContext* context, const ::mailpb::DeleteMailsRequest& request, ::mailpb::DeleteMailsResponse* response) {
-  return ::grpc::internal::BlockingUnaryCall< ::mailpb::DeleteMailsRequest, ::mailpb::DeleteMailsResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), rpcmethod_DeleteMails_, context, request, response);
-}
-
-void ClientPlayerMail::Stub::async::DeleteMails(::grpc::ClientContext* context, const ::mailpb::DeleteMailsRequest* request, ::mailpb::DeleteMailsResponse* response, std::function<void(::grpc::Status)> f) {
-  ::grpc::internal::CallbackUnaryCall< ::mailpb::DeleteMailsRequest, ::mailpb::DeleteMailsResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_DeleteMails_, context, request, response, std::move(f));
-}
-
-void ClientPlayerMail::Stub::async::DeleteMails(::grpc::ClientContext* context, const ::mailpb::DeleteMailsRequest* request, ::mailpb::DeleteMailsResponse* response, ::grpc::ClientUnaryReactor* reactor) {
-  ::grpc::internal::ClientCallbackUnaryFactory::Create< ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_DeleteMails_, context, request, response, reactor);
-}
-
-::grpc::ClientAsyncResponseReader< ::mailpb::DeleteMailsResponse>* ClientPlayerMail::Stub::PrepareAsyncDeleteMailsRaw(::grpc::ClientContext* context, const ::mailpb::DeleteMailsRequest& request, ::grpc::CompletionQueue* cq) {
-  return ::grpc::internal::ClientAsyncResponseReaderHelper::Create< ::mailpb::DeleteMailsResponse, ::mailpb::DeleteMailsRequest, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), cq, rpcmethod_DeleteMails_, context, request);
-}
-
-::grpc::ClientAsyncResponseReader< ::mailpb::DeleteMailsResponse>* ClientPlayerMail::Stub::AsyncDeleteMailsRaw(::grpc::ClientContext* context, const ::mailpb::DeleteMailsRequest& request, ::grpc::CompletionQueue* cq) {
-  auto* result =
-    this->PrepareAsyncDeleteMailsRaw(context, request, cq);
-  result->StartCall();
-  return result;
-}
-
-::grpc::Status ClientPlayerMail::Stub::DeleteReadMails(::grpc::ClientContext* context, const ::mailpb::DeleteReadMailsRequest& request, ::mailpb::DeleteReadMailsResponse* response) {
-  return ::grpc::internal::BlockingUnaryCall< ::mailpb::DeleteReadMailsRequest, ::mailpb::DeleteReadMailsResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), rpcmethod_DeleteReadMails_, context, request, response);
-}
-
-void ClientPlayerMail::Stub::async::DeleteReadMails(::grpc::ClientContext* context, const ::mailpb::DeleteReadMailsRequest* request, ::mailpb::DeleteReadMailsResponse* response, std::function<void(::grpc::Status)> f) {
-  ::grpc::internal::CallbackUnaryCall< ::mailpb::DeleteReadMailsRequest, ::mailpb::DeleteReadMailsResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_DeleteReadMails_, context, request, response, std::move(f));
-}
-
-void ClientPlayerMail::Stub::async::DeleteReadMails(::grpc::ClientContext* context, const ::mailpb::DeleteReadMailsRequest* request, ::mailpb::DeleteReadMailsResponse* response, ::grpc::ClientUnaryReactor* reactor) {
-  ::grpc::internal::ClientCallbackUnaryFactory::Create< ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_DeleteReadMails_, context, request, response, reactor);
-}
-
-::grpc::ClientAsyncResponseReader< ::mailpb::DeleteReadMailsResponse>* ClientPlayerMail::Stub::PrepareAsyncDeleteReadMailsRaw(::grpc::ClientContext* context, const ::mailpb::DeleteReadMailsRequest& request, ::grpc::CompletionQueue* cq) {
-  return ::grpc::internal::ClientAsyncResponseReaderHelper::Create< ::mailpb::DeleteReadMailsResponse, ::mailpb::DeleteReadMailsRequest, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), cq, rpcmethod_DeleteReadMails_, context, request);
-}
-
-::grpc::ClientAsyncResponseReader< ::mailpb::DeleteReadMailsResponse>* ClientPlayerMail::Stub::AsyncDeleteReadMailsRaw(::grpc::ClientContext* context, const ::mailpb::DeleteReadMailsRequest& request, ::grpc::CompletionQueue* cq) {
-  auto* result =
-    this->PrepareAsyncDeleteReadMailsRaw(context, request, cq);
-  result->StartCall();
-  return result;
-}
-
 ::grpc::Status ClientPlayerMail::Stub::ClaimMailAttachments(::grpc::ClientContext* context, const ::mailpb::ClaimMailAttachmentsRequest& request, ::mailpb::ClaimMailAttachmentsResponse* response) {
   return ::grpc::internal::BlockingUnaryCall< ::mailpb::ClaimMailAttachmentsRequest, ::mailpb::ClaimMailAttachmentsResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), rpcmethod_ClaimMailAttachments_, context, request, response);
 }
@@ -161,25 +115,71 @@ void ClientPlayerMail::Stub::async::ClaimMailAttachments(::grpc::ClientContext* 
   return result;
 }
 
-::grpc::Status ClientPlayerMail::Stub::NotifyMailEvent(::grpc::ClientContext* context, const ::mailpb::MailEventS2C& request, ::Empty* response) {
-  return ::grpc::internal::BlockingUnaryCall< ::mailpb::MailEventS2C, ::Empty, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), rpcmethod_NotifyMailEvent_, context, request, response);
+::grpc::Status ClientPlayerMail::Stub::DeleteMails(::grpc::ClientContext* context, const ::mailpb::DeleteMailsRequest& request, ::mailpb::DeleteMailsResponse* response) {
+  return ::grpc::internal::BlockingUnaryCall< ::mailpb::DeleteMailsRequest, ::mailpb::DeleteMailsResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), rpcmethod_DeleteMails_, context, request, response);
 }
 
-void ClientPlayerMail::Stub::async::NotifyMailEvent(::grpc::ClientContext* context, const ::mailpb::MailEventS2C* request, ::Empty* response, std::function<void(::grpc::Status)> f) {
-  ::grpc::internal::CallbackUnaryCall< ::mailpb::MailEventS2C, ::Empty, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_NotifyMailEvent_, context, request, response, std::move(f));
+void ClientPlayerMail::Stub::async::DeleteMails(::grpc::ClientContext* context, const ::mailpb::DeleteMailsRequest* request, ::mailpb::DeleteMailsResponse* response, std::function<void(::grpc::Status)> f) {
+  ::grpc::internal::CallbackUnaryCall< ::mailpb::DeleteMailsRequest, ::mailpb::DeleteMailsResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_DeleteMails_, context, request, response, std::move(f));
 }
 
-void ClientPlayerMail::Stub::async::NotifyMailEvent(::grpc::ClientContext* context, const ::mailpb::MailEventS2C* request, ::Empty* response, ::grpc::ClientUnaryReactor* reactor) {
-  ::grpc::internal::ClientCallbackUnaryFactory::Create< ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_NotifyMailEvent_, context, request, response, reactor);
+void ClientPlayerMail::Stub::async::DeleteMails(::grpc::ClientContext* context, const ::mailpb::DeleteMailsRequest* request, ::mailpb::DeleteMailsResponse* response, ::grpc::ClientUnaryReactor* reactor) {
+  ::grpc::internal::ClientCallbackUnaryFactory::Create< ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_DeleteMails_, context, request, response, reactor);
 }
 
-::grpc::ClientAsyncResponseReader< ::Empty>* ClientPlayerMail::Stub::PrepareAsyncNotifyMailEventRaw(::grpc::ClientContext* context, const ::mailpb::MailEventS2C& request, ::grpc::CompletionQueue* cq) {
-  return ::grpc::internal::ClientAsyncResponseReaderHelper::Create< ::Empty, ::mailpb::MailEventS2C, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), cq, rpcmethod_NotifyMailEvent_, context, request);
+::grpc::ClientAsyncResponseReader< ::mailpb::DeleteMailsResponse>* ClientPlayerMail::Stub::PrepareAsyncDeleteMailsRaw(::grpc::ClientContext* context, const ::mailpb::DeleteMailsRequest& request, ::grpc::CompletionQueue* cq) {
+  return ::grpc::internal::ClientAsyncResponseReaderHelper::Create< ::mailpb::DeleteMailsResponse, ::mailpb::DeleteMailsRequest, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), cq, rpcmethod_DeleteMails_, context, request);
 }
 
-::grpc::ClientAsyncResponseReader< ::Empty>* ClientPlayerMail::Stub::AsyncNotifyMailEventRaw(::grpc::ClientContext* context, const ::mailpb::MailEventS2C& request, ::grpc::CompletionQueue* cq) {
+::grpc::ClientAsyncResponseReader< ::mailpb::DeleteMailsResponse>* ClientPlayerMail::Stub::AsyncDeleteMailsRaw(::grpc::ClientContext* context, const ::mailpb::DeleteMailsRequest& request, ::grpc::CompletionQueue* cq) {
   auto* result =
-    this->PrepareAsyncNotifyMailEventRaw(context, request, cq);
+    this->PrepareAsyncDeleteMailsRaw(context, request, cq);
+  result->StartCall();
+  return result;
+}
+
+::grpc::Status ClientPlayerMail::Stub::ClearReadMails(::grpc::ClientContext* context, const ::mailpb::ClearReadMailsRequest& request, ::mailpb::ClearReadMailsResponse* response) {
+  return ::grpc::internal::BlockingUnaryCall< ::mailpb::ClearReadMailsRequest, ::mailpb::ClearReadMailsResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), rpcmethod_ClearReadMails_, context, request, response);
+}
+
+void ClientPlayerMail::Stub::async::ClearReadMails(::grpc::ClientContext* context, const ::mailpb::ClearReadMailsRequest* request, ::mailpb::ClearReadMailsResponse* response, std::function<void(::grpc::Status)> f) {
+  ::grpc::internal::CallbackUnaryCall< ::mailpb::ClearReadMailsRequest, ::mailpb::ClearReadMailsResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_ClearReadMails_, context, request, response, std::move(f));
+}
+
+void ClientPlayerMail::Stub::async::ClearReadMails(::grpc::ClientContext* context, const ::mailpb::ClearReadMailsRequest* request, ::mailpb::ClearReadMailsResponse* response, ::grpc::ClientUnaryReactor* reactor) {
+  ::grpc::internal::ClientCallbackUnaryFactory::Create< ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_ClearReadMails_, context, request, response, reactor);
+}
+
+::grpc::ClientAsyncResponseReader< ::mailpb::ClearReadMailsResponse>* ClientPlayerMail::Stub::PrepareAsyncClearReadMailsRaw(::grpc::ClientContext* context, const ::mailpb::ClearReadMailsRequest& request, ::grpc::CompletionQueue* cq) {
+  return ::grpc::internal::ClientAsyncResponseReaderHelper::Create< ::mailpb::ClearReadMailsResponse, ::mailpb::ClearReadMailsRequest, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), cq, rpcmethod_ClearReadMails_, context, request);
+}
+
+::grpc::ClientAsyncResponseReader< ::mailpb::ClearReadMailsResponse>* ClientPlayerMail::Stub::AsyncClearReadMailsRaw(::grpc::ClientContext* context, const ::mailpb::ClearReadMailsRequest& request, ::grpc::CompletionQueue* cq) {
+  auto* result =
+    this->PrepareAsyncClearReadMailsRaw(context, request, cq);
+  result->StartCall();
+  return result;
+}
+
+::grpc::Status ClientPlayerMail::Stub::NotifyMailChanged(::grpc::ClientContext* context, const ::mailpb::MailChangedEvent& request, ::mailpb::MailChangedEvent* response) {
+  return ::grpc::internal::BlockingUnaryCall< ::mailpb::MailChangedEvent, ::mailpb::MailChangedEvent, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), rpcmethod_NotifyMailChanged_, context, request, response);
+}
+
+void ClientPlayerMail::Stub::async::NotifyMailChanged(::grpc::ClientContext* context, const ::mailpb::MailChangedEvent* request, ::mailpb::MailChangedEvent* response, std::function<void(::grpc::Status)> f) {
+  ::grpc::internal::CallbackUnaryCall< ::mailpb::MailChangedEvent, ::mailpb::MailChangedEvent, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_NotifyMailChanged_, context, request, response, std::move(f));
+}
+
+void ClientPlayerMail::Stub::async::NotifyMailChanged(::grpc::ClientContext* context, const ::mailpb::MailChangedEvent* request, ::mailpb::MailChangedEvent* response, ::grpc::ClientUnaryReactor* reactor) {
+  ::grpc::internal::ClientCallbackUnaryFactory::Create< ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_NotifyMailChanged_, context, request, response, reactor);
+}
+
+::grpc::ClientAsyncResponseReader< ::mailpb::MailChangedEvent>* ClientPlayerMail::Stub::PrepareAsyncNotifyMailChangedRaw(::grpc::ClientContext* context, const ::mailpb::MailChangedEvent& request, ::grpc::CompletionQueue* cq) {
+  return ::grpc::internal::ClientAsyncResponseReaderHelper::Create< ::mailpb::MailChangedEvent, ::mailpb::MailChangedEvent, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), cq, rpcmethod_NotifyMailChanged_, context, request);
+}
+
+::grpc::ClientAsyncResponseReader< ::mailpb::MailChangedEvent>* ClientPlayerMail::Stub::AsyncNotifyMailChangedRaw(::grpc::ClientContext* context, const ::mailpb::MailChangedEvent& request, ::grpc::CompletionQueue* cq) {
+  auto* result =
+    this->PrepareAsyncNotifyMailChangedRaw(context, request, cq);
   result->StartCall();
   return result;
 }
@@ -208,26 +208,6 @@ ClientPlayerMail::Service::Service() {
   AddMethod(new ::grpc::internal::RpcServiceMethod(
       ClientPlayerMail_method_names[2],
       ::grpc::internal::RpcMethod::NORMAL_RPC,
-      new ::grpc::internal::RpcMethodHandler< ClientPlayerMail::Service, ::mailpb::DeleteMailsRequest, ::mailpb::DeleteMailsResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(
-          [](ClientPlayerMail::Service* service,
-             ::grpc::ServerContext* ctx,
-             const ::mailpb::DeleteMailsRequest* req,
-             ::mailpb::DeleteMailsResponse* resp) {
-               return service->DeleteMails(ctx, req, resp);
-             }, this)));
-  AddMethod(new ::grpc::internal::RpcServiceMethod(
-      ClientPlayerMail_method_names[3],
-      ::grpc::internal::RpcMethod::NORMAL_RPC,
-      new ::grpc::internal::RpcMethodHandler< ClientPlayerMail::Service, ::mailpb::DeleteReadMailsRequest, ::mailpb::DeleteReadMailsResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(
-          [](ClientPlayerMail::Service* service,
-             ::grpc::ServerContext* ctx,
-             const ::mailpb::DeleteReadMailsRequest* req,
-             ::mailpb::DeleteReadMailsResponse* resp) {
-               return service->DeleteReadMails(ctx, req, resp);
-             }, this)));
-  AddMethod(new ::grpc::internal::RpcServiceMethod(
-      ClientPlayerMail_method_names[4],
-      ::grpc::internal::RpcMethod::NORMAL_RPC,
       new ::grpc::internal::RpcMethodHandler< ClientPlayerMail::Service, ::mailpb::ClaimMailAttachmentsRequest, ::mailpb::ClaimMailAttachmentsResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(
           [](ClientPlayerMail::Service* service,
              ::grpc::ServerContext* ctx,
@@ -236,14 +216,34 @@ ClientPlayerMail::Service::Service() {
                return service->ClaimMailAttachments(ctx, req, resp);
              }, this)));
   AddMethod(new ::grpc::internal::RpcServiceMethod(
-      ClientPlayerMail_method_names[5],
+      ClientPlayerMail_method_names[3],
       ::grpc::internal::RpcMethod::NORMAL_RPC,
-      new ::grpc::internal::RpcMethodHandler< ClientPlayerMail::Service, ::mailpb::MailEventS2C, ::Empty, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(
+      new ::grpc::internal::RpcMethodHandler< ClientPlayerMail::Service, ::mailpb::DeleteMailsRequest, ::mailpb::DeleteMailsResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(
           [](ClientPlayerMail::Service* service,
              ::grpc::ServerContext* ctx,
-             const ::mailpb::MailEventS2C* req,
-             ::Empty* resp) {
-               return service->NotifyMailEvent(ctx, req, resp);
+             const ::mailpb::DeleteMailsRequest* req,
+             ::mailpb::DeleteMailsResponse* resp) {
+               return service->DeleteMails(ctx, req, resp);
+             }, this)));
+  AddMethod(new ::grpc::internal::RpcServiceMethod(
+      ClientPlayerMail_method_names[4],
+      ::grpc::internal::RpcMethod::NORMAL_RPC,
+      new ::grpc::internal::RpcMethodHandler< ClientPlayerMail::Service, ::mailpb::ClearReadMailsRequest, ::mailpb::ClearReadMailsResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(
+          [](ClientPlayerMail::Service* service,
+             ::grpc::ServerContext* ctx,
+             const ::mailpb::ClearReadMailsRequest* req,
+             ::mailpb::ClearReadMailsResponse* resp) {
+               return service->ClearReadMails(ctx, req, resp);
+             }, this)));
+  AddMethod(new ::grpc::internal::RpcServiceMethod(
+      ClientPlayerMail_method_names[5],
+      ::grpc::internal::RpcMethod::NORMAL_RPC,
+      new ::grpc::internal::RpcMethodHandler< ClientPlayerMail::Service, ::mailpb::MailChangedEvent, ::mailpb::MailChangedEvent, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(
+          [](ClientPlayerMail::Service* service,
+             ::grpc::ServerContext* ctx,
+             const ::mailpb::MailChangedEvent* req,
+             ::mailpb::MailChangedEvent* resp) {
+               return service->NotifyMailChanged(ctx, req, resp);
              }, this)));
 }
 
@@ -264,20 +264,6 @@ ClientPlayerMail::Service::~Service() {
   return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
 }
 
-::grpc::Status ClientPlayerMail::Service::DeleteMails(::grpc::ServerContext* context, const ::mailpb::DeleteMailsRequest* request, ::mailpb::DeleteMailsResponse* response) {
-  (void) context;
-  (void) request;
-  (void) response;
-  return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
-}
-
-::grpc::Status ClientPlayerMail::Service::DeleteReadMails(::grpc::ServerContext* context, const ::mailpb::DeleteReadMailsRequest* request, ::mailpb::DeleteReadMailsResponse* response) {
-  (void) context;
-  (void) request;
-  (void) response;
-  return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
-}
-
 ::grpc::Status ClientPlayerMail::Service::ClaimMailAttachments(::grpc::ServerContext* context, const ::mailpb::ClaimMailAttachmentsRequest* request, ::mailpb::ClaimMailAttachmentsResponse* response) {
   (void) context;
   (void) request;
@@ -285,7 +271,21 @@ ClientPlayerMail::Service::~Service() {
   return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
 }
 
-::grpc::Status ClientPlayerMail::Service::NotifyMailEvent(::grpc::ServerContext* context, const ::mailpb::MailEventS2C* request, ::Empty* response) {
+::grpc::Status ClientPlayerMail::Service::DeleteMails(::grpc::ServerContext* context, const ::mailpb::DeleteMailsRequest* request, ::mailpb::DeleteMailsResponse* response) {
+  (void) context;
+  (void) request;
+  (void) response;
+  return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+}
+
+::grpc::Status ClientPlayerMail::Service::ClearReadMails(::grpc::ServerContext* context, const ::mailpb::ClearReadMailsRequest* request, ::mailpb::ClearReadMailsResponse* response) {
+  (void) context;
+  (void) request;
+  (void) response;
+  return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+}
+
+::grpc::Status ClientPlayerMail::Service::NotifyMailChanged(::grpc::ServerContext* context, const ::mailpb::MailChangedEvent* request, ::mailpb::MailChangedEvent* response) {
   (void) context;
   (void) request;
   (void) response;

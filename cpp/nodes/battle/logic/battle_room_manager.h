@@ -5,9 +5,11 @@
 #include <map>
 #include <memory>
 #include <optional>
+#include <set>
 #include <string>
 #include <utility>
 #include <vector>
+#include <unordered_map>
 
 #include "muduo/net/TcpConnection.h"
 #include "time/comp/timer_task_comp.h"
@@ -16,6 +18,7 @@
 
 // 回合引擎(cpp/libs/services/battle,纯逻辑库,API 见设计文档 §5.1)
 #include "system/turn_battle_engine.h"
+#include "system/result_commit.h"
 // 结算发件箱的判定与 Redis 契约(PendingIndexSweepCursor 作为成员类型)
 #include "settlement/settlement_outbox.h"
 
@@ -27,8 +30,8 @@
 
 // 回合制战斗房间管理器(设计文档 §5.2)。
 //
-// 线程模型:所有方法只允许在 muduo loop 线程执行(gRPC handler 经
-// runInLoop + promise 投递进来,timer 回调本来就在 loop 线程),
+// 线程模型:所有方法只允许在 muduo loop 线程执行(gRPC handler 由 muduo_grpc 服务端
+// 在 loop 线程上派发,timer 回调本来就在 loop 线程),
 // 因此内部完全无锁;TimerTaskComp 也依赖当前线程 loop。
 //
 // 生命周期:房间是纯内存对象,节点崩溃即战斗作废(设计文档 §8);
@@ -141,6 +144,8 @@ public:
 
     // 幂等:房间不存在视为已销毁。销毁不发结算(补偿/回滚路径),推观众终局并关闭直连。
     void HandleDestroyBattle(const ::DestroyBattleRequest &request);
+    void HandleQueryBattleCreation(const ::QueryBattleCreationRequest&, ::QueryBattleCreationResponse&);
+    bool AcceptsPlacementOperation(uint64_t,const std::string&,const std::string&) const;
 
     // 观战接入(设计文档 §10.5)。错误 tip 约定:房间不存在=kEntityIsNull
     // (match 据此懒剔除 Redis 索引并换场重试)、观众满=kRateLimitExceeded、
@@ -180,8 +185,10 @@ public:
                              ::SetAutoBattleResponse &response);
 
     // 停机收尾:全部房间作废(不结算;观众收 ABORTED,关闭房间直连),供 SetBeforeShutdown 调用。
-    // 调用方必须在同一个 loop 任务里先关建房准入闸(BattleNodeImpl::CloseAdmission):gRPC drain
-    // 期间已排进 loop 的 CreateBattle 仍会执行,不关闸它们会在作废之后照常建房。关闸之后房间表
+    // 例外是等结果回执的确认模式房间:它的个人结算在结果发出之前已写进 pending,清房不删 pending,
+    // 结果无论是否最终到达 broker,都由 scene 登录钩子 / 冻结到期补读应用(审计 social-match-battle#2)。
+    // 调用方必须在同一个 loop 任务里先关建房准入闸(BattleNodeImpl::CloseAdmission):gRPC 排空
+    // 期间已收完的 CreateBattle 仍会派发(等许可的回调也可能排在关闸之后),不关闸它们会在作废之后照常建房。关闸之后房间表
     // 保持为空,AddObserver / IssueBattleTicket 因房间不存在自然被拒(kEntityIsNull / kInvalidParameter)。
     void AbortAllRooms(const std::string &reason);
 
@@ -225,6 +232,15 @@ private:
         // CreateBattleRequest.activity_context 原样副本(缺省 = kind NONE = 普通对局)。
         // battle 不解释业务字段,只在 FinishBattle 回显进 BattleResultEvent 并据 kind 选结果通道。
         ::BattleActivityContext activityContext;
+        bool requiresResultConfirmation = false;
+        std::optional<turnbattle::ResultCommit> resultCommit;
+        ::contracts::kafka::BattleResultEvent pendingResult;
+        // 确认模式下每名成员的 R07 个人结算字节(BuildPersonalSettlementPayloads),BeginResultCommit 时
+        // 从冻结原件算一次:结果发送前落 pending、回执后派发都用这一份,两处字节必然相同。
+        std::map<uint64_t, std::string> personalSettlementPayloads;
+        std::optional<::TurnResultS2C> pendingFinalTurn;
+        std::optional<::BattleStateS2C> pendingVisibleState;
+        ::eSpectateEndReason pendingSpectateReason = ::SPECTATE_END_BATTLE_FINISHED;
         turnbattle::TurnBattleEngine engine;
         // player_id → 路由信息副本(快照携带,battle 不查 etcd 定位对端)。
         // 有序容器:广播与结算的遍历顺序稳定,日志/回放可复现。
@@ -281,13 +297,27 @@ private:
     // 整场 deadline 到期:引擎仍未分出胜负按平局强制收尾(battle_node.proto 契约)。
     void OnBattleDeadline(uint64_t battleId);
 
-    // 战斗收尾:每参与者 BattleEndS2C(战斗帧,只走直连)→ BattleSettlementEvent(先落库后投递);
+    // 战斗收尾:确认模式先固定含全部个人结算的结果、把个人结算写进 pending,再取得Kafka all ACK，随后
+    // 每参与者 BattleEndS2C(战斗帧,只走直连)→ 旧R07 BattleSettlementEvent(确认模式只投命令,不再改写 pending)。
     // 观众按 spectateReason 推 SpectateEndS2C(§10.5);终局包排队后关闭房间全部直连;
-    // 最后向 match-results 发一条 BattleResultEvent(评分回流;带活动上下文的局改走
-    // DispatchActivityResultDurably 的持久化通道)。
-    // 只组装与发送,不动 rooms_(房间由调用方随后 EraseRoom)。
-    void FinishBattle(BattleRoom &room, ::eBattleOutcome outcome,
-                      ::eSpectateEndReason spectateReason);
+    // 旧模式最后发送评分事件；确认模式复用ACK前原件，不重新计算个人奖励。
+    // 只组装与发送,不动 rooms_；返回true才能由调用方EraseRoom，校验失败保留房间。
+    bool FinishBattle(BattleRoom &room, ::eBattleOutcome outcome,
+                      ::eSpectateEndReason spectateReason,
+                      const contracts::kafka::BattleResultEvent* committedResult = nullptr);
+    contracts::kafka::BattleResultEvent BuildResult(const BattleRoom&, ::eBattleOutcome) const;
+    void BeginResultCommit(BattleRoom&, ::eBattleOutcome, ::eSpectateEndReason,
+                           std::optional<::TurnResultS2C>, ::BattleStateS2C);
+    void PumpResultCommits();
+    void StopResultCommits();
+    // 结果第一次发往 broker 之前,把全部成员的个人结算写进 R07 pending(审计 social-match-battle#2)。
+    // 由 PumpResultCommits 驱动,每轮对每名成员各 EVAL 一次 kSetPendingSettlementScript,回复到齐后
+    // 经 OnPersonalSettlementsStaged 交给 ResultCommit::FinishStaging;没落完不发结果。
+    // Redis 未连上时不开新一轮(不消耗退避),等下一次 pump。与本地模式不同,这里不降级为「不落库直接发」:
+    // 不落库就发,恰好重现停机 / 崩溃丢个人结算的缺陷。
+    void StagePersonalSettlements(BattleRoom &room, turnbattle::ResultCommit::Clock::time_point now);
+    // 一轮落库的回复全部到齐。房间已不在(停机清房)或轮次过期时丢弃;已写下的 pending 留给 scene 裁决。
+    void OnPersonalSettlementsStaged(uint64_t battleId, uint64_t attempt, bool allStored);
 
     void BroadcastTurnResult(const BattleRoom &room, const ::TurnResultS2C &result);
 
@@ -379,18 +409,25 @@ private:
         uint32_t undeterminedRounds = 0;
     };
 
-    // 结算的**唯一**出口(R07)。顺序是硬要求:
+    // 本地(非确认)模式结算的**唯一**出口(R07;确认模式见下方 DispatchStagedSettlement,顺序同样成立)。
+    // 顺序是硬要求:
     //   Redis 落库 → (落库回调里)投 SceneCommand → 登记进 outbox 等销账。
     // 不能反过来先投再落库:投递可能比 Redis 的 SET 先到,scene 应用结算后销账
     // (此刻记录还不存在,销账是空操作),随后迟到的 SET 落地就留下一条孤儿记录,
     // 玩家下次登录会被**重复发一次奖励**。
-    // Redis 不可用(或 EVAL 没发出去)时降级为"直接投递"并报 ERROR —— 那是既有行为,不是本次引入的退化。
-    // EVAL 发出去了但应答没确认落库(空应答 / ERROR)时照样投递并登记 outbox,由第一跳探测裁决记录在不在
-    // (settlement_outbox.h 的 ClassifyPersistReply)。
+    // Redis 不可用或命令未发出时降级为直接投递并报 ERROR；已发出但落库应答不确定时仍登记重投，交探测裁决。
+    // 只用于本地(非确认)模式;确认模式的 pending 在发结果之前已由 StagePersonalSettlements 写好,
+    // 回执后走 DispatchStagedSettlement。
     void DispatchSettlementDurably(const ::BattleRouting &routing, uint64_t playerId,
                                    const ::BattleSettlementData &settlement);
 
-    // 落库回调里登记一条待销账记录并保证重投定时器已装填(落库应答没确认时也登记,见上)。
+    // 确认模式回执之后的派发:pending 已在发结果之前落库,这里只投 SceneCommand 并登记 outbox 等销账。
+    // **绝不**再写 pending:回执之前 scene 可能已经按登录钩子 / 冻结到期补读应用并销账,
+    // 再写一次会让已销账的 pending 复活,玩家下次登录重复发奖(BuildPersonalSettlementPayloads 的说明)。
+    void DispatchStagedSettlement(const ::BattleRouting &routing, uint64_t playerId, uint64_t battleId,
+                                  const std::string &payload);
+
+    // 落库回调里登记待销账记录并保证重投定时器已装填；落库应答不确定时也登记。
     void EnqueuePendingSettlement(uint64_t battleId, uint64_t playerId, std::string payload,
                                   uint32_t originalSceneNodeId);
     // 定时器回调:对每条未销账的记录探测 ACK、重新解析目标、按判定重投或收尾。
@@ -428,10 +465,9 @@ private:
     // 活动局结果的唯一出口。顺序是硬要求:SET 记录 → (成功回调里)发 Kafka → 登记待销账。
     // 反过来先发后写,guild 可能先结算并 DEL(此刻记录还不存在,DEL 是空操作),迟到的 SET
     // 落地后就留下一条孤儿记录,battle 会对一局已结算的对局一直重发到次数用尽。
-    // Redis 不可用 / SET 没发出去:降级为只发一次并报 ERROR(§6.21 R6,与改造前行为一致)。
-    // SET 发出去了但应答没确认落库(空应答 / ERROR):照发、照样登记,由 EXISTS 探测裁决(2026-10-16)。
-    void DispatchActivityResultDurably(const contracts::kafka::BattleResultEvent &result);
-    // SET 回调里登记一条待销账记录,并保证重发定时器已装填。
+    // Redis 不可用 / SET 未发出时只发一次并报 ERROR；已发出但应答不确定时仍登记重投，由 EXISTS 探测裁决。
+    void DispatchActivityResultDurably(const contracts::kafka::BattleResultEvent &result, bool brokerCommitted = false);
+    // SET 回调里登记待销账记录并保证重发定时器已装填；落库应答不确定时也登记。
     void EnqueuePendingActivityResult(uint64_t battleId, std::string payload);
     // 定时器回调:对每条未销账的记录探测一次。
     void RetryPendingActivityResults();
@@ -457,6 +493,16 @@ private:
     // 房间表:增删与生命周期回调(SetRoomLifecycleHooks)绑死在 RoomTable 里,本类只经
     // EmplaceRoom / EraseRoom 调它的 Emplace / Erase,其余路径只读(FindRoom / AbortAllRooms 抄 id)。
     battle_room_table::RoomTable<BattleRoom> rooms_;
+    // 本实例操作墓碑只在loop线程访问；进程重启后精确target_instance使旧RPC失效。
+    struct CreationOperation {std::string operationId;std::string canonicalRequest;uint64_t expiresMs=0;bool aborted=false;};
+    std::unordered_map<uint64_t,CreationOperation> creationOperations_;
+    // producer listener 只登记回执，pump 在 poll 返回后才执行终局副作用，禁止回执栈递归 send。
+    bool resultListenerInstalled_ = false;
+    uint64_t nextResultCorrelation_ = 0;
+    std::map<uint64_t, uint64_t> resultAttempts_;
+    std::set<uint64_t> resultRooms_;
+    std::vector<std::pair<uint64_t, bool>> resultReports_;
+    TimerTaskComp resultCommitTimer_;
 
     // key = (battle_id, player_id);量级 = 未销账的结算条数,常态为 0。
     std::map<std::pair<uint64_t, uint64_t>, PendingSettlement> settlementOutbox_;

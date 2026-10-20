@@ -15,7 +15,7 @@ public:
 	static uint32_t ReleaseSkill(entt::entity casterEntity, const ::ReleaseSkillRequest* request);
 	// 最先确认实体、持久数据与玩家派生属性;缺失时拒绝且不打断/加状态。
 	// 冷却和上下文按需存在,缺失不构成前置失败,写入口负责首次创建。
-	static uint32_t CheckSkillPrerequisites(entt::entity casterEntity, const ::ReleaseSkillRequest* request);
+	static uint32_t CheckSkillPrerequisites(entt::entity casterEntity, const ::ReleaseSkillRequest* request, entt::entity target);
 
 	static bool IsSkillOfType(const uint32_t skillTableId, const uint32_t skillType);
 
@@ -27,8 +27,8 @@ public:
 	static void HandleChannelThink(entt::entity casterEntity, uint64_t skillId);
 	static void HandleChannelFinish(entt::entity casterEntity, uint64_t skillId);
 
-    // 校验目标;指定目标类技能要求目标与施法者同场景,见 skill.cpp 的 ResolveSkillTarget
-    static uint32_t ValidateTarget(entt::entity casterEntity, const ::ReleaseSkillRequest* request);
+    // target 由 ReleaseSkill 的 ValidateSkillTargetEntity 校验为同场景、未冻结的玩家/NPC或空。
+    static uint32_t ValidateTarget(entt::entity casterEntity, const ::ReleaseSkillRequest* request, entt::entity target);
 
     // 只读检查冷却;活实体缺列表表示无冷却,不创建组件。
     static uint32_t CheckCooldown(entt::entity casterEntity, const SkillTable* skillTable);
@@ -41,7 +41,7 @@ public:
 	static uint32_t CheckChannel(const entt::entity casterEntity, const SkillTable* skillTable);
 
     // Broadcast skill-used message
-    static void BroadcastSkillUsedMessage(entt::entity casterEntity, const ::ReleaseSkillRequest* request);
+    static void BroadcastSkillUsedMessage(entt::entity casterEntity, const ::ReleaseSkillRequest* request, entt::entity target);
 	
     // Set up casting timer
     static void SetupCastingTimer(entt::entity casterEntity, const SkillTable* skillTable, uint64_t skillId);
@@ -51,5 +51,5 @@ public:
 
 	static void TriggerSkillEffect(entt::entity casterEntity, uint64_t skillId);
 
-	static void HandleSkillSpell(const entt::entity casterEntity, const uint64_t skillId);
+	static bool HandleSkillSpell(const entt::entity casterEntity, const uint64_t skillId);
 };

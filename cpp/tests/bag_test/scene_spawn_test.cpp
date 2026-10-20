@@ -126,4 +126,12 @@ TEST_F(SceneSpawnTest, MissingSceneDoesNotCreateTransformAndUnknownIdKeepsLegacy
     EXPECT_EQ(kTianyongSpawnZ, fallback.z());
 }
 
+TEST_F(SceneSpawnTest, MissingTransformIsNotCreatedOnEntry) {
+    SelectScene(2);
+    ASSERT_FALSE(tlsEcs.actorRegistry.any_of<Transform>(player));
+
+    EXPECT_FALSE(SceneSpawnSystem::EnsureValidEnterLocation(player, scene));
+    EXPECT_EQ(nullptr, tlsEcs.actorRegistry.try_get<Transform>(player));
+}
+
 } // namespace

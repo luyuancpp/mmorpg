@@ -151,9 +151,17 @@ func (s *DataServiceServer) RegisterPlayerZone(ctx context.Context, req *data_se
 // login 侧(go/login/internal/logic/pkg/homezone.IsUnmapped)同时认 NotFound 与
 // 老版本的 Unknown + 文案,两种服务端可以在滚动升级期间并存;所以 NotFound 的
 // 消息必须继续包含 "no home zone mapping" 这段文本,不能改写。
+//
+// RouteStore.ReadRequiresReady=true(第 3 批读方门禁,docs/handoff/launch-readiness-20261013/spec_D1_batch1b2_2_3.md §5.2)
+// 时多一种失败,**gRPC code 的集合不变**:缓存不可信、回源全局库又失败 → Unavailable + ErrCodeRouteStoreError(码 30,与
+// mapping Redis 的码 1 分开,值班一眼分清是全局库坏了)。库里没有这名玩家 → 照旧 NotFound(那是库的权威缺席)。
+// 判定顺序是先 ErrRouteReadUnavailable 再 NotFound:一次库故障绝不能被报成「这名玩家没有归属」。
 func (s *DataServiceServer) GetPlayerHomeZone(ctx context.Context, req *data_service.GetPlayerHomeZoneRequest) (*data_service.GetPlayerHomeZoneResponse, error) {
 	zoneID, merging, err := s.svcCtx.Router.GetPlayerHomeZoneAndMergeFence(ctx, req.GetPlayerId())
 	if err != nil {
+		if errors.Is(err, routing.ErrRouteReadUnavailable) {
+			return nil, status.Errorf(codes.Unavailable, "error_code=%d: %v", constants.ErrCodeRouteStoreError, err)
+		}
 		if errors.Is(err, routing.ErrHomeZoneNotMapped) {
 			// err.Error() 形如 "no home zone mapping for player 42";文案是契约,见上。
 			return nil, status.Errorf(codes.NotFound, "error_code=%d: %v", constants.ErrCodeNotFound, err)
@@ -167,9 +175,14 @@ func (s *DataServiceServer) GetPlayerHomeZone(ctx context.Context, req *data_ser
 // 批量查的调用方(login 的角色列表)天然要处理"部分有部分没有",给整批返回 NotFound
 // 会把一个正常状态升级成整批失败;单查只有一个 id,没有"部分"可言,所以那边用 NotFound。
 // 值畸形与单查同口径,整批回 Unavailable(2026-10-12 起;此前畸形值被当成缺席静默跳过)。
+// ReadRequiresReady=true 时缓存不可信的块回源全局库,任一块回源失败整批 Unavailable + ErrCodeRouteStoreError(码 30),
+// 不回半份结果(半份会被调用方当成「这些人没有归属」)。
 func (s *DataServiceServer) BatchGetPlayerHomeZone(ctx context.Context, req *data_service.BatchGetPlayerHomeZoneRequest) (*data_service.BatchGetPlayerHomeZoneResponse, error) {
 	mapping, err := s.svcCtx.Router.BatchGetPlayerHomeZone(ctx, req.PlayerIds)
 	if err != nil {
+		if errors.Is(err, routing.ErrRouteReadUnavailable) {
+			return nil, status.Errorf(codes.Unavailable, "error_code=%d: %v", constants.ErrCodeRouteStoreError, err)
+		}
 		return nil, status.Errorf(codes.Unavailable, "error_code=%d: %v", constants.ErrCodeRedis, err)
 	}
 	return &data_service.BatchGetPlayerHomeZoneResponse{PlayerZoneMap: mapping}, nil
@@ -681,6 +694,13 @@ func (s *DataServiceServer) BatchGetPlayerName(ctx context.Context, req *data_se
 // 本 RPC 没有 in-band error_code,契约就是 gRPC code;语义表与 code 全在 logic 里一处定义,
 // logic 返回的 error 已经是 status,这里只做搬运 —— 不要在这里再包一层映射。
 func (s *DataServiceServer) GetPlayerAssetOpLedger(ctx context.Context, req *data_service.GetPlayerAssetOpLedgerRequest) (*data_service.GetPlayerAssetOpLedgerResponse, error) {
+	if req.GetRequireSqlCommit() {
+		ledger, found, err := logic.GetSQLCommittedAssetLedger(ctx, s.svcCtx, req.GetPlayerId())
+		if err != nil {
+			return nil, err
+		}
+		return &data_service.GetPlayerAssetOpLedgerResponse{Found: found, Ledger: ledger, SqlCommitted: true}, nil
+	}
 	ledger, found, err := logic.GetPlayerAssetOpLedger(ctx, s.svcCtx, req.GetPlayerId())
 	if err != nil {
 		return nil, err

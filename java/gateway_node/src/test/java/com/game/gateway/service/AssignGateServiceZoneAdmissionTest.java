@@ -157,6 +157,8 @@ class AssignGateServiceZoneAdmissionTest {
 
     @Test
     void concurrentSameZonePolls_mergeDatabaseLookup() throws Exception {
+        // (2026-10-16)预算远大于下面所有 5s 上限,等待方不会先超时离栈,在途等待方计数才能当屏障用。
+        service = new AssignGateService(rpc, zoneConfigRepo, TimeUnit.SECONDS.toMillis(60));
         int callers = 8;
         CountDownLatch ready = new CountDownLatch(callers);
         CountDownLatch start = new CountDownLatch(1);
@@ -181,6 +183,9 @@ class AssignGateServiceZoneAdmissionTest {
             assertTrue(ready.await(5, TimeUnit.SECONDS));
             start.countDown();
             assertTrue(databaseEntered.await(5, TimeUnit.SECONDS));
+            // (2026-10-16)其余 7 个请求全部挂上同一次在途查询后才放行查库。原写法放行前不等它们,
+            // 晚到的请求在查库完成后才到、直接命中缓存,合并查询退化成各查各的也照样绿,只是概率性地红。
+            awaitAdmissionWaiters(1L, callers - 1);
             releaseDatabase.countDown();
 
             for (Future<AssignGateResponse> result : results) {
@@ -193,6 +198,54 @@ class AssignGateServiceZoneAdmissionTest {
             releaseDatabase.countDown();
             pool.shutdownNow();
         }
+    }
+
+    /**
+     * (2026-10-16)查库方挂住时,等待方到预算即 fail-closed 回 500 zone_admission_unavailable,不再无限期挂住;
+     * 查库方继续查,放开后结果照常写缓存,下一次请求命中缓存、不再查库。
+     * 修复前红:等待方用无上限 join(),waiter.get(5s) 抛 TimeoutException。
+     */
+    @Test
+    void loaderStuck_waiterFailsClosedWithinBudget_thenCacheServesNextRequest() throws Exception {
+        service = new AssignGateService(rpc, zoneConfigRepo, 50);
+        CountDownLatch databaseEntered = new CountDownLatch(1);
+        CountDownLatch releaseDatabase = new CountDownLatch(1);
+        when(zoneConfigRepo.findById(1L)).thenAnswer(invocation -> {
+            databaseEntered.countDown();
+            assertTrue(releaseDatabase.await(5, TimeUnit.SECONDS));
+            return Optional.of(zone(1L, 1));
+        });
+
+        ExecutorService pool = Executors.newFixedThreadPool(2);
+        try {
+            Future<AssignGateResponse> loader = pool.submit(() -> service.queryQueueStatus("tok", 1));
+            assertTrue(databaseEntered.await(5, TimeUnit.SECONDS));
+
+            Future<AssignGateResponse> waiter = pool.submit(() -> service.queryQueueStatus("tok", 1));
+            AssignGateResponse timedOut = waiter.get(5, TimeUnit.SECONDS);
+            assertEquals(500, timedOut.getCode());
+            assertEquals("zone_admission_unavailable", timedOut.getError());
+            assertFalse(loader.isDone(), "查库方不受等待方超时影响,仍在查");
+
+            releaseDatabase.countDown();
+            assertEquals(503, loader.get(5, TimeUnit.SECONDS).getCode());
+            assertEquals("zone_maintenance", service.queryQueueStatus("tok", 1).getError());
+            verify(zoneConfigRepo, times(1)).findById(1L);
+            verify(rpc, never()).queryQueueStatus(any(), anyInt());
+        } finally {
+            releaseDatabase.countDown();
+            pool.shutdownNow();
+        }
+    }
+
+    /** 等到 zoneId 的在途准入查询上挂满 expected 个等待方;5s 只是屏障上限,到点不齐即失败。 */
+    private void awaitAdmissionWaiters(long zoneId, int expected) throws InterruptedException {
+        long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(5);
+        while (service.inflightAdmissionWaiterCountForTest(zoneId) < expected && System.nanoTime() < deadline) {
+            Thread.sleep(1);
+        }
+        assertEquals(expected, service.inflightAdmissionWaiterCountForTest(zoneId),
+                "其余请求要全部挂上同一次在途准入查询后才放行查库");
     }
 
     @Test

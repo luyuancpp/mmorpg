@@ -22,42 +22,99 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-// 定向邮件:一行 = 一个收件人的一封信。
-type MailPersonalRecord struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	MailId        uint64                 `protobuf:"varint,1,opt,name=mail_id,json=mailId,proto3" json:"mail_id,omitempty"` // id_segment biz_tag = mail(与 sys_mail_id 同一个号段,全局不撞号)
-	OwnerPlayerId uint64                 `protobuf:"varint,2,opt,name=owner_player_id,json=ownerPlayerId,proto3" json:"owner_player_id,omitempty"`
-	SenderKind    uint32                 `protobuf:"varint,3,opt,name=sender_kind,json=senderKind,proto3" json:"sender_kind,omitempty"`         // mail_admin.proto 的 MailSenderKind
-	RequestId     uint64                 `protobuf:"varint,4,opt,name=request_id,json=requestId,proto3" json:"request_id,omitempty"`            // 调用方幂等键,非 0
-	RequestDigest []byte                 `protobuf:"bytes,5,opt,name=request_digest,json=requestDigest,proto3" json:"request_digest,omitempty"` // 规范化请求的 SHA-256:同键重放时比它,区分"重放"与"同键不同内容"
-	SenderName    string                 `protobuf:"bytes,6,opt,name=sender_name,json=senderName,proto3" json:"sender_name,omitempty"`          // 展示用署名(应用层限长),不是身份
-	Title         string                 `protobuf:"bytes,7,opt,name=title,proto3" json:"title,omitempty"`
-	Body          string                 `protobuf:"bytes,8,opt,name=body,proto3" json:"body,omitempty"`
-	Attachments   []byte                 `protobuf:"bytes,9,opt,name=attachments,proto3" json:"attachments,omitempty"`                   // 序列化的 AssetBundle(只填 currencies / items);无附件为空
-	ClaimState    uint32                 `protobuf:"varint,10,opt,name=claim_state,json=claimState,proto3" json:"claim_state,omitempty"` // MailClaimState。建行时按附件推导:非空 1,否则 0 —— M1 就写推导值,不是恒 0
-	SentMs        uint64                 `protobuf:"varint,11,opt,name=sent_ms,json=sentMs,proto3" json:"sent_ms,omitempty"`             // 服务端发件时刻
-	ExpireMs      uint64                 `protobuf:"varint,12,opt,name=expire_ms,json=expireMs,proto3" json:"expire_ms,omitempty"`       // 必填,> sent_ms
-	ReadMs        uint64                 `protobuf:"varint,13,opt,name=read_ms,json=readMs,proto3" json:"read_ms,omitempty"`             // 0 = 未读
-	UpdatedMs     uint64                 `protobuf:"varint,14,opt,name=updated_ms,json=updatedMs,proto3" json:"updated_ms,omitempty"`
-	DeletedMs     uint64                 `protobuf:"varint,15,opt,name=deleted_ms,json=deletedMs,proto3" json:"deleted_ms,omitempty"` // 0 = 未删。玩家删除只打这个标记;所有读路径都带 deleted_ms = 0
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+type MailAssetOpStatus int32
+
+const (
+	MailAssetOpStatus_MAIL_ASSET_OP_UNSPECIFIED MailAssetOpStatus = 0
+	MailAssetOpStatus_MAIL_ASSET_OP_PENDING     MailAssetOpStatus = 1
+	MailAssetOpStatus_MAIL_ASSET_OP_APPLIED     MailAssetOpStatus = 2
+	MailAssetOpStatus_MAIL_ASSET_OP_REJECTED    MailAssetOpStatus = 3
+	MailAssetOpStatus_MAIL_ASSET_OP_MANUAL      MailAssetOpStatus = 4
+	MailAssetOpStatus_MAIL_ASSET_OP_ABANDONED   MailAssetOpStatus = 5
+)
+
+// Enum value maps for MailAssetOpStatus.
+var (
+	MailAssetOpStatus_name = map[int32]string{
+		0: "MAIL_ASSET_OP_UNSPECIFIED",
+		1: "MAIL_ASSET_OP_PENDING",
+		2: "MAIL_ASSET_OP_APPLIED",
+		3: "MAIL_ASSET_OP_REJECTED",
+		4: "MAIL_ASSET_OP_MANUAL",
+		5: "MAIL_ASSET_OP_ABANDONED",
+	}
+	MailAssetOpStatus_value = map[string]int32{
+		"MAIL_ASSET_OP_UNSPECIFIED": 0,
+		"MAIL_ASSET_OP_PENDING":     1,
+		"MAIL_ASSET_OP_APPLIED":     2,
+		"MAIL_ASSET_OP_REJECTED":    3,
+		"MAIL_ASSET_OP_MANUAL":      4,
+		"MAIL_ASSET_OP_ABANDONED":   5,
+	}
+)
+
+func (x MailAssetOpStatus) Enum() *MailAssetOpStatus {
+	p := new(MailAssetOpStatus)
+	*p = x
+	return p
 }
 
-func (x *MailPersonalRecord) Reset() {
-	*x = MailPersonalRecord{}
+func (x MailAssetOpStatus) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (MailAssetOpStatus) Descriptor() protoreflect.EnumDescriptor {
+	return file_proto_mail_mail_table_proto_enumTypes[0].Descriptor()
+}
+
+func (MailAssetOpStatus) Type() protoreflect.EnumType {
+	return &file_proto_mail_mail_table_proto_enumTypes[0]
+}
+
+func (x MailAssetOpStatus) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use MailAssetOpStatus.Descriptor instead.
+func (MailAssetOpStatus) EnumDescriptor() ([]byte, []int) {
+	return file_proto_mail_mail_table_proto_rawDescGZIP(), []int{0}
+}
+
+// 独占邮箱库的权威记录；附件只保存共用AssetBundle字节，不保存背包/余额副本。
+type MailRecord struct {
+	state              protoimpl.MessageState `protogen:"open.v1"`
+	MailId             uint64                 `protobuf:"varint,1,opt,name=mail_id,json=mailId,proto3" json:"mail_id,omitempty"`
+	OwnerPlayerId      uint64                 `protobuf:"varint,2,opt,name=owner_player_id,json=ownerPlayerId,proto3" json:"owner_player_id,omitempty"`
+	GuildId            uint64                 `protobuf:"varint,3,opt,name=guild_id,json=guildId,proto3" json:"guild_id,omitempty"`
+	Kind               uint32                 `protobuf:"varint,4,opt,name=kind,proto3" json:"kind,omitempty"`
+	SenderKind         uint32                 `protobuf:"varint,5,opt,name=sender_kind,json=senderKind,proto3" json:"sender_kind,omitempty"`
+	RequestId          uint64                 `protobuf:"varint,6,opt,name=request_id,json=requestId,proto3" json:"request_id,omitempty"`
+	RequestHash        string                 `protobuf:"bytes,7,opt,name=request_hash,json=requestHash,proto3" json:"request_hash,omitempty"`
+	Title              string                 `protobuf:"bytes,8,opt,name=title,proto3" json:"title,omitempty"`
+	Body               string                 `protobuf:"bytes,9,opt,name=body,proto3" json:"body,omitempty"`
+	Attachments        []byte                 `protobuf:"bytes,10,opt,name=attachments,proto3" json:"attachments,omitempty"`
+	SentMs             uint64                 `protobuf:"varint,11,opt,name=sent_ms,json=sentMs,proto3" json:"sent_ms,omitempty"`
+	ExpireMs           uint64                 `protobuf:"varint,12,opt,name=expire_ms,json=expireMs,proto3" json:"expire_ms,omitempty"`
+	CampaignId         uint64                 `protobuf:"varint,13,opt,name=campaign_id,json=campaignId,proto3" json:"campaign_id,omitempty"`
+	ManifestGeneration uint64                 `protobuf:"varint,14,opt,name=manifest_generation,json=manifestGeneration,proto3" json:"manifest_generation,omitempty"`
+	unknownFields      protoimpl.UnknownFields
+	sizeCache          protoimpl.SizeCache
+}
+
+func (x *MailRecord) Reset() {
+	*x = MailRecord{}
 	mi := &file_proto_mail_mail_table_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *MailPersonalRecord) String() string {
+func (x *MailRecord) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*MailPersonalRecord) ProtoMessage() {}
+func (*MailRecord) ProtoMessage() {}
 
-func (x *MailPersonalRecord) ProtoReflect() protoreflect.Message {
+func (x *MailRecord) ProtoReflect() protoreflect.Message {
 	mi := &file_proto_mail_mail_table_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -69,148 +126,149 @@ func (x *MailPersonalRecord) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use MailPersonalRecord.ProtoReflect.Descriptor instead.
-func (*MailPersonalRecord) Descriptor() ([]byte, []int) {
+// Deprecated: Use MailRecord.ProtoReflect.Descriptor instead.
+func (*MailRecord) Descriptor() ([]byte, []int) {
 	return file_proto_mail_mail_table_proto_rawDescGZIP(), []int{0}
 }
 
-func (x *MailPersonalRecord) GetMailId() uint64 {
+func (x *MailRecord) GetMailId() uint64 {
 	if x != nil {
 		return x.MailId
 	}
 	return 0
 }
 
-func (x *MailPersonalRecord) GetOwnerPlayerId() uint64 {
+func (x *MailRecord) GetOwnerPlayerId() uint64 {
 	if x != nil {
 		return x.OwnerPlayerId
 	}
 	return 0
 }
 
-func (x *MailPersonalRecord) GetSenderKind() uint32 {
+func (x *MailRecord) GetGuildId() uint64 {
+	if x != nil {
+		return x.GuildId
+	}
+	return 0
+}
+
+func (x *MailRecord) GetKind() uint32 {
+	if x != nil {
+		return x.Kind
+	}
+	return 0
+}
+
+func (x *MailRecord) GetSenderKind() uint32 {
 	if x != nil {
 		return x.SenderKind
 	}
 	return 0
 }
 
-func (x *MailPersonalRecord) GetRequestId() uint64 {
+func (x *MailRecord) GetRequestId() uint64 {
 	if x != nil {
 		return x.RequestId
 	}
 	return 0
 }
 
-func (x *MailPersonalRecord) GetRequestDigest() []byte {
+func (x *MailRecord) GetRequestHash() string {
 	if x != nil {
-		return x.RequestDigest
-	}
-	return nil
-}
-
-func (x *MailPersonalRecord) GetSenderName() string {
-	if x != nil {
-		return x.SenderName
+		return x.RequestHash
 	}
 	return ""
 }
 
-func (x *MailPersonalRecord) GetTitle() string {
+func (x *MailRecord) GetTitle() string {
 	if x != nil {
 		return x.Title
 	}
 	return ""
 }
 
-func (x *MailPersonalRecord) GetBody() string {
+func (x *MailRecord) GetBody() string {
 	if x != nil {
 		return x.Body
 	}
 	return ""
 }
 
-func (x *MailPersonalRecord) GetAttachments() []byte {
+func (x *MailRecord) GetAttachments() []byte {
 	if x != nil {
 		return x.Attachments
 	}
 	return nil
 }
 
-func (x *MailPersonalRecord) GetClaimState() uint32 {
-	if x != nil {
-		return x.ClaimState
-	}
-	return 0
-}
-
-func (x *MailPersonalRecord) GetSentMs() uint64 {
+func (x *MailRecord) GetSentMs() uint64 {
 	if x != nil {
 		return x.SentMs
 	}
 	return 0
 }
 
-func (x *MailPersonalRecord) GetExpireMs() uint64 {
+func (x *MailRecord) GetExpireMs() uint64 {
 	if x != nil {
 		return x.ExpireMs
 	}
 	return 0
 }
 
-func (x *MailPersonalRecord) GetReadMs() uint64 {
+func (x *MailRecord) GetCampaignId() uint64 {
 	if x != nil {
-		return x.ReadMs
+		return x.CampaignId
 	}
 	return 0
 }
 
-func (x *MailPersonalRecord) GetUpdatedMs() uint64 {
+func (x *MailRecord) GetManifestGeneration() uint64 {
 	if x != nil {
-		return x.UpdatedMs
+		return x.ManifestGeneration
 	}
 	return 0
 }
 
-func (x *MailPersonalRecord) GetDeletedMs() uint64 {
-	if x != nil {
-		return x.DeletedMs
-	}
-	return 0
+// 有附件的系统邮件只在名单完整seal的同事务插入mail_message；导入中的活动不可见。
+type MailCampaignRecord struct {
+	state                  protoimpl.MessageState `protogen:"open.v1"`
+	SenderKind             uint32                 `protobuf:"varint,1,opt,name=sender_kind,json=senderKind,proto3" json:"sender_kind,omitempty"`
+	CampaignId             uint64                 `protobuf:"varint,2,opt,name=campaign_id,json=campaignId,proto3" json:"campaign_id,omitempty"`
+	ManifestGeneration     uint64                 `protobuf:"varint,3,opt,name=manifest_generation,json=manifestGeneration,proto3" json:"manifest_generation,omitempty"`
+	MailId                 uint64                 `protobuf:"varint,4,opt,name=mail_id,json=mailId,proto3" json:"mail_id,omitempty"`
+	RequestId              uint64                 `protobuf:"varint,5,opt,name=request_id,json=requestId,proto3" json:"request_id,omitempty"`
+	Producer               string                 `protobuf:"bytes,6,opt,name=producer,proto3" json:"producer,omitempty"`
+	RequestHash            string                 `protobuf:"bytes,7,opt,name=request_hash,json=requestHash,proto3" json:"request_hash,omitempty"`
+	Title                  string                 `protobuf:"bytes,8,opt,name=title,proto3" json:"title,omitempty"`
+	Body                   string                 `protobuf:"bytes,9,opt,name=body,proto3" json:"body,omitempty"`
+	Attachments            []byte                 `protobuf:"bytes,10,opt,name=attachments,proto3" json:"attachments,omitempty"`
+	ExpireMs               uint64                 `protobuf:"varint,11,opt,name=expire_ms,json=expireMs,proto3" json:"expire_ms,omitempty"`
+	ExpectedRecipientCount uint64                 `protobuf:"varint,12,opt,name=expected_recipient_count,json=expectedRecipientCount,proto3" json:"expected_recipient_count,omitempty"`
+	ExpectedShardCount     uint32                 `protobuf:"varint,13,opt,name=expected_shard_count,json=expectedShardCount,proto3" json:"expected_shard_count,omitempty"`
+	ManifestHash           string                 `protobuf:"bytes,14,opt,name=manifest_hash,json=manifestHash,proto3" json:"manifest_hash,omitempty"`
+	State                  uint32                 `protobuf:"varint,15,opt,name=state,proto3" json:"state,omitempty"`
+	CreatedMs              uint64                 `protobuf:"varint,16,opt,name=created_ms,json=createdMs,proto3" json:"created_ms,omitempty"`
+	SealedMs               uint64                 `protobuf:"varint,17,opt,name=sealed_ms,json=sealedMs,proto3" json:"sealed_ms,omitempty"`
+	Kind                   uint32                 `protobuf:"varint,18,opt,name=kind,proto3" json:"kind,omitempty"`
+	GuildId                uint64                 `protobuf:"varint,19,opt,name=guild_id,json=guildId,proto3" json:"guild_id,omitempty"`
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
-// 系统(全服)邮件:一行 = 一封对所有人可见的信。读时合并,不做写时扇出(设计 §3.1)。
-type MailSystemRecord struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	SysMailId     uint64                 `protobuf:"varint,1,opt,name=sys_mail_id,json=sysMailId,proto3" json:"sys_mail_id,omitempty"` // id_segment biz_tag = mail
-	SenderKind    uint32                 `protobuf:"varint,2,opt,name=sender_kind,json=senderKind,proto3" json:"sender_kind,omitempty"`
-	RequestId     uint64                 `protobuf:"varint,3,opt,name=request_id,json=requestId,proto3" json:"request_id,omitempty"`
-	RequestDigest []byte                 `protobuf:"bytes,4,opt,name=request_digest,json=requestDigest,proto3" json:"request_digest,omitempty"`
-	SenderName    string                 `protobuf:"bytes,5,opt,name=sender_name,json=senderName,proto3" json:"sender_name,omitempty"`
-	Title         string                 `protobuf:"bytes,6,opt,name=title,proto3" json:"title,omitempty"`
-	Body          string                 `protobuf:"bytes,7,opt,name=body,proto3" json:"body,omitempty"`
-	Attachments   []byte                 `protobuf:"bytes,8,opt,name=attachments,proto3" json:"attachments,omitempty"`
-	SentMs        uint64                 `protobuf:"varint,9,opt,name=sent_ms,json=sentMs,proto3" json:"sent_ms,omitempty"`        // 发出即可见;M1 不做定时生效
-	ExpireMs      uint64                 `protobuf:"varint,10,opt,name=expire_ms,json=expireMs,proto3" json:"expire_ms,omitempty"` // 必填:有效系统邮件数必须有界,读时合并才不会越扫越多
-	UpdatedMs     uint64                 `protobuf:"varint,11,opt,name=updated_ms,json=updatedMs,proto3" json:"updated_ms,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *MailSystemRecord) Reset() {
-	*x = MailSystemRecord{}
+func (x *MailCampaignRecord) Reset() {
+	*x = MailCampaignRecord{}
 	mi := &file_proto_mail_mail_table_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *MailSystemRecord) String() string {
+func (x *MailCampaignRecord) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*MailSystemRecord) ProtoMessage() {}
+func (*MailCampaignRecord) ProtoMessage() {}
 
-func (x *MailSystemRecord) ProtoReflect() protoreflect.Message {
+func (x *MailCampaignRecord) ProtoReflect() protoreflect.Message {
 	mi := &file_proto_mail_mail_table_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -222,117 +280,170 @@ func (x *MailSystemRecord) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use MailSystemRecord.ProtoReflect.Descriptor instead.
-func (*MailSystemRecord) Descriptor() ([]byte, []int) {
+// Deprecated: Use MailCampaignRecord.ProtoReflect.Descriptor instead.
+func (*MailCampaignRecord) Descriptor() ([]byte, []int) {
 	return file_proto_mail_mail_table_proto_rawDescGZIP(), []int{1}
 }
 
-func (x *MailSystemRecord) GetSysMailId() uint64 {
-	if x != nil {
-		return x.SysMailId
-	}
-	return 0
-}
-
-func (x *MailSystemRecord) GetSenderKind() uint32 {
+func (x *MailCampaignRecord) GetSenderKind() uint32 {
 	if x != nil {
 		return x.SenderKind
 	}
 	return 0
 }
 
-func (x *MailSystemRecord) GetRequestId() uint64 {
+func (x *MailCampaignRecord) GetCampaignId() uint64 {
+	if x != nil {
+		return x.CampaignId
+	}
+	return 0
+}
+
+func (x *MailCampaignRecord) GetManifestGeneration() uint64 {
+	if x != nil {
+		return x.ManifestGeneration
+	}
+	return 0
+}
+
+func (x *MailCampaignRecord) GetMailId() uint64 {
+	if x != nil {
+		return x.MailId
+	}
+	return 0
+}
+
+func (x *MailCampaignRecord) GetRequestId() uint64 {
 	if x != nil {
 		return x.RequestId
 	}
 	return 0
 }
 
-func (x *MailSystemRecord) GetRequestDigest() []byte {
+func (x *MailCampaignRecord) GetProducer() string {
 	if x != nil {
-		return x.RequestDigest
-	}
-	return nil
-}
-
-func (x *MailSystemRecord) GetSenderName() string {
-	if x != nil {
-		return x.SenderName
+		return x.Producer
 	}
 	return ""
 }
 
-func (x *MailSystemRecord) GetTitle() string {
+func (x *MailCampaignRecord) GetRequestHash() string {
+	if x != nil {
+		return x.RequestHash
+	}
+	return ""
+}
+
+func (x *MailCampaignRecord) GetTitle() string {
 	if x != nil {
 		return x.Title
 	}
 	return ""
 }
 
-func (x *MailSystemRecord) GetBody() string {
+func (x *MailCampaignRecord) GetBody() string {
 	if x != nil {
 		return x.Body
 	}
 	return ""
 }
 
-func (x *MailSystemRecord) GetAttachments() []byte {
+func (x *MailCampaignRecord) GetAttachments() []byte {
 	if x != nil {
 		return x.Attachments
 	}
 	return nil
 }
 
-func (x *MailSystemRecord) GetSentMs() uint64 {
-	if x != nil {
-		return x.SentMs
-	}
-	return 0
-}
-
-func (x *MailSystemRecord) GetExpireMs() uint64 {
+func (x *MailCampaignRecord) GetExpireMs() uint64 {
 	if x != nil {
 		return x.ExpireMs
 	}
 	return 0
 }
 
-func (x *MailSystemRecord) GetUpdatedMs() uint64 {
+func (x *MailCampaignRecord) GetExpectedRecipientCount() uint64 {
 	if x != nil {
-		return x.UpdatedMs
+		return x.ExpectedRecipientCount
 	}
 	return 0
 }
 
-// 某玩家对某封系统邮件的交互状态。按需物化:首次已读 / 删除时才建行,没有行 = 未读未删。
-// 只能经"系统行存在且仍有效"的条件 upsert 建出(INSERT … SELECT … FROM mail_system WHERE … AND expire_ms > ?),
-// 不许凭客户端给的 id 直接插 —— 否则任何人都能给不存在的系统邮件造状态行。
-type MailSystemStateRecord struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	PlayerId      uint64                 `protobuf:"varint,1,opt,name=player_id,json=playerId,proto3" json:"player_id,omitempty"`
-	SysMailId     uint64                 `protobuf:"varint,2,opt,name=sys_mail_id,json=sysMailId,proto3" json:"sys_mail_id,omitempty"`
-	ReadMs        uint64                 `protobuf:"varint,3,opt,name=read_ms,json=readMs,proto3" json:"read_ms,omitempty"`             // 0 = 未读
-	DeletedMs     uint64                 `protobuf:"varint,4,opt,name=deleted_ms,json=deletedMs,proto3" json:"deleted_ms,omitempty"`    // 0 = 未删(删的是"我看不看得到",系统行本身不动)
-	ClaimState    uint32                 `protobuf:"varint,5,opt,name=claim_state,json=claimState,proto3" json:"claim_state,omitempty"` // MailClaimState。物化时从系统行的附件推导(非空 1,否则 0),M1 就写推导值
-	UpdatedMs     uint64                 `protobuf:"varint,6,opt,name=updated_ms,json=updatedMs,proto3" json:"updated_ms,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+func (x *MailCampaignRecord) GetExpectedShardCount() uint32 {
+	if x != nil {
+		return x.ExpectedShardCount
+	}
+	return 0
 }
 
-func (x *MailSystemStateRecord) Reset() {
-	*x = MailSystemStateRecord{}
+func (x *MailCampaignRecord) GetManifestHash() string {
+	if x != nil {
+		return x.ManifestHash
+	}
+	return ""
+}
+
+func (x *MailCampaignRecord) GetState() uint32 {
+	if x != nil {
+		return x.State
+	}
+	return 0
+}
+
+func (x *MailCampaignRecord) GetCreatedMs() uint64 {
+	if x != nil {
+		return x.CreatedMs
+	}
+	return 0
+}
+
+func (x *MailCampaignRecord) GetSealedMs() uint64 {
+	if x != nil {
+		return x.SealedMs
+	}
+	return 0
+}
+
+func (x *MailCampaignRecord) GetKind() uint32 {
+	if x != nil {
+		return x.Kind
+	}
+	return 0
+}
+
+func (x *MailCampaignRecord) GetGuildId() uint64 {
+	if x != nil {
+		return x.GuildId
+	}
+	return 0
+}
+
+type MailCampaignShardRecord struct {
+	state              protoimpl.MessageState `protogen:"open.v1"`
+	SenderKind         uint32                 `protobuf:"varint,1,opt,name=sender_kind,json=senderKind,proto3" json:"sender_kind,omitempty"`
+	CampaignId         uint64                 `protobuf:"varint,2,opt,name=campaign_id,json=campaignId,proto3" json:"campaign_id,omitempty"`
+	ManifestGeneration uint64                 `protobuf:"varint,3,opt,name=manifest_generation,json=manifestGeneration,proto3" json:"manifest_generation,omitempty"`
+	ShardIndex         uint32                 `protobuf:"varint,4,opt,name=shard_index,json=shardIndex,proto3" json:"shard_index,omitempty"`
+	ShardHash          string                 `protobuf:"bytes,5,opt,name=shard_hash,json=shardHash,proto3" json:"shard_hash,omitempty"`
+	RecipientCount     uint32                 `protobuf:"varint,6,opt,name=recipient_count,json=recipientCount,proto3" json:"recipient_count,omitempty"`
+	unknownFields      protoimpl.UnknownFields
+	sizeCache          protoimpl.SizeCache
+}
+
+func (x *MailCampaignShardRecord) Reset() {
+	*x = MailCampaignShardRecord{}
 	mi := &file_proto_mail_mail_table_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *MailSystemStateRecord) String() string {
+func (x *MailCampaignShardRecord) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*MailSystemStateRecord) ProtoMessage() {}
+func (*MailCampaignShardRecord) ProtoMessage() {}
 
-func (x *MailSystemStateRecord) ProtoReflect() protoreflect.Message {
+func (x *MailCampaignShardRecord) ProtoReflect() protoreflect.Message {
 	mi := &file_proto_mail_mail_table_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -344,58 +455,129 @@ func (x *MailSystemStateRecord) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use MailSystemStateRecord.ProtoReflect.Descriptor instead.
-func (*MailSystemStateRecord) Descriptor() ([]byte, []int) {
+// Deprecated: Use MailCampaignShardRecord.ProtoReflect.Descriptor instead.
+func (*MailCampaignShardRecord) Descriptor() ([]byte, []int) {
 	return file_proto_mail_mail_table_proto_rawDescGZIP(), []int{2}
 }
 
-func (x *MailSystemStateRecord) GetPlayerId() uint64 {
+func (x *MailCampaignShardRecord) GetSenderKind() uint32 {
+	if x != nil {
+		return x.SenderKind
+	}
+	return 0
+}
+
+func (x *MailCampaignShardRecord) GetCampaignId() uint64 {
+	if x != nil {
+		return x.CampaignId
+	}
+	return 0
+}
+
+func (x *MailCampaignShardRecord) GetManifestGeneration() uint64 {
+	if x != nil {
+		return x.ManifestGeneration
+	}
+	return 0
+}
+
+func (x *MailCampaignShardRecord) GetShardIndex() uint32 {
+	if x != nil {
+		return x.ShardIndex
+	}
+	return 0
+}
+
+func (x *MailCampaignShardRecord) GetShardHash() string {
+	if x != nil {
+		return x.ShardHash
+	}
+	return ""
+}
+
+func (x *MailCampaignShardRecord) GetRecipientCount() uint32 {
+	if x != nil {
+		return x.RecipientCount
+	}
+	return 0
+}
+
+type MailCampaignRecipientRecord struct {
+	state              protoimpl.MessageState `protogen:"open.v1"`
+	SenderKind         uint32                 `protobuf:"varint,1,opt,name=sender_kind,json=senderKind,proto3" json:"sender_kind,omitempty"`
+	CampaignId         uint64                 `protobuf:"varint,2,opt,name=campaign_id,json=campaignId,proto3" json:"campaign_id,omitempty"`
+	ManifestGeneration uint64                 `protobuf:"varint,3,opt,name=manifest_generation,json=manifestGeneration,proto3" json:"manifest_generation,omitempty"`
+	PlayerId           uint64                 `protobuf:"varint,4,opt,name=player_id,json=playerId,proto3" json:"player_id,omitempty"`
+	ShardIndex         uint32                 `protobuf:"varint,5,opt,name=shard_index,json=shardIndex,proto3" json:"shard_index,omitempty"`
+	unknownFields      protoimpl.UnknownFields
+	sizeCache          protoimpl.SizeCache
+}
+
+func (x *MailCampaignRecipientRecord) Reset() {
+	*x = MailCampaignRecipientRecord{}
+	mi := &file_proto_mail_mail_table_proto_msgTypes[3]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *MailCampaignRecipientRecord) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*MailCampaignRecipientRecord) ProtoMessage() {}
+
+func (x *MailCampaignRecipientRecord) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_mail_mail_table_proto_msgTypes[3]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use MailCampaignRecipientRecord.ProtoReflect.Descriptor instead.
+func (*MailCampaignRecipientRecord) Descriptor() ([]byte, []int) {
+	return file_proto_mail_mail_table_proto_rawDescGZIP(), []int{3}
+}
+
+func (x *MailCampaignRecipientRecord) GetSenderKind() uint32 {
+	if x != nil {
+		return x.SenderKind
+	}
+	return 0
+}
+
+func (x *MailCampaignRecipientRecord) GetCampaignId() uint64 {
+	if x != nil {
+		return x.CampaignId
+	}
+	return 0
+}
+
+func (x *MailCampaignRecipientRecord) GetManifestGeneration() uint64 {
+	if x != nil {
+		return x.ManifestGeneration
+	}
+	return 0
+}
+
+func (x *MailCampaignRecipientRecord) GetPlayerId() uint64 {
 	if x != nil {
 		return x.PlayerId
 	}
 	return 0
 }
 
-func (x *MailSystemStateRecord) GetSysMailId() uint64 {
+func (x *MailCampaignRecipientRecord) GetShardIndex() uint32 {
 	if x != nil {
-		return x.SysMailId
+		return x.ShardIndex
 	}
 	return 0
 }
 
-func (x *MailSystemStateRecord) GetReadMs() uint64 {
-	if x != nil {
-		return x.ReadMs
-	}
-	return 0
-}
-
-func (x *MailSystemStateRecord) GetDeletedMs() uint64 {
-	if x != nil {
-		return x.DeletedMs
-	}
-	return 0
-}
-
-func (x *MailSystemStateRecord) GetClaimState() uint32 {
-	if x != nil {
-		return x.ClaimState
-	}
-	return 0
-}
-
-func (x *MailSystemStateRecord) GetUpdatedMs() uint64 {
-	if x != nil {
-		return x.UpdatedMs
-	}
-	return 0
-}
-
-// 定向邮件的每玩家串行化守卫行:只作 SELECT … FOR UPDATE 的载体,**不存计数**(设计 §3.4)。
-// 邮箱上限靠"拿守卫 + 现数"实现。不存计数的理由:存了就要求每一条删除路径(玩家删、清理已读、sweep)
-// 都在同一事务里减它,漏一处就是计数上漂、玩家永远"满"而且零报错。
-// 行在发件事务之外 INSERT IGNORE 补齐(放进事务会形成 insert-intention 死锁,friend F8 同理);
-// 行数 ≤ 被发过定向邮件的玩家数,不需要回收。
 type MailBoxRecord struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	PlayerId      uint64                 `protobuf:"varint,1,opt,name=player_id,json=playerId,proto3" json:"player_id,omitempty"`
@@ -406,7 +588,7 @@ type MailBoxRecord struct {
 
 func (x *MailBoxRecord) Reset() {
 	*x = MailBoxRecord{}
-	mi := &file_proto_mail_mail_table_proto_msgTypes[3]
+	mi := &file_proto_mail_mail_table_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -418,7 +600,7 @@ func (x *MailBoxRecord) String() string {
 func (*MailBoxRecord) ProtoMessage() {}
 
 func (x *MailBoxRecord) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_mail_mail_table_proto_msgTypes[3]
+	mi := &file_proto_mail_mail_table_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -431,7 +613,7 @@ func (x *MailBoxRecord) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MailBoxRecord.ProtoReflect.Descriptor instead.
 func (*MailBoxRecord) Descriptor() ([]byte, []int) {
-	return file_proto_mail_mail_table_proto_rawDescGZIP(), []int{3}
+	return file_proto_mail_mail_table_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *MailBoxRecord) GetPlayerId() uint64 {
@@ -448,65 +630,544 @@ func (x *MailBoxRecord) GetCreatedMs() uint64 {
 	return 0
 }
 
+// 个人行发件时创建；广播行仅在有交互时物化。pending/manual永不由到期清理删除。
+type MailStateRecord struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	PlayerId      uint64                 `protobuf:"varint,1,opt,name=player_id,json=playerId,proto3" json:"player_id,omitempty"`
+	MailId        uint64                 `protobuf:"varint,2,opt,name=mail_id,json=mailId,proto3" json:"mail_id,omitempty"`
+	ReadMs        uint64                 `protobuf:"varint,3,opt,name=read_ms,json=readMs,proto3" json:"read_ms,omitempty"`
+	DeletedMs     uint64                 `protobuf:"varint,4,opt,name=deleted_ms,json=deletedMs,proto3" json:"deleted_ms,omitempty"`
+	ClaimState    uint32                 `protobuf:"varint,5,opt,name=claim_state,json=claimState,proto3" json:"claim_state,omitempty"`
+	CurrentOpId   uint64                 `protobuf:"varint,6,opt,name=current_op_id,json=currentOpId,proto3" json:"current_op_id,omitempty"`
+	ClaimVersion  uint64                 `protobuf:"varint,7,opt,name=claim_version,json=claimVersion,proto3" json:"claim_version,omitempty"`
+	ReasonTipId   uint32                 `protobuf:"varint,8,opt,name=reason_tip_id,json=reasonTipId,proto3" json:"reason_tip_id,omitempty"`
+	UpdatedMs     uint64                 `protobuf:"varint,9,opt,name=updated_ms,json=updatedMs,proto3" json:"updated_ms,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *MailStateRecord) Reset() {
+	*x = MailStateRecord{}
+	mi := &file_proto_mail_mail_table_proto_msgTypes[5]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *MailStateRecord) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*MailStateRecord) ProtoMessage() {}
+
+func (x *MailStateRecord) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_mail_mail_table_proto_msgTypes[5]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use MailStateRecord.ProtoReflect.Descriptor instead.
+func (*MailStateRecord) Descriptor() ([]byte, []int) {
+	return file_proto_mail_mail_table_proto_rawDescGZIP(), []int{5}
+}
+
+func (x *MailStateRecord) GetPlayerId() uint64 {
+	if x != nil {
+		return x.PlayerId
+	}
+	return 0
+}
+
+func (x *MailStateRecord) GetMailId() uint64 {
+	if x != nil {
+		return x.MailId
+	}
+	return 0
+}
+
+func (x *MailStateRecord) GetReadMs() uint64 {
+	if x != nil {
+		return x.ReadMs
+	}
+	return 0
+}
+
+func (x *MailStateRecord) GetDeletedMs() uint64 {
+	if x != nil {
+		return x.DeletedMs
+	}
+	return 0
+}
+
+func (x *MailStateRecord) GetClaimState() uint32 {
+	if x != nil {
+		return x.ClaimState
+	}
+	return 0
+}
+
+func (x *MailStateRecord) GetCurrentOpId() uint64 {
+	if x != nil {
+		return x.CurrentOpId
+	}
+	return 0
+}
+
+func (x *MailStateRecord) GetClaimVersion() uint64 {
+	if x != nil {
+		return x.ClaimVersion
+	}
+	return 0
+}
+
+func (x *MailStateRecord) GetReasonTipId() uint32 {
+	if x != nil {
+		return x.ReasonTipId
+	}
+	return 0
+}
+
+func (x *MailStateRecord) GetUpdatedMs() uint64 {
+	if x != nil {
+		return x.UpdatedMs
+	}
+	return 0
+}
+
+type MailPlayerOpSeqRecord struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	PlayerId      uint64                 `protobuf:"varint,1,opt,name=player_id,json=playerId,proto3" json:"player_id,omitempty"`
+	Stream        uint32                 `protobuf:"varint,2,opt,name=stream,proto3" json:"stream,omitempty"`
+	NextSeq       uint64                 `protobuf:"varint,3,opt,name=next_seq,json=nextSeq,proto3" json:"next_seq,omitempty"`
+	UpdatedMs     uint64                 `protobuf:"varint,4,opt,name=updated_ms,json=updatedMs,proto3" json:"updated_ms,omitempty"`
+	Epoch         uint64                 `protobuf:"varint,5,opt,name=epoch,proto3" json:"epoch,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *MailPlayerOpSeqRecord) Reset() {
+	*x = MailPlayerOpSeqRecord{}
+	mi := &file_proto_mail_mail_table_proto_msgTypes[6]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *MailPlayerOpSeqRecord) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*MailPlayerOpSeqRecord) ProtoMessage() {}
+
+func (x *MailPlayerOpSeqRecord) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_mail_mail_table_proto_msgTypes[6]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use MailPlayerOpSeqRecord.ProtoReflect.Descriptor instead.
+func (*MailPlayerOpSeqRecord) Descriptor() ([]byte, []int) {
+	return file_proto_mail_mail_table_proto_rawDescGZIP(), []int{6}
+}
+
+func (x *MailPlayerOpSeqRecord) GetPlayerId() uint64 {
+	if x != nil {
+		return x.PlayerId
+	}
+	return 0
+}
+
+func (x *MailPlayerOpSeqRecord) GetStream() uint32 {
+	if x != nil {
+		return x.Stream
+	}
+	return 0
+}
+
+func (x *MailPlayerOpSeqRecord) GetNextSeq() uint64 {
+	if x != nil {
+		return x.NextSeq
+	}
+	return 0
+}
+
+func (x *MailPlayerOpSeqRecord) GetUpdatedMs() uint64 {
+	if x != nil {
+		return x.UpdatedMs
+	}
+	return 0
+}
+
+func (x *MailPlayerOpSeqRecord) GetEpoch() uint64 {
+	if x != nil {
+		return x.Epoch
+	}
+	return 0
+}
+
+type MailAssetOpRecord struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	OpId          uint64                 `protobuf:"varint,1,opt,name=op_id,json=opId,proto3" json:"op_id,omitempty"`
+	PlayerId      uint64                 `protobuf:"varint,2,opt,name=player_id,json=playerId,proto3" json:"player_id,omitempty"`
+	Stream        uint32                 `protobuf:"varint,3,opt,name=stream,proto3" json:"stream,omitempty"`
+	Seq           uint64                 `protobuf:"varint,4,opt,name=seq,proto3" json:"seq,omitempty"`
+	StreamEpoch   uint64                 `protobuf:"varint,5,opt,name=stream_epoch,json=streamEpoch,proto3" json:"stream_epoch,omitempty"`
+	MailId        uint64                 `protobuf:"varint,6,opt,name=mail_id,json=mailId,proto3" json:"mail_id,omitempty"`
+	ClaimVersion  uint64                 `protobuf:"varint,7,opt,name=claim_version,json=claimVersion,proto3" json:"claim_version,omitempty"`
+	Status        uint32                 `protobuf:"varint,8,opt,name=status,proto3" json:"status,omitempty"`
+	Payload       []byte                 `protobuf:"bytes,9,opt,name=payload,proto3" json:"payload,omitempty"`
+	TxType        uint32                 `protobuf:"varint,10,opt,name=tx_type,json=txType,proto3" json:"tx_type,omitempty"`
+	Attempts      uint32                 `protobuf:"varint,11,opt,name=attempts,proto3" json:"attempts,omitempty"`
+	NextAttemptMs uint64                 `protobuf:"varint,12,opt,name=next_attempt_ms,json=nextAttemptMs,proto3" json:"next_attempt_ms,omitempty"`
+	LeaseUntilMs  uint64                 `protobuf:"varint,13,opt,name=lease_until_ms,json=leaseUntilMs,proto3" json:"lease_until_ms,omitempty"`
+	LeaseToken    uint64                 `protobuf:"varint,14,opt,name=lease_token,json=leaseToken,proto3" json:"lease_token,omitempty"`
+	LastOutcome   uint32                 `protobuf:"varint,15,opt,name=last_outcome,json=lastOutcome,proto3" json:"last_outcome,omitempty"`
+	LastReason    uint32                 `protobuf:"varint,16,opt,name=last_reason,json=lastReason,proto3" json:"last_reason,omitempty"`
+	Durable       uint32                 `protobuf:"varint,17,opt,name=durable,proto3" json:"durable,omitempty"`
+	ReasonTipId   uint32                 `protobuf:"varint,18,opt,name=reason_tip_id,json=reasonTipId,proto3" json:"reason_tip_id,omitempty"`
+	CreatedMs     uint64                 `protobuf:"varint,19,opt,name=created_ms,json=createdMs,proto3" json:"created_ms,omitempty"`
+	UpdatedMs     uint64                 `protobuf:"varint,20,opt,name=updated_ms,json=updatedMs,proto3" json:"updated_ms,omitempty"`
+	LastSendMs    uint64                 `protobuf:"varint,21,opt,name=last_send_ms,json=lastSendMs,proto3" json:"last_send_ms,omitempty"`
+	ResolvedBy    string                 `protobuf:"bytes,22,opt,name=resolved_by,json=resolvedBy,proto3" json:"resolved_by,omitempty"`
+	ResolveReason string                 `protobuf:"bytes,23,opt,name=resolve_reason,json=resolveReason,proto3" json:"resolve_reason,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *MailAssetOpRecord) Reset() {
+	*x = MailAssetOpRecord{}
+	mi := &file_proto_mail_mail_table_proto_msgTypes[7]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *MailAssetOpRecord) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*MailAssetOpRecord) ProtoMessage() {}
+
+func (x *MailAssetOpRecord) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_mail_mail_table_proto_msgTypes[7]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use MailAssetOpRecord.ProtoReflect.Descriptor instead.
+func (*MailAssetOpRecord) Descriptor() ([]byte, []int) {
+	return file_proto_mail_mail_table_proto_rawDescGZIP(), []int{7}
+}
+
+func (x *MailAssetOpRecord) GetOpId() uint64 {
+	if x != nil {
+		return x.OpId
+	}
+	return 0
+}
+
+func (x *MailAssetOpRecord) GetPlayerId() uint64 {
+	if x != nil {
+		return x.PlayerId
+	}
+	return 0
+}
+
+func (x *MailAssetOpRecord) GetStream() uint32 {
+	if x != nil {
+		return x.Stream
+	}
+	return 0
+}
+
+func (x *MailAssetOpRecord) GetSeq() uint64 {
+	if x != nil {
+		return x.Seq
+	}
+	return 0
+}
+
+func (x *MailAssetOpRecord) GetStreamEpoch() uint64 {
+	if x != nil {
+		return x.StreamEpoch
+	}
+	return 0
+}
+
+func (x *MailAssetOpRecord) GetMailId() uint64 {
+	if x != nil {
+		return x.MailId
+	}
+	return 0
+}
+
+func (x *MailAssetOpRecord) GetClaimVersion() uint64 {
+	if x != nil {
+		return x.ClaimVersion
+	}
+	return 0
+}
+
+func (x *MailAssetOpRecord) GetStatus() uint32 {
+	if x != nil {
+		return x.Status
+	}
+	return 0
+}
+
+func (x *MailAssetOpRecord) GetPayload() []byte {
+	if x != nil {
+		return x.Payload
+	}
+	return nil
+}
+
+func (x *MailAssetOpRecord) GetTxType() uint32 {
+	if x != nil {
+		return x.TxType
+	}
+	return 0
+}
+
+func (x *MailAssetOpRecord) GetAttempts() uint32 {
+	if x != nil {
+		return x.Attempts
+	}
+	return 0
+}
+
+func (x *MailAssetOpRecord) GetNextAttemptMs() uint64 {
+	if x != nil {
+		return x.NextAttemptMs
+	}
+	return 0
+}
+
+func (x *MailAssetOpRecord) GetLeaseUntilMs() uint64 {
+	if x != nil {
+		return x.LeaseUntilMs
+	}
+	return 0
+}
+
+func (x *MailAssetOpRecord) GetLeaseToken() uint64 {
+	if x != nil {
+		return x.LeaseToken
+	}
+	return 0
+}
+
+func (x *MailAssetOpRecord) GetLastOutcome() uint32 {
+	if x != nil {
+		return x.LastOutcome
+	}
+	return 0
+}
+
+func (x *MailAssetOpRecord) GetLastReason() uint32 {
+	if x != nil {
+		return x.LastReason
+	}
+	return 0
+}
+
+func (x *MailAssetOpRecord) GetDurable() uint32 {
+	if x != nil {
+		return x.Durable
+	}
+	return 0
+}
+
+func (x *MailAssetOpRecord) GetReasonTipId() uint32 {
+	if x != nil {
+		return x.ReasonTipId
+	}
+	return 0
+}
+
+func (x *MailAssetOpRecord) GetCreatedMs() uint64 {
+	if x != nil {
+		return x.CreatedMs
+	}
+	return 0
+}
+
+func (x *MailAssetOpRecord) GetUpdatedMs() uint64 {
+	if x != nil {
+		return x.UpdatedMs
+	}
+	return 0
+}
+
+func (x *MailAssetOpRecord) GetLastSendMs() uint64 {
+	if x != nil {
+		return x.LastSendMs
+	}
+	return 0
+}
+
+func (x *MailAssetOpRecord) GetResolvedBy() string {
+	if x != nil {
+		return x.ResolvedBy
+	}
+	return ""
+}
+
+func (x *MailAssetOpRecord) GetResolveReason() string {
+	if x != nil {
+		return x.ResolveReason
+	}
+	return ""
+}
+
 var File_proto_mail_mail_table_proto protoreflect.FileDescriptor
 
 const file_proto_mail_mail_table_proto_rawDesc = "" +
 	"\n" +
-	"\x1bproto/mail/mail_table.proto\x12\x06mailpb\x1a\x1bproto/db/proto_option.proto\"\xd7\x04\n" +
-	"\x12MailPersonalRecord\x12\x17\n" +
+	"\x1bproto/mail/mail_table.proto\x12\x06mailpb\x1a\x1bproto/db/proto_option.proto\"\xb9\x04\n" +
+	"\n" +
+	"MailRecord\x12\x17\n" +
 	"\amail_id\x18\x01 \x01(\x04R\x06mailId\x12&\n" +
-	"\x0fowner_player_id\x18\x02 \x01(\x04R\rownerPlayerId\x12\x1f\n" +
-	"\vsender_kind\x18\x03 \x01(\rR\n" +
+	"\x0fowner_player_id\x18\x02 \x01(\x04R\rownerPlayerId\x12\x19\n" +
+	"\bguild_id\x18\x03 \x01(\x04R\aguildId\x12\x12\n" +
+	"\x04kind\x18\x04 \x01(\rR\x04kind\x12\x1f\n" +
+	"\vsender_kind\x18\x05 \x01(\rR\n" +
 	"senderKind\x12\x1d\n" +
 	"\n" +
-	"request_id\x18\x04 \x01(\x04R\trequestId\x12%\n" +
-	"\x0erequest_digest\x18\x05 \x01(\fR\rrequestDigest\x12\x1f\n" +
-	"\vsender_name\x18\x06 \x01(\tR\n" +
-	"senderName\x12\x14\n" +
-	"\x05title\x18\a \x01(\tR\x05title\x12\x12\n" +
-	"\x04body\x18\b \x01(\tR\x04body\x12 \n" +
-	"\vattachments\x18\t \x01(\fR\vattachments\x12\x1f\n" +
-	"\vclaim_state\x18\n" +
-	" \x01(\rR\n" +
-	"claimState\x12\x17\n" +
+	"request_id\x18\x06 \x01(\x04R\trequestId\x12!\n" +
+	"\frequest_hash\x18\a \x01(\tR\vrequestHash\x12\x14\n" +
+	"\x05title\x18\b \x01(\tR\x05title\x12\x12\n" +
+	"\x04body\x18\t \x01(\tR\x04body\x12 \n" +
+	"\vattachments\x18\n" +
+	" \x01(\fR\vattachments\x12\x17\n" +
 	"\asent_ms\x18\v \x01(\x04R\x06sentMs\x12\x1b\n" +
-	"\texpire_ms\x18\f \x01(\x04R\bexpireMs\x12\x17\n" +
-	"\aread_ms\x18\r \x01(\x04R\x06readMs\x12\x1d\n" +
+	"\texpire_ms\x18\f \x01(\x04R\bexpireMs\x12\x1f\n" +
+	"\vcampaign_id\x18\r \x01(\x04R\n" +
+	"campaignId\x12/\n" +
+	"\x13manifest_generation\x18\x0e \x01(\x04R\x12manifestGeneration:\x83\x01\x8a\x92\xf4\x01\fmail_message\x92\x92\xf4\x01\amail_idڒ\xf4\x017owner_player_id,mail_id;kind,expire_ms;guild_id,mail_id\xe2\x92\xf4\x01\x16sender_kind,request_id\xa8\x93\xf4\x01\x01\xb0\x93\xf4\x01\x04\xb8\x93\xf4\x01\x04\"\xe4\x05\n" +
+	"\x12MailCampaignRecord\x12\x1f\n" +
+	"\vsender_kind\x18\x01 \x01(\rR\n" +
+	"senderKind\x12\x1f\n" +
+	"\vcampaign_id\x18\x02 \x01(\x04R\n" +
+	"campaignId\x12/\n" +
+	"\x13manifest_generation\x18\x03 \x01(\x04R\x12manifestGeneration\x12\x17\n" +
+	"\amail_id\x18\x04 \x01(\x04R\x06mailId\x12\x1d\n" +
 	"\n" +
-	"updated_ms\x18\x0e \x01(\x04R\tupdatedMs\x12\x1d\n" +
+	"request_id\x18\x05 \x01(\x04R\trequestId\x12\x1a\n" +
+	"\bproducer\x18\x06 \x01(\tR\bproducer\x12!\n" +
+	"\frequest_hash\x18\a \x01(\tR\vrequestHash\x12\x14\n" +
+	"\x05title\x18\b \x01(\tR\x05title\x12\x12\n" +
+	"\x04body\x18\t \x01(\tR\x04body\x12 \n" +
+	"\vattachments\x18\n" +
+	" \x01(\fR\vattachments\x12\x1b\n" +
+	"\texpire_ms\x18\v \x01(\x04R\bexpireMs\x128\n" +
+	"\x18expected_recipient_count\x18\f \x01(\x04R\x16expectedRecipientCount\x120\n" +
+	"\x14expected_shard_count\x18\r \x01(\rR\x12expectedShardCount\x12#\n" +
+	"\rmanifest_hash\x18\x0e \x01(\tR\fmanifestHash\x12\x14\n" +
+	"\x05state\x18\x0f \x01(\rR\x05state\x12\x1d\n" +
 	"\n" +
-	"deleted_ms\x18\x0f \x01(\x04R\tdeletedMs:~\x8a\x92\xf4\x01\rmail_personal\x92\x92\xf4\x01\amail_idڒ\xf4\x01!owner_player_id,mail_id;expire_ms\xe2\x92\xf4\x01&sender_kind,request_id,owner_player_id\xa8\x93\xf4\x01\x01\xb0\x93\xf4\x01\x04\xb8\x93\xf4\x01\x04\"\xb5\x03\n" +
-	"\x10MailSystemRecord\x12\x1e\n" +
-	"\vsys_mail_id\x18\x01 \x01(\x04R\tsysMailId\x12\x1f\n" +
-	"\vsender_kind\x18\x02 \x01(\rR\n" +
-	"senderKind\x12\x1d\n" +
+	"created_ms\x18\x10 \x01(\x04R\tcreatedMs\x12\x1b\n" +
+	"\tsealed_ms\x18\x11 \x01(\x04R\bsealedMs\x12\x12\n" +
+	"\x04kind\x18\x12 \x01(\rR\x04kind\x12\x19\n" +
+	"\bguild_id\x18\x13 \x01(\x04R\aguildId:i\x8a\x92\xf4\x01\rmail_campaign\x92\x92\xf4\x01+sender_kind,campaign_id,manifest_generationڒ\xf4\x01\amail_id\xe2\x92\xf4\x01\x16sender_kind,request_id\"\xcb\x02\n" +
+	"\x17MailCampaignShardRecord\x12\x1f\n" +
+	"\vsender_kind\x18\x01 \x01(\rR\n" +
+	"senderKind\x12\x1f\n" +
+	"\vcampaign_id\x18\x02 \x01(\x04R\n" +
+	"campaignId\x12/\n" +
+	"\x13manifest_generation\x18\x03 \x01(\x04R\x12manifestGeneration\x12\x1f\n" +
+	"\vshard_index\x18\x04 \x01(\rR\n" +
+	"shardIndex\x12\x1d\n" +
 	"\n" +
-	"request_id\x18\x03 \x01(\x04R\trequestId\x12%\n" +
-	"\x0erequest_digest\x18\x04 \x01(\fR\rrequestDigest\x12\x1f\n" +
-	"\vsender_name\x18\x05 \x01(\tR\n" +
-	"senderName\x12\x14\n" +
-	"\x05title\x18\x06 \x01(\tR\x05title\x12\x12\n" +
-	"\x04body\x18\a \x01(\tR\x04body\x12 \n" +
-	"\vattachments\x18\b \x01(\fR\vattachments\x12\x17\n" +
-	"\asent_ms\x18\t \x01(\x04R\x06sentMs\x12\x1b\n" +
-	"\texpire_ms\x18\n" +
-	" \x01(\x04R\bexpireMs\x12\x1d\n" +
+	"shard_hash\x18\x05 \x01(\tR\tshardHash\x12'\n" +
+	"\x0frecipient_count\x18\x06 \x01(\rR\x0erecipientCount:T\x8a\x92\xf4\x01\x13mail_campaign_shard\x92\x92\xf4\x017sender_kind,campaign_id,manifest_generation,shard_index\"\xa6\x02\n" +
+	"\x1bMailCampaignRecipientRecord\x12\x1f\n" +
+	"\vsender_kind\x18\x01 \x01(\rR\n" +
+	"senderKind\x12\x1f\n" +
+	"\vcampaign_id\x18\x02 \x01(\x04R\n" +
+	"campaignId\x12/\n" +
+	"\x13manifest_generation\x18\x03 \x01(\x04R\x12manifestGeneration\x12\x1b\n" +
+	"\tplayer_id\x18\x04 \x01(\x04R\bplayerId\x12\x1f\n" +
+	"\vshard_index\x18\x05 \x01(\rR\n" +
+	"shardIndex:V\x8a\x92\xf4\x01\x17mail_campaign_recipient\x92\x92\xf4\x015sender_kind,campaign_id,manifest_generation,player_id\"h\n" +
+	"\rMailBoxRecord\x12\x1b\n" +
+	"\tplayer_id\x18\x01 \x01(\x04R\bplayerId\x12\x1d\n" +
 	"\n" +
-	"updated_ms\x18\v \x01(\x04R\tupdatedMs:X\x8a\x92\xf4\x01\vmail_system\x92\x92\xf4\x01\vsys_mail_idڒ\xf4\x01\texpire_ms\xe2\x92\xf4\x01\x16sender_kind,request_id\xa8\x93\xf4\x01\x01\xb0\x93\xf4\x01\x04\xb8\x93\xf4\x01\x04\"\x9d\x02\n" +
-	"\x15MailSystemStateRecord\x12\x1b\n" +
-	"\tplayer_id\x18\x01 \x01(\x04R\bplayerId\x12\x1e\n" +
-	"\vsys_mail_id\x18\x02 \x01(\x04R\tsysMailId\x12\x17\n" +
+	"created_ms\x18\x02 \x01(\x04R\tcreatedMs:\x1b\x8a\x92\xf4\x01\bmail_box\x92\x92\xf4\x01\tplayer_id\"\x82\x03\n" +
+	"\x0fMailStateRecord\x12\x1b\n" +
+	"\tplayer_id\x18\x01 \x01(\x04R\bplayerId\x12\x17\n" +
+	"\amail_id\x18\x02 \x01(\x04R\x06mailId\x12\x17\n" +
 	"\aread_ms\x18\x03 \x01(\x04R\x06readMs\x12\x1d\n" +
 	"\n" +
 	"deleted_ms\x18\x04 \x01(\x04R\tdeletedMs\x12\x1f\n" +
 	"\vclaim_state\x18\x05 \x01(\rR\n" +
-	"claimState\x12\x1d\n" +
+	"claimState\x12\"\n" +
+	"\rcurrent_op_id\x18\x06 \x01(\x04R\vcurrentOpId\x12#\n" +
+	"\rclaim_version\x18\a \x01(\x04R\fclaimVersion\x12\"\n" +
+	"\rreason_tip_id\x18\b \x01(\rR\vreasonTipId\x12\x1d\n" +
 	"\n" +
-	"updated_ms\x18\x06 \x01(\x04R\tupdatedMs:O\x8a\x92\xf4\x01\x11mail_system_state\x92\x92\xf4\x01\x15player_id,sys_mail_idڒ\xf4\x01\vsys_mail_id\xa8\x93\xf4\x01\x01\xb0\x93\xf4\x01\x04\xb8\x93\xf4\x01\x04\"w\n" +
-	"\rMailBoxRecord\x12\x1b\n" +
-	"\tplayer_id\x18\x01 \x01(\x04R\bplayerId\x12\x1d\n" +
+	"updated_ms\x18\t \x01(\x04R\tupdatedMs:T\x8a\x92\xf4\x01\n" +
+	"mail_state\x92\x92\xf4\x01\x11player_id,mail_idڒ\xf4\x01*mail_id,claim_state;claim_state,updated_ms\"\xca\x01\n" +
+	"\x15MailPlayerOpSeqRecord\x12\x1b\n" +
+	"\tplayer_id\x18\x01 \x01(\x04R\bplayerId\x12\x16\n" +
+	"\x06stream\x18\x02 \x01(\rR\x06stream\x12\x19\n" +
+	"\bnext_seq\x18\x03 \x01(\x04R\anextSeq\x12\x1d\n" +
 	"\n" +
-	"created_ms\x18\x02 \x01(\x04R\tcreatedMs:*\x8a\x92\xf4\x01\bmail_box\x92\x92\xf4\x01\tplayer_id\xa8\x93\xf4\x01\x01\xb0\x93\xf4\x01\x04\xb8\x93\xf4\x01\x04B\fZ\n" +
+	"updated_ms\x18\x04 \x01(\x04R\tupdatedMs\x12\x14\n" +
+	"\x05epoch\x18\x05 \x01(\x04R\x05epoch:,\x8a\x92\xf4\x01\x12mail_player_op_seq\x92\x92\xf4\x01\x10player_id,stream\"\x97\a\n" +
+	"\x11MailAssetOpRecord\x12\x13\n" +
+	"\x05op_id\x18\x01 \x01(\x04R\x04opId\x12\x1b\n" +
+	"\tplayer_id\x18\x02 \x01(\x04R\bplayerId\x12\x16\n" +
+	"\x06stream\x18\x03 \x01(\rR\x06stream\x12\x10\n" +
+	"\x03seq\x18\x04 \x01(\x04R\x03seq\x12!\n" +
+	"\fstream_epoch\x18\x05 \x01(\x04R\vstreamEpoch\x12\x17\n" +
+	"\amail_id\x18\x06 \x01(\x04R\x06mailId\x12#\n" +
+	"\rclaim_version\x18\a \x01(\x04R\fclaimVersion\x12\x16\n" +
+	"\x06status\x18\b \x01(\rR\x06status\x12\x18\n" +
+	"\apayload\x18\t \x01(\fR\apayload\x12\x17\n" +
+	"\atx_type\x18\n" +
+	" \x01(\rR\x06txType\x12\x1a\n" +
+	"\battempts\x18\v \x01(\rR\battempts\x12&\n" +
+	"\x0fnext_attempt_ms\x18\f \x01(\x04R\rnextAttemptMs\x12$\n" +
+	"\x0elease_until_ms\x18\r \x01(\x04R\fleaseUntilMs\x12\x1f\n" +
+	"\vlease_token\x18\x0e \x01(\x04R\n" +
+	"leaseToken\x12!\n" +
+	"\flast_outcome\x18\x0f \x01(\rR\vlastOutcome\x12\x1f\n" +
+	"\vlast_reason\x18\x10 \x01(\rR\n" +
+	"lastReason\x12\x18\n" +
+	"\adurable\x18\x11 \x01(\rR\adurable\x12\"\n" +
+	"\rreason_tip_id\x18\x12 \x01(\rR\vreasonTipId\x12\x1d\n" +
+	"\n" +
+	"created_ms\x18\x13 \x01(\x04R\tcreatedMs\x12\x1d\n" +
+	"\n" +
+	"updated_ms\x18\x14 \x01(\x04R\tupdatedMs\x12 \n" +
+	"\flast_send_ms\x18\x15 \x01(\x04R\n" +
+	"lastSendMs\x12\x1f\n" +
+	"\vresolved_by\x18\x16 \x01(\tR\n" +
+	"resolvedBy\x12%\n" +
+	"\x0eresolve_reason\x18\x17 \x01(\tR\rresolveReason:\xc4\x01\x8a\x92\xf4\x01\rmail_asset_op\x92\x92\xf4\x01\x05op_idڒ\xf4\x01nstatus,next_attempt_ms;player_id,stream,stream_epoch,status,seq;player_id,mail_id,claim_version;mail_id,status\xe2\x92\xf4\x01!player_id,stream,stream_epoch,seq\xa8\x93\xf4\x01\x01\xb0\x93\xf4\x01\x04\xb8\x93\xf4\x01\x04*\xbb\x01\n" +
+	"\x11MailAssetOpStatus\x12\x1d\n" +
+	"\x19MAIL_ASSET_OP_UNSPECIFIED\x10\x00\x12\x19\n" +
+	"\x15MAIL_ASSET_OP_PENDING\x10\x01\x12\x19\n" +
+	"\x15MAIL_ASSET_OP_APPLIED\x10\x02\x12\x1a\n" +
+	"\x16MAIL_ASSET_OP_REJECTED\x10\x03\x12\x18\n" +
+	"\x14MAIL_ASSET_OP_MANUAL\x10\x04\x12\x1b\n" +
+	"\x17MAIL_ASSET_OP_ABANDONED\x10\x05B\fZ\n" +
 	"proto/mailb\x06proto3"
 
 var (
@@ -521,12 +1182,18 @@ func file_proto_mail_mail_table_proto_rawDescGZIP() []byte {
 	return file_proto_mail_mail_table_proto_rawDescData
 }
 
-var file_proto_mail_mail_table_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
+var file_proto_mail_mail_table_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
+var file_proto_mail_mail_table_proto_msgTypes = make([]protoimpl.MessageInfo, 8)
 var file_proto_mail_mail_table_proto_goTypes = []any{
-	(*MailPersonalRecord)(nil),    // 0: mailpb.MailPersonalRecord
-	(*MailSystemRecord)(nil),      // 1: mailpb.MailSystemRecord
-	(*MailSystemStateRecord)(nil), // 2: mailpb.MailSystemStateRecord
-	(*MailBoxRecord)(nil),         // 3: mailpb.MailBoxRecord
+	(MailAssetOpStatus)(0),              // 0: mailpb.MailAssetOpStatus
+	(*MailRecord)(nil),                  // 1: mailpb.MailRecord
+	(*MailCampaignRecord)(nil),          // 2: mailpb.MailCampaignRecord
+	(*MailCampaignShardRecord)(nil),     // 3: mailpb.MailCampaignShardRecord
+	(*MailCampaignRecipientRecord)(nil), // 4: mailpb.MailCampaignRecipientRecord
+	(*MailBoxRecord)(nil),               // 5: mailpb.MailBoxRecord
+	(*MailStateRecord)(nil),             // 6: mailpb.MailStateRecord
+	(*MailPlayerOpSeqRecord)(nil),       // 7: mailpb.MailPlayerOpSeqRecord
+	(*MailAssetOpRecord)(nil),           // 8: mailpb.MailAssetOpRecord
 }
 var file_proto_mail_mail_table_proto_depIdxs = []int32{
 	0, // [0:0] is the sub-list for method output_type
@@ -546,13 +1213,14 @@ func file_proto_mail_mail_table_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_proto_mail_mail_table_proto_rawDesc), len(file_proto_mail_mail_table_proto_rawDesc)),
-			NumEnums:      0,
-			NumMessages:   4,
+			NumEnums:      1,
+			NumMessages:   8,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
 		GoTypes:           file_proto_mail_mail_table_proto_goTypes,
 		DependencyIndexes: file_proto_mail_mail_table_proto_depIdxs,
+		EnumInfos:         file_proto_mail_mail_table_proto_enumTypes,
 		MessageInfos:      file_proto_mail_mail_table_proto_msgTypes,
 	}.Build()
 	File_proto_mail_mail_table_proto = out.File

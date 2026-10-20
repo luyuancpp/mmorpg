@@ -23,7 +23,7 @@ import (
 // gate 校验的是 HMAC-SHA256(gate_token_secret, token_payload) 与
 // token_signature 的常数时间相等,再解出 GateTokenPayload 校验
 // gate_node_id == 本 gate、expire_timestamp > now
-// (cpp/nodes/gate/handler/rpc/client_message_processor.cpp)。校验通过只是把这条连接
+// (cpp/nodes/gate/handler/rpc/client_session_handler.cpp)。校验通过只是把这条连接
 // 标成 verified,新 zone 的 login 那边**没有**任何会话——所以跟随重定向必须完整重跑
 // Login + EnterGame,而不是"换个地址继续玩"。
 
@@ -40,6 +40,8 @@ type RedirectTarget struct {
 // ReloginFunc 在**新 gate 的连接上**重跑一遍 Login + EnterGame。
 // 由 robot 主程序注册(它才知道认证方式 / 配置 / 指标),pkg 层只负责调用——
 // 否则 pkg 要反向依赖 main 包,编译不过。
+// 它跑在 RecvLoop goroutine 上,只能用 SendRequest + RecvOne 的同步握手;禁止 CallSync
+// (回包要靠 RecvLoop 派发,在这里阻塞等回包就是自锁,见 GameClient.CallSync)。
 type ReloginFunc func(gc *GameClient) error
 
 var (

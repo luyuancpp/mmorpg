@@ -9,8 +9,8 @@
 #include <utility>
 
 #include "muduo/base/Logging.h"
-#include "muduo/net/EventLoop.h"
 #include "gate_codec.h"
+#include "login_admission.h"
 #include "error_reporter/error_reporter.h"
 #include "node/system/grpc_call_deadline.h"
 #include "proto/common/base/message.pb.h"
@@ -18,6 +18,7 @@
 #include "proto/common/base/session.pb.h"
 #include "rpc/service_metadata/login_service_metadata.h"
 #include "table/proto/tip/common_error_tip.pb.h"
+#include "table/proto/tip/login_error_tip.pb.h"
 #include <session/manager/session_manager.h>
 #include "session/comp/router_lane.h"
 #include "session/comp/router_lane_item.h"
@@ -35,7 +36,6 @@ struct InflightCall
 	uint64_t incarnation{0};
 	uint64_t clientRequestId{0};
 	uint32_t messageId{0};
-	entt::entity routerEntity{entt::null};
 };
 
 // 只用于每 30s 一行的 [lane] 汇总日志(gate 没有 Prometheus 出口)。不按会话、玩家或消息号分维度(AGENTS.md §9)。
@@ -44,8 +44,7 @@ struct LaneCounters
 	uint64_t admitted{0};
 	uint64_t sent{0};
 	uint64_t replied{0};
-	uint64_t failed{0};
-	uint64_t nodeRemoved{0};
+	uint64_t failed{0}; // 含路由服节点摘除:~Channel 以 UNAVAILABLE 完成在途调用,走同一失败回调
 	uint64_t expired{0};
 	uint64_t expiredInQueue{0};
 	uint64_t noRouter{0};
@@ -55,10 +54,11 @@ struct LaneCounters
 	uint64_t incarnationMismatch{0};
 	uint64_t droppedOnClose{0};
 	uint64_t droppedOnRedirect{0};
+	uint64_t rejectedNotLoggedIn{0}; // 本连接没有成功 Login 就轮到发 CreatePlayer / EnterGame / LeaveGame(login_admission.h)
 	std::size_t maxDepthSeen{0};
 };
 
-// 全部只在 gate 唯一的 EventLoop 线程上读写(会话表同为 thread_local,client_message_processor.cpp:542-546)。
+// 全部只在 gate 唯一的 EventLoop 线程上读写(会话表同为 thread_local,client_session_handler.cpp:542-546)。
 thread_local InflightIndex<InflightCall> tlsInflight;
 thread_local CallSeq tlsLastCallSeq = kNoCallSeq;
 thread_local uint64_t tlsLastIncarnation = 0;
@@ -134,9 +134,17 @@ void Pump(SessionId sessionId, SessionInfo &session)
 			SendEnvelope(session, item->clientRequestId, item->messageId, kServiceUnavailable);
 			continue;
 		}
-		const std::optional<entt::entity> router =
-			gRouterSender != nullptr ? gRouterSender(*item->request, item->sessionDetailsBin) : std::nullopt;
-		if (!router)
+		// 本连接没有成功 Login 就不发 CreatePlayer / EnterGame / LeaveGame(login_admission.h)。确定未执行,
+		// 回与 login 同一个「未登录」码,客户端照旧回登录。在发出时判、不在准入时判:连发的 Login → EnterGame 里,
+		// EnterGame 轮到发出时 Login 的回包已经由 OnRouterReply 记过结果。
+		if (gate_login_admission::RequiresSuccessfulLogin(item->messageId) && !session.loginSucceeded)
+		{
+			++tlsCounters.rejectedNotLoggedIn;
+			SendEnvelope(session, item->clientRequestId, item->messageId, kLoginSessionNotFound);
+			continue;
+		}
+		const bool sent = gRouterSender != nullptr && gRouterSender(*item->request, item->sessionDetailsBin);
+		if (!sent)
 		{
 			// 本地没有任何路由服(启动窗口 / 全部下线);发送函数已按 1024 采样留痕。
 			++tlsCounters.noRouter;
@@ -151,7 +159,6 @@ void Pump(SessionId sessionId, SessionInfo &session)
 										  session.incarnation,
 										  item->clientRequestId,
 										  item->messageId,
-										  *router,
 									  });
 		// 确实发出过 Login.Login 的会话,断开时才需要通知 Login 清理 session-id 状态。在发出时置位、不在入队时:
 		// 排队中、断线时作废的 Login 从没到达 login,入队就置位会让「发 Login 后立刻断开」放大断线 RPC。
@@ -163,7 +170,7 @@ void Pump(SessionId sessionId, SessionInfo &session)
 	}
 }
 
-// 失败类完成(gRPC 失败 / 节点摘除 / 本地截止)的共同收尾:核对会话、认领队头、回 1003、放行下一条。
+// 失败类完成(gRPC 失败,含路由服节点摘除 / 本地截止)的共同收尾:核对会话、认领队头、回 1003、放行下一条。
 void FinishWithFailure(CallSeq seq, const InflightCall &call)
 {
 	SessionInfo *session = FindLiveSession(call.sessionId, call.incarnation);
@@ -183,7 +190,8 @@ void FinishWithFailure(CallSeq seq, const InflightCall &call)
 	Pump(call.sessionId, *session);
 }
 
-// 认领一次完成:恰好一次(extract)。取不到 = 已过期 / 已失败 / 已因节点摘除处理 / 断线时已注销,调用方丢弃这次完成。
+// 认领一次完成:恰好一次(extract)。取不到 = 已过期 / 已失败 / 断线时已注销,调用方丢弃这次完成。
+// 正常运行时 lateDropped 只来自「本地截止先到、通道回调后到」与断线后的迟到完成;路由服摘除不再计入(W1-45)。
 std::optional<InflightCall> Claim(CallSeq seq)
 {
 	auto call = tlsInflight.Extract(seq);
@@ -203,11 +211,12 @@ void LogSummaryIfDue(SteadyTime now)
 	tlsLastSummaryAt = now;
 	const auto &c = tlsCounters;
 	LOG_INFO << "[lane] summary admitted=" << c.admitted << " sent=" << c.sent << " replied=" << c.replied
-			 << " failed=" << c.failed << " node_removed=" << c.nodeRemoved << " expired=" << c.expired
+			 << " failed=" << c.failed << " expired=" << c.expired
 			 << " expired_in_queue=" << c.expiredInQueue << " no_router=" << c.noRouter
 			 << " rejected_full=" << c.rejectedFull << " rejected_redirected=" << c.rejectedRedirected
 			 << " late_dropped=" << c.lateDropped << " incarnation_mismatch=" << c.incarnationMismatch
 			 << " dropped_on_close=" << c.droppedOnClose << " dropped_on_redirect=" << c.droppedOnRedirect
+			 << " rejected_not_logged_in=" << c.rejectedNotLoggedIn
 			 << " in_flight=" << tlsInflight.Size() << " expiry_heap=" << tlsInflight.ExpiryHeapSize()
 			 << " max_depth_seen=" << c.maxDepthSeen;
 }
@@ -278,7 +287,7 @@ bool OnRouterReply(const SessionDetails &echoed, const ::google::protobuf::Messa
 	const auto call = Claim(seq);
 	if (!call)
 	{
-		// 这个请求已经有过回执(本地截止 / 失败 / 节点摘除),再下发就是同一请求两个回执。
+		// 这个请求已经有过回执(本地截止 / 失败),再下发就是同一请求两个回执。
 		return true;
 	}
 	SessionInfo *session = FindLiveSession(call->sessionId, call->incarnation);
@@ -294,6 +303,12 @@ bool OnRouterReply(const SessionDetails &echoed, const ::google::protobuf::Messa
 		return true;
 	}
 	++tlsCounters.replied;
+	// 先记 Login 结果,再放行下一条:同一会话里排在 Login 后面的 CreatePlayer / EnterGame 在 Pump 时要看到它。
+	// 会话已按代次核对过(FindLiveSession),旧连接迟到的 Login 回包不会记到撞号的新连接上。
+	if (call->messageId == ClientPlayerLoginLoginMessageId && gate_login_admission::IsLoginReplySuccess(reply))
+	{
+		session->loginSucceeded = true;
+	}
 	if (const auto conn = session->conn.lock())
 	{
 		GetGateCodec().send(conn, reply);
@@ -319,43 +334,15 @@ bool OnRouterCallFailed(const SessionDetails &sent)
 	return true;
 }
 
-void OnRouterNodeRemoved(entt::entity routerEntity)
-{
-	auto removed = tlsInflight.ExtractIf([routerEntity](const InflightCall &call) { return call.routerEntity == routerEntity; });
-	if (removed.empty())
-	{
-		return;
-	}
-	tlsCounters.nodeRemoved += removed.size();
-	LOG_WARN << "[lane] Router node removed with in-flight calls; failing them with 1003 so their sessions can proceed"
-			 << " router_entity=" << entt::to_integral(routerEntity) << " in_flight=" << removed.size();
-	// 摘出(恰好一次)同步做,回执与 Pump 推到下一轮:本回调在 DestroyEntity 之前触发(node.cpp OnNodeRemoveEvent),
-	// 被摘实体的 NodeInfo 还在。官方 CQ 时代通道也还在,同步 Pump 会让 PickRandomNode 以 1/N 概率把下一条又发给它;
-	// 第 3 批起 node.cpp 先摘通道再触发事件、选点已不会选中它,推到下一轮保留为不依赖这一顺序的写法。
-	// 中间这一轮 lane 的在途序号保持不变,新请求只会排队;会话断线 / 换代 / 重定向由 FindLiveSession 与 Complete(seq) 兜住。
-	// 闭包只捕获数据(AGENTS.md §11.7)。
-	auto finish = [removed = std::move(removed)]()
-	{
-		for (const auto &[seq, call] : removed)
-		{
-			FinishWithFailure(seq, call);
-		}
-	};
-	if (auto *loop = muduo::net::EventLoop::getEventLoopOfCurrentThread())
-	{
-		loop->queueInLoop(std::move(finish));
-		return;
-	}
-	finish(); // 无 loop 的宿主(单测):同步收尾
-}
-
 void ExpireDue(std::chrono::steady_clock::time_point now)
 {
 	auto expired = tlsInflight.ExtractExpired(now);
 	if (!expired.empty())
 	{
 		tlsCounters.expired += expired.size();
-		// 本地截止到期说明 gRPC 回调丢了(官方 CQ 时代的 F29 等;第 3 批起摘节点与关机都会补投失败),正常运行时不该出现。
+		// 本地截止到期说明这次调用的完成没被认领:传输层回调丢了(「恰好一次」契约出缺陷;第 3 批前的 F29、
+		// CQ 轮询 !ok 两个来源已随官方 CQ 删除),或路由服回显缺失 / 解析失败 / 不带 gate_call_seq(版本不符,
+		// 对照 router_muduo_forward.cpp 的「no x-session-detail-bin echo」WARN)。正常运行时不该出现。
 		std::ostringstream message;
 		message << "in_flight_expired=" << expired.size() << " total=" << tlsCounters.expired;
 		error_reporter::Record(kServiceUnavailable, "router_lane_expired", message.str());

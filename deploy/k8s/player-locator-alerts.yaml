@@ -1,0 +1,198 @@
+# Prometheus alert rules for player_locator 的会话对账(全服单 leader + 按 gate 实例建的会话索引)。
+#
+# 来源:docs/design/player-locator-gate-session-index.md §9(指标与告警)、§4(控制面状态机)、§8(失败模式)。
+# 指标定义:go/player_locator/internal/logic/reconcile_metrics.go。
+#
+# Install as a PrometheusRule CR (kube-prometheus stack),与 owner-epoch-alerts.yaml / player-inbox-alerts.yaml 同法:
+#   kubectl apply -n observability -f deploy/k8s/player-locator-alerts.yaml
+#
+# Scrape prerequisites(前置,缺一条规则就全是哑的):
+#   - manifests/go-svc/player-locator.yaml 的 Pod 带 prometheus.io/scrape 注解、声明名为 metrics 的 9190 端口;
+#   - player-locator 的 ConfigMap 有 Prometheus 段(Host 0.0.0.0、Port 9190、Path /metrics)。go-zero 的 StartAgent 在 Host
+#     为空时直接 return,端点根本不存在。2026-10-18 前 K8s 上两者都没有(既有缺口),k8s_deploy.ps1 的 heredoc 接线见
+#     PROGRESS 同日条目;接线之前本文件一条都不会触发,leader 卡死也发现不了;
+#   - 上面两条**必须同批发布**(或先发 ConfigMap 的 Prometheus 段,再发 manifest 的注解与端口):只有注解、进程没在 9190
+#     监听时,按注解抓取的目标是 down(连接被拒),可能误触通用的 TargetDown 类告警;
+#   - 集群里要有 ServiceMonitor / PodMonitor(或按注解抓取的 job)指向它。
+#
+# 聚合口径:
+#   - leader 是**全服一个**(选主锁在共用的会话 Redis 上,所有 zone 的 locator 一起竞选),所以规则不按 namespace 分组;
+#   - 计数器每个副本各报一份 → sum(...);
+#   - gauge 只由 leader 产出:进程启动预置 0,任期开始与结束都清零,所以每个副本都导出这些序列。规则大多先乘
+#     (reconcile_is_leader == 1) 过滤、再 max(),不过滤的话,前任残留的旧值会掩盖或伪造现任的读数。按 pod 匹配用的是
+#     ServiceMonitor / PodMonitor 默认附加的 namespace、pod 标签;改用按注解抓取的 job 时 relabel 必须同样写出这两个标签;
+#   - **Stalled 例外,不按 is_leader 过滤**,直接对全体副本取 max(last_success):前任卸任时已清零,卡死的僵尸 leader 的值
+#     只会变旧、不会变新,掩盖不了现任,所以 max 就是现任的值;按 is_leader 关联反而在「现任还没导出这条序列」或换主空档
+#     (没有任何 is_leader==1 的样本)时得到空集,pending 被重置。全员失败时所有序列都是 0,表达式持续为真。
+#     代价:没有 leader 时 Stalled 与 NoLeader 一起触发,可以接受;
+#   - **换主空档会重置 pending**:Prometheus 只要有一次求值没有返回某条 alert 的序列,就把处于 pending 的它删掉。
+#     leader Pod 被终止 / 让位 / 丢锁时,旧 leader 的序列变 stale 或变 0,新 leader 的 1 要等下一次抓取才可见,
+#     按 is_leader 过滤的表达式在这段时间为空。for 很长的规则(GateIndexNotReady 24h、LegacySessionWriters 30m)
+#     因此先用短子查询(*_over_time(...[10m:1m]) / [5m:1m])把空档抹平,for 照旧负责「持续多久」:
+#     首次上线时没有历史,补建本来就要约 9 小时,不能改成「长子查询 + for 0m」,否则正落在预期未就绪的窗口里误报;
+#   - DeadGatesPending 不做平滑:新 leader 的去抖表是空的,接任后头一两拍的读数本来就是真 0(要连续两拍缺席才确认),
+#     子查询帮不上。换主会让它的 15 分钟从头计,最多推迟一个换主间隔;
+#   - 计数器的全部 label 组合与 is_leader 在进程启动时预置为 0,increase() 能抓到第一次,「没有 leader」也分得清
+#     「没抓到」(后者走 absent 分支);
+#   - label 只有有限枚举,不用 player_id,也不用 gate uuid;定位具体 gate / 玩家看同一时刻 leader 的日志
+#     (SessionReconciler: ...)。
+#
+# 本文件里凡是以指标前缀开头的词(表达式、注释、描述都算)都必须是已注册的指标名:go/player_locator/internal/logic 的
+# TestAlertRulesReferenceRegisteredMetrics 读本文件逐个核对。注释里提到文件名、服务名时不要写成指标前缀加下划线的形式。
+#
+# 阈值与 for 都是起步值([I]),待 V0 实测后校准;代码未编译、未实测。
+#
+# Severity conventions(与 scene-manager-alerts.yaml 相同):
+#   critical = pager, someone wakes up
+#   warning  = next-business-hours channel
+#   info     = dashboard annotation / trend signal
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: player-locator-alerts
+  labels:
+    app: player-locator
+    prometheus: kube-prometheus
+    role: alert-rules
+spec:
+  groups:
+    - name: player-locator.session-reconciler
+      interval: 30s
+      rules:
+        # 没有任何副本持有对账领导权:gate 整机崩溃留下的 ONLINE 会话没人处理(永久在线、LeaveScene 不执行)。
+        # absent 分支 = 一条 is_leader 序列都没有:没抓到 /metrics,或全部 Pod 还是不导出它的旧版本。
+        - alert: PlayerLocatorReconcilerNoLeader
+          expr: |
+            sum(player_locator_reconcile_is_leader) == 0
+            or absent(player_locator_reconcile_is_leader)
+          for: 5m
+          labels:
+            severity: critical
+          annotations:
+            summary: "player_locator 会话对账没有 leader 超过 5 分钟"
+            description: >-
+              选主锁 player_locator:session_reconciler:leader 在会话 Redis 上,所有 zone 的 locator 一起竞选。
+              没有 leader 多半是 Redis 不可写(此时会话写入同样失败),或全部副本都在让位后的等待里(etcd 整体不可达,
+              见各副本日志 "SessionReconciler: yielding leadership")。absent 分支先查抓取接线(文件头前置)。
+              处置:redis-cli GET player_locator:session_reconciler:leader;查 etcd 与 Redis 健康。
+
+        # 索引循环 5 分钟没有完成一拍。不按 is_leader 过滤,理由见文件头「Stalled 例外」。
+        # 新任期在第一拍成功之前读数为 0,time() - 0 恒大于 300:刚换主时表达式立即为真,吸收正常换主的是 for: 5m
+        # (新任一拍 60s 内就会成功)。leader 自己连续 3 拍失败会让位;一直 Stalled 说明换了几任都跑不通
+        # (「每一任都失败」时所有副本都是 0,表达式持续为真,不受换主空档影响)。没有 leader 时与 NoLeader 一起亮。
+        # (2026-10-18 评审更正:原写法按 is_leader 关联,现任从未成功过时为空集、卸任过的 Pod 都挂着 0、absent 也不触发,
+        # 全员失败恰好无声;原注释「读数为 0,所以刚换主不会误报」的推理是反的。)
+        - alert: PlayerLocatorReconcilerStalled
+          expr: |
+            (time() - max(player_locator_reconcile_last_success_unix{loop="index"})) > 300
+            or absent(player_locator_reconcile_last_success_unix{loop="index"})
+          for: 5m
+          labels:
+            severity: critical
+          annotations:
+            summary: "player_locator 会话对账 leader 超过 5 分钟没有完成一拍"
+            description: >-
+              看 leader 日志 "SessionReconciler: index round failed stage=etcd|redis|panic" 定位失败阶段;
+              sum by (result) (increase(player_locator_reconcile_round_total{loop="index"}[10m])) 看失败分布。
+              gate 崩溃后的会话清理在此期间停摆(断线租约链照常,只是死 gate 上的 ONLINE 会话不会被补投 DISCONNECTING)。
+              absent 分支与 NoLeader 同源,先查抓取接线。
+
+        # 索引循环失败的拍(含 etcd 读写者列表失败)。偶发是 etcd / Redis 抖动;持续说明 leader 那一侧的网络有问题,
+        # 连续 3 拍会触发让位,看是否换主后恢复。
+        - alert: PlayerLocatorReconcileRoundsFailing
+          expr: |
+            sum(increase(player_locator_reconcile_round_total{loop="index", result!="ok"}[15m])) > 3
+          for: 15m
+          labels:
+            severity: warning
+          annotations:
+            summary: "player_locator 会话对账 15 分钟内失败超过 3 拍"
+            description: >-
+              按 result 拆分:etcd_error(gate 存活集或写者列表读不出,本拍不推进去抖、不动就绪标记)、
+              redis_error、panic(同时看 safego_panic_total{point=~"player_locator.session_reconciler.*"})。
+
+        # 有不维护 gate 索引的旧版 player_locator 在注册(滚动升级窗口内是预期的)。持续 30 分钟说明升级卡住,
+        # 或有别的环境的旧版 locator 注册在同一个 etcd 上(只会带来持续补建的成本,见设计文档 §8)。
+        # min_over_time(...[5m:1m]) 只用来抹平换主空档(文件头),不改变「持续 30 分钟」的含义。
+        - alert: PlayerLocatorLegacySessionWriters
+          expr: |
+            min_over_time((
+              max(
+                player_locator_reconcile_legacy_writers
+                * on (namespace, pod) group_left ()
+                (player_locator_reconcile_is_leader == 1)
+              )
+            )[5m:1m]) > 0
+          for: 30m
+          labels:
+            severity: warning
+          annotations:
+            summary: "仍有 {{ $value | printf \"%.0f\" }} 个旧版 player_locator 在写会话(不维护 gate 索引)"
+            description: >-
+              旧写者在期间,就绪标记被删、补建扫描持续运行(限速的全键 SCAN,会抬高核心 Redis 负载)。
+              etcd 里 PlayerLocatorNodeService.rpc/ 下有 NodeInfo、/mmorpg/capability/player_locator/gate_session_index/v1/
+              下没有同 uuid 能力键的就是它们;leader 日志 "legacy session writer(s)" 列出前 3 个 uuid。
+
+        # 索引一直没有就绪:补建一遍都没完成,或每遍都因旧写者 / 键类型错误作废。目标规模下一遍补建约 9 小时([I])。
+        # max_over_time(...[10m:1m]) == 0 = 「最近 10 分钟一次都没就绪过」,只用来抹平换主空档(文件头):
+        # 原写法下 24 小时里只要有一次 leader 所在 zone 的 locator 发版,pending 就被重置,永远等不满 24h,
+        # 与设计文档 §8 残余风险 3「补建总被打断时本告警会亮」矛盾(2026-10-18 评审更正)。
+        - alert: PlayerLocatorGateIndexNotReady
+          expr: |
+            max_over_time((
+              max(
+                player_locator_gate_index_ready
+                * on (namespace, pod) group_left ()
+                (player_locator_reconcile_is_leader == 1)
+              )
+            )[10m:1m]) == 0
+          for: 24h
+          labels:
+            severity: warning
+          annotations:
+            summary: "player_locator 会话索引 24 小时没有就绪"
+            description: >-
+              看 player_locator_reconcile_round_total{loop="repair"} 的 result:gen_changed = 补建期间出现过旧写者
+              (先处理 LegacySessionWriters);incomplete = 有 ONLINE 会话因键类型错误没能补进索引(看 leader 日志
+              "key has the wrong type" 与 player_locator_reconcile_sessions_total{action="member_error"},人工处理那个键);
+              redis_error = 扫描失败(含扫描期间 Redis 换了进程,日志 "redis run_id changed during the pass");
+              一直没有 ok 也没有失败 = 补建还在跑(调大 Reconcile.ScanPagesPerSecond 前先评估核心 Redis 延迟)。
+              换主后补建从头扫(设计文档 §8 残余风险 3),发版比补建耗时更频繁时会一直亮。
+              未就绪期间对账照常处理已在索引里的死 gate 成员。
+
+        # 审计(索引就绪时)补进了成员:有会话 ONLINE 却不在它 gate 的索引里,不变量 I1 被破坏过。
+        # 可能来源:非 player_locator 的会话写者、外部篡改、只活在 etcd 故障期间的旧写者(设计文档 §8 残余风险)。
+        - alert: PlayerLocatorGateIndexAuditRepaired
+          expr: |
+            sum(increase(player_locator_reconcile_sessions_total{action="audit_repaired"}[1d])) > 0
+          for: 0m
+          labels:
+            severity: warning
+          annotations:
+            summary: "player_locator 会话索引审计补进了 {{ $value | printf \"%.0f\" }} 个漏成员"
+            description: >-
+              leader 日志 "audit found ONLINE session(s) missing from the index while it was ready" 带统计
+              (backfilled = 已补进的数,could not index = 因键类型错误没能补进的数);
+              按设计文档 §8 排查写者来源。被补的成员在补进之前,所在 gate 若已死,对应会话不会被对账处理。
+
+        # 已确认死亡的 gate 迟迟处理不完。大面积 gate 故障时按 MaxTransitionsPerSecond 限速分多拍处理是预期的
+        # (持续速率约为配置值的一半,见设计文档 §7),看 player_locator_reconcile_dead_gate_members(剩余成员)是否在下降。
+        # 不做子查询平滑:换主后新 leader 头一两拍读数是真 0(文件头),这条的 15 分钟会从头计。
+        # 剩余成员长期不降且不为 0,也可能是毒成员(会话键类型不对,摘不掉):看 action="member_error" 与 leader 日志。
+        - alert: PlayerLocatorDeadGatesPending
+          expr: |
+            max(
+              player_locator_reconcile_dead_gates
+              * on (namespace, pod) group_left ()
+              (player_locator_reconcile_is_leader == 1)
+            ) > 0
+          for: 15m
+          labels:
+            severity: warning
+          annotations:
+            summary: "player_locator 有 {{ $value | printf \"%.0f\" }} 个死 gate 15 分钟未处理完"
+            description: >-
+              剩余成员不降:看 leader 日志 cas_conflict(玩家正在重连到别的 gate,下一拍重判)与 round 失败;
+              剩余成员在降:只是量大,按 Reconcile.MaxTransitionsPerSecond 的限速在走(调高前先评估 LeaseMonitor 的
+              LeaveScene 与踢人命令的下游压力)。

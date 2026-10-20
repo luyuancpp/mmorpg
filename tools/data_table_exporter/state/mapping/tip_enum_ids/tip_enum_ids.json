@@ -65,7 +65,9 @@
         "LoginTimeout": 2031,
         "RoleNameInvalid": 2032,
         "RoleNameTaken": 2033,
-        "RoleNameSensitive": 2034
+        "RoleNameSensitive": 2034,
+        "LoginAuthProviderUnavailable": 2035,
+        "LoginTokenIssueFailed": 2036
       }
     },
     "scene_error": {
@@ -372,7 +374,19 @@
         "TradeListingNotFound": 20000,
         "TradeHomeZoneUnknown": 20001,
         "TradeFavoriteLimitReached": 20002,
-        "TradeFeatureDisabled": 20003
+        "TradeFeatureDisabled": 20003,
+        "TradeOrderNotFound": 20004,
+        "TradeOrderStateConflict": 20005,
+        "TradeRequestConflict": 20006,
+        "TradeOrderLimit": 20007,
+        "TradeCannotTradeSelf": 20008,
+        "TradeCounterpartyUnknown": 20009,
+        "TradeInsufficientAsset": 20010,
+        "TradeBidTooLow": 20011,
+        "TradeAuctionEnded": 20012,
+        "TradeAssetDeliveryPending": 20013,
+        "TradeManualReview": 20014,
+        "TradeAssetNotTradable": 20015
       }
     },
     "asset_error": {
@@ -443,14 +457,27 @@
       "base": 17000,
       "width": 1000,
       "ids": {
-        "MailClaimNotOpen": 17000,
-        "MailNotFound": 17001,
-        "MailExpired": 17002,
-        "MailRecipientBoxFull": 17003,
-        "MailAttachmentNotOpen": 17004,
-        "MailAttachmentInvalid": 17005,
-        "MailRequestConflict": 17006,
-        "MailSystemMailLimit": 17007
+        "MailNotFound": 17000,
+        "MailExpired": 17001,
+        "MailRecipientBoxFull": 17002,
+        "MailAttachmentInvalid": 17003,
+        "MailRequestConflict": 17004,
+        "MailSystemMailLimit": 17005,
+        "MailClaimPending": 17006,
+        "MailClaimManual": 17007,
+        "MailAttachmentProtected": 17008,
+        "MailClaimNotOpen": 17009,
+        "MailAttachmentNotOpen": 17010
+      }
+    },
+    "rank_error": {
+      "base": 21000,
+      "width": 1000,
+      "ids": {
+        "RankBoardNotFound": 21000,
+        "RankGenerationClosed": 21001,
+        "RankRequestConflict": 21002,
+        "RankSettlementPending": 21003
       }
     },
     "mystery_merchant_error": {

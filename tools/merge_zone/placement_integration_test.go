@@ -82,6 +82,7 @@ var itPlayerTables = []string{"player_centre_database", "player_database", "play
 // ── CAS 脚本与能力标记 ───────────────────────────────────────────
 
 func TestIT_Placement_CASScriptSemantics(t *testing.T) {
+	requireIT(t)
 	itReset(t)
 	ctx := context.Background()
 	m := itRedis(t, itMappingRD)
@@ -141,6 +142,7 @@ func TestIT_Placement_CASScriptSemantics(t *testing.T) {
 }
 
 func TestIT_Placement_CapabilityCheck(t *testing.T) {
+	requireIT(t)
 	itReset(t)
 	ctx := context.Background()
 	m := itRedis(t, itMappingRD)
@@ -167,6 +169,7 @@ func TestIT_Placement_CapabilityCheck(t *testing.T) {
 // TestIT_Placement_PinMergeVerifyUnmerge 是 pin 模式的端到端(§10.1):合服只改归属,一行都不拷;
 // 无记录者钉 "{src}:1",已有记录者不动;共享缓存不删;-verify-merged 按有效落点核对;续跑幂等;撤销只改回 home。
 func TestIT_Placement_PinMergeVerifyUnmerge(t *testing.T) {
+	requireIT(t)
 	itReset(t)
 	ctx := context.Background()
 	db := itOpen(t)
@@ -278,6 +281,7 @@ func TestIT_Placement_PinMergeVerifyUnmerge(t *testing.T) {
 }
 
 func TestIT_Placement_PinMergeRefusedWithoutCapability(t *testing.T) {
+	requireIT(t)
 	itReset(t)
 	itSeedPlayers(t, []uint64{9011, 9012}, true)
 	manifest := filepath.Join(t.TempDir(), "merge.json")
@@ -314,6 +318,7 @@ func TestIT_Placement_PinMergeRefusedWithoutCapability(t *testing.T) {
 // TestIT_Placement_CopyModeSkipsPlayersWithARecord(§10.2):copy 模式只拷没有落点记录的人;有记录者的行在其落点库,
 // 不拷 —— 但处理他们存盘的 dst go/db 必须按记录选库,所以这时同样要能力标记。验证按记录找到他们的行,撤销不删他们。
 func TestIT_Placement_CopyModeSkipsPlayersWithARecord(t *testing.T) {
+	requireIT(t)
 	itReset(t)
 	db := itOpen(t)
 	itSeedPlayers(t, []uint64{9101, 9102, 9103}, true)
@@ -373,6 +378,7 @@ func TestIT_Placement_CopyModeSkipsPlayersWithARecord(t *testing.T) {
 // TestIT_Placement_MergeAndUnmergeRefuseFrozenPlayers(§9 末条):清单里有冻结记录(搬库正在挪)的玩家时,合服
 // (两种模式)与撤销都在围栏之下、任何写之前拒绝,正常释放围栏。
 func TestIT_Placement_MergeAndUnmergeRefuseFrozenPlayers(t *testing.T) {
+	requireIT(t)
 	itReset(t)
 	itSeedPlayers(t, []uint64{9201, 9202}, true)
 	itSetPlacement(t, 9202, frozenValue(901, 1, "reloc-it-x"))
@@ -416,6 +422,7 @@ func TestIT_Placement_MergeAndUnmergeRefuseFrozenPlayers(t *testing.T) {
 // pin-placement 钉在 dst 的清单玩家,撤销改回 home 之后由 src 的 go/db 处理存盘,它必须按记录选库;
 // 没有能力标记时在任何写之前拒绝(未进入半撤销状态,围栏照常释放),补上标记后撤销照常进行、落点记录不动。
 func TestIT_Placement_UnmergeRequiresSourceCapabilityForOffSourceRecords(t *testing.T) {
+	requireIT(t)
 	itReset(t)
 	itSetHome(t, 9231, itDstZone)
 	itSetHome(t, 9232, itDstZone)
@@ -456,6 +463,7 @@ func TestIT_Placement_UnmergeRequiresSourceCapabilityForOffSourceRecords(t *test
 }
 
 func TestIT_Placement_ResumeMustKeepTheManifestMode(t *testing.T) {
+	requireIT(t)
 	itReset(t)
 	itSeedPlayers(t, []uint64{9211}, true)
 	itMarkCapable(t, itSrcZone, itDstZone)
@@ -477,6 +485,7 @@ func TestIT_Placement_ResumeMustKeepTheManifestMode(t *testing.T) {
 // ── -mode pin-placement ─────────────────────────────────────────
 
 func TestIT_Placement_PinPlacementMode(t *testing.T) {
+	requireIT(t)
 	itReset(t)
 	ctx := context.Background()
 	mapRdb := itRedis(t, itMappingRD)
@@ -532,6 +541,7 @@ func itRelocateArgs(manifest string, s, t uint32, extra ...string) []string {
 // TestIT_Relocate_IntoAPlayerStoreAndBack:整条 R0~R5 经真二进制跑一遍 —— dry-run 不写;apply 把两名玩家搬进非 zone
 // 落点库(T 里的旧行是冷副本,先删后插并计数);源库的行留作冷副本;storage-audit 认出源库已无人指向;再整库搬回。
 func TestIT_Relocate_IntoAPlayerStoreAndBack(t *testing.T) {
+	requireIT(t)
 	itReset(t)
 	db := itOpen(t)
 	itSeedPlayers(t, []uint64{9401, 9402}, true)
@@ -611,6 +621,7 @@ func TestIT_Relocate_IntoAPlayerStoreAndBack(t *testing.T) {
 // TestIT_Relocate_SkipsPlayersThatDoNotQualify(R1):有效落点不是 S、home 所在 zone 正在合服(与合服互斥)、
 // 已被别的搬库冻结的人一律跳过,记录不动;符合条件的照常切换;没全切成 exit 1。
 func TestIT_Relocate_SkipsPlayersThatDoNotQualify(t *testing.T) {
+	requireIT(t)
 	itReset(t)
 	ctx := context.Background()
 	db := itOpen(t)
@@ -680,6 +691,7 @@ func itRelocateEngine(t *testing.T, m *relocateManifest, lockWait time.Duration,
 // TestIT_Relocate_LockWaitTimeoutUnfreezes(R2):go/db 的排序锁一直在(一条冻结之前就选好库的写还没做完),
 // 期限到了本批解冻、一行都不拷;锁消失之后另起一次照常切换。
 func TestIT_Relocate_LockWaitTimeoutUnfreezes(t *testing.T) {
+	requireIT(t)
 	itReset(t)
 	ctx := context.Background()
 	db := itOpen(t)
@@ -730,6 +742,7 @@ func (r itTamperingRows) copyPlayer(ctx context.Context, id uint64) (int, error)
 }
 
 func TestIT_Relocate_CompareMismatchUnfreezes(t *testing.T) {
+	requireIT(t)
 	itReset(t)
 	ctx := context.Background()
 	itSeedPlayers(t, []uint64{9651}, true)
@@ -750,6 +763,7 @@ func TestIT_Relocate_CompareMismatchUnfreezes(t *testing.T) {
 // TestIT_Relocate_ResumeAfterACrashAndAbort:崩溃之后续跑按清单认领本次的冻结(清单来不及记的也认);
 // relocate-abort 把本次仍冻结的人解冻回 S,清单标 aborted,之后不许再续跑。
 func TestIT_Relocate_ResumeAfterACrashAndAbort(t *testing.T) {
+	requireIT(t)
 	itReset(t)
 	db := itOpen(t)
 	itSeedPlayers(t, []uint64{9701, 9702, 9711, 9712}, true)
@@ -803,6 +817,7 @@ func TestIT_Relocate_ResumeAfterACrashAndAbort(t *testing.T) {
 }
 
 func TestIT_Relocate_RefusesWithoutCapabilityOrExplicitZones(t *testing.T) {
+	requireIT(t)
 	itReset(t)
 	itSeedPlayers(t, []uint64{9751}, true)
 	manifest := filepath.Join(t.TempDir(), "reloc.json")
@@ -832,6 +847,7 @@ func TestIT_Relocate_RefusesWithoutCapabilityOrExplicitZones(t *testing.T) {
 // TestIT_Relocate_R3StatementsArePrimaryKeyPointOps 钉住 R3 两条写语句的执行计划(死锁审计口径):删 T 的旧行与
 // INSERT … SELECT 的读侧都是完整主键等值(key=PRIMARY、key_len=8),不经过任何二级索引。
 func TestIT_Relocate_R3StatementsArePrimaryKeyPointOps(t *testing.T) {
+	requireIT(t)
 	itReset(t)
 	ctx := context.Background()
 	db := itOpenReadCommitted(t)
@@ -898,6 +914,7 @@ func itExplainRows(t *testing.T, db *sql.DB, stmt string) []map[string]string {
 // ── -mode storage-audit ─────────────────────────────────────────
 
 func TestIT_StorageAudit_CountsLiveColdAndUnmappedRows(t *testing.T) {
+	requireIT(t)
 	itReset(t)
 	ctx := context.Background()
 	db := itOpen(t)

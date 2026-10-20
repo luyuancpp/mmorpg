@@ -11,7 +11,9 @@ package main
 //   P3 go/db 对那个 zone topic 的积压 = 0   —— 还有没落库的存盘任务就动 = 动的是一份旧的。
 //                                            只对「唯一权威组」算积压:候选组(按 zone 推导的 db_rpc_consumer_group_z<zone>
 //                                            加 legacy 共享组,或 -kafka-group 显式指定的一个)里恰好一个在本 topic 上有已提交位点;
-//                                            两个都有 / 都没有 / CLI 读不出,一律拒绝(见 resolveAuthoritativeLag)
+//                                            两个都有 / 都没有 / CLI 读不出,一律拒绝(见 resolveAuthoritativeLag);
+//                                            LAG 合计为 0 之后再用 kafka-get-offsets 证明每个非空分区都在表里且 LAG=0
+//                                            (Empty 组的 describe 不列从未提交过的分区,见 verifyAuthoritativeCoverage)
 //   P4 kafka:retry / kafka:dead 队列为空    —— 同上,而且这两个是**已经失败**的任务;含按原始分区拆开的
 //                                            ready 列表 kafka:retry:queue:{topic}:p*(经 SCAN 发现,见 dbTaskQueueKeys)
 //   P5 本次涉及的玩家没有任何在持的锁      —— lock:player:* / player:{id}:__lock
@@ -24,7 +26,7 @@ package main
 // P3 的可注入性:Kafka 在开发机上根本不跑,而这条检查又不能省(它保护的是
 // 「玩家最后一次存盘有没有落库」)。所以 lag 的来源是一个接口:
 //   - kafkaCLILagSource   对每个候选组跑一次 kafka-consumer-groups(.sh|.bat) --describe,
-//                         认定唯一权威组后解析它的 LAG 列 —— 生产用法
+//                         认定唯一权威组后解析它的 LAG 列,再用同目录的 kafka-get-offsets 核对非空分区全覆盖 —— 生产用法
 //   - attestedLagSource   运维显式声明「我已经确认排空了」—— 本地 / 无 CLI 环境
 //   - fakeLagSource       测试注入
 // 三者都没有 = 拒绝。默认不能是「查不到就当 0」。
@@ -42,6 +44,7 @@ import (
 	"fmt"
 	"log"
 	"os/exec"
+	"path/filepath"
 	"regexp"
 	"sort"
 	"strconv"
@@ -66,21 +69,26 @@ type kafkaLagSource interface {
 	Describe() string
 }
 
-// kafkaCLILagSource 调用 Kafka 自带的 kafka-consumer-groups CLI。
+// kafkaCLILagSource 调用 Kafka 自带的 kafka-consumer-groups CLI(以及同目录的 kafka-get-offsets)。
 // 为什么不直接连 broker:merge_zone 是独立 go.mod,拉 sarama 只为了跑一次
 // describe-group 不划算,而 CLI 在任何装了 Kafka 的运维机上都有。
 type kafkaCLILagSource struct {
-	cmdPath   string // kafka-consumer-groups.sh / .bat 的绝对路径
+	cmdPath   string // kafka-consumer-groups.sh / .bat 的绝对路径;kafka-get-offsets 按同目录同扩展名推导(kafkaGetOffsetsCmdFor)
 	bootstrap string
 }
 
 func (s kafkaCLILagSource) Describe() string {
-	return fmt.Sprintf("kafka-consumer-groups CLI (%s, bootstrap=%s)", s.cmdPath, s.bootstrap)
+	return fmt.Sprintf("kafka-consumer-groups + kafka-get-offsets CLI (%s, bootstrap=%s)", s.cmdPath, s.bootstrap)
 }
 
 // TotalLag 对每个候选组各跑一次 describe,把输出与退出状态原样交给 resolveAuthoritativeLag 判定。
 // 退出码非 0 在这里不直接失败:有的 Kafka 版本对「组不存在」以非 0 退出,而不存在的候选组是合法情形
 // (例如从没切过组的 zone 没有 _z 组),由 resolveAuthoritativeLag 按白名单文案区分。
+//
+// 权威组 LAG 合计为 0 之后,再取本 topic 的日志边界(kafka-get-offsets --time -2 / -1)交给 verifyAuthoritativeCoverage:
+// 合服 T-0 时源区 db 已停、权威组是 Empty,Kafka 的 describe 只列出有已提交位点的分区,从未提交过、却已有消息的分区
+// (新 zone / 新世代 topic 刚收到第一批存盘、db 卡在某分区首条消息上 CrashLoop 到 zone-down)根本不出现在表里,
+// 其余分区 LAG 都是 0 时合计为 0 —— 只看合计会放行一份旧行,该分区上最后的存盘留在源 topic、再没有人消费(R7 复核 [3])。
 func (s kafkaCLILagSource) TotalLag(ctx context.Context, topic string, groups []string) (int64, string, error) {
 	results := make([]groupDescribeResult, 0, len(groups))
 	for _, group := range groups {
@@ -89,7 +97,234 @@ func (s kafkaCLILagSource) TotalLag(ctx context.Context, topic string, groups []
 		out, runErr := cmd.CombinedOutput()
 		results = append(results, groupDescribeResult{group: group, output: string(out), runErr: runErr})
 	}
-	return resolveAuthoritativeLag(topic, results)
+	lag, group, err := resolveAuthoritativeLag(topic, results)
+	if err != nil || lag != 0 {
+		return lag, group, err
+	}
+	earliest, err := s.logBoundaries(ctx, topic, "-2")
+	if err != nil {
+		return 0, group, fmt.Errorf("authoritative consumer group %s: %w", group, err)
+	}
+	latest, err := s.logBoundaries(ctx, topic, "-1")
+	if err != nil {
+		return 0, group, fmt.Errorf("authoritative consumer group %s: %w", group, err)
+	}
+	if err := verifyAuthoritativeCoverage(topic, describeOutputOf(results, group), earliest, latest); err != nil {
+		return 0, group, fmt.Errorf("authoritative consumer group %s: %w", group, err)
+	}
+	return 0, group, nil
+}
+
+// logBoundaries 跑一次 kafka-get-offsets --time <-2|-1>,返回本 topic 每个分区的 earliest / latest 位点。
+// 任何失败(工具推导不出、退出码非 0、Error 行、一个分区都没有)都报错(fail-closed)。
+func (s kafkaCLILagSource) logBoundaries(ctx context.Context, topic, at string) (map[int]int64, error) {
+	cmdPath, err := kafkaGetOffsetsCmdFor(s.cmdPath)
+	if err != nil {
+		return nil, err
+	}
+	cmd := exec.CommandContext(ctx, cmdPath, "--bootstrap-server", s.bootstrap, "--topic", topic, "--time", at)
+	out, runErr := cmd.CombinedOutput()
+	if runErr != nil {
+		return nil, fmt.Errorf("kafka-get-offsets --topic %s --time %s: %w (output: %s)", topic, at, runErr, truncateForLog(string(out), 500))
+	}
+	return parseGetOffsets(string(out), topic)
+}
+
+// describeOutputOf 取某个候选组的 describe 原文(resolveAuthoritativeLag 认定的权威组一定在 results 里)。
+func describeOutputOf(results []groupDescribeResult, group string) string {
+	for _, r := range results {
+		if r.group == group {
+			return r.output
+		}
+	}
+	return ""
+}
+
+// kafkaGetOffsetsCmdFor 从 kafka-consumer-groups 的路径推导同目录、同扩展名的 kafka-get-offsets
+// (/opt/kafka/bin/kafka-consumer-groups.sh → /opt/kafka/bin/kafka-get-offsets.sh;bin\windows\…\.bat 同理;
+// 裸命令名照样替换,交给 exec 的 PATH 查找)。文件名里没有 kafka-consumer-groups 就报错,不猜。
+func kafkaGetOffsetsCmdFor(consumerGroupsCmd string) (string, error) {
+	const from, to = "kafka-consumer-groups", "kafka-get-offsets"
+	dir, base := filepath.Split(consumerGroupsCmd)
+	if !strings.Contains(base, from) {
+		return "", fmt.Errorf("cannot derive kafka-get-offsets from -kafka-consumer-groups-cmd %q: the file name does not contain %q "+
+			"(P3 needs both tools from the same Kafka bin directory)", consumerGroupsCmd, from)
+	}
+	return dir + strings.Replace(base, from, to, 1), nil
+}
+
+// parseGetOffsets 解析 kafka-get-offsets 的输出:每行 "topic:partition:offset",只收 topic 名完全相同的行,返回 分区 → 位点。
+// 与 tools/scripts/lib/kafka_consumer_groups.ps1 的 ConvertFrom-KafkaGetOffsets 同口径(那边行首 Error: 由
+// Assert-KafkaToolOutputClean 先判,这里一并判):任一行首 "Error:" 即报错;一个分区都没有即报错。
+// topic 名里不会有冒号(Kafka 合法字符只有 [a-zA-Z0-9._-]),按最后两个冒号切分。
+func parseGetOffsets(out, topic string) (map[int]int64, error) {
+	offsets := map[int]int64{}
+	for _, raw := range strings.Split(out, "\n") {
+		line := strings.TrimSpace(raw)
+		if strings.HasPrefix(line, "Error:") {
+			return nil, fmt.Errorf("kafka-get-offsets reported an error: %s", truncateForLog(line, 300))
+		}
+		last := strings.LastIndex(line, ":")
+		if last <= 0 {
+			continue
+		}
+		mid := strings.LastIndex(line[:last], ":")
+		if mid <= 0 || line[:mid] != topic {
+			continue
+		}
+		partition, errP := strconv.Atoi(line[mid+1 : last])
+		offset, errO := strconv.ParseInt(line[last+1:], 10, 64)
+		if errP != nil || errO != nil || partition < 0 {
+			continue
+		}
+		offsets[partition] = offset
+	}
+	if len(offsets) == 0 {
+		return nil, fmt.Errorf("kafka-get-offsets output has no partition of topic %s (expected lines like '%s:<partition>:<offset>')", topic, topic)
+	}
+	return offsets, nil
+}
+
+// describeRow 是 describe 表格里本 topic 一个分区的 CURRENT-OFFSET / LAG("-" 时对应的 ok 为 false)。
+type describeRow struct {
+	currentOK bool
+	current   int64
+	lagOK     bool
+	lag       int64
+}
+
+// describeRowsForTopic 按表头列名(TOPIC / PARTITION / CURRENT-OFFSET / LAG)取本 topic 每个分区的一行。
+// 没有表头、分区号不是非负整数、同一分区两行、单元格既不是整数也不是 "-",都报错(不猜)。
+func describeRowsForTopic(out, topic string) (map[int]describeRow, error) {
+	sc := bufio.NewScanner(strings.NewReader(out))
+	sc.Buffer(make([]byte, 0, 64*1024), 4*1024*1024)
+	var cols map[string]int
+	rows := map[int]describeRow{}
+	required := []string{"TOPIC", "PARTITION", "CURRENT-OFFSET", "LAG"}
+	maxCol := 0
+	for sc.Scan() {
+		fields := strings.Fields(sc.Text())
+		if len(fields) == 0 {
+			continue
+		}
+		if cols == nil {
+			candidate := map[string]int{}
+			for i, f := range fields {
+				candidate[strings.ToUpper(f)] = i
+			}
+			complete := true
+			for _, name := range required {
+				idx, ok := candidate[name]
+				if !ok {
+					complete = false
+					break
+				}
+				if idx > maxCol {
+					maxCol = idx
+				}
+			}
+			if complete {
+				cols = candidate
+			} else {
+				maxCol = 0
+			}
+			continue
+		}
+		if len(fields) <= maxCol || fields[cols["TOPIC"]] != topic {
+			continue
+		}
+		partition, err := strconv.Atoi(fields[cols["PARTITION"]])
+		if err != nil || partition < 0 {
+			return nil, fmt.Errorf("topic %s row has PARTITION %q (not a non-negative integer)", topic, fields[cols["PARTITION"]])
+		}
+		if _, dup := rows[partition]; dup {
+			return nil, fmt.Errorf("topic %s partition %d appears twice in the describe output", topic, partition)
+		}
+		var row describeRow
+		var cellErr error
+		row.current, row.currentOK, cellErr = parseOffsetCell(fields[cols["CURRENT-OFFSET"]])
+		if cellErr != nil {
+			return nil, fmt.Errorf("topic %s partition %d CURRENT-OFFSET: %w", topic, partition, cellErr)
+		}
+		row.lag, row.lagOK, cellErr = parseOffsetCell(fields[cols["LAG"]])
+		if cellErr != nil {
+			return nil, fmt.Errorf("topic %s partition %d LAG: %w", topic, partition, cellErr)
+		}
+		rows[partition] = row
+	}
+	if err := sc.Err(); err != nil {
+		return nil, err
+	}
+	if cols == nil {
+		return nil, errors.New("could not find TOPIC/PARTITION/CURRENT-OFFSET/LAG columns in kafka-consumer-groups output")
+	}
+	return rows, nil
+}
+
+// parseOffsetCell:"-" → (0, false, nil);整数 → (v, true, nil);其它 → 报错。
+func parseOffsetCell(cell string) (int64, bool, error) {
+	if cell == "-" {
+		return 0, false, nil
+	}
+	v, err := strconv.ParseInt(cell, 10, 64)
+	if err != nil {
+		return 0, false, fmt.Errorf("%q is neither an integer nor '-'", cell)
+	}
+	return v, true, nil
+}
+
+// verifyAuthoritativeCoverage 证明唯一权威组在本 topic 的每个非空分区上都已提交、且 LAG = 0(纯函数,merge_unit_test.go 覆盖)。
+//
+// 只有 earliest == latest 的空分区(从未写入或已全部过期)可以没有位点 —— 与 tools/scripts/lib/kafka_consumer_groups.ps1
+// 的 Test-HandoffFinalizeReady 同一条规则,改一边必须同步另一边。逐条:
+//   - earliest 与 latest 的分区集合必须相同;
+//   - describe 里本 topic 出现的每个分区都必须在 kafka-get-offsets 里(get-offsets 少了分区 = 读不全);
+//   - get-offsets 的每个非空分区:describe 必须有它的行,CURRENT-OFFSET 为数值且 LAG = 0
+//     (逐分区判 0,不靠合计:截断后 LAG 可能为负,与别的分区的正积压相抵)。
+//
+// 问题一次列全、按文本排序(map 遍历无序,错误文本要确定)。
+func verifyAuthoritativeCoverage(topic, describeOut string, earliest, latest map[int]int64) error {
+	rows, err := describeRowsForTopic(describeOut, topic)
+	if err != nil {
+		return err
+	}
+	var problems []string
+	for p := range earliest {
+		if _, ok := latest[p]; !ok {
+			problems = append(problems, fmt.Sprintf("partition %d: kafka-get-offsets gave an earliest offset but no latest offset", p))
+		}
+	}
+	for p := range latest {
+		if _, ok := earliest[p]; !ok {
+			problems = append(problems, fmt.Sprintf("partition %d: kafka-get-offsets gave a latest offset but no earliest offset", p))
+		}
+	}
+	for p := range rows {
+		if _, ok := latest[p]; !ok {
+			problems = append(problems, fmt.Sprintf("partition %d: in the describe output but missing from kafka-get-offsets", p))
+		}
+	}
+	for p, high := range latest {
+		low, ok := earliest[p]
+		if !ok || low == high {
+			continue
+		}
+		row, ok := rows[p]
+		switch {
+		case !ok:
+			problems = append(problems, fmt.Sprintf("partition %d: non-empty (earliest=%d latest=%d) but the group has no committed offset on it "+
+				"(describe of an Empty group omits never-committed partitions)", p, low, high))
+		case !row.currentOK:
+			problems = append(problems, fmt.Sprintf("partition %d: non-empty (earliest=%d latest=%d) but CURRENT-OFFSET is '-'", p, low, high))
+		case !row.lagOK || row.lag != 0:
+			problems = append(problems, fmt.Sprintf("partition %d: LAG is not 0 (CURRENT-OFFSET=%d, latest=%d)", p, row.current, high))
+		}
+	}
+	if len(problems) == 0 {
+		return nil
+	}
+	sort.Strings(problems)
+	return fmt.Errorf("cannot prove topic %s is drained (%d problem(s)): %s", topic, len(problems), strings.Join(problems, "; "))
 }
 
 // groupDescribeResult 是一个候选组一次 kafka-consumer-groups --describe 的原始结果(stdout+stderr 合并)。
@@ -127,34 +362,25 @@ func consumerGroupMissing(out string) bool {
 	return false
 }
 
-// committedOffsetPresent 报告该组在 topic 上是否至少有一行数值 CURRENT-OFFSET。
-//
-// 判定(与 lib/kafka_consumer_groups.ps1 的 Resolve-KafkaGroupTopicOffsets 同口径):
-//   - 命中「组不存在」白名单 → (false, nil);
-//   - 有行首 "Error:" 的行 → 报错(读不到不等于没有);
-//   - 找到表头(同一行含 TOPIC 与 CURRENT-OFFSET,按列名定位,不按下标)→ 只看 TOPIC==topic 的行:
-//     有一行是整数即 true;"-" 表示该分区没有已提交位点;既不是整数也不是 "-" 就报错(不猜);
-//   - 没有表头但有 "has no active members" → (false, nil)(Empty 组一个位点都没有时 CLI 不打表头);
-//   - 其余(无表头、无关键字)一律报错。
-func committedOffsetPresent(out, topic string) (bool, error) {
-	if consumerGroupMissing(out) {
-		return false, nil
-	}
+// describeTableScan 是一段 describe 输出的表格扫描结果(不看 Error 行、不判成败)。
+type describeTableScan struct {
+	headerFound bool // 有一行同时含 TOPIC 与 CURRENT-OFFSET
+	present     bool // 本 topic 至少一行数值 CURRENT-OFFSET
+}
+
+// scanDescribeTable 按表头列名(TOPIC / CURRENT-OFFSET,不按下标)扫本 topic 的行;
+// "-" 表示该分区没有已提交位点;既不是整数也不是 "-" 就报错(不猜)。
+func scanDescribeTable(out, topic string) (describeTableScan, error) {
 	sc := bufio.NewScanner(strings.NewReader(out))
 	sc.Buffer(make([]byte, 0, 64*1024), 4*1024*1024)
 	topicCol, offsetCol := -1, -1
-	headerFound := false
-	present := false
+	var res describeTableScan
 	for sc.Scan() {
-		line := strings.TrimSpace(sc.Text())
-		if line == "" {
+		fields := strings.Fields(sc.Text())
+		if len(fields) == 0 {
 			continue
 		}
-		if strings.HasPrefix(line, "Error:") {
-			return false, fmt.Errorf("kafka-consumer-groups reported an error: %s", truncateForLog(line, 300))
-		}
-		fields := strings.Fields(line)
-		if !headerFound {
+		if !res.headerFound {
 			t, o := -1, -1
 			for i, f := range fields {
 				switch strings.ToUpper(f) {
@@ -165,7 +391,7 @@ func committedOffsetPresent(out, topic string) (bool, error) {
 				}
 			}
 			if t >= 0 && o >= 0 {
-				topicCol, offsetCol, headerFound = t, o, true
+				topicCol, offsetCol, res.headerFound = t, o, true
 			}
 			continue
 		}
@@ -177,15 +403,79 @@ func committedOffsetPresent(out, topic string) (bool, error) {
 			continue
 		}
 		if _, err := strconv.ParseInt(cell, 10, 64); err != nil {
-			return false, fmt.Errorf("topic %s row has CURRENT-OFFSET %q (neither an integer nor '-')", topic, cell)
+			return describeTableScan{}, fmt.Errorf("topic %s row has CURRENT-OFFSET %q (neither an integer nor '-')", topic, cell)
 		}
-		present = true
+		res.present = true
 	}
 	if err := sc.Err(); err != nil {
+		return describeTableScan{}, err
+	}
+	return res, nil
+}
+
+// firstErrorLine 返回第一条行首(去掉前导空白后)为 "Error:" 的行。
+func firstErrorLine(out string) (string, bool) {
+	for _, raw := range strings.Split(out, "\n") {
+		if line := strings.TrimSpace(raw); strings.HasPrefix(line, "Error:") {
+			return line, true
+		}
+	}
+	return "", false
+}
+
+// groupMissingInDescribe 报告 describe 输出能否认定「组不存在」:命中白名单(consumerGroupMissing)且**没有表头**才算。
+//
+// 白名单在整段输出上匹配:管理客户端在新旧 describe API 之间回退时,可能先往 stderr 打一行带 GroupIdNotFoundException 的 WARN、
+// 之后照常打印表格(R7 复核 [8])。命中白名单又有表头时:
+//   - 本 topic 有数值 CURRENT-OFFSET → 矛盾输出,报错(fail-closed),不猜哪一边为真 —— 当成 missing 会拿另一组的 LAG 放行 P3;
+//   - 没有 → 不认定 missing,交给常规判定(Error 行、退出码照旧 fail-closed;两种读法都是「没有位点」)。
+//
+// 与 tools/scripts/lib/kafka_consumer_groups.ps1 Resolve-KafkaGroupTopicOffsets 的规则 1 同口径,改一边必须同步另一边。
+func groupMissingInDescribe(out, topic string) (bool, error) {
+	if !consumerGroupMissing(out) {
+		return false, nil
+	}
+	scan, err := scanDescribeTable(out, topic)
+	if err != nil {
 		return false, err
 	}
-	if headerFound {
-		return present, nil
+	if !scan.headerFound {
+		return true, nil
+	}
+	if scan.present {
+		return false, fmt.Errorf("contradictory kafka-consumer-groups output: it matches a missing-group message but also lists committed offsets on topic %s; "+
+			"refusing to guess which is true (update consumerGroupMissingPatterns and lib Get-KafkaGroupMissingPatterns with this Kafka version's wording): %s",
+			topic, truncateForLog(out, 300))
+	}
+	return false, nil
+}
+
+// committedOffsetPresent 报告该组在 topic 上是否至少有一行数值 CURRENT-OFFSET。
+//
+// 判定(与 lib/kafka_consumer_groups.ps1 的 Resolve-KafkaGroupTopicOffsets 同口径):
+//   - 命中「组不存在」白名单且没有表头 → (false, nil);命中白名单、有表头且本 topic 有数值位点 → 报错(groupMissingInDescribe);
+//   - 有行首 "Error:" 的行 → 报错(读不到不等于没有);
+//   - 找到表头(同一行含 TOPIC 与 CURRENT-OFFSET,按列名定位,不按下标)→ 只看 TOPIC==topic 的行:
+//     有一行是整数即 true;"-" 表示该分区没有已提交位点;既不是整数也不是 "-" 就报错(不猜);
+//   - 没有表头但有 "has no active members" → (false, nil)(Empty 组一个位点都没有时 CLI 不打表头);
+//   - 其余(无表头、无关键字)一律报错。
+func committedOffsetPresent(out, topic string) (bool, error) {
+	missing, err := groupMissingInDescribe(out, topic)
+	if err != nil {
+		return false, err
+	}
+	if missing {
+		return false, nil
+	}
+	if line, ok := firstErrorLine(out); ok {
+		return false, fmt.Errorf("kafka-consumer-groups reported an error: %s", truncateForLog(line, 300))
+	}
+	scan, err := scanDescribeTable(out, topic)
+	if err != nil {
+		return false, err
+	}
+	if scan.headerFound {
+		return scan.present, nil
 	}
 	if consumerGroupNoActiveMembersPattern.MatchString(out) {
 		return false, nil
@@ -196,11 +486,13 @@ func committedOffsetPresent(out, topic string) (bool, error) {
 
 // resolveAuthoritativeLag 从各候选组的 describe 结果里认定唯一权威组,并只对它算 LAG(纯函数,merge_unit_test.go 覆盖)。
 //
-//   - 命中「组不存在」白名单的组视为不存在(不论退出码);
+//   - 命中「组不存在」白名单且没有表头的组视为不存在(不论退出码);白名单与本 topic 的数值位点同时出现即报错(groupMissingInDescribe);
 //   - 其余组退出码非 0、或输出读不出(committedOffsetPresent 报错)→ 直接报错(fail-closed);
 //   - 恰好一个组在本 topic 上有数值位点 → 用 parseConsumerGroupLag 对它算 LAG(沿用对 "-" 的 fail-closed);
 //   - 多于一个 → 报错:上一次交接没收尾(冻结的旧位点与新位点并存),哪个是真的不由这里猜;
 //   - 一个都没有 → 报错:没有任何组能证明本 topic 已排空。
+//
+// LAG 合计只覆盖 describe 列出来的分区;非空分区全覆盖由调用方(kafkaCLILagSource.TotalLag)再用 verifyAuthoritativeCoverage 证明。
 func resolveAuthoritativeLag(topic string, results []groupDescribeResult) (int64, string, error) {
 	if len(results) == 0 {
 		return 0, "", errors.New("no candidate consumer group to check")
@@ -208,7 +500,11 @@ func resolveAuthoritativeLag(topic string, results []groupDescribeResult) (int64
 	var holders []groupDescribeResult
 	checked := make([]string, 0, len(results))
 	for _, r := range results {
-		if consumerGroupMissing(r.output) {
+		missing, err := groupMissingInDescribe(r.output, topic)
+		if err != nil {
+			return 0, "", fmt.Errorf("describe consumer group %s: %w", r.group, err)
+		}
+		if missing {
 			checked = append(checked, r.group+"=missing")
 			continue
 		}
@@ -395,6 +691,25 @@ func dbRetryInstanceProcessingKey(topic, instanceID string) string {
 //   - SCAN 任一页出错整体报错(fail-closed),不能把「没扫完」当成「没有」。
 func dbRetryPartitionQueuePrefix(topic string) string { return dbRetryQueueKey(topic) + ":p" }
 
+// 与 go/db/internal/saveoutbox 的64桶契约镜像。索引不分topic世代，旧世代遗留也必须挡住合服。
+type saveOutboxReader interface {
+	ZCard(context.Context, string) *redis.IntCmd
+}
+
+func assertSaveOutboxDrained(ctx context.Context, reader saveOutboxReader, zone uint32) error {
+	for bucket := uint64(0); bucket < 64; bucket++ {
+		key := fmt.Sprintf("player:save_pending:%d:%d", zone, bucket)
+		count, err := reader.ZCard(ctx, key).Result()
+		if err != nil {
+			return fmt.Errorf("读取存盘补投索引 %s 失败: %w", key, err)
+		}
+		if count != 0 {
+			return fmt.Errorf("%s 仍有 %d 个存盘意图；须由两表SQL ACK完成回收后再合服/撤销，禁止删除未提交意图", key, count)
+		}
+	}
+	return nil
+}
+
 // dbRetryPartitionQueuePattern 是 SCAN MATCH 用的 glob:topic 先做 glob 转义,再接 "*"。
 // db_task_zone_1 的模式是 kafka:retry:queue:db_task_zone_1:p*,不会匹配 db_task_zone_11 / db_task_zone_1_g2 的键
 // (前缀里紧跟 topic 的是 ":p")。
@@ -546,6 +861,11 @@ func runPreflight(ctx context.Context, d preflightDeps, p preflightParams) error
 	// P4 retry / dead / processing 队列必须空。
 	if d.sharedRdb == nil {
 		return errors.New("preflight P4: no shared (DB 0) Redis handle — cannot inspect kafka retry/dead queues")
+	}
+	// 父快照可能已提交而Kafka中尚无消息，LAG=0和retry为空都不能证明这一窗口已排空。
+	// scene已停写；仍由DB补投工作器完成双ACK回收，不在维护工具里直接清索引。
+	if err := assertSaveOutboxDrained(ctx, d.sharedRdb, p.zone); err != nil {
+		return fmt.Errorf("preflight P4 (save outbox): %w", err)
 	}
 	queueKeys, err := dbTaskQueueKeys(ctx, d.sharedRdb, topic)
 	if err != nil {

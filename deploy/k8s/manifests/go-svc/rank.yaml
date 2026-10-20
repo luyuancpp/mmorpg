@@ -1,152 +1,93 @@
-# rank:排行榜 v1(match 评分全服榜;docs/design/leaderboard-system.md)。
-#
-# **全局池,只部署到 mmorpg-infra namespace 一次,不进任何 zone namespace。**
-# 榜按全局唯一的 player_id 存(键 lb:{rating}:z / lb:{rating}:v,没有 zone 维度,§3.4),服务代码禁止按 zone 分支(契约 §0);
-# 客户端经 gate → client-rpc-router 到达唯一的读方法 GetRankPage,路由服对 RankNodeService 不做 zone 过滤。
-# go/rank/etc/rank.yaml 里的 ZoneId 只影响 etcd 注册路径,不是业务分区键。
-# k8s_deploy.ps1 的 $GoSvcCatalogue 里该条目标了 Global = $true,zone-up 会跳过它,
-# infra-up / all-up 在基础设施阶段部署。ConfigMap go-svc-rank-config 由脚本生成。
-#
-# 存储:**零 MySQL**(§5.3,D-14 不触发),没有建表 Job。榜只在 RankRedis —— 专用实例 redis-rank(manifests/infra/redis-rank.yaml,
-# noeviction + AOF,§3.5 / §9.1#4),**不是**共享 Redis:榜键无 TTL,放在会淘汰的共享库上会被静默驱逐。
-# 丢失后的恢复靠 Kafka offset 重放(§3.5 runbook,快照 topic 保留 7 天)。
-#
-# 写入只有一条路:消费 match 发布的评分快照(topic match-rating-snapshot,消费组 rank-rating,§2.4)。
-# 多副本在同一消费组里分摊 3 个分区,同一玩家(key = player_id)只落一个分区、在一个副本里串行处理;
-# 写榜按 (rating_gen, games) 字典序取新,再均衡重放只会落成 stale。保留期**只由 match 声明**,rank 不改写。
-#
-# 可达性:只有 ClientPlayerRank 走路由模式(D-12)。gate 的 GATE_CLIENT_RPC_ROUTER 在 K8s 上默认 "1"(k8s_deploy.ps1 -GateRouterMode,
-# turn-based §22 D75);以 -GateRouterMode 0 回退时这份 Deployment 照样起得来、探针绿,但玩家够不着(与 chat / friend / mail 同口径)。
-#
-# Kafka:**本文件不写 KAFKA_TOPIC_REPLICATION_FACTOR / KAFKA_COMMAND_TOPIC_*** —— k8s_deploy.ps1 对所有 Go 服务统一注入到下面唯一的 env: 段
-# (Add-GoSvcTopicReplicationEnv / Add-GoSvcCommandTopicEnv;manifest 里手写会被部署脚本拒绝)。rank 只用到副本数:它先于 match 起时
-# 会按契约分区数建出快照 topic,副本数必须拿部署级契约;命令 topic 契约 rank 用不到(不生产命令),注入了也无害。
-#
-# 连接数:rank 不连 MySQL;Redis 只连专用的 redis-rank(不进共享 Redis 的连接总账,见 k8s_deploy.ps1 Get-RedisConnectionLedgerInputs 的说明)。
+# 现役配置以服务 YAML 为源；不恢复历史 M1 表、AdminToken 或 Redis 权威榜运行时。
+# SQL榜代次/封榜/奖励意图权威；两副本共享SQL并靠逐行租约投递邮件。
 apiVersion: v1
 kind: Service
 metadata:
   name: rank
-  labels:
-    app: rank
-    tier: go-svc
+  labels: {app: rank, tier: go-svc}
 spec:
-  type: ClusterIP
-  selector:
-    app: rank
+  selector: {app: rank}
   ports:
-    - name: grpc
-      port: 51100
-      targetPort: 51100
+    - {name: grpc, port: 51100, targetPort: 51100}
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: rank
-  labels:
-    app: rank
-    tier: go-svc
+  labels: {app: rank, tier: go-svc}
 spec:
-  # 多实例安全:读是一条只读 Lua;写是单键 Lua 条件写(版本比较在 Lua 里原子完成),消费组保证每条快照只被一个副本处理。
-  # node_id 由 etcd CAS 分配(go/shared/noderegistry),路由服随机挑。不选主、没有后台任务需要协调。
-  # replicas>=2 是「容错不降级」的最低冗余:一个副本挂了,另一个接管全部分区并继续服务读。
-  # 崩溃切换窗口 = ConfigMap 的 LeaseTTL(路由服 PickRandom 不看连接状态)。全文只能有这一处两格缩进的 replicas。
   replicas: 2
-  # 先起新的、Ready 之后再停旧的:滚动期间不出现零副本。
   strategy:
     type: RollingUpdate
-    rollingUpdate:
-      maxSurge: 1
-      maxUnavailable: 0
+    rollingUpdate: {maxSurge: 1, maxUnavailable: 0}
   selector:
-    matchLabels:
-      app: rank
+    matchLabels: {app: rank}
   template:
     metadata:
-      labels:
-        app: rank
-        tier: go-svc
+      labels: {app: rank, tier: go-svc}
       annotations:
         prometheus.io/scrape: "true"
         prometheus.io/port: "9250"
-        prometheus.io/path: "/metrics"
+        prometheus.io/path: /metrics
     spec:
+      terminationGracePeriodSeconds: 35
       affinity:
         podAntiAffinity:
-          # 两个副本尽量不落同一节点,否则单节点故障等于全池不可用
           preferredDuringSchedulingIgnoredDuringExecution:
             - weight: 100
               podAffinityTerm:
                 labelSelector:
-                  matchLabels:
-                    app: rank
+                  matchLabels: {app: rank}
                 topologyKey: kubernetes.io/hostname
       containers:
         - name: rank
           image: PLACEHOLDER_IMAGE
           imagePullPolicy: PLACEHOLDER_PULL_POLICY
-          # KAFKA_TOPIC_REPLICATION_FACTOR、KAFKA_COMMAND_TOPIC_* 不在这里手写(见文件头),由脚本注入。
+          args: ["-f", "/app/etc/rank.yaml"]
           env:
-            - name: GOLANG_PROTOBUF_REGISTRATION_CONFLICT
-              value: warn
-            # C++ 约定注册(RankNodeService.rpc)写进 NodeInfo 的对外 IP(rank.go 的 advertisedHost 优先读它):
-            # ListenOn 是 0.0.0.0,不能原样写;不注入时退回第一块非 loopback 网卡,多网卡 / sidecar / 部分 CNI 下可能选错,路由服拨不通。
-            # 与 friend.yaml / mail.yaml 同一写法。
             - name: POD_IP
               valueFrom:
-                fieldRef:
-                  fieldPath: status.podIP
-          args: ["-f", "/app/etc/rank.yaml"]
+                fieldRef: {fieldPath: status.podIP}
+            - name: MMORPG_RANK_SQL_DSN
+              valueFrom:
+                secretKeyRef: {name: domain-service-secrets, key: rank-sql-dsn, optional: false}
+            - name: RANK_PRODUCER_SECRET_ADMIN
+              valueFrom:
+                secretKeyRef: {name: domain-service-secrets, key: rank-producer-admin, optional: false}
+            - name: RANK_PRODUCER_SECRET_MATCH
+              valueFrom:
+                secretKeyRef: {name: domain-service-secrets, key: rank-producer-match, optional: false}
+            - name: MAIL_PRODUCER_SECRET_RANK
+              valueFrom:
+                secretKeyRef: {name: domain-service-secrets, key: mail-producer-rank, optional: false}
           ports:
-            - containerPort: 51100
-              name: grpc
-            # 与 ConfigMap 的 MetricsListenAddr ":9250" 及上面 prometheus.io/port 注解一致(9250 = rank)
-            - containerPort: 9250
-              name: metrics
+            - {name: grpc, containerPort: 51100}
+            - {name: metrics, containerPort: 9250}
           readinessProbe:
-            grpc:
-              port: 51100
+            httpGet: {path: /healthz, port: metrics}
             initialDelaySeconds: 5
             periodSeconds: 10
           livenessProbe:
-            grpc:
-              port: 51100
-            initialDelaySeconds: 15
+            httpGet: {path: /healthz, port: metrics}
+            initialDelaySeconds: 20
             periodSeconds: 20
           lifecycle:
             preStop:
-              # 先留 5s 让 Service 摘掉 endpoint;etcd 注册(noderegistry.Close)由进程收到 SIGTERM 后在 grpc Stop 之前删除。
-              # 5s + rank.go 的 24s 硬截止 = 29s,必须 < 下面的 terminationGracePeriodSeconds(30)。
-              exec:
-                command: ["sh", "-c", "sleep 5"]
-          volumeMounts:
-            - name: svc-config
-              mountPath: /app/etc
-              readOnly: true
+              exec: {command: [sh, -c, "sleep 5"]}
           resources:
-            requests:
-              cpu: 100m
-              memory: 128Mi
-            # 全文只能有这一个 CPU limit,且不超过 2 核(与其它 Go 服务同一约定:go-zero 池上限按 GOMAXPROCS 计)。
-            limits:
-              cpu: 500m
-              memory: 256Mi
-      terminationGracePeriodSeconds: 30
+            requests: {cpu: 100m, memory: 128Mi}
+            limits: {cpu: 1000m, memory: 512Mi}
+          volumeMounts:
+            - {name: svc-config, mountPath: /app/etc, readOnly: true}
       volumes:
         - name: svc-config
-          configMap:
-            name: go-svc-rank-config
+          configMap: {name: go-svc-rank-config}
 ---
-# PDB 与主 manifest 同文件:k8s_deploy.ps1 只 apply 目录条目里的主 manifest。
 apiVersion: policy/v1
 kind: PodDisruptionBudget
 metadata:
   name: rank-pdb
-  labels:
-    app: rank
-    tier: go-svc
 spec:
   minAvailable: 1
   selector:
-    matchLabels:
-      app: rank
+    matchLabels: {app: rank}

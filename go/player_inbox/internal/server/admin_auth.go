@@ -6,13 +6,14 @@ import (
 	"fmt"
 	"strings"
 
+	"player_inbox/internal/inbox"
+
 	inboxpb "proto/player_inbox"
 
 	"github.com/zeromicro/go-zero/core/logx"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
-	"google.golang.org/grpc/peer"
 	"google.golang.org/grpc/status"
 )
 
@@ -64,16 +65,9 @@ func authorizeAdmin(ctx context.Context, want, method string) error {
 	return nil
 }
 
-// PeerAddr 是 gRPC 对端地址,审计里唯一不可伪造的部分(设计 §1.6);取不到时为 "unknown"。
-func PeerAddr(ctx context.Context) string {
-	if p, ok := peer.FromContext(ctx); ok && p.Addr != nil {
-		return p.Addr.String()
-	}
-	return "unknown"
-}
-
 // callerIdentity 拼一条「谁在调」的日志片段:对端地址 + 调用方自报的 user-agent。
 // 地址是唯一不可伪造的部分,user-agent 只是给人看的线索,不能当鉴权依据。
+// 对端地址只有 inbox.PeerAddr 一份实现(评审 L10:consumer 面的异常日志也要用,inbox 包不能反向 import 本包)。
 func callerIdentity(ctx context.Context) string {
 	agent := ""
 	if md, ok := metadata.FromIncomingContext(ctx); ok {
@@ -81,5 +75,5 @@ func callerIdentity(ctx context.Context) string {
 			agent = v[0]
 		}
 	}
-	return fmt.Sprintf("peer=%s user-agent=%q", PeerAddr(ctx), agent)
+	return fmt.Sprintf("peer=%s user-agent=%q", inbox.PeerAddr(ctx), agent)
 }

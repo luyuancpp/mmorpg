@@ -10,12 +10,15 @@ import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.QueryTimeoutException;
 import org.springframework.stereotype.Service;
 
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionException;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 /**
  * Translates {@code POST /api/assign-gate} payloads into the go-zero
@@ -71,16 +74,34 @@ public class AssignGateService {
     /** 防止外部请求用随机 zoneId 撑大负缓存。 */
     private static final int ADMISSION_CACHE_MAX_ENTRIES = 4096;
 
+    /**
+     * (2026-10-16)加入同一 zone 在途准入查询的等待方最多等多久(毫秒)。此前用无上限 {@code join()}:查库方挂在
+     * 已取到的连接上(半开 TCP、zone_config 上的 MDL 排队)时,同 zone 的 assign-gate / queue-status 请求全部无限期
+     * 挂住,Tomcat 线程随挂住时长无界增长,而探针在 8082 上照样是绿的。与 Hikari connection-timeout、
+     * {@link ServerListService#ZONE_ROWS_LOAD_WAIT_MILLIS} 同口径写死 3000,不从配置读(Hikari 把 0 当无限等);
+     * 改 connection-timeout 时三处同步改。到点按查库失败处理:fail-closed 回 500 zone_admission_unavailable。
+     */
+    static final long ADMISSION_LOAD_WAIT_MILLIS = 3000L;
+
     private final LoginRpcClient rpc;
     private final ZoneConfigRepository zoneConfigRepo;
+    /** 等待方加入在途准入查询后的时间预算(毫秒),见 {@link #ADMISSION_LOAD_WAIT_MILLIS}。 */
+    private final long admissionLoadWaitMillis;
     private final ConcurrentHashMap<Long, AdmissionCacheEntry> admissionCache = new ConcurrentHashMap<>();
     /** 同一 zone 的并发 miss 共用一个 DB 查询；失败 future 会立即移除，不做错误缓存。 */
     private final ConcurrentHashMap<Long, CompletableFuture<AdmissionState>> admissionLoads =
             new ConcurrentHashMap<>();
 
+    @Autowired
     public AssignGateService(LoginRpcClient rpc, ZoneConfigRepository zoneConfigRepo) {
+        this(rpc, zoneConfigRepo, ADMISSION_LOAD_WAIT_MILLIS);
+    }
+
+    // 包级注入点(同 ServerListService):超时用例用短预算,并发用例用远大于屏障上限的预算。
+    AssignGateService(LoginRpcClient rpc, ZoneConfigRepository zoneConfigRepo, long admissionLoadWaitMillis) {
         this.rpc = rpc;
         this.zoneConfigRepo = zoneConfigRepo;
+        this.admissionLoadWaitMillis = admissionLoadWaitMillis;
     }
 
     public AssignGateResponse assignGate(AssignGateRequest req) {
@@ -242,10 +263,15 @@ public class AssignGateService {
         }
     }
 
-    private static AdmissionState awaitAdmission(CompletableFuture<AdmissionState> active) {
+    /**
+     * 等待别人发起的那次准入查询,最多等 {@link #admissionLoadWaitMillis}。查库失败时抛查库方的原异常;到点未完成抛
+     * {@link QueryTimeoutException}(查库方不受影响,继续查,结果照常写缓存)。两者都由 checkZoneAdmission 的
+     * catch 转成 500 zone_admission_unavailable。限时等待可被中断,中断时恢复中断标记后失败。
+     */
+    private AdmissionState awaitAdmission(CompletableFuture<AdmissionState> active) {
         try {
-            return active.join();
-        } catch (CompletionException e) {
+            return active.get(admissionLoadWaitMillis, TimeUnit.MILLISECONDS);
+        } catch (ExecutionException e) {
             Throwable cause = e.getCause();
             if (cause instanceof RuntimeException runtime) {
                 throw runtime;
@@ -254,7 +280,22 @@ public class AssignGateService {
                 throw error;
             }
             throw new IllegalStateException("zone admission load failed", cause);
+        } catch (TimeoutException e) {
+            throw new QueryTimeoutException(
+                    "zone admission load still in flight after " + admissionLoadWaitMillis + "ms", e);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new IllegalStateException("interrupted while waiting for zone admission load", e);
         }
+    }
+
+    /**
+     * 仅供同包测试(只读):zoneId 当前在途准入查询上挂着的等待方数;没有在途查询时为 0。语义与限制同
+     * {@code ServerListService.inflightWaiterCountForTest}:等待方超时离开会清栈,只在等待方不会超时的用例里当屏障用。
+     */
+    int inflightAdmissionWaiterCountForTest(long zoneId) {
+        CompletableFuture<AdmissionState> active = admissionLoads.get(zoneId);
+        return active == null ? 0 : active.getNumberOfDependents();
     }
 
     private void cacheAdmission(long zoneId, AdmissionState state) {

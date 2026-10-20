@@ -1,11 +1,11 @@
 #include "channel.h"
 
 #include <algorithm>
-#include <charconv>
 
 #include "muduo/base/Logging.h"
 #include "muduo/net/EventLoop.h"
 
+#include "address.h"
 #include "grpc_timeout.h"
 #include "message_framing.h"
 
@@ -16,37 +16,6 @@ namespace
 {
 
 constexpr uint32_t kHttp2Cancel = 0x8;
-
-// 只接受规范的点分十进制 IPv4(不接受前导零、空段、主机名)。muduo 的 InetAddress 遇到非法 IP
-// 只打一行日志并留下 0.0.0.0 —— 在 Linux 上那会连到本机,所以必须先校验。
-bool IsCanonicalIpv4(const std::string &ip)
-{
-    int parts = 0;
-    size_t pos = 0;
-    while (pos <= ip.size())
-    {
-        const size_t dot = ip.find('.', pos);
-        const size_t end = dot == std::string::npos ? ip.size() : dot;
-        const size_t len = end - pos;
-        if (len == 0 || len > 3 || (len > 1 && ip[pos] == '0'))
-        {
-            return false;
-        }
-        int value = 0;
-        const auto [ptr, ec] = std::from_chars(ip.data() + pos, ip.data() + end, value);
-        if (ec != std::errc{} || ptr != ip.data() + end || value > 255)
-        {
-            return false;
-        }
-        ++parts;
-        if (dot == std::string::npos)
-        {
-            break;
-        }
-        pos = dot + 1;
-    }
-    return parts == 4;
-}
 
 double ToSeconds(std::chrono::steady_clock::duration duration)
 {
@@ -166,9 +135,9 @@ Channel::~Channel()
         transport->Shutdown();
         if (loopIsCurrent)
         {
-            // 连接对象也排到队尾再析构:本轮若刚有连接建立,muduo Connector 已排队一个绑裸 this 的
-            // resetChannel,~TcpClient(有连接时不给 Connector 续命)必须在它之后。FIFO 保证这一点,
-            // 关机时也仍在两跳排空之内。
+            // 连接对象也排到队尾再析构,与 ReleaseTransport 一致,不就地释放(§11.7);关机时也仍在两跳排空之内。
+            // 以前这里还要靠 FIFO 让 ~TcpClient 排在 muduo Connector 排队的 resetChannel 之后(上游绑裸 this);
+            // 那处已改持 shared_from_this()(muduo LOCAL DELTA),Connector 自己活到 channel_ 释放,不再依赖这里的顺序。
             loop_.queueInLoop([released = std::move(transport)]() mutable { released.reset(); });
         }
     }
@@ -723,8 +692,9 @@ void Channel::ArmDeadlineTimer()
     {
         loop_.cancel(deadlineTimer_);
     }
-    // muduo 定时器按墙钟走,只当唤醒提示;到点后用 steady_clock 复核,未到就重新 arm(§6)。
-    // 加 1ms 余量,避免墙钟与单调钟的取整差让定时器早到一点而空转一轮。
+    // muduo 定时器已按单调时钟到期(muduo-timer-cancellation-hazards.md「定时器时钟」),墙钟跳变不再影响;
+    // 到点仍用 steady_clock 复核,未到就重新 arm(§6),兜住秒→微秒截断造成的微秒级早到。
+    // 加 1ms 余量,避免这点截断让定时器早到一点而空转一轮。
     const double delaySeconds = ToSeconds(earliest - std::chrono::steady_clock::now()) + 0.001;
     std::weak_ptr<Channel> weakSelf = weak_from_this();
     deadlineTimer_ = loop_.runAfter(delaySeconds, [weakSelf]

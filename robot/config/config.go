@@ -2,8 +2,12 @@ package config
 
 import (
 	"fmt"
+	"net"
+	"net/url"
 	"os"
+	"path/filepath"
 	"strings"
+	"unicode/utf8"
 
 	"go.uber.org/zap"
 	"gopkg.in/yaml.v3"
@@ -33,6 +37,8 @@ type Config struct {
 	// 见 BattleSmoke 块); "travel-smoke" — 单机器人跨 zone 场景传送往返
 	// 冒烟(见 travel_smoke_scenario.go / TravelSmoke 块); "channel-smoke" —
 	// 单机器人玩家主动切线冒烟(见 channel_smoke_scenario.go / ChannelSmoke 块);
+	// "sync-smoke" — 落地恢复的按域版本摘要冒烟(见 sync_smoke_scenario.go / SyncSmoke 块)；
+	// "asset-arrival-prepare" — 本机专用角色的正式 RPC 资产准备与有界保活。
 	// "sync-smoke" — 落地恢复的按域版本摘要冒烟(见 sync_smoke_scenario.go / SyncSmoke 块);
 	// "merchant-smoke" — 单机器人神秘商人冒烟(见 mystery_merchant_smoke_scenario.go / MerchantSmoke 块);
 	// "equip-forge-topup" — 给一个开发账号补强化石 / 宝石 / 银两,好在真实客户端里点强化与镶嵌(见 EquipForgeTopup 块)。
@@ -40,6 +46,9 @@ type Config struct {
 
 	// FeaturesSmoke only uses an explicitly selected existing account/character.
 	FeaturesSmoke FeaturesSmokeConfig `yaml:"features_smoke"`
+
+	// AssetArrivalPrepare 只用于本机专用角色的正式 RPC 资产准备与有界保活。
+	AssetArrivalPrepare AssetArrivalPrepareConfig `yaml:"asset_arrival_prepare"`
 
 	// DataStress configures the data-consistency stress mode.
 	DataStress DataStressConfig `yaml:"data_stress"`
@@ -140,6 +149,58 @@ type FeaturesSmokeConfig struct {
 	ClaimMissionID  uint32 `yaml:"claim_mission_id"`
 	VerifyRelogin   bool   `yaml:"verify_relogin"`
 	BattleConfigID  uint32 `yaml:"battle_config_id"` // 0=跳过；1=显式单人任务战斗验收
+}
+
+// AssetArrivalPrepareConfig 没有默认账号或无限保活；买家可显式关闭装备准备。
+// GoldTarget 是准备完成后的最低金币余额，装备固定为一件 1101，不开放任意 GM 参数。
+type AssetArrivalPrepareConfig struct {
+	RunMode     string `yaml:"run_mode"`
+	Dedicated   bool   `yaml:"dedicated"`
+	Account     string `yaml:"account"`
+	GoldTarget  uint64 `yaml:"gold_target"`
+	Equipment   bool   `yaml:"equipment"`
+	HoldSeconds int    `yaml:"hold_seconds"`
+	OutputPath  string `yaml:"output_path"`
+}
+
+// ValidateAssetArrivalPrepare 必须在网络登录、建角和 GM 副作用前完成。
+// 本机 dev 声明不替代 gate/scene 自身默认拒绝的 GM 权限闸。
+func (c *Config) ValidateAssetArrivalPrepare() error {
+	p := c.AssetArrivalPrepare
+	if c.Mode != "asset-arrival-prepare" || p.RunMode != "dev" || !p.Dedicated {
+		return fmt.Errorf("资产准备仅允许显式本机 dev 模式和专用角色")
+	}
+	if c.RobotCount != 1 || c.ZoneID == 0 || c.ZoneID > 999999 {
+		return fmt.Errorf("资产准备要求单角色和显式 zone_id（1..999999）")
+	}
+	const prefix = "robot_assetarrival_"
+	suffix := strings.TrimPrefix(p.Account, prefix)
+	if !strings.HasPrefix(p.Account, prefix) || len(suffix) == 0 || len(suffix) > 48 {
+		return fmt.Errorf("资产准备账号必须使用 robot_assetarrival_ 专用前缀和 1..48 位小写后缀")
+	}
+	for _, character := range suffix {
+		if character != '_' && (character < 'a' || character > 'z') && (character < '0' || character > '9') {
+			return fmt.Errorf("资产准备账号后缀只允许小写字母、数字和下划线")
+		}
+	}
+	endpoint, err := url.Parse(c.GatewayAddr)
+	if err != nil || (endpoint.Scheme != "http" && endpoint.Scheme != "https") || endpoint.User != nil ||
+		endpoint.RawQuery != "" || endpoint.Fragment != "" || endpoint.Path != "" {
+		return fmt.Errorf("资产准备网关必须是无凭据的本机 HTTP 地址")
+	}
+	if ip := net.ParseIP(endpoint.Hostname()); ip == nil || !ip.IsLoopback() {
+		return fmt.Errorf("资产准备网关只允许字面量回环 IP")
+	}
+	if (c.AuthType != "" && c.AuthType != "password") || c.UseHttpLogin || c.LLM.Enabled || strings.TrimSpace(c.Password) == "" {
+		return fmt.Errorf("资产准备只允许显式本机开发口令认证，不运行 AI")
+	}
+	if p.GoldTarget < 17 || p.GoldTarget > 100000 || p.HoldSeconds < 120 || p.HoldSeconds > 1800 {
+		return fmt.Errorf("资产准备 gold_target 必须为 17..100000，hold_seconds 必须为 120..1800")
+	}
+	if !filepath.IsAbs(p.OutputPath) {
+		return fmt.Errorf("资产准备 output_path 必须是独立结果文件的绝对路径")
+	}
+	return nil
 }
 
 // DataStressConfig configures the "data-stress" mode that drives repeated
@@ -604,6 +665,9 @@ type TeamFollowSmokeConfig struct {
 // 两个 zone 都必须显式给出:0 会被 server-list 自动选区顶掉,"从哪个区出发"就不确定了,
 // 而本冒烟的每条断言(票据 zone、gate 地址变化、金币不回档)都以"出发区 == 账号的 home zone"为前提。
 type TravelSmokeConfig struct {
+	// Account 为空时沿用 robot_9601；显式账号仍须符合登录侧 robot_ 开发账号规则。
+	Account string `yaml:"account"`
+
 	// HomeZone 必须非 0,且是冒烟账号**首次建角**的 zone(home zone 在建角时登记,之后不随登录区变化)。
 	HomeZone uint32 `yaml:"home_zone"`
 	// VisitZone 是要去做客的 zone,必须非 0 且与 HomeZone 不同。
@@ -624,6 +688,15 @@ type TravelSmokeConfig struct {
 }
 
 func (c *TravelSmokeConfig) validate() error {
+	if c.Account == "" {
+		c.Account = "robot_9601"
+	}
+	// 与 login 的 ValidatePasswordAccount 保持 UTF-8、首尾空白和 VARCHAR(191) 字符边界一致。
+	const maxAccountRunes = 191
+	if !utf8.ValidString(c.Account) || c.Account != strings.TrimSpace(c.Account) ||
+		!strings.HasPrefix(c.Account, "robot_") || utf8.RuneCountInString(c.Account) > maxAccountRunes {
+		return fmt.Errorf("account 必须使用 robot_ 前缀、有效 UTF-8、无首尾空白且不超过 %d 个字符", maxAccountRunes)
+	}
 	if c.HomeZone == 0 || c.VisitZone == 0 {
 		return fmt.Errorf("home_zone and visit_zone must be set (non-zero)")
 	}
@@ -794,10 +867,13 @@ func (c *Config) validate() error {
 		return fmt.Errorf("account_fmt must be set")
 	}
 	switch c.Mode {
-	case "", "stress", "login-test", "data-stress", "currency-crash-snapshot", "battle-smoke", "attribute-smoke", "pet-smoke", "equip-smoke", "equip-forge-smoke", "chat-smoke", "guild-smoke", "trade-smoke", "team-smoke", "team-follow-smoke", "team-backfill-smoke", "travel-smoke", "friend-smoke", "mail-smoke", "rank-smoke", "channel-smoke", "ordering-smoke", "sync-smoke", "features-smoke", "merchant-smoke", "equip-forge-topup":
+	case "", "stress", "login-test", "data-stress", "currency-crash-snapshot", "battle-smoke", "attribute-smoke", "pet-smoke", "equip-smoke", "equip-forge-smoke", "chat-smoke", "guild-smoke", "trade-smoke", "team-smoke", "team-follow-smoke", "team-backfill-smoke", "travel-smoke", "friend-smoke", "mail-smoke", "rank-smoke", "channel-smoke", "ordering-smoke", "sync-smoke", "features-smoke", "merchant-smoke", "equip-forge-topup", "asset-arrival-prepare":
 		// valid
 	default:
-		return fmt.Errorf("unknown mode %q (expected stress, login-test, data-stress, currency-crash-snapshot, battle-smoke, attribute-smoke, pet-smoke, equip-smoke, equip-forge-smoke, chat-smoke, guild-smoke, trade-smoke, team-smoke, team-follow-smoke, team-backfill-smoke, travel-smoke, friend-smoke, mail-smoke, rank-smoke, channel-smoke, ordering-smoke, sync-smoke, features-smoke, merchant-smoke, or equip-forge-topup)", c.Mode)
+		return fmt.Errorf("unknown mode %q (expected stress, login-test, data-stress, currency-crash-snapshot, battle-smoke, attribute-smoke, pet-smoke, equip-smoke, equip-forge-smoke, chat-smoke, guild-smoke, trade-smoke, team-smoke, team-follow-smoke, team-backfill-smoke, travel-smoke, friend-smoke, mail-smoke, rank-smoke, channel-smoke, ordering-smoke, sync-smoke, features-smoke, merchant-smoke, equip-forge-topup, or asset-arrival-prepare)", c.Mode)
+	}
+	if c.Mode == "asset-arrival-prepare" {
+		return c.ValidateAssetArrivalPrepare()
 	}
 	if c.AuthType == "satoken" && c.SaTokenAddr == "" {
 		return fmt.Errorf("satoken_addr must be set when auth_type is satoken")

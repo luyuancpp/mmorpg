@@ -286,7 +286,8 @@ bool readGameConfig(const std::string &filename, GameConfig &gameConfig)
 	// 玩家持久收件箱的 scene 消费端(docs/design/player-inbox-service.md §3.3、§7.3)。整段或单键缺失都取默认:
 	// consumer_enabled = false(上线顺序第 4 步的回滚下限:新字段只往返、不消费,§11.7);
 	// periodic_fetch_minutes = 30(显式写入,见 kDefaultPlayerInboxPeriodicFetchMinutes)。
-	// k8s ConfigMap 渲染的 game_config.yaml(tools/scripts/k8s_deploy.ps1)目前不带这一段,走的就是这里的默认。
+	// K8s 的 node-config 由 tools/scripts/k8s_deploy.ps1 从 git 跟踪的 bin/etc/game_config.yaml 整段复制 player_inbox 段
+	// (收件箱交接 §6 H1:开关只认那份 yaml,部署前有写前门禁);缺段 / 缺键才走这里的默认。
 	{
 		auto *inboxConfig = gameConfig.mutable_player_inbox();
 		inboxConfig->set_consumer_enabled(false);

@@ -309,6 +309,8 @@ Test-Case '契约字面量与 login / proto / 部署生成器的源头一致' {
     Assert-Match -Text $nodeProto -Pattern ("(?m)^\s*{0}\s*=\s*{1}\s*;" -f $c.GateServiceName, $c.GateNodeType) -Because 'gate 的 node_type 必须与 proto 一致,否则 etcd 前缀对不上'
     $drainGo = Read-RepoText 'go/login/internal/logic/pkg/loginqueue/gatedrain.go'
     Assert-Match -Text $drainGo -Pattern ('GateDrainingKeyFmt\s*=\s*"{0}"' -f [regex]::Escape(($c.DrainingKeyFormat -replace '\{0\}', '%d'))) -Because 'draining 键名必须与 login 一致'
+    $redirectGo = Read-RepoText 'go/scene_manager/internal/logic/gate_redirect.go'
+    Assert-Match -Text $redirectGo -Pattern ('gateDrainingKeyFmt\s*=\s*"{0}"' -f [regex]::Escape(($c.DrainingKeyFormat -replace '\{0\}', '%d'))) -Because 'scene_manager 跨 zone 重定向读同一个 draining 键(2026-10-18 起),键名必须一致'
     $monitorGo = Read-RepoText 'go/login/internal/logic/pkg/loginqueue/gatedrain_monitor.go'
     Assert-Match -Text $monitorGo -Pattern ('GateDrainedKeyFmt\s*=\s*"{0}"' -f [regex]::Escape(($c.DrainedKeyFormat -replace '\{0\}', '%d'))) -Because 'drained 键名必须与 login 一致'
     Assert-Match -Text $monitorGo -Pattern ('DrainReasonBelowThreshold\s*=\s*"{0}"' -f $c.DrainedReasonBelowThreshold) -Because '判定理由 below_threshold'
@@ -327,6 +329,12 @@ Test-Case '契约字面量与 login / proto / 部署生成器的源头一致' {
     Assert-Match -Text $deployText -Pattern ('(?m)^\s*login\s*=\s*@\{{\s*ConfigMap\s*=\s*"{0}".*ConfigFile\s*=\s*"{1}"' -f $c.LoginConfigMap, [regex]::Escape($c.LoginConfigKey)) -Because 'login ConfigMap 名与数据键来自部署目录'
     $ttl = Get-YamlScalar -Path (Join-Path $script:RepoRoot 'bin/etc/base_deploy_config.yaml') -KeyPath 'Etcd.NodeTTLSeconds'
     Assert-True -Condition ($ttl.Found -and $c.StaleRecordWaitSeconds -gt [int]$ttl.Value) -Because '等旧记录消失的上限必须覆盖 C++ 节点租约 TTL(强杀后租约自然过期)'
+    $cacheGo = Read-RepoText 'go/login/internal/logic/pkg/node/node_cache.go'
+    $period = [regex]::Match($cacheGo, '(?m)^const gateReportPeriod = (?<s>\d+) \* time\.Second')
+    $stale = [regex]::Match($cacheGo, '(?m)^const cacheStaleAfter = gateReportPeriod \+ (?<s>\d+)\*time\.Second')
+    Assert-True -Condition ($period.Success -and $stale.Success) -Because 'login gate 目录镜像的过期时限定义形状变了要同步这里'
+    $staleSeconds = [int]$period.Groups['s'].Value + [int]$stale.Groups['s'].Value
+    Assert-True -Condition ($c.LoginMirrorSettleSeconds -gt $staleSeconds) -Because "清标记前的等待必须大于 login 镜像的 cacheStaleAfter(${staleSeconds}s)"
 }
 
 Test-Case '同 zone 候选口径与 login 源头一致(Select-GateDrainPeers 镜像的每一条)' {
@@ -596,11 +604,14 @@ Test-Case 'Redis 走 login 配置的地址,密码只经目标 Pod 的环境变�
     $context = Get-FixtureContext
     $null = Set-GateDrainingMark -Login $context.Login -NodeId 3 -PeerNodeIds @(4) -TtlSeconds 1800 6>$null
     $exec = @($script:RedisExec)
-    Assert-Equal -Expected 'exec -n audit-infra svc/redis -- sh -c' -Actual ($exec[0..6] -join ' ') -Because 'exec 进 login 所连 Redis 的 Service'
-    Assert-Equal -Expected 'sh redis.audit-infra 6379 0' -Actual ($exec[8..11] -join ' ') -Because '地址与 DB 经位置参数传入,不拼进脚本文本'
-    Assert-Match -Text $exec[7] -Pattern 'REDISCLI_AUTH=\$REDIS_PASSWORD' -Because '密码取自 Pod 自己的 Secret 环境变量'
-    Assert-Match -Text $exec[7] -Pattern 'if \[ -n "\$REDIS_PASSWORD" \]' -Because '空密码时不能设 REDISCLI_AUTH(会发 AUTH "")'
-    Assert-Match -Text $exec[7] -Pattern '--no-raw' -Because 'nil 与空串必须可区分'
+    # exec 进与 Service 同名的 StatefulSet 的 redis 容器,不 exec svc/redis:高可用形态(redis-ha.yaml)下 Service redis 指向 haproxy 代理,
+    # 代理镜像里没有 redis-cli;连哪台仍由 -h(login 配置里的 Service 地址)决定,经代理落到主。
+    Assert-Equal -Expected 'exec -n audit-infra statefulset/redis -c redis -- sh -c' -Actual ($exec[0..8] -join ' ') -Because 'exec 进 login 所连共享 Redis 的节点 Pod(redis 容器)'
+    Assert-True -Condition (($exec -join ' ') -notmatch 'svc/redis') -Because '高可用形态下 svc/redis 背后是代理,没有 redis-cli'
+    Assert-Equal -Expected 'sh redis.audit-infra 6379 0' -Actual ($exec[10..13] -join ' ') -Because '地址与 DB 经位置参数传入,不拼进脚本文本'
+    Assert-Match -Text $exec[9] -Pattern 'REDISCLI_AUTH=\$REDIS_PASSWORD' -Because '密码取自 Pod 自己的 Secret 环境变量'
+    Assert-Match -Text $exec[9] -Pattern 'if \[ -n "\$REDIS_PASSWORD" \]' -Because '空密码时不能设 REDISCLI_AUTH(会发 AUTH "")'
+    Assert-Match -Text $exec[9] -Pattern '--no-raw' -Because 'nil 与空串必须可区分'
     Assert-True -Condition (($exec -join ' ') -notmatch 'p#ss' -and ($exec -notcontains '-a')) -Because 'login 配置里的密码不能出现在本机命令行'
 }
 
@@ -797,6 +808,23 @@ Test-Case '删 Pod:复核通过 → 删除 → 旧记录消失后清两个标记
     Assert-True -Condition ($deleteCall.TimeoutSeconds -gt 90) -Because '进程截止要长于 kubectl 自己的等待'
     Assert-True -Condition (-not $script:Redis.ContainsKey('gate:3:draining') -and -not $script:Redis.ContainsKey('gate:3:drained')) -Because '两个标记都清掉'
     Assert-True -Condition $result.MarksCleared -Because '报告已清'
+}
+
+Test-Case '删 Pod:旧记录消失后先等 login 镜像跟上,再清标记' {
+    Reset-DrainFixture
+    $context = Get-FixtureContext
+    $c = Get-GateDrainContract
+    Set-ReplacementScenario -AssertPod (New-MockGatePod) -AssertEtcd (& $script:BeforeEtcd) `
+        -AfterPods @((New-MockGatePod -Uid 'uid-new' -PodIp '10.0.0.21')) -AfterEtcd @((& $script:AfterEtcd))
+    Set-Item Function:script:Start-Sleep {
+        param([int]$Milliseconds, [double]$Seconds)
+        if ($Seconds -gt 0) { $script:Events.Add("sleep:$Seconds") }
+    }
+    $result = Invoke-GatePodReplacement -Login $context.Login -Pod $context.Pod -Record $context.Record -ReadyTimeoutSeconds 30 6>$null
+    Assert-True -Condition $result.MarksCleared -Because '旧记录已消失,照常清'
+    $events = @($script:Events)
+    $settle = [Array]::IndexOf($events, "sleep:$($c.LoginMirrorSettleSeconds)")
+    Assert-True -Condition ($settle -ge 0 -and $settle -lt [Array]::IndexOf($events, 'redis:DEL')) -Because "清标记前必须先等 LoginMirrorSettleSeconds:$($events -join ', ')"
 }
 
 Test-Case '删 Pod:排空期间 Pod 被替换或 gate 进程重启过,拒绝删除' {

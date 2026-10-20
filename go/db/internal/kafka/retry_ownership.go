@@ -2,11 +2,14 @@ package kafka
 
 import (
 	"context"
+	"crypto/rand"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"net"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/redis/go-redis/v9"
@@ -37,6 +40,26 @@ import (
 //
 // 回退到旧版二进制时的注意事项:旧版看不到按实例的列表。正常停机(SIGTERM)时 release 已把收据还回 ready;
 // 若新版是崩溃退出,回退前要先起一个新版实例让它回收,或手工把 kafka:retry:processing:{topic}:* 搬回 ready。
+//
+// 重试只交给分区属主(RetryRouting=owner,retry_routing.go)之后,ready 拆成共享「未分拣收件箱」
+// kafka:retry:queue:{topic} 与按原始分区的 kafka:retry:queue:{topic}:p{N}。认领可以从任一列表来(claimFrom),
+// 但回收、停机归还、旧共享列表仍一律搬回共享收件箱,由 owner 实例分拣到 p{origin}:回收与路由解耦,本文件的回收脚本
+// 不认识 p 键,也不需要认识。回退到不认识 p* 的旧版之前,须先切 RetryRouting=shared 并等 p* 归零,或执行
+// go/db/cmd/retry_requeue 把 p* 搬回共享收件箱(docs/design/db-retry-owner-routing.md §10)。
+//
+// 认领的幂等(R7 复核):主池客户端用 go-redis 缺省的 MaxRetries=3,读超时或 EOF 时会把 EVAL 原样重发,而第一次发出的
+// 那份可能已经在服务端执行完(回包丢了;旧连接缓冲区里的命令在 Redis 恢复后照样执行)。认领脚本不幂等时,两次 RPOPLPUSH
+// 会把第一次认领到的收据留在本实例 processing 里、无人派发,本实例一直续租、别人不回收,直到重启。所以每次认领带一个
+// 随机 nonce:第一次执行把认领到的元素的「长度:SHA1」记进 kafka:retry:guard:claim:{processing}:{nonce}(retryGuardTTL),
+// 同一个 nonce 再执行时不再 POP,只在 processing 里按它找回那一个元素返回。调用方拿到错误(结果未知)时把 nonce
+// 记进 unresolved,下一拍认领之前用 retryClaimResolveScript 把可能已认领的那一个原样搬回原 ready(resolveUnresolvedClaims);
+// 解决之后记录改写成 resolved,迟到执行的旧副本也不会再 POP。残余:Redis 卡顿或不可达超过 retryGuardTTL,记录过期后
+// 迟到的旧副本会再 POP 一次,第一次认领到的那条照旧滞留到重启。
+//
+// 实例的生效模式(R7 复核):登记表只有实例名,回滚工具(go/db/cmd/retry_requeue)无从证明「没有 owner 实例活着」。
+// 续租与认领脚本在 ZADD 的同一个原子操作里把本实例的生效模式写进 HASH kafka:retry:instance_mode:{topic}
+// (routingMode 为空时不写,即直接拼结构体的单测);回收脚本摘掉登记时一并 HDEL。不写这个 HASH 的旧镜像一律视为
+// 「模式未知」:retry_requeue 只能看见本版本起的 owner 实例。
 
 const (
 	// defaultRetryLeaseSeconds 是 Kafka.RetryLeaseSeconds 未配置(0)时的租约时长;
@@ -58,9 +81,38 @@ const (
 	retryOwnershipTickTimeout = 5 * time.Second
 	// retryReleaseTimeout 是停机时归还收据的时间预算;超时也无妨,租约过期后别的实例会回收。
 	retryReleaseTimeout = 5 * time.Second
+
+	// retryGuardTTL 是认领记录与收据 ack 防重记录(kafka:retry:guard:*)的存活时间:要盖住 go-redis 的内部重发
+	// (MaxRetries=3,每次最多一个 ReadTimeout 3s,约 13s)、下一拍的 resolve,以及 Redis 卡顿期间旧连接里迟到执行的
+	// 副本。记录很小(「长度:SHA1」或一个整数,连键名约 150 字节),最坏每实例约「每拍 200 次认领 + 同量 ack」× 300s 条
+	// (满速排空 5 分钟约 12 万条、十几 MB);只有重试链路有流量时才产生。
+	retryGuardTTL = 5 * time.Minute
+	// retryClaimResolved 是认领记录被 resolve 之后的值:同一个 nonce 再执行(迟到的旧副本)不再 POP、也不再返回元素。
+	// retryClaimScript / retryClaimResolveScript 里写的是同一个字面量,改一处要同改。
+	retryClaimResolved = "resolved"
 )
 
 func retryInstancesKey(topic string) string { return "kafka:retry:instances:" + topic }
+
+// retryInstanceModesKey 是实例 → 生效模式(owner / shared)的 HASH,与登记表同生共死(见文件头)。
+// go/db/cmd/retry_requeue 经 RetryQueueDepths 读它判定「是否还有 owner 实例登记着」。
+func retryInstanceModesKey(topic string) string { return "kafka:retry:instance_mode:" + topic }
+
+// retryGuardKey 是一次认领(kind=claim)或一次收据 ack(kind=ack)的防重记录。前缀 kafka:retry:guard: 与队列键
+// (kafka:retry:queue: / kafka:retry:processing:)不相交,按队列前缀 SCAN 的工具(tools/merge_zone、人工搬运)不会扫到它。
+func retryGuardKey(kind, processingKey, nonce string) string {
+	return "kafka:retry:guard:" + kind + ":" + processingKey + ":" + nonce
+}
+
+// newRetryGuardNonce 返回一次调用的随机 nonce(16 个十六进制字符)。不用进程内计数器:同名实例重启后计数器从头来,
+// 会撞上上一个进程留下、尚未过期的记录。
+func newRetryGuardNonce() (string, error) {
+	var b [8]byte
+	if _, err := rand.Read(b[:]); err != nil {
+		return "", fmt.Errorf("retry guard nonce: %w", err)
+	}
+	return hex.EncodeToString(b[:]), nil
+}
 
 // retryLegacyProcessingKey 是旧版(单实例时代)全 zone 共用的 processing 列表。
 func retryLegacyProcessingKey(topic string) string { return "kafka:retry:processing:" + topic }
@@ -103,26 +155,105 @@ func retryLeaseDuration(configuredSeconds int) time.Duration {
 	return time.Duration(seconds) * time.Second
 }
 
-// retryLeaseScript 续租(也用于首次登记)。到期时刻取 Redis 的 TIME。
-// KEYS[1] = 登记表;ARGV[1] = instanceID,ARGV[2] = 租约毫秒数。
+// retryLeaseScript 续租(也用于首次登记)。到期时刻取 Redis 的 TIME。ARGV[3] 非空时同一原子操作里登记生效模式。
+// KEYS[1] = 登记表,KEYS[2] = 模式 HASH;ARGV[1] = instanceID,ARGV[2] = 租约毫秒数,ARGV[3] = 生效模式(空串 = 不登记)。
 const retryLeaseScript = `
 local t = redis.call('TIME')
 local now = tonumber(t[1]) * 1000 + math.floor(tonumber(t[2]) / 1000)
 redis.call('ZADD', KEYS[1], string.format('%.0f', now + tonumber(ARGV[2])), ARGV[1])
+if ARGV[3] ~= '' then
+	redis.call('HSET', KEYS[2], ARGV[1], ARGV[3])
+end
 return 1`
 
-// retryClaimScript 先续租、再把一条收据从 ready 原子地认领到本实例的 processing 列表;ready 为空时返回 nil。
-// 续租与认领必须在同一个脚本里(见文件头的不变量)。
-// KEYS[1] = ready,KEYS[2] = 本实例的 processing,KEYS[3] = 登记表;ARGV[1] = instanceID,ARGV[2] = 租约毫秒数。
+// retryClaimScript 先续租(含登记生效模式)、再把一条收据从 ready 原子地认领到本实例的 processing 列表;ready 为空时
+// 返回 nil。续租与认领必须在同一个脚本里(见文件头的不变量)。
+//
+// 按 nonce 幂等(文件头「认领的幂等」):KEYS[4] 不存在时 RPOPLPUSH,认领到元素就把「长度:SHA1」写进 KEYS[4];KEYS[4]
+// 已存在(go-redis 的重发、迟到的旧副本)时不再 POP:值为 resolved 返回 nil,否则在 processing 里找回那个元素返回
+// (先看队头 —— RPOPLPUSH 推在队头,重发紧跟在首发之后时它还在那里;再逐个比,长度不同的不算 SHA1),找不到返回 nil。
+// KEYS[1] = ready,KEYS[2] = 本实例的 processing,KEYS[3] = 登记表,KEYS[4] = 本次认领的记录,KEYS[5] = 模式 HASH;
+// ARGV[1] = instanceID,ARGV[2] = 租约毫秒数,ARGV[3] = 记录毫秒数,ARGV[4] = 生效模式(空串 = 不登记)。
 const retryClaimScript = `
+local function matches(v, rec)
+	local sep = string.find(rec, ':', 1, true)
+	if not sep or string.len(v) ~= tonumber(string.sub(rec, 1, sep - 1)) then
+		return false
+	end
+	return redis.sha1hex(v) == string.sub(rec, sep + 1)
+end
 local t = redis.call('TIME')
 local now = tonumber(t[1]) * 1000 + math.floor(tonumber(t[2]) / 1000)
 redis.call('ZADD', KEYS[3], string.format('%.0f', now + tonumber(ARGV[2])), ARGV[1])
-return redis.call('RPOPLPUSH', KEYS[1], KEYS[2])`
+if ARGV[4] ~= '' then
+	redis.call('HSET', KEYS[5], ARGV[1], ARGV[4])
+end
+local rec = redis.call('GET', KEYS[4])
+if rec then
+	if rec == 'resolved' then
+		return false
+	end
+	local head = redis.call('LINDEX', KEYS[2], 0)
+	if head and matches(head, rec) then
+		return head
+	end
+	for _, v in ipairs(redis.call('LRANGE', KEYS[2], 0, -1)) do
+		if matches(v, rec) then
+			return v
+		end
+	end
+	return false
+end
+local v = redis.call('RPOPLPUSH', KEYS[1], KEYS[2])
+if v then
+	redis.call('SET', KEYS[4], string.len(v) .. ':' .. redis.sha1hex(v), 'PX', ARGV[3])
+end
+return v`
 
-// retryReclaimScript 把某个实例名下的收据搬回 ready(一次最多 ARGV[2] 条),列表搬空后把它从登记表里摘掉。
-// ARGV[3] = '1' 时先复核租约:对方在此期间续上了就一条都不动,返回 -1。返回值否则是本次搬的条数。
-// KEYS[1] = 登记表,KEYS[2] = 该实例的 processing,KEYS[3] = ready;ARGV[1] = 该实例的 instanceID。
+// retryClaimResolveScript 处理一次结果未知的认领(retryOwnership.resolveUnresolvedClaims):记录不存在(那次认领没执行,
+// 或执行了但 ready 是空的)或已是 resolved 时返回 0;否则在 processing 里按「长度:SHA1」找到那次认领到的元素,原字节
+// RPUSH 回原 ready 的队尾(认领从队尾取,下一次就轮到它)再 LREM,返回 1;找不到(已被别的实例回收)返回 0。动手之前核对
+// ready 的类型,类型不对整体报错、记录保持原样。处理完把记录改写成 resolved,迟到的旧副本与本脚本的重发都不再动任何东西。
+// KEYS[1] = 认领记录,KEYS[2] = 本实例的 processing,KEYS[3] = 认领时的 ready;ARGV[1] = 记录毫秒数。
+const retryClaimResolveScript = `
+local function matches(v, rec)
+	local sep = string.find(rec, ':', 1, true)
+	if not sep or string.len(v) ~= tonumber(string.sub(rec, 1, sep - 1)) then
+		return false
+	end
+	return redis.sha1hex(v) == string.sub(rec, sep + 1)
+end
+local rec = redis.call('GET', KEYS[1])
+if not rec or rec == 'resolved' then
+	return 0
+end
+local t = redis.call('TYPE', KEYS[3]).ok
+if t ~= 'list' and t ~= 'none' then
+	return redis.error_reply('WRONGTYPE retry claim resolve refused: ' .. KEYS[3] .. ' is a ' .. t)
+end
+local found = false
+local head = redis.call('LINDEX', KEYS[2], 0)
+if head and matches(head, rec) then
+	found = head
+else
+	for _, v in ipairs(redis.call('LRANGE', KEYS[2], 0, -1)) do
+		if matches(v, rec) then
+			found = v
+			break
+		end
+	end
+end
+redis.call('SET', KEYS[1], 'resolved', 'PX', ARGV[1])
+if not found then
+	return 0
+end
+redis.call('RPUSH', KEYS[3], found)
+redis.call('LREM', KEYS[2], 1, found)
+return 1`
+
+// retryReclaimScript 把某个实例名下的收据搬回 ready(一次最多 ARGV[2] 条),列表搬空后把它从登记表里摘掉(连同模式 HASH
+// 里的那一项)。ARGV[3] = '1' 时先复核租约:对方在此期间续上了就一条都不动,返回 -1。返回值否则是本次搬的条数。
+// KEYS[1] = 登记表,KEYS[2] = 该实例的 processing,KEYS[3] = ready,KEYS[4] = 模式 HASH;ARGV[1] = 该实例的 instanceID。
 const retryReclaimScript = `
 if ARGV[3] == '1' then
 	local score = redis.call('ZSCORE', KEYS[1], ARGV[1])
@@ -144,21 +275,37 @@ for i = 1, tonumber(ARGV[2]) do
 end
 if redis.call('LLEN', KEYS[2]) == 0 then
 	redis.call('ZREM', KEYS[1], ARGV[1])
+	redis.call('HDEL', KEYS[4], ARGV[1])
 end
 return moved`
 
 // retryOwnership 管本实例对重试收据的归属:认领、续租、回收孤儿、停机归还。
-// 所有状态都在 Redis 里,结构体本身只读,可以被多个 goroutine 同时使用。
+// 归属状态都在 Redis 里;进程内只有 unresolved(结果未知、待 resolve 的认领,mu 保护),所以可以被多个 goroutine 同时使用。
+// routingMode 在构造之后、start 之前设定一次,之后只读。
 type retryOwnership struct {
 	rc         redis.Cmdable
 	topic      string
 	instanceID string
 	lease      time.Duration
+	// routingMode 是本实例的生效模式(metrics.RetryModeOwner / RetryModeShared),续租与认领时登记进模式 HASH;
+	// 空串不登记(直接拼结构体的单测)。
+	routingMode string
 
 	readyKey      string
 	processingKey string // 本实例的 processing 列表
 	legacyKey     string // 旧版共享 processing 列表:只回收,不写入
 	instancesKey  string
+	modesKey      string // 实例 → 生效模式的 HASH
+
+	mu         sync.Mutex
+	unresolved []unresolvedClaim
+}
+
+// unresolvedClaim 是一次结果未知的认领:EVAL 返回了错误(超时、断连、ctx 取消),脚本可能已经执行、收据可能已经在
+// processing 里却没有派发。由 resolveUnresolvedClaims 在之后的拍里处理。
+type unresolvedClaim struct {
+	readyKey  string
+	recordKey string
 }
 
 func newRetryOwnership(rc redis.Cmdable, topic, readyKey, instanceID string, lease time.Duration) *retryOwnership {
@@ -171,26 +318,84 @@ func newRetryOwnership(rc redis.Cmdable, topic, readyKey, instanceID string, lea
 		processingKey: retryInstanceProcessingKey(topic, instanceID),
 		legacyKey:     retryLegacyProcessingKey(topic),
 		instancesKey:  retryInstancesKey(topic),
+		modesKey:      retryInstanceModesKey(topic),
 	}
 }
 
-// renewLease 登记或续租。
+// renewLease 登记或续租(同时登记生效模式)。
 func (o *retryOwnership) renewLease(ctx context.Context) error {
-	return o.rc.Eval(ctx, retryLeaseScript, []string{o.instancesKey}, o.instanceID, o.lease.Milliseconds()).Err()
+	return o.rc.Eval(ctx, retryLeaseScript, []string{o.instancesKey, o.modesKey},
+		o.instanceID, o.lease.Milliseconds(), o.routingMode).Err()
 }
 
-// claim 认领一条重试收据。ready 为空时返回 redis.Nil。
+// noteUnresolvedClaim 登记一次结果未知的认领(见 unresolvedClaim)。
+func (o *retryOwnership) noteUnresolvedClaim(readyKey, recordKey string) {
+	o.mu.Lock()
+	o.unresolved = append(o.unresolved, unresolvedClaim{readyKey: readyKey, recordKey: recordKey})
+	o.mu.Unlock()
+}
+
+// unresolvedClaimCount 是此刻待 resolve 的认领数(单测与日志用)。
+func (o *retryOwnership) unresolvedClaimCount() int {
+	if o == nil {
+		return 0
+	}
+	o.mu.Lock()
+	defer o.mu.Unlock()
+	return len(o.unresolved)
+}
+
+// resolveUnresolvedClaims 逐条处理结果未知的认领:那次认领若已把收据搬进本实例 processing,就原字节搬回它原来的
+// ready(retryClaimResolveScript),由下一次正常认领派发。重试协程每拍在认领之前调用(consumeRetryQueue)。
+//
+// 返回 false 表示还有没处理完的(Redis 仍然出错):调用方本拍不再分拣、认领,免得 Redis 不可用期间每拍再添一批结果未知的
+// 认领。nil 接收者(直接拼结构体的单测没有归属登记)返回 true。脚本可重入(处理过的记录改写成 resolved),网络类错误时
+// 出错的那条与其后的原样留到下一拍;Redis 的错误回复(确定性拒绝)只打 ERROR 并放弃那一条,不挡后面的认领。
+func (o *retryOwnership) resolveUnresolvedClaims(ctx context.Context) bool {
+	if o == nil {
+		return true
+	}
+	o.mu.Lock()
+	pending := o.unresolved
+	o.unresolved = nil
+	o.mu.Unlock()
+	if len(pending) == 0 {
+		return true
+	}
+	for i, u := range pending {
+		returned, err := o.rc.Eval(ctx, retryClaimResolveScript, []string{u.recordKey, o.processingKey, u.readyKey},
+			retryGuardTTL.Milliseconds()).Int64()
+		if err != nil && isRedisErrorReply(err) {
+			// 确定性拒绝(例如 ready 键类型不对):重试也不会好,不能让它挡住以后每一拍的认领。放弃这一条:
+			// 收据(如果那次认领真的执行了)留在本实例 processing,直到停机 release 归还。
+			logx.Errorf("resolve unknown-result retry claim refused by redis; any receipt it claimed stays in this instance's processing list until shutdown release: topic=%s instance=%s ready=%s err=%v",
+				o.topic, o.instanceID, u.readyKey, err)
+			continue
+		}
+		if err != nil {
+			o.mu.Lock()
+			o.unresolved = append(append([]unresolvedClaim(nil), pending[i:]...), o.unresolved...)
+			left := len(o.unresolved)
+			o.mu.Unlock()
+			if ctx.Err() == nil {
+				logx.Errorf("resolve unknown-result retry claim failed; retry claims pause until it succeeds: topic=%s instance=%s ready=%s pending=%d err=%v",
+					o.topic, o.instanceID, u.readyKey, left, err)
+			}
+			return false
+		}
+		if returned == 1 {
+			// 那次认领确实执行了、回包丢了:收据已原样回到 ready,不丢、不耗重试次数。
+			logx.Errorf("unknown-result retry claim had moved a receipt into processing; returned it untouched: topic=%s instance=%s ready=%s",
+				o.topic, o.instanceID, u.readyKey)
+		}
+	}
+	return true
+}
+
+// claim 从共享 ready(readyKey)认领一条重试收据。ready 为空时返回 redis.Nil。
+// 与 claimFrom(retry_routing.go)同一个脚本,先续租再认领的不变量不变;owner 模式从 p{P} 认领时直接调 claimFrom。
 func (o *retryOwnership) claim(ctx context.Context) ([]byte, error) {
-	value, err := o.rc.Eval(ctx, retryClaimScript,
-		[]string{o.readyKey, o.processingKey, o.instancesKey}, o.instanceID, o.lease.Milliseconds()).Result()
-	if err != nil {
-		return nil, err
-	}
-	payload, ok := value.(string)
-	if !ok {
-		return nil, fmt.Errorf("retry claim script returned %T, want a bulk string", value)
-	}
-	return []byte(payload), nil
+	return o.claimFrom(ctx, o.readyKey)
 }
 
 // drainInstance 把某个实例名下的收据搬回 ready。requireExpired=true 时由脚本复核租约,
@@ -200,7 +405,7 @@ func (o *retryOwnership) drainInstance(ctx context.Context, instanceID string, r
 	if requireExpired {
 		checkLease = "1"
 	}
-	keys := []string{o.instancesKey, retryInstanceProcessingKey(o.topic, instanceID), o.readyKey}
+	keys := []string{o.instancesKey, retryInstanceProcessingKey(o.topic, instanceID), o.readyKey, o.modesKey}
 	for batch := 0; batch < retryReclaimMaxBatchesPerInstance; batch++ {
 		n, err := o.rc.Eval(ctx, retryReclaimScript, keys, instanceID, retryReclaimBatch, checkLease).Int64()
 		if err != nil {

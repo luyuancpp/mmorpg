@@ -72,8 +72,8 @@ import (
 // 帮会二期预留 9211-9219)、team-smoke(9301-9304)、trade-smoke(9401-9403)错开,避免并行冒烟互相顶号。
 // 不用 95xx:docs/design/guild-phase2/04-asset-channel.md 已把 robot_9501 预留给资产通道冒烟,
 // 那个冒烟要精确核对金币账本,而本场景每轮会给账号净加金币,两者不能共用账号。
+// travel_smoke.account 缺省沿用 robot_9601；显式账号仍必须匹配当前 login 的开发账号白名单。
 // 必须是**首次在 home_zone 建角**的账号:home zone 在建角时登记,之后不随登录区变化。
-const travelSmokeAccount = "robot_9601"
 
 const (
 	// 单次请求 / 回包的等待预算(金币读写、负向传送的同步回包)。
@@ -212,9 +212,9 @@ func RunTravelSmoke(cfg *config.Config) {
 	homeCfg := *cfg
 	homeCfg.ZoneID = sc.HomeZone
 	var err error
-	bot, err = travelSmokeLogin(&homeCfg, travelSmokeAccount, stats)
+	bot, err = travelSmokeLogin(&homeCfg, sc.Account, stats)
 	if err != nil {
-		fail("login", "account=%s zone=%d err=%v", travelSmokeAccount, sc.HomeZone, err)
+		fail("login", "account=%s zone=%d err=%v", sc.Account, sc.HomeZone, err)
 	}
 	homeGate := bot.gateAddr()
 	if bot.countSince(0, game.SceneClientPlayerCommonRedirectToGateMessageId) > 0 {
@@ -252,8 +252,8 @@ func RunTravelSmoke(cfg *config.Config) {
 
 	// ---- T2:负向 —— 非法目标必须同步被拒,且不发生重定向 ----
 	// 0 在服务端任何一层都是非法 zone(PlayerTravelHandoffComp 注释:targetZoneId 0 非法),不依赖部署里有哪些 zone。
-	// 这一步同时是 C++ 侧"拒绝码必须写 TLS tip"的回归点:直接写 response->error_message 会被
-	// TRANSFER_ERROR_MESSAGE 宏整体覆盖,客户端看到的是 tip=0 的"受理"(见 return_define.h)。
+	// 这一步同时是 C++ 侧“拒绝码直接写本次应答”（player_service_interface.h）的回归点：
+	// handler 漏写 response->error_message 时，客户端看到的是 tip=0 的“受理”。
 	rejectTip, err := bot.expectTravelRejected(0, sc.SceneConfigId)
 	if err != nil {
 		fail("reject-invalid-zone", "%v", err)
@@ -908,8 +908,8 @@ func (b *travelSmokeBot) expectTravelRejected(targetZone, sceneConfigId uint32) 
 					return 0, fmt.Errorf("decode TravelToZoneResponse: %w", err)
 				}
 				if tip == 0 {
-					return 0, fmt.Errorf("TravelToZone{zone=%d} 回包 tip=0(被受理了):要么 scene 没校验目标 zone,"+
-						"要么拒绝码直接写进了 response 而被 TRANSFER_ERROR_MESSAGE 宏覆盖(必须写 TLS tip)", targetZone)
+					return 0, fmt.Errorf("TravelToZone{zone=%d} 回包 tip=0（被受理了）：scene 没校验目标 zone，"+
+						"或 handler 没把拒绝码写进 response->error_message", targetZone)
 				}
 				return tip, nil
 			}

@@ -130,6 +130,9 @@ each scene enter/leave also touches the per-node counter, and
 `destroyInstance` drains the residual so force-destroys don't leak
 ghost players.
 
+谁、多久把这两个计数折成负载分写进负载集:见下文「负载刷新与 zone 登记集合(2026-10-16)」(只有领导者按 zone
+批量刷新;计数读失败不按 0 写)。
+
 ### Rebalance on node-set change
 
 When a world-hosting node joins, leaves, or role-flips, SceneManager runs
@@ -316,33 +319,40 @@ in `cpp/libs/services/scene/player/system/player_scene.cpp` drives the full
 mirror lifecycle from the gameplay side:
 
 1. **Validate prerequisites** — refuse `mirrorConfigId == 0`, validate the
-   player entity, require the player to currently be in a non-mirror source
-   scene (refuse to mirror a mirror), require `PlayerSessionSnapshotComp`
-   for gate routing, and require an available SceneManager node entity.
+   player entity, refuse while in battle or while another scene change is in
+   flight (`PlayerLifecycleSystem::IsSceneChangeBusy`), require the player to
+   currently be in a non-mirror source scene (refuse to mirror a mirror),
+   require `PlayerSessionSnapshotComp` for gate routing, and require an
+   available SceneManager node entity.
 2. **Build CreateSceneRequest** with `scene_conf_id = source.scene_config_id`,
    `scene_type = SCENE_TYPE_INSTANCE`, `zone_id = GetZoneId()`,
    `source_scene_id = source.scene_id` (drives co-location),
    `mirror_config_id = mirrorConfigId`, and `creator_ids = [player_id]`.
-3. **Fire-and-forget** via `scene_manager::SendSceneManagerCreateScene` — no
-   per-call state retained on the SceneNode.
-4. **Async response** lands in `AsyncSceneManagerCreateSceneHandler` in
-   `cpp/nodes/scene/rpc_replies/scene_manager_response_handler.cpp`. On
-   success, the handler iterates `resp.creator_ids()` and dispatches a
-   `SceneManagerEnterScene` for each creator that is still resident on this
-   node. Players that disconnected between fire and reply are skipped — when
-   they reconnect, normal `EnterScene` flows handle re-entry.
+3. **Register, then send**(2026-10-15 起):先挂 `PlayerMirrorCreateInFlightComp`(令牌 + 发送时刻),
+   再用生成客户端的每次调用回调重载 `SendSceneManagerCreateScene(..., GrpcDone, ...)` 发出,回调只按值捕获
+   `player_id` 与令牌。登记期间 `IsSceneChangeBusy` 为真,客户端换图、跨 zone 传送、队伍跟随一律被挡
+   ([client-request-ordering.md](client-request-ordering.md) §7.2 第 7 条)。
+4. **Completion** lands in `PlayerSceneSystem::HandleMirrorCreateDone`(成功 / 业务失败 / 传输失败恰好一次,
+   不再经过全局 `AsyncSceneManagerCreateSceneHandler`,scene 节点也不再安装它)。按令牌认领在途组件:
+   实体已不在或令牌对不上就丢弃,镜像由 scene_manager 按空场景回收。认领后:传输失败回 `kEnterSceneServerBusy`;
+   scene_manager 拒绝或 scene_id 为 0 回 `kEnterSceneFailed`;成功时复核(战斗在途、别的换图 / 交接在途、
+   scene_manager 可达)后经 `PlayerLifecycleSystem::RequestSceneChange` 发自动进场的 `EnterScene`,之后的
+   18 / 失败照普通换图处理。
 
-This pattern keeps the SceneNode stateless across the round trip; the echoed
-`creator_ids` is the entire correlation key. It also means a SceneManager
-that legitimately reuses an existing mirror via `MirrorDedupBySource` still
-auto-routes the requesting player(s) into that mirror.
+The correlation key is now the per-call callback, not the echoed
+`creator_ids` (business-failure replies never echoed them, so the creator
+used to get no tip at all). A SceneManager that legitimately reuses an
+existing mirror via `MirrorDedupBySource` still auto-routes the requesting
+player into that mirror.
+
+> **2026-10-17 契约勘误**：以上第 3 / 4 步和“creator_ids 是唯一关联键”保留为旧流程。镜像建场现在先登记 `PlayerMirrorCreateInFlightComp`，完成闭包按值捕获 playerId / token 并委托 `PlayerSceneSystem::HandleMirrorCreateDone`；全局 CreateScene 处理器与 `scene_manager_response_handler.cpp` 已删除，不依赖响应回显创建者。普通换图与镜像共用当前生效的 SceneManager deadline + 1000ms 时效政策，时间回拨按失效处理。完成入口先核对 token，再要求槽未过 TTL；token 不符不动新槽，匹配 token 但已过期或回拨时，仅摘对应当前 token 后静默丢弃，不推 tip、不自动进场。有效完成才释放本次槽，成功时复核玩家仍在、未进入战斗及可用 SceneManager，再经 `RequestSceneChange` 自动进场。有效槽内业务拒绝、零 scene_id 或建好时已在战斗回 `kEnterSceneFailed`，无可用 SceneManager 或传输失败回 `kEnterSceneServerBusy`（3028）。建场在途也占换图互斥闸，客户端换图、队伍跟随与跨 zone 传送不能绕过它。后来的普通换图登记、交接全部预检通过、退出新挂 `UnregisterPlayer`、权威落点成功这四个提交点永久摘掉旧镜像令牌；UTC 回拨后恢复到原 TTL 内也不能使旧提示或自动进场复活。忙碌检查仍只读，未通过的交接预检不取消旧镜像。验证状态另据实际结果；Java 对照见 `grpc-client-deadline-failure-callback.md` §12.4。
 
 ### C++ Side (Scene.CreateScene handler)
 
 1. **幂等检查**：按请求 `scene_id` 查找已有 `SceneInfoComp`，命中返回已有场景。同一 `config_id` 的不同频道有不同 scene_id，不能按配置号去重。
 2. `tlsEcs.sceneRegistry.create()` — creates entt entity (only if no duplicate).
-3. Emplaces `SceneInfoComp` (config_id, guid) and `ScenePlayers` (empty set).
-4. Fires `OnSceneCreated` event for downstream handlers (AOI, etc.).
+3. Emplaces `SceneInfoComp` (config_id, guid). 场景成员不另存反向集合：玩家只挂 `SceneEntityComp`，需要成员时扫描 `view<SceneEntityComp, PlayerGuidComp>`（见 [组件访问规则](ecs-component-access-rules.md)“实体类型与生命周期边界”）。
+4. 场景生命周期入口直接调用 Agones `OnUnitCreated` 记账，不依赖 dispatcher 订阅；最终由共享 `SceneLifecycle::CreateScene` 收口。
 
 ## Destroy Flow
 
@@ -496,7 +506,7 @@ event indicates a client-side contract bug).
 
 1. Linear scan `sceneRegistry` for entity matching `scene_id`.
 2. If not found, log `"DestroyScene: scene_id=N not found, idempotent OK"` and return success.
-3. Otherwise: fire `OnSceneDestroyed` event, then `sceneRegistry.destroy(entity)` — removes all components.
+3. 无住户时直接调用 Agones `OnUnitDestroyed` 后销毁场景实体；排空和销毁最终由共享 `SceneLifecycle::DestroyScene` 收口。
 
 **Idempotency guarantee.** The `not found → success` branch is what makes the
 Go-side cascade and reconciliation paths safe to run repeatedly. Cascade
@@ -622,6 +632,11 @@ StartLoadReporter (外层 for 循环)
       └─ watch 断开 → return → 外层 for 自动 re-list
 ```
 
+> 更正(2026-10-16):图里的 `refreshLoadScores()` 现在只在**领导者**上按 zone 批量刷新负载分(fullSync 里也走同一条
+> 路径,PUT 事件的单节点刷新同样只由领导者做);跟随者一条 Redis 命令都不发,只发布本 zone 的 `nodes_by_role`。
+> fullSync 里「清理 Redis 中的陈旧节点」与孤儿频道清理不再全库 SCAN,改读 zone 登记集合。详见下文
+> 「负载刷新与 zone 登记集合(2026-10-16)」。
+
 #### 2. Reconciliation Loop（K8s Controller 模式）
 
 **K8s 原理**：Controller 不记录"我做过什么操作"的步骤状态机，而是：
@@ -711,6 +726,133 @@ etcd Watch (事件驱动，不轮询)
 2. 之后 Watch 接管：每当有 C++ 场景节点注册（PUT 事件），`handleWatchEvent` 触发该 zone 的 `initWorldScenesForZone`（增量 reconcile）。
 3. `initWorldScenesForZone` 在 zone 补建锁内遍历世界配置，按 Redis 期望数与频道 SET 的差额分配 ID，再为集合中的每个频道发送 C++ CreateScene RPC；节点选择保留哈希分布与存活检查。
 
+## 负载刷新与 zone 登记集合(2026-10-16)
+
+**状态**:以「领导者按 zone 批量刷新 + 登记集合替代 SCAN」缓解(未编译、未测试,待 Codex 验证)。字面的「每个副本只读
+本 zone」、按 zone 选主与 etcd watch 收窄仍归 A1(`docs/design/capacity-model-hok-scale.md` §3)。容量数字均为公式推算,未压测。
+代码:`go/scene_manager/internal/logic/load_refresh.go`、`zone_registry.go`、`load_reporter.go`、`orphan_cleanup.go`、
+`world_autoscale.go`;`tools/merge_zone/scene_hot_state.go`。
+
+### 问题
+
+scene_manager 按 zone 部署(每 zone 2 副本),但默认用全局一把选主锁,全服只有一个领导者;数据面是全局的(C++ 按
+playerId 在全服所有 SM 里挑一个),所以每个副本 watch 全服 scene 节点。改动前:
+
+- 每个副本每 5s 对内存里**全部**节点逐个串行 `GET` 两个计数(读不分领导者,写只由领导者做),跟随者读出来只为发每节点
+  指标。按容量模型 §0.3 的参数推算,2000 万在线时是 0.8·Z·N_s ≈ 28 万~316 万 GET/s,每个副本每拍 3,556~17,778 次往返,
+  已超过 5s 的拍长;
+- 领导者每次 fullSync(启动、watch 中断、领导权变化)跑两次全库 SCAN(`scene_nodes:zone:*:load`、
+  `world_channels:zone:*`),SCAN 遍历的是整个共享库,开服规模下单次是小时级,期间 load reporter 的 goroutine 停摆。
+
+### 为什么不按副本刷新本 zone
+
+负载集与类型镜像只能有一个写者:跟随者的 watch 镜像可能落后于领导者的清理,会把领导者刚 `ZREM` 出负载集的死节点
+重新 `ZADD` 回去,而 DELETE 事件领导者已经消费过,没有第二次删除(`load_reporter.go` `updateNodeLoad` 的注释)。
+「每个副本刷新本 zone」需要每个 zone 各有一个写者,即按 zone 选主,还要为滚动升级另加兜底 —— 那是 A1 的范围。
+按 AGENTS.md §11「正确性 > 简单」,本项保留单写者:**只有领导者刷新**,跟随者一条 Redis 命令都不发;领导者内部按
+zone 分批,正是 A1 拆成每 zone 领导者时可以直接复用的形状。
+
+### 一拍的形状
+
+1. 一条 `SADD scene_manager:zones` 登记本拍涉及的全部 zone;
+2. 读:pipeline 分批(每批 1024 条命令),每个节点两条 `GET`;
+3. 写之前再判一次领导权,批与批之间也判;写:pipeline 分批,每个节点一条 `SET` 类型镜像(排在 `ZADD` 之前,缩短
+   「未分类节点进所有池」的窗口),每个 zone 一条 `ZADD` 写读成功的节点,再加一条 `ZADD NX` 写读失败的节点;
+4. 计数读成功、且所在 zone 的分数 `ZADD` 确认写成功的节点发每节点指标(导出的分数必须是 Redis 里生效的那个)。
+
+推算(§7.2 口径,未实测):刷新读降为 0.4·N_s GET/s(2000 万在线约 711~3,556),跟随者为 0;领导者每拍约 7~29 次往返。
+每节点序列只由领导者导出(3·N_s 条),`nodes_by_role` 约 12·Z 条。
+
+### 读失败语义(fail-closed)
+
+- **不按 0 写**:按 0 写会把满载节点伪装成最空闲的,下一批进场全压上去。旧代码 `readInt64` 出错就当 0。
+- **已在负载集里的成员保留旧分**。
+- **不在负载集里的节点以哨兵分 `1e12` 加入**(`ZADD NX`):负载集成员资格就是存活信号 —— `IsNodeAlive` 把「不在负载集」
+  当作唯一的死亡证据,`playerLocationOwnerGone` 把 `ZCARD == 0` 当作整 zone 已死,`world_rebalance` 用 `ZSCORE` 判存活。
+  Redis 丢了成员(或节点刚注册)时若因计数读失败就不加回去,活节点会被判死,在老属主仍在存盘时放行改派 / 接管。
+  哨兵分让它在选点里排最后(选点按分数升序),下一拍读成功后自然纠正;它只写进 Redis,不进每节点指标。
+- **登记写失败不扣成员资格**:`SADD` 失败只记 `registry_failed`,`ZADD` 照常写,不加 `XX`。
+- **每节点指标与 Redis 的不一致是有意的、有告警的**:读不到计数或分数 `ZADD` 没写进去的节点,本拍不更新每节点 gauge,
+  序列停在上一次成功的值、不删 —— 删掉的话单拍抖动会让序列闪断,把 `WorldNodeSaturated` / `LoadScoreDispersionLow`
+  的 for 计时清零。代价是持续读不到的节点在看板与这两条告警里一直是旧值(非成员还一直挂着哨兵分、等于少了一份容量),
+  由 `SceneManagerLoadRefreshNodeErrors` 盯 `load_refresh_node_errors_total`;写失败由 `SceneManagerLoadRefreshFailing` 盯。
+
+### pipeline 结果按批判定
+
+2026-10-16 对照模块缓存里的源码核实(go-zero v1.10.0、go-redis v9.17.3):
+
+- go-zero 的熔断挂在 `ProcessPipelineHook` 上(`core/stores/redis/breakerhook.go`):熔断打开时直接返回
+  `breaker.ErrServiceUnavailable`,队列里的命令一条都没执行、各自的 err 也不回填,`StringCmd.Result()` 是 `("", nil)`;
+- 取连接 / 网络出错时 go-redis 把错误回填到每条命令(`redis.go` `generalProcessPipeline` 的 `setCmdsErr`);
+- 正常执行时返回第一条带错命令的错误(`cmdsFirstErr`),`redis.Nil` 也算。
+
+所以:`PipelinedCtx` 的返回值不是 `redis.Nil`,且是熔断拒绝、或本批没有任何一条命令自己带错时,整批按失败处理
+(`pipelineBatchRejected`);单条 `GET` 只有 `redis.Nil` 视为 0,`("", nil)` 一律视为读失败(`classifyCounterReply`)。
+写批同理,失败记 `write_failed`。否则熔断按比例丢请求时会出现「读批被拒 → 全读成 0 → 写批被放行 → 全服分数写成 0」,
+而且 outcome 还记成 ok。
+
+outcome 上 `read_failed` 只记**传输层失败**:批被拒,或有命令带着非 Redis 回复的错误(取连接 / 网络 / 超时;go-redis 会把
+它回填到当前及后续命令),判定是 `pipelineHitTransportError`,按错误类型(有没有 `RedisError()` 方法)判。个别键的逐条回复
+错误(WRONGTYPE)与坏值(空串 / 非数字)不论批多大、节点多少都只记 `partial`。不用「整批全错」判:同一个坏键独占尾批、或
+部署里只有 1 个节点时会记成 `read_failed`,与别的节点同批时记 `partial`,告警随节点增减时响时不响。也不拿命令上的错误与
+`PipelinedCtx` 的返回值比较:重试用尽时 go-redis 直接返回最后一轮的错误,命令身上留的可能是更早一轮的错误实例。
+写失败按批聚合成一行日志(失败条数、zone 范围、第一条失败命令),网络错误被回填到整批时不至于每拍放大成 N_s+Z 行。
+
+### zone 登记集合 `scene_manager:zones`
+
+- **语义**:SET,成员是 zone 十进制;「可能留有 scene_manager 热状态的 zone」。只是发现索引,不是存活判据,不参与路由。
+- **写入方**(全部尽力而为,失败只打 Error):领导者刷新(每拍一条 `SADD`,先于负载集写入);`DesiredWorldChannelCount`
+  播种分支与 `setDesiredWorldChannelCount`(先于写期望数 Hash;可能跑在任意副本上,CreateScene 兜底会拿请求里的 zone
+  走补建,所以集合里可能有没有活节点的 zone,无害);每个副本启动时登记自己的 `ZoneId`。只加不减,多写者安全。
+- **读取方**:`sweepStaleLoadSetMembers`(扫描范围 = 快照 zone ∪ 登记集合)、`CleanupOrphanWorldChannels`(候选 zone =
+  登记集合 ∪ 有活节点的 zone)。读登记集合失败时退回只用快照 / 活节点 zone。
+- **删除方**:只有 `tools/merge_zone -clear-source-hot-state`,作为清热状态的最后一步(前面任何一步失败都保留登记)。
+- **不变量**:尽力登记 + 每拍自愈。有活节点的 zone 一定在 etcd 快照里,领导者每拍重新登记。缺口只有「升级前就已整体
+  下线、又从未登记」与「从没登记成功、又在领导者缺位时整体死掉」的 zone;它们复活时会重新进快照,一直不复活的按
+  `docs/ops/scene-node-role-split.md` §6.1 的一次性命令补登记。
+- **生产代码里不保留全库 SCAN**,也不设「打开就 SCAN」的开关:K8s ConfigMap 由 `k8s_deploy.ps1` 整份生成,手改的值下次部署
+  就被覆盖;忘了关则每次领导者 fullSync 都会把小时级 SCAN 带回 load reporter 的 goroutine。
+- 键名刻意不以 `scene_nodes:zone:` / `world_channels:zone:` / `world_channels:desired:zone:` / `node:zone:` 开头,避免被旧版本
+  的 SCAN 与 merge_zone 按源 zone 前缀清理的模式误命中;与 merge_zone 的同名常量是跨 module 契约,两边测试各自钉死。
+
+### 孤儿清理按期望数 Hash 发现
+
+候选 `(zone, confId)` 取 `world_channels:desired:zone:{z}` 的字段(每个 zone 一条 `HKEYS`),confId 不在 World 表的组按
+`(zone, confId)` 点名清理。生产代码里往频道集合 `SADD` 的唯一入口 `initWorldScenesForZone` 先经 `DesiredWorldChannelCount`
+播种期望数字段,所以「有频道集合」基本蕴含「有期望数字段」。`deleteOrphanChannel` 把删期望数字段挪到最后一步:它是发现
+索引,先删它、再删集合时中途失败,这组孤儿就再也找不到了。覆盖不到的只有 `HSETNX` 出错兜底路径建出的「有集合、没有
+期望数字段」的组与更早的遗留,后果是残留垃圾键,不影响路由;反过来「集合已空、字段还在」的残留以前找不到,现在能清。
+
+### 指标与告警
+
+- `scene_manager_load_refresh_total{outcome}`:`ok` / `partial` / `read_failed` / `registry_failed` / `write_failed` /
+  `lost_leadership`,每拍一次、只有领导者发出,所有 outcome 在注册时预置为 0;
+- `scene_manager_load_refresh_duration_seconds`(Histogram)、`scene_manager_load_refresh_node_errors_total`;
+- 每节点 gauge 只由领导者导出,降级时 `ResetLeaderGauges` 与跟随者每拍的 `ResetNodeSeries` 清掉旧序列;换主时序列换 pod,
+  空缺约一个锁 TTL 加一拍,`WorldNodeSaturated` / `LoadScoreDispersionLow` 的 for 计时会在换主时清零;
+- `nodes_by_role`:领导者发布全部 zone,跟随者只发布本 `ZoneId`,都给本 `ZoneId` 补 0;看板改为 `max by`;
+- 新告警(阈值待压测基线):`SceneManagerLoadRefreshStalled`(刷新停摆 / 没有领导者)、`SceneManagerLoadRefreshFailing`
+  (`read_failed|registry_failed|write_failed`)、`SceneManagerLoadRefreshSlow`(p99 > 2s)、`SceneManagerLoadRefreshNodeErrors`
+  (`load_refresh_node_errors_total` 持续增长 30 分钟,覆盖只记 `partial` 的个别节点长期读不到)。见 `deploy/k8s/scene-manager-alerts.yaml`
+  与 `docs/ops/scene-node-role-split.md` §7。
+
+### 兼容与升级
+
+不涉及 proto、客户端可见契约、C++ 代码与 go.mod;Redis 键名格式不变,只新增 `scene_manager:zones`。滚动升级时新旧版本
+并存:旧领导者照旧全量刷新与 SCAN、新跟随者不读,总负载只降;新领导者按 zone 刷新并登记、旧跟随者照旧全量读但不写,
+写入仍只有一个来源;领导权来回切时旧版本继续 SCAN,新版本用登记集合 ∪ 快照 zone。回滚到旧二进制行为完全回到原样,
+留下的 `scene_manager:zones` 无害。长期环境的一次性补登记步骤见 `docs/ops/scene-node-role-split.md` §6.1。
+领导者缺位(最长约一个锁 TTL)时没人刷新,与改动前相同(改动前写入也只由领导者做)。
+
+### A1 剩余缺口
+
+- 仍是全服一个领导者:刷新代价降到 0.4·N_s,但由单点承担;rebalance、分线目录、闲置回收、自动伸缩、Agones 对账这些
+  领导者循环仍遍历全部 zone;
+- etcd watch 与 `knownNodes` 仍是全服范围(数据面需要),fullSync 的全前缀 Range 与 `resolveNodeEndpoint` 慢路径的全前缀
+  Get 不在本项,要等 C++ 改成只连本 zone 的 SM 之后才能收窄;
+- `handleWatchEvent` PUT 换 zone 分支在任意副本上 `ZREM` / `DEL`,没有按领导者门控(既有问题,与 reassignSceneNode 无 CAS
+  同类,不在本项)。
+
 ## Key Redis Keys
 
 | Key | Type | Purpose |
@@ -729,6 +871,7 @@ etcd Watch (事件驱动，不轮询)
 | `node:zone:{zoneId}:{nodeId}:player_count` | String (int) | Node's aggregate player count (sum across hosted scenes) |
 | `node:zone:{zoneId}:{nodeId}:scene_node_type` | String (int) | Mirrored `eSceneNodeType` value for purpose filtering |
 | `node:zone:{zoneId}:{nodeId}:scenes` | Set | Scene ids currently hosted by this node (node-death reconciliation) |
+| `scene_manager:zones` | Set | (2026-10-16)出现过负载集成员或频道期望数的 zone(十进制);只加不减,`merge_zone -clear-source-hot-state` 摘除。领导者清扫与孤儿清理靠它发现 zone,替代全库 SCAN |
 
 Scene IDs are generated by the etcd-leased Snowflake worker and therefore have
 no Redis counter key. Legacy `node:{nodeId}:*` keys are no longer read: `nodeId`
@@ -787,6 +930,8 @@ MetricsListenAddr: ":9150"
 | `go/scene_manager/internal/logic/leavescenelogic.go` | LeaveScene: location cleanup, player count decrement |
 | `go/scene_manager/internal/logic/destroyscenelogic.go` | Admin DestroyScene RPC handler |
 | `go/scene_manager/internal/logic/load_reporter.go` | etcd → Redis node discovery, load sync, grace period |
+| `go/scene_manager/internal/logic/load_refresh.go` | (2026-10-16)领导者按 zone 批量刷新负载分;pipeline 结果按批判定、读失败不按 0 写 |
+| `go/scene_manager/internal/logic/zone_registry.go` | (2026-10-16)zone 登记集合 `scene_manager:zones`,替代 fullSync 里的全库 SCAN |
 | `go/scene_manager/internal/logic/logic_test.go` | Unit tests incl. `TestCreateScene_Mirror_*` co-location suite |
 | `go/scene_manager/internal/logic/world_rebalance.go` | World channel migration. `migrateWorldChannel` uses `reassignSceneNode` to keep `node:zone:{zoneId}:{nodeId}:scenes` in sync with `scene:{id}:node` |
 | `go/scene_manager/internal/logic/orphan_cleanup.go` | Drops world-channel sets whose confId is no longer in the World table; cleans all scene-scoped keys + reverse indexes |

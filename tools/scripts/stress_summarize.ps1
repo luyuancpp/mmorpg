@@ -27,11 +27,15 @@
        go-redis 连接池等待与超时;缺序列打印 n/a]
           when | w_sql w_task w_queue w_e2e | r_sql r_task | batch | no_cursor lease_lost rel_notown | rpool_wait rpool_tmo
 
-      [DB Redis steps(Round 20+,*_db 快照):写任务 11 个 Redis 往返的均值与合计;缺序列打印 n/a]
-          when | lock_acq cur_get ep_get plc_lkp exp_get plc_rck verify cache cur_set ep_mark lock_rel | sum
+      [DB Redis steps(Round 20+ / 围栏 v0.4,*_db 快照):12 个固定列只读写任务均值与合计;缺序列打印 n/a]
+          when | lock_acq cur_get ep_get owner_ep plc_lkp exp_get plc_rck verify publish cache_nx advance lock_rel | sum
 
       [DB retry routing(*_db 快照):重试路由模式、四个重试列表长度、路由动作计数;缺序列打印 n/a]
           when | mode | q_ready q_part q_proc q_dead | exec nonowner fwd revoked misrouted rt_dead
+
+      [DB task:result notify(*_db 快照,2026-10-18 起):读回执到达通知按 target × result 的累计数,
+       实例频道无人接收占比与回落旧频道占比;缺序列打印 n/a,分母为 0 打印 -]
+          when | inst_ok inst_nr inst_err | unset_ok unset_nr unset_err | inval_ok inval_nr inval_err | inst_nr% legacy%
 
       [optional: Kafka consumer lag (final)]
           partition | current | log_end | lag
@@ -670,6 +674,14 @@ function Format-CountCell {
     return "{0:N0}" -f [double]$Value
 }
 
+# 百分比文本;分子或分母缺序列 → n/a,分母为 0 → "-"(同 Format-Avg 的「没有样本」)。
+function Format-RatioCell {
+    param($Numerator, $Denominator)
+    if ($null -eq $Numerator -or $null -eq $Denominator) { return "n/a" }
+    if ([double]$Denominator -le 0) { return "-" }
+    return "{0:N1}%" -f (100.0 * [double]$Numerator / [double]$Denominator)
+}
+
 if ($dbSnapshots.Count -gt 0) {
 
     # ----- 2d. DB write path ---------------------------------------------
@@ -721,21 +733,25 @@ if ($dbSnapshots.Count -gt 0) {
     }
 
     # ----- 2e. DB Redis steps --------------------------------------------
-    # 写任务每个 Redis 往返的均值。11 个 step 的名字与顺序同 go/db/internal/metrics/pipeline.go 的 RedisSteps
+    # 写任务每个 Redis 往返的均值。12 个 step 的名字与顺序同 go/db/internal/metrics/pipeline.go 的 RedisSteps
     # (按写路径顺序),一一对应;那边改名 / 合并 step 时,这里、test_stress_summarize.ps1 与 TestRedisStepNamesPinned 同改。
     # 只读 op="write";读任务只有 placement_lookup / expand_get / placement_recheck / cache_set 四步,不进本表。
+    # 围栏 v0.4 起 cache_set 只剩读路径 SET NX,写任务这列应为 n/a;lease_verify 只剩 older_seq 条件路径。
+    # cache_publish 合并写路径核锁与缓存发布,applied_advance 合并 cursor_set / epoch_mark。
+    # R20 的 cache_set / lease_verify 含义已变、cursor_set / epoch_mark 已移除,新旧列不能直接相减。
     # 均值保留两位小数(Redis 往返常在 0.1ms 量级,一位小数分不开)。sum = 有序列的各步均值之和,
     # 近似一条写任务花在 Redis 往返上的时间;某步没有序列时不计入,全部没有打印 n/a。
-    $redisSteps = @('lock_acquire', 'cursor_get', 'epoch_get', 'placement_lookup', 'expand_get', 'placement_recheck',
-                    'lease_verify', 'cache_set', 'cursor_set', 'epoch_mark', 'lock_release')
-    $rsFmt = "  {0,-30} {1,-8} {2,-8} {3,-8} {4,-8} {5,-8} {6,-8} {7,-8} {8,-8} {9,-8} {10,-8} {11,-8} {12}"
+    $redisSteps = @('lock_acquire', 'cursor_get', 'epoch_get', 'owner_epoch_probe', 'placement_lookup', 'expand_get', 'placement_recheck',
+                    'lease_verify', 'cache_publish', 'cache_set', 'applied_advance', 'lock_release')
+    $rsFmt = "  {0,-30} {1,-8} {2,-8} {3,-8} {4,-8} {5,-8} {6,-8} {7,-8} {8,-8} {9,-8} {10,-8} {11,-8} {12,-8} {13}"
     Write-Host ""
-    Write-Host "=== DB Redis steps (db_task_redis_step_seconds{op=`"write`"} avg, Round 20+) ===" -ForegroundColor Yellow
+    Write-Host "=== DB Redis steps (db_task_redis_step_seconds{op=`"write`"} avg, fence v0.4) ===" -ForegroundColor Yellow
+    Write-Host '  口径: verify 仅 older_seq;cache_nx 仅读路径(本表通常 n/a);publish / advance 已合并旧步骤,勿直接减 R20 对应列。'
     Write-Host ""
-    Write-Host ($rsFmt -f 'snapshot', 'lock_acq', 'cur_get', 'ep_get', 'plc_lkp', 'exp_get', 'plc_rck', 'verify', 'cache',
-        'cur_set', 'ep_mark', 'lock_rel', 'sum')
-    Write-Host ($rsFmt -f '--------', '--------', '-------', '------', '-------', '-------', '-------', '------', '-----',
-        '-------', '-------', '--------', '---')
+    Write-Host ($rsFmt -f 'snapshot', 'lock_acq', 'cur_get', 'ep_get', 'owner_ep', 'plc_lkp', 'exp_get', 'plc_rck', 'verify',
+        'publish', 'cache_nx', 'advance', 'lock_rel', 'sum')
+    Write-Host ($rsFmt -f '--------', '--------', '-------', '------', '--------', '-------', '-------', '-------', '------',
+        '-------', '--------', '-------', '--------', '---')
 
     foreach ($snap in $dbSnapshots) {
         $m = Read-PromSnapshot $snap.FullName
@@ -798,6 +814,45 @@ if ($dbSnapshots.Count -gt 0) {
 
         $rowArgs = @($snap.BaseName, $modeCell) + @($queueCells) + @($actionCells)
         Write-Host ($rtFmt -f $rowArgs)
+    }
+
+    # ----- 2g. DB task:result notify -------------------------------------
+    # 读回执到达通知分频道(B0-3 第 2 批)的发布方观测面,指标 db_task_result_notify_total{target,result}
+    # (go/db/internal/metrics/task_result_notify.go):go/db 按 DBTask.reply_instance 只 PUBLISH 一次,合法发发起方
+    # login 的实例频道,为空 / 不合法回落全服旧频道。列:
+    #   inst_* / unset_* / inval_*   target=instance | legacy_unset | legacy_invalid 各自 result=ok | no_receiver | error 的累计
+    #   inst_nr%                     instance 里 no_receiver 的占比(分母 = instance 三个 result 之和);新版 login 全量后应约为 0,
+    #                                明显上升说明发起方 login 不在或两端频道名不一致(告警 DbTaskResultNotifyNoReceiver)
+    #   legacy%                      回落旧频道(legacy_unset + legacy_invalid)占全部通知的比例;旧版 login 发起的读计 legacy_unset,
+    #                                login 全量升级后应约为 0
+    # $notifyTargets / $notifyResults 与 metrics 包的取值逐项对应(TestTaskResultNotifyNamesMatchStressSummarize 守住),
+    # 改名要同改两边与 test_stress_summarize.ps1。旧版 db 没有这些序列 → 全部 n/a。键按 label 字母序写(result < target)。
+    # login 侧对照的 login_task_result_delivery_total{outcome} 还没进本脚本(B0-3 第 1 批交付说明的后续项)。
+    $notifyTargets = @('instance', 'legacy_unset', 'legacy_invalid')
+    $notifyResults = @('ok', 'no_receiver', 'error')
+    $ntFmt = "  {0,-30} {1,-8} {2,-8} {3,-8} | {4,-8} {5,-8} {6,-9} | {7,-8} {8,-8} {9,-9} | {10,-8} {11}"
+    Write-Host ""
+    Write-Host "=== DB task:result notify (db_task_result_notify_total, target x result) ===" -ForegroundColor Yellow
+    Write-Host ""
+    Write-Host ($ntFmt -f 'snapshot', 'inst_ok', 'inst_nr', 'inst_err', 'unset_ok', 'unset_nr', 'unset_err',
+        'inval_ok', 'inval_nr', 'inval_err', 'inst_nr%', 'legacy%')
+    Write-Host ($ntFmt -f '--------', '-------', '-------', '--------', '--------', '--------', '---------',
+        '--------', '--------', '---------', '--------', '-------')
+
+    foreach ($snap in $dbSnapshots) {
+        $m = Read-PromSnapshot $snap.FullName
+        $notifyCells = foreach ($t in $notifyTargets) {
+            foreach ($r in $notifyResults) {
+                Format-CountCell (Get-MetricSumOrNull $m (Get-SeriesPattern 'db_task_result_notify_total' "result=`"$r`",target=`"$t`""))
+            }
+        }
+        $instNoReceiver = Get-MetricSumOrNull $m (Get-SeriesPattern 'db_task_result_notify_total' 'result="no_receiver",target="instance"')
+        $instTotal      = Get-MetricSumOrNull $m '^db_task_result_notify_total\{result="[a-z_]+",target="instance"\}$'
+        $legacyTotal    = Get-MetricSumOrNull $m '^db_task_result_notify_total\{result="[a-z_]+",target="legacy_(unset|invalid)"\}$'
+        $allTotal       = Get-MetricSumOrNull $m '^db_task_result_notify_total\{'
+
+        $rowArgs = @($snap.BaseName) + @($notifyCells) + @((Format-RatioCell $instNoReceiver $instTotal), (Format-RatioCell $legacyTotal $allTotal))
+        Write-Host ($ntFmt -f $rowArgs)
     }
 }
 

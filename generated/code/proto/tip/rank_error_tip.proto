@@ -1,0 +1,20 @@
+
+syntax = "proto3";
+
+option go_package = "generated/pb/table";
+
+option java_package = "com.game.table";
+
+
+enum rank_error {
+  kRank_errorOK = 0;
+
+  kRankBoardNotFound = 21000;
+
+  kRankGenerationClosed = 21001;
+
+  kRankRequestConflict = 21002;
+
+  kRankSettlementPending = 21003;
+
+};

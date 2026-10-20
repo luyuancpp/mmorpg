@@ -142,6 +142,17 @@ func (f *fakeSchemaRunner) run(_ context.Context, _ *sql.DB, opts schemamigrate.
 	return f.report, f.err
 }
 
+// fakeLayoutCheck 记录行布局核对是否被调用,并返回预设结果。
+type fakeLayoutCheck struct {
+	err   error
+	calls int
+}
+
+func (f *fakeLayoutCheck) run(context.Context, *sql.DB) error {
+	f.calls++
+	return f.err
+}
+
 // TestEnsureSchema 钉住启动期建表策略(D-14 第 4 条,同 go/trade)。
 func TestEnsureSchema(t *testing.T) {
 	logtest.Discard(t)
@@ -149,28 +160,48 @@ func TestEnsureSchema(t *testing.T) {
 	auto := config.Config{Schema: config.SchemaConf{AutoMigrate: &yes}}
 	planOnly := config.Config{Schema: config.SchemaConf{AutoMigrate: &no}}
 
-	up, plan := &fakeSchemaRunner{}, &fakeSchemaRunner{}
-	if err := ensureSchema(context.Background(), nil, auto, up.run, plan.run); err != nil || up.calls != 1 || plan.calls != 0 {
+	up, plan, check := &fakeSchemaRunner{}, &fakeSchemaRunner{}, &fakeLayoutCheck{}
+	if err := ensureSchema(context.Background(), nil, auto, up.run, plan.run, check.run); err != nil || up.calls != 1 || plan.calls != 0 {
 		t.Fatalf("AutoMigrate=true 应只跑 Up: err=%v up=%d plan=%d", err, up.calls, plan.calls)
+	}
+	if check.calls != 1 {
+		t.Fatalf("Up 成功后必须跑一次行布局核对,实际 %d 次", check.calls)
 	}
 	if up.opts.Database != data.DatabaseName || len(up.opts.Tables) != 3 {
 		t.Fatalf("迁移选项 = %+v,应断言独占库并包含三张表", up.opts)
 	}
-	up = &fakeSchemaRunner{report: schemamigrate.Report{Manual: []string{"type drift"}}}
-	if err := ensureSchema(context.Background(), nil, auto, up.run, plan.run); err == nil {
-		t.Fatal("出现需人工项必须拒启")
+	up, check = &fakeSchemaRunner{report: schemamigrate.Report{Manual: []string{"type drift"}}}, &fakeLayoutCheck{}
+	if err := ensureSchema(context.Background(), nil, auto, up.run, plan.run, check.run); err == nil || check.calls != 0 {
+		t.Fatalf("出现需人工项必须拒启,且不跑布局核对: err=%v check=%d", err, check.calls)
 	}
-	up = &fakeSchemaRunner{err: errors.New("lock busy")}
-	if err := ensureSchema(context.Background(), nil, auto, up.run, plan.run); err == nil {
-		t.Fatal("Up 失败必须拒启")
+	up, check = &fakeSchemaRunner{err: errors.New("lock busy")}, &fakeLayoutCheck{}
+	if err := ensureSchema(context.Background(), nil, auto, up.run, plan.run, check.run); err == nil || check.calls != 0 {
+		t.Fatalf("Up 失败必须拒启,且不跑布局核对: err=%v check=%d", err, check.calls)
 	}
 	plan = &fakeSchemaRunner{report: schemamigrate.Report{Statements: []string{"CREATE TABLE ..."}}}
-	err := ensureSchema(context.Background(), nil, planOnly, up.run, plan.run)
+	err := ensureSchema(context.Background(), nil, planOnly, up.run, plan.run, check.run)
 	if err == nil || !strings.Contains(err.Error(), migrateRemedyCommand) {
 		t.Fatalf("plan 不干净必须拒启并带补救命令: %v", err)
 	}
-	plan = &fakeSchemaRunner{}
-	if err := ensureSchema(context.Background(), nil, planOnly, up.run, plan.run); err != nil {
-		t.Fatalf("plan 干净应通过: %v", err)
+	plan, check = &fakeSchemaRunner{}, &fakeLayoutCheck{}
+	if err := ensureSchema(context.Background(), nil, planOnly, up.run, plan.run, check.run); err != nil || check.calls != 1 {
+		t.Fatalf("plan 干净应通过并跑一次布局核对: err=%v check=%d", err, check.calls)
+	}
+}
+
+// TestEnsureSchemaRefusesBadRowLayout:表结构对齐但行布局核对不过(旧分片公式写出的存量行)时,两条启动路径都必须拒启。
+func TestEnsureSchemaRefusesBadRowLayout(t *testing.T) {
+	logtest.Discard(t)
+	yes, no := true, false
+	bad := errors.New("player_inbox_stream has 1 (shard, player_id) pair(s) whose shard is not RowShard(player_id)")
+	for _, c := range []config.Config{
+		{Schema: config.SchemaConf{AutoMigrate: &yes}},
+		{Schema: config.SchemaConf{AutoMigrate: &no}},
+	} {
+		check := &fakeLayoutCheck{err: bad}
+		err := ensureSchema(context.Background(), nil, c, (&fakeSchemaRunner{}).run, (&fakeSchemaRunner{}).run, check.run)
+		if err == nil || !errors.Is(err, bad) || check.calls != 1 {
+			t.Fatalf("AutoMigrate=%v: 布局核对失败必须拒启并包住原因: err=%v check=%d", *c.Schema.AutoMigrate, err, check.calls)
+		}
 	}
 }

@@ -84,7 +84,7 @@ struct RemoveItemByPosParam
 
 // 一条"整理时被销毁的实例"的销毁前抓拍。
 //
-// 整理会把被合并空的堆、以及 size==0 的僵尸实例连 guid 一起销毁,而 item_uuid
+// 整理会把被合并空的堆连 guid 一起销毁,而 item_uuid
 // 正是 transaction_log 做外挂回收关联的键 —— 实例消失必须留痕,否则追溯链在
 // 整理这一步无声断掉。Bag 是纯容器不写流水,所以它只负责**报告**销毁了哪些,
 // 由 BagService::MergeAndCompact 落流水。
@@ -499,18 +499,25 @@ public:
     // source zone / pre-snapshot state.
     void ResetFromSnapshot();
 
-    // Insert one item entry at a known position with a known guid.
-    // Companion to ResetFromSnapshot. Used by bag_marshal::Unmarshal
-    // to replay items one by one without re-running stack/anomaly logic.
-    // acquireSeq:快照里的入包序号。0 = 旧存档没盖过章,由 ItemStore 按重放顺序
-    // 重新盖 —— 那至少还原出一个自洽的先后,好过拿 guid 猜。
-    //
-    // 这个位置参数重载只带得动「身份 + 数量 + 入包序号」,**带不动实例数据**(equip 段)。
-    // 保留它是因为大量用例直调;它转调下面的整份重载。新代码(bag_marshal)一律走整份重载,
-    // 否则实例层每加一个字段,这里就多一处「忘了透传 = 存档往返丢数据」。
+    // 批量还原先抬到全包最大既有序号之后，再按输入顺序补盖旧档零章；实例数据整份保留。
+    // 生产还原入口统一经过这里，不要求调用方拼装抬水位和逐条插入的顺序。
+    void RestoreItems(std::vector<std::pair<ItemComp, uint32_t>> items);
+
+    // 仅供测试逐条还原身份、数量与序号；不携带 equip 等实例数据。
+    // 逐条调用时零章按调用顺序盖在当前水位，混有非零章的批量还原必须走 RestoreItems。
     void InsertItemForRestore(Guid guid, uint32_t configId, uint32_t stackSize, uint32_t pos,
                               uint64_t acquireSeq = 0);
 
+    // Set capacity (replays Bag::ExpandCapacity's effect without the audit log).
+    // Used by Unmarshal to restore gameplay-unlocked slots.
+    //
+    // 拒绝把容量压到**已占槽位之下**:那会当场打破"每个实例恰占一格、槽位数
+    // 不超过容量"的不变量 —— Debug 下下一次入包就断言,Release 下这个包"永远满"。
+    // 正常还原序列是 Reset -> SetCapacity -> Insert,到不了这里;这是给日后任何
+    // 误用者(GM 工具、新的还原路径)的闸。「位置可以变,物品不能丢」。
+    void SetCapacityForRestore(std::size_t newCapacity);
+
+private:
     // 整份还原:item 原样进实例层 —— item_id / config_id / size / acquire_seq / equip
     // (含 presence)一个都不丢、一个都不改。pos 是快照里的槽位。
     //
@@ -524,19 +531,7 @@ public:
     // **绝不调用 ItemInstanceInitializer**:还原的是已经存在过的实例,has_equip() 为假
     // 就是「它本来就没有」,不是「还没掷」(设计文档 §5 不变量 1)。
     void InsertItemForRestore(ItemComp item, uint32_t pos);
-    // 还原前先扫描本包全部非零序号并抬高水位，再按出现顺序补盖零序号。
-    void RaiseAcquireSeqForRestore(uint64_t sequence);
 
-    // Set capacity (replays Bag::ExpandCapacity's effect without the audit log).
-    // Used by Unmarshal to restore gameplay-unlocked slots.
-    //
-    // 拒绝把容量压到**已占槽位之下**:那会当场打破"每个实例恰占一格、槽位数
-    // 不超过容量"的不变量 —— Debug 下下一次入包就断言,Release 下这个包"永远满"。
-    // 正常还原序列是 Reset -> SetCapacity -> Insert,到不了这里;这是给日后任何
-    // 误用者(GM 工具、新的还原路径)的闸。「位置可以变,物品不能丢」。
-    void SetCapacityForRestore(std::size_t newCapacity);
-
-private:
     // ── 两层成对操作(桥层的核心职责)────────────────────────────────
     // 销毁一个实例:实例层抹掉实体与索引,布局层释放槽位。两边必须成对,
     // 所以它只能长在桥层。拆分前这是 Bag::DestroyItem,一个函数里既 destroy

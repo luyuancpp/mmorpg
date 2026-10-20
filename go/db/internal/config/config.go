@@ -3,6 +3,7 @@ package config
 import (
 	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/zeromicro/go-zero/zrpc"
 )
@@ -42,6 +43,19 @@ type PlacementConfig struct {
 	// 打开前提(§13):全部 login 已 PinOnCreate=true,且各 zone 已 -mode pin-placement 钉完存量。
 	Required bool `json:"Required,optional"`
 
+	// RequireRouteReady=true:选库与落库后复核改用就绪读脚本(shared/placement.RouteReadyReadScript),只有 mapping Redis
+	// 的副本被判可信(就绪标记里记下的 run_id / master_replid 就是本次读所在的主实例)时才按读到的值选库;否则写延后
+	// (不耗重试预算)、读耗预算,并由进程级就绪闸暂停取 Kafka 消息与认领重试(D1 第 3 批,
+	// docs/handoff/launch-readiness-20261013/spec_D1_batch1b2_2_3.md §5.3、§13.2)。启动时试跑一次读脚本,执行出错即拒启。
+	// 缺省 false:行为与引入之前相同。打开顺序(§8 P5):data_service 对账 leader 已挂上就绪标记之后逐 zone 打开;
+	// 回退先关本开关(先读方、后写方)。
+	RequireRouteReady bool `json:"RequireRouteReady,optional"`
+
+	// RouteReadyGateIntervalMs 是就绪闸刷新(一次不带映射键的读脚本)的间隔,也是闸关着时复查的间隔(毫秒)。
+	// 0 / 不写 = DefaultPlacementRouteReadyGateIntervalMs;写出来就必须在 [Min, Max] 之内,越界拒启(Validate)。
+	// 只在 RequireRouteReady=true 时生效。
+	RouteReadyGateIntervalMs int `json:"RouteReadyGateIntervalMs,optional"`
+
 	// 额外落点库按家族分两个池旋钮(G2b 批 C;本 zone 库仍用 ServerConfig.Database.MaxOpenConn / MaxIdleConn):
 	//   ZoneStore*    —— **每个**额外 zone 家族库 zone_{1..999999}_db(本 zone 库除外):冷缓存访客读、合服 pin 后的源区库;
 	//   NonZoneStore* —— **每个**非 zone 落点库 player_store_{>=1000000}_db(Phase 2)。
@@ -72,6 +86,9 @@ type PlacementRedisConfig struct {
 	Hosts    string `json:"Hosts"`
 	Password string `json:"Password,optional"`
 	DB       int    `json:"DB,optional"`
+	// PoolSize 同 RedisConfig.PoolSize(0 / 不写 = go-redis 缺省 10 × GOMAXPROCS,负数拒启)。
+	// 只在本段写出、另开一个落点客户端时生效;K8s 的 db ConfigMap 不写本段。
+	PoolSize int `json:"PoolSize,optional"`
 }
 
 // StoreFamiliesAllowed 返回是否按家族放行落点库;没写(nil)按 true。
@@ -86,6 +103,37 @@ type ServerConfig struct {
 	JsonPath    string          `json:"JsonPath"`
 	Kafka       KafkaConfig     `json:"Kafka"`
 	BlobGuard   BlobGuardConfig `json:"BlobGuard,optional"`
+	Fencing     FencingConfig   `json:"Fencing,optional"`
+	// OwnerEpochRedis 只读核心实例的 owner_epoch；缺省复用 RedisClient。
+	OwnerEpochRedis *PlacementRedisConfig `json:"OwnerEpochRedis,optional"`
+}
+
+// 玩家两张表的 MySQL 行内围栏模式(docs/design/db-write-fencing-mysql.md §4.7、§8 与 2026-10-18 存盘协议世代附注)。
+const (
+	// FencingModeLegacy 不拒绝旧写，但更新保留已有行内围栏，不写两表 SQL ACK、不补投、不发布资产 SQL 提交证据。
+	// 只与尚未升级到严格提交屏障的旧 scene / login 同世代；本 zone 已有严格世代证据时拒绝启动(saveoutbox.CheckLegacyAllowed)。
+	FencingModeLegacy = "legacy"
+	// FencingModeDual 玩家两张表按 DBTask 的 (owner_epoch, save_seq) 做行内围栏条件写,写两表 SQL ACK、跑补投,
+	// 并发布资产 SQL 提交证据。现行 C++ / login 的严格提交屏障只能与它配合。缺省值。
+	FencingModeDual = "dual"
+)
+
+// FencingConfig 是行内围栏的开关。整段可缺省:go-zero 对整段 optional 且未出现的嵌套结构不回填 default,
+// 所以零值(空串)直接解释为与现行写者同世代的 dual(2026-10-18 起;此前缺省 legacy,与严格提交屏障自相矛盾,
+// 按缺省配置玩家第二次登录起全部失败,见 data-overwrite-rollback-audit-20261018.md §2.2)。
+// 回退 legacy 不再「随时安全」:必须先把本 zone 的 scene / login 回退到不写严格屏障的版本并按设计 §8.6 排空、
+// 删除世代标记,否则 legacy 实例在启动门禁处拒启、运行中发现严格世代证据即停机。
+type FencingConfig struct {
+	Mode          string `json:"Mode,optional"`
+	EpochOverride bool   `json:"EpochOverride,optional"`
+}
+
+// EffectiveMode 返回生效的模式:空串按 dual。
+func (f FencingConfig) EffectiveMode() string {
+	if f.Mode == "" {
+		return FencingModeDual
+	}
+	return f.Mode
 }
 
 // DatabaseConfig holds database connection settings.
@@ -97,6 +145,8 @@ type DatabaseConfig struct {
 	MaxOpenConn int    `json:"MaxOpenConn"`
 	MaxIdleConn int    `json:"MaxIdleConn"`
 	Net         string `json:"Net"`
+	// RequireTiDB 强制每条玩家库物理连接使用 TiDB leader、当前严格读；false 仅兼容本地 MySQL。
+	RequireTiDB bool `json:"RequireTiDB,optional"`
 
 	// AllowedDatabases 是**外部注入**的库名白名单。
 	//
@@ -178,7 +228,7 @@ type MigrationConfig struct {
 	AdvisoryLockSeconds     int `json:"AdvisoryLockSeconds,optional"`
 }
 
-// BlobGuardConfig 是 db_task 落库路径上 pb blob 列的字节上限(大字段三档闸)。
+// BlobGuardConfig 是 db_task 落库路径上 pb blob 列的保守计费上限(大字段三档闸)。
 //
 // 档位语义:
 //   - 正常          —— 只记 histogram,零日志;
@@ -189,12 +239,12 @@ type MigrationConfig struct {
 // 设计量级是个位数 KB,16MB 的闸等于没设 —— 等它触发时行早就大到把 Save
 // 的网络往返和 Redis 写回一起拖垮了。
 type BlobGuardConfig struct {
-	// MaxColumnBytes 单个 blob 列的**入库字节**上限(0 = 用默认值)。
-	// 注意 proto2mysql 把子消息 base64 后再入库,所以入库字节 ≈ 序列化字节 × 4/3,
-	// 本字段量的是 base64 之后的那个数(也就是真正占 MEDIUMBLOB 的数)。
+	// MaxColumnBytes 单个 blob 列的保守计费上限(0 = 用默认值)。
+	// 兼容既有 base64.EncodedLen(序列化字节) 口径与指标；当前 proto2mysql v0.2.0
+	// 向 SQL 传裸 protobuf/bytes，本预算不是实际入库量，不随本轮列覆盖放宽计费算法。
 	MaxColumnBytes int64 `json:"MaxColumnBytes,optional"`
 
-	// MaxRowBytes 单行所有 blob 列入库字节之和的上限(0 = 用默认值)。
+	// MaxRowBytes 单行所有 blob 列保守计费之和的上限(0 = 用默认值)。
 	MaxRowBytes int64 `json:"MaxRowBytes,optional"`
 
 	// WarnRatio 预警水位(0 = 用默认值 0.8)。
@@ -215,6 +265,42 @@ type BlobGuardConfig struct {
 type BlobTableLimit struct {
 	MaxColumnBytes int64 `json:"MaxColumnBytes,optional"`
 	MaxRowBytes    int64 `json:"MaxRowBytes,optional"`
+	// ColumnBytes 只覆盖指定 blob 列，不能顺带放宽同表其他组件。
+	ColumnBytes map[string]int64 `json:"ColumnBytes,optional"`
+}
+
+// WithDefaults 返回独立配置，统一普通启动与未调用 InitBlobGuard 的保护闸默认值。
+// 资产账本保留五流身份和至多 256 KiB 原件；预算沿用 protobuf 的 base64 长度保守计费。
+// 显式正值（含更小的限制）原样保留；克隆两层 map，调用方后续修改互不影响。
+func (b BlobGuardConfig) WithDefaults() BlobGuardConfig {
+	if b.MaxColumnBytes <= 0 {
+		b.MaxColumnBytes = DefaultBlobMaxColumnBytes
+	}
+	if b.MaxRowBytes <= 0 {
+		b.MaxRowBytes = DefaultBlobMaxRowBytes
+	}
+	if b.WarnRatio <= 0 || b.WarnRatio > 1 {
+		b.WarnRatio = DefaultBlobWarnRatio
+	}
+	perTable := make(map[string]BlobTableLimit, len(b.PerTable)+1)
+	for table, limit := range b.PerTable {
+		columns := make(map[string]int64, len(limit.ColumnBytes))
+		for column, bytes := range limit.ColumnBytes {
+			columns[column] = bytes
+		}
+		limit.ColumnBytes = columns
+		perTable[table] = limit
+	}
+	player := perTable["player_database"]
+	if player.ColumnBytes == nil {
+		player.ColumnBytes = make(map[string]int64, 1)
+	}
+	if player.ColumnBytes["asset_op_ledger"] <= 0 {
+		player.ColumnBytes["asset_op_ledger"] = DefaultAssetLedgerMaxColumnBytes
+	}
+	perTable["player_database"] = player
+	b.PerTable = perTable
+	return b
 }
 
 // RedisConfig holds Redis connection settings.
@@ -223,6 +309,59 @@ type RedisConfig struct {
 	DefaultTTLSeconds int    `json:"DefaultTTLSeconds"`
 	Password          string `json:"Password"`
 	DB                int    `json:"DB"`
+	// PoolSize 是 go-redis 连接池上限(共享 Redis 连接总账,P0-E 第 3 批)。0 / 不写 = go-redis 缺省 10 × GOMAXPROCS,
+	// 随 CPU limit 漂移;负数起服即失败(svc.NewServiceContext)。K8s 上 tools/scripts/k8s_deploy.ps1 从 etc/db.yaml
+	// 镜像 ServerConfig.RedisClient.PoolSize 并要求正整数,Redis 连接总账读同一个键。
+	// Placement.Redis 缺省时落点句柄复用本客户端,不另开池。
+	PoolSize int `json:"PoolSize,optional"`
+
+	// 以下三个是重试 / 死信 / 毒消息入队的落盘确认(WAITAOF,docs/design/db-retry-owner-routing.md §7)。
+	// 只作用于「Kafka 位点提交之前、任务唯一副本首次写进 Redis」的入队点(go/db/internal/kafka/durable_enqueue.go):
+	// 确认不足不提交位点(fail-closed,消息重投,由 seq 游标幂等吸收);开启时启动先探一次 WAITAOF,失败拒启
+	// (需要 Redis >= 7.2 且 appendonly yes)。确认走专用的小连接池,不占上面的主池。
+	//
+	// 两个份数用 *int(理由同 go/data_service RouteStoreConfig):默认值 1 不是零值,而「显式写 0」又有合法语义 ——
+	// 两项都写 0 = 不发 WAITAOF、退回只 LPUSH(启动打一行 ERROR),只给确实没开 AOF 的环境用。nil(没写)取默认,
+	// 由 Normalize 回填;访问一律经 NumLocal / NumReplicas。redis-ha(有副本)接入时 NumReplicas 写 1。
+	WaitAOFNumLocal    *int `json:"WaitAOFNumLocal,optional"`    // 0 | 1;nil = 1
+	WaitAOFNumReplicas *int `json:"WaitAOFNumReplicas,optional"` // [0, 16];nil = 0
+	// WaitAOFTimeoutMs 是单次 WAITAOF 的等待上限(毫秒),[1, 2000];0 / 不写 = 1500,负数拒启。
+	// 专用客户端的读超时 = 本值 + 1s。默认不取 1000:appendfsync everysec 下本地确认最长要等到下一次 fsync(约 1s)
+	// 再加事件循环延迟,1000 正压在边界上。实际取 min(本值, 本批截止前剩余 − 100ms)。
+	WaitAOFTimeoutMs int `json:"WaitAOFTimeoutMs,optional"`
+}
+
+// RedisClient 入队落盘确认(WAITAOF)的默认值与上界。
+//
+// MaxRedisWaitAOFTimeoutMs 取 2000:专用客户端读超时 = 本值 + 1s,再大就拖长单批预算(5s)内的重试轮数,
+// 并让停机排空等得更久;everysec 下本地确认最长约 1s,2000 已留出一倍余量。
+const (
+	DefaultRedisWaitAOFNumLocal    = 1
+	DefaultRedisWaitAOFNumReplicas = 0
+	DefaultRedisWaitAOFTimeoutMs   = 1500
+	MaxRedisWaitAOFNumReplicas     = 16
+	MaxRedisWaitAOFTimeoutMs       = 2000
+)
+
+// NumLocal 是 WAITAOF 的 numlocal;没写(nil)= 默认 1。
+func (r RedisConfig) NumLocal() int {
+	if r.WaitAOFNumLocal == nil {
+		return DefaultRedisWaitAOFNumLocal
+	}
+	return *r.WaitAOFNumLocal
+}
+
+// NumReplicas 是 WAITAOF 的 numreplicas;没写(nil)= 默认 0。
+func (r RedisConfig) NumReplicas() int {
+	if r.WaitAOFNumReplicas == nil {
+		return DefaultRedisWaitAOFNumReplicas
+	}
+	return *r.WaitAOFNumReplicas
+}
+
+// WaitsForAOF 报告入队之后要不要发 WAITAOF:两项都是 0(显式写的)才不发。
+func (r RedisConfig) WaitsForAOF() bool {
+	return r.NumLocal() > 0 || r.NumReplicas() > 0
 }
 
 // KafkaConfig holds Kafka consumer settings.
@@ -251,7 +390,11 @@ type KafkaConfig struct {
 	RetentionMs         int64  `json:"RetentionMs,default=86400000"` // Topic retention in ms (default 24h; matches login)
 	// P1 数据安全加固 2026-06-03: 旧值 300000 (5min)
 	// db service 卡 5min+ 会丢数据,24h 给运维事故充足窗口
-	IsOfflineExpand bool `json:"IsOfflineExpand"` // Offline expansion: true = maintenance mode
+	// RetentionBytes 是 db_task topic 每分区的 retention.bytes。K8s 由 k8s_deploy.ps1 按 Kafka 盘预算渲染,
+	// 与 login 同值;本机不设 = 沿用 broker 缺省(0 = 不管理,<0 启动拒绝)。
+	// 见 docs/design/db-task-delivery-and-retention.md §B。
+	RetentionBytes  int64 `json:"RetentionBytes,optional"`
+	IsOfflineExpand bool  `json:"IsOfflineExpand"` // Offline expansion: true = maintenance mode
 
 	// SubShardCount controls intra-partition parallelism. 0 or 1 = legacy
 	// behaviour (single goroutine per partition, max parallelism =
@@ -272,6 +415,49 @@ type KafkaConfig struct {
 	// RetryLeaseSeconds 是上面那份登记的租约时长。0 = 默认 30;小于 10 的值按 10 算。
 	// 续租与孤儿回收的周期是它的三分之一;崩溃实例的在途重试收据最迟约 4/3 个租约之后回到 ready。
 	RetryLeaseSeconds int `json:"RetryLeaseSeconds,optional"`
+	// RetryRouting 决定谁执行重试(docs/design/db-retry-owner-routing.md):
+	//   shared(缺省)—— 任一实例都可以认领执行,另外每拍兜底排空按分区拆开的 kafka:retry:queue:{topic}:p{N}(回滚路径);
+	//   owner —— 重试只在持有原始分区 claim 的实例执行,与该分区的新消息同子 shard 串行;拿不到分区的实例只分拣与回收。
+	// 取值大小写敏感,拼错拒启(不静默回落)。环境变量 DB_RETRY_ROUTING(RetryRoutingEnvVar)优先于本键,只用于单 zone
+	// 金丝雀;生效值与来源以 ResolveRetryRouting 为准,启动日志 "retry routing: mode=… source=…" 是核对依据。
+	// 空串不在 Normalize 里回填,好让启动日志区分 default 与 config。
+	RetryRouting string `json:"RetryRouting,optional"`
+}
+
+// RetryRouting 的取值与覆盖用的环境变量。
+const (
+	RetryRoutingShared = "shared"
+	RetryRoutingOwner  = "owner"
+	RetryRoutingEnvVar = "DB_RETRY_ROUTING"
+)
+
+// ResolveRetryRouting 决定生效的重试路由模式与来源(source 只用于启动日志):
+//   - env 去掉首尾空白后非空:必须恰为 shared | owner(大小写敏感),source = "env DB_RETRY_ROUTING";
+//   - 否则 configured 为空:shared,source = "default";
+//   - 否则 configured 必须恰为 shared | owner,source = "config"。
+//
+// 任何非法值都返回 error,调用方拒启:拼错(Owner、owner 两侧带空格、ownr)被悄悄当成 shared,
+// 运维以为切了 owner 而实际没切,这种偏差不报错也没有日志。错误文本英文(启动日志与 K8s 事件里直接看到)。
+func ResolveRetryRouting(configured, env string) (mode, source string, err error) {
+	if v := strings.TrimSpace(env); v != "" {
+		if !validRetryRouting(v) {
+			return "", "", fmt.Errorf("environment variable %s=%q must be exactly %q or %q (case-sensitive)",
+				RetryRoutingEnvVar, env, RetryRoutingShared, RetryRoutingOwner)
+		}
+		return v, "env " + RetryRoutingEnvVar, nil
+	}
+	if configured == "" {
+		return RetryRoutingShared, "default", nil
+	}
+	if !validRetryRouting(configured) {
+		return "", "", fmt.Errorf("ServerConfig.Kafka.RetryRouting=%q must be exactly %q or %q (case-sensitive; a typo must not silently fall back to shared)",
+			configured, RetryRoutingShared, RetryRoutingOwner)
+	}
+	return configured, "config", nil
+}
+
+func validRetryRouting(mode string) bool {
+	return mode == RetryRoutingShared || mode == RetryRoutingOwner
 }
 
 var AppConfig Config
@@ -295,12 +481,14 @@ const (
 // 256 KiB / 列:玩家单个组件 blob 的设计量级是个位数 KB,256 KiB 已经留了
 // 一到两个数量级的余量,同时比 MEDIUMBLOB 的 16 MiB 低 64 倍 —— 只有这样
 // 闸门才会在「异常增长」而不是「已经炸了」的时候响。
-// 1 MiB / 行:player_database 有 9 个 blob 列,单行总量到 1 MiB 就意味着
-// 每次存盘都要推 1 MiB 过 MySQL 连接并原样写回 Redis,那已经是事故现场。
+// 1 MiB / 行:沿用所有 blob 列的 base64 长度保守计费上限，与历史指标可比。
+// 当前 SQL 参数是裸字节，不能把此值解释为真实传输量或磁盘占用；本轮不放宽整行预算。
 const (
 	DefaultBlobMaxColumnBytes int64   = 256 * 1024
 	DefaultBlobMaxRowBytes    int64   = 1024 * 1024
 	DefaultBlobWarnRatio      float64 = 0.8
+	// 只对资产账本列放宽，玩家整行仍沿用原有 1 MiB 总预算。
+	DefaultAssetLedgerMaxColumnBytes int64 = 1024 * 1024
 )
 
 // 额外落点库连接池默认值(player-storage-placement.md §6.1)。
@@ -317,6 +505,15 @@ const (
 	DefaultPlacementExtraStoreMaxOpenConn        = 8
 	DefaultPlacementExtraStoreMaxIdleConn        = 2
 	DefaultPlacementExtraStoreConnMaxIdleSeconds = 60
+)
+
+// 就绪闸刷新间隔(Placement.RouteReadyGateIntervalMs)的缺省值与上下限(spec_D1_batch1b2_2_3.md §13.2 第 1 条)。
+// 下限 200ms:每次刷新是两段 INFO,刷得再密只是给 mapping Redis 加负担,逐条任务的读本来就各自判 verdict;
+// 上限 10s:闸关着时复查一次的间隔,太长会让 Redis 恢复之后存盘白白多停一段。
+const (
+	DefaultPlacementRouteReadyGateIntervalMs = 1000
+	MinPlacementRouteReadyGateIntervalMs     = 200
+	MaxPlacementRouteReadyGateIntervalMs     = 10000
 )
 
 // 消费组超时默认值(毫秒),等于 sarama v1.43.1 的 NewConfig 默认值(Session 10s / Heartbeat 3s / Rebalance 60s),
@@ -406,16 +603,7 @@ func (c *Config) Normalize() {
 		d.SessionInnodbLockWaitSeconds = DefaultDatabaseSessionInnodbLockWaitSeconds
 	}
 
-	b := &c.ServerConfig.BlobGuard
-	if b.MaxColumnBytes <= 0 {
-		b.MaxColumnBytes = DefaultBlobMaxColumnBytes
-	}
-	if b.MaxRowBytes <= 0 {
-		b.MaxRowBytes = DefaultBlobMaxRowBytes
-	}
-	if b.WarnRatio <= 0 || b.WarnRatio > 1 {
-		b.WarnRatio = DefaultBlobWarnRatio
-	}
+	c.ServerConfig.BlobGuard = c.ServerConfig.BlobGuard.WithDefaults()
 
 	p := &c.Placement
 	// 旧键先补默认:它是新键缺省时的回落值,也让「只写旧键」的旧部署两类库维持原来的大小。
@@ -442,6 +630,10 @@ func (c *Config) Normalize() {
 	if p.ExtraStoreConnMaxIdleSeconds <= 0 {
 		p.ExtraStoreConnMaxIdleSeconds = DefaultPlacementExtraStoreConnMaxIdleSeconds
 	}
+	// 就绪闸间隔只把 0(没写)换成默认值;负数与越界留给 Validate 拒绝,不在这里悄悄改写显式值。
+	if p.RouteReadyGateIntervalMs == 0 {
+		p.RouteReadyGateIntervalMs = DefaultPlacementRouteReadyGateIntervalMs
+	}
 
 	// 消费组超时:≤0 视为没写,取默认值(约束由 ValidateConsumerGroup 检查,这里不改写显式值)。
 	k := &c.ServerConfig.Kafka
@@ -454,6 +646,70 @@ func (c *Config) Normalize() {
 	if k.RebalanceTimeoutMs <= 0 {
 		k.RebalanceTimeoutMs = DefaultKafkaRebalanceTimeoutMs
 	}
+
+	// 入队落盘确认(WAITAOF):两个份数 nil(没写)时回填默认;TimeoutMs 只把 0 换成默认,负数留给 Validate 拒绝。
+	// 只在 nil 时换成新指针,不改调用方指向的值。RetryRouting 不在这里回填(见字段注释)。
+	r := &c.ServerConfig.RedisClient
+	if r.WaitAOFNumLocal == nil {
+		v := DefaultRedisWaitAOFNumLocal
+		r.WaitAOFNumLocal = &v
+	}
+	if r.WaitAOFNumReplicas == nil {
+		v := DefaultRedisWaitAOFNumReplicas
+		r.WaitAOFNumReplicas = &v
+	}
+	if r.WaitAOFTimeoutMs == 0 {
+		r.WaitAOFTimeoutMs = DefaultRedisWaitAOFTimeoutMs
+	}
+}
+
+// Validate 校验重试路由与入队落盘确认的取值,任何一项非法都返回 error(调用方拒启),错误文本英文并点名键。
+//
+// 两个调用点,本方法对两者都安全:
+//   - go-zero 的 conf.Load 在 Normalize **之前**自动调用根结构的 Validate()(见 ValidateConsumerGroup 的注释)。
+//     所以这里把「没写」当成合法:RetryRouting 空串 = shared,两个份数 nil = 默认,WaitAOFTimeoutMs 0 = 默认 1500;
+//     只拒绝写出来的非法值。否则还没镜像新键的 ConfigMap 与旧版 yaml 会在加载时就被拒。
+//   - 启动路径在 Normalize 与 ResolveRetryRouting 之后显式再调一次(db.go)。
+//
+// Config 内嵌的 zrpc.RpcServerConf 自带 Validate(Auth 打开时校验 Redis 段);本方法会遮蔽它,所以先原样调一次,
+// 保持 conf.Load 原有的校验不丢。不在这里调 ValidateConsumerGroup:它要求先 Normalize。
+func (c *Config) Validate() error {
+	if err := c.RpcServerConf.Validate(); err != nil {
+		return err
+	}
+	if pr := c.ServerConfig.OwnerEpochRedis; pr != nil {
+		if strings.TrimSpace(pr.Hosts) == "" || pr.PoolSize < 0 || pr.DB < 0 {
+			return errors.New("ServerConfig.OwnerEpochRedis连接配置无效")
+		}
+	}
+	if mode := c.ServerConfig.Fencing.Mode; mode != "" && mode != FencingModeLegacy && mode != FencingModeDual {
+		return fmt.Errorf("ServerConfig.Fencing.Mode=%q must be exactly %q or %q (case-sensitive; empty means %q)",
+			mode, FencingModeLegacy, FencingModeDual, FencingModeDual)
+	}
+	if routing := c.ServerConfig.Kafka.RetryRouting; routing != "" && !validRetryRouting(routing) {
+		return fmt.Errorf("ServerConfig.Kafka.RetryRouting=%q must be exactly %q or %q (case-sensitive; empty means %q)",
+			routing, RetryRoutingShared, RetryRoutingOwner, RetryRoutingShared)
+	}
+	r := c.ServerConfig.RedisClient
+	if local := r.NumLocal(); local != 0 && local != 1 {
+		return fmt.Errorf("ServerConfig.RedisClient.WaitAOFNumLocal must be 0 or 1, got %d", local)
+	}
+	if replicas := r.NumReplicas(); replicas < 0 || replicas > MaxRedisWaitAOFNumReplicas {
+		return fmt.Errorf("ServerConfig.RedisClient.WaitAOFNumReplicas must be in [0, %d], got %d",
+			MaxRedisWaitAOFNumReplicas, replicas)
+	}
+	// 0 = 没写(Normalize 之后是默认 1500);WAITAOF 的 timeout 0 在 Redis 里是无限阻塞,所以 Normalize 必须先换掉它。
+	if t := r.WaitAOFTimeoutMs; t != 0 && (t < 1 || t > MaxRedisWaitAOFTimeoutMs) {
+		return fmt.Errorf("ServerConfig.RedisClient.WaitAOFTimeoutMs must be in [1, %d] (0 or unset = %d), got %d",
+			MaxRedisWaitAOFTimeoutMs, DefaultRedisWaitAOFTimeoutMs, t)
+	}
+	// 不论 RequireRouteReady 取值都校验:写错的间隔在打开开关那一刻才暴露,不如加载时就拒。
+	if v := c.Placement.RouteReadyGateIntervalMs; v != 0 &&
+		(v < MinPlacementRouteReadyGateIntervalMs || v > MaxPlacementRouteReadyGateIntervalMs) {
+		return fmt.Errorf("Placement.RouteReadyGateIntervalMs must be in [%d, %d] (0 or unset = %d), got %d",
+			MinPlacementRouteReadyGateIntervalMs, MaxPlacementRouteReadyGateIntervalMs, DefaultPlacementRouteReadyGateIntervalMs, v)
+	}
+	return nil
 }
 
 // DbTaskTopic returns the zone-specific Kafka topic for DB tasks.

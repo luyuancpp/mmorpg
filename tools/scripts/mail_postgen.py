@@ -44,8 +44,8 @@ from pathlib import Path
 REPO = Path(__file__).resolve().parents[2]
 BS = chr(92)
 
-CLIENT_METHODS = ("ListMails", "ReadMail", "DeleteMails", "DeleteReadMails", "ClaimMailAttachments", "NotifyMailEvent")
-ADMIN_METHODS = ("SendPersonalMail", "SendSystemMail")
+CLIENT_METHODS = ("ListMails", "ReadMail", "DeleteMails", "ClearReadMails", "ClaimMailAttachments", "NotifyMailChanged")
+ADMIN_METHODS = ("SendPersonalMail", "SendSystemMail", "SendGuildMail", "ImportMailRecipients", "SealMailCampaign")
 GO_PROTO_FILES = ("mail.pb.go", "mail_grpc.pb.go", "mail_admin.pb.go", "mail_admin_grpc.pb.go", "mail_table.pb.go")
 TIP_GO_FILE = "mail_error_tip.pb.go"
 
@@ -294,7 +294,7 @@ def plan_table(edits: list[ProjectEdit], missing: list[str]) -> None:
 
 def plan_proto(edits: list[ProjectEdit], missing: list[str]) -> None:
     base = "cpp/generated/proto"
-    stems = ["mail/mail.grpc.pb", "mail/mail.pb", "mail/mail_admin.grpc.pb", "mail/mail_admin.pb"]
+    stems = [f"mail/{name}{suffix}" for name in ("mail", "mail_admin", "mail_table") for suffix in (".pb", ".grpc.pb")]
     files = present_files(base, [s + ".cc" for s in stems] + [s + ".h" for s in stems], missing)
     cc = [f for f in files if f.endswith(".cc")]
     h = [f for f in files if f.endswith(".h")]

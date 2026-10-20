@@ -29,14 +29,11 @@ void AttributeDelta60FramesS2CSyncAttributesCore(entt::entity entity, uint32_t m
     AttributeDelta60FramesS2C syncMsg;
     bool hasDirtyField = false;
 
-    if (dirtyMaskComp->dirtyMask.test(AttributeDelta60FramesS2C::kEntityIdFieldNumber))
-    {
-        auto* fieldValue = actorRegistry.try_get<PlayerGuidComp>(entity);
-        if (fieldValue != nullptr) {
-            syncMsg.set_entity_id(fieldValue->value);
-            hasDirtyField = true;
+    // 主体标识随实际数据发送，本身不触发一帧增量。
+    if (hasDirtyField) {
+        if (const auto* guid = actorRegistry.try_get<PlayerGuidComp>(entity)) {
+            syncMsg.set_entity_id(guid->value);
         }
-        dirtyMaskComp->dirtyMask.reset(AttributeDelta60FramesS2C::kEntityIdFieldNumber);
     }
 
     // 存在即脏:本轮消费完就摘除,没有有效字段也不遗留空壳。

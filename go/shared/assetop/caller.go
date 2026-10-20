@@ -118,7 +118,7 @@ func (c *Caller) Do(ctx context.Context, rpc RPC, req *assetpb.AssetOpRequest) (
 	}
 
 	// scene 说人不在这儿:位置可能刚过期。重新定位,**只有换了节点**才重调一次,
-	// 同节点重调只会得到同样的答复(还多占一条 poller 线程)。
+	// 同节点重调只会得到同样的答复(还在 scene 的 EventLoop 上白跑一次)。
 	if res.Outcome == assetpb.AssetOpOutcome_ASSET_OP_OUTCOME_NOT_HERE {
 		next, rerr := c.Resolver.Resolve(ctx, req.GetPlayerId())
 		if rerr == nil && next.Endpoint != target.Endpoint {
@@ -206,6 +206,8 @@ func (c *Caller) invoke(ctx context.Context, target scenenode.Target, rpc RPC, r
 		resp, err = target.Client.AssetCredit(callCtx, signed)
 	case RPCAbort:
 		resp, err = target.Client.AssetAbortDebit(callCtx, signed)
+	case RPCAckReceipt:
+		resp, err = target.Client.AssetAckReceipt(callCtx, signed)
 	default:
 		return Result{}, fmt.Errorf("assetop: 未知的资产 RPC %d", uint8(rpc))
 	}
@@ -218,10 +220,11 @@ func (c *Caller) invoke(ctx context.Context, target scenenode.Target, rpc RPC, r
 	}
 
 	res := Result{
-		Outcome: resp.GetOutcome(),
-		Reason:  resp.GetReason().GetId(),
-		Durable: resp.GetDurable(),
-		Partial: resp.GetPartial(),
+		Outcome:  resp.GetOutcome(),
+		Reason:   resp.GetReason().GetId(),
+		Durable:  resp.GetDurable(),
+		Partial:  resp.GetPartial(),
+		Snapshot: resp.GetSnapshot(),
 	}
 	c.Metrics.observeRPC(req.GetStream(), rpc, outcomeLabel(res.Outcome), elapsed)
 	if res.Partial {

@@ -14,15 +14,18 @@ import (
 	"go.uber.org/zap"
 )
 
-// ReservedEventIdPrefix 标记 event_id.txt 里的墓碑行:`N=reserved:<原 IdName>`。
+// ReservedEventIdPrefix 标记 event_id.txt 与 message_id.txt 里的墓碑行:`N=reserved:<原名>`
+// (事件为原 IdName,RPC 方法为原 KeyName = 服务名 + 方法名)。名字沿用事件号先引入时的叫法,两份 id 文件共用。
 //
-// 事件从 proto 里删掉(或改名)后,它的号不能再发给别的事件:滚动升级窗口里旧节点发出的、
+// 事件或 RPC 方法从 proto 里删掉(或改名)后,它的号不能再发给别人:滚动升级窗口里旧节点发出的、
 // 以及 Kafka 里尚未过期的旧号消息,会被新节点按新类型解析,而 protobuf 往往还能"解析成功"。
-// 墓碑就是 proto 字段 `reserved N;` 在事件号上的对应物(AGENTS §7.4 编号不复用,
-// turn-based §22 D67):只占号,不生成任何常量、头文件条目或分派 case;原名只作排障注释。
+// 墓碑就是 proto 字段 `reserved N;` 在事件号 / 消息号上的对应物(AGENTS §7.4 编号不复用,
+// turn-based §22 D67;消息号见 muduo-rpc-channel.md 批 7):只占号,不生成任何常量、头文件条目或分派 case;
+// 原名只作排障注释。
 //
-// 写墓碑的是 generator/cpp/event_id.go,读 event_id.txt 的有它和本文件的 GenerateWithSuffix
-// (Go 事件常量)。前缀只在这里定义一次:generator/cpp 已依赖本包,反过来依赖会成环。
+// 写墓碑的是 generator/cpp/event_id.go 与 generator/cpp/service_register_info.go(行解析共用
+// generator/cpp/id_file.go);读这两份文件的还有本文件的 GenerateWithSuffix(Go 事件常量 / 消息号常量)。
+// 前缀只在这里定义一次:generator/cpp 已依赖本包,反过来依赖会成环。
 const ReservedEventIdPrefix = "reserved:"
 
 // ConstantsGenerator is responsible for generating Go constants from a file.
@@ -62,7 +65,8 @@ func (cg *ConstantsGenerator) GenerateWithSuffix(suffix string) ([]string, error
 		number := strings.TrimSpace(parts[0])
 		name := strings.TrimSpace(parts[1])
 		if strings.HasPrefix(name, ReservedEventIdPrefix) {
-			// 墓碑只占号、不生成常量;照常拼会得到 `const reserved:XxxEventId`,所有 Go 服务编译失败。
+			// 墓碑只占号、不生成常量;照常拼会得到 `const reserved:XxxEventId` / `const reserved:XxxMessageId`,
+			// 所有 Go 服务与 robot 编译失败。
 			continue
 		}
 
@@ -112,51 +116,17 @@ func NewConstantsWriter(constants []string, filePath string) *ConstantsWriter {
 
 // Write writes the constants to the specified file path.
 func (cw *ConstantsWriter) Write() error {
-	dir := filepath.Dir(cw.FilePath)
-	if err := os.MkdirAll(dir, 0755); err != nil {
-		logger.Global.Fatal("Failed to create constants directory",
+	var content strings.Builder
+	content.WriteString("package game\n\n")
+	for _, c := range cw.Constants {
+		content.WriteString(c + "\n")
+	}
+	if err := utils.WriteFileIfChanged(cw.FilePath, []byte(content.String())); err != nil {
+		logger.Global.Fatal("Failed to write constants file",
 			zap.String("file_path", cw.FilePath),
 			zap.Error(err),
 		)
 		return err
-	}
-
-	file, err := os.Create(cw.FilePath)
-	if err != nil {
-		logger.Global.Fatal("Failed to create constants file",
-			zap.String("file_path", cw.FilePath),
-			zap.Error(err),
-		)
-	}
-	defer file.Close()
-
-	writer := bufio.NewWriter(file)
-
-	_, err = writer.WriteString("package game\n\n")
-	if err != nil {
-		logger.Global.Fatal("Failed to write package name to constants file",
-			zap.String("file_path", cw.FilePath),
-			zap.Error(err),
-		)
-	}
-
-	for _, c := range cw.Constants {
-		_, err := writer.WriteString(c + "\n")
-		if err != nil {
-			logger.Global.Fatal("Failed to write constant to file",
-				zap.String("file_path", cw.FilePath),
-				zap.String("constant", c),
-				zap.Error(err),
-			)
-		}
-	}
-
-	err = writer.Flush()
-	if err != nil {
-		logger.Global.Fatal("Failed to flush constants file buffer",
-			zap.String("file_path", cw.FilePath),
-			zap.Error(err),
-		)
 	}
 
 	logger.Global.Info("Constants file written",

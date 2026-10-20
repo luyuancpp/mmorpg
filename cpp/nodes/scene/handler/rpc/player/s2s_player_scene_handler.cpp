@@ -35,9 +35,8 @@ void SceneScenePlayerHandler::EnterScene(entt::entity player,const ::GsEnterScen
 	const SceneEntity sceneEntity = PlayerSceneSystem::FindSceneById(request->scene_id());
 	if (const auto result = PlayerSceneSystem::CheckEnterScene(player, sceneEntity); result != kSuccess)
 	{
-		const auto *guid = tlsEcs.actorRegistry.try_get<PlayerGuidComp>(player);
 		LOG_ERROR << "拒绝入场 scene_id=" << request->scene_id() << " tip=" << result
-				  << " player=" << (guid ? guid->value : 0)
+				  << " player=" << tlsEcs.GetPlayerId(player)
 				  << " entity=" << entt::to_integral(player);
 		PlayerTipSystem::SendToPlayer(player, result, {});
 		return;
@@ -59,8 +58,7 @@ void SceneScenePlayerHandler::LeaveScene(entt::entity player,const ::GsLeaveScen
 	::google::protobuf::Empty* response)
 {
 	///<<< BEGIN WRITING YOUR CODE
-	const auto* g = tlsEcs.actorRegistry.try_get<PlayerGuidComp>(player);
-	LOG_DEBUG << "Handling GsLeaveSceneRequest for player: " << (g ? g->value : 0);
+	LOG_DEBUG << "Handling GsLeaveSceneRequest for player: " << tlsEcs.GetPlayerId(player);
 
 	// Save player data to Redis and handle exit logic.
 	// This replaces the legacy ChangeSceneInfo state machine checks with a direct save-and-exit flow.
@@ -74,13 +72,12 @@ void SceneScenePlayerHandler::EnterSceneS2C(entt::entity player,const ::EnterSce
 	::EnterSceneS2CResponse* response)
 {
 	///<<< BEGIN WRITING YOUR CODE
-	const auto* g2 = tlsEcs.actorRegistry.try_get<PlayerGuidComp>(player);
-	LOG_INFO << "Handling EnterSceneS2CRequest for player: " << (g2 ? g2->value : 0);
+	LOG_INFO << "Handling EnterSceneS2CRequest for player: " << tlsEcs.GetPlayerId(player);
 
 	const auto sceneEntity = tlsEcs.actorRegistry.try_get<SceneEntityComp>(player);
 	if (sceneEntity == nullptr)
 	{
-		LOG_ERROR << "Player " << (g2 ? g2->value : 0) << " has not entered any scene.";
+		LOG_ERROR << "Player " << tlsEcs.GetPlayerId(player) << " has not entered any scene.";
 		return;
 	}
 

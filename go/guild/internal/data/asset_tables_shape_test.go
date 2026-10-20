@@ -40,6 +40,12 @@ func TestAssetTablesShape(t *testing.T) {
 			"PRIMARY":                   {[]string{"player_id", "counter_kind", "ref_id", "period_key"}, true},
 			"idx_guild_daily_counter_0": {[]string{"period_key"}, false},
 		},
+		// 客户端幂等键的去重记录(2026-10-15):主键就是去重判据,(player_id, client_request_id) 必须是整个主键;
+		// 清理按 created_ms 取候选。它是后加的表,schemamigrate 只会在建表时建这两个索引,第一次就必须对。
+		"guild_client_request": {
+			"PRIMARY":                    {[]string{"player_id", "client_request_id"}, true},
+			"idx_guild_client_request_0": {[]string{"created_ms"}, false},
+		},
 	}
 
 	for table, wantIndexes := range want {

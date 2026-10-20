@@ -2810,10 +2810,12 @@ func (x *GetGuildDonateOptionsResponse) GetRecentResults() []*GuildDonationView 
 }
 
 type DonateToGuildRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	DonateId      uint32                 `protobuf:"varint,1,opt,name=donate_id,json=donateId,proto3" json:"donate_id,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state           protoimpl.MessageState `protogen:"open.v1"`
+	DonateId        uint32                 `protobuf:"varint,1,opt,name=donate_id,json=donateId,proto3" json:"donate_id,omitempty"`
+	ClientRequestId uint64                 `protobuf:"varint,2,opt,name=client_request_id,json=clientRequestId,proto3" json:"client_request_id,omitempty"` // 见上方 client_request_id 说明
+	ExpectedGuildId uint64                 `protobuf:"varint,3,opt,name=expected_guild_id,json=expectedGuildId,proto3" json:"expected_guild_id,omitempty"` // 非0绑定发起时的帮会；未提交的旧请求不得在换帮后首次执行
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
 }
 
 func (x *DonateToGuildRequest) Reset() {
@@ -2849,6 +2851,20 @@ func (*DonateToGuildRequest) Descriptor() ([]byte, []int) {
 func (x *DonateToGuildRequest) GetDonateId() uint32 {
 	if x != nil {
 		return x.DonateId
+	}
+	return 0
+}
+
+func (x *DonateToGuildRequest) GetClientRequestId() uint64 {
+	if x != nil {
+		return x.ClientRequestId
+	}
+	return 0
+}
+
+func (x *DonateToGuildRequest) GetExpectedGuildId() uint64 {
+	if x != nil {
+		return x.ExpectedGuildId
 	}
 	return 0
 }
@@ -3140,11 +3156,13 @@ func (x *GetGuildShopResponse) GetRecentOrders() []*GuildShopOrderView {
 }
 
 type BuyGuildShopGoodsRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	GoodsId       uint32                 `protobuf:"varint,1,opt,name=goods_id,json=goodsId,proto3" json:"goods_id,omitempty"`
-	Count         uint32                 `protobuf:"varint,2,opt,name=count,proto3" json:"count,omitempty"` // 份数,1..GuildShopGoodsView.max_buy_count
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state           protoimpl.MessageState `protogen:"open.v1"`
+	GoodsId         uint32                 `protobuf:"varint,1,opt,name=goods_id,json=goodsId,proto3" json:"goods_id,omitempty"`
+	Count           uint32                 `protobuf:"varint,2,opt,name=count,proto3" json:"count,omitempty"`                                              // 份数,1..GuildShopGoodsView.max_buy_count
+	ClientRequestId uint64                 `protobuf:"varint,3,opt,name=client_request_id,json=clientRequestId,proto3" json:"client_request_id,omitempty"` // 见 DonateToGuildRequest 上方的 client_request_id 说明;count=0 与 count=1 视为同一参数
+	ExpectedGuildId uint64                 `protobuf:"varint,4,opt,name=expected_guild_id,json=expectedGuildId,proto3" json:"expected_guild_id,omitempty"` // 非0绑定原帮会，事务仍按该帮会复核成员；0兼容旧端
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
 }
 
 func (x *BuyGuildShopGoodsRequest) Reset() {
@@ -3187,6 +3205,20 @@ func (x *BuyGuildShopGoodsRequest) GetGoodsId() uint32 {
 func (x *BuyGuildShopGoodsRequest) GetCount() uint32 {
 	if x != nil {
 		return x.Count
+	}
+	return 0
+}
+
+func (x *BuyGuildShopGoodsRequest) GetClientRequestId() uint64 {
+	if x != nil {
+		return x.ClientRequestId
+	}
+	return 0
+}
+
+func (x *BuyGuildShopGoodsRequest) GetExpectedGuildId() uint64 {
+	if x != nil {
+		return x.ExpectedGuildId
 	}
 	return 0
 }
@@ -4828,9 +4860,11 @@ const file_proto_guild_guild_proto_rawDesc = "" +
 	"\x12contribution_total\x18\x04 \x01(\x04R\x11contributionTotal\x121\n" +
 	"\x14contribution_balance\x18\x05 \x01(\x04R\x13contributionBalance\x12-\n" +
 	"\x13next_daily_reset_ms\x18\x06 \x01(\x04R\x10nextDailyResetMs\x12A\n" +
-	"\x0erecent_results\x18\a \x03(\v2\x1a.guildpb.GuildDonationViewR\rrecentResults\"3\n" +
+	"\x0erecent_results\x18\a \x03(\v2\x1a.guildpb.GuildDonationViewR\rrecentResults\"\x8b\x01\n" +
 	"\x14DonateToGuildRequest\x12\x1b\n" +
-	"\tdonate_id\x18\x01 \x01(\rR\bdonateId\"\xaf\x01\n" +
+	"\tdonate_id\x18\x01 \x01(\rR\bdonateId\x12*\n" +
+	"\x11client_request_id\x18\x02 \x01(\x04R\x0fclientRequestId\x12*\n" +
+	"\x11expected_guild_id\x18\x03 \x01(\x04R\x0fexpectedGuildId\"\xaf\x01\n" +
 	"\x15DonateToGuildResponse\x124\n" +
 	"\rerror_message\x18\x01 \x01(\v2\x0f.TipInfoMessageR\ferrorMessage\x126\n" +
 	"\bdonation\x18\x02 \x01(\v2\x1a.guildpb.GuildDonationViewR\bdonation\x12(\n" +
@@ -4848,10 +4882,12 @@ const file_proto_guild_guild_proto_rawDesc = "" +
 	"\x0epending_orders\x18\x04 \x03(\v2\x1b.guildpb.GuildShopOrderViewR\rpendingOrders\x12-\n" +
 	"\x13next_daily_reset_ms\x18\x05 \x01(\x04R\x10nextDailyResetMs\x12/\n" +
 	"\x14next_weekly_reset_ms\x18\x06 \x01(\x04R\x11nextWeeklyResetMs\x12@\n" +
-	"\rrecent_orders\x18\a \x03(\v2\x1b.guildpb.GuildShopOrderViewR\frecentOrders\"K\n" +
+	"\rrecent_orders\x18\a \x03(\v2\x1b.guildpb.GuildShopOrderViewR\frecentOrders\"\xa3\x01\n" +
 	"\x18BuyGuildShopGoodsRequest\x12\x19\n" +
 	"\bgoods_id\x18\x01 \x01(\rR\agoodsId\x12\x14\n" +
-	"\x05count\x18\x02 \x01(\rR\x05count\"\xb7\x01\n" +
+	"\x05count\x18\x02 \x01(\rR\x05count\x12*\n" +
+	"\x11client_request_id\x18\x03 \x01(\x04R\x0fclientRequestId\x12*\n" +
+	"\x11expected_guild_id\x18\x04 \x01(\x04R\x0fexpectedGuildId\"\xb7\x01\n" +
 	"\x19BuyGuildShopGoodsResponse\x124\n" +
 	"\rerror_message\x18\x01 \x01(\v2\x0f.TipInfoMessageR\ferrorMessage\x121\n" +
 	"\x05order\x18\x02 \x01(\v2\x1b.guildpb.GuildShopOrderViewR\x05order\x121\n" +

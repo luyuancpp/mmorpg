@@ -27,18 +27,27 @@ import (
 //     table load failure, not an intentional wipe.
 //  2. Only delete channels whose confId is NOT in the current valid set.
 //     Misaligned channels (wrong node) are handled by the rebalancer.
-//  3. Scan with a cursor, cap each call's work, so a huge key-space on
-//     Redis doesn't block the LoadReporter goroutine.
+//  3. Point lookups only, never a keyspace SCAN (2026-10-16): candidate zones
+//     come from the zone registry scene_manager:zones ∪ the zones with live
+//     nodes, candidate (zone, confId) groups from the fields of
+//     world_channels:desired:zone:{z}. The old SCAN world_channels:zone:*
+//     walked the whole shared Redis on the LoadReporter goroutine — hours at
+//     launch scale.
+//
+// 发现覆盖范围(2026-10-16):生产代码里往频道集合 SADD 的唯一入口是 initWorldScenesForZone,它先经
+// DesiredWorldChannelCount 播种 world_channels:desired:zone:{z} 的字段、后 SADD,而播种前会登记 zone
+// (zone_registry.go)。所以「有频道集合」基本蕴含「有期望数字段、zone 已登记」。覆盖不到的组合:
+//   - DesiredWorldChannelCount 的 HSETNX 出错兜底路径(直接返回种子值、不写字段)建出来的集合;
+//   - 升级前遗留、zone 又从未登记的数据(补登记见 docs/ops/scene-node-role-split.md §6.1)。
+//
+// 这些只会残留成垃圾键,不影响路由。反过来,「集合已空、期望数字段还在」的残留以前 SCAN 找不到,现在能清掉。
+// 期望数字段是发现索引,所以 deleteOrphanChannel 把删它放到最后一步。
 
-const (
-	orphanScanBatch int64 = 256
-	orphanKeyPrefix       = "world_channels:zone:"
-)
+const orphanKeyPrefix = "world_channels:zone:"
 
-// CleanupOrphanWorldChannels scans Redis for world_channels:* keys whose
-// (zone, confId) is not in the active set and deletes them. Returns the
-// number of channel sets removed. Intended to run once on startup from
-// fullSync; calling it repeatedly is safe but pointless.
+// CleanupOrphanWorldChannels finds (zone, confId) channel groups whose confId
+// is no longer in World.json and deletes them. Returns the number of groups
+// removed. Runs from the leader's fullSync; calling it repeatedly is safe.
 func CleanupOrphanWorldChannels(ctx context.Context, svcCtx *svc.ServiceContext) int {
 	validConfIds := worldConfIds()
 	if len(validConfIds) == 0 {
@@ -50,17 +59,23 @@ func CleanupOrphanWorldChannels(ctx context.Context, svcCtx *svc.ServiceContext)
 		confIdSet[id] = struct{}{}
 	}
 
-	var cursor uint64
+	registered, err := listRegisteredZones(svcCtx)
+	if err != nil {
+		logx.Errorf("[OrphanCleanup] read zone registry failed; checking zones with live nodes only: %v", err)
+	}
+
 	removed := 0
-	for {
-		keys, next, err := svcCtx.Redis.Scan(cursor, orphanKeyPrefix+"*", orphanScanBatch)
+	for _, zone := range unionZones(registered, GetActiveZones()) {
+		desiredKey := worldDesiredChannelsKey(zone)
+		fields, err := svcCtx.Redis.Hkeys(desiredKey)
 		if err != nil {
-			logx.Errorf("[OrphanCleanup] scan failed at cursor=%d: %v", cursor, err)
-			return removed
+			logx.Errorf("[OrphanCleanup] hkeys(%s) failed; skipping zone %d this round: %v", desiredKey, zone, err)
+			continue
 		}
-		for _, key := range keys {
-			zone, confId, ok := parseWorldChannelsKey(key)
-			if !ok {
+		for _, field := range fields {
+			confId, err := strconv.ParseUint(field, 10, 64)
+			if err != nil {
+				logx.Errorf("[OrphanCleanup] malformed conf field %q in %s; skipping", field, desiredKey)
 				continue
 			}
 			// Delete only when the conf is not in World.json. Channels
@@ -73,18 +88,14 @@ func CleanupOrphanWorldChannels(ctx context.Context, svcCtx *svc.ServiceContext)
 			if _, validConf := confIdSet[confId]; validConf {
 				continue
 			}
-			if deleteOrphanChannel(ctx, svcCtx, zone, confId, key) {
+			if deleteOrphanChannel(ctx, svcCtx, zone, confId, worldChannelsKey(zone, confId)) {
 				removed++
 			}
-		}
-		cursor = next
-		if cursor == 0 {
-			break
 		}
 	}
 
 	if removed > 0 {
-		logx.Infof("[OrphanCleanup] removed %d orphan world_channels sets", removed)
+		logx.Infof("[OrphanCleanup] removed %d orphan world channel groups", removed)
 	}
 	return removed
 }
@@ -92,6 +103,10 @@ func CleanupOrphanWorldChannels(ctx context.Context, svcCtx *svc.ServiceContext)
 // parseWorldChannelsKey parses "world_channels:zone:{z}:{confId}" into its
 // components. Returns false for malformed keys so a stray entry doesn't
 // blow up the whole cleanup pass.
+//
+// 2026-10-16 起生产代码不再调用它(孤儿清理改为点查,不再 SCAN 键名)。保留是为了守住键前缀约束:
+// 别的键(线号表、分线目录)不得被解析成频道集合,否则仍在滚动窗口里跑 SCAN 的旧版本 scene_manager
+// 会误删它们(TestWorldChannelDirectoryKeyFmt_CrossLanguageContract / TestParseWorldChannelsKey 在用)。
 func parseWorldChannelsKey(key string) (zone uint32, confId uint64, ok bool) {
 	if !strings.HasPrefix(key, orphanKeyPrefix) {
 		return 0, 0, false
@@ -198,19 +213,29 @@ func deleteOrphanChannel(ctx context.Context, svcCtx *svc.ServiceContext, zone u
 		svcCtx.Redis.Del(sceneDrainingKey(sceneId))
 	}
 
-	// 期望频道数是自动伸缩的权威。不清的话这张图将来被加回 World 表时,
-	// 会直接复活上次伸缩到的数量(比如伸到过 8),而不是回到配置种子。
-	svcCtx.Redis.Hdel(worldDesiredChannelsKey(zone), strconv.FormatUint(confId, 10))
 	svcCtx.Redis.Del(worldDrainingSetKey(zone, confId))
 	// 线号表与分线目录(world_channel_directory.go)同样按 (zone, conf) 存。这张图已不在 World 表里,
 	// 目录发布循环不会再碰它们:线号表没有 TTL,不删就是永久垃圾;目录有 TTL,顺手删只是让客户端
-	// 不必再等它过期。两把键刻意不用 world_channels:zone: 前缀(否则会被 CleanupOrphanWorldChannels 的
-	// SCAN 当成频道集合),所以要在这里点名删。
+	// 不必再等它过期。两把键刻意不用 world_channels:zone: 前缀(滚动窗口里仍在跑的旧版本 scene_manager
+	// 按这个前缀 SCAN,会把它们当成频道集合;merge_zone 也按这个前缀清源 zone),所以要在这里点名删。
 	svcCtx.Redis.Del(worldChannelLineNoKey(zone, confId))
 	svcCtx.Redis.Del(worldChannelDirectoryKey(zone, confId))
 
 	if _, err := svcCtx.Redis.Del(setKey); err != nil {
 		logx.Errorf("[OrphanCleanup] del(%s) failed: %v", setKey, err)
+		return false
+	}
+
+	// 期望频道数是自动伸缩的权威。不清的话这张图将来被加回 World 表时,
+	// 会直接复活上次伸缩到的数量(比如伸到过 8),而不是回到配置种子。
+	//
+	// 必须**最后**删(2026-10-16):期望数字段是 CleanupOrphanWorldChannels 的发现索引。先删它、再删集合
+	// 时中途失败,这组孤儿就再也找不到了;放在最后,前面任何一步失败都能在下一次 fullSync 被重新发现,
+	// 对已空的集合重跑是幂等的。
+	desiredField := strconv.FormatUint(confId, 10)
+	if _, err := svcCtx.Redis.Hdel(worldDesiredChannelsKey(zone), desiredField); err != nil {
+		logx.Errorf("[OrphanCleanup] hdel(%s, %s) failed; the group will be retried on next fullSync: %v",
+			worldDesiredChannelsKey(zone), desiredField, err)
 		return false
 	}
 	logx.Infof("[OrphanCleanup] removed orphan channel set zone=%d conf=%d scenes=%d",

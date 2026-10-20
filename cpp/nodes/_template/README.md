@@ -19,7 +19,7 @@ This folder provides starter templates for new C++ node `main.cpp` files.
   - `YourNodeHandler`
   - `YourNodeService`
   - log dir `logs/your_node`
-  - Kafka command proto and router names in the `YourNodeHooks` struct
+  - `YourNodeHooks` 中的 Kafka command proto 与 `DispatchKafkaCommand`
 - [ ] Add or confirm node type in `proto/common/base/node.proto`.
 - [ ] Add or confirm node type mapping in `cpp/libs/engine/core/node/system/node/node_util.cpp`.
 - [ ] Implement RPC handler(s) in `handler/rpc/*`.
@@ -29,23 +29,28 @@ This folder provides starter templates for new C++ node `main.cpp` files.
 
 ## THooks Convention
 
-Define a `YourNodeHooks` struct with optional nested types:
+`YourNodeHooks` 的可选成员与 `node_entry.h` 的实际契约一致：
 
 ```cpp
 struct YourNodeHooks {
-    using EventHandlerType = EventHandler;  // static Register() — called after node init
-    struct TableLoadHandler {               // (optional) called after tables load
+    struct TableLoadHandler {
         static void OnLoaded();
     };
-    struct KafkaHandler {                   // auto-configures Kafka consumer
-        using CommandType = contracts::kafka::YourNodeCommand;
-        static void Dispatch(const std::string& topic, const CommandType& cmd);
+    using KafkaCommandType = contracts::kafka::YourNodeCommand;
+    static void DispatchKafkaCommand(const std::string& topic, const KafkaCommandType& command)
+    {
+        DispatchYourNodeKafkaCommand(topic, command);
+    }
+    struct ClientEndpointSourceFactory {
+        static std::unique_ptr<client_endpoint::ExternalSource> Make();
     };
 };
 ```
 
-Omit any member to skip that hook.  Kafka topic/group/field names are
-auto-derived from the node type (e.g. `GateNodeService` -> topic `gate-{id}`).
+省略成员即可跳过对应 hook；声明 `KafkaCommandType` 时须同时提供 `DispatchKafkaCommand`。
+路由先校验生成的白名单，再直接调用静态 handler。新节点没有现成入口时，先在
+`protogen/internal/generator/cpp/event_ingress.go` 增加入口枚举与文件位置规则，再生成路由。
+Kafka topic、group 与寻址字段由节点配置和共享消费者统一确定，见控制面 topic 设计。
 
 ## PR Self-Check
 

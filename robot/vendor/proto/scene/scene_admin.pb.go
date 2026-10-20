@@ -59,16 +59,136 @@ func (*GameSceneTest) Descriptor() ([]byte, []int) {
 	return file_proto_scene_scene_admin_proto_rawDescGZIP(), []int{0}
 }
 
+type GmDescribeEntityRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Operator      string                 `protobuf:"bytes,1,opt,name=operator,proto3" json:"operator,omitempty"` // 审计身份，使用与停机 GM 相同的签名信封。
+	Reason        string                 `protobuf:"bytes,2,opt,name=reason,proto3" json:"reason,omitempty"`     // 必须等于 player_id 十进制串，让签名覆盖目标。
+	PlayerId      uint64                 `protobuf:"varint,3,opt,name=player_id,json=playerId,proto3" json:"player_id,omitempty"`
+	IncludeValues bool                   `protobuf:"varint,4,opt,name=include_values,json=includeValues,proto3" json:"include_values,omitempty"` // 附带持久 protobuf 组件的值，仅在鉴权后读取。
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GmDescribeEntityRequest) Reset() {
+	*x = GmDescribeEntityRequest{}
+	mi := &file_proto_scene_scene_admin_proto_msgTypes[1]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GmDescribeEntityRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GmDescribeEntityRequest) ProtoMessage() {}
+
+func (x *GmDescribeEntityRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_scene_scene_admin_proto_msgTypes[1]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GmDescribeEntityRequest.ProtoReflect.Descriptor instead.
+func (*GmDescribeEntityRequest) Descriptor() ([]byte, []int) {
+	return file_proto_scene_scene_admin_proto_rawDescGZIP(), []int{1}
+}
+
+func (x *GmDescribeEntityRequest) GetOperator() string {
+	if x != nil {
+		return x.Operator
+	}
+	return ""
+}
+
+func (x *GmDescribeEntityRequest) GetReason() string {
+	if x != nil {
+		return x.Reason
+	}
+	return ""
+}
+
+func (x *GmDescribeEntityRequest) GetPlayerId() uint64 {
+	if x != nil {
+		return x.PlayerId
+	}
+	return 0
+}
+
+func (x *GmDescribeEntityRequest) GetIncludeValues() bool {
+	if x != nil {
+		return x.IncludeValues
+	}
+	return false
+}
+
+type GmDescribeEntityResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Description   string                 `protobuf:"bytes,1,opt,name=description,proto3" json:"description,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GmDescribeEntityResponse) Reset() {
+	*x = GmDescribeEntityResponse{}
+	mi := &file_proto_scene_scene_admin_proto_msgTypes[2]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GmDescribeEntityResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GmDescribeEntityResponse) ProtoMessage() {}
+
+func (x *GmDescribeEntityResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_scene_scene_admin_proto_msgTypes[2]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GmDescribeEntityResponse.ProtoReflect.Descriptor instead.
+func (*GmDescribeEntityResponse) Descriptor() ([]byte, []int) {
+	return file_proto_scene_scene_admin_proto_rawDescGZIP(), []int{2}
+}
+
+func (x *GmDescribeEntityResponse) GetDescription() string {
+	if x != nil {
+		return x.Description
+	}
+	return ""
+}
+
 var File_proto_scene_scene_admin_proto protoreflect.FileDescriptor
 
 const file_proto_scene_scene_admin_proto_rawDesc = "" +
 	"\n" +
 	"\x1dproto/scene/scene_admin.proto\x1a\x1bproto/db/proto_option.proto\x1a\x1dproto/common/base/empty.proto\x1a proto/common/base/gm_admin.proto\"\x0f\n" +
-	"\rGameSceneTest2{\n" +
+	"\rGameSceneTest\"\x91\x01\n" +
+	"\x17GmDescribeEntityRequest\x12\x1a\n" +
+	"\boperator\x18\x01 \x01(\tR\boperator\x12\x16\n" +
+	"\x06reason\x18\x02 \x01(\tR\x06reason\x12\x1b\n" +
+	"\tplayer_id\x18\x03 \x01(\x04R\bplayerId\x12%\n" +
+	"\x0einclude_values\x18\x04 \x01(\bR\rincludeValues\"<\n" +
+	"\x18GmDescribeEntityResponse\x12 \n" +
+	"\vdescription\x18\x01 \x01(\tR\vdescription2\xc4\x01\n" +
 	"\n" +
 	"SceneScene\x12\x1e\n" +
 	"\x04Test\x12\x0e.GameSceneTest\x1a\x06.Empty\x12M\n" +
-	"\x12GmGracefulShutdown\x12\x1a.GmGracefulShutdownRequest\x1a\x1b.GmGracefulShutdownResponseB\x14\x98\xd4a\x03Z\vproto/scene\x80\x01\x01b\x06proto3"
+	"\x12GmGracefulShutdown\x12\x1a.GmGracefulShutdownRequest\x1a\x1b.GmGracefulShutdownResponse\x12G\n" +
+	"\x10GmDescribeEntity\x12\x18.GmDescribeEntityRequest\x1a\x19.GmDescribeEntityResponseB\x14\x98\xd4a\x03Z\vproto/scene\x80\x01\x01b\x06proto3"
 
 var (
 	file_proto_scene_scene_admin_proto_rawDescOnce sync.Once
@@ -82,20 +202,24 @@ func file_proto_scene_scene_admin_proto_rawDescGZIP() []byte {
 	return file_proto_scene_scene_admin_proto_rawDescData
 }
 
-var file_proto_scene_scene_admin_proto_msgTypes = make([]protoimpl.MessageInfo, 1)
+var file_proto_scene_scene_admin_proto_msgTypes = make([]protoimpl.MessageInfo, 3)
 var file_proto_scene_scene_admin_proto_goTypes = []any{
 	(*GameSceneTest)(nil),                   // 0: GameSceneTest
-	(*base.GmGracefulShutdownRequest)(nil),  // 1: GmGracefulShutdownRequest
-	(*base.Empty)(nil),                      // 2: Empty
-	(*base.GmGracefulShutdownResponse)(nil), // 3: GmGracefulShutdownResponse
+	(*GmDescribeEntityRequest)(nil),         // 1: GmDescribeEntityRequest
+	(*GmDescribeEntityResponse)(nil),        // 2: GmDescribeEntityResponse
+	(*base.GmGracefulShutdownRequest)(nil),  // 3: GmGracefulShutdownRequest
+	(*base.Empty)(nil),                      // 4: Empty
+	(*base.GmGracefulShutdownResponse)(nil), // 5: GmGracefulShutdownResponse
 }
 var file_proto_scene_scene_admin_proto_depIdxs = []int32{
 	0, // 0: SceneScene.Test:input_type -> GameSceneTest
-	1, // 1: SceneScene.GmGracefulShutdown:input_type -> GmGracefulShutdownRequest
-	2, // 2: SceneScene.Test:output_type -> Empty
-	3, // 3: SceneScene.GmGracefulShutdown:output_type -> GmGracefulShutdownResponse
-	2, // [2:4] is the sub-list for method output_type
-	0, // [0:2] is the sub-list for method input_type
+	3, // 1: SceneScene.GmGracefulShutdown:input_type -> GmGracefulShutdownRequest
+	1, // 2: SceneScene.GmDescribeEntity:input_type -> GmDescribeEntityRequest
+	4, // 3: SceneScene.Test:output_type -> Empty
+	5, // 4: SceneScene.GmGracefulShutdown:output_type -> GmGracefulShutdownResponse
+	2, // 5: SceneScene.GmDescribeEntity:output_type -> GmDescribeEntityResponse
+	3, // [3:6] is the sub-list for method output_type
+	0, // [0:3] is the sub-list for method input_type
 	0, // [0:0] is the sub-list for extension type_name
 	0, // [0:0] is the sub-list for extension extendee
 	0, // [0:0] is the sub-list for field type_name
@@ -112,7 +236,7 @@ func file_proto_scene_scene_admin_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_proto_scene_scene_admin_proto_rawDesc), len(file_proto_scene_scene_admin_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   1,
+			NumMessages:   3,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

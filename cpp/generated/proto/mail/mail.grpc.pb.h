@@ -50,20 +50,6 @@ class ClientPlayerMail final {
     std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::mailpb::ReadMailResponse>> PrepareAsyncReadMail(::grpc::ClientContext* context, const ::mailpb::ReadMailRequest& request, ::grpc::CompletionQueue* cq) {
       return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::mailpb::ReadMailResponse>>(PrepareAsyncReadMailRaw(context, request, cq));
     }
-    virtual ::grpc::Status DeleteMails(::grpc::ClientContext* context, const ::mailpb::DeleteMailsRequest& request, ::mailpb::DeleteMailsResponse* response) = 0;
-    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::mailpb::DeleteMailsResponse>> AsyncDeleteMails(::grpc::ClientContext* context, const ::mailpb::DeleteMailsRequest& request, ::grpc::CompletionQueue* cq) {
-      return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::mailpb::DeleteMailsResponse>>(AsyncDeleteMailsRaw(context, request, cq));
-    }
-    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::mailpb::DeleteMailsResponse>> PrepareAsyncDeleteMails(::grpc::ClientContext* context, const ::mailpb::DeleteMailsRequest& request, ::grpc::CompletionQueue* cq) {
-      return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::mailpb::DeleteMailsResponse>>(PrepareAsyncDeleteMailsRaw(context, request, cq));
-    }
-    virtual ::grpc::Status DeleteReadMails(::grpc::ClientContext* context, const ::mailpb::DeleteReadMailsRequest& request, ::mailpb::DeleteReadMailsResponse* response) = 0;
-    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::mailpb::DeleteReadMailsResponse>> AsyncDeleteReadMails(::grpc::ClientContext* context, const ::mailpb::DeleteReadMailsRequest& request, ::grpc::CompletionQueue* cq) {
-      return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::mailpb::DeleteReadMailsResponse>>(AsyncDeleteReadMailsRaw(context, request, cq));
-    }
-    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::mailpb::DeleteReadMailsResponse>> PrepareAsyncDeleteReadMails(::grpc::ClientContext* context, const ::mailpb::DeleteReadMailsRequest& request, ::grpc::CompletionQueue* cq) {
-      return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::mailpb::DeleteReadMailsResponse>>(PrepareAsyncDeleteReadMailsRaw(context, request, cq));
-    }
     virtual ::grpc::Status ClaimMailAttachments(::grpc::ClientContext* context, const ::mailpb::ClaimMailAttachmentsRequest& request, ::mailpb::ClaimMailAttachmentsResponse* response) = 0;
     std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::mailpb::ClaimMailAttachmentsResponse>> AsyncClaimMailAttachments(::grpc::ClientContext* context, const ::mailpb::ClaimMailAttachmentsRequest& request, ::grpc::CompletionQueue* cq) {
       return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::mailpb::ClaimMailAttachmentsResponse>>(AsyncClaimMailAttachmentsRaw(context, request, cq));
@@ -71,14 +57,27 @@ class ClientPlayerMail final {
     std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::mailpb::ClaimMailAttachmentsResponse>> PrepareAsyncClaimMailAttachments(::grpc::ClientContext* context, const ::mailpb::ClaimMailAttachmentsRequest& request, ::grpc::CompletionQueue* cq) {
       return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::mailpb::ClaimMailAttachmentsResponse>>(PrepareAsyncClaimMailAttachmentsRaw(context, request, cq));
     }
-    // S2C:服务端不实现,也不在会话白名单里;客户端只作接收方。
-    // 必须与 C2S 方法放在同一个名字含 ClientPlayer 的 service 里,生成器才出客户端下行 handler(friend F1 同理)。
-    virtual ::grpc::Status NotifyMailEvent(::grpc::ClientContext* context, const ::mailpb::MailEventS2C& request, ::Empty* response) = 0;
-    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::Empty>> AsyncNotifyMailEvent(::grpc::ClientContext* context, const ::mailpb::MailEventS2C& request, ::grpc::CompletionQueue* cq) {
-      return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::Empty>>(AsyncNotifyMailEventRaw(context, request, cq));
+    virtual ::grpc::Status DeleteMails(::grpc::ClientContext* context, const ::mailpb::DeleteMailsRequest& request, ::mailpb::DeleteMailsResponse* response) = 0;
+    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::mailpb::DeleteMailsResponse>> AsyncDeleteMails(::grpc::ClientContext* context, const ::mailpb::DeleteMailsRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::mailpb::DeleteMailsResponse>>(AsyncDeleteMailsRaw(context, request, cq));
     }
-    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::Empty>> PrepareAsyncNotifyMailEvent(::grpc::ClientContext* context, const ::mailpb::MailEventS2C& request, ::grpc::CompletionQueue* cq) {
-      return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::Empty>>(PrepareAsyncNotifyMailEventRaw(context, request, cq));
+    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::mailpb::DeleteMailsResponse>> PrepareAsyncDeleteMails(::grpc::ClientContext* context, const ::mailpb::DeleteMailsRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::mailpb::DeleteMailsResponse>>(PrepareAsyncDeleteMailsRaw(context, request, cq));
+    }
+    virtual ::grpc::Status ClearReadMails(::grpc::ClientContext* context, const ::mailpb::ClearReadMailsRequest& request, ::mailpb::ClearReadMailsResponse* response) = 0;
+    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::mailpb::ClearReadMailsResponse>> AsyncClearReadMails(::grpc::ClientContext* context, const ::mailpb::ClearReadMailsRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::mailpb::ClearReadMailsResponse>>(AsyncClearReadMailsRaw(context, request, cq));
+    }
+    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::mailpb::ClearReadMailsResponse>> PrepareAsyncClearReadMails(::grpc::ClientContext* context, const ::mailpb::ClearReadMailsRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::mailpb::ClearReadMailsResponse>>(PrepareAsyncClearReadMailsRaw(context, request, cq));
+    }
+    // S2C提醒可丢；权威状态由ListMails恢复，客户端来源禁止调用。
+    virtual ::grpc::Status NotifyMailChanged(::grpc::ClientContext* context, const ::mailpb::MailChangedEvent& request, ::mailpb::MailChangedEvent* response) = 0;
+    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::mailpb::MailChangedEvent>> AsyncNotifyMailChanged(::grpc::ClientContext* context, const ::mailpb::MailChangedEvent& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::mailpb::MailChangedEvent>>(AsyncNotifyMailChangedRaw(context, request, cq));
+    }
+    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::mailpb::MailChangedEvent>> PrepareAsyncNotifyMailChanged(::grpc::ClientContext* context, const ::mailpb::MailChangedEvent& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::mailpb::MailChangedEvent>>(PrepareAsyncNotifyMailChangedRaw(context, request, cq));
     }
     class async_interface {
      public:
@@ -87,16 +86,15 @@ class ClientPlayerMail final {
       virtual void ListMails(::grpc::ClientContext* context, const ::mailpb::ListMailsRequest* request, ::mailpb::ListMailsResponse* response, ::grpc::ClientUnaryReactor* reactor) = 0;
       virtual void ReadMail(::grpc::ClientContext* context, const ::mailpb::ReadMailRequest* request, ::mailpb::ReadMailResponse* response, std::function<void(::grpc::Status)>) = 0;
       virtual void ReadMail(::grpc::ClientContext* context, const ::mailpb::ReadMailRequest* request, ::mailpb::ReadMailResponse* response, ::grpc::ClientUnaryReactor* reactor) = 0;
-      virtual void DeleteMails(::grpc::ClientContext* context, const ::mailpb::DeleteMailsRequest* request, ::mailpb::DeleteMailsResponse* response, std::function<void(::grpc::Status)>) = 0;
-      virtual void DeleteMails(::grpc::ClientContext* context, const ::mailpb::DeleteMailsRequest* request, ::mailpb::DeleteMailsResponse* response, ::grpc::ClientUnaryReactor* reactor) = 0;
-      virtual void DeleteReadMails(::grpc::ClientContext* context, const ::mailpb::DeleteReadMailsRequest* request, ::mailpb::DeleteReadMailsResponse* response, std::function<void(::grpc::Status)>) = 0;
-      virtual void DeleteReadMails(::grpc::ClientContext* context, const ::mailpb::DeleteReadMailsRequest* request, ::mailpb::DeleteReadMailsResponse* response, ::grpc::ClientUnaryReactor* reactor) = 0;
       virtual void ClaimMailAttachments(::grpc::ClientContext* context, const ::mailpb::ClaimMailAttachmentsRequest* request, ::mailpb::ClaimMailAttachmentsResponse* response, std::function<void(::grpc::Status)>) = 0;
       virtual void ClaimMailAttachments(::grpc::ClientContext* context, const ::mailpb::ClaimMailAttachmentsRequest* request, ::mailpb::ClaimMailAttachmentsResponse* response, ::grpc::ClientUnaryReactor* reactor) = 0;
-      // S2C:服务端不实现,也不在会话白名单里;客户端只作接收方。
-      // 必须与 C2S 方法放在同一个名字含 ClientPlayer 的 service 里,生成器才出客户端下行 handler(friend F1 同理)。
-      virtual void NotifyMailEvent(::grpc::ClientContext* context, const ::mailpb::MailEventS2C* request, ::Empty* response, std::function<void(::grpc::Status)>) = 0;
-      virtual void NotifyMailEvent(::grpc::ClientContext* context, const ::mailpb::MailEventS2C* request, ::Empty* response, ::grpc::ClientUnaryReactor* reactor) = 0;
+      virtual void DeleteMails(::grpc::ClientContext* context, const ::mailpb::DeleteMailsRequest* request, ::mailpb::DeleteMailsResponse* response, std::function<void(::grpc::Status)>) = 0;
+      virtual void DeleteMails(::grpc::ClientContext* context, const ::mailpb::DeleteMailsRequest* request, ::mailpb::DeleteMailsResponse* response, ::grpc::ClientUnaryReactor* reactor) = 0;
+      virtual void ClearReadMails(::grpc::ClientContext* context, const ::mailpb::ClearReadMailsRequest* request, ::mailpb::ClearReadMailsResponse* response, std::function<void(::grpc::Status)>) = 0;
+      virtual void ClearReadMails(::grpc::ClientContext* context, const ::mailpb::ClearReadMailsRequest* request, ::mailpb::ClearReadMailsResponse* response, ::grpc::ClientUnaryReactor* reactor) = 0;
+      // S2C提醒可丢；权威状态由ListMails恢复，客户端来源禁止调用。
+      virtual void NotifyMailChanged(::grpc::ClientContext* context, const ::mailpb::MailChangedEvent* request, ::mailpb::MailChangedEvent* response, std::function<void(::grpc::Status)>) = 0;
+      virtual void NotifyMailChanged(::grpc::ClientContext* context, const ::mailpb::MailChangedEvent* request, ::mailpb::MailChangedEvent* response, ::grpc::ClientUnaryReactor* reactor) = 0;
     };
     typedef class async_interface experimental_async_interface;
     virtual class async_interface* async() { return nullptr; }
@@ -106,14 +104,14 @@ class ClientPlayerMail final {
     virtual ::grpc::ClientAsyncResponseReaderInterface< ::mailpb::ListMailsResponse>* PrepareAsyncListMailsRaw(::grpc::ClientContext* context, const ::mailpb::ListMailsRequest& request, ::grpc::CompletionQueue* cq) = 0;
     virtual ::grpc::ClientAsyncResponseReaderInterface< ::mailpb::ReadMailResponse>* AsyncReadMailRaw(::grpc::ClientContext* context, const ::mailpb::ReadMailRequest& request, ::grpc::CompletionQueue* cq) = 0;
     virtual ::grpc::ClientAsyncResponseReaderInterface< ::mailpb::ReadMailResponse>* PrepareAsyncReadMailRaw(::grpc::ClientContext* context, const ::mailpb::ReadMailRequest& request, ::grpc::CompletionQueue* cq) = 0;
-    virtual ::grpc::ClientAsyncResponseReaderInterface< ::mailpb::DeleteMailsResponse>* AsyncDeleteMailsRaw(::grpc::ClientContext* context, const ::mailpb::DeleteMailsRequest& request, ::grpc::CompletionQueue* cq) = 0;
-    virtual ::grpc::ClientAsyncResponseReaderInterface< ::mailpb::DeleteMailsResponse>* PrepareAsyncDeleteMailsRaw(::grpc::ClientContext* context, const ::mailpb::DeleteMailsRequest& request, ::grpc::CompletionQueue* cq) = 0;
-    virtual ::grpc::ClientAsyncResponseReaderInterface< ::mailpb::DeleteReadMailsResponse>* AsyncDeleteReadMailsRaw(::grpc::ClientContext* context, const ::mailpb::DeleteReadMailsRequest& request, ::grpc::CompletionQueue* cq) = 0;
-    virtual ::grpc::ClientAsyncResponseReaderInterface< ::mailpb::DeleteReadMailsResponse>* PrepareAsyncDeleteReadMailsRaw(::grpc::ClientContext* context, const ::mailpb::DeleteReadMailsRequest& request, ::grpc::CompletionQueue* cq) = 0;
     virtual ::grpc::ClientAsyncResponseReaderInterface< ::mailpb::ClaimMailAttachmentsResponse>* AsyncClaimMailAttachmentsRaw(::grpc::ClientContext* context, const ::mailpb::ClaimMailAttachmentsRequest& request, ::grpc::CompletionQueue* cq) = 0;
     virtual ::grpc::ClientAsyncResponseReaderInterface< ::mailpb::ClaimMailAttachmentsResponse>* PrepareAsyncClaimMailAttachmentsRaw(::grpc::ClientContext* context, const ::mailpb::ClaimMailAttachmentsRequest& request, ::grpc::CompletionQueue* cq) = 0;
-    virtual ::grpc::ClientAsyncResponseReaderInterface< ::Empty>* AsyncNotifyMailEventRaw(::grpc::ClientContext* context, const ::mailpb::MailEventS2C& request, ::grpc::CompletionQueue* cq) = 0;
-    virtual ::grpc::ClientAsyncResponseReaderInterface< ::Empty>* PrepareAsyncNotifyMailEventRaw(::grpc::ClientContext* context, const ::mailpb::MailEventS2C& request, ::grpc::CompletionQueue* cq) = 0;
+    virtual ::grpc::ClientAsyncResponseReaderInterface< ::mailpb::DeleteMailsResponse>* AsyncDeleteMailsRaw(::grpc::ClientContext* context, const ::mailpb::DeleteMailsRequest& request, ::grpc::CompletionQueue* cq) = 0;
+    virtual ::grpc::ClientAsyncResponseReaderInterface< ::mailpb::DeleteMailsResponse>* PrepareAsyncDeleteMailsRaw(::grpc::ClientContext* context, const ::mailpb::DeleteMailsRequest& request, ::grpc::CompletionQueue* cq) = 0;
+    virtual ::grpc::ClientAsyncResponseReaderInterface< ::mailpb::ClearReadMailsResponse>* AsyncClearReadMailsRaw(::grpc::ClientContext* context, const ::mailpb::ClearReadMailsRequest& request, ::grpc::CompletionQueue* cq) = 0;
+    virtual ::grpc::ClientAsyncResponseReaderInterface< ::mailpb::ClearReadMailsResponse>* PrepareAsyncClearReadMailsRaw(::grpc::ClientContext* context, const ::mailpb::ClearReadMailsRequest& request, ::grpc::CompletionQueue* cq) = 0;
+    virtual ::grpc::ClientAsyncResponseReaderInterface< ::mailpb::MailChangedEvent>* AsyncNotifyMailChangedRaw(::grpc::ClientContext* context, const ::mailpb::MailChangedEvent& request, ::grpc::CompletionQueue* cq) = 0;
+    virtual ::grpc::ClientAsyncResponseReaderInterface< ::mailpb::MailChangedEvent>* PrepareAsyncNotifyMailChangedRaw(::grpc::ClientContext* context, const ::mailpb::MailChangedEvent& request, ::grpc::CompletionQueue* cq) = 0;
   };
   class Stub final : public StubInterface {
    public:
@@ -132,20 +130,6 @@ class ClientPlayerMail final {
     std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::mailpb::ReadMailResponse>> PrepareAsyncReadMail(::grpc::ClientContext* context, const ::mailpb::ReadMailRequest& request, ::grpc::CompletionQueue* cq) {
       return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::mailpb::ReadMailResponse>>(PrepareAsyncReadMailRaw(context, request, cq));
     }
-    ::grpc::Status DeleteMails(::grpc::ClientContext* context, const ::mailpb::DeleteMailsRequest& request, ::mailpb::DeleteMailsResponse* response) override;
-    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::mailpb::DeleteMailsResponse>> AsyncDeleteMails(::grpc::ClientContext* context, const ::mailpb::DeleteMailsRequest& request, ::grpc::CompletionQueue* cq) {
-      return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::mailpb::DeleteMailsResponse>>(AsyncDeleteMailsRaw(context, request, cq));
-    }
-    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::mailpb::DeleteMailsResponse>> PrepareAsyncDeleteMails(::grpc::ClientContext* context, const ::mailpb::DeleteMailsRequest& request, ::grpc::CompletionQueue* cq) {
-      return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::mailpb::DeleteMailsResponse>>(PrepareAsyncDeleteMailsRaw(context, request, cq));
-    }
-    ::grpc::Status DeleteReadMails(::grpc::ClientContext* context, const ::mailpb::DeleteReadMailsRequest& request, ::mailpb::DeleteReadMailsResponse* response) override;
-    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::mailpb::DeleteReadMailsResponse>> AsyncDeleteReadMails(::grpc::ClientContext* context, const ::mailpb::DeleteReadMailsRequest& request, ::grpc::CompletionQueue* cq) {
-      return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::mailpb::DeleteReadMailsResponse>>(AsyncDeleteReadMailsRaw(context, request, cq));
-    }
-    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::mailpb::DeleteReadMailsResponse>> PrepareAsyncDeleteReadMails(::grpc::ClientContext* context, const ::mailpb::DeleteReadMailsRequest& request, ::grpc::CompletionQueue* cq) {
-      return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::mailpb::DeleteReadMailsResponse>>(PrepareAsyncDeleteReadMailsRaw(context, request, cq));
-    }
     ::grpc::Status ClaimMailAttachments(::grpc::ClientContext* context, const ::mailpb::ClaimMailAttachmentsRequest& request, ::mailpb::ClaimMailAttachmentsResponse* response) override;
     std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::mailpb::ClaimMailAttachmentsResponse>> AsyncClaimMailAttachments(::grpc::ClientContext* context, const ::mailpb::ClaimMailAttachmentsRequest& request, ::grpc::CompletionQueue* cq) {
       return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::mailpb::ClaimMailAttachmentsResponse>>(AsyncClaimMailAttachmentsRaw(context, request, cq));
@@ -153,12 +137,26 @@ class ClientPlayerMail final {
     std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::mailpb::ClaimMailAttachmentsResponse>> PrepareAsyncClaimMailAttachments(::grpc::ClientContext* context, const ::mailpb::ClaimMailAttachmentsRequest& request, ::grpc::CompletionQueue* cq) {
       return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::mailpb::ClaimMailAttachmentsResponse>>(PrepareAsyncClaimMailAttachmentsRaw(context, request, cq));
     }
-    ::grpc::Status NotifyMailEvent(::grpc::ClientContext* context, const ::mailpb::MailEventS2C& request, ::Empty* response) override;
-    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::Empty>> AsyncNotifyMailEvent(::grpc::ClientContext* context, const ::mailpb::MailEventS2C& request, ::grpc::CompletionQueue* cq) {
-      return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::Empty>>(AsyncNotifyMailEventRaw(context, request, cq));
+    ::grpc::Status DeleteMails(::grpc::ClientContext* context, const ::mailpb::DeleteMailsRequest& request, ::mailpb::DeleteMailsResponse* response) override;
+    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::mailpb::DeleteMailsResponse>> AsyncDeleteMails(::grpc::ClientContext* context, const ::mailpb::DeleteMailsRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::mailpb::DeleteMailsResponse>>(AsyncDeleteMailsRaw(context, request, cq));
     }
-    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::Empty>> PrepareAsyncNotifyMailEvent(::grpc::ClientContext* context, const ::mailpb::MailEventS2C& request, ::grpc::CompletionQueue* cq) {
-      return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::Empty>>(PrepareAsyncNotifyMailEventRaw(context, request, cq));
+    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::mailpb::DeleteMailsResponse>> PrepareAsyncDeleteMails(::grpc::ClientContext* context, const ::mailpb::DeleteMailsRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::mailpb::DeleteMailsResponse>>(PrepareAsyncDeleteMailsRaw(context, request, cq));
+    }
+    ::grpc::Status ClearReadMails(::grpc::ClientContext* context, const ::mailpb::ClearReadMailsRequest& request, ::mailpb::ClearReadMailsResponse* response) override;
+    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::mailpb::ClearReadMailsResponse>> AsyncClearReadMails(::grpc::ClientContext* context, const ::mailpb::ClearReadMailsRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::mailpb::ClearReadMailsResponse>>(AsyncClearReadMailsRaw(context, request, cq));
+    }
+    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::mailpb::ClearReadMailsResponse>> PrepareAsyncClearReadMails(::grpc::ClientContext* context, const ::mailpb::ClearReadMailsRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::mailpb::ClearReadMailsResponse>>(PrepareAsyncClearReadMailsRaw(context, request, cq));
+    }
+    ::grpc::Status NotifyMailChanged(::grpc::ClientContext* context, const ::mailpb::MailChangedEvent& request, ::mailpb::MailChangedEvent* response) override;
+    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::mailpb::MailChangedEvent>> AsyncNotifyMailChanged(::grpc::ClientContext* context, const ::mailpb::MailChangedEvent& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::mailpb::MailChangedEvent>>(AsyncNotifyMailChangedRaw(context, request, cq));
+    }
+    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::mailpb::MailChangedEvent>> PrepareAsyncNotifyMailChanged(::grpc::ClientContext* context, const ::mailpb::MailChangedEvent& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::mailpb::MailChangedEvent>>(PrepareAsyncNotifyMailChangedRaw(context, request, cq));
     }
     class async final :
       public StubInterface::async_interface {
@@ -167,14 +165,14 @@ class ClientPlayerMail final {
       void ListMails(::grpc::ClientContext* context, const ::mailpb::ListMailsRequest* request, ::mailpb::ListMailsResponse* response, ::grpc::ClientUnaryReactor* reactor) override;
       void ReadMail(::grpc::ClientContext* context, const ::mailpb::ReadMailRequest* request, ::mailpb::ReadMailResponse* response, std::function<void(::grpc::Status)>) override;
       void ReadMail(::grpc::ClientContext* context, const ::mailpb::ReadMailRequest* request, ::mailpb::ReadMailResponse* response, ::grpc::ClientUnaryReactor* reactor) override;
-      void DeleteMails(::grpc::ClientContext* context, const ::mailpb::DeleteMailsRequest* request, ::mailpb::DeleteMailsResponse* response, std::function<void(::grpc::Status)>) override;
-      void DeleteMails(::grpc::ClientContext* context, const ::mailpb::DeleteMailsRequest* request, ::mailpb::DeleteMailsResponse* response, ::grpc::ClientUnaryReactor* reactor) override;
-      void DeleteReadMails(::grpc::ClientContext* context, const ::mailpb::DeleteReadMailsRequest* request, ::mailpb::DeleteReadMailsResponse* response, std::function<void(::grpc::Status)>) override;
-      void DeleteReadMails(::grpc::ClientContext* context, const ::mailpb::DeleteReadMailsRequest* request, ::mailpb::DeleteReadMailsResponse* response, ::grpc::ClientUnaryReactor* reactor) override;
       void ClaimMailAttachments(::grpc::ClientContext* context, const ::mailpb::ClaimMailAttachmentsRequest* request, ::mailpb::ClaimMailAttachmentsResponse* response, std::function<void(::grpc::Status)>) override;
       void ClaimMailAttachments(::grpc::ClientContext* context, const ::mailpb::ClaimMailAttachmentsRequest* request, ::mailpb::ClaimMailAttachmentsResponse* response, ::grpc::ClientUnaryReactor* reactor) override;
-      void NotifyMailEvent(::grpc::ClientContext* context, const ::mailpb::MailEventS2C* request, ::Empty* response, std::function<void(::grpc::Status)>) override;
-      void NotifyMailEvent(::grpc::ClientContext* context, const ::mailpb::MailEventS2C* request, ::Empty* response, ::grpc::ClientUnaryReactor* reactor) override;
+      void DeleteMails(::grpc::ClientContext* context, const ::mailpb::DeleteMailsRequest* request, ::mailpb::DeleteMailsResponse* response, std::function<void(::grpc::Status)>) override;
+      void DeleteMails(::grpc::ClientContext* context, const ::mailpb::DeleteMailsRequest* request, ::mailpb::DeleteMailsResponse* response, ::grpc::ClientUnaryReactor* reactor) override;
+      void ClearReadMails(::grpc::ClientContext* context, const ::mailpb::ClearReadMailsRequest* request, ::mailpb::ClearReadMailsResponse* response, std::function<void(::grpc::Status)>) override;
+      void ClearReadMails(::grpc::ClientContext* context, const ::mailpb::ClearReadMailsRequest* request, ::mailpb::ClearReadMailsResponse* response, ::grpc::ClientUnaryReactor* reactor) override;
+      void NotifyMailChanged(::grpc::ClientContext* context, const ::mailpb::MailChangedEvent* request, ::mailpb::MailChangedEvent* response, std::function<void(::grpc::Status)>) override;
+      void NotifyMailChanged(::grpc::ClientContext* context, const ::mailpb::MailChangedEvent* request, ::mailpb::MailChangedEvent* response, ::grpc::ClientUnaryReactor* reactor) override;
      private:
       friend class Stub;
       explicit async(Stub* stub): stub_(stub) { }
@@ -190,20 +188,20 @@ class ClientPlayerMail final {
     ::grpc::ClientAsyncResponseReader< ::mailpb::ListMailsResponse>* PrepareAsyncListMailsRaw(::grpc::ClientContext* context, const ::mailpb::ListMailsRequest& request, ::grpc::CompletionQueue* cq) override;
     ::grpc::ClientAsyncResponseReader< ::mailpb::ReadMailResponse>* AsyncReadMailRaw(::grpc::ClientContext* context, const ::mailpb::ReadMailRequest& request, ::grpc::CompletionQueue* cq) override;
     ::grpc::ClientAsyncResponseReader< ::mailpb::ReadMailResponse>* PrepareAsyncReadMailRaw(::grpc::ClientContext* context, const ::mailpb::ReadMailRequest& request, ::grpc::CompletionQueue* cq) override;
-    ::grpc::ClientAsyncResponseReader< ::mailpb::DeleteMailsResponse>* AsyncDeleteMailsRaw(::grpc::ClientContext* context, const ::mailpb::DeleteMailsRequest& request, ::grpc::CompletionQueue* cq) override;
-    ::grpc::ClientAsyncResponseReader< ::mailpb::DeleteMailsResponse>* PrepareAsyncDeleteMailsRaw(::grpc::ClientContext* context, const ::mailpb::DeleteMailsRequest& request, ::grpc::CompletionQueue* cq) override;
-    ::grpc::ClientAsyncResponseReader< ::mailpb::DeleteReadMailsResponse>* AsyncDeleteReadMailsRaw(::grpc::ClientContext* context, const ::mailpb::DeleteReadMailsRequest& request, ::grpc::CompletionQueue* cq) override;
-    ::grpc::ClientAsyncResponseReader< ::mailpb::DeleteReadMailsResponse>* PrepareAsyncDeleteReadMailsRaw(::grpc::ClientContext* context, const ::mailpb::DeleteReadMailsRequest& request, ::grpc::CompletionQueue* cq) override;
     ::grpc::ClientAsyncResponseReader< ::mailpb::ClaimMailAttachmentsResponse>* AsyncClaimMailAttachmentsRaw(::grpc::ClientContext* context, const ::mailpb::ClaimMailAttachmentsRequest& request, ::grpc::CompletionQueue* cq) override;
     ::grpc::ClientAsyncResponseReader< ::mailpb::ClaimMailAttachmentsResponse>* PrepareAsyncClaimMailAttachmentsRaw(::grpc::ClientContext* context, const ::mailpb::ClaimMailAttachmentsRequest& request, ::grpc::CompletionQueue* cq) override;
-    ::grpc::ClientAsyncResponseReader< ::Empty>* AsyncNotifyMailEventRaw(::grpc::ClientContext* context, const ::mailpb::MailEventS2C& request, ::grpc::CompletionQueue* cq) override;
-    ::grpc::ClientAsyncResponseReader< ::Empty>* PrepareAsyncNotifyMailEventRaw(::grpc::ClientContext* context, const ::mailpb::MailEventS2C& request, ::grpc::CompletionQueue* cq) override;
+    ::grpc::ClientAsyncResponseReader< ::mailpb::DeleteMailsResponse>* AsyncDeleteMailsRaw(::grpc::ClientContext* context, const ::mailpb::DeleteMailsRequest& request, ::grpc::CompletionQueue* cq) override;
+    ::grpc::ClientAsyncResponseReader< ::mailpb::DeleteMailsResponse>* PrepareAsyncDeleteMailsRaw(::grpc::ClientContext* context, const ::mailpb::DeleteMailsRequest& request, ::grpc::CompletionQueue* cq) override;
+    ::grpc::ClientAsyncResponseReader< ::mailpb::ClearReadMailsResponse>* AsyncClearReadMailsRaw(::grpc::ClientContext* context, const ::mailpb::ClearReadMailsRequest& request, ::grpc::CompletionQueue* cq) override;
+    ::grpc::ClientAsyncResponseReader< ::mailpb::ClearReadMailsResponse>* PrepareAsyncClearReadMailsRaw(::grpc::ClientContext* context, const ::mailpb::ClearReadMailsRequest& request, ::grpc::CompletionQueue* cq) override;
+    ::grpc::ClientAsyncResponseReader< ::mailpb::MailChangedEvent>* AsyncNotifyMailChangedRaw(::grpc::ClientContext* context, const ::mailpb::MailChangedEvent& request, ::grpc::CompletionQueue* cq) override;
+    ::grpc::ClientAsyncResponseReader< ::mailpb::MailChangedEvent>* PrepareAsyncNotifyMailChangedRaw(::grpc::ClientContext* context, const ::mailpb::MailChangedEvent& request, ::grpc::CompletionQueue* cq) override;
     const ::grpc::internal::RpcMethod rpcmethod_ListMails_;
     const ::grpc::internal::RpcMethod rpcmethod_ReadMail_;
-    const ::grpc::internal::RpcMethod rpcmethod_DeleteMails_;
-    const ::grpc::internal::RpcMethod rpcmethod_DeleteReadMails_;
     const ::grpc::internal::RpcMethod rpcmethod_ClaimMailAttachments_;
-    const ::grpc::internal::RpcMethod rpcmethod_NotifyMailEvent_;
+    const ::grpc::internal::RpcMethod rpcmethod_DeleteMails_;
+    const ::grpc::internal::RpcMethod rpcmethod_ClearReadMails_;
+    const ::grpc::internal::RpcMethod rpcmethod_NotifyMailChanged_;
   };
   static std::unique_ptr<Stub> NewStub(const std::shared_ptr< ::grpc::ChannelInterface>& channel, const ::grpc::StubOptions& options = ::grpc::StubOptions());
 
@@ -213,12 +211,11 @@ class ClientPlayerMail final {
     virtual ~Service();
     virtual ::grpc::Status ListMails(::grpc::ServerContext* context, const ::mailpb::ListMailsRequest* request, ::mailpb::ListMailsResponse* response);
     virtual ::grpc::Status ReadMail(::grpc::ServerContext* context, const ::mailpb::ReadMailRequest* request, ::mailpb::ReadMailResponse* response);
-    virtual ::grpc::Status DeleteMails(::grpc::ServerContext* context, const ::mailpb::DeleteMailsRequest* request, ::mailpb::DeleteMailsResponse* response);
-    virtual ::grpc::Status DeleteReadMails(::grpc::ServerContext* context, const ::mailpb::DeleteReadMailsRequest* request, ::mailpb::DeleteReadMailsResponse* response);
     virtual ::grpc::Status ClaimMailAttachments(::grpc::ServerContext* context, const ::mailpb::ClaimMailAttachmentsRequest* request, ::mailpb::ClaimMailAttachmentsResponse* response);
-    // S2C:服务端不实现,也不在会话白名单里;客户端只作接收方。
-    // 必须与 C2S 方法放在同一个名字含 ClientPlayer 的 service 里,生成器才出客户端下行 handler(friend F1 同理)。
-    virtual ::grpc::Status NotifyMailEvent(::grpc::ServerContext* context, const ::mailpb::MailEventS2C* request, ::Empty* response);
+    virtual ::grpc::Status DeleteMails(::grpc::ServerContext* context, const ::mailpb::DeleteMailsRequest* request, ::mailpb::DeleteMailsResponse* response);
+    virtual ::grpc::Status ClearReadMails(::grpc::ServerContext* context, const ::mailpb::ClearReadMailsRequest* request, ::mailpb::ClearReadMailsResponse* response);
+    // S2C提醒可丢；权威状态由ListMails恢复，客户端来源禁止调用。
+    virtual ::grpc::Status NotifyMailChanged(::grpc::ServerContext* context, const ::mailpb::MailChangedEvent* request, ::mailpb::MailChangedEvent* response);
   };
   template <class BaseClass>
   class WithAsyncMethod_ListMails : public BaseClass {
@@ -261,52 +258,12 @@ class ClientPlayerMail final {
     }
   };
   template <class BaseClass>
-  class WithAsyncMethod_DeleteMails : public BaseClass {
-   private:
-    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
-   public:
-    WithAsyncMethod_DeleteMails() {
-      ::grpc::Service::MarkMethodAsync(2);
-    }
-    ~WithAsyncMethod_DeleteMails() override {
-      BaseClassMustBeDerivedFromService(this);
-    }
-    // disable synchronous version of this method
-    ::grpc::Status DeleteMails(::grpc::ServerContext* /*context*/, const ::mailpb::DeleteMailsRequest* /*request*/, ::mailpb::DeleteMailsResponse* /*response*/) override {
-      abort();
-      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
-    }
-    void RequestDeleteMails(::grpc::ServerContext* context, ::mailpb::DeleteMailsRequest* request, ::grpc::ServerAsyncResponseWriter< ::mailpb::DeleteMailsResponse>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
-      ::grpc::Service::RequestAsyncUnary(2, context, request, response, new_call_cq, notification_cq, tag);
-    }
-  };
-  template <class BaseClass>
-  class WithAsyncMethod_DeleteReadMails : public BaseClass {
-   private:
-    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
-   public:
-    WithAsyncMethod_DeleteReadMails() {
-      ::grpc::Service::MarkMethodAsync(3);
-    }
-    ~WithAsyncMethod_DeleteReadMails() override {
-      BaseClassMustBeDerivedFromService(this);
-    }
-    // disable synchronous version of this method
-    ::grpc::Status DeleteReadMails(::grpc::ServerContext* /*context*/, const ::mailpb::DeleteReadMailsRequest* /*request*/, ::mailpb::DeleteReadMailsResponse* /*response*/) override {
-      abort();
-      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
-    }
-    void RequestDeleteReadMails(::grpc::ServerContext* context, ::mailpb::DeleteReadMailsRequest* request, ::grpc::ServerAsyncResponseWriter< ::mailpb::DeleteReadMailsResponse>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
-      ::grpc::Service::RequestAsyncUnary(3, context, request, response, new_call_cq, notification_cq, tag);
-    }
-  };
-  template <class BaseClass>
   class WithAsyncMethod_ClaimMailAttachments : public BaseClass {
    private:
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithAsyncMethod_ClaimMailAttachments() {
-      ::grpc::Service::MarkMethodAsync(4);
+      ::grpc::Service::MarkMethodAsync(2);
     }
     ~WithAsyncMethod_ClaimMailAttachments() override {
       BaseClassMustBeDerivedFromService(this);
@@ -317,30 +274,70 @@ class ClientPlayerMail final {
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
     void RequestClaimMailAttachments(::grpc::ServerContext* context, ::mailpb::ClaimMailAttachmentsRequest* request, ::grpc::ServerAsyncResponseWriter< ::mailpb::ClaimMailAttachmentsResponse>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
+      ::grpc::Service::RequestAsyncUnary(2, context, request, response, new_call_cq, notification_cq, tag);
+    }
+  };
+  template <class BaseClass>
+  class WithAsyncMethod_DeleteMails : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithAsyncMethod_DeleteMails() {
+      ::grpc::Service::MarkMethodAsync(3);
+    }
+    ~WithAsyncMethod_DeleteMails() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status DeleteMails(::grpc::ServerContext* /*context*/, const ::mailpb::DeleteMailsRequest* /*request*/, ::mailpb::DeleteMailsResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    void RequestDeleteMails(::grpc::ServerContext* context, ::mailpb::DeleteMailsRequest* request, ::grpc::ServerAsyncResponseWriter< ::mailpb::DeleteMailsResponse>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
+      ::grpc::Service::RequestAsyncUnary(3, context, request, response, new_call_cq, notification_cq, tag);
+    }
+  };
+  template <class BaseClass>
+  class WithAsyncMethod_ClearReadMails : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithAsyncMethod_ClearReadMails() {
+      ::grpc::Service::MarkMethodAsync(4);
+    }
+    ~WithAsyncMethod_ClearReadMails() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status ClearReadMails(::grpc::ServerContext* /*context*/, const ::mailpb::ClearReadMailsRequest* /*request*/, ::mailpb::ClearReadMailsResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    void RequestClearReadMails(::grpc::ServerContext* context, ::mailpb::ClearReadMailsRequest* request, ::grpc::ServerAsyncResponseWriter< ::mailpb::ClearReadMailsResponse>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
       ::grpc::Service::RequestAsyncUnary(4, context, request, response, new_call_cq, notification_cq, tag);
     }
   };
   template <class BaseClass>
-  class WithAsyncMethod_NotifyMailEvent : public BaseClass {
+  class WithAsyncMethod_NotifyMailChanged : public BaseClass {
    private:
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
-    WithAsyncMethod_NotifyMailEvent() {
+    WithAsyncMethod_NotifyMailChanged() {
       ::grpc::Service::MarkMethodAsync(5);
     }
-    ~WithAsyncMethod_NotifyMailEvent() override {
+    ~WithAsyncMethod_NotifyMailChanged() override {
       BaseClassMustBeDerivedFromService(this);
     }
     // disable synchronous version of this method
-    ::grpc::Status NotifyMailEvent(::grpc::ServerContext* /*context*/, const ::mailpb::MailEventS2C* /*request*/, ::Empty* /*response*/) override {
+    ::grpc::Status NotifyMailChanged(::grpc::ServerContext* /*context*/, const ::mailpb::MailChangedEvent* /*request*/, ::mailpb::MailChangedEvent* /*response*/) override {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
-    void RequestNotifyMailEvent(::grpc::ServerContext* context, ::mailpb::MailEventS2C* request, ::grpc::ServerAsyncResponseWriter< ::Empty>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
+    void RequestNotifyMailChanged(::grpc::ServerContext* context, ::mailpb::MailChangedEvent* request, ::grpc::ServerAsyncResponseWriter< ::mailpb::MailChangedEvent>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
       ::grpc::Service::RequestAsyncUnary(5, context, request, response, new_call_cq, notification_cq, tag);
     }
   };
-  typedef WithAsyncMethod_ListMails<WithAsyncMethod_ReadMail<WithAsyncMethod_DeleteMails<WithAsyncMethod_DeleteReadMails<WithAsyncMethod_ClaimMailAttachments<WithAsyncMethod_NotifyMailEvent<Service > > > > > > AsyncService;
+  typedef WithAsyncMethod_ListMails<WithAsyncMethod_ReadMail<WithAsyncMethod_ClaimMailAttachments<WithAsyncMethod_DeleteMails<WithAsyncMethod_ClearReadMails<WithAsyncMethod_NotifyMailChanged<Service > > > > > > AsyncService;
   template <class BaseClass>
   class WithCallbackMethod_ListMails : public BaseClass {
    private:
@@ -396,72 +393,18 @@ class ClientPlayerMail final {
       ::grpc::CallbackServerContext* /*context*/, const ::mailpb::ReadMailRequest* /*request*/, ::mailpb::ReadMailResponse* /*response*/)  { return nullptr; }
   };
   template <class BaseClass>
-  class WithCallbackMethod_DeleteMails : public BaseClass {
-   private:
-    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
-   public:
-    WithCallbackMethod_DeleteMails() {
-      ::grpc::Service::MarkMethodCallback(2,
-          new ::grpc::internal::CallbackUnaryHandler< ::mailpb::DeleteMailsRequest, ::mailpb::DeleteMailsResponse>(
-            [this](
-                   ::grpc::CallbackServerContext* context, const ::mailpb::DeleteMailsRequest* request, ::mailpb::DeleteMailsResponse* response) { return this->DeleteMails(context, request, response); }));}
-    void SetMessageAllocatorFor_DeleteMails(
-        ::grpc::MessageAllocator< ::mailpb::DeleteMailsRequest, ::mailpb::DeleteMailsResponse>* allocator) {
-      ::grpc::internal::MethodHandler* const handler = ::grpc::Service::GetHandler(2);
-      static_cast<::grpc::internal::CallbackUnaryHandler< ::mailpb::DeleteMailsRequest, ::mailpb::DeleteMailsResponse>*>(handler)
-              ->SetMessageAllocator(allocator);
-    }
-    ~WithCallbackMethod_DeleteMails() override {
-      BaseClassMustBeDerivedFromService(this);
-    }
-    // disable synchronous version of this method
-    ::grpc::Status DeleteMails(::grpc::ServerContext* /*context*/, const ::mailpb::DeleteMailsRequest* /*request*/, ::mailpb::DeleteMailsResponse* /*response*/) override {
-      abort();
-      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
-    }
-    virtual ::grpc::ServerUnaryReactor* DeleteMails(
-      ::grpc::CallbackServerContext* /*context*/, const ::mailpb::DeleteMailsRequest* /*request*/, ::mailpb::DeleteMailsResponse* /*response*/)  { return nullptr; }
-  };
-  template <class BaseClass>
-  class WithCallbackMethod_DeleteReadMails : public BaseClass {
-   private:
-    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
-   public:
-    WithCallbackMethod_DeleteReadMails() {
-      ::grpc::Service::MarkMethodCallback(3,
-          new ::grpc::internal::CallbackUnaryHandler< ::mailpb::DeleteReadMailsRequest, ::mailpb::DeleteReadMailsResponse>(
-            [this](
-                   ::grpc::CallbackServerContext* context, const ::mailpb::DeleteReadMailsRequest* request, ::mailpb::DeleteReadMailsResponse* response) { return this->DeleteReadMails(context, request, response); }));}
-    void SetMessageAllocatorFor_DeleteReadMails(
-        ::grpc::MessageAllocator< ::mailpb::DeleteReadMailsRequest, ::mailpb::DeleteReadMailsResponse>* allocator) {
-      ::grpc::internal::MethodHandler* const handler = ::grpc::Service::GetHandler(3);
-      static_cast<::grpc::internal::CallbackUnaryHandler< ::mailpb::DeleteReadMailsRequest, ::mailpb::DeleteReadMailsResponse>*>(handler)
-              ->SetMessageAllocator(allocator);
-    }
-    ~WithCallbackMethod_DeleteReadMails() override {
-      BaseClassMustBeDerivedFromService(this);
-    }
-    // disable synchronous version of this method
-    ::grpc::Status DeleteReadMails(::grpc::ServerContext* /*context*/, const ::mailpb::DeleteReadMailsRequest* /*request*/, ::mailpb::DeleteReadMailsResponse* /*response*/) override {
-      abort();
-      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
-    }
-    virtual ::grpc::ServerUnaryReactor* DeleteReadMails(
-      ::grpc::CallbackServerContext* /*context*/, const ::mailpb::DeleteReadMailsRequest* /*request*/, ::mailpb::DeleteReadMailsResponse* /*response*/)  { return nullptr; }
-  };
-  template <class BaseClass>
   class WithCallbackMethod_ClaimMailAttachments : public BaseClass {
    private:
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithCallbackMethod_ClaimMailAttachments() {
-      ::grpc::Service::MarkMethodCallback(4,
+      ::grpc::Service::MarkMethodCallback(2,
           new ::grpc::internal::CallbackUnaryHandler< ::mailpb::ClaimMailAttachmentsRequest, ::mailpb::ClaimMailAttachmentsResponse>(
             [this](
                    ::grpc::CallbackServerContext* context, const ::mailpb::ClaimMailAttachmentsRequest* request, ::mailpb::ClaimMailAttachmentsResponse* response) { return this->ClaimMailAttachments(context, request, response); }));}
     void SetMessageAllocatorFor_ClaimMailAttachments(
         ::grpc::MessageAllocator< ::mailpb::ClaimMailAttachmentsRequest, ::mailpb::ClaimMailAttachmentsResponse>* allocator) {
-      ::grpc::internal::MethodHandler* const handler = ::grpc::Service::GetHandler(4);
+      ::grpc::internal::MethodHandler* const handler = ::grpc::Service::GetHandler(2);
       static_cast<::grpc::internal::CallbackUnaryHandler< ::mailpb::ClaimMailAttachmentsRequest, ::mailpb::ClaimMailAttachmentsResponse>*>(handler)
               ->SetMessageAllocator(allocator);
     }
@@ -477,33 +420,87 @@ class ClientPlayerMail final {
       ::grpc::CallbackServerContext* /*context*/, const ::mailpb::ClaimMailAttachmentsRequest* /*request*/, ::mailpb::ClaimMailAttachmentsResponse* /*response*/)  { return nullptr; }
   };
   template <class BaseClass>
-  class WithCallbackMethod_NotifyMailEvent : public BaseClass {
+  class WithCallbackMethod_DeleteMails : public BaseClass {
    private:
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
-    WithCallbackMethod_NotifyMailEvent() {
-      ::grpc::Service::MarkMethodCallback(5,
-          new ::grpc::internal::CallbackUnaryHandler< ::mailpb::MailEventS2C, ::Empty>(
+    WithCallbackMethod_DeleteMails() {
+      ::grpc::Service::MarkMethodCallback(3,
+          new ::grpc::internal::CallbackUnaryHandler< ::mailpb::DeleteMailsRequest, ::mailpb::DeleteMailsResponse>(
             [this](
-                   ::grpc::CallbackServerContext* context, const ::mailpb::MailEventS2C* request, ::Empty* response) { return this->NotifyMailEvent(context, request, response); }));}
-    void SetMessageAllocatorFor_NotifyMailEvent(
-        ::grpc::MessageAllocator< ::mailpb::MailEventS2C, ::Empty>* allocator) {
-      ::grpc::internal::MethodHandler* const handler = ::grpc::Service::GetHandler(5);
-      static_cast<::grpc::internal::CallbackUnaryHandler< ::mailpb::MailEventS2C, ::Empty>*>(handler)
+                   ::grpc::CallbackServerContext* context, const ::mailpb::DeleteMailsRequest* request, ::mailpb::DeleteMailsResponse* response) { return this->DeleteMails(context, request, response); }));}
+    void SetMessageAllocatorFor_DeleteMails(
+        ::grpc::MessageAllocator< ::mailpb::DeleteMailsRequest, ::mailpb::DeleteMailsResponse>* allocator) {
+      ::grpc::internal::MethodHandler* const handler = ::grpc::Service::GetHandler(3);
+      static_cast<::grpc::internal::CallbackUnaryHandler< ::mailpb::DeleteMailsRequest, ::mailpb::DeleteMailsResponse>*>(handler)
               ->SetMessageAllocator(allocator);
     }
-    ~WithCallbackMethod_NotifyMailEvent() override {
+    ~WithCallbackMethod_DeleteMails() override {
       BaseClassMustBeDerivedFromService(this);
     }
     // disable synchronous version of this method
-    ::grpc::Status NotifyMailEvent(::grpc::ServerContext* /*context*/, const ::mailpb::MailEventS2C* /*request*/, ::Empty* /*response*/) override {
+    ::grpc::Status DeleteMails(::grpc::ServerContext* /*context*/, const ::mailpb::DeleteMailsRequest* /*request*/, ::mailpb::DeleteMailsResponse* /*response*/) override {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
-    virtual ::grpc::ServerUnaryReactor* NotifyMailEvent(
-      ::grpc::CallbackServerContext* /*context*/, const ::mailpb::MailEventS2C* /*request*/, ::Empty* /*response*/)  { return nullptr; }
+    virtual ::grpc::ServerUnaryReactor* DeleteMails(
+      ::grpc::CallbackServerContext* /*context*/, const ::mailpb::DeleteMailsRequest* /*request*/, ::mailpb::DeleteMailsResponse* /*response*/)  { return nullptr; }
   };
-  typedef WithCallbackMethod_ListMails<WithCallbackMethod_ReadMail<WithCallbackMethod_DeleteMails<WithCallbackMethod_DeleteReadMails<WithCallbackMethod_ClaimMailAttachments<WithCallbackMethod_NotifyMailEvent<Service > > > > > > CallbackService;
+  template <class BaseClass>
+  class WithCallbackMethod_ClearReadMails : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithCallbackMethod_ClearReadMails() {
+      ::grpc::Service::MarkMethodCallback(4,
+          new ::grpc::internal::CallbackUnaryHandler< ::mailpb::ClearReadMailsRequest, ::mailpb::ClearReadMailsResponse>(
+            [this](
+                   ::grpc::CallbackServerContext* context, const ::mailpb::ClearReadMailsRequest* request, ::mailpb::ClearReadMailsResponse* response) { return this->ClearReadMails(context, request, response); }));}
+    void SetMessageAllocatorFor_ClearReadMails(
+        ::grpc::MessageAllocator< ::mailpb::ClearReadMailsRequest, ::mailpb::ClearReadMailsResponse>* allocator) {
+      ::grpc::internal::MethodHandler* const handler = ::grpc::Service::GetHandler(4);
+      static_cast<::grpc::internal::CallbackUnaryHandler< ::mailpb::ClearReadMailsRequest, ::mailpb::ClearReadMailsResponse>*>(handler)
+              ->SetMessageAllocator(allocator);
+    }
+    ~WithCallbackMethod_ClearReadMails() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status ClearReadMails(::grpc::ServerContext* /*context*/, const ::mailpb::ClearReadMailsRequest* /*request*/, ::mailpb::ClearReadMailsResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    virtual ::grpc::ServerUnaryReactor* ClearReadMails(
+      ::grpc::CallbackServerContext* /*context*/, const ::mailpb::ClearReadMailsRequest* /*request*/, ::mailpb::ClearReadMailsResponse* /*response*/)  { return nullptr; }
+  };
+  template <class BaseClass>
+  class WithCallbackMethod_NotifyMailChanged : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithCallbackMethod_NotifyMailChanged() {
+      ::grpc::Service::MarkMethodCallback(5,
+          new ::grpc::internal::CallbackUnaryHandler< ::mailpb::MailChangedEvent, ::mailpb::MailChangedEvent>(
+            [this](
+                   ::grpc::CallbackServerContext* context, const ::mailpb::MailChangedEvent* request, ::mailpb::MailChangedEvent* response) { return this->NotifyMailChanged(context, request, response); }));}
+    void SetMessageAllocatorFor_NotifyMailChanged(
+        ::grpc::MessageAllocator< ::mailpb::MailChangedEvent, ::mailpb::MailChangedEvent>* allocator) {
+      ::grpc::internal::MethodHandler* const handler = ::grpc::Service::GetHandler(5);
+      static_cast<::grpc::internal::CallbackUnaryHandler< ::mailpb::MailChangedEvent, ::mailpb::MailChangedEvent>*>(handler)
+              ->SetMessageAllocator(allocator);
+    }
+    ~WithCallbackMethod_NotifyMailChanged() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status NotifyMailChanged(::grpc::ServerContext* /*context*/, const ::mailpb::MailChangedEvent* /*request*/, ::mailpb::MailChangedEvent* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    virtual ::grpc::ServerUnaryReactor* NotifyMailChanged(
+      ::grpc::CallbackServerContext* /*context*/, const ::mailpb::MailChangedEvent* /*request*/, ::mailpb::MailChangedEvent* /*response*/)  { return nullptr; }
+  };
+  typedef WithCallbackMethod_ListMails<WithCallbackMethod_ReadMail<WithCallbackMethod_ClaimMailAttachments<WithCallbackMethod_DeleteMails<WithCallbackMethod_ClearReadMails<WithCallbackMethod_NotifyMailChanged<Service > > > > > > CallbackService;
   typedef CallbackService ExperimentalCallbackService;
   template <class BaseClass>
   class WithGenericMethod_ListMails : public BaseClass {
@@ -540,46 +537,12 @@ class ClientPlayerMail final {
     }
   };
   template <class BaseClass>
-  class WithGenericMethod_DeleteMails : public BaseClass {
-   private:
-    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
-   public:
-    WithGenericMethod_DeleteMails() {
-      ::grpc::Service::MarkMethodGeneric(2);
-    }
-    ~WithGenericMethod_DeleteMails() override {
-      BaseClassMustBeDerivedFromService(this);
-    }
-    // disable synchronous version of this method
-    ::grpc::Status DeleteMails(::grpc::ServerContext* /*context*/, const ::mailpb::DeleteMailsRequest* /*request*/, ::mailpb::DeleteMailsResponse* /*response*/) override {
-      abort();
-      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
-    }
-  };
-  template <class BaseClass>
-  class WithGenericMethod_DeleteReadMails : public BaseClass {
-   private:
-    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
-   public:
-    WithGenericMethod_DeleteReadMails() {
-      ::grpc::Service::MarkMethodGeneric(3);
-    }
-    ~WithGenericMethod_DeleteReadMails() override {
-      BaseClassMustBeDerivedFromService(this);
-    }
-    // disable synchronous version of this method
-    ::grpc::Status DeleteReadMails(::grpc::ServerContext* /*context*/, const ::mailpb::DeleteReadMailsRequest* /*request*/, ::mailpb::DeleteReadMailsResponse* /*response*/) override {
-      abort();
-      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
-    }
-  };
-  template <class BaseClass>
   class WithGenericMethod_ClaimMailAttachments : public BaseClass {
    private:
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithGenericMethod_ClaimMailAttachments() {
-      ::grpc::Service::MarkMethodGeneric(4);
+      ::grpc::Service::MarkMethodGeneric(2);
     }
     ~WithGenericMethod_ClaimMailAttachments() override {
       BaseClassMustBeDerivedFromService(this);
@@ -591,18 +554,52 @@ class ClientPlayerMail final {
     }
   };
   template <class BaseClass>
-  class WithGenericMethod_NotifyMailEvent : public BaseClass {
+  class WithGenericMethod_DeleteMails : public BaseClass {
    private:
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
-    WithGenericMethod_NotifyMailEvent() {
-      ::grpc::Service::MarkMethodGeneric(5);
+    WithGenericMethod_DeleteMails() {
+      ::grpc::Service::MarkMethodGeneric(3);
     }
-    ~WithGenericMethod_NotifyMailEvent() override {
+    ~WithGenericMethod_DeleteMails() override {
       BaseClassMustBeDerivedFromService(this);
     }
     // disable synchronous version of this method
-    ::grpc::Status NotifyMailEvent(::grpc::ServerContext* /*context*/, const ::mailpb::MailEventS2C* /*request*/, ::Empty* /*response*/) override {
+    ::grpc::Status DeleteMails(::grpc::ServerContext* /*context*/, const ::mailpb::DeleteMailsRequest* /*request*/, ::mailpb::DeleteMailsResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+  };
+  template <class BaseClass>
+  class WithGenericMethod_ClearReadMails : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithGenericMethod_ClearReadMails() {
+      ::grpc::Service::MarkMethodGeneric(4);
+    }
+    ~WithGenericMethod_ClearReadMails() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status ClearReadMails(::grpc::ServerContext* /*context*/, const ::mailpb::ClearReadMailsRequest* /*request*/, ::mailpb::ClearReadMailsResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+  };
+  template <class BaseClass>
+  class WithGenericMethod_NotifyMailChanged : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithGenericMethod_NotifyMailChanged() {
+      ::grpc::Service::MarkMethodGeneric(5);
+    }
+    ~WithGenericMethod_NotifyMailChanged() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status NotifyMailChanged(::grpc::ServerContext* /*context*/, const ::mailpb::MailChangedEvent* /*request*/, ::mailpb::MailChangedEvent* /*response*/) override {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
@@ -648,52 +645,12 @@ class ClientPlayerMail final {
     }
   };
   template <class BaseClass>
-  class WithRawMethod_DeleteMails : public BaseClass {
-   private:
-    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
-   public:
-    WithRawMethod_DeleteMails() {
-      ::grpc::Service::MarkMethodRaw(2);
-    }
-    ~WithRawMethod_DeleteMails() override {
-      BaseClassMustBeDerivedFromService(this);
-    }
-    // disable synchronous version of this method
-    ::grpc::Status DeleteMails(::grpc::ServerContext* /*context*/, const ::mailpb::DeleteMailsRequest* /*request*/, ::mailpb::DeleteMailsResponse* /*response*/) override {
-      abort();
-      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
-    }
-    void RequestDeleteMails(::grpc::ServerContext* context, ::grpc::ByteBuffer* request, ::grpc::ServerAsyncResponseWriter< ::grpc::ByteBuffer>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
-      ::grpc::Service::RequestAsyncUnary(2, context, request, response, new_call_cq, notification_cq, tag);
-    }
-  };
-  template <class BaseClass>
-  class WithRawMethod_DeleteReadMails : public BaseClass {
-   private:
-    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
-   public:
-    WithRawMethod_DeleteReadMails() {
-      ::grpc::Service::MarkMethodRaw(3);
-    }
-    ~WithRawMethod_DeleteReadMails() override {
-      BaseClassMustBeDerivedFromService(this);
-    }
-    // disable synchronous version of this method
-    ::grpc::Status DeleteReadMails(::grpc::ServerContext* /*context*/, const ::mailpb::DeleteReadMailsRequest* /*request*/, ::mailpb::DeleteReadMailsResponse* /*response*/) override {
-      abort();
-      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
-    }
-    void RequestDeleteReadMails(::grpc::ServerContext* context, ::grpc::ByteBuffer* request, ::grpc::ServerAsyncResponseWriter< ::grpc::ByteBuffer>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
-      ::grpc::Service::RequestAsyncUnary(3, context, request, response, new_call_cq, notification_cq, tag);
-    }
-  };
-  template <class BaseClass>
   class WithRawMethod_ClaimMailAttachments : public BaseClass {
    private:
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithRawMethod_ClaimMailAttachments() {
-      ::grpc::Service::MarkMethodRaw(4);
+      ::grpc::Service::MarkMethodRaw(2);
     }
     ~WithRawMethod_ClaimMailAttachments() override {
       BaseClassMustBeDerivedFromService(this);
@@ -704,26 +661,66 @@ class ClientPlayerMail final {
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
     void RequestClaimMailAttachments(::grpc::ServerContext* context, ::grpc::ByteBuffer* request, ::grpc::ServerAsyncResponseWriter< ::grpc::ByteBuffer>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
+      ::grpc::Service::RequestAsyncUnary(2, context, request, response, new_call_cq, notification_cq, tag);
+    }
+  };
+  template <class BaseClass>
+  class WithRawMethod_DeleteMails : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithRawMethod_DeleteMails() {
+      ::grpc::Service::MarkMethodRaw(3);
+    }
+    ~WithRawMethod_DeleteMails() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status DeleteMails(::grpc::ServerContext* /*context*/, const ::mailpb::DeleteMailsRequest* /*request*/, ::mailpb::DeleteMailsResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    void RequestDeleteMails(::grpc::ServerContext* context, ::grpc::ByteBuffer* request, ::grpc::ServerAsyncResponseWriter< ::grpc::ByteBuffer>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
+      ::grpc::Service::RequestAsyncUnary(3, context, request, response, new_call_cq, notification_cq, tag);
+    }
+  };
+  template <class BaseClass>
+  class WithRawMethod_ClearReadMails : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithRawMethod_ClearReadMails() {
+      ::grpc::Service::MarkMethodRaw(4);
+    }
+    ~WithRawMethod_ClearReadMails() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status ClearReadMails(::grpc::ServerContext* /*context*/, const ::mailpb::ClearReadMailsRequest* /*request*/, ::mailpb::ClearReadMailsResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    void RequestClearReadMails(::grpc::ServerContext* context, ::grpc::ByteBuffer* request, ::grpc::ServerAsyncResponseWriter< ::grpc::ByteBuffer>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
       ::grpc::Service::RequestAsyncUnary(4, context, request, response, new_call_cq, notification_cq, tag);
     }
   };
   template <class BaseClass>
-  class WithRawMethod_NotifyMailEvent : public BaseClass {
+  class WithRawMethod_NotifyMailChanged : public BaseClass {
    private:
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
-    WithRawMethod_NotifyMailEvent() {
+    WithRawMethod_NotifyMailChanged() {
       ::grpc::Service::MarkMethodRaw(5);
     }
-    ~WithRawMethod_NotifyMailEvent() override {
+    ~WithRawMethod_NotifyMailChanged() override {
       BaseClassMustBeDerivedFromService(this);
     }
     // disable synchronous version of this method
-    ::grpc::Status NotifyMailEvent(::grpc::ServerContext* /*context*/, const ::mailpb::MailEventS2C* /*request*/, ::Empty* /*response*/) override {
+    ::grpc::Status NotifyMailChanged(::grpc::ServerContext* /*context*/, const ::mailpb::MailChangedEvent* /*request*/, ::mailpb::MailChangedEvent* /*response*/) override {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
-    void RequestNotifyMailEvent(::grpc::ServerContext* context, ::grpc::ByteBuffer* request, ::grpc::ServerAsyncResponseWriter< ::grpc::ByteBuffer>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
+    void RequestNotifyMailChanged(::grpc::ServerContext* context, ::grpc::ByteBuffer* request, ::grpc::ServerAsyncResponseWriter< ::grpc::ByteBuffer>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
       ::grpc::Service::RequestAsyncUnary(5, context, request, response, new_call_cq, notification_cq, tag);
     }
   };
@@ -772,56 +769,12 @@ class ClientPlayerMail final {
       ::grpc::CallbackServerContext* /*context*/, const ::grpc::ByteBuffer* /*request*/, ::grpc::ByteBuffer* /*response*/)  { return nullptr; }
   };
   template <class BaseClass>
-  class WithRawCallbackMethod_DeleteMails : public BaseClass {
-   private:
-    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
-   public:
-    WithRawCallbackMethod_DeleteMails() {
-      ::grpc::Service::MarkMethodRawCallback(2,
-          new ::grpc::internal::CallbackUnaryHandler< ::grpc::ByteBuffer, ::grpc::ByteBuffer>(
-            [this](
-                   ::grpc::CallbackServerContext* context, const ::grpc::ByteBuffer* request, ::grpc::ByteBuffer* response) { return this->DeleteMails(context, request, response); }));
-    }
-    ~WithRawCallbackMethod_DeleteMails() override {
-      BaseClassMustBeDerivedFromService(this);
-    }
-    // disable synchronous version of this method
-    ::grpc::Status DeleteMails(::grpc::ServerContext* /*context*/, const ::mailpb::DeleteMailsRequest* /*request*/, ::mailpb::DeleteMailsResponse* /*response*/) override {
-      abort();
-      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
-    }
-    virtual ::grpc::ServerUnaryReactor* DeleteMails(
-      ::grpc::CallbackServerContext* /*context*/, const ::grpc::ByteBuffer* /*request*/, ::grpc::ByteBuffer* /*response*/)  { return nullptr; }
-  };
-  template <class BaseClass>
-  class WithRawCallbackMethod_DeleteReadMails : public BaseClass {
-   private:
-    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
-   public:
-    WithRawCallbackMethod_DeleteReadMails() {
-      ::grpc::Service::MarkMethodRawCallback(3,
-          new ::grpc::internal::CallbackUnaryHandler< ::grpc::ByteBuffer, ::grpc::ByteBuffer>(
-            [this](
-                   ::grpc::CallbackServerContext* context, const ::grpc::ByteBuffer* request, ::grpc::ByteBuffer* response) { return this->DeleteReadMails(context, request, response); }));
-    }
-    ~WithRawCallbackMethod_DeleteReadMails() override {
-      BaseClassMustBeDerivedFromService(this);
-    }
-    // disable synchronous version of this method
-    ::grpc::Status DeleteReadMails(::grpc::ServerContext* /*context*/, const ::mailpb::DeleteReadMailsRequest* /*request*/, ::mailpb::DeleteReadMailsResponse* /*response*/) override {
-      abort();
-      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
-    }
-    virtual ::grpc::ServerUnaryReactor* DeleteReadMails(
-      ::grpc::CallbackServerContext* /*context*/, const ::grpc::ByteBuffer* /*request*/, ::grpc::ByteBuffer* /*response*/)  { return nullptr; }
-  };
-  template <class BaseClass>
   class WithRawCallbackMethod_ClaimMailAttachments : public BaseClass {
    private:
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithRawCallbackMethod_ClaimMailAttachments() {
-      ::grpc::Service::MarkMethodRawCallback(4,
+      ::grpc::Service::MarkMethodRawCallback(2,
           new ::grpc::internal::CallbackUnaryHandler< ::grpc::ByteBuffer, ::grpc::ByteBuffer>(
             [this](
                    ::grpc::CallbackServerContext* context, const ::grpc::ByteBuffer* request, ::grpc::ByteBuffer* response) { return this->ClaimMailAttachments(context, request, response); }));
@@ -838,25 +791,69 @@ class ClientPlayerMail final {
       ::grpc::CallbackServerContext* /*context*/, const ::grpc::ByteBuffer* /*request*/, ::grpc::ByteBuffer* /*response*/)  { return nullptr; }
   };
   template <class BaseClass>
-  class WithRawCallbackMethod_NotifyMailEvent : public BaseClass {
+  class WithRawCallbackMethod_DeleteMails : public BaseClass {
    private:
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
-    WithRawCallbackMethod_NotifyMailEvent() {
-      ::grpc::Service::MarkMethodRawCallback(5,
+    WithRawCallbackMethod_DeleteMails() {
+      ::grpc::Service::MarkMethodRawCallback(3,
           new ::grpc::internal::CallbackUnaryHandler< ::grpc::ByteBuffer, ::grpc::ByteBuffer>(
             [this](
-                   ::grpc::CallbackServerContext* context, const ::grpc::ByteBuffer* request, ::grpc::ByteBuffer* response) { return this->NotifyMailEvent(context, request, response); }));
+                   ::grpc::CallbackServerContext* context, const ::grpc::ByteBuffer* request, ::grpc::ByteBuffer* response) { return this->DeleteMails(context, request, response); }));
     }
-    ~WithRawCallbackMethod_NotifyMailEvent() override {
+    ~WithRawCallbackMethod_DeleteMails() override {
       BaseClassMustBeDerivedFromService(this);
     }
     // disable synchronous version of this method
-    ::grpc::Status NotifyMailEvent(::grpc::ServerContext* /*context*/, const ::mailpb::MailEventS2C* /*request*/, ::Empty* /*response*/) override {
+    ::grpc::Status DeleteMails(::grpc::ServerContext* /*context*/, const ::mailpb::DeleteMailsRequest* /*request*/, ::mailpb::DeleteMailsResponse* /*response*/) override {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
-    virtual ::grpc::ServerUnaryReactor* NotifyMailEvent(
+    virtual ::grpc::ServerUnaryReactor* DeleteMails(
+      ::grpc::CallbackServerContext* /*context*/, const ::grpc::ByteBuffer* /*request*/, ::grpc::ByteBuffer* /*response*/)  { return nullptr; }
+  };
+  template <class BaseClass>
+  class WithRawCallbackMethod_ClearReadMails : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithRawCallbackMethod_ClearReadMails() {
+      ::grpc::Service::MarkMethodRawCallback(4,
+          new ::grpc::internal::CallbackUnaryHandler< ::grpc::ByteBuffer, ::grpc::ByteBuffer>(
+            [this](
+                   ::grpc::CallbackServerContext* context, const ::grpc::ByteBuffer* request, ::grpc::ByteBuffer* response) { return this->ClearReadMails(context, request, response); }));
+    }
+    ~WithRawCallbackMethod_ClearReadMails() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status ClearReadMails(::grpc::ServerContext* /*context*/, const ::mailpb::ClearReadMailsRequest* /*request*/, ::mailpb::ClearReadMailsResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    virtual ::grpc::ServerUnaryReactor* ClearReadMails(
+      ::grpc::CallbackServerContext* /*context*/, const ::grpc::ByteBuffer* /*request*/, ::grpc::ByteBuffer* /*response*/)  { return nullptr; }
+  };
+  template <class BaseClass>
+  class WithRawCallbackMethod_NotifyMailChanged : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithRawCallbackMethod_NotifyMailChanged() {
+      ::grpc::Service::MarkMethodRawCallback(5,
+          new ::grpc::internal::CallbackUnaryHandler< ::grpc::ByteBuffer, ::grpc::ByteBuffer>(
+            [this](
+                   ::grpc::CallbackServerContext* context, const ::grpc::ByteBuffer* request, ::grpc::ByteBuffer* response) { return this->NotifyMailChanged(context, request, response); }));
+    }
+    ~WithRawCallbackMethod_NotifyMailChanged() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status NotifyMailChanged(::grpc::ServerContext* /*context*/, const ::mailpb::MailChangedEvent* /*request*/, ::mailpb::MailChangedEvent* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    virtual ::grpc::ServerUnaryReactor* NotifyMailChanged(
       ::grpc::CallbackServerContext* /*context*/, const ::grpc::ByteBuffer* /*request*/, ::grpc::ByteBuffer* /*response*/)  { return nullptr; }
   };
   template <class BaseClass>
@@ -914,66 +911,12 @@ class ClientPlayerMail final {
     virtual ::grpc::Status StreamedReadMail(::grpc::ServerContext* context, ::grpc::ServerUnaryStreamer< ::mailpb::ReadMailRequest,::mailpb::ReadMailResponse>* server_unary_streamer) = 0;
   };
   template <class BaseClass>
-  class WithStreamedUnaryMethod_DeleteMails : public BaseClass {
-   private:
-    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
-   public:
-    WithStreamedUnaryMethod_DeleteMails() {
-      ::grpc::Service::MarkMethodStreamed(2,
-        new ::grpc::internal::StreamedUnaryHandler<
-          ::mailpb::DeleteMailsRequest, ::mailpb::DeleteMailsResponse>(
-            [this](::grpc::ServerContext* context,
-                   ::grpc::ServerUnaryStreamer<
-                     ::mailpb::DeleteMailsRequest, ::mailpb::DeleteMailsResponse>* streamer) {
-                       return this->StreamedDeleteMails(context,
-                         streamer);
-                  }));
-    }
-    ~WithStreamedUnaryMethod_DeleteMails() override {
-      BaseClassMustBeDerivedFromService(this);
-    }
-    // disable regular version of this method
-    ::grpc::Status DeleteMails(::grpc::ServerContext* /*context*/, const ::mailpb::DeleteMailsRequest* /*request*/, ::mailpb::DeleteMailsResponse* /*response*/) override {
-      abort();
-      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
-    }
-    // replace default version of method with streamed unary
-    virtual ::grpc::Status StreamedDeleteMails(::grpc::ServerContext* context, ::grpc::ServerUnaryStreamer< ::mailpb::DeleteMailsRequest,::mailpb::DeleteMailsResponse>* server_unary_streamer) = 0;
-  };
-  template <class BaseClass>
-  class WithStreamedUnaryMethod_DeleteReadMails : public BaseClass {
-   private:
-    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
-   public:
-    WithStreamedUnaryMethod_DeleteReadMails() {
-      ::grpc::Service::MarkMethodStreamed(3,
-        new ::grpc::internal::StreamedUnaryHandler<
-          ::mailpb::DeleteReadMailsRequest, ::mailpb::DeleteReadMailsResponse>(
-            [this](::grpc::ServerContext* context,
-                   ::grpc::ServerUnaryStreamer<
-                     ::mailpb::DeleteReadMailsRequest, ::mailpb::DeleteReadMailsResponse>* streamer) {
-                       return this->StreamedDeleteReadMails(context,
-                         streamer);
-                  }));
-    }
-    ~WithStreamedUnaryMethod_DeleteReadMails() override {
-      BaseClassMustBeDerivedFromService(this);
-    }
-    // disable regular version of this method
-    ::grpc::Status DeleteReadMails(::grpc::ServerContext* /*context*/, const ::mailpb::DeleteReadMailsRequest* /*request*/, ::mailpb::DeleteReadMailsResponse* /*response*/) override {
-      abort();
-      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
-    }
-    // replace default version of method with streamed unary
-    virtual ::grpc::Status StreamedDeleteReadMails(::grpc::ServerContext* context, ::grpc::ServerUnaryStreamer< ::mailpb::DeleteReadMailsRequest,::mailpb::DeleteReadMailsResponse>* server_unary_streamer) = 0;
-  };
-  template <class BaseClass>
   class WithStreamedUnaryMethod_ClaimMailAttachments : public BaseClass {
    private:
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithStreamedUnaryMethod_ClaimMailAttachments() {
-      ::grpc::Service::MarkMethodStreamed(4,
+      ::grpc::Service::MarkMethodStreamed(2,
         new ::grpc::internal::StreamedUnaryHandler<
           ::mailpb::ClaimMailAttachmentsRequest, ::mailpb::ClaimMailAttachmentsResponse>(
             [this](::grpc::ServerContext* context,
@@ -995,35 +938,89 @@ class ClientPlayerMail final {
     virtual ::grpc::Status StreamedClaimMailAttachments(::grpc::ServerContext* context, ::grpc::ServerUnaryStreamer< ::mailpb::ClaimMailAttachmentsRequest,::mailpb::ClaimMailAttachmentsResponse>* server_unary_streamer) = 0;
   };
   template <class BaseClass>
-  class WithStreamedUnaryMethod_NotifyMailEvent : public BaseClass {
+  class WithStreamedUnaryMethod_DeleteMails : public BaseClass {
    private:
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
-    WithStreamedUnaryMethod_NotifyMailEvent() {
-      ::grpc::Service::MarkMethodStreamed(5,
+    WithStreamedUnaryMethod_DeleteMails() {
+      ::grpc::Service::MarkMethodStreamed(3,
         new ::grpc::internal::StreamedUnaryHandler<
-          ::mailpb::MailEventS2C, ::Empty>(
+          ::mailpb::DeleteMailsRequest, ::mailpb::DeleteMailsResponse>(
             [this](::grpc::ServerContext* context,
                    ::grpc::ServerUnaryStreamer<
-                     ::mailpb::MailEventS2C, ::Empty>* streamer) {
-                       return this->StreamedNotifyMailEvent(context,
+                     ::mailpb::DeleteMailsRequest, ::mailpb::DeleteMailsResponse>* streamer) {
+                       return this->StreamedDeleteMails(context,
                          streamer);
                   }));
     }
-    ~WithStreamedUnaryMethod_NotifyMailEvent() override {
+    ~WithStreamedUnaryMethod_DeleteMails() override {
       BaseClassMustBeDerivedFromService(this);
     }
     // disable regular version of this method
-    ::grpc::Status NotifyMailEvent(::grpc::ServerContext* /*context*/, const ::mailpb::MailEventS2C* /*request*/, ::Empty* /*response*/) override {
+    ::grpc::Status DeleteMails(::grpc::ServerContext* /*context*/, const ::mailpb::DeleteMailsRequest* /*request*/, ::mailpb::DeleteMailsResponse* /*response*/) override {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
     // replace default version of method with streamed unary
-    virtual ::grpc::Status StreamedNotifyMailEvent(::grpc::ServerContext* context, ::grpc::ServerUnaryStreamer< ::mailpb::MailEventS2C,::Empty>* server_unary_streamer) = 0;
+    virtual ::grpc::Status StreamedDeleteMails(::grpc::ServerContext* context, ::grpc::ServerUnaryStreamer< ::mailpb::DeleteMailsRequest,::mailpb::DeleteMailsResponse>* server_unary_streamer) = 0;
   };
-  typedef WithStreamedUnaryMethod_ListMails<WithStreamedUnaryMethod_ReadMail<WithStreamedUnaryMethod_DeleteMails<WithStreamedUnaryMethod_DeleteReadMails<WithStreamedUnaryMethod_ClaimMailAttachments<WithStreamedUnaryMethod_NotifyMailEvent<Service > > > > > > StreamedUnaryService;
+  template <class BaseClass>
+  class WithStreamedUnaryMethod_ClearReadMails : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithStreamedUnaryMethod_ClearReadMails() {
+      ::grpc::Service::MarkMethodStreamed(4,
+        new ::grpc::internal::StreamedUnaryHandler<
+          ::mailpb::ClearReadMailsRequest, ::mailpb::ClearReadMailsResponse>(
+            [this](::grpc::ServerContext* context,
+                   ::grpc::ServerUnaryStreamer<
+                     ::mailpb::ClearReadMailsRequest, ::mailpb::ClearReadMailsResponse>* streamer) {
+                       return this->StreamedClearReadMails(context,
+                         streamer);
+                  }));
+    }
+    ~WithStreamedUnaryMethod_ClearReadMails() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable regular version of this method
+    ::grpc::Status ClearReadMails(::grpc::ServerContext* /*context*/, const ::mailpb::ClearReadMailsRequest* /*request*/, ::mailpb::ClearReadMailsResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    // replace default version of method with streamed unary
+    virtual ::grpc::Status StreamedClearReadMails(::grpc::ServerContext* context, ::grpc::ServerUnaryStreamer< ::mailpb::ClearReadMailsRequest,::mailpb::ClearReadMailsResponse>* server_unary_streamer) = 0;
+  };
+  template <class BaseClass>
+  class WithStreamedUnaryMethod_NotifyMailChanged : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithStreamedUnaryMethod_NotifyMailChanged() {
+      ::grpc::Service::MarkMethodStreamed(5,
+        new ::grpc::internal::StreamedUnaryHandler<
+          ::mailpb::MailChangedEvent, ::mailpb::MailChangedEvent>(
+            [this](::grpc::ServerContext* context,
+                   ::grpc::ServerUnaryStreamer<
+                     ::mailpb::MailChangedEvent, ::mailpb::MailChangedEvent>* streamer) {
+                       return this->StreamedNotifyMailChanged(context,
+                         streamer);
+                  }));
+    }
+    ~WithStreamedUnaryMethod_NotifyMailChanged() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable regular version of this method
+    ::grpc::Status NotifyMailChanged(::grpc::ServerContext* /*context*/, const ::mailpb::MailChangedEvent* /*request*/, ::mailpb::MailChangedEvent* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    // replace default version of method with streamed unary
+    virtual ::grpc::Status StreamedNotifyMailChanged(::grpc::ServerContext* context, ::grpc::ServerUnaryStreamer< ::mailpb::MailChangedEvent,::mailpb::MailChangedEvent>* server_unary_streamer) = 0;
+  };
+  typedef WithStreamedUnaryMethod_ListMails<WithStreamedUnaryMethod_ReadMail<WithStreamedUnaryMethod_ClaimMailAttachments<WithStreamedUnaryMethod_DeleteMails<WithStreamedUnaryMethod_ClearReadMails<WithStreamedUnaryMethod_NotifyMailChanged<Service > > > > > > StreamedUnaryService;
   typedef Service SplitStreamedService;
-  typedef WithStreamedUnaryMethod_ListMails<WithStreamedUnaryMethod_ReadMail<WithStreamedUnaryMethod_DeleteMails<WithStreamedUnaryMethod_DeleteReadMails<WithStreamedUnaryMethod_ClaimMailAttachments<WithStreamedUnaryMethod_NotifyMailEvent<Service > > > > > > StreamedService;
+  typedef WithStreamedUnaryMethod_ListMails<WithStreamedUnaryMethod_ReadMail<WithStreamedUnaryMethod_ClaimMailAttachments<WithStreamedUnaryMethod_DeleteMails<WithStreamedUnaryMethod_ClearReadMails<WithStreamedUnaryMethod_NotifyMailChanged<Service > > > > > > StreamedService;
 };
 
 }  // namespace mailpb

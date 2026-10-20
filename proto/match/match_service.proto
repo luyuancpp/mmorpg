@@ -5,6 +5,7 @@ import "proto/db/proto_option.proto";
 import "proto/common/base/empty.proto";
 import "proto/common/base/tip.proto";
 import "proto/battle/player_battle.proto";
+import "proto/match/match_network.proto";
 
 option go_package = "match/match";
 option (OptionFileDefaultNode) = NODE_MATCH;
@@ -16,6 +17,10 @@ option (OptionFileDefaultNode) = NODE_MATCH;
 // 失败按补偿矩阵回滚(设计文档 §3.2)。
 service MatchService {
   option (OptionIsClientProtocolService) = true;
+
+  // 获取受信地域探测端点；提交端点签名回执后才允许全球排队。
+  rpc GetNetworkProbePlan(GetNetworkProbePlanRequest) returns (GetNetworkProbePlanResponse) {}
+  rpc CommitNetworkProbe(CommitNetworkProbeRequest) returns (CommitNetworkProbeResponse) {}
 
   // Player requests to join a match queue.
   rpc JoinQueue(JoinQueueRequest) returns (JoinQueueResponse) {}
@@ -78,6 +83,9 @@ message JoinQueueRequest {
   //   超过上限 = 拒绝(kMatchModeNotOpen)
   // 上限 = match 配置 PveTeamSizeByConfigId[battle_config_id],且不超过引擎每队上限 5。
   uint32 team_size = 7;
+  // 同一玩家意图重放必须复用；为空只允许未启用全球权威的开发兼容模式。
+  string request_id = 8;
+  string network_plan_id = 9;
 }
 
 message JoinQueueResponse {
@@ -91,18 +99,26 @@ message JoinQueueResponse {
 message CancelQueueRequest {
   uint64 player_id = 1;
   string queue_ticket = 2;            // Ticket to cancel
+  // 对未知结果的 Join 也能撤销；与原 Join 共用编号，服务端永久阻止该意图迟到入队。
+  string request_id = 3;
 }
 
 // ----- Queue status -----
 
 message GetQueueStatusRequest {
   uint64 player_id = 1;
+  string request_id = 2; // 查询本次 Join 的撤销提交证据；不改变当前票据身份。
 }
 
 message GetQueueStatusResponse {
   QueueState state = 1;
   uint32 estimated_wait_seconds = 2;  // Server-estimated wait time
   uint32 queued_seconds = 3;          // How long the player has been waiting
+  string queue_ticket = 4;
+  uint64 battle_id = 5;
+  uint32 selected_region = 6;
+  uint32 retry_after_ms = 7;
+  bool request_cancelled = 8; // 对上述 request_id 的 SQL 撤销墓碑已提交；NOT_QUEUED 单独不构成此证据。
 }
 
 enum QueueState {

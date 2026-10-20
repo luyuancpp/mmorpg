@@ -1,8 +1,10 @@
 package placement
 
 import (
+	"encoding/json"
 	"errors"
 	"math"
+	"strings"
 	"testing"
 )
 
@@ -263,4 +265,176 @@ func TestRouteRowShard(t *testing.T) {
 			t.Fatalf("RouteRowShard(%d) = %d, want %d", tc.id, got, tc.want)
 		}
 	}
+}
+
+// ── 就绪标记(第 1b-1 批)─────────────────────────────────────────────────────────
+
+// validReadyMarker 是一份合规的标记(各字段取边界附近的合法值:generation 32 字符、leader 带全部允许的标点)。
+func validReadyMarker() RouteReadyMarker {
+	return RouteReadyMarker{
+		V:            RouteReadyFormatVersion,
+		Generation:   "0123456789abcdef0123456789abcdef",
+		RedisRunID:   strings.Repeat("a1", 20),
+		MasterReplID: strings.Repeat("0f", 20),
+		SetAtMs:      1_760_000_000_123,
+		WatermarkMs:  1_760_000_000_000,
+		Leader:       "route_leader@pod-1.data-service:0a1b2c3d",
+	}
+}
+
+// TestRouteReadyMarkerRoundTrip:编码后解码逐字段相等、编码确定(同一份值逐字节相同,CAS 按原值比较靠它);
+// V 为 0 时按当前版本编码;JSON 里多出的未知字段解码时忽略(字段只增不改名)。
+func TestRouteReadyMarkerRoundTrip(t *testing.T) {
+	m := validReadyMarker()
+	raw, err := EncodeRouteReadyMarker(m)
+	if err != nil {
+		t.Fatalf("EncodeRouteReadyMarker: %v", err)
+	}
+	const want = `{"v":1,"generation":"0123456789abcdef0123456789abcdef",` +
+		`"redis_run_id":"a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1","master_replid":"0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f",` +
+		`"set_at_ms":1760000000123,"watermark_ms":1760000000000,"leader":"route_leader@pod-1.data-service:0a1b2c3d"}`
+	if raw != want {
+		t.Fatalf("encoded = %s\nwant      %s(字段名与顺序是读写双方的契约)", raw, want)
+	}
+	got, err := DecodeRouteReadyMarker(raw)
+	if err != nil || got != m {
+		t.Fatalf("DecodeRouteReadyMarker(%s) = (%+v, %v), want %+v", raw, got, err, m)
+	}
+
+	zeroV := m
+	zeroV.V = 0
+	if again, err := EncodeRouteReadyMarker(zeroV); err != nil || again != raw {
+		t.Fatalf("V=0 应按当前版本编码:got (%s, %v)", again, err)
+	}
+
+	withUnknown := strings.TrimSuffix(raw, "}") + `,"evicted_keys_baseline":7,"note":"x"}`
+	got, err = DecodeRouteReadyMarker(withUnknown)
+	if err != nil || got != m {
+		t.Fatalf("未知字段应被忽略:got (%+v, %v)", got, err)
+	}
+}
+
+// TestRouteReadyMarkerRejects:不合规的值一律 ErrMalformed(调用方可以按原值撤掉);v 大于当前版本是另一个错误
+// ErrRouteReadyMarkerNewerVersion(只记日志,不删也不信任),而且不是 ErrMalformed。
+func TestRouteReadyMarkerRejects(t *testing.T) {
+	// encode 在合规夹具上改一处,绕过 Encode 的校验直接编成 JSON(edit 为 nil 时就是合规值本身)。
+	encode := func(edit func(*RouteReadyMarker)) string {
+		t.Helper()
+		m := validReadyMarker()
+		if edit != nil {
+			edit(&m)
+		}
+		return marshalUnchecked(t, m)
+	}
+	malformed := []struct {
+		name string
+		raw  string
+	}{
+		{"不是JSON", "ready"},
+		{"JSON数组", `[1]`},
+		{"null", `null`},
+		{"v缺席", strings.Replace(encode(nil), `"v":1,`, "", 1)},
+		{"v为0", encode(func(m *RouteReadyMarker) { m.V = 0 })},
+		{"v为负", encode(func(m *RouteReadyMarker) { m.V = -1 })},
+		{"v不是整数", strings.Replace(encode(nil), `"v":1`, `"v":"1"`, 1)},
+		{"缺generation", encode(func(m *RouteReadyMarker) { m.Generation = "" })},
+		{"generation超长", encode(func(m *RouteReadyMarker) { m.Generation = strings.Repeat("a", 33) })},
+		{"generation大写", encode(func(m *RouteReadyMarker) { m.Generation = "ABCDEF" })},
+		{"run_id长度不对", encode(func(m *RouteReadyMarker) { m.RedisRunID = strings.Repeat("a", 39) })},
+		{"run_id非十六进制", encode(func(m *RouteReadyMarker) { m.RedisRunID = strings.Repeat("g", 40) })},
+		{"replid长度不对", encode(func(m *RouteReadyMarker) { m.MasterReplID = strings.Repeat("a", 41) })},
+		{"set_at为0", encode(func(m *RouteReadyMarker) { m.SetAtMs = 0 })},
+		{"watermark为0", encode(func(m *RouteReadyMarker) { m.WatermarkMs = 0 })},
+		{"leader为空", encode(func(m *RouteReadyMarker) { m.Leader = "" })},
+		{"leader非ASCII", encode(func(m *RouteReadyMarker) { m.Leader = "route_leader@主机:0a1b2c3d" })},
+		{"leader带空格", encode(func(m *RouteReadyMarker) { m.Leader = "route leader" })},
+		{"leader超过96字节", encode(func(m *RouteReadyMarker) { m.Leader = strings.Repeat("a", 97) })},
+		// 2026-10-18:v=1 时已知字段类型不对照旧是畸形(只有 v 更大才不校验其余字段)。
+		{"v为1而set_at不是整数", `{"v":1,"set_at_ms":"x"}`},
+	}
+	for _, tc := range malformed {
+		t.Run("畸形_"+tc.name, func(t *testing.T) {
+			_, err := DecodeRouteReadyMarker(tc.raw)
+			if !errors.Is(err, ErrMalformed) || errors.Is(err, ErrRouteReadyMarkerNewerVersion) {
+				t.Fatalf("DecodeRouteReadyMarker(%s) error = %v, want ErrMalformed", tc.raw, err)
+			}
+		})
+	}
+
+	t.Run("v大于当前版本_只认新版本不当畸形", func(t *testing.T) {
+		// 新版本的值连其余字段都可能不合本版本的规则(这里故意把 generation 写空):不校验,只报「看不懂」。
+		raw := marshalUnchecked(t, RouteReadyMarker{V: RouteReadyFormatVersion + 1})
+		_, err := DecodeRouteReadyMarker(raw)
+		if !errors.Is(err, ErrRouteReadyMarkerNewerVersion) || errors.Is(err, ErrMalformed) {
+			t.Fatalf("DecodeRouteReadyMarker(%s) error = %v, want ErrRouteReadyMarkerNewerVersion(且不是 ErrMalformed)", raw, err)
+		}
+	})
+
+	t.Run("v大于当前版本且已知字段改了类型_仍是新版本", func(t *testing.T) {
+		// 2026-10-18 修复评审:一步整体解时 json 类型错先于 v 的判断,这种值会被判成畸形、随后被 compare-and-delete 删掉。
+		raw := `{"v":2,"set_at_ms":"x"}`
+		_, err := DecodeRouteReadyMarker(raw)
+		if !errors.Is(err, ErrRouteReadyMarkerNewerVersion) || errors.Is(err, ErrMalformed) {
+			t.Fatalf("DecodeRouteReadyMarker(%s) error = %v, want ErrRouteReadyMarkerNewerVersion(且不是 ErrMalformed)", raw, err)
+		}
+	})
+
+	t.Run("编码也拒绝不合规的值", func(t *testing.T) {
+		bad := validReadyMarker()
+		bad.Leader = "route_leader@主机"
+		if _, err := EncodeRouteReadyMarker(bad); !errors.Is(err, ErrMalformed) {
+			t.Fatalf("EncodeRouteReadyMarker(非 ASCII leader) error = %v, want ErrMalformed", err)
+		}
+		bad = validReadyMarker()
+		bad.V = RouteReadyFormatVersion + 1
+		if _, err := EncodeRouteReadyMarker(bad); !errors.Is(err, ErrMalformed) {
+			t.Fatalf("EncodeRouteReadyMarker(v=%d) error = %v, want ErrMalformed(本二进制只写当前版本)", bad.V, err)
+		}
+	})
+}
+
+// TestRouteReadyScriptsShape 只钉住两个脚本的判据文本:「当前值等于读到的原值」才写 / 删,其余零写入。
+// 执行语义(miniredis 上 CAS / CAD 的命中与落空)由 data_service routetool 的用例覆盖。
+func TestRouteReadyScriptsShape(t *testing.T) {
+	for _, tc := range []struct {
+		name, script string
+		want         []string
+		forbid       []string
+	}{
+		{
+			name:   "compare-and-set",
+			script: RouteReadyCompareAndSetScript,
+			want:   []string{"redis.call('GET', KEYS[1]) == ARGV[1]", "redis.call('SET', KEYS[1], ARGV[2])", "return 1", "return 0"},
+			forbid: []string{"'DEL'", " NX", " EX", " PX"},
+		},
+		{
+			name:   "compare-and-delete",
+			script: RouteReadyCompareAndDeleteScript,
+			want:   []string{"redis.call('GET', KEYS[1]) == ARGV[1]", "redis.call('DEL', KEYS[1])", "return 1", "return 0"},
+			forbid: []string{"'SET'", "ARGV[2]"},
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			for _, w := range tc.want {
+				if !strings.Contains(tc.script, w) {
+					t.Fatalf("脚本缺少 %q:\n%s", w, tc.script)
+				}
+			}
+			for _, f := range tc.forbid {
+				if strings.Contains(tc.script, f) {
+					t.Fatalf("脚本不该出现 %q:\n%s", f, tc.script)
+				}
+			}
+		})
+	}
+}
+
+// marshalUnchecked 不经校验地把 m 编成 JSON(只给用例拼不合规的值)。
+func marshalUnchecked(t *testing.T, m RouteReadyMarker) string {
+	t.Helper()
+	b, err := json.Marshal(m)
+	if err != nil {
+		t.Fatalf("json.Marshal: %v", err)
+	}
+	return string(b)
 }

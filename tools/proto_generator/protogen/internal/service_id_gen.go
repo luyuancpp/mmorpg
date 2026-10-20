@@ -95,7 +95,7 @@ func renderServiceMetadataHeader(serviceInfo []*RPCServiceInfo, files []*descrip
 		MethodTags:    methodTags,
 	}
 
-	return utils.GlobalEngine.MustExecute("serviceMetadataHeader", serviceMetadataHeaderTemplate, data)
+	return utils.GlobalEngine.Render("serviceMetadataHeader", serviceMetadataHeaderTemplate, data)
 }
 
 // buildNodeRpcMethodTags 按方法在文件里的顺序产出 tag,并汇总去重、排序后的前向声明(输出稳定,便于 diff)。
@@ -215,7 +215,10 @@ func writeServiceIdHeadFile(serviceInfo []*RPCServiceInfo) {
 			zap.Error(err),
 		)
 	}
-	utils.WriteFileIfChanged(outputPath, []byte(content))
+	if err := utils.WriteFileIfChanged(outputPath, []byte(content)); err != nil {
+		logger.Global.Fatal("写入服务消息号头文件失败", zap.String("file_path", outputPath), zap.Error(err))
+		return
+	}
 
 	logger.Global.Info("Service ID header file generated",
 		zap.String("file_path", outputPath),

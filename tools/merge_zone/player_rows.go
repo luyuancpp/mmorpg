@@ -689,7 +689,23 @@ var defaultCacheMsgTypes = []string{
 	"MailAllData",
 }
 
-// playerCacheKeys 列出一名玩家在**共享 DB 0**上的全部缓存键。
+// assetSQLCommitKey 是 go/db 发布的资产 SQL 提交证据键(docs/design/db-write-fencing-mysql.md §6.6)。
+// 格式必须与 go/shared/assetop.SQLCommitKey 逐字一致:本模块不依赖 shared,只能抄一份,单测钉住字面量。
+//
+// 它不是缓存(不设 TTL,资产通道据此确认「这笔资产结局已随玩家行提交进 MySQL」),但同样在共享 DB 0、
+// 同样不带 zone:合服 / 撤销改了玩家归属之后,旧证据可能指向另一个库里的提交,读侧也可能换到别的集群。
+// 删掉之后证据缺失,资产待办等玩家下一次存盘重新发布,方向安全(只会多等,不会误终结)。
+func assetSQLCommitKey(pidStr string) string {
+	return "player:{" + pidStr + "}:asset_sql_commit"
+}
+
+// 与 go/shared/savebarrier.Key 镜像；不保留可能指向回档前 SQL 的 ACK。
+func playerSaveBarrierKey(pidStr string) string {
+	return "player:{" + pidStr + "}:save_barrier"
+}
+
+// playerCacheKeys 列出一名玩家在**共享 DB 0**上合服 / 撤销时必须删掉的全部键:login / go/db 的缓存键,
+// 加上资产 SQL 提交证据键(assetSQLCommitKey)。
 // tables 传入实际发现的玩家表名(它们同时也是 MsgType),这样以后 proto
 // 加表时缓存失效自动跟上,不需要再改这里。
 func playerCacheKeys(pid uint64, tables []string) []string {
@@ -697,7 +713,7 @@ func playerCacheKeys(pid uint64, tables []string) []string {
 	names := make([]string, 0, len(defaultCacheMsgTypes)+len(tables))
 	names = append(names, defaultCacheMsgTypes...)
 	names = append(names, tables...)
-	out := make([]string, 0, len(names))
+	out := make([]string, 0, len(names)+2)
 	seen := make(map[string]struct{}, len(names))
 	for _, n := range names {
 		if _, dup := seen[n]; dup {
@@ -706,15 +722,16 @@ func playerCacheKeys(pid uint64, tables []string) []string {
 		seen[n] = struct{}{}
 		out = append(out, n+":"+pidStr)
 	}
-	return out
+	return append(out, assetSQLCommitKey(pidStr), playerSaveBarrierKey(pidStr))
 }
 
-// invalidatePlayerCaches 删掉这批玩家在 DB 0 上的 go/db + login 缓存。
+// invalidatePlayerCaches 删掉这批玩家在 DB 0 上的 go/db + login 缓存,以及资产 SQL 提交证据键。
 //
 // 为什么必须删:这些键**不带 zone**,是全服共享的一份。合服前它们装的是从
 // zone_src_db 读出来的内容;合服后玩家归属 dst,但只要键还在,login 的
 // EnsurePlayerAllDataInRedisAsync 命中缓存就直接返回,永远不会去 dst 库读。
 // 更糟的情况是 TTL 内玩家的存盘先落到 dst 库,再被这份旧缓存覆盖回去。
+// 证据键的理由见 assetSQLCommitKey。
 func invalidatePlayerCaches(
 	ctx context.Context,
 	rdb *redis.Client,
@@ -727,7 +744,7 @@ func invalidatePlayerCaches(
 	}
 	deleted := 0
 	for _, batch := range chunkUint64(ids, 200) {
-		keys := make([]string, 0, len(batch)*(len(defaultCacheMsgTypes)+len(tables)))
+		keys := make([]string, 0, len(batch)*(len(defaultCacheMsgTypes)+len(tables)+2)) // +2:资产 SQL 提交证据与父快照屏障
 		for _, pid := range batch {
 			keys = append(keys, playerCacheKeys(pid, tables)...)
 		}

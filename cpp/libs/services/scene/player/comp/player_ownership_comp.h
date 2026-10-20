@@ -212,3 +212,32 @@ struct PlayerSceneChangeInFlightComp
 	bool playerRequested{true};
 	uint64_t correlationId{0};
 };
+
+// 本节点替在线玩家发出、还没完成的镜像 CreateScene(EnterSceneC2S 的镜像分支:先建镜像,再按回来的
+// scene_id 自动进场)。
+//
+// 为什么需要:建镜像这一段 EnterScene 还没发,玩家身上没有 PlayerSceneChangeInFlightComp。不登记的话
+// IsSceneChangeBusy 看不见它,这期间的客户端换图、跨 zone 传送、队伍跟随都会放行,与随后的自动进场
+// 同时在途(client-request-ordering.md §7.2 第 7 条)。
+//
+// 为什么不复用 PlayerSceneChangeInFlightComp:那个槽记的是一条已经发出的 EnterScene(目标场景 + 关联号),
+// EnterScene 应答按它分类(enter_scene_reply::Classify)。建镜像时既没有目标 scene_id,也没有 EnterScene
+// 关联号;塞进那个槽,旧版 scene_manager 不回显号的 EnterScene 应答会按 player_id 把它当普通换图收尾,
+// 退出链也会把它误判成"可能还有 EnterScene 应答要来"。两个组件由 IsSceneChangeBusy 一起判,对调用方仍是
+// "同一玩家同时只有一件换图在途"。
+//
+// 按需状态(ecs-component-access-rules.md):只由 PlayerSceneSystem::RequestEnterMirrorScene 在发出之前创建;
+// 由该次调用的完成回调 PlayerSceneSystem::HandleMirrorCreateDone 按 token 认领并摘除。生成的 gRPC 客户端
+// 保证每次调用的完成回调恰好一次(成功 / 业务失败 / 传输失败都会到);完成通知永远不来时,靠 sentAtMs 的
+// TTL 自然失效,TTL 与普通换图取同一个值(SceneManager 的 gRPC deadline + 1s)。完成认领还要复核同一
+// TTL:令牌匹配但已过期或 UTC 回拨,摘掉本槽后直接丢弃,不得给后来的换图推提示或自动进旧镜像。
+//
+// 普通换图/交接/退出提交、权威落点成功时也摘本组件:后来的意图永久取代旧镜像,不能只依赖可恢复的墙钟 TTL。
+// token  本次建镜像的令牌(本线程单调递增,恒非 0)。完成回调按它认领,对不上说明已被顶替或实体已重建,丢弃。
+struct PlayerMirrorCreateInFlightComp
+{
+	uint64_t token{0};
+	uint64_t sentAtMs{0};
+	uint32_t mirrorConfigId{0};
+	uint64_t sourceSceneId{0};
+};

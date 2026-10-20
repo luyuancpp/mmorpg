@@ -154,16 +154,16 @@ db_task_stage_seconds_count{op="read",stage="task_total"} 2
 # TYPE db_task_redis_step_seconds histogram
 db_task_redis_step_seconds_sum{op="read",step="cache_set"} 0.009
 db_task_redis_step_seconds_count{op="read",step="cache_set"} 1
-db_task_redis_step_seconds_sum{op="write",step="cache_set"} 0.00096
-db_task_redis_step_seconds_count{op="write",step="cache_set"} 2
+db_task_redis_step_seconds_sum{op="write",step="cache_publish"} 0.00096
+db_task_redis_step_seconds_count{op="write",step="cache_publish"} 2
 db_task_redis_step_seconds_sum{op="write",step="cursor_get"} 0.00024
 db_task_redis_step_seconds_count{op="write",step="cursor_get"} 2
-db_task_redis_step_seconds_sum{op="write",step="cursor_set"} 0.00038
-db_task_redis_step_seconds_count{op="write",step="cursor_set"} 2
+db_task_redis_step_seconds_sum{op="write",step="applied_advance"} 0.00088
+db_task_redis_step_seconds_count{op="write",step="applied_advance"} 2
 db_task_redis_step_seconds_sum{op="write",step="epoch_get"} 0.00026
 db_task_redis_step_seconds_count{op="write",step="epoch_get"} 2
-db_task_redis_step_seconds_sum{op="write",step="epoch_mark"} 0.0005
-db_task_redis_step_seconds_count{op="write",step="epoch_mark"} 2
+db_task_redis_step_seconds_sum{op="write",step="owner_epoch_probe"} 0.00032
+db_task_redis_step_seconds_count{op="write",step="owner_epoch_probe"} 2
 db_task_redis_step_seconds_sum{op="write",step="expand_get"} 0.0003
 db_task_redis_step_seconds_count{op="write",step="expand_get"} 2
 db_task_redis_step_seconds_sum{op="write",step="lease_verify"} 0.00054
@@ -217,8 +217,38 @@ db_retry_route_total{action="executed_nonowner",mode="shared"} 5
 db_retry_route_total{action="forwarded",mode="owner"} 11
 db_retry_route_total{action="misrouted",mode="owner"} 8
 db_retry_route_total{action="requeued_revoked",mode="owner"} 6
+# TYPE db_task_result_notify_total counter
+db_task_result_notify_total{result="error",target="instance"} 1
+db_task_result_notify_total{result="error",target="legacy_invalid"} 8
+db_task_result_notify_total{result="error",target="legacy_unset"} 4
+db_task_result_notify_total{result="no_receiver",target="instance"} 2
+db_task_result_notify_total{result="no_receiver",target="legacy_invalid"} 7
+db_task_result_notify_total{result="no_receiver",target="legacy_unset"} 3
+db_task_result_notify_total{result="ok",target="instance"} 40
+db_task_result_notify_total{result="ok",target="legacy_invalid"} 5
+db_task_result_notify_total{result="ok",target="legacy_unset"} 6
 "@
 Set-Content -Path (Join-Path $snapDirForTest "t20m_db.txt") -Value $fakeDbSnapshotR20 -Encoding utf8
+
+# 1d. 读回执通知分频道(2026-10-18,B0-3 第 2 批)的 db_task_result_notify_total{target,result}。
+#     - t20m_db(上面)的 9 条取值互不相同(列串位即红):instance 40 / 2 / 1,legacy_unset 6 / 3 / 4,
+#       legacy_invalid 5 / 7 / 8;inst_nr% = 2 / 43 = 4.7%,legacy% = (6+3+4+5+7+8) / 76 = 33 / 76 = 43.4%。
+#     - t2m_db 是刚启动、还没有任何读回执的新版 db:9 条预置为 0 → 计数列全 0,两个比例的分母为 0 → "-"(不是 0.0%)。
+#     - t18m_db 是旧版 db:没有这个指标 → 全部 n/a。
+#     取值都小于 1000:Format-CountCell 用 N0,千分位分隔符随区域设置变。
+$fakeDbSnapshotNotifyIdle = @"
+# TYPE db_task_result_notify_total counter
+db_task_result_notify_total{result="error",target="instance"} 0
+db_task_result_notify_total{result="error",target="legacy_invalid"} 0
+db_task_result_notify_total{result="error",target="legacy_unset"} 0
+db_task_result_notify_total{result="no_receiver",target="instance"} 0
+db_task_result_notify_total{result="no_receiver",target="legacy_invalid"} 0
+db_task_result_notify_total{result="no_receiver",target="legacy_unset"} 0
+db_task_result_notify_total{result="ok",target="instance"} 0
+db_task_result_notify_total{result="ok",target="legacy_invalid"} 0
+db_task_result_notify_total{result="ok",target="legacy_unset"} 0
+"@
+Set-Content -Path (Join-Path $snapDirForTest "t2m_db.txt") -Value $fakeDbSnapshotNotifyIdle -Encoding utf8
 
 # 2. The dirty-save scan walks run/logs/cpp_nodes under the *real*
 #    repo root (not RunDir) — that's the production layout. We back up
@@ -439,17 +469,18 @@ Assert-SectionRow -Lines $outputLines -SectionMarker 'DB write path' -SnapshotNa
     -Pattern '^\s*t18m_db\s+n/a\s+n/a\s+n/a\s+n/a\s+\|\s+n/a\s+n/a\s+\|\s+n/a\s+\|\s+n/a\s+n/a\s+n/a\s+\|\s+n/a\s+n/a\s*$' `
     -Reason "a pre-Round-20 db snapshot must print n/a, not 0"
 
-# 2e DB Redis steps:11 个 step 按 go/db/internal/metrics/pipeline.go RedisSteps 的顺序,最后一列是均值之和。
+# 2e DB Redis steps:12 个 step 按 go/db/internal/metrics/pipeline.go RedisSteps 的顺序,最后一列是均值之和。
 Assert-HeaderMatches -Lines $outputLines `
-    -Pattern 'lock_acq\s+cur_get\s+ep_get\s+plc_lkp\s+exp_get\s+plc_rck\s+verify\s+cache\s+cur_set\s+ep_mark\s+lock_rel\s+sum\s*$' `
-    -Reason "DB Redis steps table must list the 11 steps in write-path order plus sum"
-# t20m:0.21 0.12 0.13 0.34 0.15 0.36 0.27 0.48 0.19 0.25 0.11,合计 2.61(ms)。cache 列是 0.48 而不是混进读任务的 9ms。
+    -Pattern 'lock_acq\s+cur_get\s+ep_get\s+owner_ep\s+plc_lkp\s+exp_get\s+plc_rck\s+verify\s+publish\s+cache_nx\s+advance\s+lock_rel\s+sum\s*$' `
+    -Reason "DB Redis steps table must list the 12 steps in write-path order plus sum"
+# t20m:0.21 0.12 0.13 0.16 0.34 0.15 0.36 0.27 0.48 n/a 0.44 0.11,合计 2.77(ms)。
+# cache_nx 只有读任务的 9ms,本表仍须 n/a;publish 不能读成旧 cache_set 列。
 Assert-SectionRow -Lines $outputLines -SectionMarker 'DB Redis steps' -SnapshotName 't20m_db' `
-    -Pattern '^\s*t20m_db\s+0\.21ms\s+0\.12ms\s+0\.13ms\s+0\.34ms\s+0\.15ms\s+0\.36ms\s+0\.27ms\s+0\.48ms\s+0\.19ms\s+0\.25ms\s+0\.11ms\s+2\.61ms\s*$' `
+    -Pattern '^\s*t20m_db\s+0\.21ms\s+0\.12ms\s+0\.13ms\s+0\.16ms\s+0\.34ms\s+0\.15ms\s+0\.36ms\s+0\.27ms\s+0\.48ms\s+n/a\s+0\.44ms\s+0\.11ms\s+2\.77ms\s*$' `
     -Reason "each write-path Redis step avg must sit in its RedisSteps column and sum must add them up"
 Assert-SectionRow -Lines $outputLines -SectionMarker 'DB Redis steps' -SnapshotName 't18m_db' `
-    -Pattern '^\s*t18m_db(\s+n/a){12}\s*$' `
-    -Reason "a pre-Round-20 db snapshot must print n/a for all 11 steps and the sum"
+    -Pattern '^\s*t18m_db(\s+n/a){13}\s*$' `
+    -Reason "a pre-Round-20 db snapshot must print n/a for all 12 steps and the sum"
 
 # 2f DB retry routing(S1 的 db_retry_* 列由 S4 测量批输出)。
 Assert-HeaderMatches -Lines $outputLines `
@@ -463,6 +494,23 @@ Assert-SectionRow -Lines $outputLines -SectionMarker 'DB retry routing' -Snapsho
 Assert-SectionRow -Lines $outputLines -SectionMarker 'DB retry routing' -SnapshotName 't18m_db' `
     -Pattern '^\s*t18m_db\s+n/a\s+\|\s+2\s+n/a\s+0\s+1\s+\|\s+n/a\s+n/a\s+n/a\s+n/a\s+n/a\s+n/a\s*$' `
     -Reason "an older db without retry routing must print n/a for the new series and real values for the old ones"
+
+# 2g DB task:result notify(B0-3 第 2 批):target 按 instance / legacy_unset / legacy_invalid 分三组,组内 ok / no_receiver / error。
+Assert-HeaderMatches -Lines $outputLines `
+    -Pattern 'inst_ok\s+inst_nr\s+inst_err\s+\|\s+unset_ok\s+unset_nr\s+unset_err\s+\|\s+inval_ok\s+inval_nr\s+inval_err\s+\|\s+inst_nr%\s+legacy%\s*$' `
+    -Reason "DB task:result notify table must keep its column order"
+# t20m:9 个计数各在自己的列;inst_nr% = 2/43 = 4.7%(分母只取 instance),legacy% = 33/76 = 43.4%(分母是全部通知)。
+Assert-SectionRow -Lines $outputLines -SectionMarker 'DB task:result notify' -SnapshotName 't20m_db' `
+    -Pattern '^\s*t20m_db\s+40\s+2\s+1\s+\|\s+6\s+3\s+4\s+\|\s+5\s+7\s+8\s+\|\s+4\.7%\s+43\.4%\s*$' `
+    -Reason "each target x result counter must land in its own column and the two ratios must use their own denominators"
+# t2m(新版 db,还没有读回执):预置的 0 照常打印 0,两个比例分母为 0 → "-"。
+Assert-SectionRow -Lines $outputLines -SectionMarker 'DB task:result notify' -SnapshotName 't2m_db' `
+    -Pattern '^\s*t2m_db(\s+0){3}\s+\|(\s+0){3}\s+\|(\s+0){3}\s+\|\s+-\s+-\s*$' `
+    -Reason "pre-created zero series must print 0 and ratios with a zero denominator must print -"
+# t18m(旧版 db):没有这个指标 → 全部 n/a,不能折成 0。
+Assert-SectionRow -Lines $outputLines -SectionMarker 'DB task:result notify' -SnapshotName 't18m_db' `
+    -Pattern '^\s*t18m_db(\s+n/a){3}\s+\|(\s+n/a){3}\s+\|(\s+n/a){3}\s+\|\s+n/a\s+n/a\s*$' `
+    -Reason "a db snapshot without db_task_result_notify_total must print n/a, not 0"
 
 # ── Cleanup ─────────────────────────────────────────────────────────────
 

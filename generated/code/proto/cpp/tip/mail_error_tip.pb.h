@@ -63,14 +63,17 @@ internal::EnumTraitsT<::mail_error_internal_data_>
 
 enum mail_error : int {
   kMail_errorOK = 0,
-  kMailClaimNotOpen = 17000,
-  kMailNotFound = 17001,
-  kMailExpired = 17002,
-  kMailRecipientBoxFull = 17003,
-  kMailAttachmentNotOpen = 17004,
-  kMailAttachmentInvalid = 17005,
-  kMailRequestConflict = 17006,
-  kMailSystemMailLimit = 17007,
+  kMailNotFound = 17000,
+  kMailExpired = 17001,
+  kMailRecipientBoxFull = 17002,
+  kMailAttachmentInvalid = 17003,
+  kMailRequestConflict = 17004,
+  kMailSystemMailLimit = 17005,
+  kMailClaimPending = 17006,
+  kMailClaimManual = 17007,
+  kMailAttachmentProtected = 17008,
+  kMailClaimNotOpen = 17009,
+  kMailAttachmentNotOpen = 17010,
   mail_error_INT_MIN_SENTINEL_DO_NOT_USE_ =
       ::std::numeric_limits<::int32_t>::min(),
   mail_error_INT_MAX_SENTINEL_DO_NOT_USE_ =
@@ -81,11 +84,11 @@ extern const uint32_t mail_error_internal_data_[];
 inline constexpr mail_error mail_error_MIN =
     static_cast<mail_error>(0);
 inline constexpr mail_error mail_error_MAX =
-    static_cast<mail_error>(17007);
+    static_cast<mail_error>(17010);
 [[nodiscard]] inline bool mail_error_IsValid(int value) {
   return ::google::protobuf::internal::ValidateEnum(value, mail_error_internal_data_);
 }
-inline constexpr int mail_error_ARRAYSIZE = 17007 + 1;
+inline constexpr int mail_error_ARRAYSIZE = 17010 + 1;
 [[nodiscard]] const ::google::protobuf::EnumDescriptor* PROTOBUF_NONNULL
 mail_error_descriptor();
 [[nodiscard]] inline auto ProtobufInternalGetEnumDescriptor(mail_error) {

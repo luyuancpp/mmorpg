@@ -9,6 +9,11 @@
 //
 // Reset() is invoked when a node leaves the cluster so stale label sets do not
 // linger forever.
+//
+// 2026-10-16 起每节点 gauge(node_player_count / node_scene_count / node_load_score)只由领导者导出:
+// 负载分刷新只在领导者上做(internal/logic/load_refresh.go),跟随者每拍 ResetNodeSeries。切主时这些序列
+// 从一个 pod 换到另一个 pod,中间最多空缺约一个锁 TTL 加一拍。nodes_by_role 由领导者发布全部 zone、
+// 跟随者只发布本进程 ZoneId(见 SetNodesByRole)。
 package metrics
 
 import (
@@ -50,11 +55,11 @@ var (
 		Help:      "Composite load score used for scheduling (lower = more attractive).",
 	}, []string{"node_id", "zone_id", "role"})
 
-	// nodesByRole:补 0 规则见 SetNodesByRole 的注释(告警 SceneManager*PoolEmpty 依赖它)。
+	// nodesByRole:补 0 规则与发布者语义见 SetNodesByRole 的注释(告警 SceneManager*PoolEmpty 依赖它)。
 	nodesByRole = prometheus.NewGaugeVec(prometheus.GaugeOpts{
 		Subsystem: subsystem,
 		Name:      "nodes_by_role",
-		Help:      "Count of live scene nodes per zone and declared role. Every declared role of every zone with live nodes, plus this instance's configured ZoneId, is published (0 when empty).",
+		Help:      "Count of live scene nodes per zone and declared role. The leader publishes every zone in its etcd mirror; followers publish only their configured ZoneId. Every declared role of each published zone, plus this instance's configured ZoneId, is published (0 when empty).",
 	}, []string{"zone_id", "role"})
 
 	// isLeaderGauge:1 = 本副本是变更类后台循环的领导者,0 = 跟随者。
@@ -120,14 +125,66 @@ var (
 	// channel_* 五种 = 玩家主动选线的预检拒绝(internal/logic/channel_pick.go,world-channel-switch.md §4.4),
 	// 只有带 client_channel_pick 的请求会发出,zone_id 是目标 zone。它们是玩家操作触发的业务拒绝,
 	// 有稳定的低速率属正常(channel_switch_cooldown / channel_full 尤其如此),不要按「> 0」告警。
+	// session_stale / session_conflict = 落点会话身份裁决拒绝(私有码 25,scene-enter-chain-residuals.md §5.2):
+	// 请求代表的登录已被 location 记的更新登录取代 / 代次相等而会话不同(违反 G2)。判定发生在目标 zone 解析
+	// 完成之前,zone_id 取请求已知的目标 zone,未知时取 gate zone。session_stale 在顶号竞态下偶发属正常;
+	// session_conflict 应恒 0。
+	// epoch_conflict 除并发推进 epoch 之外,还包括落点 Lua 发现 location 原文在观察之后被改写或删除。
 	enterSceneRejectedTotal = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Subsystem: subsystem,
 		Name:      "enter_scene_rejected_total",
 		// reason 取值必须与 enterscenelogic.go / home_zone.go / channel_pick.go 里实际传入的字面量一致;
 		// 旧的 unsafe_handoff / handoff_pending 已无调用点(换手门拒绝细分成了
 		// no_marker / stale_marker / withdrawn 三种),按旧名配的告警会恒为空而不报错。
-		Help: "EnterScene rejections by reason (handoff_pending_no_marker|handoff_pending_stale_marker|handoff_pending_withdrawn|epoch_conflict|home_zone_unavailable|home_zone_unmapped_travel|home_zone_merging|travel_map_unavailable|pending_map_fallback|scene_gone|channel_closing|channel_conf_mismatch|channel_switch_disabled|channel_full|channel_switch_cooldown).",
+		Help: "EnterScene rejections by reason (handoff_pending_no_marker|handoff_pending_stale_marker|handoff_pending_withdrawn|epoch_conflict|home_zone_unavailable|home_zone_unmapped_travel|home_zone_merging|travel_map_unavailable|pending_map_fallback|scene_gone|channel_closing|channel_conf_mismatch|channel_switch_disabled|channel_full|channel_switch_cooldown|session_stale|session_conflict).",
 	}, []string{"zone_id", "reason"})
+
+	// placementIdentityTotal 统计落点会话身份的每一次裁决(docs/design/scene-enter-chain-residuals.md §3.3):
+	//   site=enter  EnterScene 入口的 decidePlacementIdentity,verdict ∈ fresh|same_session|legacy|newer|stale|conflict;
+	//               跨节点换图的第一跳拿 18 之后重发,同一次换图会裁决两次。
+	//   site=leave  LeaveScene 的 decideLeaveIdentity,verdict ∈ legacy|keep_newer|keep_conflict|deleted。
+	// 读数:
+	//   - legacy 在全部组件升级之后应趋近 0,持续非 0 = 还有旧版 login / scene / scene_manager 副本在发无身份的请求;
+	//   - leave/keep_newer 是 b1–b4 的合法拦截(迟到的 LeaveScene 遇到更新的登录),有低速率属正常;按**速率阈值**
+	//     告警,不按出现即告警。速率异常升高说明「会话记录代次 ≥ 本会话写进 location 的代次」这个前提被打破
+	//     (违反发布顺序、混版 player_locator 副本),location 可能永久泄漏(§3.8)。告警表达式取
+	//     rate(scene_manager_placement_identity_total{site="leave",verdict="keep_newer"}[5m]) 超过基线阈值,
+	//     规则落在 deploy/k8s/scene-manager-alerts.yaml(阈值需要上线后的基线,尚未配置);
+	//   - keep_conflict / enter conflict 应恒 0,出现即 G2 被破坏,看同期的 Error 日志。
+	// 只按 site 与 verdict 分,player_id / session_id / 代次一律只进日志。
+	placementIdentityTotal = prometheus.NewCounterVec(prometheus.CounterOpts{
+		Subsystem: subsystem,
+		Name:      "placement_identity_total",
+		Help:      "Placement session-identity verdicts by site (enter|leave) and verdict (enter: fresh|same_session|legacy|newer|stale|conflict; leave: legacy|keep_newer|keep_conflict|deleted).",
+	}, []string{"site", "verdict"})
+
+	// leaveHolderReleaseTotal 统计 LeaveScene 在离场身份判为可删之后、删 location 之前的「持有者已释放」判定
+	// (docs/design/location-release-binding.md §3.2)。verdict 取 internal/logic/leave_release.go 的名表:
+	//   released / owner_dead / no_holder        拿到释放证据,删 location
+	//   legacy_epoch0 / disabled                 例外,按旧行为删(epoch 未铸造 / 功能关闭或 dev 旁路)
+	//   pending / pending_unproven               没拿到证据,保留 location、回可重试错误;登出 / 断线后的正常短暂态
+	//   forced                                   等满上限仍没拿到证据,按旧行为删除(接受回档风险)。应恒 0,出现即查
+	// 只按 verdict 分,player_id / 节点号 / epoch 一律只进日志。
+	leaveHolderReleaseTotal = prometheus.NewCounterVec(prometheus.CounterOpts{
+		Subsystem: subsystem,
+		Name:      "leave_holder_release_total",
+		Help:      "LeaveScene holder-release verdicts before deleting a player location (released|owner_dead|no_holder|legacy_epoch0|disabled|pending|pending_unproven|forced).",
+	}, []string{"verdict"})
+
+	// enterHolderReleaseTotal 统计 EnterScene 同 zone 跨节点换手门以 18 拒绝之后,要不要替这次登录请持有节点释放
+	// (docs/design/location-release-binding.md §12)。verdict 取 internal/logic/enter_holder_release.go 的名表:
+	//   delivered / failed                        登录撞上未释放的持有者,已同步请它释放(持有节点应答 / RPC 失败或超时)
+	//   not_login                                 scene 自发的请求(换图第一跳等),18 的常规来源,不请
+	//   identity_not_newer                        登录请求但落点身份不是严格更新(同会话 / 任一侧无代次),只等不请
+	//   legacy_epoch0 / holder_unaddressable      epoch 未铸造 / location 寻址不到唯一持有节点,不请
+	//   chain_gone                                发起的登录链已结束(超时 / 丢锁),不请
+	//   disabled                                  持有者释放协议关着(与 LeaveScene 同一开关)
+	// failed 持续非 0 = 持有节点不可达或过慢;只按 verdict 分,player_id / 节点号 / epoch 一律只进日志。
+	enterHolderReleaseTotal = prometheus.NewCounterVec(prometheus.CounterOpts{
+		Subsystem: subsystem,
+		Name:      "enter_holder_release_total",
+		Help:      "EnterScene holder-release requests after a cross-node handoff-gate rejection (delivered|failed|not_login|identity_not_newer|legacy_epoch0|holder_unaddressable|chain_gone|disabled).",
+	}, []string{"verdict"})
 
 	// homeZoneLookupTotal 统计 EnterScene 里每一次归属 zone 查询的结果:
 	//   mapped        data_service 给出了归属 zone
@@ -350,6 +407,45 @@ var (
 		Help:      "World channel directory publish attempts (one per world map per round) by outcome (ok|empty|error).",
 	}, []string{"zone_id", "outcome"})
 
+	// loadRefreshTotal:领导者负载分刷新(internal/logic/load_refresh.go)每拍一次的结果,outcome 取
+	// LoadRefreshOutcome* 常量:
+	//   ok               全部节点读写成功
+	//   partial          有节点计数读不到,但只是个别键的问题(逐条回复错误如 WRONGTYPE、值是空串或非数字):
+	//                    在负载集里的保留旧分,不在的以哨兵分加入,其余照常写;不论批多大、节点多少都记这个。
+	//                    读失败的节点数见 load_refresh_node_errors_total
+	//   read_failed      至少一批读遇到传输层失败(熔断拒绝 / 取连接 / 网络 / 超时),受影响的节点本拍不更新分数。
+	//                    只按错误类型判,与批怎么切无关(internal/logic/load_refresh.go pipelineHitTransportError)
+	//   registry_failed  zone 登记集合 scene_manager:zones 写失败(负载集照常写)
+	//   write_failed     写批(类型镜像 / ZADD)有命令失败,或整批没执行
+	//   lost_leadership  刷新途中失去领导权,剩余写入放弃(新领导者下一拍接上)
+	// 同时出现多种时按 write_failed > read_failed > registry_failed > lost_leadership > partial 取一个。
+	// 只有领导者发出;watch PUT 触发的单节点刷新不计入。所有 outcome 在注册时预置为 0:increase() 看不到
+	// 序列从「不存在」到 1 的第一次跳变,「刷新停摆」告警也要靠预置的 0 序列区分「没人在刷」与「指标不存在」。
+	// 告警见 deploy/k8s/scene-manager-alerts.yaml SceneManagerLoadRefreshStalled / Failing / Slow / NodeErrors。
+	// 只按 outcome 分,不带 zone_id / node_id。
+	loadRefreshTotal = prometheus.NewCounterVec(prometheus.CounterOpts{
+		Subsystem: subsystem,
+		Name:      "load_refresh_total",
+		Help:      "Leader load-score refresh ticks by outcome (ok|partial|read_failed|registry_failed|write_failed|lost_leadership).",
+	}, []string{"outcome"})
+
+	// loadRefreshSeconds:一拍领导者刷新的墙钟耗时(登记 SADD + 分批 pipeline 读 + 分批 pipeline 写)。
+	// 不带 label。拍长是 5s,接近它说明刷新开始挤占 load reporter 的 goroutine(watch / 推迟摘除同在其上)。
+	loadRefreshSeconds = prometheus.NewHistogram(prometheus.HistogramOpts{
+		Subsystem: subsystem,
+		Name:      "load_refresh_duration_seconds",
+		Help:      "Wall time of one leader load-score refresh tick (zone registry SADD + pipelined counter reads + pipelined writes).",
+		Buckets:   []float64{.01, .05, .1, .25, .5, 1, 2, 5},
+	})
+
+	// loadRefreshNodeErrorsTotal:每拍刷新里计数读失败的节点数之和(不带 label,不按节点分)。
+	// 读不到的节点不更新每节点 gauge(停在上一次成功的值),不在负载集里的还一直挂着哨兵分、选点排最后;
+	// 个别键坏掉只记 outcome=partial,所以「持续读不到」靠告警 SceneManagerLoadRefreshNodeErrors 盯本计数器。
+	loadRefreshNodeErrorsTotal = prometheus.NewCounter(prometheus.CounterOpts{
+		Subsystem: subsystem,
+		Name:      "load_refresh_node_errors_total",
+		Help:      "Scene nodes whose load counters could not be read during a leader load refresh (score kept, or added with the unknown-load sentinel).",
+	})
 	// mysteryMerchantScheduleTotal:神秘商人调度循环(internal/logic/mystery_merchant.go,
 	// mystery-merchant.md §4)对**每个 zone、每一拍**的结果。只有领导者会发出。
 	// outcome 取 MerchantSchedule* 常量:
@@ -404,9 +500,57 @@ func register() {
 			homeZoneLookupTotal,
 			nodeDetachDeferredTotal,
 			worldChannelDirectoryPublishTotal,
+			placementIdentityTotal,
+			leaveHolderReleaseTotal,
+			enterHolderReleaseTotal,
+			loadRefreshTotal, loadRefreshSeconds, loadRefreshNodeErrorsTotal,
 			mysteryMerchantScheduleTotal,
 		)
+		for _, outcome := range loadRefreshOutcomes {
+			loadRefreshTotal.WithLabelValues(outcome).Add(0)
+		}
 	})
+}
+
+// load_refresh_total 的 outcome 标签取值。**必须是常量**:它们直接变成 Prometheus label。
+const (
+	LoadRefreshOutcomeOK             = "ok"
+	LoadRefreshOutcomePartial        = "partial"
+	LoadRefreshOutcomeReadFailed     = "read_failed"
+	LoadRefreshOutcomeRegistryFailed = "registry_failed"
+	LoadRefreshOutcomeWriteFailed    = "write_failed"
+	LoadRefreshOutcomeLostLeadership = "lost_leadership"
+)
+
+// loadRefreshOutcomes 是注册时预置为 0 的全部 outcome,新增 outcome 时同步加在这里。
+var loadRefreshOutcomes = [...]string{
+	LoadRefreshOutcomeOK,
+	LoadRefreshOutcomePartial,
+	LoadRefreshOutcomeReadFailed,
+	LoadRefreshOutcomeRegistryFailed,
+	LoadRefreshOutcomeWriteFailed,
+	LoadRefreshOutcomeLostLeadership,
+}
+
+// ObserveLoadRefresh 记一拍领导者负载分刷新:结果(outcome 取 LoadRefreshOutcome*)、耗时与读失败的节点数。
+func ObserveLoadRefresh(outcome string, d time.Duration, nodeErrors int) {
+	register()
+	loadRefreshTotal.WithLabelValues(outcome).Inc()
+	loadRefreshSeconds.Observe(d.Seconds())
+	if nodeErrors > 0 {
+		loadRefreshNodeErrorsTotal.Add(float64(nodeErrors))
+	}
+}
+
+// ResetNodeSeries 清掉全部每节点 gauge 序列(node_player_count / node_scene_count / node_load_score)。
+// 这三个只由领导者导出:跟随者每拍调一次(internal/logic/load_reporter.go refreshLoadScores),降级时
+// ResetLeaderGauges 也调。两处都调,是因为 OnStateChange 与 load reporter 的刷新跑在不同 goroutine 上,
+// 降级那一刻正在跑的刷新可能在 Reset 之后又写进一批,由跟随者的下一拍清掉。
+func ResetNodeSeries() {
+	register()
+	playerCount.Reset()
+	sceneCount.Reset()
+	loadScore.Reset()
 }
 
 // world_channel_directory_publish_total 的 outcome 标签取值。**必须是常量**:它们直接变成 Prometheus label。
@@ -508,6 +652,7 @@ func ResetLeaderGauges() {
 	register()
 	agonesCounterDrift.Reset()
 	rebalancePending.Reset()
+	ResetNodeSeries()
 }
 
 // ObserveEnterSceneOwnerDeadTakeover 记一次「属主节点已死、按无持有者落点」。
@@ -552,6 +697,33 @@ func ObserveEnterSceneRollback(outcome string) {
 func ObserveEnterSceneMintReplayRecognized() {
 	register()
 	enterSceneMintReplayRecognizedTotal.Inc()
+}
+
+// placement_identity_total 的 site 标签取值。**必须是常量**:它们直接变成 Prometheus label。
+const (
+	PlacementIdentitySiteEnter = "enter"
+	PlacementIdentitySiteLeave = "leave"
+)
+
+// ObservePlacementIdentity 记一次落点会话身份裁决,见 placementIdentityTotal。site 取 PlacementIdentitySite*;
+// verdict 取 internal/logic/placement_identity.go 两张判定表的名表(固定字符串,低基数)。
+func ObservePlacementIdentity(site, verdict string) {
+	register()
+	placementIdentityTotal.WithLabelValues(site, verdict).Inc()
+}
+
+// ObserveLeaveHolderRelease 记一次 LeaveScene 的持有者释放判定,见 leaveHolderReleaseTotal。verdict 取
+// internal/logic/leave_release.go 的名表(固定字符串,低基数)。
+func ObserveLeaveHolderRelease(verdict string) {
+	register()
+	leaveHolderReleaseTotal.WithLabelValues(verdict).Inc()
+}
+
+// ObserveEnterHolderRelease 记一次 EnterScene 换手门拒绝之后的持有者释放判定或结果,见 enterHolderReleaseTotal。
+// verdict 取 internal/logic/enter_holder_release.go 的名表与 delivered / failed(固定字符串,低基数)。
+func ObserveEnterHolderRelease(verdict string) {
+	register()
+	enterHolderReleaseTotal.WithLabelValues(verdict).Inc()
 }
 
 // ObserveWorldAutoscale 记一次大世界频道扩缩容动作。
@@ -732,6 +904,8 @@ func RoleLabel(t uint32) string {
 
 // ObserveNode updates the per-node gauges. Called by LoadReporter every
 // scrape interval for every known node.
+// 2026-10-16 起只在领导者上、且只对本拍计数读成功、所在 zone 的分数 ZADD 确认写成功的节点调用
+// (internal/logic/load_refresh.go);其余节点的序列停在上一次成功的值,不删。
 func ObserveNode(nodeID string, zoneID uint32, role uint32, sceneCnt, playerCnt int64, score float64) {
 	register()
 	zoneStr := strconv.FormatUint(uint64(zoneID), 10)
@@ -775,6 +949,11 @@ var declaredSceneNodeRoles = [...]uint32{
 //   - 为什么不做 sticky zone(见过一次就永远补 0):合服下线的 zone 会让 critical 永远误报 pager,
 //     而且进程重启后记忆清空,又回到盲区 —— 两头都不对。
 //   - zone 0 跳过:不是合法 zone,单测的 config.Config{} 里 ZoneId 就是 0,补出来只会污染序列。
+//
+// 发布者(2026-10-16 起):领导者传入 etcd 镜像里全部 zone 的计数;跟随者只传本进程 ZoneId 的计数。
+// 两者都把本进程 ZoneId 作为 expectedZones 补 0。所以每个 zone 有「领导者 + 该 zone 自己的
+// scene_manager 副本」几个发布者,各自的值都来自 etcd 快照、彼此一致;看板按 max 聚合,PoolEmpty
+// 告警只做 > 0 / == 0 判定,不受发布者个数影响。
 func SetNodesByRole(counts map[struct {
 	ZoneID uint32
 	Role   uint32

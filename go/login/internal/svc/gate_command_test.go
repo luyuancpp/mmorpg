@@ -117,7 +117,7 @@ func TestGateCommandAddressingMatchesSharedVectors(t *testing.T) {
 		if err != nil {
 			t.Fatalf("%s: buildBindSessionCommand(%s): %v", c.Name, gateID, err)
 		}
-		kick, err := buildKickPlayerCommand(gateID, instanceID, 7, 1001)
+		kick, err := buildKickPlayerCommand(gateID, instanceID, 7, 1001, 1_760_000_000_000)
 		if err != nil {
 			t.Fatalf("%s: buildKickPlayerCommand(%s): %v", c.Name, gateID, err)
 		}
@@ -182,7 +182,7 @@ func TestGateCommandTargetFieldsArePopulated(t *testing.T) {
 		{
 			name: "kick",
 			build: func() (gateCommandMessage, error) {
-				return buildKickPlayerCommand(gateID, instanceID, sessionID, playerID)
+				return buildKickPlayerCommand(gateID, instanceID, sessionID, playerID, 1_760_000_000_000)
 			},
 			wantEventID:  uint32(game.ContractsKafkaKickPlayerEventEventId),
 			wantSession:  sessionID,
@@ -298,7 +298,7 @@ func TestGateCommandFailsClosed(t *testing.T) {
 				t.Errorf("SendBindSessionToGate error = %q, want it to mention %q", err, tc.wantSubstr)
 			}
 
-			err = sc.KickSessionOnGate(tc.gateID, tc.instanceID, 1, 2)
+			err = sc.KickSessionOnGate(tc.gateID, tc.instanceID, 1, 2, 3)
 			if err == nil {
 				t.Fatal("KickSessionOnGate: want error, got nil (command would be unroutable/unfilterable)")
 			}
@@ -448,11 +448,74 @@ func TestBindSessionCommandPayloadCarriesEvent(t *testing.T) {
 func TestGateCommandTopicIsRecognizedAsCommandTopic(t *testing.T) {
 	requireDefaultContract(t)
 
-	msg, err := buildKickPlayerCommand("7", "uuid-7", 1, 2)
+	msg, err := buildKickPlayerCommand("7", "uuid-7", 1, 2, 3)
 	if err != nil {
 		t.Fatalf("build: %v", err)
 	}
 	if !kafkacmd.IsCommandTopic(msg.Topic) {
 		t.Fatalf("IsCommandTopic(%q) = false; the producer would hash-partition this command", msg.Topic)
+	}
+}
+
+// TestKickPlayerCommandPayloadCarriesEvent 拆开 Kick 的 payload:必须能解成 KickPlayerEvent,三个业务字段齐全
+// (docs/design/scene-enter-chain-residuals.md §2.2 ③)。
+//
+// 踢线者代次只能经 payload 到 gate:payload 为空时 gate 的信封路径只拼得出 session_id / player_id,
+// ClassifyKick 拿不到代次,同连接更新的登录会被旧踢线误踢。player_id 丢了则退化成按 session_id 踢,
+// 会踢到复用同号的别的玩家。信封字段同时保持不变:分区 key 取自信封 PlayerId,消费端读信封上的目标字段。
+func TestKickPlayerCommandPayloadCarriesEvent(t *testing.T) {
+	requireDefaultContract(t)
+
+	const (
+		gateID          = "300"
+		instanceID      = "b0a1-uuid"
+		sessionID       = uint32(4242)
+		playerID        = uint64(90001)
+		loginGeneration = uint64(1_760_000_000_456)
+	)
+
+	msg, err := buildKickPlayerCommand(gateID, instanceID, sessionID, playerID, loginGeneration)
+	if err != nil {
+		t.Fatalf("build: %v", err)
+	}
+
+	var cmd kafkapb.GateCommand
+	if err := proto.Unmarshal(msg.Payload, &cmd); err != nil {
+		t.Fatalf("unmarshal GateCommand: %v", err)
+	}
+	if cmd.GetEventId() != uint32(game.ContractsKafkaKickPlayerEventEventId) {
+		t.Fatalf("event_id = %d, want KickPlayerEvent(%d)", cmd.GetEventId(), game.ContractsKafkaKickPlayerEventEventId)
+	}
+	// 信封:与改动前逐项相同。
+	if cmd.GetSessionId() != sessionID || cmd.GetPlayerId() != playerID {
+		t.Errorf("envelope session_id=%d player_id=%d, want %d/%d",
+			cmd.GetSessionId(), cmd.GetPlayerId(), sessionID, playerID)
+	}
+	if cmd.GetTargetGateId() != 300 || cmd.GetTargetInstanceId() != instanceID {
+		t.Errorf("envelope target gate=%d instance=%q, want 300/%q", cmd.GetTargetGateId(), cmd.GetTargetInstanceId(), instanceID)
+	}
+	// 分区与 target_gate_id 同源:300 % 256 = 44。
+	if msg.Partition != 44 {
+		t.Errorf("partition = %d, want 44 (300 %% 256)", msg.Partition)
+	}
+	if msg.PartitionKey != strconv.FormatUint(playerID, 10) {
+		t.Errorf("partition key = %q, want %q", msg.PartitionKey, strconv.FormatUint(playerID, 10))
+	}
+
+	if len(cmd.GetPayload()) == 0 {
+		t.Fatal("GateCommand.payload is empty; gate would rebuild the event from the envelope and drop login_generation")
+	}
+	var event kafkapb.KickPlayerEvent
+	if err := proto.Unmarshal(cmd.GetPayload(), &event); err != nil {
+		t.Fatalf("unmarshal KickPlayerEvent: %v", err)
+	}
+	if event.GetSessionId() != sessionID {
+		t.Errorf("KickPlayerEvent.session_id = %d, want %d", event.GetSessionId(), sessionID)
+	}
+	if event.GetPlayerId() != playerID {
+		t.Errorf("KickPlayerEvent.player_id = %d, want %d", event.GetPlayerId(), playerID)
+	}
+	if event.GetLoginGeneration() != loginGeneration {
+		t.Errorf("KickPlayerEvent.login_generation = %d, want %d", event.GetLoginGeneration(), loginGeneration)
 	}
 }

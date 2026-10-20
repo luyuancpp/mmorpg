@@ -4,9 +4,12 @@ import (
 	"context"
 	"time"
 
+	"match/internal/authority"
 	"match/internal/svc"
 
+	"google.golang.org/protobuf/proto"
 	matchpb "proto/match"
+	teampb "proto/team"
 
 	"github.com/google/uuid"
 	"github.com/zeromicro/go-zero/core/logx"
@@ -43,6 +46,19 @@ var (
 // team.NewService。
 type TeamBattleStarter struct {
 	svcCtx *svc.ServiceContext
+}
+
+// ReserveTeamMatch 必须在业务成功回包前执行；全员占用和原请求成局同时在 SQL 提交。
+func (s *TeamBattleStarter) ReserveTeamMatch(ctx context.Context, caller uint64, request *teampb.StartTeamMatchRequest, roster []uint64) (*matchpb.MatchFormationRecord, error) {
+	key, e := authority.DirectUUIDKey(1, caller, request.RequestId)
+	if e != nil {
+		return nil, e
+	}
+	payload, e := proto.MarshalOptions{Deterministic: true}.Marshal(request)
+	if e != nil {
+		return nil, e
+	}
+	return reserveGlobalDirect(ctx, s.svcCtx, key, payload, matchpb.MatchMode_MATCH_MODE_PVE_TEAM, request.BattleConfigId, roster, nil, gatherOptions{directTeamID: request.ExpectedTeamId})
 }
 
 // NewTeamBattleStarter svcCtx 需要 MatchRedis(票据)与 Config(PveTeamSizeByConfigId / matched TTL);

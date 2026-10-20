@@ -223,36 +223,34 @@ func isKnownSceneNodeType(t uint32) bool {
 		t == constants.SceneNodeTypeInstanceCross
 }
 
-// updateNodeLoad reads the node's scene_count and player_count from Redis,
-// writes the composite load score into the zone sorted set, and mirrors the
-// scene_node_type so downstream purpose-based selection doesn't need to hit
-// etcd. Score = α·scene_count + β·player_count; see Config weights.
+// updateNodeLoad refreshes one node's composite load score in the zone sorted
+// set and mirrors its scene_node_type so downstream purpose-based selection
+// doesn't need to hit etcd. Score = α·scene_count + β·player_count; see Config
+// weights. Called on watch PUT; the periodic path is refreshLoadScores.
+//
+// 只有领导者做,走与每拍刷新同一条批量路径(load_refresh.go refreshZoneLoadSets,一个 zone、一个节点),
+// 读失败语义也相同:保留旧分 / 不在负载集里的以哨兵分加入,绝不按 0 写。跟随者直接返回:不读、不写、
+// 不发每节点指标。不记 load_refresh_total —— 那是「每拍刷新还活着」的信号(告警
+// SceneManagerLoadRefreshStalled),PUT 只在节点注册时发生,混进去会掩盖停摆。
+//
+// Redis 写只归领导者(单写者):这不是幂等同值写 —— 跟随者的 watch 镜像可能落后
+// 于领导者的清理,比如领导者刚把死节点 Zrem 出负载集,跟随者的 5s 刷新
+// 又把它 Zadd 回去;而 DELETE 事件领导者已经消费过,没有第二次删除,
+// "复活"的条目会一直留到下一次 fullSync。
+// 跟随者以前仍然每拍逐个读全服节点的计数、只为发每节点指标(2026-10-16 起不再读):开服规模下那是
+// 随 zone 数 × 节点数增长的白读(容量模型 §2.2)。每节点指标改为只由领导者导出,切主时序列从一个 pod
+// 换到另一个 pod;跟随者只发布本 zone 的 nodes_by_role(见 refreshLoadScores)。
 func updateNodeLoad(svcCtx *svc.ServiceContext, entry nodeEntry) {
-	sceneCount := readInt64(svcCtx, nodeSceneCountKey(entry.reg.ZoneId, entry.nodeID))
-	playerCount := readInt64(svcCtx, nodePlayerCountKey(entry.reg.ZoneId, entry.nodeID))
-	score := computeNodeLoadScore(svcCtx, sceneCount, playerCount)
-
-	// Redis 写只归领导者:这不是幂等同值写 —— 跟随者的 watch 镜像可能落后
-	// 于领导者的清理,比如领导者刚把死节点 Zrem 出负载集,跟随者的 5s 刷新
-	// 又把它 Zadd 回去;而 DELETE 事件领导者已经消费过,没有第二次删除,
-	// "复活"的条目会一直留到下一次 fullSync。指标每副本照常发布,
-	// 跟随者的 dashboard 不断流。
-	if isLeader() {
-		loadKey := nodeLoadKey(entry.reg.ZoneId)
-		if _, err := svcCtx.Redis.Zadd(loadKey, int64(score), entry.nodeID); err != nil {
-			logx.Errorf("[LoadReporter] failed to update load for node %s (zone %d): %v", entry.nodeID, entry.reg.ZoneId, err)
-		}
-
-		// Mirror scene_node_type into Redis so getNodesForPurpose can filter
-		// without touching etcd on every CreateScene request.
-		if err := svcCtx.Redis.Set(nodeSceneNodeTypeKey(entry.reg.ZoneId, entry.nodeID),
-			strconv.FormatUint(uint64(entry.reg.SceneNodeType), 10)); err != nil {
-			logx.Errorf("[LoadReporter] failed to mirror scene_node_type for node %s: %v", entry.nodeID, err)
-		}
+	if !isLeader() {
+		return
 	}
-
-	metrics.ObserveNode(entry.nodeID, entry.reg.ZoneId, entry.reg.SceneNodeType,
-		sceneCount, playerCount, score)
+	refreshZoneLoadSets(svcCtx, map[uint32][]loadRefreshNode{
+		entry.reg.ZoneId: {{
+			zoneID: entry.reg.ZoneId,
+			nodeID: entry.nodeID,
+			role:   entry.reg.SceneNodeType,
+		}},
+	})
 }
 
 // computeNodeLoadScore combines scene_count and player_count using the
@@ -274,6 +272,7 @@ func computeNodeLoadScore(svcCtx *svc.ServiceContext, sceneCount, playerCount in
 }
 
 // readInt64 reads a string-encoded int from Redis, returning 0 on any error.
+// 不用于负载分刷新:那里「读失败」与「计数为 0」必须分开(load_refresh.go classifyCounterReply)。
 func readInt64(svcCtx *svc.ServiceContext, key string) int64 {
 	s, err := svcCtx.Redis.Get(key)
 	if err != nil || s == "" {
@@ -602,6 +601,8 @@ func rebuildActiveZones() {
 // with a periodic ticker for load-score refresh and grace-period checks.
 // On Watch error or channel close, it re-lists and re-watches automatically.
 func StartLoadReporter(ctx context.Context, svcCtx *svc.ServiceContext) {
+	// 每个副本启动时登记自己的 ZoneId 进 scene_manager:zones(跟随者此后不再发 Redis 命令,见 zone_registry.go)。
+	registerOwnZoneOnStartup(svcCtx)
 	for {
 		rev, err := fullSync(ctx, svcCtx)
 		if err != nil {
@@ -655,9 +656,9 @@ func fullSync(ctx context.Context, svcCtx *svc.ServiceContext) (int64, error) {
 	knownNodes = next
 	knownNodesMu.Unlock()
 
-	for _, entry := range next {
-		updateNodeLoad(svcCtx, entry)
-	}
+	// 与每拍刷新同一条路径:领导者按 zone 批量刷新(并登记 zone,先于下面的清扫);跟随者只发本 zone 的
+	// nodes_by_role,不碰 Redis。
+	refreshLoadScores(svcCtx)
 
 	// 每副本的进程本地清理(不走领导者闸门):watch DELETE 在跟随者上只做
 	// 本地清理,但整段 DELETE 事件也可能被错过(watch 重建窗口)。用新旧
@@ -682,7 +683,7 @@ func fullSync(ctx context.Context, svcCtx *svc.ServiceContext) (int64, error) {
 	activeZonesMu.Unlock()
 
 	// 以下全部是**变更类**动作,多副本时只有领导者执行(单写者语义);
-	// 跟随者的 fullSync 只负责重建本进程的 etcd 内存镜像与负载分。
+	// 跟随者的 fullSync 只负责重建本进程的 etcd 内存镜像(负载分也只由领导者刷新)。
 	// 领导者缺位窗口(选举间隙 / 领导者刚挂)里漏掉的动作,由新任领导者
 	// 当选时触发的 RequestLoadReporterResync -> fullSync 一次补齐。
 	if isLeader() {
@@ -732,6 +733,10 @@ func fullSync(ctx context.Context, svcCtx *svc.ServiceContext) (int64, error) {
 // 扫描范围 = 快照里的 zone ∪ Redis 里还留有负载集的 zone。只按快照扫有个洞:某 zone 的
 // **最后一个**节点在无领导窗口(或 SM 整体停机)里死掉时,快照里根本没有这个 zone,它的
 // 负载集条目、计数和孤儿实例就永远没人清(runPeriodicRebalance 也只迭代 GetActiveZones)。
+// 「还留有负载集的 zone」以前靠 SCAN scene_nodes:zone:*:load 发现,全库遍历在开服规模下是小时级;
+// 2026-10-16 起改读 zone 登记集合 scene_manager:zones(zone_registry.go):领导者刷新时先登记再写
+// 负载集,有活节点的 zone 每拍自愈。读登记集合失败时只扫快照里的 zone(打 Error),与旧 SCAN 出错即
+// break 的退化方向一致。覆盖不到的只有 zone_registry.go 文件头列出的两类缺口。
 //
 // 每个陈旧成员与 watch DELETE 走同一条摘除路径 removeNodeFromRedis:先写 death_at 再摘负载集,
 // 写不进就推迟(GO-6)。已在推迟队列里的节点被重扫到时:这次写成 death_at 就按首次推迟时的
@@ -741,30 +746,12 @@ func fullSync(ctx context.Context, svcCtx *svc.ServiceContext) (int64, error) {
 // ForgetNode(nodeID, zone, 0) —— 本进程不认识这个节点,删不存在的序列是 no-op;同身份的活节点
 // 也不在清扫范围里。
 func sweepStaleLoadSetMembers(svcCtx *svc.ServiceContext, seenByZone map[uint32]map[string]struct{}, snapshotZones []uint32) bool {
-	sweepZones := make(map[uint32]struct{}, len(snapshotZones))
-	for _, z := range snapshotZones {
-		sweepZones[z] = struct{}{}
-	}
-	cursor := uint64(0)
-	for {
-		loadKeys, nextCursor, err := svcCtx.Redis.Scan(cursor, "scene_nodes:zone:*:load", 64)
-		if err != nil {
-			logx.Errorf("[LoadReporter] scan zone load keys failed at cursor=%d: %v", cursor, err)
-			break
-		}
-		for _, k := range loadKeys {
-			var z uint32
-			if _, err := fmt.Sscanf(k, NodeLoadKeyFmt, &z); err == nil {
-				sweepZones[z] = struct{}{}
-			}
-		}
-		if nextCursor == 0 {
-			break
-		}
-		cursor = nextCursor
+	registered, err := listRegisteredZones(svcCtx)
+	if err != nil {
+		logx.Errorf("[LoadReporter] read zone registry failed; sweeping snapshot zones only: %v", err)
 	}
 
-	for zoneId := range sweepZones {
+	for _, zoneId := range unionZones(snapshotZones, registered) {
 		// seen 对快照外的 zone 是 nil map —— 该 zone 所有条目都视为 stale。
 		seen := seenByZone[zoneId]
 		pairs, err := svcCtx.Redis.ZrangeWithScores(nodeLoadKey(zoneId), 0, -1)
@@ -934,7 +921,7 @@ func handleWatchEvent(ctx context.Context, svcCtx *svc.ServiceContext, ev *clien
 		rebuildActiveZones()
 
 		// 补频道 / rebalance 是变更动作,只有领导者做;跟随者只维护上面的
-		// 内存镜像与负载分。跟随者当选时会经 resync -> fullSync 补齐。
+		// 内存镜像(updateNodeLoad 在跟随者上直接返回)。跟随者当选时会经 resync -> fullSync 补齐。
 		if wids := worldConfIds(); len(wids) > 0 && isLeader() {
 			if !existed {
 				logx.Infof("[LoadReporter] Zone %d: node %s appeared (watch PUT, role=%d)",
@@ -998,25 +985,38 @@ func handleWatchEvent(ctx context.Context, svcCtx *svc.ServiceContext, ev *clien
 // refreshLoadScores updates Redis load scores for all currently known nodes
 // and refreshes the nodes_by_role metric so dashboards reflect the current
 // cluster topology even when individual node scores don't move.
+// Called on every LoadReportInterval tick and from fullSync.
+//
+// 领导者:发布 etcd 镜像里全部 zone 的 nodes_by_role,再按 zone 批量刷新全部节点的负载分
+// (load_refresh.go refreshZoneLoadSets),记一次 load_refresh_total 与耗时。
+// 跟随者:不发任何 Redis 命令;nodes_by_role 只发布本进程 ZoneId,每节点序列每拍清一次 —— 降级那一刻
+// OnStateChange 的 ResetLeaderGauges 与正在跑的刷新在不同 goroutine 上,刷新可能在 Reset 之后又写进
+// 一批,跟随者的下一拍把它清掉。
+//
+// nodes_by_role 先于 Redis I/O 发布:它只来自 etcd 快照,不该被 Redis 慢 / 熔断拖住。
+// 两种身份都给本进程配置的 ZoneId 补 0:scene_manager 按 c.ZoneId 注册,该 zone 的
+// scene 节点正是靠这个注册找到它,所以「服务 zone Z 的 SM 期待 Z 里有 scene 节点」是现成的事实。
+// 不补的话整 zone 全灭时该 zone 一条序列都不剩,PoolEmpty 告警无从触发(见 SetNodesByRole)。
 func refreshLoadScores(svcCtx *svc.ServiceContext) {
-	knownNodesMu.RLock()
-	defer knownNodesMu.RUnlock()
+	byZone, counts := snapshotLoadRefreshNodes()
+	ownZone := svcCtx.Config.ZoneId
 
-	counts := make(map[struct {
-		ZoneID uint32
-		Role   uint32
-	}]int)
-	for _, entry := range knownNodes {
-		updateNodeLoad(svcCtx, entry)
-		counts[struct {
-			ZoneID uint32
-			Role   uint32
-		}{entry.reg.ZoneId, entry.reg.SceneNodeType}]++
+	if !isLeader() {
+		own := make(map[nodesByRoleKey]int)
+		for k, v := range counts {
+			if k.ZoneID == ownZone {
+				own[k] = v
+			}
+		}
+		metrics.SetNodesByRole(own, []uint32{ownZone})
+		metrics.ResetNodeSeries()
+		return
 	}
-	// 本进程配置的 ZoneId 即使一个节点都没有也要补 0:scene_manager 按 c.ZoneId 注册,该 zone 的
-	// scene 节点正是靠这个注册找到它,所以「服务 zone Z 的 SM 期待 Z 里有 scene 节点」是现成的事实。
-	// 不补的话整 zone 全灭时该 zone 一条序列都不剩,PoolEmpty 告警无从触发(见 SetNodesByRole)。
-	metrics.SetNodesByRole(counts, []uint32{svcCtx.Config.ZoneId})
+
+	metrics.SetNodesByRole(counts, []uint32{ownZone})
+	start := time.Now()
+	report := refreshZoneLoadSets(svcCtx, byZone)
+	metrics.ObserveLoadRefresh(report.outcome(), time.Since(start), report.nodeReadErrors)
 }
 
 // GetBestNode selects the instance-hosting node with the lowest load from

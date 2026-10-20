@@ -1,7 +1,11 @@
 # 玩家持久收件箱服务（player_inbox）设计
 
-> **状态**：设计 v1.0（2026-10-15）。D1–D14 均已由用户拍板（见 §13）。第 1 批文件清单（附录 E）已于同日获授权，但须等 P1（MySQL 围栏先落 18、19 号字段）与 P2（HEAD 上的生成积压由所属会话先清掉）都解除后才开工。未落码、未编译、未测试。
-> **版本历史**：v0.1 综合稿；v0.2 对抗评审修订（consistency / repo-fit / ops 三份评审的逐条处置见文末「评审记录」）；v1.0 用户拍板定稿（相对 v0.2 的改动见附录 D）。
+> **状态**：设计 v1.0（2026-10-15 定稿），2026-10-17 按落码订正。D1–D14 均已由用户拍板（见 §13）。
+> - **已落码**：第 1–4 批已入库（随 `de4960bee` 起的快照提交，见 [交接](../handoff/player-inbox-handoff-20261015.md) §2）。
+> - **评审修复**：2026-10-16 ~ 17 按实现评审（交接 §6：H1、M1–M7、L1–L14）分三批修：第 A 批 Go 服务、第 B 批 C++ scene、第 C 批部署 / 运维 / 文档。本稿已按修复后的代码订正，改动见附录 F。
+> - **验证（2026-10-18）**：Go 服务单测与真库集成已有通过证据；data_service / merge_zone 检查、14 个 Go 服务历史构建、C++ 全解 Debug|x64 编译及 promtool 18 条规则通过。九项部署脚本均通过，8 个计数套件合计 539/539，另有 lobby 渲染通过（交接 §3 第 2 条）。
+> - **后续验收**：用户已通知 360 加好信任；`-race`、C++ 运行测试、迁移与七场景冒烟交续验聊天串行执行，本线尚无最终回执。Java 收件箱仍待实现（§12）。Go 构建之后共享模块锁被其他会话调整，旧构建只代表执行时输入，复用由续验线核验。
+> **版本历史**：v0.1 综合稿；v0.2 对抗评审修订（consistency / repo-fit / ops 三份评审的逐条处置见文末「评审记录」）；v1.0 用户拍板定稿（相对 v0.2 的改动见附录 D）；2026-10-17 按落码与评审修复订正（附录 F）。
 >
 > **与 [reliable-player-inbox-20261014.md](reliable-player-inbox-20261014.md) 的关系**
 > - 该文 §1（`:16`）和 §5.2（`:115`）的结论是「收件箱是语义，不新建通用消息服务」「不再新建第三套通用投递器」。
@@ -19,8 +23,9 @@
 > **与 [db-write-fencing-mysql.md](db-write-fencing-mysql.md) v0.3 的关系**（用户已于 2026-10-14 授权该设计落码，见 `:3`）
 > - **字段号**：该文 §3.2（`:113`）已为 `player_database` 预定 `fence_owner_epoch = 18`、`fence_save_seq = 19`。对方会话已确认 18、19 由围栏设计保留（§11.1），收件箱取 20；加列纪律不允许留空洞，所以收件箱第 1 批必须在 18、19 已声明之后落码（§4.4，协调项 C4）。
 > - **owner_epoch 计数器倒退**：以该文 §9.1 的「定真源、抬计数器、不归零」为准。收件箱的围栏高水位登记为 `epoch-raise` 取最大值的来源之一（C4），本服务不提供归零入口。
+> - **2026-10-17 补**：围栏设计已到 v0.4，C4 已定：`go/db/cmd/epoch_raise` 自己经 `PlayerInboxAdmin.GetSummary` 读 `max_fence_epoch`（§11.1）。
 >
-> **基线**：HEAD `6281e4d27`，加上 2026-10-15 工作区里未提交的改动。行号只作参考，以函数名为准。
+> **基线**：HEAD `6281e4d27`，加上 2026-10-15 工作区里未提交的改动。2026-10-17 的订正以当时工作区的代码为准。行号只作参考，以函数名为准。
 >
 > **标记**：
 > - 【事实】可以直接核对代码或文档，附 file:line。
@@ -35,6 +40,7 @@
    - 生产方是收件箱自带的运维接口 `PlayerInboxAdmin.GmSanctionPlayer`。
    - 消费方是玩家当前的 owner scene。
    - v1 只开放一个域 `SCENE_GM_SANCTION`，三种类型含挂欠款（§2，D2 已拍板）。
+   - 2026-10-16 用户拍板：v1 的入箱白名单只放封锁 / 解封，挂欠款先不开，列进白名单即拒启（§3.3）。
 2. **服务形态（D3 已拍板）**：独立进程 `go/player_inbox`，按 D-14 独占库 `mmorpg_player_inbox`。接入要求见 §1.4，分批清单见 §11。
 3. **模型**：每个 (玩家, 域) 是一个有序邮箱。
    - **seq 分配**：在流行的行锁下取 `max(next_seq, 当前毫秒 << 12)`。同一条流内严格递增，全局库按备份恢复之后也不会复用旧号（IB-6）。
@@ -45,6 +51,7 @@
    - 推进围栏之前先读核心 Redis 里当前的 owner_epoch，请求带来的值不得超过它（IB-8）。
    - Redis 计数器倒退时，按围栏文档 §9.1 的 `epoch-raise` 处置。不提供归零接口（§7.8）。
 5. **已投递的条目，服务端不单方面终结**。取消只下发作废指令，由消费方裁决（IB-5）。v1 取消人工补发：要改主意，就用新的 request_id 重新下处置（§7.9）。
+   - **唯一例外是强制模式**：经消费方已落盘的账本证明这一条从未执行时，由管理员终结为 VOIDED（`finalized_by=ADMIN`），同事务写审计。它只用来解开 scene 回放核对判 MISMATCH 之后的停用（§7.9）。
 6. **触发入口有四个**（§7.3）。v1 不读版本摘要（D4）。
    - 实体在本节点新建、或 owner_epoch 变化后的落地：无条件拉一次。
    - 入箱提交后，经 Kafka `scene-cmd` 定向提醒。
@@ -56,11 +63,12 @@
 8. **上线**：先扩展、后收缩。
    - 所有 scene 先以 `consumer_enabled=false` 上线：认识新字段、原样回写，但不消费。这个版本就是回滚下限。
    - 然后打开消费，最后打开入箱（§11.7）。
+   - 两个开关都只认 git 跟踪的 yaml；部署脚本在写集群之前核对「消费关而入箱开」并拒绝（§3.3）。
 9. **改动量**：
    - 独立进程方案：本仓手写约 121 个文件（第 1 至第 4 批分别约 27 / 40 / 30 / 24，第 1 批另有约 7 处放行清单文档）。
    - 生成产物约 110 个，集中在第 1 批，Java 另计。
    - 远超 30 个文件的门槛，分第 0 到第 5 批落地；第 1 批开始前须向用户报文件清单并获授权。
-10. **拍板状态**：D1–D4 已于 2026-10-15 由用户拍板（§13.1）：立项并收窄修订、首域 GM 处置含挂欠款、独立进程、v1 不接摘要。D5–D14 也于同日按推荐口径拍板（§13.2）。第 1 批清单已授权，阻塞解除后开工（附录 E）。
+10. **拍板状态**：D1–D4 已于 2026-10-15 由用户拍板（§13.1）：立项并收窄修订、首域 GM 处置含挂欠款、独立进程、v1 不接摘要。D5–D14 也于同日按推荐口径拍板（§13.2）。第 1 批清单已授权（附录 E）；第 1–4 批已落码，评审修复的拍板见交接 §6 末尾（文首状态行）。
 
 ---
 
@@ -113,6 +121,8 @@
 **`SendMessageToPlayer` / `IMPORTANT`**
 - 现状【事实】：找不到人就记日志返回。`IMPORTANT` 只把日志级别调高（`reliable-player-inbox-20261014.md:109`）。
 - 关系【提议】：不复用。
+- 2026-10-16 补：`Scene.SendMessageToPlayer`（1）已于 RpcChannel 批 7 从 proto 删除并留墓碑；`IMPORTANT` 唯一的载体 `Scene.RoutePlayerStringMsg`（81）在同批的前一步已删。
+  见 `muduo-rpc-channel.md` §20.2、§20.3。「不复用」的结论不变。
 
 **owner_epoch**
 - 现状【事实】：
@@ -203,7 +213,7 @@ D3 已于 2026-10-15 拍板：独立进程 `go/player_inbox`，按 D-14 独占�
 | IB-2 | 同一个 (producer_kind, request_id) 最多一行；同键不同内容报冲突 | 表的唯一键，加上 sha256(类型 ‖ 签发时刻 ‖ 载荷) 比对；在流行锁内权威复读 |
 | IB-3 | 消费效果和账本是同一条记录、同一次落盘；Ack 只报告已经落盘的结局 | 新字段与 currency 在同一次 Marshal 里写出（与 I3 同构）；durable 判定读最后一次落盘的快照 |
 | IB-4 | 结局一旦终结就不再翻转 | Ack 对终态行只做比对，不一致只告警 |
-| IB-5 | 服务端不单方面终结已经投递过的条目 | 已投递的行只能挂作废指令，由消费方裁决 |
+| IB-5 | 服务端不单方面终结已经投递过的条目。**强制模式例外**：经消费方已落盘账本证明从未执行时，由管理员终结为 VOIDED（`finalized_by=ADMIN`），带审计 | 已投递的行只能挂作废指令，由消费方裁决。强制模式（`VoidItem` 的 `mode=FORCE_MISMATCH`）先读已落盘账本，证明该域水位已过这个 seq、环里同 seq 是另一个 request_id、环里也没有本行的 request_id，才在流行锁下终结，同事务写审计 `FORCE_VOID`（§7.9） |
 | IB-6 | 同一条流的提交顺序等于 seq 顺序，seq 严格递增，全局库恢复后也不复用 | seq 分配和 Fetch 都在流行的 `FOR UPDATE` 锁下进行；seq 取 `max(next_seq, now_ms << 12)` |
 | IB-7 | 收件箱不可用时，不阻断玩家进场和正常游戏 | 不加进 DependencyGate；失败只退避 |
 | IB-8 | 围栏只升，且一次请求能推到的值不超过核心 Redis 里当前的 owner_epoch | FIRST / ADVANCE 之前读 Redis 做上界判定；不提供归零接口 |
@@ -224,7 +234,7 @@ D3 已于 2026-10-15 拍板：独立进程 `go/player_inbox`，按 D-14 独占�
   - 围栏上界（IB-8）：防止一次错误的大 epoch 把流永久锁死。
   - Ack 要求 request_id 一致、行已经投递过。
   - 异常结果告警。
-- **接受的残余风险**：伪造一条 Ack，能把一条处置登记为「已执行」，而它实际没有生效（IB-4 规定不再翻转）。这种情况由每小时对账发现（§9.3）。
+- **接受的残余风险**：伪造一条 Ack，能把一条处置登记为「已执行」，而它实际没有生效（IB-4 规定不再翻转）。这种情况由每小时对账发现（§9.3），限于账本水位以内、最近结局环覆盖得到的范围。
 - 要做调用方签名的备选方案见 D6。
 
 ---
@@ -249,7 +259,7 @@ D3 已于 2026-10-15 拍板：独立进程 `go/player_inbox`，按 D-14 独占�
 
 **调用方**：v1 由运维按 runbook 用 grpcurl 调用。GM 后台接入另行立项，Java 网关的 admin API 是候选。
 
-**批量处置**：典型场景是运营失误多发，要对大量玩家挂欠款（`exploit_loss_prevention_zh.md:36-45`）。
+**批量处置**：典型场景是运营失误多发，要对大量玩家挂欠款（`exploit_loss_prevention_zh.md:36-45`；v1 先不开挂欠款，见本节末尾）。
 - 由调用侧脚本逐个玩家调用，限速每秒不超过 20 次。
 - 失败时按**同一个 request_id、同一个 issued_at** 原样重试。
 - 脚本规范写进 runbook。v1 不新增批量 RPC；触发条件是单次处置常态超过千人。
@@ -267,6 +277,11 @@ D3 已于 2026-10-15 拍板：独立进程 `go/player_inbox`，按 D-14 独占�
 | `GM_ATTACH_CURRENCY_DEBT` | `AttachDebt`，需要改成返回错误码（§11 第 3 批） | **不幂等**，必须靠账本去重 |
 
 **AttachDebt 算不算资产指令**：它不改余额，只是让以后的 `AddCurrency` 先抵扣欠款（`currency_system.h:74-75`）。本设计把它归为「账户处置状态」，纳入 v1。这条界线已由 D2 于 2026-10-15 拍板。
+
+**2026-10-16 拍板：v1 先不开挂欠款**（交接 §6 M2 / M3）。
+- 原因：`AttachDebt` 会合并同币种的旧欠款，并用后来那单覆盖到期时间、原因和操作人，一张小单就能让大额欠款提前失效；挂错之后 v1 也没有撤销路径。
+- 做法：类型、载荷与执行器都保留；`EnqueueTypes` 只放封锁 / 解封，列进挂欠款即拒启（§3.3）。
+- 合并语义、同域撤销类型（走 AdjustDebt 按金额减）、单笔上限和只读欠款查询，后续一起做；做完之后解禁。
 
 ### 2.3 如实评估
 
@@ -319,8 +334,17 @@ D3 已于 2026-10-15 拍板：独立进程 `go/player_inbox`，按 D-14 独占�
 
 - **入箱**：服务配置里的 `PlayerInbox.EnqueueTypes` 白名单，默认空，即全部停用。规格里**不再**有 `enabled` 字段。没在白名单里的类型返回 `kPlayerInboxDisabled`。
   - 各实例的开关短时间不一致时，只会让 GM 偶尔收到 Disabled、重试后成功，不会出错。上线时仍按 §11.7 一次性全开。
+  - **v1 只放封锁 / 解封**（§2.2）。`config.ParseEnqueueTypes` 遇到 `GM_ATTACH_CURRENCY_DEBT` 直接报错，`Validate` 与装配层都走它，所以任何启动路径都拒启（`v1DisabledEnqueueTypes`）。解禁只删这张表里的一项。
+  - 权威值在 git 跟踪的 `go/player_inbox/etc/player_inbox.yaml`，`k8s_deploy.ps1` 从这份 yaml 读出、校验后渲染进 ConfigMap（`Get-PlayerInboxEnqueueTypes`）。部署脚本不在渲染期另拒挂欠款，靠服务端 Validate 拒启：migrate Job 先失败；staging / prod，或 dev 带 `-WaitReady` 时 Deployment 不会滚动，dev 不带 `-WaitReady` 时脚本不等 Job，Deployment 照常滚动、新 Pod CrashLoop（`Apply-GoSvcMigrateJob` 的 `$gateOnJob`）。
 - **消费**：scene 配置里的 `GameConfig.player_inbox.consumer_enabled`，默认 false。
   - 关闭时不发 Fetch，但已经应用、等待确认的条目照常 Ack，因为 Ack 只报告事实（§7.7）。
+  - **权威值在 git 跟踪的 `bin/etc/game_config.yaml` 的 `player_inbox` 段**（评审 H1）。K8s 的 node-config 由 `k8s_deploy.ps1` 用 `Get-AuthoritativeYamlBlock` 整段复制；渲染值不从集群取（zone-rollback 会删 zone namespace），集群现状只用于写前门禁的交叉核对。本机 scene 读的也是这份文件。脚本读的是工作区文件，staging / prod 的真部署要求它相对 HEAD 没有未提交改动。
+  - 以前这个值由部署参数 `-PlayerInboxConsumer` 渲染，默认 off、包装入口不透传，例行发布会把已打开的消费静默写回 false。现在这个参数只用来核对：与 yaml 不一致就拒绝部署，渲染值始终取 yaml。开 / 关消费就是改 yaml 并提交，再逐 zone 执行 zone-up 滚动 scene。
+- **写前门禁**（评审 H1）：`k8s_deploy.ps1` 的 zone-up / all-up / infra-up 在任何集群写操作之前拦「消费端关、而 `EnqueueTypes` 非空」，除非显式传 `-AllowPlayerInboxConsumerOff`（只打告警放行；包装入口没有这个开关）。放行时打印一行 `player-inbox consumer gate: ... OK`。分三层：
+  1. 当前检出里的两份 yaml 相互矛盾。只靠这一层不够：zone（consumer_enabled）与 infra（EnqueueTypes）分开部署、可以来自不同 commit，「检出开消费之前的旧 commit 重跑 zone-up」与「同一提交里先跑 infra-up」它都放行（复核 H1）。
+  2. 非 DryRun 时只读另一侧线上的值：本次把 false 渲染进 node-config，就读 infra 线上 `go-svc-player-inbox-config` 的白名单；本次把非空白名单渲染进 ConfigMap，就读全部 zone 线上 node-config 的开关。读不到即拒绝。它读的是 ConfigMap 不是进程，Pod 没滚动时看不出来，上线验收仍以 scene 启动行与 `GmSanctionPlayer` 的回包为准。
+  3. staging / prod 的真部署拒绝两份 yaml 带未提交改动（部署读工作区文件，而 `bin/etc/game_config.yaml` 也是本机 scene 的配置）。
+- **关消费时的信号**：scene 启动时打 WARN `[PlayerInbox] metric=inbox_consumer_disabled`，之后 Tick 每 5 分钟补打同一行（`kNodeStuckRelogIntervalMs`，与 `inbox_registry_broken` 共用节拍）。告警侧还有「入箱在涨、锁路径 Fetch 不涨」的规则（§9.4）。
 - **Fetch / Ack 本身没有开关**：新版本二进制始终提供这两个接口；没有条目时只是返回 NO_STREAM 或空。
   - 旧版本二进制返回 UNIMPLEMENTED，scene 长退避 10 分钟，不计为故障（§7.6）。
 
@@ -354,7 +378,7 @@ message player_inbox_stream {
   option(OptionTiDBNonclusteredPK)  = true;
   option(OptionTiDBShardRowIDBits)  = 4;
   option(OptionTiDBPreSplitRegions) = 4;
-  uint32 shard         = 1;  // player_id % 64,只由 inbox.RowShard 计算
+  uint32 shard         = 1;  // mix64(player_id) % 64,只由 inbox.RowShard 计算(§4.2)
   uint64 player_id     = 2;
   uint32 domain        = 3;  // PlayerInboxDomain
   uint64 next_seq      = 4;  // 上次分配的 seq + 1;分配取 max(next_seq, now_ms<<12)(IB-6)
@@ -403,13 +427,27 @@ message player_inbox_audit {
   option(OptionTiDBNonclusteredPK)  = true;
   option(OptionTiDBShardRowIDBits)  = 4;
   uint32 shard = 1;  uint64 player_id = 2;  uint32 domain = 3;  uint64 seq = 4;
-  uint32 action      = 5;   // PlayerInboxAuditAction: SANCTION / VOID
+  uint32 action      = 5;   // PlayerInboxAuditAction: SANCTION / VOID / FORCE_VOID
   string operator    = 6;   // ≤ 64B
   string peer_addr   = 7;   // 对端地址
-  string reason      = 8;   // ≤ 256B
+  string reason      = 8;   // ≤ 256B;FORCE_VOID 行取请求的 note
   uint64 created_ms  = 9;
+  // 10–14 由 inbox.InsertAudit 从同一事务里的条目行原样复制,调用方传入的同名值被忽略(评审 L9)
+  uint32 msg_type       = 10;
+  uint64 request_id     = 11;
+  uint64 issued_at_ms   = 12;
+  bytes  content_sha256 = 13;  // 可由 10、12、14 复算核对
+  bytes  payload        = 14;  // 条目载荷原样;v1 GM 类型 ≤ 1KiB,由单测钉住
+  uint32 void_reason    = 15;  // VOID / FORCE_VOID 行为本次请求的原因;SANCTION 行为 0
 }
 ```
+
+**审计行自足**（评审 L9，2026-10-16 追加 10–15 共 6 列）：
+- 审计行永不自动删除，条目终态行 30 天后物理删除。追加这 6 列之前，条目行一删就看不出「做了什么」。
+- 内容取自同一事务里的条目行：入箱路径按主键普通读一次，作废路径用锁内已读到的那一行。读不到或身份对不上就报错、整个事务回滚（fail-closed）。锁序不变：流行 → 条目行 → 审计行。
+- 三处写审计：入箱成功（SANCTION）、作废（VOID）、强制终结（FORCE_VOID）。FORCE_VOID 单列一个 action：同一条目常先挂过指令再强制终结，审计主键含 action 且 INSERT IGNORE，共用 VOID 会吞掉这次终结的审计行。
+- 新列都有缺省值，schemamigrate 自动 ADD COLUMN，不进人工清单，也不需要另登记门禁。
+- v1 没有加 `producer_kind` 列：只有 GM 一种生产方。出现第二种时补列，(producer_kind, request_id) 才是完整的幂等键。
 
 与 v0.1 相比去掉的东西（YAGNI，按 AGENTS §11.2）：
 - **`merge_key`、`expires_at_ms`、`replaces_seq`**：v1 没有合并类、不允许过期，人工补发也已取消。
@@ -427,7 +465,12 @@ message player_inbox_audit {
 - **只用现有选项**：只用 proto2mysql 已有的 TiDB 选项（`proto_option.proto:97-100`），里面没有 CLUSTERED。
 - **seq 来源**：不用 AUTO_RANDOM，也不依赖 AUTO_INCREMENT。seq 由流行显式分配，带时间下界。
 - **shard 模数**：64，与 `placement.RouteRowShard` 相同，但**常量独立定义**。两张表的模数各自是建表时定下的契约，不联动修改。
-- **没有 CHECK 约束**：TiDB 默认不执行 CHECK。shard 的一致性靠三样东西保证：唯一的计算函数、读出时断言、单测。
+- **shard 公式**：`shard = mix64(player_id) % 64`，`mix64` 是 splitmix64 的终结函数，只由 `inbox.RowShard` 计算（`shard.go`）。
+  - **2026-10-16 首次建表前**由 `player_id % 64` 改为现公式（评审 L5）。存量和回退的 bwmarrin SnowFlake ID 低 9 位是 step，同一毫秒只建一个角色时 step=0，直接取模会把这批玩家全压进 shard 0。mix64 与位布局无关，两套号源都能打散。
+  - 上线之后再改公式等于迁移全部主键。`placement.RouteRowShard` 有同样的问题，已登记给 data_service 负责人。
+  - **旧公式写出的行对按玩家的读写静默不可见**：所有按玩家的 SQL 都带 `WHERE shard = RowShard(player_id)`，旧行查不出来，锁内判重读不到它，同一 request_id 会再入箱一次（IB-2 失效）；只有按分片扫描的读会撞上读出断言。所以按旧公式写过数据的库必须先清空收件箱三张表。
+  - **启动核对**：启动路径与 `-migrate` 在表结构对齐之后跑 `inbox.CheckRowShards`，逐表核对 `(shard, player_id)`。有一行不一致就拒启；`-migrate` 按「需人工」退出（退出码 4），K8s Job 停下而不是反复重试。
+- **没有 CHECK 约束**：TiDB 默认不执行 CHECK。shard 的一致性靠四样东西保证：唯一的计算函数、按分片扫描时的读出断言、启动时的整库核对、单测。
 - **量级假设**：单条流在保留期内不超过数百行。Fetch 用主键范围扫描，再按 `state=PENDING` 过滤。如果指标 `player_inbox_fetch_scanned_rows` 显示超出，再加普通索引 `(shard,player_id,domain,state,seq)`。
 
 ### 4.3 条目状态机
@@ -438,7 +481,8 @@ message player_inbox_audit {
 | PENDING 且挂了 VOID 指令 | Ack 报 SKIPPED | VOIDED（`finalized_by=CONSUMER`，原因取自指令） |
 | PENDING | Ack 报 UNKNOWN（消费方水位已过这一条，但原结局已不在环里） | SETTLED_UNKNOWN，同时告警 |
 | PENDING 且 `delivery_count=0` | 管理员作废 | VOIDED（`finalized_by=ADMIN`） |
-| PENDING 且 `delivery_count>0` | 管理员作废 / 隔离 | 仍是 PENDING，挂上 `directive=VOID`（IB-5） |
+| PENDING 且 `delivery_count>0` | 管理员作废 / 隔离（普通模式） | 仍是 PENDING，挂上 `directive=VOID`（IB-5） |
+| PENDING 且 `delivery_count>0` | 管理员强制作废（`mode=FORCE_MISMATCH`），且已落盘账本证明成立（`force_verdict=PROVEN`） | VOIDED（`finalized_by=ADMIN`，`void_reason` 取请求，审计 `FORCE_VOID`）；证明不成立时**不变**（§7.9） |
 | PENDING | Ack 结果为 MISMATCH / NOT_DELIVERED / SKIP_NOT_REQUESTED | **不变**，告警，消费方停用这名玩家的这个域（§7.7） |
 | 任一终态 | — | 不再变化；超过保留期后物理删除 |
 
@@ -576,6 +620,7 @@ message PlayerInboxDecisionReport {
 message AckPlayerInboxRequest {
   uint64 player_id = 1;  PlayerInboxDomain domain = 2;  uint64 owner_epoch = 3;  uint64 correlation_id = 4;
   repeated PlayerInboxDecisionReport decisions = 5;   // ≤ 32 条,按 seq 升序
+  uint32 scene_node_id = 6;             // 只用于日志(同 Fetch 的 7):进围栏 / Ack 异常的 ERROR,不参与判定;0 = 旧版 scene 没填(评审 L10)
 }
 message PlayerInboxAckItem { uint64 seq = 1;  PlayerInboxAckResult result = 2;  PlayerInboxItemState state = 3; }
 message AckPlayerInboxResponse {
@@ -583,6 +628,8 @@ message AckPlayerInboxResponse {
   PlayerInboxFenceVerdict fence = 5;  repeated PlayerInboxAckItem results = 6;
 }
 ```
+
+**发送方身份**（评审 L10）：服务端的围栏拒绝、Ack 异常和 SETTLED_UNKNOWN 日志都带 `peer=`（gRPC 对端地址）与 `scene_node_id=`。全服务的日志键统一写 `scene_node_id=`，与告警描述、runbook 一致。
 
 **在线提醒事件**：新文件 `proto/common/event/player_inbox_event.proto`，模板照 `team_event.proto:1-15`。
 
@@ -607,22 +654,45 @@ service PlayerInboxAdmin {
   rpc GetSummary(GetPlayerInboxSummaryRequest) returns (GetPlayerInboxSummaryResponse) {}   // 按玩家各域:open_count/next_seq/fence_epoch/已投递未确认数/最老未决时刻;另给 max_fence_epoch 供 epoch-raise
   rpc ListItems(ListPlayerInboxItemsRequest) returns (ListPlayerInboxItemsResponse) {}      // player_id+domain+state 过滤,after_seq 翻页,limit ≤ 200
   rpc LookupByRequest(LookupPlayerInboxRequest) returns (LookupPlayerInboxResponse) {}      // (player_id, producer_kind, request_id) → 条目与结局
-  rpc VoidItem(VoidPlayerInboxItemRequest) returns (VoidPlayerInboxItemResponse) {}         // 未投递 → VOIDED;已投递 → 挂 VOID 指令(IB-5)
+  rpc VoidItem(VoidPlayerInboxItemRequest) returns (VoidPlayerInboxItemResponse) {}         // 未投递 → VOIDED;已投递 → 挂 VOID 指令(IB-5);强制模式见下
   rpc ReconcilePlayer(ReconcilePlayerInboxRequest) returns (ReconcilePlayerInboxResponse) {} // 第 4 批:对比已落盘账本(§9.3)
 }
 message GmSanctionPlayerRequest {
   uint64 player_id = 1;
   uint64 request_id = 2;            // 运维工具按工单生成一次,重试原样带回
   uint64 issued_at_ms = 3;          // 同上;只接受 [now-7d, now+5min];进入内容摘要(IB-2)
-  oneof action { GmCurrencyGainPayload block_gain = 4; GmCurrencyGainPayload unblock_gain = 5; GmCurrencyDebtPayload attach_debt = 6; }
+  oneof action { GmCurrencyGainPayload block_gain = 4; GmCurrencyGainPayload unblock_gain = 5;
+                 GmCurrencyDebtPayload attach_debt = 6; }  // attach_debt:v1 不在白名单,回 kPlayerInboxDisabled(§3.3)
   string reason = 7;  string operator = 8;   // 必填且限长(§3.4);attach_debt.gm_operator 由服务端用 operator 覆盖
 }
 message GmSanctionPlayerResponse { TipInfoMessage error_message = 1;  uint64 seq = 2;  bool created = 3;  PlayerInboxItemState state = 4; }
+enum PlayerInboxVoidMode { PLAYER_INBOX_VOID_MODE_NORMAL = 0; PLAYER_INBOX_VOID_MODE_FORCE_MISMATCH = 1; }
+enum PlayerInboxForceVoidVerdict {               // 强制模式的账本证明结论;普通模式恒为 UNSPECIFIED
+  PLAYER_INBOX_FORCE_VOID_UNSPECIFIED = 0;       // 普通模式,或条目不存在 / 已是终态(看 error_message)
+  PLAYER_INBOX_FORCE_VOID_PROVEN = 1;            // 证明成立,已终结为 VOIDED
+  PLAYER_INBOX_FORCE_VOID_NOT_DELIVERED = 2;     // 从未投递:改用普通模式
+  PLAYER_INBOX_FORCE_VOID_LEDGER_ABSENT = 3;     // 读不到已落盘存档
+  PLAYER_INBOX_FORCE_VOID_NOT_DECIDED = 4;       // 账本水位没到这个 seq:停用原因不是 MISMATCH
+  PLAYER_INBOX_FORCE_VOID_SEQ_NOT_IN_RING = 5;   // 水位已过但环里没有这个 seq(UNKNOWN 一类):可能已执行
+  PLAYER_INBOX_FORCE_VOID_REQUEST_IN_LEDGER = 6; // 环里出现过本行的 request_id(回放,或同 seq 只有类型不同):可能已执行
+  PLAYER_INBOX_FORCE_VOID_LEDGER_INVALID = 7;    // 账本结构不合法(与 scene ValidateLedger 同口径,含环超过 32 条)
+}
 message VoidPlayerInboxItemRequest { uint64 player_id = 1; PlayerInboxDomain domain = 2; uint64 seq = 3;
-  PlayerInboxVoidReason reason = 4; string operator = 5; string note = 6; }
-message VoidPlayerInboxItemResponse { TipInfoMessage error_message = 1; PlayerInboxItemState state = 2; bool void_requested = 3; }
+  PlayerInboxVoidReason reason = 4; string operator = 5;
+  string note = 6;                  // ≤ 256B;强制模式必填(进审计 reason,写工单号与依据)
+  PlayerInboxVoidMode mode = 7; }   // 缺省 NORMAL = 原语义
+message VoidPlayerInboxItemResponse { TipInfoMessage error_message = 1; PlayerInboxItemState state = 2;
+  bool void_requested = 3;          // 强制模式恒为 false
+  PlayerInboxForceVoidVerdict force_verdict = 4; }  // 只在强制模式、行仍 PENDING 时填写
 // 查询类请求/响应字段从略:按注释写;所有 id、时间、epoch 一律 uint64
 ```
+
+**VoidItem 的两种模式**（评审 M1，2026-10-16 用户拍板）：
+- **普通模式**（`NORMAL`，原语义）：未投递的直接 VOIDED，已投递的只挂 `directive=VOID`，由消费方裁决。
+- **强制模式**（`FORCE_MISMATCH`）：只用来终结「已投递、仍 PENDING、scene 回放核对判了 MISMATCH」的行，规则见 §7.9。
+- 证明不成立时回 `kPlayerInboxItemStateConflict`，`force_verdict` 给出原因，行不变、不写审计；读账本失败回 `kPlayerInboxStoreUnavailable`（可重试）。
+- 判定强制终结成功，一律以 `force_verdict == PROVEN` 且 `state == VOIDED` 为准：不认识 `mode` 的旧版服务端会按普通模式处理，只回 `void_requested=true`。
+- `force_verdict` 与它的枚举是约定之外新增的契约面（交接 §6.4 小取舍第 1 条），按推荐口径保留；Java 版要同批跟进。
 
 v0.1 里的三个接口删掉了：
 - **`RequeueItem`**：补发到队尾会颠倒封锁和解封的先后（评审 consistency #6）。
@@ -656,7 +726,7 @@ v0.1 里的三个接口删掉了：
 
 1. 校验 `PlayerInbox.AdminToken`，用常数时间比较，照 `authorizeAdmin`；口令为空则接口停用。
 2. 从 oneof 得到 msg_type 和载荷，按 §3.4 做长度校验并覆盖 `gm_operator`。
-3. 调 `inbox.Store.Enqueue(ctx, params, auditFn)`（§6.2）。`auditFn` 在同一个事务里往 `player_inbox_audit` 写一行审计，内容包括 seq、operator、对端地址和理由。
+3. 调 `inbox.Store.Enqueue(ctx, params, auditFn)`（§6.2）。`auditFn` 在同一个事务里往 `player_inbox_audit` 写一行审计，内容包括 seq、operator、对端地址和理由，以及从条目行复制的类型、request_id、签发时刻、摘要和载荷（§4.1）。
 4. 返回 `seq` / `created` / `state`。
 
 ### 6.2 入箱核心 `Enqueue`
@@ -689,6 +759,7 @@ func (s *Store) Enqueue(ctx context.Context, p EnqueueParams, inTx func(*sql.Tx,
 5. **时间窗**：`issued_at_ms` 不在 [now−7d, now+5min] 之内，返回 `kPlayerInboxIssuedOutOfWindow`。
 6. **补建流行**：在事务外 autocommit 执行 `INSERT IGNORE`，`next_seq=1`，遇到 1213 有界重试。
    - 为什么放在事务外：照 `assetop.EnsureSeqRow`（`seq.go:72`）。两个并发请求在事务里对同一个不存在的行做「加锁读、发现没有、插入」时，共享锁升级会造成死锁。
+   - 【待订正，第 5 批之前必修】死锁审计复查 #23（交接 §2.2 末尾）指出：现在的 `ensureStream` 前面没有普通读探针，也没有守卫行，首个插入者回滚时，后到的两个及以上请求会继承间隙锁、互相挡住插入意向锁，报 1213；「1213 有界重试」不能当作消环论证。v1 唯一的生产方是逐玩家串行的 GM 接口，当前不可达。修法照 trade / guild 的 #16（普通读探针 + 守卫行下建行），与本段一起改；本轮不在范围内。
 7. **主事务**：经 `assetop.WithTxRetryConfig` 执行，参数是 `DefaultTxRetryConfig()` 再**注入** `IsRetryable`，覆盖 1213、1205、9007。隔离级固定 RC。
    1. `SELECT … FROM player_inbox_stream WHERE <pk> FOR UPDATE`。
    2. **在锁内复读唯一键**（普通读；RC 下看得见前一个持锁者已经提交的行）。命中时，同摘要返回 DUPLICATE，不同摘要返回 CONFLICT。这一步排在满箱判定之前，所以「重试与原请求赛跑」时，重试方拿到的一定是 DUPLICATE，不会是 FULL。
@@ -717,15 +788,31 @@ func (s *Store) Enqueue(ctx context.Context, p EnqueueParams, inTx func(*sql.Tx,
 3. **有 location**：
    - 从 scene 节点镜像查到 node_id 和 uuid。
    - 发 `SceneCommand{DispatchEvent, PlayerInboxNotifyEvent}` 到 `scene-cmd`，写法照 `go/match/internal/team/notify.go:226-292`：经 `kafkacmd.SceneCommandMessage` 寻址，key 是 player_id，`target_instance_id` 是 uuid（AGENTS §7 #2、#3）。
-   - 节点查不到、或 uuid 为空：算失败，留给补发循环。
-4. **Kafka 写入成功**：执行 `UPDATE stream SET notify_due_ms=0 WHERE <pk> AND next_seq = <本次 seq+1>`。
+   - 节点查不到、uuid 为空等情形按下表的结局处理。
+4. **结局已落定**（下表）：执行 `UPDATE stream SET notify_due_ms=0 WHERE <pk> AND next_seq = <本次 seq+1> AND notify_due_ms<>0`。
    - 只要这期间又有新的入箱，`next_seq` 就变了，CAS 失败，`notify_due_ms` 留给补发循环。最多多发一次提醒，不会丢。
    - 不再用毫秒值当 CAS 令牌，消除了 ABA。
+   - 入箱后那次提醒没落定时什么都不写，`notify_due_ms` 保持入箱写下的 now，交给补发循环。
+
+**提醒结局**（`inbox.NotifyResult`，即 `player_inbox_notify_total{result}` 的取值；评审 L6，复核 R3 修订）：
+
+| 结局 | 含义 | 处理 |
+|---|---|---|
+| `sent` | SceneCommand 已写进 Kafka | 落定，CAS 清零 |
+| `offline` | 没有 location | 落定：下次落地会拉 |
+| `awaiting_placement` | 跨 zone 交接已放行、目标 zone 还没落点 | 落定：目标落地会无条件拉 |
+| `no_node` | **只剩**「location 既无节点也无 epoch」（位置记录残缺） | 落定：再重试也送不到，交给落地拉取与在线兜底 |
+| `error` / `empty_uuid` / `nodes_unsynced` / `node_ambiguous` | 读 location 或写 Kafka 失败；节点注册没有 uuid（防僵尸契约，不发）；镜像还没完成首次同步；同一节点身份有多条注册 | 不落定，按退避重试 |
+| `node_missing` | 镜像已同步，却查不到 location 指向的节点 | 不落定，按退避重试。watch 重连期间镜像停在上一版、租约抖动会先删后注册，都不能断定节点已下线。**悬满 1 小时**（`notifyNodeMissingSettleAfter`）仍查不到才由补发落定并打 ERROR；节点真没了时积压告警约亮 50 分钟后自行消失 |
 
 **补发循环**：
 - 只在领导者上跑，领导者由 `go/shared/leader` 选举。
-- 每 30 秒按分片轮转一轮：`WHERE shard=? AND notify_due_ms BETWEEN 1 AND now-5000 LIMIT 100`。5 秒宽限是为了不和请求内的那次提醒抢。
-- 对每一行，读出当时的 `next_seq=N`，提醒成功后用 `WHERE next_seq=N` 做 CAS 置 0；失败就保持原值，下一轮再试。
+- 每 30 秒一轮，逐片扫 64 个分片：`WHERE shard=? AND notify_due_ms BETWEEN 1 AND now-5000 LIMIT 100`。5 秒宽限是为了不和请求内的那次提醒抢。单次提醒的预算是 1 秒（`NotifyTimeout × 5`）。
+- 对每一行，读出当时的 `next_seq=N`：
+  - 落定：用 `WHERE next_seq=N` 做 CAS 置 0。
+  - 不落定（`DeferNotifyDue`）：在同一个 next_seq CAS 里把 `notify_due_ms` 推到 `now + clamp(now − updated_ms, 30 秒, 30 分钟)`，即 30 秒起、按悬挂时长翻倍、封顶 30 分钟（`notifyRetryMin / Max`）。到点之前这一行不再被扫到，不再每轮占着分片队头。退避以流行的 `updated_ms` 计时，不加新列；Fetch / Ack / 作废推进 `updated_ms` 只会让退避回到 30 秒。
+  - CAS 失败都无害：这期间又有新的入箱，`notify_due_ms` 已被写成 now，补发照常尽快处理。
+- 积压 gauge `player_inbox_notify_backlog` 按「`notify_due_ms` 非 0 且流行最后一次写入早于 5 分钟前」统计，退避中的行照样计入（§9.4）。
 
 **提醒丢了怎么办**：Kafka 从末尾消费、玩家不在本节点就丢，所以提醒是「至多一次」。兜底有两层：
 - **落地拉取**。如果目标节点在入箱提交之前已经落地，那么那时 location 已经指向它，提交之后读 location 必然投到它。如果落地发生在提交之后，落地时的 Fetch 一定能看到这一条。
@@ -831,6 +918,15 @@ func (s *Store) Enqueue(ctx context.Context, p EnqueueParams, inTx func(*sql.Tx,
 
 不满足时，记下延后原因，按 1 秒到 60 秒加抖动退避。同 zone 交接是异步收尾的，落地钩子执行时实体可能仍处于冻结状态，同样靠退避解开。
 
+**回包到达时闸不过：丢掉本地副本、下次重拉**（评审 L1，第 B 批起；`DropPendingForRefetch`）：
+- 不在本地等闸再续做。等闸的这段时间里（冻结、交接、战斗都可能很久），服务端可能给条目挂上 VOID，按旧副本续做会把已作废的处置照样执行并报 APPLIED。代价只是服务端 `delivery_count` 多 +1。
+- `ackQueue` 为空：回到 Idle，按延后原因退避，下一次 Fetch 重新过闸。
+- `ackQueue` 非空（只可能来自执行器 DEFER 之后的续做）：先转 AwaitDurable 把已定的前缀确认掉，再按 `recheckRequested` 重拉。直接回 Idle 会让重投的前缀回放后与队列里的同一 seq 重复，服务端判 InvalidParameter。
+- **只有执行器 DEFER**（闸已过、条目已开始处理）才保留本地续做；续做时仍先过闸，闸不过同样丢掉剩下的副本，先确认前缀再重拉。
+- 退出期（`kExiting`）丢掉的这批多半再也拉不回来，另打一行 INFO `metric=inbox_leave_ack result=delivered_undecided source=apply_gate_exiting`（§7.7）。
+
+**不会自愈的延后**：目前只有 `ledger_invalid`（账本损坏）。除了延后原因变化时的 INFO `metric=inbox_deferred`，每次落地后首次出现打一条 WARN `metric=inbox_ledger_invalid source=apply_gate`，之后每 8 次失败（退避封顶 60 秒时约 8 分钟）再打一条（`kStuckWarnEveryFailures`）。节拍由 `player_inbox_rules.h` 的 `static_assert` 钉在 10 分钟告警窗口（`kSceneLogAlertWindowMs`）之内，改告警窗口要同步改这些常量。
+
 **DependencyGate 不加收件箱**（`main.cpp:350-352`）。
 
 ### 7.6 处理 Fetch 回包
@@ -841,26 +937,40 @@ func (s *Store) Enqueue(ctx context.Context, p EnqueueParams, inTx func(*sql.Tx,
    - **gRPC 返回 UNAVAILABLE / DEADLINE**：按 1 秒到 60 秒退避。
    - **STALE**：记 ERROR `metric=inbox_stale_owner`，退避 60 秒。
    - **EPOCH_REQUIRED / EPOCH_AHEAD**：属于缺陷或伪造，记 ERROR，halt。
+   - **回包带 tip**（服务端故障，例如 `kPlayerInboxStoreUnavailable`）：按 1 秒到 60 秒退避，不计协议异常。`kInvalidParameter` 目前也按这一条退避（交接 §6.4 小取舍第 11 条），没有改成停用。
    - **NO_STREAM 或没有条目**：本轮结束。
-3. **按 seq 升序逐条处理**，要求 seq 严格递增：
-   - **本二进制不认识的 `msg_type`，或类型不属于本域**：在这一条**停下**，不记账、不 Ack，halt，记 ERROR `metric=inbox_unknown_type`。这通常是版本错位（新类型先于 scene 升级被启用），绝不能当成终态的 REJECTED。
-   - **`seq ≤ decided_through`（重复投递）**：在最近结局环里找同一个 seq。
-     - 找到，且 `request_id` 与 `msg_type` 都与回包一致：把原结局放进 Ack 队列。
-     - 找到，但两者有任何一项不一致：**MISMATCH**，什么都不确认，halt，记 ERROR `metric=inbox_replay_mismatch`（IB-9）。
-     - 找不到：报 UNKNOWN，带上回包里的 `request_id`。
-   - **`directive == VOID`**：**不解码载荷**，记 SKIPPED，原因取 `void_reason`。
-   - **其余条目**：交给执行器，返回三种结果之一：
-     - `APPLIED`：记账。
-     - `REJECTED(reason)`：记账。
-     - `DEFER(reason)`：在这一条**停下**（严格顺序），本地退避后重试，不重新 Fetch。v1 的三个执行器不会返回 DEFER。
-   - **认识的类型，但载荷解码失败**：按 `REJECTED(kPlayerInboxPayloadInvalid)` 记账。
+   - **批次不合法**（seq 不严格递增等）：halt（`batch_malformed`）。
+3. **按 seq 升序逐条处理**。判定顺序是**先按账本分类，只有新条目才看指令，执行器最后才查**（评审 M1，第 B 批起；纯函数 `ClassifyDelivery` + `PlanItem`）：
+   1. **先分类**（`ClassifyDelivery`，按 seq 在账本里找）：
+      - `seq > decided_through`：**kNew**（新条目）。
+      - `seq ≤ decided_through`，环里有同 seq，且 `request_id` 与 `msg_type` 都与回包一致：**kReplay**。
+      - `seq ≤ decided_through`，环里有同 seq，但两者有任何一项不一致：**kMismatch**（IB-9）。
+      - `seq ≤ decided_through`，环里没有这个 seq：**kUnknown**。
+   2. **再定动作**（`PlanItem`）：
+      - **kReplay**：把原结局放进 Ack 队列。**不需要执行器、不看指令**：本二进制已不认识这个类型也照样回放；已执行的条目被补挂 VOID 后重投，仍回放原结局，不能报成 SKIPPED（IB-4、IB-9）。
+      - **kUnknown**：报 UNKNOWN，带上回包里的 `request_id`。同样不需要执行器、不看指令。
+      - **kMismatch**：什么都不确认（连本批已回放的前缀也不确认），halt，记 ERROR `metric=inbox_replay_mismatch`，日志带上环里同 seq 那一条的 `ledger_request_id` / `ledger_msg_type` 供对照。这一行仍是 PENDING，以后每次落地都会再次停用；**解卡靠服务端 VoidItem 的强制模式**（§7.9），终结之后的落地才会按账本回放、确认前缀。越界的分类值同样按这条处理（fail-closed）。
+      - **kNew 且 `directive == VOID`**：直接记 SKIPPED，原因取 `void_reason`。**不查执行器、不解码载荷**：本二进制不认识这个类型也照样跳过，所以给「未知类型」的条目挂 VOID 就能解开那个停用。
+      - **kNew 且指令不认识**：版本错位，halt（`metric=inbox_unknown_type`），不猜。
+      - **kNew 且没有指令**：才查执行器。本二进制不认识的 `msg_type`、或类型不属于本域：在这一条**停下**，不记账、不 Ack 这一条（已定的前缀照常确认），halt，记 ERROR `metric=inbox_unknown_type`。这通常是版本错位（新类型先于 scene 升级被启用），绝不能当成终态的 REJECTED。
+   3. **执行器**返回三种结果之一：
+      - `APPLIED`：记账。
+      - `REJECTED(reason)`：记账。认识的类型但载荷解码失败，按 `REJECTED(kPlayerInboxPayloadInvalid)` 记账。
+      - `DEFER(reason)`：在这一条**停下**（严格顺序），已处理的前缀从本地缓存摘掉，剩下的本地退避后续做，不重新 Fetch；续做时仍先过前置闸（§7.5）。v1 的执行器只在持久货币组件缺失（加载不变量被破坏）时返回 DEFER，不把这条处置因本地缺陷钉成终态。
 
    **记账**的含义：在同一个 loop 帧里写效果，推进 `decided_through=seq`，把 (seq, 结局, request_id, msg_type) 压入最近结局环（超过 32 条就挤掉最旧的）。
+
+   **为什么不能把 VOID 判定整体提到分类之前**：kReplay 会把已执行的行报成 SKIPPED，违反 IB-4 / IB-9。评审 M1 的原建议在这一点上被复核者纠正过，`PlanItem` 的注释与 rules 单测钉住这条顺序。
 4. **触发存盘**：本批有新记账时，调 `PlayerLifecycleSystem::SavePlayerToRedis`，500ms 节流（照 `RequestAssetOpPersist`，`asset_op_system.cpp:224`）。紧接着在同一条连接上发 PING 走快路径，照 `player_battle.cpp:366-397`。
 
-**执行器的改动**：
+**新落地时本域还在 Applying**（评审 L2，第 B 批起）：归属变过，本地缓存的条目是旧归属下拉到的，丢掉重拉（`DropPendingForRefetch`）。
+- `ackQueue` 非空（执行器 DEFER 之前已记账的前缀）：先转 AwaitDurable，用新 epoch 把前缀确认掉，确认完再按 `recheckRequested` 重拉。落地钩子里只切状态，不当场发 Ack、不压存盘，由下一个 tick（≤ 1 秒）推进。
+- `ackQueue` 为空：回到 Idle，无条件拉一次（§7.3）。
+- 不变量：回到 Idle 时 `ackQueue` 必为空。`StartFetch` 开头另有守卫：带着非空 `ackQueue` 时打 ERROR，改为先确认再拉，不发 Fetch。
+
+**执行器**（第 3 批已落码）：
 - `GmSanctionInboxExecutor` 调用 Block、Unblock、AttachDebt。
-- `AttachDebt` 现在返回 void，非法参数只记日志（`currency_system.cpp:304-330`），要改成返回 tip 码，否则执行器无法判断是否生效。
+- `AttachDebt` 已改为返回 tip 码（原来返回 void、非法参数只记日志），并加了币种越界校验，执行器据此判断是否生效。
 - 执行成功后写一行 `[PlayerInbox] applied type=… request_id=…` 日志，作为可检索的审计。
 
 ### 7.7 落盘之后才确认
@@ -885,8 +995,23 @@ func (s *Store) Enqueue(ctx context.Context, p EnqueueParams, inTx func(*sql.Tx,
   - 这名玩家的这个域 halt：本实体不再 Fetch，下次在本节点新建实体时再试；
   - 不重试。
 - 这样不会在同一条行上反复空转。行还是 PENDING 时，以后的会话会再拉到它；等它被挤出结局环，会以 UNKNOWN 收尾为 SETTLED_UNKNOWN，并触发告警。
+- **回包带 tip `kInvalidParameter`**（评审 L2，第 B 批起）：服务端判这份请求不合法（player_id 为 0、域未知、报告为空或超过 32 条、seq 为 0 或不严格升序、结局未知），同一份 `ackQueue` 重发只会得到同一个答复。按协议异常处理：记 ERROR `metric=inbox_ack_anomaly`，清空 `ackQueue`，halt，不重试。这些结局都已落盘，实体下次在本节点新建时会按账本回放、重新确认。
+  - 「确定性」的前提是收件箱各副本认识同一组域。将来新增域时，要先把收件箱全部升级，再让 scene 消费新域；否则 Ack 落到旧副本会判「域未知」，误停用到实体下次重建（v1 只有一个域，不会发生）。
+- 回包带其他 tip（服务端故障）：保留 `ackQueue`，退避重发。
+- 回包判 STALE：清空 `ackQueue`，退避 60 秒；已停用的域（停用前确认的是已定前缀）不再安排重试，也不打 `inbox_deferred`，免得把停用伪装成暂时延后（编译前复核 SM-1）。
 
 **Ack 请求失败**：保留 `ackQueue`，退避重发。如果实体在这期间被销毁，下次落地时 Fetch 会再次返回这些 PENDING 条目，届时从账本补确认。
+
+**离开时尽力补发一次 Ack**（评审 M4，第 B 批起；`PlayerInboxSystem::OnPlayerLeaving`）：
+- **为什么**：实体销毁时 `ackQueue` 跟着丢，这些行在服务端就停在「已投递未确认」，直到玩家下次落地。典型场景是 GM 处置之后紧接着封号踢下线，玩家可能很久不再上线。
+- **挂点**：`PlayerLifecycleSystem::FinishExitAfterPersist` 里一行调用，在 `WriteExitReleaseMarkIfEligible` 之后、`RemovePlayerSession` / `DestroyPlayer` 之前。这是退出收尾的唯一出口，进来时退出存盘已收敛，实体、owner_epoch 和落盘快照都还在。交接成功、被废黜、拒存这三种收尾不补发。
+- **覆盖范围只到「结局已定、已落盘」的行**：域处于 AwaitDurable，或处于 Applying 且带执行器 DEFER 留下的已定前缀（先丢剩下的本地条目再确认前缀）；并且按最后一次落盘快照判 durable（IB-3）。满足就调 `SendAck` 发一次：不看 Ack 退避，不等回包，不压存盘。Ack 已在途时不重发。
+- **不 durable 就什么都不做**，绝不在落盘前确认。owner_epoch 此刻仍是本节点的值，服务端应判 MATCH；新 owner 已推进围栏时判 STALE，只记 INFO 级 zombie，新 owner 会从存档补确认。
+- **回包**：不登记回调，回包按 player_id + correlation_id 找实体；实体已销毁就丢弃，同一玩家重新落地后的新实体关联号也对不上（节点级单调计数器）。gRPC→muduo 线以后改成每次调用带回调时，这一点要保持。
+- **管不到的行**：已投递、还没定结局的行（退出时 Fetch 在途；Fetch 回包在退出期被前置闸丢掉；执行器 DEFER 剩下的本地条目）没有结局可确认。只能等下次落地重拉，或由 Go 侧的 24 小时窗口把它们移出「已投递未确认」告警（§9.4）。
+- **日志**：INFO `metric=inbox_leave_ack result=sent|not_sent|not_durable|delivered_undecided|fetch_inflight|ack_inflight|decided_prefix_queued`，供对账区分「真正卡住」与「等下次落地」。`ack_inflight` 是离开时这批 Ack 已在途（带 `corr=`，它若在实体销毁后失败才成残留；评审 LC-3）；`decided_prefix_queued` 不是残留（见下一条）。
+- **退出期前置闸的处理**（编译前复核 LC-1、LC-2）：按实体是否挂着退出标记判断，不按闸返回的原因（冻结 / 交接与退出同时存在时闸先报冻结 / 交接）。退出期丢批之前，先把批首账本里已有结局的条目（回放 / UNKNOWN，不执行效果，确认不受前置闸限制）放进确认队列，只丢从第一条需要执行的条目起的剩余部分；账本缺失或已判坏时不分类，整批丢弃。其他闸下仍整批丢弃、之后重拉回放。
+- **已知缺口**：`HandlePlayerAsyncSaved` 的 kFinish 分支在替换快照之前就收尾时，看到的是上一次的快照，可能判 not_durable 少发一次（安全，只是少减一次残留；交接 §6.4 小取舍第 10 条）。
 
 ### 7.8 owner_epoch 围栏
 
@@ -899,7 +1024,7 @@ func (s *Store) Enqueue(ctx context.Context, p EnqueueParams, inTx func(*sql.Tx,
 | `fence == 0` 且 `req ≤ R` | FIRST | `fence = req` |
 | `req == fence` | MATCH | 放行 |
 | `fence < req ≤ R` | ADVANCE | `fence = req`，此后旧 epoch 的请求一律判 STALE |
-| `req < fence` | STALE | 拒绝，不投递、不终结。返回前再读一次 R，用来分类：`R == req` 记为 `fence_regressed`（计数器倒退，critical，见 §8 #14）；否则记为 `zombie` |
+| `req < fence` | STALE | 拒绝，不投递、不终结。返回前再读一次 R，用来分类：`R ≤ req` 记为 `fence_regressed`（计数器倒退，critical，见 §8 #14）；否则记为 `zombie`。原稿写的是 `R == req`；`R < req` 表示核心 Redis 的值比一个仍在请求的旧 owner 还小，同样只可能是计数器倒退，代码（`ClassifyStale`）一并归入 `fence_regressed` |
 
 **R 的读取**：R 是核心 Redis 里 `player:{id}:owner_epoch` 的当前值，解析用 `go/shared/ownerepoch`。
 - 只在快照读到的 `req > fence` 时，才在**事务外**读一次 R。
@@ -939,7 +1064,7 @@ func (s *Store) Enqueue(ctx context.Context, p EnqueueParams, inTx func(*sql.Tx,
 
 **计数器倒退的处置**（§8 #14）：
 - 收件箱不提供归零。
-- 按 `db-write-fencing-mysql.md` §9.1 执行 `epoch-raise`，把收件箱的 `max_fence_epoch` 加进取最大值的来源（C4）。抬升之后，玩家下一次进场拿到 `C'+1`，大于收件箱围栏，判 ADVANCE。
+- 按 `db-write-fencing-mysql.md` §9.1 执行 `epoch-raise`，收件箱的 `max_fence_epoch` 是取最大值的来源之一（C4，围栏设计 v0.4 已定：工具经 `PlayerInboxAdmin.GetSummary` 自己读，读不到就拒绝执行）。抬升之后，玩家下一次进场拿到 `C'+1`，大于收件箱围栏，判 ADVANCE。
 - 归零有两个问题：会与那份文档的处置相反；僵尸 scene 会把围栏重新推回旧的高值（评审 consistency #1、ops #5）。
 
 **备选**（D5）：围栏只告警、不拒绝，正确性完全交给 Redis CAS 加账本。代价是旧 scene 的确认不再受代际约束，偏离已获认可的方向「旧 scene 写入需要归属代际围栏」。
@@ -949,8 +1074,23 @@ func (s *Store) Enqueue(ctx context.Context, p EnqueueParams, inTx func(*sql.Tx,
 处理规则统一（IB-5）：
 - **从未投递的行**（`delivery_count=0`）：在流行锁下直接改成 VOIDED，因为载荷从未离开过收件箱。
 - **已投递的行**：只挂 `directive=VOID`。消费方收到后：
-  - 这条还没处理过：记 SKIPPED，然后确认；
+  - 这条还没处理过：记 SKIPPED，然后确认；本二进制不认识它的类型也一样（§7.6，kNew+VOID 不查执行器）；
   - 已经处理过：确认原来的结局。
+
+**强制模式**（`VoidItem` 的 `mode=FORCE_MISMATCH`，评审 M1，2026-10-16 用户拍板）：
+- **为什么需要**：scene 判 MISMATCH 的行（环里同 seq 是另一个 request_id）挂 VOID 也解不开：分类先于指令，每次登录都会再次停用，该域之后的处置都不执行。
+- **证明**：在事务外经 data_service 的 `GetPlayerInboxLedger` 读该玩家**已落盘**的账本（就是对账用的那一个）。只放行一种情况（`PROVEN`），全部满足才行：
+  - 行已投递（`delivery_count>0`）、仍 PENDING；
+  - 账本结构合法，与 scene `ValidateLedger` 同口径：各域非 0 且唯一、环严格升序、seq 非 0、不越过水位、结局可记、环不超过 32 条，另加 request_id 非 0；
+  - 该域 `decided_through ≥ seq`；
+  - 环里同 seq 那一条的 request_id 不同于本行，且环里任何一条都不是本行的 request_id。
+- **为什么这样就够**：消费方拒绝给 `seq ≤ 水位` 的条目记账，对这一行只会判 MISMATCH 或 UNKNOWN，不会执行它；本行在这一消费方谱系上从未执行，以后投递到也只会判 MISMATCH。账本只升、环里的条目只会被挤出，先读账本、后在锁内判定没有竞态。
+- **提交**：开事务，对流行 `FOR UPDATE`，按主键复读行，用条件写 `state=PENDING AND delivery_count>0 AND request_id=原值` 改为 VOIDED（`finalized_by=ADMIN`，`void_reason` 取请求），`open_count-1`，同事务写审计 `FORCE_VOID`（reason 取 note）。
+- **一律拒绝**（行不变、不写审计，回 `kPlayerInboxItemStateConflict` 加 `force_verdict`）：同 seq 同 request_id（回放）、水位已过而环里没有该 seq（UNKNOWN 一类）、环里别处出现本行的 request_id，这几种都可能已执行（IB-4 / IB-9）；另有水位没到、读不到存档、账本不合法、从未投递。行不存在或已是终态时沿用普通模式的结论，不看账本。
+- **同 seq、同 request_id、只有 msg_type 不同的 MISMATCH** 也被拒（`REQUEST_IN_LEDGER`）。它只可能来自数据损坏，需要人工（交接 §6.4 小取舍第 9 条）。
+- **运维步骤**：先 `ReconcilePlayer` 看到 `PENDING_BUT_DECIDED`，再调 `mode=FORCE_MISMATCH`，note 必填（工单号与依据）；以 `force_verdict == PROVEN` 且 `state == VOIDED` 判成功，再用 `LookupByRequest` 确认终态。
+- **指标与日志**：计 `player_inbox_void_total{path="force"}`（只在成功时）；成功和拒绝都打日志，带 `ledger_decided_through` 与 `ledger_request_id_at_seq` 作为证据。审计里的 `peer_addr` 经 port-forward 调用时恒为回环地址，对到具体的人要靠 kube-apiserver 的审计日志（评审 L8）。
+- **残余风险**：证明依赖已落盘的 Redis 账本，见 §7.10。
 
 **v1 不提供人工补发。** 补发到队尾，会让一条更早的封锁排到一条更新的解封后面执行，违背 GM 的最新意图（§2.2 要求严格按顺序）。运维看过当前状态之后，用新的 request_id 下一条新的处置；它的 seq 天然排在最后，表达的就是最新意图。
 
@@ -965,9 +1105,18 @@ func (s *Store) Enqueue(ctx context.Context, p EnqueueParams, inTx func(*sql.Tx,
 - **源 scene 已经应用、但没落盘就失去归属**：新 epoch 铸造之后，旧 scene 的存盘会被 Redis Lua CAS 拒绝（`kSaveIfGuardLuaScript`，`redis_client.h:42-52`）。它的效果随实体一起消失，由新 owner 重做一次，所以只生效一次。
 - **目标 scene**：落地钩子判定为新落地、并且通过前置闸之后才开始拉。它带的 epoch 更大，会把围栏推上去（不超过 R）。
 
-保证的边界与资产通道相同：只覆盖 Redis 层，不覆盖 MySQL（`reliable-player-inbox-20261014.md:100`）。
+保证的边界只覆盖 Redis 层，不覆盖 MySQL（`reliable-player-inbox-20261014.md:100`）。原稿写「与资产通道相同」，这个前提已经不成立，见下面的残余风险。
+
+**残余风险：确认依据仍是 Redis 落盘，资产通道已改为 SQL 提交证据**（评审 M7，plausible；2026-10-16 用户拍板本轮只登记）：
+- **现状**：收件箱的「已落盘」读的是 `PlayerLastPersistedSnapshotComp`，即最后一次成功写入 Redis 的玩家数据（§7.7）。资产通道已改为以 go/db 在玩家资产与账本同一 SQL 行提交之后发布的证据 `PlayerAssetSQLCommit`（`proto/common/asset/asset_op.proto`）作为到账确认，Redis 只缓存证据。
+- **为什么不能直接复用**：`PlayerAssetSQLCommit` 只带 `player_id`、`owner_epoch`、`save_seq` 与资产账本 `ledger_proto`，**不含 `inbox_ledger`**。
+- **后果**：Ack 之后、MySQL 提交之前 Redis 丢数据（AOF 丢尾、回档），账本与效果一起回退，服务端行已是终态，不会再投（§8 #15）。对账只能发现水位以内、环覆盖范围以内的这类丢失（§9.3）。
+- **强制终结同样依赖 Redis 账本**：`GetPlayerInboxLedger` 读的是 zone Redis 里的玩家 blob。终结之后已落盘账本本身回退，而回退前 scene 已经拿到这一行，就可能出现执行了却记为 VOIDED；Ack 会报 CONFLICT 告警（IB-4 不翻转）。
+- **处置**：与资产 SQL 提交那条线的负责人对齐，二选一：扩展证据带上 `inbox_ledger`；或由 go/db 另发一份 `PlayerInboxSQLCommit`。定下来之前保持现状，不改 IB-3 的判定口径。
 
 ### 7.11 回包关联
+
+> **2026-10-17 契约勘误**：以下安装方案保留作历史。Fetch / Ack 现在显式传每次调用回调，闭包按值捕获 `playerId + domain + correlationId` 并委托 `PlayerInboxSystem` 的具名完成函数；不再有 `InitPlayerInboxReply` 或独立 rpc_replies 适配文件。响应的非零 player_id / domain / correlation_id 逐字段与捕获值核对，任一不符记 ERROR 并丢弃；零值允许缺回显，仍按捕获值认领。失败用同一捕获上下文释放本次在途并沿用原退避，不保存请求副本。
 
 - 【事实】生成器不会为 gRPC 服务注册回包处理函数（`main.cpp:104-119`）。
 - 【提议】手写 `InitPlayerInboxReply()`，给 Fetch 和 Ack 的 `Async…Handler / …FailedHandler` 赋值，写法照 `InitDataServiceReply`（`id_segment_bootstrap.cpp:264-272`）。在 `main.cpp` 里紧挨 `InitSceneManagerReply()` 调用。
@@ -1011,23 +1160,25 @@ v1 不接版本摘要（D4 已拍板）。只有当落地拉取的负载超出�
 | 4 | Fetch 之后 scene 崩溃 | 条目仍是 PENDING（v1 没有租约），下一个 owner 拉到后按账本去重 | 至少一次投递，加账本去重 |
 | 5 | 已执行，但落盘前崩溃 | 内存里的效果和账本一起丢，重新执行 | 只生效一次 |
 | 6 | 已落盘，但确认前崩溃 | 下次落地再次拉到，账本显示已处理，补发 Ack；不在环里时按 UNKNOWN 规则确认 | 状态变为终态 |
-| 7 | 确认丢失 | 实体还在就退避重发；实体没了就等下次落地补确认 | ALREADY_SAME |
+| 7 | 确认丢失 | 实体还在就退避重发；实体没了就等下次落地补确认。退出收尾时尽力补发一次，只覆盖结局已定且已落盘的行（§7.7）；已投递未定结局的行只留日志，等下次落地 | ALREADY_SAME |
 | 8 | 旧 scene 迟到的 Fetch 或 Ack | 判 STALE。旧 scene 的效果被存盘 CAS 挡住，或者早已进入新 owner 加载的存档 | 一致 |
 | 9 | 迁移途中入箱 | 源 scene 被前置闸拦住；提醒按提交后的 location 投到目标，或者目标落地时拉到 | 在目标 scene 生效 |
 | 10 | 玩家长期离线 | 条目一直 PENDING，GM 类型不许过期；容量上限防止无限增长。离线积压只进 info 看板，不告警（§9.4） | 不丢 |
 | 11 | 毒消息 | 入箱时先校验；消费端对确定性错误给 REJECTED；引发崩溃循环时 `delivery_count≥5` 告警，运维 `VoidItem`，作废路径不解码载荷 | 可止损 |
 | 12 | 收件箱库或服务不可用 | GM 收到同步失败；scene 的 Fetch 和 Ack 退避；玩法不受影响（IB-7） | 只是延迟 |
-| 13 | 滚动升级的版本错位 | 收件箱旧版本：Fetch 返回 UNIMPLEMENTED，scene 长退避。scene 旧版本：`consumer_enabled` 默认关。新类型先于 scene 支持被启用：scene 遇到未知类型停在队头并告警，不记 REJECTED。部署顺序见 §11.7 | 只是延迟，不产生错误终态 |
+| 13 | 滚动升级的版本错位 | 收件箱旧版本：Fetch 返回 UNIMPLEMENTED，scene 长退避。scene 旧版本：`consumer_enabled` 默认关。新类型先于 scene 支持被启用：scene 遇到未知类型停在队头并告警，不记 REJECTED；运维给它挂 VOID 即可解开（kNew+VOID 不查执行器，§7.6）。部署顺序见 §11.7 | 只是延迟，不产生错误终态 |
 | 14 | Redis 里的 owner_epoch 倒退（备份恢复、AOF 或主从丢尾、键被删；`db-write-fencing-mysql.md` §9.1 场景表） | 新 owner 的 epoch 小于收件箱围栏，判 STALE，分类为 `fence_regressed`（critical）。按 §9.1 定真源、踢下线、`epoch-raise`，收件箱的 `max_fence_epoch` 在取最大值的来源里（C4）。不归零 | 可恢复，不被僵尸重新毒化 |
-| 15 | 已确认之后 Redis 玩家数据丢失（AOF 丢最后 1 秒） | 账本和效果一起回退，服务端行已是终态，不会再投。**每小时对账作业**发现并告警（§9.3），人工补发 | 可发现，需要人工处理 |
+| 15 | 已确认之后 Redis 玩家数据丢失（AOF 丢最后 1 秒） | 账本和效果一起回退，服务端行已是终态，不会再投。**每小时对账作业**按环内空洞判定发现并告警（§9.3），人工补发。确认依据仍是 Redis 落盘，见 §7.10 的残余风险 | **水位以内、环覆盖范围以内的丢失可发现**（含之后的条目把水位推过去、掩盖了丢失的情形）；早于满环头的仍无从核对。需要人工处理 |
 | 16 | 玩家回档 | 同上，账本随数据回退。回档预检对比快照账本的 `decided_through` 和收件箱里已终结的 APPLIED 行，列出差异；需要显式接受并写明原因，事后人工补发（D7）。【事实】单人回档的栅栏未接线，目前一律返回 NotImplemented（`rollback_logic.go:60-70`），所以预检与回档接线同批实现 | 不会悄悄发生 |
 | 17 | 合服 | 收件箱按全局唯一的 player_id 存，不需要重映射。新字段必须在各 zone 都完成迁移（合服按列名拷贝，`tools/merge_zone/player_rows.go:352`）；`tools/merge_zone/audit_resources.go:338` 加一条只读审计 | 不受影响 |
-| 18 | 收件箱库按备份恢复 | 恢复之后的新 seq 带时间下界，一定大于恢复前已分配的号。消费方水位领先 `next_seq` 时，由 CursorAhead 告警并抬号。恢复回来、已被消费方处理过的旧行，按 IB-9 核对后回放或以 UNKNOWN 收尾；核对不一致就 MISMATCH 停用。恢复窗口内丢失的条目，对照运维侧工单记录和 scene 的 `[PlayerInbox] applied` 日志人工核对后重下；不能按原 request_id 直接重放 | 不跳号、不重复；丢失项需人工处理 |
-| 19 | 账本损坏 | 加载时校验：各域唯一、最近结局升序且都 ≤ decided_through、条数 ≤ 32。不通过就挂 `PlayerInboxLedgerInvalidComp` | 只停用这名玩家的收件箱 |
+| 18 | 收件箱库按备份恢复 | 恢复之后的新 seq 带时间下界，一定大于恢复前已分配的号。消费方水位领先 `next_seq` 时，由 CursorAhead 告警并抬号。恢复回来、已被消费方处理过的旧行，按 IB-9 核对后回放或以 UNKNOWN 收尾；核对不一致就 MISMATCH 停用，经账本证明后用 VoidItem 强制模式解卡（§7.9）。恢复窗口内丢失的条目，对照运维侧工单记录和 scene 的 `[PlayerInbox] applied` 日志人工核对后重下；不能按原 request_id 直接重放 | 不跳号、不重复；丢失项需人工处理 |
+| 19 | 账本损坏 | 加载时校验：各域唯一、最近结局升序且都 ≤ decided_through、条数 ≤ 32。不通过就挂 `PlayerInboxLedgerInvalidComp`，打 ERROR `metric=inbox_ledger_invalid source=loader`；之后前置闸按 `source=apply_gate` 周期补打 WARN（§7.5）。**不要清空账本重建**：那会重复执行已执行过的处置 | 只停用这名玩家的收件箱 |
 | 20 | GM 作废与消费方执行同时发生 | 已投递的行只挂作废指令，以消费方的裁决为准 | 状态与效果一致 |
 | 21 | scene 或 go/db 降到不认识新字段的版本 | scene 旧版本按组件重建存档（`player_database_loader.cpp:140-163`），会丢掉新字段；go/db 旧版本按主键只更新已知列，账本列会停在旧值（违反 IB-3）。再升级回来，已应用、未确认的 `ATTACH_DEBT` 会被重复执行。**回滚下限** = 认识新字段的版本（§11.7）。低于下限的降级按 runbook 先关入箱和消费，对已投递、未确认的行挂 `VOID(QUARANTINED)`，升级回来之后逐条按存档核对 | 有回滚下限，破坏性降级有前置步骤 |
 | 22 | player_id 输错或玩家不存在 | 入箱前查归属区映射，返回 `kPlayerInboxPlayerNotFound` | 不留永远 PENDING 的行 |
 | 23 | 内网伪造 Fetch / Ack | 超大 epoch 判 EPOCH_AHEAD，不改状态；request_id 不一致判 MISMATCH；伪造的「已执行」由每小时对账发现（§1.6） | 不会锁死；残余风险可发现 |
+| 24 | 消费端关、入箱开（例行发布把开关写回 false、检出旧 commit 重跑 zone-up、先开了入箱，或有人只开了入箱） | 两个开关都只认 git 跟踪的 yaml；部署脚本写前门禁拒绝「消费关而白名单非空」：比当前检出的两份 yaml，非 DryRun 时再读另一侧线上的 ConfigMap，除非显式 `-AllowPlayerInboxConsumerOff`（§3.3）。漏网（ConfigMap 与进程不一致、绕过脚本、用旧脚本部署）时 scene 每 5 分钟打 WARN `metric=inbox_consumer_disabled`，告警「入箱在涨、锁路径 Fetch 不涨」亮起（§9.4）；后者被别的 zone 的投递盖住时只剩 scene 日志 | 发布前被拦下；漏网可发现，逐 zone 只能靠 scene 日志 |
+| 25 | scene 回放核对判 MISMATCH（环里同 seq 是另一个 request_id） | 该域停用，什么都不确认；每次落地都会再次停用。运维 `ReconcilePlayer` 确认后用 VoidItem 强制模式终结这一行（§7.9） | 经账本证明后可解卡 |
 
 ---
 
@@ -1045,60 +1196,98 @@ v1 的类型都不允许过期，也没有过期列，这里不做任何处理�
 
 ### 9.3 对账
 
-**定时作业**（第 4 批，只在领导者上跑）：
-- 每小时一轮，取最近 24 小时内由消费方终结的行（走 `(shard, state, updated_ms)` 索引）。
-- 按玩家经 data_service 的 `GetPlayerInboxLedger` 读出已落盘的账本，检查 `decided_through ≥ seq`。
-- 不满足就记 `player_inbox_reconcile_mismatch_total`，告警，并写一行带 player_id 的 ERROR 日志（player_id 只进日志）。
-- 读不到存档的计为 `unknown`，不告警。
-- GM 域的量很小，这个作业的开销可以忽略。
+**定时作业**（第 4 批，只在领导者上跑；评审 M5、M6、L4、L11 与复核 R1 修订，以 `reconcile.go` / `loops.go` 为准）：
 
-**手工入口** `ReconcilePlayer`：按单个玩家比对，报告两类差异：
-- 收件箱已经是终态，但账本没到这个 seq：可能是回档或 Redis 丢了数据。
-- 收件箱还是 PENDING，但账本已经处理过：确认丢了，而且玩家一直离线。
+*节拍与配置*：
+- 每 `ReconcileIntervalMinutes`（默认 60，0 = 不跑）一轮，只看最近 `ReconcileWindowHours`（默认 24）小时内由消费方终结的行。
+- `config.Validate` 在对账开启时要求 `窗口 × 60 ≥ 2 × 间隔`，否则拒启：窗口不足两轮，一轮失败或易主就会有行一次都没核对就滑出窗口。`inbox.NewLoops` 同样兜底。
+- 当选后第一轮在 1–5 分钟内随机起跑（`reconcileFirstDelay = 1 分钟 + [0, 4 分钟) 抖动`，不超过一个间隔），不再等满一个间隔。
+
+*一轮怎么扫*：
+- **起始分片步长轮转**：墙钟落在第 `k = nowMs / intervalMs` 个间隔，起点 = `k × 4 % 64`，不依赖内存状态。步长 4 = 每轮玩家上限 2000 ÷ 单片行上限 500：一片至多收 500 名新玩家，所以起点之后的前 4 片每轮必定读完；相邻轮次首尾相接，**连续 16 轮必然把 64 片各读完一遍**，不论截断多严重。
+- 从起点环形扫描，逐片按键集翻页读（`ORDER BY updated_ms DESC, player_id DESC, domain DESC, seq DESC`，每页 100 行），最新的行先核对。
+- **上限**：单片一轮最多 500 行，读满后再探一行，确有剩余才算这一片截断，然后继续下一片；新出现的玩家数到 2000 名时整轮停在当前分片。
+- **截断留痕**：触到任一上限，`player_inbox_reconcile_truncated_total` 每轮加 1，并打一行 ERROR，写明起始分片、已扫几片、哪些分片读满、停在哪片、还剩几片。窗口不足 16 个间隔且本轮截断时，另打一条 ERROR（这种配置没有覆盖保证）。被单片上限截掉的是一片里最老的行，只要这一片持续有更新的行顶着，它们就一直核对不到。
+- **读账本**：按玩家经 data_service 的 `GetPlayerInboxLedger` 读已落盘账本，有界并发 8 路（`reconcileLedgerReadConcurrency`），每次带 `LedgerReadTimeout`。单次读 panic 只丢那一名玩家，结果按下标放回，判定和日志的顺序确定。
+
+*判定：环内空洞谓词* `finalizedLedgerGap`（`decide.go`；定时对账与 `ReconcilePlayer` 共用，评审 M6）。原来只比水位：seq=a 已 APPLIED，随后 Redis 丢尾、水位回到 a−1，之后 b(>a) 一执行水位就越过 a，丢失被掩盖。现在按顺序判：
+1. 非终态的行，以及不是由消费方终结的行（管理员作废、强制终结的行都属此类）：不比。强制终结的行按构造恰好是「环里同 seq 是另一条」的形状，不能报成不一致。
+2. `seq > decided_through`：`beyond_watermark`。四种终态都比，含 SETTLED_UNKNOWN。
+3. SETTLED_UNKNOWN：到此为止，不再往下比。
+4. 环满 32 条且 seq 早于环头：已挤出环，无从核对，不报。
+5. 其余必须在环里按 seq 找到同一条：查不到报 `missing_in_ring`；查到但 request_id、msg_type 或结局不同报 `ring_mismatch`。结局比对 VOIDED 对 SKIPPED，REJECTED 另比原因码。
+- 环不满 32 条说明从没裁剪过，所以「首次处置就丢」也能抓到。
+- Go 常量 `ledgerRecentCapacity = 32` 必须与 C++ `kRecentCapacity` 同值，测试 `TestLedgerRecentCapacityMatchesConsumer` 从 `player_inbox_rules.h` 抽数比对；Java 版落码时同样对齐。
+
+*结果与读数*：
+- 每处不一致写一行带 player_id 的 ERROR（player_id 只进日志），带 `gap=` 与 `ring_len=`。
+- 读不到存档计 `reconcile_ledger_read_total{result="absent"}`，结论未知，不告警；读失败计 `error`。
+- **账本不合法**（与 scene `ValidateLedger` 同口径，含环超过 32 条；另加 request_id 非 0，scene 不查这一项）计 `result="invalid"` 并打 ERROR，**不判「无差异」**，结论按未知处理。只有 request_id 为 0 这一项不合法时，scene 不判账本损坏、不打 `inbox_ledger_invalid`，同 seq 的行再投递时表现为 `inbox_replay_mismatch`。
+- 当前不一致数是 gauge `player_inbox_reconcile_inconsistent_rows`（评审 L11，取代原来会重复累加的 `reconcile_mismatch_total`）：本任期 64 片各自最近一次读数之和。读完的分片用本轮值覆盖，只核对了一部分的分片取较大值，没读到的分片沿用旧值；卸任时归零，易主后从 0 重建，最多 16 轮。
+- 它是读数不是事件数：处置之后要等那一行滑出窗口、所在分片再被读完一次，读数才会下降，critical 告警约持续 24h + 2h。豁免表没做，需要时在 Alertmanager 静默。
+- 每轮结果计 `player_inbox_reconcile_rounds_total{result=ok|error|timeout}`；领导权丢失或关停造成的取消不计。
+
+**手工入口** `ReconcilePlayer`：按单个玩家比对，用同一个谓词，报告两类差异：
+- `FINAL_NOT_IN_LEDGER`：收件箱已由消费方终结，已落盘账本里却没有它的结局，可能是回档或 Redis 丢了数据。三种形态（越过水位、环内缺失、环里同 seq 是另一条）都报这一个值，服务端日志的 `gap=` 区分。
+- `PENDING_BUT_DECIDED`：收件箱还是 PENDING，但账本已经处理过：确认丢了而且玩家一直离线，或 scene 判了 MISMATCH（§7.9 强制模式的入口）。
+- 账本不合法时回 `kPlayerInboxStoreUnavailable` 并打 ERROR，没有在回包里加 `ledger_invalid` 字段（加字段是 proto 变更，交接 §6.4 小取舍第 6 条）。这个故障码带「可重试」的暗示，但重试不会好。
 
 ### 9.4 指标与告警
 
 前缀用 `player_inbox_`。label 只用有限枚举，**不用 player_id**。
 
-- **计数器**（每个副本各报一份）：
+以 `go/player_inbox/internal/metrics/metrics.go` 为准（2026-10-17 订正）。
+
+- **计数器**（每个副本各报一份，告警一律 `sum()`）：
   - `player_inbox_enqueue_total{type,result}`
-  - `player_inbox_fetch_total{domain,fence,path}`，path 取 fast / locked
+  - `player_inbox_fetch_total{domain,fence,path}`，path 取 fast（不加锁的快照读）/ locked（锁路径，只有它投递条目）
   - `player_inbox_ack_total{domain,result}`
-  - `player_inbox_void_total{domain,reason,path}`
-  - `player_inbox_notify_total{result}`
+  - `player_inbox_void_total{domain,reason,path}`，path 取 direct / directive / already / **force**（强制终结成功，§7.9）
+  - `player_inbox_notify_total{result}`：落定 sent / offline / awaiting_placement / no_node；按退避重试 error / empty_uuid / nodes_unsynced / node_ambiguous / node_missing（§6.3）
   - `player_inbox_cursor_ahead_total`
   - `player_inbox_fence_regressed_total`
   - `player_inbox_epoch_ahead_total`
-  - `player_inbox_reconcile_mismatch_total`
+  - `player_inbox_reconcile_truncated_total`：对账轮次没覆盖完整个窗口（§9.3）
+  - `player_inbox_reconcile_rounds_total{result}`：ok / error / timeout
+  - `player_inbox_reconcile_ledger_read_total{result}`：found / absent / error / invalid
   - `player_inbox_sweep_deleted_total`
+  - ~~`player_inbox_reconcile_mismatch_total`~~：已删（评审 L11），由下面的 gauge 取代。
+  - 启动时按封闭集合预置零值序列的只有 notify_total、reconcile_rounds_total、reconcile_ledger_read_total 三组；enqueue / fetch / ack / void 没有预置，引用它们的告警另带一支 `X unless X offset <窗口>`，接住「从无到 1」。
 - **扫描型 gauge**（只由领导者产出，避免多个副本重复上报后被放大；告警和看板一律用 `max()` 聚合）：
-  - `player_inbox_delivered_unacked`
-  - `player_inbox_delivered_unacked_oldest_seconds`
+  - `player_inbox_reconcile_inconsistent_rows`：对账的当前不一致数，本任期各分片最近读数之和（§9.3）
+  - `player_inbox_delivered_unacked`、`player_inbox_delivered_unacked_oldest_seconds`、`player_inbox_max_delivery_count`：**只算最后一次投递在最近 24 小时内的行**（评审 M4，`loops.go` 的 `deliveredStaleAfter`，代码常量不是配置键）
+  - `player_inbox_delivered_unacked_stale`：最后一次投递早于 24 小时前的已投递未确认行，只进 info。典型原因是 GM 处置之后紧接着被踢下线、再没上线，`ackQueue` 随实体丢了
   - `player_inbox_open_items`
   - `player_inbox_oldest_open_age_seconds`
-  - `player_inbox_max_delivery_count`
-  - `player_inbox_notify_backlog`
-- **连接池**：单独出池指标。
-- **直方图**：`player_inbox_fetch_scanned_rows`。
-- **scene 侧**：沿用 `metric=` 日志的写法，例如：
-  - `[PlayerInbox] metric=inbox_deferred reason=frozen|handoff|exiting|epoch_zero|in_battle|no_node|disabled`
-  - `metric=inbox_unknown_type`
-  - `metric=inbox_replay_mismatch`
-  - `metric=inbox_halted`
+  - `player_inbox_notify_backlog`：`notify_due_ms` 非 0、且流行最后一次写入早于 5 分钟前的流，退避中的也计入（§6.3）
+- **连接池**：client_golang 的 DBStatsCollector 导出 `go_sql_*{db_name="player_inbox"}`，不是 `mmorpg_sql_pool_*`，告警文件里单独写了一条池饱和规则。
+- **直方图**：`player_inbox_fetch_scanned_rows`，数的是锁路径实际走过的行（含被过滤掉的终态行），不是返回条数。
+- **scene 侧**：没有 Prometheus 端点，沿用 `[PlayerInbox] metric=` 日志的写法：
+  - `metric=inbox_deferred reason=disabled|frozen|handoff|exiting|epoch_zero|ledger_invalid|in_battle|no_node|transport|unimplemented|stale_owner|server_error|executor_defer`（INFO，原因变化时打）
+  - `metric=inbox_unknown_type`、`metric=inbox_replay_mismatch`、`metric=inbox_halted`、`metric=inbox_stale_owner`、`metric=inbox_ack_anomaly`（ERROR）
+  - `metric=inbox_ledger_invalid source=loader|apply_gate`（评审 L13）：加载时 ERROR；前置闸首次 WARN，之后每 8 次退避补打（§7.5）
+  - `metric=inbox_registry_broken`（ERROR）：注册表自检失败、整个节点停用消费；启动时一条，之后 Tick 每 5 分钟补打
+  - `metric=inbox_consumer_disabled`（WARN，评审 H1）：消费开关关着；启动时一条，之后每 5 分钟补打（§3.3）
+  - `metric=inbox_leave_ack result=sent|not_sent|not_durable|delivered_undecided|fetch_inflight|ack_inflight|decided_prefix_queued`（INFO，评审 M4、LC-2、LC-3）：离开时补发 Ack 的结果（§7.7）
+  - 不会自愈的那几条，补打节拍由 `player_inbox_rules.h` 的 `static_assert` 钉在 10 分钟告警窗口（`kSceneLogAlertWindowMs`）之内。
 
-**告警**：新建 `deploy/k8s/player-inbox-alerts.yaml`，安装步骤登记进 `deploy/k8s/README.md`，照 `:801-803` 的写法。
+**告警**：`deploy/k8s/player-inbox-alerts.yaml`，安装步骤登记在 `deploy/k8s/README.md`。规则按四组写（correctness / stuck / reconcile / info），表达式与阈值以该文件为准。
 - **critical**：
   - `fence_regressed`、`epoch_ahead` 速率 > 0；
   - Ack 结果出现 MISMATCH / CONFLICT / NOT_DELIVERED / SKIP_NOT_REQUESTED / UNKNOWN_SEQ；
-  - 对账出现不一致；
+  - 对账出现不一致：`max(max_over_time(player_inbox_reconcile_inconsistent_rows[2h])) > 0`，`max_over_time` 跨过易主空档；
   - 出现 CursorAhead。
 - **warning**：
-  - 已投递未确认最老超过 1 小时（`delivered_unacked_oldest_seconds`），这是真正的「卡住」信号；
-  - `max_delivery_count ≥ 5`；
+  - **消费可能被关**（评审 H1）：6 小时内有新入箱（`enqueue_total{result="created"}`），而锁路径 Fetch（`fetch_total{path="locked"}`）一次都没有，持续 30 分钟。没写成「Fetch 增量 == 0」：fetch_total 没有预置，开关一直关着时这条序列根本不存在，`== 0` 得到空集、规则永远不触发。局限：目标玩家全部离线时也会亮；指标不分 zone，别的 zone 有投递会盖住，逐 zone 看 scene 日志 `metric=inbox_consumer_disabled`；主防线是部署脚本的写前门禁（§3.3）。
+  - 已投递未确认最老超过 1 小时（`delivered_unacked_oldest_seconds`，只算近 24 小时的投递），这是真正的「卡住」信号；
+  - `max_delivery_count ≥ 5`（同一口径）；
   - 提醒积压超过 5 分钟；
   - 出现 SETTLED_UNKNOWN；
-  - scene 出现 `inbox_unknown_type` 或 `inbox_halted`。
-- **只进 info 看板，不告警**：未决条目数、最老未决时长。流失玩家的条目永远不会被消费，按它告警会一直亮着，淹没真正的卡住信号。
+  - 对账存活：对账跑过、但最近 3 小时没有一轮 ok（3h = 3 × 默认间隔，写死在规则里，改间隔要同步改）；对账轮次 error / timeout；对账截断；对账读到不合法账本；
+  - SQL 连接池饱和；
+  - scene 日志：`inbox_unknown_type`、`inbox_halted`、`inbox_ack_anomaly`、`inbox_ledger_invalid`、`inbox_registry_broken`、`inbox_consumer_disabled`（Loki ruler 还没接线，先作为告警文件头的值班固定查询）。`inbox_replay_mismatch` 按 critical。流选择器写 `{job="cpp_nodes", service="scene"}`：C++ 业务日志由 Alloy sidecar 读文件送 Loki，sidecar 不打 `app` 标签，写 `{app=...}` 的查询恒为空（2026-10-18 复核订正，契约测试核对）。
+- **只进 info，不告警**：未决条目数、最老未决时长、`delivered_unacked_stale`、强制终结（`void_total{path="force"}`）、`inbox_leave_ack` 的残留结果。流失玩家的条目永远不会被消费，按它告警会一直亮着，淹没真正的卡住信号。
+- **守卫**：metrics 包的 `TestAlertRulesReferenceRegisteredMetrics` 读告警文件，核对其中每个 `player_inbox_` 开头的名字都已注册，指标改名而告警漏改就红。它只核对指标名，不核对 label 取值。
 
 ---
 
@@ -1114,6 +1303,7 @@ v1 的类型都不允许过期，也没有过期列，这里不做任何处理�
   - 依据是 `seq.go:136-150` 的教训：二级索引加锁读与主键 CAS 的加锁顺序相反，会成环。
 - **不会成环**：每个事务只碰一个 (player, domain)，同一条流内部天然串行，不同流之间不存在环。
 - **Redis 读**：只在事务外进行，不在持有行锁时等待 Redis。
+  - 核心 Redis 客户端开 `ContextTimeoutEnabled`，读写超时各 1 秒（代码常量），`PoolSize` 必须显式写正整数（现为 20，与 Redis 连接总账读同一个键）（评审 L7）。否则 500ms / 200ms 的调用预算管不住 socket 读，in-band 回故障的契约会被击穿。选主的 `FenceAfter` 门槛核对过，不用改。
 - **后台循环**：清理、补发、扫描型 gauge、对账，都只在 `go/shared/leader` 选出的领导者上跑。
   - 清理只删终态行，逐行 autocommit，不持流行锁。Ack 不会修改终态行，所以两者不会反向抢锁。
   - 补发的每一步都是 CAS，领导者切换期间重叠执行也无害。
@@ -1138,6 +1328,8 @@ v1 的类型都不允许过期，也没有过期列，这里不做任何处理�
 - 落地钩子：`player_landing.cpp` 的 `OnEnteredScene` 里一行，`:206-207` 已预留位置。
 - 战斗解冻：`player_battle.cpp` 的 `RemoveInBattleComp` 里一行。这里已有 `PlayerLandingSystem::PublishAssetWake(player, AssetWakeReason::kBattleFreezeCleared)`，这个来源刻意不走 5 秒合并窗口；收件箱的重查同样**不合并、不去抖**，立即置 `nextCheckMs = now`（对方会话 2026-10-15 提醒）。
 - 两处都由对方会话确认后添加，不新增依赖。
+- 对方会话提醒的三点（2026-10-16 只读核对过，交接 §5）：落地调用幂等且开销小；冻结期间不在调用点跳过，而是由前置闸 `CheckApplyGate` 的 kFrozen 分支延后；调用放在 `PublishAssetWake` 之后（`player_landing.cpp`）。
+- 第 B 批另在 `player_lifecycle.cpp` 的 `FinishExitAfterPersist` 加了一行 `OnPlayerLeaving` 调用和对应 include（§7.7），同样是共享文件里的最小改动。
 
 **C2：摘要入口**：v1 不接摘要，对方会话已确认（2026-10-15）。本项关闭，不影响任何批次；将来接入时见 §7.14。
 
@@ -1148,12 +1340,16 @@ v1 的类型都不允许过期，也没有过期列，这里不做任何处理�
 **C4：MySQL 围栏会话**（第 0、1、4 批）
 - `player_database` 的字段号：18、19 归围栏，收件箱取 20，须在 18、19 声明之后落码（§4.4）。
 - 第 1 批的放行清单与它的 §3.4 合并维护。
-- 在它的 §9.1 和 `epoch-raise` 入口里，把收件箱的 `max_fence_epoch` 加为取最大值的来源。做法二选一：
-  - 工具直接读收件箱库；
-  - 工具加一个 `-floor` 参数，由 runbook 先调 `GetSummary` 取值再传入。
-- 同步改 runbook。
+- 在它的 §9.1 和 `epoch-raise` 入口里，把收件箱的 `max_fence_epoch` 加为取最大值的来源。**2026-10-16 已定**（围栏设计 v0.4 §9.1 第 c 步、§14 第 5、20 条）：
+  - 入口是独立工具 `go/db/cmd/epoch_raise`，不进 `cmd/migrate`。
+  - 工具自己收齐全部来源：各落点库两张玩家表的 `fence_owner_epoch`、各 topic 世代的 `applied_epoch`、location、收件箱的 `max_fence_epoch`、资产证据里的 epoch。收件箱这一项**经 `PlayerInboxAdmin.GetSummary` 管理 RPC 取**，不直连收件箱的库。
+  - **任一来源读不到就拒绝执行**。`-floor` 只作为未知来源的补充入口保留，不再是收件箱取值的做法。
+  - 抬到 `max(各来源) + 余量 K`，K 为常数（建议 10^6 量级），**不要求先排空**。
+  - 原稿的「工具直接读收件箱库」与「runbook 先调 GetSummary 再经 `-floor` 传入」两种做法都不再采用。
+- 工具由围栏那条线落码；截至 2026-10-17，仓库里还没有 `go/db/cmd/epoch_raise`，落码之前按 runbook 的人工流程。收件箱侧只需保证 `GetSummary` 稳定返回 `max_fence_epoch`，语义不变。
+- runbook 的计数器倒退一节按这个口径订正（第 C 批文档步骤）。
 
-**对方会话 2026-10-15 的确认**：v1 不接摘要可行（C2 关闭）；`player_database` 18/19 由围栏设计保留（字段号见 §4.4、C4）；C4 中与 epoch-raise 相关的改动，留待围栏会话与其 §14 第 5 条（epoch-raise 入口位置）一起定（§11.2）。
+**对方会话 2026-10-15 的确认**：v1 不接摘要可行（C2 关闭）；`player_database` 18/19 由围栏设计保留（字段号见 §4.4、C4）；C4 中与 epoch-raise 相关的改动，留待围栏会话与其 §14 第 5 条（epoch-raise 入口位置）一起定（§11.2）。2026-10-16 已随围栏设计 v0.4 定下，口径见上。
 
 ### 11.2 第 0 批：文档（D1–D4 已于 2026-10-15 拍板，用户授权定稿）
 
@@ -1164,7 +1360,7 @@ v1 的类型都不允许过期，也没有过期列，这里不做任何处理�
 - **索引与进度**：`docs/README.md`、`docs/PROGRESS.md`。
 - **不在本批由本设计改动的项**：
   - `landing-recovery-sync-digest.md` §3.3 注明「收件箱 v1 不接摘要」的注记，由对方会话处理。
-  - `db-write-fencing-mysql.md` §3.2 和 §9.1 的 C4 修改仍待围栏会话，与其 §14 第 5 条（epoch-raise 入口位置）一起定。
+  - `db-write-fencing-mysql.md` §3.2 和 §9.1 的 C4 修改仍待围栏会话，与其 §14 第 5 条（epoch-raise 入口位置）一起定。（2026-10-16 已由围栏设计 v0.4 完成，见 §11.1 C4。）
 
 验收：文档评审通过。
 
@@ -1188,7 +1384,7 @@ v1 的类型都不允许过期，也没有过期列，这里不做任何处理�
 - `tools/proto_generator/protogen/etc/proto_gen.yaml`：`domain_meta` 加 player_inbox 一块，照 trade（`:425`）。
 - `data/tip/Tip.xlsx`：组头加 15 行码。
 - `cpp/libs/engine/core/node/system/node/node_util.cpp`：nodeTypeNameMap。
-- `.gitignore`：加 `go/player_inbox` 的生成目录，照 `:163`。
+- ~~`.gitignore`：加 `go/player_inbox` 的生成目录，照 `:163`。~~ **2026-10-16 订正**：不忽略，跟踪 `go/player_inbox/generated/pb/game/`，与 friend / match / guild 一致（服务代码引用了在线提醒的事件号，忽略之后干净检出编不过）。`.gitignore` 里的那两行已删，`event_id.go` / `message_id.go` 已进版本库。见附录 E B 组。
 - C++ 工程登记（生成器不写工程文件）：
   - `cpp/generated/proto/{CMakeLists.txt, proto.vcxproj, proto.vcxproj.filters}`
   - `cpp/generated/grpc_client/{CMakeLists.txt, grpc_client.vcxproj, .filters}`
@@ -1243,6 +1439,14 @@ v1 的类型都不允许过期，也没有过期列，这里不做任何处理�
 | 后台循环 | 清理跳过 PENDING；补发以 next_seq 做 CAS，覆盖「同一毫秒两次入箱」；只在领导者上执行 |
 | 重试 | 可重试判定覆盖 1213、1205、9007 |
 | 鉴权 | 口令为空时停用；口令错误返回 PermissionDenied |
+| 强制作废（评审 M1） | 只有 PROVEN 放行；回放、UNKNOWN 一类、环里出现本行 request_id、水位没到、读不到存档、账本不合法（含环超过 32 条）、从未投递一律拒绝，行不变、不写审计（`force_void_test.go`） |
+| 对账（M5 / M6 / L4 / L11） | 步长轮转连续 16 轮覆盖全部分片；截断计数；账本 8 路并发读；空洞谓词五类判定；不合法账本不判「无差异」；当选后首轮 1–5 分钟；Go 环容量常量与 C++ 头文件同值 |
+| 分片（L5） | mix64 参考值；bwmarrin ID 在新公式下打散；旧公式的行被 `CheckRowShards` 点名、启动拒绝 |
+| 提醒（L6） | 落定 / 退避两类结局；退避 30 秒起、封顶 30 分钟；`node_missing` 悬满 1 小时才落定；积压仍计入退避中的行 |
+| 审计（L9） | 内容列只取自条目行；条目行清理之后审计行仍答得出「做了什么」 |
+| 配置 | 挂欠款进白名单即拒启；对账窗口 ≥ 2 × 间隔；`Middlewares.Stat` 开着时 Fetch / Ack 必须列进 `IgnoreContentMethods`（评审 L12，不记请求体）；`CoreRedis.PoolSize` 必须为正 |
+| 告警守卫 | `TestAlertRulesReferenceRegisteredMetrics`：告警文件里的指标名都已注册 |
+| 测试库守卫（L14） | 集成测试 DROP 之前库名必须命中 `^(player_inbox_it\|player_inbox_it_\d+_\d+)$` |
 
 **Codex 命令**（在 `go/player_inbox` 目录下）：
 - `gofmt -l ./internal`，应无输出。
@@ -1260,22 +1464,29 @@ v1 的类型都不允许过期，也没有过期列，这里不做任何处理�
 - `system/gm_sanction_inbox_executor.{h,cpp}`
 - `system/player_mutability.h`
 - `cpp/nodes/scene/rpc_replies/player_inbox_response_handler.{h,cpp}`
+
+> **2026-10-17 契约勘误**：此新建项随全局处理器删除而撤销，完成适配收口到 `PlayerInboxSystem` 每次调用回调。
+
 - `cpp/tests/currency_test/{player_inbox_rules_test.cpp, gm_sanction_inbox_executor_test.cpp}`
+- `cpp/tests/currency_test/player_inbox_system_test.cpp`（评审 L3，第 B 批补，第 C 批 C3 再补 3 例，2026-10-19 编译前复核又补 3 例，现 37 例）：`PlayerInboxSystem` 状态机的系统级用例，经现有的四个注入点（存盘、时钟、传输、消费配置）驱动，可 `--gtest_shuffle`。覆盖：落盘之前不确认、单飞、迟到回包按关联号丢弃、STALE、M1 的判定顺序（kNew+VOID、未知类型、回放 / UNKNOWN 不需要执行器、MISMATCH 一条不确认）、L1 回包时闸不过与 DEFER 续做、L2 新落地先确认前缀与 Ack 回 InvalidParameter 停用、L10 请求带 `scene_node_id`、M4 离开补发（含经 `FinishExitOrAwaitDbTaskAck` 的端到端一例）、账本损坏的周期 WARN、H1 消费关闭的启动与周期 WARN。`registry_broken` 的周期补打没有单测（`SelfCheck` 没有注入点）。
 
 **修改**：
 - `player_database_loader.cpp`：新字段的读、校验、写。写出位置必须在 currency 那对 `CopyFrom` / `SaveToProto` 之外，注释里写明了原因（`:154-163`）。
 - `currency_system.{h,cpp}`：`AttachDebt` 改为返回 `uint32_t`；同步改调用方 `cpp/tests/currency_test/{asset_op_system_test,client_gm_gate_test,currency_test}.cpp`。
 - `asset_op_system.cpp`：改为使用 `player_mutability.h`，行为零变化。
 - `cpp/nodes/scene/main.cpp`：白名单加 `PlayerInboxNodeService`，调用 `InitPlayerInboxReply()`，注册 tick。
+
+> **2026-10-17 契约勘误**：保留节点白名单和 tick；`InitPlayerInboxReply()` 安装调用已删除。
+
 - `cpp/nodes/scene/handler/event/player_inbox_event_handler.cpp`：只改守护段。
-- `player_landing.cpp`、`player_battle.cpp`：各加一行（C1）。
+- `player_landing.cpp`、`player_battle.cpp`：各加一行（C1）。`player_lifecycle.cpp`：`FinishExitAfterPersist` 一行 `OnPlayerLeaving` 调用加一行 include（第 B 批，§7.7）。
 - `bin/etc/base_deploy_config.yaml`：前缀和 deadline。`bin/etc/game_config.yaml`：`player_inbox` 段，`consumer_enabled: false`。这两个文件工作区里已有他人改动，只追加，不动别人的内容。
 - `proto/common/base/config.proto` 与 `cpp/libs/engine/config/config.cpp`（`readGameConfig` 手工逐键解析，`:235`；`configuration_table_test.cpp:493` 有加载用例可照着补）：`GameConfig` 加 `player_inbox` 段（`consumer_enabled`、`periodic_fetch_minutes`），并同改加载器。键缺失时，加载器显式取默认值 30 分钟，不依赖 proto3 的 0。用户 2026-10-15 拍板把这两项从第 1 批移到本批（附录 E P6）；`config.proto` 的生成产物（约 6 个）随本批生成。
-- 工程文件：`cpp/libs/services/scene/{CMakeLists.txt, scene.vcxproj, .filters}`、`cpp/nodes/scene/{CMakeLists.txt, scene.vcxproj, .filters}`、`currency_test.vcxproj` 及其 CMake。
+- 工程文件：`cpp/libs/services/scene/{CMakeLists.txt, scene.vcxproj, .filters}`、`cpp/nodes/scene/{CMakeLists.txt, scene.vcxproj, .filters}`、`currency_test.vcxproj`（`currency_test` 没有 CMake 文件，也没有 `.filters`，只登记 vcxproj）。
 
 **Codex 命令**：
 - 串行（`/m:1`）用 MSBuild 编 `scene` 和 `currency_test` 两个工程，配置 Debug|x64。
-- 运行 `currency_test.exe --gtest_filter=PlayerInbox*:GmSanctionInbox*:AssetOp*:Currency*`，再不带过滤器、加 `--gtest_shuffle` 跑一遍。资产相关的用例必须原样通过。
+- 运行 `currency_test.exe --gtest_filter=PlayerInbox*:GmSanctionInbox*:AssetOp*:Currency*`（`PlayerInbox*` 同时覆盖 rules 与 system 两组），再不带过滤器、加 `--gtest_shuffle` 跑一遍。资产相关的用例必须原样通过。
 - 本地栈冒烟，开始前按 AGENTS §6.2 清数据：
   1. `consumer_enabled=false` 时，存档能原样往返新字段，且不发 Fetch。
   2. 打开之后：给离线玩家下封锁，再登录。Redis 存档里 `blocked_types` 已生效，条目变为 APPLIED。
@@ -1298,6 +1509,7 @@ v1 的类型都不允许过期，也没有过期列，这里不做任何处理�
   - 批量处置脚本的限速与重试规范。
 - `deploy/k8s/player-inbox-alerts.yaml`，并在 `deploy/k8s/README.md` 里登记安装步骤。
 - `tools/scripts/k8s_deploy.ps1`：渲染 `PlayerInbox` 段和 `AdminToken` 的 Secret 引用，加契约断言 `tools/scripts/tests/k8s_deploy_contract.tests.ps1`。dev 环境的 yaml 不带口令，照 `config_test.go:240-251` 用测试钉住。
+  - 第 C 批（C1）补：node-config 的 `player_inbox` 段从 `bin/etc/game_config.yaml` 整段复制，`-PlayerInboxConsumer` 只核对；写前门禁 `Assert-PlayerInboxConsumerGate`（§3.3）；player-inbox 的 ConfigMap 从服务 yaml 整段复制顶层 `Middlewares` 段（评审 L12），`player-inbox-migrate` Job 挂同一个 ConfigMap。契约测试同步改。
 - `tools/merge_zone/audit_resources.go`：加一条只读审计。
 - TiDB 索引预切：照 `route_tool tidb-prepare` 增加一个子命令或独立命令。
 - `GetPlayerInboxLedger` 的 data_service 实现（logic、server 两个文件）及测试；对账作业接线。
@@ -1317,15 +1529,24 @@ Codex 跑 `pwsh -File tools/scripts/tests/*.tests.ps1` 里受影响的几个文�
 
 ### 11.7 上线顺序与回滚下限
 
+**部署前置**（评审修复后的硬门禁，第 C 批落地之前不得部署这一版 Go）：
+- 部署脚本必须先于或同批于新版 Go：新版 `config.Validate` 要求 ConfigMap 带 `Middlewares.StatConf`，旧脚本渲染的 ConfigMap 会让服务和 `player-inbox-migrate` Job 都拒启（评审 L12，C1）。
+- 告警文件同批更新：旧的对账 critical 告警引用的 `reconcile_mismatch_total` 已删除，不改就永不触发（评审 L11，C2）。
+- 按旧分片公式写过数据的库（只可能是开发库）先清空收件箱三张表，否则 `CheckRowShards` 拒启（§4.2）。
+
 按顺序执行：
 1. 每个 zone 库执行 `migrate`，加入账本列；建好收件箱库和表，TiDB 上预切索引。
 2. 升级 go/db 到认识新字段的版本。
 3. 部署收件箱服务，`EnqueueTypes` 为空。
-4. 全部 scene 升级，`consumer_enabled=false`。**这就是回滚下限**：新字段只是往返，不消费。
-5. 全部 scene 打开 `consumer_enabled`。
-6. 全部收件箱实例打开 `EnqueueTypes`。
+4. 全部 scene 升级，`consumer_enabled=false`。**这就是回滚下限**：新字段只是往返，不消费。这一步到第 5 步之间，scene 每 5 分钟打 WARN `metric=inbox_consumer_disabled`，是预期的。
+5. 全部 scene 打开 `consumer_enabled`：改 `bin/etc/game_config.yaml` 为 `true` 并提交，逐 zone 执行 zone-up 滚动 scene（§3.3）。
+6. 全部收件箱实例打开 `EnqueueTypes`：改服务 yaml 并提交，执行 infra-up。v1 只放封锁 / 解封（§2.2）。非 DryRun 的写前门禁这时读全部 zone 线上的 node-config，有 zone 还不是 `true` 就拒绝（§3.3 第 2 层）。它看的是 ConfigMap 不是进程，所以第 5 步仍以各 zone scene 打出 `consumer_enabled=1` 为验收，不能只靠门禁。
 
-**回滚**：回退到下限以上的任意版本都安全。低于下限的降级是破坏性变更，按 §8 #21 和 runbook 的前置步骤执行。
+**关消费**的顺序相反：先把 `EnqueueTypes` 改回 `[]` 并 infra-up，确认 `GmSanctionPlayer` 回 `kPlayerInboxDisabled`，再关 `consumer_enabled`。反过来做时，非 DryRun 的 zone-up 读到 infra 线上白名单仍非空会被拒；player-inbox 的 Pod 没滚动时它看不出来，所以要以回包为准。紧急情况下要先关消费，直接调 `k8s_deploy.ps1` 显式传 `-AllowPlayerInboxConsumerOff`（包装入口没有这个开关），并知道新入箱的处置在重开之前不会执行。
+
+**将来新增域**：先把收件箱全部升级到认识新域的版本，再让 scene 消费它（§7.7「确定性」的前提）。
+
+**回滚**：回退到下限以上的任意**镜像**都安全，只回退镜像、不回退开关：`kubectl rollout undo`，或用当前检出的脚本配旧镜像 tag 重跑。开消费之后不要检出旧 commit 再跑它的部署：开关的权威值就是 git 里的 yaml，检出旧 commit 会把 `consumer_enabled` 一起回退（下限那一版就是 false），而旧 commit 的门禁只比它自己的两份 yaml、早于 H1 修复的脚本根本没有门禁。确实要重跑旧 commit，先核对它的 `consumer_enabled` 与当前一致，不一致就先关入箱。低于下限的降级是破坏性变更，按 §8 #21 和 runbook 的前置步骤执行。
 
 ### 11.8 第 5 批（推迟，满足触发条件才做）
 
@@ -1350,6 +1571,8 @@ Codex 跑 `pwsh -File tools/scripts/tests/*.tests.ps1` 里受影响的几个文�
   - 账本放在 `player_state`，与 wallet 同一条记录。
   - Java 的「已落盘」是带 `owner_epoch` 条件的 MySQL 提交成功（`PlayerMapper.java:63-80`），比 C++ 只到 Redis 更强。
   - 围栏结局、Redis 上界、作废指令、游标、最近结局环、IB-9 回放核对、UNKNOWN 的确认规则，都与 C++ 逐条一致。
+  - 评审修复后（2026-10-16 ~ 17）另要对齐：判定顺序「先分类、再看指令、最后查执行器」（§7.6）；回包时闸不过丢副本重拉、新落地先确认前缀、Ack 回 InvalidParameter 停用；离开时尽力补发 Ack；Ack 请求带 `scene_node_id`；`metric=` 日志键名。
+- **服务端对齐项**：VoidItem 强制模式与 `force_verdict`、审计表 10–15 列与 `FORCE_VOID`、`shard = mix64(player_id) % 64`、对账步长轮转与环内空洞谓词（环容量 32 三处同值）、提醒结局与退避（含 `node_missing` 1 小时落定）、v1 不开挂欠款、消费开关来自 git 配置并带写前门禁、指标名与 label 取值。
 - **行为对齐**：Java 7.2c 原计划用「离线编辑」实现欠款（Java `docs/porting/data-ops-spec.md:52,79`）。建议改走收件箱：不夺取归属、不踢在线玩家，与 C++ 保持一致（D13）。
 - **契约**：
   - 收件箱的 RPC proto 是服务端内部契约，Java 不必照抄 C++ 的实现。
@@ -1369,7 +1592,7 @@ Codex 跑 `pwsh -File tools/scripts/tests/*.tests.ps1` 里受影响的几个文�
 | # | 决策 | 结论 | 依据 |
 |---|---|---|---|
 | D1 | 是否立项，并修订「不再新建第三套通用投递器」 | **立项**。按 §1.3「收窄」修订：只对没有渠道、非资产、改 scene 持有状态的待办开放，按域准入；修订由第 0 批完成（§11.2） | 缺口有代码证据（§1.3）；为 GM 处置单独做一条通道，本身就成了第三套投递器 |
-| D2 | 第一个域是否定为 GM 处置；`ATTACH_DEBT` 算不算资产指令 | **首域 `SCENE_GM_SANCTION`**，含 `GM_ATTACH_CURRENCY_DEBT`，认定为「账户处置状态」，纳入 v1（§2.2） | 不改余额，也不走 Debit/Credit |
+| D2 | 第一个域是否定为 GM 处置；`ATTACH_DEBT` 算不算资产指令 | **首域 `SCENE_GM_SANCTION`**，含 `GM_ATTACH_CURRENCY_DEBT`，认定为「账户处置状态」，纳入 v1（§2.2）。2026-10-16 补：v1 入箱白名单先不开挂欠款（§2.2、§3.3） | 不改余额，也不走 Debit/Credit |
 | D3 | 服务形态 | **独立进程 `go/player_inbox`**，按 D-14 独占库 `mmorpg_player_inbox`；接入要求见 §1.4 | 用户原话；落地拉取量级需要与号段隔离；不触发 D-13、生产方同进程不需要发件箱。代价多约 18 个文件和一个库（§1.4） |
 | D4 | 是否接版本摘要 | **甲：v1 不接**。落地无条件拉一次，在线靠 Kafka 提醒加有界兜底（§7.3）；将来接入见 §7.14 | 不动客户端契约、不动 playersync、不给核心 Redis 加负载，也没有「AOF 丢掉 bump」的漏洞 |
 
@@ -1399,7 +1622,7 @@ Codex 跑 `pwsh -File tools/scripts/tests/*.tests.ps1` 里受影响的几个文�
 | 寄宿 data_service | D3 | 手写文件约少 18 个、不新开库，但与 scene 的启动依赖（号段，DependencyGate，`main.cpp:350-352`）、快照与流水消费同在一个进程，独立连接池只隔离连接、不隔离 CPU 和 gRPC 线程，不利于 IB-7（不拖累进场）；data_service 的职责也要再扩一项 |
 | D4 乙：摘要 hash 里用非域号的内部字段名 | D4（v1 未采用） | 不改客户端契约，但要 playersync 新增服务端内部 bump 入口；实体在本节点新建时仍要无条件拉一次，只能省掉 `owner_epoch` 变化那一类落地拉取，省得不多 |
 | D4 丙：追加 `SyncDomain` | D4（v1 未采用） | 改客户端可见契约（`player_scene.proto:136`），需要客户端重新生成和 Java 同批；scene 还必须在下发时过滤这个域，C++ 或 Java 任一侧漏写，就会把待执行的 GM 处置提前泄露给被处置的玩家（fail-open） |
-| v1 只做封锁和解封，不含挂欠款 | D2 | `AttachDebt` 不改余额、不走 Debit/Credit，可以按「账户处置状态」纳入；而挂补缴正是运维手册的处置流程（`exploit_loss_prevention_zh.md:36-45`），scene 侧补缴相关的 GM 入口至今也只是空桩（§1.3） |
+| v1 只做封锁和解封，不含挂欠款 | D2 | `AttachDebt` 不改余额、不走 Debit/Credit，可以按「账户处置状态」纳入；而挂补缴正是运维手册的处置流程（`exploit_loss_prevention_zh.md:36-45`），scene 侧补缴相关的 GM 入口至今也只是空桩（§1.3）。2026-10-16 补：类型与执行器保留，只是入箱白名单先不开（§2.2），不推翻 D2 |
 
 ---
 
@@ -1538,6 +1761,8 @@ Codex 跑 `pwsh -File tools/scripts/tests/*.tests.ps1` 里受影响的几个文�
 
 ## 附录 E：第 1 批精确文件清单（2026-10-15 只读核实）
 
+> 历史记录：本附录是 2026-10-15 开工前的核实结果，「还没开工」「阻塞」等表述都是当时的状态。第 1 批已落码入库（文首状态行）；2026-10-16 只订正了 `.gitignore` 口径（B 组、C 组各一行）。
+
 **第 1 批还没开工。** 这次只核实了文件清单：只读，没改文件，没编译，也没跑生成器。基线是当前 HEAD `ab0f27907`（2026-10-15 08:27）加当前工作区。
 
 两份核实报告的基线都早于 `ab0f27907`（报告二是 `6281e4d27`）。这次提交一共 560 个文件，把报告里列的大部分“他人未提交改动”都提交了，所以冲突部分是按当前工作区重新核过的。报告之间的矛盾和过时结论，统一放在第九节更正。
@@ -1602,7 +1827,7 @@ P2 的积压缺口（都在 HEAD 上核过）：
 | `tools/proto_generator/protogen/etc/proto_gen.yaml` | domain_meta 加 `player_inbox` 块 | 照 trade 块 `:421-433`，新块放在 `:433` 后。 |
 | **`tools/proto_generator/protogen/etc/proto_gen.no-unity.yaml`**（两份报告都漏了） | 同上，加同样的块 | 这份副本在 `ab0f27907` 纳入跟踪，和默认配置只差 `:244` 一行。漏改的话，用它生成时整个域不会被解析，消息号也会丢（`:512` 的 DV-5 注释）。 |
 | `data/tip/Tip.xlsx` | 加组头 `//player_inbox_error base=29000 width=1000`，后面接 15 个码 | 最后一个组头在 A314（`//equip_error base=28000`），数据范围是 A1:C336，新内容从第 337 行起。只有 `kPlayerInboxStoreUnavailable` 的 fault 列填 1（设计 §5.3）。`segments.go:30-50` 最高到 28000，表里也没有 29000。 |
-| `.gitignore` | 加 `go/player_inbox/generated/` | 放在 `:163` 后，照 `:162-163`。 |
+| `.gitignore` | ~~加 `go/player_inbox/generated/`~~ **2026-10-16 订正：不忽略，跟踪 `go/player_inbox/generated/pb/game/`** | 原口径「照 trade」不成立：trade / chat 忽略该目录的前提是服务代码不引用它，而收件箱的 `internal/svc/servicecontext.go` 用了 `game.PlayerInboxNotifyEventEventId`（在线提醒的事件号），忽略之后干净检出编不过（CI `go-modules-ci.yml` 直接 `go build ./...`，不跑生成）。改照 friend / match / guild 跟踪自己的 `generated/pb/game`；proto-gen 重写它时随生成产物一起提交。 |
 
 **C++ 源码（2 个）**
 
@@ -1667,7 +1892,7 @@ P2 的积压缺口（都在 HEAD 上核过）：
 | 修改：号表 | `proto/{message_id,event_id}.txt` 加 6 份镜像；9 个 Go 服务加 robot 的 `message_id.go`（10 个）；9 个 `event_id.go` | 27 |
 | 修改：tip 汇总 | `go/shared/generated/tip/{segments,faults}.go`、`tip_text.json`、`tip_enum_ids.json` | 4 |
 | 待定 | `config.proto` 的产物 / D9 注释的产物 | +6 / +3–6 |
-| 不进版本库 | `go/player_inbox/generated/**`（被 `.gitignore` 忽略） | — |
+| 进版本库（2026-10-16 订正，原写「被 `.gitignore` 忽略」） | `go/player_inbox/generated/pb/game/{event_id,message_id}.go`：服务代码引用事件号，必须随仓库跟踪，见本附录 B 组 `.gitignore` 一行 | 2 |
 
 另外几点：
 - 生成器不写 `robot/vendor`（protogen 源码里搜不到 vendor）。`generated/robot/proto` 从 2026-08-04 起没更新过。两者都不计入。
@@ -1750,3 +1975,40 @@ P2 的积压缺口（都在 HEAD 上核过）：
 - **字段号规则以现行设计 §4.4 为准**：「不先占 18」。报告一引用的是旧稿的「先落取 18」。报告二担心的字母序问题，只在收件箱取 18 时才会出现；按现在 20 的方案，三列字母序和字段号一致。
 - **robot vendor 不由 protogen 生成**：报告一把它算进了生成产物，不对。
 - **D9 的 `rollback_database_table.proto` 在设计 §11.3 里有**，你这次给的计划漏了，已列为待定。
+
+---
+
+## 附录 F：落码与评审修复后的订正（2026-10-17）
+
+依据：实现评审与用户拍板见 [交接](../handoff/player-inbox-handoff-20261015.md) §6（H1、M1–M7、L1–L14），修复状态见交接 §6.4；以修复后的代码为准。全部未编译、未测试。
+
+| 位置 | 订正 | 依据 |
+|---|---|---|
+| 状态行、关系说明、基线 | 改为已落码；登记第 A–C 批修复；围栏设计到 v0.4、C4 已定 | 交接 §2、§6 |
+| §0 第 1、5、8 条；§1.5 IB-5；§4.3 | IB-5 加强制模式例外；状态机加「强制作废 → VOIDED（ADMIN）」一行；v1 不开挂欠款；开关只认 git yaml | M1、M2 / M3、H1 |
+| §1.6 | 伪造 Ack 的发现范围限于水位与环覆盖范围 | M6 |
+| §2.2、§13.1 D2 | v1 先不开 `GM_ATTACH_CURRENCY_DEBT` 及原因 | M2 / M3 |
+| §3.3 | 挂欠款启动即拒；消费开关权威值改为 `bin/etc/game_config.yaml`、部署参数只核对；写前门禁；关消费时的 scene WARN | M3、H1（C1、C3） |
+| §4.1 | shard 注释改为 mix64；审计表追加 10–15 共 6 列与 `FORCE_VOID` | L5、L9、M1 |
+| §4.2 | shard 公式、改公式的时间与原因、旧行静默不可见、启动整库核对 | L5、复核 R3 |
+| §5.1 | `AckPlayerInboxRequest.scene_node_id = 6`（只用于日志）；日志键统一 `scene_node_id=` | L10、复核 R5 |
+| §5.2 | VoidItem 的 `mode` / `force_verdict` 与两个新枚举；attach_debt 回 Disabled | M1、M3 |
+| §6.1、§6.2 | 审计内容列；第 6 步标注死锁审计 #23 待订正（本轮不改代码） | L9、交接 §2.2 末尾 |
+| §6.3 | 提醒结局表；`node_missing` 1 小时落定、`no_node` 只剩位置记录残缺；其余按 next_seq CAS 退避 30 秒起、封顶 30 分钟；积压按 `updated_ms` | L6、复核 R3 |
+| §7.5 | 回包时闸不过丢副本重拉，DEFER 续做时同理；账本损坏的周期 WARN | L1、L13、复核 F3 |
+| §7.6 | 新判定顺序（ClassifyDelivery → PlanItem → 执行器）；kNew+VOID 不查执行器；kMismatch 解卡靠强制终结；新落地先确认前缀；执行器 DEFER 的真实来源 | M1、L2 |
+| §7.7 | Ack 回 InvalidParameter 停用；离开时尽力补发 Ack 及覆盖范围 | L2、M4 |
+| §7.8 | STALE 分类按代码改为 `R ≤ req`；epoch-raise 经 GetSummary 取值 | 交接 §2.2、C4 |
+| §7.9 | 强制模式的证明、提交、拒绝条件与运维步骤 | M1、复核 R2 |
+| §7.10 | M7 残余风险：确认仍以 Redis 落盘为准，`PlayerAssetSQLCommit` 不含 `inbox_ledger`；强制终结同样依赖 Redis 账本 | M7 |
+| §8 | #7、#13、#15、#18、#19 订正；新增 #24（消费关、入箱开）、#25（MISMATCH 解卡） | H1、M1、M4、M6、L13 |
+| §9.3 | 对账节拍、步长轮转与 16 轮覆盖保证、截断计数、有界并发读、空洞谓词、不合法账本、分片读数 gauge | M5、M6、L4、L11、复核 R1 / R2 / R4 |
+| §9.4 | 指标清单按 `metrics.go` 重写；24 小时窗口；告警分组与 H1 告警；scene 日志信号；告警守卫测试 | M4、L6、L11、L13、H1（C2） |
+| §10 | 核心 Redis 客户端超时与池大小 | L7 |
+| §11.1 | C1 补对方会话的三点与离开钩子；C4 按围栏 v0.4 订正 | C4、交接 §5 |
+| §11.3 | `.gitignore` 改为跟踪 `go/player_inbox/generated/pb/game` | 交接 §2.2 第 3 条 |
+| §11.4、§11.5、§11.6 | 验收表补评审修复项；测试清单加 `player_inbox_system_test.cpp`；`currency_test` 只有 vcxproj；部署脚本补 C1 改动 | L3 等 |
+| §11.7 | 部署前置三条；开 / 关消费的具体操作与顺序；新增域的升级顺序 | H1、L5、L11、L12 |
+| §12 | Java 版评审修复后的对齐项 | AGENTS §12 |
+| §3.3、§8 #24、§11.7（2026-10-18 第 C 批复核） | 写前门禁改为三层：两份 yaml、非 DryRun 时只读另一侧线上 ConfigMap、staging / prod 拒绝未提交的 yaml；回滚只回退镜像，不检出旧 commit 重跑部署；门禁「保证顺序」的说法限定为 ConfigMap 层面 | 复核 H1、DOC-1、DOC-2 |
+| §3.3、§9.3 | migrate Job 失败时「Deployment 不滚动」限定为 staging / prod 或 dev 带 `-WaitReady`；账本不合法的口径写明收件箱多查 request_id 为 0、scene 不查 | 复核 DOC-6、DOC-4 |

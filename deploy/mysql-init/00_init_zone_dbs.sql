@@ -82,15 +82,12 @@ GRANT ALL PRIVILEGES ON `mmorpg_friend`.* TO 'appuser'@'%';
 CREATE DATABASE IF NOT EXISTS mmorpg_player_inbox DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 GRANT ALL PRIVILEGES ON `mmorpg_player_inbox`.* TO 'appuser'@'%';
 
--- mmorpg_mail:邮件 mail 服务独占库(go/mail/etc/mail.yaml 的 MySQL.DBName;移植批次 M1,docs/design/mail-system.md)。
--- 与上面 mmorpg_trade / mmorpg_friend 同一套规矩(port-decisions D-14):**这里只建库 + 授权**;表以
--- proto/mail/mail_table.proto 为源,由 go/schemamigrate 建(mail 启动期 Schema.AutoMigrate,
--- 或 `mail -f etc/mail.yaml -migrate`),不要往 mysql-init 里加业务表。
--- appuser 没有全局 CREATE 权限,库必须在 mail 启动前就存在。
--- 注意:已初始化过的本地 MySQL 数据卷不会重跑 initdb,存量卷需要用 root 手工执行下面两句
--- (再 FLUSH PRIVILEGES),或重建数据卷。K8s 同理:新 PVC 首次 initdb 时建库,已有数据的 PVC 手工补建
--- (步骤随邮件 M1d 写进 deploy/k8s/README.md;D-14 第 5 条:只登记这一处,不要在 k8s_deploy.ps1 另生成)。
+-- 邮件和排行榜只在此预建独占库及授权；现役 M2/M3 表由服务 -migrate 创建。
+-- 已初始化 PVC 不会重跑 initdb，必须在维护窗口补建与授权，不能依靠重新发布恢复。
+-- 新服务只在此处预建独占库，业务表仍由各服务 -migrate 创建。
 CREATE DATABASE IF NOT EXISTS mmorpg_mail DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 GRANT ALL PRIVILEGES ON `mmorpg_mail`.* TO 'appuser'@'%';
+CREATE DATABASE IF NOT EXISTS mmorpg_rank DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+GRANT ALL PRIVILEGES ON `mmorpg_rank`.* TO 'appuser'@'%';
 
 FLUSH PRIVILEGES;

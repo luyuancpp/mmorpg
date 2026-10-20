@@ -24,6 +24,10 @@
 #include "player/system/equip_attribute_rules.h"
 #include "player/system/player_equip.h"
 #include "player/system/player_level_rules.h"
+#include "player/system/player_pet.h"
+#include "player/system/player_mission.h"
+#include "modules/mission/mission_events.h"
+#include "modules/condition/condition_type.h"
 
 #include "rpc/service_metadata/player_attribute_service_metadata.h"
 #include "table/code/attributeallocratio_table.h"
@@ -39,7 +43,6 @@
 #include "proto/common/component/actor_comp.pb.h"
 #include "proto/common/component/player_attribute_comp.pb.h"
 #include "proto/common/component/player_comp.pb.h"
-#include "services/scene/player/player_events.h"
 #include "proto/scene/player_attribute.pb.h"
 
 namespace {
@@ -60,19 +63,16 @@ std::string DefaultSchemeName(uint32_t ordinal) {
 	return "方案" + std::to_string(ordinal);
 }
 
-uint64_t GuidForLog(entt::entity player) {
-	const auto* guid = tlsEcs.actorRegistry.try_get<PlayerGuidComp>(player);
-	return guid != nullptr ? guid->value : 0;
-}
 
+// 调用方均已过 CheckAttributeInputs。
 uint32_t PlayerLevel(entt::entity player) {
-	const auto* levelComp = tlsEcs.actorRegistry.try_get<LevelComp>(player);
-	return (levelComp != nullptr && levelComp->level() > 0) ? levelComp->level() : 1;
+	const auto level = tlsEcs.actorRegistry.get<LevelComp>(player).level();
+	return level > 0 ? level : 1;
 }
 
+// 调用方均已过 CheckAttributeInputs。
 uint32_t PlayerClassId(entt::entity player) {
-	const auto* uint32Comp = tlsEcs.actorRegistry.try_get<PlayerUint32Comp>(player);
-	return uint32Comp != nullptr ? uint32Comp->class_() : 0;
+	return tlsEcs.actorRegistry.get<PlayerUint32Comp>(player).class_();
 }
 
 const ClassTable* ResolveClassRow(entt::entity player) {
@@ -504,7 +504,7 @@ uint32_t CheckAttributeInputs(entt::entity player) {
 	if (!registry.all_of<BaseAttributesComp, PlayerAttributeComp, LevelComp, PlayerUint32Comp,
 						 PlayerBagsComp, DerivedAttributesComp>(player)) {
 		LOG_ERROR << "[PlayerAttribute] Required input missing; operation skipped: entity="
-				  << entt::to_integral(player) << " player_id=" << GuidForLog(player)
+				  << entt::to_integral(player) << " player_id=" << tlsEcs.GetPlayerId(player)
 				  << " has_base=" << registry.all_of<BaseAttributesComp>(player)
 				  << " has_attribute=" << registry.all_of<PlayerAttributeComp>(player)
 				  << " has_level=" << registry.all_of<LevelComp>(player)
@@ -522,7 +522,7 @@ uint32_t CheckWritable(entt::entity player) {
 		return err;
 	}
 	if (tlsEcs.actorRegistry.any_of<PlayerFrozenComp>(player)) {
-		LOG_WARN << "[PlayerAttribute] Rejected: cross-zone freeze in progress player_id=" << GuidForLog(player);
+		LOG_WARN << "[PlayerAttribute] Rejected: cross-zone freeze in progress player_id=" << tlsEcs.GetPlayerId(player);
 		return kInvalidParameter;
 	}
 	if (PlayerBattleSystem::IsInBattle(player)) {
@@ -601,7 +601,7 @@ PlayerAttributeComp* FindComp(entt::entity player) {
 	auto* comp = tlsEcs.actorRegistry.try_get<PlayerAttributeComp>(player);
 	if (comp == nullptr) {
 		LOG_ERROR << "[PlayerAttribute] PlayerAttributeComp missing (load path incomplete?): entity="
-				  << entt::to_integral(player) << " player_id=" << GuidForLog(player);
+				  << entt::to_integral(player) << " player_id=" << tlsEcs.GetPlayerId(player);
 	}
 	return comp;
 }
@@ -684,7 +684,7 @@ void ConvergeOverAllocation(entt::entity player, PlayerAttributeComp& comp) {
 			for (const auto* dim : AttributeDimensionTableManager::Instance().GetByPoolId(pool.id())) {
 				scheme.mutable_allocated()->erase(dim->id());
 			}
-			LOG_WARN << "[PlayerAttribute] Allocation exceeds total;entire pool reset and refunded: player_id=" << GuidForLog(player)
+			LOG_WARN << "[PlayerAttribute] Allocation exceeds total;entire pool reset and refunded: player_id=" << tlsEcs.GetPlayerId(player)
 					 << " pool=" << pool.id() << " scheme=" << scheme.scheme_id() << " total=" << total;
 		}
 	}
@@ -924,7 +924,7 @@ uint32_t PlayerAttributeSystem::Allocate(entt::entity player, uint32_t poolId,
 		(*scheme->mutable_allocated())[dimensionId] = want;
 	}
 	Recalculate(player, RecalcReason::kAllocate);
-	LOG_INFO << "[PlayerAttribute] Points allocated: player_id=" << GuidForLog(player) << " pool=" << poolId
+	LOG_INFO << "[PlayerAttribute] Points allocated: player_id=" << tlsEcs.GetPlayerId(player) << " pool=" << poolId
 			 << " scheme=" << scheme->scheme_id() << " delta=" << delta
 			 << " remaining=" << (remaining - delta);
 	return kSuccess;
@@ -965,7 +965,7 @@ uint32_t PlayerAttributeSystem::Reset(entt::entity player, uint32_t poolId) {
 		scheme->mutable_allocated()->erase(dim->id());
 	}
 	Recalculate(player, RecalcReason::kReset);
-	LOG_INFO << "[PlayerAttribute] Points reset: player_id=" << GuidForLog(player) << " pool=" << poolId
+	LOG_INFO << "[PlayerAttribute] Points reset: player_id=" << tlsEcs.GetPlayerId(player) << " pool=" << poolId
 			 << " scheme=" << scheme->scheme_id() << " cost_gold=" << cost;
 	return kSuccess;
 }
@@ -1066,7 +1066,7 @@ uint32_t PlayerAttributeSystem::CreateScheme(entt::entity player, const std::str
 	scheme->set_scheme_id(schemeId);
 	scheme->set_name(finalName);
 	comp.set_next_scheme_id(schemeId + 1);
-	LOG_INFO << "[PlayerAttribute] New scheme created: player_id=" << GuidForLog(player) << " scheme=" << schemeId
+	LOG_INFO << "[PlayerAttribute] New scheme created: player_id=" << tlsEcs.GetPlayerId(player) << " scheme=" << schemeId
 			 << " cost_gold=" << cost;
 	return kSuccess;
 }
@@ -1094,7 +1094,7 @@ uint32_t PlayerAttributeSystem::SwitchScheme(entt::entity player, uint32_t schem
 	comp.set_active_scheme_id(schemeId);
 	comp.set_last_switch_time(now);
 	Recalculate(player, RecalcReason::kSchemeSwitch);
-	LOG_INFO << "[PlayerAttribute] Scheme switched: player_id=" << GuidForLog(player) << " scheme=" << schemeId;
+	LOG_INFO << "[PlayerAttribute] Scheme switched: player_id=" << tlsEcs.GetPlayerId(player) << " scheme=" << schemeId;
 	return kSuccess;
 }
 
@@ -1131,19 +1131,21 @@ uint32_t PlayerAttributeSystem::GmSetLevel(entt::entity player, uint32_t level) 
 	auto* levelCompPtr = tlsEcs.actorRegistry.try_get<LevelComp>(player);
 	if (levelCompPtr == nullptr) {
 		LOG_ERROR << "[PlayerAttribute] LevelComp missing (load path incomplete?); GM set level rejected: entity="
-				  << entt::to_integral(player) << " player_id=" << GuidForLog(player);
+				  << entt::to_integral(player) << " player_id=" << tlsEcs.GetPlayerId(player);
 		return kServiceUnavailable;
 	}
 	auto& levelComp = *levelCompPtr;
 	const auto oldLevel = levelComp.level();
 	levelComp.set_level(level);
-	LOG_INFO << "[PlayerAttribute] GM level set: player_id=" << GuidForLog(player) << " " << oldLevel << " -> " << level;
+	LOG_INFO << "[PlayerAttribute] GM level set: player_id=" << tlsEcs.GetPlayerId(player) << " " << oldLevel << " -> " << level;
 
-	// 走升级事件(其他系统按同一事件接经验/技能解锁),事件处理里会 Recalculate + PushPanel
-	PlayerUpgradeEvent upgrade;
-	upgrade.player = player;
-	upgrade.newLevel = level;
-	tlsEcs.dispatcher.trigger(upgrade);
+	Recalculate(player, RecalcReason::kLevelChanged);
+	PushPanel(player);
+	PetSystem::RecalculateAll(player, PetSystem::RecalcReason::kLevelChanged);
+	PetSystem::PushList(player);
+	const ConditionEvent progress{player,
+		static_cast<uint32_t>(eConditionType::kConditionLevelUp), {level}, level};
+	PlayerMissionSystem::OnCondition(player, progress);
 	return kSuccess;
 }
 

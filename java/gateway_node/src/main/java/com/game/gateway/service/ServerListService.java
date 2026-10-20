@@ -4,6 +4,7 @@ import com.game.gateway.dto.*;
 import com.game.gateway.entity.ZoneConfig;
 import com.game.gateway.repository.ZoneConfigRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.QueryTimeoutException;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -12,8 +13,9 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionException;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.LongSupplier;
 
@@ -30,6 +32,16 @@ import java.util.function.LongSupplier;
  *   <li>缓存过期瞬间的并发请求合并成一次查库(single-flight):第一个请求查,其余 join 同一个 future。</li>
  *   <li>查库失败不缓存:异常原样抛给本次的查询方与全部等待方(与改动前相同,经 Spring 默认错误处理回 5xx),
  *       future 在 finally 里摘掉,下一个请求重新查。</li>
+ *   <li>2026-10-16 补注:等待方有时间预算 {@link #ZONE_ROWS_LOAD_WAIT_MILLIS}(上面「其余 join 同一个 future」现为限时等待)。
+ *       查库方挂住(半开 TCP、zone_config 上的 MDL 排队)时,等待方到点抛 {@link QueryTimeoutException}(经默认错误处理回 5xx),
+ *       与改动前「取不到连接最多等 3s 回 5xx」同口径,占用的 Tomcat 线程不再随挂住时长无界增长。查库方本身仍只受 JDBC 读超时约束:
+ *       jar 与 K8s ConfigMap 的 JDBC URL 当前都没配 socketTimeout、也没配查询超时,挂住时占 1 个线程与 1 条连接,登记为后续
+ *       (涉及全部查询,不在本项)。上面「与改动前相同」只指异常语义。
+ *       查库方挂在已取到的连接上时,在途 future 只有它自己能在 finally 里摘,这个副本上后到的全部请求都等满预算回 5xx,
+ *       直到那条套接字自己断开(半开 TCP 约 15 分钟,keepalive 约 2 小时):改动前这种单连接故障只拖住一个请求,合并查库
+ *       把它放大成整个副本的 server-list 不可用。概率低,根治靠 JDBC 读超时,不在本类里另做「超时顶替查库方」。
+ *       (2026-10-16 续)JDBC URL 已带 socketTimeout=10000(application.yaml,K8s ConfigMap 镜像):查库方挂住最多约 10s
+ *       即以通信异常失败、在 finally 里摘掉在途 future,上面这段不可用窗口随之收到约 10s。</li>
  * </ul>
  * 缓存里的 {@link ZoneConfig} 是脱管实体(open-in-view 关闭,findAll 返回时持久化上下文已关),没有懒加载字段,
  * 跨请求共享,本类只读不写。改成会改实体的写法之前,先把缓存换成不可变快照。
@@ -40,10 +52,19 @@ public class ServerListService {
     /** zone_config 行的缓存有效期。年龄按单调时钟算,写入时刻取查库完成时。 */
     static final long ZONE_ROWS_CACHE_TTL_NANOS = TimeUnit.SECONDS.toNanos(1);
 
+    /**
+     * 加入在途查库的等待方最多等多久(毫秒)。与 Hikari connection-timeout(application.yaml 的 hikari 段)同口径:
+     * 改动前每个请求自己 findAll,池满时最多等这么久就回 5xx;合并查库后等待方也不能比这更久。
+     * 刻意不从配置读:Hikari 把 0 当无限等,照搬会让等待方退回无上限。改 connection-timeout 时同步改这里。
+     */
+    static final long ZONE_ROWS_LOAD_WAIT_MILLIS = 3000L;
+
     private final ZoneConfigRepository zoneConfigRepo;
     private final ZoneHealthProbeService probeService;
     /** 单调时钟(纳秒),只用来算缓存年龄。 */
     private final LongSupplier nanoClock;
+    /** 等待方加入在途查库后的时间预算(毫秒),见 {@link #ZONE_ROWS_LOAD_WAIT_MILLIS}。 */
+    private final long loadWaitMillis;
 
     /** 最近一次成功查库的结果(已按 sort_order 排好、不可变);null = 还没成功过。失败从不写这里。 */
     private volatile ZoneRowsSnapshot cachedRows;
@@ -53,16 +74,19 @@ public class ServerListService {
     @Autowired
     public ServerListService(ZoneConfigRepository zoneConfigRepo,
                              ZoneHealthProbeService probeService) {
-        this(zoneConfigRepo, probeService, System::nanoTime);
+        this(zoneConfigRepo, probeService, System::nanoTime, ZONE_ROWS_LOAD_WAIT_MILLIS);
     }
 
     // 包级时钟注入点(与 ZoneHealthProbeService 同一做法):TTL 用例推进假时钟,不依赖墙钟。
+    // 等待预算同样可注入:超时用例用短预算,并发用例用远大于屏障上限的预算。
     ServerListService(ZoneConfigRepository zoneConfigRepo,
                       ZoneHealthProbeService probeService,
-                      LongSupplier nanoClock) {
+                      LongSupplier nanoClock,
+                      long loadWaitMillis) {
         this.zoneConfigRepo = zoneConfigRepo;
         this.probeService = probeService;
         this.nanoClock = nanoClock;
+        this.loadWaitMillis = loadWaitMillis;
     }
 
     public ServerListResponse getServerList() {
@@ -115,10 +139,14 @@ public class ServerListService {
                 && nanoClock.getAsLong() - snapshot.loadedAtNanos() < ZONE_ROWS_CACHE_TTL_NANOS;
     }
 
-    private static List<ZoneConfig> awaitLoad(CompletableFuture<List<ZoneConfig>> active) {
+    /**
+     * 等待别人发起的那次查库,最多等 {@link #loadWaitMillis}。查库失败时抛查库方的原异常;到点未完成抛
+     * {@link QueryTimeoutException}(查库方不受影响,继续查,结果照常写缓存)。限时等待可被中断,中断时恢复中断标记后失败。
+     */
+    private List<ZoneConfig> awaitLoad(CompletableFuture<List<ZoneConfig>> active) {
         try {
-            return active.join();
-        } catch (CompletionException e) {
+            return active.get(loadWaitMillis, TimeUnit.MILLISECONDS);
+        } catch (ExecutionException e) {
             Throwable cause = e.getCause();
             if (cause instanceof RuntimeException runtime) {
                 throw runtime;
@@ -127,7 +155,25 @@ public class ServerListService {
                 throw error;
             }
             throw new IllegalStateException("zone_config load failed", cause);
+        } catch (TimeoutException e) {
+            throw new QueryTimeoutException(
+                    "zone_config load still in flight after " + loadWaitMillis + "ms", e);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new IllegalStateException("interrupted while waiting for zone_config load", e);
         }
+    }
+
+    /**
+     * 仅供同包测试(与包级时钟注入同一做法,只读不写):当前在途查库 future 上挂着的等待方数;没有在途查库时为 0。
+     * 等待方只经 {@link #awaitLoad} 的限时 get 挂上,get 在 park 之前先把自己的等待节点压进 future 的依赖栈;
+     * 本类不给在途 future 挂任何其他回调,所以完成之前这个数就是已挂上的请求数。等待方超时或被中断离开时会把自己的节点
+     * 清出栈,计数随之下降,所以只在等待方不会超时的用例里当屏障用(等人齐再放行查库)。
+     * 不参与任何业务判断(JDK 文档也写明 getNumberOfDependents 是监控用途,不作同步控制)。
+     */
+    int inflightWaiterCountForTest() {
+        CompletableFuture<List<ZoneConfig>> active = inflightLoad.get();
+        return active == null ? 0 : active.getNumberOfDependents();
     }
 
     private record ZoneRowsSnapshot(List<ZoneConfig> rows, long loadedAtNanos) {}

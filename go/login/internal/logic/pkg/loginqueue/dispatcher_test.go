@@ -2,6 +2,7 @@ package loginqueue
 
 import (
 	"context"
+	"errors"
 	"maps"
 	"slices"
 	"strings"
@@ -13,6 +14,7 @@ import (
 	"github.com/alicebob/miniredis/v2"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/redis/go-redis/v9"
+	"github.com/zeromicro/go-zero/core/logx/logtest"
 	gzprom "github.com/zeromicro/go-zero/core/prometheus"
 )
 
@@ -151,7 +153,7 @@ func TestIntegration_QueueDrainAdmits(t *testing.T) {
 			if _, ok := admitted[tok]; ok {
 				continue
 			}
-			st, err := q.Lookup(ctx, tok, stubSignFn)
+			st, err := q.Lookup(ctx, tok, 1, stubSignFn)
 			if err != nil {
 				continue
 			}
@@ -200,7 +202,7 @@ func TestIntegration_DispatcherRespectsCapacity(t *testing.T) {
 	// was admitted — capacity is full, queue must hold.
 	time.Sleep(500 * time.Millisecond)
 	for _, tok := range stuck {
-		st, err := q.Lookup(ctx, tok, stubSignFn)
+		st, err := q.Lookup(ctx, tok, 1, stubSignFn)
 		if err != nil {
 			t.Fatalf("lookup: %v", err)
 		}
@@ -221,7 +223,7 @@ func TestIntegration_DispatcherRespectsCapacity(t *testing.T) {
 	waitFor(t, 2*time.Second, "exactly 2 admitted after capacity opened", func() bool {
 		admittedCount = 0
 		for _, tok := range stuck {
-			st, err := q.Lookup(ctx, tok, stubSignFn)
+			st, err := q.Lookup(ctx, tok, 1, stubSignFn)
 			if err == nil && st.Status == StatusAdmitted {
 				admittedCount++
 			}
@@ -271,6 +273,8 @@ func TestIntegration_LeaderElectionSerializesDispatch(t *testing.T) {
 	waitFor(t, 3*time.Second, "all entries drained", func() bool {
 		// We cheat by checking ZCARD: dispatcher pops members out, so
 		// queue length monotonically drops to zero when all admitted.
+		// (2026-10-18 补注)「pops members out」改读:放行脚本在写放行的同一段里 ZREM 成员,队列长度照样单调降到 0。
+		// 出队不再靠选主保证不重复放行(脚本先判在队),选主只省掉重复的往返。
 		n, _ := q.QueueLen(ctx, 1)
 		return n == 0
 	})
@@ -409,6 +413,9 @@ func TestIntegration_TwoZonesSharedRedis_BothQueuesDrain(t *testing.T) {
 
 // 滚动升级窗口:老版本持全服旧键、新版本持 zone 键,两把锁不互斥,同一个 zone 出现两个 leader。
 // 两个 leader 同时出队同一个 zone 时:不丢人、不重复放行(ZPOPMIN 原子),超发有界(≤ 2×cap)。
+// (2026-10-18 更正)「ZPOPMIN 原子」改读:两个 leader 可能 ZRANGE 到同一批,放行脚本先 ZSCORE 判在队,并在同一段里
+// 写占位、ZREM 成员,每条只放行一次。条目现在是原子地从队列移进占位,快照因此用 MULTI 原子地读两个 ZSET(先读队列、
+// 再读占位的两次读之间若夹进一次放行,会看到同一条出现两次);断言不变。
 func TestIntegration_DualLeadersSameZone_NoLossBoundedOverAdmit(t *testing.T) {
 	mr, err := miniredis.Run()
 	if err != nil {
@@ -452,9 +459,13 @@ func TestIntegration_DualLeadersSameZone_NoLossBoundedOverAdmit(t *testing.T) {
 	})
 
 	snapshot := func() (queued, admitted []string) {
-		queued, _ = rdb.ZRange(ctx, zoneZSetKey(1), 0, -1).Result()
-		admitted, _ = rdb.ZRange(ctx, admittedZSetKey(1), 0, -1).Result()
-		return queued, admitted
+		var queuedCmd, admittedCmd *redis.StringSliceCmd
+		_, _ = rdb.TxPipelined(ctx, func(pipe redis.Pipeliner) error {
+			queuedCmd = pipe.ZRange(ctx, zoneZSetKey(1), 0, -1)
+			admittedCmd = pipe.ZRange(ctx, admittedZSetKey(1), 0, -1)
+			return nil
+		})
+		return queuedCmd.Val(), admittedCmd.Val()
 	}
 	waitFor(t, 3*time.Second, "both leaders saturated the zone", func() bool {
 		qd, ad := snapshot()
@@ -480,7 +491,8 @@ func TestIntegration_DualLeadersSameZone_NoLossBoundedOverAdmit(t *testing.T) {
 }
 
 // countingProvider 包一层 CapacityProvider,数 CandidatesForZone 被调了几次,
-// 用来证明空队列那一拍没碰 gate 目录(生产实现每次都要取 etcd 快照、查排空标记)。
+// 用来证明空队列那一拍没碰 gate 目录(生产实现每次都要读 gate 目录 —— 2026-10-18 起读进程内镜像、
+// 不新鲜时回落 etcd —— 再查一次排空标记)。
 type countingProvider struct {
 	CapacityProvider
 	candidateCalls atomic.Int32
@@ -607,7 +619,7 @@ func TestDispatchOnce_BatchSpreadsAcrossGatesWithOneCandidateRead(t *testing.T) 
 			// 客户端取走放行时拿到的 gate 地址,就是放行时挑中的那台。
 			got := make(map[string]int, len(tc.gates))
 			for _, token := range tokens {
-				st, err := q.Lookup(ctx, token, stubSignFn)
+				st, err := q.Lookup(ctx, token, 1, stubSignFn)
 				if err != nil || st.Status != StatusAdmitted {
 					t.Fatalf("lookup = (%+v, %v), want ADMITTED", st, err)
 				}
@@ -631,8 +643,10 @@ func TestDispatchOnce_BatchSpreadsAcrossGatesWithOneCandidateRead(t *testing.T) 
 // 批内挑 gate 的兜底:候选为空时挑不出 gate,条目不能丢。pickFn 回错误,PopAdmit 走既有的「以分数 0 放回队首」,
 // 不写放行槽、不写占位,与以前逐条重取候选取到空集时相同。dispatchOnce 里候选已判过非空(没有 gate 时整拍不出队,
 // 见 TestDispatchOnce_NonEmptyQueueWithoutGates_KeepsEntries),正常走不到这里;这条钉住万一走到时的语义。
+// (2026-10-18 改写)「以分数 0 放回队首」改读:PopAdmit 跳过该条,条目从未离开队列、分数不变,错误随返回值交给
+// dispatcher(此前回 (0, nil)、错误被吞)。修复前红:err == nil,分数变成 0。
 func TestBatchPickFn_NoCandidatesKeepsEntryQueued(t *testing.T) {
-	q, _, _, cleanup := newTestQueue(t)
+	q, rdb, _, cleanup := newTestQueue(t)
 	defer cleanup()
 	ctx := context.Background()
 
@@ -640,41 +654,148 @@ func TestBatchPickFn_NoCandidatesKeepsEntryQueued(t *testing.T) {
 	if err != nil {
 		t.Fatalf("enqueue: %v", err)
 	}
-	if n, err := q.PopAdmit(ctx, 1, 1, newBatchPickFn(nil)); err != nil || n != 0 {
-		t.Fatalf("popadmit without candidates = (%d, %v), want (0, nil)", n, err)
+	score, err := rdb.ZScore(ctx, zoneZSetKey(1), res.QueueID).Result()
+	if err != nil {
+		t.Fatalf("zscore after enqueue: %v", err)
+	}
+	if n, err := q.PopAdmit(ctx, 1, 1, newBatchPickFn(nil)); err == nil || n != 0 {
+		t.Fatalf("popadmit without candidates = (%d, %v), want (0, error)", n, err)
 	}
 	if n, err := q.QueueLen(ctx, 1); err != nil || n != 1 {
-		t.Fatalf("queue len = %d err=%v, want 1: the entry must go back to the queue", n, err)
+		t.Fatalf("queue len = %d err=%v, want 1: the entry must stay in the queue", n, err)
+	}
+	if got, err := rdb.ZScore(ctx, zoneZSetKey(1), res.QueueID).Result(); err != nil || got != score {
+		t.Fatalf("queue score = %.0f err=%v, want %.0f (unchanged)", got, err, score)
 	}
 	mustAdmittedCount(t, q, 0, "no gate picked")
-	if st, err := q.Lookup(ctx, res.QueueToken, stubSignFn); err != nil || st.Status != StatusQueueing {
+	if st, err := q.Lookup(ctx, res.QueueToken, 1, stubSignFn); err != nil || st.Status != StatusQueueing {
 		t.Fatalf("lookup = (%+v, %v), want QUEUEING", st, err)
 	}
 }
 
-// 快速通道单次挑 gate 的行为不变(PickGate 现在委托给 gatePicker):人数最少、同数取 NodeID 最小,
-// 与候选顺序无关;每次调用都在新快照上挑,不跨调用记账(同一份候选连挑三次都是同一台);不改调用方的切片。
-func TestPickGate_SinglePickIsStatelessAndOrderIndependent(t *testing.T) {
-	cands := []GateCandidate{
-		{NodeID: 7, PlayerCount: 2},
-		{NodeID: 9, PlayerCount: 1},
-		{NodeID: 2, PlayerCount: 3},
-		{NodeID: 4, PlayerCount: 1},
+// D2(2026-10-18):PopAdmit 在批中途出错时,已放行的照样计入 admit_total,剩下的条目留在队列;dispatcher 每拍只打一行
+// ERROR,上下文(已放行数等)在 err 里。钩子让第 3 个不同的放行键回 "ERR injected";容量 100,一拍放 3 人。
+// 修复前红:队列长度 0(旧代码 ZPOPMIN 弹出后写入出错即丢);日志是 "dropped entries after zpopmin",不是
+// "PopAdmit zone=1 err="。
+func TestDispatchOnce_PartialBatchError_CountsAdmittedAndLogsOnce(t *testing.T) {
+	gzprom.Enable() // 计数器要指标开关打开才写,见 TestLookup_AdmitSlotExpiredUnclaimed_ReturnsExpired
+	logs := logtest.NewCollector(t)
+	mr, err := miniredis.Run()
+	if err != nil {
+		t.Fatalf("miniredis: %v", err)
 	}
-	orig := slices.Clone(cands)
-	for i := range 3 {
-		got, err := PickGate(cands)
-		if err != nil || got.NodeID != 4 {
-			t.Fatalf("pick #%d = (%+v, %v), want NodeID 4 (fewest players, then smallest NodeID)", i+1, got, err)
+	defer mr.Close()
+	rdb := redis.NewClient(&redis.Options{Addr: mr.Addr()})
+	defer rdb.Close()
+	secret := []byte("partial-batch")
+	q := New(rdb, time.Hour, 60*time.Second, secret)
+	ctx := context.Background()
+
+	prov := &integrationProvider{
+		caps:  map[uint32]uint32{1: 100},
+		cands: map[uint32][]GateCandidate{1: {{NodeID: 1, IP: "10.0.0.1", Port: 9000, ZoneID: 1}}},
+	}
+	// 不 Start:直接调 dispatchOnce,没有 goroutine,结果确定。
+	d := mustNewDispatcher(t, q, prov, rdb, secret, "dispatcher:lock:partial", 1)
+	tokens := enqueueAccounts(t, q, "alice", "bob", "carol")
+
+	var inject atomic.Bool
+	inject.Store(true)
+	var admitKeys []string // 放行脚本依次碰到的不同放行键(EVALSHA 撞 NOSCRIPT 回退 EVAL 时同一个键算一次)
+	rdb.AddHook(cmdHook{process: func(ctx context.Context, cmd redis.Cmder, next redis.ProcessHook) error {
+		key, ok := admitScriptKey(cmd)
+		if !ok || !inject.Load() {
+			return next(ctx, cmd)
+		}
+		if !slices.Contains(admitKeys, key) {
+			admitKeys = append(admitKeys, key)
+		}
+		if len(admitKeys) >= 3 && key == admitKeys[2] {
+			return failCmd(cmd, errors.New("ERR injected"))
+		}
+		return next(ctx, cmd)
+	}})
+
+	before := admitTotalValue(t, "1")
+	d.dispatchOnce(ctx)
+	if got := admitTotalValue(t, "1") - before; got != 2 {
+		t.Fatalf(`login_queue_admit_total{zone="1"} grew by %v, want 2 (admitted before the error still count)`, got)
+	}
+	left, err := rdb.ZRange(ctx, zoneZSetKey(1), 0, -1).Result()
+	if err != nil || len(left) != 1 {
+		t.Fatalf("queue after the partial batch = %v err=%v, want exactly the entry whose script failed", left, err)
+	}
+	if has, err := rdb.HExists(ctx, metaKey(left[0]), metaFieldAdmittedAt).Result(); err != nil || has {
+		t.Fatalf("meta of the remaining entry has %s=%v err=%v, want absent", metaFieldAdmittedAt, has, err)
+	}
+	if st, err := q.Lookup(ctx, tokens[left[0]], 1, signMustNotRun(t)); err != nil || st.Status != StatusQueueing {
+		t.Fatalf("lookup the remaining entry = (%+v, %v), want QUEUEING", st, err)
+	}
+	var errLines []string
+	for line := range strings.SplitSeq(logs.String(), "\n") {
+		if strings.Contains(line, "PopAdmit zone=1 err=") {
+			errLines = append(errLines, line)
 		}
 	}
-	if !slices.Equal(cands, orig) {
-		t.Fatalf("PickGate mutated its input: %v, want %v", cands, orig)
+	if len(errLines) != 1 || !strings.Contains(errLines[0], "admitted=2") {
+		t.Fatalf("PopAdmit error lines = %q, want exactly one carrying admitted=2", errLines)
 	}
-	if got, err := PickGate(nil); got != nil || err == nil {
-		t.Fatalf("PickGate(nil) = (%v, %v), want (nil, error)", got, err)
+
+	inject.Store(false)
+	d.dispatchOnce(ctx)
+	if got := admitTotalValue(t, "1") - before; got != 3 {
+		t.Fatalf(`login_queue_admit_total{zone="1"} grew by %v after the retry tick, want 3`, got)
+	}
+	if n, err := q.QueueLen(ctx, 1); err != nil || n != 0 {
+		t.Fatalf("queue len after the retry tick = %d err=%v, want 0", n, err)
 	}
 }
+
+// D3(2026-10-18):停服 / 丢租约那一拍取消落在 PopAdmit 期间时,dispatcher 不打 PopAdmit ERROR(与 queueLen 分支同口径),
+// 条目原样留在队列。钩子在 PopAdmit 的 ZRANGE 发出前调用测试持有的 cancel(),再转发。
+// 修复前红:旧代码不发 ZRANGE、钩子不触发,条目被 ZPOPMIN 弹出并放行,红在队列长度上;若把钩子挂到 zpopmin,旧代码会
+// 打出 `PopAdmit zone=1 err=zpopmin: context canceled`。
+func TestDispatchOnce_CanceledDuringPopAdmit_NoErrorLog(t *testing.T) {
+	logs := logtest.NewCollector(t)
+	mr, err := miniredis.Run()
+	if err != nil {
+		t.Fatalf("miniredis: %v", err)
+	}
+	defer mr.Close()
+	rdb := redis.NewClient(&redis.Options{Addr: mr.Addr()})
+	defer rdb.Close()
+	secret := []byte("canceled-tick")
+	q := New(rdb, time.Hour, 60*time.Second, secret)
+	bg := context.Background()
+
+	prov := &integrationProvider{
+		caps:  map[uint32]uint32{1: 100},
+		cands: map[uint32][]GateCandidate{1: {{NodeID: 1, IP: "10.0.0.1", Port: 9000, ZoneID: 1}}},
+	}
+	// 不 Start:直接调 dispatchOnce,没有 goroutine,结果确定。
+	d := mustNewDispatcher(t, q, prov, rdb, secret, "dispatcher:lock:canceled", 1)
+	if _, err := q.Enqueue(bg, 1, "u", "d"); err != nil {
+		t.Fatalf("enqueue: %v", err)
+	}
+
+	ctx, cancel := context.WithCancel(bg)
+	defer cancel()
+	rdb.AddHook(cmdHook{process: func(hctx context.Context, cmd redis.Cmder, next redis.ProcessHook) error {
+		if cmd.Name() == "zrange" {
+			cancel()
+		}
+		return next(hctx, cmd)
+	}})
+	d.dispatchOnce(ctx)
+	if out := logs.String(); strings.Contains(out, "PopAdmit zone=1") {
+		t.Fatalf("a canceled tick must not log a PopAdmit error, got logs:\n%s", out)
+	}
+	if n, err := q.QueueLen(bg, 1); err != nil || n != 1 {
+		t.Fatalf("queue len = %d err=%v, want 1: the entry stays queued when the tick is canceled", n, err)
+	}
+}
+
+// 快速通道 PickGate 的用例(2026-10-18 起随机二选一)见 gatetoken_pick_test.go。
 
 // G4b-G(Q2 回归,dispatcher 层):取走放行槽后,gate 要到下一次上报才把人数算进 PlayerCount。
 // 这几拍里占位必须留着,否则每一拍都按「在线 0、在途 0」再放一满批。
@@ -720,7 +841,7 @@ func TestDispatchOnce_ConsumedAdmitsHoldCapacityForHandoffGrace(t *testing.T) {
 
 	taken := 0
 	for _, token := range tokens {
-		st, err := q.Lookup(ctx, token, stubSignFn)
+		st, err := q.Lookup(ctx, token, 1, stubSignFn)
 		if err != nil {
 			t.Fatalf("lookup: %v", err)
 		}

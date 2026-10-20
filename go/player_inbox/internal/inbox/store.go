@@ -14,6 +14,7 @@ import (
 
 	"github.com/go-sql-driver/mysql"
 	"github.com/zeromicro/go-zero/core/logx"
+	"google.golang.org/grpc/peer"
 )
 
 // Store 是收件箱的存储与协议核心(设计 §6.2、§7.8、§7.9、§9)。
@@ -196,9 +197,72 @@ func scanItem(sc rowScanner) (*inboxpb.PlayerInboxItemRow, error) {
 }
 
 // checkRowShard 是读出时的断言(设计 §4.2:TiDB 不执行 CHECK,shard 一致性靠唯一计算函数 + 读出断言 + 单测)。
+//
+// 它只拦得住**按分片扫描**读出来的行(DueNotifications 等)。按玩家的读写一律带 WHERE `shard` = RowShard(player_id),
+// shard 写错的行根本查不出来,走不到这里 —— 那种行是静默不可见,不是 fail-closed(评审 R3);整库核对见 CheckRowShards。
 func checkRowShard(shard uint32, playerID uint64) error {
 	if want := RowShard(playerID); shard != want {
 		return fmt.Errorf("inbox: corrupt row shard=%d for player_id=%d (want %d)", shard, playerID, want)
+	}
+	return nil
+}
+
+// rowShardTables 是 shard 列由 RowShard(player_id) 决定的全部表(收件箱三张表)。
+var rowShardTables = []string{streamTable, itemTable, auditTable}
+
+// CheckRowShards 逐表核对 (shard, player_id):只要有一行 shard ≠ RowShard(player_id) 就返回 error,
+// 错误里给出表名、行数、第一行与处置(评审 R3)。
+//
+// 为什么要整库核对:shard 写错的行(典型是 L5 改公式之前按 player_id % 64 写出的开发库存量)对按玩家的读写静默不可见 ——
+// 锁内判重读不到旧行,同一 request_id 重试会再入箱一次(IB-2 失效);旧的 PENDING 行再也拉不到;旧流行只要挂着
+// notify_due_ms,DueNotifications 每轮都在 checkRowShard 上整片报错,该片的提醒补发全停。
+// 所以应在接请求之前跑一次,发现不一致即拒绝启动(装配入口:player_inbox.go 的建表 / 查表之后与 -migrate)。
+//
+// 只读、不加锁;每张表一条 DISTINCT (shard, player_id) 扫描(两列是主键前缀,走主键有序读)。收件箱只承载 GM 域,
+// 三张表是千到十万行的量级(设计 §4.2 量级假设),每次部署跑一次的代价可以接受。ctx 结束返回 ctx 的错误。
+func CheckRowShards(ctx context.Context, db sqlRunner) error {
+	for _, table := range rowShardTables {
+		if err := checkTableRowShards(ctx, db, table); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// checkTableRowShards 核对一张表;返回的 error 已带表名。
+func checkTableRowShards(ctx context.Context, db sqlRunner, table string) error {
+	rows, err := db.QueryContext(ctx, "SELECT DISTINCT `shard`, `player_id` FROM "+table)
+	if err != nil {
+		return fmt.Errorf("inbox: scan %s for shard layout: %w", table, err)
+	}
+	defer rows.Close()
+	bad := 0
+	var firstShard uint32
+	var firstPlayer uint64
+	for rows.Next() {
+		var shard uint32
+		var playerID uint64
+		if err := rows.Scan(&shard, &playerID); err != nil {
+			return fmt.Errorf("inbox: scan %s for shard layout: %w", table, err)
+		}
+		if checkRowShard(shard, playerID) == nil {
+			continue
+		}
+		if bad == 0 {
+			firstShard, firstPlayer = shard, playerID
+		}
+		bad++
+	}
+	if err := rows.Err(); err != nil {
+		return fmt.Errorf("inbox: scan %s for shard layout: %w", table, err)
+	}
+	if bad > 0 {
+		return fmt.Errorf("inbox: %s has %d (shard, player_id) pair(s) whose shard is not RowShard(player_id) "+
+			"(first: shard=%d player_id=%d, want %d); such rows are invisible to every per-player read and break idempotency. "+
+			"Rows written by a build older than the 2026-10-16 shard formula change (player_id %% 64) cannot be carried over: "+
+			"on a disposable dev/test database, empty player_inbox_stream / player_inbox_item / player_inbox_audit and start again; "+
+			"anywhere else stop and escalate, do not delete rows (design §4.2, review L5)",
+			table, bad, firstShard, firstPlayer, RowShard(firstPlayer))
 	}
 	return nil
 }
@@ -332,19 +396,56 @@ func requireOneRow(res sql.Result, what string) error {
 }
 
 // InsertAudit 在调用方事务里写一行审计(INSERT IGNORE:每条目每种动作一行,重复调用不报错,设计 §4.1)。
-// shard 由本函数按 player_id 计算,调用方传入的值被忽略。
+// 调用方只给身份、动作、「谁、为什么」与 void_reason;「做了什么」(msg_type / request_id / issued_at_ms /
+// content_sha256 / payload)由本函数在**同一事务里**按主键普通读条目行后原样复制(评审 L9,组装见 auditRowFor),
+// shard 按 player_id 计算 —— 调用方传入的这些值一律被忽略。
+//
+// 用于条目行刚在本事务里写出的场景(GM 入箱的 inTx):RC 下普通读看得见本事务自己的写。多一次主键点读,
+// 锁序不变(流行 → 条目行 → 审计行;普通读不加锁)。条目行读不到返回 error,整个事务回滚(fail-closed)。
+// 手里已经有条目行的调用方(作废)用 insertAuditForItem,不再多读一次。
 func InsertAudit(ctx context.Context, tx *sql.Tx, a *inboxpb.PlayerInboxAudit) error {
 	if a == nil {
 		return errors.New("inbox: nil audit row")
 	}
-	_, err := tx.ExecContext(ctx, "INSERT IGNORE INTO "+auditTable+
-		" (`shard`,`player_id`,`domain`,`seq`,`action`,`operator`,`peer_addr`,`reason`,`created_ms`) VALUES (?,?,?,?,?,?,?,?,?)",
-		RowShard(a.GetPlayerId()), a.GetPlayerId(), a.GetDomain(), a.GetSeq(), a.GetAction(),
-		a.GetOperator(), a.GetPeerAddr(), a.GetReason(), a.GetCreatedMs())
+	item, err := readItem(ctx, tx, RowShard(a.GetPlayerId()), a.GetPlayerId(), inboxpb.PlayerInboxDomain(a.GetDomain()), a.GetSeq())
 	if err != nil {
-		return fmt.Errorf("inbox: insert audit player=%d seq=%d action=%d: %w", a.GetPlayerId(), a.GetSeq(), a.GetAction(), err)
+		return err
+	}
+	if item == nil {
+		return fmt.Errorf("inbox: audit for a missing item player=%d domain=%d seq=%d action=%d",
+			a.GetPlayerId(), a.GetDomain(), a.GetSeq(), a.GetAction())
+	}
+	return insertAuditForItem(ctx, tx, item, a)
+}
+
+// auditColumns 是审计表的全部列,顺序与 insertAuditForItem 的实参一一对应。
+const auditColumns = "`shard`,`player_id`,`domain`,`seq`,`action`,`operator`,`peer_addr`,`reason`,`created_ms`," +
+	"`msg_type`,`request_id`,`issued_at_ms`,`content_sha256`,`payload`,`void_reason`"
+
+// insertAuditForItem 按 auditRowFor 组出整行后 INSERT IGNORE。item 必须是调用方在同一事务里读到的条目行
+// (内容列入箱后不再改,早于本事务内其它条件写读到的快照也可以用)。
+func insertAuditForItem(ctx context.Context, tx *sql.Tx, item *inboxpb.PlayerInboxItemRow, a *inboxpb.PlayerInboxAudit) error {
+	row, err := auditRowFor(item, a)
+	if err != nil {
+		return err
+	}
+	_, err = tx.ExecContext(ctx, "INSERT IGNORE INTO "+auditTable+" ("+auditColumns+") VALUES ("+placeholders(15)+")",
+		row.GetShard(), row.GetPlayerId(), row.GetDomain(), row.GetSeq(), row.GetAction(),
+		row.GetOperator(), row.GetPeerAddr(), row.GetReason(), row.GetCreatedMs(),
+		row.GetMsgType(), row.GetRequestId(), row.GetIssuedAtMs(), row.ContentSha256, row.Payload, row.GetVoidReason())
+	if err != nil {
+		return fmt.Errorf("inbox: insert audit player=%d seq=%d action=%d: %w", row.GetPlayerId(), row.GetSeq(), row.GetAction(), err)
 	}
 	return nil
+}
+
+// PeerAddr 是 gRPC 对端地址,审计里唯一不可伪造的部分(设计 §1.6);取不到时为 "unknown"。
+// 运维面写审计、consumer 面的异常日志(评审 L10)共用这一份;server 包的拦截器与适配层也调它。
+func PeerAddr(ctx context.Context) string {
+	if p, ok := peer.FromContext(ctx); ok && p.Addr != nil {
+		return p.Addr.String()
+	}
+	return "unknown"
 }
 
 // ensureStream 补建流行(设计 §6.2 第 6 步):INSERT IGNORE、next_seq=1,在**主事务之外**的独立短事务里执行,

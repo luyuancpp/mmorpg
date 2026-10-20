@@ -32,6 +32,12 @@ message BattleResultEvent {
   // 结算时 BattleSettlementData.is_dead == true 的玩家,升序去重;所有对局都填。
   // 用户决策 U2(阵亡也得奖):guild 发奖候选 = team 0 − fled_player_ids,本字段不参与过滤,只供统计与日后回退。
   repeated uint64 dead_player_ids = 11;
+  // 完整个人结算源：提交结果前固定，之后的终局包与旧R07投递复用原值。
+  // 仅作恢复原件；没有玩家源版本与SQL收据时，消费者不得据此自动重发资产或销账。
+  repeated BattleSettlementData settlements = 12;
+  // 0是没有完整个人原件的历史结果；1要求成员集合与settlements严格一一对应。
+  // 未知版本拒绝推进消费位点，不能把默认0冒充完整原件。
+  uint32 settlement_format_version = 13;
 }
 
 // match -> rank(排行榜写分,docs/design/leaderboard-system.md §2.4,2026-09-20 已拍板方案 (a))。

@@ -39,12 +39,26 @@ param(
 	# 全服好友权威 TiDB 的同一 SQL 入口(host:port)。staging/prod 必填，禁止回落到 infra MySQL。
 	# 这里只选择已有数据库，不创建 TiDB 集群、数据库或账号。
 	[string]$FriendTiDBHost = "",
-	# 玩家收件箱的 scene 消费端开关(docs/design/player-inbox-service.md §7、§11.7),写进 node-config 的
-	# game_config.yaml → player_inbox.consumer_enabled。默认 off = scene 认识并原样回写账本字段、但不发 Fetch
-	# (这就是回滚下限,上线第 4 步);全部 zone 的 scene 都升到认识新字段的版本之后,才逐 zone 以 on 重跑 zone-up
-	# 并滚动 scene(第 5 步)。不粘滞:不传就回到 off。包装入口(dev_tools.ps1 / k8s_image.ps1)不透传,开关要直接调本脚本。
-	[ValidateSet("off", "on")]
-	[string]$PlayerInboxConsumer = "off",
+	# 交易全局权威SQL入口；只选择已配置的TiDB，不创建数据库或账号。
+	[string]$TradeTiDBHost = "",
+	# 全局匹配事务域与真实机房编号。生产不允许静默退回旧Redis匹配。
+	[string]$MatchTiDBHost = "",
+	[uint32]$PhysicalRegion = 0,
+	# 玩家收件箱 scene 消费端开关的**核对值**(docs/design/player-inbox-service.md §7、§11.7;交接 player-inbox-handoff-20261015 §6 H1)。
+	# 开关的权威值只有一份:git 跟踪的 bin/etc/game_config.yaml 的 player_inbox.consumer_enabled(与 PlayerInbox.EnqueueTypes 镜像
+	# 服务 yaml 同口径)。node-config 的 game_config.yaml 把 player_inbox 段整段从那里复制,所以例行发布不会再把它写回 false。
+	# 开 / 关消费 = 改那份 yaml 并提交,再 zone-up 并滚动 scene(ConfigMap 变了不会自己重启 C++ 进程)。
+	# 本参数不改渲染值:留空 = 不核对(包装入口 dev_tools.ps1 / k8s_image.ps1 不透传,也不需要透传);给 on / off 时必须与 yaml 一致,
+	# 不一致就在任何写操作之前 throw,并提示去改 yaml。用途是把「我认为它开着 / 关着」写进发布命令,yaml 被意外改回时发布直接失败。
+	[ValidateSet("", "off", "on")]
+	[string]$PlayerInboxConsumer = "",
+	# 收件箱写前门禁的显式豁免(Assert-PlayerInboxConsumerGate):「消费端关、入箱白名单非空」时 zone-up / all-up / infra-up
+	# 在任何写操作之前拒绝 —— 这样部署后 GM 处置照样入箱成功,却没有 scene 执行,条目 delivery_count=0,进不了任何告警。
+	# 门禁先比当前检出里的两份 yaml,非 DryRun 时再只读另一侧线上已部署的值(Read-PlayerInboxGateLiveFacts):zone 与 infra 分开部署、
+	# 可以来自不同 commit。只在明知如此时传(例如紧急关消费、来不及先清空白名单);它只放行,不改任何渲染值。
+	# 包装入口(dev_tools.ps1 / k8s_image.ps1 / k8s_zone_rollback.ps1)没有这个开关:要豁免就直接调本脚本;
+	# 包装入口被拒时的出路是先把 EnqueueTypes 改回 [] 并提交、重跑 infra-up(正常关消费的顺序)。
+	[switch]$AllowPlayerInboxConsumerOff,
 	# 留空 = 按 tag 是否可变自动推导(不可变 tag -> IfNotPresent,可变 tag -> Always)。
 	# 以前无条件写死 IfNotPresent,配上 latest 就是"节点上有旧层就永远不拉新的"。
 	[ValidateSet("", "Always", "IfNotPresent", "Never")]
@@ -74,6 +88,27 @@ param(
 	[int]$KafkaRetentionCheckIntervalMs = 0,
 	[long]$KafkaRetentionBytes = 0,
 	[long]$KafkaSegmentBytes = 0,
+	# Kafka 盘预算与 db_task 保留量(S5b,docs/design/db-task-delivery-and-retention.md §B;README「Kafka 磁盘预算与 db_task retention.bytes」)。
+	# 以下五个参数 0 都表示「按档位 / 自动」,档位缺省值写在 Apply-KafkaProfileDefaults,公式在 Get-KafkaDiskPlan。
+	# db_task topic 每分区的 topic 级 retention.bytes 目标值。0 = 按档位的设计字节率 × 缓冲目标算(Get-KafkaDbTaskRetentionBytesTarget);
+	# >0 = 显式目标。两种都只是目标:盘放不下时按盘收缩并告警。负数在写路径入口拒绝(Kafka 里 -1 = 不限,磁盘无界)。
+	# 算出的值同时渲染进 db 与 login 两个 ConfigMap 的 Kafka.RetentionBytes:两个服务启动时都会对同一个 topic 设置它。
+	[long]$KafkaDbTaskRetentionBytes = 0,
+	# 每个 zone 的 db_task 设计写入速率(字节/秒,按存盘峰值估算)。0 = 按档位:dev 256 KiB/s、prod-like 1 MiB/s、prod 3 MiB/s。
+	[long]$KafkaDbTaskDesignBytesPerSec = 0,
+	# db_task 的缓冲目标(毫秒):按设计速率至少要留住多久的积压(= 能扛住多长的 DB 故障、回档能往回拨多远)。
+	# 0 = 按档位:dev 1 小时、prod-like / prod 2 小时。实际取 min(本值, db_task 的 retention.ms)。
+	[long]$KafkaDbTaskBufferTargetMs = 0,
+	# 每个 broker 的 Kafka PVC 大小(Gi)。0 = 自动:线上已有 StatefulSet kafka 就沿用线上模板(retention.bytes 按模板与每块 PVC 实际容量中小的算),
+	# StatefulSet 不在但 PVC 在(--cascade=orphan 之后)时按最小的实际 PVC,都没有才按盘预算公式算。
+	# 显式值与线上模板不同(volumeClaimTemplates 不可变、PVC 不能缩)、或大于最小的实际 PVC(盘还没扩完)时拒绝部署;
+	# 扩盘按 README 的 runbook 先 patch PVC 再带本参数重跑 infra-up。
+	[ValidateRange(0, 65536)]
+	[int]$KafkaStorageGi = 0,
+	# db_task 与审计 topic 之外所有 topic 的盘预留(GiB,单份数据、未乘副本数):控制面命令 topic、match-results、__consumer_offsets、
+	# 旧的一节点一 topic 的残留。0 = 按档位:dev 1、prod-like 2、prod 4。
+	[ValidateRange(0, 4096)]
+	[int]$KafkaOtherTopicsReserveGi = 0,
 	[string]$KafkaHeapOpts = "",
 	# Kafka broker 数。0 = 按档位取默认:-ReleaseProfile 不是 dev,或 -OpsProfile 不是 custom → 3;其余 → 1。
 	# 只接受 1 或 ≥3:两个 broker 的选举组挂一个就没有多数派,比单 broker 还脆。
@@ -86,9 +121,11 @@ param(
 	#   3:高可用(manifests/infra/redis-ha.yaml):1 主 2 从 + 每个 Pod 一个哨兵 + 2 个 haproxy 入口代理,客户端地址仍是 redis:6379。
 	# 1 → 3 可以原地切换(redis-0 带着数据当主,另外两个从它同步),但这是一次 Redis 重启,要 -ConfirmRedisCoreRestart;
 	# 3 → 1 拒绝(主可能不在 redis-0 上,直接缩容会丢数据)。见 Assert-RedisTopologyChangeIsSafe 与 README「共享 Redis:高可用形态」。
+	# 同一个值还决定 data-service / go/db 的 WAITAOF 副本确认份数(单实例 0、高可用 1,Get-MappingRedisTopology),所以必须与线上一致:
+	# zone-up / all-up -SkipInfra 部署 zone Go 服务时(非 DryRun)读线上 sts/redis —— 没给本参数就跟随线上,给了而与线上不同即拒绝
+	# (Resolve-RedisTopologyFromLive)。DryRun 不查集群,按本参数与档位渲染。
 	[ValidateRange(0, 3)]
 	[int]$RedisReplicas = 0,
-
 	[int]$CentreReplicas = 1,
 	[int]$GateReplicas = 2,
 	# battle 是不分 zone 的全局池，只由 infra-up / all-up 部署一次。
@@ -151,9 +188,10 @@ param(
 	# 猜大了烧钱),与 -AgonesRoomCapacity 同一个口径。
 	[int]$AgonesMinReplicas = 1,
 	[int]$AgonesMaxReplicas = 0,
-	# 与 C++ gRPC server 的默认值保持一致。传 0 时 Deployment / Fleet
-	# 都不注入环境变量,由进程默认值接管；正数则两种编排写入同一个值。
-	[int]$GrpcServerMaxPollers = 8,
+	# 已退役(docs/design/grpc-muduo-transport.md §15.11):第 4 批起 C++ gRPC 服务端跑在节点 EventLoop 上,
+	# 没有 poller 线程,进程也不再读 GRPC_SERVER_MAX_POLLERS。参数只为兼容旧的调用命令而保留:
+	# Deployment / Fleet / 客户端入口生成器一律不再注入该环境变量;传入大于 0 的值只打一条 Write-Warning,取值被忽略。
+	[int]$GrpcServerMaxPollers = 0,
 	# gate 对外 Service 的类型。-ClientEntryMode external:决定每序号 Service gate-<i> 的类型,只允许 NodePort / LoadBalancer
 	# (preflight 校验);podip:决定单一 gate-entry 的类型,且 gate-entry 只在 gate 副本数为 1 时生成(D90)。
 	# 取值在参数绑定后规范成 K8s 的标准大小写(见脚本顶部 ConvertTo-ClientEntryCanonicalName)。
@@ -185,6 +223,54 @@ param(
 	# 用字符串而不是 [bool]/[switch]:值原样写进 env,两边字面值一致,kubectl 里看到的就是传进来的。
 	[ValidateSet("0", "1")]
 	[string]$GateRouterMode = "1",
+	# go/db 存盘消费组的渲染模式(docs/design/db-consumer-group-per-zone.md §2 / §4;决策表见 Resolve-DbConsumerGroupPlan):
+	#   keep(缺省)  按线上 go-svc-db-config 现状渲染:最终形状原样保留;未收尾的交接形状在对方组已没有位点时自动收尾成最终形状
+	#                (去掉 GroupHandoffFrom,db 滚动一次);全新 namespace(读不到 ConfigMap)按 Kafka 位点只渲染最终形状。
+	#   zone        把本 zone 交接到按 zone 的组 db_rpc_consumer_group_z<ZoneId>(legacy 组还有位点时渲染交接形状)。
+	#   legacy      反向交接回共享组 db_rpc_consumer_group(回滚用)。
+	# zone / legacy 只许配 -Command zone-up:切组要逐 zone 做、冻结其它 zone 的发布并紧跟收尾(kafka_offset_reset.ps1 -FinalizeHandoff),
+	# all-up 一次切全部 zone 等于把所有 zone 同时放进交接窗口;其它命令在入口拒绝。zone / legacy 还要求本次部署 db(给 -GoSvcRegistry
+	# 且不带 -SkipGoSvc,k8s_deploy.ps1 里 -GoSvcRegistry 缺省为空),否则在写路径入口拒绝:不部署 db 的 zone-up 切不了组。
+	# 交接形状只写 ConsumerGroup + GroupHandoffFrom、不写 GroupID:交接闸之前的 go/db 二进制把 GroupID 当必填,在 conf.MustLoad 就拒启,
+	# 这就是「新镜像带交接闸」的能力证明(maxUnavailable 0,新 Pod 拒启时 rollout 卡住);最终形状只写 GroupID,任何二进制都能加载。
+	# 「旧 Pod 继续服务」只在线上 db 本身带交接闸时成立:ConfigMap 整目录挂载,旧 Pod 一旦重启就读到交接形状。所以显式切组渲染交接形状之前,
+	# 写路径入口先经 API server 代理抓每个 db Pod 的 /metrics,要求都有 db_consumer_group_handoff_gate_total(要 pods/proxy 权限,
+	# Assert-LiveDbPodsHaveHandoffGate),证明不了就在任何写操作之前拒绝。
+	# 非 DryRun 时在写路径入口读线上 ConfigMap,并按需 kubectl exec 进 kafka-0 读两组在本 zone db_task topic 上的位点(要 pods/exec 权限),
+	# 判不出就在任何写操作之前拒绝(all-up 不带 -SkipInfra 且 infra namespace 不存在时,本次新建的 Kafka 必然为空,不 exec);
+	# DryRun 不读集群,渲染预览并告警。不粘滞;dev_tools.ps1 只在被指定时透传,k8s_image.ps1 不透传(等于 keep)。
+	[ValidateSet("keep", "zone", "legacy")]
+	[string]$DbConsumerGroup = "keep",
+
+	# ── D1 玩家归属与落点映射持久化的部署载体(第 1b-3 批:docs/handoff/launch-readiness-20261013/spec_D1_batch1b2_2_3.md §7、§13.4)──
+	# 五个开关缺省都是今天的值(redis / false):不带它们部署,产物里 RouteStore.Mode 仍是 redis,Arm 与三个读方开关仍是 false。写进哪里:
+	#   -RouteStoreMode / -RouteReconcileArm / -RouteReadRequiresReady → zone 的 go-svc-data-service-config
+	#       (RouteStore.Mode / RouteStore.Reconcile.ArmReadyMarker / RouteStore.ReadRequiresReady);
+	#   -DbPlacementRequireRouteReady → zone 的 go-svc-db-config(Placement.RequireRouteReady);
+	#   -GuildRequireRouteReady → infra namespace 的 go-svc-guild-config(MergeMarkerRedis.RequireRouteReady,只在部署全局 Go 服务时生效)。
+	# 只改 ConfigMap 不会滚动进程(同 db 的 RetryRouting):改值后 rollout restart 对应 Deployment,以启动日志核对。
+	# 切换顺序是规格 §8 的 P2(Mode=db_first)→ P3(全部 zone 同时 Arm=true)→ P5(读方逐个打开);回退反过来(§13.5 第 1 条):
+	# 先关全部读方开关 → Arm=false(确认 leader 计了 data_service_route_reconcile_event_total{event="marker_dropped_disarmed"})→
+	# Mode=redis → route-tool rewarm -wait=0(tools/scripts/k8s_route_tool.ps1)。告警见 deploy/k8s/data-service-route-alerts.yaml。
+	# 组合门禁(写路径入口,DryRun 同样判,Assert-RouteSwitchPreflight):Arm 或任一读方开关为 true 而 Mode=redis → 拒绝
+	# (data_service 的 Validate 会拒启,进集群就是 CrashLoop);任一读方开关为 true 而 Arm=false → 拒绝(没有就绪标记,
+	# 读方全部 fail-closed:go/db 停存盘消费、data_service 全部回源、guild 全拒)。
+	# **粘滞(防翻转)**:这几个值不能「每次部署按参数重写、漏传就落回缺省」—— 漏传一次就把 db_first 静默降回 redis,
+	# zone 回档的 Step 6 重建 namespace 时尤其如此。所以非 DryRun 时写路径入口在任何写操作之前读线上现状(Assert-RouteSwitchClusterState):
+	# data-service 读**全部** zone namespace(Mode / Arm / ReadRequiresReady 是全服单值:所有 zone 共用同一个全局库与 mapping Redis),
+	# db 读本次部署的 zone,guild 读 infra namespace;与本次参数不一致就整条拒绝,报错给出照传现状的参数串。
+	# 确要切换时加 -ConfirmRouteSwitchChange。包装入口(dev_tools.ps1 / k8s_image.ps1 / k8s_zone_rollback.ps1)尚未透传这几个参数
+	# (下一批统一加转发):集群已切 db_first 之后经包装入口部署会被粘滞核对拒绝,那时直接调本脚本并照传现状。
+	# ValidateSet 不分大小写,参数绑定后规范成小写(data_service 的 Mode 区分大小写,`DB_FIRST` 会被它拒启)。
+	[ValidateSet("redis", "db_first")]
+	[string]$RouteStoreMode = "redis",
+	[switch]$RouteReconcileArm,
+	[switch]$RouteReadRequiresReady,
+	[switch]$DbPlacementRequireRouteReady,
+	[switch]$GuildRequireRouteReady,
+	# 确认本次部署就是要改动线上的上述开关(见上一段「粘滞」)。不给时线上取值会被本次参数改掉就在任何写操作之前拒绝;给了只打警告放行。
+	# 它是许可不是指令:线上与本次一致时给了也不改任何东西。不粘滞,只在被指定时透传。
+	[switch]$ConfirmRouteSwitchChange,
 
 	# ── 集群外客户端入口(D76–D93;生成器、preflight 与就绪等待在 lib/k8s_client_entry.ps1)────────────
 	# 模式矩阵(D80):
@@ -249,6 +335,36 @@ param(
 	# LOGIN_DEV_PASSWORD_SHARED_SECRET,绝不进 ConfigMap。**只允许 -ReleaseProfile dev**(与 release_preflight.ps1 的
 	# debug.login.devpassword 同一门禁),其它档位传它在任何写操作之前报错。不传 = login 没有任何口令认证配置(fail-closed)。
 	[switch]$LoginDevPasswordAuth,
+	# 集群内 login 的第三方登录(微信 / QQ):login ConfigMap 写顶层 AuthProviders 段(New-LoginAuthProvidersYaml)。两个 AppId 都不给 =
+	# 不写 AuthProviders,产物与接入前逐字相同(login 不开第三方登录)。各档位都可用(不同于 -LoginDevPasswordAuth 只许 dev)。
+	# 微信:-LoginWeChatAppId 非空才渲染 AuthProviders.WeChat(AppId + AppSecretEnv)。AppSecret 从环境变量 MMORPG_LOGIN_WECHAT_APP_SECRET
+	# 读入 zone namespace 的 Secret login-oauth(key wechat-app-secret),经 secretKeyRef 注入 login 容器的 LOGIN_WECHAT_APP_SECRET,
+	# 绝不进 ConfigMap;**任何档位**未设置都在写操作之前拒绝(没有回落值,login 对缺失的 AppSecretEnv 同样拒启)。Pod 模板带密钥指纹
+	# 注解 mmorpg.io/login-oauth-secret-hash,只轮换密钥也会滚动 login。
+	# QQ:-LoginQQAppId 非空才渲染 AuthProviders.QQ(只写 AppId):provider 只拿客户端的 access_token 调 /oauth2.0/me 并校验
+	# client_id == AppId,不需要任何密钥,不建 Secret。
+	# AppId 只允许 [A-Za-z0-9_.-]。-LoginWeChatEndpoint / -LoginQQEndpoint 只给沙箱 mock 用(留空 = 生产地址),须是
+	# https://主机[:端口][/路径](dev 档也接受 http://,与 login 在 Mode=dev 下的放行口径一致),不带用户信息、查询串与片段;
+	# 给了 Endpoint 却没给对应 AppId 在写操作之前拒绝。
+	# -LoginWeChatAllowOpenId / -LoginQQAllowOpenId:写 RequireUnionId: false,拿不到 unionid 时按 openid 建账号。以后接入 unionid
+	# 会把同一玩家分裂成两个账号且无法事后合并,非 dev 档给了要打警告;不给 = login 缺省 true(拿不到 unionid 即拒绝登录)。
+	# 全部不粘滞:每次部署按本次取值重写 ConfigMap;上次配过微信、这次没给,就删掉 login-oauth Secret,微信登录随新 Pod 一起关闭。
+	# 防误关(fail-closed,Assert-LoginAuthProviderClusterState,非 DryRun、任何写操作之前):本次部署 login 的每个 zone,线上
+	# login ConfigMap 的 AuthProviders(或 Secret login-oauth)与本次参数不一致 —— 漏传而关掉某个 provider、漏传 Endpoint 把沙箱
+	# 改连生产、漏传 AllowOpenId 把 RequireUnionId 翻回 true、换了 AppId、线上段认不出 —— 就整条拒绝,报错给出照传现状的参数串。
+	# 确要关闭或改动时加 -ConfirmLoginAuthProviderChange。线上没有、本次新开不需要确认。
+	# 包装入口照传:dev_tools.ps1(k8s-zone-up / k8s-all-up)与 k8s_zone_rollback.ps1 的 Step 6 非空才透传这六个参数与确认开关;
+	# k8s_zone_rollback.ps1 在 Step 1 删 namespace 之前按同一份判据(lib Get-LoginAuthProviderDrift)自行核对。k8s_image.ps1 不部署
+	# login,不声明它们,dev_tools.ps1 的 k8s-image-* / k8s-release-* 显式给了即拒绝。
+	[string]$LoginWeChatAppId = "",
+	[string]$LoginWeChatEndpoint = "",
+	[switch]$LoginWeChatAllowOpenId,
+	[string]$LoginQQAppId = "",
+	[string]$LoginQQEndpoint = "",
+	[switch]$LoginQQAllowOpenId,
+	# 确认本次部署就是要关掉或改动线上 login 的第三方登录配置(见上一段「防误关」)。不给时,线上配置会被本次参数关掉或改掉
+	# 就在任何写操作之前拒绝;给了只打警告放行。它是许可不是指令:线上与本次一致时给了也不改任何东西。不粘滞,只在被指定时透传。
+	[switch]$ConfirmLoginAuthProviderChange,
 	# 削峰(G4b,docs/design/open-server-rate-limit-design.md §十一):gateway Bucket4j 限流 / login 登录排队。
 	# auto(缺省)= 跟随 -ReleaseProfile:dev 关(ConfigMap 与 G4b 之前逐字相同);staging / prod 开,阈值见 $script:PeakShavingLaunchTier。
 	# off 只用于事故止血与基线压测(AGENTS §6 对比的「关削峰」那一轮);on 只用于 dev 档联调。
@@ -272,6 +388,9 @@ param(
 	# 确认本次 infra-up / all-up 可以重启共享 Redis(redis-0):本次 apply 会改变线上 sts/redis 的 Pod 模板(命令、env、探针、
 	# 镜像、resources 任何一处),或线上 sts/redis 还没有模板摘要注解(P0-E 合入后的第一次)时,不给它就在 Apply-Infra 的任何写操作
 	# 之前拒绝(Assert-RedisCoreRestartConfirmed)。重启 redis-0 = 全服登录中断并重放 AOF,只在维护窗口里显式加。
+	# 「变」指与上次经本脚本 apply 的模板(sts/redis 上的摘要注解)相比;对 redis.yaml 里声明了的 Pod 模板字段做的带外改动
+	# (kubectl edit / set image / patch)看不见,apply 会把它们改回清单值并重启 redis-0(清单里没声明的带外字段 apply 会保留)。
+	# 线上还是 2026-09-19 之前的 Deployment redis 时同样要它(切 StatefulSet = 停机且数据不迁移)。
 	# 模板没变时给了也不会重启(它是许可,不是指令);DryRun 不查集群。不粘滞;dev_tools.ps1 / k8s_image.ps1 只在被指定时透传。
 	# 名字沿用 docs/design/shared-redis-split-by-purpose.md(G4a)§4.2 的规划,语义按 P0-E 放宽为「模板有变化就要确认」。
 	[switch]$ConfirmRedisCoreRestart,
@@ -292,7 +411,7 @@ param(
 	# scene / guild / match 的 gRPC 口准入(NetworkPolicy,G-05)。off(默认):不生成,并删掉本脚本以前建的同名策略(不粘滞)。
 	# on:每个被保护的工作负载一份 NetworkPolicy($script:GrpcAllowLists):工作负载清单里**声明了的**其它端口(节点口 / metrics /
 	#   日志 sidecar)照常对任何来源开放,只有 gRPC 口限定来源(任意 namespace 里 app 标签在名单里的 Pod);没声明的端口一律不通。
-	#   scene(zone namespace,50000):scene-manager / match / player-inbox / guild / trade;
+	#   scene(zone namespace,50000):scene-manager / match / player-inbox / guild / trade / mail;
 	#   guild(infra,50300):client-rpc-router / data-service;
 	#   match(infra,50500):client-rpc-router / guild / gate(gate 只在 -GateRouterMode 0 回退时直连 match)。
 	# 名单按 2026-10-16 的代码整理(调用点见 deploy/k8s/README.md「gRPC 口准入与资产通道」);新增调用方要同时改名单,否则开了就断。
@@ -370,6 +489,17 @@ $script:LoginDevPasswordSecretName = "login-dev-password"
 $script:LoginDevPasswordSecretKey = "shared-secret"
 # 口令由 Initialize-InjectedSecrets 解析(只在要部署 login 且开了开关时)。
 $script:LoginDevPasswordSecret = ""
+# login 微信登录的 AppSecret(-LoginWeChatAppId)。部署侧从环境变量 MMORPG_LOGIN_WECHAT_APP_SECRET 读入 zone namespace 的 Secret
+# login-oauth(key wechat-app-secret),经 secretKeyRef 注入 login 容器的 LOGIN_WECHAT_APP_SECRET;ConfigMap 只写变量名
+# (AuthProviders.WeChat.AppSecretEnv)。login 不展开 ${VAR},生产模式也不接受内联 AppSecret(go/login/internal/config/auth_providers.go),
+# 所以只能走这条路。Secret 名按用途取 login-oauth 而不是 login-wechat:以后 QQ 若启用服务端换 token 要 AppKey,同一个 Secret 加 key 即可。
+# 轮换:secretKeyRef 只在容器启动时读,Pod 模板带密钥指纹注解($script:LoginOAuthSecretHashAnnotation),密钥一变模板就变,重跑 zone-up 自动滚动。
+$script:LoginOAuthSecretName = "login-oauth"
+$script:LoginOAuthWeChatSecretKey = "wechat-app-secret"
+$script:LoginWeChatAppSecretEnv = "LOGIN_WECHAT_APP_SECRET"
+$script:LoginOAuthSecretHashAnnotation = "mmorpg.io/login-oauth-secret-hash"
+# 由 Initialize-InjectedSecrets 解析(只在本次部署 login 且给了 -LoginWeChatAppId 时)。
+$script:LoginWeChatAppSecret = ""
 # gateway 管理面(/admin/**)的 X-Admin-Key,即 Spring 属性 admin.api-key(AdminApiKeyFilter 的 @Value("${admin.api-key}"))。
 # 部署侧从环境变量 MMORPG_GATEWAY_ADMIN_API_KEY 读入 zone namespace 的 Secret,经 secretKeyRef 注入 gateway 容器的 ADMIN_APIKEY,
 # 不进 ConfigMap。env 名取 Spring Boot 文档的规范写法(点换下划线、去掉短横、大写);OS 环境变量优先于 jar 内与 ConfigMap 挂载的
@@ -399,18 +529,7 @@ $script:PlayerInboxAdminTokenSecretKey = "admin-token"
 $script:PlayerInboxAdminTokenEnv = "PLAYER_INBOX_ADMIN_TOKEN"
 # 由 Initialize-InjectedSecrets 解析(只在本次部署全局 Go 服务时)。
 $script:PlayerInboxAdminToken = ""
-# 邮件运维令牌(MailAdmin,docs/design/mail-system.md §2.3 / §7.2):守 SendPersonalMail / SendSystemMail,调用方放在 gRPC metadata 的
-# x-mail-admin-token。部署侧从环境变量 MMORPG_MAIL_ADMIN_TOKEN 读入 infra namespace 的 Secret mail-admin-auth(key token),经 secretKeyRef
-# 注入容器的**同名**变量 MMORPG_MAIL_ADMIN_TOKEN(go/mail/internal/config 的 AdminTokenEnv 写死这个名字;ConfigMap 一个字都不写)。
-# 未注入(任何档位)= 不建 Secret、不注入 env,MailAdmin 停用(fail-closed,启动横幅 mail_admin=disabled),不挡 infra-up;
-# 注入了:含空白、去空白后短于 32 字节(Go 侧 MinAdminTokenBytes,短了被静默当成未配置)或与其它口令相同,一律在写操作之前拒绝。
-# 轮换:Pod 模板带令牌指纹注解(manifest 里的占位由 Apply-OneGoSvc 替换),令牌一变模板就变,重跑 infra-up 自动滚动。
-# 与 player-inbox 同一套做法(Add-GoSvcSecretEnv + 指纹占位 + 未注入时 Deployment 之后删残留 Secret),不写 secretKeyRef optional。
-$script:MailAdminTokenSecretName = "mail-admin-auth"
-$script:MailAdminTokenSecretKey = "token"
-$script:MailAdminTokenEnv = "MMORPG_MAIL_ADMIN_TOKEN"
-# 由 Initialize-InjectedSecrets 解析(只在本次部署全局 Go 服务时)。
-$script:MailAdminToken = ""
+# 邮件现役管理请求使用生产者分用途签名；密钥由domain-service-secrets注入。
 # 通用资产通道签名密钥(-AssetOps,见参数处说明)。每个调用方一个单键 Secret,键名统一 secret;环境变量名与
 # C++ asset_op_auth.cpp 的 kAssetOpCallerRules、go/guild 与 go/trade 的 svc.AssetOpSecretEnv 逐字一致。
 # 指纹注解(Get-InjectedSecretFingerprint,以 Secret 名做域分隔)同时写在调用方(guild / trade)与 scene 的 Pod 模板上:
@@ -435,8 +554,7 @@ $script:AssetOpSecrets = @{}
 #   match:client-rpc-router(路由表 MatchNodeService)、guild(MatchRpc,历练开战)、gate(只在 -GateRouterMode 0 时直连)。
 # 名单是 app 标签;运维工具(如 go/guild/cmd/assetopfix)要在名单内的 Pod 里跑,或临时关掉策略。
 $script:GrpcAllowLists = [ordered]@{
-	scene = [pscustomobject]@{ PolicyName = 'scene-grpc-allowlist'; TargetApps = @('scene', 'scene-world', 'scene-instance'); AllowedApps = @('scene-manager', 'match', 'player-inbox', 'guild', 'trade') }
-	guild = [pscustomobject]@{ PolicyName = 'guild-grpc-allowlist'; TargetApps = @('guild'); AllowedApps = @('client-rpc-router', 'data-service') }
+	scene = [pscustomobject]@{ PolicyName = 'scene-grpc-allowlist'; TargetApps = @('scene', 'scene-world', 'scene-instance'); AllowedApps = @('scene-manager', 'match', 'player-inbox', 'guild', 'trade', 'mail') }
 	match = [pscustomobject]@{ PolicyName = 'match-grpc-allowlist'; TargetApps = @('match'); AllowedApps = @('client-rpc-router', 'guild', 'gate') }
 }
 # 共享 Redis 口令(MMORPG_REDIS_PASSWORD),由 Initialize-InjectedSecrets 解析:dev 档未注入时是空串。$null = 还没解析,
@@ -530,11 +648,18 @@ $script:GatewayRateLimitOn = Resolve-PeakShavingSwitch -Value $GatewayRateLimit 
 # 生效与否由 -DryRunMode 决定 —— 契约测试核对这里绑的是本脚本的 -DryRun,且 $script:LoginQueueOn 只在这一处赋值。
 $script:LoginQueueOn = Resolve-LoginQueueSwitch -Value $LoginQueue -ReleaseProfileName $ReleaseProfile `
 	-MergeGateCleared $script:LoginQueueMergeGateCleared -DryRunMode $DryRun.IsPresent -TestOverride $env:MMORPG_TEST_LOGIN_QUEUE_GATE_CLEARED
+# -GrpcServerMaxPollers 已退役(见参数处注释):只提示,不 throw —— 旧命令带着它照常部署,生成物里不再有该环境变量。
+if ($GrpcServerMaxPollers -gt 0) {
+	Write-Warning "-GrpcServerMaxPollers is retired (the C++ gRPC server has no poller threads since batch 4, see docs/design/grpc-muduo-transport.md section 15.11); ignoring value=$GrpcServerMaxPollers. GRPC_SERVER_MAX_POLLERS is no longer injected."
+}
 
 . (Join-Path $ScriptDir "lib\release_common.ps1")
 # 集群外客户端入口(D76–D93)的生成器、preflight、就绪等待与模式切换清理。库函数不读本脚本的任何变量,
 # 碰集群的函数一律显式传 -KubeContext / -KubeConfig(漏传不会悄悄落到本机默认 context)。
 . (Join-Path (Join-Path $ScriptDir "lib") "k8s_client_entry.ps1")
+# kafka-consumer-groups --describe 的分类(Resolve-KafkaGroupTopicOffsets)、db_task topic 名(Get-DbTaskTopicName)与线上 db 消费组形状
+# (ConvertFrom-LiveDbConsumerGroup,2026-10-18 从本文件移入),与 kafka_offset_reset.ps1、k8s_zone_rollback.ps1 同一份规则;纯函数库,dot-source 无副作用。
+. (Join-Path $ScriptDir "lib" "kafka_consumer_groups.ps1")
 
 # ─────────────────────────────────────────────────────────────────
 # 不可变版本戳
@@ -582,6 +707,15 @@ $GateExternalTrafficPolicy = ConvertTo-ClientEntryCanonicalName -Value $GateExte
 $ImagePullPolicy = ConvertTo-ClientEntryCanonicalName -Value $ImagePullPolicy -Allowed @("Always", "IfNotPresent", "Never")
 # 写进 ConfigMap 的是 YAML 布尔字面量,统一成小写(True / TRUE 在不同 YAML 库里的解释不一致)。
 $RequireClientEndpoint = ConvertTo-ClientEntryCanonicalName -Value $RequireClientEndpoint -Allowed @("auto", "true", "false")
+# 规范成小写(ValidateSet 不分大小写):决策表、打印行与注解都按小写取值比较。
+$DbConsumerGroup = ConvertTo-ClientEntryCanonicalName -Value $DbConsumerGroup -Allowed @("keep", "zone", "legacy")
+# 显式切组只许单 zone 的 zone-up(理由见参数注释)。排在任何 kubectl 之前;zone-down / *-status 同样拒绝:
+# 显式模式本身就是一次部署决定,配在不部署 db 的命令上只会让人误以为切过了。
+if ($DbConsumerGroup -ne "keep" -and $Command -ne "zone-up") {
+	throw "-DbConsumerGroup $DbConsumerGroup 只允许与 -Command zone-up 一起用(逐 zone 切组 / 反向交接);$Command 请用默认的 keep。"
+}
+# D1 映射提交点模式写进 ConfigMap 的是 data_service 区分大小写的字面量(见参数 -RouteStoreMode)。
+$RouteStoreMode = ConvertTo-ClientEntryCanonicalName -Value $RouteStoreMode -Allowed @("redis", "db_first")
 
 <#
 .SYNOPSIS
@@ -632,6 +766,36 @@ function Invoke-ReleasePreflight {
 # ─────────────────────────────────────────────────────────────────
 # 密钥注入(替代以前写死在生成器里的占位常量)
 # ─────────────────────────────────────────────────────────────────
+
+<#
+.SYNOPSIS
+	解析 login 微信登录的 AppSecret(环境变量 MMORPG_LOGIN_WECHAT_APP_SECRET),返回值;不可用一律 throw。由 Initialize-InjectedSecrets
+	在写路径入口调用(只在本次部署 login 且给了 -LoginWeChatAppId 时)。
+
+.DESCRIPTION
+	- **任何档位都没有回落值**:login 对 AppSecretEnv 指向的变量缺失 / 为空一律拒启(go/login/internal/config/auth_providers.go
+	  resolveAuthCredential),生成器不替运维猜一个,未设置就在任何写操作之前拒绝。staging / prod 的「未设置 / 占位 / 短于 16 位」
+	  由 Resolve-InjectedSecret 按它的原文 throw;dev 档 Resolve-InjectedSecret 回落空串,这里补一次拒绝。
+	- 各档都拒首尾空白与 `${`:login 对这两种值同样拒启(checkCredentialValue;常见于 Secret 带进的行尾换行、照旧文档写的占位符),
+	  部署出来只会 CrashLoopBackOff,不如在写操作之前拦下。
+	- 报错只点环境变量名,不回显值。读环境变量、不读本脚本的变量,契约测试按 AST 抽出来直接调。
+#>
+function Resolve-LoginWeChatAppSecret {
+	param([Parameter(Mandatory = $true)][ValidateSet('dev', 'staging', 'prod')][string]$ReleaseProfile)
+
+	$value = Resolve-InjectedSecret -EnvName "MMORPG_LOGIN_WECHAT_APP_SECRET" -DevFallback "" -ReleaseProfile $ReleaseProfile `
+		-Purpose "login 微信登录 AppSecret(AuthProviders.WeChat.AppSecretEnv)" -MinLength 16
+	if ([string]::IsNullOrWhiteSpace($value)) {
+		throw "-LoginWeChatAppId 需要环境变量 MMORPG_LOGIN_WECHAT_APP_SECRET(微信开放平台应用的 AppSecret,经 Secret 注入 login),当前未设置,拒绝部署(任何档位都没有回落值)。"
+	}
+	if ($value -cne $value.Trim()) {
+		throw "环境变量 MMORPG_LOGIN_WECHAT_APP_SECRET 的值含首尾空白(常见于带进的行尾换行):login 拒绝这种 AppSecret,部署出来只会拒启。"
+	}
+	if ($value.Contains('${')) {
+		throw "环境变量 MMORPG_LOGIN_WECHAT_APP_SECRET 的值含未展开的 `${...}:login 不展开环境变量,对这种 AppSecret 拒绝启动。"
+	}
+	return $value
+}
 
 <#
 .SYNOPSIS
@@ -692,6 +856,14 @@ function Initialize-InjectedSecrets {
 		if ([string]::IsNullOrWhiteSpace($script:LoginDevPasswordSecret)) {
 			throw "-LoginDevPasswordAuth 需要环境变量 MMORPG_LOGIN_DEV_PASSWORD_SHARED_SECRET(开发账号的共享登录口令,robot yaml 的 password 须与它一致),当前未设置,拒绝部署。"
 		}
+	}
+
+	# login 微信登录的 AppSecret(见 $script:LoginOAuthSecretName 处的说明)。只在本次部署 login 且给了 -LoginWeChatAppId 时解析:
+	# infra-up、-SkipGoSvc 与不开微信的部署都不因它被阻断。各档位都没有回落值、缺失即拒绝,规则见 Resolve-LoginWeChatAppSecret。
+	# QQ 不需要密钥,这里没有对应项。
+	$script:LoginWeChatAppSecret = ""
+	if (-not [string]::IsNullOrEmpty($LoginWeChatAppId) -and (Test-ZoneLoginDeployed)) {
+		$script:LoginWeChatAppSecret = Resolve-LoginWeChatAppSecret -ReleaseProfile $ReleaseProfile
 	}
 
 	# 登录排队令牌的 HMAC 密钥(login Secrets.QueueToken,G4b)。生产模式开了排队就必需,且不得与 GateToken / InternalAuth 复用
@@ -757,44 +929,7 @@ function Initialize-InjectedSecrets {
 		}
 	}
 
-	# 邮件运维令牌(见 $script:MailAdminTokenSecretName 处的说明)。与上面 player-inbox 同一口径:只在本次部署全局 Go 服务时解析,
-	# 各档位都没有回落值 —— 未注入就是停用 MailAdmin(fail-closed),不挡 infra-up(先判空再调 Resolve-InjectedSecret:
-	# 后者在非 dev 档对未设置的变量直接 throw)。注入了:非 dev 档的占位 / 长度由 Resolve-InjectedSecret 查;
-	# dev 档它不查长度,这里统一再查一遍 —— go/mail 把去首尾空白后不足 32 字节的令牌**静默**当成未配置(config.ResolveAdminToken),
-	# 部署方以为开了、实际全拒,宁可在写操作之前拒绝。PowerShell 的 .Length 是 UTF-16 码元数 ≤ UTF-8 字节数,这里过了 Go 侧必过。
-	# 报错只点环境变量名,不回显值。
-	$script:MailAdminToken = ""
-	if (Test-GlobalGoSvcDeployed) {
-		if ([string]::IsNullOrWhiteSpace([System.Environment]::GetEnvironmentVariable($script:MailAdminTokenEnv))) {
-			Write-Host "mail: MMORPG_MAIL_ADMIN_TOKEN unset (ReleaseProfile=$ReleaseProfile); MailAdmin stays disabled (fail-closed), no Secret is created."
-		}
-		else {
-			$script:MailAdminToken = Resolve-InjectedSecret -EnvName $script:MailAdminTokenEnv `
-				-DevFallback "" -ReleaseProfile $ReleaseProfile -Purpose "邮件运维令牌(MailAdmin / x-mail-admin-token)" -MinLength 32
-			if ($script:MailAdminToken -match '\s') {
-				throw "环境变量 MMORPG_MAIL_ADMIN_TOKEN 含空白字符,拒绝部署(值不回显):Secret 原样进容器,运维工具按字节比对 metadata,首尾空白只会制造对不上的令牌。"
-			}
-			if ($script:MailAdminToken.Length -lt 32) {
-				throw "MMORPG_MAIL_ADMIN_TOKEN 长度 $($script:MailAdminToken.Length) < 32:go/mail 把不足 32 字节的令牌当作未配置(config.MinAdminTokenBytes),MailAdmin 会静默停用。"
-			}
-			foreach ($other in @(
-				@{ Env = 'MMORPG_GATE_TOKEN_SECRET'; Value = $script:GateTokenSecret }
-				@{ Env = 'MMORPG_INTERNAL_AUTH_SECRET'; Value = $script:InternalAuthSecret }
-				@{ Env = 'MMORPG_MYSQL_PASSWORD'; Value = $script:MysqlPassword }
-				@{ Env = 'MMORPG_REDIS_PASSWORD'; Value = $script:RedisPassword }
-				@{ Env = 'MMORPG_GATEWAY_DB_PASSWORD'; Value = $script:GatewayDbPassword }
-				@{ Env = 'MMORPG_GATEWAY_ADMIN_API_KEY'; Value = $script:GatewayAdminApiKey }
-				@{ Env = 'MMORPG_PLAYER_INBOX_ADMIN_TOKEN'; Value = $script:PlayerInboxAdminToken }
-				@{ Env = 'MMORPG_LOGIN_QUEUE_TOKEN_SECRET'; Value = $script:LoginQueueTokenSecret }
-				@{ Env = 'MMORPG_LOGIN_DEV_PASSWORD_SHARED_SECRET'; Value = $script:LoginDevPasswordSecret }
-				@{ Env = 'MMORPG_BATTLE_TOKEN_SECRET'; Value = [System.Environment]::GetEnvironmentVariable('MMORPG_BATTLE_TOKEN_SECRET') }
-			)) {
-				if (-not [string]::IsNullOrEmpty($other.Value) -and $script:MailAdminToken -ceq $other.Value) {
-					throw "MMORPG_MAIL_ADMIN_TOKEN 必须与 $($other.Env) 不同:运维令牌不得跨用途复用,泄露一处就等于两处同时失守。"
-				}
-			}
-		}
-	}
+	# 邮件运维使用 serviceauth 的 admin 生产者签名；值由现役 domain-service-secrets 注入，不新建 M1 token。
 
 	# 通用资产通道签名密钥(-AssetOps on,见参数处说明)。各档位都没有回落值:同一把密钥要在 infra-up(guild / trade 签名)与每一次
 	# zone-up(scene 验签)之间保持同值,生成器替运维随机出一个值只会让两次运行对不上。本机 dev 的随机值(lib/assetop_dev_secret.ps1)
@@ -819,7 +954,7 @@ function Initialize-InjectedSecrets {
 			@{ Env = 'MMORPG_GATEWAY_DB_PASSWORD'; Value = $script:GatewayDbPassword }
 			@{ Env = 'MMORPG_GATEWAY_ADMIN_API_KEY'; Value = $script:GatewayAdminApiKey }
 			@{ Env = 'MMORPG_PLAYER_INBOX_ADMIN_TOKEN'; Value = $script:PlayerInboxAdminToken }
-			@{ Env = 'MMORPG_MAIL_ADMIN_TOKEN'; Value = $script:MailAdminToken }
+			@{ Env = 'MAIL_PRODUCER_SECRET_ADMIN'; Value = [Environment]::GetEnvironmentVariable('MAIL_PRODUCER_SECRET_ADMIN') }
 			@{ Env = 'MMORPG_LOGIN_QUEUE_TOKEN_SECRET'; Value = $script:LoginQueueTokenSecret }
 			@{ Env = 'MMORPG_LOGIN_DEV_PASSWORD_SHARED_SECRET'; Value = $script:LoginDevPasswordSecret }
 			@{ Env = 'MMORPG_BATTLE_TOKEN_SECRET'; Value = [System.Environment]::GetEnvironmentVariable('MMORPG_BATTLE_TOKEN_SECRET') }
@@ -1346,7 +1481,7 @@ function Get-ZrpcMethodTimeouts {
 	登记一项之前先确认 C++ 不会调到它。C++ 调 Go 服务有两种形态,契约测试两种都查
 	(tools/scripts/tests/k8s_deploy_contract.tests.ps1):
 	  - 直接调用:cpp/ 下(生成物 cpp/generated 除外)出现生成客户端的符号 `Send<服务><方法>` /
-	    `Async<服务><方法>…`,或它的消息号常量 `<服务><方法>MessageId`。
+	    `Send<服务><方法>Erased`,或它的消息号常量 `<服务><方法>MessageId`。
 	  - gate 按消息号转发:gate 直连模式查 gRpcMethodRegistry 转发客户端消息,手写代码里不出现任何符号。
 	    所以消息号列在生成的 IsClientMessageId(cpp/generated/rpc/service_metadata/rpc_event_registry.cpp)里的方法
 	    一律算「C++ 会调用」,不许登记。
@@ -1377,7 +1512,7 @@ function Get-GrpcClientMethodsNotCalledFromCpp {
 
 	判定口径(每一项都是违例,不是警告):
 	  - 目标必须在 GrpcClient.CallDeadlineMs 里显式写成正整数:缺席 / 0 在 C++ 侧落到内置默认 10000
-	    (grpc_call_tag.h kDefaultGrpcCallDeadlineMs),预算不能依赖一个只写在 C++ 头文件里的隐式值。
+	    (grpc_call_types.h kDefaultGrpcCallDeadlineMs),预算不能依赖一个只写在 C++ 头文件里的隐式值。
 	  - 服务 yaml 不写 Timeout = go-zero 默认 2000(go.mod 钉的 v1.9.2 / v1.10.0 的 zrpc/config.go 里
 	    RpcServerConf.Timeout 都是 `default=2000`);写了就必须是正整数 —— 0 = go-zero 不装超时拦截器
 	    (zrpc/server.go 只在 Timeout > 0 时装),服务端没有上界,「下游先超时」无从成立。
@@ -1653,11 +1788,7 @@ function Assert-RouterForwardBudget {
 		FriendNodeService = 'go/friend/etc/friend.yaml'
 		GuildNodeService  = 'go/guild/etc/guild.yaml'
 		TradeNodeService  = 'go/trade/etc/trade.yaml'
-		# mail.yaml 的 Timeout 4000 + 1000 正好等于路由服 ForwardTimeoutMs 5000(go/mail 的 config.Validate 只收 [1000, 4000]);
-		# mail.yaml 不写 MethodTimeouts。
 		MailNodeService   = 'go/mail/etc/mail.yaml'
-		# rank.yaml 的 Timeout 4000 + 1000 正好等于路由服 ForwardTimeoutMs 5000(go/rank 的 config.Validate 只收 [1000, 4000]);
-		# rank.yaml 不写 MethodTimeouts(只有一个读方法 GetRankPage)。
 		RankNodeService   = 'go/rank/etc/rank.yaml'
 	}
 
@@ -1827,7 +1958,9 @@ function Get-MysqlConnectionLedgerInputs {
 		# 邮件(docs/design/mail-system.md §7):独占库 mmorpg_mail 一个池,上限取服务 yaml 的 MySQL.MaxOpenConn,mail ConfigMap 从同一个键镜像。
 		# 加入后规划档峰值 1780 → 1860,超过旧的 max_connections 1800,同批把它调到 2100(manifests/infra/mysql.yaml 的说明)。
 		MailReplicas          = Get-ManifestDeploymentReplicas -RelativePath 'deploy/k8s/manifests/go-svc/mail.yaml'
-		MailMaxOpen           = Get-AuthoritativeScalar -RelativePath 'go/mail/etc/mail.yaml' -KeyPath 'MySQL.MaxOpenConn'
+		MailMaxOpen           = Get-AuthoritativeScalar -RelativePath 'go/mail/etc/mail.yaml' -KeyPath 'MaxOpenConns'
+		RankReplicas          = Get-ManifestDeploymentReplicas -RelativePath 'deploy/k8s/manifests/go-svc/rank.yaml'
+		RankMaxOpen           = Get-AuthoritativeScalar -RelativePath 'go/rank/etc/rank.yaml' -KeyPath 'MaxOpenConns'
 	}
 }
 
@@ -1861,7 +1994,7 @@ function Get-MysqlConnectionLedger {
 	$required = @('MaxConnections', 'DbReplicas', 'DbHomeMaxOpen', 'DbZoneStoreMaxOpen', 'DbNonZoneStoreMaxOpen',
 		'DsReplicas', 'DsAuditStorePools', 'DsAuditMaxOpen', 'DsPlayerNameMaxOpen', 'DsRouteMaxOpen',
 		'GatewayReplicas', 'GatewayMaxPool', 'FriendReplicas', 'FriendMaxOpen', 'TradeReplicas', 'TradeMaxOpen',
-		'PlayerInboxReplicas', 'PlayerInboxMaxOpen', 'GuildReplicas', 'GuildMaxOpen', 'MailReplicas', 'MailMaxOpen')
+		'PlayerInboxReplicas', 'PlayerInboxMaxOpen', 'GuildReplicas', 'GuildMaxOpen', 'MailReplicas', 'MailMaxOpen', 'RankReplicas', 'RankMaxOpen')
 	$v = @{}
 	foreach ($key in $required) {
 		$n = 0
@@ -1880,13 +2013,13 @@ function Get-MysqlConnectionLedger {
 	$perZone = $v.DbReplicas * $dbPerInstance + $v.DsReplicas * $dsPerInstance + $v.GatewayReplicas * $gatewayPerInstance
 	# 变量名不用 $global:它是作用域修饰符的名字,读的人会以为在写全局作用域。
 	$globalPools = $v.FriendReplicas * $v.FriendMaxOpen + $v.TradeReplicas * $v.TradeMaxOpen + $v.PlayerInboxReplicas * $v.PlayerInboxMaxOpen +
-		$v.GuildReplicas * $v.GuildMaxOpen + $v.MailReplicas * $v.MailMaxOpen
+		$v.GuildReplicas * $v.GuildMaxOpen + $v.MailReplicas * $v.MailMaxOpen + $v.RankReplicas * $v.RankMaxOpen
 	$steady = $ZoneCount * $perZone + $globalPools
 	# 一个 zone 的三个 Deployment 与五个全局 Deployment(friend / trade / player-inbox / guild / mail)各多 RolloutExtraPodsPerDeployment 个实例
 	# (maxSurge 1 的新 Pod + 仍在优雅退出的旧 Pod;K8s 默认 25% 在 2 副本时 maxSurge 也是 1)。
 	# all-up 不带 -WaitReady 时各 zone 的滚动会重叠,不在这个余量里。
 	$surge = $RolloutExtraPodsPerDeployment * ($dbPerInstance + $dsPerInstance + $gatewayPerInstance + $v.FriendMaxOpen + $v.TradeMaxOpen + $v.PlayerInboxMaxOpen +
-		$v.GuildMaxOpen + $v.MailMaxOpen)
+		$v.GuildMaxOpen + $v.MailMaxOpen + $v.RankMaxOpen)
 	$peak = $steady + $surge + $OpsReserve
 	return [ordered]@{
 		DbPerInstance = $dbPerInstance; DsPerInstance = $dsPerInstance; GatewayPerInstance = $gatewayPerInstance
@@ -2084,16 +2217,91 @@ function Assert-MysqlPoolMirror {
 }
 
 # ─────────────────────────────────────────────────────────────────
+# go/db 副本数门禁(S1 ④ (c):docs/design/db-retry-owner-routing.md §8)
+# ─────────────────────────────────────────────────────────────────
+# Test-DbReplicaPartitionBudget 是纯函数;Assert-DbReplicasWithinPartitionContract 只依赖 $RepoRoot、Get-AuthoritativeScalar、
+# Get-ManifestDeploymentReplicas 与前者:契约测试按 AST 把它们抽出来单独调用(与上面 MySQL 总账同一做法)。
+
+<#
+.SYNOPSIS
+	go/db 副本数门禁的判定:副本数(或 HPA 的 maxReplicas)超过 db_task topic 的分区数即 throw。纯函数。
+
+.DESCRIPTION
+	PartitionCnt ≤ 0 同样 throw:分区数不明就判不了副本数是否越界(fail-closed)。等于 PartitionCnt 放行。
+	-ReplicasSource 只用于报错文本,说明副本数出自哪一行:缺省是 Deployment 的 replicas,HPA 传「HorizontalPodAutoscaler 的 maxReplicas」。
+	为什么是这个上界、为什么只在部署脚本里拦,见 Assert-DbReplicasWithinPartitionContract。
+#>
+function Test-DbReplicaPartitionBudget {
+	param(
+		[Parameter(Mandatory = $true)][int]$Replicas,
+		[Parameter(Mandatory = $true)][int]$PartitionCnt,
+		[string]$ReplicasSource = 'replicas'
+	)
+	if ($PartitionCnt -le 0) {
+		throw "go/db 副本数门禁:go/db/etc/db.yaml 的 ServerConfig.Kafka.PartitionCnt=$PartitionCnt 必须是正整数(fail-closed:分区数不明就判不了副本数是否越界)。"
+	}
+	if ($Replicas -gt $PartitionCnt) {
+		throw "go/db 副本数门禁:deploy/k8s/manifests/go-svc/db.yaml 的 $ReplicasSource=$Replicas 超过 go/db/etc/db.yaml 的 ServerConfig.Kafka.PartitionCnt=$PartitionCnt(replicas ≤ PartitionCnt)。多出的副本拿不到分区只做热备;滚动发布的 maxSurge 临时副本不计入。要么减副本,要么走离线换代加分区。"
+	}
+}
+
+<#
+.SYNOPSIS
+	部署门禁:go/db 的副本数不得超过 go/db/etc/db.yaml 的 ServerConfig.Kafka.PartitionCnt,超出即 throw。
+	副本数取 deploy/k8s/manifests/go-svc/db.yaml 的 Deployment replicas;同一份 manifest 里若有 HorizontalPodAutoscaler,它的 maxReplicas 同样要 ≤ PartitionCnt。
+
+.DESCRIPTION
+	为什么是这个上界(docs/design/db-retry-owner-routing.md §8):db_task 的分区在消费组成员之间独占分配,有效并行上限就是分区数。
+	超出分区数的副本拿不到任何分区的 claim:RetryRouting=owner 下它是热备 —— 只把共享收件箱按原始分区分拣进 p{N}、回收孤儿收据,
+	不执行重试(db_owned_partitions=0,Setup 打 INFO 而不是 ERROR);属主崩溃后由它在 session 超时内接手。热备不是故障,
+	但多开的副本只是白占连接(MySQL / Redis 连接总账都按 manifest 的副本数记)。
+	为什么在这里拦、而 go/db 启动期不拒启:滚动发布的 maxSurge 本来就会短暂多出一个副本(本门禁不计入它);共享消费组下进程启动时
+	无从判断分配;热备能在属主崩溃后接手。所以运行期允许多出的副本存在,只在部署脚本里静态比较仓库里的这两份文件。
+	绕过:本门禁只看经本脚本 apply 的 manifest。kubectl scale deploy/db --replicas=N、kubectl edit 与带外 apply 的 HPA 都会绕过它 ——
+	要扩副本就改 manifest 再走 zone-up,不要 kubectl scale。manifest 注释写明不要给 db 配 HPA(sarama eager 再平衡,每次成员变化全员暂停);
+	本门禁不替那条约定把关,只保证同一份 manifest 里万一出现的 HPA 上界不越过分区数(maxReplicas 行缺失或不止一处即 throw)。
+	只在写路径(zone-up / infra-up / all-up)的入口调用、先于任何集群写操作;与 Assert-MysqlPoolMirror 同一口径,不看本次是否部署 db:
+	仓库里的这两份文件互相矛盾,就不该从这棵工作树发布。
+#>
+function Assert-DbReplicasWithinPartitionContract {
+	$manifestPath = 'deploy/k8s/manifests/go-svc/db.yaml'
+	$gateName = 'go/db 副本数门禁'
+	$partitionText = Get-AuthoritativeScalar -RelativePath 'go/db/etc/db.yaml' -KeyPath 'ServerConfig.Kafka.PartitionCnt'
+	$partitionCnt = 0
+	if (-not [int]::TryParse([string]$partitionText, [ref]$partitionCnt)) {
+		throw "${gateName}:go/db/etc/db.yaml 的 ServerConfig.Kafka.PartitionCnt='$partitionText' 不是整数(fail-closed:分区数不明就判不了副本数是否越界)。"
+	}
+	# 文件缺席、两格缩进的 replicas 行不是恰好一处,由 Get-ManifestDeploymentReplicas 以本门禁的名义 throw。
+	Test-DbReplicaPartitionBudget -Replicas (Get-ManifestDeploymentReplicas -RelativePath $manifestPath -LedgerName $gateName) -PartitionCnt $partitionCnt
+
+	# HPA:按 --- 拆成文档,只看 kind 为 HorizontalPodAutoscaler 的那几份(注释里提到 HPA 不算)。
+	$full = Join-Path $RepoRoot ($manifestPath -replace '/', [System.IO.Path]::DirectorySeparatorChar)
+	$manifestText = [string](Get-Content -LiteralPath $full -Raw) -replace "`r`n", "`n"
+	foreach ($doc in ($manifestText -split '(?m)^---[ \t]*$')) {
+		if ($doc -notmatch '(?m)^kind:[ \t]*HorizontalPodAutoscaler[ \t]*$') { continue }
+		$maxReplicas = [regex]::Matches($doc, '(?m)^  maxReplicas:[ \t]*(\d+)[ \t]*$')
+		if ($maxReplicas.Count -ne 1) {
+			throw "${gateName}:$manifestPath 里 HorizontalPodAutoscaler 两格缩进的 maxReplicas 行应恰好出现 1 次,实际 $($maxReplicas.Count) 次(fail-closed)"
+		}
+		Test-DbReplicaPartitionBudget -Replicas ([int]$maxReplicas[0].Groups[1].Value) -PartitionCnt $partitionCnt -ReplicasSource 'HorizontalPodAutoscaler 的 maxReplicas'
+	}
+}
+
+# ─────────────────────────────────────────────────────────────────
 # Redis 连接总账与重启闸(P0-E:docs/handoff/global-singletons-p0-findings-20261014.md「## P0-E」修复设计二、五)
 # ─────────────────────────────────────────────────────────────────
-# 所有 zone 的 Go 服务连接池、Java gateway、每个 C++ 进程与全局池服务共连 infra namespace 里同一个 Redis(manifests/infra/redis.yaml,
-# 单实例)。连接数随 zone 数线性增长;go-redis 的池没有后台回收,连接数停在历史并发峰值。到线(maxclients)之后新连接被拒,
-# Go 客户端多半只看到 EOF / failed to authenticate,C++ 断连日志不带原因,唯一可靠的信号在服务端(INFO stats 的 rejected_connections)。
+# 所有 zone 的 Go 服务连接池、Java gateway、每个 C++ 进程与全局池服务共连 infra namespace 里同一个 Redis(-RedisReplicas 1:
+# manifests/infra/redis.yaml 单实例;3:redis-ha.yaml 的 1 主 2 从,客户端经 2 个 haproxy 代理连到主,两份清单的 MAXCLIENTS 同值、
+# 总账只读 redis.yaml 那一份)。连接数随 zone 数线性增长;go-redis 的池没有后台回收,连接数停在历史并发峰值。到线(maxclients)之后新连接被拒,
+# Go 客户端多半只看到 EOF / failed to authenticate,唯一可靠的信号在服务端(INFO stats 的 rejected_connections;
+# C++ 的断线 / 建连失败日志 2026-10-16 起带 hiredis 的 errstr)。
 # 与上面 MySQL 连接总账同一纪律:输入从权威文件读,写路径打印一行,契约测试钉住「规划档峰值 ≤ 80% × maxclients」,超过只告警、不阻断。
-# Get-RedisConnectionPlan / Get-RedisMaxClientsFromManifest / Get-RedisConnectionLedgerInputs / Get-RedisConnectionLedger /
+# go-redis 直连客户端的池上限(P0-E 第 3 批)从服务 yaml 读,ConfigMap 镜像同一个键(Get-RedisPoolMirror,与 Get-MysqlPoolMirror 同形)。
+# Get-RedisConnectionPlan / Get-RedisMaxClientsFromManifest / Get-RedisPoolMirror / Get-RedisConnectionLedgerInputs / Get-RedisConnectionLedger /
 # Get-RedisPodTemplateDigest / Get-RedisCoreRestartVerdict 只依赖 $RepoRoot 与上一节的 Get-MysqlConnectionPlan、
-# Get-ManifestDeploymentReplicas:契约测试按 AST 把它们抽出来单独调用(同上)。Assert-RedisCoreRestartConfirmed 读脚本参数
+# Get-ManifestDeploymentReplicas、Get-AuthoritativeScalar:契约测试按 AST 把它们抽出来单独调用(同上)。Assert-RedisCoreRestartConfirmed 读脚本参数
 # ($DryRun / $InfraNamespace / $ConfirmRedisCoreRestart)与 Get-LiveRedisCoreTemplateDigest(读集群),契约测试给替身后调用;
+# Get-LiveRedisCoreTemplateDigest 本身也按 AST 抽出,在测试里配假 kubectl / Build-KubectlBaseArgs 直测(失败即 throw、认出旧 Deployment);
 # Write-RedisConnectionLedger、Get-RedisZoneCppProcesses、Test-RedisLiveMaxClients 读脚本参数或集群,用 DryRun 输出核对。
 
 # 共享 Redis 的 StatefulSet 自己(不是 Pod 模板)上的 Pod 模板摘要注解。redis.yaml 里写占位,Apply-Infra 渲染时替换成
@@ -2118,6 +2326,9 @@ function Get-RedisConnectionPlan {
 		GatePerZone                   = 2
 		ScenePerZone                  = 4
 		BattleProcesses               = 1
+		# 规划档按 RouteStore.Mode=db_first 计(与 MySQL 规划档同一来源,不写第二个 $true):D1 的对账 leader 只在 db_first 下装配,
+		# 它的独立 go-redis 池(Reconcile.RedisPoolSize)提前计入,切 db_first 时不用回来改账。本次部署那一份按 -RouteStoreMode 计。
+		RouteStoreDbFirst             = $mysqlPlan.RouteStoreDbFirst
 		# 探针(startup / readiness 每 5 秒一条 redis-cli 短连接)、运维 redis-cli(k8s_gate_drain.ps1 / k8s_zone_rollback.ps1)、
 		# merge_zone / route_tool / data_consistency_check 等一次性工具、kubectl exec 会话。估计值,待实测。
 		OpsReserve                    = 50
@@ -2134,14 +2345,23 @@ function Get-RedisConnectionPlan {
 	只认整行(允许缩进)就是 `MAXCLIENTS=<数字>` 的行;注释行以 # 开头,不会命中。
 	出现 0 次时 redis-server 用它自己的缺省值(10000,且会被容器 nofile 硬限下调;外部常识),出现多次时以哪一行为准不该靠猜:
 	两种都拒绝(fail-closed)。「赋值右边不是字面量」由 tools/scripts/tests/redis_maxclients_contract.tests.ps1 拦。
+	给了 -ManifestContent 就解析这份文本、不读盘:Apply-Infra 的部署后核对用它,保证与过闸、apply 的是同一次读取的内容。
 #>
 function Get-RedisMaxClientsFromManifest {
+	param([string]$ManifestContent)
+
 	$manifestPath = 'deploy/k8s/manifests/infra/redis.yaml'
-	$full = Join-Path $RepoRoot ($manifestPath -replace '/', [System.IO.Path]::DirectorySeparatorChar)
-	if (-not (Test-Path -LiteralPath $full)) {
-		throw "Redis 连接总账:找不到 $manifestPath(fail-closed:不替你猜一个 maxclients)"
+	if ($PSBoundParameters.ContainsKey('ManifestContent')) {
+		$text = $ManifestContent
 	}
-	$found = [regex]::Matches([string](Get-Content -LiteralPath $full -Raw), '(?m)^[ \t]*MAXCLIENTS=(\d+)[ \t]*\r?$')
+	else {
+		$full = Join-Path $RepoRoot ($manifestPath -replace '/', [System.IO.Path]::DirectorySeparatorChar)
+		if (-not (Test-Path -LiteralPath $full)) {
+			throw "Redis 连接总账:找不到 $manifestPath(fail-closed:不替你猜一个 maxclients)"
+		}
+		$text = [string](Get-Content -LiteralPath $full -Raw)
+	}
+	$found = [regex]::Matches($text, '(?m)^[ \t]*MAXCLIENTS=(\d+)[ \t]*\r?$')
 	if ($found.Count -ne 1) {
 		throw "Redis 连接总账:$manifestPath 里 MAXCLIENTS=<数字> 应恰好出现 1 次,实际 $($found.Count) 次(fail-closed)"
 	}
@@ -2154,77 +2374,143 @@ function Get-RedisMaxClientsFromManifest {
 
 <#
 .SYNOPSIS
-	Redis 连接总账的输入:每副本上限常数表(每行带出处)、各客户端的副本数(读 manifest)、maxclients(读 redis.yaml)。
+	go-redis 直连客户端在服务配置里的连接池上限(P0-E 第 3 批):按目标从服务自己的 yaml 读出,不是正整数即 throw。
 
 .DESCRIPTION
-	每副本上限 = GoPools × GoPoolSizePerProc × GoMaxProcs + PubSub + Fixed:
-	  - GoPools     该服务对这台 Redis 建的 Go 连接池个数(go-redis 直连与 go-zero 封装都算,一个客户端对象一个池);
-	  - GoPoolSizePerProc = 10:go-redis v9 的 PoolSize 缺省 10 × GOMAXPROCS(robot/vendor/github.com/redis/go-redis/v9/options.go
-	    「opt.PoolSize == 0」分支;仓库里三个版本 v9.16.0 / v9.17.3 / v9.18.0 只有 v9.18.0 的源码,另两版同行为属推断,待 S2b)。
-	    go-zero 的 redis 封装不设 PoolSize(外部常识,待 S2b),同一口径。池里的连接没有后台回收,所以按池上限记账,不按常驻下限;
-	  - GoMaxProcs  该 Pod 的 GOMAXPROCS(G)。Go 1.27.2 起容器感知:CPU limit 500m 与 "1" 预期都是 2(按 limit 向上取整、下限 2,外部常识);
-	    go-zero 链进的 automaxprocs 若生效可能是 1。**未实测,待 S6**(在目标集群上只读取各 Go Pod 的 GOMAXPROCS 一次)。按 2 记,偏保守。
-	    契约测试钉住:表里每个 Go 服务 manifest 的 CPU limit ≤ 2 核 —— 调大 limit 就变红,逼着重算这一列;
-	  - PubSub      Pub/Sub 专用连接(不占池名额,另算);
-	  - Fixed       非 Go 客户端的固定连接数(Java gateway)。
+	两处调用、同一批键(与 Get-MysqlPoolMirror 同一纪律):Go 服务 ConfigMap 生成器(New-GoSvcConfigMapYaml)把它镜像进集群,
+	Get-RedisConnectionLedgerInputs 按它记账 —— 总账读到的就是集群里生效的池上限,不再按 10 × GOMAXPROCS 估,也不随 CPU limit 漂。
+	写路径入口的 Write-RedisConnectionLedger 先于任何集群写操作把全部目标读一遍,不合格就在 apply 之前 throw,不留半截部署。
+	为什么要求正整数:Go 侧 0 / 不写 = go-redis 缺省 10 × GOMAXPROCS(负数拒启),镜像一个 0 进 ConfigMap,集群里生效的就不是写出来的值。
+	go-zero 封装的客户端(data-service 的 MappingRedis、scene-manager / match / chat / friend)没有池参数,不在这里,总账按缺省池记。
+	新增一个要镜像的池 = 这里加一行,再在 ConfigMap 模板里写出来;Get-RedisConnectionLedgerInputs 读的是同一批键。
+
+.OUTPUTS
+	[ordered] 键 = 服务配置里的键路径,值 = [int]。
+#>
+function Get-RedisPoolMirror {
+	param([Parameter(Mandatory = $true)][ValidateSet('login', 'db', 'data-service', 'player-locator', 'trade', 'guild', 'player-inbox')][string]$Target)
+
+	switch ($Target) {
+		'login' { $source = 'go/login/etc/login.yaml'; $keyPaths = @('Node.RedisClient.PoolSize') }
+		'db' { $source = 'go/db/etc/db.yaml'; $keyPaths = @('ServerConfig.RedisClient.PoolSize') }
+		'data-service' { $source = 'go/data_service/etc/data_service.yaml'; $keyPaths = @('DevRedis.PoolSize') }
+		'player-locator' { $source = 'go/player_locator/etc/player_locator.yaml'; $keyPaths = @('RedisClient.PoolSize') }
+		'trade' { $source = 'go/trade/etc/trade.yaml'; $keyPaths = @('SharedRedis.PoolSize') }
+		'player-inbox' { $source = 'go/player_inbox/etc/player_inbox.yaml'; $keyPaths = @('CoreRedis.PoolSize') }
+		'guild' { $source = 'go/guild/etc/guild.yaml'; $keyPaths = @('RedisClient.PoolSize', 'PlayerLocatorRedis.PoolSize', 'MergeMarkerRedis.PoolSize') }
+	}
+
+	$values = [ordered]@{}
+	foreach ($keyPath in $keyPaths) {
+		$raw = Get-AuthoritativeScalar -RelativePath $source -KeyPath $keyPath
+		$poolSize = 0
+		if (-not [int]::TryParse([string]$raw, [ref]$poolSize) -or $poolSize -le 0) {
+			throw "Redis 连接池镜像:$source 的 $keyPath='$raw' 必须是正整数(fail-closed:0 在 Go 侧是 go-redis 缺省 10 × GOMAXPROCS,随 CPU limit 漂移,总账就不是集群的账)"
+		}
+		$values[$keyPath] = $poolSize
+	}
+	return $values
+}
+
+<#
+.SYNOPSIS
+	Redis 连接总账的输入:每副本上限常数表(每行带出处)、显式池上限(读服务 yaml)、各客户端的副本数(读 manifest)、maxclients(读 redis.yaml)。
+
+.DESCRIPTION
+	每副本上限 = ConfiguredPoolConns + DefaultPools × GoPoolSizePerProc × GoMaxProcs + PubSub + Fixed:
+	  - ConfiguredPoolConns  显式设了 PoolSize 的 go-redis 直连池之和(P0-E 第 3 批)。行上的 PoolMirror 指明目标,值由 Get-RedisPoolMirror
+	    从服务 yaml 读、ConfigMap 镜像同一个键,所以就是集群里生效的池上限,不随 CPU limit 漂;没有 PoolMirror 的行是 0;
+	  - DefaultPools  仍是 go-redis 缺省大小的池个数:go-zero 封装(redis.RedisConf 没有池参数;go-zero v1.9.2 / v1.10.0 的
+	    redisclientmanager.go 不设 PoolSize、固定 MinIdleConns 8,同一进程同一地址共用一个池),以后新接入、还没有 PoolSize 键的直连客户端也记在这里;
+	  - GoPoolSizePerProc = 10:go-redis v9 的 PoolSize 缺省 10 × GOMAXPROCS(v9.16.0 / v9.17.3 / v9.18.0 的 options.go「opt.PoolSize == 0」分支,
+	    2026-10-16 按本机模块缓存核对)。取连接由 PoolSize 大小的信号量封顶,池里的连接没有后台回收,所以按池上限记账,不按常驻下限;
+	  - GoMaxProcs  该 Pod 的 GOMAXPROCS(G),只用于 DefaultPools(没有缺省池的行写 0)。Go 1.27.2 起容器感知:CPU limit 500m 与 "1" 预期都是 2
+	    (按 limit 向上取整、下限 2,外部常识);go-zero 链进的 automaxprocs 若生效可能是 1。**未实测,待 S6**(在目标集群上只读取各 Go Pod 的
+	    GOMAXPROCS 一次)。按 2 记,偏保守。契约测试钉住:有缺省池的行,manifest 的 CPU limit ≤ 2 核 —— 调大 limit 就变红,逼着重算这一列;
+	  - PubSub      Pub/Sub 专用连接(go-redis 用 NewConn 另建,不占池名额,另算);
+	  - Fixed       非 Go 客户端或代码里写死池上限的固定连接数(Java gateway、mail)。
 	C++(gate / scene / battle)每进程 1 条(CppConnectionsPerProcess),台数由部署形态决定,不在这张表里(见 Get-RedisConnectionLedger 的参数)。
 	不计入(写在这里,接上时加一行):
-	  - player-inbox:配置有 CoreRedis 段,但 go/player_inbox 的代码还没有建 Redis 客户端;接上后按 1 个池计;
 	  - client-rpc-router:不连 Redis;
-	  - guild:2026-10-16 起有 K8s 清单,已在下表登记(三个缺省池 + 两个小池 + 落地唤醒订阅);
 	  - match 的 MatchRedis、chat 的 ChatRedis:K8s 上指向 redis-match-cluster,是另一套实例;
-	  - rank:K8s 的 rank ConfigMap 只写 RankRedis(专用实例 redis-rank,manifests/infra/redis-rank.yaml,maxclients 自管),
-	    不写共享 Redis 段,不连这台;
+	  - rank:现役 SQL 权威榜不连接 Redis，不计共享 Redis 总账；旧 R2b 专用 Redis 不部署。
 	  - login 的 PasswordAuth 失败配额池(auth_init.go passwordQuotaRedisOptions,PoolSize 4)与 SaToken 客户端:K8s 的 login ConfigMap
 	    不写这两段;启用 PasswordAuth 后每个 login 副本 +4;
 	  - 探针、运维 redis-cli 与一次性工具:进规划档的 OpsReserve。
-	新增一个连这台 Redis 的服务 = 这里加一行。缺 manifest、replicas 不是恰好一处、MAXCLIENTS 不是恰好一处,照常 throw。
+	新增一个连这台 Redis 的服务 = 这里加一行。缺 manifest、replicas 不是恰好一处、MAXCLIENTS 不是恰好一处、PoolSize 不是正整数,照常 throw。
 #>
+# 缺省 owner epoch 句柄复用主池。显式拆分会新建独立池,本部署总账尚无独立实例的 MAXCLIENTS 预算,必须先拒绝。
+# 此门禁同时用于连接总账入口与单独渲染 ConfigMap,避免绕过总账的调用静默丢配置或低估连接。
+function Assert-DbOwnerEpochRedisDeployment {
+	$source = Join-Path $RepoRoot 'go/db/etc/db.yaml'
+	$ownerRedis = Get-YamlScalar -Path $source -KeyPath 'ServerConfig.OwnerEpochRedis'
+	if ($ownerRedis.Found) {
+		throw '生成 db ConfigMap 失败:ServerConfig.OwnerEpochRedis 显式配置会新建独立连接池,但尚未登记到 Redis 连接总账及对应实例的 MAXCLIENTS 预算。当前部署只支持省略该块并复用 RedisClient;请先补齐独立实例总账再启用,不能静默丢弃该配置。'
+	}
+}
+
 function Get-RedisConnectionLedgerInputs {
+	# -RouteStoreDbFirst:按 RouteStore.Mode=db_first 记账(D1 第 1b-3 批)。缺省 $false = redis 模式,与以前的调用方逐字相同。
+	param([bool]$RouteStoreDbFirst = $false)
+	Assert-DbOwnerEpochRedisDeployment
 	$ledgerName = 'Redis 连接总账'
 	$goSvc = 'deploy/k8s/manifests/go-svc'
-	# GOMAXPROCS 按 2 计(见上;待 S6 实测)。
+	# 缺省大小的池(DefaultPools)按 GOMAXPROCS = 2 计(见上;待 S6 实测)。
 	$g = 2
+	# D1 对账 leader 的独立 go-redis 池(第 1b-2 批 data_service 对账 leader 的 mapping Redis 客户端,与 Router 的 go-zero 池隔离;
+	# PoolSize = RouteStore.Reconcile.RedisPoolSize,规格 spec_D1_batch1b_scout.md 1b-2 的 cache.go 一项):
+	# 只在 RouteStore.Mode=db_first(且 Reconcile.Enabled≠false)时装配。ConfigMap 不写 RedisPoolSize(Get-RouteStoreDeploySettings),
+	# 集群里生效的就是代码缺省 4,这里记同一个数;改 ConfigMap 写它时同改这里。全服同一时刻只有一个 leader 真正用它,但按每个
+	# data-service 副本记:go-redis 的池没有后台回收,当过 leader 的副本掉主后连接仍可能留到进程退出(偏保守,同其余各行的口径)。
+	$routeReconcileRedisPoolSize = 4
+	$dsRouteLeaderPool = if ($RouteStoreDbFirst) { $routeReconcileRedisPoolSize } else { 0 }
 	$clients = @(
 		# —— 每 zone ——
-		# login:go/login/internal/svc/servicecontext.go NewServiceContext 的 redis.NewClient(登录排队 loginqueue 复用它);
-		# Pub/Sub:go/login/internal/dispatcher/task_result_dispatcher.go 的 Subscribe(TaskResultNotifyChannel)。
-		[ordered]@{ Name = 'login'; Scope = 'zone'; Manifest = "$goSvc/login.yaml"; GoPools = 1; GoMaxProcs = $g; PubSub = 1; Fixed = 0 }
-		# db:go/db/internal/svc/servicecontext.go 的 RedisClient;Placement.Redis 不写时落点句柄复用同一个 client(K8s 的 db ConfigMap 不写它)。
-		[ordered]@{ Name = 'db'; Scope = 'zone'; Manifest = "$goSvc/db.yaml"; GoPools = 1; GoMaxProcs = $g; PubSub = 0; Fixed = 0 }
-		# data-service:go/data_service/internal/routing/router.go 的 MappingRedis(go-zero)与 DevRedis(go-redis)两个池,K8s 的 ConfigMap
-		# 两段都指向共享 Redis;配了 DevRedis 时 Regions 的集群客户端不建;route_publish.go 的 WAITAOF 探针池只在 RouteStore.Mode=db_first
-		# 时建(K8s 固定 redis)—— 切 db_first 时这里 +1 个池。
-		[ordered]@{ Name = 'data-service'; Scope = 'zone'; Manifest = "$goSvc/data-service.yaml"; GoPools = 2; GoMaxProcs = $g; PubSub = 0; Fixed = 0 }
-		# player-locator:go/player_locator/internal/svc/servicecontext.go 的 redis.NewClient。
-		[ordered]@{ Name = 'player-locator'; Scope = 'zone'; Manifest = "$goSvc/player-locator.yaml"; GoPools = 1; GoMaxProcs = $g; PubSub = 0; Fixed = 0 }
-		# scene-manager:go/scene_manager/internal/svc/servicecontext.go 的 redis.MustNewRedis(go-zero)。
-		[ordered]@{ Name = 'scene-manager'; Scope = 'zone'; Manifest = "$goSvc/scene-manager.yaml"; GoPools = 1; GoMaxProcs = $g; PubSub = 0; Fixed = 0 }
+		# login:go/login/internal/svc/servicecontext.go NewServiceContext 的 redis.NewClient(登录排队 loginqueue 复用它),
+		# 池上限 Node.RedisClient.PoolSize;Pub/Sub:go/login/internal/dispatcher/task_result_dispatcher.go subscribeLoop 的一条 Subscribe(taskresult.LegacyNotifyChannel, 本实例频道)——同一连接订两条频道,所以仍记 1(B0-3,2026-10-18)。
+		[ordered]@{ Name = 'login'; Scope = 'zone'; Manifest = "$goSvc/login.yaml"; PoolMirror = 'login'; DefaultPools = 0; GoMaxProcs = 0; PubSub = 1; Fixed = 0 }
+		# db:go/db/internal/svc/servicecontext.go 的 RedisClient(ServerConfig.RedisClient.PoolSize);Placement.Redis 不写时落点句柄复用
+		# 同一个 client(K8s 的 db ConfigMap 不写它)。
+		[ordered]@{ Name = 'db'; Scope = 'zone'; Manifest = "$goSvc/db.yaml"; PoolMirror = 'db'; DefaultPools = 0; GoMaxProcs = 0; PubSub = 0; Fixed = 2 }  # Fixed 2:go/db/internal/kafka/durable_enqueue.go 的 WAITAOF 专用客户端(durableClientPoolSize = 2,组提交的粘连连接与启动探针都从它取,不占 PoolSize 主池;db.yaml 的 WaitAOFNumLocal / WaitAOFNumReplicas 都写 0 时不建)。按开启计,偏保守,口径同 trade 行。
+		# data-service:go/data_service/internal/routing/router.go 的 DevRedis(go-redis,DevRedis.PoolSize)与 MappingRedis(go-zero,没有池参数,
+		# 缺省池)两个池,K8s 的 ConfigMap 两段都指向共享 Redis;配了 DevRedis 时 Regions 的集群客户端不建;route_publish.go 的 WAITAOF 探针
+		# (只在 RouteStore.Mode=db_first 时建)也是 go-zero 客户端,go-zero 按地址复用 MappingRedis 的池,不另开池。
+		# Fixed:db_first 时加对账 leader 的独立 go-redis 池(见上面 $dsRouteLeaderPool;redis 模式不装配,0)。
+		[ordered]@{ Name = 'data-service'; Scope = 'zone'; Manifest = "$goSvc/data-service.yaml"; PoolMirror = 'data-service'; DefaultPools = 1; GoMaxProcs = $g; PubSub = 0; Fixed = $dsRouteLeaderPool }
+		# player-locator:go/player_locator/internal/svc/servicecontext.go 的 redis.NewClient(RedisClient.PoolSize)。
+		[ordered]@{ Name = 'player-locator'; Scope = 'zone'; Manifest = "$goSvc/player-locator.yaml"; PoolMirror = 'player-locator'; DefaultPools = 0; GoMaxProcs = 0; PubSub = 0; Fixed = 0 }
+		# scene-manager:go/scene_manager/internal/svc/servicecontext.go 的 redis.MustNewRedis(go-zero,缺省池)。
+		[ordered]@{ Name = 'scene-manager'; Scope = 'zone'; Manifest = "$goSvc/scene-manager.yaml"; DefaultPools = 1; GoMaxProcs = $g; PubSub = 0; Fixed = 0 }
 		# Java gateway(Lettuce,不是池):StringRedisTemplate 的共享连接 1 条(ZoneHealthProbeService),限流打开时 RateLimitConfig 的
 		# bucket4j 专用连接再 1 条。staging / prod 缺省开限流(-GatewayRateLimit auto),dev 关时实际 1 条;按 2 记,偏保守。
-		[ordered]@{ Name = 'gateway'; Scope = 'zone'; Manifest = 'deploy/k8s/manifests/java-svc/gateway.yaml'; GoPools = 0; GoMaxProcs = 0; PubSub = 0; Fixed = 2 }
+		[ordered]@{ Name = 'gateway'; Scope = 'zone'; Manifest = 'deploy/k8s/manifests/java-svc/gateway.yaml'; DefaultPools = 0; GoMaxProcs = 0; PubSub = 0; Fixed = 2 }
 		# —— 全局池(infra namespace 一份)——
-		# match:go/match/internal/svc/servicecontext.go NewRedisHandles 的 sharedRds;MatchRedis 是 redis-match-cluster,不计。
-		[ordered]@{ Name = 'match'; Scope = 'global'; Manifest = "$goSvc/match.yaml"; GoPools = 1; GoMaxProcs = $g; PubSub = 0; Fixed = 0 }
-		# chat:go/chat/internal/svc/servicecontext.go NewRedisHandles 的 sharedRds;ChatRedis 在 K8s 复用 redis-match-cluster,不计。
-		[ordered]@{ Name = 'chat'; Scope = 'global'; Manifest = "$goSvc/chat.yaml"; GoPools = 1; GoMaxProcs = $g; PubSub = 0; Fixed = 0 }
-		# friend:go/friend/internal/svc/servicecontext.go NewRedisHandles;K8s 不配 FriendRedis,私有 key 回落共享库、两者是同一个句柄。
-		[ordered]@{ Name = 'friend'; Scope = 'global'; Manifest = "$goSvc/friend.yaml"; GoPools = 1; GoMaxProcs = $g; PubSub = 0; Fixed = 0 }
-		# trade:go/trade/internal/svc/assetchannel.go newAssetChannel 的 redis.NewClient,加 shared/assetopwake 订阅 assetop:wake 的
-		# Pub/Sub 连接(AssetOp.Wake 缺省开)。K8s 的 trade ConfigMap 现在固定 AssetOp.Enabled=false,通道不装配、不拨共享 Redis
-		# (实际 0 条);按打开计(偏保守),开关翻转时不必回来改账。
-		[ordered]@{ Name = 'trade'; Scope = 'global'; Manifest = "$goSvc/trade.yaml"; GoPools = 1; GoMaxProcs = $g; PubSub = 1; Fixed = 0 }
-		# guild:go/guild/internal/svc/servicecontext.go 的 RedisClient(DB 2,帮会缓存)、PlayerLocatorRedis(DB 0,在场 / 资产定位 / 历练结果)、
-		# MergeMarkerRedis(合服闸门,只读)三个缺省大小的池;另有两个固定小池:申请配额(go/guild/guild.go quotaRedis,PoolSize 4)
-		# 与落地恢复摘要专用池(servicecontext.go playerSyncRedisPoolSize = 4),记在 Fixed;Pub/Sub:落地唤醒订阅 assetop:wake(AssetOp.Wake
-		# 缺省开;K8s 上资产通道默认关时不订阅,按开计,偏保守)。三个池在 K8s 上都指向共享 Redis。
-		[ordered]@{ Name = 'guild'; Scope = 'global'; Manifest = "$goSvc/guild.yaml"; GoPools = 3; GoMaxProcs = $g; PubSub = 1; Fixed = 8 }
-		# mail:go/mail/internal/svc/servicecontext.go NewServiceContext 的 redis.NewRedis(go-zero,只读 player:session:{id},推送前找收件人
-		# 所在 gate);没有私有 key、没有 Pub/Sub。
-		[ordered]@{ Name = 'mail'; Scope = 'global'; Manifest = "$goSvc/mail.yaml"; GoPools = 1; GoMaxProcs = $g; PubSub = 0; Fixed = 0 }
+		# match:go/match/internal/svc/servicecontext.go NewRedisHandles 的 sharedRds(go-zero,缺省池);MatchRedis 是 redis-match-cluster,不计。
+		[ordered]@{ Name = 'match'; Scope = 'global'; Manifest = "$goSvc/match.yaml"; DefaultPools = 1; GoMaxProcs = $g; PubSub = 0; Fixed = 0 }
+		# chat:go/chat/internal/svc/servicecontext.go NewRedisHandles 的 sharedRds(go-zero,缺省池);ChatRedis 在 K8s 复用 redis-match-cluster,不计。
+		[ordered]@{ Name = 'chat'; Scope = 'global'; Manifest = "$goSvc/chat.yaml"; DefaultPools = 1; GoMaxProcs = $g; PubSub = 0; Fixed = 0 }
+		# friend:go/friend/internal/svc/servicecontext.go NewRedisHandles(go-zero,缺省池);K8s 不配 FriendRedis,私有 key 回落共享库、两者是同一个句柄。
+		[ordered]@{ Name = 'friend'; Scope = 'global'; Manifest = "$goSvc/friend.yaml"; DefaultPools = 1; GoMaxProcs = $g; PubSub = 0; Fixed = 0 }
+		# trade:go/trade/internal/svc/assetchannel.go newAssetChannel 的 redis.NewClient(SharedRedis.PoolSize),加 shared/assetopwake 订阅
+		# assetop:wake 的 Pub/Sub 连接(AssetOp.Wake 缺省开)。开关从服务yaml镜像，缺省关闭；按打开计，开关翻转时不必回来改账。
+		[ordered]@{ Name = 'trade'; Scope = 'global'; Manifest = "$goSvc/trade.yaml"; PoolMirror = 'trade'; DefaultPools = 0; GoMaxProcs = 0; PubSub = 1; Fixed = 0 }
+		# guild 三个显式池；摘要 bump 专用池固定4（svc/servicecontext.go playerSyncRedisPoolSize），另有唤醒订阅。
+		[ordered]@{ Name = 'guild'; Scope = 'global'; Manifest = "$goSvc/guild.yaml"; PoolMirror = 'guild'; DefaultPools = 0; GoMaxProcs = 0; PubSub = 1; Fixed = 4 }
+		# player-inbox:go/player_inbox/internal/svc/servicecontext.go openCoreRedis 的 redis.NewClient(核心 Redis,CoreRedis.PoolSize,
+		# 启动时 Ping);围栏上界读 owner_epoch、在线提醒读 location(scenenode.GoRedisReader)、后台循环选主锁
+		# (leader.NewGoRedisStore)共用这一个客户端,没有 Pub/Sub。
+		[ordered]@{ Name = 'player-inbox'; Scope = 'global'; Manifest = "$goSvc/player-inbox.yaml"; PoolMirror = 'player-inbox'; DefaultPools = 0; GoMaxProcs = 0; PubSub = 0; Fixed = 0 }
+		# mail显式限制单池8条连接，不使用GOMAXPROCS派生默认；rank只访问SQL与RPC。
+		[ordered]@{ Name = 'mail'; Scope = 'global'; Manifest = "$goSvc/mail.yaml"; DefaultPools = 0; GoMaxProcs = 0; PubSub = 0; Fixed = 8 }
 	)
 	foreach ($client in $clients) {
 		$client['Replicas'] = Get-ManifestDeploymentReplicas -RelativePath $client.Manifest -LedgerName $ledgerName
+		# 显式池上限:有 PoolMirror 的行读服务 yaml(与 ConfigMap 镜像同一批键,不是正整数即 throw),没有的行是 0。
+		$configuredPoolConns = 0
+		if ($client.Contains('PoolMirror')) {
+			foreach ($poolSize in (Get-RedisPoolMirror -Target $client.PoolMirror).Values) { $configuredPoolConns += $poolSize }
+		}
+		$client['ConfiguredPoolConns'] = $configuredPoolConns
 	}
 	return [ordered]@{
 		MaxClients               = Get-RedisMaxClientsFromManifest
@@ -2242,7 +2528,7 @@ function Get-RedisConnectionLedgerInputs {
 
 .DESCRIPTION
 	记号:Z = zone 数;C = 全部 zone 的 gate + scene 进程数之和;B = battle 进程数;R = 滚动期间每个工作负载多出的实例数;
-	每副本 = GoPools × GoPoolSizePerProc × GoMaxProcs + PubSub + Fixed(见 Get-RedisConnectionLedgerInputs)。
+	每副本 = ConfiguredPoolConns + DefaultPools × GoPoolSizePerProc × GoMaxProcs + PubSub + Fixed(见 Get-RedisConnectionLedgerInputs)。
 	  每 zone   = Σ(Scope=zone 的客户端:副本数 × 每副本)
 	  全局      = Σ(Scope=global 的客户端:副本数 × 每副本)+ B × 每进程
 	  稳态      = Z × 每 zone + C × 每进程 + 全局
@@ -2296,17 +2582,17 @@ function Get-RedisConnectionLedger {
 			throw "Redis 连接总账:Clients 里有一项没有 Name"
 		}
 		$f = @{}
-		foreach ($field in @('Replicas', 'GoPools', 'GoMaxProcs', 'PubSub', 'Fixed')) {
+		foreach ($field in @('Replicas', 'ConfiguredPoolConns', 'DefaultPools', 'GoMaxProcs', 'PubSub', 'Fixed')) {
 			$n = 0
 			if (-not $client.Contains($field) -or -not [int]::TryParse([string]$client[$field], [ref]$n) -or $n -lt 0) {
 				throw "Redis 连接总账:客户端 $name 的 $field='$($client[$field])' 必须是非负整数(fail-closed:不替你猜一个连接数)"
 			}
 			$f[$field] = $n
 		}
-		if ($f.GoPools -gt 0 -and $f.GoMaxProcs -le 0) {
-			throw "Redis 连接总账:客户端 $name 有 $($f.GoPools) 个 Go 连接池,GoMaxProcs 必须为正(池上限 = GoPoolSizePerProc × GOMAXPROCS)"
+		if ($f.DefaultPools -gt 0 -and $f.GoMaxProcs -le 0) {
+			throw "Redis 连接总账:客户端 $name 有 $($f.DefaultPools) 个缺省大小的 Go 连接池,GoMaxProcs 必须为正(缺省池上限 = GoPoolSizePerProc × GOMAXPROCS)"
 		}
-		$perReplica = $f.GoPools * $v.GoPoolSizePerProc * $f.GoMaxProcs + $f.PubSub + $f.Fixed
+		$perReplica = $f.ConfiguredPoolConns + $f.DefaultPools * $v.GoPoolSizePerProc * $f.GoMaxProcs + $f.PubSub + $f.Fixed
 		if ($perReplica -le 0) {
 			throw "Redis 连接总账:客户端 $name 每副本 0 条连接:不连这台 Redis 的服务不该在表里"
 		}
@@ -2371,7 +2657,9 @@ function Get-RedisZoneCppProcesses {
 #>
 function Write-RedisConnectionLedger {
 	$ledgerPlan = Get-RedisConnectionPlan
-	$ledgerInputs = Get-RedisConnectionLedgerInputs
+	# 本次部署那一份按 -RouteStoreMode 记 D1 对账 leader 的独立池(只有 db_first 才装配),规划档按 Get-RedisConnectionPlan 的 RouteStoreDbFirst 提前计入。
+	$ledgerInputs = Get-RedisConnectionLedgerInputs -RouteStoreDbFirst ($RouteStoreMode -ceq 'db_first')
+	$planLedgerInputs = Get-RedisConnectionLedgerInputs -RouteStoreDbFirst ([bool]$ledgerPlan.RouteStoreDbFirst)
 
 	# 键是 zoneId(int)。不用 [ordered]@{}:OrderedDictionary 拿 int 当下标是按位置取值,不是按键。
 	$cppByZone = [System.Collections.Generic.Dictionary[int, int]]::new()
@@ -2399,7 +2687,7 @@ function Write-RedisConnectionLedger {
 	$deployLedger = Get-RedisConnectionLedger -Inputs $ledgerInputs -ZoneCount $cppByZone.Count -CppZoneProcesses $deployCppProcesses `
 		-BattleProcesses ([Math]::Max(0, $BattleReplicas)) -RolloutExtraPodsPerDeployment $ledgerPlan.RolloutExtraPodsPerDeployment `
 		-OpsReserve $ledgerPlan.OpsReserve -WarnRatio $ledgerPlan.WarnRatio
-	$planLedger = Get-RedisConnectionLedger -Inputs $ledgerInputs -ZoneCount $ledgerPlan.ZoneCount `
+	$planLedger = Get-RedisConnectionLedger -Inputs $planLedgerInputs -ZoneCount $ledgerPlan.ZoneCount `
 		-CppZoneProcesses ($ledgerPlan.ZoneCount * ($ledgerPlan.GatePerZone + $ledgerPlan.ScenePerZone)) `
 		-BattleProcesses $ledgerPlan.BattleProcesses -RolloutExtraPodsPerDeployment $ledgerPlan.RolloutExtraPodsPerDeployment `
 		-OpsReserve $ledgerPlan.OpsReserve -WarnRatio $ledgerPlan.WarnRatio
@@ -2423,6 +2711,36 @@ function Write-RedisConnectionLedger {
 			"then MAXCLIENTS in redis.yaml in a maintenance window (restarts redis-0, needs -ConfirmRedisCoreRestart); " +
 			"or split the shared Redis by purpose (docs/design/shared-redis-split-by-purpose.md).")
 		Write-Warning ($overWarnFormat -f ($overWarn -join '; '), $deployLedger.MaxClients, $deployLedger.WarnAt)
+	}
+
+	# 高可用形态(-RedisReplicas 3,redis-ha.yaml):客户端经代理连 Redis,先到线的是代理(PROXY_MAXCONN × 副本 + 预留 ≤ MAXCLIENTS,
+	# Get-RedisHaLimits 已保证)。一个代理不在(所在节点故障;滚动时 hard-stop-after 10 秒后断开)时,它的客户端全部重连到另一个,
+	# 所以再按「单个代理的 PROXY_MAXCONN」算一次告警水位(同一个 WarnRatio)。超过只告警、不阻断,纪律同上。
+	$haTopology = Get-RedisTopology
+	if ($haTopology.HighAvailability) {
+		$haManifestRelative = 'deploy/k8s/manifests/infra/' + $haTopology.Manifest
+		$haManifestFull = Join-Path $RepoRoot ($haManifestRelative -replace '/', [System.IO.Path]::DirectorySeparatorChar)
+		if (-not (Test-Path -LiteralPath $haManifestFull)) {
+			throw "Redis 连接总账:选的是高可用形态(-RedisReplicas $($haTopology.Replicas)),但找不到 $haManifestRelative(fail-closed)"
+		}
+		$haLimits = Get-RedisHaLimits -ManifestContent ([string](Get-Content -LiteralPath $haManifestFull -Raw)) -SingleInstanceMaxClients $deployLedger.MaxClients
+		$proxyWarnAt = [int][Math]::Floor($haLimits.ProxyMaxConn * $ledgerPlan.WarnRatio)
+		Write-Host ("Redis proxy ledger: proxy_maxconn={0} proxies={1}+{2} warn_at={3} (one proxy carries every client while the other is down); deploy peak={4} plan peak={5}" -f
+			$haLimits.ProxyMaxConn, $haLimits.ProxyReplicas, $haLimits.ProxyMaxSurge, $proxyWarnAt, $deployLedger.Peak, $planLedger.Peak)
+		$overProxy = New-Object System.Collections.Generic.List[string]
+		if ($deployLedger.Peak -gt $proxyWarnAt) {
+			$overProxy.Add(("this deploy zones={0} peak {1}" -f $cppByZone.Count, $deployLedger.Peak))
+		}
+		if ($planLedger.Peak -gt $proxyWarnAt) {
+			$overProxy.Add(("plan zones={0} (Get-RedisConnectionPlan) peak {1}" -f $ledgerPlan.ZoneCount, $planLedger.Peak))
+		}
+		if ($overProxy.Count -gt 0) {
+			# 开头不留空格,理由同上一条告警。
+			$overProxyFormat = ("[RedisConnectionLedger]OverProxyWarnRatio:{0}; proxy_maxconn={1} warn_at={2} (deploy/k8s/manifests/infra/redis-ha.yaml). Deployment continues: warning only, not blocking. " +
+				"Raise PROXY_MAXCONN in redis-ha.yaml (proxies roll automatically) while keeping PROXY_MAXCONN x (proxies + maxSurge) + 1000 <= MAXCLIENTS; " +
+				"beyond that raise MAXCLIENTS on all 3 redis nodes (CONFIG SET maxclients on each first, then both manifests in a maintenance window, needs -ConfirmRedisCoreRestart).")
+			Write-Warning ($overProxyFormat -f ($overProxy -join '; '), $haLimits.ProxyMaxConn, $proxyWarnAt)
+		}
 	}
 }
 
@@ -2500,22 +2818,29 @@ function Get-RedisPodTemplateDigest {
 }
 
 # 线上 sts/redis 与本次渲染的 Pod 模板摘要 → 这次 apply 算哪一类(纯函数,契约测试直接喂值;写法同 Get-KafkaTopologyChangeVerdict):
-#   absent     线上没有 sts/redis(全新集群):不存在重启,放行
-#   unchanged  线上注解与本次摘要相同:apply 不改 Pod 模板,放行
-#   restart    摘要不同,或线上没有注解(P0-E 之前部署的、或注解被删):apply 会重启 redis-0,要求 -ConfirmRedisCoreRestart
+#   absent             线上既没有 sts/redis 也没有旧的 Deployment redis(全新集群):不存在重启,放行
+#   legacy-deployment  线上没有 sts/redis,但还有 2026-09-19(2d29163f8)之前的 Deployment redis(emptyDir):Apply-Infra 会先删它
+#                      再建 StatefulSet = 停机切换且数据不迁移,要求 -ConfirmRedisCoreRestart
+#   unchanged          线上注解与本次摘要相同:相对「上次经本脚本 apply 的模板」没变,放行(带外改动看不见,见 Assert-RedisCoreRestartConfirmed)
+#   restart            摘要不同,或线上没有注解(P0-E 之前部署的、或注解被删):apply 会重启 redis-0,要求 -ConfirmRedisCoreRestart
 function Get-RedisCoreRestartVerdict {
 	param(
 		[Parameter(Mandatory = $true)][bool]$LiveExists,
 		[AllowNull()][AllowEmptyString()][string]$LiveDigest,
-		[Parameter(Mandatory = $true)][string]$DesiredDigest
+		[Parameter(Mandatory = $true)][string]$DesiredDigest,
+		[bool]$LegacyDeployment = $false
 	)
 
-	if (-not $LiveExists) { return 'absent' }
+	if (-not $LiveExists) {
+		if ($LegacyDeployment) { return 'legacy-deployment' }
+		return 'absent'
+	}
 	if (-not [string]::IsNullOrWhiteSpace($LiveDigest) -and $LiveDigest.Trim() -ceq $DesiredDigest) { return 'unchanged' }
 	return 'restart'
 }
 
-# 线上 sts/redis 是否存在,以及它自己 metadata 上的 Pod 模板摘要注解(没有注解 = 空串)。调用方先判 DryRun:DryRun 不连集群。
+# 线上 sts/redis 是否存在、它自己 metadata 上的 Pod 模板摘要注解(没有注解 = 空串),以及没有 sts 时是否还留着旧的
+# Deployment redis(LegacyDeployment)。调用方先判 DryRun:DryRun 不连集群。
 # 读法照 Get-LiveStatefulSetReplicas。查询失败一律 throw:查不到不等于不存在(fail-closed),
 # 否则一次 kubectl 抖动就会把「要重启」误判成「全新集群」放行。
 function Get-LiveRedisCoreTemplateDigest {
@@ -2531,7 +2856,17 @@ function Get-LiveRedisCoreTemplateDigest {
 	}
 	$text = ([string]($out | Out-String)).Trim()
 	if ([string]::IsNullOrEmpty($text)) {
-		return [pscustomobject]@{ Exists = $false; Digest = '' }
+		# 没有 sts/redis 不一定是全新集群:2026-09-19 之前部署、之后没再跑过 infra-up 的集群上 Redis 还是 Deployment + emptyDir,
+		# Apply-Infra 会先 delete deployment redis 再建 StatefulSet —— 停掉 Redis 且数据不迁移,同样要确认。
+		$legacyArgs = @()
+		$legacyArgs += $baseArgs
+		$legacyArgs += @("get", "deployment", "redis", "-n", $Namespace, "--ignore-not-found", "-o", "name")
+		$legacyOut = & kubectl @legacyArgs
+		if ($LASTEXITCODE -ne 0) {
+			throw "查询线上 Deployment redis 失败(namespace=$Namespace)。fail-closed:不知道现状就无法判断这次 apply 会不会停掉旧的 Redis。"
+		}
+		$legacyText = ([string]($legacyOut | Out-String)).Trim()
+		return [pscustomobject]@{ Exists = $false; Digest = ''; LegacyDeployment = (-not [string]::IsNullOrEmpty($legacyText)) }
 	}
 	$annotations = ($text | ConvertFrom-Json).metadata.annotations
 	$digest = ''
@@ -2539,7 +2874,7 @@ function Get-LiveRedisCoreTemplateDigest {
 		$property = $annotations.PSObject.Properties[$script:RedisPodTemplateDigestAnnotation]
 		if ($null -ne $property) { $digest = ([string]$property.Value).Trim() }
 	}
-	return [pscustomobject]@{ Exists = $true; Digest = $digest }
+	return [pscustomobject]@{ Exists = $true; Digest = $digest; LegacyDeployment = $false }
 }
 
 <#
@@ -2554,9 +2889,21 @@ function Get-LiveRedisCoreTemplateDigest {
 	直接报错,infra-up 的等待正是用它(Wait-ForStatefulSetReady)。
 	运维后果:P0-E 合入后第一次 infra-up(以及以后每次改 redis.yaml 的 Pod 模板)被拒是预期行为,按 deploy/k8s/README.md
 	「Redis 连接上限与总账」在维护窗口里带 -ConfirmRedisCoreRestart 执行。
+	盲区:比较的是线上注解(= 上次经本脚本 apply 的模板摘要),不是线上真实的 spec.template。有人用 kubectl edit / set image / patch
+	带外改过 redis.yaml 里声明了的字段时,这里判 unchanged 放行,而 apply 的三方合并会把那些字段改回清单值、照样重启 redis-0。
+	改成拿 server-side dry-run 的模板与线上模板比较可以补上,待负责人拍板与实测(交接 handoff-global-singletons-p0-20261015.md)。
+	另一个盲区:有人 `kubectl delete sts redis --cascade=orphan`(改 volumeClaimTemplates 之类不可变字段的常规做法)后,redis-0 Pod 与 PVC
+	仍在服务,但这里查不到 sts、也查不到旧 Deployment,判 absent 放行;apply 新建的 StatefulSet 收养孤儿 Pod,模板不一致就重建 redis-0。
+	做过这类操作后,下一次 infra-up 前先确认 redis.yaml 的 Pod 模板与线上一致,或在维护窗口里做。
 #>
 function Assert-RedisCoreRestartConfirmed {
-	param([Parameter(Mandatory = $true)][string]$DesiredDigest)
+	param(
+		[Parameter(Mandatory = $true)][string]$DesiredDigest,
+		# 线上与本次都是高可用形态(Get-RedisTopologyChangeVerdict = unchanged 且 3 副本):模板变化 = 逐个滚动 3 个 redis Pod,
+		# 每个先由停机钩子交接主,不是「重启 redis-0、重放 AOF」。只换后果的说法,确认要求不变(仍是一次需要知情的变更)。
+		# 单实例与 1 → 3 切换不传:那两种都是 redis-0 带着全服重启。
+		[switch]$RollingHandover
+	)
 
 	if ($DryRun) {
 		# 行尾带上本次收到的开关值:DryRun 不查集群,从包装入口核对 -ConfirmRedisCoreRestart 有没有透传下来只能看这一项。
@@ -2564,16 +2911,44 @@ function Assert-RedisCoreRestartConfirmed {
 		return
 	}
 	$live = Get-LiveRedisCoreTemplateDigest -Namespace $InfraNamespace
-	$verdict = Get-RedisCoreRestartVerdict -LiveExists $live.Exists -LiveDigest $live.Digest -DesiredDigest $DesiredDigest
+	$verdict = Get-RedisCoreRestartVerdict -LiveExists $live.Exists -LiveDigest $live.Digest -DesiredDigest $DesiredDigest `
+		-LegacyDeployment ([bool]$live.LegacyDeployment)
 	if ($verdict -eq 'absent') {
-		Write-Host "Redis restart gate: statefulset/redis not found in namespace $InfraNamespace (first deployment), digest=$DesiredDigest"
+		Write-Host "Redis restart gate: neither statefulset/redis nor the legacy deployment/redis exists in namespace $InfraNamespace (first deployment), digest=$DesiredDigest"
 		return
 	}
 	if ($verdict -eq 'unchanged') {
-		Write-Host "Redis restart gate: pod template unchanged (digest=$DesiredDigest), applying redis.yaml does not restart redis-0"
+		# 措辞不说「不会重启」:只证明了与上次经本脚本 apply 的模板相同,带外改过的字段 apply 会改回去(见上面「盲区」)。
+		Write-Host "Redis restart gate: pod template unchanged since the last apply by this script (digest=$DesiredDigest); out-of-band edits to pod template fields declared in redis.yaml are not detected and would be reverted by this apply"
 		return
 	}
+	if ($verdict -eq 'legacy-deployment') {
+		if ($ConfirmRedisCoreRestart) {
+			Write-Warning "[RedisCoreRestart]Confirmed:-ConfirmRedisCoreRestart supplied, legacy deployment/redis (emptyDir) found in namespace $InfraNamespace. This apply deletes it and creates statefulset/redis: Redis stops, its data is not migrated, every player must log in again."
+			return
+		}
+		throw @"
+拒绝 apply 共享 Redis(namespace=$InfraNamespace):线上没有 statefulset/redis,但还有旧的 deployment/redis(emptyDir,2026-09-19 之前的形态)。
+本次 apply 会先删掉它再建 StatefulSet:Redis 停机,会话 / 锁 / 位置记录 / 战斗结算待销账记录全部清空、不迁移,全服需要重新登录。
+本次未做任何写操作。确认要在本次维护窗口做这次切换,加 -ConfirmRedisCoreRestart 重跑(经 dev_tools.ps1 / k8s_image.ps1 同名参数透传);
+切换前先停写,确认 db_task 积压、重试队列与死信都为 0。步骤见 deploy/k8s/README.md「Redis 连接上限与总账」。
+"@
+	}
 	$liveText = if ([string]::IsNullOrWhiteSpace($live.Digest)) { '<none>' } else { $live.Digest }
+	if ($RollingHandover) {
+		if ($ConfirmRedisCoreRestart) {
+			Write-Warning "[RedisCoreRestart]Confirmed:-ConfirmRedisCoreRestart supplied, redis pod template digest $liveText -> $DesiredDigest. This apply rolls the 3 redis pods one at a time; each pod hands the primary role over before it stops (writes pause about 2-3 s per handover)."
+			return
+		}
+		throw @"
+拒绝 apply 共享 Redis(namespace=$InfraNamespace):本次 redis-ha.yaml 的 Pod 模板摘要 $DesiredDigest 与线上 statefulset/redis 的 $liveText 不同
+(<none> = 线上还没有摘要注解)。apply 会逐个滚动重启 3 个 redis Pod:每个 Pod 停机前先由停机钩子把主交接出去,
+每次交接写入挂起约 2~3 秒(2026-10-08 本机 kind 实测零丢失;真实集群未测)。
+本次未做任何写操作。确认要在本次窗口滚动,加 -ConfirmRedisCoreRestart 重跑(经 dev_tools.ps1 / k8s_image.ps1 同名参数透传)。
+现在不打算滚动就不要跑 infra-up / 不带 -SkipInfra 的 all-up(zone 级发布用 zone-up 或 all-up -SkipInfra)。
+步骤见 deploy/k8s/README.md「共享 Redis:高可用形态」。
+"@
+	}
 	if ($ConfirmRedisCoreRestart) {
 		Write-Warning "[RedisCoreRestart]Confirmed:-ConfirmRedisCoreRestart supplied, redis pod template digest $liveText -> $DesiredDigest. This apply restarts redis-0: logins in all zones are interrupted while the AOF is replayed."
 		return
@@ -2590,16 +2965,21 @@ function Assert-RedisCoreRestartConfirmed {
 
 <#
 .SYNOPSIS
-	部署后核对(非 DryRun 且带 -WaitReady):读线上 redis-0 的 CONFIG GET maxclients,与清单的 MAXCLIENTS 比较,不等只告警。
+	部署后核对(非 DryRun 且带 -WaitReady):逐个读线上 redis-0 .. redis-<Nodes-1> 的 CONFIG GET maxclients,与清单的 MAXCLIENTS 比较,不等只告警。
 
 .DESCRIPTION
 	这是到线之前唯一能自动发现「maxclients 被容器 nofile 硬限悄悄下调」的地方(下调只在 redis-server 启动日志里留一条)。
+	高可用形态(-Nodes 3)每个节点都要核:任何一个从都可能在下一次切主后变成主,它的上限就是全服的上限。
+	-h 127.0.0.1 读的是该 Pod 自己的 redis-server(不经 Service / 代理),主、从都答 CONFIG GET。
 	口令取 Pod 自己的 REDIS_PASSWORD(Secret redis-auth),经 REDISCLI_AUTH 交给 redis-cli:不经本机命令行、不进日志;
 	为空时不设(设成空串 redis-cli 会发 AUTH "" 并报错)。写法同 k8s_gate_drain.ps1 的 Invoke-GateDrainRedis。
-	读不到(exec 失败、已经到线连不上、回复认不出)同样只告警:核对是观测不是门禁,redis.yaml 此时已经 apply 完了。
+	读不到(exec 失败、已经到线连不上、回复认不出)同样只告警:核对是观测不是门禁,清单此时已经 apply 完了。
 #>
 function Test-RedisLiveMaxClients {
-	param([Parameter(Mandatory = $true)][int]$ExpectedMaxClients)
+	param(
+		[Parameter(Mandatory = $true)][int]$ExpectedMaxClients,
+		[ValidateRange(1, 3)][int]$Nodes = 1
+	)
 
 	if ($DryRun) {
 		Write-Host "[dry-run] redis maxclients check skipped (manifest MAXCLIENTS=$ExpectedMaxClients)"
@@ -2607,22 +2987,276 @@ function Test-RedisLiveMaxClients {
 	}
 	$shell = 'if [ -n "$REDIS_PASSWORD" ]; then REDISCLI_AUTH=$REDIS_PASSWORD; export REDISCLI_AUTH; fi; exec redis-cli --raw -h 127.0.0.1 -p 6379 config get maxclients'
 	$baseArgs = Build-KubectlBaseArgs
-	$allArgs = @()
-	$allArgs += $baseArgs
-	$allArgs += @("exec", "-n", $InfraNamespace, "pod/redis-0", "-c", "redis", "--", "sh", "-c", $shell)
-	$out = & kubectl @allArgs
-	$exitCode = $LASTEXITCODE
-	$reply = [regex]::Match([string]($out | Out-String), '(?m)^\s*maxclients\s*\r?\n\s*(\d+)\s*$')
-	if ($exitCode -ne 0 -or -not $reply.Success) {
-		Write-Warning ("[RedisMaxClients]CheckFailed:could not read CONFIG GET maxclients from redis-0 (namespace={0}, exit={1}). If redis-cli cannot connect, the instance may already be full; otherwise check the 'redis fd limit:' line in: kubectl -n {0} logs redis-0 -c redis" -f $InfraNamespace, $exitCode)
+	$okCount = 0
+	$lastLive = $null
+	for ($i = 0; $i -lt $Nodes; $i++) {
+		$pod = "redis-$i"
+		$allArgs = @()
+		$allArgs += $baseArgs
+		$allArgs += @("exec", "-n", $InfraNamespace, "pod/$pod", "-c", "redis", "--", "sh", "-c", $shell)
+		$out = & kubectl @allArgs
+		$exitCode = $LASTEXITCODE
+		$reply = [regex]::Match([string]($out | Out-String), '(?m)^\s*maxclients\s*\r?\n\s*(\d+)\s*$')
+		if ($exitCode -ne 0 -or -not $reply.Success) {
+			Write-Warning ("[RedisMaxClients]CheckFailed:could not read CONFIG GET maxclients from {2} (namespace={0}, exit={1}). If redis-cli cannot connect, the instance may already be full; otherwise check the 'redis fd limit:' line in: kubectl -n {0} logs {2} -c redis" -f $InfraNamespace, $exitCode, $pod)
+			continue
+		}
+		$liveMaxClients = [long]$reply.Groups[1].Value
+		if ($liveMaxClients -ne $ExpectedMaxClients) {
+			Write-Warning ("[RedisMaxClients]Mismatch:{3} live maxclients={0} but manifest MAXCLIENTS={1} (namespace={2}). Most likely the container nofile hard limit is below MAXCLIENTS + 32 and redis-server lowered it: see the 'redis fd limit:' / ERROR lines in kubectl -n {2} logs {3} -c redis, then raise LimitNOFILE of the container runtime on the node. Or someone ran CONFIG SET maxclients. Deployment continues: warning only." -f $liveMaxClients, $ExpectedMaxClients, $InfraNamespace, $pod)
+			continue
+		}
+		$okCount++
+		$lastLive = $liveMaxClients
+	}
+	if ($okCount -ne $Nodes) { return }
+	if ($Nodes -eq 1) {
+		Write-Host "Redis maxclients check OK: live=$lastLive manifest MAXCLIENTS=$ExpectedMaxClients"
 		return
 	}
-	$liveMaxClients = [long]$reply.Groups[1].Value
-	if ($liveMaxClients -ne $ExpectedMaxClients) {
-		Write-Warning ("[RedisMaxClients]Mismatch:live maxclients={0} but manifest MAXCLIENTS={1} (namespace={2}). Most likely the container nofile hard limit is below MAXCLIENTS + 32 and redis-server lowered it: see the 'redis fd limit:' / ERROR lines in kubectl -n {2} logs redis-0 -c redis, then raise LimitNOFILE of the container runtime on the node. Or someone ran CONFIG SET maxclients. Deployment continues: warning only." -f $liveMaxClients, $ExpectedMaxClients, $InfraNamespace)
+	Write-Host "Redis maxclients check OK: live=$lastLive manifest MAXCLIENTS=$ExpectedMaxClients nodes=$Nodes"
+}
+
+# ─────────────────────────────────────────────────────────────────
+# 共享 Redis 的拓扑:单实例(redis.yaml)或高可用(redis-ha.yaml)
+# (docs/design/no-single-node-horizontal-scaling-20261001.md §5;deploy/k8s/README.md「共享 Redis:高可用形态」)
+# ─────────────────────────────────────────────────────────────────
+# 高可用形态 = 1 主 2 从 + 每个 redis Pod 一个哨兵容器 + 2 个 haproxy 入口代理。Service redis 的名字与 ClusterIP 不变,
+# 只是 selector 从 redis Pod 换成代理;代理只把连接交给「自己答 role:master、且多数哨兵认它是主」的节点。
+# 所有客户端(C++ / Go / Java)零改动,仍连 redis.<infra>:6379。故障转移、滚动更新、整体停机再拉起、从单实例原地切换,
+# 2026-10-08 都在本机 kind 的隔离命名空间里实测过(数字见设计文档 §5)。
+# 同一个拓扑决定三件事,全部从 Get-RedisTopology 推出,不各写一份:
+#   - Apply-Infra apply 哪份清单(Manifest);
+#   - WAITAOF 要几个副本确认(Get-MappingRedisTopology → Get-RouteStoreWaitAOFNumReplicas;data-service 与 go/db 两处 ConfigMap);
+#   - 部署后核对几个节点(Test-RedisLiveMaxClients -Nodes)。
+# Get-RedisTopologyFor / Get-MappingRedisTopologyFor / Get-RedisTopologyChangeVerdict / Get-RedisZoneTopologyDecision / Get-RedisHaLimits /
+# Get-RedisHaScriptsDigest / Assert-RedisPasswordSentinelSafe 是纯函数,契约测试按 AST 抽出直接调用;Get-RedisTopology 读脚本参数
+# (与 zone 写路径跟随线上时记下的 $script:RedisReplicasFollowedLive),
+# Assert-RedisTopologyChangeIsSafe / Resolve-RedisTopologyFromLive 读集群(DryRun 不查,一律当全新集群)。
+
+# zone 写路径没给 -RedisReplicas、而线上 sts/redis 的副本数与档位缺省不同时,Resolve-RedisTopologyFromLive 把线上值记在这里,
+# Get-RedisTopology 随后按它解析(只在写路径入口写一次;$null = 没有跟随)。
+$script:RedisReplicasFollowedLive = $null
+
+# 代理 Pod 模板上的脚本摘要占位(redis-ha.yaml 的 Deployment redis-proxy),由 Apply-Infra 换成 Get-RedisHaScriptsDigest 的结果。
+$script:RedisHaScriptsDigestPlaceholder = '__REDIS_HA_SCRIPTS_DIGEST__'
+
+# 副本数 → 拓扑(纯函数)。只认 1 和 3:哨兵要凑多数派,两个节点挂一个就没有多数派,比单实例还脆;
+# 更多副本没有收益(读写都只走主),还会拖慢每次滚动。
+function Get-RedisTopologyFor {
+	param([Parameter(Mandatory = $true)][int]$Replicas)
+
+	if ($Replicas -ne 1 -and $Replicas -ne 3) {
+		throw "共享 Redis 的副本数只能是 1(单实例,redis.yaml)或 3(1 主 2 从 + 哨兵 + 代理,redis-ha.yaml),实际 $Replicas。两个节点的哨兵多数派挂一个就没了,比单实例还脆。"
+	}
+	$ha = ($Replicas -eq 3)
+	return [pscustomobject]@{
+		Replicas            = $Replicas
+		HighAvailability    = $ha
+		Manifest            = if ($ha) { 'redis-ha.yaml' } else { 'redis.yaml' }
+		PodManagementPolicy = if ($ha) { 'Parallel' } else { 'OrderedReady' }
+	}
+}
+
+# 按命令行与档位解析出本次部署的 Redis 拓扑。-RedisReplicas 0(缺省)= 按档位,判据与 Get-KafkaTopology 相同;
+# zone 写路径已跟随线上($script:RedisReplicasFollowedLive)时取线上值。
+function Get-RedisTopology {
+	$replicas = $RedisReplicas
+	if ($replicas -le 0 -and $null -ne $script:RedisReplicasFollowedLive) {
+		$replicas = [int]$script:RedisReplicasFollowedLive
+	}
+	if ($replicas -le 0) {
+		$replicas = if ($ReleaseProfile -ne 'dev' -or $OpsProfile -ne 'custom') { 3 } else { 1 }
+	}
+	return Get-RedisTopologyFor -Replicas $replicas
+}
+
+# 拓扑 → mapping Redis 拓扑名(纯函数):'single' / 'ha',Get-RouteStoreWaitAOFNumReplicas 据此给 0 / 1。
+# 共享 Redis 同时是 mapping Redis(player:zone / player:placement / mapping:route:ready …),没有单独的 mapping 实例。
+function Get-MappingRedisTopologyFor {
+	param([Parameter(Mandatory = $true)]$Topology)
+
+	if ($Topology.HighAvailability) { return 'ha' }
+	return 'single'
+}
+
+# 线上 sts/redis 的副本数 → 目标副本数,这次变更算哪一类(纯函数,契约测试直接喂值;写法同 Get-KafkaTopologyChangeVerdict):
+#   absent     线上没有 sts/redis(全新集群)
+#   unchanged  副本数不变
+#   upgrade    1 → 3:单实例原地切高可用。redis-0 带着 PVC 上的数据以主身份回来,redis-1 / redis-2 新建后从它全量同步
+#   refuse     其余一律拒绝 —— 3 → 1(主可能在 redis-1 / redis-2 上,缩到只剩 redis-0 = 丢掉主上的最新数据),
+#              以及线上是 0 / 2 这类本脚本从不产生的数量(不知道它经历过什么,不猜)
+function Get-RedisTopologyChangeVerdict {
+	param(
+		[AllowNull()]$LiveReplicas,
+		[Parameter(Mandatory = $true)][int]$DesiredReplicas
+	)
+
+	if ($null -eq $LiveReplicas) { return 'absent' }
+	$live = [int]$LiveReplicas
+	if ($live -eq $DesiredReplicas) { return 'unchanged' }
+	if ($live -eq 1 -and $DesiredReplicas -eq 3) { return 'upgrade' }
+	return 'refuse'
+}
+
+# apply 共享 Redis 之前调用(Apply-Infra 里,早于任何写操作)。拒绝的变更直接 throw;返回判定,upgrade 时 Apply-Infra 要先
+# 「只删 StatefulSet 对象、留下 Pod 与 PVC」(podManagementPolicy 创建后不可改,见 Apply-Infra 的 redis 分支)。
+function Assert-RedisTopologyChangeIsSafe {
+	param([Parameter(Mandatory = $true)]$Topology)
+
+	$live = Get-LiveStatefulSetReplicas -Namespace $InfraNamespace -Name 'redis'
+	$verdict = Get-RedisTopologyChangeVerdict -LiveReplicas $live -DesiredReplicas $Topology.Replicas
+	if ($verdict -eq 'upgrade') {
+		Write-Warning "[RedisTopology]Upgrade:shared Redis 1 -> 3 (single instance -> primary + 2 replicas + sentinels + 2 proxies). redis-0 restarts with its data and becomes the primary; redis-1 / redis-2 full-sync from it; Service redis switches to the proxies. Logins in all zones are interrupted while redis-0 restarts (maintenance window, needs -ConfirmRedisCoreRestart). Afterwards re-run zone-up for every zone and rollout restart deploy/db and deploy/data-service so WAITAOF waits for 1 replica."
+	}
+	if ($verdict -ne 'refuse') { return $verdict }
+	throw @"
+拒绝变更共享 Redis 的形态:线上 sts/redis 有 $live 个副本 → 目标 $($Topology.Replicas) 个(namespace=$InfraNamespace)。
+只支持 1 → 3(单实例原地切高可用)。3 → 1 不能原地做:主可能在 redis-1 / redis-2 上,缩到只剩 redis-0 会丢掉主上的最新数据;
+线上是 0 / 2 这类本脚本从不产生的副本数时,不知道它经历过什么,也不猜。本次未做任何写操作。
+确实要回到单实例:先在维护窗口里把主切回 redis-0(redis-cli -p 26379 SENTINEL FAILOVER mymaster,直到哨兵答 redis-0),
+停写后按 deploy/k8s/README.md「共享 Redis:高可用形态」的回退步骤做;只是这次不想改形态,显式传 -RedisReplicas $live。
+"@
+}
+
+# zone 写路径(不经 Apply-Infra)的拓扑取哪个值(纯函数,契约测试直接喂值):
+#   resolved  线上没有 sts/redis(infra 还没部署,zone 本来就起不来,不替 infra-up 做判断),或线上与本次解析值一致:照本次解析值
+#   live      没给 -RedisReplicas(RequestedReplicas ≤ 0),线上是 1 或 3 且与档位缺省不同:跟随线上
+#   refuse    显式给了且与线上不同,或线上是 0 / 2 这类本脚本从不产生的副本数(不知道它经历过什么,不猜)
+function Get-RedisZoneTopologyDecision {
+	param(
+		[AllowNull()]$LiveReplicas,
+		[Parameter(Mandatory = $true)][int]$RequestedReplicas,
+		[Parameter(Mandatory = $true)][int]$ResolvedReplicas
+	)
+
+	if ($null -eq $LiveReplicas) { return 'resolved' }
+	$live = [int]$LiveReplicas
+	if ($live -eq $ResolvedReplicas) { return 'resolved' }
+	if ($RequestedReplicas -le 0 -and ($live -eq 1 -or $live -eq 3)) { return 'live' }
+	return 'refuse'
+}
+
+# 不经 Apply-Infra 的写路径(zone-up、all-up -SkipInfra)部署 zone Go 服务时调用,早于任何写操作:WAITAOF 副本份数按拓扑渲染进
+# data-service / go/db 的 ConfigMap(Get-RouteStoreWaitAOFNumReplicas),必须与线上共享 Redis 一致:
+#   - 线上高可用、按单实例渲染(写 0):主崩溃切主时,已答复成功的映射提交与入队可能只在旧主上 —— 静默降级;
+#   - 线上单实例、按高可用渲染(写 1):没有副本可等,go/db 启动探针拒启、data-service 的 WAITAOF 全部超时。
+# zone 发布不改 infra 的形态,所以没给 -RedisReplicas 时跟随线上(staging / prod 还在单实例上时,zone-up、zone 回滚的 Step 6 照常可用);
+# 显式给了而与线上不同即拒绝(那是参数写错,或想切形态却没先跑 infra-up)。DryRun 不查集群,按本次参数与档位渲染。
+function Resolve-RedisTopologyFromLive {
+	$resolved = Get-RedisTopology
+	$live = Get-LiveStatefulSetReplicas -Namespace $InfraNamespace -Name 'redis'
+	$decision = Get-RedisZoneTopologyDecision -LiveReplicas $live -RequestedReplicas $RedisReplicas -ResolvedReplicas $resolved.Replicas
+	if ($decision -eq 'resolved') { return }
+	if ($decision -eq 'live') {
+		$script:RedisReplicasFollowedLive = [int]$live
+		$followed = Get-RedisTopology
+		Write-Host "Redis topology: following live statefulset/redis replicas=$($followed.Replicas) (profile default was $($resolved.Replicas); -RedisReplicas not given) manifest=$($followed.Manifest) high_availability=$(([string]$followed.HighAvailability).ToLowerInvariant()) waitaof_replicas=$(Get-RouteStoreWaitAOFNumReplicas -Topology (Get-MappingRedisTopology))"
 		return
 	}
-	Write-Host "Redis maxclients check OK: live=$liveMaxClients manifest MAXCLIENTS=$ExpectedMaxClients"
+	throw @"
+共享 Redis 的形态与线上不一致:线上 sts/redis 有 $live 个副本,本次 -RedisReplicas $RedisReplicas(解析为 $($resolved.Replicas))(namespace=$InfraNamespace,命令 $Command)。
+这个值决定 data-service / go/db 的 WAITAOF 要几个副本确认(单实例 0、高可用 1),渲染错了要么静默丢掉切主时的已确认写入、要么 go/db 拒启。
+本次未做任何写操作。去掉 -RedisReplicas(跟随线上)或传与线上一致的值;要切换形态,先跑 infra-up(1 → 3 见 deploy/k8s/README.md「共享 Redis:高可用形态」)。
+"@
+}
+
+# 高可用形态下口令的额外字符集限制(纯函数)。双引号、反斜杠与控制字符已由 Assert-RedisPasswordYamlSafe 拒绝;
+# 这里再拒绝空白与单引号:哨兵把口令**原样、不加引号**写回它自己的配置文件(sentinel auth-pass / sentinel-pass,Redis 自身的行为),
+# 下次重启按配置语法读回时,空白会把口令拆成两段、引号会被当成引号 —— 报 "Unbalanced quotes" 起不来(2026-10-08 实测)。
+# 报错只点变量名,不回显值。空串放行(dev 档不认证)。
+function Assert-RedisPasswordSentinelSafe {
+	param([AllowEmptyString()][AllowNull()][string]$Password)
+
+	if ([string]::IsNullOrEmpty($Password)) { return }
+	if ($Password -match "[\s']") {
+		throw "MMORPG_REDIS_PASSWORD 含空白或单引号:共享 Redis 的高可用形态(-RedisReplicas 3)里,哨兵会把口令原样、不加引号地写回它自己的配置文件,下次重启读不回来。请换一个只含字母、数字与 ._~@%+=:,^- 之类符号的口令。"
+	}
+}
+
+<#
+.SYNOPSIS
+	从 redis-ha.yaml 读连接上限并核对:PROXY_MAXCONN × (代理副本数 + maxSurge) + 预留 ≤ MAXCLIENTS,且 MAXCLIENTS 与 redis.yaml 同值。
+
+.DESCRIPTION
+	为什么要让代理先到线:Redis 一旦到线,代理对它的健康检查连接也会被拒,连续两次失败就把它判下线、踢掉全部会话,
+	客户端一起重连又撞线 —— 小故障被放大成全服断线;代理到线只是新连接排队。所以代理全部副本(含滚动时多出的那个)
+	加起来也不能把 Redis 用满,留出的预留给复制、哨兵、代理健康检查、探针与运维 redis-cli。
+	MAXCLIENTS 必须与 redis.yaml 相同:Redis 连接总账(Get-RedisConnectionLedgerInputs)只从 redis.yaml 读,两种形态共用一份账。
+	纯函数(不读文件):找不到恰好一处取值、Deployment redis-proxy 的 replicas / maxSurge 不是恰好一处、或不等式不成立即 throw。
+#>
+function Get-RedisHaLimits {
+	param(
+		[Parameter(Mandatory = $true)][string]$ManifestContent,
+		[Parameter(Mandatory = $true)][int]$SingleInstanceMaxClients
+	)
+
+	# 预留名额:复制 2 条、哨兵每个对主 / 对每个从各 2 条、两个代理的健康检查、探针与运维 redis-cli。估计值,取得宽裕。
+	$reserved = 1000
+	$text = $ManifestContent -replace "`r`n", "`n"
+	$readOne = {
+		param([string]$Name)
+		$found = [regex]::Matches($text, "(?m)^[ \t]*$Name=(\d+)[ \t]*$")
+		if ($found.Count -ne 1) {
+			throw "redis-ha.yaml:$Name=<数字> 应恰好出现 1 次,实际 $($found.Count) 次(fail-closed:不替你猜连接上限)"
+		}
+		$value = 0
+		if (-not [int]::TryParse($found[0].Groups[1].Value, [ref]$value) -or $value -le 0) {
+			throw "redis-ha.yaml:$Name='$($found[0].Groups[1].Value)' 必须是正整数"
+		}
+		return $value
+	}
+	$maxClients = & $readOne 'MAXCLIENTS'
+	$proxyMaxConn = & $readOne 'PROXY_MAXCONN'
+
+	$proxyDocs = @(($text -split '(?m)^---[ \t]*$') | Where-Object { $_ -cmatch '(?m)^kind:[ \t]*Deployment[ \t]*$' -and $_ -cmatch '(?m)^  name:[ \t]*redis-proxy[ \t]*$' })
+	if ($proxyDocs.Count -ne 1) {
+		throw "redis-ha.yaml:kind: Deployment、metadata.name 为 redis-proxy 的文档应恰好 1 份,实际 $($proxyDocs.Count) 份"
+	}
+	$replicaMatches = [regex]::Matches($proxyDocs[0], '(?m)^  replicas:[ \t]*(\d+)[ \t]*$')
+	$surgeMatches = [regex]::Matches($proxyDocs[0], '(?m)^[ \t]+maxSurge:[ \t]*(\d+)[ \t]*$')
+	if ($replicaMatches.Count -ne 1 -or $surgeMatches.Count -ne 1) {
+		throw "redis-ha.yaml:Deployment redis-proxy 的 spec.replicas 与 maxSurge 应各恰好一处(整数),实际 $($replicaMatches.Count) / $($surgeMatches.Count) 处"
+	}
+	$proxyReplicas = [int]$replicaMatches[0].Groups[1].Value
+	$proxyMaxSurge = [int]$surgeMatches[0].Groups[1].Value
+
+	if ($maxClients -ne $SingleInstanceMaxClients) {
+		throw "redis-ha.yaml 的 MAXCLIENTS=$maxClients 与 redis.yaml 的 $SingleInstanceMaxClients 不同:两种形态共用一份 Redis 连接总账(只从 redis.yaml 读),必须同值。"
+	}
+	$proxyTotal = $proxyMaxConn * ($proxyReplicas + $proxyMaxSurge)
+	if ($proxyTotal + $reserved -gt $maxClients) {
+		throw "redis-ha.yaml:PROXY_MAXCONN=$proxyMaxConn × (代理副本 $proxyReplicas + maxSurge $proxyMaxSurge) + 预留 $reserved = $($proxyTotal + $reserved) 超过 MAXCLIENTS=$maxClients。代理必须比 Redis 先到线(否则到线时代理的健康检查失败、踢掉全部会话),调小 PROXY_MAXCONN 或在维护窗口调大两份清单的 MAXCLIENTS。"
+	}
+	return [pscustomobject]@{
+		MaxClients    = $maxClients
+		ProxyMaxConn  = $proxyMaxConn
+		ProxyReplicas = $proxyReplicas
+		ProxyMaxSurge = $proxyMaxSurge
+		Reserved      = $reserved
+		ProxyTotal    = $proxyTotal
+	}
+}
+
+# 脚本 ConfigMap(redis-ha-scripts)内容的摘要,取 SHA-256 前 16 位(纯函数)。写进代理的 Pod 模板注解:代理只在启动时
+# 按脚本生成配置,内容一变模板就变、Deployment 自动滚动。整块文档原样参与(只统一换行),脚本里的注释改了也会滚动 ——
+# 代理是无状态的,多滚一次只是客户端重连一次,比漏滚一次(新脚本不生效)便宜。
+function Get-RedisHaScriptsDigest {
+	param([Parameter(Mandatory = $true)][string]$ManifestContent)
+
+	$documents = @(($ManifestContent -replace "`r`n", "`n") -split '(?m)^---[ \t]*$')
+	$configMaps = @($documents | Where-Object { $_ -cmatch '(?m)^kind:[ \t]*ConfigMap[ \t]*$' -and $_ -cmatch '(?m)^  name:[ \t]*redis-ha-scripts[ \t]*$' })
+	if ($configMaps.Count -ne 1) {
+		throw "redis-ha.yaml:kind: ConfigMap、metadata.name 为 redis-ha-scripts 的文档应恰好 1 份,实际 $($configMaps.Count) 份"
+	}
+	$sha256 = [System.Security.Cryptography.SHA256]::Create()
+	try {
+		$bytes = $sha256.ComputeHash([System.Text.Encoding]::UTF8.GetBytes($configMaps[0].Trim()))
+	}
+	finally {
+		$sha256.Dispose()
+	}
+	return ((($bytes | ForEach-Object { $_.ToString('x2') }) -join '').Substring(0, 16))
 }
 
 # ─────────────────────────────────────────────────────────────────
@@ -2807,6 +3441,8 @@ function Get-RedisHaScriptsDigest {
 #   Global = $true 的条目是**全局池**服务:只在 infra-up / all-up 的基础设施阶段部署到
 #   $InfraNamespace 一次,zone-up 跳过(见 Apply-GlobalGoSvcManifests)。
 $GoSvcCatalogue = @{
+	mail = @{ ConfigMap = "go-svc-mail-config"; Manifest = "mail.yaml"; Port = 50900; ConfigFlag = "-f"; ConfigFile = "mail.yaml"; ImageName = "mmorpg-mail"; Global = $true; MigrateJob = "mail-migrate.yaml" }
+	rank = @{ ConfigMap = "go-svc-rank-config"; Manifest = "rank.yaml"; Port = 51100; ConfigFlag = "-f"; ConfigFile = "rank.yaml"; ImageName = "mmorpg-rank"; Global = $true; MigrateJob = "rank-migrate.yaml" }
 	db              = @{ ConfigMap = "go-svc-db-config";              Manifest = "db.yaml";              Port = 6000;  ConfigFlag = "-f";              ConfigFile = "db.yaml";                    ImageName = "mmorpg-db" }
 	"data-service"  = @{ ConfigMap = "go-svc-data-service-config";    Manifest = "data-service.yaml";    Port = 9000;  ConfigFlag = "-f";              ConfigFile = "data_service.yaml";             ImageName = "mmorpg-data-service"; MigrateJob = "data-service-migrate.yaml" }
 	login           = @{ ConfigMap = "go-svc-login-config";           Manifest = "login.yaml";           Port = 50000; ConfigFlag = "-loginService";   ConfigFile = "login.yaml";                  ImageName = "mmorpg-login" }
@@ -2858,21 +3494,18 @@ $GoSvcCatalogue = @{
 	# 端口 50300 / metrics 9220 与 go/guild/etc/guild.yaml、go_services.ps1 一致;ImageName 与 go_svc_image.ps1 的 guild 条目一致。
 	# 独占库 mmorpg_guild(D-14):库由 infra-up 的 mysql-init-sql(deploy/mysql-init/00_init_zone_dbs.sql)预建;
 	# 表由 MigrateJob 登记的 guild-migrate Job 建(Apply-OneGoSvc 在 ConfigMap 之后、Deployment 之前跑它)。
-	guild           = @{ ConfigMap = "go-svc-guild-config";           Manifest = "guild.yaml";           Port = 50300; ConfigFlag = "-f";              ConfigFile = "guild.yaml";                    ImageName = "mmorpg-guild"; Global = $true; MigrateJob = "guild-migrate.yaml" }
 	# 邮件 mail(docs/design/mail-system.md;M1d,2026-10-16):邮件按全局唯一的 player_id / 号段 id 存,是全局池(Global),infra namespace 一份。
 	# 客户端只经 gate → client-rpc-router 可达(路由服按 MailNodeService.rpc/ 前缀发现,mail 的 go-zero Etcd.Key 留空,D-13);
 	# `-GateRouterMode 0` 时部署得起来但玩家够不着(与 chat / friend / trade 同口径)。MailAdmin(发件)由运维直连 Service mail:50900。
 	# 端口 50900 / metrics 9240 与 go/mail/etc/mail.yaml、go_services.ps1 一致;ImageName 与 go_svc_image.ps1 的 mail 条目一致。
 	# 独占库 mmorpg_mail(D-14):库由 infra-up 的 mysql-init-sql(deploy/mysql-init/00_init_zone_dbs.sql)预建;
 	# 表由 MigrateJob 登记的 mail-migrate Job 建(Apply-OneGoSvc 在 ConfigMap 之后、Deployment 之前跑它)。
-	# 运维令牌只经 Secret mail-admin-auth 进容器(见 $script:MailAdminTokenSecretName 处的说明)。
-	mail            = @{ ConfigMap = "go-svc-mail-config";            Manifest = "mail.yaml";            Port = 50900; ConfigFlag = "-f";              ConfigFile = "mail.yaml";                     ImageName = "mmorpg-mail"; Global = $true; MigrateJob = "mail-migrate.yaml" }
+	# 运维使用 MAIL_PRODUCER_SECRET_ADMIN 的请求签名，密钥由现役 domain-service-secrets 注入。
 	# 排行榜 rank(docs/design/leaderboard-system.md §5.4;R2b):榜按全局唯一的 player_id 存,是全局池(Global),infra namespace 一份。
 	# 客户端只经 gate → client-rpc-router 可达(路由服按 RankNodeService.rpc/ 前缀发现,rank 的 go-zero Etcd.Key 留空,D-13);
 	# `-GateRouterMode 0` 时部署得起来但玩家够不着(与 chat / friend / mail 同口径)。端口与 go/rank/etc/rank.yaml、go_services.ps1 一致;
-	# ImageName 与 go_svc_image.ps1 的 rank 条目一致。零 MySQL,没有 MigrateJob;榜键只在专用 Redis redis-rank(Apply-Infra 先于全局 Go 服务 apply)。
+	# 现役 rank 使用 SQL 权威代次及 rank-migrate，奖励经 mail 发放；不启用历史 Redis 写榜 runtime。
 	# 写分只经 match 的评分快照:match 的 -MatchRatingSnapshotPublish 默认 0,不打开时 rank 起得来、榜可读但不更新(上线顺序见设计 §12.6)。
-	rank            = @{ ConfigMap = "go-svc-rank-config";            Manifest = "rank.yaml";            Port = 51100; ConfigFlag = "-f";              ConfigFile = "rank.yaml";                     ImageName = "mmorpg-rank"; Global = $true }
 }
 
 # 目录里非全局(= 随 zone 部署)的服务名。两处 zone 循环共用,避免各写一遍过滤条件。
@@ -3080,6 +3713,11 @@ function Apply-KafkaProfileDefaults {
 			if ($KafkaRetentionBytes -le 0) { $script:KafkaRetentionBytes = 134217728 }
 			if ($KafkaSegmentBytes -le 0) { $script:KafkaSegmentBytes = 16777216 }
 			if ([string]::IsNullOrWhiteSpace($KafkaHeapOpts)) { $script:KafkaHeapOpts = "-Xms128m -Xmx256m" }
+			# Kafka 盘预算(S5b,负责人 2026-10-13 拍板):每 zone 256 KiB/s、缓冲目标 1 小时、其它 topic 预留 1 GiB。
+			# 2 个 zone 时 target retention.bytes = 150994944,PVC 取下限 20Gi(Get-KafkaDiskPlan)。
+			if ($KafkaDbTaskDesignBytesPerSec -le 0) { $script:KafkaDbTaskDesignBytesPerSec = 262144 }
+			if ($KafkaDbTaskBufferTargetMs -le 0) { $script:KafkaDbTaskBufferTargetMs = 3600000 }
+			if ($KafkaOtherTopicsReserveGi -le 0) { $script:KafkaOtherTopicsReserveGi = 1 }
 		}
 		"prod-like" {
 			# 1 小时 = 4 × max.poll.interval.ms。
@@ -3090,21 +3728,576 @@ function Apply-KafkaProfileDefaults {
 			if ($KafkaRetentionBytes -le 0) { $script:KafkaRetentionBytes = 536870912 }
 			if ($KafkaSegmentBytes -le 0) { $script:KafkaSegmentBytes = 33554432 }
 			if ([string]::IsNullOrWhiteSpace($KafkaHeapOpts)) { $script:KafkaHeapOpts = "-Xms512m -Xmx1g" }
+			# Kafka 盘预算(S5b):每 zone 1 MiB/s、缓冲目标 2 小时、其它 topic 预留 2 GiB。
+			# 2 个 zone 时 target retention.bytes = 973078528,PVC 40Gi。retention.bytes 按 2 小时算,先于 6 小时的 retention.ms 生效。
+			if ($KafkaDbTaskDesignBytesPerSec -le 0) { $script:KafkaDbTaskDesignBytesPerSec = 1048576 }
+			if ($KafkaDbTaskBufferTargetMs -le 0) { $script:KafkaDbTaskBufferTargetMs = 7200000 }
+			if ($KafkaOtherTopicsReserveGi -le 0) { $script:KafkaOtherTopicsReserveGi = 2 }
 		}
 		default {
 			if ($KafkaBrokerRetentionMs -le 0) { $script:KafkaBrokerRetentionMs = 3600000 }
-			# 24 小时:与 go/db/etc/db.yaml、go/login/etc/login.yaml 的 RetentionMs 默认值
-			# (86400000)对齐。以前这里是 900000,而 db 的 ConfigMap 不写 RetentionMs、
-			# 走 Go 结构体默认的 24h —— login 与 db 都会在启动时对同一个 db_task_zone_<N>
-			# 执行 IncrementalAlterConfigs(kafkautil.EnsureTopics),于是 topic 的保留期
-			# 在 15 分钟和 24 小时之间**随两个服务的重启顺序反复横跳**。对齐之后不再漂。
+			# 24 小时:与 go/db/etc/db.yaml、go/login/etc/login.yaml 的 RetentionMs 默认值(86400000)同值。
+			# login 与 db 都会在启动时对同一个 db_task_zone_<N> 执行 IncrementalAlterConfigs(kafkautil.EnsureTopics),
+			# 两边的值不同,topic 的保留期就**随两个服务的重启顺序反复横跳**。以前这里是 900000、db 的 ConfigMap 又不写
+			# RetentionMs(走 Go 结构体默认的 24h),于是在 15 分钟与 24 小时之间横跳;把本档改成 24h 只消掉了 prod 档的横跳,
+			# dev / prod-like 档照样在 1h / 6h 与 24h 之间来回(B-15)。现在 db 与 login 两个 ConfigMap 的 RetentionMs 与
+			# RetentionBytes 都从 New-GoSvcConfigMapYaml 里同一个 $dbTaskRetentionMs / $dbTaskRetentionBytes 渲染,所有档位两边同值,
+			# 契约测试断言两个 ConfigMap 相等。真要改保留期只改这里(或 -KafkaDbTaskRetentionMs),不要只改一个服务的 yaml。
 			if ($KafkaDbTaskRetentionMs -le 0) { $script:KafkaDbTaskRetentionMs = 86400000 }
 			if ($KafkaRetentionCheckIntervalMs -le 0) { $script:KafkaRetentionCheckIntervalMs = 120000 }
 			if ($KafkaRetentionBytes -le 0) { $script:KafkaRetentionBytes = 536870912 }
 			if ($KafkaSegmentBytes -le 0) { $script:KafkaSegmentBytes = 33554432 }
 			if ([string]::IsNullOrWhiteSpace($KafkaHeapOpts)) { $script:KafkaHeapOpts = "-Xms512m -Xmx1g" }
+			# Kafka 盘预算(S5b):每 zone 3 MiB/s、缓冲目标 2 小时(全局单点交接要求 db_task 缓冲 ≥ 2h)、其它 topic 预留 4 GiB。
+			# 2 个 zone 时 target retention.bytes = 2785017856,PVC 80Gi;retention.bytes 按 2 小时算,先于 24 小时的 retention.ms 生效,
+			# 账本行会就此告警(BufferBelowRetention)。
+			if ($KafkaDbTaskDesignBytesPerSec -le 0) { $script:KafkaDbTaskDesignBytesPerSec = 3145728 }
+			if ($KafkaDbTaskBufferTargetMs -le 0) { $script:KafkaDbTaskBufferTargetMs = 7200000 }
+			if ($KafkaOtherTopicsReserveGi -le 0) { $script:KafkaOtherTopicsReserveGi = 4 }
 		}
 	}
+}
+
+# ─────────────────────────────────────────────────────────────────
+# Kafka 盘预算与 db_task retention.bytes(S5b:docs/design/db-task-delivery-and-retention.md §B;
+# 规格 docs/handoff/godb-pipeline-impl-20261015/S5-dirty-snapshot-retention-spec.md B-10 / B-11 / B-16 / B-17;容量模型 A0-3)
+# ─────────────────────────────────────────────────────────────────
+# 以前 db_task_zone_<id> 的积压上限只有 broker 缺省的每分区 retention.bytes 兜底,与盘的大小无关:zone 一多,
+# Σ 保留上限就超过 PVC(容量模型估算是 PVC 的 2.5~5.8 倍),盘写满时整个 broker 停摆。现在分四步:
+#   1. 目标值 target = roundUp(R × T × 1.2 ÷ P, 64MiB) + segment(Get-KafkaDbTaskRetentionBytesTarget);
+#   2. 盘需求 PVC ≥ 1.3 × Σ(分区数 × (retention.bytes + segment)),另计审计 topic 与其它 topic 预留(Get-KafkaDiskPlan);
+#      每个 broker 按「持有每个分区的一份副本」算(上界,不按 RF ÷ broker 数均摊,理由见 Get-KafkaDiskPlan);
+#   3. 实际盘按 显式 -KafkaStorageGi > 线上(StatefulSet 模板与每块 PVC 实际容量取小)> 公式 取;盘装不下 target 时按盘收缩
+#      retention.bytes 并告警,连 2 个 segment 都放不下才 throw;显式值与线上不同、或大于最小的实际 PVC 时拒绝(Assert-KafkaStorageChangeIsSafe);
+#      zone 数 = zones 配置 ∪ -ZoneId,非 DryRun 时再并入线上不在配置里的 zone namespace;
+#   4. 收缩后的值同时渲染进 db 与 login 的 ConfigMap(Kafka.RetentionBytes),两个服务启动时在 topic 级设置它。
+# 纯函数(Get-KafkaDiskBudgetConstants / Get-KafkaDbTaskRetentionBytesTarget / Get-KafkaDiskPlan / Get-KafkaStorageChangeVerdict)
+# 不读脚本参数、不碰集群,契约测试按 AST 抽出来直接喂值;胶水函数(Get-LiveKafkaStorageGi / Get-LiveKafkaPvcMinGi /
+# Get-LiveZoneNamespaceNames / Resolve-KafkaDiskPlan / Write-KafkaDiskLedger / Assert-KafkaStorageChangeIsSafe)由写路径入口调用。
+
+# 盘预算公式里的常数只写在这里一处,两个纯函数共用(契约测试与它们一起抽出)。
+function Get-KafkaDiskBudgetConstants {
+	return [pscustomobject]@{
+		# 分区间的倾斜余量:key = player_id 的哈希不会把字节均分到 P 个分区上。
+		SkewFactor              = [decimal]1.2
+		# 盘的余量:retention 按 segment 删除且有检查间隔滞后,索引文件与 KRaft 元数据日志也在这块盘上。
+		Headroom                = [decimal]1.3
+		# retention.bytes 的取整粒度 64MiB。
+		RetentionGranuleBytes   = [long]67108864
+		# PVC 的下限与取整步长(Gi)。
+		MinStorageGi            = 20
+		StorageStepGi           = 10
+		# 每分区至少要能留住的 segment 数:少于 2 个时只剩活跃 segment,关闭的 segment 一出现就被删,缓冲约等于零。
+		MinSegmentsPerPartition = 2
+	}
+}
+
+<#
+.SYNOPSIS
+	db_task 每分区 retention.bytes 的目标值(纯函数):roundUp(R × T × 1.2 ÷ P, 64MiB) + SegmentBytes,T = min(缓冲目标, retention.ms)。
+
+.DESCRIPTION
+	R × T 是一个 zone 按设计速率在 T 内写进 db_task 的字节数;× 1.2 是分区间倾斜余量,÷ P 摊到每个分区。
+	再加一个 segment:retention 只删整个已关闭的 segment,不加的话实际能留住的比目标少最多一个 segment。
+	T 取 min:retention.bytes 留得比 retention.ms 还久没有意义(时间先到先删),只会白占盘。
+	输入任一项不为正即 throw(fail-closed:不替你猜一个保留量)。
+#>
+function Get-KafkaDbTaskRetentionBytesTarget {
+	param(
+		[Parameter(Mandatory = $true)][long]$DesignBytesPerSec,
+		[Parameter(Mandatory = $true)][long]$BufferTargetMs,
+		[Parameter(Mandatory = $true)][long]$RetentionMs,
+		[Parameter(Mandatory = $true)][int]$Partitions,
+		[Parameter(Mandatory = $true)][long]$SegmentBytes
+	)
+
+	if ($DesignBytesPerSec -le 0 -or $BufferTargetMs -le 0 -or $RetentionMs -le 0 -or $Partitions -le 0 -or $SegmentBytes -le 0) {
+		throw "db_task retention.bytes 目标值的输入必须全部为正(design_bytes_per_sec=$DesignBytesPerSec buffer_target_ms=$BufferTargetMs retention_ms=$RetentionMs partitions=$Partitions segment_bytes=$SegmentBytes)。fail-closed:不替你猜一个保留量。"
+	}
+	$c = Get-KafkaDiskBudgetConstants
+	$bufferMs = [Math]::Min($BufferTargetMs, $RetentionMs)
+	# decimal 运算:1.2 用二进制浮点表示不精确,恰好落在 64MiB 整数倍上的值会被 Ceiling 多进一格。
+	$perPartition = [decimal]$DesignBytesPerSec * [decimal]$bufferMs / [decimal]1000 * $c.SkewFactor / [decimal]$Partitions
+	$granule = [decimal]$c.RetentionGranuleBytes
+	return [long]([Math]::Ceiling($perPartition / $granule) * $granule) + $SegmentBytes
+}
+
+<#
+.SYNOPSIS
+	Kafka 盘预算(纯函数):按公式算每个 broker 需要的 PVC,再按实际用的盘把 db_task 的 retention.bytes 收缩到放得下。
+
+.DESCRIPTION
+	单位是字节,Gi = 1073741824。记 Z = zone 数、P = 每 zone 的 db_task 分区数、seg = SegmentBytes、
+	A = 审计 topic 分区数之和(没有自己的 retention.bytes,按 broker 缺省 BrokerRetentionBytes 记)、reserve = 其它 topic 预留(GiB):
+	  需求    required    = 1.3 × (Z × P × (target + seg) + A × (BrokerRetentionBytes + seg) + reserve × Gi)
+	          RequiredGi  = max(20, ceil(required ÷ Gi ÷ 10) × 10)
+	  实际盘  EffectiveGi = ExplicitStorageGi(> 0)
+	                      > 线上 StatefulSet 在:min(LiveStorageGi, LivePvcGi)(LivePvcGi 为 $null 时取 LiveStorageGi)
+	                      > 线上 StatefulSet 不在但 PVC 在:LivePvcGi
+	                      > RequiredGi;Source 依次为 explicit / live / live-pvc / computed
+	  可容纳  capacity    = (EffectiveGi × Gi ÷ 1.3 − A × (BrokerRetentionBytes + seg) − reserve × Gi) ÷ (Z × P) − seg
+	          (上面需求式对 retention.bytes 的反解:每分区不超过它,Σ 保留上限就不超过 PVC ÷ 1.3)
+	每个 broker 的份额取上界「每个分区各持有一份副本」,不按 RF ÷ Brokers 均摊:一个 broker 对同一分区至多持有一份副本
+	(RF ≤ Brokers),所以它的落盘不超过单份数据的总量;RF ÷ Brokers 只在副本已在各 broker 间均分时成立。3 → N 扩容是放行的
+	(Assert-KafkaTopologyChangeIsSafe),而新 broker 不会自动接手已有分区,kafka-reassign-partitions 之前老 broker 仍持有全部
+	分区的副本:按均摊算会把收缩后的 retention.bytes 抬高 N/3 倍、写爆老 broker(B-17)。单 broker / RF 1 与 3 broker / RF 3
+	结果与均摊相同,只有 ≥ 4 个 broker 时偏保守。Brokers / ReplicationFactor 仍校验并带回(账本行打印)。
+	  生效值  target ≤ capacity 时 = target(FitLimited = false);否则 = floor(capacity, 64MiB)(FitLimited = true,只告警不阻断)
+	  floor(capacity, 64MiB) < 2 × seg 时 throw:每分区连 2 个 segment 都放不下。
+	  ImpliedBufferSec = P × (生效值 − seg) ÷ (R × 1.2):按设计速率估算的实际缓冲秒数(估算,不是承诺)。
+	只在放不下时才按 64MiB 取整:target 本身是「64MiB 整数倍 + seg」,一律取整会把按公式算出的盘也截掉一个粒度
+	(prod 2 个 zone:2785017856 → 2751463424),与缺省值表对不上。
+	LiveStorageGi = 线上 StatefulSet kafka 的 volumeClaimTemplates 大小,$null = 没有这个 StatefulSet(全新集群、DryRun,
+	或扩盘 runbook 的 --cascade=orphan 之后);LivePvcGi = 线上各块 kafka-data-kafka-<i> 实际容量的最小值,$null = 一块都没有。
+	只看模板会按一块并不存在的盘算(扩盘 runbook 第 ② 步某块没扩成、停在 FileSystemResizePending,或 orphan 之后不带
+	-KafkaStorageGi 跑了公式值),所以实际盘取两者中小的那个。
+	StorageTemplateGi 是渲染进 kafka.yaml volumeClaimTemplates 的值:StatefulSet 在时必须等于线上模板(模板不可变,
+	不同即 apply 被拒),哪怕它大于实际 PVC;其余情况等于 EffectiveGi。
+	返回 [ordered] 哈希表:除结果外原样带回各项输入,账本行与 Assert-KafkaStorageChangeIsSafe 只读这一份。
+#>
+function Get-KafkaDiskPlan {
+	param(
+		[Parameter(Mandatory = $true)][int]$Brokers,
+		[Parameter(Mandatory = $true)][int]$ReplicationFactor,
+		[Parameter(Mandatory = $true)][int]$ZoneCount,
+		[Parameter(Mandatory = $true)][int]$DbTaskPartitions,
+		[Parameter(Mandatory = $true)][long]$DbTaskRetentionBytesTarget,
+		[Parameter(Mandatory = $true)][long]$SegmentBytes,
+		[Parameter(Mandatory = $true)][long]$BrokerRetentionBytes,
+		[Parameter(Mandatory = $true)][int]$AuditPartitions,
+		[Parameter(Mandatory = $true)][int]$OtherTopicsReserveGi,
+		[AllowNull()]$LiveStorageGi = $null,
+		[AllowNull()]$LivePvcGi = $null,
+		[int]$ExplicitStorageGi = 0,
+		[Parameter(Mandatory = $true)][long]$DesignBytesPerSec,
+		[Parameter(Mandatory = $true)][long]$DbTaskRetentionMs
+	)
+
+	if ($Brokers -lt 1 -or $ReplicationFactor -lt 1 -or $ReplicationFactor -gt $Brokers -or $ZoneCount -lt 1 -or $DbTaskPartitions -lt 1 -or
+		$DbTaskRetentionBytesTarget -le 0 -or $SegmentBytes -le 0 -or $BrokerRetentionBytes -le 0 -or $AuditPartitions -lt 0 -or
+		$OtherTopicsReserveGi -lt 0 -or $ExplicitStorageGi -lt 0 -or $DesignBytesPerSec -le 0 -or $DbTaskRetentionMs -le 0) {
+		throw "Kafka 盘预算的输入不合法(brokers=$Brokers rf=$ReplicationFactor zones=$ZoneCount db_task_partitions=$DbTaskPartitions target_retention_bytes=$DbTaskRetentionBytesTarget segment_bytes=$SegmentBytes broker_retention_bytes=$BrokerRetentionBytes audit_partitions=$AuditPartitions other_topics_reserve_gib=$OtherTopicsReserveGi explicit_gib=$ExplicitStorageGi design_bytes_per_sec=$DesignBytesPerSec db_task_retention_ms=$DbTaskRetentionMs)。fail-closed:不替你猜一块盘。"
+	}
+	$live = $null
+	if ($null -ne $LiveStorageGi) {
+		$live = [int]$LiveStorageGi
+		if ($live -le 0) {
+			throw "线上 Kafka PVC 大小 '$LiveStorageGi' 不是正数。fail-closed:不知道线上盘多大,就算不出不会写爆盘的 retention.bytes。"
+		}
+	}
+	$livePvc = $null
+	if ($null -ne $LivePvcGi) {
+		$livePvc = [int]$LivePvcGi
+		if ($livePvc -le 0) {
+			throw "线上 Kafka PVC 的最小实际容量 '$LivePvcGi' 不是正数。fail-closed:不知道线上盘多大,就算不出不会写爆盘的 retention.bytes。"
+		}
+	}
+
+	$c = Get-KafkaDiskBudgetConstants
+	$gib = [decimal]1073741824
+	$seg = [decimal]$SegmentBytes
+	$auditBytes = [decimal]$AuditPartitions * ([decimal]$BrokerRetentionBytes + $seg)
+	$reserveBytes = [decimal]$OtherTopicsReserveGi * $gib
+	$dbTaskPartitionsTotal = [decimal]$ZoneCount * [decimal]$DbTaskPartitions
+	# 单份数据 → 每个 broker 的落盘:取上界「每个分区各一份副本」(不乘 RF ÷ broker 数,理由见 DESCRIPTION),再乘 1.3 的余量。
+	$perBrokerFactor = $c.Headroom
+	$requiredBytes = $perBrokerFactor * ($dbTaskPartitionsTotal * ([decimal]$DbTaskRetentionBytesTarget + $seg) + $auditBytes + $reserveBytes)
+	$step = [decimal]$c.StorageStepGi
+	$requiredGi = [int]([Math]::Max([decimal]$c.MinStorageGi, [Math]::Ceiling($requiredBytes / $gib / $step) * $step))
+
+	if ($ExplicitStorageGi -gt 0) {
+		# 显式值与线上不符(含大于最小的实际 PVC)由 Assert-KafkaStorageChangeIsSafe 拒绝,早于任何写操作。
+		$effectiveGi = $ExplicitStorageGi
+		$templateGi = $ExplicitStorageGi
+		$source = 'explicit'
+	}
+	elseif ($null -ne $live) {
+		$effectiveGi = if ($null -ne $livePvc) { [Math]::Min($live, $livePvc) } else { $live }
+		$templateGi = $live
+		$source = 'live'
+	}
+	elseif ($null -ne $livePvc) {
+		$effectiveGi = $livePvc
+		$templateGi = $livePvc
+		$source = 'live-pvc'
+	}
+	else {
+		$effectiveGi = $requiredGi
+		$templateGi = $requiredGi
+		$source = 'computed'
+	}
+
+	$granule = [decimal]$c.RetentionGranuleBytes
+	$capacity = ([decimal]$effectiveGi * $gib / $perBrokerFactor - $auditBytes - $reserveBytes) / $dbTaskPartitionsTotal - $seg
+	$fit = [long]([Math]::Floor($capacity / $granule) * $granule)
+	$minBytes = [long]$c.MinSegmentsPerPartition * $SegmentBytes
+	if ($fit -lt $minBytes) {
+		throw ("Kafka 盘预算:每个 broker ${effectiveGi}Gi(来源 $source)放不下 db_task —— 扣掉审计 topic($AuditPartitions 个分区)与其它 topic 预留(${OtherTopicsReserveGi}GiB)之后," +
+			"$ZoneCount 个 zone × $DbTaskPartitions 个分区每分区只能分到 $([Math]::Max([long]0, $fit)) 字节,连 2 个 segment($minBytes 字节)都放不下" +
+			"(RF=$ReplicationFactor,$Brokers 个 broker,余量 1.3)。按目标 retention.bytes=$DbTaskRetentionBytesTarget 需要每个 broker 至少 ${requiredGi}Gi:" +
+			"按 deploy/k8s/README.md「Kafka 磁盘预算与 db_task retention.bytes」的扩盘 runbook 扩到 ${requiredGi}Gi 后带 -KafkaStorageGi $requiredGi 重跑;" +
+			"或减少 zone、调小 -KafkaOtherTopicsReserveGi。尚未做任何写操作。")
+	}
+	$fitLimited = [decimal]$DbTaskRetentionBytesTarget -gt $capacity
+	$effectiveRetentionBytes = if ($fitLimited) { $fit } else { $DbTaskRetentionBytesTarget }
+	$impliedBufferSec = [Math]::Round([double]([decimal]$DbTaskPartitions * ([decimal]$effectiveRetentionBytes - $seg) / ([decimal]$DesignBytesPerSec * $c.SkewFactor)), 1)
+
+	return [ordered]@{
+		RequiredGi           = $requiredGi
+		EffectiveGi          = [int]$effectiveGi
+		StorageTemplateGi    = [int]$templateGi
+		Source               = $source
+		DbTaskRetentionBytes = [long]$effectiveRetentionBytes
+		TargetRetentionBytes = $DbTaskRetentionBytesTarget
+		FitLimited           = [bool]$fitLimited
+		ImpliedBufferSec     = $impliedBufferSec
+		ZoneCount            = $ZoneCount
+		Brokers              = $Brokers
+		ReplicationFactor    = $ReplicationFactor
+		DbTaskPartitions     = $DbTaskPartitions
+		SegmentBytes         = $SegmentBytes
+		DesignBytesPerSec    = $DesignBytesPerSec
+		DbTaskRetentionMs    = $DbTaskRetentionMs
+		AuditPartitions      = $AuditPartitions
+		BrokerRetentionBytes = $BrokerRetentionBytes
+		OtherTopicsReserveGi = $OtherTopicsReserveGi
+		LiveStorageGi        = $live
+		LivePvcGi            = $livePvc
+		ExplicitStorageGi    = $ExplicitStorageGi
+	}
+}
+
+# 线上盘 → 显式 -KafkaStorageGi,这次算哪一类(纯函数,契约测试直接喂值)。LiveStorageGi = StatefulSet kafka 的模板大小
+# ($null = 没有 StatefulSet),LivePvcGi = 各块 kafka-data-kafka-<i> 实际容量的最小值($null = 一块都没有):
+#   absent            两者都没有(全新集群、DryRun):显式值或公式值直接用
+#   auto              没给 -KafkaStorageGi:盘取 min(模板, 最小 PVC),渲染值 = 线上模板(StatefulSet 不在时 = 最小 PVC),apply 不冲突
+#   unchanged         显式值 = 线上模板(StatefulSet 在时),且不大于最小 PVC;StatefulSet 不在时显式值 = 最小 PVC
+#   expand-refused    StatefulSet 在、显式值 > 模板:volumeClaimTemplates 不可变,直接 apply 会被拒,改模板也不会改已有 PVC;按 runbook 先扩 PVC
+#   shrink-refused    显式值 < 模板(StatefulSet 在),或 StatefulSet 不在、显式值 < 最小 PVC:PVC 不能缩
+#   pvc-not-expanded  显式值 > 最小 PVC:有一块盘还没扩到这么大(扩盘 runbook 第 ② 步没成功、停在 FileSystemResizePending,
+#                     或 --cascade=orphan 之后按一块不存在的盘重跑),按它算 retention.bytes 会写爆那块盘(B-17)
+# 先判模板再判 PVC:StatefulSet 在时模板不等于显式值,apply 本身就会被拒。
+function Get-KafkaStorageChangeVerdict {
+	param(
+		[AllowNull()]$LiveStorageGi,
+		[AllowNull()]$LivePvcGi = $null,
+		[int]$ExplicitStorageGi = 0
+	)
+
+	if ($null -eq $LiveStorageGi -and $null -eq $LivePvcGi) { return 'absent' }
+	if ($ExplicitStorageGi -le 0) { return 'auto' }
+	if ($null -ne $LiveStorageGi) {
+		$template = [int]$LiveStorageGi
+		if ($ExplicitStorageGi -gt $template) { return 'expand-refused' }
+		if ($ExplicitStorageGi -lt $template) { return 'shrink-refused' }
+	}
+	if ($null -ne $LivePvcGi) {
+		$pvc = [int]$LivePvcGi
+		if ($ExplicitStorageGi -gt $pvc) { return 'pvc-not-expanded' }
+		if ($null -eq $LiveStorageGi -and $ExplicitStorageGi -lt $pvc) { return 'shrink-refused' }
+	}
+	return 'unchanged'
+}
+
+# 线上 StatefulSet kafka 的 PVC 模板大小(Gi);不存在返回 $null。DryRun 不连集群,一律当不存在。
+# 只认 <整数>Gi:别的单位(Ti / G / Mi …)、查询失败、StatefulSet 在却读不出大小,一律 throw(fail-closed)——
+# 不知道线上盘多大,就算不出不会写爆盘的 retention.bytes。名字与大小一起取,两种「空」分得开:
+# StatefulSet 不存在时整行为空(--ignore-not-found),存在却没有 volumeClaimTemplates 时只剩「kafka:」。
+function Get-LiveKafkaStorageGi {
+	if ($DryRun) { return $null }
+
+	$baseArgs = Build-KubectlBaseArgs
+	$allArgs = @()
+	$allArgs += $baseArgs
+	$allArgs += @("get", "statefulset", "kafka", "-n", $InfraNamespace, "--ignore-not-found", "-o", "jsonpath={.metadata.name}:{.spec.volumeClaimTemplates[0].spec.resources.requests.storage}")
+	$out = & kubectl @allArgs
+	if ($LASTEXITCODE -ne 0) {
+		throw "查询线上 StatefulSet kafka 的 PVC 大小失败(namespace=$InfraNamespace)。fail-closed:不知道线上盘多大,就算不出不会写爆盘的 db_task retention.bytes,拒绝部署;尚未做任何写操作。"
+	}
+	$text = ([string]($out | Out-String)).Trim()
+	if ([string]::IsNullOrEmpty($text)) { return $null }
+	if ($text -notmatch '^kafka:(\d+)Gi$') {
+		throw "线上 StatefulSet kafka 的 volumeClaimTemplates[0] 读出来是 '$text'(namespace=$InfraNamespace),不是「kafka:<整数>Gi」。fail-closed:只认 Gi,别的单位不替你换算;按 deploy/k8s/README.md「Kafka 磁盘预算与 db_task retention.bytes」核对线上 PVC 后再部署。"
+	}
+	return [int]$Matches[1]
+}
+
+# 线上各块 Kafka PVC(名字恰好是 kafka-data-kafka-<序号>,同 namespace 里别的 PVC 不算)实际容量的最小值(Gi);一块都没有返回 $null。
+# DryRun 不连集群,一律当没有。模板(Get-LiveKafkaStorageGi)只说明「新建的 PVC 会申请多大」,说明不了已有的盘多大:
+# 扩盘 runbook 第 ② 步某块没扩成或停在 FileSystemResizePending、第 ③ 步 --cascade=orphan 之后 StatefulSet 不在,都只能看 PVC。
+# 读 status.capacity(实际分到的盘;需要文件系统扩容的驱动要扩完才更新它),不读 spec.resources.requests(patch 之后立刻就变,
+# 扩容没做完时比实际盘大)。还没绑定的 PVC 没有 status.capacity(custom-columns 印成 <none>),取它的 requests:绑定时 PV 至少这么大,
+# 而且这块盘上还没有任何数据 —— 不这样处理的话,一个调度不上的新 broker 就会把所有 zone 的 zone-up 拦下。
+# 只认 <整数>Gi;别的单位、查询失败、行格式不对一律 throw(fail-closed)。custom-columns 不用 jsonpath 的 {"\n"}:
+# 内嵌双引号经 Windows 原生命令传参容易被拆坏。
+function Get-LiveKafkaPvcMinGi {
+	if ($DryRun) { return $null }
+
+	$baseArgs = Build-KubectlBaseArgs
+	$allArgs = @()
+	$allArgs += $baseArgs
+	$allArgs += @("get", "pvc", "-n", $InfraNamespace, "--no-headers", "-o", "custom-columns=NAME:.metadata.name,CAPACITY:.status.capacity.storage,REQUEST:.spec.resources.requests.storage")
+	$out = & kubectl @allArgs
+	if ($LASTEXITCODE -ne 0) {
+		throw "查询线上 Kafka PVC 的实际容量失败(namespace=$InfraNamespace)。fail-closed:不知道每块盘实际多大,就算不出不会写爆盘的 db_task retention.bytes,拒绝部署;尚未做任何写操作。"
+	}
+	$min = $null
+	foreach ($line in (([string]($out | Out-String)) -split "`r?`n")) {
+		$trimmed = $line.Trim()
+		if ([string]::IsNullOrEmpty($trimmed)) { continue }
+		$fields = @($trimmed -split '\s+')
+		if ($fields.Count -ne 3) {
+			throw "线上 PVC 列表(namespace=$InfraNamespace)有一行不是「名字 容量 申请量」三列:'$trimmed'。fail-closed:读不懂就不猜线上盘多大;尚未做任何写操作。"
+		}
+		if ($fields[0] -cnotmatch '^kafka-data-kafka-\d+$') { continue }
+		$size = if ($fields[1] -ceq '<none>') { $fields[2] } else { $fields[1] }
+		if ($size -cnotmatch '^(\d+)Gi$') {
+			throw "线上 PVC $($fields[0])(namespace=$InfraNamespace)的容量读出来是 '$size'(status.capacity='$($fields[1])' requests='$($fields[2])'),不是「<整数>Gi」。fail-closed:只认 Gi,别的单位不替你换算;按 deploy/k8s/README.md「Kafka 磁盘预算与 db_task retention.bytes」核对线上 PVC 后再部署;尚未做任何写操作。"
+		}
+		$gi = [int]$Matches[1]
+		if ($null -eq $min -or $gi -lt $min) { $min = $gi }
+	}
+	return $min
+}
+
+# 线上已有的 zone namespace(名字以「-NamespacePrefix-」开头,不含 -InfraNamespace),返回去掉前缀后的 zone 名数组(可能为空);
+# DryRun 不连集群,返回 $null(= 没读)。盘预算的 Σ 覆盖共用这套 Kafka 的全部 zone,只数 zones 配置会漏掉用 -ZoneId 单独部署、
+# 没登记进配置的 zone(或者这次换了 -ZonesConfigPath、配置缺席):漏一个 zone,按盘算出的每分区可容纳值就偏大。
+# 只认 namespace,不看里面有没有 go/db:没有 go/db 的 zone 多算一个只会让预算偏保守。zone-down 删 namespace 之后,
+# 它的 db_task topic 仍按旧的 retention.bytes 留着数据直到 retention.ms 到期,这里数不到(README 记为残余风险)。
+# 查询失败一律 throw:读不到不等于没有。
+function Get-LiveZoneNamespaceNames {
+	if ($DryRun) { return $null }
+
+	$baseArgs = Build-KubectlBaseArgs
+	$allArgs = @()
+	$allArgs += $baseArgs
+	$allArgs += @("get", "namespace", "--no-headers", "-o", "custom-columns=NAME:.metadata.name")
+	$out = & kubectl @allArgs
+	if ($LASTEXITCODE -ne 0) {
+		throw "列出线上 namespace 失败(数 zone namespace 用,前缀 $NamespacePrefix-)。fail-closed:数不清共用这套 Kafka 的 zone,就算不出不会写爆盘的 db_task retention.bytes,拒绝部署;尚未做任何写操作。"
+	}
+	$prefix = "$NamespacePrefix-"
+	$names = [System.Collections.Generic.List[string]]::new()
+	foreach ($line in (([string]($out | Out-String)) -split "`r?`n")) {
+		$trimmed = $line.Trim()
+		if ([string]::IsNullOrEmpty($trimmed)) { continue }
+		if ($trimmed -ceq $InfraNamespace) { continue }
+		if (-not $trimmed.StartsWith($prefix, [System.StringComparison]::Ordinal) -or $trimmed.Length -le $prefix.Length) { continue }
+		$names.Add($trimmed.Substring($prefix.Length))
+	}
+	# 逗号:空数组也原样交给调用方($null 才表示没读)。
+	return , ([string[]]$names.ToArray())
+}
+
+# 写路径入口算好的盘预算(Resolve-KafkaDiskPlan)。kafka.yaml 的 PVC 大小与 db / login ConfigMap 的 RetentionBytes 都读它。
+$script:KafkaDiskPlan = $null
+
+<#
+.SYNOPSIS
+	按本次部署的参数与仓库权威配置解出 Kafka 盘预算,缓存进 $script:KafkaDiskPlan 并返回。
+
+.DESCRIPTION
+	写路径入口(zone-up / all-up / infra-up)调用一次;Apply-Infra 的 kafka.yaml 分支与 db / login 的 ConfigMap 生成器读缓存,
+	缓存为空时现场再算一次(同一套输入,结果相同;算不出即 throw,不回落任何常数)。输入:
+	  - broker 数 / 副本数:Get-KafkaTopology(与 kafka.yaml、注入给 Go 服务的 KAFKA_TOPIC_REPLICATION_FACTOR 同源);
+	  - zone 数:zones 配置 ∪ -ZoneId,与 Get-InfraZoneIds 同一口径(共用这套 Kafka 的全部 zone;infra-up 时 -ZoneId 不在 zones 配置里
+	    也并入,多算一个 zone 只会让盘预算偏保守)。不调 Get-InfraZoneIds:它在 zones 配置缺席时那条 WARNING 讲的是 mysql-init-sql
+	    预建库,出现在 zone-up 的输出里是误导(同 Write-MysqlConnectionLedger);缺席时只数 -ZoneId,账本行尾标 zones_config=missing,
+	    并由 Write-KafkaDiskLedger 打 [KafkaDiskLedger]ZonesConfigMissing: 告警;-ReleaseProfile 不是 dev 时直接拒绝(Z 不可信)。
+	    非 DryRun 时再并入线上的 zone namespace(Get-LiveZoneNamespaceNames):名字既不在 zones 配置里、也不是 -ZoneName 的,
+	    每个各算一个 zone(Σ 约束覆盖的是线上真实存在的 zone,只数本次调用的配置会少算)。-ZoneName 与 -ZoneId 成对,
+	    -ZoneId 已经在集合里,同名 namespace 不重复算;
+	  - db_task 分区数:go/db/etc/db.yaml 的 ServerConfig.Kafka.PartitionCnt;审计分区数:go/data_service/etc/data_service.yaml 的
+	    Kafka.TransactionLogPartitions + Kafka.SnapshotPartitions(与 kafka-topic-init 预建的同一对值);
+	  - 线上盘:Get-LiveKafkaStorageGi(StatefulSet 模板)与 Get-LiveKafkaPvcMinGi(各块 PVC 实际容量的最小值),DryRun 都不查集群。
+	-KafkaDbTaskRetentionBytes 为负,或显式给了却不到 2 个 segment,都在这里拒绝。
+#>
+function Resolve-KafkaDiskPlan {
+	if ($KafkaDbTaskRetentionBytes -lt 0) {
+		throw "-KafkaDbTaskRetentionBytes 必须 ≥ 0(实际 $KafkaDbTaskRetentionBytes):0 = 按档位的设计字节率与缓冲目标算,>0 = 显式的每分区目标值。Kafka 里 -1 表示不限,会让磁盘无界;go/db 与 go/login 启动时同样拒绝负值。尚未做任何写操作。"
+	}
+	$minBytes = [long](Get-KafkaDiskBudgetConstants).MinSegmentsPerPartition * [long]$KafkaSegmentBytes
+	if ($KafkaDbTaskRetentionBytes -gt 0 -and $KafkaDbTaskRetentionBytes -lt $minBytes) {
+		throw "-KafkaDbTaskRetentionBytes $KafkaDbTaskRetentionBytes 不到 2 个 segment($minBytes 字节,segment_bytes=$KafkaSegmentBytes):retention 只删整个已关闭的 segment,每分区只剩活跃 segment 时缓冲约等于零。拒绝部署;尚未做任何写操作。"
+	}
+
+	$topology = Get-KafkaTopology
+
+	$zoneIds = [System.Collections.Generic.HashSet[int]]::new()
+	$null = $zoneIds.Add([int]$ZoneId)
+	# 已经由 ID 计入的 zone 名:zones 配置里的名字,加上与 -ZoneId 成对的 -ZoneName。比较不区分大小写:K8s 的 namespace 名只能是小写,
+	# zones 配置里写成大写的同一个 zone 不该被多算一次。
+	$knownZoneNames = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::OrdinalIgnoreCase)
+	$null = $knownZoneNames.Add([string]$ZoneName)
+	$zonesConfigMissing = $true
+	$zonesPath = Resolve-ZonesConfigPath
+	# 与 Get-ZonesFromJson / Get-InfraZoneIds 用同一个判据(Test-Path 不带 -LiteralPath)。zones 配置在却解析不了照常 throw。
+	if (Test-Path $zonesPath) {
+		$zonesConfigMissing = $false
+		foreach ($zone in (Get-ZonesFromJson -Path $zonesPath)) {
+			$null = $zoneIds.Add([int]$zone.zoneId)
+			$null = $knownZoneNames.Add([string]$zone.name)
+		}
+	}
+	if ($zonesConfigMissing -and $ReleaseProfile -ne 'dev') {
+		throw ("zones 配置缺席($zonesPath),-ReleaseProfile $ReleaseProfile 拒绝部署:Kafka 盘预算的 zone 数只能数 -ZoneId 与线上已有的 zone namespace," +
+			"还没部署、或已 zone-down 但 db_task topic 仍留着数据的 zone 都数不到,Z 不可信,db_task 的 retention.bytes 可能超量、写爆 Kafka 的盘(B-17)。" +
+			"用 -ZonesConfigPath 指向登记了共用这套 Kafka 的全部 zone 的配置再部署;尚未做任何写操作。")
+	}
+	# 线上不在配置里的 zone namespace,各算一个 zone。$null = DryRun 没读(账本行印 unread)。
+	$liveExtraZoneNames = $null
+	$liveZoneNames = Get-LiveZoneNamespaceNames
+	if ($null -ne $liveZoneNames) {
+		$liveExtraZoneNames = @($liveZoneNames | Where-Object { -not $knownZoneNames.Contains([string]$_) } | Sort-Object -Unique)
+	}
+	# 不写 @($liveExtraZoneNames).Count:@($null) 是一个元素的数组,DryRun 时会凭空多算一个 zone。
+	$liveExtraZoneCount = if ($null -eq $liveExtraZoneNames) { 0 } else { $liveExtraZoneNames.Count }
+	$zoneCount = $zoneIds.Count + $liveExtraZoneCount
+
+	$dbYaml = 'go/db/etc/db.yaml'
+	$dsYaml = 'go/data_service/etc/data_service.yaml'
+	$counts = @{}
+	foreach ($item in @(
+		@{ Name = 'DbTaskPartitions'; Path = $dbYaml; Key = 'ServerConfig.Kafka.PartitionCnt' }
+		@{ Name = 'TransactionLogPartitions'; Path = $dsYaml; Key = 'Kafka.TransactionLogPartitions' }
+		@{ Name = 'SnapshotPartitions'; Path = $dsYaml; Key = 'Kafka.SnapshotPartitions' }
+	)) {
+		$text = Get-AuthoritativeScalar -RelativePath $item.Path -KeyPath $item.Key
+		$n = 0
+		if (-not [int]::TryParse([string]$text, [ref]$n) -or $n -le 0) {
+			throw "$($item.Path) 的 $($item.Key)='$text' 不是正整数,算不出 Kafka 盘预算,拒绝部署(fail-closed);尚未做任何写操作。"
+		}
+		$counts[$item.Name] = $n
+	}
+
+	$target = [long]$KafkaDbTaskRetentionBytes
+	if ($target -eq 0) {
+		$target = Get-KafkaDbTaskRetentionBytesTarget -DesignBytesPerSec $KafkaDbTaskDesignBytesPerSec -BufferTargetMs $KafkaDbTaskBufferTargetMs `
+			-RetentionMs $KafkaDbTaskRetentionMs -Partitions $counts['DbTaskPartitions'] -SegmentBytes $KafkaSegmentBytes
+	}
+
+	$plan = Get-KafkaDiskPlan -Brokers $topology.Brokers -ReplicationFactor $topology.ReplicationFactor -ZoneCount $zoneCount `
+		-DbTaskPartitions $counts['DbTaskPartitions'] -DbTaskRetentionBytesTarget $target -SegmentBytes $KafkaSegmentBytes `
+		-BrokerRetentionBytes $KafkaRetentionBytes -AuditPartitions ($counts['TransactionLogPartitions'] + $counts['SnapshotPartitions']) `
+		-OtherTopicsReserveGi $KafkaOtherTopicsReserveGi -LiveStorageGi (Get-LiveKafkaStorageGi) -LivePvcGi (Get-LiveKafkaPvcMinGi) `
+		-ExplicitStorageGi $KafkaStorageGi -DesignBytesPerSec $KafkaDbTaskDesignBytesPerSec -DbTaskRetentionMs $KafkaDbTaskRetentionMs
+	$plan['ZonesConfigMissing'] = $zonesConfigMissing
+	$plan['ZonesConfigPath'] = [string]$zonesPath
+	$plan['ZoneIdSelf'] = [int]$ZoneId
+	# $null = DryRun 没读线上;否则是线上不在 zones 配置里(也不是 -ZoneName)的 zone 名,可能为空数组。
+	$plan['LiveExtraZoneNames'] = $liveExtraZoneNames
+	$script:KafkaDiskPlan = $plan
+	return $plan
+}
+
+<#
+.SYNOPSIS
+	写路径打印 Kafka 盘预算一行(以「Kafka disk ledger:」开头);盘装不下目标保留量、或按设计速率的缓冲短于 retention.ms 时告警,不阻断。
+
+.DESCRIPTION
+	与 MySQL / Redis 连接总账同一纪律:打印用英文,告警开头那一段([KafkaDiskLedger]FitLimited: / [KafkaDiskLedger]BufferBelowRetention: /
+	[KafkaDiskLedger]ZonesConfigMissing: / [KafkaDiskLedger]LiveZonesNotInConfig:)不留空格,ConsoleHost 按窗口宽度折行时契约测试只断这一段。
+	改字段或措辞要同步改契约测试与 deploy/k8s/README.md 的「Kafka 磁盘预算」一节。
+	implied_db_task_buffer_min 是按设计速率估算的缓冲,回档的 TargetTime 不能早于「现在 − 这个时长」(B-18),但它不是承诺。
+	live_sts_gib / live_pvc_min_gib 是线上 StatefulSet 模板与最小实际 PVC(none = 没有或 DryRun 没读),live_extra_zones 是线上
+	不在 zones 配置里的 zone namespace 数(unread = DryRun 没读),pvc_gib 由前两者取小、zones 已含后者。
+#>
+function Write-KafkaDiskLedger {
+	param([Parameter(Mandatory = $true)]$Plan)
+
+	$impliedMin = [long][Math]::Floor([double]$Plan.ImpliedBufferSec / 60)
+	$retentionMin = [long][Math]::Floor([double]$Plan.DbTaskRetentionMs / 60000)
+	$zonesTail = if ($Plan.ZonesConfigMissing) { ' zones_config=missing' } else { '' }
+	$liveStsText = if ($null -eq $Plan.LiveStorageGi) { 'none' } else { [string]$Plan.LiveStorageGi }
+	$livePvcText = if ($null -eq $Plan.LivePvcGi) { 'none' } else { [string]$Plan.LivePvcGi }
+	$extraZones = $Plan.LiveExtraZoneNames
+	$liveExtraText = if ($null -eq $extraZones) { 'unread' } else { [string]@($extraZones).Count }
+	$ledgerFormat = "Kafka disk ledger: brokers={0} rf={1} zones={2} db_task_partitions={3} segment_bytes={4} db_task_retention_bytes={5} " +
+		"target_retention_bytes={6} pvc_gib={7} pvc_source={8} required_gib={9} implied_db_task_buffer_min={10} db_task_retention_ms_min={11} " +
+		"design_bytes_per_sec={12} audit_partitions={13} other_topics_reserve_gib={14} live_sts_gib={15} live_pvc_min_gib={16} live_extra_zones={17}{18}"
+	Write-Host ($ledgerFormat -f $Plan.Brokers, $Plan.ReplicationFactor, $Plan.ZoneCount, $Plan.DbTaskPartitions, $Plan.SegmentBytes,
+		$Plan.DbTaskRetentionBytes, $Plan.TargetRetentionBytes, $Plan.EffectiveGi, $Plan.Source, $Plan.RequiredGi, $impliedMin, $retentionMin,
+		$Plan.DesignBytesPerSec, $Plan.AuditPartitions, $Plan.OtherTopicsReserveGi, $liveStsText, $livePvcText, $liveExtraText, $zonesTail)
+	Write-Host "Kafka disk ledger note: db_task retention.bytes is a per-topic setting applied by db / login at startup (Kafka.RetentionBytes in their ConfigMaps); zones deployed earlier keep their previous value until their next zone-up. After adding zones or resizing the PVC, re-run zone-up for every zone, or apply it at once with kafka-configs.sh --alter (deploy/k8s/README.md)."
+
+	if ($Plan.FitLimited) {
+		# 格式串先拼好再 -f:-f 的优先级高于 +,写成一个表达式的话只有最后一段会被格式化。
+		$fitFormat = ("[KafkaDiskLedger]FitLimited: PVC {0}Gi per broker (source={1}) cannot hold the db_task target retention.bytes={2}; " +
+			"the topic-level retention.bytes is shrunk to {3} so that retained data stays within PVC/1.3 (about {4} min of backlog at the design rate of {5} bytes/s per zone). " +
+			"Deployment continues: warning only, not blocking. " +
+			"When {3} is below the topic's current retention.bytes (e.g. the broker default {7} on a topic without a topic-level value), applying it lowers the topic's current limit " +
+			"and Kafka deletes unconsumed db_task backlog beyond it within retention.check.interval, whether or not db has read it; " +
+			"confirm the db consumer lag is ~0 for every partition before rolling db / login (or expand the PVC first). " +
+			"To restore the target, expand the PVC to at least {6}Gi per broker with the runbook in deploy/k8s/README.md " +
+			"(patch each PVC kafka-data-kafka-<i>, kubectl delete statefulset kafka --cascade=orphan, then infra-up -KafkaStorageGi {6}), then re-run zone-up for every zone.")
+		Write-Warning ($fitFormat -f $Plan.EffectiveGi, $Plan.Source, $Plan.TargetRetentionBytes, $Plan.DbTaskRetentionBytes, $impliedMin, $Plan.DesignBytesPerSec, $Plan.RequiredGi,
+			$Plan.BrokerRetentionBytes)
+	}
+	if ($Plan.ZonesConfigMissing) {
+		# dev 档才会走到这里(其它档 Resolve-KafkaDiskPlan 已拒绝)。措辞避开「Zones configuration missing」:那是 Get-InfraZoneIds 讲预建库的告警。
+		$liveText = if ($null -eq $extraZones) { 'live zone namespaces were not read (DryRun)' } else { "plus $(@($extraZones).Count) live zone namespace(s) not named -ZoneName" }
+		$missingFormat = ("[KafkaDiskLedger]ZonesConfigMissing: the zones config file {0} is absent, so the Kafka disk budget counts only -ZoneId {1} ({2}); zones={3} " +
+			"can miss zones that share this Kafka and the db_task retention.bytes={4} may overcommit the PVC. Point -ZonesConfigPath at the config listing every zone on this Kafka. " +
+			"Warning only under -ReleaseProfile dev; other release profiles refuse to deploy.")
+		Write-Warning ($missingFormat -f $Plan.ZonesConfigPath, $Plan.ZoneIdSelf, $liveText, $Plan.ZoneCount, $Plan.DbTaskRetentionBytes)
+	}
+	elseif ($null -ne $extraZones -and @($extraZones).Count -gt 0) {
+		$extraFormat = ("[KafkaDiskLedger]LiveZonesNotInConfig: zone namespaces for {0} exist on the cluster but are not in the zones config {1}; they share this Kafka, " +
+			"so each is counted in zones={2}. Add them to the zones config (or zone-down them) so that every zone-up / infra-up counts the same zones.")
+		Write-Warning ($extraFormat -f (@($extraZones) -join ','), $Plan.ZonesConfigPath, $Plan.ZoneCount)
+	}
+	if ([double]$Plan.ImpliedBufferSec * 1000 -lt [double]$Plan.DbTaskRetentionMs) {
+		$bufferFormat = ("[KafkaDiskLedger]BufferBelowRetention: at the design rate of {0} bytes/s per zone, db_task retention.bytes={1} holds about {2} min of backlog, " +
+			"shorter than the db_task retention.ms ({3} min), so retention.bytes deletes first. A DB outage longer than about {2} min loses queued saves, " +
+			"and a rollback TargetTime older than that cannot be fully replayed from Kafka. Warning only, not blocking; the design rate is an estimate, not a guarantee.")
+		Write-Warning ($bufferFormat -f $Plan.DesignBytesPerSec, $Plan.DbTaskRetentionBytes, $impliedMin, $retentionMin)
+	}
+}
+
+# 写路径入口调用:显式 -KafkaStorageGi 与线上模板不同、或大于最小的实际 PVC 时拒绝(判定见 Get-KafkaStorageChangeVerdict),早于任何写操作。
+# 不只 infra-up / all-up:zone-up 也按 -KafkaStorageGi 算 retention.bytes,给一块线上并不存在的盘算出来的值会写爆真实的盘(B-17)。
+function Assert-KafkaStorageChangeIsSafe {
+	param([Parameter(Mandatory = $true)]$Plan)
+
+	$template = $Plan.LiveStorageGi
+	$pvc = $Plan.LivePvcGi
+	$explicit = [int]$Plan.ExplicitStorageGi
+	$verdict = Get-KafkaStorageChangeVerdict -LiveStorageGi $template -LivePvcGi $pvc -ExplicitStorageGi $explicit
+	if ($verdict -in @('absent', 'auto', 'unchanged')) { return }
+	# expand-refused / shrink-refused 文案里的「线上」:StatefulSet 在时是它的模板,不在时(--cascade=orphan 之后)是最小的实际 PVC。
+	$live = if ($null -ne $template) { $template } else { $pvc }
+	if ($verdict -eq 'pvc-not-expanded') {
+		$stsText = if ($null -ne $template) { "StatefulSet kafka 的模板是 ${template}Gi" } else { 'StatefulSet kafka 不在(--cascade=orphan 之后)' }
+		throw @"
+拒绝按 ${explicit}Gi 部署 Kafka 盘预算(namespace=$InfraNamespace):线上 PVC kafka-data-kafka-<i> 里最小的实际容量(status.capacity)只有 ${pvc}Gi($stsText),
+按 ${explicit}Gi 算出的 db_task retention.bytes 会写爆那块盘(B-17)。尚未做任何写操作。
+先完成 deploy/k8s/README.md「Kafka 磁盘预算与 db_task retention.bytes」扩盘 runbook 的第 ② 步并确认 CAPACITY:
+  kubectl -n $InfraNamespace get pvc 列出的每块 kafka-data-kafka-<i> 的 CAPACITY 都已是 ${explicit}Gi 才算扩完;没扩成的重新 patch,
+  状态里有 FileSystemResizePending 的逐个重启对应 broker(kubectl -n $InfraNamespace delete pod kafka-<i>,等它 Ready、under-replicated 分区为 0)。
+然后带 -KafkaStorageGi $explicit 重跑。若只是这次不想改盘:去掉 -KafkaStorageGi(自动按线上最小的实际容量 ${pvc}Gi 算 retention.bytes)。
+"@
+	}
+	if ($verdict -eq 'expand-refused') {
+		throw @"
+拒绝把 Kafka PVC 从线上 ${live}Gi 改成 ${explicit}Gi(namespace=$InfraNamespace):StatefulSet 的 volumeClaimTemplates 不可变,直接 apply 会被 API server 拒绝,改模板也不会改已有的 PVC。尚未做任何写操作。
+扩盘按 deploy/k8s/README.md「Kafka 磁盘预算与 db_task retention.bytes」的 runbook 做:
+  ① kubectl get sc <StorageClass> -o jsonpath={.allowVolumeExpansion} 必须为 true(否则只能按「Kafka:多 broker」的重建流程换盘);
+  ② 逐个 kubectl -n $InfraNamespace patch pvc kafka-data-kafka-<i> -p '{"spec":{"resources":{"requests":{"storage":"${explicit}Gi"}}}}',
+     确认容量生效(需要文件系统扩容时逐个重启 broker,并确认 under-replicated 分区为 0);
+  ③ kubectl -n $InfraNamespace delete statefulset kafka --cascade=orphan(Pod 与 PVC 保留,broker 不停);
+  ④ 带 -KafkaStorageGi $explicit 重跑 infra-up(新 StatefulSet 收养原有 Pod 与 PVC),再对每个 zone 重跑 zone-up,让 db / login 按新盘设置 db_task 的 retention.bytes。
+若只是这次不想改盘:去掉 -KafkaStorageGi(自动沿用线上 ${live}Gi),或显式传 -KafkaStorageGi $live。
+"@
+	}
+	if ($verdict -eq 'shrink-refused') {
+		throw @"
+拒绝把 Kafka PVC 从线上 ${live}Gi 缩到 ${explicit}Gi(namespace=$InfraNamespace):PVC 不能缩,Kubernetes 只支持扩容。尚未做任何写操作。
+真要换小盘只能按 deploy/k8s/README.md「Kafka:多 broker」的重建流程(停写、删 StatefulSet 与 PVC、重建;Kafka 里未消费的消息全部丢弃)。
+若只是这次不想改盘:去掉 -KafkaStorageGi(自动沿用线上 ${live}Gi),或显式传 -KafkaStorageGi $live。
+"@
+	}
+	throw "内部错误:Get-KafkaStorageChangeVerdict 返回了未知判定 '$verdict'(live=$live explicit=$explicit),拒绝部署。"
 }
 
 function Show-ExposureProfileWarning {
@@ -3135,6 +4328,12 @@ function Test-ZoneGatewayDeployed {
 	return (($Command -in @("zone-up", "all-up")) -and -not $SkipJavaSvc -and -not [string]::IsNullOrWhiteSpace($JavaSvcRegistry))
 }
 
+# 本次是否部署 zone 内的 db(与 Test-ZoneLoginDeployed 同一组条件:db 与 login 都是随 zone 走的 Go 服务,
+# 由 Apply-GoSvcManifests 一起部署)。db 消费组计划(Initialize-DbConsumerGroupPlans)只在它为真时计算。
+function Test-ZoneDbDeployed {
+	return (($Command -in @("zone-up", "all-up")) -and -not $SkipGoSvc -and -not [string]::IsNullOrWhiteSpace($GoSvcRegistry))
+}
+
 # 要注入玩家收件箱运维口令时(口令已解析、非空),核对服务 yaml 声明了 PlayerInbox.AdminTokenEnv。
 # 口令只经环境变量进容器,ConfigMap 只写变量名;Go 侧不认这个键时,go-zero 把它当未知键静默忽略,运维接口就一直停用 ——
 # 部署方以为开了 GM 处置,实际所有调用都被拒。宁可在任何写操作之前拒绝部署并点名缺什么。
@@ -3148,6 +4347,317 @@ function Assert-PlayerInboxAdminTokenEnvDeclared {
 			"部署侧只经环境变量 $($script:PlayerInboxAdminTokenEnv) 注入口令,ConfigMap 不写口令值,Go 侧不认这个键时口令会被静默忽略、运维接口一直停用。" +
 			"先让 go/player_inbox 的配置支持 AdminTokenEnv(见 docs/ops/player-inbox-runbook.md §1),或本次不注入口令。")
 	}
+}
+
+<#
+.SYNOPSIS
+	scene 收件箱消费端开关的权威值:bin/etc/game_config.yaml 的 player_inbox.consumer_enabled,返回 'true' 或 'false'。
+
+.DESCRIPTION
+	交接 player-inbox-handoff-20261015 §6 H1:以前这个值由 -PlayerInboxConsumer 渲染,默认 off、不粘滞、包装入口不透传,
+	打开消费之后任何一次例行发布都会把它写回 false。现在只有 git 跟踪的这一份(与 PlayerInbox.EnqueueTypes 镜像服务 yaml 同口径),
+	渲染值不从集群取:zone-rollback 会删 zone namespace,那里的值不可靠。写前门禁另外只读 infra 侧线上的白名单作交叉核对
+	(Read-PlayerInboxGateLiveFacts),不改这里的返回值。
+	读的是 $RepoRoot 下的**工作区文件**,不是 HEAD:这份 yaml 也是本机 scene 的运行配置,可能带着没提交的改动。
+	未提交改动由 Get-PlayerInboxGateSourceState 核对,staging / prod 的真部署在写操作之前拒绝(Assert-PlayerInboxConsumerGate)。
+	三个调用方读同一份:New-NodeConfigMapYaml(渲染前核对,再整段复制 player_inbox 块)、Read-PlayerInboxGateLiveFacts
+	(决定读不读 infra 侧)与写路径入口的 Assert-PlayerInboxConsumerGate。
+	- 键缺失即 throw:C++ 缺键取 false,部署侧要求显式写出(与 EnqueueTypes 空也要写 [] 同理)。
+	- 只认小写 true / false:C++ 用 yaml-cpp 的 as<bool>,它还认 yes / on / True 等写法,门禁不替你猜,写成别的即 throw。
+	- -Expected 是 -PlayerInboxConsumer 的值:空 = 不核对;on / off 与 yaml 不一致即 throw,并指向要改的文件。它不改返回值。
+	按动态作用域读 $RepoRoot(Get-AuthoritativeScalar)。
+#>
+function Get-PlayerInboxConsumerEnabled {
+	param([string]$Expected = '')
+
+	if ($Expected -cnotin @('', 'on', 'off')) {
+		throw "内部错误:Get-PlayerInboxConsumerEnabled -Expected 只收 空 / on / off,得到 '$Expected'。"
+	}
+	$relativePath = 'bin/etc/game_config.yaml'
+	$keyPath = 'player_inbox.consumer_enabled'
+	$value = Get-AuthoritativeScalar -RelativePath $relativePath -KeyPath $keyPath
+	if ($value -cne 'true' -and $value -cne 'false') {
+		throw "收件箱消费开关:$relativePath 的 $keyPath='$value' 只能写小写 true 或 false(fail-closed:不替你猜开关)。"
+	}
+	if (-not [string]::IsNullOrEmpty($Expected)) {
+		$expectedValue = if ($Expected -ceq 'on') { 'true' } else { 'false' }
+		if ($expectedValue -cne $value) {
+			throw ("-PlayerInboxConsumer $Expected 与 $relativePath 的 $keyPath=$value 不一致,拒绝部署。" +
+				"本参数只用来核对,不改渲染值:要开 / 关消费,改那份 yaml 并提交,再 zone-up 并滚动 scene" +
+				"(deploy/k8s/README.md「玩家收件箱 player-inbox」;上线顺序见 docs/ops/player-inbox-runbook.md)。")
+		}
+	}
+	return $value
+}
+
+<#
+.SYNOPSIS
+	收件箱写前门禁(交接 §6 H1):scene 消费端关着、而入箱白名单非空时拒绝部署,除非显式传 -AllowPlayerInboxConsumerOff。
+
+.DESCRIPTION
+	消费端关 + 白名单非空 = GM 处置照样回 created=true,却没有 scene 执行;条目 delivery_count=0,进不了任何告警。
+	由写路径入口在任何集群写操作之前调用,zone-up / all-up / infra-up 三条写命令都判。分三层:
+	  1. 静态:当前检出里的两份 yaml。
+	     - 消费端:bin/etc/game_config.yaml 的 player_inbox.consumer_enabled(Get-PlayerInboxConsumerEnabled,顺带核对 -PlayerInboxConsumer);
+	     - 入箱:go/player_inbox/etc/player_inbox.yaml 的 PlayerInbox.EnqueueTypes(Get-PlayerInboxEnqueueTypes,顺带核对每一项)。
+	     这一层只拦「同一个检出里两个值相互矛盾」。它不知道另一侧线上部署的是哪个 commit 的值:zone(consumer_enabled)与
+	     infra(EnqueueTypes)分开部署,检出开消费之前的旧 commit 重跑 zone-up,这一层读到的是那个 commit 的空白名单,照样放行。
+	  2. 线上交叉核对(-LiveFacts,Read-PlayerInboxGateLiveFacts 的结果):本次把 false 渲染进 node-config 时,看 infra 线上的白名单;
+	     本次把非空白名单渲染进 ConfigMap 时,看各 zone 线上 node-config 的开关。-DryRun 不读集群,这一层跳过。
+	     局限:读的是 ConfigMap,不是进程。C++ 与 go-zero 都只在启动时读配置,ConfigMap 改了而 Pod 没滚动时两者可以不一致;
+	     上线验收仍以 scene 启动行 consumer_enabled=1 与 GmSanctionPlayer 的回包为准。
+	  3. 来源(-SourceState,Get-PlayerInboxGateSourceState 的结果):两份 yaml 相对 HEAD 有没有未提交改动。
+	     -RequireCommittedSources 为真(写路径入口在非 DryRun 的 staging / prod 传)时,有改动或判不出就拒绝;否则只告警。
+	-AllowConsumerOff 只豁免 1、2 两层的「消费端关、入箱开」(打一条警告放行),不豁免第 3 层,也不豁免 yaml 本身写错。
+	-SourceState / -LiveFacts 为 $null = 不核对这一层(契约测试直接调用时);写路径入口两个都传。
+	放行时打一行 "player-inbox consumer gate: ... OK"(豁免时改为警告),写明两个值各取自哪份文件、HEAD、工作区是否干净、线上核对结果。
+#>
+function Assert-PlayerInboxConsumerGate {
+	param(
+		# -PlayerInboxConsumer 的值,原样交给 Get-PlayerInboxConsumerEnabled 核对(空 / on / off)。
+		[string]$ExpectedConsumer = '',
+		[bool]$AllowConsumerOff = $false,
+		# Get-PlayerInboxGateSourceState 的结果;$null = 不核对来源。
+		$SourceState = $null,
+		[bool]$RequireCommittedSources = $false,
+		# Read-PlayerInboxGateLiveFacts 的结果;$null = 不做线上交叉核对。
+		$LiveFacts = $null
+	)
+
+	$consumerFile = 'bin/etc/game_config.yaml'
+	$enqueueFile = 'go/player_inbox/etc/player_inbox.yaml'
+	$consumerEnabled = Get-PlayerInboxConsumerEnabled -Expected $ExpectedConsumer
+	$enqueueTypes = @(Get-PlayerInboxEnqueueTypes -RelativePath $enqueueFile)
+
+	# 第 3 层先判:staging / prod 拿未提交的值去比,比出来的结论本身就不可追溯。
+	$head = 'unknown'
+	$worktree = 'unchecked'
+	if ($null -ne $SourceState) {
+		if (-not [string]::IsNullOrEmpty([string]$SourceState.Head)) { $head = [string]$SourceState.Head }
+		$dirtyFiles = @($SourceState.DirtyFiles | Where-Object { -not [string]::IsNullOrEmpty($_) })
+		$sourceProblem = ''
+		if (-not $SourceState.Ok) {
+			$worktree = 'unknown'
+			$sourceProblem = "判不出 $consumerFile / $enqueueFile 是否已提交($($SourceState.Reason))"
+		}
+		elseif ($dirtyFiles.Count -gt 0) {
+			$worktree = 'dirty'
+			$sourceProblem = "$($dirtyFiles -join ', ') 相对 HEAD $head 有未提交改动"
+		}
+		else {
+			$worktree = 'clean'
+		}
+		if ($sourceProblem -ne '') {
+			if ($RequireCommittedSources) {
+				throw ("拒绝部署:$sourceProblem。收件箱两个开关的权威值是提交过的 yaml,部署读的却是工作区文件;" +
+					"staging / prod 不接受未提交的值(发布记录里看不出它来自哪里)。先提交或还原这两份文件再部署。")
+			}
+			Write-Warning "player-inbox consumer gate: $sourceProblem;本次按工作区的值渲染(只有 staging / prod 的真部署拒绝)。"
+		}
+	}
+	elseif ($RequireCommittedSources) {
+		throw '内部错误:Assert-PlayerInboxConsumerGate -RequireCommittedSources 需要 -SourceState(Get-PlayerInboxGateSourceState 的结果)。'
+	}
+
+	$refusals = New-Object System.Collections.Generic.List[string]
+	# 第 1 层:同一个检出里的两份 yaml。
+	if ($consumerEnabled -ceq 'false' -and $enqueueTypes.Count -gt 0) {
+		$refusals.Add("$consumerFile 的 player_inbox.consumer_enabled=false,而 $enqueueFile 的 PlayerInbox.EnqueueTypes 非空($($enqueueTypes -join ', '))")
+	}
+	# 第 2 层:另一侧线上已部署的值。
+	$liveSummary = 'not-read'
+	if ($null -ne $LiveFacts) {
+		$liveSummary = [string]$LiveFacts.Note
+		if ($null -ne $LiveFacts.InfraEnqueueTypes) {
+			$liveEnqueue = @($LiveFacts.InfraEnqueueTypes | Where-Object { -not [string]::IsNullOrEmpty($_) })
+			if ($consumerEnabled -ceq 'false' -and $liveEnqueue.Count -gt 0) {
+				$refusals.Add(("本次把 consumer_enabled=false 渲染进 node-config,而线上 $($LiveFacts.InfraSource) 的 PlayerInbox.EnqueueTypes 非空($($liveEnqueue -join ', '))。" +
+					"常见原因是检出开消费之前的旧 commit 重跑了 zone-up:开消费之后回滚 zone,用当前 HEAD 的脚本配旧 -NodeImage,或 kubectl rollout undo"))
+			}
+		}
+		if ($null -ne $LiveFacts.ZoneConsumers -and $enqueueTypes.Count -gt 0) {
+			$offZones = @($LiveFacts.ZoneConsumers | Where-Object { $null -ne $_ -and [string]$_.Value -cne 'true' })
+			if ($offZones.Count -gt 0) {
+				$offText = @($offZones | ForEach-Object {
+						$shown = if ([string]::IsNullOrEmpty([string]$_.Value)) { 'absent' } else { [string]$_.Value }
+						"$($_.Namespace)=$shown"
+					}) -join ', '
+				$refusals.Add(("本次把非空的 PlayerInbox.EnqueueTypes($($enqueueTypes -join ', '))渲染进 player-inbox 的 ConfigMap,而线上这些 zone 的 node-config 里 " +
+					"player_inbox.consumer_enabled 不是 true(absent = 缺键,C++ 取 false):$offText。" +
+					"先逐 zone zone-up 打开消费并滚动 scene,再部署白名单;all-up 先部署白名单、后部署 zone,不能一步完成,先跑 all-up -SkipInfra 或逐 zone zone-up"))
+			}
+		}
+	}
+
+	$summary = "player-inbox consumer gate: consumer_enabled=$consumerEnabled ($consumerFile) enqueue_types=$($enqueueTypes.Count) ($enqueueFile) head=$head worktree=$worktree live=$liveSummary"
+	if ($refusals.Count -gt 0) {
+		if (-not $AllowConsumerOff) {
+			throw ("拒绝部署:" + ($refusals -join ';另外,') + "。这样部署后 GM 处置照样入箱成功,却没有 scene 执行,也不会触发任何告警。" +
+				"要开消费:把 consumer_enabled 改成 true 并提交,逐 zone zone-up 并滚动 scene(上线顺序第 5 步),之后才部署白名单;" +
+				"要关消费:先把 EnqueueTypes 改回 [] 并提交、重跑 infra-up,确认 GmSanctionPlayer 回 kPlayerInboxDisabled,再关 consumer_enabled。" +
+				"明知如此仍要部署(例如紧急关消费),直接调 tools/scripts/k8s_deploy.ps1 并显式传 -AllowPlayerInboxConsumerOff。" +
+				"包装入口(dev_tools.ps1 / k8s_image.ps1 / k8s_zone_rollback.ps1)没有这个开关:从包装入口部署被拒时," +
+				"先把 $enqueueFile 的 EnqueueTypes 改回 [] 并提交、重跑 infra-up(正常关消费的顺序),门禁随之放行。")
+		}
+		Write-Warning ($summary + ':-AllowPlayerInboxConsumerOff 放行了「消费端关、入箱开」(' + ($refusals -join ';') + ')。新入箱的处置不会执行,直到 consumer_enabled 改回 true 并滚动 scene。')
+		return
+	}
+	Write-Host "$summary OK"
+}
+
+<#
+.SYNOPSIS
+	收件箱两个开关的来源:bin/etc/game_config.yaml 与 go/player_inbox/etc/player_inbox.yaml 相对 HEAD 有没有未提交改动。
+	返回 [pscustomobject]@{ Ok [bool]; Head [string](12 位短 sha,判不出为空); DirtyFiles [string[]]; Reason [string] }。
+
+.DESCRIPTION
+	部署读的是工作区文件(Get-AuthoritativeScalar / Get-AuthoritativeYamlBlock 都读 $RepoRoot 下的文件),而 bin/etc/game_config.yaml
+	也是本机 scene 的运行配置,本机联调收件箱就要改它。不核对的话,一份没提交的 consumer_enabled: true 会随部署进集群,发布记录里看不出来。
+	整树脏只让镜像 tag 带 -dirty,而 -dirty 只在 prod 档被拒、显式传干净的 -NodeImage 时任何档位都不拦,所以这里单独看这两份文件。
+	每份文件先 git ls-files --error-unmatch 证明它被跟踪(未跟踪的文件 git diff 恒为空),再 git diff --quiet HEAD(含暂存区)。
+	git 不在 PATH、不是仓库、命令出错都返回 Ok=$false,由 Assert-PlayerInboxConsumerGate 按档位决定拒绝还是告警。
+	只读本地仓库,不碰集群;按动态作用域读 $RepoRoot。
+#>
+function Get-PlayerInboxGateSourceState {
+	$files = @('bin/etc/game_config.yaml', 'go/player_inbox/etc/player_inbox.yaml')
+	$state = [pscustomobject]@{ Ok = $false; Head = ''; DirtyFiles = [string[]]@(); Reason = '' }
+	if ($null -eq (Get-Command git -ErrorAction SilentlyContinue)) {
+		$state.Reason = 'git 不在 PATH 里'
+		return $state
+	}
+	$headOutput = [string](& git -C $RepoRoot rev-parse --short=12 HEAD 2>$null)
+	if ($LASTEXITCODE -ne 0 -or [string]::IsNullOrWhiteSpace($headOutput)) {
+		$state.Reason = "git rev-parse HEAD 失败(不是 git 仓库?):$RepoRoot"
+		return $state
+	}
+	$state.Head = $headOutput.Trim()
+	$dirty = New-Object System.Collections.Generic.List[string]
+	foreach ($file in $files) {
+		& git -C $RepoRoot ls-files --error-unmatch -- $file 2>$null | Out-Null
+		if ($LASTEXITCODE -ne 0) {
+			$state.Reason = "$file 不在 git 跟踪里"
+			return $state
+		}
+		& git -C $RepoRoot diff --quiet HEAD -- $file 2>$null
+		$diffExit = $LASTEXITCODE
+		if ($diffExit -eq 1) {
+			$dirty.Add($file)
+		}
+		elseif ($diffExit -ne 0) {
+			$state.Reason = "git diff HEAD -- $file 失败(退出码 $diffExit)"
+			return $state
+		}
+	}
+	$state.DirtyFiles = [string[]]$dirty.ToArray()
+	$state.Ok = $true
+	return $state
+}
+
+<#
+.SYNOPSIS
+	收件箱写前门禁的线上交叉核对:按本次渲染哪一侧,只读另一侧线上已部署的值,交给 Assert-PlayerInboxConsumerGate -LiveFacts。
+	返回 [pscustomobject]@{ Note [string]; InfraSource [string]; InfraEnqueueTypes [string[]] 或 $null; ZoneConsumers [pscustomobject[]] 或 $null }。
+	ZoneConsumers 每项 { Namespace; Value },Value 是 consumer_enabled 的原文,缺键为空串(C++ 缺键取 false)。$null = 这一侧没读。
+
+.DESCRIPTION
+	静态门禁只比当前检出,而 zone(consumer_enabled)与 infra(EnqueueTypes)分开部署、可以来自不同 commit(交接 §6 H1 复核)。
+	  - 本次渲染 scene 开关(zone-up / all-up)且 yaml 是 false:读 infra namespace 线上 go-svc-player-inbox-config 的 PlayerInbox.EnqueueTypes。
+	    本次先部署全局 Go 服务时(all-up 不带 -SkipInfra,Test-GlobalGoSvcDeployed 为真)不读:Apply-Infra 先把 yaml 的白名单写上去,
+	    zone 才滚动,静态门禁核过的就是这一份。zone-rollback 只删 zone namespace、不碰 infra,所以 zone 回档期间这个值仍可靠。
+	    ConfigMap 不存在(收件箱没部署)按空白名单算;ConfigMap 在而 EnqueueTypes 缺键,按 Go 侧缺省(空)算。只看空不空,不核对类型名:
+	    线上值可能来自别的 commit。
+	  - 本次渲染非空白名单(Test-GlobalGoSvcDeployed 为真):读线上全部 zone namespace(名字以 "<-NamespacePrefix>-" 开头)里 node-config 的
+	    game_config.yaml,取 player_inbox.consumer_enabled。all-up 也读:它先部署白名单、后部署 zone,这之间那些 zone 还关着。
+	    namespace 还不存在的 zone(新 zone、回档中被删的)不在其中:它们之后 zone-up 时由上一条核对。用别的 -NamespacePrefix 部署的 zone 看不到。
+	-DryRun 不读集群(Invoke-ClientEntryKubectl 不看 $DryRun,判断在这里做):两侧都是 $null,Note 写明跳过。
+	读 yaml 的错误(缺键、写法不对、-ExpectedConsumer 与 yaml 不一致)先于任何 kubectl 调用 throw,与 Assert-PlayerInboxConsumerGate 报同一句。
+	kubectl 失败、输出不是 JSON、ConfigMap 形状不对一律 throw:读不到不等于没有(同 Read-LiveDbConfigMapYaml)。尚未做任何写操作。
+#>
+function Read-PlayerInboxGateLiveFacts {
+	param(
+		# -PlayerInboxConsumer 的值:只为让「参数与 yaml 不一致」先于读集群报出来,不影响读什么。
+		[string]$ExpectedConsumer = ''
+	)
+
+	$facts = [pscustomobject]@{ Note = 'not-needed'; InfraSource = ''; InfraEnqueueTypes = $null; ZoneConsumers = $null }
+	$consumerEnabled = Get-PlayerInboxConsumerEnabled -Expected $ExpectedConsumer
+	$rendersEnqueue = [bool](Test-GlobalGoSvcDeployed)
+	$needInfra = ($Command -in @('zone-up', 'all-up')) -and -not $rendersEnqueue -and ($consumerEnabled -ceq 'false')
+	$needZones = $rendersEnqueue -and (@(Get-PlayerInboxEnqueueTypes -RelativePath 'go/player_inbox/etc/player_inbox.yaml').Count -gt 0)
+	if (-not $needInfra -and -not $needZones) { return $facts }
+	if ($DryRun) {
+		$facts.Note = 'skipped(dry-run)'
+		return $facts
+	}
+
+	$notes = New-Object System.Collections.Generic.List[string]
+	if ($needInfra) {
+		$info = $GoSvcCatalogue['player-inbox']
+		$facts.InfraSource = "namespace $InfraNamespace 的 ConfigMap $($info.ConfigMap)"
+		$result = Invoke-ClientEntryKubectl -KubectlArgs @('get', 'configmap', $info.ConfigMap, '-n', $InfraNamespace, '--ignore-not-found', '-o', 'json') `
+			-KubeContext $KubeContext -KubeConfig $KubeConfig -CaptureOutput -AllowFailure
+		if ($result.ExitCode -ne 0) {
+			throw "读取线上 $($facts.InfraSource) 失败(kubectl 退出码 $($result.ExitCode)):$($result.Stderr)。fail-closed:读不到不等于入箱关着,判不出本次关消费会不会让已开的入箱无人执行,拒绝部署;尚未做任何写操作。"
+		}
+		$items = [string[]]@()
+		$text = ([string]$result.Stdout).Trim()
+		if ($text -ne '') {
+			try {
+				$configMap = $text | ConvertFrom-Json -ErrorAction Stop
+			}
+			catch {
+				throw "线上 $($facts.InfraSource) 的 kubectl 输出不是合法 JSON,判不出入箱白名单,拒绝部署;尚未做任何写操作。$($_.Exception.Message)"
+			}
+			$property = $null
+			$dataProperty = $configMap.PSObject.Properties['data']
+			if ($null -ne $dataProperty -and $null -ne $dataProperty.Value) {
+				$property = $dataProperty.Value.PSObject.Properties[$info.ConfigFile]
+			}
+			if ($null -eq $property -or [string]::IsNullOrWhiteSpace([string]$property.Value)) {
+				throw "线上 $($facts.InfraSource) 存在,但没有 data.$($info.ConfigFile):不是本脚本生成的形状,判不出入箱白名单,拒绝部署;尚未做任何写操作。"
+			}
+			$items = (ConvertFrom-PlayerInboxEnqueueTypesText -Text ([string]$property.Value) -Source "线上 $($facts.InfraSource)").Items
+		}
+		$facts.InfraEnqueueTypes = [string[]]@($items)
+		$notes.Add("infra_enqueue_types=$(@($items).Count)")
+	}
+	if ($needZones) {
+		$prefix = "$NamespacePrefix-"
+		$result = Invoke-ClientEntryKubectl -KubectlArgs @('get', 'configmap', '--all-namespaces', '--field-selector', 'metadata.name=node-config', '-o', 'json') `
+			-KubeContext $KubeContext -KubeConfig $KubeConfig -CaptureOutput -AllowFailure
+		if ($result.ExitCode -ne 0) {
+			throw "读取各 zone 线上的 ConfigMap node-config 失败(kubectl 退出码 $($result.ExitCode)):$($result.Stderr)。fail-closed:判不出各 zone 的 scene 是否在消费收件箱,拒绝部署;尚未做任何写操作。"
+		}
+		try {
+			$list = ([string]$result.Stdout) | ConvertFrom-Json -ErrorAction Stop
+		}
+		catch {
+			throw "各 zone 线上 ConfigMap node-config 的 kubectl 输出不是合法 JSON,判不出各 zone 的 scene 是否在消费收件箱,拒绝部署;尚未做任何写操作。$($_.Exception.Message)"
+		}
+		$zones = New-Object System.Collections.Generic.List[object]
+		foreach ($item in @($list.items)) {
+			if ($null -eq $item) { continue }
+			$namespace = [string]$item.metadata.namespace
+			if (-not $namespace.StartsWith($prefix, [System.StringComparison]::Ordinal)) { continue }
+			$gameYaml = ''
+			$dataProperty = $item.PSObject.Properties['data']
+			if ($null -ne $dataProperty -and $null -ne $dataProperty.Value) {
+				$gameProperty = $dataProperty.Value.PSObject.Properties['game_config.yaml']
+				if ($null -ne $gameProperty) { $gameYaml = [string]$gameProperty.Value }
+			}
+			if ([string]::IsNullOrWhiteSpace($gameYaml)) {
+				throw "线上 namespace $namespace 的 ConfigMap node-config 没有 data.game_config.yaml:不是本脚本生成的形状,判不出该 zone 的 scene 是否消费收件箱,拒绝部署;尚未做任何写操作。"
+			}
+			$scalars = (ConvertFrom-YamlToFlatMap -Text $gameYaml).Scalars
+			$value = if ($scalars.Contains('player_inbox.consumer_enabled')) { ([string]$scalars['player_inbox.consumer_enabled']).Trim() } else { '' }
+			$zones.Add([pscustomobject]@{ Namespace = $namespace; Value = $value })
+		}
+		$facts.ZoneConsumers = $zones.ToArray()
+		$onCount = @($zones | Where-Object { $_.Value -ceq 'true' }).Count
+		$notes.Add("zones_consumer_enabled=$onCount/$($zones.Count)")
+	}
+	$facts.Note = $notes -join ','
+	return $facts
 }
 
 # 本次是否部署全局池 Go 服务(Apply-Infra → Apply-GlobalGoSvcManifests 的同一组开关:infra-up,或不带 -SkipInfra 的 all-up;
@@ -3267,15 +4777,25 @@ function Assert-ClientEntryDeployPreflight {
 	if ($LoginDevPasswordAuth -and -not $deploysLogin) {
 		Write-Warning "[client-entry] -LoginDevPasswordAuth supplied, but login is not deployed in this run (only generated with Go services during zone-up / all-up; requires -GoSvcRegistry without -SkipGoSvc); flag has no effect."
 	}
+	# login 第三方登录(微信 / QQ)参数的形状门禁与 -LoginDevPasswordAuth 同在这里、排在密钥解析之前:非法 AppId / Endpoint 报的是参数原因,
+	# 而不是「缺 MMORPG_LOGIN_WECHAT_APP_SECRET」;也排在下面只读集群的现状预检之前(纯参数检查不该先等集群)。
+	Assert-LoginAuthProviderParams -DeploysLogin $deploysLogin
 
 	if ($DryRun) {
 		Write-Host "[dry-run] Skipping current cluster-state preflight (gate / battle modes and address sources, gateway Ingress); actual execution checks before any writes."
+		if ($deploysLogin) {
+			Write-Host "[dry-run] Skipping login third-party auth (AuthProviders / Secret $($script:LoginOAuthSecretName)) cluster-state preflight; actual execution checks before any writes."
+		}
 	}
 	else {
 		Assert-ClientEntryClusterState -Zones $zones -DeploysBattle $deploysBattle -DeploysGateway $deploysGateway `
 			-AgonesFleetCrdPresent $agonesFleetCrdPresent
+		# 第三方登录防误关闸:只在本次部署 login 时查(infra-up、-SkipGoSvc、k8s_image.ps1 路径都不碰 login 的 ConfigMap 与 Secret)。
+		if ($deploysLogin) {
+			Assert-LoginAuthProviderClusterState -Zones $zones
+		}
 	}
-	Write-Host "Client entry: mode=$ClientEntryMode battle_orchestrator=$BattleOrchestrator gate_service_type=$GateServiceType gate_etp=$GateExternalTrafficPolicy require_client_endpoint=$(Resolve-RequireClientEndpoint)($RequireClientEndpoint) ingress_host=$(if ($GatewayIngressHost) { $GatewayIngressHost } else { '<none>' }) login_dev_password_auth=$($LoginDevPasswordAuth.IsPresent) allow_disruptive_switch=$($AllowDisruptiveSwitch.IsPresent)"
+	Write-Host "Client entry: mode=$ClientEntryMode battle_orchestrator=$BattleOrchestrator gate_service_type=$GateServiceType gate_etp=$GateExternalTrafficPolicy require_client_endpoint=$(Resolve-RequireClientEndpoint)($RequireClientEndpoint) ingress_host=$(if ($GatewayIngressHost) { $GatewayIngressHost } else { '<none>' }) login_dev_password_auth=$($LoginDevPasswordAuth.IsPresent) login_wechat=$(-not [string]::IsNullOrEmpty($LoginWeChatAppId)) login_qq=$(-not [string]::IsNullOrEmpty($LoginQQAppId)) allow_disruptive_switch=$($AllowDisruptiveSwitch.IsPresent)"
 }
 
 # login / scene_manager ConfigMap 的 RequireClientEndpoint 取值(见参数 -RequireClientEndpoint):auto 跟随 -ClientEntryMode
@@ -3317,6 +4837,7 @@ function Assert-ClientEntryClusterState {
 
 	$problems = @()
 	# 会踢人 / 会改写入口的漂移:没给 -AllowDisruptiveSwitch 就并入 $problems,给了只打警告。
+	# Get-*Drift 整体返回数组，先接收再追加，避免把空数组也当成一个问题。
 	$drifts = @()
 
 	if ($DeploysBattle) {
@@ -3329,7 +4850,8 @@ function Assert-ClientEntryClusterState {
 				-KubeContext $KubeContext -KubeConfig $KubeConfig
 			$problems += @($probe.Refusals)
 		}
-		$drifts += (Get-BattleEntryDrift -AgonesFleetCrdPresent $AgonesFleetCrdPresent)
+		$battleDrifts = Get-BattleEntryDrift -AgonesFleetCrdPresent $AgonesFleetCrdPresent
+		$drifts += $battleDrifts
 	}
 
 	# 不传 -Settings 的 New-GatewayRateLimitYaml 为空 = 本次 gateway ConfigMap 不含 trusted-proxies。只看 trusted-proxies 是否为空;削峰阈值(G4b)另由 -Settings 写,不参与本判定。
@@ -3344,7 +4866,8 @@ function Assert-ClientEntryClusterState {
 			$problems += @($probe.Refusals)
 		}
 		if ($ClientEntryMode -eq "external") {
-			$drifts += (Get-GateAddressDrift -Zone $zone -Namespace $namespace)
+			$gateDrifts = Get-GateAddressDrift -Zone $zone -Namespace $namespace
+			$drifts += $gateDrifts
 		}
 		if ($gatewayLosesTrustedProxies) {
 			$ingress = Invoke-ClientEntryKubectl -KubectlArgs @("get", "ingress", "gateway", "-n", $namespace, "--ignore-not-found", "-o", "name") `
@@ -3701,6 +5224,7 @@ function Get-CppZoneRedisPassword {
 	  - gate / scene / battle 的 Deployment:apply 即滚动;gate 滚动 = 断开该 Pod 上的玩家,scene 滚动 = 玩家被迁走,
 	    battle 滚动 = 作废该 Pod 上在打的局;
 	  - Agones Fleet(scene / battle):新建 GameServerSet,已 Allocated 的实例不被打断,空闲后才退场(battle 另有排空标签);
+	    这些旧实例一直用旧口令,Redis 开口令 / 换口令重启后会认证失败或 NOAUTH 直到退出,上线前要先删掉(README 上线步骤第 3 步前置);
 	  - external 的 gate StatefulSet 是 OnDelete:模板换了不自动重建,按 k8s_gate_drain.ps1 逐个排空删 Pod 才换上新口令。
 	所以开口令 / 换口令要进维护窗口,步骤见 deploy/k8s/README.md「C++ 节点的 zone Redis 口令」。
 	指纹用 Get-InjectedSecretFingerprint(用途串 zone-redis/cpp-node 做域分隔、只截 48 位),暴露面同该函数的说明;
@@ -3935,10 +5459,13 @@ ${grpcClientBlock}
 	# cpp/libs/engine/config/config.cpp::readGameConfig 先读 yaml,再用 env 覆盖
 	# (last-wins)。所以拆分模式不需要两份 ConfigMap,只需要两个 Deployment 各自
 	# 带不同的 SCENE_NODE_TYPE。详见 docs/ops/scene-node-role-split.md §2。
-	# 玩家收件箱消费端(参数 -PlayerInboxConsumer,默认 off;键名与 bin/etc/game_config.yaml、config.cpp::readGameConfig 一致)。
-	# 只写 consumer_enabled:periodic_fetch_minutes 缺席时加载器显式取默认 30 分钟(设计 §11.5),不在这里另写一份常数。
+	# 玩家收件箱消费端(docs/design/player-inbox-service.md §7.3、§11.7;交接 §6 H1):player_inbox 段由 Get-AuthoritativeYamlBlock
+	# 从 bin/etc/game_config.yaml 整段复制,那份 git 跟踪的 yaml 是 consumer_enabled 的唯一来源;periodic_fetch_minutes 跟着同一段走,
+	# 不在这里另写常数。复制前先过 Get-PlayerInboxConsumerEnabled:值只认小写 true / false,-PlayerInboxConsumer 与 yaml 不一致即 throw,
+	# 所以任何路径都渲染不出与 yaml 不同的值。键名与 config.cpp::readGameConfig 一致。
 	# battle-node-config 也由本模板生成,battle 不读这一段,多出来无副作用。
-	$playerInboxConsumerEnabled = if ($PlayerInboxConsumer -eq 'on') { 'true' } else { 'false' }
+	[void](Get-PlayerInboxConsumerEnabled -Expected $PlayerInboxConsumer)
+	$playerInboxBlock = Get-AuthoritativeYamlBlock -RelativePath 'bin/etc/game_config.yaml' -Key 'player_inbox'
 	$gameConfig = @"
 SceneNodeType: 0
 ZoneId: $CurrentZoneId
@@ -3950,8 +5477,7 @@ zoneredis:
   timeout: 3000
   max_connections: 100
   retry_interval: 1000
-player_inbox:
-  consumer_enabled: ${playerInboxConsumerEnabled}
+${playerInboxBlock}
 "@
 
 	return @"
@@ -3961,10 +5487,19 @@ metadata:
   name: $ConfigName
 data:
   base_deploy_config.yaml: |
-$($baseDeployConfig -split "`n" | ForEach-Object { "    $_" } | Out-String)
+$($baseDeployConfig -split "`r?`n" | ForEach-Object { "    $_" } | Out-String)
   game_config.yaml: |
-$($gameConfig -split "`n" | ForEach-Object { "    $_" } | Out-String)
+$($gameConfig -split "`r?`n" | ForEach-Object { "    $_" } | Out-String)
 "@
+}
+
+function Get-SceneAssetSecretEnvLines {
+	param([string]$Indent)
+	foreach ($caller in @('guild', 'trade', 'mail')) {
+		if ($script:AssetOpsOn -and $caller -ne 'mail') { continue }
+		"${Indent}- name: MMORPG_ASSET_OP_SECRET_$($caller.ToUpperInvariant())"
+		"${Indent}  valueFrom: {secretKeyRef: {name: domain-service-secrets, key: asset-${caller}, optional: true}}"
+	}
 }
 
 function New-NodeDeploymentYaml {
@@ -4006,15 +5541,13 @@ function New-NodeDeploymentYaml {
 	# 用数组逐行拼,最后 join 换行。
 	# 旧写法是 `$block += @"..."@` 连续追加两个 here-string —— here-string 内容不含
 	# 结尾换行,第二次追加会直接接在上一行尾部,生成非法 YAML。
+	# GRPC_SERVER_MAX_POLLERS 已退役(grpc-muduo-transport.md §15.11),不再注入。
 	$extraEnvLines = @()
-	if ($GrpcServerMaxPollers -gt 0) {
-		$extraEnvLines += "`t`t`t- name: GRPC_SERVER_MAX_POLLERS"
-		$extraEnvLines += "`t`t`t  value: `"$GrpcServerMaxPollers`""
-	}
 	if ($SceneNodeType -ge 0) {
 		# 覆盖 ConfigMap 里的 SceneNodeType 基线,是角色拆分真正生效的那一步。
 		$extraEnvLines += "`t`t`t- name: SCENE_NODE_TYPE"
 		$extraEnvLines += "`t`t`t  value: `"$SceneNodeType`""
+		$extraEnvLines += @(Get-SceneAssetSecretEnvLines -Indent "`t`t`t")
 	}
 	# 资产通道验签密钥(-AssetOps on,只给 scene):guild / trade 两把都要,值经 Secret 注入(secretKeyRef 不写 optional,
 	# Secret 由 Apply-Zone 先于 scene 建好)。off 时不写,模板与引入开关之前逐字相同。
@@ -4043,6 +5576,9 @@ function New-NodeDeploymentYaml {
 	#    (gate 等 ClientRpcRouter / Scene —— -GateRouterMode "0" 回退时是 Login / Scene,scene 等 SceneManager 与号段首段)已过。
 	#    readiness 只能表达前者。
 	#  - 不加 livenessProbe:tcpSocket 看不出 EventLoop 卡死(内核照样完成握手),加了只多一条杀容器的路。
+	#  - 探 gRPC 口(scene / battle):新服务端(muduo_grpc,grpc-muduo-transport.md §15.5.1)对不发 HTTP/2 preface 的连接
+	#    静默处理 —— 一个字节都不写、断开只打 DEBUG、计入 closed_before_preface,探针不会刷日志。
+	#    停机排空期间监听已关,探 gRPC 口的 readiness 失败属预期(此时 Pod 已在终止,本来就是 NotReady)。
 	#  - startupProbe 会杀容器,预算必须越过 etcd 租约:同 Pod 重启时 POD_IP 不变,旧进程的注册要等
 	#    NodeTTLSeconds(180s,bin/etc/base_deploy_config.yaml)到期才消失,在此之前新进程命中
 	#    node_allocator.cpp「Preset RPC port ... already registered」一直退避重试、不开监听。
@@ -4606,19 +6142,10 @@ function New-SceneFleetYaml {
 "@
 	}
 
-	$grpcPollersEnv = ""
-	if ($GrpcServerMaxPollers -gt 0) {
-		$grpcPollersEnv = @"
-
-                - name: GRPC_SERVER_MAX_POLLERS
-                  value: "$GrpcServerMaxPollers"
-"@
-	}
-	# 资产通道验签密钥(-AssetOps on),同 New-NodeDeploymentYaml;Fleet 模板的 env 列表项在第 16 列、空格缩进。
-	$sceneAssetOpEnv = ""
-	if ($script:AssetOpsOn) {
-		$sceneAssetOpEnv = "`n" + ((New-SceneAssetOpEnvLines -ItemIndent (' ' * 16) -Step '    ') -join "`n")
-	}
+	$sceneAssetEnvLines = @(Get-SceneAssetSecretEnvLines -Indent '                ')
+	if ($script:AssetOpsOn) { $sceneAssetEnvLines += @(New-SceneAssetOpEnvLines -ItemIndent (' ' * 16) -Step '    ') }
+	$sceneAssetEnvBlock = $sceneAssetEnvLines -join "`n"
+	# GRPC_SERVER_MAX_POLLERS 已退役(grpc-muduo-transport.md §15.11),Fleet 不再注入。
 
 	return @"
 apiVersion: agones.dev/v1
@@ -4688,7 +6215,8 @@ $gameServerContainerLine      ports:
                 - name: SNOWFLAKE_CACHE_DIR
                   value: "$SnowflakeCacheDir"
                 - name: AGONES_ENABLED
-                  value: "1"$grpcPollersEnv$sceneAssetOpEnv
+                  value: "1"
+$sceneAssetEnvBlock
               volumeMounts:
                 - name: node-config
                   mountPath: /app/bin/etc
@@ -4894,8 +6422,9 @@ function New-CppPodAnnotationBlock {
 
 <#
 .SYNOPSIS
-	把本脚本的 C++ 节点公共参数(镜像、拉取策略、发号槽缓存、日志卷与清理循环、gRPC poller、日志 sidecar、
+	把本脚本的 C++ 节点公共参数(镜像、拉取策略、发号槽缓存、日志卷与清理循环、日志 sidecar、
 	zone Redis 口令指纹注解)打包成 lib/k8s_client_entry.ps1 生成器要的 PodCommon。与 New-NodeDeploymentYaml 同一组脚本变量,一处取值。
+	-GrpcServerMaxPollers 已退役(grpc-muduo-transport.md §15.11),固定透传 0,库里也不再据它注入任何 env。
 	口令指纹要求 Initialize-InjectedSecrets 已经跑过(Get-CppZoneRedisPassword 对未解析 fail-closed),所以只在写路径入口之后调用:
 	Apply-Zone(New-ExternalGateManifests)与 Apply-Infra(New-BattleWorkloadManifest)。
 
@@ -4914,7 +6443,7 @@ function New-CppNodePodCommon {
 	}
 	return New-ClientEntryPodCommon -Image $NodeImage -ImagePullPolicy $ImagePullPolicy -SnowflakeCacheDir $SnowflakeCacheDir `
 		-LogVolumeSizeLimit $script:CppLogVolumeSizeLimit -LogPrunerCommand $script:CppLogPrunerCommand `
-		-GrpcServerMaxPollers $GrpcServerMaxPollers -PodAnnotations (Get-CppZoneRedisAuthAnnotations) @sidecar
+		-GrpcServerMaxPollers 0 -PodAnnotations (Get-CppZoneRedisAuthAnnotations) @sidecar
 }
 
 <#
@@ -5218,6 +6747,614 @@ Queue:
 "@
 }
 
+<#
+.SYNOPSIS
+	第三方登录参数(-LoginWeChatAppId / -LoginWeChatEndpoint / -LoginQQAppId / -LoginQQEndpoint)的形状校验。纯函数:只看入参,
+	返回错误文本数组(空 = 合法),不抛、不打印。
+
+.DESCRIPTION
+	调用方:写路径入口的 Assert-LoginAuthProviderParams(在密钥解析与任何写操作之前一次报全)与生成器 New-LoginAuthProvidersYaml
+	(纵深防御,同一份规则)。规则对齐 login 的启动期门禁(go/login/internal/config/auth_providers.go checkAuthAppId /
+	checkOAuthEndpoint),但部署侧更严,宁可在部署时拒也不留一个拒启的 Pod:
+	  - AppId 空串 = 不配该 provider;非空只允许 [A-Za-z0-9_.-](公开的应用号,原样写进 YAML 双引号标量,不许任何需要转义的字符)。
+	  - Endpoint 空串 = 生产地址;非空须是 https://主机[:端口][/路径],dev 档也接受 http://(login 只在 Mode=dev / test 放行 http,
+	    而 Mode: dev 只在 dev 档写);不带用户信息、查询串与片段;不得含 `${`(login 不展开环境变量,出现即拒启)。scheme 只认小写。
+	  - 给了 Endpoint 却没给对应 AppId:Endpoint 只在渲染该 provider 时才写,静默丢掉等于让人以为指向了沙箱。
+	正则一律以 \z 收尾:.NET 的 $ 会放过结尾的一个换行,换行进 YAML 就是注入。
+	报错不回显 Endpoint 的值(可能带用户信息里的口令),AppId 是公开值但同样不回显,点参数名即可定位。
+#>
+function Get-LoginAuthProviderParamErrors {
+	param(
+		[AllowEmptyString()][string]$WeChatAppId = '',
+		[AllowEmptyString()][string]$WeChatEndpoint = '',
+		[AllowEmptyString()][string]$QQAppId = '',
+		[AllowEmptyString()][string]$QQEndpoint = '',
+		[Parameter(Mandatory = $true)][ValidateSet('dev', 'staging', 'prod')][string]$ReleaseProfile
+	)
+
+	$errors = [System.Collections.Generic.List[string]]::new()
+	$providers = @(
+		[pscustomobject]@{ Name = 'WeChat'; AppIdParam = '-LoginWeChatAppId'; EndpointParam = '-LoginWeChatEndpoint'; AppId = $WeChatAppId; Endpoint = $WeChatEndpoint }
+		[pscustomobject]@{ Name = 'QQ'; AppIdParam = '-LoginQQAppId'; EndpointParam = '-LoginQQEndpoint'; AppId = $QQAppId; Endpoint = $QQEndpoint }
+	)
+	foreach ($p in $providers) {
+		if (-not [string]::IsNullOrEmpty($p.AppId) -and $p.AppId -cnotmatch '^[A-Za-z0-9_.-]+\z') {
+			$errors.Add("$($p.AppIdParam) 只允许 [A-Za-z0-9_.-](AuthProviders.$($p.Name).AppId 是公开的应用号,原样写进 login ConfigMap)。")
+		}
+		if ([string]::IsNullOrEmpty($p.Endpoint)) { continue }
+		if ([string]::IsNullOrEmpty($p.AppId)) {
+			$errors.Add("给了 $($p.EndpointParam) 却没给 $($p.AppIdParam):Endpoint 只在渲染 AuthProviders.$($p.Name) 时才写,不能静默丢掉。")
+		}
+		if ($p.Endpoint.Contains('${')) {
+			$errors.Add("$($p.EndpointParam) 含未展开的 `${...}:login 不展开环境变量,出现即拒绝启动。")
+			continue
+		}
+		$m = [regex]::Match($p.Endpoint, '^(?<scheme>https?)://(?<host>[A-Za-z0-9](?:[A-Za-z0-9.-]*[A-Za-z0-9])?)(?::(?<port>[0-9]{1,5}))?(?<path>/[A-Za-z0-9._~%/-]*)?\z')
+		if (-not $m.Success -or ($m.Groups['port'].Success -and ([int]$m.Groups['port'].Value -lt 1 -or [int]$m.Groups['port'].Value -gt 65535))) {
+			$errors.Add("$($p.EndpointParam) 须是 https://主机[:端口][/路径](dev 档也接受 http://),不带用户信息、查询串与片段,路径只用 [A-Za-z0-9._~%/-]。")
+			continue
+		}
+		if ($m.Groups['scheme'].Value -ceq 'http' -and $ReleaseProfile -ne 'dev') {
+			$errors.Add("$($p.EndpointParam) 在 -ReleaseProfile $ReleaseProfile 只接受 https://:http:// 只在 dev 档放行(login 生产模式拒绝 http,Endpoint 上的请求带着 AppSecret / access_token)。")
+		}
+	}
+	# 逐条写进管道:调用方一律用 @(...) 收集,合法时得到空数组。
+	return $errors.ToArray()
+}
+
+<#
+.SYNOPSIS
+	login.yaml 顶层的 AuthProviders 段(第三方登录,-LoginWeChatAppId / -LoginQQAppId)。两个 AppId 都为空 = 空串(不写 AuthProviders,
+	login 模板的产物与接入前逐字相同)。纯函数:只看入参,参数不合法即 throw。
+
+.DESCRIPTION
+	键名核对自 go/login/internal/config/config.go WeChatAuthConf / QQAuthConf:
+	  - WeChat:AppId + AppSecretEnv(环境变量名,值由 Apply-OneGoSvc 经 Secret login-oauth 注入容器);**从不写 AppSecret**
+	    (生产模式拒绝内联密钥,dev 也不需要)。
+	  - QQ:只写 AppId(provider 只用 access_token 调 /oauth2.0/me 并校验 client_id,不需要 AppKey);RequestUnionId 不写 = login 缺省 true。
+	  - RequireUnionId 只在 -Login*AllowOpenId 时写 false;不写 = login 缺省 true(拿不到 unionid 即拒绝登录,不回落 openid)。
+	  - Endpoint 只在给了时写(沙箱 mock);不写 = 生产地址。
+	AuthProviders 在整份 login.yaml 里只能出现一次(重复的顶层键各 YAML 解析器行为不一),login 模板别处不得再写这个键。
+	值全部写成 YAML 双引号标量;字符集已由 Get-LoginAuthProviderParamErrors 限定,不需要转义。
+	调用方:New-GoSvcConfigMapYaml 生成 login 的 ConfigMap。
+#>
+function New-LoginAuthProvidersYaml {
+	param(
+		[AllowEmptyString()][string]$WeChatAppId = '',
+		[AllowEmptyString()][string]$WeChatEndpoint = '',
+		[bool]$WeChatAllowOpenId = $false,
+		[AllowEmptyString()][string]$QQAppId = '',
+		[AllowEmptyString()][string]$QQEndpoint = '',
+		[bool]$QQAllowOpenId = $false,
+		[Parameter(Mandatory = $true)][ValidateSet('dev', 'staging', 'prod')][string]$ReleaseProfile,
+		# login 容器里存放微信 AppSecret 的环境变量名(调用方传 $script:LoginWeChatAppSecretEnv,与注入 env 的名字同源)。
+		[Parameter(Mandatory = $true)][string]$WeChatAppSecretEnv
+	)
+
+	$errors = @(Get-LoginAuthProviderParamErrors -WeChatAppId $WeChatAppId -WeChatEndpoint $WeChatEndpoint `
+		-QQAppId $QQAppId -QQEndpoint $QQEndpoint -ReleaseProfile $ReleaseProfile)
+	if ($errors.Count -gt 0) {
+		throw ("生成 login ConfigMap 的 AuthProviders 段失败:" + ($errors -join ' '))
+	}
+	if ($WeChatAppSecretEnv -cnotmatch '^[A-Z][A-Z0-9_]*\z') {
+		throw "内部错误:微信 AppSecret 的环境变量名 '$WeChatAppSecretEnv' 不是 [A-Z][A-Z0-9_]* 形状,拒绝渲染。"
+	}
+	$hasWeChat = -not [string]::IsNullOrEmpty($WeChatAppId)
+	$hasQQ = -not [string]::IsNullOrEmpty($QQAppId)
+	if (-not $hasWeChat -and -not $hasQQ) { return '' }
+
+	$lines = [System.Collections.Generic.List[string]]::new()
+	$lines.Add('# 第三方登录(k8s_deploy.ps1 -LoginWeChatAppId / -LoginQQAppId,New-LoginAuthProvidersYaml 生成)。只写公开值:微信 AppSecret 经 Secret')
+	$lines.Add('# 注入 AppSecretEnv 指向的容器环境变量,QQ 不需要密钥。RequireUnionId 不写 = login 缺省 true(拿不到 unionid 即拒绝登录)。')
+	$lines.Add('AuthProviders:')
+	if ($hasWeChat) {
+		$lines.Add('  WeChat:')
+		$lines.Add("    AppId: `"$WeChatAppId`"")
+		$lines.Add("    AppSecretEnv: `"$WeChatAppSecretEnv`"")
+		if ($WeChatAllowOpenId) { $lines.Add('    RequireUnionId: false') }
+		if (-not [string]::IsNullOrEmpty($WeChatEndpoint)) { $lines.Add("    Endpoint: `"$WeChatEndpoint`"") }
+	}
+	if ($hasQQ) {
+		$lines.Add('  QQ:')
+		$lines.Add("    AppId: `"$QQAppId`"")
+		if ($QQAllowOpenId) { $lines.Add('    RequireUnionId: false') }
+		if (-not [string]::IsNullOrEmpty($QQEndpoint)) { $lines.Add("    Endpoint: `"$QQEndpoint`"") }
+	}
+	return ($lines -join "`n")
+}
+
+<#
+.SYNOPSIS
+	写路径入口的第三方登录参数门禁:形状不对就在密钥解析与任何写操作之前 throw(一次报全),并按需打英文警告。
+	由 Assert-ClientEntryDeployPreflight 调用(与 -LoginDevPasswordAuth 的门禁同处)。
+
+.DESCRIPTION
+	规则只有一份(Get-LoginAuthProviderParamErrors);New-LoginAuthProvidersYaml 生成时再查一次作纵深防御。
+	参数非法就拒绝,不论本次是否部署 login:错的参数配在不部署 login 的命令上,下次带同一条命令部署 login 时照样会错。
+	不部署 login 时给了这些参数只告警「不生效」,与 -LoginDevPasswordAuth 同口径。
+#>
+function Assert-LoginAuthProviderParams {
+	param([Parameter(Mandatory = $true)][bool]$DeploysLogin)
+
+	$errors = @(Get-LoginAuthProviderParamErrors -WeChatAppId $LoginWeChatAppId -WeChatEndpoint $LoginWeChatEndpoint `
+		-QQAppId $LoginQQAppId -QQEndpoint $LoginQQEndpoint -ReleaseProfile $ReleaseProfile)
+	if ($errors.Count -gt 0) {
+		throw ("login 第三方登录参数校验失败($($errors.Count) 项),未做任何写操作:`n  - " + ($errors -join "`n  - "))
+	}
+
+	$hasWeChat = -not [string]::IsNullOrEmpty($LoginWeChatAppId)
+	$hasQQ = -not [string]::IsNullOrEmpty($LoginQQAppId)
+	if ($LoginWeChatAllowOpenId -and -not $hasWeChat) {
+		Write-Warning "[login-auth] -LoginWeChatAllowOpenId supplied without -LoginWeChatAppId; flag has no effect (AuthProviders.WeChat is not rendered)."
+	}
+	if ($LoginQQAllowOpenId -and -not $hasQQ) {
+		Write-Warning "[login-auth] -LoginQQAllowOpenId supplied without -LoginQQAppId; flag has no effect (AuthProviders.QQ is not rendered)."
+	}
+	if ($ReleaseProfile -ne 'dev') {
+		if ($LoginWeChatAllowOpenId -and $hasWeChat) {
+			Write-Warning "[login-auth] -LoginWeChatAllowOpenId (ReleaseProfile=$ReleaseProfile): WeChat accounts are created by openid when unionid is missing; connecting unionid later splits each such player into two accounts that cannot be merged."
+		}
+		if ($LoginQQAllowOpenId -and $hasQQ) {
+			Write-Warning "[login-auth] -LoginQQAllowOpenId (ReleaseProfile=$ReleaseProfile): QQ accounts are created by openid when unionid is missing; connecting unionid later splits each such player into two accounts that cannot be merged."
+		}
+	}
+	if (($hasWeChat -or $hasQQ) -and -not $DeploysLogin) {
+		Write-Warning "[login-auth] -LoginWeChatAppId / -LoginQQAppId supplied, but login is not deployed in this run (only generated with Go services during zone-up / all-up; requires -GoSvcRegistry without -SkipGoSvc); flags have no effect."
+	}
+	if ($ConfirmLoginAuthProviderChange -and -not $DeploysLogin) {
+		Write-Warning "[login-auth] -ConfirmLoginAuthProviderChange supplied, but login is not deployed in this run; flag has no effect."
+	}
+}
+
+<#
+.SYNOPSIS
+	login 第三方登录的防误关闸(集群现状预检,非 DryRun):本次要部署 login 的每个 zone,线上配置会被本次参数关掉或改掉,
+	就在任何写操作之前拒绝,所有 zone 一次报全。由 Assert-ClientEntryDeployPreflight 在 Assert-ClientEntryClusterState 之后调用。
+
+.DESCRIPTION
+	六个 -Login* 参数不粘滞(见参数注释),漏传一个 apply 照样成功,玩家却登不上:比 gate 换形态更隐蔽,因为 login 不报错,
+	只是 provider 没注册或 unionid 校验翻转。判据只有一份,在库里(lib Get-LoginAuthProviderDrift,k8s_zone_rollback.ps1
+	第 0 步用同一份);线上现状由 Get-LoginAuthProviderLiveState 读(login ConfigMap 的 AuthProviders 段 + Secret login-oauth
+	是否存在,名字取自库契约,与本脚本 $script:GoSvcInfo.login / $script:LoginOAuthSecretName 的相等由契约测试钉住)。
+	给了 -ConfirmLoginAuthProviderChange 只打警告放行。任何 kubectl 失败都 throw(查不到不等于没开,fail-closed)。
+	-Zones 与 Assert-ClientEntryClusterState 同一份(zone-up 一个,all-up 取 zones 配置);all-up 逐个 zone 部署,所以必须在
+	第一个写操作之前把全部 zone 判完,不留「前几个 zone 已关掉第三方登录、后面的才被拒」的半截部署。
+#>
+function Assert-LoginAuthProviderClusterState {
+	param([Parameter(Mandatory = $true)][AllowEmptyCollection()][object[]]$Zones)
+
+	$problems = @()
+	foreach ($zone in $Zones) {
+		$namespace = Get-ZoneNamespace -Name $zone.Name
+		$state = Get-LoginAuthProviderLiveState -Namespace $namespace -KubeContext $KubeContext -KubeConfig $KubeConfig
+		$drift = Get-LoginAuthProviderDrift -Live $state.Live -OAuthSecretPresent $state.OAuthSecretPresent `
+			-WeChatAppId $LoginWeChatAppId -WeChatEndpoint $LoginWeChatEndpoint -WeChatAllowOpenId $LoginWeChatAllowOpenId.IsPresent `
+			-QQAppId $LoginQQAppId -QQEndpoint $LoginQQEndpoint -QQAllowOpenId $LoginQQAllowOpenId.IsPresent
+		if ($drift.Drifts.Count -eq 0) { continue }
+		$keep = if ($drift.KeepArgs) { "要保持现状请照传 $($drift.KeepArgs)" } else { '线上没有可照传的 provider' }
+		$text = "zone $($zone.Name)(namespace=$namespace):" + ($drift.Drifts -join ';') + "。$keep;确认要关闭或改动请加 -ConfirmLoginAuthProviderChange。"
+		if ($ConfirmLoginAuthProviderChange) {
+			Write-Warning "[login-auth] -ConfirmLoginAuthProviderChange supplied; allowed: $text"
+		}
+		else {
+			$problems += $text
+		}
+	}
+	if ($problems.Count -gt 0) {
+		throw ("login 第三方登录现状预检失败($($problems.Count) 个 zone),未做任何写操作:`n  - " + ($problems -join "`n  - "))
+	}
+}
+
+# ─────────────────────────────────────────────────────────────────
+# D1 玩家归属与落点映射持久化的部署载体(第 1b-3 批:docs/handoff/launch-readiness-20261013/spec_D1_batch1b2_2_3.md §7、§13.4)
+# ─────────────────────────────────────────────────────────────────
+# 参数、切换与回退顺序见参数 -RouteStoreMode 处的注释。本节的函数:
+#   Get-RouteStoreWaitAOFNumReplicas / Get-RouteStoreDeploySettings  data-service ConfigMap 的 RouteStore 段取值(纯函数)
+#   Get-RouteSwitchParamErrors                                       开关组合门禁(纯函数)
+#   ConvertFrom-RouteSwitchLiveYaml / Get-RouteSwitchDrift / Get-RouteSwitchKeepArgs   线上现状的解析与比对(纯函数)
+#   Read-LiveRouteSwitchFacts                                        读线上 ConfigMap(只读;Invoke-ClientEntryKubectl 不看 DryRun,由调用方判)
+#   Assert-RouteSwitchClusterState / Assert-RouteSwitchPreflight     写路径入口的两道闸
+# 纯函数只依赖参数、$RepoRoot 与 Get-AuthoritativeScalar / ConvertFrom-YamlToFlatMap:契约测试按 AST 抽出直接调用;
+# 读集群的那两个在测试里给 Invoke-ClientEntryKubectl 替身。
+
+# mapping Redis 的拓扑('single' / 'ha'),决定 WAITAOF 的副本确认份数:data-service 的 RouteStore.WaitAOFNumReplicas 与 go/db 的
+# ServerConfig.RedisClient.WaitAOFNumReplicas 两处 ConfigMap 都按它渲染(单实例 0;高可用 1:哨兵切主时被提升的副本上要有这次写)。
+# 共享 Redis 就是 mapping Redis,所以判据只有一个:与 Apply-Infra 选清单用同一个 Get-RedisTopology(-RedisReplicas + 档位,zone 写路径
+# 没给参数时跟随线上,见 Resolve-RedisTopologyFromLive),不另存一份 —— 每次现取,跟随线上之后的渲染自然跟着变。
+function Get-MappingRedisTopology {
+	return Get-MappingRedisTopologyFor -Topology (Get-RedisTopology)
+}
+
+# WAITAOF 要求的副本确认份数:单实例 0,redis-ha(1 主 2 从)1。纯函数。
+function Get-RouteStoreWaitAOFNumReplicas {
+	param([Parameter(Mandatory = $true)][string]$Topology)
+	switch -CaseSensitive ($Topology) {
+		'single' { return 0 }
+		'ha' { return 1 }
+	}
+	throw "内部错误:mapping Redis 拓扑 '$Topology' 不是 single / ha,拒绝渲染 RouteStore.WaitAOFNumReplicas。"
+}
+
+<#
+.SYNOPSIS
+	data-service ConfigMap 的 RouteStore 段取值。纯函数(读服务 yaml 与传入的开关),ConfigMap 生成器与写路径入口的自检共用这一处。
+
+.DESCRIPTION
+	- Mode / ReadRequiresReady / Reconcile.ArmReadyMarker:取开关(缺省 redis / false / false),不镜像服务 yaml。
+	- FenceShards:按全局库后端分档。K8s 上 data-service 的全局库恒为 infra namespace 的 MySQL(ConfigMap 的 SnapshotMySQL.Host
+	  = mysql.<infra>:3306),即 MySQL 档;MySQL 档取服务 yaml 的值(go/data_service/etc/data_service.yaml 就是 MySQL 档,16)。
+	  **TiDB 档(64)等 TiDB Phase 1 的部署方式定了再补**:那时这里按后端选值,并在契约测试里钉住 TiDB 档。
+	  不在 [1, 64] 即 throw(64 = placement.MaxRouteFenceShards,围栏持有者写满 0..63 全部分片的契约)。
+	- WaitAOFNumLocal 固定 1(redis.yaml 与 redis-ha.yaml 的每个节点都开着 --appendonly yes);WaitAOFNumReplicas 按拓扑(Get-RouteStoreWaitAOFNumReplicas)。
+	- WaitAOFTimeoutMs 取服务 yaml,不在 [1, 1500] 即 throw(data_service 的 Validate 同一上界 MaxRouteStoreWaitAOFTimeoutMs)。
+	- Reconcile 段只写 ArmReadyMarker:其余键不写 = data_service 的代码缺省(Enabled 缺省 true、LeaseMs 10000、RedisPoolSize 4 …);
+	  Redis 连接总账里 leader 的独立池就按这个代码缺省记(Get-RedisConnectionLedgerInputs),所以这里不写 RedisPoolSize。
+	这些键在 redis 模式下没有运行效果,但 data_service 不分 Mode 校验 RouteStore(非法即拒启),所以照样先在部署侧核过。
+#>
+function Get-RouteStoreDeploySettings {
+	param(
+		[Parameter(Mandatory = $true)][string]$Mode,
+		[Parameter(Mandatory = $true)][bool]$ArmReadyMarker,
+		[Parameter(Mandatory = $true)][bool]$ReadRequiresReady,
+		[Parameter(Mandatory = $true)][string]$Topology
+	)
+	if ($Mode -cnotin @('redis', 'db_first')) {
+		throw "内部错误:RouteStore.Mode '$Mode' 不是 redis / db_first(参数绑定后应已规范成小写),拒绝渲染。"
+	}
+	$dsYaml = 'go/data_service/etc/data_service.yaml'
+	$fenceRaw = [string](Get-AuthoritativeScalar -RelativePath $dsYaml -KeyPath 'RouteStore.FenceShards')
+	$fence = 0
+	if (-not [int]::TryParse($fenceRaw, [ref]$fence) -or $fence -lt 1 -or $fence -gt 64) {
+		throw "生成 ConfigMap 失败:$dsYaml 的 RouteStore.FenceShards='$fenceRaw' 必须是 [1, 64] 内的整数(MySQL 档;64 = placement.MaxRouteFenceShards)。fail-closed:data_service 对越界值拒启。"
+	}
+	$timeoutRaw = [string](Get-AuthoritativeScalar -RelativePath $dsYaml -KeyPath 'RouteStore.WaitAOFTimeoutMs')
+	$timeout = 0
+	if (-not [int]::TryParse($timeoutRaw, [ref]$timeout) -or $timeout -lt 1 -or $timeout -gt 1500) {
+		throw "生成 ConfigMap 失败:$dsYaml 的 RouteStore.WaitAOFTimeoutMs='$timeoutRaw' 必须是 [1, 1500] 内的整数(0 = WAITAOF 无限等待;上界给 2000ms 服务端预算留余量)。fail-closed:data_service 对越界值拒启。"
+	}
+	return [ordered]@{
+		Backend            = 'mysql'
+		Mode               = $Mode
+		FenceShards        = $fence
+		WaitAOFNumLocal    = 1
+		WaitAOFNumReplicas = (Get-RouteStoreWaitAOFNumReplicas -Topology $Topology)
+		WaitAOFTimeoutMs   = $timeout
+		ReadRequiresReady  = $(if ($ReadRequiresReady) { 'true' } else { 'false' })
+		ArmReadyMarker     = $(if ($ArmReadyMarker) { 'true' } else { 'false' })
+	}
+}
+
+<#
+.SYNOPSIS
+	D1 开关的组合门禁:返回错误文本数组(空 = 合法)。纯函数。
+
+.DESCRIPTION
+	1. Arm 或任一读方开关为 true 而 Mode 不是 db_first:data_service 的 Validate 对 ArmReadyMarker / ReadRequiresReady 要求 db_first,
+	   进集群就是 CrashLoop;go/db / guild 的读方开关在 redis 模式下没有人挂就绪标记(leader 只在 db_first 下装配),打开即全部 fail-closed。
+	2. 任一读方开关为 true 而 Arm=false:Arm=false 时 leader 每拍撤掉现存标记(规格 M4),读方读不到可信标记,全部 fail-closed
+	   (go/db 暂停存盘消费、data_service 全部回源、guild 全拒)。回退顺序因此是「先关读方、再关 Arm」(§13.5 第 1 条)。
+	只看本次参数,不看本次部署了哪些服务:参数是对全服目标状态的声明(Mode 与 Arm 是全服单值)。
+#>
+function Get-RouteSwitchParamErrors {
+	param(
+		[Parameter(Mandatory = $true)][string]$Mode,
+		[Parameter(Mandatory = $true)][bool]$ArmReadyMarker,
+		[Parameter(Mandatory = $true)][bool]$ReadRequiresReady,
+		[Parameter(Mandatory = $true)][bool]$DbRequireRouteReady,
+		[Parameter(Mandatory = $true)][bool]$GuildRequireRouteReady
+	)
+	$errors = New-Object System.Collections.Generic.List[string]
+	$readers = @()
+	if ($ReadRequiresReady) { $readers += '-RouteReadRequiresReady' }
+	if ($DbRequireRouteReady) { $readers += '-DbPlacementRequireRouteReady' }
+	if ($GuildRequireRouteReady) { $readers += '-GuildRequireRouteReady' }
+	$needDbFirst = @()
+	if ($ArmReadyMarker) { $needDbFirst += '-RouteReconcileArm' }
+	$needDbFirst += $readers
+	if ($Mode -cne 'db_first' -and $needDbFirst.Count -gt 0) {
+		$errors.Add("$($needDbFirst -join ' / ') 要求 -RouteStoreMode db_first(本次是 $Mode):redis 模式下 data_service 对 ArmReadyMarker / ReadRequiresReady 拒启(进集群即 CrashLoop),也没有对账 leader 挂就绪标记,读方开关一打开就全部 fail-closed")
+	}
+	if ($readers.Count -gt 0 -and -not $ArmReadyMarker) {
+		$errors.Add("$($readers -join ' / ') 要求同时给 -RouteReconcileArm:Arm=false 时对账 leader 每拍撤掉就绪标记(规格 M4),读方读不到可信标记,全部 fail-closed(go/db 暂停存盘消费、data_service 全部回源、guild 全拒);回退顺序是先关读方开关、再关 Arm")
+	}
+	return [string[]]$errors.ToArray()
+}
+
+<#
+.SYNOPSIS
+	从线上 ConfigMap 里那份服务 yaml 读出 D1 开关的现状,返回 [ordered]@{ <本脚本参数名(不带 -)> = <规范值> }。纯函数。
+
+.DESCRIPTION
+	-Scope data-service → RouteStoreMode / RouteReconcileArm / RouteReadRequiresReady(RouteStore.Mode / RouteStore.Reconcile.ArmReadyMarker /
+	RouteStore.ReadRequiresReady);db → DbPlacementRequireRouteReady(Placement.RequireRouteReady);guild → GuildRequireRouteReady
+	(MergeMarkerRedis.RequireRouteReady)。缺键按服务的代码缺省:Mode 缺省 redis,三个布尔缺省 false(本批之前的 ConfigMap 都不写它们)。
+	写法认不出(Mode 不是 redis / db_first、布尔不是小写 true / false)时记成 '<原文>?',与任何参数值都不相等 → 粘滞核对拒绝
+	(fail-closed:看不懂不等于没开)。
+#>
+function ConvertFrom-RouteSwitchLiveYaml {
+	param(
+		[Parameter(Mandatory = $true)][ValidateSet('data-service', 'db', 'guild')][string]$Scope,
+		[Parameter(Mandatory = $true)][AllowEmptyString()][string]$Text
+	)
+	$scalars = (ConvertFrom-YamlToFlatMap -Text $Text).Scalars
+	$read = {
+		param([string]$KeyPath, [string[]]$Allowed, [string]$Default)
+		if (-not $scalars.Contains($KeyPath)) { return $Default }
+		$raw = ([string]$scalars[$KeyPath]).Trim()
+		if ($raw -eq '') { return $Default }
+		if ($Allowed -ccontains $raw) { return $raw }
+		# 显式拼接，避免 PowerShell 把问号当成变量名的一部分而丢失非法值标记。
+		return ($raw + '?')
+	}
+	$bools = @('true', 'false')
+	switch ($Scope) {
+		'data-service' {
+			return [ordered]@{
+				RouteStoreMode         = (& $read 'RouteStore.Mode' @('redis', 'db_first') 'redis')
+				RouteReconcileArm      = (& $read 'RouteStore.Reconcile.ArmReadyMarker' $bools 'false')
+				RouteReadRequiresReady = (& $read 'RouteStore.ReadRequiresReady' $bools 'false')
+			}
+		}
+		'db' { return [ordered]@{ DbPlacementRequireRouteReady = (& $read 'Placement.RequireRouteReady' $bools 'false') } }
+		'guild' { return [ordered]@{ GuildRequireRouteReady = (& $read 'MergeMarkerRedis.RequireRouteReady' $bools 'false') } }
+	}
+}
+
+# 线上现状与本次参数逐键比较(只比 -Desired 里有的键),返回「-<参数> 线上 X,本次 Y」数组。纯函数。
+function Get-RouteSwitchDrift {
+	param(
+		[Parameter(Mandatory = $true)][System.Collections.IDictionary]$Live,
+		[Parameter(Mandatory = $true)][System.Collections.IDictionary]$Desired
+	)
+	$drifts = New-Object System.Collections.Generic.List[string]
+	foreach ($key in @($Live.Keys)) {
+		if (-not $Desired.Contains($key)) { continue }
+		$liveValue = [string]$Live[$key]
+		$desiredValue = [string]$Desired[$key]
+		if ($liveValue -cne $desiredValue) { $drifts.Add("-$key 线上 $liveValue,本次 $desiredValue") }
+	}
+	return [string[]]$drifts.ToArray()
+}
+
+# 照传线上现状要给的参数串:-RouteStoreMode 照写取值,布尔开关只写为 true 的(不给 = false)。线上取值认不出时返回 $null。纯函数。
+function Get-RouteSwitchKeepArgs {
+	param([Parameter(Mandatory = $true)][System.Collections.IDictionary]$Live)
+	$parts = @()
+	foreach ($key in @($Live.Keys)) {
+		$value = [string]$Live[$key]
+		if ($value.EndsWith('?')) { return $null }
+		if ($key -ceq 'RouteStoreMode') { $parts += "-RouteStoreMode $value"; continue }
+		if ($value -ceq 'true') { $parts += "-$key" }
+	}
+	return ($parts -join ' ')
+}
+
+<#
+.SYNOPSIS
+	读线上 D1 开关现状(只读 kubectl)。返回 [object[]],每项 [pscustomobject]@{ Scope; Namespace; Values }(Values 见 ConvertFrom-RouteSwitchLiveYaml)。
+
+.DESCRIPTION
+	- -ReadDataService:一次 kubectl get configmap --all-namespaces --field-selector metadata.name=go-svc-data-service-config,
+	  只认名字以 "<-NamespacePrefix>-" 开头的 namespace(与 Read-PlayerInboxGateLiveFacts 同一口径;用别的前缀部署的 zone 看不到)。
+	  读全部 zone 而不只读本次部署的 zone:Mode / Arm / ReadRequiresReady 是全服单值,本 zone 的 namespace 刚被删掉重建
+	  (zone 回档 Step 1)或是新 zone 时,只读它自己等于不核对。
+	- -DbZoneNames:逐个读这些 zone 的 go-svc-db-config(Placement.RequireRouteReady 逐 zone 打开,只核对本次部署的 zone)。
+	  ConfigMap 不存在(新 zone、namespace 被删)= 没有现状,不比对。
+	- -ReadGuild:读 infra namespace 的 go-svc-guild-config;不存在 = 没有现状。
+	kubectl 失败、输出不是 JSON、ConfigMap 在却没有服务 yaml 那个数据键,一律 throw:读不到不等于没开(fail-closed,同 Read-LiveDbConfigMapYaml)。
+	Invoke-ClientEntryKubectl 不看 $DryRun,DryRun 判断由调用方(Assert-RouteSwitchPreflight)负责。
+#>
+function Read-LiveRouteSwitchFacts {
+	param(
+		[bool]$ReadDataService,
+		[AllowEmptyCollection()][string[]]$DbZoneNames = @(),
+		[bool]$ReadGuild
+	)
+	$facts = New-Object System.Collections.Generic.List[object]
+	$failClosed = '判不出 D1 映射开关的线上现状,拒绝部署;尚未做任何写操作。'
+	# 取 ConfigMap 里服务 yaml 那个数据键的文本;ConfigMap 在而键不在 = 不是本脚本生成的形状,throw。
+	$configFileText = {
+		param($ConfigMap, [string]$ConfigFile, [string]$Source)
+		$property = $null
+		$dataProperty = $ConfigMap.PSObject.Properties['data']
+		if ($null -ne $dataProperty -and $null -ne $dataProperty.Value) { $property = $dataProperty.Value.PSObject.Properties[$ConfigFile] }
+		if ($null -eq $property -or [string]::IsNullOrWhiteSpace([string]$property.Value)) {
+			throw "线上 $Source 存在,但没有 data.${ConfigFile}:不是本脚本生成的形状,$failClosed"
+		}
+		return [string]$property.Value
+	}
+	# 读一个 namespace 里的一份 ConfigMap:不存在返回 $null。
+	$readOne = {
+		param([string]$Namespace, $Info, [string]$Scope)
+		$source = "namespace $Namespace 的 ConfigMap $($Info.ConfigMap)"
+		$result = Invoke-ClientEntryKubectl -KubectlArgs @('get', 'configmap', $Info.ConfigMap, '-n', $Namespace, '--ignore-not-found', '-o', 'json') `
+			-KubeContext $KubeContext -KubeConfig $KubeConfig -CaptureOutput -AllowFailure
+		if ($result.ExitCode -ne 0) {
+			throw "读取线上 $source 失败(kubectl 退出码 $($result.ExitCode)):$($result.Stderr)。fail-closed:读不到不等于没开,$failClosed"
+		}
+		$text = ([string]$result.Stdout).Trim()
+		if ($text -eq '') { return $null }
+		try { $configMap = $text | ConvertFrom-Json -ErrorAction Stop }
+		catch { throw "线上 $source 的 kubectl 输出不是合法 JSON,$failClosed$($_.Exception.Message)" }
+		$yaml = & $configFileText $configMap $Info.ConfigFile $source
+		return [pscustomobject]@{ Scope = $Scope; Namespace = $Namespace; Values = (ConvertFrom-RouteSwitchLiveYaml -Scope $Scope -Text $yaml) }
+	}
+
+	if ($ReadDataService) {
+		$info = $GoSvcCatalogue['data-service']
+		$result = Invoke-ClientEntryKubectl -KubectlArgs @('get', 'configmap', '--all-namespaces', '--field-selector', "metadata.name=$($info.ConfigMap)", '-o', 'json') `
+			-KubeContext $KubeContext -KubeConfig $KubeConfig -CaptureOutput -AllowFailure
+		if ($result.ExitCode -ne 0) {
+			throw "读取各 zone 线上的 ConfigMap $($info.ConfigMap) 失败(kubectl 退出码 $($result.ExitCode)):$($result.Stderr)。fail-closed:读不到不等于还是 redis 模式,$failClosed"
+		}
+		try { $list = ([string]$result.Stdout) | ConvertFrom-Json -ErrorAction Stop }
+		catch { throw "各 zone 线上 ConfigMap $($info.ConfigMap) 的 kubectl 输出不是合法 JSON,$failClosed$($_.Exception.Message)" }
+		$prefix = "$NamespacePrefix-"
+		foreach ($item in @($list.items)) {
+			if ($null -eq $item) { continue }
+			$namespace = [string]$item.metadata.namespace
+			if (-not $namespace.StartsWith($prefix, [System.StringComparison]::Ordinal)) { continue }
+			$yaml = & $configFileText $item $info.ConfigFile "namespace $namespace 的 ConfigMap $($info.ConfigMap)"
+			$facts.Add([pscustomobject]@{ Scope = 'data-service'; Namespace = $namespace; Values = (ConvertFrom-RouteSwitchLiveYaml -Scope 'data-service' -Text $yaml) })
+		}
+	}
+	foreach ($dbZoneName in @($DbZoneNames | Where-Object { -not [string]::IsNullOrWhiteSpace($_) })) {
+		$fact = & $readOne (Get-ZoneNamespace -Name $dbZoneName) $GoSvcCatalogue['db'] 'db'
+		if ($null -ne $fact) { $facts.Add($fact) }
+	}
+	if ($ReadGuild) {
+		$fact = & $readOne $InfraNamespace $GoSvcCatalogue['guild'] 'guild'
+		if ($null -ne $fact) { $facts.Add($fact) }
+	}
+	return [object[]]$facts.ToArray()
+}
+
+<#
+.SYNOPSIS
+	D1 开关的粘滞核对(防翻转;非 DryRun,写路径入口、任何写操作之前):线上现状与本次参数不一致就整条拒绝,所有不一致一次报全。
+
+.DESCRIPTION
+	谁和谁比:
+	  - 本次部署 zone 的 Go 服务(zone-up / all-up,Test-ZoneDbDeployed):全部 zone 的 data-service(Mode / Arm / ReadRequiresReady),
+	    以及本次部署的 zone 的 db(Placement.RequireRouteReady);
+	  - 本次部署全局 Go 服务(Test-GlobalGoSvcDeployed):infra 的 guild(MergeMarkerRedis.RequireRouteReady)。本次要打开 guild 的开关
+	    而不部署 zone(infra-up)时,另读全部 zone 的 data-service,只比 Mode 与 Arm —— guild 读方的前提是全服已 db_first 且 Arm=true,
+	    参数里声明了不算数,要线上真是这样。
+	给了 -ConfirmRouteSwitchChange 只打 [RouteSwitch]Confirmed 警告放行。任何 kubectl 失败都 throw(Read-LiveRouteSwitchFacts)。
+	-ZoneNames 与 Assert-ClientEntryClusterState 同一份(zone-up 一个,all-up 取 zones 配置,infra-up 为空):all-up 逐 zone 部署,
+	必须在第一个写操作之前把全部 zone 判完,不留「前几个 zone 已翻过去、后面的才被拒」的半截部署。
+#>
+function Assert-RouteSwitchClusterState {
+	param(
+		[Parameter(Mandatory = $true)][AllowEmptyCollection()][string[]]$ZoneNames,
+		[Parameter(Mandatory = $true)][bool]$DeploysZoneGoSvc,
+		[Parameter(Mandatory = $true)][bool]$DeploysGuild
+	)
+	$asText = { param([bool]$On) if ($On) { 'true' } else { 'false' } }
+	$desired = [ordered]@{
+		RouteStoreMode               = $RouteStoreMode
+		RouteReconcileArm            = (& $asText ([bool]$RouteReconcileArm))
+		RouteReadRequiresReady       = (& $asText ([bool]$RouteReadRequiresReady))
+		DbPlacementRequireRouteReady = (& $asText ([bool]$DbPlacementRequireRouteReady))
+		GuildRequireRouteReady       = (& $asText ([bool]$GuildRequireRouteReady))
+	}
+	$guildPrecondition = $DeploysGuild -and (-not $DeploysZoneGoSvc) -and ([bool]$GuildRequireRouteReady)
+	# 不用 `$x = if (...) { @() }`:if 语句把空数组展开成 $null,传下去就成了一个 $null 的 zone 名。
+	$dbZones = @()
+	if ($DeploysZoneGoSvc) { $dbZones = @($ZoneNames) }
+	$facts = @(Read-LiveRouteSwitchFacts -ReadDataService ($DeploysZoneGoSvc -or $guildPrecondition) -DbZoneNames $dbZones -ReadGuild $DeploysGuild)
+
+	$problems = @()
+	foreach ($fact in $facts) {
+		$compare = $desired
+		if ($fact.Scope -ceq 'data-service' -and -not $DeploysZoneGoSvc) {
+			$compare = [ordered]@{ RouteStoreMode = $desired.RouteStoreMode; RouteReconcileArm = $desired.RouteReconcileArm }
+		}
+		$drifts = @(Get-RouteSwitchDrift -Live $fact.Values -Desired $compare)
+		if ($drifts.Count -eq 0) { continue }
+		$keep = Get-RouteSwitchKeepArgs -Live $fact.Values
+		$keepText = if ($null -eq $keep) { '线上取值认不出(见上面带 ? 的值),先人工核对该 ConfigMap' } elseif ($keep -eq '') { '要保持现状请不带这几个开关' } else { "要保持现状请照传 $keep(布尔开关不给 = false)" }
+		$text = "$($fact.Scope)(namespace=$($fact.Namespace)):" + ($drifts -join ';') + ";$keepText"
+		if ($ConfirmRouteSwitchChange) {
+			Write-Warning "[RouteSwitch]Confirmed:-ConfirmRouteSwitchChange supplied; allowed: $text"
+		}
+		else {
+			$problems += $text
+		}
+	}
+	$dataServiceZones = @($facts | Where-Object { $_.Scope -ceq 'data-service' }).Count
+	$dbZonesLive = @($facts | Where-Object { $_.Scope -ceq 'db' }).Count
+	$guildLive = @($facts | Where-Object { $_.Scope -ceq 'guild' }).Count
+	Write-Host "Route switch live state: data_service_zones=$dataServiceZones db_zones=$dbZonesLive guild=$guildLive drifts_refused=$($problems.Count) confirm_change=$(([bool]$ConfirmRouteSwitchChange))"
+	if ($problems.Count -gt 0) {
+		throw ("D1 映射开关的线上现状与本次参数不一致($($problems.Count) 处),未做任何写操作:`n  - " + ($problems -join "`n  - ") +
+			"`n确要切换请加 -ConfirmRouteSwitchChange(顺序见 -RouteStoreMode 参数注释:P2 Mode=db_first → P3 全部 zone Arm=true → P5 读方逐个打开,回退反过来)。")
+	}
+}
+
+<#
+.SYNOPSIS
+	D1 开关的写路径入口闸:组合门禁 → 生成器自检 → 计划行 → 粘滞核对(非 DryRun)。任何一步失败都 throw,早于任何集群写操作。
+
+.DESCRIPTION
+	组合门禁(Get-RouteSwitchParamErrors)与生成器自检(Get-RouteStoreDeploySettings)DryRun 同样判:它们只看参数与仓库文件。
+	生成器自检提前到这里的理由同 Show-PeakShavingPlan:服务 yaml 的 FenceShards / WaitAOFTimeoutMs 读不到或越界时,
+	不要等到 Apply-Zone 中途(node-config / gate / scene 已 apply)才在生成 data-service ConfigMap 时失败。
+	不受 -SkipPreflight 影响(那个开关只跳过发布预检),理由同 Assert-ClientEntryDeployPreflight。
+#>
+function Assert-RouteSwitchPreflight {
+	$errors = @(Get-RouteSwitchParamErrors -Mode $RouteStoreMode -ArmReadyMarker ([bool]$RouteReconcileArm) `
+			-ReadRequiresReady ([bool]$RouteReadRequiresReady) -DbRequireRouteReady ([bool]$DbPlacementRequireRouteReady) `
+			-GuildRequireRouteReady ([bool]$GuildRequireRouteReady))
+	if ($errors.Count -gt 0) {
+		throw ("D1 映射开关的参数组合不合法,未做任何写操作:`n  - " + ($errors -join "`n  - "))
+	}
+	$deploysZoneGoSvc = [bool](Test-ZoneDbDeployed)
+	$deploysGuild = [bool](Test-GlobalGoSvcDeployed)
+	$settings = Get-RouteStoreDeploySettings -Mode $RouteStoreMode -ArmReadyMarker ([bool]$RouteReconcileArm) `
+		-ReadRequiresReady ([bool]$RouteReadRequiresReady) -Topology (Get-MappingRedisTopology)
+	$zoneSwitchesSet = ($RouteStoreMode -cne 'redis') -or ([bool]$RouteReconcileArm) -or ([bool]$RouteReadRequiresReady) -or ([bool]$DbPlacementRequireRouteReady)
+	if ($zoneSwitchesSet -and -not $deploysZoneGoSvc) {
+		Write-Warning "[RouteSwitch]NoEffect:-RouteStoreMode / -RouteReconcileArm / -RouteReadRequiresReady / -DbPlacementRequireRouteReady only take effect when zone Go services are deployed (zone-up / all-up with -GoSvcRegistry and without -SkipGoSvc); nothing is rendered for them in this run."
+	}
+	if ($GuildRequireRouteReady -and -not $deploysGuild) {
+		Write-Warning "[RouteSwitch]NoEffect:-GuildRequireRouteReady only takes effect when global Go services are deployed (infra-up, or all-up without -SkipInfra, with -GoSvcRegistry and without -SkipGoSvc); nothing is rendered for it in this run."
+	}
+	if ($ConfirmRouteSwitchChange -and -not $deploysZoneGoSvc -and -not $deploysGuild) {
+		Write-Warning "[RouteSwitch]NoEffect:-ConfirmRouteSwitchChange supplied, but neither zone nor global Go services are deployed in this run; flag has no effect."
+	}
+	Write-Host ("Route switches: mode={0} arm={1} read_requires_ready={2} db_require_route_ready={3} guild_require_route_ready={4} fence_shards={5}({6}) waitaof={7}/{8}/{9}ms redis_topology={10} confirm_change={11}" -f
+		$settings.Mode, $settings.ArmReadyMarker, $settings.ReadRequiresReady, $(if ([bool]$DbPlacementRequireRouteReady) { 'true' } else { 'false' }),
+		$(if ([bool]$GuildRequireRouteReady) { 'true' } else { 'false' }), $settings.FenceShards, $settings.Backend, $settings.WaitAOFNumLocal,
+		$settings.WaitAOFNumReplicas, $settings.WaitAOFTimeoutMs, (Get-MappingRedisTopology), ([bool]$ConfirmRouteSwitchChange))
+	if ($DryRun) {
+		Write-Host "[dry-run] Skipping D1 route switch sticky check (live data-service / db / guild ConfigMaps); actual execution checks before any writes."
+		return
+	}
+	if (-not $deploysZoneGoSvc -and -not $deploysGuild) { return }
+	$zoneNames = @()
+	if ($Command -eq 'zone-up') {
+		$zoneNames = @($ZoneName)
+	}
+	elseif ($Command -eq 'all-up') {
+		$zoneNames = @(Get-ZonesFromJson -Path (Resolve-ZonesConfigPath) | ForEach-Object { [string]$_.name })
+	}
+	Assert-RouteSwitchClusterState -ZoneNames $zoneNames -DeploysZoneGoSvc $deploysZoneGoSvc -DeploysGuild $deploysGuild
+}
+
+function Assert-GlobalMatchKafkaTopology {
+	param($Topology)
+	if ($Topology.ReplicationFactor -lt 3 -or $Topology.MinInsyncReplicas -lt 2) {
+		throw '全球匹配结果提交要求Kafka至少3副本、min.insync.replicas至少2；不能以单broker声明耐久提交。'
+	}
+}
+
+function Get-GlobalMatchDeploymentSettings {
+	param([string]$Profile, [string]$TiDBHost, [uint32]$Region)
+	$enabled = -not [string]::IsNullOrWhiteSpace($TiDBHost)
+	if (-not $enabled -and $Profile -ne 'dev') {
+		throw '全局匹配在 staging/prod 必须指定 -MatchTiDBHost(host:port)，禁止退回旧Redis权威。'
+	}
+	if ($enabled -and $Region -eq 0) {
+		throw '全局匹配必须指定非零 -PhysicalRegion，使用真实机房编号。'
+	}
+	$hostValue = ''
+	if ($enabled) {
+		try { $hostValue = (Get-FriendSqlSettings -Profile 'dev' -TiDBHost $TiDBHost -DevelopmentHost '').Host }
+		catch { throw '-MatchTiDBHost 必须是有效的 host:port，不接受凭据或DSN。' }
+	}
+	return @{ Enabled = $enabled; Host = $hostValue; Region = $Region }
+}
+
+function Get-TradeSqlSettings {
+	param([string]$Profile, [string]$TiDBHost, [string]$DevelopmentHost)
+	if ([string]::IsNullOrEmpty($TiDBHost) -and $Profile -ne 'dev') {
+		throw '全服交易在 staging/prod 必须显式提供 -TradeTiDBHost(host:port)，禁止回落到区域MySQL。'
+	}
+	try { return Get-FriendSqlSettings -Profile 'dev' -TiDBHost $TiDBHost -DevelopmentHost $DevelopmentHost }
+	catch { throw '-TradeTiDBHost 必须是有效的 host:port，不接受凭据、DSN 或其他配置内容。' }
+}
+
 function Get-FriendSqlSettings {
 	param([string]$Profile, [string]$TiDBHost, [string]$DevelopmentHost)
 	if ([string]::IsNullOrEmpty($TiDBHost)) {
@@ -5236,7 +7373,7 @@ function Get-FriendSqlSettings {
 
 <#
 .SYNOPSIS
-	player-inbox ConfigMap 的 PlayerInbox.EnqueueTypes:从服务 yaml 读入箱白名单,逐项核对后渲染成 PlayerInbox 段下的 YAML 行。
+	从服务 yaml 读 PlayerInbox.EnqueueTypes(入箱白名单),逐项核对后按原顺序返回类型名;空白名单不返回任何元素。
 
 .DESCRIPTION
 	白名单是「哪些消息类型允许入箱」的唯一来源(docs/design/player-inbox-service.md §3.3),空 = 入箱全部停用(Go 侧回
@@ -5244,21 +7381,67 @@ function Get-FriendSqlSettings {
 	才在服务 yaml 里填上并重跑 infra-up。各档位都镜像服务 yaml(与 trade 的 Market.* 同口径):白名单进 git、可审。
 	服务 yaml 可以写块式列表或流式 `[]` / `[A, B]`;每一项必须是 proto/player_inbox/player_inbox.proto 里
 	PlayerInboxMessageType 的枚举名(PLAYER_INBOX_MSG_*,不含 UNSPECIFIED)且不重复,否则 throw:拼错的类型名在 Go 侧
-	要么拒启、要么被当成未知类型,都不该等到集群里才发现。返回值带两格缩进,直接拼进模板的 PlayerInbox 段。
+	要么拒启、要么被当成未知类型,都不该等到集群里才发现。
+	三个调用方读同一份:Get-PlayerInboxEnqueueTypesYaml(渲染 ConfigMap)、Assert-PlayerInboxConsumerGate(写前门禁)与
+	Read-PlayerInboxGateLiveFacts(决定读不读各 zone 线上的开关)。列表的形状由 ConvertFrom-PlayerInboxEnqueueTypesText 解析,
+	线上 ConfigMap 走同一个解析函数;类型名只在这里核对。
+	调用方用 @(...) 收集,空白名单得到长度 0 的数组。
 #>
-function Get-PlayerInboxEnqueueTypesYaml {
+function Get-PlayerInboxEnqueueTypes {
 	param([Parameter(Mandatory = $true)][string]$RelativePath)
 
 	$keyPath = 'PlayerInbox.EnqueueTypes'
 	$full = Join-Path $RepoRoot ($RelativePath -replace '/', [System.IO.Path]::DirectorySeparatorChar)
 	if (-not (Test-Path -LiteralPath $full)) {
-		throw "生成 player-inbox ConfigMap 失败:找不到 $RelativePath(fail-closed:不替你猜一个入箱白名单)"
+		throw "player-inbox 入箱白名单校验失败:找不到 $RelativePath(fail-closed:不替你猜一个入箱白名单)"
 	}
-	$flat = ConvertFrom-YamlToFlatMap -Text (Get-Content -LiteralPath $full -Raw)
-	if (-not $flat.Scalars.Contains($keyPath)) {
-		throw "生成 player-inbox ConfigMap 失败:$RelativePath 里查不到 $keyPath(入箱白名单必须显式写出,空白名单写 [])"
+	$parsed = ConvertFrom-PlayerInboxEnqueueTypesText -Text (Get-Content -LiteralPath $full -Raw) -Source $RelativePath
+	if (-not $parsed.Found) {
+		throw "player-inbox 入箱白名单校验失败:$RelativePath 里查不到 $keyPath(入箱白名单必须显式写出,空白名单写 [])"
+	}
+	$items = [string[]]@($parsed.Items)
+
+	$protoPath = Join-Path $RepoRoot ('proto/player_inbox/player_inbox.proto' -replace '/', [System.IO.Path]::DirectorySeparatorChar)
+	if (-not (Test-Path -LiteralPath $protoPath)) {
+		throw "player-inbox 入箱白名单校验失败:找不到 proto/player_inbox/player_inbox.proto,无法核对入箱白名单"
+	}
+	$known = @([regex]::Matches((Get-Content -LiteralPath $protoPath -Raw), '(?m)^\s*(PLAYER_INBOX_MSG_[A-Z0-9_]+)\s*=') |
+		ForEach-Object { $_.Groups[1].Value } | Where-Object { $_ -cne 'PLAYER_INBOX_MSG_UNSPECIFIED' })
+	$seen = New-Object System.Collections.Generic.List[string]
+	foreach ($item in $items) {
+		if ($known -cnotcontains $item) {
+			throw "player-inbox 入箱白名单校验失败:$RelativePath 的 $keyPath 里 '$item' 不是 PlayerInboxMessageType 的已知类型(已知:$($known -join ', '))"
+		}
+		if ($seen -ccontains $item) {
+			throw "player-inbox 入箱白名单校验失败:$RelativePath 的 $keyPath 里 '$item' 重复出现"
+		}
+		$seen.Add($item)
 	}
 
+	return $items
+}
+
+<#
+.SYNOPSIS
+	从一段 yaml 文本里取 PlayerInbox.EnqueueTypes 的各项,只解析形状、不核对类型名。
+	返回 [pscustomobject]@{ Found [bool]; Items [string[]] };键不存在时 Found=$false、Items 为空。
+
+.DESCRIPTION
+	支持块式列表与流式 `[]` / `[A, B]`(项两侧的引号去掉),按原顺序返回;既不是列表也不是流式就 throw,-Source 写进错误。
+	两个调用方:Get-PlayerInboxEnqueueTypes(git 跟踪的服务 yaml,键必须在、之后核对类型名)与 Read-PlayerInboxGateLiveFacts
+	(线上 ConfigMap,缺键按 Go 侧缺省的空白名单算,只看空不空)。形状只在这里解析一份,两边不会对同一段文字得出不同的项数。
+#>
+function ConvertFrom-PlayerInboxEnqueueTypesText {
+	param(
+		[Parameter(Mandatory = $true)][AllowEmptyString()][string]$Text,
+		[Parameter(Mandatory = $true)][string]$Source
+	)
+
+	$keyPath = 'PlayerInbox.EnqueueTypes'
+	$flat = ConvertFrom-YamlToFlatMap -Text $Text
+	if (-not $flat.Scalars.Contains($keyPath)) {
+		return [pscustomobject]@{ Found = $false; Items = [string[]]@() }
+	}
 	$items = New-Object System.Collections.Generic.List[string]
 	if ($flat.ListCounts.Contains($keyPath)) {
 		for ($i = 0; $i -lt [int]$flat.ListCounts[$keyPath]; $i++) {
@@ -5269,33 +7452,623 @@ function Get-PlayerInboxEnqueueTypesYaml {
 		$raw = ([string]$flat.Scalars[$keyPath]).Trim()
 		$flow = [regex]::Match($raw, '^\[(?<body>[^\[\]]*)\]$')
 		if (-not $flow.Success) {
-			throw "生成 player-inbox ConfigMap 失败:$RelativePath 的 $keyPath='$raw' 既不是块式列表也不是流式 [..](空白名单请写 [])"
+			throw "player-inbox 入箱白名单校验失败:$Source 的 $keyPath='$raw' 既不是块式列表也不是流式 [..](空白名单请写 [])"
 		}
 		foreach ($part in ($flow.Groups['body'].Value -split ',')) {
 			$name = $part.Trim().Trim('"', "'")
 			if ($name.Length -gt 0) { $items.Add($name) }
 		}
 	}
+	return [pscustomobject]@{ Found = $true; Items = [string[]]$items.ToArray() }
+}
 
-	$protoPath = Join-Path $RepoRoot ('proto/player_inbox/player_inbox.proto' -replace '/', [System.IO.Path]::DirectorySeparatorChar)
-	if (-not (Test-Path -LiteralPath $protoPath)) {
-		throw "生成 player-inbox ConfigMap 失败:找不到 proto/player_inbox/player_inbox.proto,无法核对入箱白名单"
-	}
-	$known = @([regex]::Matches((Get-Content -LiteralPath $protoPath -Raw), '(?m)^\s*(PLAYER_INBOX_MSG_[A-Z0-9_]+)\s*=') |
-		ForEach-Object { $_.Groups[1].Value } | Where-Object { $_ -cne 'PLAYER_INBOX_MSG_UNSPECIFIED' })
-	$seen = New-Object System.Collections.Generic.List[string]
-	foreach ($item in $items) {
-		if ($known -cnotcontains $item) {
-			throw "生成 player-inbox ConfigMap 失败:$RelativePath 的 $keyPath 里 '$item' 不是 PlayerInboxMessageType 的已知类型(已知:$($known -join ', '))"
-		}
-		if ($seen -ccontains $item) {
-			throw "生成 player-inbox ConfigMap 失败:$RelativePath 的 $keyPath 里 '$item' 重复出现"
-		}
-		$seen.Add($item)
-	}
+<#
+.SYNOPSIS
+	player-inbox ConfigMap 的 PlayerInbox.EnqueueTypes 行:取 Get-PlayerInboxEnqueueTypes 的结果,渲染成 PlayerInbox 段下的 YAML 行。
+	返回值带两格缩进,直接拼进模板的 PlayerInbox 段;空白名单写 `[]`。
+#>
+function Get-PlayerInboxEnqueueTypesYaml {
+	param([Parameter(Mandatory = $true)][string]$RelativePath)
 
+	$items = @(Get-PlayerInboxEnqueueTypes -RelativePath $RelativePath)
 	if ($items.Count -eq 0) { return '  EnqueueTypes: []' }
 	return (@('  EnqueueTypes:') + @($items | ForEach-Object { "    - $_" })) -join "`n"
+}
+
+# ─────────────────────────────────────────────────────────────────
+# go/db 存盘消费组按 zone 拆分(S2 ③;docs/design/db-consumer-group-per-zone.md §2 / §4)
+# ─────────────────────────────────────────────────────────────────
+# 记 L = go/db/etc/db.yaml 的 ServerConfig.Kafka.GroupID(legacy 共享组,也是按 zone 推导组名的基名),Z = L + "_z" + ZoneId,
+# T = 本 zone 的 db_task topic(lib Get-DbTaskTopicName,世代号取 db.yaml 的 ServerConfig.Kafka.TopicGeneration)。
+# go-svc-db-config 的 db.yaml 只有四种形状(生成器只写这四种,ConvertFrom-LiveDbConsumerGroup 只认这四种):
+#   final(G)      一行 `    GroupID: "G"`,G ∈ {L, Z}。任何二进制都能加载;最终形状只用它,不写 ConsumerGroup。
+#   handoff(X←Y)  `    ConsumerGroup: "X"` 加 `    GroupHandoffFrom: "Y"`,{X, Y} = {L, Z},不写 GroupID。
+#                 交接闸之前的二进制把 GroupID 当必填,在 conf.MustLoad 就拒启 —— 能力证明来自二进制本身,不靠镜像标签或注解。
+# 交接形状只在两条路径上渲染:显式 -DbConsumerGroup zone|legacy 的单 zone zone-up,以及 keep 读到一个尚未收尾的交接形状(原样保留)。
+# 「非破坏性」的实际成立条件:db Deployment 是 maxUnavailable 0,新 Pod 不带交接闸时拒启、rollout 卡住;但 go-svc-db-config 整目录挂载、
+# 进程只在启动时读,旧 ReplicaSet 的 Pod 只要重启一次就读到交接形状 —— 所以只有线上 db 本身带交接闸时旧 Pod 才「继续服务」。
+# 显式交接在写路径入口证明这一点(Assert-LiveDbPodsHaveHandoffGate:每个 db Pod 的 /metrics 都有 db_consumer_group_handoff_gate_total);
+# keep 不把最终形状改成交接形状,不引入新的暴露。回档 Step 6、全新 namespace、收尾之后的 keep 一律只渲染最终形状。每个 zone 的计划在写路径入口算一次(Initialize-DbConsumerGroupPlans,早于任何写操作),
+# ConfigMap(New-GoSvcConfigMapYaml)与 Pod 模板注解(Apply-OneGoSvc)读同一份(Get-DbConsumerGroupPlan)。
+# 部署脚本只读 Kafka、从不删位点:收尾必须由运维显式执行 kafka_offset_reset.ps1 -FinalizeHandoff;两组都有位点时运行时的 R7
+# (go/db 交接闸)仍是兜住手工部署 / 旧脚本的纵深防御。
+$script:DbConsumerGroupPlans = @{}
+
+# 组名字符集校验:组名会被写进 YAML 双引号标量、Pod 注解,以及 kafka-0 里的 sh -c 命令行。不合格即 throw。
+function Assert-DbConsumerGroupName {
+	param(
+		[Parameter(Mandatory = $true)][AllowEmptyString()][AllowNull()][string]$Name,
+		[Parameter(Mandatory = $true)][string]$What
+	)
+	if ($Name -cnotmatch '^[A-Za-z0-9._-]+$') {
+		throw "${What} 的消费组名 '$Name' 不合法(空值,或含 [A-Za-z0-9._-] 以外的字符),拒绝渲染。"
+	}
+}
+
+# ConvertFrom-LiveDbConsumerGroup(把线上 go-svc-db-config 的 db.yaml 归到上面四种形状之一,不属于即 throw)2026-10-18 原样移到
+# lib/kafka_consumer_groups.ps1(本文件开头已 dot-source),行为不变:回档 k8s_zone_rollback.ps1 第 0 步 f 核对部署事实要用同一份规则
+# (回档复核 [0]),不另写一份。它依赖的 YAML 解析函数来自 release_common.ps1,本文件在 dot-source 那个库之前先 dot-source 了 release_common.ps1。
+
+# 本 zone 的计划要不要读 Kafka 位点(§3.4):非 DryRun,且(显式模式、线上没有 ConfigMap、或线上是交接形状)。
+# keep 遇到最终形状不读 Kafka:最终形状原样保留永远安全,也不让日常发布依赖 kafka-0 的 exec 权限。纯函数。
+function Test-DbConsumerGroupNeedsKafkaFacts {
+	param(
+		[Parameter(Mandatory = $true)][ValidateSet('keep', 'zone', 'legacy')][string]$Mode,
+		[Parameter(Mandatory = $true)][bool]$IsDryRun,
+		[AllowNull()]$Live = $null
+	)
+	if ($IsDryRun) { return $false }
+	return (($Mode -ne 'keep') -or ($null -eq $Live) -or ($Live.Shape -ceq 'handoff'))
+}
+
+<#
+.SYNOPSIS
+	一个 zone 的 db 消费组计划(§2 决策表)。返回 [pscustomobject]@{ Shape = 'final' | 'handoff'; Group; HandoffFrom; Source; Notice; Warning },
+	或者 throw(调用方在任何写操作之前调用)。纯函数:不读集群、不读脚本级变量(契约测试按 AST 抽出来逐行喂值)。
+
+.DESCRIPTION
+	-Live:ConvertFrom-LiveDbConsumerGroup 的结果,$null = 线上没有 go-svc-db-config(全新 namespace)。
+	-Facts:@{ ZoneHasOffsets; LegacyHasOffsets }(Read-DbGroupTopicFacts),各表示该组在 T 上至少有一行数值 CURRENT-OFFSET。
+	        infra namespace 不存在的 all-up(不带 -SkipInfra,本次 Apply-Infra 新建一个空 Kafka)由 Initialize-DbConsumerGroupPlans
+	        直接传两项都为 $false(不 exec),本函数照常按决策表判定。
+	-FactsError:读 Kafka 失败的原因。只有「keep + 线上交接形状」接受它(保持线上形状,永远安全),其余一律 throw。
+	-Topic / -Partitions / -BootstrapServer 只用来拼收尾命令(kafka_offset_reset.ps1 -FinalizeHandoff),不参与判定。
+	DryRun(不读集群):keep → final(Z);zone → handoff(Z←L);legacy → handoff(L←Z);Source=dryrun-preview,都带 Warning。
+	非 DryRun,keep:
+	  线上 final(G)            → final(G),Source=live-configmap(不需要 Kafka 事实);
+	  线上 handoff(X←Y)        → 读不到 Kafka:保持 handoff(X←Y) + Warning;Y 在 T 上没有位点:final(X),Source=handoff-finalized + Notice
+	                             (去掉 GroupHandoffFrom,db 滚动一次);Y 仍有位点:保持 handoff(X←Y) + Warning(附收尾命令);
+	  线上没有(全新 namespace) → Z、L 都有位点:throw(F4,附两种收尾命令);只有 Z:final(Z);只有 L:final(L)(保留运维的反向决定,
+	                             不隐式切组);都没有:final(Z)(新 zone)。Source=fresh-namespace-kafka。全新 namespace 永远只渲染最终形状。
+	非 DryRun,显式(zone:X=Z、Y=L;legacy:X=L、Y=Z):
+	  X、Y 都有位点            → 线上就是 handoff(X←Y):幂等重跑,保持 + Warning;否则 throw(F2,附收尾命令,当前权威组取线上有效组);
+	  只有 X                   → final(X),Source=explicit-already-authoritative(回档 Step 6 走这一条:Step 5 收尾后只有 Z 有位点);
+	  只有 Y                   → handoff(X←Y),Source=explicit-handoff;
+	  都没有                   → final(X),Source=explicit-nothing-to-inherit。
+	Facts 缺字段或不是布尔值时 throw,不按「没有位点」猜(把读不到当成没有,F2 / F4 就形同虚设)。
+#>
+function Resolve-DbConsumerGroupPlan {
+	param(
+		[Parameter(Mandatory = $true)][ValidateSet('keep', 'zone', 'legacy')][string]$Mode,
+		[Parameter(Mandatory = $true)][string]$LegacyGroup,
+		[Parameter(Mandatory = $true)][string]$ZoneGroup,
+		[Parameter(Mandatory = $true)][bool]$IsDryRun,
+		[AllowNull()]$Live = $null,
+		[AllowNull()]$Facts = $null,
+		[AllowNull()][AllowEmptyString()][string]$FactsError = '',
+		[string]$Topic = '<db_task topic>',
+		[int]$Partitions = 0,
+		[string]$BootstrapServer = '<broker>'
+	)
+
+	$modeName = $Mode.ToLowerInvariant()
+	$plan = {
+		param([string]$PlanShape, [string]$PlanGroup, [string]$PlanHandoffFrom, [string]$PlanSource, [string]$PlanNotice, [string]$PlanWarning)
+		[pscustomobject]@{ Shape = $PlanShape; Group = $PlanGroup; HandoffFrom = $PlanHandoffFrom; Source = $PlanSource; Notice = $PlanNotice; Warning = $PlanWarning }
+	}
+	$partitionsText = if ($Partitions -gt 0) { [string]$Partitions } else { '<分区数>' }
+	$finalizeCommand = {
+		param([string]$Authority, [string]$Retire)
+		"tools/scripts/kafka_offset_reset.ps1 -BootstrapServer $BootstrapServer -Topic $Topic -Group $Authority -RetireGroup $Retire -Partitions $partitionsText -FinalizeHandoff"
+	}
+	$finalizeHint = "先 dry-run、确认无问题后加 -Apply(命令里的 -BootstrapServer 是集群内地址,在集群外执行时换成执行机连得到的 broker 地址),收尾后重跑本命令。见 docs/design/db-consumer-group-per-zone.md §5。"
+
+	if ($IsDryRun) {
+		if ($modeName -eq 'keep') { $previewShape = 'final'; $previewGroup = $ZoneGroup; $previewFrom = '' }
+		elseif ($modeName -eq 'zone') { $previewShape = 'handoff'; $previewGroup = $ZoneGroup; $previewFrom = $LegacyGroup }
+		else { $previewShape = 'handoff'; $previewGroup = $LegacyGroup; $previewFrom = $ZoneGroup }
+		$preview = if ($previewShape -eq 'final') { "GroupID=$previewGroup" } else { "ConsumerGroup=$previewGroup GroupHandoffFrom=$previewFrom" }
+		$warning = "DbConsumerGroup=$modeName under -DryRun: cluster not read (dryrun-preview); previewing $preview. A real run decides from the live go-svc-db-config ConfigMap and the committed offsets of $ZoneGroup / $LegacyGroup on ${Topic}: it may render a final shape (GroupID only) instead, or refuse before any write."
+		return (& $plan $previewShape $previewGroup $previewFrom 'dryrun-preview' '' $warning)
+	}
+
+	if ($null -ne $Live -and $Live.Shape -cnotin @('final', 'handoff')) {
+		throw "内部错误:线上 db 消费组形状 '$($Live.Shape)' 不是 final / handoff(应先经 ConvertFrom-LiveDbConsumerGroup)。"
+	}
+	$liveIsHandoff = ($null -ne $Live -and $Live.Shape -ceq 'handoff')
+	if (-not [string]::IsNullOrEmpty($FactsError) -and -not ($modeName -eq 'keep' -and $liveIsHandoff)) {
+		# keep + 全新 namespace:infra namespace 不存在的 all-up(不带 -SkipInfra)走不到这里(Initialize-DbConsumerGroupPlans 直接按
+		# 「两组都没有位点」判定);能走到这里的是 infra 已在、kafka-0 还没就绪(infra-up 没带 -WaitReady、上一次 Apply-Infra 半途失败)。
+		$freshHint = if ($modeName -eq 'keep' -and $null -eq $Live) { '全新集群(或 infra 刚建、kafka-0 尚未就绪)可以先跑 infra-up -WaitReady,再跑 all-up -SkipInfra(或 zone-up)。' } else { '' }
+		throw "读不到 Kafka 位点,无法判定 db 消费组归属(-DbConsumerGroup ${modeName},topic ${Topic},组 $ZoneGroup / ${LegacyGroup}),拒绝部署;尚未做任何写操作。检查 kafka-0 是否就绪、部署账号是否有 pods/exec 权限后重跑。${freshHint}原因:$FactsError"
+	}
+	$hasOffsets = {
+		param([string]$FactGroup)
+		$factName = if ($FactGroup -ceq $ZoneGroup) { 'ZoneHasOffsets' } elseif ($FactGroup -ceq $LegacyGroup) { 'LegacyHasOffsets' } else { throw "内部错误:组 $FactGroup 既不是 $ZoneGroup 也不是 ${LegacyGroup}。" }
+		$factValue = $null
+		if ($Facts -is [System.Collections.IDictionary]) {
+			if ($Facts.Contains($factName)) { $factValue = $Facts[$factName] }
+		}
+		elseif ($null -ne $Facts -and $null -ne $Facts.PSObject.Properties[$factName]) {
+			$factValue = $Facts.PSObject.Properties[$factName].Value
+		}
+		if ($factValue -isnot [bool]) {
+			throw "内部错误:决策需要 Kafka 位点事实 ${factName}(布尔),实际没有拿到(-DbConsumerGroup ${modeName}),拒绝按「没有位点」猜测。"
+		}
+		return $factValue
+	}
+
+	if ($modeName -eq 'keep') {
+		if ($null -ne $Live -and $Live.Shape -ceq 'final') {
+			return (& $plan 'final' $Live.Group '' 'live-configmap' '' '')
+		}
+		if ($liveIsHandoff) {
+			$x = $Live.Group
+			$y = $Live.HandoffFrom
+			if (-not [string]::IsNullOrEmpty($FactsError)) {
+				return (& $plan 'handoff' $x $y 'live-configmap' '' "DbConsumerGroup=keep: Kafka offsets unreadable, keeping the live handoff shape ConsumerGroup=$x GroupHandoffFrom=$y unchanged (keeping the live shape is always safe). Once kafka-0 is reachable and the handoff is finalized, re-run zone-up with keep to drop GroupHandoffFrom. Cause: $FactsError")
+			}
+			if (-not (& $hasOffsets $y)) {
+				return (& $plan 'final' $x '' 'handoff-finalized' "DbConsumerGroup=keep: handoff finalized ($y holds no committed offsets on $Topic); dropping GroupHandoffFrom and rendering GroupID=$x, db rolls once (annotation db-group-handoff-from: $y -> none)." '')
+			}
+			return (& $plan 'handoff' $x $y 'live-configmap' '' "DbConsumerGroup=keep: handoff $y -> $x not finalized yet ($y still holds committed offsets on $Topic); keeping ConsumerGroup=$x GroupHandoffFrom=$y. Finalize (dry-run first, then -Apply), then re-run zone-up with keep: $(& $finalizeCommand $x $y)")
+		}
+
+		# 全新 namespace(Remove-Zone 连 ConfigMap 一起删了):以 Kafka 为准,只渲染最终形状。
+		$zoneHas = & $hasOffsets $ZoneGroup
+		$legacyHas = & $hasOffsets $LegacyGroup
+		if ($zoneHas -and $legacyHas) {
+			throw ("全新 namespace(线上没有 go-svc-db-config),而 $ZoneGroup 与 $LegacyGroup 在 topic $Topic 上都有已提交位点:上一次交接没有收尾,判不出这个 zone 该用哪个组,拒绝部署(尚未做任何写操作)。" +
+				"先 describe 两组(kafka-consumer-groups.sh --describe --group <组>),以停服前最后在用、CURRENT-OFFSET 更大的那一组为权威组收尾(选错时 -FinalizeHandoff 的前置检查会因新组位点小于旧组而拒绝):" +
+				"若 $ZoneGroup 是权威组:$(& $finalizeCommand $ZoneGroup $LegacyGroup);若 $LegacyGroup 是权威组:$(& $finalizeCommand $LegacyGroup $ZoneGroup)。" + $finalizeHint)
+		}
+		if ($legacyHas) {
+			return (& $plan 'final' $LegacyGroup '' 'fresh-namespace-kafka' "DbConsumerGroup=keep: fresh namespace and only $LegacyGroup holds committed offsets on $Topic; rendering GroupID=$LegacyGroup (the zone stays on the legacy group, no implicit group switch)." '')
+		}
+		return (& $plan 'final' $ZoneGroup '' 'fresh-namespace-kafka' '' '')
+	}
+
+	# 显式模式:X = 目标组,Y = 另一组。
+	$x = if ($modeName -eq 'zone') { $ZoneGroup } else { $LegacyGroup }
+	$y = if ($modeName -eq 'zone') { $LegacyGroup } else { $ZoneGroup }
+	$xHas = & $hasOffsets $x
+	$yHas = & $hasOffsets $y
+	if ($xHas -and $yHas) {
+		if ($liveIsHandoff -and $Live.Group -ceq $x -and $Live.HandoffFrom -ceq $y) {
+			return (& $plan 'handoff' $x $y 'explicit-handoff' '' "DbConsumerGroup=${modeName}: re-run while handoff $y -> $x is not finalized ($y still holds committed offsets on $Topic); keeping ConsumerGroup=$x GroupHandoffFrom=$y. Finalize (dry-run first, then -Apply), then re-run zone-up with keep: $(& $finalizeCommand $x $y)")
+		}
+		if ($null -ne $Live) {
+			$authority = $Live.Group
+			$other = if ($authority -ceq $ZoneGroup) { $LegacyGroup } else { $ZoneGroup }
+			$liveShapeText = if ($Live.Shape -ceq 'final') { '最终形状' } else { "交接形状 $authority ← $($Live.HandoffFrom)" }
+			$howTo = "当前权威组是线上 go-svc-db-config 的 ${authority}(${liveShapeText}),先对它收尾:$(& $finalizeCommand $authority $other)。"
+		}
+		else {
+			$howTo = "线上没有 go-svc-db-config,先 describe 两组判定权威组(停服前最后在用、CURRENT-OFFSET 更大的那一组;选错时 -FinalizeHandoff 的前置检查会因新组位点小于旧组而拒绝):若 $ZoneGroup 是权威组:$(& $finalizeCommand $ZoneGroup $LegacyGroup);若 $LegacyGroup 是权威组:$(& $finalizeCommand $LegacyGroup $ZoneGroup)。"
+		}
+		throw ("-DbConsumerGroup $modeName 被拒绝(尚未做任何写操作):$x 与 $y 在 topic $Topic 上都有已提交位点,上一次交接没有收尾。此时再切组,go/db 交接闸的 R7 会停住本 zone 的存盘消费,合服门禁也会拒绝。" +
+			$howTo + $finalizeHint)
+	}
+	if ($xHas) {
+		return (& $plan 'final' $x '' 'explicit-already-authoritative' '' '')
+	}
+	if ($yHas) {
+		return (& $plan 'handoff' $x $y 'explicit-handoff' "DbConsumerGroup=${modeName}: rendering handoff ConsumerGroup=$x GroupHandoffFrom=$y ($y holds committed offsets on $Topic, $x holds none). Once db has rolled and seeded, finalize right away (dry-run first, then -Apply), then re-run zone-up with keep: $(& $finalizeCommand $x $y)" '')
+	}
+	return (& $plan 'final' $x '' 'explicit-nothing-to-inherit' '' '')
+}
+
+<#
+.SYNOPSIS
+	把一个 zone 的计划渲染成 db.yaml 里 ServerConfig.Kafka 下的组名键(4 格缩进,行间 LF),替换模板里原来那一行 GroupID。
+
+.DESCRIPTION
+	先一行注释,再按形状:final 只一行 GroupID;handoff 两行 ConsumerGroup + GroupHandoffFrom(不写 GroupID)。
+	计划不是四种形状之一就 throw(内部错误),不渲染半截配置。纯函数。
+#>
+function New-DbConsumerGroupYaml {
+	param([Parameter(Mandatory = $true)]$Plan)
+
+	$lines = @('    # 消费组由 k8s_deploy.ps1 按 -DbConsumerGroup 与 Kafka 位点决定(docs/design/db-consumer-group-per-zone.md)')
+	Assert-DbConsumerGroupName -Name $Plan.Group -What 'db 消费组计划'
+	if ($Plan.Shape -ceq 'final') {
+		if (-not [string]::IsNullOrEmpty($Plan.HandoffFrom)) {
+			throw "内部错误:db 消费组计划是最终形状却带了 HandoffFrom=$($Plan.HandoffFrom),拒绝渲染(最终形状只写 GroupID)。"
+		}
+		$lines += ('    GroupID: "{0}"' -f $Plan.Group)
+	}
+	elseif ($Plan.Shape -ceq 'handoff') {
+		Assert-DbConsumerGroupName -Name $Plan.HandoffFrom -What 'db 消费组计划的交接对方组'
+		if ($Plan.HandoffFrom -ceq $Plan.Group) {
+			throw "内部错误:db 消费组计划的交接对方组等于本组 $($Plan.Group),拒绝渲染(go/db 拒启这种形状)。"
+		}
+		$lines += ('    ConsumerGroup: "{0}"' -f $Plan.Group)
+		$lines += ('    GroupHandoffFrom: "{0}"' -f $Plan.HandoffFrom)
+	}
+	else {
+		throw "内部错误:db 消费组计划的形状 '$($Plan.Shape)' 不是 final / handoff,拒绝渲染。"
+	}
+	return ($lines -join "`n")
+}
+
+# 取一个 zone 的计划(ConfigMap 生成器与 Apply-OneGoSvc 的 db 注解共用)。缺失 = 写路径入口没算过,一律 throw,不回落任何默认组。
+function Get-DbConsumerGroupPlan {
+	param([Parameter(Mandatory = $true)][int]$CurrentZoneId)
+
+	if ($null -eq $script:DbConsumerGroupPlans -or -not $script:DbConsumerGroupPlans.ContainsKey($CurrentZoneId)) {
+		throw "内部错误:zone $CurrentZoneId 没有 db 消费组计划(Initialize-DbConsumerGroupPlans 未在写路径入口调用,或本 zone 不在本次部署的 zone 列表里),拒绝生成 db 的 ConfigMap / Pod 模板。"
+	}
+	return $script:DbConsumerGroupPlans[$CurrentZoneId]
+}
+
+<#
+.SYNOPSIS
+	读线上 zone namespace 里 go-svc-db-config 的 db.yaml 文本;ConfigMap 不存在(含 namespace 不存在)返回 $null。只在非 DryRun 时调用。
+
+.DESCRIPTION
+	kubectl 失败(退出码非 0)一律 throw:读不到不等于没有 —— 把「没读到」当成全新 namespace,keep 就会按 Kafka 重新判组,
+	线上的交接形状会被静默改写。有输出却解析不了、或没有 data.db.yaml 键,同样 throw。
+	Invoke-ClientEntryKubectl 不看 $DryRun,DryRun 判断由调用方(Initialize-DbConsumerGroupPlans)负责。
+#>
+function Read-LiveDbConfigMapYaml {
+	param([Parameter(Mandatory = $true)][string]$Namespace)
+
+	$info = $GoSvcCatalogue['db']
+	$result = Invoke-ClientEntryKubectl -KubectlArgs @('get', 'configmap', $info.ConfigMap, '-n', $Namespace, '--ignore-not-found', '-o', 'json') `
+		-KubeContext $KubeContext -KubeConfig $KubeConfig -CaptureOutput -AllowFailure
+	if ($result.ExitCode -ne 0) {
+		throw "读取线上 ConfigMap $($info.ConfigMap) 失败(namespace=${Namespace},kubectl 退出码 $($result.ExitCode)):$($result.Stderr)。fail-closed:读不到不等于没有,无法判定 db 消费组归属,拒绝部署;尚未做任何写操作。"
+	}
+	$text = ([string]$result.Stdout).Trim()
+	if ($text -eq '') { return $null }
+	try {
+		$configMap = $text | ConvertFrom-Json -ErrorAction Stop
+	}
+	catch {
+		throw "线上 ConfigMap $($info.ConfigMap)(namespace=${Namespace})的 kubectl 输出不是合法 JSON,无法判定 db 消费组归属,拒绝部署;尚未做任何写操作。$($_.Exception.Message)"
+	}
+	$property = $null
+	$dataProperty = $configMap.PSObject.Properties['data']
+	if ($null -ne $dataProperty -and $null -ne $dataProperty.Value) {
+		$property = $dataProperty.Value.PSObject.Properties[$info.ConfigFile]
+	}
+	if ($null -eq $property -or [string]::IsNullOrWhiteSpace([string]$property.Value)) {
+		throw "线上 ConfigMap $($info.ConfigMap)(namespace=${Namespace})存在,但没有 data.$($info.ConfigFile):不是本脚本生成的形状,无法判定 db 消费组归属,拒绝部署;尚未做任何写操作。"
+	}
+	return [string]$property.Value
+}
+
+<#
+.SYNOPSIS
+	读 zone 组与 legacy 组在 -Topic 上有没有已提交位点:kubectl exec 进 kafka-0 跑 kafka-consumer-groups.sh --describe。
+	返回 [pscustomobject]@{ ZoneHasOffsets [bool]; LegacyHasOffsets [bool] };判不出就 throw。只在非 DryRun 时调用。
+
+.DESCRIPTION
+	分类规则只有一份(lib Resolve-KafkaGroupTopicOffsets):组不存在 / 组在但本 topic 没有数值 CURRENT-OFFSET → $false;有 → $true;
+	exec 失败、"Error:" 行、退出码非 0、输出解析不了都 throw(fail-closed:把「读不到」当成「没有位点」,显式切组会跳过 F2 拒绝,
+	全新 namespace 会被判成新 zone)。stdout 与 stderr 拆行后合并交给分类函数:「组不存在」那行在不同版本里可能打到任一路。
+	KAFKA_HEAP_OPTS 在命令里覆盖成小堆,与 kafka.yaml 探针命令同一写法:容器 env 里 broker 自己的大堆参数会被 /opt/kafka/bin/*.sh 继承,
+	在 broker 的 memory limit 里再起一个大堆 JVM 会把 kafka-0 撑到 OOMKilled。所以经 /bin/sh -c 执行,组名先过字符集校验再拼进命令行。
+	命令与分类只在 lib 一份(Get-DbGroupDescribeExecArgs / Resolve-DbGroupDescribeExecResult):k8s_zone_rollback.ps1 第 0 步 e
+	在停服之前用同一条路径预读,回档 Step 6 走到这里时不会才第一次发现 exec 不通。
+	Invoke-ClientEntryKubectl 不看 $DryRun,DryRun 判断由调用方(Initialize-DbConsumerGroupPlans)负责。
+#>
+function Read-DbGroupTopicFacts {
+	param(
+		[Parameter(Mandatory = $true)][string]$Topic,
+		[Parameter(Mandatory = $true)][string]$ZoneGroup,
+		[Parameter(Mandatory = $true)][string]$LegacyGroup
+	)
+
+	$facts = [ordered]@{}
+	foreach ($entry in @(
+		@{ Name = 'ZoneHasOffsets'; Group = $ZoneGroup }
+		@{ Name = 'LegacyHasOffsets'; Group = $LegacyGroup }
+	)) {
+		Assert-DbConsumerGroupName -Name $entry.Group -What 'Kafka 位点查询'
+		$result = Invoke-ClientEntryKubectl -KubectlArgs (Get-DbGroupDescribeExecArgs -InfraNamespace $InfraNamespace -Group $entry.Group) `
+			-KubeContext $KubeContext -KubeConfig $KubeConfig -CaptureOutput -AllowFailure
+		$state = (Resolve-DbGroupDescribeExecResult -Result $result -Topic $Topic).State
+		$facts[$entry.Name] = ($state -ceq 'offsets')
+	}
+	return [pscustomobject]$facts
+}
+
+<#
+.SYNOPSIS
+	显式交接(决策表落到 Source=explicit-handoff,即 -DbConsumerGroup zone|legacy 渲染交接形状)之前,证明本 zone 线上每个 db Pod
+	跑的都是带交接闸的二进制;证明不了就 throw。只在非 DryRun 时调用,调用方在任何写操作之前调用。
+
+.DESCRIPTION
+	为什么要证明(R7 复核 [0]):go-svc-db-config 整目录挂到 /app/etc(deploy/k8s/manifests/go-svc/db.yaml,没有 subPath),
+	apply 之后 kubelet 会把**已在运行**的 Pod 的挂载卷也同步成新内容,而进程只在启动时读一次。交接形状不写 GroupID,交接闸之前的
+	二进制在 conf.MustLoad 拒启:新 Pod 拒启时 rollout 卡住(maxUnavailable 0)只是第一步 —— 旧 ReplicaSet 的 Pod 此后只要重启一次
+	(OOM、存活探针失败、节点故障后被重建),读到的同样是交接形状,同样拒启并进入 CrashLoop。两个副本都重启过之后本 zone 存盘消费全停,
+	db 全部 CrashLoop 时没有任何 db 指标序列,告警面是盲的。所以「旧 Pod 继续服务」只在线上 Pod 本身就能加载交接形状时成立
+	(docs/design/db-consumer-group-per-zone.md §8.1 的唯一硬前提),这里把这条前提从约定变成部署前检查。
+	证据取自二进制本身,不靠镜像标签或注解:带交接闸的 go/db 在 /metrics 上以 0 预建 db_consumer_group_handoff_gate_total 的全部序列
+	(go/db/internal/metrics/metrics.go register,metrics_test.go 钉住),之前的二进制没有这条序列。读法(只读,不 exec):
+	  1. kubectl get deployments,pods -l app=db -n <zone ns> -o json:取 db Deployment 的副本数与本 zone 的 db Pod;
+	  2. 对每个没在删除(无 deletionTimestamp)、没终结(phase 不是 Succeeded / Failed)的 Pod,经 API server 代理抓 /metrics:
+	     kubectl get --raw /api/v1/namespaces/<ns>/pods/<pod>:9160/proxy/metrics(9160 = db ConfigMap 的 MetricsListenAddr 与 manifest 的 metrics 端口;
+	     部署账号要有 pods/proxy 的 get 权限)。
+	任一次 kubectl 失败、输出不是 JSON、任一 Pod 抓不到或缺这条序列,都 throw(Pending / 未就绪的 Pod 抓不到,同样拒绝:它将来也会读到交接形状)。
+	一个可抓的 Pod 都没有时:db Deployment 不存在或副本数为 0 = 没有会被旧 ReplicaSet 拉起的进程,放行并告警(新 Pod 不带交接闸时
+	rollout 卡住,恢复见下);副本数 > 0 却没有可抓的 Pod(例如正被重建)判不出,throw。
+	keep 不调用:keep 只会原样保留或去掉交接形状,本次不会把 ConfigMap 从最终形状改成交接形状。
+	Invoke-ClientEntryKubectl 不看 $DryRun,DryRun 判断由调用方(Initialize-DbConsumerGroupPlans)负责。
+#>
+function Assert-LiveDbPodsHaveHandoffGate {
+	param(
+		[Parameter(Mandatory = $true)][string]$Namespace,
+		[Parameter(Mandatory = $true)][ValidateSet('zone', 'legacy')][string]$Mode,
+		[Parameter(Mandatory = $true)]$Plan
+	)
+
+	$gateSeries = 'db_consumer_group_handoff_gate_total'
+	$metricsPort = 9160
+	$modeName = $Mode.ToLowerInvariant()
+	$recoverMode = if ($modeName -eq 'zone') { 'legacy' } else { 'zone' }
+	$refusal = "-DbConsumerGroup $modeName 被拒绝(尚未做任何写操作):本次要把 namespace $Namespace 的 go-svc-db-config 渲染成交接形状 ConsumerGroup=$($Plan.Group) GroupHandoffFrom=$($Plan.HandoffFrom),"
+	$why = ("交接形状只有带交接闸的 go/db 能加载;go-svc-db-config 整目录挂载,旧 ReplicaSet 的 Pod 一旦重启(OOM、探针失败、节点故障)就会读到它并在 conf.MustLoad 拒启,本 zone 存盘消费随之停止。" +
+		"先以 keep(不切组)把 db 发布到带交接闸的镜像(docs/design/db-consumer-group-per-zone.md §8.1),等每个 db Pod 的 /metrics 都出现 $gateSeries 后再重跑本命令。" +
+		"若线上 go-svc-db-config 已经是交接形状、旧 Pod 已在 MustLoad 拒启,用 -DbConsumerGroup $recoverMode 收回到最终形状 GroupID=$($Plan.HandoffFrom)(§8.3)。")
+
+	$list = Invoke-ClientEntryKubectl -KubectlArgs @('get', 'deployments,pods', '-l', 'app=db', '-n', $Namespace, '-o', 'json', '--request-timeout=15s') `
+		-KubeContext $KubeContext -KubeConfig $KubeConfig -CaptureOutput -AllowFailure
+	if ($list.ExitCode -ne 0) {
+		throw ($refusal + "但读不到本 zone 的 db Deployment / Pod(kubectl 退出码 $($list.ExitCode):$($list.Stderr)),证明不了线上 db 带交接闸。" + $why)
+	}
+	$items = @()
+	$text = ([string]$list.Stdout).Trim()
+	if ($text -ne '') {
+		try {
+			$document = $text | ConvertFrom-Json -ErrorAction Stop
+		}
+		catch {
+			throw ($refusal + "但 kubectl get deployments,pods 的输出不是合法 JSON($($_.Exception.Message)),证明不了线上 db 带交接闸。" + $why)
+		}
+		$items = if ($document.kind -eq 'List') { @($document.items) } else { @($document) }
+	}
+	$deployment = @($items | Where-Object { $null -ne $_ -and $_.kind -eq 'Deployment' -and $_.metadata.name -eq 'db' }) | Select-Object -First 1
+	$pods = @($items | Where-Object {
+			$null -ne $_ -and $_.kind -eq 'Pod' -and $null -eq $_.metadata.deletionTimestamp -and [string]$_.status.phase -notin @('Succeeded', 'Failed')
+		})
+
+	if ($pods.Count -eq 0) {
+		$replicas = if ($null -ne $deployment) { [int]$deployment.spec.replicas } else { 0 }
+		if ($replicas -gt 0) {
+			throw ($refusal + "但 db Deployment 的副本数是 $replicas、却没有一个可检查的 db Pod(可能正在重建),判不出将被拉起的进程带不带交接闸。等 db Pod 就绪后重跑。" + $why)
+		}
+		Write-Warning "DbConsumerGroup=${modeName}: namespace $Namespace has no running db process (db Deployment absent or scaled to 0), so no old pod can restart into the handoff shape. The new db pods must run a handoff-gate binary; otherwise they refuse to start in conf.MustLoad and the rollout stalls. Recover with -DbConsumerGroup $recoverMode (final shape GroupID=$($Plan.HandoffFrom))."
+		return
+	}
+
+	$problems = @()
+	foreach ($pod in $pods) {
+		$podName = [string]$pod.metadata.name
+		$scrape = Invoke-ClientEntryKubectl -KubectlArgs @('get', '--raw', "/api/v1/namespaces/$Namespace/pods/${podName}:$metricsPort/proxy/metrics", '--request-timeout=15s') `
+			-KubeContext $KubeContext -KubeConfig $KubeConfig -CaptureOutput -AllowFailure
+		if ($scrape.ExitCode -ne 0) {
+			$problems += "Pod ${podName}:/metrics 抓不到(kubectl 退出码 $($scrape.ExitCode):$($scrape.Stderr);未就绪的 Pod 同样抓不到,部署账号还需要 pods/proxy 的 get 权限)"
+			continue
+		}
+		if ([string]$scrape.Stdout -cnotmatch "(?m)^$([regex]::Escape($gateSeries))\{") {
+			$problems += "Pod ${podName}:/metrics 里没有 $gateSeries(交接闸之前的二进制)"
+			continue
+		}
+		Write-Host "  db pod ${podName}: $gateSeries present (handoff gate binary)"
+	}
+	if ($problems.Count -gt 0) {
+		throw ($refusal + "但证明不了线上每个 db Pod 都带交接闸($($problems.Count) 项):`n  - " + ($problems -join "`n  - ") + "`n" + $why)
+	}
+}
+
+<#
+.SYNOPSIS
+	写路径入口:为本次要部署 db 的每个 zone 算出消费组计划,存进 $script:DbConsumerGroupPlans[zoneId];判不出就在任何写操作之前 throw。
+
+.DESCRIPTION
+	紧跟 Assert-ClientEntryDeployPreflight 调用(写路径入口块,早于密钥解析与任何 kubectl 写操作),读失败不会留下半截部署。
+	只在 Test-ZoneDbDeployed 为真时计算:不部署 db 时没有计划,也不读集群;此时显式 -DbConsumerGroup zone|legacy 直接 throw。
+	zone-up 处理 -ZoneName / -ZoneId,all-up 处理 zones 配置里的每个 zone(all-up 只能是 keep,显式模式已在入口拒绝)。
+	all-up 不带 -SkipInfra 且非 DryRun 时先只读探测 infra namespace:不存在 = 本次 Apply-Infra 新建一个空 Kafka,各 zone 不 exec、
+	直接按「两组都没有位点」判定(理由见函数体)。逐 zone:
+	  1. 非 DryRun 时读线上 go-svc-db-config(Read-LiveDbConfigMapYaml)并归到四种形状(ConvertFrom-LiveDbConsumerGroup);
+	  2. 需要时(Test-DbConsumerGroupNeedsKafkaFacts)kubectl exec 进 kafka-0 读两组在本 zone topic 上的位点(Read-DbGroupTopicFacts);
+	     读失败的原因作为 -FactsError 交给决策表:只有「keep + 线上交接形状」接受它(保持线上形状),其余由决策表 throw;
+	  3. Resolve-DbConsumerGroupPlan 出计划;非 DryRun 且计划来自显式交接(Source=explicit-handoff,要渲染交接形状)时,先证明线上每个 db Pod
+	     都带交接闸(Assert-LiveDbPodsHaveHandoffGate),证明不了就 throw、本 zone 不留计划;
+	  4. 每个 zone 打一行 DB consumer group: …;Notice 用 Write-Host,Warning 用 Write-Warning。
+	DryRun 不读集群(Invoke-ClientEntryKubectl 不看 $DryRun,判断在这里做),按决策表渲染预览并告警。
+#>
+function Initialize-DbConsumerGroupPlans {
+	$script:DbConsumerGroupPlans = @{}
+	if (-not (Test-ZoneDbDeployed)) {
+		# 显式切组配在不部署 db 的运行上(没给 -GoSvcRegistry,或带了 -SkipGoSvc):C++ 节点照常重部署、退出码 0,运维会以为切过了。
+		# 与入口拒绝同一理由;Test-ZoneDbDeployed 在入口检查处还没定义,所以在这里拒绝,同样早于任何写操作。
+		if ($DbConsumerGroup -ne 'keep') {
+			throw "-DbConsumerGroup $DbConsumerGroup 需要本次部署 db(给 -GoSvcRegistry 且不带 -SkipGoSvc),否则切组不会生效,拒绝部署;尚未做任何写操作。"
+		}
+		return
+	}
+
+	$dbYamlPath = 'go/db/etc/db.yaml'
+	$legacyGroup = Get-AuthoritativeScalar -RelativePath $dbYamlPath -KeyPath 'ServerConfig.Kafka.GroupID'
+	Assert-DbConsumerGroupName -Name $legacyGroup -What "$dbYamlPath 的 ServerConfig.Kafka.GroupID(legacy 组,也是按 zone 推导组名的基名)"
+	$generationText = Get-AuthoritativeScalar -RelativePath $dbYamlPath -KeyPath 'ServerConfig.Kafka.TopicGeneration'
+	$partitionText = Get-AuthoritativeScalar -RelativePath $dbYamlPath -KeyPath 'ServerConfig.Kafka.PartitionCnt'
+	$generation = 0
+	$partitions = 0
+	if (-not [int]::TryParse($generationText, [ref]$generation) -or $generation -lt 0) {
+		throw "$dbYamlPath 的 ServerConfig.Kafka.TopicGeneration='$generationText' 不是非负整数,拼不出 db_task topic 名,拒绝部署(fail-closed)。"
+	}
+	if (-not [int]::TryParse($partitionText, [ref]$partitions) -or $partitions -le 0) {
+		throw "$dbYamlPath 的 ServerConfig.Kafka.PartitionCnt='$partitionText' 不是正整数,拒绝部署(fail-closed)。"
+	}
+	$bootstrap = "kafka.${InfraNamespace}:9092"
+
+	$zones = @()
+	if ($Command -eq 'zone-up') {
+		$zones += [pscustomobject]@{ Name = $ZoneName; ZoneId = [int]$ZoneId }
+	}
+	elseif ($Command -eq 'all-up') {
+		foreach ($zone in (Get-ZonesFromJson -Path (Resolve-ZonesConfigPath))) {
+			$zones += [pscustomobject]@{ Name = [string]$zone.name; ZoneId = [int]$zone.zoneId }
+		}
+	}
+
+	# 全新 infra:all-up 不带 -SkipInfra 时,Kafka 要到 switch ($Command) 里的 Apply-Infra 才建,而计划必须在那之前算好 ——
+	# 不处理的话,新集群上的一键开服(以及 infra-down / all-down 之后的 all-up)会因 exec 不到 kafka-0 被决策表拒绝,照提示重跑也不会好。
+	# infra namespace 不存在 = 里面不可能有 Kafka 的 PVC(Remove-Infra 删的是整个 namespace,PVC 随之删除),本次新建的 Kafka 必然为空,
+	# 两组在任何 topic 上都没有位点:不 exec,直接按两项 $false 交给决策表(线上没有 → final(Z);线上 handoff(X←Y) → final(X),
+	# 即收尾;线上 final 原样保留,本来就不读 Kafka)。判据只用「namespace 不存在」,不用「kafka-0 / StatefulSet 不存在」:
+	# StatefulSet 被删而 PVC 还在时位点仍然存在。namespace 在但 kafka-0 没就绪(上次 Apply-Infra 半途失败、Terminating 中)照旧 exec,
+	# 读不到由决策表拒绝(fail-closed)。zone-up 与 -SkipInfra 不建 Kafka,不走这条。探测本身失败同样 throw:读不到不等于没有。
+	$kafkaFresh = $false
+	if ($Command -eq 'all-up' -and -not $SkipInfra -and -not $DryRun) {
+		$infraProbe = Invoke-ClientEntryKubectl -KubectlArgs @('get', 'namespace', $InfraNamespace, '--ignore-not-found', '-o', 'name') `
+			-KubeContext $KubeContext -KubeConfig $KubeConfig -CaptureOutput -AllowFailure
+		if ($infraProbe.ExitCode -ne 0) {
+			throw "读取 infra namespace $InfraNamespace 失败(kubectl 退出码 $($infraProbe.ExitCode)):$($infraProbe.Stderr)。fail-closed:判不出本次 all-up 是否新建 Kafka,无法判定 db 消费组归属,拒绝部署;尚未做任何写操作。"
+		}
+		if ([string]::IsNullOrWhiteSpace([string]$infraProbe.Stdout)) {
+			$kafkaFresh = $true
+			Write-Host "DB consumer group: infra namespace $InfraNamespace does not exist; this all-up creates Kafka from scratch (Apply-Infra), so neither group can hold committed offsets. Deciding every zone from empty Kafka facts, no kubectl exec."
+		}
+	}
+
+	foreach ($zone in $zones) {
+		$zoneGroup = "${legacyGroup}_z$($zone.ZoneId)"
+		$topic = Get-DbTaskTopicName -ZoneId $zone.ZoneId -Generation $generation
+		$live = $null
+		$facts = $null
+		$factsError = ''
+		if (-not $DryRun) {
+			$liveYaml = Read-LiveDbConfigMapYaml -Namespace (Get-ZoneNamespace -Name $zone.Name)
+			if ($null -ne $liveYaml) {
+				$live = ConvertFrom-LiveDbConsumerGroup -DbYaml $liveYaml -LegacyGroup $legacyGroup -ZoneGroup $zoneGroup
+			}
+			if (Test-DbConsumerGroupNeedsKafkaFacts -Mode $DbConsumerGroup -IsDryRun $false -Live $live) {
+				if ($kafkaFresh) {
+					$facts = [pscustomobject]@{ ZoneHasOffsets = $false; LegacyHasOffsets = $false }
+				}
+				else {
+					try {
+						$facts = Read-DbGroupTopicFacts -Topic $topic -ZoneGroup $zoneGroup -LegacyGroup $legacyGroup
+					}
+					catch {
+						$factsError = $_.Exception.Message
+					}
+				}
+			}
+		}
+		$plan = Resolve-DbConsumerGroupPlan -Mode $DbConsumerGroup -LegacyGroup $legacyGroup -ZoneGroup $zoneGroup -IsDryRun ([bool]$DryRun) `
+			-Live $live -Facts $facts -FactsError $factsError -Topic $topic -Partitions $partitions -BootstrapServer $bootstrap
+		# 交接形状只在线上 db 本身就能加载它时才是非破坏性的(旧 ReplicaSet 的 Pod 重启后读到的是新 ConfigMap),先证明再存计划。
+		if (-not $DryRun) {
+			if ($plan.Source -ceq 'explicit-handoff') {
+				Assert-LiveDbPodsHaveHandoffGate -Namespace (Get-ZoneNamespace -Name $zone.Name) -Mode $DbConsumerGroup -Plan $plan
+			}
+		}
+		$script:DbConsumerGroupPlans[[int]$zone.ZoneId] = $plan
+		$handoffText = if ([string]::IsNullOrEmpty($plan.HandoffFrom)) { 'none' } else { $plan.HandoffFrom }
+		Write-Host "DB consumer group: zone=$($zone.Name)($($zone.ZoneId)) mode=$DbConsumerGroup shape=$($plan.Shape) group=$($plan.Group) handoff_from=$handoffText source=$($plan.Source) topic=$topic"
+		if (-not [string]::IsNullOrEmpty($plan.Notice)) { Write-Host $plan.Notice }
+		if (-not [string]::IsNullOrEmpty($plan.Warning)) { Write-Warning $plan.Warning }
+	}
+}
+
+function New-GuildServiceConfigYaml {
+	param([int]$CurrentZoneId, [int]$CurrentClusterId)
+	$source = 'go/guild/etc/guild.yaml'
+	$mode = if ($ReleaseProfile -eq 'dev') { Get-AuthoritativeScalar -RelativePath $source -KeyPath 'Mode' } else { 'pro' }
+	$autoMigrate = if ($ReleaseProfile -eq 'dev') { Get-AuthoritativeScalar -RelativePath $source -KeyPath 'Schema.AutoMigrate' } else { 'false' }
+	$requireTiDB = if ($ReleaseProfile -eq 'dev') { Get-AuthoritativeScalar -RelativePath $source -KeyPath 'MySQL.RequireTiDB' } else { 'true' }
+	$trialEnabled = Get-AuthoritativeScalar -RelativePath $source -KeyPath 'Activity.TrialResult.Enabled'
+	if ($requireTiDB -eq 'true' -and $trialEnabled -eq 'true') { Assert-GlobalMatchKafkaTopology -Topology (Get-KafkaTopology) }
+	$timeout = Get-AuthoritativeScalar -RelativePath $source -KeyPath 'Timeout'
+	$quota = Get-AuthoritativeScalar -RelativePath $source -KeyPath 'ApplicationQuotaPerMinute'
+	$maxOpen = Get-AuthoritativeScalar -RelativePath $source -KeyPath 'MySQL.MaxOpenConn'
+	$lease = Get-AuthoritativeScalar -RelativePath $source -KeyPath 'Node.LeaseTTL'
+	$dial = Get-AuthoritativeScalar -RelativePath $source -KeyPath 'Registry.Etcd.DialTimeout'
+	$null = Get-RedisPoolMirror -Target 'guild'
+	$blocks = [Collections.Generic.List[string]]::new()
+	$blocks.Add(@"
+Name: guild.rpc
+Mode: $mode
+ListenOn: 0.0.0.0:50300
+Timeout: $timeout
+ApplicationQuotaPerMinute: $quota
+TableDir: /generated/tables
+ClusterId: $CurrentClusterId
+SnowflakeCacheDir: $SnowflakeCacheDir
+MySQL:
+  DataSource: ""
+  DataSourceEnv: MMORPG_GUILD_SQL_DSN
+  RequireTiDB: $requireTiDB
+  MaxOpenConn: $maxOpen
+Schema:
+  AutoMigrate: $autoMigrate
+Node:
+  ZoneId: $CurrentZoneId
+  LeaseTTL: $lease
+Registry:
+  Etcd:
+    Hosts: ["etcd.${InfraNamespace}:2379"]
+    DialTimeout: $dial
+Kafka:
+  Brokers: ["kafka.${InfraNamespace}:9092"]
+Prometheus:
+  Host: 0.0.0.0
+  Port: 9220
+  Path: /metrics
+"@)
+	foreach ($key in @('RedisClient', 'PlayerLocatorRedis', 'MergeMarkerRedis')) {
+		$block = Get-AuthoritativeYamlBlock -RelativePath $source -Key $key
+		$block = $block -replace '(?m)^  Host:.*$', "  Host: redis.${InfraNamespace}:6379"
+		$passwordKey = if ($key -eq 'MergeMarkerRedis') { 'Pass' } else { 'Password' }
+		$block = $block -replace "(?m)^  ${passwordKey}:.*$", "  ${passwordKey}: `"$($script:RedisPassword)`""
+		if ($key -eq 'MergeMarkerRedis') {
+			# D1 第 3 批 guild 读方门禁(spec_D1_batch1b2_2_3.md §5.4):取本脚本参数 -GuildRequireRouteReady(缺省 false),不镜像服务 yaml;
+			# 服务 yaml 里有这一行就改写,没有就补一行。打开前提与回退顺序见参数 -RouteStoreMode 处的注释。
+			$guildRouteReadyText = if ([bool]$GuildRequireRouteReady) { 'true' } else { 'false' }
+			if ($block -match '(?m)^  RequireRouteReady:.*$') {
+				$block = $block -replace '(?m)^  RequireRouteReady:.*$', "  RequireRouteReady: $guildRouteReadyText"
+			}
+			else {
+				$block = $block + "`n  RequireRouteReady: $guildRouteReadyText"
+			}
+		}
+		$blocks.Add($block)
+	}
+	foreach ($key in @('DataServiceRpc', 'MatchRpc')) {
+		$block = Get-AuthoritativeYamlBlock -RelativePath $source -Key $key
+		$block = $block -replace '(?m)^      -.*$', "      - `"etcd.${InfraNamespace}:2379`""
+		$blocks.Add($block)
+	}
+	foreach ($key in @('Cache', 'IdSegment', 'AssetOp', 'Activity', 'KillSwitchPrefix')) {
+		$block = Get-AuthoritativeYamlBlock -RelativePath $source -Key $key
+		if ($key -eq 'AssetOp' -and $ReleaseProfile -ne 'dev') {
+			# 08-save-owner-fence.md 的生产启用门禁仍未全验；配置接线不能替代父快照屏障证据。
+			$block = $block -replace '(?m)^  Enabled:.*$', '  Enabled: false'
+		}
+		if ($key -eq 'Activity') {
+			$block = $block -replace '(?m)^      -.*$', "      - `"kafka.${InfraNamespace}:9092`""
+		}
+		$blocks.Add($block)
+	}
+	return ($blocks -join "`n")
 }
 
 function New-GoSvcConfigMapYaml {
@@ -5309,6 +8082,19 @@ function New-GoSvcConfigMapYaml {
 	$configMapName = $info.ConfigMap
 	$configFileName = $info.ConfigFile
 	$dbTaskRetentionMs = $script:KafkaDbTaskRetentionMs
+	# db_task topic 每分区的 retention.bytes(S5b):写路径入口的 Resolve-KafkaDiskPlan 按盘预算算好(盘不够时已按盘收缩)。
+	# db 与 login 的 ConfigMap 都从这一个变量渲染 Kafka.RetentionBytes,与上面的 $dbTaskRetentionMs 同一条纪律:两个服务启动时
+	# 都对同一个 db_task topic 做 IncrementalAlterConfigs,值一不同,保留量就随重启顺序来回横跳(B-15)。
+	# 只在生成 db / login 时求值;缓存为空(没经过写路径入口的调用)时现场 Resolve 并判盘变更,算不出即 throw。
+	$dbTaskRetentionBytes = ''
+	if ($SvcName -eq 'db' -or $SvcName -eq 'login') {
+		$dbTaskDiskPlan = $script:KafkaDiskPlan
+		if ($null -eq $dbTaskDiskPlan) {
+			$dbTaskDiskPlan = Resolve-KafkaDiskPlan
+			Assert-KafkaStorageChangeIsSafe -Plan $dbTaskDiskPlan
+		}
+		$dbTaskRetentionBytes = [string][long]$dbTaskDiskPlan.DbTaskRetentionBytes
+	}
 
 	# 契约关键值一律从服务自己的 etc/*.yaml 取,不在这里再写一份常数。
 	$dbPartitionCnt    = Get-AuthoritativeScalar -RelativePath 'go/db/etc/db.yaml' -KeyPath 'ServerConfig.Kafka.PartitionCnt'
@@ -5316,6 +8102,33 @@ function New-GoSvcConfigMapYaml {
 	$dbSubShardCount   = Get-AuthoritativeScalar -RelativePath 'go/db/etc/db.yaml' -KeyPath 'ServerConfig.Kafka.SubShardCount'
 	$dbMaxOpenConn     = Get-AuthoritativeScalar -RelativePath 'go/db/etc/db.yaml' -KeyPath 'ServerConfig.Database.MaxOpenConn'
 	$dbMaxIdleConn     = Get-AuthoritativeScalar -RelativePath 'go/db/etc/db.yaml' -KeyPath 'ServerConfig.Database.MaxIdleConn'
+	# 重试路由与入队落盘确认(S1 ④ 与 WAITAOF,docs/design/db-retry-owner-routing.md):RetryRouting、WaitAOFNumLocal、WaitAOFTimeoutMs
+	# 原样镜像 go/db/etc/db.yaml。不在这里另写默认值或取值范围:go/db 启动时 ResolveRetryRouting / Config.Validate 判合法性(非法即拒启),
+	# 仓库那份由 go/db/internal/config/config_test.go 的 TestEtcYamlRetryKeysValid 钉住;原样镜像,ConfigMap 与 db.yaml 经同一个加载器、语义相同。
+	# 例外是 WaitAOFNumReplicas:它取决于 K8s 上共享 Redis 的形态,不取决于服务配置 —— 按 mapping Redis 拓扑渲染(Get-RouteStoreWaitAOFNumReplicas,
+	# 与 data-service 的 RouteStore 同一个函数:单实例 0、高可用 1)。db.yaml 的那一项保持 0,只给本机 compose 单实例用:
+	# 改成 1 会让本机 go/db 的 WAITAOF 启动探针等不到副本而拒启。db.yaml 里四个键仍须显式写出,查不到即 throw(Get-AuthoritativeScalar),
+	# 不让 ConfigMap 悄悄落回 go/db 的代码默认值。只在生成 db 自己的 ConfigMap 时求值(同下面的落点池参数)。
+	$dbRetryRouting       = ''
+	$dbWaitAOFNumLocal    = ''
+	$dbWaitAOFNumReplicas = ''
+	$dbWaitAOFTimeoutMs   = ''
+	# MySQL 行内围栏开关 ServerConfig.Fencing(docs/design/db-write-fencing-mysql.md §8):同样原样镜像 db.yaml,
+	# 合法性由 go/db 启动时的 Config.Validate 判(legacy | dual,非法即拒启);db.yaml 必须显式写出,查不到即 throw。
+	$dbFencingMode          = ''
+	$dbFencingEpochOverride = ''
+	$dbRequireTiDB          = ''
+	if ($SvcName -eq 'db') {
+		Assert-DbOwnerEpochRedisDeployment
+		$dbFencingMode          = Get-AuthoritativeScalar -RelativePath 'go/db/etc/db.yaml' -KeyPath 'ServerConfig.Fencing.Mode'
+		$dbFencingEpochOverride = Get-AuthoritativeScalar -RelativePath 'go/db/etc/db.yaml' -KeyPath 'ServerConfig.Fencing.EpochOverride'
+		$dbRequireTiDB          = Get-AuthoritativeScalar -RelativePath 'go/db/etc/db.yaml' -KeyPath 'ServerConfig.Database.RequireTiDB'
+		$dbRetryRouting       = Get-AuthoritativeScalar -RelativePath 'go/db/etc/db.yaml' -KeyPath 'ServerConfig.Kafka.RetryRouting'
+		$dbWaitAOFNumLocal    = Get-AuthoritativeScalar -RelativePath 'go/db/etc/db.yaml' -KeyPath 'ServerConfig.RedisClient.WaitAOFNumLocal'
+		$null                 = Get-AuthoritativeScalar -RelativePath 'go/db/etc/db.yaml' -KeyPath 'ServerConfig.RedisClient.WaitAOFNumReplicas'
+		$dbWaitAOFNumReplicas = [string](Get-RouteStoreWaitAOFNumReplicas -Topology (Get-MappingRedisTopology))
+		$dbWaitAOFTimeoutMs   = Get-AuthoritativeScalar -RelativePath 'go/db/etc/db.yaml' -KeyPath 'ServerConfig.RedisClient.WaitAOFTimeoutMs'
+	}
 	# 额外落点库(本 zone 库之外)的连接池:每个库一个池,按库所属家族分两个旋钮,外加空闲连接的回收秒数(G2b)。
 	# 从 go/db/etc/db.yaml 的 Placement 段镜像,并核过「正整数且 idle ≤ open」(Get-MysqlPoolMirror);MySQL 连接总账读的是同一批键。
 	# 只在生成 db 自己的 ConfigMap 时求值:别的服务不该因为 db 的池参数不合格而生成失败(写路径入口的
@@ -5332,6 +8145,14 @@ function New-GoSvcConfigMapYaml {
 		$dbNonZoneStoreMaxOpenConn      = $dbPoolMirror['Placement.NonZoneStoreMaxOpenConn']
 		$dbNonZoneStoreMaxIdleConn      = $dbPoolMirror['Placement.NonZoneStoreMaxIdleConn']
 		$dbExtraStoreConnMaxIdleSeconds = $dbPoolMirror['Placement.ExtraStoreConnMaxIdleSeconds']
+	}
+	# D1 第 3 批 go/db 读方门禁 Placement.RequireRouteReady:取本脚本参数 -DbPlacementRequireRouteReady(缺省 false),不镜像 go/db/etc/db.yaml。
+	$dbRouteReadyText = if ([bool]$DbPlacementRequireRouteReady) { 'true' } else { 'false' }
+	# db 的消费组键(四种形状之一,见 Resolve-DbConsumerGroupPlan):计划由写路径入口的 Initialize-DbConsumerGroupPlans 先算好,
+	# 这里只取本 zone 那一份并渲染;缺计划即 throw,不回落任何默认组名。只在生成 db 自己的 ConfigMap 时求值。
+	$dbConsumerGroupYaml = ''
+	if ($SvcName -eq 'db') {
+		$dbConsumerGroupYaml = New-DbConsumerGroupYaml -Plan (Get-DbConsumerGroupPlan -CurrentZoneId $CurrentZoneId)
 	}
 
 	$loginPartitionCnt      = Get-AuthoritativeScalar -RelativePath 'go/login/etc/login.yaml' -KeyPath 'Kafka.PartitionCnt'
@@ -5387,12 +8208,17 @@ function New-GoSvcConfigMapYaml {
 	$dsPlayerNameMaxIdleConn      = ''
 	$dsRouteStoreMaxOpenConn      = ''
 	$dsRouteStoreMaxIdleConn      = ''
+	# RouteStore 段的其余取值(D1 第 1b-3 批):Mode / ReadRequiresReady / Reconcile.ArmReadyMarker 取本脚本参数,FenceShards 按全局库档位、
+	# WaitAOF 按 mapping Redis 拓扑(Get-RouteStoreDeploySettings;写路径入口的 Assert-RouteSwitchPreflight 已先于任何写操作核过一遍)。
+	$dsRouteSettings              = $null
 	if ($SvcName -eq 'data-service') {
 		$dsPoolMirror = Get-MysqlPoolMirror -Target 'data-service'
 		$dsPlayerNameMaxOpenConn = $dsPoolMirror['PlayerName.MaxOpenConn']
 		$dsPlayerNameMaxIdleConn = $dsPoolMirror['PlayerName.MaxIdleConn']
 		$dsRouteStoreMaxOpenConn = $dsPoolMirror['RouteStore.MaxOpenConn']
 		$dsRouteStoreMaxIdleConn = $dsPoolMirror['RouteStore.MaxIdleConn']
+		$dsRouteSettings = Get-RouteStoreDeploySettings -Mode $RouteStoreMode -ArmReadyMarker ([bool]$RouteReconcileArm) `
+			-ReadRequiresReady ([bool]$RouteReadRequiresReady) -Topology (Get-MappingRedisTopology)
 	}
 	# C++ 约定注册(DataServiceNodeService.rpc)那把 etcd 租约的 TTL:Go config 顶层键、默认 60
 	# (go/data_service/internal/config/config.go LeaseTTL),与 scene-manager / match 同形,同样从服务自己的 yaml 取。
@@ -5420,6 +8246,26 @@ function New-GoSvcConfigMapYaml {
 	# match 的时间窗口全是"多实例 / 崩溃自愈"语义(锁 TTL、票据 TTL、战斗时限),
 	# 生成器里另抄一份就是又一处会漂移的常数,一律从服务自己的 yaml 取。
 	$matchYaml                  = 'go/match/etc/match_service.yaml'
+	$matchMode = 'pro'; $matchGlobalBlock = ''; $matchRatingBlock = ''
+	if ($SvcName -eq 'match') {
+		if ($ReleaseProfile -eq 'dev') { $matchMode = 'dev' }
+		$globalMatch = Get-GlobalMatchDeploymentSettings -Profile $ReleaseProfile -TiDBHost $MatchTiDBHost -Region $PhysicalRegion
+		if ($globalMatch.Enabled) { Assert-GlobalMatchKafkaTopology -Topology (Get-KafkaTopology) }
+		$matchGlobalBlock = Get-AuthoritativeYamlBlock -RelativePath $matchYaml -Key 'GlobalMatch'
+		$enabledValue = ([string][bool]$globalMatch.Enabled).ToLowerInvariant()
+		$matchGlobalBlock = $matchGlobalBlock -replace '(?m)^  Enabled:.*$', "  Enabled: $enabledValue"
+		if ($globalMatch.Enabled) {
+			$matchGlobalBlock = $matchGlobalBlock -replace '(?m)^  RequireTiDB:.*$', '  RequireTiDB: true'
+			$matchGlobalBlock = $matchGlobalBlock -replace '(?m)^  Host:.*$', "  Host: $($globalMatch.Host)"
+			$matchGlobalBlock = $matchGlobalBlock -replace '(?m)^  User:.*$', "  User: $script:MysqlUser"
+		}
+		$matchGlobalBlock = $matchGlobalBlock -replace '(?m)^  RankEndpoint:.*$', "  RankEndpoint: rank.${InfraNamespace}:51100"
+		$matchRatingBlock = (@('RatingEnabled','ResultTopic','ResultTopicPartitions','ResultConsumerGroup','RatingToleranceBase',
+			'RatingToleranceStepSeconds','RatingToleranceStepDelta','RatingToleranceMax','RatingToleranceMaxWaitSeconds',
+			'RatingDrawRoundCap','TableFingerprintMode') | ForEach-Object {
+			"${_}: $(Get-AuthoritativeScalar -RelativePath $matchYaml -KeyPath $_)"
+		}) -join "`n"
+	}
 	$matchTimeout               = Get-AuthoritativeScalar -RelativePath $matchYaml -KeyPath 'Timeout'
 	$matchLeaseTTL              = Get-AuthoritativeScalar -RelativePath $matchYaml -KeyPath 'LeaseTTL'
 	$matchKafkaWriteTimeout     = Get-AuthoritativeScalar -RelativePath $matchYaml -KeyPath 'KafkaWriteTimeoutSeconds'
@@ -5531,6 +8377,10 @@ function New-GoSvcConfigMapYaml {
 	$tradeMode                   = 'pro'
 	$tradeAutoMigrate            = 'false'
 	if ($SvcName -eq 'trade') {
+		$tradeSql = Get-TradeSqlSettings -Profile $ReleaseProfile -TiDBHost $TradeTiDBHost -DevelopmentHost "mysql.${InfraNamespace}:3306"
+		$tradeAssetOpBlock = Get-AuthoritativeYamlBlock -RelativePath $tradeYaml -Key 'AssetOp'
+		$tradeCommerceBlock = Get-AuthoritativeYamlBlock -RelativePath $tradeYaml -Key 'Commerce'
+		$tradeMallBlock = Get-AuthoritativeYamlBlock -RelativePath $tradeYaml -Key 'Mall'
 		$tradeName                  = Get-AuthoritativeScalar -RelativePath $tradeYaml -KeyPath 'Name'
 		$tradeTimeout               = Get-AuthoritativeScalar -RelativePath $tradeYaml -KeyPath 'Timeout'
 		$tradeLeaseTTL              = Get-AuthoritativeScalar -RelativePath $tradeYaml -KeyPath 'LeaseTTL'
@@ -5663,6 +8513,8 @@ function New-GoSvcConfigMapYaml {
 	$playerInboxDataServiceTimeout   = ''
 	$playerInboxKafkaWriteTimeoutMs  = ''
 	$playerInboxEnqueueTypesLines    = ''
+	# 顶层 Middlewares 段(评审 L12):整段从服务 yaml 复制,只在生成 player-inbox 自己的 ConfigMap 时取。
+	$playerInboxMiddlewaresBlock     = ''
 	# PlayerInbox 段里的后台循环参数(清理 / 提醒补发 / gauge / 对账,设计 §6.3、§9):逐键镜像服务 yaml,一项都不漏 ——
 	# Go 侧对缺席的键回填默认值,模板漏一项不会报错,现象是「集群里跑的是默认值」。键名与 go/player_inbox/internal/config 逐字一致。
 	$playerInboxLoopKeys = @('TerminalRetentionDays', 'SweepIntervalSeconds', 'NotifyResendIntervalSeconds',
@@ -5694,132 +8546,42 @@ function New-GoSvcConfigMapYaml {
 			[void](Get-AuthoritativeScalar -RelativePath $playerInboxYaml -KeyPath $playerInboxKey)
 		}
 		$playerInboxEnqueueTypesLines = Get-PlayerInboxEnqueueTypesYaml -RelativePath $playerInboxYaml
+		# go-zero 服务端中间件配置(评审 L12):Stat 拦截器缺省开启(Middlewares.Stat 缺省 true,整段缺席也回填),Go 侧 config.Validate
+		# 在 Stat 开着时要求 StatConf.IgnoreContentMethods 同时列出 FetchItems 与 AckItems,缺了就拒启 —— player-inbox 与用同一份
+		# ConfigMap 的 player-inbox-migrate Job(conf.MustLoad 同样跑 Validate)都起不来。整段原样复制,不在模板里抄第二份方法名;
+		# 服务 yaml 缺这一段即 throw(Get-AuthoritativeYamlBlock)。
+		$playerInboxMiddlewaresBlock = Get-AuthoritativeYamlBlock -RelativePath $playerInboxYaml -Key 'Middlewares'
 		if ($ReleaseProfile -eq 'dev') {
 			$playerInboxMode        = Get-AuthoritativeScalar -RelativePath $playerInboxYaml -KeyPath 'Mode'
 			$playerInboxAutoMigrate = Get-AuthoritativeScalar -RelativePath $playerInboxYaml -KeyPath 'Schema.AutoMigrate'
 		}
 	}
 
-	# 邮件 mail 的契约值(docs/design/mail-system.md §7.2 ③ / §7.3):键名与 go/mail/etc/mail.yaml、go/mail/internal/config 三处逐字一致,
-	# 值只从服务 yaml 取。与 trade / friend 同理**只在生成 mail 自己的 ConfigMap 时求值**。Sweep 是**顶层**段(不是 Mail.Sweep)。
-	$mailYaml                      = 'go/mail/etc/mail.yaml'
-	$mailName                      = ''
-	$mailTimeout                   = ''
-	$mailLeaseTTL                  = ''
-	$mailMysqlDBName               = ''
-	$mailMysqlMaxOpenConn          = ''
-	$mailMysqlMaxIdleConn          = ''
-	$mailDataServiceTimeout        = ''
-	$mailIdSegmentOptionalLines    = ''
-	$mailMaxPersonalMailsPerPlayer = ''
-	$mailMaxActiveSystemMails      = ''
-	$mailMaxPersonalMailTtlDays    = ''
-	$mailMaxSystemMailTtlDays      = ''
-	$mailAllowedCurrencyTypes      = ''
-	$mailSweepMode                 = ''
-	$mailSweepInterval             = ''
-	$mailSweepRetentionDays        = ''
-	$mailSweepBatchLimit           = ''
-	# 非 dev 档的固定值:Mode = pro(M-9:生产禁附件与 ROBOT 发件方都靠它,不能带着造数能力上线);
-	# AutoMigrate = false(表只由 mail-migrate Job 建,启动路径只跑一次只读 plan,不净即拒启并打印补救命令)。
-	$mailMode                      = 'pro'
-	$mailAutoMigrate               = 'false'
-	if ($SvcName -eq 'mail') {
-		$mailName                      = Get-AuthoritativeScalar -RelativePath $mailYaml -KeyPath 'Name'
-		# zrpc 服务端超时:路由服 ForwardTimeoutMs ≥ 本值 + 1000 由写路径入口的 Assert-RouterForwardBudget 核对服务 yaml,这里镜像同一个值。
-		$mailTimeout                   = Get-AuthoritativeScalar -RelativePath $mailYaml -KeyPath 'Timeout'
-		$mailLeaseTTL                  = Get-AuthoritativeScalar -RelativePath $mailYaml -KeyPath 'LeaseTTL'
-		# 库名同样取服务 yaml:D-14 规定本地与 K8s 同名(mmorpg_mail),Go 侧 config.Validate 断言它等于代码常量。
-		$mailMysqlDBName               = Get-AuthoritativeScalar -RelativePath $mailYaml -KeyPath 'MySQL.DBName'
-		$mailMysqlMaxOpenConn          = Get-AuthoritativeScalar -RelativePath $mailYaml -KeyPath 'MySQL.MaxOpenConn'
-		$mailMysqlMaxIdleConn          = Get-AuthoritativeScalar -RelativePath $mailYaml -KeyPath 'MySQL.MaxIdleConn'
-		$mailDataServiceTimeout        = Get-AuthoritativeScalar -RelativePath $mailYaml -KeyPath 'DataServiceRpc.Timeout'
-		$mailMaxPersonalMailsPerPlayer = Get-AuthoritativeScalar -RelativePath $mailYaml -KeyPath 'Mail.MaxPersonalMailsPerPlayer'
-		$mailMaxActiveSystemMails      = Get-AuthoritativeScalar -RelativePath $mailYaml -KeyPath 'Mail.MaxActiveSystemMails'
-		$mailMaxPersonalMailTtlDays    = Get-AuthoritativeScalar -RelativePath $mailYaml -KeyPath 'Mail.MaxPersonalMailTtlDays'
-		$mailMaxSystemMailTtlDays      = Get-AuthoritativeScalar -RelativePath $mailYaml -KeyPath 'Mail.MaxSystemMailTtlDays'
-		$mailAllowedCurrencyTypes      = Get-AuthoritativeScalar -RelativePath $mailYaml -KeyPath 'Mail.AllowedCurrencyTypes'
-		# 只认非空流式列表:块式写法在扁平解析器里取到空串,写进 ConfigMap 就是 null,Go 侧 Validate 拒启 → CrashLoop。
-		if ($mailAllowedCurrencyTypes -notmatch '^\[\s*\d+(\s*,\s*\d+)*\s*\]$') {
-			throw "生成 mail ConfigMap 失败:$mailYaml 的 Mail.AllowedCurrencyTypes='$mailAllowedCurrencyTypes' 必须写成非空流式列表(如 [0, 1, 2])"
-		}
-		# Sweep 四个键必须全写:整段标了 optional,go-zero 不下钻整段缺失的 optional 嵌套结构、default 标签不回填,
-		# 漏写会让 Mode 变空串并被 Validate 拒(照 friend)。
-		$mailSweepMode                 = Get-AuthoritativeScalar -RelativePath $mailYaml -KeyPath 'Sweep.Mode'
-		$mailSweepInterval             = Get-AuthoritativeScalar -RelativePath $mailYaml -KeyPath 'Sweep.Interval'
-		$mailSweepRetentionDays        = Get-AuthoritativeScalar -RelativePath $mailYaml -KeyPath 'Sweep.RetentionDays'
-		$mailSweepBatchLimit           = Get-AuthoritativeScalar -RelativePath $mailYaml -KeyPath 'Sweep.BatchLimit'
-		# IdSegment 的 Enabled / FallbackToSnowflake 是部署决策,在模板里写死;Step / MinStep / MaxStep 是调参值,
-		# yaml 里有就逐字镜像,没有就整行不写、交给 shared/idsegment 的默认(照 trade)。
-		$mailIdSegmentOptional = New-Object System.Collections.Generic.List[string]
-		$mailYamlFull = Join-Path $RepoRoot ($mailYaml -replace '/', [System.IO.Path]::DirectorySeparatorChar)
-		foreach ($mailKey in @('Step', 'MinStep', 'MaxStep')) {
-			$mailScalar = Get-YamlScalar -Path $mailYamlFull -KeyPath "IdSegment.$mailKey"
-			if ($mailScalar.Found -and -not [string]::IsNullOrWhiteSpace($mailScalar.Value)) {
-				$mailIdSegmentOptional.Add("  ${mailKey}: $($mailScalar.Value)")
-			}
-		}
-		$mailIdSegmentOptionalLines = $mailIdSegmentOptional -join "`n"
-		# 下面这些键的**值**由模板按部署形态写死(集群内地址 / 固定决策),但键本身必须在服务 yaml 里出现:
-		# go-zero 对写错的键静默忽略,模板与 Go 侧键名一旦分家,现象是「集群里用的是默认值」而没有任何报错(照 player-inbox)。
-		foreach ($mailKey in @('ListenOn', 'ZoneId', 'MetricsListenAddr', 'KillSwitchPrefix', 'Etcd.Key', 'Redis.Host', 'Redis.Type', 'Redis.Key',
-				'MySQL.Host', 'Kafka.Brokers', 'DataServiceRpc.Etcd.Key', 'DataServiceRpc.NonBlock', 'IdSegment.Enabled',
-				'IdSegment.FallbackToSnowflake', 'Middlewares.StatConf.IgnoreContentMethods')) {
-			[void](Get-AuthoritativeScalar -RelativePath $mailYaml -KeyPath $mailKey)
-		}
-		if ($ReleaseProfile -eq 'dev') {
-			$mailMode        = Get-AuthoritativeScalar -RelativePath $mailYaml -KeyPath 'Mode'
-			$mailAutoMigrate = Get-AuthoritativeScalar -RelativePath $mailYaml -KeyPath 'Schema.AutoMigrate'
-		}
-	}
-
-	# 排行榜 rank 的契约值(docs/design/leaderboard-system.md §5.4):键名与 go/rank/etc/rank.yaml、go/rank/internal/config 三处逐字一致,
-	# 值只从服务 yaml 取。与 mail 同理**只在生成 rank 自己的 ConfigMap 时求值**。
-	$rankYaml                    = 'go/rank/etc/rank.yaml'
-	$rankName                    = ''
-	$rankTimeout                 = ''
-	$rankLeaseTTL                = ''
-	$rankSnapshotTopic           = ''
-	$rankSnapshotTopicPartitions = ''
-	$rankConsumerGroup           = ''
-	$rankDataServiceTimeout      = ''
-	$rankBoardSizeSampleInterval = ''
-	# staging / prod 固定 pro:rank 只用 Mode 决定是否注册 gRPC reflection,线上不开;dev 档 = 服务 yaml 的值。
-	$rankMode                    = 'pro'
-	if ($SvcName -eq 'rank') {
-		$rankName                    = Get-AuthoritativeScalar -RelativePath $rankYaml -KeyPath 'Name'
-		$rankTimeout                 = Get-AuthoritativeScalar -RelativePath $rankYaml -KeyPath 'Timeout'
-		$rankLeaseTTL                = Get-AuthoritativeScalar -RelativePath $rankYaml -KeyPath 'LeaseTTL'
-		$rankSnapshotTopic           = Get-AuthoritativeScalar -RelativePath $rankYaml -KeyPath 'RatingSnapshotTopic'
-		$rankSnapshotTopicPartitions = Get-AuthoritativeScalar -RelativePath $rankYaml -KeyPath 'RatingSnapshotTopicPartitions'
-		$rankConsumerGroup           = Get-AuthoritativeScalar -RelativePath $rankYaml -KeyPath 'RatingConsumerGroup'
-		$rankDataServiceTimeout      = Get-AuthoritativeScalar -RelativePath $rankYaml -KeyPath 'DataServiceRpc.Timeout'
-		$rankBoardSizeSampleInterval = Get-AuthoritativeScalar -RelativePath $rankYaml -KeyPath 'BoardSizeSampleInterval'
-		# 快照 topic 的名字与分区数是 match 与 rank 共享的不可变契约(§2.4;match 的 ConfigMap 从 match_service.yaml 取同名键)。
-		# 两份服务 yaml 不一致时,rank 要么去消费一个 match 不写的 topic(榜永远不更新),要么在分区校验上起不来(后台每 30s 重试):
-		# 都是零报错的静默停更。部署前就拒绝。
-		$rankMatchYaml = 'go/match/etc/match_service.yaml'
-		foreach ($rankPair in @(@('RatingSnapshotTopic', $rankSnapshotTopic), @('RatingSnapshotTopicPartitions', $rankSnapshotTopicPartitions))) {
-			$rankMatchValue = Get-AuthoritativeScalar -RelativePath $rankMatchYaml -KeyPath $rankPair[0]
-			if ([string]$rankMatchValue -cne [string]$rankPair[1]) {
-				throw "生成 rank ConfigMap 失败:$rankYaml 的 $($rankPair[0])='$($rankPair[1])' 与 $rankMatchYaml 的 '$rankMatchValue' 不一致(评分快照 topic 是两边共享的契约,docs/design/leaderboard-system.md §2.4)"
-			}
-		}
-		# 下面这些键的**值**由模板按部署形态写死(集群内地址 / 固定决策),但键本身必须在服务 yaml 里出现(理由同 mail)。
-		foreach ($rankKey in @('ListenOn', 'ZoneId', 'MetricsListenAddr', 'KillSwitchPrefix', 'Etcd.Key', 'RankRedis.Host', 'RankRedis.Type',
-				'Kafka.Brokers', 'DataServiceRpc.Etcd.Key', 'DataServiceRpc.NonBlock')) {
-			[void](Get-AuthoritativeScalar -RelativePath $rankYaml -KeyPath $rankKey)
-		}
-		if ($ReleaseProfile -eq 'dev') {
-			$rankMode = Get-AuthoritativeScalar -RelativePath $rankYaml -KeyPath 'Mode'
-		}
-	}
+	# mail/rank 沿用下方服务 YAML 整体镜像；容量、Sweep、签名与 SQL 配置保持单一事实源。
 
 	$mysqlUser = $script:MysqlUser
 	$mysqlPassword = $script:MysqlPassword
 	$redisPassword = $script:RedisPassword
 	$gateTokenSecret = $script:GateTokenSecret
 	$internalAuthSecret = $script:InternalAuthSecret
+
+	# go-redis 直连客户端的连接池上限(P0-E 第 3 批):从服务 yaml 镜像,并核过「正整数」(Get-RedisPoolMirror);
+	# Redis 连接总账读的是同一批键。以前 ConfigMap 不写它,池上限 = go-redis 缺省 10 × GOMAXPROCS,跟着 CPU limit 漂。
+	# 只在生成该服务自己的 ConfigMap 时求值(写路径入口的 Write-RedisConnectionLedger 已经先于任何集群写操作把它们全部读过一遍)。
+	$loginRedisPoolSize   = ''
+	$dbRedisPoolSize      = ''
+	$dsDevRedisPoolSize   = ''
+	$locatorRedisPoolSize = ''
+	$tradeRedisPoolSize   = ''
+	$playerInboxRedisPoolSize = ''
+	switch ($SvcName) {
+		'login' { $loginRedisPoolSize = (Get-RedisPoolMirror -Target 'login')['Node.RedisClient.PoolSize'] }
+		'db' { $dbRedisPoolSize = (Get-RedisPoolMirror -Target 'db')['ServerConfig.RedisClient.PoolSize'] }
+		'data-service' { $dsDevRedisPoolSize = (Get-RedisPoolMirror -Target 'data-service')['DevRedis.PoolSize'] }
+		'player-locator' { $locatorRedisPoolSize = (Get-RedisPoolMirror -Target 'player-locator')['RedisClient.PoolSize'] }
+		'trade' { $tradeRedisPoolSize = (Get-RedisPoolMirror -Target 'trade')['SharedRedis.PoolSize'] }
+		'player-inbox' { $playerInboxRedisPoolSize = (Get-RedisPoolMirror -Target 'player-inbox')['CoreRedis.PoolSize'] }
+	}
 
 	# db 库名白名单。三个来源(DB_ALLOWED_DATABASES 环境变量 / AllowedDatabasesFile /
 	# 本字段)全空时,db 在默认 strict 档下**拒绝启动**
@@ -5922,95 +8684,59 @@ function New-GoSvcConfigMapYaml {
 		}
 	}
 
-	# 帮会 guild 的契约值(K8s 上线批 BK8s,2026-10-16):键名与 go/guild/etc/guild.yaml、go/guild/internal/config/config.go 逐字一致,
-	# 值只从服务 yaml 取。与 trade / friend 同理**只在生成 guild 自己的 ConfigMap 时求值**。
-	# AssetOp 与 Activity 两个大块由 Get-AuthoritativeYamlBlock 从服务 yaml 逐行原样搬运(含每个参数的取值说明):
-	# 单一真相在那份文件,这里不留可漂移的副本;唯一改写的是 AssetOp.Enabled —— 资产通道是部署决策(见 case 里的注释)。
-	$guildYaml                   = 'go/guild/etc/guild.yaml'
-	$guildName                   = ''
-	$guildTimeout                = ''
-	$guildApplicationQuota       = ''
-	$guildRedisDB                = ''
-	$guildMysqlDBName            = ''
-	$guildMysqlMaxOpenConn       = ''
-	$guildMysqlMaxIdleConn       = ''
-	$guildLeaseTTL               = ''
-	$guildCacheDefaultTTL        = ''
-	$guildCacheMaxMembers        = ''
-	$guildDataServiceTimeout     = ''
-	$guildMatchTimeout           = ''
-	$guildIdSegmentOptionalLines = ''
-	$guildAssetOpBlock           = ''
-	$guildActivityBlock          = ''
-	# -AssetOps 决定(见参数处说明);off 时与开关引入之前相同。
-	$guildAssetOpEnabled         = if ($script:AssetOpsOn) { 'true' } else { 'false' }
-	# 非 dev 档固定 false:表只由 guild-migrate Job 建(D-14 第 4 条),启动路径只跑只读 plan。
-	$guildAutoMigrate            = 'false'
-	if ($SvcName -eq 'guild') {
-		$guildName               = Get-AuthoritativeScalar -RelativePath $guildYaml -KeyPath 'Name'
-		$guildTimeout            = Get-AuthoritativeScalar -RelativePath $guildYaml -KeyPath 'Timeout'
-		$guildApplicationQuota   = Get-AuthoritativeScalar -RelativePath $guildYaml -KeyPath 'ApplicationQuotaPerMinute'
-		$guildRedisDB            = Get-AuthoritativeScalar -RelativePath $guildYaml -KeyPath 'RedisClient.DB'
-		$guildMysqlMaxOpenConn   = Get-AuthoritativeScalar -RelativePath $guildYaml -KeyPath 'MySQL.MaxOpenConn'
-		$guildMysqlMaxIdleConn   = Get-AuthoritativeScalar -RelativePath $guildYaml -KeyPath 'MySQL.MaxIdleConn'
-		$guildLeaseTTL           = Get-AuthoritativeScalar -RelativePath $guildYaml -KeyPath 'Node.LeaseTTL'
-		$guildCacheDefaultTTL    = Get-AuthoritativeScalar -RelativePath $guildYaml -KeyPath 'Cache.DefaultTTL'
-		$guildCacheMaxMembers    = Get-AuthoritativeScalar -RelativePath $guildYaml -KeyPath 'Cache.MaxMembers'
-		$guildDataServiceTimeout = Get-AuthoritativeScalar -RelativePath $guildYaml -KeyPath 'DataServiceRpc.Timeout'
-		$guildMatchTimeout       = Get-AuthoritativeScalar -RelativePath $guildYaml -KeyPath 'MatchRpc.Timeout'
-		# 库名取服务 yaml 的 DSN(go/guild 的 config.Validate 断言它等于代码常量 data.DatabaseName = mmorpg_guild);库由 mysql-init-sql 预建。
-		$guildDsn = Get-AuthoritativeScalar -RelativePath $guildYaml -KeyPath 'MySQL.DataSource'
-		$guildDsnDb = [regex]::Match($guildDsn, '\)/(?<db>[A-Za-z0-9_]+)(?:\?|$)')
-		if (-not $guildDsnDb.Success) {
-			throw "生成 guild ConfigMap 失败:读不出 $guildYaml 的 MySQL.DataSource 里的库名(原文含口令,不打印)"
+	# login 的第三方登录段(-LoginWeChatAppId / -LoginQQAppId,New-LoginAuthProvidersYaml)。只在生成 login 自己的 ConfigMap 时求值;
+	# 两个 AppId 都没给 = 空串,login 模板的产物与接入前逐字相同。只写公开值:微信 AppSecret 经 Apply-OneGoSvc 建的 Secret login-oauth
+	# 注入 AppSecretEnv 指向的容器环境变量,绝不进 ConfigMap。AuthProviders 在模板别处没有,整份 login.yaml 只此一处顶层键。
+	$loginAuthProvidersBlock = ''
+	if ($SvcName -eq 'login') {
+		$authProvidersYaml = New-LoginAuthProvidersYaml -WeChatAppId $LoginWeChatAppId -WeChatEndpoint $LoginWeChatEndpoint `
+			-WeChatAllowOpenId $LoginWeChatAllowOpenId.IsPresent -QQAppId $LoginQQAppId -QQEndpoint $LoginQQEndpoint `
+			-QQAllowOpenId $LoginQQAllowOpenId.IsPresent -ReleaseProfile $ReleaseProfile -WeChatAppSecretEnv $script:LoginWeChatAppSecretEnv
+		if (-not [string]::IsNullOrEmpty($authProvidersYaml)) {
+			$loginAuthProvidersBlock = "`n" + $authProvidersYaml
 		}
-		$guildMysqlDBName = $guildDsnDb.Groups['db'].Value
-		# 历练结果的分区数必须等于 match 的结果 topic 分区数(guild config.Validate 只查 ≥ 1;两边不等时结算消费者漏读分区,
-		# 玩家白打,而且没有任何报错)。在生成期核对,不让它进集群。
-		$guildTrialPartitions = Get-AuthoritativeScalar -RelativePath $guildYaml -KeyPath 'Activity.TrialResult.Partitions'
-		$matchResultPartitions = Get-AuthoritativeScalar -RelativePath 'go/match/etc/match_service.yaml' -KeyPath 'ResultTopicPartitions'
-		if ([string]$guildTrialPartitions -ne [string]$matchResultPartitions) {
-			throw "生成 guild ConfigMap 失败:$guildYaml 的 Activity.TrialResult.Partitions=$guildTrialPartitions 与 go/match/etc/match_service.yaml 的 ResultTopicPartitions=$matchResultPartitions 不同(历练结算会漏读分区)"
-		}
-		$guildIdSegmentOptional = New-Object System.Collections.Generic.List[string]
-		$guildYamlFull = Join-Path $RepoRoot ($guildYaml -replace '/', [System.IO.Path]::DirectorySeparatorChar)
-		foreach ($guildKey in @('Step', 'MinStep', 'MaxStep')) {
-			$guildScalar = Get-YamlScalar -Path $guildYamlFull -KeyPath "IdSegment.$guildKey"
-			if ($guildScalar.Found -and -not [string]::IsNullOrWhiteSpace($guildScalar.Value)) {
-				$guildIdSegmentOptional.Add("  ${guildKey}: $($guildScalar.Value)")
-			}
-		}
-		$guildIdSegmentOptionalLines = $guildIdSegmentOptional -join "`n"
-		# AssetOp 整块原样搬运,只改第一层的 Enabled(两格缩进;Wake 子块里四格缩进的 Enabled 不动)。
-		$assetOpLines = @((Get-AuthoritativeYamlBlock -RelativePath $guildYaml -Key 'AssetOp') -split "`r?`n")
-		$enabledHits = @(for ($i = 0; $i -lt $assetOpLines.Count; $i++) { if ($assetOpLines[$i] -match '^  Enabled:') { $i } })
-		if ($enabledHits.Count -ne 1) {
-			throw "生成 guild ConfigMap 失败:$guildYaml 的 AssetOp 块里两格缩进的 Enabled 应恰好 1 行,实际 $($enabledHits.Count) 行"
-		}
-		$assetOpLines[$enabledHits[0]] = "  Enabled: $guildAssetOpEnabled"
-		$guildAssetOpBlock = $assetOpLines -join "`n"
-		$guildActivityBlock = (Get-AuthoritativeYamlBlock -RelativePath $guildYaml -Key 'Activity') -replace "`r`n", "`n"
-		if ($ReleaseProfile -eq 'dev') {
-			$guildAutoMigrate = Get-AuthoritativeScalar -RelativePath $guildYaml -KeyPath 'Schema.AutoMigrate'
-		}
-	}
-
-	# data-service 的回档帮会闸(docs/design/guild-phase2/07-rollback-fail-closed.md §7.5.3 / §7.5.5;2026-10-16 随 guild 上 K8s 一并接上):
-	# GuildInternalRpc 不写 = 回档一律被拒;三个 Rollback* 的服务端超时(MethodTimeouts)不写 = 回档被 go-zero 默认 2000ms 截断。
-	# 取值与 MethodTimeouts 表都从服务 yaml 镜像;MethodTimeouts 里的三个方法已登记在 Get-GrpcClientMethodsNotCalledFromCpp。
-	# 回档 RPC 另要 AdminToken(本 ConfigMap 不写 = 整体停用),这几项只是让「运维在维护窗口下发口令之后」回档能真正走完帮会闸。
-	$dsGuildInternalTimeout     = ''
-	$dsGuildClockSkewMarginMs   = ''
-	$dsGuildCheckBudgetSeconds  = ''
-	$dsMethodTimeoutsBlock      = ''
-	if ($SvcName -eq 'data-service') {
-		$dsGuildInternalTimeout    = Get-AuthoritativeScalar -RelativePath 'go/data_service/etc/data_service.yaml' -KeyPath 'GuildInternalRpc.Timeout'
-		$dsGuildClockSkewMarginMs  = Get-AuthoritativeScalar -RelativePath 'go/data_service/etc/data_service.yaml' -KeyPath 'GuildClockSkewMarginMs'
-		$dsGuildCheckBudgetSeconds = Get-AuthoritativeScalar -RelativePath 'go/data_service/etc/data_service.yaml' -KeyPath 'GuildCheckBudgetSeconds'
-		$dsMethodTimeoutsBlock     = (Get-AuthoritativeYamlBlock -RelativePath 'go/data_service/etc/data_service.yaml' -Key 'MethodTimeouts') -replace "`r`n", "`n"
 	}
 
 	$svcConfig = switch ($SvcName) {
+		"guild" { New-GuildServiceConfigYaml -CurrentZoneId $CurrentZoneId -CurrentClusterId $CurrentClusterId }
+		"mail" {
+			# 域配置仍以服务yaml为源，只改容器寻址；DSN/密钥值由manifest的Secret注入。
+			$source = Get-Content -LiteralPath (Join-Path $RepoRoot 'go/mail/etc/mail.yaml') -Raw
+			$source = $source -replace '(?m)^KafkaBrokers:.*$', "KafkaBrokers: [kafka.${InfraNamespace}:9092]"
+			$source = $source -replace '(?m)^ListenOn:.*$', 'ListenOn: 0.0.0.0:50900'
+			$source = $source -replace '(?m)^AdvertiseHost:.*$', 'AdvertiseHost: ""'
+			$authorityMode = if ($ReleaseProfile -eq 'dev') { 'dev' } else { 'pro' }
+			$source = $source -replace '(?m)^Mode:.*$', "Mode: $authorityMode"
+            if ($ReleaseProfile -ne 'dev') {
+                $source = $source -replace '(?m)^AutoMigrate:.*$', 'AutoMigrate: false'
+                $source = $source -replace '(?m)^RequireTiDB:.*$', 'RequireTiDB: true'
+            }
+			$source = $source -replace '(?m)^ZoneId:.*$', "ZoneId: $CurrentZoneId"
+			$source = $source -replace '(?m)^MetricsListenAddr:.*$', 'MetricsListenAddr: 0.0.0.0:9240'
+			$source = $source -replace '127.0.0.1:2379', "etcd.${InfraNamespace}:2379"
+			$source = $source -replace '(?m)^  Endpoints: \[127.0.0.1:9000\]\r?$', "  Etcd:`n    Hosts: [etcd.${InfraNamespace}:2379]`n    Key: dataservice.rpc"
+			$source = $source -replace '(?m)^TableDir:.*$', 'TableDir: /generated/tables'
+			$source = $source -replace '(?m)^SharedRedisAddr:.*$', "SharedRedisAddr: redis.${InfraNamespace}:6379"
+			$source = $source -replace '(?m)^SharedRedisPasswordEnv:.*\r?\n', ''
+			$source + "`nSharedRedisPasswordEnv: MMORPG_MAIL_REDIS_PASSWORD`n"
+		}
+		"rank" {
+			$source = Get-Content -LiteralPath (Join-Path $RepoRoot 'go/rank/etc/rank.yaml') -Raw
+			$source = $source -replace '(?m)^ListenOn:.*$', 'ListenOn: 0.0.0.0:51100'
+			$source = $source -replace '(?m)^AdvertiseHost:.*$', 'AdvertiseHost: ""'
+			$authorityMode = if ($ReleaseProfile -eq 'dev') { 'dev' } else { 'pro' }
+			$source = $source -replace '(?m)^Mode:.*$', "Mode: $authorityMode"
+            if ($ReleaseProfile -ne 'dev') {
+                $source = $source -replace '(?m)^AutoMigrate:.*$', 'AutoMigrate: false'
+                $source = $source -replace '(?m)^RequireTiDB:.*$', 'RequireTiDB: true'
+            }
+			$source = $source -replace '(?m)^ZoneId:.*$', "ZoneId: $CurrentZoneId"
+			$source = $source -replace '(?m)^MetricsListenAddr:.*$', 'MetricsListenAddr: 0.0.0.0:9250'
+			$source = $source -replace '127.0.0.1:2379', "etcd.${InfraNamespace}:2379"
+			$source = $source -replace '(?m)^  Endpoints: \[127.0.0.1:9000\]\r?$', "  Etcd:`n    Hosts: [etcd.${InfraNamespace}:2379]`n    Key: dataservice.rpc"
+			$source = $source -replace '127.0.0.1:50900', "mail.${InfraNamespace}:50900"
+			$source -replace '(?m)^TableDir:.*$', 'TableDir: /generated/tables'
+		}
 		"db" {
 @"
 Name: db.rpc
@@ -6025,11 +8751,18 @@ ServerConfig:
   Kafka:
     Brokers:
       - "kafka.${InfraNamespace}:9092"
-    GroupID: "db_rpc_consumer_group"
+${dbConsumerGroupYaml}
     TopicGeneration: ${dbTopicGeneration}
     PartitionCnt: ${dbPartitionCnt}
     SubShardCount: ${dbSubShardCount}
+    # 重试路由 shared | owner(镜像 go/db/etc/db.yaml,docs/design/db-retry-owner-routing.md)。只改 ConfigMap 不会滚动 db:
+    # 改值后必须 rollout restart deploy/db,以每个 Pod 的启动日志 "retry routing: mode=… source=…" 与 db_retry_routing_mode 核对。
+    # 单 zone 金丝雀用 kubectl set env deploy/db DB_RETRY_ROUTING=owner(环境变量优先于本键,并且会触发滚动)。
+    RetryRouting: "${dbRetryRouting}"
     IsOfflineExpand: false
+    # db_task topic 的保留期与每分区保留量:与 login 的 ConfigMap 同值(k8s_deploy.ps1 的 Apply-KafkaProfileDefaults / Get-KafkaDiskPlan)。
+    RetentionMs: ${dbTaskRetentionMs}
+    RetentionBytes: ${dbTaskRetentionBytes}
   Database:
     Hosts: "mysql.${InfraNamespace}:3306"
     User: "${mysqlUser}"
@@ -6037,6 +8770,8 @@ ServerConfig:
     MaxOpenConn: ${dbMaxOpenConn}
     MaxIdleConn: ${dbMaxIdleConn}
     Net: ""
+    # 实际后端验证与服务 yaml 同源;true 时使用 TiDB 当前严格读,连到 MySQL 会拒启。
+    RequireTiDB: ${dbRequireTiDB}
     # 启动期 DDL(见生成器注释):dev = go/db/etc/db.yaml 的值;staging/prod = false。
     AutoCreateDatabase: ${dbAutoCreateDatabase}
     AutoMigrateSchema: ${dbAutoMigrateSchema}
@@ -6053,6 +8788,23 @@ ${dbAllowedDatabasesYaml}
     # 所以它必须与 data-service ConfigMap 的 MappingRedis 同实例、DB 0 —— 读错库 = 读不到任何记录与 home_zone,
     # 全员按本 zone 选库,被钉到别处的玩家会写错库。契约测试钉住两者同址。
     DB: 0
+    # 连接池上限(镜像 go/db/etc/db.yaml,Get-RedisPoolMirror;计入 Redis 连接总账)。
+    PoolSize: ${dbRedisPoolSize}
+    # 重试 / 死信 / 毒消息入队的落盘确认 WAITAOF(docs/design/db-retry-owner-routing.md §7):
+    # Kafka 位点提交之前入队的副本是任务唯一的副本,确认不足就不提交位点(fail-closed,消息重投);开启时启动先探一次,失败拒启。
+    # 确认走每实例 2 条的专用连接(不占上面的 PoolSize),Redis 连接总账的 db 行按开启计。两项都写 0 = 关闭确认,只给确实没开 AOF 的环境。
+    # NumLocal / TimeoutMs 镜像 go/db/etc/db.yaml;NumReplicas 按共享 Redis 的形态(-RedisReplicas:单实例 0、高可用 1,与 data-service 同源)。
+    # 只改 ConfigMap 不会滚动 db:改值(含单实例切高可用之后)必须 rollout restart deploy/db。
+    WaitAOFNumLocal: ${dbWaitAOFNumLocal}
+    WaitAOFNumReplicas: ${dbWaitAOFNumReplicas}
+    WaitAOFTimeoutMs: ${dbWaitAOFTimeoutMs}
+  # MySQL 行内围栏开关 legacy | dual(镜像 go/db/etc/db.yaml,docs/design/db-write-fencing-mysql.md §8)。
+  # 本脚本没有逐 zone 覆盖:切 dual 的门禁与逐 zone 做法见该设计 §8.3。只改 ConfigMap 不会滚动 db,
+  # 改值后必须 rollout restart deploy/db,以每个 Pod 的启动日志 "player row fencing: mode=…" 核对。
+  Fencing:
+    Mode: "${dbFencingMode}"
+    # 仅全 writer 已升级后才能打开;本脚本逐字镜像,不能替代滚动门禁。
+    EpochOverride: ${dbFencingEpochOverride}
 # 与 manifests/go-svc/db.yaml 的 metrics 容器端口 / prometheus.io/port 注解一致(9160 = db,与本地 go/db/etc/db.yaml 同值)。
 # 不写 = 缺省空串 = 不起 /metrics 端口:manifest 已声明 9160 并打了抓取注解,不写的话抓取恒失败,
 # 连接池指标 mmorpg_sql_pool_* 与 owner-epoch-alerts.yaml 的抓取前提在集群里都不成立。
@@ -6068,6 +8820,11 @@ Placement:
   NonZoneStoreMaxOpenConn: ${dbNonZoneStoreMaxOpenConn}
   NonZoneStoreMaxIdleConn: ${dbNonZoneStoreMaxIdleConn}
   ExtraStoreConnMaxIdleSeconds: ${dbExtraStoreConnMaxIdleSeconds}
+  # D1 第 3 批读方门禁(k8s_deploy.ps1 -DbPlacementRequireRouteReady,缺省 false;docs/handoff/launch-readiness-20261013/spec_D1_batch1b2_2_3.md §5.3 / §13.2):
+  # true = mapping Redis 的副本被判可信才按 player:placement / player:zone 选库,不可信时进程级就绪闸暂停取 Kafka 消息(存盘积压在 Kafka,不丢)。
+  # 逐 zone 打开(规格 §8 P5),前提是全服 Arm=true、标记已挂、leader 自检稳定为 trusted;回退先关它(先读方、后写方)。
+  # RouteReadyGateIntervalMs 不写 = 代码缺省 1000。只改 ConfigMap 不会滚动 db:改值后 rollout restart deploy/db。
+  RequireRouteReady: ${dbRouteReadyText}
 "@
 		}
 		"data-service" {
@@ -6099,6 +8856,9 @@ DevRedis:
   Type: node
   Password: "${redisPassword}"
   DB: 0
+  # 连接池上限(镜像 go/data_service/etc/data_service.yaml,Get-RedisPoolMirror;计入 Redis 连接总账)。
+  # 上面的 MappingRedis 是 go-zero 封装,没有池参数,总账按 go-redis 缺省 10 × GOMAXPROCS 记它。
+  PoolSize: ${dsDevRedisPoolSize}
 PlayerLockTTLSec: 3
 # C++ 约定的 etcd 注册(DataServiceNodeService.rpc/zone/<ZoneId>/node_type/26/node_id/<N> + 同前缀的
 # allocated 占位键,挂同一把租约):scene 靠它发现 data_service 并调 AllocateIdSegment 领 GuidSegment 号段,
@@ -6137,19 +8897,31 @@ Schema:
 # 所有档位都写 true;本地 yaml 不写(缺省 false,沿用降级运行)。
 Store:
   Required: true
-# 映射提交点(player-route-mapping-durability-proposal.md §4、§11.2,第 1a 批):所有档位固定 redis,不镜像服务 yaml ——
-# 切 db_first 是 P2 的显式运维动作:先进冻结窗口(第 2 批前禁 merge_zone 一切写模式)、P1 导入 + audit 为 0、建角压测;
-# 切换时还要按 redis 拓扑补 WaitAOF 两项(redis-ha:NumReplicas=1),并确认镜像里有 route_tool(第 1b 批补入口,proposal §11.2)。
-# 连接池大小两项例外(G2b):Mode 仍固定 redis 不镜像,只镜像 MaxOpenConn / MaxIdleConn。route store 的独立池只在 db_first 下
-# 装配,redis 模式下不开连接;但 MySQL 连接总账的规划档已按 db_first 计入它(Get-MysqlConnectionPlan),切 db_first 时池大小
-# 与总账同源,不用再补这两行。D1 第 2 阶段改本段时保留这两行。
+# 映射提交点(player-route-mapping-durability-proposal.md §4、§11.2):Mode 不镜像服务 yaml,取 k8s_deploy.ps1 的 -RouteStoreMode(缺省 redis)——
+# 切 db_first 是 P2 的显式运维动作:先进冻结窗口(第 2 批前禁 merge_zone 一切写模式)、P1 导入 + audit 为 0、建角压测、告警抓取就位
+# (docs/handoff/launch-readiness-20261013/spec_D1_batch1b2_2_3.md §8)。全部 zone 同一取值;部署前脚本读线上现状做粘滞核对,
+# 不一致要显式 -ConfirmRouteSwitchChange。K8s 上跑 route-tool 用 tools/scripts/k8s_route_tool.ps1(一次性 Job,不 exec 进本 Pod)。
+# 连接池大小两项(G2b)镜像服务 yaml:route store 的独立池只在 db_first 下装配,redis 模式下不开连接;MySQL 连接总账的规划档
+# 已按 db_first 计入它(Get-MysqlConnectionPlan)。
 # 副作用:以前这里只写 Mode、池大小取代码默认;镜像之后,服务 yaml 里一个非法的池值(如 MaxIdleConn > MaxOpenConn)会让
 # K8s 上的 data-service 在 redis 模式下也拒启(data_service.go 不分 Mode 校验 RouteStore)—— 所以生成器取值时先核
-# 「正整数且 idle ≤ open」(Get-MysqlPoolMirror),不合格在 apply 之前失败。
+# 「正整数且 idle ≤ open」(Get-MysqlPoolMirror),不合格在 apply 之前失败。下面几项同理先核(Get-RouteStoreDeploySettings)。
+# FenceShards:按全局库档位 —— K8s 的全局库是 infra 的 MySQL,取 MySQL 档(服务 yaml 的值);TiDB 档 64 等 TiDB Phase 1 的部署方式定了再补。
+# WaitAOF:本地落盘 1(两份 Redis 清单都开着 AOF);副本份数按 mapping Redis 拓扑(-RedisReplicas:单实例 redis.yaml 写 0,高可用 redis-ha.yaml 写 1);超时取服务 yaml。
+# ReadRequiresReady(第 3 批读方门禁)与 Reconcile.ArmReadyMarker(对账 leader 挂就绪标记):缺省 false,全部副本同一取值,
+# 打开顺序见规格 §8(P3 Arm → P5 读方),回退先关读方、再关 Arm。Reconcile 段其余键不写 = 代码缺省(Enabled true、LeaseMs 10000、
+# RedisPoolSize 4 …;leader 的独立 go-redis 池按这个缺省计入 Redis 连接总账)。
 RouteStore:
-  Mode: redis
+  Mode: $($dsRouteSettings.Mode)
+  FenceShards: $($dsRouteSettings.FenceShards)
   MaxOpenConn: ${dsRouteStoreMaxOpenConn}
   MaxIdleConn: ${dsRouteStoreMaxIdleConn}
+  WaitAOFNumLocal: $($dsRouteSettings.WaitAOFNumLocal)
+  WaitAOFNumReplicas: $($dsRouteSettings.WaitAOFNumReplicas)
+  WaitAOFTimeoutMs: $($dsRouteSettings.WaitAOFTimeoutMs)
+  ReadRequiresReady: $($dsRouteSettings.ReadRequiresReady)
+  Reconcile:
+    ArmReadyMarker: $($dsRouteSettings.ArmReadyMarker)
 # 与 manifest 的 9260 端口、prometheus 注解一致。多副本之后要能按 Pod 看消费者是否在跑。
 MetricsListenAddr: ":9260"
 # 回档的帮会资产闸(07-rollback-fail-closed.md §7.5.5):回档写任何玩家数据之前先问 guild「这些玩家自快照以来有没有已应用的帮会资产操作」。
@@ -6173,7 +8945,7 @@ ${dsMethodTimeoutsBlock}
 # 用 INSERT IGNORE 预建这些 biz_tag 行,幂等、绝不降低已有行的 max_id;新增永久身份两边同加。
 IdSegment:
   AllowAutoSeed: ${dataServiceAllowAutoSeed}
-  BootstrapTags: [player, guild, item, txlog, snapshot, trade_listing, guild_asset_op, friend_request, mail]
+  BootstrapTags: [player, guild, item, txlog, snapshot, trade_listing, guild_asset_op, friend_request, trade_asset_op, mail, mail_asset_op, rank_board, rank_settlement, rank_reward]
 # C++ scene 产出的交易流水 / 玩家快照落库消费者。topic 名与分区数是不可变契约,值来自服务 yaml。
 # Kafka 不可达不影响 Load/Save,只记日志并每 30s 后台重试。
 # TopicGeneration 是分区契约的代号,进有效 topic 名(<基名>_g<N>);从服务 yaml 镜像过来,当前集群
@@ -6231,6 +9003,8 @@ Node:
     DialTimeout: 3s
     ReadTimeout: 3s
     WriteTimeout: 3s
+    # 连接池上限(镜像 go/login/etc/login.yaml,Get-RedisPoolMirror;计入 Redis 连接总账)。
+    PoolSize: ${loginRedisPoolSize}
 Snowflake:
   Epoch: 1721473263000
   NodeBits: 13
@@ -6271,9 +9045,13 @@ SceneManagerRpc:
   Timeout: 5000
   Middlewares:
     Breaker: false
-# DataService gRPC 客户端:login 只用它领 PlayerId 号段(DataService.AllocateIdSegment)。
+# DataService gRPC 客户端:PlayerId 号段(AllocateIdSegment)、角色名登记、以及**每次登录**角色列表上的
+# 归属查询(BatchGetPlayerHomeZone)共用这一条连接。(2026-10-18 更正:原注释「只用它领号段」已过时。)
 # NonBlock: true —— 号段是弱依赖(node-id-overhaul-plan §6.5):data-service 没起时 login 照常起服,
 # 领段失败按 IdSegment.FallbackToSnowflake 决定回退还是拒绝建角。
+# Breaker: true —— 与 go/login/etc/login.yaml 一致(2026-10-18 起,此前 K8s 写 false):data-service 僵住但
+# etcd 键还在时,熔断器让登录的归属查询快速失败、按「保留建角 zone」放行,而不是每次登录都白等满查询预算。
+# 建角的号段与名字登记本来就 fail-closed,熔断只让它们失败得更快。
 DataServiceRpc:
   Etcd:
     Hosts:
@@ -6282,7 +9060,7 @@ DataServiceRpc:
   Timeout: 3000
   NonBlock: true
   Middlewares:
-    Breaker: false
+    Breaker: true
 # PlayerId 号段发号(node-id-overhaul-plan §6)。
 # Enabled 必须**显式写 true**:go-zero 对缺席的 optional 块不填 default,shared/idsegment 的规则是
 #   「整块不写 = 关 = 纯 snowflake 老路径」;漏写这一行等于静默回到旧发号,不会报错。
@@ -6308,10 +9086,11 @@ Secrets:
     Value: "${internalAuthSecret}"${loginQueueTokenSecretBlock}
 # 下发 gate 地址时是否必须用 gate 自报的客户端可达地址(NodeInfo.client_endpoint,D78):
 # true = 缺地址的 gate 不下发;false = 回落 endpoint(PodIP)。取值见 k8s_deploy.ps1 -RequireClientEndpoint(默认跟随 -ClientEntryMode)。
-RequireClientEndpoint: ${requireClientEndpointValue}${loginDevPasswordAuthBlock}${loginQueueBlock}
+RequireClientEndpoint: ${requireClientEndpointValue}${loginDevPasswordAuthBlock}${loginQueueBlock}${loginAuthProvidersBlock}
 Kafka:
   Brokers:
     - "kafka.${InfraNamespace}:9092"
+  # 死配置:login 只生产不消费、代码不读(go/login 已把它改为 optional);它不是 db 的消费组,值不随 -DbConsumerGroup 切组变化,Step 7 删除(docs/design/db-consumer-group-per-zone.md §8)。
   GroupID: "db_rpc_consumer_group"
   TopicGeneration: ${loginTopicGeneration}
   PartitionCnt: ${loginPartitionCnt}
@@ -6327,7 +9106,9 @@ Kafka:
   CompressionType: 0
   Idempotent: true
   MaxOpenRequests: 1
+  # db_task topic 的保留期与每分区保留量:与 db 的 ConfigMap 同值(k8s_deploy.ps1 的 Apply-KafkaProfileDefaults / Get-KafkaDiskPlan)。
   RetentionMs: ${dbTaskRetentionMs}
+  RetentionBytes: ${dbTaskRetentionBytes}
 "@
 		}
 		"player-locator" {
@@ -6343,6 +9124,8 @@ RedisClient:
   Host: redis.${InfraNamespace}:6379
   Password: "${redisPassword}"
   DB: 0
+  # 连接池上限(镜像 go/player_locator/etc/player_locator.yaml,Get-RedisPoolMirror;计入 Redis 连接总账)。
+  PoolSize: ${locatorRedisPoolSize}
 Kafka:
   Brokers:
     - "kafka.${InfraNamespace}:9092"
@@ -6358,6 +9141,15 @@ Lease:
   DefaultTTLSeconds: ${locatorLeaseTTLSeconds}
   PollInterval: 1s
   BatchSize: 100
+  # Lease.ReconcileIntervalSeconds 与 Lease.Reconcile 刻意不写:会话对账是全服单 leader,各项事实源是
+  # go/player_locator/internal/config/config.go 的默认值,必须全服一致(docs/design/player-locator-gate-session-index.md §10)。
+# Prometheus 抓取端点(go-zero 自带 agent;Host 为空时 StartAgent 直接 return,端点根本不存在)。
+# 9190 与 manifests/go-svc/player-locator.yaml 的 prometheus.io/port 注解及 metrics 容器端口一致,两者必须同批发布;
+# 会话对账 leader 卡死 / 无 leader 只能靠这里的 reconcile 指标与 deploy/k8s/player-locator-alerts.yaml 发现。
+Prometheus:
+  Host: 0.0.0.0
+  Port: 9190
+  Path: /metrics
 "@
 		}
 		"scene-manager" {
@@ -6422,6 +9214,9 @@ RequireClientEndpoint: ${requireClientEndpointValue}
 		"match" {
 @"
 Name: matchservice.rpc
+Mode: ${matchMode}
+${matchGlobalBlock}
+${matchRatingBlock}
 ListenOn: 0.0.0.0:50500
 Timeout: ${matchTimeout}
 Etcd:
@@ -6614,10 +9409,11 @@ KillSwitchPrefix: ""
 # 预建并 GRANT 给 appuser;账号沿用 db / data-service 同一组注入值(MMORPG_MYSQL_USER / MMORPG_MYSQL_PASSWORD,dev 回落 root),
 # 换成别的账号要自己补 GRANT。MaxOpenConn × Deployment 副本数(2)要算进 MySQL 的 max_connections(总账见 Get-MysqlConnectionLedger)。
 MySQL:
-  Host: "mysql.${InfraNamespace}:3306"
+  Host: "$($tradeSql.Host)"
   User: "${mysqlUser}"
   Password: "${mysqlPassword}"
   DBName: "${tradeMysqlDBName}"
+  RequireTiDB: $($tradeSql.RequireTiDB)
   MaxOpenConn: ${tradeMysqlMaxOpenConn}
   MaxIdleConn: ${tradeMysqlMaxIdleConn}
 # 建表策略(D-14 第 4 条,见生成器注释):dev = 服务 yaml 的值(启动期 schemamigrate.Up,GET_LOCK 保护多副本);
@@ -6662,109 +9458,21 @@ SharedRedis:
   Host: "redis.${InfraNamespace}:6379"
   Password: "${redisPassword}"
   DB: 0
-# 通用资产通道(guild-phase2/04-asset-channel.md §S4)。键名与 go/trade/etc/trade.yaml、go/trade/internal/config/config.go 三处逐字一致。
-# Enabled 由 -AssetOps 决定,不镜像服务 yaml(与 Mode / Schema.AutoMigrate 那条「dev 档取 yaml」的纪律刻意不同):
-#   off(默认):只写 Enabled: false 与 SecretEnv 两行;
-#   on:整块从服务 yaml 原样搬运、Enabled 改 true(落地恢复与 Cleanup* 键随之生效),签名密钥经 Secret asset-op-secret-trade
-#       注入成 SecretEnv 指定的环境变量;开之前的前提(scene 先拿到验签密钥、scene 的 gRPC 口准入、08 §8.3 六条门禁)见参数 -AssetOps。
-# 密钥值绝不写进 ConfigMap:trade 只从这个**环境变量名**读;Enabled=true 而密钥缺失 / 不足 32 字节时直接拒启(fail-closed)。
+  # 连接池上限(镜像 go/trade/etc/trade.yaml,Get-RedisPoolMirror;计入 Redis 连接总账)。
+  PoolSize: ${tradeRedisPoolSize}
+# 通用资产通道开关(guild-phase2/04-asset-channel.md §S4)。键名与 go/trade/etc/trade.yaml、
+# go/trade/internal/config/config.go 三处逐字一致。
+# **所有档位固定 false**,不镜像服务 yaml —— 与 Mode / Schema.AutoMigrate 那条"dev 档取 yaml"
+# 的纪律刻意不同,理由是上线前置还没做完(§4.43 第 29 项:两把资产密钥尚未经
+# Resolve-InjectedSecret -MinLength 32 注入;scene gRPC 端口也还没有 NetworkPolicy 只放行
+# scene_manager / match / guild / trade)。已知风险 K1(单写者只在 30s 重连租约内成立)同样
+# 建议把"任何共享环境打开资产操作"列为 B4c 的硬前置。
+# 打开之前要同时做三件事:注入密钥、补 NetworkPolicy、把这一行改成 true —— 缺一件就别改。
+# 密钥值绝不写进 ConfigMap:trade 只从下面这个**环境变量名**读,值由部署侧注入;
+# Enabled=true 而密钥缺失 / 不足 32 字节时 trade 直接拒启(fail-closed),不会静默降级。
 ${tradeAssetOpBlock}
-"@
-		}
-		"guild" {
-@"
-Name: ${guildName}
-ListenOn: 0.0.0.0:50300
-# zrpc 服务端整体超时(毫秒):不超过路由服 ForwardTimeoutMs − 1000,且 ≥ DataServiceRpc.Timeout + 归属区查询 + 回包余量(config.Validate 强制)。
-Timeout: ${guildTimeout}
-ApplicationQuotaPerMinute: ${guildApplicationQuota}
-# 刻意不写 go-zero 的 Etcd 段(D-13):guild 按 C++ 约定在 Registry.Etcd 下注册 GuildNodeService.rpc/(internal/node),
-# 路由服按这个前缀发现它;没有任何 Go 服务按 go-zero key 找 guild。
-#
-# 三个 Redis 句柄在 K8s 上都指向共享 Redis(写者含 C++ scene,不能集群化):
-#   RedisClient        帮会缓存与选主锁(DB 取服务 yaml 的值);
-#   PlayerLocatorRedis 在场查询、资产通道的 player:{id}:location、历练结果 battle:activity_result:{battle_id} ——
-#                      必须与 scene / scene_manager / battle 写这些键的 Redis 同实例同 DB(0),指错的表现是全员不在线、结算销不掉账,且不报错;
-#   MergeMarkerRedis   合服闸门 merge:in_progress:{zone},与 data-service 的 MappingRedis 同实例、DB 0(那份 ConfigMap 不写 DB)。
-RedisClient:
-  Host: "redis.${InfraNamespace}:6379"
-  Password: "${redisPassword}"
-  DB: ${guildRedisDB}
-PlayerLocatorRedis:
-  Host: "redis.${InfraNamespace}:6379"
-  Password: "${redisPassword}"
-  DB: 0
-MergeMarkerRedis:
-  Host: "redis.${InfraNamespace}:6379"
-  Pass: "${redisPassword}"
-  DB: 0
-# 独占库 ${guildMysqlDBName}(D-14):由 infra-up 的 mysql-init-sql(deploy/mysql-init/00_init_zone_dbs.sql)预建并 GRANT 给 appuser;
-# 账号沿用 db / data-service / trade 同一组注入值,换成别的账号要自己补 GRANT。不得加 clientFoundRows(config.Validate 拒启)。
-# 池上限 × Deployment 副本数进 MySQL 连接总账(Get-MysqlConnectionLedger)。
-MySQL:
-  DataSource: "${mysqlUser}:${mysqlPassword}@tcp(mysql.${InfraNamespace}:3306)/${guildMysqlDBName}?charset=utf8mb4&parseTime=true&loc=Local"
-  MaxOpenConn: ${guildMysqlMaxOpenConn}
-  MaxIdleConn: ${guildMysqlMaxIdleConn}
-# 建表策略:dev = 服务 yaml 的值;staging/prod = false,表只由 guild-migrate Job 建,启动路径只跑只读 plan。
-Schema:
-  AutoMigrate: ${guildAutoMigrate}
-# 全局池:ZoneId 只影响注册路径,业务代码不读它做分支;取命令行 -ZoneId(Apply-GlobalGoSvcManifests),与 trade / friend 同口径。
-Node:
-  ZoneId: ${CurrentZoneId}
-  LeaseTTL: ${guildLeaseTTL}
-Registry:
-  Etcd:
-    Hosts:
-      - "etcd.${InfraNamespace}:2379"
-    DialTimeout: 5s
-Cache:
-  DefaultTTL: ${guildCacheDefaultTTL}
-  MaxMembers: ${guildCacheMaxMembers}
-Kafka:
-  Brokers:
-    - "kafka.${InfraNamespace}:9092"
-# 查角色归属区与领号段(guild_id、资产 op_id)。data-service 每个 zone 都按 go-zero key 注册,全局库共用,拨到哪一个都行。
-DataServiceRpc:
-  Etcd:
-    Hosts:
-      - "etcd.${InfraNamespace}:2379"
-    Key: dataservice.rpc
-  Timeout: ${guildDataServiceTimeout}
-  NonBlock: true
-  Middlewares:
-    Breaker: false
-# guild_id 号段(biz_tag = guild,已在 data-service ConfigMap 的 IdSegment.BootstrapTags 里)。Enabled 显式 true;
-# FallbackToSnowflake 固定 false(号段失败即建帮失败,tip kGuildIdGenUnavailable,§6.4 的决定)。Step / MinStep / MaxStep 镜像服务 yaml。
-IdSegment:
-  Enabled: true
-${guildIdSegmentOptionalLines}
-  FallbackToSnowflake: false
-# 资产通道(捐献扣货币、商店兑换发物品):整块从服务 yaml 原样搬运,只有 Enabled 由部署决定(-AssetOps,默认 off)。
-# on 时签名密钥 MMORPG_ASSET_OP_SECRET_GUILD 经 Secret asset-op-secret-guild 注入,且必须 -NetworkPolicies on(scene 的 gRPC 口只放行资产调用方);
-# docs/design/guild-phase2/08-save-owner-fence.md §8.3 的六条门禁是运行期验证,脚本核不了。
-# 关着时捐献 / 兑换回 kGuildAssetPending,升级与读接口照常。
-${guildAssetOpBlock}
-# 历练开战调 match 的内部服务(MatchInternal.StartActivityBattle)。match 是全局池,按 go-zero key 注册。
-MatchRpc:
-  Etcd:
-    Hosts:
-      - "etcd.${InfraNamespace}:2379"
-    Key: matchservice.rpc
-  Timeout: ${guildMatchTimeout}
-  NonBlock: true
-  Middlewares:
-    Breaker: false
-# 历练节律与对局结果消费:整块从服务 yaml 原样搬运。TrialResult.Partitions 已在生成期核过等于 match 的 ResultTopicPartitions。
-${guildActivityBlock}
-KillSwitchPrefix: ""
-ClusterId: ${CurrentClusterId}
-# 不缓存 snowflake 槽位(容器里没有持久目录;guild_id 与资产 op_id 都由号段发,无 snowflake 回退)。
-SnowflakeCacheDir: ""
-# 与 manifests/go-svc/guild.yaml 的 metrics 端口 / prometheus.io/port 注解一致(9220 = guild);K8s 上绑 0.0.0.0 让 Prometheus 抓得到。
-Prometheus:
-  Host: 0.0.0.0
-  Port: 9220
-  Path: /metrics
+${tradeCommerceBlock}
+${tradeMallBlock}
 "@
 		}
 		"friend" {
@@ -6805,7 +9513,7 @@ Redis:
 # FriendRedis(friend 私有 key:好友列表缓存 / 申请配额 / 限流)在 K8s 上**刻意整段不配**,回落到上面的共享库。
 # F2 的缓存键已带 hash tag、全是单 key 操作,Redis Cluster 安全,所以将来换独立实例不需要改代码;
 # ⚠ 但 staging/prod 若要配独立实例,必须 maxmemory-policy=noeviction:好友列表缓存被淘汰只是多打一次 MySQL,
-#   **配额 / 限流 key 被淘汰等于限流静默失效**。共享库现在是 allkeys-lfu,这条风险已经存在,写在这里不是假装没有。
+#   **配额 / 限流 key 被淘汰等于限流静默失效**。共享库现在是 allkeys-lfu(2026-10-18 更正:compose 与 K8s 现均为 noeviction,不再淘汰、写满时拒写),这条风险已经存在,写在这里不是假装没有。
 # 全局池:ZoneId 只影响 etcd 注册路径,路由服对 FriendNodeService 不做 zone 过滤(ZoneScopedNodeTypes 默认仅 Login),
 # 任何 zone 的玩家都被路由到这里的实例;业务代码**禁止**读它做分支 —— 好友关系天然跨 zone,按 zone 过滤会把
 # 跨区好友判成"不存在"。取命令行 -ZoneId(Apply-GlobalGoSvcManifests),与 chat / trade 同口径;Go 侧 Validate 拒 0。
@@ -6873,6 +9581,10 @@ ListenOn: 0.0.0.0:50950
 Timeout: ${playerInboxTimeout}
 # go-zero Mode:dev 档 = go/player_inbox/etc/player_inbox.yaml 的值;staging/prod 固定 pro。显式写出,不赌 go-zero 缺省值。
 Mode: ${playerInboxMode}
+# 服务端中间件(评审 L12):Stat 拦截器缺省按 INFO 打每个非慢调用的整包请求体。Fetch / Ack 只屏蔽内容,方法名 / 耗时 / 慢调用照常记;
+# PlayerInboxAdmin 的请求体是审计线索,不屏蔽。下面整段由 Get-AuthoritativeYamlBlock 从服务 yaml 原样复制:
+# Go 侧 config.Validate 在 Stat 开着时要求两个方法都在列表里,缺了本服务与 player-inbox-migrate Job 都拒启。
+${playerInboxMiddlewaresBlock}
 # Etcd 段 **Key 显式留空**(port-decisions D-13,设计 §1.4「D-13 不触发」):player_inbox 按 C++ 约定注册
 # PlayerInboxNodeService.rpc/zone/<z>/...(go/shared/noderegistry),scene 按这个前缀发现它;没有任何 Go 调用方
 # 经 go-zero 发现键找它。不能整行省略 Key:go-zero 的 EtcdConf.Key 不是 optional,缺了 conf.MustLoad 直接 Fatal。
@@ -6927,6 +9639,8 @@ CoreRedis:
   Host: "redis.${InfraNamespace}:6379"
   Password: "${redisPassword}"
   DB: 0
+  # 连接池上限(镜像 go/player_inbox/etc/player_inbox.yaml,Get-RedisPoolMirror;计入 Redis 连接总账)。
+  PoolSize: ${playerInboxRedisPoolSize}
 # 在线提醒(PlayerInboxNotifyEvent → scene-cmd,至多一次,丢了由落地拉取与在线兜底补,设计 §6.3)的 broker 地址。
 # 命令 topic 的分区数 / 代号由 Apply-OneGoSvc 注入的 KAFKA_COMMAND_TOPIC_* 环境变量给出,与 C++ scene 同一份契约。
 Kafka:
@@ -6944,162 +9658,6 @@ PlayerInbox:
   AdminTokenEnv: $($script:PlayerInboxAdminTokenEnv)
 ${playerInboxEnqueueTypesLines}
 ${playerInboxLoopLines}
-"@
-		}
-		"mail" {
-@"
-Name: ${mailName}
-ListenOn: 0.0.0.0:50900
-# zrpc 服务端超时(毫秒),必须 <= 路由服 ForwardTimeoutMs - 1000(契约 §3,写路径入口的 Assert-RouterForwardBudget 核对);
-# mail 的 config.Validate 只收 [1000, 4000]。
-Timeout: ${mailTimeout}
-# go-zero Mode(M-9):只有 dev / test 允许发带附件的邮件、接受 sender_kind=ROBOT。dev 档 = go/mail/etc/mail.yaml 的值;
-# staging/prod 固定 pro(见生成器注释),不能带着造数能力上线。显式写出,不赌 go-zero 缺省值。
-Mode: ${mailMode}
-# 全局池:ZoneId 只影响 etcd 注册路径(MailNodeService.rpc/zone/<z>/...),业务代码禁止读它做分支;取命令行 -ZoneId
-# (Apply-GlobalGoSvcManifests),与 trade / friend 同口径;Go 侧 Validate 拒 0。
-ZoneId: ${CurrentZoneId}
-# MailAdmin 的请求体(收件人 + 正文)不整包进 stat 日志;与 go/mail/etc/mail.yaml 同一段,两边必须一致(契约 §7)。只屏蔽内容,不关 Stat。
-Middlewares:
-  StatConf:
-    IgnoreContentMethods:
-      - /mailpb.MailAdmin/SendPersonalMail
-      - /mailpb.MailAdmin/SendSystemMail
-# Etcd 段 **Key 显式留空**(port-decisions D-13):mail 按 C++ 约定注册 MailNodeService.rpc/zone/<z>/...(go/shared/noderegistry),
-# 路由服按这个前缀发现它;没有任何 Go 调用方经 go-zero 发现键找 mail(config.Validate 拒非空 Key)。
-# ⚠ 不能整行省略 Key:go-zero 的 EtcdConf.Key 不是 optional,缺了 conf.MustLoad 直接 Fatal,Pod 会 CrashLoop。
-Etcd:
-  Hosts:
-    - "etcd.${InfraNamespace}:2379"
-  Key: ""
-# 共享 Redis(只读跨运行时契约 key player:session:{id},推送前找收件人所在 gate;mail 没有私有 key)。
-# 这是 zrpc.RpcServerConf 自带的 Redis(RedisKeyConf)段:Key 字段不是 optional,Redis 段存在时必须显式写空串;
-# 不写 DB(契约 §4,契约 key 由多个运行时共写,DB 号全仓一致 = 默认 0);config.Validate 拒 Type: cluster。
-# Pass 与 friend / chat / match 等共享库段同批写:redis-auth 注入的密码非空时 infra/redis.yaml 才加 --requirepass,
-# 本地 mail.yaml 没有 Pass 不代表这里可以省(省了全线 NOAUTH)。
-Redis:
-  Host: redis.${InfraNamespace}:6379
-  Type: node
-  Pass: "${redisPassword}"
-  Key: ""
-# 租约 TTL(秒)= 崩溃后路由服仍可能把请求打到死实例的最长窗口(PickRandom 不看连接状态)。
-LeaseTTL: ${mailLeaseTTL}
-# 与 manifests/go-svc/mail.yaml 的 metrics 容器端口 / prometheus.io/port 注解一致(9240 = mail,契约 §7)。
-# 告警规则见 deploy/k8s/mail-alerts.yaml(sweep 每个副本都跑,规则一律 max() / sum() 聚合)。
-MetricsListenAddr: ":9240"
-# 留空 = shared/killswitch 的 DefaultPrefix(/mmorpg/killswitch/),与其它服务共用同一棵规则树。
-KillSwitchPrefix: ""
-# 独占库(D-14):库 ${mailMysqlDBName} 由 infra-up 的 mysql-init-sql(原样带入 deploy/mysql-init/00_init_zone_dbs.sql)预建并 GRANT 给 appuser;
-# 账号沿用 db / data-service / trade 同一组注入值(MMORPG_MYSQL_USER / MMORPG_MYSQL_PASSWORD,dev 回落 root)。
-# MaxOpenConn × Deployment 副本数(2)已算进 MySQL 连接总账(Get-MysqlConnectionLedgerInputs 的 MailReplicas / MailMaxOpen)。
-MySQL:
-  Host: "mysql.${InfraNamespace}:3306"
-  User: "${mysqlUser}"
-  Password: "${mysqlPassword}"
-  DBName: "${mailMysqlDBName}"
-  MaxOpenConn: ${mailMysqlMaxOpenConn}
-  MaxIdleConn: ${mailMysqlMaxIdleConn}
-# 建表策略(D-14 第 4 条):dev = 服务 yaml 的值(启动期 schemamigrate.Up,GET_LOCK 保护多副本);
-# staging/prod = false:表只由 mail-migrate Job 建,启动路径只跑只读 plan,不净即拒启并打印补救命令。
-Schema:
-  AutoMigrate: ${mailAutoMigrate}
-# S2C 推送(NotifyMailEvent → gate-cmd_g<N>,至多一次;红点真相是 ListMails 的 unread_count)的 broker 地址。
-# 命令 topic 的分区数 / 代号由 Apply-OneGoSvc 注入的 KAFKA_COMMAND_TOPIC_* 环境变量给出,与 C++ gate 同一份契约。
-Kafka:
-  Brokers:
-    - "kafka.${InfraNamespace}:9092"
-# mail_id / sys_mail_id 号段(AllocateIdSegment,biz_tag = mail,已进本脚本 data-service ConfigMap 的 IdSegment.BootstrapTags)。
-# data-service 按 zone namespace 各部署一份,但 go-zero 发现键 dataservice.rpc 不分 zone、全局库只有一份,发现到哪个实例应答都一样。
-# 这是 mail 作为**调用方**的发现键,不是 D-13 禁止的「全局服务自己的 go-zero 注册 Key」(同 trade)。
-DataServiceRpc:
-  Etcd:
-    Hosts:
-      - "etcd.${InfraNamespace}:2379"
-    Key: dataservice.rpc
-  Timeout: ${mailDataServiceTimeout}
-  NonBlock: true
-  Middlewares:
-    Breaker: false
-# Enabled 必须**显式写 true**(go-zero 对缺席的 optional 块不填 default,go/mail 的 config.Validate 拒绝 false);
-# FallbackToSnowflake 固定 false:mail 没有 snowflake 回退,号段失败即本次发件回 kServiceUnavailable。
-# Step / MinStep / MaxStep 从服务 yaml 逐字镜像,缺席则整行不写。
-IdSegment:
-  Enabled: true
-${mailIdSegmentOptionalLines}
-  FallbackToSnowflake: false
-# 邮件业务硬上限,全部取自服务 yaml(AllowedCurrencyTypes 没有默认值,漏写即拒启;权威来源是 C++ currency.h,加货币类型时同批改服务 yaml)。
-Mail:
-  MaxPersonalMailsPerPlayer: ${mailMaxPersonalMailsPerPlayer}
-  MaxActiveSystemMails: ${mailMaxActiveSystemMails}
-  MaxPersonalMailTtlDays: ${mailMaxPersonalMailTtlDays}
-  MaxSystemMailTtlDays: ${mailMaxSystemMailTtlDays}
-  AllowedCurrencyTypes: ${mailAllowedCurrencyTypes}
-# 过期邮件物理清理(顶层段,每个副本都跑,不选主)。四个键必须全写:整段 optional,缺段时 go-zero 不回填 default,Validate 拒启。
-# Mode 镜像服务 yaml(仓内默认 report_only:只出指标不删);新环境先看 mail_sweep_candidate_rows 再改 delete。
-Sweep:
-  Mode: ${mailSweepMode}
-  Interval: ${mailSweepInterval}
-  RetentionDays: ${mailSweepRetentionDays}
-  BatchLimit: ${mailSweepBatchLimit}
-# 运维令牌不在这里:只经 Secret mail-admin-auth 注入环境变量(Apply-OneGoSvc);变量缺失 = MailAdmin 停用。
-"@
-		}
-		"rank" {
-@"
-Name: ${rankName}
-ListenOn: 0.0.0.0:51100
-# zrpc 服务端超时(毫秒),必须 <= 路由服 ForwardTimeoutMs - 1000(契约 §3,写路径入口的 Assert-RouterForwardBudget 核对);
-# rank 的 config.Validate 只收 [1000, 4000];逻辑层整请求预算 = Timeout − 500ms。
-Timeout: ${rankTimeout}
-# go-zero Mode:rank 只用它决定是否注册 gRPC reflection。dev 档 = go/rank/etc/rank.yaml 的值;staging/prod 固定 pro。
-# 显式写出,不赌 go-zero 缺省值。
-Mode: ${rankMode}
-# 全局池:ZoneId 只影响 etcd 注册路径(RankNodeService.rpc/zone/<z>/...),业务代码禁止读它做分支;取命令行 -ZoneId
-# (Apply-GlobalGoSvcManifests),与 chat / mail 同口径;Go 侧 Validate 拒 0。
-ZoneId: ${CurrentZoneId}
-# Etcd 段 **Key 显式留空**(port-decisions D-13):rank 按 C++ 约定注册 RankNodeService.rpc/zone/<z>/...(go/shared/noderegistry),
-# 路由服按这个前缀发现它;没有任何 Go 调用方经 go-zero 发现键找 rank(config.Validate 拒非空 Key)。
-# ⚠ 不能整行省略 Key:go-zero 的 EtcdConf.Key 不是 optional,缺了 conf.MustLoad 直接 Fatal,Pod 会 CrashLoop。
-Etcd:
-  Hosts:
-    - "etcd.${InfraNamespace}:2379"
-  Key: ""
-# 租约 TTL(秒)= 崩溃后路由服仍可能把请求打到死实例的最长窗口(PickRandom 不看连接状态)。
-LeaseTTL: ${rankLeaseTTL}
-# 与 manifests/go-svc/rank.yaml 的 metrics 容器端口 / prometheus.io/port 注解一致(契约 §7)。
-# 告警规则见 deploy/k8s/rank-alerts.yaml(每个副本都报,规则一律 max() / sum() 聚合)。
-MetricsListenAddr: ":9250"
-# 留空 = shared/killswitch 的 DefaultPrefix(/mmorpg/killswitch/),与其它服务共用同一棵规则树。
-KillSwitchPrefix: ""
-# 榜键 lb:{rating}:z / lb:{rating}:v 只放专用实例 redis-rank(manifests/infra/redis-rank.yaml:noeviction + AOF,§3.5 / §9.1#4)。
-# **刻意不写共享 Redis 段**:rank 不读任何跨运行时契约 key,共享段只是本地的回落目标;不写它,RankRedis 被误删时
-# config.Validate 直接拒启,而不是静默把无 TTL 的榜键写进会淘汰的共享库。Pass 与共享库同一个注入值(redis-rank.yaml 用同一个可选
-# Secret redis-auth)。go-zero redis.RedisConf 形状,不写 DB。
-RankRedis:
-  Host: redis-rank.${InfraNamespace}:6379
-  Type: node
-  Pass: "${redisPassword}"
-# 评分快照(§2.4):topic 名与分区数是与 match 共享的不可变契约(上面的生成器已核对两份服务 yaml 同值);保留期只由 match 声明。
-# 消费组键刻意不叫 GroupID(本地 -Zone 会给 GroupID 加后缀);rank 的多个副本同属一个组、分摊分区。
-Kafka:
-  Brokers:
-    - "kafka.${InfraNamespace}:9092"
-RatingSnapshotTopic: ${rankSnapshotTopic}
-RatingSnapshotTopicPartitions: ${rankSnapshotTopicPartitions}
-RatingConsumerGroup: ${rankConsumerGroup}
-# 名字补全(BatchGetPlayerName,fail-open)。data-service 按 zone namespace 各部署一份,但 go-zero 发现键 dataservice.rpc 不分 zone、
-# 名字表是全局库,发现到哪个实例应答都一样;这是 rank 作为**调用方**的发现键,不是 D-13 禁止的「全局服务自己的注册 Key」(同 trade / mail)。
-DataServiceRpc:
-  Etcd:
-    Hosts:
-      - "etcd.${InfraNamespace}:2379"
-    Key: dataservice.rpc
-  Timeout: ${rankDataServiceTimeout}
-  NonBlock: true
-  Middlewares:
-    Breaker: false
-# rank_board_size 的 ZCARD 采样间隔(每个副本各自采样;告警 RankBoardShrunk 用 max() 聚合)。
-BoardSizeSampleInterval: ${rankBoardSizeSampleInterval}
 "@
 		}
 		default {
@@ -7562,6 +10120,23 @@ function Add-GoSvcTopicReplicationEnv {
 	Secret / 迁移 Job / Deployment)之前调用它,形状不对不留半截部署。manifest 里手写了同名变量视为冲突,拒绝(一处真相)。
 	secretKeyRef 不写 optional(= false):Secret 缺失时 Pod 卡在 CreateContainerConfigError,而不是带着空密钥起来。
 #>
+function Add-MatchAuthoritySecretEnv {
+	param([string]$ManifestContent)
+	$settings = Get-GlobalMatchDeploymentSettings -Profile $ReleaseProfile -TiDBHost $MatchTiDBHost -Region $PhysicalRegion
+	if (-not $settings.Enabled) { return $ManifestContent }
+	foreach ($entry in @(
+		@{ Field = 'PasswordEnv'; Key = 'match-mysql-password' },
+		@{ Field = 'ProbeSecretEnv'; Key = 'match-probe' },
+		@{ Field = 'RankSecretEnv'; Key = 'rank-producer-match' }
+	)) {
+		$envName = Get-AuthoritativeScalar -RelativePath 'go/match/etc/match_service.yaml' -KeyPath "GlobalMatch.$($entry.Field)"
+		if ($envName -cnotmatch '^[A-Z][A-Z0-9_]*$') { throw '匹配密钥环境变量名无效。' }
+		$ManifestContent = Add-GoSvcSecretEnv -SvcName 'match' -ManifestContent $ManifestContent `
+			-EnvName $envName -SecretName 'domain-service-secrets' -SecretKey $entry.Key
+	}
+	return $ManifestContent
+}
+
 function Add-GoSvcSecretEnv {
 	param(
 		[Parameter(Mandatory = $true)][string]$SvcName,
@@ -7790,6 +10365,17 @@ function Apply-LoginDevPasswordSecret {
 		-Value $script:LoginDevPasswordSecret -AppLabel "login"
 }
 
+# -LoginWeChatAppId 的 AppSecret Secret login-oauth(zone namespace)。必须先于引用它的 login Deployment apply。
+function Apply-LoginOAuthSecret {
+	param([Parameter(Mandatory = $true)][string]$Namespace)
+
+	if ([string]::IsNullOrWhiteSpace($script:LoginWeChatAppSecret)) {
+		throw "内部错误:-LoginWeChatAppId 的 AppSecret 未解析(Initialize-InjectedSecrets 未在写路径入口调用?),拒绝部署 login。"
+	}
+	Apply-InjectedSecret -Namespace $Namespace -Name $script:LoginOAuthSecretName -Key $script:LoginOAuthWeChatSecretKey `
+		-Value $script:LoginWeChatAppSecret -AppLabel "login"
+}
+
 # 单个 Go 服务的 ConfigMap + 主 manifest apply。zone 循环与全局循环共用同一段逻辑。
 function Apply-OneGoSvc {
 	param(
@@ -7821,6 +10407,30 @@ function Apply-OneGoSvc {
 		-Partitions $commandTopic.Partitions -Generation $commandTopic.Generation
 	$manifestContent = Add-GoSvcTopicReplicationEnv -SvcName $SvcName -ManifestContent $manifestContent `
 		-ReplicationFactor (Get-KafkaTopology).ReplicationFactor
+	if ($SvcName -eq 'match') {
+		$manifestContent = Add-MatchAuthoritySecretEnv -ManifestContent $manifestContent
+	}
+
+	# db 专属注解(docs/design/db-consumer-group-per-zone.md §4):Pod 模板上的 mmorpg.io/db-consumer-group / mmorpg.io/db-group-handoff-from
+	# 取本 zone 的消费组计划(Get-DbConsumerGroupPlan,与 ConfigMap 同一份)。消费组键只在 ConfigMap 里,而 ConfigMap 只在进程启动时读:
+	# 组名或交接对方组一变,注解随之变 → 模板变 → db 滚动(keep 收尾时对方组变为 none 也靠它滚一次)。注解只触发滚动,不作能力证明。
+	# 走 manifest 里的占位而不是 Add-PodTemplateAnnotation:db.yaml 的 Pod 模板已有 prometheus 注解段。占位缺失即 throw(同 player-inbox
+	# 的口令指纹占位):没有它,只改消费组的部署 apply 是 no-op,切组 / 收尾都静默不生效。替换完仍残留 PLACEHOLDER_DB_ 同样 throw。
+	# 服务名判断留在 -and 左边 / 块最外层(理由同下面 login 那段:k8s_migrate_gate.tests.ps1 按 AST 单独抽出本函数跑别的服务)。
+	# 本块是 db 专属注解替换的唯一位置,④ 的 RetryRouting 注解(如需要)用同样的占位手法放进这个块。
+	if ($SvcName -eq 'db') {
+		$dbConsumerGroupPlan = Get-DbConsumerGroupPlan -CurrentZoneId $CurrentZoneId
+		$dbGroupHandoffFromAnnotation = if ([string]::IsNullOrEmpty($dbConsumerGroupPlan.HandoffFrom)) { 'none' } else { $dbConsumerGroupPlan.HandoffFrom }
+		foreach ($dbPlaceholder in @('PLACEHOLDER_DB_CONSUMER_GROUP', 'PLACEHOLDER_DB_GROUP_HANDOFF_FROM')) {
+			if (-not $manifestContent.Contains($dbPlaceholder)) {
+				throw "服务 $SvcName 的 manifest 缺少占位 ${dbPlaceholder}(Pod 模板注解 mmorpg.io/db-consumer-group / mmorpg.io/db-group-handoff-from):没有它,只改消费组的部署不会滚动 db,切组与收尾都静默不生效。"
+			}
+		}
+		$manifestContent = $manifestContent.Replace('PLACEHOLDER_DB_CONSUMER_GROUP', $dbConsumerGroupPlan.Group).Replace('PLACEHOLDER_DB_GROUP_HANDOFF_FROM', $dbGroupHandoffFromAnnotation)
+		if ($manifestContent.Contains('PLACEHOLDER_DB_')) {
+			throw "内部错误:服务 $SvcName 的 manifest 替换消费组注解后仍残留 PLACEHOLDER_DB_ 占位,拒绝部署(本块是 db 专属占位的唯一替换处,新增占位要在这里一并替换)。"
+		}
+	}
 
 	# login 的削峰指纹(G4b,$script:PeakShavingHashAnnotation):排队开时给 Pod 模板写一条注解,关时不写。Queue 段与排队密钥都只在
 	# ConfigMap 里,而 ConfigMap 只在进程启动时读:只改 ConfigMap 时 Pod 模板不变、apply 是 no-op,login 一直按旧配置跑 ——
@@ -7829,11 +10439,33 @@ function Apply-OneGoSvc {
 	# 条件里服务名判断必须留在 -and 左边:本函数会被 k8s_migrate_gate.tests.ps1 按 AST 单独抽出来跑非 login 服务,那里
 	# 右边的变量未定义、New-LoginQueueYaml 也没有加载,靠短路才不会求值。不要调换两边顺序。
 	# login 的 manifest 在 Pod 模板里没有 annotations: 段(已有的话 Add-PodTemplateAnnotation 会 throw,要并进这一次调用)。
-	if ($SvcName -eq 'login' -and $script:LoginQueueOn) {
-		$loginPeakShavingInput = (New-LoginQueueYaml -CurrentZoneId $CurrentZoneId) + "`n" + $script:LoginQueueTokenSecret
-		$manifestContent = Add-PodTemplateAnnotation -SvcName $SvcName -ManifestContent $manifestContent `
-			-Key $script:PeakShavingHashAnnotation `
-			-Value (Get-InjectedSecretFingerprint -SecretName 'peak-shaving/login' -Value $loginPeakShavingInput)
+	# login 微信登录(-LoginWeChatAppId,见 $script:LoginOAuthSecretName 处的说明):AppSecret 只经 Secret login-oauth 进容器,env 走
+	# secretKeyRef(不写 optional,Secret 缺失的 Pod 卡在 CreateContainerConfigError,而不是带着空密钥起来 —— login 对空密钥本来也拒启);
+	# Pod 模板带密钥指纹注解 —— 只改 Secret 时模板不变、apply 是 no-op,旧 Pod 一直拿旧 AppSecret 调微信;指纹让轮换自动滚动。
+	# 两条指纹必须一次写入(同一个 Pod 模板只能有一个 annotations: 段):排队开时削峰指纹恒排第一行(契约测试按这个位置取),
+	# 微信指纹作附加项跟在后面;排队关时微信指纹自己排第一行。两项都没有就不写 annotations:,模板与接入前相同。
+	# 服务名判断留在 -and 左边 / 块最外层(理由同上)。
+	$isLoginOAuth = ($SvcName -eq 'login' -and -not [string]::IsNullOrEmpty($LoginWeChatAppId))
+	if ($SvcName -eq 'login') {
+		$loginAnnotations = [ordered]@{}
+		if ($script:LoginQueueOn) {
+			$loginPeakShavingInput = (New-LoginQueueYaml -CurrentZoneId $CurrentZoneId) + "`n" + $script:LoginQueueTokenSecret
+			$loginAnnotations[$script:PeakShavingHashAnnotation] = Get-InjectedSecretFingerprint -SecretName 'peak-shaving/login' -Value $loginPeakShavingInput
+		}
+		if ($isLoginOAuth) {
+			$manifestContent = Add-GoSvcSecretEnv -SvcName $SvcName -ManifestContent $manifestContent `
+				-EnvName $script:LoginWeChatAppSecretEnv -SecretName $script:LoginOAuthSecretName -SecretKey $script:LoginOAuthWeChatSecretKey
+			$loginAnnotations[$script:LoginOAuthSecretHashAnnotation] = Get-InjectedSecretFingerprint -SecretName $script:LoginOAuthSecretName -Value $script:LoginWeChatAppSecret
+		}
+		if ($loginAnnotations.Count -gt 0) {
+			$loginAnnotationKeys = @($loginAnnotations.Keys)
+			$loginExtraAnnotations = [ordered]@{}
+			foreach ($extraKey in ($loginAnnotationKeys | Select-Object -Skip 1)) {
+				$loginExtraAnnotations[$extraKey] = $loginAnnotations[$extraKey]
+			}
+			$manifestContent = Add-PodTemplateAnnotation -SvcName $SvcName -ManifestContent $manifestContent `
+				-Key $loginAnnotationKeys[0] -Value $loginAnnotations[$loginAnnotationKeys[0]] -AdditionalAnnotations $loginExtraAnnotations
+		}
 	}
 
 	# -LoginDevPasswordAuth:先本地渲染(形状不对就在写操作之前 throw),再建 Secret —— secretKeyRef 不是 optional,
@@ -7844,6 +10476,10 @@ function Apply-OneGoSvc {
 			-EnvName (Get-ClientEntryContract).LoginDevPasswordSecretEnv `
 			-SecretName $script:LoginDevPasswordSecretName -SecretKey $script:LoginDevPasswordSecretKey
 		Apply-LoginDevPasswordSecret -Namespace $Namespace
+	}
+	# 微信 AppSecret 的 Secret 同理:env 与指纹已在上面本地渲染完,这里建 Secret,先于 ConfigMap 与 Deployment。
+	if ($isLoginOAuth) {
+		Apply-LoginOAuthSecret -Namespace $Namespace
 	}
 
 	# match 的排行榜快照开关(-MatchRatingSnapshotPublish)写进 Pod 模板注解:ConfigMap 只在进程启动时读,开关值必须改变模板,
@@ -7881,27 +10517,7 @@ function Apply-OneGoSvc {
 		}
 	}
 
-	# mail 运维令牌(见 $script:MailAdminTokenSecretName 处的说明):这里只做本地渲染;Secret 的写入放在下面建表门禁之后、Deployment 之前
-	# (与 player-inbox 的顺序不同,理由见那一处)。
-	#   - 令牌已解析:env MMORPG_MAIL_ADMIN_TOKEN 经 secretKeyRef 注入(不写 optional,Secret 缺失的 Pod 卡在 CreateContainerConfigError,
-	#     而不是带着空令牌起来),Pod 模板上的令牌指纹占位换成指纹,令牌一变即滚动;
-	#   - 未解析:不注入 env、不建 Secret,指纹写 disabled,Go 侧读到空串即停用 MailAdmin(横幅 mail_admin=disabled)。
-	# 指纹走 manifest 里的占位而不是 Add-PodTemplateAnnotation:mail.yaml 的 Pod 模板已有 prometheus 注解段。
-	# 条件里服务名判断留在 -and 左边(理由同上:k8s_migrate_gate.tests.ps1 按 AST 单独抽出本函数跑别的服务,右边变量在那里未定义)。
-	$isMailAdmin = ($SvcName -eq 'mail' -and -not [string]::IsNullOrEmpty($script:MailAdminToken))
-	if ($SvcName -eq 'mail') {
-		$mailAdminTokenHash = 'disabled'
-		if ($isMailAdmin) {
-			$manifestContent = Add-GoSvcSecretEnv -SvcName $SvcName -ManifestContent $manifestContent `
-				-EnvName $script:MailAdminTokenEnv `
-				-SecretName $script:MailAdminTokenSecretName -SecretKey $script:MailAdminTokenSecretKey
-			$mailAdminTokenHash = Get-InjectedSecretFingerprint -SecretName $script:MailAdminTokenSecretName -Value $script:MailAdminToken
-		}
-		if (-not $manifestContent.Contains('PLACEHOLDER_MAIL_ADMIN_TOKEN_HASH')) {
-			throw "服务 $SvcName 的 manifest 缺少令牌指纹占位 PLACEHOLDER_MAIL_ADMIN_TOKEN_HASH(Pod 模板注解 mmorpg.io/mail-admin-token-hash):没有它,只轮换令牌时 Pod 不会滚动,旧令牌一直有效。"
-		}
-		$manifestContent = $manifestContent.Replace('PLACEHOLDER_MAIL_ADMIN_TOKEN_HASH', $mailAdminTokenHash)
-	}
+	# mail 的 DSN、生产者密钥与资产密钥已在现役 manifest 的 secretKeyRef 中声明。
 
 	# 通用资产通道(-AssetOps,见参数处说明):guild / trade 各自只拿自己那把签名密钥。先本地渲染,再建 Secret(与上面 player-inbox 同一顺序)。
 	#   - on:env 经 secretKeyRef 注入(不写 optional),Pod 模板上的指纹占位换成指纹;
@@ -7916,8 +10532,12 @@ function Apply-OneGoSvc {
 			throw "服务 $SvcName 的 manifest 应当恰好有一行资产密钥指纹占位 $($assetOpSpec.HashAnnotation): `"$($script:AssetOpSecretHashPlaceholder)`"(Pod 模板注解):没有它,只换密钥时 Pod 不会滚动,跨命令核对也无从判断这一侧开没开。"
 		}
 		if ($script:AssetOpsOn) {
-			$manifestContent = Add-GoSvcSecretEnv -SvcName $SvcName -ManifestContent $manifestContent `
-				-EnvName $assetOpSpec.Env -SecretName $assetOpSpec.SecretName -SecretKey $script:AssetOpSecretKey
+			if ($SvcName -eq 'guild') {
+				$manifestContent = $manifestContent.Replace('name: domain-service-secrets, key: asset-guild', "name: $($assetOpSpec.SecretName), key: $($script:AssetOpSecretKey)")
+			} else {
+				$manifestContent = Add-GoSvcSecretEnv -SvcName $SvcName -ManifestContent $manifestContent `
+					-EnvName $assetOpSpec.Env -SecretName $assetOpSpec.SecretName -SecretKey $script:AssetOpSecretKey
+			}
 			$manifestContent = $manifestContent.Replace($script:AssetOpSecretHashPlaceholder,
 				(Get-InjectedSecretFingerprint -SecretName $assetOpSpec.SecretName -Value $script:AssetOpSecrets[$SvcName]))
 			Apply-InjectedSecret -Namespace $Namespace -Name $assetOpSpec.SecretName -Key $script:AssetOpSecretKey `
@@ -7952,15 +10572,6 @@ function Apply-OneGoSvc {
 		Apply-GoSvcMigrateJob -SvcName $SvcName -Namespace $Namespace -SvcImage $svcImage -PullPolicy $svcPullPolicy
 	}
 
-	# mail 令牌 Secret 写在建表门禁之后、Deployment 之前:门禁失败(Job 没 Complete 即 throw)时 Secret 保持旧值。
-	# 反过来先写 Secret 的话,轮换令牌那次只要建表失败,Deployment(带新指纹的 Pod 模板)没 apply,旧 Pod 却会在
-	# OOM / 驱逐 / 探针重启时从 Secret 读到新令牌 —— 两个副本令牌不一致,运维经 Service 直连随机拿到 PermissionDenied,
-	# 下一次成功的 infra-up 之前都不会滚动收敛。渲染(注入 env、算指纹、核对占位)在上面、任何写操作之前已经完成。
-	if ($isMailAdmin) {
-		Apply-InjectedSecret -Namespace $Namespace -Name $script:MailAdminTokenSecretName `
-			-Key $script:MailAdminTokenSecretKey -Value $script:MailAdminToken -AppLabel $SvcName
-	}
-
 	if ($null -ne $grpcPolicyYaml) {
 		Invoke-KubectlWithInputFile -Args @("apply", "-n", $Namespace) -InputContent $grpcPolicyYaml
 	}
@@ -7972,15 +10583,17 @@ function Apply-OneGoSvc {
 		# apply 之后,不让新 Pod 因引用缺失的 Secret 卡在 CreateContainerConfigError)。
 		Invoke-Kubectl -Args @("delete", "secret", $script:LoginDevPasswordSecretName, "-n", $Namespace, "--ignore-not-found")
 	}
+	if ($SvcName -eq 'login' -and -not $isLoginOAuth) {
+		# 本次没给 -LoginWeChatAppId:ConfigMap 已不含 AuthProviders.WeChat,新 Deployment 也不再引用 AppSecret,删掉残留 Secret
+		# (放在 Deployment apply 之后,理由同上)。不粘滞 —— 上次开过微信登录、这次没给,微信登录随新 Pod 一起关闭;
+		# 线上开着而本次没给的情形已在写路径入口被 Assert-LoginAuthProviderClusterState 拦下:走到这里,要么线上本来就没开微信,
+		# 要么已用 -ConfirmLoginAuthProviderChange 确认关闭。
+		Invoke-Kubectl -Args @("delete", "secret", $script:LoginOAuthSecretName, "-n", $Namespace, "--ignore-not-found")
+	}
 	if ($SvcName -eq 'player-inbox' -and -not $isPlayerInboxAdmin) {
 		# 本次未注入运维口令:新 Deployment 不再引用 Secret,删掉残留(放在 Deployment apply 之后,理由同上);
 		# 不粘滞 —— 上次带口令部署过、这次没带,运维接口随新 Pod 一起停用。
 		Invoke-Kubectl -Args @("delete", "secret", $script:PlayerInboxAdminTokenSecretName, "-n", $Namespace, "--ignore-not-found")
-	}
-	if ($SvcName -eq 'mail' -and -not $isMailAdmin) {
-		# 本次未注入令牌:新 Deployment 不再引用 Secret,删掉残留(必须在 Deployment apply 之后,否则新 Pod 卡 CreateContainerConfigError);
-		# 不粘滞 —— 上次带令牌部署过、这次没带,MailAdmin 随新 Pod 一起停用。
-		Invoke-Kubectl -Args @("delete", "secret", $script:MailAdminTokenSecretName, "-n", $Namespace, "--ignore-not-found")
 	}
 	if ($isAssetOpCaller -and -not $script:AssetOpsOn) {
 		# 资产通道关着:新 Deployment 不再引用签名密钥,删掉残留(放在 Deployment apply 之后,理由同上;不粘滞)。
@@ -8110,11 +10723,28 @@ function New-JavaSvcConfigMapYaml {
 	$gatewayHikariMaxPool = ''
 	$gatewayHikariMinIdle = ''
 	$gatewayHikariConnectionTimeout = ''
+	$gatewayJdbcTimeoutQuery = ''
 	if ($SvcName -eq 'gateway') {
 		$gatewayPoolMirror = Get-MysqlPoolMirror -Target 'gateway'
 		$gatewayHikariMaxPool = $gatewayPoolMirror['spring.datasource.hikari.maximum-pool-size']
 		$gatewayHikariMinIdle = $gatewayPoolMirror['spring.datasource.hikari.minimum-idle']
 		$gatewayHikariConnectionTimeout = $gatewayPoolMirror['spring.datasource.hikari.connection-timeout']
+		# 2026-10-16:JDBC 连接级超时(connectTimeout / socketTimeout,毫秒)从 jar 内 spring.datasource.url 的查询串镜像,
+		# 生成器不自带常数;缺项或不是正整数即失败(fail-closed:不带一个没有读超时的 URL 上线)。理由见该文件 hikari 段的
+		# 2026-10-16 补注(续)。ConfigMap 的 URL 其余部分(主机、库名、SSL 选项)仍按集群写,不镜像。
+		$gatewayJarJdbcUrl = Get-AuthoritativeScalar -RelativePath 'java/gateway_node/src/main/resources/application.yaml' -KeyPath 'spring.datasource.url'
+		$gatewayJarJdbcParams = @{}
+		$gatewayJarJdbcQuery = ($gatewayJarJdbcUrl -split '\?', 2) | Select-Object -Skip 1 -First 1
+		foreach ($pair in @("$gatewayJarJdbcQuery" -split '&')) {
+			$kv = $pair -split '=', 2
+			if ($kv.Count -eq 2) { $gatewayJarJdbcParams[$kv[0]] = $kv[1] }
+		}
+		foreach ($timeoutKey in @('connectTimeout', 'socketTimeout')) {
+			if ("$($gatewayJarJdbcParams[$timeoutKey])" -notmatch '^[1-9][0-9]*$') {
+				throw "生成 gateway ConfigMap 失败:java/gateway_node/src/main/resources/application.yaml 的 spring.datasource.url 缺少正整数的 $timeoutKey(实际 '$($gatewayJarJdbcParams[$timeoutKey])')。fail-closed:不生成没有 JDBC 连接级超时的 URL"
+			}
+		}
+		$gatewayJdbcTimeoutQuery = '&connectTimeout={0}&socketTimeout={1}' -f $gatewayJarJdbcParams['connectTimeout'], $gatewayJarJdbcParams['socketTimeout']
 	}
 
 	$svcConfig = switch ($SvcName) {
@@ -8152,7 +10782,8 @@ spring:
   application:
     name: gateway-node
   datasource:
-    url: jdbc:mysql://mysql.${InfraNamespace}:3306/mmorpg?useSSL=false&allowPublicKeyRetrieval=true
+    # connectTimeout / socketTimeout 镜像 jar 内 spring.datasource.url 的查询串(2026-10-16,见上方生成处注释)。
+    url: jdbc:mysql://mysql.${InfraNamespace}:3306/mmorpg?useSSL=false&allowPublicKeyRetrieval=true${gatewayJdbcTimeoutQuery}
     username: "${gatewayDbUser}"
     password: "${gatewayDbPassword}"
     # 连接池大小镜像 java/gateway_node/src/main/resources/application.yaml(单一真相),计入 MySQL 连接总账;
@@ -8948,6 +11579,17 @@ function New-BattleWorkloadManifest {
 		$yaml = New-NodeDeploymentYaml -NodeName 'battle' -Replicas $BattleReplicas `
 			-RpcPort 20000 -StartCommand 'exec ./battle' -ConfigMapName 'battle-node-config'
 	}
+	$globalMatch = Get-GlobalMatchDeploymentSettings -Profile $ReleaseProfile -TiDBHost $MatchTiDBHost -Region $PhysicalRegion
+	if ($globalMatch.Enabled) {
+		# 三种battle编排使用同一注入路径；密钥只引用已有Secret，不进入配置或脚本输出。
+		Assert-GlobalMatchKafkaTopology -Topology (Get-KafkaTopology)
+		$yaml = $yaml.Replace("`t", '    ')
+		$yaml = Add-GoSvcEnvEntries -SvcName 'battle' -ManifestContent $yaml `
+			-Entries ([ordered]@{ GLOBAL_MATCH_ENABLED = 'true'; PHYSICAL_REGION = [string]$globalMatch.Region }) `
+			-NamesLabel '全球匹配探测' -Purpose '真实机房探测身份' -Comment '全局匹配部署参数，全部battle必须与match同密钥'
+		$yaml = Add-GoSvcSecretEnv -SvcName 'battle' -ManifestContent $yaml -EnvName 'MATCH_PROBE_SECRET' `
+			-SecretName 'domain-service-secrets' -SecretKey 'match-probe'
+	}
 	return [pscustomobject]@{ Orchestrator = $BattleOrchestrator; Health = $health; Yaml = $yaml }
 }
 
@@ -9014,13 +11656,17 @@ function Apply-Infra {
 	# 对象同名(Service redis / redis-headless、PDB redis-pdb、StatefulSet redis),所以同一时刻只 apply 其中一份。
 	# 下面三道检查都在任何写操作(Ensure-Namespace、删旧 Deployment、建 Secret redis-auth、apply)之前:
 	#   1. 拓扑变更闸:3 → 1 等拒绝的变更直接 throw(Assert-RedisTopologyChangeIsSafe);
-	#   2. 高可用前置:口令字符集(哨兵限制)、连接上限不等式(Get-RedisHaLimits);
+	#   2. 高可用前置:口令字符集(哨兵限制)、连接上限不等式(Get-RedisHaLimits)、代理脚本摘要;
 	#   3. 重启闸(P0-E):按下面循环里同一种渲染(只替换 __INFRA_NAMESPACE__)算出 Pod 模板摘要,本次 apply 会改变线上 sts/redis 的
-	#      Pod 模板(= 重启 redis Pod;1 → 3 必然属于这一类)而没给 -ConfirmRedisCoreRestart 时 throw。摘要随后写进 StatefulSet 自己的注解。
+	#      Pod 模板(= 重启 redis Pod;1 → 3 必然属于这一类:闸在 orphan 删除之前读线上摘要)而没给 -ConfirmRedisCoreRestart 时 throw。
+	#      摘要随后写进 StatefulSet 自己的注解。
+	# 所选清单只读这一次:循环里 apply 的、-WaitReady 部署后核对用的 MAXCLIENTS,都取自这份 $redisManifestRendered。
+	# 两次读之间文件被改(同一工作区常有多个会话在写)时,闸会按旧内容放行而实际 apply 新模板。
 	$redisTopology = Get-RedisTopology
 	$redisTopologyVerdict = $null
 	$redisPodTemplateDigest = $null
 	$redisHaScriptsDigest = $null
+	$redisManifestRendered = $null
 	$redisManifestPath = Join-Path $InfraManifestsDir $redisTopology.Manifest
 	if ($redisTopology.HighAvailability -and -not (Test-Path $redisManifestPath)) {
 		throw "共享 Redis 选的是高可用形态(-RedisReplicas $($redisTopology.Replicas)),但找不到 $redisManifestPath。fail-closed:不悄悄退回单实例。"
@@ -9037,7 +11683,8 @@ function Apply-Infra {
 			$redisHaScriptsDigest = Get-RedisHaScriptsDigest -ManifestContent $redisManifestRendered
 		}
 		$redisPodTemplateDigest = Get-RedisPodTemplateDigest -ManifestContent $redisManifestRendered
-		Assert-RedisCoreRestartConfirmed -DesiredDigest $redisPodTemplateDigest
+		Assert-RedisCoreRestartConfirmed -DesiredDigest $redisPodTemplateDigest `
+			-RollingHandover:($redisTopology.HighAvailability -and $redisTopologyVerdict -eq 'unchanged')
 	}
 	Write-Host "Deploying shared infrastructure to namespace $InfraNamespace"
 	Write-Host "Kafka profile: $KafkaProfile (broker_retention_ms=$KafkaBrokerRetentionMs db_task_retention_ms=$KafkaDbTaskRetentionMs)"
@@ -9053,9 +11700,7 @@ function Apply-Infra {
 	# 走下面的通用替换。有真实存档的环境不要为了它跑 infra-up(会连带 apply mysql.yaml,L-04 约束见
 	# docs/handoff/godb-pipeline-handoff-20261013.md §2.4),按 runbook 单独 apply 这一个清单。
 	# 共享 Redis 那一项按拓扑取 redis.yaml 或 redis-ha.yaml(见上)。
-	# redis-rank.yaml:排行榜专用 Redis(noeviction + AOF,docs/design/leaderboard-system.md §3.5)。排在共享 Redis 之后:它复用同一个
-	# 可选 Secret redis-auth,而那个 Secret 在处理共享 Redis 那一项时才建或删;全局 Go 服务(含 rank)在本循环之后才 apply。
-	$infraManifests = @("etcd.yaml", "etcd-maintenance.yaml", $redisTopology.Manifest, "redis-match-cluster.yaml", "redis-rank.yaml", "kafka.yaml", "mysql.yaml")
+	$infraManifests = @("etcd.yaml", "etcd-maintenance.yaml", $redisTopology.Manifest, "redis-match-cluster.yaml", "kafka.yaml", "mysql.yaml")
 	if ($script:CppLogSidecarEnabled -and [string]::IsNullOrWhiteSpace($LokiPushUrl)) {
 		$infraManifests += "loki.yaml"
 	}
@@ -9099,7 +11744,7 @@ function Apply-Infra {
 		}
 
 		if ($manifest -eq $redisTopology.Manifest) {
-			# 密码走**可选** Secret:dev 档 MMORPG_REDIS_PASSWORD 回落为空串 → 删掉 Secret → redis.yaml 里
+			# 密码走**可选** Secret:dev 档 MMORPG_REDIS_PASSWORD 回落为空串 → 删掉 Secret → 两份 Redis 清单里
 			# secretKeyRef 的 optional:true 让容器以无密码启动(与改造前行为一致);release 档强制 ≥12 位
 			# (Resolve-InjectedSecret 的 -MinLength 12)→ 建 Secret → 服务端 --requirepass。
 			# 这一步必须在 apply redis.yaml **之前**:Pod 起来时 Secret 不存在的话,optional 引用会解析成空,
@@ -9129,13 +11774,14 @@ stringData:
 			# 之间随机落点,会话 / 锁 / 选主锁两边各一套,等于脑裂。所以先删旧 Deployment 再 apply。
 			# 旧 emptyDir 里的数据**不迁移**(它本来也活不过一次 Pod 重建)。切换 = 一次 Redis 重启:
 			# 在线玩家的会话与位置记录清空,需要重新登录。**这是一次有停机窗口的变更。**
+			# 高可用形态的入口代理叫 redis-proxy,不受这一行影响。
 			Invoke-Kubectl -Args @("delete", "deployment", "redis", "-n", $InfraNamespace, "--ignore-not-found")
 
 			if ($redisTopologyVerdict -eq 'upgrade') {
 				# 单实例 → 高可用:podManagementPolicy 要从 OrderedReady 改成 Parallel,这个字段创建后不能改,直接 apply 会被 API server 拒绝。
 				# 所以先只删 StatefulSet 对象本身(--cascade=orphan:redis-0 这个 Pod 与它的 PVC 原样保留、继续服务),紧接着 apply 新的
 				# StatefulSet,它按同名、同标签接管 redis-0,再按滚动更新把它换成高可用模板,redis-1 / redis-2 新建后从它全量同步。
-				# 2026-10-08 在本机 kind 上实测:数据不丢,Service redis 的 ClusterIP 不变。
+				# 2026-10-08 在本机 kind 上实测:数据不丢,Service redis 的 ClusterIP 不变。重启闸已在函数开头(删除之前)判过。
 				Invoke-Kubectl -Args @("delete", "statefulset", "redis", "-n", $InfraNamespace, "--cascade=orphan", "--ignore-not-found")
 			}
 		}
@@ -9146,7 +11792,13 @@ stringData:
 			Invoke-KubectlWithInputFile -Args @("apply", "-n", $InfraNamespace) -InputContent (New-MysqlInitConfigMapYaml)
 		}
 
-		$manifestContent = Get-Content -Path $path -Raw
+		if ($manifest -eq $redisTopology.Manifest -and $null -ne $redisManifestRendered) {
+			# 重启闸判过的那一份(函数开头只读一次;redis.yaml 或 redis-ha.yaml),不重读文件;下面的 __INFRA_NAMESPACE__ 替换对它是幂等的。
+			$manifestContent = $redisManifestRendered
+		}
+		else {
+			$manifestContent = Get-Content -Path $path -Raw
+		}
 
 		# 所有 infra manifest 共用的占位:__INFRA_NAMESPACE__ → -InfraNamespace。
 		# etcd / kafka 的广播地址必须是跨 namespace 可解析的 FQDN(zone namespace 里的
@@ -9169,11 +11821,22 @@ stringData:
 			$manifestContent = $manifestContent.Replace("__KAFKA_REPLICATION_FACTOR__", [string]$kafkaTopology.ReplicationFactor)
 			$manifestContent = $manifestContent.Replace("__KAFKA_MIN_INSYNC_REPLICAS__", [string]$kafkaTopology.MinInsyncReplicas)
 			$manifestContent = $manifestContent.Replace("__KAFKA_PDB_MIN_AVAILABLE__", [string]$kafkaTopology.PdbMinAvailable)
+			# 每个 broker 的 PVC 大小(S5b):写路径入口的 Resolve-KafkaDiskPlan 已算好并判过「显式值与线上不同即拒绝」。
+			# 缓存为空(没经过写路径入口的调用)时现场再算并再判一次;算不出即 throw,不回落任何默认尺寸(fail-closed)。
+			# 局部变量不叫 $kafkaDiskPlan:PowerShell 变量名不分大小写,同名会遮住脚本级的 $KafkaDiskPlan,读的人容易看岔。
+			$infraDiskPlan = $script:KafkaDiskPlan
+			if ($null -eq $infraDiskPlan) {
+				$infraDiskPlan = Resolve-KafkaDiskPlan
+				Assert-KafkaStorageChangeIsSafe -Plan $infraDiskPlan
+			}
+			# 渲染的是 StorageTemplateGi 而不是 EffectiveGi:StatefulSet 在时模板必须原样等于线上值(不可变字段,不同即 apply 被拒),
+			# 哪怕它大于最小的实际 PVC —— 那时 retention.bytes 已按较小的实际盘(EffectiveGi)算(见 Get-KafkaDiskPlan)。
+			$manifestContent = $manifestContent.Replace("__KAFKA_STORAGE_SIZE__", ("{0}Gi" -f [int]$infraDiskPlan.StorageTemplateGi))
 		}
 
 		if ($manifest -eq $redisTopology.Manifest -and $null -ne $redisPodTemplateDigest) {
-			# 重启闸(P0-E):函数开头算好的 Pod 模板摘要写进 StatefulSet redis 自己的注解(不在 Pod 模板里,改它不滚动 redis-0),
-			# 下一次 infra-up 由 Assert-RedisCoreRestartConfirmed 读回比较。摘要与这里 apply 的内容出自同一个文件、同一种渲染。
+			# 重启闸(P0-E):函数开头算好的 Pod 模板摘要写进 StatefulSet redis 自己的注解(不在 Pod 模板里,改它不滚动 redis Pod),
+			# 下一次 infra-up 由 Assert-RedisCoreRestartConfirmed 读回比较。摘要与这里 apply 的内容是同一份字符串($redisManifestRendered)。
 			$manifestContent = $manifestContent.Replace($script:RedisPodTemplateDigestPlaceholder, $redisPodTemplateDigest)
 			if ($null -ne $redisHaScriptsDigest) {
 				# 高可用形态:脚本 ConfigMap 的摘要写进代理的 Pod 模板注解,脚本一改代理就滚动(见 Get-RedisHaScriptsDigest)。
@@ -9212,8 +11875,15 @@ stringData:
 			Wait-ForDeploymentReady -Namespace $InfraNamespace -DeploymentName "redis-proxy"
 		}
 		# 部署后核对(P0-E):生效的 maxclients 是否等于清单的 MAXCLIENTS。被容器 nofile 硬限下调时,到线之前只有这里能自动发现;
-		# 不等只告警,不阻断(redis.yaml 已经 apply 完了)。DryRun 只打一行说明,不连集群。
-		Test-RedisLiveMaxClients -ExpectedMaxClients (Get-RedisMaxClientsFromManifest)
+		# 不等只告警,不阻断(清单已经 apply 完了)。高可用形态逐个核 3 个节点。DryRun 只打一行说明,不连集群。
+		# 期望值取自函数开头那一次读取($redisManifestRendered),不重新读盘:等 StatefulSet 就绪的几分钟里文件被改,
+		# 重新读会拿新值去比刚 apply 的旧值(误报),或在编辑中途读到 0 / 2 个 MAXCLIENTS 而在 apply 之后 throw。
+		if ($null -ne $redisManifestRendered) {
+			Test-RedisLiveMaxClients -ExpectedMaxClients (Get-RedisMaxClientsFromManifest -ManifestContent $redisManifestRendered) -Nodes $redisTopology.Replicas
+		}
+		else {
+			Test-RedisLiveMaxClients -ExpectedMaxClients (Get-RedisMaxClientsFromManifest) -Nodes $redisTopology.Replicas
+		}
 		# 审计 topic 必须在 scene 产出第一条消息之前按契约建好。-WaitReady 下等 Job Complete,
 		# all-up 里随后的 zone 就一定晚于它;不带 -WaitReady 时 zone-up 之前要自己核对
 		# `kubectl -n <infra> get job kafka-topic-init` 已 Complete(README「Kafka 审计 topic 预建」)。
@@ -9263,9 +11933,10 @@ Apply-KafkaProfileDefaults
 # zone-up 与 infra-up 的档位参数不一致时,从这一行就能看出两边的副本数对不上。
 $kafkaTopologyAtStart = Get-KafkaTopology
 Write-Host "Kafka topology: brokers=$($kafkaTopologyAtStart.Brokers) controllers=$($kafkaTopologyAtStart.ControllerCount) replication_factor=$($kafkaTopologyAtStart.ReplicationFactor) min_insync_replicas=$($kafkaTopologyAtStart.MinInsyncReplicas)"
-# -RedisReplicas 非法(例如 2)同样在这里拦下;打出本次用哪份清单,infra-up 的日志里一眼能看出共享 Redis 是不是高可用形态。
+# 共享 Redis 的形态:-RedisReplicas 非法(例如 2)在这里就 throw(Get-RedisTopologyFor),早于任何集群操作;同时打出本次用哪份清单与
+# WAITAOF 副本份数,infra-up 的日志一眼能看出是不是高可用形态。zone 写路径随后可能改为跟随线上(写路径入口另打一行)。
 $redisTopologyAtStart = Get-RedisTopology
-Write-Host "Redis topology: replicas=$($redisTopologyAtStart.Replicas) manifest=$($redisTopologyAtStart.Manifest) high_availability=$(([string]$redisTopologyAtStart.HighAvailability).ToLowerInvariant())"
+Write-Host "Redis topology: replicas=$($redisTopologyAtStart.Replicas) manifest=$($redisTopologyAtStart.Manifest) high_availability=$(([string]$redisTopologyAtStart.HighAvailability).ToLowerInvariant()) waitaof_replicas=$(Get-RouteStoreWaitAOFNumReplicas -Topology (Get-MappingRedisTopology))"
 Show-ExposureProfileWarning
 
 Write-Host "Release: profile=$ReleaseProfile image=$NodeImage pullPolicy=$ImagePullPolicy go_tag=$GoSvcTag java_tag=$JavaSvcTag cluster_id=$ClusterId"
@@ -9279,12 +11950,28 @@ if ($Command -in @("zone-up", "all-up", "infra-up")) {
 	if (($Command -eq 'infra-up' -or ($Command -eq 'all-up' -and -not $SkipInfra)) -and
 		-not $SkipGoSvc -and -not [string]::IsNullOrWhiteSpace($GoSvcRegistry)) {
 		$null = Get-FriendSqlSettings -Profile $ReleaseProfile -TiDBHost $FriendTiDBHost -DevelopmentHost "mysql.${InfraNamespace}:3306"
+		$null = Get-TradeSqlSettings -Profile $ReleaseProfile -TiDBHost $TradeTiDBHost -DevelopmentHost "mysql.${InfraNamespace}:3306"
 	}
 	Assert-ImmutableReleaseImages
 	Invoke-ReleasePreflight
 	# 集群外入口的组合校验(含 -LoginDevPasswordAuth 只许 dev 档)排在密钥解析之前:非 dev 档传该开关时,
 	# 报的是门禁原因,而不是"缺环境变量"。battle 工作负载渲染与集群现状预检(只读 kubectl)也在这里,早于任何写操作。
 	Assert-ClientEntryDeployPreflight
+	# go/db 存盘消费组计划(S2 ③):逐 zone 读线上 go-svc-db-config,按需 kubectl exec 进 kafka-0 读两组位点,按决策表定形状。
+	# 只读;F2 / F4 与「读不到」的拒绝都发生在这里,早于下面的密钥解析与 switch ($Command) 里的任何写操作(见 Initialize-DbConsumerGroupPlans)。
+	Initialize-DbConsumerGroupPlans
+	# 共享 Redis 形态的线上核对(只读):不经 Apply-Infra 的写路径(zone-up、all-up -SkipInfra)部署 zone Go 服务时,db / data-service 的
+	# WAITAOF 副本份数必须与线上 sts/redis 一致 —— 没给 -RedisReplicas 就跟随线上,显式值与线上不同即拒绝(Resolve-RedisTopologyFromLive)。
+	# 不部署 zone Go 服务(-SkipGoSvc、没给 -GoSvcRegistry,例如 k8s_image.ps1 的 release-zone)时不渲染这两项,不查。
+	# infra-up / 带 infra 的 all-up 由 Apply-Infra 的拓扑变更闸负责。DryRun 不查集群(Get-LiveStatefulSetReplicas 返回 $null);
+	# 排在下面 Assert-RouteSwitchPreflight(打印 redis_topology)与 Write-RedisConnectionLedger 之前,早于密钥解析与任何写操作。
+	if (($Command -eq 'zone-up' -or ($Command -eq 'all-up' -and $SkipInfra)) -and (Test-ZoneDbDeployed)) {
+		Resolve-RedisTopologyFromLive
+	}
+	# D1 映射持久化开关(第 1b-3 批):组合门禁(Arm / 读方开关要求 db_first,读方开关要求 Arm)与 RouteStore 段生成器自检 DryRun 同样判;
+	# 非 DryRun 再读线上 data-service(全部 zone)/ db / guild 的 ConfigMap 做粘滞核对,与本次参数不一致且没给 -ConfirmRouteSwitchChange 即拒绝。
+	# 只读,早于下面的密钥解析与 switch ($Command) 里的任何写操作(见 Assert-RouteSwitchPreflight)。
+	Assert-RouteSwitchPreflight
 	# 削峰(G4b)的开关与起步值打一行,关着 / 没配可信代理时告警;只打印、不阻断。例外是生成器自检,在这里就 throw:常量表被改坏
 	# (限流阈值、排队容量不在 1..uint32),或 go/login/etc/login.yaml 缺 Queue.* 镜像键。排在密钥解析之前:
 	# 缺 MMORPG_LOGIN_QUEUE_TOKEN_SECRET 被拒时,输出里已经有「login_queue=on」这一行可对照。
@@ -9305,6 +11992,14 @@ if ($Command -in @("zone-up", "all-up", "infra-up")) {
 	# C++ gRPC deadline ≥ 目标 Go 服务 zrpc Timeout + 2000(上游比下游宽)。放在任何集群写操作之前:
 	# 不成立就整条拒绝,不留半截部署(见 Assert-GrpcClientDeadlineBudget)。
 	Assert-GrpcClientDeadlineBudget
+	# 收件箱写前门禁(交接 player-inbox-handoff-20261015 §6 H1):渲染值只取 git 跟踪的两份 yaml;-PlayerInboxConsumer 与 yaml 不一致、
+	# 「消费端关而白名单非空」(当前检出里的两份 yaml,或非 DryRun 时另一侧线上已部署的值)且没传 -AllowPlayerInboxConsumerOff、
+	# 或 staging / prod 真部署时两份 yaml 带未提交改动,同样先于任何集群写操作整条拒绝。线上值只读(Read-PlayerInboxGateLiveFacts)。
+	$playerInboxGateSource = Get-PlayerInboxGateSourceState
+	$playerInboxGateLive = Read-PlayerInboxGateLiveFacts -ExpectedConsumer $PlayerInboxConsumer
+	Assert-PlayerInboxConsumerGate -ExpectedConsumer $PlayerInboxConsumer -AllowConsumerOff ([bool]$AllowPlayerInboxConsumerOff) `
+		-SourceState $playerInboxGateSource -RequireCommittedSources ((-not $DryRun) -and $ReleaseProfile -ne 'dev') `
+		-LiveFacts $playerInboxGateLive
 	# 路由服预算链:路由目标 Go 服务 zrpc Timeout + 1000 ≤ 路由服 ForwardTimeoutMs(client-request-ordering.md §5.2 I1)。
 	# 不成立时 gate 放行同一会话的下一条请求后,上一条仍可能晚落地;同样先于任何集群写操作。
 	Assert-RouterForwardBudget
@@ -9315,6 +12010,16 @@ if ($Command -in @("zone-up", "all-up", "infra-up")) {
 	Write-MysqlConnectionLedger
 	# Redis 连接总账(P0-E):打印 "Redis connection ledger" 一行;峰值超过 80% × maxclients 只告警、不阻断(同上一行的纪律)。
 	Write-RedisConnectionLedger
+	# go/db 副本数门禁(S1 ④ (c)):manifest 的 replicas(及同一份 manifest 里 HPA 的 maxReplicas)> db.yaml 的 PartitionCnt 即整条拒绝,
+	# 先于任何集群写操作;kubectl scale 绕过它(见 Assert-DbReplicasWithinPartitionContract)。
+	Assert-DbReplicasWithinPartitionContract
+	# Kafka 盘预算(S5b):算出 db_task 的 retention.bytes 与每个 broker 的 PVC 大小(缓存进 $script:KafkaDiskPlan,
+	# Apply-Infra 的 kafka.yaml 与 db / login 的 ConfigMap 都读它),打印 "Kafka disk ledger" 一行;盘不够时按盘收缩、只告警不阻断,
+	# 连 2 个 segment 都放不下才 throw。显式 -KafkaStorageGi 与线上 PVC 不同时拒绝(volumeClaimTemplates 不可变,扩盘走 README 的 runbook)。
+	# 三条写命令都判:zone-up 同样按这块盘算 retention.bytes。全部早于 switch ($Command) 里的任何写操作。
+	$null = Resolve-KafkaDiskPlan
+	Write-KafkaDiskLedger -Plan $script:KafkaDiskPlan
+	Assert-KafkaStorageChangeIsSafe -Plan $script:KafkaDiskPlan
 }
 
 switch ($Command) {

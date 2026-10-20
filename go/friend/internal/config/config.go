@@ -90,8 +90,10 @@ type Config struct {
 
 	// FriendRedis:friend 私有 key 的存储,可配 Type: cluster(所有私有 key 都是单 key 操作,
 	// 集群安全,契约 §4)。留空则回落到共享库 c.Redis.RedisConf,启动时打 WARN 并在横幅打印落点。
-	// ⚠ staging/prod 必须指向独立实例且 maxmemory-policy=noeviction:共享库是 allkeys-lfu,
-	// 好友列表缓存被淘汰只是多打一次 MySQL,但配额 / 限流 key 被淘汰等于限流静默失效。
+	// ⚠ staging/prod 必须指向独立实例且 maxmemory-policy=noeviction。2026-10-12 起本地 compose 也改为
+	// noeviction(K8s 一直是 noeviction),回落时私有 key 不会被淘汰,但与契约 key 争内存,共享库设了
+	// maxmemory 时写满会连带拒写契约 key。共享库一旦被配成淘汰型:好友列表缓存被淘汰只是多打一次 MySQL,
+	// 但配额 / 限流 key 被淘汰等于限流静默失效。
 	//
 	// 类型用 go-zero 的 core/stores/redis.RedisConf(不是 redis/go-redis/v9 的 Options):
 	// 全仓 Go 服务统一走 go-zero 句柄,回落逻辑才能与 chat / match 复用同一套写法。

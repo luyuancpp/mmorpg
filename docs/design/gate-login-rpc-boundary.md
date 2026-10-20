@@ -71,23 +71,44 @@ service ClientPlayerLogin {
 14=ClientPlayerLoginCreatePlayer        ← gate 转发
 17=ClientPlayerLoginLeaveGame           ← gate 转发
 26=ClientPlayerLoginEnterGame           ← gate 转发
-48=ClientPlayerLoginLogin               ← gate 转发(老路径,兼容)
+48=ClientPlayerLoginLogin               ← gate 转发(auth_type=access_token:新流程绑定会话,必经;口令 / 第三方:老路径,兼容)
 58=ClientPlayerLoginDisconnect          ← gate 内部触发(玩家 TCP 断开时)
 127=ClientPlayerLoginRefreshToken       ← 应走 Java Gateway,见下文
 ```
 
-### ① `Login` (message_id=48):**双路径**
-| 路径 | 何时用 | 谁调用 |
-|---|---|---|
-| **新路径(推荐):Java Gateway `/api/login`** | 玩家在登录界面首次登录 / 静默重登 | Java Gateway → gRPC login |
-| 老路径:gate `HandleGrpcNodeMessage` | 兼容老客户端 / robot 测试用 | client → gate → gRPC login |
+### ① `Login` (message_id=48):**三种入口**
+| 路径 | 何时用 | 谁调用 | 写 `login_session` | 受 `LegacyGateLoginEnabled` 管 |
+|---|---|---|---|---|
+| **新路径(推荐):Java Gateway `/api/login`** | 玩家在登录界面首次登录 / 静默重登 | Java Gateway → gRPC login(不带会话) | 否 | 否 |
+| **gate 上 `Login{auth_type:"access_token"}`** | 新流程第二步:连上 gate 后绑定会话;也用于 access_token 重连 | client → gate → gRPC login | **是(唯一写入点)** | **否** |
+| 老路径:gate 上用口令 / 第三方凭据首认证 | 兼容老客户端 / robot 测试用 | client → gate → gRPC login | 是 | 是 |
 
-新客户端**应该走 Java Gateway**,因为:
+新客户端**应该走 Java Gateway** 做认证,因为:
 - 登录还没拿到 gate 地址,逻辑上不该已经连上 gate
 - HTTP 层好做限流 / 排队 / 风控(见 [open-server-rate-limit-design.md](./open-server-rate-limit-design.md))
 - OAuth code 失败可在 HTTP 401 阶段返回,不用先建 TCP
 
-老客户端走 gate 这条路**继续保留**,作为过渡期兼容。
+但 HTTP 入口不带会话、**不写 `login_session`、不登记设备集**。客户端连上 gate 后仍要在 TCP 上发一次
+`Login{auth_type:"access_token", auth_token:<HTTP 拿到的 access_token>}`:login 只验自家 token(不再回源第三方、
+不轮换 token),写 `login_session:{session_id}` 与账号设备集。CreatePlayer / EnterGame 第一步就是按会话读
+`login_session` 取账号,少了这一步回 `kLoginSessionNotFound`。参考调用顺序见 `robot/main.go` `loginAndEnterViaHttpGateway`。
+
+老客户端走 gate 凭据登录这条路**继续保留**,作为过渡期兼容。ARCH §12 T+2 由 login 的
+`LegacyGateLoginEnabled=false` 关掉它(回 `kLoginUnknownError`),**只关凭据首认证**;入口分类在
+`go/login/internal/logic/clientplayerlogin/legacy_gate_killswitch.go` `classifyLoginPath`,
+指标 `login_auth_path_total` 的 `path` 标签按同一分类取 `new` / `gate_bind` / `legacy`。
+2026-10-18 前的判定只看「带不带会话」,把 access_token 绑定也算作老路径,开关一关所有客户端都进不了游戏,已修正。
+
+**拒绝点在认证之前**(2026-10-18 起;此前在认证与账号锁之后)。分类只看会话头与 `auth_type`,认证前就能确定,
+所以开关关闭时被拒的 gate 凭据登录不调用认证器(第三方 code 不被消费,客户端改走 `/api/login` 时还能用)、
+不抢 `account_lock:login:{account}`、不建账号目录、不写 `login_session` / 设备集。代价:凭据真假都回
+`kLoginUnknownError`,不再先回 `kLoginAccountNotFound`;拒绝日志只记收敛后的 `auth_type` 与 `session_id`,
+不记未认证的账号。
+
+弃用遥测随之前移到认证之前,计的是**请求数**(含认证失败、抢锁失败、被开关拒绝的请求;开关关闭后运维靠
+`path="legacy"` 看还剩多少尾巴)。此时 `auth_type` 是未认证的客户端输入,先收敛再做 label
+(`deprecation.go` `authTypeMetricLabel`):空串记 `password`;`password` / `access_token` 与 auth 注册表里
+已注册的名字保留原值;其余一律记 `unknown`(大小写不符也算)。取值集合在进程生命周期内有界。
 
 ### ② `CreatePlayer` (message_id=14):**必走 gate**
 玩家此时**已经在游戏 TCP 上**(角色选择界面),客户端 UI 在 gate 的连接上发包,走 `HandleGrpcNodeMessage` 转给 login。
@@ -111,7 +132,8 @@ Refresh token 续签是"无状态"操作(只看 refresh token 本身,不需要 s
 | RPC | 玩家所处状态 | 走哪 | 备注 |
 |---|---|---|---|
 | Login(首次) | 登录界面 | Java Gateway → login | 新路径 |
-| Login(老兼容) | 登录界面 | gate → login | 兼容期保留 |
+| Login(access_token 绑定会话) | 刚连上 gate | **gate → login** | 新流程必经,`login_session` 唯一写入点;不受 `LegacyGateLoginEnabled` 管 |
+| Login(老兼容,凭据首认证) | 登录界面 | gate → login | 兼容期保留;`LegacyGateLoginEnabled=false` 时拒绝 |
 | CreatePlayer | 角色选择界面 | **gate → login** | 必走 gate |
 | EnterGame | 角色选择 → 世界 | **gate → login** | 必走 gate |
 | LeaveGame | 世界 → 角色选择 | **gate → login** | 必走 gate |
@@ -145,6 +167,11 @@ Refresh token 续签是"无状态"操作(只看 refresh token 本身,不需要 s
                          │                    │
                          │  ClientToken-      │ ──► gate 本地 HMAC 验签
                          │  VerifyRequest     │     (不查 Redis,不打 RPC)
+                         │                    │
+                         │  Login{auth_type:  │ ──► gate.HandleGrpcNodeMessage
+                         │  "access_token"}   │      → gRPC login.Login
+                         │                    │     (写 login_session + 设备集,
+                         │                    │      CreatePlayer / EnterGame 靠它)
                          └─────────┬──────────┘
                                    ▼
                          ┌────────────────────┐
@@ -216,6 +243,8 @@ Refresh token 续签是"无状态"操作(只看 refresh token 本身,不需要 s
 - 把 `Login`(首次)从 gate 路径迁到 Java Gateway 路径(已在做)
 - 把 `RefreshToken` 从 gate 路径迁到 Java Gateway 路径(目标态)
 - 给 `Login`(老路径)在 Java Gateway 灰度跑稳后,加 deprecation 日志,再下个版本删
+  ——删的只是 gate 上的**凭据首认证**;gate 上的 `Login{access_token}` 是新流程绑定会话的必经一步,
+  在另有会话绑定入口取代它之前不能删,也不能被 `LegacyGateLoginEnabled` 拦
 
 ---
 

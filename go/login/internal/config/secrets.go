@@ -12,6 +12,8 @@
 //     ② 提升为主密钥(开始用新密钥签) →
 //     ③ 旧密钥从 Additional 摘掉。
 //     每一步都能单独滚动发布,任意时刻新旧密钥签出的凭据都验得过。
+//     (2026-10-18 补注)QueueToken 的第 ③ 步须在第 ② 步全量生效后至少等 24h(loginqueue.queueTokenMaxAge,
+//     排队令牌的绝对上限),否则仍在排队、手持旧密钥令牌的玩家会被判成 bad_signature、打回队尾。
 //  3. **占位串上生产**:全仓 7 个文件写着同一个
 //     "change-me-in-production-use-a-strong-random-key"。它进过 git、
 //     进过部署脚本、进过文档,等于公开值。现在生产模式启动期直接拒绝启动。
@@ -280,6 +282,8 @@ type ResolvedSecrets struct {
 	GateToken    *SecretSet
 	QueueToken   *SecretSet
 	InternalAuth *SecretSet
+	// AuthProviders 是第三方登录(微信 / QQ)的凭据,由 svc.InitAuthProviders 消费(auth_providers.go)。
+	AuthProviders AuthProviderSecrets
 }
 
 // ActiveSecrets 是进程启动期解析好的密钥集合,由 main 在 conf.MustLoad
@@ -302,6 +306,9 @@ func EnforceInternalAuth(cfg *Config) bool {
 
 // ResolveSecrets 解析并校验全部密钥。返回的 warnings 由调用方打日志;
 // 返回 error 表示配置不可用,调用方应当直接拒绝启动。
+//
+// 第三方登录凭据(AuthProviders.WeChat.AppSecretEnv 等)也在这里解析,门禁规则见 auth_providers.go:
+// 未展开的 ${...} 任何模式都拒绝,生产模式只认环境变量、只认 https 的 Endpoint。
 //
 // lookup 参数化只为可测,生产固定传 os.LookupEnv。
 func ResolveSecrets(cfg *Config, lookup func(string) (string, bool)) (*ResolvedSecrets, []string, error) {
@@ -364,6 +371,12 @@ func ResolveSecrets(cfg *Config, lookup func(string) (string, bool)) (*ResolvedS
 		return nil, warnings, firstErr
 	}
 
+	authProviders, w, err := resolveAuthProviders(cfg.AuthProviders, relaxed, lookup)
+	collect(w)
+	if err != nil {
+		return nil, warnings, err
+	}
+
 	// 不同用途不许复用同一把主密钥。生产直接拒绝启动;开发只打 WARN
 	// (本地经常图省事三把填一样)。
 	pairs := []struct {
@@ -389,5 +402,5 @@ func ResolveSecrets(cfg *Config, lookup func(string) (string, bool)) (*ResolvedS
 		return nil, warnings, fmt.Errorf("%s", msg)
 	}
 
-	return &ResolvedSecrets{GateToken: gate, QueueToken: queue, InternalAuth: internal}, warnings, nil
+	return &ResolvedSecrets{GateToken: gate, QueueToken: queue, InternalAuth: internal, AuthProviders: authProviders}, warnings, nil
 }

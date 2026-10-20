@@ -514,6 +514,44 @@ TEST_F(ChannelLoopbackTest, UnreachableTargetFailsFastInTransientFailure)
     EXPECT_EQ(channel->GetState(false), ConnectivityState::kTransientFailure);
 }
 
+TEST_F(ChannelLoopbackTest, RefusedConnectionEntersTransientFailureWithoutWaitingForConnectTimeout)
+{
+    // 不起服务端:port_ 是刚释放的空闲端口,对端回 RST。connectTimeout 与调用截止都设得远大于断言窗口,
+    // 能在窗口内失败只可能来自 muduo Connector 的连接失败回调(§5),而不是 connect_timeout 或调用截止。
+    ChannelOptions options;
+    options.connectTimeout = 20s;
+    options.backoff.initial = 10s; // 用例期间不触发后台重连
+    const auto channel = MakeChannel(options);
+    ASSERT_NE(channel, nullptr);
+    drainAfterTest_ = 1200ms; // 让 ~TcpClient 挂的 1s removeConnector 定时器也走完
+
+    const auto record = std::make_shared<CallRecord>();
+    const auto start = std::chrono::steady_clock::now();
+    const int64_t iterationsBefore = loop_.iteration();
+    channel->StartUnaryCall(MakeRequest("x", 30s), Recorder(record));
+    EXPECT_EQ(record->count, 0) << "完成回调不得在 StartUnaryCall 内同步执行";
+
+    // Linux 回环拒连是即时的;Windows 协议栈收到 RST 后还会重试 SYN,拒连通常要 1~2s 才报给 WSAPoll。
+    // 5s 的窗口留足余量,同时远小于 20s 的 connectTimeout。
+    ASSERT_TRUE(RunUntil([&] { return record->count > 0; }, 8s)) << "拒连没有在 connectTimeout 之前报出";
+    const auto elapsed = record->completedAt - start;
+    EXPECT_LT(elapsed, std::chrono::steady_clock::duration(5s));
+    EXPECT_EQ(record->result.status.code(), StatusCode::kUnavailable) << record->result.status.ToString();
+    EXPECT_EQ(record->result.status.message().find("connect timeout"), std::string::npos)
+        << record->result.status.ToString();
+    EXPECT_EQ(channel->GetState(false), ConnectivityState::kTransientFailure);
+
+    // 等待期间 loop 不得空转:Windows 版 Channel 曾在 POLLHUP 时提前返回,吞掉 Connector 的错误回调,
+    // 水平触发的 WSAPoll 会每轮立即返回。正常情况下只有 RunLoopUntil 的 5ms 检查定时器在推动循环
+    // (约每毫秒 0.2 轮),这里放宽到每毫秒 1 轮再加 500 的余量;空转会多出几个数量级。
+    const int64_t elapsedMs = std::chrono::duration_cast<std::chrono::milliseconds>(elapsed).count();
+    EXPECT_LT(loop_.iteration() - iterationsBefore, 500 + elapsedMs);
+
+    RunFor(200ms);
+    EXPECT_EQ(record->count, 1) << "完成回调恰好一次";
+    EXPECT_EQ(channel->GetState(false), ConnectivityState::kTransientFailure);
+}
+
 TEST_F(ChannelLoopbackTest, PeerDisconnectFailsInFlightCallAndNextCallReconnects)
 {
     StartServer(

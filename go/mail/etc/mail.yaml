@@ -1,132 +1,38 @@
-# mail 邮件服务配置(设计 docs/design/mail-system.md §7.3;契约 microservice-zone-contract-20260914 §2/§3/§4/§5/§7;D-9/D-11/D-13/D-14)
-# 全局服务:全服一份、多副本、进程无状态;客户端只经 gate → 路由服到达(路由模式,D-12);运维 / robot 直连 MailAdmin。
-# 本文件的键名与 internal/config/config.go、k8s_deploy.ps1 的 mail ConfigMap 三处必须逐字一致 ——
-# 键名写错 go-zero 当未知键静默忽略,现象是"线上跑的还是默认值",没有任何报错。
 Name: mail.rpc
 ListenOn: 127.0.0.1:50900
-
-# zrpc 服务端整体超时(毫秒)。必须 ≤ 路由服 ForwardTimeoutMs(5000)− 1000(契约 §3),config.Validate 拒绝 <1000 与 >4000。
-# 逻辑层整请求 I/O 预算 = Timeout − 500ms(config.InBandReplyReserve):依赖变慢时先在预算内 in-band 回 kServiceUnavailable,
-# 不让 go-zero 的超时拦截器抢先回 DeadlineExceeded 吞掉结果。
-Timeout: 4000
-
-# go-zero 的 Mode 默认是 pro。本地显式写 dev。mail 用它决定两件事(设计 M-9):
-#   - 只有 dev / test 允许发带附件的邮件(M1 领取未开放,生产发出去的附件领不到、到期作废 = 资产损失);
-#   - 只有 dev / test 接受 sender_kind=ROBOT 的发件方。
-# K8s staging / prod 由 ConfigMap 固定为 pro("不能带着造数能力上线")。
+AdvertiseHost: 127.0.0.1
 Mode: dev
-
-# etcd 注册路径 <Prefix>/zone/<z>/... 用的 zone id;必填非 0(config.Validate 拒 0)。mail 是全局服务,zone **只影响注册路径**,
-# 业务代码禁止读它做分支(邮件按全局唯一的 player_id / 号段 id 存,合服不搬数据)。
-# ⚠ 顶层唯一一处 ZoneId,且必须写在任何嵌套段之前:go_services.ps1 -Zone 只改写文件里第一处 ZoneId。行尾不能加注释。
+Timeout: 3500
 ZoneId: 1
-
-# etcd 节点注册租约 TTL(秒)= 崩溃场景的切换窗口(路由服 PickRandom 不看连接状态)。
-LeaseTTL: 60
-
-# Prometheus /metrics 监听地址(设计 §7.1:9240 系列与现有服务不重叠)。置空关闭。必须是顶层单行:-Zone 的端口位移正则只认这个形状。
-# 指标(设计 §2.5 / §4.5 / §4.6 / §4.7,M1c 起陆续有值):mail_admin_send_total{method,sender_kind,outcome} /
-#   mail_push_total{outcome} / mail_claim_short_circuit_total / mail_list_truncated_total /
-#   mail_sweep_candidate_rows{table,mode} / mail_sweep_deleted_total{table} / mail_sweep_invalid_rows_total{table} /
-#   mail_sweep_last_run_unixtime,以及 shared/serverbase 的 rpc_inband_*、shared/killswitch 的 killswitch_blocked_total。
-MetricsListenAddr: ":9240"
-
-# RPC 级热关停(shared/killswitch)规则在 etcd 里的前缀。留空 = 默认前缀 /mmorpg/killswitch/,前缀下没有 key 时全部放行。
-# 关停整个客户端服务:etcdctl put /mmorpg/killswitch/mailpb.ClientPlayerMail/'*' true
-# 关停发件入口:     etcdctl put /mmorpg/killswitch/mailpb.MailAdmin/'*' true
-# 恢复:etcdctl del 对应的 key。
-KillSwitchPrefix: ""
-
-# etcd:只给 shared/noderegistry 注册 MailNodeService.rpc/... 与 shared/killswitch 用。
-# Key 必须显式写空串(契约 D-13):整行省略会让 conf.MustLoad 直接 Fatal(K8s 上 Pod CrashLoop);
-# 填了 Key 会额外注册 mail.rpc 并被 -Zone 按 .z<N> 切分,与"全服一份"冲突。config.Validate 拒绝非空 Key。
 Etcd:
-  Hosts:
-    - 127.0.0.1:2379
-  Key: ""
-
-# go-zero Stat 拦截器默认按 INFO 打每个请求的整包 JSON。MailAdmin 的请求体是"收件人 + 正文",不应整包落日志
-# (邮件正文是运营文本,不是玩家隐私,但收件人与正文的组合仍不该进 stat 日志,设计 §7.3)。
-# 只屏蔽内容,不关 Stat —— 慢调用告警照常保留。K8s ConfigMap 必须带同一份(契约 §7)。
-Middlewares:
-  StatConf:
-    IgnoreContentMethods:
-      - /mailpb.MailAdmin/SendPersonalMail
-      - /mailpb.MailAdmin/SendSystemMail
-
-# Redis:既有共享库,mail **只读**其中的跨运行时契约 key player:session:{id}(推送前找收件人所在 gate,设计 §4.5)。
-# mail 没有任何私有 key。必须是 node:这个契约 key 的写者含 C++ / login,没有 hash tag,共享库禁 Cluster(config.Validate 拒 cluster)。
-# 这是 zrpc.RpcServerConf 自带的 Redis(RedisKeyConf)段:Key 字段不是 optional,Redis 段存在时必须显式写(空串即可)。
-# 不写 DB(契约 §4):契约 key 由多个运行时共写,DB 号必须全仓一致 = 默认 0。
-Redis:
-  Host: 127.0.0.1:6379
-  Type: node
-  Key: ""
-
-# ---- 独占库 mmorpg_mail(D-14 第 1、5 条)----
-# 库由 deploy/mysql-init/00_init_zone_dbs.sql 预建(存量卷需手工执行建库语句);表由 go/schemamigrate 按
-# proto/mail/mail_table.proto 建 —— 本服务不写任何 DDL。DBName 必须等于代码常量 data.DatabaseName = mmorpg_mail
-# (config.Validate 断言;写成别的库名不会报错,只会把邮件的四张表建进别人的库里)。
-# 本地凭据与 go/friend、go/trade 同账号;K8s 由 ConfigMap 注入。DSN 由 svc.BuildDSN 拼(严格模式 + 会话级 RC)。
-MySQL:
-  Host: 127.0.0.1:3306
-  User: appuser
-  Password: apppass123
-  DBName: mmorpg_mail
-  MaxOpenConn: 20
-  MaxIdleConn: 5
-
-# 建表策略(D-14 第 4 条):AutoMigrate 不写或 true 时启动跑 schemamigrate.Up;false 时只跑只读 Plan,有待执行语句或
-# 需人工项就拒绝启动并打印补救命令 `mail -f etc/mail.yaml -migrate`。K8s 非 dev 档由 ConfigMap 固定 false,表由 mail-migrate Job 建。
-Schema:
-  AutoMigrate: true
-
-# 推送(S2C NotifyMailEvent,只给新到的定向邮件)写 gate-cmd_g<N>。Brokers 留空合法:推送降级为不推(at-most-once,
-# 红点真相是 ListMails 返回的 unread_count),横幅会显示出来。
-Kafka:
-  Brokers:
-    - 127.0.0.1:9092
-
-# data_service 客户端:领 mail_id / sys_mail_id 号段(AllocateIdSegment,biz_tag = mail)。是硬依赖:号段取不到,发件回 kServiceUnavailable。
-# 这里写 Key: dataservice.rpc 不违反 D-13:D-13 禁止的是指向**全局服务**的 RpcClient Key,data_service 按 zone 部署
-# (port-decisions D-13 原文;同 go/trade/etc/trade.yaml)。-Zone N 时本行会被改写为 dataservice.rpc.zN。
+  Hosts: [127.0.0.1:2379]
+MetricsListenAddr: 127.0.0.1:9240
+DSNEnv: MMORPG_MAIL_SQL_DSN
+RequireTiDB: true
+MaxOpenConns: 16
+AutoMigrate: false
+TableDir: ../../generated/tables
+SharedRedisAddr: 127.0.0.1:6379
+KafkaBrokers: [127.0.0.1:9092]
+AssetSecretEnv: MMORPG_ASSET_OP_SECRET_MAIL
 DataServiceRpc:
-  Etcd:
-    Hosts:
-      - 127.0.0.1:2379
-    Key: dataservice.rpc
-  Timeout: 3000
-  NonBlock: true
-  Middlewares:
-    Breaker: false
+  Endpoints: [127.0.0.1:9000]
+  Timeout: 2000
+Producers:
+  admin: MAIL_PRODUCER_SECRET_ADMIN
+  rank: MAIL_PRODUCER_SECRET_RANK
+  guild: MAIL_PRODUCER_SECRET_GUILD
+Log:
+  ServiceName: mail
+  Mode: console
+  Level: info
 
-# mail_id / sys_mail_id 号段(shared/idsegment.Conf,biz_tag = mail,两种 id 共用,全局不撞号,设计 §3.7)。
-# Enabled 必须 true、FallbackToSnowflake 必须 false:mail 没有 snowflake 可回退。
-# biz_tag 必须登记进 data_service 的 BootstrapTags(已登记),否则生产(AllowAutoSeed=false)发号被拒。
-IdSegment:
-  Enabled: true
-  Step: 100
-  MinStep: 10
-  MaxStep: 1000
-  FallbackToSnowflake: false
-
-# 邮件业务上限(设计 §3.1 / §3.4 / §3.5)。这些是硬上限,不是调优旋钮;改动必须同步 k8s ConfigMap。
-#   MaxPersonalMailsPerPlayer:单玩家有效定向邮件上限,超限拒收回 MailRecipientBoxFull(已拍板 100);系统邮件不计入。
-#   MaxActiveSystemMails:有效系统邮件的软上限(发件时检查)与 ListMails 读系统有效集的硬 LIMIT;读时合并要求它有界。
-#   MaxPersonalMailTtlDays / MaxSystemMailTtlDays:expire_ms 最多比服务端发件时刻晚多少天。
-#   AllowedCurrencyTypes:附件货币类型白名单,权威来源 cpp/libs/modules/currency/constants/currency.h
-#     (0 金币 / 1 钻石 / 2 绑钻,kCurrencyMax = 3)。没有默认值,必须显式写;C++ 加货币类型时这里同批改。
+KillSwitchPrefix: /mmorpg/killswitch/
 Mail:
-  MaxPersonalMailsPerPlayer: 100
+  MaxPersonalMailsPerPlayer: 200
   MaxActiveSystemMails: 100
   MaxPersonalMailTtlDays: 30
   MaxSystemMailTtlDays: 30
-  AllowedCurrencyTypes: [0, 1, 2]
-
-# 过期邮件的物理清理(设计 §4.6)。四个键必须写全:整段标 optional,缺段时 go-zero 不回填 default,Validate 拒启。
-#   Mode:report_only 只出指标不删;delete 真删。新环境先跑 report_only 看 mail_sweep_candidate_rows 是否符合预期。
-#   RetentionDays:过期后再保留多少天(供客服查询),下界 1 —— 它也是发件幂等键寿命的余量。
-#   BatchLimit:单条 DELETE … LIMIT 的行数。
 Sweep:
   Mode: report_only
   Interval: 5m

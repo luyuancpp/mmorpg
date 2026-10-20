@@ -5,6 +5,7 @@
 #include <muduo/base/Logging.h>
 
 #include <algorithm>
+#include <array>
 #include <vector>
 
 #include "modules/bag/comp/player_bags_comp.h"
@@ -55,6 +56,9 @@ namespace
 // 动态包传 bagType = 0(那里由 bag_id 指认包,该字段无意义,等于 proto 默认值、不上线)。
 void ItemToEntry(const ItemComp& item, uint32_t pos, uint32_t bagType, ItemEntry& entry)
 {
+    // ItemEntry 的字段号与 ItemComp 不同，不能合并顶层 UnknownFieldSet。
+    // 完整实例是权威，旧字段仅由它计算兼容投影。
+    entry.mutable_instance()->CopyFrom(item);
     entry.set_item_uuid(item.item_id());
     entry.set_config_id(item.config_id());
     entry.set_stack_size(item.size());
@@ -77,6 +81,8 @@ void ItemToEntry(const ItemComp& item, uint32_t pos, uint32_t bagType, ItemEntry
 // ItemEntry -> ItemComp。pos / bag_type 不进实例,由调用方单独读 entry.pos()。
 ItemComp ItemFromEntry(const ItemEntry& entry)
 {
+    if (entry.has_instance()) return entry.instance();
+    // 无完整实例的旧档，继续按既有字段还原；正常保存时补齐 instance。
     ItemComp item;
     item.set_item_id(entry.item_uuid());
     item.set_config_id(entry.config_id());
@@ -201,18 +207,10 @@ void Unmarshal(entt::entity player, const BagAllData& in)
         }
     }
 
-    // 先扫描本包所有已有章，再重放零章条目；源列表先出现零章也不会盖出重复序号。
-    for (const auto &entry : in.items())
-    {
-        if (entry.bag_type() < static_cast<uint32_t>(kBagTypeCount) && entry.stack_size() > 0)
-        {
-            bags.bags[entry.bag_type()].RaiseAcquireSeqForRestore(entry.acquire_seq());
-        }
-    }
-
     // Items replay. Out-of-range bag_type values (corruption / future
     // bag types we don't support) are dropped with a WARN — better
     // than crashing, and the player just loses those items.
+    std::array<std::vector<std::pair<ItemComp, uint32_t>>, kBagTypeCount> perBag;
     for (const auto& entry : in.items())
     {
         const uint32_t bagType = entry.bag_type();
@@ -226,8 +224,11 @@ void Unmarshal(entt::entity player, const BagAllData& in)
                      << " " << ActorLog(player);
             continue;
         }
-        // 整份重载:实例数据(equip 段)原样带回。位置参数那个重载带不动它。
-        bags.bags[bagType].InsertItemForRestore(ItemFromEntry(entry), entry.pos());
+        perBag[bagType].emplace_back(ItemFromEntry(entry), entry.pos());
+    }
+    for (uint32_t bagType = 0; bagType < static_cast<uint32_t>(kBagTypeCount); ++bagType)
+    {
+        bags.bags[bagType].RestoreItems(std::move(perBag[bagType]));
     }
 
     // Transient runtime bags. Rebuild dynamicBags_ from scratch so a
@@ -246,17 +247,13 @@ void Unmarshal(entt::entity player, const BagAllData& in)
         bag.SetProfile(BagProfileRegistry::Instance().Make(
             dyn.profile_id(), static_cast<std::size_t>(dyn.capacity())));
         bag.SetCapacityForRestore(static_cast<std::size_t>(dyn.capacity()));
+        std::vector<std::pair<ItemComp, uint32_t>> items;
+        items.reserve(dyn.items_size());
         for (const auto &entry : dyn.items())
         {
-            if (entry.stack_size() > 0)
-            {
-                bag.RaiseAcquireSeqForRestore(entry.acquire_seq());
-            }
+            items.emplace_back(ItemFromEntry(entry), entry.pos());
         }
-        for (const auto& entry : dyn.items())
-        {
-            bag.InsertItemForRestore(ItemFromEntry(entry), entry.pos());
-        }
+        bag.RestoreItems(std::move(items));
     }
 }
 

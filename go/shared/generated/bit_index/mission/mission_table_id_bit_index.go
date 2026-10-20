@@ -22,4 +22,4 @@ const (
 	ID_17 = 16
 )
 
-const MaxBitIndex = 17
+const BitmapCapacity = 17

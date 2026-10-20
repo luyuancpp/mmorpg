@@ -20,8 +20,8 @@ import (
 // 而且全程不会有任何测试变红。
 //
 // 这些值不是随便取的,改之前先想清楚它压着什么:
-//   - Workers 8 压着 scene 的 sync server poller 上限(reconcile.go 的 LoopConfig.Workers
-//     注释),调大会把玩家的进场 / 开战请求一起挤掉;
+//   - Workers 8 压着后台补偿对 scene 逻辑帧的挤占:资产 RPC 在 scene 的 EventLoop 上同步执行
+//     (reconcile.go 的 LoopConfig.Workers 注释),调大会把玩家的进场 / 开战请求一起拖慢;
 //   - Batch/Interval 决定一个副本每秒最多投多少行;
 //   - Lease 与 OpBudget 的差(leaseHeadroom)决定会不会出现「还在处理就被别的副本领走」;
 //   - PoisonDelay 决定一行解不开的毒行多久回来看一次。
@@ -60,6 +60,7 @@ func TestDefaultLoopConfigGolden(t *testing.T) {
 		{"AbandonBatch(落地恢复 §6.3 执行者 = 200)", cfg.AbandonBatch, 200},
 		{"AbandonInterval(落地恢复 §6.3 执行者 = 1 小时)", cfg.AbandonInterval, time.Hour},
 		{"AuditInterval(落地恢复 §6.2 = 24 小时)", cfg.AuditInterval, 24 * time.Hour},
+		{"RequireSQLCommit(db-write-fencing-mysql §6.6 缺省关 = HEAD 口径)", cfg.RequireSQLCommit, false},
 	}
 	for _, c := range checks {
 		if c.got != c.want {

@@ -8,13 +8,13 @@ import (
 	"db/internal/metrics"
 	"errors"
 	"fmt"
+	"shared/authoritysql"
 	"shared/placement"
 	"shared/sqlpoolstats"
 	"strconv"
 	"sync"
 	"time"
 
-	"github.com/go-sql-driver/mysql"
 	"github.com/luyuancpp/proto2mysql"
 	"github.com/zeromicro/go-zero/core/logx"
 	"github.com/zeromicro/go-zero/core/syncx"
@@ -433,12 +433,16 @@ func OpenPlacementStore(ctx context.Context, dbName string, pool StorePoolOption
 	}
 	mysqlConfig := newServiceMysqlConfig()
 	mysqlConfig.DBName = dbName
-	connector, err := mysql.NewConnector(mysqlConfig)
+	connector, err := newPlayerConnector(mysqlConfig)
 	if err != nil {
 		return nil, fmt.Errorf("create MySQL connector for %s: %w", dbName, err)
 	}
 	handle := sql.OpenDB(connector)
 	applyStorePool(handle, pool)
+	if err := authoritysql.AssertCurrentSession(ctx, handle, config.AppConfig.ServerConfig.Database.RequireTiDB); err != nil {
+		_ = handle.Close()
+		return nil, err
+	}
 	store, err := preparePlacementStore(ctx, handle, dbName, tables)
 	if err != nil {
 		_ = handle.Close()

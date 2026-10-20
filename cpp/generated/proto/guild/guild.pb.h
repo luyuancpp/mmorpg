@@ -8062,8 +8062,30 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED DonateToGuildRequest final : public
 
   // accessors -------------------------------------------------------
   enum : int {
+    kClientRequestIdFieldNumber = 2,
+    kExpectedGuildIdFieldNumber = 3,
     kDonateIdFieldNumber = 1,
   };
+  // uint64 client_request_id = 2;
+  void clear_client_request_id() ;
+  [[nodiscard]] ::uint64_t client_request_id() const;
+  void set_client_request_id(::uint64_t value);
+
+  private:
+  ::uint64_t _internal_client_request_id() const;
+  void _internal_set_client_request_id(::uint64_t value);
+
+  public:
+  // uint64 expected_guild_id = 3;
+  void clear_expected_guild_id() ;
+  [[nodiscard]] ::uint64_t expected_guild_id() const;
+  void set_expected_guild_id(::uint64_t value);
+
+  private:
+  ::uint64_t _internal_expected_guild_id() const;
+  void _internal_set_expected_guild_id(::uint64_t value);
+
+  public:
   // uint32 donate_id = 1;
   void clear_donate_id() ;
   [[nodiscard]] ::uint32_t donate_id() const;
@@ -8078,7 +8100,7 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED DonateToGuildRequest final : public
  private:
   class _Internal;
   using ParseTableT_ =
-      ::google::protobuf::internal::TcParseTable<0, 1,
+      ::google::protobuf::internal::TcParseTable<2, 3,
                           0, 0,
                           2>;
   static constexpr ParseTableT_ InternalGenerateParseTable_(
@@ -8107,6 +8129,8 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED DonateToGuildRequest final : public
         const DonateToGuildRequest& from_msg);
     ::google::protobuf::internal::HasBits<1> _has_bits_;
     ::google::protobuf::internal::CachedSize _cached_size_;
+    ::uint64_t client_request_id_;
+    ::uint64_t expected_guild_id_;
     ::uint32_t donate_id_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
@@ -9110,6 +9134,8 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED BuyGuildShopGoodsRequest final : pu
   enum : int {
     kGoodsIdFieldNumber = 1,
     kCountFieldNumber = 2,
+    kClientRequestIdFieldNumber = 3,
+    kExpectedGuildIdFieldNumber = 4,
   };
   // uint32 goods_id = 1;
   void clear_goods_id() ;
@@ -9131,11 +9157,31 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED BuyGuildShopGoodsRequest final : pu
   void _internal_set_count(::uint32_t value);
 
   public:
+  // uint64 client_request_id = 3;
+  void clear_client_request_id() ;
+  [[nodiscard]] ::uint64_t client_request_id() const;
+  void set_client_request_id(::uint64_t value);
+
+  private:
+  ::uint64_t _internal_client_request_id() const;
+  void _internal_set_client_request_id(::uint64_t value);
+
+  public:
+  // uint64 expected_guild_id = 4;
+  void clear_expected_guild_id() ;
+  [[nodiscard]] ::uint64_t expected_guild_id() const;
+  void set_expected_guild_id(::uint64_t value);
+
+  private:
+  ::uint64_t _internal_expected_guild_id() const;
+  void _internal_set_expected_guild_id(::uint64_t value);
+
+  public:
   // @@protoc_insertion_point(class_scope:guildpb.BuyGuildShopGoodsRequest)
  private:
   class _Internal;
   using ParseTableT_ =
-      ::google::protobuf::internal::TcParseTable<1, 2,
+      ::google::protobuf::internal::TcParseTable<2, 4,
                           0, 0,
                           2>;
   static constexpr ParseTableT_ InternalGenerateParseTable_(
@@ -9166,6 +9212,8 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED BuyGuildShopGoodsRequest final : pu
     ::google::protobuf::internal::CachedSize _cached_size_;
     ::uint32_t goods_id_;
     ::uint32_t count_;
+    ::uint64_t client_request_id_;
+    ::uint64_t expected_guild_id_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
   union { Impl_ _impl_; };
@@ -22205,7 +22253,7 @@ GetGuildDonateOptionsResponse::_internal_mutable_recent_results() {
 inline void DonateToGuildRequest::clear_donate_id() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.donate_id_ = 0u;
-  ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
+  ClearHasBit(_impl_._has_bits_[0], 0x00000004U);
 }
 inline ::uint32_t DonateToGuildRequest::donate_id() const {
   // @@protoc_insertion_point(field_get:guildpb.DonateToGuildRequest.donate_id)
@@ -22213,7 +22261,7 @@ inline ::uint32_t DonateToGuildRequest::donate_id() const {
 }
 inline void DonateToGuildRequest::set_donate_id(::uint32_t value) {
   _internal_set_donate_id(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  SetHasBit(_impl_._has_bits_[0], 0x00000004U);
   // @@protoc_insertion_point(field_set:guildpb.DonateToGuildRequest.donate_id)
 }
 inline ::uint32_t DonateToGuildRequest::_internal_donate_id() const {
@@ -22223,6 +22271,54 @@ inline ::uint32_t DonateToGuildRequest::_internal_donate_id() const {
 inline void DonateToGuildRequest::_internal_set_donate_id(::uint32_t value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.donate_id_ = value;
+}
+
+// uint64 client_request_id = 2;
+inline void DonateToGuildRequest::clear_client_request_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.client_request_id_ = ::uint64_t{0u};
+  ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
+}
+inline ::uint64_t DonateToGuildRequest::client_request_id() const {
+  // @@protoc_insertion_point(field_get:guildpb.DonateToGuildRequest.client_request_id)
+  return _internal_client_request_id();
+}
+inline void DonateToGuildRequest::set_client_request_id(::uint64_t value) {
+  _internal_set_client_request_id(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  // @@protoc_insertion_point(field_set:guildpb.DonateToGuildRequest.client_request_id)
+}
+inline ::uint64_t DonateToGuildRequest::_internal_client_request_id() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.client_request_id_;
+}
+inline void DonateToGuildRequest::_internal_set_client_request_id(::uint64_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.client_request_id_ = value;
+}
+
+// uint64 expected_guild_id = 3;
+inline void DonateToGuildRequest::clear_expected_guild_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.expected_guild_id_ = ::uint64_t{0u};
+  ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
+}
+inline ::uint64_t DonateToGuildRequest::expected_guild_id() const {
+  // @@protoc_insertion_point(field_get:guildpb.DonateToGuildRequest.expected_guild_id)
+  return _internal_expected_guild_id();
+}
+inline void DonateToGuildRequest::set_expected_guild_id(::uint64_t value) {
+  _internal_set_expected_guild_id(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000002U);
+  // @@protoc_insertion_point(field_set:guildpb.DonateToGuildRequest.expected_guild_id)
+}
+inline ::uint64_t DonateToGuildRequest::_internal_expected_guild_id() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.expected_guild_id_;
+}
+inline void DonateToGuildRequest::_internal_set_expected_guild_id(::uint64_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.expected_guild_id_ = value;
 }
 
 // -------------------------------------------------------------------
@@ -23129,6 +23225,54 @@ inline ::uint32_t BuyGuildShopGoodsRequest::_internal_count() const {
 inline void BuyGuildShopGoodsRequest::_internal_set_count(::uint32_t value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.count_ = value;
+}
+
+// uint64 client_request_id = 3;
+inline void BuyGuildShopGoodsRequest::clear_client_request_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.client_request_id_ = ::uint64_t{0u};
+  ClearHasBit(_impl_._has_bits_[0], 0x00000004U);
+}
+inline ::uint64_t BuyGuildShopGoodsRequest::client_request_id() const {
+  // @@protoc_insertion_point(field_get:guildpb.BuyGuildShopGoodsRequest.client_request_id)
+  return _internal_client_request_id();
+}
+inline void BuyGuildShopGoodsRequest::set_client_request_id(::uint64_t value) {
+  _internal_set_client_request_id(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000004U);
+  // @@protoc_insertion_point(field_set:guildpb.BuyGuildShopGoodsRequest.client_request_id)
+}
+inline ::uint64_t BuyGuildShopGoodsRequest::_internal_client_request_id() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.client_request_id_;
+}
+inline void BuyGuildShopGoodsRequest::_internal_set_client_request_id(::uint64_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.client_request_id_ = value;
+}
+
+// uint64 expected_guild_id = 4;
+inline void BuyGuildShopGoodsRequest::clear_expected_guild_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.expected_guild_id_ = ::uint64_t{0u};
+  ClearHasBit(_impl_._has_bits_[0], 0x00000008U);
+}
+inline ::uint64_t BuyGuildShopGoodsRequest::expected_guild_id() const {
+  // @@protoc_insertion_point(field_get:guildpb.BuyGuildShopGoodsRequest.expected_guild_id)
+  return _internal_expected_guild_id();
+}
+inline void BuyGuildShopGoodsRequest::set_expected_guild_id(::uint64_t value) {
+  _internal_set_expected_guild_id(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000008U);
+  // @@protoc_insertion_point(field_set:guildpb.BuyGuildShopGoodsRequest.expected_guild_id)
+}
+inline ::uint64_t BuyGuildShopGoodsRequest::_internal_expected_guild_id() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.expected_guild_id_;
+}
+inline void BuyGuildShopGoodsRequest::_internal_set_expected_guild_id(::uint64_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.expected_guild_id_ = value;
 }
 
 // -------------------------------------------------------------------

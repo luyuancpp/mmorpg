@@ -1,5 +1,8 @@
 # 排行榜(leaderboard / rank)v1 设计
 
+> **2026-10-19 主干合并口径**：现役为 SQL 权威的通用榜代次、封榜、快照及邮件奖励链，配置入口为 `go/rank/etc/rank.yaml`（DSNEnv、RequireTiDB、MaxOpenConns、MailRpc、Producers）。R2/R2b 的 Redis/Kafka 消费榜、redis-rank 和消费类告警保留为历史设计，不能与现役同时作为写者启用。全局服务登记、端口、冗余部署和失败可观测性继续保留。
+
+
 > **本文只是设计,未落码、未编译。** 本文不改任何 proto / yaml / 配表 / 代码;文中出现的文件改动全部是"将来那一批要改什么"的清单。
 > 日期:2026-09-20(同日经三视角评审回修一轮,见 §10)。前情:[`friend-handoff-20260920.md`](../handoff/friend-handoff-20260920.md) §4.2(leaderboard 一节)、§4.4(A 仓服务对照表中 `runtime/leaderboard` 一行)。
 > 约束来源:[`microservice-zone-contract-20260914.md`](microservice-zone-contract-20260914.md)(下称"契约")§3 / §4 / §6 / §7 / §8;[`xuanming-port-decisions-20260910.md`](xuanming-port-decisions-20260910.md) D-9 / D-11 / D-12 / D-13 / D-14;仓根 `AGENTS.md` §4 / §7 / §11。
@@ -598,6 +601,42 @@ Java 版已有更完整的接缝：`game-guild/.../rank/RedissonGuildRankRedis.j
 新增 `go/guild/internal/data/rank_read_snapshot_test.go` 在第一次成功的榜读取响应后，由独立连接立即删成员或改分，确定复现三种交错。默认使用 miniredis；设置 `GUILD_RANK_TEST_REDIS` 则走真实 Redis，所有榜键在测试传输边界映射到每例随机的 `guild-rank-it:{UUID}:rank`，只清理本例键，不使用 FLUSH。红回归在两种后端均实际得到三条失败；最终验证证据见 `build/guild-rank-read-20261015/`，完整命令与结果由本轮交付记录列出。
 
 本批实际验证：Go 新增三条交错与既有全服/分区 16 个分页边界在 miniredis、真实 Redis `13379` 均通过，`internal/data` 全部默认测试、该包 build/vet 退出 0；Java 独立 HEAD 快照执行 `GuildRanksTest` 18 项及 `GuildRanksRedisIntegrationTest` 10 项，共 28/28、无跳过、10 reactor 成功。Java 排行生产和测试的七个文件与当前工作树按 UTF-8/LF 比对一致；该证据不覆盖并行配额改动。Go 整服测试及 Java 其他域的整合结果另按本轮进度记录，不能由这组局部证据推断。
+
+## 2026-10-15 通用榜完整代次与奖励实施（进行中）
+
+用户已授权完整榜与邮件奖励闭环；本节替代旧v1不发奖的实施范围，不把尚未运行的工作标绿。新协议源为proto/rank/{rank,rank_admin,rank_table}.proto。
+
+SQL是榜代次、分数、写入游标、封榜快照与邮件奖励意图的权威；Redis只能作为可重建展示投影。内部生产者每个board/generation独占source_epoch及从1起无缺口cursor，batch写分与cursor收据同事务提交；重复cursor核完整请求摘要回放，跳号、混配、旧代次及未授权生产者拒绝。SET/SET_IF_HIGHER/INCREMENT只在该有序入口操作，不在rank重算Elo。
+
+封榜先取得生产者源SQL中停止本代写的真实屏障及最终cursor；榜端只有committed_cursor等于最终cursor才可seal。seal、TopN静态快照、全部逐玩家邮件奖励意图必须同TiDB事务提交；重试回放同settlement，不从Redis重读名单，不以写一个批次头冒充结算完成。后台按reward_id幂等调用MailAdmin，邮件未持久接收时保留奖励意图。新一代使用新的generation，不删除旧榜模拟reset。
+
+原仓SettleBoard（biz/leaderboard.go:242）按独立Exec写批次279、快照307、奖励意图383，且读榜至Clear331没有冻结；此恢复窗口不复制。旧设计的match快照出口允许末条丢失后靠下一局修复，只适用于派生展示，不能证明赛季奖励输入齐全。匹配代理负责评分SQL事务、可靠投榜outbox与源侧停代屏障，本模块负责生产者鉴权、游标、封榜与邮件奖励投递；两边共同验收才算完成。
+
+客户端新增通用榜分页/本人及周围名次，服务器一份读快照返回页/总数/本人，换账号或连接后旧回包失效。当前仅协议源及实施设计已落；未生成、未编译、未测试。
+
+## 2026-10-16 通用榜进程、封榜与邮件奖验收
+
+`go/rank`（gRPC51100、node13）和Java `game-rank`（Triple20917、group rank）已提供实际独立进程、内部生产者接口及客户端分页/周围名次入口。共享客户端契约来自主仓proto；Java拥有独立领域表和按命名空间配置的全局TiDB库。两版均固定强读、悲观事务及会话门禁，不从Redis或当前展示列表决定奖励归属。
+
+每个榜/代次固定producer、source_epoch和连续source_cursor；批次分数与完整摘要收据同事务。重复游标核同一内容，缺口与变更重放拒绝。SET、SET_IF_HIGHER和INCREMENT保留确定的同分顺序（先达成时间、再实体ID），溢出拒绝。分页、总数、本人和榜状态读取同一SQL快照，空period/generation可查最新可见代次。
+
+来源停止本代写后提供最终cursor；榜端确认全部游标到齐，原子写封榜状态、TopN静态快照及所有邮件奖励意图。奖励意图通过独立租约工作器按固定reward_id投递MailAdmin，传输结局未知仍用原载荷和原ID重投；不直接争用SYSTEM_CREDIT。奖励邮件的到期时间由封榜意图时间固定，重投不会延长它或改变摘要。隐藏一代只隐藏入口，不删除未投奖励、收据或封榜快照。
+
+真实TiDB回归：Go榜2/2；Java榜4/4，覆盖双实例同cursor只增一次、改载荷/跳号/未到最终cursor拒绝、封榜后拒写、快照/发奖意图故障整事务回滚、worker重启保留邮件幂等键、隐藏代次不丢奖励。Java同时验证每个实际物理连接的TiDB强读会话；两个JAR真实启动及客户端RankClient3/3证据见 `build/mail-rank-complete-20261015/`。来源侧评分SQL/outbox/停写屏障由匹配域实现，整链部署和跨区故障验收仍须与其合并验证；本节不代替该证据，也不宣称容量结论。
+
+### 2026-10-17 来源至奖励邮件的整链验收（本地验收完成）
+
+本批验证职责是把匹配域唯一的SQL评分与投榜outbox，经真实生产者鉴权及连续游标送入通用榜，源侧停代后封榜，再由奖励工作器调用实际MailAdmin RPC，最终从邮箱权威列表核对邮件。两版使用各自随机隔离的TiDB库与本机RPC端口，不复制Elo、榜排序、发件规则，不通过手工写入成功终态替代生产入口。
+
+重点注入邮件事务已经提交、调用方却未收到回复的UNKNOWN窗口；重新创建工作器并重投原reward_id和原载荷后，只能保留一封邮件及原幂等收据。两版均已实际验证缺口游标不能封榜、停代后迟到评分整事务回滚、重复评分/投榜/封榜不增加奖励；恢复后原奖励、附件、正文摘要及到期时间保持，权威玩家列表仅一封原mail_id。
+
+Go使用mail、rank实际仓储和服务的独立gRPC测试进程，由match的真实评分/outbox调用；排行榜进程退出后以同库重启，重投仍回原settlement及原邮件。3个测试程序编译及相关包vet全部exit0，真实TiDB整链1/1、11.74秒、0失败/跳过，629份Go及模块输入SHA未变。Java经真实Triple RankProvider/MailProvider及玩家分发入口，重建仓储和工作器后同样恢复；集成profile的clean test为14个reactor成功、整链1/1；默认profile的clean verify为9个reactor成功、原榜真TiDB4/4，0失败/错误/跳过，2324份输入SHA一致。Java仅重建对象，未执行完整JVM进程重启；Dubbo实际anyhost监听且客户端被改为本机网卡地址，不能称为严格回环或跨主机验收。两版只新增测试及Java隔离测试profile，未改生产业务逻辑。
+
+汇总证据为 `build/rank-mail-chain-20261017/two-version-rank-mail-chain-proof-20261017.json`（SHA256 `0A5BC76B3DC3F6AB0B6EF562A42C3DB7D1B69AD7C21D4F7DCB2CAC1BCD4EB644`），关联Go、Java最终proof、原失败日志和清理记录；20个来源/产物/日志/XML文件已复核摘要。Go首次子进程AccessDenied发生在业务调用前，原EXE纯启动探针成功后单次重跑通过，未改安全配置；Java两次新增测试配置/编译错误修正后才重跑，未跳测试。自身随机数据库、Go夹具进程和JavaRPC端口已清理，未清共享数据。
+
+验收到奖励邮件持久可见为止；附件领取仍走scene资产与SQL证据链，不能把生成奖励邮件等同于资产到账。Go独立进程是装配生产RPC/仓储及Worker.Tick的测试夹具，并非完整成品main、注册中心、真实gate或战斗Kafka全进程链；该整链的奖励样本为货币，未覆盖物品奖励全链。客户端沿用既有协议及UI，本批无契约变化且未新跑Unity；个人到账SQL收据、归属与父快照围栏、跨区真实故障和容量不由本节替代。
+
+> 以下 R2b 记录保留旧 Redis/Kafka 榜的运维设计与验证历史；现役运行时为上面的 SQL 权威榜、封榜及邮件奖励链，不重新启用第二个评分写者。
 
 ## 12. 落码记录(2026-10-16,Claude;Go 未编译、未跑任何 Go 测试)
 

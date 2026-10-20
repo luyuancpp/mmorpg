@@ -6,6 +6,7 @@ import com.game.gateway.dto.LoginResponse;
 import com.game.gateway.dto.RefreshTokenRequest;
 import com.game.gateway.dto.RefreshTokenResponse;
 import com.game.gateway.grpc.LoginRpcClient;
+import com.game.table.tip.TipFaults;
 import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
 import org.junit.jupiter.api.Test;
@@ -114,6 +115,33 @@ class LoginEndpointIntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(LoginResponse.CODE_AUTH_REJECTED))
                 .andExpect(jsonPath("$.message").value("auth_provider_rejected"));
+    }
+
+    /**
+     * 客户端契约（两版同批）：login 回 Tip.xlsx 标了 fault 的码时，JSON code 是 500 而不是 401，
+     * HTTP 状态仍是 200，message 仍是 {@code upstream_err=<tip>}。码值按码名从生成表取，不手写数字。
+     */
+    @Test
+    void loginEndpoint_upstreamFaultTipMapsTo500() throws Exception {
+        int tip = TipFaults.FAULTS.stream()
+                .filter(f -> f.name().equals("LoginAuthProviderUnavailable"))
+                .findFirst()
+                .orElseThrow()
+                .code();
+        LoginRpcClient.LoginResponseProto upstream = new LoginRpcClient.LoginResponseProto();
+        upstream.errorCode = tip;
+        when(loginRpcClient.login(any(LoginRpcClient.LoginRequestProto.class), anyInt())).thenReturn(upstream);
+
+        LoginRequest req = new LoginRequest();
+        req.setAuthType("wechat");
+        req.setAuthToken("code-while-wechat-is-down");
+
+        mockMvc.perform(post("/api/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(req)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(LoginResponse.CODE_INTERNAL))
+                .andExpect(jsonPath("$.message").value("upstream_err=" + tip));
     }
 
     @Test

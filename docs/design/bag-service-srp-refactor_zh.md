@@ -1,5 +1,7 @@
 # Bag → BagService 单一职责重构 (2026-03-26)
 
+> 2026-10-15：`PlayerItemBlockList` 与 `blockList` 参数已按 C004 删除，下文为 2026-03-26 历史。
+
 ## 问题
 `Bag` 类职责过多——它是一个容器，但同时还处理了：
 - 全局物品封锁检查（GainBlockService）

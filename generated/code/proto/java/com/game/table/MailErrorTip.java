@@ -36,37 +36,49 @@ public final class MailErrorTip extends com.google.protobuf.GeneratedFile {
      */
     kMail_errorOK(0),
     /**
-     * <code>kMailClaimNotOpen = 17000;</code>
+     * <code>kMailNotFound = 17000;</code>
      */
-    kMailClaimNotOpen(17000),
+    kMailNotFound(17000),
     /**
-     * <code>kMailNotFound = 17001;</code>
+     * <code>kMailExpired = 17001;</code>
      */
-    kMailNotFound(17001),
+    kMailExpired(17001),
     /**
-     * <code>kMailExpired = 17002;</code>
+     * <code>kMailRecipientBoxFull = 17002;</code>
      */
-    kMailExpired(17002),
+    kMailRecipientBoxFull(17002),
     /**
-     * <code>kMailRecipientBoxFull = 17003;</code>
+     * <code>kMailAttachmentInvalid = 17003;</code>
      */
-    kMailRecipientBoxFull(17003),
+    kMailAttachmentInvalid(17003),
     /**
-     * <code>kMailAttachmentNotOpen = 17004;</code>
+     * <code>kMailRequestConflict = 17004;</code>
      */
-    kMailAttachmentNotOpen(17004),
+    kMailRequestConflict(17004),
     /**
-     * <code>kMailAttachmentInvalid = 17005;</code>
+     * <code>kMailSystemMailLimit = 17005;</code>
      */
-    kMailAttachmentInvalid(17005),
+    kMailSystemMailLimit(17005),
     /**
-     * <code>kMailRequestConflict = 17006;</code>
+     * <code>kMailClaimPending = 17006;</code>
      */
-    kMailRequestConflict(17006),
+    kMailClaimPending(17006),
     /**
-     * <code>kMailSystemMailLimit = 17007;</code>
+     * <code>kMailClaimManual = 17007;</code>
      */
-    kMailSystemMailLimit(17007),
+    kMailClaimManual(17007),
+    /**
+     * <code>kMailAttachmentProtected = 17008;</code>
+     */
+    kMailAttachmentProtected(17008),
+    /**
+     * <code>kMailClaimNotOpen = 17009;</code>
+     */
+    kMailClaimNotOpen(17009),
+    /**
+     * <code>kMailAttachmentNotOpen = 17010;</code>
+     */
+    kMailAttachmentNotOpen(17010),
     UNRECOGNIZED(-1),
     ;
 
@@ -84,37 +96,49 @@ public final class MailErrorTip extends com.google.protobuf.GeneratedFile {
      */
     public static final int kMail_errorOK_VALUE = 0;
     /**
-     * <code>kMailClaimNotOpen = 17000;</code>
+     * <code>kMailNotFound = 17000;</code>
      */
-    public static final int kMailClaimNotOpen_VALUE = 17000;
+    public static final int kMailNotFound_VALUE = 17000;
     /**
-     * <code>kMailNotFound = 17001;</code>
+     * <code>kMailExpired = 17001;</code>
      */
-    public static final int kMailNotFound_VALUE = 17001;
+    public static final int kMailExpired_VALUE = 17001;
     /**
-     * <code>kMailExpired = 17002;</code>
+     * <code>kMailRecipientBoxFull = 17002;</code>
      */
-    public static final int kMailExpired_VALUE = 17002;
+    public static final int kMailRecipientBoxFull_VALUE = 17002;
     /**
-     * <code>kMailRecipientBoxFull = 17003;</code>
+     * <code>kMailAttachmentInvalid = 17003;</code>
      */
-    public static final int kMailRecipientBoxFull_VALUE = 17003;
+    public static final int kMailAttachmentInvalid_VALUE = 17003;
     /**
-     * <code>kMailAttachmentNotOpen = 17004;</code>
+     * <code>kMailRequestConflict = 17004;</code>
      */
-    public static final int kMailAttachmentNotOpen_VALUE = 17004;
+    public static final int kMailRequestConflict_VALUE = 17004;
     /**
-     * <code>kMailAttachmentInvalid = 17005;</code>
+     * <code>kMailSystemMailLimit = 17005;</code>
      */
-    public static final int kMailAttachmentInvalid_VALUE = 17005;
+    public static final int kMailSystemMailLimit_VALUE = 17005;
     /**
-     * <code>kMailRequestConflict = 17006;</code>
+     * <code>kMailClaimPending = 17006;</code>
      */
-    public static final int kMailRequestConflict_VALUE = 17006;
+    public static final int kMailClaimPending_VALUE = 17006;
     /**
-     * <code>kMailSystemMailLimit = 17007;</code>
+     * <code>kMailClaimManual = 17007;</code>
      */
-    public static final int kMailSystemMailLimit_VALUE = 17007;
+    public static final int kMailClaimManual_VALUE = 17007;
+    /**
+     * <code>kMailAttachmentProtected = 17008;</code>
+     */
+    public static final int kMailAttachmentProtected_VALUE = 17008;
+    /**
+     * <code>kMailClaimNotOpen = 17009;</code>
+     */
+    public static final int kMailClaimNotOpen_VALUE = 17009;
+    /**
+     * <code>kMailAttachmentNotOpen = 17010;</code>
+     */
+    public static final int kMailAttachmentNotOpen_VALUE = 17010;
 
 
     public final int getNumber() {
@@ -142,14 +166,17 @@ public final class MailErrorTip extends com.google.protobuf.GeneratedFile {
     public static mail_error forNumber(int value) {
       switch (value) {
         case 0: return kMail_errorOK;
-        case 17000: return kMailClaimNotOpen;
-        case 17001: return kMailNotFound;
-        case 17002: return kMailExpired;
-        case 17003: return kMailRecipientBoxFull;
-        case 17004: return kMailAttachmentNotOpen;
-        case 17005: return kMailAttachmentInvalid;
-        case 17006: return kMailRequestConflict;
-        case 17007: return kMailSystemMailLimit;
+        case 17000: return kMailNotFound;
+        case 17001: return kMailExpired;
+        case 17002: return kMailRecipientBoxFull;
+        case 17003: return kMailAttachmentInvalid;
+        case 17004: return kMailRequestConflict;
+        case 17005: return kMailSystemMailLimit;
+        case 17006: return kMailClaimPending;
+        case 17007: return kMailClaimManual;
+        case 17008: return kMailAttachmentProtected;
+        case 17009: return kMailClaimNotOpen;
+        case 17010: return kMailAttachmentNotOpen;
         default: return null;
       }
     }
@@ -215,14 +242,16 @@ public final class MailErrorTip extends com.google.protobuf.GeneratedFile {
       descriptor;
   static {
     java.lang.String[] descriptorData = {
-      "\n\024mail_error_tip.proto*\362\001\n\nmail_error\022\021\n" +
-      "\rkMail_errorOK\020\000\022\027\n\021kMailClaimNotOpen\020\350\204" +
-      "\001\022\023\n\rkMailNotFound\020\351\204\001\022\022\n\014kMailExpired\020\352" +
-      "\204\001\022\033\n\025kMailRecipientBoxFull\020\353\204\001\022\034\n\026kMail" +
-      "AttachmentNotOpen\020\354\204\001\022\034\n\026kMailAttachment" +
-      "Invalid\020\355\204\001\022\032\n\024kMailRequestConflict\020\356\204\001\022" +
-      "\032\n\024kMailSystemMailLimit\020\357\204\001B$\n\016com.game." +
-      "tableZ\022generated/pb/tableb\006proto3"
+      "\n\024mail_error_tip.proto*\303\002\n\nmail_error\022\021\n" +
+      "\rkMail_errorOK\020\000\022\023\n\rkMailNotFound\020\350\204\001\022\022\n" +
+      "\014kMailExpired\020\351\204\001\022\033\n\025kMailRecipientBoxFu" +
+      "ll\020\352\204\001\022\034\n\026kMailAttachmentInvalid\020\353\204\001\022\032\n\024" +
+      "kMailRequestConflict\020\354\204\001\022\032\n\024kMailSystemM" +
+      "ailLimit\020\355\204\001\022\027\n\021kMailClaimPending\020\356\204\001\022\026\n" +
+      "\020kMailClaimManual\020\357\204\001\022\036\n\030kMailAttachment" +
+      "Protected\020\360\204\001\022\027\n\021kMailClaimNotOpen\020\361\204\001\022\034" +
+      "\n\026kMailAttachmentNotOpen\020\362\204\001B$\n\016com.game" +
+      ".tableZ\022generated/pb/tableb\006proto3"
     };
     descriptor = com.google.protobuf.Descriptors.FileDescriptor
       .internalBuildGeneratedFileFrom(descriptorData,

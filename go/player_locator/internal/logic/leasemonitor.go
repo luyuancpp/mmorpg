@@ -9,6 +9,8 @@ import (
 
 	"github.com/redis/go-redis/v9"
 	"github.com/zeromicro/go-zero/core/logx"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/proto"
 
 	"player_locator/internal/svc"
@@ -202,6 +204,13 @@ func handleLeaseExpiry(ctx context.Context, svcCtx *svc.ServiceContext, claim le
 		sideEffectErr = errors.Join(sideEffectErr, err)
 	}
 	if sideEffectErr != nil {
+		if isOnlyHolderReleasePending(sideEffectErr) {
+			// 不是故障:location 的持有节点还没释放(docs/design/location-release-binding.md §3.4),scene_manager 已请它
+			// 释放。claim 照旧保留,按 claim 超时节拍重试;等不到时由 scene_manager 的上限兜底。
+			logx.Infof("LeaseMonitor: waiting for location holder to release player=%d; claim retained for retry: %v",
+				claim.playerID, sideEffectErr)
+			return
+		}
 		logx.Errorf("LeaseMonitor: cleanup side effects player=%d failed; claim retained for retry: %v",
 			claim.playerID, sideEffectErr)
 		return
@@ -283,6 +292,11 @@ func parseGateID(gateID string) uint32 {
 // notifySceneManagerLeave 调用 SceneManager.LeaveScene 清理位置与实例人数。
 // 只要仍有权威 scene 位置，client 缺失或 RPC 失败都必须返回错误，让 processing
 // receipt 留待重试；不能把未执行的清理当作成功 ACK。
+//
+// 请求带**被删那条会话记录的原值** (session_id, login_generation)(docs/design/scene-enter-chain-residuals.md §3.2):
+// scene_manager 拿它与 location 里记的会话身份比较,location 已属于更新的登录时不删,迟到的离场就删不掉
+// 新登录的 location。MarkOffline 同步路径、租约到期路径、enqueue 重试都经过这里;enqueue 用 proto.Clone
+// 保留了代次,所以只在这一处填。旧版 scene_manager 忽略这两个字段,按旧行为删除。
 func notifySceneManagerLeave(ctx context.Context, svcCtx *svc.ServiceContext, session *pb.PlayerSession) error {
 	sceneID := session.SceneId
 	if sceneID == 0 {
@@ -302,16 +316,48 @@ func notifySceneManagerLeave(ctx context.Context, svcCtx *svc.ServiceContext, se
 	}
 
 	_, err := svcCtx.SceneManagerClient.LeaveScene(ctx, &smpb.LeaveSceneRequest{
-		PlayerId: session.PlayerId,
-		SceneId:  sceneID,
+		PlayerId:        session.PlayerId,
+		SceneId:         sceneID,
+		SessionId:       session.SessionId,
+		LoginGeneration: session.LoginGeneration,
 	})
 	if err != nil {
-		return fmt.Errorf("SceneManager.LeaveScene player=%d scene=%d: %w",
-			session.PlayerId, sceneID, err)
+		if status.Code(err) == codes.FailedPrecondition {
+			// scene_manager 拿不到「持有者已释放」证据,保留了 location(docs/design/location-release-binding.md §3.2)。
+			// 照样回错误让调用方保留清理任务,但包成 errHolderReleasePending,调用方据此不按故障记录。
+			return fmt.Errorf("%w: SceneManager.LeaveScene player=%d scene=%d session=%d login_generation=%d: %v",
+				errHolderReleasePending, session.PlayerId, sceneID, session.SessionId, session.LoginGeneration, err)
+		}
+		return fmt.Errorf("SceneManager.LeaveScene player=%d scene=%d session=%d login_generation=%d: %w",
+			session.PlayerId, sceneID, session.SessionId, session.LoginGeneration, err)
 	}
-	logx.Infof("LeaseMonitor: notified SceneManager.LeaveScene player=%d scene=%d",
-		session.PlayerId, sceneID)
+	logx.Infof("LeaseMonitor: notified SceneManager.LeaveScene player=%d scene=%d session=%d login_generation=%d",
+		session.PlayerId, sceneID, session.SessionId, session.LoginGeneration)
 	return nil
+}
+
+// errHolderReleasePending:scene_manager 的 LeaveScene 回 FailedPrecondition —— location 的持有节点还没把当前代状态
+// 落盘释放,location 被保留(docs/design/location-release-binding.md §3.2 / §3.4)。它和 RPC 失败一样要求保留清理任务
+// 重试,区别只在日志级别与 MarkOffline 入队的首拍延后。
+var errHolderReleasePending = errors.New("location holder release pending")
+
+// holderReleaseFirstRetryDelay:MarkOffline 因等持有者释放而入队时,首拍延后的时长。gate 收到 LeaveGame 时已代发 ExitGame,
+// 退出存盘与 A1′ 标记通常在几十毫秒内落地;延后 2s 让第一次重试大概率就拿到标记,不必等满 claim 超时。
+const holderReleaseFirstRetryDelay = 2 * time.Second
+
+// isOnlyHolderReleasePending:清理副作用里唯一的失败是「等持有者释放」(LeaseExpired 投递等其它失败一律按故障记录)。
+func isOnlyHolderReleasePending(err error) bool {
+	if !errors.Is(err, errHolderReleasePending) {
+		return false
+	}
+	if joined, ok := err.(interface{ Unwrap() []error }); ok {
+		for _, e := range joined.Unwrap() {
+			if !errors.Is(e, errHolderReleasePending) {
+				return false
+			}
+		}
+	}
+	return true
 }
 
 // resolveSceneManagerSceneID 从 SceneManager 已有的 Redis 权威位置键回退读取。

@@ -3383,10 +3383,11 @@ func (x *BatchGetPlayerNameResponse) GetNames() map[uint64]string {
 }
 
 type GetPlayerAssetOpLedgerRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	PlayerId      uint64                 `protobuf:"varint,1,opt,name=player_id,json=playerId,proto3" json:"player_id,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state            protoimpl.MessageState `protogen:"open.v1"`
+	PlayerId         uint64                 `protobuf:"varint,1,opt,name=player_id,json=playerId,proto3" json:"player_id,omitempty"`
+	RequireSqlCommit bool                   `protobuf:"varint,2,opt,name=require_sql_commit,json=requireSqlCommit,proto3" json:"require_sql_commit,omitempty"` // true 只读取 SQL 提交证据，缺失时 found=false，禁止 Redis 快照回退
+	unknownFields    protoimpl.UnknownFields
+	sizeCache        protoimpl.SizeCache
 }
 
 func (x *GetPlayerAssetOpLedgerRequest) Reset() {
@@ -3426,10 +3427,18 @@ func (x *GetPlayerAssetOpLedgerRequest) GetPlayerId() uint64 {
 	return 0
 }
 
+func (x *GetPlayerAssetOpLedgerRequest) GetRequireSqlCommit() bool {
+	if x != nil {
+		return x.RequireSqlCommit
+	}
+	return false
+}
+
 type GetPlayerAssetOpLedgerResponse struct {
 	state         protoimpl.MessageState             `protogen:"open.v1"`
-	Found         bool                               `protobuf:"varint,1,opt,name=found,proto3" json:"found,omitempty"`  // false = 该玩家在 zone Redis 里没有 blob(从未入场,或 Redis 丢数据)
-	Ledger        *component.PlayerAssetOpLedgerComp `protobuf:"bytes,2,opt,name=ledger,proto3" json:"ledger,omitempty"` // found=true 且玩家从未有过资产操作时为空消息(不是缺席)
+	Found         bool                               `protobuf:"varint,1,opt,name=found,proto3" json:"found,omitempty"`                                   // false = 该玩家在 zone Redis 里没有 blob(从未入场,或 Redis 丢数据)
+	Ledger        *component.PlayerAssetOpLedgerComp `protobuf:"bytes,2,opt,name=ledger,proto3" json:"ledger,omitempty"`                                  // found=true 且玩家从未有过资产操作时为空消息(不是缺席)
+	SqlCommitted  bool                               `protobuf:"varint,3,opt,name=sql_committed,json=sqlCommitted,proto3" json:"sql_committed,omitempty"` // SQL 提交证据分支才为 true；旧服务默认 false，强一致调用拒绝旧证据
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -3476,6 +3485,13 @@ func (x *GetPlayerAssetOpLedgerResponse) GetLedger() *component.PlayerAssetOpLed
 		return x.Ledger
 	}
 	return nil
+}
+
+func (x *GetPlayerAssetOpLedgerResponse) GetSqlCommitted() bool {
+	if x != nil {
+		return x.SqlCommitted
+	}
+	return false
 }
 
 type GetPlayerInboxLedgerRequest struct {
@@ -3867,12 +3883,14 @@ const file_proto_data_service_data_service_proto_rawDesc = "" +
 	"\n" +
 	"NamesEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\x04R\x03key\x12\x14\n" +
-	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"<\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"j\n" +
 	"\x1dGetPlayerAssetOpLedgerRequest\x12\x1b\n" +
-	"\tplayer_id\x18\x01 \x01(\x04R\bplayerId\"h\n" +
+	"\tplayer_id\x18\x01 \x01(\x04R\bplayerId\x12,\n" +
+	"\x12require_sql_commit\x18\x02 \x01(\bR\x10requireSqlCommit\"\x8d\x01\n" +
 	"\x1eGetPlayerAssetOpLedgerResponse\x12\x14\n" +
 	"\x05found\x18\x01 \x01(\bR\x05found\x120\n" +
-	"\x06ledger\x18\x02 \x01(\v2\x18.PlayerAssetOpLedgerCompR\x06ledger\":\n" +
+	"\x06ledger\x18\x02 \x01(\v2\x18.PlayerAssetOpLedgerCompR\x06ledger\x12#\n" +
+	"\rsql_committed\x18\x03 \x01(\bR\fsqlCommitted\":\n" +
 	"\x1bGetPlayerInboxLedgerRequest\x12\x1b\n" +
 	"\tplayer_id\x18\x01 \x01(\x04R\bplayerId\"d\n" +
 	"\x1cGetPlayerInboxLedgerResponse\x12\x14\n" +

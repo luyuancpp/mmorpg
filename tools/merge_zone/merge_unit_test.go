@@ -494,6 +494,135 @@ func TestConsumerGroupMissing_Whitelist(t *testing.T) {
 	}
 }
 
+// R7 复核 [8]:「组不存在」白名单在整段输出上匹配。白名单命中却又列出本 topic 的数值位点是矛盾输出,必须报错;
+// 命中白名单但表里本 topic 没有数值位点时不认定 missing(两种读法都是「没有位点」),交给常规判定。
+// 与 tools/scripts/lib/kafka_consumer_groups.ps1 Resolve-KafkaGroupTopicOffsets 同口径(kafka_offset_reset_output_guard.tests.ps1 有对应用例)。
+func TestGroupMissingInDescribe_HeaderWinsOverWhitelist(t *testing.T) {
+	const topic = "db_task_zone_901"
+	warn := "[2026-10-17 03:00:00,000] WARN describe fell back to the classic API after " +
+		"org.apache.kafka.common.errors.GroupIdNotFoundException (org.apache.kafka.clients.admin.KafkaAdminClient)\n"
+	contradictory := warn + legacyGroupHigherStale
+	if _, err := committedOffsetPresent(contradictory, topic); err == nil || !strings.Contains(err.Error(), "contradictory") {
+		t.Fatalf("whitelist hit plus numeric rows on the topic must be refused as contradictory, got %v", err)
+	}
+	if _, _, err := resolveAuthoritativeLag(topic, []groupDescribeResult{
+		{group: "db_rpc_consumer_group_z901", output: zoneGroupDescribe},
+		{group: defaultKafkaGroup, output: contradictory},
+	}); err == nil || !strings.Contains(err.Error(), "contradictory") {
+		t.Fatalf("P3 must not treat a group with listed offsets as missing (it would vouch with the other group's LAG), got %v", err)
+	}
+
+	// 白名单命中、有表头、本 topic 没有数值位点:不是 missing,按表判为没有位点。
+	otherTopicOnly := warn + legacyGroupOtherTopicOnly
+	if missing, err := groupMissingInDescribe(otherTopicOnly, topic); err != nil || missing {
+		t.Fatalf("header present without numeric rows on the topic: missing=%v err=%v, want false nil", missing, err)
+	}
+	if present, err := committedOffsetPresent(otherTopicOnly, topic); err != nil || present {
+		t.Fatalf("header present without numeric rows on the topic: present=%v err=%v, want false nil", present, err)
+	}
+
+	// 没有表头时白名单照旧认定 missing(不论退出码)。
+	if missing, err := groupMissingInDescribe(groupMissingKafka3, topic); err != nil || !missing {
+		t.Fatalf("missing-group message without a header: missing=%v err=%v, want true nil", missing, err)
+	}
+}
+
+// R7 复核 [3]:Empty 组的 describe 只列出有已提交位点的分区。分区 2 非空却从未提交过,表里根本没有它,
+// 其余分区 LAG=0 时合计为 0 —— 必须靠 kafka-get-offsets 的日志边界拒绝。
+func TestVerifyAuthoritativeCoverage(t *testing.T) {
+	const topic = "db_task_zone_901"
+	emptyGroup := `
+Consumer group 'db_rpc_consumer_group_z901' has no active members.
+
+GROUP                       TOPIC             PARTITION  CURRENT-OFFSET  LOG-END-OFFSET  LAG  CONSUMER-ID  HOST  CLIENT-ID
+db_rpc_consumer_group_z901  db_task_zone_901  0          120             120             0    -            -     -
+db_rpc_consumer_group_z901  db_task_zone_901  1          77              77              0    -            -     -
+`
+	if lag, err := parseConsumerGroupLag(emptyGroup, topic); err != nil || lag != 0 {
+		t.Fatalf("precondition: the summed LAG is 0 (lag=%d err=%v)", lag, err)
+	}
+	cases := []struct {
+		name     string
+		describe string
+		earliest map[int]int64
+		latest   map[int]int64
+		wantErr  string // 空串 = 必须通过
+	}{
+		{"never-committed non-empty partition is refused", emptyGroup,
+			map[int]int64{0: 0, 1: 0, 2: 0}, map[int]int64{0: 120, 1: 77, 2: 5}, "partition 2: non-empty"},
+		{"never-written partition passes", emptyGroup,
+			map[int]int64{0: 0, 1: 0, 2: 0}, map[int]int64{0: 120, 1: 77, 2: 0}, ""},
+		{"fully expired partition passes", emptyGroup,
+			map[int]int64{0: 0, 1: 0, 2: 9}, map[int]int64{0: 120, 1: 77, 2: 9}, ""},
+		{"get-offsets missing a described partition is refused", emptyGroup,
+			map[int]int64{0: 0}, map[int]int64{0: 120}, "partition 1: in the describe output but missing from kafka-get-offsets"},
+		{"earliest and latest disagree on the partition set", emptyGroup,
+			map[int]int64{0: 0, 1: 0}, map[int]int64{0: 120, 1: 77, 2: 0}, "partition 2: kafka-get-offsets gave a latest offset but no earliest offset"},
+		{"negative LAG on one partition is refused even if the sum is 0", `GROUP TOPIC PARTITION CURRENT-OFFSET LOG-END-OFFSET LAG
+g db_task_zone_901 0 115 120 5
+g db_task_zone_901 1 82 77 -5`,
+			map[int]int64{0: 0, 1: 0}, map[int]int64{0: 120, 1: 77}, "LAG is not 0"},
+		{"dash CURRENT-OFFSET on a non-empty partition is refused", `GROUP TOPIC PARTITION CURRENT-OFFSET LOG-END-OFFSET LAG
+g db_task_zone_901 0 120 120 0
+g db_task_zone_901 1 - 77 -`,
+			map[int]int64{0: 0, 1: 0}, map[int]int64{0: 120, 1: 77}, "partition 1: non-empty (earliest=0 latest=77) but CURRENT-OFFSET is '-'"},
+		{"no header is an error", "Consumer group 'g' has no active members.\n",
+			map[int]int64{0: 0}, map[int]int64{0: 0}, "could not find TOPIC/PARTITION/CURRENT-OFFSET/LAG"},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			err := verifyAuthoritativeCoverage(topic, c.describe, c.earliest, c.latest)
+			if c.wantErr == "" {
+				if err != nil {
+					t.Fatalf("want pass, got %v", err)
+				}
+				return
+			}
+			if err == nil || !strings.Contains(err.Error(), c.wantErr) {
+				t.Fatalf("want error containing %q, got %v", c.wantErr, err)
+			}
+		})
+	}
+}
+
+func TestParseGetOffsets(t *testing.T) {
+	const topic = "db_task_zone_901"
+	got, err := parseGetOffsets("WARN something\n"+topic+":0:120\n"+topic+":1:0\ndb_task_zone_9011:0:7\n"+topic+"_g2:0:9\n", topic)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if want := map[int]int64{0: 120, 1: 0}; !reflect.DeepEqual(got, want) {
+		t.Fatalf("got %v, want %v (topics sharing a prefix must not leak in)", got, want)
+	}
+	for name, out := range map[string]string{
+		"error line":       topic + ":0:1\nError: Timed out waiting for a node assignment.\n",
+		"no partition":     "db_task_zone_902:0:1\n",
+		"empty output":     "",
+		"malformed offset": topic + ":0:\n",
+	} {
+		if _, err := parseGetOffsets(out, topic); err == nil {
+			t.Errorf("%s: want an error (cannot read the log boundaries)", name)
+		}
+	}
+}
+
+func TestKafkaGetOffsetsCmdFor(t *testing.T) {
+	cases := map[string]string{
+		"/opt/kafka/bin/kafka-consumer-groups.sh": "/opt/kafka/bin/kafka-get-offsets.sh",
+		"kafka-consumer-groups.sh":                "kafka-get-offsets.sh",
+		"kafka-consumer-groups":                   "kafka-get-offsets",
+	}
+	for in, want := range cases {
+		got, err := kafkaGetOffsetsCmdFor(in)
+		if err != nil || got != want {
+			t.Errorf("kafkaGetOffsetsCmdFor(%q) = %q, %v; want %q", in, got, err, want)
+		}
+	}
+	if _, err := kafkaGetOffsetsCmdFor("/opt/kafka/bin/kafka-run-class.sh"); err == nil {
+		t.Fatal("a path that is not kafka-consumer-groups must be an error, not a guess")
+	}
+}
+
 func TestKafkaGroupCandidates(t *testing.T) {
 	if got := dbConsumerGroupForZone(901); got != "db_rpc_consumer_group_z901" {
 		t.Fatalf("zone group=%q", got)
@@ -518,6 +647,56 @@ func TestKafkaGroupCandidates(t *testing.T) {
 
 // ── 缓存键 ───────────────────────────────────────────────────
 
+type saveOutboxFixture struct {
+	counts map[string]int64
+	failAt string
+	err    error
+	keys   []string
+}
+
+func (f *saveOutboxFixture) ZCard(_ context.Context, key string) *redis.IntCmd {
+	f.keys = append(f.keys, key)
+	if key == f.failAt {
+		return redis.NewIntResult(0, f.err)
+	}
+	return redis.NewIntResult(f.counts[key], nil)
+}
+
+func TestSaveOutboxPreflightRequiresAllBucketsDrained(t *testing.T) {
+	fixture := &saveOutboxFixture{}
+	if err := assertSaveOutboxDrained(context.Background(), fixture, 901); err != nil {
+		t.Fatal(err)
+	}
+	if len(fixture.keys) != 64 || fixture.keys[0] != "player:save_pending:901:0" || fixture.keys[63] != "player:save_pending:901:63" {
+		t.Fatalf("未覆盖与正式补投器相同的64桶: %v", fixture.keys)
+	}
+	for _, tc := range []struct {
+		name  string
+		count int64
+		err   error
+	}{
+		{"首桶有待提交意图", 1, nil},
+		{"末桶有旧世代意图", 3, nil},
+		{"Redis错误不能当空", 0, errors.New("Redis不可达")},
+		{"错型不能当空", 0, errors.New("WRONGTYPE")},
+		{"异常nil响应不能当空", 0, redis.Nil},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			key := "player:save_pending:901:63"
+			if tc.name == "首桶有待提交意图" {
+				key = "player:save_pending:901:0"
+			}
+			fixture := &saveOutboxFixture{counts: map[string]int64{key: tc.count}, failAt: key, err: tc.err}
+			if tc.err == nil {
+				fixture.failAt = ""
+			}
+			if err := assertSaveOutboxDrained(context.Background(), fixture, 901); err == nil || !strings.Contains(err.Error(), key) {
+				t.Fatalf("应拒绝并定位未排空/不可证明的桶 %s，实际 %v", key, err)
+			}
+		})
+	}
+}
+
 func TestPlayerCacheKeys_CoversParentSubAndDiscoveredTables(t *testing.T) {
 	keys := playerCacheKeys(42, []string{"player_database", "player_database_1", "player_centre_database"})
 	want := map[string]bool{
@@ -528,6 +707,9 @@ func TestPlayerCacheKeys_CoversParentSubAndDiscoveredTables(t *testing.T) {
 		"player_database:42":        true,
 		"player_database_1:42":      true,
 		"player_centre_database:42": true,
+		// 资产 SQL 提交证据(不是缓存,但同在 DB 0、同样不带 zone;字面量必须与 go/shared/assetop.SQLCommitKey 一致)。
+		"player:{42}:asset_sql_commit": true,
+		"player:{42}:save_barrier":     true,
 	}
 	if len(keys) != len(want) {
 		t.Fatalf("got %d keys %v, want %d", len(keys), keys, len(want))

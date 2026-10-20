@@ -37,11 +37,15 @@ namespace
 
 void PlayerSkillSystem::RegisterPlayer(entt::entity player)
 {
-	SanitizeSkillList(player);
-
-	auto &skillList = tlsEcs.actorRegistry.get_or_emplace<PlayerSkillListComp>(player);
+	auto* skillList = tlsEcs.actorRegistry.try_get<PlayerSkillListComp>(player);
+	if (skillList == nullptr)
+	{
+		LOG_ERROR << "[PlayerSkill] 缺少持久 PlayerSkillListComp，无法登记默认技能，entity="
+				  << entt::to_integral(player);
+		return;
+	}
 	std::unordered_set<uint32_t> seenSkillIds;
-	for (const auto &skill : skillList.skill_list())
+	for (const auto &skill : skillList->skill_list())
 	{
 		if (skill.skill_table_id() != 0)
 		{
@@ -53,7 +57,7 @@ void PlayerSkillSystem::RegisterPlayer(entt::entity player)
 	{
 		for (const auto skillId : tableClass.skill())
 		{
-			AddSkillIfMissing(skillList, seenSkillIds, skillId);
+			AddSkillIfMissing(*skillList, seenSkillIds, skillId);
 		}
 	}
 }

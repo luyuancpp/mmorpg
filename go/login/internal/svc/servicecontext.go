@@ -93,6 +93,8 @@ type ServiceContext struct {
 
 	// gateDrainStop 取消 startGateDrainMonitor 起的 gate 排空判定循环;nil = 没起。
 	gateDrainStop context.CancelFunc
+	// gateWatchStop 取消 startGateWatcher 起的 gate 目录 list-watch;nil = 没起。
+	gateWatchStop context.CancelFunc
 	// authCleanup 只拥有生产口令的专用 Redis 池与只读 SQL 连接。
 	authCleanup func()
 }
@@ -115,17 +117,24 @@ func NewServiceContext() *ServiceContext {
 	redisHost := config.AppConfig.Node.RedisClient.Host
 	redisPassword := config.AppConfig.Node.RedisClient.Password
 	redisDB := int(config.AppConfig.Node.RedisClient.DB)
+	if err := config.AppConfig.Node.RedisClient.ValidatePoolSize(); err != nil {
+		panic(fmt.Errorf("Node.RedisClient: %w", err))
+	}
 
 	redisClient := redis.NewClient(&redis.Options{
-		Addr:             redisHost,
-		Password:         redisPassword,
-		DB:               redisDB,
+		Addr:     redisHost,
+		Password: redisPassword,
+		DB:       redisDB,
+		// 共享 Redis 连接总账按它记账(0 = go-redis 缺省 10 × GOMAXPROCS),见 config.RedisConf.PoolSize。
+		PoolSize:         config.AppConfig.Node.RedisClient.PoolSize,
 		DisableIndentity: true, // suppress CLIENT SETINFO on Redis < 7.2
 	})
 
 	if err := redisClient.Ping(ctx).Err(); err != nil {
 		panic(fmt.Errorf("failed to connect Redis: %w", err))
 	}
+	// 生效值(缺省时是 go-redis 算出来的 10 × GOMAXPROCS):核对 ConfigMap 镜像的 PoolSize 是否真的被加载。
+	logx.Infof("Redis client %s DB=%d pool_size=%d", redisHost, redisDB, redisClient.Options().PoolSize)
 
 	kafkaClient, err := kafka.NewKeyOrderedKafkaProducer(config.AppConfig.Kafka)
 
@@ -287,10 +296,10 @@ func (s *ServiceContext) QueueCapacityProvider() loginqueue.CapacityProvider {
 
 // gateWatcherCapacityProvider adapts NodeWatcher to the loginqueue.CapacityProvider
 // interface. 这里只产出本 zone 的候选集(按 zone 过滤、去重、剔除排空中的 gate,见 candidatesFromNodes),
-// 不排序、不挑 gate。挑 gate 的规则只有一份,在 loginqueue 的 gatePicker:
-// 负载 = 在线人数(PlayerCount)+ 本拍已分给它的人数,取最少,同数取 NodeID 最小。
-// 快速通道经 PickAndSignGateToken → PickGate 在一份新候选上挑一次;dispatcher 每个非空拍取一次候选,
-// 由 newBatchPickFn 在这一份上逐条挑并记账。
+// 不排序、不挑 gate。挑 gate 有两条规则,都在 loginqueue:快速通道经 PickAndSignGateToken → PickGate
+// 在一份候选上随机抽两台、取人数少的那台;dispatcher 每个非空拍取一次候选,由 newBatchPickFn 在这一份上
+// 逐条挑并记账(负载 = PlayerCount + 本拍已分给它的人数,取最少,同数取 NodeID 最小)。
+// gate 节点读自 NodeWatcher 的进程内 list-watch 镜像,镜像不新鲜时回落直读 etcd(见 node.NodeWatcher.Nodes)。
 type gateWatcherCapacityProvider struct {
 	watcher *node.NodeWatcher
 	caps    map[string]uint32 // zone_id (decimal string) → capacity ceiling
@@ -303,7 +312,7 @@ type gateWatcherCapacityProvider struct {
 }
 
 func (g *gateWatcherCapacityProvider) CandidatesForZone(ctx context.Context, zoneID uint32) ([]loginqueue.GateCandidate, error) {
-	nodes, err := g.watcher.FetchAllNodes()
+	nodes, err := g.watcher.Nodes(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -452,6 +461,14 @@ func (s *ServiceContext) initLoginQueue() {
 	if !cfg.Enabled {
 		return
 	}
+	// (2026-10-15)QueueEntryTTL 必须为正、AdmitTTL 不小于 1ms,与下面 NewDispatcher 对 interval / lockTTL
+	// 的校验同级、起服即失败。
+	// 配置的 default 只在键缺省时生效,显式写 0s 不回落:QueueEntryTTL<=0 每次入队都会删掉整条队列,
+	// AdmitTTL<=0 会让 PopAdmit 每拍拒绝出队。后果细节见 loginqueue.ValidateTTLs。
+	// (2026-10-18 补注)QueueEntryTTL 收紧为 [1s, 24h](24h 即 loginqueue.queueTokenMaxAge,排队令牌的绝对上限),越界同样起服失败。
+	if err := loginqueue.ValidateTTLs(cfg.QueueEntryTTL, cfg.AdmitTTL); err != nil {
+		panic(fmt.Errorf("login queue: %w", err))
+	}
 	s.LoginQueue = loginqueue.New(
 		s.RedisClient,
 		cfg.QueueEntryTTL,
@@ -503,7 +520,21 @@ func (s *ServiceContext) Start() {
 	if s.QueueDispatcher != nil {
 		s.QueueDispatcher.Start()
 	}
+	s.startGateWatcher()
 	s.startGateDrainMonitor()
+}
+
+// startGateWatcher 起 gate 目录的 list-watch,让 AssignGate 与排队 dispatcher 读进程内镜像,
+// 不再每个请求打一次 etcd 前缀 Range(容量模型 A0-7)。镜像完成第一次全量同步之前,读路径照旧直读 etcd,
+// 所以这里不阻塞起服。排空监视不读镜像(见 startGateDrainMonitor)。
+func (s *ServiceContext) startGateWatcher() {
+	if s.GateWatcher == nil {
+		return
+	}
+	ctx, cancel := context.WithCancel(context.Background())
+	s.gateWatchStop = cancel
+	watcher := s.GateWatcher
+	safego.Go("login.gate_watcher", func() { watcher.Run(ctx) })
 }
 
 // startGateDrainMonitor 起 gate 排空判定循环(集群外入口 D87:标 draining → 等 drained → 删 Pod
@@ -512,6 +543,8 @@ func (s *ServiceContext) Start() {
 //
 // 快照取 GateWatcher 的原始节点,**不能**复用 CandidatesForZone / buildGateCandidates:那条链会跳过
 // 缺客户端地址的 gate、按地址去重、剔除 draining,而正在排空的 gate 恰恰是这里要看的。
+// 也不读 list-watch 镜像(NodeWatcher.Nodes),只用直读的 FetchAllNodes:写 drained 会让脚本删 Pod,
+// 这一步要 fail-closed,读不到 etcd 就本轮不判,不能拿可能过期的镜像判定(2026-10-18)。
 //
 // 每个 login 副本各跑一份,不抢 dispatcher 锁:一轮判定只按 draining 标记写 / 清 drained 标记,
 // 幂等,多副本并发写的是同一个值。GateWatcher 按本 login 的 zone 前缀建,只判本 zone 的 gate。
@@ -608,8 +641,12 @@ func (s *ServiceContext) SendBindSessionToGate(gateID string, gateInstanceID str
 }
 
 // KickSessionOnGate sends a KickPlayer command to the target Gate via Kafka.
-func (s *ServiceContext) KickSessionOnGate(gateID string, gateInstanceID string, sessionID uint32, playerID uint64) error {
-	msg, err := buildKickPlayerCommand(gateID, gateInstanceID, sessionID, playerID)
+//
+// playerID 是被踢会话所属玩家,loginGeneration 是发起踢线、已提交的那条登录链铸出的代次;
+// 两者都写进 KickPlayerEvent payload,由 gate 的 ClassifyKick 核对后才踢
+// (docs/design/scene-enter-chain-residuals.md §2.2 ③④)。调用方只能在会话记录提交之后调用。
+func (s *ServiceContext) KickSessionOnGate(gateID string, gateInstanceID string, sessionID uint32, playerID uint64, loginGeneration uint64) error {
+	msg, err := buildKickPlayerCommand(gateID, gateInstanceID, sessionID, playerID, loginGeneration)
 	if err != nil {
 		return err
 	}
@@ -658,6 +695,10 @@ func (s *ServiceContext) Stop() {
 	if s.gateDrainStop != nil {
 		s.gateDrainStop()
 		s.gateDrainStop = nil
+	}
+	if s.gateWatchStop != nil {
+		s.gateWatchStop()
+		s.gateWatchStop = nil
 	}
 	if s.TaskResultDispatcher != nil {
 		s.TaskResultDispatcher.Stop()

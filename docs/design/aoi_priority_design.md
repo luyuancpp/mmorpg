@@ -28,7 +28,7 @@ Priority is split into two layers:
 | `kAttacker` | 2 | Combat/threat system (TODO: integrate) |
 | `kQuestNpc` | 3 | Quest/mission system marks NPC (TODO: integrate) |
 | `kBoss`     | 4 | Boss / elite monster |
-| `kPinned`   | 5 | Buff/skill explicit pin (always max weight 255) |
+| `kPinned`   | 5 | 预留锁定标签，权重恒为 255；玩法尚未接入 |
 
 ### Built-in Policies
 
@@ -94,21 +94,9 @@ stores it in `AoiClientCapacityComp.clientDesiredCount` and clamps it to
 `InterestSystem::GetEffectiveCapacity(watcher)` returns
 `min(clamped_client, server_pressure_cap)`.
 
-## Pin / Unpin (Buff → AOI Bridge)
+## 锁定 / 解锁（尚未接入）
 
-```
-InterestSystem::PinAoiEntity(watcher, target)   // Adds at kPinned
-InterestSystem::UnpinAoiEntity(watcher, target)  // Downgrades to kNormal
-```
-
-**Example (assassination quest)**:
-1. Player uses eagle-eye skill → buff created.
-2. `OnBuffStart` calls `InterestSystem::PinAoiEntity(player, questTarget)`.
-3. Target appears on client even though it's far outside grid range.
-4. Quest complete / buff expires → `OnBuffRemove` calls `InterestSystem::UnpinAoiEntity(player, questTarget)`.
-5. Next `AoiSystem::Update` evicts the target if it's still out of range.
-
-Pinned entries are protected from spatial grid leave/enter eviction.
+未接入；接入时须同批设计目标离场的远端清理，不得全节点扫描。当前只保留预留的 `kPinned` 优先级语义与测试。
 
 ## Stealth Visibility
 
@@ -119,7 +107,7 @@ AOI enter checks:
 2. If target has `kBuffTypeStealth` buff → invisible **unless** observer has
    the target pinned (`AoiPriority::kPinned`) in its interest list.
 
-This means a "detect stealth" skill simply pins the stealthed target.
+侦测隐身的远端锁定尚未接入，不能将预留标签视为现有技能入口。
 
 ## Directionality
 

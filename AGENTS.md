@@ -16,6 +16,8 @@
 
 先确认任务范围、既有改动、约束和冲突；没读懂就不动手。
 
+**上线状态是兼容判断的前提**：负责人 2026-10-18 确认项目尚未上线。涉及混跑、降级、迁移、灰度或回档时，先读 [存盘围栏设计](docs/design/db-write-fencing-mysql.md) 文末「上线状态」，按其中限定的上线前范围判断阻塞；上线后以当时线上状态为准。
+
 ## 1. 项目基本信息
 
 - **类型**：MMORPG 服务器，多 zone、AOI、ECS 场景
@@ -45,7 +47,7 @@
 4. **tip 错误码不在 proto 里手写**：`generated/code/proto/tip/*.proto` 全部由导表器从 `data/tip/Tip.xlsx` 生成。
    加一个码 = 表里加一行（A 列码名，**全局唯一**，建议带域前缀；B 列中文文案；服务端内部故障在
    `fault` 列填 `1`，业务拒绝留空）→ 跑导表器 → 在服务的 `constants.go` 里写 `ErrX = uint32(table.XxxError_kXxxX)`。
-   「哪个码算故障」也由表生成（`go/shared/generated/tip/faults.go`），**不要在服务里再包一层 fault map**。
+   「哪个码算故障」也由表生成（`go/shared/generated/tip/faults.go`；Java 网关用同源的 `com.game.table.tip.TipFaults`），**不要在服务里再包一层 fault map**。
    新开一个域 = 表里加一行组头 `//xxx_error base=<起始号> width=1000`，并把新生成的
    `.pb.cc/.pb.h` 加进 `cpp/generated/table/CMakeLists.txt` 与 `table.vcxproj`。
    详见 [docs/design/tip-code-axis.md](docs/design/tip-code-axis.md)。
@@ -274,7 +276,7 @@
 - **节点摘除只在 `queueInLoop` 里做**，不在连接自己的回调栈上。
 - **关机先排空再 `quit()`**：`quit()` 经**两跳 `queueInLoop`** 排到队列末尾，靠 FIFO 让排队的 `forceCloseInLoop`（第一趟）与 `connectDestroyed`（第二趟）都跑完；少一趟就是 `TcpConnection.cc:71` 或 `Channel.cc:43` 的 assert。关闭完成标记和通知必须在最后一跳的 `quit()` 之后、完成锁内发出，解锁后不再访问 Node，保证析构等待与 fallback 不会提前结束。**不要用定时器**：Windows 的 loop 是 `poll → handleEvents → timerQueue_->loop() → doPendingFunctors`，定时器恰在 N+1 趟到期时 `quit_` 先置位、只剩一趟——它"通常"能跑完，不是"必然"。
 
-新写或修改任何持有连接、绑进回调的类时只问两句：**"我存的是 weak 吗？""我绑的是 weak 吗？"** 两个都是，这一类问题与你无关。参考实现：`RpcChannel`（只存 weak 连接，超时 tick 与消息回调只绑 `weak_ptr<RpcChannel>`）、`RpcClient::connect()`、`RpcSession`（只存 weak channel）、`RpcDoneCallback`（延后回复只持 weak channel）、`BattleClientEdge::DirectSession`。回归测试：`cpp/tests/rpc_controller_test/rpc_client_lifecycle_test.cpp`、`rpc_channel_loopback_test.cpp`。
+新写或修改任何持有连接、绑进回调的类时只问两句：**"我存的是 weak 吗？""我绑的是 weak 吗？"** 两个都是，这一类问题与你无关。参考实现：`RpcChannel`（只存 weak 连接，超时 tick 与消息回调只绑 `weak_ptr<RpcChannel>`）、`RpcClient::connect()`、`RpcSession`（只存 weak channel）、`RpcDoneCallback`（延后回复只持 weak channel）、`BattleClientEdge::DirectSession`、`muduo_grpc::Server`（gRPC 服务端，TcpServer 的等价物：连接表是 `TcpConnectionPtr` 的唯一强持有者，Acceptor / 连接 / 定时器 / `queueInLoop` 回调一律绑 `weak_ptr<Server>`，Acceptor 与 Server 只在排队任务里或 loop 外析构）、`muduo_grpc::ServerCall`（可拷贝的入站调用完成句柄，只持 `weak_ptr<Server>`，最后一个副本析构仍未完成时回失败）。回归测试：`cpp/tests/rpc_controller_test/rpc_client_lifecycle_test.cpp`、`rpc_channel_loopback_test.cpp`、`cpp/tests/muduo_grpc_test/server_test.cpp`(gRPC 服务端生命周期)。
 
 ## 12. 双版本服务器（C++/Go 版 + Java 版，强制）
 

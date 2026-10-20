@@ -29,12 +29,14 @@ import (
 //     落地若发生在提交之后,落地时的 Fetch 一定看得见这一条;
 //   - 在线有界兜底(scene 侧默认 30 分钟)。
 
-// NotifyResult 是一次提醒的结局。Settled 为真的三种可以清 notify_due_ms:送达、离线、等待跨 zone 落点
-// (后两者下一次落地一定在本次提交之后,落地 Fetch 看得见);其余留给补发循环。
+// NotifyResult 是一次提醒的结局。Settled 为真的四种可以清 notify_due_ms:送达、离线、等待跨 zone 落点、
+// 位置记录残缺(后三者交给落地拉取:下一次落地一定在本次提交之后,落地 Fetch 看得见);
+// 其余留给补发循环,按退避重试(评审 L6,见 Store.ResendNotify);其中 NotifyNodeMissing 悬满
+// notifyNodeMissingSettleAfter 之后由补发落定(notifyGivesUp)。
 type NotifyResult uint8
 
 const (
-	// NotifyError:读 location / 序列化 / 写 Kafka 失败,或提醒器未装配。
+	// NotifyError:读 location / 序列化 / 写 Kafka 失败,或提醒器未装配。留给补发。
 	NotifyError NotifyResult = iota
 	// NotifySent:SceneCommand 已写进 Kafka。
 	NotifySent
@@ -42,15 +44,28 @@ const (
 	NotifyOffline
 	// NotifyAwaitingPlacement:跨 zone 交接已放行、目标 zone 还没落点。视为成功:目标落地会无条件拉。
 	NotifyAwaitingPlacement
-	// NotifyNoNode:location 指向的节点在镜像里找不到 / 有歧义 / 镜像未同步,或 location 无节点也无 epoch。
+	// NotifyNoNode:不可恢复、视为落定(评审 L6):location 既无节点也无 epoch(位置记录残缺)。再怎么重试也送不到,
+	// 留着只会一直把积压告警顶亮;交给落地拉取与 scene 侧的在线有界兜底(§7.3)。
+	// 「镜像里查不到节点」不归这一类(评审 R3),见 NotifyNodeMissing。
 	NotifyNoNode
-	// NotifyEmptyUUID:节点注册里没有 uuid,不能填 target_instance_id(防僵尸契约,fail-closed 不发)。
+	// NotifyEmptyUUID:节点注册里没有 uuid,不能填 target_instance_id(防僵尸契约,fail-closed 不发)。留给补发。
 	NotifyEmptyUUID
+	// NotifyNodesUnsynced:scene 节点镜像还没完成首次全量同步(启动窗口里的正常现象)。留给补发。
+	NotifyNodesUnsynced
+	// NotifyNodeAmbiguous:同一 (zone, node) 身份在镜像里有多条注册(租约 / 部署分叉,scenenode 已打 ERROR),
+	// 旧租约过期后自愈。留给补发。
+	NotifyNodeAmbiguous
+	// NotifyNodeMissing:镜像已完成首次同步,却查不到 location 指向的节点(评审 R3)。**不能**断定节点已下线:
+	// scenenode.Watcher 在 watch 断开重连期间仍报 Synced()、镜像停在上一版;新节点注册到镜像收到 PUT 之间有延迟;
+	// etcd 租约抖动会先 DELETE 再重新注册,而节点上的玩家一直在线。所以留给补发、按退避重试;
+	// 悬满 notifyNodeMissingSettleAfter 仍查不到才由补发落定(那时只剩「location 停在一个真没了的节点上」)。
+	NotifyNodeMissing
 )
 
-// Settled 报告这次提醒是否可以清 notify_due_ms。
+// Settled 报告这次提醒是否可以立即清 notify_due_ms(入箱后那次提醒与补发都按它)。
+// NotifyNodeMissing 不在其中:它要悬满一段时间才落定,由补发按 notifyGivesUp 判。
 func (r NotifyResult) Settled() bool {
-	return r == NotifySent || r == NotifyOffline || r == NotifyAwaitingPlacement
+	return r == NotifySent || r == NotifyOffline || r == NotifyAwaitingPlacement || r == NotifyNoNode
 }
 
 // String 是 player_inbox_notify_total{result} 的标签。
@@ -66,6 +81,12 @@ func (r NotifyResult) String() string {
 		return "no_node"
 	case NotifyEmptyUUID:
 		return "empty_uuid"
+	case NotifyNodesUnsynced:
+		return "nodes_unsynced"
+	case NotifyNodeAmbiguous:
+		return "node_ambiguous"
+	case NotifyNodeMissing:
+		return "node_missing"
 	default:
 		return "error"
 	}
@@ -106,7 +127,8 @@ func (n *KafkaNotifier) Notify(ctx context.Context, playerID uint64, domain inbo
 	result, err := n.notify(ctx, playerID, domain)
 	metrics.ObserveNotify(result.String())
 	if err != nil {
-		logx.WithContext(ctx).Errorf("[player_inbox] Notify failed player=%d domain=%d result=%s: %v", playerID, domain, result, err)
+		logx.WithContext(ctx).Errorf("[player_inbox] Notify not delivered player=%d domain=%d result=%s settled=%v: %v",
+			playerID, domain, result, result.Settled(), err)
 	}
 	return result
 }
@@ -131,14 +153,20 @@ func (n *KafkaNotifier) notify(ctx context.Context, playerID uint64, domain inbo
 		if loc.GetOwnerEpoch() != 0 {
 			return NotifyAwaitingPlacement, nil
 		}
-		return NotifyNoNode, errors.New("location has neither node_id nor owner_epoch")
+		// 位置记录残缺是数据面异常,打 ERROR;但重试也修不好它,落定交给落地拉取。
+		return NotifyNoNode, errors.New("location has neither node_id nor owner_epoch; settled, left to the landing fetch")
 	}
 	if !n.Nodes.Synced() {
-		return NotifyNoNode, nil // 镜像还没完成首次全量同步:启动窗口里的正常现象,留给补发
+		return NotifyNodesUnsynced, nil // 镜像还没完成首次全量同步:启动窗口里的正常现象,留给补发
 	}
 	entry, err := n.Nodes.EntryOf(loc.GetZoneId(), loc.GetNodeId())
+	if errors.Is(err, scenenode.ErrNodeAmbiguous) {
+		return NotifyNodeAmbiguous, nil // EntryOf 已打 ERROR;旧租约过期后自愈,留给补发
+	}
 	if err != nil {
-		return NotifyNoNode, nil
+		// 镜像已同步却查不到:可能是 watch 重连期间的旧镜像、注册延迟或租约抖动(玩家仍在线),不当成「节点已下线」
+		// 直接落定;留给补发按退避重试,悬太久才落定(评审 R3,notifyGivesUp)。
+		return NotifyNodeMissing, nil
 	}
 	if entry.NodeUuid == "" {
 		return NotifyEmptyUUID, errors.New("scene node registration has empty uuid; refusing to send without target_instance_id")

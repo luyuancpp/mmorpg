@@ -12,6 +12,7 @@ import (
 
 	db_proto "proto/db"
 
+	"github.com/redis/go-redis/v9"
 	"github.com/zeromicro/go-zero/core/logx"
 )
 
@@ -81,6 +82,12 @@ func deferReason(cause error) string {
 		return kind.Reason()
 	}
 	switch {
+	case errors.Is(cause, errPlayerRowVanished):
+		return metrics.DeferFenceRace
+	case errors.Is(cause, errFenceEvidenceConflict):
+		return metrics.DeferFenceEvidenceConflict
+	case errors.Is(cause, errFenceRedis):
+		return metrics.DeferRedisUnavailable
 	case errors.Is(cause, proto_sql.ErrStoreCoolingDown):
 		return metrics.DeferStoreCooldown
 	case errors.Is(cause, errPlacementStoreUnavailable):
@@ -89,12 +96,17 @@ func deferReason(cause error) string {
 		return metrics.DeferOrderingLockBusy
 	case errors.Is(cause, errOrderingLeaseLost):
 		return metrics.DeferLeaseLost
+	case errors.Is(cause, errRouteNotReady):
+		// 先于 errPlacementMoved:复核时的不可信两个哨兵都包着(按「路由变了」重试),原因记在副本不可信上。
+		return metrics.DeferRouteNotReady
 	case errors.Is(cause, errPlacementFrozen):
 		return metrics.DeferPlacementFrozen
 	case errors.Is(cause, errPlacementMoved):
 		return metrics.DeferPlacementMoved
 	case errors.Is(cause, errTaskDeferred):
 		return metrics.DeferExpandLockBusy
+	case errors.Is(cause, errSchemaTooNew):
+		return metrics.DeferSchemaTooNew
 	}
 	// SQL 调用点的网络错误都已打过标记,剩下的网络错误 / 超时只可能来自 Redis(守卫、选库、复核、缓存)。
 	var ne net.Error
@@ -149,31 +161,83 @@ func logStoreDeferral(dbTask *db_proto.DBTask, reason string, cause error) {
 		reason, dbTask.GetTaskId(), dbTask.GetOp(), suppressed, cause)
 }
 
-// sampleRetryQueues 每拍采样一次三个重试列表的长度,返回 ready 的长度;读失败时返回 -1,调用方回落到固定上限。
-func (c *KeyOrderedKafkaConsumer) sampleRetryQueues() int64 {
-	ready, err := c.redisClient.LLen(c.ctx, c.retryQueueKey).Result()
-	if err != nil {
-		ready = -1
-	} else {
-		metrics.SetRetryQueueLength(metrics.RetryQueueReady, ready)
+// retryQueueSample 是一拍开始时的重试列表长度(sampleRetryQueues),给本拍的认领额度用。
+type retryQueueSample struct {
+	// shared 是共享收件箱 kafka:retry:queue:{topic} 的长度;读失败为 -1(调用方回落到固定上限)。
+	shared int64
+	// partitioned 与 c.retryPartitionKeys 下标对齐(下标 = 原始分区号),是各 p{N} 的长度;单个键读失败为 -1。
+	// 没有 p 键(直接拼结构体的单测)时为空。
+	partitioned []int64
+}
+
+// sampleRetryQueues 每拍采样一次 ready / partitioned / processing / dead 的长度并更新 db_retry_queue_length:
+// 一条 Pipelined 发出全部 LLEN(共享收件箱、本实例 processing、死信、每个 p 键),逐条判结果 —— 单个键报错(例如
+// WRONGTYPE)只让那一项记 -1、不设对应指标,不拖垮整次采样。partitioned 指标是 p* 之和,任一 p 键读失败则本拍不设。
+func (c *KeyOrderedKafkaConsumer) sampleRetryQueues() retryQueueSample {
+	var sharedCmd, processingCmd, deadCmd *redis.IntCmd
+	partitionCmds := make([]*redis.IntCmd, len(c.retryPartitionKeys))
+	// 不看 Pipelined 的返回值:它只是第一条失败命令的错误,逐条命令的结果才是判据。
+	_, _ = c.redisClient.Pipelined(c.ctx, func(p redis.Pipeliner) error {
+		sharedCmd = p.LLen(c.ctx, c.retryQueueKey)
+		processingCmd = p.LLen(c.ctx, c.retryProcessingKey)
+		deadCmd = p.LLen(c.ctx, c.retryDeadQueueKey)
+		for i, key := range c.retryPartitionKeys {
+			partitionCmds[i] = p.LLen(c.ctx, key)
+		}
+		return nil
+	})
+
+	s := retryQueueSample{shared: sampledLength(sharedCmd)}
+	if s.shared >= 0 {
+		metrics.SetRetryQueueLength(metrics.RetryQueueReady, s.shared)
 	}
-	if n, err := c.redisClient.LLen(c.ctx, c.retryProcessingKey).Result(); err == nil {
+	if n := sampledLength(processingCmd); n >= 0 {
 		metrics.SetRetryQueueLength(metrics.RetryQueueProcessing, n)
 	}
-	if n, err := c.redisClient.LLen(c.ctx, c.retryDeadQueueKey).Result(); err == nil {
+	if n := sampledLength(deadCmd); n >= 0 {
 		metrics.SetRetryQueueLength(metrics.RetryQueueDead, n)
 	}
-	return ready
+	if len(partitionCmds) > 0 {
+		s.partitioned = make([]int64, len(partitionCmds))
+	}
+	var partitionedTotal int64
+	partitionedOK := true
+	for i, cmd := range partitionCmds {
+		s.partitioned[i] = sampledLength(cmd)
+		if s.partitioned[i] < 0 {
+			partitionedOK = false
+			continue
+		}
+		partitionedTotal += s.partitioned[i]
+	}
+	if partitionedOK {
+		metrics.SetRetryQueueLength(metrics.RetryQueuePartitioned, partitionedTotal)
+	}
+	return s
+}
+
+// sampledLength 是一条 LLEN 的结果;命令没发出去(nil)或出错时为 -1。
+func sampledLength(cmd *redis.IntCmd) int64 {
+	if cmd == nil {
+		return -1
+	}
+	n, err := cmd.Result()
+	if err != nil {
+		return -1
+	}
+	return n
 }
 
 // abandonClaimedReadRetry 丢弃一条用完重试次数的读任务:读不改数据,等待它的 login 早已超时,
 // 进死信只会让死信告警失去判别力。收据从本实例的 processing 列表摘掉;摘不掉就留着,之后照常回收。
-func (c *KeyOrderedKafkaConsumer) abandonClaimedReadRetry(receipt []byte, task *db_proto.DBTask) {
+// 返回是否摘掉(调用方据此计 db_retry_route_total{action=dead})。
+func (c *KeyOrderedKafkaConsumer) abandonClaimedReadRetry(receipt []byte, task *db_proto.DBTask) bool {
 	if err := ackRetryReceipt(c.ctx, c.redisClient, c.retryProcessingKey, receipt); err != nil {
 		logx.Errorf("drop exhausted read retry failed; receipt remains recoverable: taskID=%s err=%v", task.TaskId, err)
-		return
+		return false
 	}
 	metrics.CountReadAbandoned(metrics.ReadAbandonedBudgetExhausted)
 	logx.Infof("read retry dropped after exhausting its budget (reads are never dead-lettered): taskID=%s msgType=%s retryCount=%d",
 		task.TaskId, task.MsgType, task.RetryCount)
+	return true
 }

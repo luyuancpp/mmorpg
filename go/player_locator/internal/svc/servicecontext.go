@@ -25,15 +25,22 @@ type ServiceContext struct {
 func NewServiceContext(c config.Config) *ServiceContext {
 	table.LoadTables(c.TableDir, false)
 
+	if c.RedisClient.PoolSize < 0 {
+		panic(fmt.Errorf("RedisClient.PoolSize=%d must be >= 0 (0 = go-redis default 10 x GOMAXPROCS)", c.RedisClient.PoolSize))
+	}
 	rdb := redis.NewClient(&redis.Options{
 		Addr:     c.RedisClient.Host,
 		Password: c.RedisClient.Password,
 		DB:       c.RedisClient.DB,
+		// 共享 Redis 连接总账按它记账(0 = go-redis 缺省 10 × GOMAXPROCS),见 config.RedisConf.PoolSize。
+		PoolSize: c.RedisClient.PoolSize,
 	})
 
 	if err := rdb.Ping(context.Background()).Err(); err != nil {
 		panic(fmt.Errorf("failed to connect Redis: %w", err))
 	}
+	// 生效值(缺省时是 go-redis 算出来的 10 × GOMAXPROCS):核对 ConfigMap 镜像的 PoolSize 是否真的被加载。
+	logx.Infof("Redis client %s DB=%d pool_size=%d", c.RedisClient.Host, c.RedisClient.DB, rdb.Options().PoolSize)
 
 	w := &kafkago.Writer{
 		Addr: kafkago.TCP(c.Kafka.Brokers...),

@@ -55,7 +55,7 @@ func (s *PlayerInboxServer) FetchItems(ctx context.Context, in *inboxpb.FetchPla
 	defer cancel()
 	resp, err := s.store.Fetch(ctx, in)
 	if err != nil {
-		logx.WithContext(ctx).Errorf("[player_inbox] FetchItems failed player=%d domain=%d epoch=%d scene_node=%d: %v",
+		logx.WithContext(ctx).Errorf("[player_inbox] FetchItems failed player=%d domain=%d epoch=%d scene_node_id=%d: %v",
 			in.GetPlayerId(), in.GetDomain(), in.GetOwnerEpoch(), in.GetSceneNodeId(), err)
 		return &inboxpb.FetchPlayerInboxResponse{
 			ErrorMessage: storeUnavailable(),
@@ -71,8 +71,8 @@ func (s *PlayerInboxServer) AckItems(ctx context.Context, in *inboxpb.AckPlayerI
 	defer cancel()
 	resp, err := s.store.Ack(ctx, in)
 	if err != nil {
-		logx.WithContext(ctx).Errorf("[player_inbox] AckItems failed player=%d domain=%d epoch=%d decisions=%d: %v",
-			in.GetPlayerId(), in.GetDomain(), in.GetOwnerEpoch(), len(in.GetDecisions()), err)
+		logx.WithContext(ctx).Errorf("[player_inbox] AckItems failed player=%d domain=%d epoch=%d decisions=%d scene_node_id=%d: %v",
+			in.GetPlayerId(), in.GetDomain(), in.GetOwnerEpoch(), len(in.GetDecisions()), in.GetSceneNodeId(), err)
 		return &inboxpb.AckPlayerInboxResponse{
 			ErrorMessage: storeUnavailable(),
 			PlayerId:     in.GetPlayerId(), Domain: in.GetDomain(), CorrelationId: in.GetCorrelationId(),

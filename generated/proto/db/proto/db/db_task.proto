@@ -18,6 +18,13 @@ message DBTask {
   // 生产者(scene)持有的玩家归属 epoch。db 落库前与 player:{key}:owner_epoch 比对,小于当前值即被废黜节点的迟到写,
   // 拒绝并计数 stale_owner_write_rejected;0 表示旧版生产者未填(兼容窗口内放行)。见 scene-owner-reentry-barrier.md §6.3。
   uint64 owner_epoch = 8;
+  uint64 save_seq = 9; // 同一玩家同一 owner_epoch 内严格递增；与 SQL 行版本一起校验
+  // 读任务的回复目标：发起读的 login 进程实例标识（进程启动时生成的 UUID，见 go/login/internal/dispatcher）。
+  // go/db 把读回执的到达通知 PUBLISH 到 task:result:notify:<reply_instance>；频道名与合法性校验的唯一来源是
+  // go/shared/taskresult（1~64 字节，只含 A-Z a-z 0-9 '-'）。为空（旧版 login、写任务、工具）或不合法时，
+  // go/db 回落全服旧频道 task:result:notify。新版 login 两个频道都订、发布方每条只发一次，所以新旧版本按任意顺序
+  // 滚动升级都能送达，任一侧都可单独回滚。写任务不填。字段号依据 godb 交接 §5 第 13 项：9 给 save_seq，10 给本字段。
+  string reply_instance = 10;
 }
 
 // TaskResult: DB task execution result struct

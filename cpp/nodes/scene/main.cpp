@@ -6,8 +6,6 @@
 #include "node/system/etcd/etcd_transport.h"
 #include "infra/agones/agones_gameserver_lifecycle.h"
 #include "handler/rpc/scene_handler.h"
-#include "rpc_replies/scene_manager_response_handler.h"
-#include "rpc_replies/player_inbox_response_handler.h"
 #include "handler/grpc/scene_node_service.h"
 #include "core/config/config.h"
 #include "world/world.h"
@@ -21,7 +19,6 @@
 #include "services/battle/data/battle_table_fingerprint.h"
 #include "proto/contracts/kafka/scene_command.pb.h"
 #include "handler/event/scene_kafka_command_router.h"
-#include "handler/local_event/scene_local_events.h"
 #include "id_segment_bootstrap.h"
 #include "modules/id_segment/guid_segment_registry.h"
 
@@ -108,7 +105,6 @@ int main(int argc, char *argv[])
                   &handler);
 
         node::entry::detail::ApplyPostConstructionHooks<SceneNodeHooks>(node);
-        scene_local_events::RegisterAll();
 
         // 断线释放标记(A1′)的"本节点身份当前有效"探针(cross-zone-scene-travel.md §12.6.4 M3):
         // EtcdService::IsIdentityConfirmedFresh —— lease 已授予、不在重注册中(分配键 CAS 尚未裁定)、
@@ -120,29 +116,12 @@ int main(int argc, char *argv[])
         PlayerLifecycleSystem::SetNodeIdentityProbe([&node]()
             { return node.GetServiceDiscoveryManager().etcdService.IsIdentityConfirmedFresh(); });
 
-        node.RegisterGrpcService(&context->grpcService);
+        // context 先于 node 构造、晚于 node 析构:方法表闭包捕获 grpcService 的 this,服务必须活过 Node。
+        node.RegisterGrpcService(context->grpcService);
 
         node::entry::detail::InstallSignalHandlers(loop);
 
-        // SceneManager 的 gRPC 应答处理器必须由这里装。
-        //
-        // 节点间 muduo RPC0 的「按 message_id 的全局回包表」(InitReply / gRpcResponseDispatcher /
-        // 生成的 rpc_replies/register_response_handler.cpp)已整体退场:RPC0 的回包改在调用点按次的 lambda 里处理
-        // (docs/design/muduo-rpc-channel.md §9.2),Node::RegisterHandlers() 也不再调用 InitReply。
-        // gRPC 应答适配从来不在那条链上,本段照旧:那份生成文件的筛选谓词
-        // (IsSceneNodeReceivedProtocolResponseHandler)只收 cc_generic_services(muduo TCP RPC)的服务,
-        // scene_manager 在 tools/proto_generator/protogen/etc/proto_gen.yaml 里是 rpc.type: grpc,
-        // **生成器从来不会替它装 InitSceneManagerReply**。历史上手写加进那个生成文件,
-        // 下一次 regen 必然抹掉(2026-04-16 的 f1b110bcc 就是这么把它弄丢的,
-        // 自那以后 AsyncSceneManagerEnterScene/CreateSceneHandler 一直为空,
-        // 生成客户端的 if(handler) 静默跳过每一条应答)。
-        // 形状与 ConfigureGuidSegmentClients 里的 InitDataServiceReply() 一致:
-        // 手写引导代码自己装自己的 gRPC 应答处理器。
-        // 只是给两个全局 std::function 赋值,没有前置依赖,放在发出任何请求之前即可。
-        InitSceneManagerReply();
-        // 玩家持久收件箱:同理手写装 FetchItems / AckItems 的应答与失败处理器(设计 §7.11),
-        // 再做一次注册表自检并打印生效配置(GameConfig 已在 Node 构造时加载)。
-        InitPlayerInboxReply();
+        // 玩家持久收件箱:注册表自检并打印生效配置(GameConfig 已在 Node 构造时加载)。
         PlayerInboxSystem::Initialize();
 
         tlsRedisSystem.Initialize(&loop);
@@ -203,8 +182,8 @@ int main(int argc, char *argv[])
         };
         node.SetBeforeShutdown(exitAllPlayers);
 
-		// 每次轮询都重新扫描在线实体。gRPC / Kafka 入口已经由 Node 封住,但停机
-		// 瞬间已经排入 EventLoop 的请求仍可能晚一拍创建玩家;不能只信首次快照。
+		// 每次轮询都重新扫描在线实体。Kafka 入口已经由 Node 封住;gRPC 在 OnGrpcServerDrained 之前仍在排空,
+		// 已收完的调用照常派发,停机瞬间已经排入 EventLoop 的请求也会执行,都可能晚一拍创建玩家;不能只信首次快照。
 		node.SetShutdownDrainComplete([&context](Node &n)
 									  {
 			auto view = tlsEcs.actorRegistry.view<Player>();
@@ -288,11 +267,21 @@ int main(int argc, char *argv[])
 			}
 			else if (!drained)
 			{
-				// gRPC 完全退场前 predicate 可能短暂为 true,后续在途任务又
-				// 追加玩家。重置后只有最终稳定状态才会保留 complete 日志。
+				// gRPC 排空完成(OnGrpcServerDrained)之前 predicate 可能短暂为 true,之后派发的
+				// 调用又追加玩家。重置后只有最终稳定状态才会保留 complete 日志。
 				context->shutdownDrainLogged = false;
 			}
 			return drained; });
+
+        // 拆除前钩子(Node::SetBeforeTeardown):producer 最后一次有界 flush 刚做完、回执已进 DBTask 账本,
+        // 日志 / ECS / Redis 都还活着 —— 停掉 DBTask 回执 Pump 并收账。停机时 Kafka 慢或不可用,停在回执闸门上
+        // (kAwaitAck / kRetainExhausted)的玩家就在这一刻打进那行
+        // "[DbTaskDispatch] shutting down with N player(s) whose MySQL copy may lag Redis ... ids=[...]"
+        // (合服 / 回档以 MySQL 为准时追查旧档的唯一证据)。以前它只在 Node 析构之后的 tlsRedisSystem.Shutdown() 里打,
+        // 那时 logSystem 已停、gNodeAtomic 已置空,Linux 上静默丢失;Pump 也一直跑到那时,会在半拆的节点上推下线收尾。
+        // 两种停机路径都经过这里;下面 Node 作用域之后的 tlsRedisSystem.Shutdown() 仍保留为幂等兜底。
+        node.SetBeforeTeardown([](Node &)
+                               { tlsRedisSystem.StopDbTaskDispatch(); });
 
         // 身份冲突(etcd 租约过期 / node_id 被别人抢走)和普通 SIGTERM 不是一回事:
         // 这台节点马上就不再是 node_id 的合法持有者,但玩家的 gate 会话还连着。
@@ -395,13 +384,13 @@ int main(int argc, char *argv[])
 
         loop.loop();
 		} // 异常 quit 时先让 Node 析构兜底完成业务 drain,Redis 此时仍保持可用。
-		scene_local_events::UnregisterAll();
 
 		// Node 已析构:身份探针捕获的引用从此悬空,立即清掉(之后不再跑 loop,A1′ 也不会再被调用)。
 		PlayerLifecycleSystem::SetNodeIdentityProbe({});
 
 		// Node 正常 finalizer 已先 free Hiredis;这里是幂等兜底,随后才销毁
-		// 仍由 SceneRuntimeContext 持有的 MessageAsyncClient。
+		// 仍由 SceneRuntimeContext 持有的 MessageAsyncClient。DBTask 收账正常已在拆除前钩子里做过,
+		// tlsRedisSystem.Shutdown() 里的那次是空操作(此刻打的日志在 Linux 上已写不进文件)。
 		tlsRedis.Shutdown();
 		tlsRedisSystem.Shutdown();
 

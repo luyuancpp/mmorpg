@@ -28,7 +28,7 @@ const (
 // Message for syncing entity base attribute deltas
 type ActorBaseAttributesS2C struct {
 	state            protoimpl.MessageState          `protogen:"open.v1"`
-	EntityId         uint64                          `protobuf:"varint,1,opt,name=entity_id,json=entityId,proto3" json:"entity_id,omitempty"` // Entity unique ID
+	EntityId         uint64                          `protobuf:"varint,1,opt,name=entity_id,json=entityId,proto3" json:"entity_id,omitempty"` // 玩家为 player GUID，与 ActorCreateS2C.entity 的 net id 不同；NPC 暂为 0。
 	Transform        *component.Transform            `protobuf:"bytes,2,opt,name=transform,proto3" json:"transform,omitempty"`                // Transform info
 	Velocity         *component.Velocity             `protobuf:"bytes,3,opt,name=velocity,proto3" json:"velocity,omitempty"`
 	CombatStateFlags *component.CombatStateFlagsComp `protobuf:"bytes,4,opt,name=combat_state_flags,json=combatStateFlags,proto3" json:"combat_state_flags,omitempty"` // Combat state

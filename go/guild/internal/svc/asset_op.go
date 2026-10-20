@@ -52,9 +52,9 @@ const (
 	// assetOpIDWarmTimeout 启动时同步领第一段 op_id 的预算,与 guildIDWarmTimeout 同值。
 	assetOpIDWarmTimeout = 5 * time.Second
 
-	// persistedLedgerReadTimeout 离线读已落盘账本(data_service.GetPlayerAssetOpLedger)的单次上限
+	// persistedLedgerReadTimeout 读已落盘账本(data_service.GetPlayerAssetOpLedger)的单次上限
 	// (docs/design/guild-phase2/07-rollback-fail-closed.md §7.8.3)。调用方传入的是投递预算的剩余部分,
-	// 读账本只是"可能省一次卡死"的优化,不值得吃掉其中的大头;data_service 一次 Redis GET 远小于它。
+	// 单次读不值得吃掉其中的大头:读不到只是本轮不终结、下轮再读;data_service 一次 Redis 读远小于它。
 	persistedLedgerReadTimeout = 300 * time.Millisecond
 )
 
@@ -116,6 +116,7 @@ func LoopConfigFrom(c config.AssetOpConf, retryBase time.Duration) assetop.LoopC
 		AbandonBatch:          c.AbandonBatch,
 		AbandonInterval:       msToDuration(c.AbandonIntervalMs),
 		AuditInterval:         msToDuration(c.AuditIntervalMs),
+		RequireSQLCommit:      c.RequireSQLCommit,
 	}
 }
 
@@ -306,16 +307,19 @@ func (p *AssetPipeline) AttachMaintenanceLeader(rdb *redis.Client, id string) {
 	})
 }
 
-// AttachPersistedLedger 给重投循环接上离线读账本(docs/design/guild-phase2/07-rollback-fail-closed.md §7.8.3):
+// AttachPersistedLedger 给重投循环接上已落盘账本(docs/design/guild-phase2/07-rollback-fail-closed.md §7.8.3):
 // 投递连续失败 LedgerReadMinAttempts 次之后,Loop 经 data_service.GetPlayerAssetOpLedger 读玩家已落盘的
-// 账本,读到"已应用 / 已拒绝"就提前终结,不必等玩家再上线。
+// 账本,读到"已应用 / 已拒绝"就提前终结,不必等玩家再上线;自动放弃也靠它确认 scene 从未见过这条 seq。
 //
 // 必须紧跟 NewAssetPipeline 调用:在 Start 之前,也在把 Loop 交给同步投递路径(EconomyDeps.Loop,
 // 其 ProcessOne 同样会读账本)与 gRPC 开始服务之前。Loop.Ledger 是无锁字段,有 goroutine 读它之后
 // 再写就是数据竞争。本方法只能拦住"Start / Stop 之后"这一种误用(打 ERROR、不生效);nil 接收者安全。
 //
-// client 为 nil(没配 DataServiceRpc)时保持 Ledger = nil 并打一条 INFO:离线读账本是优化,
-// 不是正确性路径 —— 没有它,长期离线玩家的行照常退避重投,玩家上线后由在线投递终结(不变量 I7)。
+// 它在不在是不是正确性路径,取决于 AssetOp.RequireSQLCommit(docs/design/db-write-fencing-mysql.md §6.6):
+//   - 关闭(缺省,HEAD 口径):离线读账本是优化。client 为 nil(没配 DataServiceRpc)时保持 Ledger = nil 并打 INFO:
+//     长期离线玩家的行照常退避重投,玩家上线后由在线投递终结(不变量 I7),自动放弃不运行。
+//   - 打开:在线 / 离线终结都只认 SQL 提交证据,没有它所有终结都停在 AwaitDurable。client 为 nil 时这里只打 ERROR,
+//     由装配方随后调 Loop.CheckWiring 拒启(guild.go)。
 func (p *AssetPipeline) AttachPersistedLedger(client dspb.DataServiceClient) {
 	if p == nil {
 		return
@@ -326,13 +330,19 @@ func (p *AssetPipeline) AttachPersistedLedger(client dspb.DataServiceClient) {
 		logx.Error("[guild] AttachPersistedLedger called after asset channel Start / Stop; ignored: Loop.Ledger can only be set before Start")
 		return
 	}
+	requireSQL := p.Loop.RequireSQLCommit()
 	if client == nil {
+		if requireSQL {
+			logx.Error("[guild] DataServiceRpc not configured while AssetOp.RequireSQLCommit=true: SQL commit evidence cannot be read; startup must be refused (Loop.CheckWiring)")
+			return
+		}
 		logx.Info("[guild] DataServiceRpc not configured: asset redelivery loop will not read persisted ledger (Loop.Ledger=nil), " +
-			"rows for long-offline players continue redelivery with backoff and finalize after players reconnect")
+			"rows for long-offline players continue redelivery with backoff and finalize after players reconnect; automatic abandon will not run")
 		return
 	}
 	p.Loop.Ledger = &assetop.DataServiceLedger{Client: client, Timeout: persistedLedgerReadTimeout}
-	logx.Infof("[guild] Asset redelivery loop wired to offline ledger reads: data_service.GetPlayerAssetOpLedger (per-call limit %v)", persistedLedgerReadTimeout)
+	logx.Infof("[guild] Asset redelivery loop wired to persisted ledger reads: data_service.GetPlayerAssetOpLedger (per-call limit %v) require_sql_commit=%t",
+		persistedLedgerReadTimeout, requireSQL)
 }
 
 // Start 起 scene 节点镜像与重投循环两个后台 goroutine,以及(装配了的话)维护选主与落地唤醒订阅。

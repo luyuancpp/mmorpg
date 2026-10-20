@@ -75,7 +75,7 @@ func (f *fakePlayerLocatorClient) Reconnect(context.Context, *plpb.ReconnectRequ
 // docs/design/player_login_flow.md §2 Disconnect: "30s reconnect window").
 func TestSetSessionDisconnecting_PassesPlayerIdAndSessionId(t *testing.T) {
 	mock := &fakePlayerLocatorClient{}
-	if err := SetSessionDisconnecting(context.Background(), mock, 12345, 678); err != nil {
+	if err := SetSessionDisconnecting(context.Background(), mock, 12345, 678, "gate-I2"); err != nil {
 		t.Fatalf("expected nil error, got %v", err)
 	}
 	if mock.setDisconnectCalls != 1 {
@@ -87,6 +87,10 @@ func TestSetSessionDisconnecting_PassesPlayerIdAndSessionId(t *testing.T) {
 	}
 	if got.SessionId != 678 {
 		t.Errorf("SessionId mismatch: got %d, want 678", got.SessionId)
+	}
+	// 实例号必须随请求到 player_locator,它据此忽略旧 gate 实例迟到的同号断线(scene-enter-chain-residuals.md §6)。
+	if got.GateInstanceId != "gate-I2" {
+		t.Errorf("GateInstanceId mismatch: got %q, want gate-I2", got.GateInstanceId)
 	}
 	if got.LeaseTtlSeconds != 30 {
 		t.Errorf("LeaseTtlSeconds: got %d, want 30 (matches disconnect-window doc)", got.LeaseTtlSeconds)
@@ -102,7 +106,7 @@ func TestSetSessionDisconnecting_WrapsRpcError(t *testing.T) {
 	mock := &fakePlayerLocatorClient{
 		setDisconnectErr: errors.New("locator unavailable"),
 	}
-	err := SetSessionDisconnecting(context.Background(), mock, 1, 2)
+	err := SetSessionDisconnecting(context.Background(), mock, 1, 2, "")
 	if err == nil {
 		t.Fatal("expected error, got nil")
 	}
@@ -126,7 +130,7 @@ func TestDeleteSession_DelayedOldLeaveGameDoesNotDeleteReplacement(t *testing.T)
 	}
 
 	// session=100 的 LeaveGame 到达时，权威会话已经被 session=200 替换。
-	if err := DeleteSession(context.Background(), mock, 12345, 100); err != nil {
+	if err := DeleteSession(context.Background(), mock, 12345, 100, ""); err != nil {
 		t.Fatalf("expected stale LeaveGame to be a successful no-op, got %v", err)
 	}
 	if mock.getSessionCalls != 1 {
@@ -149,7 +153,7 @@ func TestDeleteSession_PassesObservedSessionVersion(t *testing.T) {
 		},
 	}
 
-	if err := DeleteSession(context.Background(), mock, 12345, 200); err != nil {
+	if err := DeleteSession(context.Background(), mock, 12345, 200, "gate-I2"); err != nil {
 		t.Fatalf("expected nil error, got %v", err)
 	}
 	if mock.markOfflineCalls != 1 {
@@ -158,6 +162,51 @@ func TestDeleteSession_PassesObservedSessionVersion(t *testing.T) {
 	got := mock.lastMarkOffline
 	if got.PlayerId != 12345 || got.ExpectedSessionId != 200 || got.ExpectedSessionVersion != 7 {
 		t.Fatalf("unexpected MarkOffline request: %+v", got)
+	}
+	// 实例号原样随请求到 player_locator,由它判定(login 本地不比实例号)。
+	if got.ExpectedGateInstanceId != "gate-I2" {
+		t.Fatalf("ExpectedGateInstanceId = %q, want gate-I2", got.ExpectedGateInstanceId)
+	}
+}
+
+// TestDeleteSession_LeavesGateInstanceCheckToLocator:会话号相同时,无论实例号与记录相同、不同(gate 以同一
+// node_id 重启,旧实例 I1 上的同号连接迟到的 LeaveGame)还是为空,login 都发 MarkOffline,并原样带上发起登出的
+// 实例号(不是记录里的)。同号跨实例由 player_locator 在同一份字节上判定、打 Info 并计
+// stale_gate_instance_total{op="mark_offline"};login 本地若先短路,这一面的观测就丢了
+// (docs/design/scene-enter-chain-residuals.md §6.2)。
+func TestDeleteSession_LeavesGateInstanceCheckToLocator(t *testing.T) {
+	record := &plpb.GetSessionResponse{
+		Found: true,
+		Session: &plpb.PlayerSession{
+			PlayerId:       12345,
+			SessionId:      200,
+			SessionVersion: 7,
+			GateInstanceId: "gate-I2",
+		},
+	}
+
+	cases := map[string]string{
+		"cross instance (stale I1)":  "gate-I1",
+		"legacy request without one": "",
+		"same instance":              "gate-I2",
+	}
+	for name, requestInstance := range cases {
+		t.Run(name, func(t *testing.T) {
+			mock := &fakePlayerLocatorClient{getSessionResponse: record}
+			if err := DeleteSession(context.Background(), mock, 12345, 200, requestInstance); err != nil {
+				t.Fatalf("expected nil error, got %v", err)
+			}
+			if mock.markOfflineCalls != 1 {
+				t.Fatalf("expected exactly one MarkOffline call (player_locator decides), got %d", mock.markOfflineCalls)
+			}
+			got := mock.lastMarkOffline
+			if got.ExpectedSessionId != 200 || got.ExpectedSessionVersion != 7 {
+				t.Fatalf("unexpected MarkOffline request: %+v", got)
+			}
+			if got.ExpectedGateInstanceId != requestInstance {
+				t.Fatalf("ExpectedGateInstanceId = %q, want the reporting instance %q (not the record's)", got.ExpectedGateInstanceId, requestInstance)
+			}
+		})
 	}
 }
 

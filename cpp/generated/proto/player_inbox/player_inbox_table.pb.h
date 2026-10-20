@@ -96,6 +96,7 @@ enum PlayerInboxAuditAction : int {
   PLAYER_INBOX_AUDIT_UNSPECIFIED = 0,
   PLAYER_INBOX_AUDIT_SANCTION = 1,
   PLAYER_INBOX_AUDIT_VOID = 2,
+  PLAYER_INBOX_AUDIT_FORCE_VOID = 3,
   PlayerInboxAuditAction_INT_MIN_SENTINEL_DO_NOT_USE_ =
       ::std::numeric_limits<::int32_t>::min(),
   PlayerInboxAuditAction_INT_MAX_SENTINEL_DO_NOT_USE_ =
@@ -106,11 +107,11 @@ extern const uint32_t PlayerInboxAuditAction_internal_data_[];
 inline constexpr PlayerInboxAuditAction PlayerInboxAuditAction_MIN =
     static_cast<PlayerInboxAuditAction>(0);
 inline constexpr PlayerInboxAuditAction PlayerInboxAuditAction_MAX =
-    static_cast<PlayerInboxAuditAction>(2);
+    static_cast<PlayerInboxAuditAction>(3);
 [[nodiscard]] inline bool PlayerInboxAuditAction_IsValid(int value) {
-  return 0 <= value && value <= 2;
+  return 0 <= value && value <= 3;
 }
-inline constexpr int PlayerInboxAuditAction_ARRAYSIZE = 2 + 1;
+inline constexpr int PlayerInboxAuditAction_ARRAYSIZE = 3 + 1;
 [[nodiscard]] const ::google::protobuf::EnumDescriptor* PROTOBUF_NONNULL
 PlayerInboxAuditAction_descriptor();
 [[nodiscard]] inline auto ProtobufInternalGetEnumDescriptor(PlayerInboxAuditAction) {
@@ -125,7 +126,7 @@ template <typename T>
 }
 template <>
 [[nodiscard]] inline const ::std::string& PlayerInboxAuditAction_Name(PlayerInboxAuditAction value) {
-  return ::google::protobuf::internal::NameOfDenseEnum<PlayerInboxAuditAction_descriptor, 0, 2>(
+  return ::google::protobuf::internal::NameOfDenseEnum<PlayerInboxAuditAction_descriptor, 0, 3>(
       static_cast<int>(value));
 }
 [[nodiscard]] inline bool PlayerInboxAuditAction_Parse(
@@ -1074,12 +1075,18 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED player_inbox_audit final : public :
     kOperatorFieldNumber = 6,
     kPeerAddrFieldNumber = 7,
     kReasonFieldNumber = 8,
+    kContentSha256FieldNumber = 13,
+    kPayloadFieldNumber = 14,
     kPlayerIdFieldNumber = 2,
     kShardFieldNumber = 1,
     kDomainFieldNumber = 3,
     kSeqFieldNumber = 4,
-    kCreatedMsFieldNumber = 9,
     kActionFieldNumber = 5,
+    kMsgTypeFieldNumber = 10,
+    kCreatedMsFieldNumber = 9,
+    kRequestIdFieldNumber = 11,
+    kIssuedAtMsFieldNumber = 12,
+    kVoidReasonFieldNumber = 15,
   };
   // string operator = 6;
   void clear_operator_() ;
@@ -1126,6 +1133,36 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED player_inbox_audit final : public :
   ::std::string* PROTOBUF_NONNULL _internal_mutable_reason();
 
   public:
+  // bytes content_sha256 = 13;
+  void clear_content_sha256() ;
+  [[nodiscard]] const ::std::string& content_sha256() const;
+  template <typename Arg_ = const ::std::string&, typename... Args_>
+  void set_content_sha256(Arg_&& arg, Args_... args);
+  ::std::string* PROTOBUF_NONNULL mutable_content_sha256();
+  [[nodiscard]] ::std::string* PROTOBUF_NULLABLE release_content_sha256();
+  void set_allocated_content_sha256(::std::string* PROTOBUF_NULLABLE value);
+
+  private:
+  const ::std::string& _internal_content_sha256() const;
+  PROTOBUF_ALWAYS_INLINE void _internal_set_content_sha256(const ::std::string& value);
+  ::std::string* PROTOBUF_NONNULL _internal_mutable_content_sha256();
+
+  public:
+  // bytes payload = 14;
+  void clear_payload() ;
+  [[nodiscard]] const ::std::string& payload() const;
+  template <typename Arg_ = const ::std::string&, typename... Args_>
+  void set_payload(Arg_&& arg, Args_... args);
+  ::std::string* PROTOBUF_NONNULL mutable_payload();
+  [[nodiscard]] ::std::string* PROTOBUF_NULLABLE release_payload();
+  void set_allocated_payload(::std::string* PROTOBUF_NULLABLE value);
+
+  private:
+  const ::std::string& _internal_payload() const;
+  PROTOBUF_ALWAYS_INLINE void _internal_set_payload(const ::std::string& value);
+  ::std::string* PROTOBUF_NONNULL _internal_mutable_payload();
+
+  public:
   // uint64 player_id = 2;
   void clear_player_id() ;
   [[nodiscard]] ::uint64_t player_id() const;
@@ -1166,16 +1203,6 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED player_inbox_audit final : public :
   void _internal_set_seq(::uint64_t value);
 
   public:
-  // uint64 created_ms = 9;
-  void clear_created_ms() ;
-  [[nodiscard]] ::uint64_t created_ms() const;
-  void set_created_ms(::uint64_t value);
-
-  private:
-  ::uint64_t _internal_created_ms() const;
-  void _internal_set_created_ms(::uint64_t value);
-
-  public:
   // uint32 action = 5;
   void clear_action() ;
   [[nodiscard]] ::uint32_t action() const;
@@ -1186,11 +1213,61 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED player_inbox_audit final : public :
   void _internal_set_action(::uint32_t value);
 
   public:
+  // uint32 msg_type = 10;
+  void clear_msg_type() ;
+  [[nodiscard]] ::uint32_t msg_type() const;
+  void set_msg_type(::uint32_t value);
+
+  private:
+  ::uint32_t _internal_msg_type() const;
+  void _internal_set_msg_type(::uint32_t value);
+
+  public:
+  // uint64 created_ms = 9;
+  void clear_created_ms() ;
+  [[nodiscard]] ::uint64_t created_ms() const;
+  void set_created_ms(::uint64_t value);
+
+  private:
+  ::uint64_t _internal_created_ms() const;
+  void _internal_set_created_ms(::uint64_t value);
+
+  public:
+  // uint64 request_id = 11;
+  void clear_request_id() ;
+  [[nodiscard]] ::uint64_t request_id() const;
+  void set_request_id(::uint64_t value);
+
+  private:
+  ::uint64_t _internal_request_id() const;
+  void _internal_set_request_id(::uint64_t value);
+
+  public:
+  // uint64 issued_at_ms = 12;
+  void clear_issued_at_ms() ;
+  [[nodiscard]] ::uint64_t issued_at_ms() const;
+  void set_issued_at_ms(::uint64_t value);
+
+  private:
+  ::uint64_t _internal_issued_at_ms() const;
+  void _internal_set_issued_at_ms(::uint64_t value);
+
+  public:
+  // uint32 void_reason = 15;
+  void clear_void_reason() ;
+  [[nodiscard]] ::uint32_t void_reason() const;
+  void set_void_reason(::uint32_t value);
+
+  private:
+  ::uint32_t _internal_void_reason() const;
+  void _internal_set_void_reason(::uint32_t value);
+
+  public:
   // @@protoc_insertion_point(class_scope:player_inbox.player_inbox_audit)
  private:
   class _Internal;
   using ParseTableT_ =
-      ::google::protobuf::internal::TcParseTable<4, 9,
+      ::google::protobuf::internal::TcParseTable<4, 15,
                           0, 71,
                           2>;
   static constexpr ParseTableT_ InternalGenerateParseTable_(
@@ -1222,12 +1299,18 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED player_inbox_audit final : public :
     ::google::protobuf::internal::ArenaStringPtr operator__;
     ::google::protobuf::internal::ArenaStringPtr peer_addr_;
     ::google::protobuf::internal::ArenaStringPtr reason_;
+    ::google::protobuf::internal::ArenaStringPtr content_sha256_;
+    ::google::protobuf::internal::ArenaStringPtr payload_;
     ::uint64_t player_id_;
     ::uint32_t shard_;
     ::uint32_t domain_;
     ::uint64_t seq_;
-    ::uint64_t created_ms_;
     ::uint32_t action_;
+    ::uint32_t msg_type_;
+    ::uint64_t created_ms_;
+    ::uint64_t request_id_;
+    ::uint64_t issued_at_ms_;
+    ::uint32_t void_reason_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
   union { Impl_ _impl_; };
@@ -2190,7 +2273,7 @@ inline void player_inbox_item_row::set_allocated_note(::std::string* PROTOBUF_NU
 inline void player_inbox_audit::clear_shard() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.shard_ = 0u;
-  ClearHasBit(_impl_._has_bits_[0], 0x00000010U);
+  ClearHasBit(_impl_._has_bits_[0], 0x00000040U);
 }
 inline ::uint32_t player_inbox_audit::shard() const {
   // @@protoc_insertion_point(field_get:player_inbox.player_inbox_audit.shard)
@@ -2198,7 +2281,7 @@ inline ::uint32_t player_inbox_audit::shard() const {
 }
 inline void player_inbox_audit::set_shard(::uint32_t value) {
   _internal_set_shard(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00000010U);
+  SetHasBit(_impl_._has_bits_[0], 0x00000040U);
   // @@protoc_insertion_point(field_set:player_inbox.player_inbox_audit.shard)
 }
 inline ::uint32_t player_inbox_audit::_internal_shard() const {
@@ -2214,7 +2297,7 @@ inline void player_inbox_audit::_internal_set_shard(::uint32_t value) {
 inline void player_inbox_audit::clear_player_id() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.player_id_ = ::uint64_t{0u};
-  ClearHasBit(_impl_._has_bits_[0], 0x00000008U);
+  ClearHasBit(_impl_._has_bits_[0], 0x00000020U);
 }
 inline ::uint64_t player_inbox_audit::player_id() const {
   // @@protoc_insertion_point(field_get:player_inbox.player_inbox_audit.player_id)
@@ -2222,7 +2305,7 @@ inline ::uint64_t player_inbox_audit::player_id() const {
 }
 inline void player_inbox_audit::set_player_id(::uint64_t value) {
   _internal_set_player_id(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00000008U);
+  SetHasBit(_impl_._has_bits_[0], 0x00000020U);
   // @@protoc_insertion_point(field_set:player_inbox.player_inbox_audit.player_id)
 }
 inline ::uint64_t player_inbox_audit::_internal_player_id() const {
@@ -2238,7 +2321,7 @@ inline void player_inbox_audit::_internal_set_player_id(::uint64_t value) {
 inline void player_inbox_audit::clear_domain() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.domain_ = 0u;
-  ClearHasBit(_impl_._has_bits_[0], 0x00000020U);
+  ClearHasBit(_impl_._has_bits_[0], 0x00000080U);
 }
 inline ::uint32_t player_inbox_audit::domain() const {
   // @@protoc_insertion_point(field_get:player_inbox.player_inbox_audit.domain)
@@ -2246,7 +2329,7 @@ inline ::uint32_t player_inbox_audit::domain() const {
 }
 inline void player_inbox_audit::set_domain(::uint32_t value) {
   _internal_set_domain(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00000020U);
+  SetHasBit(_impl_._has_bits_[0], 0x00000080U);
   // @@protoc_insertion_point(field_set:player_inbox.player_inbox_audit.domain)
 }
 inline ::uint32_t player_inbox_audit::_internal_domain() const {
@@ -2262,7 +2345,7 @@ inline void player_inbox_audit::_internal_set_domain(::uint32_t value) {
 inline void player_inbox_audit::clear_seq() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.seq_ = ::uint64_t{0u};
-  ClearHasBit(_impl_._has_bits_[0], 0x00000040U);
+  ClearHasBit(_impl_._has_bits_[0], 0x00000100U);
 }
 inline ::uint64_t player_inbox_audit::seq() const {
   // @@protoc_insertion_point(field_get:player_inbox.player_inbox_audit.seq)
@@ -2270,7 +2353,7 @@ inline ::uint64_t player_inbox_audit::seq() const {
 }
 inline void player_inbox_audit::set_seq(::uint64_t value) {
   _internal_set_seq(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00000040U);
+  SetHasBit(_impl_._has_bits_[0], 0x00000100U);
   // @@protoc_insertion_point(field_set:player_inbox.player_inbox_audit.seq)
 }
 inline ::uint64_t player_inbox_audit::_internal_seq() const {
@@ -2286,7 +2369,7 @@ inline void player_inbox_audit::_internal_set_seq(::uint64_t value) {
 inline void player_inbox_audit::clear_action() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.action_ = 0u;
-  ClearHasBit(_impl_._has_bits_[0], 0x00000100U);
+  ClearHasBit(_impl_._has_bits_[0], 0x00000200U);
 }
 inline ::uint32_t player_inbox_audit::action() const {
   // @@protoc_insertion_point(field_get:player_inbox.player_inbox_audit.action)
@@ -2294,7 +2377,7 @@ inline ::uint32_t player_inbox_audit::action() const {
 }
 inline void player_inbox_audit::set_action(::uint32_t value) {
   _internal_set_action(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00000100U);
+  SetHasBit(_impl_._has_bits_[0], 0x00000200U);
   // @@protoc_insertion_point(field_set:player_inbox.player_inbox_audit.action)
 }
 inline ::uint32_t player_inbox_audit::_internal_action() const {
@@ -2502,7 +2585,7 @@ inline void player_inbox_audit::set_allocated_reason(::std::string* PROTOBUF_NUL
 inline void player_inbox_audit::clear_created_ms() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.created_ms_ = ::uint64_t{0u};
-  ClearHasBit(_impl_._has_bits_[0], 0x00000080U);
+  ClearHasBit(_impl_._has_bits_[0], 0x00000800U);
 }
 inline ::uint64_t player_inbox_audit::created_ms() const {
   // @@protoc_insertion_point(field_get:player_inbox.player_inbox_audit.created_ms)
@@ -2510,7 +2593,7 @@ inline ::uint64_t player_inbox_audit::created_ms() const {
 }
 inline void player_inbox_audit::set_created_ms(::uint64_t value) {
   _internal_set_created_ms(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00000080U);
+  SetHasBit(_impl_._has_bits_[0], 0x00000800U);
   // @@protoc_insertion_point(field_set:player_inbox.player_inbox_audit.created_ms)
 }
 inline ::uint64_t player_inbox_audit::_internal_created_ms() const {
@@ -2520,6 +2603,230 @@ inline ::uint64_t player_inbox_audit::_internal_created_ms() const {
 inline void player_inbox_audit::_internal_set_created_ms(::uint64_t value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.created_ms_ = value;
+}
+
+// uint32 msg_type = 10;
+inline void player_inbox_audit::clear_msg_type() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.msg_type_ = 0u;
+  ClearHasBit(_impl_._has_bits_[0], 0x00000400U);
+}
+inline ::uint32_t player_inbox_audit::msg_type() const {
+  // @@protoc_insertion_point(field_get:player_inbox.player_inbox_audit.msg_type)
+  return _internal_msg_type();
+}
+inline void player_inbox_audit::set_msg_type(::uint32_t value) {
+  _internal_set_msg_type(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000400U);
+  // @@protoc_insertion_point(field_set:player_inbox.player_inbox_audit.msg_type)
+}
+inline ::uint32_t player_inbox_audit::_internal_msg_type() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.msg_type_;
+}
+inline void player_inbox_audit::_internal_set_msg_type(::uint32_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.msg_type_ = value;
+}
+
+// uint64 request_id = 11;
+inline void player_inbox_audit::clear_request_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.request_id_ = ::uint64_t{0u};
+  ClearHasBit(_impl_._has_bits_[0], 0x00001000U);
+}
+inline ::uint64_t player_inbox_audit::request_id() const {
+  // @@protoc_insertion_point(field_get:player_inbox.player_inbox_audit.request_id)
+  return _internal_request_id();
+}
+inline void player_inbox_audit::set_request_id(::uint64_t value) {
+  _internal_set_request_id(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00001000U);
+  // @@protoc_insertion_point(field_set:player_inbox.player_inbox_audit.request_id)
+}
+inline ::uint64_t player_inbox_audit::_internal_request_id() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.request_id_;
+}
+inline void player_inbox_audit::_internal_set_request_id(::uint64_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.request_id_ = value;
+}
+
+// uint64 issued_at_ms = 12;
+inline void player_inbox_audit::clear_issued_at_ms() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.issued_at_ms_ = ::uint64_t{0u};
+  ClearHasBit(_impl_._has_bits_[0], 0x00002000U);
+}
+inline ::uint64_t player_inbox_audit::issued_at_ms() const {
+  // @@protoc_insertion_point(field_get:player_inbox.player_inbox_audit.issued_at_ms)
+  return _internal_issued_at_ms();
+}
+inline void player_inbox_audit::set_issued_at_ms(::uint64_t value) {
+  _internal_set_issued_at_ms(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00002000U);
+  // @@protoc_insertion_point(field_set:player_inbox.player_inbox_audit.issued_at_ms)
+}
+inline ::uint64_t player_inbox_audit::_internal_issued_at_ms() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.issued_at_ms_;
+}
+inline void player_inbox_audit::_internal_set_issued_at_ms(::uint64_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.issued_at_ms_ = value;
+}
+
+// bytes content_sha256 = 13;
+inline void player_inbox_audit::clear_content_sha256() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.content_sha256_.ClearToEmpty();
+  ClearHasBit(_impl_._has_bits_[0], 0x00000008U);
+}
+inline const ::std::string& player_inbox_audit::content_sha256() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:player_inbox.player_inbox_audit.content_sha256)
+  return _internal_content_sha256();
+}
+template <typename Arg_, typename... Args_>
+PROTOBUF_ALWAYS_INLINE void player_inbox_audit::set_content_sha256(Arg_&& arg, Args_... args) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  SetHasBit(_impl_._has_bits_[0], 0x00000008U);
+  _impl_.content_sha256_.SetBytes(static_cast<Arg_&&>(arg), args..., GetArena());
+  // @@protoc_insertion_point(field_set:player_inbox.player_inbox_audit.content_sha256)
+}
+inline ::std::string* PROTOBUF_NONNULL player_inbox_audit::mutable_content_sha256()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  SetHasBit(_impl_._has_bits_[0], 0x00000008U);
+  ::std::string* _s = _internal_mutable_content_sha256();
+  // @@protoc_insertion_point(field_mutable:player_inbox.player_inbox_audit.content_sha256)
+  return _s;
+}
+inline const ::std::string& player_inbox_audit::_internal_content_sha256() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.content_sha256_.Get();
+}
+inline void player_inbox_audit::_internal_set_content_sha256(const ::std::string& value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.content_sha256_.Set(value, GetArena());
+}
+inline ::std::string* PROTOBUF_NONNULL player_inbox_audit::_internal_mutable_content_sha256() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  return _impl_.content_sha256_.Mutable( GetArena());
+}
+inline ::std::string* PROTOBUF_NULLABLE player_inbox_audit::release_content_sha256() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:player_inbox.player_inbox_audit.content_sha256)
+  if (!CheckHasBit(_impl_._has_bits_[0], 0x00000008U)) {
+    return nullptr;
+  }
+  ClearHasBit(_impl_._has_bits_[0], 0x00000008U);
+  auto* released = _impl_.content_sha256_.Release();
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString()) {
+    _impl_.content_sha256_.Set("", GetArena());
+  }
+  return released;
+}
+inline void player_inbox_audit::set_allocated_content_sha256(::std::string* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (value != nullptr) {
+    SetHasBit(_impl_._has_bits_[0], 0x00000008U);
+  } else {
+    ClearHasBit(_impl_._has_bits_[0], 0x00000008U);
+  }
+  _impl_.content_sha256_.SetAllocated(value, GetArena());
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.content_sha256_.IsDefault()) {
+    _impl_.content_sha256_.Set("", GetArena());
+  }
+  // @@protoc_insertion_point(field_set_allocated:player_inbox.player_inbox_audit.content_sha256)
+}
+
+// bytes payload = 14;
+inline void player_inbox_audit::clear_payload() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.payload_.ClearToEmpty();
+  ClearHasBit(_impl_._has_bits_[0], 0x00000010U);
+}
+inline const ::std::string& player_inbox_audit::payload() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:player_inbox.player_inbox_audit.payload)
+  return _internal_payload();
+}
+template <typename Arg_, typename... Args_>
+PROTOBUF_ALWAYS_INLINE void player_inbox_audit::set_payload(Arg_&& arg, Args_... args) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  SetHasBit(_impl_._has_bits_[0], 0x00000010U);
+  _impl_.payload_.SetBytes(static_cast<Arg_&&>(arg), args..., GetArena());
+  // @@protoc_insertion_point(field_set:player_inbox.player_inbox_audit.payload)
+}
+inline ::std::string* PROTOBUF_NONNULL player_inbox_audit::mutable_payload()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  SetHasBit(_impl_._has_bits_[0], 0x00000010U);
+  ::std::string* _s = _internal_mutable_payload();
+  // @@protoc_insertion_point(field_mutable:player_inbox.player_inbox_audit.payload)
+  return _s;
+}
+inline const ::std::string& player_inbox_audit::_internal_payload() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.payload_.Get();
+}
+inline void player_inbox_audit::_internal_set_payload(const ::std::string& value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.payload_.Set(value, GetArena());
+}
+inline ::std::string* PROTOBUF_NONNULL player_inbox_audit::_internal_mutable_payload() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  return _impl_.payload_.Mutable( GetArena());
+}
+inline ::std::string* PROTOBUF_NULLABLE player_inbox_audit::release_payload() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:player_inbox.player_inbox_audit.payload)
+  if (!CheckHasBit(_impl_._has_bits_[0], 0x00000010U)) {
+    return nullptr;
+  }
+  ClearHasBit(_impl_._has_bits_[0], 0x00000010U);
+  auto* released = _impl_.payload_.Release();
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString()) {
+    _impl_.payload_.Set("", GetArena());
+  }
+  return released;
+}
+inline void player_inbox_audit::set_allocated_payload(::std::string* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (value != nullptr) {
+    SetHasBit(_impl_._has_bits_[0], 0x00000010U);
+  } else {
+    ClearHasBit(_impl_._has_bits_[0], 0x00000010U);
+  }
+  _impl_.payload_.SetAllocated(value, GetArena());
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.payload_.IsDefault()) {
+    _impl_.payload_.Set("", GetArena());
+  }
+  // @@protoc_insertion_point(field_set_allocated:player_inbox.player_inbox_audit.payload)
+}
+
+// uint32 void_reason = 15;
+inline void player_inbox_audit::clear_void_reason() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.void_reason_ = 0u;
+  ClearHasBit(_impl_._has_bits_[0], 0x00004000U);
+}
+inline ::uint32_t player_inbox_audit::void_reason() const {
+  // @@protoc_insertion_point(field_get:player_inbox.player_inbox_audit.void_reason)
+  return _internal_void_reason();
+}
+inline void player_inbox_audit::set_void_reason(::uint32_t value) {
+  _internal_set_void_reason(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00004000U);
+  // @@protoc_insertion_point(field_set:player_inbox.player_inbox_audit.void_reason)
+}
+inline ::uint32_t player_inbox_audit::_internal_void_reason() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.void_reason_;
+}
+inline void player_inbox_audit::_internal_set_void_reason(::uint32_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.void_reason_ = value;
 }
 
 #ifdef __GNUC__

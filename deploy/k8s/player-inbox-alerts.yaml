@@ -16,12 +16,22 @@
 #   - label 只用有限枚举,**不用 player_id**(AGENTS §9);要定位玩家看同一时刻的 ERROR 日志(player_id 只进日志)。
 #
 # label 取值契约(规则依赖,go/player_inbox/internal/metrics 改名要同步改这里):
+#   - 本文件里凡是以 player_inbox_ 开头的词(表达式、注释、描述都算)都必须是已注册的指标名:metrics 包的
+#     TestAlertRulesReferenceRegisteredMetrics 读本文件逐个核对,指标改名 / 删除而这里漏改就红。注释里提表名、文件名时不要带这个前缀。
 #   - player_inbox_ack_total{domain,result}:result 取 Ack 结果的小写名(finalized / finalized_settled_unknown / already_same /
 #     conflict / unknown_seq / not_delivered / skip_not_requested / mismatch),整请求被围栏拒绝时是围栏结局名
 #     (go/player_inbox/internal/metrics/metrics.go 的 Help)。下面的正则带 (?i) 且允许前缀,写成枚举全名也能匹配。
-#   - 一辈子可能只发生几次的结局(围栏倒退、epoch 超前、CursorAhead、对账不一致、Ack 异常结果),对应的 CounterVec 序列
-#     必须在进程启动时按封闭集合预置为 0(照 data_service 的 PrimeRollbackGuildCheck):
+#   - player_inbox_notify_total{result}:落定(清掉 notify_due)的是 sent / offline / awaiting_placement / no_node
+#     (no_node 只剩「位置记录既无节点也无 epoch」,交给落地拉取);按退避重试的是 error / empty_uuid / nodes_unsynced /
+#     node_ambiguous / node_missing(node_missing = 节点镜像已同步却查不到位置记录里的节点,多为 etcd 租约抖动,悬满 1 小时由补发落定)。
+#   - player_inbox_fetch_total{domain,fence,path}:path = fast(不加锁的快照读,落地拉取多数走这条)/ locked(锁路径,只有它投递条目)。
+#     player_inbox_void_total{domain,reason,path}:path = direct / directive / already / force(强制终结,VoidItem mode=FORCE_MISMATCH)。
+#   - player_inbox_reconcile_rounds_total{result}:ok / error / timeout(领导权丢失、关停取消的轮次不计);
+#     player_inbox_reconcile_ledger_read_total{result}:found / absent / error / invalid。
+#   - 一辈子可能只发生几次的结局,对应的 CounterVec 序列最好在进程启动时按封闭集合预置为 0(照 data_service 的 PrimeRollbackGuildCheck):
 #     increase(...) 对「从无到 1」只有一个样本,恰好漏掉第一次(owner-epoch-alerts.yaml 同一个坑)。无 label 的 Counter 天然从 0 起,不受影响。
+#     服务端只预置了 notify_total、reconcile_ledger_read_total、reconcile_rounds_total 三组;enqueue_total / fetch_total / ack_total /
+#     void_total 没有预置,引用它们的规则另带一支「X unless X offset <窗口>」,把窗口内新出现的序列也算上。
 #
 # 连接池(设计 §9.4「单独出池指标」):go/player_inbox 用 client_golang 的 DBStatsCollector 导出 go_sql_*{db_name="player_inbox"},
 # 不是 go/shared/sqlpoolstats 的 mmorpg_sql_pool_*,所以不在 mysql-connection-alerts.yaml 的 sql-pool 组覆盖范围内,
@@ -29,15 +39,54 @@
 #
 # 只进 info 看板、**不告警**的(设计 §9.4):player_inbox_open_items、player_inbox_oldest_open_age_seconds。
 # 流失玩家的条目永远不会被消费,按它们告警会一直亮着,淹没真正的「卡住」信号(已投递未确认)。
+# 同理,已投递未确认的 warning 口径只算最后一次投递在最近 24 小时内的行(评审 M4);更早的进 player_inbox_delivered_unacked_stale,
+# 只出 info 级的 PlayerInboxDeliveredUnackedStale。
 #
 # scene 侧没有 Prometheus 端点,收件箱信号只在结构化日志里(`[PlayerInbox] metric=...`,设计 §9.4)。
-# Loki ruler 目前没有挂载规则目录,下列 LogQL 先作为值班固定查询,ruler 接线之后转为规则:
-#   warning : count_over_time({app=~"scene.*"} |= "[PlayerInbox]" |= "metric=inbox_unknown_type" [10m]) > 0
+# Loki ruler 目前没有挂载规则目录,下列 LogQL 先作为值班固定查询,ruler 接线之后转为规则。
+# 流选择器:C++ 业务日志只落 logs/cpp_nodes/*.log、不经 stdout,由每个 C++ Pod 的 Alloy sidecar 读文件送 Loki
+# (k8s_deploy.ps1 Get-CppLogSidecarConfigAlloy)。它打的流标签只有 env / namespace / pod / zone / service / job / lang / level,
+# **没有 app**:写成 {app=~"scene.*"} 的选择器匹配不到任何流,查询恒为空。scene 一律写 {job="cpp_nodes", service="scene"}
+# (scene-world / scene-instance 两个池同一个二进制,文件名前缀都是 scene);逐 zone 看再加 zone="<zone 名>",或像下面
+# consumer_disabled 那条一样 sum by (zone)。本机观测台(deploy/observability/alloy/config.alloy)同样有 job / service,同一写法可用;
+# 它的 zone 只在多 zone 启动(实例名带 zN_ 前缀)时才有,单 zone 本机加 zone 过滤会把日志全部滤掉。
+# 契约测试 k8s_deploy_contract.tests.ps1「LogQL 契约」逐条核对这里用到的标签都在 sidecar 配置里。
+#   warning : count_over_time({job="cpp_nodes", service="scene"} |= "[PlayerInbox]" |= "metric=inbox_unknown_type" [10m]) > 0
 #             (新类型先于 scene 支持被加进 EnqueueTypes:scene 停在队头不记 REJECTED,§8 #13;回滚 EnqueueTypes 或先升 scene)
-#   warning : count_over_time({app=~"scene.*"} |= "[PlayerInbox]" |= "metric=inbox_halted" [10m]) > 0
+#   warning : count_over_time({job="cpp_nodes", service="scene"} |= "[PlayerInbox]" |= "metric=inbox_halted" [10m]) > 0
 #             (MISMATCH / NOT_DELIVERED / SKIP_NOT_REQUESTED 后该玩家该域停用,§7.7;与下面的 PlayerInboxAckAnomaly 对照)
-#   critical: count_over_time({app=~"scene.*"} |= "[PlayerInbox]" |= "metric=inbox_replay_mismatch" [10m]) > 0(IB-9 回放核对失败)
-#   info    : sum by (reason) (count_over_time({app=~"scene.*"} |= "metric=inbox_deferred" | regexp "reason=(?P<reason>\\w+)" [10m]))
+#   critical: count_over_time({job="cpp_nodes", service="scene"} |= "[PlayerInbox]" |= "metric=inbox_replay_mismatch" [10m]) > 0(IB-9 回放核对失败)
+#   warning : count_over_time({job="cpp_nodes", service="scene"} |= "[PlayerInbox]" |= "metric=inbox_ack_anomaly" [10m]) > 0
+#             (scene 收到异常的 Ack 回包,停用该玩家该域:结果不是 FINALIZED / ALREADY_SAME、seq 对不上,或服务端回
+#              InvalidParameter(scene 发出的确认列表不合法,只会来自 scene 缺陷)。结果类异常同时会触发收件箱侧的
+#              PlayerInboxAckAnomaly;InvalidParameter 只有这一条看得到。同一事件还会打一条 metric=inbox_halted reason=ack_anomaly)
+# 下面三条是不会自愈的停用(评审 L13、H1)。问题还在时 scene 按节拍补打同一行,两行间隔钉在 [10m] 窗口之内
+# (scene 收件箱规则头文件里 kSceneLogAlertWindowMs 的 static_assert),所以告警会一直亮着,不会亮 10 分钟就自己灭。
+# 改这里的 [10m] 要同步改 scene 的那组常量。
+#   warning : count_over_time({job="cpp_nodes", service="scene"} |= "[PlayerInbox]" |= "metric=inbox_ledger_invalid" [10m]) > 0
+#             (某玩家已落盘账本结构校验不过,这名玩家的收件箱停用,处置一直不执行,表面上与离线无异。
+#              source=loader 每次加载打一条 ERROR;玩家在线期间前置闸首次延后打一条 WARN(source=apply_gate),之后每 8 次退避补打一条。
+#              player_id 在日志里。收件箱侧的 PlayerInboxReconcileLedgerInvalid 是同一类问题,但收件箱比 scene 多查一条 request_id 为 0:
+#              只有这一项不合法时,scene 不判损坏、这一条不出现,问题表现为同 seq 再投递时的 inbox_replay_mismatch。
+#              按 runbook「账本损坏」处理,**不要清空账本重建**:那会让已执行过的处置再执行一次)
+#   warning : count_over_time({job="cpp_nodes", service="scene"} |= "[PlayerInbox]" |= "metric=inbox_registry_broken" [10m]) > 0
+#             (scene 处置注册表自检失败,本节点整体停用消费,节点上所有在线玩家的处置都不执行。
+#              启动时打一条 ERROR,之后每 5 分钟补打一条,detail= 写明哪一项不过。这是构建 / 发版缺陷:回滚或修好 scene 再发)
+#   warning : sum by (zone) (count_over_time({job="cpp_nodes", service="scene"} |= "[PlayerInbox]" |= "metric=inbox_consumer_disabled" [10m])) > 0
+#             (本节点 player_inbox.consumer_enabled 关着(评审 H1):收件箱照常收单、回 created=true,本节点一条都不执行。
+#              启动时打一条 WARN,之后每 5 分钟补打一条。上线顺序第 4 步(回滚下限)到第 5 步之间出现是预期的;
+#              EnqueueTypes 已打开的环境里出现,常见原因是 bin/etc/game_config.yaml 被改回 false、检出开消费之前的旧 commit 重跑了
+#              zone-up,或部署时用了 -AllowPlayerInboxConsumerOff(例行发布不会再把它写回 false,开关只取 git 里的 yaml)。
+#              按 runbook「消费开关与写前门禁」核对,再按「上线顺序与回滚下限」第 5 步重开并滚动 scene。
+#              要逐 zone 看就看这一条(结果按 zone 分组):收件箱侧的 PlayerInboxConsumerMaybeDisabled 不分 zone)
+#   info    : sum by (reason) (count_over_time({job="cpp_nodes", service="scene"} |= "metric=inbox_deferred" | regexp "reason=(?P<reason>\\w+)" [10m]))
+#   info    : sum by (result) (count_over_time({job="cpp_nodes", service="scene"} |= "[PlayerInbox]" |= "metric=inbox_leave_ack"
+#               | regexp "result=(?P<result>\\w+)" | result=~"delivered_undecided|not_durable|fetch_inflight|ack_inflight|not_sent" [1h]))
+#             (玩家离开本节点时没能补发 Ack 的行(评审 M4 的残余):已投递还没定结局(delivered_undecided)、
+#              结局还没落盘(not_durable)、离开时 Fetch 在途(fetch_inflight)、离开时 Ack 在途(ack_inflight,
+#              只有它随后失败才真成残留)、补发没发出去(not_sent)。decided_prefix_queued 不是残留,不计入)
+#              它们只表示这些行停在「已投递未确认」,等玩家下次落地重拉或补确认;不是故障,不用处置。
+#              玩家一直不上线的,24 小时后计入 player_inbox_delivered_unacked_stale)
 #
 # Severity conventions(与 scene-manager-alerts.yaml 相同):
 #   critical = pager, someone wakes up
@@ -57,7 +106,8 @@ spec:
     - name: player-inbox.correctness
       interval: 30s
       rules:
-        # STALE 且 R == req:核心 Redis 里的 owner_epoch 倒退了(备份恢复 / AOF 或主从丢尾 / 键被删,§8 #14)。
+        # STALE 且 R ≤ req(R = 返回前再读一次的核心 Redis 当前值,go/player_inbox 的 ClassifyStale):核心 Redis 里的 owner_epoch 倒退了
+        # (备份恢复 / AOF 或主从丢尾 / 键被删,§8 #14)。设计 §7.8 原写 R == req;R < req 倒退得更多,同样归这一类。
         # 新 owner 的 epoch 小于收件箱围栏,该玩家的收件箱拉不动,而存盘围栏同样可能失效 —— 不是收件箱自己的问题。
         - alert: PlayerInboxFenceRegressed
           expr: |
@@ -68,10 +118,12 @@ spec:
           annotations:
             summary: "收件箱发现 owner_epoch 计数器倒退(fence_regressed)"
             description: >-
-              过去 10 分钟约 {{ $value | printf "%.0f" }} 次 Fetch / Ack 判 STALE 且请求 epoch 等于 Redis 当前值:
+              过去 10 分钟约 {{ $value | printf "%.0f" }} 次 Fetch / Ack 判 STALE 且 Redis 当前值 ≤ 请求 epoch
+              (ERROR 日志 `STALE classified fence_regressed` 带 req_epoch;核心 Redis 里读到的 owner_epoch 等于或小于它都算):
               核心 Redis 的 owner_epoch 已低于收件箱记录的高水位。收件箱**不提供归零**;按
               docs/ops/player-inbox-runbook.md「计数器倒退」执行 db-write-fencing-mysql.md §9.1 的 epoch-raise,
-              取最大值的来源要包含收件箱 GetSummary 的 max_fence_epoch。
+              取最大值的来源要包含收件箱 GetSummary 的 max_fence_epoch(已定由独立工具 go/db/cmd/epoch_raise 经
+              PlayerInboxAdmin.GetSummary 自己读,任一来源读不到就拒绝执行;工具落码之前按 runbook 的人工流程写进工单)。
 
         # req > fence 且 req > R:只会来自缺陷或伪造(IB-8),状态未改。
         - alert: PlayerInboxEpochAhead
@@ -103,7 +155,7 @@ spec:
 
         # Ack 异常结果:MISMATCH / CONFLICT / NOT_DELIVERED / SKIP_NOT_REQUESTED / UNKNOWN_SEQ 都不改状态、只告警(§7.8 Ack 表)。
         # MISMATCH / NOT_DELIVERED / SKIP_NOT_REQUESTED 之后 scene 停用该玩家的该域(§7.7),不处置就一直停着。
-        # ack_total 是 CounterVec,这几个结果的序列在第一次发生之前不存在(服务端只预置了 notify / reconcile 两组),
+        # ack_total 是 CounterVec,这几个结果的序列在第一次发生之前不存在(服务端只预置了 notify 与对账的三组,见文件头),
         # increase 对「从无到 1」恰好漏掉第一次:第二支用 unless … offset 把 10 分钟内新出现的序列也算进来。
         - alert: PlayerInboxAckAnomaly
           expr: |
@@ -123,24 +175,73 @@ spec:
               按 docs/ops/player-inbox-runbook.md「Ack 异常结果」逐类核对:CONFLICT 永不翻转,保留现场;
               MISMATCH 多见于收件箱库恢复后的旧行;NOT_DELIVERED / SKIP_NOT_REQUESTED / UNKNOWN_SEQ 指向 scene 缺陷或伪造。
 
-        # 每小时对账:收件箱已终结、账本却没到这个 seq(回档 / Redis 丢数据),或收件箱 PENDING、账本已处理(§9.3)。
+        # 定时对账(领导者,默认每小时一轮,§9.3):由消费方终结的行,已落盘账本里没有它的结局 —— 水位没到这个 seq、
+        # 环覆盖范围内查无此 seq,或环里同 seq 记的是另一条 / 另一个结局(回档 / Redis 丢数据,评审 M6)。
+        # 「仍 PENDING、账本已处理」只有单人复核 ReconcilePlayer 看得到,定时对账不比它。
+        # reconcile_inconsistent_rows 是「当前不一致行数」gauge(评审 L11,取代原来的计数器):本任期 64 个分片各自
+        # 最近一次读数之和,只由领导者产出,所以用 max()。max_over_time[2h] 跨过易主空档:卸任时旧领导者把它归零,
+        # 新领导者当选后 1–5 分钟才跑第一轮。
         - alert: PlayerInboxReconcileMismatch
           expr: |
-            sum(increase(player_inbox_reconcile_mismatch_total[2h])) > 0
+            max(max_over_time(player_inbox_reconcile_inconsistent_rows[2h])) > 0
           for: 0m
           labels:
             severity: critical
           annotations:
-            summary: "收件箱对账发现与已落盘账本不一致"
+            summary: "收件箱对账发现已终结的行在已落盘账本里没有结局"
             description: >-
-              过去 2 小时对账作业发现约 {{ $value | printf "%.0f" }} 处不一致。player_id 只在收件箱 ERROR 日志里
-              (`reconcile mismatch`);逐个用 PlayerInboxAdmin.ReconcilePlayer 复核,按 docs/ops/player-inbox-runbook.md
-              「对账不一致」处理(事后人工补发 = 用新的 request_id 重下处置)。
+              近 2 小时对账读数最高约 {{ $value | printf "%.0f" }} 行:收件箱已由消费方终结,已落盘账本里却没有它的结局
+              (日志 gap=beyond_watermark 水位没到 / missing_in_ring 环里缺这一条 / ring_mismatch 同 seq 是另一条或另一个结局)。
+              player_id 只在收件箱 ERROR 日志里(`Reconcile mismatch`);逐个用 PlayerInboxAdmin.ReconcilePlayer 复核,
+              按 docs/ops/player-inbox-runbook.md「对账不一致」处理(事后补发 = 用新的 request_id 重下处置)。
+              这是读数,不是事件数:重下处置不会让它下降,要等那一行滑出对账窗口(默认 24 小时)、它所在的分片再被读完一次,
+              再过 2 小时告警才消失;确认处置完可以在 Alertmanager 静默。截断的轮次只读到一部分分片,没读到的分片沿用上次读数;
+              易主后新领导者从 0 重建,截断持续时最多 16 轮才读全,这期间读数偏低。
 
     - name: player-inbox.stuck
       interval: 1m
       rules:
+        # 消费开关可能被关(评审 H1):入箱在涨,6 小时内却没有一次锁路径 Fetch(只有锁路径会把条目投递出去)。
+        # 开关关着时 scene 一次 Fetch 都不发,条目的 delivery_count 恒为 0,本组其余「卡住」告警都看不到它。
+        # enqueue_total / fetch_total 是没有预置的 CounterVec:开关一直关着时 fetch_total 的序列根本不存在,
+        # 「sum(increase(...)) == 0」得到空集、规则永远不触发,所以右边写成「有过锁路径 Fetch」再用 unless 取反。
+        # 两边各带一支 unless … offset 6h,把 6 小时内新出现、只有一个样本的序列也算上(同 PlayerInboxAckAnomaly)。
+        - alert: PlayerInboxConsumerMaybeDisabled
+          expr: |
+            (
+              sum(increase(player_inbox_enqueue_total{result="created"}[6h])) > 0
+              or
+              sum(
+                player_inbox_enqueue_total{result="created"}
+                unless player_inbox_enqueue_total{result="created"} offset 6h
+              ) > 0
+            )
+            unless on ()
+            (
+              sum(increase(player_inbox_fetch_total{path="locked"}[6h])) > 0
+              or
+              sum(
+                player_inbox_fetch_total{path="locked"}
+                unless player_inbox_fetch_total{path="locked"} offset 6h
+              ) > 0
+            )
+          for: 30m
+          labels:
+            severity: warning
+          annotations:
+            summary: "收件箱 6 小时内有新入箱,却没有一次锁路径拉取:scene 消费开关可能被关"
+            description: >-
+              过去 6 小时新入箱约 {{ $value | printf "%.0f" }} 条,player_inbox_fetch_total{path="locked"} 一次都没涨。
+              scene 的 player_inbox.consumer_enabled 关着时,收件箱照常收单(回 created=true),处置一条都不执行。
+              先按 zone 查 scene 日志 `metric=inbox_consumer_disabled`(见文件头的固定查询),再核对 k8s_deploy.ps1 渲染出的开关值,
+              按 docs/ops/player-inbox-runbook.md「上线顺序与回滚下限」第 5 步重开并滚动 scene。
+              误报:6 小时内新入箱的目标玩家全部离线、期间又没有别的条目被投递时也会亮;这时 player_inbox_fetch_total{path="fast"}
+              仍随登录上涨(scene 在拉,开关开着),目标玩家登录后自行消失。
+              局限:收件箱全服一份、指标不带 zone,只要别的 zone 有条目被投递就会盖住关了开关的那个 zone;逐 zone 只能看 scene 日志。
+
         # 已投递未确认最老超过 1 小时:真正的「卡住」信号(scene 拉到了却迟迟不确认:落盘失败、停用、崩溃循环)。
+        # 只统计最后一次投递在最近 24 小时内的行(评审 M4):GM 处置后紧接着封号踢下线的那种行会一直已投递未确认,
+        # 放在这里会把告警永久顶住;它们 24 小时后改计入 info 级的 PlayerInboxDeliveredUnackedStale。
         - alert: PlayerInboxDeliveredUnackedTooOld
           expr: |
             max(player_inbox_delivered_unacked_oldest_seconds) > 3600
@@ -152,10 +253,12 @@ spec:
             description: >-
               最老的已投递未确认条目已等待 {{ $value | humanizeDuration }}(当前共
               {{ with query "max(player_inbox_delivered_unacked)" }}{{ . | first | value | printf "%.0f" }}{{ end }} 条)。
+              只统计最近 24 小时内投递的行,更早的见 player_inbox_delivered_unacked_stale。
               用 PlayerInboxAdmin.ListItems(state=PENDING)找出 delivery_count 高的行,对照 scene 的 `[PlayerInbox]` 日志;
               按 docs/ops/player-inbox-runbook.md「卡住与毒消息」处理。
 
         # delivery_count ≥ 5:疑似毒消息引发崩溃循环(D11:v1 不自动隔离,§7.9)。
+        # max_delivery_count 同样只统计最后一次投递在最近 24 小时内的行(评审 M4)。
         - alert: PlayerInboxPoisonSuspect
           expr: |
             max(player_inbox_max_delivery_count) >= 5
@@ -165,10 +268,12 @@ spec:
           annotations:
             summary: "收件箱有条目被投递了 {{ $value | printf \"%.0f\" }} 次仍未终结"
             description: >-
-              疑似毒消息(载荷让 scene 崩溃或处理永远失败)。核对后用 PlayerInboxAdmin.VoidItem(reason=QUARANTINED)隔离:
+              疑似毒消息(载荷让 scene 崩溃或处理永远失败)。只统计最近 24 小时内投递的行。
+              核对后用 PlayerInboxAdmin.VoidItem(reason=QUARANTINED)隔离:
               作废路径不解码载荷,不会再次触发崩溃。步骤与限速见 docs/ops/player-inbox-runbook.md「卡住与毒消息」。
 
-        # 在线提醒积压:补发循环没把 notify_due_ms 到点的流清掉(Kafka 写不进 / 领导者没在跑)。
+        # 在线提醒积压:提醒从流行最后一次写入起悬了 5 分钟以上还没落定(Kafka 写不进 / 节点镜像不对 / 领导者没在跑)。
+        # 补发没落定时把 notify_due_ms 推到 now + 退避(评审 L6),所以积压按流行的 updated_ms 起算,退避中的流照样计入。
         - alert: PlayerInboxNotifyBacklog
           expr: |
             max(player_inbox_notify_backlog) > 0
@@ -178,8 +283,12 @@ spec:
           annotations:
             summary: "收件箱在线提醒积压超过 5 分钟"
             description: >-
-              当前约 {{ $value | printf "%.0f" }} 条流的提醒到点未发。提醒只是加速(落地拉取与 30 分钟在线兜底仍会生效),
-              不丢条目;检查 Kafka 写入(player_inbox_notify_total{result})与领导者选举是否正常。
+              当前约 {{ $value | printf "%.0f" }} 条流的在线提醒悬了 5 分钟以上没落定(从流行最后一次写入起算,退避中的也算)。
+              提醒只是加速(落地拉取与 30 分钟在线兜底仍会生效),不丢条目。
+              没落定的提醒按退避重试:30 秒起、每次翻倍、封顶 30 分钟。Kafka 写不进(error)、目标 UUID 为空(empty_uuid)、
+              节点镜像未同步(nodes_unsynced)、节点身份不明(node_ambiguous)会一直重试,问题不解决告警就一直亮;
+              镜像里查不到位置记录里的节点(node_missing,多为 etcd 租约抖动)悬满 1 小时才落定,节点真没了时告警约亮 50 分钟后自行消失。
+              按 player_inbox_notify_total{result} 各取值的增速判断是哪一类,再查 Kafka 写入、scene 节点注册与领导者选举。
 
         # 独占库连接池长期用满:落地拉取的快路径是不加锁的点读,但锁路径持流行行锁等 1s;池满时 Fetch / Ack 排队,
         # scene 侧表现为超时退避(不阻断进场,IB-7)。按副本分别看(一个副本满、另一个闲时求和会被摊平)。
@@ -215,6 +324,84 @@ spec:
               过去 1 小时约 {{ $value | printf "%.0f" }} 条。效果是否生效无法从账本确认;对照 scene 的
               `[PlayerInbox] applied` 日志与玩家存档人工核实,必要时用新的 request_id 重下处置。
 
+    # 定时对账本身的健康(评审 L4、M5、M6)。对账结论的 critical 告警是上面的 PlayerInboxReconcileMismatch;
+    # 这一组管「对账有没有在跑、跑没跑全、读到的账本能不能当证据」。对账只在领导者上跑,计数器每个副本各报一份,一律 sum()。
+    - name: player-inbox.reconcile
+      interval: 5m
+      rules:
+        # 对账存活:对账开着,3 个间隔内却一轮成功的都没有(没有领导者、轮次一直失败或超时)。
+        # 窗口 3h = 3 × PlayerInbox.ReconcileIntervalMinutes(go/player_inbox/etc/player_inbox.yaml 为 60,K8s ConfigMap 原样镜像);
+        # 改了间隔要同步改这里的 [3h]。
+        # ReconcileIntervalMinutes = 0 表示关掉对账,规则读不到配置:rounds_total 的三条序列照样预置为 0、一直不涨,
+        # 只看第一个条件就会误报。第二个条件要求最近 7 天里对账至少跑过一轮(任一 result),从没跑过的环境不告警。
+        # 代价:开着却一轮都没跑过(从来没选出领导者、循环没起来)的环境这里看不到,靠上线验收兜;
+        # 有意关掉对账之后本条最多再亮 7 天,在 Alertmanager 静默即可。
+        - alert: PlayerInboxReconcileStalled
+          expr: |
+            sum(increase(player_inbox_reconcile_rounds_total{result="ok"}[3h])) == 0
+            and on ()
+            max_over_time((sum(player_inbox_reconcile_rounds_total))[7d:30m]) > 0
+          for: 10m
+          labels:
+            severity: warning
+          annotations:
+            summary: "收件箱定时对账 3 小时内没有一轮成功"
+            description: >-
+              player_inbox_reconcile_rounds_total{result="ok"} 3 小时没涨,而最近 7 天里对账跑过。丢数据、回档造成的不一致
+              这期间发现不了。先看有没有领导者(收件箱 INFO 日志 `Maintenance leader acquired`),再看
+              player_inbox_reconcile_rounds_total{result=~"error|timeout"} 与 ERROR 日志 `Reconcile round`。
+              有意关掉了对账(PlayerInbox.ReconcileIntervalMinutes = 0)时本条最多再亮 7 天,静默即可。
+
+        # 对账轮次失败或超时:error = 收集分片时读库失败等;timeout = 本轮用完 min(间隔, 2 分钟) 的预算。
+        # 单个玩家的账本读失败不算轮次失败,只让那一片的读数变成下界(见 reconcile_ledger_read_total{result="error"})。
+        - alert: PlayerInboxReconcileRoundsFailing
+          expr: |
+            sum by (result) (increase(player_inbox_reconcile_rounds_total{result=~"error|timeout"}[2h])) > 0
+          for: 0m
+          labels:
+            severity: warning
+          annotations:
+            summary: "收件箱定时对账有轮次 {{ $labels.result }}"
+            description: >-
+              过去 2 小时约 {{ $value | printf "%.0f" }} 轮 {{ $labels.result }}。ERROR 日志 `Reconcile round failed` /
+              `Reconcile round ran out of` 写明已判定 / 计划的玩家数与起始分片;没读完的分片沿用上次读数。
+              timeout 多见于 data_service 读账本变慢(GetPlayerInboxLedger)或收件箱库变慢。持续失败时 PlayerInboxReconcileStalled 也会亮。
+
+        # 对账截断(评审 M5):一轮没核对完窗口(某片读满单片上限 500 行,或玩家数到 2000)。
+        # 起点每轮前移 4 片,截断持续时每片至多隔 16 轮读完一次;被单片上限截掉的是一片里最老的行,
+        # 这一片持续有新行顶着时它们一直核对不到。
+        - alert: PlayerInboxReconcileTruncated
+          expr: |
+            sum(increase(player_inbox_reconcile_truncated_total[6h])) > 0
+          for: 0m
+          labels:
+            severity: warning
+          annotations:
+            summary: "收件箱定时对账有轮次被截断,没有核对完整个窗口"
+            description: >-
+              过去 6 小时约 {{ $value | printf "%.0f" }} 轮截断。ERROR 日志 `Reconcile round truncated` 写明起始分片、扫了几片、
+              哪些分片读满上限、停在哪片。截断期间没读到的分片沿用上次读数,critical 的 PlayerInboxReconcileMismatch 可能偏低。
+              量级持续超出(例如批量处置之后)时缩短 PlayerInbox.ReconcileWindowHours(不要少于 16 个对账间隔,
+              否则截断期间可能有分片整个窗口都轮不到),或调大代码里的上限。
+
+        # 对账读到结构不合法的已落盘账本(评审 M6、A 批修复 R2):domain 为 0 或重复、单域环超过 32 条、环里 seq 为 0 / 不严格升序 /
+        # 越过水位、结局不可记,这几条与 C++ ValidateLedger 同口径;收件箱另查 request_id 为 0,C++ 不查这一项。
+        # 结论按 unknown 算,不计入不一致读数。每轮都会重读同一名玩家,所以数的是读次数,不是玩家数。
+        - alert: PlayerInboxReconcileLedgerInvalid
+          expr: |
+            sum(increase(player_inbox_reconcile_ledger_read_total{result="invalid"}[2h])) > 0
+          for: 0m
+          labels:
+            severity: warning
+          annotations:
+            summary: "收件箱对账读到结构不合法的已落盘账本"
+            description: >-
+              过去 2 小时约 {{ $value | printf "%.0f" }} 次读到不合法的账本。player_id 在收件箱 ERROR 日志
+              `persisted inbox ledger is structurally invalid` 里。多数情况下这名玩家在 scene 上也会判账本损坏、收件箱停用
+              (scene 日志 metric=inbox_ledger_invalid),处置一直不执行。收件箱比 scene 多查一条 request_id 为 0:
+              只有这一项不合法时 scene 不判损坏、找不到 inbox_ledger_invalid,同 seq 的行再投递时表现为 metric=inbox_replay_mismatch。
+              按 docs/ops/player-inbox-runbook.md「账本损坏」处理,**不要清空账本重建**:那会让已执行过的处置再执行一次。
+
     - name: player-inbox.info
       interval: 5m
       rules:
@@ -230,3 +417,39 @@ spec:
             description: >-
               未决条目 {{ with query "max(player_inbox_open_items)" }}{{ . | first | value | printf "%.0f" }}{{ end }} 条。
               流失玩家的条目不会被消费,也不会自动删除(IB-1);只用于观察趋势与容量。
+
+        # 已投递未确认、最后一次投递早于 24 小时的行(评审 M4)。典型原因是 GM 处置后紧接着封号踢下线:实体销毁时
+        # 没定结局或没落盘的行补发不了 Ack,玩家不再上线,这一行就一直已投递未确认。只做趋势提示,不进 warning 口径。
+        - alert: PlayerInboxDeliveredUnackedStale
+          expr: |
+            max(player_inbox_delivered_unacked_stale) > 0
+          for: 0m
+          labels:
+            severity: info
+          annotations:
+            summary: "收件箱有投递超过 24 小时仍未确认的条目(多为处置后被踢下线的玩家,信息项)"
+            description: >-
+              当前约 {{ $value | printf "%.0f" }} 条。玩家下次落地会重拉并补确认,一般不用处置。数量持续上涨,或目标玩家其实一直在线时,
+              按 docs/ops/player-inbox-runbook.md「卡住与毒消息」核对(ListItems state=PENDING,看 last_delivered_ms)。
+              离开时没能补发 Ack 的原因见 scene 日志 `metric=inbox_leave_ack`(文件头的固定查询)。
+
+        # 运维强制终结(评审 M1):VoidItem mode=FORCE_MISMATCH,经已落盘账本证明同 seq 是另一个 request_id 之后,
+        # 把已投递的行终结为 VOIDED(finalized_by=ADMIN,审计 FORCE_VOID)。罕见的高风险人工操作,每次都留一条注解便于事后对审计。
+        # void_total 是没有预置的 CounterVec:第二支用 unless … offset 1h 把 1 小时内新出现的序列也算上。
+        - alert: PlayerInboxForceVoided
+          expr: |
+            sum(increase(player_inbox_void_total{path="force"}[1h])) > 0
+            or
+            sum(
+              player_inbox_void_total{path="force"}
+              unless player_inbox_void_total{path="force"} offset 1h
+            ) > 0
+          for: 0m
+          labels:
+            severity: info
+          annotations:
+            summary: "收件箱有已投递的行被运维强制终结为 VOIDED"
+            description: >-
+              过去 1 小时约 {{ $value | printf "%.0f" }} 条。逐条对照审计表(action=FORCE_VOID,带 operator、peer_addr、
+              note 里的工单号)与收件箱 INFO 日志 `VoidItem FORCE finalized`(带 ledger_decided_through、ledger_request_id_at_seq 作证据)。
+              经 port-forward 调用时 peer_addr 是回环地址,要对到具体的人看 kube-apiserver 的 portforward 审计日志(评审 L8)。

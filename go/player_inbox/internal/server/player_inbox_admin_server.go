@@ -14,7 +14,7 @@ import (
 
 // AdminStore 是运维面需要的存储能力(*inbox.Store 实现它)。
 type AdminStore interface {
-	Void(ctx context.Context, p inbox.VoidParams) (*inboxpb.VoidPlayerInboxItemResponse, error)
+	Void(ctx context.Context, p inbox.VoidParams, ledgers inbox.LedgerReader) (*inboxpb.VoidPlayerInboxItemResponse, error)
 	Summary(ctx context.Context, playerID uint64) (*inboxpb.GetPlayerInboxSummaryResponse, error)
 	List(ctx context.Context, req *inboxpb.ListPlayerInboxItemsRequest) (*inboxpb.ListPlayerInboxItemsResponse, error)
 	Lookup(ctx context.Context, req *inboxpb.LookupPlayerInboxRequest) (*inboxpb.LookupPlayerInboxResponse, error)
@@ -30,7 +30,7 @@ type AdminServer struct {
 	budget   time.Duration
 }
 
-// NewAdminServer。sanction 是 GM 处置的依赖;ledgers 是对账读已落盘账本的适配器。
+// NewAdminServer。sanction 是 GM 处置的依赖;ledgers 是读已落盘账本的适配器(对账与 VoidItem 强制模式共用)。
 func NewAdminServer(store AdminStore, sanction logic.GmSanctionDeps, ledgers inbox.LedgerReader, budget time.Duration) *AdminServer {
 	return &AdminServer{store: store, sanction: sanction, ledgers: ledgers, budget: budget}
 }
@@ -39,7 +39,7 @@ func NewAdminServer(store AdminStore, sanction logic.GmSanctionDeps, ledgers inb
 func (s *AdminServer) GmSanctionPlayer(ctx context.Context, in *inboxpb.GmSanctionPlayerRequest) (*inboxpb.GmSanctionPlayerResponse, error) {
 	ctx, cancel := withBudget(ctx, s.budget)
 	defer cancel()
-	return logic.GmSanctionPlayer(ctx, s.sanction, in, PeerAddr(ctx)), nil
+	return logic.GmSanctionPlayer(ctx, s.sanction, in, inbox.PeerAddr(ctx)), nil
 }
 
 // GetSummary 按玩家列出各域流的概况与 max_fence_epoch。
@@ -81,6 +81,8 @@ func (s *AdminServer) LookupByRequest(ctx context.Context, in *inboxpb.LookupPla
 }
 
 // VoidItem 未投递 → VOIDED;已投递 → 只挂 VOID 指令(IB-5)。同事务写审计。
+// 强制模式(mode=FORCE_MISMATCH)经已落盘账本证明后终结已投递的行,账本读取器与 ReconcilePlayer 共用装配层那一个;
+// 读账本失败与库故障一样 in-band 回 kPlayerInboxStoreUnavailable(可重试)。
 func (s *AdminServer) VoidItem(ctx context.Context, in *inboxpb.VoidPlayerInboxItemRequest) (*inboxpb.VoidPlayerInboxItemResponse, error) {
 	ctx, cancel := withBudget(ctx, s.budget)
 	defer cancel()
@@ -91,11 +93,12 @@ func (s *AdminServer) VoidItem(ctx context.Context, in *inboxpb.VoidPlayerInboxI
 		Reason:   in.GetReason(),
 		Operator: in.GetOperator(),
 		Note:     in.GetNote(),
-		PeerAddr: PeerAddr(ctx),
-	})
+		PeerAddr: inbox.PeerAddr(ctx),
+		Mode:     in.GetMode(),
+	}, s.ledgers)
 	if err != nil {
-		logx.WithContext(ctx).Errorf("[player_inbox] VoidItem failed player=%d domain=%d seq=%d operator=%q %s: %v",
-			in.GetPlayerId(), in.GetDomain(), in.GetSeq(), in.GetOperator(), callerIdentity(ctx), err)
+		logx.WithContext(ctx).Errorf("[player_inbox] VoidItem failed player=%d domain=%d seq=%d mode=%s operator=%q %s: %v",
+			in.GetPlayerId(), in.GetDomain(), in.GetSeq(), in.GetMode(), in.GetOperator(), callerIdentity(ctx), err)
 		return &inboxpb.VoidPlayerInboxItemResponse{ErrorMessage: storeUnavailable()}, nil
 	}
 	return resp, nil

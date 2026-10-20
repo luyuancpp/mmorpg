@@ -5,6 +5,7 @@
 #include <map>
 #include <random>
 #include <set>
+#include <string>
 #include <utility>
 #include <vector>
 
@@ -1134,18 +1135,18 @@ TEST(EquipGemFitTest, DesignSocketTableAcceptsExpectedGemTypes) {
     const std::vector<GemSocketRule> clothes{{0, kGemDefense}, {1, kGemHealth}};    // 部位 13
     const std::vector<GemSocketRule> shoes{{0, kGemSwift}};                         // 部位 14
     struct Row {
-        const char* label;
-        const std::vector<GemSocketRule>* sockets;
+        std::string label;
+        std::vector<GemSocketRule> sockets;
         uint32_t socket;
         bool accepts[4];  // 依次对应 攻击 / 防御 / 气血 / 迅捷
     };
     const Row rows[] = {
-        {"weapon socket 0 (attack)", &weapon, 0, {true, false, false, false}},
-        {"weapon socket 1 (any)", &weapon, 1, {true, true, true, true}},
-        {"hat socket 0 (health)", &hat, 0, {false, false, true, false}},
-        {"clothes socket 0 (defense)", &clothes, 0, {false, true, false, false}},
-        {"clothes socket 1 (health)", &clothes, 1, {false, false, true, false}},
-        {"shoes socket 0 (swift)", &shoes, 0, {false, false, false, true}},
+        {"weapon socket 0 (attack)", weapon, 0, {true, false, false, false}},
+        {"weapon socket 1 (any)", weapon, 1, {true, true, true, true}},
+        {"hat socket 0 (health)", hat, 0, {false, false, true, false}},
+        {"clothes socket 0 (defense)", clothes, 0, {false, true, false, false}},
+        {"clothes socket 1 (health)", clothes, 1, {false, false, true, false}},
+        {"shoes socket 0 (swift)", shoes, 0, {false, false, false, true}},
     };
     const uint32_t gemTypes[4] = {kGemAttack, kGemDefense, kGemHealth, kGemSwift};
     const std::vector<uint32_t> noneTaken;
@@ -1153,7 +1154,7 @@ TEST(EquipGemFitTest, DesignSocketTableAcceptsExpectedGemTypes) {
         // 孔位号必须小于 kMaxGemSockets(表校验的口径;消费侧也只看实例上前这么多条记录)
         ASSERT_LT(row.socket, equiprules::kMaxGemSockets) << row.label;
         for (std::size_t i = 0; i < 4; ++i) {
-            EXPECT_EQ(FitCode(CheckGemFit(*row.sockets, noneTaken, row.socket, gemTypes[i])),
+            EXPECT_EQ(FitCode(CheckGemFit(row.sockets, noneTaken, row.socket, gemTypes[i])),
                       FitCode(row.accepts[i] ? GemFit::kOk : GemFit::kTypeMismatch))
                 << row.label << " gemType=" << gemTypes[i];
         }

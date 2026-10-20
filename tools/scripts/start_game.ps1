@@ -60,21 +60,9 @@ $optionalServices += 'friend'
 #（Test-UsesKafkaCommandContract）。单独追加，不改上面的数组。
 $services += 'player_inbox'
 $optionalServices += 'player_inbox'
-# 邮件 mail（docs/design/mail-system.md）：与 trade / friend 同形态的新服务，同样按可选处理，两种情况跳过它：
-#   1. 缺 exe（第 1 步，与 chat / guild / trade / friend 同一逻辑）；
-#   2. MySQL 独占库 mmorpg_mail 未就绪（第 2 步 MySQL 健康后预检：库不存在或 appuser 无权限）。
-# 取舍依据与 trade 逐字相同（AGENTS §11.3）：为邮件拖垮登录 / 匹配不可接受；fail-closed 仍在 mail 进程自身（库不在即拒启）。
-# 客户端请求只承诺路由服模式可达（D-12）。它经 gate-cmd 推新邮件提醒，所以登记为 Kafka 命令契约生产者（Test-UsesKafkaCommandContract）。
-# 依赖第 3 步已起的 data_service（号段）；MailAdmin 令牌由 go_services.ps1 的 Start-ServiceInstance 只给 mail 注入。单独追加，不改上面的数组。
-$services += 'mail'
-$optionalServices += 'mail'
-# 排行榜 rank（docs/design/leaderboard-system.md）：与 chat 同形态的新服务（零 MySQL，没有库预检），只在缺 exe 时跳过
-#（第 1 步，与 chat / guild / trade / friend 同一逻辑）——为排行榜拖垮登录 / 匹配不可接受（AGENTS §11.3）。
-# Kafka / Redis 起不来时它自己降级为只读并后台重试，不会让一键启动中止。客户端请求只承诺路由服模式可达（D-12）。
-# 它只消费 match 的评分快照、不生产命令主题，所以**不**登记为 Kafka 命令契约生产者（Test-UsesKafkaCommandContract）。
-# 依赖第 3 步已起的 data_service（名字补全，fail-open）。单独追加，不改上面的数组。
-$services += 'rank'
-$optionalServices += 'rank'
+# 邮件和排行榜仍严格检查TiDB与签名密钥；启动器只在没有部署配置时跳过这两个可选域。
+$services += @('mail','rank')
+$optionalServices += @('mail','rank')
 $skippedServices = @()
 $gatewayUrl = 'http://127.0.0.1:8081'
 $oldPath = $env:PATH
@@ -85,6 +73,7 @@ $oldCommandGeneration = $env:KAFKA_COMMAND_TOPIC_GENERATION
 $oldGateClientRpcRouter = $env:GATE_CLIENT_RPC_ROUTER
 $oldGateRunMode = $env:GATE_RUN_MODE
 $oldSceneRunMode = $env:SCENE_RUN_MODE
+$oldBattleRunMode = $env:BATTLE_RUN_MODE
 # 资产通道（docs/design/guild-phase2/04-asset-channel.md §4.32）的本机开发密钥来源。
 # scene 验签、guild / trade 签名用的是同名环境变量，值必须一致，否则每次资产 RPC 都回 27008。
 # 值不写进仓库：由该库在 run/secrets/assetop-dev.env（已被 .gitignore 覆盖）生成一次并复用。
@@ -323,9 +312,7 @@ function Invoke-Dev([string]$Label, [string[]]$Arguments) {
 # 校验与落记录共用名单,防止服务被复用后才在第一次推送时暴露旧 generation。
 function Test-UsesKafkaCommandContract([string]$Name) {
     # player_inbox:在线提醒(PlayerInboxNotifyEvent)发往 scene-cmd,与 guild / friend 的推送同为命令主题生产者。
-    # mail:新邮件提醒(NotifyMailEvent)经 kafkautil.PushToPlayer 发往 gate-cmd_g<N>;用旧代主题起来的 mail 被静默复用,
-    # 推送会写进没人消费的旧主题。
-    return $Name -in @('gate','scene','battle','login','scene_manager','player_locator','match','guild','friend','player_inbox','mail')
+    return $Name -in @('gate','scene','battle','login','scene_manager','player_locator','match','guild','friend','mail','player_inbox')
 }
 # 已运行进程不会重新读取进程环境；记录本启动器实际拉起的 PID 与启动时间，防止换代后复用旧进程。
 function Assert-RunningCommandContract($Process) {
@@ -408,6 +395,18 @@ try {
     }
     foreach ($node in @('gate','scene','battle')) {
         if (-not (Test-Path -LiteralPath (Join-Path $serverRoot "bin/$node.exe"))) { throw "缺少 bin/$node.exe。" }
+    }
+    $domainRequiredEnvs = @{
+        mail = @('MMORPG_MAIL_SQL_DSN','MAIL_PRODUCER_SECRET_ADMIN','MAIL_PRODUCER_SECRET_RANK','MAIL_PRODUCER_SECRET_GUILD','MMORPG_ASSET_OP_SECRET_MAIL')
+        rank = @('MMORPG_RANK_SQL_DSN','MAIL_PRODUCER_SECRET_RANK','RANK_PRODUCER_SECRET_MATCH','RANK_PRODUCER_SECRET_ADMIN')
+    }
+    foreach ($domain in @('mail','rank')) {
+        if ($domain -in $skippedServices) { continue }
+        $missingEnvironment = @($domainRequiredEnvs[$domain] | Where-Object { [string]::IsNullOrWhiteSpace([Environment]::GetEnvironmentVariable($_)) })
+        if ($missingEnvironment.Count -gt 0) {
+            Write-Warning "$domain 缺少本机领域配置，已跳过；请配置TiDB连接与生产者签名环境变量后重新启动。"
+            $skippedServices += $domain
+        }
     }
     if (-not $ClientPath) { $ClientPath = Join-Path (Split-Path -Parent $serverRoot) 'mmorpg-client/Builds/showcase_player/mmorpg.exe' }
     $ClientPath = [IO.Path]::GetFullPath($ClientPath)
@@ -585,39 +584,7 @@ try {
                 Write-Host '  Rerun this startup script after creating the database.'
             }
         }
-        if ('mail' -notin $skippedServices) {
-            # 邮件 mail 的库预检，与上面 trade / friend 同一套做法（取舍依据见脚本顶部 $optionalServices 处）。
-            # 以 appuser 身份查 information_schema.SCHEMATA，一次覆盖「库存在」和「已授权」；密码只在容器内由 sh 展开。
-            $mailDbProblem = ''
-            try {
-                $mailDbProbe = Invoke-Docker @('exec','mysql','sh','-c','mysql -u"$MYSQL_USER" -p"$MYSQL_PASSWORD" -N -B -e "SELECT SCHEMA_NAME FROM information_schema.SCHEMATA WHERE SCHEMA_NAME = ''mmorpg_mail''"')
-                if ($mailDbProbe.Code -ne 0) {
-                    $mailDbProblem = "Query failed (docker exec exit code $($mailDbProbe.Code))"
-                } elseif ($mailDbProbe.Out.Trim() -cne 'mmorpg_mail') {
-                    $mailDbProblem = 'Database missing or appuser lacks permission'
-                }
-            } catch {
-                $mailDbProblem = "Query exception: $($_.Exception.Message)"
-            }
-            if ($mailDbProblem) {
-                $skippedServices += 'mail'
-                # 补建命令：PowerShell 7 里整行粘贴执行；root 密码取自容器环境变量，不回显。建库 / 授权与 deploy/mysql-init/00_init_zone_dbs.sql 等价。
-                $mailDbFixCommand = @'
-  docker --context desktop-linux exec mysql sh -c 'mysql -uroot -p"$MYSQL_ROOT_PASSWORD" -e "CREATE DATABASE IF NOT EXISTS mmorpg_mail DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci; GRANT ALL PRIVILEGES ON mmorpg_mail.* TO appuser@''%''; FLUSH PRIVILEGES;"'
-'@
-                Write-Warning "Mail database mmorpg_mail is not ready ($mailDbProblem); skipping mail (mail requests will return service unavailable). Other services will start normally."
-                Write-Host '  Existing MySQL volumes do not rerun deploy/mysql-init. Use root to create the missing database and grant access once (run the following command in PowerShell 7):' -ForegroundColor Yellow
-                Write-Host $mailDbFixCommand -ForegroundColor Yellow
-                Write-Host '  Rerun this startup script after creating the database.'
-            }
-        }
-        Write-Step '3/6 Start persistence services'
-        # 命令生产者(含 friend / guild / mail 推送)由 dev_tools 子进程继承与 C++ 消费者相同的契约。
-        $env:KAFKA_COMMAND_TOPIC_PARTITIONS = [string]$kafkaContract.Partitions
-        $env:KAFKA_COMMAND_TOPIC_GENERATION = [string]$kafkaContract.Generation
-        $goRecords = Repair-PidRecords 'go_services.pid.json'
-        $cppRecords = Repair-PidRecords 'cpp_nodes.pid.json' -Cpp
-        $running = @(Get-CimInstance Win32_Process | Where-Object { $_.ExecutablePath -and $_.ExecutablePath.StartsWith($serverRoot + '\',[StringComparison]::OrdinalIgnoreCase) })
+        # mail/rank 的 DSN 可能指向独立 TiDB；不探测本机默认 MySQL，真实连接与结构由现役服务 fail-closed 校验。
         foreach ($item in $running) {
             Assert-RunningCommandContract $item
             $name = [IO.Path]::GetFileNameWithoutExtension($item.Name)
@@ -642,6 +609,8 @@ try {
         # `$env:GATE_RUN_MODE='prod'` 再起一次，确认 GM 指令确实被拒。
         if ([string]::IsNullOrWhiteSpace($env:GATE_RUN_MODE))  { $env:GATE_RUN_MODE = 'dev' }
         if ([string]::IsNullOrWhiteSpace($env:SCENE_RUN_MODE)) { $env:SCENE_RUN_MODE = 'dev' }
+        # battle 的全球事务门禁也依赖显式运行模式；本机默认 dev，保留调用者指定的 prod/test。
+        if ([string]::IsNullOrWhiteSpace($env:BATTLE_RUN_MODE)) { $env:BATTLE_RUN_MODE = 'dev' }
         # 资产通道签名密钥（规格 §4.32 / §4.41 第 30 项）：scene 在第 4 步启动、guild 在第 5 步启动，
         # 两边都从这里继承同一把值，否则帮会 / 聚宝斋的每一次资产 RPC 都被判 27008(AssetAuthFailed)。
         # 必须设在 cpp-node-start 之前，由 dev_tools / go_services 子进程继承。
@@ -680,11 +649,7 @@ try {
         # 玩家收件箱 player_inbox 单独一批，理由同 trade / friend（空列表 = 全部服务）。它依赖第 3 步已起的 data_service
         #（玩家存在校验 / 对账读账本，NonBlock 拨号）；scene 已在第 4 步起来，不等它（弱依赖，IB-7）。
         if ('player_inbox' -notin $skippedServices) { Start-LocalGoServices @('player_inbox') }
-        # 邮件 mail 单独一批，理由同 trade / friend（被跳过时不调用，空列表 = 全部服务）。它依赖第 3 步已起的 data_service
-        #（mail_id / sys_mail_id 号段，NonBlock 拨号）；MailAdmin 令牌由 go_services.ps1 的 Start-ServiceInstance 只给 mail 注入。
         if ('mail' -notin $skippedServices) { Start-LocalGoServices @('mail') }
-        # 排行榜 rank 单独一批，理由同 trade / friend（被跳过时不调用，空列表 = 全部服务）。它依赖第 3 步已起的 data_service
-        #（名字补全，NonBlock 拨号）；本机 match 默认不发评分快照，榜只读不更新，打开方法见 leaderboard-system.md §5.4。
         if ('rank' -notin $skippedServices) { Start-LocalGoServices @('rank') }
         $gatewayProcess = Get-CimInstance Win32_Process | Where-Object { $_.Name -eq 'java.exe' -and $_.CommandLine -and $_.CommandLine.Contains($jar.FullName) } | Select-Object -First 1
         if (-not $gatewayProcess) {
@@ -720,6 +685,7 @@ try {
     $env:GATE_CLIENT_RPC_ROUTER = $oldGateClientRpcRouter
     $env:GATE_RUN_MODE = $oldGateRunMode
     $env:SCENE_RUN_MODE = $oldSceneRunMode
+    $env:BATTLE_RUN_MODE = $oldBattleRunMode
     Restore-AssetOpDevSecrets $oldAssetOpSecrets
     if ($transcribing) { Stop-Transcript | Out-Null }
     if ($ownsMutex) { $mutex.ReleaseMutex() }

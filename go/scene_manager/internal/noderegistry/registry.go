@@ -10,6 +10,9 @@ package noderegistry
 //   - go/guild/internal/node/node.go
 //   - go/friend/internal/node/node.go
 //   - go/player_locator/internal/node/node.go
+//
+// 2026-10-18 登记:player_locator 的副本在 tryClaimNodeID / allocateNodeID 末尾多一个可选 extraOps 钩子
+// (缺省为空,用来把能力键放进同一个注册事务),详见该文件头「有意的差异」;同步修改时保留它即可。
 
 import (
 	"context"

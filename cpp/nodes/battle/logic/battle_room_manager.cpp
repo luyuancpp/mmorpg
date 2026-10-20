@@ -10,6 +10,8 @@
 #include <vector>
 
 #include <yaml-cpp/yaml.h>
+#include <google/protobuf/io/coded_stream.h>
+#include <google/protobuf/io/zero_copy_stream_impl_lite.h>
 
 #include <muduo/contrib/hiredis/Hiredis.h>
 #include <hiredis/hiredis.h>
@@ -27,6 +29,7 @@
 #include "battle_push_policy.h"
 #include "battle_security.h"
 #include "client/battle_client_edge.h"
+#include "client/network_probe_security.h"
 
 #include "constants/turn_battle_constants.h"
 #include "data/battle_table_fingerprint.h"
@@ -571,6 +574,33 @@ void BattleRoomManager::HandleCreateBattle(const ::CreateBattleRequest &request,
 {
     const auto battleId = request.battle_id();
     response.set_battle_id(battleId);
+    if(network_probe::Enabled()&&request.placement_operation_id().empty())
+    {response.mutable_error_message()->set_id(kInvalidParameter);return;}
+
+    std::string canonical;
+    if(!request.placement_operation_id().empty())
+    {
+        {google::protobuf::io::StringOutputStream sink(&canonical);google::protobuf::io::CodedOutputStream output(&sink);
+         output.SetSerializationDeterministic(true);if(!request.SerializeToCodedStream(&output)){response.mutable_error_message()->set_id(kInvalidParameter);return;}}
+        const auto currentMs=TimeSystem::NowMillisecondsUTC();
+        // 墓碑保留覆盖所有合法迟到请求；过窗请求仍受admit_before硬拒绝。
+        std::erase_if(creationOperations_,[currentMs,&rooms=rooms_](const auto& entry){return turnbattle::CreationReceiptExpired(entry.second.expiresMs,currentMs,rooms.Find(entry.first)!=nullptr);});
+        if(!gNode||request.required_physical_region()==0||request.required_physical_region()!=network_probe::PhysicalRegion()||
+           request.target_instance_id()!=gNode->GetNodeInfo().node_uuid())
+        {response.mutable_error_message()->set_id(kInvalidParameter);return;}
+        const auto old=creationOperations_.find(battleId);
+        if(old!=creationOperations_.end())
+        {
+            if(old->second.aborted||old->second.operationId!=request.placement_operation_id()||
+               old->second.canonicalRequest!=canonical||FindRoom(battleId)==nullptr)
+                response.mutable_error_message()->set_id(kInvalidParameter);
+            return;
+        }
+        if(request.admit_before_ms()==0||request.admit_before_ms()<=currentMs)
+        {response.mutable_error_message()->set_id(kInvalidParameter);return;}
+    }
+    else if(request.required_physical_region()!=0||!request.target_instance_id().empty())
+    {response.mutable_error_message()->set_id(kInvalidParameter);return;}
 
     // 幂等:match 补偿路径可能重试 CreateBattle
     if (FindRoom(battleId) != nullptr)
@@ -622,6 +652,7 @@ void BattleRoomManager::HandleCreateBattle(const ::CreateBattleRequest &request,
     room->battleConfigId = request.battle_config_id();
     // 活动上下文原样保存(未填 = kind NONE);FinishBattle 回显并据此选结果通道(§6.20)
     room->activityContext = request.activity_context();
+    room->requiresResultConfirmation = !request.placement_operation_id().empty();
     if (!room->engine.Initialize(request))
     {
         LOG_ERROR << "CreateBattle engine initialization failed(invalid snapshot/table data): battle_id=" << battleId
@@ -667,6 +698,10 @@ void BattleRoomManager::HandleCreateBattle(const ::CreateBattleRequest &request,
         }
     }
 
+    // 纯构建/签票也可能耗尽准入预算，提交前再次拒绝过期的原操作。
+    if(!request.placement_operation_id().empty()&&request.admit_before_ms()<=TimeSystem::NowMillisecondsUTC())
+    {response.mutable_error_message()->set_id(kInvalidParameter);return;}
+
     // 插表 = 房间生命周期起点(EmplaceRoom 随即通知 Agones 单元已创建);此前的拒绝路径都没有副作用
     auto *roomPtr = EmplaceRoom(std::move(room));
     if (roomPtr == nullptr)
@@ -675,6 +710,11 @@ void BattleRoomManager::HandleCreateBattle(const ::CreateBattleRequest &request,
         // 按幂等命中处理:回 OK、不设 error_message。表里那间同 battle_id 的房间是真的在打,
         // 回错误会诱发 match 的补偿 DestroyBattle(battle_id),把它一起销毁。
         return;
+    }
+    if(!request.placement_operation_id().empty())
+    {
+        // canonical 已在任何插表/通知副作用之前成功序列化，失败路径不会留下房间。
+        creationOperations_[battleId]={request.placement_operation_id(),std::move(canonical),request.deadline_ms()+60000,false};
     }
 
     roomPtr->battleTimer.RunAfter(static_cast<double>(deadlineMs - nowMs) / 1000.0,
@@ -727,6 +767,19 @@ void BattleRoomManager::HandleCreateBattle(const ::CreateBattleRequest &request,
 void BattleRoomManager::HandleDestroyBattle(const ::DestroyBattleRequest &request)
 {
     const auto battleId = request.battle_id();
+    // 原事件可能已落 broker，尚未收到确认不能先把相同对局宣布为作废。
+    if (const auto* pending = FindRoom(battleId); pending && pending->resultCommit) return;
+    if(!request.placement_operation_id().empty())
+    {
+        if(!gNode||request.target_instance_id()!=gNode->GetNodeInfo().node_uuid())return;
+        const auto old=creationOperations_.find(battleId);
+        if(old!=creationOperations_.end()&&old->second.operationId!=request.placement_operation_id())return;
+        // 匹配恢复只撤销尚未建成的原操作。迟到的旧 worker 不能销毁新 worker 已确认的同一房间。
+        // 本检查与立墓碑同在 battle 逻辑线程，CreateBattle 不可能插在二者之间。
+        if(request.reason()=="global_match_abort_if_absent"&&FindRoom(battleId)!=nullptr)return;
+        auto& operation=creationOperations_[battleId];operation.operationId=request.placement_operation_id();operation.aborted=true;
+        operation.expiresMs=std::max(operation.expiresMs,TimeSystem::NowMillisecondsUTC()+360000);
+    }
     auto *room = FindRoom(battleId);
     if (room == nullptr)
     {
@@ -750,6 +803,23 @@ void BattleRoomManager::HandleDestroyBattle(const ::DestroyBattleRequest &reques
     EraseRoom(battleId);
 
     LOG_INFO << "DestroyBattle completed: battle_id=" << battleId << " reason=" << request.reason();
+}
+
+void BattleRoomManager::HandleQueryBattleCreation(const ::QueryBattleCreationRequest& request,::QueryBattleCreationResponse& response)
+{
+    if(!gNode||request.target_instance_id()!=gNode->GetNodeInfo().node_uuid()||request.placement_operation_id().empty())return;
+    const auto found=creationOperations_.find(request.battle_id());
+    if(found==creationOperations_.end()){response.set_state(BATTLE_CREATION_ABSENT);return;}
+    if(found->second.operationId!=request.placement_operation_id())return;
+    response.set_state(found->second.aborted?BATTLE_CREATION_ABORTED:(FindRoom(request.battle_id())?BATTLE_CREATION_PRESENT:BATTLE_CREATION_ABSENT));
+}
+
+bool BattleRoomManager::AcceptsPlacementOperation(uint64_t id,const std::string& operation,const std::string& instance) const
+{
+    if(operation.empty())return instance.empty()&&!creationOperations_.contains(id);
+    if(!gNode||instance!=gNode->GetNodeInfo().node_uuid())return false;
+    const auto old=creationOperations_.find(id);
+    return old==creationOperations_.end()||old->second.operationId==operation;
 }
 
 void BattleRoomManager::HandleSubmitBattleAction(const ::SessionDetails &sessionDetails,
@@ -785,6 +855,7 @@ void BattleRoomManager::HandleSubmitBattleAction(const ::SessionDetails &session
         return;
     }
 
+    if (room->resultCommit) { response.mutable_error_message()->set_id(kServiceUnavailable); return; }
     // 先查后提交:校验码回给提交者(G2)。原先"一律回 OK"会让玩家点了吃药、
     // 客户端显示成功、回合结算却变成默认普攻,连原因都看不到 —— 玩家资产路径
     // 不许静默降级(AGENTS §11.3)。ValidateAction 零副作用,与 SubmitAction 的
@@ -840,7 +911,7 @@ void BattleRoomManager::HandleGetBattleState(const ::SessionDetails &sessionDeta
         return;
     }
 
-    response = room->engine.BuildStateSnapshot();
+    response = room->pendingVisibleState ? *room->pendingVisibleState : room->engine.BuildStateSnapshot();
     response.set_battle_id(room->battleId);
     // 引擎无时钟,行动截止由节点回填
     response.set_action_deadline_ms(room->actionDeadlineMs);
@@ -1079,6 +1150,7 @@ void BattleRoomManager::HandleSetAutoBattle(const ::SessionDetails &sessionDetai
         return;
     }
 
+    if (room->resultCommit) { response.mutable_error_message()->set_id(kServiceUnavailable); return; }
     // 置位前先采样就绪态,供下方判断本次置位是否触发"未就绪 -> 全员就绪"的翻转
     const bool wasAllReady = room->engine.AllPlayersReady();
 
@@ -1129,6 +1201,9 @@ void BattleRoomManager::ResolveRound(const uint64_t battleId)
     {
         return;
     }
+    if (room->resultCommit) return;
+    auto visibleBefore = room->engine.BuildStateSnapshot();
+    visibleBefore.set_battle_id(battleId);
 
     // 全员就绪提前结算时,回合 timer 还挂着,先取消防止双重结算
     room->roundTimer.Cancel();
@@ -1156,12 +1231,17 @@ void BattleRoomManager::ResolveRound(const uint64_t battleId)
         result.add_action_order(actorId);
     }
 
+    if (outcome != ::BATTLE_OUTCOME_ONGOING && room->requiresResultConfirmation)
+    {
+        BeginResultCommit(*room, outcome, ::SPECTATE_END_BATTLE_FINISHED,
+                          std::move(result), std::move(visibleBefore));
+        return;
+    }
     BroadcastTurnResult(*room, result);
 
     if (outcome != ::BATTLE_OUTCOME_ONGOING)
     {
-        FinishBattle(*room, outcome, ::SPECTATE_END_BATTLE_FINISHED);
-        EraseRoom(battleId);
+        if (FinishBattle(*room, outcome, ::SPECTATE_END_BATTLE_FINISHED)) EraseRoom(battleId);
     }
 }
 
@@ -1172,6 +1252,7 @@ void BattleRoomManager::OnBattleDeadline(const uint64_t battleId)
     {
         return;
     }
+    if (room->resultCommit) return;
 
     // 整场 deadline 打满仍未分出胜负:强制平局收尾(battle_node.proto 契约)。
     // 引擎无"强制终局"接口,由节点在结算数据上盖平局章。
@@ -1184,10 +1265,15 @@ void BattleRoomManager::OnBattleDeadline(const uint64_t battleId)
              << " outcome=" << ::eBattleOutcome_Name(outcome);
 
     room->roundTimer.Cancel();
+    if (room->requiresResultConfirmation)
+    {
+        BeginResultCommit(*room, outcome, ::SPECTATE_END_BATTLE_ABORTED,
+                          std::nullopt, room->engine.BuildStateSnapshot());
+        return;
+    }
     // 观众侧 deadline 强制收尾归 ABORTED(player_battle.proto 枚举注释口径);
     // outcome 带上强制盖章结果,观众端可与参战者的平局结算对齐展示
-    FinishBattle(*room, outcome, ::SPECTATE_END_BATTLE_ABORTED);
-    EraseRoom(battleId);
+    if (FinishBattle(*room, outcome, ::SPECTATE_END_BATTLE_ABORTED)) EraseRoom(battleId);
 }
 
 void BattleRoomManager::ResendBattleConfirmed(const uint64_t battleId)
@@ -1213,37 +1299,256 @@ void BattleRoomManager::ResendBattleConfirmed(const uint64_t battleId)
              << " remain_ms=" << (room->confirmResendUntilMs - nowMs);
 }
 
-void BattleRoomManager::FinishBattle(BattleRoom &room, const ::eBattleOutcome outcome,
-                                     const ::eSpectateEndReason spectateReason)
+contracts::kafka::BattleResultEvent BattleRoomManager::BuildResult(const BattleRoom& room, const ::eBattleOutcome outcome) const
+{
+    contracts::kafka::BattleResultEvent event;
+    event.set_battle_id(room.battleId);
+    event.set_match_mode(room.matchMode);
+    event.set_battle_config_id(room.battleConfigId);
+    event.set_outcome(outcome);
+    event.set_winner_team_index(outcome == ::BATTLE_OUTCOME_SIDE_B_WIN ? 1u : 0u);
+    std::map<uint32_t, std::vector<uint64_t>> teams;
+    std::vector<uint64_t> fled, dead;
+    std::vector<::BattleSettlementData> settlements;
+    for (const auto& [playerId, routing] : room.routingByPlayer)
+    {
+        auto settlement = room.engine.BuildSettlement(playerId);
+        teams[settlement.player_team_index()].push_back(playerId);
+        event.set_total_rounds(settlement.total_rounds());
+        if (settlement.fled()) fled.push_back(playerId);
+        if (settlement.is_dead()) dead.push_back(playerId);
+        settlements.push_back(std::move(settlement));
+    }
+    for (const auto& [teamIndex, players] : teams)
+    {
+        auto* team = event.add_teams();
+        team->set_team_index(teamIndex);
+        for (const auto player : players) team->add_player_ids(player);
+    }
+    event.set_finished_at_ms(TimeSystem::NowMillisecondsUTC());
+    turnbattle::FillBattleResultActivityFields(room.activityContext, std::move(fled), std::move(dead), event);
+    if (room.requiresResultConfirmation && !turnbattle::FreezeBattleSettlementSource(event, std::move(settlements)))
+        LOG_ERROR << "metric=battle_settlement_source_invalid;terminal remains unknown";
+    return event;
+}
+
+void BattleRoomManager::BeginResultCommit(BattleRoom& room, const ::eBattleOutcome outcome,
+    const ::eSpectateEndReason reason, std::optional<::TurnResultS2C> finalTurn, ::BattleStateS2C visibleBefore)
+{
+    if (room.resultCommit) return;
+    room.roundTimer.Cancel(); room.battleTimer.Cancel(); room.confirmResendTimer.Cancel();
+    room.actionDeadlineMs = 0;
+    visibleBefore.set_battle_id(room.battleId);
+    visibleBefore.set_action_deadline_ms(0);
+    room.pendingVisibleState = std::move(visibleBefore);
+    room.pendingFinalTurn = std::move(finalTurn);
+    room.pendingSpectateReason = reason;
+    room.pendingResult = BuildResult(room, outcome);
+    std::string payload;
+    if (room.pendingResult.settlement_format_version() != 1 || !room.pendingResult.SerializeToString(&payload))
+    {
+        LOG_ERROR << "metric=battle_result_commit_serialization_failed;terminal remains unknown";
+        room.resultCommit.emplace(std::string{});
+        return;
+    }
+    // 个人结算字节在发结果之前就要落 pending(StagePersonalSettlements),成员必须与房间一一对应;
+    // 对不上与序列化失败同等处置:结果不发、房间保留,终局保持未知。
+    bool membersMatch = turnbattle::BuildPersonalSettlementPayloads(room.pendingResult, room.personalSettlementPayloads) &&
+                        room.personalSettlementPayloads.size() == room.routingByPlayer.size();
+    for (const auto& [playerId, routing] : room.routingByPlayer)
+        membersMatch = membersMatch && room.personalSettlementPayloads.contains(playerId);
+    if (!membersMatch)
+    {
+        LOG_ERROR << "metric=battle_personal_settlement_source_mismatch battle_id=" << room.battleId
+                  << ";terminal remains unknown";
+        room.personalSettlementPayloads.clear();
+        room.resultCommit.emplace(std::string{});
+        return;
+    }
+    room.resultCommit.emplace(std::move(payload));
+    resultRooms_.insert(room.battleId);
+    if (!resultListenerInstalled_)
+    {
+        KafkaProducer::Instance().setDeliveryListener([weak = WeakSelf()](const KafkaProducer::DeliveryReport& report)
+        {
+            if (const auto self = weak.lock())
+                self->resultReports_.emplace_back(report.correlationId, report.err == RdKafka::ERR_NO_ERROR);
+        });
+        resultListenerInstalled_ = true;
+        resultCommitTimer_.RunEvery(0.05, [weak = WeakSelf()]
+        { if (const auto self = weak.lock()) self->PumpResultCommits(); });
+    }
+    PumpResultCommits();
+}
+
+void BattleRoomManager::PumpResultCommits()
+{
+    KafkaProducer::Instance().poll();
+    const auto reports = std::exchange(resultReports_, {});
+    for (const auto& [correlation, acknowledged] : reports)
+    {
+        const auto attempt = resultAttempts_.find(correlation);
+        if (attempt == resultAttempts_.end()) continue;
+        const auto battleId = attempt->second;
+        resultAttempts_.erase(attempt);
+        auto* room = FindRoom(battleId);
+        if (!room || !room->resultCommit) continue;
+        if (!room->resultCommit->Deliver(correlation, acknowledged, turnbattle::ResultCommit::Clock::now()))
+        {
+            LOG_ERROR << "metric=battle_result_commit_retry failures=" << room->resultCommit->Failures();
+            continue;
+        }
+        // listener 只登记；所有副作用均在 poll 返回之后同一逻辑线程执行。
+        contracts::kafka::BattleResultEvent committed;
+        if (!committed.ParseFromString(room->resultCommit->Payload()) || committed.battle_id() != battleId)
+        {
+            LOG_ERROR << "metric=battle_settlement_source_corrupt;no terminal dispatched";
+            continue;
+        }
+        if (!FinishBattle(*room, committed.outcome(), room->pendingSpectateReason, &committed))
+            continue;
+        resultRooms_.erase(battleId);
+        EraseRoom(battleId);
+    }
+    const std::vector<uint64_t> pending(resultRooms_.begin(), resultRooms_.end());
+    for (const auto battleId : pending)
+    {
+        auto* room = FindRoom(battleId);
+        if (!room || !room->resultCommit) { resultRooms_.erase(battleId); continue; }
+        const auto instant = turnbattle::ResultCommit::Clock::now();
+        // 个人结算没落完 pending 之前不发结果(ResultCommit 的发送前置条件,CanSend 同样把关)。
+        if (!room->resultCommit->PersonalSettlementsDurable())
+        {
+            StagePersonalSettlements(*room, instant);
+            continue;
+        }
+        if (!room->resultCommit->CanSend(instant)) continue;
+        if (nextResultCorrelation_ == std::numeric_limits<uint64_t>::max())
+        { LOG_ERROR << "metric=battle_result_commit_correlation_exhausted"; continue; }
+        const auto correlation = ++nextResultCorrelation_;
+        if (!room->resultCommit->Begin(correlation, instant)) continue;
+        resultAttempts_.emplace(correlation, battleId);
+        const auto error = KafkaProducer::Instance().sendTracked(kMatchResultsTopic, room->resultCommit->Payload(),
+            std::to_string(battleId), correlation);
+        if (error != RdKafka::ERR_NO_ERROR)
+        {
+            resultAttempts_.erase(correlation);
+            room->resultCommit->Deliver(correlation, false, turnbattle::ResultCommit::Clock::now());
+            LOG_ERROR << "metric=battle_result_commit_not_queued error=" << error;
+        }
+    }
+    if (resultRooms_.empty()) StopResultCommits();
+}
+
+void BattleRoomManager::StopResultCommits()
+{
+    resultCommitTimer_.Cancel();
+    if (resultListenerInstalled_) KafkaProducer::Instance().setDeliveryListener(nullptr);
+    resultListenerInstalled_ = false;
+    resultAttempts_.clear(); resultReports_.clear(); resultRooms_.clear();
+}
+
+void BattleRoomManager::StagePersonalSettlements(BattleRoom &room, const turnbattle::ResultCommit::Clock::time_point now)
+{
+    if (!RedisReady()) return;
+    const uint64_t attempt = room.resultCommit->BeginStaging(now);
+    if (attempt == 0) return;
+    // 本节点开始往积压索引里写了,报数定时器随之常驻(与 DispatchSettlementDurably 同口径)。
+    EnsureSettlementBacklogReporter();
+
+    // 本轮回复计数。回调只捕获值与 weak_ptr<自己>(AGENTS.md §11.7);房间按 battle_id 重查。
+    struct StagingRound
+    {
+        std::size_t remaining = 0;
+        bool allStored = true;
+    };
+    const auto round = std::make_shared<StagingRound>();
+    round->remaining = room.personalSettlementPayloads.size();
+    const uint64_t battleId = room.battleId;
+    const uint64_t enqueuedAtMs = TimeSystem::NowMillisecondsUTC();
+    const auto onReply = [weakSelf = WeakSelf(), round, battleId, attempt](const bool stored)
+    {
+        round->allStored = round->allStored && stored;
+        if (--round->remaining != 0) return;
+        if (const auto self = weakSelf.lock()) self->OnPersonalSettlementsStaged(battleId, attempt, round->allStored);
+    };
+    for (const auto &[member, payload] : room.personalSettlementPayloads)
+    {
+        const uint64_t playerId = member;  // 结构化绑定不进 lambda 捕获,先拷一份
+        // 与本地模式同一条脚本:两键 SET(不过期)+ 进积压索引(kSetPendingSettlementScript 的说明)。
+        const int rc = tlsRedis.GetZoneRedis()->command(
+            [onReply, battleId, playerId](hiredis::Hiredis *, redisReply *reply)
+            {
+                const bool stored = reply != nullptr && reply->type != REDIS_REPLY_ERROR;
+                if (!stored)
+                {
+                    LOG_ERROR << "metric=battle_personal_settlement_stage_failed battle_id=" << battleId
+                              << " player_id=" << playerId << ",pending write failed;result publish waits for retry";
+                }
+                onReply(stored);
+            },
+            (std::string("EVAL %s 3 ") + battle_settlement::kPendingSettlementKeyFmt + " " +
+             battle_settlement::kPendingSettlementIdKeyFmt + " " + battle_settlement::kPendingSettlementIndexKey +
+             " %b %llu %llu %llu")
+                .c_str(),
+            battle_settlement::kSetPendingSettlementScript, playerId, playerId,
+            payload.data(), payload.size(), battleId, enqueuedAtMs, playerId);
+        if (rc != REDIS_OK)
+        {
+            // 命令没发出去时回调永远不会被调:就地计一次失败,本轮仍按到齐收口。
+            LOG_ERROR << "metric=battle_personal_settlement_stage_failed battle_id=" << battleId
+                      << " player_id=" << playerId << " rc=" << rc << ",pending write not sent;result publish waits for retry";
+            onReply(false);
+        }
+    }
+}
+
+void BattleRoomManager::OnPersonalSettlementsStaged(const uint64_t battleId, const uint64_t attempt, const bool allStored)
+{
+    auto *room = FindRoom(battleId);
+    if (room == nullptr || !room->resultCommit) return;
+    if (room->resultCommit->FinishStaging(attempt, allStored, turnbattle::ResultCommit::Clock::now()))
+    {
+        // 发送交给下一次 pump(50ms 定时器仍在转:房间还在 resultRooms_ 里)。
+        LOG_INFO << "battle personal settlements durable before result publish: battle_id=" << battleId
+                 << " players=" << room->personalSettlementPayloads.size();
+    }
+}
+
+bool BattleRoomManager::FinishBattle(BattleRoom &room, const ::eBattleOutcome outcome,
+                                     const ::eSpectateEndReason spectateReason,
+                                     const contracts::kafka::BattleResultEvent* committedResult)
 {
     room.roundTimer.Cancel();
     room.battleTimer.Cancel();
     room.confirmResendTimer.Cancel();
 
-    // 对局结果回流 match:按 team_index 归组玩家(routingByPlayer 只有玩家,天然不含怪物)
-    std::map<uint32_t, std::vector<uint64_t>> playersByTeam;
-    uint32_t totalRounds = 0;
-    // 结果事件回显的逃跑 / 阵亡名单(所有对局都填;guild 同道历练按 team 0 − 逃跑发奖,U2)
-    std::vector<uint64_t> fledPlayerIds;
-    std::vector<uint64_t> deadPlayerIds;
+    // 已确认的完整来源是唯一的终局原件；不得在ACK后再次计算掉落或终值。
+    std::map<uint64_t, ::BattleSettlementData> settlements;
+    if (committedResult)
+    {
+        for (const auto& settlement : committedResult->settlements())
+            settlements.emplace(settlement.player_id(), settlement);
+        if (settlements.size() != room.routingByPlayer.size())
+        {
+            LOG_ERROR << "metric=battle_settlement_source_missing;no terminal dispatched";
+            return false;
+        }
+        for (const auto& [playerId, routing] : room.routingByPlayer)
+            if (!settlements.contains(playerId) || !room.personalSettlementPayloads.contains(playerId))
+            {
+                LOG_ERROR << "metric=battle_settlement_source_member_mismatch;no terminal dispatched";
+                return false;
+            }
+        if (room.pendingFinalTurn) BroadcastTurnResult(room, *room.pendingFinalTurn);
+    }
 
     for (const auto &[playerId, routing] : room.routingByPlayer)
     {
-        ::BattleSettlementData settlement = room.engine.BuildSettlement(playerId);
+        ::BattleSettlementData settlement = committedResult ? settlements.at(playerId) : room.engine.BuildSettlement(playerId);
         // 强制平局路径引擎结算里还是 ONGOING,以节点判定为准统一盖章
         settlement.set_outcome(outcome);
         settlement.set_battle_id(room.battleId);
-
-        playersByTeam[settlement.player_team_index()].push_back(playerId);
-        totalRounds = settlement.total_rounds();
-        if (settlement.fled())
-        {
-            fledPlayerIds.push_back(playerId);
-        }
-        if (settlement.is_dead())
-        {
-            deadPlayerIds.push_back(playerId);
-        }
 
         // 顺序:终局包先于关直连(下面 CloseDirectConnections 在全部终局包排队之后)。
         // 终局包是战斗帧,只走直连(turn-based §22 D68);没有直连的玩家收不到它,
@@ -1256,42 +1561,26 @@ void BattleRoomManager::FinishBattle(BattleRoom &room, const ::eBattleOutcome ou
         PushBattleFrame(room, playerId, BattleClientPlayerNotifyBattleEndMessageId, end);
 
         // R07:先落库、后投递、未销账则重投(重投时重新解析目标)。
-        // 投递被推迟到 Redis 落库回调里;真正要保的是"结算在被投递之前已经持久化"。
-        DispatchSettlementDurably(routing, playerId, settlement);
+        // 确认模式的 pending 在结果发出之前已落库(StagePersonalSettlements),这里只投命令、不再改写;
+        // 本地模式投递被推迟到 Redis 落库回调里。真正要保的是"结算在被投递之前已经持久化"。
+        if (committedResult)
+            DispatchStagedSettlement(routing, playerId, room.battleId, room.personalSettlementPayloads.at(playerId));
+        else
+            DispatchSettlementDurably(routing, playerId, settlement);
     }
 
     NotifySpectateEndAndClose(room, spectateReason, outcome);
     // 终局包已全部排队,直连从此没有存在意义:shutdown 让它们先 flush 再 FIN(D23)
     CloseDirectConnections(room, "battle_finished");
 
-    // BattleResultEvent(只在真实打完的局发;DestroyBattle/AbortAllRooms 作废路径不进这里)。
-    // winner_team_index:SIDE_A_WIN=0 / SIDE_B_WIN=1,平局时 match 忽略该字段。
-    contracts::kafka::BattleResultEvent result;
-    result.set_battle_id(room.battleId);
-    result.set_match_mode(room.matchMode);
-    result.set_battle_config_id(room.battleConfigId);
-    result.set_outcome(outcome);
-    result.set_winner_team_index(outcome == ::BATTLE_OUTCOME_SIDE_B_WIN ? 1u : 0u);
-    for (const auto &[teamIndex, playerIds] : playersByTeam)
-    {
-        auto *team = result.add_teams();
-        team->set_team_index(teamIndex);
-        for (const auto playerId : playerIds)
-        {
-            team->add_player_ids(playerId);
-        }
-    }
-    result.set_total_rounds(totalRounds);
-    result.set_finished_at_ms(TimeSystem::NowMillisecondsUTC());
-    turnbattle::FillBattleResultActivityFields(room.activityContext, std::move(fledPlayerIds),
-                                               std::move(deadPlayerIds), result);
+    const auto result = committedResult ? *committedResult : BuildResult(room, outcome);
     // 活动局(帮会同道历练)丢一条就是整局帮贡 / 资金 / 物品永久丢失,走持久化通道;
     // 普通对局丢一条只影响评分,保持原来的发一次(§6.19)。
     if (result.has_activity_context())
     {
-        DispatchActivityResultDurably(result);
+        DispatchActivityResultDurably(result, committedResult != nullptr);
     }
-    else
+    else if (!committedResult)
     {
         SendBattleResultEvent(result);
     }
@@ -1299,11 +1588,12 @@ void BattleRoomManager::FinishBattle(BattleRoom &room, const ::eBattleOutcome ou
     LOG_INFO << "Battle ended: battle_id=" << room.battleId
              << " outcome=" << ::eBattleOutcome_Name(outcome)
              << " players=" << room.routingByPlayer.size()
-             << " teams=" << playersByTeam.size()
-             << " total_rounds=" << totalRounds
+             << " teams=" << result.teams_size()
+             << " total_rounds=" << result.total_rounds()
              << " fled=" << result.fled_player_ids_size()
              << " dead=" << result.dead_player_ids_size()
              << " activity_kind=" << ::eBattleActivityKind_Name(room.activityContext.kind());
+    return true;
 }
 
 void BattleRoomManager::BroadcastTurnResult(const BattleRoom &room, const ::TurnResultS2C &result)
@@ -1373,7 +1663,7 @@ void BattleRoomManager::FillSelfItems(const BattleRoom &room, ::BattleStateS2C &
 void BattleRoomManager::PushSpectateState(const BattleRoom &room, const uint64_t observerId) const
 {
     ::SpectateStateS2C state;
-    *state.mutable_state() = room.engine.BuildStateSnapshot();
+    *state.mutable_state() = room.pendingVisibleState ? *room.pendingVisibleState : room.engine.BuildStateSnapshot();
     state.mutable_state()->set_battle_id(room.battleId);
     // 引擎无时钟,行动截止由节点按房间 timer 回填(与参战者首帧同口径)
     state.mutable_state()->set_action_deadline_ms(room.actionDeadlineMs);
@@ -1416,6 +1706,7 @@ void BattleRoomManager::NotifySpectateEndAndClose(BattleRoom &room,
 
 void BattleRoomManager::AbortAllRooms(const std::string &reason)
 {
+    StopResultCommits();
     if (rooms_.Empty())
     {
         return;
@@ -1435,8 +1726,11 @@ void BattleRoomManager::AbortAllRooms(const std::string &reason)
         room->battleTimer.Cancel();
         room->confirmResendTimer.Cancel();
         // 不结算:战斗作废,scene reaper 按 InBattleComp.deadline_ms 解冻(§3.2)。
+        // 等结果回执的房间例外:个人结算在结果发出之前已写进 pending,这里不动它。框架随后 flush producer,
+        // 结果可能到达 broker;无论到没到,scene 都会在登录钩子 / 冻结到期补读时应用(审计 social-match-battle#2)。
         // 停机作废无胜负:观众收 ABORTED + ONGOING
-        NotifySpectateEndAndClose(*room, ::SPECTATE_END_BATTLE_ABORTED, ::BATTLE_OUTCOME_ONGOING);
+        if (!room->resultCommit)
+            NotifySpectateEndAndClose(*room, ::SPECTATE_END_BATTLE_ABORTED, ::BATTLE_OUTCOME_ONGOING);
         CloseDirectConnections(*room, reason.c_str());
         EraseRoom(battleId);
     }
@@ -1537,7 +1831,7 @@ bool BattleRoomManager::BuildAssignment(const BattleRoom &room, const uint64_t p
         return false;
     }
     // NodeInfo 由 Node 持有、只在 loop 线程写;跨线程读取不与写入同步。
-    // 本函数仍只在 loop 线程执行(Handle* 经 runInLoop 投递)。
+    // 本函数仍只在 loop 线程执行(Handle* 由 muduo_grpc 服务端在 loop 线程上派发)。
     const auto &self = gNode->GetNodeInfo();
     // 客户端可达地址(集群外入口 D76/D78,规则唯一权威实现在 client_endpoint::ClientFacing):
     // client_endpoint 可用就用它;否则 required=false 时回落 endpoint(podip 形态),
@@ -1822,6 +2116,14 @@ void BattleRoomManager::DispatchSettlementDurably(const ::BattleRouting &routing
     }
 }
 
+void BattleRoomManager::DispatchStagedSettlement(const ::BattleRouting &routing, const uint64_t playerId,
+                                                 const uint64_t battleId, const std::string &payload)
+{
+    // 记录先于命令存在已由发结果之前的落库保证;outbox 照常按伴生 id 键探测销账、重解析目标重投。
+    SendSettlementCommand(routing.scene_node_id(), routing.scene_instance_id(), playerId, battleId, payload);
+    EnqueuePendingSettlement(battleId, playerId, payload, routing.scene_node_id());
+}
+
 void BattleRoomManager::EnsureSettlementBacklogReporter()
 {
     if (settlementBacklogTimer_.IsActive())
@@ -2093,7 +2395,7 @@ void BattleRoomManager::NoteUndeterminedSettlementProbe(const uint64_t battleId,
 //      SET 发出去了但应答没确认落库(空应答 / ERROR)不属于 R6:照发并登记重发,由 EXISTS 裁决(2026-10-16)。
 // 同一 battle_id 可能被投递多次(重发 / R5),match-results 的消费方必须按 battle_id 幂等(proto 注释已写明)。
 
-void BattleRoomManager::DispatchActivityResultDurably(const contracts::kafka::BattleResultEvent &result)
+void BattleRoomManager::DispatchActivityResultDurably(const contracts::kafka::BattleResultEvent &result, const bool brokerCommitted)
 {
     const uint64_t battleId = result.battle_id();
 
@@ -2111,14 +2413,14 @@ void BattleRoomManager::DispatchActivityResultDurably(const contracts::kafka::Ba
         // R6:落不了库就只发一次 —— 与改造前的行为一致,不是新增的退化,但必须响一声。
         LOG_ERROR << "metric=battle_activity_result_not_durable battle_id=" << battleId
                   << ",Redis unavailable;delivering activity battle result once without persistence(lost delivery means lost guild rewards for this battle)";
-        SendMatchResultPayload(battleId, payload);
+        if (!brokerCommitted) SendMatchResultPayload(battleId, payload);
         return;
     }
 
     // 成功回调里才投递,保证"记录先于事件存在"(见头文件 DispatchActivityResultDurably 的说明)。
     const std::string key = turnbattle::ActivityResultKey(battleId);
     const int rc = tlsRedis.GetZoneRedis()->command(
-        [weakSelf = WeakSelf(), battleId, payload](hiredis::Hiredis *, redisReply *reply)
+        [weakSelf = WeakSelf(), battleId, payload, brokerCommitted](hiredis::Hiredis *, redisReply *reply)
         {
             // 应答没确认落库(空应答 / ERROR / 意外形状)也照样登记重发(ClassifyPersistReply 的说明)。
             // 以前的理由是「没有记录就没有是否已销账可探测」,可空应答时 SET 可能已经执行:记录落了而这一次
@@ -2133,7 +2435,7 @@ void BattleRoomManager::DispatchActivityResultDurably(const contracts::kafka::Ba
                           << " redis_error=" << std::string(battle_settlement::ReplyText(reply))
                           << ",activity battle result persistence unconfirmed;delivering and tracking for resend(the EXISTS probe decides whether the record exists)";
             }
-            SendMatchResultPayload(battleId, payload);
+            if (!brokerCommitted) SendMatchResultPayload(battleId, payload);
             if (const auto self = weakSelf.lock())
             {
                 self->EnqueuePendingActivityResult(battleId, payload);
@@ -2147,7 +2449,7 @@ void BattleRoomManager::DispatchActivityResultDurably(const contracts::kafka::Ba
         // 不在这里补发这局结果就静默丢了。按 R6 降级只发一次。
         LOG_ERROR << "metric=battle_activity_result_not_durable battle_id=" << battleId
                   << ",activity battle result SET could not be sent;delivering once without persistence(lost delivery means lost guild rewards for this battle)";
-        SendMatchResultPayload(battleId, payload);
+        if (!brokerCommitted) SendMatchResultPayload(battleId, payload);
     }
 }
 

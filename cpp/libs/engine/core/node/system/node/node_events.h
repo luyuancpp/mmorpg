@@ -7,5 +7,4 @@ struct OnNodeRemoveEvent
 {
     entt::entity node{entt::null};
     uint32_t nodeType{0};
-    uint32_t sceneNodeType{0};
 };

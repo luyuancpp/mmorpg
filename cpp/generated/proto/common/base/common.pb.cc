@@ -33,8 +33,6 @@ PROTOBUF_CONSTINIT ::google::protobuf::internal::ReflectionData
         {&::_pbi::kDescriptorMethods, &::descriptor_table_proto_2fcommon_2fbase_2fcommon_2eproto, /* tracker*/ nullptr,},
         // ::NodeInfo
         {&::_pbi::kDescriptorMethods, &::descriptor_table_proto_2fcommon_2fbase_2fcommon_2eproto, /* tracker*/ nullptr,},
-        // ::NodeInfoListComp
-        {&::_pbi::kDescriptorMethods, &::descriptor_table_proto_2fcommon_2fbase_2fcommon_2eproto, /* tracker*/ nullptr,},
         // ::NetworkAddress
         {&::_pbi::kDescriptorMethods, &::descriptor_table_proto_2fcommon_2fbase_2fcommon_2eproto, /* tracker*/ nullptr,},
 };
@@ -142,7 +140,7 @@ constexpr auto NetworkAddress::InternalGenerateClassData_(
           false,
       },
 #ifdef PROTOBUF_MESSAGE_GLOBALS
-      &file_reflection_data[3],
+      &file_reflection_data[2],
 #else   // !PROTOBUF_MESSAGE_GLOBALS
       &::_pbi::kDescriptorMethods,
       &descriptor_table_proto_2fcommon_2fbase_2fcommon_2eproto,
@@ -358,11 +356,11 @@ constexpr NodeInfo::ParseTableT_ NodeInfo::InternalGenerateParseTable_(const ::_
     {
       PROTOBUF_FIELD_OFFSET(NodeInfo, _impl_._has_bits_),
       0, // no _extensions_
-      11, 120,  // max_field_number, fast_idx_mask
+      12, 120,  // max_field_number, fast_idx_mask
       offsetof(ParseTableT_, field_lookup_table),
-      4294965248,  // skipmap
+      4294963200,  // skipmap
       offsetof(ParseTableT_, field_entries),
-      11,  // num_field_entries
+      12,  // num_field_entries
       3,  // num_aux_entries
       offsetof(ParseTableT_, aux_entries),
       class_data,
@@ -417,7 +415,10 @@ constexpr NodeInfo::ParseTableT_ NodeInfo::InternalGenerateParseTable_(const ::_
       {::_pbi::TcParser::FastMtS1,
        {90, 3, 2,
         PROTOBUF_FIELD_OFFSET(NodeInfo, _impl_.client_endpoint_)}},
-      {::_pbi::TcParser::MiniParse, {}},
+      // uint32 physical_region = 12;
+      {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(NodeInfo, _impl_.physical_region_), 11>(),
+       {96, 11, 0,
+        PROTOBUF_FIELD_OFFSET(NodeInfo, _impl_.physical_region_)}},
       {::_pbi::TcParser::MiniParse, {}},
       {::_pbi::TcParser::MiniParse, {}},
       {::_pbi::TcParser::MiniParse, {}},
@@ -446,6 +447,8 @@ constexpr NodeInfo::ParseTableT_ NodeInfo::InternalGenerateParseTable_(const ::_
       {PROTOBUF_FIELD_OFFSET(NodeInfo, _impl_.grpc_endpoint_), _Internal::kHasBitsOffset + 2, 1, (0 | ::_fl::kFcOptional | ::_fl::kMessage | ::_fl::kTvTable)},
       // .EndpointComp client_endpoint = 11;
       {PROTOBUF_FIELD_OFFSET(NodeInfo, _impl_.client_endpoint_), _Internal::kHasBitsOffset + 3, 2, (0 | ::_fl::kFcOptional | ::_fl::kMessage | ::_fl::kTvTable)},
+      // uint32 physical_region = 12;
+      {PROTOBUF_FIELD_OFFSET(NodeInfo, _impl_.physical_region_), _Internal::kHasBitsOffset + 11, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
     }},
     {{
         #ifndef PROTOBUF_MESSAGE_GLOBALS
@@ -489,7 +492,8 @@ inline constexpr NodeInfo::Impl_::Impl_(
         scene_node_type_{0u},
         zone_id_{0u},
         protocol_type_{0u},
-        player_count_{0u} {}
+        player_count_{0u},
+        physical_region_{0u} {}
 
 template <typename>
 constexpr NodeInfo::NodeInfo(::_pbi::ConstantInitialized,
@@ -583,157 +587,6 @@ const ::_pbi::ClassData* NodeInfo_get_class_data() {
 }
 }  // namespace
 #endif  // PROTOBUF_CUSTOM_VTABLE
-class NodeInfoListComp::_Internal {
- public:
-  using HasBits = decltype(::std::declval<NodeInfoListComp>()._impl_._has_bits_);
-  static constexpr ::int32_t kHasBitsOffset =
-      8 * PROTOBUF_FIELD_OFFSET(NodeInfoListComp, _impl_._has_bits_);
-};
-
-constexpr NodeInfoListComp::ParseTableT_ NodeInfoListComp::InternalGenerateParseTable_(const ::_pbi::ClassData* class_data) {
-  return ParseTableT_{
-    {
-      PROTOBUF_FIELD_OFFSET(NodeInfoListComp, _impl_._has_bits_),
-      0, // no _extensions_
-      1, 0,  // max_field_number, fast_idx_mask
-      offsetof(ParseTableT_, field_lookup_table),
-      4294967294,  // skipmap
-      offsetof(ParseTableT_, field_entries),
-      1,  // num_field_entries
-      1,  // num_aux_entries
-      offsetof(ParseTableT_, aux_entries),
-      class_data,
-      nullptr,  // post_loop_handler
-      ::_pbi::TcParser::GenericFallback,  // fallback
-      #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
-      ::_pbi::TcParser::GetTable<::NodeInfoListComp>(),  // to_prefetch
-      #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
-    }, {{
-      // repeated .NodeInfo node_list = 1;
-      {::_pbi::TcParser::FastMtR1,
-       {10, 0, 0,
-        PROTOBUF_FIELD_OFFSET(NodeInfoListComp, _impl_.node_list_)}},
-    }}, {{
-      65535, 65535
-    }}, {{
-      // repeated .NodeInfo node_list = 1;
-      {PROTOBUF_FIELD_OFFSET(NodeInfoListComp, _impl_.node_list_), _Internal::kHasBitsOffset + 0, 0, (0 | ::_fl::kFcRepeated | ::_fl::kMessage | ::_fl::kTvTable)},
-    }},
-    {{
-        #ifndef PROTOBUF_MESSAGE_GLOBALS
-        {::_pbi::TcParser::GetTable<::NodeInfo>()},
-        #else
-        {::_pbi::FieldAuxMessageGlobals(), &::NodeInfo_globals_},
-        #endif
-    }},
-    {{
-    }},
-  };
-}
-
-
-inline constexpr NodeInfoListComp::Impl_::Impl_(
-    [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
-    ::_pbi::ConstantInitialized) noexcept
-      : _cached_size_{0},
-        node_list_ { visibility, ::_pbi::InternalMetadataOffset::Build<
-            ::NodeInfoListComp,
-            PROTOBUF_FIELD_OFFSET(::NodeInfoListComp, _impl_.node_list_)>()
-         }
-     {}
-
-template <typename>
-constexpr NodeInfoListComp::NodeInfoListComp(::_pbi::ConstantInitialized,
-                       const ::_pbi::ClassData* PROTOBUF_NONNULL class_data)
-    : ::google::protobuf::Message(
-#if defined(PROTOBUF_CUSTOM_VTABLE)
-          class_data
-#endif  // PROTOBUF_CUSTOM_VTABLE
-          ),
-      _impl_(internal_visibility(), ::_pbi::ConstantInitialized()) {
-}
-inline void* PROTOBUF_NONNULL NodeInfoListComp::PlacementNew_(
-    const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
-    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena) {
-  return ::new (mem) NodeInfoListComp(arena);
-}
-constexpr auto NodeInfoListComp::InternalNewImpl_() {
-  return ::google::protobuf::internal::MessageCreator::CopyInit(sizeof(NodeInfoListComp), alignof(NodeInfoListComp));
-}
-constexpr auto NodeInfoListComp::InternalGenerateClassData_(
-    const MessageLite& prototype,
-    const ::google::protobuf::internal::TcParseTableBase* tc_table) {
-  return ::google::protobuf::internal::ClassDataFull{
-      ::google::protobuf::internal::ClassData{
-          &prototype,
-#ifndef PROTOBUF_MESSAGE_GLOBALS
-          &_table_.header,
-#else
-          tc_table,
-#endif
-          nullptr,  // IsInitialized
-          &NodeInfoListComp::MergeImpl,
-          ::google::protobuf::Message::GetNewImpl<NodeInfoListComp>(),
-#if defined(PROTOBUF_CUSTOM_VTABLE)
-          &NodeInfoListComp::SharedDtor,
-          ::google::protobuf::Message::GetClearImpl<NodeInfoListComp>(), &NodeInfoListComp::ByteSizeLong,
-              &NodeInfoListComp::_InternalSerialize,
-#endif  // PROTOBUF_CUSTOM_VTABLE
-          PROTOBUF_FIELD_OFFSET(NodeInfoListComp, _impl_._cached_size_),
-          false,
-      },
-#ifdef PROTOBUF_MESSAGE_GLOBALS
-      &file_reflection_data[2],
-#else   // !PROTOBUF_MESSAGE_GLOBALS
-      &::_pbi::kDescriptorMethods,
-      &descriptor_table_proto_2fcommon_2fbase_2fcommon_2eproto,
-      nullptr,  // tracker
-#endif  // PROTOBUF_MESSAGE_GLOBALS
-  };
-}
-struct NodeInfoListCompGlobalsTypeInternal : ::_pbi::MessageGlobalsBase {
-  constexpr NodeInfoListCompGlobalsTypeInternal()
-      :
-#ifndef PROTOBUF_MESSAGE_GLOBALS
-        _default(::_pbi::ConstantInitialized{},
-                 NodeInfoListComp_class_data_.base())
-#else   // !PROTOBUF_MESSAGE_GLOBALS
-        MessageGlobalsBase(NodeInfoListComp::InternalGenerateClassData_(
-            _default, &NodeInfoListComp_globals_._table.header)),
-        _default(::_pbi::ConstantInitialized{}, GetClassData()),
-        _table(::_pbi::PrivateAccess::GenerateParseTable<NodeInfoListComp>(
-            GetClassData()))
-#endif  // PROTOBUF_MESSAGE_GLOBALS
-  {
-  }
-  ~NodeInfoListCompGlobalsTypeInternal() {}
-  union {
-    alignas(::_pbi::kMaxMessageAlignment) NodeInfoListComp _default;
-  };
-#ifdef PROTOBUF_MESSAGE_GLOBALS
-  decltype(::_pbi::PrivateAccess::GenerateParseTable<NodeInfoListComp>(
-      ::std::declval<const ::_pbi::ClassData*>())) _table;
-#endif
-};
-#ifdef PROTOBUF_MESSAGE_GLOBALS
-static_assert(PROTOBUF_FIELD_OFFSET(NodeInfoListCompGlobalsTypeInternal, _default) ==
-              ::_pbi::MessageGlobalsBase::OffsetToDefault());
-#endif  // PROTOBUF_MESSAGE_GLOBALS
-
-PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
-    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 PROTOBUF_MESSAGE_GLOBALS_CONST NodeInfoListCompGlobalsTypeInternal NodeInfoListComp_globals_
-        PROTOBUF_MESSAGE_GLOBALS_SECTION(.data.rel.ro);
-#if defined(PROTOBUF_CUSTOM_VTABLE)
-namespace {
-const ::_pbi::ClassData* NodeInfoListComp_get_class_data() {
-#ifdef PROTOBUF_MESSAGE_GLOBALS
-  return NodeInfoListComp_globals_.GetClassData();
-#else
-  return NodeInfoListComp_class_data_.base();
-#endif  // PROTOBUF_MESSAGE_GLOBALS
-}
-}  // namespace
-#endif  // PROTOBUF_CUSTOM_VTABLE
 static constexpr const ::_pb::EnumDescriptor* PROTOBUF_NONNULL* PROTOBUF_NULLABLE
     file_level_enum_descriptors_proto_2fcommon_2fbase_2fcommon_2eproto = nullptr;
 static constexpr const ::_pb::ServiceDescriptor* PROTOBUF_NONNULL* PROTOBUF_NULLABLE
@@ -750,7 +603,7 @@ const ::uint32_t
         1,
         0x081, // bitmap
         PROTOBUF_FIELD_OFFSET(::NodeInfo, _impl_._has_bits_),
-        14, // hasbit index offset
+        15, // hasbit index offset
         PROTOBUF_FIELD_OFFSET(::NodeInfo, _impl_.node_id_),
         PROTOBUF_FIELD_OFFSET(::NodeInfo, _impl_.node_type_),
         PROTOBUF_FIELD_OFFSET(::NodeInfo, _impl_.launch_time_),
@@ -762,6 +615,7 @@ const ::uint32_t
         PROTOBUF_FIELD_OFFSET(::NodeInfo, _impl_.player_count_),
         PROTOBUF_FIELD_OFFSET(::NodeInfo, _impl_.grpc_endpoint_),
         PROTOBUF_FIELD_OFFSET(::NodeInfo, _impl_.client_endpoint_),
+        PROTOBUF_FIELD_OFFSET(::NodeInfo, _impl_.physical_region_),
         4,
         5,
         6,
@@ -773,11 +627,7 @@ const ::uint32_t
         10,
         2,
         3,
-        0x081, // bitmap
-        PROTOBUF_FIELD_OFFSET(::NodeInfoListComp, _impl_._has_bits_),
-        4, // hasbit index offset
-        PROTOBUF_FIELD_OFFSET(::NodeInfoListComp, _impl_.node_list_),
-        0,
+        11,
         0x081, // bitmap
         PROTOBUF_FIELD_OFFSET(::NetworkAddress, _impl_._has_bits_),
         5, // hasbit index offset
@@ -791,20 +641,18 @@ static const ::_pbi::MigrationSchema
     schemas[] ABSL_ATTRIBUTE_SECTION_VARIABLE(protodesc_cold) = {
         {0, sizeof(::EndpointComp)},
         {7, sizeof(::NodeInfo)},
-        {32, sizeof(::NodeInfoListComp)},
-        {37, sizeof(::NetworkAddress)},
+        {34, sizeof(::NetworkAddress)},
 };
 static const ::_pbi::MessageGlobalsBase* PROTOBUF_NONNULL const
     file_message_globals[] = {
         &::EndpointComp_globals_,
         &::NodeInfo_globals_,
-        &::NodeInfoListComp_globals_,
         &::NetworkAddress_globals_,
 };
 const char descriptor_table_protodef_proto_2fcommon_2fbase_2fcommon_2eproto[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
     protodesc_cold) = {
     "\n\036proto/common/base/common.proto\"(\n\014Endp"
-    "ointComp\022\n\n\002ip\030\001 \001(\t\022\014\n\004port\030\002 \001(\r\"\234\002\n\010N"
+    "ointComp\022\n\n\002ip\030\001 \001(\t\022\014\n\004port\030\002 \001(\r\"\265\002\n\010N"
     "odeInfo\022\017\n\007node_id\030\001 \001(\r\022\021\n\tnode_type\030\002 "
     "\001(\r\022\023\n\013launch_time\030\003 \001(\004\022\027\n\017scene_node_t"
     "ype\030\004 \001(\r\022\037\n\010endpoint\030\005 \001(\0132\r.EndpointCo"
@@ -812,21 +660,21 @@ const char descriptor_table_protodef_proto_2fcommon_2fbase_2fcommon_2eproto[] AB
     "(\r\022\021\n\tnode_uuid\030\010 \001(\t\022\024\n\014player_count\030\t "
     "\001(\r\022$\n\rgrpc_endpoint\030\n \001(\0132\r.EndpointCom"
     "p\022&\n\017client_endpoint\030\013 \001(\0132\r.EndpointCom"
-    "p\"0\n\020NodeInfoListComp\022\034\n\tnode_list\030\001 \003(\013"
-    "2\t.NodeInfo\"*\n\016NetworkAddress\022\n\n\002ip\030\001 \001("
-    "\t\022\014\n\004port\030\002 \001(\rB\rZ\013common/baseb\006proto3"
+    "p\022\027\n\017physical_region\030\014 \001(\r\"*\n\016NetworkAdd"
+    "ress\022\n\n\002ip\030\001 \001(\t\022\014\n\004port\030\002 \001(\rB\rZ\013common"
+    "/baseb\006proto3"
 };
 static ::absl::once_flag descriptor_table_proto_2fcommon_2fbase_2fcommon_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fcommon_2fbase_2fcommon_2eproto = {
     false,
     false,
-    478,
+    453,
     descriptor_table_protodef_proto_2fcommon_2fbase_2fcommon_2eproto,
     "proto/common/base/common.proto",
     &descriptor_table_proto_2fcommon_2fbase_2fcommon_2eproto_once,
     nullptr,
     0,
-    4,
+    3,
     schemas,
     file_message_globals,
     TableStruct_proto_2fcommon_2fbase_2fcommon_2eproto::offsets,
@@ -1122,9 +970,9 @@ NodeInfo::NodeInfo(
                offsetof(Impl_, node_id_),
            reinterpret_cast<const char*>(&from._impl_) +
                offsetof(Impl_, node_id_),
-           offsetof(Impl_, player_count_) -
+           offsetof(Impl_, physical_region_) -
                offsetof(Impl_, node_id_) +
-               sizeof(Impl_::player_count_));
+               sizeof(Impl_::physical_region_));
 
   // @@protoc_insertion_point(copy_constructor:NodeInfo)
 }
@@ -1139,9 +987,9 @@ inline void NodeInfo::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
   ::memset(reinterpret_cast<char*>(&_impl_) +
                offsetof(Impl_, endpoint_),
            0,
-           offsetof(Impl_, player_count_) -
+           offsetof(Impl_, physical_region_) -
                offsetof(Impl_, endpoint_) +
-               sizeof(Impl_::player_count_));
+               sizeof(Impl_::physical_region_));
 }
 NodeInfo::~NodeInfo() {
   // @@protoc_insertion_point(destructor:NodeInfo)
@@ -1217,10 +1065,10 @@ PROTOBUF_NOINLINE void NodeInfo::Clear() {
         reinterpret_cast<char*>(&_impl_.scene_node_type_) -
         reinterpret_cast<char*>(&_impl_.node_id_)) + sizeof(_impl_.scene_node_type_));
   }
-  if (BatchCheckHasBit(cached_has_bits, 0x00000700U)) {
+  if (BatchCheckHasBit(cached_has_bits, 0x00000f00U)) {
     ::memset(&_impl_.zone_id_, 0, static_cast<::size_t>(
-        reinterpret_cast<char*>(&_impl_.player_count_) -
-        reinterpret_cast<char*>(&_impl_.zone_id_)) + sizeof(_impl_.player_count_));
+        reinterpret_cast<char*>(&_impl_.physical_region_) -
+        reinterpret_cast<char*>(&_impl_.zone_id_)) + sizeof(_impl_.physical_region_));
   }
   _impl_._has_bits_.Clear();
   _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
@@ -1339,6 +1187,15 @@ PROTOBUF_NOINLINE void NodeInfo::Clear() {
         stream);
   }
 
+  // uint32 physical_region = 12;
+  if (CheckHasBit(cached_has_bits, 0x00000800U)) {
+    if (this_._internal_physical_region() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
+          12, this_._internal_physical_region(), target);
+    }
+  }
+
   if (ABSL_PREDICT_FALSE(this_._internal_metadata_.have_unknown_fields())) {
     target =
         ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
@@ -1416,7 +1273,7 @@ PROTOBUF_NOINLINE void NodeInfo::Clear() {
       }
     }
   }
-  if (BatchCheckHasBit(cached_has_bits, 0x00000700U)) {
+  if (BatchCheckHasBit(cached_has_bits, 0x00000f00U)) {
     // uint32 zone_id = 6;
     if (CheckHasBit(cached_has_bits, 0x00000100U)) {
       if (this_._internal_zone_id() != 0) {
@@ -1436,6 +1293,13 @@ PROTOBUF_NOINLINE void NodeInfo::Clear() {
       if (this_._internal_player_count() != 0) {
         total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
             this_._internal_player_count());
+      }
+    }
+    // uint32 physical_region = 12;
+    if (CheckHasBit(cached_has_bits, 0x00000800U)) {
+      if (this_._internal_physical_region() != 0) {
+        total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
+            this_._internal_physical_region());
       }
     }
   }
@@ -1512,7 +1376,7 @@ void NodeInfo::MergeImpl(::google::protobuf::MessageLite& to_msg,
       }
     }
   }
-  if (BatchCheckHasBit(cached_has_bits, 0x00000700U)) {
+  if (BatchCheckHasBit(cached_has_bits, 0x00000f00U)) {
     if (CheckHasBit(cached_has_bits, 0x00000100U)) {
       if (from._internal_zone_id() != 0) {
         _this->_impl_.zone_id_ = from._impl_.zone_id_;
@@ -1526,6 +1390,11 @@ void NodeInfo::MergeImpl(::google::protobuf::MessageLite& to_msg,
     if (CheckHasBit(cached_has_bits, 0x00000400U)) {
       if (from._internal_player_count() != 0) {
         _this->_impl_.player_count_ = from._impl_.player_count_;
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000800U)) {
+      if (from._internal_physical_region() != 0) {
+        _this->_impl_.physical_region_ = from._impl_.physical_region_;
       }
     }
   }
@@ -1550,236 +1419,14 @@ void NodeInfo::InternalSwap(NodeInfo* PROTOBUF_RESTRICT PROTOBUF_NONNULL other) 
   swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
   ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.node_uuid_, &other->_impl_.node_uuid_, arena);
   ::google::protobuf::internal::memswap<
-      PROTOBUF_FIELD_OFFSET(NodeInfo, _impl_.player_count_)
-      + sizeof(NodeInfo::_impl_.player_count_)
+      PROTOBUF_FIELD_OFFSET(NodeInfo, _impl_.physical_region_)
+      + sizeof(NodeInfo::_impl_.physical_region_)
       - PROTOBUF_FIELD_OFFSET(NodeInfo, _impl_.endpoint_)>(
           reinterpret_cast<char*>(&_impl_.endpoint_),
           reinterpret_cast<char*>(&other->_impl_.endpoint_));
 }
 
 ::google::protobuf::Metadata NodeInfo::GetMetadata() const {
-  return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
-}
-// ===================================================================
-
-NodeInfoListComp::NodeInfoListComp(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
-#if defined(PROTOBUF_CUSTOM_VTABLE)
-    : ::google::protobuf::Message(arena, NodeInfoListComp_get_class_data()) {
-#else   // PROTOBUF_CUSTOM_VTABLE
-    : ::google::protobuf::Message(arena) {
-#endif  // PROTOBUF_CUSTOM_VTABLE
-  SharedCtor(arena);
-  // @@protoc_insertion_point(arena_constructor:NodeInfoListComp)
-}
-PROTOBUF_NDEBUG_INLINE NodeInfoListComp::Impl_::Impl_(
-    [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
-    [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
-    [[maybe_unused]] const ::NodeInfoListComp& from_msg)
-      : _has_bits_{from._has_bits_},
-        _cached_size_{0},
-        node_list_ {
-          visibility, ::_pbi::InternalMetadataOffset::Build<
-              ::NodeInfoListComp,
-              PROTOBUF_FIELD_OFFSET(::NodeInfoListComp, _impl_.node_list_)>()
-          , from.node_list_
-        }
-     {}
-
-NodeInfoListComp::NodeInfoListComp(
-    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena,
-    const NodeInfoListComp& from)
-#if defined(PROTOBUF_CUSTOM_VTABLE)
-    : ::google::protobuf::Message(arena, NodeInfoListComp_get_class_data()) {
-
-#else   // PROTOBUF_CUSTOM_VTABLE
-    : ::google::protobuf::Message(arena) {
-#endif  // PROTOBUF_CUSTOM_VTABLE
-  NodeInfoListComp* const _this = this;
-  (void)_this;
-  _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
-      from._internal_metadata_);
-  new (&_impl_) Impl_(internal_visibility(), arena, from._impl_, from);
-
-  // @@protoc_insertion_point(copy_constructor:NodeInfoListComp)
-}
-PROTOBUF_NDEBUG_INLINE NodeInfoListComp::Impl_::Impl_(
-    [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
-    [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
-      : _cached_size_{0},
-        node_list_ { visibility, ::_pbi::InternalMetadataOffset::Build<
-            ::NodeInfoListComp,
-            PROTOBUF_FIELD_OFFSET(::NodeInfoListComp, _impl_.node_list_)>()
-         }
-     {}
-
-inline void NodeInfoListComp::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
-  new (&_impl_) Impl_(internal_visibility(), arena);
-}
-NodeInfoListComp::~NodeInfoListComp() {
-  // @@protoc_insertion_point(destructor:NodeInfoListComp)
-  SharedDtor(*this);
-}
-inline void NodeInfoListComp::SharedDtor(MessageLite& self) {
-  NodeInfoListComp& this_ = static_cast<NodeInfoListComp&>(self);
-  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
-    this_.CheckHasBitConsistency();
-  }
-  this_._internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
-  ABSL_DCHECK(this_.GetArena() == nullptr);
-  this_._impl_.~Impl_();
-}
-
-#ifndef PROTOBUF_MESSAGE_GLOBALS
-PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const
-    ::google::protobuf::internal::ClassDataFull NodeInfoListComp_class_data_ =
-        NodeInfoListComp::InternalGenerateClassData_(NodeInfoListComp_globals_._default);
-
-PROTOBUF_ATTRIBUTE_WEAK const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
-NodeInfoListComp::GetClassData() const {
-  ::google::protobuf::internal::PrefetchToLocalCache(&NodeInfoListComp_class_data_);
-  ::google::protobuf::internal::PrefetchToLocalCache(NodeInfoListComp_class_data_.tc_table);
-  return NodeInfoListComp_class_data_.base();
-}
-#else
-PROTOBUF_ATTRIBUTE_WEAK const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
-NodeInfoListComp::GetClassData() const {
-  ::google::protobuf::internal::PrefetchToLocalCache(&NodeInfoListComp_globals_);
-  ::google::protobuf::internal::PrefetchToLocalCache(
-      ::google::protobuf::internal::MessageGlobalsBase::ToParseTableBase(&NodeInfoListComp_globals_));
-  return NodeInfoListComp_globals_.GetClassData();
-}
-#endif  // !PROTOBUF_MESSAGE_GLOBALS
-#ifndef PROTOBUF_MESSAGE_GLOBALS
-PROTOBUF_CONSTINIT
-PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const NodeInfoListComp::ParseTableT_
-    NodeInfoListComp::_table_ =
-        NodeInfoListComp::InternalGenerateParseTable_(NodeInfoListComp_class_data_.base());
-#endif  // !PROTOBUF_MESSAGE_GLOBALS
-PROTOBUF_NOINLINE void NodeInfoListComp::Clear() {
-// @@protoc_insertion_point(message_clear_start:NodeInfoListComp)
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  ::uint32_t cached_has_bits = 0;
-  // Prevent compiler warnings about cached_has_bits being unused
-  (void) cached_has_bits;
-
-  cached_has_bits = _impl_._has_bits_[0];
-  if (CheckHasBit(cached_has_bits, 0x00000001U)) {
-    _impl_.node_list_.Clear();
-  }
-  _impl_._has_bits_.Clear();
-  _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
-}
-
-#if defined(PROTOBUF_CUSTOM_VTABLE)
-::uint8_t* PROTOBUF_NONNULL NodeInfoListComp::_InternalSerialize(
-    const ::google::protobuf::MessageLite& base, ::uint8_t* PROTOBUF_NONNULL target,
-    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) {
-  const NodeInfoListComp& this_ = static_cast<const NodeInfoListComp&>(base);
-#else   // PROTOBUF_CUSTOM_VTABLE
-::uint8_t* PROTOBUF_NONNULL NodeInfoListComp::_InternalSerialize(
-    ::uint8_t* PROTOBUF_NONNULL target,
-    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
-  const NodeInfoListComp& this_ = *this;
-#endif  // PROTOBUF_CUSTOM_VTABLE
-  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
-    this_.CheckHasBitConsistency();
-  }
-  // @@protoc_insertion_point(serialize_to_array_start:NodeInfoListComp)
-  ::uint32_t cached_has_bits = 0;
-  (void)cached_has_bits;
-
-  cached_has_bits = this_._impl_._has_bits_[0];
-  // repeated .NodeInfo node_list = 1;
-  if (CheckHasBit(cached_has_bits, 0x00000001U)) {
-    for (unsigned i = 0, n = static_cast<unsigned>(
-                             this_._internal_node_list_size());
-         i < n; i++) {
-      const auto& repfield = this_._internal_node_list().Get(i);
-      target =
-          ::google::protobuf::internal::WireFormatLite::InternalWriteMessage(
-              1, repfield, repfield.GetCachedSize(),
-              target, stream);
-    }
-  }
-
-  if (ABSL_PREDICT_FALSE(this_._internal_metadata_.have_unknown_fields())) {
-    target =
-        ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
-            this_._internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
-  }
-  // @@protoc_insertion_point(serialize_to_array_end:NodeInfoListComp)
-  return target;
-}
-
-#if defined(PROTOBUF_CUSTOM_VTABLE)
-::size_t NodeInfoListComp::ByteSizeLong(const MessageLite& base) {
-  const NodeInfoListComp& this_ = static_cast<const NodeInfoListComp&>(base);
-#else   // PROTOBUF_CUSTOM_VTABLE
-::size_t NodeInfoListComp::ByteSizeLong() const {
-  const NodeInfoListComp& this_ = *this;
-#endif  // PROTOBUF_CUSTOM_VTABLE
-  // @@protoc_insertion_point(message_byte_size_start:NodeInfoListComp)
-  ::size_t total_size = 0;
-
-  ::uint32_t cached_has_bits = 0;
-  // Prevent compiler warnings about cached_has_bits being unused
-  (void)cached_has_bits;
-
-  ::_pbi::Prefetch5LinesFrom7Lines(&this_);
-   {
-    // repeated .NodeInfo node_list = 1;
-    cached_has_bits = this_._impl_._has_bits_[0];
-    if (CheckHasBit(cached_has_bits, 0x00000001U)) {
-      total_size += 1UL * this_._internal_node_list_size();
-      for (const auto& msg : this_._internal_node_list()) {
-        total_size += ::google::protobuf::internal::WireFormatLite::MessageSize(msg);
-      }
-    }
-  }
-  return this_.MaybeComputeUnknownFieldsSize(total_size,
-                                             &this_._impl_._cached_size_);
-}
-
-void NodeInfoListComp::MergeImpl(::google::protobuf::MessageLite& to_msg,
-                      const ::google::protobuf::MessageLite& from_msg) {
-   auto* const _this = static_cast<NodeInfoListComp*>(&to_msg);
-  auto& from = static_cast<const NodeInfoListComp&>(from_msg);
-  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
-    from.CheckHasBitConsistency();
-  }
-  ::google::protobuf::Arena* arena = _this->GetArena();
-  // @@protoc_insertion_point(class_specific_merge_from_start:NodeInfoListComp)
-  ABSL_DCHECK_NE(&from, _this);
-  ::uint32_t cached_has_bits = 0;
-  (void)cached_has_bits;
-
-  cached_has_bits = from._impl_._has_bits_[0];
-  if (CheckHasBit(cached_has_bits, 0x00000001U)) {
-    _this->_internal_mutable_node_list()->InternalMergeFromWithArena(
-        ::google::protobuf::MessageLite::internal_visibility(), arena,
-        from._internal_node_list());
-  }
-  _this->_impl_._has_bits_[0] |= cached_has_bits;
-  _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
-      from._internal_metadata_);
-}
-
-void NodeInfoListComp::CopyFrom(const NodeInfoListComp& from) {
-  // @@protoc_insertion_point(class_specific_copy_from_start:NodeInfoListComp)
-  if (&from == this) return;
-  Clear();
-  MergeFrom(from);
-}
-
-
-void NodeInfoListComp::InternalSwap(NodeInfoListComp* PROTOBUF_RESTRICT PROTOBUF_NONNULL other) {
-  using ::std::swap;
-  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
-  swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
-  _impl_.node_list_.InternalSwap(&other->_impl_.node_list_);
-}
-
-::google::protobuf::Metadata NodeInfoListComp::GetMetadata() const {
   return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
 }
 // ===================================================================

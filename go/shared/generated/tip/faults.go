@@ -46,6 +46,8 @@ var Faults = []Fault{
 	{Code: 2029, Group: "login_error", Name: "LoginAccountDataLoadFailed"},
 	{Code: 2030, Group: "login_error", Name: "LoginFsmInvalidEvent"},
 	{Code: 2031, Group: "login_error", Name: "LoginTimeout"},
+	{Code: 2035, Group: "login_error", Name: "LoginAuthProviderUnavailable"},
+	{Code: 2036, Group: "login_error", Name: "LoginTokenIssueFailed"},
 	{Code: 3003, Group: "scene_error", Name: "EnterNodeUnavailable"},
 	{Code: 3010, Group: "scene_error", Name: "EnterSceneGsInfoNull"},
 	{Code: 3012, Group: "scene_error", Name: "EnterSceneYourSceneIsNull"},

@@ -44,17 +44,49 @@ func NewLoginLogic(ctx context.Context, svcCtx *svc.ServiceContext) *LoginLogic 
 func (l *LoginLogic) Login(in *login_proto.LoginRequest) (*login_proto.LoginResponse, error) {
 	resp := &login_proto.LoginResponse{}
 
+	// 入口分类见 classifyLoginPath:不带会话 = Java Gateway POST /api/login 直调;带会话 = 经
+	// cpp gate HandleGrpcNodeMessage 转发。gate 上 auth_type=access_token 是新流程
+	// (/api/login → assign-gate → gate Login)绑定会话的必经一步,不是弃用路径;只有在 gate 上
+	// 用口令 / 第三方凭据首认证才算 legacy。分类只看会话头与 auth_type,认证之前就能确定,
+	// 所以分类、弃用遥测(限频的弃用日志 + login_auth_path_total)与 kill switch 都放在认证之前。
+	// 遥测因此计的是请求数(含认证失败、抢锁失败与被拒的请求),auth_type 先收敛再做 label(见 authTypeMetricLabel)。
+	sessionDetails, sessionFound := ctxkeys.GetSessionDetails(l.ctx)
+	path := classifyLoginPath(sessionDetails, sessionFound, in.AuthType)
+	warnLegacyLoginCaller(path, in.AuthType)
+
+	// ARCH §12 T+2:运维确认 legacy 计数低于约定阈值后,在 login.yaml 把 LegacyGateLoginEnabled 置 false。
+	// 此后 gate 上的凭据首认证一律回通用登录错误,剩下的老客户端按常规重试改走 /api/login。
+	// gate 上的 access_token 绑定不受影响:它是 login_session 与设备集的唯一写入点,拦了它
+	// CreatePlayer / EnterGame 全部读不到 login_session(kLoginSessionNotFound),所有客户端都进不了游戏。
+	//
+	// 拒绝发生在认证之前:被拒的请求不调用认证器(第三方 code 不被消费,客户端改走 /api/login 时还能用;
+	// 口令不被校验,也不占口令配额)、不抢账号锁、不建账号目录、不写 login_session / 设备集,开关翻回去无需清理。
+	// 代价是凭据真假都回同一个码(不再先回 kLoginAccountNotFound),对旧客户端都是「登录失败,请重试」。
+	// 此时账号还没解析,日志只记收敛后的 auth_type 与 session_id,不记客户端送来的未认证账号。
+	//
+	// 刻意沿用 kLoginUnknownError 不新开码:新码要改 Tip.xlsx、重新导表、三端重编,对一个客户端 SDK
+	// 已经用通用「登录失败,请重试」处理的 kill switch 路径不值得;弃用遥测显示尾巴不收敛时再随下一轮导表加专用码。
+	if shouldRejectLegacyRequest(path, config.AppConfig.LegacyGateLoginEnabled) {
+		logx.Errorf("[DEPRECATION] legacy gate credential Login disabled by config; "+
+			"rejecting before authentication auth_type=%s session_id=%d. "+
+			"Client should migrate to POST /api/login on Java Gateway.",
+			authTypeMetricLabel(in.AuthType), sessionDetails.SessionId)
+		resp.ErrorMessage = &login_proto_common.TipInfoMessage{Id: uint32(table.LoginError_kLoginUnknownError)}
+		return resp, nil
+	}
+
 	// Resolve account via auth provider
 	account, err := l.resolveAccount(in)
 	if err != nil {
-		logx.Errorf("Auth failed: type=%s err=%v", in.AuthType, err)
-		resp.ErrorMessage = &login_proto_common.TipInfoMessage{Id: uint32(table.LoginError_kLoginAccountNotFound)}
+		tip := authFailureTip(err)
+		logx.Errorf("Auth failed: type=%s tip=%d err=%v", in.AuthType, tip, err)
+		resp.ErrorMessage = &login_proto_common.TipInfoMessage{Id: tip}
 		return resp, nil
 	}
 
 	// 1. Distributed lock (UUID + Lua safe release)
 	accountLock, err := locker.NewRedisLocker(l.svcCtx.RedisClient).TryLock(
-		l.ctx, "account_lock:login:"+account,
+		l.ctx, accountLoginLockKey(account),
 		time.Duration(config.AppConfig.Locker.AccountLockTTL)*time.Second,
 	)
 	if err != nil || !accountLock.IsLocked() {
@@ -68,57 +100,16 @@ func (l *LoginLogic) Login(in *login_proto.LoginRequest) (*login_proto.LoginResp
 		}
 	}()
 
-	// 2. Validate session
-	sessionDetails, sessionFound := ctxkeys.GetSessionDetails(l.ctx)
-
-	// Deprecation hint: when SessionDetails are attached, the call arrived
-	// through cpp gate.HandleGrpcNodeMessage — i.e. the legacy path where the
-	// client runs the Login RPC on its TCP channel after hitting assign-gate.
-	// The new path (Java Gateway POST /api/login) calls this RPC directly
-	// without a session_id, so an empty SessionDetails means "new path".
-	//
-	// We log the legacy path at warn, throttled, so ops can see the migration
-	// progress without flooding the log. Functionality is unchanged — there is
-	// no plan to break this path in the current release; a future version may
-	// gate it behind a config flag.
-	isLegacyPath := sessionFound && sessionDetails != nil && sessionDetails.SessionId > 0
-	warnLegacyLoginCaller(isLegacyPath, in.AuthType)
-
-	// ARCH §12 T+2 step: when ops has confirmed the legacy_login_count
-	// counter is below the agreed threshold, they flip
-	// `LegacyGateLoginEnabled: false` in login.yaml to harden the kill
-	// switch. From that moment the legacy branch short-circuits BEFORE
-	// any lock / Redis / device-set work, returning a generic login
-	// error to the small tail of remaining old clients (which will
-	// fall back to /api/login via their normal retry path). The flag
-	// is off only when ops explicitly turns it off — default-true
-	// preserves the current rollout state.
-	//
-	// We deliberately reuse kLoginUnknownError rather than minting a
-	// new enum value: adding to the `login_error` proto requires a
-	// codegen round and a cpp/go/java rebuild, which is overkill for
-	// a kill-switch path the client SDK already handles with its
-	// generic "login failed, please retry" UI. A dedicated error code
-	// can land alongside the next proto codegen if the deprecation
-	// telemetry ever shows the tail isn't shrinking.
-	if shouldRejectLegacyRequest(isLegacyPath, config.AppConfig.LegacyGateLoginEnabled) {
-		logx.Errorf("[DEPRECATION] legacy gate Login RPC disabled by config; "+
-			"rejecting account=%s auth_type=%s session_id=%d. "+
-			"Client should migrate to POST /api/login on Java Gateway.",
-			account, in.AuthType, sessionDetails.SessionId)
-		resp.ErrorMessage = &login_proto_common.TipInfoMessage{Id: uint32(table.LoginError_kLoginUnknownError)}
-		return resp, nil
-	}
-
 	// New path (Java Gateway HTTP): no session exists yet because the player
 	// hasn't touched the gate TCP channel. Degenerate login: validate creds,
 	// mint access/refresh tokens, return the player list. Device-limit + the
-	// login_session:* write happen the first time the client hits the gate
-	// (via the legacy path's EnterGame → bindSession flow).
-	if !isLegacyPath {
+	// login_session:* write happen when the client then runs Login with
+	// auth_type="access_token" on the gate (loginPathGateBind, below).
+	if path == loginPathHTTP {
 		userAccount, err := GetOrInitUserAccount(l.ctx, l.svcCtx.RedisClient, account)
 		if err != nil {
-			return nil, err
+			resp.ErrorMessage = &login_proto_common.TipInfoMessage{Id: accountDirectoryFailureTip(err)}
+			return resp, nil
 		}
 
 		authType := in.AuthType
@@ -126,16 +117,19 @@ func (l *LoginLogic) Login(in *login_proto.LoginRequest) (*login_proto.LoginResp
 			authType = "password"
 		}
 		if authType != "access_token" {
+			// 这条路径上 token 就是登录的全部产出:客户端接着要拿 access_token 去 gate 上 Login 绑定会话。
+			// 签发失败时不能回「成功但没有 token」——第三方 code 已被消费,客户端只会拿着空 token 卡在下一步。
+			// 回故障码,让客户端重新走一遍登录(渠道凭证要重新取)。
 			tokenPair, tokenErr := l.issueTokens(account, authType)
 			if tokenErr != nil {
 				logx.Errorf("Failed to issue tokens for account=%s: %v", account, tokenErr)
-				// Non-fatal: client just won't get tokens for silent re-login
-			} else {
-				resp.AccessToken = tokenPair.AccessToken
-				resp.RefreshToken = tokenPair.RefreshToken
-				resp.AccessTokenExpire = tokenPair.AccessTokenExpire
-				resp.RefreshTokenExpire = tokenPair.RefreshTokenExpire
+				resp.ErrorMessage = &login_proto_common.TipInfoMessage{Id: uint32(table.LoginError_kLoginTokenIssueFailed)}
+				return resp, nil
 			}
+			resp.AccessToken = tokenPair.AccessToken
+			resp.RefreshToken = tokenPair.RefreshToken
+			resp.AccessTokenExpire = tokenPair.AccessTokenExpire
+			resp.RefreshTokenExpire = tokenPair.RefreshTokenExpire
 		}
 
 		resp.Players = l.roleListWithCurrentHomeZone(userAccount)
@@ -152,6 +146,9 @@ func (l *LoginLogic) Login(in *login_proto.LoginRequest) (*login_proto.LoginResp
 
 	sessionKey := constants.GenerateSessionKey(account)
 	expire := time.Duration(config.AppConfig.Node.SessionExpireMin) * time.Minute
+	// 登录态按 gate 连接建键(gate_instance_id + session_incarnation),不再只按 session_id:
+	// gate 重启后序号从 0 开始,只按 session_id 会让新连接继承旧进程留下的登录态(loginsession 包注释)。
+	sessionRef := loginsession.RefOf(sessionDetails)
 
 	if fenceKey, fenced := sessionfence.KeyOf(sessionDetails); fenced {
 		// 3+4. gate 连接会话栅栏(docs/design/client-request-ordering.md §6.2):「连接未关闭」的检查与
@@ -161,8 +158,8 @@ func (l *LoginLogic) Login(in *login_proto.LoginRequest) (*login_proto.LoginResp
 		// Self-heal 照旧在提交前做:剔除 login_session 已不存在的设备集条目。
 		loginsession.PruneStaleFromDeviceSet(l.ctx, l.svcCtx.RedisClient, sessionKey)
 		if err := sessionfence.CommitLogin(l.ctx, l.svcCtx.RedisClient, fenceKey,
-			loginsession.Key(sessionDetails.SessionId), account, loginsession.TTL(),
-			sessionKey, sessionDetails.SessionId, expire); err != nil {
+			sessionRef.WriteKeys(), account, loginsession.TTL(),
+			sessionKey, sessionRef.DeviceMember(), expire); err != nil {
 			if errors.Is(err, sessionfence.ErrClosed) {
 				// 连接已断开,回包也送不到;什么都没写。
 				logx.Infof("Login skipped: gate connection already closed sessionId=%d account=%s", sessionDetails.SessionId, account)
@@ -174,9 +171,9 @@ func (l *LoginLogic) Login(in *login_proto.LoginRequest) (*login_proto.LoginResp
 			return resp, nil
 		}
 	} else {
-		// 旧版 gate(没有会话代次):沿用原先的两步写。
+		// 旧版 gate(没有会话代次):沿用原先的两步写,登录态仍按 session_id 建键(计入 loginsession_legacy_key_total)。
 		// 3. Save login session (stores account for this session in Redis)
-		if err := loginsession.Save(l.ctx, l.svcCtx.RedisClient, sessionDetails.SessionId, account); err != nil {
+		if err := loginsession.Save(l.ctx, l.svcCtx.RedisClient, sessionRef, account); err != nil {
 			logx.Errorf("Login save failed: sessionId=%d account=%s err=%v", sessionDetails.SessionId, account, err)
 			resp.ErrorMessage = &login_proto_common.TipInfoMessage{Id: uint32(table.LoginError_kLoginRedisSetFailed)}
 			return resp, nil
@@ -189,7 +186,7 @@ func (l *LoginLogic) Login(in *login_proto.LoginRequest) (*login_proto.LoginResp
 		loginsession.PruneStaleFromDeviceSet(l.ctx, l.svcCtx.RedisClient, sessionKey)
 
 		_, err = l.svcCtx.RedisClient.TxPipelined(l.ctx, func(pipe redis.Pipeliner) error {
-			pipe.SAdd(l.ctx, sessionKey, sessionDetails.SessionId)
+			pipe.SAdd(l.ctx, sessionKey, sessionRef.DeviceMember())
 			pipe.Expire(l.ctx, sessionKey, expire)
 			return nil
 		})
@@ -215,7 +212,8 @@ func (l *LoginLogic) Login(in *login_proto.LoginRequest) (*login_proto.LoginResp
 	// 5. Load account data
 	userAccount, err := GetOrInitUserAccount(l.ctx, l.svcCtx.RedisClient, account)
 	if err != nil {
-		return nil, err
+		resp.ErrorMessage = &login_proto_common.TipInfoMessage{Id: accountDirectoryFailureTip(err)}
+		return resp, nil
 	}
 
 	// 6. Issue access/refresh tokens (skip for access_token re-auth to avoid token churn)
@@ -227,7 +225,8 @@ func (l *LoginLogic) Login(in *login_proto.LoginRequest) (*login_proto.LoginResp
 		tokenPair, tokenErr := l.issueTokens(account, authType)
 		if tokenErr != nil {
 			logx.Errorf("Failed to issue tokens for account=%s: %v", account, tokenErr)
-			// Non-fatal: login succeeds, client just won't have tokens for reconnect
+			// Non-fatal(与上面 HTTP 分支刻意不同):gate 上的会话此时已经绑定,登录本身成功了,
+			// token 只用于之后的静默重连;这里回失败反而让「会话已绑定、客户端以为失败」两边不一致。
 		} else {
 			resp.AccessToken = tokenPair.AccessToken
 			resp.RefreshToken = tokenPair.RefreshToken
@@ -367,10 +366,34 @@ func GetOrInitUserAccount(ctx context.Context, rdb *redis.Client, account string
 
 	if err := proto.Unmarshal([]byte(value), userAccount); err != nil {
 		logx.Errorf("Unmarshal user account failed for account=%s: %v", account, err)
-		return nil, err
+		return nil, fmt.Errorf("%w: %v", errAccountDirectoryCorrupt, err)
 	}
 
 	return userAccount, nil
+}
+
+// errAccountDirectoryCorrupt 标记账号目录记录存在但解析不了(数据损坏),与 Redis 读写故障区分开。
+var errAccountDirectoryCorrupt = errors.New("account character directory is corrupt")
+
+// accountDirectoryFailureTip 把账号目录读取失败映射成 in-band 故障码(Tip.xlsx 的 fault 列,serverbase 据此告警)。
+// 以前直接 return err:gRPC 层变成 UNKNOWN,Java 网关把它当鉴权拒绝回 401,玩家被要求重走 OAuth,
+// 而 serverbase 看不到这条 in-band 故障。
+func accountDirectoryFailureTip(err error) uint32 {
+	if errors.Is(err, errAccountDirectoryCorrupt) {
+		return uint32(table.LoginError_kLoginDataParseFailed)
+	}
+	return uint32(table.LoginError_kLoginRedisError)
+}
+
+// authFailureTip 把认证失败映射成回给客户端的码:渠道或本服务渠道配置侧的故障(auth.ErrProviderUnavailable:
+// 网络 / 超时、渠道非 2xx、AppSecret 无效、拿不到必需的 unionid 等)回故障码 kLoginAuthProviderUnavailable;
+// 其余(凭证无效、未知 auth_type、口令认证关闭)仍回 kLoginAccountNotFound,不向调用方区分原因。
+// 口令认证从不包 ErrProviderUnavailable:它统一回 2000 是有意的防账号枚举(auth-provider-framework.md 2026-10-15 节)。
+func authFailureTip(err error) uint32 {
+	if errors.Is(err, auth.ErrProviderUnavailable) {
+		return uint32(table.LoginError_kLoginAuthProviderUnavailable)
+	}
+	return uint32(table.LoginError_kLoginAccountNotFound)
 }
 
 // resolveAccount determines the account identifier based on the auth type.
@@ -409,6 +432,12 @@ func resolvePasswordAccount(ctx context.Context, in *login_proto.LoginRequest, p
 		return "", auth.ErrInvalidCredentials
 	}
 	return result.Account, nil
+}
+
+// accountLoginLockKey 是 Login 认证之后按账号互斥的分布式锁 key。单独成函数是为了让测试按同一个 key
+// 断言「被 kill switch 拒绝的请求不抢账号锁」,key 改名时断言跟着走,不会悄悄变成空转。
+func accountLoginLockKey(account string) string {
+	return "account_lock:login:" + account
 }
 
 // issueTokens generates an access/refresh token pair for the authenticated account.

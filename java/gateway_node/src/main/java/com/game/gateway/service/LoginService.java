@@ -3,6 +3,7 @@ package com.game.gateway.service;
 import com.game.gateway.dto.LoginRequest;
 import com.game.gateway.dto.LoginResponse;
 import com.game.gateway.grpc.LoginRpcClient;
+import com.game.table.tip.TipFaults;
 import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
 import org.slf4j.Logger;
@@ -46,8 +47,11 @@ public class LoginService {
             if (rsp.hasError()) {
                 int upstream = rsp.errorCode == null ? -1 : rsp.errorCode;
                 String msg = rsp.errorMessage != null ? rsp.errorMessage : ("upstream_err=" + upstream);
-                // Map any upstream auth/business error to 401 — clients re-do OAuth.
-                return LoginResponse.error(LoginResponse.CODE_AUTH_REJECTED, msg);
+                int code = httpCodeForUpstreamTip(rsp.errorCode);
+                if (code == LoginResponse.CODE_INTERNAL) {
+                    log.warn("login.rpc in-band fault tip={}", upstream);
+                }
+                return LoginResponse.error(code, msg);
             }
             return LoginResponse.ok(
                     rsp.players,
@@ -59,13 +63,46 @@ public class LoginService {
         } catch (StatusRuntimeException e) {
             Status.Code c = e.getStatus().getCode();
             log.warn("login.rpc failed: {} — {}", c, e.getStatus().getDescription());
-            if (c == Status.Code.UNAVAILABLE || c == Status.Code.DEADLINE_EXCEEDED) {
-                return LoginResponse.error(LoginResponse.CODE_INTERNAL, "login_unavailable");
-            }
-            return LoginResponse.error(LoginResponse.CODE_AUTH_REJECTED, c.name());
+            return LoginResponse.error(httpCodeForRpcStatus(c), messageForRpcStatus(c));
         } catch (Exception e) {
             log.error("login.rpc unexpected error", e);
             return LoginResponse.error(LoginResponse.CODE_INTERNAL, "internal_error");
         }
+    }
+
+    /**
+     * login.rpc 以 gRPC status 失败时的 HTTP 业务码。login 的业务拒绝一律走 in-band tip（上面的 hasError 分支），
+     * 以 status 失败只可能是传输、热关停闸门或服务端内部错误：只有 UNAUTHENTICATED / PERMISSION_DENIED 是
+     * 「调用方身份不被接受」，回 401；其余（UNKNOWN、INTERNAL 等）回 500。以前除 UNAVAILABLE / DEADLINE_EXCEEDED
+     * 外一律回 401，login 内部故障（例如账号目录读 Redis 失败变成 UNKNOWN）会让玩家被要求重走 OAuth。
+     * {@link RefreshTokenService} 用同一套映射。
+     */
+    static int httpCodeForRpcStatus(Status.Code c) {
+        return c == Status.Code.UNAUTHENTICATED || c == Status.Code.PERMISSION_DENIED
+                ? LoginResponse.CODE_AUTH_REJECTED
+                : LoginResponse.CODE_INTERNAL;
+    }
+
+    /**
+     * login 回 in-band tip 码时的 HTTP 业务码。分类只认 Tip.xlsx 的 fault 列（导表器生成的 {@link TipFaults}，
+     * 与 Go serverbase 的 {@code tip.IsFault} 同一份数据），网关里不另写故障码集合：
+     * <ul>
+     *   <li>故障码（渠道 / 存储故障、令牌签发失败……）→ 500：服务端出错，客户端稍后重试，凭证不一定有问题；</li>
+     *   <li>其余码（凭证无效等业务拒绝）、没有码只有 message、本二进制不认识的新码 → 401：客户端重新认证（原行为）。</li>
+     * </ul>
+     * message 不受影响，上游 tip 保留用于排障；当前客户端只按 JSON code 分支。{@link RefreshTokenService} 用同一套映射。
+     */
+    static int httpCodeForUpstreamTip(Integer tipId) {
+        return tipId != null && TipFaults.isFault(tipId)
+                ? LoginResponse.CODE_INTERNAL
+                : LoginResponse.CODE_AUTH_REJECTED;
+    }
+
+    /** 可重试的传输类失败统一给 login_unavailable（客户端既有文案），其余带 status 名便于排障。 */
+    static String messageForRpcStatus(Status.Code c) {
+        return switch (c) {
+            case UNAVAILABLE, DEADLINE_EXCEEDED, RESOURCE_EXHAUSTED -> "login_unavailable";
+            default -> c.name();
+        };
     }
 }

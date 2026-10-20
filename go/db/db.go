@@ -6,6 +6,7 @@ import (
 	"db/internal/kafka"
 	"db/internal/logic/pkg/proto_sql"
 	"db/internal/metrics"
+	"db/internal/saveoutbox"
 	server "db/internal/server/db"
 	"db/internal/svc"
 	"flag"
@@ -44,6 +45,9 @@ const killSwitchEtcdDialTimeout = 5 * time.Second
 // 之后的续写由 kafka.KeepPlacementCapability 负责,预算见那里。
 const placementCapabilityTimeout = 5 * time.Second
 
+// saveProtocolGateTimeout 是启动期存盘协议世代门禁的预算:一条 SET 或一次 GET 加 64 个 ZCARD 的管道。
+const saveProtocolGateTimeout = 5 * time.Second
+
 func main() {
 	flag.Parse()
 	// 版本行直写 stdout,先于读配置与 logx 初始化:进程在配置 / 依赖阶段就崩溃时也已留下"跑的是哪一版"
@@ -57,6 +61,22 @@ func main() {
 	conf.MustLoad(*configFile, &config.AppConfig)
 	// 回填 optional 段的默认值(迁移超时、大字段闸上限)。见 config.Normalize 注释。
 	config.AppConfig.Normalize()
+
+	// 重试路由(docs/design/db-retry-owner-routing.md):配置键 ServerConfig.Kafka.RetryRouting,环境变量 DB_RETRY_ROUTING
+	// 优先(只用于单 zone 金丝雀)。拼错一律拒启、不静默回落;生效值回写进配置,消费者按它装配。
+	// 启动日志 "retry routing: mode=… source=…" 与指标 db_retry_routing_mode 是切换 / 回滚时的核对依据。
+	retryRouting, retryRoutingSource, err := config.ResolveRetryRouting(
+		config.AppConfig.ServerConfig.Kafka.RetryRouting, os.Getenv(config.RetryRoutingEnvVar))
+	if err != nil {
+		panic(fmt.Sprintf("retry routing rejected: %v", err))
+	}
+	config.AppConfig.ServerConfig.Kafka.RetryRouting = retryRouting
+	// 重试路由与入队落盘确认(WAITAOF)的取值校验。conf.Load 在 Normalize 之前已自动调过一次(没写的键放行),
+	// 这里按回填默认值、合并环境变量之后的生效值再判一次,非法即拒启。
+	if err := config.AppConfig.Validate(); err != nil {
+		panic(fmt.Sprintf("config rejected: %v", err))
+	}
+	logx.Infof("retry routing: mode=%s source=%s", retryRouting, retryRoutingSource)
 
 	// Derive zone-specific Kafka topic and MySQL database name from ZoneId
 	if config.AppConfig.ZoneId == 0 {
@@ -78,9 +98,10 @@ func main() {
 	if err := kafkautil.EnsureTopics(
 		config.AppConfig.ServerConfig.Kafka.Brokers,
 		[]kafkautil.TopicSpec{{
-			Name:        config.AppConfig.ServerConfig.Kafka.Topic,
-			Partitions:  config.AppConfig.ServerConfig.Kafka.PartitionCnt,
-			RetentionMs: config.AppConfig.ServerConfig.Kafka.RetentionMs,
+			Name:           config.AppConfig.ServerConfig.Kafka.Topic,
+			Partitions:     config.AppConfig.ServerConfig.Kafka.PartitionCnt,
+			RetentionMs:    config.AppConfig.ServerConfig.Kafka.RetentionMs,
+			RetentionBytes: config.AppConfig.ServerConfig.Kafka.RetentionBytes,
 		}},
 	); err != nil {
 		panic(fmt.Sprintf("Kafka db-task partition contract rejected: %v", err))
@@ -120,6 +141,68 @@ func main() {
 	// 装配大字段三档闸(必须在消费者启动之前:第一条消息落到 worker 就要过闸)
 	kafka.InitBlobGuard(config.AppConfig.ServerConfig.BlobGuard)
 
+	// 行内围栏模式:启动期设置一次、运行中不可改,必须在构造消费者之前(设计 db-write-fencing-mysql.md §4.7、§8)。
+	fencingMode := config.AppConfig.ServerConfig.Fencing.EffectiveMode()
+	if err := kafka.SetFencingMode(fencingMode); err != nil {
+		panic(fmt.Sprintf("fencing mode rejected: %v", err))
+	}
+	kafka.SetFencingEpochOverride(config.AppConfig.ServerConfig.Fencing.EpochOverride)
+	if fencingMode == config.FencingModeLegacy && config.AppConfig.ServerConfig.Fencing.EpochOverride {
+		logx.Errorf("Fencing.EpochOverride ignored in legacy mode")
+	}
+
+	logx.Infof("player row fencing: mode=%s epoch_override=%v", fencingMode, config.AppConfig.ServerConfig.Fencing.EpochOverride && fencingMode == config.FencingModeDual)
+
+	// ── 存盘协议世代门禁(data-overwrite-rollback-audit-20261018.md §2.2)──────────────────────────
+	// 现行 scene / login 只说严格提交屏障,只有 dual 写两表 SQL ACK、跑补投。dual 在消费者与补投启动之前写 zone 级世代标记;
+	// legacy 先确认本 zone 没有严格世代证据(标记或非空补投桶)才启动,运行中周期复查,发现即走正常停机并以非零码退出,
+	// 由编排重启后停在本门禁。失败一律拒启(fail-closed):判不清世代时放 legacy 进来,就是「第二次登录起全部失败」。
+	// exitCode 的 defer 必须先于下面所有 defer 注册,才能在消费者等全部停完之后最后执行。
+	exitCode := 0
+	defer func() {
+		if exitCode != 0 {
+			os.Exit(exitCode)
+		}
+	}()
+	protocolConflict := make(chan error, 1)
+	gateCtx, gateCancel := context.WithTimeout(context.Background(), saveProtocolGateTimeout)
+	if fencingMode == config.FencingModeDual {
+		err = saveoutbox.AnnounceStrictGeneration(gateCtx, ctx.RedisClient, config.AppConfig.ZoneId)
+	} else {
+		err = saveoutbox.CheckLegacyAllowed(gateCtx, ctx.RedisClient, config.AppConfig.ZoneId)
+	}
+	gateCancel()
+	if err != nil {
+		panic(fmt.Sprintf("save protocol generation gate rejected startup (mode=%s): %v", fencingMode, err))
+	}
+	if fencingMode == config.FencingModeLegacy {
+		// 复查协程在消费者停完之后才取消(defer 后进先出):停机排空期间仍续写 legacy 存活标记,dual 的补投继续等。
+		watchCtx, stopWatch := context.WithCancel(context.Background())
+		defer stopWatch()
+		go saveoutbox.WatchLegacy(watchCtx, ctx.RedisClient, config.AppConfig.ZoneId, saveoutbox.LegacyWatchInterval, func(err error) {
+			select {
+			case protocolConflict <- err:
+			default:
+			}
+		})
+		logx.Infof("save protocol generation: mode=legacy zone=%d no strict evidence; rechecking every %s",
+			config.AppConfig.ZoneId, saveoutbox.LegacyWatchInterval)
+	} else {
+		logx.Infof("save protocol generation: mode=dual %s=%s", saveoutbox.GenerationKey(config.AppConfig.ZoneId), saveoutbox.GenerationStrict)
+	}
+
+	// 玩家持久 schema 引导关闭标记(docs/design/mixed-version-persist-field-protection.md §6.2 C0):消费者启动前读一次,
+	// 读不清就拒启;运行中周期复查,只会从开放变成关闭。复查协程随进程停机退出(defer 后进先出,晚于消费者停完)。
+	schemaCtx, schemaCancel := context.WithTimeout(context.Background(), saveProtocolGateTimeout)
+	err = kafka.LoadPersistBootstrapState(schemaCtx, ctx.RedisClient, config.AppConfig.ZoneId)
+	schemaCancel()
+	if err != nil {
+		panic(fmt.Sprintf("persist schema bootstrap state rejected startup: %v", err))
+	}
+	schemaWatchCtx, stopSchemaWatch := context.WithCancel(context.Background())
+	defer stopSchemaWatch()
+	go kafka.WatchPersistBootstrap(schemaWatchCtx, ctx.RedisClient, config.AppConfig.ZoneId)
+
 	// Initialize Kafka consumer
 	kafkaConsumer, err := kafka.NewKeyOrderedKafkaConsumer(
 		config.AppConfig,
@@ -136,6 +219,14 @@ func main() {
 	if err := kafkaConsumer.Start(); err != nil {
 		panic(fmt.Sprintf("failed to start Kafka consumer: %v", err))
 	}
+
+	// 父快照Lua中保存的原始任务意图跨scene崩溃恢复；Kafka确认后仍等两表SQL双ACK才清理。
+	// 装配使用可写主父缓存Redis，与只读OwnerEpochRedis区分；跨实例拓扑未支持时拒启。
+	saveReplay, err := saveoutbox.Start(context.Background(), config.AppConfig, ctx.RedisClient, ctx.PlacementRedis, stores)
+	if err != nil {
+		panic(fmt.Sprintf("save outbox recovery rejected: %v", err))
+	}
+	defer saveReplay.Stop()
 
 	// Start Prometheus /metrics endpoint (no-op when MetricsListenAddr empty).
 	metrics.Start(config.AppConfig.MetricsListenAddr)
@@ -242,6 +333,9 @@ func main() {
 		time.Duration(pc.ExtraStoreConnMaxIdleSeconds)*time.Second)
 	fmt.Printf("  kafka:       %v\n", config.AppConfig.ServerConfig.Kafka.Brokers)
 	fmt.Printf("  kafka topic: %s\n", config.AppConfig.ServerConfig.Kafka.Topic)
+	redisCfg := config.AppConfig.ServerConfig.RedisClient
+	fmt.Printf("  retry:       routing=%s (%s) waitaof=%d/%d/%dms\n", retryRouting, retryRoutingSource,
+		redisCfg.NumLocal(), redisCfg.NumReplicas(), redisCfg.WaitAOFTimeoutMs)
 	fmt.Printf("  mysql:       %s@%s/%s\n", config.AppConfig.ServerConfig.Database.User, config.AppConfig.ServerConfig.Database.Hosts, config.AppConfig.ServerConfig.Database.DBName)
 	fmt.Println("=============================================================")
 	// 不要对 quit 调 signal.Stop / signal.Reset:Linux 上 go-zero 收到 SIGTERM 后会在约 5.5 秒后向自身重发一次
@@ -250,8 +344,15 @@ func main() {
 	// Windows 上 go-zero 的 proc 是空实现,本机 go_services.ps1 发的 Ctrl+C 以 os.Interrupt(SIGINT)到达这里。
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
-	<-quit
-	fmt.Println("Shutting down gracefully...")
+	select {
+	case <-quit:
+		fmt.Println("Shutting down gracefully...")
+	case err := <-protocolConflict:
+		// 走与信号相同的停机路径(全部 defer),最后以非零码退出;重启后停在启动门禁,直到配置改为 dual。
+		logx.Errorf("SAVE-PROTOCOL-CONFLICT legacy go/db is running in a strict save-barrier zone, shutting down: %v", err)
+		fmt.Println("Shutting down: save protocol generation conflict (set ServerConfig.Fencing.Mode=dual)...")
+		exitCode = 1
+	}
 }
 
 // newKillSwitchEtcdClient 按 RpcServerConf.Etcd 建一个只给热关停 watch 用的

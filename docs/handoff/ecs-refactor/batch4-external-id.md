@@ -526,7 +526,7 @@ player_events.h：
 - `D:/luyuan/xuanming-server-mmo/PARITY.md(Java 仓库)`
 - `D:/luyuan/xuanming-server-mmo/docs/reference/mmorpg-client-contract-aoi.md(Java 仓库 §3.1 表格 entity 行与 §3.5)`
 
-1. 方案 A 下，C++ 的语义追平 Java 现状（Java 用 SceneWorld.nextId 发非 0 雪花号，ScenePlayer.entity 在一次进场内稳定），Java 代码不需要改。
+1. 方案 A 下，两版都使用 actor 存续期间稳定的不透明号。C++ 号为 node_id<<32|seq，同时在线节点之间唯一、本进程内不复用；进程重启或 node_id 回收后，同一 node_id 从 seq=1 重新发号。Java 用 SceneWorld.nextId 雪花号，跨重启也唯一。号源维持现状，Java 代码不需要改。
 
 2. Java 契约文档 :146 现在写着「C++ 是 entt::to_integral，会复用」，需改为新语义。
 
@@ -622,11 +622,11 @@ player_events.h：
 - MSVC 下前置声明 class 与 struct 不一致会报 C4099（aoi.h、combat_state.h、buff.h、mission_comp.h、mission.h 都有 `class Xxx;` 形式的前置声明），需要统一。
 - 4b 与 4d 有大量文件属于第 1 批的独占范围（aoi、skill、buff、actor_action_state、player_attribute、actor_event_handler、player_battle、scene_node_service、scene_handler 的 CreateScene），必须等第 1 批合入后再基于它的结果改。node.cpp:1528-1532 紧挨 F010 的摘除代码，需要与 gRPC→muduo HTTP/2 迁移会话协调；两者都在改 node.cpp。
 - 4d 方案 A 依赖 Install 必须先被调用：生产环境在 World 初始化时调用，测试在夹具里调用。漏调时 Assign 返回 0，该 actor 对客户端不可见；这是 fail-closed，能被发现，但会影响测试。
-- 4d 方案 A 的号只保证本进程内唯一。跨 scene 节点换图时，新旧节点的号可能相同。如果客户端换场景时不清空旧的 actor 表，可能出现错认；现状下 to_integral 的跨节点碰撞更严重。是否需要全局唯一，取决于客户端行为，已列入待决项。
+- 4d 方案 A 的 C++ 号为 node_id<<32|seq，同时在线节点之间唯一、本进程内不复用；进程重启或 node_id 回收后，同一 node_id 从 seq=1 重新发号。Java 的 SceneWorld.nextId 雪花号跨重启也唯一。负责人已于 2026-10-16 确认客户端换场景、重连、换节点时清空 actor 表，因此保留现有号源，不加启动代次。
 - 按改动文件数计：A 约 26、C 约 14、B 约 55 个手改文件外加约 60 个生成物删除、D 约 15，合计远超 AGENTS §10.2 规定的 30 个文件上限。需要用户明确授权后才能实施。
 
 **需负责人拍板**（未拍板前不要实施相关步骤，其余步骤照常进行）：
-- F080 的对外 actor 号选哪种方案（客户端可见契约）。方案 A（推荐，契约不变）：使用不透明的 net id，非 0、本进程内不复用、actor 存续期间稳定，语义与 Java 现状一致，Java、robot、客户端都不需要改。方案 B（改契约）：玩家直接用 player_id，NPC 和怪物用 bit63 打标的场景内号，与 66 号消息的 entity_id 以及 battle 的 actor_id 统一口径，但 Java 必须同批修改，客户端可能也要改。按 AGENTS §9 我没有读取 ../mmorpg-client，请确认三件事：客户端是否把 ActorCreateS2C.entity 和 ReleaseSkillRequest.target_id 当作不透明值使用（只做 map 键和回传）；客户端在换场景、换节点时是否清空旧的 actor 表（这决定方案 A 的号只需要本进程唯一，还是要做到全局唯一）；是否接受方案 B 的语义变更。
+- F080 的方案 A 已按第 6 批核心拍板 3 确认（2026-10-16）：负责人确认客户端在换场景、重连、换节点时清空 actor 表，号源维持现状，只补契约文档。三项问题中，是否只把 actor 号当不透明值使用、是否接受方案 B，负责人未单独确认；按方案 A 记录并维持现状。本会话未读取独立客户端仓。
 - 改动规模授权。第 4 批合计约 115 个文件，其中 4b 单独约 55 个手改文件外加约 60 个陈旧生成物的删除；还要一次永久作废 29 个事件号，需设 PROTOGEN_ALLOW_MASS_EVENT_TOMBSTONE=1。按 AGENTS §10.2，超过 30 个文件必须经用户明确授权。建议按 4a、4c 先行，4b、4d 依次跟进的顺序分批授权。
 - §12 双版本对账需要写 Java 仓库：在 D:/luyuan/xuanming-server-mmo 的 PARITY.md 登记，并更新 docs/reference/mmorpg-client-contract-aoi.md 中关于 C++ 实体号的描述。请确认实施代理是否被授权写 Java 仓库，还是改由 Java 侧会话处理。
 
@@ -691,3 +691,7 @@ player_events.h：
 gate会话与lane改entt::entity，entt::null缺省，补同index不同version重绑回归；日志通过NodeInfo取业务node_id，玩家日志ActorLog读PlayerGuidComp。ActorNetIds选默认兼容A：node32+seq32、本进程不复用、耗尽拒绝、registry私有反查随组件移除清理；创建Assign失败沿既有拒入补偿。对外Of、回传Resolve，保留同场景/冻结校验；66号属性entity_id仍玩家GUID。内部SkillContext/Buff的uint64本地句柄与0哨兵兼容保留。
 
 §8生成清理挑战收口在生成器源码：检查三份构建清单完整/可转换后才删旧产物，清单自身也提供候选以支持失败恢复；旧Go/staging副本同步清，生成阶段在输入完整性/墓碑门禁后。未手改生成树，当前cpp/generated和若干生成handler/attribute仍是旧接口；等待用户恢复生成后才能整编。新增白名单/入口校验、生成清理幂等/失败、ActorNetId生命周期和拒入测试源码。静态diff/XML及交叉读源通过，不替代构建；最新全部生成器与C++测试未运行。源码选型/待执行命令/Java边界见README §7。
+
+### 2026-10-16 第6批更正（保留以上历史回执）
+
+“补同index不同version重绑回归”应为“类型契约固定用例，F033 无行为缺陷，无修复前红”。保留用例守护将来把节点句柄收窄为 index/uint32 的回退，与 §8 对 AnomalyDetector 用例的定性一致。

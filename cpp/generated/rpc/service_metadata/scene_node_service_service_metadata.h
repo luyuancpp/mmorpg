@@ -34,3 +34,7 @@ constexpr uint32_t SceneNodeGrpcAssetAbortDebitIndex = 6;
 constexpr uint32_t SceneNodeGrpcAssetCreditMessageId = 225;
 constexpr uint32_t SceneNodeGrpcAssetCreditIndex = 7;
 #define SceneNodeGrpcAssetCreditMethod  ::SceneNodeGrpc_Stub::descriptor()->method(7)
+
+constexpr uint32_t SceneNodeGrpcAssetAckReceiptMessageId = 270;
+constexpr uint32_t SceneNodeGrpcAssetAckReceiptIndex = 8;
+#define SceneNodeGrpcAssetAckReceiptMethod  ::SceneNodeGrpc_Stub::descriptor()->method(8)

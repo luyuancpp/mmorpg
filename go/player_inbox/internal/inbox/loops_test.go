@@ -2,6 +2,8 @@ package inbox
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"sync"
 	"sync/atomic"
 	"testing"
@@ -14,15 +16,20 @@ import (
 
 // fakeMaintenance 记录每类后台操作被调用的次数与参数。
 type fakeMaintenance struct {
-	mu           sync.Mutex
-	sweeps       []uint64 // cutoffMs
-	dueScans     []uint32 // shard
-	dueBefore    []uint64
-	resends      []NotifyDue
-	gaugeScans   int
-	reconcileArg []uint64 // sinceMs
-	due          map[uint32][]NotifyDue
-	calls        atomic.Int64
+	mu             sync.Mutex
+	sweeps         []uint64 // cutoffMs
+	dueScans       []uint32 // shard
+	dueBefore      []uint64
+	resends        []NotifyDue
+	gaugeScans     int
+	gaugeNow       []uint64
+	gaugeCuts      []GaugeCutoffs
+	reconcileArg   []uint64 // sinceMs
+	reconcileStart []uint32 // startShard
+	reconcileRes   ReconcileRoundResult
+	reconcileErr   error
+	due            map[uint32][]NotifyDue
+	calls          atomic.Int64
 }
 
 func (f *fakeMaintenance) SweepTerminal(_ context.Context, cutoffMs uint64, _ int) (int, error) {
@@ -50,20 +57,23 @@ func (f *fakeMaintenance) ResendNotify(_ context.Context, d NotifyDue) NotifyRes
 	return NotifySent
 }
 
-func (f *fakeMaintenance) ScanGauges(_ context.Context, _, _ uint64) (metrics.ScanGauges, error) {
+func (f *fakeMaintenance) ScanGauges(_ context.Context, nowMs uint64, cut GaugeCutoffs) (metrics.ScanGauges, error) {
 	f.calls.Add(1)
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	f.gaugeScans++
+	f.gaugeNow = append(f.gaugeNow, nowMs)
+	f.gaugeCuts = append(f.gaugeCuts, cut)
 	return metrics.ScanGauges{OpenItems: 3}, nil
 }
 
-func (f *fakeMaintenance) ReconcileRecent(_ context.Context, sinceMs uint64, _ LedgerReader) (int, error) {
+func (f *fakeMaintenance) ReconcileRecent(_ context.Context, sinceMs uint64, startShard uint32, _ LedgerReader) (ReconcileRoundResult, error) {
 	f.calls.Add(1)
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	f.reconcileArg = append(f.reconcileArg, sinceMs)
-	return 0, nil
+	f.reconcileStart = append(f.reconcileStart, startShard)
+	return f.reconcileRes, f.reconcileErr
 }
 
 type nopLedgers struct{}
@@ -176,21 +186,272 @@ func TestNotifyRoundScansAllShardsWithGrace(t *testing.T) {
 	}
 }
 
-// TestSweepAndReconcileWindows:清理截止 = now − 保留期;对账起点 = now − 窗口。
+// TestGaugeRoundCutoffs:扫描型 gauge 的两个截止都按 now 算 —— 提醒积压 = 悬了 5 分钟以上;
+// 已投递未确认的告警口径只看最后投递在 24 小时内的行,更早的归入 delivered_unacked_stale(评审 M4)。
+func TestGaugeRoundCutoffs(t *testing.T) {
+	store := &fakeMaintenance{}
+	l, err := NewLoops(store, nopLedgers{}, testLoopConfig(), func(context.Context, func(context.Context)) {}, fixedNow)
+	if err != nil {
+		t.Fatal(err)
+	}
+	l.gaugeRound(context.Background())
+	want := GaugeCutoffs{
+		NotifyOverdueBeforeMs:  testNowMs - uint64((5 * time.Minute).Milliseconds()),
+		DeliveredStaleBeforeMs: testNowMs - uint64((24 * time.Hour).Milliseconds()),
+	}
+	if len(store.gaugeCuts) != 1 || store.gaugeCuts[0] != want || store.gaugeNow[0] != testNowMs {
+		t.Fatalf("ScanGauges(now=%v, cut=%+v), want now=%d cut=%+v", store.gaugeNow, store.gaugeCuts, testNowMs, want)
+	}
+	// 时钟早于窗口(只可能是测试或时钟错乱):截止取 0,不下溢成一个巨大的数。
+	if got := gaugeCutoffs(uint64((time.Hour).Milliseconds())); got.DeliveredStaleBeforeMs != 0 ||
+		got.NotifyOverdueBeforeMs != uint64((55*time.Minute).Milliseconds()) {
+		t.Fatalf("gaugeCutoffs(1h) = %+v", got)
+	}
+}
+
+// TestSweepAndReconcileWindows:清理截止 = now − 保留期;对账起点 = now − 窗口,起始分片 = (now / 间隔) × 4 % 64。
 func TestSweepAndReconcileWindows(t *testing.T) {
 	store := &fakeMaintenance{}
 	cfg := testLoopConfig()
-	l, err := NewLoops(store, nopLedgers{}, cfg, func(context.Context, func(context.Context)) {}, fixedNow)
+	cfg.ReconcileInterval = time.Hour
+	at := time.UnixMilli(int64(testNowMs) + 5*time.Hour.Milliseconds()) // 落在第 (testNowMs/1h + 5) 个间隔
+	l, err := NewLoops(store, nopLedgers{}, cfg, func(context.Context, func(context.Context)) {}, func() time.Time { return at })
 	if err != nil {
 		t.Fatal(err)
 	}
 	l.sweepRound(context.Background())
-	l.reconcileRound(context.Background())
-	if want := testNowMs - uint64(cfg.TerminalRetention.Milliseconds()); len(store.sweeps) != 1 || store.sweeps[0] != want {
+	l.reconcileRound(context.Background(), &reconcileTally{})
+	nowMs := uint64(at.UnixMilli())
+	if want := nowMs - uint64(cfg.TerminalRetention.Milliseconds()); len(store.sweeps) != 1 || store.sweeps[0] != want {
 		t.Fatalf("sweep cutoff = %v, want [%d]", store.sweeps, want)
 	}
-	if want := testNowMs - uint64(cfg.ReconcileWindow.Milliseconds()); len(store.reconcileArg) != 1 || store.reconcileArg[0] != want {
+	if want := nowMs - uint64(cfg.ReconcileWindow.Milliseconds()); len(store.reconcileArg) != 1 || store.reconcileArg[0] != want {
 		t.Fatalf("reconcile since = %v, want [%d]", store.reconcileArg, want)
+	}
+	k := (nowMs / uint64(time.Hour.Milliseconds())) % ShardCount
+	wantStart := uint32(k * reconcileStartStride % ShardCount)
+	if len(store.reconcileStart) != 1 || store.reconcileStart[0] != wantStart {
+		t.Fatalf("reconcile start shard = %v, want [%d]", store.reconcileStart, wantStart)
+	}
+}
+
+// TestReconcileStartShardRotates:起始分片按墙钟所在的间隔轮转、每个间隔前进 reconcileStartStride(4)片、回绕;
+// 同一个间隔内(例如易主后新领导者立刻补跑)起点不变 —— 不依赖任何内存状态(评审 M5 / R1)。
+func TestReconcileStartShardRotates(t *testing.T) {
+	const interval = time.Hour
+	ms := uint64(interval.Milliseconds())
+	at := func(k, offsetMs uint64) uint32 { return reconcileStartShard(k*ms+offsetMs, interval) }
+	if reconcileStartStride != 4 || reconcileFullCycleRounds != 16 {
+		t.Fatalf("stride=%d cycle=%d, want 4 / 16(= 2000 名玩家 / 每片 500 行;⌈64/4⌉)",
+			reconcileStartStride, reconcileFullCycleRounds)
+	}
+	if at(0, 0) != 0 || at(1, 0) != 4 || at(15, 0) != 60 || at(16, 0) != 0 || at(17, 0) != 4 {
+		t.Fatalf("轮转: k=0→%d k=1→%d k=15→%d k=16→%d k=17→%d", at(0, 0), at(1, 0), at(15, 0), at(16, 0), at(17, 0))
+	}
+	if at(7, 1) != 28 || at(7, ms-1) != 28 {
+		t.Fatalf("同一个间隔内起点不变: %d %d", at(7, 1), at(7, ms-1))
+	}
+	for k := uint64(1000); k < 1000+ShardCount; k++ {
+		if next := at(k+1, 0); next != (at(k, 0)+reconcileStartStride)%ShardCount {
+			t.Fatalf("k=%d → %d,下一个间隔应前进 %d 片,得到 %d", k, at(k, 0), reconcileStartStride, next)
+		}
+	}
+	// 墙钟取到 uint64 的上界也不溢出、不越界。
+	if got := reconcileStartShard(^uint64(0), interval); got >= ShardCount || got%reconcileStartStride != 0 {
+		t.Fatalf("nowMs = 2^64−1 → %d", got)
+	}
+	if reconcileStartShard(123456, 0) != 0 {
+		t.Fatal("间隔为 0(不跑对账)时起点取 0,不除零")
+	}
+}
+
+// TestReconcileRotationCoversEveryShard 是评审 R1 的回归:截断持续、每轮只读完从起点起的 c 片时,
+// 任何一片在连续 reconcileFullCycleRounds 轮里都至少被读完一次 —— 对每个起始间隔 r0、每片 x、每个 c ∈ [stride, 64] 穷举。
+// 原实现每轮只前移 1 片:c = 32、窗口 24 轮时,偏移 (x − r0) mod 64 ∈ [55, 63] 的分片整个窗口都读不到,这里会红。
+func TestReconcileRotationCoversEveryShard(t *testing.T) {
+	const interval = time.Hour
+	ms := uint64(interval.Milliseconds())
+	for c := uint32(reconcileStartStride); c <= ShardCount; c++ {
+		for r0 := uint64(0); r0 < 2*ShardCount; r0++ {
+			var covered [ShardCount]bool
+			for k := uint64(0); k < reconcileFullCycleRounds; k++ {
+				start := reconcileStartShard((r0+k)*ms, interval)
+				for i := uint32(0); i < c; i++ {
+					covered[(start+i)%ShardCount] = true
+				}
+			}
+			for x, ok := range covered {
+				if !ok {
+					t.Fatalf("c=%d、从第 %d 个间隔起连续 %d 轮,分片 %d 一次都没读完", c, r0, reconcileFullCycleRounds, x)
+				}
+			}
+		}
+	}
+}
+
+// TestReconcileFirstDelay:当选后第一轮 = 1 分钟 + [0, 4) 分钟抖动,不超过一个间隔;注入的随机源越界也被钳住(评审 L4)。
+func TestReconcileFirstDelay(t *testing.T) {
+	fixed := func(d time.Duration) func(time.Duration) time.Duration {
+		return func(time.Duration) time.Duration { return d }
+	}
+	cases := []struct {
+		name     string
+		interval time.Duration
+		jitter   time.Duration
+		want     time.Duration
+	}{
+		{"抖动 0 → 1 分钟", time.Hour, 0, time.Minute},
+		{"抖动 90s", time.Hour, 90 * time.Second, 150 * time.Second},
+		{"抖动顶格 → 不到 5 分钟", time.Hour, 4*time.Minute - time.Nanosecond, 5*time.Minute - time.Nanosecond},
+		{"随机源越界(过大)钳到 5 分钟", time.Hour, time.Hour, 5 * time.Minute},
+		{"随机源越界(负数)钳到 1 分钟", time.Hour, -time.Minute, time.Minute},
+		{"间隔比 1–5 分钟还短:不超过一个间隔", 2 * time.Minute, 3 * time.Minute, 2 * time.Minute},
+	}
+	for _, tc := range cases {
+		if got := reconcileFirstDelay(tc.interval, fixed(tc.jitter)); got != tc.want {
+			t.Errorf("%s: first delay = %v, want %v", tc.name, got, tc.want)
+		}
+	}
+	var asked time.Duration
+	_ = reconcileFirstDelay(time.Hour, func(n time.Duration) time.Duration { asked = n; return 0 })
+	if asked != reconcileFirstDelaySpread {
+		t.Errorf("随机源被要求的区间 = %v, want %v", asked, reconcileFirstDelaySpread)
+	}
+	for i := 0; i < 100; i++ {
+		if d := randomJitter(reconcileFirstDelaySpread); d < 0 || d >= reconcileFirstDelaySpread {
+			t.Fatalf("randomJitter 越界: %v", d)
+		}
+	}
+	if randomJitter(0) != 0 || randomJitter(-time.Second) != 0 {
+		t.Error("n ≤ 0 时 randomJitter 应为 0")
+	}
+}
+
+// TestNewLoopsUsesInjectedJitter:LoopConfig.Jitter 注入后,当选后第一轮的等待由它决定(单测的确定性来源)。
+func TestNewLoopsUsesInjectedJitter(t *testing.T) {
+	cfg := testLoopConfig()
+	cfg.ReconcileInterval = time.Hour
+	cfg.Jitter = func(time.Duration) time.Duration { return 2 * time.Minute }
+	l, err := NewLoops(&fakeMaintenance{}, nopLedgers{}, cfg, func(context.Context, func(context.Context)) {}, fixedNow)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := reconcileFirstDelay(l.cfg.ReconcileInterval, l.jitter); got != 3*time.Minute {
+		t.Fatalf("first delay = %v, want 3m(1m + 注入的 2m)", got)
+	}
+}
+
+// TestEveryAfterHonorsFirstDelay:everyAfter 等 first 跑第一轮,之后按间隔;间隔 1 小时内不会有第二轮。
+// 不比较墙钟时长,只看「first 很短时第一轮发生、第二轮没有」。
+func TestEveryAfterHonorsFirstDelay(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	var wg sync.WaitGroup
+	var rounds atomic.Int64
+	everyAfter(ctx, &wg, "player_inbox.test_every_after", time.Millisecond, time.Hour, func(context.Context) { rounds.Add(1) })
+	deadline := time.Now().Add(5 * time.Second)
+	for rounds.Load() == 0 {
+		if time.Now().After(deadline) {
+			cancel()
+			t.Fatal("first = 1ms 时 5s 内没有跑第一轮")
+		}
+		time.Sleep(time.Millisecond)
+	}
+	cancel()
+	wg.Wait()
+	if n := rounds.Load(); n != 1 {
+		t.Fatalf("间隔 1 小时,应只跑了第一轮,got %d", n)
+	}
+}
+
+// TestReconcileRoundResult 钉住 reconcile_rounds_total{result} 的归类:领导权丢失 / 关停不计数;
+// 驱动没把 ctx 错误包进返回值时看 ctx.Err()。
+func TestReconcileRoundResult(t *testing.T) {
+	live := context.Background()
+	canceled, cancel := context.WithCancel(context.Background())
+	cancel()
+	expired, cancelExpired := context.WithDeadline(context.Background(), time.Unix(0, 0))
+	defer cancelExpired()
+	other := errors.New("invalid connection")
+	cases := []struct {
+		name string
+		ctx  context.Context
+		err  error
+		want string
+	}{
+		{"成功", live, nil, "ok"},
+		{"预算用完", live, context.DeadlineExceeded, "timeout"},
+		{"预算用完、驱动回了别的错误", expired, other, "timeout"},
+		{"包了一层的超时", live, fmt.Errorf("scan: %w", context.DeadlineExceeded), "timeout"},
+		{"领导权丢失 / 关停", live, context.Canceled, ""},
+		{"ctx 已取消、驱动回了别的错误", canceled, other, ""},
+		{"读库失败", live, other, "error"},
+	}
+	for _, tc := range cases {
+		if got := reconcileRoundResult(tc.ctx, tc.err); got != tc.want {
+			t.Errorf("%s: result = %q, want %q", tc.name, got, tc.want)
+		}
+	}
+}
+
+// TestReconcileTally 是评审 R1 的回归:gauge 按分片记最近一次读数。原实现把截断轮次的「本轮」读数直接写进 gauge,
+// 不一致的那一片一移出本轮的覆盖段,读数就掉回 0、critical 告警消失,而那一行还在窗口里。
+//   - 读完的分片用本轮读数覆盖(处置之后能降下来);
+//   - 只核对了一部分的分片取 max(旧, 新):发现的是下界,0 不能证明已经一致;
+//   - 本轮没读到的分片保留旧读数。
+func TestReconcileTally(t *testing.T) {
+	var tally reconcileTally
+	// 第 1 轮:分片 5 发现 2 处、分片 6 读完无差异。
+	if got := tally.apply([]ShardTally{{Shard: 5, Inconsistent: 2, Complete: true}, {Shard: 6, Complete: true}}); got != 2 {
+		t.Fatalf("第 1 轮 = %d, want 2", got)
+	}
+	// 第 2 轮截断,只读到分片 9、10:分片 5 的读数保留,gauge 不掉回 0。
+	if got := tally.apply([]ShardTally{{Shard: 9, Complete: true}, {Shard: 10, Inconsistent: 1, Complete: false}}); got != 3 {
+		t.Fatalf("第 2 轮(没碰分片 5)= %d, want 3", got)
+	}
+	// 第 3 轮:分片 5 只核对了一部分且一处没发现、分片 10 部分核对发现 0 —— 都不降。
+	if got := tally.apply([]ShardTally{{Shard: 5, Complete: false}, {Shard: 10, Complete: false}}); got != 3 {
+		t.Fatalf("第 3 轮(部分核对的 0 不算一致)= %d, want 3", got)
+	}
+	// 第 4 轮:分片 5 部分核对发现更多,取较大者。
+	if got := tally.apply([]ShardTally{{Shard: 5, Inconsistent: 4, Complete: false}}); got != 5 {
+		t.Fatalf("第 4 轮 = %d, want 5", got)
+	}
+	// 第 5 轮:分片 5、10 读完且已一致(处置过了),读数降下来。
+	if got := tally.apply([]ShardTally{{Shard: 5, Complete: true}, {Shard: 10, Complete: true}}); got != 0 {
+		t.Fatalf("第 5 轮(处置后读完)= %d, want 0", got)
+	}
+	// 收集阶段就失败的轮次没有分片读数:保持原值。
+	tally.apply([]ShardTally{{Shard: 63, Inconsistent: 1, Complete: true}})
+	if got := tally.apply(nil); got != 1 {
+		t.Fatalf("没有分片读数的轮次 = %d, want 保持 1", got)
+	}
+}
+
+// TestReconcileRoundFeedsTally:reconcileRound 把本轮的分片读数交给本任期的 tally;
+// 领导权丢失 / 关停造成的取消不记(那一轮不该再跑,卸任时 gauge 归零)。
+func TestReconcileRoundFeedsTally(t *testing.T) {
+	store := &fakeMaintenance{reconcileRes: ReconcileRoundResult{
+		Inconsistent: 1, Truncated: true,
+		Shards: []ShardTally{{Shard: 3, Inconsistent: 1, Complete: true}, {Shard: 4, Complete: false}},
+	}}
+	cfg := testLoopConfig()
+	cfg.ReconcileInterval = time.Hour
+	l, err := NewLoops(store, nopLedgers{}, cfg, func(context.Context, func(context.Context)) {}, fixedNow)
+	if err != nil {
+		t.Fatal(err)
+	}
+	tally := &reconcileTally{}
+	l.reconcileRound(context.Background(), tally)
+	if tally.byShard[3] != 1 || tally.byShard[4] != 0 {
+		t.Fatalf("tally = %v", tally.byShard)
+	}
+	canceled, cancel := context.WithCancel(context.Background())
+	cancel()
+	store.reconcileRes.Shards = []ShardTally{{Shard: 3, Complete: true}}
+	store.reconcileErr = context.Canceled
+	l.reconcileRound(canceled, tally)
+	if tally.byShard[3] != 1 {
+		t.Fatalf("取消的轮次不应改 tally: %v", tally.byShard)
 	}
 }
 
@@ -204,6 +465,8 @@ func TestNewLoopsValidates(t *testing.T) {
 		func(c *LoopConfig) { c.NotifyInterval = 0 },
 		func(c *LoopConfig) { c.GaugeInterval = -1 },
 		func(c *LoopConfig) { c.ReconcileWindow = 0 },
+		// 窗口不足两个间隔(评审 L4,同 config.Validate)。
+		func(c *LoopConfig) { c.ReconcileInterval, c.ReconcileWindow = time.Hour, 2*time.Hour-time.Millisecond },
 	}
 	for i, mutate := range bad {
 		cfg := testLoopConfig()

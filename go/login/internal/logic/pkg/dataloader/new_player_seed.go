@@ -167,6 +167,7 @@ func (r MintedIDProbe) String() string {
 //
 // 它只是写之前的预检,不是提交点:探测与种子写之间仍有窗口,seedNewPlayerScript 的条件判断照旧保留,
 // 作为写时的原子复核(建角侧对它报的 parent_exists / owner_epoch_exists 同样拒绝,设计 §10 P2)。
+// 种子只在 NewPlayerSeed.Enabled 时写;提交点(建角第 7 步)不复核这两把键,残余窗口见设计 §13.2 2026-10-16 补注。
 //
 // 两条 EXISTS 走一个 pipeline:一次往返,并且分得清是哪把键在。两条之间不需要原子:任何一把在都拒绝。
 // rc 必须与预加载、scene 读写父键是同一个 Redis 实例(同 SeedNewPlayerAllData)。本函数不写任何键。

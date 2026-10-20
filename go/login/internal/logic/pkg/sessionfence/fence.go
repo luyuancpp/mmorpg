@@ -22,7 +22,7 @@
 // 绑定在前,关闭一定读到 player,由 Disconnect 补发。两种顺序都收敛到「带租约的 DISCONNECTING」。
 //
 // 约束:CommitLogin 是多键脚本(栅栏 + login_session + 设备集),要求 login 的 Redis 是单节点(现状是
-// *redis.Client)。将来切 Redis Cluster 时必须给这三个键加同一个 hash tag。
+// *redis.Client)。将来切 Redis Cluster 时必须给这些键加同一个 hash tag。
 package sessionfence
 
 import (
@@ -52,8 +52,14 @@ func KeyOf(details *login_proto_common.SessionDetails) (Key, bool) {
 	return Key{GateInstanceID: details.GetGateInstanceId(), Incarnation: details.GetSessionIncarnation()}, true
 }
 
+// String 返回这条 gate 连接的全局唯一标识 "{gate_instance_id}:{incarnation}"。栅栏键与 login_session 的新键
+// (loginsession.RefOf)共用这一种拼法,同一条连接的两份记录始终指向同一个身份。
+func (k Key) String() string {
+	return k.GateInstanceID + ":" + strconv.FormatUint(k.Incarnation, 10)
+}
+
 func (k Key) redisKey() string {
-	return "login:sessfence:" + k.GateInstanceID + ":" + strconv.FormatUint(k.Incarnation, 10)
+	return "login:sessfence:" + k.String()
 }
 
 // TTLFor 由 EnterGame 后台链的总预算派生栅栏记录的寿命:记录必须比所有还可能读它的操作活得久,
@@ -93,13 +99,16 @@ func (o Outcome) String() string {
 // ErrClosed:CommitLogin 时连接已断开,Login 不写任何状态。
 var ErrClosed = errors.New("gate connection already closed")
 
+// KEYS = {栅栏, 设备集, login_session 键...};ARGV = {account, sessionTTL(ms), 设备集成员, deviceSetTTL(ms)}。
 var commitLoginScript = redis.NewScript(`
 if redis.call('HGET', KEYS[1], 'closed') == '1' then
   return 0
 end
-redis.call('SET', KEYS[2], ARGV[1], 'PX', ARGV[2])
-redis.call('SADD', KEYS[3], ARGV[3])
-redis.call('PEXPIRE', KEYS[3], ARGV[4])
+for i = 3, #KEYS do
+  redis.call('SET', KEYS[i], ARGV[1], 'PX', ARGV[2])
+end
+redis.call('SADD', KEYS[2], ARGV[3])
+redis.call('PEXPIRE', KEYS[2], ARGV[4])
 return 1
 `)
 
@@ -107,20 +116,25 @@ return 1
 // 检查与写入必须在同一段脚本里,否则仍有「检查通过、Disconnect 插进来、再写入」的窗口。
 // 连接已关闭返回 ErrClosed,什么都不写。
 //
-// loginSessionKey / deviceSetKey 由调用方给(与 loginsession / constants.GenerateSessionKey 的键格式同源),
-// 这里不复制键格式。
+// loginSessionKeys(至少一个,全部写同一个账号与 TTL)/ deviceSetKey / deviceMember 由调用方给
+// (与 loginsession.Ref、constants.GenerateSessionKey 的键格式同源),这里不复制键格式。
 func CommitLogin(ctx context.Context, rdb *redis.Client, key Key,
-	loginSessionKey, account string, sessionTTL time.Duration,
-	deviceSetKey string, sessionID uint32, deviceSetTTL time.Duration,
+	loginSessionKeys []string, account string, sessionTTL time.Duration,
+	deviceSetKey, deviceMember string, deviceSetTTL time.Duration,
 ) error {
 	// 脚本里是 SET ... PX,0 / 负值会被 Redis 以 invalid expire time 拒绝;旧路径 loginsession.Save 的 ttl = 0
 	// 表示永不过期,两条路径在误配置下行为分叉。这里显式报错,让误配置在第一次登录时就暴露,而不是静默写永久键。
 	if sessionTTL <= 0 || deviceSetTTL <= 0 {
 		return fmt.Errorf("session fence commit login: non-positive ttl session=%s device=%s", sessionTTL, deviceSetTTL)
 	}
-	res, err := commitLoginScript.Run(ctx, rdb,
-		[]string{key.redisKey(), loginSessionKey, deviceSetKey},
-		account, sessionTTL.Milliseconds(), strconv.FormatUint(uint64(sessionID), 10), deviceSetTTL.Milliseconds(),
+	if len(loginSessionKeys) == 0 {
+		return errors.New("session fence commit login: no login_session key")
+	}
+	keys := make([]string, 0, 2+len(loginSessionKeys))
+	keys = append(keys, key.redisKey(), deviceSetKey)
+	keys = append(keys, loginSessionKeys...)
+	res, err := commitLoginScript.Run(ctx, rdb, keys,
+		account, sessionTTL.Milliseconds(), deviceMember, deviceSetTTL.Milliseconds(),
 	).Int64()
 	if err != nil {
 		return err

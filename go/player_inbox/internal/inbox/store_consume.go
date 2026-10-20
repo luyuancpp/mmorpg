@@ -63,9 +63,13 @@ func (s *Store) readEpochBound(ctx context.Context, playerID uint64) (uint64, er
 
 // reportFenceReject 记录围栏拒绝的日志与指标。STALE 返回前再读一次 R 做分类(设计 §7.8):
 // R ≤ req 记 fence_regressed(critical),否则 zombie;分类读失败只记 unclassified,不改变 STALE 本身。
+//
+// 每条日志都带发送方身份(评审 L10):peer = gRPC 对端地址(不可伪造),scene_node_id = 请求自报的节点号
+// (只用于日志,0 = 旧版 scene 没填)。告警描述让值班按它们定位是哪台 scene 发的。
 func (s *Store) reportFenceReject(ctx context.Context, rpc string, v inboxpb.PlayerInboxFenceVerdict,
-	playerID uint64, domain inboxpb.PlayerInboxDomain, req, fence uint64) {
+	playerID uint64, domain inboxpb.PlayerInboxDomain, req, fence uint64, sceneNodeID uint32) {
 	log := logx.WithContext(ctx)
+	peerAddr := PeerAddr(ctx)
 	switch v {
 	case inboxpb.PlayerInboxFenceVerdict_PLAYER_INBOX_FENCE_STALE:
 		kind := StaleUnclassified
@@ -74,18 +78,22 @@ func (s *Store) reportFenceReject(ctx context.Context, rpc string, v inboxpb.Pla
 		}
 		if kind == StaleFenceRegressed {
 			metrics.IncFenceRegressed()
-			log.Errorf("[player_inbox] %s STALE classified fence_regressed player=%d domain=%d req_epoch=%d fence=%d: "+
-				"core Redis owner_epoch went backwards; run epoch-raise per db-write-fencing-mysql.md §9.1 (inbox max_fence_epoch "+
-				"is a max source); never reset the fence", rpc, playerID, domain, req, fence)
+			log.Errorf("[player_inbox] %s STALE classified fence_regressed player=%d domain=%d req_epoch=%d fence=%d "+
+				"peer=%s scene_node_id=%d: core Redis owner_epoch went backwards; run epoch-raise per db-write-fencing-mysql.md §9.1 "+
+				"(inbox max_fence_epoch is a max source); never reset the fence",
+				rpc, playerID, domain, req, fence, peerAddr, sceneNodeID)
 			return
 		}
-		log.Infof("[player_inbox] %s STALE (%s) player=%d domain=%d req_epoch=%d fence=%d", rpc, kind, playerID, domain, req, fence)
+		log.Infof("[player_inbox] %s STALE (%s) player=%d domain=%d req_epoch=%d fence=%d peer=%s scene_node_id=%d",
+			rpc, kind, playerID, domain, req, fence, peerAddr, sceneNodeID)
 	case inboxpb.PlayerInboxFenceVerdict_PLAYER_INBOX_FENCE_EPOCH_AHEAD:
 		metrics.IncEpochAhead()
-		log.Errorf("[player_inbox] %s EPOCH_AHEAD player=%d domain=%d req_epoch=%d fence=%d: request epoch exceeds core Redis "+
-			"owner_epoch (defect or forgery); no state changed", rpc, playerID, domain, req, fence)
+		log.Errorf("[player_inbox] %s EPOCH_AHEAD player=%d domain=%d req_epoch=%d fence=%d peer=%s scene_node_id=%d: "+
+			"request epoch exceeds core Redis owner_epoch (defect or forgery); no state changed",
+			rpc, playerID, domain, req, fence, peerAddr, sceneNodeID)
 	case inboxpb.PlayerInboxFenceVerdict_PLAYER_INBOX_FENCE_EPOCH_REQUIRED:
-		log.Errorf("[player_inbox] %s EPOCH_REQUIRED player=%d domain=%d: owner_epoch=0 rejected (fail-closed)", rpc, playerID, domain)
+		log.Errorf("[player_inbox] %s EPOCH_REQUIRED player=%d domain=%d peer=%s scene_node_id=%d: owner_epoch=0 rejected (fail-closed)",
+			rpc, playerID, domain, peerAddr, sceneNodeID)
 	}
 }
 
@@ -114,7 +122,7 @@ func (s *Store) Fetch(ctx context.Context, req *inboxpb.FetchPlayerInboxRequest)
 	if reqEpoch == 0 {
 		resp.Fence = inboxpb.PlayerInboxFenceVerdict_PLAYER_INBOX_FENCE_EPOCH_REQUIRED
 		resp.ErrorMessage = tipOf(constants.ErrEpochRequired)
-		s.reportFenceReject(ctx, "Fetch", resp.Fence, req.GetPlayerId(), domain, reqEpoch, 0)
+		s.reportFenceReject(ctx, "Fetch", resp.Fence, req.GetPlayerId(), domain, reqEpoch, 0, req.GetSceneNodeId())
 		metrics.ObserveFetch(dl, FenceLabel(resp.Fence), fetchPathFast)
 		return resp, nil
 	}
@@ -141,12 +149,12 @@ func (s *Store) Fetch(ctx context.Context, req *inboxpb.FetchPlayerInboxRequest)
 	}
 
 	decidedThrough := req.GetConsumerDecidedThrough()
-	if snap.GetOpenCount() == 0 && !IsCursorAhead(snap.GetNextSeq(), decidedThrough) {
+	if !fetchNeedsLock(snap, decidedThrough) {
 		v := DecideFence(reqEpoch, snap.GetFenceEpoch(), r)
 		resp.Fence = v
 		if !FenceAllows(v) {
 			resp.ErrorMessage = tipOf(fenceRejectTip(v))
-			s.reportFenceReject(ctx, "Fetch", v, playerID, domain, reqEpoch, snap.GetFenceEpoch())
+			s.reportFenceReject(ctx, "Fetch", v, playerID, domain, reqEpoch, snap.GetFenceEpoch(), req.GetSceneNodeId())
 		}
 		metrics.ObserveFetch(dl, FenceLabel(v), fetchPathFast)
 		return resp, nil
@@ -161,11 +169,12 @@ func (s *Store) Fetch(ctx context.Context, req *inboxpb.FetchPlayerInboxRequest)
 		hasMore     bool
 		cursorAhead bool
 		raisedTo    uint64
-		scanned     int
+		scanBound   uint64
+		scanWhole   bool
 	)
 	err = assetop.WithTxRetryConfig(ctx, s.db, s.txCfg, func(tx *sql.Tx) error {
-		verdict, lockedFence, items, hasMore, cursorAhead, raisedTo, scanned =
-			inboxpb.PlayerInboxFenceVerdict_PLAYER_INBOX_FENCE_UNSPECIFIED, 0, nil, false, false, 0, 0
+		verdict, lockedFence, items, hasMore, cursorAhead, raisedTo, scanBound, scanWhole =
+			inboxpb.PlayerInboxFenceVerdict_PLAYER_INBOX_FENCE_UNSPECIFIED, 0, nil, false, false, 0, 0, false
 		st, err := lockStream(ctx, tx, shard, playerID, domain)
 		if err != nil {
 			return err
@@ -193,11 +202,8 @@ func (s *Store) Fetch(ctx context.Context, req *inboxpb.FetchPlayerInboxRequest)
 		if err != nil {
 			return fmt.Errorf("inbox: scan pending player=%d domain=%d: %w", playerID, domain, err)
 		}
-		scanned = len(pending)
-		if len(pending) > maxItems {
-			hasMore = true
-			pending = pending[:maxItems]
-		}
+		scanBound, scanWhole = fetchScanBound(pending, maxItems+1)
+		pending, hasMore = splitPage(pending, maxItems)
 		for _, row := range pending {
 			upd, err := tx.ExecContext(ctx, "UPDATE "+itemTable+
 				" SET `delivery_count` = `delivery_count` + 1, `last_delivered_epoch` = ?, `last_delivered_ms` = ?, `updated_ms` = ?"+
@@ -212,14 +218,10 @@ func (s *Store) Fetch(ctx context.Context, req *inboxpb.FetchPlayerInboxRequest)
 			}
 			items = append(items, deliveredItem(row))
 		}
-		if FenceWrites(verdict) || raised {
-			newFence := lockedFence
-			if FenceWrites(verdict) {
-				newFence = reqEpoch
-			}
+		if write, newFence, newNextSeq := fetchStreamUpdate(verdict, lockedFence, reqEpoch, nextSeq, raised); write {
 			upd, err := tx.ExecContext(ctx, "UPDATE "+streamTable+
 				" SET `fence_epoch` = ?, `next_seq` = ?, `updated_ms` = ? WHERE "+streamPK,
-				newFence, nextSeq, nowMs, shard, playerID, uint32(domain))
+				newFence, newNextSeq, nowMs, shard, playerID, uint32(domain))
 			if err != nil {
 				return fmt.Errorf("inbox: write fence player=%d: %w", playerID, err)
 			}
@@ -236,15 +238,20 @@ func (s *Store) Fetch(ctx context.Context, req *inboxpb.FetchPlayerInboxRequest)
 	resp.Fence = verdict
 	if !FenceAllows(verdict) {
 		resp.ErrorMessage = tipOf(fenceRejectTip(verdict))
-		s.reportFenceReject(ctx, "Fetch", verdict, playerID, domain, reqEpoch, lockedFence)
+		s.reportFenceReject(ctx, "Fetch", verdict, playerID, domain, reqEpoch, lockedFence, req.GetSceneNodeId())
 		metrics.ObserveFetch(dl, FenceLabel(verdict), fetchPathLocked)
 		return resp, nil
 	}
 	resp.Items = items
 	resp.HasMore = hasMore
 	metrics.ObserveFetch(dl, FenceLabel(verdict), fetchPathLocked)
-	metrics.ObserveFetchScanned(scanned)
 	log := logx.WithContext(ctx)
+	// 扫描行数在提交之后单独数(只读、不持锁);失败只少一个样本,不影响本次投递。
+	if scanned, err := s.countScannedRows(ctx, shard, playerID, domain, scanBound, scanWhole); err != nil {
+		log.Infof("[player_inbox] fetch_scanned_rows sample skipped player=%d domain=%d: %v", playerID, domain, err)
+	} else {
+		metrics.ObserveFetchScanned(scanned)
+	}
 	if cursorAhead {
 		metrics.IncCursorAhead()
 		log.Errorf("[player_inbox] CursorAhead player=%d domain=%d consumer_decided_through=%d raised next_seq to %d: "+
@@ -253,7 +260,7 @@ func (s *Store) Fetch(ctx context.Context, req *inboxpb.FetchPlayerInboxRequest)
 	}
 	for _, it := range items {
 		if it.GetDeliveryCount() >= constants.DeliveryWarnThreshold {
-			log.Errorf("[player_inbox] Item delivered %d times without ack player=%d domain=%d seq=%d msg_type=%d scene_node=%d: "+
+			log.Errorf("[player_inbox] Item delivered %d times without ack player=%d domain=%d seq=%d msg_type=%d scene_node_id=%d: "+
 				"possible poison message; consider VoidItem(QUARANTINED)",
 				it.GetDeliveryCount(), playerID, domain, it.GetSeq(), it.GetMsgType(), req.GetSceneNodeId())
 		}
@@ -279,6 +286,23 @@ func deliveredItem(row *inboxpb.PlayerInboxItemRow) *inboxpb.PlayerInboxItem {
 	return it
 }
 
+// countScannedRows 数锁路径 PENDING 扫描实际走过的行(范围见 fetchScanBound):主键前缀 + seq ≤ bound,
+// whole 时整条流。只走主键索引、不回表,是设计 §4.2「超出数百行就加 (shard,player_id,domain,state,seq) 索引」的依据。
+func (s *Store) countScannedRows(ctx context.Context, shard uint32, playerID uint64, domain inboxpb.PlayerInboxDomain,
+	bound uint64, whole bool) (int, error) {
+	query := "SELECT COUNT(*) FROM " + itemTable + " WHERE `shard` = ? AND `player_id` = ? AND `domain` = ?"
+	args := []any{shard, playerID, uint32(domain)}
+	if !whole {
+		query += " AND `seq` <= ?"
+		args = append(args, bound)
+	}
+	var n int
+	if err := s.db.QueryRowContext(ctx, query, args...).Scan(&n); err != nil {
+		return 0, fmt.Errorf("inbox: count scanned rows player=%d domain=%d: %w", playerID, domain, err)
+	}
+	return n, nil
+}
+
 // Ack 登记消费方**已落盘**的结局(设计 §7.7、§7.8 Ack 表)。锁流行、DecideFence(同样的 R 规则),
 // 然后按 seq 升序逐条判定(decideAck),终结时用主键条件写;最后写回 open_count、需要时写回 fence_epoch。
 func (s *Store) Ack(ctx context.Context, req *inboxpb.AckPlayerInboxRequest) (*inboxpb.AckPlayerInboxResponse, error) {
@@ -297,7 +321,7 @@ func (s *Store) Ack(ctx context.Context, req *inboxpb.AckPlayerInboxRequest) (*i
 	if reqEpoch == 0 {
 		resp.Fence = inboxpb.PlayerInboxFenceVerdict_PLAYER_INBOX_FENCE_EPOCH_REQUIRED
 		resp.ErrorMessage = tipOf(constants.ErrEpochRequired)
-		s.reportFenceReject(ctx, "Ack", resp.Fence, playerID, domain, reqEpoch, 0)
+		s.reportFenceReject(ctx, "Ack", resp.Fence, playerID, domain, reqEpoch, 0, req.GetSceneNodeId())
 		metrics.ObserveAck(dl, FenceLabel(resp.Fence))
 		return resp, nil
 	}
@@ -379,23 +403,17 @@ func (s *Store) Ack(ctx context.Context, req *inboxpb.AckPlayerInboxRequest) (*i
 			}
 			results = append(results, &inboxpb.PlayerInboxAckItem{Seq: report.GetSeq(), Result: d.result, State: d.state})
 		}
-		if finalized == 0 && !FenceWrites(verdict) {
+		write, newOpen, newFence, underflow := ackStreamUpdate(verdict, st.GetOpenCount(), finalized, lockedFence, reqEpoch)
+		if !write {
 			return nil
 		}
-		openCount := st.GetOpenCount()
-		if finalized > openCount {
-			// open_count 与实际 PENDING 行不一致只可能是缺陷;它只影响满箱判定与快路径,钳到 0 并大声记录。
+		if underflow {
 			logx.WithContext(ctx).Errorf("[player_inbox] open_count underflow player=%d domain=%d open_count=%d finalized=%d; clamping to 0",
-				playerID, domain, openCount, finalized)
-			openCount = finalized
-		}
-		newFence := lockedFence
-		if FenceWrites(verdict) {
-			newFence = reqEpoch
+				playerID, domain, st.GetOpenCount(), finalized)
 		}
 		upd, err := tx.ExecContext(ctx, "UPDATE "+streamTable+
 			" SET `open_count` = ?, `fence_epoch` = ?, `updated_ms` = ? WHERE "+streamPK,
-			openCount-finalized, newFence, nowMs, shard, playerID, uint32(domain))
+			newOpen, newFence, nowMs, shard, playerID, uint32(domain))
 		if err != nil {
 			return fmt.Errorf("inbox: update stream after ack player=%d: %w", playerID, err)
 		}
@@ -408,7 +426,7 @@ func (s *Store) Ack(ctx context.Context, req *inboxpb.AckPlayerInboxRequest) (*i
 	resp.Fence = verdict
 	if !FenceAllows(verdict) {
 		resp.ErrorMessage = tipOf(fenceRejectTip(verdict))
-		s.reportFenceReject(ctx, "Ack", verdict, playerID, domain, reqEpoch, lockedFence)
+		s.reportFenceReject(ctx, "Ack", verdict, playerID, domain, reqEpoch, lockedFence, req.GetSceneNodeId())
 		metrics.ObserveAck(dl, FenceLabel(verdict))
 		return resp, nil
 	}
@@ -419,34 +437,29 @@ func (s *Store) Ack(ctx context.Context, req *inboxpb.AckPlayerInboxRequest) (*i
 
 // reportAckResults 记 Ack 逐条结果的指标;协议异常与 SETTLED_UNKNOWN 都记 ERROR(logx 没有 WARN 级;
 // 告警分级由第 4 批的规则按 ack_total{result} 区分 critical / warning)。
+// ERROR 日志带发送方身份 peer / scene_node_id(评审 L10,口径同 reportFenceReject)。
 func (s *Store) reportAckResults(ctx context.Context, playerID uint64, domain inboxpb.PlayerInboxDomain,
 	req *inboxpb.AckPlayerInboxRequest, results []*inboxpb.PlayerInboxAckItem) {
 	dl := DomainLabel(domain)
 	log := logx.WithContext(ctx)
+	peerAddr, sceneNodeID := PeerAddr(ctx), req.GetSceneNodeId()
 	for i, res := range results {
-		label := AckResultLabel(res.GetResult())
-		if res.GetResult() == inboxpb.PlayerInboxAckResult_PLAYER_INBOX_ACK_FINALIZED &&
-			res.GetState() == inboxpb.PlayerInboxItemState_PLAYER_INBOX_ITEM_SETTLED_UNKNOWN {
-			label = ackLabelSettledUnknown // warning 告警单列(设计 §9.4)
-		}
+		label := ackMetricLabel(res)
 		metrics.ObserveAck(dl, label)
 		var report *inboxpb.PlayerInboxDecisionReport
 		if i < len(req.GetDecisions()) {
 			report = req.GetDecisions()[i]
 		}
-		switch res.GetResult() {
-		case inboxpb.PlayerInboxAckResult_PLAYER_INBOX_ACK_FINALIZED:
-			if res.GetState() == inboxpb.PlayerInboxItemState_PLAYER_INBOX_ITEM_SETTLED_UNKNOWN {
-				log.Errorf("[player_inbox] Item settled as SETTLED_UNKNOWN player=%d domain=%d seq=%d request_id=%d epoch=%d: "+
-					"consumer watermark passed it but its outcome left the recent ring; verify via reconcile",
-					playerID, domain, res.GetSeq(), report.GetRequestId(), req.GetOwnerEpoch())
-			}
-		case inboxpb.PlayerInboxAckResult_PLAYER_INBOX_ACK_ALREADY_SAME:
-		default:
+		switch {
+		case label == ackLabelSettledUnknown: // warning 告警单列(设计 §9.4)
+			log.Errorf("[player_inbox] Item settled as SETTLED_UNKNOWN player=%d domain=%d seq=%d request_id=%d epoch=%d "+
+				"peer=%s scene_node_id=%d: consumer watermark passed it but its outcome left the recent ring; verify via reconcile",
+				playerID, domain, res.GetSeq(), report.GetRequestId(), req.GetOwnerEpoch(), peerAddr, sceneNodeID)
+		case isAckAnomaly(res.GetResult()):
 			log.Errorf("[player_inbox] Ack protocol anomaly result=%s player=%d domain=%d seq=%d reported_outcome=%d "+
-				"reported_request_id=%d row_state=%d epoch=%d: row unchanged; consumer halts this domain",
+				"reported_request_id=%d row_state=%d epoch=%d peer=%s scene_node_id=%d: row unchanged; consumer halts this domain",
 				AckResultLabel(res.GetResult()), playerID, domain, res.GetSeq(), report.GetOutcome(),
-				report.GetRequestId(), res.GetState(), req.GetOwnerEpoch())
+				report.GetRequestId(), res.GetState(), req.GetOwnerEpoch(), peerAddr, sceneNodeID)
 		}
 	}
 }

@@ -93,6 +93,7 @@ func TestWakePlayerProcessesAllPendingRows(t *testing.T) {
 	store := newWakeStore(testOp(1), testOp(2), testOp(3))
 	applier := appliedApplier()
 	loop, m := newTestLoop(t, store, applier, nil)
+	loop.Ledger = sqlLedgerFixture(true, testOp(1), testOp(2), testOp(3))
 
 	n, err := loop.WakePlayer(context.Background(), 42)
 	if err != nil {
@@ -283,6 +284,8 @@ func TestWakePlayerStopsClaimingWhenBudgetShort(t *testing.T) {
 	if claimed != 1 {
 		t.Fatalf("预算不够的行不得领取,实际领了 %d 行", claimed)
 	}
+	// RequireSQLCommit 关闭(HEAD 口径):scene 回包 durable 即可终结。开关打开时这一行缺 SQL 确认、保留待办,
+	// 那一侧由 sql_commit_test.go 与 TestAwaitSQLKeepsBudgetAfterApplyExhaustsIt 覆盖。
 	finalized, _ := store.snapshot()
 	if len(finalized) != 1 || finalized[0].Op.OpID != 1 {
 		t.Fatalf("已开始的第一行应照常终结,实际 %+v", finalized)

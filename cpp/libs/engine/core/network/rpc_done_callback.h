@@ -17,8 +17,6 @@
 //   * 只持有 weak_ptr<RpcChannel>(channel 每条连接一个):请求进来的那条连接断了,Run 静默丢弃 ——
 //     迟到的回复不可能落到重连后的新连接上。绝不持有强 TcpConnectionPtr / RpcChannelPtr(AGENTS §11.7)。
 //   * 只在 EventLoop 线程调用。
-//   * 与同步路径同一规则:拒绝码写 `response<T>().mutable_error_message()`,见 services/player/rpc/player_service_interface.h;
-//     进程里没有全局 tip。
 //   * 不提供次序保证:接管之后,同一会话后续的同步请求会先回包;需要串行请用业务在途闸。
 //   * 单向请求(id == 0)也能 Adopt,但 Run 不发任何东西,析构也不发 REPLY_DROPPED。
 

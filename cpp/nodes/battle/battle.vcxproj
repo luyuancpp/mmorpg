@@ -19,7 +19,6 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="handler\event\event_handler.cpp" />
     <ClCompile Include="handler\grpc\battle_node.cpp" />
     <ClCompile Include="handler\rpc\battle_handler.cpp" />
     <ClCompile Include="handler\rpc\player\player_service_interface.cpp" />

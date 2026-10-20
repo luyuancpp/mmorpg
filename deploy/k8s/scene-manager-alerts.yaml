@@ -44,11 +44,16 @@ spec:
         #   - 整个 zone 全灭:右支触发;
         #   - Go 回滚 / 只有旧二进制在跑:右支没有序列,退化为旧行为 —— 两条 critical 不会因此静默失效;
         #   - 多副本、以及别的 zone 的 SM 也在发布同一 zone:用 sum 而不是 min,只要有一个 > 0 就不触发。
+        #     (2026-10-16 更正发布者:领导者发布它 etcd 镜像里的全部 zone,跟随者只发布自己配置的 ZoneId;
+        #     所以每个 zone 的发布者是「领导者 + 该 zone 自己的 SM 副本」,各自的值都来自 etcd 快照、彼此一致。
+        #     表达式只做 > 0 / == 0 判定,不受发布者个数影响,不用改。)
         # 残余盲区:
         #   - 该 zone 自己的 SM 也全挂了,或它的 ZoneId 配错(配错还会误报一个空 zone);
         #   - 某个 SM 卡在 fullSync 的 3s 重试循环(etcd 不可达)时不再走 refreshLoadScores,它最后一次
         #     发布的 > 0 旧值会一直留着,压住这两条告警。这种形态下 scene 节点同样无法注册 / 续租,应由
         #     etcd / SM 存活类告警覆盖,本文件没有;
+        #     (2026-10-16 补充:卡住的若是领导者,压住的是**全部** zone;卡住的是跟随者,只压住它自己的 zone。
+        #     领导者卡住时 SceneManagerLoadRefreshStalled 会响,可作这一形态的旁证。)
         #   - 新 zone 开服、整 zone 维护:2 分钟后两条 critical 都会响(新行为),事先对该 zone_id 加
         #     silence,步骤见 docs/ops/scene-node-role-split.md。
         # 阈值 / for / severity 沿用原值。
@@ -100,6 +105,10 @@ spec:
             runbook_url: docs/ops/scene-node-role-split.md
 
         # --- Load imbalance ------------------------------------------------
+        # 2026-10-16 起每节点序列(node_player_count / node_load_score)只由领导者导出,换主时序列从一个
+        # pod 换到另一个 pod,中间空缺最长约一个选主锁 TTL 加一拍(约 35s),超过 30s 的评估间隔:下面
+        # WorldNodeSaturated(for 10m)与 LoadScoreDispersionLow(for 15m)的 pending 计时会在换主时清零。
+        # 表达式不用改,读数时知道这一点即可。
         - alert: SceneManagerWorldNodeSaturated
           expr: |
             max by (zone_id) (scene_manager_node_player_count{role=~"main_world.*"}) > 1800
@@ -132,6 +141,90 @@ spec:
               Scores on the world pool are nearly identical. Consider raising
               NodeLoadWeightPlayerCount so live players push more weight than
               scene count, letting the scheduler pick a clear winner.
+
+        # --- 负载分刷新(scene_manager_load_refresh_*,2026-10-16)-----------
+        # 负载分、类型镜像与每节点序列只由领导者按 zone 批量刷新(go/scene_manager/internal/logic/
+        # load_refresh.go),跟随者不刷新。load_refresh_total{outcome} 每拍(5s)由领导者记一次;六个 outcome
+        # 在每个副本注册指标时预置为 0,所以「没人在刷」表现为 increase == 0,而不是序列消失。
+        # outcome:ok / partial(个别键读不到:WRONGTYPE、空串、非数字,保留旧分)/ read_failed(读批遇到传输层
+        # 失败:熔断拒绝 / 取连接 / 网络 / 超时;只按错误类型判,与批怎么切无关)/ registry_failed
+        # (scene_manager:zones 登记失败)/ write_failed(写批失败)/ lost_leadership(刷新途中降级)。
+        # 四条的阈值与 for 都是起步值,待压测基线(AGENTS §6);代码未编译、未实测。
+        - alert: SceneManagerLoadRefreshStalled
+          expr: |
+            sum(increase(scene_manager_load_refresh_total[2m])) == 0
+            or absent(scene_manager_load_refresh_total)
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: "scene_manager 负载分刷新停摆超过 5 分钟(没有领导者在刷新)"
+            description: |
+              正常时领导者每 5s 记一次 scene_manager_load_refresh_total。连续 2 分钟没有增长、持续 5 分钟,说明
+              没有领导者(选主失败 / 全部副本 LeaderEligible=false / 选主锁所在 Redis 不可写),或领导者卡在
+              fullSync 的 3s 重试循环(etcd 不可达)、load reporter 的 goroutine 被阻塞。
+              影响:负载分与类型镜像停在最后一次的值,选点按旧分;每节点看板整片变空;同一条 goroutine 上的
+              死节点清扫、推迟摘除多半一起停。absent 分支 = 没有任何 scene_manager 导出本指标(没抓到 /metrics,
+              或全部是 2026-10-16 之前的旧版本)。
+              处置:先查 sum(scene_manager_is_leader)(应恒为 1);再看领导者日志里的
+              "[LoadReporter] full sync failed" / "watch interrupted" / "resync requested",以及 etcd 与选主锁所在
+              Redis 的健康。滚动升级期间领导者若仍是旧版本(不导出本指标),本告警会误报,升级窗口内对它加 silence。
+            runbook_url: docs/ops/scene-node-role-split.md
+
+        - alert: SceneManagerLoadRefreshFailing
+          expr: |
+            sum(increase(scene_manager_load_refresh_total{outcome=~"read_failed|registry_failed|write_failed"}[10m])) > 0
+          for: 10m
+          labels:
+            severity: warning
+          annotations:
+            summary: "scene_manager 负载分刷新持续失败(outcome=read_failed / registry_failed / write_failed)"
+            description: |
+              read_failed:计数读批遇到传输层失败(go-zero 熔断拒绝 / 取连接 / 网络 / 超时),受影响的节点保留旧分,
+              不在负载集里的以「最后才被选中」的哨兵分加入。registry_failed:登记集合 scene_manager:zones 写失败,
+              负载集照常写,但这一拍新出现的 zone 没登记,它若随后整体下线,fullSync 的清扫与孤儿清理会漏掉它。
+              write_failed:类型镜像 SET 或负载集 ZADD 失败,分数没更新(这些 zone 的每节点序列本拍不更新),新注册的
+              节点可能进不了负载集(会被当作已死,改派仍受再入屏障约束)。
+              partial(个别键的回复错误 / 坏值,不论批大小、节点多少)不在本规则里,由
+              SceneManagerLoadRefreshNodeErrors 盯;日志看领导者的 "[LoadRefresh] ... node counter reads failed"。
+              处置:查 Redis(连接数、慢日志、used_memory 与 maxmemory、go-zero 熔断日志 "breaker is open");
+              领导者日志搜 "[LoadRefresh]" 看是哪一步、哪个 zone 失败。
+            runbook_url: docs/ops/scene-node-role-split.md
+
+        - alert: SceneManagerLoadRefreshSlow
+          expr: |
+            histogram_quantile(0.99, sum by (le) (rate(scene_manager_load_refresh_duration_seconds_bucket[10m]))) > 2
+          for: 15m
+          labels:
+            severity: warning
+          annotations:
+            summary: "scene_manager 负载分刷新 p99 超过 2s(拍长 5s)"
+            description: |
+              一拍刷新 = 一条 SADD 登记 + 分批 pipeline 读两个计数 + 分批 pipeline 写类型镜像与 ZADD(每批 1024 条)。
+              p99 逼近 5s 的拍长时,刷新会挤占 load reporter 的 goroutine(watch 事件、推迟摘除、死节点收尾同在其上)。
+              多半是 Redis 慢(慢日志、CPU、网络)或全服节点数增长到单领导者扛不住(容量模型 §2.2 / A1:每 zone 选主)。
+              阈值 2s 是起步值,待压测基线。
+            runbook_url: docs/ops/scene-node-role-split.md
+
+        - alert: SceneManagerLoadRefreshNodeErrors
+          # 用 sum 而不是逐 pod:计数器只由领导者累加,换主时序列换 pod,sum 让 for 计时不随换主清零。
+          expr: |
+            sum(increase(scene_manager_load_refresh_node_errors_total[10m])) > 0
+          for: 30m
+          labels:
+            severity: warning
+          annotations:
+            summary: "scene_manager 有 scene 节点的负载计数持续读不到(超过 30 分钟)"
+            description: |
+              领导者每拍刷新时有节点的 scene_count / player_count 读不到(WRONGTYPE、值是空串或非数字,或传输层失败),
+              30 分钟里每个 10 分钟窗口都有。这些节点:在负载集里的一直保留旧分;不在的以哨兵分 1e12 加入、选点永远
+              排最后,等于悄悄少了一份容量;它们的每节点序列(node_player_count / node_load_score)停在最后一次成功的
+              值,SceneManagerWorldNodeSaturated / SceneManagerLoadScoreDispersionLow 按这份旧值判。个别键坏掉只记
+              outcome=partial,SceneManagerLoadRefreshFailing 不覆盖这种情形。
+              处置:领导者日志搜 "[LoadRefresh]",从 first 里拿到 zone / node,用 redis-cli 的 TYPE / GET 查
+              node:zone:{z}:{node}:scene_count 与 player_count;同时有 read_failed 时先按 Failing 查 Redis。
+              阈值与 for 是起步值,待压测基线。
+            runbook_url: docs/ops/scene-node-role-split.md
 
         # --- Rebalance health ----------------------------------------------
         - alert: SceneManagerRebalanceStalled
@@ -541,3 +634,39 @@ spec:
               Usually a stale image or a typo in SCENE_NODE_TYPE env. Check pod
               env / game_config.yaml.
             runbook_url: docs/ops/scene-node-role-split.md
+
+    # --- 落点会话身份(docs/design/scene-enter-chain-residuals.md §3、§5)-------
+    - name: scene-manager.placement-identity
+      rules:
+        - alert: SceneManagerPlacementIdentityConflict
+          # 代次相等而会话不同:登录代次与会话一一对应(G2)被破坏。正常恒为 0,出现即告警。
+          # keep_newer 的速率告警需要上线后的基线定阈值,尚未配置(见 metrics.go placementIdentityTotal 注释)。
+          expr: |
+            sum by (site, verdict) (increase(scene_manager_placement_identity_total{verdict=~"conflict|keep_conflict"}[10m])) > 0
+          for: 0m
+          labels:
+            severity: critical
+          annotations:
+            summary: "落点会话身份冲突({{ $labels.site }}/{{ $labels.verdict }})"
+            description: |
+              同一登录代次出现在两个不同会话上(scene-enter-chain-residuals.md §3.2 keep_conflict /
+              §5.2 conflict)。enter 侧已拒绝请求(码 25),leave 侧保留了 location 未删。按同期
+              scene_manager 的 Error 日志定位玩家与两个会话号,核对 login 的代次铸造(G2)。
+
+    # --- 删 location 绑定持有者释放(docs/design/location-release-binding.md §3.6)-------
+    - name: scene-manager.leave-holder-release
+      rules:
+        - alert: SceneManagerLeaveReleaseForced
+          # 等满 LeaveSceneHolderReleaseWaitSeconds 仍拿不到「持有者已释放」证据,按旧行为删了 location。正常恒为 0。
+          expr: |
+            sum(increase(scene_manager_leave_holder_release_total{verdict="forced"}[10m])) > 0
+          for: 0m
+          labels:
+            severity: warning
+          annotations:
+            summary: "LeaveScene 等不到持有者释放,已强制删除 location"
+            description: |
+              持有节点在上限内既没写出当前代的 handoff 标记,也没被判定死亡(location-release-binding.md §3.6)。
+              常见原因:持有节点对 Redis 的存盘长时间失败、A1′ 开关被关、实体缓存的 owner_epoch 落后于 location。
+              强制删除之后持有节点若仍在写,它的存盘会被 owner CAS 拒绝(看 scene 的 [OwnerEpoch]
+              stale_owner_rejected_exiting)。按 scene_manager 的 [LeaveRelease] ERROR 日志定位玩家与节点。

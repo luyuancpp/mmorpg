@@ -33,8 +33,9 @@ import (
 type CapacityProvider interface {
 	// CandidatesForZone returns all healthy gates serving zoneID, in
 	// arbitrary order. PickGate / gatePicker choose by load.
-	// 生产实现(svc 的 gateWatcherCapacityProvider)每次都是一次 etcd 前缀读加一次排空标记 MGET,
-	// 不缓存:dispatcher 每个非空拍只调一次;快速通道每次 AssignGate 调一到两次(FreeSlots、签票各一次)。
+	// 生产实现(svc 的 gateWatcherCapacityProvider)读 gate 目录的进程内 list-watch 镜像,镜像不新鲜时
+	// 回落一次 etcd 前缀读(2026-10-18 起;此前每次都直读 etcd),再加一次排空标记 MGET:
+	// dispatcher 每个非空拍只调一次;快速通道每次 AssignGate 调一到两次(FreeSlots、签票各一次)。
 	CandidatesForZone(ctx context.Context, zoneID uint32) ([]GateCandidate, error)
 	// ZoneCapacity is the configured ceiling for zoneID, or 0 when
 	// unconfigured (caller falls back to softCap formula).

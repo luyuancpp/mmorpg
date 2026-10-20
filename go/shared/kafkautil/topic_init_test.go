@@ -45,6 +45,7 @@ type topicAdminFake struct {
 	created       map[string]sarama.TopicDetail
 	retentionName string
 	retention     map[string]sarama.IncrementalAlterConfigsEntry
+	alterCalls    int
 	sleeps        []time.Duration
 }
 
@@ -81,6 +82,7 @@ func (a *topicAdminFake) IncrementalAlterConfig(resource sarama.ConfigResourceTy
 	if resource != sarama.TopicResource || validateOnly {
 		a.t.Fatal("retention must use a topic-level incremental update")
 	}
+	a.alterCalls++
 	a.retentionName, a.retention = name, entries
 	return nil
 }
@@ -256,6 +258,79 @@ func TestEnsureTopicsRejectsUnderReplicatedExistingTopic(t *testing.T) {
 				t.Fatalf("an existing topic with its marker must not trigger any creation: %+v", admin.created)
 			}
 		})
+	}
+}
+
+// retention.bytes(S5b):建 topic 与每次启动的增量 SET 都带上,且与 retention.ms 合成一次调用。
+func TestEnsureTopicsSetsRetentionBytesOnCreateAndAlter(t *testing.T) {
+	spec := TopicSpec{Name: "db_task_zone_1", Partitions: 10, RetentionMs: 86400000, RetentionBytes: 2785017856}
+	admin := newTopicAdminFake(t, topicMetadataReply{}, topicMetadataReply{
+		topics: map[string]sarama.TopicDetail{spec.Name: {NumPartitions: 10}},
+	})
+	if err := ensureTopics(admin, []TopicSpec{spec}, 1, admin.clock, admin.sleep); err != nil {
+		t.Fatalf("creating a topic with retention.bytes must succeed: %v", err)
+	}
+	created := admin.created[spec.Name].ConfigEntries
+	if ms := created["retention.ms"]; ms == nil || *ms != "86400000" {
+		t.Fatalf("created topic must carry retention.ms: %+v", created)
+	}
+	if bytes := created["retention.bytes"]; bytes == nil || *bytes != "2785017856" {
+		t.Fatalf("created topic must carry retention.bytes: %+v", created)
+	}
+	if admin.alterCalls != 1 || admin.retentionName != spec.Name || len(admin.retention) != 2 {
+		t.Fatalf("retention must be applied in exactly one incremental call with two entries: calls=%d entries=%+v", admin.alterCalls, admin.retention)
+	}
+	for key, want := range map[string]string{"retention.ms": "86400000", "retention.bytes": "2785017856"} {
+		entry := admin.retention[key]
+		if entry.Operation != sarama.IncrementalAlterConfigsOperationSet || entry.Value == nil || *entry.Value != want {
+			t.Fatalf("%s must be an incremental SET of %s: %+v", key, want, entry)
+		}
+	}
+}
+
+func TestEnsureTopicsLeavesRetentionBytesUnmanagedWhenZero(t *testing.T) {
+	spec := TopicSpec{Name: "db_task_zone_1", Partitions: 10, RetentionMs: 86400000}
+	admin := newTopicAdminFake(t, topicMetadataReply{}, topicMetadataReply{
+		topics: map[string]sarama.TopicDetail{spec.Name: {NumPartitions: 10}},
+	})
+	if err := ensureTopics(admin, []TopicSpec{spec}, 1, admin.clock, admin.sleep); err != nil {
+		t.Fatalf("unmanaged retention.bytes must keep the old behavior: %v", err)
+	}
+	if _, managed := admin.created[spec.Name].ConfigEntries["retention.bytes"]; managed {
+		t.Fatal("RetentionBytes=0 must not put retention.bytes into the created topic")
+	}
+	if _, managed := admin.retention["retention.bytes"]; managed || len(admin.retention) != 1 {
+		t.Fatalf("RetentionBytes=0 must only SET retention.ms: %+v", admin.retention)
+	}
+}
+
+func TestEnsureTopicsRejectsNegativeRetentionBytes(t *testing.T) {
+	spec := TopicSpec{Name: "db_task_zone_1", Partitions: 10, RetentionMs: 86400000, RetentionBytes: -1}
+	admin := newTopicAdminFake(t, topicMetadataReply{})
+	err := ensureTopics(admin, []TopicSpec{spec}, 1, admin.clock, admin.sleep)
+	if err == nil || !strings.Contains(err.Error(), "retention.bytes") {
+		t.Fatalf("negative retention.bytes (Kafka's unlimited) must be rejected: %v", err)
+	}
+	if len(admin.created) != 0 || admin.alterCalls != 0 {
+		t.Fatalf("a rejected spec must not create or alter anything: created=%+v calls=%d", admin.created, admin.alterCalls)
+	}
+}
+
+func TestEnsureTopicsRetentionBytesWithoutRetentionMs(t *testing.T) {
+	const topic = "db_task_zone_1"
+	_, marker := partitionContractMarker(topic, 10)
+	admin := newTopicAdminFake(t, topicMetadataReply{topics: map[string]sarama.TopicDetail{
+		topic:  {NumPartitions: 10},
+		marker: {NumPartitions: 1},
+	}})
+	if err := ensureTopics(admin, []TopicSpec{{Name: topic, Partitions: 10, RetentionBytes: 1 << 30}}, 1, admin.clock, admin.sleep); err != nil {
+		t.Fatalf("retention.bytes alone must be applied: %v", err)
+	}
+	if admin.alterCalls != 1 || len(admin.retention) != 1 {
+		t.Fatalf("alter must contain only retention.bytes: calls=%d entries=%+v", admin.alterCalls, admin.retention)
+	}
+	if entry := admin.retention["retention.bytes"]; entry.Value == nil || *entry.Value != "1073741824" {
+		t.Fatalf("retention.bytes must be SET verbatim: %+v", entry)
 	}
 }
 

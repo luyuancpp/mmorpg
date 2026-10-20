@@ -2,7 +2,9 @@ package logic
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"time"
 
 	"github.com/redis/go-redis/v9"
 	"github.com/zeromicro/go-zero/core/logx"
@@ -73,11 +75,20 @@ func (l *MarkOfflineLogic) MarkOffline(in *pb.MarkOfflineRequest) (*common.Empty
 		)
 		return &common.Empty{}, nil
 	}
+	// 同号跨 gate 实例:旧实例迟到的登出不得删掉新实例上的会话、也不调 LeaveScene
+	// (docs/design/scene-enter-chain-residuals.md §6.2)。与上面的会话号 / 版本比对同在 GET 到的这份字节上判,
+	// 下面的整字节 CAS 不变。
+	if isStaleGateInstanceReport(current.GateInstanceId, in.ExpectedGateInstanceId) {
+		staleGateInstanceTotal.Inc(staleGateInstanceOpMarkOffline)
+		l.Infof("MarkOffline: stale gate instance ignored player=%d session=%d/%d record_instance=%s request_instance=%s",
+			playerID, current.SessionId, current.SessionVersion, current.GateInstanceId, in.ExpectedGateInstanceId)
+		return &common.Empty{}, nil
+	}
 
 	// Lua 比较完整 protobuf 原始字节后才删除。该字节包含已经在上面核对过的
 	// session_id/session_version，因此比只比较这两个字段更强：二次 GET 到 Lua
 	// 执行之间任何会话变化都会让 CAS 失败。
-	deleted, err := deleteSessionIfUnchanged(l.ctx, l.svcCtx, playerID, data)
+	deleted, err := deleteSessionIfUnchanged(l.ctx, l.svcCtx, playerID, data, current)
 	if err != nil {
 		return nil, err
 	}
@@ -95,6 +106,9 @@ func (l *MarkOfflineLogic) MarkOffline(in *pb.MarkOfflineRequest) (*common.Empty
 	// 无 TTL 永久残留,实例 player_count 幽灵 +1(destroy-on-empty 永不触发),
 	// 多世界节点区服下次登录选到别的节点还会被 unsafe-handoff 闸门确定性拒绝,
 	// 玩家永久进不了游戏。
+	//
+	// 会话结束不等于持有 scene 已停笔:scene_manager 只在拿到「持有者已释放」证据后才删 location,拿不到就回
+	// errHolderReleasePending,这里转入清理通道重试,location 最终仍会被删(docs/design/location-release-binding.md §5)。
 	l.notifySceneManagerLeaveOrEnqueue(playerID, current)
 	return &common.Empty{}, nil
 }
@@ -110,13 +124,30 @@ func (l *MarkOfflineLogic) notifySceneManagerLeaveOrEnqueue(
 	if leaveErr == nil {
 		return
 	}
-	l.Errorf("MarkOffline: LeaveScene failed for player %d, enqueueing for lease-monitor retry: %v",
-		playerID, leaveErr)
+	readyAt := time.Now()
+	if errors.Is(leaveErr, errHolderReleasePending) {
+		// 不是故障:location 的持有节点还没把当前代状态落盘释放(docs/design/location-release-binding.md §3.4)。
+		// gate 收到 LeaveGame 时已代发 ExitGame、scene_manager 也已请持有节点释放;首拍延后一点,让 A1′ 标记先落地,
+		// 第一次重试大概率就能删掉 location。之后按 claim 超时节拍重试。
+		readyAt = readyAt.Add(holderReleaseFirstRetryDelay)
+		l.Infof("MarkOffline: location holder has not released player %d yet, enqueueing cleanup retry in %s: %v",
+			playerID, holderReleaseFirstRetryDelay, leaveErr)
+	} else {
+		l.Errorf("MarkOffline: LeaveScene failed for player %d, enqueueing for lease-monitor retry: %v",
+			playerID, leaveErr)
+	}
 
 	// 入队的快照必须是 DISCONNECTING 态:LeaseMonitor 对 State!=DISCONNECTING
 	// 的条目按"历史残留"直接 ack 丢弃。原字节是 ONLINE 态,不能直接用。
+	//
+	// gate 两项清空:这是正常登出的清理,玩家的连接多半还在(LeaveGame 不断 TCP,停在选角界面)。LeaseMonitor 处理到期
+	// 条目时会给 gate_id 指向的 gate 发 PlayerLeaseExpired,gate 对仍连着的同号会话直接 forceClose —— 登出的人会被踢下线。
+	// 以前只有 LeaveScene 同步失败才入队,这个缺陷少见;现在"等持有者释放"是常态,必须清掉(sendLeaseExpiredToGate
+	// 对空 gate_id 不发)。
 	retrySession := proto.Clone(session).(*pb.PlayerSession)
 	retrySession.State = pb.PlayerSessionState_SESSION_STATE_DISCONNECTING
+	retrySession.GateId = ""
+	retrySession.GateInstanceId = ""
 	retryBytes, err := proto.Marshal(retrySession)
 	if err != nil {
 		l.Errorf("MarkOffline: marshal retry session for player %d failed, scene cleanup LOST: %v",
@@ -124,7 +155,7 @@ func (l *MarkOfflineLogic) notifySceneManagerLeaveOrEnqueue(
 		return
 	}
 
-	enqueued, err := enqueueOfflineCleanup(l.ctx, l.svcCtx, playerID, retryBytes)
+	enqueued, err := enqueueOfflineCleanup(l.ctx, l.svcCtx, playerID, retryBytes, readyAt)
 	if err != nil {
 		// 双重失败(LeaveScene RPC + Redis 入队都挂):此时只剩日志可依赖。
 		// 位置残留的后果与修复手段见 docs/PROGRESS.md 2026-08-09 节。

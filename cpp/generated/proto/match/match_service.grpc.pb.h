@@ -41,6 +41,21 @@ class MatchService final {
   class StubInterface {
    public:
     virtual ~StubInterface() {}
+    // 获取受信地域探测端点；提交端点签名回执后才允许全球排队。
+    virtual ::grpc::Status GetNetworkProbePlan(::grpc::ClientContext* context, const ::match::GetNetworkProbePlanRequest& request, ::match::GetNetworkProbePlanResponse* response) = 0;
+    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::match::GetNetworkProbePlanResponse>> AsyncGetNetworkProbePlan(::grpc::ClientContext* context, const ::match::GetNetworkProbePlanRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::match::GetNetworkProbePlanResponse>>(AsyncGetNetworkProbePlanRaw(context, request, cq));
+    }
+    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::match::GetNetworkProbePlanResponse>> PrepareAsyncGetNetworkProbePlan(::grpc::ClientContext* context, const ::match::GetNetworkProbePlanRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::match::GetNetworkProbePlanResponse>>(PrepareAsyncGetNetworkProbePlanRaw(context, request, cq));
+    }
+    virtual ::grpc::Status CommitNetworkProbe(::grpc::ClientContext* context, const ::match::CommitNetworkProbeRequest& request, ::match::CommitNetworkProbeResponse* response) = 0;
+    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::match::CommitNetworkProbeResponse>> AsyncCommitNetworkProbe(::grpc::ClientContext* context, const ::match::CommitNetworkProbeRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::match::CommitNetworkProbeResponse>>(AsyncCommitNetworkProbeRaw(context, request, cq));
+    }
+    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::match::CommitNetworkProbeResponse>> PrepareAsyncCommitNetworkProbe(::grpc::ClientContext* context, const ::match::CommitNetworkProbeRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::match::CommitNetworkProbeResponse>>(PrepareAsyncCommitNetworkProbeRaw(context, request, cq));
+    }
     // Player requests to join a match queue.
     virtual ::grpc::Status JoinQueue(::grpc::ClientContext* context, const ::match::JoinQueueRequest& request, ::match::JoinQueueResponse* response) = 0;
     std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::match::JoinQueueResponse>> AsyncJoinQueue(::grpc::ClientContext* context, const ::match::JoinQueueRequest& request, ::grpc::CompletionQueue* cq) {
@@ -126,6 +141,11 @@ class MatchService final {
     class async_interface {
      public:
       virtual ~async_interface() {}
+      // 获取受信地域探测端点；提交端点签名回执后才允许全球排队。
+      virtual void GetNetworkProbePlan(::grpc::ClientContext* context, const ::match::GetNetworkProbePlanRequest* request, ::match::GetNetworkProbePlanResponse* response, std::function<void(::grpc::Status)>) = 0;
+      virtual void GetNetworkProbePlan(::grpc::ClientContext* context, const ::match::GetNetworkProbePlanRequest* request, ::match::GetNetworkProbePlanResponse* response, ::grpc::ClientUnaryReactor* reactor) = 0;
+      virtual void CommitNetworkProbe(::grpc::ClientContext* context, const ::match::CommitNetworkProbeRequest* request, ::match::CommitNetworkProbeResponse* response, std::function<void(::grpc::Status)>) = 0;
+      virtual void CommitNetworkProbe(::grpc::ClientContext* context, const ::match::CommitNetworkProbeRequest* request, ::match::CommitNetworkProbeResponse* response, ::grpc::ClientUnaryReactor* reactor) = 0;
       // Player requests to join a match queue.
       virtual void JoinQueue(::grpc::ClientContext* context, const ::match::JoinQueueRequest* request, ::match::JoinQueueResponse* response, std::function<void(::grpc::Status)>) = 0;
       virtual void JoinQueue(::grpc::ClientContext* context, const ::match::JoinQueueRequest* request, ::match::JoinQueueResponse* response, ::grpc::ClientUnaryReactor* reactor) = 0;
@@ -163,6 +183,10 @@ class MatchService final {
     virtual class async_interface* async() { return nullptr; }
     class async_interface* experimental_async() { return async(); }
    private:
+    virtual ::grpc::ClientAsyncResponseReaderInterface< ::match::GetNetworkProbePlanResponse>* AsyncGetNetworkProbePlanRaw(::grpc::ClientContext* context, const ::match::GetNetworkProbePlanRequest& request, ::grpc::CompletionQueue* cq) = 0;
+    virtual ::grpc::ClientAsyncResponseReaderInterface< ::match::GetNetworkProbePlanResponse>* PrepareAsyncGetNetworkProbePlanRaw(::grpc::ClientContext* context, const ::match::GetNetworkProbePlanRequest& request, ::grpc::CompletionQueue* cq) = 0;
+    virtual ::grpc::ClientAsyncResponseReaderInterface< ::match::CommitNetworkProbeResponse>* AsyncCommitNetworkProbeRaw(::grpc::ClientContext* context, const ::match::CommitNetworkProbeRequest& request, ::grpc::CompletionQueue* cq) = 0;
+    virtual ::grpc::ClientAsyncResponseReaderInterface< ::match::CommitNetworkProbeResponse>* PrepareAsyncCommitNetworkProbeRaw(::grpc::ClientContext* context, const ::match::CommitNetworkProbeRequest& request, ::grpc::CompletionQueue* cq) = 0;
     virtual ::grpc::ClientAsyncResponseReaderInterface< ::match::JoinQueueResponse>* AsyncJoinQueueRaw(::grpc::ClientContext* context, const ::match::JoinQueueRequest& request, ::grpc::CompletionQueue* cq) = 0;
     virtual ::grpc::ClientAsyncResponseReaderInterface< ::match::JoinQueueResponse>* PrepareAsyncJoinQueueRaw(::grpc::ClientContext* context, const ::match::JoinQueueRequest& request, ::grpc::CompletionQueue* cq) = 0;
     virtual ::grpc::ClientAsyncResponseReaderInterface< ::Empty>* AsyncCancelQueueRaw(::grpc::ClientContext* context, const ::match::CancelQueueRequest& request, ::grpc::CompletionQueue* cq) = 0;
@@ -187,6 +211,20 @@ class MatchService final {
   class Stub final : public StubInterface {
    public:
     Stub(const std::shared_ptr< ::grpc::ChannelInterface>& channel, const ::grpc::StubOptions& options = ::grpc::StubOptions());
+    ::grpc::Status GetNetworkProbePlan(::grpc::ClientContext* context, const ::match::GetNetworkProbePlanRequest& request, ::match::GetNetworkProbePlanResponse* response) override;
+    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::match::GetNetworkProbePlanResponse>> AsyncGetNetworkProbePlan(::grpc::ClientContext* context, const ::match::GetNetworkProbePlanRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::match::GetNetworkProbePlanResponse>>(AsyncGetNetworkProbePlanRaw(context, request, cq));
+    }
+    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::match::GetNetworkProbePlanResponse>> PrepareAsyncGetNetworkProbePlan(::grpc::ClientContext* context, const ::match::GetNetworkProbePlanRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::match::GetNetworkProbePlanResponse>>(PrepareAsyncGetNetworkProbePlanRaw(context, request, cq));
+    }
+    ::grpc::Status CommitNetworkProbe(::grpc::ClientContext* context, const ::match::CommitNetworkProbeRequest& request, ::match::CommitNetworkProbeResponse* response) override;
+    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::match::CommitNetworkProbeResponse>> AsyncCommitNetworkProbe(::grpc::ClientContext* context, const ::match::CommitNetworkProbeRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::match::CommitNetworkProbeResponse>>(AsyncCommitNetworkProbeRaw(context, request, cq));
+    }
+    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::match::CommitNetworkProbeResponse>> PrepareAsyncCommitNetworkProbe(::grpc::ClientContext* context, const ::match::CommitNetworkProbeRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::match::CommitNetworkProbeResponse>>(PrepareAsyncCommitNetworkProbeRaw(context, request, cq));
+    }
     ::grpc::Status JoinQueue(::grpc::ClientContext* context, const ::match::JoinQueueRequest& request, ::match::JoinQueueResponse* response) override;
     std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::match::JoinQueueResponse>> AsyncJoinQueue(::grpc::ClientContext* context, const ::match::JoinQueueRequest& request, ::grpc::CompletionQueue* cq) {
       return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::match::JoinQueueResponse>>(AsyncJoinQueueRaw(context, request, cq));
@@ -260,6 +298,10 @@ class MatchService final {
     class async final :
       public StubInterface::async_interface {
      public:
+      void GetNetworkProbePlan(::grpc::ClientContext* context, const ::match::GetNetworkProbePlanRequest* request, ::match::GetNetworkProbePlanResponse* response, std::function<void(::grpc::Status)>) override;
+      void GetNetworkProbePlan(::grpc::ClientContext* context, const ::match::GetNetworkProbePlanRequest* request, ::match::GetNetworkProbePlanResponse* response, ::grpc::ClientUnaryReactor* reactor) override;
+      void CommitNetworkProbe(::grpc::ClientContext* context, const ::match::CommitNetworkProbeRequest* request, ::match::CommitNetworkProbeResponse* response, std::function<void(::grpc::Status)>) override;
+      void CommitNetworkProbe(::grpc::ClientContext* context, const ::match::CommitNetworkProbeRequest* request, ::match::CommitNetworkProbeResponse* response, ::grpc::ClientUnaryReactor* reactor) override;
       void JoinQueue(::grpc::ClientContext* context, const ::match::JoinQueueRequest* request, ::match::JoinQueueResponse* response, std::function<void(::grpc::Status)>) override;
       void JoinQueue(::grpc::ClientContext* context, const ::match::JoinQueueRequest* request, ::match::JoinQueueResponse* response, ::grpc::ClientUnaryReactor* reactor) override;
       void CancelQueue(::grpc::ClientContext* context, const ::match::CancelQueueRequest* request, ::Empty* response, std::function<void(::grpc::Status)>) override;
@@ -291,6 +333,10 @@ class MatchService final {
    private:
     std::shared_ptr< ::grpc::ChannelInterface> channel_;
     class async async_stub_{this};
+    ::grpc::ClientAsyncResponseReader< ::match::GetNetworkProbePlanResponse>* AsyncGetNetworkProbePlanRaw(::grpc::ClientContext* context, const ::match::GetNetworkProbePlanRequest& request, ::grpc::CompletionQueue* cq) override;
+    ::grpc::ClientAsyncResponseReader< ::match::GetNetworkProbePlanResponse>* PrepareAsyncGetNetworkProbePlanRaw(::grpc::ClientContext* context, const ::match::GetNetworkProbePlanRequest& request, ::grpc::CompletionQueue* cq) override;
+    ::grpc::ClientAsyncResponseReader< ::match::CommitNetworkProbeResponse>* AsyncCommitNetworkProbeRaw(::grpc::ClientContext* context, const ::match::CommitNetworkProbeRequest& request, ::grpc::CompletionQueue* cq) override;
+    ::grpc::ClientAsyncResponseReader< ::match::CommitNetworkProbeResponse>* PrepareAsyncCommitNetworkProbeRaw(::grpc::ClientContext* context, const ::match::CommitNetworkProbeRequest& request, ::grpc::CompletionQueue* cq) override;
     ::grpc::ClientAsyncResponseReader< ::match::JoinQueueResponse>* AsyncJoinQueueRaw(::grpc::ClientContext* context, const ::match::JoinQueueRequest& request, ::grpc::CompletionQueue* cq) override;
     ::grpc::ClientAsyncResponseReader< ::match::JoinQueueResponse>* PrepareAsyncJoinQueueRaw(::grpc::ClientContext* context, const ::match::JoinQueueRequest& request, ::grpc::CompletionQueue* cq) override;
     ::grpc::ClientAsyncResponseReader< ::Empty>* AsyncCancelQueueRaw(::grpc::ClientContext* context, const ::match::CancelQueueRequest& request, ::grpc::CompletionQueue* cq) override;
@@ -311,6 +357,8 @@ class MatchService final {
     ::grpc::ClientAsyncResponseReader< ::RequestBattleTicketResponse>* PrepareAsyncRequestBattleTicketRaw(::grpc::ClientContext* context, const ::RequestBattleTicketRequest& request, ::grpc::CompletionQueue* cq) override;
     ::grpc::ClientAsyncResponseReader< ::match::ListWatchableBattlesResponse>* AsyncListWatchableBattlesRaw(::grpc::ClientContext* context, const ::match::ListWatchableBattlesRequest& request, ::grpc::CompletionQueue* cq) override;
     ::grpc::ClientAsyncResponseReader< ::match::ListWatchableBattlesResponse>* PrepareAsyncListWatchableBattlesRaw(::grpc::ClientContext* context, const ::match::ListWatchableBattlesRequest& request, ::grpc::CompletionQueue* cq) override;
+    const ::grpc::internal::RpcMethod rpcmethod_GetNetworkProbePlan_;
+    const ::grpc::internal::RpcMethod rpcmethod_CommitNetworkProbe_;
     const ::grpc::internal::RpcMethod rpcmethod_JoinQueue_;
     const ::grpc::internal::RpcMethod rpcmethod_CancelQueue_;
     const ::grpc::internal::RpcMethod rpcmethod_GetQueueStatus_;
@@ -328,6 +376,9 @@ class MatchService final {
    public:
     Service();
     virtual ~Service();
+    // 获取受信地域探测端点；提交端点签名回执后才允许全球排队。
+    virtual ::grpc::Status GetNetworkProbePlan(::grpc::ServerContext* context, const ::match::GetNetworkProbePlanRequest* request, ::match::GetNetworkProbePlanResponse* response);
+    virtual ::grpc::Status CommitNetworkProbe(::grpc::ServerContext* context, const ::match::CommitNetworkProbeRequest* request, ::match::CommitNetworkProbeResponse* response);
     // Player requests to join a match queue.
     virtual ::grpc::Status JoinQueue(::grpc::ServerContext* context, const ::match::JoinQueueRequest* request, ::match::JoinQueueResponse* response);
     // Player cancels their queued match request.
@@ -352,12 +403,52 @@ class MatchService final {
     virtual ::grpc::Status ListWatchableBattles(::grpc::ServerContext* context, const ::match::ListWatchableBattlesRequest* request, ::match::ListWatchableBattlesResponse* response);
   };
   template <class BaseClass>
+  class WithAsyncMethod_GetNetworkProbePlan : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithAsyncMethod_GetNetworkProbePlan() {
+      ::grpc::Service::MarkMethodAsync(0);
+    }
+    ~WithAsyncMethod_GetNetworkProbePlan() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status GetNetworkProbePlan(::grpc::ServerContext* /*context*/, const ::match::GetNetworkProbePlanRequest* /*request*/, ::match::GetNetworkProbePlanResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    void RequestGetNetworkProbePlan(::grpc::ServerContext* context, ::match::GetNetworkProbePlanRequest* request, ::grpc::ServerAsyncResponseWriter< ::match::GetNetworkProbePlanResponse>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
+      ::grpc::Service::RequestAsyncUnary(0, context, request, response, new_call_cq, notification_cq, tag);
+    }
+  };
+  template <class BaseClass>
+  class WithAsyncMethod_CommitNetworkProbe : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithAsyncMethod_CommitNetworkProbe() {
+      ::grpc::Service::MarkMethodAsync(1);
+    }
+    ~WithAsyncMethod_CommitNetworkProbe() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status CommitNetworkProbe(::grpc::ServerContext* /*context*/, const ::match::CommitNetworkProbeRequest* /*request*/, ::match::CommitNetworkProbeResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    void RequestCommitNetworkProbe(::grpc::ServerContext* context, ::match::CommitNetworkProbeRequest* request, ::grpc::ServerAsyncResponseWriter< ::match::CommitNetworkProbeResponse>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
+      ::grpc::Service::RequestAsyncUnary(1, context, request, response, new_call_cq, notification_cq, tag);
+    }
+  };
+  template <class BaseClass>
   class WithAsyncMethod_JoinQueue : public BaseClass {
    private:
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithAsyncMethod_JoinQueue() {
-      ::grpc::Service::MarkMethodAsync(0);
+      ::grpc::Service::MarkMethodAsync(2);
     }
     ~WithAsyncMethod_JoinQueue() override {
       BaseClassMustBeDerivedFromService(this);
@@ -368,7 +459,7 @@ class MatchService final {
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
     void RequestJoinQueue(::grpc::ServerContext* context, ::match::JoinQueueRequest* request, ::grpc::ServerAsyncResponseWriter< ::match::JoinQueueResponse>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
-      ::grpc::Service::RequestAsyncUnary(0, context, request, response, new_call_cq, notification_cq, tag);
+      ::grpc::Service::RequestAsyncUnary(2, context, request, response, new_call_cq, notification_cq, tag);
     }
   };
   template <class BaseClass>
@@ -377,7 +468,7 @@ class MatchService final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithAsyncMethod_CancelQueue() {
-      ::grpc::Service::MarkMethodAsync(1);
+      ::grpc::Service::MarkMethodAsync(3);
     }
     ~WithAsyncMethod_CancelQueue() override {
       BaseClassMustBeDerivedFromService(this);
@@ -388,7 +479,7 @@ class MatchService final {
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
     void RequestCancelQueue(::grpc::ServerContext* context, ::match::CancelQueueRequest* request, ::grpc::ServerAsyncResponseWriter< ::Empty>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
-      ::grpc::Service::RequestAsyncUnary(1, context, request, response, new_call_cq, notification_cq, tag);
+      ::grpc::Service::RequestAsyncUnary(3, context, request, response, new_call_cq, notification_cq, tag);
     }
   };
   template <class BaseClass>
@@ -397,7 +488,7 @@ class MatchService final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithAsyncMethod_GetQueueStatus() {
-      ::grpc::Service::MarkMethodAsync(2);
+      ::grpc::Service::MarkMethodAsync(4);
     }
     ~WithAsyncMethod_GetQueueStatus() override {
       BaseClassMustBeDerivedFromService(this);
@@ -408,7 +499,7 @@ class MatchService final {
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
     void RequestGetQueueStatus(::grpc::ServerContext* context, ::match::GetQueueStatusRequest* request, ::grpc::ServerAsyncResponseWriter< ::match::GetQueueStatusResponse>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
-      ::grpc::Service::RequestAsyncUnary(2, context, request, response, new_call_cq, notification_cq, tag);
+      ::grpc::Service::RequestAsyncUnary(4, context, request, response, new_call_cq, notification_cq, tag);
     }
   };
   template <class BaseClass>
@@ -417,7 +508,7 @@ class MatchService final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithAsyncMethod_ChallengePlayer() {
-      ::grpc::Service::MarkMethodAsync(3);
+      ::grpc::Service::MarkMethodAsync(5);
     }
     ~WithAsyncMethod_ChallengePlayer() override {
       BaseClassMustBeDerivedFromService(this);
@@ -428,7 +519,7 @@ class MatchService final {
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
     void RequestChallengePlayer(::grpc::ServerContext* context, ::match::ChallengePlayerRequest* request, ::grpc::ServerAsyncResponseWriter< ::match::ChallengePlayerResponse>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
-      ::grpc::Service::RequestAsyncUnary(3, context, request, response, new_call_cq, notification_cq, tag);
+      ::grpc::Service::RequestAsyncUnary(5, context, request, response, new_call_cq, notification_cq, tag);
     }
   };
   template <class BaseClass>
@@ -437,7 +528,7 @@ class MatchService final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithAsyncMethod_RespondChallenge() {
-      ::grpc::Service::MarkMethodAsync(4);
+      ::grpc::Service::MarkMethodAsync(6);
     }
     ~WithAsyncMethod_RespondChallenge() override {
       BaseClassMustBeDerivedFromService(this);
@@ -448,7 +539,7 @@ class MatchService final {
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
     void RequestRespondChallenge(::grpc::ServerContext* context, ::match::RespondChallengeRequest* request, ::grpc::ServerAsyncResponseWriter< ::match::RespondChallengeResponse>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
-      ::grpc::Service::RequestAsyncUnary(4, context, request, response, new_call_cq, notification_cq, tag);
+      ::grpc::Service::RequestAsyncUnary(6, context, request, response, new_call_cq, notification_cq, tag);
     }
   };
   template <class BaseClass>
@@ -457,7 +548,7 @@ class MatchService final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithAsyncMethod_NotifyChallengeInvite() {
-      ::grpc::Service::MarkMethodAsync(5);
+      ::grpc::Service::MarkMethodAsync(7);
     }
     ~WithAsyncMethod_NotifyChallengeInvite() override {
       BaseClassMustBeDerivedFromService(this);
@@ -468,7 +559,7 @@ class MatchService final {
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
     void RequestNotifyChallengeInvite(::grpc::ServerContext* context, ::match::ChallengeInviteS2C* request, ::grpc::ServerAsyncResponseWriter< ::Empty>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
-      ::grpc::Service::RequestAsyncUnary(5, context, request, response, new_call_cq, notification_cq, tag);
+      ::grpc::Service::RequestAsyncUnary(7, context, request, response, new_call_cq, notification_cq, tag);
     }
   };
   template <class BaseClass>
@@ -477,7 +568,7 @@ class MatchService final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithAsyncMethod_NotifyChallengeResult() {
-      ::grpc::Service::MarkMethodAsync(6);
+      ::grpc::Service::MarkMethodAsync(8);
     }
     ~WithAsyncMethod_NotifyChallengeResult() override {
       BaseClassMustBeDerivedFromService(this);
@@ -488,7 +579,7 @@ class MatchService final {
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
     void RequestNotifyChallengeResult(::grpc::ServerContext* context, ::match::ChallengeResultS2C* request, ::grpc::ServerAsyncResponseWriter< ::Empty>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
-      ::grpc::Service::RequestAsyncUnary(6, context, request, response, new_call_cq, notification_cq, tag);
+      ::grpc::Service::RequestAsyncUnary(8, context, request, response, new_call_cq, notification_cq, tag);
     }
   };
   template <class BaseClass>
@@ -497,7 +588,7 @@ class MatchService final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithAsyncMethod_WatchBattle() {
-      ::grpc::Service::MarkMethodAsync(7);
+      ::grpc::Service::MarkMethodAsync(9);
     }
     ~WithAsyncMethod_WatchBattle() override {
       BaseClassMustBeDerivedFromService(this);
@@ -508,7 +599,7 @@ class MatchService final {
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
     void RequestWatchBattle(::grpc::ServerContext* context, ::match::WatchBattleRequest* request, ::grpc::ServerAsyncResponseWriter< ::match::WatchBattleResponse>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
-      ::grpc::Service::RequestAsyncUnary(7, context, request, response, new_call_cq, notification_cq, tag);
+      ::grpc::Service::RequestAsyncUnary(9, context, request, response, new_call_cq, notification_cq, tag);
     }
   };
   template <class BaseClass>
@@ -517,7 +608,7 @@ class MatchService final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithAsyncMethod_RequestBattleTicket() {
-      ::grpc::Service::MarkMethodAsync(8);
+      ::grpc::Service::MarkMethodAsync(10);
     }
     ~WithAsyncMethod_RequestBattleTicket() override {
       BaseClassMustBeDerivedFromService(this);
@@ -528,7 +619,7 @@ class MatchService final {
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
     void RequestRequestBattleTicket(::grpc::ServerContext* context, ::RequestBattleTicketRequest* request, ::grpc::ServerAsyncResponseWriter< ::RequestBattleTicketResponse>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
-      ::grpc::Service::RequestAsyncUnary(8, context, request, response, new_call_cq, notification_cq, tag);
+      ::grpc::Service::RequestAsyncUnary(10, context, request, response, new_call_cq, notification_cq, tag);
     }
   };
   template <class BaseClass>
@@ -537,7 +628,7 @@ class MatchService final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithAsyncMethod_ListWatchableBattles() {
-      ::grpc::Service::MarkMethodAsync(9);
+      ::grpc::Service::MarkMethodAsync(11);
     }
     ~WithAsyncMethod_ListWatchableBattles() override {
       BaseClassMustBeDerivedFromService(this);
@@ -548,23 +639,77 @@ class MatchService final {
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
     void RequestListWatchableBattles(::grpc::ServerContext* context, ::match::ListWatchableBattlesRequest* request, ::grpc::ServerAsyncResponseWriter< ::match::ListWatchableBattlesResponse>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
-      ::grpc::Service::RequestAsyncUnary(9, context, request, response, new_call_cq, notification_cq, tag);
+      ::grpc::Service::RequestAsyncUnary(11, context, request, response, new_call_cq, notification_cq, tag);
     }
   };
-  typedef WithAsyncMethod_JoinQueue<WithAsyncMethod_CancelQueue<WithAsyncMethod_GetQueueStatus<WithAsyncMethod_ChallengePlayer<WithAsyncMethod_RespondChallenge<WithAsyncMethod_NotifyChallengeInvite<WithAsyncMethod_NotifyChallengeResult<WithAsyncMethod_WatchBattle<WithAsyncMethod_RequestBattleTicket<WithAsyncMethod_ListWatchableBattles<Service > > > > > > > > > > AsyncService;
+  typedef WithAsyncMethod_GetNetworkProbePlan<WithAsyncMethod_CommitNetworkProbe<WithAsyncMethod_JoinQueue<WithAsyncMethod_CancelQueue<WithAsyncMethod_GetQueueStatus<WithAsyncMethod_ChallengePlayer<WithAsyncMethod_RespondChallenge<WithAsyncMethod_NotifyChallengeInvite<WithAsyncMethod_NotifyChallengeResult<WithAsyncMethod_WatchBattle<WithAsyncMethod_RequestBattleTicket<WithAsyncMethod_ListWatchableBattles<Service > > > > > > > > > > > > AsyncService;
+  template <class BaseClass>
+  class WithCallbackMethod_GetNetworkProbePlan : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithCallbackMethod_GetNetworkProbePlan() {
+      ::grpc::Service::MarkMethodCallback(0,
+          new ::grpc::internal::CallbackUnaryHandler< ::match::GetNetworkProbePlanRequest, ::match::GetNetworkProbePlanResponse>(
+            [this](
+                   ::grpc::CallbackServerContext* context, const ::match::GetNetworkProbePlanRequest* request, ::match::GetNetworkProbePlanResponse* response) { return this->GetNetworkProbePlan(context, request, response); }));}
+    void SetMessageAllocatorFor_GetNetworkProbePlan(
+        ::grpc::MessageAllocator< ::match::GetNetworkProbePlanRequest, ::match::GetNetworkProbePlanResponse>* allocator) {
+      ::grpc::internal::MethodHandler* const handler = ::grpc::Service::GetHandler(0);
+      static_cast<::grpc::internal::CallbackUnaryHandler< ::match::GetNetworkProbePlanRequest, ::match::GetNetworkProbePlanResponse>*>(handler)
+              ->SetMessageAllocator(allocator);
+    }
+    ~WithCallbackMethod_GetNetworkProbePlan() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status GetNetworkProbePlan(::grpc::ServerContext* /*context*/, const ::match::GetNetworkProbePlanRequest* /*request*/, ::match::GetNetworkProbePlanResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    virtual ::grpc::ServerUnaryReactor* GetNetworkProbePlan(
+      ::grpc::CallbackServerContext* /*context*/, const ::match::GetNetworkProbePlanRequest* /*request*/, ::match::GetNetworkProbePlanResponse* /*response*/)  { return nullptr; }
+  };
+  template <class BaseClass>
+  class WithCallbackMethod_CommitNetworkProbe : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithCallbackMethod_CommitNetworkProbe() {
+      ::grpc::Service::MarkMethodCallback(1,
+          new ::grpc::internal::CallbackUnaryHandler< ::match::CommitNetworkProbeRequest, ::match::CommitNetworkProbeResponse>(
+            [this](
+                   ::grpc::CallbackServerContext* context, const ::match::CommitNetworkProbeRequest* request, ::match::CommitNetworkProbeResponse* response) { return this->CommitNetworkProbe(context, request, response); }));}
+    void SetMessageAllocatorFor_CommitNetworkProbe(
+        ::grpc::MessageAllocator< ::match::CommitNetworkProbeRequest, ::match::CommitNetworkProbeResponse>* allocator) {
+      ::grpc::internal::MethodHandler* const handler = ::grpc::Service::GetHandler(1);
+      static_cast<::grpc::internal::CallbackUnaryHandler< ::match::CommitNetworkProbeRequest, ::match::CommitNetworkProbeResponse>*>(handler)
+              ->SetMessageAllocator(allocator);
+    }
+    ~WithCallbackMethod_CommitNetworkProbe() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status CommitNetworkProbe(::grpc::ServerContext* /*context*/, const ::match::CommitNetworkProbeRequest* /*request*/, ::match::CommitNetworkProbeResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    virtual ::grpc::ServerUnaryReactor* CommitNetworkProbe(
+      ::grpc::CallbackServerContext* /*context*/, const ::match::CommitNetworkProbeRequest* /*request*/, ::match::CommitNetworkProbeResponse* /*response*/)  { return nullptr; }
+  };
   template <class BaseClass>
   class WithCallbackMethod_JoinQueue : public BaseClass {
    private:
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithCallbackMethod_JoinQueue() {
-      ::grpc::Service::MarkMethodCallback(0,
+      ::grpc::Service::MarkMethodCallback(2,
           new ::grpc::internal::CallbackUnaryHandler< ::match::JoinQueueRequest, ::match::JoinQueueResponse>(
             [this](
                    ::grpc::CallbackServerContext* context, const ::match::JoinQueueRequest* request, ::match::JoinQueueResponse* response) { return this->JoinQueue(context, request, response); }));}
     void SetMessageAllocatorFor_JoinQueue(
         ::grpc::MessageAllocator< ::match::JoinQueueRequest, ::match::JoinQueueResponse>* allocator) {
-      ::grpc::internal::MethodHandler* const handler = ::grpc::Service::GetHandler(0);
+      ::grpc::internal::MethodHandler* const handler = ::grpc::Service::GetHandler(2);
       static_cast<::grpc::internal::CallbackUnaryHandler< ::match::JoinQueueRequest, ::match::JoinQueueResponse>*>(handler)
               ->SetMessageAllocator(allocator);
     }
@@ -585,13 +730,13 @@ class MatchService final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithCallbackMethod_CancelQueue() {
-      ::grpc::Service::MarkMethodCallback(1,
+      ::grpc::Service::MarkMethodCallback(3,
           new ::grpc::internal::CallbackUnaryHandler< ::match::CancelQueueRequest, ::Empty>(
             [this](
                    ::grpc::CallbackServerContext* context, const ::match::CancelQueueRequest* request, ::Empty* response) { return this->CancelQueue(context, request, response); }));}
     void SetMessageAllocatorFor_CancelQueue(
         ::grpc::MessageAllocator< ::match::CancelQueueRequest, ::Empty>* allocator) {
-      ::grpc::internal::MethodHandler* const handler = ::grpc::Service::GetHandler(1);
+      ::grpc::internal::MethodHandler* const handler = ::grpc::Service::GetHandler(3);
       static_cast<::grpc::internal::CallbackUnaryHandler< ::match::CancelQueueRequest, ::Empty>*>(handler)
               ->SetMessageAllocator(allocator);
     }
@@ -612,13 +757,13 @@ class MatchService final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithCallbackMethod_GetQueueStatus() {
-      ::grpc::Service::MarkMethodCallback(2,
+      ::grpc::Service::MarkMethodCallback(4,
           new ::grpc::internal::CallbackUnaryHandler< ::match::GetQueueStatusRequest, ::match::GetQueueStatusResponse>(
             [this](
                    ::grpc::CallbackServerContext* context, const ::match::GetQueueStatusRequest* request, ::match::GetQueueStatusResponse* response) { return this->GetQueueStatus(context, request, response); }));}
     void SetMessageAllocatorFor_GetQueueStatus(
         ::grpc::MessageAllocator< ::match::GetQueueStatusRequest, ::match::GetQueueStatusResponse>* allocator) {
-      ::grpc::internal::MethodHandler* const handler = ::grpc::Service::GetHandler(2);
+      ::grpc::internal::MethodHandler* const handler = ::grpc::Service::GetHandler(4);
       static_cast<::grpc::internal::CallbackUnaryHandler< ::match::GetQueueStatusRequest, ::match::GetQueueStatusResponse>*>(handler)
               ->SetMessageAllocator(allocator);
     }
@@ -639,13 +784,13 @@ class MatchService final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithCallbackMethod_ChallengePlayer() {
-      ::grpc::Service::MarkMethodCallback(3,
+      ::grpc::Service::MarkMethodCallback(5,
           new ::grpc::internal::CallbackUnaryHandler< ::match::ChallengePlayerRequest, ::match::ChallengePlayerResponse>(
             [this](
                    ::grpc::CallbackServerContext* context, const ::match::ChallengePlayerRequest* request, ::match::ChallengePlayerResponse* response) { return this->ChallengePlayer(context, request, response); }));}
     void SetMessageAllocatorFor_ChallengePlayer(
         ::grpc::MessageAllocator< ::match::ChallengePlayerRequest, ::match::ChallengePlayerResponse>* allocator) {
-      ::grpc::internal::MethodHandler* const handler = ::grpc::Service::GetHandler(3);
+      ::grpc::internal::MethodHandler* const handler = ::grpc::Service::GetHandler(5);
       static_cast<::grpc::internal::CallbackUnaryHandler< ::match::ChallengePlayerRequest, ::match::ChallengePlayerResponse>*>(handler)
               ->SetMessageAllocator(allocator);
     }
@@ -666,13 +811,13 @@ class MatchService final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithCallbackMethod_RespondChallenge() {
-      ::grpc::Service::MarkMethodCallback(4,
+      ::grpc::Service::MarkMethodCallback(6,
           new ::grpc::internal::CallbackUnaryHandler< ::match::RespondChallengeRequest, ::match::RespondChallengeResponse>(
             [this](
                    ::grpc::CallbackServerContext* context, const ::match::RespondChallengeRequest* request, ::match::RespondChallengeResponse* response) { return this->RespondChallenge(context, request, response); }));}
     void SetMessageAllocatorFor_RespondChallenge(
         ::grpc::MessageAllocator< ::match::RespondChallengeRequest, ::match::RespondChallengeResponse>* allocator) {
-      ::grpc::internal::MethodHandler* const handler = ::grpc::Service::GetHandler(4);
+      ::grpc::internal::MethodHandler* const handler = ::grpc::Service::GetHandler(6);
       static_cast<::grpc::internal::CallbackUnaryHandler< ::match::RespondChallengeRequest, ::match::RespondChallengeResponse>*>(handler)
               ->SetMessageAllocator(allocator);
     }
@@ -693,13 +838,13 @@ class MatchService final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithCallbackMethod_NotifyChallengeInvite() {
-      ::grpc::Service::MarkMethodCallback(5,
+      ::grpc::Service::MarkMethodCallback(7,
           new ::grpc::internal::CallbackUnaryHandler< ::match::ChallengeInviteS2C, ::Empty>(
             [this](
                    ::grpc::CallbackServerContext* context, const ::match::ChallengeInviteS2C* request, ::Empty* response) { return this->NotifyChallengeInvite(context, request, response); }));}
     void SetMessageAllocatorFor_NotifyChallengeInvite(
         ::grpc::MessageAllocator< ::match::ChallengeInviteS2C, ::Empty>* allocator) {
-      ::grpc::internal::MethodHandler* const handler = ::grpc::Service::GetHandler(5);
+      ::grpc::internal::MethodHandler* const handler = ::grpc::Service::GetHandler(7);
       static_cast<::grpc::internal::CallbackUnaryHandler< ::match::ChallengeInviteS2C, ::Empty>*>(handler)
               ->SetMessageAllocator(allocator);
     }
@@ -720,13 +865,13 @@ class MatchService final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithCallbackMethod_NotifyChallengeResult() {
-      ::grpc::Service::MarkMethodCallback(6,
+      ::grpc::Service::MarkMethodCallback(8,
           new ::grpc::internal::CallbackUnaryHandler< ::match::ChallengeResultS2C, ::Empty>(
             [this](
                    ::grpc::CallbackServerContext* context, const ::match::ChallengeResultS2C* request, ::Empty* response) { return this->NotifyChallengeResult(context, request, response); }));}
     void SetMessageAllocatorFor_NotifyChallengeResult(
         ::grpc::MessageAllocator< ::match::ChallengeResultS2C, ::Empty>* allocator) {
-      ::grpc::internal::MethodHandler* const handler = ::grpc::Service::GetHandler(6);
+      ::grpc::internal::MethodHandler* const handler = ::grpc::Service::GetHandler(8);
       static_cast<::grpc::internal::CallbackUnaryHandler< ::match::ChallengeResultS2C, ::Empty>*>(handler)
               ->SetMessageAllocator(allocator);
     }
@@ -747,13 +892,13 @@ class MatchService final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithCallbackMethod_WatchBattle() {
-      ::grpc::Service::MarkMethodCallback(7,
+      ::grpc::Service::MarkMethodCallback(9,
           new ::grpc::internal::CallbackUnaryHandler< ::match::WatchBattleRequest, ::match::WatchBattleResponse>(
             [this](
                    ::grpc::CallbackServerContext* context, const ::match::WatchBattleRequest* request, ::match::WatchBattleResponse* response) { return this->WatchBattle(context, request, response); }));}
     void SetMessageAllocatorFor_WatchBattle(
         ::grpc::MessageAllocator< ::match::WatchBattleRequest, ::match::WatchBattleResponse>* allocator) {
-      ::grpc::internal::MethodHandler* const handler = ::grpc::Service::GetHandler(7);
+      ::grpc::internal::MethodHandler* const handler = ::grpc::Service::GetHandler(9);
       static_cast<::grpc::internal::CallbackUnaryHandler< ::match::WatchBattleRequest, ::match::WatchBattleResponse>*>(handler)
               ->SetMessageAllocator(allocator);
     }
@@ -774,13 +919,13 @@ class MatchService final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithCallbackMethod_RequestBattleTicket() {
-      ::grpc::Service::MarkMethodCallback(8,
+      ::grpc::Service::MarkMethodCallback(10,
           new ::grpc::internal::CallbackUnaryHandler< ::RequestBattleTicketRequest, ::RequestBattleTicketResponse>(
             [this](
                    ::grpc::CallbackServerContext* context, const ::RequestBattleTicketRequest* request, ::RequestBattleTicketResponse* response) { return this->RequestBattleTicket(context, request, response); }));}
     void SetMessageAllocatorFor_RequestBattleTicket(
         ::grpc::MessageAllocator< ::RequestBattleTicketRequest, ::RequestBattleTicketResponse>* allocator) {
-      ::grpc::internal::MethodHandler* const handler = ::grpc::Service::GetHandler(8);
+      ::grpc::internal::MethodHandler* const handler = ::grpc::Service::GetHandler(10);
       static_cast<::grpc::internal::CallbackUnaryHandler< ::RequestBattleTicketRequest, ::RequestBattleTicketResponse>*>(handler)
               ->SetMessageAllocator(allocator);
     }
@@ -801,13 +946,13 @@ class MatchService final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithCallbackMethod_ListWatchableBattles() {
-      ::grpc::Service::MarkMethodCallback(9,
+      ::grpc::Service::MarkMethodCallback(11,
           new ::grpc::internal::CallbackUnaryHandler< ::match::ListWatchableBattlesRequest, ::match::ListWatchableBattlesResponse>(
             [this](
                    ::grpc::CallbackServerContext* context, const ::match::ListWatchableBattlesRequest* request, ::match::ListWatchableBattlesResponse* response) { return this->ListWatchableBattles(context, request, response); }));}
     void SetMessageAllocatorFor_ListWatchableBattles(
         ::grpc::MessageAllocator< ::match::ListWatchableBattlesRequest, ::match::ListWatchableBattlesResponse>* allocator) {
-      ::grpc::internal::MethodHandler* const handler = ::grpc::Service::GetHandler(9);
+      ::grpc::internal::MethodHandler* const handler = ::grpc::Service::GetHandler(11);
       static_cast<::grpc::internal::CallbackUnaryHandler< ::match::ListWatchableBattlesRequest, ::match::ListWatchableBattlesResponse>*>(handler)
               ->SetMessageAllocator(allocator);
     }
@@ -822,15 +967,49 @@ class MatchService final {
     virtual ::grpc::ServerUnaryReactor* ListWatchableBattles(
       ::grpc::CallbackServerContext* /*context*/, const ::match::ListWatchableBattlesRequest* /*request*/, ::match::ListWatchableBattlesResponse* /*response*/)  { return nullptr; }
   };
-  typedef WithCallbackMethod_JoinQueue<WithCallbackMethod_CancelQueue<WithCallbackMethod_GetQueueStatus<WithCallbackMethod_ChallengePlayer<WithCallbackMethod_RespondChallenge<WithCallbackMethod_NotifyChallengeInvite<WithCallbackMethod_NotifyChallengeResult<WithCallbackMethod_WatchBattle<WithCallbackMethod_RequestBattleTicket<WithCallbackMethod_ListWatchableBattles<Service > > > > > > > > > > CallbackService;
+  typedef WithCallbackMethod_GetNetworkProbePlan<WithCallbackMethod_CommitNetworkProbe<WithCallbackMethod_JoinQueue<WithCallbackMethod_CancelQueue<WithCallbackMethod_GetQueueStatus<WithCallbackMethod_ChallengePlayer<WithCallbackMethod_RespondChallenge<WithCallbackMethod_NotifyChallengeInvite<WithCallbackMethod_NotifyChallengeResult<WithCallbackMethod_WatchBattle<WithCallbackMethod_RequestBattleTicket<WithCallbackMethod_ListWatchableBattles<Service > > > > > > > > > > > > CallbackService;
   typedef CallbackService ExperimentalCallbackService;
+  template <class BaseClass>
+  class WithGenericMethod_GetNetworkProbePlan : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithGenericMethod_GetNetworkProbePlan() {
+      ::grpc::Service::MarkMethodGeneric(0);
+    }
+    ~WithGenericMethod_GetNetworkProbePlan() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status GetNetworkProbePlan(::grpc::ServerContext* /*context*/, const ::match::GetNetworkProbePlanRequest* /*request*/, ::match::GetNetworkProbePlanResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+  };
+  template <class BaseClass>
+  class WithGenericMethod_CommitNetworkProbe : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithGenericMethod_CommitNetworkProbe() {
+      ::grpc::Service::MarkMethodGeneric(1);
+    }
+    ~WithGenericMethod_CommitNetworkProbe() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status CommitNetworkProbe(::grpc::ServerContext* /*context*/, const ::match::CommitNetworkProbeRequest* /*request*/, ::match::CommitNetworkProbeResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+  };
   template <class BaseClass>
   class WithGenericMethod_JoinQueue : public BaseClass {
    private:
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithGenericMethod_JoinQueue() {
-      ::grpc::Service::MarkMethodGeneric(0);
+      ::grpc::Service::MarkMethodGeneric(2);
     }
     ~WithGenericMethod_JoinQueue() override {
       BaseClassMustBeDerivedFromService(this);
@@ -847,7 +1026,7 @@ class MatchService final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithGenericMethod_CancelQueue() {
-      ::grpc::Service::MarkMethodGeneric(1);
+      ::grpc::Service::MarkMethodGeneric(3);
     }
     ~WithGenericMethod_CancelQueue() override {
       BaseClassMustBeDerivedFromService(this);
@@ -864,7 +1043,7 @@ class MatchService final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithGenericMethod_GetQueueStatus() {
-      ::grpc::Service::MarkMethodGeneric(2);
+      ::grpc::Service::MarkMethodGeneric(4);
     }
     ~WithGenericMethod_GetQueueStatus() override {
       BaseClassMustBeDerivedFromService(this);
@@ -881,7 +1060,7 @@ class MatchService final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithGenericMethod_ChallengePlayer() {
-      ::grpc::Service::MarkMethodGeneric(3);
+      ::grpc::Service::MarkMethodGeneric(5);
     }
     ~WithGenericMethod_ChallengePlayer() override {
       BaseClassMustBeDerivedFromService(this);
@@ -898,7 +1077,7 @@ class MatchService final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithGenericMethod_RespondChallenge() {
-      ::grpc::Service::MarkMethodGeneric(4);
+      ::grpc::Service::MarkMethodGeneric(6);
     }
     ~WithGenericMethod_RespondChallenge() override {
       BaseClassMustBeDerivedFromService(this);
@@ -915,7 +1094,7 @@ class MatchService final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithGenericMethod_NotifyChallengeInvite() {
-      ::grpc::Service::MarkMethodGeneric(5);
+      ::grpc::Service::MarkMethodGeneric(7);
     }
     ~WithGenericMethod_NotifyChallengeInvite() override {
       BaseClassMustBeDerivedFromService(this);
@@ -932,7 +1111,7 @@ class MatchService final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithGenericMethod_NotifyChallengeResult() {
-      ::grpc::Service::MarkMethodGeneric(6);
+      ::grpc::Service::MarkMethodGeneric(8);
     }
     ~WithGenericMethod_NotifyChallengeResult() override {
       BaseClassMustBeDerivedFromService(this);
@@ -949,7 +1128,7 @@ class MatchService final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithGenericMethod_WatchBattle() {
-      ::grpc::Service::MarkMethodGeneric(7);
+      ::grpc::Service::MarkMethodGeneric(9);
     }
     ~WithGenericMethod_WatchBattle() override {
       BaseClassMustBeDerivedFromService(this);
@@ -966,7 +1145,7 @@ class MatchService final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithGenericMethod_RequestBattleTicket() {
-      ::grpc::Service::MarkMethodGeneric(8);
+      ::grpc::Service::MarkMethodGeneric(10);
     }
     ~WithGenericMethod_RequestBattleTicket() override {
       BaseClassMustBeDerivedFromService(this);
@@ -983,7 +1162,7 @@ class MatchService final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithGenericMethod_ListWatchableBattles() {
-      ::grpc::Service::MarkMethodGeneric(9);
+      ::grpc::Service::MarkMethodGeneric(11);
     }
     ~WithGenericMethod_ListWatchableBattles() override {
       BaseClassMustBeDerivedFromService(this);
@@ -995,12 +1174,52 @@ class MatchService final {
     }
   };
   template <class BaseClass>
+  class WithRawMethod_GetNetworkProbePlan : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithRawMethod_GetNetworkProbePlan() {
+      ::grpc::Service::MarkMethodRaw(0);
+    }
+    ~WithRawMethod_GetNetworkProbePlan() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status GetNetworkProbePlan(::grpc::ServerContext* /*context*/, const ::match::GetNetworkProbePlanRequest* /*request*/, ::match::GetNetworkProbePlanResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    void RequestGetNetworkProbePlan(::grpc::ServerContext* context, ::grpc::ByteBuffer* request, ::grpc::ServerAsyncResponseWriter< ::grpc::ByteBuffer>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
+      ::grpc::Service::RequestAsyncUnary(0, context, request, response, new_call_cq, notification_cq, tag);
+    }
+  };
+  template <class BaseClass>
+  class WithRawMethod_CommitNetworkProbe : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithRawMethod_CommitNetworkProbe() {
+      ::grpc::Service::MarkMethodRaw(1);
+    }
+    ~WithRawMethod_CommitNetworkProbe() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status CommitNetworkProbe(::grpc::ServerContext* /*context*/, const ::match::CommitNetworkProbeRequest* /*request*/, ::match::CommitNetworkProbeResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    void RequestCommitNetworkProbe(::grpc::ServerContext* context, ::grpc::ByteBuffer* request, ::grpc::ServerAsyncResponseWriter< ::grpc::ByteBuffer>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
+      ::grpc::Service::RequestAsyncUnary(1, context, request, response, new_call_cq, notification_cq, tag);
+    }
+  };
+  template <class BaseClass>
   class WithRawMethod_JoinQueue : public BaseClass {
    private:
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithRawMethod_JoinQueue() {
-      ::grpc::Service::MarkMethodRaw(0);
+      ::grpc::Service::MarkMethodRaw(2);
     }
     ~WithRawMethod_JoinQueue() override {
       BaseClassMustBeDerivedFromService(this);
@@ -1011,7 +1230,7 @@ class MatchService final {
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
     void RequestJoinQueue(::grpc::ServerContext* context, ::grpc::ByteBuffer* request, ::grpc::ServerAsyncResponseWriter< ::grpc::ByteBuffer>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
-      ::grpc::Service::RequestAsyncUnary(0, context, request, response, new_call_cq, notification_cq, tag);
+      ::grpc::Service::RequestAsyncUnary(2, context, request, response, new_call_cq, notification_cq, tag);
     }
   };
   template <class BaseClass>
@@ -1020,7 +1239,7 @@ class MatchService final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithRawMethod_CancelQueue() {
-      ::grpc::Service::MarkMethodRaw(1);
+      ::grpc::Service::MarkMethodRaw(3);
     }
     ~WithRawMethod_CancelQueue() override {
       BaseClassMustBeDerivedFromService(this);
@@ -1031,7 +1250,7 @@ class MatchService final {
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
     void RequestCancelQueue(::grpc::ServerContext* context, ::grpc::ByteBuffer* request, ::grpc::ServerAsyncResponseWriter< ::grpc::ByteBuffer>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
-      ::grpc::Service::RequestAsyncUnary(1, context, request, response, new_call_cq, notification_cq, tag);
+      ::grpc::Service::RequestAsyncUnary(3, context, request, response, new_call_cq, notification_cq, tag);
     }
   };
   template <class BaseClass>
@@ -1040,7 +1259,7 @@ class MatchService final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithRawMethod_GetQueueStatus() {
-      ::grpc::Service::MarkMethodRaw(2);
+      ::grpc::Service::MarkMethodRaw(4);
     }
     ~WithRawMethod_GetQueueStatus() override {
       BaseClassMustBeDerivedFromService(this);
@@ -1051,7 +1270,7 @@ class MatchService final {
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
     void RequestGetQueueStatus(::grpc::ServerContext* context, ::grpc::ByteBuffer* request, ::grpc::ServerAsyncResponseWriter< ::grpc::ByteBuffer>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
-      ::grpc::Service::RequestAsyncUnary(2, context, request, response, new_call_cq, notification_cq, tag);
+      ::grpc::Service::RequestAsyncUnary(4, context, request, response, new_call_cq, notification_cq, tag);
     }
   };
   template <class BaseClass>
@@ -1060,7 +1279,7 @@ class MatchService final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithRawMethod_ChallengePlayer() {
-      ::grpc::Service::MarkMethodRaw(3);
+      ::grpc::Service::MarkMethodRaw(5);
     }
     ~WithRawMethod_ChallengePlayer() override {
       BaseClassMustBeDerivedFromService(this);
@@ -1071,7 +1290,7 @@ class MatchService final {
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
     void RequestChallengePlayer(::grpc::ServerContext* context, ::grpc::ByteBuffer* request, ::grpc::ServerAsyncResponseWriter< ::grpc::ByteBuffer>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
-      ::grpc::Service::RequestAsyncUnary(3, context, request, response, new_call_cq, notification_cq, tag);
+      ::grpc::Service::RequestAsyncUnary(5, context, request, response, new_call_cq, notification_cq, tag);
     }
   };
   template <class BaseClass>
@@ -1080,7 +1299,7 @@ class MatchService final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithRawMethod_RespondChallenge() {
-      ::grpc::Service::MarkMethodRaw(4);
+      ::grpc::Service::MarkMethodRaw(6);
     }
     ~WithRawMethod_RespondChallenge() override {
       BaseClassMustBeDerivedFromService(this);
@@ -1091,7 +1310,7 @@ class MatchService final {
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
     void RequestRespondChallenge(::grpc::ServerContext* context, ::grpc::ByteBuffer* request, ::grpc::ServerAsyncResponseWriter< ::grpc::ByteBuffer>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
-      ::grpc::Service::RequestAsyncUnary(4, context, request, response, new_call_cq, notification_cq, tag);
+      ::grpc::Service::RequestAsyncUnary(6, context, request, response, new_call_cq, notification_cq, tag);
     }
   };
   template <class BaseClass>
@@ -1100,7 +1319,7 @@ class MatchService final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithRawMethod_NotifyChallengeInvite() {
-      ::grpc::Service::MarkMethodRaw(5);
+      ::grpc::Service::MarkMethodRaw(7);
     }
     ~WithRawMethod_NotifyChallengeInvite() override {
       BaseClassMustBeDerivedFromService(this);
@@ -1111,7 +1330,7 @@ class MatchService final {
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
     void RequestNotifyChallengeInvite(::grpc::ServerContext* context, ::grpc::ByteBuffer* request, ::grpc::ServerAsyncResponseWriter< ::grpc::ByteBuffer>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
-      ::grpc::Service::RequestAsyncUnary(5, context, request, response, new_call_cq, notification_cq, tag);
+      ::grpc::Service::RequestAsyncUnary(7, context, request, response, new_call_cq, notification_cq, tag);
     }
   };
   template <class BaseClass>
@@ -1120,7 +1339,7 @@ class MatchService final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithRawMethod_NotifyChallengeResult() {
-      ::grpc::Service::MarkMethodRaw(6);
+      ::grpc::Service::MarkMethodRaw(8);
     }
     ~WithRawMethod_NotifyChallengeResult() override {
       BaseClassMustBeDerivedFromService(this);
@@ -1131,7 +1350,7 @@ class MatchService final {
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
     void RequestNotifyChallengeResult(::grpc::ServerContext* context, ::grpc::ByteBuffer* request, ::grpc::ServerAsyncResponseWriter< ::grpc::ByteBuffer>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
-      ::grpc::Service::RequestAsyncUnary(6, context, request, response, new_call_cq, notification_cq, tag);
+      ::grpc::Service::RequestAsyncUnary(8, context, request, response, new_call_cq, notification_cq, tag);
     }
   };
   template <class BaseClass>
@@ -1140,7 +1359,7 @@ class MatchService final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithRawMethod_WatchBattle() {
-      ::grpc::Service::MarkMethodRaw(7);
+      ::grpc::Service::MarkMethodRaw(9);
     }
     ~WithRawMethod_WatchBattle() override {
       BaseClassMustBeDerivedFromService(this);
@@ -1151,7 +1370,7 @@ class MatchService final {
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
     void RequestWatchBattle(::grpc::ServerContext* context, ::grpc::ByteBuffer* request, ::grpc::ServerAsyncResponseWriter< ::grpc::ByteBuffer>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
-      ::grpc::Service::RequestAsyncUnary(7, context, request, response, new_call_cq, notification_cq, tag);
+      ::grpc::Service::RequestAsyncUnary(9, context, request, response, new_call_cq, notification_cq, tag);
     }
   };
   template <class BaseClass>
@@ -1160,7 +1379,7 @@ class MatchService final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithRawMethod_RequestBattleTicket() {
-      ::grpc::Service::MarkMethodRaw(8);
+      ::grpc::Service::MarkMethodRaw(10);
     }
     ~WithRawMethod_RequestBattleTicket() override {
       BaseClassMustBeDerivedFromService(this);
@@ -1171,7 +1390,7 @@ class MatchService final {
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
     void RequestRequestBattleTicket(::grpc::ServerContext* context, ::grpc::ByteBuffer* request, ::grpc::ServerAsyncResponseWriter< ::grpc::ByteBuffer>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
-      ::grpc::Service::RequestAsyncUnary(8, context, request, response, new_call_cq, notification_cq, tag);
+      ::grpc::Service::RequestAsyncUnary(10, context, request, response, new_call_cq, notification_cq, tag);
     }
   };
   template <class BaseClass>
@@ -1180,7 +1399,7 @@ class MatchService final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithRawMethod_ListWatchableBattles() {
-      ::grpc::Service::MarkMethodRaw(9);
+      ::grpc::Service::MarkMethodRaw(11);
     }
     ~WithRawMethod_ListWatchableBattles() override {
       BaseClassMustBeDerivedFromService(this);
@@ -1191,8 +1410,52 @@ class MatchService final {
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
     void RequestListWatchableBattles(::grpc::ServerContext* context, ::grpc::ByteBuffer* request, ::grpc::ServerAsyncResponseWriter< ::grpc::ByteBuffer>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
-      ::grpc::Service::RequestAsyncUnary(9, context, request, response, new_call_cq, notification_cq, tag);
+      ::grpc::Service::RequestAsyncUnary(11, context, request, response, new_call_cq, notification_cq, tag);
     }
+  };
+  template <class BaseClass>
+  class WithRawCallbackMethod_GetNetworkProbePlan : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithRawCallbackMethod_GetNetworkProbePlan() {
+      ::grpc::Service::MarkMethodRawCallback(0,
+          new ::grpc::internal::CallbackUnaryHandler< ::grpc::ByteBuffer, ::grpc::ByteBuffer>(
+            [this](
+                   ::grpc::CallbackServerContext* context, const ::grpc::ByteBuffer* request, ::grpc::ByteBuffer* response) { return this->GetNetworkProbePlan(context, request, response); }));
+    }
+    ~WithRawCallbackMethod_GetNetworkProbePlan() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status GetNetworkProbePlan(::grpc::ServerContext* /*context*/, const ::match::GetNetworkProbePlanRequest* /*request*/, ::match::GetNetworkProbePlanResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    virtual ::grpc::ServerUnaryReactor* GetNetworkProbePlan(
+      ::grpc::CallbackServerContext* /*context*/, const ::grpc::ByteBuffer* /*request*/, ::grpc::ByteBuffer* /*response*/)  { return nullptr; }
+  };
+  template <class BaseClass>
+  class WithRawCallbackMethod_CommitNetworkProbe : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithRawCallbackMethod_CommitNetworkProbe() {
+      ::grpc::Service::MarkMethodRawCallback(1,
+          new ::grpc::internal::CallbackUnaryHandler< ::grpc::ByteBuffer, ::grpc::ByteBuffer>(
+            [this](
+                   ::grpc::CallbackServerContext* context, const ::grpc::ByteBuffer* request, ::grpc::ByteBuffer* response) { return this->CommitNetworkProbe(context, request, response); }));
+    }
+    ~WithRawCallbackMethod_CommitNetworkProbe() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status CommitNetworkProbe(::grpc::ServerContext* /*context*/, const ::match::CommitNetworkProbeRequest* /*request*/, ::match::CommitNetworkProbeResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    virtual ::grpc::ServerUnaryReactor* CommitNetworkProbe(
+      ::grpc::CallbackServerContext* /*context*/, const ::grpc::ByteBuffer* /*request*/, ::grpc::ByteBuffer* /*response*/)  { return nullptr; }
   };
   template <class BaseClass>
   class WithRawCallbackMethod_JoinQueue : public BaseClass {
@@ -1200,7 +1463,7 @@ class MatchService final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithRawCallbackMethod_JoinQueue() {
-      ::grpc::Service::MarkMethodRawCallback(0,
+      ::grpc::Service::MarkMethodRawCallback(2,
           new ::grpc::internal::CallbackUnaryHandler< ::grpc::ByteBuffer, ::grpc::ByteBuffer>(
             [this](
                    ::grpc::CallbackServerContext* context, const ::grpc::ByteBuffer* request, ::grpc::ByteBuffer* response) { return this->JoinQueue(context, request, response); }));
@@ -1222,7 +1485,7 @@ class MatchService final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithRawCallbackMethod_CancelQueue() {
-      ::grpc::Service::MarkMethodRawCallback(1,
+      ::grpc::Service::MarkMethodRawCallback(3,
           new ::grpc::internal::CallbackUnaryHandler< ::grpc::ByteBuffer, ::grpc::ByteBuffer>(
             [this](
                    ::grpc::CallbackServerContext* context, const ::grpc::ByteBuffer* request, ::grpc::ByteBuffer* response) { return this->CancelQueue(context, request, response); }));
@@ -1244,7 +1507,7 @@ class MatchService final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithRawCallbackMethod_GetQueueStatus() {
-      ::grpc::Service::MarkMethodRawCallback(2,
+      ::grpc::Service::MarkMethodRawCallback(4,
           new ::grpc::internal::CallbackUnaryHandler< ::grpc::ByteBuffer, ::grpc::ByteBuffer>(
             [this](
                    ::grpc::CallbackServerContext* context, const ::grpc::ByteBuffer* request, ::grpc::ByteBuffer* response) { return this->GetQueueStatus(context, request, response); }));
@@ -1266,7 +1529,7 @@ class MatchService final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithRawCallbackMethod_ChallengePlayer() {
-      ::grpc::Service::MarkMethodRawCallback(3,
+      ::grpc::Service::MarkMethodRawCallback(5,
           new ::grpc::internal::CallbackUnaryHandler< ::grpc::ByteBuffer, ::grpc::ByteBuffer>(
             [this](
                    ::grpc::CallbackServerContext* context, const ::grpc::ByteBuffer* request, ::grpc::ByteBuffer* response) { return this->ChallengePlayer(context, request, response); }));
@@ -1288,7 +1551,7 @@ class MatchService final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithRawCallbackMethod_RespondChallenge() {
-      ::grpc::Service::MarkMethodRawCallback(4,
+      ::grpc::Service::MarkMethodRawCallback(6,
           new ::grpc::internal::CallbackUnaryHandler< ::grpc::ByteBuffer, ::grpc::ByteBuffer>(
             [this](
                    ::grpc::CallbackServerContext* context, const ::grpc::ByteBuffer* request, ::grpc::ByteBuffer* response) { return this->RespondChallenge(context, request, response); }));
@@ -1310,7 +1573,7 @@ class MatchService final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithRawCallbackMethod_NotifyChallengeInvite() {
-      ::grpc::Service::MarkMethodRawCallback(5,
+      ::grpc::Service::MarkMethodRawCallback(7,
           new ::grpc::internal::CallbackUnaryHandler< ::grpc::ByteBuffer, ::grpc::ByteBuffer>(
             [this](
                    ::grpc::CallbackServerContext* context, const ::grpc::ByteBuffer* request, ::grpc::ByteBuffer* response) { return this->NotifyChallengeInvite(context, request, response); }));
@@ -1332,7 +1595,7 @@ class MatchService final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithRawCallbackMethod_NotifyChallengeResult() {
-      ::grpc::Service::MarkMethodRawCallback(6,
+      ::grpc::Service::MarkMethodRawCallback(8,
           new ::grpc::internal::CallbackUnaryHandler< ::grpc::ByteBuffer, ::grpc::ByteBuffer>(
             [this](
                    ::grpc::CallbackServerContext* context, const ::grpc::ByteBuffer* request, ::grpc::ByteBuffer* response) { return this->NotifyChallengeResult(context, request, response); }));
@@ -1354,7 +1617,7 @@ class MatchService final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithRawCallbackMethod_WatchBattle() {
-      ::grpc::Service::MarkMethodRawCallback(7,
+      ::grpc::Service::MarkMethodRawCallback(9,
           new ::grpc::internal::CallbackUnaryHandler< ::grpc::ByteBuffer, ::grpc::ByteBuffer>(
             [this](
                    ::grpc::CallbackServerContext* context, const ::grpc::ByteBuffer* request, ::grpc::ByteBuffer* response) { return this->WatchBattle(context, request, response); }));
@@ -1376,7 +1639,7 @@ class MatchService final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithRawCallbackMethod_RequestBattleTicket() {
-      ::grpc::Service::MarkMethodRawCallback(8,
+      ::grpc::Service::MarkMethodRawCallback(10,
           new ::grpc::internal::CallbackUnaryHandler< ::grpc::ByteBuffer, ::grpc::ByteBuffer>(
             [this](
                    ::grpc::CallbackServerContext* context, const ::grpc::ByteBuffer* request, ::grpc::ByteBuffer* response) { return this->RequestBattleTicket(context, request, response); }));
@@ -1398,7 +1661,7 @@ class MatchService final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithRawCallbackMethod_ListWatchableBattles() {
-      ::grpc::Service::MarkMethodRawCallback(9,
+      ::grpc::Service::MarkMethodRawCallback(11,
           new ::grpc::internal::CallbackUnaryHandler< ::grpc::ByteBuffer, ::grpc::ByteBuffer>(
             [this](
                    ::grpc::CallbackServerContext* context, const ::grpc::ByteBuffer* request, ::grpc::ByteBuffer* response) { return this->ListWatchableBattles(context, request, response); }));
@@ -1415,12 +1678,66 @@ class MatchService final {
       ::grpc::CallbackServerContext* /*context*/, const ::grpc::ByteBuffer* /*request*/, ::grpc::ByteBuffer* /*response*/)  { return nullptr; }
   };
   template <class BaseClass>
+  class WithStreamedUnaryMethod_GetNetworkProbePlan : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithStreamedUnaryMethod_GetNetworkProbePlan() {
+      ::grpc::Service::MarkMethodStreamed(0,
+        new ::grpc::internal::StreamedUnaryHandler<
+          ::match::GetNetworkProbePlanRequest, ::match::GetNetworkProbePlanResponse>(
+            [this](::grpc::ServerContext* context,
+                   ::grpc::ServerUnaryStreamer<
+                     ::match::GetNetworkProbePlanRequest, ::match::GetNetworkProbePlanResponse>* streamer) {
+                       return this->StreamedGetNetworkProbePlan(context,
+                         streamer);
+                  }));
+    }
+    ~WithStreamedUnaryMethod_GetNetworkProbePlan() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable regular version of this method
+    ::grpc::Status GetNetworkProbePlan(::grpc::ServerContext* /*context*/, const ::match::GetNetworkProbePlanRequest* /*request*/, ::match::GetNetworkProbePlanResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    // replace default version of method with streamed unary
+    virtual ::grpc::Status StreamedGetNetworkProbePlan(::grpc::ServerContext* context, ::grpc::ServerUnaryStreamer< ::match::GetNetworkProbePlanRequest,::match::GetNetworkProbePlanResponse>* server_unary_streamer) = 0;
+  };
+  template <class BaseClass>
+  class WithStreamedUnaryMethod_CommitNetworkProbe : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithStreamedUnaryMethod_CommitNetworkProbe() {
+      ::grpc::Service::MarkMethodStreamed(1,
+        new ::grpc::internal::StreamedUnaryHandler<
+          ::match::CommitNetworkProbeRequest, ::match::CommitNetworkProbeResponse>(
+            [this](::grpc::ServerContext* context,
+                   ::grpc::ServerUnaryStreamer<
+                     ::match::CommitNetworkProbeRequest, ::match::CommitNetworkProbeResponse>* streamer) {
+                       return this->StreamedCommitNetworkProbe(context,
+                         streamer);
+                  }));
+    }
+    ~WithStreamedUnaryMethod_CommitNetworkProbe() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable regular version of this method
+    ::grpc::Status CommitNetworkProbe(::grpc::ServerContext* /*context*/, const ::match::CommitNetworkProbeRequest* /*request*/, ::match::CommitNetworkProbeResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    // replace default version of method with streamed unary
+    virtual ::grpc::Status StreamedCommitNetworkProbe(::grpc::ServerContext* context, ::grpc::ServerUnaryStreamer< ::match::CommitNetworkProbeRequest,::match::CommitNetworkProbeResponse>* server_unary_streamer) = 0;
+  };
+  template <class BaseClass>
   class WithStreamedUnaryMethod_JoinQueue : public BaseClass {
    private:
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithStreamedUnaryMethod_JoinQueue() {
-      ::grpc::Service::MarkMethodStreamed(0,
+      ::grpc::Service::MarkMethodStreamed(2,
         new ::grpc::internal::StreamedUnaryHandler<
           ::match::JoinQueueRequest, ::match::JoinQueueResponse>(
             [this](::grpc::ServerContext* context,
@@ -1447,7 +1764,7 @@ class MatchService final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithStreamedUnaryMethod_CancelQueue() {
-      ::grpc::Service::MarkMethodStreamed(1,
+      ::grpc::Service::MarkMethodStreamed(3,
         new ::grpc::internal::StreamedUnaryHandler<
           ::match::CancelQueueRequest, ::Empty>(
             [this](::grpc::ServerContext* context,
@@ -1474,7 +1791,7 @@ class MatchService final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithStreamedUnaryMethod_GetQueueStatus() {
-      ::grpc::Service::MarkMethodStreamed(2,
+      ::grpc::Service::MarkMethodStreamed(4,
         new ::grpc::internal::StreamedUnaryHandler<
           ::match::GetQueueStatusRequest, ::match::GetQueueStatusResponse>(
             [this](::grpc::ServerContext* context,
@@ -1501,7 +1818,7 @@ class MatchService final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithStreamedUnaryMethod_ChallengePlayer() {
-      ::grpc::Service::MarkMethodStreamed(3,
+      ::grpc::Service::MarkMethodStreamed(5,
         new ::grpc::internal::StreamedUnaryHandler<
           ::match::ChallengePlayerRequest, ::match::ChallengePlayerResponse>(
             [this](::grpc::ServerContext* context,
@@ -1528,7 +1845,7 @@ class MatchService final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithStreamedUnaryMethod_RespondChallenge() {
-      ::grpc::Service::MarkMethodStreamed(4,
+      ::grpc::Service::MarkMethodStreamed(6,
         new ::grpc::internal::StreamedUnaryHandler<
           ::match::RespondChallengeRequest, ::match::RespondChallengeResponse>(
             [this](::grpc::ServerContext* context,
@@ -1555,7 +1872,7 @@ class MatchService final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithStreamedUnaryMethod_NotifyChallengeInvite() {
-      ::grpc::Service::MarkMethodStreamed(5,
+      ::grpc::Service::MarkMethodStreamed(7,
         new ::grpc::internal::StreamedUnaryHandler<
           ::match::ChallengeInviteS2C, ::Empty>(
             [this](::grpc::ServerContext* context,
@@ -1582,7 +1899,7 @@ class MatchService final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithStreamedUnaryMethod_NotifyChallengeResult() {
-      ::grpc::Service::MarkMethodStreamed(6,
+      ::grpc::Service::MarkMethodStreamed(8,
         new ::grpc::internal::StreamedUnaryHandler<
           ::match::ChallengeResultS2C, ::Empty>(
             [this](::grpc::ServerContext* context,
@@ -1609,7 +1926,7 @@ class MatchService final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithStreamedUnaryMethod_WatchBattle() {
-      ::grpc::Service::MarkMethodStreamed(7,
+      ::grpc::Service::MarkMethodStreamed(9,
         new ::grpc::internal::StreamedUnaryHandler<
           ::match::WatchBattleRequest, ::match::WatchBattleResponse>(
             [this](::grpc::ServerContext* context,
@@ -1636,7 +1953,7 @@ class MatchService final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithStreamedUnaryMethod_RequestBattleTicket() {
-      ::grpc::Service::MarkMethodStreamed(8,
+      ::grpc::Service::MarkMethodStreamed(10,
         new ::grpc::internal::StreamedUnaryHandler<
           ::RequestBattleTicketRequest, ::RequestBattleTicketResponse>(
             [this](::grpc::ServerContext* context,
@@ -1663,7 +1980,7 @@ class MatchService final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithStreamedUnaryMethod_ListWatchableBattles() {
-      ::grpc::Service::MarkMethodStreamed(9,
+      ::grpc::Service::MarkMethodStreamed(11,
         new ::grpc::internal::StreamedUnaryHandler<
           ::match::ListWatchableBattlesRequest, ::match::ListWatchableBattlesResponse>(
             [this](::grpc::ServerContext* context,
@@ -1684,9 +2001,9 @@ class MatchService final {
     // replace default version of method with streamed unary
     virtual ::grpc::Status StreamedListWatchableBattles(::grpc::ServerContext* context, ::grpc::ServerUnaryStreamer< ::match::ListWatchableBattlesRequest,::match::ListWatchableBattlesResponse>* server_unary_streamer) = 0;
   };
-  typedef WithStreamedUnaryMethod_JoinQueue<WithStreamedUnaryMethod_CancelQueue<WithStreamedUnaryMethod_GetQueueStatus<WithStreamedUnaryMethod_ChallengePlayer<WithStreamedUnaryMethod_RespondChallenge<WithStreamedUnaryMethod_NotifyChallengeInvite<WithStreamedUnaryMethod_NotifyChallengeResult<WithStreamedUnaryMethod_WatchBattle<WithStreamedUnaryMethod_RequestBattleTicket<WithStreamedUnaryMethod_ListWatchableBattles<Service > > > > > > > > > > StreamedUnaryService;
+  typedef WithStreamedUnaryMethod_GetNetworkProbePlan<WithStreamedUnaryMethod_CommitNetworkProbe<WithStreamedUnaryMethod_JoinQueue<WithStreamedUnaryMethod_CancelQueue<WithStreamedUnaryMethod_GetQueueStatus<WithStreamedUnaryMethod_ChallengePlayer<WithStreamedUnaryMethod_RespondChallenge<WithStreamedUnaryMethod_NotifyChallengeInvite<WithStreamedUnaryMethod_NotifyChallengeResult<WithStreamedUnaryMethod_WatchBattle<WithStreamedUnaryMethod_RequestBattleTicket<WithStreamedUnaryMethod_ListWatchableBattles<Service > > > > > > > > > > > > StreamedUnaryService;
   typedef Service SplitStreamedService;
-  typedef WithStreamedUnaryMethod_JoinQueue<WithStreamedUnaryMethod_CancelQueue<WithStreamedUnaryMethod_GetQueueStatus<WithStreamedUnaryMethod_ChallengePlayer<WithStreamedUnaryMethod_RespondChallenge<WithStreamedUnaryMethod_NotifyChallengeInvite<WithStreamedUnaryMethod_NotifyChallengeResult<WithStreamedUnaryMethod_WatchBattle<WithStreamedUnaryMethod_RequestBattleTicket<WithStreamedUnaryMethod_ListWatchableBattles<Service > > > > > > > > > > StreamedService;
+  typedef WithStreamedUnaryMethod_GetNetworkProbePlan<WithStreamedUnaryMethod_CommitNetworkProbe<WithStreamedUnaryMethod_JoinQueue<WithStreamedUnaryMethod_CancelQueue<WithStreamedUnaryMethod_GetQueueStatus<WithStreamedUnaryMethod_ChallengePlayer<WithStreamedUnaryMethod_RespondChallenge<WithStreamedUnaryMethod_NotifyChallengeInvite<WithStreamedUnaryMethod_NotifyChallengeResult<WithStreamedUnaryMethod_WatchBattle<WithStreamedUnaryMethod_RequestBattleTicket<WithStreamedUnaryMethod_ListWatchableBattles<Service > > > > > > > > > > > > StreamedService;
 };
 
 }  // namespace match

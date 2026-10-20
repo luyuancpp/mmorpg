@@ -3,6 +3,8 @@
 #include "entt/src/entt/entity/registry.hpp"
 #include "muduo/base/Timestamp.h"
 #include "muduo/net/EventLoopThread.h"
+// 内部头,只为直接测时钟换算与 Windows 的 nextTimeoutMs。
+#include "muduo/net/TimerQueue.h"
 
 #include <atomic>
 #include <cassert>
@@ -12,6 +14,7 @@
 #include <functional>
 #include <memory>
 #include <utility>
+#include <vector>
 
 #include "combat/skill/comp/skill_comp.h"
 #include "time/comp/timer_task_comp.h"
@@ -466,10 +469,11 @@ TEST(TimerQueueTest, CancelledTimerInSameBatchMustNotRun)
 	// This cannot be fixed above muduo -- a component-level guard would have to
 	// dereference the freed object just to read its own guard flag.
 	//
-	// See docs/design/muduo-timer-cancellation-hazards.md. Note this currently
-	// passes only on Windows: the guard lives in
-	// cpp/libs/engine/muduo_windows/src/muduo/net/TimerQueue.cc and has not
-	// been ported to third_party/muduo-linux.
+	// See docs/design/muduo-timer-cancellation-hazards.md.
+	// 守卫两端都有:Windows 在 cpp/libs/engine/muduo_windows/src/muduo/net/TimerQueue.cc,
+	// Linux 在 tools/archived/muduo_linux_overlay/muduo/net/TimerQueue.cc 的 LOCAL DELTA (1)
+	// (2026-08-02 起由 setup_dependencies.sh 覆盖到 third_party/muduo-linux)。本工程只有 vcxproj,
+	// 所以这条用例目前只在 Windows 上跑。
 	EXPECT_EQ(victimFires.load(), 0);
 }
 
@@ -601,6 +605,150 @@ TEST(TimerQueueTest, SelfRearmFromOwnCallbackIsHonoured)
 	//    component without restoring that copy, this test is what catches it.
 	EXPECT_EQ(fires.load(), 2);
 }
+
+// ---------------------------------------------------------------------------
+// 定时器时钟域(本仓库改动):TimerQueue 按单调时钟到期,runAt 的墙钟时刻在调用时换算到单调域。
+//
+// 不改系统时钟:换算本身用纯函数 TimerQueue::monotonicFromWall 测;接进 EventLoop 之后,用过去 / 将来的
+// 墙钟时刻验证排序不变、与 runAfter 同域比较。墙钟回拨的端到端效果(定时器不再晚 N 秒)需要改系统时间,
+// 不在单测里做。
+// ---------------------------------------------------------------------------
+
+namespace {
+// 一个 2025 年附近的墙钟读数与一个开机 5s 的单调读数,只用来固定换算的两个原点。
+constexpr int64_t kWallNowUs = 1'760'000'000LL * Timestamp::kMicroSecondsPerSecond;
+constexpr int64_t kMonoNowUs = 5LL * Timestamp::kMicroSecondsPerSecond;
+} // namespace
+
+TEST(TimerClockTest, MonotonicFromWallKeepsOffsetFromWallNow)
+{
+	const Timestamp wallNow(kWallNowUs);
+	const Timestamp monoNow(kMonoNowUs);
+
+	// 换算只保留"离现在还有多久":墙钟此刻对应单调此刻,前后偏移原样带过去。
+	const int64_t deltasUs[] = {0, 1, 2'500'000, -1, -3'000'000};
+	for (const int64_t deltaUs : deltasUs)
+	{
+		const Timestamp mono = TimerQueue::monotonicFromWall(Timestamp(kWallNowUs + deltaUs), wallNow, monoNow);
+		EXPECT_EQ(kMonoNowUs + deltaUs, mono.microSecondsSinceEpoch()) << "delta " << deltaUs << "us";
+	}
+
+	// 早于开机时刻的墙钟时刻换算出 <= 0 的值:单调域里这只是"早就到期",不是无效值。
+	const Timestamp longAgo = TimerQueue::monotonicFromWall(Timestamp(kWallNowUs - 10'000'000), wallNow, monoNow);
+	EXPECT_EQ(-5'000'000, longAgo.microSecondsSinceEpoch());
+}
+
+TEST(TimerClockTest, MonotonicFromWallPreservesOrdering)
+{
+	const Timestamp wallNow(kWallNowUs);
+	const Timestamp monoNow(kMonoNowUs);
+
+	// 单调递增的墙钟时刻(含相差 1us 的相邻点、远早于开机的点)换算后仍严格单调递增:
+	// 同一批 runAt 在队列里的先后只取决于它们的墙钟先后。
+	const int64_t deltasUs[] = {-86'400'000'000LL, -2'000'000, -1, 0, 1, 50'000, 3'600'000'000LL};
+	bool first = true;
+	int64_t previousUs = 0;
+	for (const int64_t deltaUs : deltasUs)
+	{
+		const int64_t currentUs =
+			TimerQueue::monotonicFromWall(Timestamp(kWallNowUs + deltaUs), wallNow, monoNow).microSecondsSinceEpoch();
+		if (!first)
+		{
+			EXPECT_LT(previousUs, currentUs) << "delta " << deltaUs << "us";
+		}
+		first = false;
+		previousUs = currentUs;
+	}
+}
+
+TEST(TimerClockTest, MonotonicNowDoesNotGoBackwards)
+{
+	Timestamp previous = TimerQueue::monotonicNow();
+	for (int i = 0; i < 1000; ++i)
+	{
+		const Timestamp current = TimerQueue::monotonicNow();
+		ASSERT_LE(previous.microSecondsSinceEpoch(), current.microSecondsSinceEpoch());
+		previous = current;
+	}
+}
+
+TEST(TimerClockTest, RunAtPastWallTimesFireInWallOrder)
+{
+	EventLoop loop;
+	std::vector<int> order;
+	const Timestamp now = Timestamp::now();
+
+	// 故意乱序挂:同一批里的先后只能来自换算后的到期时刻,而不是挂的先后。
+	loop.runAt(addTime(now, -1.0), [&order] { order.push_back(3); });
+	loop.runAt(addTime(now, -3.0), [&order] { order.push_back(1); });
+	loop.runAt(addTime(now, -2.0), [&order] { order.push_back(2); });
+	loop.runAt(addTime(now, -0.5), [&loop] { loop.quit(); });
+	// 兜底:换算一旦漏掉,上面几个会被当成几十年后的单调时刻,永远不到期。
+	loop.runAfter(5.0, [&loop] { loop.quit(); });
+	loop.loop();
+
+	EXPECT_EQ((std::vector<int>{1, 2, 3}), order);
+}
+
+TEST(TimerClockTest, RunAtLongPastWallTimeStillFires)
+{
+	EventLoop loop;
+	int fires = 0;
+
+	// 1970 年的墙钟时刻换算到单调域是负数。它必须照常排在最前、照常触发,之后挂着的定时器也照常触发。
+	// 注意:本用例区分不出 reset() 里 valid() → !timers_.empty() 那处改动 —— 这里负值定时器触发后队首是
+	// 正值;回调里新挂的 <= 0 定时器会由 addTimerInLoop 直接上弦,Windows 又不靠 timerfd。那处改动是
+	// 防御性的,本用例只守"负的单调值照常排序、触发且不卡住后续定时器"。
+	loop.runAt(Timestamp::fromUnixTime(1), [&fires] { ++fires; });
+	loop.runAfter(0.02, [&loop] { loop.quit(); });
+	loop.runAfter(5.0, [&loop] { loop.quit(); });
+	loop.loop();
+
+	EXPECT_EQ(1, fires);
+}
+
+TEST(TimerClockTest, RunAtFutureWallTimeSharesDomainWithRunAfter)
+{
+	EventLoop loop;
+	std::vector<int> order;
+	const Timestamp now = Timestamp::now();
+
+	// runAt(墙钟时刻)与 runAfter(时长)必须落在同一个时钟域里比先后。三个到期点相隔 40ms,
+	// 远大于两只表各读一次的偏差;唤醒再晚,同一批内也按到期时刻排序,所以不依赖调度速度。
+	loop.runAt(addTime(now, 0.06), [&order] { order.push_back(2); });
+	loop.runAfter(0.02, [&order] { order.push_back(1); });
+	loop.runAt(addTime(now, 0.10), [&order, &loop] {
+		order.push_back(3);
+		loop.quit();
+	});
+	loop.runAfter(5.0, [&loop] { loop.quit(); });
+	loop.loop();
+
+	EXPECT_EQ((std::vector<int>{1, 2, 3}), order);
+}
+
+#ifdef _WIN32
+TEST(TimerClockTest, NextTimeoutMsCountsDownOnMonotonicClock)
+{
+	// Windows 没有 timerfd,poll 的超时由 nextTimeoutMs 给出。它必须与到期时刻同在单调域:
+	// 拿单调时刻去减墙钟 now 会得到一个巨大的负数,poll 永远不阻塞,loop 空转。
+	EventLoop loop;
+	TimerQueue queue(&loop);
+	EXPECT_EQ(60000, queue.nextTimeoutMs(60000));   // 空队列:给回 fallback
+
+	// 10s 后到期:剩余量落在 (9s, 10s];留 1s 余量,测试线程被抢占也不至于误判。
+	queue.addTimer([] {}, addTime(TimerQueue::monotonicNow(), 10.0), 0.0);
+	const int timeoutMs = queue.nextTimeoutMs(60000);
+	EXPECT_GT(timeoutMs, 9000);
+	EXPECT_LE(timeoutMs, 10000);
+
+	EXPECT_EQ(100, queue.nextTimeoutMs(100));       // 超过 fallback 时截到 fallback
+
+	// 已到期的不阻塞。
+	queue.addTimer([] {}, addTime(TimerQueue::monotonicNow(), -1.0), 0.0);
+	EXPECT_EQ(0, queue.nextTimeoutMs(60000));
+}
+#endif // _WIN32
 
 int main(int argc, char **argv)
 {

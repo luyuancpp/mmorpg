@@ -404,8 +404,8 @@ if __name__ == "__main__":
     print("[11/16] engine/thread_context")
     generate("./cpp/libs/engine/thread_context/thread_context.vcxproj", "./cpp/libs/engine/thread_context/", "lib")
 
-    # muduo_grpc 只依赖 muduo 头与 nghttp2(core 只前向声明它的通道类型,不链接它);
-    # 目前只有 nodes/gate 链接它,放在 engine 库末尾、各节点之前。
+    # muduo_grpc 只依赖 muduo 头与 nghttp2。core(建通道、etcd 传输)与 grpc_client(生成的 Send*)的源码都依赖它,
+    # 三个节点都链接它;静态库之间构建顺序无关,放在 engine 库末尾、各节点之前。
     print("[12/16] engine/muduo_grpc")
     generate("./cpp/libs/engine/muduo_grpc/muduo_grpc.vcxproj", "./cpp/libs/engine/muduo_grpc/", "lib")
 

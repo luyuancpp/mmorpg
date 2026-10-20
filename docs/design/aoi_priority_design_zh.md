@@ -25,7 +25,7 @@ AOI 空间查询（六边形网格邻居）填充的是**关注列表（Interest
 | `kAttacker` | 2 | 攻击者：来自战斗/仇恨系统（TODO：接入） |
 | `kQuestNpc` | 3 | 任务NPC：由任务系统标记（TODO：接入） |
 | `kBoss` | 4 | Boss / 精英怪 |
-| `kPinned` | 5 | 手动锁定：由 Buff/技能控制（如鹰眼、暗杀目标） |
+| `kPinned` | 5 | 预留锁定标签，权重恒为 255；玩法尚未接入 |
 
 ### 内置策略
 
@@ -87,21 +87,9 @@ effectiveCapacity = min(clientReportedCapacity, serverPressureCapacity)
 `InterestSystem::GetEffectiveCapacity(watcher)` 返回
 `min(clamped_client, server_pressure_cap)`。
 
-## 锁定 / 解锁（Buff → AOI 桥接）
+## 锁定 / 解锁（尚未接入）
 
-```
-InterestSystem::PinAoiEntity(watcher, target)    // 以 kPinned 优先级添加
-InterestSystem::UnpinAoiEntity(watcher, target)   // 降级为 kNormal
-```
-
-**示例（暗杀任务）**：
-1. 玩家使用鹰眼技能 → 创建 Buff。
-2. `OnBuffStart` 调用 `InterestSystem::PinAoiEntity(player, questTarget)`。
-3. 目标出现在客户端，即使远超网格范围。
-4. 任务完成 / Buff 过期 → `OnBuffRemove` 调用 `InterestSystem::UnpinAoiEntity(player, questTarget)`。
-5. 下一帧 `AoiSystem::Update` 若目标仍在范围外则将其淘汰。
-
-被锁定的条目不受空间网格进出逻辑的影响。
+未接入；接入时须同批设计目标离场的远端清理，不得全节点扫描。当前只保留预留的 `kPinned` 优先级语义与测试。
 
 ## 隐身可见性
 
@@ -112,7 +100,7 @@ InterestSystem::UnpinAoiEntity(watcher, target)   // 降级为 kNormal
 2. 若目标拥有 `kBuffTypeStealth` Buff → 不可见，**除非**观察者将该目标
    锁定（`AoiPriority::kPinned`）在关注列表中。
 
-这意味着"侦测隐身"技能只需锁定隐身目标即可。
+侦测隐身的远端锁定尚未接入，不能将预留标签视为现有技能入口。
 
 ## 方向性
 
@@ -126,8 +114,6 @@ InterestSystem::UnpinAoiEntity(watcher, target)   // 降级为 kNormal
 |------|------|
 | `InterestSystem::AddAoiEntity(watcher, target, priority)` | 使用策略权重比较，动态容量作为上限 |
 | `InterestSystem::RemoveAoiEntity(watcher, target)` | 从关注列表移除 |
-| `InterestSystem::PinAoiEntity(watcher, target)` | 以 kPinned 锁定 |
-| `InterestSystem::UnpinAoiEntity(watcher, target)` | 解锁，降级为 kNormal |
 | `InterestSystem::UpgradePriority(watcher, target, priority)` | 提高优先级（比较策略权重，非原始枚举值） |
 | `InterestSystem::GetEffectiveCapacity(watcher)` | 动态解析有效容量 |
 | `InterestSystem::GetPriorityPolicy(watcher)` | 获取场景的策略（默认：开放世界） |

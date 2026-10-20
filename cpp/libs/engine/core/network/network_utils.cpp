@@ -2,10 +2,10 @@
 
 #include <boost/asio.hpp>
 #include <iostream>
+#include <sstream>
 #include "muduo/base/Logging.h"
 #include "network/node_utils.h"
 #include "node/system/node/node_util.h"
-#include "proto/common/base/session.pb.h"
 #include "thread_context/node_context_manager.h"
 
 NodeId GetGateNodeId(SessionId session_id)
@@ -25,8 +25,8 @@ std::optional<entt::entity> ResolveLocalZoneGateEntity(SessionId sessionId)
 		return entity;
 	}
 
-	// Defensive fallback for the brief window where the thread-local zone
-	// context (GetZoneId()) lags behind node discovery — e.g. early in
+	// Defensive fallback for the brief window where this node's zone
+	// (GetZoneId(), read from Node::localNodeInfo_, filled in Node::InitRpcServer) is not yet installed — e.g. early in
 	// startup before NodeContext is fully populated, or in dev/single-zone
 	// launches where zone propagation hasn't happened yet. The local-thread
 	// gate registry is already filtered down to same-zone gates by
@@ -70,15 +70,4 @@ void ParseIpPort(const std::string &input, std::string &ip, uint16_t &port)
 std::string FormatIpAndPort(const std::string &ip, uint32_t port)
 {
 	return ip + ":" + std::to_string(port);
-}
-
-std::vector<std::string> SerializeSessionDetails(const SessionDetails &sessionDetails)
-{
-	std::vector<std::string> result;
-	std::string serialized;
-	if (sessionDetails.SerializeToString(&serialized))
-	{
-		result.push_back(std::move(serialized));
-	}
-	return result;
 }

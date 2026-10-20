@@ -226,6 +226,7 @@ go test -race -count=1 -run SaveConditional .
 11. G2b 的 mysql.yaml（触发 Recreate）何时、按什么窗口 apply，是否等 L-04 先落地（§2.4）。
 12. ② 批 B 路线：池压缩（附录 A）还是抬上限（G2b 已落）；`SET PERSIST` 是否允许。
 13. DBTask 9 号给 `save_seq` 还是 `reply_instance`（另一个顺延到 10）；定下后两份交接都改，先落码的一方在 proto 注释里写明另一号已预留。
+    - **2026-10-18 更正**：已定 9 给 `save_seq`、10 给 `reply_instance`；`string reply_instance = 10;` 已写进 `proto/db/db_task.proto`（task:result 读回执通知分频道第 1 批，未编译、待 Codex 验证），10 号不再是「预留」。§2.3 表中「与本文 `save_seq = 9` 撞号」一行同此。
 14. 条件写上线后「只清 Redis 必须同时归零围栏」是否写进 AGENTS.md §6.2。
 15. ③ 是否是开服门槛（开服是否支持单 zone 回档或合服）。
 16. Redis 分片的 hash tag 方案与瓶颈文档 §6.5 的统一裁决（影响围栏缓存键）。

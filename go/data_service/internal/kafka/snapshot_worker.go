@@ -256,7 +256,7 @@ func (w *snapshotPartitionWorker) flush(ctx context.Context, b *snapshotBatch) e
 		metrics.ObserveKafkaConsumerMessages(ConsumerSnapshot, "inserted", int(inserted))
 		metrics.ObserveKafkaConsumerMessages(ConsumerSnapshot, "duplicate", dup)
 		if dup > 0 {
-			// 多行 ODKU 不回带每行 id,批量路径每批一条汇总(逐条模式仍是逐 guid 的 already stored 日志)。
+			// 批量路径(预读 + 普通多行 INSERT)不回带每行 id,每批一条汇总(逐条模式仍是逐 guid 的 already stored 日志)。
 			logx.Infof("[%s] partition=%d batch of %d: %d duplicate snapshot(s) already stored, skipped (offsets %d..%d)",
 				ConsumerSnapshot, w.partition, len(b.rows), dup, b.msgs[0].Offset, b.msgs[len(b.msgs)-1].Offset)
 		}

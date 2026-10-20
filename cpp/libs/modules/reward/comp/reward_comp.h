@@ -9,7 +9,7 @@
 // its own bitset with bit indices from that system's table, NOT from the reward table.
 // The reward table ID is a pure data reference ("what items/currency to give"),
 // not a persistence key for claimed status.
-using RewardBitset = std::bitset<kRewardMaxBitIndex>;
+using RewardBitset = std::bitset<kRewardBitmapCapacity>;
 
 // RewardComp: lightweight POD-level claimed-status component (ECS friendly).
 // Use this only for global/one-time rewards not owned by a specific system

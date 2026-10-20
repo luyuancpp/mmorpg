@@ -147,6 +147,8 @@ protected:
         EXPECT_EQ(2u, drained[1].amount);
         EXPECT_EQ(5u, StackSize(bag, kGuidA));
         EXPECT_EQ(nullptr, bag.GetItemCompByGuid(kGuidB));
+        EXPECT_EQ(kInvalidSlot, bag.GetItemPosByGuid(kGuidB));
+        EXPECT_EQ(2u, bag.OccupiedGridCount());
         EXPECT_EQ(nullptr, bag.GetItemCompByPos(0));
         EXPECT_EQ(3u, StackSize(bag, kGuidC));
         EXPECT_EQ(1u, bag.GetItemPosByGuid(kGuidC));
@@ -215,8 +217,10 @@ TEST_F(BagSelectionOrderTest, DrainWithoutReceiptUsesTheSameSlotOrder)
     ASSERT_EQ(kSuccess, bag.RemoveItems({{kStackConfig, 7}}));
     EXPECT_EQ(5u, StackSize(bag, kGuidA));
     EXPECT_EQ(nullptr, bag.GetItemCompByGuid(kGuidB));
-    EXPECT_EQ(nullptr, bag.GetItemCompByPos(0));
+    EXPECT_EQ(kInvalidSlot, bag.GetItemPosByGuid(kGuidB));
+    EXPECT_EQ(2u, bag.OccupiedGridCount());
     EXPECT_EQ(3u, StackSize(bag, kGuidC));
+    EXPECT_TRUE(bag.IsLayerConsistent());
 }
 
 TEST_F(BagSelectionOrderTest, DrainSkipsEmptyStackWithoutReceipt)
@@ -361,6 +365,20 @@ TEST_F(BagSelectionOrderTest, SnapshotReplayKeepsIterationOrder)
     }
     EXPECT_EQ(snapshot, Capture(restored));
     EXPECT_EQ(3u, restored.OccupiedGridCount());
+}
+
+TEST(ItemStoreTest, MergeNeverPicksAnEmptyStackAsSurvivor)
+{
+    ItemTableManager::Instance().Load();
+    ItemStore store;
+    ASSERT_NE(nullptr, store.Insert(MakeInstance(kGuidA, 0, 1)));
+    ASSERT_NE(nullptr, store.Insert(MakeInstance(kGuidB, 3, 2)));
+    ASSERT_NE(nullptr, store.Insert(MakeInstance(kGuidC, 4, 3)));
+    store.MergePartialStacks();
+    EXPECT_EQ(7u, store.Find(kGuidB)->size());
+    EXPECT_EQ(0u, store.Find(kGuidA)->size());
+    EXPECT_EQ(0u, store.Find(kGuidC)->size());
+    EXPECT_EQ((GuidVector{kGuidA, kGuidC}), store.CollectEmptyInstances());
 }
 
 TEST(ItemStoreTest, DuplicateInsertDoesNotAdvanceWatermark)

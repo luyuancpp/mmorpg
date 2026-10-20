@@ -178,6 +178,16 @@ func TestLoopConfigFromMapsY06(t *testing.T) {
 		cfg.AbandonBatch != def.AbandonBatch || cfg.AbandonInterval != def.AbandonInterval || cfg.AuditInterval != def.AuditInterval {
 		t.Errorf("落地恢复默认值与 assetop.DefaultLoopConfig 不一致: guild=%+v assetop=%+v", cfg, def)
 	}
+
+	// 资产 SQL 提交证据开关(db-write-fencing-mysql.md §6.6)原样透传;缺省关 = HEAD 口径。
+	if cfg.RequireSQLCommit {
+		t.Fatal("RequireSQLCommit 缺省必须关闭")
+	}
+	on := y06Defaults()
+	on.RequireSQLCommit = true
+	if !LoopConfigFrom(on, 1500*time.Millisecond).RequireSQLCommit {
+		t.Fatal("AssetOp.RequireSQLCommit 必须透传到 assetop.LoopConfig")
+	}
 }
 
 // TestLoopConfigFromSatisfiesNewLoop:config.Validate 允许的边界值(见 config 包的区间常量)

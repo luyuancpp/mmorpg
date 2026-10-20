@@ -22,6 +22,8 @@
 #include <sys/timerfd.h>
 #include <unistd.h>
 
+#include <chrono>
+
 namespace muduo
 {
 namespace net
@@ -42,8 +44,9 @@ int createTimerfd()
 
 struct timespec howMuchTimeFromNow(Timestamp when)
 {
+  // 本仓库改动:when 在单调域,剩余时长也按单调时钟算(timerfd 本身就是 CLOCK_MONOTONIC、按相对时长上弦)。
   int64_t microseconds = when.microSecondsSinceEpoch()
-                         - Timestamp::now().microSecondsSinceEpoch();
+                         - TimerQueue::monotonicNow().microSecondsSinceEpoch();
   if (microseconds < 100)
   {
     microseconds = 100;
@@ -61,7 +64,8 @@ void readTimerfd(int timerfd, Timestamp now)
 #ifdef __linux__
   uint64_t howmany;
   ssize_t n = ::read(timerfd, &howmany, sizeof howmany);
-  LOG_TRACE << "TimerQueue::handleRead() " << howmany << " at " << now.toString();
+  // now 是单调读数(秒.微秒,原点约为开机时刻),不是日期。
+  LOG_TRACE << "TimerQueue::handleRead() " << howmany << " at monotonic " << now.toString();
   if (n != sizeof howmany)
   {
     LOG_ERROR << "TimerQueue::handleRead() reads " << n << " bytes instead of 8";
@@ -95,6 +99,18 @@ void resetTimerfd(int timerfd, Timestamp expiration)
 using namespace muduo;
 using namespace muduo::net;
 using namespace muduo::net::detail;
+
+Timestamp TimerQueue::monotonicNow()
+{
+  const auto sinceOrigin = std::chrono::steady_clock::now().time_since_epoch();
+  return Timestamp(std::chrono::duration_cast<std::chrono::microseconds>(sinceOrigin).count());
+}
+
+Timestamp TimerQueue::monotonicFromWall(Timestamp wallTime, Timestamp wallNow, Timestamp monoNow)
+{
+  const int64_t offset = wallTime.microSecondsSinceEpoch() - wallNow.microSecondsSinceEpoch();
+  return Timestamp(monoNow.microSecondsSinceEpoch() + offset);
+}
 
 TimerQueue::TimerQueue(EventLoop* loop)
   : loop_(loop),
@@ -185,8 +201,9 @@ int TimerQueue::nextTimeoutMs(int fallbackMs) const
     return fallbackMs;
   }
 
+  // 到期时刻在单调域,now 也必须取单调读数(本仓库改动)。
   const int64_t microseconds = timers_.begin()->first.microSecondsSinceEpoch()
-                             - Timestamp::now().microSecondsSinceEpoch();
+                             - monotonicNow().microSecondsSinceEpoch();
   if (microseconds <= 0)
   {
     return 0;   // already due; poll must not block
@@ -200,7 +217,8 @@ int TimerQueue::nextTimeoutMs(int fallbackMs) const
 void TimerQueue::handleRead()
 {
   loop_->assertInLoopThread();
-  Timestamp now(Timestamp::now());
+  // 本仓库改动:到期判断(getExpired)与重复定时器的下一次到期(reset → Timer::restart)都按单调 now。
+  Timestamp now(monotonicNow());
   readTimerfd(timerfd_, now);
 
   std::vector<Entry> expired = getExpired(now);
@@ -244,8 +262,6 @@ std::vector<TimerQueue::Entry> TimerQueue::getExpired(Timestamp now)
 
 void TimerQueue::reset(const std::vector<Entry>& expired, Timestamp now)
 {
-  Timestamp nextExpire;
-
   for (const Entry& it : expired)
   {
     ActiveTimer timer(it.second, it.second->sequence());
@@ -262,14 +278,11 @@ void TimerQueue::reset(const std::vector<Entry>& expired, Timestamp now)
     }
   }
 
+  // 本仓库改动:上游用 nextExpire.valid()(> 0)判断"还有没有下一个"。单调域的到期时刻可以 <= 0
+  // (很久以前的墙钟时刻换算而来),valid() 不再等价于"队列非空",直接看队列。
   if (!timers_.empty())
   {
-    nextExpire = timers_.begin()->second->expiration();
-  }
-
-  if (nextExpire.valid())
-  {
-    resetTimerfd(timerfd_, nextExpire);
+    resetTimerfd(timerfd_, timers_.begin()->second->expiration());
   }
 }
 

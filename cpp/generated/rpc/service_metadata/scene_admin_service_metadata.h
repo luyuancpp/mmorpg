@@ -11,11 +11,17 @@ constexpr uint32_t SceneSceneGmGracefulShutdownMessageId = 126;
 constexpr uint32_t SceneSceneGmGracefulShutdownIndex = 1;
 #define SceneSceneGmGracefulShutdownMethod  ::SceneScene_Stub::descriptor()->method(1)
 
+constexpr uint32_t SceneSceneGmDescribeEntityMessageId = 306;
+constexpr uint32_t SceneSceneGmDescribeEntityIndex = 2;
+#define SceneSceneGmDescribeEntityMethod  ::SceneScene_Stub::descriptor()->method(2)
+
 // 节点间 RPC0 的方法 tag(docs/design/muduo-rpc-channel.md §10):RpcChannel / RpcClient / RpcSession 的
 // CallMethod<Tag> / SendRequest<Tag> 按它取消息号与请求 / 响应类型。只含类型信息、不依赖 core;
 // 请求 / 响应类型在此前向声明,tag 本身不要求完整类型。
 class Empty;
 class GameSceneTest;
+class GmDescribeEntityRequest;
+class GmDescribeEntityResponse;
 class GmGracefulShutdownRequest;
 class GmGracefulShutdownResponse;
 
@@ -31,4 +37,11 @@ struct SceneSceneGmGracefulShutdownRpc
     static constexpr uint32_t kMessageId = SceneSceneGmGracefulShutdownMessageId;
     using Request = ::GmGracefulShutdownRequest;
     using Response = ::GmGracefulShutdownResponse;
+};
+
+struct SceneSceneGmDescribeEntityRpc
+{
+    static constexpr uint32_t kMessageId = SceneSceneGmDescribeEntityMessageId;
+    using Request = ::GmDescribeEntityRequest;
+    using Response = ::GmDescribeEntityResponse;
 };

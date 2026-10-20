@@ -88,6 +88,29 @@ is_port_listen() {
   ss -ltn 2>/dev/null | grep -qE "[:.]$1[[:space:]]"
 }
 
+# C++ 节点启动后的存活检查(2026-10-18)。节点在 Linux 上会把 RLIMIT_NOFILE 软限自抬到硬限,
+# 硬限低于需求(gate = GateMaxConnections + 4096,scene = 4096)时拒绝启动,stderr 一行
+# "FATAL open file limit config: ..."。不查的话脚本照样打印 all services up,原因只落在
+# run/logs/cpp_nodes/<node>.log 里。先认拒启行(原因更具体),再看进程是否还在。
+# die 时本次已起的 Go 服务(以及 gate 拒启时的 scene)仍在后台;cmd_start 不查已有 pid,直接重跑 start 会让
+# 新实例绑端口失败、wait_for_port 却被旧进程满足、pid 文件被改写成已退出的 pid,之后 stop 找不到旧进程。
+# 所以 die 文案要求先 stop 再重试。
+check_cpp_node_started() {
+  local node=$1
+  local logfile="${LOG_DIR}/cpp_nodes/${node}.log"
+  local pid; pid=$(cat "${PID_DIR}/${node}.pid")
+  local refusal
+  refusal=$(grep -m1 'FATAL open file limit config:' "$logfile" 2>/dev/null || true)
+  if [[ -n "$refusal" ]]; then
+    die "$node refused to start: ${refusal} -- raise the hard nofile limit of this shell (docs/ops/linux-staging-stress-runbook.md A.1), or export NODE_OPEN_FILE_LIMIT_MODE=warn for a temporary exemption; services started so far are still running, run $0 stop before retrying"
+  fi
+  if ! kill -0 "$pid" 2>/dev/null; then
+    die "$node (pid $pid) exited during startup; check ${logfile} and ${REPO_ROOT}/bin/logs/cpp_nodes/${node}*; services started so far are still running, run $0 stop before retrying"
+  fi
+  # 打出 fd 限值行(以及豁免生效时的 WARN 行),便于确认实际软限。
+  grep '\[open_file_limit\]' "$logfile" 2>/dev/null | while read -r line; do log "  $node: $line"; done || true
+}
+
 # ── Subcommands ────────────────────────────────────────────────────
 cmd_start() {
   log "checking docker infra (redis/etcd/mysql/kafka)..."
@@ -98,7 +121,9 @@ cmd_start() {
   done
 
   log "wiping redis residue (player_locator/login_session/etc) for clean rollout..."
-  for p in 'player:session:*' 'player:*:location' 'player_to_account:*' \
+  # player:gate_index:* 是 player_locator 按 gate 建的会话索引与就绪标记 / 代次(与会话同生同灭):
+  # 只删会话不删索引会留下脏成员与幽灵 gate,下次启动后由对账补建重建。
+  for p in 'player:session:*' 'player:gate_index:*' 'player:*:location' 'player_to_account:*' \
            'access_token:*' 'refresh_token:*' 'login_session:*' \
            'login_step:*' 'account_lock:*' 'player_locker:*'; do
     redis-cli --scan --pattern "$p" 2>/dev/null \
@@ -131,16 +156,20 @@ cmd_start() {
 
   log "starting cpp scene + gate (if binaries present)..."
   if [[ -x "${REPO_ROOT}/bin/scene" ]]; then
-    "${REPO_ROOT}/bin/scene" > "${LOG_DIR}/cpp_nodes/scene.log" 2>&1 &
+    # 节点按 cwd 读 etc/ 并写 logs/,必须从 bin/ 启动(同 linux-staging-stress-runbook.md B 第 4 步);
+    # 从仓库根直接起会在 fd 检查之前就因找不到 etc/base_deploy_config.yaml 退出。exec 后 $! 就是节点 pid。
+    (cd "${REPO_ROOT}/bin" && exec ./scene) > "${LOG_DIR}/cpp_nodes/scene.log" 2>&1 &
     echo $! > "${PID_DIR}/scene.pid"
     sleep 2
+    check_cpp_node_started scene
   else
     log "  WARN: bin/scene missing — skipping (build cpp before re-running)"
   fi
   if [[ -x "${REPO_ROOT}/bin/gate" ]]; then
-    "${REPO_ROOT}/bin/gate" > "${LOG_DIR}/cpp_nodes/gate.log" 2>&1 &
+    (cd "${REPO_ROOT}/bin" && exec ./gate) > "${LOG_DIR}/cpp_nodes/gate.log" 2>&1 &
     echo $! > "${PID_DIR}/gate.pid"
     sleep 5
+    check_cpp_node_started gate
   else
     log "  WARN: bin/gate missing — skipping"
   fi

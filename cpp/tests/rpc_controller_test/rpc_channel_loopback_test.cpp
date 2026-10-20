@@ -64,7 +64,6 @@
 #include "network/rpc_channel.h"
 #include "network/rpc_channel_stats.h"
 #include "network/rpc_client.h"
-#include "network/rpc_connection_event.h"
 #include "network/rpc_controller.h"
 #include "network/rpc_done_callback.h"
 #include "network/rpc_status.h"
@@ -76,7 +75,6 @@
 #include "rpc/service_metadata/rpc_event_registry.h"
 #include "rpc/service_metadata/scene_admin_service_metadata.h"
 #include "rpc/service_metadata/scene_service_metadata.h"
-#include "thread_context/ecs_context.h"
 
 using namespace std::chrono_literals;
 
@@ -564,16 +562,17 @@ public:
     }
 };
 
-// 记录 RpcClient 报 DOWN(OnConnected2TcpServerEvent)那一刻已完成的调用数:RpcClient 在同一个回调里先 OnDisconnect
-// 再 trigger 事件,所以这个数就是「OnDisconnect 栈内」完成的调用数。只在 loop 线程上使用。
+// 记录 RpcClient 的连接观察者报 DOWN 那一刻已完成的调用数：先 OnDisconnect、重置 channel，
+// 再同步通知观察者；排队的失败回调此时尚未执行。只在 loop 线程上使用。
 struct DownProbe
 {
+    bool enabled{false};
     std::shared_ptr<CallLog> log;
     std::optional<std::size_t> completionsAtFirstDown;
 
-    void OnEvent(const OnConnected2TcpServerEvent& event)
+    void OnEvent(const TcpConnectionPtr& conn)
     {
-        if (event.conn_ && event.conn_->connected())
+        if (conn && conn->connected())
         {
             return;
         }
@@ -620,11 +619,7 @@ protected:
         // 顺序同 rpc_controller_test:先拆客户端(各自连接的唯一持有者 → forceClose → 对端 DOWN),
         // 等服务端每条连接都报过 DOWN,再在 loop 线程销毁 TcpServer(它的析构函数断言 in-loop)。
         RunInLoopAndWait([this] {
-            if (downProbeConnected_)
-            {
-                tlsEcs.dispatcher.sink<OnConnected2TcpServerEvent>().disconnect<&DownProbe::OnEvent>(downProbe_);
-                downProbeConnected_ = false;
-            }
+            downProbe_->enabled = false;
             if (ownerBox_)
             {
                 ownerBox_->reset();   // 用例中途失败时 owner 还在盒子里:也在 loop 线程上销毁
@@ -735,23 +730,25 @@ protected:
     {
         RunInLoopAndWait([this] {
             client_ = std::make_shared<RpcClient>(&Loop(), serverAddr_);
+            client_->setConnectionObserver([weakProbe = std::weak_ptr<DownProbe>(downProbe_)](const TcpConnectionPtr& conn) {
+                if (const auto probe = weakProbe.lock(); probe && probe->enabled)
+                {
+                    probe->OnEvent(conn);
+                }
+            });
             client_->connect();
         });
         ASSERT_TRUE(WaitUntil([this] { return client_->connected() && !serverConn_.expired(); }))
             << "RpcClient never connected";
     }
 
-    // 开始记录 RpcClient 报 DOWN 那一刻已完成的调用数(TearDown 负责断开 sink,用例中途 ASSERT 返回也不会悬空)。
+    // 启用 connect 前已安装的观察者探针；TearDown 先停探针，用例中途 ASSERT 返回也不会悬空。
     void WatchClientDown(std::shared_ptr<CallLog> log)
     {
         RunInLoopAndWait([this, log = std::move(log)]() mutable {
-            downProbe_.log = std::move(log);
-            downProbe_.completionsAtFirstDown.reset();
-            if (!downProbeConnected_)
-            {
-                tlsEcs.dispatcher.sink<OnConnected2TcpServerEvent>().connect<&DownProbe::OnEvent>(downProbe_);
-                downProbeConnected_ = true;
-            }
+            downProbe_->log = std::move(log);
+            downProbe_->completionsAtFirstDown.reset();
+            downProbe_->enabled = true;
         });
     }
 
@@ -880,10 +877,9 @@ protected:
     std::atomic<int> serverDowns_{0};
 
     RpcClientPtr client_;
-    // 以下三个只在 loop 线程上读写。
+    // 以下状态只在 loop 线程上读写。
     std::shared_ptr<RpcClientPtr> ownerBox_;
-    DownProbe downProbe_;
-    bool downProbeConnected_{false};
+    std::shared_ptr<DownProbe> downProbe_{std::make_shared<DownProbe>()};
 
     std::unique_ptr<muduo::net::TcpClient> probe_;
     RpcChannelPtr probeChannel_;   // 只在 loop 线程上读写
@@ -1360,7 +1356,7 @@ TEST_F(RpcChannelLoopback, DisconnectFailsOutstandingCallsAfterTheDownCallbackRe
     std::optional<std::size_t> completionsAtDown;
     bool oldChannelExpired = false;
     RunInLoopAndWait([&] {
-        completionsAtDown = downProbe_.completionsAtFirstDown;
+        completionsAtDown = downProbe_->completionsAtFirstDown;
         oldChannelExpired = oldChannel.expired();
     });
     ASSERT_TRUE(completionsAtDown.has_value()) << "RpcClient never reported DOWN";

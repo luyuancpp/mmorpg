@@ -6,6 +6,13 @@ package node
 //   - go/guild/internal/node/node.go
 //   - go/friend/internal/node/node.go
 //   - go/scene_manager/internal/noderegistry/registry.go
+//
+// 有意的差异(2026-10-18,只此一处):tryClaimNodeID / allocateNodeID 末尾多一个可选的 extraOps 钩子
+// (变参,缺省为空,不传时与其它副本逐字同义),reRegister 第 1 步的 Txn 也带上它。player_locator 用它把
+// 「会话按 gate 建索引」的能力键与 NodeInfo 放进同一个注册事务、挂同一个租约(NewNode 的 WithLeaseBoundMarkers,
+// docs/design/player-locator-gate-session-index.md §6):对账 leader 据此判断有没有不维护索引的旧版写者,
+// 两者同生同灭才不会出现「有 NodeInfo 没能力键」的误判窗口。同步 allocator 修改时保留这个钩子即可;
+// 将来收进 go/shared 时把它做成公共选项。
 
 import (
 	"context"
@@ -36,6 +43,36 @@ type Node struct {
 	client     *clientv3.Client
 	leaseID    clientv3.LeaseID
 	cancelFunc context.CancelFunc
+	// markerPrefixes 见 WithLeaseBoundMarkers;构造后只读。
+	markerPrefixes []string
+}
+
+// Option 是 NewNode 的可选项。
+type Option func(*nodeOptions)
+
+type nodeOptions struct {
+	markerPrefixes []string
+}
+
+// WithLeaseBoundMarkers 让每个前缀各多写一个「前缀 + NodeUuid」键(值 "1"),与 NodeInfo 同一个注册事务、
+// 同一个租约:首注册、换 node_id 重新分配、租约丢失后的重注册三处都带上,随租约到期或 Close 撤销一起消失。
+// node 包只把它们当不透明的键,不知道业务含义;player_locator 用它登记「会话按 gate 建索引」的能力键。
+func WithLeaseBoundMarkers(prefixes ...string) Option {
+	return func(o *nodeOptions) {
+		o.markerPrefixes = append(o.markerPrefixes, prefixes...)
+	}
+}
+
+// leaseBoundMarkerOps 把标记前缀展开成挂在 lease 上的 Put(纯函数,便于单测)。
+func leaseBoundMarkerOps(prefixes []string, nodeUUID string, lease clientv3.LeaseID) []clientv3.Op {
+	if len(prefixes) == 0 {
+		return nil
+	}
+	ops := make([]clientv3.Op, 0, len(prefixes))
+	for _, prefix := range prefixes {
+		ops = append(ops, clientv3.OpPut(prefix+nodeUUID, "1", clientv3.WithLease(lease)))
+	}
+	return ops
 }
 
 func rpcPrefix(nodeType uint32) string {
@@ -56,8 +93,12 @@ func allocationKeyPrefix(prefix string, nodeType uint32) string {
 	return fmt.Sprintf("%s/allocated/node_type/%d/node_id/", prefix, nodeType)
 }
 
-func NewNode(nodeType uint32, ip string, port uint32) (*Node, error) {
+func NewNode(nodeType uint32, ip string, port uint32, opts ...Option) (*Node, error) {
 	cfg := config.AppConfig
+	var o nodeOptions
+	for _, opt := range opts {
+		opt(&o)
+	}
 
 	client, err := clientv3.New(clientv3.Config{
 		Endpoints:   cfg.Registry.Etcd.Hosts,
@@ -86,7 +127,8 @@ func NewNode(nodeType uint32, ip string, port uint32) (*Node, error) {
 	}
 
 	prefix := rpcPrefix(nodeType)
-	nodeID, err := allocateNodeID(context.Background(), client, prefix, info, grant.ID)
+	markers := leaseBoundMarkerOps(o.markerPrefixes, info.NodeUuid, grant.ID)
+	nodeID, err := allocateNodeID(context.Background(), client, prefix, info, grant.ID, markers...)
 	if err != nil {
 		_, _ = client.Revoke(context.Background(), grant.ID)
 		client.Close()
@@ -95,15 +137,17 @@ func NewNode(nodeType uint32, ip string, port uint32) (*Node, error) {
 	info.NodeId = nodeID
 
 	return &Node{
-		Info:    info,
-		client:  client,
-		leaseID: grant.ID,
+		Info:           info,
+		client:         client,
+		leaseID:        grant.ID,
+		markerPrefixes: o.markerPrefixes,
 	}, nil
 }
 
 // allocateNodeID 在 (node_type) 下找空闲 node_id 并通过 etcd Txn CAS 占住。
 // 详细设计见 go/guild/internal/node/node.go 同名函数。
-func allocateNodeID(ctx context.Context, client *clientv3.Client, prefix string, info *proto_common.NodeInfo, leaseID clientv3.LeaseID) (uint32, error) {
+// extraOps 原样转给 tryClaimNodeID(见文件头「有意的差异」),缺省为空。
+func allocateNodeID(ctx context.Context, client *clientv3.Client, prefix string, info *proto_common.NodeInfo, leaseID clientv3.LeaseID, extraOps ...clientv3.Op) (uint32, error) {
 	usedIDs, err := scanUsedNodeIDs(ctx, client, prefix, info.NodeType)
 	if err != nil {
 		return 0, err
@@ -113,7 +157,7 @@ func allocateNodeID(ctx context.Context, client *clientv3.Client, prefix string,
 		if usedIDs[id] {
 			continue
 		}
-		ok, err := tryClaimNodeID(ctx, client, prefix, id, info, leaseID)
+		ok, err := tryClaimNodeID(ctx, client, prefix, id, info, leaseID, extraOps...)
 		if err != nil {
 			logx.Errorf("player_locator allocator: txn failed for node_id=%d: %v", id, err)
 			continue
@@ -163,7 +207,8 @@ func scanUsedNodeIDs(ctx context.Context, client *clientv3.Client, prefix string
 	return used, nil
 }
 
-func tryClaimNodeID(ctx context.Context, client *clientv3.Client, prefix string, nodeID uint32, info *proto_common.NodeInfo, leaseID clientv3.LeaseID) (bool, error) {
+// extraOps 与 allocKey / rpcKey 在同一个 Txn 的 Then 里提交(见文件头「有意的差异」),缺省为空。
+func tryClaimNodeID(ctx context.Context, client *clientv3.Client, prefix string, nodeID uint32, info *proto_common.NodeInfo, leaseID clientv3.LeaseID, extraOps ...clientv3.Op) (bool, error) {
 	allocKey := allocationKey(prefix, info.NodeType, nodeID)
 	rpcKey := rpcPath(prefix, info.ZoneId, info.NodeType, nodeID)
 
@@ -175,10 +220,10 @@ func tryClaimNodeID(ctx context.Context, client *clientv3.Client, prefix string,
 
 	txnResp, err := client.Txn(ctx).
 		If(clientv3.Compare(clientv3.Version(allocKey), "=", 0)).
-		Then(
+		Then(append([]clientv3.Op{
 			clientv3.OpPut(allocKey, info.NodeUuid, clientv3.WithLease(leaseID)),
 			clientv3.OpPut(rpcKey, string(value), clientv3.WithLease(leaseID)),
-		).
+		}, extraOps...)...).
 		Commit()
 	if err != nil {
 		return false, err
@@ -255,13 +300,16 @@ func (n *Node) reRegister(ctx context.Context) {
 			return
 		}
 
+		// 能力键等标记挂在新租约上,与 NodeInfo 同一事务重建(见文件头「有意的差异」)。
+		markers := leaseBoundMarkerOps(n.markerPrefixes, n.Info.NodeUuid, n.leaseID)
+
 		// 步骤 1:CAS 重夺原 node_id —— 只有 allocationKey 仍不存在才能写。
 		txnResp, err := n.client.Txn(ctx).
 			If(clientv3.Compare(clientv3.Version(allocKey), "=", 0)).
-			Then(
+			Then(append([]clientv3.Op{
 				clientv3.OpPut(allocKey, n.Info.NodeUuid, clientv3.WithLease(n.leaseID)),
 				clientv3.OpPut(rpcKey, string(value), clientv3.WithLease(n.leaseID)),
-			).
+			}, markers...)...).
 			Commit()
 		if err != nil {
 			logx.Errorf("player_locator re-claim txn failed: %v, retrying in %v", err, backoff)
@@ -275,7 +323,7 @@ func (n *Node) reRegister(ctx context.Context) {
 			// 步骤 2:原 node_id 已被别的实例占用,分配全新 id。
 			logx.Errorf("player_locator original node_id=%d taken by another instance, allocating new one",
 				n.Info.NodeId)
-			newID, err := allocateNodeID(ctx, n.client, prefix, n.Info, n.leaseID)
+			newID, err := allocateNodeID(ctx, n.client, prefix, n.Info, n.leaseID, markers...)
 			if err != nil {
 				logx.Errorf("player_locator re-allocate node_id failed: %v, retrying in %v", err, backoff)
 				_, _ = n.client.Revoke(context.Background(), n.leaseID)
@@ -335,6 +383,8 @@ func (n *Node) Close() error {
 		logx.Errorf("player_locator node close: delete keys failed: %v", err)
 	}
 
+	// WithLeaseBoundMarkers 的标记键随这次撤销消失。删 NodeInfo 与撤销之间短暂「有标记没 NodeInfo」,
+	// 对账 leader 只把「有 NodeInfo 没标记」判为旧写者,这个窗口无害;撤销失败时标记随租约到期消失。
 	if _, err := n.client.Revoke(context.Background(), n.leaseID); err != nil {
 		logx.Errorf("player_locator node close: revoke lease failed: %v", err)
 	}

@@ -6,10 +6,11 @@
 // 这里只回答下面几个问题,不碰实体、不改资产、不触发存盘、不发请求:
 //   1) 账本里某个域的游标在哪、怎么按 seq 升序记一条结局(最近结局环 ≤ 32,超出挤掉最旧的);
 //   2) 一条投递是新条目,还是重复投递 —— 重复投递时能不能回放原结局(IB-9 三项核对);
+//      以及分类与指令合起来,这一条接下来是执行、跳过、回放、报 UNKNOWN 还是停用(判定顺序见 PlanItem);
 //   3) 一条已定的结局此刻算不算已落盘(含 UNKNOWN 的专门规则);
 //   4) 从存档读出来的账本是否自洽(损坏就 fail-closed,由调用方挂标签停用该玩家的收件箱);
 //   5) 一次落地算不算"新落地";
-//   6) 退避与在线兜底的时长(抖动由调用方以参数传入,本文件不取随机数)。
+//   6) 退避与在线兜底的时长(抖动由调用方以参数传入,本文件不取随机数),以及卡住时周期性告警的节拍。
 //
 // 线程模型:纯函数,状态全在入参里,由调用方(scene loop 线程)保证独占访问。
 // 单测:cpp/tests/currency_test/player_inbox_rules_test.cpp。
@@ -39,6 +40,25 @@ namespace player_inbox_rules
 	constexpr uint64_t kPersistThrottleMs = 500;         // 记账后请求存盘的节流(照 kAssetOpResaveMinIntervalMs)
 	constexpr uint32_t kJitterPermilleMax = 1000;        // 抖动参数取值 [0, 1000]
 	constexpr uint32_t kPeriodicJitterPercent = 20;      // 在线兜底 ±20%
+	// 卡住时周期性告警的节拍(评审 L13、F3)。仓库现有的 scene 日志告警一律写成
+	// count_over_time({app=~"scene.*"} |= "metric=..." [10m]) > 0(deploy/k8s/player-inbox-alerts.yaml)。
+	// 问题还在时,相邻两条告警行的间隔必须落在这个窗口之内;间隔更长,告警就会"亮 10 分钟、灭几十分钟"地
+	// 反复自愈,值班容易当成已经好了,而这名玩家的处置其实一直没执行。改告警窗口或下面的节拍时两边一起改,
+	// static_assert 与 player_inbox_rules_test 守住这条推导。
+	constexpr uint64_t kSceneLogAlertWindowMs = 10ULL * 60ULL * 1000ULL;
+	// 节拍之外留给 tick 粒度(1 秒一次)与单 tick 检查预算(kTickCheckBudget)造成的顺延的余量。
+	constexpr uint64_t kStuckWarnSlackMs = 2ULL * 60ULL * 1000ULL;
+	// 不会自愈的延后(账本损坏)每连续失败这么多次再打一次 WARN。退避封顶 kBackoffMaxMs(加抖动之后仍夹在封顶之内),
+	// 所以封顶之后两条 WARN 最多相隔 8 × 60 秒,每个卡住的在线玩家每小时约 7~9 行。
+	// 不取更大的值:原先的 60 次约 50 分钟才打一条,对 [10m] 窗口的告警是抖动的(评审 F3)。
+	constexpr uint32_t kStuckWarnEveryFailures = 8;
+	static_assert(kStuckWarnEveryFailures * kBackoffMaxMs + kStuckWarnSlackMs <= kSceneLogAlertWindowMs,
+				  "卡住时两条 WARN 的最长间隔必须落在 scene 日志告警窗口之内");
+	// 整个节点的停用(注册表自检失败 metric=inbox_registry_broken、消费开关关着 metric=inbox_consumer_disabled,
+	// 评审 H1)没有逐玩家的退避可数,改按时间补打:每 5 分钟一次。两者共用这一个节拍。
+	constexpr uint64_t kNodeStuckRelogIntervalMs = 5ULL * 60ULL * 1000ULL;
+	static_assert(kNodeStuckRelogIntervalMs + kStuckWarnSlackMs <= kSceneLogAlertWindowMs,
+				  "节点级停用的补打间隔必须落在 scene 日志告警窗口之内");
 
 	// ── 账本 ────────────────────────────────────────────────────────────────
 
@@ -76,9 +96,36 @@ namespace player_inbox_rules
 	};
 	const char *DeliveryClassName(DeliveryClass deliveryClass);
 
-	// cursor 为 nullptr 时一律 kNew。kReplay 时把环里的原结局拷进 replayed(可为 nullptr)。
+	// cursor 为 nullptr 时一律 kNew。replayed 可为 nullptr;不为空时:
+	//   kReplay   拷进环里的原结局,调用方原样回放;
+	//   kMismatch 拷进环里同一 seq 的那一条,**只供日志对照**(值班据它的 request_id / msg_type 预判能否走
+	//             VoidItem 的 FORCE_MISMATCH,评审 F4),绝不能拿它确认:它属于另一个请求;
+	//   kNew / kUnknown 不动 replayed(环里没有可拷的)。
 	DeliveryClass ClassifyDelivery(const PlayerInboxDomainCursor *cursor, uint64_t seq, uint64_t requestId,
 								   uint32_t msgType, PlayerInboxDecision *replayed);
+
+	// 一条投递接下来怎么处理(设计 §7.6 第 3 步、§7.9,评审 M1)。最后一项固定为 kCount(AGENTS §11.2)。
+	enum class ItemAction : uint8_t
+	{
+		kExecute,              // 新条目、无指令:交给执行器;本二进制没有该类型的执行器时由调用方停用该域
+		kSkipVoided,           // 新条目、VOID:记 SKIPPED(reason = void_reason),不查执行器、不解码载荷
+		kReplay,               // 回放账本环里的原结局
+		kAckUnknown,           // 报 UNKNOWN(只进确认、不入环)
+		kHaltMismatch,         // 什么都不确认,停用(IB-9)
+		kHaltUnknownDirective, // 新条目带本二进制不认识的指令:版本错位,停用,不猜
+		kCount
+	};
+	const char *ItemActionName(ItemAction action);
+
+	// 判定顺序是这个函数存在的全部理由:**先按账本分类,只有新条目才看指令,执行器留给调用方最后查**。
+	//   * 回放 / UNKNOWN / MISMATCH 只核对或报告账本里已有的事实,与指令、与本二进制认不认识这个类型都无关。
+	//     反过来不能把 VOID 判定提到分类之前:已执行过的条目被补挂 VOID 后重投,必须回放原结局(IB-4、IB-9),
+	//     报成 SKIPPED 会让服务端把已生效的处置终结成"跳过"。
+	//   * 新条目带 VOID 时直接记 SKIPPED,不需要执行器:否则一条本二进制不认识类型的条目即使被运维作废,
+	//     每次登录仍会先撞上"未知类型"再次停用该域,作废指令永远解不开它。
+	// deliveryClass 只应来自 ClassifyDelivery;越界值按 kHaltMismatch(什么都不确认)处理,fail-closed。
+	// directive 是 player_inbox::PlayerInboxDirective 的数值。
+	ItemAction PlanItem(DeliveryClass deliveryClass, uint32_t directive);
 
 	// ── 落盘判定(设计 §7.7)───────────────────────────────────────────────
 
@@ -112,4 +159,8 @@ namespace player_inbox_rules
 
 	// 在线有界兜底的间隔:minutes 分钟 ±20%。minutes == 0 = 关闭,返回 0。
 	uint64_t PeriodicDelayMs(uint32_t minutes, uint32_t jitterPermille);
+
+	// 不会自愈的延后原因是否到了再打一次 WARN 的时候:failStreak 为 kStuckWarnEveryFailures 的正整数倍。
+	// "首次"由调用方按延后原因是否刚变化判定,不归这里管;本函数不改 failStreak,也不影响退避。
+	bool IsStuckWarnDue(uint32_t failStreak);
 } // namespace player_inbox_rules

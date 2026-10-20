@@ -1,9 +1,11 @@
 package metrics
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/prometheus/client_golang/prometheus"
+	dto "github.com/prometheus/client_model/go"
 )
 
 // TestSetKafkaConsumerUpCreatesChildSeries 锁死告警的前提:
@@ -303,4 +305,245 @@ func TestSQLPoolCollectorDeclaresRouteOnlyUnderDBFirst(t *testing.T) {
 			}
 		}
 	}
+}
+
+// TestPrimeRouteReadCreatesAllSeries 锁死第 3 批读方门禁告警(RouteReadSQLFallbackErrors 等,规格 §7 第 2 条)的前提:
+// PrimeRouteRead 之后,route_read_total 会出现的 13 个 path × result 组合与 route_ready_verdict_total 的 8 个 verdict
+// **全部存在且为 0**,且没有多出不会出现的组合(batch 没有 not_found_sql,enumerate 只读库)。
+// sql_error 可能一辈子只发生几次,序列不预先存在,`increase(...) > 0` 恰好漏掉第一次(同 TestPrimeRouteCreatesAllSeries)。
+func TestPrimeRouteReadCreatesAllSeries(t *testing.T) {
+	PrimeRouteRead()
+
+	families, err := prometheus.DefaultGatherer.Gather()
+	if err != nil {
+		t.Fatalf("gather: %v", err)
+	}
+	wantRead := map[string]bool{}
+	for _, s := range routeReadSeries {
+		wantRead[s[0]+"/"+s[1]] = true
+	}
+	if len(wantRead) != 13 {
+		t.Fatalf("routeReadSeries lists %d distinct combinations, want 13", len(wantRead))
+	}
+	for _, absent := range []string{
+		RouteReadPathBatch + "/" + RouteReadResultNotFoundSQL,
+		RouteReadPathEnumerate + "/" + RouteReadResultCache,
+		RouteReadPathEnumerate + "/" + RouteReadResultNotFoundSQL,
+	} {
+		if wantRead[absent] {
+			t.Fatalf("%s can never happen and must not be primed", absent)
+		}
+	}
+	wantVerdict := map[string]bool{}
+	for _, v := range routeReadyVerdicts() {
+		wantVerdict[v] = true
+	}
+	if len(wantVerdict) != 8 || !wantVerdict["trusted"] || !wantVerdict[RouteReadyVerdictScriptError] {
+		t.Fatalf("route_ready_verdict_total closed set = %v, want the 7 placement verdicts + script_error", wantVerdict)
+	}
+
+	found := map[string]bool{}
+	for _, mf := range families {
+		var want map[string]bool
+		switch mf.GetName() {
+		case "data_service_route_read_total":
+			want = wantRead
+		case "data_service_route_ready_verdict_total":
+			want = wantVerdict
+		default:
+			continue
+		}
+		found[mf.GetName()] = true
+		seen := map[string]float64{}
+		for _, m := range mf.GetMetric() {
+			var path, result, verdict string
+			for _, l := range m.GetLabel() {
+				switch l.GetName() {
+				case "path":
+					path = l.GetValue()
+				case "result":
+					result = l.GetValue()
+				case "verdict":
+					verdict = l.GetValue()
+				}
+			}
+			key := verdict
+			if key == "" {
+				key = path + "/" + result
+			}
+			seen[key] = m.GetCounter().GetValue()
+		}
+		if len(seen) != len(want) {
+			t.Fatalf("%s has %d series after priming, want %d: %v", mf.GetName(), len(seen), len(want), seen)
+		}
+		for key := range want {
+			got, ok := seen[key]
+			if !ok {
+				t.Fatalf("%s{%s} missing after priming", mf.GetName(), key)
+			}
+			if got != 0 {
+				t.Fatalf("%s{%s} = %v after priming, want 0", mf.GetName(), key, got)
+			}
+		}
+	}
+	for _, name := range []string{"data_service_route_read_total", "data_service_route_ready_verdict_total"} {
+		if !found[name] {
+			t.Fatalf("metric family %s is not registered", name)
+		}
+	}
+}
+
+// gatherFamily 按名字取一个指标族;不存在回 nil(没有任何子序列的 *Vec 不出现在 Gather 结果里)。
+func gatherFamily(t *testing.T, name string) []*dto.Metric {
+	t.Helper()
+	families, err := prometheus.DefaultGatherer.Gather()
+	if err != nil {
+		t.Fatalf("gather: %v", err)
+	}
+	for _, mf := range families {
+		if mf.GetName() == name {
+			return mf.GetMetric()
+		}
+	}
+	return nil
+}
+
+// labelKey 把一条序列的 label 值按名字顺序拼成 "a/b"(只取 names 里列的)。
+func labelKey(m *dto.Metric, names ...string) string {
+	vals := make([]string, len(names))
+	for _, l := range m.GetLabel() {
+		for i, n := range names {
+			if l.GetName() == n {
+				vals[i] = l.GetValue()
+			}
+		}
+	}
+	return strings.Join(vals, "/")
+}
+
+// TestPrimeRouteReconcileSeries 锁死对账 leader 告警的前提(规格 §13.1 第 9 条、§13.4 第 2 条):PrimeRouteReconcile 之后
+// tick 6 条、event 16 条、push 4×11=44 条、mirror 9 条全部存在且为 0;task_rows 每个 phase 一条;装配型 gauge
+// assembled=1、leader=0、arm_enabled 按入参;leader 观测型 gauge 不预置(只有现任 leader 导出)。
+func TestPrimeRouteReconcileSeries(t *testing.T) {
+	ClearRouteLeaderObservations()
+	PrimeRouteReconcile(true)
+
+	counters := []struct {
+		family string
+		labels []string
+		want   map[string]bool
+		count  int
+	}{
+		{"data_service_route_reconcile_tick_total", []string{"result"}, setOf(routeReconcileTickResults), 6},
+		{"data_service_route_reconcile_event_total", []string{"event"}, setOf(routeReconcileEvents), 16},
+		{"data_service_route_reconcile_mirror_total", []string{"result"}, setOf(routeReconcileMirrorResults), 9},
+	}
+	push := map[string]bool{}
+	for _, p := range routeReconcilePhases {
+		for _, r := range routeReconcilePushResults {
+			push[p+"/"+r] = true
+		}
+	}
+	counters = append(counters, struct {
+		family string
+		labels []string
+		want   map[string]bool
+		count  int
+	}{"data_service_route_reconcile_push_total", []string{"phase", "result"}, push, 44})
+
+	for _, c := range counters {
+		if len(c.want) != c.count {
+			t.Fatalf("%s closed set lists %d values, want %d", c.family, len(c.want), c.count)
+		}
+		metrics := gatherFamily(t, c.family)
+		if len(metrics) != c.count {
+			t.Fatalf("%s has %d series after priming, want %d", c.family, len(metrics), c.count)
+		}
+		for _, m := range metrics {
+			key := labelKey(m, c.labels...)
+			if !c.want[key] {
+				t.Fatalf("%s{%s} is not in the closed set", c.family, key)
+			}
+			if v := m.GetCounter().GetValue(); v != 0 {
+				t.Fatalf("%s{%s} = %v after priming, want 0", c.family, key, v)
+			}
+		}
+	}
+	for _, ev := range []string{"marker_dropped_disarmed", "arming_refused_debug_enabled", "foreign_fence", "lease_released_redis_unreachable"} {
+		if !setOf(routeReconcileEvents)[ev] {
+			t.Fatalf("event %q must be in the closed set (spec §13.1)", ev)
+		}
+	}
+	if rows := gatherFamily(t, "data_service_route_reconcile_task_rows"); len(rows) != 4 {
+		t.Fatalf("route_reconcile_task_rows has %d series after priming, want one per phase (4)", len(rows))
+	}
+	for name, want := range map[string]float64{
+		"data_service_route_reconcile_assembled":   1,
+		"data_service_route_reconcile_leader":      0,
+		"data_service_route_reconcile_arm_enabled": 1,
+	} {
+		m := gatherFamily(t, name)
+		if len(m) != 1 || m[0].GetGauge().GetValue() != want {
+			t.Fatalf("%s after priming = %v, want exactly one series at %v", name, m, want)
+		}
+	}
+	for _, name := range []string{"data_service_route_ready_marker", "data_service_route_writable",
+		"data_service_route_cache_verified_age_seconds", "data_service_route_ready_selfcheck"} {
+		if m := gatherFamily(t, name); len(m) != 0 {
+			t.Fatalf("%s must not be primed (only the current leader exports it), got %d series", name, len(m))
+		}
+	}
+}
+
+// TestRouteLeaderObservationsClearedOnDemote(核实意见 should「gauge 与告警口径」):leader 观测型 gauge 只由现任 leader 导出;
+// 掉主(ClearRouteLeaderObservations)之后四个族一条序列都不剩 —— 非 leader 的 0 与前任的旧值都会把 WritesFrozen / ReadyMissing 带偏。
+// 自检 gauge 恰好一个 verdict 为 1。
+func TestRouteLeaderObservationsClearedOnDemote(t *testing.T) {
+	SetRouteLeaderObservations(true, false, 12.5, "identity_mismatch")
+	if m := gatherFamily(t, "data_service_route_ready_marker"); len(m) != 1 || m[0].GetGauge().GetValue() != 1 {
+		t.Fatalf("route_ready_marker = %v, want one series at 1", m)
+	}
+	if m := gatherFamily(t, "data_service_route_writable"); len(m) != 1 || m[0].GetGauge().GetValue() != 0 {
+		t.Fatalf("route_writable = %v, want one series at 0", m)
+	}
+	if m := gatherFamily(t, "data_service_route_cache_verified_age_seconds"); len(m) != 1 || m[0].GetGauge().GetValue() != 12.5 {
+		t.Fatalf("route_cache_verified_age_seconds = %v, want one series at 12.5", m)
+	}
+	sc := gatherFamily(t, "data_service_route_ready_selfcheck")
+	if len(sc) != len(routeReadySelfCheckVerdicts()) || len(sc) != 8 {
+		t.Fatalf("route_ready_selfcheck has %d series, want the 7 placement verdicts + script_error", len(sc))
+	}
+	ones := 0
+	for _, m := range sc {
+		if m.GetGauge().GetValue() == 1 {
+			ones++
+			if v := labelKey(m, "verdict"); v != "identity_mismatch" {
+				t.Fatalf("route_ready_selfcheck{verdict=%q} = 1, want only identity_mismatch", v)
+			}
+		}
+	}
+	if ones != 1 {
+		t.Fatalf("route_ready_selfcheck has %d verdicts at 1, want exactly 1", ones)
+	}
+
+	ClearRouteLeaderObservations()
+	for _, name := range []string{"data_service_route_ready_marker", "data_service_route_writable",
+		"data_service_route_cache_verified_age_seconds", "data_service_route_ready_selfcheck"} {
+		if m := gatherFamily(t, name); len(m) != 0 {
+			t.Fatalf("%s still has %d series after demotion; only the current leader may export it", name, len(m))
+		}
+	}
+	// 装配型 gauge 不受影响:每个装配了 reconciler 的副本恒导出 leader 0/1。
+	SetRouteReconcileLeader(false)
+	if m := gatherFamily(t, "data_service_route_reconcile_leader"); len(m) != 1 || m[0].GetGauge().GetValue() != 0 {
+		t.Fatalf("route_reconcile_leader must stay exported at 0 after demotion, got %v", m)
+	}
+}
+
+func setOf(vals []string) map[string]bool {
+	out := make(map[string]bool, len(vals))
+	for _, v := range vals {
+		out[v] = true
+	}
+	return out
 }

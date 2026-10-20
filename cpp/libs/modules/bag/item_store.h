@@ -118,9 +118,8 @@ public:
         uint32_t amount{0};
     };
 
-    // 从某个 config 的若干堆叠里抽走 count 个单位。数量可能分散在多堆,
-    // 逐堆抽到够为止。被抽光的堆 size 变 0 但**实例保留**(槽位也就跟着留着),
-    // 后续并堆可以再填回去 —— 这与 Erase(guid) 的"彻底销毁"是两回事。
+    // 从某个 config 的若干堆叠里抽走 count 个单位，逐堆抽到够为止。
+    // 抽光的堆 size 变 0，实例层不销毁；Bag 必须当场成对 DestroyItem（DrainOneConfig 已这样做）。
     //
     // 库存不足时按实际持有夹紧(本来就是逐堆 min(需求, 库存)),**返回值即实扣量**;
     // 调用方要"不够就整体失败"的语义,必须自己先 HasAll(Bag::RemoveItems 就是这么做的)。
@@ -142,12 +141,8 @@ public:
     // CollectEmptyInstances 一并扫出来,不必维护两条重复的名单。
     void MergePartialStacks();
 
-    // 存不存在 size==0 的实例。这种实例什么都不装,却仍然占着一个槽位。
-    //
-    // 两条来路:①可叠加物品被抽光(DrainStacks 刻意保留空堆,好让后续并堆填回去);
-    // ②**不可叠加物品被 RemoveItemByPos 扣到 0** —— 这一类 MergePartialStacks
-    // 永远碰不到(它跳过 max_stack_size() <= 1),拆分前没有任何路径回收得了,
-    // 就是一个永久占格的僵尸。现在由整理统一回收。
+    // size==0 只会是 MergePartialStacks 刚清空的组员，紧接着由 CollectEmptyInstances 回收。
+    // 扣到 0 已当场释放，旧档零堆在加载时跳过。
     [[nodiscard]] bool HasEmptyInstances() const;
 
     // 列出所有 size==0 的实例 guid,交给桥层连同槽位一起销毁。
@@ -160,7 +155,7 @@ public:
     // 判的是 has_equip() 这个 presence,不是属性条数。
     //
     // MeasureFreeRoomPerConfig 和合并两处的 IsMergeCandidate 同样排除 equip。
-    // size>0 只约束合并;并堆刻意允许往空堆回填。
+    // size>0 约束合并，空堆不参与幸存者选择。
     [[nodiscard]] static bool CanStack(const ItemComp &leftItem, const ItemComp &rightItem);
 
     // totalSize 个单位、每堆最多 maxStackSize 个,要拆成几个实例。
@@ -173,14 +168,6 @@ public:
     // 唯一发号源 = item 种类的号段实例(tlsGuidSegmentRegistry.Get(GuidKind::kItem));
     // 拿不到号(未启用 / 两段耗尽且续段未到)返回 kInvalidGuid,**没有** snowflake 回退。
     [[nodiscard]] static Guid MintGuid();
-
-    // 发号源当前能否铸出合法 guid(号段:手里有号)。
-    // 铸号型写入必须在**改动任何状态之前**用它 fail-closed,见 .cpp 注释。
-    [[nodiscard]] static bool CanMintGuid() { return CanMintGuids(1); }
-
-    // 同上,但要求一次能铸出 count 个。号段是有限库存:段尾只剩 k 个而下一段又没到时,
-    // 一批要 n > k 个号的入包会在循环中途铸出哨兵、留下半批 —— 整批预检必须按需求量问。
-    [[nodiscard]] static bool CanMintGuids(std::size_t count);
 
     [[nodiscard]] static bool IsInvalidGuid(const ItemComp &item);
 

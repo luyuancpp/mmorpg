@@ -12,12 +12,12 @@
 //     TcpClient::newConnection 会把 connectionCallback / messageCallback 拷到 TcpConnection 上;
 //     ~TcpClient 只换 closeCallback、forceClose 又一律 queueInLoop,所以 handleClose →
 //     connectionCallback_ 必然发生在 ~RpcClient 返回之后。旧代码绑的是裸 this / 裸 channel 指针
-//     —— RpcClient::onConnection 的 DOWN 分支写已释放的堆,再 trigger OnConnected2TcpServerEvent。
+//     —— RpcClient::onConnection 的 DOWN 分支写已释放的堆,再通知连接观察者。
 //     现行修法:回调在 RpcClient::connect() 里只绑 weak_ptr<RpcClient>(消息回调只在取 channel 的那一行
 //     lock 它,派发期间由局部强引用保活 channel),对象没了 lock() 失败即返回,没有析构函数、也不需要。
 //     出站 RpcChannel 每次连上新建、断开即丢弃(docs/design/muduo-rpc-channel.md §6.1),只存 weak 连接。
-//     判据:销毁 RpcClient 并把 loop 转空后,loop 线程的 tlsEcs.dispatcher 上不得再收到该连接的
-//     DOWN 事件;channel 随 RpcClient 立即析构;同时对端(server 侧)必须真的看到 DOWN —— 证明
+//     判据:销毁 RpcClient 并把 loop 转空后,连接观察者不得再收到该连接的
+//     DOWN 通知;channel 随 RpcClient 立即析构;同时对端(server 侧)必须真的看到 DOWN —— 证明
 //     forceClose 确实执行了,拆连路径上没有人把 use_count 抬高而重蹈覆辙。
 //
 // 修复前跑第 2 条是未定义行为(onConnection 在已释放的对象上执行):Debug CRT 下多半表现为
@@ -37,10 +37,13 @@
 #include <atomic>
 #include <chrono>
 #include <cstdint>
+#include <cstdio>
 #include <functional>
 #include <future>
 #include <memory>
 #include <optional>
+#include <string>
+#include <string_view>
 #include <thread>
 #include <utility>
 #include <google/protobuf/util/json_util.h>
@@ -50,20 +53,23 @@
 #include "table/proto/tip/common_error_tip.pb.h"
 
 #include "muduo/base/CountDownLatch.h"
+#include "muduo/base/Logging.h"                              // Logger::setOutput / setLogLevel:截获断开日志的级别(第 9 节)
 #include "muduo/net/EventLoop.h"
 #include "muduo/net/EventLoopThread.h"
 #include "muduo/net/InetAddress.h"
+#include "muduo/net/TcpClient.h"
 #include "muduo/net/TcpConnection.h"
 #include "muduo/net/TcpServer.h"
 
 #include "network/rpc_channel.h"                             // RpcChannel::Create / RpcChannelPtr
 #include "network/rpc_client.h"                              // RpcClient / RpcClientPtr
-#include "network/rpc_connection_event.h"                    // OnConnected2TcpServerEvent
 #include "network/rpc_session.h"                             // RpcSession
+#include "network/rpc_status.h"                              // RpcStatus / RpcStatusCode
 #include "node/system/node/node_util.h"                      // NodeUtils::RemoveRpcSessionsBoundTo
+#include "rpc/service_metadata/gate_service_service_metadata.h"  // GateNodeHandshakeRpc
 #include "node/system/registration/registration_manager.h"  // NodeHandshakeManager
-#include "thread_context/ecs_context.h"                      // tlsEcs(thread_local)
 #include "thread_context/node_context_manager.h"             // tlsNodeContextManager(thread_local)
+#include "time/comp/timer_task_comp.h"                       // TimerTaskComp(握手定时器是否武装)
 #include "proto/common/base/common.pb.h"                     // NodeInfo
 #include "proto/common/base/node.pb.h"                       // common::base::SceneNodeService
 
@@ -99,8 +105,7 @@ uint16_t FindFreeLoopbackPort()
     return port;
 }
 
-// 记录 loop 线程 tlsEcs.dispatcher 上的 OnConnected2TcpServerEvent。
-// 只在 loop 线程上 connect / disconnect(dispatcher 是 thread_local 的)。
+// 直接记录 RpcClient 在 loop 线程报告的连接状态，生命周期与夹具相同。
 struct EventCounter
 {
     std::atomic<int> up{ 0 };
@@ -108,9 +113,9 @@ struct EventCounter
     std::promise<void> firstUp;
     std::atomic<bool> upSignalled{ false };
 
-    void OnEvent(const OnConnected2TcpServerEvent& e)
+    void OnEvent(const muduo::net::TcpConnectionPtr& conn)
     {
-        if (e.conn_ && e.conn_->connected())
+        if (conn && conn->connected())
         {
             ++up;
             if (!upSignalled.exchange(true)) firstUp.set_value();
@@ -141,14 +146,12 @@ protected:
                 if (!downSignalled_.exchange(true)) serverDown_.set_value();
             });
             server_->start();
-            tlsEcs.dispatcher.sink<OnConnected2TcpServerEvent>().connect<&EventCounter::OnEvent>(events_);
         });
     }
 
     void TearDown() override
     {
         RunInLoopAndWait([this] {
-            tlsEcs.dispatcher.sink<OnConnected2TcpServerEvent>().disconnect<&EventCounter::OnEvent>(events_);
             server_.reset();
         });
     }
@@ -172,10 +175,16 @@ protected:
     // 在 loop 线程上建一个真实的 RpcClient 并等它报 UP。
     RpcClientPtr ConnectClient()
     {
-        auto upFuture = events_.firstUp.get_future();
+        auto upFuture = events_->firstUp.get_future();
         RpcClientPtr client;
         RunInLoopAndWait([&] {
             client = std::make_shared<RpcClient>(&Loop(), serverAddr_);
+            client->setConnectionObserver([weakEvents = std::weak_ptr<EventCounter>(events_)](const muduo::net::TcpConnectionPtr& conn) {
+                if (const auto events = weakEvents.lock())
+                {
+                    events->OnEvent(conn);
+                }
+            });
             client->connect();
         });
         EXPECT_EQ(upFuture.wait_for(5s), std::future_status::ready) << "RpcClient never reported UP";
@@ -189,13 +198,13 @@ protected:
         auto downFuture = serverDown_.get_future();
         int downBefore = 0;
         RunInLoopAndWait([&] {
-            downBefore = events_.down.load();
+            downBefore = events_->down.load();
             client.reset();   // ~RpcClient → ~TcpClient → (unique 时)forceClose 入队
         });
         PumpLoop(3);
         EXPECT_EQ(downFuture.wait_for(5s), std::future_status::ready)
             << "对端没看到 DOWN:forceClose 没有执行 —— 析构路径上又有人把 use_count 抬高了";
-        return { downBefore, events_.down.load() };
+        return { downBefore, events_->down.load() };
     }
 
     // loopThread_ 排第一:最后析构,保证其余成员析构时 loop 仍在。
@@ -204,7 +213,7 @@ protected:
     std::optional<std::reference_wrapper<muduo::net::EventLoop>> loop_;
     muduo::net::InetAddress serverAddr_;
     std::unique_ptr<muduo::net::TcpServer> server_;
-    EventCounter events_;
+    std::shared_ptr<EventCounter> events_{std::make_shared<EventCounter>()};
     std::weak_ptr<muduo::net::TcpConnection> serverConnWeak_;
     std::promise<void> serverDown_;
     std::atomic<bool> downSignalled_{ false };
@@ -215,6 +224,92 @@ protected:
 // ---------------------------------------------------------------------------
 // 1. 握手重试定时器(registration_manager.cpp TryRegisterNodeSession)
 // ---------------------------------------------------------------------------
+
+// 观察者直接报告连接状态，DOWN 时当前 channel 必须已经释放。
+TEST_F(RpcClientLoopback, ConnectionObserverReportsUpAndDownWithoutDispatcher)
+{
+    struct Observation
+    {
+        std::atomic<int> up{0};
+        std::atomic<int> down{0};
+        std::atomic<bool> upSignalled{false};
+        std::atomic<bool> downSignalled{false};
+        std::atomic<bool> channelEmptyAtDown{false};
+        std::promise<void> firstUp;
+        std::promise<void> firstDown;
+    };
+    const auto observation = std::make_shared<Observation>();
+    auto upFuture = observation->firstUp.get_future();
+    auto downFuture = observation->firstDown.get_future();
+    RpcClientPtr client;
+    RunInLoopAndWait([&] {
+        client = std::make_shared<RpcClient>(&Loop(), serverAddr_);
+        const std::weak_ptr<RpcClient> weakClient = client;
+        client->setConnectionObserver([observation, weakClient](const muduo::net::TcpConnectionPtr& conn) {
+            if (conn->connected())
+            {
+                ++observation->up;
+                if (!observation->upSignalled.exchange(true)) observation->firstUp.set_value();
+                return;
+            }
+            ++observation->down;
+            if (!observation->downSignalled.exchange(true))
+            {
+                const auto liveClient = weakClient.lock();
+                observation->channelEmptyAtDown = liveClient && liveClient->channel() == nullptr;
+                observation->firstDown.set_value();
+            }
+        });
+        client->connect();
+    });
+
+    const bool reportedUp = upFuture.wait_for(5s) == std::future_status::ready;
+    EXPECT_TRUE(reportedUp) << "连接观察者没有报告 UP";
+    bool serverConnSeen = false;
+    if (reportedUp)
+    {
+        // 不先 forceClose 再析构服务端:forceClose 把连接置成 kDisconnecting,同一 functor 里的 ~TcpServer 随即
+        // 同步 connectDestroyed,它只在 kConnected 时 disableAll,Channel::remove 的 assert(isNoneEvent()) 在 Debug
+        // 下中止整个测试进程(写法与 OutboundDisconnectRightAfterConnectLogsWarn 相同)。等服务端 accept 之后直接析构
+        // 服务端:~TcpServer 以 kConnected 走 connectDestroyed,连接释放即关 fd,客户端随后看到 DOWN;监听在同一
+        // functor 里关掉,客户端立即发起的重连只会被拒,UP==1 由夹具控制,不依赖自动重试的时间窗。
+        const auto acceptDeadline = std::chrono::steady_clock::now() + 5s;
+        bool gaveUp = false;
+        while (!serverConnSeen && !gaveUp)
+        {
+            gaveUp = std::chrono::steady_clock::now() >= acceptDeadline;
+            RunInLoopAndWait([&] {
+                serverConnSeen = !serverConnWeak_.expired();   // 不 lock:本 functor 不多持一份服务端连接
+                if (serverConnSeen || gaveUp)
+                {
+                    server_.reset();
+                }
+            });
+            if (!serverConnSeen && !gaveUp)
+            {
+                std::this_thread::sleep_for(10ms);
+            }
+        }
+        EXPECT_TRUE(serverConnSeen) << "真实服务端连接不存在";
+        if (serverConnSeen)
+        {
+            EXPECT_EQ(downFuture.wait_for(5s), std::future_status::ready)
+                << "服务端关闭连接后，观察者没有报告 DOWN";
+        }
+    }
+    // EXPECT 失败也走 loop 内清理；回调只持测试状态与 weak 客户端，不借用本例栈变量。
+    RunInLoopAndWait([&] {
+        client.reset();
+        server_.reset();
+    });
+    PumpLoop(3);
+    EXPECT_EQ(observation->up.load(), 1);
+    EXPECT_GE(observation->down.load(), 1);
+    EXPECT_TRUE(observation->channelEmptyAtDown.load())
+        << "DOWN 观察者必须在 OnDisconnect 和 channel.reset 之后执行";
+    EXPECT_EQ(events_->up.load(), 0) << "本例不应经过旧 dispatcher UP 接线";
+    EXPECT_EQ(events_->down.load(), 0) << "本例不应经过旧 dispatcher DOWN 接线";
+}
 
 TEST_F(RpcClientLoopback, HandshakeRetryTimerDoesNotRetainTheConnection)
 {
@@ -283,6 +378,55 @@ TEST_F(RpcClientLoopback, InboundHandshakeRejectsGrpcOnlyTypesBeforeTouchingAnyN
     DestroyClientAndDrain(client);
 }
 
+// 握手类型白名单的放行面(registration_manager.cpp IsHandshakeNodeType / VisitHandshakeRpc)。
+// 上一个用例只守拒绝集合;这里守「Scene / Gate 必须放行」。Gate 项在出站侧不可达(没有节点向 gate 拨 TCP),
+// 但 scene 收 gate 的握手(OnNodeHandshake)靠它放行,删掉它单测照样全绿、只有联调才暴露(muduo-rpc-channel.md §10)。
+// OnNodeHandshake 放行后会访问 gNode(单测进程里没有 Node),所以借道共用同一白名单的 TryRegisterNodeSession:
+// 放行 = 在实体上武装 0.5s 握手定时器,拒绝 = 不碰 registry。判据只看定时器是否武装,不等它触发、不依赖墙钟。
+TEST_F(RpcClientLoopback, HandshakeTypeWhitelistAdmitsSceneAndGate)
+{
+    RpcClientPtr client = ConnectClient();
+    ASSERT_TRUE(client && client->connected());
+
+    struct Case
+    {
+        uint32_t nodeType;
+        bool expectAdmitted;
+    };
+    const Case cases[] = {
+        { static_cast<uint32_t>(common::base::SceneNodeService), true },
+        { static_cast<uint32_t>(common::base::GateNodeService), true },
+        // 对照组:有 registry、但只有 gRPC、没有 RPC0 握手入口。
+        { static_cast<uint32_t>(common::base::SceneManagerNodeService), false },
+    };
+    RunInLoopAndWait([&] {
+        const muduo::net::TcpConnectionPtr conn = client->GetConnection();
+        if (!conn) { ADD_FAILURE() << "client has no connection"; return; }
+        for (const Case& c : cases)
+        {
+            // 与用例 1 同法:实体建在 loop 线程的 thread_local 注册表里,TryRegisterNodeSession 按连接指针匹配到它。
+            entt::registry& registry = tlsNodeContextManager.GetRegistry(c.nodeType);
+            const entt::entity node = registry.create();
+            registry.emplace<RpcClientPtr>(node, client);
+            registry.emplace<NodeInfo>(node);   // 内容无关:匹配只看 GetConnection().get()
+
+            NodeHandshakeManager{}.TryRegisterNodeSession(c.nodeType, conn);
+            const auto* timer = registry.try_get<TimerTaskComp>(node);
+            const bool admitted = timer != nullptr && timer->IsActive();
+            EXPECT_EQ(admitted, c.expectAdmitted)
+                << "node_type=" << c.nodeType
+                << (c.expectAdmitted ? ": must have an RPC0 handshake entry (VisitHandshakeRpc lost its case)"
+                                     : ": has no RPC0 handshake entry but was admitted");
+
+            // 立刻销毁实体:~TimerTaskComp → Cancel,0.5s 后不会再有回调去碰 GetNodeInfo() / gNode。
+            registry.destroy(node);
+        }
+    });
+
+    const auto [downBefore, downAfter] = DestroyClientAndDrain(client);
+    (void)downBefore; (void)downAfter;   // 这里只要求对端看到 DOWN(在 DestroyClientAndDrain 里断言)
+}
+
 TEST(ServiceDiscoveryTypeBoundary, MismatchedJsonTypeIsRejectedBeforeSnapshotOrConnectionSideEffects)
 {
     ServiceDiscoveryManager manager;
@@ -305,7 +449,7 @@ TEST_F(RpcClientLoopback, DestroyingRpcClientDetachesCallbacksBeforeCloseRuns)
 {
     RpcClientPtr client = ConnectClient();
     ASSERT_TRUE(client && client->connected());
-    ASSERT_EQ(events_.up.load(), 1);
+    ASSERT_EQ(events_->up.load(), 1);
 
     std::weak_ptr<RpcChannel> channelWeak;
     RunInLoopAndWait([&] { channelWeak = client->channel(); });
@@ -340,14 +484,14 @@ TEST_F(RpcClientLoopback, DestroyingNodeEntityReleasesItsRpcClientCleanly)
         registry.emplace<RpcClientPtr>(node, client);
         registry.emplace<NodeInfo>(node);
         client.reset();                 // 组件现在是唯一持有者,与生产一致
-        downBefore = events_.down.load();
+        downBefore = events_->down.load();
         registry.destroy(node);         // == node_connector.cpp 的 targetRegistry.destroy(existingEntity)
     });
     PumpLoop(3);
 
     EXPECT_EQ(downFuture.wait_for(5s), std::future_status::ready)
         << "对端没看到 DOWN:实体销毁没有让旧连接 forceClose(是否又有人把 RpcClient / conn 存起来了?)";
-    EXPECT_EQ(downBefore, events_.down.load())
+    EXPECT_EQ(downBefore, events_->down.load())
         << "实体销毁后连接仍回调进已释放的 RpcClient(use-after-free)";
 }
 
@@ -443,11 +587,11 @@ TEST_F(RpcClientLoopback, ClientChannelDoesNotPinDeadConnection)
     });
     ASSERT_FALSE(channelWeak.expired()) << "a connected RpcClient must have a channel for its current connection";
     const auto deadline = std::chrono::steady_clock::now() + 5s;   // 只作活性上限,判据是 DOWN 事件本身
-    while (events_.down.load() == 0 && std::chrono::steady_clock::now() < deadline)
+    while (events_->down.load() == 0 && std::chrono::steady_clock::now() < deadline)
     {
         std::this_thread::sleep_for(10ms);
     }
-    ASSERT_GE(events_.down.load(), 1) << "client 没有收到 DOWN";
+    ASSERT_GE(events_->down.load(), 1) << "client 没有收到 DOWN";
     PumpLoop(3);
 
     bool stillConnected = true;
@@ -464,4 +608,267 @@ TEST_F(RpcClientLoopback, ClientChannelDoesNotPinDeadConnection)
 
     RunInLoopAndWait([&] { client.reset(); });   // 此时 client_.connection() 已空,~TcpClient 走 connector 分支
     PumpLoop(2);
+}
+
+// ---------------------------------------------------------------------------
+// 6. RpcSession 的 channel 已不在时,CallMethod 照样「恰好一次、永不同步」(rpc_session.h FailNotConnected)
+//    这是契约测试,不是空连接缺陷的回归测试:构造时连接非空的这条路径,旧实现同样经 loop 投递 kNotSent,
+//    本用例改动前后都应是绿的。空连接缺陷(旧实现把 loop_ 留空、done 被就地丢弃)由下面第 7 节的死亡测试锁定。
+//    这里人为清掉连接的 context 来模拟「channel 已不在」,锁定 FailNotConnected 这条路径。它不对应 DOWN 时序:
+//    RpcServer 的 DOWN 分支清 context 后在同一回调里同步摘掉本组件,loop 线程上看不到「组件还在、channel 已不在」;
+//    生产上能走到 FailNotConnected 的只有「构造时连接 context 里就没有 RpcChannelPtr」(rpc_session.h 构造函数)。
+//    无类型与 typed 两个入口,CallMethod 返回时回调 0 次;把 loop 转空后各恰好 1 次 kNotSent、response 为空。
+//    判据只看 loop 上的排队顺序(FailNotSent 经 queueInLoop 投递,先于随后排进来的 PumpLoop functor),不依赖墙钟。
+// ---------------------------------------------------------------------------
+
+TEST_F(RpcClientLoopback, SessionWithoutChannelFailsCallsExactlyOnceThroughTheLoop)
+{
+    RpcClientPtr client = ConnectClient();
+    ASSERT_TRUE(client && client->connected());
+
+    // 回调只在 loop 线程上写;读也放回 loop 线程(RunInLoopAndWait),不需要原子。
+    struct Outcome
+    {
+        int runs{0};
+        RpcStatus status;
+        bool hasResponse{false};
+    };
+    const auto untyped = std::make_shared<Outcome>();
+    const auto typed = std::make_shared<Outcome>();
+
+    bool channelGone = false;
+    bool sessionReportsUnreachable = false;
+    int runsAtReturn = -1;
+    RunInLoopAndWait([&] {
+        const muduo::net::TcpConnectionPtr serverConn = serverConnWeak_.lock();
+        if (!serverConn) { ADD_FAILURE() << "missing server connection"; return; }
+        std::weak_ptr<RpcChannel> serverChannelWeak;
+        {
+            const RpcChannelPtr serverChannel = RpcChannel::Create(Loop(), serverConn, RpcServiceMap{});
+            serverChannelWeak = serverChannel;
+            serverConn->setContext(serverChannel);   // context 成为唯一的强持有者
+        }
+        const RpcSession session{ serverConn, "uuid-channel-gone" };
+        serverConn->setContext(RpcChannelPtr());     // 同 RpcServer DOWN 分支的 setContext:channel 随 context 析构(组件不摘)
+        channelGone = serverChannelWeak.expired();
+        sessionReportsUnreachable = !session.IsConnected();
+
+        NodeHandshakeRequest request;
+        session.CallMethod(GateNodeHandshakeRpc::kMessageId, request,
+            [untyped](const RpcStatus& status, const MessagePtr& response) {
+                ++untyped->runs;
+                untyped->status = status;
+                untyped->hasResponse = response != nullptr;
+            });
+        session.CallMethod<GateNodeHandshakeRpc>(request,
+            [typed](const RpcStatus& status, const std::shared_ptr<NodeHandshakeResponse>& response) {
+                ++typed->runs;
+                typed->status = status;
+                typed->hasResponse = response != nullptr;
+            });
+        runsAtReturn = untyped->runs + typed->runs;
+    });
+    // 前置条件用 EXPECT 而非 ASSERT:提前返回会跳过下面在 loop 线程上的拆连。
+    EXPECT_TRUE(channelGone) << "the channel survived clearing the context: the precondition of this test does not hold";
+    EXPECT_TRUE(sessionReportsUnreachable) << "RpcSession::IsConnected() still reports reachable after its channel died";
+    EXPECT_EQ(runsAtReturn, 0) << "a session call completed before CallMethod returned (synchronous completion)";
+
+    PumpLoop(3);
+    Outcome untypedSeen;
+    Outcome typedSeen;
+    RunInLoopAndWait([&] {
+        untypedSeen = *untyped;
+        typedSeen = *typed;
+    });
+    EXPECT_EQ(untypedSeen.runs, 1) << "untyped CallMethod: done must run exactly once (0 = dropped in place)";
+    EXPECT_EQ(untypedSeen.status.code(), RpcStatusCode::kNotSent) << untypedSeen.status.name();
+    EXPECT_FALSE(untypedSeen.hasResponse) << "a failed call must not carry a response";
+    EXPECT_EQ(typedSeen.runs, 1) << "typed CallMethod: done must run exactly once (0 = dropped in place)";
+    EXPECT_EQ(typedSeen.status.code(), RpcStatusCode::kNotSent) << typedSeen.status.name();
+    EXPECT_FALSE(typedSeen.hasResponse) << "a failed call must not carry a response";
+
+    const auto [downBefore, downAfter] = DestroyClientAndDrain(client);
+    EXPECT_EQ(downBefore, downAfter);
+}
+
+// ---------------------------------------------------------------------------
+// 7. RpcSession 构造即拒空连接(rpc_session.h LoopOf)—— 空连接缺陷的回归测试
+//    旧实现:连接为空时构造函数直接返回、loop_ 留空,之后 CallMethod 没有 loop 可投递 kNotSent,
+//    done 被就地丢弃(只打一行 ERROR),违反「done 恰好一次」。旧代码在这里不会死 → 红;
+//    现在构造即 LOG_FATAL(muduo 在 ~Logger 里 abort,Release 下同样生效)→ 绿。
+//    不带夹具,写法照 rpc_controller_test.cpp 的 RpcControllerFromDeathTest:子进程只跑本用例,
+//    不受回环夹具的 EventLoopThread 影响。muduo 日志写 stdout,EXPECT_DEATH 只匹配 stderr,所以正则留空。
+// ---------------------------------------------------------------------------
+
+#if GTEST_HAS_DEATH_TEST
+
+TEST(RpcSessionDeathTest, NullConnectionIsFatal)
+{
+    EXPECT_DEATH(
+        {
+            const RpcSession session(muduo::net::TcpConnectionPtr{}, "uuid-null");
+            (void)session;
+        },
+        "");
+}
+
+#endif // GTEST_HAS_DEATH_TEST
+
+// ---------------------------------------------------------------------------
+// 8. muduo Connector 排队的 resetChannel 不得悬空(Connector.cc LOCAL DELTA,AGENTS.md §11.7)
+//    连上的那一刻,Connector::handleWrite 先排队 resetChannel,再同步调 TcpClient::newConnection → UP 回调。
+//    在这条栈上拆掉 TcpClient:有连接时 ~TcpClient 不给 Connector 续命,上游的 resetChannel 又绑裸 this,
+//    Connector 当场带着未释放的 channel_ 析构 —— Debug 下 ~Connector 的 assert(!channel_) 直接中止(红),
+//    Release 下 handleEvent 余下部分与排队的 resetChannel 都踩已释放内存。现在 resetChannel 持
+//    shared_from_this(),Connector 活到 channel_ 释放。判据:不崩,接住的连接随后能正常关掉、对端看到 DOWN。
+//    拆 TcpClient 时连接非独占(newConnection 栈上还有一份),~TcpClient 不会 forceClose,所以本例在测试里
+//    临时强持 TcpConnectionPtr 接住连接,最后自己 forceClose、等 connectDestroyed 跑完再释放;
+//    生产代码不得这样持有连接(§11.7)。
+// ---------------------------------------------------------------------------
+
+TEST_F(RpcClientLoopback, DestroyingTcpClientOnItsConnectStackKeepsConnectorAliveUntilChannelReset)
+{
+    // 只在 loop 线程上读写(回调与 RunInLoopAndWait 内),不需要原子。
+    struct State
+    {
+        std::unique_ptr<muduo::net::TcpClient> client;
+        muduo::net::TcpConnectionPtr heldConn;
+        std::promise<void> destroyedOnUp;
+        bool signalled{ false };
+    };
+    const auto state = std::make_shared<State>();
+    auto destroyedFuture = state->destroyedOnUp.get_future();
+    auto serverDownFuture = serverDown_.get_future();
+    RunInLoopAndWait([&] {
+        state->client = std::make_unique<muduo::net::TcpClient>(&Loop(), serverAddr_, "connector_lifetime_client");
+        // 回调会被拷到连接上、可能在本例之后才被调用:只捕获 weak,不借用本例栈变量。
+        state->client->setConnectionCallback(
+            [weakState = std::weak_ptr<State>(state)](const muduo::net::TcpConnectionPtr& conn) {
+                const auto live = weakState.lock();
+                if (!live || !conn->connected() || live->signalled) return;
+                live->signalled = true;
+                live->heldConn = conn;
+                // 仍在 Connector::handleWrite → TcpClient::newConnection 栈上,resetChannel 已排队、尚未执行。
+                live->client.reset();
+                live->destroyedOnUp.set_value();
+            });
+        state->client->connect();
+    });
+    const bool destroyed = destroyedFuture.wait_for(5s) == std::future_status::ready;
+    EXPECT_TRUE(destroyed) << "TcpClient never reported UP";
+    // 排队的 resetChannel 在 UP 那一轮的 pending functor 里就会执行,这里只确保它已跑完。
+    PumpLoop(3);
+    RunInLoopAndWait([&] {
+        if (state->heldConn) state->heldConn->forceClose();
+        state->client.reset();   // 没连上时的兜底拆除;连上时已在 UP 回调里拆掉
+    });
+    PumpLoop(3);   // forceCloseInLoop → handleClose → ~TcpClient 换上的 removeConnection 排的 connectDestroyed
+    // handleClose 不关 fd(留给析构):释放最后一份引用才关 socket,对端随后看到 DOWN。
+    RunInLoopAndWait([&] { state->heldConn.reset(); });
+    if (destroyed)
+    {
+        EXPECT_EQ(serverDownFuture.wait_for(5s), std::future_status::ready)
+            << "对端没看到 DOWN:接住的连接没有正常关掉";
+    }
+}
+
+// ---------------------------------------------------------------------------
+// 9. 出站链路断开一律 WARN,没有「启动宽限」(rpc_client.h onConnection 的 DOWN 分支)
+//    旧实现把连上后 5s 内的断开降为 INFO(kStartupGraceSeconds),依据是旧 win_connect 阻塞 select、无条件返回 0
+//    造成的假阳性连接。d27176e04 起 win_connect 非阻塞,Connector::handleWrite 以 SO_ERROR 确认连接完成才回调 UP,
+//    依据已不存在;而宽限每条连接重新计时,对端反复「接受后立刻关」的抖动会永远停在 INFO,告警看不到。
+//    判据:连上后立即由对端停服关闭(远在旧的 5s 窗口之内),截获到恰好一条 WARN 级的
+//    "Disconnected from server at <对端>"。旧代码这里只打 INFO → 0 条 → 红。
+//    日志输出函数与级别是进程级全局变量:装、卸都在 loop 线程上做(本例只有 loop 线程打日志),
+//    计数只由 loop 线程写,测试线程经 RunInLoopAndWait 读取,不与打日志的线程竞争。
+// ---------------------------------------------------------------------------
+
+namespace
+{
+
+// 只在 loop 线程上读写(日志从 loop 线程打出,装卸与读取都经 RunInLoopAndWait)。
+std::string gDisconnectWarnNeedle;
+int gDisconnectWarnLines = 0;
+
+void CountDisconnectWarn(const char* msg, int len)
+{
+    // muduo 每次调用输出函数恰好交出一整行;级别字段是定宽的 "WARN  "(Logging.cc LogLevelName)。
+    const std::string_view line(msg, static_cast<std::size_t>(len));
+    if (line.find("WARN  ") != std::string_view::npos && line.find(gDisconnectWarnNeedle) != std::string_view::npos)
+    {
+        ++gDisconnectWarnLines;
+    }
+    std::fwrite(msg, 1, static_cast<std::size_t>(len), stdout);   // 照常输出,失败时便于排查
+}
+
+// muduo 的默认输出函数在 Logging.cc 的匿名作用域里,不可取址;恢复成等价实现(同 redis_manager_auth_test.cpp)。
+void WriteLogToStdout(const char* msg, int len)
+{
+    std::fwrite(msg, 1, static_cast<std::size_t>(len), stdout);
+}
+
+} // namespace
+
+TEST_F(RpcClientLoopback, OutboundDisconnectRightAfterConnectLogsWarn)
+{
+    muduo::Logger::LogLevel savedLevel = muduo::Logger::WARN;
+    RunInLoopAndWait([&] {
+        savedLevel = muduo::Logger::logLevel();
+        muduo::Logger::setLogLevel(muduo::Logger::WARN);   // 判据是 WARN 行:级别不得高于 WARN
+        gDisconnectWarnNeedle = "Disconnected from server at " + serverAddr_.toIpPort();
+        gDisconnectWarnLines = 0;
+        muduo::Logger::setOutput(&CountDisconnectWarn);
+    });
+
+    RpcClientPtr client = ConnectClient();
+
+    // 服务端 accept 与客户端 UP 同在一个 loop 上、先后不定:等服务端连接出现再停服。截止时间只作活性上限。
+    // 由停服(~TcpServer)关掉这条连接(同第 5 节),不先 forceClose:forceClose 把连接置为 kDisconnecting 并排队
+    // forceCloseInLoop,同一 functor 里的 ~TcpServer 随即在 loop 线程同步执行 connectDestroyed —— 它只在 kConnected
+    // 时 disableAll,Channel::remove 的 assert(isNoneEvent()) 在 Debug 下中止;Release 下排队的 forceCloseInLoop
+    // 之后经 handleClose 调用绑着裸 this 的 TcpServer::removeConnection(TcpServer.cc FIXME: unsafe),踩已析构的
+    // TcpServer。~TcpServer 以 kConnected 走 connectDestroyed,连接随最后一份引用释放而关 fd,客户端随后看到 DOWN。
+    // 关连接与停监听在同一个 functor 里:客户端看到 FIN 时监听已关,TcpClient::removeConnection → Connector::restart
+    // 立即发起的重连只会被拒(restart 不走 500ms 退避),本例只有一条连接、恰好一次 DOWN。
+    const auto acceptDeadline = std::chrono::steady_clock::now() + 5s;
+    bool serverConnSeen = false;
+    bool gaveUp = false;
+    while (!serverConnSeen && !gaveUp)
+    {
+        gaveUp = std::chrono::steady_clock::now() >= acceptDeadline;
+        RunInLoopAndWait([&] {
+            serverConnSeen = !serverConnWeak_.expired();   // 不 lock:本 functor 不多持一份服务端连接
+            if (serverConnSeen || gaveUp)
+            {
+                server_.reset();
+            }
+        });
+        if (!serverConnSeen && !gaveUp)
+        {
+            std::this_thread::sleep_for(10ms);
+        }
+    }
+    EXPECT_TRUE(serverConnSeen) << "真实服务端连接不存在";
+
+    // 观察者在 DOWN 分支打完日志之后才被调用:看到 DOWN 计数时,那条断开日志已经过了输出函数。
+    const auto downDeadline = std::chrono::steady_clock::now() + 5s;   // 只作活性上限,判据是 DOWN 事件本身
+    while (events_->down.load() == 0 && std::chrono::steady_clock::now() < downDeadline)
+    {
+        std::this_thread::sleep_for(10ms);
+    }
+    EXPECT_EQ(events_->down.load(), 1) << "client 应恰好收到一次 DOWN";
+
+    // EXPECT 失败也走 loop 内的恢复与拆除,不把截获函数留给后面的用例。
+    int warnLines = -1;
+    RunInLoopAndWait([&] {
+        warnLines = gDisconnectWarnLines;
+        muduo::Logger::setOutput(&WriteLogToStdout);
+        muduo::Logger::setLogLevel(savedLevel);
+        client.reset();   // 此时 client_.connection() 已空,~TcpClient 走 connector 分支
+    });
+    PumpLoop(2);
+
+    EXPECT_EQ(warnLines, 1)
+        << "连上后立刻断开没有打出 WARN 级的 \"Disconnected from server at\":断开日志又被按连接时长降级了"
+           "(旧的 kStartupGraceSeconds 启动宽限会把 5s 内的断开降为 INFO)";
 }

@@ -465,30 +465,44 @@ func TestIsDupEntryMySQL(t *testing.T) {
 
 // ── G2a 批量落库(InsertSnapshotsIfGuidAbsent)的纯逻辑部分;真库行为见 snapshot_store_integration_test.go ──
 
-// TestInsertSnapshotsOnDuplicateKeepSQLShape 钉住多行 ODKU 的三件事:
-//   - n=1 与单行 ODKU **逐字相同**:默认配置(批 1 条)下消费者走的是单行接口,但两条路径对同一行必须是同一条语句,
-//     否则「批量开关打开前后语义等价」这句话没有依据;
-//   - n 行就有 9n 个占位符、恰一个 ON DUPLICATE KEY UPDATE、以 insertSnapshotSQL 开头(列清单只定义一次);
-//   - 行数上限的占位符总数低于预处理语句 65535 的硬上限 —— 越过它是运行期的 Prepared statement 错误,且只在大批时出现。
-func TestInsertSnapshotsOnDuplicateKeepSQLShape(t *testing.T) {
-	if got := insertSnapshotsOnDuplicateKeepSQL(1); got != insertSnapshotOnDuplicateKeepSQL {
-		t.Fatalf("n=1 的批量语句必须与单行 ODKU 逐字相同:\n%s\n---\n%s", got, insertSnapshotOnDuplicateKeepSQL)
+// TestInsertSnapshotsSQLShape 钉住批量路径两条语句的形状(死锁审计 #19 / #20,事故文档 §9.6):
+//   - 多行写是**普通 INSERT**:不许带 ON DUPLICATE KEY UPDATE(撞已存在行会留下自增主键末尾的间隙锁直到语句结束,
+//     rebalance 重叠时成环;给自增列赋值还会在批内重复时 1869),也不许带 IGNORE(会把 1062 吞成 warning,
+//     「撞键 → 整条回滚 → 逐行」这条兜底就失效了);n=1 与 insertSnapshotSQL 逐字相同,列清单只定义一次;
+//   - n 行就有 9n 个占位符;行数上限的占位符总数低于预处理语句 65535 的硬上限;
+//   - 预读按唯一键 snapshot_guid_nz 走等值 IN,且是**普通读**:不许 FOR UPDATE / FOR SHARE / LOCK IN SHARE MODE。
+//   - 单行 ODKU 仍是同一个 INSERT 主体 + 回带 id 的尾巴(单行路径不受影响)。
+//
+// 真库回归:TestSnapshotStore_BatchDedupsAgainstStoredAndWithinBatch(1869)、TestSnapshotStore_BatchOverlapDoesNotDeadlock(#20)。
+func TestInsertSnapshotsSQLShape(t *testing.T) {
+	if got := insertSnapshotsSQL(1); got != insertSnapshotSQL {
+		t.Fatalf("n=1 的批量语句必须与单行 INSERT 主体逐字相同:\n%s\n---\n%s", got, insertSnapshotSQL)
 	}
-	stmt := insertSnapshotsOnDuplicateKeepSQL(3)
+	stmt := insertSnapshotsSQL(3)
+	upper := strings.ToUpper(stmt)
+	if strings.Contains(upper, "ON DUPLICATE KEY") || strings.Contains(upper, "IGNORE") {
+		t.Fatalf("批量写必须是普通 INSERT(不带 ODKU / IGNORE):\n%s", stmt)
+	}
 	if !strings.HasPrefix(stmt, insertSnapshotSQL) {
 		t.Fatalf("批量语句必须由 insertSnapshotSQL 接出来(列清单只定义一次):\n%s", stmt)
 	}
 	if got := strings.Count(stmt, "?"); got != 27 {
 		t.Fatalf("3 行应有 27 个占位符,got %d:\n%s", got, stmt)
 	}
-	if got := strings.Count(stmt, "ON DUPLICATE KEY UPDATE"); got != 1 {
-		t.Fatalf("多行 ODKU 只能有一个 ON DUPLICATE KEY UPDATE 尾巴,got %d:\n%s", got, stmt)
-	}
-	if !strings.HasSuffix(stmt, onDuplicateKeepIDSQL) {
-		t.Fatalf("尾巴必须是 `id` = LAST_INSERT_ID(`id`)(值不变,快照保持不可变):\n%s", stmt)
-	}
 	if MaxSnapshotBatchRows*9 >= 65535 {
 		t.Fatalf("MaxSnapshotBatchRows=%d 时占位符 %d 个,超过预处理语句 65535 的上限", MaxSnapshotBatchRows, MaxSnapshotBatchRows*9)
+	}
+	pre := existingSnapshotGuidsSQL(3)
+	if want := "SELECT snapshot_guid_nz FROM player_snapshot WHERE snapshot_guid_nz IN (?,?,?)"; pre != want {
+		t.Fatalf("预读语句:\n got %s\nwant %s", pre, want)
+	}
+	for _, lock := range []string{"FOR UPDATE", "FOR SHARE", "LOCK IN SHARE MODE"} {
+		if strings.Contains(strings.ToUpper(pre), lock) {
+			t.Fatalf("预读必须是普通读,不许 %s:%s", lock, pre)
+		}
+	}
+	if insertSnapshotOnDuplicateKeepSQL != insertSnapshotSQL+onDuplicateKeepIDSQL {
+		t.Fatalf("单行 ODKU 必须是同一个 INSERT 主体 + 回带 id 的尾巴:\n%s", insertSnapshotOnDuplicateKeepSQL)
 	}
 }
 

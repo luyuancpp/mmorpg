@@ -6,6 +6,7 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"google.golang.org/protobuf/proto"
 	"strconv"
 	"strings"
 
@@ -142,6 +143,20 @@ func writeBundleCanonical(b *strings.Builder, bundle *assetpb.AssetBundle) {
 	// 单值,空缺写 0:宝宝 guid 恒非 0,所以 0 与「没带宝宝」不会混淆。
 	b.WriteString(";p=")
 	b.WriteString(strconv.FormatUint(bundle.GetPetId(), 10))
+	if len(bundle.GetItemInstances()) > 0 || bundle.GetPetInstance() != nil {
+		b.WriteString(";v2=")
+		// 完整 protobuf 字节进入签名，包含未知字段；三侧都使用确定性编码。
+		for _, item := range bundle.GetItemInstances() {
+			raw, _ := (proto.MarshalOptions{Deterministic: true}).Marshal(item)
+			b.WriteString(hex.EncodeToString(raw))
+			b.WriteByte(',')
+		}
+		b.WriteByte(';')
+		if pet := bundle.GetPetInstance(); pet != nil {
+			raw, _ := (proto.MarshalOptions{Deterministic: true}).Marshal(pet)
+			b.WriteString(hex.EncodeToString(raw))
+		}
+	}
 }
 
 // Sign 就地把 auth 写进 req:caller、timestamp_ms、signature_hex。

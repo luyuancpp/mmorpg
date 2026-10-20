@@ -1,3 +1,8 @@
+# === GENERATED FILE -- DO NOT EDIT ===
+# Produced by tools/archived/vcxproj2cmake.py from table.vcxproj.
+# Every Linux build regenerates it; hand edits are lost without warning.
+# Change the generator instead.
+
 cmake_minimum_required(VERSION 3.22)
 project(table)
 
@@ -17,6 +22,9 @@ add_definitions(-D__linux__)
 add_definitions(-DNOMINMAX)
 add_definitions(-DENTT_ID_TYPE=uint64_t)
 add_definitions(-DABSL_PROPAGATE_CXX_STD=TRUE)
+add_definitions(-DGOOGLE_CHECK_EQ=ABSL_CHECK_EQ)
+add_definitions(-DGOOGLE_LOG=ABSL_LOG)
+add_definitions(-DGOOGLE_DCHECK=ABSL_DCHECK)
 add_definitions(-DMMORPG_AGONES_CURL=1)
 
 include_directories(
@@ -39,8 +47,6 @@ include_directories(
 )
 
 set(SOURCE_FILES
-    code/activityschedule_table.cpp
-    code/activityschedule_table_fk.cpp
     code/actoractioncombatstate_table.cpp
     code/actoractionstate_table.cpp
     code/all_table.cpp
@@ -50,7 +56,6 @@ set(SOURCE_FILES
     code/condition_table.cpp
     code/cooldown_table.cpp
     code/dungeon_table.cpp
-    code/equipslot_table.cpp
     code/dungeon_table_fk.cpp
     code/globalvariable_table.cpp
     code/guildactivity_table.cpp
@@ -60,6 +65,7 @@ set(SOURCE_FILES
     code/guildrule_table.cpp
     code/guildshop_table.cpp
     code/guildshop_table_fk.cpp
+    code/equipslot_table.cpp
     code/item_table.cpp
     code/messagelimiter_table.cpp
     code/mirror_table.cpp
@@ -67,23 +73,11 @@ set(SOURCE_FILES
     code/mission_table.cpp
     code/mission_table_fk.cpp
     code/monster_table.cpp
-    code/reward_table.cpp
-    code/rolenamerule_table.cpp
-    code/skillpermission_table.cpp
-    code/skill_table.cpp
-    code/testmultikey_table.cpp
-    code/testmultikey_table_fk.cpp
-    code/test_table.cpp
-    code/world_table.cpp
-    code/world_table_fk.cpp
     code/attributeautoplan_table.cpp
+    code/attributedimension_table.cpp
+    code/attributepool_table.cpp
     code/attributeallocratio_table.cpp
     code/attributeallocratio_table_fk.cpp
-    code/attributeautoplan_table_fk.cpp
-    code/attributedimension_table.cpp
-    code/attributedimension_table_fk.cpp
-    code/attributepool_table.cpp
-    code/attributerule_table.cpp
     code/pet_table.cpp
     code/petrule_table.cpp
     code/equipattribute_table.cpp
@@ -102,7 +96,18 @@ set(SOURCE_FILES
     code/mysterymerchantrule_table.cpp
     code/mysterymerchantspot_table.cpp
     code/item_table_fk.cpp
-    proto/activityschedule_table.pb.cc
+    code/attributerule_table.cpp
+    code/reward_table.cpp
+    code/rolenamerule_table.cpp
+    code/skillpermission_table.cpp
+    code/skill_table.cpp
+    code/testmultikey_table.cpp
+    code/testmultikey_table_fk.cpp
+    code/test_table.cpp
+    code/world_table.cpp
+    code/world_table_fk.cpp
+    code/attributeautoplan_table_fk.cpp
+    code/attributedimension_table_fk.cpp
     proto/actoractioncombatstate_table.pb.cc
     proto/actoractionstate_table.pb.cc
     proto/basescene_table.pb.cc
@@ -111,18 +116,32 @@ set(SOURCE_FILES
     proto/condition_table.pb.cc
     proto/cooldown_table.pb.cc
     proto/dungeon_table.pb.cc
-    proto/equipslot_table.pb.cc
     proto/globalvariable_table.pb.cc
     proto/guildactivity_table.pb.cc
     proto/guilddonate_table.pb.cc
     proto/guildlevel_table.pb.cc
     proto/guildrule_table.pb.cc
     proto/guildshop_table.pb.cc
+    proto/equipslot_table.pb.cc
     proto/item_table.pb.cc
     proto/messagelimiter_table.pb.cc
     proto/mirror_table.pb.cc
     proto/mission_table.pb.cc
     proto/monster_table.pb.cc
+    proto/attributeautoplan_table.pb.cc
+    proto/attributedimension_table.pb.cc
+    proto/attributepool_table.pb.cc
+    proto/attributeallocratio_table.pb.cc
+    proto/pet_table.pb.cc
+    proto/petrule_table.pb.cc
+    proto/equipattribute_table.pb.cc
+    proto/equipattributecap_table.pb.cc
+    proto/equipaffixpool_table.pb.cc
+    proto/equipaffixrule_table.pb.cc
+    proto/equipenhance_table.pb.cc
+    proto/equipgem_table.pb.cc
+    proto/equipgemsocket_table.pb.cc
+    proto/attributerule_table.pb.cc
     proto/operator/ability_operator.pb.cc
     proto/operator/bag_operator.pb.cc
     proto/operator/scene_operator.pb.cc
@@ -134,8 +153,18 @@ set(SOURCE_FILES
     proto/test_table.pb.cc
     proto/tip/actor_action_error_tip.pb.cc
     proto/tip/asset_error_tip.pb.cc
+    proto/tip/mail_error_tip.pb.cc
+    proto/tip/rank_error_tip.pb.cc
     proto/tip/bag_error_tip.pb.cc
     proto/tip/buff_error_tip.pb.cc
+    proto/tip/attribute_error_tip.pb.cc
+    proto/tip/pet_error_tip.pb.cc
+    proto/tip/equip_error_tip.pb.cc
+    proto/tip/player_inbox_error_tip.pb.cc
+    proto/mysterymerchantgoods_table.pb.cc
+    proto/mysterymerchantrule_table.pb.cc
+    proto/mysterymerchantspot_table.pb.cc
+    proto/tip/mystery_merchant_error_tip.pb.cc
     proto/tip/common_error_tip.pb.cc
     proto/tip/cross_server_error_tip.pb.cc
     proto/tip/entity_error_tip.pb.cc
@@ -145,7 +174,6 @@ set(SOURCE_FILES
     proto/tip/login_error_tip.pb.cc
     proto/tip/match_error_tip.pb.cc
     proto/tip/trade_error_tip.pb.cc
-    proto/tip/pet_error_tip.pb.cc
     proto/tip/mission_error_tip.pb.cc
     proto/tip/mount_error_tip.pb.cc
     proto/tip/reward_error_tip.pb.cc
@@ -153,27 +181,9 @@ set(SOURCE_FILES
     proto/tip/skill_error_tip.pb.cc
     proto/tip/team_error_tip.pb.cc
     proto/world_table.pb.cc
-    proto/attributeautoplan_table.pb.cc
-    proto/attributeallocratio_table.pb.cc
-    proto/attributedimension_table.pb.cc
-    proto/attributepool_table.pb.cc
-    proto/attributerule_table.pb.cc
-    proto/pet_table.pb.cc
-    proto/petrule_table.pb.cc
-    proto/tip/attribute_error_tip.pb.cc
-    proto/equipattribute_table.pb.cc
-    proto/equipattributecap_table.pb.cc
-    proto/equipaffixpool_table.pb.cc
-    proto/equipaffixrule_table.pb.cc
-    proto/equipenhance_table.pb.cc
-    proto/equipgem_table.pb.cc
-    proto/equipgemsocket_table.pb.cc
-    proto/tip/equip_error_tip.pb.cc
-    proto/tip/player_inbox_error_tip.pb.cc
-    proto/mysterymerchantgoods_table.pb.cc
-    proto/mysterymerchantrule_table.pb.cc
-    proto/mysterymerchantspot_table.pb.cc
-    proto/tip/mystery_merchant_error_tip.pb.cc
+    code/activityschedule_table.cpp
+    code/activityschedule_table_fk.cpp
+    proto/activityschedule_table.pb.cc
 )
 
 add_library(table STATIC ${SOURCE_FILES})

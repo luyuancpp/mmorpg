@@ -24,7 +24,7 @@ struct SceneRouteTarget;
 //   - 一次路由决策最多真正转发一次(kSent 即清欠账);只有本地确定没发出去才续期,有总预算与次数上限。
 //   - 超限收口:推 kEnterSceneFailed(3023)→ 发 KickPlayer(reason=kEnterSceneFailed,即消息 34)
 //     → shutdown → forceCloseWithDelay。ExitGame 与 login 断线租约仍由断线回调
-//     (client_message_processor.cpp HandleConnectionDisconnection)统一处理,本文件不重复。
+//     (client_session_handler.cpp HandleConnectionDisconnection)统一处理,本文件不重复。
 //   - 截止判断一律用单调时钟(调用方传入 now),muduo 定时器只负责唤醒。
 namespace gate_scene_entry
 {
@@ -53,6 +53,11 @@ void OnRouteDecision(SessionId sessionId, SessionInfo &session, const SceneRoute
 // 代次必须先于本调用写入,见 scene-enter-session-fence.md §4):已有欠账则立即尝试一次;
 // 否则按 lastSceneRoute 建一笔有上限的欠账(还没收到路由时什么都不做,等路由自己到来)。
 void OnLoginTypeBound(SessionId sessionId, SessionInfo &session, Clock::time_point now);
+
+// 客户端 LeaveGame(回到选角界面,TCP 不断)到达 gate、转发给 login 之前调用(docs/design/location-release-binding.md §3.5 R5):
+// 先向会话绑定的 scene 代发 ExitGame(与断线同一封包),再用 gate_scene_route::ResetSceneRoute 清空会话的 scene 路由状态并撤销欠账。
+// 之后同一连接上的进场只由新的路由事件驱动,不按 LeaveGame 之前的旧路由补发。会话没绑 scene 时只清状态。不会 erase 会话。
+void OnClientLeaveGame(SessionId sessionId, SessionInfo &session);
 
 // scene 握手成功应答(conn 是应答所走的出站连接):核对它就是该节点 RpcClient 的当前连接后盖章,
 // 并把以该节点为目标的欠账提前到下一轮扫描(不在应答处理器里同步转发)。

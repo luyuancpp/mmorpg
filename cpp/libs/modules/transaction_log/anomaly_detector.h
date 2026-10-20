@@ -74,11 +74,10 @@ public:
 
     // ── Query / Reset ────────────────────────────────────────────────────
 
-    // Get the current event count in the window for a player+currency.
+    // 只读查询玩家货币窗口计数,不创建窗口;目前仅供测试观测。
     static uint32_t GetCurrencyGainCount(entt::entity player, CurrencyType type);
 
-    // Clear all tracking data (e.g. on server restart or player logout).
-    static void ClearPlayer(entt::entity player);
+    // 测试隔离用,清空所有玩家窗口但不销毁玩家;登出不需要清理,窗口随玩家实体销毁。
     static void ClearAll();
 
 private:

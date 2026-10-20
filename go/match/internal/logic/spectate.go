@@ -2,6 +2,7 @@ package logic
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"fmt"
 	"math/rand"
@@ -206,6 +207,32 @@ func dropSpectateRecord(svcCtx *svc.ServiceContext, battleId uint64) {
 
 // loadSpectateBattle 读活跃战斗记录;不存在(TTL 已清/从未登记)返回 (nil, nil)。
 func loadSpectateBattle(svcCtx *svc.ServiceContext, battleId uint64) (*matchpb.SpectateBattleRecord, error) {
+	if svcCtx.Authority != nil {
+		ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+		defer cancel()
+		f, e := svcCtx.Authority.Formation(ctx, battleId)
+		if errors.Is(e, sql.ErrNoRows) {
+			return nil, nil
+		}
+		if e != nil {
+			return nil, e
+		}
+		if f.State == 5 {
+			return nil, nil
+		}
+		if len(f.CreateRequest) == 0 {
+			return nil, errors.New("成局备战尚未完成")
+		}
+		create := &battlepb.CreateBattleRequest{}
+		if e = proto.Unmarshal(f.CreateRequest, create); e != nil {
+			return nil, e
+		}
+		names := make([]string, 0, len(create.Players))
+		for _, p := range create.Players {
+			names = append(names, p.PlayerName)
+		}
+		return newSpectateRecord(battleId, f.TargetNodeId, matchpb.MatchMode(f.Mode), f.ConfigId, names, f.CreatedMs), nil
+	}
 	raw, err := svcCtx.MatchRedis.Get(spectateBattleKey(battleId))
 	if err != nil {
 		return nil, err
@@ -371,7 +398,7 @@ func addObserverOutcomeUnknown(err error) bool {
 func addObserver(ctx context.Context, svcCtx *svc.ServiceContext, battleNodeId uint32, battleId, observerId uint64,
 	observerName string, routing *battlepb.BattleRouting,
 ) (roomMissing bool, err error) {
-	endpoint, err := svcCtx.BattleNodes.EndpointOfNode(battleNodeId)
+	endpoint, err := spectateEndpoint(ctx, svcCtx, battleNodeId, battleId)
 	if err != nil {
 		return false, fmt.Errorf("定位 battle 节点失败(node=%d): %w", battleNodeId, err)
 	}
@@ -398,7 +425,9 @@ func addObserver(ctx context.Context, svcCtx *svc.ServiceContext, battleNodeId u
 
 // removeObserver 尽力调 battle 节点摘观众(清退路径;失败只记日志)。
 func removeObserver(svcCtx *svc.ServiceContext, battleNodeId uint32, battleId, observerId uint64, reason string) {
-	endpoint, err := svcCtx.BattleNodes.EndpointOfNode(battleNodeId)
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+	endpoint, err := spectateEndpoint(ctx, svcCtx, battleNodeId, battleId)
 	if err != nil {
 		logx.Errorf("[spectate] Failed to locate battle node during removal battle=%d node=%d player=%d: %v",
 			battleId, battleNodeId, observerId, err)
@@ -412,6 +441,19 @@ func removeObserver(svcCtx *svc.ServiceContext, battleNodeId uint32, battleId, o
 		logx.Errorf("[spectate] RemoveObserver failed battle=%d player=%d reason=%s: %v",
 			battleId, observerId, reason, err)
 	}
+}
+func spectateEndpoint(ctx context.Context, s *svc.ServiceContext, node uint32, battle uint64) (string, error) {
+	if s.Authority == nil {
+		return s.BattleNodes.EndpointOfNode(node)
+	}
+	f, e := s.Authority.Formation(ctx, battle)
+	if e != nil {
+		return "", e
+	}
+	if f.State != 4 {
+		return "", errors.New("成局尚未确认或已经中止")
+	}
+	return f.TargetEndpoint, nil
 }
 
 // cleanupExpiredSpectateIndex 清理观战索引里 score 早于 TTL 窗口的残留成员

@@ -53,6 +53,29 @@ func recordSleeps(waits *[]time.Duration) func(context.Context, time.Duration) e
 	}
 }
 
+// zeroJitter 是不加抖动的抖动源,让用例的等待时长恰等于基础间隔。
+func zeroJitter(time.Duration) time.Duration { return 0 }
+
+// recordFullJitter 返回一个抖动取满(返回上界)的抖动源,并记下每次收到的上界。
+func recordFullJitter(limits *[]time.Duration) func(time.Duration) time.Duration {
+	return func(limit time.Duration) time.Duration {
+		*limits = append(*limits, limit)
+		return limit
+	}
+}
+
+// statusFailuresRateLimited 生成 n 轮「持 token 查 queue-status 回 500 → 恢复重入回 ratelimit(1ms)」的脚本步。
+func statusFailuresRateLimited(token string, n int) []queueCall {
+	var steps []queueCall
+	for range n {
+		steps = append(steps,
+			queueCall{"queue-status", token, codeResponse(500, "login_unavailable"), nil},
+			queueCall{"assign-gate", token, rateLimitQueued(1), nil},
+		)
+	}
+	return steps
+}
+
 func loginQueued(token string, rank, retryAfterMs int64) *httpAssignGateResponse {
 	return &httpAssignGateResponse{Code: 100, QueueSource: "login", QueueToken: token, QueueRank: rank, RetryAfterMs: retryAfterMs}
 }
@@ -69,9 +92,12 @@ func codeResponse(code int, errTag string) *httpAssignGateResponse {
 	return &httpAssignGateResponse{Code: code, Error: errTag}
 }
 
-// TestAssignGateWithQueue 钉住 2026-10-15 的客户端契约(设计稿 open-server-rate-limit-design.md §11.5 更正):
-// 持有 queue_token 时轮询 /api/queue-status;它失败才带 token 重入 assign-gate;重入被限流回到轮询;
-// 410 丢 token 重来。用例只看调用序列与等待时长,不依赖墙钟。
+// TestAssignGateWithQueue 钉住 2026-10-15 的客户端契约(设计稿 open-server-rate-limit-design.md §11.5 更正及其补注):
+// 持有 queue_token 时轮询 /api/queue-status,等待 = max(retry_after_ms, 下限) 加抖动,下限平时 2s、queue-status
+// 连续失败时 2s 起翻倍封顶 30s;queue-status 本身失败(网络错误 / 非 200 / code==500)才带 token 重入 assign-gate;
+// 重入被限流回到轮询;503 zone_* / 404 zone_not_found 直接报错;410 丢 token 重来。
+// 本表统一注入 zeroJitter,等待恰为基础间隔;抖动上界见 TestAssignGateWithQueue_Jitter。
+// 用例只看调用序列与等待时长,不依赖墙钟。
 func TestAssignGateWithQueue(t *testing.T) {
 	errNet := errors.New("dial tcp: connection refused")
 	cases := []struct {
@@ -82,14 +108,15 @@ func TestAssignGateWithQueue(t *testing.T) {
 	}{
 		{
 			// 修复前红:queue-status 回 5xx 落进 default 直接返回错误,token 随之丢弃,外层重试从头排队。
-			name: "queue-status 5xx, re-entry held by zone bucket, back to queue-status",
+			// 2026-10-15 下限修复前红在首次等待:取 retry_after 1s,没有 2s 下限。
+			name: "queue-status 500, re-entry held by zone bucket, back to queue-status",
 			steps: []queueCall{
 				{"assign-gate", "", loginQueued("T1", 3, 1000), nil},
 				{"queue-status", "T1", codeResponse(500, "login_unavailable"), nil},
 				{"assign-gate", "T1", rateLimitQueued(3000), nil},
 				{"queue-status", "T1", admittedResponse(), nil},
 			},
-			wantWaits: []time.Duration{time.Second, 3 * time.Second},
+			wantWaits: []time.Duration{2 * time.Second, 3 * time.Second},
 		},
 		{
 			// 修复前红:queue-status 网络错误直接返回;且 code=429 一律当失败返回,不回到轮询。
@@ -105,14 +132,115 @@ func TestAssignGateWithQueue(t *testing.T) {
 		},
 		{
 			// 修复前红:同第一例,queue-status 的 5xx 直接返回,恢复用的重入根本不会发出。
-			name: "queue-status 5xx, re-entry resumes the login queue entry",
+			// 2026-10-15 起改用 500:网关对 login 故障回 500,从不回 503「login_unavailable」;503 只表示 zone 不可进(见下面两例)。
+			name: "queue-status 500, re-entry resumes the login queue entry",
 			steps: []queueCall{
 				{"assign-gate", "", loginQueued("T1", 9, 2000), nil},
-				{"queue-status", "T1", codeResponse(503, "login_unavailable"), nil},
+				{"queue-status", "T1", codeResponse(500, "login_unavailable"), nil},
 				{"assign-gate", "T1", loginQueued("T1", 4, 2000), nil},
 				{"queue-status", "T1", admittedResponse(), nil},
 			},
 			wantWaits: []time.Duration{2 * time.Second, 2 * time.Second},
+		},
+		{
+			// 修复前红在第二次等待:取重入回的 retry_after 1ms,queue-status 持续 500 时形成毫秒级循环。
+			name: "queue-status 500, re-entry ratelimit 1ms still waits the 2s floor",
+			steps: []queueCall{
+				{"assign-gate", "", loginQueued("T1", 1, 2000), nil},
+				{"queue-status", "T1", codeResponse(500, "login_unavailable"), nil},
+				{"assign-gate", "T1", rateLimitQueued(1), nil},
+				{"queue-status", "T1", admittedResponse(), nil},
+			},
+			wantWaits: []time.Duration{2 * time.Second, 2 * time.Second},
+		},
+		{
+			// 修复前红:每次等待都是重入回的 1ms,连续失败不退避。
+			// 连续 6 次 queue-status 500,等待 2s、4s、8s、16s 后封顶 30s;queue-status 回一次排队即复位到 max(1s, 2s)。
+			name: "consecutive queue-status 500 back off to the 30s cap, a good poll resets",
+			steps: slices.Concat(
+				[]queueCall{{"assign-gate", "", loginQueued("T1", 1, 2000), nil}},
+				statusFailuresRateLimited("T1", 6),
+				[]queueCall{
+					{"queue-status", "T1", loginQueued("T1", 1, 1000), nil},
+					{"queue-status", "T1", admittedResponse(), nil},
+				},
+			),
+			wantWaits: []time.Duration{
+				2 * time.Second, // 首次排队,未失败
+				2 * time.Second, 4 * time.Second, 8 * time.Second, 16 * time.Second, 30 * time.Second, 30 * time.Second,
+				2 * time.Second, // queue-status 成功一次,退避复位
+			},
+		},
+		{
+			// 修复前红:rsp.Code < 500 把 503 当成 queue-status 本身失败,发出恢复重入,脚本用完即失败。
+			name: "queue-status 503 zone_maintenance fails without re-entry",
+			steps: []queueCall{
+				{"assign-gate", "", loginQueued("T1", 2, 2000), nil},
+				{"queue-status", "T1", codeResponse(503, "zone_maintenance"), nil},
+			},
+			wantWaits: []time.Duration{2 * time.Second},
+			wantErr:   `code=503 err="zone_maintenance"`,
+		},
+		{
+			// 修复前即绿(404 < 500,本来就交回状态机);钉住失败分类只认 code==500,不被放宽成「>=400 都重入」。
+			name: "queue-status 404 zone_not_found fails without re-entry",
+			steps: []queueCall{
+				{"assign-gate", "", loginQueued("T1", 2, 2000), nil},
+				{"queue-status", "T1", codeResponse(404, "zone_not_found"), nil},
+			},
+			wantWaits: []time.Duration{2 * time.Second},
+			wantErr:   `code=404 err="zone_not_found"`,
+		},
+		{
+			// 修复前红在第三次等待:持 token 的 429 固定等 2s,第二次连续失败没有退避到 4s。
+			name: "held token, re-entry 429 twice, waits follow the same floor and backoff",
+			steps: []queueCall{
+				{"assign-gate", "", loginQueued("T1", 0, 2000), nil},
+				{"queue-status", "T1", nil, errNet},
+				{"assign-gate", "T1", codeResponse(429, "IP_RATE_LIMIT"), nil},
+				{"queue-status", "T1", codeResponse(500, "login_unavailable"), nil},
+				{"assign-gate", "T1", codeResponse(429, "IP_RATE_LIMIT"), nil},
+				{"queue-status", "T1", admittedResponse(), nil},
+			},
+			wantWaits: []time.Duration{2 * time.Second, 2 * time.Second, 4 * time.Second},
+		},
+		{
+			// 修复前红在第三、四次等待:取重入回的 retry_after 2s,没有退避。
+			// 恢复重入回 login 排队(续上原条目)不算 queue-status 成功,连续失败次数不清零。
+			name: "re-entry resuming the login entry does not reset the backoff",
+			steps: []queueCall{
+				{"assign-gate", "", loginQueued("T1", 5, 2000), nil},
+				{"queue-status", "T1", codeResponse(500, "login_unavailable"), nil},
+				{"assign-gate", "T1", loginQueued("T1", 4, 2000), nil},
+				{"queue-status", "T1", codeResponse(500, "login_unavailable"), nil},
+				{"assign-gate", "T1", loginQueued("T1", 3, 2000), nil},
+				{"queue-status", "T1", codeResponse(500, "login_unavailable"), nil},
+				{"assign-gate", "T1", loginQueued("T1", 2, 2000), nil},
+				{"queue-status", "T1", admittedResponse(), nil},
+			},
+			wantWaits: []time.Duration{2 * time.Second, 2 * time.Second, 4 * time.Second, 8 * time.Second},
+		},
+		{
+			// 修复前即绿;钉住 410 丢 token 后不忙等:不带 token 的 assign-gate 再回 410 直接报错,不再重调。
+			name: "410 then assign-gate 410 again fails instead of spinning",
+			steps: []queueCall{
+				{"assign-gate", "", loginQueued("T1", 5, 2000), nil},
+				{"queue-status", "T1", codeResponse(410, "queue_token_expired"), nil},
+				{"assign-gate", "", codeResponse(410, "missing_queue_token"), nil},
+			},
+			wantWaits: []time.Duration{2 * time.Second},
+			wantErr:   "code=410",
+		},
+		{
+			// 修复前即绿;钉住 410 丢 token 后被 zone 桶挡住时走不持 token 的口径:按 retry_after 等待再重调 assign-gate。
+			name: "410 then ratelimit without a token waits before re-calling assign-gate",
+			steps: []queueCall{
+				{"assign-gate", "", loginQueued("T1", 5, 2000), nil},
+				{"queue-status", "T1", codeResponse(410, "queue_token_expired"), nil},
+				{"assign-gate", "", rateLimitQueued(500), nil},
+				{"assign-gate", "", admittedResponse(), nil},
+			},
+			wantWaits: []time.Duration{2 * time.Second, 500 * time.Millisecond},
 		},
 		{
 			name: "410 drops the token and restarts from assign-gate",
@@ -163,7 +291,7 @@ func TestAssignGateWithQueue(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			gw := &scriptedGateway{t: t, steps: tc.steps}
 			var waits []time.Duration
-			rsp, err := AssignGateWithQueue(context.Background(), gw, &httpAssignGateRequest{ZoneID: 1}, nil, recordSleeps(&waits))
+			rsp, err := AssignGateWithQueue(context.Background(), gw, &httpAssignGateRequest{ZoneID: 1}, nil, recordSleeps(&waits), zeroJitter)
 			if tc.wantErr == "" {
 				if err != nil {
 					t.Fatalf("err = %v, want admitted", err)
@@ -192,11 +320,233 @@ func TestAssignGateWithQueue_StopsWhenBudgetExhausted(t *testing.T) {
 		{"assign-gate", "", loginQueued("T1", 7, 2000), nil},
 	}}
 	var waits []time.Duration
-	_, err := AssignGateWithQueue(ctx, gw, &httpAssignGateRequest{ZoneID: 1}, nil, recordSleeps(&waits))
+	_, err := AssignGateWithQueue(ctx, gw, &httpAssignGateRequest{ZoneID: 1}, nil, recordSleeps(&waits), zeroJitter)
 	if err == nil || !strings.Contains(err.Error(), "queue budget exceeded") {
 		t.Fatalf("err = %v, want queue budget exceeded", err)
 	}
 	if len(gw.steps) != 0 {
 		t.Fatalf("%d scripted calls never made", len(gw.steps))
+	}
+}
+
+// budgetExpiresDuring 包住脚本网关:第 at 次调用(以 1 起算,两个端点合计)应答前结束排队预算 ctx,
+// 模拟预算恰在这次请求途中到期(生产实现每次调用各带 perCallTimeout,不随预算取消,所以请求能跨过截止时间)。
+type budgetExpiresDuring struct {
+	inner  *scriptedGateway
+	at     int
+	calls  int
+	cancel context.CancelFunc
+}
+
+func (g *budgetExpiresDuring) tick() {
+	g.calls++
+	if g.calls == g.at {
+		g.cancel()
+	}
+}
+
+func (g *budgetExpiresDuring) AssignGate(req *httpAssignGateRequest) (*httpAssignGateResponse, error) {
+	g.tick()
+	return g.inner.AssignGate(req)
+}
+
+func (g *budgetExpiresDuring) QueueStatus(queueToken string, zoneID uint32) (*httpAssignGateResponse, error) {
+	g.tick()
+	return g.inner.QueueStatus(queueToken, zoneID)
+}
+
+// TestAssignGateWithQueue_NoRequestAfterBudgetExpiresInFlight 钉住「排队预算耗尽即停,不再发请求」对不经等待的两次请求
+// 同样成立:预算在 queue-status 或恢复重入途中到期时,恢复重入与 410 后不带 token 的重调都不再发出,
+// 直接返回 queue budget exceeded。脚本里不留后续步,多发任何请求都会让 scriptedGateway 以 script exhausted 判失败。
+// 用例只看调用序列与等待时长,不依赖墙钟。
+func TestAssignGateWithQueue_NoRequestAfterBudgetExpiresInFlight(t *testing.T) {
+	errNet := errors.New("dial tcp: connection refused")
+	queued := queueCall{"assign-gate", "", loginQueued("T1", 7, 2000), nil}
+	cases := []struct {
+		name     string
+		steps    []queueCall
+		expireAt int    // 预算在第几次调用途中到期,以 1 起算
+		wantErr  string // 空串表示期望放行
+	}{
+		{
+			// 修复前红:queue-status 失败后无条件发恢复重入 assign-gate(token=T1),红在 script exhausted。
+			name:     "queue-status network error: no re-entry",
+			steps:    []queueCall{queued, {"queue-status", "T1", nil, errNet}},
+			expireAt: 2,
+			wantErr:  "queue budget exceeded",
+		},
+		{
+			// 修复前红:同上,回包 code=500 也无条件发恢复重入。
+			name:     "queue-status 500: no re-entry",
+			steps:    []queueCall{queued, {"queue-status", "T1", codeResponse(500, "login_unavailable"), nil}},
+			expireAt: 2,
+			wantErr:  "queue budget exceeded",
+		},
+		{
+			// 修复前红:case 410 无条件发不带 token 的 assign-gate,红在 script exhausted。
+			name:     "queue-status 410: no tokenless assign-gate",
+			steps:    []queueCall{queued, {"queue-status", "T1", codeResponse(410, "queue_token_expired"), nil}},
+			expireAt: 2,
+			wantErr:  "queue budget exceeded",
+		},
+		{
+			// 修复前红:预算在恢复重入途中到期,重入回 410 后仍发不带 token 的 assign-gate,红在 script exhausted。
+			name: "re-entry 410: no tokenless assign-gate",
+			steps: []queueCall{
+				queued,
+				{"queue-status", "T1", nil, errNet},
+				{"assign-gate", "T1", codeResponse(410, "queue_token_expired"), nil},
+			},
+			expireAt: 3,
+			wantErr:  "queue budget exceeded",
+		},
+		{
+			// 修复前即绿;钉住已发出的请求不随预算作废:截止后才回的放行照常生效,不被预算检查吞掉。
+			name:     "admission arriving after expiry still counts",
+			steps:    []queueCall{queued, {"queue-status", "T1", admittedResponse(), nil}},
+			expireAt: 2,
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			ctx, cancel := context.WithCancel(context.Background())
+			defer cancel()
+			inner := &scriptedGateway{t: t, steps: tc.steps}
+			gw := &budgetExpiresDuring{inner: inner, at: tc.expireAt, cancel: cancel}
+			var waits []time.Duration
+			rsp, err := AssignGateWithQueue(ctx, gw, &httpAssignGateRequest{ZoneID: 1}, nil, recordSleeps(&waits), zeroJitter)
+			if tc.wantErr == "" {
+				if err != nil {
+					t.Fatalf("err = %v, want admitted", err)
+				}
+				if rsp.Code != 0 {
+					t.Fatalf("code = %d, want 0", rsp.Code)
+				}
+			} else if err == nil || !strings.Contains(err.Error(), tc.wantErr) {
+				t.Fatalf("err = %v, want one containing %q", err, tc.wantErr)
+			}
+			if len(inner.steps) != 0 {
+				t.Fatalf("%d scripted calls never made, next %s(token=%q)", len(inner.steps), inner.steps[0].endpoint, inner.steps[0].token)
+			}
+			// 只有首次排队后的那一次等待;预算到期之后不再进入任何等待。
+			if want := []time.Duration{2 * time.Second}; !slices.Equal(waits, want) {
+				t.Fatalf("waits = %v, want %v", waits, want)
+			}
+		})
+	}
+}
+
+// TestSleepCtx_ExpiredBudgetNeverReturnsNil:排队预算已用完时 sleepCtx 必须返回错误,即使计时器同时到点。
+// 修复前红(几乎必然):d=0 的计时器与已取消的 ctx 同时就绪,select 随机选一支,每次一半概率走计时器分支返回 nil;
+// 64 次全部侥幸走 ctx 分支的概率是 2^-64。修复后计时器分支再查 ctx,结果确定。不真等待,不依赖墙钟。
+func TestSleepCtx_ExpiredBudgetNeverReturnsNil(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+	for i := range 64 {
+		if err := sleepCtx(ctx, 0); !errors.Is(err, context.Canceled) {
+			t.Fatalf("attempt %d: sleepCtx = %v, want context.Canceled", i, err)
+		}
+	}
+}
+
+// TestAssignGateWithQueue_Jitter 钉住抖动口径:持 token 时每次等待 = 基础间隔 + [0, 基础间隔的 20%];
+// 不持 token 的分支(按 retry_after_ms 重调 assign-gate)不加抖动,抖动源一次都不调。
+func TestAssignGateWithQueue_Jitter(t *testing.T) {
+	errNet := errors.New("dial tcp: connection refused")
+	cases := []struct {
+		name            string
+		steps           []queueCall
+		wantWaits       []time.Duration
+		wantJitterLimit []time.Duration // 抖动源每次收到的上界,nil 表示一次都不该调
+	}{
+		{
+			// 修复前红:持 token 的等待不加抖动(抖动源一次都没被调),等待恰为 retry_after。
+			// 抖动取满时等待 = 基础间隔 × 1.2,上界恰为基础间隔的 20%;退避下限与 retry_after 都按同一比例加抖动。
+			name: "held token waits add up to 20% of the base interval",
+			steps: []queueCall{
+				{"assign-gate", "", loginQueued("T1", 1, 2000), nil}, // 基础 2s
+				{"queue-status", "T1", nil, errNet},
+				{"assign-gate", "T1", codeResponse(429, "IP_RATE_LIMIT"), nil}, // 连续失败 1 次,基础 2s
+				{"queue-status", "T1", codeResponse(500, "login_unavailable"), nil},
+				{"assign-gate", "T1", rateLimitQueued(1), nil}, // 连续失败 2 次,基础 4s
+				{"queue-status", "T1", loginQueued("T1", 1, 5000), nil}, // 成功复位,基础取 retry_after 5s
+				{"queue-status", "T1", admittedResponse(), nil},
+			},
+			wantWaits: []time.Duration{
+				2400 * time.Millisecond, 2400 * time.Millisecond, 4800 * time.Millisecond, 6 * time.Second,
+			},
+			wantJitterLimit: []time.Duration{
+				400 * time.Millisecond, 400 * time.Millisecond, 800 * time.Millisecond, time.Second,
+			},
+		},
+		{
+			// 修复前即绿(本来就没有抖动);钉住不持 token 的分支口径不变:按 retry_after_ms(缺省 2s)等待,不调抖动源。
+			name: "without a token the jitter source is never called",
+			steps: []queueCall{
+				{"assign-gate", "", rateLimitQueued(500), nil},
+				{"assign-gate", "", rateLimitQueued(0), nil},
+				{"assign-gate", "", admittedResponse(), nil},
+			},
+			wantWaits:       []time.Duration{500 * time.Millisecond, 2 * time.Second},
+			wantJitterLimit: nil,
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			gw := &scriptedGateway{t: t, steps: tc.steps}
+			var waits, jitterLimits []time.Duration
+			rsp, err := AssignGateWithQueue(context.Background(), gw, &httpAssignGateRequest{ZoneID: 1}, nil,
+				recordSleeps(&waits), recordFullJitter(&jitterLimits))
+			if err != nil {
+				t.Fatalf("err = %v, want admitted", err)
+			}
+			if rsp.Code != 0 {
+				t.Fatalf("code = %d, want 0", rsp.Code)
+			}
+			if len(gw.steps) != 0 {
+				t.Fatalf("%d scripted calls never made, next %s(token=%q)", len(gw.steps), gw.steps[0].endpoint, gw.steps[0].token)
+			}
+			if !slices.Equal(waits, tc.wantWaits) {
+				t.Fatalf("waits = %v, want %v", waits, tc.wantWaits)
+			}
+			if !slices.Equal(jitterLimits, tc.wantJitterLimit) {
+				t.Fatalf("jitter limits = %v, want %v", jitterLimits, tc.wantJitterLimit)
+			}
+		})
+	}
+}
+
+// TestAssignGateWithQueue_HeldTokenWait 直接钉住 heldTokenWait 的边界:退避逐次翻倍封顶 30s、失败次数再大也不溢出、
+// 服务端给的更长 retry_after 优先、注入的抖动越界时被夹回 [0, 基础间隔的 20%]。
+func TestAssignGateWithQueue_HeldTokenWait(t *testing.T) {
+	fixedJitter := func(d time.Duration) func(time.Duration) time.Duration {
+		return func(time.Duration) time.Duration { return d }
+	}
+	cases := []struct {
+		name         string
+		retryAfterMs int64
+		failures     int
+		jitter       func(time.Duration) time.Duration
+		want         time.Duration
+	}{
+		{"no failure, retry_after below the floor", 1, 0, zeroJitter, 2 * time.Second},
+		{"no failure, negative retry_after", -5, 0, zeroJitter, 2 * time.Second},
+		{"no failure, retry_after above the floor", 3500, 0, zeroJitter, 3500 * time.Millisecond},
+		{"1 failure", 0, 1, zeroJitter, 2 * time.Second},
+		{"4 failures", 0, 4, zeroJitter, 16 * time.Second},
+		{"5 failures hit the cap", 0, 5, zeroJitter, 30 * time.Second},
+		{"huge failure count stays at the cap", 0, 1 << 20, zeroJitter, 30 * time.Second},
+		{"longer server retry_after wins over the cap", 45000, 9, zeroJitter, 45 * time.Second},
+		{"negative jitter clamped to 0", 0, 0, fixedJitter(-time.Second), 2 * time.Second},
+		{"oversized jitter clamped to 20%", 0, 3, fixedJitter(time.Minute), 8*time.Second + 1600*time.Millisecond},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			if got := heldTokenWait(tc.retryAfterMs, tc.failures, tc.jitter); got != tc.want {
+				t.Fatalf("heldTokenWait(%d, %d) = %v, want %v", tc.retryAfterMs, tc.failures, got, tc.want)
+			}
+		})
 	}
 }

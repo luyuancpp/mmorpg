@@ -10,6 +10,7 @@
       pwsh tools/scripts/run_cpp_tests.ps1            # 只跑(用已有 exe)
       pwsh tools/scripts/run_cpp_tests.ps1 -Build     # 先串行编译再跑
       pwsh tools/scripts/run_cpp_tests.ps1 -Filter aoi
+      pwsh tools/scripts/run_cpp_tests.ps1 -Filter muduo_grpc -LogDir build/verification/cpp-tests
 
     退出码:全绿 0,有失败/超时 1。CI 与本地都可直接用。
 
@@ -20,6 +21,9 @@
       2) 读配表的测试要能找到 bin/etc,脚本以仓库根为工作目录启动,
          由测试自身逐级上溯定位(见 turn_battle_engine_test 的真表契约用例)。
 
+.PARAMETER LogDir
+    保存每个测试工程的完整 stdout/stderr；省略时沿用临时文件清理。
+
 .NOTES
     MSBuild 必须串行 /m:1,并发会报假的 C1041/LNK1104(见 CLAUDE.md)。
 #>
@@ -28,12 +32,17 @@ param(
     [switch]$Build,
     [string]$Filter = '',
     [int]$TimeoutSeconds = 120,
-    [string]$Configuration = 'Debug'
+    [string]$Configuration = 'Debug',
+    [string]$LogDir = ''
 )
 
 $ErrorActionPreference = 'Stop'
 $repoRoot = (Resolve-Path (Join-Path $PSScriptRoot '..\..')).Path
 $testOutDir = Join-Path $repoRoot 'build\cpp\tests'
+if ($LogDir) {
+    $LogDir = [IO.Path]::GetFullPath($LogDir)
+    New-Item -ItemType Directory -Path $LogDir -Force | Out-Null
+}
 
 # 能编能跑的工程。不在表里的是「被测代码已被删除」的死工程,修不了配置就能救活,
 # 需要连测试源码一起重写或直接删,别贸然加进来(当前:
@@ -139,8 +148,15 @@ foreach ($name in $projects.Keys) {
         $failed++
         continue
     }
-    $stdout = [IO.Path]::GetTempFileName()
-    $stderr = "$stdout.err"
+    if ($LogDir) {
+        # 验证与失败交接需要完整 gtest 输出，指定目录时保留原始日志。
+        $stdout = Join-Path $LogDir "$name.stdout.log"
+        $stderr = Join-Path $LogDir "$name.stderr.log"
+    }
+    else {
+        $stdout = [IO.Path]::GetTempFileName()
+        $stderr = "$stdout.err"
+    }
     # 启动失败(被安全软件拦截、文件被占用、Access is denied)只记一条 FAIL 继续跑下一个;
     # 不能让整张汇总表随 $ErrorActionPreference='Stop' 一起消失
     # (2026-09-13 agones_lifecycle_test.exe 一个 Access is denied 就把全套 21 个工程的结果吞掉了)。
@@ -190,7 +206,7 @@ foreach ($name in $projects.Keys) {
             $results.Add([pscustomobject]@{ 名称 = $name; 构建 = 'OK'; 结果 = "$($pass.Groups[1].Value)/$($ran.Groups[1].Value) 全过" })
         }
     }
-    Remove-Item $stdout, $stderr -ErrorAction SilentlyContinue
+    if (-not $LogDir) { Remove-Item $stdout, $stderr -ErrorAction SilentlyContinue }
 }
 
 $results | Format-Table -AutoSize

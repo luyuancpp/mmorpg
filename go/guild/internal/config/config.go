@@ -3,9 +3,12 @@ package config
 import (
 	"errors"
 	"fmt"
+	"os"
+	"strings"
 	"time"
 
 	mysqldriver "github.com/go-sql-driver/mysql"
+	"github.com/zeromicro/go-zero/core/service"
 	"github.com/zeromicro/go-zero/zrpc"
 
 	"guild/internal/data"
@@ -291,8 +294,8 @@ type AssetOpConf struct {
 	ReconcileIntervalMs int `json:",default=2000"`
 	// ReconcileBatch 一次 Tick 最多领多少行;必须 ≥ Workers,否则多出来的 worker 永远闲着。
 	ReconcileBatch int `json:",default=100"`
-	// Workers 是**每个副本**同时在途的资产 RPC 上限。scene 的资产 RPC 是同步 gRPC,整个 scene 进程的
-	// sync poller 默认只有 8 条,调大会把 scene 的进场 / 开战请求挤在后面(assetop.LoopConfig.Workers 注释)。
+	// Workers 是**每个副本**同时在途的资产 RPC 上限。scene 的资产 RPC 在 scene 的 EventLoop 上同步执行,
+	// 调大会挤占逻辑帧,把 scene 的进场 / 开战请求拖在后面(assetop.LoopConfig.Workers 注释)。
 	// 副本数 × Workers 才是 scene 看到的并发,扩副本时连带复核。
 	Workers int `json:",default=8"`
 	// LeaseMs 行级租约;必须 ≥ OpBudgetMs + 2000,否则一行还在处理就被别的副本领走。
@@ -310,6 +313,11 @@ type AssetOpConf struct {
 	PoisonDelayMs int `json:",default=3600000"`
 	// LedgerReadMinAttempts 连续几次投不出去之后才读已落盘账本(B5d-1 起由 guild.go 的 AttachPersistedLedger 接上;没配 DataServiceRpc 时不读)。
 	LedgerReadMinAttempts int `json:",default=3"`
+	// RequireSQLCommit 是资产 SQL 提交证据开关,原样映射到 assetop.LoopConfig.RequireSQLCommit
+	// (docs/design/db-write-fencing-mysql.md §6.6 / §8.7)。缺省 false = HEAD 口径(scene 回包 durable / Redis 父键 blob)。
+	// **只有 guild 会投递到的 zone 全部已切 go/db Fencing.Mode=dual、已上新版 C++,并观察到证据在持续发布之后才打开**;
+	// 打开时 Loop.Ledger 必填(guild.go 经 Loop.CheckWiring 拒启)。回退时先关它,再切回 legacy 或回退 C++。
+	RequireSQLCommit bool `json:",optional"`
 
 	// ── 清理(goroutine guild.asset_op_cleanup,§5.22)──
 
@@ -573,6 +581,36 @@ func (c *Config) Validate() error {
 	if err := c.RpcServerConf.Validate(); err != nil {
 		return err
 	}
+	if c.MySQL.DataSourceEnv != "" {
+		value, present := os.LookupEnv(c.MySQL.DataSourceEnv)
+		if !present || strings.TrimSpace(value) == "" {
+			return errors.New("MySQL.DataSourceEnv 指定的SQL连接串未注入")
+		}
+		// 环境变量配置代表唯一来源；缺失时禁止退回本地样例连接串。
+		c.MySQL.DataSource = value
+	}
+	if !c.MySQL.RequiresTiDB() && c.Mode != service.DevMode && c.Mode != service.TestMode {
+		return errors.New("生产帮会权威库不得关闭TiDB门禁")
+	}
+	if maxOpen, _ := c.MySQL.EffectivePool(); maxOpen < 1 || maxOpen > 128 {
+		return errors.New("MySQL.MaxOpenConn 必须在 [1, 128] 内")
+	}
+	// 连接池上限:负数没有合法含义(0 = go-redis 缺省 10 × GOMAXPROCS),见 RedisConf.PoolSize。
+	for _, pool := range []struct {
+		name string
+		size int
+	}{
+		{"RedisClient", c.RedisClient.PoolSize},
+		{"PlayerLocatorRedis", c.PlayerLocatorRedis.PoolSize},
+		{"MergeMarkerRedis", c.MergeMarkerRedis.PoolSize},
+	} {
+		if pool.size < 0 {
+			return fmt.Errorf("%s.PoolSize(%d)不能为负:0 = go-redis 缺省 10 × GOMAXPROCS", pool.name, pool.size)
+		}
+	}
+	if err := c.MergeMarkerRedis.validate(); err != nil {
+		return err
+	}
 	if c.ApplicationQuotaPerMinute < 1 || c.ApplicationQuotaPerMinute > MaxApplicationQuotaPerMinute {
 		return fmt.Errorf("ApplicationQuotaPerMinute(%d)必须在 [1, %d] 内", c.ApplicationQuotaPerMinute, MaxApplicationQuotaPerMinute)
 	}
@@ -650,6 +688,11 @@ type RedisConf struct {
 	Host     string `json:"Host"`
 	Password string `json:"Password"`
 	DB       int    `json:"DB"`
+	// PoolSize 是 go-redis 连接池上限(共享 Redis 连接总账,P0-E 第 3 批)。0 / 不写 = go-redis 缺省 10 × GOMAXPROCS,
+	// 随 CPU limit 漂移;负数由 Validate 拒绝。guild 现在没有 K8s 清单,不进 Redis 连接总账;接入 K8s 时由
+	// tools/scripts/k8s_deploy.ps1 镜像并记账。PlayerLocatorRedis 没写 Host 时回落 RedisClient(连同本字段)。
+	// 落地恢复摘要专用客户端与申请配额池各自固定 4 条,不读本字段。
+	PoolSize int `json:"PoolSize,optional"`
 }
 
 // MergeMarkerRedisConf 是合服标记所在 Redis 的连接参数。
@@ -662,6 +705,14 @@ type MergeMarkerRedisConf struct {
 	Host string `json:"Host,optional"`
 	Pass string `json:"Pass,optional"`
 	DB   int    `json:"DB,optional"`
+	// PoolSize 同 RedisConf.PoolSize(0 / 不写 = go-redis 缺省 10 × GOMAXPROCS,负数拒启)。
+	PoolSize int `json:"PoolSize,optional"`
+	// RequireRouteReady 是 D1 第 3 批的读方门禁开关(docs/handoff/launch-readiness-20261013/spec_D1_batch1b2_2_3.md §5.4):
+	// true 时闸门改用 placement.RouteReadyReadScript,只有 mapping Redis 的就绪标记可信(身份绑定到本实例)时才按
+	// merge:in_progress:{zone} 判,不可信时经闸门的公会写(建帮、入帮、经济、活动等)一律按封锁拒绝;启动期试跑一次读脚本,执行不了就拒启。
+	// 缺省 false = 今天的 EXISTS 判据,行为不变。只在 data_service 的 RouteStore.Mode=db_first 且对账 leader 已挂上标记后打开
+	// (上线顺序 P5:go/db → data_service → guild);回退时先关它。要求配了 Host(Validate 拒绝「开关开着、闸门没接」)。
+	RequireRouteReady bool `json:"RequireRouteReady,optional"`
 }
 
 // Enabled 报告合服闸门是否配置了。Host 是唯一判据:没有地址就连不上,
@@ -670,23 +721,32 @@ func (c MergeMarkerRedisConf) Enabled() bool {
 	return c.Host != ""
 }
 
-type MySQLConf struct {
-	DataSource string `json:"DataSource"`
-	// MaxOpenConn / MaxIdleConn 是连接池上限(2026-10-16,K8s 上线批 BK8s)。以前不设 = database/sql 默认不限,
-	// 多副本 × 突发并发可以把 MySQL 的 max_connections 吃光;部署脚本的 MySQL 连接总账按这里的值记账,
-	// K8s ConfigMap 从 etc/guild.yaml 的同名键镜像。不写(0)= DefaultMySQLMaxOpenConn / DefaultMySQLMaxIdleConn;
-	// 写了必须为正,且 MaxIdleConn ≤ MaxOpenConn(Validate 强制)。
-	MaxOpenConn int `json:",optional"`
-	MaxIdleConn int `json:",optional"`
+// validate 拒绝「要求就绪标记却没接闸门」:那样开关形同虚设,闸门整体不生效,运维却以为它在 fail-closed。
+func (c MergeMarkerRedisConf) validate() error {
+	if c.RequireRouteReady && !c.Enabled() {
+		return errors.New("MergeMarkerRedis.RequireRouteReady=true 要求配置 MergeMarkerRedis.Host(data_service 的 mapping Redis):" +
+			"没接闸门时开关不生效,公会写完全不检查合服")
+	}
+	return nil
 }
 
-// 连接池缺省值:与 trade / friend / player_inbox 的服务 yaml 同取 20 / 5。
+type MySQLConf struct {
+	DataSource    string `json:"DataSource,optional"`
+	DataSourceEnv string `json:",optional"`
+	// 缺省开启全局权威库门禁；旧MySQL仅可在dev/test显式关闭。
+	RequireTiDB *bool `json:",optional"`
+	MaxOpenConn int   `json:",default=20"`
+	MaxIdleConn int   `json:",optional"`
+}
+
+func (c MySQLConf) RequiresTiDB() bool { return c.RequireTiDB == nil || *c.RequireTiDB }
+
+// 连接池预算与部署总账共用，强会话初始化仍由 authoritysql 负责。
 const (
 	DefaultMySQLMaxOpenConn = 20
 	DefaultMySQLMaxIdleConn = 5
 )
 
-// EffectivePool 返回生效的连接池上限:没写的项取缺省值。只在 Validate 通过之后用于建池。
 func (m MySQLConf) EffectivePool() (maxOpen, maxIdle int) {
 	maxOpen, maxIdle = m.MaxOpenConn, m.MaxIdleConn
 	if maxOpen == 0 {
@@ -695,7 +755,7 @@ func (m MySQLConf) EffectivePool() (maxOpen, maxIdle int) {
 	if maxIdle == 0 {
 		maxIdle = DefaultMySQLMaxIdleConn
 	}
-	return maxOpen, maxIdle
+	return
 }
 
 type NodeConf struct {

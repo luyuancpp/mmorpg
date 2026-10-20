@@ -2,22 +2,37 @@
 #include "engine/core/type_define/player_guid_comp.h"
 
 #include <algorithm>
+#include <array>
+#include <chrono>
 #include <cstdint>
 #include <cstdio>
+#include <cstdlib>
+#include <functional>
 #include <limits>
+#include <memory>
 #include <string>
 #include <vector>
+#include <hiredis/hiredis.h>
 
 #include "modules/condition/condition_type.h"
 #include "modules/mission/comp/mission_comp.h"
+#include "modules/mission/system/mission.h"
+#include "modules/bag/bag_service.h"
 #include "modules/bag/bag_system.h"
 #include "modules/bag/comp/player_bags_comp.h"
 #include "modules/bag/item_system.h"
+#include "modules/id_segment/guid_segment_registry.h"
 #include "modules/currency/comp/player_currency_comp.h"
 #include "modules/currency/constants/currency.h"
 #include "modules/currency/system/currency_system.h"
+#include "modules/gain_block/gain_block_service.h"
 #include "proto/battle/battle_data.pb.h"
 #include "table/code/item_table.h"
+#include "table/code/condition_table.h"
+#include "table/code/dungeon_table.h"
+#include "table/code/mission_table.h"
+#include "table/code/monster_table.h"
+#include "table/code/reward_table.h"
 #include "table/proto/tip/common_error_tip.pb.h"
 #include "proto/common/component/actor_comp.pb.h"
 #include "proto/common/component/actor_attribute_state_comp.pb.h"
@@ -31,6 +46,7 @@
 #include "services/scene/player/comp/player_frozen_comp.h"
 #include "services/scene/player/comp/player_ownership_comp.h"
 #include "services/scene/player/comp/last_persisted_snapshot_comp.h"
+#include "services/scene/player/system/player_mission.h"
 #include "proto/common/component/currency_comp.pb.h"
 #include "proto/common/event/battle_event.pb.h"
 #include "modules/mission/mission_events.h"
@@ -89,12 +105,122 @@ bool CountingPersist(entt::entity) {
     return false;
 }
 
+bool ArmSettlementMissionItemSegment(uint64_t lo = 100000, uint64_t hi = 200000) {
+    auto& client = tlsGuidSegmentRegistry.Get(GuidKind::kItem);
+    client.Reset();
+    GuidSegmentClient::Options options;
+    options.kindName = "item";
+    options.initialStep = 100000;
+    if (!client.Enable(options, [](const std::string&, uint32_t) { return true; },
+        [](GuidSegmentClient::TimerKind, double, std::function<void()>) {}, [] { return 0.0; })) return false;
+    client.Warm();
+    client.OnResponse(0, lo, hi);
+    return client.IsReady();
+}
+
+class PlayerMissionWithoutSinkTest : public testing::Test {
+protected:
+    void SetUp() override {
+        MissionTableManager::Instance().Load();
+        ConditionTableManager::Instance().Load();
+        RewardTableManager::Instance().Load();
+        ItemTableManager::Instance().Load();
+        DungeonTableManager::Instance().Load();
+        MonsterTableManager::Instance().Load();
+        ASSERT_TRUE(ArmSettlementMissionItemSegment());
+        player = tlsEcs.actorRegistry.create();
+        tlsEcs.actorRegistry.emplace<PlayerGuidComp>(player, kPlayerId);
+        auto& bags = tlsEcs.actorRegistry.emplace<PlayerBagsComp>(player);
+        for (auto& bag : bags.bags) bag.SetPlayerGuid(kPlayerId);
+        ASSERT_EQ(kSuccess, PlayerMissionSystem::Initialize(player));
+        tlsEcs.actorRegistry.emplace<BaseAttributesComp>(player).set_health(100);
+        tlsEcs.actorRegistry.emplace<DerivedAttributesComp>(player).set_max_health(100);
+        tlsEcs.actorRegistry.emplace<CurrencyComp>(player);
+        tlsEcs.actorRegistry.emplace<PlayerCurrencyComp>(player);
+        tlsEcs.actorRegistry.emplace<BattleSettlementLedgerComp>(player);
+        ASSERT_TRUE(tlsEcs.playerList.emplace(kPlayerId, player).second);
+        gPersistCalls = 0;
+        PlayerBattleSystem::SetPersistFnForTest(&CountingPersist);
+    }
+    void TearDown() override {
+        PlayerBattleSystem::SetPersistFnForTest(nullptr);
+        tlsEcs.playerList.erase(kPlayerId);
+        if (tlsEcs.actorRegistry.valid(player)) tlsEcs.actorRegistry.destroy(player);
+        EXPECT_TRUE(ArmSettlementMissionItemSegment(1, uint64_t{1} << 54));
+    }
+    MissionsComp& Missions() { return tlsEcs.actorRegistry.get<MissionsContainerComp>(player).map.at(0); }
+    Bag& Inventory() { return tlsEcs.actorRegistry.get<PlayerBagsComp>(player).bags[kInventory]; }
+    static constexpr Guid kPlayerId = 88448844;
+    entt::entity player{entt::null};
+};
+
+TEST_F(PlayerMissionWithoutSinkTest, BattleKillCompletesAndAutoGrantsWithoutAnyDispatcherSink) {
+    ASSERT_TRUE(tlsEcs.dispatcher.sink<ConditionEvent>().empty());
+    ASSERT_EQ(kSuccess, PlayerMissionSystem::Accept(player, 0, 4, 1000));
+    Inventory().SetCapacityForRestore(4);
+    BattleSettlementData settlement;
+    settlement.set_player_id(kPlayerId);
+    settlement.set_battle_id(801);
+    settlement.set_health(100);
+    auto* defeat = settlement.add_defeated_monsters();
+    defeat->set_monster_config_id(1);
+    defeat->set_count(1);
+
+    EXPECT_TRUE(PlayerBattleSettlementTestAccess::Apply(player, settlement));
+
+    EXPECT_TRUE(Missions().IsComplete(4));
+    EXPECT_FALSE(Missions().IsClaimable(4));
+    uint32_t itemCount = 0;
+    Inventory().ForEachItem([&itemCount](Guid, const ItemComp& item) { itemCount += item.size(); });
+    EXPECT_EQ(4u, itemCount);
+}
+
+// 只为结算幂等用例调整内存表行,析构时还原;不把虚构怪物声明成正式副本来源。
+class ScopedSettlementMissionRows {
+public:
+    bool Install() {
+        MissionTableManager::Instance().Load();
+        ConditionTableManager::Instance().Load();
+        auto* mission = const_cast<MissionTable*>(MissionTableManager::Instance().FindByIdSilent(4).first);
+        auto* first = const_cast<ConditionTable*>(ConditionTableManager::Instance().FindByIdSilent(1).first);
+        auto* second = const_cast<ConditionTable*>(ConditionTableManager::Instance().FindByIdSilent(2).first);
+        if (mission == nullptr || first == nullptr || second == nullptr) return false;
+        missionBefore = *mission;
+        firstBefore = *first;
+        secondBefore = *second;
+        installed = true;
+        mission->clear_condition_id();
+        mission->add_condition_id(1);
+        mission->add_condition_id(2);
+        mission->clear_target_count();
+        mission->add_target_count(100);
+        mission->add_target_count(100);
+        first->clear_condition1();
+        first->add_condition1(7001);
+        second->clear_condition1();
+        second->add_condition1(7002);
+        return true;
+    }
+    ~ScopedSettlementMissionRows() {
+        if (!installed) return;
+        *const_cast<MissionTable*>(MissionTableManager::Instance().FindByIdSilent(4).first) = missionBefore;
+        *const_cast<ConditionTable*>(ConditionTableManager::Instance().FindByIdSilent(1).first) = firstBefore;
+        *const_cast<ConditionTable*>(ConditionTableManager::Instance().FindByIdSilent(2).first) = secondBefore;
+    }
+private:
+    MissionTable missionBefore;
+    ConditionTable firstBefore;
+    ConditionTable secondBefore;
+    bool installed{false};
+};
+
 class PlayerBattleSettlementTest : public testing::Test {
 protected:
     void SetUp() override {
         // 缓存跨实体生命周期，所以每个测试/重复运行分配不同真实身份。
         static uint64_t nextPlayer = 9876500;
         playerId = ++nextPlayer;
+        ASSERT_TRUE(missionRows.Install());
         CreatePlayerEntity();
         RegisterPlayer();
         settlement.set_player_id(playerId);
@@ -108,7 +234,6 @@ protected:
             defeat->set_monster_config_id(configId);
             defeat->set_count(1);
         }
-        tlsEcs.dispatcher.sink<ConditionEvent>().connect<&PlayerBattleSettlementTest::OnCondition>(*this);
         gPersistCalls = 0;
         PlayerBattleSystem::SetPersistFnForTest(&CountingPersist);
     }
@@ -119,7 +244,6 @@ protected:
         tlsEcs.playerList.emplace(playerId, player);
     }
     void TearDown() override {
-        tlsEcs.dispatcher.sink<ConditionEvent>().disconnect<&PlayerBattleSettlementTest::OnCondition>(*this);
         PlayerBattleSystem::SetPersistFnForTest(nullptr);
         tlsEcs.playerList.erase(playerId);
         if (tlsEcs.actorRegistry.valid(player)) tlsEcs.actorRegistry.destroy(player);
@@ -135,34 +259,32 @@ protected:
         derived.set_max_mana(50);
         tlsEcs.actorRegistry.emplace<CurrencyComp>(player);
         tlsEcs.actorRegistry.emplace<PlayerCurrencyComp>(player);
-        tlsEcs.actorRegistry.emplace<MissionsContainerComp>(player);
+        ASSERT_EQ(kSuccess, PlayerMissionSystem::Initialize(player));
+        // 规则入口接取受控任务;正式可达性由独立的真实任务4无sink用例验证。
+        auto& missions = tlsEcs.actorRegistry.get<MissionsContainerComp>(player).map.at(0);
+        ASSERT_EQ(kSuccess, MissionSystem::AcceptMission({player, 4}, missions, MissionConfig::GetSingleton()));
         // 结算幂等账本是加载时(PlayerDatabaseMessageFieldsUnmarshal)无条件挂上的必需组件,
         // 结算路径只取不建。夹具照加载路径挂一本空账本 = 「盘上没有任何已应用条目」。
         tlsEcs.actorRegistry.emplace<BattleSettlementLedgerComp>(player);
     }
-    void OnCondition(const ConditionEvent& event) {
-        if (event.player != player) return;
-        EXPECT_EQ(event.conditionType, static_cast<uint32_t>(eConditionType::kConditionKillMonster));
-        EXPECT_EQ(event.amount, 1);
-        if (event.conditionIds.size() == 1) kills.push_back(event.conditionIds.at(0));
-        if (tryReentry) {
-            tryReentry = false;
-            didReenter = true;
-            reentryApplied = PlayerBattleSettlementTestAccess::Apply(player, settlement);
-        }
+    uint32_t KillProgressAt(int slot) const {
+        const auto* container = tlsEcs.actorRegistry.try_get<MissionsContainerComp>(player);
+        const auto* missions = container != nullptr ? container->Get(0) : nullptr;
+        if (missions == nullptr) return 0;
+        const auto& active = missions->GetMissionList().missions();
+        const auto it = active.find(4);
+        if (it == active.end() || slot >= it->second.progress_size()) return 0;
+        return it->second.progress(slot);
     }
+    uint32_t KillProgress() const { return KillProgressAt(0) + KillProgressAt(1); }
     entt::entity player{entt::null};
     uint64_t playerId{};
     BattleSettlementData settlement;
-    std::vector<uint32_t> kills;
-    bool tryReentry{}, didReenter{}, reentryApplied{};
+    ScopedSettlementMissionRows missionRows;
 };
 
-TEST_F(PlayerBattleSettlementTest, DuplicateSuccessfulCallbacksAndReentryPayAndProgressOnce) {
-    tryReentry = true;
+TEST_F(PlayerBattleSettlementTest, DuplicateSuccessfulCallbacksPayAndProgressOnce) {
     ASSERT_TRUE(PlayerBattleSettlementTestAccess::Apply(player, settlement));
-    EXPECT_TRUE(didReenter);
-    EXPECT_FALSE(reentryApplied);
     // 模拟两个 GET 均返回同一 battle_id，DEL 尚未执行时第二个回调抵达共用入口。
     // 改造后返回 true(= 这一局已应用,调用方可以解冻并尝试销账),但出参会告诉调用方
     // 「奖是上一次发的」,据此不再推一次结算面板;钱和进度当然不能再动。
@@ -170,13 +292,14 @@ TEST_F(PlayerBattleSettlementTest, DuplicateSuccessfulCallbacksAndReentryPayAndP
     EXPECT_TRUE(PlayerBattleSettlementTestAccess::Apply(player, settlement, alreadyApplied));
     EXPECT_TRUE(alreadyApplied);
     EXPECT_EQ(CurrencySystem::GetBalance(player, kCurrencyGold), 12u);
-    EXPECT_EQ(kills, (std::vector<uint32_t>{7002, 7001}));
+    EXPECT_EQ(1u, KillProgressAt(0));
+    EXPECT_EQ(1u, KillProgressAt(1));
     EXPECT_EQ(tlsEcs.actorRegistry.get<BaseAttributesComp>(player).health(), 80u);
     // 下一局不依赖 id 单调递增，正常收益仍然可应用。
     settlement.set_battle_id(700);
     EXPECT_TRUE(PlayerBattleSettlementTestAccess::Apply(player, settlement));
     EXPECT_EQ(CurrencySystem::GetBalance(player, kCurrencyGold), 24u);
-    EXPECT_EQ(kills.size(), 4u);
+    EXPECT_EQ(KillProgress(), 4u);
 }
 
 TEST_F(PlayerBattleSettlementTest, CurrencyFailureLeavesPendingSideEffectsUntouchedAndCanRetry) {
@@ -185,12 +308,12 @@ TEST_F(PlayerBattleSettlementTest, CurrencyFailureLeavesPendingSideEffectsUntouc
     PlayerBattleSettlementTestAccess::ApplyPending(player, settlement);
     EXPECT_EQ(tlsEcs.actorRegistry.get<BaseAttributesComp>(player).health(), 100u);
     EXPECT_EQ(tlsEcs.actorRegistry.get<BaseAttributesComp>(player).mana(), 50u);
-    EXPECT_TRUE(kills.empty());
+    EXPECT_EQ(0u, KillProgress());
     EXPECT_TRUE(tlsEcs.actorRegistry.all_of<InBattleComp>(player));
     tlsEcs.actorRegistry.emplace<CurrencyComp>(player);
     ASSERT_TRUE(PlayerBattleSettlementTestAccess::Apply(player, settlement));
     EXPECT_EQ(CurrencySystem::GetBalance(player, kCurrencyGold), 12u);
-    EXPECT_EQ(kills.size(), 2u);
+    EXPECT_EQ(KillProgress(), 2u);
 }
 
 // 空宠物列表是合法持久状态；整个组件缺失则是加载故障，不能跳过宝宝后仍发金币、记整笔账本。
@@ -202,7 +325,7 @@ TEST_F(PlayerBattleSettlementTest, MissingPetComponentRejectsBeforeCurrencyHealt
     EXPECT_EQ(0u, CurrencySystem::GetBalance(player, kCurrencyGold));
     EXPECT_EQ(100u, tlsEcs.actorRegistry.get<BaseAttributesComp>(player).health());
     EXPECT_EQ(50u, tlsEcs.actorRegistry.get<BaseAttributesComp>(player).mana());
-    EXPECT_TRUE(kills.empty());
+    EXPECT_EQ(0u, KillProgress());
     EXPECT_FALSE(battle_settlement::HasApplied(
         tlsEcs.actorRegistry.get<BattleSettlementLedgerComp>(player), settlement.battle_id()));
     EXPECT_FALSE(tlsEcs.actorRegistry.all_of<PlayerPetComp>(player));
@@ -217,7 +340,7 @@ TEST_F(PlayerBattleSettlementTest, MissingBagComponentRejectsBeforeCurrencyHealt
     EXPECT_FALSE(PlayerBattleSettlementTestAccess::Apply(player, settlement));
     EXPECT_EQ(0u, CurrencySystem::GetBalance(player, kCurrencyGold));
     EXPECT_EQ(100u, tlsEcs.actorRegistry.get<BaseAttributesComp>(player).health());
-    EXPECT_TRUE(kills.empty());
+    EXPECT_EQ(0u, KillProgress());
     EXPECT_FALSE(battle_settlement::HasApplied(
         tlsEcs.actorRegistry.get<BattleSettlementLedgerComp>(player), settlement.battle_id()));
     EXPECT_FALSE(tlsEcs.actorRegistry.all_of<PlayerBagsComp>(player));
@@ -229,7 +352,7 @@ TEST_F(PlayerBattleSettlementTest, MissingDerivedAttributesRejectsBeforeCurrency
     EXPECT_FALSE(PlayerBattleSettlementTestAccess::Apply(player, settlement));
     EXPECT_EQ(0u, CurrencySystem::GetBalance(player, kCurrencyGold));
     EXPECT_EQ(100u, tlsEcs.actorRegistry.get<BaseAttributesComp>(player).health());
-    EXPECT_TRUE(kills.empty());
+    EXPECT_EQ(0u, KillProgress());
     EXPECT_FALSE(battle_settlement::HasApplied(
         tlsEcs.actorRegistry.get<BattleSettlementLedgerComp>(player), settlement.battle_id()));
     EXPECT_FALSE(tlsEcs.actorRegistry.all_of<DerivedAttributesComp>(player));
@@ -248,7 +371,7 @@ TEST_F(PlayerBattleSettlementTest, MissingMissionComponentRejectsBeforeCurrencyP
     EXPECT_FALSE(PlayerBattleSettlementTestAccess::Apply(player, settlement));
     EXPECT_EQ(0u, CurrencySystem::GetBalance(player, kCurrencyGold));
     EXPECT_EQ(100u, tlsEcs.actorRegistry.get<BaseAttributesComp>(player).health());
-    EXPECT_TRUE(kills.empty());
+    EXPECT_EQ(0u, KillProgress());
     EXPECT_FALSE(battle_settlement::HasApplied(
         tlsEcs.actorRegistry.get<BattleSettlementLedgerComp>(player), settlement.battle_id()));
     EXPECT_FALSE(tlsEcs.actorRegistry.all_of<MissionsContainerComp>(player));
@@ -290,18 +413,20 @@ TEST_F(PlayerBattleSettlementTest, ReloginOldPendingDoesNotPayAgainOrRemoveNewBa
     const auto currency = tlsEcs.actorRegistry.get<CurrencyComp>(player);
     const auto attributes = tlsEcs.actorRegistry.get<BaseAttributesComp>(player);
     const auto ledger = tlsEcs.actorRegistry.get<BattleSettlementLedgerComp>(player);
+    const auto missions = tlsEcs.actorRegistry.get<MissionsContainerComp>(player);
     tlsEcs.actorRegistry.destroy(player);
     CreatePlayerEntity();
     RegisterPlayer();
     tlsEcs.actorRegistry.get<CurrencyComp>(player) = currency;
     tlsEcs.actorRegistry.get<BaseAttributesComp>(player) = attributes;
     tlsEcs.actorRegistry.get<BattleSettlementLedgerComp>(player) = ledger;
+    tlsEcs.actorRegistry.get<MissionsContainerComp>(player) = missions;
     tlsEcs.actorRegistry.emplace<InBattleComp>(player).set_battle_id(702);
     gPersistCalls = 0;
     for (int delivery = 0; delivery < 2; ++delivery) {
         PlayerBattleSettlementTestAccess::ApplyPending(player, settlement);
         EXPECT_EQ(CurrencySystem::GetBalance(player, kCurrencyGold), 12u) << "delivery " << delivery;
-        EXPECT_EQ(kills.size(), 2u) << "delivery " << delivery;
+        EXPECT_EQ(KillProgress(), 2u) << "delivery " << delivery;
         const auto* current = tlsEcs.actorRegistry.try_get<InBattleComp>(player);
         ASSERT_NE(current, nullptr);
         EXPECT_EQ(current->battle_id(), 702u);
@@ -315,27 +440,27 @@ TEST_F(PlayerBattleSettlementTest, ReloginOldPendingDoesNotPayAgainOrRemoveNewBa
 // 而且只能一次。
 TEST_F(PlayerBattleSettlementTest, CacheHitButLedgerMissReappliesExactlyOnce) {
     ASSERT_TRUE(PlayerBattleSettlementTestAccess::Apply(player, settlement));
-    ASSERT_EQ(kills.size(), 2u);
+    ASSERT_EQ(KillProgress(), 2u);
     tlsEcs.actorRegistry.destroy(player);
     CreatePlayerEntity();  // 从「没落盘」的旧 blob 重建:没有这一局的金币,也没有账本条目
     RegisterPlayer();
 
     PlayerBattleSettlementTestAccess::ApplyPending(player, settlement);  // 按账本清掉陈旧缓存,当场应用
     EXPECT_EQ(CurrencySystem::GetBalance(player, kCurrencyGold), 12u);
-    EXPECT_EQ(kills.size(), 4u);
+    EXPECT_EQ(KillProgress(), 2u);
     EXPECT_TRUE(battle_settlement::HasApplied(
         tlsEcs.actorRegistry.get<BattleSettlementLedgerComp>(player), settlement.battle_id()));
 
     PlayerBattleSettlementTestAccess::ApplyPending(player, settlement);  // 再投一次:账本挡住
     EXPECT_EQ(CurrencySystem::GetBalance(player, kCurrencyGold), 12u);
-    EXPECT_EQ(kills.size(), 4u);
+    EXPECT_EQ(KillProgress(), 2u);
 }
 
 TEST_F(PlayerBattleSettlementTest, MissingAttributesCanRetryWithoutPrematureGoldCredit) {
     tlsEcs.actorRegistry.remove<BaseAttributesComp>(player);
     EXPECT_FALSE(PlayerBattleSettlementTestAccess::Apply(player, settlement));
     EXPECT_EQ(CurrencySystem::GetBalance(player, kCurrencyGold), 0u);
-    EXPECT_TRUE(kills.empty());
+    EXPECT_EQ(0u, KillProgress());
     tlsEcs.actorRegistry.emplace<BaseAttributesComp>(player).set_health(100);
     EXPECT_TRUE(PlayerBattleSettlementTestAccess::Apply(player, settlement));
     EXPECT_EQ(CurrencySystem::GetBalance(player, kCurrencyGold), 12u);
@@ -345,7 +470,7 @@ TEST_F(PlayerBattleSettlementTest, WrongPlayerCannotApplyOrPoisonValidRetry) {
     settlement.set_player_id(playerId + 1);
     EXPECT_FALSE(PlayerBattleSettlementTestAccess::Apply(player, settlement));
     EXPECT_EQ(CurrencySystem::GetBalance(player, kCurrencyGold), 0u);
-    EXPECT_TRUE(kills.empty());
+    EXPECT_EQ(0u, KillProgress());
     settlement.set_player_id(playerId);
     EXPECT_TRUE(PlayerBattleSettlementTestAccess::Apply(player, settlement));
     EXPECT_EQ(CurrencySystem::GetBalance(player, kCurrencyGold), 12u);
@@ -382,7 +507,7 @@ TEST_F(PlayerBattleSettlementTest, LedgerFromDiskBlocksReapplyAfterRestart) {
     EXPECT_TRUE(PlayerBattleSettlementTestAccess::Apply(player, settlement, alreadyApplied));
     EXPECT_TRUE(alreadyApplied);
     EXPECT_EQ(CurrencySystem::GetBalance(player, kCurrencyGold), 0u);
-    EXPECT_TRUE(kills.empty());
+    EXPECT_EQ(0u, KillProgress());
     EXPECT_EQ(tlsEcs.actorRegistry.get<BaseAttributesComp>(player).health(), 100u);
 }
 
@@ -395,7 +520,7 @@ TEST_F(PlayerBattleSettlementTest, FrozenPlayerDefersSettlementWithNoGoldOrItems
     tlsEcs.actorRegistry.emplace<PlayerFrozenComp>(player);
 
     EXPECT_FALSE(PlayerBattleSettlementTestAccess::Apply(player, settlement));
-    EXPECT_TRUE(kills.empty());
+    EXPECT_EQ(0u, KillProgress());
     EXPECT_EQ(tlsEcs.actorRegistry.get<BaseAttributesComp>(player).health(), 100u);
     // 账本是加载时挂上的(夹具同此),这一局绝不能被登记进去。
     EXPECT_FALSE(battle_settlement::HasApplied(
@@ -405,7 +530,7 @@ TEST_F(PlayerBattleSettlementTest, FrozenPlayerDefersSettlementWithNoGoldOrItems
     // 解冻后照常应用,奖励一次不差 —— 延后不是丢弃。
     tlsEcs.actorRegistry.remove<PlayerFrozenComp>(player);
     ASSERT_TRUE(PlayerBattleSettlementTestAccess::Apply(player, settlement));
-    EXPECT_EQ(kills.size(), 2u);
+    EXPECT_EQ(KillProgress(), 2u);
 }
 
 // 归属交接一挂上,SavePlayerToRedis 开头就直接跳过写盘。此时应用等于改了一份永远落不了盘
@@ -416,8 +541,53 @@ TEST_F(PlayerBattleSettlementTest, TravelHandoffDefersWholeSettlement) {
 
     EXPECT_FALSE(PlayerBattleSettlementTestAccess::Apply(player, settlement));
     EXPECT_EQ(CurrencySystem::GetBalance(player, kCurrencyGold), 0u);
-    EXPECT_TRUE(kills.empty());
+    EXPECT_EQ(0u, KillProgress());
     EXPECT_FALSE(battle_settlement::HasApplied(
+        tlsEcs.actorRegistry.get<BattleSettlementLedgerComp>(player), settlement.battle_id()));
+}
+
+// 审计 cpp-economy#1(data-overwrite-rollback-audit-20261018.md §2.4):GM 封锁金币获取后,AddCurrency
+// 回的是终局拒绝 kAssetBlocked。修复前结算把它当暂时失败整笔返回 false,每次重投都同样被拒,这一局
+// 永远应用不上:药品不扣,掉落与任务进度丢失,下一局开打时单槽 pending 还会被覆盖。
+// 修复后只跳过金币,其余照常应用并登记账本(与资产通道的封禁口径一致)。解封后同一局的重投
+// 被账本挡住:金币不补发,进度也不重推。
+TEST_F(PlayerBattleSettlementTest, GmCurrencyBlockSkipsGoldButAppliesRestOfSettlement) {
+    ASSERT_EQ(kSuccess, CurrencySystem::BlockCurrency(player, kCurrencyGold));
+
+    bool alreadyApplied = true;
+    ASSERT_TRUE(PlayerBattleSettlementTestAccess::Apply(player, settlement, alreadyApplied));  // 修复前 false
+    EXPECT_FALSE(alreadyApplied);
+    EXPECT_EQ(CurrencySystem::GetBalance(player, kCurrencyGold), 0u);
+    EXPECT_EQ(KillProgress(), 2u);
+    EXPECT_EQ(tlsEcs.actorRegistry.get<BaseAttributesComp>(player).health(), 80u);
+    EXPECT_TRUE(battle_settlement::HasApplied(
+        tlsEcs.actorRegistry.get<BattleSettlementLedgerComp>(player), settlement.battle_id()));
+    EXPECT_EQ(gPersistCalls, 1);
+
+    ASSERT_EQ(kSuccess, CurrencySystem::UnblockCurrency(player, kCurrencyGold));
+    ASSERT_TRUE(PlayerBattleSettlementTestAccess::Apply(player, settlement, alreadyApplied));
+    EXPECT_TRUE(alreadyApplied);
+    EXPECT_EQ(CurrencySystem::GetBalance(player, kCurrencyGold), 0u);
+    EXPECT_EQ(KillProgress(), 2u);
+}
+
+// 全服 GainBlock 与单人 GM 封禁同属终局拒绝(AddCurrency 都回 kAssetBlocked),处理口径相同。
+TEST_F(PlayerBattleSettlementTest, GlobalCurrencyGainBlockSkipsGoldButAppliesRestOfSettlement) {
+    struct ScopedGlobalGoldBlock {
+        const uint32_t gold = static_cast<uint32_t>(kCurrencyGold);
+        const bool wasBlocked =
+            GainBlockService::IsGloballyBlocked(GainBlockService::GainType::kCurrency, gold);
+        ScopedGlobalGoldBlock() { GainBlockService::BlockGlobal(GainBlockService::GainType::kCurrency, gold); }
+        ~ScopedGlobalGoldBlock() {
+            if (!wasBlocked) GainBlockService::UnblockGlobal(GainBlockService::GainType::kCurrency, gold);
+        }
+    } block;
+
+    ASSERT_TRUE(PlayerBattleSettlementTestAccess::Apply(player, settlement));  // 修复前 false
+    EXPECT_EQ(CurrencySystem::GetBalance(player, kCurrencyGold), 0u);
+    EXPECT_EQ(KillProgress(), 2u);
+    EXPECT_EQ(tlsEcs.actorRegistry.get<BaseAttributesComp>(player).health(), 80u);
+    EXPECT_TRUE(battle_settlement::HasApplied(
         tlsEcs.actorRegistry.get<BattleSettlementLedgerComp>(player), settlement.battle_id()));
 }
 
@@ -461,7 +631,7 @@ TEST_F(PlayerBattleSettlementTest, MissingLedgerRejectsSettlementWithoutSideEffe
     // 修复前这几条都红:返回 true、金币 12、击杀 2 条、血量 80、账本被补建、压了一次存盘。
     EXPECT_FALSE(PlayerBattleSettlementTestAccess::Apply(player, settlement));
     EXPECT_EQ(CurrencySystem::GetBalance(player, kCurrencyGold), 0u);
-    EXPECT_TRUE(kills.empty());
+    EXPECT_EQ(0u, KillProgress());
     EXPECT_EQ(tlsEcs.actorRegistry.get<BaseAttributesComp>(player).health(), 100u);
     EXPECT_EQ(gPersistCalls, 0);
     // ASSERT 而非 EXPECT:修复前账本已被补建,下面的 emplace 会触发 entt 断言把整个测试进程带崩。
@@ -470,7 +640,7 @@ TEST_F(PlayerBattleSettlementTest, MissingLedgerRejectsSettlementWithoutSideEffe
     tlsEcs.actorRegistry.emplace<BattleSettlementLedgerComp>(player);
     ASSERT_TRUE(PlayerBattleSettlementTestAccess::Apply(player, settlement));
     EXPECT_EQ(CurrencySystem::GetBalance(player, kCurrencyGold), 12u);
-    EXPECT_EQ(kills.size(), 2u);
+    EXPECT_EQ(KillProgress(), 2u);
 }
 
 // 销账入口同理:活实体缺账本时「已应用 / 没应用」都判不了。修复前补建一本空账本并按「没应用」
@@ -544,6 +714,12 @@ namespace {
 
 constexpr uint32_t kSettlementStackItem = 10;   // 可叠加
 constexpr uint32_t kSettlementDropItem = 11;    // 可叠加
+constexpr uint32_t kSettlementNonStackItem = 1; // 不可叠加(max_stack_size = 1):每件一个新实例
+
+// 把 item 号段临时换成小区间的用例在析构时还原 bag_test 的号段基线(与 PlayerMissionWithoutSinkTest 同一基线)。
+struct ScopedItemSegmentBaseline {
+    ~ScopedItemSegmentBaseline() { EXPECT_TRUE(ArmSettlementMissionItemSegment(1, uint64_t{1} << 54)); }
+};
 
 class PlayerBattleSettlementItemTest : public PlayerBattleSettlementTest {
 protected:
@@ -556,6 +732,9 @@ protected:
     }
     Bag& Inventory() {
         return tlsEcs.actorRegistry.get<PlayerBagsComp>(player).bags[kInventory];
+    }
+    Bag& Temporary() {
+        return tlsEcs.actorRegistry.get<PlayerBagsComp>(player).bags[kTemporary];
     }
     void GiveItem(uint32_t configId, uint32_t count) {
         InitItemParam param;
@@ -574,6 +753,80 @@ protected:
         entry->set_count(count);
     }
 };
+
+TEST_F(PlayerBattleSettlementItemTest, SettlementMainBagFullSendsWholeDropBatchToTemporary) {
+    // 铺底使用还原入口；发物和流水各有独立号段，本例显式安装二者，不依赖前序用例状态。
+    auto& segment = tlsGuidSegmentRegistry.Get(GuidKind::kItem);
+    auto& txSegment = tlsGuidSegmentRegistry.Get(GuidKind::kTxLog);
+    const bool txWasEnabled = txSegment.IsEnabled();
+    const auto arm = [](GuidSegmentClient& client, const std::string& kind, uint64_t lo, uint64_t hi) {
+        client.Reset();
+        GuidSegmentClient::Options options;
+        options.kindName = kind;
+        options.initialStep = 100000;
+        if (!client.Enable(options, [](const std::string&, uint32_t) { return true; },
+                            [](GuidSegmentClient::TimerKind, double, std::function<void()>) {},
+                            [] { return 0.0; })) return false;
+        client.Warm();
+        client.OnResponse(0, lo, hi);
+        return client.IsReady();
+    };
+    struct RestoreSegment {
+        const decltype(arm)& restore;
+        GuidSegmentClient& item;
+        GuidSegmentClient& tx;
+        bool txEnabled;
+        ~RestoreSegment() {
+            EXPECT_TRUE(restore(item, "item", 1, uint64_t{1} << 54));
+            tx.Reset();
+            if (txEnabled) EXPECT_TRUE(restore(tx, "txlog", 1, uint64_t{1} << 54));
+        }
+    } restore{arm, segment, txSegment, txWasEnabled};
+    ASSERT_TRUE(arm(segment, "item", 99100000, 99200000));
+    ASSERT_TRUE(arm(txSegment, "txlog", 199100000, 199200000));
+    // 流水计数依赖已启用的 txlog 号段；未启用时 TryNext 不计 unavailable。
+    auto& logSegment = tlsGuidSegmentRegistry.Get(GuidKind::kTxLog);
+    logSegment.Reset();
+    struct ResetLogSegment {
+        ~ResetLogSegment() { tlsGuidSegmentRegistry.Get(GuidKind::kTxLog).Reset(); }
+    } resetLogSegment;
+    GuidSegmentClient::Options logOptions;
+    logOptions.kindName = "txlog";
+    logOptions.initialStep = 100000;
+    ASSERT_TRUE(logSegment.Enable(logOptions,
+        [](const std::string&, uint32_t) { return true; },
+        [](GuidSegmentClient::TimerKind, double, std::function<void()>) {},
+        [] { return 0.0; }));
+    logSegment.Warm();
+    logSegment.OnResponse(0, 700000, 800000);
+    ASSERT_TRUE(logSegment.IsReady());
+    Inventory().SetCapacityForRestore(1);
+    constexpr Guid oldItem = (uint64_t{1} << 60) + 9911;
+    Inventory().InsertItemForRestore(oldItem, 3, 1, 0, 1);
+    const auto before = Inventory().GetItemCompByGuid(oldItem)->SerializeAsString();
+    auto& temporary = tlsEcs.actorRegistry.get<PlayerBagsComp>(player).bags[kTemporary];
+    ASSERT_EQ(0u, temporary.OccupiedGridCount());
+    settlement.set_gold_gain(0);
+    settlement.clear_defeated_monsters();
+    SetGained(kSettlementStackItem, 3);
+    SetGained(kSettlementDropItem, 2);
+    const auto logBefore = tlsGuidSegmentRegistry.Get(GuidKind::kTxLog).GetStats();
+
+    ASSERT_TRUE(PlayerBattleSettlementTestAccess::Apply(player, settlement));
+
+    ASSERT_NE(nullptr, Inventory().GetItemCompByGuid(oldItem));
+    EXPECT_EQ(before, Inventory().GetItemCompByGuid(oldItem)->SerializeAsString());
+    EXPECT_EQ(0u, Inventory().GetItemPosByGuid(oldItem));
+    EXPECT_EQ(1u, Inventory().OccupiedGridCount());
+    EXPECT_EQ(3u, temporary.GetTotalItemCount(kSettlementStackItem));
+    EXPECT_EQ(2u, temporary.GetTotalItemCount(kSettlementDropItem));
+    EXPECT_EQ(2u, temporary.OccupiedGridCount());
+    EXPECT_TRUE(Inventory().IsLayerConsistent());
+    EXPECT_TRUE(temporary.IsLayerConsistent());
+    const auto logAfter = tlsGuidSegmentRegistry.Get(GuidKind::kTxLog).GetStats();
+    // 一条流水恰好申请一个 tx_id；无 Kafka 的测试只验证发放两项各尝试一次。
+    EXPECT_EQ(2u, logAfter.issued + logAfter.unavailable - logBefore.issued - logBefore.unavailable);
+}
 
 TEST_F(PlayerBattleSettlementItemTest, ConsumedIsDeductedAndGainedIsAddedToInventory) {
     GiveItem(kSettlementStackItem, 5);
@@ -641,12 +894,79 @@ TEST_F(PlayerBattleSettlementItemTest, RepeatedApplyDoesNotDoubleConsumeOrDouble
     EXPECT_EQ(CurrencySystem::GetBalance(player, kCurrencyGold), 12u);
 }
 
+// 审计 cpp-economy#0(data-overwrite-rollback-audit-20261018.md §2.4):物品号段暂时发不出号。
+// 修复前的走向:金币照常入账、药品照扣,主背包与临时格都因发不出号整批拒绝,只打一行 ERROR,账本照样登记
+// 「已应用」;在线路径随即销账,掉落永久丢失。修复后在金币之前按掉落的新实例数上界预检号段余量:
+// 不够就整笔延后、零副作用,预检本身也不耗号。号段续上后重投照常应用一次 —— 延后不是丢弃。
+TEST_F(PlayerBattleSettlementItemTest, ItemGuidShortageDefersWholeSettlementBeforeGold) {
+    ScopedItemSegmentBaseline restoreBaseline;
+    GiveItem(kSettlementStackItem, 5);  // 铺底在换号段之前,用的是基线号段
+    SetConsumed(kSettlementStackItem, 2);
+    SetGained(kSettlementNonStackItem, 3);  // 3 件不可叠加 = 3 个新实例
+    ASSERT_TRUE(ArmSettlementMissionItemSegment(99300000, 99300002));  // 只剩 2 个号
+
+    EXPECT_FALSE(PlayerBattleSettlementTestAccess::Apply(player, settlement));  // 修复前 true
+    EXPECT_EQ(CurrencySystem::GetBalance(player, kCurrencyGold), 0u);           // 修复前 12
+    EXPECT_EQ(Inventory().GetTotalItemCount(kSettlementStackItem), 5u);         // 修复前 3
+    EXPECT_EQ(Inventory().GetTotalItemCount(kSettlementNonStackItem), 0u);
+    EXPECT_EQ(Temporary().GetTotalItemCount(kSettlementNonStackItem), 0u);
+    EXPECT_EQ(0u, KillProgress());
+    EXPECT_EQ(tlsEcs.actorRegistry.get<BaseAttributesComp>(player).health(), 100u);
+    EXPECT_FALSE(battle_settlement::HasApplied(
+        tlsEcs.actorRegistry.get<BattleSettlementLedgerComp>(player), settlement.battle_id()));
+    EXPECT_EQ(gPersistCalls, 0);
+    EXPECT_EQ(tlsGuidSegmentRegistry.Get(GuidKind::kItem).Available(), 2u);
+
+    ASSERT_TRUE(ArmSettlementMissionItemSegment(99400000, 99500000));  // 续段到达
+    ASSERT_TRUE(PlayerBattleSettlementTestAccess::Apply(player, settlement));
+    EXPECT_EQ(CurrencySystem::GetBalance(player, kCurrencyGold), 12u);
+    EXPECT_EQ(Inventory().GetTotalItemCount(kSettlementStackItem), 3u);
+    EXPECT_EQ(Inventory().GetTotalItemCount(kSettlementNonStackItem), 3u);
+    EXPECT_EQ(KillProgress(), 2u);
+    EXPECT_TRUE(battle_settlement::HasApplied(
+        tlsEcs.actorRegistry.get<BattleSettlementLedgerComp>(player), settlement.battle_id()));
+}
+
+// 预检的上界也覆盖「主背包放不下 → 整批转投临时格」:主背包在空间规划阶段就拒绝,一个号都不铸,
+// 转投临时格那一次最多铸 BagService::MaxNewInstancesFor 个。号段恰好只剩这么多时必须照常落地,
+// 否则预检会把本可发放的掉落误判为号段不足,让结算无限延后。
+TEST_F(PlayerBattleSettlementItemTest, ExactItemGuidCapacityCoversTemporaryFallback) {
+    ScopedItemSegmentBaseline restoreBaseline;
+    Inventory().SetCapacityForRestore(1);
+    constexpr Guid oldItem = (uint64_t{1} << 60) + 9912;
+    Inventory().InsertItemForRestore(oldItem, 3, 1, 0, 1);
+    settlement.clear_defeated_monsters();
+    SetGained(kSettlementStackItem, 3);  // 可叠加,各占 1 个新实例
+    SetGained(kSettlementDropItem, 2);
+    ASSERT_TRUE(ArmSettlementMissionItemSegment(99600000, 99600002));  // 恰好 2 个号
+
+    ASSERT_TRUE(PlayerBattleSettlementTestAccess::Apply(player, settlement));
+    EXPECT_EQ(1u, Inventory().OccupiedGridCount());
+    EXPECT_EQ(3u, Temporary().GetTotalItemCount(kSettlementStackItem));
+    EXPECT_EQ(2u, Temporary().GetTotalItemCount(kSettlementDropItem));
+    EXPECT_EQ(CurrencySystem::GetBalance(player, kCurrencyGold), 12u);
+    EXPECT_EQ(tlsGuidSegmentRegistry.Get(GuidKind::kItem).Available(), 0u);
+}
+
+// 上界口径:不可叠加按件计,可叠加按满堆向上取整;查不到配置行的项按 0 计
+// (整批会因配置错误被拒、一个号都不铸,与号段余量无关,不能因此把结算挡成永久延后)。
+TEST(BagServiceNewInstanceBound, CountsStacksPerConfigAndIgnoresUnknownRows) {
+    ItemTableManager::Instance().Load();
+    EXPECT_EQ(0u, BagService::MaxNewInstancesFor(ItemCountMap{}));
+    EXPECT_EQ(3u, BagService::MaxNewInstancesFor(ItemCountMap{{kSettlementNonStackItem, 3}}));
+    EXPECT_EQ(1u, BagService::MaxNewInstancesFor(ItemCountMap{{kSettlementStackItem, 999}}));
+    EXPECT_EQ(2u, BagService::MaxNewInstancesFor(ItemCountMap{{kSettlementStackItem, 1000}}));
+    EXPECT_EQ(4u, BagService::MaxNewInstancesFor(
+        ItemCountMap{{kSettlementNonStackItem, 3}, {kSettlementDropItem, 5}}));
+    EXPECT_EQ(0u, BagService::MaxNewInstancesFor(ItemCountMap{{999999999u, 7}}));
+}
+
 }  // namespace
 
 // ---------------------------------------------------------------------------
 // 2026-10-14 landing-recovery-sync-digest.md §7:待结算记录去掉到期删除 + 积压索引。
-// 读写 pending 的 Lua 由 battle 与 scene 两端共用(settlement_outbox.h)。单测不连 Redis,
-// 所以盯住脚本文本里的不变量:写入不带任何过期且必 ZADD 索引;销账必 ZREM,且只在删 pending 的分支里;
+// 读写 pending 的 Lua 由 battle 与 scene 两端共用(settlement_outbox.h)。
+// ACK 直接在专用 Redis 执行生产脚本验证原子销账；其余静态契约钉住无到期删除及键位。
 // 孤儿清理的 EXISTS 与 ZREM 在同一条脚本里。键位与 battle_room_manager.cpp / player_battle.cpp 的
 // EVAL 参数顺序一一对应,改脚本键位时这里会先红。
 // ---------------------------------------------------------------------------
@@ -686,21 +1006,125 @@ TEST(PendingSettlementContract, SceneStagingJoinsBacklogIndexOnlyWhenWritten) {
     EXPECT_GT(zadd, script.find("return 2"));
 }
 
-// ZREM 只在「pending:id == 本局」分支里:pending 已属于下一局时,索引成员代表的是下一局的记录,不能摘。
+namespace {
+struct SettlementReplyDeleter {
+    void operator()(redisReply* reply) const { freeReplyObject(reply); }
+};
+
+struct SettlementRedisFixture {
+    using Reply = std::unique_ptr<redisReply, SettlementReplyDeleter>;
+    std::unique_ptr<redisContext, decltype(&redisFree)> context{nullptr, &redisFree};
+    std::array<std::string, 5> keys;
+
+    SettlementRedisFixture() {
+        const auto nonce = std::chrono::steady_clock::now().time_since_epoch().count();
+        const auto prefix = "test:{settlement-ack-" + std::to_string(nonce) + "}:";
+        for (std::size_t index = 0; index < keys.size(); ++index)
+            keys[index] = prefix + std::to_string(index);
+    }
+    ~SettlementRedisFixture() {
+        if (context == nullptr || context->err != 0) return;
+        std::vector<std::string> command{"DEL"};
+        command.insert(command.end(), keys.begin(), keys.end());
+        (void)Run(command);
+    }
+    Reply Run(const std::vector<std::string>& command) {
+        std::vector<const char*> arguments;
+        std::vector<std::size_t> lengths;
+        for (const auto& argument : command) {
+            arguments.push_back(argument.data());
+            lengths.push_back(argument.size());
+        }
+        return Reply(static_cast<redisReply*>(redisCommandArgv(context.get(),
+            static_cast<int>(arguments.size()), arguments.data(), lengths.data())));
+    }
+    Reply Ack(const std::string& battle) {
+        std::vector<std::string> command{"EVAL", battle_settlement::kAckSettlementScript, "5"};
+        command.insert(command.end(), keys.begin(), keys.end());
+        command.insert(command.end(), {battle, "player"});
+        return Run(command);
+    }
+};
+}
+
 TEST(PendingSettlementContract, AckRemovesIndexMemberOnlyTogetherWithPending) {
-    const std::string script = battle_settlement::kAckSettlementScript;
-    const auto pendingBranch = script.find("if redis.call('GET', KEYS[2]) == ARGV[1] then");
-    const auto lockBranch = script.find("if redis.call('GET', KEYS[3]) == ARGV[1] then");
-    const auto zrem = script.find("redis.call('ZREM', KEYS[5], ARGV[2])");
-    ASSERT_NE(pendingBranch, std::string::npos);
-    ASSERT_NE(lockBranch, std::string::npos);
-    ASSERT_NE(zrem, std::string::npos);
-    EXPECT_GT(zrem, pendingBranch);
-    EXPECT_LT(zrem, script.find(" end ", pendingBranch));
-    EXPECT_LT(zrem, lockBranch);
-    // zrem 指向 redis.call 开头，必须跳过整条调用再查，否则会再次命中自身的 ZREM。
-    EXPECT_EQ(script.find("'ZREM'", zrem + std::string("redis.call('ZREM', KEYS[5], ARGV[2])").size()),
-              std::string::npos);
+    const char* address = std::getenv("MMORPG_TEST_REDIS_ADDR");
+    if (address == nullptr || *address == '\0')
+        GTEST_SKIP() << "未设置 MMORPG_TEST_REDIS_ADDR，跳过真实 Redis ACK 契约";
+    const std::string endpoint(address);
+    const auto colon = endpoint.rfind(':');
+    ASSERT_NE(std::string::npos, colon);
+    ASSERT_GT(colon, 0u);
+    char* tail = nullptr;
+    const long port = std::strtol(endpoint.c_str() + colon + 1, &tail, 10);
+    ASSERT_NE(nullptr, tail);
+    ASSERT_EQ('\0', *tail);
+    ASSERT_GT(port, 0);
+    ASSERT_LE(port, 65535);
+    SettlementRedisFixture redis;
+    const timeval timeout{1, 0};
+    redis.context.reset(redisConnectWithTimeout(endpoint.substr(0, colon).c_str(), static_cast<int>(port), timeout));
+    ASSERT_NE(nullptr, redis.context);
+    ASSERT_EQ(0, redis.context->err);
+    ASSERT_EQ(REDIS_OK, redisSetTimeout(redis.context.get(), timeout));
+
+    const auto expectOk = [&redis](const std::vector<std::string>& command) {
+        const auto reply = redis.Run(command);
+        ASSERT_NE(nullptr, reply);
+        ASSERT_NE(REDIS_REPLY_ERROR, reply->type);
+    };
+    const auto expectValue = [&redis](std::size_t index, const std::string& expected) {
+        const auto reply = redis.Run({"GET", redis.keys[index]});
+        ASSERT_NE(nullptr, reply);
+        ASSERT_EQ(REDIS_REPLY_STRING, reply->type);
+        EXPECT_EQ(expected, std::string(reply->str, reply->len));
+    };
+    const auto expectAck = [&redis](const std::string& battle, long long expected) {
+        const auto reply = redis.Ack(battle);
+        ASSERT_NE(nullptr, reply);
+        ASSERT_EQ(REDIS_REPLY_INTEGER, reply->type);
+        EXPECT_EQ(expected, reply->integer);
+    };
+    const auto prepare = [&] {
+        const std::array<std::string, 4> values{"blob", "current", "current", "binding"};
+        for (std::size_t index = 0; index < values.size(); ++index)
+            ASSERT_NO_FATAL_FAILURE(expectOk({"SET", redis.keys[index], values[index]}));
+        ASSERT_NO_FATAL_FAILURE(expectOk({"ZADD", redis.keys[4], "1", "player"}));
+    };
+
+    ASSERT_NO_FATAL_FAILURE(prepare());
+    ASSERT_NO_FATAL_FAILURE(expectAck("old", 0));
+    ASSERT_NO_FATAL_FAILURE(expectValue(0, "blob"));
+    ASSERT_NO_FATAL_FAILURE(expectValue(1, "current"));
+    ASSERT_NO_FATAL_FAILURE(expectValue(2, "current"));
+    ASSERT_NO_FATAL_FAILURE(expectValue(3, "binding"));
+    auto member = redis.Run({"ZSCORE", redis.keys[4], "player"});
+    ASSERT_NE(nullptr, member);
+    EXPECT_EQ(REDIS_REPLY_STRING, member->type);
+
+    // 锁属于旧局但 pending 属于新局：只能放旧锁，不能摘掉新局索引。
+    ASSERT_NO_FATAL_FAILURE(expectOk({"SET", redis.keys[2], "old"}));
+    ASSERT_NO_FATAL_FAILURE(expectAck("old", 2));
+    ASSERT_NO_FATAL_FAILURE(expectValue(0, "blob"));
+    ASSERT_NO_FATAL_FAILURE(expectValue(1, "current"));
+    member = redis.Run({"ZSCORE", redis.keys[4], "player"});
+    ASSERT_NE(nullptr, member);
+    EXPECT_EQ(REDIS_REPLY_STRING, member->type);
+
+    ASSERT_NO_FATAL_FAILURE(prepare());
+    ASSERT_NO_FATAL_FAILURE(expectAck("current", 3));
+    for (const auto& key : redis.keys) {
+        const auto reply = redis.Run({"EXISTS", key});
+        ASSERT_NE(nullptr, reply);
+        ASSERT_EQ(REDIS_REPLY_INTEGER, reply->type);
+        EXPECT_EQ(0, reply->integer);
+    }
+    ASSERT_NO_FATAL_FAILURE(expectAck("current", 0));
+    // 旧回执重投不能删除之后新建的 pending、锁及索引。
+    ASSERT_NO_FATAL_FAILURE(prepare());
+    ASSERT_NO_FATAL_FAILURE(expectAck("old", 0));
+    ASSERT_NO_FATAL_FAILURE(expectValue(0, "blob"));
+    ASSERT_NO_FATAL_FAILURE(expectValue(2, "current"));
 }
 
 TEST(PendingSettlementContract, CorruptRecordCleanupAlsoRemovesIndexMember) {
@@ -839,7 +1263,7 @@ TEST_F(PlayerBattleSettlementTest, PendingAppliedAfterFreezeExpiryPaysOnceWithou
     for (int read = 0; read < 2; ++read) {
         PlayerBattleSettlementTestAccess::ApplyPending(player, settlement);
         EXPECT_EQ(CurrencySystem::GetBalance(player, kCurrencyGold), 12u) << "read " << read;
-        EXPECT_EQ(kills.size(), 2u) << "read " << read;
+        EXPECT_EQ(KillProgress(), 2u) << "read " << read;
         EXPECT_FALSE(tlsEcs.actorRegistry.any_of<InBattleComp>(player)) << "read " << read;
     }
 }
@@ -850,7 +1274,7 @@ TEST_F(PlayerBattleSettlementTest, FreezeExpiryRecoveryWithoutRedisAppliesNothin
     PlayerBattleSettlementTestAccess::RecoverAfterFreezeExpiry(player, playerId);
     EXPECT_TRUE(tlsEcs.actorRegistry.valid(player));
     EXPECT_EQ(CurrencySystem::GetBalance(player, kCurrencyGold), 0u);
-    EXPECT_TRUE(kills.empty());
+    EXPECT_EQ(0u, KillProgress());
     EXPECT_EQ(gPersistCalls, 0);
     EXPECT_TRUE(PlayerBattleSettlementTestAccess::LoginRecheckPending(player));
 }

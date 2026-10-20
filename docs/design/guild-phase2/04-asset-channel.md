@@ -11,7 +11,7 @@
 
 - **一句话**:Go 服务先在自己库里写一行"待办资产指令"(outbox),给它一个"该玩家该流"的递增流水号 seq;再按 `player:{id}:location` 找到玩家所在 scene,调 `SceneNodeGrpc.AssetDebit / AssetCredit / AssetAbortDebit`;scene 在 loop 线程**同一次处理**里做"查账本 → 闸门 → 改资产 → 记账本 → 触发存盘";账本和资产在 `player_database` 同一条记录里,**一起落盘、一起丢**;Go 只在响应为 `(APPLIED 或 REJECTED) 且 durable=true` 时才终结这一行。
 - **类比**:像银行柜台办业务要"流水号 + 回执"。流水号(seq)由 Go 发;柜台(scene)见过的流水号直接把原回执再给你一遍,绝不重办;回执要"盖了入库章"(durable,已写进 Redis 玩家数据)才算数。
-- **不在 gRPC 线程上等存盘**:生成器模板在 `future.get()` 之后没有守护段(`tools/proto_generator/protogen/internal/grpc_handler_gen.go:130-141`),硬塞等待会被重生成吞掉。改为:scene 应用后立刻 `SavePlayerToRedis`,响应里如实报 `durable`;Go 用**同一 seq** 按 100/200/400ms 重查,重查时 scene 只读答复(不会重办)。实测 Redis SET 为毫秒级,一般第二次就拿到 `durable=true`。
+- **不在 gRPC 线程上等存盘**:生成器模板在 `future.get()` 之后没有守护段(`tools/proto_generator/protogen/internal/grpc_handler_gen.go:130-141`),硬塞等待会被重生成吞掉。改为:scene 应用后立刻 `SavePlayerToRedis`,响应里如实报 `durable`;Go 用**同一 seq** 按 100/200/400ms 重查,重查时 scene 只读答复(不会重办)。实测 Redis SET 为毫秒级,一般第二次就拿到 `durable=true`。(**2026-10-16 更正**,grpc-muduo-transport 第 4 批,未编译:上面的理由已过时 —— 节点上没有 gRPC 线程,也没有 `future.get()`,资产 RPC 在 scene 的 EventLoop 上同步执行。结论不变,理由换成:handler 不得阻塞 loop,在调用里等存盘会卡住整个逻辑帧,所以仍是「应用后立刻存盘、如实报 `durable`、Go 同 seq 重查」。见 grpc-muduo-transport.md §15.6 / §15.8。)
 - **durable 的判定只看"确实落盘的字节"**:`PlayerLastPersistedSnapshotComp.snapshot` 是 `HandlePlayerAsyncSaved` 回调里写入的、刚写进 Redis 的整份 `PlayerAllData`(`player_lifecycle.cpp:315-319`,`last_persisted_snapshot_comp.h:9-16`)。某 seq 的结局出现在这份快照的账本里 = durable。不另建"已持久化水位"状态,不存在两份真相。
 - **账本窗口**:每条流一个 1024 位窗口,窗口上沿始终跟着"见过的最大 seq"滑动;Go 端用"每流未决 ≤16 行、未决跨度 <512"守卫,保证任何仍未决的 seq 永远在窗口内(证明见第 2 部分)。
 - **第二轮评审补强**(第 8–11 部分,优先于前文):seq 空间加"流纪元" `stream_epoch`,帮会库重建/恢复后旧 seq 不会被误认,另有跳号上限;请求体带 HMAC 签名,每条流只认对应服务;Credit 部分发放如实报 `partial`;客户端 `Gm*` 指令在分发入口统一闸住;单写者只在重连租约内成立,根治放新批次 B4c(**2026-09-21 订正**:已被 [08-save-owner-fence.md](./08-save-owner-fence.md) 取代,不造 token 围栏;共享环境门禁见 08 §8.3)。
@@ -21,8 +21,8 @@
 | 事实 | 出处 |
 |---|---|
 | SceneNodeGrpc 只有 CreateScene/DestroyScene/ReleasePlayer/PrepareBattle/CancelBattlePrepare | `proto/scene_manager/scene_node_service.proto:12-29` |
-| gRPC 包装函数 = 投递前守护段 + runInLoop + promise + `future.get()`;Handle* 在 loop 线程、在守护段内写逻辑 | `grpc_handler_gen.go:118-141`;`scene_node_service.cpp:146-154,233-247` |
-| 包装函数的 context 参数被注释掉(`grpc::ServerContext* /*context*/`),守护段读不到 metadata;scene gRPC 为明文不安全凭据 | `grpc_handler_gen.go:125`;`node.cpp:623` |
+| gRPC 包装函数 = 投递前守护段 + runInLoop + promise + `future.get()`;Handle* 在 loop 线程、在守护段内写逻辑。**2026-10-16 更正**(grpc-muduo-transport 第 4 批,未编译):服务端改为 loop 上的 `muduo_grpc::Server`,包装函数 = `grpc.<M>.guard` 守护段 + `call->Proceed()`,与 Handle* 同在 loop 线程同步执行,不再 runInLoop / promise | `grpc_handler_gen.go:118-141`;`scene_node_service.cpp:146-154,233-247`;现行形状见 grpc-muduo-transport.md §15.8 |
+| 包装函数的 context 参数被注释掉(`grpc::ServerContext* /*context*/`),守护段读不到 metadata;scene gRPC 为明文不安全凭据。**2026-10-16 更正**:第 4 批起守护段可经 `call->server_call().metadata()` 只读自定义 metadata(`-bin` 已解线上那层);仍是明文 h2c | `grpc_handler_gen.go:125`;`node.cpp:623`;grpc-muduo-transport.md §15.3 Q8 / Q10 |
 | SceneNodeGrpc 在路由表里 `ClientProtocol: false`,客户端调不到 | `go/client_rpc_router/generated/pb/game/route_table.go:119` |
 | 玩家查找 `tlsEcs.playerList.find(playerId)` | `scene_node_service.cpp:130` |
 | `player_database` 已用到字段 14,下一个空闲 15(B3a 的 `PlayerProfileComp` 也要一个,谁先落谁拿 15) | `mysql_database_table.proto:107-130` |
@@ -414,7 +414,7 @@ static void SetSecretLookupForTest(AssetOpSecretLookup fn);     // 第 8 部分 
    - 否则 `err = CurrencySystem::DeductCurrency(player, type, amount, txType, correlation_id)`。
      - `err == kSuccess` → `Record(APPLIED)` → RequestPersist → APPLIED。
      - 其它 → 前面的闸门都已通过,这里不应失败:LOG_ERROR,回 `RETRY`、reason=err,不记账。
-10. **Credit 应用**(先物品后货币:只有物品会暂时失败,先做它就不会留下半截)。**本步以第 9 部分 4.33 为准**:货币封禁预检 → 物品 guid 余量预检 → `AddItems(..., txType, correlation_id, &mutated)`(blockList 取法照 `player_mission.cpp:209-213`,`!mutated` 各分支同原稿:背包满 RETRY kAssetBagFull、kInvalidParameter 记 REJECTED kAssetBlocked、其它 RETRY)→ 逐条 AddCurrency(补缴抵扣属于正常应用)。一旦已有改动后又失败,记 `kAppliedPartial` 并回 `APPLIED + partial=true + kAssetPartialApplied`,**不再**把部分发放记成完整成功。
+10. **Credit 应用**(先物品后货币:只有物品会暂时失败,先做它就不会留下半截)。**本步以第 9 部分 4.33 为准**:货币封禁预检 → 物品 guid 余量预检 → `AddItems(..., txType, correlation_id)`（2026-10-15 起 Bag 候选提交，mutated 出参已删，物品失败恒零改动；各分支同原稿：背包满 RETRY kAssetBagFull、kInvalidParameter 记 REJECTED kAssetBlocked、其它 RETRY)→ 逐条 AddCurrency(补缴抵扣属于正常应用)。一旦已有改动后又失败,记 `kAppliedPartial` 并回 `APPLIED + partial=true + kAssetPartialApplied`,**不再**把部分发放记成完整成功。
 11. 每次调用结束打一行 INFO:`[AssetOp] rpc=… player_id=… stream=… seq=… corr=… outcome=… reason=… durable=…`(日志不是指标,可以带 player_id)。
 
 **客户端余额/背包刷新**:本批不加 scene 推送。帮会写 RPC 返回后,由客户端主动拉背包(S5 负责)。
@@ -480,15 +480,14 @@ static uint32_t DeductCurrency(entt::entity player, CurrencyType type, int64_t a
 
 **`bag_service.h/.cpp`**:`ItemCountMap` 重载改为:
 ```cpp
-static uint32_t AddItems(entt::entity playerEntity, Bag& bag, const PlayerItemBlockList& blockList,
+static uint32_t AddItems(entt::entity playerEntity, Bag& bag,
                          const ItemCountMap& itemsToAdd, TransactionType txType = TX_SYSTEM_GRANT,
-                         uint64_t correlationId = 0, bool* mutated = nullptr);
+                         uint64_t correlationId = 0, const std::string& extra = {});
 ```
-- 函数开头 `if (mutated) *mutated = false;`。
-- `ReserveForBatchAdd` 若淘汰了实例(`!evicted.empty()`),或逐配置循环里任一 `bag.AddItem` 写出了 guid,都置 `*mutated = true`。
+- 2026-10-15 起 Bag 候选提交，mutated 出参已删，物品失败恒零改动；整批成功后才发布实例、布局、回执与流水。
 - `LogItemCreate(..., txType, correlationId)`。
 
-资产通道只往 `kInventory` 发放。主背包的策略是 RejectWhenFull,不会淘汰;这里保留"淘汰也算改动"的判定,是为了防御以后调用方传入其它背包。
+资产通道只往 `kInventory` 发放。主背包采用 RejectWhenFull；任何物品入包拒绝都不改资产。
 
 ## 4.12 GM 货币指令闸门
 
@@ -515,6 +514,8 @@ inline bool IsClientGmAllowed() {
 ```
 
 `player_currency_handler.cpp` 中 `GmAddCurrency`、`GmDeductCurrency` 的守护段开头各加:
+> 历史示例：全局 tip 已于 ECS 第 2 批移除，拒绝码直接写 response 的 error_message。
+
 ```cpp
 if (!IsClientGmAllowed()) {
     LOG_WARN << "GmAddCurrency 拒绝: 未开启 MMORPG_ALLOW_CLIENT_GM";
@@ -1144,7 +1145,7 @@ const (
 
 **E12 生成签名**。`scene_node_service.proto` 有 `package scene_node;`,但请求/响应定义在无 package 的 asset_op.proto,所以 C++ 守护段签名是 `::AssetOpRequest / ::AssetOpResponse`(同 `::PrepareBattleRequest`)。Go 侧 `smpb "proto/scene_manager"` 的客户端方法参数是 `*assetpb.AssetOpRequest`(`assetpb "proto/common/asset"`)。
 
-**E13 并行未提交改动(落码前必须 diff)**。2026-09-16 `git status` 显示下列文件已被其它会话修改但未提交:`player_database_loader.cpp`、`scene_node_service.cpp`(CreateScene 投递前守护段恢复了 Agones 许可块)、`scene.vcxproj`、`cpp/generated/table/CMakeLists.txt` 与 `table.vcxproj`、`data/tip/Tip.xlsx`、`MessageLimiter.xlsx`、`jubaozhai-market.md`、`PROGRESS.md`。B4a 验证第 1 步追加:生成后 `Select-String cpp/nodes/scene/handler/grpc/scene_node_service.cpp -Pattern AcquireCreatePermitBlocking` 必须命中,否则说明重生成吞掉了他人的守护段,立即停下。
+**E13 并行未提交改动(落码前必须 diff)**。2026-09-16 `git status` 显示下列文件已被其它会话修改但未提交:`player_database_loader.cpp`、`scene_node_service.cpp`(CreateScene 投递前守护段恢复了 Agones 许可块)、`scene.vcxproj`、`cpp/generated/table/CMakeLists.txt` 与 `table.vcxproj`、`data/tip/Tip.xlsx`、`MessageLimiter.xlsx`、`jubaozhai-market.md`、`PROGRESS.md`。B4a 验证第 1 步追加:生成后 `Select-String cpp/nodes/scene/handler/grpc/scene_node_service.cpp -Pattern AcquireCreatePermitBlocking` 必须命中(2026-10-16 更正:今后改为 `-Pattern AcquireAllocationPermitAsync` 必须命中,Agones 块已迁入 `grpc.CreateScene.guard` 守护段,见 grpc-muduo-transport.md §15.14 第 3 步),否则说明重生成吞掉了他人的守护段,立即停下。
 
 ## 4.28 契约偏差更新
 
@@ -1315,10 +1316,10 @@ func (s *Signer) Sign(rpc RPC, req *assetpb.AssetOpRequest, nowMs uint64) // 就
 **新第 10 步**(Credit 应用,顺序固定;`anyMutated` 初值 false):
 - (a) **货币预检**:任一 `GainBlockService::IsGainBlocked(kCurrency, type)` 或 `CurrencySystem::IsCurrencyBlocked(player, type)` → `Record(kRejected, kAssetBlocked)` → REJECTED。
 - (b) **物品 guid 余量预检**(有物品时):`tlsGuidSegmentRegistry.Get(GuidKind::kItem).Available()`(`guid_segment_client.h:158`;取法同 `item_store.cpp:375-377`)< Σcount → `RETRY`,reason 0,WARN,不记账。Σcount 是新实例数的上界(每堆至少 1 个),只会偏严。
-- (c) **物品**:`AddItems(..., &mutated)`。
+- (c) **物品**：`AddItems(...)`。2026-10-15 起 Bag 候选提交，mutated 出参已删，物品失败恒零改动。
   - `kSuccess` → `anyMutated = true`,继续;
-  - `!mutated`:同原稿(背包满 → RETRY kAssetBagFull;kInvalidParameter → REJECTED kAssetBlocked;其它 → RETRY reason=err),均不改资产;
-  - `mutated && err != kSuccess` → 记下失败信息,`anyMutated = true`,**跳到 (e) 记部分发放**,不再发货币。
+  - 失败时按原稿分类（背包满 → RETRY kAssetBagFull；kInvalidParameter → REJECTED kAssetBlocked；其它 → RETRY reason=err），均不改物品资产；
+  - 物品整批成功后置 `anyMutated = true`，继续货币段；货币部分发放处理仍按下文。
 - (d) **货币**:逐条 `AddCurrencyFn(player, type, amount, txType, correlationId)`(默认 `&CurrencySystem::AddCurrency`,测试可换)。失败时:`anyMutated == false` → `RETRY`、reason=err、不记账;否则记下失败信息,跳到 (e)。成功一条就置 `anyMutated = true`。
 - (e) 全部成功 → `Record(kApplied)` → RequestPersist → APPLIED。有失败且 `anyMutated` → `Record(kAppliedPartial)` → RequestPersist → `APPLIED + partial=true + reason=kAssetPartialApplied`,并打 ERROR:`[AssetOp] partial player_id=… stream=… epoch=… seq=… corr=… failed=<item config_id 或 currency type> err=…`(补偿依据)。
 
@@ -1345,6 +1346,8 @@ func (s *Signer) Sign(rpc RPC, req *assetpb.AssetOpRequest, nowMs uint64) // 就
 
 **已核实**:scene 客户端可调的 `Gm*` 共 18 个——`GmAddCurrency`、`GmDeductCurrency`、`GmBlockCurrency`、`GmUnblockCurrency`(`player_currency_handler.cpp:14,34,64,93`)、`GmGrantPet`(`player_pet_handler.cpp:145`)、`GmSetPlayerLevel`(`player_attribute_handler.cpp:147`)、`player_rollback_handler.cpp:40-167` 的 12 个(GmAttachDebt/GmWaiveDebt/GmAdjustDebt/GmFreezeDebt/GmQueryDebt/GmCreateSnapshot/GmListSnapshots/GmPreviewRollback/GmExecuteRollback/GmQueryTransactionLog/GmTraceItem/GmClawbackItem,均挂在 SceneRollbackClientPlayerHandler 下,多数仍是 TODO 桩)。被 GM 封币的玩家可以自己调 `GmUnblockCurrency` 解封;回档类桩一旦实现就是客户端自助回档。客户端消息只有一个入口:gate 发 `SceneProcessClientPlayerMessageMessageId`(`client_message_processor.cpp:699-711`)→ `SceneHandler::ProcessClientPlayerMessage`(`scene_handler.cpp:307`),在 :418 `CallMethod`。`InvokePlayerService`(:441)与 `SendMessageToPlayer`(:202)是节点路由,不对客户端开放,不加闸;将来若有路径转发客户端消息,必须调用同一函数。
 
+> **2026-10-16 补(RpcChannel 批 7)**:`SceneHandler::InvokePlayerService`(Scene 40)与 `SendMessageToPlayer`(Scene 1)已退役并从 proto 删除(号 40 / 1 留墓碑,见 `docs/design/muduo-rpc-channel.md` §20.3),不再派发到玩家 handler;上一段「节点路由、不加闸」只作留痕,文末「第二轮对抗评审处置表」#6 同此。scene 按 service / method 名派发到玩家 handler(`gPlayerService`)的入口现只剩 `ProcessClientPlayerMessage`;各 `Gm*` handler 自带的内闸(货币 / 回档 / 宠物 / 属性等)保留作纵深防御。
+
 **`client_gm_gate.h`**(header-only)在原两个函数外增加:
 ```cpp
 // 方法名形如 Gm + 大写字母开头
@@ -1354,6 +1357,8 @@ inline bool IsClientGmMethodName(std::string_view name) {
 ```
 
 **`scene_handler.cpp` 守护段**:顶部 include `services/scene/player/system/client_gm_gate.h` 与 `table/proto/tip/common_error_tip.pb.h`(已包含则不重复)。:416–418 改为:
+> 历史示例：全局 tip 已于 ECS 第 2 批移除，拒绝码直接写 response 的 error_message。
+
 ```cpp
 	// Dispatch to the concrete player service method
 	const MessageUniquePtr playerResponse(service->GetResponsePrototype(method).New());
@@ -1722,3 +1727,15 @@ type ManualResolver interface {
   - 这是 **I7「Go 不得自判中止」的窄例外**：上述条件保证 scene 不可能再收到这条 seq。证明见设计 §6.3。
   - 每个 (玩家, 流) 一次最多放弃 16 条（I5），对第 8 部分 4.29 的跳号上限（累计 511）影响可忽略。人工终结与放弃的累计仍按 4.31 抬纪元处置。
 - **状态值**：`assetop.Status` 追加 `StatusAbandoned`；`GuildAssetOpStatus` / `TradeAssetOpStatus` 追加 `ABANDONED = 6`（库内状态）；客户端视图映射为已有的 `GUILD_ASSET_ORDER_STATUS_ABORTED`，不改客户端契约。
+# 2026-10-15 全域到账续批：SQL 提交与实例托管（实施中）
+
+本次授权覆盖邮件、通用排行榜、交易拍卖、商城到账、跨区匹配，两版服务与共享客户端。以下取代旧版“Redis 成功即到账”的终结条件，尚未通过运行验收的部分不得声明上线完成。
+
+- 玩家资产仍由场景服持有；服务端 outbox 负责意图、投递与重试，不另建余额权威。`mail` 独占 `SYSTEM_CREDIT`，商城发货通过 trade 独占的交易流，不让多个服务分配同一流序号。
+- C++ 存盘为同一玩家生成并继承 `save_seq`。go/db 在同一 SQL 行锁事务中比较 `(owner_epoch, save_seq)`，旧写不能覆盖新行；同版本不同载荷必须失败。资产、背包、资产账本和托管收据同属 `player_database`，不得分开提交。
+- SQL 成功后才发布 `PlayerAssetSQLCommit` 证据缓存。证据丢失或 SQL 未确认时继续等待；Go 终结 outbox 必须核验该证据里的同纪元同 seq 结局，不能用 scene 的 Redis `durable` 代替 SQL 确认。旧读取接口保留兼容，强一致调用显式 `require_sql_commit=true`。
+- 已有装备以完整 `ItemComp`、宠物以完整 `PetInstance` 序列化字节过户，保留属性 presence 与未知字段，不按模板重铸。实例身份与摘要展示字段交叉校验，目标布局与入包序号重新分配。叶子资产协议使用原 proto 字节，避免 asset/component Go 包循环。
+- 扣出结果记入原资产账本的 `receipts`，与资产同次保存，丢回包后重取原结果。收据按既有 1024 位窗口淘汰，生产侧 `MaxSpan=512` 与 `MaxPending=16` 保护未决项；新载荷进入签名，旧空字段 canonical 保持兼容。
+
+运行验收必须覆盖 SQL 失败不到账、旧版本迟到、同版本冲突、提交后回包丢失、实例属性不变、离线重查、重复领取/结算、背包满重试和退款恢复。单区测试不构成全球部署或两千万并发容量证据。
+

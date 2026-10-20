@@ -5,8 +5,8 @@
 ## 选 Gate 的权威入口
 
 客户端通过 Java gateway 的 HTTP `POST /api/assign-gate` 申请入口，gateway 做限流与 zone
-准入后转给 go-zero login 的 `LoginPreGate.AssignGate`。gateway 不选 Gate、不签票；选取最低
-负载候选与 HMAC 签发只在 login 实现。
+准入后转给 go-zero login 的 `LoginPreGate.AssignGate`。gateway 不选 Gate、不签票；login（assign-gate 入口）与
+scene_manager（跨 zone 重定向）各自按负载选 Gate 并签发，挑选规则共用 `go/shared/gatepick`（见下文「gate 目录怎么读、怎么挑」）。
 
 ```text
 客户端 → HTTP /api/assign-gate → Java gateway → gRPC LoginPreGate.AssignGate
@@ -19,12 +19,77 @@ Gate → 本地校验签名、目标 Gate 与到期时间 → 允许后续游戏
 选与签有三条路径：
 
 1. 不排队的快路径用 `PickAndSignGateToken`，选取和签发一次完成。
-2. 排队 dispatcher 准入时只 `PickGate`；客户端通过 `/api/queue-status` 消费 admit 时才
-   `SignGateToken`，TTL 从消费时起算。
+2. 排队 dispatcher 准入时只挑 Gate（批内 `gatePicker`，经 `newBatchPickFn`，不走 `PickGate`）、不签；
+   客户端通过 `/api/queue-status` 消费 admit 时才 `SignGateToken`，TTL 从消费时起算。
 3. 携 queue token 重入 `AssignGate` 的 `handleReentry` 同样在消费时签发，沿用已选 Gate。
 
 代码：`go/login/internal/logic/loginpregate/assigngatelogic.go`、`querystatuslogic.go`、
 `go/login/internal/logic/pkg/loginqueue/gatetoken.go`。
+
+### gate 目录怎么读、怎么挑（2026-10-18 起；已落码，未编译、未测试，待 Codex 验证）
+
+**读目录**：login 的 `node.NodeWatcher` 对本 zone 的 gate 前缀做 list-watch，维护一份进程内镜像
+（`go/login/internal/logic/pkg/node/node_cache.go`、`watcher.go`）。AssignGate 快路径与排队 dispatcher
+经 `CandidatesForZone` → `NodeWatcher.Nodes(ctx)` 读镜像，不再每个请求打一次 etcd 前缀 Range。
+
+- **新鲜度按每台 gate 各自计时**：镜像记下每台 gate 最近一次被刷新（收到它的事件或全量同步）的时刻，整体新鲜度
+  取最久没刷新的那台；镜像为空时取最近一次事件或同步的时刻。不用整个前缀共用一个时间戳：多 gate 时别的 gate 的事件
+  不能替一台没刷新的 gate 作证。
+- 镜像还没完成第一次全量同步，或有 gate 超过 `cacheStaleAfter`（15s）没刷新，`Nodes` 回落直读 etcd：一次线性一致
+  Range，超时取请求 ctx 截止时间与 `ServiceDiscoveryTimeout` 中较早者。回落路径的行为与改动前相同。
+- 重新全量同步的时机：watch 出错、被压缩、丢 leader（`WithRequireLeader`）；建流超过 `cacheResyncAfter`（12s）
+  仍未确认；有 gate 超过 12s 没刷新（gate 每 10s 无条件上报一次，健康时不会触发；某台漏报或还没开始上报时
+  每约 12s 多一次 Range）。空 zone 按同样间隔周期重同步，镜像保持新鲜。每轮 watch 用独立的 `clientv3.Watcher`、
+  结束时 Close，卡在半开连接上的流随之拆掉；login 的 etcd 客户端另开 gRPC keepalive（10s 探、5s 超时）。
+- 两个时限都按 gate 上报周期 10s 推（`cpp/nodes/gate/main.cpp` 的 `playerCountReportTimer`），改上报周期
+  必须同步改 `gateReportPeriod`。按每台计时，镜像里任一台 gate 的数据最多比 etcd 落后约 5s（它错过的那次上报
+  之后最多 5s 就被重同步补上或判过期），人数最坏晚约 5s 出现，仍在排队在途占位宽限 `defaultHandoffGrace`（20s）之内。
+- **gate 排空监视不读镜像**，仍用直读的 `FetchAllNodes`：写 drained 会让脚本删 Pod，读不到 etcd 就本轮不判，
+  不能拿可能过期的镜像判定。
+- **排空脚本的配合**：`tools/scripts/k8s_gate_drain.ps1` 确认旧记录在 etcd 里消失后，再等契约
+  `LoginMirrorSettleSeconds`（20s，必须大于 `cacheStaleAfter`，契约测试钉住）才清排空标记：watch 卡住时 login
+  镜像可能还留着旧记录，标记清早了会把玩家分到已删 Pod 的地址上。
+- 指标 `login_gate_directory_reads_total{source}`，source 取 `cache` / `etcd_unsynced` / `etcd_stale`。
+  稳态应几乎全是 cache；`etcd_stale` 持续不为 0 说明 etcd 不可达或 watch 反复卡住，登录又回到逐请求打 etcd。
+
+**挑 gate**（两条规则；随机二选一的实现只有一份，在 `go/shared/gatepick` 的 `TwoChoices`，login 快路径与
+scene_manager 跨 zone 重定向共用；Java 版 `game-discovery` 的 `GatePicker.pick` 同规则）：
+
+1. 快路径 `PickGate`：在候选里随机抽两台不同的 gate，取人数少的那台，同人数取第一次抽中的；只有一台就是它，
+   恰好两台时等于取最少。同人数不按 NodeID 定胜负：开新区第一个上报窗口里所有 gate 都报 0，按 NodeID 定会让
+   小号 gate 拿双倍份额、NodeID 最大的那台一个人都分不到。
+   原来是确定性取全局最少：gate 人数每 10s 才上报一次，快路径各请求互相看不到别人刚分出去的人，一个上报
+   周期里本 zone 的新连接会全部落到同一台（容量模型 §2.1「PickGate 集中度」）。随机二选一下，滞后窗口里
+   最闲那台最多拿 2/n 的新连接（3 台 67%，10 台 20%）；最忙的那台只有和同样忙的 gate 比时才会被选中。
+   **当前 K8s 默认每 zone 2 台 gate**（`k8s_deploy.ps1` 的 `GateReplicas = 2`、`deploy/k8s/zones.json`）：两台人数不等时
+   与旧规则相同；全体同人数（开新区第一个上报窗口）时从全落 NodeID 最小的一台变为两台各半；之后的窗口里羊群依旧，
+   充分摊开要每 zone 至少 3 台。验证这一项必须按至少 3 台部署，并按 gate 统计快路径下发分布。
+2. 排队 dispatcher 一拍放一批，用确定性的 `gatePicker`：在同一份候选上逐条挑并记账（负载 = 上报人数 +
+   本拍已分给它的人数，同负载 NodeID 小的在前），先填最闲的，填平之后轮转。账不跨拍。
+
+**scene_manager 跨 zone 重定向**（`go/scene_manager/internal/logic/gate_redirect.go`，2026-10-18 起；已落码，未编译、未测试）：
+顺序与 login 的 `CandidatesForZone` 一致——选客户端地址并按地址去重 → 剔除排空中的 gate（全部排空时忽略标记并打 ERROR）
+→ 随机二选一。此前是 `sort.Slice` 确定性取最少（同数不稳定）且不过滤排空。排空标记由 `drainingGateIDs` 一次 MGET 读，
+读失败放行；键名 `gate:%d:draining` 在 scene_manager 里抄了一份，由 `tools/scripts/tests/k8s_gate_drain.tests.ps1`
+钉住与 login、排空脚本三处一致。scene_manager 经**自己的** Redis 连接读标记，今天与 login 的 `Node.RedisClient` 是同一实例；
+**拆 Redis（G4a）把排空标记挪到 redis-queue 时，scene_manager 这条读也要一起指过去**（G4a 修订稿需把 scene_manager 列为
+`gate:{id}:draining` 的读者），否则读不到标记、退回不过滤。另一个隐含前提：go-zero 的 `RedisConf` 没有 DB 字段，scene_manager
+只能读 DB 0；login 的 `Node.RedisClient.DB` 改成非 0 时要同步处理。排空过滤的纯逻辑在 login（`loginqueue.FilterDrainingGates`）
+与 scene_manager（`filterDrainingTargets`）各一份：两边的读客户端不同（go-redis / go-zero）、候选类型不同，login 那份又被
+`k8s_gate_drain.tests.ps1` 按文本钉住，本次没有合并进 go/shared。
+
+**还没做**（容量模型 A0-7 的其余部分与评审登记）：
+
+- 新鲜度过滤：死掉的 gate 在 etcd 键 TTL（180s）到期前仍在候选里，镜像与直读都一样；
+- 跨请求的本地分配累加：快路径只靠随机二选一摊开，不记「本周期已分给某台多少人」；
+- dispatcher 跨拍仍从同一份滞后人数起算，同一个上报周期内连续几拍都会先填同一台最闲的 gate；
+- 快路径不感知单台 gate 的连接上限（`GateMaxConnections`，满了 gate 直接断开）：每 zone 至少 3 台、其中 m 台
+  顶到上限、区级还有名额时，约 m(m-1)/(n(n-1)) 的快路径请求会被派到满载 gate（旧规则在数据新鲜时不会）。
+  默认配置（每 zone 2 台、区容量 5000）下不可达。要修需让 login 知道单台上限，按水位剔除候选、全部超水位时回落全集；
+  不要用「只在较低一半里二选一」，它在 n≤4 时等于回到旧规则；
+- 新鲜度过滤要用「数据本身多久没变」而不是镜像刷新时刻：全量重同步会把所有 gate 的刷新时刻重置，死 gate 永远显得新鲜；
+  但直接按「最久没变的那台」判镜像过期，又会让一台死 gate 把全部读路径推回直读 etcd。两者要分开设计；
+- `proto/login/login.proto` 服务注释仍写 “picks the least-loaded Gate”，生成物同样过时；等下次本来要重生 proto 时一并改。
 
 ## 有状态连接与跨 Gate 重连
 

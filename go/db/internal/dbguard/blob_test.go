@@ -1,15 +1,196 @@
 package dbguard
 
 import (
+	"bytes"
 	"encoding/base64"
 	"errors"
 	"testing"
 
+	"github.com/luyuancpp/proto2mysql/pbconv"
+
+	assetpb "proto/common/asset"
 	component "proto/common/component"
 	dbpb "proto/common/database"
 
+	"google.golang.org/protobuf/encoding/protowire"
 	"google.golang.org/protobuf/proto"
 )
+
+// 用真实生成消息与合法未知字段构造大小边界，保留完整实例身份，不靠手算代替序列化。
+func padGeneratedMessage(t *testing.T, message proto.Message, target int) []byte {
+	t.Helper()
+	message.ProtoReflect().SetUnknown(nil)
+	padding := target - proto.Size(message) - 8
+	for attempt := 0; attempt < 4; attempt++ {
+		if padding < 0 {
+			t.Fatalf("目标大小不足以容纳消息: target=%d", target)
+		}
+		unknown := protowire.AppendTag(nil, 60001, protowire.BytesType)
+		unknown = protowire.AppendBytes(unknown, make([]byte, padding))
+		message.ProtoReflect().SetUnknown(unknown)
+		raw, err := proto.Marshal(message)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if len(raw) == target {
+			return raw
+		}
+		padding += target - len(raw)
+	}
+	t.Fatalf("无法构造精确消息大小: target=%d actual=%d", target, proto.Size(message))
+	return nil
+}
+
+func fullAssetIdentityWindow(t *testing.T, snapshots bool) *dbpb.PlayerDatabase {
+	t.Helper()
+	const maximum = ^uint64(0)
+	const maximumSeq = maximum - 2048
+	const watermark = maximumSeq - 1024
+	ledger := &component.PlayerAssetOpLedgerComp{}
+	for stream := assetpb.AssetOpStream_ASSET_OP_STREAM_GUILD_DEBIT; stream <= assetpb.AssetOpStream_ASSET_OP_STREAM_SYSTEM_CREDIT; stream++ {
+		entry := &component.AssetOpStreamLedger{
+			Stream: stream, StreamEpoch: maximum, Watermark: watermark, MaxSeq: maximumSeq,
+			SeenBits: make([]uint64, 16), AppliedBits: make([]uint64, 16),
+		}
+		for word := range entry.SeenBits {
+			entry.SeenBits[word] = maximum
+			if word < 15 {
+				entry.AppliedBits[word] = maximum
+			}
+		}
+		for index := uint64(0); index < 1024; index++ {
+			seq := watermark + index + 1
+			entry.Receipts = append(entry.Receipts, &component.AssetOpReceipt{
+				Seq: seq, CorrelationId: maximum - index, RequestDigest: bytes.Repeat([]byte{byte(stream)}, 32),
+			})
+			if index < 960 {
+				entry.PartialSeqs = append(entry.PartialSeqs, seq)
+			} else {
+				entry.Rejections = append(entry.Rejections, &component.AssetOpRejection{Seq: seq, ReasonTipId: ^uint32(0)})
+			}
+		}
+		if snapshots && stream == assetpb.AssetOpStream_ASSET_OP_STREAM_TRADE_DEBIT {
+			// 四份各 64 KiB 的快照正好打满场景约定的 256 KiB 原件总量。
+			for receipt := 0; receipt < 4; receipt++ {
+				snapshot := &assetpb.AssetSnapshot{}
+				for item := 0; item < 4; item++ {
+					id := maximum - uint64(receipt*4+item)
+					instance := &component.ItemComp{ItemId: id, ConfigId: 1, Size: 1}
+					snapshot.Items = append(snapshot.Items, &assetpb.AssetItemInstance{
+						ItemUuid: id, ConfigId: 1, StackSize: 1, InstanceProto: padGeneratedMessage(t, instance, 16360),
+					})
+				}
+				last := snapshot.Items[len(snapshot.Items)-1]
+				// 内层长度变化可能跨过外层 message 的长度 varint 边界，
+				// 必须按完整快照反馈校准，不能只补一次原始字节差额。
+				for attempt := 0; attempt < 4 && proto.Size(snapshot) != 64<<10; attempt++ {
+					target := len(last.InstanceProto) + (64<<10 - proto.Size(snapshot))
+					if target > 16<<10 {
+						t.Fatalf("实例超过场景 16 KiB 上限: %d", target)
+					}
+					last.InstanceProto = padGeneratedMessage(t, &component.ItemComp{ItemId: last.ItemUuid, ConfigId: 1, Size: 1}, target)
+				}
+				if proto.Size(snapshot) != 64<<10 {
+					t.Fatalf("快照边界未打满: %d", proto.Size(snapshot))
+				}
+				entry.Receipts[receipt].Snapshot = snapshot
+			}
+		}
+		ledger.Streams = append(ledger.Streams, entry)
+	}
+	if snapshots {
+		total := 0
+		for _, stream := range ledger.Streams {
+			for _, receipt := range stream.Receipts {
+				if receipt.Snapshot != nil {
+					total += proto.Size(receipt.Snapshot)
+				}
+			}
+		}
+		if total != 256<<10 {
+			t.Fatalf("四份托管原件必须打满 256 KiB 总量: %d", total)
+		}
+	}
+	return &dbpb.PlayerDatabase{PlayerId: maximum, AssetOpLedger: ledger}
+}
+
+func assetIdentityBudgetGuard() *Guard {
+	return NewGuard(Limits{MaxColumnBytes: 256 << 10, MaxRowBytes: 1 << 20, PerTable: map[string]TableLimit{
+		"player_database": {ColumnBytes: map[string]int64{"asset_op_ledger": 1 << 20}},
+	}}, nil)
+}
+
+func TestAssetLedgerFullWindowAndSnapshotFitsOnlySpecificColumn(t *testing.T) {
+	for _, snapshots := range []bool{false, true} {
+		name := "五流纯身份"
+		if snapshots {
+			name = "五流身份及256KiB原件"
+		}
+		t.Run(name, func(t *testing.T) {
+			message := fullAssetIdentityWindow(t, snapshots)
+			raw, err := proto.Marshal(message.AssetOpLedger)
+			if err != nil {
+				t.Fatal(err)
+			}
+			stored := len(base64.StdEncoding.EncodeToString(raw))
+			field := message.ProtoReflect().Descriptor().Fields().ByName("asset_op_ledger")
+			if field == nil {
+				t.Fatal("生成玩家消息缺少资产账本字段")
+			}
+			sqlValue, err := pbconv.SerializeFieldValue(message, field)
+			if err != nil {
+				t.Fatalf("正式 SQL 参数序列化失败: %v", err)
+			}
+			sqlBytes, ok := sqlValue.(string)
+			if !ok || len(sqlBytes) != len(raw) || !bytes.Equal([]byte(sqlBytes), raw) || len(sqlBytes) > stored {
+				t.Fatalf("SQL 参数必须为裸 protobuf 且不超过兼容计费: type=%T raw=%d SQL=%d conservative=%d",
+					sqlValue, len(raw), len(sqlBytes), stored)
+			}
+			t.Logf("账本原始protobuf=%dB，真实SQL参数=%dB，兼容base64保守计费=%dB", len(raw), len(sqlBytes), stored)
+			if stored <= 256<<10 || stored > 1<<20 {
+				t.Fatalf("边界未覆盖旧闸拒绝和新闸放行: stored=%d", stored)
+			}
+			old := NewGuard(Limits{}, nil)
+			if _, err := old.Check("player_database", message); err == nil {
+				t.Fatal("原 256 KiB 列闸必须真实拒绝此合法有界账本")
+			}
+			result, err := assetIdentityBudgetGuard().Check("player_database", message)
+			if err != nil {
+				t.Fatalf("特定账本列预算应放行: %v", err)
+			}
+			if len(result.Columns) != 1 || result.Columns[0].Column != "asset_op_ledger" ||
+				result.Columns[0].PayloadBytes != int64(len(raw)) || result.Columns[0].StoredBytes != int64(stored) ||
+				result.Columns[0].Limit != 1<<20 || result.RowLimit != 1<<20 {
+				t.Fatalf("量测或精准预算错误: %+v", result)
+			}
+			message.StressTestProbe = &component.PlayerStressTestProbe{TestSig: make([]byte, 256<<10)}
+			result, err = assetIdentityBudgetGuard().Check("player_database", message)
+			if err == nil {
+				t.Fatal("同表其他组件不得跟随账本一起放宽")
+			}
+			for _, column := range result.Columns {
+				if column.Column == "stress_test_probe" && (column.Limit != 256<<10 || column.Level != LevelReject) {
+					t.Fatalf("其他组件的原列闸被改变: %+v", column)
+				}
+			}
+		})
+	}
+}
+
+func TestAssetLedgerColumnOverrideStillEnforcesOriginalPlayerRowBudget(t *testing.T) {
+	message := fullAssetIdentityWindow(t, true)
+	message.StressTestProbe = &component.PlayerStressTestProbe{}
+	padGeneratedMessage(t, message.StressTestProbe, 192<<10)
+	result, err := assetIdentityBudgetGuard().Check("player_database", message)
+	if err == nil || result.RowLevel != LevelReject || result.RowLimit != 1<<20 || result.TotalStoredBytes <= result.RowLimit {
+		t.Fatalf("列覆盖不得绕过整行总预算: %+v err=%v", result, err)
+	}
+	for _, column := range result.Columns {
+		if column.Level == LevelReject || column.StoredBytes > column.Limit {
+			t.Fatalf("本例必须只有整行超限，单列都须合规: %+v", column)
+		}
+	}
+}
 
 // recordingObserver 收集上报,断言 histogram / counter 真的被喂了数据。
 type recordingObserver struct {
@@ -39,9 +220,9 @@ func snapshotWithData(n int) proto.Message {
 	return &dbpb.PlayerSnapshot{PlayerId: 1, Data: make([]byte, n)}
 }
 
-func TestMeasureCountsStoredBase64Bytes(t *testing.T) {
-	// proto2mysql 走 pbconv.SerializeFieldAsString,blob 列是 base64 之后才入库。
-	// 闸门量的必须是 base64 之后的长度,否则实际占用会比闸门以为的多 33%。
+func TestMeasureRetainsConservativeBase64Budget(t *testing.T) {
+	// 当前 SQL 参数是裸字节；生产闸与既有指标仍沿用更保守的 base64 长度计费。
+	// 此回归防止列预算修补顺带改变计费口径，真实 SQL 编码由满窗口用例另行对照。
 	const payload = 3000
 	result := Measure("player_snapshot", snapshotWithData(payload))
 

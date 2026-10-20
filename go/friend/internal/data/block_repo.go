@@ -15,7 +15,7 @@ import (
 //
 // 三个方法的并发形态刻意不一样,原因都写在各自函数上:
 //   - Block   会新增名额、会删好友边、会取消 pending → 走完整的容量守卫事务;
-//   - Unblock 只会让数量变少 → 单条 DELETE,不要事务也不要守卫;
+//   - Unblock 只会让数量变少 → 不要守卫,但仍是单语句 RC 事务里的一条 DELETE(为什么要事务见 Unblock);
 //   - ListBlocks 纯读 → 不缓存。
 //
 // 本文件与 friend_repo.go 是同一个包、同一个 FriendRepo:Block 必须与 AddFriend /
@@ -240,11 +240,24 @@ func (r *FriendRepo) Block(ctx context.Context, playerID, targetPlayerID uint64,
 // Unblock 从黑名单移除,幂等(删不到行不报错)。**不自动恢复好友关系** ——
 // 拉黑时删掉的边是真删,恢复要靠重新加好友(这也是玩家的预期:解除拉黑不等于重新做朋友)。
 //
-// 刻意**不加容量守卫、不开事务**:它只会让黑名单数量变少,不可能越过任何上限,
-// 而单条 DELETE 本身就是原子的。为它加一把守卫只会白白扩大与写路径的锁冲突面。
+// 刻意**不加容量守卫**:它只会让黑名单数量变少,不可能越过任何上限,
+// 为它加一把守卫只会白白扩大与写路径的锁冲突面。
 //
-// 不拿守卫也进不了等待环:自动提交的单条完整主键 DELETE,至多持有这一行的一把锁、持锁时不再等别的锁;
-// 连接池是 RC(svc.BuildDSN),删不到行时不加任何锁。与 Block ④ 在同一条 delete-marked 记录上的交互见那一步。
+// 但**要开事务**(单语句 RC 事务,提交前查 ctx;客户端请求按会话保序,docs/design/client-request-ordering.md §6.1)。
+// 原先是自动提交的单条 DELETE,"单条语句本身原子"只保证了原子,保证不了截止之后不落地:请求截止时 go-sql-driver
+// 只断开连接、不发 KILL QUERY,服务端那条 DELETE 若正排在这一行的锁后面(Block ②④、对方 AddFriend 的拉黑探针、
+// 另一个 Unblock),会一直等到拿到锁或 innodb_lock_wait_timeout(friend 连接串没设,MySQL 缺省 50 s),
+// 拿到锁后照样执行并**自动提交** —— 此时路由服早已回超时、gate 已放行同一会话的下一条,这条 DELETE
+// 就成了晚于下一条落地的迟到写(§1.3 同类乱序)。放进显式事务后,没走到 COMMIT 就不会提交:语句跑过截止时
+// database/sql 回滚并丢弃连接,服务端在连接断开时回滚未提交事务;剩余窗口只有"查完 ctx 之后发出的那一条 COMMIT"
+// (§6.1 的已发出命令),而 COMMIT 不等行锁。
+//
+// 在 InnoDB 上事务不改变锁形状:还是一条完整主键 DELETE,至多持有这一行的锁;语句之后只剩 COMMIT,持锁期间不再等任何别的锁。
+// ⚠ 在 TiDB(friend 生产强制)上**改变**锁形状,而且正是它消掉了一个检测不到的互等:自动提交的 DELETE 走乐观事务,
+// 提交时并行 prewrite 行 key 与索引 key,会与守卫事务的完整主键 Point_Get(先 PRIMARY 再行 key)各持一半,等约 3s 锁 TTL;
+// 悲观事务里这条 DELETE 本身就是带锁的 Point_Get,顺序与守卫一致,只剩单向等待(2026-10-18 真 TiDB v8.5.2 实测,
+// 事故文档 §9.7)。所以**不许**为了省一次往返把它改回自动提交。代价只是持锁时间多一次 COMMIT 往返。隔离级别显式取 friendWriteTxIsolation(RC),
+// 删不到行时不加任何锁。与 Block ④ 在同一条 delete-marked 记录上的交互见那一步。
 //
 // 已知的良性竞态:Unblock 与 AddFriend 并发时,AddFriend 的拉黑探针可能在解除之前那一瞬
 // 读到"仍被拉黑"而拒绝本次申请。玩家重试即可,不产生任何不一致状态,所以不为它加锁。
@@ -252,15 +265,32 @@ func (r *FriendRepo) Unblock(ctx context.Context, playerID, targetPlayerID uint6
 	if playerID == 0 || targetPlayerID == 0 || playerID == targetPlayerID {
 		return errInvalidPlayerPair(playerID, targetPlayerID)
 	}
-	if _, err := r.db.ExecContext(ctx,
-		"DELETE FROM friend_block WHERE player_id=? AND blocked_player_id=?",
-		playerID, targetPlayerID); err != nil {
+	tx, err := r.beginWriteTx(ctx)
+	if err != nil {
+		return fmt.Errorf("unblock %d->%d: begin: %w", playerID, targetPlayerID, err)
+	}
+	// Commit 成功之后的 Rollback 返回 sql.ErrTxDone,无害,照 database/sql 的惯用法不检查(同 runGuardedWriteOnce)。
+	defer tx.Rollback()
+	if _, err := tx.ExecContext(ctx, unblockSQL, playerID, targetPlayerID); err != nil {
 		return fmt.Errorf("unblock %d->%d: %w", playerID, targetPlayerID, err)
+	}
+	// 提交点之前显式查一次 ctx,而不只靠 Tx.Commit 自己的检查:ctx 一结束 database/sql 会在后台异步回滚,
+	// 那之后 Commit 回的是 sql.ErrTxDone 而不是 ctx 错误,日志里就看不出是截止。先查,错误链里必定是 ctx 错误。
+	if err := ctx.Err(); err != nil {
+		return fmt.Errorf("unblock %d->%d: request deadline passed before commit: %w", playerID, targetPlayerID, err)
+	}
+	if err := tx.Commit(); err != nil {
+		return fmt.Errorf("unblock %d->%d: commit: %w", playerID, targetPlayerID, err)
 	}
 	// 黑名单不进缓存(见 ListBlocks),所以这里没有缓存要失效。
 	// 好友列表也不用动:Unblock 不改任何 friend 边。
 	return nil
 }
+
+// unblockSQL 是 Unblock 的那一条 DELETE:完整主键等值(friend_block 的主键是 (player_id, blocked_player_id))。
+// 写成包级常量是为了让 request_deadline_fence_test.go 逐字比对、场景 (h) 的真库编排扮演"未提交的 Unblock"时
+// 用的都是生产代码实际执行的这一条。
+const unblockSQL = "DELETE FROM friend_block WHERE player_id=? AND blocked_player_id=?"
 
 // ListBlocks 返回该玩家拉黑的人。
 //

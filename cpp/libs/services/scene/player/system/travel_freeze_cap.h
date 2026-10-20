@@ -39,10 +39,10 @@
 //   成立(采纳回滚后的 epoch 再解冻)。本文件不涉及。
 //
 // ── 单调时钟管到哪里 ──
-//   判定(到没到上限、窗口关没关、看门狗是不是提前醒了)全部按 steady_clock;触发仍靠 muduo 定时器,而 muduo 按
-//   墙钟(Timestamp::now,Windows 上走 system_clock)到期。所以墙钟**前跳**不会让任何判定提前(看门狗提前醒来会
-//   按剩余时间重挂,见 ShouldRearmEarlyFire);墙钟**回拨** X 秒会把所有 muduo 定时器(含 1s 扫描)推迟最多 X 秒,
-//   这是引擎级残余,本文件不修。
+//   判定(到没到上限、窗口关没关、看门狗是不是提前醒了)全部按 steady_clock;触发靠 muduo 定时器。muduo 的
+//   TimerQueue 自 2026-10-16 起也按单调时钟到期(docs/design/muduo-timer-cancellation-hazards.md「定时器时钟」),
+//   墙钟前跳 / 回拨都不再让定时器(含 1s 扫描)提前或推迟。看门狗的单调复核(ShouldRearmEarlyFire)保留为纵深
+//   防御:正常运行不会触发,只在链进来的 muduo 没带这项改动(如 Linux 未应用 overlay)时兜住墙钟前跳。
 namespace travel_freeze_cap
 {
 	using Clock = std::chrono::steady_clock;
@@ -53,7 +53,7 @@ namespace travel_freeze_cap
 
 	// EnterScene 应答看门狗(PlayerLifecycleSystem::ArmTravelReplyWatchdog)。scene_manager 不可达 / 连接被重置 /
 	// zrpc 服务端超时(scene_manager_service.yaml 的 Timeout: 8000)/ C++ 侧 gRPC deadline 到期(base_deploy_config.yaml
-	// GrpcClient.CallDeadlineMs,SceneManager 10000)时,生成的客户端会调失败处理器,但传输失败 = 结果未知:
+	// GrpcClient.CallDeadlineMs,SceneManager 10000)时,EnterScene 的每次调用回调以非 OK 完成,但传输失败 = 结果未知:
 	// 对交接只记日志、不当证据(PlayerLifecycleSystem::DispatchEnterSceneTransportFailure),源端仍只能等本看门狗
 	// 按 owner_epoch 裁决 —— 没有这道看门狗,玩家会以冻结态挂到冻结上限。取值远大于 EnterScene 的正常耗时
 	// (压测 P99 亚秒)与 gRPC deadline,只兜真正的丢应答。
@@ -77,9 +77,10 @@ namespace travel_freeze_cap
 	// 上限扫描周期(PlayerLifecycleSystem::EnforceTravelFreezeCaps 的 1s 定时器)。
 	inline constexpr std::chrono::seconds kSweepInterval{1};
 
-	// 看门狗提前醒来的容差。两只时钟的频率差(对时调速最多约 500ppm,30s 内约 15ms)和 muduo 的微秒截断会造成
-	// 毫秒级的伪提前;提前量不超过它就直接执行,超过才按剩余时间重挂并计 watchdog_early_fire ——
-	// 这样该计数非 0 才能解读为"墙钟向前跳过 ≥1s"。提前至多 1s 执行是安全的:见下面 kEarlyFireTolerance ≤
+	// 看门狗提前醒来的容差。muduo 的微秒截断会造成微秒级的伪提前(muduo 按墙钟到期时还要加上两只时钟的频率差:
+	// 对时调速最多约 500ppm,30s 内约 15ms);提前量不超过它就直接执行,超过才按剩余时间重挂并计 watchdog_early_fire ——
+	// 这样该计数非 0 才能解读为"墙钟向前跳过 ≥1s"(只会出现在没带单调时钟改动的 muduo 上)。
+	// 提前至多 1s 执行是安全的:见下面 kEarlyFireTolerance ≤
 	// kVerifyMargin 的 static_assert;应答看门狗 29s 仍远大于 scene_manager 铸造 → 路由 / 回滚的 5s 窗口。
 	inline constexpr std::chrono::seconds kEarlyFireTolerance{1};
 

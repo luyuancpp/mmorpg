@@ -7,7 +7,6 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
-	"strconv"
 	"strings"
 	"sync"
 
@@ -28,7 +27,8 @@ type ProtoEventInfo struct {
 	Ingress       eventIngress
 }
 
-// 墓碑行格式与语义见 internal.ReservedEventIdPrefix(turn-based §22 D67)。
+// 墓碑行格式与语义见 internal.ReservedEventIdPrefix(turn-based §22 D67);
+// 行解析与重号校验与 message_id.txt 共用,见 id_file.go。
 
 const (
 	// maxNewTombstonesPerRun 是一轮生成里允许新转墓碑的事件数上限。墓碑永久且不可逆,
@@ -49,83 +49,13 @@ const (
 var (
 	globalProtoEventList []*ProtoEventInfo
 	// event_id.txt 的内存视图,由 ReadEventIdFile 填。
-	loadedEventIdFile = newEventIdFileState()
+	loadedEventIdFile = newIdFileState()
 	// 以下由 InitEventId 填:本轮活事件(号 → 事件)、全部墓碑(文件原有 + 本轮新转,号 → 原 IdName)、
 	// 发号后的最大号(含墓碑,决定 C++ 注册表的数组长度)。
 	eventIdInfoMap     = map[uint64]*ProtoEventInfo{}
 	reservedEventIdMap = map[uint64]string{}
 	eventFileMaxId     uint64
 )
-
-// eventIdFileEntry 是 event_id.txt 的一行:活事件 `N=<IdName>`,或墓碑 `N=reserved:<原 IdName>`。
-type eventIdFileEntry struct {
-	Id       uint64
-	Name     string // 活事件为 IdName;墓碑为被删事件的原 IdName
-	Reserved bool
-}
-
-// parseEventIdLine 解析 event_id.txt 的一行(纯函数)。
-// ok=false:不是 `N=...` 的形状,调用方告警后跳过(与改前的处置一致);
-// err 非空:号不是十进制整数,调用方应中止生成。
-func parseEventIdLine(line string) (entry eventIdFileEntry, ok bool, err error) {
-	parts := strings.Split(line, "=")
-	if len(parts) != 2 {
-		return eventIdFileEntry{}, false, nil
-	}
-
-	id, err := strconv.ParseUint(strings.TrimSpace(parts[0]), 10, 64)
-	if err != nil {
-		return eventIdFileEntry{}, false, err
-	}
-
-	name := strings.TrimSpace(parts[1])
-	if originalName, isReserved := strings.CutPrefix(name, internal.ReservedEventIdPrefix); isReserved {
-		return eventIdFileEntry{Id: id, Name: strings.TrimSpace(originalName), Reserved: true}, true, nil
-	}
-	return eventIdFileEntry{Id: id, Name: name}, true, nil
-}
-
-// eventIdFileState 是 event_id.txt 的内存视图。
-type eventIdFileState struct {
-	Active   map[string]uint64 // 活事件:IdName → 号
-	Reserved map[uint64]string // 墓碑:号 → 被删事件的原 IdName
-	MaxId    uint64            // 全部行(含墓碑)里的最大号
-}
-
-func newEventIdFileState() *eventIdFileState {
-	return &eventIdFileState{
-		Active:   map[string]uint64{},
-		Reserved: map[uint64]string{},
-	}
-}
-
-// add 登记一行。同一个号出现两次(包括一个号既是活号又是墓碑),或同一个活事件名出现两次,
-// 都说明文件被手改坏了:照旧生成会让两个事件共用一个号,或让某个号在下一轮被当成空洞回收。
-// 返回错误,由调用方中止生成(fail-closed)。
-func (s *eventIdFileState) add(entry eventIdFileEntry) error {
-	if originalName, dup := s.Reserved[entry.Id]; dup {
-		return fmt.Errorf("event id %d listed twice: already reserved for %q", entry.Id, originalName)
-	}
-	for name, id := range s.Active {
-		if id == entry.Id {
-			return fmt.Errorf("event id %d listed twice: already used by %q", entry.Id, name)
-		}
-	}
-
-	if entry.Reserved {
-		s.Reserved[entry.Id] = entry.Name
-	} else {
-		if prevId, dup := s.Active[entry.Name]; dup {
-			return fmt.Errorf("event %q listed twice: ids %d and %d", entry.Name, prevId, entry.Id)
-		}
-		s.Active[entry.Name] = entry.Id
-	}
-
-	if s.MaxId < entry.Id {
-		s.MaxId = entry.Id
-	}
-	return nil
-}
 
 func buildEventIdName(packageName, messageName string) string {
 	parts := make([]string, 0)
@@ -249,7 +179,7 @@ func ReadEventIdFile(wg *sync.WaitGroup) {
 		scanner := bufio.NewScanner(file)
 		for scanner.Scan() {
 			line := scanner.Text()
-			entry, ok, parseErr := parseEventIdLine(line)
+			entry, ok, parseErr := parseIdFileLine(line)
 			if parseErr != nil {
 				logger.Global.Fatal("Failed to parse event ID",
 					zap.String("line", line),
@@ -297,7 +227,7 @@ type eventIdAssignment struct {
 //     → 转墓碑,号永久保留;
 //  3. 新事件先按 events 的顺序填 0..MaxId 中既非活号也非墓碑的空洞,填完再从 MaxId+1 往后发。
 //     墓碑号无论新旧一律跳过。与墓碑同名的事件重新出现时同样按新事件发新号,墓碑不动。
-func assignEventIds(events []*ProtoEventInfo, file *eventIdFileState) eventIdAssignment {
+func assignEventIds(events []*ProtoEventInfo, file *idFileState) eventIdAssignment {
 	result := eventIdAssignment{
 		Infos:    make(map[uint64]*ProtoEventInfo, len(events)),
 		Reserved: make(map[uint64]string, len(file.Reserved)),
@@ -363,7 +293,7 @@ func assignEventIds(events []*ProtoEventInfo, file *eventIdFileState) eventIdAss
 //  2. 新转墓碑超过 maxNewTombstonesPerRun 且未显式放行 → 多半是事件目录配空或指错到空目录。
 //
 // 返回 nil 表示可以继续;错误信息列出涉及的 `号=名`,供排障。
-func checkEventIdInputComplete(file *eventIdFileState, result eventIdAssignment, kafkaDirConfigured, allowMassTombstone bool) error {
+func checkEventIdInputComplete(file *idFileState, result eventIdAssignment, kafkaDirConfigured, allowMassTombstone bool) error {
 	if !kafkaDirConfigured {
 		kafkaNames := make(map[uint64]string)
 		kafkaIds := make([]uint64, 0)
@@ -376,25 +306,16 @@ func checkEventIdInputComplete(file *eventIdFileState, result eventIdAssignment,
 		if len(kafkaIds) > 0 {
 			sort.Slice(kafkaIds, func(i, j int) bool { return kafkaIds[i] < kafkaIds[j] })
 			return fmt.Errorf("proto_dirs.contracts_kafka is not configured, but the event ID file still lists %d live Kafka events (%s); "+
-				"they would all be tombstoned", len(kafkaIds), formatEventIds(kafkaIds, kafkaNames))
+				"they would all be tombstoned", len(kafkaIds), formatIdNames(kafkaIds, kafkaNames))
 		}
 	}
 
 	if len(result.NewlyReserved) > maxNewTombstonesPerRun && !allowMassTombstone {
 		return fmt.Errorf("%d events would be tombstoned in one run, limit is %d (%s); "+
 			"check proto_dirs.logic_event / contracts_kafka, or set %s=1 if they were really removed",
-			len(result.NewlyReserved), maxNewTombstonesPerRun, formatEventIds(result.NewlyReserved, result.Reserved), allowMassEventTombstoneEnv)
+			len(result.NewlyReserved), maxNewTombstonesPerRun, formatIdNames(result.NewlyReserved, result.Reserved), allowMassEventTombstoneEnv)
 	}
 	return nil
-}
-
-// formatEventIds 把号按入参顺序拼成 `号=名, 号=名`。
-func formatEventIds(ids []uint64, names map[uint64]string) string {
-	parts := make([]string, 0, len(ids))
-	for _, id := range ids {
-		parts = append(parts, fmt.Sprintf("%d=%s", id, names[id]))
-	}
-	return strings.Join(parts, ", ")
 }
 
 func InitEventId() {
@@ -448,11 +369,14 @@ func renderEventIdFile(infos map[uint64]*ProtoEventInfo, reserved map[uint64]str
 }
 
 func WriteEventIdFile() {
-	utils2.WriteFileIfChanged(_config.Global.Paths.EventIdFile, []byte(renderEventIdFile(eventIdInfoMap, reservedEventIdMap)))
+	if err := utils2.WriteFileIfChanged(_config.Global.Paths.EventIdFile, []byte(renderEventIdFile(eventIdInfoMap, reservedEventIdMap))); err != nil {
+		logger.Global.Fatal("写入事件号清单失败", zap.String("event_id_file", _config.Global.Paths.EventIdFile), zap.Error(err))
+		return
+	}
 }
 
 // EventIdLen 是 C++ 注册表(kMaxEventCount / IsValidEventId)的长度:最大号 + 1,墓碑号也算在内。
-// 墓碑号不生成分派 case,旧节点发来的墓碑号消息落到 DispatchProtoEvent 的 default 分支被丢弃。
+// 墓碑号不进白名单,旧节点发来的墓碑号由节点 DispatchSceneKafkaCommand / DispatchGateKafkaCommand 拒绝并记 ERROR。
 func EventIdLen() uint64 {
 	if len(eventIdInfoMap) == 0 {
 		return 0
@@ -498,7 +422,10 @@ func writeEventIdHeaderFiles() {
 		}
 
 		outputPath := _config.Global.Paths.ServiceInfoDir + headerFileName
-		utils2.WriteFileIfChanged(outputPath, []byte(builder.String()))
+		if err := utils2.WriteFileIfChanged(outputPath, []byte(builder.String())); err != nil {
+			logger.Global.Fatal("写入事件号头文件失败", zap.String("file_path", outputPath), zap.Error(err))
+			return
+		}
 	}
 
 	logger.Global.Info("Event ID header files generated",

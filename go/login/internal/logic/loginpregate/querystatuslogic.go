@@ -22,6 +22,10 @@ import (
 //	              (2026-10-15 更正:判据不是 ZSET 落空——那只说明已出队,在途窗口里也落空、回名次 0;
 //	              是 meta 有 admitted_at 而放行槽已不在,见 loginqueue.Queue.Lookup。放行槽没人来取、
 //	              按 AdmitTTL 过期之后再查同样回 EXPIRED。此前代码实际回 QUEUEING、名次 0,与本注释不符)
+//	              (2026-10-18 补注:在途窗口(已出队、未写放行)已不存在——出队与写 admitted_at 在同一段放行
+//	              脚本里原子完成;排队中的轮询会续空闲 TTL(meta / token 索引 / 队列键 PTTL < QueueEntryTTL
+//	              时续到 1.25 倍);不在队列又没放行回 EXPIRED(queue_gone);排队令牌的绝对过期改为 24h
+//	              (loginqueue.queueTokenMaxAge)。Lookup 的 zone 取自已验签的令牌,见 loginqueue.Queue.Lookup。)
 //
 // The ADMITTED → EXPIRED transition deliberately gives the client exactly
 // one chance to read the gate token. If the client drops it (network blip
@@ -57,14 +61,17 @@ func (l *QueryQueueStatusLogic) QueryQueueStatus(in *loginpb.QueryQueueStatusReq
 		}, nil
 	}
 
-	if _, _, err := loginqueue.ParseAndVerifyQueueTokenMulti(l.svcCtx.QueueTokenVerifySecrets(), in.QueueToken); err != nil {
+	// zoneID 必须取自已验签的排队令牌:Lookup 拿它拼队列键并核对 meta.zone_id(2026-10-18),
+	// 不得用常量代替;传 0 会被当成损坏、回 EXPIRED(meta_gone)。
+	_, zoneID, err := loginqueue.ParseAndVerifyQueueTokenMulti(l.svcCtx.QueueTokenVerifySecrets(), in.QueueToken)
+	if err != nil {
 		return &loginpb.QueryQueueStatusResponse{
 			Status: uint32(loginqueue.StatusExpired),
 			Error:  err.Error(),
 		}, nil
 	}
 
-	state, err := l.svcCtx.LoginQueue.Lookup(l.ctx, in.QueueToken, func(slot *loginqueue.AdmitSlot) (*loginqueue.AdmitToken, error) {
+	state, err := l.svcCtx.LoginQueue.Lookup(l.ctx, in.QueueToken, zoneID, func(slot *loginqueue.AdmitSlot) (*loginqueue.AdmitToken, error) {
 		// Sign at consume time so the 5-min token TTL begins now (R17 R1
 		// fix). The dispatcher only picked the gate; signing here means a
 		// client that polled slowly still gets a full-TTL token.

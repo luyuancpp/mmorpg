@@ -31,6 +31,22 @@ func TestCanonicalGolden(t *testing.T) {
 	}
 }
 
+func TestCompleteInstanceCanonicalGolden(t *testing.T) {
+	req := testRequest()
+	req.Stream = assetpb.AssetOpStream_ASSET_OP_STREAM_TRADE_CREDIT
+	req.Auth = &assetpb.AssetOpAuth{Caller: "trade", TimestampMs: 1700000000123}
+	req.Bundle.ItemInstances = []*assetpb.AssetItemInstance{{ItemUuid: 42, ConfigId: 10, StackSize: 1, InstanceProto: []byte{0, 255, 1}}}
+	want := "mmorpg-asset-op/v1\ntrade\ncredit\n42\n4\n1700000000000\n7\n99\n24\nc=1:30;i=;u=;p=0;v2=082a100a1801220300ff01,;\n1700000000123"
+	if got := string(Canonical(RPCCredit, req, 1700000000123)); got != want {
+		t.Fatalf("完整原件跨语言签名漂移: got=%q want=%q", got, want)
+	}
+	before := string(Canonical(RPCCredit, req, 1700000000123))
+	req.Bundle.ItemInstances[0].InstanceProto[2]++
+	if before == string(Canonical(RPCCredit, req, 1700000000123)) {
+		t.Fatal("完整实例字节必须参与签名")
+	}
+}
+
 // 空 bundle 的写法也是契约的一部分,单独钉住。
 func TestCanonicalEmptyBundle(t *testing.T) {
 	req := &assetpb.AssetOpRequest{
@@ -102,7 +118,7 @@ func TestSignatureCoversGuidAndPetTamper(t *testing.T) {
 
 	// 攻击者能做的正是这一步:拿到合法请求,只换载荷,签名原样带上。
 	for _, c := range []struct {
-		name  string
+		name   string
 		mutate func(*assetpb.AssetOpRequest)
 	}{
 		{"换掉 item_uuid", func(r *assetpb.AssetOpRequest) { r.Bundle.ItemUuids = []uint64{900000000000000099} }},

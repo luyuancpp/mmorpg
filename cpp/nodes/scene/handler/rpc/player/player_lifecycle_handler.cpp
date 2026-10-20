@@ -35,7 +35,7 @@ void ScenePlayerHandler::ExitGame(entt::entity player,const ::GameNodeExitGameRe
 	//     return;
 	// }
 
-	// gate 断线回调与客户端主动退出都走这里(gate client_message_processor.cpp 断线时代发 ExitGame)。
+	// gate 断线回调与客户端主动退出都走这里(gate client_session_handler.cpp 断线时代发 ExitGame)。
 	PlayerLifecycleSystem::HandleExitGameNode(player, ExitCause::kClientDisconnect);
 
 	///<<< END WRITING YOUR CODE

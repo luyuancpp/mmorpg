@@ -127,8 +127,8 @@ func TestGateDrain_DegenerateInputs(t *testing.T) {
 	assert.Error(t, ClearGateDraining(ctx, nil, 1))
 }
 
-// 排空标记不影响 PickGate 的选择语义:过滤发生在候选集构造阶段,
-// PickGate 仍然只按人数挑最闲的。
+// 排空标记不影响 PickGate 的选择语义:过滤发生在候选集构造阶段。
+// 过滤后剩两台,随机二选一恰好等于取人数最少的那台,所以结果是确定的。
 func TestGateDrain_PickGateStillPicksLeastLoadedAfterFilter(t *testing.T) {
 	rdb, _ := newDrainRedis(t)
 	ctx := context.Background()

@@ -64,8 +64,11 @@ void InitServiceHandler()
 		InitLines: initLines,
 	}
 
-	content := utils.ExecuteTemplate("registerFile", tmplStr, data)
-	utils.WriteFileIfChanged(dst, []byte(content))
+	content := utils.RenderTemplateOrExit("registerFile", tmplStr, data)
+	if err := utils.WriteFileIfChanged(dst, []byte(content)); err != nil {
+		logger.Global.Fatal("写入服务注册文件失败", zap.String("output_path", dst), zap.Error(err))
+		return
+	}
 
 	logger.Global.Info("Service register file generated",
 		zap.String("output_path", dst),

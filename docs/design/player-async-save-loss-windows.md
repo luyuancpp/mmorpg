@@ -85,6 +85,10 @@ if (element->retry_count >= kMaxSaveRetries)   // 6 次
 
 同一 key 的写同时经过 `saving_queue_` 串行化：重连时未收到回调的在途写会回到待写队列；若已有更新快照则保留更新者。只有“当前 key 没有更新值等待”的最新成功写才发布生命周期完成回调。
 
+**2026-10-18 补(审计 §2.1 cpp-save-producer#0):** 退出存盘还在重试时,断线租约到期的 LeaveScene 不再无条件删 location ——
+拿不到当前代的释放证据就保留 location、请持有节点释放,下一次进场走换手门,不会再按首次落点从旧快照起新实体。
+见 [location-release-binding.md](location-release-binding.md)(等满上限 600s 才按旧行为删,计 `forced`)。
+
 **仍然诚实存在的边界：** Redis 长时间不可用并持续到进程被停机看门狗强制推进时，内存中的最新状态仍可能丢失。彻底关闭需要把完整 `PlayerAllData` 写入独立的 durable outbox，或让下一次加载能从 MySQL 分表重建完整父消息；这不是“多重试几次”能够证明解决的。
 
 ### 4.2 【已修】补缴欠款 `debts` 根本没进过存盘

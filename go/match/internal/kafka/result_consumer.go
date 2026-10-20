@@ -26,7 +26,7 @@ import (
 // match 用消费组 ResultConsumerGroup(默认 match-rating)消费并更新 Elo。
 //
 // 多实例:同组分摊分区,每条结果只被一个实例消费;重复投递(rebalance /
-// 提交前崩溃)由 handler 侧的 match:rating:applied:{battle_id} SETNX 幂等兜底。
+// 提交前崩溃)由 handler 的 SQL 入账收据幂等兜底；显式旧兼容模式沿用 Redis 标记。
 // 本文件不 import internal/logic(svc → kafka → logic → svc 会成环),
 // 入账逻辑由 main 以回调注入。
 
@@ -36,11 +36,17 @@ type ResultConsumerConfig struct {
 	Topic      string
 	GroupID    string
 	Partitions int32
+	// 全球 SQL 权威只在入账确认后提交位点；失败关闭并重建 reader 恢复原消息。
+	RequireSQLCommit bool
 }
 
-// ResultHandler 处理一条对局结果:返回 error 表示可重试的失败(Redis 抖动),
-// 消费者会有限次重试后跳过;nil 即终态(含"不计分"/"重复")。
+// ResultHandler 处理一条对局结果：error 表示入账未确认；全球模式保留原位点恢复，
+// 仅显式旧兼容模式有限重试后跳过。nil 即确认终态（含“不计分”/“重复”）。
 type ResultHandler func(ctx context.Context, event *kafkapb.BattleResultEvent) error
+
+// ResultRecordHandler 在评分与推进位点前保存Kafka完整原件；不得用重序列化代替raw。
+// 来源归档不代表个人资产已到账，也不驱动R07重投或销账。
+type ResultRecordHandler func(ctx context.Context, event *kafkapb.BattleResultEvent, raw []byte, topic string, partition int, offset int64) error
 
 // 消费者常量:handler 失败重试上限与退避;拉取失败的退避;topic 保留 7 天
 // (与入账标记 TTL 同口径,重复投递不会跨这么久)。
@@ -51,15 +57,14 @@ const (
 	resultTopicRetentionMs  = 7 * 24 * 3600 * 1000
 )
 
-// StartResultConsumer 确保 topic 存在后起消费 goroutine(ctx 结束即退出)。
-// 立即返回;handler 在消费 goroutine 里串行调用(同一实例内有序,足够:
-// 不同局互不相关,同一局只有一条结果)。
-func StartResultConsumer(ctx context.Context, cfg ResultConsumerConfig, handle ResultHandler) error {
+// EnsureResultTopic 核验结果主题，独立于是否启用评分消费者。
+// 全球服务必须在启动 matcher 与开放任何成局 RPC 之前同步通过此门禁。
+func EnsureResultTopic(cfg ResultConsumerConfig) error {
 	if len(cfg.Brokers) == 0 {
 		return fmt.Errorf("Kafka.Brokers 为空,无法消费对局结果")
 	}
-	if cfg.Topic == "" || cfg.GroupID == "" {
-		return fmt.Errorf("ResultTopic / ResultConsumerGroup 不能为空")
+	if cfg.Topic == "" {
+		return fmt.Errorf("ResultTopic 不能为空")
 	}
 	partitions := cfg.Partitions
 	if partitions <= 0 {
@@ -67,40 +72,80 @@ func StartResultConsumer(ctx context.Context, cfg ResultConsumerConfig, handle R
 	}
 	// 启动时确保 topic 存在(照 login / db 的 kafkautil.EnsureTopics):分区数是
 	// 不可变契约,与 broker 现状不一致会直接报错,让部署问题在启动时暴露。
-	if err := kafkautil.EnsureTopics(cfg.Brokers, []kafkautil.TopicSpec{{
+	topic := kafkautil.TopicSpec{
 		Name:        cfg.Topic,
 		Partitions:  partitions,
 		RetentionMs: resultTopicRetentionMs,
-	}}); err != nil {
+	}
+	if cfg.RequireSQLCommit {
+		// 全球 SQL 评级不能丢失已确认结果：严格三副本、minISR>=2，拒绝现存单副本主题。
+		topic.ReplicaFactor = 3
+		topic.RequireDurability = true
+	}
+	if err := kafkautil.EnsureTopics(cfg.Brokers, []kafkautil.TopicSpec{topic}); err != nil {
 		return fmt.Errorf("确保对局结果 topic %s 存在失败: %w", cfg.Topic, err)
 	}
+	return nil
+}
 
-	reader := kafkago.NewReader(kafkago.ReaderConfig{
-		Brokers: cfg.Brokers,
-		GroupID: cfg.GroupID,
-		Topic:   cfg.Topic,
-		// 新消费组从最早开始:match 晚于 battle 启动时,先发的结果不能丢。
-		StartOffset: kafkago.FirstOffset,
-		MinBytes:    1,
-		MaxBytes:    1 << 20,
-		MaxWait:     500 * time.Millisecond,
-		// CommitInterval=0:每条处理完同步提交,崩溃最多重放一条(幂等兜底)。
-		CommitInterval: 0,
-	})
-	logx.Infof("[rating] Battle result consumer started topic=%s group=%s brokers=%v", cfg.Topic, cfg.GroupID, cfg.Brokers)
+// StartResultConsumer 确保 topic 存在后起消费 goroutine(ctx 结束即退出)。
+// handler 在本实例内串行调用，全球结果只有 SQL 确认后才提交位点。
+func StartResultConsumer(ctx context.Context, cfg ResultConsumerConfig, handle ResultHandler, record ...ResultRecordHandler) error {
+	if handle == nil || len(record) > 1 || len(record) == 1 && record[0] == nil || cfg.RequireSQLCommit && len(record) != 1 {
+		return fmt.Errorf("全球结果消费者必须装配完整来源归档，处理器不能缺失")
+	}
+	if cfg.GroupID == "" {
+		return fmt.Errorf("ResultConsumerGroup 不能为空")
+	}
+	if err := EnsureResultTopic(cfg); err != nil {
+		return err
+	}
+
+	logx.Infof("[rating] Battle result consumer started topic=%s group=%s", cfg.Topic, cfg.GroupID)
 	safego.Go("match.kafka.results", func() {
-		defer func() {
-			if err := reader.Close(); err != nil {
-				logx.Errorf("[rating] Failed to close battle result reader: %v", err)
+		delay := resultFetchBackoff
+		for ctx.Err() == nil {
+			reader := kafkago.NewReader(kafkago.ReaderConfig{
+				Brokers: cfg.Brokers,
+				GroupID: cfg.GroupID,
+				Topic:   cfg.Topic,
+				// 新消费组从最早开始:match 晚于 battle 启动时,先发的结果不能丢。
+				StartOffset: kafkago.FirstOffset,
+				MinBytes:    1,
+				MaxBytes:    1 << 20,
+				MaxWait:     500 * time.Millisecond,
+				// CommitInterval=0:每条处理完同步提交,崩溃最多重放一条(幂等兜底)。
+				CommitInterval: 0,
+			})
+			func() {
+				defer func() {
+					if err := reader.Close(); err != nil {
+						logx.Error("关闭评级结果消费者失败")
+					}
+				}()
+				runResultConsumer(ctx, reader, handle, cfg.RequireSQLCommit, sleepCtx, record...)
+			}()
+			if !cfg.RequireSQLCommit || ctx.Err() != nil {
+				return
 			}
-		}()
-		runResultConsumer(ctx, reader, handle)
+			// 未确认的位点绝不提交；换 reader 后从 broker 的原位点恢复。每轮最多三次业务调用。
+			logx.Error("评级 SQL 尚未确认，保留 Kafka 原位点并退避恢复")
+			if !sleepCtx(ctx, delay) {
+				return
+			}
+			delay = min(delay*2, 30*time.Second)
+		}
 	})
 	return nil
 }
 
 // runResultConsumer 拉取 → 反序列化 → handler(有限重试)→ 提交,直到 ctx 结束。
-func runResultConsumer(ctx context.Context, reader *kafkago.Reader, handle ResultHandler) {
+type resultReader interface {
+	FetchMessage(context.Context) (kafkago.Message, error)
+	CommitMessages(context.Context, ...kafkago.Message) error
+}
+
+func runResultConsumer(ctx context.Context, reader resultReader, handle ResultHandler, requireSQLCommit bool, wait func(context.Context, time.Duration) bool, record ...ResultRecordHandler) {
 	for {
 		msg, err := reader.FetchMessage(ctx)
 		if err != nil {
@@ -109,7 +154,7 @@ func runResultConsumer(ctx context.Context, reader *kafkago.Reader, handle Resul
 				return
 			}
 			logx.Errorf("[rating] Failed to fetch battle result; retrying after %s: %v", resultFetchBackoff, err)
-			if !sleepCtx(ctx, resultFetchBackoff) {
+			if !wait(ctx, resultFetchBackoff) {
 				return
 			}
 			continue
@@ -117,10 +162,13 @@ func runResultConsumer(ctx context.Context, reader *kafkago.Reader, handle Resul
 
 		event := &kafkapb.BattleResultEvent{}
 		if err := proto.Unmarshal(msg.Value, event); err != nil {
-			// 坏消息跳过并提交:留在 topic 里只会每次重启都撞一遍。
-			logx.Errorf("[rating] Failed to deserialize battle result; skipping partition=%d offset=%d key=%s: %v",
+			// 全球模式关闭本轮并保留原位点；只有显式旧兼容模式允许跳过坏消息。
+			logx.Errorf("[rating] Failed to deserialize battle result partition=%d offset=%d key=%s: %v",
 				msg.Partition, msg.Offset, string(msg.Key), err)
 			metrics.ObserveRatingUpdate("unknown", "decode_error")
+			if requireSQLCommit {
+				return
+			}
 			commitResult(ctx, reader, msg)
 			continue
 		}
@@ -131,6 +179,15 @@ func runResultConsumer(ctx context.Context, reader *kafkago.Reader, handle Resul
 
 		handled := false
 		for attempt := 1; attempt <= resultHandleMaxAttempts; attempt++ {
+			if len(record) == 1 {
+				if err := record[0](ctx, event, msg.Value, msg.Topic, msg.Partition, msg.Offset); err != nil {
+					logx.Errorf("完整结算来源未确认 partition=%d offset=%d attempt=%d: %v", msg.Partition, msg.Offset, attempt, err)
+					if attempt < resultHandleMaxAttempts && !wait(ctx, resultHandleBackoff) {
+						return
+					}
+					continue
+				}
+			}
 			if err := handle(ctx, event); err == nil {
 				handled = true
 				break
@@ -139,12 +196,15 @@ func runResultConsumer(ctx context.Context, reader *kafkago.Reader, handle Resul
 					attempt, resultHandleMaxAttempts, event.GetBattleId(),
 					matchpb.MatchMode(event.GetMatchMode()).String(), err)
 			}
-			if attempt < resultHandleMaxAttempts && !sleepCtx(ctx, resultHandleBackoff) {
+			if attempt < resultHandleMaxAttempts && !wait(ctx, resultHandleBackoff) {
 				return
 			}
 		}
 		if !handled {
-			// 重试用尽:跳过这一局(评分是软数据,不能让一条坏结果卡住整个分区)。
+			if requireSQLCommit || len(record) == 1 {
+				return
+			}
+			// 显式旧兼容模式保留原来的软评分跳过策略。
 			logx.Errorf("[rating] Battle result retries exhausted; skipping battle=%d", event.GetBattleId())
 		}
 		commitResult(ctx, reader, msg)
@@ -153,7 +213,7 @@ func runResultConsumer(ctx context.Context, reader *kafkago.Reader, handle Resul
 
 // commitResult 同步提交一条消息的 offset;失败只记日志(下次提交会覆盖,
 // 崩溃最多重放到上次成功提交处,幂等标记兜底)。
-func commitResult(ctx context.Context, reader *kafkago.Reader, msg kafkago.Message) {
+func commitResult(ctx context.Context, reader resultReader, msg kafkago.Message) {
 	if err := reader.CommitMessages(ctx, msg); err != nil && ctx.Err() == nil {
 		logx.Errorf("[rating] Failed to commit battle result offset partition=%d offset=%d: %v", msg.Partition, msg.Offset, err)
 	}

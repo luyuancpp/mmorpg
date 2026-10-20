@@ -23,6 +23,7 @@ import (
 	"fmt"
 	"net"
 	"strconv"
+	"sync"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -41,8 +42,11 @@ import (
 	"shared/snowflake"
 
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/status"
 	"google.golang.org/grpc/test/bufconn"
+	"google.golang.org/protobuf/proto"
 )
 
 // fakeSceneNode is the bufconn-backed test double for a C++ scene node.
@@ -64,6 +68,38 @@ type fakeSceneNode struct {
 	createShouldFail error
 	// 覆盖业务应答,用于模拟 RPC OK 但场景未真正创建的拒绝分支。
 	createReplyOverride atomic.Pointer[scenepb.CreateSceneResponse]
+
+	// releaseMu 保护下面几项:ReleasePlayer 在 gRPC 服务端协程里执行,用例协程要读写。
+	releaseMu sync.Mutex
+	// releaseRequests 按到达顺序记下全部 ReleasePlayer 请求(克隆后存,不与调用方共享)。
+	// sharedFakeSceneNode 整包共用,用例要按 player_id 过滤,或先取长度再看增量。
+	releaseRequests []*scenenodepb.ReleasePlayerRequest
+	// releaseFailNext > 0 时,发给 releaseFailPlayer 的 ReleasePlayer 回 Unavailable 并减一(请求照样记下),
+	// 用来驱动 SM 侧重试。按玩家限定:别的用例留下的异步释放(真实 dispatchReleasePlayer 的后台协程)
+	// 可能晚到,不能让它们吃掉注入的失败次数。共享对象:设置它的用例必须在 t.Cleanup 里清零。
+	releaseFailPlayer uint64
+	releaseFailNext   int
+}
+
+// releaseRequestsFor 返回发给 playerID 的全部 ReleasePlayer 请求(按到达顺序的副本)。
+func (f *fakeSceneNode) releaseRequestsFor(playerID uint64) []*scenenodepb.ReleasePlayerRequest {
+	f.releaseMu.Lock()
+	defer f.releaseMu.Unlock()
+	var out []*scenenodepb.ReleasePlayerRequest
+	for _, req := range f.releaseRequests {
+		if req.GetPlayerId() == playerID {
+			out = append(out, req)
+		}
+	}
+	return out
+}
+
+// setReleaseFailNext 让接下来发给 playerID 的 n 次 ReleasePlayer 回 Unavailable;n = 0 清除。
+func (f *fakeSceneNode) setReleaseFailNext(playerID uint64, n int) {
+	f.releaseMu.Lock()
+	defer f.releaseMu.Unlock()
+	f.releaseFailPlayer = playerID
+	f.releaseFailNext = n
 }
 
 func (f *fakeSceneNode) CreateScene(_ context.Context, req *scenepb.CreateSceneRequest) (*scenepb.CreateSceneResponse, error) {
@@ -87,8 +123,15 @@ func (f *fakeSceneNode) DestroyScene(_ context.Context, req *scenepb.DestroyScen
 	return &basepb.Empty{}, nil
 }
 
-func (f *fakeSceneNode) ReleasePlayer(_ context.Context, _ *scenenodepb.ReleasePlayerRequest) (*basepb.Empty, error) {
+func (f *fakeSceneNode) ReleasePlayer(_ context.Context, req *scenenodepb.ReleasePlayerRequest) (*basepb.Empty, error) {
 	f.releaseCalls.Add(1)
+	f.releaseMu.Lock()
+	defer f.releaseMu.Unlock()
+	f.releaseRequests = append(f.releaseRequests, proto.Clone(req).(*scenenodepb.ReleasePlayerRequest))
+	if f.releaseFailNext > 0 && req.GetPlayerId() == f.releaseFailPlayer {
+		f.releaseFailNext--
+		return nil, status.Error(codes.Unavailable, "fake scene node: injected ReleasePlayer failure")
+	}
 	return &basepb.Empty{}, nil
 }
 

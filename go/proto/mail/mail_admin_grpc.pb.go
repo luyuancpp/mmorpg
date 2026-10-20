@@ -19,16 +19,23 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	MailAdmin_SendPersonalMail_FullMethodName = "/mailpb.MailAdmin/SendPersonalMail"
-	MailAdmin_SendSystemMail_FullMethodName   = "/mailpb.MailAdmin/SendSystemMail"
+	MailAdmin_SendPersonalMail_FullMethodName     = "/mailpb.MailAdmin/SendPersonalMail"
+	MailAdmin_SendSystemMail_FullMethodName       = "/mailpb.MailAdmin/SendSystemMail"
+	MailAdmin_SendGuildMail_FullMethodName        = "/mailpb.MailAdmin/SendGuildMail"
+	MailAdmin_ImportMailRecipients_FullMethodName = "/mailpb.MailAdmin/ImportMailRecipients"
+	MailAdmin_SealMailCampaign_FullMethodName     = "/mailpb.MailAdmin/SealMailCampaign"
 )
 
 // MailAdminClient is the client API for MailAdmin service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type MailAdminClient interface {
-	SendPersonalMail(ctx context.Context, in *SendPersonalMailRequest, opts ...grpc.CallOption) (*SendPersonalMailResponse, error)
-	SendSystemMail(ctx context.Context, in *SendSystemMailRequest, opts ...grpc.CallOption) (*SendSystemMailResponse, error)
+	SendPersonalMail(ctx context.Context, in *SendMailRequest, opts ...grpc.CallOption) (*SendMailResponse, error)
+	// 系统及帮会附件的领取资格须服务端判定；不得把广播通知当玩家资产直接入账。
+	SendSystemMail(ctx context.Context, in *SendMailRequest, opts ...grpc.CallOption) (*SendMailResponse, error)
+	SendGuildMail(ctx context.Context, in *SendMailRequest, opts ...grpc.CallOption) (*SendMailResponse, error)
+	ImportMailRecipients(ctx context.Context, in *ImportMailRecipientsRequest, opts ...grpc.CallOption) (*ImportMailRecipientsResponse, error)
+	SealMailCampaign(ctx context.Context, in *SealMailCampaignRequest, opts ...grpc.CallOption) (*SendMailResponse, error)
 }
 
 type mailAdminClient struct {
@@ -39,9 +46,9 @@ func NewMailAdminClient(cc grpc.ClientConnInterface) MailAdminClient {
 	return &mailAdminClient{cc}
 }
 
-func (c *mailAdminClient) SendPersonalMail(ctx context.Context, in *SendPersonalMailRequest, opts ...grpc.CallOption) (*SendPersonalMailResponse, error) {
+func (c *mailAdminClient) SendPersonalMail(ctx context.Context, in *SendMailRequest, opts ...grpc.CallOption) (*SendMailResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(SendPersonalMailResponse)
+	out := new(SendMailResponse)
 	err := c.cc.Invoke(ctx, MailAdmin_SendPersonalMail_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -49,10 +56,40 @@ func (c *mailAdminClient) SendPersonalMail(ctx context.Context, in *SendPersonal
 	return out, nil
 }
 
-func (c *mailAdminClient) SendSystemMail(ctx context.Context, in *SendSystemMailRequest, opts ...grpc.CallOption) (*SendSystemMailResponse, error) {
+func (c *mailAdminClient) SendSystemMail(ctx context.Context, in *SendMailRequest, opts ...grpc.CallOption) (*SendMailResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(SendSystemMailResponse)
+	out := new(SendMailResponse)
 	err := c.cc.Invoke(ctx, MailAdmin_SendSystemMail_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *mailAdminClient) SendGuildMail(ctx context.Context, in *SendMailRequest, opts ...grpc.CallOption) (*SendMailResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(SendMailResponse)
+	err := c.cc.Invoke(ctx, MailAdmin_SendGuildMail_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *mailAdminClient) ImportMailRecipients(ctx context.Context, in *ImportMailRecipientsRequest, opts ...grpc.CallOption) (*ImportMailRecipientsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ImportMailRecipientsResponse)
+	err := c.cc.Invoke(ctx, MailAdmin_ImportMailRecipients_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *mailAdminClient) SealMailCampaign(ctx context.Context, in *SealMailCampaignRequest, opts ...grpc.CallOption) (*SendMailResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(SendMailResponse)
+	err := c.cc.Invoke(ctx, MailAdmin_SealMailCampaign_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -63,8 +100,12 @@ func (c *mailAdminClient) SendSystemMail(ctx context.Context, in *SendSystemMail
 // All implementations must embed UnimplementedMailAdminServer
 // for forward compatibility.
 type MailAdminServer interface {
-	SendPersonalMail(context.Context, *SendPersonalMailRequest) (*SendPersonalMailResponse, error)
-	SendSystemMail(context.Context, *SendSystemMailRequest) (*SendSystemMailResponse, error)
+	SendPersonalMail(context.Context, *SendMailRequest) (*SendMailResponse, error)
+	// 系统及帮会附件的领取资格须服务端判定；不得把广播通知当玩家资产直接入账。
+	SendSystemMail(context.Context, *SendMailRequest) (*SendMailResponse, error)
+	SendGuildMail(context.Context, *SendMailRequest) (*SendMailResponse, error)
+	ImportMailRecipients(context.Context, *ImportMailRecipientsRequest) (*ImportMailRecipientsResponse, error)
+	SealMailCampaign(context.Context, *SealMailCampaignRequest) (*SendMailResponse, error)
 	mustEmbedUnimplementedMailAdminServer()
 }
 
@@ -75,11 +116,20 @@ type MailAdminServer interface {
 // pointer dereference when methods are called.
 type UnimplementedMailAdminServer struct{}
 
-func (UnimplementedMailAdminServer) SendPersonalMail(context.Context, *SendPersonalMailRequest) (*SendPersonalMailResponse, error) {
+func (UnimplementedMailAdminServer) SendPersonalMail(context.Context, *SendMailRequest) (*SendMailResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method SendPersonalMail not implemented")
 }
-func (UnimplementedMailAdminServer) SendSystemMail(context.Context, *SendSystemMailRequest) (*SendSystemMailResponse, error) {
+func (UnimplementedMailAdminServer) SendSystemMail(context.Context, *SendMailRequest) (*SendMailResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method SendSystemMail not implemented")
+}
+func (UnimplementedMailAdminServer) SendGuildMail(context.Context, *SendMailRequest) (*SendMailResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method SendGuildMail not implemented")
+}
+func (UnimplementedMailAdminServer) ImportMailRecipients(context.Context, *ImportMailRecipientsRequest) (*ImportMailRecipientsResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ImportMailRecipients not implemented")
+}
+func (UnimplementedMailAdminServer) SealMailCampaign(context.Context, *SealMailCampaignRequest) (*SendMailResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method SealMailCampaign not implemented")
 }
 func (UnimplementedMailAdminServer) mustEmbedUnimplementedMailAdminServer() {}
 func (UnimplementedMailAdminServer) testEmbeddedByValue()                   {}
@@ -103,7 +153,7 @@ func RegisterMailAdminServer(s grpc.ServiceRegistrar, srv MailAdminServer) {
 }
 
 func _MailAdmin_SendPersonalMail_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(SendPersonalMailRequest)
+	in := new(SendMailRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -115,13 +165,13 @@ func _MailAdmin_SendPersonalMail_Handler(srv interface{}, ctx context.Context, d
 		FullMethod: MailAdmin_SendPersonalMail_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(MailAdminServer).SendPersonalMail(ctx, req.(*SendPersonalMailRequest))
+		return srv.(MailAdminServer).SendPersonalMail(ctx, req.(*SendMailRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
 func _MailAdmin_SendSystemMail_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(SendSystemMailRequest)
+	in := new(SendMailRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -133,7 +183,61 @@ func _MailAdmin_SendSystemMail_Handler(srv interface{}, ctx context.Context, dec
 		FullMethod: MailAdmin_SendSystemMail_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(MailAdminServer).SendSystemMail(ctx, req.(*SendSystemMailRequest))
+		return srv.(MailAdminServer).SendSystemMail(ctx, req.(*SendMailRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _MailAdmin_SendGuildMail_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SendMailRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MailAdminServer).SendGuildMail(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: MailAdmin_SendGuildMail_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MailAdminServer).SendGuildMail(ctx, req.(*SendMailRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _MailAdmin_ImportMailRecipients_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ImportMailRecipientsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MailAdminServer).ImportMailRecipients(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: MailAdmin_ImportMailRecipients_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MailAdminServer).ImportMailRecipients(ctx, req.(*ImportMailRecipientsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _MailAdmin_SealMailCampaign_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SealMailCampaignRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MailAdminServer).SealMailCampaign(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: MailAdmin_SealMailCampaign_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MailAdminServer).SealMailCampaign(ctx, req.(*SealMailCampaignRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -152,6 +256,18 @@ var MailAdmin_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "SendSystemMail",
 			Handler:    _MailAdmin_SendSystemMail_Handler,
+		},
+		{
+			MethodName: "SendGuildMail",
+			Handler:    _MailAdmin_SendGuildMail_Handler,
+		},
+		{
+			MethodName: "ImportMailRecipients",
+			Handler:    _MailAdmin_ImportMailRecipients_Handler,
+		},
+		{
+			MethodName: "SealMailCampaign",
+			Handler:    _MailAdmin_SealMailCampaign_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

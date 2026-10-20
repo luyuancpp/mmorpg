@@ -133,10 +133,11 @@ func (s RPCServiceInfoList) Swap(i, j int)      { s[i], s[j] = s[j], s[i] }
 var GlobalRPCServiceList RPCServiceInfoList
 var FileServiceMap sync.Map
 
+// RpcIdMethodMap 是本轮活方法:消息号 → 方法,由 cpp.InitMessageId 填;墓碑号(message_id.txt 里
+// `N=reserved:<原 KeyName>` 的行)不在其中。
 var RpcIdMethodMap = map[uint64]*MethodInfo{}
-var MessageIdMap = map[string]uint64{}
-var MaxMessageId = uint64(0)
-var MessageIdFileMaxId = uint64(0)
+
+// FileMaxMessageId 是发号后 message_id.txt 的最大号(含墓碑),由 cpp.InitMessageId 填。
 var FileMaxMessageId = uint64(0)
 
 // NodeEnumCppQualifiedType holds the C++ fully qualified eNodeType name (e.g. "common::base::eNodeType").
@@ -325,6 +326,9 @@ func GetTypeName(fullTypeName string) string {
 	return fullTypeName
 }
 
+// MessageIdLen 是 C++ 注册表(kMaxRpcMethodCount / gRpcMethodRegistry)的长度:最大号(含墓碑)+ 1。
+// 墓碑号在注册表里留空槽(serviceName / methodName 为 nullptr),旧节点发来的墓碑号消息被
+// IsDispatchableMessageId 判为不可派发,而不是越界。
 func MessageIdLen() uint64 {
 	return FileMaxMessageId + 1
 }

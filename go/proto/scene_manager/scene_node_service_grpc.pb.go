@@ -30,6 +30,7 @@ const (
 	SceneNodeGrpc_AssetDebit_FullMethodName          = "/scene_node.SceneNodeGrpc/AssetDebit"
 	SceneNodeGrpc_AssetAbortDebit_FullMethodName     = "/scene_node.SceneNodeGrpc/AssetAbortDebit"
 	SceneNodeGrpc_AssetCredit_FullMethodName         = "/scene_node.SceneNodeGrpc/AssetCredit"
+	SceneNodeGrpc_AssetAckReceipt_FullMethodName     = "/scene_node.SceneNodeGrpc/AssetAckReceipt"
 )
 
 // SceneNodeGrpcClient is the client API for SceneNodeGrpc service.
@@ -46,6 +47,12 @@ type SceneNodeGrpcClient interface {
 	// when the player is being routed to a different scene node (cross-node scene
 	// change). The old node persists the player to Redis, drops the entity, and
 	// frees the session mapping so the new node can load fresh from Redis.
+	// 释放栅栏(docs/design/scene-enter-chain-residuals.md §4):
+	// - 交接在途的实体不处理;其余按 expected_owner_epoch 与本地缓存比对,相等才退出,缓存为 0 / 期望为 0 按旧行为释放。
+	// - SceneManager 只在本次 EnterScene 提交之后才发(带 GateId 时路由 broker ACK 之后,无 GateId 时落点成功之后);
+	//   落点或路由失败、回滚的请求一律不发。忽略即终态,响应仍是 Empty。
+	// - session_ended = true 是另一种用途(docs/design/location-release-binding.md §3.3):LeaveScene 拿不到"持有者已释放"
+	//   证据时,SceneManager 请 location 的持有节点释放——持有则按客户端断线退出,不持有则按 owner_epoch 条件补写凭证标记。
 	ReleasePlayer(ctx context.Context, in *ReleasePlayerRequest, opts ...grpc.CallOption) (*base.Empty, error)
 	// ---- 回合制战斗 gather 管线(docs/design/turn-based-battle-server.md §3.1/§5.3)----
 	// 消息定义共用 proto/scene/scene.proto 里的那一份(全局包,与 CreateSceneRequest
@@ -61,6 +68,8 @@ type SceneNodeGrpcClient interface {
 	// 未见过的 seq 记 REJECTED 占位(reason=0);见过则回原结局。允许用于任何流。
 	AssetAbortDebit(ctx context.Context, in *asset.AssetOpRequest, opts ...grpc.CallOption) (*asset.AssetOpResponse, error)
 	AssetCredit(ctx context.Context, in *asset.AssetOpRequest, opts ...grpc.CallOption) (*asset.AssetOpResponse, error)
+	// 交易库已持久保存托管快照后释放场景收据；幂等，不改变玩家资产与原始结局。
+	AssetAckReceipt(ctx context.Context, in *asset.AssetOpRequest, opts ...grpc.CallOption) (*asset.AssetOpResponse, error)
 }
 
 type sceneNodeGrpcClient struct {
@@ -151,6 +160,16 @@ func (c *sceneNodeGrpcClient) AssetCredit(ctx context.Context, in *asset.AssetOp
 	return out, nil
 }
 
+func (c *sceneNodeGrpcClient) AssetAckReceipt(ctx context.Context, in *asset.AssetOpRequest, opts ...grpc.CallOption) (*asset.AssetOpResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(asset.AssetOpResponse)
+	err := c.cc.Invoke(ctx, SceneNodeGrpc_AssetAckReceipt_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // SceneNodeGrpcServer is the server API for SceneNodeGrpc service.
 // All implementations must embed UnimplementedSceneNodeGrpcServer
 // for forward compatibility.
@@ -165,6 +184,12 @@ type SceneNodeGrpcServer interface {
 	// when the player is being routed to a different scene node (cross-node scene
 	// change). The old node persists the player to Redis, drops the entity, and
 	// frees the session mapping so the new node can load fresh from Redis.
+	// 释放栅栏(docs/design/scene-enter-chain-residuals.md §4):
+	// - 交接在途的实体不处理;其余按 expected_owner_epoch 与本地缓存比对,相等才退出,缓存为 0 / 期望为 0 按旧行为释放。
+	// - SceneManager 只在本次 EnterScene 提交之后才发(带 GateId 时路由 broker ACK 之后,无 GateId 时落点成功之后);
+	//   落点或路由失败、回滚的请求一律不发。忽略即终态,响应仍是 Empty。
+	// - session_ended = true 是另一种用途(docs/design/location-release-binding.md §3.3):LeaveScene 拿不到"持有者已释放"
+	//   证据时,SceneManager 请 location 的持有节点释放——持有则按客户端断线退出,不持有则按 owner_epoch 条件补写凭证标记。
 	ReleasePlayer(context.Context, *ReleasePlayerRequest) (*base.Empty, error)
 	// ---- 回合制战斗 gather 管线(docs/design/turn-based-battle-server.md §3.1/§5.3)----
 	// 消息定义共用 proto/scene/scene.proto 里的那一份(全局包,与 CreateSceneRequest
@@ -180,6 +205,8 @@ type SceneNodeGrpcServer interface {
 	// 未见过的 seq 记 REJECTED 占位(reason=0);见过则回原结局。允许用于任何流。
 	AssetAbortDebit(context.Context, *asset.AssetOpRequest) (*asset.AssetOpResponse, error)
 	AssetCredit(context.Context, *asset.AssetOpRequest) (*asset.AssetOpResponse, error)
+	// 交易库已持久保存托管快照后释放场景收据；幂等，不改变玩家资产与原始结局。
+	AssetAckReceipt(context.Context, *asset.AssetOpRequest) (*asset.AssetOpResponse, error)
 	mustEmbedUnimplementedSceneNodeGrpcServer()
 }
 
@@ -213,6 +240,9 @@ func (UnimplementedSceneNodeGrpcServer) AssetAbortDebit(context.Context, *asset.
 }
 func (UnimplementedSceneNodeGrpcServer) AssetCredit(context.Context, *asset.AssetOpRequest) (*asset.AssetOpResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method AssetCredit not implemented")
+}
+func (UnimplementedSceneNodeGrpcServer) AssetAckReceipt(context.Context, *asset.AssetOpRequest) (*asset.AssetOpResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method AssetAckReceipt not implemented")
 }
 func (UnimplementedSceneNodeGrpcServer) mustEmbedUnimplementedSceneNodeGrpcServer() {}
 func (UnimplementedSceneNodeGrpcServer) testEmbeddedByValue()                       {}
@@ -379,6 +409,24 @@ func _SceneNodeGrpc_AssetCredit_Handler(srv interface{}, ctx context.Context, de
 	return interceptor(ctx, in, info, handler)
 }
 
+func _SceneNodeGrpc_AssetAckReceipt_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(asset.AssetOpRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(SceneNodeGrpcServer).AssetAckReceipt(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: SceneNodeGrpc_AssetAckReceipt_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(SceneNodeGrpcServer).AssetAckReceipt(ctx, req.(*asset.AssetOpRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // SceneNodeGrpc_ServiceDesc is the grpc.ServiceDesc for SceneNodeGrpc service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -417,6 +465,10 @@ var SceneNodeGrpc_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "AssetCredit",
 			Handler:    _SceneNodeGrpc_AssetCredit_Handler,
+		},
+		{
+			MethodName: "AssetAckReceipt",
+			Handler:    _SceneNodeGrpc_AssetAckReceipt_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

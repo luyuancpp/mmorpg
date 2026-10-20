@@ -35,6 +35,7 @@
 #include "proto/common/base/empty.pb.h"
 #include "proto/common/base/tip.pb.h"
 #include "proto/battle/player_battle.pb.h"
+#include "proto/match/match_network.pb.h"
 // @@protoc_insertion_point(includes)
 
 // Must be included last.
@@ -1349,6 +1350,8 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED JoinQueueRequest final : public ::g
   // accessors -------------------------------------------------------
   enum : int {
     kPartyMemberIdsFieldNumber = 4,
+    kRequestIdFieldNumber = 8,
+    kNetworkPlanIdFieldNumber = 9,
     kPlayerIdFieldNumber = 1,
     kModeFieldNumber = 2,
     kMapConfigIdFieldNumber = 3,
@@ -1374,6 +1377,36 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED JoinQueueRequest final : public ::g
   private:
   const ::google::protobuf::RepeatedField<::uint64_t>& _internal_party_member_ids() const;
   ::google::protobuf::RepeatedField<::uint64_t>* PROTOBUF_NONNULL _internal_mutable_party_member_ids();
+
+  public:
+  // string request_id = 8;
+  void clear_request_id() ;
+  [[nodiscard]] const ::std::string& request_id() const;
+  template <typename Arg_ = const ::std::string&, typename... Args_>
+  void set_request_id(Arg_&& arg, Args_... args);
+  ::std::string* PROTOBUF_NONNULL mutable_request_id();
+  [[nodiscard]] ::std::string* PROTOBUF_NULLABLE release_request_id();
+  void set_allocated_request_id(::std::string* PROTOBUF_NULLABLE value);
+
+  private:
+  const ::std::string& _internal_request_id() const;
+  PROTOBUF_ALWAYS_INLINE void _internal_set_request_id(const ::std::string& value);
+  ::std::string* PROTOBUF_NONNULL _internal_mutable_request_id();
+
+  public:
+  // string network_plan_id = 9;
+  void clear_network_plan_id() ;
+  [[nodiscard]] const ::std::string& network_plan_id() const;
+  template <typename Arg_ = const ::std::string&, typename... Args_>
+  void set_network_plan_id(Arg_&& arg, Args_... args);
+  ::std::string* PROTOBUF_NONNULL mutable_network_plan_id();
+  [[nodiscard]] ::std::string* PROTOBUF_NULLABLE release_network_plan_id();
+  void set_allocated_network_plan_id(::std::string* PROTOBUF_NULLABLE value);
+
+  private:
+  const ::std::string& _internal_network_plan_id() const;
+  PROTOBUF_ALWAYS_INLINE void _internal_set_network_plan_id(const ::std::string& value);
+  ::std::string* PROTOBUF_NONNULL _internal_mutable_network_plan_id();
 
   public:
   // uint64 player_id = 1;
@@ -1440,8 +1473,8 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED JoinQueueRequest final : public ::g
  private:
   class _Internal;
   using ParseTableT_ =
-      ::google::protobuf::internal::TcParseTable<3, 7,
-                          0, 0,
+      ::google::protobuf::internal::TcParseTable<4, 9,
+                          0, 64,
                           2>;
   static constexpr ParseTableT_ InternalGenerateParseTable_(
       const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL class_data);
@@ -1471,6 +1504,8 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED JoinQueueRequest final : public ::g
     ::google::protobuf::internal::CachedSize _cached_size_;
     ::google::protobuf::RepeatedField<::uint64_t> party_member_ids_;
     ::google::protobuf::internal::CachedSize _party_member_ids_cached_byte_size_;
+    ::google::protobuf::internal::ArenaStringPtr request_id_;
+    ::google::protobuf::internal::ArenaStringPtr network_plan_id_;
     ::uint64_t player_id_;
     int mode_;
     ::uint32_t map_config_id_;
@@ -1632,10 +1667,30 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED GetQueueStatusResponse final : publ
 
   // accessors -------------------------------------------------------
   enum : int {
+    kQueueTicketFieldNumber = 4,
     kStateFieldNumber = 1,
     kEstimatedWaitSecondsFieldNumber = 2,
     kQueuedSecondsFieldNumber = 3,
+    kSelectedRegionFieldNumber = 6,
+    kBattleIdFieldNumber = 5,
+    kRetryAfterMsFieldNumber = 7,
+    kRequestCancelledFieldNumber = 8,
   };
+  // string queue_ticket = 4;
+  void clear_queue_ticket() ;
+  [[nodiscard]] const ::std::string& queue_ticket() const;
+  template <typename Arg_ = const ::std::string&, typename... Args_>
+  void set_queue_ticket(Arg_&& arg, Args_... args);
+  ::std::string* PROTOBUF_NONNULL mutable_queue_ticket();
+  [[nodiscard]] ::std::string* PROTOBUF_NULLABLE release_queue_ticket();
+  void set_allocated_queue_ticket(::std::string* PROTOBUF_NULLABLE value);
+
+  private:
+  const ::std::string& _internal_queue_ticket() const;
+  PROTOBUF_ALWAYS_INLINE void _internal_set_queue_ticket(const ::std::string& value);
+  ::std::string* PROTOBUF_NONNULL _internal_mutable_queue_ticket();
+
+  public:
   // .match.QueueState state = 1;
   void clear_state() ;
   [[nodiscard]] ::match::QueueState state() const;
@@ -1666,12 +1721,52 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED GetQueueStatusResponse final : publ
   void _internal_set_queued_seconds(::uint32_t value);
 
   public:
+  // uint32 selected_region = 6;
+  void clear_selected_region() ;
+  [[nodiscard]] ::uint32_t selected_region() const;
+  void set_selected_region(::uint32_t value);
+
+  private:
+  ::uint32_t _internal_selected_region() const;
+  void _internal_set_selected_region(::uint32_t value);
+
+  public:
+  // uint64 battle_id = 5;
+  void clear_battle_id() ;
+  [[nodiscard]] ::uint64_t battle_id() const;
+  void set_battle_id(::uint64_t value);
+
+  private:
+  ::uint64_t _internal_battle_id() const;
+  void _internal_set_battle_id(::uint64_t value);
+
+  public:
+  // uint32 retry_after_ms = 7;
+  void clear_retry_after_ms() ;
+  [[nodiscard]] ::uint32_t retry_after_ms() const;
+  void set_retry_after_ms(::uint32_t value);
+
+  private:
+  ::uint32_t _internal_retry_after_ms() const;
+  void _internal_set_retry_after_ms(::uint32_t value);
+
+  public:
+  // bool request_cancelled = 8;
+  void clear_request_cancelled() ;
+  [[nodiscard]] bool request_cancelled() const;
+  void set_request_cancelled(bool value);
+
+  private:
+  bool _internal_request_cancelled() const;
+  void _internal_set_request_cancelled(bool value);
+
+  public:
   // @@protoc_insertion_point(class_scope:match.GetQueueStatusResponse)
  private:
   class _Internal;
   using ParseTableT_ =
-      ::google::protobuf::internal::TcParseTable<2, 3,
-                          0, 0,
+      ::google::protobuf::internal::TcParseTable<3, 8,
+                          0, 57,
                           2>;
   static constexpr ParseTableT_ InternalGenerateParseTable_(
       const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL class_data);
@@ -1699,9 +1794,14 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED GetQueueStatusResponse final : publ
         const GetQueueStatusResponse& from_msg);
     ::google::protobuf::internal::HasBits<1> _has_bits_;
     ::google::protobuf::internal::CachedSize _cached_size_;
+    ::google::protobuf::internal::ArenaStringPtr queue_ticket_;
     int state_;
     ::uint32_t estimated_wait_seconds_;
     ::uint32_t queued_seconds_;
+    ::uint32_t selected_region_;
+    ::uint64_t battle_id_;
+    ::uint32_t retry_after_ms_;
+    bool request_cancelled_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
   union { Impl_ _impl_; };
@@ -1857,8 +1957,24 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED GetQueueStatusRequest final : publi
 
   // accessors -------------------------------------------------------
   enum : int {
+    kRequestIdFieldNumber = 2,
     kPlayerIdFieldNumber = 1,
   };
+  // string request_id = 2;
+  void clear_request_id() ;
+  [[nodiscard]] const ::std::string& request_id() const;
+  template <typename Arg_ = const ::std::string&, typename... Args_>
+  void set_request_id(Arg_&& arg, Args_... args);
+  ::std::string* PROTOBUF_NONNULL mutable_request_id();
+  [[nodiscard]] ::std::string* PROTOBUF_NULLABLE release_request_id();
+  void set_allocated_request_id(::std::string* PROTOBUF_NULLABLE value);
+
+  private:
+  const ::std::string& _internal_request_id() const;
+  PROTOBUF_ALWAYS_INLINE void _internal_set_request_id(const ::std::string& value);
+  ::std::string* PROTOBUF_NONNULL _internal_mutable_request_id();
+
+  public:
   // uint64 player_id = 1;
   void clear_player_id() ;
   [[nodiscard]] ::uint64_t player_id() const;
@@ -1873,8 +1989,8 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED GetQueueStatusRequest final : publi
  private:
   class _Internal;
   using ParseTableT_ =
-      ::google::protobuf::internal::TcParseTable<0, 1,
-                          0, 0,
+      ::google::protobuf::internal::TcParseTable<1, 2,
+                          0, 46,
                           2>;
   static constexpr ParseTableT_ InternalGenerateParseTable_(
       const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL class_data);
@@ -1902,6 +2018,7 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED GetQueueStatusRequest final : publi
         const GetQueueStatusRequest& from_msg);
     ::google::protobuf::internal::HasBits<1> _has_bits_;
     ::google::protobuf::internal::CachedSize _cached_size_;
+    ::google::protobuf::internal::ArenaStringPtr request_id_;
     ::uint64_t player_id_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
@@ -2763,6 +2880,7 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED CancelQueueRequest final : public :
   // accessors -------------------------------------------------------
   enum : int {
     kQueueTicketFieldNumber = 2,
+    kRequestIdFieldNumber = 3,
     kPlayerIdFieldNumber = 1,
   };
   // string queue_ticket = 2;
@@ -2780,6 +2898,21 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED CancelQueueRequest final : public :
   ::std::string* PROTOBUF_NONNULL _internal_mutable_queue_ticket();
 
   public:
+  // string request_id = 3;
+  void clear_request_id() ;
+  [[nodiscard]] const ::std::string& request_id() const;
+  template <typename Arg_ = const ::std::string&, typename... Args_>
+  void set_request_id(Arg_&& arg, Args_... args);
+  ::std::string* PROTOBUF_NONNULL mutable_request_id();
+  [[nodiscard]] ::std::string* PROTOBUF_NULLABLE release_request_id();
+  void set_allocated_request_id(::std::string* PROTOBUF_NULLABLE value);
+
+  private:
+  const ::std::string& _internal_request_id() const;
+  PROTOBUF_ALWAYS_INLINE void _internal_set_request_id(const ::std::string& value);
+  ::std::string* PROTOBUF_NONNULL _internal_mutable_request_id();
+
+  public:
   // uint64 player_id = 1;
   void clear_player_id() ;
   [[nodiscard]] ::uint64_t player_id() const;
@@ -2794,8 +2927,8 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED CancelQueueRequest final : public :
  private:
   class _Internal;
   using ParseTableT_ =
-      ::google::protobuf::internal::TcParseTable<1, 2,
-                          0, 45,
+      ::google::protobuf::internal::TcParseTable<2, 3,
+                          0, 55,
                           2>;
   static constexpr ParseTableT_ InternalGenerateParseTable_(
       const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL class_data);
@@ -2824,6 +2957,7 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED CancelQueueRequest final : public :
     ::google::protobuf::internal::HasBits<1> _has_bits_;
     ::google::protobuf::internal::CachedSize _cached_size_;
     ::google::protobuf::internal::ArenaStringPtr queue_ticket_;
+    ::google::protobuf::internal::ArenaStringPtr request_id_;
     ::uint64_t player_id_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
@@ -4706,7 +4840,7 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED ChallengePlayerResponse final : pub
 inline void JoinQueueRequest::clear_player_id() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.player_id_ = ::uint64_t{0u};
-  ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
+  ClearHasBit(_impl_._has_bits_[0], 0x00000008U);
 }
 inline ::uint64_t JoinQueueRequest::player_id() const {
   // @@protoc_insertion_point(field_get:match.JoinQueueRequest.player_id)
@@ -4714,7 +4848,7 @@ inline ::uint64_t JoinQueueRequest::player_id() const {
 }
 inline void JoinQueueRequest::set_player_id(::uint64_t value) {
   _internal_set_player_id(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00000002U);
+  SetHasBit(_impl_._has_bits_[0], 0x00000008U);
   // @@protoc_insertion_point(field_set:match.JoinQueueRequest.player_id)
 }
 inline ::uint64_t JoinQueueRequest::_internal_player_id() const {
@@ -4730,7 +4864,7 @@ inline void JoinQueueRequest::_internal_set_player_id(::uint64_t value) {
 inline void JoinQueueRequest::clear_mode() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.mode_ = 0;
-  ClearHasBit(_impl_._has_bits_[0], 0x00000004U);
+  ClearHasBit(_impl_._has_bits_[0], 0x00000010U);
 }
 inline ::match::MatchMode JoinQueueRequest::mode() const {
   // @@protoc_insertion_point(field_get:match.JoinQueueRequest.mode)
@@ -4738,7 +4872,7 @@ inline ::match::MatchMode JoinQueueRequest::mode() const {
 }
 inline void JoinQueueRequest::set_mode(::match::MatchMode value) {
   _internal_set_mode(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00000004U);
+  SetHasBit(_impl_._has_bits_[0], 0x00000010U);
   // @@protoc_insertion_point(field_set:match.JoinQueueRequest.mode)
 }
 inline ::match::MatchMode JoinQueueRequest::_internal_mode() const {
@@ -4754,7 +4888,7 @@ inline void JoinQueueRequest::_internal_set_mode(::match::MatchMode value) {
 inline void JoinQueueRequest::clear_map_config_id() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.map_config_id_ = 0u;
-  ClearHasBit(_impl_._has_bits_[0], 0x00000008U);
+  ClearHasBit(_impl_._has_bits_[0], 0x00000020U);
 }
 inline ::uint32_t JoinQueueRequest::map_config_id() const {
   // @@protoc_insertion_point(field_get:match.JoinQueueRequest.map_config_id)
@@ -4762,7 +4896,7 @@ inline ::uint32_t JoinQueueRequest::map_config_id() const {
 }
 inline void JoinQueueRequest::set_map_config_id(::uint32_t value) {
   _internal_set_map_config_id(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00000008U);
+  SetHasBit(_impl_._has_bits_[0], 0x00000020U);
   // @@protoc_insertion_point(field_set:match.JoinQueueRequest.map_config_id)
 }
 inline ::uint32_t JoinQueueRequest::_internal_map_config_id() const {
@@ -4829,7 +4963,7 @@ JoinQueueRequest::_internal_mutable_party_member_ids() {
 inline void JoinQueueRequest::clear_zone_id() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.zone_id_ = 0u;
-  ClearHasBit(_impl_._has_bits_[0], 0x00000010U);
+  ClearHasBit(_impl_._has_bits_[0], 0x00000040U);
 }
 inline ::uint32_t JoinQueueRequest::zone_id() const {
   // @@protoc_insertion_point(field_get:match.JoinQueueRequest.zone_id)
@@ -4837,7 +4971,7 @@ inline ::uint32_t JoinQueueRequest::zone_id() const {
 }
 inline void JoinQueueRequest::set_zone_id(::uint32_t value) {
   _internal_set_zone_id(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00000010U);
+  SetHasBit(_impl_._has_bits_[0], 0x00000040U);
   // @@protoc_insertion_point(field_set:match.JoinQueueRequest.zone_id)
 }
 inline ::uint32_t JoinQueueRequest::_internal_zone_id() const {
@@ -4853,7 +4987,7 @@ inline void JoinQueueRequest::_internal_set_zone_id(::uint32_t value) {
 inline void JoinQueueRequest::clear_battle_config_id() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.battle_config_id_ = 0u;
-  ClearHasBit(_impl_._has_bits_[0], 0x00000020U);
+  ClearHasBit(_impl_._has_bits_[0], 0x00000080U);
 }
 inline ::uint32_t JoinQueueRequest::battle_config_id() const {
   // @@protoc_insertion_point(field_get:match.JoinQueueRequest.battle_config_id)
@@ -4861,7 +4995,7 @@ inline ::uint32_t JoinQueueRequest::battle_config_id() const {
 }
 inline void JoinQueueRequest::set_battle_config_id(::uint32_t value) {
   _internal_set_battle_config_id(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00000020U);
+  SetHasBit(_impl_._has_bits_[0], 0x00000080U);
   // @@protoc_insertion_point(field_set:match.JoinQueueRequest.battle_config_id)
 }
 inline ::uint32_t JoinQueueRequest::_internal_battle_config_id() const {
@@ -4877,7 +5011,7 @@ inline void JoinQueueRequest::_internal_set_battle_config_id(::uint32_t value) {
 inline void JoinQueueRequest::clear_team_size() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.team_size_ = 0u;
-  ClearHasBit(_impl_._has_bits_[0], 0x00000040U);
+  ClearHasBit(_impl_._has_bits_[0], 0x00000100U);
 }
 inline ::uint32_t JoinQueueRequest::team_size() const {
   // @@protoc_insertion_point(field_get:match.JoinQueueRequest.team_size)
@@ -4885,7 +5019,7 @@ inline ::uint32_t JoinQueueRequest::team_size() const {
 }
 inline void JoinQueueRequest::set_team_size(::uint32_t value) {
   _internal_set_team_size(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00000040U);
+  SetHasBit(_impl_._has_bits_[0], 0x00000100U);
   // @@protoc_insertion_point(field_set:match.JoinQueueRequest.team_size)
 }
 inline ::uint32_t JoinQueueRequest::_internal_team_size() const {
@@ -4895,6 +5029,134 @@ inline ::uint32_t JoinQueueRequest::_internal_team_size() const {
 inline void JoinQueueRequest::_internal_set_team_size(::uint32_t value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.team_size_ = value;
+}
+
+// string request_id = 8;
+inline void JoinQueueRequest::clear_request_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.request_id_.ClearToEmpty();
+  ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
+}
+inline const ::std::string& JoinQueueRequest::request_id() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:match.JoinQueueRequest.request_id)
+  return _internal_request_id();
+}
+template <typename Arg_, typename... Args_>
+PROTOBUF_ALWAYS_INLINE void JoinQueueRequest::set_request_id(Arg_&& arg, Args_... args) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  SetHasBit(_impl_._has_bits_[0], 0x00000002U);
+  _impl_.request_id_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
+  // @@protoc_insertion_point(field_set:match.JoinQueueRequest.request_id)
+}
+inline ::std::string* PROTOBUF_NONNULL JoinQueueRequest::mutable_request_id()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  SetHasBit(_impl_._has_bits_[0], 0x00000002U);
+  ::std::string* _s = _internal_mutable_request_id();
+  // @@protoc_insertion_point(field_mutable:match.JoinQueueRequest.request_id)
+  return _s;
+}
+inline const ::std::string& JoinQueueRequest::_internal_request_id() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.request_id_.Get();
+}
+inline void JoinQueueRequest::_internal_set_request_id(const ::std::string& value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.request_id_.Set(value, GetArena());
+}
+inline ::std::string* PROTOBUF_NONNULL JoinQueueRequest::_internal_mutable_request_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  return _impl_.request_id_.Mutable( GetArena());
+}
+inline ::std::string* PROTOBUF_NULLABLE JoinQueueRequest::release_request_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:match.JoinQueueRequest.request_id)
+  if (!CheckHasBit(_impl_._has_bits_[0], 0x00000002U)) {
+    return nullptr;
+  }
+  ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
+  auto* released = _impl_.request_id_.Release();
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString()) {
+    _impl_.request_id_.Set("", GetArena());
+  }
+  return released;
+}
+inline void JoinQueueRequest::set_allocated_request_id(::std::string* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (value != nullptr) {
+    SetHasBit(_impl_._has_bits_[0], 0x00000002U);
+  } else {
+    ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
+  }
+  _impl_.request_id_.SetAllocated(value, GetArena());
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.request_id_.IsDefault()) {
+    _impl_.request_id_.Set("", GetArena());
+  }
+  // @@protoc_insertion_point(field_set_allocated:match.JoinQueueRequest.request_id)
+}
+
+// string network_plan_id = 9;
+inline void JoinQueueRequest::clear_network_plan_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.network_plan_id_.ClearToEmpty();
+  ClearHasBit(_impl_._has_bits_[0], 0x00000004U);
+}
+inline const ::std::string& JoinQueueRequest::network_plan_id() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:match.JoinQueueRequest.network_plan_id)
+  return _internal_network_plan_id();
+}
+template <typename Arg_, typename... Args_>
+PROTOBUF_ALWAYS_INLINE void JoinQueueRequest::set_network_plan_id(Arg_&& arg, Args_... args) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  SetHasBit(_impl_._has_bits_[0], 0x00000004U);
+  _impl_.network_plan_id_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
+  // @@protoc_insertion_point(field_set:match.JoinQueueRequest.network_plan_id)
+}
+inline ::std::string* PROTOBUF_NONNULL JoinQueueRequest::mutable_network_plan_id()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  SetHasBit(_impl_._has_bits_[0], 0x00000004U);
+  ::std::string* _s = _internal_mutable_network_plan_id();
+  // @@protoc_insertion_point(field_mutable:match.JoinQueueRequest.network_plan_id)
+  return _s;
+}
+inline const ::std::string& JoinQueueRequest::_internal_network_plan_id() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.network_plan_id_.Get();
+}
+inline void JoinQueueRequest::_internal_set_network_plan_id(const ::std::string& value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.network_plan_id_.Set(value, GetArena());
+}
+inline ::std::string* PROTOBUF_NONNULL JoinQueueRequest::_internal_mutable_network_plan_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  return _impl_.network_plan_id_.Mutable( GetArena());
+}
+inline ::std::string* PROTOBUF_NULLABLE JoinQueueRequest::release_network_plan_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:match.JoinQueueRequest.network_plan_id)
+  if (!CheckHasBit(_impl_._has_bits_[0], 0x00000004U)) {
+    return nullptr;
+  }
+  ClearHasBit(_impl_._has_bits_[0], 0x00000004U);
+  auto* released = _impl_.network_plan_id_.Release();
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString()) {
+    _impl_.network_plan_id_.Set("", GetArena());
+  }
+  return released;
+}
+inline void JoinQueueRequest::set_allocated_network_plan_id(::std::string* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (value != nullptr) {
+    SetHasBit(_impl_._has_bits_[0], 0x00000004U);
+  } else {
+    ClearHasBit(_impl_._has_bits_[0], 0x00000004U);
+  }
+  _impl_.network_plan_id_.SetAllocated(value, GetArena());
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.network_plan_id_.IsDefault()) {
+    _impl_.network_plan_id_.Set("", GetArena());
+  }
+  // @@protoc_insertion_point(field_set_allocated:match.JoinQueueRequest.network_plan_id)
 }
 
 // -------------------------------------------------------------------
@@ -5090,7 +5352,7 @@ inline void JoinQueueResponse::set_allocated_error_message(::TipInfoMessage* PRO
 inline void CancelQueueRequest::clear_player_id() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.player_id_ = ::uint64_t{0u};
-  ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
+  ClearHasBit(_impl_._has_bits_[0], 0x00000004U);
 }
 inline ::uint64_t CancelQueueRequest::player_id() const {
   // @@protoc_insertion_point(field_get:match.CancelQueueRequest.player_id)
@@ -5098,7 +5360,7 @@ inline ::uint64_t CancelQueueRequest::player_id() const {
 }
 inline void CancelQueueRequest::set_player_id(::uint64_t value) {
   _internal_set_player_id(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00000002U);
+  SetHasBit(_impl_._has_bits_[0], 0x00000004U);
   // @@protoc_insertion_point(field_set:match.CancelQueueRequest.player_id)
 }
 inline ::uint64_t CancelQueueRequest::_internal_player_id() const {
@@ -5174,6 +5436,70 @@ inline void CancelQueueRequest::set_allocated_queue_ticket(::std::string* PROTOB
   // @@protoc_insertion_point(field_set_allocated:match.CancelQueueRequest.queue_ticket)
 }
 
+// string request_id = 3;
+inline void CancelQueueRequest::clear_request_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.request_id_.ClearToEmpty();
+  ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
+}
+inline const ::std::string& CancelQueueRequest::request_id() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:match.CancelQueueRequest.request_id)
+  return _internal_request_id();
+}
+template <typename Arg_, typename... Args_>
+PROTOBUF_ALWAYS_INLINE void CancelQueueRequest::set_request_id(Arg_&& arg, Args_... args) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  SetHasBit(_impl_._has_bits_[0], 0x00000002U);
+  _impl_.request_id_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
+  // @@protoc_insertion_point(field_set:match.CancelQueueRequest.request_id)
+}
+inline ::std::string* PROTOBUF_NONNULL CancelQueueRequest::mutable_request_id()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  SetHasBit(_impl_._has_bits_[0], 0x00000002U);
+  ::std::string* _s = _internal_mutable_request_id();
+  // @@protoc_insertion_point(field_mutable:match.CancelQueueRequest.request_id)
+  return _s;
+}
+inline const ::std::string& CancelQueueRequest::_internal_request_id() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.request_id_.Get();
+}
+inline void CancelQueueRequest::_internal_set_request_id(const ::std::string& value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.request_id_.Set(value, GetArena());
+}
+inline ::std::string* PROTOBUF_NONNULL CancelQueueRequest::_internal_mutable_request_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  return _impl_.request_id_.Mutable( GetArena());
+}
+inline ::std::string* PROTOBUF_NULLABLE CancelQueueRequest::release_request_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:match.CancelQueueRequest.request_id)
+  if (!CheckHasBit(_impl_._has_bits_[0], 0x00000002U)) {
+    return nullptr;
+  }
+  ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
+  auto* released = _impl_.request_id_.Release();
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString()) {
+    _impl_.request_id_.Set("", GetArena());
+  }
+  return released;
+}
+inline void CancelQueueRequest::set_allocated_request_id(::std::string* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (value != nullptr) {
+    SetHasBit(_impl_._has_bits_[0], 0x00000002U);
+  } else {
+    ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
+  }
+  _impl_.request_id_.SetAllocated(value, GetArena());
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.request_id_.IsDefault()) {
+    _impl_.request_id_.Set("", GetArena());
+  }
+  // @@protoc_insertion_point(field_set_allocated:match.CancelQueueRequest.request_id)
+}
+
 // -------------------------------------------------------------------
 
 // GetQueueStatusRequest
@@ -5182,7 +5508,7 @@ inline void CancelQueueRequest::set_allocated_queue_ticket(::std::string* PROTOB
 inline void GetQueueStatusRequest::clear_player_id() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.player_id_ = ::uint64_t{0u};
-  ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
+  ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
 }
 inline ::uint64_t GetQueueStatusRequest::player_id() const {
   // @@protoc_insertion_point(field_get:match.GetQueueStatusRequest.player_id)
@@ -5190,7 +5516,7 @@ inline ::uint64_t GetQueueStatusRequest::player_id() const {
 }
 inline void GetQueueStatusRequest::set_player_id(::uint64_t value) {
   _internal_set_player_id(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  SetHasBit(_impl_._has_bits_[0], 0x00000002U);
   // @@protoc_insertion_point(field_set:match.GetQueueStatusRequest.player_id)
 }
 inline ::uint64_t GetQueueStatusRequest::_internal_player_id() const {
@@ -5202,6 +5528,70 @@ inline void GetQueueStatusRequest::_internal_set_player_id(::uint64_t value) {
   _impl_.player_id_ = value;
 }
 
+// string request_id = 2;
+inline void GetQueueStatusRequest::clear_request_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.request_id_.ClearToEmpty();
+  ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
+}
+inline const ::std::string& GetQueueStatusRequest::request_id() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:match.GetQueueStatusRequest.request_id)
+  return _internal_request_id();
+}
+template <typename Arg_, typename... Args_>
+PROTOBUF_ALWAYS_INLINE void GetQueueStatusRequest::set_request_id(Arg_&& arg, Args_... args) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  _impl_.request_id_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
+  // @@protoc_insertion_point(field_set:match.GetQueueStatusRequest.request_id)
+}
+inline ::std::string* PROTOBUF_NONNULL GetQueueStatusRequest::mutable_request_id()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  ::std::string* _s = _internal_mutable_request_id();
+  // @@protoc_insertion_point(field_mutable:match.GetQueueStatusRequest.request_id)
+  return _s;
+}
+inline const ::std::string& GetQueueStatusRequest::_internal_request_id() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.request_id_.Get();
+}
+inline void GetQueueStatusRequest::_internal_set_request_id(const ::std::string& value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.request_id_.Set(value, GetArena());
+}
+inline ::std::string* PROTOBUF_NONNULL GetQueueStatusRequest::_internal_mutable_request_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  return _impl_.request_id_.Mutable( GetArena());
+}
+inline ::std::string* PROTOBUF_NULLABLE GetQueueStatusRequest::release_request_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:match.GetQueueStatusRequest.request_id)
+  if (!CheckHasBit(_impl_._has_bits_[0], 0x00000001U)) {
+    return nullptr;
+  }
+  ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
+  auto* released = _impl_.request_id_.Release();
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString()) {
+    _impl_.request_id_.Set("", GetArena());
+  }
+  return released;
+}
+inline void GetQueueStatusRequest::set_allocated_request_id(::std::string* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (value != nullptr) {
+    SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  } else {
+    ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
+  }
+  _impl_.request_id_.SetAllocated(value, GetArena());
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.request_id_.IsDefault()) {
+    _impl_.request_id_.Set("", GetArena());
+  }
+  // @@protoc_insertion_point(field_set_allocated:match.GetQueueStatusRequest.request_id)
+}
+
 // -------------------------------------------------------------------
 
 // GetQueueStatusResponse
@@ -5210,7 +5600,7 @@ inline void GetQueueStatusRequest::_internal_set_player_id(::uint64_t value) {
 inline void GetQueueStatusResponse::clear_state() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.state_ = 0;
-  ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
+  ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
 }
 inline ::match::QueueState GetQueueStatusResponse::state() const {
   // @@protoc_insertion_point(field_get:match.GetQueueStatusResponse.state)
@@ -5218,7 +5608,7 @@ inline ::match::QueueState GetQueueStatusResponse::state() const {
 }
 inline void GetQueueStatusResponse::set_state(::match::QueueState value) {
   _internal_set_state(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  SetHasBit(_impl_._has_bits_[0], 0x00000002U);
   // @@protoc_insertion_point(field_set:match.GetQueueStatusResponse.state)
 }
 inline ::match::QueueState GetQueueStatusResponse::_internal_state() const {
@@ -5234,7 +5624,7 @@ inline void GetQueueStatusResponse::_internal_set_state(::match::QueueState valu
 inline void GetQueueStatusResponse::clear_estimated_wait_seconds() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.estimated_wait_seconds_ = 0u;
-  ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
+  ClearHasBit(_impl_._has_bits_[0], 0x00000004U);
 }
 inline ::uint32_t GetQueueStatusResponse::estimated_wait_seconds() const {
   // @@protoc_insertion_point(field_get:match.GetQueueStatusResponse.estimated_wait_seconds)
@@ -5242,7 +5632,7 @@ inline ::uint32_t GetQueueStatusResponse::estimated_wait_seconds() const {
 }
 inline void GetQueueStatusResponse::set_estimated_wait_seconds(::uint32_t value) {
   _internal_set_estimated_wait_seconds(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00000002U);
+  SetHasBit(_impl_._has_bits_[0], 0x00000004U);
   // @@protoc_insertion_point(field_set:match.GetQueueStatusResponse.estimated_wait_seconds)
 }
 inline ::uint32_t GetQueueStatusResponse::_internal_estimated_wait_seconds() const {
@@ -5258,7 +5648,7 @@ inline void GetQueueStatusResponse::_internal_set_estimated_wait_seconds(::uint3
 inline void GetQueueStatusResponse::clear_queued_seconds() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.queued_seconds_ = 0u;
-  ClearHasBit(_impl_._has_bits_[0], 0x00000004U);
+  ClearHasBit(_impl_._has_bits_[0], 0x00000008U);
 }
 inline ::uint32_t GetQueueStatusResponse::queued_seconds() const {
   // @@protoc_insertion_point(field_get:match.GetQueueStatusResponse.queued_seconds)
@@ -5266,7 +5656,7 @@ inline ::uint32_t GetQueueStatusResponse::queued_seconds() const {
 }
 inline void GetQueueStatusResponse::set_queued_seconds(::uint32_t value) {
   _internal_set_queued_seconds(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00000004U);
+  SetHasBit(_impl_._has_bits_[0], 0x00000008U);
   // @@protoc_insertion_point(field_set:match.GetQueueStatusResponse.queued_seconds)
 }
 inline ::uint32_t GetQueueStatusResponse::_internal_queued_seconds() const {
@@ -5276,6 +5666,166 @@ inline ::uint32_t GetQueueStatusResponse::_internal_queued_seconds() const {
 inline void GetQueueStatusResponse::_internal_set_queued_seconds(::uint32_t value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.queued_seconds_ = value;
+}
+
+// string queue_ticket = 4;
+inline void GetQueueStatusResponse::clear_queue_ticket() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.queue_ticket_.ClearToEmpty();
+  ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
+}
+inline const ::std::string& GetQueueStatusResponse::queue_ticket() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:match.GetQueueStatusResponse.queue_ticket)
+  return _internal_queue_ticket();
+}
+template <typename Arg_, typename... Args_>
+PROTOBUF_ALWAYS_INLINE void GetQueueStatusResponse::set_queue_ticket(Arg_&& arg, Args_... args) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  _impl_.queue_ticket_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
+  // @@protoc_insertion_point(field_set:match.GetQueueStatusResponse.queue_ticket)
+}
+inline ::std::string* PROTOBUF_NONNULL GetQueueStatusResponse::mutable_queue_ticket()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  ::std::string* _s = _internal_mutable_queue_ticket();
+  // @@protoc_insertion_point(field_mutable:match.GetQueueStatusResponse.queue_ticket)
+  return _s;
+}
+inline const ::std::string& GetQueueStatusResponse::_internal_queue_ticket() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.queue_ticket_.Get();
+}
+inline void GetQueueStatusResponse::_internal_set_queue_ticket(const ::std::string& value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.queue_ticket_.Set(value, GetArena());
+}
+inline ::std::string* PROTOBUF_NONNULL GetQueueStatusResponse::_internal_mutable_queue_ticket() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  return _impl_.queue_ticket_.Mutable( GetArena());
+}
+inline ::std::string* PROTOBUF_NULLABLE GetQueueStatusResponse::release_queue_ticket() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:match.GetQueueStatusResponse.queue_ticket)
+  if (!CheckHasBit(_impl_._has_bits_[0], 0x00000001U)) {
+    return nullptr;
+  }
+  ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
+  auto* released = _impl_.queue_ticket_.Release();
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString()) {
+    _impl_.queue_ticket_.Set("", GetArena());
+  }
+  return released;
+}
+inline void GetQueueStatusResponse::set_allocated_queue_ticket(::std::string* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (value != nullptr) {
+    SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  } else {
+    ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
+  }
+  _impl_.queue_ticket_.SetAllocated(value, GetArena());
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.queue_ticket_.IsDefault()) {
+    _impl_.queue_ticket_.Set("", GetArena());
+  }
+  // @@protoc_insertion_point(field_set_allocated:match.GetQueueStatusResponse.queue_ticket)
+}
+
+// uint64 battle_id = 5;
+inline void GetQueueStatusResponse::clear_battle_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.battle_id_ = ::uint64_t{0u};
+  ClearHasBit(_impl_._has_bits_[0], 0x00000020U);
+}
+inline ::uint64_t GetQueueStatusResponse::battle_id() const {
+  // @@protoc_insertion_point(field_get:match.GetQueueStatusResponse.battle_id)
+  return _internal_battle_id();
+}
+inline void GetQueueStatusResponse::set_battle_id(::uint64_t value) {
+  _internal_set_battle_id(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000020U);
+  // @@protoc_insertion_point(field_set:match.GetQueueStatusResponse.battle_id)
+}
+inline ::uint64_t GetQueueStatusResponse::_internal_battle_id() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.battle_id_;
+}
+inline void GetQueueStatusResponse::_internal_set_battle_id(::uint64_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.battle_id_ = value;
+}
+
+// uint32 selected_region = 6;
+inline void GetQueueStatusResponse::clear_selected_region() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.selected_region_ = 0u;
+  ClearHasBit(_impl_._has_bits_[0], 0x00000010U);
+}
+inline ::uint32_t GetQueueStatusResponse::selected_region() const {
+  // @@protoc_insertion_point(field_get:match.GetQueueStatusResponse.selected_region)
+  return _internal_selected_region();
+}
+inline void GetQueueStatusResponse::set_selected_region(::uint32_t value) {
+  _internal_set_selected_region(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000010U);
+  // @@protoc_insertion_point(field_set:match.GetQueueStatusResponse.selected_region)
+}
+inline ::uint32_t GetQueueStatusResponse::_internal_selected_region() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.selected_region_;
+}
+inline void GetQueueStatusResponse::_internal_set_selected_region(::uint32_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.selected_region_ = value;
+}
+
+// uint32 retry_after_ms = 7;
+inline void GetQueueStatusResponse::clear_retry_after_ms() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.retry_after_ms_ = 0u;
+  ClearHasBit(_impl_._has_bits_[0], 0x00000040U);
+}
+inline ::uint32_t GetQueueStatusResponse::retry_after_ms() const {
+  // @@protoc_insertion_point(field_get:match.GetQueueStatusResponse.retry_after_ms)
+  return _internal_retry_after_ms();
+}
+inline void GetQueueStatusResponse::set_retry_after_ms(::uint32_t value) {
+  _internal_set_retry_after_ms(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000040U);
+  // @@protoc_insertion_point(field_set:match.GetQueueStatusResponse.retry_after_ms)
+}
+inline ::uint32_t GetQueueStatusResponse::_internal_retry_after_ms() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.retry_after_ms_;
+}
+inline void GetQueueStatusResponse::_internal_set_retry_after_ms(::uint32_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.retry_after_ms_ = value;
+}
+
+// bool request_cancelled = 8;
+inline void GetQueueStatusResponse::clear_request_cancelled() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.request_cancelled_ = false;
+  ClearHasBit(_impl_._has_bits_[0], 0x00000080U);
+}
+inline bool GetQueueStatusResponse::request_cancelled() const {
+  // @@protoc_insertion_point(field_get:match.GetQueueStatusResponse.request_cancelled)
+  return _internal_request_cancelled();
+}
+inline void GetQueueStatusResponse::set_request_cancelled(bool value) {
+  _internal_set_request_cancelled(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000080U);
+  // @@protoc_insertion_point(field_set:match.GetQueueStatusResponse.request_cancelled)
+}
+inline bool GetQueueStatusResponse::_internal_request_cancelled() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.request_cancelled_;
+}
+inline void GetQueueStatusResponse::_internal_set_request_cancelled(bool value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.request_cancelled_ = value;
 }
 
 // -------------------------------------------------------------------

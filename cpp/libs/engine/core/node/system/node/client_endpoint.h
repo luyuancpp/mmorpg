@@ -104,7 +104,8 @@ bool IsUsable(const EndpointComp &endpoint);
 // 与 go/shared/clientendpoint.Select 同一口径;无 I/O、无副作用,可在热路径调用。
 // 线程约束落在实参上:NodeInfo 由 Node 持有、只在 loop 线程写;跨线程读取不与写入同步,
 // 所以 node 仍须取自 loop 线程上的 gNode->GetNodeInfo()。required 取 gNode->ClientEndpointRequired()
-// (普通成员,可跨线程读)。battle 只能在 runInLoop 之内的 BuildAssignment / 预签里调用本函数。
+// (普通成员,可跨线程读)。battle 只能在 loop 线程上的 BuildAssignment / 预签里调用本函数
+// (第 4 批起 gRPC 服务端本身就在 loop 上派发,docs/design/grpc-muduo-transport.md §15)。
 std::optional<EndpointComp> ClientFacing(const NodeInfo &node, bool required);
 
 // 来源的 env 取值(none / static / agones),供日志使用;越界返回 "unknown"。

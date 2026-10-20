@@ -1,6 +1,7 @@
 # etcd MVCC 压缩与空间维护 Runbook
 
 > **状态**:v1 — 2026-10-15,P0-C 阶段 1a + 1b 落码,**未验证**(待 Codex 执行,见 §9)。阶段 2 未做。
+> v1.1 — 同日审查修订:§2 补 K8s 探针让 NOSPACE 扩大成成员反复重启;§5 补 defrag 时限与「等 Job 结束」的判法;§7 补时间窗、应急改探针(须负责人批准)与告警在时的 defrag 判据;§8、§9 同步。
 > **范围**:K8s 的 etcd(`deploy/k8s/manifests/infra/etcd.yaml` + `etcd-maintenance.yaml`)与本机 / Linux 预发共用的 compose etcd(`deploy/docker-compose.yml`)的历史压缩、碎片整理、空间告警处置。
 > **依据**:`docs/handoff/global-singletons-p0-findings-20261014.md`「## P0-C」(证据链、推算与原设计);C++ etcd 流重建是 `docs/design/grpc-muduo-transport.md` §10.2 第 2 批。
 > **契约测试**:`tools/scripts/tests/etcd_maintenance_contract.tests.ps1`(静态)、`tools/scripts/tests/k8s_deploy_contract.tests.ps1` 的「infra-up 产物里有 etcd-compact」。
@@ -27,7 +28,13 @@ defrag 在任何环境都不自动做,只按 §5 手工逐成员做。
 - **配额与 NOSPACE**:库文件超过配额(`--quota-backend-bytes`,默认约 2GiB;按物理文件大小判断 —— 外部常识,待实测)时,
   集群拉起 `NOSPACE` 告警并进入只读 + 删除的维护态,告警**不会自动解除**。后果分项:
   - 立即失败:新节点注册、失租重注册、gate 人数上报、全部发号水位 Txn(扩容、滚动发布、崩溃恢复都受阻);
-  - 暂不受影响:已注册且租约仍在续的节点、读与 watch;login 的 PlayerId(K8s 默认走号段,不回退 snowflake);
+  - 暂不受影响(**只对 compose 的裸 etcd 成立**,K8s 见下一条):已注册且租约仍在续的节点、读与 watch;login 的 PlayerId
+    (K8s 默认走号段,不回退 snowflake);
+  - **K8s 上会扩大成成员反复重启**(按现有 `etcd.yaml` 探针与上游 `/health` 语义推断,待 §9 探针 A 实测):readiness 的 `/health`
+    与 liveness 的 `/health?serializable=true` 都先查告警,有未排除的告警就返回 503 —— `serializable` 只跳过 leader / 一致读检查,
+    跳不过告警,只有 `?exclude=NOSPACE` 能跳过。告警经 raft 落到每个成员并持久化,所以约 15s 后三个成员同时 NotReady、Service `etcd`
+    没有端点(新连接被拒);约 60s 后(10s × 6)liveness 开始重启成员,重启后告警还在,进入 CrashLoopBackOff,quorum 时有时无,
+    所有 watch、租约流与 C++ etcd 双向流都会断。处置的时间窗与应急办法见 §7;
   - 约 2 小时后:仍用 snowflakealloc 发号的 scene_manager / match / guild 因水位过旧拒发(`defaultFenceAfter = 2h`,推断)。
 - **压缩与 watch**:从已压缩的 revision 起 watch 会被服务端取消。Go 侧所有 watch 循环出错即全量重同步(推断安全);
   C++ 每 2s 用 Range 刷新续 watch 起点,保留量在分钟级以上时几乎不会撞上。C++ 的 DELETE 处理依赖 `prev_kv`、
@@ -109,6 +116,7 @@ kubectl --context $ctx -n $ns logs job/<Job 名>
 # 手工触发一次(名字自取,不能与已有 Job 重名)
 kubectl --context $ctx -n $ns create job --from=cronjob/etcd-compact etcd-compact-manual-$(Get-Date -Format yyyyMMddHHmmss)
 kubectl --context $ctx -n $ns wait --for=condition=complete job/<上一步的名字> --timeout=120s
+# 注意:有活动告警(NOSPACE)时 Job 照常压缩但以 2 结束、状态是 Failed,上面这条 wait 必然超时;那时按 §5.3 第 1 步看日志判结果。
 ```
 
 `k8s_deploy.ps1 -Command infra-status` 也会列出 `cronjob` 与 `job`。
@@ -130,8 +138,11 @@ DB SIZE 超过配额一半就该安排 defrag;超过 80% 按紧急处理(阈值�
 defrag 会阻塞所在成员(期间该成员不服务读写),所以:
 
 - **手工、逐成员**做,**不要**用 `--cluster` 一次做完;
-- 先压缩(§4.3 手工触发一次并等它 Complete),否则 defrag 腾不出空间;
-- 做之前 3/3 健康;做完等该成员恢复健康、Pod `READY 1/1` 再做下一个;
+- 先压缩(§4.3 手工触发一次,等 Job 结束并从日志确认压过了,见 §5.3 第 1 步),否则 defrag 腾不出空间;
+- 做之前 3/3 健康;做完等该成员恢复健康、Pod `READY 1/1` 再做下一个(NOSPACE 处置时这两道门槛过不去,改用 §7 第 4 步的判据);
+- **每个成员的 defrag 要在约 50 秒内做完**(推断,待实测):defrag 期间该成员持有后端读锁,同一成员的 liveness
+  (`/health?serializable=true`,超时 5s、连续 6 次失败)会被卡住,约 50~60 秒后 kubelet 杀掉该成员 —— 这正是阶段 2 前置要避免的成员重启。
+  只在压缩之后做:压缩后 defrag 只拷活数据,保留量对应的约 200~400MB 通常远用不了这么久(每 revision 字节数待 M2);活数据很大时先停下来找负责人;
 - 先做 follower,leader 最后(常见做法,减少 leader 切换);
 - 开服窗口与高峰期不做;
 - 做之前确认磁盘余量:defrag 需要大约一份库文件大小的临时空间(外部常识),`kubectl exec etcd-N -- df -h /bitnami/etcd`。
@@ -139,7 +150,13 @@ defrag 会阻塞所在成员(期间该成员不服务读写),所以:
 ### 5.3 命令
 
 ```powershell
-# 1. 先压缩:按 §4.3 手工触发 etcd-compact 并等它 Complete
+# 1. 先压缩:按 §4.3 手工触发 etcd-compact,轮询到 Job 结束(Complete 或 Failed 都算结束),再看日志判结果。
+#    不要只 wait condition=complete:有活动告警时 Job 以 2 结束、状态是 Failed,那条 wait 必然超时。
+kubectl --context $ctx -n $ns get job <上一步的名字> -o jsonpath='{.status.conditions[*].type}'   # 出现 Complete 或 Failed 即结束
+kubectl --context $ctx -n $ns logs job/<上一步的名字>
+#    有 `compacted to revision` 或 `already compacted` 就算压过了;NOSPACE 下还有一行 `ALARM ACTIVE ...`,后面跟着告警列表
+#    (`memberID:... alarm:NOSPACE`)、退出 2,属预期。
+#    是 `nothing to compact` 说明这次没有腾出空间:NOSPACE 处置时回 §7 第 3 步,手工压到更近的位置。
 # 2. 记录各成员 DB SIZE 与谁是 leader
 kubectl --context $ctx -n $ns exec etcd-0 -- etcdctl endpoint status --cluster -w table
 # 3. 逐成员,--endpoints 指向成员自己,只整理这一个;大库 defrag 会超过 etcdctl 默认 5s 命令超时,所以显式放宽(取值待实测)
@@ -196,6 +213,45 @@ Git Bash 下,以 `/` 开头的参数(容器内路径、`/mmorpg/killswitch/...` 
 
 ## 7. NOSPACE 处置(顺序不能乱)
 
+**K8s 上先看时间窗**(§2:按现有探针,告警一出成员就 NotReady,约 60s 后开始被 liveness 重启并进入 CrashLoopBackOff):
+每个成员重启后大约只有 80~90 秒可以 `exec`(liveness 首次探测在启动后 30~40 秒,之后再连续失败 5 个周期 × 10 秒;还要减去 etcd 自身的
+启动时间),下面的压缩、defrag、解除告警要抢在窗口里做,被打断就等它下一次起来接着做(压缩与 defrag 可重复执行)。
+抢不过来时的应急办法,**须经负责人批准**:
+
+- 只 patch 线上 StatefulSet、**不改仓库里的 `etcd.yaml`**(改仓库文件属阶段 2,理由见本节最后一条;`etcd_maintenance_contract.tests.ps1` 钉住了两个探针的现值,
+  会拦):readiness 与 liveness **两个都**加 `exclude=NOSPACE`。只改 liveness 不够:RollingUpdate 先换 `etcd-2`,它的 readiness 仍因告警
+  不通过,滚动卡在 `etcd-2`。patch 会按新模板逐个重建成员(此时它们本来就在被重启)。两种 shell 都先写同一份 JSON patch 文件:
+
+  ```bash
+  cat > etcd-probe-patch.json <<'EOF'
+  [{"op":"replace","path":"/spec/template/spec/containers/0/readinessProbe/httpGet/path","value":"/health?exclude=NOSPACE"},
+   {"op":"replace","path":"/spec/template/spec/containers/0/livenessProbe/httpGet/path","value":"/health?exclude=NOSPACE&serializable=true"}]
+  EOF
+  kubectl --context <ctx> -n <infra> patch statefulset etcd --type=json --patch-file etcd-probe-patch.json
+  ```
+
+  ```powershell
+  Set-Content -Path etcd-probe-patch.json -Value @'
+  [{"op":"replace","path":"/spec/template/spec/containers/0/readinessProbe/httpGet/path","value":"/health?exclude=NOSPACE"},
+   {"op":"replace","path":"/spec/template/spec/containers/0/livenessProbe/httpGet/path","value":"/health?exclude=NOSPACE&serializable=true"}]
+  '@
+  kubectl --context $ctx -n $ns patch statefulset etcd --type=json --patch-file etcd-probe-patch.json
+  ```
+
+  `containers/0` 就是 etcd 容器(StatefulSet 里只有这一个容器);patch 前可用
+  `kubectl --context $ctx -n $ns get sts etcd -o jsonpath='{.spec.template.spec.containers[0].name}'` 核对是 `etcd`。
+- patch 前确认正在跑的版本认 `exclude` 参数:`kubectl --context $ctx -n $ns exec etcd-0 -- etcd --version`(该参数的最低版本凭记忆是 3.5,
+  待 §9 探针 A 实测;不认识的版本会忽略它,patch 等于没打)。
+- **告警解除后,会 apply `etcd.yaml` 的命令都会把探针改回去并再滚动一次 3 个成员**:`infra-up`、不带 `-SkipInfra` 的 `all-up`
+  (含 `dev_tools.ps1` 的 `k8s-infra-up` / `k8s-all-up` / `k8s-release-all`)、单独 apply。Redis 重启闸不管 etcd,没有任何闸会拦。
+  **把这两条探针落进仓库也不是免费的**:对打过 patch 的这个集群,仓库模板与线上一致,apply 不产生新的 controller revision、不滚动;
+  但用同一份 `etcd.yaml` 部署的**其他环境**(其他生产区、staging、本机 kind)没打过这个 patch,它们下一次跑上面任一条命令就会滚动 3 个成员 ——
+  与阶段 2 同一个风险,所以落库同样要等 §8 的前置(C++ etcd 流重建有运行证据),或经负责人批准、逐个环境在全栈停机的维护窗口里做
+  (先停 C++ / Go 节点,没有连着的 etcd 流就不怕成员重启)。在此之前:
+  - 被 patch 的集群只走 `zone-up` 或带 `-SkipInfra` 的 `all-up`(它们不 apply `etcd.yaml`);确需 `infra-up`(例如改 Redis / Kafka)时,
+    它会把探针改回旧值并滚动 etcd,同样放进全栈停机的维护窗口;
+  - 仓库里的 `etcd.yaml` 与契约测试保持原样。
+
 1. **确认**:`etcdctl alarm list` 出现 `alarm:NOSPACE`;写入报库空间超限(报错原文待 M3 探针 A 实测)。CronJob 此时以 2 退出。
    暂停扩容与发布(新注册会失败)。
 2. **取当前 revision**:`etcdctl get etcd-maintenance/revision-probe -w json`,读应答头的 `"revision"`。
@@ -203,7 +259,10 @@ Git Bash 下,以 `/` 开头的参数(容器内路径、`/mmorpg/killswitch/...` 
    告警状态下压缩与 defrag 仍被接受(外部常识,待探针 A 实测)。
    若历史本来就不到保留量、压缩腾不出空间,紧急时可临时压到更近的位置(例如 `revision - 100000`);代价是更多 watch 起点落进已压缩区
    (Go 全量重同步;C++ 见 §2 末尾的缺口)。
-4. **逐成员 defrag**(§5.3)。
+4. **逐成员 defrag**(§5.3)。**告警在时 §5.2 的两道门槛过不去**:`etcdctl endpoint health` 在告警列表非空时把端点判为
+   unhealthy(报 `NOSPACE`),readiness 用的 `/health` 也因告警失败,Pod 永远不会 `READY 1/1`。照字面执行会卡在第一个成员,
+   永远走不到第 6 步解除告警。所以本步改用这三条判据,逐个成员确认后再做下一个:defrag 命令成功返回;该成员
+   `etcdctl --endpoints=http://127.0.0.1:2379 endpoint status` 能连上;它的 DB SIZE 下降。告警解除之后再回到 §5.2 的常规门槛。
 5. **确认空间**:每个成员的 DB SIZE 都明显低于配额。空间没腾出来就解除告警,写入一来马上再次触发。
 6. **解除告警**:`etcdctl alarm disarm`,再 `etcdctl alarm list` 确认为空。
 7. **验证写入**:`etcdctl put etcd-maintenance/disarm-check ok`,成功后 `etcdctl del etcd-maintenance/disarm-check`。
@@ -226,9 +285,13 @@ Git Bash 下,以 `/` 开头的参数(容器内路径、`/mmorpg/killswitch/...` 
 
 1. `etcd.yaml` 的 StatefulSet:镜像钉到与 compose、`etcd-maintenance.yaml` 逐字相同的 tag@摘要;env 加
    `ETCD_AUTO_COMPACTION_MODE=revision`、`ETCD_AUTO_COMPACTION_RETENTION=1000000`、`ETCD_QUOTA_BACKEND_BYTES=3221225472`(与 compose 同值);
-   Pod 模板加 `prometheus.io/scrape` / `port` / `path` 注解(写法见 `deploy/k8s/manifests/go-svc/chat.yaml`);更新文件里的注释。
+   Pod 模板加 `prometheus.io/scrape` / `port` / `path` 注解(写法见 `deploy/k8s/manifests/go-svc/chat.yaml`);readiness 改
+   `/health?exclude=NOSPACE`、liveness 改 `/health?exclude=NOSPACE&serializable=true`(理由见 §2 与 §7,告警时不再把成员摘光、反复重启;
+   前提是 §9 探针 A 证实该版本认 `exclude`);更新文件里的注释。
 2. compose 与 `etcd-maintenance.yaml` 的镜像同批改成同一个引用。
-3. 契约测试:把「阶段 2 未经许可不得提前做」改成「StatefulSet 的三项 env 与 compose 相等、配额 × 2 + 1Gi ≤ PVC」。
+3. 契约测试:把「阶段 2 未经许可不得提前做」改成「StatefulSet 的三项 env 与 compose 相等、配额 × 2 + 1Gi ≤ PVC」,
+   其中钉住的镜像期望值改成新的 tag@摘要,「不得有 `prometheus.io/` 注解」改成断言注解存在,两条探针断言改成 `exclude=NOSPACE` 的新路径
+   (§7 应急 patch 过的集群,线上已是新探针,本步对它不会再滚动;其余环境照常滚动)。
 4. 滚动:只 apply `etcd.yaml`(同样先替换 `__INFRA_NAMESPACE__`,不跑 `infra-up`,理由同 §4.2);RollingUpdate 逐个替换,
    PDB `minAvailable: 2` 与 readiness 把关。每个成员 Ready 后看 `endpoint health --cluster`,并确认没有 C++ / Go 节点 fence 或重注册。
 5. 验证:每个成员的配额指标为 3221225472;压缩 revision 随时间前进。
@@ -244,3 +307,6 @@ Git Bash 下,以 `/` 开头的参数(容器内路径、`/mmorpg/killswitch/...` 
 - 覆盖 `command` 后 `etcdctl` 是否在 PATH 上、是否认 `ETCDCTL_ENDPOINTS`、`-w json` 里 `"revision":` 的写法、「已压缩」的报错原文(M0、探针 A);
 - kind 上 apply 后 Job Complete 且 StatefulSet `etcd` 的 `currentRevision` 前后不变(证明没有滚动);
 - compose env 是否生效(M3);etcd 默认配额与 NOSPACE 下各类请求的表现(探针 A);每 revision 字节数与真实写入速率(M2、M5)。
+- 探针 A 加一步,定论 §2 / §7 的 K8s 推断:在 NOSPACE 的临时容器上依次请求 `/health`、`/health?serializable=true`、
+  `/health?exclude=NOSPACE&serializable=true`(例如 `curl -s -o /dev/null -w '%{http_code}' 'http://127.0.0.1:2379/<路径>'`),
+  期望依次 503、503、200;并记下 `etcd --version`。另在大库上计时一次 defrag,核对 §5.2 的「约 50 秒」时限。

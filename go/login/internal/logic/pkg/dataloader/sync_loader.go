@@ -21,6 +21,11 @@ type dbReadTask struct {
 	subKey  string        // Redis cache key for this individual sub-message
 }
 
+type dbTaskProducer interface {
+	SendTask(context.Context, *login_proto.DBTask, string) error
+	SendTasks(context.Context, []*login_proto.DBTask, string) error
+}
+
 // TriggerPlayerDataPreload fires Kafka DB-read requests for any data not already cached in Redis,
 // but does NOT wait for the results (fire-and-forget).
 //
@@ -32,12 +37,16 @@ type dbReadTask struct {
 //  1. Check parent-level Redis cache — skip entirely if cached.
 //  2. Check individual sub-message Redis caches.
 //  3. Send Kafka DB-read requests for sub-messages not in cache (fire-and-forget).
+//
+// replyInstance 传本进程 dispatcher 的 ReplyInstance():没人等结果,但传空串会让这些读回执
+// 退回全服旧频道广播给所有 login。
 func TriggerPlayerDataPreload(
 	ctx context.Context,
 	redisClient redis.Cmdable,
 	kafkaProducer *kafka.KeyOrderedKafkaProducer,
 	playerId uint64,
 	messages []proto.Message,
+	replyInstance string,
 ) error {
 	playerIdStr := strconv.FormatUint(playerId, 10)
 
@@ -74,32 +83,45 @@ func TriggerPlayerDataPreload(
 	}
 
 	logx.Infof("TriggerPreload: firing %d DB read tasks (no wait) for playerId=%d", len(tasks), playerId)
-	return sendDBReadRequests(ctx, kafkaProducer, tasks, playerId, playerIdStr)
+	return sendDBReadRequests(ctx, kafkaProducer, tasks, playerId, playerIdStr, replyInstance)
+}
+
+// newDBReadTask 构造一条读任务。replyInstance 必须是登记了这条任务回调的那个
+// TaskResultDispatcher 的 ReplyInstance():go/db 按它把到达通知只发到该进程的实例频道。
+func newDBReadTask(t *dbReadTask, playerId uint64, playerIdStr, replyInstance string) (*login_proto.DBTask, error) {
+	body, err := proto.Marshal(t.message)
+	if err != nil {
+		return nil, fmt.Errorf("marshal DB task body (type=%s): %w",
+			t.message.ProtoReflect().Descriptor().FullName(), err)
+	}
+	return &login_proto.DBTask{
+		Key:           playerId,
+		WhereCase:     "player_id='" + playerIdStr + "'",
+		Op:            "read",
+		MsgType:       string(t.message.ProtoReflect().Descriptor().FullName()),
+		Body:          body,
+		TaskId:        t.taskID,
+		ReplyInstance: replyInstance,
+	}, nil
 }
 
 // sendDBReadRequests sends DB read tasks to Kafka (single or batch).
+// replyInstance 写进每条任务,约束同 newDBReadTask。
 func sendDBReadRequests(
 	ctx context.Context,
-	producer *kafka.KeyOrderedKafkaProducer,
+	producer dbTaskProducer,
 	tasks []*dbReadTask,
 	playerId uint64,
 	playerIdStr string,
+	replyInstance string,
 ) error {
 	dbTasks := make([]*login_proto.DBTask, len(tasks))
 	for i, t := range tasks {
-		body, err := proto.Marshal(t.message)
+		task, err := newDBReadTask(t, playerId, playerIdStr, replyInstance)
 		if err != nil {
-			return fmt.Errorf("marshal DB task body (type=%s): %w",
-				t.message.ProtoReflect().Descriptor().FullName(), err)
+			return err
 		}
-		dbTasks[i] = &login_proto.DBTask{
-			Key:       playerId,
-			WhereCase: "player_id='" + playerIdStr + "'",
-			Op:        "read",
-			MsgType:   string(t.message.ProtoReflect().Descriptor().FullName()),
-			Body:      body,
-			TaskId:    t.taskID,
-		}
+		dbTasks[i] = task
 	}
 
 	logx.Infof("LoadSync: sending %d DB read tasks for playerId=%d", len(dbTasks), playerId)
@@ -109,18 +131,8 @@ func sendDBReadRequests(
 	return producer.SendTasks(ctx, dbTasks, playerIdStr)
 }
 
-// saveToRedis marshals a proto message and saves to Redis with TTL.
-func saveToRedis(ctx context.Context, rc redis.Cmdable, key string, msg proto.Message, ttl time.Duration) error {
-	data, err := proto.Marshal(msg)
-	if err != nil {
-		return fmt.Errorf("marshal for cache key=%s: %w", key, err)
-	}
-	return rc.Set(ctx, key, data, ttl).Err()
-}
-
 // playerAllDataParentTTL bounds how long the assembled parent-key blob may
 // stay in Redis if Scene never takes ownership (e.g. login -> immediate
 // disconnect before EnterScene). Once Scene executes SavePlayerToRedis, it
 // overwrites this entry persistently via its own Lua script.
 const playerAllDataParentTTL = 24 * time.Hour
-

@@ -1,6 +1,11 @@
 #include <gtest/gtest.h>
-#include <thread>
+#include <google/protobuf/util/message_differencer.h>
+#include <vector>
 #include "hexagons_grid.h"
+#include "infra/agones/agones_gameserver_lifecycle.h"
+#include "core/node/system/node/muduo_grpc_channel_slot.h"
+#include "muduo/net/EventLoop.h"
+#include "muduo_grpc/channel.h"
 #include "actor/actor_net_id.h"
 #include "core/system/id_generator.h"
 #include "engine/core/type_define/player_guid_comp.h"
@@ -14,10 +19,11 @@
 #include "thread_context/ecs_context.h"
 #include "network/node_utils.h"
 #include "node/system/discovery/service_node_snapshot.h"
-#include "modules/scene/scene_events.h"
 #include "spatial/system/aoi.h"
 #include "spatial/comp/grid_comp.h"
 #include "player/system/player_scene.h"
+#include "proto/scene/scene.pb.h"
+#include "world/scene_lifecycle.h"
 #include "table/proto/tip/common_error_tip.pb.h"
 #include "table/proto/tip/scene_error_tip.pb.h"
 #include "spatial/comp/scene_node_scene_comp.h"
@@ -183,8 +189,8 @@ class LocalNodeInfoResetListener : public ::testing::EmptyTestEventListener
 //     ConcludeHandoffAfterMarkSent) and the conditional evacuation mark write in
 //     DispatchEmergencyRelocate — runbook B4a / B4b / B5 and the evacuation drill only.
 //   - Relocate confirmation (section 14) pieces the host cannot reach — the send
-//     needs a live muduo_grpc channel on a running EventLoop and the verify needs
-//     a zone Redis, so these are
+//     needs a running EventLoop with a live scene_manager behind the muduo_grpc
+//     channel, and the verify needs a zone Redis, so these are
 //     covered by the pure-function / Table cases and runbook scenario V only:
 //       * anything past kAwaitingReply at the ECS level;
 //       * the kVerify branches of the correlated reply claim and the transport-failure
@@ -959,6 +965,15 @@ entt::entity MakeExitingPlayer(SessionId sessionAtExit, SessionId currentSession
     return player;
 }
 
+// 合法的新号父快照与login种子一致；让生命周期测试到达各自的继承/会话围栏。
+PlayerAllData IdentifiedPlayerLoadData(Guid playerId)
+{
+    PlayerAllData data;
+    data.mutable_player_database_data()->set_player_id(playerId);
+    data.mutable_player_database_1_data()->set_player_id(playerId);
+    return data;
+}
+
 // 与 SavePlayerToRedis 写盘时同一个形状:marshal + 两张子表的 player_id。
 bool MarshalAsSaved(entt::entity player, PlayerAllData& data)
 {
@@ -1020,14 +1035,25 @@ namespace
 {
 // 数 muduo 日志里 "save outran reconnect lease" 出现的条数(帮会值班 LogQL 按这段原文计事件数,§12.6.9)。
 int g_leaseOverrunWarnLines = 0;
-int g_missingPersistedBeforeMarkLines = 0;
+int g_handoffPrecheckRefusedLines = 0;
+int g_handoffMarkComponentRefusedLines = 0;
+int g_handoffMarkRedisDisconnectedLines = 0;
 
-void CountMissingPersistedBeforeMark(const char* msg, int len)
+void CountHandoffPrecheckLines(const char* msg, int len)
 {
-    if (std::string_view(msg, static_cast<std::size_t>(len)).find(
+    const std::string_view line(msg, static_cast<std::size_t>(len));
+    if (line.find("handoff precheck refused") != std::string_view::npos)
+    {
+        ++g_handoffPrecheckRefusedLines;
+    }
+    if (line.find(
             "persisted component missing before writing the handoff mark") != std::string_view::npos)
     {
-        ++g_missingPersistedBeforeMarkLines;
+        ++g_handoffMarkComponentRefusedLines;
+    }
+    if (line.find("zone redis not connected") != std::string_view::npos)
+    {
+        ++g_handoffMarkRedisDisconnectedLines;
     }
     std::fwrite(msg, 1, static_cast<std::size_t>(len), stdout);
 }
@@ -1178,84 +1204,99 @@ TEST(ExitPersistEcs, ReexitAfterExhaustedRekicksAndConverges)
     EXPECT_EQ(SessionMap().count(kSessionAtExit), 0u);
 }
 
-// 拒绝保存与"当前状态已经落盘"都不产生新回调,但只有后者允许销毁实体。
-// 修复前缺账本返回 false 后走 FinishExitAfterPersist,丢掉尚未落盘的内存态。
-TEST(ExitPersistEcs, MissingPersistedComponentDoesNotFinishInline)
+// 永久拒存不能收敛:按负责人决定不存盘丢弃,不让重连复用无法再保存的实体。
+TEST(ExitPersistEcs, RejectedExitIsDiscardedNotReused)
 {
     ScopedPersistedPlayerCleanup cleanup;
     const auto player = MakeOnlinePlayer(kSessionAtExit);
     ASSERT_TRUE(MarkPersisted(player));
-    const auto saved = tlsEcs.actorRegistry.get<PlayerLastPersistedSnapshotComp>(player).snapshot->SerializeAsString();
+    const auto before = exit_release_stats::Read();
+    const auto marksBefore = PlayerLifecycleSystem::ExitReleaseMarksInFlight();
     tlsEcs.actorRegistry.remove<PlayerAssetOpLedgerComp>(player);
 
     PlayerLifecycleSystem::HandleExitGameNode(player, ExitCause::kClientDisconnect);
 
-    ASSERT_TRUE(tlsEcs.actorRegistry.valid(player));
-    EXPECT_TRUE((tlsEcs.actorRegistry.all_of<UnregisterPlayer, PlayerExitIntentComp>(player)));
-    EXPECT_EQ(tlsEcs.GetPlayer(kExitPlayerId), player);
-    EXPECT_EQ(SessionMap().count(kSessionAtExit), 1u);
-    EXPECT_FALSE(tlsEcs.actorRegistry.any_of<PlayerAssetOpLedgerComp>(player));
-    EXPECT_EQ(tlsEcs.actorRegistry.get<PlayerLastPersistedSnapshotComp>(player).snapshot->SerializeAsString(), saved);
+    EXPECT_FALSE(tlsEcs.actorRegistry.valid(player));
+    EXPECT_EQ(tlsEcs.GetPlayer(kExitPlayerId), entt::entity{entt::null});
+    EXPECT_EQ(SessionMap().count(kSessionAtExit), 0u);
+    EXPECT_EQ(exit_release_stats::Read().decisions, before.decisions) << "不进入 A1′ 释放标记判定";
+    EXPECT_EQ(PlayerLifecycleSystem::ExitReleaseMarksInFlight(), marksBefore);
 }
 
-TEST(ExitPersistEcs, ExhaustedRekickWithMissingComponentRetainsEntity)
+TEST(ExitPersistEcs, MissingPersistedComponentDiscardsWithoutReleaseMark)
+{
+    ScopedPersistedPlayerCleanup cleanup;
+    const auto player = MakeOnlinePlayer(kSessionAtExit);
+    ASSERT_TRUE(MarkPersisted(player));
+    const auto before = exit_release_stats::Read();
+    tlsEcs.actorRegistry.remove<PlayerAssetOpLedgerComp>(player);
+
+    PlayerLifecycleSystem::HandleExitGameNode(player, ExitCause::kClientDisconnect);
+
+    EXPECT_FALSE(tlsEcs.actorRegistry.valid(player));
+    EXPECT_EQ(tlsEcs.GetPlayer(kExitPlayerId), entt::entity{entt::null});
+    EXPECT_EQ(SessionMap().count(kSessionAtExit), 0u);
+    EXPECT_EQ(exit_release_stats::Read().decisions, before.decisions);
+}
+
+TEST(ExitPersistEcs, ExhaustedRekickWithMissingComponentDiscardsWithoutReleaseMark)
 {
     ScopedPersistedPlayerCleanup cleanup;
     const auto player = MakeExitingPlayer(kSessionAtExit, kSessionAtExit);
     ASSERT_TRUE(MarkPersisted(player));
+    const auto before = exit_release_stats::Read();
     tlsEcs.actorRegistry.get<PlayerExitIntentComp>(player).resaveRounds = player_exit::kMaxExitResaveRounds;
     tlsEcs.actorRegistry.remove<PlayerCurrencyComp>(player);
 
     PlayerLifecycleSystem::HandleExitGameNode(player, ExitCause::kIdentityConflict);
 
-    ASSERT_TRUE(tlsEcs.actorRegistry.valid(player));
-    EXPECT_TRUE((tlsEcs.actorRegistry.all_of<UnregisterPlayer, PlayerExitIntentComp>(player)));
-    EXPECT_EQ(SessionMap().count(kSessionAtExit), 1u);
-    EXPECT_FALSE(tlsEcs.actorRegistry.any_of<PlayerCurrencyComp>(player));
+    EXPECT_FALSE(tlsEcs.actorRegistry.valid(player));
+    EXPECT_EQ(tlsEcs.GetPlayer(kExitPlayerId), entt::entity{entt::null});
+    EXPECT_EQ(SessionMap().count(kSessionAtExit), 0u);
+    EXPECT_EQ(exit_release_stats::Read().decisions, before.decisions);
 }
 
-TEST(ExitPersistEcs, LandedCallbackWithMissingComponentDoesNotConverge)
+TEST(ExitPersistEcs, LandedCallbackWithMissingComponentDiscardsWithoutReleaseMark)
 {
     ScopedPersistedPlayerCleanup cleanup;
     const auto player = MakeExitingPlayer(kSessionAtExit, kSessionAtExit);
     PlayerAllData landed;
     ASSERT_TRUE(MarshalAsSaved(player, landed));
+    const auto before = exit_release_stats::Read();
     tlsEcs.actorRegistry.remove<BattleSettlementLedgerComp>(player);
 
     PlayerLifecycleSystem::HandlePlayerAsyncSaved(kExitPlayerId, landed);
 
-    ASSERT_TRUE(tlsEcs.actorRegistry.valid(player));
-    ASSERT_TRUE((tlsEcs.actorRegistry.all_of<UnregisterPlayer, PlayerExitIntentComp>(player)));
-    EXPECT_EQ(tlsEcs.actorRegistry.get<PlayerExitIntentComp>(player).resaveRounds, 0u);
-    EXPECT_FALSE(tlsEcs.actorRegistry.any_of<BattleSettlementLedgerComp>(player));
-    const auto* snapshot = tlsEcs.actorRegistry.try_get<PlayerLastPersistedSnapshotComp>(player);
-    ASSERT_NE(snapshot, nullptr);
-    ASSERT_TRUE(snapshot->HasSnapshot());
-    EXPECT_EQ(snapshot->snapshot->SerializeAsString(), landed.SerializeAsString()) << "只记录真正落盘的旧消息";
+    EXPECT_FALSE(tlsEcs.actorRegistry.valid(player));
+    EXPECT_EQ(tlsEcs.GetPlayer(kExitPlayerId), entt::entity{entt::null});
+    EXPECT_EQ(SessionMap().count(kSessionAtExit), 0u);
+    EXPECT_EQ(exit_release_stats::Read().decisions, before.decisions);
 }
 
-TEST(ExitPersistEcs, StaleEpochResaveRejectedRetainsExitingEntity)
+TEST(ExitPersistEcs, StaleEpochResaveRejectedDiscardsWithoutReleaseMark)
 {
     ScopedPersistedPlayerCleanup cleanup;
     const auto player = MakeExitingPlayer(kSessionAtExit, kSessionAtExit);
     ASSERT_TRUE(MarkPersisted(player));
+    const auto before = exit_release_stats::Read();
     tlsEcs.actorRegistry.emplace<PlayerOwnerEpochComp>(player).epoch = 7;
     tlsEcs.actorRegistry.remove<PlayerAssetOpLedgerComp>(player);
 
     PlayerLifecycleSystem::HandlePlayerSaveRejected(kExitPlayerId, "player-save-test", "6");
 
-    ASSERT_TRUE(tlsEcs.actorRegistry.valid(player));
-    EXPECT_TRUE((tlsEcs.actorRegistry.all_of<UnregisterPlayer, PlayerExitIntentComp>(player)));
-    EXPECT_EQ(tlsEcs.actorRegistry.get<PlayerOwnerEpochComp>(player).epoch, 7u);
-    EXPECT_EQ(tlsEcs.GetPlayer(kExitPlayerId), player);
-    EXPECT_FALSE(tlsEcs.actorRegistry.any_of<PlayerAssetOpLedgerComp>(player));
+    EXPECT_FALSE(tlsEcs.actorRegistry.valid(player));
+    EXPECT_EQ(tlsEcs.GetPlayer(kExitPlayerId), entt::entity{entt::null});
+    EXPECT_EQ(SessionMap().count(kSessionAtExit), 0u);
+    EXPECT_EQ(exit_release_stats::Read().decisions, before.decisions);
 }
 
-TEST(ExitPersistEcs, IssuedHandoffCannotHideMissingPersistedComponent)
+TEST(ExitPersistEcs, IssuedHandoffWithMissingPersistedComponentDiscardsWithoutReleaseMark)
 {
     ScopedPersistedPlayerCleanup cleanup;
     const auto player = MakeOnlinePlayer(kSessionAtExit);
     ASSERT_TRUE(MarkPersisted(player));
+    const auto before = exit_release_stats::Read();
+    const auto travelBefore = travel_handoff_stats::Read();
     auto& travel = tlsEcs.actorRegistry.emplace<PlayerTravelHandoffComp>(player);
     travel.requestedAtMs = 123;
     travel.targetZoneId = 8;
@@ -1264,10 +1305,28 @@ TEST(ExitPersistEcs, IssuedHandoffCannotHideMissingPersistedComponent)
 
     PlayerLifecycleSystem::HandleExitGameNode(player, ExitCause::kClientDisconnect);
 
+    EXPECT_FALSE(tlsEcs.actorRegistry.valid(player));
+    EXPECT_EQ(tlsEcs.GetPlayer(kExitPlayerId), entt::entity{entt::null});
+    EXPECT_EQ(SessionMap().count(kSessionAtExit), 0u);
+    EXPECT_EQ(exit_release_stats::Read().decisions, before.decisions);
+    EXPECT_EQ(travel_handoff_stats::Read().exitWins, travelBefore.exitWins)
+        << "不走退出优先撤标记或改派链";
+}
+
+TEST(ExitPersistEcs, StaleEpochRejectOnOnlinePlayerKeepsEntity)
+{
+    ScopedPersistedPlayerCleanup cleanup;
+    const auto player = MakeOnlinePlayer(kSessionAtExit);
+    ASSERT_TRUE(MarkPersisted(player));
+    tlsEcs.actorRegistry.emplace<PlayerOwnerEpochComp>(player).epoch = 7;
+    tlsEcs.actorRegistry.remove<PlayerAssetOpLedgerComp>(player);
+
+    PlayerLifecycleSystem::HandlePlayerSaveRejected(kExitPlayerId, "player-save-test", "6");
+
     ASSERT_TRUE(tlsEcs.actorRegistry.valid(player));
-    EXPECT_TRUE((tlsEcs.actorRegistry.all_of<UnregisterPlayer, PlayerExitIntentComp>(player)));
-    EXPECT_TRUE((tlsEcs.actorRegistry.all_of<PlayerTravelHandoffComp, PlayerFrozenComp>(player)));
-    EXPECT_FALSE(tlsEcs.actorRegistry.any_of<PlayerAssetOpLedgerComp>(player));
+    EXPECT_FALSE(tlsEcs.actorRegistry.any_of<UnregisterPlayer>(player));
+    EXPECT_EQ(tlsEcs.GetPlayer(kExitPlayerId), player);
+    EXPECT_EQ(SessionMap().count(kSessionAtExit), 1u);
 }
 
 TEST(ExitPersistEcs, CancelExitOnReconnectRemovesBothMarkers)
@@ -1657,7 +1716,7 @@ TEST(ExitReleaseEcs, LoadWithoutClearForItsEpochIsRefused)
     RegisterPendingEnter(/*ownerEpoch=*/5);
     const auto before = exit_release_stats::Read();
 
-    PlayerLifecycleSystem::HandlePlayerAsyncLoaded(kReleasePlayerId, PlayerAllData{});
+    PlayerLifecycleSystem::HandlePlayerAsyncLoaded(kReleasePlayerId, IdentifiedPlayerLoadData(kReleasePlayerId));
 
     EXPECT_EQ(PlayerLifecycleSystem::GetPendingEnterMap().count(kReleasePlayerId), 0u) << "待入场条目已擦掉";
     EXPECT_EQ(tlsEcs.playerList.count(kReleasePlayerId), 0u) << "没有建实体";
@@ -1669,7 +1728,7 @@ TEST(ExitReleaseEcs, RouteWithoutOwnerEpochStillWaitsForTheClear)
     // 复审 ownership-major:旧版路由(owner_epoch 0)以前跳过 A2′、闸门直接放行,上一任的 A1′ 标记因此存活。
     RegisterPendingEnter(/*ownerEpoch=*/0);
     const auto before = exit_release_stats::Read();
-    PlayerLifecycleSystem::HandlePlayerAsyncLoaded(kReleasePlayerId, PlayerAllData{});
+    PlayerLifecycleSystem::HandlePlayerAsyncLoaded(kReleasePlayerId, IdentifiedPlayerLoadData(kReleasePlayerId));
     EXPECT_EQ(PlayerLifecycleSystem::GetPendingEnterMap().count(kReleasePlayerId), 0u) << "没发过清理:拒建实体";
     EXPECT_EQ(tlsEcs.playerList.count(kReleasePlayerId), 0u);
     EXPECT_EQ(exit_release_stats::Read().inheritRefused, before.inheritRefused + 1);
@@ -1682,7 +1741,7 @@ TEST(ExitReleaseEcs, RouteWithoutOwnerEpochStillWaitsForTheClear)
     EXPECT_EQ(state.targetEpoch, 0u) << "针对\"路由不带 owner_epoch\"的那一种清理";
     EXPECT_EQ(state.phase, erm::InheritClearPhase::kRetryWait) << "照样发了(zone Redis 不可用 = 失败,等重发)";
     EXPECT_EQ(state.attemptsSent, 1u);
-    PlayerLifecycleSystem::HandlePlayerAsyncLoaded(kReleasePlayerId, PlayerAllData{});
+    PlayerLifecycleSystem::HandlePlayerAsyncLoaded(kReleasePlayerId, IdentifiedPlayerLoadData(kReleasePlayerId));
     ASSERT_EQ(pending.count(kReleasePlayerId), 1u) << "等清理期间保留载入结果,不建实体";
     EXPECT_NE(pending.at(kReleasePlayerId).inheritClear.stashedLoad, nullptr);
     EXPECT_EQ(tlsEcs.playerList.count(kReleasePlayerId), 0u);
@@ -1702,7 +1761,7 @@ TEST(ExitReleaseEcs, FailingClearKeepsTheLoadThenRefusesWhenExhausted)
         EXPECT_EQ(state.attemptsSent, 1u);
     }
 
-    PlayerLifecycleSystem::HandlePlayerAsyncLoaded(kReleasePlayerId, PlayerAllData{});
+    PlayerLifecycleSystem::HandlePlayerAsyncLoaded(kReleasePlayerId, IdentifiedPlayerLoadData(kReleasePlayerId));
     {
         auto& pending = PlayerLifecycleSystem::GetPendingEnterMap();
         ASSERT_EQ(pending.count(kReleasePlayerId), 1u) << "等重发期间保留载入结果(M10)";
@@ -1801,7 +1860,7 @@ TEST(EnterSceneReplyRoute, RouteNamesCoverEveryValue)
 }
 
 // ── ECS 级接缝:直接驱动 PlayerLifecycleSystem::DispatchEnterSceneReply ──
-// 宿主里没有 zone Redis(tlsRedis.GetZoneRedis() 为空),默认也没有 EventLoop:ResolveTravelOutcome 判不清就保持冻结、
+// 宿主里没有 zone Redis(tlsRedis.GetZoneRedis() 为空),除 ScopedFakeSceneManagerNode 存活期间(夹具自带 EventLoop)外也没有 EventLoop:ResolveTravelOutcome 判不清就保持冻结、
 // 计 verify_rearmed,看门狗挂不上(只打 WARN)。所以"应答进了交接裁决"的可观察结果是证据被记下 + verify_rearmed +1。
 // 例外:用了 ScopedFakeSceneManagerNode 的用例,夹具在测试线程自建 EventLoop,期间统计 / 冻结上限定时器会挂到它上面;
 // 控制它们的 static thread_local armed 置位后不复位,之后的用例即使有 loop 也不会再挂。现有用例都不依赖这些定时器。
@@ -1846,13 +1905,12 @@ void AttachSceneChange(entt::entity player, uint64_t sceneId, bool playerRequest
 }
 
 // StartTravelHandoff 在冻结之前预检 scene_manager 是否可达(冻结上限:SET 之后才发现没有 SM 只能销毁 + 踢线,
-// 所以要在改状态之前挡住)。夹具挂一条真实的 muduo_grpc 通道,满足生产筛选契约(HasUsableGrpcClient:挂着通道且
-// 非 SHUTDOWN;没挂通道的实体选点不认,GetSceneManagerEntity 返回 null)。目标 127.0.0.1:1 没人监听,选点的
-// GetState(true) 会发起一次建连;这些用例在 epoch / Redis 检查处终止,不发真实 RPC。
-// 通道只能在构造它的 EventLoop 线程上用(GetState 断言),所以夹具在测试线程上自带一个 EventLoop,只活在夹具寿命内:
-// 期间本线程"有 loop",StartTravelHandoff 的统计(30s)/ 冻结上限扫描(1s)定时器会挂到它上面,但 loop 只在析构时
-// 转 100ms,用例本身不超过约 0.9s 就碰不到它们。退出时先在 loop 线程上析构通道、再转一小会儿 loop 让连接释放跑完,
-// 最后才析构 loop,不能裸销毁。
+// 所以要在改状态之前挡住)。夹具给 SM 实体挂一条真实的 muduo_grpc 通道(目标端口不监听),满足生产筛选契约
+// (HasUsableGrpcClient);这些用例在 epoch / Redis 检查处终止,不发真实 RPC。
+// 通道只能在其 EventLoop 线程上使用,本宿主又没有 EventLoop,所以夹具在测试线程上自带一个(一个线程同时只能有一个
+// 夹具),平时不转,只在析构时转到拆除排完:选点的 GetState(true) 已经发起过一次连接,~Channel 把连接拆除排进队列,
+// muduo Connector 拆除途中还会再排一跳(resetChannel)。两跳 queueInLoop 后再 quit(AGENTS.md §11.7),
+// 保证它们都在 loop 析构前跑完。夹具存活期间当前线程「有 EventLoop」,交接统计 / 冻结上限扫描会挂到它上面,随它销毁。
 class ScopedFakeSceneManagerNode
 {
 public:
@@ -1868,32 +1926,18 @@ public:
     ~ScopedFakeSceneManagerNode()
     {
         auto& registry = tlsNodeContextManager.GetRegistry(eNodeType::SceneManagerNodeService);
-        if (const auto channel = FindGrpcChannel(registry, entity_))
-        {
-            // 在途 = 排着等连接的调用。TRANSIENT_FAILURE 下发出的调用当场失败、不计在内,
-            // 它会在下面转 loop 时以失败完成(没装失败处理器时打 ERROR)。
-            EXPECT_EQ(channel->outstandingCalls(), 0u) << "夹具不得发起真实 RPC";
-        }
-        // 组件持有通道的唯一强引用:销毁实体即在 loop 线程上析构通道,连接释放排进 loop 队列。
+        const auto* channel = registry.try_get<MuduoGrpcChannelPtr>(entity_);
+        EXPECT_TRUE(channel != nullptr && *channel != nullptr && (*channel)->outstandingCalls() == 0)
+            << "夹具不得发起真实 RPC";
         registry.destroy(entity_);
-        DrainLoop();
+        loop_.queueInLoop([&loop = loop_] { loop.queueInLoop([&loop] { loop.quit(); }); });
+        loop_.loop();
     }
     ScopedFakeSceneManagerNode(const ScopedFakeSceneManagerNode&) = delete;
     ScopedFakeSceneManagerNode& operator=(const ScopedFakeSceneManagerNode&) = delete;
 
 private:
-    // ~Channel 排进的连接释放 → ~TcpClient 排进的 Connector::stopInLoop → 它再排的 resetChannel(后两个绑裸 this),
-    // 至少三跳,都要在 loop 析构前跑完。Windows 版 muduo 的 wakeup() 是空操作、poll 超时取最近的定时器,挂一个
-    // 5ms 的空定时器保证每 5ms 转一圈(与 tests/muduo_grpc_test/muduo_test_loop.cpp 的 RunLoopFor 同一写法)。
-    void DrainLoop()
-    {
-        const muduo::net::TimerId tick = loop_.runEvery(0.005, [] {});
-        loop_.runAfter(0.1, [this] { loop_.quit(); });
-        loop_.loop();
-        loop_.cancel(tick);
-    }
-
-    // 必须是第一个成员:最先构造、最后析构。
+    // 先于实体构造、最后析构:通道与它排进队列的拆除都要在 loop 还在时处理掉。
     muduo::net::EventLoop loop_;
     entt::entity entity_{entt::null};
 };
@@ -1912,6 +1956,12 @@ private:
     }
     return resp;
 }
+
+// 既有用例显式模拟旧的直接分发入口;新的捕获身份用例直接传入 playerId / requestTag。
+void DeliverEnterSceneReply(const ::scene_manager::EnterSceneResponse &response)
+{
+    PlayerLifecycleSystem::DispatchEnterSceneReply(response.player_id(), response.correlation_id(), response);
+}
 } // namespace
 
 TEST(TravelPersistEcs, IncompletePlayerNeverStartsHandoff)
@@ -1922,25 +1972,33 @@ TEST(TravelPersistEcs, IncompletePlayerNeverStartsHandoff)
     ScopedFakeSceneManagerNode sceneManager;
     const auto saved = tlsEcs.actorRegistry.get<PlayerLastPersistedSnapshotComp>(player).snapshot->SerializeAsString();
     tlsEcs.actorRegistry.remove<PlayerAssetOpLedgerComp>(player);
+    tlsEcs.actorRegistry.emplace<PlayerMirrorCreateInFlightComp>(player).token = 103;
     const auto before = travel_handoff_stats::Read();
 
+    g_handoffPrecheckRefusedLines = 0;
+    muduo::Logger::setOutput(CountHandoffPrecheckLines);
     const auto result = PlayerLifecycleSystem::StartTravelHandoff(player, kReplyTargetZone, 0, 0);
+    muduo::Logger::setOutput(WriteLogToStdout);
 
+    EXPECT_EQ(g_handoffPrecheckRefusedLines, 1);
     EXPECT_NE(result, PlayerLifecycleSystem::kTravelAccepted);
     ASSERT_TRUE(tlsEcs.actorRegistry.valid(player));
     EXPECT_FALSE((tlsEcs.actorRegistry.any_of<PlayerTravelHandoffComp, PlayerFrozenComp>(player)));
     EXPECT_EQ(travel_handoff_stats::Read().started, before.started);
     EXPECT_EQ(travel_handoff_stats::Read().aborted, before.aborted);
+    EXPECT_EQ(tlsEcs.actorRegistry.get<PlayerMirrorCreateInFlightComp>(player).token, 103u)
+        << "交接尚未提交,预检失败不得取消旧镜像";
     EXPECT_FALSE(tlsEcs.actorRegistry.any_of<PlayerAssetOpLedgerComp>(player));
     EXPECT_EQ(tlsEcs.actorRegistry.get<PlayerLastPersistedSnapshotComp>(player).snapshot->SerializeAsString(), saved);
 }
 
-// 驱动真实落盘回调:旧消息确实已保存,但缺组件的当前内存仍不得越过写交接标记的门。
-TEST(TravelPersistEcs, LandedCallbackWithMissingComponentAbortsBeforeMark)
+// 刚落地的存档足以支撑交接标记;不再重 marshal 假想的缺组件内存,本宿主在 Redis 连接闸终止。
+TEST(TravelPersistEcs, LandedCallbackWithMissingComponentReachesMarkGate)
 {
     ScopedPersistedPlayerCleanup cleanup;
     entt::entity player{entt::null};
     ASSERT_TRUE(MakeReplyTestPlayer(player));
+    tlsEcs.actorRegistry.emplace_or_replace<PlayerOwnerEpochComp>(player).epoch = 7;
     PlayerAllData landed;
     ASSERT_TRUE(MarshalAsSaved(player, landed));
     auto& travel = tlsEcs.actorRegistry.emplace<PlayerTravelHandoffComp>(player);
@@ -1950,17 +2008,17 @@ TEST(TravelPersistEcs, LandedCallbackWithMissingComponentAbortsBeforeMark)
     tlsEcs.actorRegistry.remove<BattleSettlementLedgerComp>(player);
     const auto before = travel_handoff_stats::Read();
 
-    // 宿主没有 Redis,旧代码也会在更晚的连接校验处 Abort。额外核对拒绝原因,
-    // 避免把"连接不可用"的早退误当成本用例已经验证了持久状态校验。
-    g_missingPersistedBeforeMarkLines = 0;
-    muduo::Logger::setOutput(CountMissingPersistedBeforeMark);
+    g_handoffMarkComponentRefusedLines = 0;
+    g_handoffMarkRedisDisconnectedLines = 0;
+    muduo::Logger::setOutput(CountHandoffPrecheckLines);
     PlayerLifecycleSystem::HandlePlayerAsyncSaved(kExitPlayerId, landed);
     muduo::Logger::setOutput(WriteLogToStdout);
 
     ASSERT_TRUE(tlsEcs.actorRegistry.valid(player));
     EXPECT_FALSE((tlsEcs.actorRegistry.any_of<PlayerTravelHandoffComp, PlayerFrozenComp>(player)));
     EXPECT_EQ(travel_handoff_stats::Read().aborted, before.aborted + 1);
-    EXPECT_EQ(g_missingPersistedBeforeMarkLines, 1);
+    EXPECT_EQ(g_handoffMarkComponentRefusedLines, 0);
+    EXPECT_EQ(g_handoffMarkRedisDisconnectedLines, 1);
     EXPECT_EQ(travel_handoff_stats::Read().handoffFastpathForced, before.handoffFastpathForced);
     EXPECT_FALSE(tlsEcs.actorRegistry.any_of<BattleSettlementLedgerComp>(player));
     EXPECT_EQ(tlsEcs.GetPlayer(kExitPlayerId), player);
@@ -1974,9 +2032,9 @@ TEST(EnterSceneReplyEcs, ForeignTaggedReplyDuringHandoffLeavesEvidenceUntouched)
     AttachHandoff(player, /*correlationId=*/42);
     const auto before = travel_handoff_stats::Read();
 
-    PlayerLifecycleSystem::DispatchEnterSceneReply(MakeReply(kExitPlayerId, kSmErrSomeRejection, 41));
-    PlayerLifecycleSystem::DispatchEnterSceneReply(MakeReply(kExitPlayerId, 0, 41));
-    PlayerLifecycleSystem::DispatchEnterSceneReply(MakeReply(kExitPlayerId, 0, 41, /*withRedirect=*/true));
+    DeliverEnterSceneReply(MakeReply(kExitPlayerId, kSmErrSomeRejection, 41));
+    DeliverEnterSceneReply(MakeReply(kExitPlayerId, 0, 41));
+    DeliverEnterSceneReply(MakeReply(kExitPlayerId, 0, 41, /*withRedirect=*/true));
 
     const auto after = travel_handoff_stats::Read();
     ASSERT_TRUE(tlsEcs.actorRegistry.valid(player)) << "外来 redirect 只记录、不销毁";
@@ -1999,7 +2057,7 @@ TEST(EnterSceneReplyEcs, ReplyBeforeHandoffSendIsIgnoredEvenWhenUncorrelated)
     AttachHandoff(player, /*correlationId=*/0);
     const auto before = travel_handoff_stats::Read();
 
-    PlayerLifecycleSystem::DispatchEnterSceneReply(MakeReply(kExitPlayerId, kSmErrSomeRejection, 0));
+    DeliverEnterSceneReply(MakeReply(kExitPlayerId, kSmErrSomeRejection, 0));
 
     const auto after = travel_handoff_stats::Read();
     const auto* travel = tlsEcs.actorRegistry.try_get<PlayerTravelHandoffComp>(player);
@@ -2017,7 +2075,7 @@ TEST(EnterSceneReplyEcs, OwnReplyReachesTravelOutcome)
     AttachHandoff(player, /*correlationId=*/42);
     const auto before = travel_handoff_stats::Read();
 
-    PlayerLifecycleSystem::DispatchEnterSceneReply(MakeReply(kExitPlayerId, kSmErrSomeRejection, 42));
+    DeliverEnterSceneReply(MakeReply(kExitPlayerId, kSmErrSomeRejection, 42));
 
     const auto after = travel_handoff_stats::Read();
     const auto* travel = tlsEcs.actorRegistry.try_get<PlayerTravelHandoffComp>(player);
@@ -2037,7 +2095,7 @@ TEST(EnterSceneReplyEcs, UncorrelatedReplyAfterSendFallsBackToLegacy)
     AttachHandoff(player, /*correlationId=*/42);
     const auto before = travel_handoff_stats::Read();
 
-    PlayerLifecycleSystem::DispatchEnterSceneReply(MakeReply(kExitPlayerId, kSmErrSomeRejection, 0));
+    DeliverEnterSceneReply(MakeReply(kExitPlayerId, kSmErrSomeRejection, 0));
 
     const auto after = travel_handoff_stats::Read();
     const auto* travel = tlsEcs.actorRegistry.try_get<PlayerTravelHandoffComp>(player);
@@ -2057,7 +2115,7 @@ TEST(EnterSceneReplyEcs, SceneChange18StillStartsSameZoneHandoff)
     AttachSceneChange(player, /*sceneId=*/777, /*playerRequested=*/true, /*correlationId=*/9);
     const auto before = travel_handoff_stats::Read();
 
-    PlayerLifecycleSystem::DispatchEnterSceneReply(
+    DeliverEnterSceneReply(
         MakeReply(kExitPlayerId, PlayerLifecycleSystem::kSmErrHandoffPending, 10));
     const auto afterForeign = travel_handoff_stats::Read();
     EXPECT_EQ(afterForeign.started, before.started) << "别的请求的 18 不起交接";
@@ -2066,7 +2124,7 @@ TEST(EnterSceneReplyEcs, SceneChange18StillStartsSameZoneHandoff)
     EXPECT_EQ(pending->correlationId, 9u);
     EXPECT_EQ(afterForeign.replyUnmatched, before.replyUnmatched + 1);
 
-    PlayerLifecycleSystem::DispatchEnterSceneReply(
+    DeliverEnterSceneReply(
         MakeReply(kExitPlayerId, PlayerLifecycleSystem::kSmErrHandoffPending, 9));
     const auto after = travel_handoff_stats::Read();
     EXPECT_EQ(after.started, before.started + 1) << "号匹配的 18 起同 zone 交接";
@@ -2086,7 +2144,7 @@ TEST(EnterSceneReplyEcs, LegacySceneChange18StillStartsHandoff)
     AttachSceneChange(player, /*sceneId=*/777, /*playerRequested=*/true, /*correlationId=*/9);
     const auto before = travel_handoff_stats::Read();
 
-    PlayerLifecycleSystem::DispatchEnterSceneReply(
+    DeliverEnterSceneReply(
         MakeReply(kExitPlayerId, PlayerLifecycleSystem::kSmErrHandoffPending, 0));
 
     const auto after = travel_handoff_stats::Read();
@@ -2103,7 +2161,7 @@ TEST(EnterSceneReplyEcs, StaleFollowReplyDoesNotConsumeNewerRequest)
     AttachSceneChange(player, /*sceneId=*/2, /*playerRequested=*/false, /*correlationId=*/20);
     const auto before = travel_handoff_stats::Read();
 
-    PlayerLifecycleSystem::DispatchEnterSceneReply(MakeReply(kExitPlayerId, kSmErrSomeRejection, 19));
+    DeliverEnterSceneReply(MakeReply(kExitPlayerId, kSmErrSomeRejection, 19));
     {
         const auto* pending = tlsEcs.actorRegistry.try_get<PlayerSceneChangeInFlightComp>(player);
         ASSERT_NE(pending, nullptr);
@@ -2113,14 +2171,70 @@ TEST(EnterSceneReplyEcs, StaleFollowReplyDoesNotConsumeNewerRequest)
     const auto afterRejected = travel_handoff_stats::Read();
     EXPECT_EQ(afterRejected.replyUnmatched, before.replyUnmatched + 1) << "对不上号的拒绝算可疑";
 
-    PlayerLifecycleSystem::DispatchEnterSceneReply(MakeReply(kExitPlayerId, 0, 19));
+    DeliverEnterSceneReply(MakeReply(kExitPlayerId, 0, 19));
     EXPECT_TRUE(tlsEcs.actorRegistry.any_of<PlayerSceneChangeInFlightComp>(player));
     EXPECT_EQ(travel_handoff_stats::Read().replyUnmatched, afterRejected.replyUnmatched)
         << "路由先到之后的纯成功迟到应答是常态,不计数";
 
-    PlayerLifecycleSystem::DispatchEnterSceneReply(MakeReply(kExitPlayerId, kSmErrSomeRejection, 20));
+    DeliverEnterSceneReply(MakeReply(kExitPlayerId, kSmErrSomeRejection, 20));
     EXPECT_FALSE(tlsEcs.actorRegistry.any_of<PlayerSceneChangeInFlightComp>(player)) << "自己的应答摘组件";
     EXPECT_EQ(travel_handoff_stats::Read().started, before.started) << "跟随被拒只记日志,不起交接";
+}
+
+TEST(EnterSceneReplyEcs, MismatchedCorrelationEchoDoesNotClaimCapturedRequest)
+{
+    entt::entity player{entt::null};
+    ASSERT_TRUE(MakeReplyTestPlayer(player));
+    constexpr uint64_t requestTag = 91;
+    AttachSceneChange(player, /*sceneId=*/777, /*playerRequested=*/false, requestTag);
+    const auto before = travel_handoff_stats::Read();
+    const auto response = MakeReply(kExitPlayerId, kSmErrSomeRejection, requestTag + 1);
+
+    PlayerLifecycleSystem::DispatchEnterSceneReply(kExitPlayerId, requestTag, response);
+
+    const auto* pending = tlsEcs.actorRegistry.try_get<PlayerSceneChangeInFlightComp>(player);
+    ASSERT_NE(pending, nullptr) << "回显冲突不得摘掉捕获请求的等待者";
+    EXPECT_EQ(pending->correlationId, requestTag);
+    const auto after = travel_handoff_stats::Read();
+    EXPECT_EQ(after.replyUnmatched, before.replyUnmatched + 1);
+    EXPECT_EQ(after.replyUncorrelated, before.replyUncorrelated);
+}
+
+TEST(EnterSceneReplyEcs, MismatchedPlayerEchoIsRejectedEvenWithoutCorrelationEcho)
+{
+    entt::entity player{entt::null};
+    ASSERT_TRUE(MakeReplyTestPlayer(player));
+    constexpr uint64_t requestTag = 91;
+    AttachSceneChange(player, /*sceneId=*/777, /*playerRequested=*/false, requestTag);
+    const auto before = travel_handoff_stats::Read();
+    const auto response = MakeReply(kExitPlayerId + 1, kSmErrSomeRejection, /*correlationId=*/0);
+
+    PlayerLifecycleSystem::DispatchEnterSceneReply(kExitPlayerId, requestTag, response);
+
+    const auto* pending = tlsEcs.actorRegistry.try_get<PlayerSceneChangeInFlightComp>(player);
+    ASSERT_NE(pending, nullptr) << "回显冲突不得摘掉捕获请求的等待者";
+    EXPECT_EQ(pending->correlationId, requestTag);
+    const auto after = travel_handoff_stats::Read();
+    EXPECT_EQ(after.replyUnmatched, before.replyUnmatched + 1);
+    EXPECT_EQ(after.replyUncorrelated, before.replyUncorrelated);
+}
+
+TEST(EnterSceneReplyEcs, CapturedIdentityClaimsReplyWithoutEcho)
+{
+    entt::entity player{entt::null};
+    ASSERT_TRUE(MakeReplyTestPlayer(player));
+    constexpr uint64_t requestTag = 93;
+    AttachSceneChange(player, /*sceneId=*/777, /*playerRequested=*/false, requestTag);
+    const auto before = travel_handoff_stats::Read();
+    const auto response = MakeReply(/*playerId=*/0, kSmErrSomeRejection, /*correlationId=*/0);
+
+    PlayerLifecycleSystem::DispatchEnterSceneReply(kExitPlayerId, requestTag, response);
+
+    EXPECT_FALSE(tlsEcs.actorRegistry.any_of<PlayerSceneChangeInFlightComp>(player))
+        << "旧版 SM 不回显时仍按捕获的身份与号收尾";
+    const auto after = travel_handoff_stats::Read();
+    EXPECT_EQ(after.replyUnmatched, before.replyUnmatched);
+    EXPECT_EQ(after.replyUncorrelated, before.replyUncorrelated) << "捕获号非 0,不走兼容退路";
 }
 
 TEST(EnterSceneReplyEcs, NoWaiterAndGonePlayerAreSilent)
@@ -2129,18 +2243,18 @@ TEST(EnterSceneReplyEcs, NoWaiterAndGonePlayerAreSilent)
     ASSERT_TRUE(MakeReplyTestPlayer(player));
     const auto before = travel_handoff_stats::Read();
 
-    PlayerLifecycleSystem::DispatchEnterSceneReply(MakeReply(kExitPlayerId, 0, 5));
-    PlayerLifecycleSystem::DispatchEnterSceneReply(MakeReply(kExitPlayerId, kSmErrSomeRejection, 5));
+    DeliverEnterSceneReply(MakeReply(kExitPlayerId, 0, 5));
+    DeliverEnterSceneReply(MakeReply(kExitPlayerId, kSmErrSomeRejection, 5));
     // 不在本节点的玩家。
-    PlayerLifecycleSystem::DispatchEnterSceneReply(MakeReply(kExitPlayerId + 1, kSmErrSomeRejection, 6));
-    // 更老的 SM:连 player_id 都没有。
-    PlayerLifecycleSystem::DispatchEnterSceneReply(MakeReply(0, kSmErrSomeRejection, 0));
+    DeliverEnterSceneReply(MakeReply(kExitPlayerId + 1, kSmErrSomeRejection, 6));
+    // 调用方没有带上捕获的 playerId:属于调用方 bug,在计数之前直接返回。
+    DeliverEnterSceneReply(MakeReply(0, kSmErrSomeRejection, 0));
 
     const auto after = travel_handoff_stats::Read();
     EXPECT_TRUE(tlsEcs.actorRegistry.valid(player));
     EXPECT_EQ(after.replyUnmatched, before.replyUnmatched);
     EXPECT_EQ(after.replyUncorrelated, before.replyUncorrelated)
-        << "player_id 为 0 的应答在计 reply_uncorrelated 之前就返回";
+        << "捕获的 playerId 为 0 时在计 reply_uncorrelated 之前就返回";
 }
 
 // ----------------------------------------------------------------------------
@@ -2152,12 +2266,9 @@ TEST(EnterSceneReplyEcs, NoWaiterAndGonePlayerAreSilent)
 
 namespace
 {
-::scene_manager::EnterSceneRequest MakeFailedRequest(Guid playerId, uint64_t correlationId)
+void DeliverEnterSceneTransportFailure(Guid playerId, uint64_t correlationId, const std::string &reason)
 {
-    ::scene_manager::EnterSceneRequest req;
-    req.set_player_id(playerId);
-    req.set_correlation_id(correlationId);
-    return req;
+    PlayerLifecycleSystem::DispatchEnterSceneTransportFailure(playerId, correlationId, reason);
 }
 
 constexpr char kTransportFailureReason[] = "SceneManager.EnterScene code=4 msg=Deadline Exceeded";
@@ -2171,8 +2282,7 @@ TEST(EnterSceneTransportFailureEcs, HandoffFailureIsNotEvidence)
     AttachHandoff(player, /*correlationId=*/42);
     const auto before = travel_handoff_stats::Read();
 
-    PlayerLifecycleSystem::DispatchEnterSceneTransportFailure(MakeFailedRequest(kExitPlayerId, 42),
-                                                              kTransportFailureReason);
+    DeliverEnterSceneTransportFailure(kExitPlayerId, 42, kTransportFailureReason);
 
     const auto after = travel_handoff_stats::Read();
     const auto* travel = tlsEcs.actorRegistry.try_get<PlayerTravelHandoffComp>(player);
@@ -2192,16 +2302,14 @@ TEST(EnterSceneTransportFailureEcs, OwnSceneChangeFailureReleasesTheSlot)
     const auto before = travel_handoff_stats::Read();
 
     // 别的请求(被顶替的)的失败不动当前等待者。
-    PlayerLifecycleSystem::DispatchEnterSceneTransportFailure(MakeFailedRequest(kExitPlayerId, 8),
-                                                              kTransportFailureReason);
+    DeliverEnterSceneTransportFailure(kExitPlayerId, 8, kTransportFailureReason);
     {
         const auto* pending = tlsEcs.actorRegistry.try_get<PlayerSceneChangeInFlightComp>(player);
         ASSERT_NE(pending, nullptr);
         EXPECT_EQ(pending->correlationId, 9u);
     }
 
-    PlayerLifecycleSystem::DispatchEnterSceneTransportFailure(MakeFailedRequest(kExitPlayerId, 9),
-                                                              kTransportFailureReason);
+    DeliverEnterSceneTransportFailure(kExitPlayerId, 9, kTransportFailureReason);
     EXPECT_FALSE(tlsEcs.actorRegistry.any_of<PlayerSceneChangeInFlightComp>(player)) << "自己的失败摘槽位";
     EXPECT_FALSE(PlayerLifecycleSystem::IsSceneChangeBusy(player)) << "玩家可以立刻重试";
     const auto after = travel_handoff_stats::Read();
@@ -2215,8 +2323,7 @@ TEST(EnterSceneTransportFailureEcs, FollowFailureReleasesTheSlotToo)
     ASSERT_TRUE(MakeReplyTestPlayer(player));
     AttachSceneChange(player, /*sceneId=*/2, /*playerRequested=*/false, /*correlationId=*/20);
 
-    PlayerLifecycleSystem::DispatchEnterSceneTransportFailure(MakeFailedRequest(kExitPlayerId, 20),
-                                                              kTransportFailureReason);
+    DeliverEnterSceneTransportFailure(kExitPlayerId, 20, kTransportFailureReason);
 
     EXPECT_FALSE(tlsEcs.actorRegistry.any_of<PlayerSceneChangeInFlightComp>(player));
     EXPECT_FALSE(tlsEcs.actorRegistry.any_of<PlayerTravelHandoffComp>(player));
@@ -2229,11 +2336,9 @@ TEST(EnterSceneTransportFailureEcs, UncorrelatedFailureNeverFallsBackToPlayerId)
     ASSERT_TRUE(MakeReplyTestPlayer(player));
     AttachSceneChange(player, /*sceneId=*/2, /*playerRequested=*/true, /*correlationId=*/20);
 
-    PlayerLifecycleSystem::DispatchEnterSceneTransportFailure(MakeFailedRequest(kExitPlayerId, 0),
-                                                              kTransportFailureReason);
+    DeliverEnterSceneTransportFailure(kExitPlayerId, 0, kTransportFailureReason);
     // 不在本节点的玩家:静默。
-    PlayerLifecycleSystem::DispatchEnterSceneTransportFailure(MakeFailedRequest(kExitPlayerId + 1, 21),
-                                                              kTransportFailureReason);
+    DeliverEnterSceneTransportFailure(kExitPlayerId + 1, 21, kTransportFailureReason);
 
     const auto* pending = tlsEcs.actorRegistry.try_get<PlayerSceneChangeInFlightComp>(player);
     ASSERT_NE(pending, nullptr);
@@ -2773,7 +2878,7 @@ TEST(TravelOwnership, ReceiptWithFailedCrossCheckIsAnomaly)
 {
     struct Case
     {
-        const char *name;
+        std::string_view name;
         to::OwnershipFacts facts;
     };
     std::vector<Case> cases;
@@ -3417,14 +3522,14 @@ TEST(RelocateConfirmKick, UnverifiableKickOnlyWhenSceneManagerCannotHaveGrantedO
         EXPECT_FALSE(rc::ShouldKickUnverified(evidence, true, false)) << rc::EvidenceName(evidence);
     }
 
-    // ⑤ 第三个入参的来源:PlayerLifecycleSystem::SmRejectedBeforeAnyPlacementWrite 的白名单 —— 这八个码在 scene_manager 里的
+    // ⑤ 第三个入参的来源:PlayerLifecycleSystem::SmRejectedBeforeAnyPlacementWrite 的白名单 —— 这九个码在 scene_manager 里的
     //    每一个出处都早于本请求的落点写。数值手抄自 go/scene_manager/internal/constants/errors.go(两边没有共享的生成物),
     //    钉在这里:那边改号而 player_lifecycle.h 没跟,盲踢就会打到已放行的会话。18 引用既有常量,不再写字面量。
     struct PinnedSmCode
     {
         uint32_t value;
         uint32_t expected;
-        const char *goName;
+        std::string_view goName;
     };
     const PinnedSmCode pinnedCodes[] = {
         {PlayerLifecycleSystem::kSmErrNoAvailableNode, 1, "ErrNoAvailableNode"},
@@ -3434,6 +3539,8 @@ TEST(RelocateConfirmKick, UnverifiableKickOnlyWhenSceneManagerCannotHaveGrantedO
         {PlayerLifecycleSystem::kSmErrSceneReentryBarrier, 17, "ErrSceneReentryBarrier"},
         {PlayerLifecycleSystem::kSmErrHomeZoneUnavailable, 20, "ErrHomeZoneUnavailable"},
         {PlayerLifecycleSystem::kSmErrHomeZoneMerging, 21, "ErrHomeZoneMerging"},
+        // 25 的唯一出处是落点会话身份判定 decidePlacementIdentity,早于一切预占与写(scene-enter-chain-residuals.md §5.2 ⑤)。
+        {PlayerLifecycleSystem::kSmErrPlacementSessionSuperseded, 25, "ErrPlacementSessionSuperseded"},
     };
     for (const auto &pinned : pinnedCodes)
     {
@@ -4255,7 +4362,7 @@ TEST(RelocateConfirmEcs, BeginSceneDrainOnlyCountsResidentsOfThatScene)
     EXPECT_EQ(RelocateStats().cancelledOnReentry, cancelledBefore + 1) << "只撤销目标场景玩家的票据";
 }
 
-// 必需清理走真实销毁入口,宿主没有注册 SceneEventHandler / BeforeLeaveScene 的 AOI sink。
+// 必需清理走真实销毁入口,宿主没有注册 任何 AOI 离场 sink。
 // 修复前只触发通知事件,玩家虽被销毁,格子和观察者仍保留陈旧句柄。
 TEST(PlayerLifecycleEcs, DestroyPlayerWithoutDetachLeavesNoAoiResidue)
 {
@@ -4285,7 +4392,7 @@ TEST(PlayerLifecycleEcs, DestroyPlayerWithoutDetachLeavesNoAoiResidue)
     PlayerLifecycleSystem::DestroyPlayer(kExitPlayerId);
 
     EXPECT_FALSE(tlsEcs.actorRegistry.valid(target));
-    EXPECT_TRUE(tlsEcs.GetPlayer(kExitPlayerId) == entt::null);
+    EXPECT_EQ(tlsEcs.GetPlayer(kExitPlayerId), entt::entity{entt::null});
     ASSERT_TRUE(tlsEcs.actorRegistry.valid(watcher));
     const auto* afterAoi = tlsEcs.actorRegistry.try_get<AoiListComp>(watcher);
     ASSERT_NE(afterAoi, nullptr);
@@ -4298,95 +4405,8 @@ TEST(PlayerLifecycleEcs, DestroyPlayerWithoutDetachLeavesNoAoiResidue)
     }
 }
 
-namespace
-{
-struct ReplacePlayerDuringLeaveNotification
-{
-    entt::entity oldPlayer{entt::null};
-    entt::entity replacement{entt::null};
-    bool destroyOldPlayer{true};
-    SessionId replacementSession{0};
-    unsigned notifications{0};
 
-    void OnLeave(const BeforeLeaveScene& event)
-    {
-        ASSERT_EQ(event.actor, oldPlayer);
-        ++notifications;
-        EXPECT_FALSE(tlsEcs.actorRegistry.any_of<SceneEntityComp>(oldPlayer)) << "通知发生在完成解绑之后";
-        if (destroyOldPlayer && tlsEcs.actorRegistry.valid(oldPlayer))
-        {
-            tlsEcs.actorRegistry.destroy(oldPlayer);
-        }
-        replacement = tlsEcs.actorRegistry.create();
-        tlsEcs.actorRegistry.emplace<PlayerGuidComp>(replacement, kExitPlayerId);
-        tlsEcs.playerList.insert_or_assign(kExitPlayerId, replacement);
-        if (replacementSession != 0)
-        {
-            auto& snapshot = tlsEcs.actorRegistry.emplace<PlayerSessionSnapshotComp>(replacement);
-            snapshot.set_player_id(kExitPlayerId);
-            snapshot.set_gate_session_id(replacementSession);
-            SessionMap().insert_or_assign(replacementSession, kExitPlayerId);
-        }
-    }
-};
-} // namespace
 
-TEST(PlayerLifecycleEcs, DestroyPlayerPreservesReplacementRegisteredByLeaveNotification)
-{
-    ScopedPersistedPlayerCleanup cleanup;
-    tlsEcs.Clear();
-    const auto oldPlayer = tlsEcs.actorRegistry.create();
-    tlsEcs.actorRegistry.emplace<PlayerGuidComp>(oldPlayer, kExitPlayerId);
-    tlsEcs.playerList.emplace(kExitPlayerId, oldPlayer);
-    PlaceInScene(oldPlayer, kRelocateSourceScene);
-    ReplacePlayerDuringLeaveNotification observer;
-    observer.oldPlayer = oldPlayer;
-    const entt::scoped_connection connection = tlsEcs.dispatcher.sink<BeforeLeaveScene>()
-        .connect<&ReplacePlayerDuringLeaveNotification::OnLeave>(observer);
-
-    PlayerLifecycleSystem::DestroyPlayer(kExitPlayerId);
-
-    EXPECT_EQ(observer.notifications, 1u);
-    EXPECT_FALSE(tlsEcs.actorRegistry.valid(oldPlayer));
-    EXPECT_FALSE(tlsEcs.actorRegistry.any_of<SceneEntityComp>(oldPlayer));
-    ASSERT_TRUE(tlsEcs.actorRegistry.valid(observer.replacement));
-    EXPECT_FALSE(tlsEcs.actorRegistry.any_of<SceneEntityComp>(observer.replacement));
-    EXPECT_EQ(tlsEcs.GetPlayer(kExitPlayerId), observer.replacement) << "旧实体收尾不能擦除回调登记的新实体";
-}
-
-TEST(PlayerLifecycleEcs, DeposedTeardownPreservesReplacementAndItsSessionAfterLeaveNotification)
-{
-    constexpr SessionId kReplacementSession = 131499;
-    for (const bool destroyOldPlayer : {true, false})
-    {
-        SCOPED_TRACE(testing::Message() << "destroy_old_player=" << destroyOldPlayer);
-        ScopedPersistedPlayerCleanup cleanup;
-        const auto oldPlayer = MakeOnlinePlayer(kSessionAtExit);
-        tlsEcs.actorRegistry.emplace<PlayerOwnerEpochComp>(oldPlayer).epoch = 5;
-        PlaceInScene(oldPlayer, kRelocateSourceScene);
-        ReplacePlayerDuringLeaveNotification observer;
-        observer.oldPlayer = oldPlayer;
-        observer.destroyOldPlayer = destroyOldPlayer;
-        observer.replacementSession = kReplacementSession;
-        const entt::scoped_connection connection = tlsEcs.dispatcher.sink<BeforeLeaveScene>()
-            .connect<&ReplacePlayerDuringLeaveNotification::OnLeave>(observer);
-
-        // 当前epoch被CAS拒绝直接触发废黜收尾;不走旧代际重存,也不需要Redis或配置表。
-        PlayerLifecycleSystem::HandlePlayerSaveRejected(kExitPlayerId, "deposed-leave-reentry-test", "5");
-
-        EXPECT_EQ(observer.notifications, 1u);
-        EXPECT_EQ(!destroyOldPlayer, tlsEcs.actorRegistry.valid(oldPlayer));
-        ASSERT_TRUE(tlsEcs.actorRegistry.valid(observer.replacement));
-        EXPECT_NE(oldPlayer, observer.replacement);
-        EXPECT_EQ(observer.replacement, tlsEcs.GetPlayer(kExitPlayerId));
-        const auto* snapshot = tlsEcs.actorRegistry.try_get<PlayerSessionSnapshotComp>(observer.replacement);
-        ASSERT_NE(nullptr, snapshot);
-        EXPECT_EQ(kReplacementSession, snapshot->gate_session_id()) << "旧废黜链不得摘除替身的会话快照";
-        const auto mapped = SessionMap().find(kReplacementSession);
-        ASSERT_TRUE(mapped != SessionMap().end()) << "旧废黜链不得移除替身的会话映射";
-        EXPECT_EQ(kExitPlayerId, mapped->second);
-    }
-}
 
 TEST(RelocateConfirmEcs, DrainWithoutSceneManagerIsVerifiedThenKicked)
 {
@@ -4408,7 +4428,7 @@ TEST(RelocateConfirmEcs, DrainWithoutSceneManagerIsVerifiedThenKicked)
     EXPECT_EQ(entry->expectation, rc::Expectation::kAtSource);
     EXPECT_EQ(entry->sessionId, kSessionAtExit);
     EXPECT_EQ(entry->ownerEpoch, 5u);
-    EXPECT_EQ(entry->sourceSceneId, kRelocateSourceScene) << "源场景在 DetachFromScene 之前抄进意图组件";
+    EXPECT_EQ(entry->sourceSceneId, kRelocateSourceScene) << "源场景在 LeaveCurrentScene 之前抄进意图组件";
     EXPECT_TRUE(entry->markValue.empty()) << "宿主没有 Redis:改派标记没尝试写";
     EXPECT_EQ(entry->markWrite, rc::MarkWrite::kNotAttempted);
     EXPECT_FALSE(entry->earlierEnterSceneMayReply) << "逐字段显式登记:没有更早的请求在途(缺省值是保守的 true)";
@@ -4450,13 +4470,13 @@ TEST(RelocateConfirmEcs, OnlyUncorrelatedRepliesAreSwallowedWhileVerifyingANotSe
     const auto travelBefore = travel_handoff_stats::Read();
 
     // ① 带非 0 号:不被认领(落回原来的 "entity is gone" 日志),不计任何 relocate_confirm_stats。7 = ErrKafkaRoute。
-    PlayerLifecycleSystem::DispatchEnterSceneReply(MakeReply(kExitPlayerId, 0, 77));
-    PlayerLifecycleSystem::DispatchEnterSceneReply(MakeReply(kExitPlayerId, 7, 77));
+    DeliverEnterSceneReply(MakeReply(kExitPlayerId, 0, 77));
+    DeliverEnterSceneReply(MakeReply(kExitPlayerId, 7, 77));
     ExpectRelocateStats(RelocateStats(), before);
 
     // ② 号为 0(旧版 scene_manager):按 player_id 认领后忽略 —— 条目已在核实,结论由核实给。
-    PlayerLifecycleSystem::DispatchEnterSceneReply(MakeReply(kExitPlayerId, 0, 0));
-    PlayerLifecycleSystem::DispatchEnterSceneReply(MakeReply(kExitPlayerId, 7, 0));
+    DeliverEnterSceneReply(MakeReply(kExitPlayerId, 0, 0));
+    DeliverEnterSceneReply(MakeReply(kExitPlayerId, 7, 0));
     auto expected = before;
     expected.replyIgnored += 2;
     ExpectRelocateStats(RelocateStats(), expected); // ③ reply_verified、outcomes、push 全程不变
@@ -4480,11 +4500,9 @@ TEST(RelocateConfirmEcs, TransportFailureForANotSentRelocateIsNotClaimed)
     ASSERT_NO_FATAL_FAILURE(RegisterNotSentRelocate());
     const auto before = RelocateStats();
 
-    PlayerLifecycleSystem::DispatchEnterSceneTransportFailure(MakeFailedRequest(kExitPlayerId, 77),
-                                                              kTransportFailureReason);
+    DeliverEnterSceneTransportFailure(kExitPlayerId, 77, kTransportFailureReason);
     // 号为 0 的失败在分发入口就被丢弃(只能来自绕过统一出口的发送)。
-    PlayerLifecycleSystem::DispatchEnterSceneTransportFailure(MakeFailedRequest(kExitPlayerId, 0),
-                                                              kTransportFailureReason);
+    DeliverEnterSceneTransportFailure(kExitPlayerId, 0, kTransportFailureReason);
 
     ExpectRelocateStats(RelocateStats(), before); // transport_failed、reply_ignored 都不动
     const auto entry = PlayerLifecycleSystem::PeekRelocateConfirm(kExitPlayerId);
@@ -4527,7 +4545,7 @@ TEST(RelocateConfirmEcs, ReentryOnSameSessionWaitsForTheLoadThenResolves)
     // 3. 实体建出来了(会话就是票据那一条)。此刻到达的应答 —— 哪怕号为 0 —— 不得被待确认表按 player_id 吞掉:
     //    认领挂在「实体已不在」分支里,实体有效时应答照旧走普通分发(落到 kNoWaiter)。号为 0 是最强的反例。
     const auto player = MakeOnlinePlayer(kSessionAtExit);
-    PlayerLifecycleSystem::DispatchEnterSceneReply(MakeReply(kExitPlayerId, 0, 0));
+    DeliverEnterSceneReply(MakeReply(kExitPlayerId, 0, 0));
     ExpectRelocateStats(RelocateStats(), before); // reply_ignored / reply_verified 都不动
     {
         const auto entry = PlayerLifecycleSystem::PeekRelocateConfirm(kExitPlayerId);
@@ -5001,7 +5019,7 @@ TEST(DbTaskTopicGeneration, GenerationDoesNotChangeZoneRouting)
 // 随存盘的 PlayerAllData 过一跳不丢。目标节点是从共享 Redis 里的 PlayerAllData 载入玩家的,所以这里
 // 走的是「marshal 成 PlayerAllData → 整条序列化 / 解析 → 从记录里的 bag_component 还原」。
 //
-// 还原这一步用 bag_marshal::Unmarshal 而不是 PlayerAllDataMessageFieldsUnMarshal:本测试宿主不加载
+// 还原这一步用 bag_marshal::Unmarshal 而不是 PlayerAllDataMessageFieldsUnmarshal:本测试宿主不加载
 // 任何配置表,整条 unmarshal 会连带跑属性 / 宝宝的载入初始化,那不是这条用例要钉的东西
 // (整条入口的往返在 bag_test 的 PlayerFeaturePersistenceTest 里,那边加载了表)。
 // 配置号沿用本文件上方的 3001 —— 表里查不到,装备栏按「还原宽容」退回快照里的槽位。
@@ -5042,7 +5060,7 @@ TEST(CrossZoneBagMarshal, EquipInstanceDataSurvivesThePlayerAllDataHop)
         auto* gemInSocket0 = worn.mutable_equip()->add_gems();
         gemInSocket0->set_socket(0);
         gemInSocket0->set_gem_config_id(2302);
-        bags.bags[kEquipment].InsertItemForRestore(worn, 5);
+        bags.bags[kEquipment].RestoreItems({{worn, 5}});
 
         // 背包里的一件:已初始化但一条都没掷出,只有 presence。
         ItemComp spare;
@@ -5050,14 +5068,14 @@ TEST(CrossZoneBagMarshal, EquipInstanceDataSurvivesThePlayerAllDataHop)
         spare.set_config_id(3002);
         spare.set_size(1);
         spare.mutable_equip();
-        bags.bags[kInventory].InsertItemForRestore(spare, 2);
+        bags.bags[kInventory].RestoreItems({{spare, 2}});
 
         // 普通物品:没有 equip 段。
         ItemComp potion;
         potion.set_item_id(kPotionGuid);
         potion.set_config_id(1001);
         potion.set_size(7);
-        bags.bags[kInventory].InsertItemForRestore(potion, 3);
+        bags.bags[kInventory].RestoreItems({{potion, 3}});
     }
 
     PlayerAllData saved;
@@ -5164,7 +5182,6 @@ TEST(CrossZoneBagMarshal, EquipInstanceDataSurvivesThePlayerAllDataHop)
 // ============================================================================
 #include "services/scene/player/system/enter_fence.h"
 #include "proto/common/component/player_login_comp.pb.h" // PlayerEnterGameStateComp、LOGIN_*
-#include "services/scene/player/player_events.h"          // PlayerLoginEvent
 
 // 让 gtest 在断言失败时打出结论名,而不是「1-byte object <04>」。只影响失败输出。
 namespace enter_fence
@@ -5215,7 +5232,7 @@ TEST(EnterFence, DecideTableEveryCell)
         SessionId requestSession;
         uint64_t requestGeneration;
         ef::Verdict expected;
-        const char *why;
+        std::string_view why;
     };
     const Row rows[] = {
         // 不存在:任意请求放行。
@@ -5373,25 +5390,8 @@ const PlayerEnterContext *PendingEnter()
     return it == pending.end() ? nullptr : &it->second;
 }
 
-int g_playerLoginEvents = 0;
 
-void CountPlayerLoginEvent(const PlayerLoginEvent &)
-{
-    ++g_playerLoginEvents;
-}
 
-// 作用域内数 PlayerLoginEvent。dispatcher 不随 tlsEcs.Clear() 清,离开作用域(含 ASSERT 提前返回)必须断开。
-struct ScopedPlayerLoginCounter
-{
-    ScopedPlayerLoginCounter()
-    {
-        g_playerLoginEvents = 0;
-        tlsEcs.dispatcher.sink<PlayerLoginEvent>().connect<&CountPlayerLoginEvent>();
-    }
-    ~ScopedPlayerLoginCounter() { tlsEcs.dispatcher.sink<PlayerLoginEvent>().disconnect<&CountPlayerLoginEvent>(); }
-    ScopedPlayerLoginCounter(const ScopedPlayerLoginCounter &) = delete;
-    ScopedPlayerLoginCounter &operator=(const ScopedPlayerLoginCounter &) = delete;
-};
 } // namespace
 
 namespace
@@ -5441,52 +5441,7 @@ protected:
     SceneEntity target{entt::null};
 };
 
-struct RevokeSceneAccessOnLeave
-{
-    SceneEntity target{entt::null};
-    unsigned notifications{0};
-    void OnLeave(const BeforeLeaveScene&)
-    {
-        ++notifications;
-        auto* info = tlsEcs.sceneRegistry.try_get<SceneInfoComp>(target);
-        ASSERT_NE(nullptr, info);
-        info->mutable_creators()->clear();
-        (*info->mutable_creators())[kExitPlayerId + 99] = true;
-    }
-};
 
-struct TakeOverEntryDuringNotification
-{
-    enum class Change : uint8_t { kIndex, kSession, kDestroy };
-    entt::entity player{entt::null};
-    entt::entity replacement{entt::null};
-    Change change{Change::kIndex};
-    unsigned notifications{0};
-    void OnLeave(const BeforeLeaveScene& event) { Apply(event.actor); }
-    void OnLogin(const PlayerLoginEvent& event) { Apply(event.player); }
-    void Apply(entt::entity actor)
-    {
-        ASSERT_EQ(player, actor);
-        ++notifications;
-        if (change == Change::kDestroy)
-        {
-            tlsEcs.actorRegistry.destroy(actor);
-            return;
-        }
-        replacement = actor;
-        if (change == Change::kIndex)
-        {
-            replacement = tlsEcs.actorRegistry.create();
-            tlsEcs.actorRegistry.emplace<PlayerGuidComp>(replacement, kExitPlayerId);
-            tlsEcs.playerList.insert_or_assign(kExitPlayerId, replacement);
-        }
-        auto& snapshot = tlsEcs.actorRegistry.get_or_emplace<PlayerSessionSnapshotComp>(replacement);
-        snapshot.set_player_id(kExitPlayerId);
-        snapshot.set_gate_session_id(kNewerSession);
-        SessionMap().insert_or_assign(kNewerSession, kExitPlayerId);
-        // 故意不更新 loginGeneration:低层会话改绑也必须让旧流程停止。
-    }
-};
 } // namespace
 
 // 没有注册 AOI 离场业务 sink,仍必须清理旧格子和观察关系,只保留新场景的唯一绑定。
@@ -5505,26 +5460,77 @@ TEST_F(SceneEntryPermissionTest, PublicSceneSwitchesWithoutBusinessSinkAndCleans
     EXPECT_EQ(kExitPlayerId, SessionMap().at(kSessionAtExit));
 }
 
-TEST_F(SceneEntryPermissionTest, CreatorKeyAllowsEntryEvenWhenStoredFlagIsFalse)
+TEST_F(SceneEntryPermissionTest, LeaveCurrentSceneClearsBindingHexAndWatchers)
 {
-    (*tlsEcs.sceneRegistry.get<SceneInfoComp>(target).mutable_creators())[kExitPlayerId] = false;
+    const auto sessionsBefore = SessionMap();
+    const auto expectLeft = [this]
+    {
+        EXPECT_FALSE((tlsEcs.actorRegistry.any_of<SceneEntityComp, Hex>(player)));
+        const auto* interests = tlsEcs.actorRegistry.try_get<AoiListComp>(watcher);
+        ASSERT_NE(nullptr, interests);
+        EXPECT_FALSE(interests->Contains(player));
+        const auto* grids = tlsEcs.sceneRegistry.try_get<SceneGridListComp>(source);
+        ASSERT_NE(nullptr, grids);
+        for (const auto& [id, grid] : *grids) EXPECT_FALSE(grid.entities.contains(player));
+    };
+
+    PlayerSceneSystem::LeaveCurrentScene(player);
+    ASSERT_NO_FATAL_FAILURE(expectLeft());
+    const auto watcherCount = tlsEcs.actorRegistry.get<AoiListComp>(watcher).entries.size();
+    const auto gridCount = tlsEcs.sceneRegistry.get<SceneGridListComp>(source).size();
+
+    PlayerSceneSystem::LeaveCurrentScene(player);
+    ASSERT_NO_FATAL_FAILURE(expectLeft());
+    EXPECT_EQ(watcherCount, tlsEcs.actorRegistry.get<AoiListComp>(watcher).entries.size());
+    EXPECT_EQ(gridCount, tlsEcs.sceneRegistry.get<SceneGridListComp>(source).size());
+    EXPECT_TRUE(SessionMap() == sessionsBefore);
+    EXPECT_EQ(player, tlsEcs.GetPlayer(kExitPlayerId));
+}
+
+TEST_F(SceneEntryPermissionTest, NonCreatorJoinsMirrorById)
+{
+    auto& info = tlsEcs.sceneRegistry.get<SceneInfoComp>(target);
+    info.set_mirror_config_id(1);
+    (*info.mutable_creators())[kExitPlayerId + 99] = true;
     EXPECT_EQ(kSuccess, PlayerSceneSystem::CheckEnterScene(player, target));
     ASSERT_TRUE(PlayerSceneSystem::HandleEnterScene(player, target));
     EXPECT_EQ(target, tlsEcs.actorRegistry.get<SceneEntityComp>(player).sceneEntity);
 }
 
-TEST_F(SceneEntryPermissionTest, RestrictedSceneRejectsUnknownMissingAndZeroGuidWithoutMutation)
+TEST_F(SceneEntryPermissionTest, EnterGameNodeAdmitsTeammateIntoLeaderMirror)
 {
-    (*tlsEcs.sceneRegistry.get<SceneInfoComp>(target).mutable_creators())[kExitPlayerId] = false;
+    auto& info = tlsEcs.sceneRegistry.get<SceneInfoComp>(target);
+    info.set_mirror_config_id(1);
+    (*info.mutable_creators())[kExitPlayerId + 99] = true;
+    PlayerEnterContext context;
+    context.enterInfo.set_scene_id(kRelocateSourceScene + 1);
+    context.enterInfo.set_session_id(kSessionAtExit);
+    context.enterInfo.set_enter_gs_type(LOGIN_RECONNECT);
+    tlsEcs.actorRegistry.emplace<PlayerMirrorCreateInFlightComp>(player).token = 101;
+
+    EXPECT_EQ(PlayerLifecycleSystem::EnterGameNodeOutcome::kEnteredExisting,
+              PlayerLifecycleSystem::HandleEnterGameNode(kExitPlayerId, context));
+    EXPECT_FALSE(tlsEcs.actorRegistry.any_of<PlayerMirrorCreateInFlightComp>(player))
+        << "权威落点成功永久取代旧镜像意图";
+
+    ASSERT_TRUE(tlsEcs.actorRegistry.valid(player));
+    ASSERT_TRUE(tlsEcs.actorRegistry.all_of<SceneEntityComp>(player));
+    EXPECT_EQ(target, tlsEcs.actorRegistry.get<SceneEntityComp>(player).sceneEntity);
+    ASSERT_TRUE(SessionMap().contains(kSessionAtExit));
+    EXPECT_EQ(kExitPlayerId, SessionMap().at(kSessionAtExit));
+}
+
+TEST_F(SceneEntryPermissionTest, MissingAndZeroGuidRejectedWithoutMutation)
+{
     const auto sessionsBefore = SessionMap();
     const auto snapshotBefore = tlsEcs.actorRegistry.get<PlayerSessionSnapshotComp>(player).SerializeAsString();
-    for (const int identity : {0, 1, 2})
+    for (const bool hasZeroGuid : {false, true})
     {
-        SCOPED_TRACE(identity);
+        SCOPED_TRACE(hasZeroGuid);
         tlsEcs.actorRegistry.remove<PlayerGuidComp>(player);
-        if (identity != 1)
-            tlsEcs.actorRegistry.emplace<PlayerGuidComp>(player, identity == 0 ? kExitPlayerId + 99 : Guid{0});
-        EXPECT_EQ(kCheckEnterSceneCreator, PlayerSceneSystem::CheckEnterScene(player, target));
+        if (hasZeroGuid)
+            tlsEcs.actorRegistry.emplace<PlayerGuidComp>(player, Guid{0});
+        EXPECT_EQ(kInvalidParameter, PlayerSceneSystem::CheckEnterScene(player, target));
         EXPECT_FALSE(PlayerSceneSystem::HandleEnterScene(player, target));
         ASSERT_NO_FATAL_FAILURE(ExpectStillInSource());
         EXPECT_TRUE(SessionMap() == sessionsBefore);
@@ -5534,13 +5540,13 @@ TEST_F(SceneEntryPermissionTest, RestrictedSceneRejectsUnknownMissingAndZeroGuid
 
 TEST_F(SceneEntryPermissionTest, LifecycleRejectsBeforeSessionOwnershipAndExitSideEffects)
 {
-    (*tlsEcs.sceneRegistry.get<SceneInfoComp>(target).mutable_creators())[kExitPlayerId + 99] = true;
     tlsEcs.actorRegistry.emplace<PlayerHomeZoneComp>(player).homeZoneId = 3;
     tlsEcs.actorRegistry.emplace<PlayerOwnerEpochComp>(player).epoch = 5;
     tlsEcs.actorRegistry.emplace<UnregisterPlayer>(player);
     tlsEcs.actorRegistry.emplace<PlayerExitIntentComp>(player).sessionAtExit = kSessionAtExit;
+    tlsEcs.actorRegistry.emplace<PlayerMirrorCreateInFlightComp>(player).token = 102;
     PlayerEnterContext context;
-    context.enterInfo.set_scene_id(kRelocateSourceScene + 1);
+    context.enterInfo.set_scene_id(kRelocateSourceScene + 2);
     context.enterInfo.set_session_id(kNewerSession);
     context.enterInfo.set_enter_gs_type(LOGIN_RECONNECT);
     context.loginGeneration = 10;
@@ -5549,6 +5555,8 @@ TEST_F(SceneEntryPermissionTest, LifecycleRejectsBeforeSessionOwnershipAndExitSi
     const auto sessionsBefore = SessionMap();
     const auto snapshotBefore = tlsEcs.actorRegistry.get<PlayerSessionSnapshotComp>(player).SerializeAsString();
 
+    EXPECT_EQ(kEnterSceneNotFound, PlayerSceneSystem::CheckEnterScene(
+                  player, PlayerSceneSystem::FindSceneById(context.enterInfo.scene_id())));
     EXPECT_FALSE(PlayerLifecycleSystem::EnterScene(player, context));
     EXPECT_EQ(PlayerLifecycleSystem::EnterGameNodeOutcome::kRejected,
               PlayerLifecycleSystem::HandleEnterGameNode(kExitPlayerId, context));
@@ -5560,136 +5568,133 @@ TEST_F(SceneEntryPermissionTest, LifecycleRejectsBeforeSessionOwnershipAndExitSi
     EXPECT_EQ(5u, tlsEcs.actorRegistry.get<PlayerOwnerEpochComp>(player).epoch);
     EXPECT_TRUE((tlsEcs.actorRegistry.all_of<UnregisterPlayer, PlayerExitIntentComp>(player)));
     EXPECT_FALSE((tlsEcs.actorRegistry.any_of<PlayerLoginIdentityComp, PlayerEnterGameStateComp>(player)));
+    EXPECT_EQ(tlsEcs.actorRegistry.get<PlayerMirrorCreateInFlightComp>(player).token, 102u)
+        << "权威落点预检被拒,不能提前取消旧镜像";
 }
 
-TEST_F(SceneEntryPermissionTest, AccessRevokedByLeaveNotificationIsRecheckedBeforeBinding)
+namespace
 {
-    (*tlsEcs.sceneRegistry.get<SceneInfoComp>(target).mutable_creators())[kExitPlayerId] = false;
-    RevokeSceneAccessOnLeave observer;
-    observer.target = target;
-    const entt::scoped_connection connection = tlsEcs.dispatcher.sink<BeforeLeaveScene>()
-        .connect<&RevokeSceneAccessOnLeave::OnLeave>(observer);
-    EXPECT_FALSE(PlayerSceneSystem::HandleEnterScene(player, target));
-    EXPECT_EQ(1u, observer.notifications);
-    EXPECT_FALSE(tlsEcs.actorRegistry.all_of<SceneEntityComp>(player));
-    EXPECT_EQ(kCheckEnterSceneCreator, PlayerSceneSystem::CheckEnterScene(player, target));
+class SceneLifecycleTest : public testing::Test
+{
+protected:
+    struct OwnedSceneCleanup
+    {
+        std::vector<SceneEntity> scenes;
+        ~OwnedSceneCleanup()
+        {
+            // StartDisabled 不清单元集合;只归还本例创建过的 key,断言提前返回也不会污染后例。
+            for (const auto scene : scenes)
+            {
+                agones::GameServerLifecycle::Instance().OnUnitDestroyed(entt::to_integral(scene));
+                if (tlsEcs.sceneRegistry.valid(scene)) tlsEcs.sceneRegistry.destroy(scene);
+            }
+        }
+    };
+
+    void SetUp() override
+    {
+        tlsEcs.Clear();
+        PlayerLifecycleSystem::ReconcileRelocateOnReentry(kExitPlayerId, 0);
+        auto& lifecycle = agones::GameServerLifecycle::Instance();
+        lifecycle.StartDisabled();
+        unitsBefore = lifecycle.UnitCount();
+    }
+    void TearDown() override
+    {
+        PlayerLifecycleSystem::ReconcileRelocateOnReentry(kExitPlayerId, 0);
+    }
+    CreateSceneRequest Request() const
+    {
+        CreateSceneRequest request;
+        request.set_config_id(1);
+        request.set_scene_id(4242);
+        request.set_mirror_config_id(2);
+        request.set_dungeon_config_id(3);
+        request.add_creator_ids(kExitPlayerId);
+        request.add_creator_ids(kExitPlayerId + 1);
+        return request;
+    }
+    void CreateAtEntry(const CreateSceneRequest& request, CreateSceneResponse& response)
+    {
+        // 组合正式入口的按号幂等契约,场景域只负责未命中后的真实创建。
+        if (const auto existing = PlayerSceneSystem::FindSceneById(request.scene_id()); existing != entt::null)
+        {
+            response.mutable_scene_info()->CopyFrom(tlsEcs.sceneRegistry.get<SceneInfoComp>(existing));
+            return;
+        }
+        response.mutable_scene_info()->CopyFrom(SceneLifecycle::CreateScene(request));
+        ownedScenes.scenes.push_back(PlayerSceneSystem::FindSceneById(request.scene_id()));
+    }
+
+    ScopedPersistedPlayerCleanup ecsCleanup;
+    OwnedSceneCleanup ownedScenes;
+    int unitsBefore{0};
+};
+} // namespace
+
+TEST_F(SceneLifecycleTest, RepeatedSceneIdReturnsSameInfoAndCountsOneUnitWithoutEventSinks)
+{
+    auto request = Request();
+    CreateSceneResponse first;
+    CreateAtEntry(request, first);
+    ASSERT_TRUE(first.has_scene_info());
+    EXPECT_EQ(4242u, first.scene_info().scene_id());
+    EXPECT_EQ(1u, first.scene_info().scene_config_id());
+    EXPECT_EQ(2u, first.scene_info().mirror_config_id());
+    EXPECT_EQ(3u, first.scene_info().dungeon_config_id());
+    EXPECT_EQ(2, first.scene_info().creators_size());
+    EXPECT_TRUE(first.scene_info().creators().contains(kExitPlayerId));
+    EXPECT_TRUE(first.scene_info().creators().contains(kExitPlayerId + 1));
+
+    request.set_config_id(9);
+    request.clear_creator_ids();
+    CreateSceneResponse second;
+    CreateAtEntry(request, second);
+
+    EXPECT_TRUE(google::protobuf::util::MessageDifferencer::Equals(first, second));
+    EXPECT_EQ(1u, tlsEcs.sceneRegistry.view<SceneInfoComp>().size());
+    EXPECT_EQ(unitsBefore + 1, agones::GameServerLifecycle::Instance().UnitCount());
 }
 
-TEST_F(SceneEntryPermissionTest, LeaveNotificationIndexTakeoverKeepsOldActorFromBindingTarget)
+TEST_F(SceneLifecycleTest, ResidentDrainKeepsSceneAndUnitUntilResidentLeaves)
 {
-    TakeOverEntryDuringNotification observer;
-    observer.player = player;
-    const entt::scoped_connection connection = tlsEcs.dispatcher.sink<BeforeLeaveScene>()
-        .connect<&TakeOverEntryDuringNotification::OnLeave>(observer);
-    PlayerEnterContext context;
-    context.enterInfo.set_scene_id(kRelocateSourceScene + 1);
-    context.enterInfo.set_session_id(kSessionAtExit);
-    context.enterInfo.set_enter_gs_type(LOGIN_RECONNECT);
+    const auto player = MakeExitingPlayer(kSessionAtExit, kSessionAtExit);
+    tlsEcs.actorRegistry.get<PlayerExitIntentComp>(player).cause = ExitCause::kSceneDrain;
+    CreateSceneResponse response;
+    CreateAtEntry(Request(), response);
+    const auto scene = PlayerSceneSystem::FindSceneById(4242);
+    ASSERT_NE(SceneEntity{entt::null}, scene);
+    tlsEcs.actorRegistry.emplace<SceneEntityComp>(player).sceneEntity = scene;
 
-    EXPECT_FALSE(PlayerLifecycleSystem::EnterScene(player, context));
+    EXPECT_EQ(1u, SceneLifecycle::DestroyScene(scene));
 
-    EXPECT_EQ(1u, observer.notifications);
+    EXPECT_TRUE(tlsEcs.sceneRegistry.valid(scene));
     ASSERT_TRUE(tlsEcs.actorRegistry.valid(player));
-    EXPECT_FALSE(tlsEcs.actorRegistry.all_of<SceneEntityComp>(player));
-    EXPECT_FALSE(tlsEcs.actorRegistry.all_of<PlayerEnterGameStateComp>(player));
-    EXPECT_EQ(observer.replacement, tlsEcs.GetPlayer(kExitPlayerId));
-    EXPECT_EQ(kExitPlayerId, SessionMap().at(kNewerSession));
+    EXPECT_EQ(scene, tlsEcs.actorRegistry.get<SceneEntityComp>(player).sceneEntity);
+    EXPECT_EQ(scene, PlayerSceneSystem::FindSceneById(4242));
+    EXPECT_EQ(unitsBefore + 1, agones::GameServerLifecycle::Instance().UnitCount());
 }
 
-TEST_F(SceneEntryPermissionTest, LeaveNotificationSameActorSessionTakeoverStopsOldEntry)
+TEST_F(SceneLifecycleTest, EmptySceneDestroyRemovesLookupAndRestoresUnitCount)
 {
-    TakeOverEntryDuringNotification observer;
-    observer.player = player;
-    observer.change = TakeOverEntryDuringNotification::Change::kSession;
-    const entt::scoped_connection connection = tlsEcs.dispatcher.sink<BeforeLeaveScene>()
-        .connect<&TakeOverEntryDuringNotification::OnLeave>(observer);
-    PlayerEnterContext context;
-    context.enterInfo.set_scene_id(kRelocateSourceScene + 1);
-    context.enterInfo.set_session_id(kSessionAtExit);
-    context.enterInfo.set_enter_gs_type(LOGIN_RECONNECT);
+    CreateSceneResponse response;
+    CreateAtEntry(Request(), response);
+    const auto scene = PlayerSceneSystem::FindSceneById(4242);
+    ASSERT_NE(SceneEntity{entt::null}, scene);
+    EXPECT_EQ(unitsBefore + 1, agones::GameServerLifecycle::Instance().UnitCount());
 
-    EXPECT_FALSE(PlayerLifecycleSystem::EnterScene(player, context));
+    EXPECT_EQ(0u, SceneLifecycle::DestroyScene(scene));
 
-    EXPECT_EQ(1u, observer.notifications);
-    ASSERT_TRUE(tlsEcs.actorRegistry.valid(player));
-    EXPECT_EQ(player, tlsEcs.GetPlayer(kExitPlayerId));
-    EXPECT_FALSE(tlsEcs.actorRegistry.all_of<SceneEntityComp>(player));
-    EXPECT_FALSE(tlsEcs.actorRegistry.all_of<PlayerEnterGameStateComp>(player));
-    EXPECT_EQ(kNewerSession, tlsEcs.actorRegistry.get<PlayerSessionSnapshotComp>(player).gate_session_id());
-    EXPECT_EQ(kExitPlayerId, SessionMap().at(kNewerSession));
+    EXPECT_FALSE(tlsEcs.sceneRegistry.valid(scene));
+    EXPECT_EQ(SceneEntity{entt::null}, PlayerSceneSystem::FindSceneById(4242));
+    EXPECT_EQ(unitsBefore, agones::GameServerLifecycle::Instance().UnitCount());
 }
 
-TEST_F(SceneEntryPermissionTest, LoginNotificationDestructionDoesNotReportEnteredExisting)
-{
-    TakeOverEntryDuringNotification observer;
-    observer.player = player;
-    observer.change = TakeOverEntryDuringNotification::Change::kDestroy;
-    const entt::scoped_connection connection = tlsEcs.dispatcher.sink<PlayerLoginEvent>()
-        .connect<&TakeOverEntryDuringNotification::OnLogin>(observer);
-    PlayerEnterContext context;
-    context.enterInfo.set_scene_id(kRelocateSourceScene + 1);
-    context.enterInfo.set_session_id(kSessionAtExit);
-    context.enterInfo.set_enter_gs_type(LOGIN_RECONNECT);
 
-    EXPECT_EQ(PlayerLifecycleSystem::EnterGameNodeOutcome::kRejected,
-              PlayerLifecycleSystem::HandleEnterGameNode(kExitPlayerId, context));
-    EXPECT_EQ(1u, observer.notifications);
-    EXPECT_FALSE(tlsEcs.actorRegistry.valid(player));
-}
 
-TEST_F(SceneEntryPermissionTest, LoginNotificationSessionTakeoverPreservesNewIdentity)
-{
-    TakeOverEntryDuringNotification observer;
-    observer.player = player;
-    observer.change = TakeOverEntryDuringNotification::Change::kSession;
-    const entt::scoped_connection connection = tlsEcs.dispatcher.sink<PlayerLoginEvent>()
-        .connect<&TakeOverEntryDuringNotification::OnLogin>(observer);
-    PlayerEnterContext context;
-    context.enterInfo.set_scene_id(kRelocateSourceScene + 1);
-    context.enterInfo.set_session_id(kSessionAtExit);
-    context.enterInfo.set_enter_gs_type(LOGIN_RECONNECT);
-    bool stillOwned = true;
 
-    EXPECT_FALSE(PlayerLifecycleSystem::EnterScene(player, context, &stillOwned));
 
-    EXPECT_FALSE(stillOwned);
-    EXPECT_EQ(1u, observer.notifications);
-    ASSERT_TRUE(tlsEcs.actorRegistry.valid(player));
-    EXPECT_EQ(player, tlsEcs.GetPlayer(kExitPlayerId));
-    EXPECT_EQ(kNewerSession, tlsEcs.actorRegistry.get<PlayerSessionSnapshotComp>(player).gate_session_id());
-    EXPECT_EQ(kExitPlayerId, SessionMap().at(kNewerSession));
-}
 
-// 内层换场景在通知后停止还不够,外层入场也必须停止,不得向陈旧句柄写登录态或触发登录结算。
-TEST(PlayerLifecycleEcs, EnterSceneStopsAfterLeaveNotificationDestroysPlayer)
-{
-    ScopedPersistedPlayerCleanup cleanup;
-    const auto oldPlayer = MakeOnlinePlayer(kSessionAtExit);
-    PlaceInScene(oldPlayer, kRelocateSourceScene);
-    const auto targetScene = tlsEcs.sceneRegistry.create();
-    constexpr uint64_t targetSceneId = kRelocateSourceScene + 1;
-    tlsEcs.sceneRegistry.emplace<SceneInfoComp>(targetScene).set_scene_id(targetSceneId);
-    ReplacePlayerDuringLeaveNotification observer;
-    observer.oldPlayer = oldPlayer;
-    const ScopedPlayerLoginCounter loginCounter;
-    const entt::scoped_connection connection = tlsEcs.dispatcher.sink<BeforeLeaveScene>()
-        .connect<&ReplacePlayerDuringLeaveNotification::OnLeave>(observer);
-    PlayerEnterContext context;
-    context.enterInfo.set_session_id(kSessionAtExit);
-    context.enterInfo.set_scene_id(targetSceneId);
-    context.enterInfo.set_enter_gs_type(LOGIN_RECONNECT);
-
-    EXPECT_FALSE(PlayerLifecycleSystem::EnterScene(oldPlayer, context));
-
-    EXPECT_EQ(observer.notifications, 1u);
-    EXPECT_FALSE(tlsEcs.actorRegistry.valid(oldPlayer));
-    EXPECT_FALSE(tlsEcs.actorRegistry.any_of<PlayerEnterGameStateComp>(oldPlayer));
-    ASSERT_TRUE(tlsEcs.actorRegistry.valid(observer.replacement));
-    EXPECT_FALSE(tlsEcs.actorRegistry.any_of<PlayerEnterGameStateComp>(observer.replacement));
-    EXPECT_FALSE(tlsEcs.actorRegistry.any_of<SceneEntityComp>(observer.replacement));
-    EXPECT_EQ(tlsEcs.GetPlayer(kExitPlayerId), observer.replacement);
-    EXPECT_EQ(g_playerLoginEvents, 0) << "通知中已销毁玩家,外层入场不能继续结算登录";
-}
 
 TEST(EnterFenceEcs, StaleEnterAfterTakeoverIsRejected)
 {
@@ -5769,7 +5774,7 @@ TEST(EnterFenceEcs, LoadCallbackBindsNewestAdmitted)
         inheritClear.phase = erm::InheritClearPhase::kConfirmed;
     }
 
-    PlayerLifecycleSystem::HandlePlayerAsyncLoaded(kExitPlayerId, PlayerAllData{});
+    PlayerLifecycleSystem::HandlePlayerAsyncLoaded(kExitPlayerId, IdentifiedPlayerLoadData(kExitPlayerId));
 
     EXPECT_EQ(PendingEnter(), nullptr) << "待入场上下文已消费";
     ASSERT_EQ(tlsEcs.playerList.count(kExitPlayerId), 1u) << "建出了实体";
@@ -5824,11 +5829,10 @@ TEST(EnterFenceEcs, NewerSessionTakesOver)
 
 TEST(EnterFenceEcs, DuplicateEnterIsIdempotent)
 {
-    // gate 补发同一条路由(同一会话、同一代次):两次都放行,登录事件只触发一次,绑定不变。
+    // gate 补发同一条路由(同一会话、同一代次):两次都放行,登录态与绑定不变。
     ASSERT_NO_FATAL_FAILURE(ResetFenceHost());
     const auto player = MakeFencedPlayer(kFenceSessionB, kGenB);
     const auto scene = PlaceInScene(player, kFenceScene);
-    const ScopedPlayerLoginCounter loginCounter;
     const uint64_t sameBefore = FenceCount(ef::Verdict::kAdmitSameSession);
 
     EXPECT_EQ(EnterGameNode(FenceEnter(kFenceSessionB, kGenB, LOGIN_REPLACE, kFenceScene)),
@@ -5836,7 +5840,6 @@ TEST(EnterFenceEcs, DuplicateEnterIsIdempotent)
     EXPECT_EQ(EnterGameNode(FenceEnter(kFenceSessionB, kGenB, LOGIN_REPLACE, kFenceScene)),
               PlayerLifecycleSystem::EnterGameNodeOutcome::kEnteredExisting);
 
-    EXPECT_EQ(g_playerLoginEvents, 1) << "重复投递不得让业务系统结算两次登录";
     EXPECT_EQ(FenceCount(ef::Verdict::kAdmitSameSession), sameBefore + 2);
     ASSERT_NO_FATAL_FAILURE(ExpectBoundTo(player, kFenceSessionB, kGenB));
     const auto *enterState = tlsEcs.actorRegistry.try_get<PlayerEnterGameStateComp>(player);
@@ -5867,7 +5870,7 @@ TEST(EnterFenceEcs, PendingSameSessionKeepsLoginType)
     const PlayerEnterContext *pending = PendingEnter();
     ASSERT_NE(pending, nullptr);
     EXPECT_EQ(pending->enterInfo.enter_gs_type(), static_cast<uint32_t>(LOGIN_FIRST))
-        << "新值为 0 时保留旧的登录类型,否则载入后不置登录态、不触发 PlayerLoginEvent";
+        << "新值为 0 时保留旧的登录类型,否则载入后不置登录态";
     EXPECT_EQ(pending->enterInfo.session_id(), kFenceSessionA);
     EXPECT_EQ(pending->enterInfo.scene_id(), kFenceScene) << "scene_id 取新值";
     EXPECT_EQ(pending->homeZoneId, 2u) << "home_zone 取新值";
@@ -6127,6 +6130,428 @@ TEST(EnterFenceEcs, StaleEnterDoesNotSupersedeRelocateEntry)
 }
 
 // ============================================================================
+// 17. MirrorCreateInFlight —— 镜像 CreateScene 在途标记(PlayerMirrorCreateInFlightComp,
+//     docs/design/client-request-ordering.md §7.2 第 7 条)。
+//     缺陷形状:EnterSceneC2S 的镜像分支发出 CreateScene 后不登记任何在途记录,IsSceneChangeBusy 看不见它,
+//     建镜像这一个往返里客户端换图 / 跨 zone 传送 / 队伍跟随都被放行,随后镜像的自动进场再把玩家搬一次。
+//     另一半:CreateScene 的业务失败应答不回显 creator_ids,旧的全局处理器找不到创建者,客户端收不到任何提示。
+//     这里直接驱动 RequestEnterMirrorScene 的闸与 HandleMirrorCreateDone(每次调用回调的落点),不发真实 RPC。
+// ============================================================================
+#include "core/network/grpc_call_types.h"                    // GrpcCallOutcome
+#include "player/system/player_tip.h"                     // 校准迟到完成不得推提示的日志观察器
+#include "player/system/db_task_dispatch_system.h"          // 复用账本测试钩子,让真实退出等回执时保留实体
+#include "proto/common/component/battle_comp.pb.h"       // InBattleComp
+
+namespace
+{
+// 与 RequestEnterMirrorScene 登记的形状一致:令牌非 0,发送时刻 = 现在。
+void AttachMirrorCreate(entt::entity player, uint64_t token)
+{
+    auto& inFlight = tlsEcs.actorRegistry.emplace<PlayerMirrorCreateInFlightComp>(player);
+    inFlight.token = token;
+    inFlight.sentAtMs = TimeSystem::NowMillisecondsUTC();
+    inFlight.mirrorConfigId = 3;
+    inFlight.sourceSceneId = 1001;
+}
+
+GrpcCallOutcome OkOutcome()
+{
+    return GrpcCallOutcome{};
+}
+
+GrpcCallOutcome DeadlineExceededOutcome()
+{
+    GrpcCallOutcome outcome;
+    outcome.code = 4; // grpc::StatusCode::DEADLINE_EXCEEDED
+    outcome.message = "Deadline Exceeded";
+    return outcome;
+}
+
+::scene_manager::CreateSceneResponse MakeCreateReply(uint32_t errorCode, uint64_t sceneId)
+{
+    ::scene_manager::CreateSceneResponse reply;
+    reply.set_error_code(errorCode);
+    reply.set_scene_id(sceneId);
+    return reply;
+}
+
+bool HasMirrorCreate(entt::entity player)
+{
+    return tlsEcs.actorRegistry.any_of<PlayerMirrorCreateInFlightComp>(player);
+}
+
+// 此宿主没有 gate:推一次 tip 会在发送边界留下 Gate session not found 的 ERROR。
+// 沿用 bag_test 的 PanelPushProbe 做法,每次先校准再清零,避免把没推与观察器失效混淆。
+int gMirrorTipPushTraces = 0;
+
+void CountMirrorTipPushTrace(const char* msg, int len)
+{
+    if (std::string_view(msg, static_cast<std::size_t>(len)).find("Gate session not found for player with session ID") !=
+        std::string_view::npos)
+    {
+        ++gMirrorTipPushTraces;
+    }
+    WriteLogToStdout(msg, len);
+}
+
+class MirrorTipPushProbe
+{
+public:
+    MirrorTipPushProbe()
+    {
+        gMirrorTipPushTraces = 0;
+        muduo::Logger::setOutput(CountMirrorTipPushTrace);
+    }
+    ~MirrorTipPushProbe() { muduo::Logger::setOutput(WriteLogToStdout); }
+    MirrorTipPushProbe(const MirrorTipPushProbe&) = delete;
+    MirrorTipPushProbe& operator=(const MirrorTipPushProbe&) = delete;
+
+    int Count() const { return gMirrorTipPushTraces; }
+    void Reset() { gMirrorTipPushTraces = 0; }
+};
+
+void CheckLateMirrorCompletion(const GrpcCallOutcome& outcome, const ::scene_manager::CreateSceneResponse* reply)
+{
+    // 两种失效时钟 × 后来的普通换图仍在途/已经结束,分别校验同一过期完成。
+    for (const bool clockWentBack : {false, true})
+    {
+        for (const bool newerChangeInFlight : {false, true})
+        {
+            SCOPED_TRACE(::testing::Message() << "clock_went_back=" << clockWentBack
+                                             << " newer_change_in_flight=" << newerChangeInFlight);
+            const auto player = MakeOnlinePlayer(kSessionAtExit);
+            AttachMirrorCreate(player, /*token=*/71);
+            const uint64_t nowMs = TimeSystem::NowMillisecondsUTC();
+            const uint64_t deadlineMs =
+                static_cast<uint64_t>(grpc_call_deadline::Get(eNodeType::SceneManagerNodeService).count());
+            tlsEcs.actorRegistry.get<PlayerMirrorCreateInFlightComp>(player).sentAtMs =
+                clockWentBack ? nowMs + 60000 : nowMs - deadlineMs - 2000;
+            ASSERT_FALSE(PlayerLifecycleSystem::IsSceneChangeBusy(player)) << "失效镜像不得挡下一次普通换图";
+
+            constexpr uint64_t newerCorrelationId = 92;
+            constexpr uint64_t newerSceneId = 9002;
+            AttachSceneChange(player, newerSceneId, /*playerRequested=*/true, newerCorrelationId);
+            const auto newerChange = tlsEcs.actorRegistry.get<PlayerSceneChangeInFlightComp>(player);
+            if (!newerChangeInFlight)
+            {
+                tlsEcs.actorRegistry.remove<PlayerSceneChangeInFlightComp>(player);
+            }
+
+            MirrorTipPushProbe tipPush;
+            PlayerTipSystem::SendToPlayer(player, kEnterSceneFailed, {});
+            ASSERT_EQ(tipPush.Count(), 1) << "校准:宿主能观察到一次提示的发送尝试";
+            tipPush.Reset();
+
+            PlayerSceneSystem::HandleMirrorCreateDone(kExitPlayerId, 71, outcome, reply);
+
+            EXPECT_FALSE(HasMirrorCreate(player)) << "匹配的旧令牌即使失效也须摘掉";
+            EXPECT_EQ(tipPush.Count(), 0) << "旧成功/失败均不得给后来的换图补推提示";
+            const auto* pending = tlsEcs.actorRegistry.try_get<PlayerSceneChangeInFlightComp>(player);
+            if (newerChangeInFlight)
+            {
+                ASSERT_NE(pending, nullptr);
+                EXPECT_EQ(pending->correlationId, newerChange.correlationId);
+                EXPECT_EQ(pending->sceneId, newerChange.sceneId);
+                EXPECT_EQ(pending->sentAtMs, newerChange.sentAtMs);
+                EXPECT_EQ(pending->playerRequested, newerChange.playerRequested);
+            }
+            else
+            {
+                EXPECT_EQ(pending, nullptr) << "后来的换图已结束,旧镜像成功也不得新建自动进场槽";
+            }
+        }
+    }
+}
+
+void CheckMirrorCompletionAfterClockRecovery(const GrpcCallOutcome& outcome,
+                                             const ::scene_manager::CreateSceneResponse* reply)
+{
+    for (const bool newerChangeInFlight : {false, true})
+    {
+        SCOPED_TRACE(newerChangeInFlight);
+        const ScopedFakeSceneManagerNode sceneManager; // 提供 EventLoop,析构时排空本地失败回调。
+        const auto player = MakeOnlinePlayer(kSessionAtExit);
+        AttachMirrorCreate(player, /*token=*/81);
+        auto oldMirror = tlsEcs.actorRegistry.get<PlayerMirrorCreateInFlightComp>(player);
+        tlsEcs.actorRegistry.get<PlayerMirrorCreateInFlightComp>(player).sentAtMs =
+            TimeSystem::NowMillisecondsUTC() + 60000;
+        ASSERT_FALSE(PlayerLifecycleSystem::IsSceneChangeBusy(player)) << "回拨放行下一次普通换图";
+
+        // 真实发送入口,但不给目标实体挂通道:只排队一个异步本地失败,不会发真实 RPC。
+        auto& smRegistry = tlsNodeContextManager.GetRegistry(eNodeType::SceneManagerNodeService);
+        const auto emptySceneManager = smRegistry.create();
+        ::scene_manager::EnterSceneRequest request;
+        request.set_player_id(kExitPlayerId);
+        request.set_session_id(kSessionAtExit);
+        request.set_scene_id(9002);
+        const uint64_t correlationId =
+            PlayerLifecycleSystem::RequestSceneChange(player, emptySceneManager, request);
+        smRegistry.destroy(emptySceneManager); // 回调只捕获身份值,不借用此实体。
+        ASSERT_FALSE(HasMirrorCreate(player)) << "普通换图提交必须永久撤销旧镜像资格";
+        const auto newerChange = tlsEcs.actorRegistry.get<PlayerSceneChangeInFlightComp>(player);
+        ASSERT_EQ(newerChange.correlationId, correlationId);
+        ASSERT_NE(correlationId, 0u);
+        if (!newerChangeInFlight)
+        {
+            tlsEcs.actorRegistry.remove<PlayerSceneChangeInFlightComp>(player);
+        }
+
+        // 只恢复局部旧请求的时间,不把被取消的组件重新挂回实体。
+        oldMirror.sentAtMs = TimeSystem::NowMillisecondsUTC();
+        ASSERT_TRUE(PlayerLifecycleSystem::IsSceneChangeRequestWithinTtl(oldMirror.sentAtMs))
+            << "墙钟恢复后旧时间又落在 TTL 内,资格仍必须已经永久取消";
+        MirrorTipPushProbe tipPush;
+        PlayerTipSystem::SendToPlayer(player, kEnterSceneFailed, {});
+        ASSERT_EQ(tipPush.Count(), 1);
+        tipPush.Reset();
+
+        PlayerSceneSystem::HandleMirrorCreateDone(kExitPlayerId, oldMirror.token, outcome, reply);
+
+        EXPECT_FALSE(HasMirrorCreate(player));
+        EXPECT_EQ(tipPush.Count(), 0);
+        const auto* pending = tlsEcs.actorRegistry.try_get<PlayerSceneChangeInFlightComp>(player);
+        if (newerChangeInFlight)
+        {
+            ASSERT_NE(pending, nullptr);
+            EXPECT_EQ(pending->correlationId, correlationId);
+            EXPECT_EQ(pending->sceneId, newerChange.sceneId);
+            EXPECT_EQ(pending->sentAtMs, newerChange.sentAtMs);
+        }
+        else
+        {
+            EXPECT_EQ(pending, nullptr) << "新换图结束后旧镜像也不得重新自动进场";
+        }
+    }
+}
+} // namespace
+
+TEST(MirrorCreateInFlightEcs, BlocksSceneChangesUntilTtl)
+{
+    const auto player = MakeOnlinePlayer(kSessionAtExit);
+    EXPECT_FALSE(PlayerLifecycleSystem::IsSceneChangeBusy(player));
+
+    AttachMirrorCreate(player, /*token=*/7);
+    EXPECT_TRUE(PlayerLifecycleSystem::IsSceneChangeBusy(player)) << "建镜像在途:别的换图 / 传送 / 跟随都要被挡";
+
+    // TTL 与普通换图同一取值:deadline 刚到时完成回调可能还没到,槽位必须还在;TTL 只兜"完成通知永远不来"。
+    const uint64_t deadlineMs =
+        static_cast<uint64_t>(grpc_call_deadline::Get(eNodeType::SceneManagerNodeService).count());
+    auto& inFlight = tlsEcs.actorRegistry.get<PlayerMirrorCreateInFlightComp>(player);
+    const uint64_t nowMs = TimeSystem::NowMillisecondsUTC();
+    inFlight.sentAtMs = nowMs - deadlineMs;
+    EXPECT_TRUE(PlayerLifecycleSystem::IsSceneChangeBusy(player));
+    inFlight.sentAtMs = nowMs - deadlineMs - 2000;
+    EXPECT_FALSE(PlayerLifecycleSystem::IsSceneChangeBusy(player)) << "过了 deadline + 余量放下一条请求";
+}
+
+TEST(MirrorCreateInFlightEcs, ZoneTravelIsRefusedWhileMirrorCreateIsInFlight)
+{
+    // 修复前这里会越过闸进 StartTravelHandoff(宿主没有 scene_manager,回 kZoneTravelTargetBusy)。
+    entt::entity player{entt::null};
+    ASSERT_TRUE(MakeReplyTestPlayer(player));
+    AttachMirrorCreate(player, /*token=*/51);
+
+    EXPECT_EQ(PlayerLifecycleSystem::RequestZoneTravel(player, kReplyTargetZone, /*sceneConfigId=*/0),
+              static_cast<uint32_t>(kEnterSceneChangingScene));
+    EXPECT_FALSE((tlsEcs.actorRegistry.any_of<PlayerTravelHandoffComp, PlayerFrozenComp>(player)));
+    EXPECT_EQ(tlsEcs.actorRegistry.get<PlayerMirrorCreateInFlightComp>(player).token, 51u);
+}
+
+TEST(MirrorCreateInFlightEcs, RequestRefusedWhileAnotherSceneChangeIsInFlight)
+{
+    entt::entity player{entt::null};
+    ASSERT_TRUE(MakeReplyTestPlayer(player));
+
+    // 普通换图在途:不发 CreateScene,也不登记建镜像。
+    AttachSceneChange(player, /*sceneId=*/777, /*playerRequested=*/true, /*correlationId=*/9);
+    EXPECT_FALSE(PlayerSceneSystem::RequestEnterMirrorScene(player, /*mirrorConfigId=*/3));
+    EXPECT_FALSE(HasMirrorCreate(player));
+
+    // 另一件建镜像在途:不顶掉它的令牌(顶掉了,它的完成回调就认领不到,玩家既进不去也收不到提示)。
+    tlsEcs.actorRegistry.remove<PlayerSceneChangeInFlightComp>(player);
+    AttachMirrorCreate(player, /*token=*/7);
+    EXPECT_FALSE(PlayerSceneSystem::RequestEnterMirrorScene(player, /*mirrorConfigId=*/3));
+    EXPECT_EQ(tlsEcs.actorRegistry.get<PlayerMirrorCreateInFlightComp>(player).token, 7u);
+}
+
+TEST(MirrorCreateInFlightEcs, DoneClaimsOnlyItsOwnToken)
+{
+    const auto player = MakeOnlinePlayer(kSessionAtExit);
+    AttachMirrorCreate(player, /*token=*/7);
+
+    // 不在本节点的玩家、被顶替的令牌:都不动当前等待者。
+    PlayerSceneSystem::HandleMirrorCreateDone(kExitPlayerId + 1, 7, DeadlineExceededOutcome(), nullptr);
+    PlayerSceneSystem::HandleMirrorCreateDone(kExitPlayerId, 6, DeadlineExceededOutcome(), nullptr);
+    ASSERT_TRUE(HasMirrorCreate(player));
+    EXPECT_EQ(tlsEcs.actorRegistry.get<PlayerMirrorCreateInFlightComp>(player).token, 7u);
+    EXPECT_TRUE(PlayerLifecycleSystem::IsSceneChangeBusy(player));
+
+    // 自己的传输失败(结果未知):摘槽位,玩家可以立刻重试;不发自动进场。
+    PlayerSceneSystem::HandleMirrorCreateDone(kExitPlayerId, 7, DeadlineExceededOutcome(), nullptr);
+    EXPECT_FALSE(HasMirrorCreate(player));
+    EXPECT_FALSE(PlayerLifecycleSystem::IsSceneChangeBusy(player));
+    EXPECT_FALSE(tlsEcs.actorRegistry.any_of<PlayerSceneChangeInFlightComp>(player));
+}
+
+TEST(MirrorCreateInFlightEcs, RejectedCreateReleasesTheSlot)
+{
+    // 业务失败应答不回显 creator_ids:旧的全局处理器找不到创建者,槽位(若有)只能等 TTL。每次调用回调按令牌认领。
+    const auto player = MakeOnlinePlayer(kSessionAtExit);
+    AttachMirrorCreate(player, /*token=*/11);
+    const auto rejected = MakeCreateReply(/*errorCode=*/5, /*sceneId=*/0);
+    PlayerSceneSystem::HandleMirrorCreateDone(kExitPlayerId, 11, OkOutcome(), &rejected);
+    EXPECT_FALSE(HasMirrorCreate(player));
+    EXPECT_FALSE(PlayerLifecycleSystem::IsSceneChangeBusy(player));
+    EXPECT_FALSE(tlsEcs.actorRegistry.any_of<PlayerSceneChangeInFlightComp>(player));
+
+    // 成功却没给 scene_id:同样按失败收尾,不拿 0 去进场。
+    AttachMirrorCreate(player, /*token=*/12);
+    const auto noScene = MakeCreateReply(/*errorCode=*/0, /*sceneId=*/0);
+    PlayerSceneSystem::HandleMirrorCreateDone(kExitPlayerId, 12, OkOutcome(), &noScene);
+    EXPECT_FALSE(HasMirrorCreate(player));
+    EXPECT_FALSE(tlsEcs.actorRegistry.any_of<PlayerSceneChangeInFlightComp>(player));
+}
+
+TEST(MirrorCreateInFlightEcs, CreatedWhileInBattleDoesNotAutoEnter)
+{
+    // 提交点复核:建镜像这一个往返里玩家可能刚进备战,战斗在途不换场景。
+    const auto player = MakeOnlinePlayer(kSessionAtExit);
+    AttachMirrorCreate(player, /*token=*/21);
+    tlsEcs.actorRegistry.emplace<InBattleComp>(player).set_battle_id(4242);
+    const auto created = MakeCreateReply(/*errorCode=*/0, /*sceneId=*/9001);
+
+    PlayerSceneSystem::HandleMirrorCreateDone(kExitPlayerId, 21, OkOutcome(), &created);
+
+    EXPECT_FALSE(HasMirrorCreate(player));
+    EXPECT_FALSE(tlsEcs.actorRegistry.any_of<PlayerSceneChangeInFlightComp>(player)) << "不发自动进场的 EnterScene";
+}
+
+TEST(MirrorCreateInFlightEcs, CreatedWithoutSceneManagerReleasesTheSlot)
+{
+    const auto player = MakeOnlinePlayer(kSessionAtExit);
+    ASSERT_EQ(GetSceneManagerEntity(kExitPlayerId), entt::entity{entt::null}) << "前置:宿主没有 scene_manager 节点,不会发真实 RPC";
+    AttachMirrorCreate(player, /*token=*/31);
+    const auto created = MakeCreateReply(/*errorCode=*/0, /*sceneId=*/9001);
+
+    PlayerSceneSystem::HandleMirrorCreateDone(kExitPlayerId, 31, OkOutcome(), &created);
+
+    EXPECT_FALSE(HasMirrorCreate(player));
+    EXPECT_FALSE(tlsEcs.actorRegistry.any_of<PlayerSceneChangeInFlightComp>(player));
+    EXPECT_FALSE(PlayerLifecycleSystem::IsSceneChangeBusy(player));
+}
+
+TEST(MirrorCreateInFlightEcs, UncorrelatedEnterSceneReplyLeavesMirrorCreateAlone)
+{
+    // 不复用 PlayerSceneChangeInFlightComp 的理由:旧版 scene_manager 不回显号的 EnterScene 应答按 player_id
+    // 对普通换图槽。建镜像单独一个组件,这类应答找不到等待者,18 也不会拿建镜像的槽起交接。
+    entt::entity player{entt::null};
+    ASSERT_TRUE(MakeReplyTestPlayer(player));
+    AttachMirrorCreate(player, /*token=*/41);
+
+    DeliverEnterSceneReply(MakeReply(kExitPlayerId, kSmErrSomeRejection, /*correlationId=*/0));
+    DeliverEnterSceneReply(
+        MakeReply(kExitPlayerId, PlayerLifecycleSystem::kSmErrHandoffPending, /*correlationId=*/0));
+
+    ASSERT_TRUE(HasMirrorCreate(player));
+    EXPECT_EQ(tlsEcs.actorRegistry.get<PlayerMirrorCreateInFlightComp>(player).token, 41u);
+    EXPECT_FALSE((tlsEcs.actorRegistry.any_of<PlayerTravelHandoffComp, PlayerFrozenComp>(player)));
+}
+
+TEST(MirrorCreateInFlightEcs, ExpiredSuccessDoesNotDisturbNewerSceneChange)
+{
+    const auto created = MakeCreateReply(/*errorCode=*/0, /*sceneId=*/9001);
+    CheckLateMirrorCompletion(OkOutcome(), &created);
+}
+
+TEST(MirrorCreateInFlightEcs, ExpiredBusinessFailureDoesNotDisturbNewerSceneChange)
+{
+    const auto rejected = MakeCreateReply(/*errorCode=*/5, /*sceneId=*/0);
+    CheckLateMirrorCompletion(OkOutcome(), &rejected);
+}
+
+TEST(MirrorCreateInFlightEcs, ExpiredTransportFailureDoesNotDisturbNewerSceneChange)
+{
+    CheckLateMirrorCompletion(DeadlineExceededOutcome(), nullptr);
+}
+
+TEST(MirrorCreateInFlightEcs, ClockRecoveryAfterCommittedChangeCannotReviveOldSuccess)
+{
+    const auto created = MakeCreateReply(/*errorCode=*/0, /*sceneId=*/9001);
+    CheckMirrorCompletionAfterClockRecovery(OkOutcome(), &created);
+}
+
+TEST(MirrorCreateInFlightEcs, ClockRecoveryAfterCommittedChangeCannotReviveOldBusinessFailure)
+{
+    const auto rejected = MakeCreateReply(/*errorCode=*/5, /*sceneId=*/0);
+    CheckMirrorCompletionAfterClockRecovery(OkOutcome(), &rejected);
+}
+
+TEST(MirrorCreateInFlightEcs, ClockRecoveryAfterCommittedChangeCannotReviveOldTransportFailure)
+{
+    CheckMirrorCompletionAfterClockRecovery(DeadlineExceededOutcome(), nullptr);
+}
+
+TEST(MirrorCreateInFlightEcs, CommittedHandoffPermanentlyCancelsOldMirror)
+{
+    const ScopedFakeSceneManagerNode sceneManager;
+    entt::entity player{entt::null};
+    ASSERT_TRUE(MakeReplyTestPlayer(player));
+    AttachMirrorCreate(player, /*token=*/82);
+    tlsEcs.actorRegistry.get<PlayerMirrorCreateInFlightComp>(player).sentAtMs =
+        TimeSystem::NowMillisecondsUTC() + 60000;
+    ASSERT_FALSE(PlayerLifecycleSystem::IsSceneChangeBusy(player));
+    const auto before = travel_handoff_stats::Read();
+
+    EXPECT_EQ(PlayerLifecycleSystem::StartTravelHandoff(player, kReplyTargetZone, 0, 0),
+              PlayerLifecycleSystem::kTravelAccepted);
+
+    EXPECT_EQ(travel_handoff_stats::Read().started, before.started + 1);
+    EXPECT_EQ(travel_handoff_stats::Read().aborted, before.aborted + 1)
+        << "沿用无 owner_epoch 宿主的就地 Abort,旧镜像资格仍不得恢复";
+    ASSERT_TRUE(tlsEcs.actorRegistry.valid(player));
+    EXPECT_FALSE(HasMirrorCreate(player));
+    MirrorTipPushProbe tipPush;
+    PlayerTipSystem::SendToPlayer(player, kEnterSceneFailed, {});
+    ASSERT_EQ(tipPush.Count(), 1);
+    tipPush.Reset();
+    const auto created = MakeCreateReply(/*errorCode=*/0, /*sceneId=*/9001);
+    PlayerSceneSystem::HandleMirrorCreateDone(kExitPlayerId, 82, OkOutcome(), &created);
+    EXPECT_EQ(tipPush.Count(), 0);
+    EXPECT_FALSE(tlsEcs.actorRegistry.any_of<PlayerSceneChangeInFlightComp>(player));
+}
+
+TEST(MirrorCreateInFlightEcs, CommittedExitCancelsMirrorWhileWaitingForDbAck)
+{
+    ScopedPersistedPlayerCleanup cleanup;
+    struct LedgerCleanup
+    {
+        LedgerCleanup() { DbTaskDispatchSystem::ResetForTest(); }
+        ~LedgerCleanup() { DbTaskDispatchSystem::ResetForTest(); }
+    } ledgerCleanup;
+    const auto player = MakeOnlinePlayer(kSessionAtExit);
+    ASSERT_TRUE(MarkPersisted(player));
+    auto& ledger = DbTaskDispatchSystem::LedgerForTest();
+    const auto generation = ledger.BeginSave(kExitPlayerId);
+    ledger.IssueTicket(kExitPlayerId, generation, db_task_dispatch::Clock::now());
+    ledger.FinishSave(kExitPlayerId, generation, /*allQueued=*/true);
+    AttachMirrorCreate(player, /*token=*/83);
+
+    PlayerLifecycleSystem::HandleExitGameNode(player, ExitCause::kNodeShutdown);
+
+    ASSERT_TRUE(tlsEcs.actorRegistry.valid(player)) << "实体还在等 DBTask 回执,旧完成确实仍可能找到它";
+    ASSERT_TRUE(tlsEcs.actorRegistry.any_of<UnregisterPlayer>(player));
+    ASSERT_FALSE(HasMirrorCreate(player));
+    MirrorTipPushProbe tipPush;
+    PlayerTipSystem::SendToPlayer(player, kEnterSceneFailed, {});
+    ASSERT_EQ(tipPush.Count(), 1);
+    tipPush.Reset();
+    const auto created = MakeCreateReply(/*errorCode=*/0, /*sceneId=*/9001);
+    PlayerSceneSystem::HandleMirrorCreateDone(kExitPlayerId, 83, OkOutcome(), &created);
+    EXPECT_EQ(tipPush.Count(), 0);
+    EXPECT_FALSE(tlsEcs.actorRegistry.any_of<PlayerSceneChangeInFlightComp>(player));
+}
+
+// ============================================================================
 // Test bootstrap
 // ============================================================================
 TEST(LocalNodeInfoTest, SurvivesEcsClear)
@@ -6139,41 +6564,16 @@ TEST(LocalNodeInfoTest, SurvivesEcsClear)
     EXPECT_EQ(GetNodeInfo().node_id(), 31u);
 }
 
-TEST(LocalNodeInfoTest, SameInstanceOnEveryThread)
-{
-    TestLocalNodeInfo().set_node_id(31);
-    const NodeInfo* observed = nullptr;
-    uint32_t observedNodeId = 0;
-    // 宿主寿命覆盖 join,期间没有 protobuf 写入;这里只验证门面不再落入另一份 TLS。
-    std::thread reader([&] {
-        observed = &GetNodeInfo();
-        observedNodeId = GetNodeInfo().node_id();
-    });
-    reader.join();
-    EXPECT_EQ(&TestLocalNodeInfo(), observed);
-    EXPECT_EQ(31u, observedNodeId);
-}
 
 TEST(LocalNodeInfoTest, UninstalledIsReadOnlyDefault)
 {
-    const auto *previous = InstallLocalNodeInfo(nullptr);
+    InstallLocalNodeInfo(nullptr);
     EXPECT_EQ(&GetNodeInfo(), &NodeInfo::default_instance());
     EXPECT_EQ(GetZoneId(), 0u);
-    EXPECT_EQ(InstallLocalNodeInfo(previous), nullptr);
+    InstallLocalNodeInfo(&TestLocalNodeInfo());
     EXPECT_EQ(&GetNodeInfo(), &TestLocalNodeInfo());
 }
 
-TEST(LocalNodeInfoTest, InstallingAnotherOwnerCanRestorePreviousBinding)
-{
-    NodeInfo replacement;
-    replacement.set_zone_id(12);
-    const auto *previous = InstallLocalNodeInfo(&replacement);
-    EXPECT_EQ(previous, &TestLocalNodeInfo());
-    EXPECT_EQ(&GetNodeInfo(), &replacement);
-    EXPECT_EQ(GetZoneId(), 12u);
-    EXPECT_EQ(InstallLocalNodeInfo(previous), &replacement);
-    EXPECT_EQ(&GetNodeInfo(), &TestLocalNodeInfo());
-}
 
 TEST(ServiceNodeSnapshotTest, UpsertKeepsOneSnapshotPerUuid)
 {
@@ -6235,9 +6635,900 @@ TEST(ServiceNodeSnapshotTest, InvalidNodeTypesAreEmptyAndRejectWrites)
 int main(int argc, char** argv)
 {
     ::testing::InitGoogleTest(&argc, argv);
-    const auto *previous = InstallLocalNodeInfo(&TestLocalNodeInfo());
+    InstallLocalNodeInfo(&TestLocalNodeInfo());
     ::testing::UnitTest::GetInstance()->listeners().Append(new LocalNodeInfoResetListener);
     const int result = RUN_ALL_TESTS();
-    InstallLocalNodeInfo(previous);
+    InstallLocalNodeInfo(nullptr);
     return result;
+}
+
+// ============================================================================
+// 进场链余项 c / d 的 C++ 部分(docs/design/scene-enter-chain-residuals.md §4.7 / §5.7)。
+// 本文件有别的会话的大量在途改动,本节只在文件末尾追加:ReleasePlayer 归属栅栏(纯判定 + 库函数接缝)、
+// 发往 scene_manager 的请求盖章(enter_fence::ActingLoginGeneration)、scene_manager 私有码 25。
+// 宿主里没有 Redis:会走到退出的释放类用例先 MarkPersisted,让退出走快路径同步收尾(不碰 Redis 客户端)。
+// 这样不带栅栏的旧逻辑在这些用例上只会断言失败(实体被销毁),不会因空 Redis 客户端崩溃。
+// ============================================================================
+#include "services/scene/player/system/release_fence.h"
+
+namespace
+{
+namespace rf = release_fence;
+
+constexpr rf::Verdict kAllReleaseVerdicts[] = {
+    rf::Verdict::kRelease,
+    rf::Verdict::kReleaseUnversioned,
+    rf::Verdict::kReleaseCacheUnknown,
+    rf::Verdict::kSkipHandoffInFlight,
+    rf::Verdict::kSkipStaleRelease,
+    rf::Verdict::kSkipAheadOfHolder,
+};
+static_assert(std::size(kAllReleaseVerdicts) == rf::kVerdictCount, "新增结论时补进这张表,并补判定用例");
+
+constexpr uint64_t kReleaseExpectedEpoch = 5; // E:scene_manager 本次落点 CAS 用过的观察值
+
+// 静态存储期,供 constexpr 断言取地址。
+constexpr PlayerLoginIdentityComp kActingIdentity{kSessionAtExit, 9};
+
+uint64_t ReleaseVerdictCount(const release_fence_stats::Snapshot &snapshot, rf::Verdict verdict)
+{
+    return snapshot.verdicts[static_cast<std::size_t>(verdict)];
+}
+
+// 在线实体(kExitPlayerId,绑定 session)+ 缓存 owner_epoch(0 = 不挂组件)+ "盘上已是同一份"。
+bool MakeReleaseTarget(uint64_t cachedOwnerEpoch, entt::entity &player, SessionId session = kSessionAtExit)
+{
+    player = MakeOnlinePlayer(session);
+    if (cachedOwnerEpoch != 0)
+    {
+        tlsEcs.actorRegistry.emplace<PlayerOwnerEpochComp>(player).epoch = cachedOwnerEpoch;
+    }
+    return MarkPersisted(player);
+}
+
+void ReleaseFromSceneManager(uint64_t expectedOwnerEpoch)
+{
+    PlayerLifecycleSystem::HandleReleaseFromSceneManager(kExitPlayerId, expectedOwnerEpoch, /*targetSceneId=*/42,
+                                                         /*targetNodeId=*/"node-target");
+}
+
+// 被忽略的释放零副作用:实体与会话映射都还在,没有挂上退出标记。调用方先 ASSERT 实体有效。
+void ExpectEntityUntouched(entt::entity player, SessionId session)
+{
+    EXPECT_EQ(tlsEcs.GetPlayer(kExitPlayerId), player);
+    EXPECT_EQ(SessionMap().count(session), 1u);
+    EXPECT_FALSE(tlsEcs.actorRegistry.any_of<UnregisterPlayer>(player));
+    EXPECT_FALSE(tlsEcs.actorRegistry.any_of<PlayerExitIntentComp>(player));
+}
+
+// 被执行的释放走了 kReleasedByTransfer 退出:宿主里快路径同步收尾、实体销毁;A1′ 按"原因不在可写集合"跳过
+// (released_by_transfer 不写断线释放标记),据此确认退出原因。
+void ExpectReleasedByTransfer(entt::entity player, SessionId session, const exit_release_stats::Snapshot &before)
+{
+    EXPECT_FALSE(tlsEcs.actorRegistry.valid(player));
+    EXPECT_EQ(tlsEcs.playerList.count(kExitPlayerId), 0u);
+    EXPECT_EQ(SessionMap().count(session), 0u);
+    const auto skipCause = static_cast<std::size_t>(erm::ExitReleaseDecision::kSkipCause);
+    EXPECT_EQ(exit_release_stats::Read().decisions[skipCause], before.decisions[skipCause] + 1)
+        << "退出原因必须是 released_by_transfer(A1′ 按原因跳过)";
+}
+} // namespace
+
+TEST(ReleaseFence, DecideTableEveryCell)
+{
+    constexpr uint64_t E = kReleaseExpectedEpoch;
+    for (const uint64_t cached : {uint64_t{0}, E - 1, E, E + 2})
+    {
+        // 第 1 行:交接在途先于一切比较。
+        for (const uint64_t expected : {uint64_t{0}, E})
+        {
+            EXPECT_EQ(rf::Decide(expected, cached, /*handoffRequested=*/true), rf::Verdict::kSkipHandoffInFlight)
+                << "expected=" << expected << " cached=" << cached;
+        }
+        // 第 2 行:期望 0(旧版 scene_manager)按旧行为释放,先于缓存判断。
+        EXPECT_EQ(rf::Decide(0, cached, false), rf::Verdict::kReleaseUnversioned) << "cached=" << cached;
+    }
+    EXPECT_EQ(rf::Decide(E, 0, false), rf::Verdict::kReleaseCacheUnknown) << "第 3 行:缓存 0(含组件缺失)按旧行为释放";
+    EXPECT_EQ(rf::Decide(E, E, false), rf::Verdict::kRelease) << "第 4 行:缓存恰好是那一代";
+    EXPECT_EQ(rf::Decide(E, E + 2, false), rf::Verdict::kSkipStaleRelease) << "第 5 行:已采纳回滚 / 回流重载,迟到的旧释放";
+    EXPECT_EQ(rf::Decide(E, E - 1, false), rf::Verdict::kSkipAheadOfHolder) << "第 6 行:期望超前于缓存,生产构造不出";
+    static_assert(rf::Decide(5, 5, false) == rf::Verdict::kRelease &&
+                      rf::Decide(5, 7, false) == rf::Verdict::kSkipStaleRelease &&
+                      rf::Decide(5, 7, true) == rf::Verdict::kSkipHandoffInFlight,
+                  "判定必须能在编译期求值(纯函数)");
+
+    // 只有前三种结论执行退出;越界按不释放(fail-closed:退出是破坏性动作)。
+    for (const auto verdict : kAllReleaseVerdicts)
+    {
+        const bool expectRelease = verdict == rf::Verdict::kRelease || verdict == rf::Verdict::kReleaseUnversioned ||
+                                   verdict == rf::Verdict::kReleaseCacheUnknown;
+        EXPECT_EQ(rf::Releases(verdict), expectRelease) << rf::VerdictName(verdict);
+    }
+    EXPECT_FALSE(rf::Releases(rf::Verdict::kCount));
+}
+
+TEST(ReleaseFence, NamesCoverEveryValue)
+{
+    for (std::size_t i = 0; i < rf::kVerdictCount; ++i)
+    {
+        const auto verdict = kAllReleaseVerdicts[i];
+        EXPECT_EQ(static_cast<std::size_t>(verdict), i) << "表按枚举序排列";
+        EXPECT_STRNE(rf::VerdictName(verdict), "?");
+        for (std::size_t j = 0; j < i; ++j)
+        {
+            EXPECT_STRNE(rf::VerdictName(kAllReleaseVerdicts[j]), rf::VerdictName(verdict)) << "汇总行 key 不得重名";
+        }
+    }
+    EXPECT_STREQ(rf::VerdictName(rf::Verdict::kCount), "?") << "越界不能读出数组外";
+    // 名字是 [ReleaseFence] 汇总行的 key(运维检索),钉住三个告警项的原文。
+    EXPECT_STREQ(rf::VerdictName(rf::Verdict::kSkipStaleRelease), "skip_stale_release");
+    EXPECT_STREQ(rf::VerdictName(rf::Verdict::kSkipAheadOfHolder), "skip_ahead_of_holder");
+    EXPECT_STREQ(rf::VerdictName(rf::Verdict::kReleaseCacheUnknown), "release_cache_unknown");
+}
+
+TEST(ReleaseFence, SummaryEscalatesOnlyOnAnomalies)
+{
+    for (const auto verdict : kAllReleaseVerdicts)
+    {
+        const bool expectAlarming = verdict == rf::Verdict::kReleaseCacheUnknown ||
+                                    verdict == rf::Verdict::kSkipStaleRelease ||
+                                    verdict == rf::Verdict::kSkipAheadOfHolder;
+        EXPECT_EQ(rf::Alarming(verdict), expectAlarming) << rf::VerdictName(verdict);
+    }
+    release_fence_stats::Snapshot previous;
+    release_fence_stats::Snapshot next = previous;
+    next.verdicts[static_cast<std::size_t>(rf::Verdict::kRelease)] += 3;
+    next.verdicts[static_cast<std::size_t>(rf::Verdict::kReleaseUnversioned)] += 1;
+    next.verdicts[static_cast<std::size_t>(rf::Verdict::kSkipHandoffInFlight)] += 2;
+    next.notFound += 4;
+    EXPECT_FALSE(next.AlarmingIncreaseSince(previous)) << "常态计数增长打 INFO";
+    next.verdicts[static_cast<std::size_t>(rf::Verdict::kSkipStaleRelease)] += 1;
+    EXPECT_TRUE(next.AlarmingIncreaseSince(previous)) << "迟到的旧释放被挡下:升 WARN";
+}
+
+TEST(ReleaseFenceEcs, LateReleaseAfterRollbackAdoptKeepsEntity)
+{
+    // 主时序(设计 §4.1):B5 采纳之后 —— 缓存已抬到 E+2、交接组件已摘(IsHandoffRequested 为假),迟到的释放带 E。
+    // 宿主里真实 B5 成功采纳会强制写 Redis(没有客户端),所以直接构造采纳之后的实体;"先抬 epoch、后摘交接组件"
+    // 的顺序由 ResolveTravelOutcome 那里的注释钉住。
+    ScopedPersistedPlayerCleanup cleanup;
+    entt::entity player{entt::null};
+    ASSERT_TRUE(MakeReleaseTarget(kReleaseExpectedEpoch + 2, player));
+    ASSERT_FALSE(PlayerLifecycleSystem::IsHandoffRequested(player));
+    const auto before = release_fence_stats::Read();
+
+    ReleaseFromSceneManager(kReleaseExpectedEpoch);
+
+    ASSERT_TRUE(tlsEcs.actorRegistry.valid(player)) << "采纳回滚后仍持有归属的实体不得被迟到的旧释放退掉";
+    ExpectEntityUntouched(player, kSessionAtExit);
+    EXPECT_EQ(tlsEcs.actorRegistry.get<PlayerOwnerEpochComp>(player).epoch, kReleaseExpectedEpoch + 2)
+        << "只读缓存,不采纳、不改写";
+    const auto after = release_fence_stats::Read();
+    EXPECT_EQ(ReleaseVerdictCount(after, rf::Verdict::kSkipStaleRelease),
+              ReleaseVerdictCount(before, rf::Verdict::kSkipStaleRelease) + 1);
+}
+
+TEST(ReleaseFenceEcs, LateReleaseOnReturnedEntityIgnored)
+{
+    // 变体 C(回流):换到别处成功(E+1)后约 6s 内又换回本节点(铸 E+2),本节点新载入的实体带着新会话与 E+2;
+    // 还在重试的旧释放(期望 E)此时才到。
+    ScopedPersistedPlayerCleanup cleanup;
+    entt::entity player{entt::null};
+    ASSERT_TRUE(MakeReleaseTarget(kReleaseExpectedEpoch + 2, player, kNewerSession));
+    auto &identity = tlsEcs.actorRegistry.emplace<PlayerLoginIdentityComp>(player);
+    identity.sessionId = kNewerSession;
+    identity.loginGeneration = 9;
+    const auto before = release_fence_stats::Read();
+
+    ReleaseFromSceneManager(kReleaseExpectedEpoch);
+
+    ASSERT_TRUE(tlsEcs.actorRegistry.valid(player)) << "回流后新载入的实体不得被旧释放退掉";
+    ExpectEntityUntouched(player, kNewerSession);
+    const auto &identityAfter = tlsEcs.actorRegistry.get<PlayerLoginIdentityComp>(player);
+    EXPECT_EQ(identityAfter.sessionId, kNewerSession);
+    EXPECT_EQ(identityAfter.loginGeneration, 9u);
+    EXPECT_EQ(ReleaseVerdictCount(release_fence_stats::Read(), rf::Verdict::kSkipStaleRelease),
+              ReleaseVerdictCount(before, rf::Verdict::kSkipStaleRelease) + 1);
+}
+
+TEST(ReleaseFenceEcs, EqualEpochReleases)
+{
+    ScopedPersistedPlayerCleanup cleanup;
+    entt::entity player{entt::null};
+    ASSERT_TRUE(MakeReleaseTarget(kReleaseExpectedEpoch, player));
+    const auto exitBefore = exit_release_stats::Read();
+    const auto before = release_fence_stats::Read();
+
+    ReleaseFromSceneManager(kReleaseExpectedEpoch);
+
+    ExpectReleasedByTransfer(player, kSessionAtExit, exitBefore);
+    EXPECT_EQ(ReleaseVerdictCount(release_fence_stats::Read(), rf::Verdict::kRelease),
+              ReleaseVerdictCount(before, rf::Verdict::kRelease) + 1);
+}
+
+TEST(ReleaseFenceEcs, UnversionedReleaseKeepsLegacy)
+{
+    // 旧版 scene_manager 不带期望值(0):按旧行为释放并计数。
+    ScopedPersistedPlayerCleanup cleanup;
+    entt::entity player{entt::null};
+    ASSERT_TRUE(MakeReleaseTarget(kReleaseExpectedEpoch, player));
+    const auto exitBefore = exit_release_stats::Read();
+    const auto before = release_fence_stats::Read();
+
+    ReleaseFromSceneManager(/*expectedOwnerEpoch=*/0);
+
+    ExpectReleasedByTransfer(player, kSessionAtExit, exitBefore);
+    EXPECT_EQ(ReleaseVerdictCount(release_fence_stats::Read(), rf::Verdict::kReleaseUnversioned),
+              ReleaseVerdictCount(before, rf::Verdict::kReleaseUnversioned) + 1);
+}
+
+TEST(ReleaseFenceEcs, CacheUnknownReleasesAndCounts)
+{
+    // 实体没有 PlayerOwnerEpochComp(缓存按 0):不 fail-closed,按旧行为释放并计数。
+    ScopedPersistedPlayerCleanup cleanup;
+    entt::entity player{entt::null};
+    ASSERT_TRUE(MakeReleaseTarget(/*cachedOwnerEpoch=*/0, player));
+    ASSERT_FALSE(tlsEcs.actorRegistry.any_of<PlayerOwnerEpochComp>(player));
+    const auto exitBefore = exit_release_stats::Read();
+    const auto before = release_fence_stats::Read();
+
+    ReleaseFromSceneManager(kReleaseExpectedEpoch);
+
+    ExpectReleasedByTransfer(player, kSessionAtExit, exitBefore);
+    EXPECT_EQ(ReleaseVerdictCount(release_fence_stats::Read(), rf::Verdict::kReleaseCacheUnknown),
+              ReleaseVerdictCount(before, rf::Verdict::kReleaseCacheUnknown) + 1);
+}
+
+TEST(ReleaseFenceEcs, AheadOfHolderIgnored)
+{
+    ScopedPersistedPlayerCleanup cleanup;
+    entt::entity player{entt::null};
+    ASSERT_TRUE(MakeReleaseTarget(kReleaseExpectedEpoch, player));
+    const auto before = release_fence_stats::Read();
+
+    ReleaseFromSceneManager(kReleaseExpectedEpoch + 1);
+
+    ASSERT_TRUE(tlsEcs.actorRegistry.valid(player)) << "期望超前于缓存:退出要求严格相等,忽略";
+    ExpectEntityUntouched(player, kSessionAtExit);
+    EXPECT_EQ(tlsEcs.actorRegistry.get<PlayerOwnerEpochComp>(player).epoch, kReleaseExpectedEpoch);
+    EXPECT_EQ(ReleaseVerdictCount(release_fence_stats::Read(), rf::Verdict::kSkipAheadOfHolder),
+              ReleaseVerdictCount(before, rf::Verdict::kSkipAheadOfHolder) + 1);
+}
+
+TEST(ReleaseFenceEcs, HandoffInFlightStillIgnored)
+{
+    // 现有守卫,语义不变:交接已发起的实体不论期望值多少都不走退出。
+    ScopedPersistedPlayerCleanup cleanup;
+    entt::entity player{entt::null};
+    ASSERT_TRUE(MakeReleaseTarget(kReleaseExpectedEpoch, player));
+    AttachHandoff(player, /*correlationId=*/0);
+    ASSERT_TRUE(PlayerLifecycleSystem::IsHandoffRequested(player));
+    const auto before = release_fence_stats::Read();
+
+    for (const uint64_t expected : {uint64_t{0}, kReleaseExpectedEpoch, kReleaseExpectedEpoch + 2})
+    {
+        ReleaseFromSceneManager(expected);
+        ASSERT_TRUE(tlsEcs.actorRegistry.valid(player)) << "expected=" << expected;
+    }
+
+    ExpectEntityUntouched(player, kSessionAtExit);
+    ASSERT_TRUE((tlsEcs.actorRegistry.all_of<PlayerTravelHandoffComp, PlayerFrozenComp>(player)))
+        << "交接与冻结组件原样保留,去留只由 EnterScene 应答与看门狗裁决";
+    EXPECT_EQ(tlsEcs.actorRegistry.get<PlayerTravelHandoffComp>(player).requestedAtMs, 1000u);
+    EXPECT_EQ(ReleaseVerdictCount(release_fence_stats::Read(), rf::Verdict::kSkipHandoffInFlight),
+              ReleaseVerdictCount(before, rf::Verdict::kSkipHandoffInFlight) + 3);
+}
+
+TEST(ReleaseFenceEcs, StaleReleaseOnExitingEntityDoesNotMerge)
+{
+    // 退出中(重存到上限、被保留)的实体缓存 E+2,迟到的旧释放带 E:不得进 HandleExitGameNode。
+    // 不带栅栏时会合并原因并触发超限重踢,快路径收尾后实体被销毁。
+    ScopedPersistedPlayerCleanup cleanup;
+    const auto player = MakeExitingPlayer(kSessionAtExit, kSessionAtExit);
+    tlsEcs.actorRegistry.emplace<PlayerOwnerEpochComp>(player).epoch = kReleaseExpectedEpoch + 2;
+    tlsEcs.actorRegistry.get<PlayerExitIntentComp>(player).resaveRounds = player_exit::kMaxExitResaveRounds;
+    ASSERT_TRUE(MarkPersisted(player));
+    const PlayerExitIntentComp intentBefore = tlsEcs.actorRegistry.get<PlayerExitIntentComp>(player);
+    const auto persistBefore = exit_persist_stats::Read();
+    const auto before = release_fence_stats::Read();
+
+    ReleaseFromSceneManager(kReleaseExpectedEpoch);
+
+    ASSERT_TRUE(tlsEcs.actorRegistry.valid(player)) << "被忽略的释放不得推动退出收尾";
+    EXPECT_TRUE(tlsEcs.actorRegistry.any_of<UnregisterPlayer>(player)) << "原有退出照常在途,不被摘也不被重挂";
+    const auto *intent = tlsEcs.actorRegistry.try_get<PlayerExitIntentComp>(player);
+    ASSERT_NE(intent, nullptr);
+    EXPECT_EQ(intent->cause, intentBefore.cause);
+    EXPECT_EQ(intent->releaseMarkSuppressed, intentBefore.releaseMarkSuppressed);
+    EXPECT_EQ(intent->suppressedBy, intentBefore.suppressedBy);
+    EXPECT_EQ(intent->resaveRounds, intentBefore.resaveRounds) << "不触发超限重踢(轮次不清零)";
+    EXPECT_EQ(exit_persist_stats::Read().exhaustedRekick, persistBefore.exhaustedRekick);
+    EXPECT_EQ(ReleaseVerdictCount(release_fence_stats::Read(), rf::Verdict::kSkipStaleRelease),
+              ReleaseVerdictCount(before, rf::Verdict::kSkipStaleRelease) + 1);
+}
+
+TEST(ReleaseFenceEcs, PlayerNotOnThisNodeIsIdempotent)
+{
+    ScopedPersistedPlayerCleanup cleanup;
+    tlsEcs.Clear();
+    SessionMap().clear();
+    const auto before = release_fence_stats::Read();
+
+    ReleaseFromSceneManager(kReleaseExpectedEpoch);
+
+    const auto after = release_fence_stats::Read();
+    EXPECT_EQ(after.notFound, before.notFound + 1);
+    EXPECT_EQ(after.verdicts, before.verdicts) << "找不到实体时不做判定";
+}
+
+TEST(ActingLoginGeneration, NoIdentityComponentYieldsZero)
+{
+    EXPECT_EQ(ef::ActingLoginGeneration(nullptr, kSessionAtExit), 0u);
+    static_assert(ef::ActingLoginGeneration(nullptr, kSessionAtExit) == 0, "纯函数,可在编译期求值");
+}
+
+TEST(ActingLoginGeneration, SessionMismatchYieldsZero)
+{
+    PlayerLoginIdentityComp identity;
+    identity.sessionId = kSessionAtExit;
+    identity.loginGeneration = 9;
+    EXPECT_EQ(ef::ActingLoginGeneration(&identity, kNewerSession), 0u) << "请求会话不是实体已放行的那一条:不冒用它的代次";
+    EXPECT_EQ(ef::ActingLoginGeneration(&identity, 0), 0u);
+    EXPECT_EQ(ef::ActingLoginGeneration(&identity, kInvalidSessionId), 0u);
+
+    // 两边都"没有会话"不算同一会话(与 player_exit::IsBoundSession 同一口径)。
+    PlayerLoginIdentityComp unbound;
+    unbound.sessionId = kInvalidSessionId;
+    unbound.loginGeneration = 9;
+    EXPECT_EQ(ef::ActingLoginGeneration(&unbound, kInvalidSessionId), 0u);
+    unbound.sessionId = 0;
+    EXPECT_EQ(ef::ActingLoginGeneration(&unbound, 0), 0u);
+}
+
+TEST(ActingLoginGeneration, MatchingSessionYieldsGeneration)
+{
+    PlayerLoginIdentityComp identity;
+    identity.sessionId = kSessionAtExit;
+    identity.loginGeneration = 9;
+    EXPECT_EQ(ef::ActingLoginGeneration(&identity, kSessionAtExit), 9u);
+    identity.loginGeneration = 0;
+    EXPECT_EQ(ef::ActingLoginGeneration(&identity, kSessionAtExit), 0u) << "身份没有代次(旧版 login 放行的)就如实给 0";
+    static_assert(ef::ActingLoginGeneration(&kActingIdentity, kSessionAtExit) == 9, "纯函数,可在编译期求值");
+}
+
+// ===========================================================================
+// 会话结束释放(ReleasePlayerRequest.session_ended)与回档证据计数
+// (docs/design/location-release-binding.md §3.3、§3.7;审计 data-overwrite-rollback-audit-20261018.md §2.1)。
+//
+// scene_manager 的 LeaveScene 拿不到"持有者已释放"证据时请持有节点释放:持有 → 按客户端断线退出(存盘后 A1′ 写标记);
+// 完全不持有 → 按 owner_epoch 条件补写凭证标记;交接在途 / 代际不等 → 不动。宿主没有 Redis:标记写一律走"写不成"
+// 分支,用例只看判定与计数。
+// ===========================================================================
+
+namespace
+{
+constexpr rf::SessionEndedCredential kAllSessionEndedCredentials[] = {
+    rf::SessionEndedCredential::kWrite,
+    rf::SessionEndedCredential::kSkipUnversioned,
+    rf::SessionEndedCredential::kSkipLocalHolder,
+    rf::SessionEndedCredential::kSkipMarkDisabled,
+    rf::SessionEndedCredential::kSkipDevBypass,
+    rf::SessionEndedCredential::kSkipIdentity,
+};
+static_assert(std::size(kAllSessionEndedCredentials) == rf::kSessionEndedCredentialCount,
+              "新增凭证结论时补进这张表,并补判定用例");
+
+uint64_t CredentialCount(const release_fence_stats::Snapshot &snapshot, rf::SessionEndedCredential decision)
+{
+    return snapshot.credentialDecisions[static_cast<std::size_t>(decision)];
+}
+
+uint64_t CredentialWriteOutcomes(const release_fence_stats::Snapshot &snapshot)
+{
+    return snapshot.credentialWritten + snapshot.credentialEpochMoved + snapshot.credentialFailed;
+}
+
+// 全部条件都满足"写"的输入,各用例只改一项。
+rf::SessionEndedFacts WritableSessionEndedFacts()
+{
+    rf::SessionEndedFacts facts;
+    facts.expectedOwnerEpoch = kReleaseExpectedEpoch;
+    facts.localHolderPossible = false;
+    facts.markFeatureEnabled = true;
+    facts.devUnsafeCrossNode = false;
+    facts.identityConfirmed = true;
+    return facts;
+}
+
+// 本节点完全不持有 kExitPlayerId:没有实体、没有会话映射、没有待入场条目、没有改派待确认条目。
+void ClearLocalHolderOfExitPlayer()
+{
+    tlsEcs.Clear();
+    SessionMap().clear();
+    DrainRelocateConfirms();
+}
+
+// 覆盖身份(ReleasePlayerRequest.covered_*,location-release-binding.md §13)用例里的被覆盖那次登录:会话 kSessionAtExit、
+// 代次 kCoveredGeneration。实体的 PlayerLoginIdentityComp 由各用例按需摆;不摆 = 实体没有登录代次。
+constexpr uint64_t kCoveredGeneration = 20;
+
+constexpr rf::SessionEndedBinding kAllSessionEndedBindings[] = {
+    rf::SessionEndedBinding::kCovered,
+    rf::SessionEndedBinding::kUnversionedRequest,
+    rf::SessionEndedBinding::kUnversionedEntity,
+    rf::SessionEndedBinding::kSkipNewerLogin,
+    rf::SessionEndedBinding::kSkipConflict,
+};
+static_assert(std::size(kAllSessionEndedBindings) == rf::kSessionEndedBindingCount,
+              "新增登录身份结论时补进这张表,并补判定用例");
+
+uint64_t BindingCount(const release_fence_stats::Snapshot &snapshot, rf::SessionEndedBinding binding)
+{
+    return snapshot.bindingDecisions[static_cast<std::size_t>(binding)];
+}
+
+// 会话结束释放,覆盖身份默认是新版 scene_manager 对"离场的就是实体当前那次登录"的正常载荷。
+void ReleaseEndedSession(uint64_t expectedOwnerEpoch, SessionId coveredSession = kSessionAtExit,
+                         uint64_t coveredGeneration = kCoveredGeneration)
+{
+    PlayerLifecycleSystem::HandleSessionEndedRelease(kExitPlayerId, expectedOwnerEpoch, coveredSession, coveredGeneration);
+}
+
+// 给实体摆上"已放行的最高登录身份"(EnterScene 第 1 步 RecordLoginIdentity 写的那个组件)。
+void BindLoginIdentity(entt::entity player, SessionId session, uint64_t generation)
+{
+    auto &identity = tlsEcs.actorRegistry.emplace_or_replace<PlayerLoginIdentityComp>(player);
+    identity.sessionId = session;
+    identity.loginGeneration = generation;
+}
+
+// 会话结束释放的退出走了 kClientDisconnect:宿主里快路径同步收尾、实体销毁;A1′ 判定为"写"(原因在可写集合里)。
+void ExpectExitedAsClientDisconnect(entt::entity player, SessionId session, const exit_release_stats::Snapshot &before)
+{
+    EXPECT_FALSE(tlsEcs.actorRegistry.valid(player));
+    EXPECT_EQ(tlsEcs.playerList.count(kExitPlayerId), 0u);
+    EXPECT_EQ(SessionMap().count(session), 0u);
+    const auto write = static_cast<std::size_t>(erm::ExitReleaseDecision::kWrite);
+    EXPECT_EQ(exit_release_stats::Read().decisions[write], before.decisions[write] + 1) << "按客户端断线退出:A1′ 判定写标记";
+}
+} // namespace
+
+TEST(ReleaseFence, SessionEndedCredentialDecideTable)
+{
+    EXPECT_EQ(rf::DecideSessionEndedCredential(WritableSessionEndedFacts()), rf::SessionEndedCredential::kWrite);
+
+    auto facts = WritableSessionEndedFacts();
+    facts.expectedOwnerEpoch = 0;
+    EXPECT_EQ(rf::DecideSessionEndedCredential(facts), rf::SessionEndedCredential::kSkipUnversioned);
+
+    facts = WritableSessionEndedFacts();
+    facts.localHolderPossible = true;
+    EXPECT_EQ(rf::DecideSessionEndedCredential(facts), rf::SessionEndedCredential::kSkipLocalHolder);
+
+    facts = WritableSessionEndedFacts();
+    facts.markFeatureEnabled = false;
+    EXPECT_EQ(rf::DecideSessionEndedCredential(facts), rf::SessionEndedCredential::kSkipMarkDisabled);
+
+    facts = WritableSessionEndedFacts();
+    facts.devUnsafeCrossNode = true;
+    EXPECT_EQ(rf::DecideSessionEndedCredential(facts), rf::SessionEndedCredential::kSkipDevBypass);
+
+    facts = WritableSessionEndedFacts();
+    facts.identityConfirmed = false;
+    EXPECT_EQ(rf::DecideSessionEndedCredential(facts), rf::SessionEndedCredential::kSkipIdentity);
+
+    // 默认值全部取"不写"的一侧:漏填任何一项都只会少写。
+    EXPECT_NE(rf::DecideSessionEndedCredential(rf::SessionEndedFacts{}), rf::SessionEndedCredential::kWrite);
+    static_assert(rf::DecideSessionEndedCredential(rf::SessionEndedFacts{}) == rf::SessionEndedCredential::kSkipUnversioned,
+                  "判定必须能在编译期求值(纯函数)");
+}
+
+TEST(ReleaseFence, SessionEndedCredentialNamesCoverEveryValue)
+{
+    for (std::size_t i = 0; i < rf::kSessionEndedCredentialCount; ++i)
+    {
+        const auto decision = kAllSessionEndedCredentials[i];
+        EXPECT_EQ(static_cast<std::size_t>(decision), i) << "表按枚举序排列";
+        EXPECT_STRNE(rf::SessionEndedCredentialName(decision), "?");
+        for (std::size_t j = 0; j < i; ++j)
+        {
+            EXPECT_STRNE(rf::SessionEndedCredentialName(kAllSessionEndedCredentials[j]),
+                         rf::SessionEndedCredentialName(decision))
+                << "汇总行 key 不得重名";
+        }
+    }
+    EXPECT_STREQ(rf::SessionEndedCredentialName(rf::SessionEndedCredential::kCount), "?");
+}
+
+TEST(ReleaseFenceEcs, SessionEndedReleaseExitsHolderAsClientDisconnect)
+{
+    // 持有者缓存恰好是那一代:按客户端断线退出。宿主里快路径同步收尾、实体销毁;A1′ 判定为"写"(原因在可写集合里),
+    // 而不是交接释放那样按原因跳过 —— 这正是 scene_manager 下一次重试要看的那枚标记。
+    ScopedPersistedPlayerCleanup cleanup;
+    ScopedConfirmedNodeIdentity identity;
+    DrainRelocateConfirms();
+    entt::entity player{entt::null};
+    ASSERT_TRUE(MakeReleaseTarget(kReleaseExpectedEpoch, player));
+    const auto exitBefore = exit_release_stats::Read();
+    const auto before = release_fence_stats::Read();
+
+    ReleaseEndedSession(kReleaseExpectedEpoch);
+
+    EXPECT_FALSE(tlsEcs.actorRegistry.valid(player));
+    EXPECT_EQ(tlsEcs.playerList.count(kExitPlayerId), 0u);
+    EXPECT_EQ(SessionMap().count(kSessionAtExit), 0u);
+    const auto exitAfter = exit_release_stats::Read();
+    const auto write = static_cast<std::size_t>(erm::ExitReleaseDecision::kWrite);
+    const auto skipCause = static_cast<std::size_t>(erm::ExitReleaseDecision::kSkipCause);
+    EXPECT_EQ(exitAfter.decisions[write], exitBefore.decisions[write] + 1) << "按客户端断线退出:A1′ 判定写标记";
+    EXPECT_EQ(exitAfter.decisions[skipCause], exitBefore.decisions[skipCause]) << "不得按交接释放的原因跳过 A1′";
+    const auto after = release_fence_stats::Read();
+    EXPECT_EQ(after.sessionEnded, before.sessionEnded + 1);
+    EXPECT_EQ(ReleaseVerdictCount(after, rf::Verdict::kRelease), ReleaseVerdictCount(before, rf::Verdict::kRelease) + 1);
+    EXPECT_EQ(after.credentialDecisions, before.credentialDecisions) << "持有时不走凭证";
+    EXPECT_EQ(BindingCount(after, rf::SessionEndedBinding::kUnversionedEntity),
+              BindingCount(before, rf::SessionEndedBinding::kUnversionedEntity) + 1)
+        << "夹具实体没有登录身份组件:证明不了它更新,按现行为退出";
+    DrainRelocateConfirms();
+}
+
+TEST(ReleaseFenceEcs, SessionEndedReleaseOnStaleEntityIgnored)
+{
+    // 实体已在更新的一代(E+2):这条释放属于更早的 location,不动实体。
+    ScopedPersistedPlayerCleanup cleanup;
+    entt::entity player{entt::null};
+    ASSERT_TRUE(MakeReleaseTarget(kReleaseExpectedEpoch + 2, player));
+    const auto before = release_fence_stats::Read();
+
+    ReleaseEndedSession(kReleaseExpectedEpoch);
+
+    ASSERT_TRUE(tlsEcs.actorRegistry.valid(player));
+    ExpectEntityUntouched(player, kSessionAtExit);
+    const auto after = release_fence_stats::Read();
+    EXPECT_EQ(ReleaseVerdictCount(after, rf::Verdict::kSkipStaleRelease),
+              ReleaseVerdictCount(before, rf::Verdict::kSkipStaleRelease) + 1);
+    EXPECT_EQ(CredentialWriteOutcomes(after), CredentialWriteOutcomes(before)) << "有实体时绝不写凭证";
+}
+
+TEST(ReleaseFenceEcs, SessionEndedReleaseDuringHandoffIgnored)
+{
+    // 交接在途:去留只由 EnterScene 应答与看门狗裁决,交接的 EnterScene 会改写 location。
+    ScopedPersistedPlayerCleanup cleanup;
+    entt::entity player{entt::null};
+    ASSERT_TRUE(MakeReleaseTarget(kReleaseExpectedEpoch, player));
+    AttachHandoff(player, /*correlationId=*/0);
+    const auto before = release_fence_stats::Read();
+
+    ReleaseEndedSession(kReleaseExpectedEpoch);
+
+    ASSERT_TRUE(tlsEcs.actorRegistry.valid(player));
+    ExpectEntityUntouched(player, kSessionAtExit);
+    EXPECT_EQ(ReleaseVerdictCount(release_fence_stats::Read(), rf::Verdict::kSkipHandoffInFlight),
+              ReleaseVerdictCount(before, rf::Verdict::kSkipHandoffInFlight) + 1);
+}
+
+TEST(ReleaseFenceEcs, SessionEndedReleaseWithoutHolderWritesCredential)
+{
+    // 本节点完全不持有(实体已存盘销毁、A1′ 没写成或已过 TTL):按 owner_epoch 条件补写凭证。宿主无 Redis,写走"写不成"。
+    ScopedPersistedPlayerCleanup cleanup;
+    ScopedConfirmedNodeIdentity identity;
+    ClearLocalHolderOfExitPlayer();
+    const auto before = release_fence_stats::Read();
+
+    ReleaseEndedSession(kReleaseExpectedEpoch);
+
+    const auto after = release_fence_stats::Read();
+    EXPECT_EQ(after.sessionEnded, before.sessionEnded + 1);
+    EXPECT_EQ(CredentialCount(after, rf::SessionEndedCredential::kWrite),
+              CredentialCount(before, rf::SessionEndedCredential::kWrite) + 1);
+    EXPECT_EQ(CredentialWriteOutcomes(after), CredentialWriteOutcomes(before) + 1) << "条件写发出且有结果(宿主里是失败)";
+    EXPECT_EQ(after.verdicts, before.verdicts) << "没有实体时不做实体判定";
+    EXPECT_EQ(tlsEcs.playerList.count(kExitPlayerId), 0u) << "凭证不建实体";
+}
+
+TEST(ReleaseFenceEcs, SessionEndedReleaseWithPendingLoadSkipsCredential)
+{
+    // 载入在途:载入建出实体就是持有者,放弃时 A2′ 自己补写;这里发凭证等于给即将上线的持有者发放行证。
+    ScopedPersistedPlayerCleanup cleanup;
+    ScopedConfirmedNodeIdentity identity;
+    ClearLocalHolderOfExitPlayer();
+    PlayerEnterContext ctx;
+    ctx.ownerEpoch = kReleaseExpectedEpoch;
+    PlayerLifecycleSystem::GetPendingEnterMap()[kExitPlayerId] = ctx;
+    const auto before = release_fence_stats::Read();
+
+    ReleaseEndedSession(kReleaseExpectedEpoch);
+
+    const auto after = release_fence_stats::Read();
+    EXPECT_EQ(CredentialCount(after, rf::SessionEndedCredential::kSkipLocalHolder),
+              CredentialCount(before, rf::SessionEndedCredential::kSkipLocalHolder) + 1);
+    EXPECT_EQ(CredentialWriteOutcomes(after), CredentialWriteOutcomes(before));
+    EXPECT_EQ(PlayerLifecycleSystem::GetPendingEnterMap().count(kExitPlayerId), 1u) << "不碰待入场条目";
+    DrainRelocateConfirms();
+}
+
+TEST(ReleaseFenceEcs, SessionEndedReleaseWithoutConfirmedIdentitySkipsCredential)
+{
+    // 本节点身份不确认(没注入探针 = 不确认,M3):写标记可能给接手的新进程开放行口,不写。
+    ScopedPersistedPlayerCleanup cleanup;
+    PlayerLifecycleSystem::SetNodeIdentityProbe({});
+    ClearLocalHolderOfExitPlayer();
+    const auto before = release_fence_stats::Read();
+
+    ReleaseEndedSession(kReleaseExpectedEpoch);
+
+    const auto after = release_fence_stats::Read();
+    EXPECT_EQ(CredentialCount(after, rf::SessionEndedCredential::kSkipIdentity),
+              CredentialCount(before, rf::SessionEndedCredential::kSkipIdentity) + 1);
+    EXPECT_EQ(CredentialWriteOutcomes(after), CredentialWriteOutcomes(before));
+}
+
+// ── 覆盖身份:会话结束释放在归属代际放行之后再比登录身份(ReleasePlayerRequest.covered_*,location-release-binding.md §13)──
+
+TEST(ReleaseFence, SessionEndedBindingDecideTable)
+{
+    constexpr uint64_t g = kCoveredGeneration;
+    // 覆盖代次 0(旧版 scene_manager):按现行为,哪怕实体明显更新。
+    EXPECT_EQ(rf::DecideSessionEndedBinding(kNewerSession, g + 5, 0, 0), rf::SessionEndedBinding::kUnversionedRequest);
+    EXPECT_EQ(rf::DecideSessionEndedBinding(kNewerSession, g + 5, kSessionAtExit, 0),
+              rf::SessionEndedBinding::kUnversionedRequest);
+    // 两边都没有代次时第 1 行先于第 2 行:旧版 scene_manager 必须记到 unversioned_request(运维靠它恒 0 判断升级完成),
+    // 不能因为目标实体也是旧登录就被记成 unversioned_entity 藏起来。
+    EXPECT_EQ(rf::DecideSessionEndedBinding(kSessionAtExit, 0, 0, 0), rf::SessionEndedBinding::kUnversionedRequest);
+    EXPECT_EQ(rf::DecideSessionEndedBinding(kInvalidSessionId, 0, kSessionAtExit, 0),
+              rf::SessionEndedBinding::kUnversionedRequest);
+    // 实体没有登录代次:证明不了它更新。
+    EXPECT_EQ(rf::DecideSessionEndedBinding(kNewerSession, 0, kSessionAtExit, g), rf::SessionEndedBinding::kUnversionedEntity);
+    EXPECT_EQ(rf::DecideSessionEndedBinding(kInvalidSessionId, 0, kSessionAtExit, g),
+              rf::SessionEndedBinding::kUnversionedEntity);
+    // 实体代次更大:不论会话号同不同。
+    EXPECT_EQ(rf::DecideSessionEndedBinding(kNewerSession, g + 1, kSessionAtExit, g), rf::SessionEndedBinding::kSkipNewerLogin);
+    EXPECT_EQ(rf::DecideSessionEndedBinding(kSessionAtExit, g + 1, kSessionAtExit, g), rf::SessionEndedBinding::kSkipNewerLogin)
+        << "同会话号、更大代次 = 同一连接 LeaveGame 后的另一次登录;不沿用入场栅栏「同会话一律放行」的口径";
+    EXPECT_EQ(rf::DecideSessionEndedBinding(kInvalidSessionId, g + 1, 0, g), rf::SessionEndedBinding::kSkipNewerLogin);
+    // 同代:两边会话都有效且不同 → 冲突;相同,或任一侧没有会话(没得比,不当作不同)→ 覆盖。
+    EXPECT_EQ(rf::DecideSessionEndedBinding(kNewerSession, g, kSessionAtExit, g), rf::SessionEndedBinding::kSkipConflict);
+    EXPECT_EQ(rf::DecideSessionEndedBinding(kSessionAtExit, g, kSessionAtExit, g), rf::SessionEndedBinding::kCovered);
+    EXPECT_EQ(rf::DecideSessionEndedBinding(kInvalidSessionId, g, kSessionAtExit, g), rf::SessionEndedBinding::kCovered);
+    EXPECT_EQ(rf::DecideSessionEndedBinding(0, g, kSessionAtExit, g), rf::SessionEndedBinding::kCovered);
+    EXPECT_EQ(rf::DecideSessionEndedBinding(kNewerSession, g, 0, g), rf::SessionEndedBinding::kCovered);
+    EXPECT_EQ(rf::DecideSessionEndedBinding(kNewerSession, g, kInvalidSessionId, g), rf::SessionEndedBinding::kCovered);
+    // 实体代次更小:实体服务的登录比被覆盖的还早(登录撞门时覆盖到这次登录,实体还绑着 location 上的旧会话),退出。
+    EXPECT_EQ(rf::DecideSessionEndedBinding(kSessionAtExit, g - 1, kNewerSession, g), rf::SessionEndedBinding::kCovered);
+    EXPECT_EQ(rf::DecideSessionEndedBinding(kSessionAtExit, g - 1, kSessionAtExit, g), rf::SessionEndedBinding::kCovered);
+    static_assert(rf::DecideSessionEndedBinding(kSessionAtExit, kCoveredGeneration + 1, kSessionAtExit, kCoveredGeneration) ==
+                      rf::SessionEndedBinding::kSkipNewerLogin,
+                  "纯函数,可在编译期求值");
+}
+
+TEST(ReleaseFence, SessionEndedBindingNamesCoverEveryValue)
+{
+    for (std::size_t i = 0; i < rf::kSessionEndedBindingCount; ++i)
+    {
+        const auto binding = kAllSessionEndedBindings[i];
+        EXPECT_EQ(static_cast<std::size_t>(binding), i) << "表按枚举序排列";
+        EXPECT_STRNE(rf::SessionEndedBindingName(binding), "?");
+        for (std::size_t j = 0; j < i; ++j)
+        {
+            EXPECT_STRNE(rf::SessionEndedBindingName(kAllSessionEndedBindings[j]), rf::SessionEndedBindingName(binding))
+                << "汇总行 key 不得重名";
+        }
+        // 只有两项 skip 不退出,也只有它们升 WARN。
+        EXPECT_EQ(rf::BindingAlarming(binding), !rf::BindingReleases(binding)) << rf::SessionEndedBindingName(binding);
+    }
+    EXPECT_STREQ(rf::SessionEndedBindingName(rf::SessionEndedBinding::kCount), "?") << "越界不能读出数组外";
+    EXPECT_FALSE(rf::BindingReleases(rf::SessionEndedBinding::kCount)) << "越界值按不退出(fail-closed)";
+    EXPECT_TRUE(rf::BindingReleases(rf::SessionEndedBinding::kCovered));
+    EXPECT_TRUE(rf::BindingReleases(rf::SessionEndedBinding::kUnversionedRequest));
+    EXPECT_TRUE(rf::BindingReleases(rf::SessionEndedBinding::kUnversionedEntity));
+    EXPECT_FALSE(rf::BindingReleases(rf::SessionEndedBinding::kSkipNewerLogin));
+    EXPECT_FALSE(rf::BindingReleases(rf::SessionEndedBinding::kSkipConflict));
+    // 名字是 [ReleaseFence] 汇总行 binding_ 后缀的 key(运维检索),钉住两个告警项的原文。
+    EXPECT_STREQ(rf::SessionEndedBindingName(rf::SessionEndedBinding::kSkipNewerLogin), "skip_newer_login");
+    EXPECT_STREQ(rf::SessionEndedBindingName(rf::SessionEndedBinding::kSkipConflict), "skip_conflict");
+}
+
+TEST(ReleaseFence, SummaryEscalatesOnBindingSkip)
+{
+    release_fence_stats::Snapshot previous;
+    release_fence_stats::Snapshot next = previous;
+    next.bindingDecisions[static_cast<std::size_t>(rf::SessionEndedBinding::kCovered)] += 3;
+    next.bindingDecisions[static_cast<std::size_t>(rf::SessionEndedBinding::kUnversionedRequest)] += 1;
+    next.bindingDecisions[static_cast<std::size_t>(rf::SessionEndedBinding::kUnversionedEntity)] += 1;
+    EXPECT_FALSE(next == previous) << "binding 计数有变化就要打行";
+    EXPECT_FALSE(next.AlarmingIncreaseSince(previous)) << "常态计数增长打 INFO";
+    next.bindingDecisions[static_cast<std::size_t>(rf::SessionEndedBinding::kSkipNewerLogin)] += 1;
+    EXPECT_TRUE(next.AlarmingIncreaseSince(previous)) << "挡下迟到的会话结束释放:升 WARN";
+    release_fence_stats::Snapshot conflict = previous;
+    conflict.bindingDecisions[static_cast<std::size_t>(rf::SessionEndedBinding::kSkipConflict)] += 1;
+    EXPECT_TRUE(conflict.AlarmingIncreaseSince(previous));
+}
+
+TEST(ReleaseFenceEcs, SessionEndedReleaseAfterSameNodeReloginKeepsNewerLogin)
+{
+    // §12.5 残余 1 的主时序:登录撞门的同步释放请求超时(failed)。客户端随即重登(会话 kNewerSession、更大代次),落回本节点
+    // (同物理节点不铸造,仍是 E),复用实体并在 EnterScene 第 1 步记下新身份;覆盖到 (kSessionAtExit, g) 的那条释放这时才
+    // 在本节点执行。代际相等照旧放行,登录身份判定挡下:实体与新会话原样保留。
+    ScopedPersistedPlayerCleanup cleanup;
+    DrainRelocateConfirms();
+    entt::entity player{entt::null};
+    ASSERT_TRUE(MakeReleaseTarget(kReleaseExpectedEpoch, player, kNewerSession));
+    BindLoginIdentity(player, kNewerSession, kCoveredGeneration + 1);
+    const auto before = release_fence_stats::Read();
+
+    ReleaseEndedSession(kReleaseExpectedEpoch);
+
+    ASSERT_TRUE(tlsEcs.actorRegistry.valid(player)) << "迟到的会话结束释放不得退掉已绑上更新登录的实体";
+    ExpectEntityUntouched(player, kNewerSession);
+    const auto &identity = tlsEcs.actorRegistry.get<PlayerLoginIdentityComp>(player);
+    EXPECT_EQ(identity.sessionId, kNewerSession);
+    EXPECT_EQ(identity.loginGeneration, kCoveredGeneration + 1) << "只读,不改写身份";
+    const auto after = release_fence_stats::Read();
+    EXPECT_EQ(after.sessionEnded, before.sessionEnded + 1);
+    EXPECT_EQ(ReleaseVerdictCount(after, rf::Verdict::kRelease), ReleaseVerdictCount(before, rf::Verdict::kRelease) + 1)
+        << "归属代际照旧判 release:挡下它的是第二道判定";
+    EXPECT_EQ(BindingCount(after, rf::SessionEndedBinding::kSkipNewerLogin),
+              BindingCount(before, rf::SessionEndedBinding::kSkipNewerLogin) + 1);
+    EXPECT_TRUE(after.AlarmingIncreaseSince(before)) << "30s 汇总行升 WARN";
+    EXPECT_EQ(CredentialWriteOutcomes(after), CredentialWriteOutcomes(before)) << "有实体时绝不写凭证";
+    DrainRelocateConfirms();
+}
+
+TEST(ReleaseFenceEcs, SessionEndedReleaseKeepsSameConnectionRelogin)
+{
+    // LeaveScene 的后台派发晚到:LeaveGame 之后同一连接再登录,会话号不变、代次变大,落回本节点复用实体;覆盖到离场那次
+    // 登录 (kSessionAtExit, g) 的释放这时才到。只比会话号会把这次新登录当成离场会话退掉。
+    ScopedPersistedPlayerCleanup cleanup;
+    DrainRelocateConfirms();
+    entt::entity player{entt::null};
+    ASSERT_TRUE(MakeReleaseTarget(kReleaseExpectedEpoch, player));
+    BindLoginIdentity(player, kSessionAtExit, kCoveredGeneration + 1);
+    const auto before = release_fence_stats::Read();
+
+    ReleaseEndedSession(kReleaseExpectedEpoch);
+
+    ASSERT_TRUE(tlsEcs.actorRegistry.valid(player));
+    ExpectEntityUntouched(player, kSessionAtExit);
+    EXPECT_EQ(BindingCount(release_fence_stats::Read(), rf::SessionEndedBinding::kSkipNewerLogin),
+              BindingCount(before, rf::SessionEndedBinding::kSkipNewerLogin) + 1);
+    DrainRelocateConfirms();
+}
+
+TEST(ReleaseFenceEcs, SessionEndedReleaseExitsCoveredLogin)
+{
+    // 实体绑着的就是被覆盖的那次登录(登出 / 断线后 LeaveScene 的正常时序):照常按客户端断线退出。
+    ScopedPersistedPlayerCleanup cleanup;
+    ScopedConfirmedNodeIdentity identity;
+    DrainRelocateConfirms();
+    entt::entity player{entt::null};
+    ASSERT_TRUE(MakeReleaseTarget(kReleaseExpectedEpoch, player));
+    BindLoginIdentity(player, kSessionAtExit, kCoveredGeneration);
+    const auto exitBefore = exit_release_stats::Read();
+    const auto before = release_fence_stats::Read();
+
+    ReleaseEndedSession(kReleaseExpectedEpoch);
+
+    ExpectExitedAsClientDisconnect(player, kSessionAtExit, exitBefore);
+    EXPECT_EQ(BindingCount(release_fence_stats::Read(), rf::SessionEndedBinding::kCovered),
+              BindingCount(before, rf::SessionEndedBinding::kCovered) + 1);
+    DrainRelocateConfirms();
+}
+
+TEST(ReleaseFenceEcs, SessionEndedReleaseExitsOlderLoginOnLoginCollision)
+{
+    // 登录撞上未释放的持有者(§12):请求覆盖到发起这次登录的会话 (kNewerSession, g),实体还绑着 location 上更早的那次
+    // 登录 (kSessionAtExit, g-1)。它已被这次登录取代,照常按客户端断线退出。
+    ScopedPersistedPlayerCleanup cleanup;
+    ScopedConfirmedNodeIdentity identity;
+    DrainRelocateConfirms();
+    entt::entity player{entt::null};
+    ASSERT_TRUE(MakeReleaseTarget(kReleaseExpectedEpoch, player));
+    BindLoginIdentity(player, kSessionAtExit, kCoveredGeneration - 1);
+    const auto exitBefore = exit_release_stats::Read();
+    const auto before = release_fence_stats::Read();
+
+    ReleaseEndedSession(kReleaseExpectedEpoch, kNewerSession, kCoveredGeneration);
+
+    ExpectExitedAsClientDisconnect(player, kSessionAtExit, exitBefore);
+    EXPECT_EQ(BindingCount(release_fence_stats::Read(), rf::SessionEndedBinding::kCovered),
+              BindingCount(before, rf::SessionEndedBinding::kCovered) + 1);
+    DrainRelocateConfirms();
+}
+
+TEST(ReleaseFenceEcs, SessionEndedReleaseSameGenerationOtherSessionIgnored)
+{
+    // 同代异会话违反 G2(一个代次只属于一条会话):分不清哪一份该退,退出是破坏性动作,不动。
+    ScopedPersistedPlayerCleanup cleanup;
+    DrainRelocateConfirms();
+    entt::entity player{entt::null};
+    ASSERT_TRUE(MakeReleaseTarget(kReleaseExpectedEpoch, player, kNewerSession));
+    BindLoginIdentity(player, kNewerSession, kCoveredGeneration);
+    const auto before = release_fence_stats::Read();
+
+    ReleaseEndedSession(kReleaseExpectedEpoch);
+
+    ASSERT_TRUE(tlsEcs.actorRegistry.valid(player));
+    ExpectEntityUntouched(player, kNewerSession);
+    EXPECT_EQ(BindingCount(release_fence_stats::Read(), rf::SessionEndedBinding::kSkipConflict),
+              BindingCount(before, rf::SessionEndedBinding::kSkipConflict) + 1);
+    DrainRelocateConfirms();
+}
+
+TEST(ReleaseFenceEcs, SessionEndedReleaseWithoutCoveredIdentityKeepsLegacyBehavior)
+{
+    // 旧版 scene_manager 不带覆盖身份(0 / 0):只比 owner_epoch,与本节之前一致 —— 实体绑着更新的登录也照常退出。
+    // 这是滚动窗口里的已知行为(scene 先于 scene_manager 发布,§13.6),全量升级后 binding_unversioned_request 应恒为 0。
+    ScopedPersistedPlayerCleanup cleanup;
+    ScopedConfirmedNodeIdentity identity;
+    DrainRelocateConfirms();
+    entt::entity player{entt::null};
+    ASSERT_TRUE(MakeReleaseTarget(kReleaseExpectedEpoch, player, kNewerSession));
+    BindLoginIdentity(player, kNewerSession, kCoveredGeneration + 1);
+    const auto exitBefore = exit_release_stats::Read();
+    const auto before = release_fence_stats::Read();
+
+    ReleaseEndedSession(kReleaseExpectedEpoch, /*coveredSession=*/0, /*coveredGeneration=*/0);
+
+    ExpectExitedAsClientDisconnect(player, kNewerSession, exitBefore);
+    EXPECT_EQ(BindingCount(release_fence_stats::Read(), rf::SessionEndedBinding::kUnversionedRequest),
+              BindingCount(before, rf::SessionEndedBinding::kUnversionedRequest) + 1);
+    DrainRelocateConfirms();
+}
+
+TEST(ReleaseFenceEcs, SessionEndedBindingJudgedOnlyAfterEpochReleases)
+{
+    // 两道判定的顺序:代际不等(或交接在途)先挡下的释放不再比登录身份,binding_* 不计 —— 汇总行里的 binding_*
+    // 因此读作「归属代际已放行之后」的分布。
+    ScopedPersistedPlayerCleanup cleanup;
+    entt::entity player{entt::null};
+    ASSERT_TRUE(MakeReleaseTarget(kReleaseExpectedEpoch + 2, player));
+    BindLoginIdentity(player, kSessionAtExit, kCoveredGeneration + 1);
+    const auto before = release_fence_stats::Read();
+
+    ReleaseEndedSession(kReleaseExpectedEpoch);
+
+    ASSERT_TRUE(tlsEcs.actorRegistry.valid(player));
+    ExpectEntityUntouched(player, kSessionAtExit);
+    const auto after = release_fence_stats::Read();
+    EXPECT_EQ(ReleaseVerdictCount(after, rf::Verdict::kSkipStaleRelease),
+              ReleaseVerdictCount(before, rf::Verdict::kSkipStaleRelease) + 1);
+    EXPECT_EQ(after.bindingDecisions, before.bindingDecisions) << "代际先挡下:不做登录身份判定";
+}
+
+TEST(OwnerEpochStats, RejectedExitingSaveCountsAsRollbackEvidence)
+{
+    // 退出中的实体存盘被 owner CAS 拒(被拒的就是它当前缓存的那一代 = 已被废黜):退出存盘从未落地,差额随实体丢弃。
+    // 这是回档的直接证据,单独计 stale_owner_rejected_exiting(总数 stale_owner_write_rejected 照旧 +1)。
+    ScopedPersistedPlayerCleanup cleanup;
+    const auto player = MakeExitingPlayer(kSessionAtExit, kSessionAtExit);
+    ASSERT_TRUE(MarkPersisted(player));
+    tlsEcs.actorRegistry.emplace<PlayerOwnerEpochComp>(player).epoch = 6;
+    tlsEcs.actorRegistry.remove<PlayerAssetOpLedgerComp>(player);
+    const auto before = owner_epoch_stats::Read();
+
+    PlayerLifecycleSystem::HandlePlayerSaveRejected(kExitPlayerId, "player-save-test", "6");
+
+    EXPECT_FALSE(tlsEcs.actorRegistry.valid(player)) << "已被废黜:不存盘销毁";
+    const auto after = owner_epoch_stats::Read();
+    EXPECT_EQ(after.staleOwnerWriteRejected, before.staleOwnerWriteRejected + 1);
+    EXPECT_EQ(after.staleOwnerRejectedExiting, before.staleOwnerRejectedExiting + 1);
+    EXPECT_TRUE(after.Any());
+}
+
+TEST(OwnerEpochStats, RejectedLiveSaveIsNotCountedAsExiting)
+{
+    // 在线(没在退出)的实体被拒:只计总数,不计"退出中从未落地"。
+    ScopedPersistedPlayerCleanup cleanup;
+    const auto player = MakeOnlinePlayer(kSessionAtExit);
+    ASSERT_TRUE(MarkPersisted(player));
+    tlsEcs.actorRegistry.emplace<PlayerOwnerEpochComp>(player).epoch = 6;
+    tlsEcs.actorRegistry.remove<PlayerAssetOpLedgerComp>(player);
+    const auto before = owner_epoch_stats::Read();
+
+    PlayerLifecycleSystem::HandlePlayerSaveRejected(kExitPlayerId, "player-save-test", "6");
+
+    EXPECT_FALSE(tlsEcs.actorRegistry.valid(player));
+    const auto after = owner_epoch_stats::Read();
+    EXPECT_EQ(after.staleOwnerWriteRejected, before.staleOwnerWriteRejected + 1);
+    EXPECT_EQ(after.staleOwnerRejectedExiting, before.staleOwnerRejectedExiting);
 }

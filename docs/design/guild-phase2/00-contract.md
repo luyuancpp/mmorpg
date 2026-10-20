@@ -129,3 +129,15 @@
 - robot:`guild_smoke` 扩展,账号段 `robot_9211`–`robot_9219`(避开 9001–9006、9101–9102、9201–9203、9301–9304、9401–9403)。
 - 文档:本设计落 `docs/design/guild-phase2.md`;更新 `guild-zone-client-access.md` §5、D-14 §8、`jubaozhai-market.md` §6.4、`team-system.md` §G.2(名字)、PROGRESS。
 - message id 与 Tip.xlsx 与聚宝斋/组队会话共用,proto-gen 与导表每批串行跑,跑前 `git status` 核对他人未提交产物不被覆盖。
+
+## 7. 2026-10-16 全球帮会运行与交付接线
+
+Go 帮会已加入全局服务镜像目录和 K8s catalogue，只有一份跨 zone 的逻辑池，多副本共用 `domain-service-secrets/guild-sql-dsn`；常驻实例及 `guild-migrate` Job 均从 `MMORPG_GUILD_SQL_DSN` 解析同一 DSN，空环境拒绝且不回退示例。预发/生产固定 TiDB 强读门禁，活动结果开启时结果 topic 须 RF≥3、minISR≥2，启动同步验证，不能先注册开历练再后台建 RF1。dev 明确保留原配置的旧 MySQL 兼容，不能作为全球强一致验收证据。
+
+运行实例注入 Pod IP，不能把 `0.0.0.0` 发布成 gRPC 目标；配表固定 `/generated/tables`，data_service 与 match 通过集群 etcd 的既有发现键连接。活动、幂等保留期、资产重投和三个 Redis 池参数由服务 yaml 镜像。连接总账每副本为三个配置池（当前各20）+ 固定摘要专用池4 + 唤醒订阅1，共65；副本与滚动余量继续由部署清单和既有公式计算。
+
+预发/生产帮会资产通道保持关闭，直至 `08-save-owner-fence.md` 的六条生产启用门禁与冷加载父快照屏障完成验收；接线存在不等于可以提前激活扣款发物。开发环境按源 yaml 开关验证。迁移 Job 先于 Deployment，生产常驻实例只核结构，不自动执行 DDL。数据库与授权账号须由环境预建；本次没有连接生产、写真实 Secret 或执行集群部署。
+
+运维变更 `guild.yaml` ConfigMap 或 `guild-sql-dsn/asset-guild` Secret 后，需要对目标开发或已批准的部署环境执行受控滚动，并核对新 Pod 的配置与服务导出。仅 apply 同镜像 tag 的 ConfigMap/Secret 不能证明进程读取了新配置；环境变量不会在旧 Pod 内自动刷新。
+
+本批客户端真实隔离回归228/228、Java `0.1.0-SNAPSHOT` 帮会96/96（含12项真TiDB）、成品启动UP等证据见 `docs/PROGRESS.md` 的2026-10-16续批和Java `PARITY.md`。普通战斗R07个人资产、归属/父快照屏障及跨洲故障与容量仍单独验收。

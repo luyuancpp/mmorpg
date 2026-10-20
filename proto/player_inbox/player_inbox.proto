@@ -221,6 +221,9 @@ message AckPlayerInboxRequest {
   uint64 owner_epoch = 3;
   uint64 correlation_id = 4;
   repeated PlayerInboxDecisionReport decisions = 5;  // ≤ 32 条,按 seq 升序
+  // 只用于日志(同 FetchPlayerInboxRequest.scene_node_id):服务端把它与 gRPC 对端地址一起打进围栏 / Ack 异常的
+  // ERROR 日志,值班按它定位发送方(评审 L10)。不参与任何判定;0 = 旧版 scene 没填。
+  uint32 scene_node_id = 6;
 }
 
 message PlayerInboxAckItem {

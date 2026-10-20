@@ -165,7 +165,7 @@ var (
 // NewDeps 由 main 调用,签名是 F1 批与 F2 批之间的接缝契约(F1 规格 §3.8)。
 func NewDeps(svcCtx *svc.ServiceContext) *Deps {
 	// 缓存句柄用 FriendRedis(friend 私有 key),不是 SharedRedis:
-	// 共享库是 allkeys-lfu,而且那里只放跨运行时契约 key(契约 §4)。
+	// 共享库只放跨运行时契约 key(契约 §4),好友缓存挤进去会与契约 key 争内存。
 	// 列表读的硬上限交给 repo 保管(F2 §4):缓存里存的是**已经截断过**的列表,
 	// 逐调用传上限会让"缓存里那份按谁的上限截的"取决于谁先回填。
 	// 推荐查询的服务端语句上限取整请求预算:正常路径上 context 先到期,这条上限只负责掐掉

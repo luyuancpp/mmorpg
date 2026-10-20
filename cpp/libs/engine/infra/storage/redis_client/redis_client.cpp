@@ -67,7 +67,7 @@ void MessageSyncRedisClient::Save(const google::protobuf::Message& message, cons
 
 	auto* reply = static_cast<redisReply*>(redisCommand(context_.get(),
 		"EVAL %s 1 %b %b",
-		kSaveAndMarkLuaScript,
+		kSaveLuaScript,
 		key.c_str(),
 		static_cast<size_t>(key.length()),
 		message_cached_array.data(),

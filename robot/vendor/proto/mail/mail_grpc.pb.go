@@ -11,7 +11,6 @@ import (
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
-	base "proto/common/base"
 )
 
 // This is a compile-time assertion to ensure that this generated file
@@ -22,10 +21,10 @@ const _ = grpc.SupportPackageIsVersion9
 const (
 	ClientPlayerMail_ListMails_FullMethodName            = "/mailpb.ClientPlayerMail/ListMails"
 	ClientPlayerMail_ReadMail_FullMethodName             = "/mailpb.ClientPlayerMail/ReadMail"
-	ClientPlayerMail_DeleteMails_FullMethodName          = "/mailpb.ClientPlayerMail/DeleteMails"
-	ClientPlayerMail_DeleteReadMails_FullMethodName      = "/mailpb.ClientPlayerMail/DeleteReadMails"
 	ClientPlayerMail_ClaimMailAttachments_FullMethodName = "/mailpb.ClientPlayerMail/ClaimMailAttachments"
-	ClientPlayerMail_NotifyMailEvent_FullMethodName      = "/mailpb.ClientPlayerMail/NotifyMailEvent"
+	ClientPlayerMail_DeleteMails_FullMethodName          = "/mailpb.ClientPlayerMail/DeleteMails"
+	ClientPlayerMail_ClearReadMails_FullMethodName       = "/mailpb.ClientPlayerMail/ClearReadMails"
+	ClientPlayerMail_NotifyMailChanged_FullMethodName    = "/mailpb.ClientPlayerMail/NotifyMailChanged"
 )
 
 // ClientPlayerMailClient is the client API for ClientPlayerMail service.
@@ -34,12 +33,11 @@ const (
 type ClientPlayerMailClient interface {
 	ListMails(ctx context.Context, in *ListMailsRequest, opts ...grpc.CallOption) (*ListMailsResponse, error)
 	ReadMail(ctx context.Context, in *ReadMailRequest, opts ...grpc.CallOption) (*ReadMailResponse, error)
-	DeleteMails(ctx context.Context, in *DeleteMailsRequest, opts ...grpc.CallOption) (*DeleteMailsResponse, error)
-	DeleteReadMails(ctx context.Context, in *DeleteReadMailsRequest, opts ...grpc.CallOption) (*DeleteReadMailsResponse, error)
 	ClaimMailAttachments(ctx context.Context, in *ClaimMailAttachmentsRequest, opts ...grpc.CallOption) (*ClaimMailAttachmentsResponse, error)
-	// S2C:服务端不实现,也不在会话白名单里;客户端只作接收方。
-	// 必须与 C2S 方法放在同一个名字含 ClientPlayer 的 service 里,生成器才出客户端下行 handler(friend F1 同理)。
-	NotifyMailEvent(ctx context.Context, in *MailEventS2C, opts ...grpc.CallOption) (*base.Empty, error)
+	DeleteMails(ctx context.Context, in *DeleteMailsRequest, opts ...grpc.CallOption) (*DeleteMailsResponse, error)
+	ClearReadMails(ctx context.Context, in *ClearReadMailsRequest, opts ...grpc.CallOption) (*ClearReadMailsResponse, error)
+	// S2C提醒可丢；权威状态由ListMails恢复，客户端来源禁止调用。
+	NotifyMailChanged(ctx context.Context, in *MailChangedEvent, opts ...grpc.CallOption) (*MailChangedEvent, error)
 }
 
 type clientPlayerMailClient struct {
@@ -70,26 +68,6 @@ func (c *clientPlayerMailClient) ReadMail(ctx context.Context, in *ReadMailReque
 	return out, nil
 }
 
-func (c *clientPlayerMailClient) DeleteMails(ctx context.Context, in *DeleteMailsRequest, opts ...grpc.CallOption) (*DeleteMailsResponse, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(DeleteMailsResponse)
-	err := c.cc.Invoke(ctx, ClientPlayerMail_DeleteMails_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *clientPlayerMailClient) DeleteReadMails(ctx context.Context, in *DeleteReadMailsRequest, opts ...grpc.CallOption) (*DeleteReadMailsResponse, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(DeleteReadMailsResponse)
-	err := c.cc.Invoke(ctx, ClientPlayerMail_DeleteReadMails_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
 func (c *clientPlayerMailClient) ClaimMailAttachments(ctx context.Context, in *ClaimMailAttachmentsRequest, opts ...grpc.CallOption) (*ClaimMailAttachmentsResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(ClaimMailAttachmentsResponse)
@@ -100,10 +78,30 @@ func (c *clientPlayerMailClient) ClaimMailAttachments(ctx context.Context, in *C
 	return out, nil
 }
 
-func (c *clientPlayerMailClient) NotifyMailEvent(ctx context.Context, in *MailEventS2C, opts ...grpc.CallOption) (*base.Empty, error) {
+func (c *clientPlayerMailClient) DeleteMails(ctx context.Context, in *DeleteMailsRequest, opts ...grpc.CallOption) (*DeleteMailsResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(base.Empty)
-	err := c.cc.Invoke(ctx, ClientPlayerMail_NotifyMailEvent_FullMethodName, in, out, cOpts...)
+	out := new(DeleteMailsResponse)
+	err := c.cc.Invoke(ctx, ClientPlayerMail_DeleteMails_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *clientPlayerMailClient) ClearReadMails(ctx context.Context, in *ClearReadMailsRequest, opts ...grpc.CallOption) (*ClearReadMailsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ClearReadMailsResponse)
+	err := c.cc.Invoke(ctx, ClientPlayerMail_ClearReadMails_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *clientPlayerMailClient) NotifyMailChanged(ctx context.Context, in *MailChangedEvent, opts ...grpc.CallOption) (*MailChangedEvent, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(MailChangedEvent)
+	err := c.cc.Invoke(ctx, ClientPlayerMail_NotifyMailChanged_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -116,12 +114,11 @@ func (c *clientPlayerMailClient) NotifyMailEvent(ctx context.Context, in *MailEv
 type ClientPlayerMailServer interface {
 	ListMails(context.Context, *ListMailsRequest) (*ListMailsResponse, error)
 	ReadMail(context.Context, *ReadMailRequest) (*ReadMailResponse, error)
-	DeleteMails(context.Context, *DeleteMailsRequest) (*DeleteMailsResponse, error)
-	DeleteReadMails(context.Context, *DeleteReadMailsRequest) (*DeleteReadMailsResponse, error)
 	ClaimMailAttachments(context.Context, *ClaimMailAttachmentsRequest) (*ClaimMailAttachmentsResponse, error)
-	// S2C:服务端不实现,也不在会话白名单里;客户端只作接收方。
-	// 必须与 C2S 方法放在同一个名字含 ClientPlayer 的 service 里,生成器才出客户端下行 handler(friend F1 同理)。
-	NotifyMailEvent(context.Context, *MailEventS2C) (*base.Empty, error)
+	DeleteMails(context.Context, *DeleteMailsRequest) (*DeleteMailsResponse, error)
+	ClearReadMails(context.Context, *ClearReadMailsRequest) (*ClearReadMailsResponse, error)
+	// S2C提醒可丢；权威状态由ListMails恢复，客户端来源禁止调用。
+	NotifyMailChanged(context.Context, *MailChangedEvent) (*MailChangedEvent, error)
 	mustEmbedUnimplementedClientPlayerMailServer()
 }
 
@@ -138,17 +135,17 @@ func (UnimplementedClientPlayerMailServer) ListMails(context.Context, *ListMails
 func (UnimplementedClientPlayerMailServer) ReadMail(context.Context, *ReadMailRequest) (*ReadMailResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method ReadMail not implemented")
 }
-func (UnimplementedClientPlayerMailServer) DeleteMails(context.Context, *DeleteMailsRequest) (*DeleteMailsResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "method DeleteMails not implemented")
-}
-func (UnimplementedClientPlayerMailServer) DeleteReadMails(context.Context, *DeleteReadMailsRequest) (*DeleteReadMailsResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "method DeleteReadMails not implemented")
-}
 func (UnimplementedClientPlayerMailServer) ClaimMailAttachments(context.Context, *ClaimMailAttachmentsRequest) (*ClaimMailAttachmentsResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method ClaimMailAttachments not implemented")
 }
-func (UnimplementedClientPlayerMailServer) NotifyMailEvent(context.Context, *MailEventS2C) (*base.Empty, error) {
-	return nil, status.Error(codes.Unimplemented, "method NotifyMailEvent not implemented")
+func (UnimplementedClientPlayerMailServer) DeleteMails(context.Context, *DeleteMailsRequest) (*DeleteMailsResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method DeleteMails not implemented")
+}
+func (UnimplementedClientPlayerMailServer) ClearReadMails(context.Context, *ClearReadMailsRequest) (*ClearReadMailsResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ClearReadMails not implemented")
+}
+func (UnimplementedClientPlayerMailServer) NotifyMailChanged(context.Context, *MailChangedEvent) (*MailChangedEvent, error) {
+	return nil, status.Error(codes.Unimplemented, "method NotifyMailChanged not implemented")
 }
 func (UnimplementedClientPlayerMailServer) mustEmbedUnimplementedClientPlayerMailServer() {}
 func (UnimplementedClientPlayerMailServer) testEmbeddedByValue()                          {}
@@ -207,42 +204,6 @@ func _ClientPlayerMail_ReadMail_Handler(srv interface{}, ctx context.Context, de
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ClientPlayerMail_DeleteMails_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(DeleteMailsRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(ClientPlayerMailServer).DeleteMails(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: ClientPlayerMail_DeleteMails_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ClientPlayerMailServer).DeleteMails(ctx, req.(*DeleteMailsRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _ClientPlayerMail_DeleteReadMails_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(DeleteReadMailsRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(ClientPlayerMailServer).DeleteReadMails(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: ClientPlayerMail_DeleteReadMails_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ClientPlayerMailServer).DeleteReadMails(ctx, req.(*DeleteReadMailsRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
 func _ClientPlayerMail_ClaimMailAttachments_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ClaimMailAttachmentsRequest)
 	if err := dec(in); err != nil {
@@ -261,20 +222,56 @@ func _ClientPlayerMail_ClaimMailAttachments_Handler(srv interface{}, ctx context
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ClientPlayerMail_NotifyMailEvent_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(MailEventS2C)
+func _ClientPlayerMail_DeleteMails_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeleteMailsRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(ClientPlayerMailServer).NotifyMailEvent(ctx, in)
+		return srv.(ClientPlayerMailServer).DeleteMails(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: ClientPlayerMail_NotifyMailEvent_FullMethodName,
+		FullMethod: ClientPlayerMail_DeleteMails_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ClientPlayerMailServer).NotifyMailEvent(ctx, req.(*MailEventS2C))
+		return srv.(ClientPlayerMailServer).DeleteMails(ctx, req.(*DeleteMailsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ClientPlayerMail_ClearReadMails_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ClearReadMailsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ClientPlayerMailServer).ClearReadMails(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ClientPlayerMail_ClearReadMails_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ClientPlayerMailServer).ClearReadMails(ctx, req.(*ClearReadMailsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ClientPlayerMail_NotifyMailChanged_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(MailChangedEvent)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ClientPlayerMailServer).NotifyMailChanged(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ClientPlayerMail_NotifyMailChanged_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ClientPlayerMailServer).NotifyMailChanged(ctx, req.(*MailChangedEvent))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -295,20 +292,20 @@ var ClientPlayerMail_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _ClientPlayerMail_ReadMail_Handler,
 		},
 		{
-			MethodName: "DeleteMails",
-			Handler:    _ClientPlayerMail_DeleteMails_Handler,
-		},
-		{
-			MethodName: "DeleteReadMails",
-			Handler:    _ClientPlayerMail_DeleteReadMails_Handler,
-		},
-		{
 			MethodName: "ClaimMailAttachments",
 			Handler:    _ClientPlayerMail_ClaimMailAttachments_Handler,
 		},
 		{
-			MethodName: "NotifyMailEvent",
-			Handler:    _ClientPlayerMail_NotifyMailEvent_Handler,
+			MethodName: "DeleteMails",
+			Handler:    _ClientPlayerMail_DeleteMails_Handler,
+		},
+		{
+			MethodName: "ClearReadMails",
+			Handler:    _ClientPlayerMail_ClearReadMails_Handler,
+		},
+		{
+			MethodName: "NotifyMailChanged",
+			Handler:    _ClientPlayerMail_NotifyMailChanged_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

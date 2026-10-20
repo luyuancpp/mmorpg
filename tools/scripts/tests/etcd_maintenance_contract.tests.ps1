@@ -8,13 +8,14 @@
     「infra-up 的 DryRun 产物里有 etcd-compact」(阶段 1b)要跑部署脚本,放在 k8s_deploy_contract.tests.ps1 的 Kafka 清单用例之后。
 
     守住的东西:
-      - CronJob 的形态:名字、不叠跑、不重试、失败留痕、标签不能是 app: etcd、占位只用 __INFRA_NAMESPACE__;
+      - CronJob 的形态:名字、调度只用 */N 分钟、不叠跑、不重试、失败留痕、Job 有小于调度间隔的 activeDeadlineSeconds(防卡死的 Job 让 Forbid
+        永久跳过后续调度)、标签不能是 app: etcd、占位只用 __INFRA_NAMESPACE__;
       - 压缩脚本:目标来自线性一致读,不做 defrag、不解除告警,查告警不经管道(否则查询失败等于「没有告警」);
       - 取值:KEEP_REVISIONS 与 compose 的 ETCD_AUTO_COMPACTION_RETENTION 同值,配额满足「配额 × 2 + 1Gi ≤ PVC」;
       - 镜像:清单、etcd.yaml、compose 三处逐字相同,钉版本只能三处同批改;
-      - 阶段 2(给 etcd.yaml 的 StatefulSet 加压缩 / 配额 env)会滚动 etcd,前置是 C++ etcd 流重建验证通过
-        (docs/design/grpc-muduo-transport.md §10.2 第 2 批)。未经负责人许可不得提前做;真做阶段 2 时把最后一条改成
-        「StatefulSet 的 env 与 compose 相等」的断言。
+      - 阶段 2(给 etcd.yaml 的 StatefulSet 加压缩 / 配额 env、钉镜像 tag@摘要、加抓取注解、探针改 exclude=NOSPACE)会滚动 etcd,前置是 C++ etcd 流重建
+        验证通过(docs/design/grpc-muduo-transport.md §10.2 第 2 批)。未经负责人许可不得提前做;真做阶段 2 时把最后一条改成
+        「StatefulSet 的 env 与 compose 相等」的断言,镜像期望值改成钉住的引用。
 
     设计与取值:docs/handoff/global-singletons-p0-findings-20261014.md「## P0-C」;运维:docs/ops/etcd-maintenance-runbook.md。
 
@@ -134,12 +135,21 @@ Test-Case 'etcd-maintenance.yaml 只含 ConfigMap 与 CronJob,不会改到 State
 Test-Case 'CronJob etcd-compact:不叠跑、同一轮不重试、Pod 不重启、失败记录保留' {
     $text = Get-NonCommentText (Read-RepoText $script:MaintenancePath)
     Assert-Match -Text $text -Pattern 'kind:\s*CronJob\s*\nmetadata:\s*\n\s+name:\s*etcd-compact\s*\n' -Because 'CronJob 名固定为 etcd-compact(runbook 的手工触发命令、infra-status 与契约测试都按这个名字找)'
-    Assert-Match -Text $text -Pattern '(?m)^\s*schedule:\s*"[^"]+"\s*$' -Because '必须有调度'
+    # 调度只认「每 N 分钟」(*/N * * * *)这一种写法:下面 activeDeadlineSeconds 的上界由 N 推出,别的写法算不出间隔,一律判红。
+    $everyMinutes = [int](Get-SingleCapture -Text $text -Pattern '(?m)^\s*schedule:\s*"\*/([1-9][0-9]*) \* \* \* \*"\s*$' -What 'CronJob 的 schedule(*/N * * * *)')
     Assert-Match -Text $text -Pattern '(?m)^\s*concurrencyPolicy:\s*Forbid\s*$' -Because '首次在涨大的库上压缩可能跑得久,不能两轮叠在一起'
     Assert-Match -Text $text -Pattern '(?m)^\s*backoffLimit:\s*0\s*$' -Because '失败要可见:同一轮不重试,下一轮调度就是重试'
     Assert-Match -Text $text -Pattern '(?m)^\s*restartPolicy:\s*Never\s*$' -Because 'Pod 原地重启会把失败藏进 RESTARTS 计数'
     $failedHistory = [int](Get-SingleCapture -Text $text -Pattern '(?m)^\s*failedJobsHistoryLimit:\s*(\d+)\s*$' -What 'failedJobsHistoryLimit')
     Assert-True -Condition ($failedHistory -ge 1) -Because "failedJobsHistoryLimit 至少 1,失败的 Job 及其日志才留得下来(实际 $failedHistory)"
+    # activeDeadlineSeconds 是 Forbid 下唯一防「一个卡住的 Job 永久挡住后续调度」的东西:Pod 卡在拉镜像(latest + IfNotPresent,
+    # 调度到没有镜像的节点)时 Job 一直 Active,Forbid 跳过之后每一轮,也不产生 Failed 记录,压缩就此停摆。
+    # 它必须小于调度间隔(上面 schedule 的 N 分钟),否则一个跑满时限的 Job 仍会吞掉下一轮。
+    $intervalSeconds = $everyMinutes * 60
+    $activeDeadline = [int](Get-SingleCapture -Text $text -Pattern '(?m)^\s*activeDeadlineSeconds:\s*(\d+)\s*$' -What 'Job 的 activeDeadlineSeconds')
+    Assert-True -Condition ($activeDeadline -gt 0 -and $activeDeadline -lt $intervalSeconds) -Because "activeDeadlineSeconds 必须在 (0, 调度间隔 ${intervalSeconds}s) 内,让卡住的 Job 在下一轮调度之前以 Failed 结束(实际 $activeDeadline)"
+    # startingDeadlineSeconds 管的是控制器停摆时错过的调度点(不补跑),不是上面那种卡死的兜底;缺了它控制器恢复后可能报错过太多调度而停调度。
+    Assert-Match -Text $text -Pattern '(?m)^\s*startingDeadlineSeconds:\s*\d+\s*$' -Because '控制器停摆后错过的调度点直接跳过,不补跑'
 }
 
 Test-Case '标签一律 app: etcd-maintenance,绝不能是 app: etcd' {
@@ -204,9 +214,21 @@ Test-Case 'etcd 镜像:etcd-maintenance.yaml、etcd.yaml、compose 三处逐字�
     Assert-Equal -Expected $etcdImage -Actual $composeImage -Because '本机 / 预发与 K8s 跑同一个 etcd 镜像;钉版本三处同批改'
 }
 
-Test-Case '阶段 2 未经许可不得提前做:etcd.yaml 的 StatefulSet 里还没有压缩 / 配额参数' {
+Test-Case '阶段 2 未经许可不得提前做:etcd.yaml 的 StatefulSet 里还没有压缩 / 配额参数、没有钉镜像、没有抓取注解、探针未改' {
     $code = Get-NonCommentText (Read-RepoText $script:EtcdPath)
     Assert-NotMatch -Text $code -Pattern 'ETCD_AUTO_COMPACTION|ETCD_QUOTA_BACKEND_BYTES|auto-compaction|quota-backend-bytes' -Because '给 StatefulSet 加压缩 / 配额参数会滚动 etcd;前置是 C++ etcd 流重建(docs/design/grpc-muduo-transport.md §10.2 第 2 批)验证通过并经负责人许可。真做阶段 2 时把这条改成「StatefulSet 的 env 与 compose 相等」'
+    # 钉 tag@摘要与加 prometheus 抓取注解同样改 Pod 模板、滚动 3 个成员,也属阶段 2(etcd.yaml 镜像行上方注释、runbook §8)。
+    # 上一条「三处镜像逐字相同」会鼓励 M0 之后三处一起钉版:一起改时那条照样绿,etcd 却在前置满足之前被滚动了,所以这里单独钉住现值。
+    Assert-NotMatch -Text $code -Pattern 'prometheus\.io/' -Because '抓取注解进 Pod 模板会滚动 etcd,属阶段 2(runbook §8 步骤 1)'
+    $etcdImage = Get-SingleCapture -Text $code -Pattern '(?m)^\s*image:\s*(\S+)\s*$' -What 'etcd.yaml 的 image'
+    Assert-Equal -Expected 'bitnamilegacy/etcd:latest' -Actual $etcdImage -Because '钉镜像会滚动 etcd,属阶段 2;真做阶段 2 时与 etcd-maintenance.yaml、compose 同批改,并把这里的期望值改成钉住的 tag@摘要'
+    # 探针改 exclude=NOSPACE(runbook §2 / §7 / §8)同样改 Pod 模板、滚动 etcd,也属阶段 2;两个路径都钉住现值。
+    # runbook §7 的应急 patch 只改线上、不落库:落库对被 patch 的集群不滚动,但会让用同一份 etcd.yaml 的其他环境下次 infra-up 时滚动,
+    # 与阶段 2 同一个风险。所以只在阶段 2(或经负责人批准、逐环境全栈停机的窗口)时同批改这两条。
+    $readinessPath = Get-SingleCapture -Text $code -Pattern 'readinessProbe:\s*\n\s*httpGet:\s*\n\s*path:\s*(\S+)' -What 'etcd.yaml 的 readinessProbe path'
+    $livenessPath = Get-SingleCapture -Text $code -Pattern 'livenessProbe:\s*\n\s*httpGet:\s*\n\s*path:\s*(\S+)' -What 'etcd.yaml 的 livenessProbe path'
+    Assert-Equal -Expected '/health' -Actual $readinessPath -Because '改 readiness 探针会滚动 etcd,属阶段 2(runbook §8 步骤 1);§7 的应急 patch 只改线上、不落库'
+    Assert-Equal -Expected '/health?serializable=true' -Actual $livenessPath -Because '改 liveness 探针会滚动 etcd,属阶段 2(runbook §8 步骤 1);§7 的应急 patch 只改线上、不落库'
 }
 
 exit (Complete-TestRun -SuiteName 'etcd_maintenance_contract')

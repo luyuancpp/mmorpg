@@ -12,6 +12,7 @@
 // 并恢复其它用例使用的号段基线 —— 不依赖别的文件的用例先跑或后跑。
 
 #include <gtest/gtest.h>
+#include <google/protobuf/unknown_field_set.h>
 
 #include <cstdint>
 #include <functional>
@@ -364,8 +365,8 @@ TEST_F(BagInstanceDataTest, TakeThenPutMovesTheWholeInstanceBetweenBags)
 	equipment.SetProfile(BagProfile::Equipment(kEquipmentCapacity));
 
 	const ItemComp original = MakeRolledInstance(kGuidA, kEquipA);
-	inventory.InsertItemForRestore(original, 4);
-	inventory.InsertItemForRestore(MakeInstance(kGuidB, kEquipB), 5);
+	inventory.RestoreItems({{original, 4}});
+	inventory.RestoreItems({{MakeInstance(kGuidB, kEquipB), 5}});
 	ASSERT_EQ(2u, inventory.OccupiedGridCount());
 	ASSERT_EQ(4u, inventory.GetItemPosByGuid(kGuidA));
 
@@ -445,7 +446,7 @@ TEST_F(BagInstanceDataTest, PutInstanceWithoutASlotUsesTheSamePlacementAsAddItem
 
 	// 自由格:first-fit。
 	Bag inventory;
-	inventory.InsertItemForRestore(MakeInstance(kGuidC, kPlainNonStack), 0);
+	inventory.RestoreItems({{MakeInstance(kGuidC, kPlainNonStack), 0}});
 	ASSERT_EQ(kSuccess, inventory.PutInstance(MakeInstance(kGuidD, kEquipA)));
 	EXPECT_EQ(1u, inventory.GetItemPosByGuid(kGuidD));
 	EXPECT_TRUE(inventory.IsLayerConsistent());
@@ -510,7 +511,7 @@ TEST_F(BagInstanceDataTest, PutInstanceRefusesAGuidAlreadyInTheBag)
 TEST_F(BagInstanceDataTest, PutInstanceRefusesInvalidIdentityOrShape)
 {
 	Bag inventory;
-	inventory.InsertItemForRestore(MakeInstance(kGuidA, kEquipA), 0);
+	inventory.RestoreItems({{MakeInstance(kGuidA, kEquipA), 0}});
 	const BagState before = Capture(inventory);
 
 	// 搬运的是既有实例,必须带着自己的 guid 来:这里绝不替它铸号。
@@ -541,7 +542,7 @@ TEST_F(BagInstanceDataTest, PutInstanceNeverEvictsEvenOnAnEvictingBag)
 {
 	Bag temporary;
 	temporary.SetProfile(BagProfile::Temporary(1));
-	temporary.InsertItemForRestore(MakeInstance(kGuidA, kEquipA), 0);
+	temporary.RestoreItems({{MakeInstance(kGuidA, kEquipA), 0}});
 	const BagState before = Capture(temporary);
 
 	EXPECT_EQ(kBagAddItemBagFull, temporary.PutInstance(MakeInstance(kGuidB, kEquipB)));
@@ -556,13 +557,13 @@ TEST_F(BagInstanceDataTest, PutInstanceRestampsAcquireSeq)
 	Bag source;
 	ItemComp veteran = MakeInstance(kGuidA, kEquipA);
 	veteran.set_acquire_seq(5000);
-	source.InsertItemForRestore(veteran, 0);
+	source.RestoreItems({{veteran, 0}});
 	ASSERT_NE(nullptr, source.GetItemCompByGuid(kGuidA));
 	ASSERT_EQ(5000u, source.GetItemCompByGuid(kGuidA)->acquire_seq());
 
 	Bag target;
-	target.InsertItemForRestore(MakeInstance(kGuidB, kEquipB), 0);       // 盖 1
-	target.InsertItemForRestore(MakeInstance(kGuidC, kPlainNonStack), 1); // 盖 2
+	target.RestoreItems({{MakeInstance(kGuidB, kEquipB), 0}});       // 盖 1
+	target.RestoreItems({{MakeInstance(kGuidC, kPlainNonStack), 1}}); // 盖 2
 
 	ItemComp carried;
 	ASSERT_EQ(kSuccess, source.TakeInstance(kGuidA, carried));
@@ -753,7 +754,7 @@ TEST_F(BagInstanceDataTest, InitializerNeverRunsOnRestoreOrCarry)
 	InstallCountingInitializer();
 	Bag bag;
 	bag.InsertItemForRestore(kGuidA, kEquipA, /*stackSize=*/1, /*pos=*/0); // 位置参数重载
-	bag.InsertItemForRestore(MakeInstance(kGuidB, kEquipB), 1);            // 整份重载
+	bag.RestoreItems({{MakeInstance(kGuidB, kEquipB), 1}});            // 整份重载
 	EXPECT_EQ(0, initializerCalls);
 	ASSERT_EQ(2u, bag.OccupiedGridCount());
 	bag.ForEachItem([](Guid, const ItemComp &item) { EXPECT_FALSE(item.has_equip()); });
@@ -866,9 +867,9 @@ TEST_F(BagInstanceDataTest, FixedBagMarshalRoundTripKeepsEquipPresenceAndContent
 	uint64_t sourceSeq = 0;
 	{
 		auto &bags = tlsEcs.actorRegistry.emplace<PlayerBagsComp>(source);
-		bags.bags[kInventory].InsertItemForRestore(twoRows, 3);
-		bags.bags[kEquipment].InsertItemForRestore(zeroRows, kSlotKind1First);
-		bags.bags[kWarehouse].InsertItemForRestore(plain, 7);
+		bags.bags[kInventory].RestoreItems({{twoRows, 3}});
+		bags.bags[kEquipment].RestoreItems({{zeroRows, kSlotKind1First}});
+		bags.bags[kWarehouse].RestoreItems({{plain, 7}});
 		ASSERT_NE(nullptr, bags.bags[kInventory].GetItemCompByGuid(kGuidA));
 		sourceSeq = bags.bags[kInventory].GetItemCompByGuid(kGuidA)->acquire_seq();
 		ASSERT_NE(0u, sourceSeq);
@@ -916,9 +917,9 @@ TEST_F(BagInstanceDataTest, DynamicBagMarshalRoundTripKeepsEquipPresenceAndConte
 	{
 		auto &bags = tlsEcs.actorRegistry.emplace<PlayerBagsComp>(source);
 		Bag &dynamicBag = bags.dynamicBags_[kDynamicBagId];
-		dynamicBag.InsertItemForRestore(twoRows, 2);
-		dynamicBag.InsertItemForRestore(zeroRows, 5);
-		dynamicBag.InsertItemForRestore(plain, 6);
+		dynamicBag.RestoreItems({{twoRows, 2}});
+		dynamicBag.RestoreItems({{zeroRows, 5}});
+		dynamicBag.RestoreItems({{plain, 6}});
 		ASSERT_EQ(3u, dynamicBag.OccupiedGridCount());
 	}
 
@@ -953,13 +954,67 @@ TEST_F(BagInstanceDataTest, DynamicBagMarshalRoundTripKeepsEquipPresenceAndConte
 	EXPECT_TRUE(restoredBag.IsLayerConsistent());
 }
 
+TEST_F(BagInstanceDataTest, FixedAndDynamicSqlSnapshotRoundTripKeepsCompleteInstanceUnknownFields)
+{
+	const auto source = NewPlayer();
+	auto& bags = tlsEcs.actorRegistry.emplace<PlayerBagsComp>(source);
+	auto item = MakeRolledInstance(kGuidA, kEquipA);
+	item.GetReflection()->MutableUnknownFields(&item)->AddVarint(100, 456);
+	item.mutable_equip()->GetReflection()->MutableUnknownFields(item.mutable_equip())->AddLengthDelimited(101, "future-growth");
+	bags.bags[kInventory].RestoreItems({{item, 3}});
+	item.set_item_id(kGuidB);
+	bags.dynamicBags_[kDynamicBagId].RestoreItems({{item, 5}});
+	const auto fixedBefore = Capture(bags.bags[kInventory]);
+	const auto dynamicBefore = Capture(bags.dynamicBags_[kDynamicBagId]);
+	BagAllData wire;
+	bag_marshal::Marshal(source, wire);
+	ASSERT_EQ(1, wire.items_size());
+	ASSERT_TRUE(wire.items(0).has_instance());
+	ASSERT_EQ(1, wire.dynamic_bags_size());
+	ASSERT_TRUE(wire.dynamic_bags(0).items(0).has_instance());
+	BagAllData parsed;
+	ASSERT_TRUE(parsed.ParseFromString(wire.SerializeAsString()));
+	const auto dest = NewPlayer();
+	bag_marshal::Unmarshal(dest, parsed);
+	const auto& restored = tlsEcs.actorRegistry.get<PlayerBagsComp>(dest);
+	EXPECT_EQ(fixedBefore, Capture(restored.bags[kInventory]));
+	const auto dynamic = restored.dynamicBags_.find(kDynamicBagId);
+	ASSERT_NE(restored.dynamicBags_.end(), dynamic);
+	EXPECT_EQ(dynamicBefore, Capture(dynamic->second));
+}
+
+TEST_F(BagInstanceDataTest, LegacyItemEntryIsUpgradedWithoutChangingInstanceOrLayout)
+{
+	const auto player = NewPlayer();
+	BagAllData legacy;
+	legacy.add_capacities(20);
+	auto* entry = legacy.add_items();
+	entry->set_item_uuid(kGuidA);
+	entry->set_config_id(kEquipA);
+	entry->set_stack_size(1);
+	entry->set_pos(3);
+	entry->set_acquire_seq(41);
+	entry->mutable_equip()->set_enhance_level(7);
+	bag_marshal::Unmarshal(player, legacy);
+	BagAllData upgraded;
+	bag_marshal::Marshal(player, upgraded);
+	ASSERT_EQ(1, upgraded.items_size());
+	const auto& saved = upgraded.items(0);
+	ASSERT_TRUE(saved.has_instance());
+	EXPECT_EQ(kGuidA, saved.instance().item_id());
+	EXPECT_EQ(kEquipA, saved.instance().config_id());
+	EXPECT_EQ(41u, saved.instance().acquire_seq());
+	EXPECT_EQ(7u, saved.instance().equip().enhance_level());
+	EXPECT_EQ(3u, saved.pos());
+}
+
 // 还原的整份重载:equip 与 acquire_seq 原样保留;位置参数重载仍然可用且等价于"没有 equip"。
 TEST_F(BagInstanceDataTest, RestoreOverloadKeepsTheWholeInstance)
 {
 	Bag bag;
 	ItemComp rolled = MakeRolledInstance(kGuidA, kEquipA);
 	rolled.set_acquire_seq(41);
-	bag.InsertItemForRestore(rolled, 2);
+	bag.RestoreItems({{rolled, 2}});
 	bag.InsertItemForRestore(kGuidB, kEquipB, /*stackSize=*/1, /*pos=*/6, /*acquireSeq=*/42);
 
 	ASSERT_NO_FATAL_FAILURE(ExpectStoredInstance(bag, rolled));
@@ -1003,7 +1058,7 @@ TEST_F(BagInstanceDataTest, StacksCarryingEquipAreNeverMergedInto)
 	Bag bag;
 	ItemComp misconfigured = MakeInstance(kGuidE, kStackable);
 	AddAffix(misconfigured, /*attrId=*/3, /*tier=*/1, /*value=*/9, /*seq=*/0);
-	bag.InsertItemForRestore(misconfigured, 0);
+	bag.RestoreItems({{misconfigured, 0}});
 
 	// ① 入包并堆(PlanStackIntoExistingStacks -> CanStack):进来的数量另开一堆。
 	std::vector<Guid> written;
@@ -1045,7 +1100,7 @@ TEST_F(BagInstanceDataTest, StacksCarryingEquipAreNeverMergedInto)
 	//    上限下,不跳过时它都"并得进去"。
 	Bag oneCell;
 	oneCell.SetProfile(BagProfile::Flat(1));
-	oneCell.InsertItemForRestore(misconfigured, 0);
+	oneCell.RestoreItems({{misconfigured, 0}});
 	ASSERT_EQ(1u, oneCell.OccupiedGridCount());
 	const BagState before = Capture(oneCell);
 	ItemCountMap oneMoreUnit;
@@ -1067,7 +1122,7 @@ TEST_F(BagInstanceDataTest, NamedSlotRestoreKeepsAnAcceptingSnapshotSlot)
 	// 只戴在同部位的第二个槽:不许被挪到第一个空槽。
 	Bag single;
 	single.SetProfile(BagProfile::Equipment(kEquipmentCapacity));
-	single.InsertItemForRestore(MakeInstance(kGuidA, kEquipA), kSlotKind1Second);
+	single.RestoreItems({{MakeInstance(kGuidA, kEquipA), kSlotKind1Second}});
 	EXPECT_EQ(kSlotKind1Second, single.GetItemPosByGuid(kGuidA));
 	EXPECT_EQ(kInvalidGuid, single.Layout().At(kSlotKind1First));
 	EXPECT_TRUE(single.IsLayerConsistent());
@@ -1075,8 +1130,8 @@ TEST_F(BagInstanceDataTest, NamedSlotRestoreKeepsAnAcceptingSnapshotSlot)
 	// 两个槽都戴着,还原顺序与槽号相反(存档按实例层遍历序写出,不保证按槽号)。
 	Bag bothWorn;
 	bothWorn.SetProfile(BagProfile::Equipment(kEquipmentCapacity));
-	bothWorn.InsertItemForRestore(MakeInstance(kGuidB, kEquipB), kSlotKind1Second);
-	bothWorn.InsertItemForRestore(MakeInstance(kGuidA, kEquipA), kSlotKind1First);
+	bothWorn.RestoreItems({{MakeInstance(kGuidB, kEquipB), kSlotKind1Second}});
+	bothWorn.RestoreItems({{MakeInstance(kGuidA, kEquipA), kSlotKind1First}});
 	EXPECT_EQ(kSlotKind1First, bothWorn.GetItemPosByGuid(kGuidA));
 	EXPECT_EQ(kSlotKind1Second, bothWorn.GetItemPosByGuid(kGuidB));
 	EXPECT_TRUE(bothWorn.IsLayerConsistent());
@@ -1084,11 +1139,11 @@ TEST_F(BagInstanceDataTest, NamedSlotRestoreKeepsAnAcceptingSnapshotSlot)
 	// 快照槽位不再接受该部位(策划改了表):落到该部位的第一个空槽,原槽位保持空着。
 	Bag fallback;
 	fallback.SetProfile(BagProfile::Equipment(kEquipmentCapacity));
-	fallback.InsertItemForRestore(MakeInstance(kGuidC, kEquipA), kSlotKind2);
+	fallback.RestoreItems({{MakeInstance(kGuidC, kEquipA), kSlotKind2}});
 	EXPECT_EQ(kSlotKind1First, fallback.GetItemPosByGuid(kGuidC));
 	EXPECT_EQ(kInvalidGuid, fallback.Layout().At(kSlotKind2));
 	// 快照槽位接受该部位但已被占(两件声称同一个槽):后来的那件去下一个空槽,两件都在。
-	fallback.InsertItemForRestore(MakeInstance(kGuidD, kEquipB), kSlotKind1First);
+	fallback.RestoreItems({{MakeInstance(kGuidD, kEquipB), kSlotKind1First}});
 	EXPECT_EQ(kSlotKind1First, fallback.GetItemPosByGuid(kGuidC)) << "the occupant is not displaced";
 	EXPECT_EQ(kSlotKind1Second, fallback.GetItemPosByGuid(kGuidD));
 	EXPECT_EQ(2u, fallback.OccupiedGridCount());
@@ -1097,7 +1152,7 @@ TEST_F(BagInstanceDataTest, NamedSlotRestoreKeepsAnAcceptingSnapshotSlot)
 	// 容量缩到只剩 0 号槽:1 号槽不在容量内,同样退回第一个空槽。
 	Bag narrow;
 	narrow.SetProfile(BagProfile::Equipment(1));
-	narrow.InsertItemForRestore(MakeInstance(kGuidA, kEquipA), kSlotKind1Second);
+	narrow.RestoreItems({{MakeInstance(kGuidA, kEquipA), kSlotKind1Second}});
 	EXPECT_EQ(kSlotKind1First, narrow.GetItemPosByGuid(kGuidA));
 	EXPECT_TRUE(narrow.IsLayerConsistent());
 }
@@ -1168,7 +1223,7 @@ TEST_F(BagInstanceDataTest, EnhanceLevelAndGemsTravelWithTakeAndPut)
 	equipment.SetProfile(BagProfile::Equipment(kEquipmentCapacity));
 
 	const ItemComp original = MakeForgedOnlyInstance(kGuidA, kEquipA);
-	inventory.InsertItemForRestore(original, 2);
+	inventory.RestoreItems({{original, 2}});
 	ASSERT_NO_FATAL_FAILURE(ExpectStoredInstance(inventory, original));
 
 	// 穿上(指定同部位的第二个槽)。
@@ -1222,11 +1277,11 @@ TEST_F(BagInstanceDataTest, MarshalRoundTripKeepsEnhanceLevelGemsAndPresence)
 	const auto source = NewPlayer();
 	{
 		auto &bags = tlsEcs.actorRegistry.emplace<PlayerBagsComp>(source);
-		bags.bags[kInventory].InsertItemForRestore(enhancedOnly, 0);
-		bags.bags[kInventory].InsertItemForRestore(allDefault, 1);
-		bags.bags[kInventory].InsertItemForRestore(uninitialised, 2);
-		bags.bags[kEquipment].InsertItemForRestore(gemsOnly, kSlotKind1Second);
-		bags.bags[kWarehouse].InsertItemForRestore(forged, 7);
+		bags.bags[kInventory].RestoreItems({{enhancedOnly, 0}});
+		bags.bags[kInventory].RestoreItems({{allDefault, 1}});
+		bags.bags[kInventory].RestoreItems({{uninitialised, 2}});
+		bags.bags[kEquipment].RestoreItems({{gemsOnly, kSlotKind1Second}});
+		bags.bags[kWarehouse].RestoreItems({{forged, 7}});
 	}
 
 	BagAllData wire;
@@ -1304,8 +1359,8 @@ TEST_F(BagInstanceDataTest, EnhanceLevelAndGemsSurviveACrossZoneRoundTrip)
 	{
 		auto &bags = tlsEcs.actorRegistry.emplace<PlayerBagsComp>(home);
 		ASSERT_EQ(kSuccess, bags.bags[kEquipment].PutInstance(worn, kSlotKind1Second));
-		bags.bags[kInventory].InsertItemForRestore(inInventory, 4);
-		bags.dynamicBags_[kDynamicBagId].InsertItemForRestore(inDynamicBag, 3);
+		bags.bags[kInventory].RestoreItems({{inInventory, 4}});
+		bags.dynamicBags_[kDynamicBagId].RestoreItems({{inDynamicBag, 3}});
 	}
 
 	const auto away = RoundTripBags(home); // 去程
@@ -1354,8 +1409,8 @@ TEST_F(BagInstanceDataTest, InPlaceEquipEditIsWhatGetsSavedAndMovesNothing)
 		Bag &inventory = bags.bags[kInventory];
 		ItemComp initialised = MakeInstance(kGuidA, kEquipA);
 		initialised.mutable_equip(); // 已初始化、未强化、未镶嵌
-		inventory.InsertItemForRestore(initialised, 6);
-		inventory.InsertItemForRestore(MakeInstance(kGuidB, kPlainNonStack), 7);
+		inventory.RestoreItems({{initialised, 6}});
+		inventory.RestoreItems({{MakeInstance(kGuidB, kPlainNonStack), 7}});
 
 		// 两件都放好之后才取指针:实例指针在下一次 Insert / Erase(含整理)后失效。
 		ItemComp *target = inventory.GetItemCompByGuid(kGuidA);

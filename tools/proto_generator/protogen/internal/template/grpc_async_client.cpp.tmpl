@@ -1,31 +1,24 @@
 #include "muduo/base/Logging.h"
-{{ $root := . }}
 
 #include "{{.GeneratorGrpcFileName}}.h"
-#include <algorithm>
 #include <atomic>
 #include <chrono>
-#include <memory>
 #include <string>
 #include <utility>
 #include "core/network/grpc_client_runtime.h"
 #include "core/utils/encode/base64.h"
 #include "muduo_grpc/channel.h"
 
-{{/* 传输:节点实体上的 muduo_grpc::Channel(docs/design/grpc-muduo-transport.md §14)。线上契约(§4):
-     :path = k<Svc><Method>GrpcPath;metadata 应用层先 Base64 一层,-bin 键再由传输层编一层;截止按 steady_clock。
-     空 package → 全局命名空间(匿名 namespace 会让公开函数跨编译单元不可见,LNK2019);
-     文件级状态单独放真匿名 namespace 保持内部链接,避免多个无 package 服务撞名。 */}}
+{{/* 节点实体上的 muduo_grpc::Channel 负责传输;metadata 保持应用层 Base64,截止使用单调时钟。 */}}
 namespace {
-// 本文件所有 unary 调用的 deadline(毫秒)。启动时 Set{{.FileBaseNameCamel}}CallDeadline 按目标节点类型写入
-// (Node::Initialize → grpc_call_deadline::Apply);原子量:与应答处理器一样是进程级全局。
+// 每个 proto 文件独立的进程级 deadline;启动时按目标节点类型写入。
 std::atomic<uint32_t> callDeadlineMs{kDefaultGrpcCallDeadlineMs};
 
 std::chrono::milliseconds DefaultCallDeadline() {
     return std::chrono::milliseconds(callDeadlineMs.load(std::memory_order_relaxed));
 }
 
-GrpcCallOutcome LocalFailure(uint32_t code, std::string message) {
+GrpcCallOutcome MakeLocalFailureOutcome(uint32_t code, std::string message) {
     GrpcCallOutcome outcome;
     outcome.code = code;
     outcome.message = std::move(message);
@@ -34,116 +27,61 @@ GrpcCallOutcome LocalFailure(uint32_t code, std::string message) {
 }
 
 {{if .Package}}namespace {{.Package}} {{"{"}}{{end}}
-
 {{- range $svc := .ServiceInfo }}
 {{- range $method := $svc.Methods }}
+{{- if not (or $method.ClientStreaming $method.ServerStreaming) }}
 #pragma region {{ $svc.Service }}{{ $method.Method }}
-{{- if or $method.ClientStreaming $method.ServerStreaming }}
-
-void Send{{ $svc.Service }}{{ $method.Method }}(entt::registry&, entt::entity, const {{ $method.CppRequest }}&) {
-    LOG_ERROR << "gRPC {{ $svc.Service }}.{{ $method.Method }} is a streaming method; the generated client does not support it";
-}
-
-void Send{{ $svc.Service }}{{ $method.Method }}(entt::registry&, entt::entity, const {{ $method.CppRequest }}&, const std::vector<std::string>&, const std::vector<std::string>&) {
-    LOG_ERROR << "gRPC {{ $svc.Service }}.{{ $method.Method }} is a streaming method; the generated client does not support it";
-}
-
-void Send{{ $svc.Service }}{{ $method.Method }}(entt::registry&, entt::entity, const google::protobuf::Message&, const std::vector<std::string>&, const std::vector<std::string>&) {
-    LOG_ERROR << "gRPC {{ $svc.Service }}.{{ $method.Method }} is a streaming method; the generated client does not support it";
-}
-{{- else }}
-Async{{ $svc.Service }}{{ $method.Method }}HandlerFunctionType Async{{ $svc.Service }}{{ $method.Method }}Handler;
-Async{{ $svc.Service }}{{ $method.Method }}FailedHandlerFunctionType Async{{ $svc.Service }}{{ $method.Method }}FailedHandler;
-
 namespace {
-// 一次调用的状态:随完成回调走(shared_ptr),不进 ECS、不放对象池。
-// request 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
-struct {{ $svc.Service }}{{ $method.Method }}Call {
-    {{ $method.CppRequest }} request;
-    GrpcSentMetadata sentMetadata;
-    // 每次调用回调;为空时走全局 Async{{ $svc.Service }}{{ $method.Method }}Handler / FailedHandler。
-    GrpcDone<{{ $method.CppResponse }}> done;
-};
-
-void Complete{{ $svc.Service }}{{ $method.Method }}(const {{ $svc.Service }}{{ $method.Method }}Call& call, const GrpcCallOutcome& outcome,
-                                                const {{ $method.CppResponse }}* reply) {
-    if (call.done) {
-        // 带每次调用回调的调用只交给它,不再走全局应答 / 失败处理器。reply 只在回调期间有效。
-        call.done(outcome, outcome.ok() ? reply : nullptr);
-        return;
-    }
-    if (outcome.ok()) {
-        if (Async{{ $svc.Service }}{{ $method.Method }}Handler) {
-            Async{{ $svc.Service }}{{ $method.Method }}Handler(outcome, *reply);
-        } else {
-            // 应答到了却没人收:2026-04 起换图应答就是这样静默丢了约 5 个月。每个方法每线程报一次;
-            // 确实不需要应答的调用方显式装一个空处理器。
-            thread_local bool reportedMissingHandler = false;
-            if (!reportedMissingHandler) {
-                reportedMissingHandler = true;
-                LOG_ERROR << "gRPC {{ $svc.Service }}.{{ $method.Method }} reply dropped: Async{{ $svc.Service }}{{ $method.Method }}Handler is not installed"
-                          << " (install one, or an empty one if the reply is intentionally ignored)";
-            }
-        }
-    } else if (Async{{ $svc.Service }}{{ $method.Method }}FailedHandler) {
-        const GrpcCallFailure failure{ {{ $svc.Service }}{{ $method.Method }}MessageId, "{{ $svc.Service }}.{{ $method.Method }}", outcome, call.sentMetadata};
-        Async{{ $svc.Service }}{{ $method.Method }}FailedHandler(failure, call.request);
-    } else {
-        LOG_ERROR << "gRPC {{ $svc.Service }}.{{ $method.Method }} failed: code=" << outcome.code << " msg=" << outcome.message;
-    }
-}
-
-void QueueLocal{{ $svc.Service }}{{ $method.Method }}Failure(std::shared_ptr<{{ $svc.Service }}{{ $method.Method }}Call> call, uint32_t code, std::string message) {
-    QueueGrpcLocalCompletion([call = std::move(call), outcome = LocalFailure(code, std::move(message))] {
-        Complete{{ $svc.Service }}{{ $method.Method }}(*call, outcome, nullptr);
+void QueueLocal{{ $svc.Service }}{{ $method.Method }}Failure(GrpcDone<{{ $method.CppResponse }}> done, uint32_t code, std::string message) {
+    QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(code, std::move(message))] {
+        done(outcome, nullptr);
     });
 }
 }
 
-// 所有 unary Send 重载的唯一发送入口。deadline <= 0 用本文件默认 deadline;done 为空走全局处理器。
+// 请求必须在这里同步序列化:gate 的共享原型在下次调用会被覆盖。
+// 若将来改成异步序列化,必须先恢复请求的独立副本。
 void Start{{ $svc.Service }}{{ $method.Method }}Call(entt::registry& registry, entt::entity nodeEntity, const {{ $method.CppRequest }}& request,
                                              GrpcSentMetadata metadata, std::chrono::milliseconds deadline,
                                              GrpcDone<{{ $method.CppResponse }}> done) {
-    auto call = std::make_shared<{{ $svc.Service }}{{ $method.Method }}Call>();
-    call->request = request;
-    call->sentMetadata = std::move(metadata);
-    call->done = std::move(done);
-
+    if (!done) {
+        LOG_FATAL << "gRPC {{ $svc.Service }}.{{ $method.Method }} requires a done callback";
+    }
+    muduo_grpc::UnaryCallRequest unaryRequest;
+    unaryRequest.method = std::string(k{{ $svc.Service }}{{ $method.Method }}GrpcPath);
+    if (!request.SerializeToString(&unaryRequest.message)) {
+        QueueLocal{{ $svc.Service }}{{ $method.Method }}Failure(std::move(done), kGrpcStatusInternal, "failed to serialize the request");
+        return;
+    }
     const auto channel = FindGrpcChannel(registry, nodeEntity);
     if (!channel) {
-        QueueLocal{{ $svc.Service }}{{ $method.Method }}Failure(std::move(call), kGrpcStatusUnavailable, "node transport missing or closing");
+        QueueLocal{{ $svc.Service }}{{ $method.Method }}Failure(std::move(done), kGrpcStatusUnavailable, "node transport missing or closing");
         return;
     }
-    muduo_grpc::UnaryCallRequest rpc;
-    rpc.method = std::string(k{{ $svc.Service }}{{ $method.Method }}GrpcPath);
-    if (!call->request.SerializeToString(&rpc.message)) {
-        QueueLocal{{ $svc.Service }}{{ $method.Method }}Failure(std::move(call), kGrpcStatusInternal, "failed to serialize the request");
-        return;
+    unaryRequest.metadata.reserve(metadata.size());
+    for (const auto& [key, value] : metadata) {
+        // Go 侧依赖这层应用编码;-bin 的线上编码另由传输层负责。
+        unaryRequest.metadata.emplace_back(key, Base64Encode(value));
     }
-    rpc.metadata.reserve(call->sentMetadata.size());
-    for (const auto& [key, value] : call->sentMetadata) {
-        // 应用层这一层 Base64 不能省:线上字节与改前一致,Go 侧按它解码、按原样回显(§4.2)。
-        rpc.metadata.emplace_back(key, Base64Encode(value));
-    }
-    rpc.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
-    channel->StartUnaryCall(std::move(rpc), [call](muduo_grpc::UnaryCallResult&& result) {
+    unaryRequest.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
+    channel->StartUnaryCall(std::move(unaryRequest), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
         GrpcCallOutcome outcome;
         outcome.code = result.status.code_value();
         outcome.message = result.status.message();
         outcome.initialMetadata = std::move(result.initialMetadata);
         outcome.trailingMetadata = std::move(result.trailingMetadata);
         if (!outcome.ok()) {
-            Complete{{ $svc.Service }}{{ $method.Method }}(*call, outcome, nullptr);
+            done(outcome, nullptr);
             return;
         }
         {{ $method.CppResponse }} reply;
         if (!reply.ParseFromString(result.response)) {
             outcome.code = kGrpcStatusInternal;
             outcome.message = "failed to parse the {{ $svc.Service }}.{{ $method.Method }} response";
-            Complete{{ $svc.Service }}{{ $method.Method }}(*call, outcome, nullptr);
+            done(outcome, nullptr);
             return;
         }
-        Complete{{ $svc.Service }}{{ $method.Method }}(*call, outcome, &reply);
+        done(outcome, &reply);
     });
 }
 
@@ -152,77 +90,36 @@ void Send{{ $svc.Service }}{{ $method.Method }}(entt::registry& registry, entt::
     Start{{ $svc.Service }}{{ $method.Method }}Call(registry, nodeEntity, request, options.metadata, options.deadline, std::move(done));
 }
 
-void Send{{ $svc.Service }}{{ $method.Method }}(entt::registry& registry, entt::entity nodeEntity, const {{ $method.CppRequest }}& request) {
-    // 显式写出空 vector:另有 (request, GrpcDone, GrpcCallOptions) 重载,两个 {} 会有二义性。
-    Send{{ $svc.Service }}{{ $method.Method }}(registry, nodeEntity, request, std::vector<std::string>{}, std::vector<std::string>{});
-}
-
-void Send{{ $svc.Service }}{{ $method.Method }}(entt::registry& registry, entt::entity nodeEntity, const {{ $method.CppRequest }}& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues) {
-    const size_t count = std::min(metaKeys.size(), metaValues.size());
-    GrpcSentMetadata metadata;
-    metadata.reserve(count);
-    for (size_t i = 0; i < count; ++i) {
-        metadata.emplace_back(metaKeys[i], metaValues[i]);
+void Send{{ $svc.Service }}{{ $method.Method }}Erased(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message,
+                                                  GrpcMessageDone done, const GrpcCallOptions& options) {
+    if (!done) {
+        LOG_FATAL << "gRPC {{ $svc.Service }}.{{ $method.Method }} requires a done callback";
     }
-    Start{{ $svc.Service }}{{ $method.Method }}Call(registry, nodeEntity, request, std::move(metadata), std::chrono::milliseconds{0}, nullptr);
+    if (message.GetDescriptor() != {{ $method.CppRequest }}::descriptor()) {
+        const auto requestTypeName = message.GetDescriptor()->full_name();
+        LOG_ERROR << "gRPC {{ $svc.Service }}.{{ $method.Method }}: request type " << std::string(requestTypeName.data(), requestTypeName.size())
+                  << " does not match; not sent";
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
+            done(outcome, nullptr);
+        });
+        return;
+    }
+    // descriptor 相同仍可能是 DynamicMessage;进入 typed 路径前必须核对真实 C++ 类型。
+    const auto* typedRequest = dynamic_cast<const {{ $method.CppRequest }}*>(&message);
+    if (typedRequest == nullptr) {
+        LOG_ERROR << "gRPC {{ $svc.Service }}.{{ $method.Method }}: request C++ type does not match; not sent";
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
+            done(outcome, nullptr);
+        });
+        return;
+    }
+    Start{{ $svc.Service }}{{ $method.Method }}Call(registry, nodeEntity, *typedRequest, options.metadata, options.deadline,
+        [done = std::move(done)](const GrpcCallOutcome& outcome, const {{ $method.CppResponse }}* reply) { done(outcome, reply); });
 }
-
-void Send{{ $svc.Service }}{{ $method.Method }}(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues) {
-    const {{ $method.CppRequest }}& derived = static_cast<const {{ $method.CppRequest }}&>(message);
-    Send{{ $svc.Service }}{{ $method.Method }}(registry, nodeEntity, derived, metaKeys, metaValues);
-}
-{{- end }}
 #pragma endregion
 {{- end }}
 {{- end }}
-
-void Set{{ .FileBaseNameCamel }}Handler(const std::function<void(const GrpcReplyContext&, const ::google::protobuf::Message& reply)>& handler) {
-{{- range $svc := .ServiceInfo }}
-{{- range $method := $svc.Methods }}
-{{- if not (or $method.ClientStreaming $method.ServerStreaming) }}
-    Async{{ $svc.Service }}{{ $method.Method }}Handler = handler;
 {{- end }}
-{{- end }}
-{{- end }}
-    (void)handler;
-}
-
-void Set{{ .FileBaseNameCamel }}IfEmptyHandler(const std::function<void(const GrpcReplyContext&, const ::google::protobuf::Message& reply)>& handler) {
-{{- range $svc := .ServiceInfo }}
-{{- range $method := $svc.Methods }}
-{{- if not (or $method.ClientStreaming $method.ServerStreaming) }}
-    if (!Async{{ $svc.Service }}{{ $method.Method }}Handler) {
-        Async{{ $svc.Service }}{{ $method.Method }}Handler = handler;
-    }
-{{- end }}
-{{- end }}
-{{- end }}
-    (void)handler;
-}
-
-void Set{{ .FileBaseNameCamel }}FailedHandler(const std::function<void(const GrpcCallFailure&, const ::google::protobuf::Message& request)>& handler) {
-{{- range $svc := .ServiceInfo }}
-{{- range $method := $svc.Methods }}
-{{- if not (or $method.ClientStreaming $method.ServerStreaming) }}
-    Async{{ $svc.Service }}{{ $method.Method }}FailedHandler = handler;
-{{- end }}
-{{- end }}
-{{- end }}
-    (void)handler;
-}
-
-void Set{{ .FileBaseNameCamel }}IfEmptyFailedHandler(const std::function<void(const GrpcCallFailure&, const ::google::protobuf::Message& request)>& handler) {
-{{- range $svc := .ServiceInfo }}
-{{- range $method := $svc.Methods }}
-{{- if not (or $method.ClientStreaming $method.ServerStreaming) }}
-    if (!Async{{ $svc.Service }}{{ $method.Method }}FailedHandler) {
-        Async{{ $svc.Service }}{{ $method.Method }}FailedHandler = handler;
-    }
-{{- end }}
-{{- end }}
-{{- end }}
-    (void)handler;
-}
 
 void Set{{ .FileBaseNameCamel }}CallDeadline(std::chrono::milliseconds deadline) {
     callDeadlineMs.store(static_cast<uint32_t>(deadline.count()), std::memory_order_relaxed);

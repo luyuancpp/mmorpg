@@ -36,7 +36,6 @@ class ClientPlayerRank final {
   class StubInterface {
    public:
     virtual ~StubInterface() {}
-    // 拉一页 + 顺带"我的名次":合成一个 RPC,因为客户端 gRPC 回包按 message_id FIFO 匹配、同一功能只能单请求在途(§4.2)。
     virtual ::grpc::Status GetRankPage(::grpc::ClientContext* context, const ::rankpb::GetRankPageRequest& request, ::rankpb::GetRankPageResponse* response) = 0;
     std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::rankpb::GetRankPageResponse>> AsyncGetRankPage(::grpc::ClientContext* context, const ::rankpb::GetRankPageRequest& request, ::grpc::CompletionQueue* cq) {
       return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::rankpb::GetRankPageResponse>>(AsyncGetRankPageRaw(context, request, cq));
@@ -44,12 +43,20 @@ class ClientPlayerRank final {
     std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::rankpb::GetRankPageResponse>> PrepareAsyncGetRankPage(::grpc::ClientContext* context, const ::rankpb::GetRankPageRequest& request, ::grpc::CompletionQueue* cq) {
       return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::rankpb::GetRankPageResponse>>(PrepareAsyncGetRankPageRaw(context, request, cq));
     }
+    virtual ::grpc::Status GetRankAround(::grpc::ClientContext* context, const ::rankpb::GetRankAroundRequest& request, ::rankpb::GetRankAroundResponse* response) = 0;
+    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::rankpb::GetRankAroundResponse>> AsyncGetRankAround(::grpc::ClientContext* context, const ::rankpb::GetRankAroundRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::rankpb::GetRankAroundResponse>>(AsyncGetRankAroundRaw(context, request, cq));
+    }
+    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::rankpb::GetRankAroundResponse>> PrepareAsyncGetRankAround(::grpc::ClientContext* context, const ::rankpb::GetRankAroundRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::rankpb::GetRankAroundResponse>>(PrepareAsyncGetRankAroundRaw(context, request, cq));
+    }
     class async_interface {
      public:
       virtual ~async_interface() {}
-      // 拉一页 + 顺带"我的名次":合成一个 RPC,因为客户端 gRPC 回包按 message_id FIFO 匹配、同一功能只能单请求在途(§4.2)。
       virtual void GetRankPage(::grpc::ClientContext* context, const ::rankpb::GetRankPageRequest* request, ::rankpb::GetRankPageResponse* response, std::function<void(::grpc::Status)>) = 0;
       virtual void GetRankPage(::grpc::ClientContext* context, const ::rankpb::GetRankPageRequest* request, ::rankpb::GetRankPageResponse* response, ::grpc::ClientUnaryReactor* reactor) = 0;
+      virtual void GetRankAround(::grpc::ClientContext* context, const ::rankpb::GetRankAroundRequest* request, ::rankpb::GetRankAroundResponse* response, std::function<void(::grpc::Status)>) = 0;
+      virtual void GetRankAround(::grpc::ClientContext* context, const ::rankpb::GetRankAroundRequest* request, ::rankpb::GetRankAroundResponse* response, ::grpc::ClientUnaryReactor* reactor) = 0;
     };
     typedef class async_interface experimental_async_interface;
     virtual class async_interface* async() { return nullptr; }
@@ -57,6 +64,8 @@ class ClientPlayerRank final {
    private:
     virtual ::grpc::ClientAsyncResponseReaderInterface< ::rankpb::GetRankPageResponse>* AsyncGetRankPageRaw(::grpc::ClientContext* context, const ::rankpb::GetRankPageRequest& request, ::grpc::CompletionQueue* cq) = 0;
     virtual ::grpc::ClientAsyncResponseReaderInterface< ::rankpb::GetRankPageResponse>* PrepareAsyncGetRankPageRaw(::grpc::ClientContext* context, const ::rankpb::GetRankPageRequest& request, ::grpc::CompletionQueue* cq) = 0;
+    virtual ::grpc::ClientAsyncResponseReaderInterface< ::rankpb::GetRankAroundResponse>* AsyncGetRankAroundRaw(::grpc::ClientContext* context, const ::rankpb::GetRankAroundRequest& request, ::grpc::CompletionQueue* cq) = 0;
+    virtual ::grpc::ClientAsyncResponseReaderInterface< ::rankpb::GetRankAroundResponse>* PrepareAsyncGetRankAroundRaw(::grpc::ClientContext* context, const ::rankpb::GetRankAroundRequest& request, ::grpc::CompletionQueue* cq) = 0;
   };
   class Stub final : public StubInterface {
    public:
@@ -68,11 +77,20 @@ class ClientPlayerRank final {
     std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::rankpb::GetRankPageResponse>> PrepareAsyncGetRankPage(::grpc::ClientContext* context, const ::rankpb::GetRankPageRequest& request, ::grpc::CompletionQueue* cq) {
       return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::rankpb::GetRankPageResponse>>(PrepareAsyncGetRankPageRaw(context, request, cq));
     }
+    ::grpc::Status GetRankAround(::grpc::ClientContext* context, const ::rankpb::GetRankAroundRequest& request, ::rankpb::GetRankAroundResponse* response) override;
+    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::rankpb::GetRankAroundResponse>> AsyncGetRankAround(::grpc::ClientContext* context, const ::rankpb::GetRankAroundRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::rankpb::GetRankAroundResponse>>(AsyncGetRankAroundRaw(context, request, cq));
+    }
+    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::rankpb::GetRankAroundResponse>> PrepareAsyncGetRankAround(::grpc::ClientContext* context, const ::rankpb::GetRankAroundRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::rankpb::GetRankAroundResponse>>(PrepareAsyncGetRankAroundRaw(context, request, cq));
+    }
     class async final :
       public StubInterface::async_interface {
      public:
       void GetRankPage(::grpc::ClientContext* context, const ::rankpb::GetRankPageRequest* request, ::rankpb::GetRankPageResponse* response, std::function<void(::grpc::Status)>) override;
       void GetRankPage(::grpc::ClientContext* context, const ::rankpb::GetRankPageRequest* request, ::rankpb::GetRankPageResponse* response, ::grpc::ClientUnaryReactor* reactor) override;
+      void GetRankAround(::grpc::ClientContext* context, const ::rankpb::GetRankAroundRequest* request, ::rankpb::GetRankAroundResponse* response, std::function<void(::grpc::Status)>) override;
+      void GetRankAround(::grpc::ClientContext* context, const ::rankpb::GetRankAroundRequest* request, ::rankpb::GetRankAroundResponse* response, ::grpc::ClientUnaryReactor* reactor) override;
      private:
       friend class Stub;
       explicit async(Stub* stub): stub_(stub) { }
@@ -86,7 +104,10 @@ class ClientPlayerRank final {
     class async async_stub_{this};
     ::grpc::ClientAsyncResponseReader< ::rankpb::GetRankPageResponse>* AsyncGetRankPageRaw(::grpc::ClientContext* context, const ::rankpb::GetRankPageRequest& request, ::grpc::CompletionQueue* cq) override;
     ::grpc::ClientAsyncResponseReader< ::rankpb::GetRankPageResponse>* PrepareAsyncGetRankPageRaw(::grpc::ClientContext* context, const ::rankpb::GetRankPageRequest& request, ::grpc::CompletionQueue* cq) override;
+    ::grpc::ClientAsyncResponseReader< ::rankpb::GetRankAroundResponse>* AsyncGetRankAroundRaw(::grpc::ClientContext* context, const ::rankpb::GetRankAroundRequest& request, ::grpc::CompletionQueue* cq) override;
+    ::grpc::ClientAsyncResponseReader< ::rankpb::GetRankAroundResponse>* PrepareAsyncGetRankAroundRaw(::grpc::ClientContext* context, const ::rankpb::GetRankAroundRequest& request, ::grpc::CompletionQueue* cq) override;
     const ::grpc::internal::RpcMethod rpcmethod_GetRankPage_;
+    const ::grpc::internal::RpcMethod rpcmethod_GetRankAround_;
   };
   static std::unique_ptr<Stub> NewStub(const std::shared_ptr< ::grpc::ChannelInterface>& channel, const ::grpc::StubOptions& options = ::grpc::StubOptions());
 
@@ -94,8 +115,8 @@ class ClientPlayerRank final {
    public:
     Service();
     virtual ~Service();
-    // 拉一页 + 顺带"我的名次":合成一个 RPC,因为客户端 gRPC 回包按 message_id FIFO 匹配、同一功能只能单请求在途(§4.2)。
     virtual ::grpc::Status GetRankPage(::grpc::ServerContext* context, const ::rankpb::GetRankPageRequest* request, ::rankpb::GetRankPageResponse* response);
+    virtual ::grpc::Status GetRankAround(::grpc::ServerContext* context, const ::rankpb::GetRankAroundRequest* request, ::rankpb::GetRankAroundResponse* response);
   };
   template <class BaseClass>
   class WithAsyncMethod_GetRankPage : public BaseClass {
@@ -117,7 +138,27 @@ class ClientPlayerRank final {
       ::grpc::Service::RequestAsyncUnary(0, context, request, response, new_call_cq, notification_cq, tag);
     }
   };
-  typedef WithAsyncMethod_GetRankPage<Service > AsyncService;
+  template <class BaseClass>
+  class WithAsyncMethod_GetRankAround : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithAsyncMethod_GetRankAround() {
+      ::grpc::Service::MarkMethodAsync(1);
+    }
+    ~WithAsyncMethod_GetRankAround() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status GetRankAround(::grpc::ServerContext* /*context*/, const ::rankpb::GetRankAroundRequest* /*request*/, ::rankpb::GetRankAroundResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    void RequestGetRankAround(::grpc::ServerContext* context, ::rankpb::GetRankAroundRequest* request, ::grpc::ServerAsyncResponseWriter< ::rankpb::GetRankAroundResponse>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
+      ::grpc::Service::RequestAsyncUnary(1, context, request, response, new_call_cq, notification_cq, tag);
+    }
+  };
+  typedef WithAsyncMethod_GetRankPage<WithAsyncMethod_GetRankAround<Service > > AsyncService;
   template <class BaseClass>
   class WithCallbackMethod_GetRankPage : public BaseClass {
    private:
@@ -145,7 +186,34 @@ class ClientPlayerRank final {
     virtual ::grpc::ServerUnaryReactor* GetRankPage(
       ::grpc::CallbackServerContext* /*context*/, const ::rankpb::GetRankPageRequest* /*request*/, ::rankpb::GetRankPageResponse* /*response*/)  { return nullptr; }
   };
-  typedef WithCallbackMethod_GetRankPage<Service > CallbackService;
+  template <class BaseClass>
+  class WithCallbackMethod_GetRankAround : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithCallbackMethod_GetRankAround() {
+      ::grpc::Service::MarkMethodCallback(1,
+          new ::grpc::internal::CallbackUnaryHandler< ::rankpb::GetRankAroundRequest, ::rankpb::GetRankAroundResponse>(
+            [this](
+                   ::grpc::CallbackServerContext* context, const ::rankpb::GetRankAroundRequest* request, ::rankpb::GetRankAroundResponse* response) { return this->GetRankAround(context, request, response); }));}
+    void SetMessageAllocatorFor_GetRankAround(
+        ::grpc::MessageAllocator< ::rankpb::GetRankAroundRequest, ::rankpb::GetRankAroundResponse>* allocator) {
+      ::grpc::internal::MethodHandler* const handler = ::grpc::Service::GetHandler(1);
+      static_cast<::grpc::internal::CallbackUnaryHandler< ::rankpb::GetRankAroundRequest, ::rankpb::GetRankAroundResponse>*>(handler)
+              ->SetMessageAllocator(allocator);
+    }
+    ~WithCallbackMethod_GetRankAround() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status GetRankAround(::grpc::ServerContext* /*context*/, const ::rankpb::GetRankAroundRequest* /*request*/, ::rankpb::GetRankAroundResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    virtual ::grpc::ServerUnaryReactor* GetRankAround(
+      ::grpc::CallbackServerContext* /*context*/, const ::rankpb::GetRankAroundRequest* /*request*/, ::rankpb::GetRankAroundResponse* /*response*/)  { return nullptr; }
+  };
+  typedef WithCallbackMethod_GetRankPage<WithCallbackMethod_GetRankAround<Service > > CallbackService;
   typedef CallbackService ExperimentalCallbackService;
   template <class BaseClass>
   class WithGenericMethod_GetRankPage : public BaseClass {
@@ -160,6 +228,23 @@ class ClientPlayerRank final {
     }
     // disable synchronous version of this method
     ::grpc::Status GetRankPage(::grpc::ServerContext* /*context*/, const ::rankpb::GetRankPageRequest* /*request*/, ::rankpb::GetRankPageResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+  };
+  template <class BaseClass>
+  class WithGenericMethod_GetRankAround : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithGenericMethod_GetRankAround() {
+      ::grpc::Service::MarkMethodGeneric(1);
+    }
+    ~WithGenericMethod_GetRankAround() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status GetRankAround(::grpc::ServerContext* /*context*/, const ::rankpb::GetRankAroundRequest* /*request*/, ::rankpb::GetRankAroundResponse* /*response*/) override {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
@@ -185,6 +270,26 @@ class ClientPlayerRank final {
     }
   };
   template <class BaseClass>
+  class WithRawMethod_GetRankAround : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithRawMethod_GetRankAround() {
+      ::grpc::Service::MarkMethodRaw(1);
+    }
+    ~WithRawMethod_GetRankAround() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status GetRankAround(::grpc::ServerContext* /*context*/, const ::rankpb::GetRankAroundRequest* /*request*/, ::rankpb::GetRankAroundResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    void RequestGetRankAround(::grpc::ServerContext* context, ::grpc::ByteBuffer* request, ::grpc::ServerAsyncResponseWriter< ::grpc::ByteBuffer>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
+      ::grpc::Service::RequestAsyncUnary(1, context, request, response, new_call_cq, notification_cq, tag);
+    }
+  };
+  template <class BaseClass>
   class WithRawCallbackMethod_GetRankPage : public BaseClass {
    private:
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
@@ -204,6 +309,28 @@ class ClientPlayerRank final {
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
     virtual ::grpc::ServerUnaryReactor* GetRankPage(
+      ::grpc::CallbackServerContext* /*context*/, const ::grpc::ByteBuffer* /*request*/, ::grpc::ByteBuffer* /*response*/)  { return nullptr; }
+  };
+  template <class BaseClass>
+  class WithRawCallbackMethod_GetRankAround : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithRawCallbackMethod_GetRankAround() {
+      ::grpc::Service::MarkMethodRawCallback(1,
+          new ::grpc::internal::CallbackUnaryHandler< ::grpc::ByteBuffer, ::grpc::ByteBuffer>(
+            [this](
+                   ::grpc::CallbackServerContext* context, const ::grpc::ByteBuffer* request, ::grpc::ByteBuffer* response) { return this->GetRankAround(context, request, response); }));
+    }
+    ~WithRawCallbackMethod_GetRankAround() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status GetRankAround(::grpc::ServerContext* /*context*/, const ::rankpb::GetRankAroundRequest* /*request*/, ::rankpb::GetRankAroundResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    virtual ::grpc::ServerUnaryReactor* GetRankAround(
       ::grpc::CallbackServerContext* /*context*/, const ::grpc::ByteBuffer* /*request*/, ::grpc::ByteBuffer* /*response*/)  { return nullptr; }
   };
   template <class BaseClass>
@@ -233,9 +360,36 @@ class ClientPlayerRank final {
     // replace default version of method with streamed unary
     virtual ::grpc::Status StreamedGetRankPage(::grpc::ServerContext* context, ::grpc::ServerUnaryStreamer< ::rankpb::GetRankPageRequest,::rankpb::GetRankPageResponse>* server_unary_streamer) = 0;
   };
-  typedef WithStreamedUnaryMethod_GetRankPage<Service > StreamedUnaryService;
+  template <class BaseClass>
+  class WithStreamedUnaryMethod_GetRankAround : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithStreamedUnaryMethod_GetRankAround() {
+      ::grpc::Service::MarkMethodStreamed(1,
+        new ::grpc::internal::StreamedUnaryHandler<
+          ::rankpb::GetRankAroundRequest, ::rankpb::GetRankAroundResponse>(
+            [this](::grpc::ServerContext* context,
+                   ::grpc::ServerUnaryStreamer<
+                     ::rankpb::GetRankAroundRequest, ::rankpb::GetRankAroundResponse>* streamer) {
+                       return this->StreamedGetRankAround(context,
+                         streamer);
+                  }));
+    }
+    ~WithStreamedUnaryMethod_GetRankAround() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable regular version of this method
+    ::grpc::Status GetRankAround(::grpc::ServerContext* /*context*/, const ::rankpb::GetRankAroundRequest* /*request*/, ::rankpb::GetRankAroundResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    // replace default version of method with streamed unary
+    virtual ::grpc::Status StreamedGetRankAround(::grpc::ServerContext* context, ::grpc::ServerUnaryStreamer< ::rankpb::GetRankAroundRequest,::rankpb::GetRankAroundResponse>* server_unary_streamer) = 0;
+  };
+  typedef WithStreamedUnaryMethod_GetRankPage<WithStreamedUnaryMethod_GetRankAround<Service > > StreamedUnaryService;
   typedef Service SplitStreamedService;
-  typedef WithStreamedUnaryMethod_GetRankPage<Service > StreamedService;
+  typedef WithStreamedUnaryMethod_GetRankPage<WithStreamedUnaryMethod_GetRankAround<Service > > StreamedService;
 };
 
 }  // namespace rankpb

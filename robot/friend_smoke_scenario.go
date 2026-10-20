@@ -138,20 +138,13 @@ type friendSmokeBot struct {
 	// pushTimeout 是等一条 S2C 好友事件的预算(friend_smoke.push_timeout_ms)。
 	pushTimeout time.Duration
 
+	// caller 发请求并只等它自己的回包(按请求号认领,见 smoke_rpc_call.go)。
+	caller *smokeCaller
+
 	// RecvLoop goroutine 写、场景主流程读,mu 保护。
 	mu sync.Mutex
-	// replies:本次请求发出后收到的第一个同消息号回包(含信封拒绝)。
-	replies map[uint32]*base.MessageContent
 	// pushes:收到的 S2C 好友事件,按到达顺序。断言前用 resetPushes 清空。
 	pushes []*friendpb.FriendEventS2C
-	// gateTips:本次请求期间收到的 SendTipToClient(gate 选不到路由服时走这条)。
-	gateTips []uint32
-	// awaiting:主流程当前正在等的消息号,0 = 没在等。
-	// 它只为一件事存在:第 6 步要对**推送消息号本身**发请求,那一刻同一个号上
-	// 既可能来"信封拒绝"也可能来"真推送"。没有这个标记就只能靠 error_message 是否为空
-	// 去猜,而"friend 真的实现了 NotifyFriendEvent 并回了空 Empty"恰好也是 error_message 为空
-	// —— 那正是本步要抓的缺陷,却会被当成推送吞掉,失败显示成超时。
-	awaiting uint32
 
 	lastRequestAt time.Time // 仅主流程读写
 }
@@ -562,7 +555,7 @@ func friendSmokeLogin(cfg *config.Config, account string, spacing, pushTimeout t
 		stats:          stats,
 		requestSpacing: spacing,
 		pushTimeout:    pushTimeout,
-		replies:        make(map[uint32]*base.MessageContent),
+		caller:         newSmokeCaller(gc, stats, account, friendSmokeRpcTimeout, errFriendSmokeTimeout),
 	}
 	gameobject.PlayerList.Set(gc.PlayerId, bot.player)
 	go gc.RecvLoop(bot.onMessage)
@@ -578,48 +571,30 @@ func friendSmokeLogin(cfg *config.Config, account string, spacing, pushTimeout t
 	return bot, nil
 }
 
-// onMessage:好友消息号的回包与推送由本场景认领;gate 的 SendTipToClient 记下来供快速失败;
-// 其余交给通用分发。
+// onMessage:好友推送留底;好友请求的回包带请求号,由 GameClient 交给 caller,不会到这里;
+// gate 的 SendTipToClient 交给 caller 供快速失败;其余交给通用分发。
 //
-// ⚠ 必须在分发前认领 ClientPlayerFriend 的**全部 11 个**消息号(10 个 C2S + NotifyFriendEvent)。
-// 服务名含 "ClientPlayer",生成器会给它产出 robot handler stub 并登记进 message_body_handler.go;
-// 信封拒绝(error_message 非空、body 为空)一旦落进 MessageBodyHandler 会被解成全零响应,
-// 看上去像 tip=0 受理 —— 失败会显示为通过。**推送那个号最容易漏**,漏了它第 1/3 步等不到推送,
-// 而且 6 步的信封拒绝会被同一个坑吞掉。
+// ⚠ 必须在分发前拦下 ClientPlayerFriend 的**全部 11 个**消息号:生成器给它产出了 robot handler stub,
+// 信封拒绝(error_message 非空、body 为空)一旦落进 MessageBodyHandler 会被解成全零响应,看上去像 tip=0 受理。
+// 第 6 步对推送号本身发请求:它的回包带请求号、推送 id = 0,按 id 即可分开,不再需要 awaiting 标记。
 func (b *friendSmokeBot) onMessage(client *pkg.GameClient, msg *base.MessageContent) {
 	b.stats.MsgRecv()
 	id := msg.GetMessageId()
-	if friendSmokeIsFriendMessage(id) {
-		b.mu.Lock()
-		switch {
-		case b.awaiting == id:
-			// 主流程正在等这个号:一律当回包(信封拒绝与业务回包都在这条路上)。
-			// ⚠ 本分支**优先于**下面的推送分支,而第 6 步 A 等的就是 NotifyFriendEvent 这个号:
-			// 那一刻若 friend 真给 A 推了一条好友事件,它会被记成"第 6 步的信封回包"而不是推送。
-			// 现在的七步里第 6 步前后没有任何会给 A 产生推送的操作,所以跑不到;
-			// 但**在第 6 步附近加步骤前必须重看这里**,否则会静默误判(不会报错、只会给错结论)。
-			if _, seen := b.replies[id]; !seen {
-				b.replies[id] = msg
-			}
-		case id == game.ClientPlayerFriendNotifyFriendEventMessageId:
-			evt := &friendpb.FriendEventS2C{}
-			if err := proto.Unmarshal(msg.GetSerializedMessage(), evt); err == nil {
-				b.pushes = append(b.pushes, evt)
-			}
-		default:
-			// 没人在等的 C2S 回包 = 上一次请求超时之后才姗姗来迟的那一个。丢掉,
-			// 否则它会被下一次同号请求误读成"本次的回包"(pet-smoke 踩过同类坑)。
+	if id == game.ClientPlayerFriendNotifyFriendEventMessageId {
+		evt := &friendpb.FriendEventS2C{}
+		if err := proto.Unmarshal(msg.GetSerializedMessage(), evt); err == nil {
+			b.mu.Lock()
+			b.pushes = append(b.pushes, evt)
+			b.mu.Unlock()
 		}
-		b.mu.Unlock()
+		return
+	}
+	if friendSmokeIsFriendMessage(id) {
+		smokeDropUncorrelatedReply(b.account, msg)
 		return
 	}
 	if id == game.SceneClientPlayerCommonSendTipToClientMessageId {
-		var tipInfo base.TipInfoMessage
-		if err := proto.Unmarshal(msg.GetSerializedMessage(), &tipInfo); err == nil && tipInfo.GetId() != 0 {
-			b.mu.Lock()
-			b.gateTips = append(b.gateTips, tipInfo.GetId())
-			b.mu.Unlock()
-		}
+		b.caller.onGateTipMessage(msg)
 	}
 	handler.MessageBodyHandler(client, msg)
 }
@@ -656,7 +631,7 @@ func (b *friendSmokeBot) waitPush(reason friendpb.FriendEventReason, byPlayerID 
 	}
 }
 
-// call 发一个好友请求并等同消息号的第一个回包。
+// call 发一个好友请求并只等它自己的回包(smokeCaller.call)。
 //
 // 返回的 envelopeTip 非 0 表示 gate / 路由服级拒绝(信封 error_message,body 为空),此时 response 未填充;
 // 为 0 时 response 已解码。gate 推 kServiceUnavailable 返回 error;超时返回包裹 errFriendSmokeTimeout 的 error。
@@ -664,49 +639,8 @@ func (b *friendSmokeBot) call(messageId uint32, request, response proto.Message)
 	if wait := b.requestSpacing - time.Since(b.lastRequestAt); wait > 0 {
 		time.Sleep(wait)
 	}
-	b.mu.Lock()
-	delete(b.replies, messageId)
-	b.gateTips = nil
-	b.awaiting = messageId
-	b.mu.Unlock()
-	defer func() {
-		b.mu.Lock()
-		b.awaiting = 0
-		b.mu.Unlock()
-	}()
-
-	if err := b.gc.SendRequest(messageId, request); err != nil {
-		return 0, fmt.Errorf("send message_id=%d: %w", messageId, err)
-	}
 	b.lastRequestAt = time.Now()
-	b.stats.MsgSent()
-
-	deadline := time.Now().Add(friendSmokeRpcTimeout)
-	for time.Now().Before(deadline) {
-		b.mu.Lock()
-		reply := b.replies[messageId]
-		gateUnavailable := false
-		for _, tip := range b.gateTips {
-			gateUnavailable = gateUnavailable || tip == tipFriendServiceUnavailable
-		}
-		b.mu.Unlock()
-
-		if reply != nil {
-			if tip := reply.GetErrorMessage().GetId(); tip != 0 {
-				return tip, nil
-			}
-			if err := proto.Unmarshal(reply.GetSerializedMessage(), response); err != nil {
-				return 0, fmt.Errorf("decode message_id=%d: %w", messageId, err)
-			}
-			return 0, nil
-		}
-		if gateUnavailable {
-			return 0, fmt.Errorf("gate SendTipToClient tip=%d(gate 选不到路由服实例,或未以 GATE_CLIENT_RPC_ROUTER=1 启动)",
-				tipFriendServiceUnavailable)
-		}
-		time.Sleep(50 * time.Millisecond)
-	}
-	return 0, fmt.Errorf("message_id=%d account=%s %w(%s)", messageId, b.account, errFriendSmokeTimeout, friendSmokeRpcTimeout)
+	return b.caller.call(messageId, request, response)
 }
 
 // rpc 发请求并返回业务 tip(响应体 error_message.id,0 = 受理)。

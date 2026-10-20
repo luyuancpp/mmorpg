@@ -1,10 +1,8 @@
 #include "muduo/base/Logging.h"
 
 #include "client_rpc_router_grpc_client.h"
-#include <algorithm>
 #include <atomic>
 #include <chrono>
-#include <memory>
 #include <string>
 #include <utility>
 #include "core/network/grpc_client_runtime.h"
@@ -12,15 +10,14 @@
 #include "muduo_grpc/channel.h"
 
 namespace {
-// 本文件所有 unary 调用的 deadline(毫秒)。启动时 SetClientRpcRouterCallDeadline 按目标节点类型写入
-// (Node::Initialize → grpc_call_deadline::Apply);原子量:与应答处理器一样是进程级全局。
+// 每个 proto 文件独立的进程级 deadline;启动时按目标节点类型写入。
 std::atomic<uint32_t> callDeadlineMs{kDefaultGrpcCallDeadlineMs};
 
 std::chrono::milliseconds DefaultCallDeadline() {
     return std::chrono::milliseconds(callDeadlineMs.load(std::memory_order_relaxed));
 }
 
-GrpcCallOutcome LocalFailure(uint32_t code, std::string message) {
+GrpcCallOutcome MakeLocalFailureOutcome(uint32_t code, std::string message) {
     GrpcCallOutcome outcome;
     outcome.code = code;
     outcome.message = std::move(message);
@@ -30,98 +27,57 @@ GrpcCallOutcome LocalFailure(uint32_t code, std::string message) {
 
 namespace client_rpc_router {
 #pragma region ClientRpcRouterForward
-AsyncClientRpcRouterForwardHandlerFunctionType AsyncClientRpcRouterForwardHandler;
-AsyncClientRpcRouterForwardFailedHandlerFunctionType AsyncClientRpcRouterForwardFailedHandler;
-
 namespace {
-// 一次调用的状态:随完成回调走(shared_ptr),不进 ECS、不放对象池。
-// request 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
-struct ClientRpcRouterForwardCall {
-    ::client_rpc_router::ForwardRequest request;
-    GrpcSentMetadata sentMetadata;
-    // 每次调用回调;为空时走全局 AsyncClientRpcRouterForwardHandler / FailedHandler。
-    GrpcDone<::MessageContent> done;
-};
-
-void CompleteClientRpcRouterForward(const ClientRpcRouterForwardCall& call, const GrpcCallOutcome& outcome,
-                                                const ::MessageContent* reply) {
-    if (call.done) {
-        // 带每次调用回调的调用只交给它,不再走全局应答 / 失败处理器。reply 只在回调期间有效。
-        call.done(outcome, outcome.ok() ? reply : nullptr);
-        return;
-    }
-    if (outcome.ok()) {
-        if (AsyncClientRpcRouterForwardHandler) {
-            AsyncClientRpcRouterForwardHandler(outcome, *reply);
-        } else {
-            // 应答到了却没人收:2026-04 起换图应答就是这样静默丢了约 5 个月。每个方法每线程报一次;
-            // 确实不需要应答的调用方显式装一个空处理器。
-            thread_local bool reportedMissingHandler = false;
-            if (!reportedMissingHandler) {
-                reportedMissingHandler = true;
-                LOG_ERROR << "gRPC ClientRpcRouter.Forward reply dropped: AsyncClientRpcRouterForwardHandler is not installed"
-                          << " (install one, or an empty one if the reply is intentionally ignored)";
-            }
-        }
-    } else if (AsyncClientRpcRouterForwardFailedHandler) {
-        const GrpcCallFailure failure{ ClientRpcRouterForwardMessageId, "ClientRpcRouter.Forward", outcome, call.sentMetadata};
-        AsyncClientRpcRouterForwardFailedHandler(failure, call.request);
-    } else {
-        LOG_ERROR << "gRPC ClientRpcRouter.Forward failed: code=" << outcome.code << " msg=" << outcome.message;
-    }
-}
-
-void QueueLocalClientRpcRouterForwardFailure(std::shared_ptr<ClientRpcRouterForwardCall> call, uint32_t code, std::string message) {
-    QueueGrpcLocalCompletion([call = std::move(call), outcome = LocalFailure(code, std::move(message))] {
-        CompleteClientRpcRouterForward(*call, outcome, nullptr);
+void QueueLocalClientRpcRouterForwardFailure(GrpcDone<::MessageContent> done, uint32_t code, std::string message) {
+    QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(code, std::move(message))] {
+        done(outcome, nullptr);
     });
 }
 }
 
-// 所有 unary Send 重载的唯一发送入口。deadline <= 0 用本文件默认 deadline;done 为空走全局处理器。
+// 请求必须在这里同步序列化:gate 的共享原型在下次调用会被覆盖。
+// 若将来改成异步序列化,必须先恢复请求的独立副本。
 void StartClientRpcRouterForwardCall(entt::registry& registry, entt::entity nodeEntity, const ::client_rpc_router::ForwardRequest& request,
                                              GrpcSentMetadata metadata, std::chrono::milliseconds deadline,
                                              GrpcDone<::MessageContent> done) {
-    auto call = std::make_shared<ClientRpcRouterForwardCall>();
-    call->request = request;
-    call->sentMetadata = std::move(metadata);
-    call->done = std::move(done);
-
+    if (!done) {
+        LOG_FATAL << "gRPC ClientRpcRouter.Forward requires a done callback";
+    }
+    muduo_grpc::UnaryCallRequest unaryRequest;
+    unaryRequest.method = std::string(kClientRpcRouterForwardGrpcPath);
+    if (!request.SerializeToString(&unaryRequest.message)) {
+        QueueLocalClientRpcRouterForwardFailure(std::move(done), kGrpcStatusInternal, "failed to serialize the request");
+        return;
+    }
     const auto channel = FindGrpcChannel(registry, nodeEntity);
     if (!channel) {
-        QueueLocalClientRpcRouterForwardFailure(std::move(call), kGrpcStatusUnavailable, "node transport missing or closing");
+        QueueLocalClientRpcRouterForwardFailure(std::move(done), kGrpcStatusUnavailable, "node transport missing or closing");
         return;
     }
-    muduo_grpc::UnaryCallRequest rpc;
-    rpc.method = std::string(kClientRpcRouterForwardGrpcPath);
-    if (!call->request.SerializeToString(&rpc.message)) {
-        QueueLocalClientRpcRouterForwardFailure(std::move(call), kGrpcStatusInternal, "failed to serialize the request");
-        return;
+    unaryRequest.metadata.reserve(metadata.size());
+    for (const auto& [key, value] : metadata) {
+        // Go 侧依赖这层应用编码;-bin 的线上编码另由传输层负责。
+        unaryRequest.metadata.emplace_back(key, Base64Encode(value));
     }
-    rpc.metadata.reserve(call->sentMetadata.size());
-    for (const auto& [key, value] : call->sentMetadata) {
-        // 应用层这一层 Base64 不能省:线上字节与改前一致,Go 侧按它解码、按原样回显(§4.2)。
-        rpc.metadata.emplace_back(key, Base64Encode(value));
-    }
-    rpc.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
-    channel->StartUnaryCall(std::move(rpc), [call](muduo_grpc::UnaryCallResult&& result) {
+    unaryRequest.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
+    channel->StartUnaryCall(std::move(unaryRequest), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
         GrpcCallOutcome outcome;
         outcome.code = result.status.code_value();
         outcome.message = result.status.message();
         outcome.initialMetadata = std::move(result.initialMetadata);
         outcome.trailingMetadata = std::move(result.trailingMetadata);
         if (!outcome.ok()) {
-            CompleteClientRpcRouterForward(*call, outcome, nullptr);
+            done(outcome, nullptr);
             return;
         }
         ::MessageContent reply;
         if (!reply.ParseFromString(result.response)) {
             outcome.code = kGrpcStatusInternal;
             outcome.message = "failed to parse the ClientRpcRouter.Forward response";
-            CompleteClientRpcRouterForward(*call, outcome, nullptr);
+            done(outcome, nullptr);
             return;
         }
-        CompleteClientRpcRouterForward(*call, outcome, &reply);
+        done(outcome, &reply);
     });
 }
 
@@ -130,50 +86,33 @@ void SendClientRpcRouterForward(entt::registry& registry, entt::entity nodeEntit
     StartClientRpcRouterForwardCall(registry, nodeEntity, request, options.metadata, options.deadline, std::move(done));
 }
 
-void SendClientRpcRouterForward(entt::registry& registry, entt::entity nodeEntity, const ::client_rpc_router::ForwardRequest& request) {
-    // 显式写出空 vector:另有 (request, GrpcDone, GrpcCallOptions) 重载,两个 {} 会有二义性。
-    SendClientRpcRouterForward(registry, nodeEntity, request, std::vector<std::string>{}, std::vector<std::string>{});
-}
-
-void SendClientRpcRouterForward(entt::registry& registry, entt::entity nodeEntity, const ::client_rpc_router::ForwardRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues) {
-    const size_t count = std::min(metaKeys.size(), metaValues.size());
-    GrpcSentMetadata metadata;
-    metadata.reserve(count);
-    for (size_t i = 0; i < count; ++i) {
-        metadata.emplace_back(metaKeys[i], metaValues[i]);
+void SendClientRpcRouterForwardErased(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message,
+                                                  GrpcMessageDone done, const GrpcCallOptions& options) {
+    if (!done) {
+        LOG_FATAL << "gRPC ClientRpcRouter.Forward requires a done callback";
     }
-    StartClientRpcRouterForwardCall(registry, nodeEntity, request, std::move(metadata), std::chrono::milliseconds{0}, nullptr);
-}
-
-void SendClientRpcRouterForward(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues) {
-    const ::client_rpc_router::ForwardRequest& derived = static_cast<const ::client_rpc_router::ForwardRequest&>(message);
-    SendClientRpcRouterForward(registry, nodeEntity, derived, metaKeys, metaValues);
+    if (message.GetDescriptor() != ::client_rpc_router::ForwardRequest::descriptor()) {
+        const auto requestTypeName = message.GetDescriptor()->full_name();
+        LOG_ERROR << "gRPC ClientRpcRouter.Forward: request type " << std::string(requestTypeName.data(), requestTypeName.size())
+                  << " does not match; not sent";
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
+            done(outcome, nullptr);
+        });
+        return;
+    }
+    // descriptor 相同仍可能是 DynamicMessage;进入 typed 路径前必须核对真实 C++ 类型。
+    const auto* typedRequest = dynamic_cast<const ::client_rpc_router::ForwardRequest*>(&message);
+    if (typedRequest == nullptr) {
+        LOG_ERROR << "gRPC ClientRpcRouter.Forward: request C++ type does not match; not sent";
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
+            done(outcome, nullptr);
+        });
+        return;
+    }
+    StartClientRpcRouterForwardCall(registry, nodeEntity, *typedRequest, options.metadata, options.deadline,
+        [done = std::move(done)](const GrpcCallOutcome& outcome, const ::MessageContent* reply) { done(outcome, reply); });
 }
 #pragma endregion
-
-void SetClientRpcRouterHandler(const std::function<void(const GrpcReplyContext&, const ::google::protobuf::Message& reply)>& handler) {
-    AsyncClientRpcRouterForwardHandler = handler;
-    (void)handler;
-}
-
-void SetClientRpcRouterIfEmptyHandler(const std::function<void(const GrpcReplyContext&, const ::google::protobuf::Message& reply)>& handler) {
-    if (!AsyncClientRpcRouterForwardHandler) {
-        AsyncClientRpcRouterForwardHandler = handler;
-    }
-    (void)handler;
-}
-
-void SetClientRpcRouterFailedHandler(const std::function<void(const GrpcCallFailure&, const ::google::protobuf::Message& request)>& handler) {
-    AsyncClientRpcRouterForwardFailedHandler = handler;
-    (void)handler;
-}
-
-void SetClientRpcRouterIfEmptyFailedHandler(const std::function<void(const GrpcCallFailure&, const ::google::protobuf::Message& request)>& handler) {
-    if (!AsyncClientRpcRouterForwardFailedHandler) {
-        AsyncClientRpcRouterForwardFailedHandler = handler;
-    }
-    (void)handler;
-}
 
 void SetClientRpcRouterCallDeadline(std::chrono::milliseconds deadline) {
     callDeadlineMs.store(static_cast<uint32_t>(deadline.count()), std::memory_order_relaxed);

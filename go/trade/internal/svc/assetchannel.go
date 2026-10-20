@@ -9,6 +9,7 @@ import (
 	"sync"
 	"time"
 
+	"trade/internal/commerce"
 	"trade/internal/config"
 	"trade/internal/constants"
 	"trade/internal/data"
@@ -108,6 +109,8 @@ type AssetChannel struct {
 	OpIDs *idsegment.Client
 	// Pipeline 入队 + 重投循环的门面;密钥缺失时为 nil。
 	Pipeline *reconcile.Pipeline
+	Commerce *commerce.Engine
+	Mall     *commerce.Mall
 	// Wake 落地唤醒订阅(shared/assetopwake,设计 §5.3):订 SharedRedis 上的 assetop:wake,
 	// 把玩家落地交给 Pipeline.WakePlayer。AssetOp.Wake 显式关闭时为 nil(nil 接收者的 Start / Stop 安全)。
 	Wake *assetopwake.Subscriber
@@ -142,6 +145,8 @@ func newAssetChannel(c config.Config, db *sql.DB, ds dspb.DataServiceClient) (*A
 		Addr:     c.SharedRedis.Host,
 		Password: c.SharedRedis.Password,
 		DB:       c.SharedRedis.DB,
+		// 共享 Redis 连接总账按它记账(0 = go-redis 缺省 10 × GOMAXPROCS;负数已被 config.Validate 拒绝)。
+		PoolSize: c.SharedRedis.PoolSize,
 	})
 	pingCtx, cancel := context.WithTimeout(context.Background(), sharedRedisPingTimeout)
 	defer cancel()
@@ -152,6 +157,8 @@ func newAssetChannel(c config.Config, db *sql.DB, ds dspb.DataServiceClient) (*A
 		return nil, fmt.Errorf("连接共享 Redis %s (DB %d) 失败(位置键 player:{id}:location 在这里,"+
 			"必须与 C++ scene / scene_manager 同一实例): %w", c.SharedRedis.Host, c.SharedRedis.DB, err)
 	}
+	// 生效值(缺省时是 go-redis 算出来的 10 × GOMAXPROCS):核对 ConfigMap 镜像的 PoolSize 是否真的被加载。
+	logx.Infof("Shared Redis client %s DB=%d pool_size=%d", c.SharedRedis.Host, c.SharedRedis.DB, rdb.Options().PoolSize)
 
 	ops, err := data.NewAssetOpRepo(db, constants.StoreOpTimeout)
 	if err != nil {
@@ -211,14 +218,17 @@ func newAssetChannel(c config.Config, db *sql.DB, ds dspb.DataServiceClient) (*A
 		OpIDs:   opIDs,
 		Metrics: assetMetrics,
 		// 落地恢复(docs/design/landing-recovery-sync-digest.md §6.4,与 guild 同口径):
-		//   - Ledger:离线读已落盘账本,也是自动放弃"账本确定未见"那条证据的唯一来源;
+		//   - Ledger:离线读已落盘账本,也是自动放弃"账本确定未见"那条证据的唯一来源;RequireSQLCommit 打开时
+		//     还是在线 / 离线终结所认的 SQL 提交证据来源,缺了 reconcile.New 拒绝构造;
 		//   - Locator:自动放弃前重新解析位置,与 Caller 同一个 Locator(同一份位置键、同一份节点镜像,
 		//     "有没有位置"与投递看到的是同一件事);
-		//   - Recovery:停放档 / 自动放弃 / 日对账的参数。
-		// 三者都只能在这里(任何 goroutine 读 Loop 之前)交给 reconcile.New。
-		Ledger:   persistedLedger(ds),
-		Locator:  locator,
-		Recovery: recoveryFrom(c.AssetOp),
+		//   - Recovery:停放档 / 自动放弃 / 日对账的参数;
+		//   - RequireSQLCommit:资产 SQL 提交证据开关(docs/design/db-write-fencing-mysql.md §6.6,缺省关 = HEAD 口径)。
+		// 这些都只能在这里(任何 goroutine 读 Loop 之前)交给 reconcile.New。
+		Ledger:           persistedLedger(ds),
+		Locator:          locator,
+		Recovery:         recoveryFrom(c.AssetOp),
+		RequireSQLCommit: c.AssetOp.RequireSQLCommit,
 	})
 	if err != nil {
 		// 循环常量写错,或落地恢复参数越过 assetop 的硬边界(config.Validate 已先拦一道),都必须炸在启动。
@@ -264,10 +274,15 @@ func newAssetChannel(c config.Config, db *sql.DB, ds dspb.DataServiceClient) (*A
 	return ch, nil
 }
 
-// persistedLedger 建离线读账本(assetop.DataServiceLedger)。没有 data_service 客户端时回 **nil 接口**
-// (不是装着 nil 指针的接口):reconcile.New 据此不挂 Loop.Ledger,离线读账本与自动放弃都不运行(fail-closed);
-// 长期离线玩家的行照常退避重投,玩家上线后由在线投递终结(不变量 I7)。
-// trade 的 NewServiceContext 无条件拨 data_service(号段也要它),生产上走不到 nil 分支。
+// persistedLedger 建已落盘账本读取器(assetop.DataServiceLedger,同时能读 Redis 父键 blob 与 SQL 提交证据)。
+// 没有 data_service 客户端时回 **nil 接口**(不是装着 nil 指针的接口):reconcile.New 据此不挂 Loop.Ledger。
+// 后果按 AssetOp.RequireSQLCommit(docs/design/db-write-fencing-mysql.md §6.6)分:
+//   - 关闭(缺省,HEAD 口径):离线读账本只是优化,它与自动放弃都不运行(fail-closed);长期离线玩家的行照常退避重投,
+//     玩家上线后由在线投递终结(不变量 I7)。
+//   - 打开:在线 / 离线终结都只认 SQL 证据,reconcile.New 经 Loop.CheckWiring 拒绝构造,服务拒启。
+//
+// 交易合同(commerce)的收据 ACK 也用它读 SQL 证据。trade 的 NewServiceContext 无条件拨 data_service(号段也要它),
+// 生产上走不到 nil 分支。
 func persistedLedger(ds dspb.DataServiceClient) assetop.LedgerReader {
 	if ds == nil {
 		logx.Info("[trade] data_service client absent: asset redelivery loop will not read persisted ledger (Loop.Ledger=nil); " +
@@ -396,6 +411,31 @@ func (a *AssetChannel) Start(ctx context.Context, etcd *clientv3.Client) {
 			defer a.wg.Done()
 			a.Pipeline.Run(loopCtx) // 阻塞到 loopCtx 结束、本轮 Tick 的 worker 全部落库完
 		})
+		if a.Commerce != nil {
+			a.wg.Add(1)
+			safego.Go("trade.commerce.reconcile", func() {
+				defer a.wg.Done()
+				ticker := time.NewTicker(time.Second)
+				defer ticker.Stop()
+				for {
+					select {
+					case <-loopCtx.Done():
+						return
+					case <-ticker.C:
+						budget, cancel := context.WithTimeout(loopCtx, 10*time.Second)
+						if err := a.Commerce.Tick(budget); err != nil && loopCtx.Err() == nil {
+							logx.Errorf("交易合同恢复失败: %v", err)
+						}
+						if a.Mall != nil {
+							if err := a.Mall.Tick(budget); err != nil && loopCtx.Err() == nil {
+								logx.Errorf("商城交付恢复失败: %v", err)
+							}
+						}
+						cancel()
+					}
+				}
+			})
+		}
 		if a.maintenance != nil {
 			a.wg.Add(1)
 			safego.Go(assetOpMaintenancePoint, func() {

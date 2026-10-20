@@ -7,14 +7,12 @@
 #include "gate_codec.h"
 #include "gate_security.h"
 #include "node/system/node/node.h"
-#include "network/rpc_channel_stats.h"
 #include "network/rpc_controller.h"
 
 #include "proto/common/component/player_network_comp.pb.h"
 #include "network/broadcast_target_codec.h"
 #include <session/manager/session_manager.h>
 #include <session/system/session_identity_fence.h>
-#include "handler/event/scene_route_helper.h"
 
 #include <algorithm>
 #include <string>
@@ -51,68 +49,9 @@ namespace
 				 << "Identity fence is inactive for such messages; this is logged once. "
 				 << "See docs/design/routing-identity-audit-20260908.md R13.";
 	}
-
-	// 源路由一族(Gate.RoutePlayerMessage / Gate.RouteNodeMessage,scene 侧的 RoutePlayerStringMsg /
-	// RouteNodeStringMsg)已退役,只做显式拒绝。理由见 docs/design/muduo-rpc-channel.md §9.3:
-	//   - 全仓没有发起端(C++ 只有这几个 handler 互相转发);RoutePlayerMessage(74)/ RoutePlayerStringMsg(81)
-	//     不在 IsClientMessageId 里,客户端不可达;
-	//   - 它是「源路由 + 逐跳同步镜像应答」:应答在下游完成之前就回给上游且没有错误字段,正是 A→B→C 的反例;
-	//   - 旧的 gate 终点分支 O(N) 扫会话、绕过身份栅栏,还把 body 里的 ClientRequest.id 当作 MessageContent.id
-	//     写进客户端 socket,可能被客户端当成某次请求的回包;
-	//   - 跨节点玩家消息的权威通道是 Kafka 与持久收件箱(cross_scene_player_messaging.md、reliable-player-inbox-20261014.md)。
-	// SetFailed 之后框架回 RPC_ERROR(HANDLER_FAILED),调用方得到 kRemoteFailed;这里不转发、不写客户端 socket、
-	// 不填 response。proto 方法暂不删:message_id 还没有墓碑,删了会被发号器回收给新方法(§9.3 末段)。
-	//
-	// occurrences 由各 handler 的函数内 static 持有:handler 只在节点唯一的 EventLoop 线程上派发,不需要原子。
-	// 日志按 ShouldLogRpcEvent 采样(前 8 条逐条,之后每 1024 条一条),防止对端刷包把日志打爆。
-	void RejectDeprecatedRouteCall(::google::protobuf::RpcController *controller, const char *method,
-								   uint64_t &occurrences)
-	{
-		controller->SetFailed(std::string(method) +
-							  " is deprecated: no initiator; cross-node player messages go through Kafka / reliable inbox");
-		++occurrences;
-		if (!ShouldLogRpcEvent(occurrences))
-		{
-			return;
-		}
-		const auto &conn = RpcController::From(controller).conn();
-		LOG_WARN << "Rejected deprecated RPC " << method
-				 << ": no initiator; cross-node player messages go through Kafka / reliable inbox"
-				 << " (docs/design/muduo-rpc-channel.md 9.3). peer="
-				 << (conn ? conn->peerAddress().toIpPort() : std::string("<unknown>"))
-				 << " occurrences=" << occurrences;
-	}
 } // namespace
 
 ///<<< END WRITING YOUR CODE
-
-void GateHandler::PlayerEnterGameNode(::google::protobuf::RpcController* controller, const ::RegisterGameNodeSessionRequest* request,
-	::RegisterGameNodeSessionResponse* response,
-	::google::protobuf::Closure* done)
-{
-	///<<< BEGIN WRITING YOUR CODE
-	auto sessionIt = tlsSessionManager.sessions().find(request->session_info().session_id());
-	if (sessionIt == tlsSessionManager.sessions().end())
-	{
-		LOG_ERROR << "Session ID not found for PlayerEnterGs, session ID: " << request->session_info().session_id();
-		return;
-	}
-	// Resolve protocol node_id -> local registry entity before binding the session.
-	if (const auto sceneNodeEntity = NodeUtils::FindNodeEntityByNodeId(SceneNodeService, request->scene_node_id()); sceneNodeEntity)
-	{
-		sessionIt->second.SetNodeEntity(SceneNodeService, *sceneNodeEntity);
-	}
-	else
-	{
-		LOG_ERROR << "PlayerEnterGs: scene node not found in registry, session_id="
-				  << request->session_info().session_id()
-				  << ", scene_node_id=" << request->scene_node_id();
-	}
-	response->mutable_session_info()->CopyFrom(request->session_info());
-	LOG_INFO << "Player entered GS, session ID: " << request->session_info().session_id()
-		<< ", game node ID: " << request->scene_node_id();
-	///<<< END WRITING YOUR CODE
-}
 
 void GateHandler::SendMessageToPlayer(::google::protobuf::RpcController* controller, const ::NodeRouteMessageRequest* request,
 	::Empty* response,
@@ -155,29 +94,7 @@ void GateHandler::SendMessageToPlayer(::google::protobuf::RpcController* control
 	}
 	GetGateCodec().send(conn, request->message_content());
 	///<<< END WRITING YOUR CODE
-}
 
-void GateHandler::RouteNodeMessage(::google::protobuf::RpcController* controller, const ::RouteMessageRequest* request,
-	::RouteMessageResponse* response,
-	::google::protobuf::Closure* done)
-{
-	///<<< BEGIN WRITING YOUR CODE
-	// 已退役:显式拒绝,不再转发(见上方 RejectDeprecatedRouteCall 与 docs/design/muduo-rpc-channel.md §9.3)。
-	static uint64_t rejectedCalls = 0;
-	RejectDeprecatedRouteCall(controller, "Gate.RouteNodeMessage", rejectedCalls);
-	///<<< END WRITING YOUR CODE
-}
-
-void GateHandler::RoutePlayerMessage(::google::protobuf::RpcController* controller, const ::RoutePlayerMessageRequest* request,
-	::RoutePlayerMessageResponse* response,
-	::google::protobuf::Closure* done)
-{
-	///<<< BEGIN WRITING YOUR CODE
-	// 已退役:显式拒绝。不再按 node_list 转发、不再往客户端 socket 写 body、不再镜像 response
-	// (见上方 RejectDeprecatedRouteCall 与 docs/design/muduo-rpc-channel.md §9.3)。
-	static uint64_t rejectedCalls = 0;
-	RejectDeprecatedRouteCall(controller, "Gate.RoutePlayerMessage", rejectedCalls);
-	///<<< END WRITING YOUR CODE
 }
 
 void GateHandler::BroadcastToPlayers(::google::protobuf::RpcController* controller, const ::BroadcastToPlayersRequest* request,
@@ -221,6 +138,7 @@ void GateHandler::BroadcastToPlayers(::google::protobuf::RpcController* controll
 
 	broadcast_targets::ForEach(*request, sendToSession);
 	///<<< END WRITING YOUR CODE
+
 }
 
 void GateHandler::BroadcastToScene(::google::protobuf::RpcController* controller, const ::BroadcastToSceneRequest* request,
@@ -241,6 +159,7 @@ void GateHandler::BroadcastToScene(::google::protobuf::RpcController* controller
 		}
 	}
 	///<<< END WRITING YOUR CODE
+
 }
 
 void GateHandler::BroadcastToAll(::google::protobuf::RpcController* controller, const ::BroadcastToAllRequest* request,
@@ -256,6 +175,7 @@ void GateHandler::BroadcastToAll(::google::protobuf::RpcController* controller, 
 		}
 	}
 	///<<< END WRITING YOUR CODE
+
 }
 
 void GateHandler::NodeHandshake(::google::protobuf::RpcController* controller, const ::NodeHandshakeRequest* request,
@@ -265,42 +185,7 @@ void GateHandler::NodeHandshake(::google::protobuf::RpcController* controller, c
 ///<<< BEGIN WRITING YOUR CODE
 	gNode->GetNodeRegistrationManager().OnNodeHandshake(RpcController::From(controller), *request, *response);
 ///<<< END WRITING YOUR CODE
-}
 
-void GateHandler::BindSessionToGate(::google::protobuf::RpcController* controller, const ::BindSessionToGateRequest* request,
-	::BindSessionToGateResponse* response,
-	::google::protobuf::Closure* done)
-{
-///<<< BEGIN WRITING YOUR CODE
-	// 只能**就地更新**已有会话,绝不能整体赋值。
-	//
-	// 旧实现 `sessions()[id] = SessionInfo{...}` 会把在线会话连同 conn(TCP 连接)、
-	// verified、entityIds(scene 绑定)、sceneId 一起覆盖成默认值:
-	//   - conn 变成空 shared_ptr,而 SendMessageToPlayer / BroadcastToPlayers /
-	//     PushToPlayerEventHandler 都不检查 conn 就 `conn->send()` —— 直接空指针解引用;
-	//   - verified 归 false,该客户端后续所有消息被判未验证并 shutdown;
-	//   - scene 绑定丢失,玩家消息再也路由不到场景节点。
-	// 会话不存在时也不能凭空建一条:没有 conn 的会话永远不会被 TCP 断开回调清掉,
-	// 只会永久泄漏。正确形态与 Kafka 侧的 BindSessionEventHandler 保持一致。
-	auto &sessions = tlsSessionManager.sessions();
-	const auto sessionIt = sessions.find(request->session_id());
-	if (sessionIt == sessions.end())
-	{
-		LOG_ERROR << "BindSessionToGate: session not found (client already disconnected?), session_id="
-				  << request->session_id() << " player_id=" << request->player_id();
-		return;
-	}
-
-	// 与 Kafka 侧 BindSessionEventHandler 走同一个写入口:换了角色时登录代次必须重置,否则新角色的入场会
-	// 盖上上一个角色的代次(scene-enter-session-fence.md §4)。这条 RPC 不带代次(当前无发送方,login 已改走
-	// Kafka),按 0 写入:同一角色时取 max 不变,换角色时清零,由 scene 按版本 0 规则裁决;也不带登录类型。
-	gate_scene_route::ApplyLoginBinding(sessionIt->second, request->player_id(), request->session_version(),
-										/*loginGeneration=*/0, /*enterGsType=*/0);
-
-	response->set_session_id(request->session_id());
-	response->set_session_version(request->session_version());
-	response->set_player_id(request->player_id());
-///<<< END WRITING YOUR CODE
 }
 
 void GateHandler::GmGracefulShutdown(::google::protobuf::RpcController* controller, const ::GmGracefulShutdownRequest* request,
@@ -386,4 +271,5 @@ void GateHandler::GmGracefulShutdown(::google::protobuf::RpcController* controll
 	return;
 
 ///<<< END WRITING YOUR CODE
+
 }

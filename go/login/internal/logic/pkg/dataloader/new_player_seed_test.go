@@ -204,8 +204,7 @@ func TestSeedNewPlayerAllData_RedisDownIsError(t *testing.T) {
 	}
 }
 
-// 不变量 I2:种子 ≡ 冷读读空后的组装结果。实例 2 预置 go/db 读空时回写的子表缓存(请求体原样),
-// 让 EnsurePlayerAllDataInRedisAsync 走「子表缓存全命中、无读任务」那一支组装父键,两边必须 proto.Equal。
+// 不变量 I2:种子 ≡ SQL 冷读读空后的组装结果。即使子表缓存全命中，也必须查 SQL。
 func TestSeedEqualsColdReadAssemblyForEmptyRows(t *testing.T) {
 	ctx := context.Background()
 
@@ -225,13 +224,16 @@ func TestSeedEqualsColdReadAssemblyForEmptyRows(t *testing.T) {
 	}
 	calls := 0
 	var gotErr error
-	// disp / producer 为 nil:这一支不该发读任务,发了就 panic。
-	EnsurePlayerAllDataInRedisAsync(ctx, rdb2, nil, nil, seedTestPlayerID, 0, func(err error) {
+	reads := &coldSQLReads{read: sqlReadAtVersion(0, 0)}
+	EnsurePlayerAllDataInRedisAsync(ctx, rdb2, reads, reads, seedTestPlayerID, 0, func(err error) {
 		calls++
 		gotErr = err
 	})
 	if calls != 1 || gotErr != nil {
 		t.Fatalf("cold-read assembly onComplete calls = %d, err = %v; want 1 / nil", calls, gotErr)
+	}
+	if reads.count != 2 {
+		t.Fatalf("冷读使用了子缓存: SQL reads=%d", reads.count)
 	}
 
 	seeded, _ := readSeedParent(t, rdb1, seedTestPlayerID)

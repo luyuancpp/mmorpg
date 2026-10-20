@@ -64,6 +64,9 @@ func InitAuthProviders() (cleanup func()) {
 	cfg := config.AppConfig.AuthProviders
 
 	if cfg.SaToken != nil {
+		if err := cfg.SaToken.Redis.ValidatePoolSize(); err != nil {
+			panic(fmt.Errorf("AuthProviders.SaToken.Redis: %w", err))
+		}
 		rdb := redis.NewClient(&redis.Options{
 			Addr:             cfg.SaToken.Redis.Host,
 			Password:         cfg.SaToken.Redis.Password,
@@ -71,6 +74,7 @@ func InitAuthProviders() (cleanup func()) {
 			DialTimeout:      cfg.SaToken.Redis.DialTimeout,
 			ReadTimeout:      cfg.SaToken.Redis.ReadTimeout,
 			WriteTimeout:     cfg.SaToken.Redis.WriteTimeout,
+			PoolSize:         cfg.SaToken.Redis.PoolSize, // 同一个 RedisConf:写了就生效,不静默忽略
 			DisableIndentity: true,
 		})
 		if err := rdb.Ping(context.Background()).Err(); err != nil {
@@ -84,30 +88,22 @@ func InitAuthProviders() (cleanup func()) {
 		logx.Infof("Auth provider registered: satoken (Redis=%s)", cfg.SaToken.Redis.Host)
 	}
 
+	// 第三方凭据只从 ResolveSecrets 的结果取(auth_providers.go 已校验 Env / 占位符 / https),不再读 yaml 明文。
+	providerSecrets := activeSecrets().AuthProviders
 	if cfg.WeChat != nil {
-		auth.Register("wechat", &auth.WeChatProvider{
-			AppId:     cfg.WeChat.AppId,
-			AppSecret: cfg.WeChat.AppSecret,
-			Endpoint:  cfg.WeChat.Endpoint,
-		})
-		if cfg.WeChat.Endpoint != "" {
-			logx.Infof("Auth provider registered: wechat (endpoint override: %s)", cfg.WeChat.Endpoint)
-		} else {
-			logx.Info("Auth provider registered: wechat")
+		provider, err := weChatProviderFromConfig(cfg.WeChat, providerSecrets)
+		if err != nil {
+			panic(fmt.Sprintf("invalid AuthProviders.WeChat configuration: %v", err))
 		}
+		auth.Register("wechat", provider)
+		logx.Infof("Auth provider registered: wechat (require_unionid=%v endpoint_override=%q)",
+			cfg.WeChat.RequireUnionId, cfg.WeChat.Endpoint)
 	}
 
 	if cfg.QQ != nil {
-		auth.Register("qq", &auth.QQProvider{
-			AppId:    cfg.QQ.AppId,
-			AppKey:   cfg.QQ.AppKey,
-			Endpoint: cfg.QQ.Endpoint,
-		})
-		if cfg.QQ.Endpoint != "" {
-			logx.Infof("Auth provider registered: qq (endpoint override: %s)", cfg.QQ.Endpoint)
-		} else {
-			logx.Info("Auth provider registered: qq")
-		}
+		auth.Register("qq", qqProviderFromConfig(cfg.QQ, providerSecrets))
+		logx.Infof("Auth provider registered: qq (request_unionid=%v require_unionid=%v endpoint_override=%q)",
+			cfg.QQ.RequestUnionId, cfg.QQ.RequireUnionId, cfg.QQ.Endpoint)
 	}
 
 	if cfg.NetEase != nil {
@@ -206,6 +202,31 @@ func developmentPasswordProviderFromConfig(conf config.DevPasswordAuthConf, look
 		return nil, fmt.Errorf("environment variable %q is missing or empty", envName)
 	}
 	return auth.NewDevelopmentPasswordProvider(sharedSecret, conf.AllowedAccountPrefixes)
+}
+
+// weChatProviderFromConfig 把配置与 ResolveSecrets 解析出的密钥组装成 provider。不注册,便于单测
+// (auth 注册表是进程级的,同名重复注册会 panic)。密钥为空说明 ResolveSecrets 没跑:拒绝,不带空密钥上线。
+func weChatProviderFromConfig(conf *config.WeChatAuthConf, secrets config.AuthProviderSecrets) (*auth.WeChatProvider, error) {
+	if secrets.WeChatAppSecret == "" {
+		return nil, fmt.Errorf("AppSecret was not resolved; config.ResolveSecrets must run before InitAuthProviders")
+	}
+	return &auth.WeChatProvider{
+		AppId:               conf.AppId,
+		AppSecret:           secrets.WeChatAppSecret,
+		Endpoint:            conf.Endpoint,
+		AllowOpenIdFallback: !conf.RequireUnionId,
+	}, nil
+}
+
+// qqProviderFromConfig 同 weChatProviderFromConfig;QQ 不需要密钥,AppKey 只是透传保留字段。
+func qqProviderFromConfig(conf *config.QQAuthConf, secrets config.AuthProviderSecrets) *auth.QQProvider {
+	return &auth.QQProvider{
+		AppId:                 conf.AppId,
+		AppKey:                secrets.QQAppKey,
+		Endpoint:              conf.Endpoint,
+		AllowOpenIdFallback:   !conf.RequireUnionId,
+		DisableUnionIdRequest: !conf.RequestUnionId,
+	}
 }
 
 // RegisterAccessTokenProvider registers the access_token provider.

@@ -35,7 +35,10 @@ var messageHandlers = map[uint32]handlerFunc{
 }
 
 func MessageBodyHandler(client *pkg.GameClient, response *base.MessageContent) {
-	zap.L().Debug("Received message body", zap.String("response", response.String()))
+	zap.L().Debug("Received message body",
+		zap.Uint32("message_id", response.GetMessageId()),
+		zap.Int("body_bytes", len(response.GetSerializedMessage())),
+	)
 
 	player, ok := gameobject.PlayerList.Get(client.PlayerId)
 	if !ok {

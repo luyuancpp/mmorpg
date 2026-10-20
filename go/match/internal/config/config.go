@@ -11,7 +11,9 @@ import (
 
 type Config struct {
 	zrpc.RpcServerConf
-	Kafka struct {
+	// 全球模式权威在同一个 TiDB 事务域；Redis 只保存候选索引和通知。
+	GlobalMatch GlobalMatchConf `json:",optional"`
+	Kafka       struct {
 		Brokers []string
 	}
 
@@ -188,6 +190,21 @@ type Config struct {
 	DataServiceRpc zrpc.RpcClientConf `json:",optional"`
 }
 
+type GlobalMatchConf struct {
+	Enabled                bool   `json:",optional"`
+	RequireTiDB            bool   `json:",optional"`
+	Host                   string `json:",optional"`
+	User                   string `json:",optional"`
+	PasswordEnv            string `json:",default=MATCH_MYSQL_PASSWORD"`
+	Database               string `json:",default=mmorpg_match"`
+	ProbeSecretEnv         string `json:",default=MATCH_PROBE_SECRET"`
+	CrossRegionWaitSeconds uint32 `json:",default=30"`
+	HardLatencyMs          uint32 `json:",default=180"`
+	ProbeTTLSeconds        uint32 `json:",default=120"`
+	RankEndpoint           string `json:",default=127.0.0.1:51100"`
+	RankSecretEnv          string `json:",default=RANK_PRODUCER_SECRET_MATCH"`
+}
+
 // TeamConf 组队配置(team-system.md §D.1 / §D.3)。
 type TeamConf struct {
 	// AllowCrossZone:是否允许不同 home zone 的玩家同队。默认 false:申请、审批(同意)、
@@ -225,6 +242,9 @@ func (c *Config) Validate() error {
 			c.RatingSnapshotRetentionHours)
 	}
 	if c.RatingSnapshotPublishEnabled {
+		if c.GlobalMatch.Enabled {
+			return errors.New("全球评分只走SQL outbox签名投榜，不能同时启用旧Kafka评分快照发布")
+		}
 		if !c.RatingEnabled {
 			return errors.New("RatingSnapshotPublishEnabled=true 需要 RatingEnabled=true:不消费对局结果就没有评分快照可发")
 		}

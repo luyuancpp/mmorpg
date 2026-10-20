@@ -104,11 +104,6 @@ uint32_t MissionSystem::AcceptMission(const AcceptMissionEvent &acceptEvent, Mis
 	}
 	missionComp.GetMutableMissionList().mutable_missions()->insert({missionId, std::move(mission)});
 
-	OnAcceptedMissionEvent acceptedEvent;
-	acceptedEvent.player = playerEntity;
-	acceptedEvent.missionId = missionId;
-	tlsEcs.dispatcher.trigger(acceptedEvent);
-
 	LOG_INFO << "Mission accepted: missionId = " << missionId
 			 << " " << ActorLog(playerEntity);
 	return kSuccess;
@@ -177,7 +172,7 @@ bool MissionSystem::AreAllConditionsFulfilled(const MissionComp &mission, uint32
 	return true;
 }
 
-void MissionSystem::HandleConditionEvent(const ConditionEvent &conditionEvent, MissionsComp &missionComp, const IMissionConfig &config, uint32_t onlyMissionId)
+void MissionSystem::HandleConditionEvent(const ConditionEvent &conditionEvent, MissionsComp &missionComp, const IMissionConfig &config, MissionFollowUps& out, uint32_t onlyMissionId)
 {
 	if (conditionEvent.conditionIds.empty())
 	{
@@ -224,7 +219,7 @@ void MissionSystem::HandleConditionEvent(const ConditionEvent &conditionEvent, M
 		missions.erase(missionIt);
 	}
 
-	OnMissionCompletion(playerEntity, justCompleted, missionComp, config);
+	OnMissionCompletion(playerEntity, justCompleted, missionComp, config, out);
 }
 
 void MissionSystem::RemoveMissionFromConditionIndex(MissionsComp &missionComp, uint32_t missionId, const IMissionConfig &config)
@@ -321,95 +316,31 @@ bool MissionSystem::UpdateProgressIfConditionMatches(const ConditionEvent &condi
     return true;
 }
 
-// OnMissionCompletion — Per-mission completion handler for the normal
-// gameplay path. Called from HandleConditionEvent after each progress
-// update, with the set of missions that just transitioned to COMPLETE
-// in this round.
-//
-// For each completed mission this runs the full side-effect chain:
-//   1. Remove the mission from condition→missions classification index
-//      and set the completed bit in the player's bitmap.
-//   2. Reward handling per IMissionConfig::GetRewardAction:
-//        kAutoGrant  → OnMissionAwardEvent (claimable bit kept until the grant succeeds)
-//        kClaimable  → set the claimable-reward bit (player pulls later)
-//   3. Chain follow-up: AcceptMissionEvent for every mission
-//      listed in GetNextMissionTableIds, so quest chains progress.
-//   4. Fire ConditionEvent(kConditionCompleteMission) so other systems
-//      whose conditions depend on "completed mission X" can advance.
-// 第 2~4 步的事件在本轮所有任务状态落定之后同步 trigger(原因见函数内注释)。
-//
-// Contrast with CompleteAllMissions above: that one is GM-only and skips
-// the entire side-effect chain. Do not merge the two. See todo.md #225.
-void MissionSystem::OnMissionCompletion(entt::entity playerEntity, const std::unordered_set<uint32_t> &completedMissions, MissionsComp &missionComp, const IMissionConfig &config)
+// 本轮所有任务状态先落定,再由玩家任务入口按奖励、接续、完成事实的顺序驱动后续动作。
+// CompleteAllMissions 只做 GM 批量完成,不收集这些业务副作用。
+void MissionSystem::OnMissionCompletion(entt::entity /*playerEntity*/, const std::unordered_set<uint32_t>& completedMissions, MissionsComp& missionComp, const IMissionConfig& config, MissionFollowUps& out)
 {
-	// 必须保留完整 64 位:高 32 位是 version,截成 uint32 后槽位复用过的玩家
-	// 还原出来的是 version 0 的句柄,handler 里 valid() 判否,事件被静默丢弃。
-	const auto playerEntityValue = playerEntity;
-
-	// 副作用事件先收集、等全部完成任务的状态落定后再派发。
-	// 不能边处理边派发:同一批里的任务 B 已从任务表摘掉但还没置完成位,
-	// 此时任务 A 的后续接取若恰好是 B,会把 B 重新接一遍。
-	// 也不能用 dispatcher.enqueue:生产代码里没有任何地方调用 update(),事件会永远
-	// 堆在队列里;而即便补上 update(),entt 3.13 的 publish() 把 events[pos] 的引用
-	// 交给监听者,监听者再往同类型队列 enqueue(ConditionEvent 完成任务会再产生
-	// ConditionEvent)时 push_back 扩容,这个引用就悬空了。trigger 按值拷贝事件,没有这个问题。
-	std::vector<OnMissionAwardEvent> awardEvents;
-	std::vector<AcceptMissionEvent> acceptEvents;
-	std::vector<ConditionEvent> conditionEvents;
-
-	for (const uint32_t missionId : completedMissions)
-	{
-		UnregisterMissionIndexes(missionComp, missionId, config);
-		SetBit(MissionBitMap, missionComp.GetMutableCompletedMissions(), missionId);
-
-		// Deliver or arm the reward according to the mission's reward policy.
-		switch (GetRewardAction(config, missionId))
-		{
-		case RewardAction::kAutoGrant:
-		{
-            // 先保留待领取权，再尝试发奖；满包、禁发或号段不足都可以重试。
+    for (const uint32_t missionId : completedMissions)
+    {
+        UnregisterMissionIndexes(missionComp, missionId, config);
+        SetBit(MissionBitMap, missionComp.GetMutableCompletedMissions(), missionId);
+        switch (GetRewardAction(config, missionId))
+        {
+        case RewardAction::kAutoGrant:
+            // 发奖成功前保留领取权;满包、禁发或号段不足时仍可重试。
             missionComp.RestoreClaimable(missionId);
-			OnMissionAwardEvent &awardEvent = awardEvents.emplace_back();
-			awardEvent.player = playerEntityValue;
-			awardEvent.missionId = missionId;
-			break;
-		}
-		case RewardAction::kClaimable:
-			SetBit(MissionBitMap, missionComp.GetClaimableRewards(), missionId);
-			break;
-		default:
-			break;
-		}
-
-		// Auto-accept the follow-up missions so the quest chain advances.
-		for (const uint32_t nextMissionId : config.GetNextMissionTableIds(missionId))
-		{
-			AcceptMissionEvent &nextMissionEvent = acceptEvents.emplace_back();
-			nextMissionEvent.player = playerEntityValue;
-			nextMissionEvent.missionId = nextMissionId;
-		}
-
-		// Notify the condition system so "complete mission X" conditions can trigger.
-		ConditionEvent &completeMissionCondition = conditionEvents.emplace_back();
-		completeMissionCondition.player = playerEntityValue;
-		completeMissionCondition.conditionType = static_cast<uint32_t>(eConditionType::kConditionCompleteMission);
-		completeMissionCondition.amount = 1;
-		completeMissionCondition.conditionIds.push_back(missionId);
-	}
-
-	// 派发顺序与原先按类型 update 的口径一致:先发奖,再接后续任务,最后推进「完成任务 X」条件。
-	// 监听者可能重入本系统(接取 → 补算进度 → 又完成任务),此时本函数的循环已经结束,
-	// 局部向量不会再被修改,重入是安全的;链路深度受任务配置约束,有限。
-	for (OnMissionAwardEvent &event : awardEvents)
-	{
-		tlsEcs.dispatcher.trigger(std::move(event));
-	}
-	for (AcceptMissionEvent &event : acceptEvents)
-	{
-		tlsEcs.dispatcher.trigger(std::move(event));
-	}
-	for (ConditionEvent &event : conditionEvents)
-	{
-		tlsEcs.dispatcher.trigger(std::move(event));
-	}
+            out.autoGrant.push_back(missionId);
+            break;
+        case RewardAction::kClaimable:
+            SetBit(MissionBitMap, missionComp.GetClaimableRewards(), missionId);
+            break;
+        default:
+            break;
+        }
+        for (const uint32_t nextMissionId : config.GetNextMissionTableIds(missionId))
+        {
+            out.chainAccept.push_back(nextMissionId);
+        }
+        out.completed.push_back(missionId);
+    }
 }

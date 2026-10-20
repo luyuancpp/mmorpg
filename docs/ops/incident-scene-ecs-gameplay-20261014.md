@@ -34,7 +34,7 @@
 | 9 | F022 | 出站 TCP 客户端留在 thread_local registry，晚于 EventLoop 析构；客户端析构再次访问 loop，可能 use-after-free。 | 两跳 quit 前清理 `RpcClientPtr`；etcd / gRPC CQ、stub 和 watch 的关闭与排空仍未完成。 | **部分处理，剩余问题未关闭** |
 | 10 | F039 | 受伤后回调将攻击者当成受击者，重置攻击者的脱战加成；第 4 项补齐后该错误路径具备执行条件。 | `OnAfterTakeDamage` 按调用契约传递攻击者和受击者。原审计为关联 low 项，纳入本批完整性检查。 | 已有改动，待验证 |
 | 11 | F059 / F060 | 存盘 Marshal 使用 `get_or_emplace`，必需组件缺失时会补出默认值并写入快照，存在以零值覆盖有效存档的风险。 | 生成器模板与调用方尚未修；因 `player_lifecycle.cpp` 正在被另一会话修改而暂缓。 | **未处理，仍有数据风险** |
-| 12 | F001 / F002 | Kafka 命令直接复用进程内事件分发表，审计记录覆盖 47 个事件，包括携带进程内实体整数的事件；跨进程载荷可进入本不应开放的本地事件入口。 | 待盘清全部合法生产者后制定命令白名单，覆盖正在接入的 `BindSessionEvent`，再改生成源。 | **未处理，信任边界未收口** |
+| 12 | F001 / F002 | Kafka 命令直接复用进程内事件分发表，审计记录覆盖 47 个事件，包括携带进程内实体整数的事件；跨进程载荷可进入本不应开放的本地事件入口。 | 源码已按 `OptionKafkaIngress` 白名单收口，覆盖 `BindSessionEvent` 等合法入口。 | 源码已收口（见 [控制面事件入口](../design/control-plane-topic-partitioning-20260908.md#2026-10-15-事件入口边界第-4-批源码方案)），运行验收待做 |
 
 其他未复核审计项不因本表而关闭。原完整审计清单未随本次材料提供，本记录不据分组数量推算其余问题已经解决。
 
@@ -80,7 +80,7 @@
 
 - **F059 / F060**：[Marshal 生成模板](../../tools/proto_generator/protogen/internal/template/player_data_loader.cpp.tmpl)仍直接使用 `get_or_emplace`；[player_lifecycle.cpp](../../cpp/libs/services/scene/player/system/player_lifecycle.cpp)调用该生成链构造存盘快照。整改应明确必需组件缺失的错误语义，在任何持久化副作用前拒绝不完整快照，并覆盖周期存盘、退出、停机、迁移和失败重试。必须修生成源、正式重生成并检查调用方，不能手改生成产物。
 - **文档遗留冲突**：ECS 访问文档仍把 Marshal 的“缺失时默认值回退”列为可接受用途。这与本批识别出的存档风险及 `AGENTS.md §11.3` 数据完整性要求不一致。该历史例外不能充当 F059 放行依据，后续修复必须同时修正文档。本次只记录冲突，没有擅自改写该会话正在处理的实现。
-- **F001 / F002**：[Kafka 默认分发入口](../../cpp/libs/engine/core/node/system/node/node_kafka_command_handler.h)检查事件号非零和 payload 非空后进入通用 `DispatchProtoEvent`；[生成模板](../../tools/proto_generator/protogen/internal/template/rpc_event_registry.cpp.tmpl)没有区分跨进程命令与本地事件。应先列出发送方、接收节点、身份字段、白名单和非法事件拒绝行为，再在生成源收口；保留实例 UUID 防僵尸检查。不能漏掉合法命令后静默丢弃，也不能因生产者尚未盘清而把入口记为安全。
+- **F001 / F002**：[Kafka 节点入口](../../cpp/libs/engine/core/node/system/node/node_kafka_command_handler.h)保留实例 UUID 防僵尸检查；生成的节点本地 `DispatchSceneKafkaCommand` / `DispatchGateKafkaCommand` 按 `OptionKafkaIngress` 白名单解包并直接调用 handler。未标注事件被拒绝并记 ERROR，解码失败记 WARN；具体边界见 [控制面事件入口](../design/control-plane-topic-partitioning-20260908.md#2026-10-15-事件入口边界第-4-批源码方案)，运行验收待做。
 
 ## 4. 历史关联：已经出现过的信号未形成完整闭环
 
@@ -127,7 +127,7 @@ pwsh tools/scripts/run_cpp_tests.ps1 -Build -Filter aoi
 - [ ] 覆盖 Buff 添加触发 rehash、子 Buff 驱散当前条目、属性组件不齐，以及节点带真实出站连接关机的场景；现有 9 条新增测试没有覆盖全部这些风险。
 - [ ] 完成 F022 的 gRPC / etcd 资源关闭与排空，并分别验证节点摘除、进程退出；TCP 改动不能代替此项。
 - [ ] 完成 F059 / F060 的生成源和调用方修复，证明缺必需组件时不写入零值快照，并修正文档历史例外。
-- [ ] 完成 F001 / F002 的合法生产者清单、命令白名单及非法事件拒绝测试，验证 `BindSessionEvent` 等合法入口无遗漏。
+- [ ] 运行验收：非法事件被拒、`BindSessionEvent` 等合法入口无遗漏。
 - [ ] 更新 Java 对账并完成相关行为验证；保留有意差异及其依据，不把本次文档登记计作双版本功能完成。
 
 ## 6. Java 版对账

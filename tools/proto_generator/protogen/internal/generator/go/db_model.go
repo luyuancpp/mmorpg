@@ -155,7 +155,7 @@ func GenerateMergedTableSQL(messageNames []string) error {
 			zap.String("message_full_name", msgFullNameStr),
 		)
 
-		verifyMessageValidity(msgFullNameStr, msgInstance)
+		logMessageFields(msgFullNameStr, msgInstance)
 
 		sqlGenerator.RegisterTable(msgInstance)
 		tableSQL := sqlGenerator.GetCreateTableSQL(msgInstance)
@@ -189,7 +189,7 @@ func GenerateMergedTableSQL(messageNames []string) error {
 		sqlFileName := _config.Global.FileExtensions.ModelSqlExtension
 		sqlPath := filepath.Join(sqlDir, sqlFileName)
 
-		if err := os.WriteFile(sqlPath, []byte(mergedSQL.String()), 0644); err != nil {
+		if err := utils2.WriteFileIfChanged(sqlPath, []byte(mergedSQL.String())); err != nil {
 			logger.Global.Error("Failed to write SQL file",
 				zap.String("sql_path", sqlPath),
 				zap.Error(err),
@@ -206,7 +206,7 @@ func GenerateMergedTableSQL(messageNames []string) error {
 	return nil
 }
 
-func verifyMessageValidity(msgName string, msg proto.Message) {
+func logMessageFields(msgName string, msg proto.Message) {
 	msgReflect := msg.ProtoReflect()
 	fieldCount := 0
 
@@ -214,7 +214,7 @@ func verifyMessageValidity(msgName string, msg proto.Message) {
 	for i := 0; i < fields.Len(); i++ {
 		fd := fields.Get(i)
 		fieldCount++
-		logger.Global.Debug("Message instance field info",
+		logger.Global.Debug("消息描述符字段信息",
 			zap.String("message_name", msgName),
 			zap.String("field_name", string(fd.Name())),
 			zap.String("field_kind", fd.Kind().String()),
@@ -223,12 +223,12 @@ func verifyMessageValidity(msgName string, msg proto.Message) {
 	}
 
 	if fieldCount == 0 {
-		logger.Global.Warn("Message has no fields",
+		logger.Global.Warn("消息描述符未声明字段",
 			zap.String("message_name", msgName),
-			zap.String("reason", "activation failed"),
+			zap.String("reason", "字段列表为空"),
 		)
 	} else {
-		logger.Global.Info("Message validation passed",
+		logger.Global.Info("消息描述符字段记录完成",
 			zap.String("message_name", msgName),
 			zap.Int("field_count", fieldCount),
 		)
@@ -245,7 +245,7 @@ func writeMessageNamesToJSON(messages []string) error {
 	}
 
 	outputPath := _config.Global.Paths.TableGeneratorDir + _config.Global.Naming.DbTableListJson
-	if err := os.WriteFile(outputPath, data, 0644); err != nil {
+	if err := utils2.WriteFileIfChanged(outputPath, data); err != nil {
 		logger.Global.Error("Failed to write JSON config file",
 			zap.String("output_path", outputPath),
 			zap.Error(err),

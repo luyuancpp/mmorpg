@@ -57,8 +57,12 @@ extern "C" {
 extern const ::google::protobuf::internal::DescriptorTable descriptor_table_proto_2fplayer_5finbox_2fplayer_5finbox_5fadmin_2eproto;
 }  // extern "C"
 namespace player_inbox {
+enum PlayerInboxForceVoidVerdict : int;
+extern const uint32_t PlayerInboxForceVoidVerdict_internal_data_[];
 enum PlayerInboxReconcileDiffKind : int;
 extern const uint32_t PlayerInboxReconcileDiffKind_internal_data_[];
+enum PlayerInboxVoidMode : int;
+extern const uint32_t PlayerInboxVoidMode_internal_data_[];
 class GetPlayerInboxSummaryRequest;
 struct GetPlayerInboxSummaryRequestGlobalsTypeInternal;
 #ifndef PROTOBUF_MESSAGE_GLOBALS
@@ -191,12 +195,104 @@ extern const VoidPlayerInboxItemResponseGlobalsTypeInternal VoidPlayerInboxItemR
 namespace google {
 namespace protobuf {
 template <>
+internal::EnumTraitsT<::player_inbox::PlayerInboxForceVoidVerdict_internal_data_>
+    internal::EnumTraitsImpl::value<::player_inbox::PlayerInboxForceVoidVerdict>;
+template <>
 internal::EnumTraitsT<::player_inbox::PlayerInboxReconcileDiffKind_internal_data_>
     internal::EnumTraitsImpl::value<::player_inbox::PlayerInboxReconcileDiffKind>;
+template <>
+internal::EnumTraitsT<::player_inbox::PlayerInboxVoidMode_internal_data_>
+    internal::EnumTraitsImpl::value<::player_inbox::PlayerInboxVoidMode>;
 }  // namespace protobuf
 }  // namespace google
 
 namespace player_inbox {
+enum PlayerInboxVoidMode : int {
+  PLAYER_INBOX_VOID_MODE_NORMAL = 0,
+  PLAYER_INBOX_VOID_MODE_FORCE_MISMATCH = 1,
+  PlayerInboxVoidMode_INT_MIN_SENTINEL_DO_NOT_USE_ =
+      ::std::numeric_limits<::int32_t>::min(),
+  PlayerInboxVoidMode_INT_MAX_SENTINEL_DO_NOT_USE_ =
+      ::std::numeric_limits<::int32_t>::max(),
+};
+
+extern const uint32_t PlayerInboxVoidMode_internal_data_[];
+inline constexpr PlayerInboxVoidMode PlayerInboxVoidMode_MIN =
+    static_cast<PlayerInboxVoidMode>(0);
+inline constexpr PlayerInboxVoidMode PlayerInboxVoidMode_MAX =
+    static_cast<PlayerInboxVoidMode>(1);
+[[nodiscard]] inline bool PlayerInboxVoidMode_IsValid(int value) {
+  return 0 <= value && value <= 1;
+}
+inline constexpr int PlayerInboxVoidMode_ARRAYSIZE = 1 + 1;
+[[nodiscard]] const ::google::protobuf::EnumDescriptor* PROTOBUF_NONNULL
+PlayerInboxVoidMode_descriptor();
+[[nodiscard]] inline auto ProtobufInternalGetEnumDescriptor(PlayerInboxVoidMode) {
+  return PlayerInboxVoidMode_descriptor();
+}
+template <typename T>
+[[nodiscard]] const ::std::string& PlayerInboxVoidMode_Name(T value) {
+  static_assert(::std::is_same<T, PlayerInboxVoidMode>::value ||
+                    ::std::is_integral<T>::value,
+                "Incorrect type passed to PlayerInboxVoidMode_Name().");
+  return PlayerInboxVoidMode_Name(static_cast<PlayerInboxVoidMode>(value));
+}
+template <>
+[[nodiscard]] inline const ::std::string& PlayerInboxVoidMode_Name(PlayerInboxVoidMode value) {
+  return ::google::protobuf::internal::NameOfDenseEnum<PlayerInboxVoidMode_descriptor, 0, 1>(
+      static_cast<int>(value));
+}
+[[nodiscard]] inline bool PlayerInboxVoidMode_Parse(
+    ::absl::string_view name, PlayerInboxVoidMode* PROTOBUF_NONNULL value) {
+  return ::google::protobuf::internal::ParseNamedEnum<PlayerInboxVoidMode>(PlayerInboxVoidMode_descriptor(), name,
+                                           value);
+}
+enum PlayerInboxForceVoidVerdict : int {
+  PLAYER_INBOX_FORCE_VOID_UNSPECIFIED = 0,
+  PLAYER_INBOX_FORCE_VOID_PROVEN = 1,
+  PLAYER_INBOX_FORCE_VOID_NOT_DELIVERED = 2,
+  PLAYER_INBOX_FORCE_VOID_LEDGER_ABSENT = 3,
+  PLAYER_INBOX_FORCE_VOID_NOT_DECIDED = 4,
+  PLAYER_INBOX_FORCE_VOID_SEQ_NOT_IN_RING = 5,
+  PLAYER_INBOX_FORCE_VOID_REQUEST_IN_LEDGER = 6,
+  PLAYER_INBOX_FORCE_VOID_LEDGER_INVALID = 7,
+  PlayerInboxForceVoidVerdict_INT_MIN_SENTINEL_DO_NOT_USE_ =
+      ::std::numeric_limits<::int32_t>::min(),
+  PlayerInboxForceVoidVerdict_INT_MAX_SENTINEL_DO_NOT_USE_ =
+      ::std::numeric_limits<::int32_t>::max(),
+};
+
+extern const uint32_t PlayerInboxForceVoidVerdict_internal_data_[];
+inline constexpr PlayerInboxForceVoidVerdict PlayerInboxForceVoidVerdict_MIN =
+    static_cast<PlayerInboxForceVoidVerdict>(0);
+inline constexpr PlayerInboxForceVoidVerdict PlayerInboxForceVoidVerdict_MAX =
+    static_cast<PlayerInboxForceVoidVerdict>(7);
+[[nodiscard]] inline bool PlayerInboxForceVoidVerdict_IsValid(int value) {
+  return 0 <= value && value <= 7;
+}
+inline constexpr int PlayerInboxForceVoidVerdict_ARRAYSIZE = 7 + 1;
+[[nodiscard]] const ::google::protobuf::EnumDescriptor* PROTOBUF_NONNULL
+PlayerInboxForceVoidVerdict_descriptor();
+[[nodiscard]] inline auto ProtobufInternalGetEnumDescriptor(PlayerInboxForceVoidVerdict) {
+  return PlayerInboxForceVoidVerdict_descriptor();
+}
+template <typename T>
+[[nodiscard]] const ::std::string& PlayerInboxForceVoidVerdict_Name(T value) {
+  static_assert(::std::is_same<T, PlayerInboxForceVoidVerdict>::value ||
+                    ::std::is_integral<T>::value,
+                "Incorrect type passed to PlayerInboxForceVoidVerdict_Name().");
+  return PlayerInboxForceVoidVerdict_Name(static_cast<PlayerInboxForceVoidVerdict>(value));
+}
+template <>
+[[nodiscard]] inline const ::std::string& PlayerInboxForceVoidVerdict_Name(PlayerInboxForceVoidVerdict value) {
+  return ::google::protobuf::internal::NameOfDenseEnum<PlayerInboxForceVoidVerdict_descriptor, 0, 7>(
+      static_cast<int>(value));
+}
+[[nodiscard]] inline bool PlayerInboxForceVoidVerdict_Parse(
+    ::absl::string_view name, PlayerInboxForceVoidVerdict* PROTOBUF_NONNULL value) {
+  return ::google::protobuf::internal::ParseNamedEnum<PlayerInboxForceVoidVerdict>(PlayerInboxForceVoidVerdict_descriptor(), name,
+                                           value);
+}
 enum PlayerInboxReconcileDiffKind : int {
   PLAYER_INBOX_RECONCILE_DIFF_UNSPECIFIED = 0,
   PLAYER_INBOX_RECONCILE_FINAL_NOT_IN_LEDGER = 1,
@@ -400,6 +496,7 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED VoidPlayerInboxItemRequest final : 
     kSeqFieldNumber = 3,
     kDomainFieldNumber = 2,
     kReasonFieldNumber = 4,
+    kModeFieldNumber = 7,
   };
   // string operator = 5;
   void clear_operator_() ;
@@ -471,11 +568,21 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED VoidPlayerInboxItemRequest final : 
   void _internal_set_reason(::player_inbox::PlayerInboxVoidReason value);
 
   public:
+  // .player_inbox.PlayerInboxVoidMode mode = 7;
+  void clear_mode() ;
+  [[nodiscard]] ::player_inbox::PlayerInboxVoidMode mode() const;
+  void set_mode(::player_inbox::PlayerInboxVoidMode value);
+
+  private:
+  ::player_inbox::PlayerInboxVoidMode _internal_mode() const;
+  void _internal_set_mode(::player_inbox::PlayerInboxVoidMode value);
+
+  public:
   // @@protoc_insertion_point(class_scope:player_inbox.VoidPlayerInboxItemRequest)
  private:
   class _Internal;
   using ParseTableT_ =
-      ::google::protobuf::internal::TcParseTable<3, 6,
+      ::google::protobuf::internal::TcParseTable<3, 7,
                           0, 60,
                           2>;
   static constexpr ParseTableT_ InternalGenerateParseTable_(
@@ -510,6 +617,7 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED VoidPlayerInboxItemRequest final : 
     ::uint64_t seq_;
     int domain_;
     int reason_;
+    int mode_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
   union { Impl_ _impl_; };
@@ -2747,6 +2855,7 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED VoidPlayerInboxItemResponse final :
     kErrorMessageFieldNumber = 1,
     kStateFieldNumber = 2,
     kVoidRequestedFieldNumber = 3,
+    kForceVerdictFieldNumber = 4,
   };
   // .TipInfoMessage error_message = 1;
   [[nodiscard]] bool has_error_message()
@@ -2784,11 +2893,21 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED VoidPlayerInboxItemResponse final :
   void _internal_set_void_requested(bool value);
 
   public:
+  // .player_inbox.PlayerInboxForceVoidVerdict force_verdict = 4;
+  void clear_force_verdict() ;
+  [[nodiscard]] ::player_inbox::PlayerInboxForceVoidVerdict force_verdict() const;
+  void set_force_verdict(::player_inbox::PlayerInboxForceVoidVerdict value);
+
+  private:
+  ::player_inbox::PlayerInboxForceVoidVerdict _internal_force_verdict() const;
+  void _internal_set_force_verdict(::player_inbox::PlayerInboxForceVoidVerdict value);
+
+  public:
   // @@protoc_insertion_point(class_scope:player_inbox.VoidPlayerInboxItemResponse)
  private:
   class _Internal;
   using ParseTableT_ =
-      ::google::protobuf::internal::TcParseTable<2, 3,
+      ::google::protobuf::internal::TcParseTable<2, 4,
                           1, 0,
                           2>;
   static constexpr ParseTableT_ InternalGenerateParseTable_(
@@ -2820,6 +2939,7 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED VoidPlayerInboxItemResponse final :
     ::TipInfoMessage* PROTOBUF_NULLABLE error_message_;
     int state_;
     bool void_requested_;
+    int force_verdict_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
   union { Impl_ _impl_; };
@@ -6808,6 +6928,30 @@ inline void VoidPlayerInboxItemRequest::set_allocated_note(::std::string* PROTOB
   // @@protoc_insertion_point(field_set_allocated:player_inbox.VoidPlayerInboxItemRequest.note)
 }
 
+// .player_inbox.PlayerInboxVoidMode mode = 7;
+inline void VoidPlayerInboxItemRequest::clear_mode() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.mode_ = 0;
+  ClearHasBit(_impl_._has_bits_[0], 0x00000040U);
+}
+inline ::player_inbox::PlayerInboxVoidMode VoidPlayerInboxItemRequest::mode() const {
+  // @@protoc_insertion_point(field_get:player_inbox.VoidPlayerInboxItemRequest.mode)
+  return _internal_mode();
+}
+inline void VoidPlayerInboxItemRequest::set_mode(::player_inbox::PlayerInboxVoidMode value) {
+  _internal_set_mode(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000040U);
+  // @@protoc_insertion_point(field_set:player_inbox.VoidPlayerInboxItemRequest.mode)
+}
+inline ::player_inbox::PlayerInboxVoidMode VoidPlayerInboxItemRequest::_internal_mode() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return static_cast<::player_inbox::PlayerInboxVoidMode>(_impl_.mode_);
+}
+inline void VoidPlayerInboxItemRequest::_internal_set_mode(::player_inbox::PlayerInboxVoidMode value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.mode_ = value;
+}
+
 // -------------------------------------------------------------------
 
 // VoidPlayerInboxItemResponse
@@ -6951,6 +7095,30 @@ inline bool VoidPlayerInboxItemResponse::_internal_void_requested() const {
 inline void VoidPlayerInboxItemResponse::_internal_set_void_requested(bool value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.void_requested_ = value;
+}
+
+// .player_inbox.PlayerInboxForceVoidVerdict force_verdict = 4;
+inline void VoidPlayerInboxItemResponse::clear_force_verdict() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.force_verdict_ = 0;
+  ClearHasBit(_impl_._has_bits_[0], 0x00000008U);
+}
+inline ::player_inbox::PlayerInboxForceVoidVerdict VoidPlayerInboxItemResponse::force_verdict() const {
+  // @@protoc_insertion_point(field_get:player_inbox.VoidPlayerInboxItemResponse.force_verdict)
+  return _internal_force_verdict();
+}
+inline void VoidPlayerInboxItemResponse::set_force_verdict(::player_inbox::PlayerInboxForceVoidVerdict value) {
+  _internal_set_force_verdict(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000008U);
+  // @@protoc_insertion_point(field_set:player_inbox.VoidPlayerInboxItemResponse.force_verdict)
+}
+inline ::player_inbox::PlayerInboxForceVoidVerdict VoidPlayerInboxItemResponse::_internal_force_verdict() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return static_cast<::player_inbox::PlayerInboxForceVoidVerdict>(_impl_.force_verdict_);
+}
+inline void VoidPlayerInboxItemResponse::_internal_set_force_verdict(::player_inbox::PlayerInboxForceVoidVerdict value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.force_verdict_ = value;
 }
 
 // -------------------------------------------------------------------
@@ -7447,6 +7615,18 @@ ReconcilePlayerInboxResponse::_internal_mutable_diffs() {
 namespace google {
 namespace protobuf {
 
+template <>
+struct is_proto_enum<::player_inbox::PlayerInboxVoidMode> : std::true_type {};
+template <>
+inline const EnumDescriptor* PROTOBUF_NONNULL GetEnumDescriptor<::player_inbox::PlayerInboxVoidMode>() {
+  return ::player_inbox::PlayerInboxVoidMode_descriptor();
+}
+template <>
+struct is_proto_enum<::player_inbox::PlayerInboxForceVoidVerdict> : std::true_type {};
+template <>
+inline const EnumDescriptor* PROTOBUF_NONNULL GetEnumDescriptor<::player_inbox::PlayerInboxForceVoidVerdict>() {
+  return ::player_inbox::PlayerInboxForceVoidVerdict_descriptor();
+}
 template <>
 struct is_proto_enum<::player_inbox::PlayerInboxReconcileDiffKind> : std::true_type {};
 template <>

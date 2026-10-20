@@ -4,13 +4,11 @@
 #include "engine/core/type_define/type_define.h"
 
 class BuffTable;
-struct SkillExecutedEvent;
 
 // Caster (buff applier), Parent (buff target),
 // Skill (which skill created this buff), BuffLayer (stacks),
 // BuffLevel, BuffDuration,
 // BuffTag, BuffImmuneTag,
-// Context (contextual data at buff creation time).
 
 class DamageEventComp;
 struct BuffEntry;
@@ -21,7 +19,7 @@ struct BuffEntry;
 class BuffSystem
 {
 public:
-    // 每帧推进周期 buff、处理帧末待删;处理完列表为空的实体随即摘掉 BuffListComp。
+    // 每帧推进周期 buff，处理完列表为空的实体随即摘掉 BuffListComp。
     static void Update(double delta);
 
     // 同一帧使用同一个同进程单调毫秒读数；显式时间入口也用于确定性回归。
@@ -29,7 +27,7 @@ public:
 
     // 返回 {错误码, 新建条目的 buff_id};叠层 / 纯驱散 / 冻结或回合战斗中丢弃时 buff_id 为 UINT64_MAX。
     // 只有真正新建条目时才会在 parent 上创建 BuffListComp;被拒绝、纯驱散、叠层的施加不改变组件集合。
-    static std::tuple<uint32_t, uint64_t>  AddOrUpdateBuff(entt::entity parent, uint32_t buffTableId, const SkillContextPtrComp& abilityContext);
+    static std::tuple<uint32_t, uint64_t>  AddOrUpdateBuff(entt::entity parent, uint32_t buffTableId, uint64_t caster);
 
     static std::tuple<uint32_t, uint64_t> AddOrUpdateBuff(entt::entity parent, uint32_t buffTableId);
 
@@ -39,18 +37,12 @@ public:
 
     static void RemoveSubBuff(BuffEntry& buffComp, UInt64Set& buffsToRemove);
 
-    // 标记帧末移除;buff 不在 parent 的列表里时不标记(记错误日志)。
-    static void MarkBuffForRemoval(entt::entity parent, uint64_t buffId);
-
-    // Remove pending buffs at end of frame
-    static void RemovePendingBuffs(entt::entity parent, BuffListComp& buffListComp);
-
     // Check if buff can be created (checks target immunity)
     static uint32_t CanCreateBuff(entt::entity parentEntity, uint32_t buffTableId);
 
     // 同表、同「处理后的施法者」(no_caster 时不区分施法者)的条目已存在时叠层 / 刷新并返回 true。
     // 不改变实体的组件集合;没有 BuffListComp(身上没有 buff)时返回 false。
-    static bool HandleExistingBuff(entt::entity parentEntity, uint32_t buffTableId, const SkillContextPtrComp& abilityContext);
+    static bool HandleExistingBuff(entt::entity parentEntity, uint32_t buffTableId, uint64_t caster);
 
     // Fired after instantiation but before activation (not yet in buff container).
     // Dispels existing buffs whose tags match this buff's dispel_tag. Returns true
@@ -62,7 +54,7 @@ public:
     static void OnBuffStart(entt::entity parent, BuffEntry& buffComp, const BuffTable* buffTable);
 
     // Called when a same-type/same-caster buff exists: refresh stacks, level, duration.
-    static void OnBuffRefresh(entt::entity parent, uint32_t buffTableId, const SkillContextPtrComp& abilityContext, BuffEntry& buffComp);
+    static void OnBuffRefresh(entt::entity parent, uint32_t buffTableId, uint64_t caster, BuffEntry& buffComp);
 
     // Called before buff removal (still in buff container). Designer-configurable.
     static void OnBuffRemove(entt::entity parent, BuffEntry& buffComp, const BuffTable* buffTable);
@@ -78,9 +70,6 @@ public:
     static void OnIntervalThink(entt::entity parent, uint64_t buffId, uint64_t nowMilliseconds);
 
     static void OnBuffExpire(entt::entity parent, uint64_t buffId);
-
-    // Triggered when an active skill executes successfully
-    static void OnSkillExecuted(SkillExecutedEvent& event);
 
     // Triggered when dealing damage to target
     static void OnBeforeGiveDamage(const entt::entity casterEntity, const entt::entity targetEntity, DamageEventComp& damageEvent);
@@ -114,7 +103,7 @@ public:
     static void AddTargetSubBuffs(
         entt::entity targetEntity,
         const BuffTable* buffTable,
-        const SkillContextPtrComp& abilityContext
+        uint64_t caster
     );
 
     static void AddSubBuffsWithoutCheck(
@@ -127,7 +116,7 @@ private:
     // 有脱战父 id 时创建独立子项，并在启动回调前登记归属；UINT64_MAX 表示普通施加。
     static std::tuple<uint32_t, uint64_t> AddOrUpdateBuffWithOwner(
         entt::entity parent, uint32_t buffTableId,
-        const SkillContextPtrComp& abilityContext, uint64_t combatIdleOwnerId);
+        uint64_t caster, uint64_t combatIdleOwnerId);
 };
 
 

@@ -39,6 +39,35 @@ func ledgerReply(resp *dspb.GetPlayerAssetOpLedgerResponse, err error) func(cont
 
 // A1:found=false → (nil, nil);found=true → 原样返回账本,账本字段缺席时回空消息(不是 nil)。
 func TestDataServiceLedger_A1_FoundMapping(t *testing.T) {
+	t.Run("旧服务忽略SQL要求仍返回Redisblob必须拒绝", func(t *testing.T) {
+		svc := &fakeLedgerService{call: ledgerReply(&dspb.GetPlayerAssetOpLedgerResponse{Found: true, Ledger: &componentpb.PlayerAssetOpLedgerComp{}}, nil)}
+		got, err := (&DataServiceLedger{Client: svc}).ReadSQLCommittedLedger(context.Background(), 7)
+		if err == nil || got != nil {
+			t.Fatalf("旧服务不能冒充SQL提交证据: %v %v", got, err)
+		}
+	})
+	t.Run("SQL证据带账本", func(t *testing.T) {
+		want := &componentpb.PlayerAssetOpLedgerComp{Streams: []*componentpb.AssetOpStreamLedger{{
+			Stream: assetpb.AssetOpStream_ASSET_OP_STREAM_TRADE_DEBIT, Watermark: 1, MaxSeq: 2, StreamEpoch: 9,
+		}}}
+		svc := &fakeLedgerService{call: func(_ context.Context, req *dspb.GetPlayerAssetOpLedgerRequest) (*dspb.GetPlayerAssetOpLedgerResponse, error) {
+			if !req.GetRequireSqlCommit() {
+				t.Fatal("读 SQL 证据必须显式要求 require_sql_commit")
+			}
+			return &dspb.GetPlayerAssetOpLedgerResponse{Found: true, Ledger: want, SqlCommitted: true}, nil
+		}}
+		got, err := (&DataServiceLedger{Client: svc}).ReadSQLCommittedLedger(context.Background(), 7)
+		if err != nil || !proto.Equal(want, got) {
+			t.Fatalf("SQL 证据账本应原样返回: got=%v err=%v", got, err)
+		}
+	})
+	t.Run("SQL证据缺失", func(t *testing.T) {
+		svc := &fakeLedgerService{call: ledgerReply(&dspb.GetPlayerAssetOpLedgerResponse{Found: false, SqlCommitted: true}, nil)}
+		got, err := (&DataServiceLedger{Client: svc}).ReadSQLCommittedLedger(context.Background(), 7)
+		if err != nil || got != nil {
+			t.Fatalf("证据缺失应得 (nil, nil),实际 (%v, %v)", got, err)
+		}
+	})
 	t.Run("found=false", func(t *testing.T) {
 		svc := &fakeLedgerService{call: ledgerReply(&dspb.GetPlayerAssetOpLedgerResponse{Found: false}, nil)}
 		got, err := (&DataServiceLedger{Client: svc}).ReadPersistedLedger(context.Background(), 7)
@@ -57,6 +86,10 @@ func TestDataServiceLedger_A1_FoundMapping(t *testing.T) {
 		var gotPlayer uint64
 		svc := &fakeLedgerService{call: func(_ context.Context, req *dspb.GetPlayerAssetOpLedgerRequest) (*dspb.GetPlayerAssetOpLedgerResponse, error) {
 			gotPlayer = req.GetPlayerId()
+			if req.GetRequireSqlCommit() {
+				t.Fatal("ReadPersistedLedger 读 Redis 父键 blob(HEAD 口径),不得要求 SQL 提交证据")
+			}
+			// 读 blob 时 sql_committed 恒为 false,不能因此拒绝。
 			return &dspb.GetPlayerAssetOpLedgerResponse{Found: true, Ledger: want}, nil
 		}}
 		got, err := (&DataServiceLedger{Client: svc}).ReadPersistedLedger(context.Background(), 7)
@@ -72,7 +105,7 @@ func TestDataServiceLedger_A1_FoundMapping(t *testing.T) {
 	})
 
 	t.Run("found=true 账本缺席", func(t *testing.T) {
-		svc := &fakeLedgerService{call: ledgerReply(&dspb.GetPlayerAssetOpLedgerResponse{Found: true}, nil)}
+		svc := &fakeLedgerService{call: ledgerReply(&dspb.GetPlayerAssetOpLedgerResponse{Found: true, SqlCommitted: true}, nil)}
 		got, err := (&DataServiceLedger{Client: svc}).ReadPersistedLedger(context.Background(), 7)
 		if err != nil {
 			t.Fatalf("意外错误: %v", err)

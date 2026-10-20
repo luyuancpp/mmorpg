@@ -29,6 +29,9 @@ const (
 	PlayerInboxAuditAction_PLAYER_INBOX_AUDIT_UNSPECIFIED PlayerInboxAuditAction = 0
 	PlayerInboxAuditAction_PLAYER_INBOX_AUDIT_SANCTION    PlayerInboxAuditAction = 1 // GmSanctionPlayer 入箱
 	PlayerInboxAuditAction_PLAYER_INBOX_AUDIT_VOID        PlayerInboxAuditAction = 2 // VoidItem(未投递直接 VOIDED,或已投递挂 VOID 指令)
+	// VoidItem 强制模式:经已落盘账本证明后终结已投递的行。与 VOID 分列:同一条目常先挂过指令再强制终结,
+	// 审计主键含 action 且 INSERT IGNORE,共用 VOID 会让这次终结的审计行被静默吞掉。
+	PlayerInboxAuditAction_PLAYER_INBOX_AUDIT_FORCE_VOID PlayerInboxAuditAction = 3
 )
 
 // Enum value maps for PlayerInboxAuditAction.
@@ -37,11 +40,13 @@ var (
 		0: "PLAYER_INBOX_AUDIT_UNSPECIFIED",
 		1: "PLAYER_INBOX_AUDIT_SANCTION",
 		2: "PLAYER_INBOX_AUDIT_VOID",
+		3: "PLAYER_INBOX_AUDIT_FORCE_VOID",
 	}
 	PlayerInboxAuditAction_value = map[string]int32{
 		"PLAYER_INBOX_AUDIT_UNSPECIFIED": 0,
 		"PLAYER_INBOX_AUDIT_SANCTION":    1,
 		"PLAYER_INBOX_AUDIT_VOID":        2,
+		"PLAYER_INBOX_AUDIT_FORCE_VOID":  3,
 	}
 )
 
@@ -75,7 +80,7 @@ func (PlayerInboxAuditAction) EnumDescriptor() ([]byte, []int) {
 // 每 (玩家, 域) 一行。锁序第 1:seq 分配、Fetch、Ack、作废都先对它 FOR UPDATE(IB-6)。
 type PlayerInboxStream struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Shard         uint32                 `protobuf:"varint,1,opt,name=shard,proto3" json:"shard,omitempty"` // player_id % 64,只由 inbox.RowShard 计算
+	Shard         uint32                 `protobuf:"varint,1,opt,name=shard,proto3" json:"shard,omitempty"` // mix64(player_id) % 64,只由 inbox.RowShard 计算
 	PlayerId      uint64                 `protobuf:"varint,2,opt,name=player_id,json=playerId,proto3" json:"player_id,omitempty"`
 	Domain        uint32                 `protobuf:"varint,3,opt,name=domain,proto3" json:"domain,omitempty"`                                // PlayerInboxDomain
 	NextSeq       uint64                 `protobuf:"varint,4,opt,name=next_seq,json=nextSeq,proto3" json:"next_seq,omitempty"`               // 上次分配的 seq + 1;分配取 max(next_seq, now_ms << 12)(IB-6)
@@ -404,17 +409,25 @@ func (x *PlayerInboxItemRow) GetNote() string {
 }
 
 // 运维审计,与入箱 / 作废同库同事务(设计 §6.1)。每条目每种动作一行;重复调用 INSERT IGNORE。
+// 审计行永不自动删除,而条目终态行 30 天后物理删除:「做了什么」(10–14)必须在审计行里自足(评审 L9)。
+// 10–14 一律由 inbox.InsertAudit 从**同一事务里的条目行**原样复制,调用方传入的同名字段被忽略(条目内容入箱后不再改)。
 type PlayerInboxAudit struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Shard         uint32                 `protobuf:"varint,1,opt,name=shard,proto3" json:"shard,omitempty"`
 	PlayerId      uint64                 `protobuf:"varint,2,opt,name=player_id,json=playerId,proto3" json:"player_id,omitempty"`
 	Domain        uint32                 `protobuf:"varint,3,opt,name=domain,proto3" json:"domain,omitempty"` // PlayerInboxDomain
 	Seq           uint64                 `protobuf:"varint,4,opt,name=seq,proto3" json:"seq,omitempty"`
-	Action        uint32                 `protobuf:"varint,5,opt,name=action,proto3" json:"action,omitempty"`                    // PlayerInboxAuditAction:SANCTION / VOID
+	Action        uint32                 `protobuf:"varint,5,opt,name=action,proto3" json:"action,omitempty"`                    // PlayerInboxAuditAction:SANCTION / VOID / FORCE_VOID
 	Operator      string                 `protobuf:"bytes,6,opt,name=operator,proto3" json:"operator,omitempty"`                 // 调用方自报,≤ 64B
 	PeerAddr      string                 `protobuf:"bytes,7,opt,name=peer_addr,json=peerAddr,proto3" json:"peer_addr,omitempty"` // gRPC 对端地址,唯一不可伪造的部分(设计 §1.6)
 	Reason        string                 `protobuf:"bytes,8,opt,name=reason,proto3" json:"reason,omitempty"`                     // ≤ 256B
 	CreatedMs     uint64                 `protobuf:"varint,9,opt,name=created_ms,json=createdMs,proto3" json:"created_ms,omitempty"`
+	MsgType       uint32                 `protobuf:"varint,10,opt,name=msg_type,json=msgType,proto3" json:"msg_type,omitempty"`                  // PlayerInboxMessageType,取自条目行
+	RequestId     uint64                 `protobuf:"varint,11,opt,name=request_id,json=requestId,proto3" json:"request_id,omitempty"`            // 生产方幂等键,取自条目行
+	IssuedAtMs    uint64                 `protobuf:"varint,12,opt,name=issued_at_ms,json=issuedAtMs,proto3" json:"issued_at_ms,omitempty"`       // 生产方签发时刻,取自条目行
+	ContentSha256 []byte                 `protobuf:"bytes,13,opt,name=content_sha256,json=contentSha256,proto3" json:"content_sha256,omitempty"` // 取自条目行:sha256(msg_type ‖ issued_at_ms ‖ payload),可对 14 复算核对
+	Payload       []byte                 `protobuf:"bytes,14,opt,name=payload,proto3" json:"payload,omitempty"`                                  // 条目载荷原样:入箱时按 payload_message 确定性序列化的字节(v1 GM 类型 ≤ 1KiB)
+	VoidReason    uint32                 `protobuf:"varint,15,opt,name=void_reason,json=voidReason,proto3" json:"void_reason,omitempty"`         // PlayerInboxVoidReason:VOID / FORCE_VOID 行为本次请求的原因,SANCTION 行为 0
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -512,6 +525,48 @@ func (x *PlayerInboxAudit) GetCreatedMs() uint64 {
 	return 0
 }
 
+func (x *PlayerInboxAudit) GetMsgType() uint32 {
+	if x != nil {
+		return x.MsgType
+	}
+	return 0
+}
+
+func (x *PlayerInboxAudit) GetRequestId() uint64 {
+	if x != nil {
+		return x.RequestId
+	}
+	return 0
+}
+
+func (x *PlayerInboxAudit) GetIssuedAtMs() uint64 {
+	if x != nil {
+		return x.IssuedAtMs
+	}
+	return 0
+}
+
+func (x *PlayerInboxAudit) GetContentSha256() []byte {
+	if x != nil {
+		return x.ContentSha256
+	}
+	return nil
+}
+
+func (x *PlayerInboxAudit) GetPayload() []byte {
+	if x != nil {
+		return x.Payload
+	}
+	return nil
+}
+
+func (x *PlayerInboxAudit) GetVoidReason() uint32 {
+	if x != nil {
+		return x.VoidReason
+	}
+	return 0
+}
+
 var File_proto_player_inbox_player_inbox_table_proto protoreflect.FileDescriptor
 
 const file_proto_player_inbox_player_inbox_table_proto_rawDesc = "" +
@@ -560,7 +615,7 @@ const file_proto_player_inbox_player_inbox_table_proto_rawDesc = "" +
 	"\n" +
 	"updated_ms\x18\x15 \x01(\x04R\tupdatedMs\x12#\n" +
 	"\roperator_name\x18\x16 \x01(\tR\foperatorName\x12\x12\n" +
-	"\x04note\x18\x17 \x01(\tR\x04note:\x8c\x01\x8a\x92\xf4\x01\x11player_inbox_item\x92\x92\xf4\x01\x1ashard,player_id,domain,seqڒ\xf4\x01\x16shard,state,updated_ms\xe2\x92\xf4\x01(shard,player_id,producer_kind,request_id\xa8\x93\xf4\x01\x01\xb0\x93\xf4\x01\x04\xb8\x93\xf4\x01\x04\"\xc2\x02\n" +
+	"\x04note\x18\x17 \x01(\tR\x04note:\x8c\x01\x8a\x92\xf4\x01\x11player_inbox_item\x92\x92\xf4\x01\x1ashard,player_id,domain,seqڒ\xf4\x01\x16shard,state,updated_ms\xe2\x92\xf4\x01(shard,player_id,producer_kind,request_id\xa8\x93\xf4\x01\x01\xb0\x93\xf4\x01\x04\xb8\x93\xf4\x01\x04\"\x80\x04\n" +
 	"\x12player_inbox_audit\x12\x14\n" +
 	"\x05shard\x18\x01 \x01(\rR\x05shard\x12\x1b\n" +
 	"\tplayer_id\x18\x02 \x01(\x04R\bplayerId\x12\x16\n" +
@@ -571,11 +626,22 @@ const file_proto_player_inbox_player_inbox_table_proto_rawDesc = "" +
 	"\tpeer_addr\x18\a \x01(\tR\bpeerAddr\x12\x16\n" +
 	"\x06reason\x18\b \x01(\tR\x06reason\x12\x1d\n" +
 	"\n" +
-	"created_ms\x18\t \x01(\x04R\tcreatedMs:G\x8a\x92\xf4\x01\x12player_inbox_audit\x92\x92\xf4\x01!shard,player_id,domain,seq,action\xa8\x93\xf4\x01\x01\xb0\x93\xf4\x01\x04*z\n" +
+	"created_ms\x18\t \x01(\x04R\tcreatedMs\x12\x19\n" +
+	"\bmsg_type\x18\n" +
+	" \x01(\rR\amsgType\x12\x1d\n" +
+	"\n" +
+	"request_id\x18\v \x01(\x04R\trequestId\x12 \n" +
+	"\fissued_at_ms\x18\f \x01(\x04R\n" +
+	"issuedAtMs\x12%\n" +
+	"\x0econtent_sha256\x18\r \x01(\fR\rcontentSha256\x12\x18\n" +
+	"\apayload\x18\x0e \x01(\fR\apayload\x12\x1f\n" +
+	"\vvoid_reason\x18\x0f \x01(\rR\n" +
+	"voidReason:G\x8a\x92\xf4\x01\x12player_inbox_audit\x92\x92\xf4\x01!shard,player_id,domain,seq,action\xa8\x93\xf4\x01\x01\xb0\x93\xf4\x01\x04*\x9d\x01\n" +
 	"\x16PlayerInboxAuditAction\x12\"\n" +
 	"\x1ePLAYER_INBOX_AUDIT_UNSPECIFIED\x10\x00\x12\x1f\n" +
 	"\x1bPLAYER_INBOX_AUDIT_SANCTION\x10\x01\x12\x1b\n" +
-	"\x17PLAYER_INBOX_AUDIT_VOID\x10\x02B\x14Z\x12proto/player_inboxb\x06proto3"
+	"\x17PLAYER_INBOX_AUDIT_VOID\x10\x02\x12!\n" +
+	"\x1dPLAYER_INBOX_AUDIT_FORCE_VOID\x10\x03B\x14Z\x12proto/player_inboxb\x06proto3"
 
 var (
 	file_proto_player_inbox_player_inbox_table_proto_rawDescOnce sync.Once

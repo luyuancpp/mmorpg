@@ -4,6 +4,7 @@
 package unity
 
 import (
+	"bytes"
 	"math"
 	"os"
 	"path/filepath"
@@ -14,6 +15,7 @@ import (
 
 	"protogen/internal"
 	_config "protogen/internal/config"
+	"protogen/internal/utils"
 	"protogen/logger"
 
 	"go.uber.org/zap"
@@ -59,14 +61,14 @@ func UnityClientHandlerGenerator(wg *sync.WaitGroup) {
 		}
 
 		if err := os.MkdirAll(handlerDir, 0o755); err != nil {
-			logger.Global.Warn("Failed to create Unity handler directory",
+			logger.Global.Fatal("创建 Unity 处理器目录失败",
 				zap.String("dir", handlerDir),
 				zap.Error(err),
 			)
 			return
 		}
 		if err := os.MkdirAll(filepath.Dir(registryFile), 0o755); err != nil {
-			logger.Global.Warn("Failed to create Unity registry directory",
+			logger.Global.Fatal("创建 Unity 注册表目录失败",
 				zap.String("dir", filepath.Dir(registryFile)),
 				zap.Error(err),
 			)
@@ -114,7 +116,7 @@ func UnityClientHandlerGenerator(wg *sync.WaitGroup) {
 
 				filePath := filepath.Join(handlerDir, handlerName+".cs")
 				if err := writeHandlerFile(filePath, data); err != nil {
-					logger.Global.Warn("Failed to write Unity handler file",
+					logger.Global.Fatal("写入 Unity 处理器文件失败",
 						zap.String("file", filePath),
 						zap.Error(err),
 					)
@@ -129,7 +131,7 @@ func UnityClientHandlerGenerator(wg *sync.WaitGroup) {
 		})
 
 		if err := writeRegistryFile(registryFile, entries); err != nil {
-			logger.Global.Warn("Failed to write Unity handler registry",
+			logger.Global.Fatal("写入 Unity 处理器注册表失败",
 				zap.String("file", registryFile),
 				zap.Error(err),
 			)
@@ -156,12 +158,11 @@ func writeHandlerFile(filePath string, data handlerData) error {
 		return err
 	}
 
-	f, err := os.Create(filePath)
-	if err != nil {
+	var content bytes.Buffer
+	if err := tmpl.Execute(&content, data); err != nil {
 		return err
 	}
-	defer f.Close()
-	return tmpl.Execute(f, data)
+	return utils.WriteFileIfChanged(filePath, content.Bytes())
 }
 
 func writeRegistryFile(filePath string, entries []handlerData) error {
@@ -170,12 +171,11 @@ func writeRegistryFile(filePath string, entries []handlerData) error {
 		return err
 	}
 
-	f, err := os.Create(filePath)
-	if err != nil {
+	var content bytes.Buffer
+	if err := tmpl.Execute(&content, registryData{Entries: entries}); err != nil {
 		return err
 	}
-	defer f.Close()
-	return tmpl.Execute(f, registryData{Entries: entries})
+	return utils.WriteFileIfChanged(filePath, content.Bytes())
 }
 
 // isRelevantService keeps the same gating rule as the Go robot generator:

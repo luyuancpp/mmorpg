@@ -446,6 +446,22 @@ func TestBuildRewardBundle(t *testing.T) {
 	assert.Error(t, err, "缺 Reward 查询")
 }
 
+func TestBuildRewardBundleHonorsSceneTotalGrantLimit(t *testing.T) {
+	for _, total := range []uint32{4096, 4097} {
+		lookup := rewardLookup(map[uint32]*tablepb.RewardTable{
+			1: {Id: 1, Reward: []*tablepb.Rewardreward{{RewardItem: 1, RewardCount: 2048}, {RewardItem: 2, RewardCount: total - 2048}}},
+		})
+		bundle, err := buildRewardBundle(1, lookup)
+		if total == 4096 {
+			require.NoError(t, err)
+			require.Len(t, bundle.Items, 2)
+		} else {
+			require.Error(t, err)
+			require.Nil(t, bundle)
+		}
+	}
+}
+
 // 锁住"代码读的列"与"导表产物"没有脱节:Reward 1 两槽物品 1×2 → 单项物品 1×4。
 // 只 Load 这一张表、用新建的管理器实例:不改全局快照;table.LoadTables 任何一张表缺文件都是 log.Fatalf。
 // 前置:导表器已跑过(generated/tables/reward.json 存在)。

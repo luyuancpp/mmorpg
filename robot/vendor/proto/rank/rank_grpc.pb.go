@@ -19,15 +19,16 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	ClientPlayerRank_GetRankPage_FullMethodName = "/rankpb.ClientPlayerRank/GetRankPage"
+	ClientPlayerRank_GetRankPage_FullMethodName   = "/rankpb.ClientPlayerRank/GetRankPage"
+	ClientPlayerRank_GetRankAround_FullMethodName = "/rankpb.ClientPlayerRank/GetRankAround"
 )
 
 // ClientPlayerRankClient is the client API for ClientPlayerRank service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type ClientPlayerRankClient interface {
-	// 拉一页 + 顺带"我的名次":合成一个 RPC,因为客户端 gRPC 回包按 message_id FIFO 匹配、同一功能只能单请求在途(§4.2)。
 	GetRankPage(ctx context.Context, in *GetRankPageRequest, opts ...grpc.CallOption) (*GetRankPageResponse, error)
+	GetRankAround(ctx context.Context, in *GetRankAroundRequest, opts ...grpc.CallOption) (*GetRankAroundResponse, error)
 }
 
 type clientPlayerRankClient struct {
@@ -48,12 +49,22 @@ func (c *clientPlayerRankClient) GetRankPage(ctx context.Context, in *GetRankPag
 	return out, nil
 }
 
+func (c *clientPlayerRankClient) GetRankAround(ctx context.Context, in *GetRankAroundRequest, opts ...grpc.CallOption) (*GetRankAroundResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetRankAroundResponse)
+	err := c.cc.Invoke(ctx, ClientPlayerRank_GetRankAround_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // ClientPlayerRankServer is the server API for ClientPlayerRank service.
 // All implementations must embed UnimplementedClientPlayerRankServer
 // for forward compatibility.
 type ClientPlayerRankServer interface {
-	// 拉一页 + 顺带"我的名次":合成一个 RPC,因为客户端 gRPC 回包按 message_id FIFO 匹配、同一功能只能单请求在途(§4.2)。
 	GetRankPage(context.Context, *GetRankPageRequest) (*GetRankPageResponse, error)
+	GetRankAround(context.Context, *GetRankAroundRequest) (*GetRankAroundResponse, error)
 	mustEmbedUnimplementedClientPlayerRankServer()
 }
 
@@ -66,6 +77,9 @@ type UnimplementedClientPlayerRankServer struct{}
 
 func (UnimplementedClientPlayerRankServer) GetRankPage(context.Context, *GetRankPageRequest) (*GetRankPageResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetRankPage not implemented")
+}
+func (UnimplementedClientPlayerRankServer) GetRankAround(context.Context, *GetRankAroundRequest) (*GetRankAroundResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetRankAround not implemented")
 }
 func (UnimplementedClientPlayerRankServer) mustEmbedUnimplementedClientPlayerRankServer() {}
 func (UnimplementedClientPlayerRankServer) testEmbeddedByValue()                          {}
@@ -106,6 +120,24 @@ func _ClientPlayerRank_GetRankPage_Handler(srv interface{}, ctx context.Context,
 	return interceptor(ctx, in, info, handler)
 }
 
+func _ClientPlayerRank_GetRankAround_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetRankAroundRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ClientPlayerRankServer).GetRankAround(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ClientPlayerRank_GetRankAround_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ClientPlayerRankServer).GetRankAround(ctx, req.(*GetRankAroundRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // ClientPlayerRank_ServiceDesc is the grpc.ServiceDesc for ClientPlayerRank service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -116,6 +148,10 @@ var ClientPlayerRank_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetRankPage",
 			Handler:    _ClientPlayerRank_GetRankPage_Handler,
+		},
+		{
+			MethodName: "GetRankAround",
+			Handler:    _ClientPlayerRank_GetRankAround_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

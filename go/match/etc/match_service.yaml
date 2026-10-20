@@ -1,4 +1,20 @@
 Name: matchservice.rpc
+Mode: dev
+# 本地兼容模式显式关闭；生产必须启用，所有副本连接同一TiDB库。
+# 密钥只从环境读取，MATCH_PROBE_SECRET须与各机房battle一致且至少32字节。
+GlobalMatch:
+  Enabled: false
+  RequireTiDB: true
+  Host: 127.0.0.1:4000
+  User: root
+  Database: mmorpg_match
+  PasswordEnv: MATCH_MYSQL_PASSWORD
+  ProbeSecretEnv: MATCH_PROBE_SECRET
+  CrossRegionWaitSeconds: 30
+  HardLatencyMs: 180
+  ProbeTTLSeconds: 120
+  RankEndpoint: 127.0.0.1:51100
+  RankSecretEnv: RANK_PRODUCER_SECRET_MATCH
 ListenOn: 127.0.0.1:50500
 # zrpc 服务端超时(毫秒),对同一 server 上的 MatchService 与 ClientPlayerTeam 都生效。2026-10-14 由 5000 改为 4000
 # (docs/design/client-request-ordering.md O10 / §5):预算链要求「目标 Timeout + 1000 ≤ 路由服 ForwardTimeoutMs(5000)」。

@@ -143,8 +143,8 @@ func bitAt(words []uint64, i uint64) bool {
 // ClassifyPersisted 从**已落盘**的玩家账本里读某个 seq 的结局。
 //
 // 只有 APPLIED / REJECTED 才是结论;其余一律回 UNKNOWN(含"未见"),调用方继续等。
-// 返回的结论可以直接当 durable:它读的就是已经写进 Redis 的那份数据,而按不变量 I2,
-// 已记账的结局永不改变 —— 所以玩家在不在线都不影响这次读取。
+// 这里只解释位图，尚未绑定具体请求身份，不能独立据此终结业务。
+// 正式消费还须经 resultWithReceipt 核对 correlation 与 32 字节摘要；旧账本缺身份一律 UNKNOWN。
 func ClassifyPersisted(l *componentpb.PlayerAssetOpLedgerComp, s assetpb.AssetOpStream, epoch, seq uint64) (assetpb.AssetOpOutcome, bool, uint32) {
 	stream := FindStream(l, s)
 	switch ClassifySeq(stream, epoch, seq) {

@@ -80,13 +80,24 @@ func main() {
 	svcCtx := svc.NewServiceContext(c)
 
 	ctx, cancel := context.WithCancel(context.Background())
+	resultConfig := matchkafka.ResultConsumerConfig{
+		Brokers: c.Kafka.Brokers, Topic: c.ResultTopic,
+		GroupID: c.ResultConsumerGroup, Partitions: c.ResultTopicPartitions,
+		RequireSQLCommit: c.GlobalMatch.Enabled,
+	}
+	// 成局之后 battle 会写结果，不能等到可选的评分消费者启动时才发现主题不耐久。
+	// 此门禁先于 matcher、节点发现和 RPC 注册；失败直接拒绝本进程启动。
+	if c.GlobalMatch.Enabled {
+		if err := matchkafka.EnsureResultTopic(resultConfig); err != nil {
+			cancel()
+			panic(fmt.Errorf("全球匹配结果主题未满足耐久契约，拒绝启动: %w", err))
+		}
+	}
 
 	// Prometheus /metrics(MetricsListenAddr 为空则不开)。
 	metrics.Start(c.MetricsListenAddr)
 	// 本实例生效的组队跨区开关;多实例取值不一致 = 滚动切换中(team-system.md J-13a)。
 	metrics.SetTeamCrossZoneAllowed(c.Team.AllowCrossZone)
-	// 本实例是否关掉了队伍补位匹配(应急开关);多实例取值不一致 = 逐个重启中。
-	metrics.SetTeamFillQueueDisabled(c.Team.FillQueueDisabled)
 
 	// scene / battle 节点发现:etcd list-watch 内存镜像
 	// (gather 定位 PrepareBattle / CreateBattle 对端用,照 LoadReporter 模式;
@@ -94,40 +105,24 @@ func main() {
 	safego.Go("match.watch.scene", func() { svcCtx.SceneNodes.Run(ctx, svcCtx.Etcd) })
 	safego.Go("match.watch.battle", func() { svcCtx.BattleNodes.Run(ctx, svcCtx.Etcd) })
 
-	// 组队(team-system.md §A.3,port-decisions D-2 / feasibility D7):与 match 同进程、同一个
-	// zrpc server,协议独立(ClientPlayerTeam service + TeamNodeService 第二次节点注册)。
-	//   - home zone 查询走 data_service(DataServiceRpc 未配置时 DataServiceClient 为 nil,
-	//     team 需要 home zone 的请求一律回 TeamInternal,不拒绝起服);
-	//   - 整队开战的票据域端口由 logic.TeamBattleStarter 实现,这一行同时是
-	//     *logic.TeamBattleStarter 满足 team.BattleStarter 的编译期保证(team 与 logic 互不 import)。
-	teamService := team.NewService(svcCtx,
-		team.NewDataServiceHomeZone(svcCtx.DataServiceClient, team.DefaultHomeZoneLookupTimeout),
-		matchlogic.NewTeamBattleStarter(svcCtx))
-	// 队伍补位匹配的反向端口(team-backfill-matching.md §4):matcher 弹组前向 team 复核补位单、
-	// 撤单 / 开局后让 team 推送。这一行同时是 *team.Service 满足 svc.PartyTeamPort 的编译期保证。
-	// **必须在 matcher 循环启动之前注入**:进程重启时 Redis 里还留着存量补位单(票据 6 小时),
-	// 端口缺失期间 matcher 不会让补位单成组(见 logic.groupPicker.checkParty),但也就白等;
-	// 后面那段对局结果消费者的启动在 Kafka 慢时要等好几秒。
-	svcCtx.SetPartyTeam(teamService)
-
-	// matcher loop:定时扫队列凑单。多实例安全由每个 (mode, config) 队列的
-	// Redis SETNX 锁保证,match 服务本身无状态、可水平扩(设计文档 §5.4)。
-	matchlogic.StartMatcherLoop(ctx, svcCtx)
-
-	// 对局结果回流(cross-zone-matchmaking.md §11):消费 battle 发的
-	// BattleResultEvent 更新 Elo。消费者不 import logic(会成环),入账逻辑
-	// 以回调注入;RatingEnabled=false 时不消费,评分停在默认 1500。
-	if c.RatingEnabled {
+	// 全球结果来源归档独立于评分开关，PVE与不计分局也必须保全完整个人原件。
+	// 启动接线先于matcher与RPC注册；旧兼容模式仍只在启用评分时消费。
+	if c.GlobalMatch.Enabled || c.RatingEnabled {
 		startResults := func() error {
-			return matchkafka.StartResultConsumer(ctx, matchkafka.ResultConsumerConfig{
-				Brokers:    c.Kafka.Brokers,
-				Topic:      c.ResultTopic,
-				GroupID:    c.ResultConsumerGroup,
-				Partitions: c.ResultTopicPartitions,
-			}, func(_ context.Context, event *kafkapb.BattleResultEvent) error {
+			var recorder []matchkafka.ResultRecordHandler
+			if c.GlobalMatch.Enabled {
+				if svcCtx.Authority == nil {
+					return fmt.Errorf("全球匹配完整结算来源数据库未装配")
+				}
+				recorder = append(recorder, svcCtx.Authority.ArchiveCompletion)
+			}
+			return matchkafka.StartResultConsumer(ctx, resultConfig, func(_ context.Context, event *kafkapb.BattleResultEvent) error {
+				if !c.RatingEnabled {
+					return nil
+				}
 				_, err := matchlogic.ApplyBattleResult(svcCtx, event)
 				return err
-			})
+			}, recorder...)
 		}
 		// 排行榜评分快照 topic(docs/design/leaderboard-system.md §2.4):RatingEnabled=true 时不论发布开关开没开,都由 match
 		// 声明分区契约与保留期 —— rank 先起时 topic 以 broker 默认保留期建出(rank Ensure 传 RetentionMs: -1 不改写),
@@ -141,19 +136,21 @@ func main() {
 		// 3 分区契约从此永久破坏,match 与 rank 的 Ensure 都永远失败,只能手工删 topic(R1 评审)。
 		// 所以两步串成一步重试:声明不成功,评分入账就停在当前值(排队 / 凑单照常),日志每 30s 报一次原因。
 		// 开关关闭时两者各自重试:快照 topic 的问题(比如分区数与 broker 不一致)不能连带停掉评分入账。
-		startRating := startResults
-		if c.RatingSnapshotPublishEnabled {
-			startRating = func() error {
+		consumeResults := startResults
+		if c.RatingEnabled && !c.GlobalMatch.Enabled && c.RatingSnapshotPublishEnabled {
+			consumeResults = func() error {
 				if err := ensureSnapshotTopic(); err != nil {
 					return fmt.Errorf("快照发布已打开,必须先声明评分快照 topic %s 才能起结果消费者: %w", c.RatingSnapshotTopic, err)
 				}
 				return startResults()
 			}
 		}
-		// 评分是软数据:Kafka 暂不可达(EnsureTopics / 建 reader 失败)不能拖死匹配本身
-		// (复审:RatingEnabled=true 让 match 启动硬依赖 Kafka)。降级为告警 + 30s 后台重试,
-		// 期间排队/凑单照常、评分停在当前值;重试成功后从最早 offset 补消费,不丢结果。
-		if err := startRating(); err != nil {
+		// 全球来源归档必须同步装配成功；只有显式旧兼容模式的软评分允许告警后后台重试。
+		if err := consumeResults(); err != nil {
+			if c.GlobalMatch.Enabled {
+				cancel()
+				panic(fmt.Errorf("全球匹配完整结算来源消费者未就绪，拒绝启动: %w", err))
+			}
 			logx.Errorf("[rating] Failed to start battle result consumer; rating updates paused, retrying in the background after 30s: %v", err)
 			safego.Go("match.kafka.results.retry", func() {
 				for {
@@ -162,7 +159,7 @@ func main() {
 						return
 					case <-time.After(30 * time.Second):
 					}
-					if err := startRating(); err != nil {
+					if err := consumeResults(); err != nil {
 						logx.Errorf("[rating] Failed to restart battle result consumer; retrying after 30s: %v", err)
 						continue
 					}
@@ -171,11 +168,10 @@ func main() {
 				}
 			})
 		}
-
 		// 开关关闭:快照 topic 只在后台声明、失败每 30s 重试(开关打开时已经在 startRating 里先于结果消费者同步声明)。
 		// 不在这里同步试第一次:Kafka 能建连却不回包时一次 admin 调用最坏要几十秒,叠在 startRating 之后会把 gRPC 起服推迟一倍,
 		// 被 liveness 探针杀掉重启 —— 而开关关着时没有任何东西等这个 topic。
-		if !c.RatingSnapshotPublishEnabled {
+		if c.RatingEnabled && !c.GlobalMatch.Enabled && !c.RatingSnapshotPublishEnabled {
 			safego.Go("match.kafka.rating_snapshot_topic", func() {
 				for {
 					err := ensureSnapshotTopic()
@@ -196,6 +192,19 @@ func main() {
 		logx.Infof("[rating] Leaderboard rating snapshot publish enabled=%t topic=%s partitions=%d retention=%dh",
 			c.RatingSnapshotPublishEnabled, c.RatingSnapshotTopic, c.RatingSnapshotTopicPartitions, c.RatingSnapshotRetentionHours)
 	}
+
+	// 组队(team-system.md §A.3,port-decisions D-2 / feasibility D7):与 match 同进程、同一个
+	// zrpc server,协议独立(ClientPlayerTeam service + TeamNodeService 第二次节点注册)。
+	//   - home zone 查询走 data_service(DataServiceRpc 未配置时 DataServiceClient 为 nil,
+	//     team 需要 home zone 的请求一律回 TeamInternal,不拒绝起服);
+	//   - 整队开战的票据域端口由 logic.TeamBattleStarter 实现,这一行同时是
+	//     *logic.TeamBattleStarter 满足 team.BattleStarter 的编译期保证(team 与 logic 互不 import)。
+	teamService := team.NewService(svcCtx,
+		team.NewDataServiceHomeZone(svcCtx.DataServiceClient, team.DefaultHomeZoneLookupTimeout),
+		matchlogic.NewTeamBattleStarter(svcCtx))
+	svcCtx.SetPartyTeam(teamService)
+	// 完整结果归档与队伍反向端口均就绪后才开放成局。
+	matchlogic.StartMatcherLoop(ctx, svcCtx)
 
 	s := zrpc.MustNewServer(c.RpcServerConf, func(grpcServer *grpc.Server) {
 		matchpb.RegisterMatchServiceServer(grpcServer, server.NewMatchServiceServer(svcCtx))

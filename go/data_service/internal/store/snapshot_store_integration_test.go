@@ -7,6 +7,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"slices"
 	"strings"
 	"sync"
 	"testing"
@@ -941,6 +942,180 @@ func TestSnapshotStore_SameGuidQueueDeadlockIsAbsorbed(t *testing.T) {
 		"关键是上面的 require.NoError —— 它没冒泡就说明有界重试把它吸收了)", retries)
 }
 
+// TestSnapshotStore_BatchOutOfGuidOrderOverlapDoesNotDeadlock 钉住 #20 复核时发现的第二个环(事故文档 §9.6.3):
+// 两个写者、同一批、批内 guid 倒序、没有已存在的行把间隙隔开。按行序插时:
+//
+//	A 插下 2001、排在 C 未提交的 9000 后面;B 在 2001 上等 A,等待中的 S next-key 请求罩住 (1000, 2001);
+//	C 回滚 → A 插 9000 后再插 1001,落进 (1000, 2001),被 B 的排队请求挡住 → A 等 B、B 等 A → 1213(复核员 10/10)。
+//
+// 按 guid 升序插时 A 先插 1001、2001,之后的 9000 落不进 B 等待的间隙,只有单向等待,重跑计数必须为 0。
+func TestSnapshotStore_BatchOutOfGuidOrderOverlapDoesNotDeadlock(t *testing.T) {
+	db := storetest.NewMigratedDB(t)
+	requireDeadlockDetect(t, db.Raw)
+	ss := newSnapshotStore(t, db)
+	requireGuidUniqueKey(t, ss)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+	defer cancel()
+
+	const (
+		createdAt  = uint64(1700000000)
+		waitBudget = 10 * time.Second
+	)
+	_, inserted, err := ss.InsertSnapshotIfGuidAbsent(ctx, sceneRow(10, 1000, createdAt, []byte("stored")))
+	require.NoError(t, err)
+	require.True(t, inserted)
+
+	txC, err := db.Raw.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelRepeatableRead})
+	require.NoError(t, err)
+	defer txC.Rollback()
+	_, err = txC.ExecContext(ctx, store.InsertSnapshotSQLForTest,
+		store.SnapshotInsertArgsForTest(sceneRow(30, 9000, createdAt, []byte("c")))...)
+	require.NoError(t, err, "夹具:C 应插入 guid=9000")
+
+	batch := func(tag string) []*store.SnapshotRow {
+		return []*store.SnapshotRow{ // 行序故意 guid 倒序:2001 在 1001 前面
+			sceneRow(11, 2001, createdAt, []byte(tag)), sceneRow(11, 9000, createdAt, []byte(tag)), sceneRow(11, 1001, createdAt, []byte(tag)),
+		}
+	}
+	type result struct {
+		n   int64
+		err error
+	}
+	retriesBefore := ss.DeadlockRetriesForTest()
+	doneA := make(chan result, 1)
+	go func() { n, err := ss.InsertSnapshotsIfGuidAbsent(ctx, batch("a")); doneA <- result{n, err} }()
+	if err := awaitLockWaiters(ctx, db.Raw, store.PlayerSnapshotTableName, 1, waitBudget); err != nil {
+		_ = txC.Rollback()
+		<-doneA
+		skipOrFailOnLockWait(t, err, "A 应排在 C 那条未提交的 9000 后面")
+	}
+	doneB := make(chan result, 1)
+	go func() { n, err := ss.InsertSnapshotsIfGuidAbsent(ctx, batch("b")); doneB <- result{n, err} }()
+	if err := awaitLockWaiters(ctx, db.Raw, store.PlayerSnapshotTableName, 2, waitBudget); err != nil {
+		_ = txC.Rollback()
+		<-doneA
+		<-doneB
+		skipOrFailOnLockWait(t, err, "B 应排在 A 那条未提交记录后面")
+	}
+
+	require.NoError(t, txC.Rollback())
+	a, b := <-doneA, <-doneB
+	require.NoError(t, a.err, "A")
+	require.NoError(t, b.err, "B")
+	assert.Zero(t, ss.DeadlockRetriesForTest()-retriesBefore, "批内倒序 + 重叠不许靠 1213 就地重跑吸收:批量必须按 guid 升序插")
+	assert.Equal(t, int64(3), a.n+b.n, "两批合起来恰好三行新插入")
+	for _, g := range []uint64{1000, 1001, 2001, 9000} {
+		assert.Equalf(t, int64(1), db.Count(t, store.PlayerSnapshotTableName, "snapshot_guid = ?", g), "guid=%d 必须恰好一行", g)
+	}
+}
+
+// TestSnapshotTableUniqueIndexesAreOnlyGuidKey 守住快照去重的一个隐含前提:player_snapshot 上的唯一索引只有
+// PRIMARY 与 uk_snapshot_guid_nz。单行 ODKU 会就地吸收**任何**唯一键上的重复(撞上别的唯一键时 affected=0、
+// LAST_INSERT_ID 回带那一行的 id),这条快照会被当成「已存在」静默丢弃;批量路径「撞 1062 只会是并发写者同 guid」
+// 的判断也依赖它。要给这张表加唯一键,先改两条写入路径的判重,再改这里。(2026-10-16 复核员真库实测)
+func TestSnapshotTableUniqueIndexesAreOnlyGuidKey(t *testing.T) {
+	db := storetest.NewMigratedDB(t)
+	ss := newSnapshotStore(t, db)
+	requireGuidUniqueKey(t, ss)
+	rows, err := db.Raw.QueryContext(context.Background(),
+		`SELECT DISTINCT INDEX_NAME FROM information_schema.STATISTICS
+		  WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND NON_UNIQUE = 0 ORDER BY INDEX_NAME`,
+		store.PlayerSnapshotTableName)
+	require.NoError(t, err)
+	defer rows.Close()
+	var got []string
+	for rows.Next() {
+		var name string
+		require.NoError(t, rows.Scan(&name))
+		got = append(got, name)
+	}
+	require.NoError(t, rows.Err())
+	assert.Equal(t, []string{"PRIMARY", store.SnapshotGuidUniqueKey}, got,
+		"player_snapshot 只许有这两个唯一索引:多出来的唯一键会被单行 ODKU 静默吸收,快照被当成已存在丢弃")
+}
+
+// TestSnapshotStore_BatchOverlapDoesNotDeadlock 钉住死锁审计 #20(事故文档 §9.6.3 / §9.6.4「现场四」):
+// rebalance 重叠时两个实例的批量落库不成环。编排照搬复核员复现旧实现 3/3 成环的那一组:
+//
+//	库里已有 1000、2000;C 插 9000 不提交(扮演一个没写完的写者);
+//	A 批 [2001, 9000, 1001]:2001 先插下,9000 排在 C 后面;
+//	B 批 [2000, 2001, 1001](新属主从更早的 offset 重读):2001 排在 A 后面;
+//	C 回滚 → A 继续插 9000、1001 并提交 → B 撞 1062 → 逐行判重。
+//
+// 旧实现(多行 ODKU)里 B 的第一行 2000 撞已提交记录,在自增主键末尾留下 X 间隙锁直到语句结束,A 回来要在主键末尾
+// 插 9000 / 1001 时被它挡住,而 B 正等着 A 的 2001 —— 环,1213 由就地重跑吸收,这里的重跑计数就不为 0。
+// 新实现:B 的预读剔掉 2000,普通 INSERT 不持间隙锁地等 A,A 不等 B,单向等待,重跑计数必须为 0。
+func TestSnapshotStore_BatchOverlapDoesNotDeadlock(t *testing.T) {
+	db := storetest.NewMigratedDB(t)
+	requireDeadlockDetect(t, db.Raw)
+	ss := newSnapshotStore(t, db)
+	requireGuidUniqueKey(t, ss)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+	defer cancel()
+
+	const (
+		createdAt  = uint64(1700000000)
+		waitBudget = 10 * time.Second
+	)
+	for _, g := range []uint64{1000, 2000} {
+		_, inserted, err := ss.InsertSnapshotIfGuidAbsent(ctx, sceneRow(10, g, createdAt, []byte("stored")))
+		require.NoError(t, err)
+		require.True(t, inserted)
+	}
+
+	txC, err := db.Raw.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelRepeatableRead})
+	require.NoError(t, err)
+	defer txC.Rollback()
+	_, err = txC.ExecContext(ctx, store.InsertSnapshotSQLForTest,
+		store.SnapshotInsertArgsForTest(sceneRow(30, 9000, createdAt, []byte("c")))...)
+	require.NoError(t, err, "夹具:C 应插入 guid=9000")
+
+	type result struct {
+		n   int64
+		err error
+	}
+	retriesBefore, fallbacksBefore := ss.DeadlockRetriesForTest(), ss.BatchFallbacksForTest()
+	doneA := make(chan result, 1)
+	go func() {
+		n, err := ss.InsertSnapshotsIfGuidAbsent(ctx, []*store.SnapshotRow{
+			sceneRow(11, 2001, createdAt, []byte("a")), sceneRow(11, 9000, createdAt, []byte("a")), sceneRow(11, 1001, createdAt, []byte("a")),
+		})
+		doneA <- result{n, err}
+	}()
+	if err := awaitLockWaiters(ctx, db.Raw, store.PlayerSnapshotTableName, 1, waitBudget); err != nil {
+		_ = txC.Rollback()
+		<-doneA
+		skipOrFailOnLockWait(t, err, "A 的 9000 应排在 C 那条未提交记录后面")
+	}
+	doneB := make(chan result, 1)
+	go func() {
+		n, err := ss.InsertSnapshotsIfGuidAbsent(ctx, []*store.SnapshotRow{
+			sceneRow(11, 2000, createdAt, []byte("b")), sceneRow(11, 2001, createdAt, []byte("b")), sceneRow(11, 1001, createdAt, []byte("b")),
+		})
+		doneB <- result{n, err}
+	}()
+	if err := awaitLockWaiters(ctx, db.Raw, store.PlayerSnapshotTableName, 2, waitBudget); err != nil {
+		_ = txC.Rollback()
+		<-doneA
+		<-doneB
+		skipOrFailOnLockWait(t, err, "B 的 2001 应排在 A 那条未提交记录后面")
+	}
+
+	require.NoError(t, txC.Rollback())
+	a, b := <-doneA, <-doneB
+	require.NoError(t, a.err, "A")
+	require.NoError(t, b.err, "B")
+	assert.Equal(t, int64(3), a.n, "A 的三行都是新插入")
+	assert.Equal(t, int64(0), b.n, "B 的三行都已被 A 或之前落过")
+	assert.Zero(t, ss.DeadlockRetriesForTest()-retriesBefore, "批量重叠不许再靠 1213 就地重跑吸收(#20)")
+	assert.Equal(t, uint64(1), ss.BatchFallbacksForTest()-fallbacksBefore,
+		"只有 B 撞 1062 转逐行一次:A 预读时 2001 / 1001 / 9000 都不在;B 的预读剔掉了已提交的 2000")
+	for _, g := range []uint64{1000, 1001, 2000, 2001, 9000} {
+		assert.Equalf(t, int64(1), db.Count(t, store.PlayerSnapshotTableName, "snapshot_guid = ?", g), "guid=%d 必须恰好一行", g)
+	}
+	assert.Equal(t, []byte("a"), snapshotDataOf(t, ctx, db, 2001), "2001 由 A 先落")
+}
+
 // TestSnapshotStore_LegacyWriterCoexistsWithUniqueKey 钉住滚动升级窗口的行为:
 // **旧版本二进制**(按 INSERT...SELECT...NOT EXISTS 去重)对着**新表结构**(已有唯一键)写,
 // 不会违反唯一键,也不会写出重复行。
@@ -1271,6 +1446,7 @@ func TestSnapshotStore_BatchDedupsAgainstStoredAndWithinBatch(t *testing.T) {
 	n, err := ss.InsertSnapshotsIfGuidAbsent(ctx, batch)
 	require.NoError(t, err)
 	assert.Equal(t, int64(2), n, "只有 g2、g3 是新插入:库里已有的 g1 与批内第二条 g2 都不计")
+	assert.Zero(t, ss.BatchFallbacksForTest(), "库里已有与批内重复都应由预读剔掉,不许撞 1062 转逐行")
 
 	for _, guid := range []uint64{81001, 81002, 81003} {
 		assert.Equalf(t, int64(1), db.Count(t, store.PlayerSnapshotTableName, "snapshot_guid = ?", guid), "guid=%d 必须恰好一行", guid)
@@ -1304,16 +1480,18 @@ func TestSnapshotStore_BatchReplayIsNoop(t *testing.T) {
 	n, err = ss.InsertSnapshotsIfGuidAbsent(ctx, batch)
 	require.NoError(t, err)
 	assert.Equal(t, int64(0), n, "重放整批:0 行新插入")
+	assert.Zero(t, ss.BatchFallbacksForTest(), "重放应由预读整批剔掉,不许撞 1062 转逐行")
 	assert.Equal(t, int64(3), db.Count(t, store.PlayerSnapshotTableName, "source = 1"))
 	for _, r := range batch {
 		assert.Equalf(t, before[r.SnapshotGuid], snapshotIDsOfGuid(t, ctx, db, r.SnapshotGuid), "guid=%d 的 id 在重放后变了", r.SnapshotGuid)
 	}
 }
 
-// TestSnapshotStore_BatchIdsFollowRowOrder:同一玩家一批 5 行,自增 id 严格按**行序**递增(不是按 guid 大小)。
-// 消费者按 offset 序拼批,所以 id 序 = 同一玩家的 offset 序;ListSceneSnapshotsByPlayer 在 created_at 同秒并列时
-// 按 id DESC 排,次序因此与逐条消费一致。guid 故意不单调,免得「按 guid 排了序」也能让断言通过。
-func TestSnapshotStore_BatchIdsFollowRowOrder(t *testing.T) {
+// TestSnapshotStore_BatchIdsFollowGuidOrder:同一批 5 行,自增 id 严格按 **guid 升序**递增(不是按行序)。
+// 批量路径按 guid 升序拼多行 INSERT 是为了让取锁顺序 = 唯一键顺序(两写者倒序成环,见 InsertSnapshotsIfGuidAbsent
+// 「为什么要按 guid 升序插」);代价是同秒并列时 ListSceneSnapshotsByPlayer 的 id DESC 次序跟 guid 走。
+// guid 故意按行序打乱,免得「没排序」也能让断言通过。
+func TestSnapshotStore_BatchIdsFollowGuidOrder(t *testing.T) {
 	db := storetest.NewMigratedDB(t)
 	ss := newSnapshotStore(t, db)
 	requireGuidUniqueKey(t, ss)
@@ -1329,12 +1507,14 @@ func TestSnapshotStore_BatchIdsFollowRowOrder(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, int64(len(guids)), n)
 
+	sorted := slices.Clone(guids)
+	slices.Sort(sorted)
 	var prev uint64
-	for i, g := range guids {
+	for i, g := range sorted {
 		ids := snapshotIDsOfGuid(t, ctx, db, g)
 		require.Lenf(t, ids, 1, "guid=%d", g)
 		if i > 0 {
-			assert.Greaterf(t, ids[0], prev, "第 %d 行(guid=%d)的 id 应大于上一行:id 序必须跟着行序走", i, g)
+			assert.Greaterf(t, ids[0], prev, "guid=%d 的 id 应大于更小 guid 的那一行:批量按 guid 升序插", g)
 		}
 		prev = ids[0]
 	}

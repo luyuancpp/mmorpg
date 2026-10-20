@@ -22,7 +22,7 @@ func TestPrebuiltZeroSeries(t *testing.T) {
 		got[mf.GetName()] = len(mf.GetMetric())
 	}
 	for name, want := range map[string]int{
-		"mail_admin_send_total":          2 * 3 * 5, // method × sender_kind × outcome
+		"mail_admin_send_total":          3 * 7 * 5, // method × sender_kind × outcome
 		"mail_push_total":                4,
 		"mail_claim_short_circuit_total": 1,
 		"mail_list_truncated_total":      1,

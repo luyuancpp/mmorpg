@@ -76,6 +76,7 @@
     {
       "type": "stat",
       "title": "Live scene nodes by role (per zone)",
+      "description": "每个 zone 有多个发布者(领导者发布全部 zone,该 zone 自己的 scene_manager 副本发布本 zone),各自的值都来自 etcd 快照、彼此一致,所以按 max 聚合;用 sum 会按发布者个数放大(2026-10-16 起)。",
       "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
       "gridPos": { "h": 6, "w": 8, "x": 0, "y": 1 },
       "id": 101,
@@ -89,7 +90,7 @@
       },
       "targets": [
         {
-          "expr": "sum by (zone_id, role) (scene_manager_nodes_by_role{zone_id=~\"$zone_id\"})",
+          "expr": "max by (zone_id, role) (scene_manager_nodes_by_role{zone_id=~\"$zone_id\"})",
           "legendFormat": "z{{zone_id}} / {{role}}",
           "refId": "A"
         }

@@ -1,3 +1,8 @@
+# === GENERATED FILE -- DO NOT EDIT ===
+# Produced by tools/archived/vcxproj2cmake.py from scene.vcxproj.
+# Every Linux build regenerates it; hand edits are lost without warning.
+# Change the generator instead.
+
 cmake_minimum_required(VERSION 3.22)
 project(scene)
 
@@ -17,6 +22,9 @@ add_definitions(-D__linux__)
 add_definitions(-DNOMINMAX)
 add_definitions(-DENTT_ID_TYPE=uint64_t)
 add_definitions(-DABSL_PROPAGATE_CXX_STD=TRUE)
+add_definitions(-DGOOGLE_CHECK_EQ=ABSL_CHECK_EQ)
+add_definitions(-DGOOGLE_LOG=ABSL_LOG)
+add_definitions(-DGOOGLE_DCHECK=ABSL_DCHECK)
 add_definitions(-DMMORPG_AGONES_CURL=1)
 
 include_directories(
@@ -27,23 +35,11 @@ include_directories(
     ../../../../third_party/entt/single_include
     ../../../../third_party/fmt/include
     ../../../../third_party/grpc/third_party/
-    # ── OpenSSL 头路径(asset_op_auth.cpp 用)────────────────────────────────
-    # asset_op_auth.cpp 走 engine/core/security/token_security.h,那是 header-only,
-    # 直接 #include <openssl/crypto.h> / <evp.h> / <hmac.h>。scene 库此前从不碰 OpenSSL,
-    # 所以这两条是新加的,漏了就是 C1083/fatal error: openssl/crypto.h: No such file。
-    #
-    # **顺序敏感,boringssl 必须排在 openssl 之前**:third_party/openssl/include/openssl
-    # 里 crypto.h 只有未 configure 的 crypto.h.in(evp.h / hmac.h 倒是真文件),能凑齐
-    # 三个头的只有 boringssl。反过来排,crypto.h 会先落到那棵**未 configure 的源码树**上,
-    # 通常直接 fatal error 停在编译期(不是静默混搭);真正的运行期未定义行为来自"头和库
-    # 各走一边"—— 链接侧 -lssl/-lcrypto 取的是 gRPC 装过去的 BoringSSL。与 gate 同序
-    # (cpp/nodes/gate/CMakeLists.txt:27/30)。
     ../../../../third_party/grpc/third_party/boringssl-with-bazel/include/
     ../../../../third_party/hexagons_grids/
     ../../../../third_party/librdkafka/src-cpp/
     ../../../../third_party/lua/src/
     ../../../../third_party/muduo-linux/
-    # 与上面 boringssl 配对,见那里的顺序说明(必须排在 boringssl 之后)。
     ../../../../third_party/openssl/include/
     ../../../../third_party/recastnavigation/
     ../../../../third_party/redis/
@@ -82,7 +78,6 @@ set(SOURCE_FILES
     actor/action_state/system/actor_action_state.cpp
     actor/attribute/system/actor_attribute_calculator.cpp
     actor/attribute/system/actor_state_attribute_sync.cpp
-    battle/system/player_battle.cpp
     combat/buff/system/buff.cpp
     combat/buff/system/buff_impl.cpp
     combat/buff/system/modifier_buff_impl.cpp
@@ -101,24 +96,16 @@ set(SOURCE_FILES
     generated/attribute/attributedelta5framess2c_attribute_sync.cpp
     generated/attribute/attributedelta60framess2c_attribute_sync.cpp
     player/system/afk.cpp
-    # 通用资产通道(guild-phase2/04-asset-channel.md §S4):验签 + 纯函数账本 + RPC 处理系统。
-    # asset_op_auth.cpp 是 §4.32 要求的独立编译单元(AssetOpCanonical / VerifyAssetOpAuth /
-    # AssetOpAuthVerdictName),asset_op_system.h 无条件 include 它的头 —— 不登记会在
-    # scene 静态库里缺定义,scene 节点工程与 currency_test 链接期报 unresolved external。
     player/system/asset_op_auth.cpp
     player/system/asset_op_ledger.cpp
     player/system/asset_op_system.cpp
-    player/system/player_database_loader.cpp
-    player/system/player_database_1_loader.cpp
-    # 玩家持久收件箱的 scene 消费端(docs/design/player-inbox-service.md §7):纯规则 + 类型注册表 / 执行器表 +
-    # GM 处置执行器 + 系统本体。player_landing.cpp 与 player_battle.cpp 各调一行,player_database_loader.cpp
-    # 调账本校验,漏登记会在 scene 静态库里缺定义,链接期报 undefined reference。
     player/system/player_inbox_rules.cpp
     player/system/player_inbox_registry.cpp
     player/system/gm_sanction_inbox_executor.cpp
     player/system/player_inbox_system.cpp
-    # DBTask 投递账本(纯数据结构)与它的粘合层;player_lifecycle.cpp 与 core/system/redis.cpp 都调它,
-    # 漏登记会在 scene 静态库里缺定义,链接期报 undefined reference。
+    player/system/player_database_loader.cpp
+    player/system/player_database_1_loader.cpp
+    battle/system/player_battle.cpp
     player/system/db_task_dispatch_ledger.cpp
     player/system/db_task_dispatch_system.cpp
     player/system/player_lifecycle.cpp
@@ -129,10 +116,6 @@ set(SOURCE_FILES
     player/system/player_skill.cpp
     player/system/player_attribute.cpp
     player/system/player_pet.cpp
-    # 装备编排(掷随机属性 / 穿脱 / 加成汇总 / tooltip 显示,docs/design/equipment-attributes.md §4.3)。
-    # 两个头 equip_attribute_rules.h(纯规则,header-only)与 player_equip.h 不需要登记:
-    # CMake 这边只列编译单元。player_attribute.cpp 与 player_feature_snapshot.cpp 都调它,
-    # 漏登记会在 scene 静态库里缺定义,链接期报 undefined reference。
     player/system/player_equip.cpp
     # 神秘商人(docs/design/mystery-merchant.md §5):读记录、公告、查询、购买。
     # 纯规则头 mystery_merchant_rules.h 与 player_mystery_merchant.h 不需要登记(CMake 只列编译单元)。
@@ -140,10 +123,6 @@ set(SOURCE_FILES
     player/system/player_tip.cpp
     player/system/stress_test_probe.cpp
     player/system/bag_marshal.cpp
-    player/system/mission_marshal.cpp
-    player/system/player_activity_schedule.cpp
-    player/system/player_feature_snapshot.cpp
-    player/system/player_mission.cpp
     spatial/system/aoi.cpp
     spatial/system/grid.cpp
     spatial/system/interest.cpp
@@ -153,7 +132,12 @@ set(SOURCE_FILES
     spatial/system/recast.cpp
     spatial/system/scene_spawn.cpp
     spatial/system/view.cpp
+    world/scene_lifecycle.cpp
     world/world.cpp
+    player/system/player_feature_snapshot.cpp
+    player/system/player_mission.cpp
+    player/system/mission_marshal.cpp
+    player/system/player_activity_schedule.cpp
 )
 
 add_library(scene STATIC ${SOURCE_FILES})

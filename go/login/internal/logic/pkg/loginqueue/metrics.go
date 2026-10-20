@@ -108,13 +108,29 @@ var (
 	//   "admit_window_passed" — 放行过(meta 有 admitted_at),放行槽却已被取走或已按 AdmitTTL 过期(2026-10-15 起;
 	//                     此前这两种情况回「排队中、名次 0」,不计数)。持续升高 = 客户端轮询慢于 AdmitTTL,
 	//                     或取走的回包在丢、客户端在重试。
+	//
+	// (2026-10-18 补注)各原因的新语义:
+	//   - "meta_gone" 含空闲超过 QueueEntryTTL 的条目(token 索引或 meta 已按空闲 TTL 过期;此前这类通常记 ttl,
+	//     因为令牌与条目同为 1h),也含 meta 类型损坏、meta 的 zone 与令牌不符;zone 一律取自令牌(此前 token 索引
+	//     不在时记 unknown;令牌里的 zone 为 0 时仍记 unknown)。
+	//   - "ttl" 只表示排队令牌超过 24h 的绝对过期(loginqueue.queueTokenMaxAge)。
+	//   - "queue_gone":meta 在、没有 admitted_at、又不在队列(来源见 Queue.lookupStateScript:整个 zone 空闲超过
+	//     QueueEntryTTL 后队列键先到期、人工 ZREM / DEL 队列键、排队开着时混跑新旧版)。持续非零说明有人在排队开着时
+	//     混跑新旧版,或手工动了队列键。与其它原因一样不预置标签(go-zero 指标开关打开前写的样本会被丢弃),面板用
+	//     `or vector(0)`。
 	expiredTotal = metric.NewCounterVec(&metric.CounterVecOpts{
 		Namespace: metricNamespace,
 		Subsystem: "",
 		Name:      "expired_total",
-		Help: "Cumulative count of EXPIRED responses to AssignGate/QueryQueueStatus, " +
-			"per zone (best-effort, may be 'unknown' when token couldn't be parsed) " +
-			"and reason. Sustained non-zero 'ttl' = client polling slower than admit_ttl.",
+		Help: "Cumulative count of EXPIRED responses to AssignGate/QueryQueueStatus, per zone " +
+			"(taken from the queue token; 'unknown' when the token could not be parsed) and reason: " +
+			"'bad_signature' = forged or malformed queue token; " +
+			"'ttl' = queue token past its 24h absolute lifetime; " +
+			"'meta_gone' = entry idle longer than QueueEntryTTL (token index or meta expired), corrupt meta, or zone mismatch; " +
+			"'queue_gone' = meta present but neither queued nor admitted (whole zone idle past QueueEntryTTL, " +
+			"manual ZREM/DEL of the queue key, or old and new login versions mixed while the queue was enabled); " +
+			"'admit_window_passed' = admitted, but the admit slot was already taken or expired; " +
+			"'queue_disabled' = polled while Queue.Enabled=false.",
 		Labels: []string{"zone", "reason"},
 	})
 
@@ -143,6 +159,10 @@ const (
 
 	// ExpireReasonAdmitWindowPassed:放行槽已被取走或已过期之后再查(见 Queue.Lookup)。
 	ExpireReasonAdmitWindowPassed = "admit_window_passed"
+
+	// ExpireReasonQueueGone:meta 在、没有 admitted_at、又不在队列(2026-10-18 起,见 Queue.Lookup 与 lookupStateScript)。
+	// 此前这种形状回「排队中、名次 0」的在途窗口。
+	ExpireReasonQueueGone = "queue_gone"
 )
 
 // labelZone formats a uint32 zone id for use as a Prometheus label.
@@ -174,6 +194,10 @@ func RecordExpiredQueueDisabled() {
 // recordAdmit is called by the dispatcher after each successful PopAdmit
 // batch, with the count of entries that were actually admitted (which may
 // be less than the requested batch if signFn failed for some entries).
+// (2026-10-15 补注)meta 已过期的条目(在队里待满 QueueEntryTTL)与写入出错的条目都不计入,
+// 此前前者照样计入、虚增 admit_total;两类都由 PopAdmit 每批汇总一行日志(见 Queue.PopAdmit)。
+// (2026-10-18 补注)PopAdmit 中途出错时返回的已放行数照样计入(dispatchOnce 先记账再判错误);「写入出错的条目」
+// 现在留在队列、下一拍再放,不再丢失。go-redis 重发、第一次已写成的放行(REPLAYED)也计入。
 func recordAdmit(zoneID uint32, count int) {
 	if count <= 0 {
 		return

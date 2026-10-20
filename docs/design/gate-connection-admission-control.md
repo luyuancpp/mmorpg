@@ -151,6 +151,14 @@ cookie 一点忙不帮）；反过来，应用层再怎么改也吸收不了带�
 | G12 | **131071 硬上限是借来的**：`network_utils.h:12` 借 `snow_flake.h:26` 的 `kNodeBits=17` 当 seq 位宽。编译期打开 `ENABLE_SNOWFLAKE_TESTING` 会让它**静默变成 511**，并让默认的 `GateMaxConnections: 20000` 在 `main.cpp:116` 直接 `LOG_FATAL` | 两个语义完全无关的常量共用一个名字 |
 | G13 | **应用侧零 Prometheus 埋点** | `cpp/nodes/gate` 全仓 grep 不到 prometheus。现在只能靠内核计数器 + 采样日志间接推断 |
 
+> **2026-10-18 G4 落码说明(未编译、未验证,待 Codex 跑容器级对照与 kind 实测)**:进程启动时自抬软限并做门槛检查,
+> 位置在引擎的 `Node::Initialize`(`LoadConfigs` / `InitLogSystem` 之后、`InitRpcServer` 连 Redis 之前),gate / scene / battle 都经过这里;
+> 纯判定在 `cpp/libs/engine/core/node/system/node/open_file_limit.h`。软限抬到 min(硬限, 1048576),只抬不降、不动硬限;
+> 需求 = 客户端面准入上限 + 4096(gate 取 `GateMaxConnections`,battle 取 `BattleMaxConnections`,scene 取 0);
+> 抬完仍不够时缺省经 `FatalStartupConfig` 先写 stderr 再拒启,与运行模式无关;运维豁免只认 `NODE_OPEN_FILE_LIMIT_MODE=warn`。
+> 镜像与 K8s 模板仍然不设 ulimit(这一点 G4 的描述照旧成立),硬限要在节点运行时层面保证,
+> 上线前置与回退见 [gate-kernel-tuning-runbook.md](../ops/gate-kernel-tuning-runbook.md) §3.1。
+
 #### 4.2.1 G9 前置条件现状(2026-09-29 更正,集群外入口 D76–D93;未上集群,待 kind 验证)
 
 G9 的前置条件是"gate 的 `peerAddress()` 看到的是玩家真实源 IP"。集群外入口落码后,它按部署形态分成两种情况:
@@ -213,6 +221,23 @@ G9 的前置条件是"gate 的 `peerAddress()` 看到的是玩家真实源 IP"�
 - **不要**走 initContainer + privileged：那是为一个进程自己能改的值给节点提权。
   KEP-5758（per-container ulimits）至今只是提案。
 - 验收：`cat /proc/1/limits`。**「我在 yaml 里设了 nofile」这句话通常是错的**。
+
+> **2026-10-18 P0-1 落码说明(未编译、未验证)**:按本节落码,有三处与上文不同,理由记在这里(AGENTS §11 偏离须记录)。
+> 1. **位置**:不在 gate `main.cpp` 的 `ValidateGateConnectionLimitOrDie()` 旁边,而在引擎 `Node::Initialize`(读完配置、开任何网络 fd 之前)。
+>    gate 的门禁在 `configure` 里,那时 Redis / Kafka / etcd 都已初始化;放在引擎里 scene / battle 也一并覆盖。
+>    代价:误配 `GateMaxConnections` > 131071 又碰上硬限不够时,先看到的是 fd 拒启而不是 gate 的上限报错(拒启文案里带配置键和取值,仍可诊断)。
+> 2. **不学 Redis 下调 `maxclients`**,抬不够就拒启:下调会让准入上限悄悄失真(login 仍按配置上限往这台 gate 派人),scene 也没有上限可以下调。
+>    余量取固定 4096(推算:gate 直连模式约 2Z 条到全服 scene_manager,scene 约 4Z 条到全服 SM / DS,Z ≈ 200~445),只是拒启门槛。
+> 3. **加了运维豁免开关** `NODE_OPEN_FILE_LIMIT_MODE`(缺省 enforce,`warn` 时只打 WARN 继续启动;负责人 2026-10-17 拍板)。
+>    理由:硬限在节点运行时层面,各集群尚未实测,工作区又会被整区快照带进镜像,scene 的门槛没有配置可调,不能只剩回滚镜像一种应急手段。
+>    C++ 节点没有指标出口(G13),豁免只进 stdout 与日志。
+> 验收订正见 §9.2 的 2026-10-18 注:gate / scene 的 PID 1 可能是 `sh`,不要读 `/proc/1/limits`。
+>
+> **2026-10-18 评审补充**:① warn 的代价比「超出的连接 EMFILE」大:本节准入闸门在 accept 拿到 fd 之后才判,上限没调时客户端连接先占满 fd 表,
+> 之后节点间 / Redis / Kafka / etcd 重连与 muduo 日志滚动(`FileUtil::AppendFile` fopen 失败只有 assert)都会失败,gate 可能被 etcd 摘除或崩溃。
+> gate / battle 的应急首选是把准入上限调到 ≤ 实际软限 − 4096(检查直接通过),warn 只作短时手段。② 拒启不等于「滚动停住」:C++ Deployment 没写
+> strategy(缺省 25% / 25%),scene 缺省 4 副本滚动时先少一台,battle hostPort 形态(maxUnavailable 1)单副本会整体停服;
+> 所以发布前先读各节点池硬限是硬前置。按形态的影响面与回退步骤见 `docs/ops/gate-kernel-tuning-runbook.md` §3.1 的 2026-10-18 更正。
 
 ### P0-2 · 未认证连接：独立预算 + 死线 + LRU 淘汰（对应 G1，堵 SECURITY.md 自认的洞）
 
@@ -444,6 +469,11 @@ cat /sys/fs/cgroup/memory.current
 ss -s                              # TIME_WAIT 计数
 conntrack -C; cat /proc/sys/net/netfilter/nf_conntrack_max
 ```
+
+> **2026-10-18 订正**:K8s 上 gate / scene 的启动命令是 `/bin/sh -lc "... && ./gate"`,不是 `exec`,PID 1 可能是 `sh`,
+> 读 `/proc/1/limits` 会读到 sh 的限值、误判。一律按进程名找 pid 再读:
+> `for p in /proc/[0-9]*; do n=$(cat $p/comm 2>/dev/null); case "$n" in gate|scene|battle) echo $n; grep "Max open files" $p/limits;; esac; done`。
+> 进程启动行 `[open_file_limit] ... soft=... hard=...`(stdout,`kubectl logs` 可见)是主证据,/proc 读数作辅证。`ls /proc/1/fd` 同理要换成对应 pid。
 
 ### 9.3 复现
 

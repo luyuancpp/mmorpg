@@ -32,6 +32,9 @@ func SnapshotInsertArgsForTest(row *SnapshotRow) []any { return snapshotInsertAr
 // DeadlockRetriesForTest 返回本 store 因 1213 就地重跑 InsertSnapshotIfGuidAbsent / InsertSnapshotsIfGuidAbsent 的累计次数。
 func (s *SnapshotStore) DeadlockRetriesForTest() uint64 { return s.deadlockRetries.Load() }
 
+// BatchFallbacksForTest 返回批量路径撞 1062、整批转逐行的累计次数(钉住「先预读」:常态必须为 0)。
+func (s *SnapshotStore) BatchFallbacksForTest() uint64 { return s.batchFallbacks.Load() }
+
 // UniqueGuidKeyForTest 返回建 store 时探到的结构能力(uk_snapshot_guid_nz 在不在)。
 func (s *SnapshotStore) UniqueGuidKeyForTest() bool { return s.uniqueGuidKey }
 
@@ -150,6 +153,17 @@ func BootstrapRouteTablesOnlyForTest(ctx context.Context, db *sql.DB, dbName str
 
 // LockRetriesForTest 返回本 store 因 1213 / 9007 重来的累计次数。
 func (s *RouteStore) LockRetriesForTest() uint64 { return s.lockRetries.Load() }
+
+// RouteProbeGuardSQLForTest / RouteProbeShardModulusSQLForTest 让真库用例用**同一段生产文本**扮演另一个正在探针的副本
+// (TestRouteStore_ProbesQueueOnMetaGuard)。
+const (
+	RouteProbeGuardSQLForTest        = routeLockProbeGuardSQL
+	RouteProbeShardModulusSQLForTest = routeProbeShardModulusSQL
+)
+
+// RouteLockMetaSQLForTest 是反向修库写事务的第一句(R18x,route_meta(id=1) FOR UPDATE):真库用例用同一段生产文本
+// 扮演一个正在修库的事务,证明解冻的 R22 排在它后面(TestRouteStore_UnfreezeWaitsForRepairMetaLock)。
+const RouteLockMetaSQLForTest = routeLockMetaSQL
 
 // NewRouteStoreFromDBForTest 在调用方给的池上跑探针并装出 store(失败时关掉 db)。
 // 真库用例拿一个**没有**会话变量的池(storetest 的 Raw)来证明探针 fail-closed。

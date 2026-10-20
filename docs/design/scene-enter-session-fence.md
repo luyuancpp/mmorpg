@@ -123,7 +123,7 @@ Replace)、短线重连都铸。跨 zone 第二条腿在目标 zone 的 login �
 
 **Bind 修通**:`buildBindSessionCommand` 改为把 `BindSessionEvent{session_id, player_id, session_version,
 enter_gs_type, login_generation}` 序列化进 `GateCommand.payload`(信封字段照填)。生成的
-`gate_kafka_command_router.cpp` 对非空 payload 走 `DispatchProtoEvent`,`BindSessionEvent` 已在注册表里,
+`gate_kafka_command_router.cpp` 的 `DispatchGateKafkaCommand` 对非空 payload 按白名单解包后直接调用 handler，`BindSessionEvent=32` 已在 gate 白名单里，
 新旧 gate 都能解,不改生成产物。顺带修好 `session_version` 一直传不到 gate 的问题(gate 侧仍无读取方)。
 
 **gate 的盖章规则**(只抬高、不丢弃):
@@ -285,6 +285,7 @@ P 随后经新会话重登通过栅栏时,按 P 快照里的旧号无条件擦,�
 | Disconnect / LeaveGame → player_locator | 现状够(按 session_id + 整字节 CAS / 双字段);gate 重启后同号复用仍是 R13 残余 |
 | LeaveGame / 租约到期的 `LeaveScene` | **本次不改**,登记待办:MarkOffline 删会话后同步调 LeaveScene,期间无屏障,同落点重登不写 location,迟到的 LeaveScene 会删掉新登录的 location(`leavescenelogic.go` 自述) |
 | gRPC `ReleasePlayer` | **本次不改**,登记待办:只带 player_id,迟到会把交接回滚后的实体退掉;根治是带预期 owner_epoch |
+| 上面三条与下文提到的五项余项 a–e | 设计见 [scene-enter-chain-residuals.md](scene-enter-chain-residuals.md)(2026-10-16 设计稿,未落码) |
 
 接手(2026-10-14):上表三条"本次不改",加上 §9 残余 2(scene_manager 落点 Lua 记会话身份),以及"ExitGame 带登录代次、
 断线上报带 gate 实例号"这条可选加固,共五项,由并行会话「玩家消息投递与位置管理」在本批落地之后接手(该会话转述其用户已确认)。
@@ -322,6 +323,7 @@ P 随后经新会话重登通过栅栏时,按 P 快照里的旧号无条件擦,�
    仍无条件覆盖会话的 homeZoneId / ownerEpoch,`OnRouteDecision` 还会用它替换本角色在途的欠账(随后被玩家围栏撤销)。
    同一连接换角色时,新角色之后的补发可能带上旧角色的 epoch。登录代次已按角色隔离,epoch 没有;改 epoch 的覆盖规则
    属于归属语义,不在本次范围(cross-zone-scene-travel.md §13.3 L 系列同源)。
+8. 第 2、6 条与 §7 接手说明里的五项(余项 a–e)的设计、选定方案和新登记的残余,见 [scene-enter-chain-residuals.md](scene-enter-chain-residuals.md)。
 
 ## 10. 测试与验收映射
 

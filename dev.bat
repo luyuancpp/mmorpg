@@ -387,7 +387,7 @@ if not errorlevel 1 (
 if not exist "run\logs" mkdir "run\logs"
 if not exist "run\pids" mkdir "run\pids"
 echo Starting SA-Token dev server...
-%PS% -Command "$wd='%CD%\%SATOKEN_DIR%'; $log='%CD%\%SATOKEN_LOG%'; $pidFile='%CD%\%SATOKEN_PID%'; $maven='%MAVEN_CMD%'; $cmd='call "' + $maven + '" spring-boot:run >> "' + $log + '" 2>&1'; $p=Start-Process -FilePath 'cmd.exe' -ArgumentList '/c',$cmd -WorkingDirectory $wd -WindowStyle Hidden -PassThru; Set-Content -Path $pidFile -Value $p.Id"
+%PS% -Command "$wd='%CD%\%SATOKEN_DIR%'; $log='%CD%\%SATOKEN_LOG%'; $pidFile='%CD%\%SATOKEN_PID%'; $maven='%MAVEN_CMD%'; $cmd='call "' + $maven + '" spring-boot:run -Dspring-boot.run.profiles=dev >> "' + $log + '" 2>&1'; $p=Start-Process -FilePath 'cmd.exe' -ArgumentList '/c',$cmd -WorkingDirectory $wd -WindowStyle Hidden -PassThru; Set-Content -Path $pidFile -Value $p.Id"
 if errorlevel 1 ( echo SA-Token start failed. & pause & exit /b 1 )
 echo SA-Token launched in background.
 echo Log: %SATOKEN_LOG%

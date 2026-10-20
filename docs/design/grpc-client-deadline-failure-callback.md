@@ -2,6 +2,8 @@
 
 > 状态(2026-09-28):两批均已落码,第一批 regen 已完成(897ac8241)。**全部未编译、未测试**,编译与单测交 Codex
 > (AGENTS.md §10.1),步骤见 §9.2。
+> 2026-10-17：删除全局处理器 A–C 落地后的现行接口与调用点见 §12；旧选型和落地记录保留作历史，验证结果须另据实际运行记录。
+> 2026-10-19：现行公共类型头为 `cpp/libs/engine/core/network/grpc_call_types.h`，职责与生成边界见 §12.1；此前章节中的旧路径保留为迁移历史。
 > 2026-10-15:传输换成 muduo_grpc([grpc-muduo-transport.md](grpc-muduo-transport.md) §14),本文的处理器 / 失败回调
 > 契约不变、签名去 grpc 化;手写调用方的适配见那边 §14.3,**未编译**,当前有效的验证步骤以 §12 为准。
 > 相关:`docs/design/microservice-zone-contract-20260914.md` §3「超时预算」、`docs/design/cross-zone-scene-travel.md` §12.2、
@@ -14,6 +16,8 @@
 | D1 | 调用失败不回调:只有 `status.ok()` 才调 `Async<Svc><Method>Handler`,否则只打一行 `LOG_ERROR << error_message()` | 模板 `grpc_async_client.cpp.tmpl:92-97`;生成物如 `scene_manager_service_grpc_client.cpp:26-31` | 业务层收不到失败,每个调用点各写看门狗兜底:`player_lifecycle.cpp` 的 5s 在途标记(`kSceneChangeInFlightTtlMs`)与 30s 交接应答看门狗、`id_segment_bootstrap.cpp` / `GuidSegmentClient` 的 `fetchTimeoutSec`;镜像副本 CreateScene、玩家换图、gate 转发在 gRPC 失败时客户端什么也收不到 |
 | D2 | 不设 deadline:`cpp/`、`tools/` 下 `set_deadline(` 为 0 | 模板 `:116`、`:141` 附近 | 服务端不回、连接半死时调用永远挂着;"上游比下游宽"无从谈起 |
 | D3 | 应答处理器靠手装,生成器不知道谁装、也不报漏装 | `cpp/nodes/scene/main.cpp:96-110` 手装 `InitSceneManagerReply()` | 2026-04-16 `f1b110bcc` regen 抹掉注册调用后,`if (handler)` 静默跳过每条换图应答约 5 个月 |
+
+> **2026-10-17 契约勘误**：D3 已由 §12 的必填每次调用回调在结构上消除，不再另做全局处理器自动注册。
 
 附带确认的既有事实(不在本次修复范围,见 §10):
 - `HandleCompletedQueueMessage` 的 `if (!ok) { LOG_ERROR; return; }`:unary 的 Finish 标签 gRPC 保证 `ok == true`,本方案不受影响;对流(etcd Watch / LeaseKeepAlive)会泄漏 tag、提前 return、流永久失效。
@@ -33,6 +37,8 @@
 - 不做生成器自动注册(评估见 §6)。
 
 ## 3. 接口设计
+
+> **2026-10-17 契约勘误**：§3.1 / §3.2 保留为历史选型；全局应答 / 失败处理器接口由 §12 取代，§3.3“结果未知”的失败语义仍适用。
 
 ### 3.1 选型:另提供失败处理器,不改现有应答处理器签名
 
@@ -182,6 +188,8 @@ GrpcClient:
 | + | gate 直连模式通用路径 `client_message_processor.cpp:792` `rpcHandlerMeta.sender` | 任意客户端 gRPC 消息 | 同 #8 | 同 #8,调用点不改 | 一 |
 | + | etcd 一元调用(`etcd_helper.cpp`) | Range / Put / Txn / LeaseGrant / LeaseRevoke | 见下 | **不装失败处理器**,保持"只打日志 + 既有 10s 看门狗 / 2s 周期重发";deadline 5000 < 看门狗 10000,反而消除了"旧调用的迟到应答被记到新 pending key 上"的错位 | 一(只 deadline) |
 
+> **2026-10-17 契约勘误**：本表的旧全局处理器安装方式、请求副本和 `x-idseg-seq` 归属已由 §12.2 的每次调用落点取代；etcd 现走 `MuduoEtcdTransport`，不通过生成客户端的全局处理器。
+
 **#2 为什么回「服务器繁忙,请稍后再试」而不是「换图失败」**:传输失败时 scene_manager 可能已执行、路由事件随后到达。回 `kEnterSceneFailed` 会出现"先报失败、后被搬走"。但常见的失败形态是 scene_manager 整个不可达(UNAVAILABLE 立即返回),此时不回任何提示,客户端就会一直等一个不会来的 `EnterSceneS2C`(用户明确提出的缺陷)。取中:回措辞不断言结果的提示,并释放槽位允许重试。"先提示、后成功"只在 scene_manager 服务端超时(已调到 8s 盖住全部内部预算)或请求发出后断连时出现,属罕见路径。跨 zone 传送线建议过"只释放槽不提示",此处取舍记录在案,若需改为不提示,只动 `DispatchEnterSceneTransportFailure` 一行。
 
 **用哪个码(2026-10-01 用户拍板:保留提示,换成更规范的文案)**:首版复用 `kServiceUnavailable`(「服务不可用」),有两个问题 —— 文案生硬、没告诉玩家该怎么办;而且它是通用码,客户端的换图界面不认识,会显示成"传送失败(tip=1003)"。改为在 `data/tip/Tip.xlsx` 的 scene_error 组新开 `EnterSceneServerBusy`(导表器发号 **3028**,fault=1),文案「服务器繁忙,请稍后再试」:
@@ -192,6 +200,8 @@ GrpcClient:
 **#1 的约束(与跨 zone 传送线对齐)**:按请求的 correlation_id 分发,**不按 player_id**(否则会把 4e409c5c3 刚修掉的"吃掉别的请求的应答"带回来);交接的传输失败**不**作为失败证据解冻 —— 那会在其实已被放行时解冻并带新 epoch 存盘,等于回档;也不提前触发核实:UNAVAILABLE 可能发生在 scene_manager 的 Kafka 写 / 回滚窗口中间,`kTravelReplyBudgetSec` 注释里的下限约束正是为此。
 
 ## 6. 应答处理器能否由生成器自动注册
+
+> **2026-10-17 契约勘误**：本问题已关闭：全局处理器及安装函数删除，`done` 是唯一完成通道且必须非空，无需再生成自动注册入口。以下分析仅保留当时的选型依据。
 
 结论:**这次不做自动注册,只做"漏装即报"的绊线**;自动注册作为独立任务。
 
@@ -259,7 +269,7 @@ GrpcClient:
    通过标准:新增 `GuidSegmentClientTest.TransportFailureRetriesWithoutWaitingForFetchTimeout` 与 `EnterSceneTransportFailureEcs.*`(5 条)全部 PASS;其余用例与本次改动前的基线一致(bag_test 09-28 基线里有 8 条他人在途区域的既有失败,见 PROGRESS.md 09-28 防御 / 法力条目)。
 4. 联机冒烟(有本地栈时):起 gate / scene 后,
    - 日志里应有一行 `[GrpcClient] unary call deadlines (ms): default=10000 ...`(`LogLevel` 为 0 / 1 时可见;本地默认 2 = WARN 看不到,可临时调低),没有 `CallDeadlineMs entry ignored`;
-   - 跑任意一条换图冒烟,不得出现 `reply dropped: Async...Handler is not installed`;
+   - 跑任意一条换图冒烟,不得出现 `requires a done callback`（2026-10-17：旧的 `reply dropped: Async...Handler is not installed` 检查随全局处理器删除而失效）;
    - 停掉 scene_manager 后在客户端发一次换图:10s 内收到 tip 3028(服务器繁忙,请稍后再试;10-01 前为 1003),再发一次不应被"切换中"(3014)挡住;
    - 路由模式下停掉路由服后发任意 gRPC 类消息:客户端收到 tip 1003,gate 日志有采样的 `gRPC client call failed (sampled)`。
 
@@ -267,14 +277,27 @@ GrpcClient:
 
 1. 流(etcd Watch / LeaseKeepAlive)的 `!ok` 分支:泄漏 tag、提前 return 跳过本轮其余事件、流不重建(KeepAlive 死后约每个 TTL 重注册一轮)。另立项。
 2. etcd 一元调用若要接失败处理器:传输失败必须走与 `OnTxnTimeout` 等价的"取出 pending key 重发",**不能**走 `OnTxnFailed`(在 `kReRegisterExisting` 下会让节点因一次 etcd 抖动自杀),且要用请求里的 key 核对 `pendingTxnKey`。
+
+> **2026-10-17 契约勘误**：此条关于生成客户端失败处理器的后续已作废；etcd 一元与双向流已走手写 `MuduoEtcdTransport`，业务重试语义仍由其 pending 状态与看门狗负责。
+
 3. 纯服务端流方法会被模板误生成成 unary(今天 proto 里没有此类方法)。
 4. ~~`SendMessageToPlayerOnGrpcNode`(`player_message_utils.cpp:270-315`)无调用方,且发的是 `*requestProto` 而非入参。~~ 分工会话 09-29 删除(§8)。
 5. ~~login Timeout 待拍板(§4.3)~~ 09-29 已改;~~CreateScene 错误应答回显 `creator_ids`(§7)~~ 已由每次调用回调关闭(§7、§11)。
 6. 生成器自动注册(§6)。
 
+> **2026-10-17 契约勘误**：此后续已作废，原因见 §6 与 §12；不再增加全局处理器注册机制。
+
+
 ## 11. 每次调用回调(2026-10-15)
 
 > 状态:模板与 `grpc_call_tag.h` 已改,**未 regen、未编译**(regen 与编译交 Codex / 用户,见 §11.4)。
+>
+> **2026-10-16 更新**:第 3 批(`docs/design/grpc-muduo-transport.md` §14)起生成客户端只走 `muduo_grpc::Channel`,
+> 官方 CQ / Stub / `ClientContext` 全部删除;10-15 22:27 已按新模板 regen(仍未编译)。本节的 `done` / `GrpcCallOptions`
+> 契约不变,下面 §11.3 中关于 CQ、`BeginShutdownGrpcNode`、对象池的条目已按新传输改写。`GrpcCallFailure` 新形状为
+> `{messageId, method, const GrpcCallOutcome& outcome, sentMetadata}`,另有 `code()` / `message()` / `FindSentMetadata()`;
+> 全局应答处理器的第一个参数由 `grpc::ClientContext` 改为 `GrpcReplyContext`(= `GrpcCallOutcome`,带响应头 / trailers
+> 的 metadata)。§3.2 的代码块是 09 月的历史形状,以 `cpp/generated/grpc_client/grpc_call_tag.h` 为准。
 > 接口与 muduo HTTP/2 gRPC 会话(`docs/design/grpc-muduo-transport.md`)共同商定;RPC0 侧的同类能力见
 > `docs/design/muduo-rpc-channel.md`(`RpcChannel::CallMethod` 的每次调用 lambda)。
 
@@ -285,6 +308,8 @@ GrpcClient:
 同一方法有两类调用方时还会互相抢处理器。每次调用回调把"这次调用要接着做什么"直接捕获进闭包,与 RPC0 对齐。
 
 ### 11.2 形状(每个 unary 方法多一个重载,既有 API 一律不动)
+
+> **2026-10-17 契约勘误**：本小节是增量迁移时的兼容形状；最终只保留必填 `GrpcDone<Resp>` 的 typed 入口与供通用 sender 使用的 `Erased` 入口，旧三参 / metadata 数组 / `Message&` 重载和流式拒绝桩均删除，见 §12。
 
 ```cpp
 // grpc_call_tag.h(手工维护)
@@ -303,19 +328,23 @@ void Send<Svc><Method>(entt::registry&, entt::entity nodeEntity, const Request&,
 
 ### 11.3 契约
 
-- `done` **恰好调用一次**,只在节点所属 EventLoop 线程调用,**从不在 `Send` 栈内同步调用**:缺组件 / 节点关闭的本地拒绝
-  与真实 CQ 完成一样经 `QueueGrpcClientCompletion` 延后(UNAVAILABLE)。
+> **2026-10-17 契约勘误**：`done` 为空时 `LOG_FATAL`，不再回退全局处理器；成功 / 失败都只完成本次回调。发送前同步序列化请求，不再保存请求副本，且异步闭包不得捕获 request 引用或指针；其余恰好一次、从不同步、EventLoop 与结果未知约束不变。
+
+- `done` **恰好调用一次**,只在节点所属 EventLoop 线程调用,**从不在 `Send` 栈内同步调用**:实体没挂通道 / 序列化失败的
+  本地拒绝经 `QueueGrpcLocalCompletion` 延后(UNAVAILABLE / INTERNAL),真实应答由 `muduo_grpc::Channel` 经 `queueInLoop` 投递。
 - `reply` 只在 `ok()` 时非空,只在回调期间有效。
 - 带 `done` 的调用**不再**触发该方法的全局应答 / 失败处理器;`done` 为空等同于不带回调的 `Send`。
-- 节点摘除 / 停机:`BeginShutdownGrpcNode` 取消在途调用,`done` 以非 OK(官方 CQ 为 CANCELLED)在拆节点之前完成;
-  `PollGrpcNodeShutdown` 的排空判据不变(调用对象与本地完成都计数),所以停机阶段 0 的 FIFO 保证照旧成立。
-- 每次调用状态在 `boost::object_pool` 的调用对象里(地址不移动),不进 ECS 组件(ECS 审计 C008)。
+- 节点摘除 / 停机(第 3 批起):先摘 / 清 `MuduoGrpcChannelPtr`,`~Channel` 把在途调用以 UNAVAILABLE 排队投递,
+  所以 `done` 在实体销毁**之后**才执行,回调不得捕获实体句柄或组件指针。停机阶段 0 之后的拆除经 `queueInLoop` 排在这些
+  完成之后;拆除开头若 `GrpcClientLocalCompletionsDrained()` 为假(拆除中又有人 Send),让一轮再进。
+- 每次调用状态放在 `shared_ptr` 里随完成回调走(请求副本、metadata 原值、done),不进 ECS 组件(ECS 审计 C008)。
 - 非 OK 仍是**结果未知**(§3.3)。**调用方不得按 `code` 区分「停机」与「传输失败」**:同一停机场景,官方 CQ 取消给
   CANCELLED,`muduo_grpc::Channel` 析构给 UNAVAILABLE("channel shut down"),muduo HTTP/2 传输换上后 code 会变。
   非 OK 一律只释放本地在途状态,需要裁决对端的仍走各自的看门狗 / 权威数据。
 
 实现上三个 unary 重载都汇到生成的 `Start<Svc><Method>Call`(唯一发送入口);`Complete<Svc><Method>` 先看 `done`,
-有就只交给它。生成代码没有 muduo_grpc 分支:两种传输都在 `grpc::ChannelInterface` 之下。
+有就只交给它。第 3 批起 `Start<Svc><Method>Call` 从节点实体取 `MuduoGrpcChannelPtr`,序列化后调
+`muduo_grpc::Channel::StartUnaryCall`;没有官方 `grpc::ChannelInterface` 分支(设计见 grpc-muduo-transport.md §14)。
 
 > 2026-10-15 第 3 批后([grpc-muduo-transport.md](grpc-muduo-transport.md) §14.1):生成代码只走节点实体上的
 > `MuduoGrpcChannelPtr`(`muduo_grpc::Channel::StartUnaryCall`),上一段「两种传输都在 `grpc::ChannelInterface` 之下」作废。
@@ -324,6 +353,8 @@ void Send<Svc><Method>(entt::registry&, entt::entity nodeEntity, const Request&,
 > `PollGrpcNodeShutdown` 与调用对象池均已删除,调用状态放在随完成回调走的 `shared_ptr` 里。§11.2 末段与 §11.3 第 1、4、5 条按此理解。
 
 ### 11.4 regen 与验证(交 Codex / 用户)
+
+> **2026-10-17 契约勘误**：旧的“不触发全局处理器”断言改为验证唯一完成通道；本地拒绝测试必须显式传 done。重生成前先 build 生成器，再跑生成器单测；当前验证顺序与通过标准见 `grpc-muduo-transport.md` §15.14 和删除清单最终验证。本候选没有运行构建或测试。
 
 1. 仓库根:`pwsh -File tools/scripts/dev_tools.ps1 -Command proto-gen-build`,再
    `pwsh -File tools/scripts/dev_tools.ps1 -Command proto-gen-run -ConfigPath tools/proto_generator/protogen/etc/proto_gen.no-unity.yaml`。
@@ -334,11 +365,65 @@ void Send<Svc><Method>(entt::registry&, entt::entity nodeEntity, const Request&,
    成功一次且 options 生效(对端是测试内的官方 C++ gRPC 服务端桩,并核对 metadata 的应用层 Base64)、本地拒绝异步 UNAVAILABLE 一次、
    摘掉实体上的 `MuduoGrpcChannelPtr` 后在途调用与新调用各以 UNAVAILABLE 完成一次且 `done` 执行时通道已析构;
    三条都断言不触发全局处理器。跑法同 `rpc_controller_test` 其余用例(`--gtest_filter=GrpcClientLifecycleTest.*`)。
+   **2026-10-16**:该文件建在 CQ / Stub / `grpc::ServerBuilder` 上,第 3 批已删除。本地拒绝那条改由
+   `cpp/tests/rpc_controller_test/grpc_client_local_reject_test.cpp`(`GrpcClientLocalRejectTest.*`)覆盖;成功与停机两条
+   等第 4 批有 muduo 服务端后用回环重写(注意新语义下回调在实体销毁之后执行,不能照抄旧断言)。
+
+## 12. 删除全局应答处理器，只留每次调用回调（2026-10-17）
+
+本节是删除清单 A–C 全部实际落地后适用的现行契约；此前章节保留迁移历史。本节不代表生成、编译、单测、Linux 或联机验证已通过，结果以 Codex 的实际运行记录为准。
+
+### 12.1 接口与保留边界
+
+`GrpcCallOutcome`、`GrpcDone`、`GrpcMessageDone`、`GrpcCallOptions` 与 metadata 的权威定义统一放在手写公共头 `cpp/libs/engine/core/network/grpc_call_types.h`，调用方与生成客户端均以 `core/network/grpc_call_types.h` 引用。`GrpcTag` 已删除，旧名 `grpc_call_tag.h` 不再表达内容；将公共类型移出 `cpp/generated/grpc_client/`，使文件职责与生成边界一致。生成器模板必须直接引用新头，公共类型不由生成器产出；变更不改变调用、回调或线上协议语义。
+
+每个 unary 方法必须显式接收 `GrpcDone<Resp>`；gate 通用 sender 使用对应的 `Send<Svc><Method>Erased` 与 `GrpcMessageDone`，两者汇到同一个发送入口。`GrpcCallOptions` 的 deadline 与原值 metadata、`GrpcCallOutcome` 的状态与响应 metadata、逐文件和总入口的 deadline 设置继续保留。
+
+删除 `Async<Svc><Method>Handler / FailedHandler`、`Set*Handler / SetIfEmpty*Handler`、`GrpcReplyContext`、`GrpcCallFailure`、`FindSentMetadata`，以及无 done 的三参、metadata 数组与旧 `Message&` 重载。流式方法不再生成拒绝桩或通用 sender；etcd Watch / LeaseKeepAlive 继续由手写 `MuduoEtcdTransport` 承担。
+
+`done` 必须非空，缺失时 `LOG_FATAL`。每次调用只经 done 完成，恰好一次、只在所属 EventLoop、从不在 Send 栈内同步完成；本地拒绝也延后投递。成功响应指针仅在回调期间有效；非 OK 是结果未知，不能按状态码臆断对端是否执行，也不在生成层新增重试。节点摘除后的回调不能依赖节点实体、组件或连接仍存在。
+
+发送入口在任何异步闭包建立之前同步序列化请求；共享 `requestProto` 可在下一次调用时被覆盖。回调按值捕获本次业务上下文，不保存 request 引用或指针，也不再为全局失败处理器保存请求副本。应用层仍只存 weak 连接，完成回调不捕获 `TcpConnectionPtr`。
+
+### 12.2 调用点落点
+
+| 调用 | 完成入口与归属 | 失败与迟到语义 |
+|---|---|---|
+| EnterScene（普通换图、跟随、镜像自动进场、交接、疏散） | `SendCorrelatedEnterScene` 按值捕获 `playerId + requestTag`，交 `PlayerLifecycleSystem::DispatchEnterSceneReply` / `DispatchEnterSceneTransportFailure` | 捕获号认领等待者；普通换图释放槽，玩家发起时回 3028，跟随只记日志；交接失败仍是结果未知，由原看门狗 / 权威状态裁决 |
+| 镜像 CreateScene | `PlayerSceneSystem::HandleMirrorCreateDone`，按捕获的 `playerId + token` 认领 `PlayerMirrorCreateInFlightComp`，还须槽未过 TTL 且未发生时间回拨 | 令牌不符不改新槽；匹配令牌但槽已过期或时间回拨，仅摘当前令牌后静默丢弃，不推 tip、不自动进场；有效槽内业务拒绝、零 scene_id、建好时已在战斗回 `kEnterSceneFailed`，无可用 SceneManager 或传输失败回 3028 |
+| AllocateIdSegment | `IdSegmentTransport` 的每次调用回调按捕获 seq 认领 inflight / abandoned | 删除 `x-idseg-seq` metadata 归属；保留单飞与原迟到窗口；正常失败交 `OnTransportFailure`，已放弃调用不重复判失败 |
+| 收件箱 Fetch / Ack | `PlayerInboxSystem` 的具名完成函数，闭包捕获 `playerId + domain + correlationId` | 先核对非零回显，再按捕获值认领；旧调用不清掉新调用的在途状态；原退避、UNIMPLEMENTED 与幂等语义保持 |
+| gate 直连通用转发 | `ForwardDirectGrpcCallResult` 捕获 session_id / incarnation / message_id 与发送时的 SessionDetails 原始字节，交 `gate_rpc_reply_bridge` | 成功和失败先按发送时的会话代次认领，拒绝 session_id 复用后的旧完成；成功不依赖服务端回显，失败仍走既有失败桥及 lane 认领 |
+| gate 直连 Login.Disconnect | 显式 typed done，只捕获 sessionId | 成功无后续；失败每 1024 次采样 WARN，不向已断开或复用该 session_id 的新会话推 tip |
+| gate 路由 Forward | `router_muduo_forward.cpp` 的 `SendForward`，本来就有每次调用回调 | 成功仍按响应头原值回显的会话交桥；失败按发送时捕获的会话交失败桥；不重试 |
+
+### 12.3 回显、日志与客户端行为
+
+EnterScene 的归属以闭包捕获的 playerId / requestTag 为准；响应中非零的 player_id 或 correlation_id 与捕获值不符，记 ERROR、计 unmatched 并丢弃。回显为 0 允许旧版 SceneManager，仍用捕获值精确认领；生产的 requestTag 恒非 0，legacy 分类分支只保留给单测或绕过统一出口的调用，`reply_uncorrelated` 在生产不再因旧版 SceneManager 缺回显而增长。
+
+收件箱同样逐字段核对非零的 player_id / domain / correlation_id；任一不符记 ERROR 并丢弃，零值按捕获值处理，不把全部核对挂在 correlation_id 非零这一条件下。号段不再通过响应 metadata 找归属。Forward 的响应头会话仍是路由服回显契约，不把直连模式的捕获规则套到它上面。
+
+`SceneManager.EnterScene error: player=… corr=… code=… msg=…` 与 `deferred (handoff pending)` 的日志格式、先分发再记日志的顺序保持；gate 失败桥的采样、lane 认领和 1003 信封规则保持。直连 match 不回显会话头时，其成功应答现在可送到客户端；直连回包仍沿用既有消息包装，不因此新增请求 id。
+
+镜像建场景在途也占 `IsSceneChangeBusy`，客户端换图、队伍跟随和跨 zone 传送不能绕过该槽。普通换图与镜像共用同一时效政策：当前生效的 SceneManager deadline + 1000ms；仅当 `now >= sentAtMs` 且 `now - sentAtMs < TTL` 时槽有效。镜像 done 先核对 token，再核对该时效；匹配 token 但已过期或时间回拨时，只摘对应的当前 token 后丢弃，不推 tip、不发 EnterScene，不能仅凭 token 匹配执行后续。后来的普通换图登记、交接全部预检通过、退出新挂 `UnregisterPlayer`、权威落点成功这四个提交点都会主动摘掉旧镜像组件，永久取消旧请求的提示及自动进场资格；只读忙碌检查不负责删除。即使 UTC 回拨后恢复到原 TTL 内，旧完成也不能重新取得资格；交接预检失败不取消仍有效的旧镜像。CreateScene 的有效在途业务失败现在会通知创建者，不能把此变化描述为纯内部改造。
+
+### 12.4 生成、测试与双版本
+
+先 `proto-gen-build`，再 `go test ./internal/... ./cmd`，随后重生成；不手改生成物。生成器测试守住：仅 unary、有 typed / Erased done 入口、没有旧全局接口、Erased 类型校验，以及 D5 的“序列化先于任何闭包、闭包不捕获 request”。`grpc_client_local_reject_test.cpp` 只验证显式 done 的异步恰好一次本地拒绝与排空，不再安装全局处理器。
+
+EnterScene 增补非零回显不一致丢弃与零回显按捕获值处理的回归；收件箱覆盖 Fetch / Ack 的一致、不一致、零值和传输失败；CreateScene 原有 8 条 `MirrorCreateInFlightEcs.*` 覆盖在途互斥与令牌认领，还须覆盖 token 匹配但槽已过 TTL / 时间回拨时，不推 tip、不自动进场且不误摘新槽；同时覆盖普通换图、交接、退出与权威落点成功后永久撤销资格，以及 UTC 回拨恢复后旧成功 / 业务失败 / 传输失败不能复活。实际执行与是否通过仍须记录，不以静态阅读替代运行结果。
+
+删除全局处理器本身是 C++ 内部实现收口，不新增客户端、线上 proto 或存储契约，Java 无对应改造。镜像 CreateScene 的客户端可见变化单独按 Java 仓 `PARITY.md` 的“镜像建场景在途标记、SortBag 冻结闸（2026-10-15）”行核对：Java `0.1.0-SNAPSHOT`（`4057c10`）原有在途闸；建镜像传输失败时 C++ 推 3028、Java 推 1003 是已登记差异。
+
+## 附录：2026-10-15 第三批的历史验证计划
+
+以下记录保留迁移过程，现行接口及验证入口以本文件 §12 为准，不重新启用全局处理器。
+
    2026-10-15 第 3 批后改写为 muduo_grpc 运行时;原先针对官方 CQ 的 owner 寿命用例(`QueuedFailureKeepsOwnerAlive...`)与
    etcd Watch 流两条用例随 §14.1 的删除一并删掉,流的缓冲 / 取消 / 析构由 `muduo_grpc_test` 的 `ChannelLoopbackTest.BidiStream*` /
    `CancelledStream*` / `ChannelDestructionClosesStreams*` 覆盖。`rpc_controller_test` 的 Debug|x64 从此链 `muduo_grpc.lib` 与 `nghttp2.lib`。
 
-## 12. 第 3 批后的重生成与验证(2026-10-15,交 Codex / 负责人)
+### 原第三批计划
 
 前提:origin/main 已含第 3 批模板 / core 与 §14.3 的调用方适配。本节取代 §9.2 第 2、3 步与 §11.4 第 3 步;
 §9.2 第 1 步(生成器单测)与第 4 步(联机冒烟)仍然有效。工作目录仓库根,MSBuild **一律 `/m:1`**。

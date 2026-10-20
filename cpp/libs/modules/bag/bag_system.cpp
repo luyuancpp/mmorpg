@@ -398,10 +398,10 @@ uint32_t Bag::RemoveItemByPos(const RemoveItemByPosParam &param)
 	}
 
 	item->set_size(item->size() - param.size);
-    if (item->size() == 0)
-    {
-        DestroyItem(param.item_guid);
-    }
+	if (item->size() == 0)
+	{
+		DestroyItem(param.item_guid);
+	}
 	AssertLayerConsistency();
 	return kSuccess;
 }
@@ -514,12 +514,7 @@ bool Bag::MergeAndCompact(std::vector<DestroyedInstance> *destroyedOut, CompactP
 	// ① 合并同种未满堆(纯实例层)。被合并空的堆 size 变 0,连同下面②一起回收。
 	store_.MergePartialStacks();
 
-	// ② 按实例序回收所有 size==0 的实例。空堆只回收、不参与合并,不区分来路:
-	//      * ① 刚清空的可叠加堆;
-	//      * 可叠加物品被 RemoveItems 抽光留下的空堆;
-	//      * **不可叠加物品被 RemoveItemByPos 扣到 0 的僵尸** —— 这一类
-	//        MergePartialStacks 永远碰不到(它跳过 max_stack_size() <= 1),
-	//        拆分前没有任何路径回收得了,会永久占着一个格子。
+	// ② 按实例序回收①刚清空的可叠加堆；扣空已当场释放，加载也跳过旧档零堆。
 	//    销毁前抓拍 (guid, config, size) 交给调用方:整理会退役一批 item_uuid,
 	//    而那是 transaction_log 的关联键。Bag 是纯容器不写流水,只负责报告。
 	for (const Guid guid : store_.CollectEmptyInstances())
@@ -588,199 +583,205 @@ static void InitializeNewInstance(const ItemInstanceInitializer *instanceInitial
 }
 
 uint32_t Bag::AddItem(const InitItemParam &param, std::vector<Guid> *writtenGuidsOut,
-                      std::vector<DestroyedInstance> *evictedOut,
-                      const ItemInstanceInitializer *instanceInitializer)
+					  std::vector<DestroyedInstance> *evictedOut,
+					  const ItemInstanceInitializer *instanceInitializer)
 {
-    std::vector<GuidVector> written;
-    const auto result = AddItems(std::vector<InitItemParam>{param}, evictedOut, &written,
-                                 instanceInitializer);
-    if (result == kSuccess && writtenGuidsOut != nullptr && !written.empty())
-    {
-        writtenGuidsOut->insert(writtenGuidsOut->end(), written.front().begin(), written.front().end());
-    }
-    return result == kBagItemNotStacked ? kBagAddItemBagFull : result;
+	std::vector<GuidVector> written;
+	const auto result = AddItems(std::vector<InitItemParam>{param}, evictedOut, &written,
+								 instanceInitializer);
+	if (result == kSuccess && writtenGuidsOut != nullptr && !written.empty())
+	{
+		writtenGuidsOut->insert(writtenGuidsOut->end(), written.front().begin(), written.front().end());
+	}
+	return result == kBagItemNotStacked ? kBagAddItemBagFull : result;
 }
 
 uint32_t Bag::AddItems(const ItemCountMap &itemsToAdd,
-                       std::vector<DestroyedInstance> *evictedOut,
-                       std::vector<GuidVector> *writtenByEntryOut,
-                       const ItemInstanceInitializer *instanceInitializer)
+					   std::vector<DestroyedInstance> *evictedOut,
+					   std::vector<GuidVector> *writtenByEntryOut,
+					   const ItemInstanceInitializer *instanceInitializer)
 {
-    std::vector<InitItemParam> entries;
-    entries.reserve(itemsToAdd.size());
-    for (const auto &[configId, count] : SortedByConfigId(itemsToAdd))
-    {
-        InitItemParam param;
-        param.itemPBComp.set_config_id(configId);
-        param.itemPBComp.set_size(count);
-        entries.push_back(std::move(param));
-    }
-    return AddItems(entries, evictedOut, writtenByEntryOut, instanceInitializer);
+	std::vector<InitItemParam> entries;
+	entries.reserve(itemsToAdd.size());
+	for (const auto &[configId, count] : SortedByConfigId(itemsToAdd))
+	{
+		InitItemParam param;
+		param.itemPBComp.set_config_id(configId);
+		param.itemPBComp.set_size(count);
+		entries.push_back(std::move(param));
+	}
+	return AddItems(entries, evictedOut, writtenByEntryOut, instanceInitializer);
 }
 
 uint32_t Bag::AddItems(const std::vector<InitItemParam> &itemsToAdd,
-                       std::vector<DestroyedInstance> *evictedOut,
-                       std::vector<GuidVector> *writtenByEntryOut,
-                       const ItemInstanceInitializer *instanceInitializer)
+					   std::vector<DestroyedInstance> *evictedOut,
+					   std::vector<GuidVector> *writtenByEntryOut,
+					   const ItemInstanceInitializer *instanceInitializer)
 {
-    // 所有入口共用一次提交。按需铸出的号允许作废，玩家实例、槽位和回执只能整批发布。
-    if (itemsToAdd.empty())
-    {
-        return kSuccess;
-    }
-    ItemCountMap stackUnits;
-    ItemCountMap separateInstances;
-    std::unordered_set<Guid> preassigned;
-    for (const auto &param : itemsToAdd)
-    {
-        const auto &item = param.itemPBComp;
-        if (item.config_id() == 0 || item.size() == 0)
-        {
-            return PrintStackAndReturnError(kBagAddItemInvalidParam);
-        }
-        LookupItemOrReturnError(item.config_id());
-        const auto maxStack = itemRow->max_stack_size();
-        if (maxStack == 0)
-        {
-            return PrintStackAndReturnError(kInvalidTableData);
-        }
-        if (!admission_->Accepts(item.config_id()))
-        {
-            return PrintStackAndReturnError(kBagAddItemInvalidParam);
-        }
-        // 已带实例数据的物品不能合堆；单独计实例数，不拿普通材料的空余抵扣它。
-        auto &units = item.has_equip() ? separateInstances[item.config_id()] : stackUnits[item.config_id()];
-        const auto added = item.has_equip() ? ItemStore::StacksNeededFor(item.size(), maxStack) : item.size();
-        if (added > std::numeric_limits<uint32_t>::max() - units)
-        {
-            return PrintStackAndReturnError(kBagAddItemInvalidParam);
-        }
-        units += static_cast<uint32_t>(added);
-        if (maxStack == 1 && item.size() == 1 && !ItemStore::IsInvalidGuid(item))
-        {
-            if (store_.Contains(item.item_id()) || !preassigned.insert(item.item_id()).second)
-            {
-                return PrintStackAndReturnError(kBagDeleteItemAlreadyHasGuid);
-            }
-        }
-    }
+	// 所有入口共用一次提交。按需铸出的号允许作废，玩家实例、槽位和回执只能整批发布。
+	if (itemsToAdd.empty())
+	{
+		return kSuccess;
+	}
+	ItemCountMap stackUnits;
+	ItemCountMap separateInstances;
+	std::unordered_set<Guid> preassigned;
+	for (const auto &param : itemsToAdd)
+	{
+		const auto &item = param.itemPBComp;
+		if (item.config_id() == 0 || item.size() == 0)
+		{
+			return PrintStackAndReturnError(kBagAddItemInvalidParam);
+		}
+		LookupItemOrReturnError(item.config_id());
+		const auto maxStack = itemRow->max_stack_size();
+		if (maxStack == 0)
+		{
+			return PrintStackAndReturnError(kInvalidTableData);
+		}
+		if (!admission_->Accepts(item.config_id()))
+		{
+			return PrintStackAndReturnError(kBagAddItemInvalidParam);
+		}
+		// 已带实例数据的物品不能合堆；单独计实例数，不拿普通材料的空余抵扣它。
+		auto &units = item.has_equip() ? separateInstances[item.config_id()] : stackUnits[item.config_id()];
+		const auto added = item.has_equip() ? ItemStore::StacksNeededFor(item.size(), maxStack) : item.size();
+		if (added > std::numeric_limits<uint32_t>::max() - units)
+		{
+			return PrintStackAndReturnError(kBagAddItemInvalidParam);
+		}
+		units += static_cast<uint32_t>(added);
+		if (maxStack == 1 && item.size() == 1 && !ItemStore::IsInvalidGuid(item))
+		{
+			if (store_.Contains(item.item_id()) || !preassigned.insert(item.item_id()).second)
+			{
+				return PrintStackAndReturnError(kBagDeleteItemAlreadyHasGuid);
+			}
+		}
+	}
 
-    GuidVector victims;
-    std::size_t newInstanceCount = 0;
-    if (!PlanEviction(stackUnits, evictedOut != nullptr, victims, &newInstanceCount, &separateInstances))
-    {
-        return PrintStackAndReturnError(kBagItemNotStacked);
-    }
+	GuidVector victims;
+	std::size_t newInstanceCount = 0;
+	if (!PlanEviction(stackUnits, evictedOut != nullptr, victims, &newInstanceCount, &separateInstances))
+	{
+		return PrintStackAndReturnError(kBagItemNotStacked);
+	}
 
-    // 先铸齐最终规划所需的号，再执行初始化回调和任何玩家状态修改。预取/失效可在铸号中途发生。
-    if (newInstanceCount < preassigned.size())
-    {
-        return PrintStackAndReturnError(kInvalidTableData);
-    }
-    GuidVector minted;
-    minted.reserve(newInstanceCount - preassigned.size());
-    std::unordered_set<Guid> reserved = preassigned;
-    for (std::size_t i = preassigned.size(); i < newInstanceCount; ++i)
-    {
-        const Guid guid = ItemStore::MintGuid();
-        if (guid == 0 || guid == kInvalidGuid || store_.Contains(guid) || !reserved.insert(guid).second)
-        {
-            LOG_ERROR << "Bag::AddItems: item guid reservation failed; batch unchanged. player " << PlayerGuid();
-            return PrintStackAndReturnError(kBagAddItemInvalidParam);
-        }
-        minted.push_back(guid);
-    }
+	// 先铸齐最终规划所需的号，再执行初始化回调和任何玩家状态修改。预取/失效可在铸号中途发生。
+	if (newInstanceCount < preassigned.size())
+	{
+		LOG_ERROR << "Bag::AddItems: 规划实例数少于预设身份数，批次未修改。player=" << PlayerGuid();
+		assert(false && "规划实例数少于预设身份数");
+		return PrintStackAndReturnError(kInvalidTableData);
+	}
+	GuidVector minted;
+	minted.reserve(newInstanceCount - preassigned.size());
+	std::unordered_set<Guid> reserved = preassigned;
+	for (std::size_t i = preassigned.size(); i < newInstanceCount; ++i)
+	{
+		const Guid guid = ItemStore::MintGuid();
+		if (guid == 0 || guid == kInvalidGuid || store_.Contains(guid) || !reserved.insert(guid).second)
+		{
+			LOG_ERROR << "Bag::AddItems: item guid reservation failed; batch unchanged. player " << PlayerGuid();
+			return PrintStackAndReturnError(kBagAddItemInvalidParam);
+		}
+		minted.push_back(guid);
+	}
 
-    // 候选仓库隔离合堆、盖章和实例初始化；失败时原仓库及其入包水位保持不变。
-    ItemStore candidate = store_;
-    std::vector<DestroyedInstance> evicted;
-    for (const auto guid : victims)
-    {
-        const auto *item = candidate.Find(guid);
-        if (item == nullptr)
-        {
-            return PrintStackAndReturnError(kInvalidTableData);
-        }
-        evicted.push_back({guid, item->config_id(), item->size()});
-        candidate.Erase(guid);
-    }
-    std::vector<std::pair<Guid, uint32_t>> newItems;
-    std::vector<GuidVector> written(itemsToAdd.size());
-    std::size_t nextMint = 0;
-    for (std::size_t entry = 0; entry < itemsToAdd.size(); ++entry)
-    {
-        const auto &proto = itemsToAdd[entry].itemPBComp;
-        LookupItemOrReturnError(proto.config_id());
-        const auto maxStack = itemRow->max_stack_size();
-        std::vector<ItemStore::StackFill> fills;
-        uint32_t remaining = maxStack > 1 ? candidate.PlanStackIntoExistingStacks(proto, maxStack, fills) : proto.size();
-        candidate.ApplyStackFill(fills, &written[entry]);
-        while (remaining > 0)
-        {
-            ItemComp piece = proto;
-            const auto amount = std::min(maxStack, remaining);
-            piece.set_size(amount);
-            if (!(maxStack == 1 && proto.size() == 1 && !ItemStore::IsInvalidGuid(proto)))
-            {
-                if (nextMint == minted.size())
-                {
-                    LOG_ERROR << "Bag::AddItems: reserved guid count disagrees with plan; batch unchanged. player "
-                              << PlayerGuid();
-                    return PrintStackAndReturnError(kInvalidTableData);
-                }
-                piece.set_item_id(minted[nextMint++]);
-            }
-            if (maxStack == 1)
-            {
-                InitializeNewInstance(instanceInitializer, piece, PlayerGuid());
-            }
-            const auto guid = piece.item_id();
-            if (candidate.Insert(std::move(piece)) == nullptr)
-            {
-                return PrintStackAndReturnError(kBagDeleteItemAlreadyHasGuid);
-            }
-            newItems.emplace_back(guid, proto.config_id());
-            written[entry].push_back(guid);
-            remaining -= amount;
-        }
-    }
-    if (nextMint != minted.size())
-    {
-        return PrintStackAndReturnError(kInvalidTableData);
-    }
+	// 候选仓库隔离合堆、盖章和实例初始化；失败时原仓库及其入包水位保持不变。
+	ItemStore candidate = store_;
+	std::vector<DestroyedInstance> evicted;
+	for (const auto guid : victims)
+	{
+		const auto *item = candidate.Find(guid);
+		if (item == nullptr)
+		{
+			LOG_ERROR << "Bag::AddItems: 淘汰策略返回仓库外身份，批次未修改。player=" << PlayerGuid();
+			assert(false && "淘汰策略返回仓库外身份");
+			return PrintStackAndReturnError(kInvalidTableData);
+		}
+		evicted.push_back({guid, item->config_id(), item->size()});
+		candidate.Erase(guid);
+	}
+	std::vector<std::pair<Guid, uint32_t>> newItems;
+	std::vector<GuidVector> written(itemsToAdd.size());
+	std::size_t nextMint = 0;
+	for (std::size_t entry = 0; entry < itemsToAdd.size(); ++entry)
+	{
+		const auto &proto = itemsToAdd[entry].itemPBComp;
+		LookupItemOrReturnError(proto.config_id());
+		const auto maxStack = itemRow->max_stack_size();
+		std::vector<ItemStore::StackFill> fills;
+		uint32_t remaining = maxStack > 1 ? candidate.PlanStackIntoExistingStacks(proto, maxStack, fills) : proto.size();
+		candidate.ApplyStackFill(fills, &written[entry]);
+		while (remaining > 0)
+		{
+			ItemComp piece = proto;
+			const auto amount = std::min(maxStack, remaining);
+			piece.set_size(amount);
+			if (!(maxStack == 1 && proto.size() == 1 && !ItemStore::IsInvalidGuid(proto)))
+			{
+				if (nextMint == minted.size())
+				{
+					LOG_ERROR << "Bag::AddItems: 预取身份数与规划不一致，批次未修改。player=" << PlayerGuid();
+					assert(false && "预取身份数与规划不一致");
+					return PrintStackAndReturnError(kInvalidTableData);
+				}
+				piece.set_item_id(minted[nextMint++]);
+			}
+			if (maxStack == 1)
+			{
+				InitializeNewInstance(instanceInitializer, piece, PlayerGuid());
+			}
+			const auto guid = piece.item_id();
+			if (candidate.Insert(std::move(piece)) == nullptr)
+			{
+				return PrintStackAndReturnError(kBagDeleteItemAlreadyHasGuid);
+			}
+			newItems.emplace_back(guid, proto.config_id());
+			written[entry].push_back(guid);
+			remaining -= amount;
+		}
+	}
+	if (nextMint != minted.size())
+	{
+		LOG_ERROR << "Bag::AddItems: 规划与提交实例数不一致，批次未修改。player=" << PlayerGuid();
+		assert(false && "规划与提交实例数不一致");
+		return PrintStackAndReturnError(kInvalidTableData);
+	}
 
-    // 布局与仓库都在候选中完成，试放失败只丢弃副本，不依赖反向恢复或 Debug 断言。
-    auto candidateLayout = layout_->Clone();
-    if (candidateLayout == nullptr)
-    {
-        LOG_ERROR << "Bag::AddItems: layout cannot create a transaction candidate; batch unchanged. player "
-                  << PlayerGuid();
-        return PrintStackAndReturnError(kInvalidTableData);
-    }
-    for (const auto guid : victims)
-    {
-        candidateLayout->Remove(guid);
-    }
-    for (const auto &[guid, configId] : newItems)
-    {
-        if (PlaceInstance(guid, configId, candidateLayout.get()) == kInvalidSlot)
-        {
-            return PrintStackAndReturnError(kBagItemNotStacked);
-        }
-    }
-    // 单一场景逻辑线程，无回调的提交段同时发布两层候选。
-    store_ = std::move(candidate);
-    layout_ = std::move(candidateLayout);
-    if (evictedOut != nullptr)
-    {
-        evictedOut->insert(evictedOut->end(), evicted.begin(), evicted.end());
-    }
-    if (writtenByEntryOut != nullptr)
-    {
-        writtenByEntryOut->insert(writtenByEntryOut->end(), written.begin(), written.end());
-    }
-    AssertLayerConsistency();
-    return kSuccess;
+	// 布局与仓库都在候选中完成，试放失败只丢弃副本，不依赖反向恢复或 Debug 断言。
+	auto candidateLayout = layout_->Clone();
+	if (candidateLayout == nullptr)
+	{
+		LOG_ERROR << "Bag::AddItems: 布局无法创建事务候选，批次未修改。player=" << PlayerGuid();
+		assert(false && "布局无法创建事务候选");
+		return PrintStackAndReturnError(kInvalidTableData);
+	}
+	for (const auto guid : victims)
+	{
+		candidateLayout->Remove(guid);
+	}
+	for (const auto &[guid, configId] : newItems)
+	{
+		if (PlaceInstance(guid, configId, candidateLayout.get()) == kInvalidSlot)
+		{
+			return PrintStackAndReturnError(kBagItemNotStacked);
+		}
+	}
+	// 单一场景逻辑线程，无回调的提交段同时发布两层候选。
+	store_ = std::move(candidate);
+	layout_ = std::move(candidateLayout);
+	if (evictedOut != nullptr)
+	{
+		evictedOut->insert(evictedOut->end(), evicted.begin(), evicted.end());
+	}
+	if (writtenByEntryOut != nullptr)
+	{
+		writtenByEntryOut->insert(writtenByEntryOut->end(), written.begin(), written.end());
+	}
+	AssertLayerConsistency();
+	return kSuccess;
 }
 
 uint32_t Bag::RemoveItem(Guid del_guid)
@@ -897,30 +898,30 @@ std::size_t Bag::CountFreeSlotsForKind(uint32_t kind) const
 }
 
 bool Bag::PlanEviction(const ItemCountMap &unitsToAdd, bool allowEviction,
-                       GuidVector &victimOrder, std::size_t *totalInstancesOut,
-                       const ItemCountMap *separateInstances)
+					   GuidVector &victimOrder, std::size_t *totalInstancesOut,
+					   const ItemCountMap *separateInstances)
 {
-    victimOrder.clear();
-    const auto plan = [&](ItemCountMap &need, std::size_t &total, const std::unordered_set<Guid> *excluded = nullptr)
-    {
-        if (PlanInstances(unitsToAdd, &need, &total, excluded) != kSuccess)
-        {
-            return false;
-        }
-        if (separateInstances != nullptr)
-        {
-            for (const auto &[configId, count] : *separateInstances)
-            {
-                need[configId] += count;
-                total += count;
-            }
-        }
-        if (totalInstancesOut != nullptr)
-        {
-            *totalInstancesOut = total;
-        }
-        return true;
-    };
+	victimOrder.clear();
+	const auto plan = [&](ItemCountMap &need, std::size_t &total, const std::unordered_set<Guid> *excluded = nullptr)
+	{
+		if (PlanInstances(unitsToAdd, &need, &total, excluded) != kSuccess)
+		{
+			return false;
+		}
+		if (separateInstances != nullptr)
+		{
+			for (const auto &[configId, count] : *separateInstances)
+			{
+				need[configId] += count;
+				total += count;
+			}
+		}
+		if (totalInstancesOut != nullptr)
+		{
+			*totalInstancesOut = total;
+		}
+		return true;
+	};
 	// 第一问永远是"照现在这样放得下吗" —— 放得下就什么都不做,淘汰只在真放不下时发生。
 	ItemCountMap need;
 	std::size_t needTotal = 0;
@@ -1021,7 +1022,7 @@ bool Bag::PlanEviction(const ItemCountMap &unitsToAdd, bool allowEviction,
 		return false;
 	}
 
-    return true;
+	return true;
 }
 
 bool Bag::CanReserve(const ItemCountMap &instancesByConfig, std::size_t totalInstances) const
@@ -1357,18 +1358,28 @@ void Bag::InsertItemForRestore(Guid guid, uint32_t configId, uint32_t stackSize,
 	InsertItemForRestore(std::move(proto), pos);
 }
 
-void Bag::RaiseAcquireSeqForRestore(uint64_t sequence)
+void Bag::RestoreItems(std::vector<std::pair<ItemComp, uint32_t>> items)
 {
-    store_.RaiseAcquireSeq(sequence);
+	for (const auto &[item, pos] : items)
+	{
+		if (item.size() > 0)
+		{
+			store_.RaiseAcquireSeq(item.acquire_seq());
+		}
+	}
+	for (auto &[item, pos] : items)
+	{
+		InsertItemForRestore(std::move(item), pos);
+	}
 }
 
 void Bag::InsertItemForRestore(ItemComp item, uint32_t pos)
 {
-    // 零数量不代表资产，也不应占槽或消耗旧档补章序号。
-    if (item.size() == 0)
-    {
-        return;
-    }
+	// 零数量不代表资产，也不应占槽或消耗旧档补章序号。
+	if (item.size() == 0)
+	{
+		return;
+	}
 	// 身份与模板先抄出来:item 下面会被 move 进实例层。
 	const Guid guid = item.item_id();
 	const uint32_t configId = item.config_id();

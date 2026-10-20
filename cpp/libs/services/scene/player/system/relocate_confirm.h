@@ -39,6 +39,8 @@
 //     改派已处理完)。读到的 owner_epoch 只当条件补写的参数与日志,不得写进任何组件。
 //   * 应答与传输失败都按关联号认领(DecideReplyClaim / DecideTransportFailureClaim)。只有回显号为 0 的应答
 //     (旧版 scene_manager 不回显)才退回按 player_id 认领;传输失败没有这条退路。
+//     关联号已改为闭包捕获,生产中 requestTag 恒不为 0;旧版 SM 不回显时也按捕获号路由。
+//     零号分支只留给单测和绕过统一出口的调用。
 //   * 传输失败 = 结果未知(kTransportFailed),与"等不到完成通知"(kNoReply)同侧:settle 之前不读、不提前踢,
 //     读不到时也不盲踢。
 //   * 核实与凭证补写只走不重放的 zone Redis 连接(tlsRedis.GetZoneRedis() 的 muduo hiredis::Hiredis::command,
@@ -577,10 +579,11 @@ namespace relocate_confirm
 		return errorCode == 0 ? Evidence::kReplySucceeded : Evidence::kReplyRejected;
 	}
 
-	// 一条 EnterScene 应答(实体已不在本节点时)归不归待确认表。replyTag = 应答回显的 correlation_id。
+	// 一条 EnterScene 应答(实体已不在本节点时)归不归待确认表。replyTag = 调用点闭包捕获的 correlation_id。
 	//   回显号非 0:只有与条目记下的号相等才是本次改派的。条目还没发出(号为 0)时任何带号应答都不是它的。
 	//   回显号为 0(旧版 scene_manager 不回显):退回按 player_id —— 有条目就认领。这种认领归属不精确,
 	//   粘合层不得据此记"完成通知已到"(Table::MarkCompletion)。
+	//   生产中 requestTag 恒不为 0,旧版 SM 不回显也按捕获号路由;零号分支只留给单测和绕过统一出口的调用。
 	constexpr ClaimAction DecideReplyClaim(bool hasEntry, uint64_t entryCorrelationId, Phase phase,
 										   uint64_t replyTag)
 	{

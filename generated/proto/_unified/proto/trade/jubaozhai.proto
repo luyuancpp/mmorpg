@@ -3,6 +3,7 @@ option go_package = "proto/trade";
 
 import "proto/db/proto_option.proto";
 import "proto/common/base/tip.proto";
+import "proto/trade/commerce.proto";
 
 package trade;
 
@@ -158,4 +159,26 @@ service ClientPlayerJubaozhai {
   rpc GetListingDetail (GetListingDetailRequest) returns (GetListingDetailResponse);
   rpc SetFavorite (SetFavoriteRequest) returns (SetFavoriteResponse);
   rpc GetMyShelf (GetMyShelfRequest) returns (GetMyShelfResponse);
+  // 官方SKU付款只接受可信渠道回执；客户端只可下单、查单和取消未付单。
+  rpc ListOfficialSkus (ListOfficialSkusRequest) returns (ListOfficialSkusResponse);
+  rpc CreateOfficialOrder (CreateOfficialOrderRequest) returns (CommerceOrderResponse);
+  rpc GetCommerceOrder (GetCommerceOrderRequest) returns (CommerceOrderResponse);
+  rpc CancelCommerceOrder (CancelCommerceOrderRequest) returns (CommerceOrderResponse);
+  rpc ListCommerceOrders (ListCommerceOrdersRequest) returns (ListCommerceOrdersResponse);
+  // P2P双方确认、固定价寄售、同质材料限价订单簿和限时最高价竞拍各有持久状态机。
+  rpc CreatePlayerTrade (CreatePlayerTradeRequest) returns (CommerceOrderResponse);
+  rpc ConfirmPlayerTrade (ConfirmPlayerTradeRequest) returns (CommerceOrderResponse);
+  rpc CreateConsignment (CreateConsignmentRequest) returns (CommerceOrderResponse);
+  rpc BuyConsignment (BuyConsignmentRequest) returns (CommerceOrderResponse);
+  rpc CancelConsignment (CancelConsignmentRequest) returns (CommerceOrderResponse);
+  rpc PlaceMarketOrder (PlaceMarketOrderRequest) returns (MarketOrderResponse);
+  rpc CancelMarketOrder (CancelMarketOrderRequest) returns (MarketOrderResponse);
+  rpc ListMarketOrders (ListMarketOrdersRequest) returns (ListMarketOrdersResponse);
+  rpc GetMarketDepth (GetMarketDepthRequest) returns (GetMarketDepthResponse);
+  rpc CreateAuctionLot (CreateAuctionLotRequest) returns (AuctionLotResponse);
+  rpc PlaceAuctionBid (PlaceAuctionBidRequest) returns (AuctionLotResponse);
+  rpc GetAuctionLot (GetAuctionLotRequest) returns (AuctionLotResponse);
+  rpc CancelAuctionLot (CancelAuctionLotRequest) returns (AuctionLotResponse);
+  rpc BrowseCommerceOffers (BrowseCommerceOffersRequest) returns (BrowseCommerceOffersResponse);
+  rpc ListTradeMarkets (ListTradeMarketsRequest) returns (ListTradeMarketsResponse);
 }

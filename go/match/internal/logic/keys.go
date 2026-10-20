@@ -33,8 +33,9 @@ import (
 //
 // 评分 key 按玩家分布、不带 {mq}(JoinQueue 读评分与入队 Lua 不同 slot,所以评分
 // 在 Go 侧读出后作为 ARGV 传进 Lua)。**无 TTL 的前提是 MatchRedis 独立部署**:
-// MatchRedis 缺省回落到共享库时,共享库若配了 allkeys-lfu 之类的淘汰策略,评分
-// 可能被淘汰回落到默认 1500 —— 生产必须配独立 MatchRedis(设计文档 §4.2 / §11)。
+// MatchRedis 缺省回落到共享库时,共享库若被配成 allkeys-* 淘汰型,评分可能被淘汰回落到
+// 默认 1500;即使是 noeviction(2026-10-12 起本地 compose 也改为 noeviction,K8s 一直是),
+// 无 TTL 的评分也在与契约 key 争内存 —— 生产必须配独立 MatchRedis(设计文档 §4.2 / §11)。
 //
 // ---- SharedRedis:既有共享库,match 原有代码只读 ----
 //

@@ -2,10 +2,10 @@ package constants
 
 const (
 	ErrCodeOK              uint32 = 0
-	ErrCodeRedis           uint32 = 1 // Redis operation failed
+	ErrCodeRedis           uint32 = 1 // Redis 读写失败;也含玩家数据路由失败(映射缺席 / 映射库故障或熔断 / 回源失败 / zone 未配集群),原因见 [DataRoute] 日志
 	ErrCodeLockConflict    uint32 = 2 // Another writer holds the player lock
 	ErrCodeVersionMismatch uint32 = 3 // Optimistic lock version mismatch
-	ErrCodeNotFound        uint32 = 4 // Player data or mapping not found
+	ErrCodeNotFound        uint32 = 4 // CreatePlayerSnapshot:玩家无数据。in-band 数据入口从不用它表示映射缺席(「无映射」只出现在 GetPlayerHomeZone 的 gRPC status)
 
 	// Snapshot / Rollback errors
 	ErrCodeSnapshotNotFound uint32 = 10 // No snapshot found matching criteria
@@ -69,6 +69,11 @@ const (
 	//
 	// 与 ErrCodeZoneMappingConflict 分开:那个是"这条映射本来就有主",这个是
 	// "整个 zone 现在不接受新映射",运维看到后者要去查合服跑完没有。
+	//
+	// 2026-10-19 起 SavePlayerData / SetPlayerField / DeletePlayerData 也以 in-band error_code 返回它:
+	// home zone(src 或 dst)处在合服围栏内,或拿锁后复核发现 home 已被合服 / 撤销合服改写
+	// (routing.AcquirePlayerWriteLock)。零写入,调用方在合服结束后重试。ReadRequiresReady=true 且回源 SQL 时,
+	// 围栏取自 zone_merge_fence(merge_zone 目前只写 Redis 围栏,沿用 db_first 冻结窗口的前提)。
 	ErrCodeZoneMergeInProgress uint32 = 22
 
 	// ErrCodeAdminAuthRequired:运维 RPC 缺少 / 带错 x-admin-token,或服务端根本没配 AdminToken

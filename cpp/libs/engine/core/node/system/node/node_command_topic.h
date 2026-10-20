@@ -1,7 +1,7 @@
 #pragma once
 
-// 控制面命令 topic 的**寻址契约**(唯一真源之一;另一份在 go/shared/kafkautil/command_topic.go,
-// 两边由 go/shared/kafkautil/testdata/command_partition_vectors.json 对拍)。
+// 控制面命令 topic 的**寻址契约**(唯一真源之一;另一份在 go/shared/kafkacmd/command_topic.go,
+// 两边由 go/shared/kafkacmd/testdata/command_partition_vectors.json 对拍)。
 //
 // 设计文档:docs/design/control-plane-topic-partitioning-20260908.md
 //
@@ -30,7 +30,7 @@
 namespace node::kafka {
 
 // P 的编译期默认值。改这个数 = 改不可变契约,必须同时:
-//   1) cpp 这里、2) go/shared/kafkautil/command_topic.go、
+//   1) cpp 这里、2) go/shared/kafkacmd/command_topic.go、
 //   3) deploy/docker-compose.yml 的 kafka-topic-init、
 //   4) deploy/k8s/manifests/infra/kafka-topic-init.yaml(经 k8s_deploy.ps1 注入),
 // 并且**换一个代号**(kDefaultCommandTopicGeneration +1)换一批新 topic。

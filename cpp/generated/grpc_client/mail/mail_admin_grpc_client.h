@@ -1,11 +1,8 @@
 #pragma once
 #include <chrono>
-#include <functional>
-#include <string>
 #include <string_view>
-#include <vector>
 #include "entt/src/entt/entity/registry.hpp"
-#include "grpc_client/grpc_call_tag.h"
+#include "core/network/grpc_call_types.h"
 
 #include "rpc/service_metadata/mail_admin_service_metadata.h"
 
@@ -13,46 +10,44 @@ namespace mailpb {
 #pragma region MailAdminSendPersonalMail
 // gRPC :path(线上契约,与 Go 侧一致)。
 inline constexpr std::string_view kMailAdminSendPersonalMailGrpcPath = "/mailpb.MailAdmin/SendPersonalMail";
-using AsyncMailAdminSendPersonalMailHandlerFunctionType =
-    std::function<void(const GrpcReplyContext&, const ::mailpb::SendPersonalMailResponse&)>;
-extern AsyncMailAdminSendPersonalMailHandlerFunctionType AsyncMailAdminSendPersonalMailHandler;
-// 调用以非 OK 状态结束时的回调(deadline 到期 / 连接不可用 / 服务端报错),拿到发出的请求副本。
-// 未装时只打 ERROR 日志。失败 = 结果未知,语义见 GrpcCallFailure。
-using AsyncMailAdminSendPersonalMailFailedHandlerFunctionType =
-    std::function<void(const GrpcCallFailure&, const ::mailpb::SendPersonalMailRequest&)>;
-extern AsyncMailAdminSendPersonalMailFailedHandlerFunctionType AsyncMailAdminSendPersonalMailFailedHandler;
-
-void SendMailAdminSendPersonalMail(entt::registry& registry, entt::entity nodeEntity, const ::mailpb::SendPersonalMailRequest& request);
-void SendMailAdminSendPersonalMail(entt::registry& registry, entt::entity nodeEntity, const ::mailpb::SendPersonalMailRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
-void SendMailAdminSendPersonalMail(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
-// 每次调用回调版(契约见 grpc_call_tag.h 的 GrpcDone):done 恰好调用一次、从不在本函数栈内同步调用,
-// 且本次调用不再触发上面的全局处理器。done 为空等同于不带回调的 Send。
-void SendMailAdminSendPersonalMail(entt::registry& registry, entt::entity nodeEntity, const ::mailpb::SendPersonalMailRequest& request, GrpcDone<::mailpb::SendPersonalMailResponse> done, const GrpcCallOptions& options = {});
+// done 必填且恰好调用一次,从不在 Send 栈内同步调用;为空 LOG_FATAL。响应只在回调期间有效。
+void SendMailAdminSendPersonalMail(entt::registry& registry, entt::entity nodeEntity, const ::mailpb::SendMailRequest& request, GrpcDone<::mailpb::SendMailResponse> done, const GrpcCallOptions& options = {});
+// 类型擦除版只供元数据 sender 使用;动态类型不匹配时异步回 INTERNAL,不发出请求。
+void SendMailAdminSendPersonalMailErased(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, GrpcMessageDone done, const GrpcCallOptions& options);
 #pragma endregion
 #pragma region MailAdminSendSystemMail
 // gRPC :path(线上契约,与 Go 侧一致)。
 inline constexpr std::string_view kMailAdminSendSystemMailGrpcPath = "/mailpb.MailAdmin/SendSystemMail";
-using AsyncMailAdminSendSystemMailHandlerFunctionType =
-    std::function<void(const GrpcReplyContext&, const ::mailpb::SendSystemMailResponse&)>;
-extern AsyncMailAdminSendSystemMailHandlerFunctionType AsyncMailAdminSendSystemMailHandler;
-// 调用以非 OK 状态结束时的回调(deadline 到期 / 连接不可用 / 服务端报错),拿到发出的请求副本。
-// 未装时只打 ERROR 日志。失败 = 结果未知,语义见 GrpcCallFailure。
-using AsyncMailAdminSendSystemMailFailedHandlerFunctionType =
-    std::function<void(const GrpcCallFailure&, const ::mailpb::SendSystemMailRequest&)>;
-extern AsyncMailAdminSendSystemMailFailedHandlerFunctionType AsyncMailAdminSendSystemMailFailedHandler;
-
-void SendMailAdminSendSystemMail(entt::registry& registry, entt::entity nodeEntity, const ::mailpb::SendSystemMailRequest& request);
-void SendMailAdminSendSystemMail(entt::registry& registry, entt::entity nodeEntity, const ::mailpb::SendSystemMailRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
-void SendMailAdminSendSystemMail(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
-// 每次调用回调版(契约见 grpc_call_tag.h 的 GrpcDone):done 恰好调用一次、从不在本函数栈内同步调用,
-// 且本次调用不再触发上面的全局处理器。done 为空等同于不带回调的 Send。
-void SendMailAdminSendSystemMail(entt::registry& registry, entt::entity nodeEntity, const ::mailpb::SendSystemMailRequest& request, GrpcDone<::mailpb::SendSystemMailResponse> done, const GrpcCallOptions& options = {});
+// done 必填且恰好调用一次,从不在 Send 栈内同步调用;为空 LOG_FATAL。响应只在回调期间有效。
+void SendMailAdminSendSystemMail(entt::registry& registry, entt::entity nodeEntity, const ::mailpb::SendMailRequest& request, GrpcDone<::mailpb::SendMailResponse> done, const GrpcCallOptions& options = {});
+// 类型擦除版只供元数据 sender 使用;动态类型不匹配时异步回 INTERNAL,不发出请求。
+void SendMailAdminSendSystemMailErased(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, GrpcMessageDone done, const GrpcCallOptions& options);
 #pragma endregion
-void SetMailAdminHandler(const std::function<void(const GrpcReplyContext&, const ::google::protobuf::Message& reply)>& handler);
-void SetMailAdminIfEmptyHandler(const std::function<void(const GrpcReplyContext&, const ::google::protobuf::Message& reply)>& handler);
-void SetMailAdminFailedHandler(const std::function<void(const GrpcCallFailure&, const ::google::protobuf::Message& request)>& handler);
-void SetMailAdminIfEmptyFailedHandler(const std::function<void(const GrpcCallFailure&, const ::google::protobuf::Message& request)>& handler);
-// 本文件所有 unary 调用此后使用的 deadline;启动时由 SetGrpcCallDeadline 按目标节点类型调用。
+#pragma region MailAdminSendGuildMail
+// gRPC :path(线上契约,与 Go 侧一致)。
+inline constexpr std::string_view kMailAdminSendGuildMailGrpcPath = "/mailpb.MailAdmin/SendGuildMail";
+// done 必填且恰好调用一次,从不在 Send 栈内同步调用;为空 LOG_FATAL。响应只在回调期间有效。
+void SendMailAdminSendGuildMail(entt::registry& registry, entt::entity nodeEntity, const ::mailpb::SendMailRequest& request, GrpcDone<::mailpb::SendMailResponse> done, const GrpcCallOptions& options = {});
+// 类型擦除版只供元数据 sender 使用;动态类型不匹配时异步回 INTERNAL,不发出请求。
+void SendMailAdminSendGuildMailErased(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, GrpcMessageDone done, const GrpcCallOptions& options);
+#pragma endregion
+#pragma region MailAdminImportMailRecipients
+// gRPC :path(线上契约,与 Go 侧一致)。
+inline constexpr std::string_view kMailAdminImportMailRecipientsGrpcPath = "/mailpb.MailAdmin/ImportMailRecipients";
+// done 必填且恰好调用一次,从不在 Send 栈内同步调用;为空 LOG_FATAL。响应只在回调期间有效。
+void SendMailAdminImportMailRecipients(entt::registry& registry, entt::entity nodeEntity, const ::mailpb::ImportMailRecipientsRequest& request, GrpcDone<::mailpb::ImportMailRecipientsResponse> done, const GrpcCallOptions& options = {});
+// 类型擦除版只供元数据 sender 使用;动态类型不匹配时异步回 INTERNAL,不发出请求。
+void SendMailAdminImportMailRecipientsErased(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, GrpcMessageDone done, const GrpcCallOptions& options);
+#pragma endregion
+#pragma region MailAdminSealMailCampaign
+// gRPC :path(线上契约,与 Go 侧一致)。
+inline constexpr std::string_view kMailAdminSealMailCampaignGrpcPath = "/mailpb.MailAdmin/SealMailCampaign";
+// done 必填且恰好调用一次,从不在 Send 栈内同步调用;为空 LOG_FATAL。响应只在回调期间有效。
+void SendMailAdminSealMailCampaign(entt::registry& registry, entt::entity nodeEntity, const ::mailpb::SealMailCampaignRequest& request, GrpcDone<::mailpb::SendMailResponse> done, const GrpcCallOptions& options = {});
+// 类型擦除版只供元数据 sender 使用;动态类型不匹配时异步回 INTERNAL,不发出请求。
+void SendMailAdminSealMailCampaignErased(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, GrpcMessageDone done, const GrpcCallOptions& options);
+#pragma endregion
+// 本文件所有 unary 调用此后使用的 deadline;启动时按目标节点类型设置。
 void SetMailAdminCallDeadline(std::chrono::milliseconds deadline);
 
 }// namespace mailpb

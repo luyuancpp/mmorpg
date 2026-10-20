@@ -103,11 +103,11 @@ func buildGateCommandMessage(kind string, gateID string, gateInstanceID string,
 // 而不是在测试里再抄一遍字段字面量 —— 抄一遍的测试只能证明抄得对。
 //
 // Bind 的业务字段整份序列化成 BindSessionEvent 放进 payload:gate 的生成路由
-// (gate_kafka_command_router.cpp)对非空 payload 走 DispatchProtoEvent,信封路径只拼得出
+// (gate_kafka_command_router.cpp)的 DispatchGateKafkaCommand 按白名单解包 payload 后直接调用 handler，信封路径只拼得出
 // session_id / player_id / enter_gs_type,带不到 session_version 与 login_generation。
 // login_generation 必须随 Bind 到 gate:Bind 先于本次路由到达时,gate 会立即按上一次的
 // lastSceneRoute 补发登录进场,补发要带本次登录的代次(scene-enter-session-fence.md §4)。
-// 新旧 gate 都认得 payload 里的 BindSessionEvent(事件已在注册表里,未知字段原样跳过)。
+// 新旧 gate 都认得 payload 里的 BindSessionEvent(事件已在 gate 白名单里，BindSessionEvent=32,未知字段原样跳过)。
 // 信封字段照填(与 PushTip 同做法):分区 key 取自信封 PlayerId,broker 侧排障也读信封。
 func buildBindSessionCommand(gateID string, gateInstanceID string,
 	sessionID uint32, playerID uint64, sessionVersion uint32, enterGsType uint32, loginGeneration uint64,
@@ -131,13 +131,28 @@ func buildBindSessionCommand(gateID string, gateInstanceID string,
 	})
 }
 
+// Kick 与 Bind 同理,业务字段整份序列化成 KickPlayerEvent 放进 payload:踢线者的登录代次只能经 payload 到 gate
+// (信封没有对应字段,生成路由的信封分支只按同名同型映射得到 session_id / player_id)。gate 的 ClassifyKick
+// 用 player_id 只踢当前绑定该玩家的会话,用代次在会话已见过不小于它的登录时不踢
+// (docs/design/scene-enter-chain-residuals.md §2.2 ③④)。
+// 旧 gate 按白名单解出 KickPlayerEvent,未知的 2 / 3 号字段被忽略,仍按 session_id 踢,不丢踢线。
+// 信封的 SessionId / PlayerId / EventId 照填:分区 key 取自信封 PlayerId,broker 侧排障也读信封。
 func buildKickPlayerCommand(gateID string, gateInstanceID string,
-	sessionID uint32, playerID uint64,
+	sessionID uint32, playerID uint64, loginGeneration uint64,
 ) (gateCommandMessage, error) {
+	eventPayload, err := proto.Marshal(&kafkapb.KickPlayerEvent{
+		SessionId:       sessionID,
+		PlayerId:        playerID,
+		LoginGeneration: loginGeneration,
+	})
+	if err != nil {
+		return gateCommandMessage{}, fmt.Errorf("marshal KickPlayerEvent (session=%d): %w", sessionID, err)
+	}
 	return buildGateCommandMessage("kick", gateID, gateInstanceID, &kafkapb.GateCommand{
 		SessionId: sessionID,
 		PlayerId:  playerID,
 		EventId:   uint32(game.ContractsKafkaKickPlayerEventEventId),
+		Payload:   eventPayload,
 	})
 }
 

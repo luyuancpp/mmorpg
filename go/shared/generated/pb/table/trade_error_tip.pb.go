@@ -29,6 +29,18 @@ const (
 	TradeError_kTradeHomeZoneUnknown      TradeError = 20001
 	TradeError_kTradeFavoriteLimitReached TradeError = 20002
 	TradeError_kTradeFeatureDisabled      TradeError = 20003
+	TradeError_kTradeOrderNotFound        TradeError = 20004
+	TradeError_kTradeOrderStateConflict   TradeError = 20005
+	TradeError_kTradeRequestConflict      TradeError = 20006
+	TradeError_kTradeOrderLimit           TradeError = 20007
+	TradeError_kTradeCannotTradeSelf      TradeError = 20008
+	TradeError_kTradeCounterpartyUnknown  TradeError = 20009
+	TradeError_kTradeInsufficientAsset    TradeError = 20010
+	TradeError_kTradeBidTooLow            TradeError = 20011
+	TradeError_kTradeAuctionEnded         TradeError = 20012
+	TradeError_kTradeAssetDeliveryPending TradeError = 20013
+	TradeError_kTradeManualReview         TradeError = 20014
+	TradeError_kTradeAssetNotTradable     TradeError = 20015
 )
 
 // Enum value maps for TradeError.
@@ -39,6 +51,18 @@ var (
 		20001: "kTradeHomeZoneUnknown",
 		20002: "kTradeFavoriteLimitReached",
 		20003: "kTradeFeatureDisabled",
+		20004: "kTradeOrderNotFound",
+		20005: "kTradeOrderStateConflict",
+		20006: "kTradeRequestConflict",
+		20007: "kTradeOrderLimit",
+		20008: "kTradeCannotTradeSelf",
+		20009: "kTradeCounterpartyUnknown",
+		20010: "kTradeInsufficientAsset",
+		20011: "kTradeBidTooLow",
+		20012: "kTradeAuctionEnded",
+		20013: "kTradeAssetDeliveryPending",
+		20014: "kTradeManualReview",
+		20015: "kTradeAssetNotTradable",
 	}
 	TradeError_value = map[string]int32{
 		"kTrade_errorOK":             0,
@@ -46,6 +70,18 @@ var (
 		"kTradeHomeZoneUnknown":      20001,
 		"kTradeFavoriteLimitReached": 20002,
 		"kTradeFeatureDisabled":      20003,
+		"kTradeOrderNotFound":        20004,
+		"kTradeOrderStateConflict":   20005,
+		"kTradeRequestConflict":      20006,
+		"kTradeOrderLimit":           20007,
+		"kTradeCannotTradeSelf":      20008,
+		"kTradeCounterpartyUnknown":  20009,
+		"kTradeInsufficientAsset":    20010,
+		"kTradeBidTooLow":            20011,
+		"kTradeAuctionEnded":         20012,
+		"kTradeAssetDeliveryPending": 20013,
+		"kTradeManualReview":         20014,
+		"kTradeAssetNotTradable":     20015,
 	}
 )
 
@@ -80,13 +116,25 @@ var File_trade_error_tip_proto protoreflect.FileDescriptor
 
 const file_trade_error_tip_proto_rawDesc = "" +
 	"\n" +
-	"\x15trade_error_tip.proto*\x9a\x01\n" +
+	"\x15trade_error_tip.proto*\xf2\x03\n" +
 	"\vtrade_error\x12\x12\n" +
 	"\x0ekTrade_errorOK\x10\x00\x12\x1b\n" +
 	"\x15kTradeListingNotFound\x10\xa0\x9c\x01\x12\x1b\n" +
 	"\x15kTradeHomeZoneUnknown\x10\xa1\x9c\x01\x12 \n" +
 	"\x1akTradeFavoriteLimitReached\x10\xa2\x9c\x01\x12\x1b\n" +
-	"\x15kTradeFeatureDisabled\x10\xa3\x9c\x01B$\n" +
+	"\x15kTradeFeatureDisabled\x10\xa3\x9c\x01\x12\x19\n" +
+	"\x13kTradeOrderNotFound\x10\xa4\x9c\x01\x12\x1e\n" +
+	"\x18kTradeOrderStateConflict\x10\xa5\x9c\x01\x12\x1b\n" +
+	"\x15kTradeRequestConflict\x10\xa6\x9c\x01\x12\x16\n" +
+	"\x10kTradeOrderLimit\x10\xa7\x9c\x01\x12\x1b\n" +
+	"\x15kTradeCannotTradeSelf\x10\xa8\x9c\x01\x12\x1f\n" +
+	"\x19kTradeCounterpartyUnknown\x10\xa9\x9c\x01\x12\x1d\n" +
+	"\x17kTradeInsufficientAsset\x10\xaa\x9c\x01\x12\x15\n" +
+	"\x0fkTradeBidTooLow\x10\xab\x9c\x01\x12\x18\n" +
+	"\x12kTradeAuctionEnded\x10\xac\x9c\x01\x12 \n" +
+	"\x1akTradeAssetDeliveryPending\x10\xad\x9c\x01\x12\x18\n" +
+	"\x12kTradeManualReview\x10\xae\x9c\x01\x12\x1c\n" +
+	"\x16kTradeAssetNotTradable\x10\xaf\x9c\x01B$\n" +
 	"\x0ecom.game.tableZ\x12generated/pb/tableb\x06proto3"
 
 var (

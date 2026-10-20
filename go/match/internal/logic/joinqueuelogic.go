@@ -2,6 +2,7 @@ package logic
 
 import (
 	"context"
+	"time"
 
 	"match/internal/constants"
 	"match/internal/metrics"
@@ -123,6 +124,23 @@ func (l *JoinQueueLogic) JoinQueue(in *matchpb.JoinQueueRequest) (*matchpb.JoinQ
 	}
 
 	// 每玩家最多一单在途(设计决策 D4)。
+	if l.svcCtx.Authority != nil {
+		loc, e := loadPlayerLocation(l.svcCtx, playerId)
+		if e != nil {
+			return nil, e
+		}
+		if loc == nil {
+			return &matchpb.JoinQueueResponse{ErrorCode: constants.ErrNotInScene, ErrorMessage: tipErr(constants.ErrNotInScene, "请先进入场景")}, nil
+		}
+		stale, e := l.callerSessionStale(playerId)
+		if e != nil {
+			return nil, e
+		}
+		if stale {
+			return &matchpb.JoinQueueResponse{ErrorCode: constants.ErrNotInScene, ErrorMessage: tipErr(constants.ErrNotInScene, "会话已经失效")}, nil
+		}
+		return globalJoin(l, in, required, loc.ZoneId)
+	}
 	existing, err := loadTicket(l.svcCtx, playerId)
 	if err != nil {
 		l.Errorf("[match] JoinQueue failed to read ticket player=%d: %v", playerId, err)
@@ -298,6 +316,20 @@ func (l *JoinQueueLogic) healOrphanQueuedTicket(playerId uint64, existing *queue
 // 尚未 LPUSH)都是良性:前者 matcher 的 CAS 失败把他剔出组,后者队列里多一份
 // 由 popGroup 去重,两条路都不会留下孤儿。
 func healOrphanTicket(svcCtx *svc.ServiceContext, log logx.Logger, playerId uint64, existing *queueTicket) (bool, error) {
+	if svcCtx.Authority != nil {
+		if existing.State == ticketStateReady {
+			ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+			defer cancel()
+			t, e := svcCtx.Authority.Ticket(ctx, playerId)
+			if e != nil {
+				return false, e
+			}
+			if t != nil && t.State == 3 {
+				return releaseGlobalFinished(ctx, svcCtx, t)
+			}
+		}
+		return false, nil
+	}
 	if existing.State == ticketStateReady {
 		// ready = 开局成功后的短暂停留态(ReadyTicketTTLSeconds 自清)。走到这里说明
 		// 上面的 battle:lock 咨询性检查已经放行 —— 锁在结算应用/作废时被 scene 删除,

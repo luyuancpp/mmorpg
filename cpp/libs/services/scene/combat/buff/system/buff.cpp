@@ -58,26 +58,19 @@ uint64_t SteadyNowMilliseconds()
         std::chrono::steady_clock::now().time_since_epoch()).count());
 }
 
-// processed_caster 里的「无施法者」。actor 的 0 号句柄已在 EcsContext 构造时退役,
-// 真实施法者的实体整数不会是 0,所以 0 可以安全地当协议值用。
-constexpr uint64_t kNoBuffCaster = 0;
-
 // 「处理后的施法者」:新建条目时写进 processed_caster,叠层时按它找同一条 buff。
 // 新建与叠层必须走这同一条规则,否则两边算出来的值永远对不上。
 // - no_caster 的 buff 不区分施法者:一律记 kNoBuffCaster,任何施法者再挂都叠到同一条上;
-// - 其余按施法者隔离;没有技能上下文的(子 buff 链路、系统施加)同样记 kNoBuffCaster。
+// - 其余按施法者隔离;没有施法者的系统施加同样记 kNoBuffCaster。
 // 写进去的取值与回合引擎 TurnBattleEngine::StackOrRefreshExistingBuff 的 caster_id 一致,
-// 但叠层行为并不完全一致:按施法者隔离、又没有技能上下文的施加,实时侧仍每次新建一条
+// 但叠层行为并不完全一致:按施法者隔离、又没有施法者的施加,实时侧仍每次新建一条
 // (HandleExistingBuff 直接返回 false),回合引擎会把 caster_id==0 的条目互相叠层。
 // 这是有意保留的差异 —— 子 buff 链路(同一 owner 挂多条同表子 buff)依赖它,要对齐须另行决策。
 // 以前 no_caster 写的是 entt::null(uint64 全 1),叠层时却拿它和施法者整数比较,永远不等:
 // 每挂一次就新建一条,max_layer 形同虚设(C003)。
-uint64_t ProcessedCasterOf(const BuffTable& buffRow, const SkillContextPtrComp& abilityContext)
+uint64_t ProcessedCasterOf(const BuffTable& buffRow, uint64_t caster)
 {
-    if (buffRow.no_caster() != 0 || abilityContext == nullptr) {
-        return kNoBuffCaster;
-    }
-    return abilityContext->caster();
+    return buffRow.no_caster() != 0 ? kNoBuffCaster : caster;
 }
 
 bool IsCombatIdleBonus(const BuffListComp& buffList, uint64_t childId)
@@ -130,19 +123,19 @@ bool HasStealthBuffExcept(const entt::entity parent, const uint64_t excludeBuffI
     return false;
 }
 
-// Add or update buff (with abilityContext)
+// 按施法者整数施加或叠层 Buff。
 std::tuple<uint32_t, uint64_t> BuffSystem::AddOrUpdateBuff(
     const entt::entity parent,
     const uint32_t buffTableId,
-    const SkillContextPtrComp& abilityContext)
+    uint64_t caster)
 {
-    return AddOrUpdateBuffWithOwner(parent, buffTableId, abilityContext, UINT64_MAX);
+    return AddOrUpdateBuffWithOwner(parent, buffTableId, caster, UINT64_MAX);
 }
 
 std::tuple<uint32_t, uint64_t> BuffSystem::AddOrUpdateBuffWithOwner(
     const entt::entity parent,
     const uint32_t buffTableId,
-    const SkillContextPtrComp& abilityContext,
+    uint64_t caster,
     const uint64_t combatIdleOwnerId)
 {
     if (!tlsEcs.actorRegistry.valid(parent))
@@ -187,7 +180,7 @@ std::tuple<uint32_t, uint64_t> BuffSystem::AddOrUpdateBuffWithOwner(
     }
 
     // 持续加成必须能随各自的父独立撤销，不能叠进其他父或独立施加的条目。
-    if (combatIdleOwnerId == UINT64_MAX && HandleExistingBuff(parent, buffTableId, abilityContext)) {
+    if (combatIdleOwnerId == UINT64_MAX && HandleExistingBuff(parent, buffTableId, caster)) {
         return {kSuccess, UINT64_MAX};
     }
 
@@ -212,11 +205,8 @@ std::tuple<uint32_t, uint64_t> BuffSystem::AddOrUpdateBuffWithOwner(
     auto& buffList = tlsEcs.actorRegistry.get_or_emplace<BuffListComp>(parent);
 
     BuffEntry newBuff;
-    if (abilityContext != nullptr)
-    {
-        newBuff.buffPb.set_caster(abilityContext->caster());
-    }
-    newBuff.buffPb.set_processed_caster(ProcessedCasterOf(*buffRow, abilityContext));
+    newBuff.buffPb.set_caster(caster);
+    newBuff.buffPb.set_processed_caster(ProcessedCasterOf(*buffRow, caster));
     // 新条目就是第 1 层,叠层上限 max_layer 才是「最多几层」(与回合引擎新建条目的 layer=1 一致)。
     // 以前从 0 起算,max_layer=N 实际能叠到 N+1 次。
     newBuff.buffPb.set_layer(1);
@@ -224,27 +214,21 @@ std::tuple<uint32_t, uint64_t> BuffSystem::AddOrUpdateBuffWithOwner(
     uint64_t newBuffId = GenerateUniqueBuffId(buffList);
     newBuff.buffPb.set_buff_id(newBuffId);
     newBuff.buffPb.set_buff_table_id(buffTableId);
-    newBuff.skillContext = abilityContext;
     newBuff.dataPbPtr = CreateBuffDataPtr(buffRow);
 
     auto [fst, snd] = buffList.emplace(newBuffId, std::move(newBuff));
     if (combatIdleOwnerId != UINT64_MAX) {
-        // 启动回调可以同步重入；提前登记后，普通叠层与父移除都能看到完整归属。
+        // 子项插入时同时登记归属,让普通叠层与父移除看到完整父子关系。
         buffList.at(combatIdleOwnerId).buffPb.mutable_sub_buff_list_id()->emplace(newBuffId, false);
     }
     OnBuffStart(parent, fst->second, buffRow);
-
-    auto* liveList = tlsEcs.actorRegistry.try_get<BuffListComp>(parent);
-    if (liveList == nullptr || !liveList->contains(newBuffId)) {
-        return {kSuccess, newBuffId};  // 启动回调已移除本条，不能再挂到期定时器
-    }
 
     // 显式无限时长优先于 duration，同时保留旧配置 duration<0 的永久语义。
     if (buffRow->infinite_duration() != 0) {
         return {kSuccess, newBuffId};
     }
     if (buffRow->duration() > 0) {
-        liveList->at(newBuffId).expireTimerTaskComp.RunAfter(buffRow->duration(), [parent, newBuffId] {
+        fst->second.expireTimerTaskComp.RunAfter(buffRow->duration(), [parent, newBuffId] {
             if (!tlsEcs.actorRegistry.valid(parent))
             {
                 return;
@@ -259,12 +243,12 @@ std::tuple<uint32_t, uint64_t> BuffSystem::AddOrUpdateBuffWithOwner(
     return {kSuccess, newBuffId};
 }
 
-// Add or update buff (without abilityContext)
+// 系统施加，不指定施法者。
 std::tuple<uint32_t, uint64_t> BuffSystem::AddOrUpdateBuff(
     const entt::entity parent,
     const uint32_t buffTableId)
 {
-    return AddOrUpdateBuff(parent, buffTableId, nullptr);
+    return AddOrUpdateBuff(parent, buffTableId, kNoBuffCaster);
 }
 
 
@@ -275,15 +259,8 @@ void BuffSystem::RemoveBuff(const entt::entity parent, const uint64_t buffId)
 }
 
 void BuffSystem::RemoveBuff(const entt::entity parent, const UInt64Set& removeBuffIdList) {
-    // 先标记整批再触发移除回调：前一条子项的回调不能把新施加的 Buff 叠进待删的后一条。
-    // 快照也允许调用方传入实体上的待删集合，清理标记时不会使本循环失效。
+    // 调用方可以传入实体上的待删集合,先拷贝以免级联清理使遍历失效。
     const auto removeIds = removeBuffIdList;
-    for (const auto removeBuffId : removeIds) {
-        const auto* buffList = tlsEcs.actorRegistry.try_get<BuffListComp>(parent);
-        if (buffList != nullptr && buffList->contains(removeBuffId)) {
-            MarkBuffForRemoval(parent, removeBuffId);
-        }
-    }
     for (const auto removeBuffId : removeIds) {
         // 前一条的级联清理可能已经移除了本条，批量移除按仍存活的 id 处理。
         const auto* buffList = tlsEcs.actorRegistry.try_get<BuffListComp>(parent);
@@ -304,42 +281,6 @@ void BuffSystem::RemoveSubBuff(BuffEntry& buffComp, UInt64Set& buffsToRemove)
     }
 
     buffComp.buffPb.clear_sub_buff_list_id();
-}
-
-void BuffSystem::MarkBuffForRemoval(const entt::entity parent, uint64_t buffId) {
-    // 待删集合是按需状态:第一次标记时创建,帧末 RemovePendingBuffs 处理完即摘掉。
-    // 只给确实挂着这条 buff 的实体建 —— BuffSystem::Update 只遍历带 BuffListComp 的实体,
-    // 标在别处的记号永远不会被处理,只会凭空多出一个组件(F037)。
-    const auto* buffList = tlsEcs.actorRegistry.try_get<BuffListComp>(parent);
-    if (buffList == nullptr || !buffList->contains(buffId)) {
-        LOG_ERROR << "MarkBuffForRemoval: buff not on entity. entity=" << entt::to_integral(parent)
-                  << " buff_id=" << buffId << " has_buff_list=" << (buffList != nullptr);
-        return;
-    }
-
-    auto* pendingRemoveBuffs = tlsEcs.actorRegistry.try_get<BuffPendingRemoveBuffs>(parent);
-    if (pendingRemoveBuffs == nullptr) {
-        pendingRemoveBuffs = &tlsEcs.actorRegistry.emplace<BuffPendingRemoveBuffs>(parent);
-    }
-    pendingRemoveBuffs->emplace(buffId);
-}
-
-// Remove pending buffs at end of frame
-void BuffSystem::RemovePendingBuffs(const entt::entity parent, BuffListComp&) {
-    // 这里原来是 get_or_emplace:BuffSystem::Update 每帧对每个带 buff 的实体都调一次,
-    // 于是所有带 buff 的实体都会被永久挂上一个空的 unordered_set 组件(而且
-    // MarkBuffForRemoval 全仓无调用方,这个集合永远是空的)。CLAUDE.md §7.5 明确
-    // 禁止 per-tick 路径用 get_or_emplace,改 try_get + 早退。
-    auto* pendingRemoveBuffs = tlsEcs.actorRegistry.try_get<BuffPendingRemoveBuffs>(parent);
-    if (pendingRemoveBuffs == nullptr) {
-        return;
-    }
-
-    // 先取走这一批并摘组件，避免回调重入时继续端着集合引用；新标记留给下一帧。
-    const auto pending = std::move(*pendingRemoveBuffs);
-    tlsEcs.actorRegistry.remove<BuffPendingRemoveBuffs>(parent);
-    // 统一走到期/移除路径，不能直接 erase 绕过父子清理与状态撤销。
-    BuffSystem::RemoveBuff(parent, pending);
 }
 
 // Buff expiry handler
@@ -369,12 +310,6 @@ void BuffSystem::OnBuffExpire(const entt::entity parent, const uint64_t buffId)
     }
     OnBuffRemove(parent, buffIt->second, buffRow);
     buffList.erase(buffId);
-    if (auto* pending = tlsEcs.actorRegistry.try_get<BuffPendingRemoveBuffs>(parent)) {
-        pending->erase(buffId);
-        if (pending->empty()) {
-            tlsEcs.actorRegistry.remove<BuffPendingRemoveBuffs>(parent);
-        }
-    }
     for (auto& liveBuff : buffList | std::views::values) {
         liveBuff.buffPb.mutable_sub_buff_list_id()->erase(buffId);
     }
@@ -405,13 +340,13 @@ uint32_t BuffSystem::CanCreateBuff(const entt::entity parentEntity, const uint32
 // Handle existing buff (stack/refresh)
 bool BuffSystem::HandleExistingBuff(const entt::entity parentEntity,
     const uint32_t buffTableId,
-    const SkillContextPtrComp& abilityContext)
+    uint64_t caster)
 {
     LookupBuffOrReturnFalse(buffTableId);
 
-    // 按施法者隔离、却没有施法者上下文:认不出「同一施法者」,保持每次新建一条的既有行为。
-    // no_caster 的 buff 不看施法者,有没有上下文都照常叠层。
-    if (buffRow->no_caster() == 0 && !abilityContext) {
+    // 按施法者隔离却没有施法者时，保持每次新建一条的既有行为。
+    // no_caster 的 buff 不看施法者，照常叠层。
+    if (buffRow->no_caster() == 0 && caster == kNoBuffCaster) {
         return false;
     }
 
@@ -422,20 +357,16 @@ bool BuffSystem::HandleExistingBuff(const entt::entity parentEntity,
         return false;
     }
 
-    const auto processedCaster = ProcessedCasterOf(*buffRow, abilityContext);
+    const auto processedCaster = ProcessedCasterOf(*buffRow, caster);
     for (auto& buffComp : *buffList | std::views::values) {
         if (buffComp.buffPb.buff_table_id() == buffTableId && buffComp.buffPb.processed_caster() == processedCaster) {
-            const auto* pending = tlsEcs.actorRegistry.try_get<BuffPendingRemoveBuffs>(parentEntity);
-            if (pending != nullptr && pending->contains(buffComp.buffPb.buff_id())) {
-                continue;
-            }
             if (IsCombatIdleBonus(*buffList, buffComp.buffPb.buff_id())) {
                 continue;
             }
             if (buffComp.buffPb.layer() < buffRow->max_layer()) {
                 buffComp.buffPb.set_layer(buffComp.buffPb.layer() + 1);
             }
-            OnBuffRefresh(parentEntity, buffTableId, abilityContext, buffComp);
+            OnBuffRefresh(parentEntity, buffTableId, caster, buffComp);
             return true;
         }
     }
@@ -486,30 +417,12 @@ void BuffSystem::OnBuffStart(entt::entity parent, BuffEntry& buff, const BuffTab
         tlsEcs.actorRegistry.emplace_or_replace<StealthedTagComp>(parent);
     }
 
-    // 沉默状态事件等同步回调可以驱散父子，后续实现不能继续使用原 BuffEntry 引用。
-    const auto buffId = buff.buffPb.buff_id();
-    using StartHandler = void (*)(entt::entity, BuffEntry&, const BuffTable*);
-    constexpr StartHandler kStartHandlers[] = {
-        [](entt::entity actor, BuffEntry& entry, const BuffTable* row) {
-            BuffImplSystem::OnBuffStart(actor, entry, row);
-        },
-        &ModifierBuffImplSystem::OnBuffStart,
-        &MotionModifierBuffImplSystem::OnBuffStart,
-    };
-    for (const auto handler : kStartHandlers) {
-        auto* list = tlsEcs.actorRegistry.try_get<BuffListComp>(parent);
-        if (list == nullptr) {
-            return;
-        }
-        const auto live = list->find(buffId);
-        if (live == list->end()) {
-            return;
-        }
-        handler(parent, live->second, buffTable);
-    }
+    BuffImplSystem::OnBuffStart(parent, buff, buffTable);
+    ModifierBuffImplSystem::OnBuffStart(parent, buff, buffTable);
+    MotionModifierBuffImplSystem::OnBuffStart(parent, buff, buffTable);
 }
 
-void BuffSystem::OnBuffRefresh(entt::entity parent, uint32_t buffTableId, const SkillContextPtrComp& abilityContext, BuffEntry& buffComp)
+void BuffSystem::OnBuffRefresh(entt::entity parent, uint32_t buffTableId, uint64_t caster, BuffEntry& buffComp)
 {
     // TODO: implement buff refresh logic (e.g. reset duration, reapply modifiers)
 }
@@ -585,11 +498,6 @@ void BuffSystem::OnIntervalThink(entt::entity parent, uint64_t buffId, uint64_t 
         handler(parent, liveIt->second, buffRow, nowMilliseconds);
     }
 }
-void BuffSystem::OnSkillExecuted(SkillExecutedEvent& event)
-{
-    // TODO: implement buff reactions to skill execution events
-}
-
 void BuffSystem::OnBeforeGiveDamage(const entt::entity casterEntity, const entt::entity targetEntity, DamageEventComp& damageEvent)
 {
     BuffImplSystem::OnBeforeGiveDamage(casterEntity, targetEntity, damageEvent);
@@ -656,7 +564,7 @@ bool BuffSystem::AddSubBuffs(entt::entity parent,
 
 void BuffSystem::AddTargetSubBuffs(const entt::entity targetEntity,
     const BuffTable* buffTable,
-    const SkillContextPtrComp& abilityContext)
+    uint64_t caster)
 {
     if (buffTable == nullptr)
     {
@@ -664,7 +572,7 @@ void BuffSystem::AddTargetSubBuffs(const entt::entity targetEntity,
     }
 
     for (auto& targetSubBuffTableId : buffTable->target_sub_buff()) {
-        AddOrUpdateBuff(targetEntity, targetSubBuffTableId, abilityContext);
+        AddOrUpdateBuff(targetEntity, targetSubBuffTableId, caster);
     }
 }
 
@@ -674,9 +582,9 @@ void BuffSystem::AddSubBuffsWithoutCheck(entt::entity parent,
 {
     // AddOrUpdateBuff 会往同一张 buffList 里插入子 buff,也可能顺着
     // DispelBuffsOnAwake 把 buffComp 自己驱散掉,所以不能端着 buffComp 的引用
-    // 跨调用。记下 owner 的 id 和上下文强引用,每轮重查;owner 没了就停手。
+    // 跨调用。记下 owner 的 id 和施法者整数，每轮重查；owner 没了就停手。
     const auto ownerBuffId = buffComp.buffPb.buff_id();
-    const SkillContextPtrComp ownerContext = buffComp.skillContext;
+    const uint64_t ownerCaster = buffComp.buffPb.caster();
     const bool isCombatIdleOwner = buffTable->buff_type() == kBuffTypeNoDamageOrSkillHitInLastSeconds;
 
     for (const auto& subBuff : buffTable->sub_buff()) {
@@ -685,8 +593,8 @@ void BuffSystem::AddSubBuffsWithoutCheck(entt::entity parent,
             return;
         }
         auto [result, newBuffId] = isCombatIdleOwner
-            ? AddOrUpdateBuffWithOwner(parent, subBuff, ownerContext, ownerBuffId)
-            : AddOrUpdateBuff(parent, subBuff, ownerContext);
+            ? AddOrUpdateBuffWithOwner(parent, subBuff, ownerCaster, ownerBuffId)
+            : AddOrUpdateBuff(parent, subBuff, ownerCaster);
 
         auto* buffList = tlsEcs.actorRegistry.try_get<BuffListComp>(parent);
         if (buffList == nullptr) {
@@ -792,7 +700,6 @@ void BuffSystem::Update(const double delta, uint64_t nowMilliseconds) {
     for (auto&& [target, buffListComp] : tlsEcs.actorRegistry.view<BuffListComp>(
             entt::exclude<PlayerFrozenComp>).each()) {
         ProcessBuffs(target, buffListComp, delta, nowMilliseconds);
-        BuffSystem::RemovePendingBuffs(target, buffListComp);
 
         // 按需状态的结束:列表空了就摘掉 BuffListComp(之后 buffListComp 引用失效,不能再碰)。
         // 只在帧末这里摘:buff 到期 / 驱散发生在各种回调深处,调用栈上还可能有人端着这张表的引用

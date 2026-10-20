@@ -56,7 +56,7 @@ func NewForwardLogic(ctx context.Context, svcCtx *svc.ServiceContext) *ForwardLo
 // 带 x-session-detail-bin 响应头的成功响应,gRPC 错误在 gate 侧无法路由回会话。
 // sampledErrorf 是客户端 / 目标状态驱动的失败分支专用日志:这些分支的触发速率
 // 完全由公网流量或对端故障决定,逐条 Errorf 会把故障放大成日志 I/O 风暴
-// (gate 侧对同类拒绝走的就是 1/1024 采样,client_message_processor.cpp)。
+// (gate 侧对同类拒绝走的就是 1/1024 采样,client_session_handler.cpp)。
 // 每个 key(outcome)首条必打,之后每 1024 条打一行并带累计数;真正的计数
 // 权威是 client_rpc_router_forward_total{message_id,outcome} 指标,日志只留样本。
 func sampledErrorf(key, format string, args ...any) {

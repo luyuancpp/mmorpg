@@ -5,23 +5,7 @@
 #include <limits>
 #include "core/utils/encode/base64.h"
 
-constexpr char kSessionBinMetaKey[] = "x-session-detail-bin";
-
 using SessionDetailsPtr = std::unique_ptr<SessionDetails>;
-
-SessionDetailsPtr GetSessionDetailsByReplyContext(const GrpcReplyContext& context)
-{
-    // initialMetadata 与官方客户端的 GetServerInitialMetadata 同义:-bin 键已解掉线上那层 base64,剩下的是应用层值。
-    for (const auto& [key, value] : context.initialMetadata) {
-        if (key == kSessionBinMetaKey) {
-            return ParseSessionDetailsMetadataValue(value);
-        }
-        else {
-            LOG_DEBUG << "Skipping metadata key: " << key;
-        }
-    }
-    return nullptr;
-}
 
 SessionDetailsPtr ParseSessionDetailsMetadataValue(std::string_view applicationValue)
 {

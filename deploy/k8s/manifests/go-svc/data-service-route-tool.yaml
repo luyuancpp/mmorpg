@@ -1,0 +1,103 @@
+# data-service-route-tool:映射持久化运维工具 route-tool 的一次性 Job 模板
+# (D1 第 1b-3 批;docs/handoff/launch-readiness-20261013/spec_D1_batch1b2_2_3.md §7 第 3 条、§13.4 第 3 条;形状照 data-service-migrate.yaml)。
+#
+# 与 manifests/go-svc/data-service.yaml 同一镜像、同一 ConfigMap(go-svc-data-service-config),跑服务二进制自带的工具入口:
+#   /app/service -f /app/etc/data_service.yaml -route-tool <子命令> [子命令参数]
+# (go/data_service/data_service.go 的 -route-tool;子命令与退出码见 go/data_service/internal/routetoolcli/cli.go 的 usage:
+#  0 干净 / 1 完成但需要人工处理 / 2 失败 / 3 有生效的合服围栏)。
+#
+# 为什么是独立 Job,不 kubectl exec 进在役 Pod:data-service 容器的内存 limit 是 512Mi,import / audit 的已见集合是 O(N)
+# (百万行约几十 MB,千万行几百 MB);在役容器里跑可能触发 cgroup OOM,把正在服务的 data_service 一起杀掉。
+# exec 只限 -dry-run 或小库(runbook §9.4)。这里的资源单独设,按行数调大。
+#
+# 调用:只经 tools/scripts/k8s_route_tool.ps1(渲染 → apply → 等完成 → 存 stdout / stderr 到报告目录 → 按容器退出码原样返回)。
+# 本文件里的占位(全大写、带 PLACEHOLDER 加下划线的前缀;下面列出时省略前缀,免得注释也被替换)由该脚本替换,漏替换即拒绝 apply;
+# 不要手工 kubectl apply 本文件。
+#   JOB_NAME                 data-service-route-tool-<运行号>(每次一个新名字,不删上一次的 Job,日志可回看)
+#   RUN_ID                   运行号(yyyyMMdd-HHmmss-<4 位十六进制>),与报告目录同名
+#   IMAGE / PULL_POLICY      缺省取在役 deployment/data-service 的镜像与拉取策略(同一二进制、同一份配置)
+#   ACTIVE_DEADLINE_SECONDS  脚本的 -TimeoutSeconds:到点 K8s 杀掉 Pod、Job 判 Failed(DeadlineExceeded)
+#   ROUTE_TOOL_ARGS          ["-f", "/app/etc/data_service.yaml", "-route-tool", <子命令>, <参数>…](JSON 数组,逐项转义)
+#
+# 不自动重试:backoffLimit 0、restartPolicy Never。子命令大多幂等,但 unfreeze / reconcile-from-cache 这类写操作重跑与否
+# 要由人看过上一次的输出再定;节点排空 / 抢占导致的驱逐同样直接判 Failed,由运维重跑。
+# ttlSecondsAfterFinished 留一天:之后 K8s 自己删 Job 与 Pod;报告目录里的 stdout / stderr 才是长期留档。
+#
+# stdout / stderr 分开:容器日志把两路合在一起,而 route-tool 的契约是「stdout 只有一行统计(给脚本解析),其余全在 stderr」。
+# 所以容器命令用 sh 包一层:stdout 先写进 /tmp/route-tool/stdout(emptyDir),进程退出后在标记行之间原样打印出来,
+# 再以 route-tool 自己的退出码退出;k8s_route_tool.ps1 按带运行号的标记把日志切回两份。stderr 直接进容器日志,不经文件。
+# 注意:kubelet 的容器日志轮转(containerLogMaxSize 缺省 10Mi)可能截掉很早的 stderr 明细,大库请用 -max-report 限制明细行数;
+# stdout 块总在最后,不受影响。
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: PLACEHOLDER_JOB_NAME
+  labels:
+    # 刻意不用 app: data-service:Service / PDB 的 selector 是 app=data-service,工具 Pod 混进去会被当成 gRPC 后端。
+    # k8s_route_tool.ps1 按这个标签查「有没有在途的 route-tool Job」(全部 namespace,同一个全局库只许一个在跑)。
+    app: data-service-route-tool
+    tier: go-svc
+  annotations:
+    mmorpg.io/route-tool-run-id: "PLACEHOLDER_RUN_ID"
+spec:
+  backoffLimit: 0
+  activeDeadlineSeconds: PLACEHOLDER_ACTIVE_DEADLINE_SECONDS
+  ttlSecondsAfterFinished: 86400
+  template:
+    metadata:
+      labels:
+        app: data-service-route-tool
+        tier: go-svc
+      annotations:
+        mmorpg.io/route-tool-run-id: "PLACEHOLDER_RUN_ID"
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: route-tool
+          image: PLACEHOLDER_IMAGE
+          imagePullPolicy: PLACEHOLDER_PULL_POLICY
+          env:
+            - name: GOLANG_PROTOBUF_REGISTRATION_CONFLICT
+              value: warn
+            # 标记行带运行号:stderr 里碰巧出现同样的字样也切不错。
+            - name: ROUTE_TOOL_RUN_ID
+              value: "PLACEHOLDER_RUN_ID"
+          # 镜像的 ENTRYPOINT 是 /app/service(deploy/k8s/Dockerfile.go-svc);写了 command 就要显式调它。
+          # args 原样作为 "$@" 交给 /app/service;$0 只是占位名。printf 而不是 echo:标记行前后的换行由这里固定,
+          # 统计行末尾有没有换行都能被脚本原样还原(见 k8s_route_tool.ps1 的 Split-RouteToolLog)。
+          command:
+            - sh
+            - -c
+            - |
+              out=/tmp/route-tool/stdout
+              /app/service "$@" >"$out"
+              rc=$?
+              printf '%s\n' "@@ROUTE_TOOL_STDOUT_BEGIN ${ROUTE_TOOL_RUN_ID}@@"
+              cat "$out"
+              printf '\n%s\n' "@@ROUTE_TOOL_STDOUT_END ${ROUTE_TOOL_RUN_ID}@@"
+              exit "$rc"
+            - route-tool
+          # 与 data-service.yaml 的 args 只差 -route-tool 及其后的子命令:同一份 ConfigMap,库名 / 账号 / mapping Redis 与服务完全一致。
+          args: PLACEHOLDER_ROUTE_TOOL_ARGS
+          volumeMounts:
+            - name: svc-config
+              mountPath: /app/etc
+              readOnly: true
+            - name: scratch
+              mountPath: /tmp/route-tool
+          # 资源与在役 data-service(512Mi)分开:import / audit 的已见集合随行数线性增长,千万行要几百 MB。
+          # 行数更大时先调大 limits 再跑;OOMKilled(退出码 137)由 k8s_route_tool.ps1 报成失败(2)。
+          resources:
+            requests:
+              cpu: 200m
+              memory: 256Mi
+            limits:
+              cpu: "1"
+              memory: 2Gi
+      volumes:
+        - name: svc-config
+          configMap:
+            name: go-svc-data-service-config
+        - name: scratch
+          emptyDir:
+            sizeLimit: 64Mi

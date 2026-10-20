@@ -62,11 +62,12 @@ var messageHandlers = map[uint32]handlerFunc{
 	game.ClientPlayerLoginRefreshTokenMessageId: unmarshalAndCall(ClientPlayerLoginRefreshTokenHandler),
 	game.ClientPlayerMailListMailsMessageId: unmarshalAndCall(ClientPlayerMailListMailsHandler),
 	game.ClientPlayerMailReadMailMessageId: unmarshalAndCall(ClientPlayerMailReadMailHandler),
-	game.ClientPlayerMailDeleteMailsMessageId: unmarshalAndCall(ClientPlayerMailDeleteMailsHandler),
-	game.ClientPlayerMailDeleteReadMailsMessageId: unmarshalAndCall(ClientPlayerMailDeleteReadMailsHandler),
 	game.ClientPlayerMailClaimMailAttachmentsMessageId: unmarshalAndCall(ClientPlayerMailClaimMailAttachmentsHandler),
-	game.ClientPlayerMailNotifyMailEventMessageId: unmarshalAndCall(ClientPlayerMailNotifyMailEventHandler),
+	game.ClientPlayerMailDeleteMailsMessageId: unmarshalAndCall(ClientPlayerMailDeleteMailsHandler),
+	game.ClientPlayerMailClearReadMailsMessageId: unmarshalAndCall(ClientPlayerMailClearReadMailsHandler),
+	game.ClientPlayerMailNotifyMailChangedMessageId: unmarshalAndCall(ClientPlayerMailNotifyMailChangedHandler),
 	game.ClientPlayerRankGetRankPageMessageId: unmarshalAndCall(ClientPlayerRankGetRankPageHandler),
+	game.ClientPlayerRankGetRankAroundMessageId: unmarshalAndCall(ClientPlayerRankGetRankAroundHandler),
 	game.SceneClientPlayerCommonSendTipToClientMessageId: unmarshalAndCall(SceneClientPlayerCommonSendTipToClientHandler),
 	game.SceneClientPlayerCommonKickPlayerMessageId: unmarshalAndCall(SceneClientPlayerCommonKickPlayerHandler),
 	game.SceneClientPlayerCommonRedirectToGateMessageId: unmarshalAndCall(SceneClientPlayerCommonRedirectToGateHandler),
@@ -150,10 +151,33 @@ var messageHandlers = map[uint32]handlerFunc{
 	game.ClientPlayerJubaozhaiGetListingDetailMessageId: unmarshalAndCall(ClientPlayerJubaozhaiGetListingDetailHandler),
 	game.ClientPlayerJubaozhaiSetFavoriteMessageId: unmarshalAndCall(ClientPlayerJubaozhaiSetFavoriteHandler),
 	game.ClientPlayerJubaozhaiGetMyShelfMessageId: unmarshalAndCall(ClientPlayerJubaozhaiGetMyShelfHandler),
+	game.ClientPlayerJubaozhaiListOfficialSkusMessageId: unmarshalAndCall(ClientPlayerJubaozhaiListOfficialSkusHandler),
+	game.ClientPlayerJubaozhaiCreateOfficialOrderMessageId: unmarshalAndCall(ClientPlayerJubaozhaiCreateOfficialOrderHandler),
+	game.ClientPlayerJubaozhaiGetCommerceOrderMessageId: unmarshalAndCall(ClientPlayerJubaozhaiGetCommerceOrderHandler),
+	game.ClientPlayerJubaozhaiCancelCommerceOrderMessageId: unmarshalAndCall(ClientPlayerJubaozhaiCancelCommerceOrderHandler),
+	game.ClientPlayerJubaozhaiListCommerceOrdersMessageId: unmarshalAndCall(ClientPlayerJubaozhaiListCommerceOrdersHandler),
+	game.ClientPlayerJubaozhaiCreatePlayerTradeMessageId: unmarshalAndCall(ClientPlayerJubaozhaiCreatePlayerTradeHandler),
+	game.ClientPlayerJubaozhaiConfirmPlayerTradeMessageId: unmarshalAndCall(ClientPlayerJubaozhaiConfirmPlayerTradeHandler),
+	game.ClientPlayerJubaozhaiCreateConsignmentMessageId: unmarshalAndCall(ClientPlayerJubaozhaiCreateConsignmentHandler),
+	game.ClientPlayerJubaozhaiBuyConsignmentMessageId: unmarshalAndCall(ClientPlayerJubaozhaiBuyConsignmentHandler),
+	game.ClientPlayerJubaozhaiCancelConsignmentMessageId: unmarshalAndCall(ClientPlayerJubaozhaiCancelConsignmentHandler),
+	game.ClientPlayerJubaozhaiPlaceMarketOrderMessageId: unmarshalAndCall(ClientPlayerJubaozhaiPlaceMarketOrderHandler),
+	game.ClientPlayerJubaozhaiCancelMarketOrderMessageId: unmarshalAndCall(ClientPlayerJubaozhaiCancelMarketOrderHandler),
+	game.ClientPlayerJubaozhaiListMarketOrdersMessageId: unmarshalAndCall(ClientPlayerJubaozhaiListMarketOrdersHandler),
+	game.ClientPlayerJubaozhaiGetMarketDepthMessageId: unmarshalAndCall(ClientPlayerJubaozhaiGetMarketDepthHandler),
+	game.ClientPlayerJubaozhaiCreateAuctionLotMessageId: unmarshalAndCall(ClientPlayerJubaozhaiCreateAuctionLotHandler),
+	game.ClientPlayerJubaozhaiPlaceAuctionBidMessageId: unmarshalAndCall(ClientPlayerJubaozhaiPlaceAuctionBidHandler),
+	game.ClientPlayerJubaozhaiGetAuctionLotMessageId: unmarshalAndCall(ClientPlayerJubaozhaiGetAuctionLotHandler),
+	game.ClientPlayerJubaozhaiCancelAuctionLotMessageId: unmarshalAndCall(ClientPlayerJubaozhaiCancelAuctionLotHandler),
+	game.ClientPlayerJubaozhaiBrowseCommerceOffersMessageId: unmarshalAndCall(ClientPlayerJubaozhaiBrowseCommerceOffersHandler),
+	game.ClientPlayerJubaozhaiListTradeMarketsMessageId: unmarshalAndCall(ClientPlayerJubaozhaiListTradeMarketsHandler),
 }
 
 func MessageBodyHandler(client *pkg.GameClient, response *base.MessageContent) {
-	zap.L().Debug("Received message body", zap.String("response", response.String()))
+	zap.L().Debug("Received message body",
+		zap.Uint32("message_id", response.GetMessageId()),
+		zap.Int("body_bytes", len(response.GetSerializedMessage())),
+	)
 
 	player, ok := gameobject.PlayerList.Get(client.PlayerId)
 	if !ok {

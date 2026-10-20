@@ -1,6 +1,6 @@
 # 服务端发布清单
 
-**Updated:** 2026-09-16(重组:新增 §1–§5 发布流水线;原 2026-05-09 版"HTTP /api/login 上线 Checklist"全文移入文末附录,内容未删)
+**Updated:** 2026-09-16(重组:新增 §1–§5 发布流水线;原 2026-05-09 版"HTTP /api/login 上线 Checklist"全文移入文末附录,内容未删);2026-10-16 增补 §6「发版后一次性项」,§2.1 ⑦ 加指针
 **适用范围:** 服务端运行镜像(C++ 节点 `mmorpg-node`、Go 服务、Java 网关)的出包、发版、版本追溯、回滚与离线交付
 **设计依据:** [release-packaging-standard-20260914.md](../design/release-packaging-standard-20260914.md)(P1–P4)、[CHANGELOG.md](../../CHANGELOG.md)
 **脚本入口:** `tools/scripts/publish_images.ps1` → `make_release.ps1` → `release_preflight.ps1`;离线交付 `fetch_images.ps1` → `import_images.ps1`;快照清理 `artifacts_retention.ps1`;公共库 `tools/scripts/lib/release_common.ps1`、`tools/scripts/lib/artifacts_lib.ps1`;GitHub 干净出包 `.github/workflows/release.yml`
@@ -115,6 +115,8 @@ GitHub Actions 的 `release.yml` 覆盖其中 ③⑤(外加版本号、CHANGELOG
   git push origin vX.Y.Z
   ```
   部署沿用 `k8s_deploy.ps1` / `k8s_image.ps1` 的既有命令,`-ReleaseProfile prod`,镜像参数统一用本版本 tag:`-NodeImage <registry>/mmorpg-node:vX.Y.Z-<12位commit>`、`-GoSvcRegistry <registry> -GoSvcTag vX.Y.Z-<12位commit>`、`-JavaSvcRegistry <registry> -JavaSvcTag vX.Y.Z-<12位commit>`。部署前后按 §3.2 核对 digest。
+  部署核对完成后,查看 §6 有没有本版本对应的一次性项(2026-10-16 增补)。
+  首次发布含 B0-4(C++ 节点 fd 上限不够就拒启)的版本之前,先按 [gate-kernel-tuning-runbook.md](gate-kernel-tuning-runbook.md) §3.1「上线前置」第 1 步,读各集群各节点池的容器 nofile 硬限并记进 PROGRESS;硬限不够时先处理再发布。拒启的影响面按工作负载形态不同(单副本 battle hostPort 会整体停服),回滚另有 external gate 删 Pod 等额外步骤,见同节「紧急回退」(2026-10-18 增补)。
 
 ### 2.2 在 GitHub Actions 上出包(`.github/workflows/release.yml`)
 
@@ -163,6 +165,27 @@ GitHub Actions 的 `release.yml` 覆盖其中 ③⑤(外加版本号、CHANGELOG
 - [ ] **核对 registry 上的 tag 仍指向记录的 digest**:对每个 ref 跑 `docker buildx imagetools inspect <ref>`,`Digest:` 必须等于 `images.digests["<ref>"]`。不一致说明 tag 被覆盖过:**不要用这个 tag 回滚**,停下查清是谁推的、推了什么。
 - [ ] **部署上一版本**:沿用 `k8s_deploy.ps1` 既有部署命令,`-ReleaseProfile prod`,镜像参数换成上一版:`-NodeImage <registry>/mmorpg-node:<image_tag>`、`-GoSvcTag <image_tag>`、`-JavaSvcTag <image_tag>`。
 - [ ] **快速回滚单个 Deployment**:`kubectl rollout undo`(附录 E.2 三级回滚的第 3 级)。它的前提是新旧 revision 的 tag 不同且不可变,本流水线的 `vX.Y.Z-<commit>` tag 满足。
+  - **gateway 例外(2026-10-16 补注)**:gateway 的上一个 revision 早于 2026-10-15「探针改走独立管理端口 8082」时,**不要**对 gateway 做 `kubectl rollout undo`。undo 只退 Pod 模板(探针回到 8081),`java-svc-gateway-config` 仍是 `management.server.port: 8082`,三个探针全部失败,startupProbe 约 600s 后杀容器并反复重启,rollout 卡到 progressDeadline,回滚不生效。改用旧 commit 重跑 `k8s_deploy.ps1 zone-up`(ConfigMap 与 Pod 模板同批生成);详见 [deploy/k8s/README.md](../../deploy/k8s/README.md)「gateway 探针、管理端口与回退口径」。更一般地,`rollout undo` 还隐含「旧 revision 与当前 ConfigMap 兼容」这一前提,ConfigMap 不随 undo 回退。
+- [ ] **go/db 回滚到 S1(重试只交给分区属主)之前的版本**(2026-10-17 补;已落码,未编译、未测试,待 Codex 验证):先按 [db-retry-owner-routing.md](../design/db-retry-owner-routing.md) §10 切回 RetryRouting=shared 并 rollout restart,用 `go/db/cmd/retry_requeue -check` 确认所有 `kafka:retry:queue:{topic}:p*` 为 0,再回滚镜像。旧版本只认共享收件箱 `kafka:retry:queue:{topic}`、看不到 p*,直接回滚会让其中的存盘滞留(它们在 Redis 里只有这一份);已经回滚的,立即执行 retry_requeue 搬回(告警 DbRetryPartitionedStranded)。上面「部署上一版本」(`-GoSvcTag <上一版>`)与「快速回滚单个 Deployment」(`kubectl rollout undo deploy/db`)两条路径都适用;步骤:
+  1. **切回 shared 并等滚动完成**(`<zone ns>` 即 `mmorpg-zone-<z>`):配置里是 owner 时,把 `go/db/etc/db.yaml` 的 `RetryRouting` 改回 `shared` → `k8s_deploy.ps1 zone-up` → `kubectl -n <zone ns> rollout restart deploy/db` → `kubectl -n <zone ns> rollout status deploy/db`(只改 ConfigMap 不会滚动 db);金丝雀留下的环境变量用 `kubectl -n <zone ns> set env deploy/db DB_RETRY_ROUTING-` 去掉(同样触发滚动,也要等 rollout status)。`kubectl set env` 加的变量不在 last-applied 里,`k8s_deploy` 的 apply 不会删它,且环境变量优先于配置键,必须单独去掉。
+  2. **三项人工核对**(retry_requeue 的退出码 5 只看得见会登记模式的 go/db,更早的 S1 镜像不登记,所以这三项不能省):
+     - 每个 db Pod 的 `db_retry_routing_mode{mode="owner"}` 都是 0(Prometheus 查 `db_retry_routing_mode{namespace="<zone ns>", mode="owner"}`;S1 之前的 Pod 没有这条序列,不算 owner);
+     - `kubectl -n <zone ns> set env deploy/db --list` 里没有 `DB_RETRY_ROUTING=owner`;
+     - `kubectl -n <zone ns> rollout status deploy/db` 已完成。
+  3. **只读盘点,按退出码判断**(工作目录 `go/db`;`-zone` 必填:R7 之前缺省取配置文件里的 ZoneId,漏了会盘点别的 zone 的 topic 并以 0 退出(fail-open);现在不给 `-zone` 直接以退出码 1 退出,一条不动;K8s 上 go/db 的 `RedisClient` 是 `redis.<InfraNamespace>:6379`、DB 0;口令只经环境变量传入,名字由 `-redis-password-env` 指定,不上命令行):
+     ```powershell
+     kubectl -n <InfraNamespace> port-forward svc/redis 16379:6379
+     go run ./cmd/retry_requeue -f etc/db.yaml -zone <z> -redis 127.0.0.1:16379 -redis-db 0 -redis-password-env REDIS_PASSWORD -check
+     ```
+     `REDIS_PASSWORD` 是执行者自己设的环境变量(名字可换);Redis 不设口令的档位(dev)去掉 `-redis-password-env`,口令取 `-f` 配置里的值(仓库自带的为空)。
+     topic 由 `-f` 配置的 `ServerConfig.Kafka.TopicGeneration` 推导,该 zone 的代次与本地配置不同时加 `-topic-generation <N>`。**只有退出码 0 才允许回滚**:
+     - 0:p* 全 0,且登记表里没有 owner 实例、目标在用;
+     - 3:p* 还有存盘。shared 实例每拍兜底排空 p*,稍后重跑;一直不降时看 DbRetryPartitionedNoProgress、本 zone 主库是否在冷却;
+     - 4:目标看起来没在用(登记表为空,共享收件箱、死信、旧共享 processing、全部 p* 都是 0),多半是 `-f` / `-zone` / `-topic-generation` / `-redis` / `-redis-db` 指错了,核对后重跑;只有该 zone 的 go/db 已全部停机时才加 `-allow-empty-target`;
+     - 5:登记表里还有登记为 owner 模式的实例(输出逐行列出实例名与模式),回到第 1 步;
+     - 1:参数、配置、Redis 连接或盘点出错,修好原因后重跑。
+  4. **回滚镜像时认准 revision**:第 1 步的 `rollout restart` / `set env` 本身会生成新的 revision,之后不带参数的 `kubectl rollout undo deploy/db` 回到的是切换前那个 S1 revision,不是 S1 之前的镜像。先 `kubectl -n <zone ns> rollout history deploy/db` 找到 S1 之前镜像的 revision,用 `kubectl -n <zone ns> rollout undo deploy/db --to-revision=<N>`;或者走「部署上一版本」。ConfigMap 里的 `RetryRouting` / `WaitAOF*` 不用先改:go/db 用的 go-zero v1.10.0 忽略未知键(`go/db/internal/config/config_test.go` 的 `TestConfigLoaderIgnoresUnknownKeys` 守住)。回滚完成后建议再跑一次第 3 步确认 p* 仍为 0(回到的镜像早于按实例 processing 列表、不往登记表里写时,共享收件箱、死信、旧共享 processing(`kafka:retry:processing:{topic}`,这类镜像的在途收据就在这里)也都为 0 时以 4 退出,参数核对无误即可;旧共享 processing 非 0、p* 为 0 时以 0 退出)。
+  5. **已经回滚了(没做上面几步,或紧急回滚)**:约 10 分钟内会响 DbRetryPartitionedStranded。立即按第 2 步核对(此时 db 应已全是 S1 之前的镜像),用第 3 步同一组参数先跑 `-check`,再去掉 `-check` 执行搬回(把 p* 搬回共享收件箱;同样过退出码 4 / 5 两道门,一条不动就退出;可重入,中途失败修好原因后重跑)。搬完它会再盘点一次,退出码 0 才算搬完,3 表示还有实例在把收件箱分拣回 p*。搬回完成之前不要清理任何 Redis 键,也不要重启或清空这台 Redis。告警按 Prometheus 里 6h 内的最后样本判定,搬回之后窗口内仍会响,以 `-check` 退出码 0 为准并静默。
 - [ ] **回滚后核对**:按 §3.1 确认 Pod `imageID` digest、启动版本行、`/app/BUILD_INFO` 都已是上一版本;再做附录 E.3"回滚后必做"。
 - **数据不随代码回滚**:库结构迁移只前进(`go/schemamigrate` 只有 `Up`;trade 的迁移 Job 以 `-migrate` 运行),回滚前确认上一版本能在当前库结构上运行。需要把数据回到某个时间点时走 `tools/scripts/k8s_zone_rollback.ps1`(`-NodeImage` 必填,且必须是不可变引用)与 [zone_data_rollback.md](../design/zone_data_rollback.md)。
 
@@ -185,6 +208,50 @@ GitHub Actions 的 `release.yml` 覆盖其中 ③⑤(外加版本号、CHANGELOG
 
 ---
 
+## 6. 发版后一次性项
+
+只在**第一次**部署含对应改动的版本之后做一次,做完在 `docs/PROGRESS.md` 记一条(环境、时间、读数),之后的发版不再重复。在 staging / prod 执行属于触碰共享环境,**须负责人明确指定环境并授权**(AGENTS.md §9),AI 与 CI 都不执行。本机开发 / 压测环境每轮都 `FLUSHALL`,不用单独做。
+
+### 6.1 清理共享核心 Redis 里的存量 `dirty_keys_set`(2026-10-16 增补)
+
+- **背景**:含 2026-10-16 落码提交(提交号待提交后回填)的 C++ scene 镜像,两段存盘 Lua 不再 `SADD` 全服单键 `dirty_keys_set`;没换镜像的 scene 实例仍在写。这个键全仓没有读者、没有 TTL,只随「累计存过盘的玩家数」增长;新版本不再写它,旧版本写下的存量要一次性删掉。新旧版本混跑与回滚都无害(旧二进制只是继续写一个没人读的键),所以清理不是发版的前置条件,但必须在下面的门禁之后做。依据见 [capacity-model-hok-scale.md](../design/capacity-model-hok-scale.md) A0-4、[shared-redis-split-by-purpose.md](../design/shared-redis-split-by-purpose.md) §2.5 第 1 条。
+- **对象**:C++ `zoneredis` 指向的共享核心 Redis 的 DB 0(C++ 不发 `SELECT`)。K8s 上是 `<InfraNamespace>` 里的 StatefulSet `redis`(Pod `redis-0`,Service `redis.<InfraNamespace>:6379`);届时若已换成别的实例,以 `k8s_deploy.ps1` 生成的 zoneredis 配置为准。若届时已切到 `deploy/k8s/manifests/infra/redis-ha.yaml`(1 主 2 从 + 哨兵,2026-10-15 时尚未接入部署路径),`redis-0` 不一定是主:在从库上 `UNLINK` 会报 `READONLY`,`OBJECT IDLETIME` 也只反映那个从库上的访问。所以进 Pod 后先跑下面的 ⓪ `ROLE`,不是 master 就换到 `ROLE` 为 master 的那个 `redis-N` 上重来(两份清单里 Redis 容器都叫 `redis`)。
+- [ ] **门禁:版本盘点**(必须先过,不能用 `OBJECT IDLETIME` 代替,原因见下一条)。确认**所有** scene 实例都已换成含该改动的镜像,包括 Agones 里仍是 `Allocated` 的旧 GameServer(它们不随 Fleet 滚动立即退出,会继续写这个键):
+  ```powershell
+  # scene 的 Pod:Deployment 与 Agones 两种编排的 Pod 都带 app=<scene 池名>;每个容器按「容器名=imageID」列出
+  kubectl get pods -A -l 'app in (scene,scene-world,scene-instance)' -o jsonpath='{range .items[*]}{.metadata.namespace}{"\t"}{.metadata.name}{"\t"}app={.metadata.labels.app}{"\t"}{range .status.containerStatuses[*]}{.name}={.imageID}{" "}{end}{"\n"}{end}'
+  # Agones GameServer,重点看 STATE=Allocated 的那些;GameServer 的 Pod 与它同名,版本以上一条里该 Pod 业务容器的 imageID 为准
+  kubectl get gameservers -A -l 'app in (scene,scene-world,scene-instance)' -o custom-columns='NS:.metadata.namespace,GS:.metadata.name,STATE:.status.state,IMAGE:.spec.template.spec.containers[*].image'
+  ```
+  - **只核对业务容器**:容器名与 Pod 的 `app` 标签同值(`k8s_deploy.ps1` 里 Deployment 模板是 `- name: $NodeName`,Fleet 模板是 `- name: $FleetName`,都与 app 标签同值)。Agones 注入的 SDK sidecar `agones-gameserver-sidecar`(以普通容器还是原生 sidecar 注入取决于 Agones 的特性门,未核实)和 C++ 日志 sidecar(原生 sidecar,在 `initContainerStatuses` 里,上面的命令本来就不列)都不核对,它们的 digest 不会出现在任何 release manifest 里。
+  - **逐个确定业务容器的源码提交 `<commit>`**,再跑 `git merge-base --is-ancestor <落码提交> <commit>`,返回 0 才算已含改动:
+    1. 正式发布的镜像:`imageID` 的 digest 按 §3.2 第 1 步反查到 release manifest,取它的 `source.commit`。
+    2. 反查不到 manifest 的(快照部署,staging 常见;CI 出包的 manifest `images.digests` 为空,见 §2.2):改用 §3.1 的 `/app/BUILD_INFO`,即 `kubectl -n <ns> exec <pod> -c <app 值> -- cat /app/BUILD_INFO` 里的 `commit=`;或镜像 OCI label `org.opencontainers.image.revision`。commit 带 `-dirty` 的镜像出自未提交的工作树,commit 证明不了内容,按「无法确定」处理。
+  - **按判定结果处理**:
+    - 全部返回 0:门禁通过。
+    - 确认不含(返回 1):这是仍会写这个键的旧实例。Deployment 的 Pod 等滚动换完;`Allocated` 的 GameServer 上有在线玩家,等它自然结束退出,不要为清理这个键删它(确需提前,只在维护窗口、确认没有在线玩家后再删)。处理完回来重做盘点。
+    - 无法确定(两种来源都拿不到 commit,或带 `-dirty`):门禁不过。停下按 §3.2 查清它跑的是什么,**不要**据此删实例。
+- [ ] **辅助观测(不作门禁)**:`OBJECT IDLETIME dirty_keys_set` 必须是对这个键执行的**第一条**命令(其他读命令会刷新 LRU,`OBJECT` 不会);隔至少一个完整的周期存盘(默认 300s,建议 10 分钟以上)再读一次。读数归零说明还有写者或读者,停下排查。读数一直增大**不能**证明没有旧写者:旧二进制只在真写时才 SADD,快照相等的存盘会被跳过;`BGSAVE` / `BGREWRITEAOF` 子进程运行期间,读写也不刷新 LRU。
+- [ ] **按序执行**(口令不上命令行:进 Pod 后用容器自带的 `REDIS_PASSWORD` 导出成 `REDISCLI_AUTH`;dev 档没有口令时这一步什么都不做):
+  ```sh
+  kubectl -n <InfraNamespace> exec -it redis-0 -c redis -- sh
+  # 以下在 Pod 内执行
+  [ -n "$REDIS_PASSWORD" ] && export REDISCLI_AUTH="$REDIS_PASSWORD"
+  redis-cli ROLE                             # ⓪ 第一行必须是 master,否则退出换 Pod(见上面「对象」);它不碰下面的键,不影响 ① 的读数
+  redis-cli OBJECT IDLETIME dirty_keys_set   # ① 必须是对这个键的第一条命令
+  redis-cli TYPE dirty_keys_set              # ② 期望 set;none = 没有存量,直接做 24 小时复查
+  redis-cli SCARD dirty_keys_set             # ③ O(1),记下规模
+  redis-cli MEMORY USAGE dirty_keys_set      # ④ 默认 SAMPLES 5 抽样;不要带 SAMPLES 0(O(N),阻塞),也不要 SMEMBERS
+  redis-cli UNLINK dirty_keys_set            # ⑤ 主线程只摘键,内存由后台 lazyfree 释放;禁止 DEL(大 set 在主线程逐个释放成员,阻塞数秒)
+  redis-cli EXISTS dirty_keys_set            # ⑥ 期望 0
+  ```
+- [ ] **24 小时后复查**:再执行一次 `EXISTS dirty_keys_set`,期望仍为 0。被建回说明还有旧二进制在跑:回到版本盘点找到并处理掉它,再重复 ⑤⑥。
+- **兜底**:托管 Redis 禁用或改名了 `UNLINK` 时,循环执行 `SPOP dirty_keys_set 1000`,批与批之间短暂停顿,直到 `SCARD` 为 0;不要用 `SSCAN` + `SREM` 全量遍历。
+- **恢复后重做**:之后若从清理前的 AOF / RDB 备份恢复了这个 Redis(K8s 上是 PVC + appendonly),存量键会跟着回来,恢复后重做 ⓪、②~⑥ 与 24 小时复查。scene 镜像回滚到不含改动的版本也会把键重新建起来(无害),再次升级后同样重做版本盘点与 ②~⑥。
+- **预期与记录**:`INFO memory` 的 `used_memory` 下降;RSS 不一定立刻回落(jemalloc)。把环境、时间、③④ 的读数和两次 `EXISTS` 结果记进 `docs/PROGRESS.md`。此前的规模与内存数字都是推算,以这里的读数为准。
+
+---
+
 # 附录:2026-05 HTTP 登录链路专项(历史)
 
 > **时效说明:** 以下是 2026-05-09 为"新登录链路(HTTP `/api/login`)从灰度到全量上线"写的专项清单,2026-09-16 重组本文档时整体原样移到这里(仅标题下调一级),未随之后的代码与部署方式更新。其中的测试计数、commit 数、T+0~T+3 时间线、单机阈值都是当时的状态;通用条目(配置审计、内核参数、ulimit、监控基线、回滚 SOP)引用前请对照当前代码与 `release_preflight.ps1` 核实。
@@ -201,6 +268,8 @@ GitHub Actions 的 `release.yml` 覆盖其中 ③⑤(外加版本号、CHANGELOG
 ### A. 部署前(代码已合,准备发布镜像)
 
 #### A.1 代码 / 测试
+
+- [ ] (2026-10-19 增补)开服前由 AI 复核「登录取逻辑服 / 物理服是不是瓶颈、能不能水平扩展」:见 `docs/design/tidb-phase1-and-launch-readiness.md` §7 L-18 与 `player-route-mapping-durability-proposal.md` §12.2,结论写回文档后才算过这一项。
 
 - [ ] `mvn test` Java Gateway 全绿(当前 34/34)
 - [ ] `go build ./...` go-zero login + player_locator + scene_manager + data_service + db 全 EXIT=0
@@ -268,6 +337,14 @@ net.ipv4.tcp_keepalive_probes = 3
 | gate accept queue 溢出 | `nstat TcpExtListenOverflows` | > 0 → 严重告警 |
 | Kafka `gate-{gateId}` lag | kafka-ui / cmak | > 1000 → 告警 |
 | player_locator session ONLINE 数 | redis ZCARD player_locator:lease_zset + SCAN player:session: | 偏差 > 20% → 怀疑 #B-1 类 leak |
+
+> **2026-10-18 更正(B0-1 会话对账按 gate 建索引)**:上表最后一行的数据源写错了,而且不能照做:
+> `player_locator:lease_zset` 这个键不存在(断线租约 ZSET 是 `player:leases`);生产核心 Redis 上也**不要**跑 `SCAN player:session:*` 全键扫描 —— 目标规模下一遍要数小时,和业务抢同一个单主。改为:
+> - 在线数上界:指标 `player_locator_gate_index_members`(只由会话对账 leader 产出,按 `player_locator_reconcile_is_leader == 1` 过滤后取 max)。它是**上界**,不是精确在线数:存活 gate 索引里的脏成员要等日审计清掉;
+> - 断线中(DISCONNECTING、等租约到期)的人数:`ZCARD player:leases`;
+> - 抽查单个 gate:`SMEMBERS player:gate_index:gates` 列出登记过的 gate 实例 uuid,再 `SCARD player:gate_index:sessions:<uuid>`;
+> - 「偏差 > 20%」的对照基线改为 gateway / login 侧的在线计数;对账本身有没有在跑,看 `deploy/k8s/player-locator-alerts.yaml` 的 NoLeader / Stalled。
+> - 单个玩家卡在 ONLINE 的定向补救见本附录 F.B-1 末尾「定向补救」。机制见 [player-locator-gate-session-index.md](../design/player-locator-gate-session-index.md)。
 
 #### B.2 日志关键词
 
@@ -391,6 +468,8 @@ kubectl rollout undo deploy/login -n mmorpg
 # cpp gate 是 statefulset,谨慎滚动
 ```
 
+> **2026-10-16 补注**(上面与第 1 级代码块原文保留):`deploy/gateway-node -n mmorpg` 是 2026-05 的旧名。当前 K8s 上 Java 网关的 Deployment 叫 `gateway`,位于各 zone namespace(`<NamespacePrefix>-<zone>`,如 `mmorpg-zone-<zone>`);第 1 级的 `rollout restart` 同样要换成 `kubectl -n <zone ns> rollout restart deploy/gateway`。gateway 的上一个 revision 早于 2026-10-15 探针改端口时,不要对它做 `rollout undo`(原因见 §4「快速回滚单个 Deployment」的 gateway 例外),改用旧 commit 重跑 `k8s_deploy.ps1 zone-up`。第 1 级「Gateway 配置中心改 `gate.rate-limit.enabled=false`」是 2026-05 的口径,在当前 K8s 部署下是否仍有效未核对。
+
 #### E.3 回滚后必做
 
 - [ ] 抓 5 分钟 Gateway / login / gate 日志归档(给事后复盘)
@@ -408,6 +487,27 @@ kubectl rollout undo deploy/login -n mmorpg
 - **治标:** robot main `defer sendDisconnectBestEffort(gc)` 主动通知 login.Disconnect (commit `0f4712996` 之后)
 - **治本:** cpp gate `HandleConnectionDisconnection` 把 `SessionInfo.playerId` 填进 `SessionDetails`,login `markPlayerSessionDisconnecting` 真的能跑(本轮 commit)
 - **生产影响:** 玩家正常 TCP 断会触发 OS-level RST → gate 同样路径,本来就走治本逻辑,所以**生产无症状**;dev 重跑机器人时遇到
+
+**定向补救(2026-10-18 增补):单个玩家的会话卡在 ONLINE**
+
+login 的 `markPlayerSessionDisconnecting` 退避重试 4 次仍失败时打 CRITICAL 日志 `CRITICAL: session stuck ONLINE — SetSessionDisconnecting exhausted retries player=<player_id> session=<session_id> gate_instance="<uuid>" ...`(日志里写的「#B-1 sweep」就指这里)。这类会话所在的 gate 还活着,会话对账**看不到**它(对账只处理 etcd 里已消失的 gate,机制见 [player-locator-gate-session-index.md](../design/player-locator-gate-session-index.md));gate 已死的那一类不用人工处理,对账会在 2~3 拍(约 2~3 分钟)内补投 DISCONNECTING。处置按玩家逐个来,**不要**在生产核心 Redis 上全键 SCAN:
+
+1. 从 CRITICAL 日志取 `player`、`session`、`gate_instance`。
+2. 转发到该 zone 的 player-locator(不要把服务暴露到集群外),在仓库根目录执行(proto 的 import 路径以仓库根为准;staging / prod 不开 gRPC 反射,必须带 `-proto`):
+   ```bash
+   kubectl -n <zone namespace> port-forward svc/player-locator 50100:50100
+   grpcurl -plaintext -import-path . -proto proto/player_locator/player_locator.proto \
+     -d '{"player_id": <player_id>}' 127.0.0.1:50100 playerlocator.PlayerLocator/GetSession
+   ```
+3. 只有 `found=true`、`state=SESSION_STATE_ONLINE`、`session_id` 等于日志里的 session(日志的 gate_instance 非空时还要与 `gate_instance_id` 相同)才继续。已经是 DISCONNECTING、已不存在、或 session_id 变了,说明玩家已重连 / 重登或已被清理,什么都不做。
+4. 补投断线(与 login 原本要发的那一次完全相同;会话在这之间被改写时 CAS 自动失败,不会踢掉活人):
+   ```bash
+   grpcurl -plaintext -import-path . -proto proto/player_locator/player_locator.proto \
+     -d '{"player_id": <player_id>, "session_id": <session_id>, "gate_instance_id": "<GetSession 回的 gate_instance_id>"}' \
+     127.0.0.1:50100 playerlocator.PlayerLocator/SetDisconnecting
+   ```
+5. 再 GetSession 一次应为 `SESSION_STATE_DISCONNECTING`;断线租约(缺省 30s)到期后 LeaseMonitor 发踢人与 LeaveScene,随后 `found=false`。
+- 文档债(登记,不在本次改):`go/login/internal/logic/clientplayerlogin/session_lifecycle.go` 的注释与 CRITICAL 日志文案仍写「#B-1 SCAN 巡检 / sweep」,与 `disconnectlogic.go` 注释里过时的「Redis key TTL expires」并列,随 login 下一次改动更正。
 
 #### F.B-2: docker kafka 单 broker 偶发 Exited (255)
 

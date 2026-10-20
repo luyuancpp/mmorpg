@@ -9,11 +9,12 @@
 
 #include "handler/rpc/battle_handler.h"
 // 生成骨架:proto/battle/battle_node.proto 重生成后由生成器写出
-// handler/grpc/battle_node.h(class BattleNodeImpl,形态同 scene 的
-// handler/grpc/scene_node_service.h:runInLoop + promise 投递到 loop 线程)。
+// handler/grpc/battle_node.h(class BattleNodeImpl : muduo_grpc::Service,形态同 scene 的
+// handler/grpc/scene_node_service.h:全部在节点 EventLoop 线程上执行,不创建线程)。
 #include "handler/grpc/battle_node.h"
 #include "logic/battle_room_manager.h"
 #include "client/battle_client_edge.h"
+#include "client/network_probe_security.h"
 #include "battle_security.h"
 #include "node_config_manager.h"
 
@@ -98,7 +99,7 @@ namespace
         // IssueBattleTicket)
         std::unique_ptr<BattleNodeImpl> battleNodeService;
         // 客户端直连面(设计文档 §18):装在节点自身 TCP 端口上,票据握手 + 战斗消息就地派发
-        std::unique_ptr<BattleClientEdge> clientEdge;
+        std::shared_ptr<BattleClientEdge> clientEdge;
     };
 
     // 启动门禁:空 battle_token_secret 在生产模式下**拒绝启动**(照 gate 的
@@ -114,6 +115,8 @@ namespace
                      << "', falling back to run_mode=prod. Valid values: prod|dev|test.";
         }
         const auto mode = resolution.mode;
+        if(mode==battle_security::RunMode::kProd&&!network_probe::Enabled())
+            LOG_FATAL << "生产battle必须开启GLOBAL_MATCH_ENABLED并使用全球事务权威放置";
         const auto &deploy = gNodeConfigManager.GetBaseDeployConfig();
 
         switch (battle_security::ClassifyTokenSecret(deploy.battle_token_secret(), mode))
@@ -262,15 +265,22 @@ int main(int argc, char *argv[])
         Node::CanConnectNodeTypeList{},
         [](Node &node, BattleRuntimeContext &context)
         {
-            // gRPC 服务要在 etcd 端口分配之前注册:框架看到 GetGrpcServices()
-            // 非空才会派生 gRPC 端口(TCP + 30000)并在 server 就绪后发布服务发现
-            // (node_allocator.cpp / PublishDiscoveryAfterGrpcReady)。
+            node.MutableNodeInfo().set_physical_region(network_probe::PhysicalRegion());
+            if(network_probe::Enabled())
+            {
+                if(network_probe::PhysicalRegion()==0||network_probe::Secret().size()<32)
+                    LOG_FATAL << "全球匹配要求非零 PHYSICAL_REGION 及至少32字节 MATCH_PROBE_SECRET";
+            }
+            // gRPC 服务要在 etcd 端口分配之前注册:框架看到 HasGrpcServices()
+            // 为真才会派生 gRPC 端口(TCP + 30000)并在 server 就绪后发布服务发现
+            // (node_allocator.cpp / PublishDiscoveryAfterGrpcReady)。context 先于 Node 构造、晚于 Node 析构,
+            // 满足「服务必须活过 Node」(方法表闭包捕获服务的 this)。
             context.battleNodeService = std::make_unique<BattleNodeImpl>(*node.GetLoop());
-            node.RegisterGrpcService(context.battleNodeService.get());
+            node.RegisterGrpcService(*context.battleNodeService);
 
             // 客户端直连面(设计文档 §18):先过安全门禁,再装配。
             ValidateBattleClientEdgeConfigOrDie();
-            context.clientEdge = std::make_unique<BattleClientEdge>();
+            context.clientEdge = std::make_shared<BattleClientEdge>();
             BattleRoomManager::Instance().SetClientEdge(context.clientEdge.get());
 
             // 房间 = Agones 单元(D82 / D85):房间表(battle_room_table.h,只能经 Emplace / Erase 增删)
@@ -330,18 +340,23 @@ int main(int argc, char *argv[])
                 } });
 
             // 停机收尾,顺序固定:
-            //   0) 关建房准入闸(终态)。必须先于作废:框架随后才关 gRPC,drain 期间已拿到许可、已排进 loop
-            //      的 CreateBattle 仍会跑完 —— 不先关闸,它们会在作废之后照常建房、发确认事件,房间随进程
-            //      退出无声丢失。关闸与作废在同一个 loop 任务里,排在后面的建房在 loop 内复核时必被拒
+            //   0) 关建房准入闸(终态)。必须先于作废:本 hook 返回后框架才进入 gRPC 排空,排空期间已收完的
+            //      CreateBattle 照常派发,已放行、还排在 loop 队列里的许可回调也会在本任务之后执行 —— 不先关闸,
+            //      它们会在作废之后照常建房、发确认事件,房间随进程退出无声丢失。关闸与作废在同一个 loop 任务里,
+            //      排在后面的建房在守护段第 1 道闸或许可回调里的复核时必被拒
             //      (UNAVAILABLE battle_not_allocatable,match 换节点),与 lifecycle 当时的状态无关;
             //      房间表从此保持为空,AddObserver / IssueBattleTicket 因房间不存在自然被拒;
             //   1) 所有在打战斗作废(不发结算;观众收 ABORTED;scene 侧 reaper 按 InBattleComp.deadline_ms
-            //      解冻,设计文档 §3.2)。每个房间经 EraseRoom 通知 lifecycle 单元销毁;
+            //      解冻,设计文档 §3.2)。等结果回执的全球房间,个人结算在结果发出前已落 pending,
+            //      作废不删它,由 scene 补读应用(cross-zone-matchmaking.md §13.6)。每个房间经 EraseRoom 通知 lifecycle 单元销毁;
             //   2) 断开全部客户端直连;
             //   3) 停 Agones lifecycle worker 并 join(Stop 幂等)。放在最后,让单元计数先归零;
-            //      归零可能让 worker 发一次 POST /ready,Stop 至多等这一次 HTTP 的超时(默认 2s)。
+            //      归零可能让 worker 发一次 POST /ready;Stop 经取消令牌中止它(以及在途的 allocate / health 等),
+            //      不等满超时,通常毫秒级、最坏约 1s(libcurl 空闲期进度回调粒度;grpc-muduo-transport.md §15.16)。
+            //      Stop 同时把还在等许可的 CreateBattle 以「拒绝」投进 loop 队列(本任务之后执行,回 battle_not_allocatable)。
             //      刻意**不**调 /shutdown:SIGTERM 通常就是 Agones 删 Pod 发来的,再回敬 /shutdown 是递归删除。
-            // 框架随后关 gRPC(drain 在途调用)并 flush Kafka producer。
+            // 框架随后进入 gRPC 排空(全部在 loop 内:停听、两段 GOAWAY、已收完的调用照常派发,约 3s 硬上限;
+            // docs/design/grpc-muduo-transport.md §15.10),并 flush Kafka producer。
             node.SetBeforeShutdown([&context](Node &)
                                    {
                 context.battleNodeService->CloseAdmission();

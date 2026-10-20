@@ -7,7 +7,7 @@
 //      编译单测,见 cpp/nodes/gate/tests/gate_security_test.cpp;
 //   2) 同一条结论在不同调用点该打 FATAL(启动拒绝)还是 WARN(降级留痕)
 //      由调用点决定,所以本头只**返回结论,不打日志**;
-//   3) HMAC 工具原来藏在 client_message_processor.cpp 的匿名 namespace 里,
+//   3) HMAC 工具原来藏在 client_session_handler.cpp 的匿名 namespace 里,
 //      GM 鉴权要复用它 —— 提到这里避免第二份实现。
 //
 // 依赖:标准库 + OpenSSL(gate 已经链了 ssl/crypto,不引入新依赖)+

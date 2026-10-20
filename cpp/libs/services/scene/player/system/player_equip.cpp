@@ -48,10 +48,6 @@ namespace {
 using equiprules::AffixTier;
 using equiprules::EffectKind;
 
-uint64_t GuidForLog(entt::entity player) {
-	const auto* guid = tlsEcs.actorRegistry.try_get<PlayerGuidComp>(player);
-	return guid != nullptr ? guid->value : 0;
-}
 
 // 等级 / 职业的取法与 player_attribute.cpp 的同名函数同口径(那两个是它的文件内私有函数,
 // 这里照 player_pet.cpp 的 OwnerLevel 的做法各留一份;改组件归属时三处一起改)。
@@ -333,7 +329,7 @@ uint32_t CheckWritable(entt::entity player) {
 		return kEntityIsNull;
 	}
 	if (tlsEcs.actorRegistry.any_of<PlayerFrozenComp>(player)) {
-		LOG_WARN << "[PlayerEquip] Rejected: cross-zone freeze in progress player_id=" << GuidForLog(player);
+		LOG_WARN << "[PlayerEquip] Rejected: cross-zone freeze in progress player_id=" << tlsEcs.GetPlayerId(player);
 		return kEquipFrozen;
 	}
 	if (PlayerBattleSystem::IsInBattle(player)) {
@@ -349,7 +345,7 @@ uint32_t CheckWritable(entt::entity player) {
 // 尚未落盘的状态 —— 为一件装备拖垮整台节点,损失只会更大。
 void ReportLostInstance(const ItemComp& item, const char* where, entt::entity player) {
 	LOG_ERROR << "[PlayerEquip][INSTANCE_LOST] Rollback failed;instance is absent from all bags;manual compensation required: player_id="
-			  << GuidForLog(player) << " where=" << where << " guid=" << item.item_id()
+			  << tlsEcs.GetPlayerId(player) << " where=" << where << " guid=" << item.item_id()
 			  << " config=" << item.config_id() << " instance={ " << item.ShortDebugString() << " }";
 }
 
@@ -361,7 +357,7 @@ bool PutBack(Bag& bag, const ItemComp& item, uint32_t preferredSlot, const char*
 		return true;
 	}
 	if (bag.PutInstance(item) == kSuccess) {
-		LOG_ERROR << "[PlayerEquip] Original slot unavailable during rollback;placed at automatically selected location: player_id=" << GuidForLog(player)
+		LOG_ERROR << "[PlayerEquip] Original slot unavailable during rollback;placed at automatically selected location: player_id=" << tlsEcs.GetPlayerId(player)
 				  << " bag=" << bagName << " guid=" << item.item_id() << " config=" << item.config_id()
 				  << " preferred_slot=" << preferredSlot;
 		return true;
@@ -437,19 +433,8 @@ ItemComp* RefetchInitializedInstance(Bag& bag, Guid itemId) {
 	return (instance != nullptr && instance->has_equip()) ? instance : nullptr;
 }
 
-// 按 config 扣过数量之后回收被抽空的堆:size == 0 的实例仍占一格,还会以 count = 0 出现在快照里
-// (同战斗结算的做法)。kMergeOnly 只合并 / 回收,一格不挪。
-// 失败只记日志:扣除与写实例都已提交,这里已经不是能回头的地方;空堆留到下一次整理再回收。
-void ReclaimEmptyStacks(entt::entity player, Bag& inventory, const char* where) {
-	if (const auto err = BagService::MergeAndCompact(player, inventory, CompactPolicy::kMergeOnly);
-		err != kSuccess) {
-		LOG_ERROR << "[PlayerEquip] 扣除后回收空堆失败(空堆留到下次整理): player_id=" << GuidForLog(player)
-				  << " where=" << where << " err=" << err;
-	}
-}
-
 // 包里有没有哪一堆 configId 还塞得下至少 1 个。判据与容器层入包时的并堆一致:同 config、不带 equip 段、
-// 没到堆叠上限(被抽空还没回收的空堆也算有余量)。静默、只读:给「背包满」这类玩家随手能触发的常规拒绝
+// 没到堆叠上限。静默、只读:给「背包满」这类玩家随手能触发的常规拒绝
 // 做预检用,不让它走到容器层会打 ERROR + 调用栈的不足分支。
 bool HasStackWithRoom(const Bag& bag, uint32_t configId, uint32_t maxStackSize) {
 	bool found = false;
@@ -982,7 +967,7 @@ uint32_t PlayerEquipSystem::Equip(entt::entity player, Guid itemId) {
 		const ItemComp* occupant = equipment.GetItemCompByGuid(replacedGuid);
 		const ItemTable* occupantRow = occupant != nullptr ? ItemRow(occupant->config_id()) : nullptr;
 		if (occupant == nullptr || occupantRow == nullptr || !IsCarriable(*occupant, *occupantRow)) {
-			LOG_ERROR << "[PlayerEquip] Target slot occupant cannot be moved;replacement rejected: player_id=" << GuidForLog(player)
+			LOG_ERROR << "[PlayerEquip] Target slot occupant cannot be moved;replacement rejected: player_id=" << tlsEcs.GetPlayerId(player)
 					  << " slot=" << targetSlot << " occupant_guid=" << replacedGuid
 					  << " occupant_in_store=" << (occupant != nullptr)
 					  << " occupant_row_found=" << (occupantRow != nullptr);
@@ -995,7 +980,7 @@ uint32_t PlayerEquipSystem::Equip(entt::entity player, Guid itemId) {
 	//      走进任何一个失败分支都是两层状态不自洽的编程错误 ----
 	ItemComp incoming;
 	if (const auto err = inventory.TakeInstance(itemId, incoming); err != kSuccess) {
-		LOG_ERROR << "[PlayerEquip] Equip failed(removing from bag): player_id=" << GuidForLog(player) << " guid=" << itemId
+		LOG_ERROR << "[PlayerEquip] Equip failed(removing from bag): player_id=" << tlsEcs.GetPlayerId(player) << " guid=" << itemId
 				  << " config=" << configId << " err=" << err;
 		return kEquipInternalError;  // TakeInstance 失败零副作用,无需回滚
 	}
@@ -1003,7 +988,7 @@ uint32_t PlayerEquipSystem::Equip(entt::entity player, Guid itemId) {
 	ItemComp replaced;
 	if (replacing) {
 		if (const auto err = equipment.TakeInstance(replacedGuid, replaced); err != kSuccess) {
-			LOG_ERROR << "[PlayerEquip] Equip failed(removing previous equipment): player_id=" << GuidForLog(player)
+			LOG_ERROR << "[PlayerEquip] Equip failed(removing previous equipment): player_id=" << tlsEcs.GetPlayerId(player)
 					  << " guid=" << itemId << " config=" << configId << " replaced_guid=" << replacedGuid
 					  << " slot=" << targetSlot << " err=" << err;
 			PutBack(inventory, incoming, inventorySlot, "inventory", player);
@@ -1012,7 +997,7 @@ uint32_t PlayerEquipSystem::Equip(entt::entity player, Guid itemId) {
 	}
 
 	if (const auto err = equipment.PutInstance(incoming, targetSlot); err != kSuccess) {
-		LOG_ERROR << "[PlayerEquip] Equip failed(inserting into equipment bag): player_id=" << GuidForLog(player) << " guid=" << itemId
+		LOG_ERROR << "[PlayerEquip] Equip failed(inserting into equipment bag): player_id=" << tlsEcs.GetPlayerId(player) << " guid=" << itemId
 				  << " config=" << configId << " slot=" << targetSlot << " err=" << err;
 		// 回滚时只有「装备栏一侧放不回去」才改变了穿戴:那件旧装备已不在装备栏(丢失由 PutBack 报告),
 		// 面板必须跟上,否则数值里还留着它的加成。放回成功哪怕换了槽,加成都不变,不必重算;
@@ -1031,7 +1016,7 @@ uint32_t PlayerEquipSystem::Equip(entt::entity player, Guid itemId) {
 	if (replacing) {
 		// 新装备刚从背包腾出一格,旧装备必然放得下;不指定槽,让背包自己找位。
 		if (const auto err = inventory.PutInstance(replaced); err != kSuccess) {
-			LOG_ERROR << "[PlayerEquip] Equip failed(returning previous equipment to bag): player_id=" << GuidForLog(player)
+			LOG_ERROR << "[PlayerEquip] Equip failed(returning previous equipment to bag): player_id=" << tlsEcs.GetPlayerId(player)
 					  << " guid=" << itemId << " config=" << configId << " replaced_guid=" << replacedGuid
 					  << " replaced_config=" << replaced.config_id() << " err=" << err;
 			ItemComp undo;
@@ -1052,7 +1037,7 @@ uint32_t PlayerEquipSystem::Equip(entt::entity player, Guid itemId) {
 	}
 
 	OnEquipmentChanged(player);
-	LOG_INFO << "[PlayerEquip] Equipped: player_id=" << GuidForLog(player) << " guid=" << itemId
+	LOG_INFO << "[PlayerEquip] Equipped: player_id=" << tlsEcs.GetPlayerId(player) << " guid=" << itemId
 			 << " config=" << configId << " slot=" << targetSlot << " replaced_guid="
 			 << (replacing ? replacedGuid : 0);
 	return kSuccess;
@@ -1078,7 +1063,7 @@ uint32_t PlayerEquipSystem::Unequip(entt::entity player, Guid itemId) {
 	const ItemTable* row = ItemRow(configId);
 	if (row == nullptr || !IsCarriable(*item, *row)) {
 		// 穿着的东西查不到表 / 变成了可堆叠 / size 不是 1:数据或表坏了,搬运原语会拒,这里先说清楚。
-		LOG_ERROR << "[PlayerEquip] Equipped item cannot be moved;unequip rejected: player_id=" << GuidForLog(player)
+		LOG_ERROR << "[PlayerEquip] Equipped item cannot be moved;unequip rejected: player_id=" << tlsEcs.GetPlayerId(player)
 				  << " guid=" << itemId << " config=" << configId << " row_found=" << (row != nullptr)
 				  << " size=" << item->size();
 		return kEquipInternalError;
@@ -1092,7 +1077,7 @@ uint32_t PlayerEquipSystem::Unequip(entt::entity player, Guid itemId) {
 	ItemCountMap needed;
 	needed[configId] = 1;
 	if (const auto err = inventory.CheckSpaceFor(needed); err != kSuccess) {
-		LOG_ERROR << "[PlayerEquip] Character bag has free space but rejects this equipment;unequip rejected: player_id=" << GuidForLog(player)
+		LOG_ERROR << "[PlayerEquip] Character bag has free space but rejects this equipment;unequip rejected: player_id=" << tlsEcs.GetPlayerId(player)
 				  << " guid=" << itemId << " config=" << configId << " err=" << err;
 		return kEquipInternalError;
 	}
@@ -1101,12 +1086,12 @@ uint32_t PlayerEquipSystem::Unequip(entt::entity player, Guid itemId) {
 	// ---- 搬运 ----
 	ItemComp carried;
 	if (const auto err = equipment.TakeInstance(itemId, carried); err != kSuccess) {
-		LOG_ERROR << "[PlayerEquip] Unequip failed(removing from equipment bag): player_id=" << GuidForLog(player) << " guid=" << itemId
+		LOG_ERROR << "[PlayerEquip] Unequip failed(removing from equipment bag): player_id=" << tlsEcs.GetPlayerId(player) << " guid=" << itemId
 				  << " config=" << configId << " err=" << err;
 		return kEquipInternalError;  // 零副作用,无需回滚
 	}
 	if (const auto err = inventory.PutInstance(carried); err != kSuccess) {
-		LOG_ERROR << "[PlayerEquip] Unequip failed(returning to bag): player_id=" << GuidForLog(player) << " guid=" << itemId
+		LOG_ERROR << "[PlayerEquip] Unequip failed(returning to bag): player_id=" << tlsEcs.GetPlayerId(player) << " guid=" << itemId
 				  << " config=" << configId << " err=" << err;
 		if (!PutBack(equipment, carried, wornSlot, "equipment", player)) {
 			// 没能放回装备栏:这件装备已不在身上(丢失由 PutBack 报告),面板必须跟上。
@@ -1116,7 +1101,7 @@ uint32_t PlayerEquipSystem::Unequip(entt::entity player, Guid itemId) {
 	}
 
 	OnEquipmentChanged(player);
-	LOG_INFO << "[PlayerEquip] Unequipped: player_id=" << GuidForLog(player) << " guid=" << itemId
+	LOG_INFO << "[PlayerEquip] Unequipped: player_id=" << tlsEcs.GetPlayerId(player) << " guid=" << itemId
 			 << " config=" << configId << " slot=" << wornSlot;
 	return kSuccess;
 }
@@ -1139,7 +1124,7 @@ uint32_t PlayerEquipSystem::GmGrantItem(entt::entity player, uint32_t configId, 
 	// 新装备的掷属性挂在这条路上,不需要在这里再调 RollNewInstance。
 	const auto err = BagService::AddItems(player, bags->bags[kInventory],
 										  items, TX_GM_GRANT);
-	LOG_INFO << "[PlayerEquip] GM item grant: player_id=" << GuidForLog(player) << " config=" << configId
+	LOG_INFO << "[PlayerEquip] GM item grant: player_id=" << tlsEcs.GetPlayerId(player) << " config=" << configId
 			 << " count=" << count << " err=" << err;
 	return err;
 }
@@ -1168,7 +1153,7 @@ uint32_t PlayerEquipSystem::Enhance(entt::entity player, Guid itemId, EnhanceOut
 	}
 	const uint32_t configId = located.item->get().config_id();
 	if (!located.initialized) {
-		LOG_WARN << "[PlayerEquip] 强化被拒,实例未初始化(没有 equip 段): player_id=" << GuidForLog(player)
+		LOG_WARN << "[PlayerEquip] 强化被拒,实例未初始化(没有 equip 段): player_id=" << tlsEcs.GetPlayerId(player)
 				 << " guid=" << itemId << " config=" << configId;
 		return kEquipEnhanceUnavailable;
 	}
@@ -1186,7 +1171,7 @@ uint32_t PlayerEquipSystem::Enhance(entt::entity player, Guid itemId, EnhanceOut
 	const uint32_t targetLevel = currentLevel + 1;
 	const EquipEnhanceTable* enhanceRow = EnhanceRow(targetLevel);
 	if (enhanceRow == nullptr) {
-		LOG_ERROR << "[PlayerEquip] 强化失败,EquipEnhance 缺行: player_id=" << GuidForLog(player) << " guid=" << itemId
+		LOG_ERROR << "[PlayerEquip] 强化失败,EquipEnhance 缺行: player_id=" << tlsEcs.GetPlayerId(player) << " guid=" << itemId
 				  << " config=" << configId << " target_level=" << targetLevel << " max_level=" << maxLevel;
 		return kEquipInternalError;
 	}
@@ -1205,7 +1190,7 @@ uint32_t PlayerEquipSystem::Enhance(entt::entity player, Guid itemId, EnhanceOut
 		//    扣的就是玩家的装备实例(甚至是正在强化的这一件)。表校验只打日志,这里 fail-closed。
 		const ItemTable* materialRow = ItemRow(materialId);
 		if (materialRow == nullptr || materialRow->equip_kind() != 0) {
-			LOG_ERROR << "[PlayerEquip] 强化失败,材料行不可用(不存在或被配成了装备): player_id=" << GuidForLog(player)
+			LOG_ERROR << "[PlayerEquip] 强化失败,材料行不可用(不存在或被配成了装备): player_id=" << tlsEcs.GetPlayerId(player)
 					  << " guid=" << itemId << " target_level=" << targetLevel << " material_id=" << materialId
 					  << " material_row_found=" << (materialRow != nullptr);
 			return kEquipInternalError;
@@ -1234,7 +1219,7 @@ uint32_t PlayerEquipSystem::Enhance(entt::entity player, Guid itemId, EnhanceOut
 		if (const auto err = CurrencySystem::DeductCurrency(player, kCurrencyGold, static_cast<int64_t>(costGold),
 															TX_EQUIP_ENHANCE, itemId);
 			err != kSuccess) {
-			LOG_ERROR << "[PlayerEquip] 强化失败(扣金币),什么都没动: player_id=" << GuidForLog(player)
+			LOG_ERROR << "[PlayerEquip] 强化失败(扣金币),什么都没动: player_id=" << tlsEcs.GetPlayerId(player)
 					  << " guid=" << itemId << " config=" << configId << " target_level=" << targetLevel
 					  << " cost_gold=" << costGold << " err=" << err;
 			return kEquipInternalError;
@@ -1249,7 +1234,7 @@ uint32_t PlayerEquipSystem::Enhance(entt::entity player, Guid itemId, EnhanceOut
 				BagService::RemoveItemsExact(player, inventory, materials, TX_EQUIP_ENHANCE, itemId, extra);
 			err != kSuccess) {
 			LOG_ERROR << "[PlayerEquip][ENHANCE_PARTIAL] 强化扣材料失败,已扣的金币(gold_deducted)不退、材料与等级未动,需人工对账: player_id="
-					  << GuidForLog(player) << " guid=" << itemId << " config=" << configId
+					  << tlsEcs.GetPlayerId(player) << " guid=" << itemId << " config=" << configId
 					  << " from_level=" << currentLevel << " gold_deducted=" << costGold
 					  << " material_id=" << materialId << " material_count=" << materialCount << " err=" << err;
 			return kEquipInternalError;
@@ -1259,7 +1244,7 @@ uint32_t PlayerEquipSystem::Enhance(entt::entity player, Guid itemId, EnhanceOut
 	ItemComp* instance = RefetchInitializedInstance(holder, itemId);
 	if (instance == nullptr) {
 		LOG_ERROR << "[PlayerEquip][INSTANCE_LOST] 强化已扣费,但写等级时取不到这件装备,需人工补偿: player_id="
-				  << GuidForLog(player) << " guid=" << itemId << " config=" << configId
+				  << tlsEcs.GetPlayerId(player) << " guid=" << itemId << " config=" << configId
 				  << " from_level=" << currentLevel << " success=" << success << " gold_deducted=" << costGold
 				  << " material_id=" << (needsMaterial ? materialId : 0)
 				  << " material_count=" << (needsMaterial ? materialCount : 0);
@@ -1268,17 +1253,12 @@ uint32_t PlayerEquipSystem::Enhance(entt::entity player, Guid itemId, EnhanceOut
 	const uint32_t newLevel =
 		success ? targetLevel : equiprules::LevelAfterFailure(currentLevel, failLevelLoss);
 	instance->mutable_equip()->set_enhance_level(newLevel);
-	// 13. 回收材料抽空的堆。放在写等级之后:「已扣」与「已写」之间不夹任何会销毁实例的步骤。
-	//     整理会让 instance 失效,此后不再碰它。
-	if (needsMaterial) {
-		ReclaimEmptyStacks(player, inventory, "enhance");
-	}
 	// 14. 穿着的那件等级变了 → 加成变了(失败且不掉级时等级没变,不必重算)
 	if (worn && newLevel != currentLevel) {
 		OnEquipmentChanged(player);
 	}
 	// 15.
-	LOG_INFO << "[PlayerEquip] 强化: player_id=" << GuidForLog(player) << " guid=" << itemId << " config=" << configId
+	LOG_INFO << "[PlayerEquip] 强化: player_id=" << tlsEcs.GetPlayerId(player) << " guid=" << itemId << " config=" << configId
 			 << " from_level=" << currentLevel << " to_level=" << newLevel << " success=" << success
 			 << " worn=" << worn << " cost_gold=" << costGold << " material_id=" << (needsMaterial ? materialId : 0)
 			 << " material_count=" << (needsMaterial ? materialCount : 0);
@@ -1306,7 +1286,7 @@ uint32_t PlayerEquipSystem::InlayGem(entt::entity player, Guid itemId, uint32_t 
 	}
 	const uint32_t configId = located.item->get().config_id();
 	if (!located.initialized) {
-		LOG_WARN << "[PlayerEquip] 镶嵌被拒,实例未初始化(没有 equip 段): player_id=" << GuidForLog(player)
+		LOG_WARN << "[PlayerEquip] 镶嵌被拒,实例未初始化(没有 equip 段): player_id=" << tlsEcs.GetPlayerId(player)
 				 << " guid=" << itemId << " config=" << configId << " socket=" << socket
 				 << " gem_config=" << gemConfigId;
 		return kEquipGemSocketInvalid;
@@ -1333,12 +1313,12 @@ uint32_t PlayerEquipSystem::InlayGem(entt::entity player, Guid itemId, uint32_t 
 		if (fit == equiprules::GemFit::kSocketOccupied && !IsGemEffectiveOn(located.item->get(), located.row->get(), socket)) {
 			// 玩家看到的是「已镶但未生效」:宝石行 / 属性行被改掉了,或同孔有重复记录。照常拒绝(先取下),留一条线索。
 			const EquipGem* occupant = FirstGemRecordOn(located.item->get(), socket);
-			LOG_WARN << "[PlayerEquip] 镶嵌被拒,目标孔被一颗当前不生效的宝石占着: player_id=" << GuidForLog(player)
+			LOG_WARN << "[PlayerEquip] 镶嵌被拒,目标孔被一颗当前不生效的宝石占着: player_id=" << tlsEcs.GetPlayerId(player)
 					 << " guid=" << itemId << " config=" << configId << " socket=" << socket
 					 << " occupant_gem_config=" << (occupant != nullptr ? occupant->gem_config_id() : 0);
 		}
 		if (fit == equiprules::GemFit::kCount) {
-			LOG_ERROR << "[PlayerEquip] 镶嵌失败,孔位判定返回了枚举之外的结果: player_id=" << GuidForLog(player)
+			LOG_ERROR << "[PlayerEquip] 镶嵌失败,孔位判定返回了枚举之外的结果: player_id=" << tlsEcs.GetPlayerId(player)
 					  << " guid=" << itemId << " socket=" << socket << " gem_config=" << gemConfigId;
 		}
 		return err;
@@ -1346,7 +1326,7 @@ uint32_t PlayerEquipSystem::InlayGem(entt::entity player, Guid itemId, uint32_t 
 	// 5. 记录条数上限。干净数据走不到这里(孔位数 <= kMaxGemSockets,满了会先被第 4 步判成已占);
 	//    走到 = 实例上有孔位定义之外的脏记录。消费侧只看前 kMaxGemSockets 条,再追加的那一条不会生效,所以拒。
 	if (storedGems.size() >= static_cast<int>(equiprules::kMaxGemSockets)) {
-		LOG_ERROR << "[PlayerEquip] 镶嵌失败,实例上的宝石记录已达上限(脏数据): player_id=" << GuidForLog(player)
+		LOG_ERROR << "[PlayerEquip] 镶嵌失败,实例上的宝石记录已达上限(脏数据): player_id=" << tlsEcs.GetPlayerId(player)
 				  << " guid=" << itemId << " config=" << configId << " socket=" << socket
 				  << " gem_records=" << storedGems.size() << " limit=" << equiprules::kMaxGemSockets;
 		return kEquipInternalError;
@@ -1366,7 +1346,7 @@ uint32_t PlayerEquipSystem::InlayGem(entt::entity player, Guid itemId, uint32_t 
 	if (const auto err =
 			BagService::RemoveItemsExact(player, inventory, gemToConsume, TX_EQUIP_INLAY, itemId, extra);
 		err != kSuccess) {
-		LOG_ERROR << "[PlayerEquip] 镶嵌失败(扣宝石),什么都没动: player_id=" << GuidForLog(player) << " guid=" << itemId
+		LOG_ERROR << "[PlayerEquip] 镶嵌失败(扣宝石),什么都没动: player_id=" << tlsEcs.GetPlayerId(player) << " guid=" << itemId
 				  << " config=" << configId << " socket=" << socket << " gem_config=" << gemConfigId
 				  << " err=" << err;
 		return kEquipInternalError;
@@ -1375,20 +1355,18 @@ uint32_t PlayerEquipSystem::InlayGem(entt::entity player, Guid itemId, uint32_t 
 	ItemComp* instance = RefetchInitializedInstance(holder, itemId);
 	if (instance == nullptr) {
 		LOG_ERROR << "[PlayerEquip][GEM_LOST] 宝石已扣,但写孔位时取不到这件装备,需人工补偿: player_id="
-				  << GuidForLog(player) << " guid=" << itemId << " config=" << configId << " socket=" << socket
+				  << tlsEcs.GetPlayerId(player) << " guid=" << itemId << " config=" << configId << " socket=" << socket
 				  << " gem_config=" << gemConfigId;
 		return kEquipInternalError;
 	}
 	EquipGem* placed = instance->mutable_equip()->add_gems();
 	placed->set_socket(socket);
 	placed->set_gem_config_id(gemConfigId);
-	// 9. 回收宝石抽空的堆(放在写实例之后,理由同强化)。整理会让 instance / placed 失效,此后不再碰。
-	ReclaimEmptyStacks(player, inventory, "inlay");
 	// 10.
 	if (worn) {
 		OnEquipmentChanged(player);
 	}
-	LOG_INFO << "[PlayerEquip] 镶嵌: player_id=" << GuidForLog(player) << " guid=" << itemId << " config=" << configId
+	LOG_INFO << "[PlayerEquip] 镶嵌: player_id=" << tlsEcs.GetPlayerId(player) << " guid=" << itemId << " config=" << configId
 			 << " socket=" << socket << " gem_config=" << gemConfigId << " worn=" << worn;
 	return kSuccess;
 }
@@ -1416,7 +1394,7 @@ uint32_t PlayerEquipSystem::RemoveGem(entt::entity player, Guid itemId, uint32_t
 	const EquipGem* record = FirstGemRecordOn(located.item->get(), socket);
 	if (record == nullptr) {
 		if (!located.initialized) {
-			LOG_WARN << "[PlayerEquip] 取下被拒,实例未初始化(没有 equip 段): player_id=" << GuidForLog(player)
+			LOG_WARN << "[PlayerEquip] 取下被拒,实例未初始化(没有 equip 段): player_id=" << tlsEcs.GetPlayerId(player)
 					 << " guid=" << itemId << " config=" << configId << " socket=" << socket;
 		}
 		return kEquipGemSocketEmpty;
@@ -1430,7 +1408,7 @@ uint32_t PlayerEquipSystem::RemoveGem(entt::entity player, Guid itemId, uint32_t
 	const ItemTable* gemItemRow = ItemRow(gemConfigId);
 	if (gemItemRow == nullptr || gemItemRow->equip_kind() != 0) {
 		LOG_ERROR << "[PlayerEquip] 取下失败,宝石的 Item 行不可用(不存在或被配成了装备),宝石仍在装备上: player_id="
-				  << GuidForLog(player) << " guid=" << itemId << " config=" << configId << " socket=" << socket
+				  << tlsEcs.GetPlayerId(player) << " guid=" << itemId << " config=" << configId << " socket=" << socket
 				  << " gem_config=" << gemConfigId << " gem_row_found=" << (gemItemRow != nullptr);
 		return kEquipInternalError;
 	}
@@ -1458,7 +1436,7 @@ uint32_t PlayerEquipSystem::RemoveGem(entt::entity player, Guid itemId, uint32_t
 		return kEquipGemBagFull;  // 同种宝石的堆都满了、又没有空格
 	}
 	if (addErr != kSuccess) {
-		LOG_ERROR << "[PlayerEquip] 取下失败(退回宝石),宝石仍在装备上: player_id=" << GuidForLog(player)
+		LOG_ERROR << "[PlayerEquip] 取下失败(退回宝石),宝石仍在装备上: player_id=" << tlsEcs.GetPlayerId(player)
 				  << " guid=" << itemId << " config=" << configId << " socket=" << socket
 				  << " gem_config=" << gemConfigId << " err=" << addErr;
 		return kEquipInternalError;
@@ -1467,7 +1445,7 @@ uint32_t PlayerEquipSystem::RemoveGem(entt::entity player, Guid itemId, uint32_t
 	ItemComp* instance = RefetchInitializedInstance(holder, itemId);
 	if (instance == nullptr) {
 		LOG_ERROR << "[PlayerEquip][INSTANCE_LOST] 宝石已退回背包,但抹孔位时取不到这件装备,需人工核对: player_id="
-				  << GuidForLog(player) << " guid=" << itemId << " config=" << configId << " socket=" << socket
+				  << tlsEcs.GetPlayerId(player) << " guid=" << itemId << " config=" << configId << " socket=" << socket
 				  << " gem_config=" << gemConfigId;
 		return kEquipInternalError;
 	}
@@ -1486,7 +1464,7 @@ uint32_t PlayerEquipSystem::RemoveGem(entt::entity player, Guid itemId, uint32_t
 			refundedRecordRemoved = true;  // 这一条就是刚退回去的那颗
 		} else {
 			LOG_ERROR << "[PlayerEquip] 取下时清掉了同孔的多余宝石记录(脏数据,不退物): player_id="
-					  << GuidForLog(player) << " guid=" << itemId << " config=" << configId << " socket=" << socket
+					  << tlsEcs.GetPlayerId(player) << " guid=" << itemId << " config=" << configId << " socket=" << socket
 					  << " gem_config_id=" << recordConfigId;
 		}
 		gemsOnInstance->DeleteSubrange(i, 1);  // 后面的元素前移,下标不动
@@ -1497,10 +1475,10 @@ uint32_t PlayerEquipSystem::RemoveGem(entt::entity player, Guid itemId, uint32_t
 	}
 	if (!wasEffective) {
 		LOG_WARN << "[PlayerEquip] 取下的是一颗当时不生效的宝石(表里已没有它的宝石行 / 孔位定义 / 属性行): player_id="
-				 << GuidForLog(player) << " guid=" << itemId << " config=" << configId << " socket=" << socket
+				 << tlsEcs.GetPlayerId(player) << " guid=" << itemId << " config=" << configId << " socket=" << socket
 				 << " gem_config=" << gemConfigId;
 	}
-	LOG_INFO << "[PlayerEquip] 取下: player_id=" << GuidForLog(player) << " guid=" << itemId << " config=" << configId
+	LOG_INFO << "[PlayerEquip] 取下: player_id=" << tlsEcs.GetPlayerId(player) << " guid=" << itemId << " config=" << configId
 			 << " socket=" << socket << " gem_config=" << gemConfigId << " worn=" << worn;
 	return kSuccess;
 }
@@ -1519,7 +1497,7 @@ void PlayerEquipSystem::CollectBonus(entt::entity player, equiprules::EquipBonus
 	if (bags == nullptr) {
 		return;
 	}
-	const uint64_t playerId = GuidForLog(player);
+	const uint64_t playerId = tlsEcs.GetPlayerId(player);
 	bags->bags[kEquipment].ForEachItem(
 		[&out, playerId](Guid, const ItemComp& item) { AccumulateWornItem(item, playerId, out); });
 }

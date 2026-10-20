@@ -1385,6 +1385,7 @@ cd tools/data_table_exporter && py -m pytest -q
   - `route_table.go` 条目如 §I.2 所述;
   - `rpc_event_registry.h` 里 `kMaxRpcMethodCount == 最大号 + 1`;
   - **Agones 块正向断言**:`grep -n AcquireCreatePermitBlocking cpp/nodes/scene/handler/grpc/scene_node_service.cpp` 必须命中，不命中即判失败。只看 `git diff` 查不出问题：该块已在 commit `6c4021ae5`(2026-09-02)被删掉，HEAD 里没有任何调用点(见 J-28 ④);
+    (2026-10-16 更正:该函数 2026-09-29 已改名为 `AcquireAllocationPermitBlocking`;grpc-muduo-transport 第 4 批起 Agones 块在守护段 `grpc.CreateScene.guard` 里、改用异步许可。今后此断言改为 `grep -n AcquireAllocationPermitAsync cpp/nodes/scene/handler/grpc/scene_node_service.cpp` 必须命中,且 `AcquireAllocationPermitBlocking` 不得命中,见 grpc-muduo-transport.md §15.14 第 3 步。本文其余处的同名断言是历史执行记录,不再改写。)
   - `go/team/generated/pb/game/` 与 `cpp/generated/grpc_client/team/team_grpc_client.{h,cpp}` 已生成(两者必定生成，见 §B.5、§I.1 批 0 第 11 项),后者已登记进 grpc_client 工程。
 - 然后把 15 个消息号的额度填进 `data/MessageLimiter.xlsx`,再执行一次 `dev.bat export`(MessageLimiter 只需导表，proto 生成器不读它;**不要**用 `dev.bat gen`,理由同第 1 步)。之后如需重跑 proto 生成，仍用同一份副本执行 `proto-gen-run -ConfigPath <副本>`。
 
@@ -1605,7 +1606,7 @@ cd robot && go mod vendor && go build ./...
 | 1 | Go `teampb "proto/team"`(包名 `team`):26 个 message、3 个 enum(`TeamMatchState_TEAM_MATCH_STATE_*`、`TeamChangeReason_TEAM_CHANGE_REASON_*`、`TeamEventType_TEAM_EVENT_TYPE_*`)、`ClientPlayerTeamServer` / `UnimplementedClientPlayerTeamServer` / `RegisterClientPlayerTeamServer` | `go/proto/team/team.pb.go`、`team_grpc.pb.go` | `go/match/internal/team/*`、`go/match/match_service.go`、`robot/team_smoke_scenario.go` |
 | 2 | Go `event.PlayerTeamRefreshEvent`;C++ `::PlayerTeamRefreshEvent` | `go/proto/common/event/team_event.pb.go`;`cpp/generated/proto/common/event/team_event.pb.{h,cc}` | `team/notify.go`、`service_test.go`;`player_team.cpp`、`team_event_handler.{h,cpp}` |
 | 3 | C++ `::TeamId::membership_epoch()` / `set_membership_epoch()` | `cpp/generated/proto/common/component/team_comp.pb.h` | `player_team.cpp` |
-| 4 | `game.PlayerTeamRefreshEventEventId`(Go);C++ 同名常量 + `DispatchProtoEvent` 的对应 case | `proto/event_id.txt` → `go/match/generated/pb/game/event_id.go`;`cpp/generated/rpc/service_metadata/{common_event_team_event_event_id.h, rpc_event_registry.*}` | `team/notify.go`、`service_test.go`;scene Kafka 命令路由 |
+| 4 | `game.PlayerTeamRefreshEventEventId`(Go);C++ 同名常量 + `DispatchSceneKafkaCommand` 的白名单 case | `proto/event_id.txt` → `go/match/generated/pb/game/event_id.go`;`cpp/generated/rpc/service_metadata/common_event_team_event_event_id.h` 与 `cpp/nodes/scene/handler/event/scene_kafka_command_router.cpp` | `team/notify.go`、`service_test.go`;scene Kafka 命令路由 |
 | 5 | `game.ClientPlayerTeam{CreateTeam,GetMyTeam,ApplyJoinTeam,HandleApplication,InviteToTeam,RespondInvite,ListMyInvites,LeaveTeam,KickMember,TransferLeader,DisbandTeam,StartTeamMatch,NotifyTeamSnapshot,NotifyTeamInvite,NotifyTeamEvent}MessageId`(15 个,数值由发号器定) | `proto/message_id.txt` → `go/match/generated/pb/game/message_id.go`、`robot/generated/pb/game/message_id.go`、`go/client_rpc_router/generated/pb/game/{message_id,route_table}.go`、`cpp/generated/rpc/service_metadata/team_service_metadata.h`(另会多出 `go/team/generated/`,J-15) | `team/{notify,service}.go`、测试;`robot/team_smoke_scenario.go`;MessageLimiter 额度 |
 | 6 | `table.TeamError_kTeam{NotLeader,HomeZoneUnknown,CrossZoneDenied,InviteNotFound,InviteLimit,InMatch,MemberOffline,MemberInBattle,MemberNotReady,DungeonNotOpen,SizeExceeded,StateChanged,Internal}`;`tip.Segments` 的 team 段 Hi/Count;`tip.Faults` 含 TeamInternal | `Tip.xlsx` 加 13 行 → `go/shared/generated/pb/table/team_error_tip.pb.go`、`go/shared/generated/tip/{segments,faults}.go`(robot 还要 `go mod vendor`) | `team/errors.go`、`errors_test.go`、`server.go`(`serverbase.TipVerdict`);`robot/team_smoke_scenario.go` |
 | 7 | C++ `cpp/generated/proto/team/team.{pb,grpc.pb}.{h,cc}` | proto 生成 | 已登记进 proto 工程(文件不存在前 proto 工程编不过) |
@@ -1934,7 +1935,7 @@ cd robot && go mod vendor && go build ./...
 
 `proto/event_id.txt` 新增唯一一行 `48=PlayerTeamRefreshEvent`(`git diff --numstat` = `1  0`)。各服务 `generated/pb/game/event_id.go` 同步出现 `const PlayerTeamRefreshEventEventId = 48`(例:`go/match/generated/pb/game/event_id.go:51`)。
 
-`PlayerTeamRefreshEvent` 在全局命名空间(`team_event.proto` 无 `package`),由 `rpc_event_registry.cpp` 的 `DispatchProtoEvent` 解包后进程内分发到 `TeamEventHandler`。
+`PlayerTeamRefreshEvent` 在全局命名空间(`team_event.proto` 无 `package`),由生成的 `scene_kafka_command_router.cpp` 中 `DispatchSceneKafkaCommand` 白名单解包后直接调用 `TeamEventHandler`。
 
 ### GR.4 生成护栏核对(逐条 pass / fail)
 
@@ -2172,11 +2173,15 @@ cd robot && .\robot.exe -c etc\team_smoke.yaml          # 形态一:expect_cross
 2. `go/match/internal/team/service.go` —— `preflightMatch` 在 `loc == nil` 之后补一条:`loc.GetNodeId() == ""`(等待落点)按 `ErrMemberNotReady` 拒绝。
    理由:该状态下没有任何 scene 节点持有玩家,`gather.go` 的 `preparePlayer` 必然在 `EndpointOf(zone, "")` 上失败;早拒能省掉一轮"建开战锁 → 建票 → gather 失败 → 补偿删锁"。
 
+> **2026-10-17 契约勘误**：`scene_manager_response_handler.cpp` 已删除；EnterScene 应答经完成闭包捕获的 playerId / requestTag 认领后交 `PlayerLifecycleSystem::DispatchEnterSceneReply`，不再由旧适配器按响应 player_id 寻找等待者。此处的发送侧冻结闸仍保留。
+
 ### 未修、需要决策的
 
 - **EnterScene 应答没有相关性标识**:`scene_manager_response_handler.cpp` 只能靠 `resp.player_id()` 把应答对回玩家,于是同一玩家在传送在途期间收到的**任何**一条 EnterScene 应答(跟随、紧急疏散、镜像副本建好后的自动进场)都会被 `HandleTravelEnterSceneReply` 当成传送应答。方向是安全的(会走 `ResolveTravelOutcome` 核实 epoch,最坏是白撤回一次交接、玩家留在源节点),但会造成"传送莫名失败"。上面的守卫已消除组队这一侧的同期来源,残留窗口是"跟随请求先发、传送后起、应答后到"。彻底修需要在 `EnterSceneRequest/Response` 上加一个回显的 correlation id(proto 改动 + regen),属产品/接口决策,未动。
   *(2026-09-28 补注:**已由关联号解决,未编译、未测试**。`EnterSceneRequest.correlation_id = 10` / `EnterSceneResponse.correlation_id = 6`,scene_manager 只原样回显(不复用 `request_id`);scene 内所有 EnterScene 都经 `SendCorrelatedEnterScene` 带非 0 号发出,应答由 `PlayerLifecycleSystem::DispatchEnterSceneReply` 按号分发,号与等待者对不上的一律丢弃,不再进 `HandleTravelEnterSceneReply`。组队跟随改走 `RequestSceneChange(..., playerRequested = false)`,行为不变(被拒只记日志、不弹 tip、不进传送裁决)。上面"跟随请求先发、传送后起、应答后到"里**应答被当成传送应答**的这一半随之关闭。仍有两条残余:① 应答串号只剩旧版 scene_manager 不回显(号为 0)的滚动升级窗口,此时退回按 player_id 对号的旧行为(计入 `reply_uncorrelated`);② 同一场景还有一条**不带号**的证据路径 —— 进场路由:`player_lifecycle.cpp` `EnterScene` 第 3.2 步只要同 zone 交接在途、交接没指定场景实例(`sceneId == 0`)、路由带来的 owner_epoch 非 0 且与路由到达前相同,就以 `travel_outcome::Evidence::kSucceeded` 调 `ResolveTravelOutcome`,不看 correlation_id。所以同节点跟随或换图的路由(走 Kafka → gate,常晚于 gRPC 应答)若在同 zone 交接发起后才到,仍会撤掉标记、静默解冻,这次传送作废(不回档,玩家留在本节点;跨 zone 传送不走这一步)。根治要让进场路由(`RoutePlayerEvent` / `PlayerEnterGameNodeRequest`)带关联号,需改 Kafka / gate 契约,本轮不做。提交 9da27f9a4 + 4e409c5c3 + 935ec83b1,详见 `cross-zone-scene-travel.md` 的「EnterScene 应答关联号」一节(按标题引用,不写死节号;该节随设计文档更新落地,落地后再核对一次标题)。)*
 - **生成物滞后**:`proto/scene_manager/storage.proto` 的 `PlayerLocation.owner_epoch`、`EnterSceneResponse.player_id` 都还没 regen(`go/proto/scene_manager/storage.pb.go` 无 `OwnerEpoch`,`cpp/generated/proto/scene_manager/storage.pb.h` 无 `owner_epoch`)。这是 `1f2bdd01c` 自己写明的"未 regen"状态,不是合并引入的;但 scene_manager 与 scene 在 regen 之前都编不过,组队的验证清单要排在 regen 之后。
+
+> **2026-10-17 契约勘误**：补注中的残余①已由每次调用捕获关联号消除：旧版 SM 不回显也用捕获值精确认领，不再走生产的 player_id 退路，也不因此计 `reply_uncorrelated`。残余②涉及路由事件证据，不能据此勘误宣称已解决。
 
 ---
 

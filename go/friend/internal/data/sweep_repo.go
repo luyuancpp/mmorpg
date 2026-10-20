@@ -2,6 +2,8 @@ package data
 
 import (
 	"context"
+	"database/sql"
+	"errors"
 	"fmt"
 
 	"github.com/zeromicro/go-zero/core/logx"
@@ -50,17 +52,16 @@ import (
 //
 // **为什么逐行删,不许改成一条批量 DELETE**(防 ABBA 的关键):
 //  1. 候选是**普通读**(不加锁):`SELECT player_id FROM friend_capacity WHERE friend_count = 0 AND created_ms < ? LIMIT ?`
-//  2. 逐行、**自动提交**、按主键删:`DELETE FROM friend_capacity WHERE player_id = ? AND friend_count = 0 AND created_ms < ?`
+//  2. 逐行、每行一个 RC 写事务{`lockCapacityRowSQL` 主键点锁 → `DELETE FROM friend_capacity WHERE player_id = ? AND friend_count = 0 AND created_ms < ?`}
+//     (deleteOneRowPointLocked;2026-10-18 以前是单条自动提交 DELETE,TiDB 上会与守卫各持一半互等,见该函数)
 //
 // 写成 `DELETE ... WHERE friend_count = 0 AND created_ms < ? LIMIT ?` 不行:那条语句在**一个**语句事务里
 // 按**二级索引序**锁住多行守卫行,而所有业务写事务按 **player_id 升序**锁两行守卫行 —— 两种取锁顺序
-// 不同,回收与业务写之间可以成环(1213)。逐行自动提交时,回收任一时刻**至多持有一把守卫锁、
-// 且持锁时不再等别的锁**,不可能处在等待环里。
+// 不同,回收与业务写之间可以成环(1213)。逐行删时,回收任一时刻**至多持有一把守卫锁**,且先点锁、取锁顺序与守卫相同,
+// 不可能处在等待环里。
 // DELETE 里重复写 `friend_count = 0 AND created_ms < ?` 是提交点复核:候选读与删除之间该行可能已被
 // AcceptFriend 加过好友 —— RC 下 DELETE 拿到行锁后按最新已提交版本重判 WHERE,不匹配就不删。
-// (这两条语句不开事务,走的是连接默认隔离级别而不是写路径的 RC;复核照样成立 —— InnoDB 的 DELETE
-// 在任何隔离级别下都是**当前读**。候选行刚被别人删掉时,RR 下主键等值未命中会留一把间隙锁,
-// 但它只活到这条自动提交语句结束,同样不构成"持有并等待"。)
+// (删行事务用 beginWriteTx,即写路径的 RC;点锁读不到行(刚被别人删掉)就直接回 0,不留任何锁。)
 //
 // **为什么不需要 updated_ms 那种"发现 0 就拒删"的保险**:created_ms = 0(从旧共享库搬来的存量行)
 // 恰恰是安全的 —— 零好友的存量行被立刻回收没有任何语义损失(理由同"为什么删行无害")。
@@ -236,7 +237,8 @@ func (r *FriendRepo) countTerminalRequestsMissingUpdatedMs(ctx context.Context, 
 // 代价:一轮至多 batchLimit 次往返(默认 1000),对 5 分钟一轮的后台任务可以接受。
 // 每行 DELETE 的 WHERE 重复终态与截止点条件,是提交点复核:候选读与删除之间该行可能已被 upsert
 // 改回 pending(玩家重新发起申请),这时必须不删。多副本同时跑时,后到的一方删到 0 行,无害。
-// 单条自动提交语句,不开事务:分批的意义就是让每次持锁窗口足够短。
+// 每行一个 RC 写事务{lockRequestRowSQL 主键点锁 → 带复核的主键 DELETE}(deleteOneRowPointLocked),持锁窗口仍只有一行;
+// 2026-10-18 以前是单条自动提交 DELETE,TiDB 上会与守卫事务各持一半互等、检测不到(理由见该函数)。
 func (r *FriendRepo) deleteTerminalRequestsBefore(ctx context.Context, cutoffMs uint64, limit int) (int64, error) {
 	rows, err := r.db.QueryContext(ctx,
 		"SELECT from_player_id, to_player_id FROM friend_request WHERE status IN (?, ?) AND updated_ms < ? LIMIT ?",
@@ -266,18 +268,54 @@ func (r *FriendRepo) deleteTerminalRequestsBefore(ctx context.Context, cutoffMs 
 		if err := ctx.Err(); err != nil {
 			return deleted, err
 		}
-		result, err := r.db.ExecContext(ctx, deleteTerminalRequestSQL,
-			k.from, k.to, requestStatusAccepted, requestStatusRejected, cutoffMs)
+		n, err := r.deleteOneRowPointLocked(ctx,
+			lockRequestRowSQL, []any{k.from, k.to},
+			deleteTerminalRequestSQL, k.from, k.to, requestStatusAccepted, requestStatusRejected, cutoffMs)
 		if err != nil {
 			return deleted, fmt.Errorf("delete terminal friend request %d->%d: %w", k.from, k.to, err)
-		}
-		n, err := result.RowsAffected()
-		if err != nil {
-			return deleted, fmt.Errorf("delete terminal friend request: rows affected: %w", err)
 		}
 		deleted += n
 	}
 	return deleted, nil
+}
+
+// deleteOneRowPointLocked 在一个 RC 写事务里删一行:先 lockSQL(完整主键等值 FOR UPDATE,不带复核谓词),
+// 读不到行就回 0;再执行带提交点复核的 deleteSQL;最后提交。返回实际删除行数(0 或 1)。
+//
+// 为什么不再是「单条自动提交 DELETE」(2026-10-18 真 TiDB v8.5.2 实测,事故文档 §9.7):生产 friend 强制跑 TiDB,
+// pessimistic-auto-commit 默认关,自动提交语句走**乐观**事务,提交时按 region 并行 prewrite 行 key 与索引 key;
+// 守卫事务的完整主键 FOR UPDATE 是 Point_Get,先锁 PRIMARY 索引 key、再锁行 key。两边可能各持一半互等,
+// 死锁检测器看不到,要等约 3s 的锁 TTL 过期才解开(终态申请清理 550 轮 62 次 3.0~3.9s、容量行回收 200 轮 12 次)。
+// 显式悲观事务里先点锁,取锁顺序与守卫同为 PRIMARY → 行 key,冲突只剩单向等待,同组实验 0 次。
+// MySQL 下锁集与顺序不变(点锁与 DELETE 锁同一条聚簇记录),只多 BEGIN / 点锁 / COMMIT 几次往返。
+func (r *FriendRepo) deleteOneRowPointLocked(ctx context.Context, lockSQL string, lockArgs []any, deleteSQL string, deleteArgs ...any) (int64, error) {
+	tx, err := r.beginWriteTx(ctx)
+	if err != nil {
+		return 0, err
+	}
+	defer func() { _ = tx.Rollback() }()
+	var locked int64
+	switch err := tx.QueryRowContext(ctx, lockSQL, lockArgs...).Scan(&locked); {
+	case errors.Is(err, sql.ErrNoRows):
+		return 0, nil // 行已被别的副本删掉或从未存在
+	case err != nil:
+		return 0, fmt.Errorf("point lock: %w", err)
+	}
+	result, err := tx.ExecContext(ctx, deleteSQL, deleteArgs...)
+	if err != nil {
+		return 0, err
+	}
+	n, err := result.RowsAffected()
+	if err != nil {
+		return 0, fmt.Errorf("rows affected: %w", err)
+	}
+	if n > 1 {
+		return 0, fmt.Errorf("primary-key delete affected %d rows: WHERE is broken", n)
+	}
+	if err := tx.Commit(); err != nil {
+		return 0, fmt.Errorf("commit: %w", err)
+	}
+	return n, nil
 }
 
 // deleteTerminalRequestSQL:按 friend_request 完整主键删一行终态过期申请,WHERE 里重复终态与截止点条件
@@ -372,17 +410,18 @@ func (r *FriendRepo) listIdleCapacityRowsBefore(ctx context.Context, cutoffMs ui
 // 但那等于让"只删零好友行"这条前提靠运气成立。
 // 经由 SweepIdleCapacityRows 进来的单线程用例测不到这两个条件(候选读已经按同样的条件滤过一遍),
 // 所以由 sweep_repo_test.go 的 TestDeleteIdleCapacityRow_RechecksAtCommitPoint 直调本函数逐条钉住。
-// 若该行此刻正被某个写事务的守卫锁着,这条 DELETE 会等到对方提交(此时我们手里没有任何别的锁)。
+// 若该行此刻正被某个写事务的守卫锁着,点锁会等到对方提交(此时我们手里没有任何别的锁)。
+// 写法是 deleteOneRowPointLocked(RC 事务里先 lockCapacityRowSQL 点锁、再删),不是单条自动提交 DELETE:
+// 理由见该函数(TiDB 上自动提交与守卫 Point_Get 各持一半互等、检测不到)。
 func (r *FriendRepo) deleteIdleCapacityRow(ctx context.Context, playerID, cutoffMs uint64) (int64, error) {
-	result, err := r.db.ExecContext(ctx,
-		"DELETE FROM friend_capacity WHERE player_id = ? AND friend_count = 0 AND created_ms < ?",
-		playerID, cutoffMs)
+	removed, err := r.deleteOneRowPointLocked(ctx,
+		lockCapacityRowSQL, []any{playerID},
+		deleteIdleCapacityRowSQL, playerID, cutoffMs)
 	if err != nil {
 		return 0, fmt.Errorf("delete idle friend capacity row %d: %w", playerID, err)
 	}
-	removed, err := result.RowsAffected()
-	if err != nil {
-		return 0, fmt.Errorf("delete idle friend capacity row %d: rows affected: %w", playerID, err)
-	}
 	return removed, nil
 }
+
+// deleteIdleCapacityRowSQL:按主键删一行零好友容量行,WHERE 里重复 friend_count / created_ms 作提交点复核。
+const deleteIdleCapacityRowSQL = "DELETE FROM friend_capacity WHERE player_id = ? AND friend_count = 0 AND created_ms < ?"

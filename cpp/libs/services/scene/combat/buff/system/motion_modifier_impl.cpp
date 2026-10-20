@@ -4,11 +4,6 @@ void MotionModifierBuffImplSystem::OnBuffStart(entt::entity parent, BuffEntry& b
 {
 }
 
-void MotionModifierBuffImplSystem::OnBuffRefresh(entt::entity parent, uint32_t buffTableId,
-    const SkillContextPtrComp& abilityContext, BuffEntry& buffComp)
-{
-}
-
 void MotionModifierBuffImplSystem::OnBuffRemove(entt::entity parent, BuffEntry& buff, const BuffTable* buffTable)
 {
 }

@@ -2,17 +2,47 @@ package logic
 
 import (
 	"context"
-	"strconv"
 	"time"
 
 	"github.com/redis/go-redis/v9"
 	"github.com/zeromicro/go-zero/core/logx"
+	"github.com/zeromicro/go-zero/core/metric"
 	"google.golang.org/protobuf/proto"
 
 	"player_locator/internal/svc"
 	common "proto/common/base"
 	pb "proto/player_locator"
 )
+
+// staleGateInstanceTotal 计「请求与会话记录的 gate 实例号都非空且不等、按旧实例迟到的上报忽略」的次数
+// (docs/design/scene-enter-chain-residuals.md §6.2)。op ∈ set_disconnecting | mark_offline,低基数,
+// 不放 player_id;定位具体玩家靠同一处带两边实例号的 Info 日志。
+// 稳态应接近 0;有数说明出现了同号跨实例(gate 以同一 node_id 重启 / 冲突收尾 / 跨 zone 同号),
+// 被忽略的会话改由 session_reconciler 在旧实例从 etcd 消失后兜底清理(§6.8)。
+// player_locator 此前没有自己的业务指标,这里沿用 login 的做法(go-zero core/metric,经 go-zero 自带的
+// /metrics agent 暴露,开关见 etc/player_locator.yaml 的 Prometheus 段);markofflinelogic.go 共用这一个计数器。
+var staleGateInstanceTotal = metric.NewCounterVec(&metric.CounterVecOpts{
+	Namespace: "player_locator",
+	Subsystem: "",
+	Name:      "stale_gate_instance_total",
+	Help: "Disconnect / logout reports ignored because the request's gate instance differs from the session record's " +
+		"(both non-empty). Op: set_disconnecting | mark_offline.",
+	Labels: []string{"op"},
+})
+
+// staleGateInstanceTotal 的 op 取值。
+const (
+	staleGateInstanceOpSetDisconnecting = "set_disconnecting"
+	staleGateInstanceOpMarkOffline      = "mark_offline"
+)
+
+// isStaleGateInstanceReport 判断一条断线 / 登出上报是否来自会话记录所指之外的 gate 实例:两边都非空且不等。
+// "" 表示未知(旧版 login、早期会话记录),一律不比较,不当成「不等」(§1.4)。
+// 记录里的实例号由已提交的 SetSession / Reconnect 写入,与 gate 上报所带的 SessionDetails.gate_instance_id 同源
+// (node_uuid,进程启动时生成一次),所以被判陈旧的只会是跨实例的上报。
+func isStaleGateInstanceReport(recordInstanceID, requestInstanceID string) bool {
+	return recordInstanceID != "" && requestInstanceID != "" && recordInstanceID != requestInstanceID
+}
 
 type SetDisconnectingLogic struct {
 	ctx    context.Context
@@ -52,6 +82,16 @@ func (l *SetDisconnectingLogic) SetDisconnecting(in *pb.SetDisconnectingRequest)
 		return &common.Empty{}, nil
 	}
 
+	// 同号跨 gate 实例:旧实例迟到的断线上报不得给新实例上的会话挂租约,否则租约到期后活玩家被踢、
+	// location 被删(docs/design/scene-enter-chain-residuals.md §6.1)。判定在 GET 到的同一份字节上做,
+	// 随后的整字节 CAS 不变,比对与提交之间没有窗口。
+	if isStaleGateInstanceReport(session.GateInstanceId, in.GateInstanceId) {
+		staleGateInstanceTotal.Inc(staleGateInstanceOpSetDisconnecting)
+		l.Infof("SetDisconnecting: stale gate instance player=%d session=%d record_instance=%s request_instance=%s, ignoring",
+			in.PlayerId, in.SessionId, session.GateInstanceId, in.GateInstanceId)
+		return &common.Empty{}, nil
+	}
+
 	// Calculate TTL
 	ttl := time.Duration(in.LeaseTtlSeconds) * time.Second
 	if ttl == 0 {
@@ -70,6 +110,9 @@ func (l *SetDisconnectingLogic) SetDisconnecting(in *pb.SetDisconnectingRequest)
 		return &common.Empty{}, nil
 	}
 
+	// 原地改写之前留一份旧会话(ONLINE),只用来推导要摘除的 gate 索引成员。
+	previous := proto.Clone(session).(*pb.PlayerSession)
+
 	// 状态变化也是 session 的真实变化，必须推进版本；monitor 的完整 protobuf
 	// CAS 会因此同时约束 session_id 与 session_version。
 	session.State = pb.PlayerSessionState_SESSION_STATE_DISCONNECTING
@@ -86,21 +129,12 @@ func (l *SetDisconnectingLogic) SetDisconnecting(in *pb.SetDisconnectingRequest)
 	// tick 相位与批量积压都保证 monitor 晚于 TTL。静态宽限也无法覆盖大规模断线。
 	// 现在 ready -> processing claim 会保留载荷，外部副作用全部成功后才 ack；
 	// 因此 session 必须活到显式 CAS 清理，不能再有独立的提前过期时钟。
-	playerID := strconv.FormatUint(in.PlayerId, 10)
-	swapped, err := setDisconnectingScript.Run(
-		l.ctx,
-		l.svcCtx.RedisClient,
-		sessionLifecycleKeys(in.PlayerId),
-		data,
-		updated,
-		0,
-		time.Now().Add(ttl).Unix(),
-		playerID,
-	).Int()
+	// 与会话对账共用同一个提交点(transitionToDisconnecting),gate 索引成员在同一段 Lua 里摘除。
+	swapped, err := transitionToDisconnecting(l.ctx, l.svcCtx, in.PlayerId, data, updated, time.Now().Add(ttl).Unix(), previous)
 	if err != nil {
 		return nil, err
 	}
-	if swapped != 1 {
+	if !swapped {
 		l.Infof("SetDisconnecting: session changed during CAS player=%d session=%d, ignoring stale disconnect",
 			in.PlayerId, in.SessionId)
 		return &common.Empty{}, nil

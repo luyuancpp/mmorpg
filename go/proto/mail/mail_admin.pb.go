@@ -22,84 +22,45 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-type MailSenderKind int32
-
-const (
-	MailSenderKind_MAIL_SENDER_KIND_UNSPECIFIED MailSenderKind = 0
-	MailSenderKind_MAIL_SENDER_KIND_OPS_TOOL    MailSenderKind = 1 // 运维工具(go/mail/cmd/mailadmin)
-	MailSenderKind_MAIL_SENDER_KIND_ROBOT       MailSenderKind = 2 // robot 冒烟。只在 Mode=dev|test 接受,其它 Mode 回 kInvalidParameter(在取号之前)
-)
-
-// Enum value maps for MailSenderKind.
-var (
-	MailSenderKind_name = map[int32]string{
-		0: "MAIL_SENDER_KIND_UNSPECIFIED",
-		1: "MAIL_SENDER_KIND_OPS_TOOL",
-		2: "MAIL_SENDER_KIND_ROBOT",
-	}
-	MailSenderKind_value = map[string]int32{
-		"MAIL_SENDER_KIND_UNSPECIFIED": 0,
-		"MAIL_SENDER_KIND_OPS_TOOL":    1,
-		"MAIL_SENDER_KIND_ROBOT":       2,
-	}
-)
-
-func (x MailSenderKind) Enum() *MailSenderKind {
-	p := new(MailSenderKind)
-	*p = x
-	return p
+// 内部发件接口不标客户端服务。每个caller独立密钥和可发频道白名单。
+// 相同(sender_kind,request_id)重放先核载荷，不能因满箱/已过期重复发件。
+type SendMailRequest struct {
+	state             protoimpl.MessageState `protogen:"open.v1"`
+	SenderKind        uint32                 `protobuf:"varint,1,opt,name=sender_kind,json=senderKind,proto3" json:"sender_kind,omitempty"`
+	RequestId         uint64                 `protobuf:"varint,2,opt,name=request_id,json=requestId,proto3" json:"request_id,omitempty"`
+	RecipientPlayerId uint64                 `protobuf:"varint,3,opt,name=recipient_player_id,json=recipientPlayerId,proto3" json:"recipient_player_id,omitempty"`
+	GuildId           uint64                 `protobuf:"varint,4,opt,name=guild_id,json=guildId,proto3" json:"guild_id,omitempty"`
+	Title             string                 `protobuf:"bytes,5,opt,name=title,proto3" json:"title,omitempty"`
+	Body              string                 `protobuf:"bytes,6,opt,name=body,proto3" json:"body,omitempty"`
+	Attachments       *MailAttachments       `protobuf:"bytes,7,opt,name=attachments,proto3" json:"attachments,omitempty"`
+	ExpireMs          uint64                 `protobuf:"varint,8,opt,name=expire_ms,json=expireMs,proto3" json:"expire_ms,omitempty"`
+	Auth              *base.ServiceCallAuth  `protobuf:"bytes,9,opt,name=auth,proto3" json:"auth,omitempty"`
+	// 系统附件必须先导入冻结名单并seal。纯文本及个人邮件这些字段须为0/空。
+	CampaignId             uint64 `protobuf:"varint,10,opt,name=campaign_id,json=campaignId,proto3" json:"campaign_id,omitempty"`
+	ManifestGeneration     uint64 `protobuf:"varint,11,opt,name=manifest_generation,json=manifestGeneration,proto3" json:"manifest_generation,omitempty"`
+	ExpectedRecipientCount uint64 `protobuf:"varint,12,opt,name=expected_recipient_count,json=expectedRecipientCount,proto3" json:"expected_recipient_count,omitempty"`
+	ExpectedShardCount     uint32 `protobuf:"varint,13,opt,name=expected_shard_count,json=expectedShardCount,proto3" json:"expected_shard_count,omitempty"`
+	// SHA256("v1\n" + 按shard_index升序拼接 "index:lowercase_sha256:count\n")。
+	// shard摘要是去重并按uint64升序的player_id十进制字符串，每个后接\n的SHA256。
+	ManifestHash  string `protobuf:"bytes,14,opt,name=manifest_hash,json=manifestHash,proto3" json:"manifest_hash,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
-func (x MailSenderKind) String() string {
-	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
-}
-
-func (MailSenderKind) Descriptor() protoreflect.EnumDescriptor {
-	return file_proto_mail_mail_admin_proto_enumTypes[0].Descriptor()
-}
-
-func (MailSenderKind) Type() protoreflect.EnumType {
-	return &file_proto_mail_mail_admin_proto_enumTypes[0]
-}
-
-func (x MailSenderKind) Number() protoreflect.EnumNumber {
-	return protoreflect.EnumNumber(x)
-}
-
-// Deprecated: Use MailSenderKind.Descriptor instead.
-func (MailSenderKind) EnumDescriptor() ([]byte, []int) {
-	return file_proto_mail_mail_admin_proto_rawDescGZIP(), []int{0}
-}
-
-type SendPersonalMailRequest struct {
-	state      protoimpl.MessageState `protogen:"open.v1"`
-	SenderKind MailSenderKind         `protobuf:"varint,1,opt,name=sender_kind,json=senderKind,proto3,enum=mailpb.MailSenderKind" json:"sender_kind,omitempty"`
-	// 非 0。键的最短有效期 = expire_ms + 保留期,与收件人删不删信无关(定向邮件是软删,物理删只归 sweep)。
-	RequestId         uint64           `protobuf:"varint,2,opt,name=request_id,json=requestId,proto3" json:"request_id,omitempty"`
-	RecipientPlayerId uint64           `protobuf:"varint,3,opt,name=recipient_player_id,json=recipientPlayerId,proto3" json:"recipient_player_id,omitempty"` // 不校验是否存在:mail 不读玩家名册,发给不存在的 id 只是一封没人看的信
-	SenderName        string           `protobuf:"bytes,4,opt,name=sender_name,json=senderName,proto3" json:"sender_name,omitempty"`                         // ≤ 16 个字符(Unicode 码点)
-	Title             string           `protobuf:"bytes,5,opt,name=title,proto3" json:"title,omitempty"`                                                     // ≤ 32 个字符
-	Body              string           `protobuf:"bytes,6,opt,name=body,proto3" json:"body,omitempty"`                                                       // ≤ 1000 个字符
-	Attachments       *MailAttachments `protobuf:"bytes,7,opt,name=attachments,proto3" json:"attachments,omitempty"`                                         // M1 生产(Mode 不是 dev / test)必须为空,否则 MailAttachmentNotOpen
-	ExpireMs          uint64           `protobuf:"varint,8,opt,name=expire_ms,json=expireMs,proto3" json:"expire_ms,omitempty"`                              // 必填;服务端发件时刻 < expire_ms ≤ 发件时刻 + 定向邮件最长有效期
-	unknownFields     protoimpl.UnknownFields
-	sizeCache         protoimpl.SizeCache
-}
-
-func (x *SendPersonalMailRequest) Reset() {
-	*x = SendPersonalMailRequest{}
+func (x *SendMailRequest) Reset() {
+	*x = SendMailRequest{}
 	mi := &file_proto_mail_mail_admin_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *SendPersonalMailRequest) String() string {
+func (x *SendMailRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*SendPersonalMailRequest) ProtoMessage() {}
+func (*SendMailRequest) ProtoMessage() {}
 
-func (x *SendPersonalMailRequest) ProtoReflect() protoreflect.Message {
+func (x *SendMailRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_proto_mail_mail_admin_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -111,68 +72,110 @@ func (x *SendPersonalMailRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use SendPersonalMailRequest.ProtoReflect.Descriptor instead.
-func (*SendPersonalMailRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use SendMailRequest.ProtoReflect.Descriptor instead.
+func (*SendMailRequest) Descriptor() ([]byte, []int) {
 	return file_proto_mail_mail_admin_proto_rawDescGZIP(), []int{0}
 }
 
-func (x *SendPersonalMailRequest) GetSenderKind() MailSenderKind {
+func (x *SendMailRequest) GetSenderKind() uint32 {
 	if x != nil {
 		return x.SenderKind
 	}
-	return MailSenderKind_MAIL_SENDER_KIND_UNSPECIFIED
+	return 0
 }
 
-func (x *SendPersonalMailRequest) GetRequestId() uint64 {
+func (x *SendMailRequest) GetRequestId() uint64 {
 	if x != nil {
 		return x.RequestId
 	}
 	return 0
 }
 
-func (x *SendPersonalMailRequest) GetRecipientPlayerId() uint64 {
+func (x *SendMailRequest) GetRecipientPlayerId() uint64 {
 	if x != nil {
 		return x.RecipientPlayerId
 	}
 	return 0
 }
 
-func (x *SendPersonalMailRequest) GetSenderName() string {
+func (x *SendMailRequest) GetGuildId() uint64 {
 	if x != nil {
-		return x.SenderName
+		return x.GuildId
 	}
-	return ""
+	return 0
 }
 
-func (x *SendPersonalMailRequest) GetTitle() string {
+func (x *SendMailRequest) GetTitle() string {
 	if x != nil {
 		return x.Title
 	}
 	return ""
 }
 
-func (x *SendPersonalMailRequest) GetBody() string {
+func (x *SendMailRequest) GetBody() string {
 	if x != nil {
 		return x.Body
 	}
 	return ""
 }
 
-func (x *SendPersonalMailRequest) GetAttachments() *MailAttachments {
+func (x *SendMailRequest) GetAttachments() *MailAttachments {
 	if x != nil {
 		return x.Attachments
 	}
 	return nil
 }
 
-func (x *SendPersonalMailRequest) GetExpireMs() uint64 {
+func (x *SendMailRequest) GetExpireMs() uint64 {
 	if x != nil {
 		return x.ExpireMs
 	}
 	return 0
 }
 
-type SendPersonalMailResponse struct {
+func (x *SendMailRequest) GetAuth() *base.ServiceCallAuth {
+	if x != nil {
+		return x.Auth
+	}
+	return nil
+}
+
+func (x *SendMailRequest) GetCampaignId() uint64 {
+	if x != nil {
+		return x.CampaignId
+	}
+	return 0
+}
+
+func (x *SendMailRequest) GetManifestGeneration() uint64 {
+	if x != nil {
+		return x.ManifestGeneration
+	}
+	return 0
+}
+
+func (x *SendMailRequest) GetExpectedRecipientCount() uint64 {
+	if x != nil {
+		return x.ExpectedRecipientCount
+	}
+	return 0
+}
+
+func (x *SendMailRequest) GetExpectedShardCount() uint32 {
+	if x != nil {
+		return x.ExpectedShardCount
+	}
+	return 0
+}
+
+func (x *SendMailRequest) GetManifestHash() string {
+	if x != nil {
+		return x.ManifestHash
+	}
+	return ""
+}
+
+type SendMailResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	ErrorMessage  *base.TipInfoMessage   `protobuf:"bytes,1,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"`
 	MailId        uint64                 `protobuf:"varint,2,opt,name=mail_id,json=mailId,proto3" json:"mail_id,omitempty"`
@@ -181,20 +184,20 @@ type SendPersonalMailResponse struct {
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *SendPersonalMailResponse) Reset() {
-	*x = SendPersonalMailResponse{}
+func (x *SendMailResponse) Reset() {
+	*x = SendMailResponse{}
 	mi := &file_proto_mail_mail_admin_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *SendPersonalMailResponse) String() string {
+func (x *SendMailResponse) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*SendPersonalMailResponse) ProtoMessage() {}
+func (*SendMailResponse) ProtoMessage() {}
 
-func (x *SendPersonalMailResponse) ProtoReflect() protoreflect.Message {
+func (x *SendMailResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_proto_mail_mail_admin_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -206,60 +209,58 @@ func (x *SendPersonalMailResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use SendPersonalMailResponse.ProtoReflect.Descriptor instead.
-func (*SendPersonalMailResponse) Descriptor() ([]byte, []int) {
+// Deprecated: Use SendMailResponse.ProtoReflect.Descriptor instead.
+func (*SendMailResponse) Descriptor() ([]byte, []int) {
 	return file_proto_mail_mail_admin_proto_rawDescGZIP(), []int{1}
 }
 
-func (x *SendPersonalMailResponse) GetErrorMessage() *base.TipInfoMessage {
+func (x *SendMailResponse) GetErrorMessage() *base.TipInfoMessage {
 	if x != nil {
 		return x.ErrorMessage
 	}
 	return nil
 }
 
-func (x *SendPersonalMailResponse) GetMailId() uint64 {
+func (x *SendMailResponse) GetMailId() uint64 {
 	if x != nil {
 		return x.MailId
 	}
 	return 0
 }
 
-func (x *SendPersonalMailResponse) GetDuplicated() bool {
+func (x *SendMailResponse) GetDuplicated() bool {
 	if x != nil {
 		return x.Duplicated
 	}
 	return false
 }
 
-type SendSystemMailRequest struct {
-	state       protoimpl.MessageState `protogen:"open.v1"`
-	SenderKind  MailSenderKind         `protobuf:"varint,1,opt,name=sender_kind,json=senderKind,proto3,enum=mailpb.MailSenderKind" json:"sender_kind,omitempty"`
-	RequestId   uint64                 `protobuf:"varint,2,opt,name=request_id,json=requestId,proto3" json:"request_id,omitempty"`
-	SenderName  string                 `protobuf:"bytes,3,opt,name=sender_name,json=senderName,proto3" json:"sender_name,omitempty"`
-	Title       string                 `protobuf:"bytes,4,opt,name=title,proto3" json:"title,omitempty"`
-	Body        string                 `protobuf:"bytes,5,opt,name=body,proto3" json:"body,omitempty"`
-	Attachments *MailAttachments       `protobuf:"bytes,6,opt,name=attachments,proto3" json:"attachments,omitempty"` // M1 生产必须为空
-	// 必填;服务端发件时刻 < expire_ms ≤ 发件时刻 + 系统邮件最长有效期。发出即可见,不做定时生效;M1 不可撤回。
-	ExpireMs      uint64 `protobuf:"varint,7,opt,name=expire_ms,json=expireMs,proto3" json:"expire_ms,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+type ImportMailRecipientsRequest struct {
+	state              protoimpl.MessageState `protogen:"open.v1"`
+	SenderKind         uint32                 `protobuf:"varint,1,opt,name=sender_kind,json=senderKind,proto3" json:"sender_kind,omitempty"`
+	CampaignId         uint64                 `protobuf:"varint,2,opt,name=campaign_id,json=campaignId,proto3" json:"campaign_id,omitempty"`
+	ManifestGeneration uint64                 `protobuf:"varint,3,opt,name=manifest_generation,json=manifestGeneration,proto3" json:"manifest_generation,omitempty"`
+	ShardIndex         uint32                 `protobuf:"varint,4,opt,name=shard_index,json=shardIndex,proto3" json:"shard_index,omitempty"`
+	PlayerIds          []uint64               `protobuf:"varint,5,rep,packed,name=player_ids,json=playerIds,proto3" json:"player_ids,omitempty"`
+	Auth               *base.ServiceCallAuth  `protobuf:"bytes,6,opt,name=auth,proto3" json:"auth,omitempty"`
+	unknownFields      protoimpl.UnknownFields
+	sizeCache          protoimpl.SizeCache
 }
 
-func (x *SendSystemMailRequest) Reset() {
-	*x = SendSystemMailRequest{}
+func (x *ImportMailRecipientsRequest) Reset() {
+	*x = ImportMailRecipientsRequest{}
 	mi := &file_proto_mail_mail_admin_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *SendSystemMailRequest) String() string {
+func (x *ImportMailRecipientsRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*SendSystemMailRequest) ProtoMessage() {}
+func (*ImportMailRecipientsRequest) ProtoMessage() {}
 
-func (x *SendSystemMailRequest) ProtoReflect() protoreflect.Message {
+func (x *ImportMailRecipientsRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_proto_mail_mail_admin_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -271,83 +272,76 @@ func (x *SendSystemMailRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use SendSystemMailRequest.ProtoReflect.Descriptor instead.
-func (*SendSystemMailRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use ImportMailRecipientsRequest.ProtoReflect.Descriptor instead.
+func (*ImportMailRecipientsRequest) Descriptor() ([]byte, []int) {
 	return file_proto_mail_mail_admin_proto_rawDescGZIP(), []int{2}
 }
 
-func (x *SendSystemMailRequest) GetSenderKind() MailSenderKind {
+func (x *ImportMailRecipientsRequest) GetSenderKind() uint32 {
 	if x != nil {
 		return x.SenderKind
-	}
-	return MailSenderKind_MAIL_SENDER_KIND_UNSPECIFIED
-}
-
-func (x *SendSystemMailRequest) GetRequestId() uint64 {
-	if x != nil {
-		return x.RequestId
 	}
 	return 0
 }
 
-func (x *SendSystemMailRequest) GetSenderName() string {
+func (x *ImportMailRecipientsRequest) GetCampaignId() uint64 {
 	if x != nil {
-		return x.SenderName
+		return x.CampaignId
 	}
-	return ""
+	return 0
 }
 
-func (x *SendSystemMailRequest) GetTitle() string {
+func (x *ImportMailRecipientsRequest) GetManifestGeneration() uint64 {
 	if x != nil {
-		return x.Title
+		return x.ManifestGeneration
 	}
-	return ""
+	return 0
 }
 
-func (x *SendSystemMailRequest) GetBody() string {
+func (x *ImportMailRecipientsRequest) GetShardIndex() uint32 {
 	if x != nil {
-		return x.Body
+		return x.ShardIndex
 	}
-	return ""
+	return 0
 }
 
-func (x *SendSystemMailRequest) GetAttachments() *MailAttachments {
+func (x *ImportMailRecipientsRequest) GetPlayerIds() []uint64 {
 	if x != nil {
-		return x.Attachments
+		return x.PlayerIds
 	}
 	return nil
 }
 
-func (x *SendSystemMailRequest) GetExpireMs() uint64 {
+func (x *ImportMailRecipientsRequest) GetAuth() *base.ServiceCallAuth {
 	if x != nil {
-		return x.ExpireMs
+		return x.Auth
 	}
-	return 0
+	return nil
 }
 
-type SendSystemMailResponse struct {
+type ImportMailRecipientsResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	ErrorMessage  *base.TipInfoMessage   `protobuf:"bytes,1,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"`
-	SysMailId     uint64                 `protobuf:"varint,2,opt,name=sys_mail_id,json=sysMailId,proto3" json:"sys_mail_id,omitempty"`
+	ImportedCount uint64                 `protobuf:"varint,2,opt,name=imported_count,json=importedCount,proto3" json:"imported_count,omitempty"`
 	Duplicated    bool                   `protobuf:"varint,3,opt,name=duplicated,proto3" json:"duplicated,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *SendSystemMailResponse) Reset() {
-	*x = SendSystemMailResponse{}
+func (x *ImportMailRecipientsResponse) Reset() {
+	*x = ImportMailRecipientsResponse{}
 	mi := &file_proto_mail_mail_admin_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *SendSystemMailResponse) String() string {
+func (x *ImportMailRecipientsResponse) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*SendSystemMailResponse) ProtoMessage() {}
+func (*ImportMailRecipientsResponse) ProtoMessage() {}
 
-func (x *SendSystemMailResponse) ProtoReflect() protoreflect.Message {
+func (x *ImportMailRecipientsResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_proto_mail_mail_admin_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -359,80 +353,161 @@ func (x *SendSystemMailResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use SendSystemMailResponse.ProtoReflect.Descriptor instead.
-func (*SendSystemMailResponse) Descriptor() ([]byte, []int) {
+// Deprecated: Use ImportMailRecipientsResponse.ProtoReflect.Descriptor instead.
+func (*ImportMailRecipientsResponse) Descriptor() ([]byte, []int) {
 	return file_proto_mail_mail_admin_proto_rawDescGZIP(), []int{3}
 }
 
-func (x *SendSystemMailResponse) GetErrorMessage() *base.TipInfoMessage {
+func (x *ImportMailRecipientsResponse) GetErrorMessage() *base.TipInfoMessage {
 	if x != nil {
 		return x.ErrorMessage
 	}
 	return nil
 }
 
-func (x *SendSystemMailResponse) GetSysMailId() uint64 {
+func (x *ImportMailRecipientsResponse) GetImportedCount() uint64 {
 	if x != nil {
-		return x.SysMailId
+		return x.ImportedCount
 	}
 	return 0
 }
 
-func (x *SendSystemMailResponse) GetDuplicated() bool {
+func (x *ImportMailRecipientsResponse) GetDuplicated() bool {
 	if x != nil {
 		return x.Duplicated
 	}
 	return false
 }
 
+type SealMailCampaignRequest struct {
+	state              protoimpl.MessageState `protogen:"open.v1"`
+	SenderKind         uint32                 `protobuf:"varint,1,opt,name=sender_kind,json=senderKind,proto3" json:"sender_kind,omitempty"`
+	CampaignId         uint64                 `protobuf:"varint,2,opt,name=campaign_id,json=campaignId,proto3" json:"campaign_id,omitempty"`
+	ManifestGeneration uint64                 `protobuf:"varint,3,opt,name=manifest_generation,json=manifestGeneration,proto3" json:"manifest_generation,omitempty"`
+	Auth               *base.ServiceCallAuth  `protobuf:"bytes,4,opt,name=auth,proto3" json:"auth,omitempty"`
+	unknownFields      protoimpl.UnknownFields
+	sizeCache          protoimpl.SizeCache
+}
+
+func (x *SealMailCampaignRequest) Reset() {
+	*x = SealMailCampaignRequest{}
+	mi := &file_proto_mail_mail_admin_proto_msgTypes[4]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SealMailCampaignRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SealMailCampaignRequest) ProtoMessage() {}
+
+func (x *SealMailCampaignRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_mail_mail_admin_proto_msgTypes[4]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SealMailCampaignRequest.ProtoReflect.Descriptor instead.
+func (*SealMailCampaignRequest) Descriptor() ([]byte, []int) {
+	return file_proto_mail_mail_admin_proto_rawDescGZIP(), []int{4}
+}
+
+func (x *SealMailCampaignRequest) GetSenderKind() uint32 {
+	if x != nil {
+		return x.SenderKind
+	}
+	return 0
+}
+
+func (x *SealMailCampaignRequest) GetCampaignId() uint64 {
+	if x != nil {
+		return x.CampaignId
+	}
+	return 0
+}
+
+func (x *SealMailCampaignRequest) GetManifestGeneration() uint64 {
+	if x != nil {
+		return x.ManifestGeneration
+	}
+	return 0
+}
+
+func (x *SealMailCampaignRequest) GetAuth() *base.ServiceCallAuth {
+	if x != nil {
+		return x.Auth
+	}
+	return nil
+}
+
 var File_proto_mail_mail_admin_proto protoreflect.FileDescriptor
 
 const file_proto_mail_mail_admin_proto_rawDesc = "" +
 	"\n" +
-	"\x1bproto/mail/mail_admin.proto\x12\x06mailpb\x1a\x1bproto/common/base/tip.proto\x1a\x15proto/mail/mail.proto\"\xc4\x02\n" +
-	"\x17SendPersonalMailRequest\x127\n" +
-	"\vsender_kind\x18\x01 \x01(\x0e2\x16.mailpb.MailSenderKindR\n" +
+	"\x1bproto/mail/mail_admin.proto\x12\x06mailpb\x1a\x1bproto/common/base/tip.proto\x1a)proto/common/base/service_call_auth.proto\x1a\x15proto/mail/mail.proto\"\xb3\x04\n" +
+	"\x0fSendMailRequest\x12\x1f\n" +
+	"\vsender_kind\x18\x01 \x01(\rR\n" +
 	"senderKind\x12\x1d\n" +
 	"\n" +
 	"request_id\x18\x02 \x01(\x04R\trequestId\x12.\n" +
-	"\x13recipient_player_id\x18\x03 \x01(\x04R\x11recipientPlayerId\x12\x1f\n" +
-	"\vsender_name\x18\x04 \x01(\tR\n" +
-	"senderName\x12\x14\n" +
+	"\x13recipient_player_id\x18\x03 \x01(\x04R\x11recipientPlayerId\x12\x19\n" +
+	"\bguild_id\x18\x04 \x01(\x04R\aguildId\x12\x14\n" +
 	"\x05title\x18\x05 \x01(\tR\x05title\x12\x12\n" +
 	"\x04body\x18\x06 \x01(\tR\x04body\x129\n" +
 	"\vattachments\x18\a \x01(\v2\x17.mailpb.MailAttachmentsR\vattachments\x12\x1b\n" +
-	"\texpire_ms\x18\b \x01(\x04R\bexpireMs\"\x89\x01\n" +
-	"\x18SendPersonalMailResponse\x124\n" +
+	"\texpire_ms\x18\b \x01(\x04R\bexpireMs\x120\n" +
+	"\x04auth\x18\t \x01(\v2\x1c.common.base.ServiceCallAuthR\x04auth\x12\x1f\n" +
+	"\vcampaign_id\x18\n" +
+	" \x01(\x04R\n" +
+	"campaignId\x12/\n" +
+	"\x13manifest_generation\x18\v \x01(\x04R\x12manifestGeneration\x128\n" +
+	"\x18expected_recipient_count\x18\f \x01(\x04R\x16expectedRecipientCount\x120\n" +
+	"\x14expected_shard_count\x18\r \x01(\rR\x12expectedShardCount\x12#\n" +
+	"\rmanifest_hash\x18\x0e \x01(\tR\fmanifestHash\"\x81\x01\n" +
+	"\x10SendMailResponse\x124\n" +
 	"\rerror_message\x18\x01 \x01(\v2\x0f.TipInfoMessageR\ferrorMessage\x12\x17\n" +
 	"\amail_id\x18\x02 \x01(\x04R\x06mailId\x12\x1e\n" +
 	"\n" +
 	"duplicated\x18\x03 \x01(\bR\n" +
-	"duplicated\"\x92\x02\n" +
-	"\x15SendSystemMailRequest\x127\n" +
-	"\vsender_kind\x18\x01 \x01(\x0e2\x16.mailpb.MailSenderKindR\n" +
-	"senderKind\x12\x1d\n" +
+	"duplicated\"\x82\x02\n" +
+	"\x1bImportMailRecipientsRequest\x12\x1f\n" +
+	"\vsender_kind\x18\x01 \x01(\rR\n" +
+	"senderKind\x12\x1f\n" +
+	"\vcampaign_id\x18\x02 \x01(\x04R\n" +
+	"campaignId\x12/\n" +
+	"\x13manifest_generation\x18\x03 \x01(\x04R\x12manifestGeneration\x12\x1f\n" +
+	"\vshard_index\x18\x04 \x01(\rR\n" +
+	"shardIndex\x12\x1d\n" +
 	"\n" +
-	"request_id\x18\x02 \x01(\x04R\trequestId\x12\x1f\n" +
-	"\vsender_name\x18\x03 \x01(\tR\n" +
-	"senderName\x12\x14\n" +
-	"\x05title\x18\x04 \x01(\tR\x05title\x12\x12\n" +
-	"\x04body\x18\x05 \x01(\tR\x04body\x129\n" +
-	"\vattachments\x18\x06 \x01(\v2\x17.mailpb.MailAttachmentsR\vattachments\x12\x1b\n" +
-	"\texpire_ms\x18\a \x01(\x04R\bexpireMs\"\x8e\x01\n" +
-	"\x16SendSystemMailResponse\x124\n" +
-	"\rerror_message\x18\x01 \x01(\v2\x0f.TipInfoMessageR\ferrorMessage\x12\x1e\n" +
-	"\vsys_mail_id\x18\x02 \x01(\x04R\tsysMailId\x12\x1e\n" +
+	"player_ids\x18\x05 \x03(\x04R\tplayerIds\x120\n" +
+	"\x04auth\x18\x06 \x01(\v2\x1c.common.base.ServiceCallAuthR\x04auth\"\x9b\x01\n" +
+	"\x1cImportMailRecipientsResponse\x124\n" +
+	"\rerror_message\x18\x01 \x01(\v2\x0f.TipInfoMessageR\ferrorMessage\x12%\n" +
+	"\x0eimported_count\x18\x02 \x01(\x04R\rimportedCount\x12\x1e\n" +
 	"\n" +
 	"duplicated\x18\x03 \x01(\bR\n" +
-	"duplicated*m\n" +
-	"\x0eMailSenderKind\x12 \n" +
-	"\x1cMAIL_SENDER_KIND_UNSPECIFIED\x10\x00\x12\x1d\n" +
-	"\x19MAIL_SENDER_KIND_OPS_TOOL\x10\x01\x12\x1a\n" +
-	"\x16MAIL_SENDER_KIND_ROBOT\x10\x022\xb3\x01\n" +
-	"\tMailAdmin\x12U\n" +
-	"\x10SendPersonalMail\x12\x1f.mailpb.SendPersonalMailRequest\x1a .mailpb.SendPersonalMailResponse\x12O\n" +
-	"\x0eSendSystemMail\x12\x1d.mailpb.SendSystemMailRequest\x1a\x1e.mailpb.SendSystemMailResponseB\x0fZ\n" +
-	"proto/mail\x80\x01\x00b\x06proto3"
+	"duplicated\"\xbe\x01\n" +
+	"\x17SealMailCampaignRequest\x12\x1f\n" +
+	"\vsender_kind\x18\x01 \x01(\rR\n" +
+	"senderKind\x12\x1f\n" +
+	"\vcampaign_id\x18\x02 \x01(\x04R\n" +
+	"campaignId\x12/\n" +
+	"\x13manifest_generation\x18\x03 \x01(\x04R\x12manifestGeneration\x120\n" +
+	"\x04auth\x18\x04 \x01(\v2\x1c.common.base.ServiceCallAuthR\x04auth2\x8d\x03\n" +
+	"\tMailAdmin\x12E\n" +
+	"\x10SendPersonalMail\x12\x17.mailpb.SendMailRequest\x1a\x18.mailpb.SendMailResponse\x12C\n" +
+	"\x0eSendSystemMail\x12\x17.mailpb.SendMailRequest\x1a\x18.mailpb.SendMailResponse\x12B\n" +
+	"\rSendGuildMail\x12\x17.mailpb.SendMailRequest\x1a\x18.mailpb.SendMailResponse\x12a\n" +
+	"\x14ImportMailRecipients\x12#.mailpb.ImportMailRecipientsRequest\x1a$.mailpb.ImportMailRecipientsResponse\x12M\n" +
+	"\x10SealMailCampaign\x12\x1f.mailpb.SealMailCampaignRequest\x1a\x18.mailpb.SendMailResponseB\fZ\n" +
+	"proto/mailb\x06proto3"
 
 var (
 	file_proto_mail_mail_admin_proto_rawDescOnce sync.Once
@@ -446,33 +521,39 @@ func file_proto_mail_mail_admin_proto_rawDescGZIP() []byte {
 	return file_proto_mail_mail_admin_proto_rawDescData
 }
 
-var file_proto_mail_mail_admin_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_proto_mail_mail_admin_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
+var file_proto_mail_mail_admin_proto_msgTypes = make([]protoimpl.MessageInfo, 5)
 var file_proto_mail_mail_admin_proto_goTypes = []any{
-	(MailSenderKind)(0),              // 0: mailpb.MailSenderKind
-	(*SendPersonalMailRequest)(nil),  // 1: mailpb.SendPersonalMailRequest
-	(*SendPersonalMailResponse)(nil), // 2: mailpb.SendPersonalMailResponse
-	(*SendSystemMailRequest)(nil),    // 3: mailpb.SendSystemMailRequest
-	(*SendSystemMailResponse)(nil),   // 4: mailpb.SendSystemMailResponse
-	(*MailAttachments)(nil),          // 5: mailpb.MailAttachments
-	(*base.TipInfoMessage)(nil),      // 6: TipInfoMessage
+	(*SendMailRequest)(nil),              // 0: mailpb.SendMailRequest
+	(*SendMailResponse)(nil),             // 1: mailpb.SendMailResponse
+	(*ImportMailRecipientsRequest)(nil),  // 2: mailpb.ImportMailRecipientsRequest
+	(*ImportMailRecipientsResponse)(nil), // 3: mailpb.ImportMailRecipientsResponse
+	(*SealMailCampaignRequest)(nil),      // 4: mailpb.SealMailCampaignRequest
+	(*MailAttachments)(nil),              // 5: mailpb.MailAttachments
+	(*base.ServiceCallAuth)(nil),         // 6: common.base.ServiceCallAuth
+	(*base.TipInfoMessage)(nil),          // 7: TipInfoMessage
 }
 var file_proto_mail_mail_admin_proto_depIdxs = []int32{
-	0, // 0: mailpb.SendPersonalMailRequest.sender_kind:type_name -> mailpb.MailSenderKind
-	5, // 1: mailpb.SendPersonalMailRequest.attachments:type_name -> mailpb.MailAttachments
-	6, // 2: mailpb.SendPersonalMailResponse.error_message:type_name -> TipInfoMessage
-	0, // 3: mailpb.SendSystemMailRequest.sender_kind:type_name -> mailpb.MailSenderKind
-	5, // 4: mailpb.SendSystemMailRequest.attachments:type_name -> mailpb.MailAttachments
-	6, // 5: mailpb.SendSystemMailResponse.error_message:type_name -> TipInfoMessage
-	1, // 6: mailpb.MailAdmin.SendPersonalMail:input_type -> mailpb.SendPersonalMailRequest
-	3, // 7: mailpb.MailAdmin.SendSystemMail:input_type -> mailpb.SendSystemMailRequest
-	2, // 8: mailpb.MailAdmin.SendPersonalMail:output_type -> mailpb.SendPersonalMailResponse
-	4, // 9: mailpb.MailAdmin.SendSystemMail:output_type -> mailpb.SendSystemMailResponse
-	8, // [8:10] is the sub-list for method output_type
-	6, // [6:8] is the sub-list for method input_type
-	6, // [6:6] is the sub-list for extension type_name
-	6, // [6:6] is the sub-list for extension extendee
-	0, // [0:6] is the sub-list for field type_name
+	5,  // 0: mailpb.SendMailRequest.attachments:type_name -> mailpb.MailAttachments
+	6,  // 1: mailpb.SendMailRequest.auth:type_name -> common.base.ServiceCallAuth
+	7,  // 2: mailpb.SendMailResponse.error_message:type_name -> TipInfoMessage
+	6,  // 3: mailpb.ImportMailRecipientsRequest.auth:type_name -> common.base.ServiceCallAuth
+	7,  // 4: mailpb.ImportMailRecipientsResponse.error_message:type_name -> TipInfoMessage
+	6,  // 5: mailpb.SealMailCampaignRequest.auth:type_name -> common.base.ServiceCallAuth
+	0,  // 6: mailpb.MailAdmin.SendPersonalMail:input_type -> mailpb.SendMailRequest
+	0,  // 7: mailpb.MailAdmin.SendSystemMail:input_type -> mailpb.SendMailRequest
+	0,  // 8: mailpb.MailAdmin.SendGuildMail:input_type -> mailpb.SendMailRequest
+	2,  // 9: mailpb.MailAdmin.ImportMailRecipients:input_type -> mailpb.ImportMailRecipientsRequest
+	4,  // 10: mailpb.MailAdmin.SealMailCampaign:input_type -> mailpb.SealMailCampaignRequest
+	1,  // 11: mailpb.MailAdmin.SendPersonalMail:output_type -> mailpb.SendMailResponse
+	1,  // 12: mailpb.MailAdmin.SendSystemMail:output_type -> mailpb.SendMailResponse
+	1,  // 13: mailpb.MailAdmin.SendGuildMail:output_type -> mailpb.SendMailResponse
+	3,  // 14: mailpb.MailAdmin.ImportMailRecipients:output_type -> mailpb.ImportMailRecipientsResponse
+	1,  // 15: mailpb.MailAdmin.SealMailCampaign:output_type -> mailpb.SendMailResponse
+	11, // [11:16] is the sub-list for method output_type
+	6,  // [6:11] is the sub-list for method input_type
+	6,  // [6:6] is the sub-list for extension type_name
+	6,  // [6:6] is the sub-list for extension extendee
+	0,  // [0:6] is the sub-list for field type_name
 }
 
 func init() { file_proto_mail_mail_admin_proto_init() }
@@ -486,14 +567,13 @@ func file_proto_mail_mail_admin_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_proto_mail_mail_admin_proto_rawDesc), len(file_proto_mail_mail_admin_proto_rawDesc)),
-			NumEnums:      1,
-			NumMessages:   4,
+			NumEnums:      0,
+			NumMessages:   5,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
 		GoTypes:           file_proto_mail_mail_admin_proto_goTypes,
 		DependencyIndexes: file_proto_mail_mail_admin_proto_depIdxs,
-		EnumInfos:         file_proto_mail_mail_admin_proto_enumTypes,
 		MessageInfos:      file_proto_mail_mail_admin_proto_msgTypes,
 	}.Build()
 	File_proto_mail_mail_admin_proto = out.File

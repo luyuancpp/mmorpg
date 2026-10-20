@@ -73,6 +73,8 @@ func CreatePlayerSnapshot(ctx context.Context, svcCtx *svc.ServiceContext, req *
 	// 3. Look up zone
 	zoneID, err := svcCtx.Router.GetPlayerHomeZone(ctx, req.PlayerID)
 	if err != nil {
+		// DevRedis 下第 1 步不查映射,「有数据、无映射」的玩家在这里才失败;码照旧是 ErrCodeRedis,原因记进 [DataRoute] 日志。
+		logRouteFailure(ctx, "CreatePlayerSnapshot", req.PlayerID, err)
 		return &CreateSnapshotResp{ErrorCode: constants.ErrCodeRedis},
 			fmt.Errorf("resolve home zone for snapshot player %d: %w", req.PlayerID, err)
 	}

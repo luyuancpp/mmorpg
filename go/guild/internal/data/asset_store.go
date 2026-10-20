@@ -150,8 +150,9 @@ const (
 
 // 清理指标的 table label 与 orphan 指标的两个 label,全部取自固定集合(不带任何 id,AGENTS §9)。
 const (
-	cleanupTableAssetOp = "guild_asset_op"
-	cleanupTableCounter = "guild_daily_counter"
+	cleanupTableAssetOp       = "guild_asset_op"
+	cleanupTableCounter       = "guild_daily_counter"
+	cleanupTableClientRequest = "guild_client_request"
 
 	orphanKindDonate = "donate"
 	orphanKindShop   = "shop"
@@ -174,7 +175,7 @@ var (
 		Namespace: guildMetricNamespace,
 		Subsystem: "asset",
 		Name:      "cleanup_deleted_total",
-		Help:      "清理任务删除的行数(终态资产指令 / 过期计数行)。长期为 0 而表在长,说明清理没在跑。",
+		Help:      "清理任务删除的行数(终态资产指令 / 过期计数行 / 过期的客户端幂等键去重记录)。长期为 0 而表在长,说明清理没在跑。",
 		Labels:    []string{"table"},
 	})
 )
@@ -331,6 +332,16 @@ const (
 	// 终态 op 行的点锁与其余 op 行写者共用 sqlLockAssetOp(同一形状,见上)。
 	sqlLockCleanupCounter = `SELECT period_key FROM guild_daily_counter
 	WHERE player_id = ? AND counter_kind = ? AND ref_id = ? AND period_key = ? FOR UPDATE`
+
+	// 客户端幂等键的去重记录(guild_client_request,锁序位置 11):created_ms 早于截止的行。候选走 idx_guild_client_request_0,
+	// 点锁只写完整主键等值(Point_Get 快路径,理由同 sqlLockCleanupCounter),复核条件留在点删里。
+	// 本表别的写者只有预留事务插新行(created_ms = 请求的 now,远在截止之后),行集合不相交;点锁只为让多个副本的清理排队。
+	sqlListCleanupClientRequests = "SELECT `player_id`, `client_request_id` FROM " + guildClientRequestTable +
+		" WHERE `created_ms` < ? ORDER BY `created_ms` ASC LIMIT ?"
+	sqlLockCleanupClientRequest = "SELECT `op_id` FROM " + guildClientRequestTable +
+		" WHERE `player_id` = ? AND `client_request_id` = ? FOR UPDATE"
+	sqlCleanupClientRequest = "DELETE FROM " + guildClientRequestTable +
+		" WHERE `player_id` = ? AND `client_request_id` = ? AND `created_ms` < ?"
 )
 
 // PendingStatus 是 guild_asset_op.status 的"未决"库值,给 assetop 的 seq 分配与本文件的 SQL 用。
@@ -1261,10 +1272,15 @@ func (s *GuildAssetStore) RunCleanup(ctx context.Context, c CleanupConf) {
 	}
 }
 
-// CleanupOnce 跑一轮清理(可测:时刻由调用方给)。三类(终态指令、过期日键计数、过期周键计数)各自分批,
+// CleanupOnce 跑一轮清理(可测:时刻由调用方给)。四类(过期去重记录、终态指令、过期日键计数、过期周键计数)各自分批,
 // 每批"普通读候选主键 → 逐行 RC 短事务{主键点锁 → 主键点删}"(见 sqlListCleanupTerminalOps 上方的说明与 execCleanupDelete)。
-// 一类失败不影响另外两类,错误合并返回;已删的行数照常计指标。
+// 一类失败不影响其它类,错误合并返回;已删的行数照常计指标。
 // 点删失败不在本轮重试:没删掉的行仍满足条件,下一轮(Interval 之后)自然再删,不丢任何东西。
+//
+// 去重记录与终态指令共用 TerminalRetention 的截止,并排在它之前删:指令按终结时刻判龄、终结不早于创建,
+// 所以一笔指令可删时它的去重记录早已可删。批次上限或单行失败仍可能让少量去重记录比指令行晚一轮删,
+// 那段时间里重发同一个键查到记录却查不到指令行 —— logic 按拒绝答复、不重新执行(economy_logic.go 的 clientRequestMismatch)。
+// 去重记录与回档检查的清理水位无关,水位写不进也照删。
 func (s *GuildAssetStore) CleanupOnce(ctx context.Context, now time.Time, c CleanupConf) error {
 	if c.TerminalRetention <= 0 || c.CounterRetention <= 0 {
 		return fmt.Errorf("guild asset cleanup: retention must be positive (terminal=%v counter=%v)",
@@ -1280,6 +1296,9 @@ func (s *GuildAssetStore) CleanupOnce(ctx context.Context, now time.Time, c Clea
 
 	var errs []error
 	if opCutoffMs > 0 {
+		errs = append(errs, s.cleanupInBatches(ctx, cleanupTableClientRequest, func(ctx context.Context) (int, int64, error) {
+			return s.cleanupClientRequestsBatch(ctx, opCutoffMs)
+		}))
 		// 先推进清理水位再删(write-ahead,理由见 asset_op_cleanup_watermark.go):回档检查靠水位知道"哪一段流水已经可能被删"。
 		// 水位写不进就不删终态行 —— 多留一轮无害;删了却没记下,调大保留期之后那段流水会被误当成"可证明且没有分歧"。
 		if err := s.advanceTerminalCleanupWatermark(ctx, opCutoffMs); err != nil {
@@ -1361,6 +1380,51 @@ func (s *GuildAssetStore) cleanupTerminalOpsBatch(ctx context.Context, cutoffMs 
 		}
 	}
 	return len(opIDs), deleted, nil
+}
+
+// clientRequestKey 是 guild_client_request 的完整主键。
+type clientRequestKey struct{ PlayerID, ClientRequestID uint64 }
+
+// cleanupClientRequestsBatch:普通读至多 500 个 created_ms 早于截止的去重记录主键(按创建时刻升序),逐行短事务点锁 + 点删并复核。
+func (s *GuildAssetStore) cleanupClientRequestsBatch(ctx context.Context, cutoffMs uint64) (int, int64, error) {
+	keys, err := s.listCleanupClientRequests(ctx, cutoffMs)
+	if err != nil {
+		return 0, 0, err
+	}
+	var deleted int64
+	for _, k := range keys {
+		n, err := s.execCleanupDelete(ctx, sqlLockCleanupClientRequest, []any{k.PlayerID, k.ClientRequestID},
+			sqlCleanupClientRequest, k.PlayerID, k.ClientRequestID, cutoffMs)
+		deleted += n
+		if err != nil {
+			return len(keys), deleted, fmt.Errorf("delete %s (player=%d client_request_id=%d): %w",
+				guildClientRequestTable, k.PlayerID, k.ClientRequestID, err)
+		}
+	}
+	return len(keys), deleted, nil
+}
+
+func (s *GuildAssetStore) listCleanupClientRequests(ctx context.Context, cutoffMs uint64) ([]clientRequestKey, error) {
+	ctx, cancel := context.WithTimeout(ctx, storeReadBudget)
+	defer cancel()
+	rows, err := s.db.QueryContext(ctx, sqlListCleanupClientRequests, cutoffMs, cleanupBatchSize)
+	if err != nil {
+		return nil, fmt.Errorf("list expired %s: %w", guildClientRequestTable, err)
+	}
+	defer rows.Close()
+
+	var keys []clientRequestKey
+	for rows.Next() {
+		var k clientRequestKey
+		if err := rows.Scan(&k.PlayerID, &k.ClientRequestID); err != nil {
+			return nil, fmt.Errorf("scan expired %s: %w", guildClientRequestTable, err)
+		}
+		keys = append(keys, k)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("iterate expired %s: %w", guildClientRequestTable, err)
+	}
+	return keys, nil
 }
 
 // counterKey 是 guild_daily_counter 的完整主键。

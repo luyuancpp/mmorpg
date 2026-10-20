@@ -1,5 +1,6 @@
 # Guild Service Configuration
 Name: guild.rpc
+Mode: dev
 ListenOn: 127.0.0.1:50300
 # zrpc 服务端整体超时(毫秒):≤ 路由服 ForwardTimeoutMs(5000)− 1000 = 4000
 # (docs/design/guild-phase2/00-contract.md §2)。另须 ≥ DataServiceRpc.Timeout + 1500(归属区查询)
@@ -15,16 +16,21 @@ ApplicationQuotaPerMinute: 10
 # 写了反而会被本地 go_services.ps1 -Zone 加上 .z<N> 后缀,把同一个全局服务切成按 zone 的碎片。
 
 # Global Redis (not per-zone — guilds are cross-zone)
+# 三段 Redis 的 PoolSize 是各自 go-redis 连接池上限(P0-E 第 3 批):0 / 不写 = go-redis 缺省 10 × GOMAXPROCS,
+# 随 CPU limit 漂移(本机 Windows 上是 10 × 核数);负数 config.Validate 拒启。20 = K8s 上 GOMAXPROCS 按 2 时的缺省值。
+# guild 现在没有 K8s 清单、不进共享 Redis 连接总账;接入 K8s 时要在 tools/scripts/k8s_deploy.ps1 镜像这三个键并记账。
 RedisClient:
   Host: 127.0.0.1:6379
   Password: ""
   DB: 2
+  PoolSize: 20
 
 # Online status source (player_locator session store)
 PlayerLocatorRedis:
   Host: 127.0.0.1:6379
   Password: ""
   DB: 0
+  PoolSize: 20
 
 # 合服闸门(可选):指向 data_service 的 **mapping Redis**,guild 只读一把键
 # merge:in_progress:{zone}。键存在 = 该 zone 正在合服 → CreateGuild 拒绝
@@ -36,16 +42,27 @@ PlayerLocatorRedis:
 # 填错库 = 闸门永远看不到标记 = 合服窗口内照样能在源 zone 建帮。
 #
 # 整段删掉 = 闸门不生效,启动时会打一条 "MergeMarkerRedis 未配置" 的 Info。
+#
+# RequireRouteReady(D1 第 3 批读方门禁,缺省 false = 上面的 EXISTS 判据,行为不变):
+# true 时只有 mapping Redis 的就绪标记 mapping:route:ready 可信(记下的身份就是本实例)才按闸门键判,
+# 不可信时经闸门的公会写(建帮、入帮、经济、活动等)一律按封锁拒绝;启动期试跑一次读脚本,执行不了就拒启。只在 data_service 已是 db_first、
+# 对账 leader 已挂上标记之后打开(上线顺序 P5:go/db → data_service → guild),回退时先关它。
+# 见 docs/handoff/launch-readiness-20261013/spec_D1_batch1b2_2_3.md §5.4 / §8。
 MergeMarkerRedis:
   Host: 127.0.0.1:6379
   Pass: ""
   DB: 0
+  PoolSize: 20
+  RequireRouteReady: false
 
 # ---- 独占库 mmorpg_guild(D-14 §1/§5,§8 已修订)----
 # 库由 deploy/mysql-init/00_init_zone_dbs.sql 预建(存量卷需 root 手工执行那两行);表由 go/schemamigrate
 # 按 proto/guild/guild_db.proto 建。DSN 库名必须是 mmorpg_guild(config.Validate 断言)。
 # 账号用 appuser(与 go/trade/etc/trade.yaml 同账号,只对独占库有 ALL 权限)。
 MySQL:
+  # 本地旧MySQL兼容；全局部署须开启，预发/生产禁止关闭。
+  RequireTiDB: false
+  MaxOpenConn: 20
   DataSource: "appuser:apppass123@tcp(127.0.0.1:3306)/mmorpg_guild?charset=utf8mb4&parseTime=true&loc=Local"
   # 连接池上限(每个副本)。不写 = 20 / 5;MaxIdleConn ≤ MaxOpenConn。K8s ConfigMap 从这两个键镜像,
   # MySQL 连接总账(k8s_deploy.ps1 Get-MysqlConnectionLedger)按 MaxOpenConn × 副本数记账。
@@ -126,8 +143,8 @@ IdSegment:
 #   (config.Validate 强制)。
 AssetOp:
   Enabled: true
-  # 重投循环节律。Workers 是**每个副本**同时压向 scene 的资产 RPC 上限(scene 的同步 poller 默认只有 8 条),
-  # 扩副本或调大前先复核;ReconcileBatch 必须 ≥ Workers。
+  # 重投循环节律。Workers 是**每个副本**同时压向 scene 的资产 RPC 上限(资产 RPC 在 scene 的 EventLoop 上同步执行,
+  # 调大会挤占逻辑帧,见 assetop.LoopConfig.Workers 注释),扩副本或调大前先复核;ReconcileBatch 必须 ≥ Workers。
   ReconcileIntervalMs: 2000
   ReconcileBatch: 100
   Workers: 8
@@ -142,6 +159,13 @@ AssetOp:
   PoisonDelayMs: 3600000
   # 连续几次投不出去之后才读已落盘账本(B5d 接上 Ledger 之前不生效)。
   LedgerReadMinAttempts: 3
+  # 资产 SQL 提交证据开关(docs/design/db-write-fencing-mysql.md §6.6 / §8.7)。不写或 false = HEAD 口径:在线按 scene
+  #   回包的 durable 终结,离线读账本与自动放弃读 Redis 父键 blob。true = 在线 / 离线终结只认 go/db 发布的 SQL 提交证据,
+  #   自动放弃要 blob 与证据都确认未见。
+  # !! 只有 guild 会投递到的 zone 全部已切 go/db Fencing.Mode=dual、已上新版 C++,并观察到证据在持续发布之后才打开;
+  #   打开前接受「已离线、尚无证据的玩家待办要等他再次存盘」。打开时没有 DataServiceRpc 即拒启。
+  #   回退顺序:先把这里改回 false,再把 zone 切回 legacy 或回退 C++。
+  RequireSQLCommit: false
   # 终态行 / 过期计数行清理(goroutine guild.asset_op_cleanup,每个副本都跑,删除幂等,PENDING 与
   # APPLIED_PARTIAL 永不删)。TerminalRetentionDays 同时是 B5d 回档检查可追溯窗口的下界,调小前先看
   # 07-rollback-fail-closed.md §7.4.2。

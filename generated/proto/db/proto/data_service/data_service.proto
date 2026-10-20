@@ -521,11 +521,15 @@ message BatchGetPlayerNameResponse {
 //   - zone Redis 读失败 → Internal;blob 在但反序列化失败、或 player_id 与请求不符 → Internal;
 //   - player_id = 0 → InvalidArgument。
 
-message GetPlayerAssetOpLedgerRequest { uint64 player_id = 1; }
+message GetPlayerAssetOpLedgerRequest {
+  uint64 player_id = 1;
+  bool require_sql_commit = 2; // true 只读取 SQL 提交证据，缺失时 found=false，禁止 Redis 快照回退
+}
 
 message GetPlayerAssetOpLedgerResponse {
   bool found = 1;                          // false = 该玩家在 zone Redis 里没有 blob(从未入场,或 Redis 丢数据)
   PlayerAssetOpLedgerComp ledger = 2;      // found=true 且玩家从未有过资产操作时为空消息(不是缺席)
+  bool sql_committed = 3; // SQL 提交证据分支才为 true；旧服务默认 false，强一致调用拒绝旧证据
 }
 
 // ── 玩家收件箱:已落盘账本 ─────────────────────────────────────

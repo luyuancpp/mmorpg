@@ -84,7 +84,8 @@
     # go/db 存盘消费组的渲染模式(keep | zone | legacy),透传给 k8s_deploy.ps1 同名参数,语义见那边的参数注释与
     # docs/design/db-consumer-group-per-zone.md(zone / legacy 只许配 k8s-zone-up,由 k8s_deploy.ps1 在入口拒绝)。
     # 默认留空 = 不透传,由 k8s_deploy.ps1 的默认值 keep 接管(写法同 -GateRouterMode:默认值只留在 k8s_deploy.ps1 一处)。
-    # k8s-release-* 不转发它(等于 keep);k8s-zone-rollback 不经本参数,回滚脚本的 Step 6 自己固定传 zone。
+    # k8s-image-* / k8s-release-* 不转发它(不部署 db);k8s-zone-rollback 不经本参数,回滚脚本的 Step 6 自己固定传 zone。
+    # 这两条路上显式给了即在任何副作用之前拒绝,不静默吞掉。
     [ValidateSet("", "keep", "zone", "legacy")]
     [string]$DbConsumerGroup = "",
     # 排行榜评分快照发布开关(k8s-infra-up / k8s-all-up),透传给 k8s_deploy.ps1 -MatchRatingSnapshotPublish(docs/design/leaderboard-system.md §5.4)。
@@ -108,7 +109,8 @@
     # infra / zone,之后每次经本入口重新部署都必须再传同一组参数;漏传时 k8s_deploy.ps1 按集群现状在任何写操作之前拒绝
     # (确要切换形态或改地址,加 -AllowDisruptiveSwitch)。
     # k8s-zone-rollback 转发 -GateRouterMode、本组的 gate / Ingress 参数、-GateServiceType、-RequireClientEndpoint、
-    # -LoginDevPasswordAuth、-AllowDisruptiveSwitch、显式给了的 -ReleaseProfile 与 -KubeContext / -KubeConfig
+    # -LoginDevPasswordAuth、第三方登录的 -Login* 与 -ConfirmLoginAuthProviderChange(见参数块末尾)、
+    # -AllowDisruptiveSwitch、显式给了的 -ReleaseProfile 与 -KubeContext / -KubeConfig
     # (不转发 -BattleOrchestrator:zone 回滚不碰 battle 全局池)。它的 Step 1 删掉整个 zone namespace,k8s_deploy.ps1 的
     # 集群现状预检在 Step 6 通常无从触发,改由 k8s_zone_rollback.ps1 在停服之前自行核对,并把 Step 6 的参数先 -DryRun 一遍(见该脚本第 0 步);
     # 以 external 运行的 zone 回滚时照传上一次部署的同一组值。
@@ -146,6 +148,11 @@
     # 语义见 k8s_deploy.ps1 参数注释(P0-E 重启闸);switch 只在被指定时透传,只在维护窗口里显式加。
     # 只对会 apply infra 的入口有意义:k8s-infra-up、k8s-all-up、k8s-release-all(均不带 -SkipInfra);k8s-zone-rollback 不 infra-up,不转发。
     [switch]$ConfirmRedisCoreRestart,
+    # 共享 Redis 的形态(1 = 单实例 redis.yaml,3 = 高可用 redis-ha.yaml;0 = 不透传,由 k8s_deploy.ps1 按档位取),透传给
+    # k8s_deploy.ps1 / k8s_image.ps1 同名参数,语义见 k8s_deploy.ps1 参数注释。非 0 才透传。zone 入口(k8s-zone-up 等)通常不用传:
+    # 它决定 db / data-service 的 WAITAOF 副本份数,k8s_deploy.ps1 的 zone-up 没收到时跟随线上 sts/redis,收到而与线上不同即拒绝。
+    [ValidateRange(0, 3)]
+    [int]$RedisReplicas = 0,
     [switch]$SkipInfra,
     [switch]$SkipGoSvc,
     [string]$GoSvcRegistry = "ghcr.io/luyuancpp",
@@ -322,7 +329,9 @@
     [switch]$KafkaToLatest,
     [switch]$KafkaDeleteAndRecreate,
     [int]$KafkaPartitions = 0,
-    [int]$KafkaReplicationFactor = 1,
+    # 0 = 没给(不透传)。-KafkaDeleteAndRecreate 时 kafka_offset_reset.ps1 要求显式给出、且等于现有 topic 的副本数;
+    # 以前缺省 1 且只在 ≠ 1 时透传,单 broker 档显式给 1 也传不下去。
+    [int]$KafkaReplicationFactor = 0,
     [string]$KafkaBin = "",
     # 转给 kafka_offset_reset.ps1 -RetireGroup / -FinalizeHandoff(db_task 消费组交接收尾与回档退役旧组位点,
     # 见 docs/design/db-consumer-group-per-zone.md §5)。都要配 -KafkaPartitions(> 0)。
@@ -332,14 +341,16 @@
 
     # ── k8s-zone-rollback ─────────────────────────────────────────
     # See tools/scripts/k8s_zone_rollback.ps1 for full docs.
-    # Wraps docs/design/zone_data_rollback.md §3 5-step disaster recovery.
-    [string]$RollbackTargetTime = "",       # ISO 8601 UTC
+    # Wraps docs/design/zone_data_rollback.md §3 disaster recovery(负责人 2026-10-17 裁决:丢弃 TargetTime 之后的写)。
+    [string]$RollbackTargetTime = "",       # UTC,yyyy-MM-ddTHH:mm:ss[.fff]Z
+    # go/db 的共享 Redis(K8s 即 infra redis 的 DB 0;回档工具在这里丢弃 T 之后的状态,不做 FLUSHDB)。-RollbackApply 时必填。
     [string]$RollbackRedisHost = "",
     [string]$RollbackRedisPort = "6379",
+    # 已废弃(2026-10-18):口令不再经命令行。非空即在调用回滚脚本之前拒绝,改用 -RollbackRedisPasswordEnv <环境变量名>。
     [string]$RollbackRedisPassword = "",
     [int]$RollbackRedisDB = 0,
-    # 留空 = 由 k8s_zone_rollback.ps1 按 -ZoneId 推导 db_task_zone_<id>。
-    # 旧默认 "db_task_topic" 全仓不存在,会静默重置一个空 topic。
+    # 留空 = 由 k8s_zone_rollback.ps1 按 -ZoneId 与 go/db/etc/db.yaml 的 TopicGeneration 推导 db_task_zone_<id>[_g<gen>];
+    # 显式给了却与推导值不同,回滚脚本在入口拒绝。旧默认 "db_task_topic" 全仓不存在,会静默重置一个空 topic。
     [string]$RollbackKafkaTopic = "",
     # 留空 = 由 k8s_zone_rollback.ps1 按 go/db/etc/db.yaml 的 GroupID 基名推导:-RollbackKafkaGroup 为 <基名>_z<ZoneId>
     # (回档后的权威组,Step 5 重置它),-RollbackKafkaLegacyGroup 为 <基名>(Step 5 删除它在本 topic 上的位点)。
@@ -350,11 +361,43 @@
     # 转给 k8s_zone_rollback.ps1 -ConfirmNoGatewayIngress:显式声明回滚后该 zone 不要 Ingress gateway(Ingress 核对的显式决定,
     # 与 -GatewayIngressHost 互斥)。switch 不占位置参数,插在这里不影响后面参数的位置绑定。
     [switch]$RollbackConfirmNoGatewayIngress,
-    # 转给 k8s_zone_rollback.ps1 -ConfirmFlushSharedRedis:Step 4 FLUSHDB 的目标 DB 里有全局共享键
-    # (player:zone / player:placement / player:maprev / merge:* / consumer:applied* / kafka:retry*)时仍然放行。默认拒绝。
+    # 已废弃(2026-10-18):回档不再 FLUSHDB(go/db 游标、重试收据、映射、账号目录与各 zone 缓存同在一个 Redis DB)。
+    # 传了即在调用回滚脚本之前拒绝;整套环境重建走 AGENTS.md §6.2。
     [switch]$RollbackConfirmFlushSharedRedis,
+    # 以下转给 k8s_zone_rollback.ps1 的同名参数(去掉 Rollback 前缀),非空 / 大于 0 才转发,语义与校验都在回滚脚本一处:
+    # Redis 口令所在的环境变量名、zone_<id>_db DSN 所在的环境变量名(都只给变量名)、预编译的 zone_rollback_discard、屏障协议世代
+    # (legacy;strict 待负责人裁决 #3)、rollback-id(单步或整脚本重跑用同一个)、Step 1b 的静默窗口秒数(≥ 300)、
+    # -RollbackSkipMySqlPause 时声明的 PITR 恢复时刻、带 blocked 玩家继续的人数(待负责人裁决 #4,回滚脚本会拒绝)。
+    # switch 与这些字符串 / 整数都放在参数块末尾,不影响前面参数的位置绑定。
+    [string]$RollbackRedisPasswordEnv = "",
+    [string]$RollbackMySqlDsnEnv = "",
+    [string]$RollbackDiscardTool = "",
+    [ValidateSet("", "legacy", "strict")]
+    [string]$RollbackBarrierProtocol = "",
+    [string]$RollbackId = "",
+    [int]$RollbackQuiesceSeconds = 0,
+    [string]$RollbackPitrRestoredTo = "",
+    [int]$RollbackAcceptBlockedPlayers = 0,
+    # 转给 k8s_zone_rollback.ps1 的 -AllowEmptyTarget / -AcknowledgeNoPostTWrites(回档复核 [11]):只在被指定时转发,语义见回滚脚本同名参数
+    # (前者只用于从未落过库的新 zone;后者只用于 T 之后确实没有任何存盘的 zone,inventory / purge / verify 一并带上)。
+    # 以前经本入口走不到这两条路径,只能直接调用回滚脚本。
+    [switch]$RollbackAllowEmptyTarget,
+    [switch]$RollbackAcknowledgeNoPostTWrites,
     # 原 -RollbackKafkaDrainTimeoutSec 已删除(2026-10-15):回滚脚本删掉了 zone-down 之后等 LAG 排空的 Step 2。
-    [switch]$RollbackApply
+    [switch]$RollbackApply,
+    # 集群内 login 的第三方登录(微信 / QQ),透传给 k8s_deploy.ps1 同名参数(k8s-zone-up / k8s-all-up)与 k8s-zone-rollback 的 Step 6,
+    # 语义、形状校验与微信密钥(环境变量 MMORPG_LOGIN_WECHAT_APP_SECRET,不经参数)都只在 k8s_deploy.ps1 一处。字符串非空才透传,
+    # switch 只在被指定时透传:默认值只留在下游。不粘滞,而且漏传有闸:线上已开的第三方登录会被本次参数关掉或改掉时,
+    # k8s_deploy.ps1 在任何写操作之前拒绝(k8s-zone-rollback 由回滚脚本第 0 步在停服之前拒绝),报错给出照传现状的参数串;
+    # 确要关闭或改动加 -ConfirmLoginAuthProviderChange。k8s_image.ps1 不部署 login,k8s-image-* / k8s-release-* 显式给了即拒绝。
+    # 追加在参数块末尾:字符串参数按声明顺序占位置,插在中间会挪动后面参数的位置绑定。
+    [string]$LoginWeChatAppId = "",
+    [string]$LoginWeChatEndpoint = "",
+    [switch]$LoginWeChatAllowOpenId,
+    [string]$LoginQQAppId = "",
+    [string]$LoginQQEndpoint = "",
+    [switch]$LoginQQAllowOpenId,
+    [switch]$ConfirmLoginAuthProviderChange
 )
 
 $ErrorActionPreference = "Stop"
@@ -404,12 +447,23 @@ function Invoke-ProtoGenBuild {
         $primaryProtoGenExePath = Join-Path $ProtoGenDir "proto-gen.exe"
         $staleCmdExePath = Join-Path $ProtoGenDir "cmd.exe"
 
+        # 构建开始时刻:构建成功后用它给 exe 打写入时间戳(理由见下文),必须在 go build 启动之前取。
+        $buildStartUtc = [DateTime]::UtcNow
         go build -v -o $legacyProtoGenExePath ./cmd
         # go build 是外部命令,失败不会触发 $ErrorActionPreference = "Stop"。不在这里拦,下一行就会把上一次的
         # 旧 pbgen.exe 当新产物复制过去、脚本以 0 退出,dev.bat 接着用旧生成器改写代码。
         # 2026-09-20 就这样吞掉了 scene_node_service.cpp 的手写守护段。构建失败必须让整条 proto 流程停下。
         if ($LASTEXITCODE -ne 0) { throw "proto generator build failed (go build exit $LASTEXITCODE); stale pbgen.exe / proto-gen.exe left untouched, do not run proto-gen-run" }
         Copy-Item -Path $legacyProtoGenExePath -Destination $primaryProtoGenExePath -Force
+        # go build 发现产物已是最新时可以不重写文件,刷新写入时间也只是它的尽力而为(忽略错误)。
+        # proto-gen-run 按写入时间判定 exe 是否落后于源码(Get-ProtoGenBinaryStaleReason),所以构建成功后在这里显式打戳,
+        # 保证「构建成功 ⇒ 构建开始前已落盘的源码不判旧」:否则源码只被 touch(如切分支)时,构建了也会被 -UseBinary 一直拒绝。
+        # 戳用构建开始时刻而不是构建结束时刻:go build 在各包编译时才读源码,同一工作区的其他会话在构建期间保存的源码
+        # 可能没进这次产物;它们的写入时间晚于构建开始,proto-gen-run 会判旧(fail-closed),不会被更晚的戳盖住。
+        # 受文件系统时间戳精度限制,紧贴构建开始那一刻的保存仍可能判为不旧。
+        foreach ($builtExePath in @($legacyProtoGenExePath, $primaryProtoGenExePath)) {
+            [System.IO.File]::SetLastWriteTimeUtc($builtExePath, $buildStartUtc)
+        }
 
         if (Test-Path $staleCmdExePath) {
             Remove-Item $staleCmdExePath -Force -ErrorAction SilentlyContinue
@@ -418,6 +472,42 @@ function Invoke-ProtoGenBuild {
     finally {
         Pop-Location
     }
+}
+
+# 预编译生成器 exe 是否落后于生成器源码:落后时返回一句英文原因(哪个 exe 比哪个源码文件旧),否则返回 $null。
+# 背景:批 7 起 proto/message_id.txt 有 `N=reserved:<KeyName>` 墓碑行。不认识墓碑的旧 exe 会把墓碑号当空号回收、
+# 写回时丢掉墓碑行,悄悄毁掉「号码不复用」;同一工作区又有多个会话随时可能 regen,所以跑 exe 前必须先判新旧。
+# 只比现存源码文件的写入时间(LastWriteTimeUtc),不比内容,两个方向都有误差:
+#   - 多判:切分支等只 touch 源码的操作会误判为旧,代价只是改走 go run 或提示重建;
+#   - 漏判:删除源码文件、改名(NTFS 改名保留写入时间)、保留原写入时间的复制或解压,都不会留下比 exe 新的文件,判不出来。
+#     这类改动通常伴随其他源码修改;单独发生时需要手动跑 proto-gen-build。
+# 源码范围 = $ProtoGenDir 下会进入二进制的输入:
+#   - *.go,排除 *_test.go(测试文件不进二进制);
+#   - *.tmpl:grpc_service_handler.*.tmpl、service_metadata.h.tmpl 经 go:embed 编进二进制;其余模板在运行期按相对路径读取,
+#     一并计入只会多判,不会因此漏判;
+#   - 根目录 go.mod / go.sum(依赖版本变化)。
+# 排除的顶层目录(生成器运行期写入或读取、不进二进制;不排除的话每次 regen 后都可能误判为旧):
+#   - cpp/:cmd/root.go 的 makeProjectDir 在运行期按相对工作目录创建 generated_dir="cpp/generated/";
+#   - etc/:运行期读取的 yaml 配置;
+#   - bin/:.gitignore 里的本地构建输出目录。
+function Get-ProtoGenBinaryStaleReason {
+    param([Parameter(Mandatory = $true)][string]$BinaryPath)
+
+    $excludedTopLevelDirs = @('cpp', 'etc', 'bin')
+    $topLevelFiles = @(Get-ChildItem -LiteralPath $ProtoGenDir -File -Force)
+    $nestedFiles = @(Get-ChildItem -LiteralPath $ProtoGenDir -Directory -Force |
+        Where-Object { $excludedTopLevelDirs -notcontains $_.Name } |
+        ForEach-Object { Get-ChildItem -LiteralPath $_.FullName -Recurse -File -Force })
+    $sources = @(($topLevelFiles + $nestedFiles) | Where-Object {
+            ($_.Name -like '*.go' -and $_.Name -notlike '*_test.go') -or $_.Name -like '*.tmpl'
+        }) + @($topLevelFiles | Where-Object { $_.Name -in @('go.mod', 'go.sum') })
+
+    $binaryWriteTimeUtc = (Get-Item -LiteralPath $BinaryPath -Force).LastWriteTimeUtc
+    $newestSource = $sources | Sort-Object -Property LastWriteTimeUtc -Descending | Select-Object -First 1
+    if ($null -eq $newestSource -or $newestSource.LastWriteTimeUtc -le $binaryWriteTimeUtc) {
+        return $null
+    }
+    return "{0} ({1:o}) is older than generator source {2} ({3:o})" -f (Split-Path -Leaf $BinaryPath), $binaryWriteTimeUtc, $newestSource.FullName, $newestSource.LastWriteTimeUtc
 }
 
 function Invoke-ProtoGenRun {
@@ -460,28 +550,41 @@ function Invoke-ProtoGenRun {
             return
         }
 
+        # 预编译 exe:优先 proto-gen.exe,其次兼容名 pbgen.exe;两者都没有时为 $null。
+        $selectedProtoGenExePath = $null
+        if (Test-Path $primaryProtoGenExePath) {
+            $selectedProtoGenExePath = $primaryProtoGenExePath
+        }
+        elseif (Test-Path $legacyProtoGenExePath) {
+            $selectedProtoGenExePath = $legacyProtoGenExePath
+        }
+        # 选中的 exe 落后于生成器源码时不能直接跑:旧 exe 会抹掉 message_id.txt 墓碑等新格式(见 Get-ProtoGenBinaryStaleReason)。
+        $binaryStaleReason = $null
+        if ($null -ne $selectedProtoGenExePath) {
+            $binaryStaleReason = Get-ProtoGenBinaryStaleReason -BinaryPath $selectedProtoGenExePath
+        }
+
         if ($UseBinary) {
-            if (Test-Path $primaryProtoGenExePath) {
-                & $primaryProtoGenExePath
-                if ($LASTEXITCODE -ne 0) { throw "协议生成器执行失败（退出码 $LASTEXITCODE）；生成未完成，停止后续构建。" }
-                return
+            if ($null -eq $selectedProtoGenExePath) {
+                throw "proto-gen binary not found. Expected $primaryProtoGenExePath or $legacyProtoGenExePath. Please run proto-gen-build first."
             }
-
-            if (Test-Path $legacyProtoGenExePath) {
-                & $legacyProtoGenExePath
-                if ($LASTEXITCODE -ne 0) { throw "协议生成器执行失败（退出码 $LASTEXITCODE）；生成未完成，停止后续构建。" }
-                return
+            # 调用者显式要求跑 exe:不偷偷换成 go run,直接拒绝,让调用者先重建或显式改用 -UseGoRun。
+            if ($null -ne $binaryStaleReason) {
+                throw "Stale proto-gen binary refused; run proto-gen-build first or pass -UseGoRun. $binaryStaleReason."
             }
-
-            throw "proto-gen binary not found. Expected $primaryProtoGenExePath or $legacyProtoGenExePath. Please run proto-gen-build first."
+            & $selectedProtoGenExePath
+            if ($LASTEXITCODE -ne 0) { throw "协议生成器执行失败（退出码 $LASTEXITCODE）；生成未完成，停止后续构建。" }
+            return
         }
 
         # Default strategy: prefer prebuilt proto-gen binary for faster startup, fall back to the legacy name, then go run.
-        if (Test-Path $primaryProtoGenExePath) {
-            & $primaryProtoGenExePath
+        # 选中的 exe 落后于源码时告警并改走 go run(按当前源码生成),不跑旧 exe。
+        if ($null -ne $binaryStaleReason) {
+            Write-Warning "$binaryStaleReason; running 'go run ./cmd' instead. Run proto-gen-build to refresh the binary."
+            go run ./cmd
         }
-        elseif (Test-Path $legacyProtoGenExePath) {
-            & $legacyProtoGenExePath
+        elseif ($null -ne $selectedProtoGenExePath) {
+            & $selectedProtoGenExePath
         }
         else {
             go run ./cmd
@@ -758,10 +861,21 @@ function Invoke-K8sDeploy {
     if (-not [string]::IsNullOrWhiteSpace($GatewayIngressTlsSecret)) { $args.GatewayIngressTlsSecret = $GatewayIngressTlsSecret }
     if (-not [string]::IsNullOrWhiteSpace($GatewayTrustedProxies)) { $args.GatewayTrustedProxies = $GatewayTrustedProxies }
     if ($LoginDevPasswordAuth) { $args.LoginDevPasswordAuth = $true }
+    # login 第三方登录(微信 / QQ)同一口径:字符串非空才传,switch 只在被指定时传。漏传的防误关闸在 k8s_deploy.ps1
+    # (Assert-LoginAuthProviderClusterState,非 DryRun、任何写操作之前),本函数只透传,不复制规则。
+    if (-not [string]::IsNullOrWhiteSpace($LoginWeChatAppId)) { $args.LoginWeChatAppId = $LoginWeChatAppId }
+    if (-not [string]::IsNullOrWhiteSpace($LoginWeChatEndpoint)) { $args.LoginWeChatEndpoint = $LoginWeChatEndpoint }
+    if ($LoginWeChatAllowOpenId) { $args.LoginWeChatAllowOpenId = $true }
+    if (-not [string]::IsNullOrWhiteSpace($LoginQQAppId)) { $args.LoginQQAppId = $LoginQQAppId }
+    if (-not [string]::IsNullOrWhiteSpace($LoginQQEndpoint)) { $args.LoginQQEndpoint = $LoginQQEndpoint }
+    if ($LoginQQAllowOpenId) { $args.LoginQQAllowOpenId = $true }
+    if ($ConfirmLoginAuthProviderChange) { $args.ConfirmLoginAuthProviderChange = $true }
     if (-not [string]::IsNullOrWhiteSpace($RequireClientEndpoint)) { $args.RequireClientEndpoint = $RequireClientEndpoint }
     if ($AllowDisruptiveSwitch) { $args.AllowDisruptiveSwitch = $true }
     # 共享 Redis 重启闸的确认(P0-E),同一口径:switch 只在被指定时传。
     if ($ConfirmRedisCoreRestart) { $args.ConfirmRedisCoreRestart = $true }
+    # 共享 Redis 的形态:非 0 才传(0 = k8s_deploy.ps1 按档位取)。
+    if ($RedisReplicas -gt 0) { $args.RedisReplicas = $RedisReplicas }
 
     if ($DryRun) {
         $args.DryRun = $true
@@ -891,6 +1005,17 @@ function Invoke-K8sImage {
     if (-not [string]::IsNullOrWhiteSpace($GatewayIngressClassName)) { $notForwarded += '-GatewayIngressClassName' }
     if (-not [string]::IsNullOrWhiteSpace($GatewayIngressTlsSecret)) { $notForwarded += '-GatewayIngressTlsSecret' }
     if (-not [string]::IsNullOrWhiteSpace($GatewayTrustedProxies)) { $notForwarded += '-GatewayTrustedProxies' }
+    # -DbConsumerGroup:k8s_image.ps1 不部署 db(不传 -GoSvcRegistry),给什么值都不生效;切组只走 k8s-zone-up(docs/design/db-consumer-group-per-zone.md)。
+    if (-not [string]::IsNullOrWhiteSpace($DbConsumerGroup)) { $notForwarded += '-DbConsumerGroup' }
+    # login 第三方登录(微信 / QQ)与它的确认开关同 -LoginDevPasswordAuth:只落在 login 上,k8s_image.ps1 不部署 login、也不声明它们。
+    # 经这条路发布反过来也关不掉线上的第三方登录(不重写 login ConfigMap、不碰 Secret login-oauth),不需要防误关。
+    if (-not [string]::IsNullOrWhiteSpace($LoginWeChatAppId)) { $notForwarded += '-LoginWeChatAppId' }
+    if (-not [string]::IsNullOrWhiteSpace($LoginWeChatEndpoint)) { $notForwarded += '-LoginWeChatEndpoint' }
+    if ($LoginWeChatAllowOpenId) { $notForwarded += '-LoginWeChatAllowOpenId' }
+    if (-not [string]::IsNullOrWhiteSpace($LoginQQAppId)) { $notForwarded += '-LoginQQAppId' }
+    if (-not [string]::IsNullOrWhiteSpace($LoginQQEndpoint)) { $notForwarded += '-LoginQQEndpoint' }
+    if ($LoginQQAllowOpenId) { $notForwarded += '-LoginQQAllowOpenId' }
+    if ($ConfirmLoginAuthProviderChange) { $notForwarded += '-ConfirmLoginAuthProviderChange' }
     if ($notForwarded.Count -gt 0) {
         throw "k8s-image-* / k8s-release-* 不支持 $($notForwarded -join ', '):k8s_image.ps1 不部署 Go / Java 服务,也不支持 Agones 高密度 / FleetAutoscaler。请改用 k8s-infra-up / k8s-zone-up / k8s-all-up(直接调 k8s_deploy.ps1)。"
     }
@@ -951,7 +1076,8 @@ function Invoke-K8sImage {
         $args.GateRouterMode = $GateRouterMode
     }
     # 集群外入口参数,口径同 Invoke-K8sDeploy(k8s_image.ps1 原样转给 k8s_deploy.ps1)。
-    # -Gateway* / -LoginDevPasswordAuth 不在此列,已在函数开头拒绝(k8s_image.ps1 也不声明它们)。
+    # -Gateway* / -LoginDevPasswordAuth / 第三方登录的 -Login* 与 -ConfirmLoginAuthProviderChange 不在此列,已在函数开头拒绝
+    # (k8s_image.ps1 也不声明它们)。
     if (-not [string]::IsNullOrWhiteSpace($ClientEntryMode)) { $args.ClientEntryMode = $ClientEntryMode }
     if (-not [string]::IsNullOrWhiteSpace($ClientPublicHost)) { $args.ClientPublicHost = $ClientPublicHost }
     if (-not [string]::IsNullOrWhiteSpace($GateClientHostTemplate)) { $args.GateClientHostTemplate = $GateClientHostTemplate }
@@ -962,6 +1088,8 @@ function Invoke-K8sImage {
     if ($AllowDisruptiveSwitch) { $args.AllowDisruptiveSwitch = $true }
     # release-all(不带 -SkipInfra)会 infra-up,共享 Redis 重启闸的确认同一口径透传。
     if ($ConfirmRedisCoreRestart) { $args.ConfirmRedisCoreRestart = $true }
+    # 共享 Redis 的形态同一口径:非 0 才传。
+    if ($RedisReplicas -gt 0) { $args.RedisReplicas = $RedisReplicas }
     # 留空不透传;k8s_image.ps1 不部署 login / scene_manager,给了由它告警"只参与预检、不改写 ConfigMap"。
     if (-not [string]::IsNullOrWhiteSpace($RequireClientEndpoint)) { $args.RequireClientEndpoint = $RequireClientEndpoint }
     if ($WaitReady) {
@@ -1379,7 +1507,8 @@ Compatibility aliases (legacy):
 
 Useful proto-gen flags:
     -EnablePprof   Enable pprof wait mode (PROTOGEN_ENABLE_PPROF=1)
-    -UseBinary     Force running proto-gen binary (proto-gen.exe, fallback: pbgen.exe)
+    -UseBinary     Force running proto-gen binary (proto-gen.exe, fallback: pbgen.exe);
+                   refuses to run when the binary is older than the generator sources (run proto-gen-build first)
     -UseGoRun      Force running go run ./cmd
 
 Go micro-service commands (local dev):
@@ -1661,25 +1790,38 @@ switch ($Command) {
         if ($KafkaDeleteAndRecreate)          { $kArgs.DeleteAndRecreateTopic = $true }
         if ($KafkaFinalizeHandoff)            { $kArgs.FinalizeHandoff = $true }
         if ($KafkaPartitions -gt 0)           { $kArgs.Partitions = $KafkaPartitions }
-        if ($KafkaReplicationFactor -ne 1)    { $kArgs.ReplicationFactor = $KafkaReplicationFactor }
+        if ($KafkaReplicationFactor -gt 0)    { $kArgs.ReplicationFactor = $KafkaReplicationFactor }
         if ($KafkaBin -ne "")                 { $kArgs.KafkaBin = $KafkaBin }
         if ($KafkaApply)                      { $kArgs.Apply = $true }
-        # 被调脚本以 exit 结束时(DeleteAndRecreateTopic / FinalizeHandoff)只设 $LASTEXITCODE、不抛,先清零再判,失败不得当成成功。
+        # 被调脚本三种模式的成功路径都以 exit 0 结束、失败一律 throw;以 exit 结束时只设 $LASTEXITCODE、不抛,先清零再判,失败不得当成成功。
         $global:LASTEXITCODE = 0
         & (Join-Path $ScriptDir "kafka_offset_reset.ps1") @kArgs
         if ($LASTEXITCODE -ne 0) { throw "kafka_offset_reset.ps1 failed (exit code $LASTEXITCODE)" }
     }
     "k8s-zone-rollback" {
         # Wraps k8s_zone_rollback.ps1 — see docs/design/zone_data_rollback.md §3.
-        # Orchestrates: preflight → zone-down → MySQL PITR (manual) → Redis FLUSHDB
-        #             → Kafka offset reset (zone group; retire legacy offsets) → zone-up → verification checklist.
+        # Orchestrates: preflight → zone-down → post-stop checks → MySQL PITR (manual) → inventory
+        #             → Kafka offsets to the log end (zone group; retire legacy offsets) → discard post-TargetTime Redis state
+        #             → verify → zone-up → verification checklist.
         if ($RollbackTargetTime -eq "") {
-            throw "k8s-zone-rollback requires -RollbackTargetTime (ISO 8601 UTC, e.g. '2026-05-15T14:23:00Z')"
+            throw "k8s-zone-rollback requires -RollbackTargetTime (UTC, e.g. '2026-05-15T14:23:00Z')"
+        }
+        # 已废弃的两个参数在调用回滚脚本之前拒绝,不静默吞掉(AGENTS §11.3)。
+        if ($RollbackConfirmFlushSharedRedis) {
+            throw "k8s-zone-rollback 不再支持 -RollbackConfirmFlushSharedRedis:回档已不做 FLUSHDB(go/db 游标、重试收据、映射、账号目录与各 zone 缓存同在一个 Redis DB,FLUSHDB 等于事故),改由 zone_rollback_discard 只丢弃 TargetTime 之后的状态;整套环境重建走 AGENTS.md §6.2。去掉该参数重跑;尚未做任何操作。"
+        }
+        if ($RollbackRedisPassword -ne "") {
+            throw "k8s-zone-rollback 不再支持 -RollbackRedisPassword:口令经命令行会进进程列表与 shell 历史。把口令放进环境变量,改传 -RollbackRedisPasswordEnv <变量名>;尚未做任何操作。"
         }
         # 回滚目标版本必须显式给。默认的 git 短 sha 是**当前工作树**的版本,
         # 拿它回滚等于"把数据回档到过去、把代码留在现在",比不回滚更危险。
         if (-not $script:NodeImageExplicit) {
             throw "k8s-zone-rollback requires an explicit -NodeImage (回滚目标版本的镜像引用,如 ghcr.io/luyuancpp/mmorpg-node:<回滚目标 sha>)。默认值是当前工作树的 sha,不是回滚目标。"
+        }
+        # 回档的 Step 6 固定传 -DbConsumerGroup zone(docs/design/db-consumer-group-per-zone.md §6),本参数在这条路上不生效;
+        # 显式给了就在调用回档脚本之前拒绝,不静默吞掉(AGENTS §11.3)。
+        if (-not [string]::IsNullOrWhiteSpace($DbConsumerGroup)) {
+            throw "k8s-zone-rollback 不支持 -DbConsumerGroup:回档的 Step 6 固定使用 zone(回档后落到 zone 组的最终形状),给的 '$DbConsumerGroup' 不会生效。去掉该参数重跑;尚未做任何操作。"
         }
         # 必须 hashtable splatting:数组 splatting 会按**位置**绑定,
         # "-ZoneName" 这个字符串本身会被绑到 ZoneName、"$ZoneName" 绑到 [int]$ZoneId,
@@ -1698,10 +1840,19 @@ switch ($Command) {
         if ($RollbackKafkaLegacyGroup -ne "") { $rbArgs.KafkaLegacyGroup = $RollbackKafkaLegacyGroup }
         if ($RollbackRedisHost -ne "")     { $rbArgs.RedisHost = $RollbackRedisHost }
         if ($RollbackRedisPort -ne "6379") { $rbArgs.RedisPort = $RollbackRedisPort }
-        if ($RollbackRedisPassword -ne "") { $rbArgs.RedisPassword = $RollbackRedisPassword }
         if ($RollbackRedisDB -ne 0)        { $rbArgs.RedisDB = $RollbackRedisDB }
         if ($RollbackSkipMySqlPause)       { $rbArgs.SkipMySqlPause = $true }
-        if ($RollbackConfirmFlushSharedRedis) { $rbArgs.ConfirmFlushSharedRedis = $true }
+        # 回档丢弃语义的新参数(2026-10-18):非空 / 大于 0 才转发,默认值与校验只在回滚脚本一处。
+        if ($RollbackRedisPasswordEnv -ne "")  { $rbArgs.RedisPasswordEnv = $RollbackRedisPasswordEnv }
+        if ($RollbackMySqlDsnEnv -ne "")       { $rbArgs.MySqlDsnEnv = $RollbackMySqlDsnEnv }
+        if ($RollbackDiscardTool -ne "")       { $rbArgs.RollbackDiscardTool = $RollbackDiscardTool }
+        if ($RollbackBarrierProtocol -ne "")   { $rbArgs.BarrierProtocol = $RollbackBarrierProtocol }
+        if ($RollbackId -ne "")                { $rbArgs.RollbackId = $RollbackId }
+        if ($RollbackQuiesceSeconds -gt 0)     { $rbArgs.QuiesceSeconds = $RollbackQuiesceSeconds }
+        if ($RollbackPitrRestoredTo -ne "")    { $rbArgs.PitrRestoredTo = $RollbackPitrRestoredTo }
+        if ($RollbackAcceptBlockedPlayers -gt 0) { $rbArgs.AcceptBlockedPlayers = $RollbackAcceptBlockedPlayers }
+        if ($RollbackAllowEmptyTarget)         { $rbArgs.AllowEmptyTarget = $true }
+        if ($RollbackAcknowledgeNoPostTWrites) { $rbArgs.AcknowledgeNoPostTWrites = $true }
         if ($RollbackApply)                { $rbArgs.Apply = $true }
         # 留空不传,由下游默认值接管(k8s_zone_rollback.ps1 的 Step 6 再原样转给 k8s-zone-up);默认值只在 k8s_deploy.ps1 一处。
         # 这组参数不粘滞:以 external / "0" 回退 / 经 Ingress 对外 / staging、prod 档 / 开发口令登录运行的 zone 回滚时,
@@ -1726,6 +1877,15 @@ switch ($Command) {
         if (-not [string]::IsNullOrWhiteSpace($GatewayIngressClassName))   { $rbArgs.GatewayIngressClassName = $GatewayIngressClassName }
         if (-not [string]::IsNullOrWhiteSpace($GatewayIngressTlsSecret))   { $rbArgs.GatewayIngressTlsSecret = $GatewayIngressTlsSecret }
         if (-not [string]::IsNullOrWhiteSpace($GatewayTrustedProxies))     { $rbArgs.GatewayTrustedProxies = $GatewayTrustedProxies }
+        # login 第三方登录(微信 / QQ)同一口径:非空 / 被指定才转发。回滚脚本在 Step 1 删 namespace 之前核对线上 login ConfigMap 与
+        # Secret login-oauth,线上开着的会被本次参数关掉或改掉就拒绝;它再把这组参数转给 Step 6。
+        if (-not [string]::IsNullOrWhiteSpace($LoginWeChatAppId))          { $rbArgs.LoginWeChatAppId = $LoginWeChatAppId }
+        if (-not [string]::IsNullOrWhiteSpace($LoginWeChatEndpoint))       { $rbArgs.LoginWeChatEndpoint = $LoginWeChatEndpoint }
+        if ($LoginWeChatAllowOpenId)                                       { $rbArgs.LoginWeChatAllowOpenId = $true }
+        if (-not [string]::IsNullOrWhiteSpace($LoginQQAppId))              { $rbArgs.LoginQQAppId = $LoginQQAppId }
+        if (-not [string]::IsNullOrWhiteSpace($LoginQQEndpoint))           { $rbArgs.LoginQQEndpoint = $LoginQQEndpoint }
+        if ($LoginQQAllowOpenId)                                           { $rbArgs.LoginQQAllowOpenId = $true }
+        if ($ConfirmLoginAuthProviderChange)                               { $rbArgs.ConfirmLoginAuthProviderChange = $true }
         # 预检、Step 1、Step 6 用同一集群;以前这里不转发,-KubeContext 被静默忽略、回滚落到 kubectl 当前 context。
         if (-not [string]::IsNullOrWhiteSpace($KubeContext))               { $rbArgs.KubeContext = $KubeContext }
         if (-not [string]::IsNullOrWhiteSpace($KubeConfig))                { $rbArgs.KubeConfig = $KubeConfig }

@@ -5,6 +5,8 @@
 #include "player/system/db_task_dispatch_system.h"
 #include "player/system/dirty_save_stats.h"
 #include "player/system/player_lifecycle.h"
+#include "player/system/release_fence.h" // [ReleaseFence] 汇总行
+#include "player/system/save_seq.h"      // [SaveSeq] 汇总行
 #include "thread_context/ecs_context.h"
 #include "thread_context/redis_manager.h"
 
@@ -77,7 +79,8 @@ void RedisSystem::Initialize(muduo::net::EventLoop* loop)
     // DBTask 投递回执的驱动点(DbTaskDispatchSystem::Pump):poll() 派发回执 → 330s 票据超时兜底 → 把落定的玩家交给
     // PlayerLifecycleSystem::OnDbTaskDispatchSettled。回执只在本线程的 poll / flush / send 里派发,空闲节点上没有 send()
     // 来驱动,下线收尾会一直等;50ms 让收尾正常只多 ≤ 50ms。BeginShutdown **不**取消它:停机 drain 期间被保留 / 等回执的
-    // 退出实体要靠它推完(停机谓词按 IsSaveInFlight 等这些实体)。lambda 无捕获,不绑 this。
+    // 退出实体要靠它推完(停机谓词按 IsSaveInFlight 等这些实体)。取消在 StopDbTaskDispatch(Node 的拆除前钩子,
+    // producer 最后一次 flush 之后)。lambda 无捕获,不绑 this。
     static constexpr double kDbTaskDispatchPumpIntervalSec = 0.05;
     dbTaskPumpTimerId_ = loop->runEvery(kDbTaskDispatchPumpIntervalSec, []
                                         { DbTaskDispatchSystem::Pump(); });
@@ -89,8 +92,10 @@ void RedisSystem::Initialize(muduo::net::EventLoop* loop)
     static constexpr double kQueueSnapshotIntervalSec = 30.0;
     // lastEnterFence:上一次打出 [EnterFence] 时的计数(只在本定时器里读写,逻辑线程上;初值全 0 = 第一次有计数就打)。
     // lastDbTaskDispatch:上一次打出 [DbTaskDispatch] 时的计数(同上,只在本定时器里读写)。
+    // lastReleaseFence:上一次打出 [ReleaseFence] 时的计数(同上,只在本定时器里读写)。
     snapshotTimerId_ = loop->runEvery(kQueueSnapshotIntervalSec, [this, lastEnterFence = enter_fence_stats::Snapshot{},
-                                                                  lastDbTaskDispatch = db_task_dispatch_stats::Snapshot{}]() mutable
+                                                                  lastDbTaskDispatch = db_task_dispatch_stats::Snapshot{},
+                                                                  lastReleaseFence = release_fence_stats::Snapshot{}]() mutable
                                       {
         if (playerRedis)
         {
@@ -122,7 +127,24 @@ void RedisSystem::Initialize(muduo::net::EventLoop* loop)
         {
             LOG_WARN << "[OwnerEpoch] stale_owner_write_rejected=" << ownerStats.staleOwnerWriteRejected
                      << " home_zone_unknown=" << ownerStats.homeZoneUnknown
-                     << " owner_epoch_unknown=" << ownerStats.ownerEpochUnknown;
+                     << " owner_epoch_unknown=" << ownerStats.ownerEpochUnknown
+                     << " stale_owner_rejected_exiting=" << ownerStats.staleOwnerRejectedExiting;
+        }
+        // 存盘序号发号器的异常计数(save_seq.h 的 save_seq_stats;db-write-fencing-mysql.md §7.2)。单独一行、单独前缀,
+        // 不动上面几行的解析格式。key=value 平铺、进程启动以来的累计值;三项正常都应恒 0,任一非 0 才打,级别 WARN
+        // (有坏数据或 scene 主机时钟超前,含义见 save_seq_stats)。玩家号不进这一行。
+        const auto saveSeqStats = save_seq_stats::Read();
+        if (saveSeqStats.Any())
+        {
+            std::string line = "[SaveSeq]";
+            for (std::size_t i = 0; i < saveSeqStats.values.size(); ++i)
+            {
+                line += ' ';
+                line += save_seq_stats::kCounterNames[i];
+                line += '=';
+                line += std::to_string(saveSeqStats.values[i]);
+            }
+            LOG_WARN << line;
         }
         // 入场会话栅栏的结论计数(enter_fence.h 的 enter_fence_stats;scene-enter-session-fence.md §5.7)。单独一行、单独前缀,
         // 不动上面两行的解析格式。key=value 平铺、进程启动以来的累计值,有变化才打;这一拍里拒绝类计数有增长时升 WARN
@@ -149,6 +171,53 @@ void RedisSystem::Initialize(muduo::net::EventLoop* loop)
                 LOG_INFO << line;
             }
             lastEnterFence = fenceStats;
+        }
+        // ReleasePlayer 归属栅栏的结论计数(release_fence.h 的 release_fence_stats;scene-enter-chain-residuals.md §4.4)。
+        // 单独一行、单独前缀,不动上面几行的解析格式。key=value 平铺、进程启动以来的累计值,有变化才打;这一拍里
+        // skip_stale_release / skip_ahead_of_holder / release_cache_unknown 有增长时升 WARN(release_fence::Alarming),否则 INFO。
+        // release_unversioned 在 scene_manager 全量升级后应恒为 0;not_found 是成功交接后的常态。
+        const auto releaseFenceStats = release_fence_stats::Read();
+        if (releaseFenceStats != lastReleaseFence)
+        {
+            std::string line = "[ReleaseFence]";
+            for (std::size_t i = 0; i < releaseFenceStats.verdicts.size(); ++i)
+            {
+                line += ' ';
+                line += release_fence::kVerdictNames[i];
+                line += '=';
+                line += std::to_string(releaseFenceStats.verdicts[i]);
+            }
+            line += " not_found=" + std::to_string(releaseFenceStats.notFound);
+            // 会话结束释放(docs/design/location-release-binding.md §3.3):总数、凭证判定分布与条件写结果,追加在原有 key 之后。
+            line += " session_ended=" + std::to_string(releaseFenceStats.sessionEnded);
+            for (std::size_t i = 0; i < releaseFenceStats.credentialDecisions.size(); ++i)
+            {
+                line += " credential_";
+                line += release_fence::kSessionEndedCredentialNames[i];
+                line += '=';
+                line += std::to_string(releaseFenceStats.credentialDecisions[i]);
+            }
+            line += " credential_written=" + std::to_string(releaseFenceStats.credentialWritten);
+            line += " credential_epoch_moved=" + std::to_string(releaseFenceStats.credentialEpochMoved);
+            line += " credential_failed=" + std::to_string(releaseFenceStats.credentialFailed);
+            // 会话结束释放的登录身份判定(location-release-binding.md §13),追加在最后。binding_skip_newer_login /
+            // binding_skip_conflict 有增长时升 WARN(release_fence::BindingAlarming)。
+            for (std::size_t i = 0; i < releaseFenceStats.bindingDecisions.size(); ++i)
+            {
+                line += " binding_";
+                line += release_fence::kSessionEndedBindingNames[i];
+                line += '=';
+                line += std::to_string(releaseFenceStats.bindingDecisions[i]);
+            }
+            if (releaseFenceStats.AlarmingIncreaseSince(lastReleaseFence))
+            {
+                LOG_WARN << line;
+            }
+            else
+            {
+                LOG_INFO << line;
+            }
+            lastReleaseFence = releaseFenceStats;
         }
         // DBTask 投递记账(db_task_dispatch_system.h 的 db_task_dispatch_stats)。单独一行、单独前缀,不动上面几行的
         // 解析格式。key=value 平铺、进程启动以来的累计值;计数有变化或还有未落定玩家时才打。这一拍里出现「MySQL 可能
@@ -260,6 +329,25 @@ void RedisSystem::BeginShutdown()
 	}
 }
 
+void RedisSystem::StopDbTaskDispatch()
+{
+	// loop_ 为空 = Initialize 没跑过(监听器也没登记)或已 Shutdown(已收过账):什么都不做。这也保证析构里的第二次
+	// Shutdown 不会在 thread_local 析构期间再碰 KafkaProducer。
+	if (!loop_.has_value())
+	{
+		return;
+	}
+	// 先停 Pump 再注销监听器:之后不会再有 Pump 把落定的玩家交给下线收尾(Node 拆除前钩子之后的让轮里,Redis 已释放、
+	// etcd 已注销,那时推收尾只会制造写失败与告警噪声)。未落定的玩家由 DbTaskDispatchSystem::Shutdown 打一行 ERROR 留证;
+	// 它自身幂等,第二次调用不再打。
+	if (dbTaskPumpTimerActive_)
+	{
+		loop_->get().cancel(dbTaskPumpTimerId_);
+		dbTaskPumpTimerActive_ = false;
+	}
+	DbTaskDispatchSystem::Shutdown();
+}
+
 void RedisSystem::Shutdown()
 {
 	BeginShutdown();
@@ -279,14 +367,8 @@ void RedisSystem::Shutdown()
             loop.cancel(snapshotTimerId_);
             snapshotTimerActive_ = false;
         }
-        if (dbTaskPumpTimerActive_)
-        {
-            loop.cancel(dbTaskPumpTimerId_);
-            dbTaskPumpTimerActive_ = false;
-        }
-        // 先停 Pump 再注销监听器;未落定的玩家在这里打一行 ERROR 留证。放在 loop_ 有值的分支里:析构里的
-        // 第二次 Shutdown 走不到这里(Shutdown 自身也幂等),不会在 thread_local 析构期间再碰 KafkaProducer。
-        DbTaskDispatchSystem::Shutdown();
+        // 正常停机时 Node 的拆除前钩子已经调过(那时日志还活着),这里是幂等兜底:钩子没挂上 / 没走到拆除时才真正生效。
+        StopDbTaskDispatch();
     }
 	tlsRedis.SetReconnectCallback({});
     playerRedis.reset();

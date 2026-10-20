@@ -1,0 +1,366 @@
+package assetop
+
+import (
+	"context"
+	"errors"
+	"testing"
+
+	"github.com/alicebob/miniredis/v2"
+	"github.com/prometheus/client_golang/prometheus/testutil"
+	"github.com/redis/go-redis/v9"
+	"google.golang.org/protobuf/proto"
+	assetpb "proto/common/asset"
+	componentpb "proto/common/component"
+)
+
+// requireSQLCommit 打开资产 SQL 提交证据开关(db-write-fencing-mysql.md §6.6),给 newTestLoop 用。
+func requireSQLCommit(c *LoopConfig) { c.RequireSQLCommit = true }
+
+// splitLedger 让 Redis 父键 blob 与 SQL 提交证据各给各的账本:开关打开时自动放弃要两份都读,
+// 「证据落后于父键」(fence-inflight.md F6)只能用两份不同的账本造出来。
+type splitLedger struct {
+	blob *fakeLedger
+	sql  *fakeLedger
+}
+
+func (s *splitLedger) ReadPersistedLedger(ctx context.Context, playerID uint64) (*componentpb.PlayerAssetOpLedgerComp, error) {
+	return s.blob.ReadPersistedLedger(ctx, playerID)
+}
+
+func (s *splitLedger) ReadSQLCommittedLedger(ctx context.Context, playerID uint64) (*componentpb.PlayerAssetOpLedgerComp, error) {
+	return s.sql.ReadPersistedLedger(ctx, playerID)
+}
+
+// blobOnlyLedger 只会读 Redis 父键 blob(没有实现 SQLCommitLedgerReader),模拟开关打开却装错了读取器。
+type blobOnlyLedger struct{ inner *fakeLedger }
+
+func (b blobOnlyLedger) ReadPersistedLedger(ctx context.Context, playerID uint64) (*componentpb.PlayerAssetOpLedgerComp, error) {
+	return b.inner.ReadPersistedLedger(ctx, playerID)
+}
+
+// 独立 SQL 账本事实，不由 RPC 的 durable 字段派生。
+func sqlLedgerFixture(applied bool, ops ...Op) *fakeLedger {
+	comp := &componentpb.PlayerAssetOpLedgerComp{}
+	for _, op := range ops {
+		var stream *componentpb.AssetOpStreamLedger
+		for _, entry := range comp.Streams {
+			if entry.Stream == op.Stream && entry.StreamEpoch == op.StreamEpoch {
+				stream = entry
+			}
+		}
+		if stream == nil {
+			stream = newStreamLedger(op.Stream, op.StreamEpoch, 0, op.Seq)
+			comp.Streams = append(comp.Streams, stream)
+		}
+		if op.Seq > stream.MaxSeq {
+			stream.MaxSeq = op.Seq
+		}
+		markSeen(stream, op.Seq, applied)
+		stream.Receipts = append(stream.Receipts, identityReceiptFixture(op))
+	}
+	return &fakeLedger{ledger: comp}
+}
+
+func TestSQLProofRequiredBeforeFinalizing(t *testing.T) {
+	for _, tc := range []struct {
+		name   string
+		reader *fakeLedger
+		commit bool
+	}{
+		{"无装配", nil, false}, {"没有证据", &fakeLedger{}, false},
+		{"读失败", &fakeLedger{err: errors.New("SQL 证据不可用")}, false},
+		{"SQL 未见本次", sqlLedgerFixture(true, testOp(2)), false},
+		{"独立 SQL 已提交", sqlLedgerFixture(true, testOp(1)), true},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			store := newFakeStore(testOp(1))
+			loop, _ := newTestLoop(t, store, &fakeApplier{fn: func(RPC, *assetpb.AssetOpRequest) (Result, error) { return resultApplied(true), nil }}, requireSQLCommit)
+			if tc.reader != nil {
+				loop.Ledger = tc.reader
+			}
+			got, err := loop.ProcessOne(context.Background(), testOp(1))
+			if err != nil || got.Finalized != tc.commit {
+				t.Fatalf("SQL 确认证据决定终结: got=%+v err=%v", got, err)
+			}
+			if got.Finalized && !got.Result.SQLCommitted {
+				t.Fatal("开关打开时终结的结果必须带 SQLCommitted")
+			}
+		})
+	}
+}
+
+// 开关关闭(缺省)回到 HEAD 口径:scene 回包 durable 即终结,不读 SQL 证据,结果不带 SQLCommitted。
+func TestSQLProofSwitchOffKeepsHeadSemantics(t *testing.T) {
+	op := testOp(1)
+	store := newFakeStore(op)
+	loop, _ := newTestLoop(t, store, &fakeApplier{fn: func(RPC, *assetpb.AssetOpRequest) (Result, error) { return resultApplied(true), nil }}, nil)
+	ledger := &splitLedger{blob: &fakeLedger{}, sql: &fakeLedger{}}
+	loop.Ledger = ledger
+	if err := loop.CheckWiring(); err != nil {
+		t.Fatalf("开关关闭时 Ledger 可选,不得拒启: %v", err)
+	}
+	got, err := loop.ProcessOne(context.Background(), op)
+	if err != nil || !got.Finalized || got.Status != StatusApplied {
+		t.Fatalf("开关关闭时 scene durable 即终结: %+v %v", got, err)
+	}
+	if got.Result.SQLCommitted {
+		t.Fatal("开关关闭时不得声称 SQL 已提交")
+	}
+	if ledger.blob.reads.Load() != 0 || ledger.sql.reads.Load() != 0 {
+		t.Fatalf("在线终结不读账本: blob=%d sql=%d", ledger.blob.reads.Load(), ledger.sql.reads.Load())
+	}
+
+	// 回包 durable=false 仍按 AwaitDurable 重排,与 HEAD 一致。
+	store2 := newFakeStore(op)
+	loop2, _ := newTestLoop(t, store2, &fakeApplier{fn: func(RPC, *assetpb.AssetOpRequest) (Result, error) { return resultApplied(false), nil }}, nil)
+	loop2.Ledger = sqlLedgerFixture(true, op)
+	got, err = loop2.ProcessOne(context.Background(), op)
+	if err != nil || got.Finalized {
+		t.Fatalf("开关关闭时未落盘的回包不得因 SQL 证据而终结: %+v %v", got, err)
+	}
+}
+
+// 离线读账本按开关选来源:关闭读 Redis 父键 blob,打开只读 SQL 证据。
+func TestOfflineLedgerReadFollowsSwitch(t *testing.T) {
+	op := testOp(1)
+	op.Attempts = 5
+	notHere := &fakeApplier{fn: func(RPC, *assetpb.AssetOpRequest) (Result, error) {
+		return Result{Outcome: assetpb.AssetOpOutcome_ASSET_OP_OUTCOME_NOT_HERE, Local: true}, nil
+	}}
+	// blob 已见、证据未见:证据落后于父键。
+	newLedger := func() *splitLedger {
+		return &splitLedger{blob: sqlLedgerFixture(true, op), sql: sqlLedgerFixture(true, testOp(2))}
+	}
+
+	t.Run("关闭读blob", func(t *testing.T) {
+		loop, _ := newTestLoop(t, newFakeStore(op), notHere, nil)
+		ledger := newLedger()
+		loop.Ledger = ledger
+		got, err := loop.ProcessOne(context.Background(), op)
+		if err != nil || !got.Finalized || got.Result.SQLCommitted {
+			t.Fatalf("关闭时按 blob 终结且不带 SQLCommitted: %+v %v", got, err)
+		}
+		if ledger.sql.reads.Load() != 0 {
+			t.Fatal("关闭时不得读 SQL 证据")
+		}
+	})
+	t.Run("打开只认证据", func(t *testing.T) {
+		loop, _ := newTestLoop(t, newFakeStore(op), notHere, requireSQLCommit)
+		ledger := newLedger()
+		loop.Ledger = ledger
+		got, err := loop.ProcessOne(context.Background(), op)
+		if err != nil || got.Finalized {
+			t.Fatalf("证据未见时不得凭 blob 终结: %+v %v", got, err)
+		}
+		if ledger.blob.reads.Load() != 0 {
+			t.Fatal("打开时离线终结不得读 blob")
+		}
+		ledger.sql = sqlLedgerFixture(true, op)
+		got, err = loop.ProcessOne(context.Background(), op)
+		if err != nil || !got.Finalized || !got.Result.SQLCommitted {
+			t.Fatalf("证据已见应终结并带 SQLCommitted: %+v %v", got, err)
+		}
+	})
+}
+
+// 开关打开却没有能读 SQL 证据的 Ledger:启动时拒启(fence-inflight.md F6 (b))。
+func TestCheckWiringRequiresSQLLedgerWhenSwitchOn(t *testing.T) {
+	for _, tc := range []struct {
+		name   string
+		ledger LedgerReader
+		ok     bool
+	}{
+		{"没挂", nil, false},
+		{"只会读blob", blobOnlyLedger{inner: &fakeLedger{}}, false},
+		{"能读SQL证据", &fakeLedger{}, true},
+		{"DataServiceLedger", &DataServiceLedger{}, true},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			loop, _ := newTestLoop(t, newFakeStore(), appliedApplier(), requireSQLCommit)
+			if tc.ledger != nil {
+				loop.Ledger = tc.ledger
+			}
+			if err := loop.CheckWiring(); (err == nil) != tc.ok {
+				t.Fatalf("CheckWiring err=%v,期望通过=%t", err, tc.ok)
+			}
+		})
+	}
+	loop, _ := newTestLoop(t, newFakeStore(), appliedApplier(), nil)
+	if err := loop.CheckWiring(); err != nil {
+		t.Fatalf("开关关闭时没挂 Ledger 也合法(HEAD 口径): %v", err)
+	}
+}
+
+func TestSQLProofCanConfirmBeforeRedisReply(t *testing.T) {
+	op := testOp(1)
+	loop, _ := newTestLoop(t, newFakeStore(op), &fakeApplier{fn: func(RPC, *assetpb.AssetOpRequest) (Result, error) { return resultApplied(false), nil }}, requireSQLCommit)
+	loop.Ledger = sqlLedgerFixture(true, op)
+	got, err := loop.ProcessOne(context.Background(), op)
+	if err != nil || !got.Finalized {
+		t.Fatalf("SQL 提交独立于 Redis 回包: %+v %v", got, err)
+	}
+}
+
+func TestSQLProofRetainsCompleteEscrowReceipt(t *testing.T) {
+	op := testOp(1)
+	op.Stream = assetpb.AssetOpStream_ASSET_OP_STREAM_TRADE_DEBIT
+	op.Bundle = &assetpb.AssetBundle{ItemUuids: []uint64{99}}
+	reader := sqlLedgerFixture(true, op)
+	loop, _ := newTestLoop(t, newFakeStore(op), &fakeApplier{fn: func(RPC, *assetpb.AssetOpRequest) (Result, error) {
+		res := resultApplied(true)
+		res.Snapshot = &assetpb.AssetSnapshot{Items: []*assetpb.AssetItemInstance{{ItemUuid: 99, InstanceProto: []byte("仅RPC中的原件")}}}
+		return res, nil
+	}}, requireSQLCommit)
+	loop.Ledger = reader
+	got, err := loop.ProcessOne(context.Background(), op)
+	if err != nil || got.Finalized {
+		t.Fatalf("SQL 缺托管原件时不得终结: %+v %v", got, err)
+	}
+	digest, _ := receiptDigest(op)
+	reader.ledger.Streams[0].Receipts = []*componentpb.AssetOpReceipt{{Seq: op.Seq, CorrelationId: op.CorrelationID, RequestDigest: digest[:], Snapshot: &assetpb.AssetSnapshot{Items: []*assetpb.AssetItemInstance{{ItemUuid: 99, InstanceProto: []byte{1, 2, 3}}}}}}
+	res, err := loop.verifySQLCommit(context.Background(), op, resultApplied(true))
+	if err != nil || !res.Durable || len(res.Snapshot.GetItems()) != 1 {
+		t.Fatalf("原件应完整恢复: %+v %v", res, err)
+	}
+	for _, corrupt := range []func(*componentpb.AssetOpReceipt){
+		func(r *componentpb.AssetOpReceipt) { r.RequestDigest = nil },
+		func(r *componentpb.AssetOpReceipt) { r.CorrelationId++ },
+		func(r *componentpb.AssetOpReceipt) { r.Snapshot.Items[0].ItemUuid++ },
+		func(r *componentpb.AssetOpReceipt) { r.Snapshot.Items[0].InstanceProto = nil },
+	} {
+		copy := proto.Clone(reader.ledger).(*componentpb.PlayerAssetOpLedgerComp)
+		corrupt(copy.Streams[0].Receipts[0])
+		got := resultWithReceipt(copy, op, res)
+		if got.Durable || got.Snapshot != nil {
+			t.Fatal("摘要、关联或实例身份不符不能形成到账证明")
+		}
+	}
+}
+
+// 开关关闭时托管扣出照 HEAD 口径信 scene 回包,但回包里的原件必须与本笔实例身份一致,否则不终结。
+func TestEscrowReceiptCheckedWhenSwitchOff(t *testing.T) {
+	op := testOp(1)
+	op.Stream = assetpb.AssetOpStream_ASSET_OP_STREAM_TRADE_DEBIT
+	op.Bundle = &assetpb.AssetBundle{ItemUuids: []uint64{99}}
+	for _, tc := range []struct {
+		name     string
+		uuid     uint64
+		instance []byte
+		finalize bool
+	}{
+		{"原件身份一致", 99, []byte{1}, true},
+		{"原件身份不符", 98, []byte{1}, false},
+		{"原件缺实例字节", 99, nil, false},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			store := newFakeStore(op)
+			loop, _ := newTestLoop(t, store, &fakeApplier{fn: func(RPC, *assetpb.AssetOpRequest) (Result, error) {
+				res := resultApplied(true)
+				res.Snapshot = &assetpb.AssetSnapshot{Items: []*assetpb.AssetItemInstance{{ItemUuid: tc.uuid, InstanceProto: tc.instance}}}
+				return res, nil
+			}}, nil)
+			got, err := loop.ProcessOne(context.Background(), op)
+			if err != nil || got.Finalized != tc.finalize {
+				t.Fatalf("托管原件判据: %+v %v", got, err)
+			}
+			if tc.finalize {
+				finalized, _ := store.snapshot()
+				if len(finalized) != 1 || len(finalized[0].Res.Snapshot.GetItems()) != 1 {
+					t.Fatalf("终结时必须带上原件: %+v", finalized)
+				}
+			}
+		})
+	}
+}
+
+func publishCount(result string) float64 {
+	return testutil.ToFloat64(sqlCommitPublishTotal.WithLabelValues(result))
+}
+
+func newEvidenceRedis(t *testing.T) (*miniredis.Miniredis, *redis.Client) {
+	t.Helper()
+	server := miniredis.RunT(t)
+	client := redis.NewClient(&redis.Options{Addr: server.Addr()})
+	t.Cleanup(func() { _ = client.Close() })
+	return server, client
+}
+
+func TestSQLCommitPublicationIsMonotonicAtUint64Limit(t *testing.T) {
+	server, client := newEvidenceRedis(t)
+	ctx := context.Background()
+	written, ahead, conflict := publishCount(sqlCommitWritten), publishCount(sqlCommitAhead), publishCount(sqlCommitConflict)
+
+	newer := &assetpb.PlayerAssetSQLCommit{PlayerId: ^uint64(0), OwnerEpoch: ^uint64(0), SaveSeq: ^uint64(0), LedgerProto: []byte("new")}
+	if err := PublishSQLCommit(ctx, client, newer); err != nil {
+		t.Fatal(err)
+	}
+	older := &assetpb.PlayerAssetSQLCommit{PlayerId: newer.PlayerId, OwnerEpoch: newer.OwnerEpoch, SaveSeq: newer.SaveSeq - 1, LedgerProto: []byte("old")}
+	if err := PublishSQLCommit(ctx, client, older); err != nil {
+		t.Fatalf("已有证据更新时不回错误(写已落库),只计数: %v", err)
+	}
+	if got := publishCount(sqlCommitAhead) - ahead; got != 1 {
+		t.Fatalf("证据已更新(n==0 的旧语义)必须计数,实际 %v", got)
+	}
+	if err := PublishSQLCommit(ctx, client, newer); err != nil {
+		t.Fatalf("同版本同内容是幂等重放: %v", err)
+	}
+	key := SQLCommitKey(newer.PlayerId)
+	stored := server.HGet(key, "data")
+	newer.LedgerProto = []byte("conflict")
+	if err := PublishSQLCommit(ctx, client, newer); err == nil {
+		t.Fatal("同版本不同账本必须拒绝")
+	}
+	if got := publishCount(sqlCommitConflict) - conflict; got != 1 {
+		t.Fatalf("同版本冲突必须计数,实际 %v", got)
+	}
+	if server.HGet(key, "data") != stored || server.HGet(key, "version") != SQLCommitVersion(^uint64(0), ^uint64(0)) {
+		t.Fatal("被拒绝的发布不得改动已有证据")
+	}
+	if got := publishCount(sqlCommitWritten) - written; got != 2 {
+		t.Fatalf("首次写入与幂等重放各计 written 一次,实际 %v", got)
+	}
+}
+
+// 版本按 (owner_epoch, save_seq) 的字典序逐字节比较:新 epoch 的小 seq 胜过旧 epoch 的大 seq。
+func TestSQLCommitVersionOrderIsEpochThenSeq(t *testing.T) {
+	server, client := newEvidenceRedis(t)
+	ctx := context.Background()
+	key := SQLCommitKey(7)
+	publish := func(epoch, seq uint64, data string) {
+		t.Helper()
+		if err := PublishSQLCommit(ctx, client, &assetpb.PlayerAssetSQLCommit{PlayerId: 7, OwnerEpoch: epoch, SaveSeq: seq, LedgerProto: []byte(data)}); err != nil {
+			t.Fatal(err)
+		}
+	}
+	publish(2, 1, "e2s1")
+	publish(1, ^uint64(0), "e1max") // 旧 epoch:不回退
+	if got := server.HGet(key, "version"); got != SQLCommitVersion(2, 1) {
+		t.Fatalf("旧 epoch 的发布不得覆盖新 epoch,实际 %s", got)
+	}
+	publish(2, 10, "e2s10") // 10 与 9 位数不同:定宽才比得对
+	publish(2, 9, "e2s9")
+	if got := server.HGet(key, "version"); got != SQLCommitVersion(2, 10) {
+		t.Fatalf("同 epoch 按 seq 数值比较,实际 %s", got)
+	}
+	if len(SQLCommitVersion(^uint64(0), ^uint64(0))) != 41 {
+		t.Fatal("版本串必须是 41 字节定宽")
+	}
+}
+
+// 存量版本串畸形(人工写坏、旧格式)时报错并计数,不改存量,也不当成「没有证据」覆盖掉。
+func TestSQLCommitMalformedStoredVersionRejected(t *testing.T) {
+	server, client := newEvidenceRedis(t)
+	key := SQLCommitKey(8)
+	server.HSet(key, "version", "9:1", "data", "keep")
+	failed := publishCount(sqlCommitError)
+	err := PublishSQLCommit(context.Background(), client, &assetpb.PlayerAssetSQLCommit{PlayerId: 8, OwnerEpoch: 9, SaveSeq: 2, LedgerProto: []byte("x")})
+	if err == nil {
+		t.Fatal("存量版本畸形必须报错")
+	}
+	if got := publishCount(sqlCommitError) - failed; got != 1 {
+		t.Fatalf("畸形版本必须计 error,实际 %v", got)
+	}
+	if server.HGet(key, "version") != "9:1" || server.HGet(key, "data") != "keep" {
+		t.Fatal("报错时不得改动存量")
+	}
+}

@@ -28,7 +28,7 @@ type Segment struct {
 // Segments 按 Base 升序,段两两不重叠(由导表器生成期自检保证)。
 var Segments = []Segment{
 	{Domain: "common", Group: "common_error", Base: 1000, Width: 1000, Lo: 1000, Hi: 1018, Count: 19},
-	{Domain: "login", Group: "login_error", Base: 2000, Width: 1000, Lo: 2000, Hi: 2034, Count: 35},
+	{Domain: "login", Group: "login_error", Base: 2000, Width: 1000, Lo: 2000, Hi: 2036, Count: 37},
 	{Domain: "scene", Group: "scene_error", Base: 3000, Width: 1000, Lo: 3000, Hi: 3028, Count: 29},
 	{Domain: "team", Group: "team_error", Base: 4000, Width: 1000, Lo: 4000, Hi: 4030, Count: 31},
 	{Domain: "mission", Group: "mission_error", Base: 5000, Width: 1000, Lo: 5000, Hi: 5006, Count: 7},
@@ -43,8 +43,9 @@ var Segments = []Segment{
 	{Domain: "guild", Group: "guild_error", Base: 14000, Width: 1000, Lo: 14000, Hi: 14041, Count: 42},
 	{Domain: "friend", Group: "friend_error", Base: 15000, Width: 1000, Lo: 15000, Hi: 15009, Count: 10},
 	{Domain: "match", Group: "match_error", Base: 16000, Width: 1000, Lo: 16000, Hi: 16020, Count: 21},
-	{Domain: "mail", Group: "mail_error", Base: 17000, Width: 1000, Lo: 17000, Hi: 17007, Count: 8},
-	{Domain: "trade", Group: "trade_error", Base: 20000, Width: 1000, Lo: 20000, Hi: 20003, Count: 4},
+	{Domain: "mail", Group: "mail_error", Base: 17000, Width: 1000, Lo: 17000, Hi: 17010, Count: 11},
+	{Domain: "trade", Group: "trade_error", Base: 20000, Width: 1000, Lo: 20000, Hi: 20015, Count: 16},
+	{Domain: "rank", Group: "rank_error", Base: 21000, Width: 1000, Lo: 21000, Hi: 21003, Count: 4},
 	{Domain: "attribute", Group: "attribute_error", Base: 25000, Width: 1000, Lo: 25000, Hi: 25014, Count: 15},
 	{Domain: "pet", Group: "pet_error", Base: 26000, Width: 1000, Lo: 26000, Hi: 26016, Count: 17},
 	{Domain: "asset", Group: "asset_error", Base: 27000, Width: 1000, Lo: 27000, Hi: 27008, Count: 9},

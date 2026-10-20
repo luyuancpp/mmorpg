@@ -431,6 +431,10 @@ func TestSweepStaleLoadSetMembers_DefersInsteadOfZremOnDeathMarkFailure(t *testi
 			require.NoError(t, err)
 		}
 	}
+	// 生产路径先登记 zone 再写负载集(zone_registry.go);这里直接 ZADD 绕过了登记,手工补上,
+	// 快照外的 otherZone 才在清扫范围里。
+	_, err := mr.SAdd("scene_manager:zones", "1", "3")
+	require.NoError(t, err)
 	seen := map[uint32]map[string]struct{}{testZoneId: {"20": {}}}
 	faults.failDeathAt.Store(true)
 

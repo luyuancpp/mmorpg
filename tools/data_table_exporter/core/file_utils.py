@@ -99,10 +99,11 @@ def md5_copy(src: str | Path, dst: str | Path) -> None:
         raise FileNotFoundError(f"部署源不存在: {src}")
 
 
-# 手写文件白名单:这些文件本就该只存在于部署目标树、源树里没有,不算陈旧产物。
+# 独立维护文件白名单:手写文件和其他生成器产物本就没有导表源文件,不算陈旧产物。
 # 路径是相对目标目录的 posix 形式。新增手写文件必须登记在这里,否则每次导表都会告警。
 _DEPLOY_KEEP: frozenset[str] = frozenset({
     "table/table_test.go",  # 手写的表加载冒烟测试
+    "persistschema/persistschema.go",  # proto-gen 按 proto/persist_schema_gen.txt 生成
 })
 
 # 只对这些后缀查陈旧产物(编译单元;.json/.pb 等数据产物由 manifest 与业务自行管理)。

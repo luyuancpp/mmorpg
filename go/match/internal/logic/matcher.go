@@ -135,6 +135,11 @@ const legacyQueueSweepInterval = time.Minute
 // (设计文档 §5.4)。锁只覆盖"弹出成组"这一小段;弹出后的 gather 在
 // 独立 goroutine 里执行,不占锁。
 func StartMatcherLoop(ctx context.Context, svcCtx *svc.ServiceContext) {
+	if svcCtx.Authority != nil {
+		svcCtx.GlobalGatherSlots = make(chan struct{}, 16)
+		safego.Loop(ctx, "match.global", 500*time.Millisecond, func(ctx context.Context) { runGlobalRound(ctx, svcCtx) })
+		return
+	}
 	interval := time.Duration(svcCtx.Config.MatcherIntervalMs) * time.Millisecond
 	if interval <= 0 {
 		interval = 500 * time.Millisecond

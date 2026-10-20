@@ -12,6 +12,7 @@ import (
 	"unicode/utf8"
 
 	"github.com/zeromicro/go-zero/core/logx"
+	"google.golang.org/protobuf/proto"
 
 	assetpb "proto/common/asset"
 	componentpb "proto/common/component"
@@ -172,11 +173,24 @@ type Applier interface {
 	Do(ctx context.Context, rpc RPC, req *assetpb.AssetOpRequest) (Result, error)
 }
 
-// LedgerReader 读玩家**已落盘**的账本(zone Redis 里的玩家 blob)。
-// 实现在 B5(data_service 新增只读 RPC GetPlayerAssetOpLedger)。
+// LedgerReader 读玩家**已落盘**的账本(zone Redis 里的玩家父键 blob,HEAD 口径)。
+// 实现在 B5(data_service 只读 RPC GetPlayerAssetOpLedger,DataServiceLedger)。
 // 玩家从未落过盘时返回 (nil, nil)。
+//
+// LoopConfig.RequireSQLCommit 打开时,终结改认 SQL 提交证据:Ledger 还必须实现 SQLCommitLedgerReader
+// (Loop.CheckWiring 在启动时断言),blob 只剩自动放弃的「两份都未见」那一半(abandon.go)。
 type LedgerReader interface {
 	ReadPersistedLedger(ctx context.Context, playerID uint64) (*componentpb.PlayerAssetOpLedgerComp, error)
+}
+
+// SQLCommitLedgerReader 读 go/db 在玩家 SQL 行提交后发布的资产 SQL 提交证据里的账本
+// (docs/design/db-write-fencing-mysql.md §6.6)。证据缺失时返回 (nil, nil),调用方继续等,
+// 不得退回 Redis blob;读失败返回 error。DataServiceLedger 实现它。
+//
+// 不并进 LedgerReader:开关关闭的服务(以及各业务的测试替身)只需要 blob 一种读法,
+// 并进去会逼所有实现同批改。
+type SQLCommitLedgerReader interface {
+	ReadSQLCommittedLedger(ctx context.Context, playerID uint64) (*componentpb.PlayerAssetOpLedgerComp, error)
 }
 
 // PendingAgeReader 是 Store 的**可选**能力:报告某条流最老未决行的创建时刻。
@@ -255,13 +269,16 @@ type LoopConfig struct {
 	Batch int
 	// Workers 是**同时在途的资产 RPC 条数上限**,也是本配置里最不能随手调大的一项。
 	//
-	// 理由:scene 的资产 RPC 是同步 gRPC —— 每条在途请求占住 scene 一条 sync server
-	// poller 线程,而整个 scene 进程的 poller 上限默认只有 8
-	// (GRPC_SERVER_MAX_POLLERS,cpp/libs/engine/core/node/system/node/node.cpp:632-644,
-	// 另见 docs/design/scene-node-threading-model.md)。
-	// 不设上限时,一次 Tick 的 100 行会同时压向同一个 scene 节点,把 poller 占满;
-	// 排在后面的不只是资产请求,还有 scene_manager 的 CreateScene、match 的 PrepareBattle
+	// 理由(docs/design/grpc-muduo-transport.md §15.6):scene 的 gRPC 服务端跑在节点 EventLoop 上,
+	// 每条资产 RPC 都在逻辑帧所在的那条 loop 线程上同步执行(durable 探测、Redis 写都在这一次调用里),
+	// 另见 docs/design/scene-node-threading-model.md。
+	// 不设上限时,一次 Tick 的 100 行会同时压向同一个 scene 节点,在 loop 上逐条执行、挤占逻辑帧;
+	// 被拖在后面的不只是资产请求,还有 scene_manager 的 CreateScene、match 的 PrepareBattle
 	// —— 玩家会卡在进场和开战上,而根因在一个后台补偿循环里,极难联想。
+	// scene 服务端自己的上限(每连接 256 条流、全节点在途 1024)只防过载,不替后台补偿限流,
+	// 补偿并发必须远低于它们。
+	// 第 4 批之前的理由是「每条在途请求占住 scene 一条 sync server poller 线程,上限默认 8」;
+	// poller 与 GRPC_SERVER_MAX_POLLERS 已随第 4 批退役,数值 8 不变(Y-06 golden 不变)。
 	//
 	// 另外这是**每个服务副本**的上限:副本数 × Workers 才是 scene 看见的并发,
 	// 扩副本时要连带复核。
@@ -313,6 +330,17 @@ type LoopConfig struct {
 	AbandonInterval time.Duration
 	// AuditInterval 是 RunMaintenance 两轮日对账之间的间隔;0 = 不跑对账,负数非法。
 	AuditInterval time.Duration
+
+	// RequireSQLCommit 是资产 SQL 提交证据的开关(docs/design/db-write-fencing-mysql.md §6.6、§8.7、§14 第 23 条)。
+	//
+	// false(零值,缺省):HEAD 口径。在线按 scene 回包的 durable 终结,离线读账本与自动放弃读 Redis 父键 blob;
+	// Ledger 可选。true:在线 / 离线终结都只认 SQL 提交证据(SQLCommitLedgerReader),Result.SQLCommitted 只在这时为真;
+	// 自动放弃要 Redis blob 与 SQL 证据都「确定未见」才放弃;Ledger 必填并实现 SQLCommitLedgerReader(CheckWiring 拒启)。
+	//
+	// **只有本服务会投递到的 zone 全部已切 Fencing.Mode=dual、已上新版 C++,并观察到证据在持续发布之后才打开**
+	// (§8.7 第 ⑤ 步)。打开前要接受:已离线、新链路上线前没有证据的玩家,待办要等他再次存盘才能终结。
+	// 回退时先关它,再把 zone 切回 legacy 或回退 C++。
+	RequireSQLCommit bool
 }
 
 // DefaultLoopConfig 是规格 §4.37 的取值,加上落地恢复设计 §6 的取值。
@@ -413,8 +441,10 @@ type Loop struct {
 	metrics *Metrics
 	now     func() time.Time
 
-	// Ledger 可选:能读已落盘账本时,长期离线且已记账的行可以提前终结(规格 §4.37)。
-	// 在 Run / ProcessOne 之前设置。
+	// Ledger 读已落盘账本。开关关闭(LoopConfig.RequireSQLCommit=false)时可选:能读时长期离线且已记账的行
+	// 可以提前终结(规格 §4.37),它也是自动放弃的证据来源,没有它两者都不运行。开关打开时必填,且必须实现
+	// SQLCommitLedgerReader:在线 / 离线终结都靠它确认 SQL 已提交。
+	// 在 Run / ProcessOne 之前设置,设置完调 CheckWiring;运行期间不允许修改。
 	Ledger LedgerReader
 	// Manual 可选:人工终结通道(规格 §4.38)。只服务于「进程里已经有 Loop」的调用方;
 	// 不连 scene 的工具(assetopfix)直接用包级 ResolveManually,不要为它造一个假 Loop。
@@ -462,6 +492,28 @@ func NewLoop(cfg LoopConfig, store Store, applier Applier, m *Metrics, now func(
 		now:     now,
 		slots:   make(chan struct{}, cfg.Workers),
 	}, nil
+}
+
+// CheckWiring 在可选字段(Ledger 等)挂好之后、Run / ProcessOne 之前调用:开关要求的依赖缺了就回错误,
+// 装配方据此拒启。开关打开却没有 SQL 证据读取器时,每一笔终结都只能停在 AwaitDurable,
+// 这种装配必须在启动时炸,不能留到运行期静默卡住(fence-inflight.md F6 (b))。
+func (l *Loop) CheckWiring() error {
+	if l.cfg.RequireSQLCommit && l.sqlLedger() == nil {
+		return errors.New("assetop: 打开了 RequireSQLCommit 却没有挂实现 SQLCommitLedgerReader 的 Loop.Ledger(检查 DataServiceRpc 配置)")
+	}
+	return nil
+}
+
+// RequireSQLCommit 报告本循环是否打开了资产 SQL 提交证据开关(LoopConfig.RequireSQLCommit),供装配方打日志。
+func (l *Loop) RequireSQLCommit() bool { return l.cfg.RequireSQLCommit }
+
+// sqlLedger 返回能读 SQL 提交证据的那份 Ledger;没挂或没实现时为 nil。
+func (l *Loop) sqlLedger() SQLCommitLedgerReader {
+	if l.Ledger == nil {
+		return nil
+	}
+	reader, _ := l.Ledger.(SQLCommitLedgerReader)
+	return reader
 }
 
 func (l *Loop) nowMs() uint64 { return uint64(l.now().UnixMilli()) }
@@ -656,7 +708,7 @@ func (l *Loop) rowBudgetLeft(ctx context.Context) bool {
 //     也就避开了 TiDB 下修改 idx_0 列之前必须先加锁的规则;
 //   - 结局、重排、终结都与退避重投一致,唤醒没有任何新的状态迁移;玩家仍在加载、战斗或冻结时
 //     scene 回 RETRY,行按原有退避重排(设计 L-4);
-//   - 并发计入 Workers 预算(与 Tick 共用 slots),一波登录潮压不垮 scene 的 poller。
+//   - 并发计入 Workers 预算(与 Tick 共用 slots),一波登录潮不会挤占 scene 的逻辑帧(EventLoop)。
 //
 // 逐行串行:一个玩家最多 32 行,串行只占一个名额,而且这些请求本来就都落在同一个 scene 节点上。
 //
@@ -779,6 +831,15 @@ func (l *Loop) ProcessOne(ctx context.Context, op Op) (Processed, error) {
 	if err == nil && res.Local {
 		res = l.tryPersistedLedger(applyCtx, op, res)
 	}
+	// 终结前的证据核对按开关分两种口径(LoopConfig.RequireSQLCommit):打开时只认 SQL 提交证据;
+	// 关闭时回到 HEAD 口径(scene 回包的 durable / Redis blob),托管扣出另要求原件与本笔身份一致。
+	if err == nil && !res.SQLCommitted && isSceneTerminal(res.Outcome) {
+		if l.cfg.RequireSQLCommit {
+			res, err = l.verifySQLCommit(applyCtx, op, res)
+		} else {
+			res = withMatchingReceipt(op, res)
+		}
+	}
 
 	switch Decide(res, err) {
 	case ActionFinalize:
@@ -810,6 +871,114 @@ func (l *Loop) ProcessOne(ctx context.Context, op Op) (Processed, error) {
 		}
 		return l.reschedule(ctx, op, l.alertNextMs(nowMs), res, nowMs, "alert")
 	}
+}
+
+// verifySQLCommit 将 scene 的结局与 SQL 提交证据核对(只在 LoopConfig.RequireSQLCommit 打开时调用)。
+// durable=false 的 scene 回包也可能已在随后提交，反之 Redis durable=true 绝不能单独使跨服务对侧入账。
+// 拿不到证据(读失败、缺证据、证据未见本笔)一律按未落盘返回,由 Decide 走 AwaitDurable 重排,不终结。
+func (l *Loop) verifySQLCommit(ctx context.Context, op Op, res Result) (Result, error) {
+	res.Durable = false
+	res.Snapshot = nil // 在线回包不是已提交的托管原件证明。
+	if ctx.Err() != nil {
+		return res, nil
+	}
+	reader := l.sqlLedger()
+	if reader == nil {
+		// CheckWiring 本应在启动时拦下;走到这里说明装配方漏调了它。不静默:每笔都计数并打 ERROR。
+		l.metrics.incLedgerRead("unwired")
+		logx.Errorf("[AssetOp] RequireSQLCommit is on but no SQL commit ledger reader is attached; operation stays pending op_id=%d stream=%d seq=%d",
+			op.OpID, op.Stream, op.Seq)
+		return res, nil
+	}
+	ledger, err := reader.ReadSQLCommittedLedger(ctx, op.PlayerID)
+	if err != nil {
+		l.metrics.incLedgerRead("error")
+		l.metrics.incStoreError("ledger_read")
+		logx.Errorf("[AssetOp] Failed to read asset SQL commit evidence; operation stays pending op_id=%d: %v", op.OpID, err)
+		return res, nil
+	}
+	if ledger == nil {
+		l.metrics.incLedgerRead("absent")
+		return res, nil
+	}
+	outcome, partial, reason := ClassifyPersisted(ledger, op.Stream, op.StreamEpoch, op.Seq)
+	if !isSceneTerminal(outcome) {
+		l.metrics.incLedgerRead("unseen")
+		return res, nil
+	}
+	proved := resultWithReceipt(ledger, op, Result{Outcome: outcome, Reason: reason, Durable: true, SQLCommitted: true, Partial: partial})
+	if !proved.Terminal() {
+		l.metrics.incLedgerRead("unseen")
+		return proved, nil
+	}
+	if outcome != res.Outcome {
+		return res, ErrOutcomeFlip
+	}
+	proved.Partial = proved.Partial || res.Partial
+	if proved.Reason == 0 {
+		proved.Reason = res.Reason
+	}
+	return proved, nil
+}
+
+func resultWithReceipt(ledger *componentpb.PlayerAssetOpLedgerComp, op Op, res Result) Result {
+	res.Snapshot = nil
+	receipt := matchingReceipt(ledger, op)
+	if receipt == nil {
+		return Result{Outcome: assetpb.AssetOpOutcome_ASSET_OP_OUTCOME_UNKNOWN}
+	}
+	if res.Outcome == assetpb.AssetOpOutcome_ASSET_OP_OUTCOME_APPLIED && escrowsInstances(op) {
+		if !receiptSnapshotMatches(op, receipt.GetSnapshot()) {
+			return Result{Outcome: assetpb.AssetOpOutcome_ASSET_OP_OUTCOME_UNKNOWN}
+		}
+		res.Snapshot = proto.Clone(receipt.GetSnapshot()).(*assetpb.AssetSnapshot)
+	} else if snapshotHasInstances(receipt.GetSnapshot()) {
+		return Result{Outcome: assetpb.AssetOpOutcome_ASSET_OP_OUTCOME_UNKNOWN}
+	}
+	return res
+}
+
+// withMatchingReceipt 是开关关闭(HEAD 口径)时终结前对托管原件的同一道判据:只有实例扣出才带原件,
+// 且快照必须与本笔扣出的实例身份逐一对上,否则丢掉(不让一个空快照把纯货币托管也拖进收据 ACK);
+// APPLIED 的实例扣出缺原件时按未落盘处理(AwaitDurable 重排),与 resultWithReceipt 同口径。
+// 帮会、发奖等不是托管的流本就不带快照,原样通过。
+func withMatchingReceipt(op Op, res Result) Result {
+	if res.Snapshot != nil && (!escrowsInstances(op) || !receiptSnapshotMatches(op, res.Snapshot)) {
+		res.Snapshot = nil
+	}
+	if escrowAwaitsReceipt(op, res) {
+		res.Durable = false
+	}
+	return res
+}
+
+// escrowsInstances:本笔是实例扣出(按道具 guid 或宝宝 id 扣出已有实例)。
+func escrowsInstances(op Op) bool {
+	return len(op.Bundle.GetItemUuids()) > 0 || op.Bundle.GetPetId() != 0
+}
+
+// escrowAwaitsReceipt:APPLIED 的实例扣出却没有可用原件。这时不能终结,否则托管方拿不到过户所需的完整实例。
+func escrowAwaitsReceipt(op Op, res Result) bool {
+	return res.Outcome == assetpb.AssetOpOutcome_ASSET_OP_OUTCOME_APPLIED && escrowsInstances(op) && res.Snapshot == nil
+}
+
+func receiptSnapshotMatches(op Op, snapshot *assetpb.AssetSnapshot) bool {
+	if op.Stream != assetpb.AssetOpStream_ASSET_OP_STREAM_TRADE_DEBIT || snapshot == nil ||
+		len(snapshot.GetItems()) != len(op.Bundle.GetItemUuids()) ||
+		(snapshot.GetPet() != nil) != (op.Bundle.GetPetId() != 0) {
+		return false
+	}
+	identities := make(map[uint64]bool, len(op.Bundle.GetItemUuids()))
+	for _, id := range op.Bundle.GetItemUuids() {
+		identities[id] = true
+	}
+	for _, item := range snapshot.GetItems() {
+		if item == nil || item.GetItemUuid() == 0 || !identities[item.GetItemUuid()] || len(item.GetInstanceProto()) == 0 {
+			return false
+		}
+		delete(identities, item.GetItemUuid())
+	}
+	return len(identities) == 0 && (snapshot.GetPet() == nil || snapshot.GetPet().GetPetId() == op.Bundle.GetPetId() && len(snapshot.GetPet().GetInstanceProto()) > 0)
 }
 
 // rpcFor 决定这次发哪个方法:过了业务截止时间就改发中止,否则按流的方向发。
@@ -942,8 +1111,9 @@ func carryPartialReason(op Op, res Result) Result {
 
 // tryPersistedLedger 在玩家长期不在线时,从已落盘账本里把结局读回来。
 //
-// 为什么安全:读的是已经写进 Redis 的那份数据,而已记账的结局永不改变(不变量 I2),
-// 所以玩家在不在线都不影响结论,读到的结局天然就是 durable 的。
+// 为什么安全:读的是已经落盘的那份数据,而已记账的结局永不改变(不变量 I2),
+// 所以玩家在不在线都不影响结论,读到的结局天然就是 durable 的。读哪一份按开关定(readFinalLedger):
+// 关闭时是 Redis 父键 blob(HEAD 口径),打开时只认 SQL 提交证据,结果才带 SQLCommitted。
 // 读不到结局的行**不**在 Go 侧自行判中止(不变量 I7):scene 没记账就无法保证
 // 这个 seq 将来不会被一个晚到的请求应用。
 func (l *Loop) tryPersistedLedger(ctx context.Context, op Op, res Result) Result {
@@ -951,7 +1121,7 @@ func (l *Loop) tryPersistedLedger(ctx context.Context, op Op, res Result) Result
 		return res
 	}
 
-	ledger, err := l.Ledger.ReadPersistedLedger(ctx, op.PlayerID)
+	ledger, err := l.readFinalLedger(ctx, op.PlayerID)
 	if err != nil {
 		l.metrics.incLedgerRead("error")
 		l.metrics.incStoreError("ledger_read")
@@ -968,10 +1138,28 @@ func (l *Loop) tryPersistedLedger(ctx context.Context, op Op, res Result) Result
 		l.metrics.incLedgerRead("unseen")
 		return res
 	}
+	proved := resultWithReceipt(ledger, op, Result{Outcome: outcome, Reason: reason, Durable: true, SQLCommitted: l.cfg.RequireSQLCommit, Partial: partial})
+	if !proved.Terminal() {
+		l.metrics.incLedgerRead("unseen")
+		return proved
+	}
 	l.metrics.incLedgerRead("finalized")
 	logx.Infof("[AssetOp] Persisted outcome read offline; finalization possible op_id=%d stream=%d seq=%d outcome=%s partial=%t",
 		op.OpID, op.Stream, op.Seq, outcomeLabel(outcome), partial)
-	return Result{Outcome: outcome, Reason: reason, Durable: true, Partial: partial}
+	return proved
+}
+
+// readFinalLedger 读「终结所认的那份已落盘账本」:开关打开读 SQL 提交证据,关闭读 Redis 父键 blob(HEAD 口径)。
+// 开关打开却没有 SQL 读取器时回错误(CheckWiring 本应在启动时拦下),绝不退回读 blob。
+func (l *Loop) readFinalLedger(ctx context.Context, playerID uint64) (*componentpb.PlayerAssetOpLedgerComp, error) {
+	if !l.cfg.RequireSQLCommit {
+		return l.Ledger.ReadPersistedLedger(ctx, playerID)
+	}
+	reader := l.sqlLedger()
+	if reader == nil {
+		return nil, errors.New("assetop: RequireSQLCommit 打开但 Loop.Ledger 没有实现 SQLCommitLedgerReader")
+	}
+	return reader.ReadSQLCommittedLedger(ctx, playerID)
 }
 
 // refreshPendingAge 刷新「最老未决行年龄」。Store 没实现 PendingAgeReader,

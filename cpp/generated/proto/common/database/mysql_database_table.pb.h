@@ -1469,8 +1469,9 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED player_database_1 final : public ::
     kPlayerIdFieldNumber = 1,
     kFenceOwnerEpochFieldNumber = 3,
     kFenceSaveSeqFieldNumber = 4,
+    kPersistSchemaGenFieldNumber = 5,
   };
-  // .PlayerStressTestProbe stress_test_probe = 2;
+  // .PlayerStressTestProbe stress_test_probe = 2 [(.OptionPersistUncarried) = true];
   [[nodiscard]] bool has_stress_test_probe()
       const;
   void clear_stress_test_probe() ;
@@ -1516,11 +1517,21 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED player_database_1 final : public ::
   void _internal_set_fence_save_seq(::uint64_t value);
 
   public:
+  // uint32 persist_schema_gen = 5;
+  void clear_persist_schema_gen() ;
+  [[nodiscard]] ::uint32_t persist_schema_gen() const;
+  void set_persist_schema_gen(::uint32_t value);
+
+  private:
+  ::uint32_t _internal_persist_schema_gen() const;
+  void _internal_set_persist_schema_gen(::uint32_t value);
+
+  public:
   // @@protoc_insertion_point(class_scope:player_database_1)
  private:
   class _Internal;
   using ParseTableT_ =
-      ::google::protobuf::internal::TcParseTable<2, 4,
+      ::google::protobuf::internal::TcParseTable<3, 5,
                           1, 0,
                           2>;
   static constexpr ParseTableT_ InternalGenerateParseTable_(
@@ -1553,6 +1564,7 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED player_database_1 final : public ::
     ::uint64_t player_id_;
     ::uint64_t fence_owner_epoch_;
     ::uint64_t fence_save_seq_;
+    ::uint32_t persist_schema_gen_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
   union { Impl_ _impl_; };
@@ -2185,10 +2197,11 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED player_database final : public ::go
     kAssetOpLedgerFieldNumber = 16,
     kSettlementLedgerFieldNumber = 17,
     kInboxLedgerFieldNumber = 20,
-    kMysteryMerchantFieldNumber = 21,
+    kMysteryMerchantFieldNumber = 22,
     kPlayerIdFieldNumber = 1,
     kFenceOwnerEpochFieldNumber = 18,
     kFenceSaveSeqFieldNumber = 19,
+    kPersistSchemaGenFieldNumber = 21,
   };
   // .Transform transform = 2;
   [[nodiscard]] bool has_transform()
@@ -2302,7 +2315,7 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED player_database final : public ::go
   ::CurrencyComp* PROTOBUF_NONNULL _internal_mutable_currency();
 
   public:
-  // .PlayerStressTestProbe stress_test_probe = 9;
+  // .PlayerStressTestProbe stress_test_probe = 9 [(.OptionPersistUncarried) = true];
   [[nodiscard]] bool has_stress_test_probe()
       const;
   void clear_stress_test_probe() ;
@@ -2318,7 +2331,7 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED player_database final : public ::go
   ::PlayerStressTestProbe* PROTOBUF_NONNULL _internal_mutable_stress_test_probe();
 
   public:
-  // .PlayerMergeStateComp merge_state = 10;
+  // .PlayerMergeStateComp merge_state = 10 [(.OptionPersistUncarried) = true];
   [[nodiscard]] bool has_merge_state()
       const;
   void clear_merge_state() ;
@@ -2462,7 +2475,7 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED player_database final : public ::go
   ::PlayerInboxLedgerComp* PROTOBUF_NONNULL _internal_mutable_inbox_ledger();
 
   public:
-  // .PlayerMysteryMerchantComp mystery_merchant = 21;
+  // .PlayerMysteryMerchantComp mystery_merchant = 22;
   [[nodiscard]] bool has_mystery_merchant()
       const;
   void clear_mystery_merchant() ;
@@ -2508,11 +2521,21 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED player_database final : public ::go
   void _internal_set_fence_save_seq(::uint64_t value);
 
   public:
+  // uint32 persist_schema_gen = 21;
+  void clear_persist_schema_gen() ;
+  [[nodiscard]] ::uint32_t persist_schema_gen() const;
+  void set_persist_schema_gen(::uint32_t value);
+
+  private:
+  ::uint32_t _internal_persist_schema_gen() const;
+  void _internal_set_persist_schema_gen(::uint32_t value);
+
+  public:
   // @@protoc_insertion_point(class_scope:player_database)
  private:
   class _Internal;
   using ParseTableT_ =
-      ::google::protobuf::internal::TcParseTable<5, 21,
+      ::google::protobuf::internal::TcParseTable<5, 22,
                           18, 0,
                           2>;
   static constexpr ParseTableT_ InternalGenerateParseTable_(
@@ -2562,6 +2585,7 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED player_database final : public ::go
     ::uint64_t player_id_;
     ::uint64_t fence_owner_epoch_;
     ::uint64_t fence_save_seq_;
+    ::uint32_t persist_schema_gen_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
   union { Impl_ _impl_; };
@@ -4249,7 +4273,7 @@ inline void player_database::set_allocated_currency(::CurrencyComp* PROTOBUF_NUL
   // @@protoc_insertion_point(field_set_allocated:player_database.currency)
 }
 
-// .PlayerStressTestProbe stress_test_probe = 9;
+// .PlayerStressTestProbe stress_test_probe = 9 [(.OptionPersistUncarried) = true];
 inline bool player_database::has_stress_test_probe() const {
   bool value = CheckHasBit(_impl_._has_bits_[0], 0x00000080U);
   PROTOBUF_ASSUME(!value || _impl_.stress_test_probe_ != nullptr);
@@ -4342,7 +4366,7 @@ inline void player_database::set_allocated_stress_test_probe(::PlayerStressTestP
   // @@protoc_insertion_point(field_set_allocated:player_database.stress_test_probe)
 }
 
-// .PlayerMergeStateComp merge_state = 10;
+// .PlayerMergeStateComp merge_state = 10 [(.OptionPersistUncarried) = true];
 inline bool player_database::has_merge_state() const {
   bool value = CheckHasBit(_impl_._has_bits_[0], 0x00000100U);
   PROTOBUF_ASSUME(!value || _impl_.merge_state_ != nullptr);
@@ -5227,7 +5251,31 @@ inline void player_database::set_allocated_inbox_ledger(::PlayerInboxLedgerComp*
   // @@protoc_insertion_point(field_set_allocated:player_database.inbox_ledger)
 }
 
-// .PlayerMysteryMerchantComp mystery_merchant = 21;
+// uint32 persist_schema_gen = 21;
+inline void player_database::clear_persist_schema_gen() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.persist_schema_gen_ = 0u;
+  ClearHasBit(_impl_._has_bits_[0], 0x00200000U);
+}
+inline ::uint32_t player_database::persist_schema_gen() const {
+  // @@protoc_insertion_point(field_get:player_database.persist_schema_gen)
+  return _internal_persist_schema_gen();
+}
+inline void player_database::set_persist_schema_gen(::uint32_t value) {
+  _internal_set_persist_schema_gen(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00200000U);
+  // @@protoc_insertion_point(field_set:player_database.persist_schema_gen)
+}
+inline ::uint32_t player_database::_internal_persist_schema_gen() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.persist_schema_gen_;
+}
+inline void player_database::_internal_set_persist_schema_gen(::uint32_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.persist_schema_gen_ = value;
+}
+
+// .PlayerMysteryMerchantComp mystery_merchant = 22;
 inline bool player_database::has_mystery_merchant() const {
   bool value = CheckHasBit(_impl_._has_bits_[0], 0x00020000U);
   PROTOBUF_ASSUME(!value || _impl_.mystery_merchant_ != nullptr);
@@ -5348,7 +5396,7 @@ inline void player_database_1::_internal_set_player_id(::uint64_t value) {
   _impl_.player_id_ = value;
 }
 
-// .PlayerStressTestProbe stress_test_probe = 2;
+// .PlayerStressTestProbe stress_test_probe = 2 [(.OptionPersistUncarried) = true];
 inline bool player_database_1::has_stress_test_probe() const {
   bool value = CheckHasBit(_impl_._has_bits_[0], 0x00000001U);
   PROTOBUF_ASSUME(!value || _impl_.stress_test_probe_ != nullptr);
@@ -5487,6 +5535,30 @@ inline ::uint64_t player_database_1::_internal_fence_save_seq() const {
 inline void player_database_1::_internal_set_fence_save_seq(::uint64_t value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.fence_save_seq_ = value;
+}
+
+// uint32 persist_schema_gen = 5;
+inline void player_database_1::clear_persist_schema_gen() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.persist_schema_gen_ = 0u;
+  ClearHasBit(_impl_._has_bits_[0], 0x00000010U);
+}
+inline ::uint32_t player_database_1::persist_schema_gen() const {
+  // @@protoc_insertion_point(field_get:player_database_1.persist_schema_gen)
+  return _internal_persist_schema_gen();
+}
+inline void player_database_1::set_persist_schema_gen(::uint32_t value) {
+  _internal_set_persist_schema_gen(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000010U);
+  // @@protoc_insertion_point(field_set:player_database_1.persist_schema_gen)
+}
+inline ::uint32_t player_database_1::_internal_persist_schema_gen() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.persist_schema_gen_;
+}
+inline void player_database_1::_internal_set_persist_schema_gen(::uint32_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.persist_schema_gen_ = value;
 }
 
 #ifdef __GNUC__

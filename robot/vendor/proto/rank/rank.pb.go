@@ -23,77 +23,135 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-// 榜类型。v1 只有 match 评分全服榜;**不预留** GUILD(公会榜在 go/guild 里另有实现、不计划搬,留一个永不实现的值
-// 会让人以为它可用,设计 L-15)。追加新榜只许 append 枚举值。
-type RankBoard int32
+type RankScope int32
 
 const (
-	RankBoard_RANK_BOARD_UNSPECIFIED  RankBoard = 0
-	RankBoard_RANK_BOARD_MATCH_RATING RankBoard = 1 // match 的 Elo 评分(不分模式、不分 zone,§1.3)
+	RankScope_RANK_SCOPE_UNSPECIFIED RankScope = 0
+	RankScope_RANK_SCOPE_GLOBAL      RankScope = 1
+	RankScope_RANK_SCOPE_GUILD       RankScope = 2
+	RankScope_RANK_SCOPE_INSTANCE    RankScope = 3
+	RankScope_RANK_SCOPE_CUSTOM      RankScope = 4
 )
 
-// Enum value maps for RankBoard.
+// Enum value maps for RankScope.
 var (
-	RankBoard_name = map[int32]string{
-		0: "RANK_BOARD_UNSPECIFIED",
-		1: "RANK_BOARD_MATCH_RATING",
+	RankScope_name = map[int32]string{
+		0: "RANK_SCOPE_UNSPECIFIED",
+		1: "RANK_SCOPE_GLOBAL",
+		2: "RANK_SCOPE_GUILD",
+		3: "RANK_SCOPE_INSTANCE",
+		4: "RANK_SCOPE_CUSTOM",
 	}
-	RankBoard_value = map[string]int32{
-		"RANK_BOARD_UNSPECIFIED":  0,
-		"RANK_BOARD_MATCH_RATING": 1,
+	RankScope_value = map[string]int32{
+		"RANK_SCOPE_UNSPECIFIED": 0,
+		"RANK_SCOPE_GLOBAL":      1,
+		"RANK_SCOPE_GUILD":       2,
+		"RANK_SCOPE_INSTANCE":    3,
+		"RANK_SCOPE_CUSTOM":      4,
 	}
 )
 
-func (x RankBoard) Enum() *RankBoard {
-	p := new(RankBoard)
+func (x RankScope) Enum() *RankScope {
+	p := new(RankScope)
 	*p = x
 	return p
 }
 
-func (x RankBoard) String() string {
+func (x RankScope) String() string {
 	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
 }
 
-func (RankBoard) Descriptor() protoreflect.EnumDescriptor {
+func (RankScope) Descriptor() protoreflect.EnumDescriptor {
 	return file_proto_rank_rank_proto_enumTypes[0].Descriptor()
 }
 
-func (RankBoard) Type() protoreflect.EnumType {
+func (RankScope) Type() protoreflect.EnumType {
 	return &file_proto_rank_rank_proto_enumTypes[0]
 }
 
-func (x RankBoard) Number() protoreflect.EnumNumber {
+func (x RankScope) Number() protoreflect.EnumNumber {
 	return protoreflect.EnumNumber(x)
 }
 
-// Deprecated: Use RankBoard.Descriptor instead.
-func (RankBoard) EnumDescriptor() ([]byte, []int) {
+// Deprecated: Use RankScope.Descriptor instead.
+func (RankScope) EnumDescriptor() ([]byte, []int) {
 	return file_proto_rank_rank_proto_rawDescGZIP(), []int{0}
 }
 
-type GetRankPageRequest struct {
+type RankGenerationState int32
+
+const (
+	RankGenerationState_RANK_GENERATION_UNSPECIFIED RankGenerationState = 0
+	RankGenerationState_RANK_GENERATION_OPEN        RankGenerationState = 1
+	RankGenerationState_RANK_GENERATION_SEALED      RankGenerationState = 2
+)
+
+// Enum value maps for RankGenerationState.
+var (
+	RankGenerationState_name = map[int32]string{
+		0: "RANK_GENERATION_UNSPECIFIED",
+		1: "RANK_GENERATION_OPEN",
+		2: "RANK_GENERATION_SEALED",
+	}
+	RankGenerationState_value = map[string]int32{
+		"RANK_GENERATION_UNSPECIFIED": 0,
+		"RANK_GENERATION_OPEN":        1,
+		"RANK_GENERATION_SEALED":      2,
+	}
+)
+
+func (x RankGenerationState) Enum() *RankGenerationState {
+	p := new(RankGenerationState)
+	*p = x
+	return p
+}
+
+func (x RankGenerationState) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (RankGenerationState) Descriptor() protoreflect.EnumDescriptor {
+	return file_proto_rank_rank_proto_enumTypes[1].Descriptor()
+}
+
+func (RankGenerationState) Type() protoreflect.EnumType {
+	return &file_proto_rank_rank_proto_enumTypes[1]
+}
+
+func (x RankGenerationState) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use RankGenerationState.Descriptor instead.
+func (RankGenerationState) EnumDescriptor() ([]byte, []int) {
+	return file_proto_rank_rank_proto_rawDescGZIP(), []int{1}
+}
+
+type RankBoardKey struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Board         RankBoard              `protobuf:"varint,1,opt,name=board,proto3,enum=rankpb.RankBoard" json:"board,omitempty"`
-	Page          uint32                 `protobuf:"varint,2,opt,name=page,proto3" json:"page,omitempty"`                         // 从 1 起;0 视为 1;超过末页按末页(照 jubaozhai BrowseListingsRequest)
-	PageSize      uint32                 `protobuf:"varint,3,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"` // 0 取默认 20;超过上限按上限 50
+	BoardType     uint32                 `protobuf:"varint,1,opt,name=board_type,json=boardType,proto3" json:"board_type,omitempty"`
+	Scope         RankScope              `protobuf:"varint,2,opt,name=scope,proto3,enum=rankpb.RankScope" json:"scope,omitempty"`
+	ScopeId       uint64                 `protobuf:"varint,3,opt,name=scope_id,json=scopeId,proto3" json:"scope_id,omitempty"`
+	Period        string                 `protobuf:"bytes,4,opt,name=period,proto3" json:"period,omitempty"`
+	Generation    uint64                 `protobuf:"varint,5,opt,name=generation,proto3" json:"generation,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *GetRankPageRequest) Reset() {
-	*x = GetRankPageRequest{}
+func (x *RankBoardKey) Reset() {
+	*x = RankBoardKey{}
 	mi := &file_proto_rank_rank_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *GetRankPageRequest) String() string {
+func (x *RankBoardKey) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*GetRankPageRequest) ProtoMessage() {}
+func (*RankBoardKey) ProtoMessage() {}
 
-func (x *GetRankPageRequest) ProtoReflect() protoreflect.Message {
+func (x *RankBoardKey) ProtoReflect() protoreflect.Message {
 	mi := &file_proto_rank_rank_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -105,39 +163,53 @@ func (x *GetRankPageRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use GetRankPageRequest.ProtoReflect.Descriptor instead.
-func (*GetRankPageRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use RankBoardKey.ProtoReflect.Descriptor instead.
+func (*RankBoardKey) Descriptor() ([]byte, []int) {
 	return file_proto_rank_rank_proto_rawDescGZIP(), []int{0}
 }
 
-func (x *GetRankPageRequest) GetBoard() RankBoard {
+func (x *RankBoardKey) GetBoardType() uint32 {
 	if x != nil {
-		return x.Board
-	}
-	return RankBoard_RANK_BOARD_UNSPECIFIED
-}
-
-func (x *GetRankPageRequest) GetPage() uint32 {
-	if x != nil {
-		return x.Page
+		return x.BoardType
 	}
 	return 0
 }
 
-func (x *GetRankPageRequest) GetPageSize() uint32 {
+func (x *RankBoardKey) GetScope() RankScope {
 	if x != nil {
-		return x.PageSize
+		return x.Scope
+	}
+	return RankScope_RANK_SCOPE_UNSPECIFIED
+}
+
+func (x *RankBoardKey) GetScopeId() uint64 {
+	if x != nil {
+		return x.ScopeId
+	}
+	return 0
+}
+
+func (x *RankBoardKey) GetPeriod() string {
+	if x != nil {
+		return x.Period
+	}
+	return ""
+}
+
+func (x *RankBoardKey) GetGeneration() uint64 {
+	if x != nil {
+		return x.Generation
 	}
 	return 0
 }
 
 type RankEntry struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Rank          uint32                 `protobuf:"varint,1,opt,name=rank,proto3" json:"rank,omitempty"` // 从 1 起,连续名次(同分先达到者在前,不做并列名次,§3.3)
-	PlayerId      uint64                 `protobuf:"varint,2,opt,name=player_id,json=playerId,proto3" json:"player_id,omitempty"`
-	Name          string                 `protobuf:"bytes,3,opt,name=name,proto3" json:"name,omitempty"`                                   // 展示名;名字补全失败时为空(fail-open,§4.3)
-	RatingCenti   uint32                 `protobuf:"varint,4,opt,name=rating_centi,json=ratingCenti,proto3" json:"rating_centi,omitempty"` // 分 × 100;客户端自己格式化两位小数
-	Games         uint64                 `protobuf:"varint,5,opt,name=games,proto3" json:"games,omitempty"`                                // 累计排位局数
+	Rank          uint64                 `protobuf:"varint,1,opt,name=rank,proto3" json:"rank,omitempty"`
+	EntityId      uint64                 `protobuf:"varint,2,opt,name=entity_id,json=entityId,proto3" json:"entity_id,omitempty"`
+	Score         int64                  `protobuf:"varint,3,opt,name=score,proto3" json:"score,omitempty"`
+	AchievedMs    uint64                 `protobuf:"varint,4,opt,name=achieved_ms,json=achievedMs,proto3" json:"achieved_ms,omitempty"`
+	Name          string                 `protobuf:"bytes,5,opt,name=name,proto3" json:"name,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -172,16 +244,30 @@ func (*RankEntry) Descriptor() ([]byte, []int) {
 	return file_proto_rank_rank_proto_rawDescGZIP(), []int{1}
 }
 
-func (x *RankEntry) GetRank() uint32 {
+func (x *RankEntry) GetRank() uint64 {
 	if x != nil {
 		return x.Rank
 	}
 	return 0
 }
 
-func (x *RankEntry) GetPlayerId() uint64 {
+func (x *RankEntry) GetEntityId() uint64 {
 	if x != nil {
-		return x.PlayerId
+		return x.EntityId
+	}
+	return 0
+}
+
+func (x *RankEntry) GetScore() int64 {
+	if x != nil {
+		return x.Score
+	}
+	return 0
+}
+
+func (x *RankEntry) GetAchievedMs() uint64 {
+	if x != nil {
+		return x.AchievedMs
 	}
 	return 0
 }
@@ -193,38 +279,84 @@ func (x *RankEntry) GetName() string {
 	return ""
 }
 
-func (x *RankEntry) GetRatingCenti() uint32 {
+type GetRankPageRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Board         *RankBoardKey          `protobuf:"bytes,1,opt,name=board,proto3" json:"board,omitempty"`
+	Page          uint32                 `protobuf:"varint,2,opt,name=page,proto3" json:"page,omitempty"`
+	PageSize      uint32                 `protobuf:"varint,3,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetRankPageRequest) Reset() {
+	*x = GetRankPageRequest{}
+	mi := &file_proto_rank_rank_proto_msgTypes[2]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetRankPageRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetRankPageRequest) ProtoMessage() {}
+
+func (x *GetRankPageRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_rank_rank_proto_msgTypes[2]
 	if x != nil {
-		return x.RatingCenti
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetRankPageRequest.ProtoReflect.Descriptor instead.
+func (*GetRankPageRequest) Descriptor() ([]byte, []int) {
+	return file_proto_rank_rank_proto_rawDescGZIP(), []int{2}
+}
+
+func (x *GetRankPageRequest) GetBoard() *RankBoardKey {
+	if x != nil {
+		return x.Board
+	}
+	return nil
+}
+
+func (x *GetRankPageRequest) GetPage() uint32 {
+	if x != nil {
+		return x.Page
 	}
 	return 0
 }
 
-func (x *RankEntry) GetGames() uint64 {
+func (x *GetRankPageRequest) GetPageSize() uint32 {
 	if x != nil {
-		return x.Games
+		return x.PageSize
 	}
 	return 0
 }
 
 type GetRankPageResponse struct {
-	state        protoimpl.MessageState `protogen:"open.v1"`
-	ErrorMessage *base.TipInfoMessage   `protobuf:"bytes,1,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"`
-	Entries      []*RankEntry           `protobuf:"bytes,2,rep,name=entries,proto3" json:"entries,omitempty"`
-	TotalCount   uint32                 `protobuf:"varint,3,opt,name=total_count,json=totalCount,proto3" json:"total_count,omitempty"`
-	Page         uint32                 `protobuf:"varint,4,opt,name=page,proto3" json:"page,omitempty"`                            // 钳制后的页码
-	PageSize     uint32                 `protobuf:"varint,5,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"`    // 钳制后的页长
-	PageCount    uint32                 `protobuf:"varint,6,opt,name=page_count,json=pageCount,proto3" json:"page_count,omitempty"` // 至少为 1(空榜时也是 1)
-	// 调用者自己的名次。未上榜时 self.rank = 0、其余字段为空 —— **不是错误**,error_message 为空,entries 照常返回
-	// (一页数据正常而自己未上榜,回 tip 会让客户端把整页当失败,§4.2)。
-	Self          *RankEntry `protobuf:"bytes,7,opt,name=self,proto3" json:"self,omitempty"`
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	ErrorMessage  *base.TipInfoMessage   `protobuf:"bytes,1,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"`
+	Board         *RankBoardKey          `protobuf:"bytes,2,opt,name=board,proto3" json:"board,omitempty"`
+	Entries       []*RankEntry           `protobuf:"bytes,3,rep,name=entries,proto3" json:"entries,omitempty"`
+	TotalCount    uint64                 `protobuf:"varint,4,opt,name=total_count,json=totalCount,proto3" json:"total_count,omitempty"`
+	Page          uint32                 `protobuf:"varint,5,opt,name=page,proto3" json:"page,omitempty"`
+	PageSize      uint32                 `protobuf:"varint,6,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"`
+	PageCount     uint64                 `protobuf:"varint,7,opt,name=page_count,json=pageCount,proto3" json:"page_count,omitempty"`
+	Self          *RankEntry             `protobuf:"bytes,8,opt,name=self,proto3" json:"self,omitempty"`
+	State         RankGenerationState    `protobuf:"varint,9,opt,name=state,proto3,enum=rankpb.RankGenerationState" json:"state,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *GetRankPageResponse) Reset() {
 	*x = GetRankPageResponse{}
-	mi := &file_proto_rank_rank_proto_msgTypes[2]
+	mi := &file_proto_rank_rank_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -236,7 +368,7 @@ func (x *GetRankPageResponse) String() string {
 func (*GetRankPageResponse) ProtoMessage() {}
 
 func (x *GetRankPageResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_rank_rank_proto_msgTypes[2]
+	mi := &file_proto_rank_rank_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -249,12 +381,19 @@ func (x *GetRankPageResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetRankPageResponse.ProtoReflect.Descriptor instead.
 func (*GetRankPageResponse) Descriptor() ([]byte, []int) {
-	return file_proto_rank_rank_proto_rawDescGZIP(), []int{2}
+	return file_proto_rank_rank_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *GetRankPageResponse) GetErrorMessage() *base.TipInfoMessage {
 	if x != nil {
 		return x.ErrorMessage
+	}
+	return nil
+}
+
+func (x *GetRankPageResponse) GetBoard() *RankBoardKey {
+	if x != nil {
+		return x.Board
 	}
 	return nil
 }
@@ -266,7 +405,7 @@ func (x *GetRankPageResponse) GetEntries() []*RankEntry {
 	return nil
 }
 
-func (x *GetRankPageResponse) GetTotalCount() uint32 {
+func (x *GetRankPageResponse) GetTotalCount() uint64 {
 	if x != nil {
 		return x.TotalCount
 	}
@@ -287,7 +426,7 @@ func (x *GetRankPageResponse) GetPageSize() uint32 {
 	return 0
 }
 
-func (x *GetRankPageResponse) GetPageCount() uint32 {
+func (x *GetRankPageResponse) GetPageCount() uint64 {
 	if x != nil {
 		return x.PageCount
 	}
@@ -301,37 +440,192 @@ func (x *GetRankPageResponse) GetSelf() *RankEntry {
 	return nil
 }
 
+func (x *GetRankPageResponse) GetState() RankGenerationState {
+	if x != nil {
+		return x.State
+	}
+	return RankGenerationState_RANK_GENERATION_UNSPECIFIED
+}
+
+type GetRankAroundRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Board         *RankBoardKey          `protobuf:"bytes,1,opt,name=board,proto3" json:"board,omitempty"`
+	Radius        uint32                 `protobuf:"varint,2,opt,name=radius,proto3" json:"radius,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetRankAroundRequest) Reset() {
+	*x = GetRankAroundRequest{}
+	mi := &file_proto_rank_rank_proto_msgTypes[4]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetRankAroundRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetRankAroundRequest) ProtoMessage() {}
+
+func (x *GetRankAroundRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_rank_rank_proto_msgTypes[4]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetRankAroundRequest.ProtoReflect.Descriptor instead.
+func (*GetRankAroundRequest) Descriptor() ([]byte, []int) {
+	return file_proto_rank_rank_proto_rawDescGZIP(), []int{4}
+}
+
+func (x *GetRankAroundRequest) GetBoard() *RankBoardKey {
+	if x != nil {
+		return x.Board
+	}
+	return nil
+}
+
+func (x *GetRankAroundRequest) GetRadius() uint32 {
+	if x != nil {
+		return x.Radius
+	}
+	return 0
+}
+
+type GetRankAroundResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	ErrorMessage  *base.TipInfoMessage   `protobuf:"bytes,1,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"`
+	Board         *RankBoardKey          `protobuf:"bytes,2,opt,name=board,proto3" json:"board,omitempty"`
+	Entries       []*RankEntry           `protobuf:"bytes,3,rep,name=entries,proto3" json:"entries,omitempty"`
+	Self          *RankEntry             `protobuf:"bytes,4,opt,name=self,proto3" json:"self,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetRankAroundResponse) Reset() {
+	*x = GetRankAroundResponse{}
+	mi := &file_proto_rank_rank_proto_msgTypes[5]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetRankAroundResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetRankAroundResponse) ProtoMessage() {}
+
+func (x *GetRankAroundResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_rank_rank_proto_msgTypes[5]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetRankAroundResponse.ProtoReflect.Descriptor instead.
+func (*GetRankAroundResponse) Descriptor() ([]byte, []int) {
+	return file_proto_rank_rank_proto_rawDescGZIP(), []int{5}
+}
+
+func (x *GetRankAroundResponse) GetErrorMessage() *base.TipInfoMessage {
+	if x != nil {
+		return x.ErrorMessage
+	}
+	return nil
+}
+
+func (x *GetRankAroundResponse) GetBoard() *RankBoardKey {
+	if x != nil {
+		return x.Board
+	}
+	return nil
+}
+
+func (x *GetRankAroundResponse) GetEntries() []*RankEntry {
+	if x != nil {
+		return x.Entries
+	}
+	return nil
+}
+
+func (x *GetRankAroundResponse) GetSelf() *RankEntry {
+	if x != nil {
+		return x.Self
+	}
+	return nil
+}
+
 var File_proto_rank_rank_proto protoreflect.FileDescriptor
 
 const file_proto_rank_rank_proto_rawDesc = "" +
 	"\n" +
-	"\x15proto/rank/rank.proto\x12\x06rankpb\x1a\x1bproto/db/proto_option.proto\x1a\x1bproto/common/base/tip.proto\"n\n" +
-	"\x12GetRankPageRequest\x12'\n" +
-	"\x05board\x18\x01 \x01(\x0e2\x11.rankpb.RankBoardR\x05board\x12\x12\n" +
-	"\x04page\x18\x02 \x01(\rR\x04page\x12\x1b\n" +
-	"\tpage_size\x18\x03 \x01(\rR\bpageSize\"\x89\x01\n" +
-	"\tRankEntry\x12\x12\n" +
-	"\x04rank\x18\x01 \x01(\rR\x04rank\x12\x1b\n" +
-	"\tplayer_id\x18\x02 \x01(\x04R\bplayerId\x12\x12\n" +
-	"\x04name\x18\x03 \x01(\tR\x04name\x12!\n" +
-	"\frating_centi\x18\x04 \x01(\rR\vratingCenti\x12\x14\n" +
-	"\x05games\x18\x05 \x01(\x04R\x05games\"\x90\x02\n" +
-	"\x13GetRankPageResponse\x124\n" +
-	"\rerror_message\x18\x01 \x01(\v2\x0f.TipInfoMessageR\ferrorMessage\x12+\n" +
-	"\aentries\x18\x02 \x03(\v2\x11.rankpb.RankEntryR\aentries\x12\x1f\n" +
-	"\vtotal_count\x18\x03 \x01(\rR\n" +
-	"totalCount\x12\x12\n" +
-	"\x04page\x18\x04 \x01(\rR\x04page\x12\x1b\n" +
-	"\tpage_size\x18\x05 \x01(\rR\bpageSize\x12\x1d\n" +
+	"\x15proto/rank/rank.proto\x12\x06rankpb\x1a\x1bproto/db/proto_option.proto\x1a\x1bproto/common/base/tip.proto\"\xa9\x01\n" +
+	"\fRankBoardKey\x12\x1d\n" +
 	"\n" +
-	"page_count\x18\x06 \x01(\rR\tpageCount\x12%\n" +
-	"\x04self\x18\a \x01(\v2\x11.rankpb.RankEntryR\x04self*D\n" +
-	"\tRankBoard\x12\x1a\n" +
-	"\x16RANK_BOARD_UNSPECIFIED\x10\x00\x12\x1b\n" +
-	"\x17RANK_BOARD_MATCH_RATING\x10\x012a\n" +
+	"board_type\x18\x01 \x01(\rR\tboardType\x12'\n" +
+	"\x05scope\x18\x02 \x01(\x0e2\x11.rankpb.RankScopeR\x05scope\x12\x19\n" +
+	"\bscope_id\x18\x03 \x01(\x04R\ascopeId\x12\x16\n" +
+	"\x06period\x18\x04 \x01(\tR\x06period\x12\x1e\n" +
+	"\n" +
+	"generation\x18\x05 \x01(\x04R\n" +
+	"generation\"\x87\x01\n" +
+	"\tRankEntry\x12\x12\n" +
+	"\x04rank\x18\x01 \x01(\x04R\x04rank\x12\x1b\n" +
+	"\tentity_id\x18\x02 \x01(\x04R\bentityId\x12\x14\n" +
+	"\x05score\x18\x03 \x01(\x03R\x05score\x12\x1f\n" +
+	"\vachieved_ms\x18\x04 \x01(\x04R\n" +
+	"achievedMs\x12\x12\n" +
+	"\x04name\x18\x05 \x01(\tR\x04name\"q\n" +
+	"\x12GetRankPageRequest\x12*\n" +
+	"\x05board\x18\x01 \x01(\v2\x14.rankpb.RankBoardKeyR\x05board\x12\x12\n" +
+	"\x04page\x18\x02 \x01(\rR\x04page\x12\x1b\n" +
+	"\tpage_size\x18\x03 \x01(\rR\bpageSize\"\xef\x02\n" +
+	"\x13GetRankPageResponse\x124\n" +
+	"\rerror_message\x18\x01 \x01(\v2\x0f.TipInfoMessageR\ferrorMessage\x12*\n" +
+	"\x05board\x18\x02 \x01(\v2\x14.rankpb.RankBoardKeyR\x05board\x12+\n" +
+	"\aentries\x18\x03 \x03(\v2\x11.rankpb.RankEntryR\aentries\x12\x1f\n" +
+	"\vtotal_count\x18\x04 \x01(\x04R\n" +
+	"totalCount\x12\x12\n" +
+	"\x04page\x18\x05 \x01(\rR\x04page\x12\x1b\n" +
+	"\tpage_size\x18\x06 \x01(\rR\bpageSize\x12\x1d\n" +
+	"\n" +
+	"page_count\x18\a \x01(\x04R\tpageCount\x12%\n" +
+	"\x04self\x18\b \x01(\v2\x11.rankpb.RankEntryR\x04self\x121\n" +
+	"\x05state\x18\t \x01(\x0e2\x1b.rankpb.RankGenerationStateR\x05state\"Z\n" +
+	"\x14GetRankAroundRequest\x12*\n" +
+	"\x05board\x18\x01 \x01(\v2\x14.rankpb.RankBoardKeyR\x05board\x12\x16\n" +
+	"\x06radius\x18\x02 \x01(\rR\x06radius\"\xcd\x01\n" +
+	"\x15GetRankAroundResponse\x124\n" +
+	"\rerror_message\x18\x01 \x01(\v2\x0f.TipInfoMessageR\ferrorMessage\x12*\n" +
+	"\x05board\x18\x02 \x01(\v2\x14.rankpb.RankBoardKeyR\x05board\x12+\n" +
+	"\aentries\x18\x03 \x03(\v2\x11.rankpb.RankEntryR\aentries\x12%\n" +
+	"\x04self\x18\x04 \x01(\v2\x11.rankpb.RankEntryR\x04self*\x84\x01\n" +
+	"\tRankScope\x12\x1a\n" +
+	"\x16RANK_SCOPE_UNSPECIFIED\x10\x00\x12\x15\n" +
+	"\x11RANK_SCOPE_GLOBAL\x10\x01\x12\x14\n" +
+	"\x10RANK_SCOPE_GUILD\x10\x02\x12\x17\n" +
+	"\x13RANK_SCOPE_INSTANCE\x10\x03\x12\x15\n" +
+	"\x11RANK_SCOPE_CUSTOM\x10\x04*l\n" +
+	"\x13RankGenerationState\x12\x1f\n" +
+	"\x1bRANK_GENERATION_UNSPECIFIED\x10\x00\x12\x18\n" +
+	"\x14RANK_GENERATION_OPEN\x10\x01\x12\x1a\n" +
+	"\x16RANK_GENERATION_SEALED\x10\x022\xaf\x01\n" +
 	"\x10ClientPlayerRank\x12F\n" +
-	"\vGetRankPage\x12\x1a.rankpb.GetRankPageRequest\x1a\x1b.rankpb.GetRankPageResponse\x1a\x05\x88\xa8\xc3\x01\x01B\x13\x98\xd4a\x12Z\n" +
-	"proto/rank\x80\x01\x00b\x06proto3"
+	"\vGetRankPage\x12\x1a.rankpb.GetRankPageRequest\x1a\x1b.rankpb.GetRankPageResponse\x12L\n" +
+	"\rGetRankAround\x12\x1c.rankpb.GetRankAroundRequest\x1a\x1d.rankpb.GetRankAroundResponse\x1a\x05\x88\xa8\xc3\x01\x01B\x10\x98\xd4a\x12Z\n" +
+	"proto/rankb\x06proto3"
 
 var (
 	file_proto_rank_rank_proto_rawDescOnce sync.Once
@@ -345,27 +639,41 @@ func file_proto_rank_rank_proto_rawDescGZIP() []byte {
 	return file_proto_rank_rank_proto_rawDescData
 }
 
-var file_proto_rank_rank_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_proto_rank_rank_proto_msgTypes = make([]protoimpl.MessageInfo, 3)
+var file_proto_rank_rank_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
+var file_proto_rank_rank_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
 var file_proto_rank_rank_proto_goTypes = []any{
-	(RankBoard)(0),              // 0: rankpb.RankBoard
-	(*GetRankPageRequest)(nil),  // 1: rankpb.GetRankPageRequest
-	(*RankEntry)(nil),           // 2: rankpb.RankEntry
-	(*GetRankPageResponse)(nil), // 3: rankpb.GetRankPageResponse
-	(*base.TipInfoMessage)(nil), // 4: TipInfoMessage
+	(RankScope)(0),                // 0: rankpb.RankScope
+	(RankGenerationState)(0),      // 1: rankpb.RankGenerationState
+	(*RankBoardKey)(nil),          // 2: rankpb.RankBoardKey
+	(*RankEntry)(nil),             // 3: rankpb.RankEntry
+	(*GetRankPageRequest)(nil),    // 4: rankpb.GetRankPageRequest
+	(*GetRankPageResponse)(nil),   // 5: rankpb.GetRankPageResponse
+	(*GetRankAroundRequest)(nil),  // 6: rankpb.GetRankAroundRequest
+	(*GetRankAroundResponse)(nil), // 7: rankpb.GetRankAroundResponse
+	(*base.TipInfoMessage)(nil),   // 8: TipInfoMessage
 }
 var file_proto_rank_rank_proto_depIdxs = []int32{
-	0, // 0: rankpb.GetRankPageRequest.board:type_name -> rankpb.RankBoard
-	4, // 1: rankpb.GetRankPageResponse.error_message:type_name -> TipInfoMessage
-	2, // 2: rankpb.GetRankPageResponse.entries:type_name -> rankpb.RankEntry
-	2, // 3: rankpb.GetRankPageResponse.self:type_name -> rankpb.RankEntry
-	1, // 4: rankpb.ClientPlayerRank.GetRankPage:input_type -> rankpb.GetRankPageRequest
-	3, // 5: rankpb.ClientPlayerRank.GetRankPage:output_type -> rankpb.GetRankPageResponse
-	5, // [5:6] is the sub-list for method output_type
-	4, // [4:5] is the sub-list for method input_type
-	4, // [4:4] is the sub-list for extension type_name
-	4, // [4:4] is the sub-list for extension extendee
-	0, // [0:4] is the sub-list for field type_name
+	0,  // 0: rankpb.RankBoardKey.scope:type_name -> rankpb.RankScope
+	2,  // 1: rankpb.GetRankPageRequest.board:type_name -> rankpb.RankBoardKey
+	8,  // 2: rankpb.GetRankPageResponse.error_message:type_name -> TipInfoMessage
+	2,  // 3: rankpb.GetRankPageResponse.board:type_name -> rankpb.RankBoardKey
+	3,  // 4: rankpb.GetRankPageResponse.entries:type_name -> rankpb.RankEntry
+	3,  // 5: rankpb.GetRankPageResponse.self:type_name -> rankpb.RankEntry
+	1,  // 6: rankpb.GetRankPageResponse.state:type_name -> rankpb.RankGenerationState
+	2,  // 7: rankpb.GetRankAroundRequest.board:type_name -> rankpb.RankBoardKey
+	8,  // 8: rankpb.GetRankAroundResponse.error_message:type_name -> TipInfoMessage
+	2,  // 9: rankpb.GetRankAroundResponse.board:type_name -> rankpb.RankBoardKey
+	3,  // 10: rankpb.GetRankAroundResponse.entries:type_name -> rankpb.RankEntry
+	3,  // 11: rankpb.GetRankAroundResponse.self:type_name -> rankpb.RankEntry
+	4,  // 12: rankpb.ClientPlayerRank.GetRankPage:input_type -> rankpb.GetRankPageRequest
+	6,  // 13: rankpb.ClientPlayerRank.GetRankAround:input_type -> rankpb.GetRankAroundRequest
+	5,  // 14: rankpb.ClientPlayerRank.GetRankPage:output_type -> rankpb.GetRankPageResponse
+	7,  // 15: rankpb.ClientPlayerRank.GetRankAround:output_type -> rankpb.GetRankAroundResponse
+	14, // [14:16] is the sub-list for method output_type
+	12, // [12:14] is the sub-list for method input_type
+	12, // [12:12] is the sub-list for extension type_name
+	12, // [12:12] is the sub-list for extension extendee
+	0,  // [0:12] is the sub-list for field type_name
 }
 
 func init() { file_proto_rank_rank_proto_init() }
@@ -378,8 +686,8 @@ func file_proto_rank_rank_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_proto_rank_rank_proto_rawDesc), len(file_proto_rank_rank_proto_rawDesc)),
-			NumEnums:      1,
-			NumMessages:   3,
+			NumEnums:      2,
+			NumMessages:   6,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

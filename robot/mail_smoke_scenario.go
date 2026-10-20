@@ -1,3 +1,5 @@
+// 2026-10-19 主干适配：M2/M3 serviceauth + MailView/limit + MailChangedEvent。
+// 使用 admin 生产者密钥，附件必须通过 scene 资产通道完成，不再把 M1 领取短路当成功。
 package main
 
 // mail-smoke 场景:两个机器人经 gate → client_rpc_router 对 go/mail 做端到端冒烟
@@ -27,7 +29,7 @@ package main
 // R 每轮删掉自己视图里的 S,邮箱只累积 Q 一封,连跑时第 4 步的未读核账一直是单页精确等式。
 //
 // ⚠ 消息号常量名(game.ClientPlayerMail*MessageId / game.MailAdmin*MessageId)按 robot/generated/pb/game/message_id.go 的
-// 规律(`<服务名><方法名>MessageId`)书写,与 go/mail/internal/logic/push.go 用的 game.ClientPlayerMailNotifyMailEventMessageId
+// 规律(`<服务名><方法名>MessageId`)书写,与 go/mail/internal/logic/push.go 用的 game.ClientPlayerMailNotifyMailChangedMessageId
 // 同源;proto-gen 之后若对不上,改这里,别改 proto。
 
 import (
@@ -45,9 +47,9 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials/insecure"
-	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/proto"
+	"shared/serviceauth"
 
 	"proto/common/base"
 	mailpb "proto/mail"
@@ -99,22 +101,17 @@ const (
 	mailSmokeCurrencyAmount uint64 = 1
 )
 
-// 令牌约定只能手抄(robot 不能 import go/mail/internal),与 go/mail/internal/config/config.go 逐字一致:
-// AdminTokenEnv / AdminTokenMetadataKey / MinAdminTokenBytes;Go 侧先 TrimSpace 再比长度。
+// admin 生产者密钥只用于 serviceauth.Sign；环境变量名与 mail.yaml Producers.admin 对应。
 const (
-	mailSmokeAdminTokenEnv      = "MMORPG_MAIL_ADMIN_TOKEN"
-	mailSmokeAdminTokenMetadata = "x-mail-admin-token"
+	mailSmokeAdminTokenEnv      = "MAIL_PRODUCER_SECRET_ADMIN"
 	mailSmokeMinAdminTokenBytes = 32
-	mailSmokeOperator           = "robot/mail-smoke"
 )
 
 // tip id 一律读导表器生成的枚举,不写字面量(AGENTS.md §7 不变量 5)。
 var (
 	tipMailNotFound           = uint32(tiptable.MailError_kMailNotFound)
-	tipMailClaimNotOpen       = uint32(tiptable.MailError_kMailClaimNotOpen)
 	tipMailRecipientBoxFull   = uint32(tiptable.MailError_kMailRecipientBoxFull)
-	tipMailSystemMailLimit    = uint32(tiptable.MailError_kMailSystemMailLimit)
-	tipMailAttachmentNotOpen  = uint32(tiptable.MailError_kMailAttachmentNotOpen)
+	tipMailAttachmentNotOpen  = uint32(tiptable.MailError_kMailAttachmentInvalid)
 	tipMailRequestConflict    = uint32(tiptable.MailError_kMailRequestConflict)
 	tipMailInvalidParameter   = uint32(tiptable.CommonError_kInvalidParameter)
 	tipMailRateLimited        = uint32(tiptable.CommonError_kRateLimitExceeded)
@@ -147,7 +144,7 @@ type mailSmokeBot struct {
 	// replies:本次请求发出后收到的第一个同消息号回包(含信封拒绝)。
 	replies map[uint32]*base.MessageContent
 	// pushes:收到的 S2C 邮件事件,按到达顺序。断言前用 resetPushes 清空。
-	pushes []*mailpb.MailEventS2C
+	pushes []*mailpb.MailChangedEvent
 	// gateTips:本次请求期间收到的 SendTipToClient(gate 选不到路由服时走这条)。
 	gateTips []uint32
 	// awaiting:主流程当前正在等的消息号,0 = 没在等。第 7 步 O 对**推送消息号本身**发请求,
@@ -189,14 +186,10 @@ func RunMailSmoke(cfg *config.Config) {
 		os.Exit(1)
 	}
 
-	// 令牌先查(在登录之前):缺了整轮都没意义。只报长度与变量名,**不打印值**。
+	// 与服务端 admin 生产者使用相同的分用途签名密钥；不记录密钥值。
 	token := strings.TrimSpace(os.Getenv(mailSmokeAdminTokenEnv))
-	if len(token) < mailSmokeMinAdminTokenBytes {
-		fail("admin-token", "%s is unset or shorter than %d bytes after trimming (got %d): MailAdmin would answer PermissionDenied. "+
-			"Load the same token that go_services.ps1 injected into mail, in this shell (from robot/): "+
-			"`. ..\\tools\\scripts\\lib\\mail_admin_dev_token.ps1; Initialize-MailAdminDevToken | Out-Null` "+
-			"(the library locates the repo root from its own path, so the current directory does not matter)",
-			mailSmokeAdminTokenEnv, mailSmokeMinAdminTokenBytes, len(token))
+	if len([]byte(token)) < mailSmokeMinAdminTokenBytes {
+		fail("admin-secret", "%s must contain the same >=32-byte producer secret as the mail service", mailSmokeAdminTokenEnv)
 	}
 
 	spacing := time.Duration(sc.RequestIntervalMs) * time.Millisecond
@@ -263,30 +256,30 @@ func RunMailSmoke(cfg *config.Config) {
 	nonce := mailSmokeNonce()
 	expireMs := uint64(time.Now().Add(mailSmokeExpireAfter).UnixMilli())
 	requestBase := uint64(time.Now().UnixNano())
-	sysReq := &mailpb.SendSystemMailRequest{
-		SenderKind: mailpb.MailSenderKind_MAIL_SENDER_KIND_ROBOT,
+	sysReq := &mailpb.SendMailRequest{
+		SenderKind: 1,
 		RequestId:  requestBase,
-		SenderName: "robot-smoke",
-		Title:      "smoke sys " + nonce,
-		Body:       "mail-smoke system mail " + nonce,
-		ExpireMs:   expireMs,
+
+		Title:    "smoke sys " + nonce,
+		Body:     "mail-smoke system mail " + nonce,
+		ExpireMs: expireMs,
 	}
-	plainReq := &mailpb.SendPersonalMailRequest{
-		SenderKind:        mailpb.MailSenderKind_MAIL_SENDER_KIND_ROBOT,
+	plainReq := &mailpb.SendMailRequest{
+		SenderKind:        1,
 		RequestId:         requestBase + 1,
 		RecipientPlayerId: r.gc.PlayerId,
-		SenderName:        "robot-smoke",
-		Title:             "smoke plain " + nonce,
-		Body:              "mail-smoke personal mail " + nonce,
-		ExpireMs:          expireMs,
+
+		Title:    "smoke plain " + nonce,
+		Body:     "mail-smoke personal mail " + nonce,
+		ExpireMs: expireMs,
 	}
-	attachReq := &mailpb.SendPersonalMailRequest{
-		SenderKind:        mailpb.MailSenderKind_MAIL_SENDER_KIND_ROBOT,
+	attachReq := &mailpb.SendMailRequest{
+		SenderKind:        1,
 		RequestId:         requestBase + 2,
 		RecipientPlayerId: r.gc.PlayerId,
-		SenderName:        "robot-smoke",
-		Title:             "smoke attach " + nonce,
-		Body:              "mail-smoke attachment mail " + nonce,
+
+		Title: "smoke attach " + nonce,
+		Body:  "mail-smoke attachment mail " + nonce,
 		Attachments: &mailpb.MailAttachments{Currencies: []*mailpb.MailCurrency{
 			{CurrencyType: mailSmokeCurrencyType, Amount: mailSmokeCurrencyAmount},
 		}},
@@ -329,7 +322,7 @@ func RunMailSmoke(cfg *config.Config) {
 		zap.Uint64("plain_mail_id", plainID), zap.Uint64("attach_mail_id", attachID))
 
 	// ---- 步骤 2:新信推送(弱断言) ----
-	pushReceived := r.waitPush(mailpb.MailEventReason_MAIL_EVENT_REASON_NEW_MAIL)
+	pushReceived := r.waitPush(plainID)
 	zap.L().Info("[mail-smoke] step 2: new-mail push", zap.Bool("push_received", pushReceived),
 		zap.Duration("waited_up_to", r.pushTimeout))
 
@@ -348,7 +341,7 @@ func RunMailSmoke(cfg *config.Config) {
 	if attachSummary == nil {
 		fail("list-recipient", "recipient cannot see its attachment mail %d", attachID)
 	}
-	if attachSummary.GetClaimState() != mailpb.MailClaimState_MAIL_CLAIM_STATE_UNCLAIMED {
+	if attachSummary.GetClaimState() != mailpb.MailClaimState_MAIL_CLAIM_UNCLAIMED {
 		fail("list-recipient", "attachment mail %d claim_state=%s, expected UNCLAIMED", attachID, attachSummary.GetClaimState())
 	}
 	if rList.claimable == 0 {
@@ -369,21 +362,21 @@ func RunMailSmoke(cfg *config.Config) {
 
 	// ---- 步骤 4:读信减未读;别人读不到 ----
 	// 先断言 P 自己的已读位(不依赖全局计数):request_id 每轮新发,第 3 步的列表里它必须是未读。
-	if mailSmokeFind(rList.mails, plainID).GetRead() {
+	if mailSmokeFind(rList.mails, plainID).GetIsRead() {
 		fail("read-recipient", "personal mail %d is already read before ReadMail", plainID)
 	}
 	readResp := &mailpb.ReadMailResponse{}
 	if err := r.expect(game.ClientPlayerMailReadMailMessageId, &mailpb.ReadMailRequest{MailId: plainID}, readResp, 0); err != nil {
 		fail("read-recipient", "%v", err)
 	}
-	if !readResp.GetSummary().GetRead() || readResp.GetBody() != plainReq.GetBody() {
-		fail("read-recipient", "ReadMail(%d) returned read=%v body_match=%v", plainID, readResp.GetSummary().GetRead(), readResp.GetBody() == plainReq.GetBody())
+	if !readResp.GetMail().GetIsRead() || readResp.GetMail().GetBody() != plainReq.GetBody() {
+		fail("read-recipient", "ReadMail(%d) returned read=%v body_match=%v", plainID, readResp.GetMail().GetIsRead(), readResp.GetMail().GetBody() == plainReq.GetBody())
 	}
 	rAfterRead, err := r.listAll()
 	if err != nil {
 		fail("read-recipient", "%v", err)
 	}
-	if s := mailSmokeFind(rAfterRead.mails, plainID); s == nil || !s.GetRead() {
+	if s := mailSmokeFind(rAfterRead.mails, plainID); s == nil || !s.GetIsRead() {
 		fail("read-recipient", "personal mail %d is not listed as read after ReadMail (listed=%v)", plainID, s != nil)
 	}
 	unreadExact, err := mailSmokeCheckUnreadAfterRead(rList, rAfterRead, plainID)
@@ -396,28 +389,53 @@ func RunMailSmoke(cfg *config.Config) {
 	zap.L().Info("[mail-smoke] step 4: read ok, observer refused",
 		zap.Uint32("unread_before", rList.unread), zap.Uint32("unread_after", rAfterRead.unread), zap.Bool("unread_check_exact", unreadExact))
 
-	// ---- 步骤 5:领取未开放(M1),失败后状态不变 ----
-	if err := r.expect(game.ClientPlayerMailClaimMailAttachmentsMessageId,
-		&mailpb.ClaimMailAttachmentsRequest{MailIds: []uint64{attachID}}, &mailpb.ClaimMailAttachmentsResponse{}, tipMailClaimNotOpen); err != nil {
+	// ---- 步骤 5：未领取保护与真实资产到账 ----
+	protected := &mailpb.DeleteMailsResponse{}
+	if err := r.expect(game.ClientPlayerMailDeleteMailsMessageId, &mailpb.DeleteMailsRequest{MailIds: []uint64{attachID}}, protected, 0); err != nil {
+		fail("protect-before-claim", "%v", err)
+	}
+	if !mailSmokeContains(protected.GetProtectedMailIds(), attachID) {
+		fail("protect-before-claim", "unclaimed attachment was not protected")
+	}
+	claim := &mailpb.ClaimMailAttachmentsResponse{}
+	if err := r.expect(game.ClientPlayerMailClaimMailAttachmentsMessageId, &mailpb.ClaimMailAttachmentsRequest{MailIds: []uint64{attachID}}, claim, 0); err != nil {
 		fail("claim", "%v", err)
 	}
-	rAfterClaim, err := r.listAll()
-	if err != nil {
-		fail("claim", "%v", err)
+	if len(claim.GetResults()) != 1 || claim.GetResults()[0].GetAssetOpId() == 0 {
+		fail("claim", "claim did not persist exactly one asset operation")
 	}
-	if s := mailSmokeFind(rAfterClaim.mails, attachID); s == nil || s.GetClaimState() != mailpb.MailClaimState_MAIL_CLAIM_STATE_UNCLAIMED {
-		fail("claim", "attachment mail %d is no longer UNCLAIMED after a refused claim", attachID)
+	opID := claim.GetResults()[0].GetAssetOpId()
+	claimDeadline := time.Now().Add(30 * time.Second)
+	for {
+		listed, err := r.listAll()
+		if err != nil {
+			fail("claim-poll", "%v", err)
+		}
+		view := mailSmokeFind(listed.mails, attachID)
+		if view != nil && view.GetClaimState() == mailpb.MailClaimState_MAIL_CLAIM_CLAIMED {
+			break
+		}
+		if view == nil || view.GetClaimState() == mailpb.MailClaimState_MAIL_CLAIM_MANUAL || !time.Now().Before(claimDeadline) {
+			fail("claim-poll", "asset operation %d did not reach CLAIMED", opID)
+		}
+		time.Sleep(spacing)
 	}
-	zap.L().Info("[mail-smoke] step 5: claim refused (not open in M1), state unchanged")
+	replayClaim := &mailpb.ClaimMailAttachmentsResponse{}
+	if err := r.expect(game.ClientPlayerMailClaimMailAttachmentsMessageId, &mailpb.ClaimMailAttachmentsRequest{MailIds: []uint64{attachID}}, replayClaim, 0); err != nil {
+		fail("claim-replay", "%v", err)
+	}
+	if len(replayClaim.GetResults()) != 1 || replayClaim.GetResults()[0].GetAssetOpId() != opID {
+		fail("claim-replay", "claim replay changed the asset operation")
+	}
 
 	// ---- 步骤 6:带附件的删不掉;无附件的可重复删 ----
 	delAttach := &mailpb.DeleteMailsResponse{}
 	if err := r.expect(game.ClientPlayerMailDeleteMailsMessageId, &mailpb.DeleteMailsRequest{MailIds: []uint64{attachID}}, delAttach, 0); err != nil {
 		fail("delete-protected", "%v", err)
 	}
-	if delAttach.GetDeletedCount() != 0 || !mailSmokeContains(delAttach.GetProtectedMailIds(), attachID) {
-		fail("delete-protected", "DeleteMails([%d]) deleted_count=%d protected=%v, expected 0 and the id protected (unclaimed attachments)",
-			attachID, delAttach.GetDeletedCount(), delAttach.GetProtectedMailIds())
+	if !mailSmokeContains(delAttach.GetDeletedMailIds(), attachID) || mailSmokeContains(delAttach.GetProtectedMailIds(), attachID) {
+		fail("delete-protected", "DeleteMails([%d]) deleted_count=%d protected=%v, expected claimed attachment to be deletable after the earlier protection check",
+			attachID, len(delAttach.GetDeletedMailIds()), delAttach.GetProtectedMailIds())
 	}
 	for round := 1; round <= 2; round++ {
 		if err := r.expect(game.ClientPlayerMailDeleteMailsMessageId, &mailpb.DeleteMailsRequest{MailIds: []uint64{plainID}}, &mailpb.DeleteMailsResponse{}, 0); err != nil {
@@ -429,9 +447,9 @@ func RunMailSmoke(cfg *config.Config) {
 	if err := r.expect(game.ClientPlayerMailDeleteMailsMessageId, &mailpb.DeleteMailsRequest{MailIds: []uint64{sysID}}, delSys, 0); err != nil {
 		fail("delete-system", "%v", err)
 	}
-	if delSys.GetDeletedCount() != 1 || len(delSys.GetProtectedMailIds()) != 0 {
+	if len(delSys.GetDeletedMailIds()) != 1 || len(delSys.GetProtectedMailIds()) != 0 {
 		fail("delete-system", "DeleteMails([%d]) deleted_count=%d protected=%v, expected 1 and nothing protected (system mail without attachments)",
-			sysID, delSys.GetDeletedCount(), delSys.GetProtectedMailIds())
+			sysID, len(delSys.GetDeletedMailIds()), delSys.GetProtectedMailIds())
 	}
 	rAfterDelete, err := r.listAll()
 	if err != nil {
@@ -450,14 +468,14 @@ func RunMailSmoke(cfg *config.Config) {
 	if mailSmokeFind(oAfterDelete.mails, sysID) == nil {
 		fail("delete-system", "observer can no longer see system mail %d after the recipient deleted it: deleting a system mail must only hide it for the deleter", sysID)
 	}
-	zap.L().Info("[mail-smoke] step 6: protected delete refused, plain delete idempotent, system mail deleted for the recipient only")
+	zap.L().Info("[mail-smoke] step 6: unclaimed delete protected, claimed delete accepted, plain delete idempotent, system mail deleted for the recipient only")
 
 	// ---- 步骤 7:D-9 反向断言 ----
 	// NotifyMailEvent 与 5 个 C2S 方法同处 ClientPlayerMail(客户端协议服务),gate 白名单收这个号、请求会进到 mail;
 	// 挡它的是 mail 的会话拦截器(方法级白名单),路由服把上游 gRPC 错误统一翻成信封 kServiceUnavailable。
 	// 由**不收定向邮件的 O** 来发:awaiting 分支优先于推送分支,若由 R 发,一条迟到的真推送会被记成本步的回包。
-	envelopeTip, err := o.call(game.ClientPlayerMailNotifyMailEventMessageId,
-		&mailpb.MailEventS2C{Reason: mailpb.MailEventReason_MAIL_EVENT_REASON_NEW_MAIL, TsMs: uint64(time.Now().UnixMilli())}, &base.Empty{})
+	envelopeTip, err := o.call(game.ClientPlayerMailNotifyMailChangedMessageId,
+		&mailpb.MailChangedEvent{MailId: sysID}, &base.Empty{})
 	switch {
 	case errors.Is(err, errMailSmokeTimeout):
 		fail("notify-via-gate", "Expected envelope tip=%d, but timed out: gate dropped the NotifyMailEvent message ID (not in the allowlist), "+
@@ -482,13 +500,13 @@ func RunMailSmoke(cfg *config.Config) {
 		response  proto.Message
 	}{
 		{"SendPersonalMail", game.MailAdminSendPersonalMailMessageId,
-			&mailpb.SendPersonalMailRequest{SenderKind: mailpb.MailSenderKind_MAIL_SENDER_KIND_ROBOT, RequestId: requestBase + 3,
-				RecipientPlayerId: o.gc.PlayerId, SenderName: "robot-smoke", Title: "smoke via gate " + nonce, ExpireMs: expireMs},
-			&mailpb.SendPersonalMailResponse{}},
+			&mailpb.SendMailRequest{SenderKind: 1, RequestId: requestBase + 3,
+				RecipientPlayerId: o.gc.PlayerId, Title: "smoke via gate " + nonce, ExpireMs: expireMs},
+			&mailpb.SendMailResponse{}},
 		{"SendSystemMail", game.MailAdminSendSystemMailMessageId,
-			&mailpb.SendSystemMailRequest{SenderKind: mailpb.MailSenderKind_MAIL_SENDER_KIND_ROBOT, RequestId: requestBase + 4,
-				SenderName: "robot-smoke", Title: "smoke via gate " + nonce, ExpireMs: expireMs},
-			&mailpb.SendSystemMailResponse{}},
+			&mailpb.SendMailRequest{SenderKind: 1, RequestId: requestBase + 4,
+				Title: "smoke via gate " + nonce, ExpireMs: expireMs},
+			&mailpb.SendMailResponse{}},
 	} {
 		envelopeTip, err := o.call(adminCall.messageID, adminCall.request, adminCall.response)
 		switch {
@@ -580,8 +598,8 @@ func (b *mailSmokeBot) onMessage(client *pkg.GameClient, msg *base.MessageConten
 			if _, seen := b.replies[id]; !seen {
 				b.replies[id] = msg
 			}
-		case id == game.ClientPlayerMailNotifyMailEventMessageId:
-			evt := &mailpb.MailEventS2C{}
+		case id == game.ClientPlayerMailNotifyMailChangedMessageId:
+			evt := &mailpb.MailChangedEvent{}
 			if err := proto.Unmarshal(msg.GetSerializedMessage(), evt); err == nil {
 				b.pushes = append(b.pushes, evt)
 			}
@@ -610,12 +628,12 @@ func (b *mailSmokeBot) resetPushes() {
 }
 
 // waitPush 等一条指定 reason 的邮件事件,返回是否在预算内收到(弱断言,由调用方只打印不判失败)。
-func (b *mailSmokeBot) waitPush(reason mailpb.MailEventReason) bool {
+func (b *mailSmokeBot) waitPush(mailID uint64) bool {
 	deadline := time.Now().Add(b.pushTimeout)
 	for {
 		b.mu.Lock()
 		for _, evt := range b.pushes {
-			if evt.GetReason() == reason {
+			if evt.GetMailId() == mailID {
 				b.mu.Unlock()
 				return true
 			}
@@ -630,7 +648,7 @@ func (b *mailSmokeBot) waitPush(reason mailpb.MailEventReason) bool {
 
 // mailSmokeListing 是一次翻页列表的汇总结果。unread / claimable / serverNowMs 取第一页的值(服务端对全集算;now 以第一页为准)。
 type mailSmokeListing struct {
-	mails       []*mailpb.MailSummary
+	mails       []*mailpb.MailView
 	unread      uint32
 	claimable   uint32
 	serverNowMs uint64
@@ -645,20 +663,20 @@ func (b *mailSmokeBot) listAll() (*mailSmokeListing, error) {
 	for page := 0; page < mailSmokeMaxPages; page++ {
 		resp := &mailpb.ListMailsResponse{}
 		if err := b.expect(game.ClientPlayerMailListMailsMessageId,
-			&mailpb.ListMailsRequest{BeforeMailId: before, PageSize: mailSmokePageSize}, resp, 0); err != nil {
+			&mailpb.ListMailsRequest{BeforeMailId: before, Limit: mailSmokePageSize}, resp, 0); err != nil {
 			return nil, err
 		}
 		if page == 0 {
 			out.unread = resp.GetUnreadCount()
 			out.claimable = resp.GetClaimableCount()
 			out.serverNowMs = resp.GetServerNowMs()
-			out.singlePage = !resp.GetHasMore()
+			out.singlePage = resp.GetNextBeforeMailId() == 0
 		}
 		out.mails = append(out.mails, resp.GetMails()...)
-		if !resp.GetHasMore() || len(resp.GetMails()) == 0 {
+		if resp.GetNextBeforeMailId() == 0 || len(resp.GetMails()) == 0 {
 			return out, nil
 		}
-		next := resp.GetMails()[len(resp.GetMails())-1].GetMailId()
+		next := resp.GetNextBeforeMailId()
 		if before != 0 && next >= before {
 			return nil, fmt.Errorf("account=%s ListMails cursor did not advance (before=%d next=%d): mail_id must be strictly descending", b.account, before, next)
 		}
@@ -683,7 +701,7 @@ func mailSmokeCheckUnreadAfterRead(before, after *mailSmokeListing, readID uint6
 	var expired int64
 	for _, m := range before.mails {
 		seen[m.GetMailId()] = struct{}{}
-		if m.GetMailId() == readID || m.GetRead() {
+		if m.GetMailId() == readID || m.GetIsRead() {
 			continue
 		}
 		if m.GetExpireMs() > before.serverNowMs && m.GetExpireMs() <= after.serverNowMs {
@@ -692,7 +710,7 @@ func mailSmokeCheckUnreadAfterRead(before, after *mailSmokeListing, readID uint6
 	}
 	var arrived int64
 	for _, m := range after.mails {
-		if _, ok := seen[m.GetMailId()]; !ok && !m.GetRead() {
+		if _, ok := seen[m.GetMailId()]; !ok && !m.GetIsRead() {
 			arrived++
 		}
 	}
@@ -799,9 +817,9 @@ func (b *mailSmokeBot) expect(messageId uint32, request proto.Message, response 
 
 // mailSmokeAdminContext 给直连 MailAdmin 的调用加上令牌与操作人 metadata(与 go/mail/cmd/mailadmin 同一写法)。
 // 不带任何会话 metadata:mail 的会话拦截器把"无会话"视为内部调用放行,令牌由 MailAdmin 自己核对。
-func mailSmokeAdminContext(token string) (context.Context, context.CancelFunc) {
+func mailSmokeAdminContext(_ string) (context.Context, context.CancelFunc) {
 	ctx, cancel := context.WithTimeout(context.Background(), mailSmokeAdminTimeout)
-	ctx = metadata.AppendToOutgoingContext(ctx, mailSmokeAdminTokenMetadata, token, "x-operator", mailSmokeOperator)
+	// 不带 gate 会话；身份由请求内的 serviceauth 证明。
 	return ctx, cancel
 }
 
@@ -827,8 +845,6 @@ func mailSmokeAdminTipHint(tip uint32) string {
 		return "(Mode=pro 不允许发带附件的邮件:mail-smoke 要求 mail.yaml 的 Mode 为 dev 或 test)"
 	case tipMailRecipientBoxFull:
 		return "(收件人邮箱满:15 分钟内连跑太多轮,等本轮的信过期再跑)"
-	case tipMailSystemMailLimit:
-		return "(有效系统邮件已达 Mail.MaxActiveSystemMails:等本轮的信过期再跑)"
 	case tipMailRequestConflict:
 		return "(同一 request_id 带了不同内容:重放必须原样带回首次的请求,含 expire_ms)"
 	case tipMailServiceUnavailable:
@@ -838,9 +854,12 @@ func mailSmokeAdminTipHint(tip uint32) string {
 }
 
 // mailSmokeSendSystem 调 MailAdmin.SendSystemMail,受理且 sys_mail_id 非 0 才返回。
-func mailSmokeSendSystem(client mailpb.MailAdminClient, token string, req *mailpb.SendSystemMailRequest) (uint64, bool, error) {
+func mailSmokeSendSystem(client mailpb.MailAdminClient, token string, req *mailpb.SendMailRequest) (uint64, bool, error) {
 	ctx, cancel := mailSmokeAdminContext(token)
 	defer cancel()
+	if err := serviceauth.Sign("/mailpb.MailAdmin/SendSystemMail", req, "admin", token, uint64(time.Now().UnixMilli())); err != nil {
+		return 0, false, err
+	}
 	resp, err := client.SendSystemMail(ctx, req)
 	if err != nil {
 		return 0, false, fmt.Errorf("SendSystemMail request_id=%d gRPC 错误 %v%s", req.GetRequestId(), err, mailSmokeAdminGrpcHint(err))
@@ -848,16 +867,19 @@ func mailSmokeSendSystem(client mailpb.MailAdminClient, token string, req *mailp
 	if tip := resp.GetErrorMessage().GetId(); tip != 0 {
 		return 0, false, fmt.Errorf("SendSystemMail request_id=%d 业务拒绝 tip=%d%s", req.GetRequestId(), tip, mailSmokeAdminTipHint(tip))
 	}
-	if resp.GetSysMailId() == 0 {
+	if resp.GetMailId() == 0 {
 		return 0, false, fmt.Errorf("SendSystemMail request_id=%d 受理但 sys_mail_id=0", req.GetRequestId())
 	}
-	return resp.GetSysMailId(), resp.GetDuplicated(), nil
+	return resp.GetMailId(), resp.GetDuplicated(), nil
 }
 
 // mailSmokeSendPersonal 调 MailAdmin.SendPersonalMail,受理且 mail_id 非 0 才返回。
-func mailSmokeSendPersonal(client mailpb.MailAdminClient, token string, req *mailpb.SendPersonalMailRequest) (uint64, bool, error) {
+func mailSmokeSendPersonal(client mailpb.MailAdminClient, token string, req *mailpb.SendMailRequest) (uint64, bool, error) {
 	ctx, cancel := mailSmokeAdminContext(token)
 	defer cancel()
+	if err := serviceauth.Sign("/mailpb.MailAdmin/SendPersonalMail", req, "admin", token, uint64(time.Now().UnixMilli())); err != nil {
+		return 0, false, err
+	}
 	resp, err := client.SendPersonalMail(ctx, req)
 	if err != nil {
 		return 0, false, fmt.Errorf("SendPersonalMail request_id=%d recipient=%d gRPC 错误 %v%s",
@@ -884,9 +906,9 @@ func mailSmokeIsMailMessage(messageId uint32) bool {
 	case game.ClientPlayerMailListMailsMessageId,
 		game.ClientPlayerMailReadMailMessageId,
 		game.ClientPlayerMailDeleteMailsMessageId,
-		game.ClientPlayerMailDeleteReadMailsMessageId,
+		game.ClientPlayerMailClearReadMailsMessageId,
 		game.ClientPlayerMailClaimMailAttachmentsMessageId,
-		game.ClientPlayerMailNotifyMailEventMessageId,
+		game.ClientPlayerMailNotifyMailChangedMessageId,
 		game.MailAdminSendPersonalMailMessageId,
 		game.MailAdminSendSystemMailMessageId:
 		return true
@@ -903,7 +925,7 @@ func mailSmokeNonce() string {
 	return s
 }
 
-func mailSmokeFind(mails []*mailpb.MailSummary, mailID uint64) *mailpb.MailSummary {
+func mailSmokeFind(mails []*mailpb.MailView, mailID uint64) *mailpb.MailView {
 	for _, m := range mails {
 		if m.GetMailId() == mailID {
 			return m

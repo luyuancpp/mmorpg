@@ -102,7 +102,7 @@ def test_multiple_gaps_are_never_reclaimed(cfg):
 def test_bitset_capacity_covers_retired_top_id(cfg):
     """最大 ID 被删后,位图容量仍按已分配位数算,不能缩水。
 
-    ``_find_max_bit`` 只看当前表数据,ID 5 删掉后它算出 4,而位 4 仍被退休的 ID 5 占着,
+    ``_read_max_bit_index_column_value`` 只看当前表数据,ID 5 删掉后它算出 4,而位 4 仍被退休的 ID 5 占着,
     ``std::bitset<4>`` 就会放不下位 4。
     """
     _write_mapping(cfg, {1: 0, 2: 1, 3: 2, 4: 3, 5: 4})
@@ -111,7 +111,7 @@ def test_bitset_capacity_covers_retired_top_id(cfg):
     generate_bit_indexes(cfg, tables)
 
     header = (cfg.cpp.bit_index_dir / "mission_table_id_bit_index.h").read_text(encoding="utf-8")
-    assert "kMissionMaxBitIndex = 5" in header
+    assert "kMissionBitmapCapacity = 5" in header
 
 
 # ---------------------------------------------------------------------------
@@ -207,4 +207,4 @@ def test_generated_sources_follow_bit_order(cfg):
     )
     assert "package mission" in go_src
     assert "ID_4 = 3" in go_src
-    assert "MaxBitIndex = 4" in go_src
+    assert "BitmapCapacity = 4" in go_src

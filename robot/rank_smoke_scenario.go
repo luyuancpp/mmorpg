@@ -1,3 +1,5 @@
+// 2026-10-19 主干适配：现役 SQL 通用榜以 score 与 achieved_ms 观察本局新鲜度。
+// 保留跨区对局、跨区同榜/名字、未上榜与限流意图，不使用已退役的 R2b Redis 写者或 games 计数。
 package main
 
 // rank-smoke 场景:两个机器人跨区打一局 1V1,验证整条写榜链 —— 对局 → match 评分入账 → 评分快照(Kafka match-rating-snapshot)
@@ -177,8 +179,8 @@ func RunRankSmoke(cfg *config.Config) {
 		fail("read-before", "B: %v", err)
 	}
 	zap.L().Info("[rank-smoke] step 1: self before the battle",
-		zap.Uint32("a_rank", beforeA.GetRank()), zap.Uint64("a_games", beforeA.GetGames()), zap.Uint32("a_rating_centi", beforeA.GetRatingCenti()),
-		zap.Uint32("b_rank", beforeB.GetRank()), zap.Uint64("b_games", beforeB.GetGames()), zap.Uint32("b_rating_centi", beforeB.GetRatingCenti()))
+		zap.Uint64("a_rank", beforeA.GetRank()), zap.Uint64("a_achieved_ms", beforeA.GetAchievedMs()), zap.Int64("a_score", beforeA.GetScore()),
+		zap.Uint64("b_rank", beforeB.GetRank()), zap.Uint64("b_achieved_ms", beforeB.GetAchievedMs()), zap.Int64("b_score", beforeB.GetScore()))
 
 	// ---- 步骤 2:跨区 1V1 打到终局 ----
 	aDone := make(chan crossZoneFighterResult, 1)
@@ -224,27 +226,31 @@ func RunRankSmoke(cfg *config.Config) {
 		if !time.Now().Before(deadline) {
 			fail("board-update", "within %s the board did not record the battle: A games %d -> %d (rank %d), B games %d -> %d (rank %d). "+
 				"Check match_service.yaml RatingEnabled / RatingSnapshotPublishEnabled = true (local only, do not commit), "+
-				"rank is consuming (rank_last_consume_unixtime advancing) and redis is writable",
-				updateTimeout, beforeA.GetGames(), afterA.GetGames(), afterA.GetRank(), beforeB.GetGames(), afterB.GetGames(), afterB.GetRank())
+				"match rank publisher and rank SQL are writable",
+				updateTimeout, beforeA.GetAchievedMs(), afterA.GetAchievedMs(), afterA.GetRank(), beforeB.GetAchievedMs(), afterB.GetAchievedMs(), afterB.GetRank())
 		}
 	}
 	zap.L().Info("[rank-smoke] step 3: board updated",
-		zap.Uint32("a_rank", afterA.GetRank()), zap.Uint64("a_games", afterA.GetGames()), zap.Uint32("a_rating_centi", afterA.GetRatingCenti()),
-		zap.Uint32("b_rank", afterB.GetRank()), zap.Uint64("b_games", afterB.GetGames()), zap.Uint32("b_rating_centi", afterB.GetRatingCenti()))
+		zap.Uint64("a_rank", afterA.GetRank()), zap.Uint64("a_achieved_ms", afterA.GetAchievedMs()), zap.Int64("a_score", afterA.GetScore()),
+		zap.Uint64("b_rank", afterB.GetRank()), zap.Uint64("b_achieved_ms", afterB.GetAchievedMs()), zap.Int64("b_score", afterB.GetScore()))
 
 	// ---- 步骤 4:断言 ----
 	// 胜负方向:只有两人打之前都在榜上才有可信的"打之前分数"(未上榜时 match 侧可能早有评分,不能假定 1500)。
 	decisive := outcome == battle.EBattleOutcome_BATTLE_OUTCOME_SIDE_A_WIN || outcome == battle.EBattleOutcome_BATTLE_OUTCOME_SIDE_B_WIN
 	if decisive && beforeA.GetRank() != 0 && beforeB.GetRank() != 0 {
-		upA := afterA.GetRatingCenti() > beforeA.GetRatingCenti()
-		upB := afterB.GetRatingCenti() > beforeB.GetRatingCenti()
+		upA := afterA.GetScore() > beforeA.GetScore()
+		upB := afterB.GetScore() > beforeB.GetScore()
 		if upA == upB {
 			fail("rating-direction", "decisive battle (%s) but rating moved A %d -> %d, B %d -> %d: expected exactly one winner to gain",
-				outcome, beforeA.GetRatingCenti(), afterA.GetRatingCenti(), beforeB.GetRatingCenti(), afterB.GetRatingCenti())
+				outcome, beforeA.GetScore(), afterA.GetScore(), beforeB.GetScore(), afterB.GetScore())
 		}
 	}
 	// 跨区名字补全:B 读 A 所在的那一页。
-	pageOfA := (afterA.GetRank()-1)/rankSmokeMaxPageSize + 1
+	pageOfA64 := (afterA.GetRank()-1)/uint64(rankSmokeMaxPageSize) + 1
+	if pageOfA64 > uint64(^uint32(0)) {
+		fail("page", "rank is outside the protocol page range")
+	}
+	pageOfA := uint32(pageOfA64)
 	pageResp, err := b.page(pageOfA, rankSmokeMaxPageSize)
 	if err != nil {
 		fail("cross-zone-name", "B reads page %d: %v", pageOfA, err)
@@ -254,7 +260,7 @@ func RunRankSmoke(cfg *config.Config) {
 	}
 	var entryA *rankpb.RankEntry
 	for _, e := range pageResp.GetEntries() {
-		if e.GetPlayerId() == a.gc.PlayerId {
+		if e.GetEntityId() == a.gc.PlayerId {
 			entryA = e
 		}
 	}
@@ -269,19 +275,19 @@ func RunRankSmoke(cfg *config.Config) {
 			"rank's BatchGetPlayerName failed for at least one of them (check rank_name_lookup_total{outcome=\"error\"} and data_service reachability)",
 			pageOfA, sc.ZoneA, entryA.GetName(), sc.ZoneB, pageResp.GetSelf().GetName())
 	}
-	if pageResp.GetSelf().GetPlayerId() != b.gc.PlayerId || pageResp.GetSelf().GetRank() == 0 {
+	if pageResp.GetSelf().GetEntityId() != b.gc.PlayerId || pageResp.GetSelf().GetRank() == 0 {
 		fail("cross-zone-name", "B's self entry is player %d rank %d, want player %d ranked (B just played a match)",
-			pageResp.GetSelf().GetPlayerId(), pageResp.GetSelf().GetRank(), b.gc.PlayerId)
+			pageResp.GetSelf().GetEntityId(), pageResp.GetSelf().GetRank(), b.gc.PlayerId)
 	}
 
 	// 名次与分数一致:用同一份回包里的 A 条目与 B 的 self 比(一页 + self 出自同一次只读 Lua,是同一时刻的榜);
 	// 拿 A、B 两次独立读到的名次比,写榜恰好落在两次读之间时会误报。分数相同时按"先达到者在前",谁前都对,不判。
 	selfB := pageResp.GetSelf()
 	switch {
-	case entryA.GetRatingCenti() > selfB.GetRatingCenti() && entryA.GetRank() >= selfB.GetRank(),
-		selfB.GetRatingCenti() > entryA.GetRatingCenti() && selfB.GetRank() >= entryA.GetRank():
+	case entryA.GetScore() > selfB.GetScore() && entryA.GetRank() >= selfB.GetRank(),
+		selfB.GetScore() > entryA.GetScore() && selfB.GetRank() >= entryA.GetRank():
 		fail("rank-order", "in one response A rating=%d rank=%d, B rating=%d rank=%d: higher rating must rank higher",
-			entryA.GetRatingCenti(), entryA.GetRank(), selfB.GetRatingCenti(), selfB.GetRank())
+			entryA.GetScore(), entryA.GetRank(), selfB.GetScore(), selfB.GetRank())
 	}
 
 	// N 从不排位:未上榜不是错误。
@@ -311,8 +317,8 @@ func RunRankSmoke(cfg *config.Config) {
 		rateLimitChecked = true
 	}
 
-	zap.L().Info(fmt.Sprintf("RANK_SMOKE_OK player_a=%d player_b=%d battle_id=%d outcome=%s rank_a=%d rank_b=%d games_a=%d games_b=%d total=%d name_cross_zone=%q rate_limit_checked=%v",
-		a.gc.PlayerId, b.gc.PlayerId, resA.battleId, outcome, afterA.GetRank(), afterB.GetRank(), afterA.GetGames(), afterB.GetGames(),
+	zap.L().Info(fmt.Sprintf("RANK_SMOKE_OK player_a=%d player_b=%d battle_id=%d outcome=%s rank_a=%d rank_b=%d achieved_ms_a=%d achieved_ms_b=%d total=%d name_cross_zone=%q rate_limit_checked=%v",
+		a.gc.PlayerId, b.gc.PlayerId, resA.battleId, outcome, afterA.GetRank(), afterB.GetRank(), afterA.GetAchievedMs(), afterB.GetAchievedMs(),
 		pageResp.GetTotalCount(), entryA.GetName(), rateLimitChecked),
 		zap.String("gate_a", a.gateAddr()), zap.String("gate_b", b.gateAddr()))
 	cleanup()
@@ -325,9 +331,9 @@ func rankSmokePlayedOneMore(before, after *rankpb.RankEntry) bool {
 		return false
 	}
 	if before.GetRank() == 0 {
-		return after.GetGames() >= 1
+		return after.GetAchievedMs() > 0
 	}
-	return after.GetGames() == before.GetGames()+1
+	return after.GetAchievedMs() > before.GetAchievedMs()
 }
 
 // rankSmokeCheckPage 校验一页的形状:名次从 (page − 1) × size + 1 起连续、分数不增、条数不超过页长、page / page_count 自洽。
@@ -335,25 +341,28 @@ func rankSmokeCheckPage(resp *rankpb.GetRankPageResponse, wantPage, size uint32)
 	if resp.GetPage() != wantPage {
 		return fmt.Errorf("asked page %d, got page %d (page_count=%d)", wantPage, resp.GetPage(), resp.GetPageCount())
 	}
-	if resp.GetPageCount() < 1 || resp.GetPage() > resp.GetPageCount() {
+	if resp.GetTotalCount() == 0 && len(resp.GetEntries()) == 0 && resp.GetSelf().GetRank() == 0 {
+		return nil
+	}
+	if resp.GetPageCount() < 1 || uint64(resp.GetPage()) > resp.GetPageCount() {
 		return fmt.Errorf("page=%d page_count=%d is not self-consistent", resp.GetPage(), resp.GetPageCount())
 	}
 	if uint32(len(resp.GetEntries())) > size {
 		return fmt.Errorf("page has %d entries, page_size=%d", len(resp.GetEntries()), size)
 	}
-	first := (wantPage-1)*size + 1
-	var prev uint32
+	first := (uint64(wantPage)-1)*uint64(size) + 1
+	var prev int64
 	for i, e := range resp.GetEntries() {
-		if want := first + uint32(i); e.GetRank() != want {
+		if want := first + uint64(i); e.GetRank() != want {
 			return fmt.Errorf("entry %d has rank %d, expected %d (ranks must be consecutive)", i, e.GetRank(), want)
 		}
-		if i > 0 && e.GetRatingCenti() > prev {
-			return fmt.Errorf("entry %d rating %d is higher than the one above it (%d): the board must be sorted by rating descending", i, e.GetRatingCenti(), prev)
+		if i > 0 && e.GetScore() > prev {
+			return fmt.Errorf("entry %d rating %d is higher than the one above it (%d): the board must be sorted by rating descending", i, e.GetScore(), prev)
 		}
-		if e.GetPlayerId() == 0 {
+		if e.GetEntityId() == 0 {
 			return fmt.Errorf("entry %d has player_id 0", i)
 		}
-		prev = e.GetRatingCenti()
+		prev = e.GetScore()
 	}
 	return nil
 }
@@ -472,7 +481,7 @@ func (b *rankSmokeBot) call(req *rankpb.GetRankPageRequest, resp *rankpb.GetRank
 // page 读一页(按间隔节流);信封拒绝、超时、业务 tip 一律报错并给出可读原因。
 func (b *rankSmokeBot) page(page, size uint32) (*rankpb.GetRankPageResponse, error) {
 	resp := &rankpb.GetRankPageResponse{}
-	envelopeTip, err := b.call(&rankpb.GetRankPageRequest{Board: rankpb.RankBoard_RANK_BOARD_MATCH_RATING, Page: page, PageSize: size}, resp, true)
+	envelopeTip, err := b.call(&rankpb.GetRankPageRequest{Board: &rankpb.RankBoardKey{BoardType: 1, Scope: rankpb.RankScope_RANK_SCOPE_GLOBAL, Period: "all", Generation: 1}, Page: page, PageSize: size}, resp, true)
 	if err != nil {
 		return nil, err
 	}
@@ -490,7 +499,7 @@ func (b *rankSmokeBot) page(page, size uint32) (*rankpb.GetRankPageResponse, err
 		return nil, errors.New("rank rejected GetRankPage with kInvalidParameter: rank could not see the session identity " +
 			"(check the router forwards x-session-detail-bin)")
 	case tipRankServiceUnavailable:
-		return nil, errors.New("rank answered kServiceUnavailable: the board Redis is unreachable (see rank logs 'board read failed')")
+		return nil, errors.New("rank answered kServiceUnavailable: the authoritative SQL board is unavailable (see rank logs 'board read failed')")
 	default:
 		return nil, fmt.Errorf("GetRankPage tip=%d", tip)
 	}
@@ -506,8 +515,8 @@ func (b *rankSmokeBot) selfEntry() (*rankpb.RankEntry, error) {
 	if self == nil {
 		self = &rankpb.RankEntry{}
 	}
-	if self.GetRank() != 0 && self.GetPlayerId() != b.gc.PlayerId {
-		return nil, fmt.Errorf("self entry belongs to player %d, expected %d (rank must take \"me\" from the session, D-9)", self.GetPlayerId(), b.gc.PlayerId)
+	if self.GetRank() != 0 && self.GetEntityId() != b.gc.PlayerId {
+		return nil, fmt.Errorf("self entry belongs to player %d, expected %d (rank must take \"me\" from the session, D-9)", self.GetEntityId(), b.gc.PlayerId)
 	}
 	return self, nil
 }
@@ -518,7 +527,7 @@ func (b *rankSmokeBot) expectRateLimited(perSecond int) error {
 	time.Sleep(2 * time.Second) // 让前面请求所在的窗口过去(窗口按秒粒度)
 	for i := 1; i <= perSecond+1; i++ {
 		resp := &rankpb.GetRankPageResponse{}
-		envelopeTip, err := b.call(&rankpb.GetRankPageRequest{Board: rankpb.RankBoard_RANK_BOARD_MATCH_RATING, Page: 1, PageSize: 5}, resp, false)
+		envelopeTip, err := b.call(&rankpb.GetRankPageRequest{Board: &rankpb.RankBoardKey{BoardType: 1, Scope: rankpb.RankScope_RANK_SCOPE_GLOBAL, Period: "all", Generation: 1}, Page: 1, PageSize: 5}, resp, false)
 		if err != nil {
 			return fmt.Errorf("request %d: %v", i, err)
 		}

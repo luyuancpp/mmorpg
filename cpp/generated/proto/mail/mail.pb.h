@@ -33,7 +33,6 @@
 #include "google/protobuf/generated_enum_reflection.h"
 #include "google/protobuf/unknown_field_set.h"
 #include "proto/db/proto_option.pb.h"
-#include "proto/common/base/empty.pb.h"
 #include "proto/common/base/tip.pb.h"
 // @@protoc_insertion_point(includes)
 
@@ -61,8 +60,6 @@ extern const ::google::protobuf::internal::DescriptorTable descriptor_table_prot
 namespace mailpb {
 enum MailClaimState : int;
 extern const uint32_t MailClaimState_internal_data_[];
-enum MailEventReason : int;
-extern const uint32_t MailEventReason_internal_data_[];
 enum MailKind : int;
 extern const uint32_t MailKind_internal_data_[];
 class ClaimMailAttachmentsRequest;
@@ -81,6 +78,22 @@ extern const ::google::protobuf::internal::ClassDataFull ClaimMailAttachmentsRes
 #else
 extern const ClaimMailAttachmentsResponseGlobalsTypeInternal ClaimMailAttachmentsResponse_globals_;
 #endif  // PROTOBUF_MESSAGE_GLOBALS
+class ClearReadMailsRequest;
+struct ClearReadMailsRequestGlobalsTypeInternal;
+#ifndef PROTOBUF_MESSAGE_GLOBALS
+extern ClearReadMailsRequestGlobalsTypeInternal ClearReadMailsRequest_globals_;
+extern const ::google::protobuf::internal::ClassDataFull ClearReadMailsRequest_class_data_;
+#else
+extern const ClearReadMailsRequestGlobalsTypeInternal ClearReadMailsRequest_globals_;
+#endif  // PROTOBUF_MESSAGE_GLOBALS
+class ClearReadMailsResponse;
+struct ClearReadMailsResponseGlobalsTypeInternal;
+#ifndef PROTOBUF_MESSAGE_GLOBALS
+extern ClearReadMailsResponseGlobalsTypeInternal ClearReadMailsResponse_globals_;
+extern const ::google::protobuf::internal::ClassDataFull ClearReadMailsResponse_class_data_;
+#else
+extern const ClearReadMailsResponseGlobalsTypeInternal ClearReadMailsResponse_globals_;
+#endif  // PROTOBUF_MESSAGE_GLOBALS
 class DeleteMailsRequest;
 struct DeleteMailsRequestGlobalsTypeInternal;
 #ifndef PROTOBUF_MESSAGE_GLOBALS
@@ -96,22 +109,6 @@ extern DeleteMailsResponseGlobalsTypeInternal DeleteMailsResponse_globals_;
 extern const ::google::protobuf::internal::ClassDataFull DeleteMailsResponse_class_data_;
 #else
 extern const DeleteMailsResponseGlobalsTypeInternal DeleteMailsResponse_globals_;
-#endif  // PROTOBUF_MESSAGE_GLOBALS
-class DeleteReadMailsRequest;
-struct DeleteReadMailsRequestGlobalsTypeInternal;
-#ifndef PROTOBUF_MESSAGE_GLOBALS
-extern DeleteReadMailsRequestGlobalsTypeInternal DeleteReadMailsRequest_globals_;
-extern const ::google::protobuf::internal::ClassDataFull DeleteReadMailsRequest_class_data_;
-#else
-extern const DeleteReadMailsRequestGlobalsTypeInternal DeleteReadMailsRequest_globals_;
-#endif  // PROTOBUF_MESSAGE_GLOBALS
-class DeleteReadMailsResponse;
-struct DeleteReadMailsResponseGlobalsTypeInternal;
-#ifndef PROTOBUF_MESSAGE_GLOBALS
-extern DeleteReadMailsResponseGlobalsTypeInternal DeleteReadMailsResponse_globals_;
-extern const ::google::protobuf::internal::ClassDataFull DeleteReadMailsResponse_class_data_;
-#else
-extern const DeleteReadMailsResponseGlobalsTypeInternal DeleteReadMailsResponse_globals_;
 #endif  // PROTOBUF_MESSAGE_GLOBALS
 class ListMailsRequest;
 struct ListMailsRequestGlobalsTypeInternal;
@@ -129,6 +126,14 @@ extern const ::google::protobuf::internal::ClassDataFull ListMailsResponse_class
 #else
 extern const ListMailsResponseGlobalsTypeInternal ListMailsResponse_globals_;
 #endif  // PROTOBUF_MESSAGE_GLOBALS
+class MailActionResult;
+struct MailActionResultGlobalsTypeInternal;
+#ifndef PROTOBUF_MESSAGE_GLOBALS
+extern MailActionResultGlobalsTypeInternal MailActionResult_globals_;
+extern const ::google::protobuf::internal::ClassDataFull MailActionResult_class_data_;
+#else
+extern const MailActionResultGlobalsTypeInternal MailActionResult_globals_;
+#endif  // PROTOBUF_MESSAGE_GLOBALS
 class MailAttachments;
 struct MailAttachmentsGlobalsTypeInternal;
 #ifndef PROTOBUF_MESSAGE_GLOBALS
@@ -136,6 +141,14 @@ extern MailAttachmentsGlobalsTypeInternal MailAttachments_globals_;
 extern const ::google::protobuf::internal::ClassDataFull MailAttachments_class_data_;
 #else
 extern const MailAttachmentsGlobalsTypeInternal MailAttachments_globals_;
+#endif  // PROTOBUF_MESSAGE_GLOBALS
+class MailChangedEvent;
+struct MailChangedEventGlobalsTypeInternal;
+#ifndef PROTOBUF_MESSAGE_GLOBALS
+extern MailChangedEventGlobalsTypeInternal MailChangedEvent_globals_;
+extern const ::google::protobuf::internal::ClassDataFull MailChangedEvent_class_data_;
+#else
+extern const MailChangedEventGlobalsTypeInternal MailChangedEvent_globals_;
 #endif  // PROTOBUF_MESSAGE_GLOBALS
 class MailCurrency;
 struct MailCurrencyGlobalsTypeInternal;
@@ -145,14 +158,6 @@ extern const ::google::protobuf::internal::ClassDataFull MailCurrency_class_data
 #else
 extern const MailCurrencyGlobalsTypeInternal MailCurrency_globals_;
 #endif  // PROTOBUF_MESSAGE_GLOBALS
-class MailEventS2C;
-struct MailEventS2CGlobalsTypeInternal;
-#ifndef PROTOBUF_MESSAGE_GLOBALS
-extern MailEventS2CGlobalsTypeInternal MailEventS2C_globals_;
-extern const ::google::protobuf::internal::ClassDataFull MailEventS2C_class_data_;
-#else
-extern const MailEventS2CGlobalsTypeInternal MailEventS2C_globals_;
-#endif  // PROTOBUF_MESSAGE_GLOBALS
 class MailItem;
 struct MailItemGlobalsTypeInternal;
 #ifndef PROTOBUF_MESSAGE_GLOBALS
@@ -161,13 +166,13 @@ extern const ::google::protobuf::internal::ClassDataFull MailItem_class_data_;
 #else
 extern const MailItemGlobalsTypeInternal MailItem_globals_;
 #endif  // PROTOBUF_MESSAGE_GLOBALS
-class MailSummary;
-struct MailSummaryGlobalsTypeInternal;
+class MailView;
+struct MailViewGlobalsTypeInternal;
 #ifndef PROTOBUF_MESSAGE_GLOBALS
-extern MailSummaryGlobalsTypeInternal MailSummary_globals_;
-extern const ::google::protobuf::internal::ClassDataFull MailSummary_class_data_;
+extern MailViewGlobalsTypeInternal MailView_globals_;
+extern const ::google::protobuf::internal::ClassDataFull MailView_class_data_;
 #else
-extern const MailSummaryGlobalsTypeInternal MailSummary_globals_;
+extern const MailViewGlobalsTypeInternal MailView_globals_;
 #endif  // PROTOBUF_MESSAGE_GLOBALS
 class ReadMailRequest;
 struct ReadMailRequestGlobalsTypeInternal;
@@ -192,9 +197,6 @@ template <>
 internal::EnumTraitsT<::mailpb::MailClaimState_internal_data_>
     internal::EnumTraitsImpl::value<::mailpb::MailClaimState>;
 template <>
-internal::EnumTraitsT<::mailpb::MailEventReason_internal_data_>
-    internal::EnumTraitsImpl::value<::mailpb::MailEventReason>;
-template <>
 internal::EnumTraitsT<::mailpb::MailKind_internal_data_>
     internal::EnumTraitsImpl::value<::mailpb::MailKind>;
 }  // namespace protobuf
@@ -203,8 +205,9 @@ internal::EnumTraitsT<::mailpb::MailKind_internal_data_>
 namespace mailpb {
 enum MailKind : int {
   MAIL_KIND_UNSPECIFIED = 0,
-  MAIL_KIND_SYSTEM = 1,
-  MAIL_KIND_PERSONAL = 2,
+  MAIL_KIND_PERSONAL = 1,
+  MAIL_KIND_SYSTEM = 2,
+  MAIL_KIND_GUILD = 3,
   MailKind_INT_MIN_SENTINEL_DO_NOT_USE_ =
       ::std::numeric_limits<::int32_t>::min(),
   MailKind_INT_MAX_SENTINEL_DO_NOT_USE_ =
@@ -215,11 +218,11 @@ extern const uint32_t MailKind_internal_data_[];
 inline constexpr MailKind MailKind_MIN =
     static_cast<MailKind>(0);
 inline constexpr MailKind MailKind_MAX =
-    static_cast<MailKind>(2);
+    static_cast<MailKind>(3);
 [[nodiscard]] inline bool MailKind_IsValid(int value) {
-  return 0 <= value && value <= 2;
+  return 0 <= value && value <= 3;
 }
-inline constexpr int MailKind_ARRAYSIZE = 2 + 1;
+inline constexpr int MailKind_ARRAYSIZE = 3 + 1;
 [[nodiscard]] const ::google::protobuf::EnumDescriptor* PROTOBUF_NONNULL
 MailKind_descriptor();
 [[nodiscard]] inline auto ProtobufInternalGetEnumDescriptor(MailKind) {
@@ -234,7 +237,7 @@ template <typename T>
 }
 template <>
 [[nodiscard]] inline const ::std::string& MailKind_Name(MailKind value) {
-  return ::google::protobuf::internal::NameOfDenseEnum<MailKind_descriptor, 0, 2>(
+  return ::google::protobuf::internal::NameOfDenseEnum<MailKind_descriptor, 0, 3>(
       static_cast<int>(value));
 }
 [[nodiscard]] inline bool MailKind_Parse(
@@ -243,8 +246,11 @@ template <>
                                            value);
 }
 enum MailClaimState : int {
-  MAIL_CLAIM_STATE_NONE = 0,
-  MAIL_CLAIM_STATE_UNCLAIMED = 1,
+  MAIL_CLAIM_NONE = 0,
+  MAIL_CLAIM_UNCLAIMED = 1,
+  MAIL_CLAIM_PENDING = 2,
+  MAIL_CLAIM_CLAIMED = 3,
+  MAIL_CLAIM_MANUAL = 4,
   MailClaimState_INT_MIN_SENTINEL_DO_NOT_USE_ =
       ::std::numeric_limits<::int32_t>::min(),
   MailClaimState_INT_MAX_SENTINEL_DO_NOT_USE_ =
@@ -255,11 +261,11 @@ extern const uint32_t MailClaimState_internal_data_[];
 inline constexpr MailClaimState MailClaimState_MIN =
     static_cast<MailClaimState>(0);
 inline constexpr MailClaimState MailClaimState_MAX =
-    static_cast<MailClaimState>(1);
+    static_cast<MailClaimState>(4);
 [[nodiscard]] inline bool MailClaimState_IsValid(int value) {
-  return 0 <= value && value <= 1;
+  return 0 <= value && value <= 4;
 }
-inline constexpr int MailClaimState_ARRAYSIZE = 1 + 1;
+inline constexpr int MailClaimState_ARRAYSIZE = 4 + 1;
 [[nodiscard]] const ::google::protobuf::EnumDescriptor* PROTOBUF_NONNULL
 MailClaimState_descriptor();
 [[nodiscard]] inline auto ProtobufInternalGetEnumDescriptor(MailClaimState) {
@@ -274,52 +280,12 @@ template <typename T>
 }
 template <>
 [[nodiscard]] inline const ::std::string& MailClaimState_Name(MailClaimState value) {
-  return ::google::protobuf::internal::NameOfDenseEnum<MailClaimState_descriptor, 0, 1>(
+  return ::google::protobuf::internal::NameOfDenseEnum<MailClaimState_descriptor, 0, 4>(
       static_cast<int>(value));
 }
 [[nodiscard]] inline bool MailClaimState_Parse(
     ::absl::string_view name, MailClaimState* PROTOBUF_NONNULL value) {
   return ::google::protobuf::internal::ParseNamedEnum<MailClaimState>(MailClaimState_descriptor(), name,
-                                           value);
-}
-enum MailEventReason : int {
-  MAIL_EVENT_REASON_UNSPECIFIED = 0,
-  MAIL_EVENT_REASON_NEW_MAIL = 1,
-  MailEventReason_INT_MIN_SENTINEL_DO_NOT_USE_ =
-      ::std::numeric_limits<::int32_t>::min(),
-  MailEventReason_INT_MAX_SENTINEL_DO_NOT_USE_ =
-      ::std::numeric_limits<::int32_t>::max(),
-};
-
-extern const uint32_t MailEventReason_internal_data_[];
-inline constexpr MailEventReason MailEventReason_MIN =
-    static_cast<MailEventReason>(0);
-inline constexpr MailEventReason MailEventReason_MAX =
-    static_cast<MailEventReason>(1);
-[[nodiscard]] inline bool MailEventReason_IsValid(int value) {
-  return 0 <= value && value <= 1;
-}
-inline constexpr int MailEventReason_ARRAYSIZE = 1 + 1;
-[[nodiscard]] const ::google::protobuf::EnumDescriptor* PROTOBUF_NONNULL
-MailEventReason_descriptor();
-[[nodiscard]] inline auto ProtobufInternalGetEnumDescriptor(MailEventReason) {
-  return MailEventReason_descriptor();
-}
-template <typename T>
-[[nodiscard]] const ::std::string& MailEventReason_Name(T value) {
-  static_assert(::std::is_same<T, MailEventReason>::value ||
-                    ::std::is_integral<T>::value,
-                "Incorrect type passed to MailEventReason_Name().");
-  return MailEventReason_Name(static_cast<MailEventReason>(value));
-}
-template <>
-[[nodiscard]] inline const ::std::string& MailEventReason_Name(MailEventReason value) {
-  return ::google::protobuf::internal::NameOfDenseEnum<MailEventReason_descriptor, 0, 1>(
-      static_cast<int>(value));
-}
-[[nodiscard]] inline bool MailEventReason_Parse(
-    ::absl::string_view name, MailEventReason* PROTOBUF_NONNULL value) {
-  return ::google::protobuf::internal::ParseNamedEnum<MailEventReason>(MailEventReason_descriptor(), name,
                                            value);
 }
 using ::google::protobuf::internal::generated_enum::AbslParseFlag;
@@ -587,7 +553,7 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED MailItem final : public ::google::p
   [[nodiscard]] static const MailItem& default_instance() {
     return *::google::protobuf::internal::MessageGlobalsBase::ToDefaultInstance<MailItem>(&MailItem_globals_);
   }
-  static constexpr int kIndexInFileMessages = 2;
+  static constexpr int kIndexInFileMessages = 1;
   friend void swap(MailItem& a, MailItem& b) { a.Swap(&b); }
   inline void Swap(MailItem* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -744,219 +710,6 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED MailItem final : public ::google::p
 };
 // -------------------------------------------------------------------
 
-class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED MailEventS2C final : public ::google::protobuf::Message
-/* @@protoc_insertion_point(class_definition:mailpb.MailEventS2C) */ {
- public:
-  inline MailEventS2C() : MailEventS2C(nullptr) {}
-  ~MailEventS2C() PROTOBUF_FINAL;
-
-#if defined(PROTOBUF_CUSTOM_VTABLE)
-  void operator delete(MailEventS2C* PROTOBUF_NONNULL msg, ::std::destroying_delete_t) {
-    SharedDtor(*msg);
-    ::google::protobuf::internal::SizedDelete(msg, sizeof(MailEventS2C));
-  }
-#endif
-
-  template <typename = void>
-  explicit constexpr MailEventS2C(::google::protobuf::internal::ConstantInitialized,
-                           const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
-                               class_data);
-
-  inline MailEventS2C(const MailEventS2C& from) : MailEventS2C(nullptr, from) {}
-  inline MailEventS2C(MailEventS2C&& from) noexcept : MailEventS2C(nullptr, ::std::move(from)) {}
-  inline MailEventS2C& operator=(const MailEventS2C& from) {
-    CopyFrom(from);
-    return *this;
-  }
-  inline MailEventS2C& operator=(MailEventS2C&& from) noexcept {
-    if (this == &from) return *this;
-    if (::google::protobuf::internal::CanMoveWithInternalSwap(GetArena(), from.GetArena())) {
-      InternalSwap(&from);
-    } else {
-      CopyFrom(from);
-    }
-    return *this;
-  }
-
-  [[nodiscard]] inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const
-      ABSL_ATTRIBUTE_LIFETIME_BOUND {
-    return _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance);
-  }
-  [[nodiscard]] inline ::google::protobuf::UnknownFieldSet* PROTOBUF_NONNULL
-  mutable_unknown_fields() ABSL_ATTRIBUTE_LIFETIME_BOUND {
-    return _internal_metadata_.mutable_unknown_fields<::google::protobuf::UnknownFieldSet>();
-  }
-
-  [[nodiscard]] static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL descriptor() {
-    return GetDescriptor();
-  }
-  [[nodiscard]] static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL
-  GetDescriptor() {
-    return default_instance().GetMetadata().descriptor;
-  }
-  [[nodiscard]] static const ::google::protobuf::Reflection* PROTOBUF_NONNULL GetReflection() {
-    return default_instance().GetMetadata().reflection;
-  }
-  [[nodiscard]] static const MailEventS2C& default_instance() {
-    return *::google::protobuf::internal::MessageGlobalsBase::ToDefaultInstance<MailEventS2C>(&MailEventS2C_globals_);
-  }
-  static constexpr int kIndexInFileMessages = 14;
-  friend void swap(MailEventS2C& a, MailEventS2C& b) { a.Swap(&b); }
-  inline void Swap(MailEventS2C* PROTOBUF_NONNULL other) {
-    if (other == this) return;
-    if (::google::protobuf::internal::CanUseInternalSwap(GetArena(), other->GetArena())) {
-      InternalSwap(other);
-    } else {
-      ::google::protobuf::internal::GenericSwap(this, other);
-    }
-  }
-  void UnsafeArenaSwap(MailEventS2C* PROTOBUF_NONNULL other) {
-    if (other == this) return;
-    ABSL_DCHECK(GetArena() == other->GetArena());
-    InternalSwap(other);
-  }
-
-  // implements Message ----------------------------------------------
-
-  [[nodiscard]] MailEventS2C* PROTOBUF_NONNULL
-  New(::google::protobuf::Arena* PROTOBUF_NULLABLE arena = nullptr) const {
-    return ::google::protobuf::Message::DefaultConstruct<MailEventS2C>(arena);
-  }
-  using ::google::protobuf::Message::CopyFrom;
-  void CopyFrom(const MailEventS2C& from);
-  using ::google::protobuf::Message::MergeFrom;
-  void MergeFrom(const MailEventS2C& from) { MailEventS2C::MergeImpl(*this, from); }
-
-  private:
-  static void MergeImpl(::google::protobuf::MessageLite& to_msg,
-                        const ::google::protobuf::MessageLite& from_msg);
-
-  public:
-  [[nodiscard]] bool IsInitialized() const {
-    return true;
-  }
-  ABSL_ATTRIBUTE_REINITIALIZES void Clear() PROTOBUF_FINAL;
-  #if defined(PROTOBUF_CUSTOM_VTABLE)
-  private:
-  [[nodiscard]] static ::size_t ByteSizeLong(const ::google::protobuf::MessageLite& msg);
-  [[nodiscard]] static ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
-      const ::google::protobuf::MessageLite& msg, ::uint8_t* PROTOBUF_NONNULL target,
-      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream);
-
-  public:
-  [[nodiscard]] ::size_t ByteSizeLong() const { return ByteSizeLong(*this); }
-  [[nodiscard]] ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
-      ::uint8_t* PROTOBUF_NONNULL target,
-      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
-    return _InternalSerialize(*this, target, stream);
-  }
-  #else   // PROTOBUF_CUSTOM_VTABLE
-  [[nodiscard]] ::size_t ByteSizeLong() const final;
-  [[nodiscard]] ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
-      ::uint8_t* PROTOBUF_NONNULL target,
-      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const final;
-  #endif  // PROTOBUF_CUSTOM_VTABLE
-  [[nodiscard]] int GetCachedSize() const {
-    return _impl_._cached_size_.Get();
-  }
-
-  private:
-  void SharedCtor(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
-  static void SharedDtor(MessageLite& self);
-  void InternalSwap(MailEventS2C* PROTOBUF_NONNULL other);
- private:
-  template <typename T>
-  friend ::absl::string_view(::google::protobuf::internal::GetAnyMessageName)();
-  static ::absl::string_view FullMessageName() { return "mailpb.MailEventS2C"; }
-
-  explicit MailEventS2C(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
-  MailEventS2C(::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const MailEventS2C& from);
-  MailEventS2C(
-      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, MailEventS2C&& from) noexcept
-      : MailEventS2C(arena) {
-    *this = ::std::move(from);
-  }
-  const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL GetClassData() const PROTOBUF_FINAL;
-  static void* PROTOBUF_NONNULL PlacementNew_(
-      const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
-      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
-  static constexpr auto InternalNewImpl_();
-
- public:
-  static constexpr auto InternalGenerateClassData_(
-      const MessageLite& prototype,
-      const ::google::protobuf::internal::TcParseTableBase* PROTOBUF_NULLABLE tc_table = nullptr);
-
-  [[nodiscard]] ::google::protobuf::Metadata GetMetadata() const;
-  // nested types ----------------------------------------------------
-
-  // accessors -------------------------------------------------------
-  enum : int {
-    kTsMsFieldNumber = 2,
-    kReasonFieldNumber = 1,
-  };
-  // uint64 ts_ms = 2;
-  void clear_ts_ms() ;
-  [[nodiscard]] ::uint64_t ts_ms() const;
-  void set_ts_ms(::uint64_t value);
-
-  private:
-  ::uint64_t _internal_ts_ms() const;
-  void _internal_set_ts_ms(::uint64_t value);
-
-  public:
-  // .mailpb.MailEventReason reason = 1;
-  void clear_reason() ;
-  [[nodiscard]] ::mailpb::MailEventReason reason() const;
-  void set_reason(::mailpb::MailEventReason value);
-
-  private:
-  ::mailpb::MailEventReason _internal_reason() const;
-  void _internal_set_reason(::mailpb::MailEventReason value);
-
-  public:
-  // @@protoc_insertion_point(class_scope:mailpb.MailEventS2C)
- private:
-  class _Internal;
-  using ParseTableT_ =
-      ::google::protobuf::internal::TcParseTable<1, 2,
-                          0, 0,
-                          2>;
-  static constexpr ParseTableT_ InternalGenerateParseTable_(
-      const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL class_data);
-  friend class ::google::protobuf::internal::TcParser;
-  #ifndef PROTOBUF_MESSAGE_GLOBALS
-  static const ParseTableT_ _table_;
-  #endif
-
-  friend class ::google::protobuf::MessageLite;
-  friend class ::google::protobuf::Arena;
-  friend ::google::protobuf::internal::PrivateAccess;
-  template <typename T>
-  friend class ::google::protobuf::Arena::InternalHelper;
-  using InternalArenaConstructable_ = void;
-  using DestructorSkippable_ = void;
-  struct Impl_ {
-    inline explicit constexpr Impl_(::google::protobuf::internal::InternalVisibility visibility,
-                                    ::google::protobuf::internal::ConstantInitialized) noexcept;
-    inline explicit Impl_(
-        ::google::protobuf::internal::InternalVisibility visibility,
-        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
-    inline explicit Impl_(
-        ::google::protobuf::internal::InternalVisibility visibility,
-        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
-        const MailEventS2C& from_msg);
-    ::google::protobuf::internal::HasBits<1> _has_bits_;
-    ::google::protobuf::internal::CachedSize _cached_size_;
-    ::uint64_t ts_ms_;
-    int reason_;
-    PROTOBUF_TSAN_DECLARE_MEMBER
-  };
-  union { Impl_ _impl_; };
-  friend struct ::TableStruct_proto_2fmail_2fmail_2eproto;
-};
-// -------------------------------------------------------------------
-
 class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED MailCurrency final : public ::google::protobuf::Message
 /* @@protoc_insertion_point(class_definition:mailpb.MailCurrency) */ {
  public:
@@ -1013,7 +766,7 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED MailCurrency final : public ::googl
   [[nodiscard]] static const MailCurrency& default_instance() {
     return *::google::protobuf::internal::MessageGlobalsBase::ToDefaultInstance<MailCurrency>(&MailCurrency_globals_);
   }
-  static constexpr int kIndexInFileMessages = 1;
+  static constexpr int kIndexInFileMessages = 0;
   friend void swap(MailCurrency& a, MailCurrency& b) { a.Swap(&b); }
   inline void Swap(MailCurrency* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -1170,6 +923,207 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED MailCurrency final : public ::googl
 };
 // -------------------------------------------------------------------
 
+class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED MailChangedEvent final : public ::google::protobuf::Message
+/* @@protoc_insertion_point(class_definition:mailpb.MailChangedEvent) */ {
+ public:
+  inline MailChangedEvent() : MailChangedEvent(nullptr) {}
+  ~MailChangedEvent() PROTOBUF_FINAL;
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+  void operator delete(MailChangedEvent* PROTOBUF_NONNULL msg, ::std::destroying_delete_t) {
+    SharedDtor(*msg);
+    ::google::protobuf::internal::SizedDelete(msg, sizeof(MailChangedEvent));
+  }
+#endif
+
+  template <typename = void>
+  explicit constexpr MailChangedEvent(::google::protobuf::internal::ConstantInitialized,
+                           const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
+                               class_data);
+
+  inline MailChangedEvent(const MailChangedEvent& from) : MailChangedEvent(nullptr, from) {}
+  inline MailChangedEvent(MailChangedEvent&& from) noexcept : MailChangedEvent(nullptr, ::std::move(from)) {}
+  inline MailChangedEvent& operator=(const MailChangedEvent& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline MailChangedEvent& operator=(MailChangedEvent&& from) noexcept {
+    if (this == &from) return *this;
+    if (::google::protobuf::internal::CanMoveWithInternalSwap(GetArena(), from.GetArena())) {
+      InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  [[nodiscard]] inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance);
+  }
+  [[nodiscard]] inline ::google::protobuf::UnknownFieldSet* PROTOBUF_NONNULL
+  mutable_unknown_fields() ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.mutable_unknown_fields<::google::protobuf::UnknownFieldSet>();
+  }
+
+  [[nodiscard]] static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL descriptor() {
+    return GetDescriptor();
+  }
+  [[nodiscard]] static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL
+  GetDescriptor() {
+    return default_instance().GetMetadata().descriptor;
+  }
+  [[nodiscard]] static const ::google::protobuf::Reflection* PROTOBUF_NONNULL GetReflection() {
+    return default_instance().GetMetadata().reflection;
+  }
+  [[nodiscard]] static const MailChangedEvent& default_instance() {
+    return *::google::protobuf::internal::MessageGlobalsBase::ToDefaultInstance<MailChangedEvent>(&MailChangedEvent_globals_);
+  }
+  static constexpr int kIndexInFileMessages = 15;
+  friend void swap(MailChangedEvent& a, MailChangedEvent& b) { a.Swap(&b); }
+  inline void Swap(MailChangedEvent* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    if (::google::protobuf::internal::CanUseInternalSwap(GetArena(), other->GetArena())) {
+      InternalSwap(other);
+    } else {
+      ::google::protobuf::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(MailChangedEvent* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    ABSL_DCHECK(GetArena() == other->GetArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  [[nodiscard]] MailChangedEvent* PROTOBUF_NONNULL
+  New(::google::protobuf::Arena* PROTOBUF_NULLABLE arena = nullptr) const {
+    return ::google::protobuf::Message::DefaultConstruct<MailChangedEvent>(arena);
+  }
+  using ::google::protobuf::Message::CopyFrom;
+  void CopyFrom(const MailChangedEvent& from);
+  using ::google::protobuf::Message::MergeFrom;
+  void MergeFrom(const MailChangedEvent& from) { MailChangedEvent::MergeImpl(*this, from); }
+
+  private:
+  static void MergeImpl(::google::protobuf::MessageLite& to_msg,
+                        const ::google::protobuf::MessageLite& from_msg);
+
+  public:
+  [[nodiscard]] bool IsInitialized() const {
+    return true;
+  }
+  ABSL_ATTRIBUTE_REINITIALIZES void Clear() PROTOBUF_FINAL;
+  #if defined(PROTOBUF_CUSTOM_VTABLE)
+  private:
+  [[nodiscard]] static ::size_t ByteSizeLong(const ::google::protobuf::MessageLite& msg);
+  [[nodiscard]] static ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      const ::google::protobuf::MessageLite& msg, ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream);
+
+  public:
+  [[nodiscard]] ::size_t ByteSizeLong() const { return ByteSizeLong(*this); }
+  [[nodiscard]] ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
+    return _InternalSerialize(*this, target, stream);
+  }
+  #else   // PROTOBUF_CUSTOM_VTABLE
+  [[nodiscard]] ::size_t ByteSizeLong() const final;
+  [[nodiscard]] ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const final;
+  #endif  // PROTOBUF_CUSTOM_VTABLE
+  [[nodiscard]] int GetCachedSize() const {
+    return _impl_._cached_size_.Get();
+  }
+
+  private:
+  void SharedCtor(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static void SharedDtor(MessageLite& self);
+  void InternalSwap(MailChangedEvent* PROTOBUF_NONNULL other);
+ private:
+  template <typename T>
+  friend ::absl::string_view(::google::protobuf::internal::GetAnyMessageName)();
+  static ::absl::string_view FullMessageName() { return "mailpb.MailChangedEvent"; }
+
+  explicit MailChangedEvent(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  MailChangedEvent(::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const MailChangedEvent& from);
+  MailChangedEvent(
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, MailChangedEvent&& from) noexcept
+      : MailChangedEvent(arena) {
+    *this = ::std::move(from);
+  }
+  const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL GetClassData() const PROTOBUF_FINAL;
+  static void* PROTOBUF_NONNULL PlacementNew_(
+      const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static constexpr auto InternalNewImpl_();
+
+ public:
+  static constexpr auto InternalGenerateClassData_(
+      const MessageLite& prototype,
+      const ::google::protobuf::internal::TcParseTableBase* PROTOBUF_NULLABLE tc_table = nullptr);
+
+  [[nodiscard]] ::google::protobuf::Metadata GetMetadata() const;
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+  enum : int {
+    kMailIdFieldNumber = 1,
+  };
+  // uint64 mail_id = 1;
+  void clear_mail_id() ;
+  [[nodiscard]] ::uint64_t mail_id() const;
+  void set_mail_id(::uint64_t value);
+
+  private:
+  ::uint64_t _internal_mail_id() const;
+  void _internal_set_mail_id(::uint64_t value);
+
+  public:
+  // @@protoc_insertion_point(class_scope:mailpb.MailChangedEvent)
+ private:
+  class _Internal;
+  using ParseTableT_ =
+      ::google::protobuf::internal::TcParseTable<0, 1,
+                          0, 0,
+                          2>;
+  static constexpr ParseTableT_ InternalGenerateParseTable_(
+      const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL class_data);
+  friend class ::google::protobuf::internal::TcParser;
+  #ifndef PROTOBUF_MESSAGE_GLOBALS
+  static const ParseTableT_ _table_;
+  #endif
+
+  friend class ::google::protobuf::MessageLite;
+  friend class ::google::protobuf::Arena;
+  friend ::google::protobuf::internal::PrivateAccess;
+  template <typename T>
+  friend class ::google::protobuf::Arena::InternalHelper;
+  using InternalArenaConstructable_ = void;
+  using DestructorSkippable_ = void;
+  struct Impl_ {
+    inline explicit constexpr Impl_(::google::protobuf::internal::InternalVisibility visibility,
+                                    ::google::protobuf::internal::ConstantInitialized) noexcept;
+    inline explicit Impl_(
+        ::google::protobuf::internal::InternalVisibility visibility,
+        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+    inline explicit Impl_(
+        ::google::protobuf::internal::InternalVisibility visibility,
+        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
+        const MailChangedEvent& from_msg);
+    ::google::protobuf::internal::HasBits<1> _has_bits_;
+    ::google::protobuf::internal::CachedSize _cached_size_;
+    ::uint64_t mail_id_;
+    PROTOBUF_TSAN_DECLARE_MEMBER
+  };
+  union { Impl_ _impl_; };
+  friend struct ::TableStruct_proto_2fmail_2fmail_2eproto;
+};
+// -------------------------------------------------------------------
+
 class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED ListMailsRequest final : public ::google::protobuf::Message
 /* @@protoc_insertion_point(class_definition:mailpb.ListMailsRequest) */ {
  public:
@@ -1319,7 +1273,7 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED ListMailsRequest final : public ::g
   // accessors -------------------------------------------------------
   enum : int {
     kBeforeMailIdFieldNumber = 1,
-    kPageSizeFieldNumber = 2,
+    kLimitFieldNumber = 2,
   };
   // uint64 before_mail_id = 1;
   void clear_before_mail_id() ;
@@ -1331,14 +1285,14 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED ListMailsRequest final : public ::g
   void _internal_set_before_mail_id(::uint64_t value);
 
   public:
-  // uint32 page_size = 2;
-  void clear_page_size() ;
-  [[nodiscard]] ::uint32_t page_size() const;
-  void set_page_size(::uint32_t value);
+  // uint32 limit = 2;
+  void clear_limit() ;
+  [[nodiscard]] ::uint32_t limit() const;
+  void set_limit(::uint32_t value);
 
   private:
-  ::uint32_t _internal_page_size() const;
-  void _internal_set_page_size(::uint32_t value);
+  ::uint32_t _internal_limit() const;
+  void _internal_set_limit(::uint32_t value);
 
   public:
   // @@protoc_insertion_point(class_scope:mailpb.ListMailsRequest)
@@ -1375,148 +1329,10 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED ListMailsRequest final : public ::g
     ::google::protobuf::internal::HasBits<1> _has_bits_;
     ::google::protobuf::internal::CachedSize _cached_size_;
     ::uint64_t before_mail_id_;
-    ::uint32_t page_size_;
+    ::uint32_t limit_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
   union { Impl_ _impl_; };
-  friend struct ::TableStruct_proto_2fmail_2fmail_2eproto;
-};
-// -------------------------------------------------------------------
-
-class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED DeleteReadMailsRequest final : public ::google::protobuf::internal::ZeroFieldsBase
-/* @@protoc_insertion_point(class_definition:mailpb.DeleteReadMailsRequest) */ {
- public:
-  inline DeleteReadMailsRequest() : DeleteReadMailsRequest(nullptr) {}
-
-#if defined(PROTOBUF_CUSTOM_VTABLE)
-  void operator delete(DeleteReadMailsRequest* PROTOBUF_NONNULL msg, ::std::destroying_delete_t) {
-    SharedDtor(*msg);
-    ::google::protobuf::internal::SizedDelete(msg, sizeof(DeleteReadMailsRequest));
-  }
-#endif
-
-  template <typename = void>
-  explicit constexpr DeleteReadMailsRequest(::google::protobuf::internal::ConstantInitialized,
-                           const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
-                               class_data);
-
-  inline DeleteReadMailsRequest(const DeleteReadMailsRequest& from) : DeleteReadMailsRequest(nullptr, from) {}
-  inline DeleteReadMailsRequest(DeleteReadMailsRequest&& from) noexcept : DeleteReadMailsRequest(nullptr, ::std::move(from)) {}
-  inline DeleteReadMailsRequest& operator=(const DeleteReadMailsRequest& from) {
-    CopyFrom(from);
-    return *this;
-  }
-  inline DeleteReadMailsRequest& operator=(DeleteReadMailsRequest&& from) noexcept {
-    if (this == &from) return *this;
-    if (::google::protobuf::internal::CanMoveWithInternalSwap(GetArena(), from.GetArena())) {
-      InternalSwap(&from);
-    } else {
-      CopyFrom(from);
-    }
-    return *this;
-  }
-
-  [[nodiscard]] inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const
-      ABSL_ATTRIBUTE_LIFETIME_BOUND {
-    return _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance);
-  }
-  [[nodiscard]] inline ::google::protobuf::UnknownFieldSet* PROTOBUF_NONNULL
-  mutable_unknown_fields() ABSL_ATTRIBUTE_LIFETIME_BOUND {
-    return _internal_metadata_.mutable_unknown_fields<::google::protobuf::UnknownFieldSet>();
-  }
-
-  [[nodiscard]] static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL descriptor() {
-    return GetDescriptor();
-  }
-  [[nodiscard]] static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL
-  GetDescriptor() {
-    return default_instance().GetMetadata().descriptor;
-  }
-  [[nodiscard]] static const ::google::protobuf::Reflection* PROTOBUF_NONNULL GetReflection() {
-    return default_instance().GetMetadata().reflection;
-  }
-  [[nodiscard]] static const DeleteReadMailsRequest& default_instance() {
-    return *::google::protobuf::internal::MessageGlobalsBase::ToDefaultInstance<DeleteReadMailsRequest>(&DeleteReadMailsRequest_globals_);
-  }
-  static constexpr int kIndexInFileMessages = 10;
-  friend void swap(DeleteReadMailsRequest& a, DeleteReadMailsRequest& b) { a.Swap(&b); }
-  inline void Swap(DeleteReadMailsRequest* PROTOBUF_NONNULL other) {
-    if (other == this) return;
-    if (::google::protobuf::internal::CanUseInternalSwap(GetArena(), other->GetArena())) {
-      InternalSwap(other);
-    } else {
-      ::google::protobuf::internal::GenericSwap(this, other);
-    }
-  }
-  void UnsafeArenaSwap(DeleteReadMailsRequest* PROTOBUF_NONNULL other) {
-    if (other == this) return;
-    ABSL_DCHECK(GetArena() == other->GetArena());
-    InternalSwap(other);
-  }
-
-  // implements Message ----------------------------------------------
-
-  [[nodiscard]] DeleteReadMailsRequest* PROTOBUF_NONNULL
-  New(::google::protobuf::Arena* PROTOBUF_NULLABLE arena = nullptr) const {
-    return ::google::protobuf::internal::ZeroFieldsBase::DefaultConstruct<DeleteReadMailsRequest>(arena);
-  }
-  using ::google::protobuf::internal::ZeroFieldsBase::CopyFrom;
-  inline void CopyFrom(const DeleteReadMailsRequest& from) { ::google::protobuf::internal::ZeroFieldsBase::CopyImpl(*this, from); }
-  using ::google::protobuf::internal::ZeroFieldsBase::MergeFrom;
-  void MergeFrom(const DeleteReadMailsRequest& from) { ::google::protobuf::internal::ZeroFieldsBase::MergeImpl(*this, from); }
-
-  public:
-  [[nodiscard]] bool IsInitialized() const {
-    return true;
-  }
- private:
-  template <typename T>
-  friend ::absl::string_view(::google::protobuf::internal::GetAnyMessageName)();
-  static ::absl::string_view FullMessageName() { return "mailpb.DeleteReadMailsRequest"; }
-
-  explicit DeleteReadMailsRequest(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
-  DeleteReadMailsRequest(::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const DeleteReadMailsRequest& from);
-  DeleteReadMailsRequest(
-      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, DeleteReadMailsRequest&& from) noexcept
-      : DeleteReadMailsRequest(arena) {
-    *this = ::std::move(from);
-  }
-  const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL GetClassData() const PROTOBUF_FINAL;
-  static void* PROTOBUF_NONNULL PlacementNew_(
-      const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
-      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
-  static constexpr auto InternalNewImpl_();
-
- public:
-  static constexpr auto InternalGenerateClassData_(
-      const MessageLite& prototype,
-      const ::google::protobuf::internal::TcParseTableBase* PROTOBUF_NULLABLE tc_table = nullptr);
-
-  [[nodiscard]] ::google::protobuf::Metadata GetMetadata() const;
-  // nested types ----------------------------------------------------
-
-  // accessors -------------------------------------------------------
-  // @@protoc_insertion_point(class_scope:mailpb.DeleteReadMailsRequest)
- private:
-  class _Internal;
-  using ParseTableT_ =
-      ::google::protobuf::internal::TcParseTable<0, 0,
-                          0, 0,
-                          2>;
-  static constexpr ParseTableT_ InternalGenerateParseTable_(
-      const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL class_data);
-  friend class ::google::protobuf::internal::TcParser;
-  #ifndef PROTOBUF_MESSAGE_GLOBALS
-  static const ParseTableT_ _table_;
-  #endif
-
-  friend class ::google::protobuf::MessageLite;
-  friend class ::google::protobuf::Arena;
-  friend ::google::protobuf::internal::PrivateAccess;
-  template <typename T>
-  friend class ::google::protobuf::Arena::InternalHelper;
-  using InternalArenaConstructable_ = void;
-  using DestructorSkippable_ = void;
   friend struct ::TableStruct_proto_2fmail_2fmail_2eproto;
 };
 // -------------------------------------------------------------------
@@ -1577,7 +1393,7 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED DeleteMailsRequest final : public :
   [[nodiscard]] static const DeleteMailsRequest& default_instance() {
     return *::google::protobuf::internal::MessageGlobalsBase::ToDefaultInstance<DeleteMailsRequest>(&DeleteMailsRequest_globals_);
   }
-  static constexpr int kIndexInFileMessages = 8;
+  static constexpr int kIndexInFileMessages = 11;
   friend void swap(DeleteMailsRequest& a, DeleteMailsRequest& b) { a.Swap(&b); }
   inline void Swap(DeleteMailsRequest* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -1733,6 +1549,144 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED DeleteMailsRequest final : public :
 };
 // -------------------------------------------------------------------
 
+class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED ClearReadMailsRequest final : public ::google::protobuf::internal::ZeroFieldsBase
+/* @@protoc_insertion_point(class_definition:mailpb.ClearReadMailsRequest) */ {
+ public:
+  inline ClearReadMailsRequest() : ClearReadMailsRequest(nullptr) {}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+  void operator delete(ClearReadMailsRequest* PROTOBUF_NONNULL msg, ::std::destroying_delete_t) {
+    SharedDtor(*msg);
+    ::google::protobuf::internal::SizedDelete(msg, sizeof(ClearReadMailsRequest));
+  }
+#endif
+
+  template <typename = void>
+  explicit constexpr ClearReadMailsRequest(::google::protobuf::internal::ConstantInitialized,
+                           const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
+                               class_data);
+
+  inline ClearReadMailsRequest(const ClearReadMailsRequest& from) : ClearReadMailsRequest(nullptr, from) {}
+  inline ClearReadMailsRequest(ClearReadMailsRequest&& from) noexcept : ClearReadMailsRequest(nullptr, ::std::move(from)) {}
+  inline ClearReadMailsRequest& operator=(const ClearReadMailsRequest& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline ClearReadMailsRequest& operator=(ClearReadMailsRequest&& from) noexcept {
+    if (this == &from) return *this;
+    if (::google::protobuf::internal::CanMoveWithInternalSwap(GetArena(), from.GetArena())) {
+      InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  [[nodiscard]] inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance);
+  }
+  [[nodiscard]] inline ::google::protobuf::UnknownFieldSet* PROTOBUF_NONNULL
+  mutable_unknown_fields() ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.mutable_unknown_fields<::google::protobuf::UnknownFieldSet>();
+  }
+
+  [[nodiscard]] static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL descriptor() {
+    return GetDescriptor();
+  }
+  [[nodiscard]] static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL
+  GetDescriptor() {
+    return default_instance().GetMetadata().descriptor;
+  }
+  [[nodiscard]] static const ::google::protobuf::Reflection* PROTOBUF_NONNULL GetReflection() {
+    return default_instance().GetMetadata().reflection;
+  }
+  [[nodiscard]] static const ClearReadMailsRequest& default_instance() {
+    return *::google::protobuf::internal::MessageGlobalsBase::ToDefaultInstance<ClearReadMailsRequest>(&ClearReadMailsRequest_globals_);
+  }
+  static constexpr int kIndexInFileMessages = 13;
+  friend void swap(ClearReadMailsRequest& a, ClearReadMailsRequest& b) { a.Swap(&b); }
+  inline void Swap(ClearReadMailsRequest* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    if (::google::protobuf::internal::CanUseInternalSwap(GetArena(), other->GetArena())) {
+      InternalSwap(other);
+    } else {
+      ::google::protobuf::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(ClearReadMailsRequest* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    ABSL_DCHECK(GetArena() == other->GetArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  [[nodiscard]] ClearReadMailsRequest* PROTOBUF_NONNULL
+  New(::google::protobuf::Arena* PROTOBUF_NULLABLE arena = nullptr) const {
+    return ::google::protobuf::internal::ZeroFieldsBase::DefaultConstruct<ClearReadMailsRequest>(arena);
+  }
+  using ::google::protobuf::internal::ZeroFieldsBase::CopyFrom;
+  inline void CopyFrom(const ClearReadMailsRequest& from) { ::google::protobuf::internal::ZeroFieldsBase::CopyImpl(*this, from); }
+  using ::google::protobuf::internal::ZeroFieldsBase::MergeFrom;
+  void MergeFrom(const ClearReadMailsRequest& from) { ::google::protobuf::internal::ZeroFieldsBase::MergeImpl(*this, from); }
+
+  public:
+  [[nodiscard]] bool IsInitialized() const {
+    return true;
+  }
+ private:
+  template <typename T>
+  friend ::absl::string_view(::google::protobuf::internal::GetAnyMessageName)();
+  static ::absl::string_view FullMessageName() { return "mailpb.ClearReadMailsRequest"; }
+
+  explicit ClearReadMailsRequest(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  ClearReadMailsRequest(::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const ClearReadMailsRequest& from);
+  ClearReadMailsRequest(
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, ClearReadMailsRequest&& from) noexcept
+      : ClearReadMailsRequest(arena) {
+    *this = ::std::move(from);
+  }
+  const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL GetClassData() const PROTOBUF_FINAL;
+  static void* PROTOBUF_NONNULL PlacementNew_(
+      const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static constexpr auto InternalNewImpl_();
+
+ public:
+  static constexpr auto InternalGenerateClassData_(
+      const MessageLite& prototype,
+      const ::google::protobuf::internal::TcParseTableBase* PROTOBUF_NULLABLE tc_table = nullptr);
+
+  [[nodiscard]] ::google::protobuf::Metadata GetMetadata() const;
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+  // @@protoc_insertion_point(class_scope:mailpb.ClearReadMailsRequest)
+ private:
+  class _Internal;
+  using ParseTableT_ =
+      ::google::protobuf::internal::TcParseTable<0, 0,
+                          0, 0,
+                          2>;
+  static constexpr ParseTableT_ InternalGenerateParseTable_(
+      const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL class_data);
+  friend class ::google::protobuf::internal::TcParser;
+  #ifndef PROTOBUF_MESSAGE_GLOBALS
+  static const ParseTableT_ _table_;
+  #endif
+
+  friend class ::google::protobuf::MessageLite;
+  friend class ::google::protobuf::Arena;
+  friend ::google::protobuf::internal::PrivateAccess;
+  template <typename T>
+  friend class ::google::protobuf::Arena::InternalHelper;
+  using InternalArenaConstructable_ = void;
+  using DestructorSkippable_ = void;
+  friend struct ::TableStruct_proto_2fmail_2fmail_2eproto;
+};
+// -------------------------------------------------------------------
+
 class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED ClaimMailAttachmentsRequest final : public ::google::protobuf::Message
 /* @@protoc_insertion_point(class_definition:mailpb.ClaimMailAttachmentsRequest) */ {
  public:
@@ -1789,7 +1743,7 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED ClaimMailAttachmentsRequest final :
   [[nodiscard]] static const ClaimMailAttachmentsRequest& default_instance() {
     return *::google::protobuf::internal::MessageGlobalsBase::ToDefaultInstance<ClaimMailAttachmentsRequest>(&ClaimMailAttachmentsRequest_globals_);
   }
-  static constexpr int kIndexInFileMessages = 12;
+  static constexpr int kIndexInFileMessages = 8;
   friend void swap(ClaimMailAttachmentsRequest& a, ClaimMailAttachmentsRequest& b) { a.Swap(&b); }
   inline void Swap(ClaimMailAttachmentsRequest* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -1882,7 +1836,6 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED ClaimMailAttachmentsRequest final :
   // accessors -------------------------------------------------------
   enum : int {
     kMailIdsFieldNumber = 1,
-    kAllFieldNumber = 2,
   };
   // repeated uint64 mail_ids = 1;
   [[nodiscard]] int mail_ids_size()
@@ -1904,21 +1857,11 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED ClaimMailAttachmentsRequest final :
   ::google::protobuf::RepeatedField<::uint64_t>* PROTOBUF_NONNULL _internal_mutable_mail_ids();
 
   public:
-  // bool all = 2;
-  void clear_all() ;
-  [[nodiscard]] bool all() const;
-  void set_all(bool value);
-
-  private:
-  bool _internal_all() const;
-  void _internal_set_all(bool value);
-
-  public:
   // @@protoc_insertion_point(class_scope:mailpb.ClaimMailAttachmentsRequest)
  private:
   class _Internal;
   using ParseTableT_ =
-      ::google::protobuf::internal::TcParseTable<1, 2,
+      ::google::protobuf::internal::TcParseTable<0, 1,
                           0, 0,
                           2>;
   static constexpr ParseTableT_ InternalGenerateParseTable_(
@@ -1949,7 +1892,6 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED ClaimMailAttachmentsRequest final :
     ::google::protobuf::internal::CachedSize _cached_size_;
     ::google::protobuf::RepeatedField<::uint64_t> mail_ids_;
     ::google::protobuf::internal::CachedSize _mail_ids_cached_byte_size_;
-    bool all_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
   union { Impl_ _impl_; };
@@ -2013,7 +1955,7 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED MailAttachments final : public ::go
   [[nodiscard]] static const MailAttachments& default_instance() {
     return *::google::protobuf::internal::MessageGlobalsBase::ToDefaultInstance<MailAttachments>(&MailAttachments_globals_);
   }
-  static constexpr int kIndexInFileMessages = 0;
+  static constexpr int kIndexInFileMessages = 2;
   friend void swap(MailAttachments& a, MailAttachments& b) { a.Swap(&b); }
   inline void Swap(MailAttachments* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -2192,31 +2134,31 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED MailAttachments final : public ::go
 };
 // -------------------------------------------------------------------
 
-class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED DeleteReadMailsResponse final : public ::google::protobuf::Message
-/* @@protoc_insertion_point(class_definition:mailpb.DeleteReadMailsResponse) */ {
+class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED MailActionResult final : public ::google::protobuf::Message
+/* @@protoc_insertion_point(class_definition:mailpb.MailActionResult) */ {
  public:
-  inline DeleteReadMailsResponse() : DeleteReadMailsResponse(nullptr) {}
-  ~DeleteReadMailsResponse() PROTOBUF_FINAL;
+  inline MailActionResult() : MailActionResult(nullptr) {}
+  ~MailActionResult() PROTOBUF_FINAL;
 
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-  void operator delete(DeleteReadMailsResponse* PROTOBUF_NONNULL msg, ::std::destroying_delete_t) {
+  void operator delete(MailActionResult* PROTOBUF_NONNULL msg, ::std::destroying_delete_t) {
     SharedDtor(*msg);
-    ::google::protobuf::internal::SizedDelete(msg, sizeof(DeleteReadMailsResponse));
+    ::google::protobuf::internal::SizedDelete(msg, sizeof(MailActionResult));
   }
 #endif
 
   template <typename = void>
-  explicit constexpr DeleteReadMailsResponse(::google::protobuf::internal::ConstantInitialized,
+  explicit constexpr MailActionResult(::google::protobuf::internal::ConstantInitialized,
                            const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
                                class_data);
 
-  inline DeleteReadMailsResponse(const DeleteReadMailsResponse& from) : DeleteReadMailsResponse(nullptr, from) {}
-  inline DeleteReadMailsResponse(DeleteReadMailsResponse&& from) noexcept : DeleteReadMailsResponse(nullptr, ::std::move(from)) {}
-  inline DeleteReadMailsResponse& operator=(const DeleteReadMailsResponse& from) {
+  inline MailActionResult(const MailActionResult& from) : MailActionResult(nullptr, from) {}
+  inline MailActionResult(MailActionResult&& from) noexcept : MailActionResult(nullptr, ::std::move(from)) {}
+  inline MailActionResult& operator=(const MailActionResult& from) {
     CopyFrom(from);
     return *this;
   }
-  inline DeleteReadMailsResponse& operator=(DeleteReadMailsResponse&& from) noexcept {
+  inline MailActionResult& operator=(MailActionResult&& from) noexcept {
     if (this == &from) return *this;
     if (::google::protobuf::internal::CanMoveWithInternalSwap(GetArena(), from.GetArena())) {
       InternalSwap(&from);
@@ -2245,12 +2187,12 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED DeleteReadMailsResponse final : pub
   [[nodiscard]] static const ::google::protobuf::Reflection* PROTOBUF_NONNULL GetReflection() {
     return default_instance().GetMetadata().reflection;
   }
-  [[nodiscard]] static const DeleteReadMailsResponse& default_instance() {
-    return *::google::protobuf::internal::MessageGlobalsBase::ToDefaultInstance<DeleteReadMailsResponse>(&DeleteReadMailsResponse_globals_);
+  [[nodiscard]] static const MailActionResult& default_instance() {
+    return *::google::protobuf::internal::MessageGlobalsBase::ToDefaultInstance<MailActionResult>(&MailActionResult_globals_);
   }
-  static constexpr int kIndexInFileMessages = 11;
-  friend void swap(DeleteReadMailsResponse& a, DeleteReadMailsResponse& b) { a.Swap(&b); }
-  inline void Swap(DeleteReadMailsResponse* PROTOBUF_NONNULL other) {
+  static constexpr int kIndexInFileMessages = 9;
+  friend void swap(MailActionResult& a, MailActionResult& b) { a.Swap(&b); }
+  inline void Swap(MailActionResult* PROTOBUF_NONNULL other) {
     if (other == this) return;
     if (::google::protobuf::internal::CanUseInternalSwap(GetArena(), other->GetArena())) {
       InternalSwap(other);
@@ -2258,7 +2200,7 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED DeleteReadMailsResponse final : pub
       ::google::protobuf::internal::GenericSwap(this, other);
     }
   }
-  void UnsafeArenaSwap(DeleteReadMailsResponse* PROTOBUF_NONNULL other) {
+  void UnsafeArenaSwap(MailActionResult* PROTOBUF_NONNULL other) {
     if (other == this) return;
     ABSL_DCHECK(GetArena() == other->GetArena());
     InternalSwap(other);
@@ -2266,14 +2208,14 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED DeleteReadMailsResponse final : pub
 
   // implements Message ----------------------------------------------
 
-  [[nodiscard]] DeleteReadMailsResponse* PROTOBUF_NONNULL
+  [[nodiscard]] MailActionResult* PROTOBUF_NONNULL
   New(::google::protobuf::Arena* PROTOBUF_NULLABLE arena = nullptr) const {
-    return ::google::protobuf::Message::DefaultConstruct<DeleteReadMailsResponse>(arena);
+    return ::google::protobuf::Message::DefaultConstruct<MailActionResult>(arena);
   }
   using ::google::protobuf::Message::CopyFrom;
-  void CopyFrom(const DeleteReadMailsResponse& from);
+  void CopyFrom(const MailActionResult& from);
   using ::google::protobuf::Message::MergeFrom;
-  void MergeFrom(const DeleteReadMailsResponse& from) { DeleteReadMailsResponse::MergeImpl(*this, from); }
+  void MergeFrom(const MailActionResult& from) { MailActionResult::MergeImpl(*this, from); }
 
   private:
   static void MergeImpl(::google::protobuf::MessageLite& to_msg,
@@ -2311,17 +2253,17 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED DeleteReadMailsResponse final : pub
   private:
   void SharedCtor(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
   static void SharedDtor(MessageLite& self);
-  void InternalSwap(DeleteReadMailsResponse* PROTOBUF_NONNULL other);
+  void InternalSwap(MailActionResult* PROTOBUF_NONNULL other);
  private:
   template <typename T>
   friend ::absl::string_view(::google::protobuf::internal::GetAnyMessageName)();
-  static ::absl::string_view FullMessageName() { return "mailpb.DeleteReadMailsResponse"; }
+  static ::absl::string_view FullMessageName() { return "mailpb.MailActionResult"; }
 
-  explicit DeleteReadMailsResponse(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
-  DeleteReadMailsResponse(::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const DeleteReadMailsResponse& from);
-  DeleteReadMailsResponse(
-      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, DeleteReadMailsResponse&& from) noexcept
-      : DeleteReadMailsResponse(arena) {
+  explicit MailActionResult(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  MailActionResult(::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const MailActionResult& from);
+  MailActionResult(
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, MailActionResult&& from) noexcept
+      : MailActionResult(arena) {
     *this = ::std::move(from);
   }
   const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL GetClassData() const PROTOBUF_FINAL;
@@ -2340,10 +2282,12 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED DeleteReadMailsResponse final : pub
 
   // accessors -------------------------------------------------------
   enum : int {
-    kErrorMessageFieldNumber = 1,
-    kDeletedCountFieldNumber = 2,
+    kErrorMessageFieldNumber = 2,
+    kMailIdFieldNumber = 1,
+    kAssetOpIdFieldNumber = 4,
+    kClaimStateFieldNumber = 3,
   };
-  // .TipInfoMessage error_message = 1;
+  // .TipInfoMessage error_message = 2;
   [[nodiscard]] bool has_error_message()
       const;
   void clear_error_message() ;
@@ -2359,21 +2303,41 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED DeleteReadMailsResponse final : pub
   ::TipInfoMessage* PROTOBUF_NONNULL _internal_mutable_error_message();
 
   public:
-  // uint32 deleted_count = 2;
-  void clear_deleted_count() ;
-  [[nodiscard]] ::uint32_t deleted_count() const;
-  void set_deleted_count(::uint32_t value);
+  // uint64 mail_id = 1;
+  void clear_mail_id() ;
+  [[nodiscard]] ::uint64_t mail_id() const;
+  void set_mail_id(::uint64_t value);
 
   private:
-  ::uint32_t _internal_deleted_count() const;
-  void _internal_set_deleted_count(::uint32_t value);
+  ::uint64_t _internal_mail_id() const;
+  void _internal_set_mail_id(::uint64_t value);
 
   public:
-  // @@protoc_insertion_point(class_scope:mailpb.DeleteReadMailsResponse)
+  // uint64 asset_op_id = 4;
+  void clear_asset_op_id() ;
+  [[nodiscard]] ::uint64_t asset_op_id() const;
+  void set_asset_op_id(::uint64_t value);
+
+  private:
+  ::uint64_t _internal_asset_op_id() const;
+  void _internal_set_asset_op_id(::uint64_t value);
+
+  public:
+  // .mailpb.MailClaimState claim_state = 3;
+  void clear_claim_state() ;
+  [[nodiscard]] ::mailpb::MailClaimState claim_state() const;
+  void set_claim_state(::mailpb::MailClaimState value);
+
+  private:
+  ::mailpb::MailClaimState _internal_claim_state() const;
+  void _internal_set_claim_state(::mailpb::MailClaimState value);
+
+  public:
+  // @@protoc_insertion_point(class_scope:mailpb.MailActionResult)
  private:
   class _Internal;
   using ParseTableT_ =
-      ::google::protobuf::internal::TcParseTable<1, 2,
+      ::google::protobuf::internal::TcParseTable<2, 4,
                           1, 0,
                           2>;
   static constexpr ParseTableT_ InternalGenerateParseTable_(
@@ -2399,11 +2363,13 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED DeleteReadMailsResponse final : pub
     inline explicit Impl_(
         ::google::protobuf::internal::InternalVisibility visibility,
         ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
-        const DeleteReadMailsResponse& from_msg);
+        const MailActionResult& from_msg);
     ::google::protobuf::internal::HasBits<1> _has_bits_;
     ::google::protobuf::internal::CachedSize _cached_size_;
     ::TipInfoMessage* PROTOBUF_NULLABLE error_message_;
-    ::uint32_t deleted_count_;
+    ::uint64_t mail_id_;
+    ::uint64_t asset_op_id_;
+    int claim_state_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
   union { Impl_ _impl_; };
@@ -2467,7 +2433,7 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED DeleteMailsResponse final : public 
   [[nodiscard]] static const DeleteMailsResponse& default_instance() {
     return *::google::protobuf::internal::MessageGlobalsBase::ToDefaultInstance<DeleteMailsResponse>(&DeleteMailsResponse_globals_);
   }
-  static constexpr int kIndexInFileMessages = 9;
+  static constexpr int kIndexInFileMessages = 12;
   friend void swap(DeleteMailsResponse& a, DeleteMailsResponse& b) { a.Swap(&b); }
   inline void Swap(DeleteMailsResponse* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -2559,10 +2525,30 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED DeleteMailsResponse final : public 
 
   // accessors -------------------------------------------------------
   enum : int {
+    kDeletedMailIdsFieldNumber = 2,
     kProtectedMailIdsFieldNumber = 3,
     kErrorMessageFieldNumber = 1,
-    kDeletedCountFieldNumber = 2,
   };
+  // repeated uint64 deleted_mail_ids = 2;
+  [[nodiscard]] int deleted_mail_ids_size()
+      const;
+  private:
+  int _internal_deleted_mail_ids_size() const;
+
+  public:
+  void clear_deleted_mail_ids() ;
+  [[nodiscard]] ::uint64_t deleted_mail_ids(int index) const;
+  void set_deleted_mail_ids(int index, ::uint64_t value);
+  void add_deleted_mail_ids(::uint64_t value);
+  [[nodiscard]] const ::google::protobuf::RepeatedField<::uint64_t>& deleted_mail_ids()
+      const;
+  ::google::protobuf::RepeatedField<::uint64_t>* PROTOBUF_NONNULL mutable_deleted_mail_ids();
+
+  private:
+  const ::google::protobuf::RepeatedField<::uint64_t>& _internal_deleted_mail_ids() const;
+  ::google::protobuf::RepeatedField<::uint64_t>* PROTOBUF_NONNULL _internal_mutable_deleted_mail_ids();
+
+  public:
   // repeated uint64 protected_mail_ids = 3;
   [[nodiscard]] int protected_mail_ids_size()
       const;
@@ -2599,16 +2585,6 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED DeleteMailsResponse final : public 
   ::TipInfoMessage* PROTOBUF_NONNULL _internal_mutable_error_message();
 
   public:
-  // uint32 deleted_count = 2;
-  void clear_deleted_count() ;
-  [[nodiscard]] ::uint32_t deleted_count() const;
-  void set_deleted_count(::uint32_t value);
-
-  private:
-  ::uint32_t _internal_deleted_count() const;
-  void _internal_set_deleted_count(::uint32_t value);
-
-  public:
   // @@protoc_insertion_point(class_scope:mailpb.DeleteMailsResponse)
  private:
   class _Internal;
@@ -2642,10 +2618,607 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED DeleteMailsResponse final : public 
         const DeleteMailsResponse& from_msg);
     ::google::protobuf::internal::HasBits<1> _has_bits_;
     ::google::protobuf::internal::CachedSize _cached_size_;
+    ::google::protobuf::RepeatedField<::uint64_t> deleted_mail_ids_;
+    ::google::protobuf::internal::CachedSize _deleted_mail_ids_cached_byte_size_;
     ::google::protobuf::RepeatedField<::uint64_t> protected_mail_ids_;
     ::google::protobuf::internal::CachedSize _protected_mail_ids_cached_byte_size_;
     ::TipInfoMessage* PROTOBUF_NULLABLE error_message_;
-    ::uint32_t deleted_count_;
+    PROTOBUF_TSAN_DECLARE_MEMBER
+  };
+  union { Impl_ _impl_; };
+  friend struct ::TableStruct_proto_2fmail_2fmail_2eproto;
+};
+// -------------------------------------------------------------------
+
+class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED ClearReadMailsResponse final : public ::google::protobuf::Message
+/* @@protoc_insertion_point(class_definition:mailpb.ClearReadMailsResponse) */ {
+ public:
+  inline ClearReadMailsResponse() : ClearReadMailsResponse(nullptr) {}
+  ~ClearReadMailsResponse() PROTOBUF_FINAL;
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+  void operator delete(ClearReadMailsResponse* PROTOBUF_NONNULL msg, ::std::destroying_delete_t) {
+    SharedDtor(*msg);
+    ::google::protobuf::internal::SizedDelete(msg, sizeof(ClearReadMailsResponse));
+  }
+#endif
+
+  template <typename = void>
+  explicit constexpr ClearReadMailsResponse(::google::protobuf::internal::ConstantInitialized,
+                           const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
+                               class_data);
+
+  inline ClearReadMailsResponse(const ClearReadMailsResponse& from) : ClearReadMailsResponse(nullptr, from) {}
+  inline ClearReadMailsResponse(ClearReadMailsResponse&& from) noexcept : ClearReadMailsResponse(nullptr, ::std::move(from)) {}
+  inline ClearReadMailsResponse& operator=(const ClearReadMailsResponse& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline ClearReadMailsResponse& operator=(ClearReadMailsResponse&& from) noexcept {
+    if (this == &from) return *this;
+    if (::google::protobuf::internal::CanMoveWithInternalSwap(GetArena(), from.GetArena())) {
+      InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  [[nodiscard]] inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance);
+  }
+  [[nodiscard]] inline ::google::protobuf::UnknownFieldSet* PROTOBUF_NONNULL
+  mutable_unknown_fields() ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.mutable_unknown_fields<::google::protobuf::UnknownFieldSet>();
+  }
+
+  [[nodiscard]] static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL descriptor() {
+    return GetDescriptor();
+  }
+  [[nodiscard]] static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL
+  GetDescriptor() {
+    return default_instance().GetMetadata().descriptor;
+  }
+  [[nodiscard]] static const ::google::protobuf::Reflection* PROTOBUF_NONNULL GetReflection() {
+    return default_instance().GetMetadata().reflection;
+  }
+  [[nodiscard]] static const ClearReadMailsResponse& default_instance() {
+    return *::google::protobuf::internal::MessageGlobalsBase::ToDefaultInstance<ClearReadMailsResponse>(&ClearReadMailsResponse_globals_);
+  }
+  static constexpr int kIndexInFileMessages = 14;
+  friend void swap(ClearReadMailsResponse& a, ClearReadMailsResponse& b) { a.Swap(&b); }
+  inline void Swap(ClearReadMailsResponse* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    if (::google::protobuf::internal::CanUseInternalSwap(GetArena(), other->GetArena())) {
+      InternalSwap(other);
+    } else {
+      ::google::protobuf::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(ClearReadMailsResponse* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    ABSL_DCHECK(GetArena() == other->GetArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  [[nodiscard]] ClearReadMailsResponse* PROTOBUF_NONNULL
+  New(::google::protobuf::Arena* PROTOBUF_NULLABLE arena = nullptr) const {
+    return ::google::protobuf::Message::DefaultConstruct<ClearReadMailsResponse>(arena);
+  }
+  using ::google::protobuf::Message::CopyFrom;
+  void CopyFrom(const ClearReadMailsResponse& from);
+  using ::google::protobuf::Message::MergeFrom;
+  void MergeFrom(const ClearReadMailsResponse& from) { ClearReadMailsResponse::MergeImpl(*this, from); }
+
+  private:
+  static void MergeImpl(::google::protobuf::MessageLite& to_msg,
+                        const ::google::protobuf::MessageLite& from_msg);
+
+  public:
+  [[nodiscard]] bool IsInitialized() const {
+    return true;
+  }
+  ABSL_ATTRIBUTE_REINITIALIZES void Clear() PROTOBUF_FINAL;
+  #if defined(PROTOBUF_CUSTOM_VTABLE)
+  private:
+  [[nodiscard]] static ::size_t ByteSizeLong(const ::google::protobuf::MessageLite& msg);
+  [[nodiscard]] static ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      const ::google::protobuf::MessageLite& msg, ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream);
+
+  public:
+  [[nodiscard]] ::size_t ByteSizeLong() const { return ByteSizeLong(*this); }
+  [[nodiscard]] ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
+    return _InternalSerialize(*this, target, stream);
+  }
+  #else   // PROTOBUF_CUSTOM_VTABLE
+  [[nodiscard]] ::size_t ByteSizeLong() const final;
+  [[nodiscard]] ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const final;
+  #endif  // PROTOBUF_CUSTOM_VTABLE
+  [[nodiscard]] int GetCachedSize() const {
+    return _impl_._cached_size_.Get();
+  }
+
+  private:
+  void SharedCtor(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static void SharedDtor(MessageLite& self);
+  void InternalSwap(ClearReadMailsResponse* PROTOBUF_NONNULL other);
+ private:
+  template <typename T>
+  friend ::absl::string_view(::google::protobuf::internal::GetAnyMessageName)();
+  static ::absl::string_view FullMessageName() { return "mailpb.ClearReadMailsResponse"; }
+
+  explicit ClearReadMailsResponse(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  ClearReadMailsResponse(::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const ClearReadMailsResponse& from);
+  ClearReadMailsResponse(
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, ClearReadMailsResponse&& from) noexcept
+      : ClearReadMailsResponse(arena) {
+    *this = ::std::move(from);
+  }
+  const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL GetClassData() const PROTOBUF_FINAL;
+  static void* PROTOBUF_NONNULL PlacementNew_(
+      const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static constexpr auto InternalNewImpl_();
+
+ public:
+  static constexpr auto InternalGenerateClassData_(
+      const MessageLite& prototype,
+      const ::google::protobuf::internal::TcParseTableBase* PROTOBUF_NULLABLE tc_table = nullptr);
+
+  [[nodiscard]] ::google::protobuf::Metadata GetMetadata() const;
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+  enum : int {
+    kDeletedMailIdsFieldNumber = 2,
+    kProtectedMailIdsFieldNumber = 3,
+    kErrorMessageFieldNumber = 1,
+  };
+  // repeated uint64 deleted_mail_ids = 2;
+  [[nodiscard]] int deleted_mail_ids_size()
+      const;
+  private:
+  int _internal_deleted_mail_ids_size() const;
+
+  public:
+  void clear_deleted_mail_ids() ;
+  [[nodiscard]] ::uint64_t deleted_mail_ids(int index) const;
+  void set_deleted_mail_ids(int index, ::uint64_t value);
+  void add_deleted_mail_ids(::uint64_t value);
+  [[nodiscard]] const ::google::protobuf::RepeatedField<::uint64_t>& deleted_mail_ids()
+      const;
+  ::google::protobuf::RepeatedField<::uint64_t>* PROTOBUF_NONNULL mutable_deleted_mail_ids();
+
+  private:
+  const ::google::protobuf::RepeatedField<::uint64_t>& _internal_deleted_mail_ids() const;
+  ::google::protobuf::RepeatedField<::uint64_t>* PROTOBUF_NONNULL _internal_mutable_deleted_mail_ids();
+
+  public:
+  // repeated uint64 protected_mail_ids = 3;
+  [[nodiscard]] int protected_mail_ids_size()
+      const;
+  private:
+  int _internal_protected_mail_ids_size() const;
+
+  public:
+  void clear_protected_mail_ids() ;
+  [[nodiscard]] ::uint64_t protected_mail_ids(int index) const;
+  void set_protected_mail_ids(int index, ::uint64_t value);
+  void add_protected_mail_ids(::uint64_t value);
+  [[nodiscard]] const ::google::protobuf::RepeatedField<::uint64_t>& protected_mail_ids()
+      const;
+  ::google::protobuf::RepeatedField<::uint64_t>* PROTOBUF_NONNULL mutable_protected_mail_ids();
+
+  private:
+  const ::google::protobuf::RepeatedField<::uint64_t>& _internal_protected_mail_ids() const;
+  ::google::protobuf::RepeatedField<::uint64_t>* PROTOBUF_NONNULL _internal_mutable_protected_mail_ids();
+
+  public:
+  // .TipInfoMessage error_message = 1;
+  [[nodiscard]] bool has_error_message()
+      const;
+  void clear_error_message() ;
+  [[nodiscard]] const ::TipInfoMessage& error_message() const;
+  [[nodiscard]] ::TipInfoMessage* PROTOBUF_NULLABLE release_error_message();
+  ::TipInfoMessage* PROTOBUF_NONNULL mutable_error_message();
+  void set_allocated_error_message(::TipInfoMessage* PROTOBUF_NULLABLE value);
+  void unsafe_arena_set_allocated_error_message(::TipInfoMessage* PROTOBUF_NULLABLE value);
+  ::TipInfoMessage* PROTOBUF_NULLABLE unsafe_arena_release_error_message();
+
+  private:
+  const ::TipInfoMessage& _internal_error_message() const;
+  ::TipInfoMessage* PROTOBUF_NONNULL _internal_mutable_error_message();
+
+  public:
+  // @@protoc_insertion_point(class_scope:mailpb.ClearReadMailsResponse)
+ private:
+  class _Internal;
+  using ParseTableT_ =
+      ::google::protobuf::internal::TcParseTable<2, 3,
+                          1, 0,
+                          2>;
+  static constexpr ParseTableT_ InternalGenerateParseTable_(
+      const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL class_data);
+  friend class ::google::protobuf::internal::TcParser;
+  #ifndef PROTOBUF_MESSAGE_GLOBALS
+  static const ParseTableT_ _table_;
+  #endif
+
+  friend class ::google::protobuf::MessageLite;
+  friend class ::google::protobuf::Arena;
+  friend ::google::protobuf::internal::PrivateAccess;
+  template <typename T>
+  friend class ::google::protobuf::Arena::InternalHelper;
+  using InternalArenaConstructable_ = void;
+  using DestructorSkippable_ = void;
+  struct Impl_ {
+    inline explicit constexpr Impl_(::google::protobuf::internal::InternalVisibility visibility,
+                                    ::google::protobuf::internal::ConstantInitialized) noexcept;
+    inline explicit Impl_(
+        ::google::protobuf::internal::InternalVisibility visibility,
+        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+    inline explicit Impl_(
+        ::google::protobuf::internal::InternalVisibility visibility,
+        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
+        const ClearReadMailsResponse& from_msg);
+    ::google::protobuf::internal::HasBits<1> _has_bits_;
+    ::google::protobuf::internal::CachedSize _cached_size_;
+    ::google::protobuf::RepeatedField<::uint64_t> deleted_mail_ids_;
+    ::google::protobuf::internal::CachedSize _deleted_mail_ids_cached_byte_size_;
+    ::google::protobuf::RepeatedField<::uint64_t> protected_mail_ids_;
+    ::google::protobuf::internal::CachedSize _protected_mail_ids_cached_byte_size_;
+    ::TipInfoMessage* PROTOBUF_NULLABLE error_message_;
+    PROTOBUF_TSAN_DECLARE_MEMBER
+  };
+  union { Impl_ _impl_; };
+  friend struct ::TableStruct_proto_2fmail_2fmail_2eproto;
+};
+// -------------------------------------------------------------------
+
+class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED MailView final : public ::google::protobuf::Message
+/* @@protoc_insertion_point(class_definition:mailpb.MailView) */ {
+ public:
+  inline MailView() : MailView(nullptr) {}
+  ~MailView() PROTOBUF_FINAL;
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+  void operator delete(MailView* PROTOBUF_NONNULL msg, ::std::destroying_delete_t) {
+    SharedDtor(*msg);
+    ::google::protobuf::internal::SizedDelete(msg, sizeof(MailView));
+  }
+#endif
+
+  template <typename = void>
+  explicit constexpr MailView(::google::protobuf::internal::ConstantInitialized,
+                           const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
+                               class_data);
+
+  inline MailView(const MailView& from) : MailView(nullptr, from) {}
+  inline MailView(MailView&& from) noexcept : MailView(nullptr, ::std::move(from)) {}
+  inline MailView& operator=(const MailView& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline MailView& operator=(MailView&& from) noexcept {
+    if (this == &from) return *this;
+    if (::google::protobuf::internal::CanMoveWithInternalSwap(GetArena(), from.GetArena())) {
+      InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  [[nodiscard]] inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance);
+  }
+  [[nodiscard]] inline ::google::protobuf::UnknownFieldSet* PROTOBUF_NONNULL
+  mutable_unknown_fields() ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.mutable_unknown_fields<::google::protobuf::UnknownFieldSet>();
+  }
+
+  [[nodiscard]] static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL descriptor() {
+    return GetDescriptor();
+  }
+  [[nodiscard]] static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL
+  GetDescriptor() {
+    return default_instance().GetMetadata().descriptor;
+  }
+  [[nodiscard]] static const ::google::protobuf::Reflection* PROTOBUF_NONNULL GetReflection() {
+    return default_instance().GetMetadata().reflection;
+  }
+  [[nodiscard]] static const MailView& default_instance() {
+    return *::google::protobuf::internal::MessageGlobalsBase::ToDefaultInstance<MailView>(&MailView_globals_);
+  }
+  static constexpr int kIndexInFileMessages = 3;
+  friend void swap(MailView& a, MailView& b) { a.Swap(&b); }
+  inline void Swap(MailView* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    if (::google::protobuf::internal::CanUseInternalSwap(GetArena(), other->GetArena())) {
+      InternalSwap(other);
+    } else {
+      ::google::protobuf::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(MailView* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    ABSL_DCHECK(GetArena() == other->GetArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  [[nodiscard]] MailView* PROTOBUF_NONNULL
+  New(::google::protobuf::Arena* PROTOBUF_NULLABLE arena = nullptr) const {
+    return ::google::protobuf::Message::DefaultConstruct<MailView>(arena);
+  }
+  using ::google::protobuf::Message::CopyFrom;
+  void CopyFrom(const MailView& from);
+  using ::google::protobuf::Message::MergeFrom;
+  void MergeFrom(const MailView& from) { MailView::MergeImpl(*this, from); }
+
+  private:
+  static void MergeImpl(::google::protobuf::MessageLite& to_msg,
+                        const ::google::protobuf::MessageLite& from_msg);
+
+  public:
+  [[nodiscard]] bool IsInitialized() const {
+    return true;
+  }
+  ABSL_ATTRIBUTE_REINITIALIZES void Clear() PROTOBUF_FINAL;
+  #if defined(PROTOBUF_CUSTOM_VTABLE)
+  private:
+  [[nodiscard]] static ::size_t ByteSizeLong(const ::google::protobuf::MessageLite& msg);
+  [[nodiscard]] static ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      const ::google::protobuf::MessageLite& msg, ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream);
+
+  public:
+  [[nodiscard]] ::size_t ByteSizeLong() const { return ByteSizeLong(*this); }
+  [[nodiscard]] ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
+    return _InternalSerialize(*this, target, stream);
+  }
+  #else   // PROTOBUF_CUSTOM_VTABLE
+  [[nodiscard]] ::size_t ByteSizeLong() const final;
+  [[nodiscard]] ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const final;
+  #endif  // PROTOBUF_CUSTOM_VTABLE
+  [[nodiscard]] int GetCachedSize() const {
+    return _impl_._cached_size_.Get();
+  }
+
+  private:
+  void SharedCtor(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static void SharedDtor(MessageLite& self);
+  void InternalSwap(MailView* PROTOBUF_NONNULL other);
+ private:
+  template <typename T>
+  friend ::absl::string_view(::google::protobuf::internal::GetAnyMessageName)();
+  static ::absl::string_view FullMessageName() { return "mailpb.MailView"; }
+
+  explicit MailView(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  MailView(::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const MailView& from);
+  MailView(
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, MailView&& from) noexcept
+      : MailView(arena) {
+    *this = ::std::move(from);
+  }
+  const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL GetClassData() const PROTOBUF_FINAL;
+  static void* PROTOBUF_NONNULL PlacementNew_(
+      const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static constexpr auto InternalNewImpl_();
+
+ public:
+  static constexpr auto InternalGenerateClassData_(
+      const MessageLite& prototype,
+      const ::google::protobuf::internal::TcParseTableBase* PROTOBUF_NULLABLE tc_table = nullptr);
+
+  [[nodiscard]] ::google::protobuf::Metadata GetMetadata() const;
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+  enum : int {
+    kTitleFieldNumber = 3,
+    kBodyFieldNumber = 4,
+    kAttachmentsFieldNumber = 9,
+    kClaimReasonFieldNumber = 11,
+    kMailIdFieldNumber = 1,
+    kKindFieldNumber = 2,
+    kIsReadFieldNumber = 7,
+    kSentMsFieldNumber = 5,
+    kExpireMsFieldNumber = 6,
+    kAssetOpIdFieldNumber = 10,
+    kClaimStateFieldNumber = 8,
+  };
+  // string title = 3;
+  void clear_title() ;
+  [[nodiscard]] const ::std::string& title() const;
+  template <typename Arg_ = const ::std::string&, typename... Args_>
+  void set_title(Arg_&& arg, Args_... args);
+  ::std::string* PROTOBUF_NONNULL mutable_title();
+  [[nodiscard]] ::std::string* PROTOBUF_NULLABLE release_title();
+  void set_allocated_title(::std::string* PROTOBUF_NULLABLE value);
+
+  private:
+  const ::std::string& _internal_title() const;
+  PROTOBUF_ALWAYS_INLINE void _internal_set_title(const ::std::string& value);
+  ::std::string* PROTOBUF_NONNULL _internal_mutable_title();
+
+  public:
+  // string body = 4;
+  void clear_body() ;
+  [[nodiscard]] const ::std::string& body() const;
+  template <typename Arg_ = const ::std::string&, typename... Args_>
+  void set_body(Arg_&& arg, Args_... args);
+  ::std::string* PROTOBUF_NONNULL mutable_body();
+  [[nodiscard]] ::std::string* PROTOBUF_NULLABLE release_body();
+  void set_allocated_body(::std::string* PROTOBUF_NULLABLE value);
+
+  private:
+  const ::std::string& _internal_body() const;
+  PROTOBUF_ALWAYS_INLINE void _internal_set_body(const ::std::string& value);
+  ::std::string* PROTOBUF_NONNULL _internal_mutable_body();
+
+  public:
+  // .mailpb.MailAttachments attachments = 9;
+  [[nodiscard]] bool has_attachments()
+      const;
+  void clear_attachments() ;
+  [[nodiscard]] const ::mailpb::MailAttachments& attachments() const;
+  [[nodiscard]] ::mailpb::MailAttachments* PROTOBUF_NULLABLE release_attachments();
+  ::mailpb::MailAttachments* PROTOBUF_NONNULL mutable_attachments();
+  void set_allocated_attachments(::mailpb::MailAttachments* PROTOBUF_NULLABLE value);
+  void unsafe_arena_set_allocated_attachments(::mailpb::MailAttachments* PROTOBUF_NULLABLE value);
+  ::mailpb::MailAttachments* PROTOBUF_NULLABLE unsafe_arena_release_attachments();
+
+  private:
+  const ::mailpb::MailAttachments& _internal_attachments() const;
+  ::mailpb::MailAttachments* PROTOBUF_NONNULL _internal_mutable_attachments();
+
+  public:
+  // .TipInfoMessage claim_reason = 11;
+  [[nodiscard]] bool has_claim_reason()
+      const;
+  void clear_claim_reason() ;
+  [[nodiscard]] const ::TipInfoMessage& claim_reason() const;
+  [[nodiscard]] ::TipInfoMessage* PROTOBUF_NULLABLE release_claim_reason();
+  ::TipInfoMessage* PROTOBUF_NONNULL mutable_claim_reason();
+  void set_allocated_claim_reason(::TipInfoMessage* PROTOBUF_NULLABLE value);
+  void unsafe_arena_set_allocated_claim_reason(::TipInfoMessage* PROTOBUF_NULLABLE value);
+  ::TipInfoMessage* PROTOBUF_NULLABLE unsafe_arena_release_claim_reason();
+
+  private:
+  const ::TipInfoMessage& _internal_claim_reason() const;
+  ::TipInfoMessage* PROTOBUF_NONNULL _internal_mutable_claim_reason();
+
+  public:
+  // uint64 mail_id = 1;
+  void clear_mail_id() ;
+  [[nodiscard]] ::uint64_t mail_id() const;
+  void set_mail_id(::uint64_t value);
+
+  private:
+  ::uint64_t _internal_mail_id() const;
+  void _internal_set_mail_id(::uint64_t value);
+
+  public:
+  // .mailpb.MailKind kind = 2;
+  void clear_kind() ;
+  [[nodiscard]] ::mailpb::MailKind kind() const;
+  void set_kind(::mailpb::MailKind value);
+
+  private:
+  ::mailpb::MailKind _internal_kind() const;
+  void _internal_set_kind(::mailpb::MailKind value);
+
+  public:
+  // bool is_read = 7;
+  void clear_is_read() ;
+  [[nodiscard]] bool is_read() const;
+  void set_is_read(bool value);
+
+  private:
+  bool _internal_is_read() const;
+  void _internal_set_is_read(bool value);
+
+  public:
+  // uint64 sent_ms = 5;
+  void clear_sent_ms() ;
+  [[nodiscard]] ::uint64_t sent_ms() const;
+  void set_sent_ms(::uint64_t value);
+
+  private:
+  ::uint64_t _internal_sent_ms() const;
+  void _internal_set_sent_ms(::uint64_t value);
+
+  public:
+  // uint64 expire_ms = 6;
+  void clear_expire_ms() ;
+  [[nodiscard]] ::uint64_t expire_ms() const;
+  void set_expire_ms(::uint64_t value);
+
+  private:
+  ::uint64_t _internal_expire_ms() const;
+  void _internal_set_expire_ms(::uint64_t value);
+
+  public:
+  // uint64 asset_op_id = 10;
+  void clear_asset_op_id() ;
+  [[nodiscard]] ::uint64_t asset_op_id() const;
+  void set_asset_op_id(::uint64_t value);
+
+  private:
+  ::uint64_t _internal_asset_op_id() const;
+  void _internal_set_asset_op_id(::uint64_t value);
+
+  public:
+  // .mailpb.MailClaimState claim_state = 8;
+  void clear_claim_state() ;
+  [[nodiscard]] ::mailpb::MailClaimState claim_state() const;
+  void set_claim_state(::mailpb::MailClaimState value);
+
+  private:
+  ::mailpb::MailClaimState _internal_claim_state() const;
+  void _internal_set_claim_state(::mailpb::MailClaimState value);
+
+  public:
+  // @@protoc_insertion_point(class_scope:mailpb.MailView)
+ private:
+  class _Internal;
+  using ParseTableT_ =
+      ::google::protobuf::internal::TcParseTable<4, 11,
+                          2, 41,
+                          2>;
+  static constexpr ParseTableT_ InternalGenerateParseTable_(
+      const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL class_data);
+  friend class ::google::protobuf::internal::TcParser;
+  #ifndef PROTOBUF_MESSAGE_GLOBALS
+  static const ParseTableT_ _table_;
+  #endif
+
+  friend class ::google::protobuf::MessageLite;
+  friend class ::google::protobuf::Arena;
+  friend ::google::protobuf::internal::PrivateAccess;
+  template <typename T>
+  friend class ::google::protobuf::Arena::InternalHelper;
+  using InternalArenaConstructable_ = void;
+  using DestructorSkippable_ = void;
+  struct Impl_ {
+    inline explicit constexpr Impl_(::google::protobuf::internal::InternalVisibility visibility,
+                                    ::google::protobuf::internal::ConstantInitialized) noexcept;
+    inline explicit Impl_(
+        ::google::protobuf::internal::InternalVisibility visibility,
+        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+    inline explicit Impl_(
+        ::google::protobuf::internal::InternalVisibility visibility,
+        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
+        const MailView& from_msg);
+    ::google::protobuf::internal::HasBits<1> _has_bits_;
+    ::google::protobuf::internal::CachedSize _cached_size_;
+    ::google::protobuf::internal::ArenaStringPtr title_;
+    ::google::protobuf::internal::ArenaStringPtr body_;
+    ::mailpb::MailAttachments* PROTOBUF_NULLABLE attachments_;
+    ::TipInfoMessage* PROTOBUF_NULLABLE claim_reason_;
+    ::uint64_t mail_id_;
+    int kind_;
+    bool is_read_;
+    ::uint64_t sent_ms_;
+    ::uint64_t expire_ms_;
+    ::uint64_t asset_op_id_;
+    int claim_state_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
   union { Impl_ _impl_; };
@@ -2709,7 +3282,7 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED ClaimMailAttachmentsResponse final 
   [[nodiscard]] static const ClaimMailAttachmentsResponse& default_instance() {
     return *::google::protobuf::internal::MessageGlobalsBase::ToDefaultInstance<ClaimMailAttachmentsResponse>(&ClaimMailAttachmentsResponse_globals_);
   }
-  static constexpr int kIndexInFileMessages = 13;
+  static constexpr int kIndexInFileMessages = 10;
   friend void swap(ClaimMailAttachmentsResponse& a, ClaimMailAttachmentsResponse& b) { a.Swap(&b); }
   inline void Swap(ClaimMailAttachmentsResponse* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -2801,8 +3374,30 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED ClaimMailAttachmentsResponse final 
 
   // accessors -------------------------------------------------------
   enum : int {
+    kResultsFieldNumber = 2,
     kErrorMessageFieldNumber = 1,
   };
+  // repeated .mailpb.MailActionResult results = 2;
+  [[nodiscard]] int results_size()
+      const;
+  private:
+  int _internal_results_size() const;
+
+  public:
+  void clear_results() ;
+  [[nodiscard]] const ::mailpb::MailActionResult& results(int index) const;
+  [[nodiscard]] ::mailpb::MailActionResult* PROTOBUF_NONNULL mutable_results(int index);
+  ::mailpb::MailActionResult* PROTOBUF_NONNULL add_results();
+  [[nodiscard]] const ::google::protobuf::RepeatedPtrField<::mailpb::MailActionResult>&
+  results() const;
+  [[nodiscard]] ::google::protobuf::RepeatedPtrField<::mailpb::MailActionResult>* PROTOBUF_NONNULL
+  mutable_results();
+
+  private:
+  const ::google::protobuf::RepeatedPtrField<::mailpb::MailActionResult>& _internal_results() const;
+  ::google::protobuf::RepeatedPtrField<::mailpb::MailActionResult>* PROTOBUF_NONNULL _internal_mutable_results();
+
+  public:
   // .TipInfoMessage error_message = 1;
   [[nodiscard]] bool has_error_message()
       const;
@@ -2823,8 +3418,8 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED ClaimMailAttachmentsResponse final 
  private:
   class _Internal;
   using ParseTableT_ =
-      ::google::protobuf::internal::TcParseTable<0, 1,
-                          1, 0,
+      ::google::protobuf::internal::TcParseTable<1, 2,
+                          2, 0,
                           2>;
   static constexpr ParseTableT_ InternalGenerateParseTable_(
       const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL class_data);
@@ -2852,320 +3447,8 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED ClaimMailAttachmentsResponse final 
         const ClaimMailAttachmentsResponse& from_msg);
     ::google::protobuf::internal::HasBits<1> _has_bits_;
     ::google::protobuf::internal::CachedSize _cached_size_;
+    ::google::protobuf::RepeatedPtrField< ::mailpb::MailActionResult > results_;
     ::TipInfoMessage* PROTOBUF_NULLABLE error_message_;
-    PROTOBUF_TSAN_DECLARE_MEMBER
-  };
-  union { Impl_ _impl_; };
-  friend struct ::TableStruct_proto_2fmail_2fmail_2eproto;
-};
-// -------------------------------------------------------------------
-
-class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED MailSummary final : public ::google::protobuf::Message
-/* @@protoc_insertion_point(class_definition:mailpb.MailSummary) */ {
- public:
-  inline MailSummary() : MailSummary(nullptr) {}
-  ~MailSummary() PROTOBUF_FINAL;
-
-#if defined(PROTOBUF_CUSTOM_VTABLE)
-  void operator delete(MailSummary* PROTOBUF_NONNULL msg, ::std::destroying_delete_t) {
-    SharedDtor(*msg);
-    ::google::protobuf::internal::SizedDelete(msg, sizeof(MailSummary));
-  }
-#endif
-
-  template <typename = void>
-  explicit constexpr MailSummary(::google::protobuf::internal::ConstantInitialized,
-                           const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
-                               class_data);
-
-  inline MailSummary(const MailSummary& from) : MailSummary(nullptr, from) {}
-  inline MailSummary(MailSummary&& from) noexcept : MailSummary(nullptr, ::std::move(from)) {}
-  inline MailSummary& operator=(const MailSummary& from) {
-    CopyFrom(from);
-    return *this;
-  }
-  inline MailSummary& operator=(MailSummary&& from) noexcept {
-    if (this == &from) return *this;
-    if (::google::protobuf::internal::CanMoveWithInternalSwap(GetArena(), from.GetArena())) {
-      InternalSwap(&from);
-    } else {
-      CopyFrom(from);
-    }
-    return *this;
-  }
-
-  [[nodiscard]] inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const
-      ABSL_ATTRIBUTE_LIFETIME_BOUND {
-    return _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance);
-  }
-  [[nodiscard]] inline ::google::protobuf::UnknownFieldSet* PROTOBUF_NONNULL
-  mutable_unknown_fields() ABSL_ATTRIBUTE_LIFETIME_BOUND {
-    return _internal_metadata_.mutable_unknown_fields<::google::protobuf::UnknownFieldSet>();
-  }
-
-  [[nodiscard]] static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL descriptor() {
-    return GetDescriptor();
-  }
-  [[nodiscard]] static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL
-  GetDescriptor() {
-    return default_instance().GetMetadata().descriptor;
-  }
-  [[nodiscard]] static const ::google::protobuf::Reflection* PROTOBUF_NONNULL GetReflection() {
-    return default_instance().GetMetadata().reflection;
-  }
-  [[nodiscard]] static const MailSummary& default_instance() {
-    return *::google::protobuf::internal::MessageGlobalsBase::ToDefaultInstance<MailSummary>(&MailSummary_globals_);
-  }
-  static constexpr int kIndexInFileMessages = 3;
-  friend void swap(MailSummary& a, MailSummary& b) { a.Swap(&b); }
-  inline void Swap(MailSummary* PROTOBUF_NONNULL other) {
-    if (other == this) return;
-    if (::google::protobuf::internal::CanUseInternalSwap(GetArena(), other->GetArena())) {
-      InternalSwap(other);
-    } else {
-      ::google::protobuf::internal::GenericSwap(this, other);
-    }
-  }
-  void UnsafeArenaSwap(MailSummary* PROTOBUF_NONNULL other) {
-    if (other == this) return;
-    ABSL_DCHECK(GetArena() == other->GetArena());
-    InternalSwap(other);
-  }
-
-  // implements Message ----------------------------------------------
-
-  [[nodiscard]] MailSummary* PROTOBUF_NONNULL
-  New(::google::protobuf::Arena* PROTOBUF_NULLABLE arena = nullptr) const {
-    return ::google::protobuf::Message::DefaultConstruct<MailSummary>(arena);
-  }
-  using ::google::protobuf::Message::CopyFrom;
-  void CopyFrom(const MailSummary& from);
-  using ::google::protobuf::Message::MergeFrom;
-  void MergeFrom(const MailSummary& from) { MailSummary::MergeImpl(*this, from); }
-
-  private:
-  static void MergeImpl(::google::protobuf::MessageLite& to_msg,
-                        const ::google::protobuf::MessageLite& from_msg);
-
-  public:
-  [[nodiscard]] bool IsInitialized() const {
-    return true;
-  }
-  ABSL_ATTRIBUTE_REINITIALIZES void Clear() PROTOBUF_FINAL;
-  #if defined(PROTOBUF_CUSTOM_VTABLE)
-  private:
-  [[nodiscard]] static ::size_t ByteSizeLong(const ::google::protobuf::MessageLite& msg);
-  [[nodiscard]] static ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
-      const ::google::protobuf::MessageLite& msg, ::uint8_t* PROTOBUF_NONNULL target,
-      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream);
-
-  public:
-  [[nodiscard]] ::size_t ByteSizeLong() const { return ByteSizeLong(*this); }
-  [[nodiscard]] ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
-      ::uint8_t* PROTOBUF_NONNULL target,
-      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
-    return _InternalSerialize(*this, target, stream);
-  }
-  #else   // PROTOBUF_CUSTOM_VTABLE
-  [[nodiscard]] ::size_t ByteSizeLong() const final;
-  [[nodiscard]] ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
-      ::uint8_t* PROTOBUF_NONNULL target,
-      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const final;
-  #endif  // PROTOBUF_CUSTOM_VTABLE
-  [[nodiscard]] int GetCachedSize() const {
-    return _impl_._cached_size_.Get();
-  }
-
-  private:
-  void SharedCtor(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
-  static void SharedDtor(MessageLite& self);
-  void InternalSwap(MailSummary* PROTOBUF_NONNULL other);
- private:
-  template <typename T>
-  friend ::absl::string_view(::google::protobuf::internal::GetAnyMessageName)();
-  static ::absl::string_view FullMessageName() { return "mailpb.MailSummary"; }
-
-  explicit MailSummary(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
-  MailSummary(::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const MailSummary& from);
-  MailSummary(
-      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, MailSummary&& from) noexcept
-      : MailSummary(arena) {
-    *this = ::std::move(from);
-  }
-  const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL GetClassData() const PROTOBUF_FINAL;
-  static void* PROTOBUF_NONNULL PlacementNew_(
-      const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
-      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
-  static constexpr auto InternalNewImpl_();
-
- public:
-  static constexpr auto InternalGenerateClassData_(
-      const MessageLite& prototype,
-      const ::google::protobuf::internal::TcParseTableBase* PROTOBUF_NULLABLE tc_table = nullptr);
-
-  [[nodiscard]] ::google::protobuf::Metadata GetMetadata() const;
-  // nested types ----------------------------------------------------
-
-  // accessors -------------------------------------------------------
-  enum : int {
-    kSenderNameFieldNumber = 3,
-    kTitleFieldNumber = 4,
-    kAttachmentsFieldNumber = 9,
-    kMailIdFieldNumber = 1,
-    kKindFieldNumber = 2,
-    kReadFieldNumber = 7,
-    kSentMsFieldNumber = 5,
-    kExpireMsFieldNumber = 6,
-    kClaimStateFieldNumber = 8,
-  };
-  // string sender_name = 3;
-  void clear_sender_name() ;
-  [[nodiscard]] const ::std::string& sender_name() const;
-  template <typename Arg_ = const ::std::string&, typename... Args_>
-  void set_sender_name(Arg_&& arg, Args_... args);
-  ::std::string* PROTOBUF_NONNULL mutable_sender_name();
-  [[nodiscard]] ::std::string* PROTOBUF_NULLABLE release_sender_name();
-  void set_allocated_sender_name(::std::string* PROTOBUF_NULLABLE value);
-
-  private:
-  const ::std::string& _internal_sender_name() const;
-  PROTOBUF_ALWAYS_INLINE void _internal_set_sender_name(const ::std::string& value);
-  ::std::string* PROTOBUF_NONNULL _internal_mutable_sender_name();
-
-  public:
-  // string title = 4;
-  void clear_title() ;
-  [[nodiscard]] const ::std::string& title() const;
-  template <typename Arg_ = const ::std::string&, typename... Args_>
-  void set_title(Arg_&& arg, Args_... args);
-  ::std::string* PROTOBUF_NONNULL mutable_title();
-  [[nodiscard]] ::std::string* PROTOBUF_NULLABLE release_title();
-  void set_allocated_title(::std::string* PROTOBUF_NULLABLE value);
-
-  private:
-  const ::std::string& _internal_title() const;
-  PROTOBUF_ALWAYS_INLINE void _internal_set_title(const ::std::string& value);
-  ::std::string* PROTOBUF_NONNULL _internal_mutable_title();
-
-  public:
-  // .mailpb.MailAttachments attachments = 9;
-  [[nodiscard]] bool has_attachments()
-      const;
-  void clear_attachments() ;
-  [[nodiscard]] const ::mailpb::MailAttachments& attachments() const;
-  [[nodiscard]] ::mailpb::MailAttachments* PROTOBUF_NULLABLE release_attachments();
-  ::mailpb::MailAttachments* PROTOBUF_NONNULL mutable_attachments();
-  void set_allocated_attachments(::mailpb::MailAttachments* PROTOBUF_NULLABLE value);
-  void unsafe_arena_set_allocated_attachments(::mailpb::MailAttachments* PROTOBUF_NULLABLE value);
-  ::mailpb::MailAttachments* PROTOBUF_NULLABLE unsafe_arena_release_attachments();
-
-  private:
-  const ::mailpb::MailAttachments& _internal_attachments() const;
-  ::mailpb::MailAttachments* PROTOBUF_NONNULL _internal_mutable_attachments();
-
-  public:
-  // uint64 mail_id = 1;
-  void clear_mail_id() ;
-  [[nodiscard]] ::uint64_t mail_id() const;
-  void set_mail_id(::uint64_t value);
-
-  private:
-  ::uint64_t _internal_mail_id() const;
-  void _internal_set_mail_id(::uint64_t value);
-
-  public:
-  // .mailpb.MailKind kind = 2;
-  void clear_kind() ;
-  [[nodiscard]] ::mailpb::MailKind kind() const;
-  void set_kind(::mailpb::MailKind value);
-
-  private:
-  ::mailpb::MailKind _internal_kind() const;
-  void _internal_set_kind(::mailpb::MailKind value);
-
-  public:
-  // bool read = 7;
-  void clear_read() ;
-  [[nodiscard]] bool read() const;
-  void set_read(bool value);
-
-  private:
-  bool _internal_read() const;
-  void _internal_set_read(bool value);
-
-  public:
-  // uint64 sent_ms = 5;
-  void clear_sent_ms() ;
-  [[nodiscard]] ::uint64_t sent_ms() const;
-  void set_sent_ms(::uint64_t value);
-
-  private:
-  ::uint64_t _internal_sent_ms() const;
-  void _internal_set_sent_ms(::uint64_t value);
-
-  public:
-  // uint64 expire_ms = 6;
-  void clear_expire_ms() ;
-  [[nodiscard]] ::uint64_t expire_ms() const;
-  void set_expire_ms(::uint64_t value);
-
-  private:
-  ::uint64_t _internal_expire_ms() const;
-  void _internal_set_expire_ms(::uint64_t value);
-
-  public:
-  // .mailpb.MailClaimState claim_state = 8;
-  void clear_claim_state() ;
-  [[nodiscard]] ::mailpb::MailClaimState claim_state() const;
-  void set_claim_state(::mailpb::MailClaimState value);
-
-  private:
-  ::mailpb::MailClaimState _internal_claim_state() const;
-  void _internal_set_claim_state(::mailpb::MailClaimState value);
-
-  public:
-  // @@protoc_insertion_point(class_scope:mailpb.MailSummary)
- private:
-  class _Internal;
-  using ParseTableT_ =
-      ::google::protobuf::internal::TcParseTable<4, 9,
-                          1, 51,
-                          2>;
-  static constexpr ParseTableT_ InternalGenerateParseTable_(
-      const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL class_data);
-  friend class ::google::protobuf::internal::TcParser;
-  #ifndef PROTOBUF_MESSAGE_GLOBALS
-  static const ParseTableT_ _table_;
-  #endif
-
-  friend class ::google::protobuf::MessageLite;
-  friend class ::google::protobuf::Arena;
-  friend ::google::protobuf::internal::PrivateAccess;
-  template <typename T>
-  friend class ::google::protobuf::Arena::InternalHelper;
-  using InternalArenaConstructable_ = void;
-  using DestructorSkippable_ = void;
-  struct Impl_ {
-    inline explicit constexpr Impl_(::google::protobuf::internal::InternalVisibility visibility,
-                                    ::google::protobuf::internal::ConstantInitialized) noexcept;
-    inline explicit Impl_(
-        ::google::protobuf::internal::InternalVisibility visibility,
-        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
-    inline explicit Impl_(
-        ::google::protobuf::internal::InternalVisibility visibility,
-        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
-        const MailSummary& from_msg);
-    ::google::protobuf::internal::HasBits<1> _has_bits_;
-    ::google::protobuf::internal::CachedSize _cached_size_;
-    ::google::protobuf::internal::ArenaStringPtr sender_name_;
-    ::google::protobuf::internal::ArenaStringPtr title_;
-    ::mailpb::MailAttachments* PROTOBUF_NULLABLE attachments_;
-    ::uint64_t mail_id_;
-    int kind_;
-    bool read_;
-    ::uint64_t sent_ms_;
-    ::uint64_t expire_ms_;
-    int claim_state_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
   union { Impl_ _impl_; };
@@ -3321,26 +3604,9 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED ReadMailResponse final : public ::g
 
   // accessors -------------------------------------------------------
   enum : int {
-    kBodyFieldNumber = 3,
     kErrorMessageFieldNumber = 1,
-    kSummaryFieldNumber = 2,
-    kServerNowMsFieldNumber = 4,
+    kMailFieldNumber = 2,
   };
-  // string body = 3;
-  void clear_body() ;
-  [[nodiscard]] const ::std::string& body() const;
-  template <typename Arg_ = const ::std::string&, typename... Args_>
-  void set_body(Arg_&& arg, Args_... args);
-  ::std::string* PROTOBUF_NONNULL mutable_body();
-  [[nodiscard]] ::std::string* PROTOBUF_NULLABLE release_body();
-  void set_allocated_body(::std::string* PROTOBUF_NULLABLE value);
-
-  private:
-  const ::std::string& _internal_body() const;
-  PROTOBUF_ALWAYS_INLINE void _internal_set_body(const ::std::string& value);
-  ::std::string* PROTOBUF_NONNULL _internal_mutable_body();
-
-  public:
   // .TipInfoMessage error_message = 1;
   [[nodiscard]] bool has_error_message()
       const;
@@ -3357,38 +3623,28 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED ReadMailResponse final : public ::g
   ::TipInfoMessage* PROTOBUF_NONNULL _internal_mutable_error_message();
 
   public:
-  // .mailpb.MailSummary summary = 2;
-  [[nodiscard]] bool has_summary()
+  // .mailpb.MailView mail = 2;
+  [[nodiscard]] bool has_mail()
       const;
-  void clear_summary() ;
-  [[nodiscard]] const ::mailpb::MailSummary& summary() const;
-  [[nodiscard]] ::mailpb::MailSummary* PROTOBUF_NULLABLE release_summary();
-  ::mailpb::MailSummary* PROTOBUF_NONNULL mutable_summary();
-  void set_allocated_summary(::mailpb::MailSummary* PROTOBUF_NULLABLE value);
-  void unsafe_arena_set_allocated_summary(::mailpb::MailSummary* PROTOBUF_NULLABLE value);
-  ::mailpb::MailSummary* PROTOBUF_NULLABLE unsafe_arena_release_summary();
+  void clear_mail() ;
+  [[nodiscard]] const ::mailpb::MailView& mail() const;
+  [[nodiscard]] ::mailpb::MailView* PROTOBUF_NULLABLE release_mail();
+  ::mailpb::MailView* PROTOBUF_NONNULL mutable_mail();
+  void set_allocated_mail(::mailpb::MailView* PROTOBUF_NULLABLE value);
+  void unsafe_arena_set_allocated_mail(::mailpb::MailView* PROTOBUF_NULLABLE value);
+  ::mailpb::MailView* PROTOBUF_NULLABLE unsafe_arena_release_mail();
 
   private:
-  const ::mailpb::MailSummary& _internal_summary() const;
-  ::mailpb::MailSummary* PROTOBUF_NONNULL _internal_mutable_summary();
-
-  public:
-  // uint64 server_now_ms = 4;
-  void clear_server_now_ms() ;
-  [[nodiscard]] ::uint64_t server_now_ms() const;
-  void set_server_now_ms(::uint64_t value);
-
-  private:
-  ::uint64_t _internal_server_now_ms() const;
-  void _internal_set_server_now_ms(::uint64_t value);
+  const ::mailpb::MailView& _internal_mail() const;
+  ::mailpb::MailView* PROTOBUF_NONNULL _internal_mutable_mail();
 
   public:
   // @@protoc_insertion_point(class_scope:mailpb.ReadMailResponse)
  private:
   class _Internal;
   using ParseTableT_ =
-      ::google::protobuf::internal::TcParseTable<2, 4,
-                          2, 36,
+      ::google::protobuf::internal::TcParseTable<1, 2,
+                          2, 0,
                           2>;
   static constexpr ParseTableT_ InternalGenerateParseTable_(
       const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL class_data);
@@ -3416,10 +3672,8 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED ReadMailResponse final : public ::g
         const ReadMailResponse& from_msg);
     ::google::protobuf::internal::HasBits<1> _has_bits_;
     ::google::protobuf::internal::CachedSize _cached_size_;
-    ::google::protobuf::internal::ArenaStringPtr body_;
     ::TipInfoMessage* PROTOBUF_NULLABLE error_message_;
-    ::mailpb::MailSummary* PROTOBUF_NULLABLE summary_;
-    ::uint64_t server_now_ms_;
+    ::mailpb::MailView* PROTOBUF_NULLABLE mail_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
   union { Impl_ _impl_; };
@@ -3577,12 +3831,12 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED ListMailsResponse final : public ::
   enum : int {
     kMailsFieldNumber = 2,
     kErrorMessageFieldNumber = 1,
-    kHasMoreFieldNumber = 3,
+    kNextBeforeMailIdFieldNumber = 3,
     kUnreadCountFieldNumber = 4,
-    kServerNowMsFieldNumber = 6,
     kClaimableCountFieldNumber = 5,
+    kServerNowMsFieldNumber = 6,
   };
-  // repeated .mailpb.MailSummary mails = 2;
+  // repeated .mailpb.MailView mails = 2;
   [[nodiscard]] int mails_size()
       const;
   private:
@@ -3590,17 +3844,17 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED ListMailsResponse final : public ::
 
   public:
   void clear_mails() ;
-  [[nodiscard]] const ::mailpb::MailSummary& mails(int index) const;
-  [[nodiscard]] ::mailpb::MailSummary* PROTOBUF_NONNULL mutable_mails(int index);
-  ::mailpb::MailSummary* PROTOBUF_NONNULL add_mails();
-  [[nodiscard]] const ::google::protobuf::RepeatedPtrField<::mailpb::MailSummary>&
+  [[nodiscard]] const ::mailpb::MailView& mails(int index) const;
+  [[nodiscard]] ::mailpb::MailView* PROTOBUF_NONNULL mutable_mails(int index);
+  ::mailpb::MailView* PROTOBUF_NONNULL add_mails();
+  [[nodiscard]] const ::google::protobuf::RepeatedPtrField<::mailpb::MailView>&
   mails() const;
-  [[nodiscard]] ::google::protobuf::RepeatedPtrField<::mailpb::MailSummary>* PROTOBUF_NONNULL
+  [[nodiscard]] ::google::protobuf::RepeatedPtrField<::mailpb::MailView>* PROTOBUF_NONNULL
   mutable_mails();
 
   private:
-  const ::google::protobuf::RepeatedPtrField<::mailpb::MailSummary>& _internal_mails() const;
-  ::google::protobuf::RepeatedPtrField<::mailpb::MailSummary>* PROTOBUF_NONNULL _internal_mutable_mails();
+  const ::google::protobuf::RepeatedPtrField<::mailpb::MailView>& _internal_mails() const;
+  ::google::protobuf::RepeatedPtrField<::mailpb::MailView>* PROTOBUF_NONNULL _internal_mutable_mails();
 
   public:
   // .TipInfoMessage error_message = 1;
@@ -3619,14 +3873,14 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED ListMailsResponse final : public ::
   ::TipInfoMessage* PROTOBUF_NONNULL _internal_mutable_error_message();
 
   public:
-  // bool has_more = 3;
-  void clear_has_more() ;
-  [[nodiscard]] bool has_more() const;
-  void set_has_more(bool value);
+  // uint64 next_before_mail_id = 3;
+  void clear_next_before_mail_id() ;
+  [[nodiscard]] ::uint64_t next_before_mail_id() const;
+  void set_next_before_mail_id(::uint64_t value);
 
   private:
-  bool _internal_has_more() const;
-  void _internal_set_has_more(bool value);
+  ::uint64_t _internal_next_before_mail_id() const;
+  void _internal_set_next_before_mail_id(::uint64_t value);
 
   public:
   // uint32 unread_count = 4;
@@ -3639,16 +3893,6 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED ListMailsResponse final : public ::
   void _internal_set_unread_count(::uint32_t value);
 
   public:
-  // uint64 server_now_ms = 6;
-  void clear_server_now_ms() ;
-  [[nodiscard]] ::uint64_t server_now_ms() const;
-  void set_server_now_ms(::uint64_t value);
-
-  private:
-  ::uint64_t _internal_server_now_ms() const;
-  void _internal_set_server_now_ms(::uint64_t value);
-
-  public:
   // uint32 claimable_count = 5;
   void clear_claimable_count() ;
   [[nodiscard]] ::uint32_t claimable_count() const;
@@ -3657,6 +3901,16 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED ListMailsResponse final : public ::
   private:
   ::uint32_t _internal_claimable_count() const;
   void _internal_set_claimable_count(::uint32_t value);
+
+  public:
+  // uint64 server_now_ms = 6;
+  void clear_server_now_ms() ;
+  [[nodiscard]] ::uint64_t server_now_ms() const;
+  void set_server_now_ms(::uint64_t value);
+
+  private:
+  ::uint64_t _internal_server_now_ms() const;
+  void _internal_set_server_now_ms(::uint64_t value);
 
   public:
   // @@protoc_insertion_point(class_scope:mailpb.ListMailsResponse)
@@ -3692,12 +3946,12 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED ListMailsResponse final : public ::
         const ListMailsResponse& from_msg);
     ::google::protobuf::internal::HasBits<1> _has_bits_;
     ::google::protobuf::internal::CachedSize _cached_size_;
-    ::google::protobuf::RepeatedPtrField< ::mailpb::MailSummary > mails_;
+    ::google::protobuf::RepeatedPtrField< ::mailpb::MailView > mails_;
     ::TipInfoMessage* PROTOBUF_NULLABLE error_message_;
-    bool has_more_;
+    ::uint64_t next_before_mail_id_;
     ::uint32_t unread_count_;
-    ::uint64_t server_now_ms_;
     ::uint32_t claimable_count_;
+    ::uint64_t server_now_ms_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
   union { Impl_ _impl_; };
@@ -3716,6 +3970,110 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED ListMailsResponse final : public ::
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wstrict-aliasing"
 #endif  // __GNUC__
+// -------------------------------------------------------------------
+
+// MailCurrency
+
+// uint32 currency_type = 1;
+inline void MailCurrency::clear_currency_type() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.currency_type_ = 0u;
+  ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
+}
+inline ::uint32_t MailCurrency::currency_type() const {
+  // @@protoc_insertion_point(field_get:mailpb.MailCurrency.currency_type)
+  return _internal_currency_type();
+}
+inline void MailCurrency::set_currency_type(::uint32_t value) {
+  _internal_set_currency_type(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000002U);
+  // @@protoc_insertion_point(field_set:mailpb.MailCurrency.currency_type)
+}
+inline ::uint32_t MailCurrency::_internal_currency_type() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.currency_type_;
+}
+inline void MailCurrency::_internal_set_currency_type(::uint32_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.currency_type_ = value;
+}
+
+// uint64 amount = 2;
+inline void MailCurrency::clear_amount() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.amount_ = ::uint64_t{0u};
+  ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
+}
+inline ::uint64_t MailCurrency::amount() const {
+  // @@protoc_insertion_point(field_get:mailpb.MailCurrency.amount)
+  return _internal_amount();
+}
+inline void MailCurrency::set_amount(::uint64_t value) {
+  _internal_set_amount(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  // @@protoc_insertion_point(field_set:mailpb.MailCurrency.amount)
+}
+inline ::uint64_t MailCurrency::_internal_amount() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.amount_;
+}
+inline void MailCurrency::_internal_set_amount(::uint64_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.amount_ = value;
+}
+
+// -------------------------------------------------------------------
+
+// MailItem
+
+// uint32 config_id = 1;
+inline void MailItem::clear_config_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.config_id_ = 0u;
+  ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
+}
+inline ::uint32_t MailItem::config_id() const {
+  // @@protoc_insertion_point(field_get:mailpb.MailItem.config_id)
+  return _internal_config_id();
+}
+inline void MailItem::set_config_id(::uint32_t value) {
+  _internal_set_config_id(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  // @@protoc_insertion_point(field_set:mailpb.MailItem.config_id)
+}
+inline ::uint32_t MailItem::_internal_config_id() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.config_id_;
+}
+inline void MailItem::_internal_set_config_id(::uint32_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.config_id_ = value;
+}
+
+// uint32 count = 2;
+inline void MailItem::clear_count() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.count_ = 0u;
+  ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
+}
+inline ::uint32_t MailItem::count() const {
+  // @@protoc_insertion_point(field_get:mailpb.MailItem.count)
+  return _internal_count();
+}
+inline void MailItem::set_count(::uint32_t value) {
+  _internal_set_count(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000002U);
+  // @@protoc_insertion_point(field_set:mailpb.MailItem.count)
+}
+inline ::uint32_t MailItem::_internal_count() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.count_;
+}
+inline void MailItem::_internal_set_count(::uint32_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.count_ = value;
+}
+
 // -------------------------------------------------------------------
 
 // MailAttachments
@@ -3832,405 +4190,301 @@ MailAttachments::_internal_mutable_items() {
 
 // -------------------------------------------------------------------
 
-// MailCurrency
-
-// uint32 currency_type = 1;
-inline void MailCurrency::clear_currency_type() {
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.currency_type_ = 0u;
-  ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
-}
-inline ::uint32_t MailCurrency::currency_type() const {
-  // @@protoc_insertion_point(field_get:mailpb.MailCurrency.currency_type)
-  return _internal_currency_type();
-}
-inline void MailCurrency::set_currency_type(::uint32_t value) {
-  _internal_set_currency_type(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00000002U);
-  // @@protoc_insertion_point(field_set:mailpb.MailCurrency.currency_type)
-}
-inline ::uint32_t MailCurrency::_internal_currency_type() const {
-  ::google::protobuf::internal::TSanRead(&_impl_);
-  return _impl_.currency_type_;
-}
-inline void MailCurrency::_internal_set_currency_type(::uint32_t value) {
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.currency_type_ = value;
-}
-
-// uint64 amount = 2;
-inline void MailCurrency::clear_amount() {
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.amount_ = ::uint64_t{0u};
-  ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
-}
-inline ::uint64_t MailCurrency::amount() const {
-  // @@protoc_insertion_point(field_get:mailpb.MailCurrency.amount)
-  return _internal_amount();
-}
-inline void MailCurrency::set_amount(::uint64_t value) {
-  _internal_set_amount(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00000001U);
-  // @@protoc_insertion_point(field_set:mailpb.MailCurrency.amount)
-}
-inline ::uint64_t MailCurrency::_internal_amount() const {
-  ::google::protobuf::internal::TSanRead(&_impl_);
-  return _impl_.amount_;
-}
-inline void MailCurrency::_internal_set_amount(::uint64_t value) {
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.amount_ = value;
-}
-
-// -------------------------------------------------------------------
-
-// MailItem
-
-// uint32 config_id = 1;
-inline void MailItem::clear_config_id() {
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.config_id_ = 0u;
-  ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
-}
-inline ::uint32_t MailItem::config_id() const {
-  // @@protoc_insertion_point(field_get:mailpb.MailItem.config_id)
-  return _internal_config_id();
-}
-inline void MailItem::set_config_id(::uint32_t value) {
-  _internal_set_config_id(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00000001U);
-  // @@protoc_insertion_point(field_set:mailpb.MailItem.config_id)
-}
-inline ::uint32_t MailItem::_internal_config_id() const {
-  ::google::protobuf::internal::TSanRead(&_impl_);
-  return _impl_.config_id_;
-}
-inline void MailItem::_internal_set_config_id(::uint32_t value) {
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.config_id_ = value;
-}
-
-// uint32 count = 2;
-inline void MailItem::clear_count() {
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.count_ = 0u;
-  ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
-}
-inline ::uint32_t MailItem::count() const {
-  // @@protoc_insertion_point(field_get:mailpb.MailItem.count)
-  return _internal_count();
-}
-inline void MailItem::set_count(::uint32_t value) {
-  _internal_set_count(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00000002U);
-  // @@protoc_insertion_point(field_set:mailpb.MailItem.count)
-}
-inline ::uint32_t MailItem::_internal_count() const {
-  ::google::protobuf::internal::TSanRead(&_impl_);
-  return _impl_.count_;
-}
-inline void MailItem::_internal_set_count(::uint32_t value) {
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.count_ = value;
-}
-
-// -------------------------------------------------------------------
-
-// MailSummary
+// MailView
 
 // uint64 mail_id = 1;
-inline void MailSummary::clear_mail_id() {
+inline void MailView::clear_mail_id() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.mail_id_ = ::uint64_t{0u};
-  ClearHasBit(_impl_._has_bits_[0], 0x00000008U);
+  ClearHasBit(_impl_._has_bits_[0], 0x00000010U);
 }
-inline ::uint64_t MailSummary::mail_id() const {
-  // @@protoc_insertion_point(field_get:mailpb.MailSummary.mail_id)
+inline ::uint64_t MailView::mail_id() const {
+  // @@protoc_insertion_point(field_get:mailpb.MailView.mail_id)
   return _internal_mail_id();
 }
-inline void MailSummary::set_mail_id(::uint64_t value) {
+inline void MailView::set_mail_id(::uint64_t value) {
   _internal_set_mail_id(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00000008U);
-  // @@protoc_insertion_point(field_set:mailpb.MailSummary.mail_id)
+  SetHasBit(_impl_._has_bits_[0], 0x00000010U);
+  // @@protoc_insertion_point(field_set:mailpb.MailView.mail_id)
 }
-inline ::uint64_t MailSummary::_internal_mail_id() const {
+inline ::uint64_t MailView::_internal_mail_id() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
   return _impl_.mail_id_;
 }
-inline void MailSummary::_internal_set_mail_id(::uint64_t value) {
+inline void MailView::_internal_set_mail_id(::uint64_t value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.mail_id_ = value;
 }
 
 // .mailpb.MailKind kind = 2;
-inline void MailSummary::clear_kind() {
+inline void MailView::clear_kind() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.kind_ = 0;
-  ClearHasBit(_impl_._has_bits_[0], 0x00000010U);
+  ClearHasBit(_impl_._has_bits_[0], 0x00000020U);
 }
-inline ::mailpb::MailKind MailSummary::kind() const {
-  // @@protoc_insertion_point(field_get:mailpb.MailSummary.kind)
+inline ::mailpb::MailKind MailView::kind() const {
+  // @@protoc_insertion_point(field_get:mailpb.MailView.kind)
   return _internal_kind();
 }
-inline void MailSummary::set_kind(::mailpb::MailKind value) {
+inline void MailView::set_kind(::mailpb::MailKind value) {
   _internal_set_kind(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00000010U);
-  // @@protoc_insertion_point(field_set:mailpb.MailSummary.kind)
+  SetHasBit(_impl_._has_bits_[0], 0x00000020U);
+  // @@protoc_insertion_point(field_set:mailpb.MailView.kind)
 }
-inline ::mailpb::MailKind MailSummary::_internal_kind() const {
+inline ::mailpb::MailKind MailView::_internal_kind() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
   return static_cast<::mailpb::MailKind>(_impl_.kind_);
 }
-inline void MailSummary::_internal_set_kind(::mailpb::MailKind value) {
+inline void MailView::_internal_set_kind(::mailpb::MailKind value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.kind_ = value;
 }
 
-// string sender_name = 3;
-inline void MailSummary::clear_sender_name() {
+// string title = 3;
+inline void MailView::clear_title() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.sender_name_.ClearToEmpty();
+  _impl_.title_.ClearToEmpty();
   ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
 }
-inline const ::std::string& MailSummary::sender_name() const
+inline const ::std::string& MailView::title() const
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_get:mailpb.MailSummary.sender_name)
-  return _internal_sender_name();
+  // @@protoc_insertion_point(field_get:mailpb.MailView.title)
+  return _internal_title();
 }
 template <typename Arg_, typename... Args_>
-PROTOBUF_ALWAYS_INLINE void MailSummary::set_sender_name(Arg_&& arg, Args_... args) {
+PROTOBUF_ALWAYS_INLINE void MailView::set_title(Arg_&& arg, Args_... args) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   SetHasBit(_impl_._has_bits_[0], 0x00000001U);
-  _impl_.sender_name_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
-  // @@protoc_insertion_point(field_set:mailpb.MailSummary.sender_name)
+  _impl_.title_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
+  // @@protoc_insertion_point(field_set:mailpb.MailView.title)
 }
-inline ::std::string* PROTOBUF_NONNULL MailSummary::mutable_sender_name()
+inline ::std::string* PROTOBUF_NONNULL MailView::mutable_title()
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
   SetHasBit(_impl_._has_bits_[0], 0x00000001U);
-  ::std::string* _s = _internal_mutable_sender_name();
-  // @@protoc_insertion_point(field_mutable:mailpb.MailSummary.sender_name)
+  ::std::string* _s = _internal_mutable_title();
+  // @@protoc_insertion_point(field_mutable:mailpb.MailView.title)
   return _s;
 }
-inline const ::std::string& MailSummary::_internal_sender_name() const {
+inline const ::std::string& MailView::_internal_title() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
-  return _impl_.sender_name_.Get();
+  return _impl_.title_.Get();
 }
-inline void MailSummary::_internal_set_sender_name(const ::std::string& value) {
+inline void MailView::_internal_set_title(const ::std::string& value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.sender_name_.Set(value, GetArena());
+  _impl_.title_.Set(value, GetArena());
 }
-inline ::std::string* PROTOBUF_NONNULL MailSummary::_internal_mutable_sender_name() {
+inline ::std::string* PROTOBUF_NONNULL MailView::_internal_mutable_title() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  return _impl_.sender_name_.Mutable( GetArena());
+  return _impl_.title_.Mutable( GetArena());
 }
-inline ::std::string* PROTOBUF_NULLABLE MailSummary::release_sender_name() {
+inline ::std::string* PROTOBUF_NULLABLE MailView::release_title() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  // @@protoc_insertion_point(field_release:mailpb.MailSummary.sender_name)
+  // @@protoc_insertion_point(field_release:mailpb.MailView.title)
   if (!CheckHasBit(_impl_._has_bits_[0], 0x00000001U)) {
     return nullptr;
   }
   ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
-  auto* released = _impl_.sender_name_.Release();
-  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString()) {
-    _impl_.sender_name_.Set("", GetArena());
-  }
-  return released;
-}
-inline void MailSummary::set_allocated_sender_name(::std::string* PROTOBUF_NULLABLE value) {
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  if (value != nullptr) {
-    SetHasBit(_impl_._has_bits_[0], 0x00000001U);
-  } else {
-    ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
-  }
-  _impl_.sender_name_.SetAllocated(value, GetArena());
-  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.sender_name_.IsDefault()) {
-    _impl_.sender_name_.Set("", GetArena());
-  }
-  // @@protoc_insertion_point(field_set_allocated:mailpb.MailSummary.sender_name)
-}
-
-// string title = 4;
-inline void MailSummary::clear_title() {
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.title_.ClearToEmpty();
-  ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
-}
-inline const ::std::string& MailSummary::title() const
-    ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_get:mailpb.MailSummary.title)
-  return _internal_title();
-}
-template <typename Arg_, typename... Args_>
-PROTOBUF_ALWAYS_INLINE void MailSummary::set_title(Arg_&& arg, Args_... args) {
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  SetHasBit(_impl_._has_bits_[0], 0x00000002U);
-  _impl_.title_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
-  // @@protoc_insertion_point(field_set:mailpb.MailSummary.title)
-}
-inline ::std::string* PROTOBUF_NONNULL MailSummary::mutable_title()
-    ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  SetHasBit(_impl_._has_bits_[0], 0x00000002U);
-  ::std::string* _s = _internal_mutable_title();
-  // @@protoc_insertion_point(field_mutable:mailpb.MailSummary.title)
-  return _s;
-}
-inline const ::std::string& MailSummary::_internal_title() const {
-  ::google::protobuf::internal::TSanRead(&_impl_);
-  return _impl_.title_.Get();
-}
-inline void MailSummary::_internal_set_title(const ::std::string& value) {
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.title_.Set(value, GetArena());
-}
-inline ::std::string* PROTOBUF_NONNULL MailSummary::_internal_mutable_title() {
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  return _impl_.title_.Mutable( GetArena());
-}
-inline ::std::string* PROTOBUF_NULLABLE MailSummary::release_title() {
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  // @@protoc_insertion_point(field_release:mailpb.MailSummary.title)
-  if (!CheckHasBit(_impl_._has_bits_[0], 0x00000002U)) {
-    return nullptr;
-  }
-  ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
   auto* released = _impl_.title_.Release();
   if (::google::protobuf::internal::DebugHardenForceCopyDefaultString()) {
     _impl_.title_.Set("", GetArena());
   }
   return released;
 }
-inline void MailSummary::set_allocated_title(::std::string* PROTOBUF_NULLABLE value) {
+inline void MailView::set_allocated_title(::std::string* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (value != nullptr) {
+    SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  } else {
+    ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
+  }
+  _impl_.title_.SetAllocated(value, GetArena());
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.title_.IsDefault()) {
+    _impl_.title_.Set("", GetArena());
+  }
+  // @@protoc_insertion_point(field_set_allocated:mailpb.MailView.title)
+}
+
+// string body = 4;
+inline void MailView::clear_body() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.body_.ClearToEmpty();
+  ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
+}
+inline const ::std::string& MailView::body() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:mailpb.MailView.body)
+  return _internal_body();
+}
+template <typename Arg_, typename... Args_>
+PROTOBUF_ALWAYS_INLINE void MailView::set_body(Arg_&& arg, Args_... args) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  SetHasBit(_impl_._has_bits_[0], 0x00000002U);
+  _impl_.body_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
+  // @@protoc_insertion_point(field_set:mailpb.MailView.body)
+}
+inline ::std::string* PROTOBUF_NONNULL MailView::mutable_body()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  SetHasBit(_impl_._has_bits_[0], 0x00000002U);
+  ::std::string* _s = _internal_mutable_body();
+  // @@protoc_insertion_point(field_mutable:mailpb.MailView.body)
+  return _s;
+}
+inline const ::std::string& MailView::_internal_body() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.body_.Get();
+}
+inline void MailView::_internal_set_body(const ::std::string& value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.body_.Set(value, GetArena());
+}
+inline ::std::string* PROTOBUF_NONNULL MailView::_internal_mutable_body() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  return _impl_.body_.Mutable( GetArena());
+}
+inline ::std::string* PROTOBUF_NULLABLE MailView::release_body() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:mailpb.MailView.body)
+  if (!CheckHasBit(_impl_._has_bits_[0], 0x00000002U)) {
+    return nullptr;
+  }
+  ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
+  auto* released = _impl_.body_.Release();
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString()) {
+    _impl_.body_.Set("", GetArena());
+  }
+  return released;
+}
+inline void MailView::set_allocated_body(::std::string* PROTOBUF_NULLABLE value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   if (value != nullptr) {
     SetHasBit(_impl_._has_bits_[0], 0x00000002U);
   } else {
     ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
   }
-  _impl_.title_.SetAllocated(value, GetArena());
-  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.title_.IsDefault()) {
-    _impl_.title_.Set("", GetArena());
+  _impl_.body_.SetAllocated(value, GetArena());
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.body_.IsDefault()) {
+    _impl_.body_.Set("", GetArena());
   }
-  // @@protoc_insertion_point(field_set_allocated:mailpb.MailSummary.title)
+  // @@protoc_insertion_point(field_set_allocated:mailpb.MailView.body)
 }
 
 // uint64 sent_ms = 5;
-inline void MailSummary::clear_sent_ms() {
+inline void MailView::clear_sent_ms() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.sent_ms_ = ::uint64_t{0u};
-  ClearHasBit(_impl_._has_bits_[0], 0x00000040U);
+  ClearHasBit(_impl_._has_bits_[0], 0x00000080U);
 }
-inline ::uint64_t MailSummary::sent_ms() const {
-  // @@protoc_insertion_point(field_get:mailpb.MailSummary.sent_ms)
+inline ::uint64_t MailView::sent_ms() const {
+  // @@protoc_insertion_point(field_get:mailpb.MailView.sent_ms)
   return _internal_sent_ms();
 }
-inline void MailSummary::set_sent_ms(::uint64_t value) {
+inline void MailView::set_sent_ms(::uint64_t value) {
   _internal_set_sent_ms(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00000040U);
-  // @@protoc_insertion_point(field_set:mailpb.MailSummary.sent_ms)
+  SetHasBit(_impl_._has_bits_[0], 0x00000080U);
+  // @@protoc_insertion_point(field_set:mailpb.MailView.sent_ms)
 }
-inline ::uint64_t MailSummary::_internal_sent_ms() const {
+inline ::uint64_t MailView::_internal_sent_ms() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
   return _impl_.sent_ms_;
 }
-inline void MailSummary::_internal_set_sent_ms(::uint64_t value) {
+inline void MailView::_internal_set_sent_ms(::uint64_t value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.sent_ms_ = value;
 }
 
 // uint64 expire_ms = 6;
-inline void MailSummary::clear_expire_ms() {
+inline void MailView::clear_expire_ms() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.expire_ms_ = ::uint64_t{0u};
-  ClearHasBit(_impl_._has_bits_[0], 0x00000080U);
+  ClearHasBit(_impl_._has_bits_[0], 0x00000100U);
 }
-inline ::uint64_t MailSummary::expire_ms() const {
-  // @@protoc_insertion_point(field_get:mailpb.MailSummary.expire_ms)
+inline ::uint64_t MailView::expire_ms() const {
+  // @@protoc_insertion_point(field_get:mailpb.MailView.expire_ms)
   return _internal_expire_ms();
 }
-inline void MailSummary::set_expire_ms(::uint64_t value) {
+inline void MailView::set_expire_ms(::uint64_t value) {
   _internal_set_expire_ms(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00000080U);
-  // @@protoc_insertion_point(field_set:mailpb.MailSummary.expire_ms)
+  SetHasBit(_impl_._has_bits_[0], 0x00000100U);
+  // @@protoc_insertion_point(field_set:mailpb.MailView.expire_ms)
 }
-inline ::uint64_t MailSummary::_internal_expire_ms() const {
+inline ::uint64_t MailView::_internal_expire_ms() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
   return _impl_.expire_ms_;
 }
-inline void MailSummary::_internal_set_expire_ms(::uint64_t value) {
+inline void MailView::_internal_set_expire_ms(::uint64_t value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.expire_ms_ = value;
 }
 
-// bool read = 7;
-inline void MailSummary::clear_read() {
+// bool is_read = 7;
+inline void MailView::clear_is_read() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.read_ = false;
-  ClearHasBit(_impl_._has_bits_[0], 0x00000020U);
+  _impl_.is_read_ = false;
+  ClearHasBit(_impl_._has_bits_[0], 0x00000040U);
 }
-inline bool MailSummary::read() const {
-  // @@protoc_insertion_point(field_get:mailpb.MailSummary.read)
-  return _internal_read();
+inline bool MailView::is_read() const {
+  // @@protoc_insertion_point(field_get:mailpb.MailView.is_read)
+  return _internal_is_read();
 }
-inline void MailSummary::set_read(bool value) {
-  _internal_set_read(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00000020U);
-  // @@protoc_insertion_point(field_set:mailpb.MailSummary.read)
+inline void MailView::set_is_read(bool value) {
+  _internal_set_is_read(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000040U);
+  // @@protoc_insertion_point(field_set:mailpb.MailView.is_read)
 }
-inline bool MailSummary::_internal_read() const {
+inline bool MailView::_internal_is_read() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
-  return _impl_.read_;
+  return _impl_.is_read_;
 }
-inline void MailSummary::_internal_set_read(bool value) {
+inline void MailView::_internal_set_is_read(bool value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.read_ = value;
+  _impl_.is_read_ = value;
 }
 
 // .mailpb.MailClaimState claim_state = 8;
-inline void MailSummary::clear_claim_state() {
+inline void MailView::clear_claim_state() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.claim_state_ = 0;
-  ClearHasBit(_impl_._has_bits_[0], 0x00000100U);
+  ClearHasBit(_impl_._has_bits_[0], 0x00000400U);
 }
-inline ::mailpb::MailClaimState MailSummary::claim_state() const {
-  // @@protoc_insertion_point(field_get:mailpb.MailSummary.claim_state)
+inline ::mailpb::MailClaimState MailView::claim_state() const {
+  // @@protoc_insertion_point(field_get:mailpb.MailView.claim_state)
   return _internal_claim_state();
 }
-inline void MailSummary::set_claim_state(::mailpb::MailClaimState value) {
+inline void MailView::set_claim_state(::mailpb::MailClaimState value) {
   _internal_set_claim_state(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00000100U);
-  // @@protoc_insertion_point(field_set:mailpb.MailSummary.claim_state)
+  SetHasBit(_impl_._has_bits_[0], 0x00000400U);
+  // @@protoc_insertion_point(field_set:mailpb.MailView.claim_state)
 }
-inline ::mailpb::MailClaimState MailSummary::_internal_claim_state() const {
+inline ::mailpb::MailClaimState MailView::_internal_claim_state() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
   return static_cast<::mailpb::MailClaimState>(_impl_.claim_state_);
 }
-inline void MailSummary::_internal_set_claim_state(::mailpb::MailClaimState value) {
+inline void MailView::_internal_set_claim_state(::mailpb::MailClaimState value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.claim_state_ = value;
 }
 
 // .mailpb.MailAttachments attachments = 9;
-inline bool MailSummary::has_attachments() const {
+inline bool MailView::has_attachments() const {
   bool value = CheckHasBit(_impl_._has_bits_[0], 0x00000004U);
   PROTOBUF_ASSUME(!value || _impl_.attachments_ != nullptr);
   return value;
 }
-inline void MailSummary::clear_attachments() {
+inline void MailView::clear_attachments() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   if (_impl_.attachments_ != nullptr) _impl_.attachments_->Clear();
   ClearHasBit(_impl_._has_bits_[0], 0x00000004U);
 }
-inline const ::mailpb::MailAttachments& MailSummary::_internal_attachments() const {
+inline const ::mailpb::MailAttachments& MailView::_internal_attachments() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
   const ::mailpb::MailAttachments* p = _impl_.attachments_;
   return p != nullptr ? *p : *::google::protobuf::internal::MessageGlobalsBase::ToDefaultInstance<::mailpb::MailAttachments>(&::mailpb::MailAttachments_globals_);
 }
-inline const ::mailpb::MailAttachments& MailSummary::attachments() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_get:mailpb.MailSummary.attachments)
+inline const ::mailpb::MailAttachments& MailView::attachments() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:mailpb.MailView.attachments)
   return _internal_attachments();
 }
-inline void MailSummary::unsafe_arena_set_allocated_attachments(
+inline void MailView::unsafe_arena_set_allocated_attachments(
     ::mailpb::MailAttachments* PROTOBUF_NULLABLE value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   if (GetArena() == nullptr) {
@@ -4242,9 +4496,9 @@ inline void MailSummary::unsafe_arena_set_allocated_attachments(
   } else {
     ClearHasBit(_impl_._has_bits_[0], 0x00000004U);
   }
-  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:mailpb.MailSummary.attachments)
+  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:mailpb.MailView.attachments)
 }
-inline ::mailpb::MailAttachments* PROTOBUF_NULLABLE MailSummary::release_attachments() {
+inline ::mailpb::MailAttachments* PROTOBUF_NULLABLE MailView::release_attachments() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
 
   ClearHasBit(_impl_._has_bits_[0], 0x00000004U);
@@ -4263,16 +4517,16 @@ inline ::mailpb::MailAttachments* PROTOBUF_NULLABLE MailSummary::release_attachm
   }
   return released;
 }
-inline ::mailpb::MailAttachments* PROTOBUF_NULLABLE MailSummary::unsafe_arena_release_attachments() {
+inline ::mailpb::MailAttachments* PROTOBUF_NULLABLE MailView::unsafe_arena_release_attachments() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  // @@protoc_insertion_point(field_release:mailpb.MailSummary.attachments)
+  // @@protoc_insertion_point(field_release:mailpb.MailView.attachments)
 
   ClearHasBit(_impl_._has_bits_[0], 0x00000004U);
   ::mailpb::MailAttachments* temp = _impl_.attachments_;
   _impl_.attachments_ = nullptr;
   return temp;
 }
-inline ::mailpb::MailAttachments* PROTOBUF_NONNULL MailSummary::_internal_mutable_attachments() {
+inline ::mailpb::MailAttachments* PROTOBUF_NONNULL MailView::_internal_mutable_attachments() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   if (_impl_.attachments_ == nullptr) {
     auto* p = ::google::protobuf::Message::DefaultConstruct<::mailpb::MailAttachments>(GetArena());
@@ -4280,14 +4534,14 @@ inline ::mailpb::MailAttachments* PROTOBUF_NONNULL MailSummary::_internal_mutabl
   }
   return _impl_.attachments_;
 }
-inline ::mailpb::MailAttachments* PROTOBUF_NONNULL MailSummary::mutable_attachments()
+inline ::mailpb::MailAttachments* PROTOBUF_NONNULL MailView::mutable_attachments()
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
   SetHasBit(_impl_._has_bits_[0], 0x00000004U);
   ::mailpb::MailAttachments* _msg = _internal_mutable_attachments();
-  // @@protoc_insertion_point(field_mutable:mailpb.MailSummary.attachments)
+  // @@protoc_insertion_point(field_mutable:mailpb.MailView.attachments)
   return _msg;
 }
-inline void MailSummary::set_allocated_attachments(::mailpb::MailAttachments* PROTOBUF_NULLABLE value) {
+inline void MailView::set_allocated_attachments(::mailpb::MailAttachments* PROTOBUF_NULLABLE value) {
   ::google::protobuf::Arena* message_arena = GetArena();
   ::google::protobuf::internal::TSanWrite(&_impl_);
   if (message_arena == nullptr) {
@@ -4305,7 +4559,124 @@ inline void MailSummary::set_allocated_attachments(::mailpb::MailAttachments* PR
   }
 
   _impl_.attachments_ = reinterpret_cast<::mailpb::MailAttachments*>(value);
-  // @@protoc_insertion_point(field_set_allocated:mailpb.MailSummary.attachments)
+  // @@protoc_insertion_point(field_set_allocated:mailpb.MailView.attachments)
+}
+
+// uint64 asset_op_id = 10;
+inline void MailView::clear_asset_op_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.asset_op_id_ = ::uint64_t{0u};
+  ClearHasBit(_impl_._has_bits_[0], 0x00000200U);
+}
+inline ::uint64_t MailView::asset_op_id() const {
+  // @@protoc_insertion_point(field_get:mailpb.MailView.asset_op_id)
+  return _internal_asset_op_id();
+}
+inline void MailView::set_asset_op_id(::uint64_t value) {
+  _internal_set_asset_op_id(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000200U);
+  // @@protoc_insertion_point(field_set:mailpb.MailView.asset_op_id)
+}
+inline ::uint64_t MailView::_internal_asset_op_id() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.asset_op_id_;
+}
+inline void MailView::_internal_set_asset_op_id(::uint64_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.asset_op_id_ = value;
+}
+
+// .TipInfoMessage claim_reason = 11;
+inline bool MailView::has_claim_reason() const {
+  bool value = CheckHasBit(_impl_._has_bits_[0], 0x00000008U);
+  PROTOBUF_ASSUME(!value || _impl_.claim_reason_ != nullptr);
+  return value;
+}
+inline const ::TipInfoMessage& MailView::_internal_claim_reason() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  const ::TipInfoMessage* p = _impl_.claim_reason_;
+  return p != nullptr ? *p : *::google::protobuf::internal::MessageGlobalsBase::ToDefaultInstance<::TipInfoMessage>(&::TipInfoMessage_globals_);
+}
+inline const ::TipInfoMessage& MailView::claim_reason() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:mailpb.MailView.claim_reason)
+  return _internal_claim_reason();
+}
+inline void MailView::unsafe_arena_set_allocated_claim_reason(
+    ::TipInfoMessage* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (GetArena() == nullptr) {
+    delete reinterpret_cast<::google::protobuf::MessageLite*>(_impl_.claim_reason_);
+  }
+  _impl_.claim_reason_ = reinterpret_cast<::TipInfoMessage*>(value);
+  if (value != nullptr) {
+    SetHasBit(_impl_._has_bits_[0], 0x00000008U);
+  } else {
+    ClearHasBit(_impl_._has_bits_[0], 0x00000008U);
+  }
+  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:mailpb.MailView.claim_reason)
+}
+inline ::TipInfoMessage* PROTOBUF_NULLABLE MailView::release_claim_reason() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+
+  ClearHasBit(_impl_._has_bits_[0], 0x00000008U);
+  ::TipInfoMessage* released = _impl_.claim_reason_;
+  _impl_.claim_reason_ = nullptr;
+  if (::google::protobuf::internal::DebugHardenForceCopyInRelease()) {
+    auto* old = reinterpret_cast<::google::protobuf::MessageLite*>(released);
+    released = ::google::protobuf::internal::DuplicateIfNonNull(released);
+    if (GetArena() == nullptr) {
+      delete old;
+    }
+  } else {
+    if (GetArena() != nullptr) {
+      released = ::google::protobuf::internal::DuplicateIfNonNull(released);
+    }
+  }
+  return released;
+}
+inline ::TipInfoMessage* PROTOBUF_NULLABLE MailView::unsafe_arena_release_claim_reason() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:mailpb.MailView.claim_reason)
+
+  ClearHasBit(_impl_._has_bits_[0], 0x00000008U);
+  ::TipInfoMessage* temp = _impl_.claim_reason_;
+  _impl_.claim_reason_ = nullptr;
+  return temp;
+}
+inline ::TipInfoMessage* PROTOBUF_NONNULL MailView::_internal_mutable_claim_reason() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (_impl_.claim_reason_ == nullptr) {
+    auto* p = ::google::protobuf::Message::DefaultConstruct<::TipInfoMessage>(GetArena());
+    _impl_.claim_reason_ = reinterpret_cast<::TipInfoMessage*>(p);
+  }
+  return _impl_.claim_reason_;
+}
+inline ::TipInfoMessage* PROTOBUF_NONNULL MailView::mutable_claim_reason()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  SetHasBit(_impl_._has_bits_[0], 0x00000008U);
+  ::TipInfoMessage* _msg = _internal_mutable_claim_reason();
+  // @@protoc_insertion_point(field_mutable:mailpb.MailView.claim_reason)
+  return _msg;
+}
+inline void MailView::set_allocated_claim_reason(::TipInfoMessage* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::Arena* message_arena = GetArena();
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (message_arena == nullptr) {
+    delete reinterpret_cast<::google::protobuf::MessageLite*>(_impl_.claim_reason_);
+  }
+
+  if (value != nullptr) {
+    ::google::protobuf::Arena* submessage_arena = reinterpret_cast<::google::protobuf::Message*>(value)->GetArena();
+    if (message_arena != submessage_arena) {
+      value = ::google::protobuf::internal::GetOwnedMessage(message_arena, value, submessage_arena);
+    }
+    SetHasBit(_impl_._has_bits_[0], 0x00000008U);
+  } else {
+    ClearHasBit(_impl_._has_bits_[0], 0x00000008U);
+  }
+
+  _impl_.claim_reason_ = reinterpret_cast<::TipInfoMessage*>(value);
+  // @@protoc_insertion_point(field_set_allocated:mailpb.MailView.claim_reason)
 }
 
 // -------------------------------------------------------------------
@@ -4336,28 +4707,28 @@ inline void ListMailsRequest::_internal_set_before_mail_id(::uint64_t value) {
   _impl_.before_mail_id_ = value;
 }
 
-// uint32 page_size = 2;
-inline void ListMailsRequest::clear_page_size() {
+// uint32 limit = 2;
+inline void ListMailsRequest::clear_limit() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.page_size_ = 0u;
+  _impl_.limit_ = 0u;
   ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
 }
-inline ::uint32_t ListMailsRequest::page_size() const {
-  // @@protoc_insertion_point(field_get:mailpb.ListMailsRequest.page_size)
-  return _internal_page_size();
+inline ::uint32_t ListMailsRequest::limit() const {
+  // @@protoc_insertion_point(field_get:mailpb.ListMailsRequest.limit)
+  return _internal_limit();
 }
-inline void ListMailsRequest::set_page_size(::uint32_t value) {
-  _internal_set_page_size(value);
+inline void ListMailsRequest::set_limit(::uint32_t value) {
+  _internal_set_limit(value);
   SetHasBit(_impl_._has_bits_[0], 0x00000002U);
-  // @@protoc_insertion_point(field_set:mailpb.ListMailsRequest.page_size)
+  // @@protoc_insertion_point(field_set:mailpb.ListMailsRequest.limit)
 }
-inline ::uint32_t ListMailsRequest::_internal_page_size() const {
+inline ::uint32_t ListMailsRequest::_internal_limit() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
-  return _impl_.page_size_;
+  return _impl_.limit_;
 }
-inline void ListMailsRequest::_internal_set_page_size(::uint32_t value) {
+inline void ListMailsRequest::_internal_set_limit(::uint32_t value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.page_size_ = value;
+  _impl_.limit_ = value;
 }
 
 // -------------------------------------------------------------------
@@ -4457,7 +4828,7 @@ inline void ListMailsResponse::set_allocated_error_message(::TipInfoMessage* PRO
   // @@protoc_insertion_point(field_set_allocated:mailpb.ListMailsResponse.error_message)
 }
 
-// repeated .mailpb.MailSummary mails = 2;
+// repeated .mailpb.MailView mails = 2;
 inline int ListMailsResponse::_internal_mails_size() const {
   return _internal_mails().size();
 }
@@ -4469,71 +4840,71 @@ inline void ListMailsResponse::clear_mails() {
   _impl_.mails_.Clear();
   ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
 }
-inline const ::mailpb::MailSummary& ListMailsResponse::mails(int index) const
+inline const ::mailpb::MailView& ListMailsResponse::mails(int index) const
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
   // @@protoc_insertion_point(field_get:mailpb.ListMailsResponse.mails)
   return _internal_mails().Get(index);
 }
-inline ::mailpb::MailSummary* PROTOBUF_NONNULL ListMailsResponse::mutable_mails(int index)
+inline ::mailpb::MailView* PROTOBUF_NONNULL ListMailsResponse::mutable_mails(int index)
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
   // @@protoc_insertion_point(field_mutable:mailpb.ListMailsResponse.mails)
   return _internal_mutable_mails()->Mutable(index);
 }
-inline ::mailpb::MailSummary* PROTOBUF_NONNULL ListMailsResponse::add_mails()
+inline ::mailpb::MailView* PROTOBUF_NONNULL ListMailsResponse::add_mails()
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  ::mailpb::MailSummary* _add =
+  ::mailpb::MailView* _add =
       _internal_mutable_mails()->InternalAddWithArena(
           ::google::protobuf::MessageLite::internal_visibility(), GetArena());
   SetHasBit(_impl_._has_bits_[0], 0x00000001U);
   // @@protoc_insertion_point(field_add:mailpb.ListMailsResponse.mails)
   return _add;
 }
-inline const ::google::protobuf::RepeatedPtrField<::mailpb::MailSummary>& ListMailsResponse::mails() const
+inline const ::google::protobuf::RepeatedPtrField<::mailpb::MailView>& ListMailsResponse::mails() const
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
   // @@protoc_insertion_point(field_list:mailpb.ListMailsResponse.mails)
   return _internal_mails();
 }
-inline ::google::protobuf::RepeatedPtrField<::mailpb::MailSummary>* PROTOBUF_NONNULL
+inline ::google::protobuf::RepeatedPtrField<::mailpb::MailView>* PROTOBUF_NONNULL
 ListMailsResponse::mutable_mails() ABSL_ATTRIBUTE_LIFETIME_BOUND {
   SetHasBit(_impl_._has_bits_[0], 0x00000001U);
   // @@protoc_insertion_point(field_mutable_list:mailpb.ListMailsResponse.mails)
   ::google::protobuf::internal::TSanWrite(&_impl_);
   return _internal_mutable_mails();
 }
-inline const ::google::protobuf::RepeatedPtrField<::mailpb::MailSummary>&
+inline const ::google::protobuf::RepeatedPtrField<::mailpb::MailView>&
 ListMailsResponse::_internal_mails() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
   return _impl_.mails_;
 }
-inline ::google::protobuf::RepeatedPtrField<::mailpb::MailSummary>* PROTOBUF_NONNULL
+inline ::google::protobuf::RepeatedPtrField<::mailpb::MailView>* PROTOBUF_NONNULL
 ListMailsResponse::_internal_mutable_mails() {
   ::google::protobuf::internal::TSanRead(&_impl_);
   return &_impl_.mails_;
 }
 
-// bool has_more = 3;
-inline void ListMailsResponse::clear_has_more() {
+// uint64 next_before_mail_id = 3;
+inline void ListMailsResponse::clear_next_before_mail_id() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.has_more_ = false;
+  _impl_.next_before_mail_id_ = ::uint64_t{0u};
   ClearHasBit(_impl_._has_bits_[0], 0x00000004U);
 }
-inline bool ListMailsResponse::has_more() const {
-  // @@protoc_insertion_point(field_get:mailpb.ListMailsResponse.has_more)
-  return _internal_has_more();
+inline ::uint64_t ListMailsResponse::next_before_mail_id() const {
+  // @@protoc_insertion_point(field_get:mailpb.ListMailsResponse.next_before_mail_id)
+  return _internal_next_before_mail_id();
 }
-inline void ListMailsResponse::set_has_more(bool value) {
-  _internal_set_has_more(value);
+inline void ListMailsResponse::set_next_before_mail_id(::uint64_t value) {
+  _internal_set_next_before_mail_id(value);
   SetHasBit(_impl_._has_bits_[0], 0x00000004U);
-  // @@protoc_insertion_point(field_set:mailpb.ListMailsResponse.has_more)
+  // @@protoc_insertion_point(field_set:mailpb.ListMailsResponse.next_before_mail_id)
 }
-inline bool ListMailsResponse::_internal_has_more() const {
+inline ::uint64_t ListMailsResponse::_internal_next_before_mail_id() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
-  return _impl_.has_more_;
+  return _impl_.next_before_mail_id_;
 }
-inline void ListMailsResponse::_internal_set_has_more(bool value) {
+inline void ListMailsResponse::_internal_set_next_before_mail_id(::uint64_t value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.has_more_ = value;
+  _impl_.next_before_mail_id_ = value;
 }
 
 // uint32 unread_count = 4;
@@ -4564,7 +4935,7 @@ inline void ListMailsResponse::_internal_set_unread_count(::uint32_t value) {
 inline void ListMailsResponse::clear_claimable_count() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.claimable_count_ = 0u;
-  ClearHasBit(_impl_._has_bits_[0], 0x00000020U);
+  ClearHasBit(_impl_._has_bits_[0], 0x00000010U);
 }
 inline ::uint32_t ListMailsResponse::claimable_count() const {
   // @@protoc_insertion_point(field_get:mailpb.ListMailsResponse.claimable_count)
@@ -4572,7 +4943,7 @@ inline ::uint32_t ListMailsResponse::claimable_count() const {
 }
 inline void ListMailsResponse::set_claimable_count(::uint32_t value) {
   _internal_set_claimable_count(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00000020U);
+  SetHasBit(_impl_._has_bits_[0], 0x00000010U);
   // @@protoc_insertion_point(field_set:mailpb.ListMailsResponse.claimable_count)
 }
 inline ::uint32_t ListMailsResponse::_internal_claimable_count() const {
@@ -4588,7 +4959,7 @@ inline void ListMailsResponse::_internal_set_claimable_count(::uint32_t value) {
 inline void ListMailsResponse::clear_server_now_ms() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.server_now_ms_ = ::uint64_t{0u};
-  ClearHasBit(_impl_._has_bits_[0], 0x00000010U);
+  ClearHasBit(_impl_._has_bits_[0], 0x00000020U);
 }
 inline ::uint64_t ListMailsResponse::server_now_ms() const {
   // @@protoc_insertion_point(field_get:mailpb.ListMailsResponse.server_now_ms)
@@ -4596,7 +4967,7 @@ inline ::uint64_t ListMailsResponse::server_now_ms() const {
 }
 inline void ListMailsResponse::set_server_now_ms(::uint64_t value) {
   _internal_set_server_now_ms(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00000010U);
+  SetHasBit(_impl_._has_bits_[0], 0x00000020U);
   // @@protoc_insertion_point(field_set:mailpb.ListMailsResponse.server_now_ms)
 }
 inline ::uint64_t ListMailsResponse::_internal_server_now_ms() const {
@@ -4642,7 +5013,7 @@ inline void ReadMailRequest::_internal_set_mail_id(::uint64_t value) {
 
 // .TipInfoMessage error_message = 1;
 inline bool ReadMailResponse::has_error_message() const {
-  bool value = CheckHasBit(_impl_._has_bits_[0], 0x00000002U);
+  bool value = CheckHasBit(_impl_._has_bits_[0], 0x00000001U);
   PROTOBUF_ASSUME(!value || _impl_.error_message_ != nullptr);
   return value;
 }
@@ -4663,16 +5034,16 @@ inline void ReadMailResponse::unsafe_arena_set_allocated_error_message(
   }
   _impl_.error_message_ = reinterpret_cast<::TipInfoMessage*>(value);
   if (value != nullptr) {
-    SetHasBit(_impl_._has_bits_[0], 0x00000002U);
+    SetHasBit(_impl_._has_bits_[0], 0x00000001U);
   } else {
-    ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
+    ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
   }
   // @@protoc_insertion_point(field_unsafe_arena_set_allocated:mailpb.ReadMailResponse.error_message)
 }
 inline ::TipInfoMessage* PROTOBUF_NULLABLE ReadMailResponse::release_error_message() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
 
-  ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
+  ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
   ::TipInfoMessage* released = _impl_.error_message_;
   _impl_.error_message_ = nullptr;
   if (::google::protobuf::internal::DebugHardenForceCopyInRelease()) {
@@ -4692,7 +5063,7 @@ inline ::TipInfoMessage* PROTOBUF_NULLABLE ReadMailResponse::unsafe_arena_releas
   ::google::protobuf::internal::TSanWrite(&_impl_);
   // @@protoc_insertion_point(field_release:mailpb.ReadMailResponse.error_message)
 
-  ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
+  ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
   ::TipInfoMessage* temp = _impl_.error_message_;
   _impl_.error_message_ = nullptr;
   return temp;
@@ -4707,12 +5078,431 @@ inline ::TipInfoMessage* PROTOBUF_NONNULL ReadMailResponse::_internal_mutable_er
 }
 inline ::TipInfoMessage* PROTOBUF_NONNULL ReadMailResponse::mutable_error_message()
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  SetHasBit(_impl_._has_bits_[0], 0x00000002U);
+  SetHasBit(_impl_._has_bits_[0], 0x00000001U);
   ::TipInfoMessage* _msg = _internal_mutable_error_message();
   // @@protoc_insertion_point(field_mutable:mailpb.ReadMailResponse.error_message)
   return _msg;
 }
 inline void ReadMailResponse::set_allocated_error_message(::TipInfoMessage* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::Arena* message_arena = GetArena();
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (message_arena == nullptr) {
+    delete reinterpret_cast<::google::protobuf::MessageLite*>(_impl_.error_message_);
+  }
+
+  if (value != nullptr) {
+    ::google::protobuf::Arena* submessage_arena = reinterpret_cast<::google::protobuf::Message*>(value)->GetArena();
+    if (message_arena != submessage_arena) {
+      value = ::google::protobuf::internal::GetOwnedMessage(message_arena, value, submessage_arena);
+    }
+    SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  } else {
+    ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
+  }
+
+  _impl_.error_message_ = reinterpret_cast<::TipInfoMessage*>(value);
+  // @@protoc_insertion_point(field_set_allocated:mailpb.ReadMailResponse.error_message)
+}
+
+// .mailpb.MailView mail = 2;
+inline bool ReadMailResponse::has_mail() const {
+  bool value = CheckHasBit(_impl_._has_bits_[0], 0x00000002U);
+  PROTOBUF_ASSUME(!value || _impl_.mail_ != nullptr);
+  return value;
+}
+inline void ReadMailResponse::clear_mail() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (_impl_.mail_ != nullptr) _impl_.mail_->Clear();
+  ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
+}
+inline const ::mailpb::MailView& ReadMailResponse::_internal_mail() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  const ::mailpb::MailView* p = _impl_.mail_;
+  return p != nullptr ? *p : *::google::protobuf::internal::MessageGlobalsBase::ToDefaultInstance<::mailpb::MailView>(&::mailpb::MailView_globals_);
+}
+inline const ::mailpb::MailView& ReadMailResponse::mail() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:mailpb.ReadMailResponse.mail)
+  return _internal_mail();
+}
+inline void ReadMailResponse::unsafe_arena_set_allocated_mail(
+    ::mailpb::MailView* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (GetArena() == nullptr) {
+    delete reinterpret_cast<::google::protobuf::MessageLite*>(_impl_.mail_);
+  }
+  _impl_.mail_ = reinterpret_cast<::mailpb::MailView*>(value);
+  if (value != nullptr) {
+    SetHasBit(_impl_._has_bits_[0], 0x00000002U);
+  } else {
+    ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
+  }
+  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:mailpb.ReadMailResponse.mail)
+}
+inline ::mailpb::MailView* PROTOBUF_NULLABLE ReadMailResponse::release_mail() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+
+  ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
+  ::mailpb::MailView* released = _impl_.mail_;
+  _impl_.mail_ = nullptr;
+  if (::google::protobuf::internal::DebugHardenForceCopyInRelease()) {
+    auto* old = reinterpret_cast<::google::protobuf::MessageLite*>(released);
+    released = ::google::protobuf::internal::DuplicateIfNonNull(released);
+    if (GetArena() == nullptr) {
+      delete old;
+    }
+  } else {
+    if (GetArena() != nullptr) {
+      released = ::google::protobuf::internal::DuplicateIfNonNull(released);
+    }
+  }
+  return released;
+}
+inline ::mailpb::MailView* PROTOBUF_NULLABLE ReadMailResponse::unsafe_arena_release_mail() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:mailpb.ReadMailResponse.mail)
+
+  ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
+  ::mailpb::MailView* temp = _impl_.mail_;
+  _impl_.mail_ = nullptr;
+  return temp;
+}
+inline ::mailpb::MailView* PROTOBUF_NONNULL ReadMailResponse::_internal_mutable_mail() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (_impl_.mail_ == nullptr) {
+    auto* p = ::google::protobuf::Message::DefaultConstruct<::mailpb::MailView>(GetArena());
+    _impl_.mail_ = reinterpret_cast<::mailpb::MailView*>(p);
+  }
+  return _impl_.mail_;
+}
+inline ::mailpb::MailView* PROTOBUF_NONNULL ReadMailResponse::mutable_mail()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  SetHasBit(_impl_._has_bits_[0], 0x00000002U);
+  ::mailpb::MailView* _msg = _internal_mutable_mail();
+  // @@protoc_insertion_point(field_mutable:mailpb.ReadMailResponse.mail)
+  return _msg;
+}
+inline void ReadMailResponse::set_allocated_mail(::mailpb::MailView* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::Arena* message_arena = GetArena();
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (message_arena == nullptr) {
+    delete reinterpret_cast<::google::protobuf::MessageLite*>(_impl_.mail_);
+  }
+
+  if (value != nullptr) {
+    ::google::protobuf::Arena* submessage_arena = value->GetArena();
+    if (message_arena != submessage_arena) {
+      value = ::google::protobuf::internal::GetOwnedMessage(message_arena, value, submessage_arena);
+    }
+    SetHasBit(_impl_._has_bits_[0], 0x00000002U);
+  } else {
+    ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
+  }
+
+  _impl_.mail_ = reinterpret_cast<::mailpb::MailView*>(value);
+  // @@protoc_insertion_point(field_set_allocated:mailpb.ReadMailResponse.mail)
+}
+
+// -------------------------------------------------------------------
+
+// ClaimMailAttachmentsRequest
+
+// repeated uint64 mail_ids = 1;
+inline int ClaimMailAttachmentsRequest::_internal_mail_ids_size() const {
+  return _internal_mail_ids().size();
+}
+inline int ClaimMailAttachmentsRequest::mail_ids_size() const {
+  return _internal_mail_ids_size();
+}
+inline void ClaimMailAttachmentsRequest::clear_mail_ids() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.mail_ids_.Clear();
+  ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
+}
+inline ::uint64_t ClaimMailAttachmentsRequest::mail_ids(int index) const {
+  // @@protoc_insertion_point(field_get:mailpb.ClaimMailAttachmentsRequest.mail_ids)
+  return _internal_mail_ids().Get(index);
+}
+inline void ClaimMailAttachmentsRequest::set_mail_ids(int index, ::uint64_t value) {
+  _internal_mutable_mail_ids()->Set(index, value);
+  // @@protoc_insertion_point(field_set:mailpb.ClaimMailAttachmentsRequest.mail_ids)
+}
+inline void ClaimMailAttachmentsRequest::add_mail_ids(::uint64_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _internal_mutable_mail_ids()
+      ->InternalAddWithArena<const ::google::protobuf::MessageLite*>(
+          internal_visibility(), this, value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  // @@protoc_insertion_point(field_add:mailpb.ClaimMailAttachmentsRequest.mail_ids)
+}
+inline const ::google::protobuf::RepeatedField<::uint64_t>& ClaimMailAttachmentsRequest::mail_ids() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_list:mailpb.ClaimMailAttachmentsRequest.mail_ids)
+  return _internal_mail_ids();
+}
+inline ::google::protobuf::RepeatedField<::uint64_t>* PROTOBUF_NONNULL ClaimMailAttachmentsRequest::mutable_mail_ids()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  // @@protoc_insertion_point(field_mutable_list:mailpb.ClaimMailAttachmentsRequest.mail_ids)
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  return _internal_mutable_mail_ids();
+}
+inline const ::google::protobuf::RepeatedField<::uint64_t>&
+ClaimMailAttachmentsRequest::_internal_mail_ids() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.mail_ids_;
+}
+inline ::google::protobuf::RepeatedField<::uint64_t>* PROTOBUF_NONNULL
+ClaimMailAttachmentsRequest::_internal_mutable_mail_ids() {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return &_impl_.mail_ids_;
+}
+
+// -------------------------------------------------------------------
+
+// MailActionResult
+
+// uint64 mail_id = 1;
+inline void MailActionResult::clear_mail_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.mail_id_ = ::uint64_t{0u};
+  ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
+}
+inline ::uint64_t MailActionResult::mail_id() const {
+  // @@protoc_insertion_point(field_get:mailpb.MailActionResult.mail_id)
+  return _internal_mail_id();
+}
+inline void MailActionResult::set_mail_id(::uint64_t value) {
+  _internal_set_mail_id(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000002U);
+  // @@protoc_insertion_point(field_set:mailpb.MailActionResult.mail_id)
+}
+inline ::uint64_t MailActionResult::_internal_mail_id() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.mail_id_;
+}
+inline void MailActionResult::_internal_set_mail_id(::uint64_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.mail_id_ = value;
+}
+
+// .TipInfoMessage error_message = 2;
+inline bool MailActionResult::has_error_message() const {
+  bool value = CheckHasBit(_impl_._has_bits_[0], 0x00000001U);
+  PROTOBUF_ASSUME(!value || _impl_.error_message_ != nullptr);
+  return value;
+}
+inline const ::TipInfoMessage& MailActionResult::_internal_error_message() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  const ::TipInfoMessage* p = _impl_.error_message_;
+  return p != nullptr ? *p : *::google::protobuf::internal::MessageGlobalsBase::ToDefaultInstance<::TipInfoMessage>(&::TipInfoMessage_globals_);
+}
+inline const ::TipInfoMessage& MailActionResult::error_message() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:mailpb.MailActionResult.error_message)
+  return _internal_error_message();
+}
+inline void MailActionResult::unsafe_arena_set_allocated_error_message(
+    ::TipInfoMessage* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (GetArena() == nullptr) {
+    delete reinterpret_cast<::google::protobuf::MessageLite*>(_impl_.error_message_);
+  }
+  _impl_.error_message_ = reinterpret_cast<::TipInfoMessage*>(value);
+  if (value != nullptr) {
+    SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  } else {
+    ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
+  }
+  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:mailpb.MailActionResult.error_message)
+}
+inline ::TipInfoMessage* PROTOBUF_NULLABLE MailActionResult::release_error_message() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+
+  ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
+  ::TipInfoMessage* released = _impl_.error_message_;
+  _impl_.error_message_ = nullptr;
+  if (::google::protobuf::internal::DebugHardenForceCopyInRelease()) {
+    auto* old = reinterpret_cast<::google::protobuf::MessageLite*>(released);
+    released = ::google::protobuf::internal::DuplicateIfNonNull(released);
+    if (GetArena() == nullptr) {
+      delete old;
+    }
+  } else {
+    if (GetArena() != nullptr) {
+      released = ::google::protobuf::internal::DuplicateIfNonNull(released);
+    }
+  }
+  return released;
+}
+inline ::TipInfoMessage* PROTOBUF_NULLABLE MailActionResult::unsafe_arena_release_error_message() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:mailpb.MailActionResult.error_message)
+
+  ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
+  ::TipInfoMessage* temp = _impl_.error_message_;
+  _impl_.error_message_ = nullptr;
+  return temp;
+}
+inline ::TipInfoMessage* PROTOBUF_NONNULL MailActionResult::_internal_mutable_error_message() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (_impl_.error_message_ == nullptr) {
+    auto* p = ::google::protobuf::Message::DefaultConstruct<::TipInfoMessage>(GetArena());
+    _impl_.error_message_ = reinterpret_cast<::TipInfoMessage*>(p);
+  }
+  return _impl_.error_message_;
+}
+inline ::TipInfoMessage* PROTOBUF_NONNULL MailActionResult::mutable_error_message()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  ::TipInfoMessage* _msg = _internal_mutable_error_message();
+  // @@protoc_insertion_point(field_mutable:mailpb.MailActionResult.error_message)
+  return _msg;
+}
+inline void MailActionResult::set_allocated_error_message(::TipInfoMessage* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::Arena* message_arena = GetArena();
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (message_arena == nullptr) {
+    delete reinterpret_cast<::google::protobuf::MessageLite*>(_impl_.error_message_);
+  }
+
+  if (value != nullptr) {
+    ::google::protobuf::Arena* submessage_arena = reinterpret_cast<::google::protobuf::Message*>(value)->GetArena();
+    if (message_arena != submessage_arena) {
+      value = ::google::protobuf::internal::GetOwnedMessage(message_arena, value, submessage_arena);
+    }
+    SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  } else {
+    ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
+  }
+
+  _impl_.error_message_ = reinterpret_cast<::TipInfoMessage*>(value);
+  // @@protoc_insertion_point(field_set_allocated:mailpb.MailActionResult.error_message)
+}
+
+// .mailpb.MailClaimState claim_state = 3;
+inline void MailActionResult::clear_claim_state() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.claim_state_ = 0;
+  ClearHasBit(_impl_._has_bits_[0], 0x00000008U);
+}
+inline ::mailpb::MailClaimState MailActionResult::claim_state() const {
+  // @@protoc_insertion_point(field_get:mailpb.MailActionResult.claim_state)
+  return _internal_claim_state();
+}
+inline void MailActionResult::set_claim_state(::mailpb::MailClaimState value) {
+  _internal_set_claim_state(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000008U);
+  // @@protoc_insertion_point(field_set:mailpb.MailActionResult.claim_state)
+}
+inline ::mailpb::MailClaimState MailActionResult::_internal_claim_state() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return static_cast<::mailpb::MailClaimState>(_impl_.claim_state_);
+}
+inline void MailActionResult::_internal_set_claim_state(::mailpb::MailClaimState value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.claim_state_ = value;
+}
+
+// uint64 asset_op_id = 4;
+inline void MailActionResult::clear_asset_op_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.asset_op_id_ = ::uint64_t{0u};
+  ClearHasBit(_impl_._has_bits_[0], 0x00000004U);
+}
+inline ::uint64_t MailActionResult::asset_op_id() const {
+  // @@protoc_insertion_point(field_get:mailpb.MailActionResult.asset_op_id)
+  return _internal_asset_op_id();
+}
+inline void MailActionResult::set_asset_op_id(::uint64_t value) {
+  _internal_set_asset_op_id(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000004U);
+  // @@protoc_insertion_point(field_set:mailpb.MailActionResult.asset_op_id)
+}
+inline ::uint64_t MailActionResult::_internal_asset_op_id() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.asset_op_id_;
+}
+inline void MailActionResult::_internal_set_asset_op_id(::uint64_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.asset_op_id_ = value;
+}
+
+// -------------------------------------------------------------------
+
+// ClaimMailAttachmentsResponse
+
+// .TipInfoMessage error_message = 1;
+inline bool ClaimMailAttachmentsResponse::has_error_message() const {
+  bool value = CheckHasBit(_impl_._has_bits_[0], 0x00000002U);
+  PROTOBUF_ASSUME(!value || _impl_.error_message_ != nullptr);
+  return value;
+}
+inline const ::TipInfoMessage& ClaimMailAttachmentsResponse::_internal_error_message() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  const ::TipInfoMessage* p = _impl_.error_message_;
+  return p != nullptr ? *p : *::google::protobuf::internal::MessageGlobalsBase::ToDefaultInstance<::TipInfoMessage>(&::TipInfoMessage_globals_);
+}
+inline const ::TipInfoMessage& ClaimMailAttachmentsResponse::error_message() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:mailpb.ClaimMailAttachmentsResponse.error_message)
+  return _internal_error_message();
+}
+inline void ClaimMailAttachmentsResponse::unsafe_arena_set_allocated_error_message(
+    ::TipInfoMessage* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (GetArena() == nullptr) {
+    delete reinterpret_cast<::google::protobuf::MessageLite*>(_impl_.error_message_);
+  }
+  _impl_.error_message_ = reinterpret_cast<::TipInfoMessage*>(value);
+  if (value != nullptr) {
+    SetHasBit(_impl_._has_bits_[0], 0x00000002U);
+  } else {
+    ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
+  }
+  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:mailpb.ClaimMailAttachmentsResponse.error_message)
+}
+inline ::TipInfoMessage* PROTOBUF_NULLABLE ClaimMailAttachmentsResponse::release_error_message() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+
+  ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
+  ::TipInfoMessage* released = _impl_.error_message_;
+  _impl_.error_message_ = nullptr;
+  if (::google::protobuf::internal::DebugHardenForceCopyInRelease()) {
+    auto* old = reinterpret_cast<::google::protobuf::MessageLite*>(released);
+    released = ::google::protobuf::internal::DuplicateIfNonNull(released);
+    if (GetArena() == nullptr) {
+      delete old;
+    }
+  } else {
+    if (GetArena() != nullptr) {
+      released = ::google::protobuf::internal::DuplicateIfNonNull(released);
+    }
+  }
+  return released;
+}
+inline ::TipInfoMessage* PROTOBUF_NULLABLE ClaimMailAttachmentsResponse::unsafe_arena_release_error_message() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:mailpb.ClaimMailAttachmentsResponse.error_message)
+
+  ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
+  ::TipInfoMessage* temp = _impl_.error_message_;
+  _impl_.error_message_ = nullptr;
+  return temp;
+}
+inline ::TipInfoMessage* PROTOBUF_NONNULL ClaimMailAttachmentsResponse::_internal_mutable_error_message() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (_impl_.error_message_ == nullptr) {
+    auto* p = ::google::protobuf::Message::DefaultConstruct<::TipInfoMessage>(GetArena());
+    _impl_.error_message_ = reinterpret_cast<::TipInfoMessage*>(p);
+  }
+  return _impl_.error_message_;
+}
+inline ::TipInfoMessage* PROTOBUF_NONNULL ClaimMailAttachmentsResponse::mutable_error_message()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  SetHasBit(_impl_._has_bits_[0], 0x00000002U);
+  ::TipInfoMessage* _msg = _internal_mutable_error_message();
+  // @@protoc_insertion_point(field_mutable:mailpb.ClaimMailAttachmentsResponse.error_message)
+  return _msg;
+}
+inline void ClaimMailAttachmentsResponse::set_allocated_error_message(::TipInfoMessage* PROTOBUF_NULLABLE value) {
   ::google::protobuf::Arena* message_arena = GetArena();
   ::google::protobuf::internal::TSanWrite(&_impl_);
   if (message_arena == nullptr) {
@@ -4730,193 +5520,62 @@ inline void ReadMailResponse::set_allocated_error_message(::TipInfoMessage* PROT
   }
 
   _impl_.error_message_ = reinterpret_cast<::TipInfoMessage*>(value);
-  // @@protoc_insertion_point(field_set_allocated:mailpb.ReadMailResponse.error_message)
+  // @@protoc_insertion_point(field_set_allocated:mailpb.ClaimMailAttachmentsResponse.error_message)
 }
 
-// .mailpb.MailSummary summary = 2;
-inline bool ReadMailResponse::has_summary() const {
-  bool value = CheckHasBit(_impl_._has_bits_[0], 0x00000004U);
-  PROTOBUF_ASSUME(!value || _impl_.summary_ != nullptr);
-  return value;
+// repeated .mailpb.MailActionResult results = 2;
+inline int ClaimMailAttachmentsResponse::_internal_results_size() const {
+  return _internal_results().size();
 }
-inline void ReadMailResponse::clear_summary() {
+inline int ClaimMailAttachmentsResponse::results_size() const {
+  return _internal_results_size();
+}
+inline void ClaimMailAttachmentsResponse::clear_results() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  if (_impl_.summary_ != nullptr) _impl_.summary_->Clear();
-  ClearHasBit(_impl_._has_bits_[0], 0x00000004U);
-}
-inline const ::mailpb::MailSummary& ReadMailResponse::_internal_summary() const {
-  ::google::protobuf::internal::TSanRead(&_impl_);
-  const ::mailpb::MailSummary* p = _impl_.summary_;
-  return p != nullptr ? *p : *::google::protobuf::internal::MessageGlobalsBase::ToDefaultInstance<::mailpb::MailSummary>(&::mailpb::MailSummary_globals_);
-}
-inline const ::mailpb::MailSummary& ReadMailResponse::summary() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_get:mailpb.ReadMailResponse.summary)
-  return _internal_summary();
-}
-inline void ReadMailResponse::unsafe_arena_set_allocated_summary(
-    ::mailpb::MailSummary* PROTOBUF_NULLABLE value) {
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  if (GetArena() == nullptr) {
-    delete reinterpret_cast<::google::protobuf::MessageLite*>(_impl_.summary_);
-  }
-  _impl_.summary_ = reinterpret_cast<::mailpb::MailSummary*>(value);
-  if (value != nullptr) {
-    SetHasBit(_impl_._has_bits_[0], 0x00000004U);
-  } else {
-    ClearHasBit(_impl_._has_bits_[0], 0x00000004U);
-  }
-  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:mailpb.ReadMailResponse.summary)
-}
-inline ::mailpb::MailSummary* PROTOBUF_NULLABLE ReadMailResponse::release_summary() {
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-
-  ClearHasBit(_impl_._has_bits_[0], 0x00000004U);
-  ::mailpb::MailSummary* released = _impl_.summary_;
-  _impl_.summary_ = nullptr;
-  if (::google::protobuf::internal::DebugHardenForceCopyInRelease()) {
-    auto* old = reinterpret_cast<::google::protobuf::MessageLite*>(released);
-    released = ::google::protobuf::internal::DuplicateIfNonNull(released);
-    if (GetArena() == nullptr) {
-      delete old;
-    }
-  } else {
-    if (GetArena() != nullptr) {
-      released = ::google::protobuf::internal::DuplicateIfNonNull(released);
-    }
-  }
-  return released;
-}
-inline ::mailpb::MailSummary* PROTOBUF_NULLABLE ReadMailResponse::unsafe_arena_release_summary() {
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  // @@protoc_insertion_point(field_release:mailpb.ReadMailResponse.summary)
-
-  ClearHasBit(_impl_._has_bits_[0], 0x00000004U);
-  ::mailpb::MailSummary* temp = _impl_.summary_;
-  _impl_.summary_ = nullptr;
-  return temp;
-}
-inline ::mailpb::MailSummary* PROTOBUF_NONNULL ReadMailResponse::_internal_mutable_summary() {
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  if (_impl_.summary_ == nullptr) {
-    auto* p = ::google::protobuf::Message::DefaultConstruct<::mailpb::MailSummary>(GetArena());
-    _impl_.summary_ = reinterpret_cast<::mailpb::MailSummary*>(p);
-  }
-  return _impl_.summary_;
-}
-inline ::mailpb::MailSummary* PROTOBUF_NONNULL ReadMailResponse::mutable_summary()
-    ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  SetHasBit(_impl_._has_bits_[0], 0x00000004U);
-  ::mailpb::MailSummary* _msg = _internal_mutable_summary();
-  // @@protoc_insertion_point(field_mutable:mailpb.ReadMailResponse.summary)
-  return _msg;
-}
-inline void ReadMailResponse::set_allocated_summary(::mailpb::MailSummary* PROTOBUF_NULLABLE value) {
-  ::google::protobuf::Arena* message_arena = GetArena();
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  if (message_arena == nullptr) {
-    delete reinterpret_cast<::google::protobuf::MessageLite*>(_impl_.summary_);
-  }
-
-  if (value != nullptr) {
-    ::google::protobuf::Arena* submessage_arena = value->GetArena();
-    if (message_arena != submessage_arena) {
-      value = ::google::protobuf::internal::GetOwnedMessage(message_arena, value, submessage_arena);
-    }
-    SetHasBit(_impl_._has_bits_[0], 0x00000004U);
-  } else {
-    ClearHasBit(_impl_._has_bits_[0], 0x00000004U);
-  }
-
-  _impl_.summary_ = reinterpret_cast<::mailpb::MailSummary*>(value);
-  // @@protoc_insertion_point(field_set_allocated:mailpb.ReadMailResponse.summary)
-}
-
-// string body = 3;
-inline void ReadMailResponse::clear_body() {
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.body_.ClearToEmpty();
+  _impl_.results_.Clear();
   ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
 }
-inline const ::std::string& ReadMailResponse::body() const
+inline const ::mailpb::MailActionResult& ClaimMailAttachmentsResponse::results(int index) const
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_get:mailpb.ReadMailResponse.body)
-  return _internal_body();
+  // @@protoc_insertion_point(field_get:mailpb.ClaimMailAttachmentsResponse.results)
+  return _internal_results().Get(index);
 }
-template <typename Arg_, typename... Args_>
-PROTOBUF_ALWAYS_INLINE void ReadMailResponse::set_body(Arg_&& arg, Args_... args) {
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  SetHasBit(_impl_._has_bits_[0], 0x00000001U);
-  _impl_.body_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
-  // @@protoc_insertion_point(field_set:mailpb.ReadMailResponse.body)
-}
-inline ::std::string* PROTOBUF_NONNULL ReadMailResponse::mutable_body()
+inline ::mailpb::MailActionResult* PROTOBUF_NONNULL ClaimMailAttachmentsResponse::mutable_results(int index)
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_mutable:mailpb.ClaimMailAttachmentsResponse.results)
+  return _internal_mutable_results()->Mutable(index);
+}
+inline ::mailpb::MailActionResult* PROTOBUF_NONNULL ClaimMailAttachmentsResponse::add_results()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  ::mailpb::MailActionResult* _add =
+      _internal_mutable_results()->InternalAddWithArena(
+          ::google::protobuf::MessageLite::internal_visibility(), GetArena());
   SetHasBit(_impl_._has_bits_[0], 0x00000001U);
-  ::std::string* _s = _internal_mutable_body();
-  // @@protoc_insertion_point(field_mutable:mailpb.ReadMailResponse.body)
-  return _s;
+  // @@protoc_insertion_point(field_add:mailpb.ClaimMailAttachmentsResponse.results)
+  return _add;
 }
-inline const ::std::string& ReadMailResponse::_internal_body() const {
+inline const ::google::protobuf::RepeatedPtrField<::mailpb::MailActionResult>& ClaimMailAttachmentsResponse::results() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_list:mailpb.ClaimMailAttachmentsResponse.results)
+  return _internal_results();
+}
+inline ::google::protobuf::RepeatedPtrField<::mailpb::MailActionResult>* PROTOBUF_NONNULL
+ClaimMailAttachmentsResponse::mutable_results() ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  // @@protoc_insertion_point(field_mutable_list:mailpb.ClaimMailAttachmentsResponse.results)
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  return _internal_mutable_results();
+}
+inline const ::google::protobuf::RepeatedPtrField<::mailpb::MailActionResult>&
+ClaimMailAttachmentsResponse::_internal_results() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
-  return _impl_.body_.Get();
+  return _impl_.results_;
 }
-inline void ReadMailResponse::_internal_set_body(const ::std::string& value) {
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.body_.Set(value, GetArena());
-}
-inline ::std::string* PROTOBUF_NONNULL ReadMailResponse::_internal_mutable_body() {
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  return _impl_.body_.Mutable( GetArena());
-}
-inline ::std::string* PROTOBUF_NULLABLE ReadMailResponse::release_body() {
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  // @@protoc_insertion_point(field_release:mailpb.ReadMailResponse.body)
-  if (!CheckHasBit(_impl_._has_bits_[0], 0x00000001U)) {
-    return nullptr;
-  }
-  ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
-  auto* released = _impl_.body_.Release();
-  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString()) {
-    _impl_.body_.Set("", GetArena());
-  }
-  return released;
-}
-inline void ReadMailResponse::set_allocated_body(::std::string* PROTOBUF_NULLABLE value) {
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  if (value != nullptr) {
-    SetHasBit(_impl_._has_bits_[0], 0x00000001U);
-  } else {
-    ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
-  }
-  _impl_.body_.SetAllocated(value, GetArena());
-  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.body_.IsDefault()) {
-    _impl_.body_.Set("", GetArena());
-  }
-  // @@protoc_insertion_point(field_set_allocated:mailpb.ReadMailResponse.body)
-}
-
-// uint64 server_now_ms = 4;
-inline void ReadMailResponse::clear_server_now_ms() {
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.server_now_ms_ = ::uint64_t{0u};
-  ClearHasBit(_impl_._has_bits_[0], 0x00000008U);
-}
-inline ::uint64_t ReadMailResponse::server_now_ms() const {
-  // @@protoc_insertion_point(field_get:mailpb.ReadMailResponse.server_now_ms)
-  return _internal_server_now_ms();
-}
-inline void ReadMailResponse::set_server_now_ms(::uint64_t value) {
-  _internal_set_server_now_ms(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00000008U);
-  // @@protoc_insertion_point(field_set:mailpb.ReadMailResponse.server_now_ms)
-}
-inline ::uint64_t ReadMailResponse::_internal_server_now_ms() const {
+inline ::google::protobuf::RepeatedPtrField<::mailpb::MailActionResult>* PROTOBUF_NONNULL
+ClaimMailAttachmentsResponse::_internal_mutable_results() {
   ::google::protobuf::internal::TSanRead(&_impl_);
-  return _impl_.server_now_ms_;
-}
-inline void ReadMailResponse::_internal_set_server_now_ms(::uint64_t value) {
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.server_now_ms_ = value;
+  return &_impl_.results_;
 }
 
 // -------------------------------------------------------------------
@@ -4980,7 +5639,7 @@ DeleteMailsRequest::_internal_mutable_mail_ids() {
 
 // .TipInfoMessage error_message = 1;
 inline bool DeleteMailsResponse::has_error_message() const {
-  bool value = CheckHasBit(_impl_._has_bits_[0], 0x00000002U);
+  bool value = CheckHasBit(_impl_._has_bits_[0], 0x00000004U);
   PROTOBUF_ASSUME(!value || _impl_.error_message_ != nullptr);
   return value;
 }
@@ -5001,16 +5660,16 @@ inline void DeleteMailsResponse::unsafe_arena_set_allocated_error_message(
   }
   _impl_.error_message_ = reinterpret_cast<::TipInfoMessage*>(value);
   if (value != nullptr) {
-    SetHasBit(_impl_._has_bits_[0], 0x00000002U);
+    SetHasBit(_impl_._has_bits_[0], 0x00000004U);
   } else {
-    ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
+    ClearHasBit(_impl_._has_bits_[0], 0x00000004U);
   }
   // @@protoc_insertion_point(field_unsafe_arena_set_allocated:mailpb.DeleteMailsResponse.error_message)
 }
 inline ::TipInfoMessage* PROTOBUF_NULLABLE DeleteMailsResponse::release_error_message() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
 
-  ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
+  ClearHasBit(_impl_._has_bits_[0], 0x00000004U);
   ::TipInfoMessage* released = _impl_.error_message_;
   _impl_.error_message_ = nullptr;
   if (::google::protobuf::internal::DebugHardenForceCopyInRelease()) {
@@ -5030,7 +5689,7 @@ inline ::TipInfoMessage* PROTOBUF_NULLABLE DeleteMailsResponse::unsafe_arena_rel
   ::google::protobuf::internal::TSanWrite(&_impl_);
   // @@protoc_insertion_point(field_release:mailpb.DeleteMailsResponse.error_message)
 
-  ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
+  ClearHasBit(_impl_._has_bits_[0], 0x00000004U);
   ::TipInfoMessage* temp = _impl_.error_message_;
   _impl_.error_message_ = nullptr;
   return temp;
@@ -5045,7 +5704,7 @@ inline ::TipInfoMessage* PROTOBUF_NONNULL DeleteMailsResponse::_internal_mutable
 }
 inline ::TipInfoMessage* PROTOBUF_NONNULL DeleteMailsResponse::mutable_error_message()
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  SetHasBit(_impl_._has_bits_[0], 0x00000002U);
+  SetHasBit(_impl_._has_bits_[0], 0x00000004U);
   ::TipInfoMessage* _msg = _internal_mutable_error_message();
   // @@protoc_insertion_point(field_mutable:mailpb.DeleteMailsResponse.error_message)
   return _msg;
@@ -5062,37 +5721,64 @@ inline void DeleteMailsResponse::set_allocated_error_message(::TipInfoMessage* P
     if (message_arena != submessage_arena) {
       value = ::google::protobuf::internal::GetOwnedMessage(message_arena, value, submessage_arena);
     }
-    SetHasBit(_impl_._has_bits_[0], 0x00000002U);
+    SetHasBit(_impl_._has_bits_[0], 0x00000004U);
   } else {
-    ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
+    ClearHasBit(_impl_._has_bits_[0], 0x00000004U);
   }
 
   _impl_.error_message_ = reinterpret_cast<::TipInfoMessage*>(value);
   // @@protoc_insertion_point(field_set_allocated:mailpb.DeleteMailsResponse.error_message)
 }
 
-// uint32 deleted_count = 2;
-inline void DeleteMailsResponse::clear_deleted_count() {
+// repeated uint64 deleted_mail_ids = 2;
+inline int DeleteMailsResponse::_internal_deleted_mail_ids_size() const {
+  return _internal_deleted_mail_ids().size();
+}
+inline int DeleteMailsResponse::deleted_mail_ids_size() const {
+  return _internal_deleted_mail_ids_size();
+}
+inline void DeleteMailsResponse::clear_deleted_mail_ids() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.deleted_count_ = 0u;
-  ClearHasBit(_impl_._has_bits_[0], 0x00000004U);
+  _impl_.deleted_mail_ids_.Clear();
+  ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
 }
-inline ::uint32_t DeleteMailsResponse::deleted_count() const {
-  // @@protoc_insertion_point(field_get:mailpb.DeleteMailsResponse.deleted_count)
-  return _internal_deleted_count();
+inline ::uint64_t DeleteMailsResponse::deleted_mail_ids(int index) const {
+  // @@protoc_insertion_point(field_get:mailpb.DeleteMailsResponse.deleted_mail_ids)
+  return _internal_deleted_mail_ids().Get(index);
 }
-inline void DeleteMailsResponse::set_deleted_count(::uint32_t value) {
-  _internal_set_deleted_count(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00000004U);
-  // @@protoc_insertion_point(field_set:mailpb.DeleteMailsResponse.deleted_count)
+inline void DeleteMailsResponse::set_deleted_mail_ids(int index, ::uint64_t value) {
+  _internal_mutable_deleted_mail_ids()->Set(index, value);
+  // @@protoc_insertion_point(field_set:mailpb.DeleteMailsResponse.deleted_mail_ids)
 }
-inline ::uint32_t DeleteMailsResponse::_internal_deleted_count() const {
+inline void DeleteMailsResponse::add_deleted_mail_ids(::uint64_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _internal_mutable_deleted_mail_ids()
+      ->InternalAddWithArena<const ::google::protobuf::MessageLite*>(
+          internal_visibility(), this, value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  // @@protoc_insertion_point(field_add:mailpb.DeleteMailsResponse.deleted_mail_ids)
+}
+inline const ::google::protobuf::RepeatedField<::uint64_t>& DeleteMailsResponse::deleted_mail_ids() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_list:mailpb.DeleteMailsResponse.deleted_mail_ids)
+  return _internal_deleted_mail_ids();
+}
+inline ::google::protobuf::RepeatedField<::uint64_t>* PROTOBUF_NONNULL DeleteMailsResponse::mutable_deleted_mail_ids()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  // @@protoc_insertion_point(field_mutable_list:mailpb.DeleteMailsResponse.deleted_mail_ids)
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  return _internal_mutable_deleted_mail_ids();
+}
+inline const ::google::protobuf::RepeatedField<::uint64_t>&
+DeleteMailsResponse::_internal_deleted_mail_ids() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
-  return _impl_.deleted_count_;
+  return _impl_.deleted_mail_ids_;
 }
-inline void DeleteMailsResponse::_internal_set_deleted_count(::uint32_t value) {
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.deleted_count_ = value;
+inline ::google::protobuf::RepeatedField<::uint64_t>* PROTOBUF_NONNULL
+DeleteMailsResponse::_internal_mutable_deleted_mail_ids() {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return &_impl_.deleted_mail_ids_;
 }
 
 // repeated uint64 protected_mail_ids = 3;
@@ -5105,7 +5791,7 @@ inline int DeleteMailsResponse::protected_mail_ids_size() const {
 inline void DeleteMailsResponse::clear_protected_mail_ids() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.protected_mail_ids_.Clear();
-  ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
+  ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
 }
 inline ::uint64_t DeleteMailsResponse::protected_mail_ids(int index) const {
   // @@protoc_insertion_point(field_get:mailpb.DeleteMailsResponse.protected_mail_ids)
@@ -5120,7 +5806,7 @@ inline void DeleteMailsResponse::add_protected_mail_ids(::uint64_t value) {
   _internal_mutable_protected_mail_ids()
       ->InternalAddWithArena<const ::google::protobuf::MessageLite*>(
           internal_visibility(), this, value);
-  SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  SetHasBit(_impl_._has_bits_[0], 0x00000002U);
   // @@protoc_insertion_point(field_add:mailpb.DeleteMailsResponse.protected_mail_ids)
 }
 inline const ::google::protobuf::RepeatedField<::uint64_t>& DeleteMailsResponse::protected_mail_ids() const
@@ -5130,7 +5816,7 @@ inline const ::google::protobuf::RepeatedField<::uint64_t>& DeleteMailsResponse:
 }
 inline ::google::protobuf::RepeatedField<::uint64_t>* PROTOBUF_NONNULL DeleteMailsResponse::mutable_protected_mail_ids()
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  SetHasBit(_impl_._has_bits_[0], 0x00000002U);
   // @@protoc_insertion_point(field_mutable_list:mailpb.DeleteMailsResponse.protected_mail_ids)
   ::google::protobuf::internal::TSanWrite(&_impl_);
   return _internal_mutable_protected_mail_ids();
@@ -5148,28 +5834,28 @@ DeleteMailsResponse::_internal_mutable_protected_mail_ids() {
 
 // -------------------------------------------------------------------
 
-// DeleteReadMailsRequest
+// ClearReadMailsRequest
 
 // -------------------------------------------------------------------
 
-// DeleteReadMailsResponse
+// ClearReadMailsResponse
 
 // .TipInfoMessage error_message = 1;
-inline bool DeleteReadMailsResponse::has_error_message() const {
-  bool value = CheckHasBit(_impl_._has_bits_[0], 0x00000001U);
+inline bool ClearReadMailsResponse::has_error_message() const {
+  bool value = CheckHasBit(_impl_._has_bits_[0], 0x00000004U);
   PROTOBUF_ASSUME(!value || _impl_.error_message_ != nullptr);
   return value;
 }
-inline const ::TipInfoMessage& DeleteReadMailsResponse::_internal_error_message() const {
+inline const ::TipInfoMessage& ClearReadMailsResponse::_internal_error_message() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
   const ::TipInfoMessage* p = _impl_.error_message_;
   return p != nullptr ? *p : *::google::protobuf::internal::MessageGlobalsBase::ToDefaultInstance<::TipInfoMessage>(&::TipInfoMessage_globals_);
 }
-inline const ::TipInfoMessage& DeleteReadMailsResponse::error_message() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_get:mailpb.DeleteReadMailsResponse.error_message)
+inline const ::TipInfoMessage& ClearReadMailsResponse::error_message() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:mailpb.ClearReadMailsResponse.error_message)
   return _internal_error_message();
 }
-inline void DeleteReadMailsResponse::unsafe_arena_set_allocated_error_message(
+inline void ClearReadMailsResponse::unsafe_arena_set_allocated_error_message(
     ::TipInfoMessage* PROTOBUF_NULLABLE value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   if (GetArena() == nullptr) {
@@ -5177,16 +5863,16 @@ inline void DeleteReadMailsResponse::unsafe_arena_set_allocated_error_message(
   }
   _impl_.error_message_ = reinterpret_cast<::TipInfoMessage*>(value);
   if (value != nullptr) {
-    SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+    SetHasBit(_impl_._has_bits_[0], 0x00000004U);
   } else {
-    ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
+    ClearHasBit(_impl_._has_bits_[0], 0x00000004U);
   }
-  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:mailpb.DeleteReadMailsResponse.error_message)
+  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:mailpb.ClearReadMailsResponse.error_message)
 }
-inline ::TipInfoMessage* PROTOBUF_NULLABLE DeleteReadMailsResponse::release_error_message() {
+inline ::TipInfoMessage* PROTOBUF_NULLABLE ClearReadMailsResponse::release_error_message() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
 
-  ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
+  ClearHasBit(_impl_._has_bits_[0], 0x00000004U);
   ::TipInfoMessage* released = _impl_.error_message_;
   _impl_.error_message_ = nullptr;
   if (::google::protobuf::internal::DebugHardenForceCopyInRelease()) {
@@ -5202,16 +5888,16 @@ inline ::TipInfoMessage* PROTOBUF_NULLABLE DeleteReadMailsResponse::release_erro
   }
   return released;
 }
-inline ::TipInfoMessage* PROTOBUF_NULLABLE DeleteReadMailsResponse::unsafe_arena_release_error_message() {
+inline ::TipInfoMessage* PROTOBUF_NULLABLE ClearReadMailsResponse::unsafe_arena_release_error_message() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  // @@protoc_insertion_point(field_release:mailpb.DeleteReadMailsResponse.error_message)
+  // @@protoc_insertion_point(field_release:mailpb.ClearReadMailsResponse.error_message)
 
-  ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
+  ClearHasBit(_impl_._has_bits_[0], 0x00000004U);
   ::TipInfoMessage* temp = _impl_.error_message_;
   _impl_.error_message_ = nullptr;
   return temp;
 }
-inline ::TipInfoMessage* PROTOBUF_NONNULL DeleteReadMailsResponse::_internal_mutable_error_message() {
+inline ::TipInfoMessage* PROTOBUF_NONNULL ClearReadMailsResponse::_internal_mutable_error_message() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   if (_impl_.error_message_ == nullptr) {
     auto* p = ::google::protobuf::Message::DefaultConstruct<::TipInfoMessage>(GetArena());
@@ -5219,14 +5905,14 @@ inline ::TipInfoMessage* PROTOBUF_NONNULL DeleteReadMailsResponse::_internal_mut
   }
   return _impl_.error_message_;
 }
-inline ::TipInfoMessage* PROTOBUF_NONNULL DeleteReadMailsResponse::mutable_error_message()
+inline ::TipInfoMessage* PROTOBUF_NONNULL ClearReadMailsResponse::mutable_error_message()
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  SetHasBit(_impl_._has_bits_[0], 0x00000004U);
   ::TipInfoMessage* _msg = _internal_mutable_error_message();
-  // @@protoc_insertion_point(field_mutable:mailpb.DeleteReadMailsResponse.error_message)
+  // @@protoc_insertion_point(field_mutable:mailpb.ClearReadMailsResponse.error_message)
   return _msg;
 }
-inline void DeleteReadMailsResponse::set_allocated_error_message(::TipInfoMessage* PROTOBUF_NULLABLE value) {
+inline void ClearReadMailsResponse::set_allocated_error_message(::TipInfoMessage* PROTOBUF_NULLABLE value) {
   ::google::protobuf::Arena* message_arena = GetArena();
   ::google::protobuf::internal::TSanWrite(&_impl_);
   if (message_arena == nullptr) {
@@ -5238,265 +5924,143 @@ inline void DeleteReadMailsResponse::set_allocated_error_message(::TipInfoMessag
     if (message_arena != submessage_arena) {
       value = ::google::protobuf::internal::GetOwnedMessage(message_arena, value, submessage_arena);
     }
-    SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+    SetHasBit(_impl_._has_bits_[0], 0x00000004U);
   } else {
-    ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
+    ClearHasBit(_impl_._has_bits_[0], 0x00000004U);
   }
 
   _impl_.error_message_ = reinterpret_cast<::TipInfoMessage*>(value);
-  // @@protoc_insertion_point(field_set_allocated:mailpb.DeleteReadMailsResponse.error_message)
+  // @@protoc_insertion_point(field_set_allocated:mailpb.ClearReadMailsResponse.error_message)
 }
 
-// uint32 deleted_count = 2;
-inline void DeleteReadMailsResponse::clear_deleted_count() {
+// repeated uint64 deleted_mail_ids = 2;
+inline int ClearReadMailsResponse::_internal_deleted_mail_ids_size() const {
+  return _internal_deleted_mail_ids().size();
+}
+inline int ClearReadMailsResponse::deleted_mail_ids_size() const {
+  return _internal_deleted_mail_ids_size();
+}
+inline void ClearReadMailsResponse::clear_deleted_mail_ids() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.deleted_count_ = 0u;
-  ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
-}
-inline ::uint32_t DeleteReadMailsResponse::deleted_count() const {
-  // @@protoc_insertion_point(field_get:mailpb.DeleteReadMailsResponse.deleted_count)
-  return _internal_deleted_count();
-}
-inline void DeleteReadMailsResponse::set_deleted_count(::uint32_t value) {
-  _internal_set_deleted_count(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00000002U);
-  // @@protoc_insertion_point(field_set:mailpb.DeleteReadMailsResponse.deleted_count)
-}
-inline ::uint32_t DeleteReadMailsResponse::_internal_deleted_count() const {
-  ::google::protobuf::internal::TSanRead(&_impl_);
-  return _impl_.deleted_count_;
-}
-inline void DeleteReadMailsResponse::_internal_set_deleted_count(::uint32_t value) {
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.deleted_count_ = value;
-}
-
-// -------------------------------------------------------------------
-
-// ClaimMailAttachmentsRequest
-
-// repeated uint64 mail_ids = 1;
-inline int ClaimMailAttachmentsRequest::_internal_mail_ids_size() const {
-  return _internal_mail_ids().size();
-}
-inline int ClaimMailAttachmentsRequest::mail_ids_size() const {
-  return _internal_mail_ids_size();
-}
-inline void ClaimMailAttachmentsRequest::clear_mail_ids() {
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.mail_ids_.Clear();
+  _impl_.deleted_mail_ids_.Clear();
   ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
 }
-inline ::uint64_t ClaimMailAttachmentsRequest::mail_ids(int index) const {
-  // @@protoc_insertion_point(field_get:mailpb.ClaimMailAttachmentsRequest.mail_ids)
-  return _internal_mail_ids().Get(index);
+inline ::uint64_t ClearReadMailsResponse::deleted_mail_ids(int index) const {
+  // @@protoc_insertion_point(field_get:mailpb.ClearReadMailsResponse.deleted_mail_ids)
+  return _internal_deleted_mail_ids().Get(index);
 }
-inline void ClaimMailAttachmentsRequest::set_mail_ids(int index, ::uint64_t value) {
-  _internal_mutable_mail_ids()->Set(index, value);
-  // @@protoc_insertion_point(field_set:mailpb.ClaimMailAttachmentsRequest.mail_ids)
+inline void ClearReadMailsResponse::set_deleted_mail_ids(int index, ::uint64_t value) {
+  _internal_mutable_deleted_mail_ids()->Set(index, value);
+  // @@protoc_insertion_point(field_set:mailpb.ClearReadMailsResponse.deleted_mail_ids)
 }
-inline void ClaimMailAttachmentsRequest::add_mail_ids(::uint64_t value) {
+inline void ClearReadMailsResponse::add_deleted_mail_ids(::uint64_t value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  _internal_mutable_mail_ids()
+  _internal_mutable_deleted_mail_ids()
       ->InternalAddWithArena<const ::google::protobuf::MessageLite*>(
           internal_visibility(), this, value);
   SetHasBit(_impl_._has_bits_[0], 0x00000001U);
-  // @@protoc_insertion_point(field_add:mailpb.ClaimMailAttachmentsRequest.mail_ids)
+  // @@protoc_insertion_point(field_add:mailpb.ClearReadMailsResponse.deleted_mail_ids)
 }
-inline const ::google::protobuf::RepeatedField<::uint64_t>& ClaimMailAttachmentsRequest::mail_ids() const
+inline const ::google::protobuf::RepeatedField<::uint64_t>& ClearReadMailsResponse::deleted_mail_ids() const
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_list:mailpb.ClaimMailAttachmentsRequest.mail_ids)
-  return _internal_mail_ids();
+  // @@protoc_insertion_point(field_list:mailpb.ClearReadMailsResponse.deleted_mail_ids)
+  return _internal_deleted_mail_ids();
 }
-inline ::google::protobuf::RepeatedField<::uint64_t>* PROTOBUF_NONNULL ClaimMailAttachmentsRequest::mutable_mail_ids()
+inline ::google::protobuf::RepeatedField<::uint64_t>* PROTOBUF_NONNULL ClearReadMailsResponse::mutable_deleted_mail_ids()
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
   SetHasBit(_impl_._has_bits_[0], 0x00000001U);
-  // @@protoc_insertion_point(field_mutable_list:mailpb.ClaimMailAttachmentsRequest.mail_ids)
+  // @@protoc_insertion_point(field_mutable_list:mailpb.ClearReadMailsResponse.deleted_mail_ids)
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  return _internal_mutable_mail_ids();
+  return _internal_mutable_deleted_mail_ids();
 }
 inline const ::google::protobuf::RepeatedField<::uint64_t>&
-ClaimMailAttachmentsRequest::_internal_mail_ids() const {
+ClearReadMailsResponse::_internal_deleted_mail_ids() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
-  return _impl_.mail_ids_;
+  return _impl_.deleted_mail_ids_;
 }
 inline ::google::protobuf::RepeatedField<::uint64_t>* PROTOBUF_NONNULL
-ClaimMailAttachmentsRequest::_internal_mutable_mail_ids() {
+ClearReadMailsResponse::_internal_mutable_deleted_mail_ids() {
   ::google::protobuf::internal::TSanRead(&_impl_);
-  return &_impl_.mail_ids_;
+  return &_impl_.deleted_mail_ids_;
 }
 
-// bool all = 2;
-inline void ClaimMailAttachmentsRequest::clear_all() {
+// repeated uint64 protected_mail_ids = 3;
+inline int ClearReadMailsResponse::_internal_protected_mail_ids_size() const {
+  return _internal_protected_mail_ids().size();
+}
+inline int ClearReadMailsResponse::protected_mail_ids_size() const {
+  return _internal_protected_mail_ids_size();
+}
+inline void ClearReadMailsResponse::clear_protected_mail_ids() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.all_ = false;
+  _impl_.protected_mail_ids_.Clear();
   ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
 }
-inline bool ClaimMailAttachmentsRequest::all() const {
-  // @@protoc_insertion_point(field_get:mailpb.ClaimMailAttachmentsRequest.all)
-  return _internal_all();
+inline ::uint64_t ClearReadMailsResponse::protected_mail_ids(int index) const {
+  // @@protoc_insertion_point(field_get:mailpb.ClearReadMailsResponse.protected_mail_ids)
+  return _internal_protected_mail_ids().Get(index);
 }
-inline void ClaimMailAttachmentsRequest::set_all(bool value) {
-  _internal_set_all(value);
+inline void ClearReadMailsResponse::set_protected_mail_ids(int index, ::uint64_t value) {
+  _internal_mutable_protected_mail_ids()->Set(index, value);
+  // @@protoc_insertion_point(field_set:mailpb.ClearReadMailsResponse.protected_mail_ids)
+}
+inline void ClearReadMailsResponse::add_protected_mail_ids(::uint64_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _internal_mutable_protected_mail_ids()
+      ->InternalAddWithArena<const ::google::protobuf::MessageLite*>(
+          internal_visibility(), this, value);
   SetHasBit(_impl_._has_bits_[0], 0x00000002U);
-  // @@protoc_insertion_point(field_set:mailpb.ClaimMailAttachmentsRequest.all)
+  // @@protoc_insertion_point(field_add:mailpb.ClearReadMailsResponse.protected_mail_ids)
 }
-inline bool ClaimMailAttachmentsRequest::_internal_all() const {
-  ::google::protobuf::internal::TSanRead(&_impl_);
-  return _impl_.all_;
-}
-inline void ClaimMailAttachmentsRequest::_internal_set_all(bool value) {
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.all_ = value;
-}
-
-// -------------------------------------------------------------------
-
-// ClaimMailAttachmentsResponse
-
-// .TipInfoMessage error_message = 1;
-inline bool ClaimMailAttachmentsResponse::has_error_message() const {
-  bool value = CheckHasBit(_impl_._has_bits_[0], 0x00000001U);
-  PROTOBUF_ASSUME(!value || _impl_.error_message_ != nullptr);
-  return value;
-}
-inline const ::TipInfoMessage& ClaimMailAttachmentsResponse::_internal_error_message() const {
-  ::google::protobuf::internal::TSanRead(&_impl_);
-  const ::TipInfoMessage* p = _impl_.error_message_;
-  return p != nullptr ? *p : *::google::protobuf::internal::MessageGlobalsBase::ToDefaultInstance<::TipInfoMessage>(&::TipInfoMessage_globals_);
-}
-inline const ::TipInfoMessage& ClaimMailAttachmentsResponse::error_message() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_get:mailpb.ClaimMailAttachmentsResponse.error_message)
-  return _internal_error_message();
-}
-inline void ClaimMailAttachmentsResponse::unsafe_arena_set_allocated_error_message(
-    ::TipInfoMessage* PROTOBUF_NULLABLE value) {
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  if (GetArena() == nullptr) {
-    delete reinterpret_cast<::google::protobuf::MessageLite*>(_impl_.error_message_);
-  }
-  _impl_.error_message_ = reinterpret_cast<::TipInfoMessage*>(value);
-  if (value != nullptr) {
-    SetHasBit(_impl_._has_bits_[0], 0x00000001U);
-  } else {
-    ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
-  }
-  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:mailpb.ClaimMailAttachmentsResponse.error_message)
-}
-inline ::TipInfoMessage* PROTOBUF_NULLABLE ClaimMailAttachmentsResponse::release_error_message() {
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-
-  ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
-  ::TipInfoMessage* released = _impl_.error_message_;
-  _impl_.error_message_ = nullptr;
-  if (::google::protobuf::internal::DebugHardenForceCopyInRelease()) {
-    auto* old = reinterpret_cast<::google::protobuf::MessageLite*>(released);
-    released = ::google::protobuf::internal::DuplicateIfNonNull(released);
-    if (GetArena() == nullptr) {
-      delete old;
-    }
-  } else {
-    if (GetArena() != nullptr) {
-      released = ::google::protobuf::internal::DuplicateIfNonNull(released);
-    }
-  }
-  return released;
-}
-inline ::TipInfoMessage* PROTOBUF_NULLABLE ClaimMailAttachmentsResponse::unsafe_arena_release_error_message() {
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  // @@protoc_insertion_point(field_release:mailpb.ClaimMailAttachmentsResponse.error_message)
-
-  ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
-  ::TipInfoMessage* temp = _impl_.error_message_;
-  _impl_.error_message_ = nullptr;
-  return temp;
-}
-inline ::TipInfoMessage* PROTOBUF_NONNULL ClaimMailAttachmentsResponse::_internal_mutable_error_message() {
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  if (_impl_.error_message_ == nullptr) {
-    auto* p = ::google::protobuf::Message::DefaultConstruct<::TipInfoMessage>(GetArena());
-    _impl_.error_message_ = reinterpret_cast<::TipInfoMessage*>(p);
-  }
-  return _impl_.error_message_;
-}
-inline ::TipInfoMessage* PROTOBUF_NONNULL ClaimMailAttachmentsResponse::mutable_error_message()
+inline const ::google::protobuf::RepeatedField<::uint64_t>& ClearReadMailsResponse::protected_mail_ids() const
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  SetHasBit(_impl_._has_bits_[0], 0x00000001U);
-  ::TipInfoMessage* _msg = _internal_mutable_error_message();
-  // @@protoc_insertion_point(field_mutable:mailpb.ClaimMailAttachmentsResponse.error_message)
-  return _msg;
+  // @@protoc_insertion_point(field_list:mailpb.ClearReadMailsResponse.protected_mail_ids)
+  return _internal_protected_mail_ids();
 }
-inline void ClaimMailAttachmentsResponse::set_allocated_error_message(::TipInfoMessage* PROTOBUF_NULLABLE value) {
-  ::google::protobuf::Arena* message_arena = GetArena();
+inline ::google::protobuf::RepeatedField<::uint64_t>* PROTOBUF_NONNULL ClearReadMailsResponse::mutable_protected_mail_ids()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  SetHasBit(_impl_._has_bits_[0], 0x00000002U);
+  // @@protoc_insertion_point(field_mutable_list:mailpb.ClearReadMailsResponse.protected_mail_ids)
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  if (message_arena == nullptr) {
-    delete reinterpret_cast<::google::protobuf::MessageLite*>(_impl_.error_message_);
-  }
-
-  if (value != nullptr) {
-    ::google::protobuf::Arena* submessage_arena = reinterpret_cast<::google::protobuf::Message*>(value)->GetArena();
-    if (message_arena != submessage_arena) {
-      value = ::google::protobuf::internal::GetOwnedMessage(message_arena, value, submessage_arena);
-    }
-    SetHasBit(_impl_._has_bits_[0], 0x00000001U);
-  } else {
-    ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
-  }
-
-  _impl_.error_message_ = reinterpret_cast<::TipInfoMessage*>(value);
-  // @@protoc_insertion_point(field_set_allocated:mailpb.ClaimMailAttachmentsResponse.error_message)
+  return _internal_mutable_protected_mail_ids();
+}
+inline const ::google::protobuf::RepeatedField<::uint64_t>&
+ClearReadMailsResponse::_internal_protected_mail_ids() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.protected_mail_ids_;
+}
+inline ::google::protobuf::RepeatedField<::uint64_t>* PROTOBUF_NONNULL
+ClearReadMailsResponse::_internal_mutable_protected_mail_ids() {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return &_impl_.protected_mail_ids_;
 }
 
 // -------------------------------------------------------------------
 
-// MailEventS2C
+// MailChangedEvent
 
-// .mailpb.MailEventReason reason = 1;
-inline void MailEventS2C::clear_reason() {
+// uint64 mail_id = 1;
+inline void MailChangedEvent::clear_mail_id() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.reason_ = 0;
-  ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
-}
-inline ::mailpb::MailEventReason MailEventS2C::reason() const {
-  // @@protoc_insertion_point(field_get:mailpb.MailEventS2C.reason)
-  return _internal_reason();
-}
-inline void MailEventS2C::set_reason(::mailpb::MailEventReason value) {
-  _internal_set_reason(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00000002U);
-  // @@protoc_insertion_point(field_set:mailpb.MailEventS2C.reason)
-}
-inline ::mailpb::MailEventReason MailEventS2C::_internal_reason() const {
-  ::google::protobuf::internal::TSanRead(&_impl_);
-  return static_cast<::mailpb::MailEventReason>(_impl_.reason_);
-}
-inline void MailEventS2C::_internal_set_reason(::mailpb::MailEventReason value) {
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.reason_ = value;
-}
-
-// uint64 ts_ms = 2;
-inline void MailEventS2C::clear_ts_ms() {
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.ts_ms_ = ::uint64_t{0u};
+  _impl_.mail_id_ = ::uint64_t{0u};
   ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
 }
-inline ::uint64_t MailEventS2C::ts_ms() const {
-  // @@protoc_insertion_point(field_get:mailpb.MailEventS2C.ts_ms)
-  return _internal_ts_ms();
+inline ::uint64_t MailChangedEvent::mail_id() const {
+  // @@protoc_insertion_point(field_get:mailpb.MailChangedEvent.mail_id)
+  return _internal_mail_id();
 }
-inline void MailEventS2C::set_ts_ms(::uint64_t value) {
-  _internal_set_ts_ms(value);
+inline void MailChangedEvent::set_mail_id(::uint64_t value) {
+  _internal_set_mail_id(value);
   SetHasBit(_impl_._has_bits_[0], 0x00000001U);
-  // @@protoc_insertion_point(field_set:mailpb.MailEventS2C.ts_ms)
+  // @@protoc_insertion_point(field_set:mailpb.MailChangedEvent.mail_id)
 }
-inline ::uint64_t MailEventS2C::_internal_ts_ms() const {
+inline ::uint64_t MailChangedEvent::_internal_mail_id() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
-  return _impl_.ts_ms_;
+  return _impl_.mail_id_;
 }
-inline void MailEventS2C::_internal_set_ts_ms(::uint64_t value) {
+inline void MailChangedEvent::_internal_set_mail_id(::uint64_t value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.ts_ms_ = value;
+  _impl_.mail_id_ = value;
 }
 
 #ifdef __GNUC__
@@ -5521,12 +6085,6 @@ struct is_proto_enum<::mailpb::MailClaimState> : std::true_type {};
 template <>
 inline const EnumDescriptor* PROTOBUF_NONNULL GetEnumDescriptor<::mailpb::MailClaimState>() {
   return ::mailpb::MailClaimState_descriptor();
-}
-template <>
-struct is_proto_enum<::mailpb::MailEventReason> : std::true_type {};
-template <>
-inline const EnumDescriptor* PROTOBUF_NONNULL GetEnumDescriptor<::mailpb::MailEventReason>() {
-  return ::mailpb::MailEventReason_descriptor();
 }
 
 }  // namespace protobuf

@@ -24,6 +24,13 @@ func NewMatchServiceServer(svcCtx *svc.ServiceContext) *MatchServiceServer {
 	}
 }
 
+func (s *MatchServiceServer) GetNetworkProbePlan(ctx context.Context, in *matchpb.GetNetworkProbePlanRequest) (*matchpb.GetNetworkProbePlanResponse, error) {
+	return logic.GetNetworkProbePlan(ctx, s.svcCtx)
+}
+func (s *MatchServiceServer) CommitNetworkProbe(ctx context.Context, in *matchpb.CommitNetworkProbeRequest) (*matchpb.CommitNetworkProbeResponse, error) {
+	return logic.CommitNetworkProbe(ctx, s.svcCtx, in)
+}
+
 // JoinQueue 玩家入队(客户端经 gate gRPC 直达)。
 func (s *MatchServiceServer) JoinQueue(ctx context.Context, in *matchpb.JoinQueueRequest) (*matchpb.JoinQueueResponse, error) {
 	l := logic.NewJoinQueueLogic(ctx, s.svcCtx)

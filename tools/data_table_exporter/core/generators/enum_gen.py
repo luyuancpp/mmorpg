@@ -37,7 +37,8 @@ protobuf 的 enum 值是 enum 的兄弟而不是子成员，于是所有 tip pro
 
 现在 ``Tip.xlsx`` 有一列 ``fault``（按第 1 行表头名定位，不按列位）：
 标 ``1`` 的码是故障，空的不是。产物是 Go 侧的 ``faults.go``（``tip.IsFault``），
-``serverbase.TipVerdict`` 只消费它。
+``serverbase.TipVerdict`` 只消费它；以及同一份数据的 Java 侧 ``tip/TipFaults.java``
+（2026-10-18 起），Java 网关据此把 login 的 in-band 故障码回 500 而不是 401。
 
 * 表头 ``fault`` **必须存在**：列被删/改名不能静默变成「全部不是故障」，
   那会让所有 in-band 故障告警一起消失且零报错；
@@ -362,8 +363,12 @@ def _parse_tip_sheet(ws) -> dict[str, dict]:
     fault_col = _locate_fault_column(ws)
     fault_letter = get_column_letter(fault_col + 1)
 
-    for row_idx in range(_TIP_DATA_BEGIN_ROW, (ws.max_row or _TIP_DATA_BEGIN_ROW) + 1):
-        cells = ws[row_idx]
+    # 合法 xlsx 可以不写 worksheet dimension；顺序读取到文件末尾，不能把
+    # read_only 下未知的 max_row 当成只有元数据行，否则会漏掉后续整组错误码。
+    for row_idx, cells in enumerate(ws.iter_rows(min_row=_TIP_DATA_BEGIN_ROW),
+                                    start=_TIP_DATA_BEGIN_ROW):
+        if not cells:
+            continue
         val = cells[0].value
         fault_raw = cells[fault_col].value if fault_col < len(cells) else None
         if val is None or not str(val).strip():
@@ -653,15 +658,17 @@ def _generate_tip_segments(cfg: ExporterConfig, env: Environment, groups: dict[s
 
 
 def _generate_tip_faults(cfg: ExporterConfig, env: Environment, groups: dict[str, dict]) -> None:
-    """生成 Go 侧故障码表(``tip.Faults`` / ``tip.IsFault``)。
+    """生成故障码表:Go 侧 ``tip.Faults`` / ``tip.IsFault``,Java 侧 ``TipFaults``。
 
     取代 go/shared/serverbase/tipcode.go 里那张手写的 tipFaultCodes 与
     guild 的本地 faultCodes —— 「码算不算故障」是码的属性,和码定义放在一起
     (Tip.xlsx 的 fault 列),这里只是同一份事实的生成产物。
+    Java 版给网关用(login 的 in-band 故障码回 500 而不是 401,tip-code-axis.md §2.10);
+    两门语言用同一份 rows,码集合不可能分叉。
 
     只收当前活动的 entry:墓碑虽然占着号,但已经没有定义,也就没有分类。
     """
-    if not cfg.go.enabled:
+    if not cfg.go.enabled and not cfg.java.enabled:
         return
     rows = []
     for name, g in groups.items():
@@ -669,20 +676,40 @@ def _generate_tip_faults(cfg: ExporterConfig, env: Environment, groups: dict[str
             if enum_name in g["faults"]:
                 rows.append({"code": g["ids"][enum_name], "group": name, "name": enum_name})
     rows.sort(key=lambda r: r["code"])
-    out_dir = Path(cfg.go.code_dir).parent / "tip"
-    ensure_dirs(out_dir)
-    tpl = env.get_template("tip_faults.go.j2")
-    content = tpl.render(rows=rows)
-    # Jinja 默认吃掉模板末尾那一个换行,而 gofmt 要求文件以换行结尾;
-    # 补回去,让产物可以直接过 gofmt -l。
-    if not content.endswith("\n"):
-        content += "\n"
-    write_file(out_dir / "faults.go", content)
+    if cfg.go.enabled:
+        out_dir = Path(cfg.go.code_dir).parent / "tip"
+        ensure_dirs(out_dir)
+        tpl = env.get_template("tip_faults.go.j2")
+        content = tpl.render(rows=rows)
+        # Jinja 默认吃掉模板末尾那一个换行,而 gofmt 要求文件以换行结尾;
+        # 补回去,让产物可以直接过 gofmt -l。
+        if not content.endswith("\n"):
+            content += "\n"
+        write_file(out_dir / "faults.go", content)
+    if cfg.java.enabled:
+        _generate_tip_faults_java(cfg, env, rows)
     logger.info("Generated tip fault table: %d fault code(s)", len(rows))
     if not rows:
         # 合法但极可疑:一整张码表里没有一个服务端故障,多半是列被清空了。
         # 表头还在所以不中止,但要让跑导表的人看见。
         logger.warning("The fault column in Tip.xlsx marks no fault codes; serverbase will not detect any in-band faults")
+
+
+def _generate_tip_faults_java(cfg: ExporterConfig, env: Environment, rows: list[dict]) -> None:
+    """生成 Java 侧故障码表 ``<java.package>.tip.TipFaults``。
+
+    落在 Java 代码树的 ``tip/`` 子目录:整棵代码树照旧部署进 config_node,
+    ``tip/`` 另由 exporter_config.yaml 单独部署进 Java 网关;Java 版由 ContractSync
+    原样复制。只依赖 JDK,不依赖 protobuf 运行时 —— 网关不加载配置表。
+    """
+    package = ".".join(p for p in (cfg.java.package, "tip") if p)
+    out_dir = Path(cfg.java.code_dir) / "tip"
+    ensure_dirs(out_dir)
+    content = env.get_template("tip_faults.java.j2").render(package=package, rows=rows)
+    # 与 Go 产物同理:Jinja 吃掉模板末尾的换行,补回去,文件以换行结尾。
+    if not content.endswith("\n"):
+        content += "\n"
+    write_file(out_dir / "TipFaults.java", content)
 
 
 def _generate_tip_text(cfg: ExporterConfig, groups: dict[str, dict]) -> None:

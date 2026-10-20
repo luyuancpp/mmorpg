@@ -6,10 +6,9 @@
 //
 // 客户端本体(modules/id_segment/guid_segment_client.h)不认识 gRPC 与节点发现;注册表
 // (guid_segment_registry.h)只是按种类放实例。这里把它们接到 DataService.AllocateIdSegment:
-//   * 发送 = 所有种类共用一条到 data_service 的 gRPC 路径(共享通道单飞,请求带编号),
+//   * 发送 = 所有种类共用一条到 data_service 的 gRPC 路径(共享通道单飞,回调捕获编号),
 //     从已连接且通道 READY 的 DataServiceNodeService 节点里随机挑一个发异步请求;
-//   * 响应 = 生成的 AsyncDataServiceAllocateIdSegmentHandler 转调传输层,按请求编号分发给
-//     发出它的那一种实例的 OnResponse。
+//   * 响应 = 每次调用回调带回本次请求编号,分发给发出它的那一种实例。
 
 class Node;
 
@@ -18,8 +17,3 @@ class Node;
 // 配置自相矛盾(Enabled=true 但 step 三元组非法、同一种类配了两块)直接 LOG_FATAL:
 // 发号源配错了不该带病启动。没配 / Enabled=false 的种类 WARN 后按 fail-closed 跑。
 std::size_t ConfigureGuidSegmentClients(Node &node);
-
-// 注册 AllocateIdSegment 的响应 handler(进程级函数对象,注册与是否启用无关)。
-// ConfigureGuidSegmentClients 自己会调它;单独暴露只为了显式重装。它是 gRPC 应答 handler,在这里手写安装;
-// 节点间 RPC0 的按 message_id 回包表(InitReply / rpc_replies/register_response_handler.cpp)已退场。
-void InitDataServiceReply();

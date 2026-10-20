@@ -26,20 +26,24 @@ type VoidParams struct {
 	Operator string
 	Note     string
 	PeerAddr string
+	// Mode 缺省 NORMAL = 原语义;FORCE_MISMATCH 走 forceVoid(要求 ledgers 非 nil、Note 非空)。
+	Mode inboxpb.PlayerInboxVoidMode
 }
 
-// Void 作废一条条目(设计 §7.9、IB-5):
+// Void 作废一条条目(设计 §7.9、IB-5)。普通模式:
 //   - 从未投递(delivery_count=0):在流行锁下直接改 VOIDED(finalized_by=ADMIN),open_count−1;
 //   - 已投递:只挂 directive=VOID,由消费方裁决(还没处理过 → 记 SKIPPED 再确认;已处理过 → 确认原结局);
 //   - 已挂过 VOID 指令:幂等成功,不改行;
 //   - 已是终态 → kPlayerInboxItemStateConflict;不存在 → kPlayerInboxItemNotFound。
 //
 // 改动行的分支与审计行(action=VOID,INSERT IGNORE)同库同事务。
-func (s *Store) Void(ctx context.Context, p VoidParams) (*inboxpb.VoidPlayerInboxItemResponse, error) {
+// 强制模式(mode=FORCE_MISMATCH)见 forceVoid;ledgers 只有它用,普通模式可传 nil。
+func (s *Store) Void(ctx context.Context, p VoidParams, ledgers LedgerReader) (*inboxpb.VoidPlayerInboxItemResponse, error) {
 	resp := &inboxpb.VoidPlayerInboxItemResponse{}
 	if _, ok := s.registry.Domain(p.Domain); !ok || p.PlayerID == 0 || p.Seq == 0 ||
 		p.Reason == inboxpb.PlayerInboxVoidReason_PLAYER_INBOX_VOID_UNSPECIFIED ||
-		inboxpb.PlayerInboxVoidReason_name[int32(p.Reason)] == "" {
+		inboxpb.PlayerInboxVoidReason_name[int32(p.Reason)] == "" ||
+		inboxpb.PlayerInboxVoidMode_name[int32(p.Mode)] == "" {
 		resp.ErrorMessage = tipOf(constants.ErrInvalidParameter)
 		return resp, nil
 	}
@@ -50,6 +54,9 @@ func (s *Store) Void(ctx context.Context, p VoidParams) (*inboxpb.VoidPlayerInbo
 	if code := ValidateText(p.Note, constants.MaxReasonBytes, false); code != 0 {
 		resp.ErrorMessage = tipOf(code)
 		return resp, nil
+	}
+	if p.Mode == inboxpb.PlayerInboxVoidMode_PLAYER_INBOX_VOID_MODE_FORCE_MISMATCH {
+		return s.forceVoid(ctx, p, ledgers)
 	}
 
 	shard := RowShard(p.PlayerID)
@@ -92,14 +99,13 @@ func (s *Store) Void(ctx context.Context, p VoidParams) (*inboxpb.VoidPlayerInbo
 			if err := requireOneRow(upd, "void item"); err != nil {
 				return err
 			}
-			openCount := st.GetOpenCount()
-			if openCount == 0 {
+			openCount, underflow := subtractOpenCount(st.GetOpenCount(), 1)
+			if underflow {
 				logx.WithContext(ctx).Errorf("[player_inbox] open_count already 0 while voiding a PENDING row player=%d domain=%d seq=%d",
 					p.PlayerID, p.Domain, p.Seq)
-				openCount = 1
 			}
 			upd, err = tx.ExecContext(ctx, "UPDATE "+streamTable+" SET `open_count` = ?, `updated_ms` = ? WHERE "+streamPK,
-				openCount-1, nowMs, shard, p.PlayerID, uint32(p.Domain))
+				openCount, nowMs, shard, p.PlayerID, uint32(p.Domain))
 			if err != nil {
 				return fmt.Errorf("inbox: update stream after void player=%d: %w", p.PlayerID, err)
 			}
@@ -122,37 +128,28 @@ func (s *Store) Void(ctx context.Context, p VoidParams) (*inboxpb.VoidPlayerInbo
 		case voidAlreadyRequested:
 			state = inboxpb.PlayerInboxItemState_PLAYER_INBOX_ITEM_PENDING
 		}
-		return InsertAudit(ctx, tx, &inboxpb.PlayerInboxAudit{
-			PlayerId:  p.PlayerID,
-			Domain:    uint32(p.Domain),
-			Seq:       p.Seq,
-			Action:    uint32(inboxpb.PlayerInboxAuditAction_PLAYER_INBOX_AUDIT_VOID),
-			Operator:  p.Operator,
-			PeerAddr:  p.PeerAddr,
-			Reason:    p.Note,
-			CreatedMs: nowMs,
+		// 内容列(msg_type / request_id / 载荷等)取自上面读到的 row(评审 L9);void_reason 记本次请求的原因。
+		return insertAuditForItem(ctx, tx, row, &inboxpb.PlayerInboxAudit{
+			PlayerId:   p.PlayerID,
+			Domain:     uint32(p.Domain),
+			Seq:        p.Seq,
+			Action:     uint32(inboxpb.PlayerInboxAuditAction_PLAYER_INBOX_AUDIT_VOID),
+			Operator:   p.Operator,
+			PeerAddr:   p.PeerAddr,
+			Reason:     p.Note,
+			CreatedMs:  nowMs,
+			VoidReason: uint32(p.Reason),
 		})
 	})
 	if err != nil {
 		return nil, err
 	}
 
-	dl, rl := DomainLabel(p.Domain), VoidReasonLabel(p.Reason)
-	switch action {
-	case voidNotFound:
-		resp.ErrorMessage = tipOf(constants.ErrItemNotFound)
-	case voidTerminal:
-		resp.ErrorMessage = tipOf(constants.ErrItemStateConflict)
-		resp.State = state
-	case voidDirect:
-		resp.State = state
-		metrics.ObserveVoid(dl, rl, "direct")
-	case voidDirective:
-		resp.State, resp.VoidRequested = state, true
-		metrics.ObserveVoid(dl, rl, "directive")
-	case voidAlreadyRequested:
-		resp.State, resp.VoidRequested = state, true
-		metrics.ObserveVoid(dl, rl, "already")
+	rl := VoidReasonLabel(p.Reason)
+	out := voidOutcomeOf(action, state)
+	resp.ErrorMessage, resp.State, resp.VoidRequested = tipOf(out.tip), out.state, out.voidRequested
+	if out.path != "" {
+		metrics.ObserveVoid(DomainLabel(p.Domain), rl, out.path)
 	}
 	if resp.ErrorMessage == nil {
 		logx.WithContext(ctx).Infof("[player_inbox] VoidItem player=%d domain=%d seq=%d reason=%s state=%d void_requested=%t operator=%q peer=%s",
@@ -161,12 +158,134 @@ func (s *Store) Void(ctx context.Context, p VoidParams) (*inboxpb.VoidPlayerInbo
 	return resp, nil
 }
 
+// forceVoid 是 VoidItem 的强制模式(设计 §7.9,mode=FORCE_MISMATCH):终结一条被 scene 回放核对判 MISMATCH、
+// 因而永久停用该域的已投递行。普通模式对已投递的行只能挂指令,而 scene 先做回放核对、后看指令,挂了也解不开。
+//
+//  1. 事务外经 ledgers 读该玩家**已落盘**的账本(不在持有行锁时等 data_service / Redis,设计 §10)。
+//     读失败返回 error(适配层折成 kPlayerInboxStoreUnavailable,可重试),不改任何状态。
+//  2. 开事务锁流行,按主键复读行,decideForceVoidLocked 判定。证明成立才以「仍 PENDING、已投递、request_id 不变」
+//     为条件改 VOIDED(finalized_by=ADMIN、void_reason=请求的原因),open_count−1,同事务写审计
+//     (action=FORCE_VOID,reason=note)。证明不成立 → kPlayerInboxItemStateConflict + force_verdict,行不变、不写审计。
+//
+// 先读账本、后在锁内判定没有竞态:账本水位只升不降,环里某个 seq 的结局写定后不再改(只会被挤出环);
+// 证明成立时消费方对本行只会判 MISMATCH,这期间无论再投递多少次都不会执行它。唯一的例外是「已落盘账本本身回退」
+// (Redis 丢数据),与资产通道一样在保证边界之外(设计 §7.10)。
+//
+// 终态行重复调用回 kPlayerInboxItemStateConflict(与普通模式一致);是否已强制终结,按 LookupByRequest 看
+// state=VOIDED、finalized_by=ADMIN 且 delivery_count>0(普通模式直接作废的行 delivery_count 恒为 0)。
+func (s *Store) forceVoid(ctx context.Context, p VoidParams, ledgers LedgerReader) (*inboxpb.VoidPlayerInboxItemResponse, error) {
+	resp := &inboxpb.VoidPlayerInboxItemResponse{}
+	// 强制终结是高风险操作:审计必须写清工单与依据,note 必填。
+	if code := ValidateText(p.Note, constants.MaxReasonBytes, true); code != 0 {
+		resp.ErrorMessage = tipOf(code)
+		return resp, nil
+	}
+	if ledgers == nil {
+		return nil, fmt.Errorf("inbox: force void has no ledger reader")
+	}
+	readCtx, cancel := context.WithTimeout(ctx, constants.LedgerReadTimeout)
+	ledger, found, err := ledgers.ReadInboxLedger(readCtx, p.PlayerID)
+	cancel()
+	if err != nil {
+		return nil, fmt.Errorf("inbox: force void read persisted ledger player=%d: %w", p.PlayerID, err)
+	}
+
+	shard := RowShard(p.PlayerID)
+	var (
+		action    voidAction
+		proof     forceVoidProof
+		state     inboxpb.PlayerInboxItemState
+		requestID uint64
+	)
+	err = assetop.WithTxRetryConfig(ctx, s.db, s.txCfg, func(tx *sql.Tx) error {
+		action, proof, state, requestID = voidNotFound, forceVoidProof{}, inboxpb.PlayerInboxItemState_PLAYER_INBOX_ITEM_UNSPECIFIED, 0
+		st, err := lockStream(ctx, tx, shard, p.PlayerID, p.Domain)
+		if err != nil {
+			return err
+		}
+		if st == nil {
+			return nil
+		}
+		row, err := readItem(ctx, tx, shard, p.PlayerID, p.Domain, p.Seq)
+		if err != nil {
+			return err
+		}
+		action, proof = decideForceVoidLocked(row, ledger, found)
+		if row != nil {
+			state, requestID = inboxpb.PlayerInboxItemState(row.GetState()), row.GetRequestId()
+		}
+		if action != voidForced {
+			return nil
+		}
+		nowMs := s.nowMs()
+		upd, err := tx.ExecContext(ctx, "UPDATE "+itemTable+
+			" SET `state` = ?, `finalized_by` = ?, `void_reason` = ?, `updated_ms` = ?"+
+			" WHERE "+itemPK+" AND `state` = ? AND `delivery_count` > 0 AND `request_id` = ?",
+			uint32(inboxpb.PlayerInboxItemState_PLAYER_INBOX_ITEM_VOIDED),
+			uint32(inboxpb.PlayerInboxFinalizer_PLAYER_INBOX_FINALIZER_ADMIN), uint32(p.Reason), nowMs,
+			shard, p.PlayerID, uint32(p.Domain), p.Seq, uint32(inboxpb.PlayerInboxItemState_PLAYER_INBOX_ITEM_PENDING), requestID)
+		if err != nil {
+			return fmt.Errorf("inbox: force void item player=%d seq=%d: %w", p.PlayerID, p.Seq, err)
+		}
+		if err := requireOneRow(upd, "force void item"); err != nil {
+			return err
+		}
+		openCount, underflow := subtractOpenCount(st.GetOpenCount(), 1)
+		if underflow {
+			logx.WithContext(ctx).Errorf("[player_inbox] open_count already 0 while force-voiding a PENDING row player=%d domain=%d seq=%d",
+				p.PlayerID, p.Domain, p.Seq)
+		}
+		upd, err = tx.ExecContext(ctx, "UPDATE "+streamTable+" SET `open_count` = ?, `updated_ms` = ? WHERE "+streamPK,
+			openCount, nowMs, shard, p.PlayerID, uint32(p.Domain))
+		if err != nil {
+			return fmt.Errorf("inbox: update stream after force void player=%d: %w", p.PlayerID, err)
+		}
+		if err := requireOneRow(upd, "update stream after force void"); err != nil {
+			return err
+		}
+		state = inboxpb.PlayerInboxItemState_PLAYER_INBOX_ITEM_VOIDED
+		// 证明成立时 row 非 nil(decideForceVoidLocked 对 nil 判 voidNotFound);内容列取自它(评审 L9)。
+		return insertAuditForItem(ctx, tx, row, &inboxpb.PlayerInboxAudit{
+			PlayerId:   p.PlayerID,
+			Domain:     uint32(p.Domain),
+			Seq:        p.Seq,
+			Action:     uint32(inboxpb.PlayerInboxAuditAction_PLAYER_INBOX_AUDIT_FORCE_VOID),
+			Operator:   p.Operator,
+			PeerAddr:   p.PeerAddr,
+			Reason:     p.Note,
+			CreatedMs:  nowMs,
+			VoidReason: uint32(p.Reason),
+		})
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	rl := VoidReasonLabel(p.Reason)
+	out := voidOutcomeOf(action, state)
+	resp.ErrorMessage, resp.State, resp.VoidRequested = tipOf(out.tip), out.state, out.voidRequested
+	resp.ForceVerdict = proof.verdict
+	if out.path != "" {
+		metrics.ObserveVoid(DomainLabel(p.Domain), rl, out.path)
+	}
+	log := logx.WithContext(ctx)
+	switch action {
+	case voidForced:
+		log.Infof("[player_inbox] VoidItem FORCE finalized player=%d domain=%d seq=%d request_id=%d reason=%s "+
+			"ledger_decided_through=%d ledger_request_id_at_seq=%d operator=%q peer=%s",
+			p.PlayerID, p.Domain, p.Seq, requestID, rl, proof.decidedThrough, proof.ringRequestID, p.Operator, p.PeerAddr)
+	case voidForceRefused:
+		log.Infof("[player_inbox] VoidItem FORCE refused player=%d domain=%d seq=%d request_id=%d verdict=%s "+
+			"ledger_decided_through=%d ledger_request_id_at_seq=%d operator=%q peer=%s",
+			p.PlayerID, p.Domain, p.Seq, requestID, proof.verdict, proof.decidedThrough, proof.ringRequestID, p.Operator, p.PeerAddr)
+	}
+	return resp, nil
+}
+
 // Summary 按玩家列出各域流的概况,另给 max_fence_epoch 供 epoch-raise 取最大值(设计 §7.8、C4)。
 func (s *Store) Summary(ctx context.Context, playerID uint64) (*inboxpb.GetPlayerInboxSummaryResponse, error) {
-	resp := &inboxpb.GetPlayerInboxSummaryResponse{PlayerId: playerID}
 	if playerID == 0 {
-		resp.ErrorMessage = tipOf(constants.ErrInvalidParameter)
-		return resp, nil
+		return &inboxpb.GetPlayerInboxSummaryResponse{ErrorMessage: tipOf(constants.ErrInvalidParameter)}, nil
 	}
 	shard := RowShard(playerID)
 	rows, err := s.db.QueryContext(ctx, "SELECT "+streamColumns+" FROM "+streamTable+
@@ -187,11 +306,7 @@ func (s *Store) Summary(ctx context.Context, playerID uint64) (*inboxpb.GetPlaye
 		return nil, err
 	}
 
-	type agg struct {
-		deliveredUnacked uint32
-		oldestCreatedMs  uint64
-	}
-	aggs := map[uint32]agg{}
+	aggs := map[uint32]pendingAggregate{}
 	arows, err := s.db.QueryContext(ctx, "SELECT `domain`,"+
 		" COALESCE(SUM(CASE WHEN `delivery_count` > 0 THEN 1 ELSE 0 END), 0), COALESCE(MIN(`created_ms`), 0)"+
 		" FROM "+itemTable+" WHERE `shard` = ? AND `player_id` = ? AND `state` = ? GROUP BY `domain`",
@@ -201,7 +316,7 @@ func (s *Store) Summary(ctx context.Context, playerID uint64) (*inboxpb.GetPlaye
 	}
 	for arows.Next() {
 		var d uint32
-		var a agg
+		var a pendingAggregate
 		if err := arows.Scan(&d, &a.deliveredUnacked, &a.oldestCreatedMs); err != nil {
 			arows.Close()
 			return nil, err
@@ -211,21 +326,7 @@ func (s *Store) Summary(ctx context.Context, playerID uint64) (*inboxpb.GetPlaye
 	if err := arows.Close(); err != nil {
 		return nil, err
 	}
-
-	for _, st := range streams {
-		a := aggs[st.GetDomain()]
-		resp.Streams = append(resp.Streams, &inboxpb.PlayerInboxStreamSummary{
-			Domain:                 inboxpb.PlayerInboxDomain(st.GetDomain()),
-			OpenCount:              st.GetOpenCount(),
-			NextSeq:                st.GetNextSeq(),
-			FenceEpoch:             st.GetFenceEpoch(),
-			DeliveredUnackedCount:  a.deliveredUnacked,
-			OldestPendingCreatedMs: a.oldestCreatedMs,
-			NotifyDueMs:            st.GetNotifyDueMs(),
-		})
-		resp.MaxFenceEpoch = max(resp.MaxFenceEpoch, st.GetFenceEpoch())
-	}
-	return resp, nil
+	return summarizeStreams(playerID, streams, aggs), nil
 }
 
 // List 按 player_id + domain(+ 可选 state)分页列条目,seq 升序,after_seq 翻页,limit ≤ 200。
@@ -254,10 +355,7 @@ func (s *Store) List(ctx context.Context, req *inboxpb.ListPlayerInboxItemsReque
 	if err != nil {
 		return nil, fmt.Errorf("inbox: list items player=%d: %w", req.GetPlayerId(), err)
 	}
-	if len(rows) > limit {
-		resp.HasMore = true
-		rows = rows[:limit]
-	}
+	rows, resp.HasMore = splitPage(rows, limit)
 	for _, row := range rows {
 		resp.Items = append(resp.Items, ItemView(row))
 	}

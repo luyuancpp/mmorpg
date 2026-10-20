@@ -17,39 +17,33 @@
 #include "scene_route_helper.h"
 #include "scene_entry_dispatch.h"
 #include "handler/rpc/client_request_lane.h"
+#include <session/system/session_identity_fence.h>
 
 #include <chrono>
 
 // 向 scene 转发进场(ForwardPlayerToScene)、欠账补发与超限收口都在 scene_entry_dispatch.cpp(CPP-2);
 // 下面 RoutePlayer / BindSession 的守护段只经 scene_route_helper.h 的纯函数写会话字段,再委托过去。
-///<<< END WRITING YOUR CODE
-void GateEventHandler::Register()
-{
-    tlsEcs.dispatcher.sink<contracts::kafka::RoutePlayerEvent>().connect<&GateEventHandler::RoutePlayerEventHandler>();
-    tlsEcs.dispatcher.sink<contracts::kafka::KickPlayerEvent>().connect<&GateEventHandler::KickPlayerEventHandler>();
-    tlsEcs.dispatcher.sink<contracts::kafka::PlayerDisconnectedEvent>().connect<&GateEventHandler::PlayerDisconnectedEventHandler>();
-    tlsEcs.dispatcher.sink<contracts::kafka::PlayerLeaseExpiredEvent>().connect<&GateEventHandler::PlayerLeaseExpiredEventHandler>();
-    tlsEcs.dispatcher.sink<contracts::kafka::BindSessionEvent>().connect<&GateEventHandler::BindSessionEventHandler>();
-    tlsEcs.dispatcher.sink<contracts::kafka::RedirectToGateEvent>().connect<&GateEventHandler::RedirectToGateEventHandler>();
-    tlsEcs.dispatcher.sink<contracts::kafka::PushToPlayerEvent>().connect<&GateEventHandler::PushToPlayerEventHandler>();
-    tlsEcs.dispatcher.sink<contracts::kafka::BroadcastToPlayersEvent>().connect<&GateEventHandler::BroadcastToPlayersEventHandler>();
-    tlsEcs.dispatcher.sink<contracts::kafka::BroadcastToSceneEvent>().connect<&GateEventHandler::BroadcastToSceneEventHandler>();
-    tlsEcs.dispatcher.sink<contracts::kafka::BroadcastToAllEvent>().connect<&GateEventHandler::BroadcastToAllEventHandler>();
-}
 
-void GateEventHandler::UnRegister()
+namespace
 {
-    tlsEcs.dispatcher.sink<contracts::kafka::RoutePlayerEvent>().disconnect<&GateEventHandler::RoutePlayerEventHandler>();
-    tlsEcs.dispatcher.sink<contracts::kafka::KickPlayerEvent>().disconnect<&GateEventHandler::KickPlayerEventHandler>();
-    tlsEcs.dispatcher.sink<contracts::kafka::PlayerDisconnectedEvent>().disconnect<&GateEventHandler::PlayerDisconnectedEventHandler>();
-    tlsEcs.dispatcher.sink<contracts::kafka::PlayerLeaseExpiredEvent>().disconnect<&GateEventHandler::PlayerLeaseExpiredEventHandler>();
-    tlsEcs.dispatcher.sink<contracts::kafka::BindSessionEvent>().disconnect<&GateEventHandler::BindSessionEventHandler>();
-    tlsEcs.dispatcher.sink<contracts::kafka::RedirectToGateEvent>().disconnect<&GateEventHandler::RedirectToGateEventHandler>();
-    tlsEcs.dispatcher.sink<contracts::kafka::PushToPlayerEvent>().disconnect<&GateEventHandler::PushToPlayerEventHandler>();
-    tlsEcs.dispatcher.sink<contracts::kafka::BroadcastToPlayersEvent>().disconnect<&GateEventHandler::BroadcastToPlayersEventHandler>();
-    tlsEcs.dispatcher.sink<contracts::kafka::BroadcastToSceneEvent>().disconnect<&GateEventHandler::BroadcastToSceneEventHandler>();
-    tlsEcs.dispatcher.sink<contracts::kafka::BroadcastToAllEvent>().disconnect<&GateEventHandler::BroadcastToAllEventHandler>();
+    // 旧版 login 的踢线不带 player_id(ClassifyKick 判 kKickUnfenced):按 session_id 踢(旧行为)。
+    // 迁移窗口里每条踢线都成立,只在本线程首次记一行 INFO,看到它 = login 灰度尚未完成
+    // (docs/design/scene-enter-chain-residuals.md §2.5)。做法同 gate_service_handler.cpp 的 LogFenceUnfencedOnce;
+    // 标记用 thread_local,与 tlsSessionManager 同一线程归属,不引入跨线程共享状态。
+    void LogKickUnfencedOnce(uint32_t sessionId)
+    {
+        thread_local bool logged = false;
+        if (logged)
+        {
+            return;
+        }
+        logged = true;
+        LOG_INFO << "KickPlayer: received a kick without player_id (legacy login); kicking by session_id only. "
+                 << "Kick identity fence is inactive for such events; this is logged once per thread. session_id="
+                 << sessionId << " See docs/design/scene-enter-chain-residuals.md section 2.";
+    }
 }
+///<<< END WRITING YOUR CODE
 void GateEventHandler::RoutePlayerEventHandler(const contracts::kafka::RoutePlayerEvent& event)
 {
 ///<<< BEGIN WRITING YOUR CODE
@@ -72,6 +66,21 @@ void GateEventHandler::RoutePlayerEventHandler(const contracts::kafka::RoutePlay
     }
 
     auto &session = it->second;
+
+    // 客户端 LeaveGame 之后、下一次登录进场之前到达的、属于 LeaveGame 之前那条登录链的路由:在写任何会话字段之前丢弃
+    // (scene_route_helper.h IsRouteFromBeforeLeaveGame,docs/design/location-release-binding.md §3.5 R5)。
+    // 不丢的话它会重新填上 lastSceneRoute / ownerEpoch,下一次 BindSession 按这条旧路由、带旧 epoch 补发。
+    if (gate_scene_route::IsRouteFromBeforeLeaveGame(session, event.player_id(), event.login_generation()))
+    {
+        LOG_INFO << "RoutePlayer: dropped a route issued before the client left the game, session_id=" << sessionId
+                 << " player_id=" << event.player_id()
+                 << " scene_node_id=" << targetNodeId
+                 << " scene_id=" << event.scene_id()
+                 << " owner_epoch=" << event.owner_epoch()
+                 << " route_login_generation=" << event.login_generation()
+                 << " login_generation_at_leave=" << session.loginGenerationAtReset;
+        return;
+    }
 
     // 身份字段在转发之前写进会话(scene_route_helper.h ApplyRouteIdentity):转发、欠账重试与晚到 BindSession
     // 的补发都从会话取,不再读路由事件。玩家只在会话未绑角色时采用(BindSession 可能尚未到达);归属 zone 与
@@ -110,7 +119,31 @@ void GateEventHandler::KickPlayerEventHandler(const contracts::kafka::KickPlayer
         return;
     }
 
-    auto conn = it->second.conn.lock();
+    // 踢线身份栅栏(session_identity_fence.h ClassifyKick;scene-enter-chain-residuals.md §2.2 ④):
+    // 只踢当前绑定该玩家、且没承载更新登录的会话。纯判定,在任何副作用之前做;只读 loginGeneration,不写
+    // (写入点仍只有 scene_route_helper.h 的两个 helper)。
+    const auto &session = it->second;
+    const auto verdict = gate_session_fence::ClassifyKick(session.playerId, session.loginGeneration,
+                                                          event.player_id(), event.login_generation());
+    switch (verdict)
+    {
+    case gate_session_fence::KickVerdict::kSkipOtherPlayer:
+    case gate_session_fence::KickVerdict::kSkipNewerLogin:
+        LOG_WARN << "KickPlayer: identity fence skipped kick. session_id=" << sessionId
+                 << " session_player_id=" << session.playerId
+                 << " event_player_id=" << event.player_id()
+                 << " session_login_generation=" << session.loginGeneration
+                 << " kicker_login_generation=" << event.login_generation()
+                 << " verdict=" << gate_session_fence::KickVerdictName(verdict);
+        return;
+    case gate_session_fence::KickVerdict::kKickUnfenced:
+        LogKickUnfencedOnce(sessionId);
+        break;
+    case gate_session_fence::KickVerdict::kKick:
+        break;
+    }
+
+    auto conn = session.conn.lock();
     if (!conn || !conn->connected())
     {
         LOG_DEBUG << "KickPlayer: connection already closed. session_id=" << sessionId;
@@ -127,12 +160,11 @@ void GateEventHandler::KickPlayerEventHandler(const contracts::kafka::KickPlayer
 
     conn->shutdown();
     LOG_INFO << "KickPlayer: kicked session_id=" << sessionId
-             << " player_id=" << it->second.playerId;
-///<<< END WRITING YOUR CODE
-}
-void GateEventHandler::PlayerDisconnectedEventHandler(const contracts::kafka::PlayerDisconnectedEvent& event)
-{
-///<<< BEGIN WRITING YOUR CODE
+             << " player_id=" << session.playerId
+             << " event_player_id=" << event.player_id()
+             << " session_login_generation=" << session.loginGeneration
+             << " kicker_login_generation=" << event.login_generation()
+             << " verdict=" << gate_session_fence::KickVerdictName(verdict);
 ///<<< END WRITING YOUR CODE
 }
 void GateEventHandler::PlayerLeaseExpiredEventHandler(const contracts::kafka::PlayerLeaseExpiredEvent& event)

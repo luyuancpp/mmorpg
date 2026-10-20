@@ -48,6 +48,7 @@
 #include "table/proto/tip/reward_error_tip.pb.h"
 #include "rpc/service_metadata/player_mission_service_metadata.h"
 #include "table/proto/tip/common_error_tip.pb.h"
+#include "table/proto/tip/pet_error_tip.pb.h"
 #include "thread_context/ecs_context.h"
 
 namespace {
@@ -152,10 +153,6 @@ protected:
         ASSERT_EQ(kSuccess, PlayerMissionSystem::Initialize(player));
     }
     void TearDown() override {
-        tlsEcs.dispatcher.clear<AcceptMissionEvent>();
-        tlsEcs.dispatcher.clear<ConditionEvent>();
-        tlsEcs.dispatcher.clear<OnAcceptedMissionEvent>();
-        tlsEcs.dispatcher.clear<OnMissionAwardEvent>();
         if (tlsEcs.actorRegistry.valid(player)) tlsEcs.actorRegistry.destroy(player);
         EXPECT_TRUE(ArmItemSegment(1, uint64_t{1} << 54));
     }
@@ -188,7 +185,7 @@ protected:
         kill.conditionType = static_cast<uint32_t>(eConditionType::kConditionKillMonster);
         kill.conditionIds.push_back(1);
         kill.amount = 1;
-        MissionSystem::HandleConditionEvent(kill, Missions(), MissionConfig::GetSingleton());
+        PlayerMissionSystem::OnCondition(player, kill);
         ASSERT_TRUE(Missions().IsClaimable(12));
     }
     uint32_t ReadBagCount() {
@@ -301,7 +298,7 @@ TEST_F(MissionActionHandlerTest, FrozenActionsPreserveStateAndReadOnlySnapshotDi
 }
 
 // ═════════════════════════════════════════════════════════════════════════
-// 三类组件分别验证:派生 MoveSpeedComp / CombatStateFlagsComp 在 actor 创建时挂,
+// 三类组件分别验证:派生 CombatStateFlagsComp 在 actor 创建时挂,
 // 持久 PlayerPetComp 由加载链路挂;按需 ActorStateComp 在第一次状态写入时创建。
 // 初始化链不编进本工程,派生与持久组件缺失场景由夹具显式构造,按需状态调用真实写入口。
 // ═════════════════════════════════════════════════════════════════════════
@@ -332,13 +329,13 @@ class ActorAttributeCalculatorTest : public ActorEntityFixture {};
 // 修复前 Update 只清位不摘组件:标过一次脏的 actor 永远留在 view 里,每 tick 白遍历一遍。
 TEST_F(ActorAttributeCalculatorTest, UpdateRemovesTheDirtyFlagComponentOnceConsumed) {
     const auto actor = NewEntity();
-    tlsEcs.actorRegistry.emplace<MoveSpeedComp>(actor);
-    ActorAttributeCalculatorSystem::MarkAttributeForUpdate(actor, kMoveSpeed);
+    tlsEcs.actorRegistry.emplace<CombatStateFlagsComp>(actor);
+    ActorAttributeCalculatorSystem::MarkAttributeForUpdate(actor, kCombatState);
     ActorAttributeCalculatorSystem::MarkAttributeForUpdate(actor, kHealth);
     ASSERT_TRUE(Has<AttributeDirtyFlagsComp>(actor));
     {
         const auto &bits = tlsEcs.actorRegistry.get<AttributeDirtyFlagsComp>(actor).attributeBits;
-        EXPECT_TRUE(bits.test(kMoveSpeed)) << "marks within one tick must merge, not replace each other";
+        EXPECT_TRUE(bits.test(kCombatState)) << "marks within one tick must merge, not replace each other";
         EXPECT_TRUE(bits.test(kHealth));
     }
 
@@ -347,45 +344,34 @@ TEST_F(ActorAttributeCalculatorTest, UpdateRemovesTheDirtyFlagComponentOnceConsu
 }
 
 // 跨 zone 冻结中的玩家不重算,标记原样留到冻结解除(view 的 exclude 口径不变),解冻后消费即摘。
-// 修复前解冻那次 Update 只清位不摘组件,而且没有 buff 列表时直接 return,移速停在 2.0。
 TEST_F(ActorAttributeCalculatorTest, FrozenPlayerKeepsItsDirtyFlagsUntilTheFreezeEnds) {
     const auto actor = NewEntity();
-    tlsEcs.actorRegistry.emplace<MoveSpeedComp>(actor).moveSpeed = 2.0;
+    auto& flags = tlsEcs.actorRegistry.emplace<CombatStateFlagsComp>(actor);
+    constexpr uint32_t kExistingCombatState = 2;
+    (*flags.mutable_state_flags())[kExistingCombatState] = true;
+    const auto before = flags.SerializeAsString();
     tlsEcs.actorRegistry.emplace<PlayerFrozenComp>(actor);
-    ActorAttributeCalculatorSystem::MarkAttributeForUpdate(actor, kMoveSpeed);
+    ActorAttributeCalculatorSystem::MarkAttributeForUpdate(actor, kCombatState);
 
     ActorAttributeCalculatorSystem::Update();
     ASSERT_TRUE(Has<AttributeDirtyFlagsComp>(actor));
-    EXPECT_DOUBLE_EQ(2.0, tlsEcs.actorRegistry.get<MoveSpeedComp>(actor).moveSpeed);
+    EXPECT_EQ(before, tlsEcs.actorRegistry.get<CombatStateFlagsComp>(actor).SerializeAsString());
 
     tlsEcs.actorRegistry.remove<PlayerFrozenComp>(actor);
     ActorAttributeCalculatorSystem::Update();
     EXPECT_FALSE(Has<AttributeDirtyFlagsComp>(actor));
-    EXPECT_DOUBLE_EQ(0.0, tlsEcs.actorRegistry.get<MoveSpeedComp>(actor).moveSpeed);
+    EXPECT_TRUE(tlsEcs.actorRegistry.get<CombatStateFlagsComp>(actor).state_flags().empty());
 }
 
 // 没走 actor 初始化的实体:重算函数只取不建,缺组件报错跳过;标记照样消费,不每 tick 重报。
-// 修复前 UpdateMoveSpeed / ResetCombatStateFlags 用 get_or_emplace,会把这两个组件补出来。
+// 修复前 ResetCombatStateFlags 用 get_or_emplace，会把缺失的同步投影补出来。
 TEST_F(ActorAttributeCalculatorTest, RecalculationDoesNotCreateMissingRequiredComponents) {
     const auto actor = NewEntity();
-    ActorAttributeCalculatorSystem::MarkAttributeForUpdate(actor, kMoveSpeed);
     ActorAttributeCalculatorSystem::MarkAttributeForUpdate(actor, kCombatState);
 
     ActorAttributeCalculatorSystem::Update();
-    EXPECT_FALSE(Has<MoveSpeedComp>(actor));
     EXPECT_FALSE(Has<CombatStateFlagsComp>(actor));
     EXPECT_FALSE(Has<AttributeDirtyFlagsComp>(actor));
-}
-
-// 身上没有 buff 列表(按需组件)= 没有移速加成:移速回到 0。
-// 修复前这里直接 return,上一次算出的加成一直留在 MoveSpeedComp 里。
-TEST_F(ActorAttributeCalculatorTest, MoveSpeedFallsBackToZeroWhenNoBuffListIsLeft) {
-    const auto actor = NewEntity();
-    tlsEcs.actorRegistry.emplace<MoveSpeedComp>(actor).moveSpeed = 3.5;
-    ActorAttributeCalculatorSystem::MarkAttributeForUpdate(actor, kMoveSpeed);
-
-    ActorAttributeCalculatorSystem::Update();
-    EXPECT_DOUBLE_EQ(0.0, tlsEcs.actorRegistry.get<MoveSpeedComp>(actor).moveSpeed);
 }
 
 // 走过初始化的 actor:同步投影照旧等于当前激活的战斗状态(键存在即激活)。修复前后都应成立。
@@ -608,6 +594,31 @@ TEST_F(PetOwnerLevelTest, MissingOwnerLevelSkipsLoadRepairAndRecalculationWithou
     PetSystem::RecalculateAll(player, PetSystem::RecalcReason::kLevelChanged);
     EXPECT_EQ(before, Comp().SerializeAsString());
     EXPECT_FALSE(Has<LevelComp>(player));
+}
+
+TEST_F(PetOwnerLevelTest, TradedGrowthSurvivesLowerOwnerLoadAndRoundTripButCannotSummonOrBattle) {
+    auto& level = tlsEcs.actorRegistry.emplace<LevelComp>(player);
+    level.set_level(10);
+    PetSystem::InitializeOnLoad(player);
+    EXPECT_EQ(kSavedLevel, Comp().pets(0).level());
+    EXPECT_EQ(100u, Comp().pets(0).allocated().at(dimensionId));
+    EXPECT_EQ(kPetOwnerLevelNotEnough, PetSystem::Summon(player, kPetId));
+    Comp().set_active_pet_id(kPetId); // 存量出战指针也不能绕过战斗入口。
+    BattlePetSnapshot battle;
+    EXPECT_FALSE(PetSystem::BuildBattleSnapshot(player, battle));
+    PetSystem::RecalculateAll(player, PetSystem::RecalcReason::kLevelChanged);
+    EXPECT_EQ(0u, Comp().active_pet_id());
+    PlayerPetComp restored;
+    ASSERT_TRUE(restored.ParseFromString(Comp().SerializeAsString()));
+    EXPECT_EQ(kSavedLevel, restored.pets(0).level());
+    EXPECT_EQ(100u, restored.pets(0).allocated().at(dimensionId));
+    level.set_level(kSavedLevel);
+    EXPECT_EQ(kSuccess, PetSystem::Summon(player, kPetId));
+    level.set_level(10);
+    PetSystem::RecalculateAll(player, PetSystem::RecalcReason::kLevelChanged);
+    EXPECT_EQ(0u, Comp().active_pet_id());
+    EXPECT_EQ(kSavedLevel, Comp().pets(0).level());
+    EXPECT_EQ(100u, Comp().pets(0).allocated().at(dimensionId));
 }
 
 TEST_F(PetOwnerLevelTest, MissingOwnerLevelRejectsSummonBeforeChangingActivePet) {

@@ -10,6 +10,9 @@ public final class CommerceProperties {
     private String runMode = "prod";
     private String gatewaySecret;
     private String paymentSecret;
+    private String deliverySecret;
+    public String getDeliverySecret(){return deliverySecret;}
+    public void setDeliverySecret(String value){deliverySecret=value;}
     private String paymentSubject = "payment-adapter";
     private int maxUnpaidOrders = 5;
     public boolean isRequireTidb() { return requireTidb; }
@@ -31,6 +34,7 @@ public final class CommerceProperties {
         if (!strong(gatewaySecret) || !strong(paymentSecret) || gatewaySecret.equals(paymentSecret)) {
             throw new IllegalStateException("必须配置两把不同且至少 32 字节的商城调用密钥");
         }
+        if(deliverySecret!=null&&!deliverySecret.isEmpty()&&(!strong(deliverySecret)||deliverySecret.equals(gatewaySecret)||deliverySecret.equals(paymentSecret)))throw new IllegalStateException("交付调用密钥必须与网关及支付密钥不同且至少32字节");
         if (paymentSubject == null || !paymentSubject.matches("[a-z][a-z0-9-]{2,63}")) {
             throw new IllegalStateException("支付调用方名称非法");
         }

@@ -40,6 +40,7 @@ type PlayerInboxAdminClient interface {
 	// (player_id, producer_kind, request_id) → 条目与结局。
 	LookupByRequest(ctx context.Context, in *LookupPlayerInboxRequest, opts ...grpc.CallOption) (*LookupPlayerInboxResponse, error)
 	// 未投递 → VOIDED;已投递 → 只挂 VOID 指令,由消费方裁决(IB-5)。
+	// 强制模式(mode=FORCE_MISMATCH)只为解开 scene 回放核对判 MISMATCH 之后的永久停用,见 PlayerInboxVoidMode。
 	VoidItem(ctx context.Context, in *VoidPlayerInboxItemRequest, opts ...grpc.CallOption) (*VoidPlayerInboxItemResponse, error)
 	// 单个玩家比对收件箱与已落盘账本(设计 §9.3)。第 4 批实现,此前服务端回 UNIMPLEMENTED。
 	ReconcilePlayer(ctx context.Context, in *ReconcilePlayerInboxRequest, opts ...grpc.CallOption) (*ReconcilePlayerInboxResponse, error)
@@ -126,6 +127,7 @@ type PlayerInboxAdminServer interface {
 	// (player_id, producer_kind, request_id) → 条目与结局。
 	LookupByRequest(context.Context, *LookupPlayerInboxRequest) (*LookupPlayerInboxResponse, error)
 	// 未投递 → VOIDED;已投递 → 只挂 VOID 指令,由消费方裁决(IB-5)。
+	// 强制模式(mode=FORCE_MISMATCH)只为解开 scene 回放核对判 MISMATCH 之后的永久停用,见 PlayerInboxVoidMode。
 	VoidItem(context.Context, *VoidPlayerInboxItemRequest) (*VoidPlayerInboxItemResponse, error)
 	// 单个玩家比对收件箱与已落盘账本(设计 §9.3)。第 4 批实现,此前服务端回 UNIMPLEMENTED。
 	ReconcilePlayer(context.Context, *ReconcilePlayerInboxRequest) (*ReconcilePlayerInboxResponse, error)

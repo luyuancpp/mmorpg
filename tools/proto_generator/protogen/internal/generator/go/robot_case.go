@@ -1,13 +1,14 @@
 package _go
 
 import (
-	"os"
+	"bytes"
 	"strings"
 	"sync"
 	"text/template"
 
 	"protogen/internal"
 	_config "protogen/internal/config"
+	"protogen/internal/utils"
 	"protogen/logger"
 
 	"go.uber.org/zap"
@@ -60,7 +61,7 @@ func GoRobotTotalHandlerGenerator(wg *sync.WaitGroup) {
 
 		err := generateTotalHandlerFile(_config.Global.Paths.RobotMsgBodyHandlerFile, handlerCases)
 		if err != nil {
-			logger.Global.Error("Failed to generate robot message handler file",
+			logger.Global.Fatal("生成机器人消息处理器文件失败",
 				zap.Error(err),
 			)
 			return
@@ -97,15 +98,6 @@ func generateTotalHandlerFile(fileName string, cases []HandlerCase) error {
 		logger.Global.Fatal("Failed to generate handler file: file path is empty")
 	}
 
-	file, err := os.Create(fileName)
-	if err != nil {
-		logger.Global.Fatal("Failed to create handler file",
-			zap.String("file_name", fileName),
-			zap.Error(err),
-		)
-	}
-	defer file.Close()
-
 	tmpl, err := template.ParseFiles("internal/template/robot_handler_total.go.tmpl")
 	if err != nil {
 		logger.Global.Fatal("Failed to parse handler template",
@@ -117,12 +109,17 @@ func generateTotalHandlerFile(fileName string, cases []HandlerCase) error {
 		Cases: cases,
 	}
 
-	if err := tmpl.Execute(file, data); err != nil {
+	var content bytes.Buffer
+	if err := tmpl.Execute(&content, data); err != nil {
 		logger.Global.Fatal("Failed to execute handler template",
 			zap.String("file_name", fileName),
 			zap.Int("case_count", len(cases)),
 			zap.Error(err),
 		)
+		return err
+	}
+	if err := utils.WriteFileIfChanged(fileName, content.Bytes()); err != nil {
+		return err
 	}
 
 	logger.Global.Debug("Handler template executed",

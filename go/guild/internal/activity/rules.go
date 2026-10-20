@@ -328,6 +328,7 @@ func buildRewardBundle(rewardID uint32, rewardOf func(uint32) (*tablepb.RewardTa
 		return nil, fmt.Errorf("Reward 表缺少 id=%d 的行", rewardID)
 	}
 	sums := make(map[uint32]uint64, len(row.GetReward()))
+	var total uint64
 	for i, slot := range row.GetReward() {
 		count := slot.GetRewardCount()
 		if count == 0 {
@@ -337,6 +338,10 @@ func buildRewardBundle(rewardID uint32, rewardOf func(uint32) (*tablepb.RewardTa
 		// 有数量却没物品:多半是漏填了物品列。当空槽跳过会让玩家少拿一份而没人发现。
 		if item == 0 {
 			return nil, fmt.Errorf("Reward[%d] 第 %d 槽 reward_item=0 而 reward_count=%d", rewardID, i+1, count)
+		}
+		total += uint64(count)
+		if total > 4096 {
+			return nil, fmt.Errorf("Reward[%d] 总物品数量超过资产通道4096上限", rewardID)
 		}
 		sums[item] += uint64(count)
 		if sums[item] > math.MaxUint32 {

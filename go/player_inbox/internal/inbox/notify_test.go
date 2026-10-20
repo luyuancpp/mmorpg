@@ -3,8 +3,12 @@ package inbox
 import (
 	"context"
 	"errors"
+	"fmt"
 	"strconv"
 	"testing"
+	"time"
+
+	"player_inbox/internal/metrics"
 
 	event "proto/common/event"
 	kafkapb "proto/contracts/kafka"
@@ -60,9 +64,13 @@ func locationBytes(t *testing.T, loc *smpb.PlayerLocation) []byte {
 const notifyEventID = 49
 
 // TestKafkaNotifierOutcomes 钉住提醒的每种结局与「是否可以清 notify_due_ms」(设计 §6.3)。
+// 评审 L6:位置记录既无节点也无 epoch 不可恢复,落定交给落地拉取;镜像未同步、节点身份歧义会自愈,留给补发(退避重试)。
+// 评审 R3 的回归:镜像已同步却查不到节点原来也判落定,但那可能只是 watch 重连期间的旧镜像或租约抖动(玩家仍在线),
+// 第一次就清零会让封锁晚到约 30 分钟 —— 现在单列 node_missing,留给补发。
 func TestKafkaNotifierOutcomes(t *testing.T) {
 	online := locationBytes(t, &smpb.PlayerLocation{NodeId: "7", ZoneId: 2, OwnerEpoch: 3})
 	node := scenenode.NodeEntry{NodeId: 7, ZoneId: 2, NodeUuid: "uuid-7", Endpoint: "10.0.0.7:7000"}
+	ambiguous := fmt.Errorf("%w zone=2 node=7: 2 条注册", scenenode.ErrNodeAmbiguous)
 	cases := []struct {
 		name    string
 		loc     fakeLocations
@@ -77,10 +85,13 @@ func TestKafkaNotifierOutcomes(t *testing.T) {
 		{"location 写坏", fakeLocations{raw: []byte{0xff}}, fakeNodes{synced: true}, nil, NotifyError, false, 0},
 		{"等待跨 zone 落点:视为成功", fakeLocations{raw: locationBytes(t, &smpb.PlayerLocation{ZoneId: 2, OwnerEpoch: 4})},
 			fakeNodes{synced: true}, nil, NotifyAwaitingPlacement, true, 0},
-		{"无节点也无 epoch", fakeLocations{raw: locationBytes(t, &smpb.PlayerLocation{ZoneId: 2})},
-			fakeNodes{synced: true}, nil, NotifyNoNode, false, 0},
-		{"镜像未同步", fakeLocations{raw: online}, fakeNodes{synced: false}, nil, NotifyNoNode, false, 0},
-		{"节点查不到", fakeLocations{raw: online}, fakeNodes{synced: true, err: errors.New("not registered")}, nil, NotifyNoNode, false, 0},
+		{"无节点也无 epoch:不可恢复,落定交给落地拉取", fakeLocations{raw: locationBytes(t, &smpb.PlayerLocation{ZoneId: 2})},
+			fakeNodes{synced: true}, nil, NotifyNoNode, true, 0},
+		{"镜像未同步:留给补发", fakeLocations{raw: online}, fakeNodes{synced: false}, nil, NotifyNodesUnsynced, false, 0},
+		{"镜像已同步却查不到节点:可能是租约抖动,留给补发", fakeLocations{raw: online},
+			fakeNodes{synced: true, err: errors.New("节点未注册 zone=2 node=7")}, nil, NotifyNodeMissing, false, 0},
+		{"节点身份歧义:租约过期后自愈,留给补发", fakeLocations{raw: online}, fakeNodes{synced: true, err: ambiguous},
+			nil, NotifyNodeAmbiguous, false, 0},
 		{"uuid 为空:不发(防僵尸)", fakeLocations{raw: online}, fakeNodes{synced: true, entry: scenenode.NodeEntry{NodeId: 7, ZoneId: 2}},
 			nil, NotifyEmptyUUID, false, 0},
 		{"写 Kafka 失败", fakeLocations{raw: online}, fakeNodes{synced: true, entry: node}, errors.New("broker down"), NotifyError, false, 0},
@@ -96,6 +107,38 @@ func TestKafkaNotifierOutcomes(t *testing.T) {
 					got, got.Settled(), len(w.msgs), tc.want, tc.settled, tc.writes)
 			}
 		})
+	}
+}
+
+// TestNotifyGivesUp 钉住补发对 node_missing 的落定时机(评审 R3):悬满 1 小时才落定,之前按退避重试;
+// 别的没落定结局永远不在这里落定(它们会自愈,或要人处理);时钟回拨 / 起算点缺失不落定。
+func TestNotifyGivesUp(t *testing.T) {
+	hour := uint64(notifyNodeMissingSettleAfter.Milliseconds())
+	if notifyNodeMissingSettleAfter != time.Hour {
+		t.Fatalf("notifyNodeMissingSettleAfter = %v, want 1h(scene 侧在线兜底最长 36 分钟之后)", notifyNodeMissingSettleAfter)
+	}
+	const since = testNowMs
+	cases := []struct {
+		name   string
+		result NotifyResult
+		nowMs  uint64
+		since  uint64
+		want   bool
+	}{
+		{"查不到节点、刚悬 30s:重试", NotifyNodeMissing, since + 30_000, since, false},
+		{"查不到节点、差 1ms 满 1 小时:重试", NotifyNodeMissing, since + hour - 1, since, false},
+		{"查不到节点、恰好 1 小时:落定", NotifyNodeMissing, since + hour, since, true},
+		{"查不到节点、悬了 3 小时:落定", NotifyNodeMissing, since + 3*hour, since, true},
+		{"时钟回拨:不落定", NotifyNodeMissing, since - 1, since, false},
+		{"起算点缺失:不落定", NotifyNodeMissing, since + 3*hour, 0, false},
+		{"镜像未同步悬了 3 小时:不在这里落定", NotifyNodesUnsynced, since + 3*hour, since, false},
+		{"Kafka 写失败悬了 3 小时:不在这里落定", NotifyError, since + 3*hour, since, false},
+		{"节点身份歧义悬了 3 小时:不在这里落定", NotifyNodeAmbiguous, since + 3*hour, since, false},
+	}
+	for _, tc := range cases {
+		if got := notifyGivesUp(tc.result, tc.nowMs, tc.since); got != tc.want {
+			t.Errorf("%s: notifyGivesUp = %v, want %v", tc.name, got, tc.want)
+		}
 	}
 }
 
@@ -146,5 +189,30 @@ func TestKafkaNotifierIncompleteIsError(t *testing.T) {
 	}
 	if got := (&KafkaNotifier{}).Notify(context.Background(), 1, gmDomain); got != NotifyError || got.Settled() {
 		t.Fatalf("空 notifier = %s", got)
+	}
+}
+
+// TestNotifyResultLabelsArePreregistered:每种结局的 notify_total{result} 标签互不相同,且与 metrics 启动时预建的
+// 零值序列逐一对应 —— 新增结局忘了预建,告警的 increase(...) 会漏掉它第一次出现(metrics.Register 的注释)。
+func TestNotifyResultLabelsArePreregistered(t *testing.T) {
+	all := []NotifyResult{NotifyError, NotifySent, NotifyOffline, NotifyAwaitingPlacement, NotifyNoNode,
+		NotifyEmptyUUID, NotifyNodesUnsynced, NotifyNodeAmbiguous, NotifyNodeMissing}
+	pre := map[string]bool{}
+	for _, l := range metrics.NotifyResultLabels() {
+		pre[l] = true
+	}
+	seen := map[string]bool{}
+	for _, r := range all {
+		label := r.String()
+		if seen[label] {
+			t.Errorf("标签 %q 被两种结局共用", label)
+		}
+		seen[label] = true
+		if !pre[label] {
+			t.Errorf("结局 %d 的标签 %q 没有在 metrics.NotifyResultLabels 里预建", r, label)
+		}
+	}
+	if len(pre) != len(seen) {
+		t.Errorf("预建标签 %v 与结局标签 %v 数目不一致(有多余或遗漏)", pre, seen)
 	}
 }

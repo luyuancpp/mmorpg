@@ -63,10 +63,6 @@
         }                                                                   \
     } while (0)
 
-// 过渡兼容:生成头仍有调用;proto-gen 重生并确认无调用后删除本宏。
-// 拒绝码规则见 services/player/rpc/player_service_interface.h,这里不再搬运任何状态。
-#define TRANSFER_ERROR_MESSAGE(response) do { (void)(response); } while (0)
-
 // 依赖调用处的 player / request / response;校验失败写本次应答并退出调用方。
 // 拒绝码规则见 services/player/rpc/player_service_interface.h。
 #define CHECK_PLAYER_REQUEST(request, fn)                                                       \

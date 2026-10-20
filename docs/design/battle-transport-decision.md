@@ -56,6 +56,8 @@
 这些是 gRPC 不该进热路径的依据,不是不用 gRPC 的依据:
 
 > (2026-09-29 更正)本节行号按 2026-09-05 的代码。现行位置见 §8.6 行号漂移表。其中 `battle_client_player_service.cpp` 已随收缩删除(D66);gate 中继路径的成本描述的是收缩前旧模式的做法,现在两种模式都不再中继战斗。
+>
+> (2026-10-16 更正,代码未编译、待 Codex 验证)下面「线程」「阻塞桥」「应答轮询」三条已随 C++ gRPC 迁到 muduo 驱动而不再成立,只作历史保留:第 3 批起生成客户端走 `muduo_grpc::Channel`,CQ 与 5ms 轮询删除;第 4 批起 battle / scene 的 gRPC 服务端是 `muduo_grpc::Server`,跑在节点 EventLoop 上,没有 EventEngine / poller / 关机线程,`GRPC_SERVER_MAX_POLLERS` 已退役,handler 在 loop 上同步执行、不再 `runInLoop` + `promise/future`,CreateBattle 的 Agones 许可改走 `AcquireAllocationPermitAsync`(见 [grpc-muduo-transport.md](grpc-muduo-transport.md) §14、§15)。「端口派生」「版本锁步」两条仍然成立。本文的取舍结论没有因此重新评估。
 
 - **线程**:EventEngine 池 `Clamp(cores, 4, 16)` 起手(20 核 = 17 条),仅是下限,backlog 时 Lifeguard 还会加;sync server 另有 poller 1..8 条(`node.cpp:625-645`,env `GRPC_SERVER_MAX_POLLERS`);再加 iomgr timer 线程。
 - **阻塞桥**:每个 gRPC handler 在 poller 线程上 `runInLoop` + `promise/future` 等 muduo loop(`battle_client_player_service.cpp:71-79`、`battle_node.cpp:29-37`)。上限 8 个在途调用;scene 在 2 poller 时撞过 500ms 悬崖(`node.cpp:627-633` 注释)。
@@ -296,9 +298,9 @@ chat / guild / friend / trade 等业务服不满足这 6 条,目标形态一律�
   | `grpc_init_client.cpp:213-221`(battle 的 CQ + stub) | `:438-443` |
   | `grpc_init_client.cpp:151-158`(CQ 排空) | `HandleCompletedQueueMessage` `:358-434` |
   | `etcd_service.cpp:36-40`(5ms `RunEvery`) | `:33` |
-  | `node.cpp:625-645` / `:627-633`(poller 与 500ms 悬崖注释) | `:730-750` / `:731-737` |
+  | `node.cpp:625-645` / `:627-633`(poller 与 500ms 悬崖注释) | `:730-750` / `:731-737`;2026-10-16 起 poller 配置随第 4 批删除(`GRPC_SERVER_MAX_POLLERS` 已退役,见 grpc-muduo-transport.md §15.11) |
   | `node_connector.cpp:39-80` | `ConnectToGrpcNode` `:39-82` |
-  | `battle_client_player_service.cpp:71-79`(阻塞桥) | 文件已随收缩删除(D66);阻塞桥仍见 `battle_node.cpp`,CreateBattle 先过准入与许可(D82)再 `runInLoop`,`:60-117` |
+  | `battle_client_player_service.cpp:71-79`(阻塞桥) | 文件已随收缩删除(D66);阻塞桥仍见 `battle_node.cpp`,CreateBattle 先过准入与许可(D82)再 `runInLoop`,`:60-117`;2026-10-16 起阻塞桥随第 4 批删除,CreateBattle 改为 loop 上的守护段 + 异步许可(grpc-muduo-transport.md §15.8.4) |
   | `node_allocator.cpp:302-324`(gRPC 端口 = TCP + 30000) | `:302-326` |
   | `game_channel.cpp:372`(`HandleResponseMessage`) | `:386` |
   | `registration_manager.cpp:118` | `:134` |

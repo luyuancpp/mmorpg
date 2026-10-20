@@ -5,27 +5,43 @@ import "proto/db/proto_option.proto";
 import "proto/common/base/empty.proto";
 import "proto/common/base/common.proto";
 import "proto/common/base/message.proto";
+import "proto/common/base/tip.proto";
+import "proto/scene/scene_info.proto";
+import "proto/battle/battle_data.proto";
 
 option cc_generic_services = true;
 option (OptionFileDefaultNode) = NODE_SCENE;
 
 message PlayerEnterGameNodeRequest
 {
+  reserved 3;                  // 原 uint32 centre_node_id,2026-04-18(dcb1e2a68)删除,不复用
   uint64 player_id = 1;
-  uint64 session_id = 2;
-  uint32 centre_node_id = 3;
+  uint32 session_id = 2;
+  uint32 enter_gs_type = 4;    // LOGIN_FIRST / LOGIN_RECONNECT / LOGIN_REPLACE
+  uint64 scene_id = 5;         // Target scene instance GUID from SceneManager
+  uint32 home_zone_id = 6;     // 玩家归属 zone,gate 从 RoutePlayerEvent 透传;0=未知(fail-closed 落进程 zone)
+  uint64 owner_epoch = 7;      // 本次路由的归属 epoch,gate 从 RoutePlayerEvent 透传;0=旧版 Go 未铸造(存盘不校验)
+  // 登录代次:gate 用本会话、本角色见过的最高代次盖章(Bind 与 Route 取大),scene 入场栅栏据此
+  // 拒绝跨会话的陈旧入场(docs/design/scene-enter-session-fence.md)。0 = 上游未带(旧版)。
+  uint64 login_generation = 8;
 }
 
 message ProcessClientPlayerMessageRequest
 {
   MessageContent message_content = 1;
-  uint64 session_id = 2;
+  uint32 session_id = 2;
+  // 反向(gate -> scene)的身份栅栏,与 NodeMessageHeader.target_player_id 对称
+  // (routing-identity-audit-20260908.md R13 的反向面)。gate 复用 node_id 之后,
+  // scene 的 SessionMap 里可能仍留着"旧 gate 的同号 session -> A 玩家"的映射,
+  // 而新 gate 上同一个 session 号已经属于 B —— 不带玩家身份的话 B 的客户端消息
+  // 会被派发到 A 的实体上执行。0 = 老 gate(灰度窗口),scene 放行不校验。
+  uint64 player_id = 3;
 }
 
 message ProcessClientPlayerMessageResponse
 {
   MessageContent message_content = 1;
-  uint64 session_id = 2;
+  uint32 session_id = 2;
 }
 
 message SessionDisconnectRequest
@@ -41,19 +57,17 @@ message GameNodeConnectRequest
 
 message RegisterPlayerSessionRequest
 {
-  uint64 session_id = 1;
+  uint32 session_id = 1;
   uint64 player_id = 2;
-}
-
-message Centre2GsEnterSceneRequest
-{
-  uint64 player_id = 1;
-  uint64 scene_id = 2;
 }
 
 message CreateSceneRequest
 {
   uint32 config_id = 1;
+  uint64 scene_id = 2;  // Go-allocated scene ID; C++ dedup by this when > 0.
+  uint32 mirror_config_id = 3;  // Mirror config ID (0 = not a mirror instance)
+  uint32 dungeon_config_id = 4; // Dungeon config ID (0 = not a dungeon instance)
+  repeated uint64 creator_ids = 5; // Creator player IDs (for instance access control)
 }
 
 message CreateSceneResponse
@@ -61,18 +75,42 @@ message CreateSceneResponse
   SceneInfoComp scene_info = 1;
 }
 
+message DestroySceneRequest
+{
+  uint64 scene_id = 1;
+}
+
+// ---- 回合制战斗备战(match -> scene,gather 协议;设计文档 turn-based-battle-server.md §3.1)----
+
+message PrepareBattleRequest
+{
+  uint64 player_id = 1;
+  uint64 battle_id = 2;
+  uint32 battle_node_id = 3;  // 写进 InBattleComp(日志/排障用)
+  uint64 deadline_ms = 4;     // 战斗作废期限(Unix 毫秒),scene reaper 依据
+  uint64 prepare_deadline_ms = 5; // 备战作废期限(Unix 毫秒):CreateBattle 确认前 reaper 按它解冻(二期,设计 cross-zone-matchmaking.md §10);0 = 沿用 deadline_ms
+}
+
+message PrepareBattleResponse
+{
+  TipInfoMessage error_message = 1;   // 玩家不在/已在战斗等拒绝原因
+  BattlePlayerSnapshot snapshot = 2;  // 冻结成功时返回战斗快照
+  string table_fingerprint = 3;      // scene 侧战斗配表指纹(六张战斗表解析后确定性序列化的 sha256 前 16 字节 hex);match 比对全员一致
+}
+
+message CancelBattlePrepareRequest
+{
+  uint64 player_id = 1;
+  uint64 battle_id = 2;  // 不匹配 InBattleComp.battle_id 时忽略(防迟到取消)
+}
+
 service Scene {
   rpc PlayerEnterGameNode (PlayerEnterGameNodeRequest) returns (Empty);
-  rpc SendMessageToPlayer (NodeRouteMessageRequest) returns (NodeRouteMessageResponse);
   rpc ProcessClientPlayerMessage (ProcessClientPlayerMessageRequest) returns (ProcessClientPlayerMessageResponse);
-  rpc CentreSendToPlayerViaGameNode (NodeRouteMessageRequest) returns (Empty);
-  rpc InvokePlayerService (NodeRouteMessageRequest) returns (NodeRouteMessageResponse);
-  rpc RouteNodeStringMsg (RouteMessageRequest) returns (RouteMessageResponse);
-  rpc RoutePlayerStringMsg (RoutePlayerMessageRequest) returns (RoutePlayerMessageResponse) {
-    option (OptionMessagePriority) = MESSAGE_PRIORITY_IMPORTANT;
-  }
   rpc UpdateSessionDetail (RegisterPlayerSessionRequest) returns (Empty);
-  rpc EnterScene (Centre2GsEnterSceneRequest) returns (Empty);
   rpc CreateScene (CreateSceneRequest) returns (CreateSceneResponse);
+  rpc DestroyScene (DestroySceneRequest) returns (Empty);
+  rpc PrepareBattle (PrepareBattleRequest) returns (PrepareBattleResponse);
+  rpc CancelBattlePrepare (CancelBattlePrepareRequest) returns (Empty);
   rpc NodeHandshake(NodeHandshakeRequest) returns (NodeHandshakeResponse);
 }

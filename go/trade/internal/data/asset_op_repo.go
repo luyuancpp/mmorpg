@@ -40,7 +40,7 @@ const (
 const assetOpColumns = "`op_id`, `player_id`, `stream`, `stream_epoch`, `seq`, `kind`, `status`, `durable`, " +
 	"`attempts`, `next_attempt_ms`, `deadline_ms`, `lease_until_ms`, `lease_token`, `tx_type`, " +
 	"`ref_kind`, `ref_id`, `payload`, `last_outcome`, `last_reason`, `created_ms`, `updated_ms`, " +
-	"`resolved_by`, `resolve_reason`, `last_send_ms`"
+	"`resolved_by`, `resolve_reason`, `last_send_ms`, `escrow_snapshot`, `receipt_ack_pending`, `business_consumed`"
 
 // PendingStatus 是 outbox 的"待办"状态数值,给 assetop 的 seq 分配与重投循环用。
 // 取 proto 枚举而不是写 0 / 1:§4.43 #23 明确 assetop.Status 不绑库值,库值由业务表自己定。
@@ -127,9 +127,9 @@ func (r *AssetOpRepo) bounded(ctx context.Context) (context.Context, context.Can
 //     跑在任何业务事务之外。
 //   - Finalize / ResolveManually / Abandon:RC 事务{trade_asset_op 主键点锁(sqlLockAssetOp)→ 带复核谓词的主键 CAS},
 //     不碰 seq 表;点锁读不到行(只可能已被清理)按 CAS 落空处理。为什么先点锁见下方"op 行的写者:先主键点锁再 CAS"。
-//   - Claim / Reschedule / markPoison / ReleaseLease:自动提交的单行主键 UPDATE(RC,见 svc.BuildDSN)。
-//     ⚠ 与 guild 不同:guild 的重排 / 毒行推迟已进 RC 事务并先点锁(它们改 idx_0 的 next_attempt_ms,G-C2 / V1),
-//     trade 这两条仍是自动提交 —— MySQL 下无环;迁 TiDB 之前必须对齐 guild,理由同下一节。
+//   - Claim / ReleaseLease:自动提交的单行主键 UPDATE(RC,见 svc.BuildDSN),只改无索引列,变更集合只有行 key。
+//   - Reschedule / markPoison:RC 事务{sqlLockAssetOp 主键点锁 → 带复核谓词的主键点改},与 guild 对齐(2026-10-18)。
+//     它们改 idx_0 的 next_attempt_ms,自动提交在 TiDB 上会与终结各持一半互等、检测不到(真 TiDB 实测,事故文档 §9.7)。
 //   - CleanupTerminalOps:逐行 RC 短事务{trade_asset_op 主键点锁 → 带复核条件的主键点删},只删终态行,
 //     不碰 seq 表(seq 表的"永不删除"前提不受影响,见 TestSeqTableRowsAreNeverDeleted)。
 //   - ListDue / OldestPendingCreatedMs / getOp / ListPendingByPlayer / CountPendingByClass /
@@ -532,7 +532,7 @@ func (r *AssetOpRepo) AllocateSeqsTx(ctx context.Context, tx *sql.Tx, nowMs uint
 func (r *AssetOpRepo) InsertOp(ctx context.Context, tx *sql.Tx, rec *tradepb.TradeAssetOpRecord) error {
 	_, err := tx.ExecContext(ctx,
 		"INSERT INTO "+AssetOpTableName+" ("+assetOpColumns+") VALUES "+
-			"(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+			"(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
 		rec.GetOpId(), rec.GetPlayerId(), rec.GetStream(), rec.GetStreamEpoch(), rec.GetSeq(),
 		int32(rec.GetKind()), int32(rec.GetStatus()), rec.GetDurable(),
 		rec.GetAttempts(), rec.GetNextAttemptMs(), rec.GetDeadlineMs(), rec.GetLeaseUntilMs(), rec.GetLeaseToken(),
@@ -541,6 +541,7 @@ func (r *AssetOpRepo) InsertOp(ctx context.Context, tx *sql.Tx, rec *tradepb.Tra
 		// 新行一律是空留痕:人工终结只由 ResolveManually 写,插入路径绝不预置操作人。
 		rec.GetResolvedBy(), rec.GetResolveReason(),
 		insertLastSendMs(rec),
+		rec.GetEscrowSnapshot(), rec.GetReceiptAckPending(), rec.GetBusinessConsumed(),
 	)
 	if err != nil {
 		return fmt.Errorf("insert %s %d: %w", AssetOpTableName, rec.GetOpId(), err)
@@ -781,8 +782,19 @@ func (r *AssetOpRepo) Claim(ctx context.Context, opID, nowMs, leaseUntilMs, pois
 // 才被人工终结的行(sqlPoisonAssetOp)。只清租约,不动 last_send_ms(LastSendMs 契约第 4 条)。
 // 失败只记在返回给调用方的错误里之外的日志层:这里没有 logger,推迟失败的后果是
 // 下一轮再撞一次同一行(仍然跳过),不会丢数据,所以吞掉写错误但不吞解码错误。
+//
+// 写法与 Reschedule 同:RC 事务{sqlLockAssetOp 主键点锁 → 带令牌与状态复核的点改}。这条改了 idx_0 的 next_attempt_ms,
+// TiDB 上若自动提交(乐观、按 region 并行 prewrite),会与终结 / 人工终结的「点锁 PRIMARY → 行 key」各持一半互等,
+// 死锁检测器看不到,要等约 3s 的锁 TTL(2026-10-18 真 TiDB v8.5.2 实测;见 docs/ops/incident-friend-lock-order-deadlock-2026-09-21.md §9.7)。
 func (r *AssetOpRepo) markPoison(ctx context.Context, opID, token, nowMs, poisonUntilMs uint64) {
-	_, _ = r.db.ExecContext(ctx, sqlPoisonAssetOp, poisonUntilMs, nowMs, opID, token, PendingStatus())
+	_ = assetop.WithTxRetry(ctx, r.db, txRetryAttempts, IsRetryableTxError, func(tx *sql.Tx) error {
+		found, err := lockAssetOpRow(ctx, tx, opID)
+		if err != nil || !found {
+			return err // 行已被清理:没有可推迟的
+		}
+		_, err = tx.ExecContext(ctx, sqlPoisonAssetOp, poisonUntilMs, nowMs, opID, token, PendingStatus())
+		return err
+	})
 }
 
 // Finalize 把行终结成 status,并在同一事务里做对侧账。RowsAffected == 1 才算本次终结
@@ -800,6 +812,9 @@ func (r *AssetOpRepo) markPoison(ctx context.Context, opID, token, nowMs, poison
 // ABANDONED 只能经 Abandon(带令牌、六条证据齐全)写入。重投循环本来就只会传这四个,这道闸防的是绕过循环的调用者。
 // 同写 next_attempt_ms = 终结时刻(sqlFinalizeAssetOp),终态行清理按它判龄。
 func (r *AssetOpRepo) Finalize(ctx context.Context, op assetop.Op, status assetop.Status, res assetop.Result, nowMs uint64) (bool, error) {
+	if status == assetop.StatusApplied && res.Partial {
+		return false, errors.New("部分到账不得终结为完整交易成功")
+	}
 	final := StatusToRecord(status)
 	if !isFinalizableRecord(final) {
 		return false, fmt.Errorf("finalize %s %d: 终结状态非法 (%s)", AssetOpTableName, op.OpID, status)
@@ -816,6 +831,13 @@ func (r *AssetOpRepo) Finalize(ctx context.Context, op assetop.Op, status asseto
 		if !found {
 			return nil // 行已被清理:与 CAS 落空同义,不做对侧账
 		}
+		var refKind uint32
+		if err := tx.QueryRowContext(ctx, "SELECT ref_kind FROM "+AssetOpTableName+" WHERE op_id=?", op.OpID).Scan(&refKind); err != nil {
+			return err
+		}
+		if refKind == uint32(tradepb.TradeAssetOpRefKind_TRADE_ASSET_OP_REF_KIND_ORDER) && (!res.SQLCommitted || !res.Durable) {
+			return errors.New("交易合同终结缺少玩家SQL提交证据")
+		}
 		result, err := tx.ExecContext(ctx, sqlFinalizeAssetOp,
 			int32(final), uint32(res.Outcome), res.Reason, nowMs, nowMs, op.OpID, PendingStatus())
 		if err != nil {
@@ -827,6 +849,15 @@ func (r *AssetOpRepo) Finalize(ctx context.Context, op assetop.Op, status asseto
 		}
 		if affected != 1 {
 			return nil // 已被别的副本终结:不是错误,也不做对侧账
+		}
+		if res.Snapshot != nil && status == assetop.StatusApplied && op.Stream == assetpb.AssetOpStream_ASSET_OP_STREAM_TRADE_DEBIT {
+			snapshot, marshalErr := proto.MarshalOptions{Deterministic: true}.Marshal(res.Snapshot)
+			if marshalErr != nil {
+				return marshalErr
+			}
+			if _, err := tx.ExecContext(ctx, "UPDATE "+AssetOpTableName+" SET escrow_snapshot=?,receipt_ack_pending=1 WHERE op_id=?", snapshot, op.OpID); err != nil {
+				return err
+			}
 		}
 		finalized = true
 		// P3 对侧账在这里(同一事务):
@@ -905,24 +936,39 @@ func (r *AssetOpRepo) ResolveManually(ctx context.Context, m assetop.ManualResol
 // 只能靠人肉比对日志时间戳才发现。
 //
 // last_send_ms 只在本次确实发过请求(!res.Local)时推进到 nowMs(LastSendMs 契约第 3 条,见 sqlRescheduleAssetOp)。
+//
+// 写法:RC 事务{sqlLockAssetOp 主键点锁 → 带令牌复核的点改},与 Finalize / guild 的 Reschedule 同形
+// (见"op 行的写者:先主键点锁再 CAS")。这条改 idx_0 的 next_attempt_ms;自动提交在 TiDB 上走乐观事务、提交时按 region
+// 并行 prewrite 行 key 与索引 key,会与终结的「点锁 PRIMARY → 行 key」各持一半互等,死锁检测器看不到,要等约 3s 的锁 TTL
+// 才解开(2026-10-18 真 TiDB v8.5.2:自动提交 31/40 次约 3s 停顿,改成本形状 0/40;事故文档 §9.7)。
+// 点锁读不到行(已被清理)与 CAS 落空同义,回 ErrLeaseLost;ErrLeaseLost 不在 IsRetryableTxError 里,不会被重跑。
 func (r *AssetOpRepo) Reschedule(ctx context.Context, op assetop.Op, nextAttemptMs uint64, res assetop.Result, nowMs uint64) error {
 	ctx, cancel := r.bounded(ctx)
 	defer cancel()
-	execRes, err := r.db.ExecContext(ctx, sqlRescheduleAssetOp,
-		nextAttemptMs, res.Durable, uint32(res.Outcome), res.Reason, nowMs,
-		!res.Local, nowMs,
-		op.OpID, PendingStatus(), op.LeaseToken)
-	if err != nil {
-		return fmt.Errorf("reschedule %s %d: %w", AssetOpTableName, op.OpID, err)
-	}
-	affected, err := execRes.RowsAffected()
-	if err != nil {
-		return fmt.Errorf("reschedule %s %d rows affected: %w", AssetOpTableName, op.OpID, err)
-	}
-	if affected == 0 {
-		return fmt.Errorf("%w: op_id=%d", assetop.ErrLeaseLost, op.OpID)
-	}
-	return nil
+	return assetop.WithTxRetry(ctx, r.db, txRetryAttempts, IsRetryableTxError, func(tx *sql.Tx) error {
+		found, err := lockAssetOpRow(ctx, tx, op.OpID)
+		if err != nil {
+			return fmt.Errorf("reschedule %s %d: %w", AssetOpTableName, op.OpID, err)
+		}
+		if !found {
+			return fmt.Errorf("%w: op_id=%d(行已不存在)", assetop.ErrLeaseLost, op.OpID)
+		}
+		execRes, err := tx.ExecContext(ctx, sqlRescheduleAssetOp,
+			nextAttemptMs, res.Durable, uint32(res.Outcome), res.Reason, nowMs,
+			!res.Local, nowMs,
+			op.OpID, PendingStatus(), op.LeaseToken)
+		if err != nil {
+			return fmt.Errorf("reschedule %s %d: %w", AssetOpTableName, op.OpID, err)
+		}
+		affected, err := execRes.RowsAffected()
+		if err != nil {
+			return fmt.Errorf("reschedule %s %d rows affected: %w", AssetOpTableName, op.OpID, err)
+		}
+		if affected == 0 {
+			return fmt.Errorf("%w: op_id=%d", assetop.ErrLeaseLost, op.OpID)
+		}
+		return nil
+	})
 }
 
 // OldestPendingCreatedMs 实现 assetop 的可选接口,喂 assetop_pending_oldest_age_seconds。
@@ -1221,9 +1267,9 @@ const (
 // 清理点删之前的主键点锁与终结类写者共用 sqlLockAssetOp(同一形状,见"op 行的写者:先主键点锁再 CAS")。
 const (
 	sqlListCleanupTerminalOps = "SELECT `op_id` FROM " + AssetOpTableName +
-		" WHERE `status` IN (?, ?, ?, ?) AND `next_attempt_ms` < ? ORDER BY `op_id` ASC LIMIT ?"
+		" WHERE `status` IN (?, ?, ?, ?) AND `receipt_ack_pending`=0 AND (`ref_kind`<>2 OR `business_consumed`=1) AND `next_attempt_ms` < ? ORDER BY `op_id` ASC LIMIT ?"
 	sqlCleanupTerminalOp = "DELETE FROM " + AssetOpTableName +
-		" WHERE `op_id` = ? AND `status` IN (?, ?, ?, ?) AND `next_attempt_ms` < ?"
+		" WHERE `op_id` = ? AND `status` IN (?, ?, ?, ?) AND `receipt_ack_pending`=0 AND (`ref_kind`<>2 OR `business_consumed`=1) AND `next_attempt_ms` < ?"
 )
 
 // cleanupStatuses 是可被清理的四个终态的库值,顺序即两条清理语句里 IN (?, ?, ?, ?) 的参数顺序。
@@ -1380,6 +1426,72 @@ func (r *AssetOpRepo) deleteTerminalOp(ctx context.Context, opID, cutoffMs uint6
 	return deleted, nil
 }
 
+// 交易合同(ref_kind=2)名下 op 行的锁定写,供 commerce 引擎在**已锁合同行**的事务里调用。
+//
+// 以前引擎直接发 `UPDATE trade_asset_op … WHERE ref_kind=2 AND ref_id=?`:在 TiDB 悲观事务里它走 idx_2,
+// 读阶段先锁行 key、语句末尾才锁非聚簇 PRIMARY 与 uk;终结 / 人工终结 / 放弃的点锁是「先 PRIMARY 再行 key」,
+// 两边在同一行的两把 key 上反序,真 TiDB v8.5.2 受控编排 5/5 报 1213、自然竞态 246 次里 10 次(2026-10-18,事故文档 §9.7)。
+// 现在的形状:候选普通读(按 idx_2 拿 op_id,不加锁)→ 按 op_id 升序逐行 lockAssetOpRow → 主键点改,
+// 锁序变成「合同行 → op 行(PRIMARY → 行 key)」,与终结同向,同组实验 0/5、0/246。
+// 候选读不漏行:同一合同的 op 行只由 advance 在锁住合同行之后插入,调用方已持有合同行锁。
+const (
+	sqlListOpIDsByCommerce = "SELECT `op_id` FROM " + AssetOpTableName + " WHERE `ref_kind` = 2 AND `ref_id` = ? ORDER BY `op_id`"
+	// 取消:把仍待办的买方托管扣款(stream=3)截止提前到现在;复核谓词与原批量语句逐字相同,只换成主键点改。
+	sqlExpireEscrowDebitOp = "UPDATE " + AssetOpTableName + " SET `deadline_ms` = ? WHERE `op_id` = ? AND `stream` = 3 AND `status` = 1"
+	sqlConsumeCommerceOp   = "UPDATE " + AssetOpTableName + " SET `business_consumed` = 1 WHERE `op_id` = ?"
+)
+
+// ExpireCommerceEscrowDebitsTx 把合同 commerceID 名下仍待办的托管扣款截止提前到 nowMs(取消合同时)。
+func (r *AssetOpRepo) ExpireCommerceEscrowDebitsTx(ctx context.Context, tx *sql.Tx, commerceID, nowMs uint64) error {
+	return r.updateCommerceOpsTx(ctx, tx, commerceID, "expire escrow debit", sqlExpireEscrowDebitOp, func(opID uint64) []any {
+		return []any{nowMs, opID}
+	})
+}
+
+// MarkCommerceOpsConsumedTx 把合同 commerceID 名下的 op 行标成业务已消费(合同结案时)。
+func (r *AssetOpRepo) MarkCommerceOpsConsumedTx(ctx context.Context, tx *sql.Tx, commerceID uint64) error {
+	return r.updateCommerceOpsTx(ctx, tx, commerceID, "mark consumed", sqlConsumeCommerceOp, func(opID uint64) []any {
+		return []any{opID}
+	})
+}
+
+// updateCommerceOpsTx:候选普通读 → 按 op_id 升序逐行「主键点锁 → 主键点改」。点锁读不到行(已被清理)就跳过。
+// 错误原样 %w:1213 / 1205 / 9007 由调用方的 WithTxRetry 整事务重跑。
+func (r *AssetOpRepo) updateCommerceOpsTx(ctx context.Context, tx *sql.Tx, commerceID uint64, what, stmt string, args func(opID uint64) []any) error {
+	rows, err := tx.QueryContext(ctx, sqlListOpIDsByCommerce, commerceID)
+	if err != nil {
+		return fmt.Errorf("%s: list %s of commerce %d: %w", what, AssetOpTableName, commerceID, err)
+	}
+	var opIDs []uint64
+	for rows.Next() {
+		var id uint64
+		if err := rows.Scan(&id); err != nil {
+			_ = rows.Close()
+			return fmt.Errorf("%s: scan op_id of commerce %d: %w", what, commerceID, err)
+		}
+		opIDs = append(opIDs, id)
+	}
+	if err := rows.Close(); err != nil {
+		return fmt.Errorf("%s: list %s of commerce %d: %w", what, AssetOpTableName, commerceID, err)
+	}
+	if err := rows.Err(); err != nil {
+		return fmt.Errorf("%s: list %s of commerce %d: %w", what, AssetOpTableName, commerceID, err)
+	}
+	for _, id := range opIDs { // SQL 已按 op_id 升序
+		found, err := lockAssetOpRow(ctx, tx, id)
+		if err != nil {
+			return fmt.Errorf("%s: %w", what, err)
+		}
+		if !found {
+			continue
+		}
+		if _, err := tx.ExecContext(ctx, stmt, args(id)...); err != nil {
+			return fmt.Errorf("%s %s %d: %w", what, AssetOpTableName, id, err)
+		}
+	}
+	return nil
+}
+
 // lockAssetOpRow 在调用方的事务里跑 sqlLockAssetOp(op 行的主键点锁),报告行是否存在。
 // 必须是该事务里碰 trade_asset_op 的**第一条**语句,随后才是带复核谓词的点改 / 点删(见"op 行的写者:先主键点锁再 CAS")。
 // 读不到行 = 已被清理(清理只删保留期外的终态行),回 (false, nil),由调用方按各自的"落空"语义处理。
@@ -1422,6 +1534,7 @@ func scanAssetOp(row rowScanner) (*tradepb.TradeAssetOpRecord, error) {
 		&rec.TxType, &refKind, &rec.RefId, &rec.Payload,
 		&rec.LastOutcome, &rec.LastReason, &rec.CreatedMs, &rec.UpdatedMs,
 		&rec.ResolvedBy, &rec.ResolveReason, &rec.LastSendMs,
+		&rec.EscrowSnapshot, &rec.ReceiptAckPending, &rec.BusinessConsumed,
 	); err != nil {
 		return nil, err
 	}

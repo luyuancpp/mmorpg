@@ -69,6 +69,9 @@ message MarkOfflineRequest {
   uint64 player_id = 1;
   uint32 expected_session_id = 2;
   uint32 expected_session_version = 3;
+  // 语义同 SetDisconnectingRequest.gate_instance_id:请求与会话记录的实例号都非空且不等时,
+  // 判为旧实例迟到的登出,忽略(不删会话、不调 LeaveScene);空 = 旧版 login,不校验。
+  string expected_gate_instance_id = 4;
 }
 
 // Disconnect request: mark DISCONNECTING + start TTL lease
@@ -76,6 +79,9 @@ message SetDisconnectingRequest {
   uint64 player_id = 1;
   uint32 session_id = 2;
   uint32 lease_ttl_seconds = 3;  // Default 30s
+  // 发起断线的 gate 实例 uuid(SessionDetails.gate_instance_id)。请求与会话记录的实例号都非空且不等时,
+  // 判为旧实例迟到的上报,忽略;空 = 旧版 login,不校验(docs/design/scene-enter-chain-residuals.md §6)。
+  string gate_instance_id = 4;
 }
 
 // Reconnect request: cancel lease, restore ONLINE

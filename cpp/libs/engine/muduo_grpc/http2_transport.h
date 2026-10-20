@@ -6,6 +6,8 @@
 //   * 必须由 shared_ptr 持有(Create);Connect() 里才把 weak_ptr<自己> 绑进 TcpClient 回调与定时器。
 //   * 连接所有权只在 muduo:本类按值持有 TcpClient,只存 weak_ptr<TcpConnection>。
 //   * 一个对象只对应一次连接尝试、一条 TCP 连接;断开后不重连,由 Channel 新建下一个。
+//     muduo Connector 报连接失败时立即停掉它的内部重试,下一轮 CloseWithError,通道随即进 TRANSIENT_FAILURE
+//     按自己的退避重连;connectTimeout 只兜「TCP 连上但对端迟迟不发 SETTINGS」与未报失败的情形。
 //   * 析构前显式 forceClose,随后 ~TcpClient 只替换 closeCallback;析构不得发生在本对象自己的回调栈上
 //     (Channel 一律在 queueInLoop 里释放)。
 // 线程:全部方法只能在所属 EventLoop 线程调用。
@@ -67,7 +69,7 @@ public:
                                           const Metadata & /*initialMetadata*/) {}
     virtual void OnTransportStreamMessage(Http2Transport & /*transport*/, int32_t /*streamId*/,
                                           std::string /*message*/) {}
-    // 连接已经不可用(握手超时、对端断开、协议错误、探测超时)。在途流此前已逐个 OnTransportStreamClosed。
+    // 连接已经不可用(建连失败、握手超时、对端断开、协议错误、探测超时)。在途流此前已逐个 OnTransportStreamClosed。
     virtual void OnTransportClosed(Http2Transport &transport, const Status &reason) = 0;
 };
 
@@ -129,6 +131,8 @@ public:
 private:
     void HandleConnection(const muduo::net::TcpConnectionPtr &conn);
     void HandleMessage(const muduo::net::TcpConnectionPtr &conn, muduo::net::Buffer *buffer);
+    // Connector 的连接失败回调(在它自己的 Channel 事件栈或 Connect() 栈上):只停重试并把关闭排到下一轮。
+    void HandleConnectFailed(int savedErrno);
     void HandleConnectTimeout();
     void HandleProbeTimeout(uint64_t probeGeneration);
     void ArmConnectTimer();
@@ -170,7 +174,8 @@ private:
     int sessionDepth_{0};
     bool flushDeferred_{false};
 
-    // muduo 定时器按墙钟走:截止点另记一份 steady_clock,到点复核,未到就按剩余时间重新上弦。
+    // muduo 定时器已按单调时钟到期;截止点仍另记一份 steady_clock,到点复核,未到就按剩余时间重新上弦
+    // (兜住秒→微秒截断造成的微秒级早到)。
     muduo::net::TimerId connectTimer_;
     bool connectTimerArmed_{false};
     std::chrono::steady_clock::time_point connectDeadline_{};

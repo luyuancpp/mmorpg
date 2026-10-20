@@ -4,7 +4,7 @@
 
 2026-09-10，为游戏内三页原生 UI 提供真实服务端数据。复用已有 Bag / BagService、MissionTable 和 MissionsContainerComp，不创建并行物品或任务状态，不因开窗发道具、接任务、改存档。
 
-背包支持已持久化的四类固定包读取，以及玩家显式整理人物背包、仓库。任务系统当前仅有运行态组件，未接存档；`GetMissionReward` 只清领取位，`OnMissionAwardEventHandler` 为空，因此本轮只读、不暴露接取或领奖 RPC。活动尚无正式运营排期，目录来自 `MissionTable.mission_type = 2`，全部保持未排期且不可参与，不凭节日美术捏造开放活动或奖励。
+背包支持已持久化的四类固定包读取，以及玩家显式整理人物背包、仓库。任务由 MissionsContainerComp 保存，随玩家数据库记录加载与持久化；显式接取、领奖经 PlayerMissionSystem 校验并驱动任务链，列表读取仍不产生接取或发奖副作用。活动目录来自 `MissionTable.mission_type = 2`，开放状态由服务端排期决定；没有排期时保持未排期且不可参与，不凭节日美术捏造开放活动或奖励。
 
 ## 协议
 
@@ -16,10 +16,12 @@
 | 191 | SceneBagClientPlayer.GetBag | 单包实例、布局、货币快照 |
 | 192 | SceneBagClientPlayer.SortBag | 整理后完整单包快照、changed |
 | 193 | SceneMissionClientPlayer.GetMissionList | 配置目录和已有任务运行态 |
+| 194 | SceneMissionClientPlayer.AcceptMission | 接取结果及最新任务列表 |
+| 195 | SceneMissionClientPlayer.ClaimMissionReward | 领奖结果及最新任务列表 |
 
 原有 0–189 编号逐行保持不变。不要沿用合并前“180–188 为宠物”的旧记录：180 为 DataServiceAllocateIdSegment，宠物为 181–189。
 
-所有请求经现有玩家会话路由至 scene，不接受客户端传入 player_id。handler 只委托系统，错误码使用已有 tip 枚举，写入 TLS TipInfoMessage 后由生成层 `TRANSFER_ERROR_MESSAGE` 转移；直接写响应错误会被该宏覆盖。
+所有请求经现有玩家会话路由至 scene，不接受客户端传入 player_id。handler 只委托系统，错误码使用已有 tip 枚举，拒绝码直接写本次应答的 error_message（规则见 cpp/libs/services/player/rpc/player_service_interface.h）。
 
 ## 背包的不变量
 
@@ -36,9 +38,9 @@
 
 任务列表合并正式配置和已有运行态，保留存量但缺表的任务并标记 configured=false；已接受、完成、待领取由 MissionsComp 的真实状态决定。目标带显式 objective_index，可区分重复 condition_id；目标数量采用任务覆盖值或条件表默认值，完成判定复用 condition_util。已完成任务没有历史计数时不伪造计数。
 
-任务返回 state_persistent=false，can_accept/can_claim=false。配置目前没有展示名称、描述、NPC 和地图位置，响应留空，客户端不编造导航目标。完成任务的发奖与持久化需要独立玩法任务完成后才能开启操作能力。
+已加载玩家的任务列表恒返回 state_persistent=true；缺 MissionsContainerComp 时任务与活动列表返回 kServiceUnavailable，不补建存档或伪装成空目录。can_accept/can_claim 由当前任务状态与 CheckAccept/CheckClaim 的只读校验共同决定，冻结或条件不满足时为 false；读取本身不接取或发奖。配置目前没有展示名称、描述、NPC 和地图位置，响应留空，客户端不编造导航目标。
 
-活动只展示现有 type=2 的任务配置；当前为 15、16、17。starts_at_ms/ends_at_ms 均为 0，status=UNSCHEDULED，can_participate=false。活动皮肤可使用春节、元宵、中秋装饰，但美术不决定线上排期。未来排期按 `activity_maintenance_auto_shift.md` 的基线/生效时间契约接入，不能用客户端时钟自行开放。
+活动只展示现有 type=2 的任务配置；当前为 15、16、17。PlayerActivityScheduleSystem 填写 starts_at_ms/ends_at_ms 与开放状态，只有 status=OPEN 且任务接取校验通过才令 can_participate=true；无排期时为 UNSCHEDULED 且不可参与。活动皮肤可使用春节、元宵、中秋装饰，但美术不决定线上排期。排期遵循 `activity_maintenance_auto_shift.md` 的基线/生效时间契约，不能用客户端时钟自行开放。
 
 ## 生成、构建和验证
 

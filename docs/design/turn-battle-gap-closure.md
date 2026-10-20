@@ -123,6 +123,10 @@
 1. **道具余量的唯一真相是引擎私有的开局快照副本**(`createRequest.players[].items`)。`BattleActorState` 不承载道具;要下发给客户端只能经 `BattleStateS2C.self_items`,且只填给本人。
 2. **掉落只在引擎判定 `SIDE_A_WIN` 的那一刻摇一次**。`BuildSettlement` 仍是 `const` 且可重复读(节点 outbox 会重投并重复读),绝不在里面摇点或改状态。
 3. **结算里的道具失败不得让整笔结算失败**:金币已在前面入账,返回 false 会让应用缓存抹掉记录、重投时重复加钱。道具失败一律记日志 + 继续。
+   **2026-10-19 补充**(审计 cpp-economy#0 / #1,[data-overwrite-rollback-audit-20261018.md](data-overwrite-rollback-audit-20261018.md) §2.4):
+   - 「会自己消失」的失败必须在金币之前判掉,让整笔延后,不能留到这里吞掉。现在 item 号段余量不够时整笔延后:
+     需求量取 `BagService::MaxNewInstancesFor`,预检在 `HasItemGuidsForDrops`。留到这里的只剩包满、禁发、配置错误这类终局失败。
+   - 金币反过来:`AddCurrency` 回终局的 `kAssetBlocked` 时只跳过金币、继续结算,其余失败仍整笔延后。
 4. **局中闸只放入口层**(见 D48)。任何人想把 `InBattleComp` 判定加进 `BagService` / `CurrencySystem` 之前,先读这条。
 5. **快照进引擎前必须清洗**:引擎 `InitPlayers` 对 buff 与技能各有一道兜底过滤。快照来自另一个进程(甚至另一个 zone 的 scene),不能单点信任。
 
@@ -155,6 +159,7 @@
 2. **proto 重生成**(`proto/battle/player_battle.proto` 加了 `self_items`):
    `pwsh tools\scripts\dev_tools.ps1 -Command proto-gen-build` 然后 `pwsh tools\scripts\dev_tools.ps1 -Command proto-gen-run -UseBinary -ConfigPath tools\proto_generator\protogen\etc\proto_gen.yaml`;随后 `cd go && build.bat`。
    - 正向断言(regen 吞代码的历史坑):`grep -n AcquireCreatePermitBlocking cpp/nodes/scene/handler/grpc/scene_node_service.cpp` **必须命中**。
+     (2026-10-16 更正:今后改为 `grep -n AcquireAllocationPermitAsync` 同一文件必须命中,Agones 块在 `grpc.CreateScene.guard` 守护段里,见 grpc-muduo-transport.md §15.14 第 3 步。)
    - 核对 `proto/message_id.txt` 既有号一个不少(本轮不新增 RPC,该文件应无实质变化)。
 3. **C++ 串行编译**(一律 `/m:1`,MSBuild 在 `D:\Program Files\Microsoft Visual Studio\18\Enterprise\MSBuild\Current\Bin\MSBuild.exe`):
    顺序 `proto → table → modules → battle → scene → 节点(battle/scene)`。

@@ -251,13 +251,14 @@ func (*CreateTeamRequest) Descriptor() ([]byte, []int) {
 }
 
 type GetMyTeamRequest struct {
-	state        protoimpl.MessageState `protogen:"open.v1"`
-	NotifyOnline bool                   `protobuf:"varint,1,opt,name=notify_online,json=notifyOnline,proto3" json:"notify_online,omitempty"` // 进游戏后第一次拉取填 true:服务端把当前视图推给其他在线队员(在线态刷新)
+	state          protoimpl.MessageState `protogen:"open.v1"`
+	NotifyOnline   bool                   `protobuf:"varint,1,opt,name=notify_online,json=notifyOnline,proto3" json:"notify_online,omitempty"`        // 进游戏后第一次拉取填 true:服务端把当前视图推给其他在线队员(在线态刷新)
+	MatchRequestId string                 `protobuf:"bytes,2,opt,name=match_request_id,json=matchRequestId,proto3" json:"match_request_id,omitempty"` // 查询该玩家原开战意图，不创建新一局。
 	// 队员请求归队(点「归队」、跟随中看不到队长):调用者在队里且不是队长时,服务端给他所在的 scene 发一次
 	// 组队刷新信号,scene 按既有跟随规则处理 —— 与队长同一场景实例、且互相看不见或相距超过 8 → 瞬移到队长脚下;
 	// 队长在本节点的另一个场景 → 换过去;跨节点 / 跨 zone / 战斗中 → 不动(team-system.md「组队跟随 v1.1」V.9)。
 	// 不认识本字段的服务端(旧版本)按普通 GetMyTeam 处理,只是不归队。
-	Regroup       bool `protobuf:"varint,2,opt,name=regroup,proto3" json:"regroup,omitempty"`
+	Regroup       bool `protobuf:"varint,3,opt,name=regroup,proto3" json:"regroup,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -297,6 +298,13 @@ func (x *GetMyTeamRequest) GetNotifyOnline() bool {
 		return x.NotifyOnline
 	}
 	return false
+}
+
+func (x *GetMyTeamRequest) GetMatchRequestId() string {
+	if x != nil {
+		return x.MatchRequestId
+	}
+	return ""
 }
 
 func (x *GetMyTeamRequest) GetRegroup() bool {
@@ -746,9 +754,10 @@ type StartTeamMatchRequest struct {
 	state          protoimpl.MessageState `protogen:"open.v1"`
 	BattleConfigId uint32                 `protobuf:"varint,1,opt,name=battle_config_id,json=battleConfigId,proto3" json:"battle_config_id,omitempty"` // DungeonTable id;模式固定 PVE_TEAM
 	ExpectedTeamId uint64                 `protobuf:"varint,2,opt,name=expected_team_id,json=expectedTeamId,proto3" json:"expected_team_id,omitempty"`
+	RequestId      string                 `protobuf:"bytes,3,opt,name=request_id,json=requestId,proto3" json:"request_id,omitempty"` // 全球权威模式必填 UUID；重试原意图复用，旧空值明确拒绝。
 	// 目标人数(team-backfill-matching.md):0 或等于当前队伍人数 = 有几个人就几个人直接开战(加字段前的行为);
 	// 大于当前人数 = 整队进该人数档的队列等补位,凑满后同场开战;小于当前人数或超过副本上限 → kTeamSizeExceeded。
-	TargetTeamSize uint32 `protobuf:"varint,3,opt,name=target_team_size,json=targetTeamSize,proto3" json:"target_team_size,omitempty"`
+	TargetTeamSize uint32 `protobuf:"varint,4,opt,name=target_team_size,json=targetTeamSize,proto3" json:"target_team_size,omitempty"`
 	unknownFields  protoimpl.UnknownFields
 	sizeCache      protoimpl.SizeCache
 }
@@ -797,6 +806,13 @@ func (x *StartTeamMatchRequest) GetExpectedTeamId() uint64 {
 	return 0
 }
 
+func (x *StartTeamMatchRequest) GetRequestId() string {
+	if x != nil {
+		return x.RequestId
+	}
+	return ""
+}
+
 func (x *StartTeamMatchRequest) GetTargetTeamSize() uint32 {
 	if x != nil {
 		return x.TargetTeamSize
@@ -808,6 +824,7 @@ type TeamResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	ErrorMessage  *base.TipInfoMessage   `protobuf:"bytes,1,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"` // id=0 成功;非 0 时 team 仍可能携带调用者当前视图(取自同一次 S_READ,照常按 §H.3 应用)
 	Team          *TeamView              `protobuf:"bytes,2,opt,name=team,proto3" json:"team,omitempty"`                                     // 调用者视角;无队伍时 team_id=0
+	MatchIntent   *TeamMatchIntent       `protobuf:"bytes,3,opt,name=match_intent,json=matchIntent,proto3" json:"match_intent,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -856,6 +873,73 @@ func (x *TeamResponse) GetTeam() *TeamView {
 	return nil
 }
 
+func (x *TeamResponse) GetMatchIntent() *TeamMatchIntent {
+	if x != nil {
+		return x.MatchIntent
+	}
+	return nil
+}
+
+type TeamMatchIntent struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	RequestId     string                 `protobuf:"bytes,1,opt,name=request_id,json=requestId,proto3" json:"request_id,omitempty"`
+	BattleId      uint64                 `protobuf:"varint,2,opt,name=battle_id,json=battleId,proto3" json:"battle_id,omitempty"`
+	State         uint32                 `protobuf:"varint,3,opt,name=state,proto3" json:"state,omitempty"` // 1/2/3仍在恢复，4已建房，5已确认中止；0未找到，不代表迟到请求永不会提交。
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *TeamMatchIntent) Reset() {
+	*x = TeamMatchIntent{}
+	mi := &file_proto_team_team_proto_msgTypes[13]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *TeamMatchIntent) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*TeamMatchIntent) ProtoMessage() {}
+
+func (x *TeamMatchIntent) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_team_team_proto_msgTypes[13]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use TeamMatchIntent.ProtoReflect.Descriptor instead.
+func (*TeamMatchIntent) Descriptor() ([]byte, []int) {
+	return file_proto_team_team_proto_rawDescGZIP(), []int{13}
+}
+
+func (x *TeamMatchIntent) GetRequestId() string {
+	if x != nil {
+		return x.RequestId
+	}
+	return ""
+}
+
+func (x *TeamMatchIntent) GetBattleId() uint64 {
+	if x != nil {
+		return x.BattleId
+	}
+	return 0
+}
+
+func (x *TeamMatchIntent) GetState() uint32 {
+	if x != nil {
+		return x.State
+	}
+	return 0
+}
+
 type ListMyInvitesResponse struct {
 	state         protoimpl.MessageState    `protogen:"open.v1"`
 	ErrorMessage  *base.TipInfoMessage      `protobuf:"bytes,1,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"`
@@ -867,7 +951,7 @@ type ListMyInvitesResponse struct {
 
 func (x *ListMyInvitesResponse) Reset() {
 	*x = ListMyInvitesResponse{}
-	mi := &file_proto_team_team_proto_msgTypes[13]
+	mi := &file_proto_team_team_proto_msgTypes[14]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -879,7 +963,7 @@ func (x *ListMyInvitesResponse) String() string {
 func (*ListMyInvitesResponse) ProtoMessage() {}
 
 func (x *ListMyInvitesResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_team_team_proto_msgTypes[13]
+	mi := &file_proto_team_team_proto_msgTypes[14]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -892,7 +976,7 @@ func (x *ListMyInvitesResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListMyInvitesResponse.ProtoReflect.Descriptor instead.
 func (*ListMyInvitesResponse) Descriptor() ([]byte, []int) {
-	return file_proto_team_team_proto_rawDescGZIP(), []int{13}
+	return file_proto_team_team_proto_rawDescGZIP(), []int{14}
 }
 
 func (x *ListMyInvitesResponse) GetErrorMessage() *base.TipInfoMessage {
@@ -935,7 +1019,7 @@ type TeamMemberView struct {
 
 func (x *TeamMemberView) Reset() {
 	*x = TeamMemberView{}
-	mi := &file_proto_team_team_proto_msgTypes[14]
+	mi := &file_proto_team_team_proto_msgTypes[15]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -947,7 +1031,7 @@ func (x *TeamMemberView) String() string {
 func (*TeamMemberView) ProtoMessage() {}
 
 func (x *TeamMemberView) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_team_team_proto_msgTypes[14]
+	mi := &file_proto_team_team_proto_msgTypes[15]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -960,7 +1044,7 @@ func (x *TeamMemberView) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TeamMemberView.ProtoReflect.Descriptor instead.
 func (*TeamMemberView) Descriptor() ([]byte, []int) {
-	return file_proto_team_team_proto_rawDescGZIP(), []int{14}
+	return file_proto_team_team_proto_rawDescGZIP(), []int{15}
 }
 
 func (x *TeamMemberView) GetPlayerId() uint64 {
@@ -1051,7 +1135,7 @@ type TeamApplicationView struct {
 
 func (x *TeamApplicationView) Reset() {
 	*x = TeamApplicationView{}
-	mi := &file_proto_team_team_proto_msgTypes[15]
+	mi := &file_proto_team_team_proto_msgTypes[16]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1063,7 +1147,7 @@ func (x *TeamApplicationView) String() string {
 func (*TeamApplicationView) ProtoMessage() {}
 
 func (x *TeamApplicationView) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_team_team_proto_msgTypes[15]
+	mi := &file_proto_team_team_proto_msgTypes[16]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1076,7 +1160,7 @@ func (x *TeamApplicationView) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TeamApplicationView.ProtoReflect.Descriptor instead.
 func (*TeamApplicationView) Descriptor() ([]byte, []int) {
-	return file_proto_team_team_proto_rawDescGZIP(), []int{15}
+	return file_proto_team_team_proto_rawDescGZIP(), []int{16}
 }
 
 func (x *TeamApplicationView) GetPlayer() *TeamMemberView {
@@ -1111,7 +1195,7 @@ type TeamOutgoingInviteView struct {
 
 func (x *TeamOutgoingInviteView) Reset() {
 	*x = TeamOutgoingInviteView{}
-	mi := &file_proto_team_team_proto_msgTypes[16]
+	mi := &file_proto_team_team_proto_msgTypes[17]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1123,7 +1207,7 @@ func (x *TeamOutgoingInviteView) String() string {
 func (*TeamOutgoingInviteView) ProtoMessage() {}
 
 func (x *TeamOutgoingInviteView) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_team_team_proto_msgTypes[16]
+	mi := &file_proto_team_team_proto_msgTypes[17]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1136,7 +1220,7 @@ func (x *TeamOutgoingInviteView) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TeamOutgoingInviteView.ProtoReflect.Descriptor instead.
 func (*TeamOutgoingInviteView) Descriptor() ([]byte, []int) {
-	return file_proto_team_team_proto_rawDescGZIP(), []int{16}
+	return file_proto_team_team_proto_rawDescGZIP(), []int{17}
 }
 
 func (x *TeamOutgoingInviteView) GetInvitee() *TeamMemberView {
@@ -1168,7 +1252,7 @@ type TeamIncomingInviteView struct {
 
 func (x *TeamIncomingInviteView) Reset() {
 	*x = TeamIncomingInviteView{}
-	mi := &file_proto_team_team_proto_msgTypes[17]
+	mi := &file_proto_team_team_proto_msgTypes[18]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1180,7 +1264,7 @@ func (x *TeamIncomingInviteView) String() string {
 func (*TeamIncomingInviteView) ProtoMessage() {}
 
 func (x *TeamIncomingInviteView) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_team_team_proto_msgTypes[17]
+	mi := &file_proto_team_team_proto_msgTypes[18]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1193,7 +1277,7 @@ func (x *TeamIncomingInviteView) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TeamIncomingInviteView.ProtoReflect.Descriptor instead.
 func (*TeamIncomingInviteView) Descriptor() ([]byte, []int) {
-	return file_proto_team_team_proto_rawDescGZIP(), []int{17}
+	return file_proto_team_team_proto_rawDescGZIP(), []int{18}
 }
 
 func (x *TeamIncomingInviteView) GetTeamId() uint64 {
@@ -1268,7 +1352,7 @@ type TeamView struct {
 
 func (x *TeamView) Reset() {
 	*x = TeamView{}
-	mi := &file_proto_team_team_proto_msgTypes[18]
+	mi := &file_proto_team_team_proto_msgTypes[19]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1280,7 +1364,7 @@ func (x *TeamView) String() string {
 func (*TeamView) ProtoMessage() {}
 
 func (x *TeamView) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_team_team_proto_msgTypes[18]
+	mi := &file_proto_team_team_proto_msgTypes[19]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1293,7 +1377,7 @@ func (x *TeamView) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TeamView.ProtoReflect.Descriptor instead.
 func (*TeamView) Descriptor() ([]byte, []int) {
-	return file_proto_team_team_proto_rawDescGZIP(), []int{18}
+	return file_proto_team_team_proto_rawDescGZIP(), []int{19}
 }
 
 func (x *TeamView) GetTeamId() uint64 {
@@ -1420,7 +1504,7 @@ type TeamSnapshotS2C struct {
 
 func (x *TeamSnapshotS2C) Reset() {
 	*x = TeamSnapshotS2C{}
-	mi := &file_proto_team_team_proto_msgTypes[19]
+	mi := &file_proto_team_team_proto_msgTypes[20]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1432,7 +1516,7 @@ func (x *TeamSnapshotS2C) String() string {
 func (*TeamSnapshotS2C) ProtoMessage() {}
 
 func (x *TeamSnapshotS2C) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_team_team_proto_msgTypes[19]
+	mi := &file_proto_team_team_proto_msgTypes[20]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1445,7 +1529,7 @@ func (x *TeamSnapshotS2C) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TeamSnapshotS2C.ProtoReflect.Descriptor instead.
 func (*TeamSnapshotS2C) Descriptor() ([]byte, []int) {
-	return file_proto_team_team_proto_rawDescGZIP(), []int{19}
+	return file_proto_team_team_proto_rawDescGZIP(), []int{20}
 }
 
 func (x *TeamSnapshotS2C) GetTeam() *TeamView {
@@ -1486,7 +1570,7 @@ type TeamInviteS2C struct {
 
 func (x *TeamInviteS2C) Reset() {
 	*x = TeamInviteS2C{}
-	mi := &file_proto_team_team_proto_msgTypes[20]
+	mi := &file_proto_team_team_proto_msgTypes[21]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1498,7 +1582,7 @@ func (x *TeamInviteS2C) String() string {
 func (*TeamInviteS2C) ProtoMessage() {}
 
 func (x *TeamInviteS2C) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_team_team_proto_msgTypes[20]
+	mi := &file_proto_team_team_proto_msgTypes[21]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1511,7 +1595,7 @@ func (x *TeamInviteS2C) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TeamInviteS2C.ProtoReflect.Descriptor instead.
 func (*TeamInviteS2C) Descriptor() ([]byte, []int) {
-	return file_proto_team_team_proto_rawDescGZIP(), []int{20}
+	return file_proto_team_team_proto_rawDescGZIP(), []int{21}
 }
 
 func (x *TeamInviteS2C) GetInvite() *TeamIncomingInviteView {
@@ -1540,7 +1624,7 @@ type TeamEventS2C struct {
 
 func (x *TeamEventS2C) Reset() {
 	*x = TeamEventS2C{}
-	mi := &file_proto_team_team_proto_msgTypes[21]
+	mi := &file_proto_team_team_proto_msgTypes[22]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1552,7 +1636,7 @@ func (x *TeamEventS2C) String() string {
 func (*TeamEventS2C) ProtoMessage() {}
 
 func (x *TeamEventS2C) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_team_team_proto_msgTypes[21]
+	mi := &file_proto_team_team_proto_msgTypes[22]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1565,7 +1649,7 @@ func (x *TeamEventS2C) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TeamEventS2C.ProtoReflect.Descriptor instead.
 func (*TeamEventS2C) Descriptor() ([]byte, []int) {
-	return file_proto_team_team_proto_rawDescGZIP(), []int{21}
+	return file_proto_team_team_proto_rawDescGZIP(), []int{22}
 }
 
 func (x *TeamEventS2C) GetType() TeamEventType {
@@ -1608,7 +1692,7 @@ type TeamRecord struct {
 
 func (x *TeamRecord) Reset() {
 	*x = TeamRecord{}
-	mi := &file_proto_team_team_proto_msgTypes[22]
+	mi := &file_proto_team_team_proto_msgTypes[23]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1620,7 +1704,7 @@ func (x *TeamRecord) String() string {
 func (*TeamRecord) ProtoMessage() {}
 
 func (x *TeamRecord) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_team_team_proto_msgTypes[22]
+	mi := &file_proto_team_team_proto_msgTypes[23]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1633,7 +1717,7 @@ func (x *TeamRecord) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TeamRecord.ProtoReflect.Descriptor instead.
 func (*TeamRecord) Descriptor() ([]byte, []int) {
-	return file_proto_team_team_proto_rawDescGZIP(), []int{22}
+	return file_proto_team_team_proto_rawDescGZIP(), []int{23}
 }
 
 func (x *TeamRecord) GetTeamId() uint64 {
@@ -1725,7 +1809,7 @@ type TeamMemberRecord struct {
 
 func (x *TeamMemberRecord) Reset() {
 	*x = TeamMemberRecord{}
-	mi := &file_proto_team_team_proto_msgTypes[23]
+	mi := &file_proto_team_team_proto_msgTypes[24]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1737,7 +1821,7 @@ func (x *TeamMemberRecord) String() string {
 func (*TeamMemberRecord) ProtoMessage() {}
 
 func (x *TeamMemberRecord) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_team_team_proto_msgTypes[23]
+	mi := &file_proto_team_team_proto_msgTypes[24]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1750,7 +1834,7 @@ func (x *TeamMemberRecord) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TeamMemberRecord.ProtoReflect.Descriptor instead.
 func (*TeamMemberRecord) Descriptor() ([]byte, []int) {
-	return file_proto_team_team_proto_rawDescGZIP(), []int{23}
+	return file_proto_team_team_proto_rawDescGZIP(), []int{24}
 }
 
 func (x *TeamMemberRecord) GetPlayerId() uint64 {
@@ -1793,7 +1877,7 @@ type TeamApplicationRecord struct {
 
 func (x *TeamApplicationRecord) Reset() {
 	*x = TeamApplicationRecord{}
-	mi := &file_proto_team_team_proto_msgTypes[24]
+	mi := &file_proto_team_team_proto_msgTypes[25]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1805,7 +1889,7 @@ func (x *TeamApplicationRecord) String() string {
 func (*TeamApplicationRecord) ProtoMessage() {}
 
 func (x *TeamApplicationRecord) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_team_team_proto_msgTypes[24]
+	mi := &file_proto_team_team_proto_msgTypes[25]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1818,7 +1902,7 @@ func (x *TeamApplicationRecord) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TeamApplicationRecord.ProtoReflect.Descriptor instead.
 func (*TeamApplicationRecord) Descriptor() ([]byte, []int) {
-	return file_proto_team_team_proto_rawDescGZIP(), []int{24}
+	return file_proto_team_team_proto_rawDescGZIP(), []int{25}
 }
 
 func (x *TeamApplicationRecord) GetPlayerId() uint64 {
@@ -1862,7 +1946,7 @@ type TeamInviteRecord struct {
 
 func (x *TeamInviteRecord) Reset() {
 	*x = TeamInviteRecord{}
-	mi := &file_proto_team_team_proto_msgTypes[25]
+	mi := &file_proto_team_team_proto_msgTypes[26]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1874,7 +1958,7 @@ func (x *TeamInviteRecord) String() string {
 func (*TeamInviteRecord) ProtoMessage() {}
 
 func (x *TeamInviteRecord) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_team_team_proto_msgTypes[25]
+	mi := &file_proto_team_team_proto_msgTypes[26]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1887,7 +1971,7 @@ func (x *TeamInviteRecord) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TeamInviteRecord.ProtoReflect.Descriptor instead.
 func (*TeamInviteRecord) Descriptor() ([]byte, []int) {
-	return file_proto_team_team_proto_rawDescGZIP(), []int{25}
+	return file_proto_team_team_proto_rawDescGZIP(), []int{26}
 }
 
 func (x *TeamInviteRecord) GetInviteeId() uint64 {
@@ -1930,10 +2014,11 @@ var File_proto_team_team_proto protoreflect.FileDescriptor
 const file_proto_team_team_proto_rawDesc = "" +
 	"\n" +
 	"\x15proto/team/team.proto\x12\x06teampb\x1a\x1bproto/db/proto_option.proto\x1a\x1dproto/common/base/empty.proto\x1a\x1bproto/common/base/tip.proto\"\x13\n" +
-	"\x11CreateTeamRequest\"Q\n" +
+	"\x11CreateTeamRequest\"{\n" +
 	"\x10GetMyTeamRequest\x12#\n" +
-	"\rnotify_online\x18\x01 \x01(\bR\fnotifyOnline\x12\x18\n" +
-	"\aregroup\x18\x02 \x01(\bR\aregroup\"@\n" +
+	"\rnotify_online\x18\x01 \x01(\bR\fnotifyOnline\x12(\n" +
+	"\x10match_request_id\x18\x02 \x01(\tR\x0ematchRequestId\x12\x18\n" +
+	"\aregroup\x18\x03 \x01(\bR\aregroup\"@\n" +
 	"\x14ApplyJoinTeamRequest\x12(\n" +
 	"\x10target_player_id\x18\x01 \x01(\x04R\x0etargetPlayerId\"\x81\x01\n" +
 	"\x18HandleApplicationRequest\x12!\n" +
@@ -1956,14 +2041,22 @@ const file_proto_team_team_proto_rawDesc = "" +
 	"\x10target_player_id\x18\x01 \x01(\x04R\x0etargetPlayerId\x12(\n" +
 	"\x10expected_team_id\x18\x02 \x01(\x04R\x0eexpectedTeamId\">\n" +
 	"\x12DisbandTeamRequest\x12(\n" +
-	"\x10expected_team_id\x18\x01 \x01(\x04R\x0eexpectedTeamId\"\x95\x01\n" +
+	"\x10expected_team_id\x18\x01 \x01(\x04R\x0eexpectedTeamId\"\xb4\x01\n" +
 	"\x15StartTeamMatchRequest\x12(\n" +
 	"\x10battle_config_id\x18\x01 \x01(\rR\x0ebattleConfigId\x12(\n" +
-	"\x10expected_team_id\x18\x02 \x01(\x04R\x0eexpectedTeamId\x12(\n" +
-	"\x10target_team_size\x18\x03 \x01(\rR\x0etargetTeamSize\"j\n" +
+	"\x10expected_team_id\x18\x02 \x01(\x04R\x0eexpectedTeamId\x12\x1d\n" +
+	"\n" +
+	"request_id\x18\x03 \x01(\tR\trequestId\x12(\n" +
+	"\x10target_team_size\x18\x04 \x01(\rR\x0etargetTeamSize\"\xa6\x01\n" +
 	"\fTeamResponse\x124\n" +
 	"\rerror_message\x18\x01 \x01(\v2\x0f.TipInfoMessageR\ferrorMessage\x12$\n" +
-	"\x04team\x18\x02 \x01(\v2\x10.teampb.TeamViewR\x04team\"\xad\x01\n" +
+	"\x04team\x18\x02 \x01(\v2\x10.teampb.TeamViewR\x04team\x12:\n" +
+	"\fmatch_intent\x18\x03 \x01(\v2\x17.teampb.TeamMatchIntentR\vmatchIntent\"c\n" +
+	"\x0fTeamMatchIntent\x12\x1d\n" +
+	"\n" +
+	"request_id\x18\x01 \x01(\tR\trequestId\x12\x1b\n" +
+	"\tbattle_id\x18\x02 \x01(\x04R\bbattleId\x12\x14\n" +
+	"\x05state\x18\x03 \x01(\rR\x05state\"\xad\x01\n" +
 	"\x15ListMyInvitesResponse\x124\n" +
 	"\rerror_message\x18\x01 \x01(\v2\x0f.TipInfoMessageR\ferrorMessage\x128\n" +
 	"\ainvites\x18\x02 \x03(\v2\x1e.teampb.TeamIncomingInviteViewR\ainvites\x12$\n" +
@@ -2124,7 +2217,7 @@ func file_proto_team_team_proto_rawDescGZIP() []byte {
 }
 
 var file_proto_team_team_proto_enumTypes = make([]protoimpl.EnumInfo, 3)
-var file_proto_team_team_proto_msgTypes = make([]protoimpl.MessageInfo, 26)
+var file_proto_team_team_proto_msgTypes = make([]protoimpl.MessageInfo, 27)
 var file_proto_team_team_proto_goTypes = []any{
 	(TeamMatchState)(0),              // 0: teampb.TeamMatchState
 	(TeamChangeReason)(0),            // 1: teampb.TeamChangeReason
@@ -2142,77 +2235,79 @@ var file_proto_team_team_proto_goTypes = []any{
 	(*DisbandTeamRequest)(nil),       // 13: teampb.DisbandTeamRequest
 	(*StartTeamMatchRequest)(nil),    // 14: teampb.StartTeamMatchRequest
 	(*TeamResponse)(nil),             // 15: teampb.TeamResponse
-	(*ListMyInvitesResponse)(nil),    // 16: teampb.ListMyInvitesResponse
-	(*TeamMemberView)(nil),           // 17: teampb.TeamMemberView
-	(*TeamApplicationView)(nil),      // 18: teampb.TeamApplicationView
-	(*TeamOutgoingInviteView)(nil),   // 19: teampb.TeamOutgoingInviteView
-	(*TeamIncomingInviteView)(nil),   // 20: teampb.TeamIncomingInviteView
-	(*TeamView)(nil),                 // 21: teampb.TeamView
-	(*TeamSnapshotS2C)(nil),          // 22: teampb.TeamSnapshotS2C
-	(*TeamInviteS2C)(nil),            // 23: teampb.TeamInviteS2C
-	(*TeamEventS2C)(nil),             // 24: teampb.TeamEventS2C
-	(*TeamRecord)(nil),               // 25: teampb.TeamRecord
-	(*TeamMemberRecord)(nil),         // 26: teampb.TeamMemberRecord
-	(*TeamApplicationRecord)(nil),    // 27: teampb.TeamApplicationRecord
-	(*TeamInviteRecord)(nil),         // 28: teampb.TeamInviteRecord
-	(*base.TipInfoMessage)(nil),      // 29: TipInfoMessage
-	(*base.Empty)(nil),               // 30: Empty
+	(*TeamMatchIntent)(nil),          // 16: teampb.TeamMatchIntent
+	(*ListMyInvitesResponse)(nil),    // 17: teampb.ListMyInvitesResponse
+	(*TeamMemberView)(nil),           // 18: teampb.TeamMemberView
+	(*TeamApplicationView)(nil),      // 19: teampb.TeamApplicationView
+	(*TeamOutgoingInviteView)(nil),   // 20: teampb.TeamOutgoingInviteView
+	(*TeamIncomingInviteView)(nil),   // 21: teampb.TeamIncomingInviteView
+	(*TeamView)(nil),                 // 22: teampb.TeamView
+	(*TeamSnapshotS2C)(nil),          // 23: teampb.TeamSnapshotS2C
+	(*TeamInviteS2C)(nil),            // 24: teampb.TeamInviteS2C
+	(*TeamEventS2C)(nil),             // 25: teampb.TeamEventS2C
+	(*TeamRecord)(nil),               // 26: teampb.TeamRecord
+	(*TeamMemberRecord)(nil),         // 27: teampb.TeamMemberRecord
+	(*TeamApplicationRecord)(nil),    // 28: teampb.TeamApplicationRecord
+	(*TeamInviteRecord)(nil),         // 29: teampb.TeamInviteRecord
+	(*base.TipInfoMessage)(nil),      // 30: TipInfoMessage
+	(*base.Empty)(nil),               // 31: Empty
 }
 var file_proto_team_team_proto_depIdxs = []int32{
-	29, // 0: teampb.TeamResponse.error_message:type_name -> TipInfoMessage
-	21, // 1: teampb.TeamResponse.team:type_name -> teampb.TeamView
-	29, // 2: teampb.ListMyInvitesResponse.error_message:type_name -> TipInfoMessage
-	20, // 3: teampb.ListMyInvitesResponse.invites:type_name -> teampb.TeamIncomingInviteView
-	17, // 4: teampb.TeamApplicationView.player:type_name -> teampb.TeamMemberView
-	17, // 5: teampb.TeamOutgoingInviteView.invitee:type_name -> teampb.TeamMemberView
-	17, // 6: teampb.TeamIncomingInviteView.inviter:type_name -> teampb.TeamMemberView
-	0,  // 7: teampb.TeamView.match_state:type_name -> teampb.TeamMatchState
-	17, // 8: teampb.TeamView.members:type_name -> teampb.TeamMemberView
-	18, // 9: teampb.TeamView.applications:type_name -> teampb.TeamApplicationView
-	19, // 10: teampb.TeamView.pending_invites:type_name -> teampb.TeamOutgoingInviteView
-	21, // 11: teampb.TeamSnapshotS2C.team:type_name -> teampb.TeamView
-	1,  // 12: teampb.TeamSnapshotS2C.reason:type_name -> teampb.TeamChangeReason
-	29, // 13: teampb.TeamSnapshotS2C.tip:type_name -> TipInfoMessage
-	20, // 14: teampb.TeamInviteS2C.invite:type_name -> teampb.TeamIncomingInviteView
-	2,  // 15: teampb.TeamEventS2C.type:type_name -> teampb.TeamEventType
-	26, // 16: teampb.TeamRecord.members:type_name -> teampb.TeamMemberRecord
-	27, // 17: teampb.TeamRecord.applications:type_name -> teampb.TeamApplicationRecord
-	28, // 18: teampb.TeamRecord.invites:type_name -> teampb.TeamInviteRecord
-	3,  // 19: teampb.ClientPlayerTeam.CreateTeam:input_type -> teampb.CreateTeamRequest
-	4,  // 20: teampb.ClientPlayerTeam.GetMyTeam:input_type -> teampb.GetMyTeamRequest
-	5,  // 21: teampb.ClientPlayerTeam.ApplyJoinTeam:input_type -> teampb.ApplyJoinTeamRequest
-	6,  // 22: teampb.ClientPlayerTeam.HandleApplication:input_type -> teampb.HandleApplicationRequest
-	7,  // 23: teampb.ClientPlayerTeam.InviteToTeam:input_type -> teampb.InviteToTeamRequest
-	8,  // 24: teampb.ClientPlayerTeam.RespondInvite:input_type -> teampb.RespondInviteRequest
-	9,  // 25: teampb.ClientPlayerTeam.ListMyInvites:input_type -> teampb.ListMyInvitesRequest
-	10, // 26: teampb.ClientPlayerTeam.LeaveTeam:input_type -> teampb.LeaveTeamRequest
-	11, // 27: teampb.ClientPlayerTeam.KickMember:input_type -> teampb.KickMemberRequest
-	12, // 28: teampb.ClientPlayerTeam.TransferLeader:input_type -> teampb.TransferLeaderRequest
-	13, // 29: teampb.ClientPlayerTeam.DisbandTeam:input_type -> teampb.DisbandTeamRequest
-	14, // 30: teampb.ClientPlayerTeam.StartTeamMatch:input_type -> teampb.StartTeamMatchRequest
-	22, // 31: teampb.ClientPlayerTeam.NotifyTeamSnapshot:input_type -> teampb.TeamSnapshotS2C
-	23, // 32: teampb.ClientPlayerTeam.NotifyTeamInvite:input_type -> teampb.TeamInviteS2C
-	24, // 33: teampb.ClientPlayerTeam.NotifyTeamEvent:input_type -> teampb.TeamEventS2C
-	15, // 34: teampb.ClientPlayerTeam.CreateTeam:output_type -> teampb.TeamResponse
-	15, // 35: teampb.ClientPlayerTeam.GetMyTeam:output_type -> teampb.TeamResponse
-	15, // 36: teampb.ClientPlayerTeam.ApplyJoinTeam:output_type -> teampb.TeamResponse
-	15, // 37: teampb.ClientPlayerTeam.HandleApplication:output_type -> teampb.TeamResponse
-	15, // 38: teampb.ClientPlayerTeam.InviteToTeam:output_type -> teampb.TeamResponse
-	15, // 39: teampb.ClientPlayerTeam.RespondInvite:output_type -> teampb.TeamResponse
-	16, // 40: teampb.ClientPlayerTeam.ListMyInvites:output_type -> teampb.ListMyInvitesResponse
-	15, // 41: teampb.ClientPlayerTeam.LeaveTeam:output_type -> teampb.TeamResponse
-	15, // 42: teampb.ClientPlayerTeam.KickMember:output_type -> teampb.TeamResponse
-	15, // 43: teampb.ClientPlayerTeam.TransferLeader:output_type -> teampb.TeamResponse
-	15, // 44: teampb.ClientPlayerTeam.DisbandTeam:output_type -> teampb.TeamResponse
-	15, // 45: teampb.ClientPlayerTeam.StartTeamMatch:output_type -> teampb.TeamResponse
-	30, // 46: teampb.ClientPlayerTeam.NotifyTeamSnapshot:output_type -> Empty
-	30, // 47: teampb.ClientPlayerTeam.NotifyTeamInvite:output_type -> Empty
-	30, // 48: teampb.ClientPlayerTeam.NotifyTeamEvent:output_type -> Empty
-	34, // [34:49] is the sub-list for method output_type
-	19, // [19:34] is the sub-list for method input_type
-	19, // [19:19] is the sub-list for extension type_name
-	19, // [19:19] is the sub-list for extension extendee
-	0,  // [0:19] is the sub-list for field type_name
+	30, // 0: teampb.TeamResponse.error_message:type_name -> TipInfoMessage
+	22, // 1: teampb.TeamResponse.team:type_name -> teampb.TeamView
+	16, // 2: teampb.TeamResponse.match_intent:type_name -> teampb.TeamMatchIntent
+	30, // 3: teampb.ListMyInvitesResponse.error_message:type_name -> TipInfoMessage
+	21, // 4: teampb.ListMyInvitesResponse.invites:type_name -> teampb.TeamIncomingInviteView
+	18, // 5: teampb.TeamApplicationView.player:type_name -> teampb.TeamMemberView
+	18, // 6: teampb.TeamOutgoingInviteView.invitee:type_name -> teampb.TeamMemberView
+	18, // 7: teampb.TeamIncomingInviteView.inviter:type_name -> teampb.TeamMemberView
+	0,  // 8: teampb.TeamView.match_state:type_name -> teampb.TeamMatchState
+	18, // 9: teampb.TeamView.members:type_name -> teampb.TeamMemberView
+	19, // 10: teampb.TeamView.applications:type_name -> teampb.TeamApplicationView
+	20, // 11: teampb.TeamView.pending_invites:type_name -> teampb.TeamOutgoingInviteView
+	22, // 12: teampb.TeamSnapshotS2C.team:type_name -> teampb.TeamView
+	1,  // 13: teampb.TeamSnapshotS2C.reason:type_name -> teampb.TeamChangeReason
+	30, // 14: teampb.TeamSnapshotS2C.tip:type_name -> TipInfoMessage
+	21, // 15: teampb.TeamInviteS2C.invite:type_name -> teampb.TeamIncomingInviteView
+	2,  // 16: teampb.TeamEventS2C.type:type_name -> teampb.TeamEventType
+	27, // 17: teampb.TeamRecord.members:type_name -> teampb.TeamMemberRecord
+	28, // 18: teampb.TeamRecord.applications:type_name -> teampb.TeamApplicationRecord
+	29, // 19: teampb.TeamRecord.invites:type_name -> teampb.TeamInviteRecord
+	3,  // 20: teampb.ClientPlayerTeam.CreateTeam:input_type -> teampb.CreateTeamRequest
+	4,  // 21: teampb.ClientPlayerTeam.GetMyTeam:input_type -> teampb.GetMyTeamRequest
+	5,  // 22: teampb.ClientPlayerTeam.ApplyJoinTeam:input_type -> teampb.ApplyJoinTeamRequest
+	6,  // 23: teampb.ClientPlayerTeam.HandleApplication:input_type -> teampb.HandleApplicationRequest
+	7,  // 24: teampb.ClientPlayerTeam.InviteToTeam:input_type -> teampb.InviteToTeamRequest
+	8,  // 25: teampb.ClientPlayerTeam.RespondInvite:input_type -> teampb.RespondInviteRequest
+	9,  // 26: teampb.ClientPlayerTeam.ListMyInvites:input_type -> teampb.ListMyInvitesRequest
+	10, // 27: teampb.ClientPlayerTeam.LeaveTeam:input_type -> teampb.LeaveTeamRequest
+	11, // 28: teampb.ClientPlayerTeam.KickMember:input_type -> teampb.KickMemberRequest
+	12, // 29: teampb.ClientPlayerTeam.TransferLeader:input_type -> teampb.TransferLeaderRequest
+	13, // 30: teampb.ClientPlayerTeam.DisbandTeam:input_type -> teampb.DisbandTeamRequest
+	14, // 31: teampb.ClientPlayerTeam.StartTeamMatch:input_type -> teampb.StartTeamMatchRequest
+	23, // 32: teampb.ClientPlayerTeam.NotifyTeamSnapshot:input_type -> teampb.TeamSnapshotS2C
+	24, // 33: teampb.ClientPlayerTeam.NotifyTeamInvite:input_type -> teampb.TeamInviteS2C
+	25, // 34: teampb.ClientPlayerTeam.NotifyTeamEvent:input_type -> teampb.TeamEventS2C
+	15, // 35: teampb.ClientPlayerTeam.CreateTeam:output_type -> teampb.TeamResponse
+	15, // 36: teampb.ClientPlayerTeam.GetMyTeam:output_type -> teampb.TeamResponse
+	15, // 37: teampb.ClientPlayerTeam.ApplyJoinTeam:output_type -> teampb.TeamResponse
+	15, // 38: teampb.ClientPlayerTeam.HandleApplication:output_type -> teampb.TeamResponse
+	15, // 39: teampb.ClientPlayerTeam.InviteToTeam:output_type -> teampb.TeamResponse
+	15, // 40: teampb.ClientPlayerTeam.RespondInvite:output_type -> teampb.TeamResponse
+	17, // 41: teampb.ClientPlayerTeam.ListMyInvites:output_type -> teampb.ListMyInvitesResponse
+	15, // 42: teampb.ClientPlayerTeam.LeaveTeam:output_type -> teampb.TeamResponse
+	15, // 43: teampb.ClientPlayerTeam.KickMember:output_type -> teampb.TeamResponse
+	15, // 44: teampb.ClientPlayerTeam.TransferLeader:output_type -> teampb.TeamResponse
+	15, // 45: teampb.ClientPlayerTeam.DisbandTeam:output_type -> teampb.TeamResponse
+	15, // 46: teampb.ClientPlayerTeam.StartTeamMatch:output_type -> teampb.TeamResponse
+	31, // 47: teampb.ClientPlayerTeam.NotifyTeamSnapshot:output_type -> Empty
+	31, // 48: teampb.ClientPlayerTeam.NotifyTeamInvite:output_type -> Empty
+	31, // 49: teampb.ClientPlayerTeam.NotifyTeamEvent:output_type -> Empty
+	35, // [35:50] is the sub-list for method output_type
+	20, // [20:35] is the sub-list for method input_type
+	20, // [20:20] is the sub-list for extension type_name
+	20, // [20:20] is the sub-list for extension extendee
+	0,  // [0:20] is the sub-list for field type_name
 }
 
 func init() { file_proto_team_team_proto_init() }
@@ -2226,7 +2321,7 @@ func file_proto_team_team_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_proto_team_team_proto_rawDesc), len(file_proto_team_team_proto_rawDesc)),
 			NumEnums:      3,
-			NumMessages:   26,
+			NumMessages:   27,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

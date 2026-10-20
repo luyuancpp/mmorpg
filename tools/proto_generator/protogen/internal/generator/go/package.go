@@ -6,6 +6,7 @@ import (
 	"os"
 	"strings"
 
+	"protogen/internal/utils"
 	"protogen/logger"
 
 	"go.uber.org/zap"
@@ -46,23 +47,27 @@ func GenGoPackageOptWithAdjustedPath(goPackagePath string) string {
 func AddGoPackage(protoFile, goPackagePath string, isMulti bool) (bool, error) {
 	file, err := os.Open(protoFile)
 	if err != nil {
-	logger.Global.Fatal("Failed to open proto file",
-		zap.String("file_path", protoFile),
+		logger.Global.Fatal("Failed to open proto file",
+			zap.String("file_path", protoFile),
 			zap.Error(err),
 		)
 	}
-	defer file.Close()
 
 	var lines []string
 	scanner := bufio.NewScanner(file)
 	for scanner.Scan() {
 		lines = append(lines, scanner.Text())
 	}
-	if err := scanner.Err(); err != nil {
-	logger.Global.Fatal("Failed to read proto file content",
-		zap.String("file_path", protoFile),
+	readErr := scanner.Err()
+	closeErr := file.Close()
+	if err := readErr; err != nil {
+		logger.Global.Fatal("Failed to read proto file content",
+			zap.String("file_path", protoFile),
 			zap.Error(err),
 		)
+	}
+	if closeErr != nil {
+		return false, closeErr
 	}
 
 	// Check if go_package already exists — if so, replace it with the correct one
@@ -125,30 +130,6 @@ func AddGoPackage(protoFile, goPackagePath string, isMulti bool) (bool, error) {
 }
 
 func writeProtoFile(protoFile string, lines []string) (bool, error) {
-	output, err := os.Create(protoFile)
-	if err != nil {
-		logger.Global.Fatal("Failed to create proto file write handle",
-			zap.String("file_path", protoFile),
-			zap.Error(err),
-		)
-	}
-	defer output.Close()
-
-	writer := bufio.NewWriter(output)
-	for _, line := range lines {
-		if _, err := writer.WriteString(line + "\n"); err != nil {
-			logger.Global.Fatal("Failed to write proto file content",
-				zap.String("file_path", protoFile),
-				zap.Error(err),
-			)
-		}
-	}
-	if err := writer.Flush(); err != nil {
-		logger.Global.Fatal("Failed to flush proto file write buffer",
-			zap.String("file_path", protoFile),
-			zap.Error(err),
-		)
-	}
-
-	return true, nil
+	err := utils.WriteFileIfChanged(protoFile, []byte(strings.Join(lines, "\n")+"\n"))
+	return err == nil, err
 }

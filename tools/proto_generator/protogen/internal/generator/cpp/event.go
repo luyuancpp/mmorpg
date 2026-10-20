@@ -13,6 +13,7 @@ import (
 
 	"go.uber.org/zap"
 
+	"protogen/internal"
 	_config "protogen/internal/config"
 	utils2 "protogen/internal/utils"
 	"protogen/logger"
@@ -20,7 +21,11 @@ import (
 
 // generateClassNameFromFile generates a C++ class name from a proto file name (underscore to upper camel case) with a suffix.
 func generateClassNameFromFile(file os.DirEntry, suffix string) string {
-	baseName := strings.TrimSuffix(file.Name(), filepath.Ext(file.Name()))
+	return generateClassNameFromProtoName(file.Name(), suffix)
+}
+
+func generateClassNameFromProtoName(name, suffix string) string {
+	baseName := strings.TrimSuffix(name, filepath.Ext(name))
 	parts := strings.Split(baseName, "_")
 	title := cases.Title(language.English)
 
@@ -104,80 +109,32 @@ func buildEventHandlerSignature(className, qualifiedTypeName, eventName string) 
 }
 
 // extractUserCodeBlocks extracts user-written code blocks from each event handler function in a .cpp file.
+//
+// 与 handler 生成器共用 internal.ReadCodeSectionsByKeys 的取段规则(internal/code_parser.go 的 codeParser):
+// 守护段内不认查找键、函数体内不认签名、以 ";" 结尾的声明不进入方法、不归任何方法的段整段跳过。
+// 修复前这里每一行都匹配签名 —— 守护段里出现某个事件 handler 的签名字面量(注释、手写的转调)会把解析拉进那个方法,
+// 随后的结束标记把它已取到的代码覆盖成只剩结束标记;FirstCode 缺失时第一个方法段会被当成全局段。
+// 结构损坏或带不走的非空段返回 error(拒绝生成,不吞代码);文件不存在时全部取默认空段。
+// 返回的 codeMap 以 methodSignatures 原样(含行尾换行)为键,值去掉行尾换行,供模板按 .Signature 取用。
 func extractUserCodeBlocks(cppPath string, methodSignatures []string) (map[string]string, string, error) {
-	codeMap := make(map[string]string)
-
-	file, err := os.Open(cppPath)
+	// 签名带行尾换行(buildEventHandlerSignature);查找键去掉它,在签名起始行上逐字匹配,CRLF 文件同样认得出。
+	keys := make([]string, 0, len(methodSignatures))
+	for _, signature := range methodSignatures {
+		keys = append(keys, strings.TrimRight(signature, "\r\n"))
+	}
+	sections, err := internal.ReadCodeSectionsByKeys(cppPath, keys)
 	if err != nil {
 		return nil, "", err
 	}
-	defer file.Close()
-
-	scanner := bufio.NewScanner(file)
-	var (
-		globalCode    string
-		currentMethod string
-		currentCode   string
-		inGlobalCode  bool
-		inMethodCode  bool
-		globalHandled bool
-	)
-
-	for scanner.Scan() {
-		line := scanner.Text() + "\n"
-
-		if inGlobalCode {
-			globalCode += line
-			if strings.Contains(line, _config.Global.Naming.YourCodeEnd) {
-				inGlobalCode = false
-			}
-			continue
-		}
-		if !globalHandled && strings.Contains(line, _config.Global.Naming.YourCodeBegin) {
-			globalCode = line
-			inGlobalCode = true
-			globalHandled = true
-			continue
-		}
-
-		if currentMethod == "" {
-			for _, signature := range methodSignatures {
-				if strings.Contains(line, signature) {
-					currentMethod = signature
-					break
-				}
-			}
-		}
-
-		if currentMethod != "" {
-			if strings.Contains(line, _config.Global.Naming.YourCodeBegin) {
-				inMethodCode = true
-				currentCode += line
-			} else if strings.Contains(line, _config.Global.Naming.YourCodeEnd) {
-				currentCode += line
-				codeMap[currentMethod] = currentCode
-				currentMethod = ""
-				currentCode = ""
-				inMethodCode = false
-			} else if inMethodCode {
-				currentCode += line
-			}
-		}
+	if err := internal.RefuseLostCodeSections(cppPath, sections); err != nil {
+		return nil, "", err
 	}
 
-	if globalCode == "" {
-		globalCode = _config.Global.Naming.YourCodePair
+	codeMap := make(map[string]string, len(methodSignatures))
+	for i, signature := range methodSignatures {
+		codeMap[signature] = utils2.TrimTrailingLineBreaks(sections.CodeMap[keys[i]])
 	}
-	globalCode = utils2.TrimTrailingLineBreaks(globalCode)
-
-	for _, signature := range methodSignatures {
-		if _, exists := codeMap[signature]; !exists {
-			codeMap[signature] = utils2.TrimTrailingLineBreaks(_config.Global.Naming.YourCodePair)
-			continue
-		}
-		codeMap[signature] = utils2.TrimTrailingLineBreaks(codeMap[signature])
-	}
-	return codeMap, globalCode, scanner.Err()
+	return codeMap, utils2.TrimTrailingLineBreaks(sections.FirstCode), nil
 }
 
 // EventTemplateData holds data for rendering templates.
@@ -198,6 +155,39 @@ type EventHandlerMessage struct {
 	IsLast        bool
 }
 
+// Kafka handler 只接受显式入口事件,顺序沿用 proto,不再为内部消息生成空 handler。
+func kafkaIngressMessages(protoRelativeDir string, file os.DirEntry, messages []string) []string {
+	protoInclude := filepath.ToSlash(filepath.Join(_config.Global.DirectoryNames.ProtoDirName, protoRelativeDir,
+		strings.Replace(file.Name(), _config.Global.FileExtensions.Proto, _config.Global.FileExtensions.PbH, 1)))
+	allowed := make(map[string]struct{})
+	for _, event := range globalProtoEventList {
+		if event.ProtoInclude == protoInclude && event.Ingress != eventIngressNone {
+			allowed[event.MessageName] = struct{}{}
+		}
+	}
+	var result []string
+	for _, message := range messages {
+		if _, ok := allowed[message]; ok {
+			result = append(result, message)
+		}
+	}
+	return result
+}
+
+func filterKafkaIngressFiles(protoRelativeDir string, files []os.DirEntry) []os.DirEntry {
+	var result []os.DirEntry
+	for _, file := range files {
+		messages, err := parseProtoMessages(filepath.Join(_config.Global.Paths.ProtoDir, protoRelativeDir, file.Name()))
+		if err != nil {
+			logger.Global.Fatal("读取 Kafka 入口 proto 失败", zap.String("file", file.Name()), zap.Error(err))
+		}
+		if len(kafkaIngressMessages(protoRelativeDir, file, messages)) > 0 {
+			result = append(result, file)
+		}
+	}
+	return result
+}
+
 // generateEventHandlerFiles generates .h and .cpp files for each proto using templates.
 func generateEventHandlerFiles(wg *sync.WaitGroup, file os.DirEntry, protoRelativeDir string, outputDir string) {
 	defer wg.Done()
@@ -209,6 +199,10 @@ func generateEventHandlerFiles(wg *sync.WaitGroup, file os.DirEntry, protoRelati
 			zap.String("proto_file", protoFilePath),
 			zap.Error(err),
 		)
+		return
+	}
+	eventMessages = kafkaIngressMessages(protoRelativeDir, file, eventMessages)
+	if len(eventMessages) == 0 {
 		return
 	}
 
@@ -236,7 +230,8 @@ func generateEventHandlerFiles(wg *sync.WaitGroup, file os.DirEntry, protoRelati
 
 	userCodeBlocks, globalCode, err := extractUserCodeBlocks(cppFilePath, handlerSignatures)
 	if err != nil {
-		logger.Global.Warn("Failed to read user code",
+		// 读失败或守护段带不走时继续渲染,会把自定义代码覆盖成空段:拒绝生成(与 handler 生成器同口径)。
+		logger.Global.Fatal("Refusing to regenerate event handler: user code sections cannot be preserved",
 			zap.String("cpp_file", cppFilePath),
 			zap.Error(err),
 		)
@@ -264,13 +259,13 @@ func generateEventHandlerFiles(wg *sync.WaitGroup, file os.DirEntry, protoRelati
 	}
 
 	if err := utils2.RenderTemplateToFile("internal/template/event_handler.h.tmpl", headerFilePath, tmplData); err != nil {
-		logger.Global.Error("Failed to generate header file",
+		logger.Global.Fatal("生成事件处理器头文件失败",
 			zap.String("header_file", headerFilePath),
 			zap.Error(err),
 		)
 	}
 	if err := utils2.RenderTemplateToFile("internal/template/event_handler.cpp.tmpl", cppFilePath, tmplData); err != nil {
-		logger.Global.Error("Failed to generate cpp file",
+		logger.Global.Fatal("生成事件处理器源文件失败",
 			zap.String("cpp_file", cppFilePath),
 			zap.Error(err),
 		)
@@ -314,7 +309,7 @@ func GenerateAllEventHandlers(wg *sync.WaitGroup) {
 			zap.Error(err),
 		)
 	}
-	logicEventFiles = filterProtoFiles(logicEventFiles)
+	logicEventFiles = filterKafkaIngressFiles(_config.Global.PathLists.ProtoDirs.LogicEvent, filterProtoFiles(logicEventFiles))
 
 	for _, file := range logicEventFiles {
 		wg.Add(1)
@@ -330,7 +325,7 @@ func GenerateAllEventHandlers(wg *sync.WaitGroup) {
 				zap.Error(readErr),
 			)
 		} else {
-			kafkaContractFiles = filterProtoFilesBySuffix(files, "_event.proto")
+			kafkaContractFiles = filterKafkaIngressFiles(_config.Global.PathLists.ProtoDirs.ContractsKafka, filterProtoFilesBySuffix(files, "_event.proto"))
 			for _, file := range kafkaContractFiles {
 				wg.Add(1)
 				go generateEventHandlerFiles(wg, file, _config.Global.PathLists.ProtoDirs.ContractsKafka, _config.Global.Paths.GateNodeEventHandlerDirectory)
@@ -338,74 +333,6 @@ func GenerateAllEventHandlers(wg *sync.WaitGroup) {
 		}
 	}
 
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		if err = GenerateEventHandlersTemplate(logicEventFiles, _config.Global.Paths.SceneNodeEventHandlerDirectory); err != nil {
-			logger.Global.Fatal("Failed to generate event handler template",
-				zap.String("dir", _config.Global.Paths.SceneNodeEventHandlerDirectory),
-				zap.Error(err),
-			)
-			return
-		}
-		if len(kafkaContractFiles) > 0 {
-			if err = GenerateEventHandlersTemplate(kafkaContractFiles, _config.Global.Paths.GateNodeEventHandlerDirectory); err != nil {
-				logger.Global.Fatal("Failed to generate Gate event handler template",
-					zap.String("dir", _config.Global.Paths.GateNodeEventHandlerDirectory),
-					zap.Error(err),
-				)
-				return
-			}
-		}
-	}()
-}
-
-func GenerateEventHandlersTemplate(protoFiles []os.DirEntry, outputDir string) error {
-	// Prepare the dynamic data
-	var cppIncludeData, registerData, unRegisterData string
-	for _, protoFile := range protoFiles {
-		if !strings.HasSuffix(protoFile.Name(), _config.Global.FileExtensions.Proto) {
-			continue
-		}
-
-		cppIncludeData += _config.Global.Naming.IncludeBegin + strings.Replace(filepath.Base(strings.ToLower(protoFile.Name())), _config.Global.FileExtensions.Proto, _config.Global.FileExtensions.HandlerH, 1) + _config.Global.Naming.IncludeEndLine
-
-		className := generateClassNameFromFile(protoFile, _config.Global.Naming.HandlerFile)
-		registerData += className + "::Register();\n"
-		unRegisterData += className + "::UnRegister();\n"
-	}
-
-	eventCppData := struct {
-		IncludeBegin               string
-		EventHandlerHeaderFileName string
-		IncludeEndLine             string
-		CppIncludeData             string
-		RegisterData               string
-		UnRegisterData             string
-	}{
-		IncludeBegin:               _config.Global.Naming.IncludeBegin,
-		EventHandlerHeaderFileName: _config.Global.Naming.EventHandlerBase + _config.Global.FileExtensions.Header,
-		IncludeEndLine:             _config.Global.Naming.IncludeEndLine,
-		CppIncludeData:             cppIncludeData,
-		RegisterData:               registerData,
-		UnRegisterData:             unRegisterData,
-	}
-
-	headerFilePath := filepath.Join(outputDir, _config.Global.Naming.EventHandlerBase+_config.Global.FileExtensions.Header)
-	cppFilePath := filepath.Join(outputDir, _config.Global.Naming.EventHandlerBase+_config.Global.FileExtensions.Cpp)
-	if err := utils2.RenderTemplateToFile("internal/template/event_handler_total.h.tmpl", headerFilePath, nil); err != nil {
-		logger.Global.Error("Failed to generate aggregate header file",
-			zap.String("header_file", headerFilePath),
-			zap.Error(err),
-		)
-	}
-	if err := utils2.RenderTemplateToFile("internal/template/event_handler_total.cpp.tmpl", cppFilePath, eventCppData); err != nil {
-		logger.Global.Error("Failed to generate aggregate cpp file",
-			zap.String("cpp_file", cppFilePath),
-			zap.Error(err),
-		)
-	}
-	return nil
 }
 
 type Config struct {

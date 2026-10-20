@@ -3,14 +3,18 @@ package main
 import (
 	"sync"
 
+	"go.uber.org/zap"
+
 	"protogen/internal"
 	cppGen "protogen/internal/generator/cpp"
 	cppGenOption "protogen/internal/generator/cpp/options"
 	goGen "protogen/internal/generator/go"
 	goGenOption "protogen/internal/generator/go/options"
 	unityGen "protogen/internal/generator/unity"
+	"protogen/internal/persistschema"
 	"protogen/internal/prototools"
 	protoToolsOption "protogen/internal/prototools/option"
+	"protogen/logger"
 )
 
 func runGenerationPipeline(runner *ExecutionRunner) {
@@ -37,13 +41,13 @@ func runGenerationPipeline(runner *ExecutionRunner) {
 		{Name: "cppGen.GenNodeUtil", Run: cppGen.GenNodeUtil},
 		{Name: "cppGen.GenerateAllEventHandlers", Run: cppGen.GenerateAllEventHandlers},
 		{Name: "cppGen.GenerateGateKafkaCommandRouter", Run: cppGen.GenerateGateKafkaCommandRouter},
+		{Name: "cppGen.GenerateSceneKafkaCommandRouter", Run: cppGen.GenerateSceneKafkaCommandRouter},
 	})
 
 	runner.RunTask("cppGen.InitMessageId", cppGen.InitMessageId)
 	runner.RunTask("cppGen.InitEventId", cppGen.InitEventId)
 	runner.RunTask("cppGen.WriteMessageIdFile", cppGen.WriteMessageIdFile)
 	runner.RunTask("cppGen.WriteEventIdFile", cppGen.WriteEventIdFile)
-	runner.RunTaskWithWG("prototools.PruneOrphanedLocalEventOutputs", prototools.PruneOrphanedLocalEventOutputs)
 
 	runner.RunParallelGroup("MethodFilesGeneration", []NamedTask{
 		{Name: "cppGen.WriteMethodFile", Run: cppGen.WriteMethodFile},
@@ -67,9 +71,14 @@ func runGenerationPipeline(runner *ExecutionRunner) {
 		{Name: "goGen.GoRobotTotalHandlerGenerator", Run: goGen.GoRobotTotalHandlerGenerator},
 		{Name: "unityGen.UnityClientHandlerGenerator", Run: unityGen.UnityClientHandlerGenerator},
 		{Name: "cppGen.CppPlayerDataLoadGenerator", Run: cppGen.CppPlayerDataLoadGenerator},
+		// 玩家持久 schema 世代台账:违反可携带性规则时整次生成失败(docs/design/mixed-version-persist-field-protection.md §3)。
+		{Name: "persistschema.Generate", Run: persistschema.Generate},
 		{Name: "cppGen.CppGrpcCallClient", Run: cppGen.CppGrpcCallClient},
 		{Name: "protoToolsOption.ProcessAllOptions", Run: func(wg *sync.WaitGroup) {
-			protoToolsOption.ProcessAllOptions(wg, internal.FdSet)
+			if err := protoToolsOption.ProcessAllOptions(wg, internal.FdSet); err != nil {
+				logger.Global.Fatal("处理协议 option 失败", zap.Error(err))
+			}
 		}},
 	})
+	runner.RunTaskWithWG("prototools.SyncCppBuildProjects", prototools.SyncCppBuildProjects)
 }

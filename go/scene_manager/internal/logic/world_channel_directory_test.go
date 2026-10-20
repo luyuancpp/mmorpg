@@ -665,7 +665,7 @@ func TestPublishWorldChannelDirectory_OneMapFailingDoesNotBlockOthers(t *testing
 }
 
 // 地图从 World 表移除后,孤儿清理要把这张图的线号表与目录一起带走:
-// 线号表没有 TTL,而且它们的键名不带 world_channels:zone: 前缀,清理的 SCAN 扫不到。
+// 线号表没有 TTL,而且它们的键名不带 world_channels:zone: 前缀,不会被当成频道组发现,只能按 (zone, conf) 点名删。
 func TestOrphanCleanup_DropsLineNoTableAndDirectory(t *testing.T) {
 	sc, mr := newChannelDirectoryCtx(t)
 	ctx := context.Background()
@@ -723,7 +723,8 @@ func TestWorldChannelDirectoryKeyFmt_CrossLanguageContract(t *testing.T) {
 	assert.Equal(t, "world_channel_directory:zone:3:1001", worldChannelDirectoryKey(3, 1001))
 
 	// 线号表只有 scene_manager 自己读写,不是跨语言契约;钉住它是为了守住「不用 world_channels:zone:
-	// 前缀」这条约束(孤儿清理按那个前缀 SCAN,会把它当成频道集合)。
+	// 前缀」这条约束(旧版本 scene_manager 的孤儿清理按那个前缀 SCAN、merge_zone 按那个前缀清源 zone,
+	// 会把它当成频道集合;新版本 2026-10-16 起改为点查)。
 	assert.Equal(t, "world_channel_lineno:zone:%d:%d", WorldChannelLineNoKeyFmt)
 	for _, key := range []string{worldChannelDirectoryKey(3, 1001), worldChannelLineNoKey(3, 1001)} {
 		_, _, isChannelSet := parseWorldChannelsKey(key)

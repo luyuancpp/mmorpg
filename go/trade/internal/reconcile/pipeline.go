@@ -123,9 +123,13 @@ type Deps struct {
 	Metrics *assetop.Metrics
 	// Now 注入时钟,单测可控;nil 时用 time.Now。
 	Now func() time.Time
-	// Ledger 可选:读玩家已落盘的资产账本(生产是 assetop.DataServiceLedger)。挂上之后,长期离线且已记账的行
-	// 可以提前终结;它也是自动放弃"账本确定未见"那条证据的唯一来源 —— 没有它自动放弃不运行(fail-closed)。
+	// Ledger 读玩家已落盘的资产账本(生产是 assetop.DataServiceLedger)。RequireSQLCommit 关闭时可选:挂上之后,
+	// 长期离线且已记账的行可以提前终结;它也是自动放弃"账本确定未见"那条证据的唯一来源 —— 没有它自动放弃不运行
+	// (fail-closed)。RequireSQLCommit 打开时必填且必须能读 SQL 提交证据,否则 New 拒绝构造(Loop.CheckWiring)。
 	Ledger assetop.LedgerReader
+	// RequireSQLCommit 是资产 SQL 提交证据开关(config.AssetOpConf.RequireSQLCommit,原样进 assetop.LoopConfig;
+	// docs/design/db-write-fencing-mysql.md §6.6)。零值 = HEAD 口径。
+	RequireSQLCommit bool
 	// Locator 可选:自动放弃前重新解析玩家位置(生产与 Caller.Resolver 是同一个 scenenode.Locator)。
 	// 为 nil 时自动放弃不运行(fail-closed)。
 	Locator assetop.Resolver
@@ -204,7 +208,9 @@ func New(d Deps) (*Pipeline, error) {
 	if now == nil {
 		now = time.Now
 	}
-	loop, err := assetop.NewLoop(loopConfig(d.Recovery), d.Ops, d.Caller, d.Metrics, now)
+	cfg := loopConfig(d.Recovery)
+	cfg.RequireSQLCommit = d.RequireSQLCommit
+	loop, err := assetop.NewLoop(cfg, d.Ops, d.Caller, d.Metrics, now)
 	if err != nil {
 		return nil, fmt.Errorf("trade: 资产重投循环参数非法: %w", err)
 	}
@@ -219,6 +225,10 @@ func New(d Deps) (*Pipeline, error) {
 	}
 	if d.Locator != nil {
 		loop.Locator = d.Locator
+	}
+	// 开关打开却没有能读 SQL 证据的 Ledger:每笔终结都只能停在 AwaitDurable,必须在构造时拒绝。
+	if err := loop.CheckWiring(); err != nil {
+		return nil, fmt.Errorf("trade: %w", err)
 	}
 	return &Pipeline{ops: d.Ops, loop: loop, ids: d.OpIDs, now: now, metrics: d.Metrics, recovery: d.Recovery}, nil
 }
@@ -265,10 +275,10 @@ func (p *Pipeline) Run(ctx context.Context) {
 		return
 	}
 	logx.Infof("[trade] Asset redelivery loop started: interval=%v batch=%d workers=%d lease=%v "+
-		"offline_after_attempts=%d offline_backoff=%v abandon_after=%v audit_interval=%v ledger=%t",
+		"offline_after_attempts=%d offline_backoff=%v abandon_after=%v audit_interval=%v ledger=%t require_sql_commit=%t",
 		loopInterval, loopBatch, loopWorkers, loopLease,
 		p.recovery.OfflineAfterAttempts, p.recovery.OfflineBackoff, p.recovery.AbandonAfter, p.recovery.AuditInterval,
-		p.loop.Ledger != nil)
+		p.loop.Ledger != nil, p.loop.RequireSQLCommit())
 	p.loop.Run(ctx)
 	logx.Info("[trade] Asset redelivery loop stopped")
 }

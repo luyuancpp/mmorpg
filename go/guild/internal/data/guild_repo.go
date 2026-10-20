@@ -82,6 +82,10 @@ var (
 	ErrGuildMaxLevel = errors.New("guild already at max level")
 	// ErrFundsInsufficient:锁内读到的帮会资金不够升到下一级。
 	ErrFundsInsufficient = errors.New("guild funds insufficient")
+	// ErrClientRequestReplayed:捐献 / 兑换预留在锁住本人成员行之后,读到同一 (玩家, client_request_id) 已有去重记录 ——
+	// 首次请求已经写成了指令(它比本次的事务前查重晚一步提交)。本事务整体回滚、什么都不写;
+	// 调用方按去重记录找回首次那笔指令答复,不是业务拒绝,也不是故障。
+	ErrClientRequestReplayed = errors.New("guild client request already applied")
 )
 
 // GuildData is the persistence-layer representation of a guild (stored in Redis + MySQL).

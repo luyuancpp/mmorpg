@@ -430,10 +430,8 @@ func channelSmokeIsRecorded(messageId uint32) bool {
 // NotifySceneInfo 把目录记到 Player 上,都靠通用 handler。
 //
 // 唯一不转发的是 EnterScene(63)的同步应答。它的通用 handler(logic/handler/scene_scene_client_player_enter_scene.go)
-// 只打日志,判据是「error_message != nil」;而 scene 每次应答都会把 error_message 物化成一条空消息
-// (return_define.h 的 TRANSFER_ERROR_MESSAGE 无条件 mutable_error_message()),于是每一次**被受理**的切线都会被
-// 打成带堆栈的 WARN "enter scene rejected",紧挨着本场景的 PASS 行,排障时会被误读成切线被拒;gate 信封拒绝时
-// body 为空,它反而打 "enter scene accepted"。本场景按 error_message.id 自己判(requestEnterScene),
+// gate 信封拒绝时 body 为空，通用 handler 会误打 "enter scene accepted"。
+// 本场景按 error_message.id 自己判（requestEnterScene），
 // 不转发不丢任何状态。
 func (b *channelSmokeBot) onMessage(client *pkg.GameClient, msg *base.MessageContent) {
 	b.stats.MsgRecv()

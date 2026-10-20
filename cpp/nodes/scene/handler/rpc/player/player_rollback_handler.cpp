@@ -19,13 +19,15 @@ namespace
     //
     // 这十二条挂在 SceneRollbackClientPlayer 下,它**没有**标
     // OptionIsClientProtocolService,所以 gate 的 GM 清单里没有它们 —— gate 也确实
-    // 挡得住(只放行 IsClientMessageId 的号)。但 scene 的两个分发入口都不看这个
-    // option:ProcessClientPlayerMessage 只按 message_id 查注册表,InvokePlayerService
-    // 是节点路由。任何能连上 scene RPC 端口的进程,直接发 message_id 102-117 就调到
-    // 这里。等 P1-B 把这些桩填上,那就是"谁都能回档、回收任意玩家"。
+    // 挡得住(只放行 IsClientMessageId 的号)。但 scene 的分发入口不看这个
+    // option:ProcessClientPlayerMessage 只按 message_id 查注册表。任何能连上 scene
+    // RPC 端口的进程,直接发 message_id 102-117 就调到这里。等 P1-B 把这些桩填上,
+    // 那就是"谁都能回档、回收任意玩家"。
     //
-    // 分发入口的统一闸门(guild-phase2 §S4 4.34)盖住客户端那条路,这一层盖住节点
-    // 路由那条 —— 两条路都要盖,漏一条等于没盖。
+    // 分发入口的统一闸门(guild-phase2 §S4 4.34)盖住客户端那条路。原先的节点路由入口
+    // InvokePlayerService 也能打到这里,那条路只有这一层盖得住;它已于批 7 退役并从 proto 删除
+    // (docs/design/muduo-rpc-channel.md §20),这一层仍保留作纵深防御 —— 将来若再有
+    // 路径能打到玩家 handler,每条路都要盖,漏一条等于没盖。
     //
     // **读类也拦**:GmQueryDebt / GmTraceItem / GmQueryTransactionLog 这几条会把
     // 指定玩家的欠款、物品流转、交易流水读出来。它们不改数据,但按最小权限,

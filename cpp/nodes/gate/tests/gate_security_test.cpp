@@ -23,7 +23,6 @@
 #include <string>
 
 #include "gate_router_mode.h"
-#include "gate_router_transport.h"
 #include "gate_security.h"
 #include "gate_version.h"
 
@@ -206,78 +205,6 @@ TEST(GateRouterMode, ModeNameIsStableForLogs)
 	// 启动日志与运维手册都按这两个词查:不能改。
 	EXPECT_STREQ("router", gate_router_mode::RouterModeName(true));
 	EXPECT_STREQ("direct", gate_router_mode::RouterModeName(false));
-}
-
-// ── 路由服传输开关(GATE_ROUTER_TRANSPORT):默认必须落在官方 gRPC ──────────
-//
-// grpc-muduo-transport.md §8:grpc(默认)| muduo_h2。不认识的值按 grpc 并由调用点打 WARN ——
-// 拼错时落在旧实现,而不是悄悄切到新路径。
-
-TEST(GateRouterTransport, EmptyDefaultsToOfficialGrpc)
-{
-	const auto resolution = gate_router_transport::ParseTransport("");
-	EXPECT_EQ(gate_router_transport::Transport::kOfficialGrpc, resolution.transport);
-	EXPECT_TRUE(resolution.recognized);
-	EXPECT_EQ("", resolution.raw);
-}
-
-TEST(GateRouterTransport, GrpcIsRecognizedCaseInsensitively)
-{
-	for (const char *value : {"grpc", "GRPC", "Grpc"})
-	{
-		const auto resolution = gate_router_transport::ParseTransport(value);
-		EXPECT_EQ(gate_router_transport::Transport::kOfficialGrpc, resolution.transport) << value;
-		EXPECT_TRUE(resolution.recognized) << value;
-	}
-}
-
-TEST(GateRouterTransport, MuduoH2IsRecognizedAndTrimmed)
-{
-	for (const char *value : {"muduo_h2", " muduo_h2 ", "MUDUO_H2", "\tmuduo_h2\n"})
-	{
-		const auto resolution = gate_router_transport::ParseTransport(value);
-		EXPECT_EQ(gate_router_transport::Transport::kMuduoH2, resolution.transport) << "'" << value << "'";
-		EXPECT_TRUE(resolution.recognized) << "'" << value << "'";
-		EXPECT_EQ(value, resolution.raw) << "raw 保留原值,供 WARN 日志打印";
-	}
-}
-
-TEST(GateRouterTransport, MisspelledValueFallsBackToGrpcAndIsFlagged)
-{
-	for (const char *value : {"muduo-h2", "muduoh2", "muduo_h3", "h2", "muduo", "muduo_h2x", "grpc2", "muduo h2"})
-	{
-		const auto resolution = gate_router_transport::ParseTransport(value);
-		EXPECT_EQ(gate_router_transport::Transport::kOfficialGrpc, resolution.transport) << value;
-		EXPECT_FALSE(resolution.recognized) << value;
-		EXPECT_EQ(value, resolution.raw);
-	}
-}
-
-TEST(GateRouterTransport, EnvValueIsReadAndParsed)
-{
-	// 用测试专属变量名,不与 ResolveOnce() 的进程级缓存耦合。
-	constexpr char kEnv[] = "GATE_ROUTER_TRANSPORT_UNIT_TEST";
-	SetEnvForTest(kEnv, "muduo_h2");
-	EXPECT_EQ(gate_router_transport::Transport::kMuduoH2, gate_router_transport::ResolveTransportFromEnv(kEnv).transport);
-	SetEnvForTest(kEnv, "typo");
-	const auto typo = gate_router_transport::ResolveTransportFromEnv(kEnv);
-	EXPECT_EQ(gate_router_transport::Transport::kOfficialGrpc, typo.transport);
-	EXPECT_FALSE(typo.recognized);
-	SetEnvForTest(kEnv, "");
-	const auto unset = gate_router_transport::ResolveTransportFromEnv(kEnv);
-	EXPECT_EQ(gate_router_transport::Transport::kOfficialGrpc, unset.transport);
-	EXPECT_TRUE(unset.recognized);
-	// 变量名为空指针:同样是默认。
-	const auto noName = gate_router_transport::ResolveTransportFromEnv(nullptr);
-	EXPECT_EQ(gate_router_transport::Transport::kOfficialGrpc, noName.transport);
-	EXPECT_TRUE(noName.recognized);
-}
-
-TEST(GateRouterTransport, TransportNameIsStableForLogs)
-{
-	EXPECT_STREQ("grpc", gate_router_transport::TransportName(gate_router_transport::Transport::kOfficialGrpc));
-	EXPECT_STREQ("muduo_h2", gate_router_transport::TransportName(gate_router_transport::Transport::kMuduoH2));
-	EXPECT_STREQ("GATE_ROUTER_TRANSPORT", gate_router_transport::kTransportEnv);
 }
 
 // ── 空 gate_token_secret:这是工作包 a 的核心回归 ───────────────────────────

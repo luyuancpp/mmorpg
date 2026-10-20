@@ -18,22 +18,16 @@
     <ClCompile Include="handler\event\scene_entry_dispatch.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="handler\event\event_handler.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="handler\event\gate_event_handler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="handler\event\gate_kafka_command_router.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="handler\event\player_event_handler.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="handler\rpc\client_message_processor.cpp">
+    <ClCompile Include="handler\rpc\client_session_handler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="handler\rpc\client_request_lane.cpp">
@@ -62,19 +56,13 @@
     <ClInclude Include="handler\event\scene_entry_dispatch.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="handler\event\event_handler.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="handler\event\gate_event_handler.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="handler\event\gate_kafka_command_router.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="handler\event\player_event_handler.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="handler\rpc\client_message_processor.h">
+    <ClInclude Include="handler\rpc\client_session_handler.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="handler\rpc\client_request_lane.h">
@@ -84,9 +72,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="handler\rpc\rpc_reply_bridge.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="gate_router_transport.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="handler\rpc\gate_service_handler.h">

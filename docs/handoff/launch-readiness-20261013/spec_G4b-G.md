@@ -583,6 +583,16 @@ go-redis 把 `int64` / `uint32` 参数编码成十进制字符串，`float64` �
 
 计数从只读的 `SCARD` 变成带清理的写脚本后，「Redis 只读」（主从切换瞬间的 `READONLY`）也会让 `FreeSlots` 报错。此时快速通道占位、入队这些本来就是写的操作同样会失败，结果仍是不放行，没有新增方向。
 
+> **2026-10-15 补注（「`PopAdmit` 的 MULTI 出错」一行，原表保留；已落码，未编译、未测试，待 Codex 验证）**：放行的写入已不是 MULTI，改为一段 `admitEntryScript`（见 §5.8 末尾的补注）。这一行现在是：脚本出错（含 `pickFn` 出错后回填队列失败）仍 `continue`、不计入放行数、不回填，但不再零日志——每批汇总一行 `ERROR`：`[loginqueue] PopAdmit dropped entries after zpopmin zone=<z> reason=write_failed popped=… admitted=… dropped=… firstQueueId=… firstErr=…`。调用方 ctx 被取消（停服、丢租约）已不会走到这一行，见 §5.8 末尾补注第 1 条。
+>
+> （2026-10-16 更正，上句原文保留）「调用方 ctx 被取消已不会走到这一行」过强：取消之后 3s 预算内没写完的尾部仍记进这一行（`firstErr` 通常是 `context deadline exceeded`），见 §5.8 末尾「补注（续）」第 1 条；滚动重启时看到 `write_failed` 要先想到这一支。
+>
+> （2026-10-18 更正，「`PopAdmit` 的 MULTI 出错」一行与上面两段，原文保留；已落码，未编译、未测试，待 Codex 验证）出队改为 `ZRANGE` + 每条一段先判在队的 `admitEntryScript`，条目在放行写成之前不离开队列。
+> - **脚本出错时停批，不丢条目。** 含 noeviction 写满。本批在第一个出错处停下，剩余条目原样留在队列。
+> - **`pickFn` 出错只跳过。** 只跳过该条，不再回填。
+> - **日志。** dispatcher 先计入已放行数，再在 ctx 未取消时每拍至多打一行 `ERROR [loginqueue] PopAdmit zone=<z> err=admit script queueId=… admitted=… skipped=… untried=…: …`。`PopAdmit dropped entries after zpopmin …` 一行与 3s 写入预算都已删除。
+> - **方向改变。** 这一行由「条目丢失」变为 fail-closed（停批、条目留在队列）。见 §5.8 末尾的 2026-10-18 更正。
+
 ### 5.4 并发与原子性边界
 
 - `Queue.now` 与 `Queue.handoffGrace` 构造后只读（测试在使用前设置），并发读安全。
@@ -641,6 +651,61 @@ go-redis 把 `int64` / `uint32` 参数编码成十进制字符串，`float64` �
 > - **第 4 条部分修**：go-redis 超时重发 `GETDEL`、第二次回空时，客户端现在看到 EXPIRED（410）而不是名次 0，会重新排队；但那张票仍然丢了。Java 版的取走请求号（让重发拿回同一张票）本仓库没有做。
 > - **第 2 条不变**：`PopAdmit` 在写放行槽之前丢掉的条目没有 `admitted_at`，与在途窗口无法区分，仍停在名次 0 直到 meta 过期。
 > - §5.1「重复轮询」一条的结论不变：第二次 `GETDEL` 回空，在改分数之前就返回，占位不续期；只是客户端看到的由名次 0 变为 EXPIRED。T13（`TestConsume_RepeatPollDoesNotExtendPlaceholder`）的断言随之收紧为 EXPIRED，§6.3 的照写代码块保留 10-13 原文。
+
+> **2026-10-15 补注（第 2 条与上一段更正的后续；交接 `handoff-launch-readiness-decisions-20261015.md` §4 第 2 项的核实与修复，已落码，未编译、未测试，待 Codex 验证）**：上一段更正里「`PopAdmit` 与放行槽同一个 MULTI 写进 meta 的 `admitted_at`」（以及 :60 的 F6 更正里同样的说法）已不成立，原文保留，以本条为准。
+> 1. **停服、丢租约不再丢整批**：`PopAdmit` 收到的是 dispatcher 的 `drainCtx`，停服（`Stop → cancel`）与丢租约（`onLost → drainCancel`）都会取消它。原实现 `ZPOPMIN` 之后逐条写仍用它，取消之后剩下每一条都在 go-redis 取连接时（`waitTurn`）就以 `context.Canceled` 返回、命令没发出，整批剩余条目既不在队列、也没有放行槽和 `admitted_at`，玩家停在名次 0 直到 meta 过期（1h）。现在 `ZPOPMIN` 仍用调用方 ctx（取消之后不再弹出新的一批），弹出之后的写入改用 `context.WithoutCancel` 加 3s 上限（`popAdmitWriteBudget`：go-zero 收到 SIGTERM 后先等 1s、5.5s 强杀）。丢租约后旧 leader 写完自己已弹出的条目不会重复写槽或重复签票，新 leader 暂时看不到这些占位，最多多放一批，与 §5.4 第 2 条的在途上界同类。用例：`TestPopAdmit_CtxCanceledMidBatch_StillWritesPoppedEntries`（修复前红在 n=1）、`TestPopAdmit_CtxCanceledBeforePop_PopsNothing`。
+> 2. **放行改为一段脚本 `admitEntryScript`**：放行槽（`SET PX AdmitTTL`）、meta 的 `admitted_at`（`HSET`，只在 meta 在时）、在途占位（`ZADD` + 只增不减的 `PEXPIRE W`）在一段 Lua 里写，替代原 MULTI{`SET`, `markAdmittedScript`, `admittedHoldScript`}。`markAdmittedScript` 已删除。两道只读前置判定，不过时一个键都不动：
+>    - **meta 不在 → 回 0，整条丢弃**：条目在队里待满 `QueueEntryTTL`，token 索引与 meta 由 `Enqueue` 同一个 MULTI、同一个 TTL 设下、同时过期，排队令牌也已到期，再没人能取到放行槽。原实现照样写槽、占一个 `AdmitTTL` 的在途名额、计入 `login_queue_admit_total`；等待超过 1h 的稳态下队首每一条都是这种孤儿。现在不写、不占、不计数，每批一行 `INFO`（`reason=meta_gone`）。`TestPopAdmit_MetaGone_DoesNotRecreateMeta` 后半段断言随之翻转（原「放行槽照常可取」→ 不写槽、不占位、查询回 EXPIRED），新增 `TestPopAdmit_EntryOlderThanQueueEntryTTL_NotAdmitted` 走真实到期路径（修复前红在 n=2）。
+>    - **`admitted_at` 已在 → 回 2，不写，计入放行数**：go-redis 对单条命令在读超时、连接断开后自动重发（MULTI 读失败不重发），改成单条脚本之后，第一次已执行、回包丢失、期间客户端已取走放行槽时，重发会写出第二个放行槽、签出第二张 gate 票，并把占位分数拨回「放行时刻 + AdmitTTL」。这道守卫让重发成为空操作。用例：`TestPopAdmit_AdmitScriptReplayedAfterConsume_DoesNotReissue`（用 go-redis 钩子确定地模拟重发）。
+> 3. **用例拆分**：`TestLookup_AdmitSlotExpiredUnclaimed_ReturnsExpired` 只留行为断言（EXPIRED、`admit_window_passed` +1、这次查询不给在途占位续期），修复前红在 EXPIRED 断言上；存储布局（`admitted_at` 字段、meta 的 TTL 不变）挪到新用例 `TestPopAdmit_MarksAdmittedAtKeepingMetaTTL`，先 `FastForward` 再用等式断言 PTTL，续期、抹掉、缩短都会红（原区间断言分不出「保持」与「续期到 entryTTL」）。
+> 4. **TTL 正值校验（部分落码）**：`loginqueue.ValidateTTLs(entryTTL, admitTTL)` 已加，两者都必须为正（不要求 `AdmitTTL < QueueEntryTTL`，Java 版 `QueueSettings` 同样只校验为正），用例 `TestValidateTTLs_RejectsNonPositive`。`PopAdmit` 在 `ZPOPMIN` 之前也调它：TTL 非正时一个都不弹出、回错误（dispatcher 每拍记 `ERROR [loginqueue] PopAdmit zone=<z> err=loginqueue: … ttl must be positive …`），条目原样留在队列；原实现在 `AdmitTTL: 0s` 下写出永不过期的放行槽，只改脚本不加这道拦截则会把弹出的整批全部丢掉（用例 `TestPopAdmit_NonPositiveAdmitTTL_PopsNothing`）。**起服接线还没做**（`servicecontext.initLoginQueue` 在 `New` 之前调用、失败即 panic，以及对应的 wiring 用例、`config.go` / `login.yaml` 注释），不在本批允许改的文件里，已交主会话；接线之前显式写 `QueueEntryTTL: 0s` 仍不报错，每次入队删掉整条队列、token 索引不带 TTL（`PopAdmit` 不再出队，但 `Enqueue` 没有拦截）。
+> 5. **仍未修、只登记**：
+>    - `redis-queue` 按 noeviction 写满时，`ZPOPMIN` 照常成功、放行脚本的第一条写被拒，计数与锁续期不受影响，`free` 不降，几拍之内整条队列被弹空，玩家停在名次 0 直到 meta 过期。现在每拍一行汇总 `ERROR`，但仍会丢人。根治是 §5.4 第 2 条所说的单段 Lua（弹出与写入合一，`#!lua` 不带 `allow-oom`，写满时弹出前整段拒绝，需要 Redis ≥ 7；miniredis 不支持 shebang，证据只能来自真实 Redis），待负责人定；上线前应配 `redis-queue` 的内存水位告警。
+>    - `pickFn` 出错时以分数 0 回填队列的 `ZADD`：一批把队列弹空之后，这条 `ZADD` 建出的 `queue:zone:<z>` 没有 TTL，直到下一次入队才被设上（既有）。
+>    - 剩余丢条目路径：写入超出 3s 预算、Redis 出错、进程被强杀、`pickFn` 回 `(nil, nil)`、Marshal 失败。
+>    - 「心跳续期单次抖动」不会触发 `onLost`（距上次续期成功超过 `fenceAfter` 才会），Redis 持续不可达时写入本身就会失败，与 ctx 无关。
+> 6. **Java 版**：弹出与写占位本来就在同一段 Lua 里，没有 ctx 取消这条路径；出队 Lua 遇到 meta 已过期的成员时是否也写槽、占位，以及写满时的行为，待对照 Java 仓库 `PARITY.md` 核对。
+
+> **2026-10-15 补注（续，更正上一条第 1、4、5 条；已落码，未编译、未测试，待 Codex 验证）**：上一条原文保留，以本条为准。
+> 1. **写入预算的起算点**（更正第 1 条「弹出之后的写入改用 `context.WithoutCancel` 加 3s 上限」）：3s 预算改为自 `PopAdmit` 第一次看到调用方 ctx 已结束时起算，没有取消时不设截止，与改动前（写入沿用没有截止的 `drainCtx`）一致。上一条的写法自 `ZPOPMIN` 返回时起算，没有任何取消也会截断开区大批次（例：batch=5000、逐条往返超过 0.6ms 即超出 3s），尾部条目丢失、停在名次 0 约 1h；它们不占在途名额，下一拍 `free` 不降，每拍的尾部都这样丢，比改动前更糟。取消检查放在每次写之前（不在循环开头），`pickFn` 期间发生的取消在本条就生效。预算经 `Queue.popAdmitWriteBudget` 读取（`New` 设为常量 3s，只有同包测试改它）。
+>    - 停服时序：go-zero 约在 SIGTERM 后 1s 通知 shutdown listener，服务退出后 `ctx.Stop` 才取消 `drainCtx`，预算通常在 SIGTERM 后约 4s 走完，早于 5.5s 强杀；到期时正在等回包的那一条还会再等到 `ReadTimeout`（默认 3s），Redis 慢到这种程度时会越过强杀点，被强杀的尾部条目也打不出汇总 `ERROR`。
+>    - 用例：`TestPopAdmit_NoCancel_LongBatchNotCutByWriteBudget`（预算设 0、不取消，三条都放行；自弹出起算的写法红在 n=3，回 0）；`TestPopAdmit_CtxCanceledMidBatch_WriteBudgetExhausted_DropsRest`（预算设 0、第 2 次 `pickFn` 时取消，只放行第 1 条，另两条不在队列、没有放行槽、查询回名次 0；永不起算的写法红在 n=1，回 3）。`TestPopAdmit_CtxCanceledMidBatch_StillWritesPoppedEntries` 用默认 3s，不变。
+>    - 第 5 条「剩余丢条目路径：写入超出 3s 预算」相应读作「取消之后写入超出 3s 预算」。
+> 2. **起服接线已接上**（更正第 4 条「起服接线还没做」）：`servicecontext.initLoginQueue` 已在 `loginqueue.New` 之前调 `ValidateTTLs`，失败即 panic（`Queue.Enabled=false` 时不校验），配 wiring 用例 `TestInitLoginQueue_NonPositiveTTLPanicsWhenQueueEnabled` 与 `config.go` / `login.yaml` 补注（主会话所改，不在本批文件内）。第 4 条末句「接线之前显式写 `QueueEntryTTL: 0s` 仍不报错」只描述接线前的状态；`PopAdmit` 的弹出前拦截保留为纵深防御。
+> 3. **`AdmitTTL` 的 1ms 下界**：`admitEntryScript` 以 `AdmitTTL.Milliseconds()` 作 `SET PX`，不足 1ms（例如显式写 `500us`）取整为 0，Redis 拒绝 `SET PX 0`，弹出的整批全部丢失；原 go-redis `Set` 会把它截成 1ms，所以这是本批改脚本引入的缺口。`ValidateTTLs` 对 admitTTL 的判定改为不足 1ms 即拒（报错串 `admit ttl must be positive and at least 1ms`，仍含 wiring 用例匹配的 `ttl must be positive`），起服校验与弹出前拦截随之覆盖。用例：`TestValidateTTLs_RejectsNonPositive` 加 500µs（拒）与 1ms（收）两组；`TestPopAdmit_NonPositiveAdmitTTL_PopsNothing` 改为 0 与 500µs 两个子用例。entryTTL 不加这条下界：`Enqueue` 经 go-redis 的 `Expire` / `Set`，不足 1s / 1ms 会被截成 1s / 1ms。
+
+> **2026-10-18 更正（第 1、2、4 条，上两条补注，以及 §5.4 第 2 条、§5.5「不丢人、不重复放行」；原文保留；`loginqueue` 包已落码，未编译、未测试，待 Codex 验证）**：完整说明见设计稿 `docs/design/login-queue-2026-05.md` §5 决策树后的 2026-10-18 更正，这里只列与本规格相关的结论。
+> 1. **第 2 条与上一条补注第 5 条「仍未修」：已修。** `PopAdmit` 不再 `ZPOPMIN`：先 `ZRANGE` 读候选，再逐条跑 `admitEntryScript`。脚本第一步 `ZSCORE` 判成员仍在队列，写成时在同一段里 `ZREM`。
+>    - **不再丢条目。** `pickFn` 回 `(nil, nil)`、Marshal 失败、脚本出错、取消、写满、强杀都不再丢条目。
+>    - **随之删除的机制。** `popAdmitWriteBudget`（上一条补注第 1 条与「补注（续）」第 1 条）；`pickFn` 出错时以分数 0 回填的 `ZADD`，连同它「建出没有 TTL 的队列键」的边角。
+>    - **用例。**
+>      - 删除：`TestPopAdmit_NoCancel_LongBatchNotCutByWriteBudget`、`TestPopAdmit_CtxCanceledMidBatch_WriteBudgetExhausted_DropsRest`。
+>      - 改写：`TestPopAdmit_CtxCanceledMidBatch_StillWritesPoppedEntries` → `TestPopAdmit_CtxCanceledMidBatch_RestStayQueued`（取消后剩余条目留在队列）；`TestPopAdmitReQueuesOnSignFailure` → `TestPopAdmit_PickFailure_EntryNeverLeavesQueue`（分数不变）。
+>      - 改名：`TestPopAdmit_CtxCanceledBeforePop_PopsNothing` → `TestPopAdmit_CtxCanceledBeforeRead_AdmitsNothing`。
+> 2. **写满的根治不需要 `#!lua`**（更正上一条补注第 5 条第 1 点）：
+>    - **兼容模式下的行为。** 脚本无 shebang 时，写满下脚本照常开跑。只有写段第一条是 DENYOOM 命令、且之前没执行过任何写时，脚本才在那条写上被拒。
+>    - **放行脚本的写法。** 写段第一条是 `HSET`，它之前只有只读命令。写满时整段被拒、什么都没写、条目留在队列，本身就是 fail-closed。
+>    - **为什么不用 shebang。** 带 shebang 不带 flags 反而会在写满时整段拒绝，连 META_GONE / ALREADY 的清理也做不了；miniredis 也不解析 shebang。
+>    - **用例与证据。** 用例 `TestPopAdmit_OOMOnAdmitScript_EntriesStayQueued`（用 go-redis 钩子模拟 OOM 回包）。真实 Redis 证据待 §8.4 的 2026-10-18 补注第 1 项。
+>    - **写满期间。** 查询与续期照常，新入队失败（`StatusError`），仍需内存水位告警。
+> 3. **放行脚本返回值改为 1~5，全部非零整数**：GONE / META_GONE / ALREADY / WRITTEN / REPLAYED。
+>    - **meta 不在。** 上一条补注第 2 条的「meta 不在 → 回 0，整条丢弃」，改为 META_GONE（2）并 `ZREM` 成员；判据扩为「不是 hash」，类型损坏的 meta 不再卡死整个 zone。
+>    - **`admitted_at` 已在。** 「`admitted_at` 已在 → 回 2，计入放行数」拆成两支：
+>      - 成员已不在队列、`admitted_at` 等于本次放行时刻 → REPLAYED（5），计入；
+>      - 成员仍在队列、已有 `admitted_at` → ALREADY（3），`ZREM`、不计数。这一支只来自上一次非写满原因的部分写入，实际只有占位键 `WRONGTYPE`，至多多放 1 人、持续一个 `AdmitTTL`，不双签。
+>    - **用例。** `TestPopAdmit_AdmitScriptReplayedAfterConsume_DoesNotReissue` 的断言维持（REPLAYED 计一次、不重写放行槽），另加 `ZCARD == 0`。
+> 4. **§5.4 第 2 条：快速通道插队窗口消失。** 快速通道看到的队列，在本批每条都原子地「移出 + 写占位」之前不会变空。任一时刻在途 ≤ 2 ×（`C − O`）的上界，只剩双 leader / 多副本重叠出队一个来源。
+> 5. **§5.5「不丢人、不重复放行：`ZPOPMIN` 与 `GETDEL` 的原子性与占位键无关」。**
+>    - **不重复放行。** 新版靠放行脚本第一步判在队。
+>    - **不丢人不成立。** 排队开着混跑 2026-10-18 前后两版时，旧版 leader 已弹出、未写完的条目会被新版判为 `queue_gone`、打回队尾。
+>    - **发布约束。** 本版本以及从它回滚，都必须在 `Queue.Enabled=false` 下滚完（`login.yaml` 上线清单第 0 步的 10-18 补注）。
+> 6. **第 1、4 条与 10-15 更正第 2 条（「与在途窗口无法区分」）：在途窗口已不存在。**
+>    - **读状态合成一段脚本。** `Lookup` 没取到放行槽之后，跑一段 `lookupStateScript`（与放行脚本互斥原子）。meta 在、没有 `admitted_at`、又不在队列时，回 EXPIRED（新原因 `queue_gone`）。
+>    - **zone 来自令牌。** `Lookup` 的 zone 改取自已验签的令牌。
+>    - **第 4 条剩余部分不变。** go-redis 重发 `GETDEL` 时，那张票仍找不回来。
+> 7. **起服校验。** 「补注（续）」第 3 条末句「entryTTL 不加这条下界」作废。`QueueEntryTTL` 收紧为 [1s, 24h]（`ValidateTTLs`，起服装配沿用），`TestValidateTTLs_RejectsNonPositive` 加 500ms / 1s / 24h / 24h+1s 四组。
+>    - **含义变化。** `QueueEntryTTL` 同时改为空闲 TTL：排队中的查询会把 meta、token 索引、队列键续到 1.25 倍。排队令牌改为固定 24h。
+> 8. **Java 版**：待做，由主会话在 Java 仓库 `PARITY.md` 登记。
 
 ---
 
@@ -1604,6 +1669,39 @@ Remove-Item Env:GOTOOLCHAIN, Env:GOPROXY -ErrorAction SilentlyContinue
   4. （10-15 补，验证只延长不缩短）排队中途手工 `redis-cli PEXPIRE admitted:zset:zone:1 600000`，等下一次放行、取走或快速通道写入之后再看 `PTTL`：应仍大于 120000、并随时间递减，而不是被压回 120000。做完后不用恢复，整键 TTL 自然走完即可。
   5. 判读第 3 步的 `q_admitted` 时按 §5.2「放行节奏的上界」，不按 runbook 现文的「100s 内涨到 100」。
   6. 结果（命令原文与输出摘要）写进 `docs/PROGRESS.md` 的新条目；任一项不符就停下报告，不打开排队。
+
+> **2026-10-15 补注（第 3 步，原文保留）**：放行已不是「MULTI 里的 `EVAL`」，而是直接 `EVALSHA`（`NOSCRIPT` 时回退 `EVAL`）一段 `admitEntryScript`（§5.8 末尾补注第 2 条）。第 3 步「放行确有发生」现在说明的是这段脚本能在真实 Redis 上执行；另加三项核对：放行之后、取走之前 `HGET queue:meta:<queueId> admitted_at` 是 13 位毫秒、`PTTL admit:<queueId>` 在 (0, 60000] 内（不能是 −1）、`PTTL queue:meta:<queueId>` 与放行前相比只随时间递减（没被续期、没变 −1）。login 日志里不应出现 `PopAdmit dropped entries after zpopmin … reason=write_failed`。
+
+> **2026-10-18 补注（最小冒烟扩项；原文与上一条补注保留；仍是打开排队前的硬门槛）**：本次改了三处，见设计稿 `docs/design/login-queue-2026-05.md` §5 决策树后的 2026-10-18 更正。
+> - 放行改为「`ZRANGE` + 每条一段先判在队的 `admitEntryScript`」；
+> - 查询改为一段带续期的 `lookupStateScript`；
+> - `QueueEntryTTL` 改为空闲 TTL。
+>
+> 下列各项也必须在真实 Redis 7.x 上跑通，并把命令原文与输出摘要记进 `docs/PROGRESS.md`。任一项不符就停下报告，不打开排队。起栈方式同上：scratchpad 里的配置副本、`Queue.Enabled=true`、容量取小值，不改 `go/login/etc/login.yaml`；命令由 Codex 或负责人执行，需要拉镜像时先问用户。
+> 1. **写满。**
+>    - **做法。** 排队进行中执行 `CONFIG SET maxmemory <INFO memory 的 used_memory>`（`maxmemory-policy` 为 `noeviction`），等至少一拍。
+>    - **期望：**
+>      - login 日志出现 `[loginqueue] PopAdmit zone=1 err=… OOM …`；
+>      - `ZCARD queue:zone:1` 不变；
+>      - 没有新的 `admit:*` 键；
+>      - robot 仍收到 QUEUEING；
+>      - 轮询之后 `PTTL queue:meta:<id>` 大于 `QueueEntryTTL`（续期在写满时仍生效）；
+>      - 新的 AssignGate 入队回 `StatusError`。
+>    - **恢复。** 恢复原 `maxmemory` 之后，放行恢复，`ZCARD` 下降。
+>    - **（2026-10-18 补注，上面「轮询之后 PTTL 大于 QueueEntryTTL」一条；原文保留）** 这条判据没有证明力：写满前每个条目都已续过，剩余 TTL 本来就在 (E, 1.25E]，写满时脚本里的 PEXPIRE 全部失败它也照样通过。改为：执行 `CONFIG SET maxmemory` 之后，手工 `PEXPIRE queue:meta:<id> 60000`、`PEXPIRE queue:token:<token> 60000`（PEXPIRE 不是 DENYOOM 命令，写满时照样接受），等该客户端再轮询一次，期望两者的 PTTL 回到约 1.25×`QueueEntryTTL`。也可以把冒烟用 login 配置的 `QueueEntryTTL` 取小值（如 40s），写满后观察跨过 E/4 的那一次续期。
+> 2. **续期。**
+>    - 轮询中的条目，`PTTL queue:meta:<id>` 与 `PTTL queue:token:<token>` 落在 (QueueEntryTTL, 1.25×QueueEntryTTL]。
+>    - 判读：刚轮询完时不低于 `QueueEntryTTL`；两次轮询之间可能比它低至多一个轮询间隔，下一次轮询即续回 1.25 倍。
+>    - `PTTL queue:zone:1` 不是 −1，且不被后续入队压短。
+> 3. **入队的 NX/GT。** 先 `PEXPIRE queue:zone:1 <大于 QueueEntryTTL 的毫秒值>`，再入队一人。`PTTL` 不被压回 `QueueEntryTTL`。
+> 4. **毒丸 meta。** 手工 `SET queue:meta:<某排队者 id> x`。期望：
+>    - 该客户端收到 410（`queue_gone` 或 `meta_gone`，期望 `meta_gone`）；
+>    - 其他人照常放行；
+>    - login 日志出现 `metaGone=1` 的 `[loginqueue] PopAdmit entries not admitted …` INFO 行。
+> 5. **RESP3。** go-redis v9 默认 RESP3，两段脚本都只回整数。上面所有 `Lookup` 分支都不报 unexpected reply 一类错误：QUEUEING、ADMITTED、`admit_window_passed`，以及 `queue_gone`（`ZREM queue:zone:1 <某排队者 id>` 造出来）。
+> 6. **上一条补注的核对项改读：**
+>    - `PTTL queue:meta:<queueId>` 自放行起只随时间递减、不变 −1。放行之前的排队中轮询会把它续到 1.25 倍，属预期。
+>    - 「不应出现 `PopAdmit dropped entries after zpopmin … reason=write_failed`」改为：除第 1 项写满期间外，不应出现 `[loginqueue] PopAdmit zone=1 err=`。
 
 ---
 

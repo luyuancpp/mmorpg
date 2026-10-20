@@ -29,7 +29,8 @@ class BattlePetSettlementData;
 //
 // 组件归属:PlayerPetComp 由加载(PlayerDatabaseMessageFieldsUnmarshal)挂上,本类所有入口只取不建。
 // 缺组件是服务端故障:返回错误码的入口(含 BuildList)一律返回 kServiceUnavailable(写入口在任何扣费 /
-// 改动之前返回),BuildBattleSnapshot 答 false(不带宝宝),其余重算入口跳过,PushList 不推;都记 ERROR。
+// 改动之前返回),BuildBattleSnapshot 答 false，调用方须先校验 PlayerPetComp 存在(见 PlayerBattleSystem::BuildBattleSnapshot)；
+// 其余重算入口跳过，PushList 不推；都记 ERROR。
 // 错误码口径与 player_mission.cpp / skill.cpp 一致:实体无效 → kEntityIsNull,实体有效但缺必需组件 → kServiceUnavailable。
 // 使用主人等级的初始化修补、重算、召唤、加点、洗点、发放还要求已加载 LevelComp;
 // 缺失时在清理存档、扣费或铸号之前拒绝 / 跳过,不拿默认 1 级覆盖宝宝。BuildList 读取已存宝宝等级,
@@ -108,7 +109,8 @@ public:
 
 	// —— 战斗接缝(scene/battle/system/player_battle.cpp 调用)——
 
-	// 出战宝宝的战斗快照。没有出战宝宝返回 false(不是错误)。
+	// 出战宝宝的战斗快照。没有出战宝宝返回 false；调用前须确认 PlayerPetComp 存在。
+	// 缺组件同样返回 false，不能据此当作正常开战。
 	static bool BuildBattleSnapshot(entt::entity player, ::BattlePetSnapshot& snapshot);
 
 	// 结算回写:HP/MP 终值按现算上限夹后落实例;阵亡宝宝回满(与玩家同口径,

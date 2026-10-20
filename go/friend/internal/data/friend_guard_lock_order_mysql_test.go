@@ -956,7 +956,7 @@ func failOrSkipOnLockWaitError(t *testing.T, err error, expectation string) {
 
 // ── 场景 (h):Block ④ 在"被未提交删除压住"的 friend_block 记录上,与排队的 Unblock 不成环 ──
 //
-// Unblock 不拿守卫(自动提交的单条 DELETE),所以同一对 (me, target) 上除了 Block 自己,能来排队的只有 Unblock
+// Unblock 不拿守卫(单语句 RC 事务里的一条 DELETE),所以同一对 (me, target) 上除了 Block 自己,能来排队的只有 Unblock
 // (第二个 Block 会先被守卫挡住)。2026-09-21 死锁审计推出的交错:Unblock#2 持 X 正在删 (me,target) →
 // Block 走到 ④、在这条记录上等 → Unblock#3 也来排队等 X → Unblock#2 提交。
 //   - ④ 若是 INSERT IGNORE:重复键检查取 **S**。Block 先拿到 S(Unblock#3 的 X 与之冲突,继续等);记录是已提交的
@@ -999,8 +999,7 @@ func TestBlockInsertOnRowUnderPendingDeleteDoesNotDeadlockWithQueuedUnblock(t *t
 		t.Fatalf("夹具:开 Unblock#2 事务失败: %v", err)
 	}
 	defer unblock2.Rollback()
-	res, err := unblock2.ExecContext(ctx,
-		"DELETE FROM friend_block WHERE player_id=? AND blocked_player_id=?", me, target)
+	res, err := unblock2.ExecContext(ctx, unblockSQL, me, target)
 	if err != nil {
 		t.Fatalf("夹具:Unblock#2 的 DELETE 失败: %v", err)
 	}
@@ -1103,9 +1102,12 @@ func TestLockingStatementsArePrimaryKeyPointLookups(t *testing.T) {
 		{"lockFriendEdgeRowSQL", lockFriendEdgeRowSQL, []any{91001, 91002}, []string{"const"}, "16"},
 		{"cancelPendingRequestSQL", cancelPendingRequestSQL,
 			[]any{requestStatusRejected, 1, 91001, 91002, requestStatusPending}, []string{"range", "const"}, "16"},
-		// sweep 清理终态申请:逐行按主键删(sweep_repo.go 的 deleteTerminalRequestsBefore)。
+		// sweep 清理终态申请:逐行先主键点锁、再按主键删(sweep_repo.go 的 deleteTerminalRequestsBefore)。
+		{"lockRequestRowSQL", lockRequestRowSQL, []any{91001, 91002}, []string{"const"}, "16"},
 		{"deleteTerminalRequestSQL", deleteTerminalRequestSQL,
 			[]any{91001, 91002, requestStatusAccepted, requestStatusRejected, 2000000000000}, []string{"range", "const"}, "16"},
+		// 容量行回收:先 lockCapacityRowSQL 点锁,再按主键删(sweep_repo.go 的 deleteIdleCapacityRow)。
+		{"deleteIdleCapacityRowSQL", deleteIdleCapacityRowSQL, []any{91001, 2000000000000}, []string{"range", "const"}, "8"},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {

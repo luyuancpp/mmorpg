@@ -4,7 +4,7 @@
 ``state/mapping/table_index_mapping/`` 下),并据此生成 C++ / Go 常量。
 
 **位序是玩家存档位图的下标口径**(消费方见 ``cpp/libs/modules/mission/comp/mission_comp.h``
-的 ``std::bitset<kMissionMaxBitIndex>``、``reward_comp.h`` 的 ``RewardBitset``)。
+的 ``std::bitset<kMissionBitmapCapacity>``、``reward_comp.h`` 的 ``RewardBitset``)。
 一旦发布,这个下标就写进了所有存量玩家的档案,因此有两条不可协商的红线:
 
 1. **位序只增不改、永不复用**。删一张表里的某个 ID 再加一个新 ID,若新 ID 捡走
@@ -71,12 +71,12 @@ def generate_bit_indexes(cfg: ExporterConfig, tables: list[TableSchema]) -> None
         id_to_index = dict(sorted(id_to_index.items(), key=lambda kv: kv[1]))
         _save_mapping(mapping_file, id_to_index)
 
-        max_bit = _resolve_max_bit(schema, cfg, id_to_index)
+        bitmap_capacity = _resolve_bitmap_capacity(schema, cfg, id_to_index)
 
         if cfg.cpp.enabled:
-            _gen_cpp(schema.name, id_to_index, max_bit, env, cfg)
+            _gen_cpp(schema.name, id_to_index, bitmap_capacity, env, cfg)
         if cfg.go.enabled:
-            _gen_go(schema.name, id_to_index, max_bit, env, cfg)
+            _gen_go(schema.name, id_to_index, bitmap_capacity, env, cfg)
 
 
 # ---------------------------------------------------------------------------
@@ -195,51 +195,51 @@ def _update_mapping(table_name: str, ids: list[int], existing: dict[int, int]) -
 # Helpers
 # ---------------------------------------------------------------------------
 
-def _find_max_bit(schema: TableSchema, cfg: ExporterConfig) -> int:
-    """Find the maximum bit_index value from data rows."""
-    bit_col = schema.bit_index_columns[0].excel_index
+def _read_max_bit_index_column_value(schema: TableSchema, cfg: ExporterConfig) -> int:
+    """读取带 bit_index 标记列的最大 ID，保留历史容量计算下限。"""
+    marked_column_index = schema.bit_index_columns[0].excel_index
     ws = open_worksheet(schema)
-    max_val = 0
+    max_id = 0
     for row in ws.iter_rows(min_row=cfg.data_begin_row, values_only=True):
-        v = row[bit_col] if bit_col < len(row) else None
-        if isinstance(v, (int, float)):
-            max_val = max(max_val, int(v))
-    return max_val
+        cell_value = row[marked_column_index] if marked_column_index < len(row) else None
+        if isinstance(cell_value, (int, float)):
+            max_id = max(max_id, int(cell_value))
+    return max_id
 
 
-def _resolve_max_bit(schema: TableSchema, cfg: ExporterConfig, mapping: dict[int, int]) -> int:
+def _resolve_bitmap_capacity(schema: TableSchema, cfg: ExporterConfig, mapping: dict[int, int]) -> int:
     """位图容量 = max(表里 bit_index 列的最大值, 已分配的最大位 + 1)。
 
-    ``_find_max_bit`` 取的是**当前表数据**里 bit_index 列的最大值(实际就是最大 ID),
+    ``_read_max_bit_index_column_value`` 取的是**当前表数据**里 bit_index 列的最大值(实际就是最大 ID),
     这只在 ID 从 1 起连续、且从没删过行时才恰好等于所需位数。一旦最大的那个 ID 被删掉,
     它的位序仍在 mapping 里占位(见 ``_update_mapping``),表数据的最大值却掉了下去,
-    ``std::bitset<kXxxMaxBitIndex>`` 就会小于实际用到的位数 → 越界。
-    这里取两者较大值兜底:只会变大不会变小,不存在缩小位图导致存档截断的风险。
+    ``std::bitset<kXxxBitmapCapacity>`` 就会小于实际用到的位数 → 越界。
+    保留表 ID 上限决定容量的历史口径,同时确保覆盖全部已分配位序。
     """
-    data_max = _find_max_bit(schema, cfg)
-    required = max(mapping.values(), default=-1) + 1
-    if required > data_max:
+    table_id_upper_bound = _read_max_bit_index_column_value(schema, cfg)
+    mapped_bit_capacity = max(mapping.values(), default=-1) + 1
+    if mapped_bit_capacity > table_id_upper_bound:
         logger.warning(
-            "[%s] Bitmap capacity is set to the allocated bit count %d (table data gives %d); this usually means the largest ID was removed while its bit index remains reserved.",
-            schema.name, required, data_max,
+            "[%s] Bitmap capacity is set to the mapped bit capacity %d (table ID upper bound gives %d); this usually means the largest ID was removed while its bit index remains reserved.",
+            schema.name, mapped_bit_capacity, table_id_upper_bound,
         )
-        return required
-    return data_max
+        return mapped_bit_capacity
+    return table_id_upper_bound
 
 
 # ---------------------------------------------------------------------------
 # Code generation
 # ---------------------------------------------------------------------------
 
-def _gen_cpp(name, mapping, max_bit, env, cfg):
+def _gen_cpp(name, mapping, bitmap_capacity, env, cfg):
     ensure_dirs(cfg.cpp.bit_index_dir)
     tpl = env.get_template("cpp_bit_index.h.j2")
-    content = tpl.render(sheet=name, id_to_index=mapping, max_bit_index=max_bit)
+    content = tpl.render(sheet=name, id_to_index=mapping, bitmap_capacity=bitmap_capacity)
     write_file(cfg.cpp.bit_index_dir / f"{name.lower()}_table_id_bit_index.h", content)
     logger.info("Generated C++ bit_index: %s", name)
 
 
-def _gen_go(name, mapping, max_bit, env, cfg):
+def _gen_go(name, mapping, bitmap_capacity, env, cfg):
     """Go 位序常量:每张表落到与包同名的子目录 bit_index/<pkg>/。
 
     不能平铺:模板声明 `package <sheet>`,Go 要求「一个目录一个包」。两张以上 bit_index 表
@@ -255,7 +255,7 @@ def _gen_go(name, mapping, max_bit, env, cfg):
     # name_width:常量名最长长度,模板据此 ljust 补齐,使产物与 gofmt 的 `=` 对齐一致。
     name_width = max((len(f"ID_{row_id}") for row_id in mapping), default=0)
     content = tpl.render(
-        sheet=name, id_to_index=mapping, max_bit_index=max_bit, name_width=name_width
+        sheet=name, id_to_index=mapping, bitmap_capacity=bitmap_capacity, name_width=name_width
     )
     write_file(out_dir / f"{pkg}_table_id_bit_index.go", content)
     logger.info("Generated Go bit_index: %s -> %s", name, out_dir)

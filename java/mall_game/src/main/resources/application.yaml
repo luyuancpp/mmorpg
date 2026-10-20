@@ -17,4 +17,5 @@ commerce:
   require-tidb: ${COMMERCE_REQUIRE_TIDB:true}
   gateway-secret: ${COMMERCE_GATEWAY_SECRET}
   payment-secret: ${COMMERCE_PAYMENT_SECRET}
+  delivery-secret: ${COMMERCE_DELIVERY_SECRET:}
   payment-subject: ${COMMERCE_PAYMENT_SUBJECT:payment-adapter}

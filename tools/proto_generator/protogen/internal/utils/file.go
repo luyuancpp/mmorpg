@@ -2,13 +2,16 @@ package utils
 
 import (
 	"bytes"
-	"io"
+	"errors"
 	"io/fs"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"sync"
+	"syscall"
 	"text/template"
+	"time"
 
 	_config "protogen/internal/config"
 	"protogen/logger"
@@ -49,13 +52,61 @@ func WriteFileIfChanged(outputPath string, content []byte) error {
 	if err = os.MkdirAll(filepath.Dir(outputPath), 0755); err != nil {
 		return err
 	}
-	if err = os.WriteFile(outputPath, content, 0644); err != nil {
+	// 不能截断被gopls/编译器映射的旧绑定；同目录写全后替换，旧读者继续持有旧文件。
+	staged, err := os.CreateTemp(filepath.Dir(outputPath), ".generated-*")
+	if err != nil {
 		return err
+	}
+	defer os.Remove(staged.Name())
+	if _, err = staged.Write(content); err != nil {
+		staged.Close()
+		return err
+	}
+	if err = staged.Chmod(0644); err != nil {
+		staged.Close()
+		return err
+	}
+	if err = staged.Close(); err != nil {
+		return err
+	}
+	// Go 1.27 的Root.Rename在Windows使用POSIX替换语义；os.Rename的旧API
+	// 仍会拒绝存在内存映射读者的目标文件。根限定在同目录，不改读者或系统配置。
+	root, err := os.OpenRoot(filepath.Dir(outputPath))
+	if err != nil {
+		return err
+	}
+	defer root.Close()
+	// 索引器/杀毒扫描可能短暂禁止替换。仅对Windows共享/映射占用进行有界幂等重试；
+	// 超过单调时钟预算仍返回原错误，不结束占用进程，也不截断旧文件。
+	deadline := time.Now().Add(2 * time.Second)
+	delay := 25 * time.Millisecond
+	for {
+		err = root.Rename(filepath.Base(staged.Name()), filepath.Base(outputPath))
+		if err == nil {
+			break
+		}
+		remaining := time.Until(deadline)
+		if !isWindowsFileOccupancy(err) || remaining <= 0 {
+			return err
+		}
+		if delay > remaining {
+			delay = remaining
+		}
+		time.Sleep(delay)
+		if delay < 200*time.Millisecond {
+			delay *= 2
+		}
 	}
 	logger.Global.Info("File updated",
 		zap.String("file_path", outputPath),
 	)
 	return nil
+}
+
+func isWindowsFileOccupancy(err error) bool {
+	// Win32:ACCESS_DENIED / SHARING_VIOLATION / LOCK_VIOLATION / USER_MAPPED_FILE。
+	return runtime.GOOS == "windows" && (errors.Is(err, syscall.Errno(5)) || errors.Is(err, syscall.Errno(32)) ||
+		errors.Is(err, syscall.Errno(33)) || errors.Is(err, syscall.Errno(1224)))
 }
 
 // WriteFileIfChangedSafe writes content when it changed and logs warnings instead of returning errors.
@@ -96,8 +147,7 @@ func RenderTemplateToFileWithFuncs(tmplPath string, outputPath string, data any,
 		return err
 	}
 	normalized := NormalizeGeneratedLayout(buf.String())
-	WriteFileIfChangedSafe(outputPath, []byte(normalized))
-	return nil
+	return WriteFileIfChanged(outputPath, []byte(normalized))
 }
 
 // CopyFileIfChangedAsync copies a file asynchronously if content differs.
@@ -124,7 +174,7 @@ func CopyFileIfChangedAsync(wg *sync.WaitGroup, inputPath, outputPath string) {
 		if err == nil && bytes.Equal(srcContent, dstContent) {
 			return
 		}
-		if err := os.WriteFile(outputPath, srcContent, 0644); err != nil {
+		if err := WriteFileIfChanged(outputPath, srcContent); err != nil {
 			logger.Global.Fatal("Failed to write destination file",
 				zap.String("dest_path", outputPath),
 				zap.Error(err),
@@ -156,22 +206,11 @@ func CopyFS(fsys fs.FS, targetDir string) error {
 }
 
 func copyFSFile(fsys fs.FS, srcPath, targetPath string) error {
-	srcFile, err := fsys.Open(srcPath)
+	content, err := fs.ReadFile(fsys, srcPath)
 	if err != nil {
 		return err
 	}
-	defer srcFile.Close()
-	srcInfo, err := srcFile.Stat()
-	if err != nil {
-		return err
-	}
-	destFile, err := os.OpenFile(targetPath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, srcInfo.Mode()&0777)
-	if err != nil {
-		return err
-	}
-	defer destFile.Close()
-	_, err = io.Copy(destFile, srcFile)
-	return err
+	return WriteFileIfChanged(targetPath, content)
 }
 
 // CopyLocalDir copies a local directory using CopyFS.

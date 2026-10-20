@@ -98,24 +98,27 @@ const char descriptor_table_protodef_proto_2fdb_2fproto_5foption_2eproto[] ABSL_
     "PreSplitRegions\022\037.google.protobuf.Messag"
     "eOptions\030\267\302\036 \001(\r\210\001\001:F\n\030OptionTiDBAutoIDC"
     "acheOne\022\037.google.protobuf.MessageOptions"
-    "\030\270\302\036 \001(\010\210\001\001:=\n\021OptionRepeatLimit\022\035.googl"
-    "e.protobuf.FieldOptions\030\300\317$ \001(\r\210\001\001:>\n\022Op"
-    "tionDBFieldExtra\022\035.google.protobuf.Field"
-    "Options\030\301\317$ \001(\t\210\001\001:<\n\020OptionDBReadOnly\022\035"
-    ".google.protobuf.FieldOptions\030\302\317$ \001(\010\210\001\001"
-    ":>\n\022OptionDBNamePrefix\022\035.google.protobuf"
-    ".FieldOptions\030\303\317$ \001(\t\210\001\001:;\n\017OptionDBLoad"
-    "Sql\022\035.google.protobuf.FieldOptions\030\304\317$ \001"
-    "(\t\210\001\001:>\n\022OptionDBNeedEscape\022\035.google.pro"
-    "tobuf.FieldOptions\030\305\317$ \001(\010\210\001\001:=\n\021OptionD"
-    "BProcParam\022\035.google.protobuf.FieldOption"
-    "s\030\306\317$ \001(\010\210\001\001:9\n\rOptionOldName\022\035.google.p"
-    "rotobuf.FieldOptions\030\307\317$ \001(\t\210\001\001:7\n\013Optio"
-    "nTable\022\035.google.protobuf.FieldOptions\030\310\317"
-    "$ \001(\t\210\001\001:=\n\021OptionBackUpTabel\022\035.google.p"
-    "rotobuf.FieldOptions\030\311\317$ \001(\t\210\001\001B2H\001Z.git"
-    "hub.com/luyuancpp/protooption;messageopt"
-    "ionb\006proto3"
+    "\030\270\302\036 \001(\010\210\001\001:A\n\023OptionPersistFrozen\022\037.goo"
+    "gle.protobuf.MessageOptions\030\310\302\036 \001(\010\210\001\001:="
+    "\n\021OptionRepeatLimit\022\035.google.protobuf.Fi"
+    "eldOptions\030\300\317$ \001(\r\210\001\001:>\n\022OptionDBFieldEx"
+    "tra\022\035.google.protobuf.FieldOptions\030\301\317$ \001"
+    "(\t\210\001\001:<\n\020OptionDBReadOnly\022\035.google.proto"
+    "buf.FieldOptions\030\302\317$ \001(\010\210\001\001:>\n\022OptionDBN"
+    "amePrefix\022\035.google.protobuf.FieldOptions"
+    "\030\303\317$ \001(\t\210\001\001:;\n\017OptionDBLoadSql\022\035.google."
+    "protobuf.FieldOptions\030\304\317$ \001(\t\210\001\001:>\n\022Opti"
+    "onDBNeedEscape\022\035.google.protobuf.FieldOp"
+    "tions\030\305\317$ \001(\010\210\001\001:=\n\021OptionDBProcParam\022\035."
+    "google.protobuf.FieldOptions\030\306\317$ \001(\010\210\001\001:"
+    "9\n\rOptionOldName\022\035.google.protobuf.Field"
+    "Options\030\307\317$ \001(\t\210\001\001:7\n\013OptionTable\022\035.goog"
+    "le.protobuf.FieldOptions\030\310\317$ \001(\t\210\001\001:=\n\021O"
+    "ptionBackUpTabel\022\035.google.protobuf.Field"
+    "Options\030\311\317$ \001(\t\210\001\001:B\n\026OptionPersistUncar"
+    "ried\022\035.google.protobuf.FieldOptions\030\350\317$ "
+    "\001(\010\210\001\001B2H\001Z.github.com/luyuancpp/protoop"
+    "tion;messageoptionb\006proto3"
 };
 static const ::_pbi::DescriptorTable* PROTOBUF_NONNULL const
     descriptor_table_proto_2fdb_2fproto_5foption_2eproto_deps[1] = {
@@ -125,7 +128,7 @@ static ::absl::once_flag descriptor_table_proto_2fdb_2fproto_5foption_2eproto_on
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fdb_2fproto_5foption_2eproto = {
     false,
     false,
-    3211,
+    3346,
     descriptor_table_protodef_proto_2fdb_2fproto_5foption_2eproto,
     "proto/db/proto_option.proto",
     &descriptor_table_proto_2fdb_2fproto_5foption_2eproto_once,
@@ -266,6 +269,10 @@ PROTOBUF_CONSTINIT
         OptionTiDBAutoIDCacheOne(kOptionTiDBAutoIDCacheOneFieldNumber, false);
 PROTOBUF_CONSTINIT
     PROTOBUF_ATTRIBUTE_INIT_PRIORITY2 ::_pbi::ExtensionIdentifier<
+        ::google::protobuf::MessageOptions, ::_pbi::PrimitiveTypeTraits< bool >, 8, false>
+        OptionPersistFrozen(kOptionPersistFrozenFieldNumber, false);
+PROTOBUF_CONSTINIT
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY2 ::_pbi::ExtensionIdentifier<
         ::google::protobuf::FieldOptions, ::_pbi::PrimitiveTypeTraits< ::uint32_t >, 13, false>
         OptionRepeatLimit(kOptionRepeatLimitFieldNumber, 0u);
 const std::string OptionDBFieldExtra_default("");
@@ -310,6 +317,10 @@ PROTOBUF_CONSTINIT
     PROTOBUF_ATTRIBUTE_INIT_PRIORITY2 ::_pbi::ExtensionIdentifier<
         ::google::protobuf::FieldOptions, ::_pbi::StringTypeTraits, 9, false>
         OptionBackUpTabel(kOptionBackUpTabelFieldNumber, OptionBackUpTabel_default);
+PROTOBUF_CONSTINIT
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY2 ::_pbi::ExtensionIdentifier<
+        ::google::protobuf::FieldOptions, ::_pbi::PrimitiveTypeTraits< bool >, 8, false>
+        OptionPersistUncarried(kOptionPersistUncarriedFieldNumber, false);
 // @@protoc_insertion_point(namespace_scope)
 namespace google {
 namespace protobuf {
@@ -386,6 +397,9 @@ PROTOBUF_ATTRIBUTE_INIT_PRIORITY2 static ::std::false_type
             &::google::protobuf::MessageOptions::default_instance(), 500024, 8,
             false, false, /*is_utf8=*/false),
         ::_pbi::ExtensionSet::RegisterExtension(
+            &::google::protobuf::MessageOptions::default_instance(), 500040, 8,
+            false, false, /*is_utf8=*/false),
+        ::_pbi::ExtensionSet::RegisterExtension(
             &::google::protobuf::FieldOptions::default_instance(), 600000, 13,
             false, false, /*is_utf8=*/false),
         ::_pbi::ExtensionSet::RegisterExtension(
@@ -415,5 +429,8 @@ PROTOBUF_ATTRIBUTE_INIT_PRIORITY2 static ::std::false_type
         ::_pbi::ExtensionSet::RegisterExtension(
             &::google::protobuf::FieldOptions::default_instance(), 600009, 9,
             false, false, /*is_utf8=*/true),
+        ::_pbi::ExtensionSet::RegisterExtension(
+            &::google::protobuf::FieldOptions::default_instance(), 600040, 8,
+            false, false, /*is_utf8=*/false),
          ::std::false_type{});
 #include "google/protobuf/port_undef.inc"

@@ -13,10 +13,12 @@ import (
 	"sync"
 	"testing"
 
+	"db/internal/locker"
 	"db/internal/metrics"
 	"db/internal/storeerr"
 	db_proto "proto/db"
 	"shared/placement"
+	"time"
 
 	"github.com/alicebob/miniredis/v2"
 	"github.com/luyuancpp/proto2mysql"
@@ -25,6 +27,26 @@ import (
 	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/proto"
 )
+
+// 兼容既有只断言错误的用例；结局专项用例直接调用生产接口。
+func runDBOpError(ctx context.Context, rc redis.Cmdable, task *db_proto.DBTask, msg proto.Message, handler dbOpHandler, route *placementRoute, lease writeLease) error {
+	_, err := runDBOp(ctx, rc, task, msg, handler, route, lease)
+	return err
+}
+func (l *fakeLease) runTokenScript(ctx context.Context, script *redis.Script, keys []string, args ...interface{}) (int64, error) {
+	if err := l.verify(ctx); err != nil {
+		return 0, err
+	}
+	l.log.add("publish")
+	if l.token == nil {
+		var err error
+		l.token, err = locker.NewRedisLocker(l.rc).TryLock(ctx, "fixture", time.Minute)
+		if err != nil {
+			return 0, err
+		}
+	}
+	return l.token.RunTokenScript(ctx, script, keys, append([]interface{}{int64(60000)}, args...)...)
+}
 
 // orderLog 是一份并发安全的事件顺序日志。
 type orderLog struct {
@@ -54,6 +76,11 @@ func (h redisCmdLogger) DialHook(next redis.DialHook) redis.DialHook { return ne
 
 func (h redisCmdLogger) ProcessHook(next redis.ProcessHook) redis.ProcessHook {
 	return func(ctx context.Context, cmd redis.Cmder) error {
+		// fakeLease 首次运行真实 Lua 前创建测试令牌；这条 SET NX 是夹具准备，
+		// 不是缓存发布。仍记录所有其他 SET，避免漏掉绕开原子发布的回归。
+		if cmd.Name() == "set" && len(cmd.Args()) > 1 && cmd.Args()[1] == "distributed:lock:fixture" {
+			return next(ctx, cmd)
+		}
 		if h.names[cmd.Name()] {
 			h.log.add(cmd.Name())
 		}
@@ -67,6 +94,8 @@ func (h redisCmdLogger) ProcessPipelineHook(next redis.ProcessPipelineHook) redi
 
 // fakeLease 实现 writeLease。
 type fakeLease struct {
+	rc        *redis.Client
+	token     *locker.TryLockResult
 	log       *orderLog
 	ctx       context.Context
 	beginErr  error
@@ -163,7 +192,7 @@ func (f *runDBOpFixture) task(op string) *db_proto.DBTask {
 
 // handler 返回一个记录调用与 ctx、执行 hook 后返回 err 的 SQL 半程替身。
 func (f *runDBOpFixture) handler(err error, hook func()) dbOpHandler {
-	return func(ctx context.Context, _ *proto2mysql.DB, _ *db_proto.DBTask, _ proto.Message) error {
+	return func(ctx context.Context, _ *proto2mysql.DB, _ *db_proto.DBTask, _ proto.Message) (writeOutcome, error) {
 		f.mu.Lock()
 		f.handlerCalls++
 		f.handlerCtx = ctx
@@ -172,7 +201,7 @@ func (f *runDBOpFixture) handler(err error, hook func()) dbOpHandler {
 		if hook != nil {
 			hook()
 		}
-		return err
+		return writeOutcome{kind: writeApplied}, err
 	}
 }
 
@@ -194,7 +223,7 @@ func connLostSQLError() error {
 func TestRunDBOp_WriteRequiresLease(t *testing.T) {
 	f := newRunDBOpFixture(t)
 	task := f.task("write")
-	err := runDBOp(context.Background(), f.rc, task, &db_proto.TaskResult{}, f.handler(nil, nil), f.route("write"), nil)
+	err := runDBOpError(context.Background(), f.rc, task, &db_proto.TaskResult{}, f.handler(nil, nil), f.route("write"), nil)
 	require.Error(t, err)
 	assert.Zero(t, f.calls(), "a write without an ordering lease must not run any SQL")
 	assert.False(t, f.cacheExists(task))
@@ -203,20 +232,20 @@ func TestRunDBOp_WriteRequiresLease(t *testing.T) {
 func TestRunDBOp_LostBeforeSQLSendsNothing(t *testing.T) {
 	f := newRunDBOpFixture(t)
 	task := f.task("write")
-	lease := &fakeLease{log: f.log, beginErr: fmt.Errorf("%w: injected", errOrderingLeaseLost)}
-	err := runDBOp(context.Background(), f.rc, task, &db_proto.TaskResult{}, f.handler(nil, nil), f.route("write"), lease)
+	lease := &fakeLease{log: f.log, rc: f.rc, beginErr: fmt.Errorf("%w: injected", errOrderingLeaseLost)}
+	err := runDBOpError(context.Background(), f.rc, task, &db_proto.TaskResult{}, f.handler(nil, nil), f.route("write"), lease)
 	require.ErrorIs(t, err, errOrderingLeaseLost)
 	assert.Zero(t, f.calls())
 	assert.Equal(t, []string{"beginSQL"}, f.log.snapshot())
 }
 
-// 核锁在复核之后、共享缓存回写之前:失租时缓存不写;正常时顺序固定为 SQL → 复核(MGET)→ 核锁 → SET。
+// 核锁与共享缓存写在同一令牌 Lua 中；失租时缓存不写，正常顺序为 SQL → 复核(MGET) → 令牌发布。
 func TestRunDBOp_VerifyBeforeCachePublication(t *testing.T) {
 	t.Run("lease lost at verify: no cache", func(t *testing.T) {
 		f := newRunDBOpFixture(t)
 		task := f.task("write")
-		lease := &fakeLease{log: f.log, verifyErr: fmt.Errorf("%w: owner changed", errOrderingLeaseLost)}
-		err := runDBOp(context.Background(), f.rc, task, &db_proto.TaskResult{}, f.handler(nil, nil), f.route("write"), lease)
+		lease := &fakeLease{log: f.log, rc: f.rc, verifyErr: fmt.Errorf("%w: owner changed", errOrderingLeaseLost)}
+		err := runDBOpError(context.Background(), f.rc, task, &db_proto.TaskResult{}, f.handler(nil, nil), f.route("write"), lease)
 		require.ErrorIs(t, err, errOrderingLeaseLost)
 		assert.False(t, f.cacheExists(task), "a write whose lease is lost must not publish the shared cache")
 		assert.Equal(t, []string{"beginSQL", "handler", "finish", "mget", "verify"}, f.log.snapshot())
@@ -224,21 +253,21 @@ func TestRunDBOp_VerifyBeforeCachePublication(t *testing.T) {
 	t.Run("verify interrupted by a canceled context: no cache, not a lease loss", func(t *testing.T) {
 		f := newRunDBOpFixture(t)
 		task := f.task("write")
-		lease := &fakeLease{log: f.log, verifyErr: fmt.Errorf("verify ordering lease: %w", context.Canceled)}
-		err := runDBOp(context.Background(), f.rc, task, &db_proto.TaskResult{}, f.handler(nil, nil), f.route("write"), lease)
+		lease := &fakeLease{log: f.log, rc: f.rc, verifyErr: fmt.Errorf("verify ordering lease: %w", context.Canceled)}
+		err := runDBOpError(context.Background(), f.rc, task, &db_proto.TaskResult{}, f.handler(nil, nil), f.route("write"), lease)
 		require.Error(t, err)
 		assert.NotErrorIs(t, err, errOrderingLeaseLost)
-		assert.Contains(t, err.Error(), "verify ordering lease before cache publication")
+		assert.Contains(t, err.Error(), "verify ordering lease")
 		assert.False(t, f.cacheExists(task))
 	})
 	t.Run("normal order", func(t *testing.T) {
 		f := newRunDBOpFixture(t)
 		task := f.task("write")
-		lease := &fakeLease{log: f.log}
-		err := runDBOp(context.Background(), f.rc, task, &db_proto.TaskResult{}, f.handler(nil, nil), f.route("write"), lease)
+		lease := &fakeLease{log: f.log, rc: f.rc}
+		err := runDBOpError(context.Background(), f.rc, task, &db_proto.TaskResult{}, f.handler(nil, nil), f.route("write"), lease)
 		require.NoError(t, err)
 		assert.True(t, f.cacheExists(task))
-		assert.Equal(t, []string{"beginSQL", "handler", "finish", "mget", "verify", "set"}, f.log.snapshot())
+		assert.Equal(t, []string{"beginSQL", "handler", "finish", "mget", "verify", "publish"}, f.log.snapshot())
 	})
 }
 
@@ -279,13 +308,13 @@ func TestRunDBOp_HandlerGetsLeaseContextForWrites(t *testing.T) {
 
 	t.Run("write", func(t *testing.T) {
 		f := newRunDBOpFixture(t)
-		lease := &fakeLease{log: f.log, ctx: leaseCtx}
-		require.NoError(t, runDBOp(callerCtx, f.rc, f.task("write"), &db_proto.TaskResult{}, f.handler(nil, nil), f.route("write"), lease))
+		lease := &fakeLease{log: f.log, rc: f.rc, ctx: leaseCtx}
+		require.NoError(t, runDBOpError(callerCtx, f.rc, f.task("write"), &db_proto.TaskResult{}, f.handler(nil, nil), f.route("write"), lease))
 		assert.Equal(t, "lease", f.handlerCtx.Value(ctxKey{}))
 	})
 	t.Run("read", func(t *testing.T) {
 		f := newRunDBOpFixture(t)
-		require.NoError(t, runDBOp(callerCtx, f.rc, f.task("read"), &db_proto.TaskResult{}, f.handler(nil, nil), f.route("read"), nil))
+		require.NoError(t, runDBOpError(callerCtx, f.rc, f.task("read"), &db_proto.TaskResult{}, f.handler(nil, nil), f.route("read"), nil))
 		assert.Equal(t, "caller", f.handlerCtx.Value(ctxKey{}))
 	})
 }
@@ -330,8 +359,8 @@ func TestRunDBOp_ReportsOnlySQLOutcome(t *testing.T) {
 			if tc.afterSQL != nil {
 				hook = func() { tc.afterSQL(t, f) }
 			}
-			lease := &fakeLease{log: f.log, verifyErr: tc.verifyErr}
-			err := runDBOp(context.Background(), publishRC, f.task("write"), &db_proto.TaskResult{},
+			lease := &fakeLease{log: f.log, rc: publishRC, verifyErr: tc.verifyErr}
+			err := runDBOpError(context.Background(), publishRC, f.task("write"), &db_proto.TaskResult{},
 				f.handler(tc.sqlErr, hook), f.route("write"), lease)
 			if tc.wantErr {
 				assert.Error(t, err)
@@ -345,18 +374,21 @@ func TestRunDBOp_ReportsOnlySQLOutcome(t *testing.T) {
 	}
 }
 
-// SQL 的 ctx 被本进程取消(写:失租;读:claim 收回)时什么都不报;写任务按失租 / 取消返回,不带 storeerr 标记
+// SQL 的 ctx 被本进程取消(写:失租;读:claim 收回)时什么都不报;写任务按取消原因(失租)返回,不带 storeerr 标记
 // (否则会被记成 conn_lost、豁免重试预算)。
 func TestRunDBOp_CanceledSQLIsNotReported(t *testing.T) {
-	canceled, cancel := context.WithCancel(context.Background())
-	cancel()
-
 	t.Run("write", func(t *testing.T) {
 		f := newRunDBOpFixture(t)
-		lease := &fakeLease{log: f.log, ctx: canceled}
-		err := runDBOp(context.Background(), f.rc, f.task("write"), &db_proto.TaskResult{},
-			f.handler(connLostSQLError(), nil), f.route("write"), lease)
+		// 与生产的租约同形:sqlCtx 只随失租取消,取消原因包着 errOrderingLeaseLost。
+		ctx, cancel := context.WithCancelCause(context.Background())
+		cancel(fmt.Errorf("%w: injected", errOrderingLeaseLost))
+		lease := &fakeLease{log: f.log, rc: f.rc, ctx: ctx}
+		sqlErr := connLostSQLError()
+		err := runDBOpError(context.Background(), f.rc, f.task("write"), &db_proto.TaskResult{},
+			f.handler(sqlErr, nil), f.route("write"), lease)
 		require.Error(t, err)
+		assert.ErrorIs(t, err, errOrderingLeaseLost, "a write canceled by lease loss is reported as lease loss")
+		assert.NotErrorIs(t, err, sqlErr, "the SQL error is attached as text only, not kept in the error chain")
 		assert.Equal(t, storeerr.KindNone, storeerr.KindOf(err), "a canceled SQL must not carry a store-side tag")
 		connLost, healthy := f.stores.counts(testZoneID)
 		assert.Zero(t, connLost)
@@ -365,7 +397,9 @@ func TestRunDBOp_CanceledSQLIsNotReported(t *testing.T) {
 	})
 	t.Run("read", func(t *testing.T) {
 		f := newRunDBOpFixture(t)
-		err := runDBOp(canceled, f.rc, f.task("read"), &db_proto.TaskResult{},
+		canceled, cancel := context.WithCancel(context.Background())
+		cancel()
+		err := runDBOpError(canceled, f.rc, f.task("read"), &db_proto.TaskResult{},
 			f.handler(connLostSQLError(), nil), f.route("read"), nil)
 		require.Error(t, err)
 		assert.ErrorIs(t, err, context.Canceled)
@@ -379,7 +413,70 @@ func TestRunDBOp_CanceledSQLIsNotReported(t *testing.T) {
 func TestRunDBOp_ObservesSQLStage(t *testing.T) {
 	f := newRunDBOpFixture(t)
 	before := stageCount(t, "write", metrics.StageSQL)
-	require.NoError(t, runDBOp(context.Background(), f.rc, f.task("write"), &db_proto.TaskResult{},
-		f.handler(nil, nil), f.route("write"), &fakeLease{log: f.log}))
+	require.NoError(t, runDBOpError(context.Background(), f.rc, f.task("write"), &db_proto.TaskResult{},
+		f.handler(nil, nil), f.route("write"), &fakeLease{log: f.log, rc: f.rc}))
 	assert.Equal(t, before+1, stageCount(t, "write", metrics.StageSQL))
+}
+
+func TestRunDBOpRejectedOutcomesAreHealthyAndNeverPublish(t *testing.T) {
+	for _, kind := range []string{writeOlder, writeStaleOwner, writeLegacyAfterSeq} {
+		t.Run(kind, func(t *testing.T) {
+			f := newRunDBOpFixture(t)
+			task := f.task("write")
+			lease := &fakeLease{log: f.log, rc: f.rc}
+			handler := func(context.Context, *proto2mysql.DB, *db_proto.DBTask, proto.Message) (writeOutcome, error) {
+				f.log.add("handler")
+				return writeOutcome{kind: kind, storedEpoch: 7}, nil
+			}
+			outcome, err := runDBOp(context.Background(), f.rc, task, &db_proto.TaskResult{}, handler, f.route("write"), lease)
+			require.NoError(t, err)
+			require.Equal(t, kind, outcome.kind)
+			require.Equal(t, uint64(7), outcome.storedEpoch)
+			require.False(t, f.cacheExists(task))
+			lost, healthy := f.stores.counts(testZoneID)
+			require.Zero(t, lost)
+			require.Equal(t, 1, healthy)
+			if kind == writeOlder {
+				require.Equal(t, []string{"beginSQL", "handler", "finish", "mget", "verify"}, f.log.snapshot())
+			} else {
+				require.Equal(t, []string{"beginSQL", "handler", "finish"}, f.log.snapshot())
+			}
+		})
+	}
+}
+
+func TestRunDBOpOlderMustConfirmBeforeLeaseVerification(t *testing.T) {
+	for _, phase := range []string{"placement", "lease"} {
+		t.Run(phase, func(t *testing.T) {
+			f := newRunDBOpFixture(t)
+			task := f.task("write")
+			lease := &fakeLease{log: f.log, rc: f.rc}
+			if phase == "placement" {
+				require.NoError(t, f.mr.Set(placement.Key(runDBOpTestKey), "102:3"))
+			} else {
+				lease.verifyErr = errOrderingLeaseLost
+			}
+			handler := func(context.Context, *proto2mysql.DB, *db_proto.DBTask, proto.Message) (writeOutcome, error) {
+				return writeOutcome{kind: writeOlder}, nil
+			}
+			_, err := runDBOp(context.Background(), f.rc, task, &db_proto.TaskResult{}, handler, f.route("write"), lease)
+			require.Error(t, err)
+			require.False(t, f.cacheExists(task))
+			if phase == "placement" {
+				require.NotContains(t, f.log.snapshot(), "verify")
+			} else {
+				require.ErrorIs(t, err, errOrderingLeaseLost)
+			}
+		})
+	}
+}
+
+func TestRunDBOpCanceledSuccessfulHandlerCannotPublish(t *testing.T) {
+	f := newRunDBOpFixture(t)
+	ctx, cancel := context.WithCancelCause(context.Background())
+	cancel(errOrderingLeaseLost)
+	_, err := runDBOp(context.Background(), f.rc, f.task("write"), &db_proto.TaskResult{}, f.handler(nil, nil), f.route("write"), &fakeLease{log: f.log, rc: f.rc, ctx: ctx})
+	require.ErrorIs(t, err, errOrderingLeaseLost)
+	require.False(t, f.cacheExists(f.task("write")))
+	require.Equal(t, []string{"beginSQL", "handler", "finish"}, f.log.snapshot())
 }

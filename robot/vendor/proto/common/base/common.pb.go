@@ -96,6 +96,8 @@ type NodeInfo struct {
 	// 可用 = ip 非空且 port 在 1..65535；半填（只有 ip 或只有 port）视为缺失。
 	// 字段号 11 上线后不复用；废弃时写 `reserved 11;`（AGENTS.md §4.3）。
 	ClientEndpoint *EndpointComp `protobuf:"bytes,11,opt,name=client_endpoint,json=clientEndpoint,proto3" json:"client_endpoint,omitempty"`
+	// 真实机房身份，由部署注入。0 = 未声明，不能用于跨地域匹配。
+	PhysicalRegion uint32 `protobuf:"varint,12,opt,name=physical_region,json=physicalRegion,proto3" json:"physical_region,omitempty"`
 	unknownFields  protoimpl.UnknownFields
 	sizeCache      protoimpl.SizeCache
 }
@@ -207,48 +209,11 @@ func (x *NodeInfo) GetClientEndpoint() *EndpointComp {
 	return nil
 }
 
-type NodeInfoListComp struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	NodeList      []*NodeInfo            `protobuf:"bytes,1,rep,name=node_list,json=nodeList,proto3" json:"node_list,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *NodeInfoListComp) Reset() {
-	*x = NodeInfoListComp{}
-	mi := &file_proto_common_base_common_proto_msgTypes[2]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *NodeInfoListComp) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*NodeInfoListComp) ProtoMessage() {}
-
-func (x *NodeInfoListComp) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_common_base_common_proto_msgTypes[2]
+func (x *NodeInfo) GetPhysicalRegion() uint32 {
 	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
+		return x.PhysicalRegion
 	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use NodeInfoListComp.ProtoReflect.Descriptor instead.
-func (*NodeInfoListComp) Descriptor() ([]byte, []int) {
-	return file_proto_common_base_common_proto_rawDescGZIP(), []int{2}
-}
-
-func (x *NodeInfoListComp) GetNodeList() []*NodeInfo {
-	if x != nil {
-		return x.NodeList
-	}
-	return nil
+	return 0
 }
 
 type NetworkAddress struct {
@@ -261,7 +226,7 @@ type NetworkAddress struct {
 
 func (x *NetworkAddress) Reset() {
 	*x = NetworkAddress{}
-	mi := &file_proto_common_base_common_proto_msgTypes[3]
+	mi := &file_proto_common_base_common_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -273,7 +238,7 @@ func (x *NetworkAddress) String() string {
 func (*NetworkAddress) ProtoMessage() {}
 
 func (x *NetworkAddress) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_common_base_common_proto_msgTypes[3]
+	mi := &file_proto_common_base_common_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -286,7 +251,7 @@ func (x *NetworkAddress) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use NetworkAddress.ProtoReflect.Descriptor instead.
 func (*NetworkAddress) Descriptor() ([]byte, []int) {
-	return file_proto_common_base_common_proto_rawDescGZIP(), []int{3}
+	return file_proto_common_base_common_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *NetworkAddress) GetIp() string {
@@ -310,7 +275,7 @@ const file_proto_common_base_common_proto_rawDesc = "" +
 	"\x1eproto/common/base/common.proto\"2\n" +
 	"\fEndpointComp\x12\x0e\n" +
 	"\x02ip\x18\x01 \x01(\tR\x02ip\x12\x12\n" +
-	"\x04port\x18\x02 \x01(\rR\x04port\"\x9e\x03\n" +
+	"\x04port\x18\x02 \x01(\rR\x04port\"\xc7\x03\n" +
 	"\bNodeInfo\x12\x17\n" +
 	"\anode_id\x18\x01 \x01(\rR\x06nodeId\x12\x1b\n" +
 	"\tnode_type\x18\x02 \x01(\rR\bnodeType\x12\x1f\n" +
@@ -324,9 +289,8 @@ const file_proto_common_base_common_proto_rawDesc = "" +
 	"\fplayer_count\x18\t \x01(\rR\vplayerCount\x122\n" +
 	"\rgrpc_endpoint\x18\n" +
 	" \x01(\v2\r.EndpointCompR\fgrpcEndpoint\x126\n" +
-	"\x0fclient_endpoint\x18\v \x01(\v2\r.EndpointCompR\x0eclientEndpoint\":\n" +
-	"\x10NodeInfoListComp\x12&\n" +
-	"\tnode_list\x18\x01 \x03(\v2\t.NodeInfoR\bnodeList\"4\n" +
+	"\x0fclient_endpoint\x18\v \x01(\v2\r.EndpointCompR\x0eclientEndpoint\x12'\n" +
+	"\x0fphysical_region\x18\f \x01(\rR\x0ephysicalRegion\"4\n" +
 	"\x0eNetworkAddress\x12\x0e\n" +
 	"\x02ip\x18\x01 \x01(\tR\x02ip\x12\x12\n" +
 	"\x04port\x18\x02 \x01(\rR\x04portB\x13Z\x11proto/common/baseb\x06proto3"
@@ -343,23 +307,21 @@ func file_proto_common_base_common_proto_rawDescGZIP() []byte {
 	return file_proto_common_base_common_proto_rawDescData
 }
 
-var file_proto_common_base_common_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
+var file_proto_common_base_common_proto_msgTypes = make([]protoimpl.MessageInfo, 3)
 var file_proto_common_base_common_proto_goTypes = []any{
-	(*EndpointComp)(nil),     // 0: EndpointComp
-	(*NodeInfo)(nil),         // 1: NodeInfo
-	(*NodeInfoListComp)(nil), // 2: NodeInfoListComp
-	(*NetworkAddress)(nil),   // 3: NetworkAddress
+	(*EndpointComp)(nil),   // 0: EndpointComp
+	(*NodeInfo)(nil),       // 1: NodeInfo
+	(*NetworkAddress)(nil), // 2: NetworkAddress
 }
 var file_proto_common_base_common_proto_depIdxs = []int32{
 	0, // 0: NodeInfo.endpoint:type_name -> EndpointComp
 	0, // 1: NodeInfo.grpc_endpoint:type_name -> EndpointComp
 	0, // 2: NodeInfo.client_endpoint:type_name -> EndpointComp
-	1, // 3: NodeInfoListComp.node_list:type_name -> NodeInfo
-	4, // [4:4] is the sub-list for method output_type
-	4, // [4:4] is the sub-list for method input_type
-	4, // [4:4] is the sub-list for extension type_name
-	4, // [4:4] is the sub-list for extension extendee
-	0, // [0:4] is the sub-list for field type_name
+	3, // [3:3] is the sub-list for method output_type
+	3, // [3:3] is the sub-list for method input_type
+	3, // [3:3] is the sub-list for extension type_name
+	3, // [3:3] is the sub-list for extension extendee
+	0, // [0:3] is the sub-list for field type_name
 }
 
 func init() { file_proto_common_base_common_proto_init() }
@@ -373,7 +335,7 @@ func file_proto_common_base_common_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_proto_common_base_common_proto_rawDesc), len(file_proto_common_base_common_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   4,
+			NumMessages:   3,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

@@ -58,7 +58,7 @@
   - battle:`BattleRoomManager::BuildAssignment`(`battle_room_manager.cpp:1432`),补签 IssueBattleTicket 同路。
 - 去重:login 与 scene_manager 按有效客户端地址 `net.JoinHostPort(host, port)` 去重,同一地址只留 launch_time 最大的一条。login 的顺序是先按 zone 过滤、再去重、最后做排空过滤;如果先做排空过滤,同地址上没被标记的陈旧影子会顶上来。
 - 去重的理由:地址稳定时,gate 崩溃后旧记录会残留到 NodeTTL(180s)。客户端能连通 TCP,却会被新 gate 以 `token_gate_node_mismatch` 拒绝。
-- 线程约束(battle):`ClientFacing(gNode->GetNodeInfo(), ...)` 只能在 loop 线程上调用。`GetNodeInfo()` 读的是 thread_local,在 gRPC 线程上会得到空 NodeInfo,结果是整批静默拒签。`ClientEndpointRequired()` 可以跨线程读。
+- 线程约束(battle):`ClientFacing(gNode->GetNodeInfo(), ...)` 只能在 loop 线程上调用。`GetNodeInfo()` 读的是 thread_local,在其它线程上会得到空 NodeInfo,结果是整批静默拒签。`ClientEndpointRequired()` 可以跨线程读。(2026-10-16:第 4 批起 gRPC handler 也在 loop 线程上执行,节点上已没有 gRPC 线程;这条约束对 lifecycle worker 等后台线程仍然成立。)
 - 指标:`mmorpg_client_endpoint_select_total{result="client|fallback|rejected|deduped"}`(`go/shared/clientendpoint/metrics.go`),不带 player_id。读法见运维手册「客户端地址排障」。
 
 ### D79 生产方 fail-closed,并在发布前同步解析
@@ -90,10 +90,11 @@
 ### D82 battle 分配许可与建房准入
 
 - CreateBattle 的节点级准入共三道,全部在任何副作用之前(`cpp/nodes/battle/handler/grpc/battle_node.cpp:56-124`;2026-09-29 更正,初稿写作 56-110,第三道的拒绝在 `:120`):
-  1. 建房准入闸(`battle_admission_gate.h`),在 gRPC 线程上判定。SetAfterStart 完成后才打开,停机开始即关闭。
-  2. 分配许可:gRPC 线程上、`runInLoop` 之前调 `AcquireAllocationPermitBlocking()`,等 Agones allocate 的上限是 allocateWaitTimeout(3s)。
-  3. 投递进 loop 后,复核准入闸。
-- 任一道不过,即返回 `grpc::Status(UNAVAILABLE, "battle_not_allocatable")`。三道都通过后,才是 loop 内预签票据(D70),再插表。
+  1. 建房准入闸(`battle_admission_gate.h`)。SetAfterStart 完成后才打开,停机开始即关闭。
+  2. 分配许可,等 Agones allocate 的上限是 allocateWaitTimeout(3s)。
+  3. 许可回到 loop 后,复核准入闸。
+  - (2026-10-16 更正,第 4 批,代码未编译、待 Codex 验证)三道现在都在 loop 线程上,写在守护段 `grpc.CreateBattle.guard` 里:第 1 道同步判定;第 2 道改为 `AcquireAllocationPermitAsync(loop, cb)`,HTTP 在 lifecycle worker,结果经 `queueInLoop` 回 loop;第 3 道在许可回调里经 `weak_ptr` 复核闸,通过才 `Proceed()` 进 `HandleCreateBattle`(见 [grpc-muduo-transport.md](grpc-muduo-transport.md) §15.8.4、§15.9)。初稿写的「第 1、2 道在 gRPC 线程上判定,`runInLoop` 之前调 `AcquireAllocationPermitBlocking()`」随第 4 批失效:节点上已没有 gRPC 线程,`AcquireAllocationPermitBlocking` 只给非 EventLoop 线程与测试用。
+- 任一道不过,即返回 `UNAVAILABLE "battle_not_allocatable"`(第 4 批起由守护段 `call->Reject(...)` 回出,线上字节不变)。三道都通过后,才是 loop 内预签票据(D70),再插表。
 - match 侧(`go/match/internal/logic/gather.go:65`,`isBattleNotAllocatable` 在 `:581`)只认 `codes.Unavailable` 加上消息**精确等于** `battle_not_allocatable` 的组合。命中时不发 DestroyBattle,用 `PickRandomExcept`(`node_watcher.go:317`)按 endpoint 排除已试节点,换一个节点重试**一次**;仍被拒就干净失败,记 `match_gather_total{outcome="not_allocatable"}`。其他 UNAVAILABLE 照旧走 DestroyBattle 兜底。
 - 偏离「CreateBattle 错误走 tip、status 恒 OK」惯例的理由:这是节点级的准入拒绝,发生在业务处理之前;UNAVAILABLE 是 gRPC 标准的「换一台试」语义;客户端看不到这个错误,不值得为它往 Tip.xlsx 发号。
 - AddObserver / IssueBattleTicket 只作用于已有房间,不取许可。
@@ -252,7 +253,7 @@
 | `CLIENT_ENDPOINT_REQUIRED` | `0` \| `1`;缺省 0,其他值致命;none + 1 是矛盾配置,致命 | C++ `client_endpoint.h:35`;external 形态的 gate / battle 模板写 1 |
 | `HOST_IP` | fieldRef `status.hostIP`,只参与 `CLIENT_ENDPOINT_HOST` 的计算 | gate StatefulSet、battle hostPort Deployment 模板 |
 | `POD_NAME` | fieldRef `metadata.name`,gate 由它的后缀算序号 | gate StatefulSet 模板与启动 shell |
-| `gate:<id>:draining` | 值 = 标记时刻的整数 Unix 秒(取 Redis `TIME`),带 EX TTL | 由排空脚本写;login `loginqueue` 的 `GateDrainingKeyFmt` 读 |
+| `gate:<id>:draining` | 值 = 标记时刻的整数 Unix 秒(取 Redis `TIME`),带 EX TTL | 由排空脚本写;login `loginqueue` 的 `GateDrainingKeyFmt` 读;scene_manager `gate_redirect.go` 的 `gateDrainingKeyFmt` 也读(2026-10-18 起,契约测试钉住三处一致) |
 | `gate:<id>:drained` | 值 = `below_threshold` \| `deadline`;TTL 跟随 draining 的剩余 TTL | 由 login `gatedrain_monitor.go` 写;排空脚本读 |
 | `GateDrain.Interval` / `DrainedBelowPlayers` / `Deadline` | login 排空判定参数,默认 5s / 0 / 25m | `go/login/internal/config/config.go:132-145`;排空脚本从 login ConfigMap 读取并校验 TTL |
 | `RequireClientEndpoint` | login / scene_manager 配置的顶层布尔键,默认 false;ConfigMap 里只能是字面量 true / false | `go/login/internal/config/config.go:115`、scene_manager config;`k8s_deploy.ps1 -RequireClientEndpoint`;排空脚本也读它 |
@@ -375,7 +376,7 @@ pwsh -File tools/scripts/k8s_gate_drain.ps1 -ZoneName <zone> -Ordinal <i> -Delet
 - `reason=deadline` 时打醒目警告:这台 gate 上还有玩家,删 Pod 会让他们断线重连。
 - 取消排空:在 login 所连的 Redis 上执行 `DEL gate:<id>:draining gate:<id>:drained`。
 - **脚本不做缩容**。直接 scale StatefulSet 之后,要等旧 node_id 的 etcd 记录消失,再手工 `DEL gate:<id>:draining gate:<id>:drained`。不清的话,因为 node_id 全局唯一、按最小空闲号复用,而 login 的 Redis 跨 zone 共用,之后拿到这个 node_id 的 gate(可能在任意 zone)在 TTL 内分不到玩家。
-- 依赖:脚本 `kubectl exec` 进 `svc/etcd`、`svc/redis` 背后的 Pod,再按 login 配置里的 Service 地址连回同一个 Service,需要 pods/exec 权限,也依赖集群支持 hairpin 流量。Redis 若用 ACL 禁了 EVAL,脚本会 fail-closed 拒绝。这三项都要在 kind 上顺带验证。
+- 依赖:脚本 `kubectl exec` 进 `svc/etcd` 背后的 Pod、`statefulset/redis` 的 redis 容器(2026-10-19 起;共享 Redis 高可用形态下 `svc/redis` 指向 haproxy 代理,代理镜像没有 redis-cli),再按 login 配置里的 Service 地址连回同一个 Service(高可用形态下经代理落到主),需要 pods/exec 权限,也依赖集群支持 hairpin 流量。Redis 若用 ACL 禁了 EVAL,脚本会 fail-closed 拒绝。这三项都要在 kind 上顺带验证。
 
 ### GateDrain 配置与 Deadline 约束
 
@@ -738,7 +739,7 @@ Agones 段 7000–7009 → 7100–7109;前置条件新增端口预检、「先�
   - admin 口令的 Spring 绑定没有运行期证据;口令指纹注解暴露 48 位截断哈希,读得到 Deployment 的人可以离线校验弱口令(非 dev 档要求 ≥32 位)。
 - **gate**:
   - gate 崩溃前已签发的票据会失效,客户端需要重新登录。
-  - scene_manager 的 RedirectToGate 不过滤正在排空的 gate(既有缺口)。
+  - scene_manager 的 RedirectToGate 不过滤正在排空的 gate(既有缺口)。(2026-10-18 已修:`gate_redirect.go` 的 `drainingGateIDs` / `filterDrainingTargets`,先去重后过滤、全部排空时忽略标记、读失败放行;已落码,未编译、未测试。)
   - 两台活 gate 报了同一地址时,只有较新的那台会被下发,另一台静默不接新玩家,只能从 `deduped` 持续增长看出来。
   - 去重键里的 DNS 名区分大小写。
 - **模式与地址不粘滞**:漏传参数时,集群现状预检能在写操作之前拦下,前提是集群读得到。

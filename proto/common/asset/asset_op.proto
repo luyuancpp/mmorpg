@@ -9,8 +9,8 @@ import "proto/common/base/tip.proto";
 // import 本文件取 AssetOpStream。一旦本文件再 import component/database,
 // 生成的 Go 代码就是 component → asset → component 的包级循环,
 // `go build ./...` 必然 "import cycle not allowed"(protoc 本身是 DAG,不报错,
-// 炸点在 Go 编译)。AssetSnapshot 因此用下面内联的精简形状,不复用
-// ItemEntry / PetInstance。
+// 炸点在 Go 编译)。AssetSnapshot 用身份摘要加原实例protobuf字节，
+// 不复制 ItemComp / PetInstance 的属性结构。
 
 // 通用资产通道(docs/design/guild-phase2/04-asset-channel.md §S4)。
 //
@@ -30,7 +30,7 @@ enum AssetOpStream {
   ASSET_OP_STREAM_GUILD_CREDIT = 2;   // guild 独占
   ASSET_OP_STREAM_TRADE_DEBIT = 3;    // trade 独占(聚宝斋 P2)
   ASSET_OP_STREAM_TRADE_CREDIT = 4;   // trade 独占(聚宝斋 P2)
-  ASSET_OP_STREAM_SYSTEM_CREDIT = 5;  // 预留:邮件/GM 发物(D1)
+  ASSET_OP_STREAM_SYSTEM_CREDIT = 5;  // mail独占；榜奖等生产者通过可信邮件意图发放
 }
 
 enum AssetOpOutcome {
@@ -74,12 +74,16 @@ message AssetBundle {
   repeated uint64 item_uuids = 3;
   // 按 guid 扣出/入账一只宝宝;0 = 不涉及宝宝。同样已进签名串(`;p=` 段),见上。
   uint64 pet_id = 4;
+  // 已有实例过户。instance_proto 是原有 ItemComp/PetInstance 的完整序列化字节，
+  // 不复制属性结构，保留未知字段；目标背包重新分配布局和入包序号。
+  repeated AssetItemInstance item_instances = 5;
+  AssetPetInstance pet_instance = 6;
 }
 
 // 调用方签名(§4.32,不变量 I9)。放在消息体里:生成的 gRPC 包装读不到 metadata
 // (grpc_handler_gen.go:125 把 context 参数注释掉了)。
 message AssetOpAuth {
-  string caller = 1;          // "guild" / "trade";按流白名单
+  string caller = 1;          // "guild" / "trade" / "mail";按流独占白名单
   uint64 timestamp_ms = 2;    // 签名时刻;与 scene 时钟偏差须 <= 300000
   string signature_hex = 3;   // lowercase-hex(HMAC-SHA256(调用方密钥, canonical))
 }
@@ -95,25 +99,14 @@ message AssetOpRequest {
   AssetOpAuth auth = 8;
 }
 
-// ---- 聚宝斋 P2 追加(帮会不使用)----
-//
-// **当前状态:纯预留,v1 既不填也不读。**(2026-09-19 跨包审稿 minor)
-// 下面三个 message 与 AssetOpResponse.snapshot 至今**零写者、零读者**:scene 侧
-// 没有任何 mutable_snapshot(...) 调用,Go 侧 assetop / trade 也没有 GetSnapshot(...)。
-// 留着是为了把字段号先钉死(§4.3.1「扩展一律追加」),不是"对账快照已经可用"。
-// 解锁条件:canonical 的 `;u=;p=` 两段已于 2026-09-19 补齐,剩下的是 scene 的填充与
-// trade 的读取(随 P3 托管一起落)。**在那之前谁都不要按"响应里已经
-// 有库存快照"去接线** —— 读到的一定是空 message,而空 message 与"本次没动任何
-// 库存"在 proto3 上不可区分,静默走错分支。
-//
-// 快照用的两个精简形状:本文件必须是叶子包(见文件头),不能 import
-// bag_quest_mail_data.proto 的 ItemEntry / player_pet_comp.proto 的 PetInstance。
-// 只取交易展示与对账需要的字段;pos / bag_type / allocated / aptitude 等
-// 持久化细节不进快照,scene 填充时从对应组件里取同名字段即可。
+// 交易完整实例快照：scene扣出时提取原件并和结局同记录持久化，
+// 重查仍返回原件；trade在自己的SQL事务保存快照后才发送可靠ACK释放。
+// 帮会不使用。叶子包不得反向依赖组件；完整成长与未知字段保留在instance_proto。
 message AssetItemInstance {
-  uint64 item_uuid = 1;   // 与 ItemEntry.item_uuid 同源(SnowFlake guid)
+  uint64 item_uuid = 1;   // 与 ItemComp.item_id 同源的运行时实例ID，不凭字段名选择号源解析器
   uint32 config_id = 2;   // ItemTable id
   uint32 stack_size = 3;  // 不可叠加物品恒为 1
+  bytes instance_proto = 4; // 完整 ItemComp；三个身份字段必须与内部值一致
 }
 
 message AssetPetInstance {
@@ -121,11 +114,11 @@ message AssetPetInstance {
   uint32 pet_table_id = 2; // Pet 表 id
   string name = 3;         // 玩家自定义名;空 = 用 PetTable.name
   uint32 level = 4;        // 成交时的等级快照,只为展示
+  bytes instance_proto = 5; // 完整 PetInstance；身份字段必须与内部值一致
 }
 
-// 【P2 预留,v1 不填不读】这一次指令实际动到的那份库存。将来交易侧用它做
-// "寄售快照 / 收货确认"的展示与对账;帮会的 Debit/Credit 永远不填此字段
-// (填充只会发生在 TRADE_* 流上)。解锁条件见上面那段。
+// 本次已有实例的托管原件；与原始不可变bundle共同描述完整交易条款。
+// 帮会的 Debit/Credit 不填此字段，不能把空快照解释为资产已到账。
 message AssetSnapshot {
   // 本次扣出(Debit)或入账(Credit)的物品条目。
   repeated AssetItemInstance items = 1;
@@ -144,4 +137,13 @@ message AssetOpResponse {
   // 【P2 预留,v1 不填不读】交易库存快照。当前 scene 不填、Go 不读,解锁条件见
   // AssetSnapshot 上方那段。占号在先,避免 P2 动手时再抢 5。
   AssetSnapshot snapshot = 5;
+}
+
+// go/db 在玩家资产与账本的同一 SQL 行提交后发布的提交证据。
+// Redis 只缓存证据：丢失时继续等待重投，不得退回使用 scene 的 Redis 快照作到账确认。
+message PlayerAssetSQLCommit {
+  uint64 player_id = 1;
+  uint64 owner_epoch = 2;
+  uint64 save_seq = 3;
+  bytes ledger_proto = 4; // PlayerAssetOpLedgerComp，避免 asset/component 包循环
 }

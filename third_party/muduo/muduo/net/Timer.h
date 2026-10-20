@@ -39,6 +39,8 @@ class Timer : noncopyable
     callback_();
   }
 
+  // 本仓库改动:到期时刻在单调时钟域(TimerQueue::monotonicNow),不是 epoch 时间,不能与 Timestamp::now() 比较;
+  // restart() 收到的 now 也是单调读数。
   Timestamp expiration() const  { return expiration_; }
   bool repeat() const { return repeat_; }
   int64_t sequence() const { return sequence_; }

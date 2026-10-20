@@ -11,6 +11,7 @@ package placement
 // 用的 Redis 客户端不同,各自用自己的客户端执行 PublishRouteScript,这里只给脚本、键和回复的判定口径。
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"strconv"
@@ -27,7 +28,171 @@ func MapRevKey(playerID uint64) string {
 
 // RouteReadyKey 是「副本完整可信」标记(提案 §3.3)。第 1a 批只定义,不写也不读:
 // 写它的是第 1b 批的对账 leader,提前写会让读方误以为缓存缺键就是权威缺席。
+//
+// 2026-10-18(第 1b-1 批)补:值的格式见 RouteReadyMarker(string 类型的 JSON)。写者只有 db_first 的对账 leader
+// (第 1b-2 批),用 SET NX 写;任何一方都可以按原值 compare-and-delete(RouteReadyCompareAndDeleteScript,撤掉信任是
+// fail-closed 的方向);route_tool unfreeze 只做 compare-and-set 改 generation、或 compare-and-delete 撤掉畸形 / 失效值。
+// 读方(第 3 批)只看「存在且非空」,不解析值。第 1b-1 批仍没有任何写者 SET 它。
+// 2026-10-19 更正(spec_D1_batch1b2_2_3.md §2 M1):上一句已作废。读方用 route_ready.go 的 RouteReadyReadScript
+// 在同一段 Lua 里取标记、本实例身份与映射键,经 VerifyRouteReady 判定:标记可解码且身份等于本实例才信任,
+// 只看「存在」会把重启 / 切主 / 旧备份恢复后留下的旧标记当真。写者是对账 leader 的 RouteReadyArmScript(带预热令牌)。
 const RouteReadyKey = "mapping:route:ready"
+
+// RouteReadyFormatVersion 是 RouteReadyMarker.V 当前的取值。字段只增不改名、解析时忽略未知字段,
+// 只有不兼容的改动才 +1。
+const RouteReadyFormatVersion = 1
+
+// RouteReadyMarker 是 mapping:route:ready 的值(提案 §11.2「第 1b 批」)。必须存成 **string** 类型的 JSON:
+// 第 3 批的 go/db 用 MGET 一并读它,MGET 对非 string 类型的键回 nil,会被当成缺席。
+//
+//   - Generation:写标记时 route_meta.generation(库世代),与库不等即说明库被重置过;
+//   - RedisRunID / MasterReplID:写标记时 mapping Redis 的 INFO server run_id 与 INFO replication master_replid,
+//     与当前实例不等 = Redis 重启 / 切主 / 换实例,标记不再可信;
+//   - SetAtMs:写标记时的库时钟(诊断;第 1b-2 批 rewarm 用它判「新标记」);
+//   - WatermarkMs:最近一次提交的 route_reconcile.watermark_ms,即「缓存截至」的库时钟,回档检测与回看修补都用它;
+//   - Leader:写标记的 leader 标识(诊断),字符集与 player_route.updated_by 相同。
+type RouteReadyMarker struct {
+	V            int    `json:"v"`
+	Generation   string `json:"generation"`
+	RedisRunID   string `json:"redis_run_id"`
+	MasterReplID string `json:"master_replid"`
+	SetAtMs      uint64 `json:"set_at_ms"`
+	WatermarkMs  uint64 `json:"watermark_ms"`
+	Leader       string `json:"leader"`
+}
+
+// 标记各字段的长度约束。generation 与 route_meta.generation(varchar(32) ascii,迁移种 32 个十六进制字符)同口径;
+// run_id 与 master_replid 是 Redis 生成的 40 个十六进制字符;leader 与 route_reconcile.leader 的列宽 varchar(96) 同口径。
+const (
+	routeReadyGenerationMaxLen = 32
+	routeReadyRedisIDLen       = 40
+	routeReadyLeaderMaxLen     = 96
+)
+
+// ErrRouteReadyMarkerNewerVersion 表示标记的 v 大于本二进制认识的 RouteReadyFormatVersion:它是更新版本的写者写的。
+// 调用方只记日志,**既不删也不信任**(删了会与新版本的写者来回打架;信任了就是按看不懂的格式下结论)。
+// 与 ErrMalformed 分开:畸形值可以按原值 compare-and-delete 撤掉,新版本的值不行。
+var ErrRouteReadyMarkerNewerVersion = errors.New("placement: route ready marker has a newer format version")
+
+// EncodeRouteReadyMarker 校验后编码成标记值(字段顺序固定,同一份 m 每次编码逐字节相同)。
+// V 为 0 时按 RouteReadyFormatVersion 编码;其它取值必须等于它。
+func EncodeRouteReadyMarker(m RouteReadyMarker) (string, error) {
+	if m.V == 0 {
+		m.V = RouteReadyFormatVersion
+	}
+	if m.V != RouteReadyFormatVersion {
+		return "", fmt.Errorf("%w: route ready marker v=%d, this binary writes v=%d", ErrMalformed, m.V, RouteReadyFormatVersion)
+	}
+	if err := m.validate(); err != nil {
+		return "", err
+	}
+	b, err := json.Marshal(m)
+	if err != nil {
+		return "", fmt.Errorf("%w: encode route ready marker: %v", ErrMalformed, err)
+	}
+	return string(b), nil
+}
+
+// DecodeRouteReadyMarker 解析标记值。未知字段忽略(字段只增不改名)。
+//   - v 大于 RouteReadyFormatVersion → ErrRouteReadyMarkerNewerVersion(不再校验其余字段:新格式的规则本二进制不知道);
+//   - 其余任何不合规(不是 JSON 对象、v 不是 1、generation 不是 1..32 个 [0-9a-f]、run_id / replid 不是 40 个 [0-9a-f]、
+//     set_at_ms / watermark_ms 为 0、leader 不是 1..96 字节的 [A-Za-z0-9._@:-])→ 用 %w 包 ErrMalformed。
+//
+// 分两步解(2026-10-18 修复评审):先只解 v,再按 v=1 的结构整体解。一步整体解时,新版本若改了某个已知字段的类型
+// (例如 set_at_ms 改成字符串),json.Unmarshal 先报类型错,还没看 v 就判成 ErrMalformed,调用方随即按原值 compare-and-delete,
+// 删掉新版本写者的标记 —— 正是 ErrRouteReadyMarkerNewerVersion 要防的来回打架。v 本身解不出来(不是对象、v 不是整数)才算畸形。
+func DecodeRouteReadyMarker(raw string) (RouteReadyMarker, error) {
+	var head struct {
+		V int `json:"v"`
+	}
+	if err := json.Unmarshal([]byte(raw), &head); err != nil {
+		return RouteReadyMarker{}, fmt.Errorf("%w: route ready marker is not a JSON object with an integer v: %v", ErrMalformed, err)
+	}
+	if head.V > RouteReadyFormatVersion {
+		return RouteReadyMarker{}, fmt.Errorf("%w: v=%d, this binary knows v<=%d", ErrRouteReadyMarkerNewerVersion, head.V, RouteReadyFormatVersion)
+	}
+	var m RouteReadyMarker
+	if err := json.Unmarshal([]byte(raw), &m); err != nil {
+		return RouteReadyMarker{}, fmt.Errorf("%w: route ready marker is not a JSON object of the expected shape: %v", ErrMalformed, err)
+	}
+	if m.V != RouteReadyFormatVersion {
+		return RouteReadyMarker{}, fmt.Errorf("%w: route ready marker v=%d, want %d", ErrMalformed, m.V, RouteReadyFormatVersion)
+	}
+	if err := m.validate(); err != nil {
+		return RouteReadyMarker{}, err
+	}
+	return m, nil
+}
+
+// validate 校验 v 以外的字段(手写字符校验、不引 regexp,与 ValidRev 同口径)。
+func (m RouteReadyMarker) validate() error {
+	switch {
+	case !lowerHexOfLen(m.Generation, 1, routeReadyGenerationMaxLen):
+		return fmt.Errorf("%w: route ready marker generation %q must be 1..%d chars of [0-9a-f]", ErrMalformed, m.Generation, routeReadyGenerationMaxLen)
+	case !lowerHexOfLen(m.RedisRunID, routeReadyRedisIDLen, routeReadyRedisIDLen):
+		return fmt.Errorf("%w: route ready marker redis_run_id %q must be %d chars of [0-9a-f]", ErrMalformed, m.RedisRunID, routeReadyRedisIDLen)
+	case !lowerHexOfLen(m.MasterReplID, routeReadyRedisIDLen, routeReadyRedisIDLen):
+		return fmt.Errorf("%w: route ready marker master_replid %q must be %d chars of [0-9a-f]", ErrMalformed, m.MasterReplID, routeReadyRedisIDLen)
+	case m.SetAtMs == 0 || m.WatermarkMs == 0:
+		return fmt.Errorf("%w: route ready marker set_at_ms=%d watermark_ms=%d must both be > 0", ErrMalformed, m.SetAtMs, m.WatermarkMs)
+	case !routeReadyLeaderOK(m.Leader):
+		return fmt.Errorf("%w: route ready marker leader %q must be 1..%d bytes of [A-Za-z0-9._@:-]", ErrMalformed, m.Leader, routeReadyLeaderMaxLen)
+	}
+	return nil
+}
+
+// lowerHexOfLen 报告 s 是否由 [minLen, maxLen] 个 [0-9a-f] 组成(大写不算:三种来源都只产小写)。
+func lowerHexOfLen(s string, minLen, maxLen int) bool {
+	if len(s) < minLen || len(s) > maxLen {
+		return false
+	}
+	for i := 0; i < len(s); i++ {
+		c := s[i]
+		if (c < '0' || c > '9') && (c < 'a' || c > 'f') {
+			return false
+		}
+	}
+	return true
+}
+
+// routeReadyLeaderOK 与 data_service store 包的 validRouteWriter 同一字符集与上限(leader 存进 route_reconcile.leader,
+// 列是 ascii varchar(96))。这里镜像一份而不是 import:本包不依赖 data_service。
+func routeReadyLeaderOK(s string) bool {
+	if s == "" || len(s) > routeReadyLeaderMaxLen {
+		return false
+	}
+	for i := 0; i < len(s); i++ {
+		c := s[i]
+		switch {
+		case c >= 'a' && c <= 'z', c >= 'A' && c <= 'Z', c >= '0' && c <= '9':
+		case c == '.', c == '_', c == '@', c == ':', c == '-':
+		default:
+			return false
+		}
+	}
+	return true
+}
+
+// RouteReadyCompareAndSetScript 按原值换标记:KEYS[1] 当前值等于 ARGV[1] 才 SET 成 ARGV[2](不带过期),回 1;
+// 否则零写入,回 0。键不在时 GET 回 false,与任何 ARGV[1] 都不等,回 0。键不是 string 类型时 GET 报 WRONGTYPE,
+// 脚本以错误回复结束、零写入。
+const RouteReadyCompareAndSetScript = `-- route ready marker compare-and-set,docs/design/player-route-mapping-durability-proposal.md §11.2(第 1b 批)
+if redis.call('GET', KEYS[1]) == ARGV[1] then
+  redis.call('SET', KEYS[1], ARGV[2])
+  return 1
+end
+return 0
+`
+
+// RouteReadyCompareAndDeleteScript 按原值撤标记:KEYS[1] 当前值等于 ARGV[1] 才 DEL,回 1;否则零写入,回 0。
+// 「只删自己读到的那一版」:读到之后被别人换成新值的标记不会被误删。
+const RouteReadyCompareAndDeleteScript = `-- route ready marker compare-and-delete,docs/design/player-route-mapping-durability-proposal.md §11.2(第 1b 批)
+if redis.call('GET', KEYS[1]) == ARGV[1] then
+  redis.call('DEL', KEYS[1])
+  return 1
+end
+return 0
+`
 
 // 合服围栏在库里按 (zone_id, shard) 存 N 份相同内容:建角只锁 player_id % N 那一个分片,
 // 获取围栏的一方锁全部分片(提案 §3.2「围栏为什么分片」)。
@@ -70,9 +235,10 @@ func RouteFenceShard(playerID uint64, shards uint32) (uint32, error) {
 // 与 RouteFenceShard 无关:那是可配置的围栏分片数,只决定 W1 锁哪一个围栏行;两者同时出现的函数里不得同名。
 const RouteRowShards uint32 = 64
 
-// RouteRowShard 返回 player_route.route_shard。写者与读者都只能经它计算(tools/merge_zone 已经 import
-// shared/placement,第 2 批写库时直接调它,不得自己再写一份取模 —— 算错片的写者在 CHECK 不生效的库上
-// 能给同一个 player_id 写出两行,而按正确片点查的读者看不到另一行)。
+// RouteRowShard 返回 player_route.route_shard。写者与读者都只能经它计算,不得自己再写一份取模 —— 算错片的写者
+// 在 CHECK 不生效的库上能给同一个 player_id 写出两行,而按正确片点查的读者看不到另一行。
+// 2026-10-19 更正:tools/merge_zone **没有** import shared(独立 module,不改 go.mod),第 2 批在 route_publish.go 里
+// 镜像了本常量与取模,由 merge_zone 的 TestMirroredRouteScriptsMatchShared 按源码逐字比对,并在开写前跑 P4 / P5 探针。
 func RouteRowShard(playerID uint64) uint32 {
 	return uint32(playerID % uint64(RouteRowShards))
 }

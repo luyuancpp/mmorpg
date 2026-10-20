@@ -80,6 +80,7 @@ class PlayerInboxAdmin final {
       return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::player_inbox::LookupPlayerInboxResponse>>(PrepareAsyncLookupByRequestRaw(context, request, cq));
     }
     // 未投递 → VOIDED;已投递 → 只挂 VOID 指令,由消费方裁决(IB-5)。
+    // 强制模式(mode=FORCE_MISMATCH)只为解开 scene 回放核对判 MISMATCH 之后的永久停用,见 PlayerInboxVoidMode。
     virtual ::grpc::Status VoidItem(::grpc::ClientContext* context, const ::player_inbox::VoidPlayerInboxItemRequest& request, ::player_inbox::VoidPlayerInboxItemResponse* response) = 0;
     std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::player_inbox::VoidPlayerInboxItemResponse>> AsyncVoidItem(::grpc::ClientContext* context, const ::player_inbox::VoidPlayerInboxItemRequest& request, ::grpc::CompletionQueue* cq) {
       return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::player_inbox::VoidPlayerInboxItemResponse>>(AsyncVoidItemRaw(context, request, cq));
@@ -111,6 +112,7 @@ class PlayerInboxAdmin final {
       virtual void LookupByRequest(::grpc::ClientContext* context, const ::player_inbox::LookupPlayerInboxRequest* request, ::player_inbox::LookupPlayerInboxResponse* response, std::function<void(::grpc::Status)>) = 0;
       virtual void LookupByRequest(::grpc::ClientContext* context, const ::player_inbox::LookupPlayerInboxRequest* request, ::player_inbox::LookupPlayerInboxResponse* response, ::grpc::ClientUnaryReactor* reactor) = 0;
       // 未投递 → VOIDED;已投递 → 只挂 VOID 指令,由消费方裁决(IB-5)。
+      // 强制模式(mode=FORCE_MISMATCH)只为解开 scene 回放核对判 MISMATCH 之后的永久停用,见 PlayerInboxVoidMode。
       virtual void VoidItem(::grpc::ClientContext* context, const ::player_inbox::VoidPlayerInboxItemRequest* request, ::player_inbox::VoidPlayerInboxItemResponse* response, std::function<void(::grpc::Status)>) = 0;
       virtual void VoidItem(::grpc::ClientContext* context, const ::player_inbox::VoidPlayerInboxItemRequest* request, ::player_inbox::VoidPlayerInboxItemResponse* response, ::grpc::ClientUnaryReactor* reactor) = 0;
       // 单个玩家比对收件箱与已落盘账本(设计 §9.3)。第 4 批实现,此前服务端回 UNIMPLEMENTED。
@@ -239,6 +241,7 @@ class PlayerInboxAdmin final {
     // (player_id, producer_kind, request_id) → 条目与结局。
     virtual ::grpc::Status LookupByRequest(::grpc::ServerContext* context, const ::player_inbox::LookupPlayerInboxRequest* request, ::player_inbox::LookupPlayerInboxResponse* response);
     // 未投递 → VOIDED;已投递 → 只挂 VOID 指令,由消费方裁决(IB-5)。
+    // 强制模式(mode=FORCE_MISMATCH)只为解开 scene 回放核对判 MISMATCH 之后的永久停用,见 PlayerInboxVoidMode。
     virtual ::grpc::Status VoidItem(::grpc::ServerContext* context, const ::player_inbox::VoidPlayerInboxItemRequest* request, ::player_inbox::VoidPlayerInboxItemResponse* response);
     // 单个玩家比对收件箱与已落盘账本(设计 §9.3)。第 4 批实现,此前服务端回 UNIMPLEMENTED。
     virtual ::grpc::Status ReconcilePlayer(::grpc::ServerContext* context, const ::player_inbox::ReconcilePlayerInboxRequest* request, ::player_inbox::ReconcilePlayerInboxResponse* response);

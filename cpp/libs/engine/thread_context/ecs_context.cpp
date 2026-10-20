@@ -17,6 +17,12 @@ entt::entity EcsContext::GetPlayer(Guid playerUid)
     return it->second;
 }
 
+Guid EcsContext::GetPlayerId(entt::entity player) const
+{
+    const auto* guid = actorRegistry.try_get<PlayerGuidComp>(player);
+    return guid != nullptr ? guid->value : 0;
+}
+
 void EcsContext::Clear()
 {
     actorRegistry.clear();

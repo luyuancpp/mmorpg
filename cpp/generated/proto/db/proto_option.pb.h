@@ -352,6 +352,9 @@ extern ::google::protobuf::internal::ExtensionIdentifier<
 inline constexpr int kOptionTiDBAutoIDCacheOneFieldNumber = 500024;
 extern ::google::protobuf::internal::ExtensionIdentifier<
     ::google::protobuf::MessageOptions, ::google::protobuf::internal::PrimitiveTypeTraits< bool >, 8, false>(OptionTiDBAutoIDCacheOne);
+inline constexpr int kOptionPersistFrozenFieldNumber = 500040;
+extern ::google::protobuf::internal::ExtensionIdentifier<
+    ::google::protobuf::MessageOptions, ::google::protobuf::internal::PrimitiveTypeTraits< bool >, 8, false>(OptionPersistFrozen);
 inline constexpr int kOptionRepeatLimitFieldNumber = 600000;
 extern ::google::protobuf::internal::ExtensionIdentifier<
     ::google::protobuf::FieldOptions, ::google::protobuf::internal::PrimitiveTypeTraits< ::uint32_t >, 13, false>(OptionRepeatLimit);
@@ -382,6 +385,9 @@ extern ::google::protobuf::internal::ExtensionIdentifier<
 inline constexpr int kOptionBackUpTabelFieldNumber = 600009;
 extern ::google::protobuf::internal::ExtensionIdentifier<
     ::google::protobuf::FieldOptions, ::google::protobuf::internal::StringTypeTraits, 9, false>(OptionBackUpTabel);
+inline constexpr int kOptionPersistUncarriedFieldNumber = 600040;
+extern ::google::protobuf::internal::ExtensionIdentifier<
+    ::google::protobuf::FieldOptions, ::google::protobuf::internal::PrimitiveTypeTraits< bool >, 8, false>(OptionPersistUncarried);
 
 // ===================================================================
 

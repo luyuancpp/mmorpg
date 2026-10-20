@@ -28,17 +28,6 @@ void ActorBaseAttributesS2CSyncAttributesCore(entt::entity entity, uint32_t mess
 
     ActorBaseAttributesS2C syncMsg;
     bool hasDirtyField = false;
-
-    if (dirtyMaskComp->dirtyMask.test(ActorBaseAttributesS2C::kEntityIdFieldNumber))
-    {
-        auto* fieldValue = actorRegistry.try_get<PlayerGuidComp>(entity);
-        if (fieldValue != nullptr) {
-            syncMsg.set_entity_id(fieldValue->value);
-            hasDirtyField = true;
-        }
-        dirtyMaskComp->dirtyMask.reset(ActorBaseAttributesS2C::kEntityIdFieldNumber);
-    }
-
     if (dirtyMaskComp->dirtyMask.test(ActorBaseAttributesS2C::kTransformFieldNumber))
     {
         auto* fieldComponent = actorRegistry.try_get<Transform>(entity);
@@ -46,9 +35,7 @@ void ActorBaseAttributesS2CSyncAttributesCore(entt::entity entity, uint32_t mess
             syncMsg.mutable_transform()->CopyFrom(*fieldComponent);
             hasDirtyField = true;
         }
-        dirtyMaskComp->dirtyMask.reset(ActorBaseAttributesS2C::kTransformFieldNumber);
     }
-
     if (dirtyMaskComp->dirtyMask.test(ActorBaseAttributesS2C::kVelocityFieldNumber))
     {
         auto* fieldComponent = actorRegistry.try_get<Velocity>(entity);
@@ -56,9 +43,7 @@ void ActorBaseAttributesS2CSyncAttributesCore(entt::entity entity, uint32_t mess
             syncMsg.mutable_velocity()->CopyFrom(*fieldComponent);
             hasDirtyField = true;
         }
-        dirtyMaskComp->dirtyMask.reset(ActorBaseAttributesS2C::kVelocityFieldNumber);
     }
-
     if (dirtyMaskComp->dirtyMask.test(ActorBaseAttributesS2C::kCombatStateFlagsFieldNumber))
     {
         auto* fieldComponent = actorRegistry.try_get<CombatStateFlagsComp>(entity);
@@ -66,7 +51,13 @@ void ActorBaseAttributesS2CSyncAttributesCore(entt::entity entity, uint32_t mess
             syncMsg.mutable_combat_state_flags()->CopyFrom(*fieldComponent);
             hasDirtyField = true;
         }
-        dirtyMaskComp->dirtyMask.reset(ActorBaseAttributesS2C::kCombatStateFlagsFieldNumber);
+    }
+
+    // 主体标识随实际数据发送，本身不触发一帧增量。
+    if (hasDirtyField) {
+        if (const auto* guid = actorRegistry.try_get<PlayerGuidComp>(entity)) {
+            syncMsg.set_entity_id(guid->value);
+        }
     }
 
     // 存在即脏:本轮消费完就摘除,没有有效字段也不遗留空壳。

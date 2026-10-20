@@ -57,8 +57,26 @@ extern "C" {
 extern const ::google::protobuf::internal::DescriptorTable descriptor_table_proto_2frank_2frank_2eproto;
 }  // extern "C"
 namespace rankpb {
-enum RankBoard : int;
-extern const uint32_t RankBoard_internal_data_[];
+enum RankGenerationState : int;
+extern const uint32_t RankGenerationState_internal_data_[];
+enum RankScope : int;
+extern const uint32_t RankScope_internal_data_[];
+class GetRankAroundRequest;
+struct GetRankAroundRequestGlobalsTypeInternal;
+#ifndef PROTOBUF_MESSAGE_GLOBALS
+extern GetRankAroundRequestGlobalsTypeInternal GetRankAroundRequest_globals_;
+extern const ::google::protobuf::internal::ClassDataFull GetRankAroundRequest_class_data_;
+#else
+extern const GetRankAroundRequestGlobalsTypeInternal GetRankAroundRequest_globals_;
+#endif  // PROTOBUF_MESSAGE_GLOBALS
+class GetRankAroundResponse;
+struct GetRankAroundResponseGlobalsTypeInternal;
+#ifndef PROTOBUF_MESSAGE_GLOBALS
+extern GetRankAroundResponseGlobalsTypeInternal GetRankAroundResponse_globals_;
+extern const ::google::protobuf::internal::ClassDataFull GetRankAroundResponse_class_data_;
+#else
+extern const GetRankAroundResponseGlobalsTypeInternal GetRankAroundResponse_globals_;
+#endif  // PROTOBUF_MESSAGE_GLOBALS
 class GetRankPageRequest;
 struct GetRankPageRequestGlobalsTypeInternal;
 #ifndef PROTOBUF_MESSAGE_GLOBALS
@@ -75,6 +93,14 @@ extern const ::google::protobuf::internal::ClassDataFull GetRankPageResponse_cla
 #else
 extern const GetRankPageResponseGlobalsTypeInternal GetRankPageResponse_globals_;
 #endif  // PROTOBUF_MESSAGE_GLOBALS
+class RankBoardKey;
+struct RankBoardKeyGlobalsTypeInternal;
+#ifndef PROTOBUF_MESSAGE_GLOBALS
+extern RankBoardKeyGlobalsTypeInternal RankBoardKey_globals_;
+extern const ::google::protobuf::internal::ClassDataFull RankBoardKey_class_data_;
+#else
+extern const RankBoardKeyGlobalsTypeInternal RankBoardKey_globals_;
+#endif  // PROTOBUF_MESSAGE_GLOBALS
 class RankEntry;
 struct RankEntryGlobalsTypeInternal;
 #ifndef PROTOBUF_MESSAGE_GLOBALS
@@ -87,50 +113,97 @@ extern const RankEntryGlobalsTypeInternal RankEntry_globals_;
 namespace google {
 namespace protobuf {
 template <>
-internal::EnumTraitsT<::rankpb::RankBoard_internal_data_>
-    internal::EnumTraitsImpl::value<::rankpb::RankBoard>;
+internal::EnumTraitsT<::rankpb::RankGenerationState_internal_data_>
+    internal::EnumTraitsImpl::value<::rankpb::RankGenerationState>;
+template <>
+internal::EnumTraitsT<::rankpb::RankScope_internal_data_>
+    internal::EnumTraitsImpl::value<::rankpb::RankScope>;
 }  // namespace protobuf
 }  // namespace google
 
 namespace rankpb {
-enum RankBoard : int {
-  RANK_BOARD_UNSPECIFIED = 0,
-  RANK_BOARD_MATCH_RATING = 1,
-  RankBoard_INT_MIN_SENTINEL_DO_NOT_USE_ =
+enum RankScope : int {
+  RANK_SCOPE_UNSPECIFIED = 0,
+  RANK_SCOPE_GLOBAL = 1,
+  RANK_SCOPE_GUILD = 2,
+  RANK_SCOPE_INSTANCE = 3,
+  RANK_SCOPE_CUSTOM = 4,
+  RankScope_INT_MIN_SENTINEL_DO_NOT_USE_ =
       ::std::numeric_limits<::int32_t>::min(),
-  RankBoard_INT_MAX_SENTINEL_DO_NOT_USE_ =
+  RankScope_INT_MAX_SENTINEL_DO_NOT_USE_ =
       ::std::numeric_limits<::int32_t>::max(),
 };
 
-extern const uint32_t RankBoard_internal_data_[];
-inline constexpr RankBoard RankBoard_MIN =
-    static_cast<RankBoard>(0);
-inline constexpr RankBoard RankBoard_MAX =
-    static_cast<RankBoard>(1);
-[[nodiscard]] inline bool RankBoard_IsValid(int value) {
-  return 0 <= value && value <= 1;
+extern const uint32_t RankScope_internal_data_[];
+inline constexpr RankScope RankScope_MIN =
+    static_cast<RankScope>(0);
+inline constexpr RankScope RankScope_MAX =
+    static_cast<RankScope>(4);
+[[nodiscard]] inline bool RankScope_IsValid(int value) {
+  return 0 <= value && value <= 4;
 }
-inline constexpr int RankBoard_ARRAYSIZE = 1 + 1;
+inline constexpr int RankScope_ARRAYSIZE = 4 + 1;
 [[nodiscard]] const ::google::protobuf::EnumDescriptor* PROTOBUF_NONNULL
-RankBoard_descriptor();
-[[nodiscard]] inline auto ProtobufInternalGetEnumDescriptor(RankBoard) {
-  return RankBoard_descriptor();
+RankScope_descriptor();
+[[nodiscard]] inline auto ProtobufInternalGetEnumDescriptor(RankScope) {
+  return RankScope_descriptor();
 }
 template <typename T>
-[[nodiscard]] const ::std::string& RankBoard_Name(T value) {
-  static_assert(::std::is_same<T, RankBoard>::value ||
+[[nodiscard]] const ::std::string& RankScope_Name(T value) {
+  static_assert(::std::is_same<T, RankScope>::value ||
                     ::std::is_integral<T>::value,
-                "Incorrect type passed to RankBoard_Name().");
-  return RankBoard_Name(static_cast<RankBoard>(value));
+                "Incorrect type passed to RankScope_Name().");
+  return RankScope_Name(static_cast<RankScope>(value));
 }
 template <>
-[[nodiscard]] inline const ::std::string& RankBoard_Name(RankBoard value) {
-  return ::google::protobuf::internal::NameOfDenseEnum<RankBoard_descriptor, 0, 1>(
+[[nodiscard]] inline const ::std::string& RankScope_Name(RankScope value) {
+  return ::google::protobuf::internal::NameOfDenseEnum<RankScope_descriptor, 0, 4>(
       static_cast<int>(value));
 }
-[[nodiscard]] inline bool RankBoard_Parse(
-    ::absl::string_view name, RankBoard* PROTOBUF_NONNULL value) {
-  return ::google::protobuf::internal::ParseNamedEnum<RankBoard>(RankBoard_descriptor(), name,
+[[nodiscard]] inline bool RankScope_Parse(
+    ::absl::string_view name, RankScope* PROTOBUF_NONNULL value) {
+  return ::google::protobuf::internal::ParseNamedEnum<RankScope>(RankScope_descriptor(), name,
+                                           value);
+}
+enum RankGenerationState : int {
+  RANK_GENERATION_UNSPECIFIED = 0,
+  RANK_GENERATION_OPEN = 1,
+  RANK_GENERATION_SEALED = 2,
+  RankGenerationState_INT_MIN_SENTINEL_DO_NOT_USE_ =
+      ::std::numeric_limits<::int32_t>::min(),
+  RankGenerationState_INT_MAX_SENTINEL_DO_NOT_USE_ =
+      ::std::numeric_limits<::int32_t>::max(),
+};
+
+extern const uint32_t RankGenerationState_internal_data_[];
+inline constexpr RankGenerationState RankGenerationState_MIN =
+    static_cast<RankGenerationState>(0);
+inline constexpr RankGenerationState RankGenerationState_MAX =
+    static_cast<RankGenerationState>(2);
+[[nodiscard]] inline bool RankGenerationState_IsValid(int value) {
+  return 0 <= value && value <= 2;
+}
+inline constexpr int RankGenerationState_ARRAYSIZE = 2 + 1;
+[[nodiscard]] const ::google::protobuf::EnumDescriptor* PROTOBUF_NONNULL
+RankGenerationState_descriptor();
+[[nodiscard]] inline auto ProtobufInternalGetEnumDescriptor(RankGenerationState) {
+  return RankGenerationState_descriptor();
+}
+template <typename T>
+[[nodiscard]] const ::std::string& RankGenerationState_Name(T value) {
+  static_assert(::std::is_same<T, RankGenerationState>::value ||
+                    ::std::is_integral<T>::value,
+                "Incorrect type passed to RankGenerationState_Name().");
+  return RankGenerationState_Name(static_cast<RankGenerationState>(value));
+}
+template <>
+[[nodiscard]] inline const ::std::string& RankGenerationState_Name(RankGenerationState value) {
+  return ::google::protobuf::internal::NameOfDenseEnum<RankGenerationState_descriptor, 0, 2>(
+      static_cast<int>(value));
+}
+[[nodiscard]] inline bool RankGenerationState_Parse(
+    ::absl::string_view name, RankGenerationState* PROTOBUF_NONNULL value) {
+  return ::google::protobuf::internal::ParseNamedEnum<RankGenerationState>(RankGenerationState_descriptor(), name,
                                            value);
 }
 using ::google::protobuf::internal::generated_enum::AbslParseFlag;
@@ -289,13 +362,13 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED RankEntry final : public ::google::
 
   // accessors -------------------------------------------------------
   enum : int {
-    kNameFieldNumber = 3,
-    kPlayerIdFieldNumber = 2,
+    kNameFieldNumber = 5,
     kRankFieldNumber = 1,
-    kRatingCentiFieldNumber = 4,
-    kGamesFieldNumber = 5,
+    kEntityIdFieldNumber = 2,
+    kScoreFieldNumber = 3,
+    kAchievedMsFieldNumber = 4,
   };
-  // string name = 3;
+  // string name = 5;
   void clear_name() ;
   [[nodiscard]] const ::std::string& name() const;
   template <typename Arg_ = const ::std::string&, typename... Args_>
@@ -310,44 +383,44 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED RankEntry final : public ::google::
   ::std::string* PROTOBUF_NONNULL _internal_mutable_name();
 
   public:
-  // uint64 player_id = 2;
-  void clear_player_id() ;
-  [[nodiscard]] ::uint64_t player_id() const;
-  void set_player_id(::uint64_t value);
-
-  private:
-  ::uint64_t _internal_player_id() const;
-  void _internal_set_player_id(::uint64_t value);
-
-  public:
-  // uint32 rank = 1;
+  // uint64 rank = 1;
   void clear_rank() ;
-  [[nodiscard]] ::uint32_t rank() const;
-  void set_rank(::uint32_t value);
+  [[nodiscard]] ::uint64_t rank() const;
+  void set_rank(::uint64_t value);
 
   private:
-  ::uint32_t _internal_rank() const;
-  void _internal_set_rank(::uint32_t value);
+  ::uint64_t _internal_rank() const;
+  void _internal_set_rank(::uint64_t value);
 
   public:
-  // uint32 rating_centi = 4;
-  void clear_rating_centi() ;
-  [[nodiscard]] ::uint32_t rating_centi() const;
-  void set_rating_centi(::uint32_t value);
+  // uint64 entity_id = 2;
+  void clear_entity_id() ;
+  [[nodiscard]] ::uint64_t entity_id() const;
+  void set_entity_id(::uint64_t value);
 
   private:
-  ::uint32_t _internal_rating_centi() const;
-  void _internal_set_rating_centi(::uint32_t value);
+  ::uint64_t _internal_entity_id() const;
+  void _internal_set_entity_id(::uint64_t value);
 
   public:
-  // uint64 games = 5;
-  void clear_games() ;
-  [[nodiscard]] ::uint64_t games() const;
-  void set_games(::uint64_t value);
+  // int64 score = 3;
+  void clear_score() ;
+  [[nodiscard]] ::int64_t score() const;
+  void set_score(::int64_t value);
 
   private:
-  ::uint64_t _internal_games() const;
-  void _internal_set_games(::uint64_t value);
+  ::int64_t _internal_score() const;
+  void _internal_set_score(::int64_t value);
+
+  public:
+  // uint64 achieved_ms = 4;
+  void clear_achieved_ms() ;
+  [[nodiscard]] ::uint64_t achieved_ms() const;
+  void set_achieved_ms(::uint64_t value);
+
+  private:
+  ::uint64_t _internal_achieved_ms() const;
+  void _internal_set_achieved_ms(::uint64_t value);
 
   public:
   // @@protoc_insertion_point(class_scope:rankpb.RankEntry)
@@ -384,10 +457,590 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED RankEntry final : public ::google::
     ::google::protobuf::internal::HasBits<1> _has_bits_;
     ::google::protobuf::internal::CachedSize _cached_size_;
     ::google::protobuf::internal::ArenaStringPtr name_;
-    ::uint64_t player_id_;
-    ::uint32_t rank_;
-    ::uint32_t rating_centi_;
-    ::uint64_t games_;
+    ::uint64_t rank_;
+    ::uint64_t entity_id_;
+    ::int64_t score_;
+    ::uint64_t achieved_ms_;
+    PROTOBUF_TSAN_DECLARE_MEMBER
+  };
+  union { Impl_ _impl_; };
+  friend struct ::TableStruct_proto_2frank_2frank_2eproto;
+};
+// -------------------------------------------------------------------
+
+class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED RankBoardKey final : public ::google::protobuf::Message
+/* @@protoc_insertion_point(class_definition:rankpb.RankBoardKey) */ {
+ public:
+  inline RankBoardKey() : RankBoardKey(nullptr) {}
+  ~RankBoardKey() PROTOBUF_FINAL;
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+  void operator delete(RankBoardKey* PROTOBUF_NONNULL msg, ::std::destroying_delete_t) {
+    SharedDtor(*msg);
+    ::google::protobuf::internal::SizedDelete(msg, sizeof(RankBoardKey));
+  }
+#endif
+
+  template <typename = void>
+  explicit constexpr RankBoardKey(::google::protobuf::internal::ConstantInitialized,
+                           const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
+                               class_data);
+
+  inline RankBoardKey(const RankBoardKey& from) : RankBoardKey(nullptr, from) {}
+  inline RankBoardKey(RankBoardKey&& from) noexcept : RankBoardKey(nullptr, ::std::move(from)) {}
+  inline RankBoardKey& operator=(const RankBoardKey& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline RankBoardKey& operator=(RankBoardKey&& from) noexcept {
+    if (this == &from) return *this;
+    if (::google::protobuf::internal::CanMoveWithInternalSwap(GetArena(), from.GetArena())) {
+      InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  [[nodiscard]] inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance);
+  }
+  [[nodiscard]] inline ::google::protobuf::UnknownFieldSet* PROTOBUF_NONNULL
+  mutable_unknown_fields() ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.mutable_unknown_fields<::google::protobuf::UnknownFieldSet>();
+  }
+
+  [[nodiscard]] static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL descriptor() {
+    return GetDescriptor();
+  }
+  [[nodiscard]] static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL
+  GetDescriptor() {
+    return default_instance().GetMetadata().descriptor;
+  }
+  [[nodiscard]] static const ::google::protobuf::Reflection* PROTOBUF_NONNULL GetReflection() {
+    return default_instance().GetMetadata().reflection;
+  }
+  [[nodiscard]] static const RankBoardKey& default_instance() {
+    return *::google::protobuf::internal::MessageGlobalsBase::ToDefaultInstance<RankBoardKey>(&RankBoardKey_globals_);
+  }
+  static constexpr int kIndexInFileMessages = 0;
+  friend void swap(RankBoardKey& a, RankBoardKey& b) { a.Swap(&b); }
+  inline void Swap(RankBoardKey* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    if (::google::protobuf::internal::CanUseInternalSwap(GetArena(), other->GetArena())) {
+      InternalSwap(other);
+    } else {
+      ::google::protobuf::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(RankBoardKey* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    ABSL_DCHECK(GetArena() == other->GetArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  [[nodiscard]] RankBoardKey* PROTOBUF_NONNULL
+  New(::google::protobuf::Arena* PROTOBUF_NULLABLE arena = nullptr) const {
+    return ::google::protobuf::Message::DefaultConstruct<RankBoardKey>(arena);
+  }
+  using ::google::protobuf::Message::CopyFrom;
+  void CopyFrom(const RankBoardKey& from);
+  using ::google::protobuf::Message::MergeFrom;
+  void MergeFrom(const RankBoardKey& from) { RankBoardKey::MergeImpl(*this, from); }
+
+  private:
+  static void MergeImpl(::google::protobuf::MessageLite& to_msg,
+                        const ::google::protobuf::MessageLite& from_msg);
+
+  public:
+  [[nodiscard]] bool IsInitialized() const {
+    return true;
+  }
+  ABSL_ATTRIBUTE_REINITIALIZES void Clear() PROTOBUF_FINAL;
+  #if defined(PROTOBUF_CUSTOM_VTABLE)
+  private:
+  [[nodiscard]] static ::size_t ByteSizeLong(const ::google::protobuf::MessageLite& msg);
+  [[nodiscard]] static ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      const ::google::protobuf::MessageLite& msg, ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream);
+
+  public:
+  [[nodiscard]] ::size_t ByteSizeLong() const { return ByteSizeLong(*this); }
+  [[nodiscard]] ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
+    return _InternalSerialize(*this, target, stream);
+  }
+  #else   // PROTOBUF_CUSTOM_VTABLE
+  [[nodiscard]] ::size_t ByteSizeLong() const final;
+  [[nodiscard]] ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const final;
+  #endif  // PROTOBUF_CUSTOM_VTABLE
+  [[nodiscard]] int GetCachedSize() const {
+    return _impl_._cached_size_.Get();
+  }
+
+  private:
+  void SharedCtor(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static void SharedDtor(MessageLite& self);
+  void InternalSwap(RankBoardKey* PROTOBUF_NONNULL other);
+ private:
+  template <typename T>
+  friend ::absl::string_view(::google::protobuf::internal::GetAnyMessageName)();
+  static ::absl::string_view FullMessageName() { return "rankpb.RankBoardKey"; }
+
+  explicit RankBoardKey(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  RankBoardKey(::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const RankBoardKey& from);
+  RankBoardKey(
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, RankBoardKey&& from) noexcept
+      : RankBoardKey(arena) {
+    *this = ::std::move(from);
+  }
+  const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL GetClassData() const PROTOBUF_FINAL;
+  static void* PROTOBUF_NONNULL PlacementNew_(
+      const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static constexpr auto InternalNewImpl_();
+
+ public:
+  static constexpr auto InternalGenerateClassData_(
+      const MessageLite& prototype,
+      const ::google::protobuf::internal::TcParseTableBase* PROTOBUF_NULLABLE tc_table = nullptr);
+
+  [[nodiscard]] ::google::protobuf::Metadata GetMetadata() const;
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+  enum : int {
+    kPeriodFieldNumber = 4,
+    kBoardTypeFieldNumber = 1,
+    kScopeFieldNumber = 2,
+    kScopeIdFieldNumber = 3,
+    kGenerationFieldNumber = 5,
+  };
+  // string period = 4;
+  void clear_period() ;
+  [[nodiscard]] const ::std::string& period() const;
+  template <typename Arg_ = const ::std::string&, typename... Args_>
+  void set_period(Arg_&& arg, Args_... args);
+  ::std::string* PROTOBUF_NONNULL mutable_period();
+  [[nodiscard]] ::std::string* PROTOBUF_NULLABLE release_period();
+  void set_allocated_period(::std::string* PROTOBUF_NULLABLE value);
+
+  private:
+  const ::std::string& _internal_period() const;
+  PROTOBUF_ALWAYS_INLINE void _internal_set_period(const ::std::string& value);
+  ::std::string* PROTOBUF_NONNULL _internal_mutable_period();
+
+  public:
+  // uint32 board_type = 1;
+  void clear_board_type() ;
+  [[nodiscard]] ::uint32_t board_type() const;
+  void set_board_type(::uint32_t value);
+
+  private:
+  ::uint32_t _internal_board_type() const;
+  void _internal_set_board_type(::uint32_t value);
+
+  public:
+  // .rankpb.RankScope scope = 2;
+  void clear_scope() ;
+  [[nodiscard]] ::rankpb::RankScope scope() const;
+  void set_scope(::rankpb::RankScope value);
+
+  private:
+  ::rankpb::RankScope _internal_scope() const;
+  void _internal_set_scope(::rankpb::RankScope value);
+
+  public:
+  // uint64 scope_id = 3;
+  void clear_scope_id() ;
+  [[nodiscard]] ::uint64_t scope_id() const;
+  void set_scope_id(::uint64_t value);
+
+  private:
+  ::uint64_t _internal_scope_id() const;
+  void _internal_set_scope_id(::uint64_t value);
+
+  public:
+  // uint64 generation = 5;
+  void clear_generation() ;
+  [[nodiscard]] ::uint64_t generation() const;
+  void set_generation(::uint64_t value);
+
+  private:
+  ::uint64_t _internal_generation() const;
+  void _internal_set_generation(::uint64_t value);
+
+  public:
+  // @@protoc_insertion_point(class_scope:rankpb.RankBoardKey)
+ private:
+  class _Internal;
+  using ParseTableT_ =
+      ::google::protobuf::internal::TcParseTable<3, 5,
+                          0, 34,
+                          2>;
+  static constexpr ParseTableT_ InternalGenerateParseTable_(
+      const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL class_data);
+  friend class ::google::protobuf::internal::TcParser;
+  #ifndef PROTOBUF_MESSAGE_GLOBALS
+  static const ParseTableT_ _table_;
+  #endif
+
+  friend class ::google::protobuf::MessageLite;
+  friend class ::google::protobuf::Arena;
+  friend ::google::protobuf::internal::PrivateAccess;
+  template <typename T>
+  friend class ::google::protobuf::Arena::InternalHelper;
+  using InternalArenaConstructable_ = void;
+  using DestructorSkippable_ = void;
+  struct Impl_ {
+    inline explicit constexpr Impl_(::google::protobuf::internal::InternalVisibility visibility,
+                                    ::google::protobuf::internal::ConstantInitialized) noexcept;
+    inline explicit Impl_(
+        ::google::protobuf::internal::InternalVisibility visibility,
+        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+    inline explicit Impl_(
+        ::google::protobuf::internal::InternalVisibility visibility,
+        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
+        const RankBoardKey& from_msg);
+    ::google::protobuf::internal::HasBits<1> _has_bits_;
+    ::google::protobuf::internal::CachedSize _cached_size_;
+    ::google::protobuf::internal::ArenaStringPtr period_;
+    ::uint32_t board_type_;
+    int scope_;
+    ::uint64_t scope_id_;
+    ::uint64_t generation_;
+    PROTOBUF_TSAN_DECLARE_MEMBER
+  };
+  union { Impl_ _impl_; };
+  friend struct ::TableStruct_proto_2frank_2frank_2eproto;
+};
+// -------------------------------------------------------------------
+
+class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED GetRankPageResponse final : public ::google::protobuf::Message
+/* @@protoc_insertion_point(class_definition:rankpb.GetRankPageResponse) */ {
+ public:
+  inline GetRankPageResponse() : GetRankPageResponse(nullptr) {}
+  ~GetRankPageResponse() PROTOBUF_FINAL;
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+  void operator delete(GetRankPageResponse* PROTOBUF_NONNULL msg, ::std::destroying_delete_t) {
+    SharedDtor(*msg);
+    ::google::protobuf::internal::SizedDelete(msg, sizeof(GetRankPageResponse));
+  }
+#endif
+
+  template <typename = void>
+  explicit constexpr GetRankPageResponse(::google::protobuf::internal::ConstantInitialized,
+                           const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
+                               class_data);
+
+  inline GetRankPageResponse(const GetRankPageResponse& from) : GetRankPageResponse(nullptr, from) {}
+  inline GetRankPageResponse(GetRankPageResponse&& from) noexcept : GetRankPageResponse(nullptr, ::std::move(from)) {}
+  inline GetRankPageResponse& operator=(const GetRankPageResponse& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline GetRankPageResponse& operator=(GetRankPageResponse&& from) noexcept {
+    if (this == &from) return *this;
+    if (::google::protobuf::internal::CanMoveWithInternalSwap(GetArena(), from.GetArena())) {
+      InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  [[nodiscard]] inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance);
+  }
+  [[nodiscard]] inline ::google::protobuf::UnknownFieldSet* PROTOBUF_NONNULL
+  mutable_unknown_fields() ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.mutable_unknown_fields<::google::protobuf::UnknownFieldSet>();
+  }
+
+  [[nodiscard]] static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL descriptor() {
+    return GetDescriptor();
+  }
+  [[nodiscard]] static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL
+  GetDescriptor() {
+    return default_instance().GetMetadata().descriptor;
+  }
+  [[nodiscard]] static const ::google::protobuf::Reflection* PROTOBUF_NONNULL GetReflection() {
+    return default_instance().GetMetadata().reflection;
+  }
+  [[nodiscard]] static const GetRankPageResponse& default_instance() {
+    return *::google::protobuf::internal::MessageGlobalsBase::ToDefaultInstance<GetRankPageResponse>(&GetRankPageResponse_globals_);
+  }
+  static constexpr int kIndexInFileMessages = 3;
+  friend void swap(GetRankPageResponse& a, GetRankPageResponse& b) { a.Swap(&b); }
+  inline void Swap(GetRankPageResponse* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    if (::google::protobuf::internal::CanUseInternalSwap(GetArena(), other->GetArena())) {
+      InternalSwap(other);
+    } else {
+      ::google::protobuf::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(GetRankPageResponse* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    ABSL_DCHECK(GetArena() == other->GetArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  [[nodiscard]] GetRankPageResponse* PROTOBUF_NONNULL
+  New(::google::protobuf::Arena* PROTOBUF_NULLABLE arena = nullptr) const {
+    return ::google::protobuf::Message::DefaultConstruct<GetRankPageResponse>(arena);
+  }
+  using ::google::protobuf::Message::CopyFrom;
+  void CopyFrom(const GetRankPageResponse& from);
+  using ::google::protobuf::Message::MergeFrom;
+  void MergeFrom(const GetRankPageResponse& from) { GetRankPageResponse::MergeImpl(*this, from); }
+
+  private:
+  static void MergeImpl(::google::protobuf::MessageLite& to_msg,
+                        const ::google::protobuf::MessageLite& from_msg);
+
+  public:
+  [[nodiscard]] bool IsInitialized() const {
+    return true;
+  }
+  ABSL_ATTRIBUTE_REINITIALIZES void Clear() PROTOBUF_FINAL;
+  #if defined(PROTOBUF_CUSTOM_VTABLE)
+  private:
+  [[nodiscard]] static ::size_t ByteSizeLong(const ::google::protobuf::MessageLite& msg);
+  [[nodiscard]] static ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      const ::google::protobuf::MessageLite& msg, ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream);
+
+  public:
+  [[nodiscard]] ::size_t ByteSizeLong() const { return ByteSizeLong(*this); }
+  [[nodiscard]] ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
+    return _InternalSerialize(*this, target, stream);
+  }
+  #else   // PROTOBUF_CUSTOM_VTABLE
+  [[nodiscard]] ::size_t ByteSizeLong() const final;
+  [[nodiscard]] ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const final;
+  #endif  // PROTOBUF_CUSTOM_VTABLE
+  [[nodiscard]] int GetCachedSize() const {
+    return _impl_._cached_size_.Get();
+  }
+
+  private:
+  void SharedCtor(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static void SharedDtor(MessageLite& self);
+  void InternalSwap(GetRankPageResponse* PROTOBUF_NONNULL other);
+ private:
+  template <typename T>
+  friend ::absl::string_view(::google::protobuf::internal::GetAnyMessageName)();
+  static ::absl::string_view FullMessageName() { return "rankpb.GetRankPageResponse"; }
+
+  explicit GetRankPageResponse(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  GetRankPageResponse(::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const GetRankPageResponse& from);
+  GetRankPageResponse(
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, GetRankPageResponse&& from) noexcept
+      : GetRankPageResponse(arena) {
+    *this = ::std::move(from);
+  }
+  const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL GetClassData() const PROTOBUF_FINAL;
+  static void* PROTOBUF_NONNULL PlacementNew_(
+      const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static constexpr auto InternalNewImpl_();
+
+ public:
+  static constexpr auto InternalGenerateClassData_(
+      const MessageLite& prototype,
+      const ::google::protobuf::internal::TcParseTableBase* PROTOBUF_NULLABLE tc_table = nullptr);
+
+  [[nodiscard]] ::google::protobuf::Metadata GetMetadata() const;
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+  enum : int {
+    kEntriesFieldNumber = 3,
+    kErrorMessageFieldNumber = 1,
+    kBoardFieldNumber = 2,
+    kSelfFieldNumber = 8,
+    kTotalCountFieldNumber = 4,
+    kPageFieldNumber = 5,
+    kPageSizeFieldNumber = 6,
+    kPageCountFieldNumber = 7,
+    kStateFieldNumber = 9,
+  };
+  // repeated .rankpb.RankEntry entries = 3;
+  [[nodiscard]] int entries_size()
+      const;
+  private:
+  int _internal_entries_size() const;
+
+  public:
+  void clear_entries() ;
+  [[nodiscard]] const ::rankpb::RankEntry& entries(int index) const;
+  [[nodiscard]] ::rankpb::RankEntry* PROTOBUF_NONNULL mutable_entries(int index);
+  ::rankpb::RankEntry* PROTOBUF_NONNULL add_entries();
+  [[nodiscard]] const ::google::protobuf::RepeatedPtrField<::rankpb::RankEntry>&
+  entries() const;
+  [[nodiscard]] ::google::protobuf::RepeatedPtrField<::rankpb::RankEntry>* PROTOBUF_NONNULL
+  mutable_entries();
+
+  private:
+  const ::google::protobuf::RepeatedPtrField<::rankpb::RankEntry>& _internal_entries() const;
+  ::google::protobuf::RepeatedPtrField<::rankpb::RankEntry>* PROTOBUF_NONNULL _internal_mutable_entries();
+
+  public:
+  // .TipInfoMessage error_message = 1;
+  [[nodiscard]] bool has_error_message()
+      const;
+  void clear_error_message() ;
+  [[nodiscard]] const ::TipInfoMessage& error_message() const;
+  [[nodiscard]] ::TipInfoMessage* PROTOBUF_NULLABLE release_error_message();
+  ::TipInfoMessage* PROTOBUF_NONNULL mutable_error_message();
+  void set_allocated_error_message(::TipInfoMessage* PROTOBUF_NULLABLE value);
+  void unsafe_arena_set_allocated_error_message(::TipInfoMessage* PROTOBUF_NULLABLE value);
+  ::TipInfoMessage* PROTOBUF_NULLABLE unsafe_arena_release_error_message();
+
+  private:
+  const ::TipInfoMessage& _internal_error_message() const;
+  ::TipInfoMessage* PROTOBUF_NONNULL _internal_mutable_error_message();
+
+  public:
+  // .rankpb.RankBoardKey board = 2;
+  [[nodiscard]] bool has_board()
+      const;
+  void clear_board() ;
+  [[nodiscard]] const ::rankpb::RankBoardKey& board() const;
+  [[nodiscard]] ::rankpb::RankBoardKey* PROTOBUF_NULLABLE release_board();
+  ::rankpb::RankBoardKey* PROTOBUF_NONNULL mutable_board();
+  void set_allocated_board(::rankpb::RankBoardKey* PROTOBUF_NULLABLE value);
+  void unsafe_arena_set_allocated_board(::rankpb::RankBoardKey* PROTOBUF_NULLABLE value);
+  ::rankpb::RankBoardKey* PROTOBUF_NULLABLE unsafe_arena_release_board();
+
+  private:
+  const ::rankpb::RankBoardKey& _internal_board() const;
+  ::rankpb::RankBoardKey* PROTOBUF_NONNULL _internal_mutable_board();
+
+  public:
+  // .rankpb.RankEntry self = 8;
+  [[nodiscard]] bool has_self()
+      const;
+  void clear_self() ;
+  [[nodiscard]] const ::rankpb::RankEntry& self() const;
+  [[nodiscard]] ::rankpb::RankEntry* PROTOBUF_NULLABLE release_self();
+  ::rankpb::RankEntry* PROTOBUF_NONNULL mutable_self();
+  void set_allocated_self(::rankpb::RankEntry* PROTOBUF_NULLABLE value);
+  void unsafe_arena_set_allocated_self(::rankpb::RankEntry* PROTOBUF_NULLABLE value);
+  ::rankpb::RankEntry* PROTOBUF_NULLABLE unsafe_arena_release_self();
+
+  private:
+  const ::rankpb::RankEntry& _internal_self() const;
+  ::rankpb::RankEntry* PROTOBUF_NONNULL _internal_mutable_self();
+
+  public:
+  // uint64 total_count = 4;
+  void clear_total_count() ;
+  [[nodiscard]] ::uint64_t total_count() const;
+  void set_total_count(::uint64_t value);
+
+  private:
+  ::uint64_t _internal_total_count() const;
+  void _internal_set_total_count(::uint64_t value);
+
+  public:
+  // uint32 page = 5;
+  void clear_page() ;
+  [[nodiscard]] ::uint32_t page() const;
+  void set_page(::uint32_t value);
+
+  private:
+  ::uint32_t _internal_page() const;
+  void _internal_set_page(::uint32_t value);
+
+  public:
+  // uint32 page_size = 6;
+  void clear_page_size() ;
+  [[nodiscard]] ::uint32_t page_size() const;
+  void set_page_size(::uint32_t value);
+
+  private:
+  ::uint32_t _internal_page_size() const;
+  void _internal_set_page_size(::uint32_t value);
+
+  public:
+  // uint64 page_count = 7;
+  void clear_page_count() ;
+  [[nodiscard]] ::uint64_t page_count() const;
+  void set_page_count(::uint64_t value);
+
+  private:
+  ::uint64_t _internal_page_count() const;
+  void _internal_set_page_count(::uint64_t value);
+
+  public:
+  // .rankpb.RankGenerationState state = 9;
+  void clear_state() ;
+  [[nodiscard]] ::rankpb::RankGenerationState state() const;
+  void set_state(::rankpb::RankGenerationState value);
+
+  private:
+  ::rankpb::RankGenerationState _internal_state() const;
+  void _internal_set_state(::rankpb::RankGenerationState value);
+
+  public:
+  // @@protoc_insertion_point(class_scope:rankpb.GetRankPageResponse)
+ private:
+  class _Internal;
+  using ParseTableT_ =
+      ::google::protobuf::internal::TcParseTable<4, 9,
+                          4, 0,
+                          2>;
+  static constexpr ParseTableT_ InternalGenerateParseTable_(
+      const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL class_data);
+  friend class ::google::protobuf::internal::TcParser;
+  #ifndef PROTOBUF_MESSAGE_GLOBALS
+  static const ParseTableT_ _table_;
+  #endif
+
+  friend class ::google::protobuf::MessageLite;
+  friend class ::google::protobuf::Arena;
+  friend ::google::protobuf::internal::PrivateAccess;
+  template <typename T>
+  friend class ::google::protobuf::Arena::InternalHelper;
+  using InternalArenaConstructable_ = void;
+  using DestructorSkippable_ = void;
+  struct Impl_ {
+    inline explicit constexpr Impl_(::google::protobuf::internal::InternalVisibility visibility,
+                                    ::google::protobuf::internal::ConstantInitialized) noexcept;
+    inline explicit Impl_(
+        ::google::protobuf::internal::InternalVisibility visibility,
+        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+    inline explicit Impl_(
+        ::google::protobuf::internal::InternalVisibility visibility,
+        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
+        const GetRankPageResponse& from_msg);
+    ::google::protobuf::internal::HasBits<1> _has_bits_;
+    ::google::protobuf::internal::CachedSize _cached_size_;
+    ::google::protobuf::RepeatedPtrField< ::rankpb::RankEntry > entries_;
+    ::TipInfoMessage* PROTOBUF_NULLABLE error_message_;
+    ::rankpb::RankBoardKey* PROTOBUF_NULLABLE board_;
+    ::rankpb::RankEntry* PROTOBUF_NULLABLE self_;
+    ::uint64_t total_count_;
+    ::uint32_t page_;
+    ::uint32_t page_size_;
+    ::uint64_t page_count_;
+    int state_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
   union { Impl_ _impl_; };
@@ -451,7 +1104,7 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED GetRankPageRequest final : public :
   [[nodiscard]] static const GetRankPageRequest& default_instance() {
     return *::google::protobuf::internal::MessageGlobalsBase::ToDefaultInstance<GetRankPageRequest>(&GetRankPageRequest_globals_);
   }
-  static constexpr int kIndexInFileMessages = 0;
+  static constexpr int kIndexInFileMessages = 2;
   friend void swap(GetRankPageRequest& a, GetRankPageRequest& b) { a.Swap(&b); }
   inline void Swap(GetRankPageRequest* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -547,14 +1200,20 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED GetRankPageRequest final : public :
     kPageFieldNumber = 2,
     kPageSizeFieldNumber = 3,
   };
-  // .rankpb.RankBoard board = 1;
+  // .rankpb.RankBoardKey board = 1;
+  [[nodiscard]] bool has_board()
+      const;
   void clear_board() ;
-  [[nodiscard]] ::rankpb::RankBoard board() const;
-  void set_board(::rankpb::RankBoard value);
+  [[nodiscard]] const ::rankpb::RankBoardKey& board() const;
+  [[nodiscard]] ::rankpb::RankBoardKey* PROTOBUF_NULLABLE release_board();
+  ::rankpb::RankBoardKey* PROTOBUF_NONNULL mutable_board();
+  void set_allocated_board(::rankpb::RankBoardKey* PROTOBUF_NULLABLE value);
+  void unsafe_arena_set_allocated_board(::rankpb::RankBoardKey* PROTOBUF_NULLABLE value);
+  ::rankpb::RankBoardKey* PROTOBUF_NULLABLE unsafe_arena_release_board();
 
   private:
-  ::rankpb::RankBoard _internal_board() const;
-  void _internal_set_board(::rankpb::RankBoard value);
+  const ::rankpb::RankBoardKey& _internal_board() const;
+  ::rankpb::RankBoardKey* PROTOBUF_NONNULL _internal_mutable_board();
 
   public:
   // uint32 page = 2;
@@ -582,7 +1241,7 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED GetRankPageRequest final : public :
   class _Internal;
   using ParseTableT_ =
       ::google::protobuf::internal::TcParseTable<2, 3,
-                          0, 0,
+                          1, 0,
                           2>;
   static constexpr ParseTableT_ InternalGenerateParseTable_(
       const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL class_data);
@@ -610,7 +1269,7 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED GetRankPageRequest final : public :
         const GetRankPageRequest& from_msg);
     ::google::protobuf::internal::HasBits<1> _has_bits_;
     ::google::protobuf::internal::CachedSize _cached_size_;
-    int board_;
+    ::rankpb::RankBoardKey* PROTOBUF_NULLABLE board_;
     ::uint32_t page_;
     ::uint32_t page_size_;
     PROTOBUF_TSAN_DECLARE_MEMBER
@@ -620,31 +1279,31 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED GetRankPageRequest final : public :
 };
 // -------------------------------------------------------------------
 
-class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED GetRankPageResponse final : public ::google::protobuf::Message
-/* @@protoc_insertion_point(class_definition:rankpb.GetRankPageResponse) */ {
+class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED GetRankAroundResponse final : public ::google::protobuf::Message
+/* @@protoc_insertion_point(class_definition:rankpb.GetRankAroundResponse) */ {
  public:
-  inline GetRankPageResponse() : GetRankPageResponse(nullptr) {}
-  ~GetRankPageResponse() PROTOBUF_FINAL;
+  inline GetRankAroundResponse() : GetRankAroundResponse(nullptr) {}
+  ~GetRankAroundResponse() PROTOBUF_FINAL;
 
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-  void operator delete(GetRankPageResponse* PROTOBUF_NONNULL msg, ::std::destroying_delete_t) {
+  void operator delete(GetRankAroundResponse* PROTOBUF_NONNULL msg, ::std::destroying_delete_t) {
     SharedDtor(*msg);
-    ::google::protobuf::internal::SizedDelete(msg, sizeof(GetRankPageResponse));
+    ::google::protobuf::internal::SizedDelete(msg, sizeof(GetRankAroundResponse));
   }
 #endif
 
   template <typename = void>
-  explicit constexpr GetRankPageResponse(::google::protobuf::internal::ConstantInitialized,
+  explicit constexpr GetRankAroundResponse(::google::protobuf::internal::ConstantInitialized,
                            const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
                                class_data);
 
-  inline GetRankPageResponse(const GetRankPageResponse& from) : GetRankPageResponse(nullptr, from) {}
-  inline GetRankPageResponse(GetRankPageResponse&& from) noexcept : GetRankPageResponse(nullptr, ::std::move(from)) {}
-  inline GetRankPageResponse& operator=(const GetRankPageResponse& from) {
+  inline GetRankAroundResponse(const GetRankAroundResponse& from) : GetRankAroundResponse(nullptr, from) {}
+  inline GetRankAroundResponse(GetRankAroundResponse&& from) noexcept : GetRankAroundResponse(nullptr, ::std::move(from)) {}
+  inline GetRankAroundResponse& operator=(const GetRankAroundResponse& from) {
     CopyFrom(from);
     return *this;
   }
-  inline GetRankPageResponse& operator=(GetRankPageResponse&& from) noexcept {
+  inline GetRankAroundResponse& operator=(GetRankAroundResponse&& from) noexcept {
     if (this == &from) return *this;
     if (::google::protobuf::internal::CanMoveWithInternalSwap(GetArena(), from.GetArena())) {
       InternalSwap(&from);
@@ -673,12 +1332,12 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED GetRankPageResponse final : public 
   [[nodiscard]] static const ::google::protobuf::Reflection* PROTOBUF_NONNULL GetReflection() {
     return default_instance().GetMetadata().reflection;
   }
-  [[nodiscard]] static const GetRankPageResponse& default_instance() {
-    return *::google::protobuf::internal::MessageGlobalsBase::ToDefaultInstance<GetRankPageResponse>(&GetRankPageResponse_globals_);
+  [[nodiscard]] static const GetRankAroundResponse& default_instance() {
+    return *::google::protobuf::internal::MessageGlobalsBase::ToDefaultInstance<GetRankAroundResponse>(&GetRankAroundResponse_globals_);
   }
-  static constexpr int kIndexInFileMessages = 2;
-  friend void swap(GetRankPageResponse& a, GetRankPageResponse& b) { a.Swap(&b); }
-  inline void Swap(GetRankPageResponse* PROTOBUF_NONNULL other) {
+  static constexpr int kIndexInFileMessages = 5;
+  friend void swap(GetRankAroundResponse& a, GetRankAroundResponse& b) { a.Swap(&b); }
+  inline void Swap(GetRankAroundResponse* PROTOBUF_NONNULL other) {
     if (other == this) return;
     if (::google::protobuf::internal::CanUseInternalSwap(GetArena(), other->GetArena())) {
       InternalSwap(other);
@@ -686,7 +1345,7 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED GetRankPageResponse final : public 
       ::google::protobuf::internal::GenericSwap(this, other);
     }
   }
-  void UnsafeArenaSwap(GetRankPageResponse* PROTOBUF_NONNULL other) {
+  void UnsafeArenaSwap(GetRankAroundResponse* PROTOBUF_NONNULL other) {
     if (other == this) return;
     ABSL_DCHECK(GetArena() == other->GetArena());
     InternalSwap(other);
@@ -694,14 +1353,14 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED GetRankPageResponse final : public 
 
   // implements Message ----------------------------------------------
 
-  [[nodiscard]] GetRankPageResponse* PROTOBUF_NONNULL
+  [[nodiscard]] GetRankAroundResponse* PROTOBUF_NONNULL
   New(::google::protobuf::Arena* PROTOBUF_NULLABLE arena = nullptr) const {
-    return ::google::protobuf::Message::DefaultConstruct<GetRankPageResponse>(arena);
+    return ::google::protobuf::Message::DefaultConstruct<GetRankAroundResponse>(arena);
   }
   using ::google::protobuf::Message::CopyFrom;
-  void CopyFrom(const GetRankPageResponse& from);
+  void CopyFrom(const GetRankAroundResponse& from);
   using ::google::protobuf::Message::MergeFrom;
-  void MergeFrom(const GetRankPageResponse& from) { GetRankPageResponse::MergeImpl(*this, from); }
+  void MergeFrom(const GetRankAroundResponse& from) { GetRankAroundResponse::MergeImpl(*this, from); }
 
   private:
   static void MergeImpl(::google::protobuf::MessageLite& to_msg,
@@ -739,17 +1398,17 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED GetRankPageResponse final : public 
   private:
   void SharedCtor(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
   static void SharedDtor(MessageLite& self);
-  void InternalSwap(GetRankPageResponse* PROTOBUF_NONNULL other);
+  void InternalSwap(GetRankAroundResponse* PROTOBUF_NONNULL other);
  private:
   template <typename T>
   friend ::absl::string_view(::google::protobuf::internal::GetAnyMessageName)();
-  static ::absl::string_view FullMessageName() { return "rankpb.GetRankPageResponse"; }
+  static ::absl::string_view FullMessageName() { return "rankpb.GetRankAroundResponse"; }
 
-  explicit GetRankPageResponse(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
-  GetRankPageResponse(::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const GetRankPageResponse& from);
-  GetRankPageResponse(
-      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, GetRankPageResponse&& from) noexcept
-      : GetRankPageResponse(arena) {
+  explicit GetRankAroundResponse(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  GetRankAroundResponse(::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const GetRankAroundResponse& from);
+  GetRankAroundResponse(
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, GetRankAroundResponse&& from) noexcept
+      : GetRankAroundResponse(arena) {
     *this = ::std::move(from);
   }
   const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL GetClassData() const PROTOBUF_FINAL;
@@ -768,15 +1427,12 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED GetRankPageResponse final : public 
 
   // accessors -------------------------------------------------------
   enum : int {
-    kEntriesFieldNumber = 2,
+    kEntriesFieldNumber = 3,
     kErrorMessageFieldNumber = 1,
-    kSelfFieldNumber = 7,
-    kTotalCountFieldNumber = 3,
-    kPageFieldNumber = 4,
-    kPageSizeFieldNumber = 5,
-    kPageCountFieldNumber = 6,
+    kBoardFieldNumber = 2,
+    kSelfFieldNumber = 4,
   };
-  // repeated .rankpb.RankEntry entries = 2;
+  // repeated .rankpb.RankEntry entries = 3;
   [[nodiscard]] int entries_size()
       const;
   private:
@@ -813,7 +1469,23 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED GetRankPageResponse final : public 
   ::TipInfoMessage* PROTOBUF_NONNULL _internal_mutable_error_message();
 
   public:
-  // .rankpb.RankEntry self = 7;
+  // .rankpb.RankBoardKey board = 2;
+  [[nodiscard]] bool has_board()
+      const;
+  void clear_board() ;
+  [[nodiscard]] const ::rankpb::RankBoardKey& board() const;
+  [[nodiscard]] ::rankpb::RankBoardKey* PROTOBUF_NULLABLE release_board();
+  ::rankpb::RankBoardKey* PROTOBUF_NONNULL mutable_board();
+  void set_allocated_board(::rankpb::RankBoardKey* PROTOBUF_NULLABLE value);
+  void unsafe_arena_set_allocated_board(::rankpb::RankBoardKey* PROTOBUF_NULLABLE value);
+  ::rankpb::RankBoardKey* PROTOBUF_NULLABLE unsafe_arena_release_board();
+
+  private:
+  const ::rankpb::RankBoardKey& _internal_board() const;
+  ::rankpb::RankBoardKey* PROTOBUF_NONNULL _internal_mutable_board();
+
+  public:
+  // .rankpb.RankEntry self = 4;
   [[nodiscard]] bool has_self()
       const;
   void clear_self() ;
@@ -829,52 +1501,12 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED GetRankPageResponse final : public 
   ::rankpb::RankEntry* PROTOBUF_NONNULL _internal_mutable_self();
 
   public:
-  // uint32 total_count = 3;
-  void clear_total_count() ;
-  [[nodiscard]] ::uint32_t total_count() const;
-  void set_total_count(::uint32_t value);
-
-  private:
-  ::uint32_t _internal_total_count() const;
-  void _internal_set_total_count(::uint32_t value);
-
-  public:
-  // uint32 page = 4;
-  void clear_page() ;
-  [[nodiscard]] ::uint32_t page() const;
-  void set_page(::uint32_t value);
-
-  private:
-  ::uint32_t _internal_page() const;
-  void _internal_set_page(::uint32_t value);
-
-  public:
-  // uint32 page_size = 5;
-  void clear_page_size() ;
-  [[nodiscard]] ::uint32_t page_size() const;
-  void set_page_size(::uint32_t value);
-
-  private:
-  ::uint32_t _internal_page_size() const;
-  void _internal_set_page_size(::uint32_t value);
-
-  public:
-  // uint32 page_count = 6;
-  void clear_page_count() ;
-  [[nodiscard]] ::uint32_t page_count() const;
-  void set_page_count(::uint32_t value);
-
-  private:
-  ::uint32_t _internal_page_count() const;
-  void _internal_set_page_count(::uint32_t value);
-
-  public:
-  // @@protoc_insertion_point(class_scope:rankpb.GetRankPageResponse)
+  // @@protoc_insertion_point(class_scope:rankpb.GetRankAroundResponse)
  private:
   class _Internal;
   using ParseTableT_ =
-      ::google::protobuf::internal::TcParseTable<3, 7,
-                          3, 0,
+      ::google::protobuf::internal::TcParseTable<2, 4,
+                          4, 0,
                           2>;
   static constexpr ParseTableT_ InternalGenerateParseTable_(
       const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL class_data);
@@ -899,16 +1531,232 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED GetRankPageResponse final : public 
     inline explicit Impl_(
         ::google::protobuf::internal::InternalVisibility visibility,
         ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
-        const GetRankPageResponse& from_msg);
+        const GetRankAroundResponse& from_msg);
     ::google::protobuf::internal::HasBits<1> _has_bits_;
     ::google::protobuf::internal::CachedSize _cached_size_;
     ::google::protobuf::RepeatedPtrField< ::rankpb::RankEntry > entries_;
     ::TipInfoMessage* PROTOBUF_NULLABLE error_message_;
+    ::rankpb::RankBoardKey* PROTOBUF_NULLABLE board_;
     ::rankpb::RankEntry* PROTOBUF_NULLABLE self_;
-    ::uint32_t total_count_;
-    ::uint32_t page_;
-    ::uint32_t page_size_;
-    ::uint32_t page_count_;
+    PROTOBUF_TSAN_DECLARE_MEMBER
+  };
+  union { Impl_ _impl_; };
+  friend struct ::TableStruct_proto_2frank_2frank_2eproto;
+};
+// -------------------------------------------------------------------
+
+class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED GetRankAroundRequest final : public ::google::protobuf::Message
+/* @@protoc_insertion_point(class_definition:rankpb.GetRankAroundRequest) */ {
+ public:
+  inline GetRankAroundRequest() : GetRankAroundRequest(nullptr) {}
+  ~GetRankAroundRequest() PROTOBUF_FINAL;
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+  void operator delete(GetRankAroundRequest* PROTOBUF_NONNULL msg, ::std::destroying_delete_t) {
+    SharedDtor(*msg);
+    ::google::protobuf::internal::SizedDelete(msg, sizeof(GetRankAroundRequest));
+  }
+#endif
+
+  template <typename = void>
+  explicit constexpr GetRankAroundRequest(::google::protobuf::internal::ConstantInitialized,
+                           const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
+                               class_data);
+
+  inline GetRankAroundRequest(const GetRankAroundRequest& from) : GetRankAroundRequest(nullptr, from) {}
+  inline GetRankAroundRequest(GetRankAroundRequest&& from) noexcept : GetRankAroundRequest(nullptr, ::std::move(from)) {}
+  inline GetRankAroundRequest& operator=(const GetRankAroundRequest& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline GetRankAroundRequest& operator=(GetRankAroundRequest&& from) noexcept {
+    if (this == &from) return *this;
+    if (::google::protobuf::internal::CanMoveWithInternalSwap(GetArena(), from.GetArena())) {
+      InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  [[nodiscard]] inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance);
+  }
+  [[nodiscard]] inline ::google::protobuf::UnknownFieldSet* PROTOBUF_NONNULL
+  mutable_unknown_fields() ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.mutable_unknown_fields<::google::protobuf::UnknownFieldSet>();
+  }
+
+  [[nodiscard]] static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL descriptor() {
+    return GetDescriptor();
+  }
+  [[nodiscard]] static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL
+  GetDescriptor() {
+    return default_instance().GetMetadata().descriptor;
+  }
+  [[nodiscard]] static const ::google::protobuf::Reflection* PROTOBUF_NONNULL GetReflection() {
+    return default_instance().GetMetadata().reflection;
+  }
+  [[nodiscard]] static const GetRankAroundRequest& default_instance() {
+    return *::google::protobuf::internal::MessageGlobalsBase::ToDefaultInstance<GetRankAroundRequest>(&GetRankAroundRequest_globals_);
+  }
+  static constexpr int kIndexInFileMessages = 4;
+  friend void swap(GetRankAroundRequest& a, GetRankAroundRequest& b) { a.Swap(&b); }
+  inline void Swap(GetRankAroundRequest* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    if (::google::protobuf::internal::CanUseInternalSwap(GetArena(), other->GetArena())) {
+      InternalSwap(other);
+    } else {
+      ::google::protobuf::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(GetRankAroundRequest* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    ABSL_DCHECK(GetArena() == other->GetArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  [[nodiscard]] GetRankAroundRequest* PROTOBUF_NONNULL
+  New(::google::protobuf::Arena* PROTOBUF_NULLABLE arena = nullptr) const {
+    return ::google::protobuf::Message::DefaultConstruct<GetRankAroundRequest>(arena);
+  }
+  using ::google::protobuf::Message::CopyFrom;
+  void CopyFrom(const GetRankAroundRequest& from);
+  using ::google::protobuf::Message::MergeFrom;
+  void MergeFrom(const GetRankAroundRequest& from) { GetRankAroundRequest::MergeImpl(*this, from); }
+
+  private:
+  static void MergeImpl(::google::protobuf::MessageLite& to_msg,
+                        const ::google::protobuf::MessageLite& from_msg);
+
+  public:
+  [[nodiscard]] bool IsInitialized() const {
+    return true;
+  }
+  ABSL_ATTRIBUTE_REINITIALIZES void Clear() PROTOBUF_FINAL;
+  #if defined(PROTOBUF_CUSTOM_VTABLE)
+  private:
+  [[nodiscard]] static ::size_t ByteSizeLong(const ::google::protobuf::MessageLite& msg);
+  [[nodiscard]] static ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      const ::google::protobuf::MessageLite& msg, ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream);
+
+  public:
+  [[nodiscard]] ::size_t ByteSizeLong() const { return ByteSizeLong(*this); }
+  [[nodiscard]] ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
+    return _InternalSerialize(*this, target, stream);
+  }
+  #else   // PROTOBUF_CUSTOM_VTABLE
+  [[nodiscard]] ::size_t ByteSizeLong() const final;
+  [[nodiscard]] ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const final;
+  #endif  // PROTOBUF_CUSTOM_VTABLE
+  [[nodiscard]] int GetCachedSize() const {
+    return _impl_._cached_size_.Get();
+  }
+
+  private:
+  void SharedCtor(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static void SharedDtor(MessageLite& self);
+  void InternalSwap(GetRankAroundRequest* PROTOBUF_NONNULL other);
+ private:
+  template <typename T>
+  friend ::absl::string_view(::google::protobuf::internal::GetAnyMessageName)();
+  static ::absl::string_view FullMessageName() { return "rankpb.GetRankAroundRequest"; }
+
+  explicit GetRankAroundRequest(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  GetRankAroundRequest(::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const GetRankAroundRequest& from);
+  GetRankAroundRequest(
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, GetRankAroundRequest&& from) noexcept
+      : GetRankAroundRequest(arena) {
+    *this = ::std::move(from);
+  }
+  const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL GetClassData() const PROTOBUF_FINAL;
+  static void* PROTOBUF_NONNULL PlacementNew_(
+      const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static constexpr auto InternalNewImpl_();
+
+ public:
+  static constexpr auto InternalGenerateClassData_(
+      const MessageLite& prototype,
+      const ::google::protobuf::internal::TcParseTableBase* PROTOBUF_NULLABLE tc_table = nullptr);
+
+  [[nodiscard]] ::google::protobuf::Metadata GetMetadata() const;
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+  enum : int {
+    kBoardFieldNumber = 1,
+    kRadiusFieldNumber = 2,
+  };
+  // .rankpb.RankBoardKey board = 1;
+  [[nodiscard]] bool has_board()
+      const;
+  void clear_board() ;
+  [[nodiscard]] const ::rankpb::RankBoardKey& board() const;
+  [[nodiscard]] ::rankpb::RankBoardKey* PROTOBUF_NULLABLE release_board();
+  ::rankpb::RankBoardKey* PROTOBUF_NONNULL mutable_board();
+  void set_allocated_board(::rankpb::RankBoardKey* PROTOBUF_NULLABLE value);
+  void unsafe_arena_set_allocated_board(::rankpb::RankBoardKey* PROTOBUF_NULLABLE value);
+  ::rankpb::RankBoardKey* PROTOBUF_NULLABLE unsafe_arena_release_board();
+
+  private:
+  const ::rankpb::RankBoardKey& _internal_board() const;
+  ::rankpb::RankBoardKey* PROTOBUF_NONNULL _internal_mutable_board();
+
+  public:
+  // uint32 radius = 2;
+  void clear_radius() ;
+  [[nodiscard]] ::uint32_t radius() const;
+  void set_radius(::uint32_t value);
+
+  private:
+  ::uint32_t _internal_radius() const;
+  void _internal_set_radius(::uint32_t value);
+
+  public:
+  // @@protoc_insertion_point(class_scope:rankpb.GetRankAroundRequest)
+ private:
+  class _Internal;
+  using ParseTableT_ =
+      ::google::protobuf::internal::TcParseTable<1, 2,
+                          1, 0,
+                          2>;
+  static constexpr ParseTableT_ InternalGenerateParseTable_(
+      const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL class_data);
+  friend class ::google::protobuf::internal::TcParser;
+  #ifndef PROTOBUF_MESSAGE_GLOBALS
+  static const ParseTableT_ _table_;
+  #endif
+
+  friend class ::google::protobuf::MessageLite;
+  friend class ::google::protobuf::Arena;
+  friend ::google::protobuf::internal::PrivateAccess;
+  template <typename T>
+  friend class ::google::protobuf::Arena::InternalHelper;
+  using InternalArenaConstructable_ = void;
+  using DestructorSkippable_ = void;
+  struct Impl_ {
+    inline explicit constexpr Impl_(::google::protobuf::internal::InternalVisibility visibility,
+                                    ::google::protobuf::internal::ConstantInitialized) noexcept;
+    inline explicit Impl_(
+        ::google::protobuf::internal::InternalVisibility visibility,
+        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+    inline explicit Impl_(
+        ::google::protobuf::internal::InternalVisibility visibility,
+        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
+        const GetRankAroundRequest& from_msg);
+    ::google::protobuf::internal::HasBits<1> _has_bits_;
+    ::google::protobuf::internal::CachedSize _cached_size_;
+    ::rankpb::RankBoardKey* PROTOBUF_NULLABLE board_;
+    ::uint32_t radius_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
   union { Impl_ _impl_; };
@@ -929,133 +1777,269 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED GetRankPageResponse final : public 
 #endif  // __GNUC__
 // -------------------------------------------------------------------
 
-// GetRankPageRequest
+// RankBoardKey
 
-// .rankpb.RankBoard board = 1;
-inline void GetRankPageRequest::clear_board() {
+// uint32 board_type = 1;
+inline void RankBoardKey::clear_board_type() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.board_ = 0;
-  ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
-}
-inline ::rankpb::RankBoard GetRankPageRequest::board() const {
-  // @@protoc_insertion_point(field_get:rankpb.GetRankPageRequest.board)
-  return _internal_board();
-}
-inline void GetRankPageRequest::set_board(::rankpb::RankBoard value) {
-  _internal_set_board(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00000001U);
-  // @@protoc_insertion_point(field_set:rankpb.GetRankPageRequest.board)
-}
-inline ::rankpb::RankBoard GetRankPageRequest::_internal_board() const {
-  ::google::protobuf::internal::TSanRead(&_impl_);
-  return static_cast<::rankpb::RankBoard>(_impl_.board_);
-}
-inline void GetRankPageRequest::_internal_set_board(::rankpb::RankBoard value) {
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.board_ = value;
-}
-
-// uint32 page = 2;
-inline void GetRankPageRequest::clear_page() {
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.page_ = 0u;
+  _impl_.board_type_ = 0u;
   ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
 }
-inline ::uint32_t GetRankPageRequest::page() const {
-  // @@protoc_insertion_point(field_get:rankpb.GetRankPageRequest.page)
-  return _internal_page();
+inline ::uint32_t RankBoardKey::board_type() const {
+  // @@protoc_insertion_point(field_get:rankpb.RankBoardKey.board_type)
+  return _internal_board_type();
 }
-inline void GetRankPageRequest::set_page(::uint32_t value) {
-  _internal_set_page(value);
+inline void RankBoardKey::set_board_type(::uint32_t value) {
+  _internal_set_board_type(value);
   SetHasBit(_impl_._has_bits_[0], 0x00000002U);
-  // @@protoc_insertion_point(field_set:rankpb.GetRankPageRequest.page)
+  // @@protoc_insertion_point(field_set:rankpb.RankBoardKey.board_type)
 }
-inline ::uint32_t GetRankPageRequest::_internal_page() const {
+inline ::uint32_t RankBoardKey::_internal_board_type() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
-  return _impl_.page_;
+  return _impl_.board_type_;
 }
-inline void GetRankPageRequest::_internal_set_page(::uint32_t value) {
+inline void RankBoardKey::_internal_set_board_type(::uint32_t value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.page_ = value;
+  _impl_.board_type_ = value;
 }
 
-// uint32 page_size = 3;
-inline void GetRankPageRequest::clear_page_size() {
+// .rankpb.RankScope scope = 2;
+inline void RankBoardKey::clear_scope() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.page_size_ = 0u;
+  _impl_.scope_ = 0;
   ClearHasBit(_impl_._has_bits_[0], 0x00000004U);
 }
-inline ::uint32_t GetRankPageRequest::page_size() const {
-  // @@protoc_insertion_point(field_get:rankpb.GetRankPageRequest.page_size)
-  return _internal_page_size();
+inline ::rankpb::RankScope RankBoardKey::scope() const {
+  // @@protoc_insertion_point(field_get:rankpb.RankBoardKey.scope)
+  return _internal_scope();
 }
-inline void GetRankPageRequest::set_page_size(::uint32_t value) {
-  _internal_set_page_size(value);
+inline void RankBoardKey::set_scope(::rankpb::RankScope value) {
+  _internal_set_scope(value);
   SetHasBit(_impl_._has_bits_[0], 0x00000004U);
-  // @@protoc_insertion_point(field_set:rankpb.GetRankPageRequest.page_size)
+  // @@protoc_insertion_point(field_set:rankpb.RankBoardKey.scope)
 }
-inline ::uint32_t GetRankPageRequest::_internal_page_size() const {
+inline ::rankpb::RankScope RankBoardKey::_internal_scope() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
-  return _impl_.page_size_;
+  return static_cast<::rankpb::RankScope>(_impl_.scope_);
 }
-inline void GetRankPageRequest::_internal_set_page_size(::uint32_t value) {
+inline void RankBoardKey::_internal_set_scope(::rankpb::RankScope value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.page_size_ = value;
+  _impl_.scope_ = value;
+}
+
+// uint64 scope_id = 3;
+inline void RankBoardKey::clear_scope_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.scope_id_ = ::uint64_t{0u};
+  ClearHasBit(_impl_._has_bits_[0], 0x00000008U);
+}
+inline ::uint64_t RankBoardKey::scope_id() const {
+  // @@protoc_insertion_point(field_get:rankpb.RankBoardKey.scope_id)
+  return _internal_scope_id();
+}
+inline void RankBoardKey::set_scope_id(::uint64_t value) {
+  _internal_set_scope_id(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000008U);
+  // @@protoc_insertion_point(field_set:rankpb.RankBoardKey.scope_id)
+}
+inline ::uint64_t RankBoardKey::_internal_scope_id() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.scope_id_;
+}
+inline void RankBoardKey::_internal_set_scope_id(::uint64_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.scope_id_ = value;
+}
+
+// string period = 4;
+inline void RankBoardKey::clear_period() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.period_.ClearToEmpty();
+  ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
+}
+inline const ::std::string& RankBoardKey::period() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:rankpb.RankBoardKey.period)
+  return _internal_period();
+}
+template <typename Arg_, typename... Args_>
+PROTOBUF_ALWAYS_INLINE void RankBoardKey::set_period(Arg_&& arg, Args_... args) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  _impl_.period_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
+  // @@protoc_insertion_point(field_set:rankpb.RankBoardKey.period)
+}
+inline ::std::string* PROTOBUF_NONNULL RankBoardKey::mutable_period()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  ::std::string* _s = _internal_mutable_period();
+  // @@protoc_insertion_point(field_mutable:rankpb.RankBoardKey.period)
+  return _s;
+}
+inline const ::std::string& RankBoardKey::_internal_period() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.period_.Get();
+}
+inline void RankBoardKey::_internal_set_period(const ::std::string& value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.period_.Set(value, GetArena());
+}
+inline ::std::string* PROTOBUF_NONNULL RankBoardKey::_internal_mutable_period() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  return _impl_.period_.Mutable( GetArena());
+}
+inline ::std::string* PROTOBUF_NULLABLE RankBoardKey::release_period() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:rankpb.RankBoardKey.period)
+  if (!CheckHasBit(_impl_._has_bits_[0], 0x00000001U)) {
+    return nullptr;
+  }
+  ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
+  auto* released = _impl_.period_.Release();
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString()) {
+    _impl_.period_.Set("", GetArena());
+  }
+  return released;
+}
+inline void RankBoardKey::set_allocated_period(::std::string* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (value != nullptr) {
+    SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  } else {
+    ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
+  }
+  _impl_.period_.SetAllocated(value, GetArena());
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.period_.IsDefault()) {
+    _impl_.period_.Set("", GetArena());
+  }
+  // @@protoc_insertion_point(field_set_allocated:rankpb.RankBoardKey.period)
+}
+
+// uint64 generation = 5;
+inline void RankBoardKey::clear_generation() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.generation_ = ::uint64_t{0u};
+  ClearHasBit(_impl_._has_bits_[0], 0x00000010U);
+}
+inline ::uint64_t RankBoardKey::generation() const {
+  // @@protoc_insertion_point(field_get:rankpb.RankBoardKey.generation)
+  return _internal_generation();
+}
+inline void RankBoardKey::set_generation(::uint64_t value) {
+  _internal_set_generation(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000010U);
+  // @@protoc_insertion_point(field_set:rankpb.RankBoardKey.generation)
+}
+inline ::uint64_t RankBoardKey::_internal_generation() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.generation_;
+}
+inline void RankBoardKey::_internal_set_generation(::uint64_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.generation_ = value;
 }
 
 // -------------------------------------------------------------------
 
 // RankEntry
 
-// uint32 rank = 1;
+// uint64 rank = 1;
 inline void RankEntry::clear_rank() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.rank_ = 0u;
-  ClearHasBit(_impl_._has_bits_[0], 0x00000004U);
+  _impl_.rank_ = ::uint64_t{0u};
+  ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
 }
-inline ::uint32_t RankEntry::rank() const {
+inline ::uint64_t RankEntry::rank() const {
   // @@protoc_insertion_point(field_get:rankpb.RankEntry.rank)
   return _internal_rank();
 }
-inline void RankEntry::set_rank(::uint32_t value) {
+inline void RankEntry::set_rank(::uint64_t value) {
   _internal_set_rank(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00000004U);
+  SetHasBit(_impl_._has_bits_[0], 0x00000002U);
   // @@protoc_insertion_point(field_set:rankpb.RankEntry.rank)
 }
-inline ::uint32_t RankEntry::_internal_rank() const {
+inline ::uint64_t RankEntry::_internal_rank() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
   return _impl_.rank_;
 }
-inline void RankEntry::_internal_set_rank(::uint32_t value) {
+inline void RankEntry::_internal_set_rank(::uint64_t value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.rank_ = value;
 }
 
-// uint64 player_id = 2;
-inline void RankEntry::clear_player_id() {
+// uint64 entity_id = 2;
+inline void RankEntry::clear_entity_id() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.player_id_ = ::uint64_t{0u};
-  ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
+  _impl_.entity_id_ = ::uint64_t{0u};
+  ClearHasBit(_impl_._has_bits_[0], 0x00000004U);
 }
-inline ::uint64_t RankEntry::player_id() const {
-  // @@protoc_insertion_point(field_get:rankpb.RankEntry.player_id)
-  return _internal_player_id();
+inline ::uint64_t RankEntry::entity_id() const {
+  // @@protoc_insertion_point(field_get:rankpb.RankEntry.entity_id)
+  return _internal_entity_id();
 }
-inline void RankEntry::set_player_id(::uint64_t value) {
-  _internal_set_player_id(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00000002U);
-  // @@protoc_insertion_point(field_set:rankpb.RankEntry.player_id)
+inline void RankEntry::set_entity_id(::uint64_t value) {
+  _internal_set_entity_id(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000004U);
+  // @@protoc_insertion_point(field_set:rankpb.RankEntry.entity_id)
 }
-inline ::uint64_t RankEntry::_internal_player_id() const {
+inline ::uint64_t RankEntry::_internal_entity_id() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
-  return _impl_.player_id_;
+  return _impl_.entity_id_;
 }
-inline void RankEntry::_internal_set_player_id(::uint64_t value) {
+inline void RankEntry::_internal_set_entity_id(::uint64_t value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.player_id_ = value;
+  _impl_.entity_id_ = value;
 }
 
-// string name = 3;
+// int64 score = 3;
+inline void RankEntry::clear_score() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.score_ = ::int64_t{0};
+  ClearHasBit(_impl_._has_bits_[0], 0x00000008U);
+}
+inline ::int64_t RankEntry::score() const {
+  // @@protoc_insertion_point(field_get:rankpb.RankEntry.score)
+  return _internal_score();
+}
+inline void RankEntry::set_score(::int64_t value) {
+  _internal_set_score(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000008U);
+  // @@protoc_insertion_point(field_set:rankpb.RankEntry.score)
+}
+inline ::int64_t RankEntry::_internal_score() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.score_;
+}
+inline void RankEntry::_internal_set_score(::int64_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.score_ = value;
+}
+
+// uint64 achieved_ms = 4;
+inline void RankEntry::clear_achieved_ms() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.achieved_ms_ = ::uint64_t{0u};
+  ClearHasBit(_impl_._has_bits_[0], 0x00000010U);
+}
+inline ::uint64_t RankEntry::achieved_ms() const {
+  // @@protoc_insertion_point(field_get:rankpb.RankEntry.achieved_ms)
+  return _internal_achieved_ms();
+}
+inline void RankEntry::set_achieved_ms(::uint64_t value) {
+  _internal_set_achieved_ms(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000010U);
+  // @@protoc_insertion_point(field_set:rankpb.RankEntry.achieved_ms)
+}
+inline ::uint64_t RankEntry::_internal_achieved_ms() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.achieved_ms_;
+}
+inline void RankEntry::_internal_set_achieved_ms(::uint64_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.achieved_ms_ = value;
+}
+
+// string name = 5;
 inline void RankEntry::clear_name() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.name_.ClearToEmpty();
@@ -1119,52 +2103,154 @@ inline void RankEntry::set_allocated_name(::std::string* PROTOBUF_NULLABLE value
   // @@protoc_insertion_point(field_set_allocated:rankpb.RankEntry.name)
 }
 
-// uint32 rating_centi = 4;
-inline void RankEntry::clear_rating_centi() {
+// -------------------------------------------------------------------
+
+// GetRankPageRequest
+
+// .rankpb.RankBoardKey board = 1;
+inline bool GetRankPageRequest::has_board() const {
+  bool value = CheckHasBit(_impl_._has_bits_[0], 0x00000001U);
+  PROTOBUF_ASSUME(!value || _impl_.board_ != nullptr);
+  return value;
+}
+inline void GetRankPageRequest::clear_board() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.rating_centi_ = 0u;
-  ClearHasBit(_impl_._has_bits_[0], 0x00000008U);
+  if (_impl_.board_ != nullptr) _impl_.board_->Clear();
+  ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
 }
-inline ::uint32_t RankEntry::rating_centi() const {
-  // @@protoc_insertion_point(field_get:rankpb.RankEntry.rating_centi)
-  return _internal_rating_centi();
-}
-inline void RankEntry::set_rating_centi(::uint32_t value) {
-  _internal_set_rating_centi(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00000008U);
-  // @@protoc_insertion_point(field_set:rankpb.RankEntry.rating_centi)
-}
-inline ::uint32_t RankEntry::_internal_rating_centi() const {
+inline const ::rankpb::RankBoardKey& GetRankPageRequest::_internal_board() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
-  return _impl_.rating_centi_;
+  const ::rankpb::RankBoardKey* p = _impl_.board_;
+  return p != nullptr ? *p : *::google::protobuf::internal::MessageGlobalsBase::ToDefaultInstance<::rankpb::RankBoardKey>(&::rankpb::RankBoardKey_globals_);
 }
-inline void RankEntry::_internal_set_rating_centi(::uint32_t value) {
+inline const ::rankpb::RankBoardKey& GetRankPageRequest::board() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:rankpb.GetRankPageRequest.board)
+  return _internal_board();
+}
+inline void GetRankPageRequest::unsafe_arena_set_allocated_board(
+    ::rankpb::RankBoardKey* PROTOBUF_NULLABLE value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.rating_centi_ = value;
+  if (GetArena() == nullptr) {
+    delete reinterpret_cast<::google::protobuf::MessageLite*>(_impl_.board_);
+  }
+  _impl_.board_ = reinterpret_cast<::rankpb::RankBoardKey*>(value);
+  if (value != nullptr) {
+    SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  } else {
+    ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
+  }
+  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:rankpb.GetRankPageRequest.board)
+}
+inline ::rankpb::RankBoardKey* PROTOBUF_NULLABLE GetRankPageRequest::release_board() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+
+  ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
+  ::rankpb::RankBoardKey* released = _impl_.board_;
+  _impl_.board_ = nullptr;
+  if (::google::protobuf::internal::DebugHardenForceCopyInRelease()) {
+    auto* old = reinterpret_cast<::google::protobuf::MessageLite*>(released);
+    released = ::google::protobuf::internal::DuplicateIfNonNull(released);
+    if (GetArena() == nullptr) {
+      delete old;
+    }
+  } else {
+    if (GetArena() != nullptr) {
+      released = ::google::protobuf::internal::DuplicateIfNonNull(released);
+    }
+  }
+  return released;
+}
+inline ::rankpb::RankBoardKey* PROTOBUF_NULLABLE GetRankPageRequest::unsafe_arena_release_board() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:rankpb.GetRankPageRequest.board)
+
+  ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
+  ::rankpb::RankBoardKey* temp = _impl_.board_;
+  _impl_.board_ = nullptr;
+  return temp;
+}
+inline ::rankpb::RankBoardKey* PROTOBUF_NONNULL GetRankPageRequest::_internal_mutable_board() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (_impl_.board_ == nullptr) {
+    auto* p = ::google::protobuf::Message::DefaultConstruct<::rankpb::RankBoardKey>(GetArena());
+    _impl_.board_ = reinterpret_cast<::rankpb::RankBoardKey*>(p);
+  }
+  return _impl_.board_;
+}
+inline ::rankpb::RankBoardKey* PROTOBUF_NONNULL GetRankPageRequest::mutable_board()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  ::rankpb::RankBoardKey* _msg = _internal_mutable_board();
+  // @@protoc_insertion_point(field_mutable:rankpb.GetRankPageRequest.board)
+  return _msg;
+}
+inline void GetRankPageRequest::set_allocated_board(::rankpb::RankBoardKey* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::Arena* message_arena = GetArena();
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (message_arena == nullptr) {
+    delete reinterpret_cast<::google::protobuf::MessageLite*>(_impl_.board_);
+  }
+
+  if (value != nullptr) {
+    ::google::protobuf::Arena* submessage_arena = value->GetArena();
+    if (message_arena != submessage_arena) {
+      value = ::google::protobuf::internal::GetOwnedMessage(message_arena, value, submessage_arena);
+    }
+    SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  } else {
+    ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
+  }
+
+  _impl_.board_ = reinterpret_cast<::rankpb::RankBoardKey*>(value);
+  // @@protoc_insertion_point(field_set_allocated:rankpb.GetRankPageRequest.board)
 }
 
-// uint64 games = 5;
-inline void RankEntry::clear_games() {
+// uint32 page = 2;
+inline void GetRankPageRequest::clear_page() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.games_ = ::uint64_t{0u};
-  ClearHasBit(_impl_._has_bits_[0], 0x00000010U);
+  _impl_.page_ = 0u;
+  ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
 }
-inline ::uint64_t RankEntry::games() const {
-  // @@protoc_insertion_point(field_get:rankpb.RankEntry.games)
-  return _internal_games();
+inline ::uint32_t GetRankPageRequest::page() const {
+  // @@protoc_insertion_point(field_get:rankpb.GetRankPageRequest.page)
+  return _internal_page();
 }
-inline void RankEntry::set_games(::uint64_t value) {
-  _internal_set_games(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00000010U);
-  // @@protoc_insertion_point(field_set:rankpb.RankEntry.games)
+inline void GetRankPageRequest::set_page(::uint32_t value) {
+  _internal_set_page(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000002U);
+  // @@protoc_insertion_point(field_set:rankpb.GetRankPageRequest.page)
 }
-inline ::uint64_t RankEntry::_internal_games() const {
+inline ::uint32_t GetRankPageRequest::_internal_page() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
-  return _impl_.games_;
+  return _impl_.page_;
 }
-inline void RankEntry::_internal_set_games(::uint64_t value) {
+inline void GetRankPageRequest::_internal_set_page(::uint32_t value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.games_ = value;
+  _impl_.page_ = value;
+}
+
+// uint32 page_size = 3;
+inline void GetRankPageRequest::clear_page_size() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.page_size_ = 0u;
+  ClearHasBit(_impl_._has_bits_[0], 0x00000004U);
+}
+inline ::uint32_t GetRankPageRequest::page_size() const {
+  // @@protoc_insertion_point(field_get:rankpb.GetRankPageRequest.page_size)
+  return _internal_page_size();
+}
+inline void GetRankPageRequest::set_page_size(::uint32_t value) {
+  _internal_set_page_size(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000004U);
+  // @@protoc_insertion_point(field_set:rankpb.GetRankPageRequest.page_size)
+}
+inline ::uint32_t GetRankPageRequest::_internal_page_size() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.page_size_;
+}
+inline void GetRankPageRequest::_internal_set_page_size(::uint32_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.page_size_ = value;
 }
 
 // -------------------------------------------------------------------
@@ -1264,7 +2350,105 @@ inline void GetRankPageResponse::set_allocated_error_message(::TipInfoMessage* P
   // @@protoc_insertion_point(field_set_allocated:rankpb.GetRankPageResponse.error_message)
 }
 
-// repeated .rankpb.RankEntry entries = 2;
+// .rankpb.RankBoardKey board = 2;
+inline bool GetRankPageResponse::has_board() const {
+  bool value = CheckHasBit(_impl_._has_bits_[0], 0x00000004U);
+  PROTOBUF_ASSUME(!value || _impl_.board_ != nullptr);
+  return value;
+}
+inline void GetRankPageResponse::clear_board() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (_impl_.board_ != nullptr) _impl_.board_->Clear();
+  ClearHasBit(_impl_._has_bits_[0], 0x00000004U);
+}
+inline const ::rankpb::RankBoardKey& GetRankPageResponse::_internal_board() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  const ::rankpb::RankBoardKey* p = _impl_.board_;
+  return p != nullptr ? *p : *::google::protobuf::internal::MessageGlobalsBase::ToDefaultInstance<::rankpb::RankBoardKey>(&::rankpb::RankBoardKey_globals_);
+}
+inline const ::rankpb::RankBoardKey& GetRankPageResponse::board() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:rankpb.GetRankPageResponse.board)
+  return _internal_board();
+}
+inline void GetRankPageResponse::unsafe_arena_set_allocated_board(
+    ::rankpb::RankBoardKey* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (GetArena() == nullptr) {
+    delete reinterpret_cast<::google::protobuf::MessageLite*>(_impl_.board_);
+  }
+  _impl_.board_ = reinterpret_cast<::rankpb::RankBoardKey*>(value);
+  if (value != nullptr) {
+    SetHasBit(_impl_._has_bits_[0], 0x00000004U);
+  } else {
+    ClearHasBit(_impl_._has_bits_[0], 0x00000004U);
+  }
+  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:rankpb.GetRankPageResponse.board)
+}
+inline ::rankpb::RankBoardKey* PROTOBUF_NULLABLE GetRankPageResponse::release_board() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+
+  ClearHasBit(_impl_._has_bits_[0], 0x00000004U);
+  ::rankpb::RankBoardKey* released = _impl_.board_;
+  _impl_.board_ = nullptr;
+  if (::google::protobuf::internal::DebugHardenForceCopyInRelease()) {
+    auto* old = reinterpret_cast<::google::protobuf::MessageLite*>(released);
+    released = ::google::protobuf::internal::DuplicateIfNonNull(released);
+    if (GetArena() == nullptr) {
+      delete old;
+    }
+  } else {
+    if (GetArena() != nullptr) {
+      released = ::google::protobuf::internal::DuplicateIfNonNull(released);
+    }
+  }
+  return released;
+}
+inline ::rankpb::RankBoardKey* PROTOBUF_NULLABLE GetRankPageResponse::unsafe_arena_release_board() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:rankpb.GetRankPageResponse.board)
+
+  ClearHasBit(_impl_._has_bits_[0], 0x00000004U);
+  ::rankpb::RankBoardKey* temp = _impl_.board_;
+  _impl_.board_ = nullptr;
+  return temp;
+}
+inline ::rankpb::RankBoardKey* PROTOBUF_NONNULL GetRankPageResponse::_internal_mutable_board() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (_impl_.board_ == nullptr) {
+    auto* p = ::google::protobuf::Message::DefaultConstruct<::rankpb::RankBoardKey>(GetArena());
+    _impl_.board_ = reinterpret_cast<::rankpb::RankBoardKey*>(p);
+  }
+  return _impl_.board_;
+}
+inline ::rankpb::RankBoardKey* PROTOBUF_NONNULL GetRankPageResponse::mutable_board()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  SetHasBit(_impl_._has_bits_[0], 0x00000004U);
+  ::rankpb::RankBoardKey* _msg = _internal_mutable_board();
+  // @@protoc_insertion_point(field_mutable:rankpb.GetRankPageResponse.board)
+  return _msg;
+}
+inline void GetRankPageResponse::set_allocated_board(::rankpb::RankBoardKey* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::Arena* message_arena = GetArena();
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (message_arena == nullptr) {
+    delete reinterpret_cast<::google::protobuf::MessageLite*>(_impl_.board_);
+  }
+
+  if (value != nullptr) {
+    ::google::protobuf::Arena* submessage_arena = value->GetArena();
+    if (message_arena != submessage_arena) {
+      value = ::google::protobuf::internal::GetOwnedMessage(message_arena, value, submessage_arena);
+    }
+    SetHasBit(_impl_._has_bits_[0], 0x00000004U);
+  } else {
+    ClearHasBit(_impl_._has_bits_[0], 0x00000004U);
+  }
+
+  _impl_.board_ = reinterpret_cast<::rankpb::RankBoardKey*>(value);
+  // @@protoc_insertion_point(field_set_allocated:rankpb.GetRankPageResponse.board)
+}
+
+// repeated .rankpb.RankEntry entries = 3;
 inline int GetRankPageResponse::_internal_entries_size() const {
   return _internal_entries().size();
 }
@@ -1319,35 +2503,35 @@ GetRankPageResponse::_internal_mutable_entries() {
   return &_impl_.entries_;
 }
 
-// uint32 total_count = 3;
+// uint64 total_count = 4;
 inline void GetRankPageResponse::clear_total_count() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.total_count_ = 0u;
-  ClearHasBit(_impl_._has_bits_[0], 0x00000008U);
+  _impl_.total_count_ = ::uint64_t{0u};
+  ClearHasBit(_impl_._has_bits_[0], 0x00000010U);
 }
-inline ::uint32_t GetRankPageResponse::total_count() const {
+inline ::uint64_t GetRankPageResponse::total_count() const {
   // @@protoc_insertion_point(field_get:rankpb.GetRankPageResponse.total_count)
   return _internal_total_count();
 }
-inline void GetRankPageResponse::set_total_count(::uint32_t value) {
+inline void GetRankPageResponse::set_total_count(::uint64_t value) {
   _internal_set_total_count(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00000008U);
+  SetHasBit(_impl_._has_bits_[0], 0x00000010U);
   // @@protoc_insertion_point(field_set:rankpb.GetRankPageResponse.total_count)
 }
-inline ::uint32_t GetRankPageResponse::_internal_total_count() const {
+inline ::uint64_t GetRankPageResponse::_internal_total_count() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
   return _impl_.total_count_;
 }
-inline void GetRankPageResponse::_internal_set_total_count(::uint32_t value) {
+inline void GetRankPageResponse::_internal_set_total_count(::uint64_t value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.total_count_ = value;
 }
 
-// uint32 page = 4;
+// uint32 page = 5;
 inline void GetRankPageResponse::clear_page() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.page_ = 0u;
-  ClearHasBit(_impl_._has_bits_[0], 0x00000010U);
+  ClearHasBit(_impl_._has_bits_[0], 0x00000020U);
 }
 inline ::uint32_t GetRankPageResponse::page() const {
   // @@protoc_insertion_point(field_get:rankpb.GetRankPageResponse.page)
@@ -1355,7 +2539,7 @@ inline ::uint32_t GetRankPageResponse::page() const {
 }
 inline void GetRankPageResponse::set_page(::uint32_t value) {
   _internal_set_page(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00000010U);
+  SetHasBit(_impl_._has_bits_[0], 0x00000020U);
   // @@protoc_insertion_point(field_set:rankpb.GetRankPageResponse.page)
 }
 inline ::uint32_t GetRankPageResponse::_internal_page() const {
@@ -1367,11 +2551,11 @@ inline void GetRankPageResponse::_internal_set_page(::uint32_t value) {
   _impl_.page_ = value;
 }
 
-// uint32 page_size = 5;
+// uint32 page_size = 6;
 inline void GetRankPageResponse::clear_page_size() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.page_size_ = 0u;
-  ClearHasBit(_impl_._has_bits_[0], 0x00000020U);
+  ClearHasBit(_impl_._has_bits_[0], 0x00000040U);
 }
 inline ::uint32_t GetRankPageResponse::page_size() const {
   // @@protoc_insertion_point(field_get:rankpb.GetRankPageResponse.page_size)
@@ -1379,7 +2563,7 @@ inline ::uint32_t GetRankPageResponse::page_size() const {
 }
 inline void GetRankPageResponse::set_page_size(::uint32_t value) {
   _internal_set_page_size(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00000020U);
+  SetHasBit(_impl_._has_bits_[0], 0x00000040U);
   // @@protoc_insertion_point(field_set:rankpb.GetRankPageResponse.page_size)
 }
 inline ::uint32_t GetRankPageResponse::_internal_page_size() const {
@@ -1391,40 +2575,40 @@ inline void GetRankPageResponse::_internal_set_page_size(::uint32_t value) {
   _impl_.page_size_ = value;
 }
 
-// uint32 page_count = 6;
+// uint64 page_count = 7;
 inline void GetRankPageResponse::clear_page_count() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.page_count_ = 0u;
-  ClearHasBit(_impl_._has_bits_[0], 0x00000040U);
+  _impl_.page_count_ = ::uint64_t{0u};
+  ClearHasBit(_impl_._has_bits_[0], 0x00000080U);
 }
-inline ::uint32_t GetRankPageResponse::page_count() const {
+inline ::uint64_t GetRankPageResponse::page_count() const {
   // @@protoc_insertion_point(field_get:rankpb.GetRankPageResponse.page_count)
   return _internal_page_count();
 }
-inline void GetRankPageResponse::set_page_count(::uint32_t value) {
+inline void GetRankPageResponse::set_page_count(::uint64_t value) {
   _internal_set_page_count(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00000040U);
+  SetHasBit(_impl_._has_bits_[0], 0x00000080U);
   // @@protoc_insertion_point(field_set:rankpb.GetRankPageResponse.page_count)
 }
-inline ::uint32_t GetRankPageResponse::_internal_page_count() const {
+inline ::uint64_t GetRankPageResponse::_internal_page_count() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
   return _impl_.page_count_;
 }
-inline void GetRankPageResponse::_internal_set_page_count(::uint32_t value) {
+inline void GetRankPageResponse::_internal_set_page_count(::uint64_t value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.page_count_ = value;
 }
 
-// .rankpb.RankEntry self = 7;
+// .rankpb.RankEntry self = 8;
 inline bool GetRankPageResponse::has_self() const {
-  bool value = CheckHasBit(_impl_._has_bits_[0], 0x00000004U);
+  bool value = CheckHasBit(_impl_._has_bits_[0], 0x00000008U);
   PROTOBUF_ASSUME(!value || _impl_.self_ != nullptr);
   return value;
 }
 inline void GetRankPageResponse::clear_self() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   if (_impl_.self_ != nullptr) _impl_.self_->Clear();
-  ClearHasBit(_impl_._has_bits_[0], 0x00000004U);
+  ClearHasBit(_impl_._has_bits_[0], 0x00000008U);
 }
 inline const ::rankpb::RankEntry& GetRankPageResponse::_internal_self() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
@@ -1443,16 +2627,16 @@ inline void GetRankPageResponse::unsafe_arena_set_allocated_self(
   }
   _impl_.self_ = reinterpret_cast<::rankpb::RankEntry*>(value);
   if (value != nullptr) {
-    SetHasBit(_impl_._has_bits_[0], 0x00000004U);
+    SetHasBit(_impl_._has_bits_[0], 0x00000008U);
   } else {
-    ClearHasBit(_impl_._has_bits_[0], 0x00000004U);
+    ClearHasBit(_impl_._has_bits_[0], 0x00000008U);
   }
   // @@protoc_insertion_point(field_unsafe_arena_set_allocated:rankpb.GetRankPageResponse.self)
 }
 inline ::rankpb::RankEntry* PROTOBUF_NULLABLE GetRankPageResponse::release_self() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
 
-  ClearHasBit(_impl_._has_bits_[0], 0x00000004U);
+  ClearHasBit(_impl_._has_bits_[0], 0x00000008U);
   ::rankpb::RankEntry* released = _impl_.self_;
   _impl_.self_ = nullptr;
   if (::google::protobuf::internal::DebugHardenForceCopyInRelease()) {
@@ -1472,7 +2656,7 @@ inline ::rankpb::RankEntry* PROTOBUF_NULLABLE GetRankPageResponse::unsafe_arena_
   ::google::protobuf::internal::TSanWrite(&_impl_);
   // @@protoc_insertion_point(field_release:rankpb.GetRankPageResponse.self)
 
-  ClearHasBit(_impl_._has_bits_[0], 0x00000004U);
+  ClearHasBit(_impl_._has_bits_[0], 0x00000008U);
   ::rankpb::RankEntry* temp = _impl_.self_;
   _impl_.self_ = nullptr;
   return temp;
@@ -1487,7 +2671,7 @@ inline ::rankpb::RankEntry* PROTOBUF_NONNULL GetRankPageResponse::_internal_muta
 }
 inline ::rankpb::RankEntry* PROTOBUF_NONNULL GetRankPageResponse::mutable_self()
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  SetHasBit(_impl_._has_bits_[0], 0x00000004U);
+  SetHasBit(_impl_._has_bits_[0], 0x00000008U);
   ::rankpb::RankEntry* _msg = _internal_mutable_self();
   // @@protoc_insertion_point(field_mutable:rankpb.GetRankPageResponse.self)
   return _msg;
@@ -1504,13 +2688,511 @@ inline void GetRankPageResponse::set_allocated_self(::rankpb::RankEntry* PROTOBU
     if (message_arena != submessage_arena) {
       value = ::google::protobuf::internal::GetOwnedMessage(message_arena, value, submessage_arena);
     }
+    SetHasBit(_impl_._has_bits_[0], 0x00000008U);
+  } else {
+    ClearHasBit(_impl_._has_bits_[0], 0x00000008U);
+  }
+
+  _impl_.self_ = reinterpret_cast<::rankpb::RankEntry*>(value);
+  // @@protoc_insertion_point(field_set_allocated:rankpb.GetRankPageResponse.self)
+}
+
+// .rankpb.RankGenerationState state = 9;
+inline void GetRankPageResponse::clear_state() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.state_ = 0;
+  ClearHasBit(_impl_._has_bits_[0], 0x00000100U);
+}
+inline ::rankpb::RankGenerationState GetRankPageResponse::state() const {
+  // @@protoc_insertion_point(field_get:rankpb.GetRankPageResponse.state)
+  return _internal_state();
+}
+inline void GetRankPageResponse::set_state(::rankpb::RankGenerationState value) {
+  _internal_set_state(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000100U);
+  // @@protoc_insertion_point(field_set:rankpb.GetRankPageResponse.state)
+}
+inline ::rankpb::RankGenerationState GetRankPageResponse::_internal_state() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return static_cast<::rankpb::RankGenerationState>(_impl_.state_);
+}
+inline void GetRankPageResponse::_internal_set_state(::rankpb::RankGenerationState value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.state_ = value;
+}
+
+// -------------------------------------------------------------------
+
+// GetRankAroundRequest
+
+// .rankpb.RankBoardKey board = 1;
+inline bool GetRankAroundRequest::has_board() const {
+  bool value = CheckHasBit(_impl_._has_bits_[0], 0x00000001U);
+  PROTOBUF_ASSUME(!value || _impl_.board_ != nullptr);
+  return value;
+}
+inline void GetRankAroundRequest::clear_board() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (_impl_.board_ != nullptr) _impl_.board_->Clear();
+  ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
+}
+inline const ::rankpb::RankBoardKey& GetRankAroundRequest::_internal_board() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  const ::rankpb::RankBoardKey* p = _impl_.board_;
+  return p != nullptr ? *p : *::google::protobuf::internal::MessageGlobalsBase::ToDefaultInstance<::rankpb::RankBoardKey>(&::rankpb::RankBoardKey_globals_);
+}
+inline const ::rankpb::RankBoardKey& GetRankAroundRequest::board() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:rankpb.GetRankAroundRequest.board)
+  return _internal_board();
+}
+inline void GetRankAroundRequest::unsafe_arena_set_allocated_board(
+    ::rankpb::RankBoardKey* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (GetArena() == nullptr) {
+    delete reinterpret_cast<::google::protobuf::MessageLite*>(_impl_.board_);
+  }
+  _impl_.board_ = reinterpret_cast<::rankpb::RankBoardKey*>(value);
+  if (value != nullptr) {
+    SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  } else {
+    ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
+  }
+  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:rankpb.GetRankAroundRequest.board)
+}
+inline ::rankpb::RankBoardKey* PROTOBUF_NULLABLE GetRankAroundRequest::release_board() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+
+  ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
+  ::rankpb::RankBoardKey* released = _impl_.board_;
+  _impl_.board_ = nullptr;
+  if (::google::protobuf::internal::DebugHardenForceCopyInRelease()) {
+    auto* old = reinterpret_cast<::google::protobuf::MessageLite*>(released);
+    released = ::google::protobuf::internal::DuplicateIfNonNull(released);
+    if (GetArena() == nullptr) {
+      delete old;
+    }
+  } else {
+    if (GetArena() != nullptr) {
+      released = ::google::protobuf::internal::DuplicateIfNonNull(released);
+    }
+  }
+  return released;
+}
+inline ::rankpb::RankBoardKey* PROTOBUF_NULLABLE GetRankAroundRequest::unsafe_arena_release_board() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:rankpb.GetRankAroundRequest.board)
+
+  ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
+  ::rankpb::RankBoardKey* temp = _impl_.board_;
+  _impl_.board_ = nullptr;
+  return temp;
+}
+inline ::rankpb::RankBoardKey* PROTOBUF_NONNULL GetRankAroundRequest::_internal_mutable_board() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (_impl_.board_ == nullptr) {
+    auto* p = ::google::protobuf::Message::DefaultConstruct<::rankpb::RankBoardKey>(GetArena());
+    _impl_.board_ = reinterpret_cast<::rankpb::RankBoardKey*>(p);
+  }
+  return _impl_.board_;
+}
+inline ::rankpb::RankBoardKey* PROTOBUF_NONNULL GetRankAroundRequest::mutable_board()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  ::rankpb::RankBoardKey* _msg = _internal_mutable_board();
+  // @@protoc_insertion_point(field_mutable:rankpb.GetRankAroundRequest.board)
+  return _msg;
+}
+inline void GetRankAroundRequest::set_allocated_board(::rankpb::RankBoardKey* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::Arena* message_arena = GetArena();
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (message_arena == nullptr) {
+    delete reinterpret_cast<::google::protobuf::MessageLite*>(_impl_.board_);
+  }
+
+  if (value != nullptr) {
+    ::google::protobuf::Arena* submessage_arena = value->GetArena();
+    if (message_arena != submessage_arena) {
+      value = ::google::protobuf::internal::GetOwnedMessage(message_arena, value, submessage_arena);
+    }
+    SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  } else {
+    ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
+  }
+
+  _impl_.board_ = reinterpret_cast<::rankpb::RankBoardKey*>(value);
+  // @@protoc_insertion_point(field_set_allocated:rankpb.GetRankAroundRequest.board)
+}
+
+// uint32 radius = 2;
+inline void GetRankAroundRequest::clear_radius() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.radius_ = 0u;
+  ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
+}
+inline ::uint32_t GetRankAroundRequest::radius() const {
+  // @@protoc_insertion_point(field_get:rankpb.GetRankAroundRequest.radius)
+  return _internal_radius();
+}
+inline void GetRankAroundRequest::set_radius(::uint32_t value) {
+  _internal_set_radius(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000002U);
+  // @@protoc_insertion_point(field_set:rankpb.GetRankAroundRequest.radius)
+}
+inline ::uint32_t GetRankAroundRequest::_internal_radius() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.radius_;
+}
+inline void GetRankAroundRequest::_internal_set_radius(::uint32_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.radius_ = value;
+}
+
+// -------------------------------------------------------------------
+
+// GetRankAroundResponse
+
+// .TipInfoMessage error_message = 1;
+inline bool GetRankAroundResponse::has_error_message() const {
+  bool value = CheckHasBit(_impl_._has_bits_[0], 0x00000002U);
+  PROTOBUF_ASSUME(!value || _impl_.error_message_ != nullptr);
+  return value;
+}
+inline const ::TipInfoMessage& GetRankAroundResponse::_internal_error_message() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  const ::TipInfoMessage* p = _impl_.error_message_;
+  return p != nullptr ? *p : *::google::protobuf::internal::MessageGlobalsBase::ToDefaultInstance<::TipInfoMessage>(&::TipInfoMessage_globals_);
+}
+inline const ::TipInfoMessage& GetRankAroundResponse::error_message() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:rankpb.GetRankAroundResponse.error_message)
+  return _internal_error_message();
+}
+inline void GetRankAroundResponse::unsafe_arena_set_allocated_error_message(
+    ::TipInfoMessage* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (GetArena() == nullptr) {
+    delete reinterpret_cast<::google::protobuf::MessageLite*>(_impl_.error_message_);
+  }
+  _impl_.error_message_ = reinterpret_cast<::TipInfoMessage*>(value);
+  if (value != nullptr) {
+    SetHasBit(_impl_._has_bits_[0], 0x00000002U);
+  } else {
+    ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
+  }
+  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:rankpb.GetRankAroundResponse.error_message)
+}
+inline ::TipInfoMessage* PROTOBUF_NULLABLE GetRankAroundResponse::release_error_message() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+
+  ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
+  ::TipInfoMessage* released = _impl_.error_message_;
+  _impl_.error_message_ = nullptr;
+  if (::google::protobuf::internal::DebugHardenForceCopyInRelease()) {
+    auto* old = reinterpret_cast<::google::protobuf::MessageLite*>(released);
+    released = ::google::protobuf::internal::DuplicateIfNonNull(released);
+    if (GetArena() == nullptr) {
+      delete old;
+    }
+  } else {
+    if (GetArena() != nullptr) {
+      released = ::google::protobuf::internal::DuplicateIfNonNull(released);
+    }
+  }
+  return released;
+}
+inline ::TipInfoMessage* PROTOBUF_NULLABLE GetRankAroundResponse::unsafe_arena_release_error_message() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:rankpb.GetRankAroundResponse.error_message)
+
+  ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
+  ::TipInfoMessage* temp = _impl_.error_message_;
+  _impl_.error_message_ = nullptr;
+  return temp;
+}
+inline ::TipInfoMessage* PROTOBUF_NONNULL GetRankAroundResponse::_internal_mutable_error_message() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (_impl_.error_message_ == nullptr) {
+    auto* p = ::google::protobuf::Message::DefaultConstruct<::TipInfoMessage>(GetArena());
+    _impl_.error_message_ = reinterpret_cast<::TipInfoMessage*>(p);
+  }
+  return _impl_.error_message_;
+}
+inline ::TipInfoMessage* PROTOBUF_NONNULL GetRankAroundResponse::mutable_error_message()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  SetHasBit(_impl_._has_bits_[0], 0x00000002U);
+  ::TipInfoMessage* _msg = _internal_mutable_error_message();
+  // @@protoc_insertion_point(field_mutable:rankpb.GetRankAroundResponse.error_message)
+  return _msg;
+}
+inline void GetRankAroundResponse::set_allocated_error_message(::TipInfoMessage* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::Arena* message_arena = GetArena();
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (message_arena == nullptr) {
+    delete reinterpret_cast<::google::protobuf::MessageLite*>(_impl_.error_message_);
+  }
+
+  if (value != nullptr) {
+    ::google::protobuf::Arena* submessage_arena = reinterpret_cast<::google::protobuf::Message*>(value)->GetArena();
+    if (message_arena != submessage_arena) {
+      value = ::google::protobuf::internal::GetOwnedMessage(message_arena, value, submessage_arena);
+    }
+    SetHasBit(_impl_._has_bits_[0], 0x00000002U);
+  } else {
+    ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
+  }
+
+  _impl_.error_message_ = reinterpret_cast<::TipInfoMessage*>(value);
+  // @@protoc_insertion_point(field_set_allocated:rankpb.GetRankAroundResponse.error_message)
+}
+
+// .rankpb.RankBoardKey board = 2;
+inline bool GetRankAroundResponse::has_board() const {
+  bool value = CheckHasBit(_impl_._has_bits_[0], 0x00000004U);
+  PROTOBUF_ASSUME(!value || _impl_.board_ != nullptr);
+  return value;
+}
+inline void GetRankAroundResponse::clear_board() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (_impl_.board_ != nullptr) _impl_.board_->Clear();
+  ClearHasBit(_impl_._has_bits_[0], 0x00000004U);
+}
+inline const ::rankpb::RankBoardKey& GetRankAroundResponse::_internal_board() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  const ::rankpb::RankBoardKey* p = _impl_.board_;
+  return p != nullptr ? *p : *::google::protobuf::internal::MessageGlobalsBase::ToDefaultInstance<::rankpb::RankBoardKey>(&::rankpb::RankBoardKey_globals_);
+}
+inline const ::rankpb::RankBoardKey& GetRankAroundResponse::board() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:rankpb.GetRankAroundResponse.board)
+  return _internal_board();
+}
+inline void GetRankAroundResponse::unsafe_arena_set_allocated_board(
+    ::rankpb::RankBoardKey* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (GetArena() == nullptr) {
+    delete reinterpret_cast<::google::protobuf::MessageLite*>(_impl_.board_);
+  }
+  _impl_.board_ = reinterpret_cast<::rankpb::RankBoardKey*>(value);
+  if (value != nullptr) {
+    SetHasBit(_impl_._has_bits_[0], 0x00000004U);
+  } else {
+    ClearHasBit(_impl_._has_bits_[0], 0x00000004U);
+  }
+  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:rankpb.GetRankAroundResponse.board)
+}
+inline ::rankpb::RankBoardKey* PROTOBUF_NULLABLE GetRankAroundResponse::release_board() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+
+  ClearHasBit(_impl_._has_bits_[0], 0x00000004U);
+  ::rankpb::RankBoardKey* released = _impl_.board_;
+  _impl_.board_ = nullptr;
+  if (::google::protobuf::internal::DebugHardenForceCopyInRelease()) {
+    auto* old = reinterpret_cast<::google::protobuf::MessageLite*>(released);
+    released = ::google::protobuf::internal::DuplicateIfNonNull(released);
+    if (GetArena() == nullptr) {
+      delete old;
+    }
+  } else {
+    if (GetArena() != nullptr) {
+      released = ::google::protobuf::internal::DuplicateIfNonNull(released);
+    }
+  }
+  return released;
+}
+inline ::rankpb::RankBoardKey* PROTOBUF_NULLABLE GetRankAroundResponse::unsafe_arena_release_board() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:rankpb.GetRankAroundResponse.board)
+
+  ClearHasBit(_impl_._has_bits_[0], 0x00000004U);
+  ::rankpb::RankBoardKey* temp = _impl_.board_;
+  _impl_.board_ = nullptr;
+  return temp;
+}
+inline ::rankpb::RankBoardKey* PROTOBUF_NONNULL GetRankAroundResponse::_internal_mutable_board() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (_impl_.board_ == nullptr) {
+    auto* p = ::google::protobuf::Message::DefaultConstruct<::rankpb::RankBoardKey>(GetArena());
+    _impl_.board_ = reinterpret_cast<::rankpb::RankBoardKey*>(p);
+  }
+  return _impl_.board_;
+}
+inline ::rankpb::RankBoardKey* PROTOBUF_NONNULL GetRankAroundResponse::mutable_board()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  SetHasBit(_impl_._has_bits_[0], 0x00000004U);
+  ::rankpb::RankBoardKey* _msg = _internal_mutable_board();
+  // @@protoc_insertion_point(field_mutable:rankpb.GetRankAroundResponse.board)
+  return _msg;
+}
+inline void GetRankAroundResponse::set_allocated_board(::rankpb::RankBoardKey* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::Arena* message_arena = GetArena();
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (message_arena == nullptr) {
+    delete reinterpret_cast<::google::protobuf::MessageLite*>(_impl_.board_);
+  }
+
+  if (value != nullptr) {
+    ::google::protobuf::Arena* submessage_arena = value->GetArena();
+    if (message_arena != submessage_arena) {
+      value = ::google::protobuf::internal::GetOwnedMessage(message_arena, value, submessage_arena);
+    }
     SetHasBit(_impl_._has_bits_[0], 0x00000004U);
   } else {
     ClearHasBit(_impl_._has_bits_[0], 0x00000004U);
   }
 
+  _impl_.board_ = reinterpret_cast<::rankpb::RankBoardKey*>(value);
+  // @@protoc_insertion_point(field_set_allocated:rankpb.GetRankAroundResponse.board)
+}
+
+// repeated .rankpb.RankEntry entries = 3;
+inline int GetRankAroundResponse::_internal_entries_size() const {
+  return _internal_entries().size();
+}
+inline int GetRankAroundResponse::entries_size() const {
+  return _internal_entries_size();
+}
+inline void GetRankAroundResponse::clear_entries() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.entries_.Clear();
+  ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
+}
+inline const ::rankpb::RankEntry& GetRankAroundResponse::entries(int index) const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:rankpb.GetRankAroundResponse.entries)
+  return _internal_entries().Get(index);
+}
+inline ::rankpb::RankEntry* PROTOBUF_NONNULL GetRankAroundResponse::mutable_entries(int index)
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_mutable:rankpb.GetRankAroundResponse.entries)
+  return _internal_mutable_entries()->Mutable(index);
+}
+inline ::rankpb::RankEntry* PROTOBUF_NONNULL GetRankAroundResponse::add_entries()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  ::rankpb::RankEntry* _add =
+      _internal_mutable_entries()->InternalAddWithArena(
+          ::google::protobuf::MessageLite::internal_visibility(), GetArena());
+  SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  // @@protoc_insertion_point(field_add:rankpb.GetRankAroundResponse.entries)
+  return _add;
+}
+inline const ::google::protobuf::RepeatedPtrField<::rankpb::RankEntry>& GetRankAroundResponse::entries() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_list:rankpb.GetRankAroundResponse.entries)
+  return _internal_entries();
+}
+inline ::google::protobuf::RepeatedPtrField<::rankpb::RankEntry>* PROTOBUF_NONNULL
+GetRankAroundResponse::mutable_entries() ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  // @@protoc_insertion_point(field_mutable_list:rankpb.GetRankAroundResponse.entries)
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  return _internal_mutable_entries();
+}
+inline const ::google::protobuf::RepeatedPtrField<::rankpb::RankEntry>&
+GetRankAroundResponse::_internal_entries() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.entries_;
+}
+inline ::google::protobuf::RepeatedPtrField<::rankpb::RankEntry>* PROTOBUF_NONNULL
+GetRankAroundResponse::_internal_mutable_entries() {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return &_impl_.entries_;
+}
+
+// .rankpb.RankEntry self = 4;
+inline bool GetRankAroundResponse::has_self() const {
+  bool value = CheckHasBit(_impl_._has_bits_[0], 0x00000008U);
+  PROTOBUF_ASSUME(!value || _impl_.self_ != nullptr);
+  return value;
+}
+inline void GetRankAroundResponse::clear_self() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (_impl_.self_ != nullptr) _impl_.self_->Clear();
+  ClearHasBit(_impl_._has_bits_[0], 0x00000008U);
+}
+inline const ::rankpb::RankEntry& GetRankAroundResponse::_internal_self() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  const ::rankpb::RankEntry* p = _impl_.self_;
+  return p != nullptr ? *p : *::google::protobuf::internal::MessageGlobalsBase::ToDefaultInstance<::rankpb::RankEntry>(&::rankpb::RankEntry_globals_);
+}
+inline const ::rankpb::RankEntry& GetRankAroundResponse::self() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:rankpb.GetRankAroundResponse.self)
+  return _internal_self();
+}
+inline void GetRankAroundResponse::unsafe_arena_set_allocated_self(
+    ::rankpb::RankEntry* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (GetArena() == nullptr) {
+    delete reinterpret_cast<::google::protobuf::MessageLite*>(_impl_.self_);
+  }
   _impl_.self_ = reinterpret_cast<::rankpb::RankEntry*>(value);
-  // @@protoc_insertion_point(field_set_allocated:rankpb.GetRankPageResponse.self)
+  if (value != nullptr) {
+    SetHasBit(_impl_._has_bits_[0], 0x00000008U);
+  } else {
+    ClearHasBit(_impl_._has_bits_[0], 0x00000008U);
+  }
+  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:rankpb.GetRankAroundResponse.self)
+}
+inline ::rankpb::RankEntry* PROTOBUF_NULLABLE GetRankAroundResponse::release_self() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+
+  ClearHasBit(_impl_._has_bits_[0], 0x00000008U);
+  ::rankpb::RankEntry* released = _impl_.self_;
+  _impl_.self_ = nullptr;
+  if (::google::protobuf::internal::DebugHardenForceCopyInRelease()) {
+    auto* old = reinterpret_cast<::google::protobuf::MessageLite*>(released);
+    released = ::google::protobuf::internal::DuplicateIfNonNull(released);
+    if (GetArena() == nullptr) {
+      delete old;
+    }
+  } else {
+    if (GetArena() != nullptr) {
+      released = ::google::protobuf::internal::DuplicateIfNonNull(released);
+    }
+  }
+  return released;
+}
+inline ::rankpb::RankEntry* PROTOBUF_NULLABLE GetRankAroundResponse::unsafe_arena_release_self() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:rankpb.GetRankAroundResponse.self)
+
+  ClearHasBit(_impl_._has_bits_[0], 0x00000008U);
+  ::rankpb::RankEntry* temp = _impl_.self_;
+  _impl_.self_ = nullptr;
+  return temp;
+}
+inline ::rankpb::RankEntry* PROTOBUF_NONNULL GetRankAroundResponse::_internal_mutable_self() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (_impl_.self_ == nullptr) {
+    auto* p = ::google::protobuf::Message::DefaultConstruct<::rankpb::RankEntry>(GetArena());
+    _impl_.self_ = reinterpret_cast<::rankpb::RankEntry*>(p);
+  }
+  return _impl_.self_;
+}
+inline ::rankpb::RankEntry* PROTOBUF_NONNULL GetRankAroundResponse::mutable_self()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  SetHasBit(_impl_._has_bits_[0], 0x00000008U);
+  ::rankpb::RankEntry* _msg = _internal_mutable_self();
+  // @@protoc_insertion_point(field_mutable:rankpb.GetRankAroundResponse.self)
+  return _msg;
+}
+inline void GetRankAroundResponse::set_allocated_self(::rankpb::RankEntry* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::Arena* message_arena = GetArena();
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (message_arena == nullptr) {
+    delete reinterpret_cast<::google::protobuf::MessageLite*>(_impl_.self_);
+  }
+
+  if (value != nullptr) {
+    ::google::protobuf::Arena* submessage_arena = value->GetArena();
+    if (message_arena != submessage_arena) {
+      value = ::google::protobuf::internal::GetOwnedMessage(message_arena, value, submessage_arena);
+    }
+    SetHasBit(_impl_._has_bits_[0], 0x00000008U);
+  } else {
+    ClearHasBit(_impl_._has_bits_[0], 0x00000008U);
+  }
+
+  _impl_.self_ = reinterpret_cast<::rankpb::RankEntry*>(value);
+  // @@protoc_insertion_point(field_set_allocated:rankpb.GetRankAroundResponse.self)
 }
 
 #ifdef __GNUC__
@@ -1525,10 +3207,16 @@ namespace google {
 namespace protobuf {
 
 template <>
-struct is_proto_enum<::rankpb::RankBoard> : std::true_type {};
+struct is_proto_enum<::rankpb::RankScope> : std::true_type {};
 template <>
-inline const EnumDescriptor* PROTOBUF_NONNULL GetEnumDescriptor<::rankpb::RankBoard>() {
-  return ::rankpb::RankBoard_descriptor();
+inline const EnumDescriptor* PROTOBUF_NONNULL GetEnumDescriptor<::rankpb::RankScope>() {
+  return ::rankpb::RankScope_descriptor();
+}
+template <>
+struct is_proto_enum<::rankpb::RankGenerationState> : std::true_type {};
+template <>
+inline const EnumDescriptor* PROTOBUF_NONNULL GetEnumDescriptor<::rankpb::RankGenerationState>() {
+  return ::rankpb::RankGenerationState_descriptor();
 }
 
 }  // namespace protobuf

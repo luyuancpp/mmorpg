@@ -80,8 +80,12 @@ type PlayerNameStore interface {
 // 理由同上面几个 store:单测可以注入假实现验证 db_first 的编排与 fail-closed 行为。
 //
 // 只在 RouteStore.Mode=db_first 时装配;redis 模式下恒为 nil,也没有任何代码读它。
+//
+// 第 3 批起再嵌 routing.RouteReader(回源读:R2 / R3 / R6 在缓存不可信时读库,R7 在 db_first 下一律读库):
+// 同一个 *store.RouteStore 同时作为写入点与回源读者注入 Router(routeRouterOptions)。
 type PlayerRouteStore interface {
 	routing.RouteStore
+	routing.RouteReader
 	Close() error
 }
 
@@ -134,6 +138,9 @@ const autoMigrateTimeout = 5 * time.Minute
 // routePublishProbeMargin 是 db_first 装配时 WAITAOF 能力探针在 WaitAOFTimeoutMs 之外多给的时间
 // (连 mapping Redis、PING、回包)。
 const routePublishProbeMargin = 3 * time.Second
+
+// routeReadyProbeTimeout 是 ReadRequiresReady=true 时启动期试跑一次读脚本的时限(连 mapping Redis、EVAL 含两次 INFO、回包)。
+const routeReadyProbeTimeout = 3 * time.Second
 
 // MySQLConfigOf 把 yaml 的 SnapshotMySQL 段转成 store 的连接参数;main 的 -migrate 入口也用它。
 func MySQLConfigOf(c config.Config) store.MySQLConfig {
@@ -267,10 +274,12 @@ func NewServiceContext(c config.Config) *ServiceContext {
 
 	// 只有 store 非 nil 时才注入(规格 d 节「nil 接口陷阱」):newPlayerRouteStore 的失败分支返回字面量 nil,
 	// 这里的判空才可靠;若改成先赋给 *store.RouteStore 再转接口,就会得到「非 nil 接口包着 nil 指针」,
-	// 路由器的判空拦不住、调用即 panic。
-	var routerOpts []routing.RouterOption
-	if playerRouteStore != nil {
-		routerOpts = append(routerOpts, routing.WithRouteStore(playerRouteStore))
+	// 路由器的判空拦不住、调用即 panic。第 3 批起同一个实例也作为回源读者注入(routeRouterOptions)。
+	routerOpts := routeRouterOptions(playerRouteStore)
+
+	// 第 3 批读方门禁的指标只在开关打开时预置(理由同 metrics.PrimeRoute;开关只许 db_first,Validate 已钉住)。
+	if c.RouteStore.DBFirst() && c.RouteStore.ReadRequiresReady {
+		metrics.PrimeRouteRead()
 	}
 
 	return &ServiceContext{
@@ -287,7 +296,8 @@ func NewServiceContext(c config.Config) *ServiceContext {
 }
 
 // newPlayerRouteStore 装配 db_first 的库内提交点。redis 模式、启动期迁移失败(schemaReady=false)、
-// 或 mapping Redis 过不了 WAITAOF 能力探针(routing.ProbeWaitAOF)时返回 nil。
+// 或 mapping Redis 过不了 WAITAOF 能力探针(routing.ProbeWaitAOF)时返回 nil;第 3 批起,ReadRequiresReady=true 而
+// 读脚本在 mapping Redis 上跑不起来(probeRouteReadyReadAtStartup)时同样返回 nil。
 //
 // 连接参数用全局库(MySQLConfigOf),池大小覆盖为 RouteStore 段的值 —— route store 的会话变量(RC + 锁等待 1s)
 // 不能带给别的 store,所以它总是自己开池(store.NewRouteStore)。写者标识 "data_service@{hostname}" 写进
@@ -315,6 +325,9 @@ func newPlayerRouteStore(c config.Config, mysqlCfg store.MySQLConfig, schemaRead
 			"as RouteStore.WaitAOF* requires: %v", probeErr)
 		return nil
 	}
+	if !probeRouteReadyReadAtStartup(c) {
+		return nil
+	}
 	routeCfg := mysqlCfg
 	routeCfg.MaxOpenConn = c.RouteStore.MaxOpenConn
 	routeCfg.MaxIdleConn = c.RouteStore.MaxIdleConn
@@ -333,6 +346,38 @@ func newPlayerRouteStore(c config.Config, mysqlCfg store.MySQLConfig, schemaRead
 	logx.Infof("[ServiceContext] route store ready (RouteStore.Mode=db_first): fence_shards=%d publish_attempts=%d waitaof_numlocal=%d waitaof_numreplicas=%d waitaof_timeout_ms=%d",
 		c.RouteStore.FenceShards, c.RouteStore.PublishAttempts, c.RouteStore.NumLocal(), c.RouteStore.NumReplicas(), c.RouteStore.WaitAOFTimeoutMs)
 	return rs
+}
+
+// probeRouteReadyReadAtStartup 是第 3 批读方门禁的启动探针(规格 §13.2 第 2 条):ReadRequiresReady=false 时什么都不做、
+// 回 true;true 时在 mapping Redis 上试跑一次读脚本(不带映射键,routing.ProbeRouteReadyRead),跑不起来(INFO 在脚本里
+// 不可用、ACL 拒绝、连不上)回 false —— 调用方不装配 route store,MissingStores 带上 player_route,Store.Required=true 时
+// main 拒启(既有的拒启机制,不另开一条)。跑得起来但标记不可信是启动时的正常状态(leader 预热完才挂),只记日志。
+// 放在开库之前:与 WAITAOF 探针同理,配置错误挡在启动期,不让它变成每一次读都回源、每一次回源都多两次失败的 INFO。
+func probeRouteReadyReadAtStartup(c config.Config) bool {
+	if !c.RouteStore.ReadRequiresReady {
+		return true
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), routeReadyProbeTimeout)
+	defer cancel()
+	verdict, err := routing.ProbeRouteReadyRead(ctx, c.MappingRedis)
+	if err != nil {
+		logx.Errorf("[ServiceContext] route store not assembled (RouteStore.ReadRequiresReady=true but the route ready read script cannot run "+
+			"on the mapping redis; RegisterPlayerZone and every untrusted read will fail closed): %v", err)
+		return false
+	}
+	logx.Infof("[ServiceContext] route ready read probe ok: verdict=%s (anything but trusted is normal until the reconcile leader arms the marker; "+
+		"readers fall back to player_route meanwhile)", verdict)
+	return true
+}
+
+// routeRouterOptions 把装配好的 route store 同时作为写入点(WithRouteStore)与回源读者(WithRouteReader,第 3 批)交给 Router。
+// rs 为 nil(redis 模式或没装配起来)时一个选项都不给。判空可靠的前提同 NewServiceContext 的说明:newPlayerRouteStore 的
+// 失败分支返回字面量 nil,不会把一个 nil 的 *store.RouteStore 包成非 nil 接口。纯函数,单测直接测。
+func routeRouterOptions(rs PlayerRouteStore) []routing.RouterOption {
+	if rs == nil {
+		return nil
+	}
+	return []routing.RouterOption{routing.WithRouteStore(rs), routing.WithRouteReader(rs)}
 }
 
 // newGuildDivergenceChecker 装配回档闸问 guild 的接缝(07 §7.5.1、§7.5.5)。

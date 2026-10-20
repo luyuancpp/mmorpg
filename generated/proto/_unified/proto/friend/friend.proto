@@ -34,12 +34,12 @@ import "proto/common/base/tip.proto";
 // 重算冲突,且客户端与服务端各自重生成后号会对不上)。未上线、无老客户端,
 // 所以本期允许号段整体变动(AGENTS §4.3)。
 //
-// ⚠ 那 8 个旧号**不是作废、而是语义会变**:InitMessageId
-// (tools/proto_generator/protogen/internal/generator/cpp/service_register_info.go 里
-// "把未占用号灌进 unUseMessageId,再 `for uk := range unUseMessageId { mv.Id = uk; break }`")
-// 会把空号当成可用号池分给需要发号的新方法,取到哪个由 Go map 的迭代顺序定 —— 也就是说
-// 同一个号在这次生成后指向的是另一个方法,而且每次生成的具体落位都可能不同。
-// 由此产生一条硬约束:gate 的 rpc_event_registry、client_rpc_router 的 route_table、
+// ⚠ 那 8 个旧号当时**不是作废、而是语义变了**:这次改名发生在消息号墓碑机制之前,当时的
+// InitMessageId 把空号当成可用号池、按 Go map 的迭代顺序分给需要发号的新方法,这些号已经指向
+// 别的方法。2026-10 批 7 起规则已改(tools/proto_generator/protogen/internal/generator/cpp/
+// service_register_info.go 的 assignMessageIds):从 proto 删掉的方法转为 `N=reserved:<KeyName>`
+// 墓碑,号永不复用;新方法按号升序确定性地填空洞,再从最大号之后往后发。
+// 硬约束仍然成立:gate 的 rpc_event_registry、client_rpc_router 的 route_table、
 // Unity 与 robot 的消息号必须来自**同一次** proto-gen 并同批发布。混用两次生成的产物
 // 不会报错,只会让消息号静默错位(客户端发 AddFriend、服务端按别的方法解包)。
 

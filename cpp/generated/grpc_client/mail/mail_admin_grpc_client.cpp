@@ -1,10 +1,8 @@
 #include "muduo/base/Logging.h"
 
 #include "mail_admin_grpc_client.h"
-#include <algorithm>
 #include <atomic>
 #include <chrono>
-#include <memory>
 #include <string>
 #include <utility>
 #include "core/network/grpc_client_runtime.h"
@@ -12,15 +10,14 @@
 #include "muduo_grpc/channel.h"
 
 namespace {
-// 本文件所有 unary 调用的 deadline(毫秒)。启动时 SetMailAdminCallDeadline 按目标节点类型写入
-// (Node::Initialize → grpc_call_deadline::Apply);原子量:与应答处理器一样是进程级全局。
+// 每个 proto 文件独立的进程级 deadline;启动时按目标节点类型写入。
 std::atomic<uint32_t> callDeadlineMs{kDefaultGrpcCallDeadlineMs};
 
 std::chrono::milliseconds DefaultCallDeadline() {
     return std::chrono::milliseconds(callDeadlineMs.load(std::memory_order_relaxed));
 }
 
-GrpcCallOutcome LocalFailure(uint32_t code, std::string message) {
+GrpcCallOutcome MakeLocalFailureOutcome(uint32_t code, std::string message) {
     GrpcCallOutcome outcome;
     outcome.code = code;
     outcome.message = std::move(message);
@@ -30,279 +27,440 @@ GrpcCallOutcome LocalFailure(uint32_t code, std::string message) {
 
 namespace mailpb {
 #pragma region MailAdminSendPersonalMail
-AsyncMailAdminSendPersonalMailHandlerFunctionType AsyncMailAdminSendPersonalMailHandler;
-AsyncMailAdminSendPersonalMailFailedHandlerFunctionType AsyncMailAdminSendPersonalMailFailedHandler;
-
 namespace {
-// 一次调用的状态:随完成回调走(shared_ptr),不进 ECS、不放对象池。
-// request 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
-struct MailAdminSendPersonalMailCall {
-    ::mailpb::SendPersonalMailRequest request;
-    GrpcSentMetadata sentMetadata;
-    // 每次调用回调;为空时走全局 AsyncMailAdminSendPersonalMailHandler / FailedHandler。
-    GrpcDone<::mailpb::SendPersonalMailResponse> done;
-};
-
-void CompleteMailAdminSendPersonalMail(const MailAdminSendPersonalMailCall& call, const GrpcCallOutcome& outcome,
-                                                const ::mailpb::SendPersonalMailResponse* reply) {
-    if (call.done) {
-        // 带每次调用回调的调用只交给它,不再走全局应答 / 失败处理器。reply 只在回调期间有效。
-        call.done(outcome, outcome.ok() ? reply : nullptr);
-        return;
-    }
-    if (outcome.ok()) {
-        if (AsyncMailAdminSendPersonalMailHandler) {
-            AsyncMailAdminSendPersonalMailHandler(outcome, *reply);
-        } else {
-            // 应答到了却没人收:2026-04 起换图应答就是这样静默丢了约 5 个月。每个方法每线程报一次;
-            // 确实不需要应答的调用方显式装一个空处理器。
-            thread_local bool reportedMissingHandler = false;
-            if (!reportedMissingHandler) {
-                reportedMissingHandler = true;
-                LOG_ERROR << "gRPC MailAdmin.SendPersonalMail reply dropped: AsyncMailAdminSendPersonalMailHandler is not installed"
-                          << " (install one, or an empty one if the reply is intentionally ignored)";
-            }
-        }
-    } else if (AsyncMailAdminSendPersonalMailFailedHandler) {
-        const GrpcCallFailure failure{ MailAdminSendPersonalMailMessageId, "MailAdmin.SendPersonalMail", outcome, call.sentMetadata};
-        AsyncMailAdminSendPersonalMailFailedHandler(failure, call.request);
-    } else {
-        LOG_ERROR << "gRPC MailAdmin.SendPersonalMail failed: code=" << outcome.code << " msg=" << outcome.message;
-    }
-}
-
-void QueueLocalMailAdminSendPersonalMailFailure(std::shared_ptr<MailAdminSendPersonalMailCall> call, uint32_t code, std::string message) {
-    QueueGrpcLocalCompletion([call = std::move(call), outcome = LocalFailure(code, std::move(message))] {
-        CompleteMailAdminSendPersonalMail(*call, outcome, nullptr);
+void QueueLocalMailAdminSendPersonalMailFailure(GrpcDone<::mailpb::SendMailResponse> done, uint32_t code, std::string message) {
+    QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(code, std::move(message))] {
+        done(outcome, nullptr);
     });
 }
 }
 
-// 所有 unary Send 重载的唯一发送入口。deadline <= 0 用本文件默认 deadline;done 为空走全局处理器。
-void StartMailAdminSendPersonalMailCall(entt::registry& registry, entt::entity nodeEntity, const ::mailpb::SendPersonalMailRequest& request,
+// 请求必须在这里同步序列化:gate 的共享原型在下次调用会被覆盖。
+// 若将来改成异步序列化,必须先恢复请求的独立副本。
+void StartMailAdminSendPersonalMailCall(entt::registry& registry, entt::entity nodeEntity, const ::mailpb::SendMailRequest& request,
                                              GrpcSentMetadata metadata, std::chrono::milliseconds deadline,
-                                             GrpcDone<::mailpb::SendPersonalMailResponse> done) {
-    auto call = std::make_shared<MailAdminSendPersonalMailCall>();
-    call->request = request;
-    call->sentMetadata = std::move(metadata);
-    call->done = std::move(done);
-
+                                             GrpcDone<::mailpb::SendMailResponse> done) {
+    if (!done) {
+        LOG_FATAL << "gRPC MailAdmin.SendPersonalMail requires a done callback";
+    }
+    muduo_grpc::UnaryCallRequest unaryRequest;
+    unaryRequest.method = std::string(kMailAdminSendPersonalMailGrpcPath);
+    if (!request.SerializeToString(&unaryRequest.message)) {
+        QueueLocalMailAdminSendPersonalMailFailure(std::move(done), kGrpcStatusInternal, "failed to serialize the request");
+        return;
+    }
     const auto channel = FindGrpcChannel(registry, nodeEntity);
     if (!channel) {
-        QueueLocalMailAdminSendPersonalMailFailure(std::move(call), kGrpcStatusUnavailable, "node transport missing or closing");
+        QueueLocalMailAdminSendPersonalMailFailure(std::move(done), kGrpcStatusUnavailable, "node transport missing or closing");
         return;
     }
-    muduo_grpc::UnaryCallRequest rpc;
-    rpc.method = std::string(kMailAdminSendPersonalMailGrpcPath);
-    if (!call->request.SerializeToString(&rpc.message)) {
-        QueueLocalMailAdminSendPersonalMailFailure(std::move(call), kGrpcStatusInternal, "failed to serialize the request");
-        return;
+    unaryRequest.metadata.reserve(metadata.size());
+    for (const auto& [key, value] : metadata) {
+        // Go 侧依赖这层应用编码;-bin 的线上编码另由传输层负责。
+        unaryRequest.metadata.emplace_back(key, Base64Encode(value));
     }
-    rpc.metadata.reserve(call->sentMetadata.size());
-    for (const auto& [key, value] : call->sentMetadata) {
-        // 应用层这一层 Base64 不能省:线上字节与改前一致,Go 侧按它解码、按原样回显(§4.2)。
-        rpc.metadata.emplace_back(key, Base64Encode(value));
-    }
-    rpc.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
-    channel->StartUnaryCall(std::move(rpc), [call](muduo_grpc::UnaryCallResult&& result) {
+    unaryRequest.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
+    channel->StartUnaryCall(std::move(unaryRequest), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
         GrpcCallOutcome outcome;
         outcome.code = result.status.code_value();
         outcome.message = result.status.message();
         outcome.initialMetadata = std::move(result.initialMetadata);
         outcome.trailingMetadata = std::move(result.trailingMetadata);
         if (!outcome.ok()) {
-            CompleteMailAdminSendPersonalMail(*call, outcome, nullptr);
+            done(outcome, nullptr);
             return;
         }
-        ::mailpb::SendPersonalMailResponse reply;
+        ::mailpb::SendMailResponse reply;
         if (!reply.ParseFromString(result.response)) {
             outcome.code = kGrpcStatusInternal;
             outcome.message = "failed to parse the MailAdmin.SendPersonalMail response";
-            CompleteMailAdminSendPersonalMail(*call, outcome, nullptr);
+            done(outcome, nullptr);
             return;
         }
-        CompleteMailAdminSendPersonalMail(*call, outcome, &reply);
+        done(outcome, &reply);
     });
 }
 
-void SendMailAdminSendPersonalMail(entt::registry& registry, entt::entity nodeEntity, const ::mailpb::SendPersonalMailRequest& request,
-                                            GrpcDone<::mailpb::SendPersonalMailResponse> done, const GrpcCallOptions& options) {
+void SendMailAdminSendPersonalMail(entt::registry& registry, entt::entity nodeEntity, const ::mailpb::SendMailRequest& request,
+                                            GrpcDone<::mailpb::SendMailResponse> done, const GrpcCallOptions& options) {
     StartMailAdminSendPersonalMailCall(registry, nodeEntity, request, options.metadata, options.deadline, std::move(done));
 }
 
-void SendMailAdminSendPersonalMail(entt::registry& registry, entt::entity nodeEntity, const ::mailpb::SendPersonalMailRequest& request) {
-    // 显式写出空 vector:另有 (request, GrpcDone, GrpcCallOptions) 重载,两个 {} 会有二义性。
-    SendMailAdminSendPersonalMail(registry, nodeEntity, request, std::vector<std::string>{}, std::vector<std::string>{});
-}
-
-void SendMailAdminSendPersonalMail(entt::registry& registry, entt::entity nodeEntity, const ::mailpb::SendPersonalMailRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues) {
-    const size_t count = std::min(metaKeys.size(), metaValues.size());
-    GrpcSentMetadata metadata;
-    metadata.reserve(count);
-    for (size_t i = 0; i < count; ++i) {
-        metadata.emplace_back(metaKeys[i], metaValues[i]);
+void SendMailAdminSendPersonalMailErased(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message,
+                                                  GrpcMessageDone done, const GrpcCallOptions& options) {
+    if (!done) {
+        LOG_FATAL << "gRPC MailAdmin.SendPersonalMail requires a done callback";
     }
-    StartMailAdminSendPersonalMailCall(registry, nodeEntity, request, std::move(metadata), std::chrono::milliseconds{0}, nullptr);
-}
-
-void SendMailAdminSendPersonalMail(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues) {
-    const ::mailpb::SendPersonalMailRequest& derived = static_cast<const ::mailpb::SendPersonalMailRequest&>(message);
-    SendMailAdminSendPersonalMail(registry, nodeEntity, derived, metaKeys, metaValues);
+    if (message.GetDescriptor() != ::mailpb::SendMailRequest::descriptor()) {
+        const auto requestTypeName = message.GetDescriptor()->full_name();
+        LOG_ERROR << "gRPC MailAdmin.SendPersonalMail: request type " << std::string(requestTypeName.data(), requestTypeName.size())
+                  << " does not match; not sent";
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
+            done(outcome, nullptr);
+        });
+        return;
+    }
+    // descriptor 相同仍可能是 DynamicMessage;进入 typed 路径前必须核对真实 C++ 类型。
+    const auto* typedRequest = dynamic_cast<const ::mailpb::SendMailRequest*>(&message);
+    if (typedRequest == nullptr) {
+        LOG_ERROR << "gRPC MailAdmin.SendPersonalMail: request C++ type does not match; not sent";
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
+            done(outcome, nullptr);
+        });
+        return;
+    }
+    StartMailAdminSendPersonalMailCall(registry, nodeEntity, *typedRequest, options.metadata, options.deadline,
+        [done = std::move(done)](const GrpcCallOutcome& outcome, const ::mailpb::SendMailResponse* reply) { done(outcome, reply); });
 }
 #pragma endregion
 #pragma region MailAdminSendSystemMail
-AsyncMailAdminSendSystemMailHandlerFunctionType AsyncMailAdminSendSystemMailHandler;
-AsyncMailAdminSendSystemMailFailedHandlerFunctionType AsyncMailAdminSendSystemMailFailedHandler;
-
 namespace {
-// 一次调用的状态:随完成回调走(shared_ptr),不进 ECS、不放对象池。
-// request 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
-struct MailAdminSendSystemMailCall {
-    ::mailpb::SendSystemMailRequest request;
-    GrpcSentMetadata sentMetadata;
-    // 每次调用回调;为空时走全局 AsyncMailAdminSendSystemMailHandler / FailedHandler。
-    GrpcDone<::mailpb::SendSystemMailResponse> done;
-};
-
-void CompleteMailAdminSendSystemMail(const MailAdminSendSystemMailCall& call, const GrpcCallOutcome& outcome,
-                                                const ::mailpb::SendSystemMailResponse* reply) {
-    if (call.done) {
-        // 带每次调用回调的调用只交给它,不再走全局应答 / 失败处理器。reply 只在回调期间有效。
-        call.done(outcome, outcome.ok() ? reply : nullptr);
-        return;
-    }
-    if (outcome.ok()) {
-        if (AsyncMailAdminSendSystemMailHandler) {
-            AsyncMailAdminSendSystemMailHandler(outcome, *reply);
-        } else {
-            // 应答到了却没人收:2026-04 起换图应答就是这样静默丢了约 5 个月。每个方法每线程报一次;
-            // 确实不需要应答的调用方显式装一个空处理器。
-            thread_local bool reportedMissingHandler = false;
-            if (!reportedMissingHandler) {
-                reportedMissingHandler = true;
-                LOG_ERROR << "gRPC MailAdmin.SendSystemMail reply dropped: AsyncMailAdminSendSystemMailHandler is not installed"
-                          << " (install one, or an empty one if the reply is intentionally ignored)";
-            }
-        }
-    } else if (AsyncMailAdminSendSystemMailFailedHandler) {
-        const GrpcCallFailure failure{ MailAdminSendSystemMailMessageId, "MailAdmin.SendSystemMail", outcome, call.sentMetadata};
-        AsyncMailAdminSendSystemMailFailedHandler(failure, call.request);
-    } else {
-        LOG_ERROR << "gRPC MailAdmin.SendSystemMail failed: code=" << outcome.code << " msg=" << outcome.message;
-    }
-}
-
-void QueueLocalMailAdminSendSystemMailFailure(std::shared_ptr<MailAdminSendSystemMailCall> call, uint32_t code, std::string message) {
-    QueueGrpcLocalCompletion([call = std::move(call), outcome = LocalFailure(code, std::move(message))] {
-        CompleteMailAdminSendSystemMail(*call, outcome, nullptr);
+void QueueLocalMailAdminSendSystemMailFailure(GrpcDone<::mailpb::SendMailResponse> done, uint32_t code, std::string message) {
+    QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(code, std::move(message))] {
+        done(outcome, nullptr);
     });
 }
 }
 
-// 所有 unary Send 重载的唯一发送入口。deadline <= 0 用本文件默认 deadline;done 为空走全局处理器。
-void StartMailAdminSendSystemMailCall(entt::registry& registry, entt::entity nodeEntity, const ::mailpb::SendSystemMailRequest& request,
+// 请求必须在这里同步序列化:gate 的共享原型在下次调用会被覆盖。
+// 若将来改成异步序列化,必须先恢复请求的独立副本。
+void StartMailAdminSendSystemMailCall(entt::registry& registry, entt::entity nodeEntity, const ::mailpb::SendMailRequest& request,
                                              GrpcSentMetadata metadata, std::chrono::milliseconds deadline,
-                                             GrpcDone<::mailpb::SendSystemMailResponse> done) {
-    auto call = std::make_shared<MailAdminSendSystemMailCall>();
-    call->request = request;
-    call->sentMetadata = std::move(metadata);
-    call->done = std::move(done);
-
+                                             GrpcDone<::mailpb::SendMailResponse> done) {
+    if (!done) {
+        LOG_FATAL << "gRPC MailAdmin.SendSystemMail requires a done callback";
+    }
+    muduo_grpc::UnaryCallRequest unaryRequest;
+    unaryRequest.method = std::string(kMailAdminSendSystemMailGrpcPath);
+    if (!request.SerializeToString(&unaryRequest.message)) {
+        QueueLocalMailAdminSendSystemMailFailure(std::move(done), kGrpcStatusInternal, "failed to serialize the request");
+        return;
+    }
     const auto channel = FindGrpcChannel(registry, nodeEntity);
     if (!channel) {
-        QueueLocalMailAdminSendSystemMailFailure(std::move(call), kGrpcStatusUnavailable, "node transport missing or closing");
+        QueueLocalMailAdminSendSystemMailFailure(std::move(done), kGrpcStatusUnavailable, "node transport missing or closing");
         return;
     }
-    muduo_grpc::UnaryCallRequest rpc;
-    rpc.method = std::string(kMailAdminSendSystemMailGrpcPath);
-    if (!call->request.SerializeToString(&rpc.message)) {
-        QueueLocalMailAdminSendSystemMailFailure(std::move(call), kGrpcStatusInternal, "failed to serialize the request");
-        return;
+    unaryRequest.metadata.reserve(metadata.size());
+    for (const auto& [key, value] : metadata) {
+        // Go 侧依赖这层应用编码;-bin 的线上编码另由传输层负责。
+        unaryRequest.metadata.emplace_back(key, Base64Encode(value));
     }
-    rpc.metadata.reserve(call->sentMetadata.size());
-    for (const auto& [key, value] : call->sentMetadata) {
-        // 应用层这一层 Base64 不能省:线上字节与改前一致,Go 侧按它解码、按原样回显(§4.2)。
-        rpc.metadata.emplace_back(key, Base64Encode(value));
-    }
-    rpc.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
-    channel->StartUnaryCall(std::move(rpc), [call](muduo_grpc::UnaryCallResult&& result) {
+    unaryRequest.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
+    channel->StartUnaryCall(std::move(unaryRequest), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
         GrpcCallOutcome outcome;
         outcome.code = result.status.code_value();
         outcome.message = result.status.message();
         outcome.initialMetadata = std::move(result.initialMetadata);
         outcome.trailingMetadata = std::move(result.trailingMetadata);
         if (!outcome.ok()) {
-            CompleteMailAdminSendSystemMail(*call, outcome, nullptr);
+            done(outcome, nullptr);
             return;
         }
-        ::mailpb::SendSystemMailResponse reply;
+        ::mailpb::SendMailResponse reply;
         if (!reply.ParseFromString(result.response)) {
             outcome.code = kGrpcStatusInternal;
             outcome.message = "failed to parse the MailAdmin.SendSystemMail response";
-            CompleteMailAdminSendSystemMail(*call, outcome, nullptr);
+            done(outcome, nullptr);
             return;
         }
-        CompleteMailAdminSendSystemMail(*call, outcome, &reply);
+        done(outcome, &reply);
     });
 }
 
-void SendMailAdminSendSystemMail(entt::registry& registry, entt::entity nodeEntity, const ::mailpb::SendSystemMailRequest& request,
-                                            GrpcDone<::mailpb::SendSystemMailResponse> done, const GrpcCallOptions& options) {
+void SendMailAdminSendSystemMail(entt::registry& registry, entt::entity nodeEntity, const ::mailpb::SendMailRequest& request,
+                                            GrpcDone<::mailpb::SendMailResponse> done, const GrpcCallOptions& options) {
     StartMailAdminSendSystemMailCall(registry, nodeEntity, request, options.metadata, options.deadline, std::move(done));
 }
 
-void SendMailAdminSendSystemMail(entt::registry& registry, entt::entity nodeEntity, const ::mailpb::SendSystemMailRequest& request) {
-    // 显式写出空 vector:另有 (request, GrpcDone, GrpcCallOptions) 重载,两个 {} 会有二义性。
-    SendMailAdminSendSystemMail(registry, nodeEntity, request, std::vector<std::string>{}, std::vector<std::string>{});
-}
-
-void SendMailAdminSendSystemMail(entt::registry& registry, entt::entity nodeEntity, const ::mailpb::SendSystemMailRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues) {
-    const size_t count = std::min(metaKeys.size(), metaValues.size());
-    GrpcSentMetadata metadata;
-    metadata.reserve(count);
-    for (size_t i = 0; i < count; ++i) {
-        metadata.emplace_back(metaKeys[i], metaValues[i]);
+void SendMailAdminSendSystemMailErased(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message,
+                                                  GrpcMessageDone done, const GrpcCallOptions& options) {
+    if (!done) {
+        LOG_FATAL << "gRPC MailAdmin.SendSystemMail requires a done callback";
     }
-    StartMailAdminSendSystemMailCall(registry, nodeEntity, request, std::move(metadata), std::chrono::milliseconds{0}, nullptr);
-}
-
-void SendMailAdminSendSystemMail(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues) {
-    const ::mailpb::SendSystemMailRequest& derived = static_cast<const ::mailpb::SendSystemMailRequest&>(message);
-    SendMailAdminSendSystemMail(registry, nodeEntity, derived, metaKeys, metaValues);
+    if (message.GetDescriptor() != ::mailpb::SendMailRequest::descriptor()) {
+        const auto requestTypeName = message.GetDescriptor()->full_name();
+        LOG_ERROR << "gRPC MailAdmin.SendSystemMail: request type " << std::string(requestTypeName.data(), requestTypeName.size())
+                  << " does not match; not sent";
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
+            done(outcome, nullptr);
+        });
+        return;
+    }
+    // descriptor 相同仍可能是 DynamicMessage;进入 typed 路径前必须核对真实 C++ 类型。
+    const auto* typedRequest = dynamic_cast<const ::mailpb::SendMailRequest*>(&message);
+    if (typedRequest == nullptr) {
+        LOG_ERROR << "gRPC MailAdmin.SendSystemMail: request C++ type does not match; not sent";
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
+            done(outcome, nullptr);
+        });
+        return;
+    }
+    StartMailAdminSendSystemMailCall(registry, nodeEntity, *typedRequest, options.metadata, options.deadline,
+        [done = std::move(done)](const GrpcCallOutcome& outcome, const ::mailpb::SendMailResponse* reply) { done(outcome, reply); });
 }
 #pragma endregion
-
-void SetMailAdminHandler(const std::function<void(const GrpcReplyContext&, const ::google::protobuf::Message& reply)>& handler) {
-    AsyncMailAdminSendPersonalMailHandler = handler;
-    AsyncMailAdminSendSystemMailHandler = handler;
-    (void)handler;
+#pragma region MailAdminSendGuildMail
+namespace {
+void QueueLocalMailAdminSendGuildMailFailure(GrpcDone<::mailpb::SendMailResponse> done, uint32_t code, std::string message) {
+    QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(code, std::move(message))] {
+        done(outcome, nullptr);
+    });
+}
 }
 
-void SetMailAdminIfEmptyHandler(const std::function<void(const GrpcReplyContext&, const ::google::protobuf::Message& reply)>& handler) {
-    if (!AsyncMailAdminSendPersonalMailHandler) {
-        AsyncMailAdminSendPersonalMailHandler = handler;
+// 请求必须在这里同步序列化:gate 的共享原型在下次调用会被覆盖。
+// 若将来改成异步序列化,必须先恢复请求的独立副本。
+void StartMailAdminSendGuildMailCall(entt::registry& registry, entt::entity nodeEntity, const ::mailpb::SendMailRequest& request,
+                                             GrpcSentMetadata metadata, std::chrono::milliseconds deadline,
+                                             GrpcDone<::mailpb::SendMailResponse> done) {
+    if (!done) {
+        LOG_FATAL << "gRPC MailAdmin.SendGuildMail requires a done callback";
     }
-    if (!AsyncMailAdminSendSystemMailHandler) {
-        AsyncMailAdminSendSystemMailHandler = handler;
+    muduo_grpc::UnaryCallRequest unaryRequest;
+    unaryRequest.method = std::string(kMailAdminSendGuildMailGrpcPath);
+    if (!request.SerializeToString(&unaryRequest.message)) {
+        QueueLocalMailAdminSendGuildMailFailure(std::move(done), kGrpcStatusInternal, "failed to serialize the request");
+        return;
     }
-    (void)handler;
+    const auto channel = FindGrpcChannel(registry, nodeEntity);
+    if (!channel) {
+        QueueLocalMailAdminSendGuildMailFailure(std::move(done), kGrpcStatusUnavailable, "node transport missing or closing");
+        return;
+    }
+    unaryRequest.metadata.reserve(metadata.size());
+    for (const auto& [key, value] : metadata) {
+        // Go 侧依赖这层应用编码;-bin 的线上编码另由传输层负责。
+        unaryRequest.metadata.emplace_back(key, Base64Encode(value));
+    }
+    unaryRequest.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
+    channel->StartUnaryCall(std::move(unaryRequest), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
+        GrpcCallOutcome outcome;
+        outcome.code = result.status.code_value();
+        outcome.message = result.status.message();
+        outcome.initialMetadata = std::move(result.initialMetadata);
+        outcome.trailingMetadata = std::move(result.trailingMetadata);
+        if (!outcome.ok()) {
+            done(outcome, nullptr);
+            return;
+        }
+        ::mailpb::SendMailResponse reply;
+        if (!reply.ParseFromString(result.response)) {
+            outcome.code = kGrpcStatusInternal;
+            outcome.message = "failed to parse the MailAdmin.SendGuildMail response";
+            done(outcome, nullptr);
+            return;
+        }
+        done(outcome, &reply);
+    });
 }
 
-void SetMailAdminFailedHandler(const std::function<void(const GrpcCallFailure&, const ::google::protobuf::Message& request)>& handler) {
-    AsyncMailAdminSendPersonalMailFailedHandler = handler;
-    AsyncMailAdminSendSystemMailFailedHandler = handler;
-    (void)handler;
+void SendMailAdminSendGuildMail(entt::registry& registry, entt::entity nodeEntity, const ::mailpb::SendMailRequest& request,
+                                            GrpcDone<::mailpb::SendMailResponse> done, const GrpcCallOptions& options) {
+    StartMailAdminSendGuildMailCall(registry, nodeEntity, request, options.metadata, options.deadline, std::move(done));
 }
 
-void SetMailAdminIfEmptyFailedHandler(const std::function<void(const GrpcCallFailure&, const ::google::protobuf::Message& request)>& handler) {
-    if (!AsyncMailAdminSendPersonalMailFailedHandler) {
-        AsyncMailAdminSendPersonalMailFailedHandler = handler;
+void SendMailAdminSendGuildMailErased(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message,
+                                                  GrpcMessageDone done, const GrpcCallOptions& options) {
+    if (!done) {
+        LOG_FATAL << "gRPC MailAdmin.SendGuildMail requires a done callback";
     }
-    if (!AsyncMailAdminSendSystemMailFailedHandler) {
-        AsyncMailAdminSendSystemMailFailedHandler = handler;
+    if (message.GetDescriptor() != ::mailpb::SendMailRequest::descriptor()) {
+        const auto requestTypeName = message.GetDescriptor()->full_name();
+        LOG_ERROR << "gRPC MailAdmin.SendGuildMail: request type " << std::string(requestTypeName.data(), requestTypeName.size())
+                  << " does not match; not sent";
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
+            done(outcome, nullptr);
+        });
+        return;
     }
-    (void)handler;
+    // descriptor 相同仍可能是 DynamicMessage;进入 typed 路径前必须核对真实 C++ 类型。
+    const auto* typedRequest = dynamic_cast<const ::mailpb::SendMailRequest*>(&message);
+    if (typedRequest == nullptr) {
+        LOG_ERROR << "gRPC MailAdmin.SendGuildMail: request C++ type does not match; not sent";
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
+            done(outcome, nullptr);
+        });
+        return;
+    }
+    StartMailAdminSendGuildMailCall(registry, nodeEntity, *typedRequest, options.metadata, options.deadline,
+        [done = std::move(done)](const GrpcCallOutcome& outcome, const ::mailpb::SendMailResponse* reply) { done(outcome, reply); });
 }
+#pragma endregion
+#pragma region MailAdminImportMailRecipients
+namespace {
+void QueueLocalMailAdminImportMailRecipientsFailure(GrpcDone<::mailpb::ImportMailRecipientsResponse> done, uint32_t code, std::string message) {
+    QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(code, std::move(message))] {
+        done(outcome, nullptr);
+    });
+}
+}
+
+// 请求必须在这里同步序列化:gate 的共享原型在下次调用会被覆盖。
+// 若将来改成异步序列化,必须先恢复请求的独立副本。
+void StartMailAdminImportMailRecipientsCall(entt::registry& registry, entt::entity nodeEntity, const ::mailpb::ImportMailRecipientsRequest& request,
+                                             GrpcSentMetadata metadata, std::chrono::milliseconds deadline,
+                                             GrpcDone<::mailpb::ImportMailRecipientsResponse> done) {
+    if (!done) {
+        LOG_FATAL << "gRPC MailAdmin.ImportMailRecipients requires a done callback";
+    }
+    muduo_grpc::UnaryCallRequest unaryRequest;
+    unaryRequest.method = std::string(kMailAdminImportMailRecipientsGrpcPath);
+    if (!request.SerializeToString(&unaryRequest.message)) {
+        QueueLocalMailAdminImportMailRecipientsFailure(std::move(done), kGrpcStatusInternal, "failed to serialize the request");
+        return;
+    }
+    const auto channel = FindGrpcChannel(registry, nodeEntity);
+    if (!channel) {
+        QueueLocalMailAdminImportMailRecipientsFailure(std::move(done), kGrpcStatusUnavailable, "node transport missing or closing");
+        return;
+    }
+    unaryRequest.metadata.reserve(metadata.size());
+    for (const auto& [key, value] : metadata) {
+        // Go 侧依赖这层应用编码;-bin 的线上编码另由传输层负责。
+        unaryRequest.metadata.emplace_back(key, Base64Encode(value));
+    }
+    unaryRequest.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
+    channel->StartUnaryCall(std::move(unaryRequest), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
+        GrpcCallOutcome outcome;
+        outcome.code = result.status.code_value();
+        outcome.message = result.status.message();
+        outcome.initialMetadata = std::move(result.initialMetadata);
+        outcome.trailingMetadata = std::move(result.trailingMetadata);
+        if (!outcome.ok()) {
+            done(outcome, nullptr);
+            return;
+        }
+        ::mailpb::ImportMailRecipientsResponse reply;
+        if (!reply.ParseFromString(result.response)) {
+            outcome.code = kGrpcStatusInternal;
+            outcome.message = "failed to parse the MailAdmin.ImportMailRecipients response";
+            done(outcome, nullptr);
+            return;
+        }
+        done(outcome, &reply);
+    });
+}
+
+void SendMailAdminImportMailRecipients(entt::registry& registry, entt::entity nodeEntity, const ::mailpb::ImportMailRecipientsRequest& request,
+                                            GrpcDone<::mailpb::ImportMailRecipientsResponse> done, const GrpcCallOptions& options) {
+    StartMailAdminImportMailRecipientsCall(registry, nodeEntity, request, options.metadata, options.deadline, std::move(done));
+}
+
+void SendMailAdminImportMailRecipientsErased(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message,
+                                                  GrpcMessageDone done, const GrpcCallOptions& options) {
+    if (!done) {
+        LOG_FATAL << "gRPC MailAdmin.ImportMailRecipients requires a done callback";
+    }
+    if (message.GetDescriptor() != ::mailpb::ImportMailRecipientsRequest::descriptor()) {
+        const auto requestTypeName = message.GetDescriptor()->full_name();
+        LOG_ERROR << "gRPC MailAdmin.ImportMailRecipients: request type " << std::string(requestTypeName.data(), requestTypeName.size())
+                  << " does not match; not sent";
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
+            done(outcome, nullptr);
+        });
+        return;
+    }
+    // descriptor 相同仍可能是 DynamicMessage;进入 typed 路径前必须核对真实 C++ 类型。
+    const auto* typedRequest = dynamic_cast<const ::mailpb::ImportMailRecipientsRequest*>(&message);
+    if (typedRequest == nullptr) {
+        LOG_ERROR << "gRPC MailAdmin.ImportMailRecipients: request C++ type does not match; not sent";
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
+            done(outcome, nullptr);
+        });
+        return;
+    }
+    StartMailAdminImportMailRecipientsCall(registry, nodeEntity, *typedRequest, options.metadata, options.deadline,
+        [done = std::move(done)](const GrpcCallOutcome& outcome, const ::mailpb::ImportMailRecipientsResponse* reply) { done(outcome, reply); });
+}
+#pragma endregion
+#pragma region MailAdminSealMailCampaign
+namespace {
+void QueueLocalMailAdminSealMailCampaignFailure(GrpcDone<::mailpb::SendMailResponse> done, uint32_t code, std::string message) {
+    QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(code, std::move(message))] {
+        done(outcome, nullptr);
+    });
+}
+}
+
+// 请求必须在这里同步序列化:gate 的共享原型在下次调用会被覆盖。
+// 若将来改成异步序列化,必须先恢复请求的独立副本。
+void StartMailAdminSealMailCampaignCall(entt::registry& registry, entt::entity nodeEntity, const ::mailpb::SealMailCampaignRequest& request,
+                                             GrpcSentMetadata metadata, std::chrono::milliseconds deadline,
+                                             GrpcDone<::mailpb::SendMailResponse> done) {
+    if (!done) {
+        LOG_FATAL << "gRPC MailAdmin.SealMailCampaign requires a done callback";
+    }
+    muduo_grpc::UnaryCallRequest unaryRequest;
+    unaryRequest.method = std::string(kMailAdminSealMailCampaignGrpcPath);
+    if (!request.SerializeToString(&unaryRequest.message)) {
+        QueueLocalMailAdminSealMailCampaignFailure(std::move(done), kGrpcStatusInternal, "failed to serialize the request");
+        return;
+    }
+    const auto channel = FindGrpcChannel(registry, nodeEntity);
+    if (!channel) {
+        QueueLocalMailAdminSealMailCampaignFailure(std::move(done), kGrpcStatusUnavailable, "node transport missing or closing");
+        return;
+    }
+    unaryRequest.metadata.reserve(metadata.size());
+    for (const auto& [key, value] : metadata) {
+        // Go 侧依赖这层应用编码;-bin 的线上编码另由传输层负责。
+        unaryRequest.metadata.emplace_back(key, Base64Encode(value));
+    }
+    unaryRequest.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
+    channel->StartUnaryCall(std::move(unaryRequest), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
+        GrpcCallOutcome outcome;
+        outcome.code = result.status.code_value();
+        outcome.message = result.status.message();
+        outcome.initialMetadata = std::move(result.initialMetadata);
+        outcome.trailingMetadata = std::move(result.trailingMetadata);
+        if (!outcome.ok()) {
+            done(outcome, nullptr);
+            return;
+        }
+        ::mailpb::SendMailResponse reply;
+        if (!reply.ParseFromString(result.response)) {
+            outcome.code = kGrpcStatusInternal;
+            outcome.message = "failed to parse the MailAdmin.SealMailCampaign response";
+            done(outcome, nullptr);
+            return;
+        }
+        done(outcome, &reply);
+    });
+}
+
+void SendMailAdminSealMailCampaign(entt::registry& registry, entt::entity nodeEntity, const ::mailpb::SealMailCampaignRequest& request,
+                                            GrpcDone<::mailpb::SendMailResponse> done, const GrpcCallOptions& options) {
+    StartMailAdminSealMailCampaignCall(registry, nodeEntity, request, options.metadata, options.deadline, std::move(done));
+}
+
+void SendMailAdminSealMailCampaignErased(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message,
+                                                  GrpcMessageDone done, const GrpcCallOptions& options) {
+    if (!done) {
+        LOG_FATAL << "gRPC MailAdmin.SealMailCampaign requires a done callback";
+    }
+    if (message.GetDescriptor() != ::mailpb::SealMailCampaignRequest::descriptor()) {
+        const auto requestTypeName = message.GetDescriptor()->full_name();
+        LOG_ERROR << "gRPC MailAdmin.SealMailCampaign: request type " << std::string(requestTypeName.data(), requestTypeName.size())
+                  << " does not match; not sent";
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
+            done(outcome, nullptr);
+        });
+        return;
+    }
+    // descriptor 相同仍可能是 DynamicMessage;进入 typed 路径前必须核对真实 C++ 类型。
+    const auto* typedRequest = dynamic_cast<const ::mailpb::SealMailCampaignRequest*>(&message);
+    if (typedRequest == nullptr) {
+        LOG_ERROR << "gRPC MailAdmin.SealMailCampaign: request C++ type does not match; not sent";
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
+            done(outcome, nullptr);
+        });
+        return;
+    }
+    StartMailAdminSealMailCampaignCall(registry, nodeEntity, *typedRequest, options.metadata, options.deadline,
+        [done = std::move(done)](const GrpcCallOutcome& outcome, const ::mailpb::SendMailResponse* reply) { done(outcome, reply); });
+}
+#pragma endregion
 
 void SetMailAdminCallDeadline(std::chrono::milliseconds deadline) {
     callDeadlineMs.store(static_cast<uint32_t>(deadline.count()), std::memory_order_relaxed);

@@ -285,6 +285,8 @@
   - go/proto/common/component 含 PlayerProfileComp;
   - cpp/generated/proto/common/component/player_comp.pb.h 含 PlayerProfileComp;
   - cpp 的 scene_node_service.cpp 仍含 AcquireCreatePermitBlocking(G-08);
+    (2026-10-16 更正:今后改为 AcquireAllocationPermitAsync 命中、AcquireAllocationPermitBlocking 不得命中 ——
+    grpc-muduo-transport 第 4 批起 Agones 块在守护段 grpc.CreateScene.guard 里、走异步许可,见该文 §15.14 第 3 步;本节其余是历史执行记录。)
   - 再跑一次步骤 0 的 git status 存为 status-after-gen.txt,与 before 对比,他人未提交产物不得变化,diff 只允许本批和 B3a-1 的新增。
 - 失败保留:build.ps1 输出和两份 status。
 
@@ -684,6 +686,7 @@ trade 已有 enum 列进索引的先例;**enum 进复合主键(`guild_daily_coun
      git grep -n DONATE_REFUND -- proto go/proto 为 0 行(D2);
      记录 kMaxRpcMethodCount,应 = message_id.txt 最大 id + 1(G-06:生成器报容量错就停,不手改上限);
      Select-String cpp/nodes/scene/handler/grpc/scene_node_service.cpp -Pattern AcquireCreatePermitBlocking 必须命中(G-08)。
+     (2026-10-16 更正:今后 -Pattern 改为 AcquireAllocationPermitAsync,同 §8.3 B3a-2 步骤 2 的更正。)
 
 5. 限流行(proto-gen 之后):
      python tools/scripts/guild_b5a_xlsx_patch.py message-limiter --dry-run

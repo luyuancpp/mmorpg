@@ -31,11 +31,8 @@ message NodeInfo {
   // 可用 = ip 非空且 port 在 1..65535；半填（只有 ip 或只有 port）视为缺失。
   // 字段号 11 上线后不复用；废弃时写 `reserved 11;`（AGENTS.md §4.3）。
   EndpointComp client_endpoint = 11;
-}
-
-message NodeInfoListComp
-{
-  repeated NodeInfo node_list = 1;
+  // 真实机房身份，由部署注入。0 = 未声明，不能用于跨地域匹配。
+  uint32 physical_region = 12;
 }
 
 message NetworkAddress

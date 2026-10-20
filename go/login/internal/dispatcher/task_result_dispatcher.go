@@ -7,17 +7,20 @@ package dispatcher
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"sync"
 	"time"
 
 	db_proto "proto/db"
 
+	"github.com/google/uuid"
 	"github.com/redis/go-redis/v9"
 	"github.com/zeromicro/go-zero/core/logx"
 	"google.golang.org/protobuf/proto"
 
 	"shared/safego"
+	"shared/taskresult"
 )
 
 // safego 点位名。它们会直接变成 Prometheus label,必须是常量
@@ -27,9 +30,6 @@ const (
 	pointWorker     = "login.task_result_worker"
 	pointCallback   = "login.task_result_callback"
 )
-
-// TaskResultNotifyChannel must match the channel published by the DB consumer.
-const TaskResultNotifyChannel = "task:result:notify"
 
 // ResultCallback receives the decoded TaskResult, or an error if the result
 // could not be fetched (timeout, decode failure, etc.).
@@ -46,6 +46,11 @@ type pendingEntry struct {
 type TaskResultDispatcher struct {
 	rc         redis.UniversalClient
 	defaultTTL time.Duration
+
+	// replyInstance 是本进程的读回执回复目标(DBTask.reply_instance),instanceChannel 是它
+	// 对应的实例频道。构造时定死、此后只读,无需加锁。
+	replyInstance   string
+	instanceChannel string
 
 	mu      sync.Mutex
 	pending map[string]pendingEntry
@@ -88,23 +93,50 @@ const dispatchJobsBuffer = 4096
 // NewTaskResultDispatcher constructs the dispatcher. defaultTTL bounds how long
 // a registration may sit unfulfilled before its callback is fired with a
 // timeout error — protects against DB drops / pub/sub loss / etc.
+//
+// 回复目标按「进程」每次启动取一个新 UUID:回调表只活在本进程内存里,进程换了旧回调也就
+// 没了,新进程接住旧进程的通知毫无用处。不用主机名 / Pod 名:容器原地重启后它们不变,
+// 会让新进程收到旧进程任务的通知。签名保持不变,装配处(svc.ServiceContext)无需改动。
 func NewTaskResultDispatcher(rc redis.UniversalClient, defaultTTL time.Duration) *TaskResultDispatcher {
+	return newTaskResultDispatcher(rc, defaultTTL, uuid.NewString())
+}
+
+// newTaskResultDispatcher 由调用方指定回复目标。replyInstance 不合法属于编程错误,直接 panic
+// 让进程启动即失败,而不是带着一个 go/db 会回落到全服广播的目标默默运行。
+func newTaskResultDispatcher(rc redis.UniversalClient, defaultTTL time.Duration, replyInstance string) *TaskResultDispatcher {
+	instanceChannel, ok := taskresult.InstanceNotifyChannel(replyInstance)
+	if !ok {
+		panic(fmt.Sprintf("dispatcher: invalid task result reply instance %q", replyInstance))
+	}
 	if defaultTTL <= 0 {
 		defaultTTL = 30 * time.Second
 	}
+	registerDeliveryMetrics()
 	return &TaskResultDispatcher{
-		rc:           rc,
-		defaultTTL:   defaultTTL,
-		pending:      make(map[string]pendingEntry),
-		stopCh:       make(chan struct{}),
-		doneCh:       make(chan struct{}),
-		dispatchJobs: make(chan dispatchJob, dispatchJobsBuffer),
+		rc:              rc,
+		defaultTTL:      defaultTTL,
+		replyInstance:   replyInstance,
+		instanceChannel: instanceChannel,
+		pending:         make(map[string]pendingEntry),
+		stopCh:          make(chan struct{}),
+		doneCh:          make(chan struct{}),
+		dispatchJobs:    make(chan dispatchJob, dispatchJobsBuffer),
 	}
+}
+
+// ReplyInstance 返回本进程的读回执回复目标。发读任务时必须把它写进 DBTask.reply_instance,
+// 而且必须取自登记了这批回调的同一个 dispatcher:取错了,通知会投到别的进程或无人订阅的
+// 频道,等待方只能等满 TTL 靠兜底 LPOP 取回。
+func (d *TaskResultDispatcher) ReplyInstance() string {
+	return d.replyInstance
 }
 
 // Start launches the subscriber goroutine, the periodic GC sweep, and the
 // bounded dispatch worker pool.
 func (d *TaskResultDispatcher) Start() {
+	// 运维据此把实例频道对到 Pod(PUBSUB CHANNELS task:result:notify:*)。
+	logx.Infof("TaskResultDispatcher starting: reply_instance=%s channels=[%s %s]",
+		d.replyInstance, taskresult.LegacyNotifyChannel, d.instanceChannel)
 	for i := 0; i < dispatchWorkerCount; i++ {
 		d.workersWg.Add(1)
 		safego.Go(pointWorker, d.dispatchWorker)
@@ -141,7 +173,8 @@ drained:
 }
 
 // Register associates `cb` with `taskID`. The callback is invoked exactly once
-// when a notification arrives, when the registration TTL elapses, or on Stop.
+// when a notification arrives, when the registration TTL elapses, or on Stop
+// — unless the registration is withdrawn first with Cancel.
 // `ttl<=0` uses the dispatcher default.
 func (d *TaskResultDispatcher) Register(taskID string, ttl time.Duration, cb ResultCallback) {
 	if ttl <= 0 {
@@ -155,6 +188,22 @@ func (d *TaskResultDispatcher) Register(taskID string, ttl time.Duration, cb Res
 	}
 	d.pending[taskID] = pendingEntry{cb: cb, expiresAt: time.Now().Add(ttl)}
 	d.mu.Unlock()
+}
+
+// Cancel 撤销登记:删掉这些 taskID 的回调,不回调、不计数。只给「登记后任务没能发出去、调用方
+// 已自行以错误收尾」的路径用。留着这种登记只会在 TTL 到期时多做一次无用的 LPOP,并把发送失败
+// 计成 timed_out,混进「通知丢了且结果也没取到」的口径,让值班把 Kafka 故障误判成 Pub/Sub 或
+// go/db 的送达问题。
+//
+// 约束:已被 dispatch / sweep 取走的回调不受影响,照常执行一次;不存在的 taskID 忽略;Stop 之后
+// pending 为 nil,delete 是空操作。被撤销的任务若实际已发出,结果只在 Redis 里按 TTL 过期;
+// 它的通知到达时已不在回调表,实例频道上会计 late_notify。
+func (d *TaskResultDispatcher) Cancel(taskIDs ...string) {
+	d.mu.Lock()
+	defer d.mu.Unlock()
+	for _, id := range taskIDs {
+		delete(d.pending, id)
+	}
 }
 
 // take atomically removes and returns the callback for taskID (or nil if none).
@@ -172,7 +221,7 @@ func (d *TaskResultDispatcher) take(taskID string) ResultCallback {
 	return e.cb
 }
 
-// run subscribes to the notify channel and dispatches incoming taskIDs. A
+// run subscribes to the notify channels (legacy + per-instance) and dispatches incoming taskIDs. A
 // secondary ticker sweeps expired registrations.
 func (d *TaskResultDispatcher) run() {
 	defer close(d.doneCh)
@@ -224,10 +273,15 @@ func (d *TaskResultDispatcher) run() {
 }
 
 func (d *TaskResultDispatcher) subscribeLoop(ctx context.Context, gc *time.Ticker) error {
-	psub := d.rc.Subscribe(ctx, TaskResultNotifyChannel)
+	// 一条 SUBSCRIBE 同时订旧频道与本实例频道,共用这一条 Pub/Sub 连接(Redis 连接总账里
+	// login 的 PubSub 仍是 1);go-redis 断线重连时按记下的频道集合整体重订。旧频道永久保留:
+	// 混跑期旧版 go/db 只发它,go/db 回滚后也只发它,发布方对缺目标的任务也回落到它。
+	psub := d.rc.Subscribe(ctx, taskresult.LegacyNotifyChannel, d.instanceChannel)
 	defer psub.Close()
 
 	// Confirm subscription is live before processing.
+	// 只等第一条确认:Redis 把整条 SUBSCRIBE 执行完(两个频道都已登记)才把确认写回连接;
+	// 第二条确认随后由 psub.Channel() 的读循环当作 *redis.Subscription 忽略。
 	if _, err := psub.Receive(ctx); err != nil {
 		return fmt.Errorf("subscribe receive: %w", err)
 	}
@@ -259,7 +313,7 @@ func (d *TaskResultDispatcher) subscribeLoop(ctx context.Context, gc *time.Ticke
 			if !ok {
 				return fmt.Errorf("pubsub channel closed")
 			}
-			d.dispatch(ctx, msg.Payload)
+			d.dispatch(ctx, msg.Channel, msg.Payload)
 		}
 	}
 }
@@ -277,12 +331,25 @@ func (d *TaskResultDispatcher) subscribeLoop(ctx context.Context, gc *time.Ticke
 // Unmarshal + user callback are all moved to a per-message goroutine so the
 // subscriber loop dequeues msgCh at full speed. Callback fan-out remains
 // goroutine-per-message — same as before, just hoisted earlier.
-func (d *TaskResultDispatcher) dispatch(ctx context.Context, taskID string) {
+//
+// channel 是通知到达的频道,只用于区分计数,两条频道上本进程的任务处理方式完全相同。
+func (d *TaskResultDispatcher) dispatch(ctx context.Context, channel, taskID string) {
+	fromInstance := channel == d.instanceChannel
 	cb := d.take(taskID)
 	if cb == nil {
-		// Either belongs to a different process (pub/sub broadcasts to all
-		// subscribers) or already expired — both safe to ignore.
+		// 旧频道是全服广播:混跑期(旧版 go/db、未填回复目标的生产者)别的 login 的任务也送到
+		// 这里,查不到是常态,不计数。实例频道只投本进程发起的任务,查不到说明通知迟到(任务已被
+		// 兜底计过 salvaged / timed_out)、重复(go/db 重投重执行后再发一次,任务早已送达)或登记
+		// 已被 Cancel,都可安全忽略,但值得计数;口径见 metrics.go。
+		if fromInstance {
+			countDelivery(deliveryLateNotify)
+		}
 		return
+	}
+	if fromInstance {
+		countDelivery(deliveryInstanceNotify)
+	} else {
+		countDelivery(deliveryLegacyNotify)
 	}
 
 	job := dispatchJob{taskID: taskID, cb: cb}
@@ -324,6 +391,11 @@ func (d *TaskResultDispatcher) runDispatchJob(ctx context.Context, job dispatchJ
 	resultKey := fmt.Sprintf("task:result:%s", job.taskID)
 	bytesVal, err := d.rc.LPop(ctx, resultKey).Bytes()
 	if err != nil {
+		// 有通知却没有结果:go/db 总是先 LPUSH 再 PUBLISH,正常不会发生。单独计数是为了暴露
+		// 结果 LIST 与通知频道不在同一个 Redis 实例这类配置错误;Redis 故障不算在内。
+		if errors.Is(err, redis.Nil) {
+			countDelivery(deliveryResultMissing)
+		}
 		job.cb(nil, fmt.Errorf("lpop %s: %w", resultKey, err))
 		return
 	}
@@ -373,10 +445,12 @@ func (d *TaskResultDispatcher) sweepExpired(ctx context.Context) {
 				res := &db_proto.TaskResult{}
 				if uerr := proto.Unmarshal(bytesVal, res); uerr == nil {
 					logx.Infof("TaskResultDispatcher salvaged taskID=%s after notify drop", it.taskID)
+					countDelivery(deliverySalvaged)
 					it.cb(res, nil)
 					return
 				}
 			}
+			countDelivery(deliveryTimedOut)
 			it.cb(nil, fmt.Errorf("task result wait timed out"))
 		})
 	}

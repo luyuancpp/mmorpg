@@ -796,14 +796,10 @@ const file_proto_scene_scene_proto_rawDesc = "" +
 	"\x11table_fingerprint\x18\x03 \x01(\tR\x10tableFingerprint\"V\n" +
 	"\x1aCancelBattlePrepareRequest\x12\x1b\n" +
 	"\tplayer_id\x18\x01 \x01(\x04R\bplayerId\x12\x1b\n" +
-	"\tbattle_id\x18\x02 \x01(\x04R\bbattleId2\xbf\x06\n" +
+	"\tbattle_id\x18\x02 \x01(\x04R\bbattleId2\x8c\x04\n" +
 	"\x05Scene\x12:\n" +
-	"\x13PlayerEnterGameNode\x12\x1b.PlayerEnterGameNodeRequest\x1a\x06.Empty\x12J\n" +
-	"\x13SendMessageToPlayer\x12\x18.NodeRouteMessageRequest\x1a\x19.NodeRouteMessageResponse\x12e\n" +
-	"\x1aProcessClientPlayerMessage\x12\".ProcessClientPlayerMessageRequest\x1a#.ProcessClientPlayerMessageResponse\x12J\n" +
-	"\x13InvokePlayerService\x12\x18.NodeRouteMessageRequest\x1a\x19.NodeRouteMessageResponse\x12A\n" +
-	"\x12RouteNodeStringMsg\x12\x14.RouteMessageRequest\x1a\x15.RouteMessageResponse\x12V\n" +
-	"\x14RoutePlayerStringMsg\x12\x1a.RoutePlayerMessageRequest\x1a\x1b.RoutePlayerMessageResponse\"\x05\x80\x99\xc8\x01\x01\x12<\n" +
+	"\x13PlayerEnterGameNode\x12\x1b.PlayerEnterGameNodeRequest\x1a\x06.Empty\x12e\n" +
+	"\x1aProcessClientPlayerMessage\x12\".ProcessClientPlayerMessageRequest\x1a#.ProcessClientPlayerMessageResponse\x12<\n" +
 	"\x13UpdateSessionDetail\x12\x1d.RegisterPlayerSessionRequest\x1a\x06.Empty\x128\n" +
 	"\vCreateScene\x12\x13.CreateSceneRequest\x1a\x14.CreateSceneResponse\x12,\n" +
 	"\fDestroyScene\x12\x14.DestroySceneRequest\x1a\x06.Empty\x12>\n" +
@@ -842,15 +838,9 @@ var file_proto_scene_scene_proto_goTypes = []any{
 	(*SceneInfoComp)(nil),                      // 14: SceneInfoComp
 	(*base.TipInfoMessage)(nil),                // 15: TipInfoMessage
 	(*battle.BattlePlayerSnapshot)(nil),        // 16: BattlePlayerSnapshot
-	(*base.NodeRouteMessageRequest)(nil),       // 17: NodeRouteMessageRequest
-	(*base.RouteMessageRequest)(nil),           // 18: RouteMessageRequest
-	(*base.RoutePlayerMessageRequest)(nil),     // 19: RoutePlayerMessageRequest
-	(*base.NodeHandshakeRequest)(nil),          // 20: NodeHandshakeRequest
-	(*base.Empty)(nil),                         // 21: Empty
-	(*base.NodeRouteMessageResponse)(nil),      // 22: NodeRouteMessageResponse
-	(*base.RouteMessageResponse)(nil),          // 23: RouteMessageResponse
-	(*base.RoutePlayerMessageResponse)(nil),    // 24: RoutePlayerMessageResponse
-	(*base.NodeHandshakeResponse)(nil),         // 25: NodeHandshakeResponse
+	(*base.NodeHandshakeRequest)(nil),          // 17: NodeHandshakeRequest
+	(*base.Empty)(nil),                         // 18: Empty
+	(*base.NodeHandshakeResponse)(nil),         // 19: NodeHandshakeResponse
 }
 var file_proto_scene_scene_proto_depIdxs = []int32{
 	12, // 0: ProcessClientPlayerMessageRequest.message_content:type_name -> MessageContent
@@ -860,31 +850,23 @@ var file_proto_scene_scene_proto_depIdxs = []int32{
 	15, // 4: PrepareBattleResponse.error_message:type_name -> TipInfoMessage
 	16, // 5: PrepareBattleResponse.snapshot:type_name -> BattlePlayerSnapshot
 	0,  // 6: Scene.PlayerEnterGameNode:input_type -> PlayerEnterGameNodeRequest
-	17, // 7: Scene.SendMessageToPlayer:input_type -> NodeRouteMessageRequest
-	1,  // 8: Scene.ProcessClientPlayerMessage:input_type -> ProcessClientPlayerMessageRequest
-	17, // 9: Scene.InvokePlayerService:input_type -> NodeRouteMessageRequest
-	18, // 10: Scene.RouteNodeStringMsg:input_type -> RouteMessageRequest
-	19, // 11: Scene.RoutePlayerStringMsg:input_type -> RoutePlayerMessageRequest
-	5,  // 12: Scene.UpdateSessionDetail:input_type -> RegisterPlayerSessionRequest
-	6,  // 13: Scene.CreateScene:input_type -> CreateSceneRequest
-	8,  // 14: Scene.DestroyScene:input_type -> DestroySceneRequest
-	9,  // 15: Scene.PrepareBattle:input_type -> PrepareBattleRequest
-	11, // 16: Scene.CancelBattlePrepare:input_type -> CancelBattlePrepareRequest
-	20, // 17: Scene.NodeHandshake:input_type -> NodeHandshakeRequest
-	21, // 18: Scene.PlayerEnterGameNode:output_type -> Empty
-	22, // 19: Scene.SendMessageToPlayer:output_type -> NodeRouteMessageResponse
-	2,  // 20: Scene.ProcessClientPlayerMessage:output_type -> ProcessClientPlayerMessageResponse
-	22, // 21: Scene.InvokePlayerService:output_type -> NodeRouteMessageResponse
-	23, // 22: Scene.RouteNodeStringMsg:output_type -> RouteMessageResponse
-	24, // 23: Scene.RoutePlayerStringMsg:output_type -> RoutePlayerMessageResponse
-	21, // 24: Scene.UpdateSessionDetail:output_type -> Empty
-	7,  // 25: Scene.CreateScene:output_type -> CreateSceneResponse
-	21, // 26: Scene.DestroyScene:output_type -> Empty
-	10, // 27: Scene.PrepareBattle:output_type -> PrepareBattleResponse
-	21, // 28: Scene.CancelBattlePrepare:output_type -> Empty
-	25, // 29: Scene.NodeHandshake:output_type -> NodeHandshakeResponse
-	18, // [18:30] is the sub-list for method output_type
-	6,  // [6:18] is the sub-list for method input_type
+	1,  // 7: Scene.ProcessClientPlayerMessage:input_type -> ProcessClientPlayerMessageRequest
+	5,  // 8: Scene.UpdateSessionDetail:input_type -> RegisterPlayerSessionRequest
+	6,  // 9: Scene.CreateScene:input_type -> CreateSceneRequest
+	8,  // 10: Scene.DestroyScene:input_type -> DestroySceneRequest
+	9,  // 11: Scene.PrepareBattle:input_type -> PrepareBattleRequest
+	11, // 12: Scene.CancelBattlePrepare:input_type -> CancelBattlePrepareRequest
+	17, // 13: Scene.NodeHandshake:input_type -> NodeHandshakeRequest
+	18, // 14: Scene.PlayerEnterGameNode:output_type -> Empty
+	2,  // 15: Scene.ProcessClientPlayerMessage:output_type -> ProcessClientPlayerMessageResponse
+	18, // 16: Scene.UpdateSessionDetail:output_type -> Empty
+	7,  // 17: Scene.CreateScene:output_type -> CreateSceneResponse
+	18, // 18: Scene.DestroyScene:output_type -> Empty
+	10, // 19: Scene.PrepareBattle:output_type -> PrepareBattleResponse
+	18, // 20: Scene.CancelBattlePrepare:output_type -> Empty
+	19, // 21: Scene.NodeHandshake:output_type -> NodeHandshakeResponse
+	14, // [14:22] is the sub-list for method output_type
+	6,  // [6:14] is the sub-list for method input_type
 	6,  // [6:6] is the sub-list for extension type_name
 	6,  // [6:6] is the sub-list for extension extendee
 	0,  // [0:6] is the sub-list for field type_name

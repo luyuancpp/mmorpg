@@ -42,7 +42,7 @@ t1  Redis 返回结果
     -> SessionMap.find(session_A) -> 找到             // 会话仍然有效
     -> InitPlayerFromAllData(data, enterInfo_A)
       -> EnterScene -> HandleEnterScene
-        -> 将玩家绑定到场景，加入 ScenePlayers 和 AOI 网格
+        -> 给玩家挂 SceneEntityComp 绑定到场景，并加入 AOI 网格
         -> SendMessageToClientViaGate(EnterSceneS2C)  // 客户端收到响应
 ```
 
@@ -177,3 +177,7 @@ t1  迟到的 ExitGame(session_A) 到达
    - `ProcessClientPlayerMessage`：经 Kafka 路由的客户端消息。
    - `SendMessageToPlayer`：经 gRPC 路由的 Gate 转发消息。
    - `InvokePlayerService`：gRPC 玩家服务调用。
+
+> 2026-10-16 补（RpcChannel 批 7）：`SendMessageToPlayer`（Scene 1）与 `InvokePlayerService`（Scene 40）已退役并从 proto 删除
+> （号留墓碑，见 `docs/design/muduo-rpc-channel.md` §20.3），不再派发任何消息，也就不存在旧会话消息经它们误投的问题；
+> 现存的消息分发路径只剩 `ProcessClientPlayerMessage`。上面「修改文件」表与第 2 层防护里涉及这两个入口的描述只作留痕。

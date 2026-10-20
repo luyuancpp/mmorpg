@@ -87,18 +87,32 @@ void Channel::handleEventWithGuard(Timestamp receiveTime)
 {
   eventHandling_ = true;
   LOG_TRACE << reventsToString();
+  bool hangupAsError = false;
   if ((revents_ & POLLHUP) && !(revents_ & POLLIN))
   {
     if (logHup_)
     {
       LOG_WARN << "fd = " << fd_ << " Channel::handle_event() POLLHUP";
     }
-    if (closeCallback_) closeCallback_();
 #ifdef WIN32
-    eventHandling_ = false;
-    return;
+    // LOCAL DELTA:Windows 上挂断后只交给 closeCallback 并直接返回,是为了不在已关闭的
+    // TcpConnection 上再跑 error / write 回调。这只对设了 closeCallback 的 channel 成立。
+    // Connector 的 channel 只设了 write / error 回调:WSAPoll 对被拒的非阻塞 connect
+    // 报 POLLHUP(通常连同 POLLERR),直接返回会让 Connector 永远等不到 handleError、
+    // 停在 kConnecting,水平触发的 WSAPoll 还会每轮立即返回而空转。
+    // 所以没设 closeCallback、设了 errorCallback 的 channel(本仓只有 Connector)不提前返回,
+    // 挂断按错误投递(没带 POLLERR 也投递,只投一次),由 handleError 读 SO_ERROR 走 retry;
+    // 其余 channel(TcpConnection、Acceptor、定时器 / 唤醒、hiredis)行为不变。
+    if (closeCallback_ || !errorCallback_)
+    {
+      if (closeCallback_) closeCallback_();
+      eventHandling_ = false;
+      return;
+    }
+    hangupAsError = true;
+#else
+    if (closeCallback_) closeCallback_();
 #endif // WIN32
-
   }
 
   if (revents_ & POLLNVAL)
@@ -106,7 +120,7 @@ void Channel::handleEventWithGuard(Timestamp receiveTime)
     LOG_WARN << "fd = " << fd_ << " Channel::handle_event() POLLNVAL";
   }
 
-  if (revents_ & (POLLERR | POLLNVAL))
+  if ((revents_ & (POLLERR | POLLNVAL)) || hangupAsError)
   {
     if (errorCallback_) errorCallback_();
   }

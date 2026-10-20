@@ -29,13 +29,13 @@ namespace _fl = ::google::protobuf::internal::field_layout;
 namespace {
 PROTOBUF_CONSTINIT ::google::protobuf::internal::ReflectionData
     file_reflection_data[] = {
-        // ::mailpb::MailAttachments
-        {&::_pbi::kDescriptorMethods, &::descriptor_table_proto_2fmail_2fmail_2eproto, /* tracker*/ nullptr,},
         // ::mailpb::MailCurrency
         {&::_pbi::kDescriptorMethods, &::descriptor_table_proto_2fmail_2fmail_2eproto, /* tracker*/ nullptr,},
         // ::mailpb::MailItem
         {&::_pbi::kDescriptorMethods, &::descriptor_table_proto_2fmail_2fmail_2eproto, /* tracker*/ nullptr,},
-        // ::mailpb::MailSummary
+        // ::mailpb::MailAttachments
+        {&::_pbi::kDescriptorMethods, &::descriptor_table_proto_2fmail_2fmail_2eproto, /* tracker*/ nullptr,},
+        // ::mailpb::MailView
         {&::_pbi::kDescriptorMethods, &::descriptor_table_proto_2fmail_2fmail_2eproto, /* tracker*/ nullptr,},
         // ::mailpb::ListMailsRequest
         {&::_pbi::kDescriptorMethods, &::descriptor_table_proto_2fmail_2fmail_2eproto, /* tracker*/ nullptr,},
@@ -45,19 +45,21 @@ PROTOBUF_CONSTINIT ::google::protobuf::internal::ReflectionData
         {&::_pbi::kDescriptorMethods, &::descriptor_table_proto_2fmail_2fmail_2eproto, /* tracker*/ nullptr,},
         // ::mailpb::ReadMailResponse
         {&::_pbi::kDescriptorMethods, &::descriptor_table_proto_2fmail_2fmail_2eproto, /* tracker*/ nullptr,},
+        // ::mailpb::ClaimMailAttachmentsRequest
+        {&::_pbi::kDescriptorMethods, &::descriptor_table_proto_2fmail_2fmail_2eproto, /* tracker*/ nullptr,},
+        // ::mailpb::MailActionResult
+        {&::_pbi::kDescriptorMethods, &::descriptor_table_proto_2fmail_2fmail_2eproto, /* tracker*/ nullptr,},
+        // ::mailpb::ClaimMailAttachmentsResponse
+        {&::_pbi::kDescriptorMethods, &::descriptor_table_proto_2fmail_2fmail_2eproto, /* tracker*/ nullptr,},
         // ::mailpb::DeleteMailsRequest
         {&::_pbi::kDescriptorMethods, &::descriptor_table_proto_2fmail_2fmail_2eproto, /* tracker*/ nullptr,},
         // ::mailpb::DeleteMailsResponse
         {&::_pbi::kDescriptorMethods, &::descriptor_table_proto_2fmail_2fmail_2eproto, /* tracker*/ nullptr,},
-        // ::mailpb::DeleteReadMailsRequest
+        // ::mailpb::ClearReadMailsRequest
         {&::_pbi::kDescriptorMethods, &::descriptor_table_proto_2fmail_2fmail_2eproto, /* tracker*/ nullptr,},
-        // ::mailpb::DeleteReadMailsResponse
+        // ::mailpb::ClearReadMailsResponse
         {&::_pbi::kDescriptorMethods, &::descriptor_table_proto_2fmail_2fmail_2eproto, /* tracker*/ nullptr,},
-        // ::mailpb::ClaimMailAttachmentsRequest
-        {&::_pbi::kDescriptorMethods, &::descriptor_table_proto_2fmail_2fmail_2eproto, /* tracker*/ nullptr,},
-        // ::mailpb::ClaimMailAttachmentsResponse
-        {&::_pbi::kDescriptorMethods, &::descriptor_table_proto_2fmail_2fmail_2eproto, /* tracker*/ nullptr,},
-        // ::mailpb::MailEventS2C
+        // ::mailpb::MailChangedEvent
         {&::_pbi::kDescriptorMethods, &::descriptor_table_proto_2fmail_2fmail_2eproto, /* tracker*/ nullptr,},
 };
 }  // namespace
@@ -301,7 +303,7 @@ constexpr auto MailItem::InternalGenerateClassData_(
           false,
       },
 #ifdef PROTOBUF_MESSAGE_GLOBALS
-      &file_reflection_data[2],
+      &file_reflection_data[1],
 #else   // !PROTOBUF_MESSAGE_GLOBALS
       &::_pbi::kDescriptorMethods,
       &descriptor_table_proto_2fmail_2fmail_2eproto,
@@ -348,154 +350,6 @@ const ::_pbi::ClassData* MailItem_get_class_data() {
   return MailItem_globals_.GetClassData();
 #else
   return MailItem_class_data_.base();
-#endif  // PROTOBUF_MESSAGE_GLOBALS
-}
-}  // namespace
-#endif  // PROTOBUF_CUSTOM_VTABLE
-class MailEventS2C::_Internal {
- public:
-  using HasBits = decltype(::std::declval<MailEventS2C>()._impl_._has_bits_);
-  static constexpr ::int32_t kHasBitsOffset =
-      8 * PROTOBUF_FIELD_OFFSET(MailEventS2C, _impl_._has_bits_);
-};
-
-constexpr MailEventS2C::ParseTableT_ MailEventS2C::InternalGenerateParseTable_(const ::_pbi::ClassData* class_data) {
-  return ParseTableT_{
-    {
-      PROTOBUF_FIELD_OFFSET(MailEventS2C, _impl_._has_bits_),
-      0, // no _extensions_
-      2, 8,  // max_field_number, fast_idx_mask
-      offsetof(ParseTableT_, field_lookup_table),
-      4294967292,  // skipmap
-      offsetof(ParseTableT_, field_entries),
-      2,  // num_field_entries
-      0,  // num_aux_entries
-      offsetof(ParseTableT_, field_names),  // no aux_entries
-      class_data,
-      nullptr,  // post_loop_handler
-      ::_pbi::TcParser::GenericFallback,  // fallback
-      #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
-      ::_pbi::TcParser::GetTable<::mailpb::MailEventS2C>(),  // to_prefetch
-      #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
-    }, {{
-      // uint64 ts_ms = 2;
-      {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(MailEventS2C, _impl_.ts_ms_), 0>(),
-       {16, 0, 0,
-        PROTOBUF_FIELD_OFFSET(MailEventS2C, _impl_.ts_ms_)}},
-      // .mailpb.MailEventReason reason = 1;
-      {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(MailEventS2C, _impl_.reason_), 1>(),
-       {8, 1, 0,
-        PROTOBUF_FIELD_OFFSET(MailEventS2C, _impl_.reason_)}},
-    }}, {{
-      65535, 65535
-    }}, {{
-      // .mailpb.MailEventReason reason = 1;
-      {PROTOBUF_FIELD_OFFSET(MailEventS2C, _impl_.reason_), _Internal::kHasBitsOffset + 1, 0, (0 | ::_fl::kFcOptional | ::_fl::kOpenEnum)},
-      // uint64 ts_ms = 2;
-      {PROTOBUF_FIELD_OFFSET(MailEventS2C, _impl_.ts_ms_), _Internal::kHasBitsOffset + 0, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
-    }},
-    // no aux_entries
-    {{
-    }},
-  };
-}
-
-
-inline constexpr MailEventS2C::Impl_::Impl_(
-    [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
-    ::_pbi::ConstantInitialized) noexcept
-      : _cached_size_{0},
-        ts_ms_{::uint64_t{0u}},
-        reason_{static_cast< ::mailpb::MailEventReason >(0)} {}
-
-template <typename>
-constexpr MailEventS2C::MailEventS2C(::_pbi::ConstantInitialized,
-                       const ::_pbi::ClassData* PROTOBUF_NONNULL class_data)
-    : ::google::protobuf::Message(
-#if defined(PROTOBUF_CUSTOM_VTABLE)
-          class_data
-#endif  // PROTOBUF_CUSTOM_VTABLE
-          ),
-      _impl_(internal_visibility(), ::_pbi::ConstantInitialized()) {
-}
-inline void* PROTOBUF_NONNULL MailEventS2C::PlacementNew_(
-    const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
-    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena) {
-  return ::new (mem) MailEventS2C(arena);
-}
-constexpr auto MailEventS2C::InternalNewImpl_() {
-  return ::google::protobuf::internal::MessageCreator::ZeroInit(sizeof(MailEventS2C), alignof(MailEventS2C));
-}
-constexpr auto MailEventS2C::InternalGenerateClassData_(
-    const MessageLite& prototype,
-    const ::google::protobuf::internal::TcParseTableBase* tc_table) {
-  return ::google::protobuf::internal::ClassDataFull{
-      ::google::protobuf::internal::ClassData{
-          &prototype,
-#ifndef PROTOBUF_MESSAGE_GLOBALS
-          &_table_.header,
-#else
-          tc_table,
-#endif
-          nullptr,  // IsInitialized
-          &MailEventS2C::MergeImpl,
-          ::google::protobuf::Message::GetNewImpl<MailEventS2C>(),
-#if defined(PROTOBUF_CUSTOM_VTABLE)
-          &MailEventS2C::SharedDtor,
-          ::google::protobuf::Message::GetClearImpl<MailEventS2C>(), &MailEventS2C::ByteSizeLong,
-              &MailEventS2C::_InternalSerialize,
-#endif  // PROTOBUF_CUSTOM_VTABLE
-          PROTOBUF_FIELD_OFFSET(MailEventS2C, _impl_._cached_size_),
-          false,
-      },
-#ifdef PROTOBUF_MESSAGE_GLOBALS
-      &file_reflection_data[14],
-#else   // !PROTOBUF_MESSAGE_GLOBALS
-      &::_pbi::kDescriptorMethods,
-      &descriptor_table_proto_2fmail_2fmail_2eproto,
-      nullptr,  // tracker
-#endif  // PROTOBUF_MESSAGE_GLOBALS
-  };
-}
-struct MailEventS2CGlobalsTypeInternal : ::_pbi::MessageGlobalsBase {
-  constexpr MailEventS2CGlobalsTypeInternal()
-      :
-#ifndef PROTOBUF_MESSAGE_GLOBALS
-        _default(::_pbi::ConstantInitialized{},
-                 MailEventS2C_class_data_.base())
-#else   // !PROTOBUF_MESSAGE_GLOBALS
-        MessageGlobalsBase(MailEventS2C::InternalGenerateClassData_(
-            _default, &MailEventS2C_globals_._table.header)),
-        _default(::_pbi::ConstantInitialized{}, GetClassData()),
-        _table(::_pbi::PrivateAccess::GenerateParseTable<MailEventS2C>(
-            GetClassData()))
-#endif  // PROTOBUF_MESSAGE_GLOBALS
-  {
-  }
-  ~MailEventS2CGlobalsTypeInternal() {}
-  union {
-    alignas(::_pbi::kMaxMessageAlignment) MailEventS2C _default;
-  };
-#ifdef PROTOBUF_MESSAGE_GLOBALS
-  decltype(::_pbi::PrivateAccess::GenerateParseTable<MailEventS2C>(
-      ::std::declval<const ::_pbi::ClassData*>())) _table;
-#endif
-};
-#ifdef PROTOBUF_MESSAGE_GLOBALS
-static_assert(PROTOBUF_FIELD_OFFSET(MailEventS2CGlobalsTypeInternal, _default) ==
-              ::_pbi::MessageGlobalsBase::OffsetToDefault());
-#endif  // PROTOBUF_MESSAGE_GLOBALS
-
-PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
-    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 PROTOBUF_MESSAGE_GLOBALS_CONST MailEventS2CGlobalsTypeInternal MailEventS2C_globals_
-        PROTOBUF_MESSAGE_GLOBALS_SECTION(.data.rel.ro);
-#if defined(PROTOBUF_CUSTOM_VTABLE)
-namespace {
-const ::_pbi::ClassData* MailEventS2C_get_class_data() {
-#ifdef PROTOBUF_MESSAGE_GLOBALS
-  return MailEventS2C_globals_.GetClassData();
-#else
-  return MailEventS2C_class_data_.base();
 #endif  // PROTOBUF_MESSAGE_GLOBALS
 }
 }  // namespace
@@ -597,7 +451,7 @@ constexpr auto MailCurrency::InternalGenerateClassData_(
           false,
       },
 #ifdef PROTOBUF_MESSAGE_GLOBALS
-      &file_reflection_data[1],
+      &file_reflection_data[0],
 #else   // !PROTOBUF_MESSAGE_GLOBALS
       &::_pbi::kDescriptorMethods,
       &descriptor_table_proto_2fmail_2fmail_2eproto,
@@ -648,6 +502,147 @@ const ::_pbi::ClassData* MailCurrency_get_class_data() {
 }
 }  // namespace
 #endif  // PROTOBUF_CUSTOM_VTABLE
+class MailChangedEvent::_Internal {
+ public:
+  using HasBits = decltype(::std::declval<MailChangedEvent>()._impl_._has_bits_);
+  static constexpr ::int32_t kHasBitsOffset =
+      8 * PROTOBUF_FIELD_OFFSET(MailChangedEvent, _impl_._has_bits_);
+};
+
+constexpr MailChangedEvent::ParseTableT_ MailChangedEvent::InternalGenerateParseTable_(const ::_pbi::ClassData* class_data) {
+  return ParseTableT_{
+    {
+      PROTOBUF_FIELD_OFFSET(MailChangedEvent, _impl_._has_bits_),
+      0, // no _extensions_
+      1, 0,  // max_field_number, fast_idx_mask
+      offsetof(ParseTableT_, field_lookup_table),
+      4294967294,  // skipmap
+      offsetof(ParseTableT_, field_entries),
+      1,  // num_field_entries
+      0,  // num_aux_entries
+      offsetof(ParseTableT_, field_names),  // no aux_entries
+      class_data,
+      nullptr,  // post_loop_handler
+      ::_pbi::TcParser::GenericFallback,  // fallback
+      #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
+      ::_pbi::TcParser::GetTable<::mailpb::MailChangedEvent>(),  // to_prefetch
+      #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
+    }, {{
+      // uint64 mail_id = 1;
+      {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(MailChangedEvent, _impl_.mail_id_), 0>(),
+       {8, 0, 0,
+        PROTOBUF_FIELD_OFFSET(MailChangedEvent, _impl_.mail_id_)}},
+    }}, {{
+      65535, 65535
+    }}, {{
+      // uint64 mail_id = 1;
+      {PROTOBUF_FIELD_OFFSET(MailChangedEvent, _impl_.mail_id_), _Internal::kHasBitsOffset + 0, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
+    }},
+    // no aux_entries
+    {{
+    }},
+  };
+}
+
+
+inline constexpr MailChangedEvent::Impl_::Impl_(
+    [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
+    ::_pbi::ConstantInitialized) noexcept
+      : _cached_size_{0},
+        mail_id_{::uint64_t{0u}} {}
+
+template <typename>
+constexpr MailChangedEvent::MailChangedEvent(::_pbi::ConstantInitialized,
+                       const ::_pbi::ClassData* PROTOBUF_NONNULL class_data)
+    : ::google::protobuf::Message(
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+          class_data
+#endif  // PROTOBUF_CUSTOM_VTABLE
+          ),
+      _impl_(internal_visibility(), ::_pbi::ConstantInitialized()) {
+}
+inline void* PROTOBUF_NONNULL MailChangedEvent::PlacementNew_(
+    const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena) {
+  return ::new (mem) MailChangedEvent(arena);
+}
+constexpr auto MailChangedEvent::InternalNewImpl_() {
+  return ::google::protobuf::internal::MessageCreator::ZeroInit(sizeof(MailChangedEvent), alignof(MailChangedEvent));
+}
+constexpr auto MailChangedEvent::InternalGenerateClassData_(
+    const MessageLite& prototype,
+    const ::google::protobuf::internal::TcParseTableBase* tc_table) {
+  return ::google::protobuf::internal::ClassDataFull{
+      ::google::protobuf::internal::ClassData{
+          &prototype,
+#ifndef PROTOBUF_MESSAGE_GLOBALS
+          &_table_.header,
+#else
+          tc_table,
+#endif
+          nullptr,  // IsInitialized
+          &MailChangedEvent::MergeImpl,
+          ::google::protobuf::Message::GetNewImpl<MailChangedEvent>(),
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+          &MailChangedEvent::SharedDtor,
+          ::google::protobuf::Message::GetClearImpl<MailChangedEvent>(), &MailChangedEvent::ByteSizeLong,
+              &MailChangedEvent::_InternalSerialize,
+#endif  // PROTOBUF_CUSTOM_VTABLE
+          PROTOBUF_FIELD_OFFSET(MailChangedEvent, _impl_._cached_size_),
+          false,
+      },
+#ifdef PROTOBUF_MESSAGE_GLOBALS
+      &file_reflection_data[15],
+#else   // !PROTOBUF_MESSAGE_GLOBALS
+      &::_pbi::kDescriptorMethods,
+      &descriptor_table_proto_2fmail_2fmail_2eproto,
+      nullptr,  // tracker
+#endif  // PROTOBUF_MESSAGE_GLOBALS
+  };
+}
+struct MailChangedEventGlobalsTypeInternal : ::_pbi::MessageGlobalsBase {
+  constexpr MailChangedEventGlobalsTypeInternal()
+      :
+#ifndef PROTOBUF_MESSAGE_GLOBALS
+        _default(::_pbi::ConstantInitialized{},
+                 MailChangedEvent_class_data_.base())
+#else   // !PROTOBUF_MESSAGE_GLOBALS
+        MessageGlobalsBase(MailChangedEvent::InternalGenerateClassData_(
+            _default, &MailChangedEvent_globals_._table.header)),
+        _default(::_pbi::ConstantInitialized{}, GetClassData()),
+        _table(::_pbi::PrivateAccess::GenerateParseTable<MailChangedEvent>(
+            GetClassData()))
+#endif  // PROTOBUF_MESSAGE_GLOBALS
+  {
+  }
+  ~MailChangedEventGlobalsTypeInternal() {}
+  union {
+    alignas(::_pbi::kMaxMessageAlignment) MailChangedEvent _default;
+  };
+#ifdef PROTOBUF_MESSAGE_GLOBALS
+  decltype(::_pbi::PrivateAccess::GenerateParseTable<MailChangedEvent>(
+      ::std::declval<const ::_pbi::ClassData*>())) _table;
+#endif
+};
+#ifdef PROTOBUF_MESSAGE_GLOBALS
+static_assert(PROTOBUF_FIELD_OFFSET(MailChangedEventGlobalsTypeInternal, _default) ==
+              ::_pbi::MessageGlobalsBase::OffsetToDefault());
+#endif  // PROTOBUF_MESSAGE_GLOBALS
+
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 PROTOBUF_MESSAGE_GLOBALS_CONST MailChangedEventGlobalsTypeInternal MailChangedEvent_globals_
+        PROTOBUF_MESSAGE_GLOBALS_SECTION(.data.rel.ro);
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+namespace {
+const ::_pbi::ClassData* MailChangedEvent_get_class_data() {
+#ifdef PROTOBUF_MESSAGE_GLOBALS
+  return MailChangedEvent_globals_.GetClassData();
+#else
+  return MailChangedEvent_class_data_.base();
+#endif  // PROTOBUF_MESSAGE_GLOBALS
+}
+}  // namespace
+#endif  // PROTOBUF_CUSTOM_VTABLE
 class ListMailsRequest::_Internal {
  public:
   using HasBits = decltype(::std::declval<ListMailsRequest>()._impl_._has_bits_);
@@ -674,10 +669,10 @@ constexpr ListMailsRequest::ParseTableT_ ListMailsRequest::InternalGenerateParse
       ::_pbi::TcParser::GetTable<::mailpb::ListMailsRequest>(),  // to_prefetch
       #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
     }, {{
-      // uint32 page_size = 2;
-      {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(ListMailsRequest, _impl_.page_size_), 1>(),
+      // uint32 limit = 2;
+      {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(ListMailsRequest, _impl_.limit_), 1>(),
        {16, 1, 0,
-        PROTOBUF_FIELD_OFFSET(ListMailsRequest, _impl_.page_size_)}},
+        PROTOBUF_FIELD_OFFSET(ListMailsRequest, _impl_.limit_)}},
       // uint64 before_mail_id = 1;
       {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(ListMailsRequest, _impl_.before_mail_id_), 0>(),
        {8, 0, 0,
@@ -687,8 +682,8 @@ constexpr ListMailsRequest::ParseTableT_ ListMailsRequest::InternalGenerateParse
     }}, {{
       // uint64 before_mail_id = 1;
       {PROTOBUF_FIELD_OFFSET(ListMailsRequest, _impl_.before_mail_id_), _Internal::kHasBitsOffset + 0, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
-      // uint32 page_size = 2;
-      {PROTOBUF_FIELD_OFFSET(ListMailsRequest, _impl_.page_size_), _Internal::kHasBitsOffset + 1, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
+      // uint32 limit = 2;
+      {PROTOBUF_FIELD_OFFSET(ListMailsRequest, _impl_.limit_), _Internal::kHasBitsOffset + 1, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
     }},
     // no aux_entries
     {{
@@ -702,7 +697,7 @@ inline constexpr ListMailsRequest::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
       : _cached_size_{0},
         before_mail_id_{::uint64_t{0u}},
-        page_size_{0u} {}
+        limit_{0u} {}
 
 template <typename>
 constexpr ListMailsRequest::ListMailsRequest(::_pbi::ConstantInitialized,
@@ -792,130 +787,6 @@ const ::_pbi::ClassData* ListMailsRequest_get_class_data() {
   return ListMailsRequest_globals_.GetClassData();
 #else
   return ListMailsRequest_class_data_.base();
-#endif  // PROTOBUF_MESSAGE_GLOBALS
-}
-}  // namespace
-#endif  // PROTOBUF_CUSTOM_VTABLE
-class DeleteReadMailsRequest::_Internal {
- public:
-};
-
-constexpr DeleteReadMailsRequest::ParseTableT_ DeleteReadMailsRequest::InternalGenerateParseTable_(const ::_pbi::ClassData* class_data) {
-  return ParseTableT_{
-    {
-      PROTOBUF_FIELD_OFFSET(DeleteReadMailsRequest,
-                            _impl_._cached_size_),  // no hasbits
-      0, // no _extensions_
-      0, 0,  // max_field_number, fast_idx_mask
-      offsetof(ParseTableT_, field_lookup_table),
-      4294967295,  // skipmap
-      offsetof(ParseTableT_, field_names),  // no field_entries
-      0,  // num_field_entries
-      0,  // num_aux_entries
-      offsetof(ParseTableT_, field_names),  // no aux_entries
-      class_data,
-      nullptr,  // post_loop_handler
-      ::_pbi::TcParser::GenericFallback,  // fallback
-      #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
-      ::_pbi::TcParser::GetTable<::mailpb::DeleteReadMailsRequest>(),  // to_prefetch
-      #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
-    }, {{
-      {::_pbi::TcParser::MiniParse, {}},
-    }}, {{
-      65535, 65535
-    }}, // no field_entries, or aux_entries
-    {{
-    }},
-  };
-}
-
-template <typename>
-constexpr DeleteReadMailsRequest::DeleteReadMailsRequest(::_pbi::ConstantInitialized,
-                       const ::_pbi::ClassData* PROTOBUF_NONNULL class_data)
-    : ::google::protobuf::internal::ZeroFieldsBase(
-#if defined(PROTOBUF_CUSTOM_VTABLE)
-          class_data
-#endif  // PROTOBUF_CUSTOM_VTABLE
-      ) {
-}
-inline void* PROTOBUF_NONNULL DeleteReadMailsRequest::PlacementNew_(
-    const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
-    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena) {
-  return ::new (mem) DeleteReadMailsRequest(arena);
-}
-constexpr auto DeleteReadMailsRequest::InternalNewImpl_() {
-  return ::google::protobuf::internal::MessageCreator::ZeroInit(sizeof(DeleteReadMailsRequest), alignof(DeleteReadMailsRequest));
-}
-constexpr auto DeleteReadMailsRequest::InternalGenerateClassData_(
-    const MessageLite& prototype,
-    const ::google::protobuf::internal::TcParseTableBase* tc_table) {
-  return ::google::protobuf::internal::ClassDataFull{
-      ::google::protobuf::internal::ClassData{
-          &prototype,
-#ifndef PROTOBUF_MESSAGE_GLOBALS
-          &_table_.header,
-#else
-          tc_table,
-#endif
-          nullptr,  // IsInitialized
-          &DeleteReadMailsRequest::MergeImpl,
-          ::google::protobuf::internal::ZeroFieldsBase::GetNewImpl<DeleteReadMailsRequest>(),
-#if defined(PROTOBUF_CUSTOM_VTABLE)
-          &DeleteReadMailsRequest::SharedDtor,
-          ::google::protobuf::internal::ZeroFieldsBase::GetClearImpl<DeleteReadMailsRequest>(), &DeleteReadMailsRequest::ByteSizeLong,
-              &DeleteReadMailsRequest::_InternalSerialize,
-#endif  // PROTOBUF_CUSTOM_VTABLE
-          PROTOBUF_FIELD_OFFSET(DeleteReadMailsRequest, _impl_._cached_size_),
-          false,
-      },
-#ifdef PROTOBUF_MESSAGE_GLOBALS
-      &file_reflection_data[10],
-#else   // !PROTOBUF_MESSAGE_GLOBALS
-      &::_pbi::kDescriptorMethods,
-      &descriptor_table_proto_2fmail_2fmail_2eproto,
-      nullptr,  // tracker
-#endif  // PROTOBUF_MESSAGE_GLOBALS
-  };
-}
-struct DeleteReadMailsRequestGlobalsTypeInternal : ::_pbi::MessageGlobalsBase {
-  constexpr DeleteReadMailsRequestGlobalsTypeInternal()
-      :
-#ifndef PROTOBUF_MESSAGE_GLOBALS
-        _default(::_pbi::ConstantInitialized{},
-                 DeleteReadMailsRequest_class_data_.base())
-#else   // !PROTOBUF_MESSAGE_GLOBALS
-        MessageGlobalsBase(DeleteReadMailsRequest::InternalGenerateClassData_(
-            _default, &DeleteReadMailsRequest_globals_._table.header)),
-        _default(::_pbi::ConstantInitialized{}, GetClassData()),
-        _table(::_pbi::PrivateAccess::GenerateParseTable<DeleteReadMailsRequest>(
-            GetClassData()))
-#endif  // PROTOBUF_MESSAGE_GLOBALS
-  {
-  }
-  ~DeleteReadMailsRequestGlobalsTypeInternal() {}
-  union {
-    alignas(::_pbi::kMaxMessageAlignment) DeleteReadMailsRequest _default;
-  };
-#ifdef PROTOBUF_MESSAGE_GLOBALS
-  decltype(::_pbi::PrivateAccess::GenerateParseTable<DeleteReadMailsRequest>(
-      ::std::declval<const ::_pbi::ClassData*>())) _table;
-#endif
-};
-#ifdef PROTOBUF_MESSAGE_GLOBALS
-static_assert(PROTOBUF_FIELD_OFFSET(DeleteReadMailsRequestGlobalsTypeInternal, _default) ==
-              ::_pbi::MessageGlobalsBase::OffsetToDefault());
-#endif  // PROTOBUF_MESSAGE_GLOBALS
-
-PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
-    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 PROTOBUF_MESSAGE_GLOBALS_CONST DeleteReadMailsRequestGlobalsTypeInternal DeleteReadMailsRequest_globals_
-        PROTOBUF_MESSAGE_GLOBALS_SECTION(.data.rel.ro);
-#if defined(PROTOBUF_CUSTOM_VTABLE)
-namespace {
-const ::_pbi::ClassData* DeleteReadMailsRequest_get_class_data() {
-#ifdef PROTOBUF_MESSAGE_GLOBALS
-  return DeleteReadMailsRequest_globals_.GetClassData();
-#else
-  return DeleteReadMailsRequest_class_data_.base();
 #endif  // PROTOBUF_MESSAGE_GLOBALS
 }
 }  // namespace
@@ -1015,7 +886,7 @@ constexpr auto DeleteMailsRequest::InternalGenerateClassData_(
           false,
       },
 #ifdef PROTOBUF_MESSAGE_GLOBALS
-      &file_reflection_data[8],
+      &file_reflection_data[11],
 #else   // !PROTOBUF_MESSAGE_GLOBALS
       &::_pbi::kDescriptorMethods,
       &descriptor_table_proto_2fmail_2fmail_2eproto,
@@ -1066,6 +937,130 @@ const ::_pbi::ClassData* DeleteMailsRequest_get_class_data() {
 }
 }  // namespace
 #endif  // PROTOBUF_CUSTOM_VTABLE
+class ClearReadMailsRequest::_Internal {
+ public:
+};
+
+constexpr ClearReadMailsRequest::ParseTableT_ ClearReadMailsRequest::InternalGenerateParseTable_(const ::_pbi::ClassData* class_data) {
+  return ParseTableT_{
+    {
+      PROTOBUF_FIELD_OFFSET(ClearReadMailsRequest,
+                            _impl_._cached_size_),  // no hasbits
+      0, // no _extensions_
+      0, 0,  // max_field_number, fast_idx_mask
+      offsetof(ParseTableT_, field_lookup_table),
+      4294967295,  // skipmap
+      offsetof(ParseTableT_, field_names),  // no field_entries
+      0,  // num_field_entries
+      0,  // num_aux_entries
+      offsetof(ParseTableT_, field_names),  // no aux_entries
+      class_data,
+      nullptr,  // post_loop_handler
+      ::_pbi::TcParser::GenericFallback,  // fallback
+      #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
+      ::_pbi::TcParser::GetTable<::mailpb::ClearReadMailsRequest>(),  // to_prefetch
+      #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
+    }, {{
+      {::_pbi::TcParser::MiniParse, {}},
+    }}, {{
+      65535, 65535
+    }}, // no field_entries, or aux_entries
+    {{
+    }},
+  };
+}
+
+template <typename>
+constexpr ClearReadMailsRequest::ClearReadMailsRequest(::_pbi::ConstantInitialized,
+                       const ::_pbi::ClassData* PROTOBUF_NONNULL class_data)
+    : ::google::protobuf::internal::ZeroFieldsBase(
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+          class_data
+#endif  // PROTOBUF_CUSTOM_VTABLE
+      ) {
+}
+inline void* PROTOBUF_NONNULL ClearReadMailsRequest::PlacementNew_(
+    const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena) {
+  return ::new (mem) ClearReadMailsRequest(arena);
+}
+constexpr auto ClearReadMailsRequest::InternalNewImpl_() {
+  return ::google::protobuf::internal::MessageCreator::ZeroInit(sizeof(ClearReadMailsRequest), alignof(ClearReadMailsRequest));
+}
+constexpr auto ClearReadMailsRequest::InternalGenerateClassData_(
+    const MessageLite& prototype,
+    const ::google::protobuf::internal::TcParseTableBase* tc_table) {
+  return ::google::protobuf::internal::ClassDataFull{
+      ::google::protobuf::internal::ClassData{
+          &prototype,
+#ifndef PROTOBUF_MESSAGE_GLOBALS
+          &_table_.header,
+#else
+          tc_table,
+#endif
+          nullptr,  // IsInitialized
+          &ClearReadMailsRequest::MergeImpl,
+          ::google::protobuf::internal::ZeroFieldsBase::GetNewImpl<ClearReadMailsRequest>(),
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+          &ClearReadMailsRequest::SharedDtor,
+          ::google::protobuf::internal::ZeroFieldsBase::GetClearImpl<ClearReadMailsRequest>(), &ClearReadMailsRequest::ByteSizeLong,
+              &ClearReadMailsRequest::_InternalSerialize,
+#endif  // PROTOBUF_CUSTOM_VTABLE
+          PROTOBUF_FIELD_OFFSET(ClearReadMailsRequest, _impl_._cached_size_),
+          false,
+      },
+#ifdef PROTOBUF_MESSAGE_GLOBALS
+      &file_reflection_data[13],
+#else   // !PROTOBUF_MESSAGE_GLOBALS
+      &::_pbi::kDescriptorMethods,
+      &descriptor_table_proto_2fmail_2fmail_2eproto,
+      nullptr,  // tracker
+#endif  // PROTOBUF_MESSAGE_GLOBALS
+  };
+}
+struct ClearReadMailsRequestGlobalsTypeInternal : ::_pbi::MessageGlobalsBase {
+  constexpr ClearReadMailsRequestGlobalsTypeInternal()
+      :
+#ifndef PROTOBUF_MESSAGE_GLOBALS
+        _default(::_pbi::ConstantInitialized{},
+                 ClearReadMailsRequest_class_data_.base())
+#else   // !PROTOBUF_MESSAGE_GLOBALS
+        MessageGlobalsBase(ClearReadMailsRequest::InternalGenerateClassData_(
+            _default, &ClearReadMailsRequest_globals_._table.header)),
+        _default(::_pbi::ConstantInitialized{}, GetClassData()),
+        _table(::_pbi::PrivateAccess::GenerateParseTable<ClearReadMailsRequest>(
+            GetClassData()))
+#endif  // PROTOBUF_MESSAGE_GLOBALS
+  {
+  }
+  ~ClearReadMailsRequestGlobalsTypeInternal() {}
+  union {
+    alignas(::_pbi::kMaxMessageAlignment) ClearReadMailsRequest _default;
+  };
+#ifdef PROTOBUF_MESSAGE_GLOBALS
+  decltype(::_pbi::PrivateAccess::GenerateParseTable<ClearReadMailsRequest>(
+      ::std::declval<const ::_pbi::ClassData*>())) _table;
+#endif
+};
+#ifdef PROTOBUF_MESSAGE_GLOBALS
+static_assert(PROTOBUF_FIELD_OFFSET(ClearReadMailsRequestGlobalsTypeInternal, _default) ==
+              ::_pbi::MessageGlobalsBase::OffsetToDefault());
+#endif  // PROTOBUF_MESSAGE_GLOBALS
+
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 PROTOBUF_MESSAGE_GLOBALS_CONST ClearReadMailsRequestGlobalsTypeInternal ClearReadMailsRequest_globals_
+        PROTOBUF_MESSAGE_GLOBALS_SECTION(.data.rel.ro);
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+namespace {
+const ::_pbi::ClassData* ClearReadMailsRequest_get_class_data() {
+#ifdef PROTOBUF_MESSAGE_GLOBALS
+  return ClearReadMailsRequest_globals_.GetClassData();
+#else
+  return ClearReadMailsRequest_class_data_.base();
+#endif  // PROTOBUF_MESSAGE_GLOBALS
+}
+}  // namespace
+#endif  // PROTOBUF_CUSTOM_VTABLE
 class ClaimMailAttachmentsRequest::_Internal {
  public:
   using HasBits = decltype(::std::declval<ClaimMailAttachmentsRequest>()._impl_._has_bits_);
@@ -1078,11 +1073,11 @@ constexpr ClaimMailAttachmentsRequest::ParseTableT_ ClaimMailAttachmentsRequest:
     {
       PROTOBUF_FIELD_OFFSET(ClaimMailAttachmentsRequest, _impl_._has_bits_),
       0, // no _extensions_
-      2, 8,  // max_field_number, fast_idx_mask
+      1, 0,  // max_field_number, fast_idx_mask
       offsetof(ParseTableT_, field_lookup_table),
-      4294967292,  // skipmap
+      4294967294,  // skipmap
       offsetof(ParseTableT_, field_entries),
-      2,  // num_field_entries
+      1,  // num_field_entries
       0,  // num_aux_entries
       offsetof(ParseTableT_, field_names),  // no aux_entries
       class_data,
@@ -1092,10 +1087,6 @@ constexpr ClaimMailAttachmentsRequest::ParseTableT_ ClaimMailAttachmentsRequest:
       ::_pbi::TcParser::GetTable<::mailpb::ClaimMailAttachmentsRequest>(),  // to_prefetch
       #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
     }, {{
-      // bool all = 2;
-      {::_pbi::TcParser::SingularVarintNoZag1<bool, offsetof(ClaimMailAttachmentsRequest, _impl_.all_), 1>(),
-       {16, 1, 0,
-        PROTOBUF_FIELD_OFFSET(ClaimMailAttachmentsRequest, _impl_.all_)}},
       // repeated uint64 mail_ids = 1;
       {::_pbi::TcParser::FastV64P1,
        {10, 0, 0,
@@ -1105,8 +1096,6 @@ constexpr ClaimMailAttachmentsRequest::ParseTableT_ ClaimMailAttachmentsRequest:
     }}, {{
       // repeated uint64 mail_ids = 1;
       {PROTOBUF_FIELD_OFFSET(ClaimMailAttachmentsRequest, _impl_.mail_ids_), _Internal::kHasBitsOffset + 0, 0, (0 | ::_fl::kFcRepeated | ::_fl::kPackedUInt64)},
-      // bool all = 2;
-      {PROTOBUF_FIELD_OFFSET(ClaimMailAttachmentsRequest, _impl_.all_), _Internal::kHasBitsOffset + 1, 0, (0 | ::_fl::kFcOptional | ::_fl::kBool)},
     }},
     // no aux_entries
     {{
@@ -1124,8 +1113,7 @@ inline constexpr ClaimMailAttachmentsRequest::Impl_::Impl_(
             PROTOBUF_FIELD_OFFSET(::mailpb::ClaimMailAttachmentsRequest, _impl_.mail_ids_)>()
          }
         ,
-        _mail_ids_cached_byte_size_{0},
-        all_{false} {}
+        _mail_ids_cached_byte_size_{0} {}
 
 template <typename>
 constexpr ClaimMailAttachmentsRequest::ClaimMailAttachmentsRequest(::_pbi::ConstantInitialized,
@@ -1168,7 +1156,7 @@ constexpr auto ClaimMailAttachmentsRequest::InternalGenerateClassData_(
           false,
       },
 #ifdef PROTOBUF_MESSAGE_GLOBALS
-      &file_reflection_data[12],
+      &file_reflection_data[8],
 #else   // !PROTOBUF_MESSAGE_GLOBALS
       &::_pbi::kDescriptorMethods,
       &descriptor_table_proto_2fmail_2fmail_2eproto,
@@ -1335,7 +1323,7 @@ constexpr auto MailAttachments::InternalGenerateClassData_(
           false,
       },
 #ifdef PROTOBUF_MESSAGE_GLOBALS
-      &file_reflection_data[0],
+      &file_reflection_data[2],
 #else   // !PROTOBUF_MESSAGE_GLOBALS
       &::_pbi::kDescriptorMethods,
       &descriptor_table_proto_2fmail_2fmail_2eproto,
@@ -1386,47 +1374,59 @@ const ::_pbi::ClassData* MailAttachments_get_class_data() {
 }
 }  // namespace
 #endif  // PROTOBUF_CUSTOM_VTABLE
-class DeleteReadMailsResponse::_Internal {
+class MailActionResult::_Internal {
  public:
-  using HasBits = decltype(::std::declval<DeleteReadMailsResponse>()._impl_._has_bits_);
+  using HasBits = decltype(::std::declval<MailActionResult>()._impl_._has_bits_);
   static constexpr ::int32_t kHasBitsOffset =
-      8 * PROTOBUF_FIELD_OFFSET(DeleteReadMailsResponse, _impl_._has_bits_);
+      8 * PROTOBUF_FIELD_OFFSET(MailActionResult, _impl_._has_bits_);
 };
 
-constexpr DeleteReadMailsResponse::ParseTableT_ DeleteReadMailsResponse::InternalGenerateParseTable_(const ::_pbi::ClassData* class_data) {
+constexpr MailActionResult::ParseTableT_ MailActionResult::InternalGenerateParseTable_(const ::_pbi::ClassData* class_data) {
   return ParseTableT_{
     {
-      PROTOBUF_FIELD_OFFSET(DeleteReadMailsResponse, _impl_._has_bits_),
+      PROTOBUF_FIELD_OFFSET(MailActionResult, _impl_._has_bits_),
       0, // no _extensions_
-      2, 8,  // max_field_number, fast_idx_mask
+      4, 24,  // max_field_number, fast_idx_mask
       offsetof(ParseTableT_, field_lookup_table),
-      4294967292,  // skipmap
+      4294967280,  // skipmap
       offsetof(ParseTableT_, field_entries),
-      2,  // num_field_entries
+      4,  // num_field_entries
       1,  // num_aux_entries
       offsetof(ParseTableT_, aux_entries),
       class_data,
       nullptr,  // post_loop_handler
       ::_pbi::TcParser::GenericFallback,  // fallback
       #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
-      ::_pbi::TcParser::GetTable<::mailpb::DeleteReadMailsResponse>(),  // to_prefetch
+      ::_pbi::TcParser::GetTable<::mailpb::MailActionResult>(),  // to_prefetch
       #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
     }, {{
-      // uint32 deleted_count = 2;
-      {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(DeleteReadMailsResponse, _impl_.deleted_count_), 1>(),
-       {16, 1, 0,
-        PROTOBUF_FIELD_OFFSET(DeleteReadMailsResponse, _impl_.deleted_count_)}},
-      // .TipInfoMessage error_message = 1;
+      // uint64 asset_op_id = 4;
+      {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(MailActionResult, _impl_.asset_op_id_), 2>(),
+       {32, 2, 0,
+        PROTOBUF_FIELD_OFFSET(MailActionResult, _impl_.asset_op_id_)}},
+      // uint64 mail_id = 1;
+      {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(MailActionResult, _impl_.mail_id_), 1>(),
+       {8, 1, 0,
+        PROTOBUF_FIELD_OFFSET(MailActionResult, _impl_.mail_id_)}},
+      // .TipInfoMessage error_message = 2;
       {::_pbi::TcParser::FastMtS1,
-       {10, 0, 0,
-        PROTOBUF_FIELD_OFFSET(DeleteReadMailsResponse, _impl_.error_message_)}},
+       {18, 0, 0,
+        PROTOBUF_FIELD_OFFSET(MailActionResult, _impl_.error_message_)}},
+      // .mailpb.MailClaimState claim_state = 3;
+      {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(MailActionResult, _impl_.claim_state_), 3>(),
+       {24, 3, 0,
+        PROTOBUF_FIELD_OFFSET(MailActionResult, _impl_.claim_state_)}},
     }}, {{
       65535, 65535
     }}, {{
-      // .TipInfoMessage error_message = 1;
-      {PROTOBUF_FIELD_OFFSET(DeleteReadMailsResponse, _impl_.error_message_), _Internal::kHasBitsOffset + 0, 0, (0 | ::_fl::kFcOptional | ::_fl::kMessage | ::_fl::kTvTable)},
-      // uint32 deleted_count = 2;
-      {PROTOBUF_FIELD_OFFSET(DeleteReadMailsResponse, _impl_.deleted_count_), _Internal::kHasBitsOffset + 1, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
+      // uint64 mail_id = 1;
+      {PROTOBUF_FIELD_OFFSET(MailActionResult, _impl_.mail_id_), _Internal::kHasBitsOffset + 1, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
+      // .TipInfoMessage error_message = 2;
+      {PROTOBUF_FIELD_OFFSET(MailActionResult, _impl_.error_message_), _Internal::kHasBitsOffset + 0, 0, (0 | ::_fl::kFcOptional | ::_fl::kMessage | ::_fl::kTvTable)},
+      // .mailpb.MailClaimState claim_state = 3;
+      {PROTOBUF_FIELD_OFFSET(MailActionResult, _impl_.claim_state_), _Internal::kHasBitsOffset + 3, 0, (0 | ::_fl::kFcOptional | ::_fl::kOpenEnum)},
+      // uint64 asset_op_id = 4;
+      {PROTOBUF_FIELD_OFFSET(MailActionResult, _impl_.asset_op_id_), _Internal::kHasBitsOffset + 2, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
     }},
     {{
         #ifndef PROTOBUF_MESSAGE_GLOBALS
@@ -1441,15 +1441,17 @@ constexpr DeleteReadMailsResponse::ParseTableT_ DeleteReadMailsResponse::Interna
 }
 
 
-inline constexpr DeleteReadMailsResponse::Impl_::Impl_(
+inline constexpr MailActionResult::Impl_::Impl_(
     [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
     ::_pbi::ConstantInitialized) noexcept
       : _cached_size_{0},
         error_message_{nullptr},
-        deleted_count_{0u} {}
+        mail_id_{::uint64_t{0u}},
+        asset_op_id_{::uint64_t{0u}},
+        claim_state_{static_cast< ::mailpb::MailClaimState >(0)} {}
 
 template <typename>
-constexpr DeleteReadMailsResponse::DeleteReadMailsResponse(::_pbi::ConstantInitialized,
+constexpr MailActionResult::MailActionResult(::_pbi::ConstantInitialized,
                        const ::_pbi::ClassData* PROTOBUF_NONNULL class_data)
     : ::google::protobuf::Message(
 #if defined(PROTOBUF_CUSTOM_VTABLE)
@@ -1458,15 +1460,15 @@ constexpr DeleteReadMailsResponse::DeleteReadMailsResponse(::_pbi::ConstantIniti
           ),
       _impl_(internal_visibility(), ::_pbi::ConstantInitialized()) {
 }
-inline void* PROTOBUF_NONNULL DeleteReadMailsResponse::PlacementNew_(
+inline void* PROTOBUF_NONNULL MailActionResult::PlacementNew_(
     const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
     ::google::protobuf::Arena* PROTOBUF_NULLABLE arena) {
-  return ::new (mem) DeleteReadMailsResponse(arena);
+  return ::new (mem) MailActionResult(arena);
 }
-constexpr auto DeleteReadMailsResponse::InternalNewImpl_() {
-  return ::google::protobuf::internal::MessageCreator::ZeroInit(sizeof(DeleteReadMailsResponse), alignof(DeleteReadMailsResponse));
+constexpr auto MailActionResult::InternalNewImpl_() {
+  return ::google::protobuf::internal::MessageCreator::ZeroInit(sizeof(MailActionResult), alignof(MailActionResult));
 }
-constexpr auto DeleteReadMailsResponse::InternalGenerateClassData_(
+constexpr auto MailActionResult::InternalGenerateClassData_(
     const MessageLite& prototype,
     const ::google::protobuf::internal::TcParseTableBase* tc_table) {
   return ::google::protobuf::internal::ClassDataFull{
@@ -1478,18 +1480,18 @@ constexpr auto DeleteReadMailsResponse::InternalGenerateClassData_(
           tc_table,
 #endif
           nullptr,  // IsInitialized
-          &DeleteReadMailsResponse::MergeImpl,
-          ::google::protobuf::Message::GetNewImpl<DeleteReadMailsResponse>(),
+          &MailActionResult::MergeImpl,
+          ::google::protobuf::Message::GetNewImpl<MailActionResult>(),
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-          &DeleteReadMailsResponse::SharedDtor,
-          ::google::protobuf::Message::GetClearImpl<DeleteReadMailsResponse>(), &DeleteReadMailsResponse::ByteSizeLong,
-              &DeleteReadMailsResponse::_InternalSerialize,
+          &MailActionResult::SharedDtor,
+          ::google::protobuf::Message::GetClearImpl<MailActionResult>(), &MailActionResult::ByteSizeLong,
+              &MailActionResult::_InternalSerialize,
 #endif  // PROTOBUF_CUSTOM_VTABLE
-          PROTOBUF_FIELD_OFFSET(DeleteReadMailsResponse, _impl_._cached_size_),
+          PROTOBUF_FIELD_OFFSET(MailActionResult, _impl_._cached_size_),
           false,
       },
 #ifdef PROTOBUF_MESSAGE_GLOBALS
-      &file_reflection_data[11],
+      &file_reflection_data[9],
 #else   // !PROTOBUF_MESSAGE_GLOBALS
       &::_pbi::kDescriptorMethods,
       &descriptor_table_proto_2fmail_2fmail_2eproto,
@@ -1497,45 +1499,45 @@ constexpr auto DeleteReadMailsResponse::InternalGenerateClassData_(
 #endif  // PROTOBUF_MESSAGE_GLOBALS
   };
 }
-struct DeleteReadMailsResponseGlobalsTypeInternal : ::_pbi::MessageGlobalsBase {
-  constexpr DeleteReadMailsResponseGlobalsTypeInternal()
+struct MailActionResultGlobalsTypeInternal : ::_pbi::MessageGlobalsBase {
+  constexpr MailActionResultGlobalsTypeInternal()
       :
 #ifndef PROTOBUF_MESSAGE_GLOBALS
         _default(::_pbi::ConstantInitialized{},
-                 DeleteReadMailsResponse_class_data_.base())
+                 MailActionResult_class_data_.base())
 #else   // !PROTOBUF_MESSAGE_GLOBALS
-        MessageGlobalsBase(DeleteReadMailsResponse::InternalGenerateClassData_(
-            _default, &DeleteReadMailsResponse_globals_._table.header)),
+        MessageGlobalsBase(MailActionResult::InternalGenerateClassData_(
+            _default, &MailActionResult_globals_._table.header)),
         _default(::_pbi::ConstantInitialized{}, GetClassData()),
-        _table(::_pbi::PrivateAccess::GenerateParseTable<DeleteReadMailsResponse>(
+        _table(::_pbi::PrivateAccess::GenerateParseTable<MailActionResult>(
             GetClassData()))
 #endif  // PROTOBUF_MESSAGE_GLOBALS
   {
   }
-  ~DeleteReadMailsResponseGlobalsTypeInternal() {}
+  ~MailActionResultGlobalsTypeInternal() {}
   union {
-    alignas(::_pbi::kMaxMessageAlignment) DeleteReadMailsResponse _default;
+    alignas(::_pbi::kMaxMessageAlignment) MailActionResult _default;
   };
 #ifdef PROTOBUF_MESSAGE_GLOBALS
-  decltype(::_pbi::PrivateAccess::GenerateParseTable<DeleteReadMailsResponse>(
+  decltype(::_pbi::PrivateAccess::GenerateParseTable<MailActionResult>(
       ::std::declval<const ::_pbi::ClassData*>())) _table;
 #endif
 };
 #ifdef PROTOBUF_MESSAGE_GLOBALS
-static_assert(PROTOBUF_FIELD_OFFSET(DeleteReadMailsResponseGlobalsTypeInternal, _default) ==
+static_assert(PROTOBUF_FIELD_OFFSET(MailActionResultGlobalsTypeInternal, _default) ==
               ::_pbi::MessageGlobalsBase::OffsetToDefault());
 #endif  // PROTOBUF_MESSAGE_GLOBALS
 
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
-    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 PROTOBUF_MESSAGE_GLOBALS_CONST DeleteReadMailsResponseGlobalsTypeInternal DeleteReadMailsResponse_globals_
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 PROTOBUF_MESSAGE_GLOBALS_CONST MailActionResultGlobalsTypeInternal MailActionResult_globals_
         PROTOBUF_MESSAGE_GLOBALS_SECTION(.data.rel.ro);
 #if defined(PROTOBUF_CUSTOM_VTABLE)
 namespace {
-const ::_pbi::ClassData* DeleteReadMailsResponse_get_class_data() {
+const ::_pbi::ClassData* MailActionResult_get_class_data() {
 #ifdef PROTOBUF_MESSAGE_GLOBALS
-  return DeleteReadMailsResponse_globals_.GetClassData();
+  return MailActionResult_globals_.GetClassData();
 #else
-  return DeleteReadMailsResponse_class_data_.base();
+  return MailActionResult_class_data_.base();
 #endif  // PROTOBUF_MESSAGE_GLOBALS
 }
 }  // namespace
@@ -1569,25 +1571,25 @@ constexpr DeleteMailsResponse::ParseTableT_ DeleteMailsResponse::InternalGenerat
       {::_pbi::TcParser::MiniParse, {}},
       // .TipInfoMessage error_message = 1;
       {::_pbi::TcParser::FastMtS1,
-       {10, 1, 0,
+       {10, 2, 0,
         PROTOBUF_FIELD_OFFSET(DeleteMailsResponse, _impl_.error_message_)}},
-      // uint32 deleted_count = 2;
-      {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(DeleteMailsResponse, _impl_.deleted_count_), 2>(),
-       {16, 2, 0,
-        PROTOBUF_FIELD_OFFSET(DeleteMailsResponse, _impl_.deleted_count_)}},
+      // repeated uint64 deleted_mail_ids = 2;
+      {::_pbi::TcParser::FastV64P1,
+       {18, 0, 0,
+        PROTOBUF_FIELD_OFFSET(DeleteMailsResponse, _impl_.deleted_mail_ids_)}},
       // repeated uint64 protected_mail_ids = 3;
       {::_pbi::TcParser::FastV64P1,
-       {26, 0, 0,
+       {26, 1, 0,
         PROTOBUF_FIELD_OFFSET(DeleteMailsResponse, _impl_.protected_mail_ids_)}},
     }}, {{
       65535, 65535
     }}, {{
       // .TipInfoMessage error_message = 1;
-      {PROTOBUF_FIELD_OFFSET(DeleteMailsResponse, _impl_.error_message_), _Internal::kHasBitsOffset + 1, 0, (0 | ::_fl::kFcOptional | ::_fl::kMessage | ::_fl::kTvTable)},
-      // uint32 deleted_count = 2;
-      {PROTOBUF_FIELD_OFFSET(DeleteMailsResponse, _impl_.deleted_count_), _Internal::kHasBitsOffset + 2, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
+      {PROTOBUF_FIELD_OFFSET(DeleteMailsResponse, _impl_.error_message_), _Internal::kHasBitsOffset + 2, 0, (0 | ::_fl::kFcOptional | ::_fl::kMessage | ::_fl::kTvTable)},
+      // repeated uint64 deleted_mail_ids = 2;
+      {PROTOBUF_FIELD_OFFSET(DeleteMailsResponse, _impl_.deleted_mail_ids_), _Internal::kHasBitsOffset + 0, 0, (0 | ::_fl::kFcRepeated | ::_fl::kPackedUInt64)},
       // repeated uint64 protected_mail_ids = 3;
-      {PROTOBUF_FIELD_OFFSET(DeleteMailsResponse, _impl_.protected_mail_ids_), _Internal::kHasBitsOffset + 0, 0, (0 | ::_fl::kFcRepeated | ::_fl::kPackedUInt64)},
+      {PROTOBUF_FIELD_OFFSET(DeleteMailsResponse, _impl_.protected_mail_ids_), _Internal::kHasBitsOffset + 1, 0, (0 | ::_fl::kFcRepeated | ::_fl::kPackedUInt64)},
     }},
     {{
         #ifndef PROTOBUF_MESSAGE_GLOBALS
@@ -1606,14 +1608,19 @@ inline constexpr DeleteMailsResponse::Impl_::Impl_(
     [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
     ::_pbi::ConstantInitialized) noexcept
       : _cached_size_{0},
+        deleted_mail_ids_ { visibility, ::_pbi::InternalMetadataOffset::Build<
+            ::mailpb::DeleteMailsResponse,
+            PROTOBUF_FIELD_OFFSET(::mailpb::DeleteMailsResponse, _impl_.deleted_mail_ids_)>()
+         }
+        ,
+        _deleted_mail_ids_cached_byte_size_{0},
         protected_mail_ids_ { visibility, ::_pbi::InternalMetadataOffset::Build<
             ::mailpb::DeleteMailsResponse,
             PROTOBUF_FIELD_OFFSET(::mailpb::DeleteMailsResponse, _impl_.protected_mail_ids_)>()
          }
         ,
         _protected_mail_ids_cached_byte_size_{0},
-        error_message_{nullptr},
-        deleted_count_{0u} {}
+        error_message_{nullptr} {}
 
 template <typename>
 constexpr DeleteMailsResponse::DeleteMailsResponse(::_pbi::ConstantInitialized,
@@ -1656,7 +1663,7 @@ constexpr auto DeleteMailsResponse::InternalGenerateClassData_(
           false,
       },
 #ifdef PROTOBUF_MESSAGE_GLOBALS
-      &file_reflection_data[9],
+      &file_reflection_data[12],
 #else   // !PROTOBUF_MESSAGE_GLOBALS
       &::_pbi::kDescriptorMethods,
       &descriptor_table_proto_2fmail_2fmail_2eproto,
@@ -1707,41 +1714,54 @@ const ::_pbi::ClassData* DeleteMailsResponse_get_class_data() {
 }
 }  // namespace
 #endif  // PROTOBUF_CUSTOM_VTABLE
-class ClaimMailAttachmentsResponse::_Internal {
+class ClearReadMailsResponse::_Internal {
  public:
-  using HasBits = decltype(::std::declval<ClaimMailAttachmentsResponse>()._impl_._has_bits_);
+  using HasBits = decltype(::std::declval<ClearReadMailsResponse>()._impl_._has_bits_);
   static constexpr ::int32_t kHasBitsOffset =
-      8 * PROTOBUF_FIELD_OFFSET(ClaimMailAttachmentsResponse, _impl_._has_bits_);
+      8 * PROTOBUF_FIELD_OFFSET(ClearReadMailsResponse, _impl_._has_bits_);
 };
 
-constexpr ClaimMailAttachmentsResponse::ParseTableT_ ClaimMailAttachmentsResponse::InternalGenerateParseTable_(const ::_pbi::ClassData* class_data) {
+constexpr ClearReadMailsResponse::ParseTableT_ ClearReadMailsResponse::InternalGenerateParseTable_(const ::_pbi::ClassData* class_data) {
   return ParseTableT_{
     {
-      PROTOBUF_FIELD_OFFSET(ClaimMailAttachmentsResponse, _impl_._has_bits_),
+      PROTOBUF_FIELD_OFFSET(ClearReadMailsResponse, _impl_._has_bits_),
       0, // no _extensions_
-      1, 0,  // max_field_number, fast_idx_mask
+      3, 24,  // max_field_number, fast_idx_mask
       offsetof(ParseTableT_, field_lookup_table),
-      4294967294,  // skipmap
+      4294967288,  // skipmap
       offsetof(ParseTableT_, field_entries),
-      1,  // num_field_entries
+      3,  // num_field_entries
       1,  // num_aux_entries
       offsetof(ParseTableT_, aux_entries),
       class_data,
       nullptr,  // post_loop_handler
       ::_pbi::TcParser::GenericFallback,  // fallback
       #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
-      ::_pbi::TcParser::GetTable<::mailpb::ClaimMailAttachmentsResponse>(),  // to_prefetch
+      ::_pbi::TcParser::GetTable<::mailpb::ClearReadMailsResponse>(),  // to_prefetch
       #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
     }, {{
+      {::_pbi::TcParser::MiniParse, {}},
       // .TipInfoMessage error_message = 1;
       {::_pbi::TcParser::FastMtS1,
-       {10, 0, 0,
-        PROTOBUF_FIELD_OFFSET(ClaimMailAttachmentsResponse, _impl_.error_message_)}},
+       {10, 2, 0,
+        PROTOBUF_FIELD_OFFSET(ClearReadMailsResponse, _impl_.error_message_)}},
+      // repeated uint64 deleted_mail_ids = 2;
+      {::_pbi::TcParser::FastV64P1,
+       {18, 0, 0,
+        PROTOBUF_FIELD_OFFSET(ClearReadMailsResponse, _impl_.deleted_mail_ids_)}},
+      // repeated uint64 protected_mail_ids = 3;
+      {::_pbi::TcParser::FastV64P1,
+       {26, 1, 0,
+        PROTOBUF_FIELD_OFFSET(ClearReadMailsResponse, _impl_.protected_mail_ids_)}},
     }}, {{
       65535, 65535
     }}, {{
       // .TipInfoMessage error_message = 1;
-      {PROTOBUF_FIELD_OFFSET(ClaimMailAttachmentsResponse, _impl_.error_message_), _Internal::kHasBitsOffset + 0, 0, (0 | ::_fl::kFcOptional | ::_fl::kMessage | ::_fl::kTvTable)},
+      {PROTOBUF_FIELD_OFFSET(ClearReadMailsResponse, _impl_.error_message_), _Internal::kHasBitsOffset + 2, 0, (0 | ::_fl::kFcOptional | ::_fl::kMessage | ::_fl::kTvTable)},
+      // repeated uint64 deleted_mail_ids = 2;
+      {PROTOBUF_FIELD_OFFSET(ClearReadMailsResponse, _impl_.deleted_mail_ids_), _Internal::kHasBitsOffset + 0, 0, (0 | ::_fl::kFcRepeated | ::_fl::kPackedUInt64)},
+      // repeated uint64 protected_mail_ids = 3;
+      {PROTOBUF_FIELD_OFFSET(ClearReadMailsResponse, _impl_.protected_mail_ids_), _Internal::kHasBitsOffset + 1, 0, (0 | ::_fl::kFcRepeated | ::_fl::kPackedUInt64)},
     }},
     {{
         #ifndef PROTOBUF_MESSAGE_GLOBALS
@@ -1756,10 +1776,420 @@ constexpr ClaimMailAttachmentsResponse::ParseTableT_ ClaimMailAttachmentsRespons
 }
 
 
+inline constexpr ClearReadMailsResponse::Impl_::Impl_(
+    [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
+    ::_pbi::ConstantInitialized) noexcept
+      : _cached_size_{0},
+        deleted_mail_ids_ { visibility, ::_pbi::InternalMetadataOffset::Build<
+            ::mailpb::ClearReadMailsResponse,
+            PROTOBUF_FIELD_OFFSET(::mailpb::ClearReadMailsResponse, _impl_.deleted_mail_ids_)>()
+         }
+        ,
+        _deleted_mail_ids_cached_byte_size_{0},
+        protected_mail_ids_ { visibility, ::_pbi::InternalMetadataOffset::Build<
+            ::mailpb::ClearReadMailsResponse,
+            PROTOBUF_FIELD_OFFSET(::mailpb::ClearReadMailsResponse, _impl_.protected_mail_ids_)>()
+         }
+        ,
+        _protected_mail_ids_cached_byte_size_{0},
+        error_message_{nullptr} {}
+
+template <typename>
+constexpr ClearReadMailsResponse::ClearReadMailsResponse(::_pbi::ConstantInitialized,
+                       const ::_pbi::ClassData* PROTOBUF_NONNULL class_data)
+    : ::google::protobuf::Message(
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+          class_data
+#endif  // PROTOBUF_CUSTOM_VTABLE
+          ),
+      _impl_(internal_visibility(), ::_pbi::ConstantInitialized()) {
+}
+inline void* PROTOBUF_NONNULL ClearReadMailsResponse::PlacementNew_(
+    const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena) {
+  return ::new (mem) ClearReadMailsResponse(arena);
+}
+constexpr auto ClearReadMailsResponse::InternalNewImpl_() {
+  return ::google::protobuf::internal::MessageCreator::CopyInit(sizeof(ClearReadMailsResponse), alignof(ClearReadMailsResponse));
+}
+constexpr auto ClearReadMailsResponse::InternalGenerateClassData_(
+    const MessageLite& prototype,
+    const ::google::protobuf::internal::TcParseTableBase* tc_table) {
+  return ::google::protobuf::internal::ClassDataFull{
+      ::google::protobuf::internal::ClassData{
+          &prototype,
+#ifndef PROTOBUF_MESSAGE_GLOBALS
+          &_table_.header,
+#else
+          tc_table,
+#endif
+          nullptr,  // IsInitialized
+          &ClearReadMailsResponse::MergeImpl,
+          ::google::protobuf::Message::GetNewImpl<ClearReadMailsResponse>(),
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+          &ClearReadMailsResponse::SharedDtor,
+          ::google::protobuf::Message::GetClearImpl<ClearReadMailsResponse>(), &ClearReadMailsResponse::ByteSizeLong,
+              &ClearReadMailsResponse::_InternalSerialize,
+#endif  // PROTOBUF_CUSTOM_VTABLE
+          PROTOBUF_FIELD_OFFSET(ClearReadMailsResponse, _impl_._cached_size_),
+          false,
+      },
+#ifdef PROTOBUF_MESSAGE_GLOBALS
+      &file_reflection_data[14],
+#else   // !PROTOBUF_MESSAGE_GLOBALS
+      &::_pbi::kDescriptorMethods,
+      &descriptor_table_proto_2fmail_2fmail_2eproto,
+      nullptr,  // tracker
+#endif  // PROTOBUF_MESSAGE_GLOBALS
+  };
+}
+struct ClearReadMailsResponseGlobalsTypeInternal : ::_pbi::MessageGlobalsBase {
+  constexpr ClearReadMailsResponseGlobalsTypeInternal()
+      :
+#ifndef PROTOBUF_MESSAGE_GLOBALS
+        _default(::_pbi::ConstantInitialized{},
+                 ClearReadMailsResponse_class_data_.base())
+#else   // !PROTOBUF_MESSAGE_GLOBALS
+        MessageGlobalsBase(ClearReadMailsResponse::InternalGenerateClassData_(
+            _default, &ClearReadMailsResponse_globals_._table.header)),
+        _default(::_pbi::ConstantInitialized{}, GetClassData()),
+        _table(::_pbi::PrivateAccess::GenerateParseTable<ClearReadMailsResponse>(
+            GetClassData()))
+#endif  // PROTOBUF_MESSAGE_GLOBALS
+  {
+  }
+  ~ClearReadMailsResponseGlobalsTypeInternal() {}
+  union {
+    alignas(::_pbi::kMaxMessageAlignment) ClearReadMailsResponse _default;
+  };
+#ifdef PROTOBUF_MESSAGE_GLOBALS
+  decltype(::_pbi::PrivateAccess::GenerateParseTable<ClearReadMailsResponse>(
+      ::std::declval<const ::_pbi::ClassData*>())) _table;
+#endif
+};
+#ifdef PROTOBUF_MESSAGE_GLOBALS
+static_assert(PROTOBUF_FIELD_OFFSET(ClearReadMailsResponseGlobalsTypeInternal, _default) ==
+              ::_pbi::MessageGlobalsBase::OffsetToDefault());
+#endif  // PROTOBUF_MESSAGE_GLOBALS
+
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 PROTOBUF_MESSAGE_GLOBALS_CONST ClearReadMailsResponseGlobalsTypeInternal ClearReadMailsResponse_globals_
+        PROTOBUF_MESSAGE_GLOBALS_SECTION(.data.rel.ro);
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+namespace {
+const ::_pbi::ClassData* ClearReadMailsResponse_get_class_data() {
+#ifdef PROTOBUF_MESSAGE_GLOBALS
+  return ClearReadMailsResponse_globals_.GetClassData();
+#else
+  return ClearReadMailsResponse_class_data_.base();
+#endif  // PROTOBUF_MESSAGE_GLOBALS
+}
+}  // namespace
+#endif  // PROTOBUF_CUSTOM_VTABLE
+class MailView::_Internal {
+ public:
+  using HasBits = decltype(::std::declval<MailView>()._impl_._has_bits_);
+  static constexpr ::int32_t kHasBitsOffset =
+      8 * PROTOBUF_FIELD_OFFSET(MailView, _impl_._has_bits_);
+};
+
+constexpr MailView::ParseTableT_ MailView::InternalGenerateParseTable_(const ::_pbi::ClassData* class_data) {
+  return ParseTableT_{
+    {
+      PROTOBUF_FIELD_OFFSET(MailView, _impl_._has_bits_),
+      0, // no _extensions_
+      11, 120,  // max_field_number, fast_idx_mask
+      offsetof(ParseTableT_, field_lookup_table),
+      4294965248,  // skipmap
+      offsetof(ParseTableT_, field_entries),
+      11,  // num_field_entries
+      2,  // num_aux_entries
+      offsetof(ParseTableT_, aux_entries),
+      class_data,
+      nullptr,  // post_loop_handler
+      ::_pbi::TcParser::GenericFallback,  // fallback
+      #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
+      ::_pbi::TcParser::GetTable<::mailpb::MailView>(),  // to_prefetch
+      #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
+    }, {{
+      {::_pbi::TcParser::MiniParse, {}},
+      // uint64 mail_id = 1;
+      {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(MailView, _impl_.mail_id_), 4>(),
+       {8, 4, 0,
+        PROTOBUF_FIELD_OFFSET(MailView, _impl_.mail_id_)}},
+      // .mailpb.MailKind kind = 2;
+      {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(MailView, _impl_.kind_), 5>(),
+       {16, 5, 0,
+        PROTOBUF_FIELD_OFFSET(MailView, _impl_.kind_)}},
+      // string title = 3;
+      {::_pbi::TcParser::FastUS1,
+       {26, 0, 0,
+        PROTOBUF_FIELD_OFFSET(MailView, _impl_.title_)}},
+      // string body = 4;
+      {::_pbi::TcParser::FastUS1,
+       {34, 1, 0,
+        PROTOBUF_FIELD_OFFSET(MailView, _impl_.body_)}},
+      // uint64 sent_ms = 5;
+      {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(MailView, _impl_.sent_ms_), 7>(),
+       {40, 7, 0,
+        PROTOBUF_FIELD_OFFSET(MailView, _impl_.sent_ms_)}},
+      // uint64 expire_ms = 6;
+      {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(MailView, _impl_.expire_ms_), 8>(),
+       {48, 8, 0,
+        PROTOBUF_FIELD_OFFSET(MailView, _impl_.expire_ms_)}},
+      // bool is_read = 7;
+      {::_pbi::TcParser::SingularVarintNoZag1<bool, offsetof(MailView, _impl_.is_read_), 6>(),
+       {56, 6, 0,
+        PROTOBUF_FIELD_OFFSET(MailView, _impl_.is_read_)}},
+      // .mailpb.MailClaimState claim_state = 8;
+      {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(MailView, _impl_.claim_state_), 10>(),
+       {64, 10, 0,
+        PROTOBUF_FIELD_OFFSET(MailView, _impl_.claim_state_)}},
+      // .mailpb.MailAttachments attachments = 9;
+      {::_pbi::TcParser::FastMtS1,
+       {74, 2, 0,
+        PROTOBUF_FIELD_OFFSET(MailView, _impl_.attachments_)}},
+      // uint64 asset_op_id = 10;
+      {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(MailView, _impl_.asset_op_id_), 9>(),
+       {80, 9, 0,
+        PROTOBUF_FIELD_OFFSET(MailView, _impl_.asset_op_id_)}},
+      // .TipInfoMessage claim_reason = 11;
+      {::_pbi::TcParser::FastMtS1,
+       {90, 3, 1,
+        PROTOBUF_FIELD_OFFSET(MailView, _impl_.claim_reason_)}},
+      {::_pbi::TcParser::MiniParse, {}},
+      {::_pbi::TcParser::MiniParse, {}},
+      {::_pbi::TcParser::MiniParse, {}},
+      {::_pbi::TcParser::MiniParse, {}},
+    }}, {{
+      65535, 65535
+    }}, {{
+      // uint64 mail_id = 1;
+      {PROTOBUF_FIELD_OFFSET(MailView, _impl_.mail_id_), _Internal::kHasBitsOffset + 4, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
+      // .mailpb.MailKind kind = 2;
+      {PROTOBUF_FIELD_OFFSET(MailView, _impl_.kind_), _Internal::kHasBitsOffset + 5, 0, (0 | ::_fl::kFcOptional | ::_fl::kOpenEnum)},
+      // string title = 3;
+      {PROTOBUF_FIELD_OFFSET(MailView, _impl_.title_), _Internal::kHasBitsOffset + 0, 0, (0 | ::_fl::kFcOptional | ::_fl::kUtf8String | ::_fl::kRepAString)},
+      // string body = 4;
+      {PROTOBUF_FIELD_OFFSET(MailView, _impl_.body_), _Internal::kHasBitsOffset + 1, 0, (0 | ::_fl::kFcOptional | ::_fl::kUtf8String | ::_fl::kRepAString)},
+      // uint64 sent_ms = 5;
+      {PROTOBUF_FIELD_OFFSET(MailView, _impl_.sent_ms_), _Internal::kHasBitsOffset + 7, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
+      // uint64 expire_ms = 6;
+      {PROTOBUF_FIELD_OFFSET(MailView, _impl_.expire_ms_), _Internal::kHasBitsOffset + 8, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
+      // bool is_read = 7;
+      {PROTOBUF_FIELD_OFFSET(MailView, _impl_.is_read_), _Internal::kHasBitsOffset + 6, 0, (0 | ::_fl::kFcOptional | ::_fl::kBool)},
+      // .mailpb.MailClaimState claim_state = 8;
+      {PROTOBUF_FIELD_OFFSET(MailView, _impl_.claim_state_), _Internal::kHasBitsOffset + 10, 0, (0 | ::_fl::kFcOptional | ::_fl::kOpenEnum)},
+      // .mailpb.MailAttachments attachments = 9;
+      {PROTOBUF_FIELD_OFFSET(MailView, _impl_.attachments_), _Internal::kHasBitsOffset + 2, 0, (0 | ::_fl::kFcOptional | ::_fl::kMessage | ::_fl::kTvTable)},
+      // uint64 asset_op_id = 10;
+      {PROTOBUF_FIELD_OFFSET(MailView, _impl_.asset_op_id_), _Internal::kHasBitsOffset + 9, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
+      // .TipInfoMessage claim_reason = 11;
+      {PROTOBUF_FIELD_OFFSET(MailView, _impl_.claim_reason_), _Internal::kHasBitsOffset + 3, 1, (0 | ::_fl::kFcOptional | ::_fl::kMessage | ::_fl::kTvTable)},
+    }},
+    {{
+        #ifndef PROTOBUF_MESSAGE_GLOBALS
+        {::_pbi::TcParser::GetTable<::mailpb::MailAttachments>()},
+        #else
+        {::_pbi::FieldAuxMessageGlobals(), &::mailpb::MailAttachments_globals_},
+        #endif
+        #ifndef PROTOBUF_MESSAGE_GLOBALS
+        {::_pbi::TcParser::GetTable<::TipInfoMessage>()},
+        #else
+        {::_pbi::FieldAuxMessageGlobals(), &::TipInfoMessage_globals_},
+        #endif
+    }},
+    {{
+      "\17\0\0\5\4\0\0\0\0\0\0\0\0\0\0\0"
+      "mailpb.MailView"
+      "title"
+      "body"
+    }},
+  };
+}
+
+
+inline constexpr MailView::Impl_::Impl_(
+    [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
+    ::_pbi::ConstantInitialized) noexcept
+      : _cached_size_{0},
+        title_(
+            &::google::protobuf::internal::fixed_address_empty_string,
+            ::_pbi::ConstantInitialized()),
+        body_(
+            &::google::protobuf::internal::fixed_address_empty_string,
+            ::_pbi::ConstantInitialized()),
+        attachments_{nullptr},
+        claim_reason_{nullptr},
+        mail_id_{::uint64_t{0u}},
+        kind_{static_cast< ::mailpb::MailKind >(0)},
+        is_read_{false},
+        sent_ms_{::uint64_t{0u}},
+        expire_ms_{::uint64_t{0u}},
+        asset_op_id_{::uint64_t{0u}},
+        claim_state_{static_cast< ::mailpb::MailClaimState >(0)} {}
+
+template <typename>
+constexpr MailView::MailView(::_pbi::ConstantInitialized,
+                       const ::_pbi::ClassData* PROTOBUF_NONNULL class_data)
+    : ::google::protobuf::Message(
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+          class_data
+#endif  // PROTOBUF_CUSTOM_VTABLE
+          ),
+      _impl_(internal_visibility(), ::_pbi::ConstantInitialized()) {
+}
+inline void* PROTOBUF_NONNULL MailView::PlacementNew_(
+    const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena) {
+  return ::new (mem) MailView(arena);
+}
+constexpr auto MailView::InternalNewImpl_() {
+  return ::google::protobuf::internal::MessageCreator::CopyInit(sizeof(MailView), alignof(MailView));
+}
+constexpr auto MailView::InternalGenerateClassData_(
+    const MessageLite& prototype,
+    const ::google::protobuf::internal::TcParseTableBase* tc_table) {
+  return ::google::protobuf::internal::ClassDataFull{
+      ::google::protobuf::internal::ClassData{
+          &prototype,
+#ifndef PROTOBUF_MESSAGE_GLOBALS
+          &_table_.header,
+#else
+          tc_table,
+#endif
+          nullptr,  // IsInitialized
+          &MailView::MergeImpl,
+          ::google::protobuf::Message::GetNewImpl<MailView>(),
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+          &MailView::SharedDtor,
+          ::google::protobuf::Message::GetClearImpl<MailView>(), &MailView::ByteSizeLong,
+              &MailView::_InternalSerialize,
+#endif  // PROTOBUF_CUSTOM_VTABLE
+          PROTOBUF_FIELD_OFFSET(MailView, _impl_._cached_size_),
+          false,
+      },
+#ifdef PROTOBUF_MESSAGE_GLOBALS
+      &file_reflection_data[3],
+#else   // !PROTOBUF_MESSAGE_GLOBALS
+      &::_pbi::kDescriptorMethods,
+      &descriptor_table_proto_2fmail_2fmail_2eproto,
+      nullptr,  // tracker
+#endif  // PROTOBUF_MESSAGE_GLOBALS
+  };
+}
+struct MailViewGlobalsTypeInternal : ::_pbi::MessageGlobalsBase {
+  constexpr MailViewGlobalsTypeInternal()
+      :
+#ifndef PROTOBUF_MESSAGE_GLOBALS
+        _default(::_pbi::ConstantInitialized{},
+                 MailView_class_data_.base())
+#else   // !PROTOBUF_MESSAGE_GLOBALS
+        MessageGlobalsBase(MailView::InternalGenerateClassData_(
+            _default, &MailView_globals_._table.header)),
+        _default(::_pbi::ConstantInitialized{}, GetClassData()),
+        _table(::_pbi::PrivateAccess::GenerateParseTable<MailView>(
+            GetClassData()))
+#endif  // PROTOBUF_MESSAGE_GLOBALS
+  {
+  }
+  ~MailViewGlobalsTypeInternal() {}
+  union {
+    alignas(::_pbi::kMaxMessageAlignment) MailView _default;
+  };
+#ifdef PROTOBUF_MESSAGE_GLOBALS
+  decltype(::_pbi::PrivateAccess::GenerateParseTable<MailView>(
+      ::std::declval<const ::_pbi::ClassData*>())) _table;
+#endif
+};
+#ifdef PROTOBUF_MESSAGE_GLOBALS
+static_assert(PROTOBUF_FIELD_OFFSET(MailViewGlobalsTypeInternal, _default) ==
+              ::_pbi::MessageGlobalsBase::OffsetToDefault());
+#endif  // PROTOBUF_MESSAGE_GLOBALS
+
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 PROTOBUF_MESSAGE_GLOBALS_CONST MailViewGlobalsTypeInternal MailView_globals_
+        PROTOBUF_MESSAGE_GLOBALS_SECTION(.data.rel.ro);
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+namespace {
+const ::_pbi::ClassData* MailView_get_class_data() {
+#ifdef PROTOBUF_MESSAGE_GLOBALS
+  return MailView_globals_.GetClassData();
+#else
+  return MailView_class_data_.base();
+#endif  // PROTOBUF_MESSAGE_GLOBALS
+}
+}  // namespace
+#endif  // PROTOBUF_CUSTOM_VTABLE
+class ClaimMailAttachmentsResponse::_Internal {
+ public:
+  using HasBits = decltype(::std::declval<ClaimMailAttachmentsResponse>()._impl_._has_bits_);
+  static constexpr ::int32_t kHasBitsOffset =
+      8 * PROTOBUF_FIELD_OFFSET(ClaimMailAttachmentsResponse, _impl_._has_bits_);
+};
+
+constexpr ClaimMailAttachmentsResponse::ParseTableT_ ClaimMailAttachmentsResponse::InternalGenerateParseTable_(const ::_pbi::ClassData* class_data) {
+  return ParseTableT_{
+    {
+      PROTOBUF_FIELD_OFFSET(ClaimMailAttachmentsResponse, _impl_._has_bits_),
+      0, // no _extensions_
+      2, 8,  // max_field_number, fast_idx_mask
+      offsetof(ParseTableT_, field_lookup_table),
+      4294967292,  // skipmap
+      offsetof(ParseTableT_, field_entries),
+      2,  // num_field_entries
+      2,  // num_aux_entries
+      offsetof(ParseTableT_, aux_entries),
+      class_data,
+      nullptr,  // post_loop_handler
+      ::_pbi::TcParser::GenericFallback,  // fallback
+      #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
+      ::_pbi::TcParser::GetTable<::mailpb::ClaimMailAttachmentsResponse>(),  // to_prefetch
+      #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
+    }, {{
+      // repeated .mailpb.MailActionResult results = 2;
+      {::_pbi::TcParser::FastMtR1,
+       {18, 0, 1,
+        PROTOBUF_FIELD_OFFSET(ClaimMailAttachmentsResponse, _impl_.results_)}},
+      // .TipInfoMessage error_message = 1;
+      {::_pbi::TcParser::FastMtS1,
+       {10, 1, 0,
+        PROTOBUF_FIELD_OFFSET(ClaimMailAttachmentsResponse, _impl_.error_message_)}},
+    }}, {{
+      65535, 65535
+    }}, {{
+      // .TipInfoMessage error_message = 1;
+      {PROTOBUF_FIELD_OFFSET(ClaimMailAttachmentsResponse, _impl_.error_message_), _Internal::kHasBitsOffset + 1, 0, (0 | ::_fl::kFcOptional | ::_fl::kMessage | ::_fl::kTvTable)},
+      // repeated .mailpb.MailActionResult results = 2;
+      {PROTOBUF_FIELD_OFFSET(ClaimMailAttachmentsResponse, _impl_.results_), _Internal::kHasBitsOffset + 0, 1, (0 | ::_fl::kFcRepeated | ::_fl::kMessage | ::_fl::kTvTable)},
+    }},
+    {{
+        #ifndef PROTOBUF_MESSAGE_GLOBALS
+        {::_pbi::TcParser::GetTable<::TipInfoMessage>()},
+        #else
+        {::_pbi::FieldAuxMessageGlobals(), &::TipInfoMessage_globals_},
+        #endif
+        #ifndef PROTOBUF_MESSAGE_GLOBALS
+        {::_pbi::TcParser::GetTable<::mailpb::MailActionResult>()},
+        #else
+        {::_pbi::FieldAuxMessageGlobals(), &::mailpb::MailActionResult_globals_},
+        #endif
+    }},
+    {{
+    }},
+  };
+}
+
+
 inline constexpr ClaimMailAttachmentsResponse::Impl_::Impl_(
     [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
     ::_pbi::ConstantInitialized) noexcept
       : _cached_size_{0},
+        results_ { visibility, ::_pbi::InternalMetadataOffset::Build<
+            ::mailpb::ClaimMailAttachmentsResponse,
+            PROTOBUF_FIELD_OFFSET(::mailpb::ClaimMailAttachmentsResponse, _impl_.results_)>()
+         }
+        ,
         error_message_{nullptr} {}
 
 template <typename>
@@ -1778,7 +2208,7 @@ inline void* PROTOBUF_NONNULL ClaimMailAttachmentsResponse::PlacementNew_(
   return ::new (mem) ClaimMailAttachmentsResponse(arena);
 }
 constexpr auto ClaimMailAttachmentsResponse::InternalNewImpl_() {
-  return ::google::protobuf::internal::MessageCreator::ZeroInit(sizeof(ClaimMailAttachmentsResponse), alignof(ClaimMailAttachmentsResponse));
+  return ::google::protobuf::internal::MessageCreator::CopyInit(sizeof(ClaimMailAttachmentsResponse), alignof(ClaimMailAttachmentsResponse));
 }
 constexpr auto ClaimMailAttachmentsResponse::InternalGenerateClassData_(
     const MessageLite& prototype,
@@ -1803,7 +2233,7 @@ constexpr auto ClaimMailAttachmentsResponse::InternalGenerateClassData_(
           false,
       },
 #ifdef PROTOBUF_MESSAGE_GLOBALS
-      &file_reflection_data[13],
+      &file_reflection_data[10],
 #else   // !PROTOBUF_MESSAGE_GLOBALS
       &::_pbi::kDescriptorMethods,
       &descriptor_table_proto_2fmail_2fmail_2eproto,
@@ -1854,224 +2284,6 @@ const ::_pbi::ClassData* ClaimMailAttachmentsResponse_get_class_data() {
 }
 }  // namespace
 #endif  // PROTOBUF_CUSTOM_VTABLE
-class MailSummary::_Internal {
- public:
-  using HasBits = decltype(::std::declval<MailSummary>()._impl_._has_bits_);
-  static constexpr ::int32_t kHasBitsOffset =
-      8 * PROTOBUF_FIELD_OFFSET(MailSummary, _impl_._has_bits_);
-};
-
-constexpr MailSummary::ParseTableT_ MailSummary::InternalGenerateParseTable_(const ::_pbi::ClassData* class_data) {
-  return ParseTableT_{
-    {
-      PROTOBUF_FIELD_OFFSET(MailSummary, _impl_._has_bits_),
-      0, // no _extensions_
-      9, 120,  // max_field_number, fast_idx_mask
-      offsetof(ParseTableT_, field_lookup_table),
-      4294966784,  // skipmap
-      offsetof(ParseTableT_, field_entries),
-      9,  // num_field_entries
-      1,  // num_aux_entries
-      offsetof(ParseTableT_, aux_entries),
-      class_data,
-      nullptr,  // post_loop_handler
-      ::_pbi::TcParser::GenericFallback,  // fallback
-      #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
-      ::_pbi::TcParser::GetTable<::mailpb::MailSummary>(),  // to_prefetch
-      #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
-    }, {{
-      {::_pbi::TcParser::MiniParse, {}},
-      // uint64 mail_id = 1;
-      {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(MailSummary, _impl_.mail_id_), 3>(),
-       {8, 3, 0,
-        PROTOBUF_FIELD_OFFSET(MailSummary, _impl_.mail_id_)}},
-      // .mailpb.MailKind kind = 2;
-      {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(MailSummary, _impl_.kind_), 4>(),
-       {16, 4, 0,
-        PROTOBUF_FIELD_OFFSET(MailSummary, _impl_.kind_)}},
-      // string sender_name = 3;
-      {::_pbi::TcParser::FastUS1,
-       {26, 0, 0,
-        PROTOBUF_FIELD_OFFSET(MailSummary, _impl_.sender_name_)}},
-      // string title = 4;
-      {::_pbi::TcParser::FastUS1,
-       {34, 1, 0,
-        PROTOBUF_FIELD_OFFSET(MailSummary, _impl_.title_)}},
-      // uint64 sent_ms = 5;
-      {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(MailSummary, _impl_.sent_ms_), 6>(),
-       {40, 6, 0,
-        PROTOBUF_FIELD_OFFSET(MailSummary, _impl_.sent_ms_)}},
-      // uint64 expire_ms = 6;
-      {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(MailSummary, _impl_.expire_ms_), 7>(),
-       {48, 7, 0,
-        PROTOBUF_FIELD_OFFSET(MailSummary, _impl_.expire_ms_)}},
-      // bool read = 7;
-      {::_pbi::TcParser::SingularVarintNoZag1<bool, offsetof(MailSummary, _impl_.read_), 5>(),
-       {56, 5, 0,
-        PROTOBUF_FIELD_OFFSET(MailSummary, _impl_.read_)}},
-      // .mailpb.MailClaimState claim_state = 8;
-      {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(MailSummary, _impl_.claim_state_), 8>(),
-       {64, 8, 0,
-        PROTOBUF_FIELD_OFFSET(MailSummary, _impl_.claim_state_)}},
-      // .mailpb.MailAttachments attachments = 9;
-      {::_pbi::TcParser::FastMtS1,
-       {74, 2, 0,
-        PROTOBUF_FIELD_OFFSET(MailSummary, _impl_.attachments_)}},
-      {::_pbi::TcParser::MiniParse, {}},
-      {::_pbi::TcParser::MiniParse, {}},
-      {::_pbi::TcParser::MiniParse, {}},
-      {::_pbi::TcParser::MiniParse, {}},
-      {::_pbi::TcParser::MiniParse, {}},
-      {::_pbi::TcParser::MiniParse, {}},
-    }}, {{
-      65535, 65535
-    }}, {{
-      // uint64 mail_id = 1;
-      {PROTOBUF_FIELD_OFFSET(MailSummary, _impl_.mail_id_), _Internal::kHasBitsOffset + 3, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
-      // .mailpb.MailKind kind = 2;
-      {PROTOBUF_FIELD_OFFSET(MailSummary, _impl_.kind_), _Internal::kHasBitsOffset + 4, 0, (0 | ::_fl::kFcOptional | ::_fl::kOpenEnum)},
-      // string sender_name = 3;
-      {PROTOBUF_FIELD_OFFSET(MailSummary, _impl_.sender_name_), _Internal::kHasBitsOffset + 0, 0, (0 | ::_fl::kFcOptional | ::_fl::kUtf8String | ::_fl::kRepAString)},
-      // string title = 4;
-      {PROTOBUF_FIELD_OFFSET(MailSummary, _impl_.title_), _Internal::kHasBitsOffset + 1, 0, (0 | ::_fl::kFcOptional | ::_fl::kUtf8String | ::_fl::kRepAString)},
-      // uint64 sent_ms = 5;
-      {PROTOBUF_FIELD_OFFSET(MailSummary, _impl_.sent_ms_), _Internal::kHasBitsOffset + 6, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
-      // uint64 expire_ms = 6;
-      {PROTOBUF_FIELD_OFFSET(MailSummary, _impl_.expire_ms_), _Internal::kHasBitsOffset + 7, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
-      // bool read = 7;
-      {PROTOBUF_FIELD_OFFSET(MailSummary, _impl_.read_), _Internal::kHasBitsOffset + 5, 0, (0 | ::_fl::kFcOptional | ::_fl::kBool)},
-      // .mailpb.MailClaimState claim_state = 8;
-      {PROTOBUF_FIELD_OFFSET(MailSummary, _impl_.claim_state_), _Internal::kHasBitsOffset + 8, 0, (0 | ::_fl::kFcOptional | ::_fl::kOpenEnum)},
-      // .mailpb.MailAttachments attachments = 9;
-      {PROTOBUF_FIELD_OFFSET(MailSummary, _impl_.attachments_), _Internal::kHasBitsOffset + 2, 0, (0 | ::_fl::kFcOptional | ::_fl::kMessage | ::_fl::kTvTable)},
-    }},
-    {{
-        #ifndef PROTOBUF_MESSAGE_GLOBALS
-        {::_pbi::TcParser::GetTable<::mailpb::MailAttachments>()},
-        #else
-        {::_pbi::FieldAuxMessageGlobals(), &::mailpb::MailAttachments_globals_},
-        #endif
-    }},
-    {{
-      "\22\0\0\13\5\0\0\0\0\0\0\0\0\0\0\0"
-      "mailpb.MailSummary"
-      "sender_name"
-      "title"
-    }},
-  };
-}
-
-
-inline constexpr MailSummary::Impl_::Impl_(
-    [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
-    ::_pbi::ConstantInitialized) noexcept
-      : _cached_size_{0},
-        sender_name_(
-            &::google::protobuf::internal::fixed_address_empty_string,
-            ::_pbi::ConstantInitialized()),
-        title_(
-            &::google::protobuf::internal::fixed_address_empty_string,
-            ::_pbi::ConstantInitialized()),
-        attachments_{nullptr},
-        mail_id_{::uint64_t{0u}},
-        kind_{static_cast< ::mailpb::MailKind >(0)},
-        read_{false},
-        sent_ms_{::uint64_t{0u}},
-        expire_ms_{::uint64_t{0u}},
-        claim_state_{static_cast< ::mailpb::MailClaimState >(0)} {}
-
-template <typename>
-constexpr MailSummary::MailSummary(::_pbi::ConstantInitialized,
-                       const ::_pbi::ClassData* PROTOBUF_NONNULL class_data)
-    : ::google::protobuf::Message(
-#if defined(PROTOBUF_CUSTOM_VTABLE)
-          class_data
-#endif  // PROTOBUF_CUSTOM_VTABLE
-          ),
-      _impl_(internal_visibility(), ::_pbi::ConstantInitialized()) {
-}
-inline void* PROTOBUF_NONNULL MailSummary::PlacementNew_(
-    const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
-    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena) {
-  return ::new (mem) MailSummary(arena);
-}
-constexpr auto MailSummary::InternalNewImpl_() {
-  return ::google::protobuf::internal::MessageCreator::CopyInit(sizeof(MailSummary), alignof(MailSummary));
-}
-constexpr auto MailSummary::InternalGenerateClassData_(
-    const MessageLite& prototype,
-    const ::google::protobuf::internal::TcParseTableBase* tc_table) {
-  return ::google::protobuf::internal::ClassDataFull{
-      ::google::protobuf::internal::ClassData{
-          &prototype,
-#ifndef PROTOBUF_MESSAGE_GLOBALS
-          &_table_.header,
-#else
-          tc_table,
-#endif
-          nullptr,  // IsInitialized
-          &MailSummary::MergeImpl,
-          ::google::protobuf::Message::GetNewImpl<MailSummary>(),
-#if defined(PROTOBUF_CUSTOM_VTABLE)
-          &MailSummary::SharedDtor,
-          ::google::protobuf::Message::GetClearImpl<MailSummary>(), &MailSummary::ByteSizeLong,
-              &MailSummary::_InternalSerialize,
-#endif  // PROTOBUF_CUSTOM_VTABLE
-          PROTOBUF_FIELD_OFFSET(MailSummary, _impl_._cached_size_),
-          false,
-      },
-#ifdef PROTOBUF_MESSAGE_GLOBALS
-      &file_reflection_data[3],
-#else   // !PROTOBUF_MESSAGE_GLOBALS
-      &::_pbi::kDescriptorMethods,
-      &descriptor_table_proto_2fmail_2fmail_2eproto,
-      nullptr,  // tracker
-#endif  // PROTOBUF_MESSAGE_GLOBALS
-  };
-}
-struct MailSummaryGlobalsTypeInternal : ::_pbi::MessageGlobalsBase {
-  constexpr MailSummaryGlobalsTypeInternal()
-      :
-#ifndef PROTOBUF_MESSAGE_GLOBALS
-        _default(::_pbi::ConstantInitialized{},
-                 MailSummary_class_data_.base())
-#else   // !PROTOBUF_MESSAGE_GLOBALS
-        MessageGlobalsBase(MailSummary::InternalGenerateClassData_(
-            _default, &MailSummary_globals_._table.header)),
-        _default(::_pbi::ConstantInitialized{}, GetClassData()),
-        _table(::_pbi::PrivateAccess::GenerateParseTable<MailSummary>(
-            GetClassData()))
-#endif  // PROTOBUF_MESSAGE_GLOBALS
-  {
-  }
-  ~MailSummaryGlobalsTypeInternal() {}
-  union {
-    alignas(::_pbi::kMaxMessageAlignment) MailSummary _default;
-  };
-#ifdef PROTOBUF_MESSAGE_GLOBALS
-  decltype(::_pbi::PrivateAccess::GenerateParseTable<MailSummary>(
-      ::std::declval<const ::_pbi::ClassData*>())) _table;
-#endif
-};
-#ifdef PROTOBUF_MESSAGE_GLOBALS
-static_assert(PROTOBUF_FIELD_OFFSET(MailSummaryGlobalsTypeInternal, _default) ==
-              ::_pbi::MessageGlobalsBase::OffsetToDefault());
-#endif  // PROTOBUF_MESSAGE_GLOBALS
-
-PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
-    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 PROTOBUF_MESSAGE_GLOBALS_CONST MailSummaryGlobalsTypeInternal MailSummary_globals_
-        PROTOBUF_MESSAGE_GLOBALS_SECTION(.data.rel.ro);
-#if defined(PROTOBUF_CUSTOM_VTABLE)
-namespace {
-const ::_pbi::ClassData* MailSummary_get_class_data() {
-#ifdef PROTOBUF_MESSAGE_GLOBALS
-  return MailSummary_globals_.GetClassData();
-#else
-  return MailSummary_class_data_.base();
-#endif  // PROTOBUF_MESSAGE_GLOBALS
-}
-}  // namespace
-#endif  // PROTOBUF_CUSTOM_VTABLE
 class ReadMailResponse::_Internal {
  public:
   using HasBits = decltype(::std::declval<ReadMailResponse>()._impl_._has_bits_);
@@ -2084,11 +2296,11 @@ constexpr ReadMailResponse::ParseTableT_ ReadMailResponse::InternalGenerateParse
     {
       PROTOBUF_FIELD_OFFSET(ReadMailResponse, _impl_._has_bits_),
       0, // no _extensions_
-      4, 24,  // max_field_number, fast_idx_mask
+      2, 8,  // max_field_number, fast_idx_mask
       offsetof(ParseTableT_, field_lookup_table),
-      4294967280,  // skipmap
+      4294967292,  // skipmap
       offsetof(ParseTableT_, field_entries),
-      4,  // num_field_entries
+      2,  // num_field_entries
       2,  // num_aux_entries
       offsetof(ParseTableT_, aux_entries),
       class_data,
@@ -2098,33 +2310,21 @@ constexpr ReadMailResponse::ParseTableT_ ReadMailResponse::InternalGenerateParse
       ::_pbi::TcParser::GetTable<::mailpb::ReadMailResponse>(),  // to_prefetch
       #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
     }, {{
-      // uint64 server_now_ms = 4;
-      {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(ReadMailResponse, _impl_.server_now_ms_), 3>(),
-       {32, 3, 0,
-        PROTOBUF_FIELD_OFFSET(ReadMailResponse, _impl_.server_now_ms_)}},
+      // .mailpb.MailView mail = 2;
+      {::_pbi::TcParser::FastMtS1,
+       {18, 1, 1,
+        PROTOBUF_FIELD_OFFSET(ReadMailResponse, _impl_.mail_)}},
       // .TipInfoMessage error_message = 1;
       {::_pbi::TcParser::FastMtS1,
-       {10, 1, 0,
+       {10, 0, 0,
         PROTOBUF_FIELD_OFFSET(ReadMailResponse, _impl_.error_message_)}},
-      // .mailpb.MailSummary summary = 2;
-      {::_pbi::TcParser::FastMtS1,
-       {18, 2, 1,
-        PROTOBUF_FIELD_OFFSET(ReadMailResponse, _impl_.summary_)}},
-      // string body = 3;
-      {::_pbi::TcParser::FastUS1,
-       {26, 0, 0,
-        PROTOBUF_FIELD_OFFSET(ReadMailResponse, _impl_.body_)}},
     }}, {{
       65535, 65535
     }}, {{
       // .TipInfoMessage error_message = 1;
-      {PROTOBUF_FIELD_OFFSET(ReadMailResponse, _impl_.error_message_), _Internal::kHasBitsOffset + 1, 0, (0 | ::_fl::kFcOptional | ::_fl::kMessage | ::_fl::kTvTable)},
-      // .mailpb.MailSummary summary = 2;
-      {PROTOBUF_FIELD_OFFSET(ReadMailResponse, _impl_.summary_), _Internal::kHasBitsOffset + 2, 1, (0 | ::_fl::kFcOptional | ::_fl::kMessage | ::_fl::kTvTable)},
-      // string body = 3;
-      {PROTOBUF_FIELD_OFFSET(ReadMailResponse, _impl_.body_), _Internal::kHasBitsOffset + 0, 0, (0 | ::_fl::kFcOptional | ::_fl::kUtf8String | ::_fl::kRepAString)},
-      // uint64 server_now_ms = 4;
-      {PROTOBUF_FIELD_OFFSET(ReadMailResponse, _impl_.server_now_ms_), _Internal::kHasBitsOffset + 3, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
+      {PROTOBUF_FIELD_OFFSET(ReadMailResponse, _impl_.error_message_), _Internal::kHasBitsOffset + 0, 0, (0 | ::_fl::kFcOptional | ::_fl::kMessage | ::_fl::kTvTable)},
+      // .mailpb.MailView mail = 2;
+      {PROTOBUF_FIELD_OFFSET(ReadMailResponse, _impl_.mail_), _Internal::kHasBitsOffset + 1, 1, (0 | ::_fl::kFcOptional | ::_fl::kMessage | ::_fl::kTvTable)},
     }},
     {{
         #ifndef PROTOBUF_MESSAGE_GLOBALS
@@ -2133,15 +2333,12 @@ constexpr ReadMailResponse::ParseTableT_ ReadMailResponse::InternalGenerateParse
         {::_pbi::FieldAuxMessageGlobals(), &::TipInfoMessage_globals_},
         #endif
         #ifndef PROTOBUF_MESSAGE_GLOBALS
-        {::_pbi::TcParser::GetTable<::mailpb::MailSummary>()},
+        {::_pbi::TcParser::GetTable<::mailpb::MailView>()},
         #else
-        {::_pbi::FieldAuxMessageGlobals(), &::mailpb::MailSummary_globals_},
+        {::_pbi::FieldAuxMessageGlobals(), &::mailpb::MailView_globals_},
         #endif
     }},
     {{
-      "\27\0\0\4\0\0\0\0"
-      "mailpb.ReadMailResponse"
-      "body"
     }},
   };
 }
@@ -2151,12 +2348,8 @@ inline constexpr ReadMailResponse::Impl_::Impl_(
     [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
     ::_pbi::ConstantInitialized) noexcept
       : _cached_size_{0},
-        body_(
-            &::google::protobuf::internal::fixed_address_empty_string,
-            ::_pbi::ConstantInitialized()),
         error_message_{nullptr},
-        summary_{nullptr},
-        server_now_ms_{::uint64_t{0u}} {}
+        mail_{nullptr} {}
 
 template <typename>
 constexpr ReadMailResponse::ReadMailResponse(::_pbi::ConstantInitialized,
@@ -2174,7 +2367,7 @@ inline void* PROTOBUF_NONNULL ReadMailResponse::PlacementNew_(
   return ::new (mem) ReadMailResponse(arena);
 }
 constexpr auto ReadMailResponse::InternalNewImpl_() {
-  return ::google::protobuf::internal::MessageCreator::CopyInit(sizeof(ReadMailResponse), alignof(ReadMailResponse));
+  return ::google::protobuf::internal::MessageCreator::ZeroInit(sizeof(ReadMailResponse), alignof(ReadMailResponse));
 }
 constexpr auto ReadMailResponse::InternalGenerateClassData_(
     const MessageLite& prototype,
@@ -2281,25 +2474,25 @@ constexpr ListMailsResponse::ParseTableT_ ListMailsResponse::InternalGeneratePar
       {::_pbi::TcParser::FastMtS1,
        {10, 1, 0,
         PROTOBUF_FIELD_OFFSET(ListMailsResponse, _impl_.error_message_)}},
-      // repeated .mailpb.MailSummary mails = 2;
+      // repeated .mailpb.MailView mails = 2;
       {::_pbi::TcParser::FastMtR1,
        {18, 0, 1,
         PROTOBUF_FIELD_OFFSET(ListMailsResponse, _impl_.mails_)}},
-      // bool has_more = 3;
-      {::_pbi::TcParser::SingularVarintNoZag1<bool, offsetof(ListMailsResponse, _impl_.has_more_), 2>(),
+      // uint64 next_before_mail_id = 3;
+      {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(ListMailsResponse, _impl_.next_before_mail_id_), 2>(),
        {24, 2, 0,
-        PROTOBUF_FIELD_OFFSET(ListMailsResponse, _impl_.has_more_)}},
+        PROTOBUF_FIELD_OFFSET(ListMailsResponse, _impl_.next_before_mail_id_)}},
       // uint32 unread_count = 4;
       {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(ListMailsResponse, _impl_.unread_count_), 3>(),
        {32, 3, 0,
         PROTOBUF_FIELD_OFFSET(ListMailsResponse, _impl_.unread_count_)}},
       // uint32 claimable_count = 5;
-      {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(ListMailsResponse, _impl_.claimable_count_), 5>(),
-       {40, 5, 0,
+      {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(ListMailsResponse, _impl_.claimable_count_), 4>(),
+       {40, 4, 0,
         PROTOBUF_FIELD_OFFSET(ListMailsResponse, _impl_.claimable_count_)}},
       // uint64 server_now_ms = 6;
-      {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(ListMailsResponse, _impl_.server_now_ms_), 4>(),
-       {48, 4, 0,
+      {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(ListMailsResponse, _impl_.server_now_ms_), 5>(),
+       {48, 5, 0,
         PROTOBUF_FIELD_OFFSET(ListMailsResponse, _impl_.server_now_ms_)}},
       {::_pbi::TcParser::MiniParse, {}},
     }}, {{
@@ -2307,16 +2500,16 @@ constexpr ListMailsResponse::ParseTableT_ ListMailsResponse::InternalGeneratePar
     }}, {{
       // .TipInfoMessage error_message = 1;
       {PROTOBUF_FIELD_OFFSET(ListMailsResponse, _impl_.error_message_), _Internal::kHasBitsOffset + 1, 0, (0 | ::_fl::kFcOptional | ::_fl::kMessage | ::_fl::kTvTable)},
-      // repeated .mailpb.MailSummary mails = 2;
+      // repeated .mailpb.MailView mails = 2;
       {PROTOBUF_FIELD_OFFSET(ListMailsResponse, _impl_.mails_), _Internal::kHasBitsOffset + 0, 1, (0 | ::_fl::kFcRepeated | ::_fl::kMessage | ::_fl::kTvTable)},
-      // bool has_more = 3;
-      {PROTOBUF_FIELD_OFFSET(ListMailsResponse, _impl_.has_more_), _Internal::kHasBitsOffset + 2, 0, (0 | ::_fl::kFcOptional | ::_fl::kBool)},
+      // uint64 next_before_mail_id = 3;
+      {PROTOBUF_FIELD_OFFSET(ListMailsResponse, _impl_.next_before_mail_id_), _Internal::kHasBitsOffset + 2, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
       // uint32 unread_count = 4;
       {PROTOBUF_FIELD_OFFSET(ListMailsResponse, _impl_.unread_count_), _Internal::kHasBitsOffset + 3, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
       // uint32 claimable_count = 5;
-      {PROTOBUF_FIELD_OFFSET(ListMailsResponse, _impl_.claimable_count_), _Internal::kHasBitsOffset + 5, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
+      {PROTOBUF_FIELD_OFFSET(ListMailsResponse, _impl_.claimable_count_), _Internal::kHasBitsOffset + 4, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
       // uint64 server_now_ms = 6;
-      {PROTOBUF_FIELD_OFFSET(ListMailsResponse, _impl_.server_now_ms_), _Internal::kHasBitsOffset + 4, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
+      {PROTOBUF_FIELD_OFFSET(ListMailsResponse, _impl_.server_now_ms_), _Internal::kHasBitsOffset + 5, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
     }},
     {{
         #ifndef PROTOBUF_MESSAGE_GLOBALS
@@ -2325,9 +2518,9 @@ constexpr ListMailsResponse::ParseTableT_ ListMailsResponse::InternalGeneratePar
         {::_pbi::FieldAuxMessageGlobals(), &::TipInfoMessage_globals_},
         #endif
         #ifndef PROTOBUF_MESSAGE_GLOBALS
-        {::_pbi::TcParser::GetTable<::mailpb::MailSummary>()},
+        {::_pbi::TcParser::GetTable<::mailpb::MailView>()},
         #else
-        {::_pbi::FieldAuxMessageGlobals(), &::mailpb::MailSummary_globals_},
+        {::_pbi::FieldAuxMessageGlobals(), &::mailpb::MailView_globals_},
         #endif
     }},
     {{
@@ -2346,10 +2539,10 @@ inline constexpr ListMailsResponse::Impl_::Impl_(
          }
         ,
         error_message_{nullptr},
-        has_more_{false},
+        next_before_mail_id_{::uint64_t{0u}},
         unread_count_{0u},
-        server_now_ms_{::uint64_t{0u}},
-        claimable_count_{0u} {}
+        claimable_count_{0u},
+        server_now_ms_{::uint64_t{0u}} {}
 
 template <typename>
 constexpr ListMailsResponse::ListMailsResponse(::_pbi::ConstantInitialized,
@@ -2445,19 +2638,12 @@ const ::_pbi::ClassData* ListMailsResponse_get_class_data() {
 #endif  // PROTOBUF_CUSTOM_VTABLE
 }  // namespace mailpb
 static const ::_pb::EnumDescriptor* PROTOBUF_NONNULL
-    file_level_enum_descriptors_proto_2fmail_2fmail_2eproto[3];
+    file_level_enum_descriptors_proto_2fmail_2fmail_2eproto[2];
 static constexpr const ::_pb::ServiceDescriptor* PROTOBUF_NONNULL* PROTOBUF_NULLABLE
     file_level_service_descriptors_proto_2fmail_2fmail_2eproto = nullptr;
 const ::uint32_t
     TableStruct_proto_2fmail_2fmail_2eproto::offsets[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
         protodesc_cold) = {
-        0x081, // bitmap
-        PROTOBUF_FIELD_OFFSET(::mailpb::MailAttachments, _impl_._has_bits_),
-        5, // hasbit index offset
-        PROTOBUF_FIELD_OFFSET(::mailpb::MailAttachments, _impl_.currencies_),
-        PROTOBUF_FIELD_OFFSET(::mailpb::MailAttachments, _impl_.items_),
-        0,
-        1,
         0x081, // bitmap
         PROTOBUF_FIELD_OFFSET(::mailpb::MailCurrency, _impl_._has_bits_),
         5, // hasbit index offset
@@ -2473,31 +2659,42 @@ const ::uint32_t
         0,
         1,
         0x081, // bitmap
-        PROTOBUF_FIELD_OFFSET(::mailpb::MailSummary, _impl_._has_bits_),
-        12, // hasbit index offset
-        PROTOBUF_FIELD_OFFSET(::mailpb::MailSummary, _impl_.mail_id_),
-        PROTOBUF_FIELD_OFFSET(::mailpb::MailSummary, _impl_.kind_),
-        PROTOBUF_FIELD_OFFSET(::mailpb::MailSummary, _impl_.sender_name_),
-        PROTOBUF_FIELD_OFFSET(::mailpb::MailSummary, _impl_.title_),
-        PROTOBUF_FIELD_OFFSET(::mailpb::MailSummary, _impl_.sent_ms_),
-        PROTOBUF_FIELD_OFFSET(::mailpb::MailSummary, _impl_.expire_ms_),
-        PROTOBUF_FIELD_OFFSET(::mailpb::MailSummary, _impl_.read_),
-        PROTOBUF_FIELD_OFFSET(::mailpb::MailSummary, _impl_.claim_state_),
-        PROTOBUF_FIELD_OFFSET(::mailpb::MailSummary, _impl_.attachments_),
-        3,
-        4,
+        PROTOBUF_FIELD_OFFSET(::mailpb::MailAttachments, _impl_._has_bits_),
+        5, // hasbit index offset
+        PROTOBUF_FIELD_OFFSET(::mailpb::MailAttachments, _impl_.currencies_),
+        PROTOBUF_FIELD_OFFSET(::mailpb::MailAttachments, _impl_.items_),
         0,
         1,
-        6,
-        7,
+        0x081, // bitmap
+        PROTOBUF_FIELD_OFFSET(::mailpb::MailView, _impl_._has_bits_),
+        14, // hasbit index offset
+        PROTOBUF_FIELD_OFFSET(::mailpb::MailView, _impl_.mail_id_),
+        PROTOBUF_FIELD_OFFSET(::mailpb::MailView, _impl_.kind_),
+        PROTOBUF_FIELD_OFFSET(::mailpb::MailView, _impl_.title_),
+        PROTOBUF_FIELD_OFFSET(::mailpb::MailView, _impl_.body_),
+        PROTOBUF_FIELD_OFFSET(::mailpb::MailView, _impl_.sent_ms_),
+        PROTOBUF_FIELD_OFFSET(::mailpb::MailView, _impl_.expire_ms_),
+        PROTOBUF_FIELD_OFFSET(::mailpb::MailView, _impl_.is_read_),
+        PROTOBUF_FIELD_OFFSET(::mailpb::MailView, _impl_.claim_state_),
+        PROTOBUF_FIELD_OFFSET(::mailpb::MailView, _impl_.attachments_),
+        PROTOBUF_FIELD_OFFSET(::mailpb::MailView, _impl_.asset_op_id_),
+        PROTOBUF_FIELD_OFFSET(::mailpb::MailView, _impl_.claim_reason_),
+        4,
         5,
+        0,
+        1,
+        7,
         8,
+        6,
+        10,
         2,
+        9,
+        3,
         0x081, // bitmap
         PROTOBUF_FIELD_OFFSET(::mailpb::ListMailsRequest, _impl_._has_bits_),
         5, // hasbit index offset
         PROTOBUF_FIELD_OFFSET(::mailpb::ListMailsRequest, _impl_.before_mail_id_),
-        PROTOBUF_FIELD_OFFSET(::mailpb::ListMailsRequest, _impl_.page_size_),
+        PROTOBUF_FIELD_OFFSET(::mailpb::ListMailsRequest, _impl_.limit_),
         0,
         1,
         0x081, // bitmap
@@ -2505,7 +2702,7 @@ const ::uint32_t
         9, // hasbit index offset
         PROTOBUF_FIELD_OFFSET(::mailpb::ListMailsResponse, _impl_.error_message_),
         PROTOBUF_FIELD_OFFSET(::mailpb::ListMailsResponse, _impl_.mails_),
-        PROTOBUF_FIELD_OFFSET(::mailpb::ListMailsResponse, _impl_.has_more_),
+        PROTOBUF_FIELD_OFFSET(::mailpb::ListMailsResponse, _impl_.next_before_mail_id_),
         PROTOBUF_FIELD_OFFSET(::mailpb::ListMailsResponse, _impl_.unread_count_),
         PROTOBUF_FIELD_OFFSET(::mailpb::ListMailsResponse, _impl_.claimable_count_),
         PROTOBUF_FIELD_OFFSET(::mailpb::ListMailsResponse, _impl_.server_now_ms_),
@@ -2513,8 +2710,8 @@ const ::uint32_t
         0,
         2,
         3,
-        5,
         4,
+        5,
         0x081, // bitmap
         PROTOBUF_FIELD_OFFSET(::mailpb::ReadMailRequest, _impl_._has_bits_),
         4, // hasbit index offset
@@ -2522,15 +2719,34 @@ const ::uint32_t
         0,
         0x081, // bitmap
         PROTOBUF_FIELD_OFFSET(::mailpb::ReadMailResponse, _impl_._has_bits_),
-        7, // hasbit index offset
+        5, // hasbit index offset
         PROTOBUF_FIELD_OFFSET(::mailpb::ReadMailResponse, _impl_.error_message_),
-        PROTOBUF_FIELD_OFFSET(::mailpb::ReadMailResponse, _impl_.summary_),
-        PROTOBUF_FIELD_OFFSET(::mailpb::ReadMailResponse, _impl_.body_),
-        PROTOBUF_FIELD_OFFSET(::mailpb::ReadMailResponse, _impl_.server_now_ms_),
+        PROTOBUF_FIELD_OFFSET(::mailpb::ReadMailResponse, _impl_.mail_),
+        0,
         1,
-        2,
+        0x081, // bitmap
+        PROTOBUF_FIELD_OFFSET(::mailpb::ClaimMailAttachmentsRequest, _impl_._has_bits_),
+        4, // hasbit index offset
+        PROTOBUF_FIELD_OFFSET(::mailpb::ClaimMailAttachmentsRequest, _impl_.mail_ids_),
+        0,
+        0x081, // bitmap
+        PROTOBUF_FIELD_OFFSET(::mailpb::MailActionResult, _impl_._has_bits_),
+        7, // hasbit index offset
+        PROTOBUF_FIELD_OFFSET(::mailpb::MailActionResult, _impl_.mail_id_),
+        PROTOBUF_FIELD_OFFSET(::mailpb::MailActionResult, _impl_.error_message_),
+        PROTOBUF_FIELD_OFFSET(::mailpb::MailActionResult, _impl_.claim_state_),
+        PROTOBUF_FIELD_OFFSET(::mailpb::MailActionResult, _impl_.asset_op_id_),
+        1,
         0,
         3,
+        2,
+        0x081, // bitmap
+        PROTOBUF_FIELD_OFFSET(::mailpb::ClaimMailAttachmentsResponse, _impl_._has_bits_),
+        5, // hasbit index offset
+        PROTOBUF_FIELD_OFFSET(::mailpb::ClaimMailAttachmentsResponse, _impl_.error_message_),
+        PROTOBUF_FIELD_OFFSET(::mailpb::ClaimMailAttachmentsResponse, _impl_.results_),
+        1,
+        0,
         0x081, // bitmap
         PROTOBUF_FIELD_OFFSET(::mailpb::DeleteMailsRequest, _impl_._has_bits_),
         4, // hasbit index offset
@@ -2540,137 +2756,131 @@ const ::uint32_t
         PROTOBUF_FIELD_OFFSET(::mailpb::DeleteMailsResponse, _impl_._has_bits_),
         6, // hasbit index offset
         PROTOBUF_FIELD_OFFSET(::mailpb::DeleteMailsResponse, _impl_.error_message_),
-        PROTOBUF_FIELD_OFFSET(::mailpb::DeleteMailsResponse, _impl_.deleted_count_),
+        PROTOBUF_FIELD_OFFSET(::mailpb::DeleteMailsResponse, _impl_.deleted_mail_ids_),
         PROTOBUF_FIELD_OFFSET(::mailpb::DeleteMailsResponse, _impl_.protected_mail_ids_),
-        1,
         2,
         0,
+        1,
         0x000, // bitmap
         0x081, // bitmap
-        PROTOBUF_FIELD_OFFSET(::mailpb::DeleteReadMailsResponse, _impl_._has_bits_),
-        5, // hasbit index offset
-        PROTOBUF_FIELD_OFFSET(::mailpb::DeleteReadMailsResponse, _impl_.error_message_),
-        PROTOBUF_FIELD_OFFSET(::mailpb::DeleteReadMailsResponse, _impl_.deleted_count_),
+        PROTOBUF_FIELD_OFFSET(::mailpb::ClearReadMailsResponse, _impl_._has_bits_),
+        6, // hasbit index offset
+        PROTOBUF_FIELD_OFFSET(::mailpb::ClearReadMailsResponse, _impl_.error_message_),
+        PROTOBUF_FIELD_OFFSET(::mailpb::ClearReadMailsResponse, _impl_.deleted_mail_ids_),
+        PROTOBUF_FIELD_OFFSET(::mailpb::ClearReadMailsResponse, _impl_.protected_mail_ids_),
+        2,
         0,
         1,
         0x081, // bitmap
-        PROTOBUF_FIELD_OFFSET(::mailpb::ClaimMailAttachmentsRequest, _impl_._has_bits_),
-        5, // hasbit index offset
-        PROTOBUF_FIELD_OFFSET(::mailpb::ClaimMailAttachmentsRequest, _impl_.mail_ids_),
-        PROTOBUF_FIELD_OFFSET(::mailpb::ClaimMailAttachmentsRequest, _impl_.all_),
-        0,
-        1,
-        0x081, // bitmap
-        PROTOBUF_FIELD_OFFSET(::mailpb::ClaimMailAttachmentsResponse, _impl_._has_bits_),
+        PROTOBUF_FIELD_OFFSET(::mailpb::MailChangedEvent, _impl_._has_bits_),
         4, // hasbit index offset
-        PROTOBUF_FIELD_OFFSET(::mailpb::ClaimMailAttachmentsResponse, _impl_.error_message_),
-        0,
-        0x081, // bitmap
-        PROTOBUF_FIELD_OFFSET(::mailpb::MailEventS2C, _impl_._has_bits_),
-        5, // hasbit index offset
-        PROTOBUF_FIELD_OFFSET(::mailpb::MailEventS2C, _impl_.reason_),
-        PROTOBUF_FIELD_OFFSET(::mailpb::MailEventS2C, _impl_.ts_ms_),
-        1,
+        PROTOBUF_FIELD_OFFSET(::mailpb::MailChangedEvent, _impl_.mail_id_),
         0,
 };
 
 static const ::_pbi::MigrationSchema
     schemas[] ABSL_ATTRIBUTE_SECTION_VARIABLE(protodesc_cold) = {
-        {0, sizeof(::mailpb::MailAttachments)},
-        {7, sizeof(::mailpb::MailCurrency)},
-        {14, sizeof(::mailpb::MailItem)},
-        {21, sizeof(::mailpb::MailSummary)},
-        {42, sizeof(::mailpb::ListMailsRequest)},
-        {49, sizeof(::mailpb::ListMailsResponse)},
-        {64, sizeof(::mailpb::ReadMailRequest)},
-        {69, sizeof(::mailpb::ReadMailResponse)},
-        {80, sizeof(::mailpb::DeleteMailsRequest)},
-        {85, sizeof(::mailpb::DeleteMailsResponse)},
-        {94, sizeof(::mailpb::DeleteReadMailsRequest)},
-        {95, sizeof(::mailpb::DeleteReadMailsResponse)},
-        {102, sizeof(::mailpb::ClaimMailAttachmentsRequest)},
-        {109, sizeof(::mailpb::ClaimMailAttachmentsResponse)},
-        {114, sizeof(::mailpb::MailEventS2C)},
+        {0, sizeof(::mailpb::MailCurrency)},
+        {7, sizeof(::mailpb::MailItem)},
+        {14, sizeof(::mailpb::MailAttachments)},
+        {21, sizeof(::mailpb::MailView)},
+        {46, sizeof(::mailpb::ListMailsRequest)},
+        {53, sizeof(::mailpb::ListMailsResponse)},
+        {68, sizeof(::mailpb::ReadMailRequest)},
+        {73, sizeof(::mailpb::ReadMailResponse)},
+        {80, sizeof(::mailpb::ClaimMailAttachmentsRequest)},
+        {85, sizeof(::mailpb::MailActionResult)},
+        {96, sizeof(::mailpb::ClaimMailAttachmentsResponse)},
+        {103, sizeof(::mailpb::DeleteMailsRequest)},
+        {108, sizeof(::mailpb::DeleteMailsResponse)},
+        {117, sizeof(::mailpb::ClearReadMailsRequest)},
+        {118, sizeof(::mailpb::ClearReadMailsResponse)},
+        {127, sizeof(::mailpb::MailChangedEvent)},
 };
 static const ::_pbi::MessageGlobalsBase* PROTOBUF_NONNULL const
     file_message_globals[] = {
-        &::mailpb::MailAttachments_globals_,
         &::mailpb::MailCurrency_globals_,
         &::mailpb::MailItem_globals_,
-        &::mailpb::MailSummary_globals_,
+        &::mailpb::MailAttachments_globals_,
+        &::mailpb::MailView_globals_,
         &::mailpb::ListMailsRequest_globals_,
         &::mailpb::ListMailsResponse_globals_,
         &::mailpb::ReadMailRequest_globals_,
         &::mailpb::ReadMailResponse_globals_,
+        &::mailpb::ClaimMailAttachmentsRequest_globals_,
+        &::mailpb::MailActionResult_globals_,
+        &::mailpb::ClaimMailAttachmentsResponse_globals_,
         &::mailpb::DeleteMailsRequest_globals_,
         &::mailpb::DeleteMailsResponse_globals_,
-        &::mailpb::DeleteReadMailsRequest_globals_,
-        &::mailpb::DeleteReadMailsResponse_globals_,
-        &::mailpb::ClaimMailAttachmentsRequest_globals_,
-        &::mailpb::ClaimMailAttachmentsResponse_globals_,
-        &::mailpb::MailEventS2C_globals_,
+        &::mailpb::ClearReadMailsRequest_globals_,
+        &::mailpb::ClearReadMailsResponse_globals_,
+        &::mailpb::MailChangedEvent_globals_,
 };
 const char descriptor_table_protodef_proto_2fmail_2fmail_2eproto[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
     protodesc_cold) = {
     "\n\025proto/mail/mail.proto\022\006mailpb\032\033proto/d"
-    "b/proto_option.proto\032\035proto/common/base/"
-    "empty.proto\032\033proto/common/base/tip.proto"
-    "\"\\\n\017MailAttachments\022(\n\ncurrencies\030\001 \003(\0132"
-    "\024.mailpb.MailCurrency\022\037\n\005items\030\002 \003(\0132\020.m"
-    "ailpb.MailItem\"5\n\014MailCurrency\022\025\n\rcurren"
-    "cy_type\030\001 \001(\r\022\016\n\006amount\030\002 \001(\004\",\n\010MailIte"
-    "m\022\021\n\tconfig_id\030\001 \001(\r\022\r\n\005count\030\002 \001(\r\"\357\001\n\013"
-    "MailSummary\022\017\n\007mail_id\030\001 \001(\004\022\036\n\004kind\030\002 \001"
-    "(\0162\020.mailpb.MailKind\022\023\n\013sender_name\030\003 \001("
-    "\t\022\r\n\005title\030\004 \001(\t\022\017\n\007sent_ms\030\005 \001(\004\022\021\n\texp"
-    "ire_ms\030\006 \001(\004\022\014\n\004read\030\007 \001(\010\022+\n\013claim_stat"
-    "e\030\010 \001(\0162\026.mailpb.MailClaimState\022,\n\013attac"
-    "hments\030\t \001(\0132\027.mailpb.MailAttachments\"=\n"
-    "\020ListMailsRequest\022\026\n\016before_mail_id\030\001 \001("
-    "\004\022\021\n\tpage_size\030\002 \001(\r\"\267\001\n\021ListMailsRespon"
-    "se\022&\n\rerror_message\030\001 \001(\0132\017.TipInfoMessa"
-    "ge\022\"\n\005mails\030\002 \003(\0132\023.mailpb.MailSummary\022\020"
-    "\n\010has_more\030\003 \001(\010\022\024\n\014unread_count\030\004 \001(\r\022\027"
-    "\n\017claimable_count\030\005 \001(\r\022\025\n\rserver_now_ms"
-    "\030\006 \001(\004\"\"\n\017ReadMailRequest\022\017\n\007mail_id\030\001 \001"
-    "(\004\"\205\001\n\020ReadMailResponse\022&\n\rerror_message"
-    "\030\001 \001(\0132\017.TipInfoMessage\022$\n\007summary\030\002 \001(\013"
-    "2\023.mailpb.MailSummary\022\014\n\004body\030\003 \001(\t\022\025\n\rs"
-    "erver_now_ms\030\004 \001(\004\"&\n\022DeleteMailsRequest"
-    "\022\020\n\010mail_ids\030\001 \003(\004\"p\n\023DeleteMailsRespons"
-    "e\022&\n\rerror_message\030\001 \001(\0132\017.TipInfoMessag"
-    "e\022\025\n\rdeleted_count\030\002 \001(\r\022\032\n\022protected_ma"
-    "il_ids\030\003 \003(\004\"\030\n\026DeleteReadMailsRequest\"X"
-    "\n\027DeleteReadMailsResponse\022&\n\rerror_messa"
-    "ge\030\001 \001(\0132\017.TipInfoMessage\022\025\n\rdeleted_cou"
-    "nt\030\002 \001(\r\"<\n\033ClaimMailAttachmentsRequest\022"
-    "\020\n\010mail_ids\030\001 \003(\004\022\013\n\003all\030\002 \001(\010\"F\n\034ClaimM"
-    "ailAttachmentsResponse\022&\n\rerror_message\030"
-    "\001 \001(\0132\017.TipInfoMessage\"F\n\014MailEventS2C\022\'"
-    "\n\006reason\030\001 \001(\0162\027.mailpb.MailEventReason\022"
-    "\r\n\005ts_ms\030\002 \001(\004*S\n\010MailKind\022\031\n\025MAIL_KIND_"
-    "UNSPECIFIED\020\000\022\024\n\020MAIL_KIND_SYSTEM\020\001\022\026\n\022M"
-    "AIL_KIND_PERSONAL\020\002*Q\n\016MailClaimState\022\031\n"
-    "\025MAIL_CLAIM_STATE_NONE\020\000\022\036\n\032MAIL_CLAIM_S"
-    "TATE_UNCLAIMED\020\001\"\004\010\002\020\004*T\n\017MailEventReaso"
-    "n\022!\n\035MAIL_EVENT_REASON_UNSPECIFIED\020\000\022\036\n\032"
-    "MAIL_EVENT_REASON_NEW_MAIL\020\0012\312\003\n\020ClientP"
-    "layerMail\022@\n\tListMails\022\030.mailpb.ListMail"
-    "sRequest\032\031.mailpb.ListMailsResponse\022=\n\010R"
-    "eadMail\022\027.mailpb.ReadMailRequest\032\030.mailp"
-    "b.ReadMailResponse\022F\n\013DeleteMails\022\032.mail"
-    "pb.DeleteMailsRequest\032\033.mailpb.DeleteMai"
-    "lsResponse\022R\n\017DeleteReadMails\022\036.mailpb.D"
-    "eleteReadMailsRequest\032\037.mailpb.DeleteRea"
-    "dMailsResponse\022a\n\024ClaimMailAttachments\022#"
-    ".mailpb.ClaimMailAttachmentsRequest\032$.ma"
-    "ilpb.ClaimMailAttachmentsResponse\022/\n\017Not"
-    "ifyMailEvent\022\024.mailpb.MailEventS2C\032\006.Emp"
-    "ty\032\005\210\250\303\001\001B\024Z\017mail/proto/mail\200\001\000b\006proto3"
+    "b/proto_option.proto\032\033proto/common/base/"
+    "tip.proto\"5\n\014MailCurrency\022\025\n\rcurrency_ty"
+    "pe\030\001 \001(\r\022\016\n\006amount\030\002 \001(\004\",\n\010MailItem\022\021\n\t"
+    "config_id\030\001 \001(\r\022\r\n\005count\030\002 \001(\r\"\\\n\017MailAt"
+    "tachments\022(\n\ncurrencies\030\001 \003(\0132\024.mailpb.M"
+    "ailCurrency\022\037\n\005items\030\002 \003(\0132\020.mailpb.Mail"
+    "Item\"\244\002\n\010MailView\022\017\n\007mail_id\030\001 \001(\004\022\036\n\004ki"
+    "nd\030\002 \001(\0162\020.mailpb.MailKind\022\r\n\005title\030\003 \001("
+    "\t\022\014\n\004body\030\004 \001(\t\022\017\n\007sent_ms\030\005 \001(\004\022\021\n\texpi"
+    "re_ms\030\006 \001(\004\022\017\n\007is_read\030\007 \001(\010\022+\n\013claim_st"
+    "ate\030\010 \001(\0162\026.mailpb.MailClaimState\022,\n\013att"
+    "achments\030\t \001(\0132\027.mailpb.MailAttachments\022"
+    "\023\n\013asset_op_id\030\n \001(\004\022%\n\014claim_reason\030\013 \001"
+    "(\0132\017.TipInfoMessage\"9\n\020ListMailsRequest\022"
+    "\026\n\016before_mail_id\030\001 \001(\004\022\r\n\005limit\030\002 \001(\r\"\277"
+    "\001\n\021ListMailsResponse\022&\n\rerror_message\030\001 "
+    "\001(\0132\017.TipInfoMessage\022\037\n\005mails\030\002 \003(\0132\020.ma"
+    "ilpb.MailView\022\033\n\023next_before_mail_id\030\003 \001"
+    "(\004\022\024\n\014unread_count\030\004 \001(\r\022\027\n\017claimable_co"
+    "unt\030\005 \001(\r\022\025\n\rserver_now_ms\030\006 \001(\004\"\"\n\017Read"
+    "MailRequest\022\017\n\007mail_id\030\001 \001(\004\"Z\n\020ReadMail"
+    "Response\022&\n\rerror_message\030\001 \001(\0132\017.TipInf"
+    "oMessage\022\036\n\004mail\030\002 \001(\0132\020.mailpb.MailView"
+    "\"/\n\033ClaimMailAttachmentsRequest\022\020\n\010mail_"
+    "ids\030\001 \003(\004\"\215\001\n\020MailActionResult\022\017\n\007mail_i"
+    "d\030\001 \001(\004\022&\n\rerror_message\030\002 \001(\0132\017.TipInfo"
+    "Message\022+\n\013claim_state\030\003 \001(\0162\026.mailpb.Ma"
+    "ilClaimState\022\023\n\013asset_op_id\030\004 \001(\004\"q\n\034Cla"
+    "imMailAttachmentsResponse\022&\n\rerror_messa"
+    "ge\030\001 \001(\0132\017.TipInfoMessage\022)\n\007results\030\002 \003"
+    "(\0132\030.mailpb.MailActionResult\"&\n\022DeleteMa"
+    "ilsRequest\022\020\n\010mail_ids\030\001 \003(\004\"s\n\023DeleteMa"
+    "ilsResponse\022&\n\rerror_message\030\001 \001(\0132\017.Tip"
+    "InfoMessage\022\030\n\020deleted_mail_ids\030\002 \003(\004\022\032\n"
+    "\022protected_mail_ids\030\003 \003(\004\"\027\n\025ClearReadMa"
+    "ilsRequest\"v\n\026ClearReadMailsResponse\022&\n\r"
+    "error_message\030\001 \001(\0132\017.TipInfoMessage\022\030\n\020"
+    "deleted_mail_ids\030\002 \003(\004\022\032\n\022protected_mail"
+    "_ids\030\003 \003(\004\"#\n\020MailChangedEvent\022\017\n\007mail_i"
+    "d\030\001 \001(\004*h\n\010MailKind\022\031\n\025MAIL_KIND_UNSPECI"
+    "FIED\020\000\022\026\n\022MAIL_KIND_PERSONAL\020\001\022\024\n\020MAIL_K"
+    "IND_SYSTEM\020\002\022\023\n\017MAIL_KIND_GUILD\020\003*\206\001\n\016Ma"
+    "ilClaimState\022\023\n\017MAIL_CLAIM_NONE\020\000\022\030\n\024MAI"
+    "L_CLAIM_UNCLAIMED\020\001\022\026\n\022MAIL_CLAIM_PENDIN"
+    "G\020\002\022\026\n\022MAIL_CLAIM_CLAIMED\020\003\022\025\n\021MAIL_CLAI"
+    "M_MANUAL\020\0042\337\003\n\020ClientPlayerMail\022@\n\tListM"
+    "ails\022\030.mailpb.ListMailsRequest\032\031.mailpb."
+    "ListMailsResponse\022=\n\010ReadMail\022\027.mailpb.R"
+    "eadMailRequest\032\030.mailpb.ReadMailResponse"
+    "\022a\n\024ClaimMailAttachments\022#.mailpb.ClaimM"
+    "ailAttachmentsRequest\032$.mailpb.ClaimMail"
+    "AttachmentsResponse\022F\n\013DeleteMails\022\032.mai"
+    "lpb.DeleteMailsRequest\032\033.mailpb.DeleteMa"
+    "ilsResponse\022O\n\016ClearReadMails\022\035.mailpb.C"
+    "learReadMailsRequest\032\036.mailpb.ClearReadM"
+    "ailsResponse\022G\n\021NotifyMailChanged\022\030.mail"
+    "pb.MailChangedEvent\032\030.mailpb.MailChanged"
+    "Event\032\005\210\250\303\001\001B\025Z\017mail/proto/mail\230\324a\rb\006pro"
+    "to3"
 };
 static const ::_pbi::DescriptorTable* PROTOBUF_NONNULL const
-    descriptor_table_proto_2fmail_2fmail_2eproto_deps[3] = {
-        &::descriptor_table_proto_2fcommon_2fbase_2fempty_2eproto,
+    descriptor_table_proto_2fmail_2fmail_2eproto_deps[2] = {
         &::descriptor_table_proto_2fcommon_2fbase_2ftip_2eproto,
         &::descriptor_table_proto_2fdb_2fproto_5foption_2eproto,
 };
@@ -2678,13 +2888,13 @@ static ::absl::once_flag descriptor_table_proto_2fmail_2fmail_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fmail_2fmail_2eproto = {
     false,
     false,
-    2199,
+    2363,
     descriptor_table_protodef_proto_2fmail_2fmail_2eproto,
     "proto/mail/mail.proto",
     &descriptor_table_proto_2fmail_2fmail_2eproto_once,
     descriptor_table_proto_2fmail_2fmail_2eproto_deps,
-    3,
-    15,
+    2,
+    16,
     schemas,
     file_message_globals,
     TableStruct_proto_2fmail_2fmail_2eproto::offsets,
@@ -2698,288 +2908,14 @@ MailKind_descriptor() {
   return file_level_enum_descriptors_proto_2fmail_2fmail_2eproto[0];
 }
 PROTOBUF_CONSTINIT const uint32_t MailKind_internal_data_[] = {
-    196608u, 0u, };
+    262144u, 0u, };
 [[nodiscard]] const ::google::protobuf::EnumDescriptor* PROTOBUF_NONNULL
 MailClaimState_descriptor() {
   ::google::protobuf::internal::AssignDescriptors(&descriptor_table_proto_2fmail_2fmail_2eproto);
   return file_level_enum_descriptors_proto_2fmail_2fmail_2eproto[1];
 }
 PROTOBUF_CONSTINIT const uint32_t MailClaimState_internal_data_[] = {
-    131072u, 0u, };
-[[nodiscard]] const ::google::protobuf::EnumDescriptor* PROTOBUF_NONNULL
-MailEventReason_descriptor() {
-  ::google::protobuf::internal::AssignDescriptors(&descriptor_table_proto_2fmail_2fmail_2eproto);
-  return file_level_enum_descriptors_proto_2fmail_2fmail_2eproto[2];
-}
-PROTOBUF_CONSTINIT const uint32_t MailEventReason_internal_data_[] = {
-    131072u, 0u, };
-// ===================================================================
-
-MailAttachments::MailAttachments(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
-#if defined(PROTOBUF_CUSTOM_VTABLE)
-    : ::google::protobuf::Message(arena, MailAttachments_get_class_data()) {
-#else   // PROTOBUF_CUSTOM_VTABLE
-    : ::google::protobuf::Message(arena) {
-#endif  // PROTOBUF_CUSTOM_VTABLE
-  SharedCtor(arena);
-  // @@protoc_insertion_point(arena_constructor:mailpb.MailAttachments)
-}
-PROTOBUF_NDEBUG_INLINE MailAttachments::Impl_::Impl_(
-    [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
-    [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
-    [[maybe_unused]] const ::mailpb::MailAttachments& from_msg)
-      : _has_bits_{from._has_bits_},
-        _cached_size_{0},
-        currencies_ {
-          visibility, ::_pbi::InternalMetadataOffset::Build<
-              ::mailpb::MailAttachments,
-              PROTOBUF_FIELD_OFFSET(::mailpb::MailAttachments, _impl_.currencies_)>()
-          , from.currencies_
-        }
-        ,
-        items_ {
-          visibility, ::_pbi::InternalMetadataOffset::Build<
-              ::mailpb::MailAttachments,
-              PROTOBUF_FIELD_OFFSET(::mailpb::MailAttachments, _impl_.items_)>()
-          , from.items_
-        }
-     {}
-
-MailAttachments::MailAttachments(
-    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena,
-    const MailAttachments& from)
-#if defined(PROTOBUF_CUSTOM_VTABLE)
-    : ::google::protobuf::Message(arena, MailAttachments_get_class_data()) {
-
-#else   // PROTOBUF_CUSTOM_VTABLE
-    : ::google::protobuf::Message(arena) {
-#endif  // PROTOBUF_CUSTOM_VTABLE
-  MailAttachments* const _this = this;
-  (void)_this;
-  _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
-      from._internal_metadata_);
-  new (&_impl_) Impl_(internal_visibility(), arena, from._impl_, from);
-
-  // @@protoc_insertion_point(copy_constructor:mailpb.MailAttachments)
-}
-PROTOBUF_NDEBUG_INLINE MailAttachments::Impl_::Impl_(
-    [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
-    [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
-      : _cached_size_{0},
-        currencies_ { visibility, ::_pbi::InternalMetadataOffset::Build<
-            ::mailpb::MailAttachments,
-            PROTOBUF_FIELD_OFFSET(::mailpb::MailAttachments, _impl_.currencies_)>()
-         }
-        ,
-        items_ { visibility, ::_pbi::InternalMetadataOffset::Build<
-            ::mailpb::MailAttachments,
-            PROTOBUF_FIELD_OFFSET(::mailpb::MailAttachments, _impl_.items_)>()
-         }
-     {}
-
-inline void MailAttachments::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
-  new (&_impl_) Impl_(internal_visibility(), arena);
-}
-MailAttachments::~MailAttachments() {
-  // @@protoc_insertion_point(destructor:mailpb.MailAttachments)
-  SharedDtor(*this);
-}
-inline void MailAttachments::SharedDtor(MessageLite& self) {
-  MailAttachments& this_ = static_cast<MailAttachments&>(self);
-  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
-    this_.CheckHasBitConsistency();
-  }
-  this_._internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
-  ABSL_DCHECK(this_.GetArena() == nullptr);
-  this_._impl_.~Impl_();
-}
-
-#ifndef PROTOBUF_MESSAGE_GLOBALS
-PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const
-    ::google::protobuf::internal::ClassDataFull MailAttachments_class_data_ =
-        MailAttachments::InternalGenerateClassData_(MailAttachments_globals_._default);
-
-PROTOBUF_ATTRIBUTE_WEAK const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
-MailAttachments::GetClassData() const {
-  ::google::protobuf::internal::PrefetchToLocalCache(&MailAttachments_class_data_);
-  ::google::protobuf::internal::PrefetchToLocalCache(MailAttachments_class_data_.tc_table);
-  return MailAttachments_class_data_.base();
-}
-#else
-PROTOBUF_ATTRIBUTE_WEAK const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
-MailAttachments::GetClassData() const {
-  ::google::protobuf::internal::PrefetchToLocalCache(&MailAttachments_globals_);
-  ::google::protobuf::internal::PrefetchToLocalCache(
-      ::google::protobuf::internal::MessageGlobalsBase::ToParseTableBase(&MailAttachments_globals_));
-  return MailAttachments_globals_.GetClassData();
-}
-#endif  // !PROTOBUF_MESSAGE_GLOBALS
-#ifndef PROTOBUF_MESSAGE_GLOBALS
-PROTOBUF_CONSTINIT
-PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const MailAttachments::ParseTableT_
-    MailAttachments::_table_ =
-        MailAttachments::InternalGenerateParseTable_(MailAttachments_class_data_.base());
-#endif  // !PROTOBUF_MESSAGE_GLOBALS
-PROTOBUF_NOINLINE void MailAttachments::Clear() {
-// @@protoc_insertion_point(message_clear_start:mailpb.MailAttachments)
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  ::uint32_t cached_has_bits = 0;
-  // Prevent compiler warnings about cached_has_bits being unused
-  (void) cached_has_bits;
-
-  cached_has_bits = _impl_._has_bits_[0];
-  if (BatchCheckHasBit(cached_has_bits, 0x00000003U)) {
-    if (CheckHasBit(cached_has_bits, 0x00000001U)) {
-      _impl_.currencies_.Clear();
-    }
-    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
-      _impl_.items_.Clear();
-    }
-  }
-  _impl_._has_bits_.Clear();
-  _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
-}
-
-#if defined(PROTOBUF_CUSTOM_VTABLE)
-::uint8_t* PROTOBUF_NONNULL MailAttachments::_InternalSerialize(
-    const ::google::protobuf::MessageLite& base, ::uint8_t* PROTOBUF_NONNULL target,
-    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) {
-  const MailAttachments& this_ = static_cast<const MailAttachments&>(base);
-#else   // PROTOBUF_CUSTOM_VTABLE
-::uint8_t* PROTOBUF_NONNULL MailAttachments::_InternalSerialize(
-    ::uint8_t* PROTOBUF_NONNULL target,
-    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
-  const MailAttachments& this_ = *this;
-#endif  // PROTOBUF_CUSTOM_VTABLE
-  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
-    this_.CheckHasBitConsistency();
-  }
-  // @@protoc_insertion_point(serialize_to_array_start:mailpb.MailAttachments)
-  ::uint32_t cached_has_bits = 0;
-  (void)cached_has_bits;
-
-  cached_has_bits = this_._impl_._has_bits_[0];
-  // repeated .mailpb.MailCurrency currencies = 1;
-  if (CheckHasBit(cached_has_bits, 0x00000001U)) {
-    for (unsigned i = 0, n = static_cast<unsigned>(
-                             this_._internal_currencies_size());
-         i < n; i++) {
-      const auto& repfield = this_._internal_currencies().Get(i);
-      target =
-          ::google::protobuf::internal::WireFormatLite::InternalWriteMessage(
-              1, repfield, repfield.GetCachedSize(),
-              target, stream);
-    }
-  }
-
-  // repeated .mailpb.MailItem items = 2;
-  if (CheckHasBit(cached_has_bits, 0x00000002U)) {
-    for (unsigned i = 0, n = static_cast<unsigned>(
-                             this_._internal_items_size());
-         i < n; i++) {
-      const auto& repfield = this_._internal_items().Get(i);
-      target =
-          ::google::protobuf::internal::WireFormatLite::InternalWriteMessage(
-              2, repfield, repfield.GetCachedSize(),
-              target, stream);
-    }
-  }
-
-  if (ABSL_PREDICT_FALSE(this_._internal_metadata_.have_unknown_fields())) {
-    target =
-        ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
-            this_._internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
-  }
-  // @@protoc_insertion_point(serialize_to_array_end:mailpb.MailAttachments)
-  return target;
-}
-
-#if defined(PROTOBUF_CUSTOM_VTABLE)
-::size_t MailAttachments::ByteSizeLong(const MessageLite& base) {
-  const MailAttachments& this_ = static_cast<const MailAttachments&>(base);
-#else   // PROTOBUF_CUSTOM_VTABLE
-::size_t MailAttachments::ByteSizeLong() const {
-  const MailAttachments& this_ = *this;
-#endif  // PROTOBUF_CUSTOM_VTABLE
-  // @@protoc_insertion_point(message_byte_size_start:mailpb.MailAttachments)
-  ::size_t total_size = 0;
-
-  ::uint32_t cached_has_bits = 0;
-  // Prevent compiler warnings about cached_has_bits being unused
-  (void)cached_has_bits;
-
-  ::_pbi::Prefetch5LinesFrom7Lines(&this_);
-  cached_has_bits = this_._impl_._has_bits_[0];
-  if (BatchCheckHasBit(cached_has_bits, 0x00000003U)) {
-    // repeated .mailpb.MailCurrency currencies = 1;
-    if (CheckHasBit(cached_has_bits, 0x00000001U)) {
-      total_size += 1UL * this_._internal_currencies_size();
-      for (const auto& msg : this_._internal_currencies()) {
-        total_size += ::google::protobuf::internal::WireFormatLite::MessageSize(msg);
-      }
-    }
-    // repeated .mailpb.MailItem items = 2;
-    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
-      total_size += 1UL * this_._internal_items_size();
-      for (const auto& msg : this_._internal_items()) {
-        total_size += ::google::protobuf::internal::WireFormatLite::MessageSize(msg);
-      }
-    }
-  }
-  return this_.MaybeComputeUnknownFieldsSize(total_size,
-                                             &this_._impl_._cached_size_);
-}
-
-void MailAttachments::MergeImpl(::google::protobuf::MessageLite& to_msg,
-                      const ::google::protobuf::MessageLite& from_msg) {
-   auto* const _this = static_cast<MailAttachments*>(&to_msg);
-  auto& from = static_cast<const MailAttachments&>(from_msg);
-  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
-    from.CheckHasBitConsistency();
-  }
-  ::google::protobuf::Arena* arena = _this->GetArena();
-  // @@protoc_insertion_point(class_specific_merge_from_start:mailpb.MailAttachments)
-  ABSL_DCHECK_NE(&from, _this);
-  ::uint32_t cached_has_bits = 0;
-  (void)cached_has_bits;
-
-  cached_has_bits = from._impl_._has_bits_[0];
-  if (BatchCheckHasBit(cached_has_bits, 0x00000003U)) {
-    if (CheckHasBit(cached_has_bits, 0x00000001U)) {
-      _this->_internal_mutable_currencies()->InternalMergeFromWithArena(
-          ::google::protobuf::MessageLite::internal_visibility(), arena,
-          from._internal_currencies());
-    }
-    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
-      _this->_internal_mutable_items()->InternalMergeFromWithArena(
-          ::google::protobuf::MessageLite::internal_visibility(), arena,
-          from._internal_items());
-    }
-  }
-  _this->_impl_._has_bits_[0] |= cached_has_bits;
-  _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
-      from._internal_metadata_);
-}
-
-void MailAttachments::CopyFrom(const MailAttachments& from) {
-  // @@protoc_insertion_point(class_specific_copy_from_start:mailpb.MailAttachments)
-  if (&from == this) return;
-  Clear();
-  MergeFrom(from);
-}
-
-
-void MailAttachments::InternalSwap(MailAttachments* PROTOBUF_RESTRICT PROTOBUF_NONNULL other) {
-  using ::std::swap;
-  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
-  swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
-  _impl_.currencies_.InternalSwap(&other->_impl_.currencies_);
-  _impl_.items_.InternalSwap(&other->_impl_.items_);
-}
-
-::google::protobuf::Metadata MailAttachments::GetMetadata() const {
-  return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
-}
+    327680u, 0u, };
 // ===================================================================
 
 MailCurrency::MailCurrency(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
@@ -3438,34 +3374,306 @@ void MailItem::InternalSwap(MailItem* PROTOBUF_RESTRICT PROTOBUF_NONNULL other) 
 }
 // ===================================================================
 
-MailSummary::MailSummary(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+MailAttachments::MailAttachments(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-    : ::google::protobuf::Message(arena, MailSummary_get_class_data()) {
+    : ::google::protobuf::Message(arena, MailAttachments_get_class_data()) {
 #else   // PROTOBUF_CUSTOM_VTABLE
     : ::google::protobuf::Message(arena) {
 #endif  // PROTOBUF_CUSTOM_VTABLE
   SharedCtor(arena);
-  // @@protoc_insertion_point(arena_constructor:mailpb.MailSummary)
+  // @@protoc_insertion_point(arena_constructor:mailpb.MailAttachments)
 }
-PROTOBUF_NDEBUG_INLINE MailSummary::Impl_::Impl_(
+PROTOBUF_NDEBUG_INLINE MailAttachments::Impl_::Impl_(
     [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
     [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
-    [[maybe_unused]] const ::mailpb::MailSummary& from_msg)
+    [[maybe_unused]] const ::mailpb::MailAttachments& from_msg)
       : _has_bits_{from._has_bits_},
         _cached_size_{0},
-        sender_name_(arena, from.sender_name_),
-        title_(arena, from.title_) {}
+        currencies_ {
+          visibility, ::_pbi::InternalMetadataOffset::Build<
+              ::mailpb::MailAttachments,
+              PROTOBUF_FIELD_OFFSET(::mailpb::MailAttachments, _impl_.currencies_)>()
+          , from.currencies_
+        }
+        ,
+        items_ {
+          visibility, ::_pbi::InternalMetadataOffset::Build<
+              ::mailpb::MailAttachments,
+              PROTOBUF_FIELD_OFFSET(::mailpb::MailAttachments, _impl_.items_)>()
+          , from.items_
+        }
+     {}
 
-MailSummary::MailSummary(
+MailAttachments::MailAttachments(
     ::google::protobuf::Arena* PROTOBUF_NULLABLE arena,
-    const MailSummary& from)
+    const MailAttachments& from)
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-    : ::google::protobuf::Message(arena, MailSummary_get_class_data()) {
+    : ::google::protobuf::Message(arena, MailAttachments_get_class_data()) {
 
 #else   // PROTOBUF_CUSTOM_VTABLE
     : ::google::protobuf::Message(arena) {
 #endif  // PROTOBUF_CUSTOM_VTABLE
-  MailSummary* const _this = this;
+  MailAttachments* const _this = this;
+  (void)_this;
+  _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+  new (&_impl_) Impl_(internal_visibility(), arena, from._impl_, from);
+
+  // @@protoc_insertion_point(copy_constructor:mailpb.MailAttachments)
+}
+PROTOBUF_NDEBUG_INLINE MailAttachments::Impl_::Impl_(
+    [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
+    [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+      : _cached_size_{0},
+        currencies_ { visibility, ::_pbi::InternalMetadataOffset::Build<
+            ::mailpb::MailAttachments,
+            PROTOBUF_FIELD_OFFSET(::mailpb::MailAttachments, _impl_.currencies_)>()
+         }
+        ,
+        items_ { visibility, ::_pbi::InternalMetadataOffset::Build<
+            ::mailpb::MailAttachments,
+            PROTOBUF_FIELD_OFFSET(::mailpb::MailAttachments, _impl_.items_)>()
+         }
+     {}
+
+inline void MailAttachments::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
+  new (&_impl_) Impl_(internal_visibility(), arena);
+}
+MailAttachments::~MailAttachments() {
+  // @@protoc_insertion_point(destructor:mailpb.MailAttachments)
+  SharedDtor(*this);
+}
+inline void MailAttachments::SharedDtor(MessageLite& self) {
+  MailAttachments& this_ = static_cast<MailAttachments&>(self);
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    this_.CheckHasBitConsistency();
+  }
+  this_._internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
+  ABSL_DCHECK(this_.GetArena() == nullptr);
+  this_._impl_.~Impl_();
+}
+
+#ifndef PROTOBUF_MESSAGE_GLOBALS
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const
+    ::google::protobuf::internal::ClassDataFull MailAttachments_class_data_ =
+        MailAttachments::InternalGenerateClassData_(MailAttachments_globals_._default);
+
+PROTOBUF_ATTRIBUTE_WEAK const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
+MailAttachments::GetClassData() const {
+  ::google::protobuf::internal::PrefetchToLocalCache(&MailAttachments_class_data_);
+  ::google::protobuf::internal::PrefetchToLocalCache(MailAttachments_class_data_.tc_table);
+  return MailAttachments_class_data_.base();
+}
+#else
+PROTOBUF_ATTRIBUTE_WEAK const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
+MailAttachments::GetClassData() const {
+  ::google::protobuf::internal::PrefetchToLocalCache(&MailAttachments_globals_);
+  ::google::protobuf::internal::PrefetchToLocalCache(
+      ::google::protobuf::internal::MessageGlobalsBase::ToParseTableBase(&MailAttachments_globals_));
+  return MailAttachments_globals_.GetClassData();
+}
+#endif  // !PROTOBUF_MESSAGE_GLOBALS
+#ifndef PROTOBUF_MESSAGE_GLOBALS
+PROTOBUF_CONSTINIT
+PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const MailAttachments::ParseTableT_
+    MailAttachments::_table_ =
+        MailAttachments::InternalGenerateParseTable_(MailAttachments_class_data_.base());
+#endif  // !PROTOBUF_MESSAGE_GLOBALS
+PROTOBUF_NOINLINE void MailAttachments::Clear() {
+// @@protoc_insertion_point(message_clear_start:mailpb.MailAttachments)
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  cached_has_bits = _impl_._has_bits_[0];
+  if (BatchCheckHasBit(cached_has_bits, 0x00000003U)) {
+    if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+      _impl_.currencies_.Clear();
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      _impl_.items_.Clear();
+    }
+  }
+  _impl_._has_bits_.Clear();
+  _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::uint8_t* PROTOBUF_NONNULL MailAttachments::_InternalSerialize(
+    const ::google::protobuf::MessageLite& base, ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) {
+  const MailAttachments& this_ = static_cast<const MailAttachments&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::uint8_t* PROTOBUF_NONNULL MailAttachments::_InternalSerialize(
+    ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
+  const MailAttachments& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    this_.CheckHasBitConsistency();
+  }
+  // @@protoc_insertion_point(serialize_to_array_start:mailpb.MailAttachments)
+  ::uint32_t cached_has_bits = 0;
+  (void)cached_has_bits;
+
+  cached_has_bits = this_._impl_._has_bits_[0];
+  // repeated .mailpb.MailCurrency currencies = 1;
+  if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+    for (unsigned i = 0, n = static_cast<unsigned>(
+                             this_._internal_currencies_size());
+         i < n; i++) {
+      const auto& repfield = this_._internal_currencies().Get(i);
+      target =
+          ::google::protobuf::internal::WireFormatLite::InternalWriteMessage(
+              1, repfield, repfield.GetCachedSize(),
+              target, stream);
+    }
+  }
+
+  // repeated .mailpb.MailItem items = 2;
+  if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+    for (unsigned i = 0, n = static_cast<unsigned>(
+                             this_._internal_items_size());
+         i < n; i++) {
+      const auto& repfield = this_._internal_items().Get(i);
+      target =
+          ::google::protobuf::internal::WireFormatLite::InternalWriteMessage(
+              2, repfield, repfield.GetCachedSize(),
+              target, stream);
+    }
+  }
+
+  if (ABSL_PREDICT_FALSE(this_._internal_metadata_.have_unknown_fields())) {
+    target =
+        ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
+            this_._internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
+  }
+  // @@protoc_insertion_point(serialize_to_array_end:mailpb.MailAttachments)
+  return target;
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::size_t MailAttachments::ByteSizeLong(const MessageLite& base) {
+  const MailAttachments& this_ = static_cast<const MailAttachments&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::size_t MailAttachments::ByteSizeLong() const {
+  const MailAttachments& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  // @@protoc_insertion_point(message_byte_size_start:mailpb.MailAttachments)
+  ::size_t total_size = 0;
+
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void)cached_has_bits;
+
+  ::_pbi::Prefetch5LinesFrom7Lines(&this_);
+  cached_has_bits = this_._impl_._has_bits_[0];
+  if (BatchCheckHasBit(cached_has_bits, 0x00000003U)) {
+    // repeated .mailpb.MailCurrency currencies = 1;
+    if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+      total_size += 1UL * this_._internal_currencies_size();
+      for (const auto& msg : this_._internal_currencies()) {
+        total_size += ::google::protobuf::internal::WireFormatLite::MessageSize(msg);
+      }
+    }
+    // repeated .mailpb.MailItem items = 2;
+    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      total_size += 1UL * this_._internal_items_size();
+      for (const auto& msg : this_._internal_items()) {
+        total_size += ::google::protobuf::internal::WireFormatLite::MessageSize(msg);
+      }
+    }
+  }
+  return this_.MaybeComputeUnknownFieldsSize(total_size,
+                                             &this_._impl_._cached_size_);
+}
+
+void MailAttachments::MergeImpl(::google::protobuf::MessageLite& to_msg,
+                      const ::google::protobuf::MessageLite& from_msg) {
+   auto* const _this = static_cast<MailAttachments*>(&to_msg);
+  auto& from = static_cast<const MailAttachments&>(from_msg);
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    from.CheckHasBitConsistency();
+  }
+  ::google::protobuf::Arena* arena = _this->GetArena();
+  // @@protoc_insertion_point(class_specific_merge_from_start:mailpb.MailAttachments)
+  ABSL_DCHECK_NE(&from, _this);
+  ::uint32_t cached_has_bits = 0;
+  (void)cached_has_bits;
+
+  cached_has_bits = from._impl_._has_bits_[0];
+  if (BatchCheckHasBit(cached_has_bits, 0x00000003U)) {
+    if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+      _this->_internal_mutable_currencies()->InternalMergeFromWithArena(
+          ::google::protobuf::MessageLite::internal_visibility(), arena,
+          from._internal_currencies());
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      _this->_internal_mutable_items()->InternalMergeFromWithArena(
+          ::google::protobuf::MessageLite::internal_visibility(), arena,
+          from._internal_items());
+    }
+  }
+  _this->_impl_._has_bits_[0] |= cached_has_bits;
+  _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+}
+
+void MailAttachments::CopyFrom(const MailAttachments& from) {
+  // @@protoc_insertion_point(class_specific_copy_from_start:mailpb.MailAttachments)
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+
+void MailAttachments::InternalSwap(MailAttachments* PROTOBUF_RESTRICT PROTOBUF_NONNULL other) {
+  using ::std::swap;
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
+  swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
+  _impl_.currencies_.InternalSwap(&other->_impl_.currencies_);
+  _impl_.items_.InternalSwap(&other->_impl_.items_);
+}
+
+::google::protobuf::Metadata MailAttachments::GetMetadata() const {
+  return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
+}
+// ===================================================================
+
+void MailView::clear_claim_reason() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (_impl_.claim_reason_ != nullptr) _impl_.claim_reason_->Clear();
+  ClearHasBit(_impl_._has_bits_[0], 0x00000008U);
+}
+MailView::MailView(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, MailView_get_class_data()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  SharedCtor(arena);
+  // @@protoc_insertion_point(arena_constructor:mailpb.MailView)
+}
+PROTOBUF_NDEBUG_INLINE MailView::Impl_::Impl_(
+    [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
+    [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
+    [[maybe_unused]] const ::mailpb::MailView& from_msg)
+      : _has_bits_{from._has_bits_},
+        _cached_size_{0},
+        title_(arena, from.title_),
+        body_(arena, from.body_) {}
+
+MailView::MailView(
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena,
+    const MailView& from)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, MailView_get_class_data()) {
+
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  MailView* const _this = this;
   (void)_this;
   _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
       from._internal_metadata_);
@@ -3473,6 +3681,9 @@ MailSummary::MailSummary(
   ::uint32_t cached_has_bits = _impl_._has_bits_[0];
   _impl_.attachments_ = (CheckHasBit(cached_has_bits, 0x00000004U))
                 ? ::google::protobuf::Message::CopyConstruct(arena, *from._impl_.attachments_)
+                : nullptr;
+  _impl_.claim_reason_ = (CheckHasBit(cached_has_bits, 0x00000008U))
+                ? ::google::protobuf::Message::CopyConstruct(arena, *from._impl_.claim_reason_)
                 : nullptr;
   ::memcpy(reinterpret_cast<char*>(&_impl_) +
                offsetof(Impl_, mail_id_),
@@ -3482,16 +3693,16 @@ MailSummary::MailSummary(
                offsetof(Impl_, mail_id_) +
                sizeof(Impl_::claim_state_));
 
-  // @@protoc_insertion_point(copy_constructor:mailpb.MailSummary)
+  // @@protoc_insertion_point(copy_constructor:mailpb.MailView)
 }
-PROTOBUF_NDEBUG_INLINE MailSummary::Impl_::Impl_(
+PROTOBUF_NDEBUG_INLINE MailView::Impl_::Impl_(
     [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
     [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
       : _cached_size_{0},
-        sender_name_(arena),
-        title_(arena) {}
+        title_(arena),
+        body_(arena) {}
 
-inline void MailSummary::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
+inline void MailView::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
   new (&_impl_) Impl_(internal_visibility(), arena);
   ::memset(reinterpret_cast<char*>(&_impl_) +
                offsetof(Impl_, attachments_),
@@ -3500,100 +3711,109 @@ inline void MailSummary::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
                offsetof(Impl_, attachments_) +
                sizeof(Impl_::claim_state_));
 }
-MailSummary::~MailSummary() {
-  // @@protoc_insertion_point(destructor:mailpb.MailSummary)
+MailView::~MailView() {
+  // @@protoc_insertion_point(destructor:mailpb.MailView)
   SharedDtor(*this);
 }
-inline void MailSummary::SharedDtor(MessageLite& self) {
-  MailSummary& this_ = static_cast<MailSummary&>(self);
+inline void MailView::SharedDtor(MessageLite& self) {
+  MailView& this_ = static_cast<MailView&>(self);
   if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
     this_.CheckHasBitConsistency();
   }
   this_._internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
   ABSL_DCHECK(this_.GetArena() == nullptr);
-  this_._impl_.sender_name_.Destroy();
   this_._impl_.title_.Destroy();
+  this_._impl_.body_.Destroy();
   delete this_._impl_.attachments_;
+  delete this_._impl_.claim_reason_;
   this_._impl_.~Impl_();
 }
 
 #ifndef PROTOBUF_MESSAGE_GLOBALS
 PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const
-    ::google::protobuf::internal::ClassDataFull MailSummary_class_data_ =
-        MailSummary::InternalGenerateClassData_(MailSummary_globals_._default);
+    ::google::protobuf::internal::ClassDataFull MailView_class_data_ =
+        MailView::InternalGenerateClassData_(MailView_globals_._default);
 
 PROTOBUF_ATTRIBUTE_WEAK const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
-MailSummary::GetClassData() const {
-  ::google::protobuf::internal::PrefetchToLocalCache(&MailSummary_class_data_);
-  ::google::protobuf::internal::PrefetchToLocalCache(MailSummary_class_data_.tc_table);
-  return MailSummary_class_data_.base();
+MailView::GetClassData() const {
+  ::google::protobuf::internal::PrefetchToLocalCache(&MailView_class_data_);
+  ::google::protobuf::internal::PrefetchToLocalCache(MailView_class_data_.tc_table);
+  return MailView_class_data_.base();
 }
 #else
 PROTOBUF_ATTRIBUTE_WEAK const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
-MailSummary::GetClassData() const {
-  ::google::protobuf::internal::PrefetchToLocalCache(&MailSummary_globals_);
+MailView::GetClassData() const {
+  ::google::protobuf::internal::PrefetchToLocalCache(&MailView_globals_);
   ::google::protobuf::internal::PrefetchToLocalCache(
-      ::google::protobuf::internal::MessageGlobalsBase::ToParseTableBase(&MailSummary_globals_));
-  return MailSummary_globals_.GetClassData();
+      ::google::protobuf::internal::MessageGlobalsBase::ToParseTableBase(&MailView_globals_));
+  return MailView_globals_.GetClassData();
 }
 #endif  // !PROTOBUF_MESSAGE_GLOBALS
 #ifndef PROTOBUF_MESSAGE_GLOBALS
 PROTOBUF_CONSTINIT
-PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const MailSummary::ParseTableT_
-    MailSummary::_table_ =
-        MailSummary::InternalGenerateParseTable_(MailSummary_class_data_.base());
+PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const MailView::ParseTableT_
+    MailView::_table_ =
+        MailView::InternalGenerateParseTable_(MailView_class_data_.base());
 #endif  // !PROTOBUF_MESSAGE_GLOBALS
-PROTOBUF_NOINLINE void MailSummary::Clear() {
-// @@protoc_insertion_point(message_clear_start:mailpb.MailSummary)
+PROTOBUF_NOINLINE void MailView::Clear() {
+// @@protoc_insertion_point(message_clear_start:mailpb.MailView)
   ::google::protobuf::internal::TSanWrite(&_impl_);
   ::uint32_t cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
   (void) cached_has_bits;
 
   cached_has_bits = _impl_._has_bits_[0];
-  if (BatchCheckHasBit(cached_has_bits, 0x00000007U)) {
+  if (BatchCheckHasBit(cached_has_bits, 0x0000000fU)) {
     if (CheckHasBit(cached_has_bits, 0x00000001U)) {
-      _impl_.sender_name_.ClearNonDefaultToEmpty();
+      _impl_.title_.ClearNonDefaultToEmpty();
     }
     if (CheckHasBit(cached_has_bits, 0x00000002U)) {
-      _impl_.title_.ClearNonDefaultToEmpty();
+      _impl_.body_.ClearNonDefaultToEmpty();
     }
     if (CheckHasBit(cached_has_bits, 0x00000004U)) {
       ABSL_DCHECK(_impl_.attachments_ != nullptr);
       _impl_.attachments_->Clear();
     }
+    if (CheckHasBit(cached_has_bits, 0x00000008U)) {
+      ABSL_DCHECK(_impl_.claim_reason_ != nullptr);
+      _impl_.claim_reason_->Clear();
+    }
   }
-  if (BatchCheckHasBit(cached_has_bits, 0x000000f8U)) {
+  if (BatchCheckHasBit(cached_has_bits, 0x000000f0U)) {
     ::memset(&_impl_.mail_id_, 0, static_cast<::size_t>(
-        reinterpret_cast<char*>(&_impl_.expire_ms_) -
-        reinterpret_cast<char*>(&_impl_.mail_id_)) + sizeof(_impl_.expire_ms_));
+        reinterpret_cast<char*>(&_impl_.sent_ms_) -
+        reinterpret_cast<char*>(&_impl_.mail_id_)) + sizeof(_impl_.sent_ms_));
   }
-  _impl_.claim_state_ = 0;
+  if (BatchCheckHasBit(cached_has_bits, 0x00000700U)) {
+    ::memset(&_impl_.expire_ms_, 0, static_cast<::size_t>(
+        reinterpret_cast<char*>(&_impl_.claim_state_) -
+        reinterpret_cast<char*>(&_impl_.expire_ms_)) + sizeof(_impl_.claim_state_));
+  }
   _impl_._has_bits_.Clear();
   _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
 }
 
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-::uint8_t* PROTOBUF_NONNULL MailSummary::_InternalSerialize(
+::uint8_t* PROTOBUF_NONNULL MailView::_InternalSerialize(
     const ::google::protobuf::MessageLite& base, ::uint8_t* PROTOBUF_NONNULL target,
     ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) {
-  const MailSummary& this_ = static_cast<const MailSummary&>(base);
+  const MailView& this_ = static_cast<const MailView&>(base);
 #else   // PROTOBUF_CUSTOM_VTABLE
-::uint8_t* PROTOBUF_NONNULL MailSummary::_InternalSerialize(
+::uint8_t* PROTOBUF_NONNULL MailView::_InternalSerialize(
     ::uint8_t* PROTOBUF_NONNULL target,
     ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
-  const MailSummary& this_ = *this;
+  const MailView& this_ = *this;
 #endif  // PROTOBUF_CUSTOM_VTABLE
   if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
     this_.CheckHasBitConsistency();
   }
-  // @@protoc_insertion_point(serialize_to_array_start:mailpb.MailSummary)
+  // @@protoc_insertion_point(serialize_to_array_start:mailpb.MailView)
   ::uint32_t cached_has_bits = 0;
   (void)cached_has_bits;
 
   cached_has_bits = this_._impl_._has_bits_[0];
   // uint64 mail_id = 1;
-  if (CheckHasBit(cached_has_bits, 0x00000008U)) {
+  if (CheckHasBit(cached_has_bits, 0x00000010U)) {
     if (this_._internal_mail_id() != 0) {
       target = stream->EnsureSpace(target);
       target = ::_pbi::WireFormatLite::WriteUInt64ToArray(
@@ -3602,7 +3822,7 @@ PROTOBUF_NOINLINE void MailSummary::Clear() {
   }
 
   // .mailpb.MailKind kind = 2;
-  if (CheckHasBit(cached_has_bits, 0x00000010U)) {
+  if (CheckHasBit(cached_has_bits, 0x00000020U)) {
     if (this_._internal_kind() != 0) {
       target = stream->EnsureSpace(target);
       target = ::_pbi::WireFormatLite::WriteEnumToArray(
@@ -3610,28 +3830,28 @@ PROTOBUF_NOINLINE void MailSummary::Clear() {
     }
   }
 
-  // string sender_name = 3;
+  // string title = 3;
   if (CheckHasBit(cached_has_bits, 0x00000001U)) {
-    if (!this_._internal_sender_name().empty()) {
-      const ::std::string& _s = this_._internal_sender_name();
+    if (!this_._internal_title().empty()) {
+      const ::std::string& _s = this_._internal_title();
       ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
-          _s.data(), static_cast<int>(_s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "mailpb.MailSummary.sender_name");
+          _s.data(), static_cast<int>(_s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "mailpb.MailView.title");
       target = stream->WriteStringMaybeAliased(3, _s, target);
     }
   }
 
-  // string title = 4;
+  // string body = 4;
   if (CheckHasBit(cached_has_bits, 0x00000002U)) {
-    if (!this_._internal_title().empty()) {
-      const ::std::string& _s = this_._internal_title();
+    if (!this_._internal_body().empty()) {
+      const ::std::string& _s = this_._internal_body();
       ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
-          _s.data(), static_cast<int>(_s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "mailpb.MailSummary.title");
+          _s.data(), static_cast<int>(_s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "mailpb.MailView.body");
       target = stream->WriteStringMaybeAliased(4, _s, target);
     }
   }
 
   // uint64 sent_ms = 5;
-  if (CheckHasBit(cached_has_bits, 0x00000040U)) {
+  if (CheckHasBit(cached_has_bits, 0x00000080U)) {
     if (this_._internal_sent_ms() != 0) {
       target = stream->EnsureSpace(target);
       target = ::_pbi::WireFormatLite::WriteUInt64ToArray(
@@ -3640,7 +3860,7 @@ PROTOBUF_NOINLINE void MailSummary::Clear() {
   }
 
   // uint64 expire_ms = 6;
-  if (CheckHasBit(cached_has_bits, 0x00000080U)) {
+  if (CheckHasBit(cached_has_bits, 0x00000100U)) {
     if (this_._internal_expire_ms() != 0) {
       target = stream->EnsureSpace(target);
       target = ::_pbi::WireFormatLite::WriteUInt64ToArray(
@@ -3648,17 +3868,17 @@ PROTOBUF_NOINLINE void MailSummary::Clear() {
     }
   }
 
-  // bool read = 7;
-  if (CheckHasBit(cached_has_bits, 0x00000020U)) {
-    if (this_._internal_read() != 0) {
+  // bool is_read = 7;
+  if (CheckHasBit(cached_has_bits, 0x00000040U)) {
+    if (this_._internal_is_read() != 0) {
       target = stream->EnsureSpace(target);
       target = ::_pbi::WireFormatLite::WriteBoolToArray(
-          7, this_._internal_read(), target);
+          7, this_._internal_is_read(), target);
     }
   }
 
   // .mailpb.MailClaimState claim_state = 8;
-  if (CheckHasBit(cached_has_bits, 0x00000100U)) {
+  if (CheckHasBit(cached_has_bits, 0x00000400U)) {
     if (this_._internal_claim_state() != 0) {
       target = stream->EnsureSpace(target);
       target = ::_pbi::WireFormatLite::WriteEnumToArray(
@@ -3673,23 +3893,39 @@ PROTOBUF_NOINLINE void MailSummary::Clear() {
         stream);
   }
 
+  // uint64 asset_op_id = 10;
+  if (CheckHasBit(cached_has_bits, 0x00000200U)) {
+    if (this_._internal_asset_op_id() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteUInt64ToArray(
+          10, this_._internal_asset_op_id(), target);
+    }
+  }
+
+  // .TipInfoMessage claim_reason = 11;
+  if (CheckHasBit(cached_has_bits, 0x00000008U)) {
+    target = ::google::protobuf::internal::WireFormatLite::InternalWriteMessage(
+        11, *this_._impl_.claim_reason_, this_._impl_.claim_reason_->GetCachedSize(), target,
+        stream);
+  }
+
   if (ABSL_PREDICT_FALSE(this_._internal_metadata_.have_unknown_fields())) {
     target =
         ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
             this_._internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
   }
-  // @@protoc_insertion_point(serialize_to_array_end:mailpb.MailSummary)
+  // @@protoc_insertion_point(serialize_to_array_end:mailpb.MailView)
   return target;
 }
 
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-::size_t MailSummary::ByteSizeLong(const MessageLite& base) {
-  const MailSummary& this_ = static_cast<const MailSummary&>(base);
+::size_t MailView::ByteSizeLong(const MessageLite& base) {
+  const MailView& this_ = static_cast<const MailView&>(base);
 #else   // PROTOBUF_CUSTOM_VTABLE
-::size_t MailSummary::ByteSizeLong() const {
-  const MailSummary& this_ = *this;
+::size_t MailView::ByteSizeLong() const {
+  const MailView& this_ = *this;
 #endif  // PROTOBUF_CUSTOM_VTABLE
-  // @@protoc_insertion_point(message_byte_size_start:mailpb.MailSummary)
+  // @@protoc_insertion_point(message_byte_size_start:mailpb.MailView)
   ::size_t total_size = 0;
 
   ::uint32_t cached_has_bits = 0;
@@ -3699,18 +3935,18 @@ PROTOBUF_NOINLINE void MailSummary::Clear() {
   ::_pbi::Prefetch5LinesFrom7Lines(&this_);
   cached_has_bits = this_._impl_._has_bits_[0];
   if (BatchCheckHasBit(cached_has_bits, 0x000000ffU)) {
-    // string sender_name = 3;
+    // string title = 3;
     if (CheckHasBit(cached_has_bits, 0x00000001U)) {
-      if (!this_._internal_sender_name().empty()) {
-        total_size += 1 + ::google::protobuf::internal::WireFormatLite::StringSize(
-                                        this_._internal_sender_name());
-      }
-    }
-    // string title = 4;
-    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
       if (!this_._internal_title().empty()) {
         total_size += 1 + ::google::protobuf::internal::WireFormatLite::StringSize(
                                         this_._internal_title());
+      }
+    }
+    // string body = 4;
+    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      if (!this_._internal_body().empty()) {
+        total_size += 1 + ::google::protobuf::internal::WireFormatLite::StringSize(
+                                        this_._internal_body());
       }
     }
     // .mailpb.MailAttachments attachments = 9;
@@ -3718,44 +3954,56 @@ PROTOBUF_NOINLINE void MailSummary::Clear() {
       total_size += 1 +
                     ::google::protobuf::internal::WireFormatLite::MessageSize(*this_._impl_.attachments_);
     }
-    // uint64 mail_id = 1;
+    // .TipInfoMessage claim_reason = 11;
     if (CheckHasBit(cached_has_bits, 0x00000008U)) {
+      total_size += 1 +
+                    ::google::protobuf::internal::WireFormatLite::MessageSize(*this_._impl_.claim_reason_);
+    }
+    // uint64 mail_id = 1;
+    if (CheckHasBit(cached_has_bits, 0x00000010U)) {
       if (this_._internal_mail_id() != 0) {
         total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(
             this_._internal_mail_id());
       }
     }
     // .mailpb.MailKind kind = 2;
-    if (CheckHasBit(cached_has_bits, 0x00000010U)) {
+    if (CheckHasBit(cached_has_bits, 0x00000020U)) {
       if (this_._internal_kind() != 0) {
         total_size += 1 +
                       ::_pbi::WireFormatLite::EnumSize(this_._internal_kind());
       }
     }
-    // bool read = 7;
-    if (CheckHasBit(cached_has_bits, 0x00000020U)) {
-      if (this_._internal_read() != 0) {
+    // bool is_read = 7;
+    if (CheckHasBit(cached_has_bits, 0x00000040U)) {
+      if (this_._internal_is_read() != 0) {
         total_size += 2;
       }
     }
     // uint64 sent_ms = 5;
-    if (CheckHasBit(cached_has_bits, 0x00000040U)) {
+    if (CheckHasBit(cached_has_bits, 0x00000080U)) {
       if (this_._internal_sent_ms() != 0) {
         total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(
             this_._internal_sent_ms());
       }
     }
+  }
+  if (BatchCheckHasBit(cached_has_bits, 0x00000700U)) {
     // uint64 expire_ms = 6;
-    if (CheckHasBit(cached_has_bits, 0x00000080U)) {
+    if (CheckHasBit(cached_has_bits, 0x00000100U)) {
       if (this_._internal_expire_ms() != 0) {
         total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(
             this_._internal_expire_ms());
       }
     }
-  }
-   {
+    // uint64 asset_op_id = 10;
+    if (CheckHasBit(cached_has_bits, 0x00000200U)) {
+      if (this_._internal_asset_op_id() != 0) {
+        total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(
+            this_._internal_asset_op_id());
+      }
+    }
     // .mailpb.MailClaimState claim_state = 8;
-    if (CheckHasBit(cached_has_bits, 0x00000100U)) {
+    if (CheckHasBit(cached_has_bits, 0x00000400U)) {
       if (this_._internal_claim_state() != 0) {
         total_size += 1 +
                       ::_pbi::WireFormatLite::EnumSize(this_._internal_claim_state());
@@ -3766,15 +4014,15 @@ PROTOBUF_NOINLINE void MailSummary::Clear() {
                                              &this_._impl_._cached_size_);
 }
 
-void MailSummary::MergeImpl(::google::protobuf::MessageLite& to_msg,
+void MailView::MergeImpl(::google::protobuf::MessageLite& to_msg,
                       const ::google::protobuf::MessageLite& from_msg) {
-   auto* const _this = static_cast<MailSummary*>(&to_msg);
-  auto& from = static_cast<const MailSummary&>(from_msg);
+   auto* const _this = static_cast<MailView*>(&to_msg);
+  auto& from = static_cast<const MailView&>(from_msg);
   if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
     from.CheckHasBitConsistency();
   }
   ::google::protobuf::Arena* arena = _this->GetArena();
-  // @@protoc_insertion_point(class_specific_merge_from_start:mailpb.MailSummary)
+  // @@protoc_insertion_point(class_specific_merge_from_start:mailpb.MailView)
   ABSL_DCHECK_NE(&from, _this);
   ::uint32_t cached_has_bits = 0;
   (void)cached_has_bits;
@@ -3782,20 +4030,20 @@ void MailSummary::MergeImpl(::google::protobuf::MessageLite& to_msg,
   cached_has_bits = from._impl_._has_bits_[0];
   if (BatchCheckHasBit(cached_has_bits, 0x000000ffU)) {
     if (CheckHasBit(cached_has_bits, 0x00000001U)) {
-      if (!from._internal_sender_name().empty()) {
-        _this->_internal_set_sender_name(from._internal_sender_name());
-      } else {
-        if (_this->_impl_.sender_name_.IsDefault()) {
-          _this->_internal_set_sender_name("");
-        }
-      }
-    }
-    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
       if (!from._internal_title().empty()) {
         _this->_internal_set_title(from._internal_title());
       } else {
         if (_this->_impl_.title_.IsDefault()) {
           _this->_internal_set_title("");
+        }
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      if (!from._internal_body().empty()) {
+        _this->_internal_set_body(from._internal_body());
+      } else {
+        if (_this->_impl_.body_.IsDefault()) {
+          _this->_internal_set_body("");
         }
       }
     }
@@ -3808,34 +4056,49 @@ void MailSummary::MergeImpl(::google::protobuf::MessageLite& to_msg,
       }
     }
     if (CheckHasBit(cached_has_bits, 0x00000008U)) {
+      ABSL_DCHECK(from._impl_.claim_reason_ != nullptr);
+      if (_this->_impl_.claim_reason_ == nullptr) {
+        _this->_impl_.claim_reason_ = ::google::protobuf::Message::CopyConstruct(arena, *from._impl_.claim_reason_);
+      } else {
+        _this->_impl_.claim_reason_->MergeFrom(*from._impl_.claim_reason_);
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000010U)) {
       if (from._internal_mail_id() != 0) {
         _this->_impl_.mail_id_ = from._impl_.mail_id_;
       }
     }
-    if (CheckHasBit(cached_has_bits, 0x00000010U)) {
+    if (CheckHasBit(cached_has_bits, 0x00000020U)) {
       if (from._internal_kind() != 0) {
         _this->_impl_.kind_ = from._impl_.kind_;
       }
     }
-    if (CheckHasBit(cached_has_bits, 0x00000020U)) {
-      if (from._internal_read() != 0) {
-        _this->_impl_.read_ = from._impl_.read_;
+    if (CheckHasBit(cached_has_bits, 0x00000040U)) {
+      if (from._internal_is_read() != 0) {
+        _this->_impl_.is_read_ = from._impl_.is_read_;
       }
     }
-    if (CheckHasBit(cached_has_bits, 0x00000040U)) {
+    if (CheckHasBit(cached_has_bits, 0x00000080U)) {
       if (from._internal_sent_ms() != 0) {
         _this->_impl_.sent_ms_ = from._impl_.sent_ms_;
       }
     }
-    if (CheckHasBit(cached_has_bits, 0x00000080U)) {
+  }
+  if (BatchCheckHasBit(cached_has_bits, 0x00000700U)) {
+    if (CheckHasBit(cached_has_bits, 0x00000100U)) {
       if (from._internal_expire_ms() != 0) {
         _this->_impl_.expire_ms_ = from._impl_.expire_ms_;
       }
     }
-  }
-  if (CheckHasBit(cached_has_bits, 0x00000100U)) {
-    if (from._internal_claim_state() != 0) {
-      _this->_impl_.claim_state_ = from._impl_.claim_state_;
+    if (CheckHasBit(cached_has_bits, 0x00000200U)) {
+      if (from._internal_asset_op_id() != 0) {
+        _this->_impl_.asset_op_id_ = from._impl_.asset_op_id_;
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000400U)) {
+      if (from._internal_claim_state() != 0) {
+        _this->_impl_.claim_state_ = from._impl_.claim_state_;
+      }
     }
   }
   _this->_impl_._has_bits_[0] |= cached_has_bits;
@@ -3843,31 +4106,31 @@ void MailSummary::MergeImpl(::google::protobuf::MessageLite& to_msg,
       from._internal_metadata_);
 }
 
-void MailSummary::CopyFrom(const MailSummary& from) {
-  // @@protoc_insertion_point(class_specific_copy_from_start:mailpb.MailSummary)
+void MailView::CopyFrom(const MailView& from) {
+  // @@protoc_insertion_point(class_specific_copy_from_start:mailpb.MailView)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
 }
 
 
-void MailSummary::InternalSwap(MailSummary* PROTOBUF_RESTRICT PROTOBUF_NONNULL other) {
+void MailView::InternalSwap(MailView* PROTOBUF_RESTRICT PROTOBUF_NONNULL other) {
   using ::std::swap;
   auto* arena = GetArena();
   ABSL_DCHECK_EQ(arena, other->GetArena());
   _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
-  ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.sender_name_, &other->_impl_.sender_name_, arena);
   ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.title_, &other->_impl_.title_, arena);
+  ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.body_, &other->_impl_.body_, arena);
   ::google::protobuf::internal::memswap<
-      PROTOBUF_FIELD_OFFSET(MailSummary, _impl_.claim_state_)
-      + sizeof(MailSummary::_impl_.claim_state_)
-      - PROTOBUF_FIELD_OFFSET(MailSummary, _impl_.attachments_)>(
+      PROTOBUF_FIELD_OFFSET(MailView, _impl_.claim_state_)
+      + sizeof(MailView::_impl_.claim_state_)
+      - PROTOBUF_FIELD_OFFSET(MailView, _impl_.attachments_)>(
           reinterpret_cast<char*>(&_impl_.attachments_),
           reinterpret_cast<char*>(&other->_impl_.attachments_));
 }
 
-::google::protobuf::Metadata MailSummary::GetMetadata() const {
+::google::protobuf::Metadata MailView::GetMetadata() const {
   return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
 }
 // ===================================================================
@@ -3902,9 +4165,9 @@ inline void ListMailsRequest::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) 
   ::memset(reinterpret_cast<char*>(&_impl_) +
                offsetof(Impl_, before_mail_id_),
            0,
-           offsetof(Impl_, page_size_) -
+           offsetof(Impl_, limit_) -
                offsetof(Impl_, before_mail_id_) +
-               sizeof(Impl_::page_size_));
+               sizeof(Impl_::limit_));
 }
 ListMailsRequest::~ListMailsRequest() {
   // @@protoc_insertion_point(destructor:mailpb.ListMailsRequest)
@@ -3956,8 +4219,8 @@ PROTOBUF_NOINLINE void ListMailsRequest::Clear() {
   cached_has_bits = _impl_._has_bits_[0];
   if (BatchCheckHasBit(cached_has_bits, 0x00000003U)) {
     ::memset(&_impl_.before_mail_id_, 0, static_cast<::size_t>(
-        reinterpret_cast<char*>(&_impl_.page_size_) -
-        reinterpret_cast<char*>(&_impl_.before_mail_id_)) + sizeof(_impl_.page_size_));
+        reinterpret_cast<char*>(&_impl_.limit_) -
+        reinterpret_cast<char*>(&_impl_.before_mail_id_)) + sizeof(_impl_.limit_));
   }
   _impl_._has_bits_.Clear();
   _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
@@ -3991,12 +4254,12 @@ PROTOBUF_NOINLINE void ListMailsRequest::Clear() {
     }
   }
 
-  // uint32 page_size = 2;
+  // uint32 limit = 2;
   if (CheckHasBit(cached_has_bits, 0x00000002U)) {
-    if (this_._internal_page_size() != 0) {
+    if (this_._internal_limit() != 0) {
       target = stream->EnsureSpace(target);
       target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
-          2, this_._internal_page_size(), target);
+          2, this_._internal_limit(), target);
     }
   }
 
@@ -4033,11 +4296,11 @@ PROTOBUF_NOINLINE void ListMailsRequest::Clear() {
             this_._internal_before_mail_id());
       }
     }
-    // uint32 page_size = 2;
+    // uint32 limit = 2;
     if (CheckHasBit(cached_has_bits, 0x00000002U)) {
-      if (this_._internal_page_size() != 0) {
+      if (this_._internal_limit() != 0) {
         total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
-            this_._internal_page_size());
+            this_._internal_limit());
       }
     }
   }
@@ -4065,8 +4328,8 @@ void ListMailsRequest::MergeImpl(::google::protobuf::MessageLite& to_msg,
       }
     }
     if (CheckHasBit(cached_has_bits, 0x00000002U)) {
-      if (from._internal_page_size() != 0) {
-        _this->_impl_.page_size_ = from._impl_.page_size_;
+      if (from._internal_limit() != 0) {
+        _this->_impl_.limit_ = from._impl_.limit_;
       }
     }
   }
@@ -4088,8 +4351,8 @@ void ListMailsRequest::InternalSwap(ListMailsRequest* PROTOBUF_RESTRICT PROTOBUF
   _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
   ::google::protobuf::internal::memswap<
-      PROTOBUF_FIELD_OFFSET(ListMailsRequest, _impl_.page_size_)
-      + sizeof(ListMailsRequest::_impl_.page_size_)
+      PROTOBUF_FIELD_OFFSET(ListMailsRequest, _impl_.limit_)
+      + sizeof(ListMailsRequest::_impl_.limit_)
       - PROTOBUF_FIELD_OFFSET(ListMailsRequest, _impl_.before_mail_id_)>(
           reinterpret_cast<char*>(&_impl_.before_mail_id_),
           reinterpret_cast<char*>(&other->_impl_.before_mail_id_));
@@ -4147,12 +4410,12 @@ ListMailsResponse::ListMailsResponse(
                 ? ::google::protobuf::Message::CopyConstruct(arena, *from._impl_.error_message_)
                 : nullptr;
   ::memcpy(reinterpret_cast<char*>(&_impl_) +
-               offsetof(Impl_, has_more_),
+               offsetof(Impl_, next_before_mail_id_),
            reinterpret_cast<const char*>(&from._impl_) +
-               offsetof(Impl_, has_more_),
-           offsetof(Impl_, claimable_count_) -
-               offsetof(Impl_, has_more_) +
-               sizeof(Impl_::claimable_count_));
+               offsetof(Impl_, next_before_mail_id_),
+           offsetof(Impl_, server_now_ms_) -
+               offsetof(Impl_, next_before_mail_id_) +
+               sizeof(Impl_::server_now_ms_));
 
   // @@protoc_insertion_point(copy_constructor:mailpb.ListMailsResponse)
 }
@@ -4171,9 +4434,9 @@ inline void ListMailsResponse::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena)
   ::memset(reinterpret_cast<char*>(&_impl_) +
                offsetof(Impl_, error_message_),
            0,
-           offsetof(Impl_, claimable_count_) -
+           offsetof(Impl_, server_now_ms_) -
                offsetof(Impl_, error_message_) +
-               sizeof(Impl_::claimable_count_));
+               sizeof(Impl_::server_now_ms_));
 }
 ListMailsResponse::~ListMailsResponse() {
   // @@protoc_insertion_point(destructor:mailpb.ListMailsResponse)
@@ -4234,9 +4497,9 @@ PROTOBUF_NOINLINE void ListMailsResponse::Clear() {
     }
   }
   if (BatchCheckHasBit(cached_has_bits, 0x0000003cU)) {
-    ::memset(&_impl_.has_more_, 0, static_cast<::size_t>(
-        reinterpret_cast<char*>(&_impl_.claimable_count_) -
-        reinterpret_cast<char*>(&_impl_.has_more_)) + sizeof(_impl_.claimable_count_));
+    ::memset(&_impl_.next_before_mail_id_, 0, static_cast<::size_t>(
+        reinterpret_cast<char*>(&_impl_.server_now_ms_) -
+        reinterpret_cast<char*>(&_impl_.next_before_mail_id_)) + sizeof(_impl_.server_now_ms_));
   }
   _impl_._has_bits_.Clear();
   _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
@@ -4268,7 +4531,7 @@ PROTOBUF_NOINLINE void ListMailsResponse::Clear() {
         stream);
   }
 
-  // repeated .mailpb.MailSummary mails = 2;
+  // repeated .mailpb.MailView mails = 2;
   if (CheckHasBit(cached_has_bits, 0x00000001U)) {
     for (unsigned i = 0, n = static_cast<unsigned>(
                              this_._internal_mails_size());
@@ -4281,12 +4544,12 @@ PROTOBUF_NOINLINE void ListMailsResponse::Clear() {
     }
   }
 
-  // bool has_more = 3;
+  // uint64 next_before_mail_id = 3;
   if (CheckHasBit(cached_has_bits, 0x00000004U)) {
-    if (this_._internal_has_more() != 0) {
+    if (this_._internal_next_before_mail_id() != 0) {
       target = stream->EnsureSpace(target);
-      target = ::_pbi::WireFormatLite::WriteBoolToArray(
-          3, this_._internal_has_more(), target);
+      target = ::_pbi::WireFormatLite::WriteUInt64ToArray(
+          3, this_._internal_next_before_mail_id(), target);
     }
   }
 
@@ -4300,7 +4563,7 @@ PROTOBUF_NOINLINE void ListMailsResponse::Clear() {
   }
 
   // uint32 claimable_count = 5;
-  if (CheckHasBit(cached_has_bits, 0x00000020U)) {
+  if (CheckHasBit(cached_has_bits, 0x00000010U)) {
     if (this_._internal_claimable_count() != 0) {
       target = stream->EnsureSpace(target);
       target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
@@ -4309,7 +4572,7 @@ PROTOBUF_NOINLINE void ListMailsResponse::Clear() {
   }
 
   // uint64 server_now_ms = 6;
-  if (CheckHasBit(cached_has_bits, 0x00000010U)) {
+  if (CheckHasBit(cached_has_bits, 0x00000020U)) {
     if (this_._internal_server_now_ms() != 0) {
       target = stream->EnsureSpace(target);
       target = ::_pbi::WireFormatLite::WriteUInt64ToArray(
@@ -4343,7 +4606,7 @@ PROTOBUF_NOINLINE void ListMailsResponse::Clear() {
   ::_pbi::Prefetch5LinesFrom7Lines(&this_);
   cached_has_bits = this_._impl_._has_bits_[0];
   if (BatchCheckHasBit(cached_has_bits, 0x0000003fU)) {
-    // repeated .mailpb.MailSummary mails = 2;
+    // repeated .mailpb.MailView mails = 2;
     if (CheckHasBit(cached_has_bits, 0x00000001U)) {
       total_size += 1UL * this_._internal_mails_size();
       for (const auto& msg : this_._internal_mails()) {
@@ -4355,10 +4618,11 @@ PROTOBUF_NOINLINE void ListMailsResponse::Clear() {
       total_size += 1 +
                     ::google::protobuf::internal::WireFormatLite::MessageSize(*this_._impl_.error_message_);
     }
-    // bool has_more = 3;
+    // uint64 next_before_mail_id = 3;
     if (CheckHasBit(cached_has_bits, 0x00000004U)) {
-      if (this_._internal_has_more() != 0) {
-        total_size += 2;
+      if (this_._internal_next_before_mail_id() != 0) {
+        total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(
+            this_._internal_next_before_mail_id());
       }
     }
     // uint32 unread_count = 4;
@@ -4368,18 +4632,18 @@ PROTOBUF_NOINLINE void ListMailsResponse::Clear() {
             this_._internal_unread_count());
       }
     }
-    // uint64 server_now_ms = 6;
-    if (CheckHasBit(cached_has_bits, 0x00000010U)) {
-      if (this_._internal_server_now_ms() != 0) {
-        total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(
-            this_._internal_server_now_ms());
-      }
-    }
     // uint32 claimable_count = 5;
-    if (CheckHasBit(cached_has_bits, 0x00000020U)) {
+    if (CheckHasBit(cached_has_bits, 0x00000010U)) {
       if (this_._internal_claimable_count() != 0) {
         total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
             this_._internal_claimable_count());
+      }
+    }
+    // uint64 server_now_ms = 6;
+    if (CheckHasBit(cached_has_bits, 0x00000020U)) {
+      if (this_._internal_server_now_ms() != 0) {
+        total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(
+            this_._internal_server_now_ms());
       }
     }
   }
@@ -4416,8 +4680,8 @@ void ListMailsResponse::MergeImpl(::google::protobuf::MessageLite& to_msg,
       }
     }
     if (CheckHasBit(cached_has_bits, 0x00000004U)) {
-      if (from._internal_has_more() != 0) {
-        _this->_impl_.has_more_ = from._impl_.has_more_;
+      if (from._internal_next_before_mail_id() != 0) {
+        _this->_impl_.next_before_mail_id_ = from._impl_.next_before_mail_id_;
       }
     }
     if (CheckHasBit(cached_has_bits, 0x00000008U)) {
@@ -4426,13 +4690,13 @@ void ListMailsResponse::MergeImpl(::google::protobuf::MessageLite& to_msg,
       }
     }
     if (CheckHasBit(cached_has_bits, 0x00000010U)) {
-      if (from._internal_server_now_ms() != 0) {
-        _this->_impl_.server_now_ms_ = from._impl_.server_now_ms_;
+      if (from._internal_claimable_count() != 0) {
+        _this->_impl_.claimable_count_ = from._impl_.claimable_count_;
       }
     }
     if (CheckHasBit(cached_has_bits, 0x00000020U)) {
-      if (from._internal_claimable_count() != 0) {
-        _this->_impl_.claimable_count_ = from._impl_.claimable_count_;
+      if (from._internal_server_now_ms() != 0) {
+        _this->_impl_.server_now_ms_ = from._impl_.server_now_ms_;
       }
     }
   }
@@ -4455,8 +4719,8 @@ void ListMailsResponse::InternalSwap(ListMailsResponse* PROTOBUF_RESTRICT PROTOB
   swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
   _impl_.mails_.InternalSwap(&other->_impl_.mails_);
   ::google::protobuf::internal::memswap<
-      PROTOBUF_FIELD_OFFSET(ListMailsResponse, _impl_.claimable_count_)
-      + sizeof(ListMailsResponse::_impl_.claimable_count_)
+      PROTOBUF_FIELD_OFFSET(ListMailsResponse, _impl_.server_now_ms_)
+      + sizeof(ListMailsResponse::_impl_.server_now_ms_)
       - PROTOBUF_FIELD_OFFSET(ListMailsResponse, _impl_.error_message_)>(
           reinterpret_cast<char*>(&_impl_.error_message_),
           reinterpret_cast<char*>(&other->_impl_.error_message_));
@@ -4659,7 +4923,7 @@ void ReadMailRequest::InternalSwap(ReadMailRequest* PROTOBUF_RESTRICT PROTOBUF_N
 void ReadMailResponse::clear_error_message() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   if (_impl_.error_message_ != nullptr) _impl_.error_message_->Clear();
-  ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
+  ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
 }
 ReadMailResponse::ReadMailResponse(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
 #if defined(PROTOBUF_CUSTOM_VTABLE)
@@ -4675,8 +4939,7 @@ PROTOBUF_NDEBUG_INLINE ReadMailResponse::Impl_::Impl_(
     [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
     [[maybe_unused]] const ::mailpb::ReadMailResponse& from_msg)
       : _has_bits_{from._has_bits_},
-        _cached_size_{0},
-        body_(arena, from.body_) {}
+        _cached_size_{0} {}
 
 ReadMailResponse::ReadMailResponse(
     ::google::protobuf::Arena* PROTOBUF_NULLABLE arena,
@@ -4693,30 +4956,28 @@ ReadMailResponse::ReadMailResponse(
       from._internal_metadata_);
   new (&_impl_) Impl_(internal_visibility(), arena, from._impl_, from);
   ::uint32_t cached_has_bits = _impl_._has_bits_[0];
-  _impl_.error_message_ = (CheckHasBit(cached_has_bits, 0x00000002U))
+  _impl_.error_message_ = (CheckHasBit(cached_has_bits, 0x00000001U))
                 ? ::google::protobuf::Message::CopyConstruct(arena, *from._impl_.error_message_)
                 : nullptr;
-  _impl_.summary_ = (CheckHasBit(cached_has_bits, 0x00000004U))
-                ? ::google::protobuf::Message::CopyConstruct(arena, *from._impl_.summary_)
+  _impl_.mail_ = (CheckHasBit(cached_has_bits, 0x00000002U))
+                ? ::google::protobuf::Message::CopyConstruct(arena, *from._impl_.mail_)
                 : nullptr;
-  _impl_.server_now_ms_ = from._impl_.server_now_ms_;
 
   // @@protoc_insertion_point(copy_constructor:mailpb.ReadMailResponse)
 }
 PROTOBUF_NDEBUG_INLINE ReadMailResponse::Impl_::Impl_(
     [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
     [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
-      : _cached_size_{0},
-        body_(arena) {}
+      : _cached_size_{0} {}
 
 inline void ReadMailResponse::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
   new (&_impl_) Impl_(internal_visibility(), arena);
   ::memset(reinterpret_cast<char*>(&_impl_) +
                offsetof(Impl_, error_message_),
            0,
-           offsetof(Impl_, server_now_ms_) -
+           offsetof(Impl_, mail_) -
                offsetof(Impl_, error_message_) +
-               sizeof(Impl_::server_now_ms_));
+               sizeof(Impl_::mail_));
 }
 ReadMailResponse::~ReadMailResponse() {
   // @@protoc_insertion_point(destructor:mailpb.ReadMailResponse)
@@ -4729,9 +4990,8 @@ inline void ReadMailResponse::SharedDtor(MessageLite& self) {
   }
   this_._internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
   ABSL_DCHECK(this_.GetArena() == nullptr);
-  this_._impl_.body_.Destroy();
   delete this_._impl_.error_message_;
-  delete this_._impl_.summary_;
+  delete this_._impl_.mail_;
   this_._impl_.~Impl_();
 }
 
@@ -4769,20 +5029,16 @@ PROTOBUF_NOINLINE void ReadMailResponse::Clear() {
   (void) cached_has_bits;
 
   cached_has_bits = _impl_._has_bits_[0];
-  if (BatchCheckHasBit(cached_has_bits, 0x00000007U)) {
+  if (BatchCheckHasBit(cached_has_bits, 0x00000003U)) {
     if (CheckHasBit(cached_has_bits, 0x00000001U)) {
-      _impl_.body_.ClearNonDefaultToEmpty();
-    }
-    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
       ABSL_DCHECK(_impl_.error_message_ != nullptr);
       _impl_.error_message_->Clear();
     }
-    if (CheckHasBit(cached_has_bits, 0x00000004U)) {
-      ABSL_DCHECK(_impl_.summary_ != nullptr);
-      _impl_.summary_->Clear();
+    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      ABSL_DCHECK(_impl_.mail_ != nullptr);
+      _impl_.mail_->Clear();
     }
   }
-  _impl_.server_now_ms_ = ::uint64_t{0u};
   _impl_._has_bits_.Clear();
   _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
 }
@@ -4807,36 +5063,17 @@ PROTOBUF_NOINLINE void ReadMailResponse::Clear() {
 
   cached_has_bits = this_._impl_._has_bits_[0];
   // .TipInfoMessage error_message = 1;
-  if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+  if (CheckHasBit(cached_has_bits, 0x00000001U)) {
     target = ::google::protobuf::internal::WireFormatLite::InternalWriteMessage(
         1, *this_._impl_.error_message_, this_._impl_.error_message_->GetCachedSize(), target,
         stream);
   }
 
-  // .mailpb.MailSummary summary = 2;
-  if (CheckHasBit(cached_has_bits, 0x00000004U)) {
+  // .mailpb.MailView mail = 2;
+  if (CheckHasBit(cached_has_bits, 0x00000002U)) {
     target = ::google::protobuf::internal::WireFormatLite::InternalWriteMessage(
-        2, *this_._impl_.summary_, this_._impl_.summary_->GetCachedSize(), target,
+        2, *this_._impl_.mail_, this_._impl_.mail_->GetCachedSize(), target,
         stream);
-  }
-
-  // string body = 3;
-  if (CheckHasBit(cached_has_bits, 0x00000001U)) {
-    if (!this_._internal_body().empty()) {
-      const ::std::string& _s = this_._internal_body();
-      ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
-          _s.data(), static_cast<int>(_s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "mailpb.ReadMailResponse.body");
-      target = stream->WriteStringMaybeAliased(3, _s, target);
-    }
-  }
-
-  // uint64 server_now_ms = 4;
-  if (CheckHasBit(cached_has_bits, 0x00000008U)) {
-    if (this_._internal_server_now_ms() != 0) {
-      target = stream->EnsureSpace(target);
-      target = ::_pbi::WireFormatLite::WriteUInt64ToArray(
-          4, this_._internal_server_now_ms(), target);
-    }
   }
 
   if (ABSL_PREDICT_FALSE(this_._internal_metadata_.have_unknown_fields())) {
@@ -4864,30 +5101,16 @@ PROTOBUF_NOINLINE void ReadMailResponse::Clear() {
 
   ::_pbi::Prefetch5LinesFrom7Lines(&this_);
   cached_has_bits = this_._impl_._has_bits_[0];
-  if (BatchCheckHasBit(cached_has_bits, 0x0000000fU)) {
-    // string body = 3;
-    if (CheckHasBit(cached_has_bits, 0x00000001U)) {
-      if (!this_._internal_body().empty()) {
-        total_size += 1 + ::google::protobuf::internal::WireFormatLite::StringSize(
-                                        this_._internal_body());
-      }
-    }
+  if (BatchCheckHasBit(cached_has_bits, 0x00000003U)) {
     // .TipInfoMessage error_message = 1;
-    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+    if (CheckHasBit(cached_has_bits, 0x00000001U)) {
       total_size += 1 +
                     ::google::protobuf::internal::WireFormatLite::MessageSize(*this_._impl_.error_message_);
     }
-    // .mailpb.MailSummary summary = 2;
-    if (CheckHasBit(cached_has_bits, 0x00000004U)) {
+    // .mailpb.MailView mail = 2;
+    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
       total_size += 1 +
-                    ::google::protobuf::internal::WireFormatLite::MessageSize(*this_._impl_.summary_);
-    }
-    // uint64 server_now_ms = 4;
-    if (CheckHasBit(cached_has_bits, 0x00000008U)) {
-      if (this_._internal_server_now_ms() != 0) {
-        total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(
-            this_._internal_server_now_ms());
-      }
+                    ::google::protobuf::internal::WireFormatLite::MessageSize(*this_._impl_.mail_);
     }
   }
   return this_.MaybeComputeUnknownFieldsSize(total_size,
@@ -4908,17 +5131,8 @@ void ReadMailResponse::MergeImpl(::google::protobuf::MessageLite& to_msg,
   (void)cached_has_bits;
 
   cached_has_bits = from._impl_._has_bits_[0];
-  if (BatchCheckHasBit(cached_has_bits, 0x0000000fU)) {
+  if (BatchCheckHasBit(cached_has_bits, 0x00000003U)) {
     if (CheckHasBit(cached_has_bits, 0x00000001U)) {
-      if (!from._internal_body().empty()) {
-        _this->_internal_set_body(from._internal_body());
-      } else {
-        if (_this->_impl_.body_.IsDefault()) {
-          _this->_internal_set_body("");
-        }
-      }
-    }
-    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
       ABSL_DCHECK(from._impl_.error_message_ != nullptr);
       if (_this->_impl_.error_message_ == nullptr) {
         _this->_impl_.error_message_ = ::google::protobuf::Message::CopyConstruct(arena, *from._impl_.error_message_);
@@ -4926,17 +5140,12 @@ void ReadMailResponse::MergeImpl(::google::protobuf::MessageLite& to_msg,
         _this->_impl_.error_message_->MergeFrom(*from._impl_.error_message_);
       }
     }
-    if (CheckHasBit(cached_has_bits, 0x00000004U)) {
-      ABSL_DCHECK(from._impl_.summary_ != nullptr);
-      if (_this->_impl_.summary_ == nullptr) {
-        _this->_impl_.summary_ = ::google::protobuf::Message::CopyConstruct(arena, *from._impl_.summary_);
+    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      ABSL_DCHECK(from._impl_.mail_ != nullptr);
+      if (_this->_impl_.mail_ == nullptr) {
+        _this->_impl_.mail_ = ::google::protobuf::Message::CopyConstruct(arena, *from._impl_.mail_);
       } else {
-        _this->_impl_.summary_->MergeFrom(*from._impl_.summary_);
-      }
-    }
-    if (CheckHasBit(cached_has_bits, 0x00000008U)) {
-      if (from._internal_server_now_ms() != 0) {
-        _this->_impl_.server_now_ms_ = from._impl_.server_now_ms_;
+        _this->_impl_.mail_->MergeFrom(*from._impl_.mail_);
       }
     }
   }
@@ -4955,20 +5164,802 @@ void ReadMailResponse::CopyFrom(const ReadMailResponse& from) {
 
 void ReadMailResponse::InternalSwap(ReadMailResponse* PROTOBUF_RESTRICT PROTOBUF_NONNULL other) {
   using ::std::swap;
-  auto* arena = GetArena();
-  ABSL_DCHECK_EQ(arena, other->GetArena());
   _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
-  ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.body_, &other->_impl_.body_, arena);
   ::google::protobuf::internal::memswap<
-      PROTOBUF_FIELD_OFFSET(ReadMailResponse, _impl_.server_now_ms_)
-      + sizeof(ReadMailResponse::_impl_.server_now_ms_)
+      PROTOBUF_FIELD_OFFSET(ReadMailResponse, _impl_.mail_)
+      + sizeof(ReadMailResponse::_impl_.mail_)
       - PROTOBUF_FIELD_OFFSET(ReadMailResponse, _impl_.error_message_)>(
           reinterpret_cast<char*>(&_impl_.error_message_),
           reinterpret_cast<char*>(&other->_impl_.error_message_));
 }
 
 ::google::protobuf::Metadata ReadMailResponse::GetMetadata() const {
+  return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
+}
+// ===================================================================
+
+ClaimMailAttachmentsRequest::ClaimMailAttachmentsRequest(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, ClaimMailAttachmentsRequest_get_class_data()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  SharedCtor(arena);
+  // @@protoc_insertion_point(arena_constructor:mailpb.ClaimMailAttachmentsRequest)
+}
+PROTOBUF_NDEBUG_INLINE ClaimMailAttachmentsRequest::Impl_::Impl_(
+    [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
+    [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
+    [[maybe_unused]] const ::mailpb::ClaimMailAttachmentsRequest& from_msg)
+      : _has_bits_{from._has_bits_},
+        _cached_size_{0},
+        mail_ids_ {
+          visibility, ::_pbi::InternalMetadataOffset::Build<
+              ::mailpb::ClaimMailAttachmentsRequest,
+              PROTOBUF_FIELD_OFFSET(::mailpb::ClaimMailAttachmentsRequest, _impl_.mail_ids_)>()
+          , from.mail_ids_
+        }
+        ,
+        _mail_ids_cached_byte_size_{0} {}
+
+ClaimMailAttachmentsRequest::ClaimMailAttachmentsRequest(
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena,
+    const ClaimMailAttachmentsRequest& from)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, ClaimMailAttachmentsRequest_get_class_data()) {
+
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  ClaimMailAttachmentsRequest* const _this = this;
+  (void)_this;
+  _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+  new (&_impl_) Impl_(internal_visibility(), arena, from._impl_, from);
+
+  // @@protoc_insertion_point(copy_constructor:mailpb.ClaimMailAttachmentsRequest)
+}
+PROTOBUF_NDEBUG_INLINE ClaimMailAttachmentsRequest::Impl_::Impl_(
+    [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
+    [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+      : _cached_size_{0},
+        mail_ids_ { visibility, ::_pbi::InternalMetadataOffset::Build<
+            ::mailpb::ClaimMailAttachmentsRequest,
+            PROTOBUF_FIELD_OFFSET(::mailpb::ClaimMailAttachmentsRequest, _impl_.mail_ids_)>()
+         }
+        ,
+        _mail_ids_cached_byte_size_{0} {}
+
+inline void ClaimMailAttachmentsRequest::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
+  new (&_impl_) Impl_(internal_visibility(), arena);
+}
+ClaimMailAttachmentsRequest::~ClaimMailAttachmentsRequest() {
+  // @@protoc_insertion_point(destructor:mailpb.ClaimMailAttachmentsRequest)
+  SharedDtor(*this);
+}
+inline void ClaimMailAttachmentsRequest::SharedDtor(MessageLite& self) {
+  ClaimMailAttachmentsRequest& this_ = static_cast<ClaimMailAttachmentsRequest&>(self);
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    this_.CheckHasBitConsistency();
+  }
+  this_._internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
+  ABSL_DCHECK(this_.GetArena() == nullptr);
+  this_._impl_.~Impl_();
+}
+
+#ifndef PROTOBUF_MESSAGE_GLOBALS
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const
+    ::google::protobuf::internal::ClassDataFull ClaimMailAttachmentsRequest_class_data_ =
+        ClaimMailAttachmentsRequest::InternalGenerateClassData_(ClaimMailAttachmentsRequest_globals_._default);
+
+PROTOBUF_ATTRIBUTE_WEAK const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
+ClaimMailAttachmentsRequest::GetClassData() const {
+  ::google::protobuf::internal::PrefetchToLocalCache(&ClaimMailAttachmentsRequest_class_data_);
+  ::google::protobuf::internal::PrefetchToLocalCache(ClaimMailAttachmentsRequest_class_data_.tc_table);
+  return ClaimMailAttachmentsRequest_class_data_.base();
+}
+#else
+PROTOBUF_ATTRIBUTE_WEAK const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
+ClaimMailAttachmentsRequest::GetClassData() const {
+  ::google::protobuf::internal::PrefetchToLocalCache(&ClaimMailAttachmentsRequest_globals_);
+  ::google::protobuf::internal::PrefetchToLocalCache(
+      ::google::protobuf::internal::MessageGlobalsBase::ToParseTableBase(&ClaimMailAttachmentsRequest_globals_));
+  return ClaimMailAttachmentsRequest_globals_.GetClassData();
+}
+#endif  // !PROTOBUF_MESSAGE_GLOBALS
+#ifndef PROTOBUF_MESSAGE_GLOBALS
+PROTOBUF_CONSTINIT
+PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const ClaimMailAttachmentsRequest::ParseTableT_
+    ClaimMailAttachmentsRequest::_table_ =
+        ClaimMailAttachmentsRequest::InternalGenerateParseTable_(ClaimMailAttachmentsRequest_class_data_.base());
+#endif  // !PROTOBUF_MESSAGE_GLOBALS
+PROTOBUF_NOINLINE void ClaimMailAttachmentsRequest::Clear() {
+// @@protoc_insertion_point(message_clear_start:mailpb.ClaimMailAttachmentsRequest)
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  cached_has_bits = _impl_._has_bits_[0];
+  if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+    _impl_.mail_ids_.Clear();
+  }
+  _impl_._has_bits_.Clear();
+  _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::uint8_t* PROTOBUF_NONNULL ClaimMailAttachmentsRequest::_InternalSerialize(
+    const ::google::protobuf::MessageLite& base, ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) {
+  const ClaimMailAttachmentsRequest& this_ = static_cast<const ClaimMailAttachmentsRequest&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::uint8_t* PROTOBUF_NONNULL ClaimMailAttachmentsRequest::_InternalSerialize(
+    ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
+  const ClaimMailAttachmentsRequest& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    this_.CheckHasBitConsistency();
+  }
+  // @@protoc_insertion_point(serialize_to_array_start:mailpb.ClaimMailAttachmentsRequest)
+  ::uint32_t cached_has_bits = 0;
+  (void)cached_has_bits;
+
+  cached_has_bits = this_._impl_._has_bits_[0];
+  // repeated uint64 mail_ids = 1;
+  if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+    {
+      int byte_size = this_._impl_._mail_ids_cached_byte_size_.Get();
+      if (byte_size > 0) {
+        target = stream->WriteUInt64Packed(
+            1, this_._internal_mail_ids(), byte_size, target);
+      }
+    }
+  }
+
+  if (ABSL_PREDICT_FALSE(this_._internal_metadata_.have_unknown_fields())) {
+    target =
+        ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
+            this_._internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
+  }
+  // @@protoc_insertion_point(serialize_to_array_end:mailpb.ClaimMailAttachmentsRequest)
+  return target;
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::size_t ClaimMailAttachmentsRequest::ByteSizeLong(const MessageLite& base) {
+  const ClaimMailAttachmentsRequest& this_ = static_cast<const ClaimMailAttachmentsRequest&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::size_t ClaimMailAttachmentsRequest::ByteSizeLong() const {
+  const ClaimMailAttachmentsRequest& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  // @@protoc_insertion_point(message_byte_size_start:mailpb.ClaimMailAttachmentsRequest)
+  ::size_t total_size = 0;
+
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void)cached_has_bits;
+
+  ::_pbi::Prefetch5LinesFrom7Lines(&this_);
+   {
+    // repeated uint64 mail_ids = 1;
+    cached_has_bits = this_._impl_._has_bits_[0];
+    if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+      total_size +=
+          ::_pbi::WireFormatLite::UInt64SizeWithPackedTagSize(
+              this_._internal_mail_ids(), 1,
+              this_._impl_._mail_ids_cached_byte_size_);
+    }
+  }
+  return this_.MaybeComputeUnknownFieldsSize(total_size,
+                                             &this_._impl_._cached_size_);
+}
+
+void ClaimMailAttachmentsRequest::MergeImpl(::google::protobuf::MessageLite& to_msg,
+                      const ::google::protobuf::MessageLite& from_msg) {
+   auto* const _this = static_cast<ClaimMailAttachmentsRequest*>(&to_msg);
+  auto& from = static_cast<const ClaimMailAttachmentsRequest&>(from_msg);
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    from.CheckHasBitConsistency();
+  }
+  // @@protoc_insertion_point(class_specific_merge_from_start:mailpb.ClaimMailAttachmentsRequest)
+  ABSL_DCHECK_NE(&from, _this);
+  ::uint32_t cached_has_bits = 0;
+  (void)cached_has_bits;
+
+  cached_has_bits = from._impl_._has_bits_[0];
+  if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+    _this->_internal_mutable_mail_ids()->MergeFrom(from._internal_mail_ids());
+  }
+  _this->_impl_._has_bits_[0] |= cached_has_bits;
+  _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+}
+
+void ClaimMailAttachmentsRequest::CopyFrom(const ClaimMailAttachmentsRequest& from) {
+  // @@protoc_insertion_point(class_specific_copy_from_start:mailpb.ClaimMailAttachmentsRequest)
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+
+void ClaimMailAttachmentsRequest::InternalSwap(ClaimMailAttachmentsRequest* PROTOBUF_RESTRICT PROTOBUF_NONNULL other) {
+  using ::std::swap;
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
+  swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
+  _impl_.mail_ids_.InternalSwap(&other->_impl_.mail_ids_);
+}
+
+::google::protobuf::Metadata ClaimMailAttachmentsRequest::GetMetadata() const {
+  return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
+}
+// ===================================================================
+
+void MailActionResult::clear_error_message() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (_impl_.error_message_ != nullptr) _impl_.error_message_->Clear();
+  ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
+}
+MailActionResult::MailActionResult(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, MailActionResult_get_class_data()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  SharedCtor(arena);
+  // @@protoc_insertion_point(arena_constructor:mailpb.MailActionResult)
+}
+PROTOBUF_NDEBUG_INLINE MailActionResult::Impl_::Impl_(
+    [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
+    [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
+    [[maybe_unused]] const ::mailpb::MailActionResult& from_msg)
+      : _has_bits_{from._has_bits_},
+        _cached_size_{0} {}
+
+MailActionResult::MailActionResult(
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena,
+    const MailActionResult& from)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, MailActionResult_get_class_data()) {
+
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  MailActionResult* const _this = this;
+  (void)_this;
+  _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+  new (&_impl_) Impl_(internal_visibility(), arena, from._impl_, from);
+  ::uint32_t cached_has_bits = _impl_._has_bits_[0];
+  _impl_.error_message_ = (CheckHasBit(cached_has_bits, 0x00000001U))
+                ? ::google::protobuf::Message::CopyConstruct(arena, *from._impl_.error_message_)
+                : nullptr;
+  ::memcpy(reinterpret_cast<char*>(&_impl_) +
+               offsetof(Impl_, mail_id_),
+           reinterpret_cast<const char*>(&from._impl_) +
+               offsetof(Impl_, mail_id_),
+           offsetof(Impl_, claim_state_) -
+               offsetof(Impl_, mail_id_) +
+               sizeof(Impl_::claim_state_));
+
+  // @@protoc_insertion_point(copy_constructor:mailpb.MailActionResult)
+}
+PROTOBUF_NDEBUG_INLINE MailActionResult::Impl_::Impl_(
+    [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
+    [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+      : _cached_size_{0} {}
+
+inline void MailActionResult::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
+  new (&_impl_) Impl_(internal_visibility(), arena);
+  ::memset(reinterpret_cast<char*>(&_impl_) +
+               offsetof(Impl_, error_message_),
+           0,
+           offsetof(Impl_, claim_state_) -
+               offsetof(Impl_, error_message_) +
+               sizeof(Impl_::claim_state_));
+}
+MailActionResult::~MailActionResult() {
+  // @@protoc_insertion_point(destructor:mailpb.MailActionResult)
+  SharedDtor(*this);
+}
+inline void MailActionResult::SharedDtor(MessageLite& self) {
+  MailActionResult& this_ = static_cast<MailActionResult&>(self);
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    this_.CheckHasBitConsistency();
+  }
+  this_._internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
+  ABSL_DCHECK(this_.GetArena() == nullptr);
+  delete this_._impl_.error_message_;
+  this_._impl_.~Impl_();
+}
+
+#ifndef PROTOBUF_MESSAGE_GLOBALS
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const
+    ::google::protobuf::internal::ClassDataFull MailActionResult_class_data_ =
+        MailActionResult::InternalGenerateClassData_(MailActionResult_globals_._default);
+
+PROTOBUF_ATTRIBUTE_WEAK const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
+MailActionResult::GetClassData() const {
+  ::google::protobuf::internal::PrefetchToLocalCache(&MailActionResult_class_data_);
+  ::google::protobuf::internal::PrefetchToLocalCache(MailActionResult_class_data_.tc_table);
+  return MailActionResult_class_data_.base();
+}
+#else
+PROTOBUF_ATTRIBUTE_WEAK const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
+MailActionResult::GetClassData() const {
+  ::google::protobuf::internal::PrefetchToLocalCache(&MailActionResult_globals_);
+  ::google::protobuf::internal::PrefetchToLocalCache(
+      ::google::protobuf::internal::MessageGlobalsBase::ToParseTableBase(&MailActionResult_globals_));
+  return MailActionResult_globals_.GetClassData();
+}
+#endif  // !PROTOBUF_MESSAGE_GLOBALS
+#ifndef PROTOBUF_MESSAGE_GLOBALS
+PROTOBUF_CONSTINIT
+PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const MailActionResult::ParseTableT_
+    MailActionResult::_table_ =
+        MailActionResult::InternalGenerateParseTable_(MailActionResult_class_data_.base());
+#endif  // !PROTOBUF_MESSAGE_GLOBALS
+PROTOBUF_NOINLINE void MailActionResult::Clear() {
+// @@protoc_insertion_point(message_clear_start:mailpb.MailActionResult)
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  cached_has_bits = _impl_._has_bits_[0];
+  if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+    ABSL_DCHECK(_impl_.error_message_ != nullptr);
+    _impl_.error_message_->Clear();
+  }
+  if (BatchCheckHasBit(cached_has_bits, 0x0000000eU)) {
+    ::memset(&_impl_.mail_id_, 0, static_cast<::size_t>(
+        reinterpret_cast<char*>(&_impl_.claim_state_) -
+        reinterpret_cast<char*>(&_impl_.mail_id_)) + sizeof(_impl_.claim_state_));
+  }
+  _impl_._has_bits_.Clear();
+  _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::uint8_t* PROTOBUF_NONNULL MailActionResult::_InternalSerialize(
+    const ::google::protobuf::MessageLite& base, ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) {
+  const MailActionResult& this_ = static_cast<const MailActionResult&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::uint8_t* PROTOBUF_NONNULL MailActionResult::_InternalSerialize(
+    ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
+  const MailActionResult& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    this_.CheckHasBitConsistency();
+  }
+  // @@protoc_insertion_point(serialize_to_array_start:mailpb.MailActionResult)
+  ::uint32_t cached_has_bits = 0;
+  (void)cached_has_bits;
+
+  cached_has_bits = this_._impl_._has_bits_[0];
+  // uint64 mail_id = 1;
+  if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+    if (this_._internal_mail_id() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteUInt64ToArray(
+          1, this_._internal_mail_id(), target);
+    }
+  }
+
+  // .TipInfoMessage error_message = 2;
+  if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+    target = ::google::protobuf::internal::WireFormatLite::InternalWriteMessage(
+        2, *this_._impl_.error_message_, this_._impl_.error_message_->GetCachedSize(), target,
+        stream);
+  }
+
+  // .mailpb.MailClaimState claim_state = 3;
+  if (CheckHasBit(cached_has_bits, 0x00000008U)) {
+    if (this_._internal_claim_state() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteEnumToArray(
+          3, this_._internal_claim_state(), target);
+    }
+  }
+
+  // uint64 asset_op_id = 4;
+  if (CheckHasBit(cached_has_bits, 0x00000004U)) {
+    if (this_._internal_asset_op_id() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteUInt64ToArray(
+          4, this_._internal_asset_op_id(), target);
+    }
+  }
+
+  if (ABSL_PREDICT_FALSE(this_._internal_metadata_.have_unknown_fields())) {
+    target =
+        ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
+            this_._internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
+  }
+  // @@protoc_insertion_point(serialize_to_array_end:mailpb.MailActionResult)
+  return target;
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::size_t MailActionResult::ByteSizeLong(const MessageLite& base) {
+  const MailActionResult& this_ = static_cast<const MailActionResult&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::size_t MailActionResult::ByteSizeLong() const {
+  const MailActionResult& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  // @@protoc_insertion_point(message_byte_size_start:mailpb.MailActionResult)
+  ::size_t total_size = 0;
+
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void)cached_has_bits;
+
+  ::_pbi::Prefetch5LinesFrom7Lines(&this_);
+  cached_has_bits = this_._impl_._has_bits_[0];
+  if (BatchCheckHasBit(cached_has_bits, 0x0000000fU)) {
+    // .TipInfoMessage error_message = 2;
+    if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+      total_size += 1 +
+                    ::google::protobuf::internal::WireFormatLite::MessageSize(*this_._impl_.error_message_);
+    }
+    // uint64 mail_id = 1;
+    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      if (this_._internal_mail_id() != 0) {
+        total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(
+            this_._internal_mail_id());
+      }
+    }
+    // uint64 asset_op_id = 4;
+    if (CheckHasBit(cached_has_bits, 0x00000004U)) {
+      if (this_._internal_asset_op_id() != 0) {
+        total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(
+            this_._internal_asset_op_id());
+      }
+    }
+    // .mailpb.MailClaimState claim_state = 3;
+    if (CheckHasBit(cached_has_bits, 0x00000008U)) {
+      if (this_._internal_claim_state() != 0) {
+        total_size += 1 +
+                      ::_pbi::WireFormatLite::EnumSize(this_._internal_claim_state());
+      }
+    }
+  }
+  return this_.MaybeComputeUnknownFieldsSize(total_size,
+                                             &this_._impl_._cached_size_);
+}
+
+void MailActionResult::MergeImpl(::google::protobuf::MessageLite& to_msg,
+                      const ::google::protobuf::MessageLite& from_msg) {
+   auto* const _this = static_cast<MailActionResult*>(&to_msg);
+  auto& from = static_cast<const MailActionResult&>(from_msg);
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    from.CheckHasBitConsistency();
+  }
+  ::google::protobuf::Arena* arena = _this->GetArena();
+  // @@protoc_insertion_point(class_specific_merge_from_start:mailpb.MailActionResult)
+  ABSL_DCHECK_NE(&from, _this);
+  ::uint32_t cached_has_bits = 0;
+  (void)cached_has_bits;
+
+  cached_has_bits = from._impl_._has_bits_[0];
+  if (BatchCheckHasBit(cached_has_bits, 0x0000000fU)) {
+    if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+      ABSL_DCHECK(from._impl_.error_message_ != nullptr);
+      if (_this->_impl_.error_message_ == nullptr) {
+        _this->_impl_.error_message_ = ::google::protobuf::Message::CopyConstruct(arena, *from._impl_.error_message_);
+      } else {
+        _this->_impl_.error_message_->MergeFrom(*from._impl_.error_message_);
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      if (from._internal_mail_id() != 0) {
+        _this->_impl_.mail_id_ = from._impl_.mail_id_;
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000004U)) {
+      if (from._internal_asset_op_id() != 0) {
+        _this->_impl_.asset_op_id_ = from._impl_.asset_op_id_;
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000008U)) {
+      if (from._internal_claim_state() != 0) {
+        _this->_impl_.claim_state_ = from._impl_.claim_state_;
+      }
+    }
+  }
+  _this->_impl_._has_bits_[0] |= cached_has_bits;
+  _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+}
+
+void MailActionResult::CopyFrom(const MailActionResult& from) {
+  // @@protoc_insertion_point(class_specific_copy_from_start:mailpb.MailActionResult)
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+
+void MailActionResult::InternalSwap(MailActionResult* PROTOBUF_RESTRICT PROTOBUF_NONNULL other) {
+  using ::std::swap;
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
+  swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
+  ::google::protobuf::internal::memswap<
+      PROTOBUF_FIELD_OFFSET(MailActionResult, _impl_.claim_state_)
+      + sizeof(MailActionResult::_impl_.claim_state_)
+      - PROTOBUF_FIELD_OFFSET(MailActionResult, _impl_.error_message_)>(
+          reinterpret_cast<char*>(&_impl_.error_message_),
+          reinterpret_cast<char*>(&other->_impl_.error_message_));
+}
+
+::google::protobuf::Metadata MailActionResult::GetMetadata() const {
+  return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
+}
+// ===================================================================
+
+void ClaimMailAttachmentsResponse::clear_error_message() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (_impl_.error_message_ != nullptr) _impl_.error_message_->Clear();
+  ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
+}
+ClaimMailAttachmentsResponse::ClaimMailAttachmentsResponse(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, ClaimMailAttachmentsResponse_get_class_data()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  SharedCtor(arena);
+  // @@protoc_insertion_point(arena_constructor:mailpb.ClaimMailAttachmentsResponse)
+}
+PROTOBUF_NDEBUG_INLINE ClaimMailAttachmentsResponse::Impl_::Impl_(
+    [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
+    [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
+    [[maybe_unused]] const ::mailpb::ClaimMailAttachmentsResponse& from_msg)
+      : _has_bits_{from._has_bits_},
+        _cached_size_{0},
+        results_ {
+          visibility, ::_pbi::InternalMetadataOffset::Build<
+              ::mailpb::ClaimMailAttachmentsResponse,
+              PROTOBUF_FIELD_OFFSET(::mailpb::ClaimMailAttachmentsResponse, _impl_.results_)>()
+          , from.results_
+        }
+     {}
+
+ClaimMailAttachmentsResponse::ClaimMailAttachmentsResponse(
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena,
+    const ClaimMailAttachmentsResponse& from)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, ClaimMailAttachmentsResponse_get_class_data()) {
+
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  ClaimMailAttachmentsResponse* const _this = this;
+  (void)_this;
+  _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+  new (&_impl_) Impl_(internal_visibility(), arena, from._impl_, from);
+  ::uint32_t cached_has_bits = _impl_._has_bits_[0];
+  _impl_.error_message_ = (CheckHasBit(cached_has_bits, 0x00000002U))
+                ? ::google::protobuf::Message::CopyConstruct(arena, *from._impl_.error_message_)
+                : nullptr;
+
+  // @@protoc_insertion_point(copy_constructor:mailpb.ClaimMailAttachmentsResponse)
+}
+PROTOBUF_NDEBUG_INLINE ClaimMailAttachmentsResponse::Impl_::Impl_(
+    [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
+    [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+      : _cached_size_{0},
+        results_ { visibility, ::_pbi::InternalMetadataOffset::Build<
+            ::mailpb::ClaimMailAttachmentsResponse,
+            PROTOBUF_FIELD_OFFSET(::mailpb::ClaimMailAttachmentsResponse, _impl_.results_)>()
+         }
+     {}
+
+inline void ClaimMailAttachmentsResponse::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
+  new (&_impl_) Impl_(internal_visibility(), arena);
+  _impl_.error_message_ = {};
+}
+ClaimMailAttachmentsResponse::~ClaimMailAttachmentsResponse() {
+  // @@protoc_insertion_point(destructor:mailpb.ClaimMailAttachmentsResponse)
+  SharedDtor(*this);
+}
+inline void ClaimMailAttachmentsResponse::SharedDtor(MessageLite& self) {
+  ClaimMailAttachmentsResponse& this_ = static_cast<ClaimMailAttachmentsResponse&>(self);
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    this_.CheckHasBitConsistency();
+  }
+  this_._internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
+  ABSL_DCHECK(this_.GetArena() == nullptr);
+  delete this_._impl_.error_message_;
+  this_._impl_.~Impl_();
+}
+
+#ifndef PROTOBUF_MESSAGE_GLOBALS
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const
+    ::google::protobuf::internal::ClassDataFull ClaimMailAttachmentsResponse_class_data_ =
+        ClaimMailAttachmentsResponse::InternalGenerateClassData_(ClaimMailAttachmentsResponse_globals_._default);
+
+PROTOBUF_ATTRIBUTE_WEAK const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
+ClaimMailAttachmentsResponse::GetClassData() const {
+  ::google::protobuf::internal::PrefetchToLocalCache(&ClaimMailAttachmentsResponse_class_data_);
+  ::google::protobuf::internal::PrefetchToLocalCache(ClaimMailAttachmentsResponse_class_data_.tc_table);
+  return ClaimMailAttachmentsResponse_class_data_.base();
+}
+#else
+PROTOBUF_ATTRIBUTE_WEAK const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
+ClaimMailAttachmentsResponse::GetClassData() const {
+  ::google::protobuf::internal::PrefetchToLocalCache(&ClaimMailAttachmentsResponse_globals_);
+  ::google::protobuf::internal::PrefetchToLocalCache(
+      ::google::protobuf::internal::MessageGlobalsBase::ToParseTableBase(&ClaimMailAttachmentsResponse_globals_));
+  return ClaimMailAttachmentsResponse_globals_.GetClassData();
+}
+#endif  // !PROTOBUF_MESSAGE_GLOBALS
+#ifndef PROTOBUF_MESSAGE_GLOBALS
+PROTOBUF_CONSTINIT
+PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const ClaimMailAttachmentsResponse::ParseTableT_
+    ClaimMailAttachmentsResponse::_table_ =
+        ClaimMailAttachmentsResponse::InternalGenerateParseTable_(ClaimMailAttachmentsResponse_class_data_.base());
+#endif  // !PROTOBUF_MESSAGE_GLOBALS
+PROTOBUF_NOINLINE void ClaimMailAttachmentsResponse::Clear() {
+// @@protoc_insertion_point(message_clear_start:mailpb.ClaimMailAttachmentsResponse)
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  cached_has_bits = _impl_._has_bits_[0];
+  if (BatchCheckHasBit(cached_has_bits, 0x00000003U)) {
+    if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+      _impl_.results_.Clear();
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      ABSL_DCHECK(_impl_.error_message_ != nullptr);
+      _impl_.error_message_->Clear();
+    }
+  }
+  _impl_._has_bits_.Clear();
+  _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::uint8_t* PROTOBUF_NONNULL ClaimMailAttachmentsResponse::_InternalSerialize(
+    const ::google::protobuf::MessageLite& base, ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) {
+  const ClaimMailAttachmentsResponse& this_ = static_cast<const ClaimMailAttachmentsResponse&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::uint8_t* PROTOBUF_NONNULL ClaimMailAttachmentsResponse::_InternalSerialize(
+    ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
+  const ClaimMailAttachmentsResponse& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    this_.CheckHasBitConsistency();
+  }
+  // @@protoc_insertion_point(serialize_to_array_start:mailpb.ClaimMailAttachmentsResponse)
+  ::uint32_t cached_has_bits = 0;
+  (void)cached_has_bits;
+
+  cached_has_bits = this_._impl_._has_bits_[0];
+  // .TipInfoMessage error_message = 1;
+  if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+    target = ::google::protobuf::internal::WireFormatLite::InternalWriteMessage(
+        1, *this_._impl_.error_message_, this_._impl_.error_message_->GetCachedSize(), target,
+        stream);
+  }
+
+  // repeated .mailpb.MailActionResult results = 2;
+  if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+    for (unsigned i = 0, n = static_cast<unsigned>(
+                             this_._internal_results_size());
+         i < n; i++) {
+      const auto& repfield = this_._internal_results().Get(i);
+      target =
+          ::google::protobuf::internal::WireFormatLite::InternalWriteMessage(
+              2, repfield, repfield.GetCachedSize(),
+              target, stream);
+    }
+  }
+
+  if (ABSL_PREDICT_FALSE(this_._internal_metadata_.have_unknown_fields())) {
+    target =
+        ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
+            this_._internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
+  }
+  // @@protoc_insertion_point(serialize_to_array_end:mailpb.ClaimMailAttachmentsResponse)
+  return target;
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::size_t ClaimMailAttachmentsResponse::ByteSizeLong(const MessageLite& base) {
+  const ClaimMailAttachmentsResponse& this_ = static_cast<const ClaimMailAttachmentsResponse&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::size_t ClaimMailAttachmentsResponse::ByteSizeLong() const {
+  const ClaimMailAttachmentsResponse& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  // @@protoc_insertion_point(message_byte_size_start:mailpb.ClaimMailAttachmentsResponse)
+  ::size_t total_size = 0;
+
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void)cached_has_bits;
+
+  ::_pbi::Prefetch5LinesFrom7Lines(&this_);
+  cached_has_bits = this_._impl_._has_bits_[0];
+  if (BatchCheckHasBit(cached_has_bits, 0x00000003U)) {
+    // repeated .mailpb.MailActionResult results = 2;
+    if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+      total_size += 1UL * this_._internal_results_size();
+      for (const auto& msg : this_._internal_results()) {
+        total_size += ::google::protobuf::internal::WireFormatLite::MessageSize(msg);
+      }
+    }
+    // .TipInfoMessage error_message = 1;
+    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      total_size += 1 +
+                    ::google::protobuf::internal::WireFormatLite::MessageSize(*this_._impl_.error_message_);
+    }
+  }
+  return this_.MaybeComputeUnknownFieldsSize(total_size,
+                                             &this_._impl_._cached_size_);
+}
+
+void ClaimMailAttachmentsResponse::MergeImpl(::google::protobuf::MessageLite& to_msg,
+                      const ::google::protobuf::MessageLite& from_msg) {
+   auto* const _this = static_cast<ClaimMailAttachmentsResponse*>(&to_msg);
+  auto& from = static_cast<const ClaimMailAttachmentsResponse&>(from_msg);
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    from.CheckHasBitConsistency();
+  }
+  ::google::protobuf::Arena* arena = _this->GetArena();
+  // @@protoc_insertion_point(class_specific_merge_from_start:mailpb.ClaimMailAttachmentsResponse)
+  ABSL_DCHECK_NE(&from, _this);
+  ::uint32_t cached_has_bits = 0;
+  (void)cached_has_bits;
+
+  cached_has_bits = from._impl_._has_bits_[0];
+  if (BatchCheckHasBit(cached_has_bits, 0x00000003U)) {
+    if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+      _this->_internal_mutable_results()->InternalMergeFromWithArena(
+          ::google::protobuf::MessageLite::internal_visibility(), arena,
+          from._internal_results());
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      ABSL_DCHECK(from._impl_.error_message_ != nullptr);
+      if (_this->_impl_.error_message_ == nullptr) {
+        _this->_impl_.error_message_ = ::google::protobuf::Message::CopyConstruct(arena, *from._impl_.error_message_);
+      } else {
+        _this->_impl_.error_message_->MergeFrom(*from._impl_.error_message_);
+      }
+    }
+  }
+  _this->_impl_._has_bits_[0] |= cached_has_bits;
+  _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+}
+
+void ClaimMailAttachmentsResponse::CopyFrom(const ClaimMailAttachmentsResponse& from) {
+  // @@protoc_insertion_point(class_specific_copy_from_start:mailpb.ClaimMailAttachmentsResponse)
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+
+void ClaimMailAttachmentsResponse::InternalSwap(ClaimMailAttachmentsResponse* PROTOBUF_RESTRICT PROTOBUF_NONNULL other) {
+  using ::std::swap;
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
+  swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
+  _impl_.results_.InternalSwap(&other->_impl_.results_);
+  swap(_impl_.error_message_, other->_impl_.error_message_);
+}
+
+::google::protobuf::Metadata ClaimMailAttachmentsResponse::GetMetadata() const {
   return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
 }
 // ===================================================================
@@ -5195,7 +6186,7 @@ void DeleteMailsRequest::InternalSwap(DeleteMailsRequest* PROTOBUF_RESTRICT PROT
 void DeleteMailsResponse::clear_error_message() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   if (_impl_.error_message_ != nullptr) _impl_.error_message_->Clear();
-  ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
+  ClearHasBit(_impl_._has_bits_[0], 0x00000004U);
 }
 DeleteMailsResponse::DeleteMailsResponse(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
 #if defined(PROTOBUF_CUSTOM_VTABLE)
@@ -5212,6 +6203,14 @@ PROTOBUF_NDEBUG_INLINE DeleteMailsResponse::Impl_::Impl_(
     [[maybe_unused]] const ::mailpb::DeleteMailsResponse& from_msg)
       : _has_bits_{from._has_bits_},
         _cached_size_{0},
+        deleted_mail_ids_ {
+          visibility, ::_pbi::InternalMetadataOffset::Build<
+              ::mailpb::DeleteMailsResponse,
+              PROTOBUF_FIELD_OFFSET(::mailpb::DeleteMailsResponse, _impl_.deleted_mail_ids_)>()
+          , from.deleted_mail_ids_
+        }
+        ,
+        _deleted_mail_ids_cached_byte_size_{0},
         protected_mail_ids_ {
           visibility, ::_pbi::InternalMetadataOffset::Build<
               ::mailpb::DeleteMailsResponse,
@@ -5236,10 +6235,9 @@ DeleteMailsResponse::DeleteMailsResponse(
       from._internal_metadata_);
   new (&_impl_) Impl_(internal_visibility(), arena, from._impl_, from);
   ::uint32_t cached_has_bits = _impl_._has_bits_[0];
-  _impl_.error_message_ = (CheckHasBit(cached_has_bits, 0x00000002U))
+  _impl_.error_message_ = (CheckHasBit(cached_has_bits, 0x00000004U))
                 ? ::google::protobuf::Message::CopyConstruct(arena, *from._impl_.error_message_)
                 : nullptr;
-  _impl_.deleted_count_ = from._impl_.deleted_count_;
 
   // @@protoc_insertion_point(copy_constructor:mailpb.DeleteMailsResponse)
 }
@@ -5247,6 +6245,12 @@ PROTOBUF_NDEBUG_INLINE DeleteMailsResponse::Impl_::Impl_(
     [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
     [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
       : _cached_size_{0},
+        deleted_mail_ids_ { visibility, ::_pbi::InternalMetadataOffset::Build<
+            ::mailpb::DeleteMailsResponse,
+            PROTOBUF_FIELD_OFFSET(::mailpb::DeleteMailsResponse, _impl_.deleted_mail_ids_)>()
+         }
+        ,
+        _deleted_mail_ids_cached_byte_size_{0},
         protected_mail_ids_ { visibility, ::_pbi::InternalMetadataOffset::Build<
             ::mailpb::DeleteMailsResponse,
             PROTOBUF_FIELD_OFFSET(::mailpb::DeleteMailsResponse, _impl_.protected_mail_ids_)>()
@@ -5256,12 +6260,7 @@ PROTOBUF_NDEBUG_INLINE DeleteMailsResponse::Impl_::Impl_(
 
 inline void DeleteMailsResponse::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
   new (&_impl_) Impl_(internal_visibility(), arena);
-  ::memset(reinterpret_cast<char*>(&_impl_) +
-               offsetof(Impl_, error_message_),
-           0,
-           offsetof(Impl_, deleted_count_) -
-               offsetof(Impl_, error_message_) +
-               sizeof(Impl_::deleted_count_));
+  _impl_.error_message_ = {};
 }
 DeleteMailsResponse::~DeleteMailsResponse() {
   // @@protoc_insertion_point(destructor:mailpb.DeleteMailsResponse)
@@ -5312,16 +6311,18 @@ PROTOBUF_NOINLINE void DeleteMailsResponse::Clear() {
   (void) cached_has_bits;
 
   cached_has_bits = _impl_._has_bits_[0];
-  if (BatchCheckHasBit(cached_has_bits, 0x00000003U)) {
+  if (BatchCheckHasBit(cached_has_bits, 0x00000007U)) {
     if (CheckHasBit(cached_has_bits, 0x00000001U)) {
-      _impl_.protected_mail_ids_.Clear();
+      _impl_.deleted_mail_ids_.Clear();
     }
     if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      _impl_.protected_mail_ids_.Clear();
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000004U)) {
       ABSL_DCHECK(_impl_.error_message_ != nullptr);
       _impl_.error_message_->Clear();
     }
   }
-  _impl_.deleted_count_ = 0u;
   _impl_._has_bits_.Clear();
   _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
 }
@@ -5346,23 +6347,25 @@ PROTOBUF_NOINLINE void DeleteMailsResponse::Clear() {
 
   cached_has_bits = this_._impl_._has_bits_[0];
   // .TipInfoMessage error_message = 1;
-  if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+  if (CheckHasBit(cached_has_bits, 0x00000004U)) {
     target = ::google::protobuf::internal::WireFormatLite::InternalWriteMessage(
         1, *this_._impl_.error_message_, this_._impl_.error_message_->GetCachedSize(), target,
         stream);
   }
 
-  // uint32 deleted_count = 2;
-  if (CheckHasBit(cached_has_bits, 0x00000004U)) {
-    if (this_._internal_deleted_count() != 0) {
-      target = stream->EnsureSpace(target);
-      target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
-          2, this_._internal_deleted_count(), target);
+  // repeated uint64 deleted_mail_ids = 2;
+  if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+    {
+      int byte_size = this_._impl_._deleted_mail_ids_cached_byte_size_.Get();
+      if (byte_size > 0) {
+        target = stream->WriteUInt64Packed(
+            2, this_._internal_deleted_mail_ids(), byte_size, target);
+      }
     }
   }
 
   // repeated uint64 protected_mail_ids = 3;
-  if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+  if (CheckHasBit(cached_has_bits, 0x00000002U)) {
     {
       int byte_size = this_._impl_._protected_mail_ids_cached_byte_size_.Get();
       if (byte_size > 0) {
@@ -5398,24 +6401,24 @@ PROTOBUF_NOINLINE void DeleteMailsResponse::Clear() {
   ::_pbi::Prefetch5LinesFrom7Lines(&this_);
   cached_has_bits = this_._impl_._has_bits_[0];
   if (BatchCheckHasBit(cached_has_bits, 0x00000007U)) {
-    // repeated uint64 protected_mail_ids = 3;
+    // repeated uint64 deleted_mail_ids = 2;
     if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+      total_size +=
+          ::_pbi::WireFormatLite::UInt64SizeWithPackedTagSize(
+              this_._internal_deleted_mail_ids(), 1,
+              this_._impl_._deleted_mail_ids_cached_byte_size_);
+    }
+    // repeated uint64 protected_mail_ids = 3;
+    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
       total_size +=
           ::_pbi::WireFormatLite::UInt64SizeWithPackedTagSize(
               this_._internal_protected_mail_ids(), 1,
               this_._impl_._protected_mail_ids_cached_byte_size_);
     }
     // .TipInfoMessage error_message = 1;
-    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+    if (CheckHasBit(cached_has_bits, 0x00000004U)) {
       total_size += 1 +
                     ::google::protobuf::internal::WireFormatLite::MessageSize(*this_._impl_.error_message_);
-    }
-    // uint32 deleted_count = 2;
-    if (CheckHasBit(cached_has_bits, 0x00000004U)) {
-      if (this_._internal_deleted_count() != 0) {
-        total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
-            this_._internal_deleted_count());
-      }
     }
   }
   return this_.MaybeComputeUnknownFieldsSize(total_size,
@@ -5438,19 +6441,17 @@ void DeleteMailsResponse::MergeImpl(::google::protobuf::MessageLite& to_msg,
   cached_has_bits = from._impl_._has_bits_[0];
   if (BatchCheckHasBit(cached_has_bits, 0x00000007U)) {
     if (CheckHasBit(cached_has_bits, 0x00000001U)) {
-      _this->_internal_mutable_protected_mail_ids()->MergeFrom(from._internal_protected_mail_ids());
+      _this->_internal_mutable_deleted_mail_ids()->MergeFrom(from._internal_deleted_mail_ids());
     }
     if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      _this->_internal_mutable_protected_mail_ids()->MergeFrom(from._internal_protected_mail_ids());
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000004U)) {
       ABSL_DCHECK(from._impl_.error_message_ != nullptr);
       if (_this->_impl_.error_message_ == nullptr) {
         _this->_impl_.error_message_ = ::google::protobuf::Message::CopyConstruct(arena, *from._impl_.error_message_);
       } else {
         _this->_impl_.error_message_->MergeFrom(*from._impl_.error_message_);
-      }
-    }
-    if (CheckHasBit(cached_has_bits, 0x00000004U)) {
-      if (from._internal_deleted_count() != 0) {
-        _this->_impl_.deleted_count_ = from._impl_.deleted_count_;
       }
     }
   }
@@ -5471,13 +6472,9 @@ void DeleteMailsResponse::InternalSwap(DeleteMailsResponse* PROTOBUF_RESTRICT PR
   using ::std::swap;
   _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
+  _impl_.deleted_mail_ids_.InternalSwap(&other->_impl_.deleted_mail_ids_);
   _impl_.protected_mail_ids_.InternalSwap(&other->_impl_.protected_mail_ids_);
-  ::google::protobuf::internal::memswap<
-      PROTOBUF_FIELD_OFFSET(DeleteMailsResponse, _impl_.deleted_count_)
-      + sizeof(DeleteMailsResponse::_impl_.deleted_count_)
-      - PROTOBUF_FIELD_OFFSET(DeleteMailsResponse, _impl_.error_message_)>(
-          reinterpret_cast<char*>(&_impl_.error_message_),
-          reinterpret_cast<char*>(&other->_impl_.error_message_));
+  swap(_impl_.error_message_, other->_impl_.error_message_);
 }
 
 ::google::protobuf::Metadata DeleteMailsResponse::GetMetadata() const {
@@ -5485,56 +6482,56 @@ void DeleteMailsResponse::InternalSwap(DeleteMailsResponse* PROTOBUF_RESTRICT PR
 }
 // ===================================================================
 
-DeleteReadMailsRequest::DeleteReadMailsRequest(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+ClearReadMailsRequest::ClearReadMailsRequest(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-    : ::google::protobuf::internal::ZeroFieldsBase(arena, DeleteReadMailsRequest_get_class_data()) {
+    : ::google::protobuf::internal::ZeroFieldsBase(arena, ClearReadMailsRequest_get_class_data()) {
 #else   // PROTOBUF_CUSTOM_VTABLE
     : ::google::protobuf::internal::ZeroFieldsBase(arena) {
 #endif  // PROTOBUF_CUSTOM_VTABLE
-  // @@protoc_insertion_point(arena_constructor:mailpb.DeleteReadMailsRequest)
+  // @@protoc_insertion_point(arena_constructor:mailpb.ClearReadMailsRequest)
 }
-DeleteReadMailsRequest::DeleteReadMailsRequest(
+ClearReadMailsRequest::ClearReadMailsRequest(
     ::google::protobuf::Arena* PROTOBUF_NULLABLE arena,
-    const DeleteReadMailsRequest& from)
+    const ClearReadMailsRequest& from)
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-    : ::google::protobuf::internal::ZeroFieldsBase(arena, DeleteReadMailsRequest_get_class_data()) {
+    : ::google::protobuf::internal::ZeroFieldsBase(arena, ClearReadMailsRequest_get_class_data()) {
 
 #else   // PROTOBUF_CUSTOM_VTABLE
     : ::google::protobuf::internal::ZeroFieldsBase(arena) {
 #endif  // PROTOBUF_CUSTOM_VTABLE
-  DeleteReadMailsRequest* const _this = this;
+  ClearReadMailsRequest* const _this = this;
   (void)_this;
   _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
       from._internal_metadata_);
 
-  // @@protoc_insertion_point(copy_constructor:mailpb.DeleteReadMailsRequest)
+  // @@protoc_insertion_point(copy_constructor:mailpb.ClearReadMailsRequest)
 }
 
 #ifndef PROTOBUF_MESSAGE_GLOBALS
 PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const
-    ::google::protobuf::internal::ClassDataFull DeleteReadMailsRequest_class_data_ =
-        DeleteReadMailsRequest::InternalGenerateClassData_(DeleteReadMailsRequest_globals_._default);
+    ::google::protobuf::internal::ClassDataFull ClearReadMailsRequest_class_data_ =
+        ClearReadMailsRequest::InternalGenerateClassData_(ClearReadMailsRequest_globals_._default);
 
 PROTOBUF_ATTRIBUTE_WEAK const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
-DeleteReadMailsRequest::GetClassData() const {
-  ::google::protobuf::internal::PrefetchToLocalCache(&DeleteReadMailsRequest_class_data_);
-  ::google::protobuf::internal::PrefetchToLocalCache(DeleteReadMailsRequest_class_data_.tc_table);
-  return DeleteReadMailsRequest_class_data_.base();
+ClearReadMailsRequest::GetClassData() const {
+  ::google::protobuf::internal::PrefetchToLocalCache(&ClearReadMailsRequest_class_data_);
+  ::google::protobuf::internal::PrefetchToLocalCache(ClearReadMailsRequest_class_data_.tc_table);
+  return ClearReadMailsRequest_class_data_.base();
 }
 #else
 PROTOBUF_ATTRIBUTE_WEAK const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
-DeleteReadMailsRequest::GetClassData() const {
-  ::google::protobuf::internal::PrefetchToLocalCache(&DeleteReadMailsRequest_globals_);
+ClearReadMailsRequest::GetClassData() const {
+  ::google::protobuf::internal::PrefetchToLocalCache(&ClearReadMailsRequest_globals_);
   ::google::protobuf::internal::PrefetchToLocalCache(
-      ::google::protobuf::internal::MessageGlobalsBase::ToParseTableBase(&DeleteReadMailsRequest_globals_));
-  return DeleteReadMailsRequest_globals_.GetClassData();
+      ::google::protobuf::internal::MessageGlobalsBase::ToParseTableBase(&ClearReadMailsRequest_globals_));
+  return ClearReadMailsRequest_globals_.GetClassData();
 }
 #endif  // !PROTOBUF_MESSAGE_GLOBALS
 #ifndef PROTOBUF_MESSAGE_GLOBALS
 PROTOBUF_CONSTINIT
-PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const DeleteReadMailsRequest::ParseTableT_
-    DeleteReadMailsRequest::_table_ =
-        DeleteReadMailsRequest::InternalGenerateParseTable_(DeleteReadMailsRequest_class_data_.base());
+PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const ClearReadMailsRequest::ParseTableT_
+    ClearReadMailsRequest::_table_ =
+        ClearReadMailsRequest::InternalGenerateParseTable_(ClearReadMailsRequest_class_data_.base());
 #endif  // !PROTOBUF_MESSAGE_GLOBALS
 
 
@@ -5543,74 +6540,96 @@ PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const DeleteReadMailsRequest::ParseTableT_
 
 
 
-::google::protobuf::Metadata DeleteReadMailsRequest::GetMetadata() const {
+::google::protobuf::Metadata ClearReadMailsRequest::GetMetadata() const {
   return ::google::protobuf::internal::ZeroFieldsBase::GetMetadataImpl(GetClassData()->full());
 }
 // ===================================================================
 
-void DeleteReadMailsResponse::clear_error_message() {
+void ClearReadMailsResponse::clear_error_message() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   if (_impl_.error_message_ != nullptr) _impl_.error_message_->Clear();
-  ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
+  ClearHasBit(_impl_._has_bits_[0], 0x00000004U);
 }
-DeleteReadMailsResponse::DeleteReadMailsResponse(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+ClearReadMailsResponse::ClearReadMailsResponse(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-    : ::google::protobuf::Message(arena, DeleteReadMailsResponse_get_class_data()) {
+    : ::google::protobuf::Message(arena, ClearReadMailsResponse_get_class_data()) {
 #else   // PROTOBUF_CUSTOM_VTABLE
     : ::google::protobuf::Message(arena) {
 #endif  // PROTOBUF_CUSTOM_VTABLE
   SharedCtor(arena);
-  // @@protoc_insertion_point(arena_constructor:mailpb.DeleteReadMailsResponse)
+  // @@protoc_insertion_point(arena_constructor:mailpb.ClearReadMailsResponse)
 }
-PROTOBUF_NDEBUG_INLINE DeleteReadMailsResponse::Impl_::Impl_(
+PROTOBUF_NDEBUG_INLINE ClearReadMailsResponse::Impl_::Impl_(
     [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
     [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
-    [[maybe_unused]] const ::mailpb::DeleteReadMailsResponse& from_msg)
+    [[maybe_unused]] const ::mailpb::ClearReadMailsResponse& from_msg)
       : _has_bits_{from._has_bits_},
-        _cached_size_{0} {}
+        _cached_size_{0},
+        deleted_mail_ids_ {
+          visibility, ::_pbi::InternalMetadataOffset::Build<
+              ::mailpb::ClearReadMailsResponse,
+              PROTOBUF_FIELD_OFFSET(::mailpb::ClearReadMailsResponse, _impl_.deleted_mail_ids_)>()
+          , from.deleted_mail_ids_
+        }
+        ,
+        _deleted_mail_ids_cached_byte_size_{0},
+        protected_mail_ids_ {
+          visibility, ::_pbi::InternalMetadataOffset::Build<
+              ::mailpb::ClearReadMailsResponse,
+              PROTOBUF_FIELD_OFFSET(::mailpb::ClearReadMailsResponse, _impl_.protected_mail_ids_)>()
+          , from.protected_mail_ids_
+        }
+        ,
+        _protected_mail_ids_cached_byte_size_{0} {}
 
-DeleteReadMailsResponse::DeleteReadMailsResponse(
+ClearReadMailsResponse::ClearReadMailsResponse(
     ::google::protobuf::Arena* PROTOBUF_NULLABLE arena,
-    const DeleteReadMailsResponse& from)
+    const ClearReadMailsResponse& from)
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-    : ::google::protobuf::Message(arena, DeleteReadMailsResponse_get_class_data()) {
+    : ::google::protobuf::Message(arena, ClearReadMailsResponse_get_class_data()) {
 
 #else   // PROTOBUF_CUSTOM_VTABLE
     : ::google::protobuf::Message(arena) {
 #endif  // PROTOBUF_CUSTOM_VTABLE
-  DeleteReadMailsResponse* const _this = this;
+  ClearReadMailsResponse* const _this = this;
   (void)_this;
   _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
       from._internal_metadata_);
   new (&_impl_) Impl_(internal_visibility(), arena, from._impl_, from);
   ::uint32_t cached_has_bits = _impl_._has_bits_[0];
-  _impl_.error_message_ = (CheckHasBit(cached_has_bits, 0x00000001U))
+  _impl_.error_message_ = (CheckHasBit(cached_has_bits, 0x00000004U))
                 ? ::google::protobuf::Message::CopyConstruct(arena, *from._impl_.error_message_)
                 : nullptr;
-  _impl_.deleted_count_ = from._impl_.deleted_count_;
 
-  // @@protoc_insertion_point(copy_constructor:mailpb.DeleteReadMailsResponse)
+  // @@protoc_insertion_point(copy_constructor:mailpb.ClearReadMailsResponse)
 }
-PROTOBUF_NDEBUG_INLINE DeleteReadMailsResponse::Impl_::Impl_(
+PROTOBUF_NDEBUG_INLINE ClearReadMailsResponse::Impl_::Impl_(
     [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
     [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
-      : _cached_size_{0} {}
+      : _cached_size_{0},
+        deleted_mail_ids_ { visibility, ::_pbi::InternalMetadataOffset::Build<
+            ::mailpb::ClearReadMailsResponse,
+            PROTOBUF_FIELD_OFFSET(::mailpb::ClearReadMailsResponse, _impl_.deleted_mail_ids_)>()
+         }
+        ,
+        _deleted_mail_ids_cached_byte_size_{0},
+        protected_mail_ids_ { visibility, ::_pbi::InternalMetadataOffset::Build<
+            ::mailpb::ClearReadMailsResponse,
+            PROTOBUF_FIELD_OFFSET(::mailpb::ClearReadMailsResponse, _impl_.protected_mail_ids_)>()
+         }
+        ,
+        _protected_mail_ids_cached_byte_size_{0} {}
 
-inline void DeleteReadMailsResponse::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
+inline void ClearReadMailsResponse::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
   new (&_impl_) Impl_(internal_visibility(), arena);
-  ::memset(reinterpret_cast<char*>(&_impl_) +
-               offsetof(Impl_, error_message_),
-           0,
-           offsetof(Impl_, deleted_count_) -
-               offsetof(Impl_, error_message_) +
-               sizeof(Impl_::deleted_count_));
+  _impl_.error_message_ = {};
 }
-DeleteReadMailsResponse::~DeleteReadMailsResponse() {
-  // @@protoc_insertion_point(destructor:mailpb.DeleteReadMailsResponse)
+ClearReadMailsResponse::~ClearReadMailsResponse() {
+  // @@protoc_insertion_point(destructor:mailpb.ClearReadMailsResponse)
   SharedDtor(*this);
 }
-inline void DeleteReadMailsResponse::SharedDtor(MessageLite& self) {
-  DeleteReadMailsResponse& this_ = static_cast<DeleteReadMailsResponse&>(self);
+inline void ClearReadMailsResponse::SharedDtor(MessageLite& self) {
+  ClearReadMailsResponse& this_ = static_cast<ClearReadMailsResponse&>(self);
   if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
     this_.CheckHasBitConsistency();
   }
@@ -5622,79 +6641,99 @@ inline void DeleteReadMailsResponse::SharedDtor(MessageLite& self) {
 
 #ifndef PROTOBUF_MESSAGE_GLOBALS
 PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const
-    ::google::protobuf::internal::ClassDataFull DeleteReadMailsResponse_class_data_ =
-        DeleteReadMailsResponse::InternalGenerateClassData_(DeleteReadMailsResponse_globals_._default);
+    ::google::protobuf::internal::ClassDataFull ClearReadMailsResponse_class_data_ =
+        ClearReadMailsResponse::InternalGenerateClassData_(ClearReadMailsResponse_globals_._default);
 
 PROTOBUF_ATTRIBUTE_WEAK const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
-DeleteReadMailsResponse::GetClassData() const {
-  ::google::protobuf::internal::PrefetchToLocalCache(&DeleteReadMailsResponse_class_data_);
-  ::google::protobuf::internal::PrefetchToLocalCache(DeleteReadMailsResponse_class_data_.tc_table);
-  return DeleteReadMailsResponse_class_data_.base();
+ClearReadMailsResponse::GetClassData() const {
+  ::google::protobuf::internal::PrefetchToLocalCache(&ClearReadMailsResponse_class_data_);
+  ::google::protobuf::internal::PrefetchToLocalCache(ClearReadMailsResponse_class_data_.tc_table);
+  return ClearReadMailsResponse_class_data_.base();
 }
 #else
 PROTOBUF_ATTRIBUTE_WEAK const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
-DeleteReadMailsResponse::GetClassData() const {
-  ::google::protobuf::internal::PrefetchToLocalCache(&DeleteReadMailsResponse_globals_);
+ClearReadMailsResponse::GetClassData() const {
+  ::google::protobuf::internal::PrefetchToLocalCache(&ClearReadMailsResponse_globals_);
   ::google::protobuf::internal::PrefetchToLocalCache(
-      ::google::protobuf::internal::MessageGlobalsBase::ToParseTableBase(&DeleteReadMailsResponse_globals_));
-  return DeleteReadMailsResponse_globals_.GetClassData();
+      ::google::protobuf::internal::MessageGlobalsBase::ToParseTableBase(&ClearReadMailsResponse_globals_));
+  return ClearReadMailsResponse_globals_.GetClassData();
 }
 #endif  // !PROTOBUF_MESSAGE_GLOBALS
 #ifndef PROTOBUF_MESSAGE_GLOBALS
 PROTOBUF_CONSTINIT
-PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const DeleteReadMailsResponse::ParseTableT_
-    DeleteReadMailsResponse::_table_ =
-        DeleteReadMailsResponse::InternalGenerateParseTable_(DeleteReadMailsResponse_class_data_.base());
+PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const ClearReadMailsResponse::ParseTableT_
+    ClearReadMailsResponse::_table_ =
+        ClearReadMailsResponse::InternalGenerateParseTable_(ClearReadMailsResponse_class_data_.base());
 #endif  // !PROTOBUF_MESSAGE_GLOBALS
-PROTOBUF_NOINLINE void DeleteReadMailsResponse::Clear() {
-// @@protoc_insertion_point(message_clear_start:mailpb.DeleteReadMailsResponse)
+PROTOBUF_NOINLINE void ClearReadMailsResponse::Clear() {
+// @@protoc_insertion_point(message_clear_start:mailpb.ClearReadMailsResponse)
   ::google::protobuf::internal::TSanWrite(&_impl_);
   ::uint32_t cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
   (void) cached_has_bits;
 
   cached_has_bits = _impl_._has_bits_[0];
-  if (CheckHasBit(cached_has_bits, 0x00000001U)) {
-    ABSL_DCHECK(_impl_.error_message_ != nullptr);
-    _impl_.error_message_->Clear();
+  if (BatchCheckHasBit(cached_has_bits, 0x00000007U)) {
+    if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+      _impl_.deleted_mail_ids_.Clear();
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      _impl_.protected_mail_ids_.Clear();
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000004U)) {
+      ABSL_DCHECK(_impl_.error_message_ != nullptr);
+      _impl_.error_message_->Clear();
+    }
   }
-  _impl_.deleted_count_ = 0u;
   _impl_._has_bits_.Clear();
   _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
 }
 
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-::uint8_t* PROTOBUF_NONNULL DeleteReadMailsResponse::_InternalSerialize(
+::uint8_t* PROTOBUF_NONNULL ClearReadMailsResponse::_InternalSerialize(
     const ::google::protobuf::MessageLite& base, ::uint8_t* PROTOBUF_NONNULL target,
     ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) {
-  const DeleteReadMailsResponse& this_ = static_cast<const DeleteReadMailsResponse&>(base);
+  const ClearReadMailsResponse& this_ = static_cast<const ClearReadMailsResponse&>(base);
 #else   // PROTOBUF_CUSTOM_VTABLE
-::uint8_t* PROTOBUF_NONNULL DeleteReadMailsResponse::_InternalSerialize(
+::uint8_t* PROTOBUF_NONNULL ClearReadMailsResponse::_InternalSerialize(
     ::uint8_t* PROTOBUF_NONNULL target,
     ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
-  const DeleteReadMailsResponse& this_ = *this;
+  const ClearReadMailsResponse& this_ = *this;
 #endif  // PROTOBUF_CUSTOM_VTABLE
   if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
     this_.CheckHasBitConsistency();
   }
-  // @@protoc_insertion_point(serialize_to_array_start:mailpb.DeleteReadMailsResponse)
+  // @@protoc_insertion_point(serialize_to_array_start:mailpb.ClearReadMailsResponse)
   ::uint32_t cached_has_bits = 0;
   (void)cached_has_bits;
 
   cached_has_bits = this_._impl_._has_bits_[0];
   // .TipInfoMessage error_message = 1;
-  if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+  if (CheckHasBit(cached_has_bits, 0x00000004U)) {
     target = ::google::protobuf::internal::WireFormatLite::InternalWriteMessage(
         1, *this_._impl_.error_message_, this_._impl_.error_message_->GetCachedSize(), target,
         stream);
   }
 
-  // uint32 deleted_count = 2;
+  // repeated uint64 deleted_mail_ids = 2;
+  if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+    {
+      int byte_size = this_._impl_._deleted_mail_ids_cached_byte_size_.Get();
+      if (byte_size > 0) {
+        target = stream->WriteUInt64Packed(
+            2, this_._internal_deleted_mail_ids(), byte_size, target);
+      }
+    }
+  }
+
+  // repeated uint64 protected_mail_ids = 3;
   if (CheckHasBit(cached_has_bits, 0x00000002U)) {
-    if (this_._internal_deleted_count() != 0) {
-      target = stream->EnsureSpace(target);
-      target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
-          2, this_._internal_deleted_count(), target);
+    {
+      int byte_size = this_._impl_._protected_mail_ids_cached_byte_size_.Get();
+      if (byte_size > 0) {
+        target = stream->WriteUInt64Packed(
+            3, this_._internal_protected_mail_ids(), byte_size, target);
+      }
     }
   }
 
@@ -5703,18 +6742,18 @@ PROTOBUF_NOINLINE void DeleteReadMailsResponse::Clear() {
         ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
             this_._internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
   }
-  // @@protoc_insertion_point(serialize_to_array_end:mailpb.DeleteReadMailsResponse)
+  // @@protoc_insertion_point(serialize_to_array_end:mailpb.ClearReadMailsResponse)
   return target;
 }
 
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-::size_t DeleteReadMailsResponse::ByteSizeLong(const MessageLite& base) {
-  const DeleteReadMailsResponse& this_ = static_cast<const DeleteReadMailsResponse&>(base);
+::size_t ClearReadMailsResponse::ByteSizeLong(const MessageLite& base) {
+  const ClearReadMailsResponse& this_ = static_cast<const ClearReadMailsResponse&>(base);
 #else   // PROTOBUF_CUSTOM_VTABLE
-::size_t DeleteReadMailsResponse::ByteSizeLong() const {
-  const DeleteReadMailsResponse& this_ = *this;
+::size_t ClearReadMailsResponse::ByteSizeLong() const {
+  const ClearReadMailsResponse& this_ = *this;
 #endif  // PROTOBUF_CUSTOM_VTABLE
-  // @@protoc_insertion_point(message_byte_size_start:mailpb.DeleteReadMailsResponse)
+  // @@protoc_insertion_point(message_byte_size_start:mailpb.ClearReadMailsResponse)
   ::size_t total_size = 0;
 
   ::uint32_t cached_has_bits = 0;
@@ -5723,40 +6762,53 @@ PROTOBUF_NOINLINE void DeleteReadMailsResponse::Clear() {
 
   ::_pbi::Prefetch5LinesFrom7Lines(&this_);
   cached_has_bits = this_._impl_._has_bits_[0];
-  if (BatchCheckHasBit(cached_has_bits, 0x00000003U)) {
-    // .TipInfoMessage error_message = 1;
+  if (BatchCheckHasBit(cached_has_bits, 0x00000007U)) {
+    // repeated uint64 deleted_mail_ids = 2;
     if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+      total_size +=
+          ::_pbi::WireFormatLite::UInt64SizeWithPackedTagSize(
+              this_._internal_deleted_mail_ids(), 1,
+              this_._impl_._deleted_mail_ids_cached_byte_size_);
+    }
+    // repeated uint64 protected_mail_ids = 3;
+    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      total_size +=
+          ::_pbi::WireFormatLite::UInt64SizeWithPackedTagSize(
+              this_._internal_protected_mail_ids(), 1,
+              this_._impl_._protected_mail_ids_cached_byte_size_);
+    }
+    // .TipInfoMessage error_message = 1;
+    if (CheckHasBit(cached_has_bits, 0x00000004U)) {
       total_size += 1 +
                     ::google::protobuf::internal::WireFormatLite::MessageSize(*this_._impl_.error_message_);
-    }
-    // uint32 deleted_count = 2;
-    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
-      if (this_._internal_deleted_count() != 0) {
-        total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
-            this_._internal_deleted_count());
-      }
     }
   }
   return this_.MaybeComputeUnknownFieldsSize(total_size,
                                              &this_._impl_._cached_size_);
 }
 
-void DeleteReadMailsResponse::MergeImpl(::google::protobuf::MessageLite& to_msg,
+void ClearReadMailsResponse::MergeImpl(::google::protobuf::MessageLite& to_msg,
                       const ::google::protobuf::MessageLite& from_msg) {
-   auto* const _this = static_cast<DeleteReadMailsResponse*>(&to_msg);
-  auto& from = static_cast<const DeleteReadMailsResponse&>(from_msg);
+   auto* const _this = static_cast<ClearReadMailsResponse*>(&to_msg);
+  auto& from = static_cast<const ClearReadMailsResponse&>(from_msg);
   if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
     from.CheckHasBitConsistency();
   }
   ::google::protobuf::Arena* arena = _this->GetArena();
-  // @@protoc_insertion_point(class_specific_merge_from_start:mailpb.DeleteReadMailsResponse)
+  // @@protoc_insertion_point(class_specific_merge_from_start:mailpb.ClearReadMailsResponse)
   ABSL_DCHECK_NE(&from, _this);
   ::uint32_t cached_has_bits = 0;
   (void)cached_has_bits;
 
   cached_has_bits = from._impl_._has_bits_[0];
-  if (BatchCheckHasBit(cached_has_bits, 0x00000003U)) {
+  if (BatchCheckHasBit(cached_has_bits, 0x00000007U)) {
     if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+      _this->_internal_mutable_deleted_mail_ids()->MergeFrom(from._internal_deleted_mail_ids());
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      _this->_internal_mutable_protected_mail_ids()->MergeFrom(from._internal_protected_mail_ids());
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000004U)) {
       ABSL_DCHECK(from._impl_.error_message_ != nullptr);
       if (_this->_impl_.error_message_ == nullptr) {
         _this->_impl_.error_message_ = ::google::protobuf::Message::CopyConstruct(arena, *from._impl_.error_message_);
@@ -5764,516 +6816,47 @@ void DeleteReadMailsResponse::MergeImpl(::google::protobuf::MessageLite& to_msg,
         _this->_impl_.error_message_->MergeFrom(*from._impl_.error_message_);
       }
     }
-    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
-      if (from._internal_deleted_count() != 0) {
-        _this->_impl_.deleted_count_ = from._impl_.deleted_count_;
-      }
-    }
   }
   _this->_impl_._has_bits_[0] |= cached_has_bits;
   _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
       from._internal_metadata_);
 }
 
-void DeleteReadMailsResponse::CopyFrom(const DeleteReadMailsResponse& from) {
-  // @@protoc_insertion_point(class_specific_copy_from_start:mailpb.DeleteReadMailsResponse)
+void ClearReadMailsResponse::CopyFrom(const ClearReadMailsResponse& from) {
+  // @@protoc_insertion_point(class_specific_copy_from_start:mailpb.ClearReadMailsResponse)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
 }
 
 
-void DeleteReadMailsResponse::InternalSwap(DeleteReadMailsResponse* PROTOBUF_RESTRICT PROTOBUF_NONNULL other) {
+void ClearReadMailsResponse::InternalSwap(ClearReadMailsResponse* PROTOBUF_RESTRICT PROTOBUF_NONNULL other) {
   using ::std::swap;
   _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
-  ::google::protobuf::internal::memswap<
-      PROTOBUF_FIELD_OFFSET(DeleteReadMailsResponse, _impl_.deleted_count_)
-      + sizeof(DeleteReadMailsResponse::_impl_.deleted_count_)
-      - PROTOBUF_FIELD_OFFSET(DeleteReadMailsResponse, _impl_.error_message_)>(
-          reinterpret_cast<char*>(&_impl_.error_message_),
-          reinterpret_cast<char*>(&other->_impl_.error_message_));
-}
-
-::google::protobuf::Metadata DeleteReadMailsResponse::GetMetadata() const {
-  return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
-}
-// ===================================================================
-
-ClaimMailAttachmentsRequest::ClaimMailAttachmentsRequest(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
-#if defined(PROTOBUF_CUSTOM_VTABLE)
-    : ::google::protobuf::Message(arena, ClaimMailAttachmentsRequest_get_class_data()) {
-#else   // PROTOBUF_CUSTOM_VTABLE
-    : ::google::protobuf::Message(arena) {
-#endif  // PROTOBUF_CUSTOM_VTABLE
-  SharedCtor(arena);
-  // @@protoc_insertion_point(arena_constructor:mailpb.ClaimMailAttachmentsRequest)
-}
-PROTOBUF_NDEBUG_INLINE ClaimMailAttachmentsRequest::Impl_::Impl_(
-    [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
-    [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
-    [[maybe_unused]] const ::mailpb::ClaimMailAttachmentsRequest& from_msg)
-      : _has_bits_{from._has_bits_},
-        _cached_size_{0},
-        mail_ids_ {
-          visibility, ::_pbi::InternalMetadataOffset::Build<
-              ::mailpb::ClaimMailAttachmentsRequest,
-              PROTOBUF_FIELD_OFFSET(::mailpb::ClaimMailAttachmentsRequest, _impl_.mail_ids_)>()
-          , from.mail_ids_
-        }
-        ,
-        _mail_ids_cached_byte_size_{0} {}
-
-ClaimMailAttachmentsRequest::ClaimMailAttachmentsRequest(
-    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena,
-    const ClaimMailAttachmentsRequest& from)
-#if defined(PROTOBUF_CUSTOM_VTABLE)
-    : ::google::protobuf::Message(arena, ClaimMailAttachmentsRequest_get_class_data()) {
-
-#else   // PROTOBUF_CUSTOM_VTABLE
-    : ::google::protobuf::Message(arena) {
-#endif  // PROTOBUF_CUSTOM_VTABLE
-  ClaimMailAttachmentsRequest* const _this = this;
-  (void)_this;
-  _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
-      from._internal_metadata_);
-  new (&_impl_) Impl_(internal_visibility(), arena, from._impl_, from);
-  _impl_.all_ = from._impl_.all_;
-
-  // @@protoc_insertion_point(copy_constructor:mailpb.ClaimMailAttachmentsRequest)
-}
-PROTOBUF_NDEBUG_INLINE ClaimMailAttachmentsRequest::Impl_::Impl_(
-    [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
-    [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
-      : _cached_size_{0},
-        mail_ids_ { visibility, ::_pbi::InternalMetadataOffset::Build<
-            ::mailpb::ClaimMailAttachmentsRequest,
-            PROTOBUF_FIELD_OFFSET(::mailpb::ClaimMailAttachmentsRequest, _impl_.mail_ids_)>()
-         }
-        ,
-        _mail_ids_cached_byte_size_{0} {}
-
-inline void ClaimMailAttachmentsRequest::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
-  new (&_impl_) Impl_(internal_visibility(), arena);
-  _impl_.all_ = {};
-}
-ClaimMailAttachmentsRequest::~ClaimMailAttachmentsRequest() {
-  // @@protoc_insertion_point(destructor:mailpb.ClaimMailAttachmentsRequest)
-  SharedDtor(*this);
-}
-inline void ClaimMailAttachmentsRequest::SharedDtor(MessageLite& self) {
-  ClaimMailAttachmentsRequest& this_ = static_cast<ClaimMailAttachmentsRequest&>(self);
-  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
-    this_.CheckHasBitConsistency();
-  }
-  this_._internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
-  ABSL_DCHECK(this_.GetArena() == nullptr);
-  this_._impl_.~Impl_();
-}
-
-#ifndef PROTOBUF_MESSAGE_GLOBALS
-PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const
-    ::google::protobuf::internal::ClassDataFull ClaimMailAttachmentsRequest_class_data_ =
-        ClaimMailAttachmentsRequest::InternalGenerateClassData_(ClaimMailAttachmentsRequest_globals_._default);
-
-PROTOBUF_ATTRIBUTE_WEAK const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
-ClaimMailAttachmentsRequest::GetClassData() const {
-  ::google::protobuf::internal::PrefetchToLocalCache(&ClaimMailAttachmentsRequest_class_data_);
-  ::google::protobuf::internal::PrefetchToLocalCache(ClaimMailAttachmentsRequest_class_data_.tc_table);
-  return ClaimMailAttachmentsRequest_class_data_.base();
-}
-#else
-PROTOBUF_ATTRIBUTE_WEAK const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
-ClaimMailAttachmentsRequest::GetClassData() const {
-  ::google::protobuf::internal::PrefetchToLocalCache(&ClaimMailAttachmentsRequest_globals_);
-  ::google::protobuf::internal::PrefetchToLocalCache(
-      ::google::protobuf::internal::MessageGlobalsBase::ToParseTableBase(&ClaimMailAttachmentsRequest_globals_));
-  return ClaimMailAttachmentsRequest_globals_.GetClassData();
-}
-#endif  // !PROTOBUF_MESSAGE_GLOBALS
-#ifndef PROTOBUF_MESSAGE_GLOBALS
-PROTOBUF_CONSTINIT
-PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const ClaimMailAttachmentsRequest::ParseTableT_
-    ClaimMailAttachmentsRequest::_table_ =
-        ClaimMailAttachmentsRequest::InternalGenerateParseTable_(ClaimMailAttachmentsRequest_class_data_.base());
-#endif  // !PROTOBUF_MESSAGE_GLOBALS
-PROTOBUF_NOINLINE void ClaimMailAttachmentsRequest::Clear() {
-// @@protoc_insertion_point(message_clear_start:mailpb.ClaimMailAttachmentsRequest)
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  ::uint32_t cached_has_bits = 0;
-  // Prevent compiler warnings about cached_has_bits being unused
-  (void) cached_has_bits;
-
-  cached_has_bits = _impl_._has_bits_[0];
-  if (CheckHasBit(cached_has_bits, 0x00000001U)) {
-    _impl_.mail_ids_.Clear();
-  }
-  _impl_.all_ = false;
-  _impl_._has_bits_.Clear();
-  _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
-}
-
-#if defined(PROTOBUF_CUSTOM_VTABLE)
-::uint8_t* PROTOBUF_NONNULL ClaimMailAttachmentsRequest::_InternalSerialize(
-    const ::google::protobuf::MessageLite& base, ::uint8_t* PROTOBUF_NONNULL target,
-    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) {
-  const ClaimMailAttachmentsRequest& this_ = static_cast<const ClaimMailAttachmentsRequest&>(base);
-#else   // PROTOBUF_CUSTOM_VTABLE
-::uint8_t* PROTOBUF_NONNULL ClaimMailAttachmentsRequest::_InternalSerialize(
-    ::uint8_t* PROTOBUF_NONNULL target,
-    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
-  const ClaimMailAttachmentsRequest& this_ = *this;
-#endif  // PROTOBUF_CUSTOM_VTABLE
-  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
-    this_.CheckHasBitConsistency();
-  }
-  // @@protoc_insertion_point(serialize_to_array_start:mailpb.ClaimMailAttachmentsRequest)
-  ::uint32_t cached_has_bits = 0;
-  (void)cached_has_bits;
-
-  cached_has_bits = this_._impl_._has_bits_[0];
-  // repeated uint64 mail_ids = 1;
-  if (CheckHasBit(cached_has_bits, 0x00000001U)) {
-    {
-      int byte_size = this_._impl_._mail_ids_cached_byte_size_.Get();
-      if (byte_size > 0) {
-        target = stream->WriteUInt64Packed(
-            1, this_._internal_mail_ids(), byte_size, target);
-      }
-    }
-  }
-
-  // bool all = 2;
-  if (CheckHasBit(cached_has_bits, 0x00000002U)) {
-    if (this_._internal_all() != 0) {
-      target = stream->EnsureSpace(target);
-      target = ::_pbi::WireFormatLite::WriteBoolToArray(
-          2, this_._internal_all(), target);
-    }
-  }
-
-  if (ABSL_PREDICT_FALSE(this_._internal_metadata_.have_unknown_fields())) {
-    target =
-        ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
-            this_._internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
-  }
-  // @@protoc_insertion_point(serialize_to_array_end:mailpb.ClaimMailAttachmentsRequest)
-  return target;
-}
-
-#if defined(PROTOBUF_CUSTOM_VTABLE)
-::size_t ClaimMailAttachmentsRequest::ByteSizeLong(const MessageLite& base) {
-  const ClaimMailAttachmentsRequest& this_ = static_cast<const ClaimMailAttachmentsRequest&>(base);
-#else   // PROTOBUF_CUSTOM_VTABLE
-::size_t ClaimMailAttachmentsRequest::ByteSizeLong() const {
-  const ClaimMailAttachmentsRequest& this_ = *this;
-#endif  // PROTOBUF_CUSTOM_VTABLE
-  // @@protoc_insertion_point(message_byte_size_start:mailpb.ClaimMailAttachmentsRequest)
-  ::size_t total_size = 0;
-
-  ::uint32_t cached_has_bits = 0;
-  // Prevent compiler warnings about cached_has_bits being unused
-  (void)cached_has_bits;
-
-  ::_pbi::Prefetch5LinesFrom7Lines(&this_);
-  cached_has_bits = this_._impl_._has_bits_[0];
-  if (BatchCheckHasBit(cached_has_bits, 0x00000003U)) {
-    // repeated uint64 mail_ids = 1;
-    if (CheckHasBit(cached_has_bits, 0x00000001U)) {
-      total_size +=
-          ::_pbi::WireFormatLite::UInt64SizeWithPackedTagSize(
-              this_._internal_mail_ids(), 1,
-              this_._impl_._mail_ids_cached_byte_size_);
-    }
-    // bool all = 2;
-    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
-      if (this_._internal_all() != 0) {
-        total_size += 2;
-      }
-    }
-  }
-  return this_.MaybeComputeUnknownFieldsSize(total_size,
-                                             &this_._impl_._cached_size_);
-}
-
-void ClaimMailAttachmentsRequest::MergeImpl(::google::protobuf::MessageLite& to_msg,
-                      const ::google::protobuf::MessageLite& from_msg) {
-   auto* const _this = static_cast<ClaimMailAttachmentsRequest*>(&to_msg);
-  auto& from = static_cast<const ClaimMailAttachmentsRequest&>(from_msg);
-  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
-    from.CheckHasBitConsistency();
-  }
-  // @@protoc_insertion_point(class_specific_merge_from_start:mailpb.ClaimMailAttachmentsRequest)
-  ABSL_DCHECK_NE(&from, _this);
-  ::uint32_t cached_has_bits = 0;
-  (void)cached_has_bits;
-
-  cached_has_bits = from._impl_._has_bits_[0];
-  if (BatchCheckHasBit(cached_has_bits, 0x00000003U)) {
-    if (CheckHasBit(cached_has_bits, 0x00000001U)) {
-      _this->_internal_mutable_mail_ids()->MergeFrom(from._internal_mail_ids());
-    }
-    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
-      if (from._internal_all() != 0) {
-        _this->_impl_.all_ = from._impl_.all_;
-      }
-    }
-  }
-  _this->_impl_._has_bits_[0] |= cached_has_bits;
-  _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
-      from._internal_metadata_);
-}
-
-void ClaimMailAttachmentsRequest::CopyFrom(const ClaimMailAttachmentsRequest& from) {
-  // @@protoc_insertion_point(class_specific_copy_from_start:mailpb.ClaimMailAttachmentsRequest)
-  if (&from == this) return;
-  Clear();
-  MergeFrom(from);
-}
-
-
-void ClaimMailAttachmentsRequest::InternalSwap(ClaimMailAttachmentsRequest* PROTOBUF_RESTRICT PROTOBUF_NONNULL other) {
-  using ::std::swap;
-  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
-  swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
-  _impl_.mail_ids_.InternalSwap(&other->_impl_.mail_ids_);
-  swap(_impl_.all_, other->_impl_.all_);
-}
-
-::google::protobuf::Metadata ClaimMailAttachmentsRequest::GetMetadata() const {
-  return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
-}
-// ===================================================================
-
-void ClaimMailAttachmentsResponse::clear_error_message() {
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  if (_impl_.error_message_ != nullptr) _impl_.error_message_->Clear();
-  ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
-}
-ClaimMailAttachmentsResponse::ClaimMailAttachmentsResponse(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
-#if defined(PROTOBUF_CUSTOM_VTABLE)
-    : ::google::protobuf::Message(arena, ClaimMailAttachmentsResponse_get_class_data()) {
-#else   // PROTOBUF_CUSTOM_VTABLE
-    : ::google::protobuf::Message(arena) {
-#endif  // PROTOBUF_CUSTOM_VTABLE
-  SharedCtor(arena);
-  // @@protoc_insertion_point(arena_constructor:mailpb.ClaimMailAttachmentsResponse)
-}
-PROTOBUF_NDEBUG_INLINE ClaimMailAttachmentsResponse::Impl_::Impl_(
-    [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
-    [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
-    [[maybe_unused]] const ::mailpb::ClaimMailAttachmentsResponse& from_msg)
-      : _has_bits_{from._has_bits_},
-        _cached_size_{0} {}
-
-ClaimMailAttachmentsResponse::ClaimMailAttachmentsResponse(
-    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena,
-    const ClaimMailAttachmentsResponse& from)
-#if defined(PROTOBUF_CUSTOM_VTABLE)
-    : ::google::protobuf::Message(arena, ClaimMailAttachmentsResponse_get_class_data()) {
-
-#else   // PROTOBUF_CUSTOM_VTABLE
-    : ::google::protobuf::Message(arena) {
-#endif  // PROTOBUF_CUSTOM_VTABLE
-  ClaimMailAttachmentsResponse* const _this = this;
-  (void)_this;
-  _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
-      from._internal_metadata_);
-  new (&_impl_) Impl_(internal_visibility(), arena, from._impl_, from);
-  ::uint32_t cached_has_bits = _impl_._has_bits_[0];
-  _impl_.error_message_ = (CheckHasBit(cached_has_bits, 0x00000001U))
-                ? ::google::protobuf::Message::CopyConstruct(arena, *from._impl_.error_message_)
-                : nullptr;
-
-  // @@protoc_insertion_point(copy_constructor:mailpb.ClaimMailAttachmentsResponse)
-}
-PROTOBUF_NDEBUG_INLINE ClaimMailAttachmentsResponse::Impl_::Impl_(
-    [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
-    [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
-      : _cached_size_{0} {}
-
-inline void ClaimMailAttachmentsResponse::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
-  new (&_impl_) Impl_(internal_visibility(), arena);
-  _impl_.error_message_ = {};
-}
-ClaimMailAttachmentsResponse::~ClaimMailAttachmentsResponse() {
-  // @@protoc_insertion_point(destructor:mailpb.ClaimMailAttachmentsResponse)
-  SharedDtor(*this);
-}
-inline void ClaimMailAttachmentsResponse::SharedDtor(MessageLite& self) {
-  ClaimMailAttachmentsResponse& this_ = static_cast<ClaimMailAttachmentsResponse&>(self);
-  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
-    this_.CheckHasBitConsistency();
-  }
-  this_._internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
-  ABSL_DCHECK(this_.GetArena() == nullptr);
-  delete this_._impl_.error_message_;
-  this_._impl_.~Impl_();
-}
-
-#ifndef PROTOBUF_MESSAGE_GLOBALS
-PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const
-    ::google::protobuf::internal::ClassDataFull ClaimMailAttachmentsResponse_class_data_ =
-        ClaimMailAttachmentsResponse::InternalGenerateClassData_(ClaimMailAttachmentsResponse_globals_._default);
-
-PROTOBUF_ATTRIBUTE_WEAK const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
-ClaimMailAttachmentsResponse::GetClassData() const {
-  ::google::protobuf::internal::PrefetchToLocalCache(&ClaimMailAttachmentsResponse_class_data_);
-  ::google::protobuf::internal::PrefetchToLocalCache(ClaimMailAttachmentsResponse_class_data_.tc_table);
-  return ClaimMailAttachmentsResponse_class_data_.base();
-}
-#else
-PROTOBUF_ATTRIBUTE_WEAK const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
-ClaimMailAttachmentsResponse::GetClassData() const {
-  ::google::protobuf::internal::PrefetchToLocalCache(&ClaimMailAttachmentsResponse_globals_);
-  ::google::protobuf::internal::PrefetchToLocalCache(
-      ::google::protobuf::internal::MessageGlobalsBase::ToParseTableBase(&ClaimMailAttachmentsResponse_globals_));
-  return ClaimMailAttachmentsResponse_globals_.GetClassData();
-}
-#endif  // !PROTOBUF_MESSAGE_GLOBALS
-#ifndef PROTOBUF_MESSAGE_GLOBALS
-PROTOBUF_CONSTINIT
-PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const ClaimMailAttachmentsResponse::ParseTableT_
-    ClaimMailAttachmentsResponse::_table_ =
-        ClaimMailAttachmentsResponse::InternalGenerateParseTable_(ClaimMailAttachmentsResponse_class_data_.base());
-#endif  // !PROTOBUF_MESSAGE_GLOBALS
-PROTOBUF_NOINLINE void ClaimMailAttachmentsResponse::Clear() {
-// @@protoc_insertion_point(message_clear_start:mailpb.ClaimMailAttachmentsResponse)
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  ::uint32_t cached_has_bits = 0;
-  // Prevent compiler warnings about cached_has_bits being unused
-  (void) cached_has_bits;
-
-  cached_has_bits = _impl_._has_bits_[0];
-  if (CheckHasBit(cached_has_bits, 0x00000001U)) {
-    ABSL_DCHECK(_impl_.error_message_ != nullptr);
-    _impl_.error_message_->Clear();
-  }
-  _impl_._has_bits_.Clear();
-  _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
-}
-
-#if defined(PROTOBUF_CUSTOM_VTABLE)
-::uint8_t* PROTOBUF_NONNULL ClaimMailAttachmentsResponse::_InternalSerialize(
-    const ::google::protobuf::MessageLite& base, ::uint8_t* PROTOBUF_NONNULL target,
-    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) {
-  const ClaimMailAttachmentsResponse& this_ = static_cast<const ClaimMailAttachmentsResponse&>(base);
-#else   // PROTOBUF_CUSTOM_VTABLE
-::uint8_t* PROTOBUF_NONNULL ClaimMailAttachmentsResponse::_InternalSerialize(
-    ::uint8_t* PROTOBUF_NONNULL target,
-    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
-  const ClaimMailAttachmentsResponse& this_ = *this;
-#endif  // PROTOBUF_CUSTOM_VTABLE
-  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
-    this_.CheckHasBitConsistency();
-  }
-  // @@protoc_insertion_point(serialize_to_array_start:mailpb.ClaimMailAttachmentsResponse)
-  ::uint32_t cached_has_bits = 0;
-  (void)cached_has_bits;
-
-  cached_has_bits = this_._impl_._has_bits_[0];
-  // .TipInfoMessage error_message = 1;
-  if (CheckHasBit(cached_has_bits, 0x00000001U)) {
-    target = ::google::protobuf::internal::WireFormatLite::InternalWriteMessage(
-        1, *this_._impl_.error_message_, this_._impl_.error_message_->GetCachedSize(), target,
-        stream);
-  }
-
-  if (ABSL_PREDICT_FALSE(this_._internal_metadata_.have_unknown_fields())) {
-    target =
-        ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
-            this_._internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
-  }
-  // @@protoc_insertion_point(serialize_to_array_end:mailpb.ClaimMailAttachmentsResponse)
-  return target;
-}
-
-#if defined(PROTOBUF_CUSTOM_VTABLE)
-::size_t ClaimMailAttachmentsResponse::ByteSizeLong(const MessageLite& base) {
-  const ClaimMailAttachmentsResponse& this_ = static_cast<const ClaimMailAttachmentsResponse&>(base);
-#else   // PROTOBUF_CUSTOM_VTABLE
-::size_t ClaimMailAttachmentsResponse::ByteSizeLong() const {
-  const ClaimMailAttachmentsResponse& this_ = *this;
-#endif  // PROTOBUF_CUSTOM_VTABLE
-  // @@protoc_insertion_point(message_byte_size_start:mailpb.ClaimMailAttachmentsResponse)
-  ::size_t total_size = 0;
-
-  ::uint32_t cached_has_bits = 0;
-  // Prevent compiler warnings about cached_has_bits being unused
-  (void)cached_has_bits;
-
-   {
-    // .TipInfoMessage error_message = 1;
-    cached_has_bits = this_._impl_._has_bits_[0];
-    if (CheckHasBit(cached_has_bits, 0x00000001U)) {
-      total_size += 1 +
-                    ::google::protobuf::internal::WireFormatLite::MessageSize(*this_._impl_.error_message_);
-    }
-  }
-  return this_.MaybeComputeUnknownFieldsSize(total_size,
-                                             &this_._impl_._cached_size_);
-}
-
-void ClaimMailAttachmentsResponse::MergeImpl(::google::protobuf::MessageLite& to_msg,
-                      const ::google::protobuf::MessageLite& from_msg) {
-   auto* const _this = static_cast<ClaimMailAttachmentsResponse*>(&to_msg);
-  auto& from = static_cast<const ClaimMailAttachmentsResponse&>(from_msg);
-  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
-    from.CheckHasBitConsistency();
-  }
-  ::google::protobuf::Arena* arena = _this->GetArena();
-  // @@protoc_insertion_point(class_specific_merge_from_start:mailpb.ClaimMailAttachmentsResponse)
-  ABSL_DCHECK_NE(&from, _this);
-  ::uint32_t cached_has_bits = 0;
-  (void)cached_has_bits;
-
-  cached_has_bits = from._impl_._has_bits_[0];
-  if (CheckHasBit(cached_has_bits, 0x00000001U)) {
-    ABSL_DCHECK(from._impl_.error_message_ != nullptr);
-    if (_this->_impl_.error_message_ == nullptr) {
-      _this->_impl_.error_message_ = ::google::protobuf::Message::CopyConstruct(arena, *from._impl_.error_message_);
-    } else {
-      _this->_impl_.error_message_->MergeFrom(*from._impl_.error_message_);
-    }
-  }
-  _this->_impl_._has_bits_[0] |= cached_has_bits;
-  _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
-      from._internal_metadata_);
-}
-
-void ClaimMailAttachmentsResponse::CopyFrom(const ClaimMailAttachmentsResponse& from) {
-  // @@protoc_insertion_point(class_specific_copy_from_start:mailpb.ClaimMailAttachmentsResponse)
-  if (&from == this) return;
-  Clear();
-  MergeFrom(from);
-}
-
-
-void ClaimMailAttachmentsResponse::InternalSwap(ClaimMailAttachmentsResponse* PROTOBUF_RESTRICT PROTOBUF_NONNULL other) {
-  using ::std::swap;
-  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
-  swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
+  _impl_.deleted_mail_ids_.InternalSwap(&other->_impl_.deleted_mail_ids_);
+  _impl_.protected_mail_ids_.InternalSwap(&other->_impl_.protected_mail_ids_);
   swap(_impl_.error_message_, other->_impl_.error_message_);
 }
 
-::google::protobuf::Metadata ClaimMailAttachmentsResponse::GetMetadata() const {
+::google::protobuf::Metadata ClearReadMailsResponse::GetMetadata() const {
   return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
 }
 // ===================================================================
 
-MailEventS2C::MailEventS2C(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+MailChangedEvent::MailChangedEvent(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-    : ::google::protobuf::Message(arena, MailEventS2C_get_class_data()) {
+    : ::google::protobuf::Message(arena, MailChangedEvent_get_class_data()) {
 #else   // PROTOBUF_CUSTOM_VTABLE
     : ::google::protobuf::Message(arena) {
 #endif  // PROTOBUF_CUSTOM_VTABLE
   SharedCtor(arena);
-  // @@protoc_insertion_point(arena_constructor:mailpb.MailEventS2C)
+  // @@protoc_insertion_point(arena_constructor:mailpb.MailChangedEvent)
 }
-MailEventS2C::MailEventS2C(
-    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const MailEventS2C& from)
+MailChangedEvent::MailChangedEvent(
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const MailChangedEvent& from)
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-    : ::google::protobuf::Message(arena, MailEventS2C_get_class_data()),
+    : ::google::protobuf::Message(arena, MailChangedEvent_get_class_data()),
 #else   // PROTOBUF_CUSTOM_VTABLE
     : ::google::protobuf::Message(arena),
 #endif  // PROTOBUF_CUSTOM_VTABLE
@@ -6281,26 +6864,21 @@ MailEventS2C::MailEventS2C(
   _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
       from._internal_metadata_);
 }
-PROTOBUF_NDEBUG_INLINE MailEventS2C::Impl_::Impl_(
+PROTOBUF_NDEBUG_INLINE MailChangedEvent::Impl_::Impl_(
     [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
     [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
       : _cached_size_{0} {}
 
-inline void MailEventS2C::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
+inline void MailChangedEvent::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
   new (&_impl_) Impl_(internal_visibility(), arena);
-  ::memset(reinterpret_cast<char*>(&_impl_) +
-               offsetof(Impl_, ts_ms_),
-           0,
-           offsetof(Impl_, reason_) -
-               offsetof(Impl_, ts_ms_) +
-               sizeof(Impl_::reason_));
+  _impl_.mail_id_ = {};
 }
-MailEventS2C::~MailEventS2C() {
-  // @@protoc_insertion_point(destructor:mailpb.MailEventS2C)
+MailChangedEvent::~MailChangedEvent() {
+  // @@protoc_insertion_point(destructor:mailpb.MailChangedEvent)
   SharedDtor(*this);
 }
-inline void MailEventS2C::SharedDtor(MessageLite& self) {
-  MailEventS2C& this_ = static_cast<MailEventS2C&>(self);
+inline void MailChangedEvent::SharedDtor(MessageLite& self) {
+  MailChangedEvent& this_ = static_cast<MailChangedEvent&>(self);
   if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
     this_.CheckHasBitConsistency();
   }
@@ -6311,81 +6889,67 @@ inline void MailEventS2C::SharedDtor(MessageLite& self) {
 
 #ifndef PROTOBUF_MESSAGE_GLOBALS
 PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const
-    ::google::protobuf::internal::ClassDataFull MailEventS2C_class_data_ =
-        MailEventS2C::InternalGenerateClassData_(MailEventS2C_globals_._default);
+    ::google::protobuf::internal::ClassDataFull MailChangedEvent_class_data_ =
+        MailChangedEvent::InternalGenerateClassData_(MailChangedEvent_globals_._default);
 
 PROTOBUF_ATTRIBUTE_WEAK const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
-MailEventS2C::GetClassData() const {
-  ::google::protobuf::internal::PrefetchToLocalCache(&MailEventS2C_class_data_);
-  ::google::protobuf::internal::PrefetchToLocalCache(MailEventS2C_class_data_.tc_table);
-  return MailEventS2C_class_data_.base();
+MailChangedEvent::GetClassData() const {
+  ::google::protobuf::internal::PrefetchToLocalCache(&MailChangedEvent_class_data_);
+  ::google::protobuf::internal::PrefetchToLocalCache(MailChangedEvent_class_data_.tc_table);
+  return MailChangedEvent_class_data_.base();
 }
 #else
 PROTOBUF_ATTRIBUTE_WEAK const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
-MailEventS2C::GetClassData() const {
-  ::google::protobuf::internal::PrefetchToLocalCache(&MailEventS2C_globals_);
+MailChangedEvent::GetClassData() const {
+  ::google::protobuf::internal::PrefetchToLocalCache(&MailChangedEvent_globals_);
   ::google::protobuf::internal::PrefetchToLocalCache(
-      ::google::protobuf::internal::MessageGlobalsBase::ToParseTableBase(&MailEventS2C_globals_));
-  return MailEventS2C_globals_.GetClassData();
+      ::google::protobuf::internal::MessageGlobalsBase::ToParseTableBase(&MailChangedEvent_globals_));
+  return MailChangedEvent_globals_.GetClassData();
 }
 #endif  // !PROTOBUF_MESSAGE_GLOBALS
 #ifndef PROTOBUF_MESSAGE_GLOBALS
 PROTOBUF_CONSTINIT
-PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const MailEventS2C::ParseTableT_
-    MailEventS2C::_table_ =
-        MailEventS2C::InternalGenerateParseTable_(MailEventS2C_class_data_.base());
+PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const MailChangedEvent::ParseTableT_
+    MailChangedEvent::_table_ =
+        MailChangedEvent::InternalGenerateParseTable_(MailChangedEvent_class_data_.base());
 #endif  // !PROTOBUF_MESSAGE_GLOBALS
-PROTOBUF_NOINLINE void MailEventS2C::Clear() {
-// @@protoc_insertion_point(message_clear_start:mailpb.MailEventS2C)
+PROTOBUF_NOINLINE void MailChangedEvent::Clear() {
+// @@protoc_insertion_point(message_clear_start:mailpb.MailChangedEvent)
   ::google::protobuf::internal::TSanWrite(&_impl_);
   ::uint32_t cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
   (void) cached_has_bits;
 
-  cached_has_bits = _impl_._has_bits_[0];
-  if (BatchCheckHasBit(cached_has_bits, 0x00000003U)) {
-    ::memset(&_impl_.ts_ms_, 0, static_cast<::size_t>(
-        reinterpret_cast<char*>(&_impl_.reason_) -
-        reinterpret_cast<char*>(&_impl_.ts_ms_)) + sizeof(_impl_.reason_));
-  }
+  _impl_.mail_id_ = ::uint64_t{0u};
   _impl_._has_bits_.Clear();
   _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
 }
 
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-::uint8_t* PROTOBUF_NONNULL MailEventS2C::_InternalSerialize(
+::uint8_t* PROTOBUF_NONNULL MailChangedEvent::_InternalSerialize(
     const ::google::protobuf::MessageLite& base, ::uint8_t* PROTOBUF_NONNULL target,
     ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) {
-  const MailEventS2C& this_ = static_cast<const MailEventS2C&>(base);
+  const MailChangedEvent& this_ = static_cast<const MailChangedEvent&>(base);
 #else   // PROTOBUF_CUSTOM_VTABLE
-::uint8_t* PROTOBUF_NONNULL MailEventS2C::_InternalSerialize(
+::uint8_t* PROTOBUF_NONNULL MailChangedEvent::_InternalSerialize(
     ::uint8_t* PROTOBUF_NONNULL target,
     ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
-  const MailEventS2C& this_ = *this;
+  const MailChangedEvent& this_ = *this;
 #endif  // PROTOBUF_CUSTOM_VTABLE
   if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
     this_.CheckHasBitConsistency();
   }
-  // @@protoc_insertion_point(serialize_to_array_start:mailpb.MailEventS2C)
+  // @@protoc_insertion_point(serialize_to_array_start:mailpb.MailChangedEvent)
   ::uint32_t cached_has_bits = 0;
   (void)cached_has_bits;
 
   cached_has_bits = this_._impl_._has_bits_[0];
-  // .mailpb.MailEventReason reason = 1;
-  if (CheckHasBit(cached_has_bits, 0x00000002U)) {
-    if (this_._internal_reason() != 0) {
-      target = stream->EnsureSpace(target);
-      target = ::_pbi::WireFormatLite::WriteEnumToArray(
-          1, this_._internal_reason(), target);
-    }
-  }
-
-  // uint64 ts_ms = 2;
+  // uint64 mail_id = 1;
   if (CheckHasBit(cached_has_bits, 0x00000001U)) {
-    if (this_._internal_ts_ms() != 0) {
+    if (this_._internal_mail_id() != 0) {
       target = stream->EnsureSpace(target);
       target = ::_pbi::WireFormatLite::WriteUInt64ToArray(
-          2, this_._internal_ts_ms(), target);
+          1, this_._internal_mail_id(), target);
     }
   }
 
@@ -6394,39 +6958,31 @@ PROTOBUF_NOINLINE void MailEventS2C::Clear() {
         ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
             this_._internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
   }
-  // @@protoc_insertion_point(serialize_to_array_end:mailpb.MailEventS2C)
+  // @@protoc_insertion_point(serialize_to_array_end:mailpb.MailChangedEvent)
   return target;
 }
 
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-::size_t MailEventS2C::ByteSizeLong(const MessageLite& base) {
-  const MailEventS2C& this_ = static_cast<const MailEventS2C&>(base);
+::size_t MailChangedEvent::ByteSizeLong(const MessageLite& base) {
+  const MailChangedEvent& this_ = static_cast<const MailChangedEvent&>(base);
 #else   // PROTOBUF_CUSTOM_VTABLE
-::size_t MailEventS2C::ByteSizeLong() const {
-  const MailEventS2C& this_ = *this;
+::size_t MailChangedEvent::ByteSizeLong() const {
+  const MailChangedEvent& this_ = *this;
 #endif  // PROTOBUF_CUSTOM_VTABLE
-  // @@protoc_insertion_point(message_byte_size_start:mailpb.MailEventS2C)
+  // @@protoc_insertion_point(message_byte_size_start:mailpb.MailChangedEvent)
   ::size_t total_size = 0;
 
   ::uint32_t cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
   (void)cached_has_bits;
 
-  ::_pbi::Prefetch5LinesFrom7Lines(&this_);
-  cached_has_bits = this_._impl_._has_bits_[0];
-  if (BatchCheckHasBit(cached_has_bits, 0x00000003U)) {
-    // uint64 ts_ms = 2;
+   {
+    // uint64 mail_id = 1;
+    cached_has_bits = this_._impl_._has_bits_[0];
     if (CheckHasBit(cached_has_bits, 0x00000001U)) {
-      if (this_._internal_ts_ms() != 0) {
+      if (this_._internal_mail_id() != 0) {
         total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(
-            this_._internal_ts_ms());
-      }
-    }
-    // .mailpb.MailEventReason reason = 1;
-    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
-      if (this_._internal_reason() != 0) {
-        total_size += 1 +
-                      ::_pbi::WireFormatLite::EnumSize(this_._internal_reason());
+            this_._internal_mail_id());
       }
     }
   }
@@ -6434,29 +6990,22 @@ PROTOBUF_NOINLINE void MailEventS2C::Clear() {
                                              &this_._impl_._cached_size_);
 }
 
-void MailEventS2C::MergeImpl(::google::protobuf::MessageLite& to_msg,
+void MailChangedEvent::MergeImpl(::google::protobuf::MessageLite& to_msg,
                       const ::google::protobuf::MessageLite& from_msg) {
-   auto* const _this = static_cast<MailEventS2C*>(&to_msg);
-  auto& from = static_cast<const MailEventS2C&>(from_msg);
+   auto* const _this = static_cast<MailChangedEvent*>(&to_msg);
+  auto& from = static_cast<const MailChangedEvent&>(from_msg);
   if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
     from.CheckHasBitConsistency();
   }
-  // @@protoc_insertion_point(class_specific_merge_from_start:mailpb.MailEventS2C)
+  // @@protoc_insertion_point(class_specific_merge_from_start:mailpb.MailChangedEvent)
   ABSL_DCHECK_NE(&from, _this);
   ::uint32_t cached_has_bits = 0;
   (void)cached_has_bits;
 
   cached_has_bits = from._impl_._has_bits_[0];
-  if (BatchCheckHasBit(cached_has_bits, 0x00000003U)) {
-    if (CheckHasBit(cached_has_bits, 0x00000001U)) {
-      if (from._internal_ts_ms() != 0) {
-        _this->_impl_.ts_ms_ = from._impl_.ts_ms_;
-      }
-    }
-    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
-      if (from._internal_reason() != 0) {
-        _this->_impl_.reason_ = from._impl_.reason_;
-      }
+  if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+    if (from._internal_mail_id() != 0) {
+      _this->_impl_.mail_id_ = from._impl_.mail_id_;
     }
   }
   _this->_impl_._has_bits_[0] |= cached_has_bits;
@@ -6464,27 +7013,22 @@ void MailEventS2C::MergeImpl(::google::protobuf::MessageLite& to_msg,
       from._internal_metadata_);
 }
 
-void MailEventS2C::CopyFrom(const MailEventS2C& from) {
-  // @@protoc_insertion_point(class_specific_copy_from_start:mailpb.MailEventS2C)
+void MailChangedEvent::CopyFrom(const MailChangedEvent& from) {
+  // @@protoc_insertion_point(class_specific_copy_from_start:mailpb.MailChangedEvent)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
 }
 
 
-void MailEventS2C::InternalSwap(MailEventS2C* PROTOBUF_RESTRICT PROTOBUF_NONNULL other) {
+void MailChangedEvent::InternalSwap(MailChangedEvent* PROTOBUF_RESTRICT PROTOBUF_NONNULL other) {
   using ::std::swap;
   _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
-  ::google::protobuf::internal::memswap<
-      PROTOBUF_FIELD_OFFSET(MailEventS2C, _impl_.reason_)
-      + sizeof(MailEventS2C::_impl_.reason_)
-      - PROTOBUF_FIELD_OFFSET(MailEventS2C, _impl_.ts_ms_)>(
-          reinterpret_cast<char*>(&_impl_.ts_ms_),
-          reinterpret_cast<char*>(&other->_impl_.ts_ms_));
+  swap(_impl_.mail_id_, other->_impl_.mail_id_);
 }
 
-::google::protobuf::Metadata MailEventS2C::GetMetadata() const {
+::google::protobuf::Metadata MailChangedEvent::GetMetadata() const {
   return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
 }
 // @@protoc_insertion_point(namespace_scope)

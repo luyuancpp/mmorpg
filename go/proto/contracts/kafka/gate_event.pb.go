@@ -38,7 +38,8 @@ type RoutePlayerEvent struct {
 	// 必须随事件下发,节点不得自行读 Redis:两次改派挨近时后到者才持有最新值。
 	// 见 scene-owner-reentry-barrier.md §3.3。
 	OwnerEpoch uint64 `protobuf:"varint,6,opt,name=owner_epoch,json=ownerEpoch,proto3" json:"owner_epoch,omitempty"`
-	// 发起这次路由的登录代次(EnterSceneRequest.login_generation 原样透传)。scene 节点自发的路由为 0。
+	// 发起这次路由的登录代次(EnterSceneRequest.login_generation 原样透传)。scene 自发的路由带实体已放行的代次
+	// (≤ gate 会话值),旧版 scene 为 0(docs/design/scene-enter-chain-residuals.md §5.2 ④)。
 	// gate 只用它抬高会话上记的代次,不据此丢弃路由(docs/design/scene-enter-session-fence.md §4)。
 	LoginGeneration uint64 `protobuf:"varint,7,opt,name=login_generation,json=loginGeneration,proto3" json:"login_generation,omitempty"`
 	unknownFields   protoimpl.UnknownFields
@@ -124,11 +125,18 @@ func (x *RoutePlayerEvent) GetLoginGeneration() uint64 {
 	return 0
 }
 
+// login 在 ReplaceLogin 的会话记录提交成功之后,踢掉被替换的旧会话(docs/design/scene-enter-chain-residuals.md §2)。
+// login 经 GateCommand.payload 下发(信封字段照填):登录代次只能经 payload 到 gate。
 type KickPlayerEvent struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	SessionId     uint32                 `protobuf:"varint,1,opt,name=session_id,json=sessionId,proto3" json:"session_id,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state     protoimpl.MessageState `protogen:"open.v1"`
+	SessionId uint32                 `protobuf:"varint,1,opt,name=session_id,json=sessionId,proto3" json:"session_id,omitempty"`
+	// 被踢会话所属玩家。gate 只踢当前绑定该玩家的会话;0 = 旧版发送方,按 session_id 踢。
+	// 信封路径由生成路由按同名同型从 GateCommand.player_id 映射(必须 uint64)。
+	PlayerId uint64 `protobuf:"varint,2,opt,name=player_id,json=playerId,proto3" json:"player_id,omitempty"`
+	// 发起踢线、已提交的那条登录链的代次。会话已见过不小于它的代次时不踢;0 = 不比较。只经 payload 下发。
+	LoginGeneration uint64 `protobuf:"varint,3,opt,name=login_generation,json=loginGeneration,proto3" json:"login_generation,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
 }
 
 func (x *KickPlayerEvent) Reset() {
@@ -164,6 +172,20 @@ func (*KickPlayerEvent) Descriptor() ([]byte, []int) {
 func (x *KickPlayerEvent) GetSessionId() uint32 {
 	if x != nil {
 		return x.SessionId
+	}
+	return 0
+}
+
+func (x *KickPlayerEvent) GetPlayerId() uint64 {
+	if x != nil {
+		return x.PlayerId
+	}
+	return 0
+}
+
+func (x *KickPlayerEvent) GetLoginGeneration() uint64 {
+	if x != nil {
+		return x.LoginGeneration
 	}
 	return 0
 }
@@ -738,10 +760,12 @@ const file_proto_contracts_kafka_gate_event_proto_rawDesc = "" +
 	"homeZoneId\x12\x1f\n" +
 	"\vowner_epoch\x18\x06 \x01(\x04R\n" +
 	"ownerEpoch\x12)\n" +
-	"\x10login_generation\x18\a \x01(\x04R\x0floginGeneration:\x05\x88\xe6\xd5\x02\x01\"7\n" +
+	"\x10login_generation\x18\a \x01(\x04R\x0floginGeneration:\x05\x88\xe6\xd5\x02\x01\"\x7f\n" +
 	"\x0fKickPlayerEvent\x12\x1d\n" +
 	"\n" +
-	"session_id\x18\x01 \x01(\rR\tsessionId:\x05\x88\xe6\xd5\x02\x01\"\x98\x01\n" +
+	"session_id\x18\x01 \x01(\rR\tsessionId\x12\x1b\n" +
+	"\tplayer_id\x18\x02 \x01(\x04R\bplayerId\x12)\n" +
+	"\x10login_generation\x18\x03 \x01(\x04R\x0floginGeneration:\x05\x88\xe6\xd5\x02\x01\"\x98\x01\n" +
 	"\x17PlayerDisconnectedEvent\x12\x1d\n" +
 	"\n" +
 	"session_id\x18\x01 \x01(\rR\tsessionId\x12\x1b\n" +

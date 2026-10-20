@@ -23,25 +23,30 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+// 邮件是玩家可见业务。player_inbox只承接非资产scene待办，不承接本协议。
+// 我是谁只取gate会话。附件由服务端持久指令到账，客户端不修改资产。
 type MailKind int32
 
 const (
 	MailKind_MAIL_KIND_UNSPECIFIED MailKind = 0
-	MailKind_MAIL_KIND_SYSTEM      MailKind = 1 // 全服邮件:一封对所有人可见
-	MailKind_MAIL_KIND_PERSONAL    MailKind = 2 // 定向邮件:系统 / 运维发给某一个玩家(不是玩家发玩家,那是 M4)
+	MailKind_MAIL_KIND_PERSONAL    MailKind = 1
+	MailKind_MAIL_KIND_SYSTEM      MailKind = 2
+	MailKind_MAIL_KIND_GUILD       MailKind = 3
 )
 
 // Enum value maps for MailKind.
 var (
 	MailKind_name = map[int32]string{
 		0: "MAIL_KIND_UNSPECIFIED",
-		1: "MAIL_KIND_SYSTEM",
-		2: "MAIL_KIND_PERSONAL",
+		1: "MAIL_KIND_PERSONAL",
+		2: "MAIL_KIND_SYSTEM",
+		3: "MAIL_KIND_GUILD",
 	}
 	MailKind_value = map[string]int32{
 		"MAIL_KIND_UNSPECIFIED": 0,
-		"MAIL_KIND_SYSTEM":      1,
-		"MAIL_KIND_PERSONAL":    2,
+		"MAIL_KIND_PERSONAL":    1,
+		"MAIL_KIND_SYSTEM":      2,
+		"MAIL_KIND_GUILD":       3,
 	}
 )
 
@@ -72,24 +77,31 @@ func (MailKind) EnumDescriptor() ([]byte, []int) {
 	return file_proto_mail_mail_proto_rawDescGZIP(), []int{0}
 }
 
-// 领取状态。库表里 claim_state 列(uint32)的取值**只在这里定义**(设计 §3.3):
-// 表 proto 不引用本枚举作列类型 —— enum 列被写入未知值时扫行会落到 0,分不清"未知"与"无附件"。
 type MailClaimState int32
 
 const (
-	MailClaimState_MAIL_CLAIM_STATE_NONE      MailClaimState = 0 // 无附件。只表示这个,不表示"这一列还没启用"
-	MailClaimState_MAIL_CLAIM_STATE_UNCLAIMED MailClaimState = 1 // 有附件、未领
+	MailClaimState_MAIL_CLAIM_NONE      MailClaimState = 0
+	MailClaimState_MAIL_CLAIM_UNCLAIMED MailClaimState = 1
+	MailClaimState_MAIL_CLAIM_PENDING   MailClaimState = 2
+	MailClaimState_MAIL_CLAIM_CLAIMED   MailClaimState = 3
+	MailClaimState_MAIL_CLAIM_MANUAL    MailClaimState = 4
 )
 
 // Enum value maps for MailClaimState.
 var (
 	MailClaimState_name = map[int32]string{
-		0: "MAIL_CLAIM_STATE_NONE",
-		1: "MAIL_CLAIM_STATE_UNCLAIMED",
+		0: "MAIL_CLAIM_NONE",
+		1: "MAIL_CLAIM_UNCLAIMED",
+		2: "MAIL_CLAIM_PENDING",
+		3: "MAIL_CLAIM_CLAIMED",
+		4: "MAIL_CLAIM_MANUAL",
 	}
 	MailClaimState_value = map[string]int32{
-		"MAIL_CLAIM_STATE_NONE":      0,
-		"MAIL_CLAIM_STATE_UNCLAIMED": 1,
+		"MAIL_CLAIM_NONE":      0,
+		"MAIL_CLAIM_UNCLAIMED": 1,
+		"MAIL_CLAIM_PENDING":   2,
+		"MAIL_CLAIM_CLAIMED":   3,
+		"MAIL_CLAIM_MANUAL":    4,
 	}
 )
 
@@ -120,120 +132,17 @@ func (MailClaimState) EnumDescriptor() ([]byte, []int) {
 	return file_proto_mail_mail_proto_rawDescGZIP(), []int{1}
 }
 
-type MailEventReason int32
-
-const (
-	MailEventReason_MAIL_EVENT_REASON_UNSPECIFIED MailEventReason = 0
-	MailEventReason_MAIL_EVENT_REASON_NEW_MAIL    MailEventReason = 1 // 收到一封新的定向邮件;系统(全服)邮件不推
-)
-
-// Enum value maps for MailEventReason.
-var (
-	MailEventReason_name = map[int32]string{
-		0: "MAIL_EVENT_REASON_UNSPECIFIED",
-		1: "MAIL_EVENT_REASON_NEW_MAIL",
-	}
-	MailEventReason_value = map[string]int32{
-		"MAIL_EVENT_REASON_UNSPECIFIED": 0,
-		"MAIL_EVENT_REASON_NEW_MAIL":    1,
-	}
-)
-
-func (x MailEventReason) Enum() *MailEventReason {
-	p := new(MailEventReason)
-	*p = x
-	return p
-}
-
-func (x MailEventReason) String() string {
-	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
-}
-
-func (MailEventReason) Descriptor() protoreflect.EnumDescriptor {
-	return file_proto_mail_mail_proto_enumTypes[2].Descriptor()
-}
-
-func (MailEventReason) Type() protoreflect.EnumType {
-	return &file_proto_mail_mail_proto_enumTypes[2]
-}
-
-func (x MailEventReason) Number() protoreflect.EnumNumber {
-	return protoreflect.EnumNumber(x)
-}
-
-// Deprecated: Use MailEventReason.Descriptor instead.
-func (MailEventReason) EnumDescriptor() ([]byte, []int) {
-	return file_proto_mail_mail_proto_rawDescGZIP(), []int{2}
-}
-
-// 附件:实例层只描述"是什么、多少"(AGENTS §11.6),没有位置 / 槽位 / 展示名 / 图标。
-// 两个列表的顺序都**没有业务含义**:客户端按 currency_type / config_id 自行排序展示,不得依赖下标。
-// 将来要"按运营指定的顺序展示"必须新增显式的 display_order 字段。
-type MailAttachments struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Currencies    []*MailCurrency        `protobuf:"bytes,1,rep,name=currencies,proto3" json:"currencies,omitempty"` // ≤ 4 条,currency_type 不重复且在服务端白名单内
-	Items         []*MailItem            `protobuf:"bytes,2,rep,name=items,proto3" json:"items,omitempty"`           // ≤ 16 条,config_id 不重复
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *MailAttachments) Reset() {
-	*x = MailAttachments{}
-	mi := &file_proto_mail_mail_proto_msgTypes[0]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *MailAttachments) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*MailAttachments) ProtoMessage() {}
-
-func (x *MailAttachments) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_mail_mail_proto_msgTypes[0]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use MailAttachments.ProtoReflect.Descriptor instead.
-func (*MailAttachments) Descriptor() ([]byte, []int) {
-	return file_proto_mail_mail_proto_rawDescGZIP(), []int{0}
-}
-
-func (x *MailAttachments) GetCurrencies() []*MailCurrency {
-	if x != nil {
-		return x.Currencies
-	}
-	return nil
-}
-
-func (x *MailAttachments) GetItems() []*MailItem {
-	if x != nil {
-		return x.Items
-	}
-	return nil
-}
-
-// 与 proto/common/asset/asset_op.proto 的 CurrencyAmount / ItemGrant 逐字段对应;
-// 领取(M2)时由 Go 侧唯一一处转换函数拼成 AssetBundle。
 type MailCurrency struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	CurrencyType  uint32                 `protobuf:"varint,1,opt,name=currency_type,json=currencyType,proto3" json:"currency_type,omitempty"`
-	Amount        uint64                 `protobuf:"varint,2,opt,name=amount,proto3" json:"amount,omitempty"` // 1 ≤ amount ≤ INT64_MAX
+	Amount        uint64                 `protobuf:"varint,2,opt,name=amount,proto3" json:"amount,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *MailCurrency) Reset() {
 	*x = MailCurrency{}
-	mi := &file_proto_mail_mail_proto_msgTypes[1]
+	mi := &file_proto_mail_mail_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -245,7 +154,7 @@ func (x *MailCurrency) String() string {
 func (*MailCurrency) ProtoMessage() {}
 
 func (x *MailCurrency) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_mail_mail_proto_msgTypes[1]
+	mi := &file_proto_mail_mail_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -258,7 +167,7 @@ func (x *MailCurrency) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MailCurrency.ProtoReflect.Descriptor instead.
 func (*MailCurrency) Descriptor() ([]byte, []int) {
-	return file_proto_mail_mail_proto_rawDescGZIP(), []int{1}
+	return file_proto_mail_mail_proto_rawDescGZIP(), []int{0}
 }
 
 func (x *MailCurrency) GetCurrencyType() uint32 {
@@ -278,14 +187,14 @@ func (x *MailCurrency) GetAmount() uint64 {
 type MailItem struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	ConfigId      uint32                 `protobuf:"varint,1,opt,name=config_id,json=configId,proto3" json:"config_id,omitempty"`
-	Count         uint32                 `protobuf:"varint,2,opt,name=count,proto3" json:"count,omitempty"` // ≥ 1
+	Count         uint32                 `protobuf:"varint,2,opt,name=count,proto3" json:"count,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *MailItem) Reset() {
 	*x = MailItem{}
-	mi := &file_proto_mail_mail_proto_msgTypes[2]
+	mi := &file_proto_mail_mail_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -297,7 +206,7 @@ func (x *MailItem) String() string {
 func (*MailItem) ProtoMessage() {}
 
 func (x *MailItem) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_mail_mail_proto_msgTypes[2]
+	mi := &file_proto_mail_mail_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -310,7 +219,7 @@ func (x *MailItem) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MailItem.ProtoReflect.Descriptor instead.
 func (*MailItem) Descriptor() ([]byte, []int) {
-	return file_proto_mail_mail_proto_rawDescGZIP(), []int{2}
+	return file_proto_mail_mail_proto_rawDescGZIP(), []int{1}
 }
 
 func (x *MailItem) GetConfigId() uint32 {
@@ -327,36 +236,90 @@ func (x *MailItem) GetCount() uint32 {
 	return 0
 }
 
-type MailSummary struct {
-	state      protoimpl.MessageState `protogen:"open.v1"`
-	MailId     uint64                 `protobuf:"varint,1,opt,name=mail_id,json=mailId,proto3" json:"mail_id,omitempty"` // 定向与系统邮件出自同一个号段,全局不撞号;客户端只凭它定位,不必回传 kind
-	Kind       MailKind               `protobuf:"varint,2,opt,name=kind,proto3,enum=mailpb.MailKind" json:"kind,omitempty"`
-	SenderName string                 `protobuf:"bytes,3,opt,name=sender_name,json=senderName,proto3" json:"sender_name,omitempty"` // 展示用署名,不是身份
-	Title      string                 `protobuf:"bytes,4,opt,name=title,proto3" json:"title,omitempty"`
-	SentMs     uint64                 `protobuf:"varint,5,opt,name=sent_ms,json=sentMs,proto3" json:"sent_ms,omitempty"`
-	ExpireMs   uint64                 `protobuf:"varint,6,opt,name=expire_ms,json=expireMs,proto3" json:"expire_ms,omitempty"`
-	Read       bool                   `protobuf:"varint,7,opt,name=read,proto3" json:"read,omitempty"`
-	ClaimState MailClaimState         `protobuf:"varint,8,opt,name=claim_state,json=claimState,proto3,enum=mailpb.MailClaimState" json:"claim_state,omitempty"`
-	// 摘要里就带附件(合计 ≤ 20 条,很小):客户端据此做"有未领附件的不让删"的置灰,不必为每封再读一次正文。
-	Attachments   *MailAttachments `protobuf:"bytes,9,opt,name=attachments,proto3" json:"attachments,omitempty"`
+// 仅新授予凭证；既有装备/宝宝的托管转让由共用资产实例契约承接，不重铸替代。
+type MailAttachments struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Currencies    []*MailCurrency        `protobuf:"bytes,1,rep,name=currencies,proto3" json:"currencies,omitempty"`
+	Items         []*MailItem            `protobuf:"bytes,2,rep,name=items,proto3" json:"items,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *MailSummary) Reset() {
-	*x = MailSummary{}
+func (x *MailAttachments) Reset() {
+	*x = MailAttachments{}
+	mi := &file_proto_mail_mail_proto_msgTypes[2]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *MailAttachments) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*MailAttachments) ProtoMessage() {}
+
+func (x *MailAttachments) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_mail_mail_proto_msgTypes[2]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use MailAttachments.ProtoReflect.Descriptor instead.
+func (*MailAttachments) Descriptor() ([]byte, []int) {
+	return file_proto_mail_mail_proto_rawDescGZIP(), []int{2}
+}
+
+func (x *MailAttachments) GetCurrencies() []*MailCurrency {
+	if x != nil {
+		return x.Currencies
+	}
+	return nil
+}
+
+func (x *MailAttachments) GetItems() []*MailItem {
+	if x != nil {
+		return x.Items
+	}
+	return nil
+}
+
+type MailView struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	MailId        uint64                 `protobuf:"varint,1,opt,name=mail_id,json=mailId,proto3" json:"mail_id,omitempty"`
+	Kind          MailKind               `protobuf:"varint,2,opt,name=kind,proto3,enum=mailpb.MailKind" json:"kind,omitempty"`
+	Title         string                 `protobuf:"bytes,3,opt,name=title,proto3" json:"title,omitempty"`
+	Body          string                 `protobuf:"bytes,4,opt,name=body,proto3" json:"body,omitempty"`
+	SentMs        uint64                 `protobuf:"varint,5,opt,name=sent_ms,json=sentMs,proto3" json:"sent_ms,omitempty"`
+	ExpireMs      uint64                 `protobuf:"varint,6,opt,name=expire_ms,json=expireMs,proto3" json:"expire_ms,omitempty"`
+	IsRead        bool                   `protobuf:"varint,7,opt,name=is_read,json=isRead,proto3" json:"is_read,omitempty"`
+	ClaimState    MailClaimState         `protobuf:"varint,8,opt,name=claim_state,json=claimState,proto3,enum=mailpb.MailClaimState" json:"claim_state,omitempty"`
+	Attachments   *MailAttachments       `protobuf:"bytes,9,opt,name=attachments,proto3" json:"attachments,omitempty"`
+	AssetOpId     uint64                 `protobuf:"varint,10,opt,name=asset_op_id,json=assetOpId,proto3" json:"asset_op_id,omitempty"`
+	ClaimReason   *base.TipInfoMessage   `protobuf:"bytes,11,opt,name=claim_reason,json=claimReason,proto3" json:"claim_reason,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *MailView) Reset() {
+	*x = MailView{}
 	mi := &file_proto_mail_mail_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *MailSummary) String() string {
+func (x *MailView) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*MailSummary) ProtoMessage() {}
+func (*MailView) ProtoMessage() {}
 
-func (x *MailSummary) ProtoReflect() protoreflect.Message {
+func (x *MailView) ProtoReflect() protoreflect.Message {
 	mi := &file_proto_mail_mail_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -368,78 +331,92 @@ func (x *MailSummary) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use MailSummary.ProtoReflect.Descriptor instead.
-func (*MailSummary) Descriptor() ([]byte, []int) {
+// Deprecated: Use MailView.ProtoReflect.Descriptor instead.
+func (*MailView) Descriptor() ([]byte, []int) {
 	return file_proto_mail_mail_proto_rawDescGZIP(), []int{3}
 }
 
-func (x *MailSummary) GetMailId() uint64 {
+func (x *MailView) GetMailId() uint64 {
 	if x != nil {
 		return x.MailId
 	}
 	return 0
 }
 
-func (x *MailSummary) GetKind() MailKind {
+func (x *MailView) GetKind() MailKind {
 	if x != nil {
 		return x.Kind
 	}
 	return MailKind_MAIL_KIND_UNSPECIFIED
 }
 
-func (x *MailSummary) GetSenderName() string {
-	if x != nil {
-		return x.SenderName
-	}
-	return ""
-}
-
-func (x *MailSummary) GetTitle() string {
+func (x *MailView) GetTitle() string {
 	if x != nil {
 		return x.Title
 	}
 	return ""
 }
 
-func (x *MailSummary) GetSentMs() uint64 {
+func (x *MailView) GetBody() string {
+	if x != nil {
+		return x.Body
+	}
+	return ""
+}
+
+func (x *MailView) GetSentMs() uint64 {
 	if x != nil {
 		return x.SentMs
 	}
 	return 0
 }
 
-func (x *MailSummary) GetExpireMs() uint64 {
+func (x *MailView) GetExpireMs() uint64 {
 	if x != nil {
 		return x.ExpireMs
 	}
 	return 0
 }
 
-func (x *MailSummary) GetRead() bool {
+func (x *MailView) GetIsRead() bool {
 	if x != nil {
-		return x.Read
+		return x.IsRead
 	}
 	return false
 }
 
-func (x *MailSummary) GetClaimState() MailClaimState {
+func (x *MailView) GetClaimState() MailClaimState {
 	if x != nil {
 		return x.ClaimState
 	}
-	return MailClaimState_MAIL_CLAIM_STATE_NONE
+	return MailClaimState_MAIL_CLAIM_NONE
 }
 
-func (x *MailSummary) GetAttachments() *MailAttachments {
+func (x *MailView) GetAttachments() *MailAttachments {
 	if x != nil {
 		return x.Attachments
 	}
 	return nil
 }
 
+func (x *MailView) GetAssetOpId() uint64 {
+	if x != nil {
+		return x.AssetOpId
+	}
+	return 0
+}
+
+func (x *MailView) GetClaimReason() *base.TipInfoMessage {
+	if x != nil {
+		return x.ClaimReason
+	}
+	return nil
+}
+
 type ListMailsRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	BeforeMailId  uint64                 `protobuf:"varint,1,opt,name=before_mail_id,json=beforeMailId,proto3" json:"before_mail_id,omitempty"` // 0 = 从最新开始;游标分页,只返回 mail_id 小于它的
-	PageSize      uint32                 `protobuf:"varint,2,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"`               // 0 取服务端默认(20);超过服务端上限(50)按上限钳制,不报错
+	BeforeMailId  uint64                 `protobuf:"varint,1,opt,name=before_mail_id,json=beforeMailId,proto3" json:"before_mail_id,omitempty"`
+	Limit         uint32                 `protobuf:"varint,2,opt,name=limit,proto3" json:"limit,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -481,25 +458,23 @@ func (x *ListMailsRequest) GetBeforeMailId() uint64 {
 	return 0
 }
 
-func (x *ListMailsRequest) GetPageSize() uint32 {
+func (x *ListMailsRequest) GetLimit() uint32 {
 	if x != nil {
-		return x.PageSize
+		return x.Limit
 	}
 	return 0
 }
 
 type ListMailsResponse struct {
-	state        protoimpl.MessageState `protogen:"open.v1"`
-	ErrorMessage *base.TipInfoMessage   `protobuf:"bytes,1,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"`
-	Mails        []*MailSummary         `protobuf:"bytes,2,rep,name=mails,proto3" json:"mails,omitempty"` // 按 mail_id 降序。这是协议承诺的排序,不是"下标有含义"
-	HasMore      bool                   `protobuf:"varint,3,opt,name=has_more,json=hasMore,proto3" json:"has_more,omitempty"`
-	UnreadCount  uint32                 `protobuf:"varint,4,opt,name=unread_count,json=unreadCount,proto3" json:"unread_count,omitempty"` // 服务端对**全集**算(不是本页),红点以它为准
-	// 有附件且未过期的封数。M1 领取尚未开放(ClaimMailAttachments 恒回 MailClaimNotOpen),
-	// 这个数照算:客户端据此提示"有附件暂不可领"。
-	ClaimableCount uint32 `protobuf:"varint,5,opt,name=claimable_count,json=claimableCount,proto3" json:"claimable_count,omitempty"`
-	ServerNowMs    uint64 `protobuf:"varint,6,opt,name=server_now_ms,json=serverNowMs,proto3" json:"server_now_ms,omitempty"`
-	unknownFields  protoimpl.UnknownFields
-	sizeCache      protoimpl.SizeCache
+	state            protoimpl.MessageState `protogen:"open.v1"`
+	ErrorMessage     *base.TipInfoMessage   `protobuf:"bytes,1,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"`
+	Mails            []*MailView            `protobuf:"bytes,2,rep,name=mails,proto3" json:"mails,omitempty"`
+	NextBeforeMailId uint64                 `protobuf:"varint,3,opt,name=next_before_mail_id,json=nextBeforeMailId,proto3" json:"next_before_mail_id,omitempty"`
+	UnreadCount      uint32                 `protobuf:"varint,4,opt,name=unread_count,json=unreadCount,proto3" json:"unread_count,omitempty"`
+	ClaimableCount   uint32                 `protobuf:"varint,5,opt,name=claimable_count,json=claimableCount,proto3" json:"claimable_count,omitempty"`
+	ServerNowMs      uint64                 `protobuf:"varint,6,opt,name=server_now_ms,json=serverNowMs,proto3" json:"server_now_ms,omitempty"`
+	unknownFields    protoimpl.UnknownFields
+	sizeCache        protoimpl.SizeCache
 }
 
 func (x *ListMailsResponse) Reset() {
@@ -539,18 +514,18 @@ func (x *ListMailsResponse) GetErrorMessage() *base.TipInfoMessage {
 	return nil
 }
 
-func (x *ListMailsResponse) GetMails() []*MailSummary {
+func (x *ListMailsResponse) GetMails() []*MailView {
 	if x != nil {
 		return x.Mails
 	}
 	return nil
 }
 
-func (x *ListMailsResponse) GetHasMore() bool {
+func (x *ListMailsResponse) GetNextBeforeMailId() uint64 {
 	if x != nil {
-		return x.HasMore
+		return x.NextBeforeMailId
 	}
-	return false
+	return 0
 }
 
 func (x *ListMailsResponse) GetUnreadCount() uint32 {
@@ -621,9 +596,7 @@ func (x *ReadMailRequest) GetMailId() uint64 {
 type ReadMailResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	ErrorMessage  *base.TipInfoMessage   `protobuf:"bytes,1,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"`
-	Summary       *MailSummary           `protobuf:"bytes,2,opt,name=summary,proto3" json:"summary,omitempty"` // 已是"读过"之后的状态(read = true)
-	Body          string                 `protobuf:"bytes,3,opt,name=body,proto3" json:"body,omitempty"`
-	ServerNowMs   uint64                 `protobuf:"varint,4,opt,name=server_now_ms,json=serverNowMs,proto3" json:"server_now_ms,omitempty"`
+	Mail          *MailView              `protobuf:"bytes,2,opt,name=mail,proto3" json:"mail,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -665,231 +638,23 @@ func (x *ReadMailResponse) GetErrorMessage() *base.TipInfoMessage {
 	return nil
 }
 
-func (x *ReadMailResponse) GetSummary() *MailSummary {
+func (x *ReadMailResponse) GetMail() *MailView {
 	if x != nil {
-		return x.Summary
+		return x.Mail
 	}
 	return nil
-}
-
-func (x *ReadMailResponse) GetBody() string {
-	if x != nil {
-		return x.Body
-	}
-	return ""
-}
-
-func (x *ReadMailResponse) GetServerNowMs() uint64 {
-	if x != nil {
-		return x.ServerNowMs
-	}
-	return 0
-}
-
-type DeleteMailsRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	MailIds       []uint64               `protobuf:"varint,1,rep,packed,name=mail_ids,json=mailIds,proto3" json:"mail_ids,omitempty"` // 1..20 个
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *DeleteMailsRequest) Reset() {
-	*x = DeleteMailsRequest{}
-	mi := &file_proto_mail_mail_proto_msgTypes[8]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *DeleteMailsRequest) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*DeleteMailsRequest) ProtoMessage() {}
-
-func (x *DeleteMailsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_mail_mail_proto_msgTypes[8]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use DeleteMailsRequest.ProtoReflect.Descriptor instead.
-func (*DeleteMailsRequest) Descriptor() ([]byte, []int) {
-	return file_proto_mail_mail_proto_rawDescGZIP(), []int{8}
-}
-
-func (x *DeleteMailsRequest) GetMailIds() []uint64 {
-	if x != nil {
-		return x.MailIds
-	}
-	return nil
-}
-
-type DeleteMailsResponse struct {
-	state        protoimpl.MessageState `protogen:"open.v1"`
-	ErrorMessage *base.TipInfoMessage   `protobuf:"bytes,1,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"`
-	DeletedCount uint32                 `protobuf:"varint,2,opt,name=deleted_count,json=deletedCount,proto3" json:"deleted_count,omitempty"`
-	// 因带着未领且未过期的附件而没有删的邮件(服务端拒删,整请求仍算成功)。删不存在 / 已删的邮件算成功、不在这里。
-	ProtectedMailIds []uint64 `protobuf:"varint,3,rep,packed,name=protected_mail_ids,json=protectedMailIds,proto3" json:"protected_mail_ids,omitempty"`
-	unknownFields    protoimpl.UnknownFields
-	sizeCache        protoimpl.SizeCache
-}
-
-func (x *DeleteMailsResponse) Reset() {
-	*x = DeleteMailsResponse{}
-	mi := &file_proto_mail_mail_proto_msgTypes[9]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *DeleteMailsResponse) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*DeleteMailsResponse) ProtoMessage() {}
-
-func (x *DeleteMailsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_mail_mail_proto_msgTypes[9]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use DeleteMailsResponse.ProtoReflect.Descriptor instead.
-func (*DeleteMailsResponse) Descriptor() ([]byte, []int) {
-	return file_proto_mail_mail_proto_rawDescGZIP(), []int{9}
-}
-
-func (x *DeleteMailsResponse) GetErrorMessage() *base.TipInfoMessage {
-	if x != nil {
-		return x.ErrorMessage
-	}
-	return nil
-}
-
-func (x *DeleteMailsResponse) GetDeletedCount() uint32 {
-	if x != nil {
-		return x.DeletedCount
-	}
-	return 0
-}
-
-func (x *DeleteMailsResponse) GetProtectedMailIds() []uint64 {
-	if x != nil {
-		return x.ProtectedMailIds
-	}
-	return nil
-}
-
-type DeleteReadMailsRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *DeleteReadMailsRequest) Reset() {
-	*x = DeleteReadMailsRequest{}
-	mi := &file_proto_mail_mail_proto_msgTypes[10]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *DeleteReadMailsRequest) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*DeleteReadMailsRequest) ProtoMessage() {}
-
-func (x *DeleteReadMailsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_mail_mail_proto_msgTypes[10]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use DeleteReadMailsRequest.ProtoReflect.Descriptor instead.
-func (*DeleteReadMailsRequest) Descriptor() ([]byte, []int) {
-	return file_proto_mail_mail_proto_rawDescGZIP(), []int{10}
-}
-
-type DeleteReadMailsResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	ErrorMessage  *base.TipInfoMessage   `protobuf:"bytes,1,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"`
-	DeletedCount  uint32                 `protobuf:"varint,2,opt,name=deleted_count,json=deletedCount,proto3" json:"deleted_count,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *DeleteReadMailsResponse) Reset() {
-	*x = DeleteReadMailsResponse{}
-	mi := &file_proto_mail_mail_proto_msgTypes[11]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *DeleteReadMailsResponse) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*DeleteReadMailsResponse) ProtoMessage() {}
-
-func (x *DeleteReadMailsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_mail_mail_proto_msgTypes[11]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use DeleteReadMailsResponse.ProtoReflect.Descriptor instead.
-func (*DeleteReadMailsResponse) Descriptor() ([]byte, []int) {
-	return file_proto_mail_mail_proto_rawDescGZIP(), []int{11}
-}
-
-func (x *DeleteReadMailsResponse) GetErrorMessage() *base.TipInfoMessage {
-	if x != nil {
-		return x.ErrorMessage
-	}
-	return nil
-}
-
-func (x *DeleteReadMailsResponse) GetDeletedCount() uint32 {
-	if x != nil {
-		return x.DeletedCount
-	}
-	return 0
 }
 
 type ClaimMailAttachmentsRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	MailIds       []uint64               `protobuf:"varint,1,rep,packed,name=mail_ids,json=mailIds,proto3" json:"mail_ids,omitempty"` // 1..20 个;与 all 二选一
-	All           bool                   `protobuf:"varint,2,opt,name=all,proto3" json:"all,omitempty"`
+	MailIds       []uint64               `protobuf:"varint,1,rep,packed,name=mail_ids,json=mailIds,proto3" json:"mail_ids,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ClaimMailAttachmentsRequest) Reset() {
 	*x = ClaimMailAttachmentsRequest{}
-	mi := &file_proto_mail_mail_proto_msgTypes[12]
+	mi := &file_proto_mail_mail_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -901,7 +666,7 @@ func (x *ClaimMailAttachmentsRequest) String() string {
 func (*ClaimMailAttachmentsRequest) ProtoMessage() {}
 
 func (x *ClaimMailAttachmentsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_mail_mail_proto_msgTypes[12]
+	mi := &file_proto_mail_mail_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -914,7 +679,7 @@ func (x *ClaimMailAttachmentsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ClaimMailAttachmentsRequest.ProtoReflect.Descriptor instead.
 func (*ClaimMailAttachmentsRequest) Descriptor() ([]byte, []int) {
-	return file_proto_mail_mail_proto_rawDescGZIP(), []int{12}
+	return file_proto_mail_mail_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *ClaimMailAttachmentsRequest) GetMailIds() []uint64 {
@@ -924,25 +689,85 @@ func (x *ClaimMailAttachmentsRequest) GetMailIds() []uint64 {
 	return nil
 }
 
-func (x *ClaimMailAttachmentsRequest) GetAll() bool {
+type MailActionResult struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	MailId        uint64                 `protobuf:"varint,1,opt,name=mail_id,json=mailId,proto3" json:"mail_id,omitempty"`
+	ErrorMessage  *base.TipInfoMessage   `protobuf:"bytes,2,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"`
+	ClaimState    MailClaimState         `protobuf:"varint,3,opt,name=claim_state,json=claimState,proto3,enum=mailpb.MailClaimState" json:"claim_state,omitempty"`
+	AssetOpId     uint64                 `protobuf:"varint,4,opt,name=asset_op_id,json=assetOpId,proto3" json:"asset_op_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *MailActionResult) Reset() {
+	*x = MailActionResult{}
+	mi := &file_proto_mail_mail_proto_msgTypes[9]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *MailActionResult) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*MailActionResult) ProtoMessage() {}
+
+func (x *MailActionResult) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_mail_mail_proto_msgTypes[9]
 	if x != nil {
-		return x.All
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
 	}
-	return false
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use MailActionResult.ProtoReflect.Descriptor instead.
+func (*MailActionResult) Descriptor() ([]byte, []int) {
+	return file_proto_mail_mail_proto_rawDescGZIP(), []int{9}
+}
+
+func (x *MailActionResult) GetMailId() uint64 {
+	if x != nil {
+		return x.MailId
+	}
+	return 0
+}
+
+func (x *MailActionResult) GetErrorMessage() *base.TipInfoMessage {
+	if x != nil {
+		return x.ErrorMessage
+	}
+	return nil
+}
+
+func (x *MailActionResult) GetClaimState() MailClaimState {
+	if x != nil {
+		return x.ClaimState
+	}
+	return MailClaimState_MAIL_CLAIM_NONE
+}
+
+func (x *MailActionResult) GetAssetOpId() uint64 {
+	if x != nil {
+		return x.AssetOpId
+	}
+	return 0
 }
 
 type ClaimMailAttachmentsResponse struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
-	// M1:形状合法的请求恒回 MailClaimNotOpen(不触库);形状非法回 kInvalidParameter。
-	// 方法在 M1 就定义,是为了让客户端与消息号在 M2 开放领取时不必再变。
-	ErrorMessage  *base.TipInfoMessage `protobuf:"bytes,1,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"`
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	ErrorMessage  *base.TipInfoMessage   `protobuf:"bytes,1,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"`
+	Results       []*MailActionResult    `protobuf:"bytes,2,rep,name=results,proto3" json:"results,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ClaimMailAttachmentsResponse) Reset() {
 	*x = ClaimMailAttachmentsResponse{}
-	mi := &file_proto_mail_mail_proto_msgTypes[13]
+	mi := &file_proto_mail_mail_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -954,7 +779,7 @@ func (x *ClaimMailAttachmentsResponse) String() string {
 func (*ClaimMailAttachmentsResponse) ProtoMessage() {}
 
 func (x *ClaimMailAttachmentsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_mail_mail_proto_msgTypes[13]
+	mi := &file_proto_mail_mail_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -967,7 +792,7 @@ func (x *ClaimMailAttachmentsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ClaimMailAttachmentsResponse.ProtoReflect.Descriptor instead.
 func (*ClaimMailAttachmentsResponse) Descriptor() ([]byte, []int) {
-	return file_proto_mail_mail_proto_rawDescGZIP(), []int{13}
+	return file_proto_mail_mail_proto_rawDescGZIP(), []int{10}
 }
 
 func (x *ClaimMailAttachmentsResponse) GetErrorMessage() *base.TipInfoMessage {
@@ -977,29 +802,176 @@ func (x *ClaimMailAttachmentsResponse) GetErrorMessage() *base.TipInfoMessage {
 	return nil
 }
 
-// S2C 提示。at-most-once:推送丢了不补,客户端下次 ListMails 自然看到;所以这里只带"有变化"的信号,不带邮件内容。
-type MailEventS2C struct {
+func (x *ClaimMailAttachmentsResponse) GetResults() []*MailActionResult {
+	if x != nil {
+		return x.Results
+	}
+	return nil
+}
+
+type DeleteMailsRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Reason        MailEventReason        `protobuf:"varint,1,opt,name=reason,proto3,enum=mailpb.MailEventReason" json:"reason,omitempty"`
-	TsMs          uint64                 `protobuf:"varint,2,opt,name=ts_ms,json=tsMs,proto3" json:"ts_ms,omitempty"`
+	MailIds       []uint64               `protobuf:"varint,1,rep,packed,name=mail_ids,json=mailIds,proto3" json:"mail_ids,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *MailEventS2C) Reset() {
-	*x = MailEventS2C{}
+func (x *DeleteMailsRequest) Reset() {
+	*x = DeleteMailsRequest{}
+	mi := &file_proto_mail_mail_proto_msgTypes[11]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DeleteMailsRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DeleteMailsRequest) ProtoMessage() {}
+
+func (x *DeleteMailsRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_mail_mail_proto_msgTypes[11]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DeleteMailsRequest.ProtoReflect.Descriptor instead.
+func (*DeleteMailsRequest) Descriptor() ([]byte, []int) {
+	return file_proto_mail_mail_proto_rawDescGZIP(), []int{11}
+}
+
+func (x *DeleteMailsRequest) GetMailIds() []uint64 {
+	if x != nil {
+		return x.MailIds
+	}
+	return nil
+}
+
+type DeleteMailsResponse struct {
+	state            protoimpl.MessageState `protogen:"open.v1"`
+	ErrorMessage     *base.TipInfoMessage   `protobuf:"bytes,1,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"`
+	DeletedMailIds   []uint64               `protobuf:"varint,2,rep,packed,name=deleted_mail_ids,json=deletedMailIds,proto3" json:"deleted_mail_ids,omitempty"`
+	ProtectedMailIds []uint64               `protobuf:"varint,3,rep,packed,name=protected_mail_ids,json=protectedMailIds,proto3" json:"protected_mail_ids,omitempty"`
+	unknownFields    protoimpl.UnknownFields
+	sizeCache        protoimpl.SizeCache
+}
+
+func (x *DeleteMailsResponse) Reset() {
+	*x = DeleteMailsResponse{}
+	mi := &file_proto_mail_mail_proto_msgTypes[12]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DeleteMailsResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DeleteMailsResponse) ProtoMessage() {}
+
+func (x *DeleteMailsResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_mail_mail_proto_msgTypes[12]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DeleteMailsResponse.ProtoReflect.Descriptor instead.
+func (*DeleteMailsResponse) Descriptor() ([]byte, []int) {
+	return file_proto_mail_mail_proto_rawDescGZIP(), []int{12}
+}
+
+func (x *DeleteMailsResponse) GetErrorMessage() *base.TipInfoMessage {
+	if x != nil {
+		return x.ErrorMessage
+	}
+	return nil
+}
+
+func (x *DeleteMailsResponse) GetDeletedMailIds() []uint64 {
+	if x != nil {
+		return x.DeletedMailIds
+	}
+	return nil
+}
+
+func (x *DeleteMailsResponse) GetProtectedMailIds() []uint64 {
+	if x != nil {
+		return x.ProtectedMailIds
+	}
+	return nil
+}
+
+type ClearReadMailsRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ClearReadMailsRequest) Reset() {
+	*x = ClearReadMailsRequest{}
+	mi := &file_proto_mail_mail_proto_msgTypes[13]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ClearReadMailsRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ClearReadMailsRequest) ProtoMessage() {}
+
+func (x *ClearReadMailsRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_mail_mail_proto_msgTypes[13]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ClearReadMailsRequest.ProtoReflect.Descriptor instead.
+func (*ClearReadMailsRequest) Descriptor() ([]byte, []int) {
+	return file_proto_mail_mail_proto_rawDescGZIP(), []int{13}
+}
+
+type ClearReadMailsResponse struct {
+	state            protoimpl.MessageState `protogen:"open.v1"`
+	ErrorMessage     *base.TipInfoMessage   `protobuf:"bytes,1,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"`
+	DeletedMailIds   []uint64               `protobuf:"varint,2,rep,packed,name=deleted_mail_ids,json=deletedMailIds,proto3" json:"deleted_mail_ids,omitempty"`
+	ProtectedMailIds []uint64               `protobuf:"varint,3,rep,packed,name=protected_mail_ids,json=protectedMailIds,proto3" json:"protected_mail_ids,omitempty"`
+	unknownFields    protoimpl.UnknownFields
+	sizeCache        protoimpl.SizeCache
+}
+
+func (x *ClearReadMailsResponse) Reset() {
+	*x = ClearReadMailsResponse{}
 	mi := &file_proto_mail_mail_proto_msgTypes[14]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *MailEventS2C) String() string {
+func (x *ClearReadMailsResponse) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*MailEventS2C) ProtoMessage() {}
+func (*ClearReadMailsResponse) ProtoMessage() {}
 
-func (x *MailEventS2C) ProtoReflect() protoreflect.Message {
+func (x *ClearReadMailsResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_proto_mail_mail_proto_msgTypes[14]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1011,21 +983,72 @@ func (x *MailEventS2C) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use MailEventS2C.ProtoReflect.Descriptor instead.
-func (*MailEventS2C) Descriptor() ([]byte, []int) {
+// Deprecated: Use ClearReadMailsResponse.ProtoReflect.Descriptor instead.
+func (*ClearReadMailsResponse) Descriptor() ([]byte, []int) {
 	return file_proto_mail_mail_proto_rawDescGZIP(), []int{14}
 }
 
-func (x *MailEventS2C) GetReason() MailEventReason {
+func (x *ClearReadMailsResponse) GetErrorMessage() *base.TipInfoMessage {
 	if x != nil {
-		return x.Reason
+		return x.ErrorMessage
 	}
-	return MailEventReason_MAIL_EVENT_REASON_UNSPECIFIED
+	return nil
 }
 
-func (x *MailEventS2C) GetTsMs() uint64 {
+func (x *ClearReadMailsResponse) GetDeletedMailIds() []uint64 {
 	if x != nil {
-		return x.TsMs
+		return x.DeletedMailIds
+	}
+	return nil
+}
+
+func (x *ClearReadMailsResponse) GetProtectedMailIds() []uint64 {
+	if x != nil {
+		return x.ProtectedMailIds
+	}
+	return nil
+}
+
+type MailChangedEvent struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	MailId        uint64                 `protobuf:"varint,1,opt,name=mail_id,json=mailId,proto3" json:"mail_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *MailChangedEvent) Reset() {
+	*x = MailChangedEvent{}
+	mi := &file_proto_mail_mail_proto_msgTypes[15]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *MailChangedEvent) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*MailChangedEvent) ProtoMessage() {}
+
+func (x *MailChangedEvent) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_mail_mail_proto_msgTypes[15]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use MailChangedEvent.ProtoReflect.Descriptor instead.
+func (*MailChangedEvent) Descriptor() ([]byte, []int) {
+	return file_proto_mail_mail_proto_rawDescGZIP(), []int{15}
+}
+
+func (x *MailChangedEvent) GetMailId() uint64 {
+	if x != nil {
+		return x.MailId
 	}
 	return 0
 }
@@ -1034,83 +1057,90 @@ var File_proto_mail_mail_proto protoreflect.FileDescriptor
 
 const file_proto_mail_mail_proto_rawDesc = "" +
 	"\n" +
-	"\x15proto/mail/mail.proto\x12\x06mailpb\x1a\x1bproto/db/proto_option.proto\x1a\x1dproto/common/base/empty.proto\x1a\x1bproto/common/base/tip.proto\"o\n" +
-	"\x0fMailAttachments\x124\n" +
-	"\n" +
-	"currencies\x18\x01 \x03(\v2\x14.mailpb.MailCurrencyR\n" +
-	"currencies\x12&\n" +
-	"\x05items\x18\x02 \x03(\v2\x10.mailpb.MailItemR\x05items\"K\n" +
+	"\x15proto/mail/mail.proto\x12\x06mailpb\x1a\x1bproto/db/proto_option.proto\x1a\x1bproto/common/base/tip.proto\"K\n" +
 	"\fMailCurrency\x12#\n" +
 	"\rcurrency_type\x18\x01 \x01(\rR\fcurrencyType\x12\x16\n" +
 	"\x06amount\x18\x02 \x01(\x04R\x06amount\"=\n" +
 	"\bMailItem\x12\x1b\n" +
 	"\tconfig_id\x18\x01 \x01(\rR\bconfigId\x12\x14\n" +
-	"\x05count\x18\x02 \x01(\rR\x05count\"\xc1\x02\n" +
-	"\vMailSummary\x12\x17\n" +
+	"\x05count\x18\x02 \x01(\rR\x05count\"o\n" +
+	"\x0fMailAttachments\x124\n" +
+	"\n" +
+	"currencies\x18\x01 \x03(\v2\x14.mailpb.MailCurrencyR\n" +
+	"currencies\x12&\n" +
+	"\x05items\x18\x02 \x03(\v2\x10.mailpb.MailItemR\x05items\"\x8a\x03\n" +
+	"\bMailView\x12\x17\n" +
 	"\amail_id\x18\x01 \x01(\x04R\x06mailId\x12$\n" +
-	"\x04kind\x18\x02 \x01(\x0e2\x10.mailpb.MailKindR\x04kind\x12\x1f\n" +
-	"\vsender_name\x18\x03 \x01(\tR\n" +
-	"senderName\x12\x14\n" +
-	"\x05title\x18\x04 \x01(\tR\x05title\x12\x17\n" +
+	"\x04kind\x18\x02 \x01(\x0e2\x10.mailpb.MailKindR\x04kind\x12\x14\n" +
+	"\x05title\x18\x03 \x01(\tR\x05title\x12\x12\n" +
+	"\x04body\x18\x04 \x01(\tR\x04body\x12\x17\n" +
 	"\asent_ms\x18\x05 \x01(\x04R\x06sentMs\x12\x1b\n" +
-	"\texpire_ms\x18\x06 \x01(\x04R\bexpireMs\x12\x12\n" +
-	"\x04read\x18\a \x01(\bR\x04read\x127\n" +
+	"\texpire_ms\x18\x06 \x01(\x04R\bexpireMs\x12\x17\n" +
+	"\ais_read\x18\a \x01(\bR\x06isRead\x127\n" +
 	"\vclaim_state\x18\b \x01(\x0e2\x16.mailpb.MailClaimStateR\n" +
 	"claimState\x129\n" +
-	"\vattachments\x18\t \x01(\v2\x17.mailpb.MailAttachmentsR\vattachments\"U\n" +
+	"\vattachments\x18\t \x01(\v2\x17.mailpb.MailAttachmentsR\vattachments\x12\x1e\n" +
+	"\vasset_op_id\x18\n" +
+	" \x01(\x04R\tassetOpId\x122\n" +
+	"\fclaim_reason\x18\v \x01(\v2\x0f.TipInfoMessageR\vclaimReason\"N\n" +
 	"\x10ListMailsRequest\x12$\n" +
-	"\x0ebefore_mail_id\x18\x01 \x01(\x04R\fbeforeMailId\x12\x1b\n" +
-	"\tpage_size\x18\x02 \x01(\rR\bpageSize\"\xff\x01\n" +
+	"\x0ebefore_mail_id\x18\x01 \x01(\x04R\fbeforeMailId\x12\x14\n" +
+	"\x05limit\x18\x02 \x01(\rR\x05limit\"\x90\x02\n" +
 	"\x11ListMailsResponse\x124\n" +
-	"\rerror_message\x18\x01 \x01(\v2\x0f.TipInfoMessageR\ferrorMessage\x12)\n" +
-	"\x05mails\x18\x02 \x03(\v2\x13.mailpb.MailSummaryR\x05mails\x12\x19\n" +
-	"\bhas_more\x18\x03 \x01(\bR\ahasMore\x12!\n" +
+	"\rerror_message\x18\x01 \x01(\v2\x0f.TipInfoMessageR\ferrorMessage\x12&\n" +
+	"\x05mails\x18\x02 \x03(\v2\x10.mailpb.MailViewR\x05mails\x12-\n" +
+	"\x13next_before_mail_id\x18\x03 \x01(\x04R\x10nextBeforeMailId\x12!\n" +
 	"\funread_count\x18\x04 \x01(\rR\vunreadCount\x12'\n" +
 	"\x0fclaimable_count\x18\x05 \x01(\rR\x0eclaimableCount\x12\"\n" +
 	"\rserver_now_ms\x18\x06 \x01(\x04R\vserverNowMs\"*\n" +
 	"\x0fReadMailRequest\x12\x17\n" +
-	"\amail_id\x18\x01 \x01(\x04R\x06mailId\"\xaf\x01\n" +
+	"\amail_id\x18\x01 \x01(\x04R\x06mailId\"n\n" +
 	"\x10ReadMailResponse\x124\n" +
-	"\rerror_message\x18\x01 \x01(\v2\x0f.TipInfoMessageR\ferrorMessage\x12-\n" +
-	"\asummary\x18\x02 \x01(\v2\x13.mailpb.MailSummaryR\asummary\x12\x12\n" +
-	"\x04body\x18\x03 \x01(\tR\x04body\x12\"\n" +
-	"\rserver_now_ms\x18\x04 \x01(\x04R\vserverNowMs\"/\n" +
-	"\x12DeleteMailsRequest\x12\x19\n" +
-	"\bmail_ids\x18\x01 \x03(\x04R\amailIds\"\x9e\x01\n" +
-	"\x13DeleteMailsResponse\x124\n" +
-	"\rerror_message\x18\x01 \x01(\v2\x0f.TipInfoMessageR\ferrorMessage\x12#\n" +
-	"\rdeleted_count\x18\x02 \x01(\rR\fdeletedCount\x12,\n" +
-	"\x12protected_mail_ids\x18\x03 \x03(\x04R\x10protectedMailIds\"\x18\n" +
-	"\x16DeleteReadMailsRequest\"t\n" +
-	"\x17DeleteReadMailsResponse\x124\n" +
-	"\rerror_message\x18\x01 \x01(\v2\x0f.TipInfoMessageR\ferrorMessage\x12#\n" +
-	"\rdeleted_count\x18\x02 \x01(\rR\fdeletedCount\"J\n" +
+	"\rerror_message\x18\x01 \x01(\v2\x0f.TipInfoMessageR\ferrorMessage\x12$\n" +
+	"\x04mail\x18\x02 \x01(\v2\x10.mailpb.MailViewR\x04mail\"8\n" +
 	"\x1bClaimMailAttachmentsRequest\x12\x19\n" +
-	"\bmail_ids\x18\x01 \x03(\x04R\amailIds\x12\x10\n" +
-	"\x03all\x18\x02 \x01(\bR\x03all\"T\n" +
+	"\bmail_ids\x18\x01 \x03(\x04R\amailIds\"\xba\x01\n" +
+	"\x10MailActionResult\x12\x17\n" +
+	"\amail_id\x18\x01 \x01(\x04R\x06mailId\x124\n" +
+	"\rerror_message\x18\x02 \x01(\v2\x0f.TipInfoMessageR\ferrorMessage\x127\n" +
+	"\vclaim_state\x18\x03 \x01(\x0e2\x16.mailpb.MailClaimStateR\n" +
+	"claimState\x12\x1e\n" +
+	"\vasset_op_id\x18\x04 \x01(\x04R\tassetOpId\"\x88\x01\n" +
 	"\x1cClaimMailAttachmentsResponse\x124\n" +
-	"\rerror_message\x18\x01 \x01(\v2\x0f.TipInfoMessageR\ferrorMessage\"T\n" +
-	"\fMailEventS2C\x12/\n" +
-	"\x06reason\x18\x01 \x01(\x0e2\x17.mailpb.MailEventReasonR\x06reason\x12\x13\n" +
-	"\x05ts_ms\x18\x02 \x01(\x04R\x04tsMs*S\n" +
+	"\rerror_message\x18\x01 \x01(\v2\x0f.TipInfoMessageR\ferrorMessage\x122\n" +
+	"\aresults\x18\x02 \x03(\v2\x18.mailpb.MailActionResultR\aresults\"/\n" +
+	"\x12DeleteMailsRequest\x12\x19\n" +
+	"\bmail_ids\x18\x01 \x03(\x04R\amailIds\"\xa3\x01\n" +
+	"\x13DeleteMailsResponse\x124\n" +
+	"\rerror_message\x18\x01 \x01(\v2\x0f.TipInfoMessageR\ferrorMessage\x12(\n" +
+	"\x10deleted_mail_ids\x18\x02 \x03(\x04R\x0edeletedMailIds\x12,\n" +
+	"\x12protected_mail_ids\x18\x03 \x03(\x04R\x10protectedMailIds\"\x17\n" +
+	"\x15ClearReadMailsRequest\"\xa6\x01\n" +
+	"\x16ClearReadMailsResponse\x124\n" +
+	"\rerror_message\x18\x01 \x01(\v2\x0f.TipInfoMessageR\ferrorMessage\x12(\n" +
+	"\x10deleted_mail_ids\x18\x02 \x03(\x04R\x0edeletedMailIds\x12,\n" +
+	"\x12protected_mail_ids\x18\x03 \x03(\x04R\x10protectedMailIds\"+\n" +
+	"\x10MailChangedEvent\x12\x17\n" +
+	"\amail_id\x18\x01 \x01(\x04R\x06mailId*h\n" +
 	"\bMailKind\x12\x19\n" +
-	"\x15MAIL_KIND_UNSPECIFIED\x10\x00\x12\x14\n" +
-	"\x10MAIL_KIND_SYSTEM\x10\x01\x12\x16\n" +
-	"\x12MAIL_KIND_PERSONAL\x10\x02*Q\n" +
-	"\x0eMailClaimState\x12\x19\n" +
-	"\x15MAIL_CLAIM_STATE_NONE\x10\x00\x12\x1e\n" +
-	"\x1aMAIL_CLAIM_STATE_UNCLAIMED\x10\x01\"\x04\b\x02\x10\x04*T\n" +
-	"\x0fMailEventReason\x12!\n" +
-	"\x1dMAIL_EVENT_REASON_UNSPECIFIED\x10\x00\x12\x1e\n" +
-	"\x1aMAIL_EVENT_REASON_NEW_MAIL\x10\x012\xca\x03\n" +
+	"\x15MAIL_KIND_UNSPECIFIED\x10\x00\x12\x16\n" +
+	"\x12MAIL_KIND_PERSONAL\x10\x01\x12\x14\n" +
+	"\x10MAIL_KIND_SYSTEM\x10\x02\x12\x13\n" +
+	"\x0fMAIL_KIND_GUILD\x10\x03*\x86\x01\n" +
+	"\x0eMailClaimState\x12\x13\n" +
+	"\x0fMAIL_CLAIM_NONE\x10\x00\x12\x18\n" +
+	"\x14MAIL_CLAIM_UNCLAIMED\x10\x01\x12\x16\n" +
+	"\x12MAIL_CLAIM_PENDING\x10\x02\x12\x16\n" +
+	"\x12MAIL_CLAIM_CLAIMED\x10\x03\x12\x15\n" +
+	"\x11MAIL_CLAIM_MANUAL\x10\x042\xdf\x03\n" +
 	"\x10ClientPlayerMail\x12@\n" +
 	"\tListMails\x12\x18.mailpb.ListMailsRequest\x1a\x19.mailpb.ListMailsResponse\x12=\n" +
-	"\bReadMail\x12\x17.mailpb.ReadMailRequest\x1a\x18.mailpb.ReadMailResponse\x12F\n" +
-	"\vDeleteMails\x12\x1a.mailpb.DeleteMailsRequest\x1a\x1b.mailpb.DeleteMailsResponse\x12R\n" +
-	"\x0fDeleteReadMails\x12\x1e.mailpb.DeleteReadMailsRequest\x1a\x1f.mailpb.DeleteReadMailsResponse\x12a\n" +
-	"\x14ClaimMailAttachments\x12#.mailpb.ClaimMailAttachmentsRequest\x1a$.mailpb.ClaimMailAttachmentsResponse\x12/\n" +
-	"\x0fNotifyMailEvent\x12\x14.mailpb.MailEventS2C\x1a\x06.Empty\x1a\x05\x88\xa8\xc3\x01\x01B\x0fZ\n" +
-	"proto/mail\x80\x01\x00b\x06proto3"
+	"\bReadMail\x12\x17.mailpb.ReadMailRequest\x1a\x18.mailpb.ReadMailResponse\x12a\n" +
+	"\x14ClaimMailAttachments\x12#.mailpb.ClaimMailAttachmentsRequest\x1a$.mailpb.ClaimMailAttachmentsResponse\x12F\n" +
+	"\vDeleteMails\x12\x1a.mailpb.DeleteMailsRequest\x1a\x1b.mailpb.DeleteMailsResponse\x12O\n" +
+	"\x0eClearReadMails\x12\x1d.mailpb.ClearReadMailsRequest\x1a\x1e.mailpb.ClearReadMailsResponse\x12G\n" +
+	"\x11NotifyMailChanged\x12\x18.mailpb.MailChangedEvent\x1a\x18.mailpb.MailChangedEvent\x1a\x05\x88\xa8\xc3\x01\x01B\x10\x98\xd4a\rZ\n" +
+	"proto/mailb\x06proto3"
 
 var (
 	file_proto_mail_mail_proto_rawDescOnce sync.Once
@@ -1124,61 +1154,63 @@ func file_proto_mail_mail_proto_rawDescGZIP() []byte {
 	return file_proto_mail_mail_proto_rawDescData
 }
 
-var file_proto_mail_mail_proto_enumTypes = make([]protoimpl.EnumInfo, 3)
-var file_proto_mail_mail_proto_msgTypes = make([]protoimpl.MessageInfo, 15)
+var file_proto_mail_mail_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
+var file_proto_mail_mail_proto_msgTypes = make([]protoimpl.MessageInfo, 16)
 var file_proto_mail_mail_proto_goTypes = []any{
 	(MailKind)(0),                        // 0: mailpb.MailKind
 	(MailClaimState)(0),                  // 1: mailpb.MailClaimState
-	(MailEventReason)(0),                 // 2: mailpb.MailEventReason
-	(*MailAttachments)(nil),              // 3: mailpb.MailAttachments
-	(*MailCurrency)(nil),                 // 4: mailpb.MailCurrency
-	(*MailItem)(nil),                     // 5: mailpb.MailItem
-	(*MailSummary)(nil),                  // 6: mailpb.MailSummary
-	(*ListMailsRequest)(nil),             // 7: mailpb.ListMailsRequest
-	(*ListMailsResponse)(nil),            // 8: mailpb.ListMailsResponse
-	(*ReadMailRequest)(nil),              // 9: mailpb.ReadMailRequest
-	(*ReadMailResponse)(nil),             // 10: mailpb.ReadMailResponse
-	(*DeleteMailsRequest)(nil),           // 11: mailpb.DeleteMailsRequest
-	(*DeleteMailsResponse)(nil),          // 12: mailpb.DeleteMailsResponse
-	(*DeleteReadMailsRequest)(nil),       // 13: mailpb.DeleteReadMailsRequest
-	(*DeleteReadMailsResponse)(nil),      // 14: mailpb.DeleteReadMailsResponse
-	(*ClaimMailAttachmentsRequest)(nil),  // 15: mailpb.ClaimMailAttachmentsRequest
-	(*ClaimMailAttachmentsResponse)(nil), // 16: mailpb.ClaimMailAttachmentsResponse
-	(*MailEventS2C)(nil),                 // 17: mailpb.MailEventS2C
+	(*MailCurrency)(nil),                 // 2: mailpb.MailCurrency
+	(*MailItem)(nil),                     // 3: mailpb.MailItem
+	(*MailAttachments)(nil),              // 4: mailpb.MailAttachments
+	(*MailView)(nil),                     // 5: mailpb.MailView
+	(*ListMailsRequest)(nil),             // 6: mailpb.ListMailsRequest
+	(*ListMailsResponse)(nil),            // 7: mailpb.ListMailsResponse
+	(*ReadMailRequest)(nil),              // 8: mailpb.ReadMailRequest
+	(*ReadMailResponse)(nil),             // 9: mailpb.ReadMailResponse
+	(*ClaimMailAttachmentsRequest)(nil),  // 10: mailpb.ClaimMailAttachmentsRequest
+	(*MailActionResult)(nil),             // 11: mailpb.MailActionResult
+	(*ClaimMailAttachmentsResponse)(nil), // 12: mailpb.ClaimMailAttachmentsResponse
+	(*DeleteMailsRequest)(nil),           // 13: mailpb.DeleteMailsRequest
+	(*DeleteMailsResponse)(nil),          // 14: mailpb.DeleteMailsResponse
+	(*ClearReadMailsRequest)(nil),        // 15: mailpb.ClearReadMailsRequest
+	(*ClearReadMailsResponse)(nil),       // 16: mailpb.ClearReadMailsResponse
+	(*MailChangedEvent)(nil),             // 17: mailpb.MailChangedEvent
 	(*base.TipInfoMessage)(nil),          // 18: TipInfoMessage
-	(*base.Empty)(nil),                   // 19: Empty
 }
 var file_proto_mail_mail_proto_depIdxs = []int32{
-	4,  // 0: mailpb.MailAttachments.currencies:type_name -> mailpb.MailCurrency
-	5,  // 1: mailpb.MailAttachments.items:type_name -> mailpb.MailItem
-	0,  // 2: mailpb.MailSummary.kind:type_name -> mailpb.MailKind
-	1,  // 3: mailpb.MailSummary.claim_state:type_name -> mailpb.MailClaimState
-	3,  // 4: mailpb.MailSummary.attachments:type_name -> mailpb.MailAttachments
-	18, // 5: mailpb.ListMailsResponse.error_message:type_name -> TipInfoMessage
-	6,  // 6: mailpb.ListMailsResponse.mails:type_name -> mailpb.MailSummary
-	18, // 7: mailpb.ReadMailResponse.error_message:type_name -> TipInfoMessage
-	6,  // 8: mailpb.ReadMailResponse.summary:type_name -> mailpb.MailSummary
-	18, // 9: mailpb.DeleteMailsResponse.error_message:type_name -> TipInfoMessage
-	18, // 10: mailpb.DeleteReadMailsResponse.error_message:type_name -> TipInfoMessage
-	18, // 11: mailpb.ClaimMailAttachmentsResponse.error_message:type_name -> TipInfoMessage
-	2,  // 12: mailpb.MailEventS2C.reason:type_name -> mailpb.MailEventReason
-	7,  // 13: mailpb.ClientPlayerMail.ListMails:input_type -> mailpb.ListMailsRequest
-	9,  // 14: mailpb.ClientPlayerMail.ReadMail:input_type -> mailpb.ReadMailRequest
-	11, // 15: mailpb.ClientPlayerMail.DeleteMails:input_type -> mailpb.DeleteMailsRequest
-	13, // 16: mailpb.ClientPlayerMail.DeleteReadMails:input_type -> mailpb.DeleteReadMailsRequest
-	15, // 17: mailpb.ClientPlayerMail.ClaimMailAttachments:input_type -> mailpb.ClaimMailAttachmentsRequest
-	17, // 18: mailpb.ClientPlayerMail.NotifyMailEvent:input_type -> mailpb.MailEventS2C
-	8,  // 19: mailpb.ClientPlayerMail.ListMails:output_type -> mailpb.ListMailsResponse
-	10, // 20: mailpb.ClientPlayerMail.ReadMail:output_type -> mailpb.ReadMailResponse
-	12, // 21: mailpb.ClientPlayerMail.DeleteMails:output_type -> mailpb.DeleteMailsResponse
-	14, // 22: mailpb.ClientPlayerMail.DeleteReadMails:output_type -> mailpb.DeleteReadMailsResponse
-	16, // 23: mailpb.ClientPlayerMail.ClaimMailAttachments:output_type -> mailpb.ClaimMailAttachmentsResponse
-	19, // 24: mailpb.ClientPlayerMail.NotifyMailEvent:output_type -> Empty
-	19, // [19:25] is the sub-list for method output_type
-	13, // [13:19] is the sub-list for method input_type
-	13, // [13:13] is the sub-list for extension type_name
-	13, // [13:13] is the sub-list for extension extendee
-	0,  // [0:13] is the sub-list for field type_name
+	2,  // 0: mailpb.MailAttachments.currencies:type_name -> mailpb.MailCurrency
+	3,  // 1: mailpb.MailAttachments.items:type_name -> mailpb.MailItem
+	0,  // 2: mailpb.MailView.kind:type_name -> mailpb.MailKind
+	1,  // 3: mailpb.MailView.claim_state:type_name -> mailpb.MailClaimState
+	4,  // 4: mailpb.MailView.attachments:type_name -> mailpb.MailAttachments
+	18, // 5: mailpb.MailView.claim_reason:type_name -> TipInfoMessage
+	18, // 6: mailpb.ListMailsResponse.error_message:type_name -> TipInfoMessage
+	5,  // 7: mailpb.ListMailsResponse.mails:type_name -> mailpb.MailView
+	18, // 8: mailpb.ReadMailResponse.error_message:type_name -> TipInfoMessage
+	5,  // 9: mailpb.ReadMailResponse.mail:type_name -> mailpb.MailView
+	18, // 10: mailpb.MailActionResult.error_message:type_name -> TipInfoMessage
+	1,  // 11: mailpb.MailActionResult.claim_state:type_name -> mailpb.MailClaimState
+	18, // 12: mailpb.ClaimMailAttachmentsResponse.error_message:type_name -> TipInfoMessage
+	11, // 13: mailpb.ClaimMailAttachmentsResponse.results:type_name -> mailpb.MailActionResult
+	18, // 14: mailpb.DeleteMailsResponse.error_message:type_name -> TipInfoMessage
+	18, // 15: mailpb.ClearReadMailsResponse.error_message:type_name -> TipInfoMessage
+	6,  // 16: mailpb.ClientPlayerMail.ListMails:input_type -> mailpb.ListMailsRequest
+	8,  // 17: mailpb.ClientPlayerMail.ReadMail:input_type -> mailpb.ReadMailRequest
+	10, // 18: mailpb.ClientPlayerMail.ClaimMailAttachments:input_type -> mailpb.ClaimMailAttachmentsRequest
+	13, // 19: mailpb.ClientPlayerMail.DeleteMails:input_type -> mailpb.DeleteMailsRequest
+	15, // 20: mailpb.ClientPlayerMail.ClearReadMails:input_type -> mailpb.ClearReadMailsRequest
+	17, // 21: mailpb.ClientPlayerMail.NotifyMailChanged:input_type -> mailpb.MailChangedEvent
+	7,  // 22: mailpb.ClientPlayerMail.ListMails:output_type -> mailpb.ListMailsResponse
+	9,  // 23: mailpb.ClientPlayerMail.ReadMail:output_type -> mailpb.ReadMailResponse
+	12, // 24: mailpb.ClientPlayerMail.ClaimMailAttachments:output_type -> mailpb.ClaimMailAttachmentsResponse
+	14, // 25: mailpb.ClientPlayerMail.DeleteMails:output_type -> mailpb.DeleteMailsResponse
+	16, // 26: mailpb.ClientPlayerMail.ClearReadMails:output_type -> mailpb.ClearReadMailsResponse
+	17, // 27: mailpb.ClientPlayerMail.NotifyMailChanged:output_type -> mailpb.MailChangedEvent
+	22, // [22:28] is the sub-list for method output_type
+	16, // [16:22] is the sub-list for method input_type
+	16, // [16:16] is the sub-list for extension type_name
+	16, // [16:16] is the sub-list for extension extendee
+	0,  // [0:16] is the sub-list for field type_name
 }
 
 func init() { file_proto_mail_mail_proto_init() }
@@ -1191,8 +1223,8 @@ func file_proto_mail_mail_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_proto_mail_mail_proto_rawDesc), len(file_proto_mail_mail_proto_rawDesc)),
-			NumEnums:      3,
-			NumMessages:   15,
+			NumEnums:      2,
+			NumMessages:   16,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

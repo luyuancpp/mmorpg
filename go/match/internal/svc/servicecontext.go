@@ -8,6 +8,7 @@ import (
 	"sync/atomic"
 	"time"
 
+	"match/internal/authority"
 	"match/internal/config"
 	"match/internal/discovery"
 	matchkafka "match/internal/kafka"
@@ -37,7 +38,12 @@ const (
 )
 
 type ServiceContext struct {
-	Config config.Config
+	Config    config.Config
+	Authority *authority.Store
+	// 候选扫描游标是可重建调度状态，只由matcher循环访问；不参与SQL写决策。
+	GlobalScanMs      uint64
+	GlobalScanPlayer  uint64
+	GlobalGatherSlots chan struct{}
 
 	// 双存储(设计文档 cross-zone-matchmaking.md D2):
 	//   - MatchRedis:match 私有 key(match:* / challenge:* / spectate:*),
@@ -93,11 +99,12 @@ type ServiceContext struct {
 	// 不阻塞 match 起服,调用时才返回 Unavailable。
 	DataServiceClient dspb.DataServiceClient
 
+	stopOnce            sync.Once
+	rankPublisherCancel context.CancelFunc
+	rankPublisherDone   chan struct{}
 	// partyTeam 队伍补位匹配里 logic 反过来问 / 通知 team 域的端口(见 PartyTeamPort),
 	// 装配时由 SetPartyTeam 注入。用 atomic:matcher 循环比组队服务先启动。
 	partyTeam atomic.Pointer[partyTeamHolder]
-
-	stopOnce sync.Once
 }
 
 // PartyTeamPort 队伍补位匹配(docs/design/team-backfill-matching.md)里 logic 需要 team 域回答 / 接收的两件事,
@@ -137,6 +144,9 @@ func (s *ServiceContext) PartyTeam() PartyTeamPort {
 }
 
 func NewServiceContext(c config.Config) *ServiceContext {
+	if c.Mode != "dev" && c.Mode != "test" && (!c.GlobalMatch.Enabled || !c.GlobalMatch.RequireTiDB) {
+		panic("生产匹配必须启用全球TiDB事务权威")
+	}
 	etcdCli, err := clientv3.New(clientv3.Config{
 		Endpoints:   c.Etcd.Hosts,
 		DialTimeout: 5 * time.Second,
@@ -220,6 +230,28 @@ func NewServiceContext(c config.Config) *ServiceContext {
 		func(entry discovery.NodeEntry) { discovery.RemoveEndpointConn(entry.Endpoint) })
 
 	sc.DataServiceClient = NewDataServiceClient(c.DataServiceRpc)
+	if c.GlobalMatch.Enabled {
+		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+		defer cancel()
+		store, err := authority.Open(ctx, c.GlobalMatch)
+		if err != nil {
+			sc.Stop()
+			panic(fmt.Errorf("全球匹配权威初始化失败: %w", err))
+		}
+		sc.Authority = store
+		secret := os.Getenv(c.GlobalMatch.RankSecretEnv)
+		if len(secret) < 32 || c.GlobalMatch.RankEndpoint == "" {
+			sc.Stop()
+			panic("全球评级投榜必须注入RANK_PRODUCER_SECRET_MATCH与RankEndpoint")
+		}
+		pubctx, pubcancel := context.WithCancel(context.Background())
+		sc.rankPublisherCancel = pubcancel
+		sc.rankPublisherDone = make(chan struct{})
+		go func() {
+			defer close(sc.rankPublisherDone)
+			authority.RunRankPublisher(pubctx, store, c.GlobalMatch.RankEndpoint, secret)
+		}()
+	}
 
 	return sc
 }
@@ -273,6 +305,13 @@ func (sc *ServiceContext) SnowflakeLost() <-chan struct{} {
 // 幂等,正常 defer 与失租强退路径可安全共用。
 func (sc *ServiceContext) Stop() {
 	sc.stopOnce.Do(func() {
+		if sc.rankPublisherCancel != nil {
+			sc.rankPublisherCancel()
+			<-sc.rankPublisherDone
+		}
+		if sc.Authority != nil {
+			_ = sc.Authority.DB.Close()
+		}
 		if sc.Kafka != nil {
 			if err := sc.Kafka.Close(); err != nil {
 				logx.Errorf("[match] Kafka writer close/flush failed: %v", err)

@@ -27,8 +27,7 @@ void SceneSceneClientPlayerHandler::EnterScene(entt::entity player,const ::Enter
 	::EnterSceneC2SResponse* response)
 {
 ///<<< BEGIN WRITING YOUR CODE
-	const auto* g = tlsEcs.actorRegistry.try_get<PlayerGuidComp>(player);
-	LOG_TRACE << "EnterSceneC2S request received for player: " << (g ? g->value : 0)
+	LOG_TRACE << "EnterSceneC2S request received for player: " << tlsEcs.GetPlayerId(player)
 		<< ", scene_info: " << request->scene_info().ShortDebugString();
 
 	auto game_node_type = gNode->GetNodeInfo().scene_node_type();
@@ -44,7 +43,7 @@ void SceneSceneClientPlayerHandler::EnterScene(entt::entity player,const ::Enter
 	// 结算落地摘除 InBattleComp 前,玩家必须留在当前场景节点接收结算事件。
 	if (PlayerBattleSystem::IsInBattle(player))
 	{
-		LOG_WARN << "[PlayerBattle] EnterSceneC2S rejected: player battle in progress, player_id=" << (g ? g->value : 0);
+		LOG_WARN << "[PlayerBattle] EnterSceneC2S rejected: player battle in progress, player_id=" << tlsEcs.GetPlayerId(player);
 		response->mutable_error_message()->set_id(kEnterSceneFailed);
 		return;
 	}
@@ -55,7 +54,7 @@ void SceneSceneClientPlayerHandler::EnterScene(entt::entity player,const ::Enter
 	// 放在镜像分支之前:冻结中的玩家同样不该去创建镜像。
 	if (PlayerLifecycleSystem::IsSceneChangeBusy(player))
 	{
-		LOG_INFO << "EnterSceneC2S rejected: scene change already in flight, player_id=" << (g ? g->value : 0);
+		LOG_INFO << "EnterSceneC2S rejected: scene change already in flight, player_id=" << tlsEcs.GetPlayerId(player);
 		response->mutable_error_message()->set_id(kEnterSceneChangingScene);
 		return;
 	}
@@ -74,8 +73,8 @@ void SceneSceneClientPlayerHandler::EnterScene(entt::entity player,const ::Enter
 	// scene_id > 0 with mirror_config_id > 0 is still a plain EnterScene
 	// (joining an existing mirror by id) and falls through to the normal
 	// path below. We dispatch via PlayerSceneSystem::RequestEnterMirrorScene,
-	// which fires CreateScene at SceneManager; the async CreateScene reply
-	// handler echoes creator_ids and drives the follow-up EnterScene.
+	// 该入口登记 PlayerMirrorCreateInFlightComp,让上方在途闸阻止后续换图,并通过每次调用回调
+	// 发起 CreateScene。PlayerSceneSystem::HandleMirrorCreateDone 负责后续 EnterScene 或失败提示。
 	// Success here is "request queued", not "player entered" — mirror
 	// creation is async and the client sees the normal EnterSceneS2C
 	// when the pipeline completes.
@@ -83,11 +82,11 @@ void SceneSceneClientPlayerHandler::EnterScene(entt::entity player,const ::Enter
 	{
 		if (PlayerSceneSystem::RequestEnterMirrorScene(player, scene_info.mirror_config_id()))
 		{
-			LOG_INFO << "EnterSceneC2S: mirror request dispatched player=" << (g ? g->value : 0)
+			LOG_INFO << "EnterSceneC2S: mirror request dispatched player=" << tlsEcs.GetPlayerId(player)
 			         << " mirror_config=" << scene_info.mirror_config_id();
 			return;
 		}
-		LOG_ERROR << "EnterSceneC2S: mirror dispatch failed player=" << (g ? g->value : 0)
+		LOG_ERROR << "EnterSceneC2S: mirror dispatch failed player=" << tlsEcs.GetPlayerId(player)
 		          << " mirror_config=" << scene_info.mirror_config_id();
 		response->mutable_error_message()->set_id(kEnterSceneParamError);
 		return;
@@ -98,7 +97,7 @@ void SceneSceneClientPlayerHandler::EnterScene(entt::entity player,const ::Enter
 		const auto current_scene_info = tlsEcs.sceneRegistry.try_get<SceneInfoComp>(current_scene_comp->sceneEntity);
 		if (current_scene_info && current_scene_info->scene_id() == scene_info.scene_id() && scene_info.scene_id() > 0)
 		{
-			LOG_WARN << "Player " << (g ? g->value : 0) << " is already in the requested scene: " << scene_info.scene_id();
+			LOG_WARN << "Player " << tlsEcs.GetPlayerId(player) << " is already in the requested scene: " << scene_info.scene_id();
 			response->mutable_error_message()->set_id(kEnterSceneYouInCurrentScene);
 			return;
 		}
@@ -107,7 +106,7 @@ void SceneSceneClientPlayerHandler::EnterScene(entt::entity player,const ::Enter
 	const auto* playerSessionPB = tlsEcs.actorRegistry.try_get<PlayerSessionSnapshotComp>(player);
 	if (!playerSessionPB)
 	{
-		LOG_ERROR << "EnterSceneC2S: PlayerSessionSnapshotComp missing for player " << (g ? g->value : 0);
+		LOG_ERROR << "EnterSceneC2S: PlayerSessionSnapshotComp missing for player " << tlsEcs.GetPlayerId(player);
 		response->mutable_error_message()->set_id(kEnterSceneParamError);
 		return;
 	}

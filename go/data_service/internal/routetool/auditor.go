@@ -38,7 +38,24 @@ import (
 //	db_invalid           库里这一行过不了 RouteRow.Placement() 的校验
 //	redis_rev_ahead      maprev 合法且大于库里的 rev:库被回档的信号(提案 M3)
 //
-// 墓碑行(home 与落点都是 NULL)视为没有记录。maprev 缺席不算差异:第 1a 批 redis 模式下没有任何写者写它。
+// 墓碑行(home 与落点都是 NULL)视为没有记录。maprev 缺席不算差异:第 1a 批 redis 模式下没有任何写者写它(-require-maprev 除外,见下)。
+//
+// 冻结期恢复口径(-frozen-recovery,2026-10-18 第 1b-1 批):全局库回档后的恢复流程 freeze → reconcile-from-cache → audit → unfreeze
+// 里,反向修库只有「缓存 → 库」一个方向,冻结期间也没有人把库推回缓存,于是库里独有的行(回档前发布失败的孤儿行、回档后到冻结前
+// 提交而发布失败的行)一定计成 db_only_unpublished,audit 永远到不了 0。这个口径下 db_only_unpublished 照常计数、照常打明细,
+// 但**不计入退出码**;其余类别必须为 0。这些行解冻之后由第 1b-2 批 leader 的增量推送补到缓存(1b-2 之前仍只能等 audit 人工核对)。
+// 只在冻结时才有意义(可写时孤儿行与「Redis 丢了已确认的发布」分不开),是否冻结由入口(routetoolcli)先查。
+//
+// 严格 maprev 口径(-require-maprev,2026-10-19 第 1b-2 批收尾,规格 spec_D1_batch1b2_2_3.md §4.6 第 2 项):提案 §7 P3
+// 「挂就绪标记之前 audit 为 0」的门禁。打开时多一类差异(默认关,上面「maprev 缺席不算差异」的口径与统计行逐字不变):
+//
+//	redis_rev_behind     库行不是墓碑,缓存里至少有它的一把键,而 player:maprev 缺席或小于库 rev。值相同也算:
+//	                     发布脚本按 maprev 做 set-if-newer,缺 maprev 的键会被遗留值守卫挡住(值不同时回 legacy_conflict),
+//	                     maprev 落后的键会让下一次发布判错新旧 —— 挂标记之前必须由 leader 的推送(或二次导入)补齐
+//
+// 三族键全部不在的行已计 db_only_unpublished(它的 maprev 当然也缺),不再重复计成 redis_rev_behind。
+// 与 -frozen-recovery 同时给时两个口径各管各的:-frozen-recovery 只豁免 db_only_unpublished,redis_rev_behind 照常计入退出码。
+// 冻结期一般到不了 0(反向修库之后库 rev 领先缓存的行要等解冻后 leader 的增量推送补 maprev),所以两者同用只适合核对,不作门禁。
 
 // AuditOptions 是 audit 的参数(cmd/route_tool 的命令行一一对应)。
 type AuditOptions struct {
@@ -57,6 +74,10 @@ type AuditOptions struct {
 	Stderr io.Writer
 	// Sleep 是复核前的等待;nil = 按 RecheckDelay 真睡(可被 ctx 取消)。单测注入它,在等待期间改两边的数据。
 	Sleep func(ctx context.Context, d time.Duration) error
+	// FrozenRecovery 是冻结期恢复口径(见文件头):db_only_unpublished 不计入退出码。调用方保证此时映射写者已冻结。
+	FrozenRecovery bool
+	// RequireMapRev 是严格 maprev 口径(见文件头):多计 redis_rev_behind,计入 Differences 与退出码。默认关。
+	RequireMapRev bool
 }
 
 func (o AuditOptions) validate() error {
@@ -90,6 +111,8 @@ type AuditReport struct {
 	RedisMalformed    int
 	DBInvalid         int
 	RedisRevAhead     int
+	// RedisRevBehind 只在 RequireMapRev 打开时计数(否则恒为 0)。
+	RedisRevBehind int
 
 	MergedIntoMissingInRedis int
 	MergedIntoMissingInDB    int
@@ -98,30 +121,47 @@ type AuditReport struct {
 	// RedisFencesActive 与 TransientCleared 只做提示,不算差异。
 	RedisFencesActive int
 	TransientCleared  int
+
+	// FrozenRecovery 记下本次是否按冻结期恢复口径判退出码(AuditOptions.FrozenRecovery 原样带出;不进统计行)。
+	FrozenRecovery bool
+	// RequireMapRev 记下本次是否按严格 maprev 口径计数(AuditOptions.RequireMapRev 原样带出);打开时统计行末尾多一段 redis_rev_behind。
+	RequireMapRev bool
 }
 
-// Differences 是全部差异计数之和(不含 RedisFencesActive / TransientCleared),非 0 = 退出码 1。
+// Differences 是全部差异计数之和(不含 RedisFencesActive / TransientCleared)。
 func (r AuditReport) Differences() int {
 	return r.DBOnlyUnpublished + r.MissingInRedis + r.MissingInDB + r.ValueMismatch + r.RedisMalformed +
-		r.DBInvalid + r.RedisRevAhead + r.MergedIntoMissingInRedis + r.MergedIntoMissingInDB + r.MergedIntoMismatch
+		r.DBInvalid + r.RedisRevAhead + r.RedisRevBehind + r.MergedIntoMissingInRedis + r.MergedIntoMissingInDB + r.MergedIntoMismatch
 }
 
-// SummaryLine 是 stdout 唯一的一行。
+// BlockingDifferences 是决定退出码的差异数,非 0 = 退出码 1:默认等于 Differences;冻结期恢复口径下不含 db_only_unpublished。
+func (r AuditReport) BlockingDifferences() int {
+	if r.FrozenRecovery {
+		return r.Differences() - r.DBOnlyUnpublished
+	}
+	return r.Differences()
+}
+
+// SummaryLine 是 stdout 唯一的一行。严格 maprev 口径下末尾追加 ` redis_rev_behind=N`;默认口径逐字不变(脚本照旧解析)。
 func (r AuditReport) SummaryLine() string {
-	return fmt.Sprintf("route_audit db_rows=%d redis_players=%d db_only_unpublished=%d missing_in_redis=%d missing_in_db=%d "+
+	line := fmt.Sprintf("route_audit db_rows=%d redis_players=%d db_only_unpublished=%d missing_in_redis=%d missing_in_db=%d "+
 		"value_mismatch=%d redis_malformed=%d db_invalid=%d redis_rev_ahead=%d merged_into_missing_in_redis=%d "+
 		"merged_into_missing_in_db=%d merged_into_mismatch=%d redis_fences_active=%d transient_cleared=%d",
 		r.DBRows, r.RedisPlayers, r.DBOnlyUnpublished, r.MissingInRedis, r.MissingInDB,
 		r.ValueMismatch, r.RedisMalformed, r.DBInvalid, r.RedisRevAhead, r.MergedIntoMissingInRedis,
 		r.MergedIntoMissingInDB, r.MergedIntoMismatch, r.RedisFencesActive, r.TransientCleared)
+	if r.RequireMapRev {
+		line += fmt.Sprintf(" redis_rev_behind=%d", r.RedisRevBehind)
+	}
+	return line
 }
 
-// AuditExitCode 把一次 audit 的结果映射成退出码:出错 2,有差异 1(db_only_unpublished 也算),否则 0。
+// AuditExitCode 把一次 audit 的结果映射成退出码:出错 2,有差异 1(db_only_unpublished 也算,冻结期恢复口径除外),否则 0。
 func AuditExitCode(rep AuditReport, err error) int {
 	switch {
 	case err != nil:
 		return ExitFailed
-	case rep.Differences() > 0:
+	case rep.BlockingDifferences() > 0:
 		return ExitAttention
 	default:
 		return ExitClean
@@ -139,6 +179,8 @@ const (
 	diffRedisMalformed
 	diffDBInvalid
 	diffRedisRevAhead
+	// diffRedisRevBehind 只由严格 maprev 口径产生(auditor.classify),classifyRoute 本身不产生它。
+	diffRedisRevBehind
 )
 
 // String 与 stdout 统计行的键同名。
@@ -158,6 +200,8 @@ func (k diffKind) String() string {
 		return "db_invalid"
 	case diffRedisRevAhead:
 		return "redis_rev_ahead"
+	case diffRedisRevBehind:
+		return "redis_rev_behind"
 	default:
 		return "unknown"
 	}
@@ -180,6 +224,8 @@ func (r *AuditReport) add(k diffKind, n int) {
 		r.DBInvalid += n
 	case diffRedisRevAhead:
 		r.RedisRevAhead += n
+	case diffRedisRevBehind:
+		r.RedisRevBehind += n
 	}
 }
 
@@ -244,6 +290,34 @@ func malformedTriple(raw routeTriple) bool {
 	return bad != nil
 }
 
+// classify 是本次 audit 的分类口径:classifyRoute 的结果,严格 maprev 口径下再加 redis_rev_behind(判据见文件头)。
+// 方向 A、方向 B 与复核都经它,三处口径一致。
+func (a *auditor) classify(db *store.RouteRow, raw routeTriple) []diffKind {
+	kinds := classifyRoute(db, raw)
+	if !a.opts.RequireMapRev || !mapRevBehind(db, raw, kinds) {
+		return kinds
+	}
+	return append(kinds, diffRedisRevBehind) // 它的序号最大,追加之后仍是升序
+}
+
+// mapRevBehind 报告这名玩家的缓存 maprev 是否缺席或小于库 rev。库里没有行、库行无效、墓碑、三族键全无(已计 db_only_unpublished)、
+// 缓存值畸形(已计 redis_malformed)都不算。
+func mapRevBehind(db *store.RouteRow, raw routeTriple, kinds []diffKind) bool {
+	if db == nil || db.IsTombstone() || raw.absent() {
+		return false
+	}
+	for _, k := range kinds {
+		if k == diffDBInvalid || k == diffRedisMalformed {
+			return false
+		}
+	}
+	r, bad := parseRedisRoute(db.PlayerID, raw)
+	if bad != nil {
+		return false
+	}
+	return r.MapRev == 0 || r.MapRev < db.Rev
+}
+
 // playerDiff 是一名玩家在某一次读取时的差异与两边的值(打明细用)。
 type playerDiff struct {
 	playerID uint64
@@ -299,6 +373,8 @@ func Audit(ctx context.Context, rd mappingReader, db routeDB, opts AuditOptions)
 		firstCounts: make(map[diffKind]int),
 		candidates:  make(map[uint64]playerDiff),
 	}
+	a.report.FrozenRecovery = opts.FrozenRecovery
+	a.report.RequireMapRev = opts.RequireMapRev
 
 	steps := []func(context.Context) error{a.checkFences, a.auditDBRows, a.auditRedisKeys, a.auditMergedInto, a.settle}
 	for _, step := range steps {
@@ -308,6 +384,17 @@ func Audit(ctx context.Context, rd mappingReader, db routeDB, opts AuditOptions)
 		}
 	}
 	a.detail.finish()
+	if opts.FrozenRecovery {
+		// 统计行的格式不变(脚本照旧解析);口径写在 stderr。
+		fmt.Fprintf(opts.Stderr, "NOTE: -frozen-recovery: db_only_unpublished=%d is reported but not counted in the exit code "+
+			"(rows only the DB has; the reconcile leader of batch 1b-2 pushes them to the cache after unfreeze); every other category must be 0\n",
+			a.report.DBOnlyUnpublished)
+	}
+	if opts.RequireMapRev {
+		fmt.Fprintf(opts.Stderr, "NOTE: -require-maprev: redis_rev_behind=%d counts rows (not tombstones) whose cache keys exist but player:maprev is "+
+			"absent or below the DB rev; it is counted in the exit code (also with -frozen-recovery, which only exempts db_only_unpublished)\n",
+			a.report.RedisRevBehind)
+	}
 	fmt.Fprintln(opts.Stdout, a.report.SummaryLine())
 	return a.report, nil
 }
@@ -352,7 +439,7 @@ func (a *auditor) auditDBRows(ctx context.Context) error {
 		for i := range rows {
 			row := rows[i]
 			a.dbSeen[row.PlayerID] = struct{}{}
-			a.recordFirst(playerDiff{playerID: row.PlayerID, kinds: classifyRoute(&row, triples[i]), db: &row, raw: triples[i]})
+			a.recordFirst(playerDiff{playerID: row.PlayerID, kinds: a.classify(&row, triples[i]), db: &row, raw: triples[i]})
 		}
 		if len(rows) < a.opts.Batch {
 			return nil
@@ -412,7 +499,7 @@ func (a *auditor) auditRedisOnlyPlayers(ctx context.Context, ids []uint64) error
 			if row, ok := rows[id]; ok {
 				dbRow = &row
 			}
-			a.recordFirst(playerDiff{playerID: id, kinds: classifyRoute(dbRow, triples[i]), db: dbRow, raw: triples[i]})
+			a.recordFirst(playerDiff{playerID: id, kinds: a.classify(dbRow, triples[i]), db: dbRow, raw: triples[i]})
 		}
 	}
 	return nil
@@ -520,7 +607,7 @@ func (a *auditor) settle(ctx context.Context) error {
 				dbRow = &row
 			}
 			first := a.candidates[id]
-			still := intersectKinds(first.kinds, classifyRoute(dbRow, triples[i]))
+			still := intersectKinds(first.kinds, a.classify(dbRow, triples[i]))
 			a.report.TransientCleared += len(first.kinds) - len(still)
 			for _, k := range still {
 				a.report.add(k, 1)

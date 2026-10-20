@@ -2,7 +2,7 @@
 
 // scene 侧 GM 客户端指令的**第二道锁**(P0-a)。
 //
-// 第一道锁在 gate(cpp/nodes/gate/handler/rpc/client_message_processor.cpp,
+// 第一道锁在 gate(cpp/nodes/gate/handler/rpc/client_session_handler.cpp,
 // 清单 gate_gm_client_messages.h)。这里再拦一次,防的是绕开 gate 的三条路:
 //   1) scene 的 RPC 端口在集群网络里对其它 Pod 是通的,任何能连上的进程都能直接
 //      发 SceneCurrencyClientPlayer.GmAddCurrency —— gate 的闸对它不存在;
@@ -63,7 +63,7 @@ inline bool IsClientGmMethodName(std::string_view name)
 	return name.size() >= 3 && name[0] == 'G' && name[1] == 'm' && name[2] >= 'A' && name[2] <= 'Z';
 }
 
-// true = 本次调用应当被拒绝(调用点负责 SetTip + return)。
+// true = 本次调用应当被拒绝（调用点把拒绝码写进本次 response 的 error_message 并 return）。
 // 拒绝一律留痕:这是"有人在直连 scene 打 GM"的唯一信号源。
 inline bool RejectGmClientRpc(const char *rpcName)
 {

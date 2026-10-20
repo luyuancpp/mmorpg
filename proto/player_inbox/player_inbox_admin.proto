@@ -28,6 +28,7 @@ service PlayerInboxAdmin {
   // (player_id, producer_kind, request_id) → 条目与结局。
   rpc LookupByRequest(LookupPlayerInboxRequest) returns (LookupPlayerInboxResponse) {}
   // 未投递 → VOIDED;已投递 → 只挂 VOID 指令,由消费方裁决(IB-5)。
+  // 强制模式(mode=FORCE_MISMATCH)只为解开 scene 回放核对判 MISMATCH 之后的永久停用,见 PlayerInboxVoidMode。
   rpc VoidItem(VoidPlayerInboxItemRequest) returns (VoidPlayerInboxItemResponse) {}
   // 单个玩家比对收件箱与已落盘账本(设计 §9.3)。第 4 批实现,此前服务端回 UNIMPLEMENTED。
   rpc ReconcilePlayer(ReconcilePlayerInboxRequest) returns (ReconcilePlayerInboxResponse) {}
@@ -133,26 +134,64 @@ message LookupPlayerInboxResponse {
 
 // ── VoidItem ─────────────────────────────────────────────────────────────
 
+// 作废模式。
+enum PlayerInboxVoidMode {
+  // 原语义(IB-5):未投递 → VOIDED;已投递 → 只挂 VOID 指令,由消费方裁决。
+  PLAYER_INBOX_VOID_MODE_NORMAL = 0;
+  // 强制终结一条「已投递、仍 PENDING」的行,只用于解开 scene 回放核对判 MISMATCH 之后的永久停用
+  // (已投递的行只能挂指令,而 scene 先做回放核对、后看指令,挂了也照样每次登录都停用)。
+  // 服务端先经 data_service.GetPlayerInboxLedger 读该玩家**已落盘**的账本,证明:该域 decided_through ≥ seq,
+  // 且最近结局环里同 seq 那一条记的是**另一个** request_id —— 消费方在这个 seq 上裁决的是别的条目,
+  // 本行在这一消费方谱系上从未执行,以后投递到也只会判 MISMATCH。证明成立才在流行锁下复读、仍 PENDING
+  // 才改 VOIDED(finalized_by=ADMIN),同事务写审计(action=FORCE_VOID)。
+  // 证明不成立或账本缺失 → kPlayerInboxItemStateConflict,force_verdict 给出原因,行不变;
+  // 读账本失败 → kPlayerInboxStoreUnavailable(可重试)。环里同 seq 同 request_id(回放)、
+  // 水位已过而环里没有该 seq(UNKNOWN 一类)都可能已执行,一律拒绝(IB-4 / IB-9)。
+  PLAYER_INBOX_VOID_MODE_FORCE_MISMATCH = 1;
+}
+
+// 强制模式的账本证明结论。普通模式恒为 UNSPECIFIED。
+enum PlayerInboxForceVoidVerdict {
+  PLAYER_INBOX_FORCE_VOID_UNSPECIFIED = 0;        // 普通模式,或条目不存在 / 已是终态(看 error_message)
+  PLAYER_INBOX_FORCE_VOID_PROVEN = 1;             // 证明成立,已终结为 VOIDED
+  PLAYER_INBOX_FORCE_VOID_NOT_DELIVERED = 2;      // 从未投递:改用普通模式直接作废
+  PLAYER_INBOX_FORCE_VOID_LEDGER_ABSENT = 3;      // 读不到已落盘存档:无从证明
+  PLAYER_INBOX_FORCE_VOID_NOT_DECIDED = 4;        // 账本水位没到这个 seq:消费方还没裁决它,停用原因不是 MISMATCH
+  PLAYER_INBOX_FORCE_VOID_SEQ_NOT_IN_RING = 5;    // 水位已过但环里没有这个 seq(UNKNOWN 一类):原结局已挤出环,可能已执行
+  PLAYER_INBOX_FORCE_VOID_REQUEST_IN_LEDGER = 6;  // 环里出现过本行的 request_id(同 seq = 回放或类型不符,或别的 seq):可能已执行
+  // 账本结构不合法,整份检查、与 scene 判账本损坏同口径(任一域:domain 为 0 或重复 / 环超过 32 条 /
+  // 环非严格升序 / seq 为 0 / 越过水位 / 结局不可记;另加 request_id 为 0)。这种账本 scene 侧整份停用,不会走到 MISMATCH。
+  PLAYER_INBOX_FORCE_VOID_LEDGER_INVALID = 7;
+}
+
 message VoidPlayerInboxItemRequest {
   uint64 player_id = 1;
   PlayerInboxDomain domain = 2;
   uint64 seq = 3;
-  PlayerInboxVoidReason reason = 4;     // 必须非 UNSPECIFIED
+  PlayerInboxVoidReason reason = 4;     // 必须非 UNSPECIFIED;强制模式写进行的 void_reason
   string operator = 5;                  // 必填,≤ 64B
-  string note = 6;                      // ≤ 256B
+  string note = 6;                      // ≤ 256B;强制模式必填(进审计 reason,写工单号与依据)
+  PlayerInboxVoidMode mode = 7;         // 缺省 NORMAL = 原语义
 }
 
+// 兼容提示:不认识 mode 的旧版服务端会按普通模式处理(已投递只挂指令,回 void_requested=true)。
+// 调用方判定强制终结成功,一律以 force_verdict == PROVEN 且 state == VOIDED 为准。
 message VoidPlayerInboxItemResponse {
-  TipInfoMessage error_message = 1;     // 条目不存在 → kPlayerInboxItemNotFound;已是终态 → kPlayerInboxItemStateConflict
-  PlayerInboxItemState state = 2;       // 处理后的状态:未投递 → VOIDED;已投递 → 仍为 PENDING
-  bool void_requested = 3;              // true = 已投递,只挂了 VOID 指令,等消费方裁决
+  TipInfoMessage error_message = 1;     // 条目不存在 → kPlayerInboxItemNotFound;已是终态 / 强制证明不成立 → kPlayerInboxItemStateConflict
+  PlayerInboxItemState state = 2;       // 处理后的状态:未投递 → VOIDED;已投递 → 仍为 PENDING;强制终结 → VOIDED
+  bool void_requested = 3;              // true = 已投递,只挂了 VOID 指令,等消费方裁决(强制模式恒为 false)
+  PlayerInboxForceVoidVerdict force_verdict = 4;  // 只在强制模式、行仍 PENDING 时填写
 }
 
 // ── ReconcilePlayer(第 4 批)────────────────────────────────────────────
 
 enum PlayerInboxReconcileDiffKind {
   PLAYER_INBOX_RECONCILE_DIFF_UNSPECIFIED = 0;
-  PLAYER_INBOX_RECONCILE_FINAL_NOT_IN_LEDGER = 1;    // 收件箱已终态,账本水位没到这个 seq:可能回档或 Redis 丢数据
+  // 收件箱已由消费方终结,已落盘账本里却没有它的结局:可能回档或 Redis 丢数据。三种形态都报这一个值
+  // (服务端日志的 gap= 区分):账本水位没到这个 seq;水位已过、seq 落在最近结局环该覆盖的范围内
+  // (环不满 32 条,或 seq 不早于环头)却查无此 seq —— 丢掉的结局被之后的条目掩盖;环里同 seq 记的是
+  // 另一条(request_id / msg_type 不同)或另一个结局。SETTLED_UNKNOWN 只比水位;管理员终结的行不比对。
+  PLAYER_INBOX_RECONCILE_FINAL_NOT_IN_LEDGER = 1;
   PLAYER_INBOX_RECONCILE_PENDING_BUT_DECIDED = 2;    // 收件箱仍 PENDING,账本已处理过:确认丢了且玩家一直离线
 }
 

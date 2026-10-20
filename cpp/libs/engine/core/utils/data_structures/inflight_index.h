@@ -2,7 +2,7 @@
 
 // 在途调用索引:按调用号认领,保证每个调用恰好被处理一次;另带一个按截止时刻排序的过期堆。
 //
-// 「恰好一次」的判据只有一个:Extract / ExtractExpired / ExtractIf / ExtractAll 能否把条目从索引里取出来。
+// 「恰好一次」的判据只有一个:Extract / ExtractExpired / ExtractAll 能否把条目从索引里取出来。
 // 取到的那条路径负责完成,其余路径(迟到的回包、迟到的超时、已经清空的断连)一律取不到、什么都不做。
 // 不依赖定时器取消,也不依赖「回包与超时谁先到」(docs/design/muduo-timer-cancellation-hazards.md)。
 //
@@ -81,27 +81,6 @@ public:
 			}
 		}
 		return expired;
-	}
-
-	// 取出全部满足 pred(call) 的调用。O(在途数),只用于很少发生的批量场景(如节点摘除)。
-	// 堆里对应的条目留着,弹出时因已不在索引里而被跳过。
-	template <typename Pred>
-	std::vector<std::pair<InflightCallId, Call>> ExtractIf(Pred pred)
-	{
-		std::vector<std::pair<InflightCallId, Call>> matched;
-		for (auto it = calls_.begin(); it != calls_.end();)
-		{
-			if (pred(it->second))
-			{
-				matched.emplace_back(it->first, std::move(it->second));
-				it = calls_.erase(it);
-			}
-			else
-			{
-				++it;
-			}
-		}
-		return matched;
 	}
 
 	// 取出全部调用并清空过期堆(断连、通道关闭时用)。返回顺序不保证。

@@ -8,17 +8,21 @@ import (
 	"sync/atomic"
 	"time"
 
+	"match/internal/authority"
 	"match/internal/constants"
 	"match/internal/metrics"
 	"match/internal/playercontract"
 	"match/internal/svc"
 
 	base "proto/common/base"
+	matchpb "proto/match"
 	teampb "proto/team"
+	"shared/generated/pb/table"
 	"shared/playersync"
 
 	"github.com/google/uuid"
 	"github.com/zeromicro/go-zero/core/logx"
+	"google.golang.org/protobuf/proto"
 )
 
 // 组队 RPC 编排(设计文档 docs/design/team-system.md §D.5)。
@@ -163,6 +167,24 @@ func (s *Service) CreateTeam(ctx context.Context, caller uint64, _ *teampb.Creat
 // GetMyTeam 自由读 + 过期清理 / 惰性转让;没变化但 TTL 不足时续期;notify_online 时推给其他在线队员;
 // regroup 时请求归队(见 publishRegroup)。
 func (s *Service) GetMyTeam(ctx context.Context, caller uint64, in *teampb.GetMyTeamRequest) *teampb.TeamResponse {
+	resp := s.getMyTeam(ctx, caller, in)
+	if s.svcCtx.Authority != nil && in.MatchRequestId != "" {
+		key, e := authority.DirectUUIDKey(1, caller, in.MatchRequestId)
+		if e != nil {
+			return s.respond(ctx, caller, uint32(table.CommonError_kInvalidParameter), 0)
+		}
+		f, _, e := s.svcCtx.Authority.FindDirect(ctx, key)
+		if e != nil {
+			return s.respond(ctx, caller, ErrInternal, 0)
+		}
+		if f != nil {
+			resp.MatchIntent = &teampb.TeamMatchIntent{RequestId: in.MatchRequestId, BattleId: f.BattleId, State: f.State}
+		}
+	}
+	return resp
+}
+
+func (s *Service) getMyTeam(ctx context.Context, caller uint64, in *teampb.GetMyTeamRequest) *teampb.TeamResponse {
 	self, failed := s.readSelf(ctx, methodGetMyTeam, caller)
 	if failed != nil {
 		return failed
@@ -375,6 +397,25 @@ func (s *Service) DisbandTeam(ctx context.Context, caller uint64, in *teampb.Dis
 // 之后不加开战锁,改走 startBackfill —— 整队进人数档队列,回包是 QUEUED 视图;凑满后由 matcher 开局。
 func (s *Service) StartTeamMatch(ctx context.Context, caller uint64, in *teampb.StartTeamMatchRequest) *teampb.TeamResponse {
 	log := logx.WithContext(ctx)
+	if s.svcCtx.Authority != nil {
+		key, e := authority.DirectUUIDKey(1, caller, in.RequestId)
+		if e != nil {
+			return s.respond(ctx, caller, uint32(table.CommonError_kInvalidParameter), 0)
+		}
+		f, original, e := s.svcCtx.Authority.FindDirect(ctx, key)
+		if e != nil {
+			return s.respond(ctx, caller, ErrInternal, 0)
+		}
+		if f != nil {
+			var previous teampb.StartTeamMatchRequest
+			if proto.Unmarshal(original, &previous) != nil || !proto.Equal(&previous, in) {
+				return s.respond(ctx, caller, uint32(table.CommonError_kInvalidParameter), 0)
+			}
+			resp := s.respond(ctx, caller, 0, 0)
+			resp.MatchIntent = &teampb.TeamMatchIntent{RequestId: in.RequestId, BattleId: f.BattleId, State: f.State}
+			return resp
+		}
+	}
 	if s.starter == nil {
 		log.Errorf("[team] StartTeamMatch not wired (BattleStarter is nil) player=%d", caller)
 		return s.matchReject(ctx, caller, ErrInternal, 0, nil)
@@ -414,7 +455,7 @@ func (s *Service) StartTeamMatch(ctx context.Context, caller uint64, in *teampb.
 		if targetSize != 0 && (targetSize < memberCount || targetSize > limit) {
 			return s.matchReject(ctx, caller, ErrSizeExceeded, 0, &snap)
 		}
-		if backfill && s.svcCtx.Config.Team.FillQueueDisabled {
+		if backfill && (s.svcCtx.Config.Team.FillQueueDisabled || s.svcCtx.Authority != nil) {
 			return s.matchReject(ctx, caller, ErrDungeonNotOpen, 0, &snap)
 		}
 		roster := MatchRoster(rec)
@@ -464,7 +505,7 @@ func (s *Service) StartTeamMatch(ctx context.Context, caller uint64, in *teampb.
 			s.settleUnconfirmedLock(ctx, snap.TeamId, token, lockTTL)
 			continue
 		}
-		return s.launchMatch(ctx, caller, configId, lock.Commit, token, lockTTL, zones)
+		return s.launchMatch(ctx, caller, configId, lock.Commit, token, lockTTL, zones, in)
 	}
 	return s.matchReject(ctx, caller, ErrStateChanged, 0, nil)
 }
@@ -534,12 +575,34 @@ func (s *Service) preflightMatch(ctx context.Context, roster []uint64) (map[uint
 // launchMatch 开战锁已落盘之后(§E.1 第 7–9 步)。建票与 gather 只用锁内名单(与锁同一次提交落盘)。
 // lockTTL 是加锁时用的锁时长,交给 finishMatch 推出 EndMatch 的兜底上限。
 func (s *Service) launchMatch(ctx context.Context, caller uint64, configId uint32, lock *CommitResult,
-	token string, lockTTL time.Duration, zones map[uint64]uint32,
+	token string, lockTTL time.Duration, zones map[uint64]uint32, request *teampb.StartTeamMatchRequest,
 ) *teampb.TeamResponse {
 	log := logx.WithContext(ctx)
 	teamId := lock.TeamId
 	roster := append([]uint64(nil), lock.Decision.Record.GetMatchLockRoster()...)
-	tickets, failed := s.starter.CreateMatchedTickets(ctx, configId, teamId, roster, zones)
+	var tickets map[uint64]string
+	var failed uint64
+	var formation *matchpb.MatchFormationRecord
+	if s.svcCtx.Authority != nil {
+		starter, ok := s.starter.(interface {
+			ReserveTeamMatch(context.Context, uint64, *teampb.StartTeamMatchRequest, []uint64) (*matchpb.MatchFormationRecord, error)
+		})
+		if !ok {
+			return s.respond(ctx, caller, ErrInternal, 0)
+		}
+		var e error
+		formation, e = starter.ReserveTeamMatch(ctx, caller, request, roster)
+		if e != nil {
+			// 可能已提交：保留原请求号供 GetMyTeam 查询，不按结果未知去删除 SQL 成局。
+			return s.respond(ctx, caller, ErrInternal, 0)
+		}
+		tickets = make(map[uint64]string, len(formation.Members))
+		for _, m := range formation.Members {
+			tickets[m.PlayerId] = m.Ticket
+		}
+	} else {
+		tickets, failed = s.starter.CreateMatchedTickets(ctx, configId, teamId, roster, zones)
+	}
 	if failed != 0 {
 		metrics.ObserveTeamMatch(matchOutcomeTicketFailed)
 		log.Infof("[team] Team battle ticket creation failed; releasing battle start lock team=%d player=%d", teamId, failed)
@@ -553,6 +616,16 @@ func (s *Service) launchMatch(ctx context.Context, caller uint64, configId uint3
 	log.Infof("[team] Team battle start accepted team=%d config=%d roster=%v", teamId, configId, roster)
 	asyncFn("match.gather.pve_team", func() {
 		ok := s.starter.RunGather(configId, roster, tickets)
+		if formation != nil {
+			query, stop := context.WithTimeout(context.Background(), 3*time.Second)
+			final, e := s.svcCtx.Authority.Formation(query, formation.BattleId)
+			stop()
+			if e != nil || final.State < 4 {
+				logx.Info("原队伍成局仍在恢复，保留业务开战锁和原意图")
+				return
+			}
+			ok = final.State == 4
+		}
 		outcome := matchOutcomeGatherFailed
 		if ok {
 			outcome = matchOutcomeSuccess
@@ -561,6 +634,9 @@ func (s *Service) launchMatch(ctx context.Context, caller uint64, configId uint3
 		// gather 失败拿不到具体原因:tip 留空(§E.1 第 8 步)。
 		s.finishMatch(teamId, token, lockTTL, ok, roster, nil)
 	})
+	if formation != nil {
+		resp.MatchIntent = &teampb.TeamMatchIntent{RequestId: request.RequestId, BattleId: formation.BattleId, State: formation.State}
+	}
 	return resp
 }
 

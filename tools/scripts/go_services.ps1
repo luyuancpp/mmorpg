@@ -114,8 +114,8 @@ $GoBinDir   = Join-Path $RepoRoot "bin\go_services"
 # guild 用 MMORPG_ASSET_OP_SECRET_GUILD 签名、scene 用同名变量验签,值必须一致,否则每一次资产 RPC
 # 都回 27008(AssetAuthFailed)。密钥值不写进仓库,见该文件的说明;用法见 Start-ServiceInstance。
 . (Join-Path $ScriptDir "lib\assetop_dev_secret.ps1")
-# 邮件 MailAdmin 共享令牌(docs/design/mail-system.md §2.3)的本机开发值来源:只注入给 mail,用法见 Start-ServiceInstance。
-# 令牌值不写进仓库,见该文件的说明(run/secrets/mail-admin-dev.env;robot / mailadmin CLI 在自己的 shell 里按同一文件取值)。
+# 邮件 MailAdmin admin 生产者签名密钥(docs/design/mail-system.md §2.3)的本机开发值来源:只注入给 mail,用法见 Start-ServiceInstance。
+# 令牌值不写进仓库,见该文件的说明(run/secrets/mail-admin-producer-dev.env;robot / mailadmin CLI 在自己的 shell 里按同一文件取值)。
 . (Join-Path $ScriptDir "lib\mail_admin_dev_token.ps1")
 
 # ── Service catalogue ────────────────────────────────────────────────
@@ -145,6 +145,8 @@ $GoBinDir   = Join-Path $RepoRoot "bin\go_services"
 #               + 5s 余量),再离组、等 worker 收尾,比其它服务慢;K8s 侧对应 45s 宽限减 5s preStop。
 #               超时被强杀不丢数据(排序锁留到 TTL、重试收据租约过期后回收),只是失去优雅停的收益。
 $ServiceCatalogue = [ordered]@{
+    mail = @{ Dir = "mail"; Entry = "mail.go"; Port = 50900; Desc = "邮件（全局权威邮箱与附件到账）"; ConfigFlag = "-f"; ConfigFile = "etc/mail.yaml"; AllowMultiInstance = $true; Tier = 1 }
+    rank = @{ Dir = "rank"; Entry = "rank.go"; Port = 51100; Desc = "排行榜（全局代次、封榜与奖励）"; ConfigFlag = "-f"; ConfigFile = "etc/rank.yaml"; AllowMultiInstance = $true; Tier = 1 }
     db              = @{ Dir = "db";              Entry = "db.go";                    Port = 6000;  Desc = "DB (Kafka consumer + MySQL)";       ConfigFlag = "-f";            ConfigFile = "etc/db.yaml";                    AllowMultiInstance = $true;  Tier = 0; StopTimeoutSeconds = 35 }
     data_service    = @{ Dir = "data_service";    Entry = "data_service.go";          Port = 9000;  Desc = "Data Service (multi-zone Redis)"; ConfigFlag = "-f";            ConfigFile = "etc/data_service.yaml";          AllowMultiInstance = $true;  Tier = 0 }
     # Base ports for the zRPC services were originally 50000/50200 but Windows
@@ -223,38 +225,7 @@ $ServiceCatalogue = [ordered]@{
     # Windows 保留区间内。player_inbox.yaml 形状须满足本脚本 -Zone 改写:顶层单行 ListenOn / MetricsListenAddr、顶层 ZoneId
     # 写在所有嵌套段之前;自己的 Etcd.Key 是空串(D-13),DataServiceRpc.Etcd.Key: dataservice.rpc 会被加 .z<N>(照 trade)。
     player_inbox      = @{ Dir = "player_inbox"; Entry = "player_inbox.go"; Port = 50950; Desc = "Player Inbox (玩家持久收件箱,scene 直连)"; ConfigFlag = "-f"; ConfigFile = "etc/player_inbox.yaml"; AllowMultiInstance = $true; Tier = 1 }
-    # 邮件 mail(docs/design/mail-system.md):全局一份(MailNodeService),邮件按全局唯一的 player_id / 号段 id 存,业务代码禁止读 ZoneId 做分支;
-    # 客户端请求与 chat / guild / trade / friend 一样**只承诺路由服模式可达**(GATE_CLIENT_RPC_ROUTER=1);运维 CLI / robot 直连 MailAdmin。
-    # 与 friend 一样本目录不写 Global:K8s 侧由 k8s_deploy.ps1 $GoSvcCatalogue 的 Global = $true 表达,本地双 zone 仍每 zone 起一份。
-    # Tier 1:依赖 MySQL 独占库 mmorpg_mail(库由 deploy/mysql-init/00_init_zone_dbs.sql 预建,表由启动期 schemamigrate 或
-    # `mail -f etc/mail.yaml -migrate` 建,D-14)、共享 Redis(只读 player:session:{id})、etcd、Kafka(gate-cmd 推送)与 data_service
-    # (Tier 0;mail_id / sys_mail_id 号段 biz_tag = mail,NonBlock 拨号),不拨 login 等服务。
-    # 多开安全:发件 / 读 / 删都是 MySQL 事务(定向邮件判重在守卫行锁内),后台 sweep 是幂等的 DELETE … LIMIT,不引入 leader。
-    # MailAdmin 令牌 MMORPG_MAIL_ADMIN_TOKEN 由 Start-ServiceInstance 从 run/secrets/mail-admin-dev.env 注入,只给 mail(见那里的注释)。
-    # 不写 StopTimeoutSeconds:mail 的 lifecycle 硬截止 24s,默认 25s 正好盖住。
-    # 端口 50900 / metrics 9240 与 go/mail/etc/mail.yaml 的 ListenOn / MetricsListenAddr、k8s_deploy.ps1 的 $GoSvcCatalogue 与 ConfigMap、
-    # manifests/go-svc/mail.yaml 五处逐字一致(契约 §7);-Zone 2 位移后 51900 / 10240,51900 落在机器 B 2026-09-20 实测保留区
-    # 51840–51939(docs/handoff/friend-handoff-20260920.md §4.1),由 Resolve-BindablePort 自动上挪(同 chat / trade)。mail.yaml 形状满足
-    # 本脚本 -Zone 改写:顶层单行 ListenOn / MetricsListenAddr、顶层 ZoneId 写在所有嵌套段之前;自己的 Etcd.Key 是空串(D-13),
-    # DataServiceRpc.Etcd.Key: dataservice.rpc 会被加 .z<N>(照 trade)。
-    # ⚠ 本条目只能在 mail 的 proto-gen 产物入库、go/mail 编译变绿之后存在:所有不带 -Services 的 build(dev.bat start 等)都会编它,
-    #   编不过时整批 build 以 "Build failed for: mail" 中止(docs/design/mail-system.md §12.3「M1d 启用」)。
-    mail              = @{ Dir = "mail"; Entry = "mail.go"; Port = 50900; Desc = "Mail (全局邮件,路由服可达)"; ConfigFlag = "-f"; ConfigFile = "etc/mail.yaml"; AllowMultiInstance = $true; Tier = 1 }
-    # 排行榜 rank(docs/design/leaderboard-system.md):全局一份(RankNodeService),榜按全局唯一的 player_id 存,业务代码禁止读 ZoneId 做分支;
-    # 客户端只有一个读方法 GetRankPage,与 chat / guild / trade / friend / mail 一样**只承诺路由服模式可达**(GATE_CLIENT_RPC_ROUTER=1)。
-    # 与 friend 一样本目录不写 Global:K8s 侧由 k8s_deploy.ps1 $GoSvcCatalogue 的 Global = $true 表达,本地双 zone 仍每 zone 起一份。
-    # Tier 1:零 MySQL;依赖 Redis(本机 RankRedis.Host 留空 = 回落共享库并打 WARN,线上是专用 noeviction 实例)、etcd、Kafka
-    # (消费 match 的评分快照,消费组 rank-rating)与 data_service(Tier 0;名字补全,fail-open,NonBlock 拨号),不拨 login 等服务。
-    # 写分只经 Kafka:本机 match_service.yaml 的 RatingSnapshotPublishEnabled 仓内是 false,不打开时榜不会更新(只读,不是故障)。
-    # 双 zone 时两份 rank 同属一个消费组(键名刻意叫 RatingConsumerGroup,不吃 -Zone 的 GroupID 后缀)、写同一个共享 Redis,分摊分区而不是各消费一遍。
-    # 多开安全:读是一条只读 Lua,写是单键条件写 Lua(版本比较在 Lua 里原子完成),消费组保证每条快照只被一个实例处理,不引入 leader。
-    # 不写 StopTimeoutSeconds:rank 的 lifecycle 硬截止 24s,默认 25s 正好盖住。
-    # 端口与 go/rank/etc/rank.yaml 的 ListenOn、k8s_deploy.ps1 的 $GoSvcCatalogue、manifests/go-svc/rank.yaml 逐字一致(契约 §7);
-    # -Zone 2 位移 +1000,不在已观测的 Windows 保留区间内。rank.yaml 形状满足本脚本 -Zone 改写:顶层单行 ListenOn / MetricsListenAddr、
-    # 顶层 ZoneId 写在所有嵌套段之前;自己的 Etcd.Key 是空串(D-13),DataServiceRpc.Etcd.Key: dataservice.rpc 会被加 .z<N>(照 trade)。
-    # ⚠ 本条目只能在 rank 的 proto-gen 产物(go/proto/rank)入库、go/rank 编译变绿之后存在:所有不带 -Services 的 build 都会编它,
-    #   编不过时整批 build 以 "Build failed for: rank" 中止(docs/design/leaderboard-system.md §12.6)。
-    rank              = @{ Dir = "rank"; Entry = "rank.go"; Port = 51100; Desc = "Rank (全服排行榜,路由服可达)"; ConfigFlag = "-f"; ConfigFile = "etc/rank.yaml"; AllowMultiInstance = $true; Tier = 1 }
+    # mail/rank 已按上面的现役条目登记：SQL/TiDB DSN、分用途生产者签名及全局语义；不恢复M1运行时。
 }
 
 # Derived per-instance config files live here so the source tree stays clean.
@@ -747,9 +718,9 @@ function Start-ServiceInstance {
     # 仅限本机 dev:预发 / 生产的密钥由部署侧注入(k8s_deploy.ps1 Resolve-InjectedSecret -MinLength 32)。
     $injectAssetOpSecret = ($Name -eq 'guild')
     $prevAssetOpSecrets = $null
-    # MailAdmin 共享令牌(docs/design/mail-system.md §2.3):**只对 mail 注入、只给这一把**;值取自 run/secrets/mail-admin-dev.env
+    # MailAdmin admin 生产者签名密钥(docs/design/mail-system.md §2.3):**只对 mail 注入、只给这一把**;值取自 run/secrets/mail-admin-producer-dev.env
     # (lib 首次随机生成,与本机 robot mail-smoke / cmd/mailadmin 读同一份),只在没设时兜底、不回显值、finally 里还原。
-    # 仅限本机 dev:预发 / 生产由 k8s_deploy.ps1 经 Secret mail-admin-auth 注入,部署链从不调用这里。
+    # 仅限本机 dev:预发 / 生产由 k8s_deploy.ps1 经 Secret domain-service-secrets 的 mail-producer-admin 注入,部署链从不调用这里。
     # lib 函数只在 mail 分支里调用:go_services_ports.tests.ps1 按 AST 只加载本文件的函数(不执行顶层 dot-source)再起 chat / trade,
     # 无条件调用会让那些用例报「命令未找到」。
     $injectMailAdminToken = ($Name -eq 'mail')

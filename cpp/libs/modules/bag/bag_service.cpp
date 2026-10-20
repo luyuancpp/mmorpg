@@ -6,6 +6,7 @@
 #include "engine/core/macros/return_define.h"
 #include "table/proto/tip/asset_error_tip.pb.h" // kAssetFrozen / kAssetInvalidBundle — 按 guid 扣出的错误码
 #include "table/proto/tip/common_error_tip.pb.h"
+#include "table/code/item_table.h"
 
 #include "modules/gain_block/gain_block_service.h"
 #include "modules/transaction_log/anomaly_detector.h"
@@ -138,16 +139,8 @@ uint32_t BagService::AddItems(
 	const ItemCountMap &itemsToAdd,
 	TransactionType txType,
 	uint64_t correlationId,
-	const std::string &extra,
-	bool *mutated)
+	const std::string &extra)
 {
-	// 先置 false:下面每条 return 路径都可能在任意一步退出,只有开头统一清零才能
-	// 保证"没写过 true 就是真的没动过"。
-	if (mutated != nullptr)
-	{
-		*mutated = false;
-	}
-
 	// ── Cross-zone Frozen check (Single Writer guarantee) ────────────────
 	// See AddItem above for rationale. Reject the whole batch early.
 	// See docs/design/cross-zone-readiness-audit.md §11.1.
@@ -175,10 +168,6 @@ uint32_t BagService::AddItems(
     std::vector<DestroyedInstance> evicted;
     std::vector<GuidVector> written;
     RETURN_ON_ERROR(bag.AddItems(itemsToAdd, &evicted, &written, InstalledItemInstanceInitializer()));
-    if (mutated != nullptr)
-    {
-        *mutated = !itemsToAdd.empty();
-    }
     LogEvictedInstances(playerEntity, evicted);
     for (std::size_t i = 0; i < ordered.size(); ++i)
     {
@@ -189,6 +178,21 @@ uint32_t BagService::AddItems(
     }
 
 	return kSuccess;
+}
+
+uint64_t BagService::MaxNewInstancesFor(const ItemCountMap &itemsToAdd)
+{
+	uint64_t total = 0;
+	for (const auto &[configId, count] : itemsToAdd)
+	{
+		const auto *row = ItemTableManager::Instance().FindByIdSilent(configId).first;
+		if (row == nullptr || row->max_stack_size() == 0 || count == 0)
+		{
+			continue; // Bag::AddItems 会在铸号之前整批拒绝这类批次,见头文件
+		}
+		total += ItemStore::StacksNeededFor(count, row->max_stack_size());
+	}
+	return total;
 }
 
 uint32_t BagService::AddItems(

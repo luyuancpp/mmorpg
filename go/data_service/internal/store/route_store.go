@@ -35,6 +35,11 @@ import (
 // 用 AST 机械守住 player_route)。Redis 一侧的发布(set-if-newer)在 routing 包,不在这里:
 // 事务里绝不做 Redis 读写 —— 预检在开事务之前,发布在提交之后(规格 c.2 第 3 条)。
 //
+// 2026-10-18(第 1b-1 批)补:route_meta / route_reconcile 的写语句同样只在本文件(TestRouteMetaAndReconcileWritesOnlyInStoreFiles
+// 用同样的 AST 守卫钉住;第 1b-2 批的对账 leader 新增 route_reconcile.go 时一并放进允许集合)。本批新增的写入方:
+// 冻结 / 解冻(FreezeRouteWriters / UnfreezeRouteWriters,route_tool freeze / unfreeze)与冻结态下的反向修库
+// (RepairRoutesFromCache / RepairMergedIntoFromCache,route_tool reconcile-from-cache)。锁序见下面不变量 2 的补充。
+//
 // 「行片」与「围栏片」是两回事,同一函数里不得同名:行片 rowShard = player_id % placement.RouteRowShards
 // (聚簇主键首列,常量 64,建表后不可改);围栏片 fenceShard = player_id % FenceShards(可配,只决定 W1 锁哪一个
 // 围栏行)。绑错的后果:把围栏片绑进 R4,两种片不相等的新号(FenceShards=8 时占 7/8)撞 chk_route_shard(3819)
@@ -46,6 +51,10 @@ import (
 //  2. **锁顺序**:route_meta(普通读)→ zone_merge_fence 分片(FOR UPDATE)→ player_route(按聚簇键 (route_shard, player_id);
 //     ODKU 或 FOR UPDATE)。W1 只持一个分片行、再等最多一个玩家行;导入只按聚簇键升序锁玩家行、不碰分片;
 //     任何一次锁多行的语句(R8 FOR UPDATE、R7、R9 循环)都按聚簇键升序,两个并发导入之间也不成环(规格 c.2)。
+//     2026-10-18(第 1b-1 批)补:反向修库 route_meta(R18x FOR UPDATE)→ player_route(按聚簇键升序);
+//     解冻 route_reconcile(R20 FOR UPDATE)→ route_meta(R22);冻结只写 route_meta(R19,单条自动提交)。
+//     W1 与导入对 route_meta 只做普通读、从不持它的锁,建池探针守卫是 route_meta → player_route(与修库同向),
+//     没有任何一方持 route_meta 再去等 route_reconcile,所以不成环。
 //  3. **会话级 RC + 锁等待 1s**(buildRouteDSN,建 store 时探针读回校验):锁推演只在 RC 下成立;
 //     锁等待封顶后,ctx 到期的请求最多再占 1s 分片锁。
 //  4. **1213 / 9007 有界重试,1205 不重试**:前两者整个事务已被回滚、重跑安全;1205 已经等满了封顶的 1s,
@@ -144,6 +153,12 @@ var (
 	// 非聚簇的表按 (route_shard, player_id) 切毫无意义,而且建表后改不了,只能趁表空 DROP 后用 -migrate 重建。
 	ErrRouteTiDBNotClustered = errors.New("route tables are not CLUSTERED on TiDB; while they are still empty, " +
 		"DROP them and rebuild with `data_service -f <yaml> -migrate`")
+	// ErrRouteNotFrozen route_meta.writable == 1:反向修库(缓存 → 库)只许在映射写者冻结时做(第 1b-1 批),
+	// 否则修库写进去的旧缓存值会与并发的 W1 互相覆盖。先 `route-tool freeze`。
+	ErrRouteNotFrozen = errors.New("route_meta: writable=1; repairing the DB from the cache needs the route writers frozen first " +
+		"(`data_service -f <yaml> -route-tool freeze`)")
+	// ErrRouteReconcileMissing route_reconcile 没有 id=1 那一行(迁移没跑过,或库被重置后没重跑迁移)。
+	ErrRouteReconcileMissing = errors.New("route_reconcile: row id=1 missing; run `data_service -f <yaml> -migrate`")
 )
 
 // errRouteImportRaced 内部哨兵:导入的 R7 受影响行数小于待插行数 —— R8 之后有 W1 并发插入了同一个 id。
@@ -176,6 +191,8 @@ const (
 
 	// R1 读可写开关(普通一致读,提案 §4.1-2 第 1 步)。建 store 的探针也用它确认 meta 行在。
 	routeReadWritableSQL = "SELECT writable FROM route_meta WHERE id = 1"
+	// 建池探针的守卫(lockRouteProbeGuard):同一行,加锁读。
+	routeLockProbeGuardSQL = routeReadWritableSQL + " FOR UPDATE"
 
 	// R2 锁围栏分片行。active 为 NULL 也当生效(fail-closed):只有 CHECK 不生效的库上才可能出现
 	// run_id 非空而 expires_at_ms 为 NULL 的行。
@@ -248,7 +265,43 @@ const (
 	// R16 迁移种对账行(ODKU no-op:已存在时 leader / 租约 / 水位一个字节都不改 —— 第 1b 批的 leader 可能正在跑)。
 	routeReconcileSeedSQL = "INSERT INTO route_reconcile (id, watermark_ms, cache_verified_ms)" +
 		" VALUES (1, 0, 0) ON DUPLICATE KEY UPDATE id = id"
+
+	// ── 第 1b-1 批(2026-10-18):冻结、解冻与冻结态下的反向修库 ──
+
+	// R17 反向修库的整行覆盖:缓存 maprev > 库 rev(库被回档)或同 rev 平局且显式 -resolve-ties=cache 时,把缓存那一版
+	// 连同 rev 写回库。rev 置为 maprev 而不是 +1:两边 rev 相同,之后的发布与 audit 才认得出是同一版。
+	// 按读到的库 rev 做 CAS(行已被 R8 锁住,不是恰好 1 行就是不可能状态)。
+	// 实参:home、storage、version、frozen、rev(= maprev)、writer、行片、player_id、库 rev。
+	routeRepairOverwriteSQL = "UPDATE player_route SET home_zone = ?, storage_id = ?, placement_version = ?, frozen_run_id = ?," +
+		" rev = ?, updated_by = ?, updated_at_ms = " + dbNowMsSQL +
+		" WHERE route_shard = ? AND player_id = ? AND rev = ?"
+
+	// R18 读 route_meta 整行(普通一致读):库世代与可写开关。
+	routeReadMetaSQL = "SELECT generation, writable FROM route_meta WHERE id = 1"
+	// R18x R18 的加锁形态:反向修库的写事务第一句,在提交点用同一把行锁复核冻结态。修库持着它直到提交,
+	// 并发的解冻(R22 要这一行的 X 锁)只能排在修库提交之后 —— 普通读做不到这一点:解冻一提交,
+	// 已经过了检查的修库事务照样提交,而 W1 已经恢复写入(AGENTS.md §11.3「提交点用同一并发控制机制原子复核」)。
+	// 与建池探针的守卫(routeLockProbeGuardSQL)锁同一行、文本不同:多取一列 generation 进错误信息,契约用例也靠文本区分两者。
+	routeLockMetaSQL = routeReadMetaSQL + " FOR UPDATE"
+
+	// R19 冻结(单条自动提交)。`AND writable <> 0`:已冻结时受影响 0 行,再用 R18 区分「已冻结」与「缺行」,
+	// 不依赖引擎对「值没变」的受影响行数口径。
+	routeFreezeSQL = "UPDATE route_meta SET writable = 0 WHERE id = 1 AND writable <> 0"
+
+	// R20 解冻事务的第一句:锁对账行、读当前水位。锁序 route_reconcile → route_meta 与第 1b-2 批 leader 每拍的事务一致。
+	routeLockReconcileWatermarkSQL = "SELECT watermark_ms FROM route_reconcile WHERE id = 1 FOR UPDATE"
+	// R21 抬高水位(只增不减)。实参:要求的最低水位。
+	routeRaiseWatermarkSQL = "UPDATE route_reconcile SET watermark_ms = GREATEST(watermark_ms, ?) WHERE id = 1"
+	// R22 解冻。`AND writable = 0`:只从冻结态翻回可写;generation 不换(提案 §11.2 第 1b 批偏离 B1)。
+	routeUnfreezeSQL = "UPDATE route_meta SET writable = 1 WHERE id = 1 AND writable = 0"
 )
+
+// RouteFreezeTimeoutMin 是含冻结写(R19 / R22)的调用至少要给的时限。TiDB 把 route_meta 设成缓存表之后
+// (提案 §11.2「TiDB 运维步骤」第 6 条,S2 档起必选),对它的写要等当前读租约到期(tidb_table_cache_lease,
+// 缺省 3s【未核实】),这段等待不是锁等待、不受会话 innodb_lock_wait_timeout=1 约束,只受 ctx 约束。
+// 所以时限取 max(5s, 租约 + 2s);租约调大时调用方(route_tool -freeze-timeout)要同步放大。
+// 本批 tidb-prepare 不发 `ALTER TABLE route_meta CACHE`,那一步留给 TiDB Phase 1 的部署步骤。
+const RouteFreezeTimeoutMin = 5 * time.Second
 
 // routeImportInsertSQL 拼 n 行的 R7。
 func routeImportInsertSQL(n int) string {
@@ -466,9 +519,9 @@ func newRouteStoreFromDB(ctx context.Context, db *sql.DB, opts RouteStoreOptions
 // 实测在两种引擎上是同一个判据。它只证明「CHECK 生效」,不证明模数是 64(探针行 (片 1, player_id 0) 对任何模数都违例,
 // 按旧模数 16 建的表也过得了这一步):P4 通过之后,在同一个事务里接着跑第 5 步 probeRouteShardModulus 核对模数。
 //
-// 无论哪种结果事务都回滚,CHECK 没生效时那行也不会留下。CHECK 生效时语句在写索引前就被拒、不取锁;
-// 不生效时多副本同时探针,后到的最多等 1s 行锁(会话锁等待封顶)后同样回滚(三方以上并发时可能 1213,
-// 由 newRouteStoreFromDB 整事务有界重跑,见 probeRouteShardModulus 的「锁」)。
+// 无论哪种结果事务都回滚,CHECK 没生效时那行也不会留下。CHECK 生效时语句在写索引前就被拒、不取锁。
+// 整个探针事务的第一句是 lockRouteProbeGuard(route_meta(id=1) FOR UPDATE):多副本同时探针时在这行已提交的守卫上
+// 排队、逐个探针,后到的最多等 1s(会话锁等待封顶),不会排在别人必然回滚的探针行后面(见 probeRouteShardModulus 的「锁」)。
 func probeRouteShardCheck(ctx context.Context, db *sql.DB) error {
 	tx, err := db.BeginTx(ctx, nil)
 	if err != nil {
@@ -476,6 +529,9 @@ func probeRouteShardCheck(ctx context.Context, db *sql.DB) error {
 	}
 	defer func() { _ = tx.Rollback() }()
 
+	if err := lockRouteProbeGuard(ctx, tx); err != nil {
+		return err
+	}
 	_, err = tx.ExecContext(ctx, routeProbeShardCheckSQL)
 	if err == nil {
 		return fmt.Errorf("%w: a row violating it was accepted (rolled back)", ErrRouteCheckNotEnforced)
@@ -535,10 +591,13 @@ func probeRouteShardCheck(ctx context.Context, db *sql.DB) error {
 // 锁:这两行不存在且模数一致时真的插进去(未提交);已存在时撞键会在那一行上取共享锁(评审按 mysql-server 8.0.36
 // 源码 row0ins.cc 核对,未实跑;真库用例 TestRouteStore_ProbeKeysHeldByRealPlayers 取证)。两种都持到回滚(毫秒级),
 // 所以 63 / 64 号玩家的 W1 可能在探针期间短暂排队;反过来探针最多等会话锁等待 1s,等满即 1205、这次建池失败
-// (不重试,重启即可)。各副本都按聚簇键升序插这两行,两行之间不成环;但三个及以上会话并发插同一个**缺席**的探针键时
-// (空表、首次部署,或 63 / 64 号还没建角),先插入者回滚后,其余等待者查重取的 S 锁会被继承成 gap 锁(MySQL 8.0 在
-// RC 下同样继承;评审按源码 lock0lock.cc 推断,未实跑),它们重新插入要插入意向锁,互等成 1213。所以 newRouteStoreFromDB
-// 对 P4 + P5 整个事务按 1213 / 9007 有界重跑(retryRouteTx;InnoDB 遇 1213 已整事务回滚、探针不留数据,重跑安全)。
+// (不重试,重启即可)。各副本都按聚簇键升序插这两行,两行之间不成环。
+// 三个及以上会话并发插同一个**缺席**的探针键时(空表、首次部署,或 63 / 64 号还没建角),先插入者(探针**必然**回滚)
+// 回滚后,其余等待者查重取的 S 锁被继承成 gap 锁,重新插入要插入意向锁,互等成 1213 —— 事故文档
+// docs/ops/incident-friend-lock-order-deadlock-2026-09-21.md §9.1 现场二,写法与隔离级别都消不掉(2026-10-16 真库在 RC 下
+// 复现 10/10)。唯一的消法是让首次插入者先排在一行已提交的守卫行上:所以 P4 之前先 lockRouteProbeGuard 锁住
+// route_meta(id=1),并发探针在它上面串成一列,任何时刻至多一个探针持有未提交的探针行(同一真库编排 0/10)。
+// newRouteStoreFromDB 对 P4 + P5 的 1213 / 9007 有界重跑(retryRouteTx)只剩最后防线的意义,不再是正确性论证。
 // P4 被拒之后事务继续用:MySQL 只回滚失败的那条语句;TiDB 是否同样只回滚语句【未核实】,
 // 由真 TiDB 用例(TestRouteStore_TiDBClusteredShardsAndPresplit)取证。
 //
@@ -625,6 +684,28 @@ func probeRouteSession(ctx context.Context, db *sql.DB) error {
 type routeQueryer interface {
 	QueryContext(ctx context.Context, query string, args ...any) (*sql.Rows, error)
 	QueryRowContext(ctx context.Context, query string, args ...any) *sql.Row
+}
+
+// lockRouteProbeGuard 是探针事务(P4 + P5)的第一句:对 route_meta(id=1) 完整主键等值 FOR UPDATE。
+// 这一行由迁移种好、从不删除,所以并发建池的探针排在一行**已提交**的记录上,而不是排在别人必然回滚的探针行后面
+// (原因见 probeRouteShardModulus 的「锁」)。与全局锁序 route_meta → zone_merge_fence → player_route 同向;
+// W1 对 route_meta 只做一致读(requireRouteWritable),不受它影响;冻结写者(1b 把 writable 置 0)最多等一个探针事务。
+// 需要对 route_meta 的 UPDATE(或 DELETE / LOCK TABLES)权限 —— MySQL 对 FOR UPDATE 的要求;部署给 appuser 的是库级 ALL。
+func lockRouteProbeGuard(ctx context.Context, tx *sql.Tx) error {
+	var writable uint64
+	err := tx.QueryRowContext(ctx, routeLockProbeGuardSQL).Scan(&writable)
+	if errors.Is(err, sql.ErrNoRows) {
+		return ErrRouteMetaMissing
+	}
+	var me *mysql.MySQLError
+	if errors.As(err, &me) && me.Number == mysqlErrTableAccessDenied {
+		return fmt.Errorf("route store: the probe guard needs SELECT ... FOR UPDATE on route_meta "+
+			"(UPDATE privilege), including for read-only uses such as route_tool audit: %w", err)
+	}
+	if err != nil {
+		return fmt.Errorf("route store: lock route_meta(id=1) as the probe guard: %w", err)
+	}
+	return nil
 }
 
 // readRouteWritable 读 route_meta.writable(R1)。没有 id=1 那一行时回 ErrRouteMetaMissing。
@@ -1260,42 +1341,11 @@ func (s *RouteStore) importRoutesTx(ctx context.Context, ids []uint64, rows []Ro
 		return RouteScanCursorAt(plan.fills[i].row).Less(RouteScanCursorAt(plan.fills[j].row))
 	})
 
-	if len(plan.inserts) > 0 {
-		args := make([]any, 0, len(plan.inserts)*8)
-		for _, r := range plan.inserts {
-			args = append(args, routeShardArg(r.PlayerID), r.PlayerID, nullU32(r.HomeZone), nullU32(r.StorageID), nullU64(r.PlacementVersion),
-				nullString(r.FrozenRunID), r.Rev, s.writer)
-		}
-		res, err := tx.ExecContext(ctx, routeImportInsertSQL(len(plan.inserts)), args...)
-		if err != nil {
-			return RouteImportStats{}, fmt.Errorf("import insert %d player_route rows: %w", len(plan.inserts), err)
-		}
-		n, err := res.RowsAffected()
-		if err != nil {
-			return RouteImportStats{}, fmt.Errorf("import insert %d player_route rows affected: %w", len(plan.inserts), err)
-		}
-		want := int64(len(plan.inserts))
-		switch {
-		case n == want:
-		case n >= 0 && n < want:
-			return RouteImportStats{}, fmt.Errorf("%w: inserted %d of %d rows", errRouteImportRaced, n, want)
-		default:
-			// ODKU no-op 不可能让受影响行数超过待插行数;出现即说明语句被改过,fail-closed、不重试。
-			return RouteImportStats{}, fmt.Errorf("import insert player_route: 受影响行数 %d 超过待插行数 %d,"+
-				"ON DUPLICATE KEY UPDATE 必须保持 no-op、连接不得带 CLIENT_FOUND_ROWS", n, want)
-		}
+	if err := s.insertRouteRows(ctx, tx, "import", plan.inserts); err != nil {
+		return RouteImportStats{}, err
 	}
-
-	for _, f := range plan.fills {
-		r := f.row
-		res, err := tx.ExecContext(ctx, routeImportFillSQL, nullU32(r.HomeZone), nullU32(r.StorageID), nullU64(r.PlacementVersion),
-			nullString(r.FrozenRunID), s.writer, routeShardArg(r.PlayerID), r.PlayerID, f.dbRev)
-		if err != nil {
-			return RouteImportStats{}, fmt.Errorf("import fill player_route player_id=%d: %w", r.PlayerID, err)
-		}
-		if err := requireOneRowAffected(res, "import fill player_route player_id="+strconv.FormatUint(r.PlayerID, 10)); err != nil {
-			return RouteImportStats{}, err
-		}
+	if err := s.fillRouteRows(ctx, tx, "import", plan.fills); err != nil {
+		return RouteImportStats{}, err
 	}
 
 	if err := tx.Commit(); err != nil {
@@ -1303,6 +1353,56 @@ func (s *RouteStore) importRoutesTx(ctx context.Context, ids []uint64, rows []Ro
 	}
 	committed = true
 	return plan.stats, nil
+}
+
+// insertRouteRows 执行 R7(rows 已按聚簇键升序,rev 已定):受影响行数必须等于行数。少了 = 加锁读之后有 W1 并发插入了
+// 同一个 id(errRouteImportRaced,整批回滚后重来,重来时那一行会被 R8 读到);多了 = 语句被改过(fail-closed、不重试)。
+// 导入与反向修库共用;what 只进报错。
+func (s *RouteStore) insertRouteRows(ctx context.Context, tx *sql.Tx, what string, rows []RouteRow) error {
+	if len(rows) == 0 {
+		return nil
+	}
+	args := make([]any, 0, len(rows)*8)
+	for _, r := range rows {
+		args = append(args, routeShardArg(r.PlayerID), r.PlayerID, nullU32(r.HomeZone), nullU32(r.StorageID), nullU64(r.PlacementVersion),
+			nullString(r.FrozenRunID), r.Rev, s.writer)
+	}
+	res, err := tx.ExecContext(ctx, routeImportInsertSQL(len(rows)), args...)
+	if err != nil {
+		return fmt.Errorf("%s insert %d player_route rows: %w", what, len(rows), err)
+	}
+	n, err := res.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("%s insert %d player_route rows affected: %w", what, len(rows), err)
+	}
+	want := int64(len(rows))
+	switch {
+	case n == want:
+		return nil
+	case n >= 0 && n < want:
+		return fmt.Errorf("%w: inserted %d of %d rows", errRouteImportRaced, n, want)
+	default:
+		// ODKU no-op 不可能让受影响行数超过待插行数;出现即说明语句被改过,fail-closed、不重试。
+		return fmt.Errorf("%s insert player_route: 受影响行数 %d 超过待插行数 %d,"+
+			"ON DUPLICATE KEY UPDATE 必须保持 no-op、连接不得带 CLIENT_FOUND_ROWS", what, n, want)
+	}
+}
+
+// fillRouteRows 逐行执行 R9(fills 已按聚簇键升序):只补库里为 NULL 的列、rev + 1,按读到的 rev 做 CAS,必须恰好 1 行。
+// 导入与反向修库(无 maprev 时退回导入语义)共用;what 只进报错。
+func (s *RouteStore) fillRouteRows(ctx context.Context, tx *sql.Tx, what string, fills []routeImportFill) error {
+	for _, f := range fills {
+		r := f.row
+		res, err := tx.ExecContext(ctx, routeImportFillSQL, nullU32(r.HomeZone), nullU32(r.StorageID), nullU64(r.PlacementVersion),
+			nullString(r.FrozenRunID), s.writer, routeShardArg(r.PlayerID), r.PlayerID, f.dbRev)
+		if err != nil {
+			return fmt.Errorf("%s fill player_route player_id=%d: %w", what, r.PlayerID, err)
+		}
+		if err := requireOneRowAffected(res, what+" fill player_route player_id="+strconv.FormatUint(r.PlayerID, 10)); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // routeImportFill 是一行要补列的写:row 是补完之后的整行,dbRev 是 R8 读到的 rev(R9 的 CAS 条件)。
@@ -1527,6 +1627,17 @@ const (
 // 同 src 而 dst 或 run_id 不同:记冲突,不覆盖。dry-run 只做 R11 的不加锁形态。
 // 每行 SrcZone / DstZone 必须非 0 且不相等、RunID 必须合法(placement.ValidRunID),否则 ErrRouteInvalidArgument。
 func (s *RouteStore) ImportMergedInto(ctx context.Context, rows []MergedIntoRow, dryRun bool) (MergedIntoImportStats, error) {
+	return s.addMergedInto(ctx, rows, dryRun, "import", requireRouteWritable)
+}
+
+// routeWriteGate 是一个映射写事务的第一步(拿到 tx 之后、任何写之前):导入要 writable=1(requireRouteWritable),
+// 反向修库要 writable≠1 且加锁复核(requireRouteFrozenLocked)。
+type routeWriteGate func(ctx context.Context, q routeQueryer) error
+
+// addMergedInto 是 ImportMergedInto 与 RepairMergedIntoFromCache 共用的循环:每行一个事务,gate → R10 → 受影响 0 行时
+// R11 加锁读比对;只增不删、冲突不覆盖。what 只进操作名与报错(import / repair)。dry-run 只做 R11 的不加锁形态,
+// 不经 gate(调用方自己决定 dry-run 要不要先查开关)。
+func (s *RouteStore) addMergedInto(ctx context.Context, rows []MergedIntoRow, dryRun bool, what string, gate routeWriteGate) (MergedIntoImportStats, error) {
 	if err := validateMergedIntoRows(rows); err != nil {
 		return MergedIntoImportStats{}, err
 	}
@@ -1541,10 +1652,10 @@ func (s *RouteStore) ImportMergedInto(ctx context.Context, rows []MergedIntoRow,
 			}
 			verdict, dbRow = classifyMergedInto(cur, found, r)
 		} else {
-			op := fmt.Sprintf("zone_merged_into import src_zone=%d", r.SrcZone)
+			op := fmt.Sprintf("zone_merged_into %s src_zone=%d", what, r.SrcZone)
 			err := s.runRouteTx(ctx, op, func() error {
 				var attemptErr error
-				verdict, dbRow, attemptErr = s.importMergedIntoTx(ctx, r)
+				verdict, dbRow, attemptErr = s.importMergedIntoTx(ctx, r, what, gate)
 				return attemptErr
 			})
 			if err != nil {
@@ -1563,11 +1674,11 @@ func (s *RouteStore) ImportMergedInto(ctx context.Context, rows []MergedIntoRow,
 	return stats, nil
 }
 
-// importMergedIntoTx 一行 merged_into 的一次事务尝试。
-func (s *RouteStore) importMergedIntoTx(ctx context.Context, r MergedIntoRow) (mergedIntoVerdict, MergedIntoRow, error) {
+// importMergedIntoTx 一行 merged_into 的一次事务尝试(导入与反向修库共用,gate 见 routeWriteGate)。
+func (s *RouteStore) importMergedIntoTx(ctx context.Context, r MergedIntoRow, what string, gate routeWriteGate) (mergedIntoVerdict, MergedIntoRow, error) {
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
-		return 0, MergedIntoRow{}, fmt.Errorf("begin zone_merged_into import tx src_zone=%d: %w", r.SrcZone, err)
+		return 0, MergedIntoRow{}, fmt.Errorf("begin zone_merged_into %s tx src_zone=%d: %w", what, r.SrcZone, err)
 	}
 	committed := false
 	defer func() {
@@ -1576,21 +1687,21 @@ func (s *RouteStore) importMergedIntoTx(ctx context.Context, r MergedIntoRow) (m
 		}
 	}()
 
-	if err := requireRouteWritable(ctx, tx); err != nil {
+	if err := gate(ctx, tx); err != nil {
 		return 0, MergedIntoRow{}, err
 	}
 	res, err := tx.ExecContext(ctx, routeInsertMergedIntoSQL, uint64(r.SrcZone), uint64(r.DstZone), r.RunID)
 	if err != nil {
-		return 0, MergedIntoRow{}, fmt.Errorf("import zone_merged_into src_zone=%d: %w", r.SrcZone, err)
+		return 0, MergedIntoRow{}, fmt.Errorf("%s zone_merged_into src_zone=%d: %w", what, r.SrcZone, err)
 	}
 	n, err := res.RowsAffected()
 	if err != nil {
-		return 0, MergedIntoRow{}, fmt.Errorf("import zone_merged_into src_zone=%d rows affected: %w", r.SrcZone, err)
+		return 0, MergedIntoRow{}, fmt.Errorf("%s zone_merged_into src_zone=%d rows affected: %w", what, r.SrcZone, err)
 	}
 	switch n {
 	case 1:
 		if err := tx.Commit(); err != nil {
-			return 0, MergedIntoRow{}, fmt.Errorf("commit zone_merged_into import src_zone=%d (outcome unknown; rerun the import): %w", r.SrcZone, err)
+			return 0, MergedIntoRow{}, fmt.Errorf("commit zone_merged_into %s src_zone=%d (outcome unknown; rerun the %s): %w", what, r.SrcZone, what, err)
 		}
 		committed = true
 		return mergedIntoInserted, MergedIntoRow{}, nil
@@ -1606,7 +1717,7 @@ func (s *RouteStore) importMergedIntoTx(ctx context.Context, r MergedIntoRow) (m
 		verdict, dbRow := classifyMergedInto(cur, true, r)
 		return verdict, dbRow, nil
 	default:
-		return 0, MergedIntoRow{}, fmt.Errorf("import zone_merged_into src_zone=%d: 受影响行数 %d 不在 {1=插入, 0=撞键 no-op} 之内", r.SrcZone, n)
+		return 0, MergedIntoRow{}, fmt.Errorf("%s zone_merged_into src_zone=%d: 受影响行数 %d 不在 {1=插入, 0=撞键 no-op} 之内", what, r.SrcZone, n)
 	}
 }
 
@@ -1651,6 +1762,463 @@ func validateMergedIntoRows(rows []MergedIntoRow) error {
 		}
 	}
 	return nil
+}
+
+// ── 冻结、解冻与冻结态下的反向修库(第 1b-1 批,2026-10-18)──────────────────────────
+//
+// 用途:db_first 下全局库被回档(PITR;K8s 下全局库与 zone 库同一个 mysql 实例,zone 回档会连带回档它)之后,
+// 缓存才是较新的一边。恢复流程(提案 §11.2「第 1b 批」、runbook §9.4):freeze → reconcile-from-cache(缓存 → 库)
+// → audit -frozen-recovery → unfreeze。这四步的库内原语都在这里;Redis 一侧的读与判定在 routetool 包。
+
+// RouteMeta 是 route_meta(id=1) 那一行。
+type RouteMeta struct {
+	// Generation 是库世代(迁移种行时的 32 个十六进制字符;已存在的行迁移不改它)。
+	Generation string
+	// Writable 1 = 映射写者可写;其它 = 冻结(W1 与导入拒写,反向修库才可做)。
+	Writable uint64
+}
+
+// Frozen 报告映射写者是否被冻结(writable != 1,与 requireRouteWritable 的判据互为反面)。
+func (m RouteMeta) Frozen() bool { return m.Writable != 1 }
+
+// ReadRouteMeta 读 route_meta(id=1)(R18,普通一致读)。没有这一行回 ErrRouteMetaMissing。
+func (s *RouteStore) ReadRouteMeta(ctx context.Context) (RouteMeta, error) {
+	return readRouteMeta(ctx, s.db, routeReadMetaSQL)
+}
+
+// readRouteMeta 用 query(R18 或其加锁形态 R18x)读 route_meta(id=1)。
+func readRouteMeta(ctx context.Context, q routeQueryer, query string) (RouteMeta, error) {
+	var m RouteMeta
+	err := q.QueryRowContext(ctx, query).Scan(&m.Generation, &m.Writable)
+	if errors.Is(err, sql.ErrNoRows) {
+		return RouteMeta{}, ErrRouteMetaMissing
+	}
+	if err != nil {
+		return RouteMeta{}, fmt.Errorf("read route_meta: %w", err)
+	}
+	return m, nil
+}
+
+// requireRouteFrozen 是反向修库 dry-run 的前置(R18 普通读):writable == 1 即 ErrRouteNotFrozen。
+func requireRouteFrozen(ctx context.Context, q routeQueryer) error {
+	return requireRouteFrozenWith(ctx, q, routeReadMetaSQL)
+}
+
+// requireRouteFrozenLocked 是反向修库写事务的第一步(R18x 加锁读),q 必须是事务:行锁持到提交,
+// 并发的解冻(R22)排在本事务之后,保证「冻结期内修库」在提交点仍然成立(见 routeLockMetaSQL)。
+func requireRouteFrozenLocked(ctx context.Context, q routeQueryer) error {
+	return requireRouteFrozenWith(ctx, q, routeLockMetaSQL)
+}
+
+func requireRouteFrozenWith(ctx context.Context, q routeQueryer, query string) error {
+	m, err := readRouteMeta(ctx, q, query)
+	if err != nil {
+		return err
+	}
+	if !m.Frozen() {
+		return fmt.Errorf("%w (generation=%s)", ErrRouteNotFrozen, m.Generation)
+	}
+	return nil
+}
+
+// FreezeRouteWriters 冻结映射写者(R19,单条自动提交)。changed=false 表示本来就是冻结的;缺行回 ErrRouteMetaMissing。
+//
+// 冻结只拦「之后」读开关的事务:W1 与导入对 writable 是普通读,已经过了检查的事务仍会提交(提案 §11.2 第 1a 批
+// 「仍未解决的风险」第 3 条)。所以反向修库在扫描之前先等一段宽限(route_tool -freeze-grace,缺省 10s,覆盖 W1 的 2s
+// 服务端预算),写事务里再用 R18x 加锁复核。ctx 的时限至少给 RouteFreezeTimeoutMin。
+// redis 模式的 W1 不读 writable:那时冻结只拦导入与反向修库,由调用方提示。
+func (s *RouteStore) FreezeRouteWriters(ctx context.Context) (bool, error) {
+	res, err := s.db.ExecContext(ctx, routeFreezeSQL)
+	if err != nil {
+		return false, fmt.Errorf("freeze route writers (route_meta.writable=0): %w", err)
+	}
+	n, err := res.RowsAffected()
+	if err != nil {
+		return false, fmt.Errorf("freeze route writers rows affected: %w", err)
+	}
+	switch n {
+	case 1:
+		return true, nil
+	case 0:
+		m, err := s.ReadRouteMeta(ctx)
+		if err != nil {
+			return false, err
+		}
+		if m.Writable == 0 {
+			return false, nil
+		}
+		// R19 与 R18 之间有人把它改成了非 0(并发的解冻,或手工 SQL):不猜,让运维重跑。
+		return false, fmt.Errorf("freeze route writers: affected 0 rows but route_meta.writable=%d right after; it changed concurrently, rerun", m.Writable)
+	default:
+		return false, fmt.Errorf("freeze route writers: 受影响行数 %d 不在 {1=冻结, 0=已冻结或缺行} 之内", n)
+	}
+}
+
+// UnfreezeRouteWriters 解冻映射写者。一个事务:R20(锁对账行、读水位)→ R18(普通读开关)→ 已可写就整笔回滚、changed=false
+// → minWatermarkMs 大于当前水位时 R21 抬高 → R22 → COMMIT。缺对账行回 ErrRouteReconcileMissing,缺 meta 行回 ErrRouteMetaMissing。
+//
+// 先抬水位、再翻 writable:minWatermarkMs 是就绪标记里记的「缓存截至」时刻,库被回档后库水位低于它,不先抬的话
+// 第 1b-2 批的 leader 会把「库水位 < 标记水位」再判成回档、立刻又冻结;中途崩溃整笔回滚,重跑幂等。generation 不换(偏离 B1)。
+// 锁序 route_reconcile → route_meta,与第 1b-2 批 leader 每拍的事务同序;两个并发解冻在 R20 上串行,后到的读到 writable=1 即 no-op。
+// 进行中的反向修库持着 route_meta 的行锁(R18x),R22 会排在它提交之后 —— 最多等会话锁等待 1s,等满即 1205、整笔回滚、
+// 不重试(文件头不变量 4),修库结束后重跑即可。ctx 的时限至少给 RouteFreezeTimeoutMin。
+func (s *RouteStore) UnfreezeRouteWriters(ctx context.Context, minWatermarkMs uint64) (bool, error) {
+	var changed bool
+	err := s.runRouteTx(ctx, "route_meta unfreeze", func() error {
+		var attemptErr error
+		changed, attemptErr = s.unfreezeTx(ctx, minWatermarkMs)
+		return attemptErr
+	})
+	if err != nil {
+		return false, err
+	}
+	return changed, nil
+}
+
+// unfreezeTx 一次解冻事务尝试。
+func (s *RouteStore) unfreezeTx(ctx context.Context, minWatermarkMs uint64) (bool, error) {
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return false, fmt.Errorf("begin route_meta unfreeze tx: %w", err)
+	}
+	committed := false
+	defer func() {
+		if !committed {
+			_ = tx.Rollback()
+		}
+	}()
+
+	var watermark uint64
+	err = tx.QueryRowContext(ctx, routeLockReconcileWatermarkSQL).Scan(&watermark)
+	if errors.Is(err, sql.ErrNoRows) {
+		return false, ErrRouteReconcileMissing
+	}
+	if err != nil {
+		return false, fmt.Errorf("lock route_reconcile(id=%d): %w", routeMetaRowID, err)
+	}
+	meta, err := readRouteMeta(ctx, tx, routeReadMetaSQL)
+	if err != nil {
+		return false, err
+	}
+	if !meta.Frozen() {
+		return false, nil // 已经可写:什么都不写(水位也不抬),由 defer 回滚
+	}
+	if minWatermarkMs > watermark {
+		res, err := tx.ExecContext(ctx, routeRaiseWatermarkSQL, minWatermarkMs)
+		if err != nil {
+			return false, fmt.Errorf("raise route_reconcile.watermark_ms %d -> %d: %w", watermark, minWatermarkMs, err)
+		}
+		if err := requireOneRowAffected(res, "raise route_reconcile.watermark_ms"); err != nil {
+			return false, err
+		}
+	}
+	res, err := tx.ExecContext(ctx, routeUnfreezeSQL)
+	if err != nil {
+		return false, fmt.Errorf("unfreeze route writers (route_meta.writable=1): %w", err)
+	}
+	if err := requireOneRowAffected(res, fmt.Sprintf("unfreeze route_meta (writable was %d)", meta.Writable)); err != nil {
+		// writable 既不是 1 也不是 0(有人手工写了别的值):不猜,拒绝。
+		return false, err
+	}
+	if err := tx.Commit(); err != nil {
+		return false, fmt.Errorf("commit route_meta unfreeze (outcome unknown; rerun the unfreeze, it is idempotent): %w", err)
+	}
+	committed = true
+	return true, nil
+}
+
+// RouteRepairOptions 是反向修库(RepairRoutesFromCache)的行为参数。
+type RouteRepairOptions struct {
+	// DryRun 只判定不写:普通读开关与已有行,不开事务。
+	DryRun bool
+	// ResolveTies:缓存 maprev 与库 rev 相同而值不同(平局)时用缓存值覆盖(route_tool -resolve-ties=cache);
+	// 默认只报告。同一 rev 出现两份值只可能是有写者绕过了发布脚本,或回档之后库复用了 rev,哪边对要人判断。
+	ResolveTies bool
+}
+
+// RouteRepairStats 是一批反向修库的判定统计(dry-run 时是「如果写会怎样」)。
+type RouteRepairStats struct {
+	// Inserted 库里没有这一行:插入,rev = maprev(无 maprev 取 1)。
+	Inserted int
+	// Restored 缓存 maprev > 库 rev:用缓存整行覆盖,rev 置为 maprev(库被回档丢掉的写由此补回)。
+	Restored int
+	// Matched 两边一致(同 rev 同值;无 maprev 时按导入口径一致)。
+	Matched int
+	// DBAhead 库 rev > maprev,或无 maprev 时库有值而缓存无键:不动(解冻之后由增量推送补到缓存)。
+	DBAhead int
+	// Filled 无 maprev 时退回导入语义:只补库里为 NULL 的列(rev + 1)。
+	Filled int
+	// Ties 同 rev 而值不同、没有覆盖(默认):要人看。TiesResolved 同上、已按 ResolveTies 用缓存覆盖(rev 不变)。
+	Ties, TiesResolved []RouteImportConflict
+	// Conflicts 库行本身过不了校验,或无 maprev 时两边同一列都有值且不同:不写,要人看。
+	Conflicts []RouteImportConflict
+}
+
+// RepairRoutesFromCache 把一批缓存里的映射修回 player_route(反向修库,第 1b-1 批)。只许在冻结时做:
+// writable == 1 → ErrRouteNotFrozen(一条写都不发)。rows 的约束同 ImportRoutes(按 player_id 严格升序、无重复、
+// 不超过 RouteBatchLimit、每行至少有 home 或落点之一),否则 ErrRouteInvalidArgument。逐行判定见 decideRepair。
+//
+// 非 dry-run 时一批一个事务:R18x(加锁复核冻结态)→ R8(按聚簇键升序加锁读已有行)→ decideRepair → R7(插新行)
+// → R9(无 maprev 的补列)→ R17(整行覆盖,rev = maprev,按读到的 rev 做 CAS)→ COMMIT。三类写都按聚簇键升序。
+// R7 行数对不上(冻结前已过开关检查的 W1 在 R8 之后插了同一个 id)整批回滚重来,共用 routeTxAttempts 的预算。
+// 重跑幂等:已修过的行 rev 与值都等于缓存,再判就是 Matched。
+//
+// dry-run 只做 R18 与 R8 的不加锁形态,不开事务、不写任何东西,同样给出统计。
+func (s *RouteStore) RepairRoutesFromCache(ctx context.Context, rows []RouteImportRow, opts RouteRepairOptions) (RouteRepairStats, error) {
+	if err := validateRouteImportRows(rows); err != nil {
+		return RouteRepairStats{}, err
+	}
+	if len(rows) == 0 {
+		return RouteRepairStats{}, nil
+	}
+	ids := make([]uint64, len(rows))
+	for i, r := range rows {
+		ids[i] = r.PlayerID
+	}
+
+	if opts.DryRun {
+		if err := requireRouteFrozen(ctx, s.db); err != nil {
+			return RouteRepairStats{}, err
+		}
+		existing, err := loadRoutes(ctx, s.db, ids, false)
+		if err != nil {
+			return RouteRepairStats{}, err
+		}
+		return planRouteRepair(rows, existing, opts.ResolveTies).stats, nil
+	}
+
+	var stats RouteRepairStats
+	op := fmt.Sprintf("player_route repair from cache (%d rows, player_id %d..%d)", len(rows), rows[0].PlayerID, rows[len(rows)-1].PlayerID)
+	err := s.runRouteTx(ctx, op, func() error {
+		var attemptErr error
+		stats, attemptErr = s.repairRoutesTx(ctx, ids, rows, opts.ResolveTies)
+		return attemptErr
+	})
+	if err != nil {
+		return RouteRepairStats{}, err
+	}
+	return stats, nil
+}
+
+// repairRoutesTx 一次反向修库事务尝试。
+func (s *RouteStore) repairRoutesTx(ctx context.Context, ids []uint64, rows []RouteImportRow, resolveTies bool) (RouteRepairStats, error) {
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return RouteRepairStats{}, fmt.Errorf("begin player_route repair tx: %w", err)
+	}
+	committed := false
+	defer func() {
+		if !committed {
+			_ = tx.Rollback()
+		}
+	}()
+
+	if err := requireRouteFrozenLocked(ctx, tx); err != nil {
+		return RouteRepairStats{}, err
+	}
+	existing, err := loadRoutes(ctx, tx, ids, true)
+	if err != nil {
+		return RouteRepairStats{}, err
+	}
+	plan := planRouteRepair(rows, existing, resolveTies)
+	// 三类写都改成聚簇键序,与 R8 的取锁顺序一致(同 importRoutesTx)。统计与清单不受影响。
+	sort.Slice(plan.inserts, func(i, j int) bool {
+		return RouteScanCursorAt(plan.inserts[i]).Less(RouteScanCursorAt(plan.inserts[j]))
+	})
+	sort.Slice(plan.fills, func(i, j int) bool {
+		return RouteScanCursorAt(plan.fills[i].row).Less(RouteScanCursorAt(plan.fills[j].row))
+	})
+	sort.Slice(plan.overwrites, func(i, j int) bool {
+		return RouteScanCursorAt(plan.overwrites[i].row).Less(RouteScanCursorAt(plan.overwrites[j].row))
+	})
+
+	if err := s.insertRouteRows(ctx, tx, "repair", plan.inserts); err != nil {
+		return RouteRepairStats{}, err
+	}
+	if err := s.fillRouteRows(ctx, tx, "repair", plan.fills); err != nil {
+		return RouteRepairStats{}, err
+	}
+	for _, o := range plan.overwrites {
+		r := o.row
+		res, err := tx.ExecContext(ctx, routeRepairOverwriteSQL, nullU32(r.HomeZone), nullU32(r.StorageID), nullU64(r.PlacementVersion),
+			nullString(r.FrozenRunID), r.Rev, s.writer, routeShardArg(r.PlayerID), r.PlayerID, o.dbRev)
+		if err != nil {
+			return RouteRepairStats{}, fmt.Errorf("repair overwrite player_route player_id=%d rev %d -> %d: %w", r.PlayerID, o.dbRev, r.Rev, err)
+		}
+		if err := requireOneRowAffected(res, "repair overwrite player_route player_id="+strconv.FormatUint(r.PlayerID, 10)); err != nil {
+			return RouteRepairStats{}, err
+		}
+	}
+
+	if err := tx.Commit(); err != nil {
+		return RouteRepairStats{}, fmt.Errorf("commit player_route repair (outcome unknown; the repair is idempotent, rerun it): %w", err)
+	}
+	committed = true
+	return plan.stats, nil
+}
+
+// routeRepairOverwrite 是一行 R17:row 是缓存那一版的整行(Rev = maprev),dbRev 是 R8 读到的 rev(CAS 条件)。
+type routeRepairOverwrite struct {
+	row   RouteRow
+	dbRev uint64
+}
+
+// routeRepairPlan 是一批反向修库的判定结果(inserts / fills / overwrites 保持 rows 的 player_id 升序,写之前再按聚簇键排)。
+type routeRepairPlan struct {
+	stats      RouteRepairStats
+	inserts    []RouteRow
+	fills      []routeImportFill
+	overwrites []routeRepairOverwrite
+}
+
+// planRouteRepair 对每一行跑 decideRepair 并汇总。existing 是库里已有的行(按 player_id)。
+func planRouteRepair(rows []RouteImportRow, existing map[uint64]RouteRow, resolveTies bool) routeRepairPlan {
+	var plan routeRepairPlan
+	for _, r := range rows {
+		var dbRow *RouteRow
+		if cur, ok := existing[r.PlayerID]; ok {
+			dbRow = &cur
+		}
+		d := decideRepair(dbRow, r, resolveTies)
+		switch d.action {
+		case repairInsert:
+			plan.stats.Inserted++
+			plan.inserts = append(plan.inserts, d.row)
+		case repairRestore:
+			plan.stats.Restored++
+			plan.overwrites = append(plan.overwrites, routeRepairOverwrite{row: d.row, dbRev: dbRow.Rev})
+		case repairMatch:
+			plan.stats.Matched++
+		case repairDBAhead:
+			plan.stats.DBAhead++
+		case repairFill:
+			plan.stats.Filled++
+			plan.fills = append(plan.fills, routeImportFill{row: d.row, dbRev: dbRow.Rev})
+		case repairTie:
+			plan.stats.Ties = append(plan.stats.Ties, RouteImportConflict{PlayerID: r.PlayerID, DB: *dbRow, Redis: r})
+		case repairTieResolved:
+			plan.stats.TiesResolved = append(plan.stats.TiesResolved, RouteImportConflict{PlayerID: r.PlayerID, DB: *dbRow, Redis: r})
+			plan.overwrites = append(plan.overwrites, routeRepairOverwrite{row: d.row, dbRev: dbRow.Rev})
+		default: // repairConflict:dbRow 一定非 nil(库里没有行只会是 insert)
+			plan.stats.Conflicts = append(plan.stats.Conflicts, RouteImportConflict{PlayerID: r.PlayerID, DB: *dbRow, Redis: r})
+		}
+	}
+	return plan
+}
+
+// repairAction 是 decideRepair 对一行的结论。
+type repairAction uint8
+
+const (
+	repairInsert repairAction = iota + 1
+	repairRestore
+	repairMatch
+	repairDBAhead
+	repairFill
+	repairTie
+	repairTieResolved
+	repairConflict
+)
+
+// String 只给用例的失败信息用。
+func (a repairAction) String() string {
+	switch a {
+	case repairInsert:
+		return "insert"
+	case repairRestore:
+		return "restore"
+	case repairMatch:
+		return "match"
+	case repairDBAhead:
+		return "db_ahead"
+	case repairFill:
+		return "fill"
+	case repairTie:
+		return "tie"
+	case repairTieResolved:
+		return "tie_resolved"
+	case repairConflict:
+		return "conflict"
+	default:
+		return "unknown"
+	}
+}
+
+// repairDecision:insert 时 row 是要插入的行(rev 已定);restore / tie_resolved 时 row 是缓存那一版的整行(Rev = maprev);
+// fill 时 row 是补完 NULL 列之后的整行(Rev 仍是库里读到的那一版,写时由 R9 加一);其余结论 row 为零值。
+type repairDecision struct {
+	action repairAction
+	row    RouteRow
+}
+
+// decideRepair 判定一名玩家在冻结态下该怎么从缓存修库(提案 §11.2「第 1b 批」D5):
+//  1. 库里没有行,或缓存没有 maprev:退回导入语义(decideImport;库无行 → 插入,rev = maprev / 1;无 maprev 时只补 NULL 列,
+//     两边都有值且不同 → conflict)。无 maprev 说明这一版从没经过发布脚本,缓存不比库更可信,不覆盖;
+//  2. 库行本身过不了校验 → conflict(不在修库里顺手改坏行,交给人);
+//  3. maprev > 库 rev → restore:库被回档丢了这几版,用缓存整行覆盖,rev 置为 maprev;
+//     但库里某列有值而缓存同列缺席(home 或落点)→ conflict(2026-10-18 修复评审):db_first 下库的这两列只会从 NULL 变成有值
+//     (W1 / 导入只补 NULL 列,W3 删号停用),发布脚本按 rev 原子写整行,所以「rev 更高却少一列」只可能是脚本之外的 DEL;
+//     照覆盖会把库里正确的值清成 NULL,之后两边都没有这一列,audit 判 match、静默放过。将来启用删号墓碑时要同步调整这条判据;
+//  4. maprev < 库 rev → db_ahead:库更新(回档之后到冻结之前又提交过),不动;
+//  5. maprev == 库 rev:值相同 → match;值不同 → tie(默认只报告),resolveTies 时 tie_resolved(用缓存覆盖,rev 不变)。
+//
+// 值按缓存形态比较(home 十进制、落点 Encode,冻结态与稳定态视为不同),与 audit / decideImport 同口径。
+func decideRepair(db *RouteRow, r RouteImportRow, resolveTies bool) repairDecision {
+	if db == nil || r.MapRev == 0 {
+		d := decideImport(db, r)
+		switch d.action {
+		case importInsert:
+			return repairDecision{action: repairInsert, row: d.row}
+		case importMatch:
+			return repairDecision{action: repairMatch}
+		case importFill:
+			return repairDecision{action: repairFill, row: d.row}
+		case importDBAhead:
+			return repairDecision{action: repairDBAhead}
+		default:
+			// importConflict(库行无效或同列异值);MapRev 为 0 时 decideImport 不会给 rev_regression。
+			return repairDecision{action: repairConflict}
+		}
+	}
+	dbPlc, err := db.PlacementValue()
+	if err != nil {
+		return repairDecision{action: repairConflict}
+	}
+	cache := RouteRow{PlayerID: r.PlayerID, HomeZone: r.HomeZone, Rev: r.MapRev}.withPlacement(r.Placement)
+	cachePlc, err := cache.PlacementValue()
+	if err != nil {
+		// 入参已过 validateRouteImportRows 的落点校验,走不到这里;防御性地按冲突处理,不写。
+		return repairDecision{action: repairConflict}
+	}
+	switch {
+	case r.MapRev > db.Rev && ((db.HomeValue() != "" && cache.HomeValue() == "") || (dbPlc != "" && cachePlc == "")):
+		return repairDecision{action: repairConflict}
+	case r.MapRev > db.Rev:
+		return repairDecision{action: repairRestore, row: cache}
+	case r.MapRev < db.Rev:
+		return repairDecision{action: repairDBAhead}
+	case db.HomeValue() == cache.HomeValue() && dbPlc == cachePlc:
+		return repairDecision{action: repairMatch}
+	case resolveTies:
+		return repairDecision{action: repairTieResolved, row: cache}
+	default:
+		return repairDecision{action: repairTie}
+	}
+}
+
+// RepairMergedIntoFromCache 把缓存里的合走标记补回 zone_merged_into(反向修库的一部分):库里没有就插入;同 src 而 dst /
+// run_id 不同记冲突、不覆盖;**永不删除**(合走标记是挡住「回填把已合走的玩家钉回源区」的唯一东西)。
+// 与 ImportMergedInto 同一个循环,区别只在开关:要求冻结 —— 写事务的第一句是 R18x 加锁复核,dry-run 先 R18 普通读一次。
+func (s *RouteStore) RepairMergedIntoFromCache(ctx context.Context, rows []MergedIntoRow, dryRun bool) (MergedIntoImportStats, error) {
+	if dryRun && len(rows) > 0 {
+		if err := validateMergedIntoRows(rows); err != nil {
+			return MergedIntoImportStats{}, err
+		}
+		if err := requireRouteFrozen(ctx, s.db); err != nil {
+			return MergedIntoImportStats{}, err
+		}
+	}
+	return s.addMergedInto(ctx, rows, dryRun, "repair", requireRouteFrozenLocked)
 }
 
 // ── 只读接口(route_tool audit 用;都是一致读,不取锁)──────────────────────────

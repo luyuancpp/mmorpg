@@ -28,6 +28,7 @@ import (
 	"shared/placement"
 
 	goredis "github.com/redis/go-redis/v9"
+	"github.com/zeromicro/go-zero/core/breaker"
 	"github.com/zeromicro/go-zero/core/logx"
 	"github.com/zeromicro/go-zero/core/stores/redis"
 )
@@ -302,15 +303,20 @@ func (r *Router) publishRoute(ctx context.Context, row store.RouteRow) error {
 			}
 			return nil
 		})
-		if evalCmd == nil {
-			// 回调根本没被调用(取连接失败、熔断器拒绝):一条命令都没发出去,可以重试。
+		// 2026-10-18 更正(原注释「回调根本没被调用(取连接失败、熔断器拒绝)」只对了前一半):回调没被调用只发生在取连接失败时;
+		// 熔断打开时回调**照样被调用**、命令照样排进队列,但 go-zero 的 breakerHook.ProcessPipelineHook 直接返回
+		// breaker.ErrServiceUnavailable、不调下一层(ctx 已结束时 DoWithAcceptableCtx 先回 ctx.Err(),同理),队列里的命令一条都没
+		// 执行,各自的 Err() 为 nil、Val() 为 nil(go-zero v1.10.0 core/stores/redis/breakerhook.go、go-redis v9.18.0 pipeline.go Exec
+		// 不回填错误)。按旧判据它们会落到 ClassifyPublishReply(nil) → ErrUnexpectedPublishReply,被当成确定性错误、不再重试。
+		// 现在两种情况都按「没执行」处理:可重试的 Redis 不可用(判据同 scene_manager load_refresh.go 的 pipelineBatchRejected)。
+		if evalCmd == nil || publishPipelineNotExecuted(pipeErr, evalCmd, waitCmd) {
 			if pipeErr == nil {
 				pipeErr = errors.New("pipeline callback was not invoked")
 			}
-			lastErr = fmt.Errorf("route publish pipeline for player %d not sent: %w", row.PlayerID, pipeErr)
+			lastErr = fmt.Errorf("route publish pipeline for player %d not executed (connection / circuit breaker / context): %w", row.PlayerID, pipeErr)
 			continue
 		}
-		// 不看 pipeErr 本身:它只是第一条失败命令的错误,逐条命令的结果才是判据。
+		// 执行过的批不看 pipeErr 本身:它只是第一条失败命令的错误,逐条命令的结果才是判据。
 
 		if evalErr := evalCmd.Err(); evalErr != nil {
 			if isRedisErrorReply(evalErr) {
@@ -388,6 +394,9 @@ func (r *Router) publishRoute(ctx context.Context, row store.RouteRow) error {
 // 熔断器一开,同一个客户端上无关的 GetPlayerHomeZone、BatchGet、玩家锁也会被按概率丢弃,影响面从建角扩大到登录。
 //
 // 用自己新建的 *redis.Redis(go-zero 按地址复用底层连接池,不多开池),熔断器与 Router 的互不相干。
+// 2026-10-18 更正:上一句的后半不成立。go-zero v1.10.0 的底层 go-redis 客户端按地址缓存(redisclientmanager.go getClient),
+// 熔断钩子在**第一次**建客户端时用当时那个 *redis.Redis 的熔断器挂上;之后同地址新建的 *redis.Redis 拿到的是同一个客户端、
+// 同一个熔断器。所以本探针与 Router 共用一个熔断器(谁先建谁的),探针的失败同样计进 Router 的熔断。原文不删,风险登记在提案 §11.2 第 1b-1 批。
 // 新连接上没有写过东西(WAITAOF 等的是本连接的写偏移),本地确认会立即返回;timeout 仍取配置值而不是 1ms,
 // 免得池里某条刚写过的连接赶上 everysec 的 fsync 间隙,被误判成「不满足」。
 func ProbeWaitAOF(ctx context.Context, mapping redis.RedisConf, rc config.RouteStoreConfig) error {
@@ -404,11 +413,12 @@ func ProbeWaitAOF(ctx context.Context, mapping redis.RedisConf, rc config.RouteS
 		waitCmd = p.Do(ctx, "WAITAOF", rc.NumLocal(), rc.NumReplicas(), rc.WaitAOFTimeoutMs)
 		return nil
 	})
-	if waitCmd == nil {
+	// 没执行(取连接失败、熔断打开、ctx 已结束)单独报:否则会落到下面的 Slice() 报成「needs appendonly yes」,把运维引错方向。
+	if waitCmd == nil || publishPipelineNotExecuted(pipeErr, waitCmd) {
 		if pipeErr == nil {
 			pipeErr = errors.New("pipeline callback was not invoked")
 		}
-		return fmt.Errorf("WAITAOF probe not sent to mapping redis %s: %w", mapping.Host, pipeErr)
+		return fmt.Errorf("WAITAOF probe not executed on mapping redis %s: %w", mapping.Host, pipeErr)
 	}
 	acks, err := waitCmd.Slice()
 	if err != nil {
@@ -434,6 +444,29 @@ func withLastAttempt(err, cause error) error {
 		return err
 	}
 	return fmt.Errorf("%w; last attempt: %w", err, cause)
+}
+
+// publishPipelineNotExecuted 判断一批已排队的 pipeline 命令是否应按「一条都没执行」处理(纯函数,单测直接测)。
+// pipeErr 是 PipelinedCtx 的返回值,cmds 是回调里排的命令(nil 跳过):
+//   - pipeErr 为 nil 或 redis.Nil:批已执行,逐条判;
+//   - pipeErr 是熔断拒绝(breaker.ErrServiceUnavailable):没执行(钩子不调下一层,命令的 Err() / Val() 都是 nil);
+//   - 其它 pipeErr,且没有任何一条命令自己带错:错误没落到任何命令上(ctx 已结束时熔断钩子先回 ctx.Err() 等),没执行;
+//   - 其它 pipeErr,且有命令自己带错:批已执行(或 go-redis 已把网络错误回填到每条命令,generalProcessPipeline 的 setCmdsErr),逐条判。
+//
+// 与 scene_manager internal/logic/load_refresh.go 的 pipelineBatchRejected 同一判据(两个模块各一份:不为几行代码开公共包)。
+func publishPipelineNotExecuted(pipeErr error, cmds ...*goredis.Cmd) bool {
+	if pipeErr == nil || errors.Is(pipeErr, goredis.Nil) {
+		return false
+	}
+	if errors.Is(pipeErr, breaker.ErrServiceUnavailable) {
+		return true
+	}
+	for _, c := range cmds {
+		if c != nil && c.Err() != nil {
+			return false
+		}
+	}
+	return true
 }
 
 // isRedisErrorReply 判断 err 是不是 Redis 回的错误回复(确定性错误)。网络错误、ctx 错误、熔断拒绝都不是。

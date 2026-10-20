@@ -3,15 +3,19 @@ package logic
 import (
 	"context"
 	"errors"
+	"os"
 	"testing"
+	"time"
 
 	"github.com/alicebob/miniredis/v2"
+	"github.com/google/uuid"
 	goredis "github.com/redis/go-redis/v9"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"guild/internal/constants"
 	pb "proto/guild"
+	"shared/placement"
 )
 
 // fakeFence 让用例精确控制闸门的三种回答,不必起 Redis。
@@ -139,4 +143,384 @@ func TestRedisMergeFence_RedisDownIsAnError(t *testing.T) {
 // 没配时构造函数返回 nil 指针,那边据此传一个 nil **接口**给 GuildLogic。
 func TestNewRedisMergeFence_NilClientYieldsNilFence(t *testing.T) {
 	assert.Nil(t, NewRedisMergeFence(nil))
+}
+
+// TestMergeFenceKeyMatchesPlacement:读脚本的 KEYS 用 placement.MergeFenceKey 组装,
+// 与本包(以及 data_service / merge_zone)的拼法必须一字不差,否则开关打开后闸门永远看不到键。
+func TestMergeFenceKeyMatchesPlacement(t *testing.T) {
+	for _, zone := range []uint32{1, 7, 42, 999999} {
+		assert.Equal(t, placement.MergeFenceKey(zone), MergeFenceKey(zone))
+	}
+}
+
+// ── RouteReadyMergeFence(MergeMarkerRedis.RequireRouteReady=true)──────────
+//
+// 规格 docs/handoff/launch-readiness-20261013/spec_D1_batch1b2_2_3.md §5.1 / §5.4:只有 Trusted 才按闸门键判,
+// 其余 verdict 与读脚本出错一律返回 error(调用方当封锁)。miniredis 不支持 INFO 的 server / replication 段,
+// 下面的单测经 RouteReadyReader 注入回复;脚本本身的执行语义见 TestRouteReadyMergeFence_RealRedis。
+
+const (
+	rrTestRunID      = "1111111111111111111111111111111111111111"
+	rrTestReplID     = "2222222222222222222222222222222222222222"
+	rrTestOtherRunID = "3333333333333333333333333333333333333333"
+	rrTestOtherRepl  = "4444444444444444444444444444444444444444"
+)
+
+// fakeRouteReadyReader 回放一份读脚本回复,并记下每次调用的 KEYS。
+type fakeRouteReadyReader struct {
+	reply     any
+	err       error
+	exists    bool
+	existsErr error
+
+	readKeys   [][]string
+	existsKeys []string
+}
+
+func (r *fakeRouteReadyReader) ReadRouteReady(_ context.Context, keys []string) (any, error) {
+	r.readKeys = append(r.readKeys, append([]string(nil), keys...))
+	return r.reply, r.err
+}
+
+func (r *fakeRouteReadyReader) KeyExists(_ context.Context, key string) (bool, error) {
+	r.existsKeys = append(r.existsKeys, key)
+	return r.exists, r.existsErr
+}
+
+// routeReadyTestMarker 编码一个记着 (runID, replID) 的合法就绪标记。
+func routeReadyTestMarker(t *testing.T, runID, replID string) string {
+	t.Helper()
+	raw, err := placement.EncodeRouteReadyMarker(placement.RouteReadyMarker{
+		Generation:   "0123456789abcdef0123456789abcdef",
+		RedisRunID:   runID,
+		MasterReplID: replID,
+		SetAtMs:      1760000000000,
+		WatermarkMs:  1760000000000,
+		Leader:       "data_service@guild-test:1",
+	})
+	require.NoError(t, err)
+	return raw
+}
+
+// routeReadyReply 拼读脚本的回复:{marker, run_id, role, master_replid, 映射键的值...}。
+func routeReadyReply(marker any, runID, role, replID string, values ...any) []any {
+	return append([]any{marker, runID, role, replID}, values...)
+}
+
+// newObservedRouteReadyFence 返回一个把 verdict label 记进 labels 的闸门。
+func newObservedRouteReadyFence(reader RouteReadyReader) (*RouteReadyMergeFence, *[]string) {
+	labels := &[]string{}
+	f := newRouteReadyMergeFence(reader)
+	f.observe = func(label string) { *labels = append(*labels, label) }
+	return f, labels
+}
+
+func TestRouteReadyMergeFence_TrustedValuePresentBlocks(t *testing.T) {
+	reader := &fakeRouteReadyReader{reply: routeReadyReply(routeReadyTestMarker(t, rrTestRunID, rrTestReplID),
+		rrTestRunID, "master", rrTestReplID, `{"fence_epoch":3}`)}
+	fence, labels := newObservedRouteReadyFence(reader)
+
+	merging, err := fence.MergeInProgress(context.Background(), 7)
+	require.NoError(t, err)
+	assert.True(t, merging)
+	assert.Equal(t, [][]string{{placement.RouteReadyKey, "merge:in_progress:7"}}, reader.readKeys,
+		"KEYS 必须是 [就绪标记, 本 zone 的闸门键],标记在前")
+	assert.Empty(t, reader.existsKeys, "值已在,不该再多一次 EXISTS")
+	assert.Equal(t, []string{"trusted"}, *labels)
+}
+
+func TestRouteReadyMergeFence_TrustedValueAbsentPassesAfterExists(t *testing.T) {
+	reader := &fakeRouteReadyReader{reply: routeReadyReply(routeReadyTestMarker(t, rrTestRunID, rrTestReplID),
+		rrTestRunID, "master", rrTestReplID, nil)}
+	fence, labels := newObservedRouteReadyFence(reader)
+
+	merging, err := fence.MergeInProgress(context.Background(), 7)
+	require.NoError(t, err)
+	assert.False(t, merging, "副本可信且闸门键不在 → 放行")
+	assert.Equal(t, []string{"merge:in_progress:7"}, reader.existsKeys)
+	assert.Equal(t, []string{"trusted"}, *labels)
+}
+
+// TestRouteReadyMergeFence_TrustedNonStringKeyStillBlocks:MGET 对非 string 类型的键回 nil,
+// 老路径的 EXISTS 对它是封锁 —— 换读法不能把它变成放行。
+func TestRouteReadyMergeFence_TrustedNonStringKeyStillBlocks(t *testing.T) {
+	reader := &fakeRouteReadyReader{
+		reply:  routeReadyReply(routeReadyTestMarker(t, rrTestRunID, rrTestReplID), rrTestRunID, "master", rrTestReplID, nil),
+		exists: true,
+	}
+	fence, _ := newObservedRouteReadyFence(reader)
+
+	merging, err := fence.MergeInProgress(context.Background(), 7)
+	require.NoError(t, err)
+	assert.True(t, merging)
+}
+
+func TestRouteReadyMergeFence_TrustedExistsErrorIsAnError(t *testing.T) {
+	reader := &fakeRouteReadyReader{
+		reply:     routeReadyReply(routeReadyTestMarker(t, rrTestRunID, rrTestReplID), rrTestRunID, "master", rrTestReplID, nil),
+		existsErr: errors.New("i/o timeout"),
+	}
+	fence, _ := newObservedRouteReadyFence(reader)
+
+	merging, err := fence.MergeInProgress(context.Background(), 7)
+	require.Error(t, err, "EXISTS 补判失败必须报错,由调用方 fail-closed")
+	assert.False(t, merging)
+	assert.NotErrorIs(t, err, ErrMergeFenceRouteNotReady)
+}
+
+// TestRouteReadyMergeFence_UntrustedVerdictsAreErrors 覆盖 Trusted 以外的每一种 verdict:
+// 值在不在都不用、不补 EXISTS,一律返回包了 ErrMergeFenceRouteNotReady 的 error。
+func TestRouteReadyMergeFence_UntrustedVerdictsAreErrors(t *testing.T) {
+	good := routeReadyTestMarker(t, rrTestRunID, rrTestReplID)
+	cases := []struct {
+		name  string
+		reply []any
+		label string
+	}{
+		{"absent_with_value", routeReadyReply(nil, rrTestRunID, "master", rrTestReplID, `{"fence_epoch":1}`), "absent"},
+		{"absent_without_value", routeReadyReply(nil, rrTestRunID, "master", rrTestReplID, nil), "absent"},
+		{"malformed", routeReadyReply("not-json", rrTestRunID, "master", rrTestReplID, nil), "malformed"},
+		{"newer_version", routeReadyReply(`{"v":2,"set_at_ms":"later"}`, rrTestRunID, "master", rrTestReplID, nil), "newer_version"},
+		{"identity_unavailable_run_id", routeReadyReply(good, "", "master", rrTestReplID, nil), "identity_unavailable"},
+		{"identity_unavailable_role", routeReadyReply(good, rrTestRunID, "", rrTestReplID, nil), "identity_unavailable"},
+		{"not_master", routeReadyReply(good, rrTestRunID, "slave", rrTestReplID, nil), "not_master"},
+		{"identity_mismatch_run_id", routeReadyReply(good, rrTestOtherRunID, "master", rrTestReplID, nil), "identity_mismatch"},
+		{"identity_mismatch_replid", routeReadyReply(good, rrTestRunID, "master", rrTestOtherRepl, `{"fence_epoch":1}`), "identity_mismatch"},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			reader := &fakeRouteReadyReader{reply: tc.reply}
+			fence, labels := newObservedRouteReadyFence(reader)
+
+			merging, err := fence.MergeInProgress(context.Background(), 7)
+			require.ErrorIs(t, err, ErrMergeFenceRouteNotReady)
+			assert.False(t, merging)
+			assert.Contains(t, err.Error(), "verdict="+tc.label)
+			assert.Empty(t, reader.existsKeys, "副本不可信时不能拿 EXISTS 补判")
+			assert.Equal(t, []string{tc.label}, *labels)
+		})
+	}
+}
+
+// TestRouteReadyMergeFence_ReadFailuresAreErrors:脚本执行出错与回复形状不对都是 error(不是 RouteNotReady),
+// label 记 read_error。
+func TestRouteReadyMergeFence_ReadFailuresAreErrors(t *testing.T) {
+	good := routeReadyTestMarker(t, rrTestRunID, rrTestReplID)
+	cases := []struct {
+		name   string
+		reader *fakeRouteReadyReader
+		is     error
+	}{
+		{"script_error", &fakeRouteReadyReader{err: errors.New("ERR This Redis command is not allowed from script")}, nil},
+		{"reply_not_array", &fakeRouteReadyReader{reply: "OK"}, placement.ErrUnexpectedRouteReadyReadReply},
+		{"reply_missing_value", &fakeRouteReadyReader{reply: routeReadyReply(good, rrTestRunID, "master", rrTestReplID)}, placement.ErrUnexpectedRouteReadyReadReply},
+		{"reply_value_wrong_type", &fakeRouteReadyReader{reply: routeReadyReply(good, rrTestRunID, "master", rrTestReplID, int64(1))}, placement.ErrUnexpectedRouteReadyReadReply},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			fence, labels := newObservedRouteReadyFence(tc.reader)
+
+			merging, err := fence.MergeInProgress(context.Background(), 7)
+			require.Error(t, err)
+			assert.False(t, merging)
+			assert.NotErrorIs(t, err, ErrMergeFenceRouteNotReady)
+			if tc.is != nil {
+				assert.ErrorIs(t, err, tc.is)
+			}
+			assert.Empty(t, tc.reader.existsKeys)
+			assert.Equal(t, []string{routeReadyVerdictReadError}, *labels)
+		})
+	}
+}
+
+func TestRouteReadyMergeFence_ZoneZeroAndNilAreNotChecked(t *testing.T) {
+	reader := &fakeRouteReadyReader{err: errors.New("must not be called")}
+	fence, labels := newObservedRouteReadyFence(reader)
+	merging, err := fence.MergeInProgress(context.Background(), 0)
+	require.NoError(t, err)
+	assert.False(t, merging)
+	assert.Empty(t, reader.readKeys, "zone=0 不该产生一次 Redis 往返")
+	assert.Empty(t, *labels)
+
+	var nilFence *RouteReadyMergeFence
+	merging, err = nilFence.MergeInProgress(context.Background(), 7)
+	require.NoError(t, err)
+	assert.False(t, merging)
+	assert.Nil(t, NewRouteReadyMergeFence(nil), "没配客户端时构造函数返回 nil,guild.go 据此不装闸门")
+}
+
+// TestCreateGuild_RouteNotReadyRefusedAsMerging 钉住「调用方不改」:副本不可信的 error 走既有的
+// fail-closed 分支,回 kGuildZoneMerging + "merge fence unreadable"。
+func TestCreateGuild_RouteNotReadyRefusedAsMerging(t *testing.T) {
+	reader := &fakeRouteReadyReader{reply: routeReadyReply(nil, rrTestRunID, "master", rrTestReplID, nil)}
+	fence, _ := newObservedRouteReadyFence(reader)
+	l := NewGuildLogic(nil, nil, nil, fence, nil)
+
+	resp, err := l.CreateGuild(context.Background(), &pb.CreateGuildRequest{
+		PlayerId: 1003, Name: "route-not-ready", ZoneId: 7,
+	})
+	require.NoError(t, err)
+	assert.Equal(t, constants.ErrZoneMerging, resp.GetErrorMessage().GetId())
+	assert.Equal(t, []string{"merge fence unreadable"}, resp.GetErrorMessage().GetParameters())
+	assert.Nil(t, resp.GetGuild())
+}
+
+func TestRouteReadyMergeFence_Probe(t *testing.T) {
+	good := routeReadyTestMarker(t, rrTestRunID, rrTestReplID)
+
+	t.Run("trusted", func(t *testing.T) {
+		reader := &fakeRouteReadyReader{reply: routeReadyReply(good, rrTestRunID, "master", rrTestReplID)}
+		fence, labels := newObservedRouteReadyFence(reader)
+		verdict, err := fence.Probe(context.Background())
+		require.NoError(t, err)
+		assert.Equal(t, placement.RouteReadyTrusted, verdict)
+		assert.Equal(t, [][]string{{placement.RouteReadyKey}}, reader.readKeys, "探针不带映射键")
+		assert.Empty(t, *labels, "探针不计指标")
+	})
+	t.Run("untrusted_is_not_an_error", func(t *testing.T) {
+		reader := &fakeRouteReadyReader{reply: routeReadyReply(nil, rrTestRunID, "master", rrTestReplID)}
+		fence, _ := newObservedRouteReadyFence(reader)
+		verdict, err := fence.Probe(context.Background())
+		require.NoError(t, err, "标记还没挂上不算启动失败")
+		assert.Equal(t, placement.RouteReadyAbsent, verdict)
+	})
+	t.Run("script_error_refuses_start", func(t *testing.T) {
+		reader := &fakeRouteReadyReader{err: errors.New("ERR This Redis command is not allowed from script")}
+		fence, _ := newObservedRouteReadyFence(reader)
+		verdict, err := fence.Probe(context.Background())
+		require.Error(t, err)
+		assert.NotEqual(t, placement.RouteReadyTrusted, verdict, "出错时不能回零值 Trusted")
+	})
+	t.Run("bad_shape_refuses_start", func(t *testing.T) {
+		reader := &fakeRouteReadyReader{reply: routeReadyReply(good, rrTestRunID, "master", rrTestReplID, nil)}
+		fence, _ := newObservedRouteReadyFence(reader)
+		_, err := fence.Probe(context.Background())
+		require.ErrorIs(t, err, placement.ErrUnexpectedRouteReadyReadReply)
+	})
+	t.Run("nil_fence_refuses_start", func(t *testing.T) {
+		var nilFence *RouteReadyMergeFence
+		_, err := nilFence.Probe(context.Background())
+		require.Error(t, err)
+	})
+}
+
+// TestRouteReadyVerdictLabelsAreClosed:label 全集 = placement 的全部 verdict + read_error,无重复;
+// 每个 verdict 的 String() 都在集合里(PrimeRouteReadyMetrics 按它预置)。
+func TestRouteReadyVerdictLabelsAreClosed(t *testing.T) {
+	labels := routeReadyVerdictLabels()
+	seen := map[string]bool{}
+	for _, l := range labels {
+		assert.False(t, seen[l], "label %q 重复", l)
+		seen[l] = true
+	}
+	assert.True(t, seen[routeReadyVerdictReadError])
+	for _, v := range []placement.RouteReadyVerdict{
+		placement.RouteReadyTrusted, placement.RouteReadyAbsent, placement.RouteReadyMalformed, placement.RouteReadyNewerVersion,
+		placement.RouteReadyIdentityUnavailable, placement.RouteReadyNotMaster, placement.RouteReadyIdentityMismatch,
+	} {
+		assert.True(t, seen[v.String()], "verdict %s 不在 label 全集里", v)
+	}
+	assert.Len(t, labels, len(placement.RouteReadyVerdictNames())+1)
+}
+
+// prefixRouteReadyReader 给所有 KEYS 加一次性前缀:真 Redis 用例不碰真正的 mapping:route:ready 与闸门键。
+type prefixRouteReadyReader struct {
+	inner  RouteReadyReader
+	prefix string
+}
+
+func (p prefixRouteReadyReader) ReadRouteReady(ctx context.Context, keys []string) (any, error) {
+	out := make([]string, len(keys))
+	for i, k := range keys {
+		out[i] = p.prefix + k
+	}
+	return p.inner.ReadRouteReady(ctx, out)
+}
+
+func (p prefixRouteReadyReader) KeyExists(ctx context.Context, key string) (bool, error) {
+	return p.inner.KeyExists(ctx, p.prefix+key)
+}
+
+// flipFirstHex 返回一个与 s 只差第一个字符的十六进制串(构造「别的实例」的身份)。
+func flipFirstHex(s string) string {
+	if s[0] == '0' {
+		return "1" + s[1:]
+	}
+	return "0" + s[1:]
+}
+
+// TestRouteReadyMergeFence_RealRedis 在真 Redis 上执行 placement.RouteReadyReadScript
+// (miniredis 不支持 INFO 的 server / replication 段):证明脚本里能调 INFO、回复形状与 ParseRouteReadyRead 一致、
+// 身份绑定生效、非 string 闸门键仍封锁。键全部带一次性前缀,结束时删除;实例必须是主。
+//
+// 运行(Codex):GUILD_ROUTE_READY_IT_REDIS=127.0.0.1:6379;设 GUILD_ROUTE_READY_IT_REQUIRE=1 时缺地址判 FAIL 而不是 SKIP。
+// 地址给了却连不上同样是 FAIL(不是 SKIP)。
+func TestRouteReadyMergeFence_RealRedis(t *testing.T) {
+	addr := os.Getenv("GUILD_ROUTE_READY_IT_REDIS")
+	if addr == "" {
+		if os.Getenv("GUILD_ROUTE_READY_IT_REQUIRE") == "1" {
+			t.Fatal("GUILD_ROUTE_READY_IT_REQUIRE=1 but GUILD_ROUTE_READY_IT_REDIS is empty")
+		}
+		t.Skip("set GUILD_ROUTE_READY_IT_REDIS to run the route ready read script on a real Redis (miniredis lacks INFO server/replication)")
+	}
+	rdb := goredis.NewClient(&goredis.Options{Addr: addr, DialTimeout: 3 * time.Second, ReadTimeout: 3 * time.Second, WriteTimeout: 3 * time.Second})
+	t.Cleanup(func() { _ = rdb.Close() })
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	infoServer, err := rdb.Info(ctx, "server").Result()
+	require.NoError(t, err)
+	infoRepl, err := rdb.Info(ctx, "replication").Result()
+	require.NoError(t, err)
+	id, err := placement.ParseRedisInstanceIdentity(infoServer, infoRepl)
+	require.NoError(t, err)
+	require.Equal(t, "master", id.Role, "GUILD_ROUTE_READY_IT_REDIS must point at a master")
+
+	prefix := "codex:guild-route-ready:" + uuid.NewString() + ":"
+	readyKey := prefix + placement.RouteReadyKey
+	stringFence := prefix + MergeFenceKey(7)
+	hashFence := prefix + MergeFenceKey(8)
+	t.Cleanup(func() {
+		cctx, ccancel := context.WithTimeout(context.Background(), 3*time.Second)
+		defer ccancel()
+		_ = rdb.Del(cctx, readyKey, stringFence, hashFence).Err()
+	})
+	fence, labels := newObservedRouteReadyFence(prefixRouteReadyReader{inner: redisRouteReadyReader{rdb: rdb}, prefix: prefix})
+
+	// 1. 标记不在:不可信,探针不报错。
+	_, err = fence.MergeInProgress(ctx, 7)
+	require.ErrorIs(t, err, ErrMergeFenceRouteNotReady)
+	verdict, err := fence.Probe(ctx)
+	require.NoError(t, err, "INFO must be callable from a script on this Redis")
+	assert.Equal(t, placement.RouteReadyAbsent, verdict)
+
+	// 2. 挂上本实例身份的标记:可信,按闸门键判。
+	require.NoError(t, rdb.Set(ctx, readyKey, routeReadyTestMarker(t, id.RunID, id.MasterReplID), 0).Err())
+	verdict, err = fence.Probe(ctx)
+	require.NoError(t, err)
+	assert.Equal(t, placement.RouteReadyTrusted, verdict)
+	merging, err := fence.MergeInProgress(ctx, 7)
+	require.NoError(t, err)
+	assert.False(t, merging)
+	require.NoError(t, rdb.Set(ctx, stringFence, `{"fence_epoch":1}`, 0).Err())
+	merging, err = fence.MergeInProgress(ctx, 7)
+	require.NoError(t, err)
+	assert.True(t, merging)
+	require.NoError(t, rdb.HSet(ctx, hashFence, "f", "v").Err())
+	merging, err = fence.MergeInProgress(ctx, 8)
+	require.NoError(t, err)
+	assert.True(t, merging, "非 string 的闸门键 MGET 回 nil,仍须经 EXISTS 封锁")
+
+	// 3. 标记记的是别的实例:不可信。
+	require.NoError(t, rdb.Set(ctx, readyKey, routeReadyTestMarker(t, flipFirstHex(id.RunID), id.MasterReplID), 0).Err())
+	_, err = fence.MergeInProgress(ctx, 7)
+	require.ErrorIs(t, err, ErrMergeFenceRouteNotReady)
+	assert.Equal(t, "identity_mismatch", (*labels)[len(*labels)-1])
+
+	// 4. 标记不是 string:按缺席处理,脚本不报错。
+	require.NoError(t, rdb.Del(ctx, readyKey).Err())
+	require.NoError(t, rdb.HSet(ctx, readyKey, "f", "v").Err())
+	_, err = fence.MergeInProgress(ctx, 7)
+	require.ErrorIs(t, err, ErrMergeFenceRouteNotReady)
+	assert.Equal(t, "absent", (*labels)[len(*labels)-1])
 }

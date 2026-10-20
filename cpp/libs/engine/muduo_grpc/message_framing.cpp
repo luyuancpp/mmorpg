@@ -69,7 +69,8 @@ Status MessageDeframer::Feed(const uint8_t *data, size_t len, std::vector<std::s
             }
             bodyExpected_ = length;
             body_.clear();
-            body_.reserve(length);
+            // 预分配封顶 64KiB:对端可以只报长度不发数据,按声明长度预分配会把每个流放大到上限(§15.4.2)。
+            body_.reserve(std::min<size_t>(length, 64 * 1024));
             continue;
         }
 

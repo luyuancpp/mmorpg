@@ -9,49 +9,47 @@
 #include "combat_state/constants/combat_state.h"
 #include "macros/return_define.h"
 #include "proto/common/component/actor_combat_state_comp.pb.h"
-#include "services/scene/actor/actor_events.h"
 
-void CombatStateSystem::AddCombatState(const CombatStateAddedEvent& addEvent) {
-    const auto entityId = addEvent.actor;
+void CombatStateSystem::AddCombatState(entt::entity entityId, uint64_t sourceBuffId, uint32_t stateType) {
     // 先校验实体、再校验参数,最后才 get_or_emplace。
-    // 事件里的 entity 是外部数据(buff 生命周期投递,buff 可能比实体活得久),
+    // 调用方是 Buff 生命周期钩子,Buff 可能比实体活得久,
     // 对一个已销毁的实体做 get_or_emplace 在 EnTT 里是 UB(Release 下直接写坏内存)。
     // 参数校验也必须前置,否则非法 state_type 会白白给实体挂上一个空组件。
     if (!tlsEcs.actorRegistry.valid(entityId)) {
         return;
     }
 
-    if (addEvent.stateType >= kActorMaxCombatStateType) {
+    if (stateType >= kActorMaxCombatStateType) {
         return;
     }
 
+    // 此处延迟创建,只有首个合法 Buff 状态实际写入时才挂状态集合。
     auto& combatStateCollection = tlsEcs.actorRegistry.get_or_emplace<CombatStateCollectionComp>(entityId);
 
-    auto stateIterator = combatStateCollection.mutable_states()->find(addEvent.stateType);
+    auto stateIterator = combatStateCollection.mutable_states()->find(stateType);
     if (stateIterator == combatStateCollection.mutable_states()->end()) {
         const auto [newStateIterator, wasInserted] = combatStateCollection.mutable_states()->emplace(
-            addEvent.stateType, CombatStateDetailsComp{});
+            stateType, CombatStateDetailsComp{});
         if (!wasInserted) {
             return; 
         }
         stateIterator = newStateIterator;
     }
 
-    stateIterator->second.mutable_sources()->emplace(addEvent.sourceBuffId, false);
+    stateIterator->second.mutable_sources()->emplace(sourceBuffId, false);
 
     ActorAttributeCalculatorSystem::MarkAttributeForUpdate(entityId, kCombatState);
 }
 
-void CombatStateSystem::RemoveCombatState(const CombatStateRemovedEvent& removeEvent) {
-    const auto entityId = removeEvent.actor;
-    // 同 AddCombatState:实体可能已销毁(buff 销毁事件常常晚于实体)。
+void CombatStateSystem::RemoveCombatState(entt::entity entityId, uint64_t sourceBuffId, uint32_t stateType) {
+    // 同 AddCombatState:实体可能已销毁,Buff 清理钩子仍可能抵达。
     // 而且"移除"路径本来就不该 get_or_emplace —— 那会给从来没有过战斗状态的
     // 实体凭空建一个空组件(§7.5 也禁止在这类路径上 get_or_emplace)。
     if (!tlsEcs.actorRegistry.valid(entityId)) {
         return;
     }
 
-    if (removeEvent.stateType >= kActorMaxCombatStateType) {
+    if (stateType >= kActorMaxCombatStateType) {
         return;
     }
 
@@ -61,12 +59,12 @@ void CombatStateSystem::RemoveCombatState(const CombatStateRemovedEvent& removeE
     }
     auto& combatStateCollection = *combatStateCollectionPtr;
 
-    auto stateIterator = combatStateCollection.mutable_states()->find(removeEvent.stateType);
+    auto stateIterator = combatStateCollection.mutable_states()->find(stateType);
     if (stateIterator == combatStateCollection.mutable_states()->end()) {
         return;
     }
 
-    stateIterator->second.mutable_sources()->erase(removeEvent.sourceBuffId);
+    stateIterator->second.mutable_sources()->erase(sourceBuffId);
 
     if (stateIterator->second.sources().empty()) {
         combatStateCollection.mutable_states()->erase(stateIterator);

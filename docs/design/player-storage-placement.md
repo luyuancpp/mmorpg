@@ -260,6 +260,8 @@ TiDB 决策 D1 的「映射持久化兜底表」仍是遗留项(§11.4)。
 - 指标:`scene_manager_enter_scene_rejected_total{reason="home_zone_merging"}`,zone_id 为 gate zone;`home_zone_lookup_total` 对这类请求仍记 `outcome=mapped`。
 - 21 在 C++ scene 和 login 都按通用失败处理:scene 解冻并回 tip;login 推 `kEnterSceneFailed`,保留会话。客户端没有专门文案。
 
+> **2026-10-17 契约勘误**：五个 EnterSceneRequest 构造点中的 `scene_manager_response_handler.cpp` 已迁到 `player_scene.cpp` 的 `HandleMirrorCreateDone`；构造点总数及“生产调用均携带 gate_id”的围栏前提不变。
+
 ### 8.3 login
 
 - CreatePlayer:`Placement.PinOnCreate`(默认 false)为 true 时,把 `Placement.NewPlayerStorageId`(0 = 本 login 所在 zone)作为 `storage_id` 传给 `RegisterPlayerZone`。
@@ -344,7 +346,9 @@ TiDB 决策 D1 的「映射持久化兜底表」仍是遗留项(§11.4)。
 - 每人一次 CAS:期望无记录、home==src,写入 `"{src}:1"`。记录已是 `"{src}:1"` 或等于清单记下的原值,视为正常;其余情况中止并保留围栏。
 - 与 pin 矛盾的 `-skip-player-rows` 直接拒绝。
 
-**blob 与 data Redis(已定,负责人 2026-09-28)**:data_service 按 home_zone 选 data Redis 集群。src 与 dst 不在同一集群时,pin 合服后 `player:{id}:*` 会读不到。所以工具在 pin 模式下拒绝 `-migrate-player-blobs`(除非同时给 `-skip-player-blob-migration`),提示改用 copy 模式。copy 模式仍为全部清单玩家拷 blob(blob 跟 home 走),拷行与删缓存只针对无记录者。§10.1 第 3 条「pin 不拷 blob」**保留**,这道拒绝也保留:现有 dev / K8s 部署都配了 DevRedis,Regions 分片从未生效,`player:{id}:*` 不在生产读写链上(决定原文见 PROGRESS.md「2026-09-28 玩家存储落点」条目的「剩余风险」;本段原写「待拍板」,2026-10-12 同步)。多集群部署的限制本身仍在,这类部署合服只能用 copy 模式。
+**blob 与 data Redis(已定,负责人 2026-09-28)**:data_service 按 home_zone 选 data Redis 集群。src 与 dst 不在同一集群时,pin 合服后 `player:{id}:*` 会读不到。所以工具在 pin 模式下拒绝 `-migrate-player-blobs`(除非同时给 `-skip-player-blob-migration`),提示改用 copy 模式。copy 模式给了 `-migrate-player-blobs` 时为全部清单玩家拷 blob(blob 跟 home 走),拷行与删缓存只针对无记录者;**没给这个开关就不拷 blob,与模式无关**(第 2 步只看该开关,2026-10-19 按代码更正:此前本段写成 copy 模式无条件拷)。同日起,`-source-data-redis` 与 `-target-data-redis` 都给了且不是同一后端(地址或 DB 不同)、却既没给 `-migrate-player-blobs` 也没给 `-skip-player-blob-migration` 时,工具在任何写之前拒绝(`checkDataRedisBlobFlags`);两个地址没给全时工具无从判断拓扑,多集群部署合服必须给全。§10.1 第 3 条「pin 不拷 blob」**保留**,这道拒绝也保留:现有 dev / K8s 部署都配了 DevRedis,Regions 分片从未生效,`player:{id}:*` 不在生产读写链上(决定原文见 PROGRESS.md「2026-09-28 玩家存储落点」条目的「剩余风险」;本段原写「待拍板」,2026-10-12 同步)。多集群部署的限制本身仍在,这类部署合服只能用 copy 模式。
+
+**拷 blob 前查数据锁(2026-10-19,未编译、未测试)**:`-migrate-player-blobs` 的第 2 步在 apply 模式下拷每名玩家之前,先对源 data Redis `EXISTS player:{id}:__lock`(data_service 的数据锁),锁在就中止、保留围栏(dry-run 只告警);目标端写入前先 `DEL player:{id}:__fields`(data_service 字段索引,避免残留索引的戳与拷过去的版本巧合相等)。正确性依赖 data_service 写门禁(`routing.AcquirePlayerWriteLock`:拿到数据锁之后复核合服围栏,提交脚本校验锁 token),两者必须一起部署;滚动升级期间的旧 data_service 副本不拦写。带外搬迁(`-skip-player-blob-migration`)同样要遵守「立围栏之后、确认每名玩家的数据锁不在(或至少等 `PlayerLockTTLSec`)再搬」。另:工具内拷贝遇到没有任何 `player:{id}:*` 字符串键的清单玩家会整步中止(`merge_run.go` 的 `copyPlayerBlobs`),这族键不在存档主链上、多数玩家没有,真实多集群合服目前只能带外搬,工具内拷贝要另行设计。
 
 **设计没写、按正确性补上的五条**:
 1. copy 模式下,清单玩家里只要有人已有记录,同样要求能力标记:他们的行不动,dst 的 go/db 必须按记录选库。

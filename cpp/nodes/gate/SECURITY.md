@@ -180,7 +180,7 @@ scene 侧有**第二道锁**,判据是它自己的 `SCENE_RUN_MODE`(同样默认
 
 实现:清单 `cpp/nodes/gate/gate_gm_client_messages.h`(用生成常量,不写字面量
 消息号)、策略 `gate_security.h` 的 `ClassifyGmClientMessage`、接线
-`handler/rpc/client_message_processor.cpp`、scene 侧
+`handler/rpc/client_session_handler.cpp`、scene 侧
 `cpp/nodes/scene/handler/rpc/player/player_gm_guard.h`。
 
 ### 运维须知
@@ -256,6 +256,13 @@ gate 启动会打两条 `[gate_version]` 单行记录(直写 stdout,不受 `LogL
 > 其中三条与本文档直接相关、且**会让本节描述的闸门失效**的结论：
 > ① 进程从不 `setrlimit`、k8s 也没有对应字段，真正先生效的上限很可能是 `RLIMIT_NOFILE` soft=1024，
 > 那样 `GateMaxConnections` 这条分支永远执行不到；
+> **（2026-10-18 更正 ①，未编译、未验证）** 节点启动时已在引擎 `Node::Initialize` 里把软限自抬到 min(硬限, 1048576)，
+> 抬完仍低于 `GateMaxConnections` + 4096 就拒绝启动（运维豁免只认 `NODE_OPEN_FILE_LIMIT_MODE=warn`）；
+> k8s 仍没有对应字段，硬限取决于节点上的容器运行时，上线前要先读一次各节点池的硬限。
+> 见设计文档 G4 / P0-1 的 2026-10-18 落码说明与 `docs/ops/gate-kernel-tuning-runbook.md` §3.1。
+> **（2026-10-18 补充）** 开了 warn 豁免而 `GateMaxConnections` 没调到 ≤ 软限 − 4096 时，本节的闸门回到 ① 所说的失效状态：
+> 客户端连接先把 fd 表占满，此后节点间 / Redis / Kafka / etcd 重连与日志滚动都会 EMFILE，gate 可能被摘除或崩溃；
+> 应急首选是调低上限（检查直接通过），不是开豁免。
 > ② `LogLevel: 2` 在 muduo 枚举里是 **INFO 而非注释所写的 WARN**，而 `TcpServer` 对每条连接的
 > 建立与移除各有一行无条件 `LOG_INFO`——本节称道的采样纪律被上游抵消；
 > ③ 补上「未认证连接独立预算 + 死线」约 20 行、不需要改 muduo，是投入产出比最高的一条。

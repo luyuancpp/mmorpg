@@ -11,9 +11,11 @@
 //   留在 gate_security.h,清单(看 message_id)放这里。
 //
 // 为什么用生成常量而不是字面量 37/49/94/95/175/187:
-//   message_id 由导出器按 proto 顺序分配,proto 一改就漂移(proto/message_id.txt
-//   是产物不是契约)。写字面量的清单会在某次 regen 之后静默指向别的 RPC ——
-//   那时闸门要么拦错人,要么把 GM 指令重新放出去,而且没有任何编译错误。
+//   message_id 由生成器发号。RpcChannel 批 7 起活号不再变、删掉的方法转为
+//   `N=reserved:` 墓碑(docs/design/muduo-rpc-channel.md §20),但停服重新发号
+//   (client-access-band-routing.md D52)仍会整体改号。写字面量的清单会在那次 regen
+//   之后静默指向别的 RPC —— 那时闸门要么拦错人,要么把 GM 指令重新放出去,而且没有
+//   任何编译错误;生成常量则跟着号一起变,删掉的方法直接编译失败。
 //
 // 维护规矩:**新加任何 Gm* / Debug* / Test* 客户端 RPC,必须同时加进本表**。
 // 更好的做法是根本不要把它们标 `OptionIsClientProtocolService`(参照

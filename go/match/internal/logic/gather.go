@@ -20,6 +20,7 @@ import (
 	"github.com/zeromicro/go-zero/core/logx"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/proto"
 )
 
 // gather 各跳 RPC 的超时。
@@ -143,6 +144,9 @@ func RunActivityGather(svcCtx *svc.ServiceContext, battleConfigId uint32, member
 // gatherOptions 活动开局的附加参数(§6.18.1)。零值 = 原有行为:gather 自己发 battle_id、
 // CreateBattleRequest 不带活动上下文。
 type gatherOptions struct {
+	directTeamID uint64
+	// 非nil时地域、实例与battle_id均已在TiDB成局事务固定，禁止随机重选。
+	formation *matchpb.MatchFormationRecord
 	// presetBattleID 非 0:调用方已用 svcCtx.BattleIDGen 生成 battle_id,gather 直接用它。
 	presetBattleID uint64
 	// activityContext 非空:原样放进 CreateBattleRequest.activity_context。
@@ -162,10 +166,24 @@ func runGather(svcCtx *svc.ServiceContext, mode matchpb.MatchMode, battleConfigI
 func runGatherWithOptions(svcCtx *svc.ServiceContext, mode matchpb.MatchMode, battleConfigId uint32,
 	members []uint64, requeueOnFail bool, withTickets bool, tickets map[uint64]string, opts gatherOptions,
 ) bool {
+	if svcCtx.Authority != nil && opts.formation == nil {
+		return globalDirectGather(svcCtx, mode, battleConfigId, members, tickets, opts)
+	}
 	start := time.Now()
 	modeName := mode.String()
 
 	fail := func(outcome string, failedPlayer uint64, prepared []preparedMember, battleId uint64) bool {
+		if opts.formation != nil {
+			if globalDestroy(svcCtx, opts.formation) {
+				globalAbortPrepared(svcCtx, opts.formation)
+			} else {
+				ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+				_ = svcCtx.Authority.Unknown(ctx, opts.formation)
+				cancel()
+			}
+			metrics.ObserveGather(modeName, outcome, time.Since(start))
+			return false
+		}
 		if withTickets && requeueOnFail {
 			// 进补偿前先给幸存者票据续期(CAS):matched TTL 只覆盖到这里为止的
 			// 链路(matchedTicketTTLFor),逐人 CancelBattlePrepare 每人最长
@@ -215,6 +233,11 @@ func runGatherWithOptions(svcCtx *svc.ServiceContext, mode matchpb.MatchMode, ba
 
 	// 2. 选 battle 节点(全局池,v1 随机;负载上报二期)。
 	battleNode, ok := svcCtx.BattleNodes.PickRandom()
+	if opts.formation != nil {
+		f := opts.formation
+		battleNode = discovery.NodeEntry{NodeId: f.TargetNodeId, NodeUuid: f.TargetInstanceId, Endpoint: f.TargetEndpoint, PhysicalRegion: f.PhysicalRegion}
+		ok = true
+	}
 	if !ok {
 		logx.Errorf("[gather] No available battle node battle=%d mode=%s members=%v", battleId, modeName, members)
 		return fail("no_battle_node", 0, nil, 0)
@@ -228,6 +251,10 @@ func runGatherWithOptions(svcCtx *svc.ServiceContext, mode matchpb.MatchMode, ba
 	// BattleMaxDurationSeconds+60s 的战斗锁(设计决策 D13;deadline_ms 语义不变,
 	// CreateBattle 成功后仍是战斗本身的作废期限)。
 	prepareDeadlineMs := nowMs() + uint64(matchedTicketTTLFor(svcCtx, uint32(len(members))))*1000
+	if opts.formation != nil {
+		deadlineMs = opts.formation.DeadlineMs
+		prepareDeadlineMs = min(opts.formation.CreatedMs+uint64(matchedTicketTTLFor(svcCtx, uint32(len(members))))*1000, opts.formation.RetryAtMs-1000)
+	}
 
 	// 2.5 观战互斥清退(设计决策 D11 / 不变量 8):进 gather 的玩家必须先从
 	//     观战中摘除 —— 一名玩家同一时刻只保留一条 battle 直连(客户端单条链路,
@@ -243,7 +270,16 @@ func runGatherWithOptions(svcCtx *svc.ServiceContext, mode matchpb.MatchMode, ba
 	// 3. 逐参与者冻结收快照。
 	var prepared []preparedMember
 	for i, playerId := range members {
-		endpoint, resp, err := preparePlayer(svcCtx, playerId, battleId, battleNode.NodeId, deadlineMs, prepareDeadlineMs)
+		var before func(string) error
+		if opts.formation != nil {
+			before = func(endpoint string) error {
+				ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+				defer cancel()
+				return svcCtx.Authority.Prepared(ctx, opts.formation, playerId, endpoint)
+			}
+		}
+		endpoint, resp, err := preparePlayerFenced(svcCtx, playerId, battleId, battleNode.NodeId, deadlineMs, prepareDeadlineMs, before)
+
 		if err != nil {
 			logx.Errorf("[gather] PrepareBattle failed battle=%d player=%d (member %d/%d): %v",
 				battleId, playerId, i+1, len(members), err)
@@ -299,6 +335,26 @@ func runGatherWithOptions(svcCtx *svc.ServiceContext, mode matchpb.MatchMode, ba
 		TableFingerprint: tableFingerprint,
 		ActivityContext:  opts.activityContext,
 	}
+	if opts.formation != nil {
+		f := opts.formation
+		createReq.RequiredPhysicalRegion = f.PhysicalRegion
+		createReq.PlacementOperationId = f.OperationId
+		createReq.TargetInstanceId = f.TargetInstanceId
+		createReq.AdmitBeforeMs = prepareDeadlineMs
+		payload, merr := proto.MarshalOptions{Deterministic: true}.Marshal(createReq)
+		if merr != nil {
+			return fail("intent_failed", 0, prepared, battleId)
+		}
+		ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+		canonical, merr := svcCtx.Authority.SaveIntent(ctx, opts.formation, payload)
+		cancel()
+		if merr != nil {
+			return fail("intent_failed", 0, prepared, battleId)
+		}
+		if merr = proto.Unmarshal(canonical, createReq); merr != nil {
+			return fail("intent_failed", 0, prepared, battleId)
+		}
+	}
 
 	// failDropRecord 是"房间必未建成 / 已确认销毁"时的失败出口:按 outcome 补偿(解冻、回队首或删票;
 	// 没有肇事者 —— 节点不可分配、Redis 故障、battle 拒绝都不是玩家的错),之后尽力删掉 4.1 预写的
@@ -319,13 +375,25 @@ func runGatherWithOptions(svcCtx *svc.ServiceContext, mode matchpb.MatchMode, ba
 	//     调用方知道;窗口里被按 battle_id 观战懒剔除的记录由第 6 步补写。
 	record := newSpectateRecord(battleId, battleNode.NodeId, mode, battleConfigId, playerNames, createdAtMs)
 	if err := writeSpectateRecord(svcCtx, record); err != nil {
-		logx.Errorf("[gather] Failed to write spectator record; not creating room battle=%d node=%d(%s) members=%v: %v",
-			battleId, battleNode.NodeId, battleNode.Endpoint, members, err)
-		return failDropRecord("index_failed")
+		if opts.formation != nil {
+			logx.Errorf("[gather] 全球 SQL 落点已持久化，观战展示投影待恢复 battle=%d: %v", battleId, err)
+		} else {
+			logx.Errorf("[gather] Failed to write spectator record; not creating room battle=%d node=%d(%s) members=%v: %v",
+				battleId, battleNode.NodeId, battleNode.Endpoint, members, err)
+			return failDropRecord("index_failed")
+		}
 	}
 
+	if opts.formation != nil {
+		ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+		e := svcCtx.Authority.CheckWork(ctx, opts.formation)
+		cancel()
+		if e != nil {
+			return false
+		}
+	}
 	err = createBattle(battleNode, createReq)
-	if errors.Is(err, errBattleNotAllocatable) {
+	if opts.formation == nil && errors.Is(err, errBattleNotAllocatable) {
 		// 4.2 节点级准入拒绝(k8s-client-entry D82):battle 在 gRPC 线程上、runInLoop 之前取分配
 		//     许可,拿不到即回 Unavailable + battle_not_allocatable,保证没插表、没发确认事件。
 		//     所以不发 DestroyBattle,换一个没试过的节点重试**一次**:一次足以绕开正在排空 / 缩容
@@ -353,6 +421,12 @@ func runGatherWithOptions(svcCtx *svc.ServiceContext, mode matchpb.MatchMode, ba
 		}
 	}
 	if err != nil {
+		if opts.formation != nil {
+			ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+			_ = svcCtx.Authority.Unknown(ctx, opts.formation)
+			cancel()
+			return false
+		}
 		logx.Errorf("[gather] CreateBattle failed battle=%d node=%d(%s): %v",
 			battleId, battleNode.NodeId, battleNode.Endpoint, err)
 		if errors.Is(err, errBattleNotAllocatable) {
@@ -382,7 +456,15 @@ func runGatherWithOptions(svcCtx *svc.ServiceContext, mode matchpb.MatchMode, ba
 
 	// 5. 成功收尾:ticket 推进 ready(短 TTL 自清),后续状态由
 	//    battle 节点的 BattleStartS2C / 结算链路接管。
-	if withTickets {
+	if opts.formation != nil {
+		ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+		e := svcCtx.Authority.Finish(ctx, opts.formation, true)
+		cancel()
+		if e != nil {
+			logx.Error("建房成功但全球权威提交未确认，保留原意图恢复")
+			return false
+		}
+	} else if withTickets {
 		for _, pid := range members {
 			markTicketReady(svcCtx, pid, tickets[pid], battleId)
 		}
@@ -413,6 +495,11 @@ func runGatherWithOptions(svcCtx *svc.ServiceContext, mode matchpb.MatchMode, ba
 func preparePlayer(svcCtx *svc.ServiceContext, playerId, battleId uint64,
 	battleNodeId uint32, deadlineMs, prepareDeadlineMs uint64,
 ) (string, *scenepb.PrepareBattleResponse, error) {
+	return preparePlayerFenced(svcCtx, playerId, battleId, battleNodeId, deadlineMs, prepareDeadlineMs, nil)
+}
+
+// 全球模式在冻结 RPC 之前持久化精确端点，并校验本代工作租约。
+func preparePlayerFenced(svcCtx *svc.ServiceContext, playerId, battleId uint64, battleNodeId uint32, deadlineMs, prepareDeadlineMs uint64, before func(string) error) (string, *scenepb.PrepareBattleResponse, error) {
 	// player:{id}:location 由 scene_manager 写(protobuf PlayerLocation),
 	// 是玩家 scene 定位的共享契约(设计文档 §5.4 / go/scene_manager changesceneutil.go);
 	// 带 zone_id,所以任意 zone 的玩家都能定位到自己 zone 的 scene 节点。
@@ -429,6 +516,11 @@ func preparePlayer(svcCtx *svc.ServiceContext, playerId, battleId uint64,
 		return "", nil, fmt.Errorf("定位 scene 节点失败(zone=%d node=%s): %w", loc.ZoneId, loc.NodeId, err)
 	}
 
+	if before != nil {
+		if err = before(endpoint); err != nil {
+			return endpoint, nil, err
+		}
+	}
 	resp, err := prepareBattleFn(endpoint, &scenepb.PrepareBattleRequest{
 		PlayerId:          playerId,
 		BattleId:          battleId,

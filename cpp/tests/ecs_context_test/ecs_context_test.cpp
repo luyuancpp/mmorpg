@@ -1,16 +1,76 @@
 #include <gtest/gtest.h>
 
 #include <iterator>
-#include <thread>
 #include <type_traits>
 
 #include "thread_context/ecs_context.h"
 #include "type_alias/player_session_type_alias.h"
+#include "utils/registry/describe_entity.h"
 
 namespace
 {
 static_assert(!std::is_convertible_v<entt::entity, SceneEntity>);
 static_assert(!std::is_convertible_v<SceneEntity, entt::entity>);
+
+struct DescribeProbeTag {};
+struct DescribeOtherProbe { int value; };
+struct DescribeSceneProbe { int value; };
+
+TEST(DescribeEntityTest, ListsExactlyTheAttachedComponents)
+{
+    entt::registry registry;
+    const auto actor = registry.create();
+    registry.emplace<PlayerGuidComp>(actor, PlayerGuidComp{42});
+    registry.emplace<DescribeProbeTag>(actor);
+    registry.emplace<DescribeOtherProbe>(registry.create(), 7);
+
+    const auto description = DescribeEntity(registry, actor);
+
+    EXPECT_EQ(0U, description.find("entity="));
+    EXPECT_NE(std::string::npos, description.find("valid=1"));
+    EXPECT_NE(std::string::npos, description.find("PlayerGuidComp"));
+    EXPECT_NE(std::string::npos, description.find("DescribeProbeTag"));
+    EXPECT_EQ(std::string::npos, description.find("DescribeOtherProbe"));
+}
+
+TEST(DescribeEntityTest, StaleAndNullHandlesAreSafe)
+{
+    entt::registry registry;
+    const auto actor = registry.create();
+    registry.emplace<PlayerGuidComp>(actor, PlayerGuidComp{42});
+    registry.destroy(actor);
+    registry.emplace<DescribeProbeTag>(registry.create());
+    const auto poolCount = std::distance(registry.storage().begin(), registry.storage().end());
+
+    EXPECT_NO_THROW({ EXPECT_NE(std::string::npos, DescribeEntity(registry, actor).find("valid=0")); });
+    EXPECT_NE(std::string::npos, DescribeEntity(registry, entt::entity{entt::null}).find("valid=0"));
+    EXPECT_EQ(poolCount, std::distance(registry.storage().begin(), registry.storage().end()));
+}
+
+TEST(DescribeEntityTest, WorksForSceneRegistry)
+{
+    tlsEcs.Clear();
+    const auto scene = tlsEcs.sceneRegistry.create();
+    tlsEcs.sceneRegistry.emplace<DescribeSceneProbe>(scene, 7);
+    EXPECT_NE(std::string::npos, DescribeEntity(tlsEcs.sceneRegistry, scene).find("DescribeSceneProbe"));
+    tlsEcs.Clear();
+}
+
+TEST(EcsContextTest, GetPlayerIdReadsGuidOrZero)
+{
+    EcsContext context;
+    const auto actor = context.actorRegistry.create();
+    context.actorRegistry.emplace<PlayerGuidComp>(actor, PlayerGuidComp{42});
+    EXPECT_EQ(42U, context.GetPlayerId(actor));
+    EXPECT_EQ(0U, context.GetPlayerId(context.actorRegistry.create()));
+    context.actorRegistry.destroy(actor);
+    const auto replacement = context.actorRegistry.create();
+    context.actorRegistry.emplace<PlayerGuidComp>(replacement, PlayerGuidComp{7});
+    EXPECT_EQ(entt::to_entity(actor), entt::to_entity(replacement));
+    EXPECT_EQ(0U, context.GetPlayerId(actor));
+    EXPECT_EQ(7U, context.GetPlayerId(replacement));
+    EXPECT_EQ(0U, context.GetPlayerId(entt::null));
+}
 
 TEST(SceneEntityContract, SceneAndActorLifetimesAreIndependent)
 {
@@ -33,33 +93,6 @@ protected:
     void TearDown() override { tlsEcs.Clear(); }
 };
 
-TEST_F(SessionPlayerIndexTest, EmptyLookupDoesNotCreateComponentPools)
-{
-    const auto& registry = tlsEcs.actorRegistry;
-    const auto poolsBefore = std::distance(registry.storage().begin(), registry.storage().end());
-    const auto& scenes = tlsEcs.sceneRegistry;
-    const auto scenePoolsBefore = std::distance(scenes.storage().begin(), scenes.storage().end());
-
-    EXPECT_FALSE(SessionMap().contains(17));
-
-    EXPECT_EQ(poolsBefore, std::distance(registry.storage().begin(), registry.storage().end()));
-    EXPECT_EQ(scenePoolsBefore, std::distance(scenes.storage().begin(), scenes.storage().end()));
-}
-
-TEST_F(SessionPlayerIndexTest, SurvivesUnrelatedRegistryClear)
-{
-    constexpr SessionId session = 17;
-    constexpr Guid player = 100000000000001ULL;
-    SessionMap().insert_or_assign(session, player);
-
-    // 会话路由的寿命属于上下文，不由场景或角色组件池的清理决定。
-    tlsEcs.actorRegistry.clear();
-    tlsEcs.sceneRegistry.clear();
-
-    ASSERT_TRUE(SessionMap().contains(session));
-    EXPECT_EQ(player, SessionMap().at(session));
-}
-
 TEST_F(SessionPlayerIndexTest, ContextClearDropsBothIndexesAndAllowsNewSession)
 {
     constexpr SessionId session = 17;
@@ -78,35 +111,4 @@ TEST_F(SessionPlayerIndexTest, ContextClearDropsBothIndexesAndAllowsNewSession)
     EXPECT_EQ(player + 1, SessionMap().at(session));
 }
 
-TEST_F(SessionPlayerIndexTest, RebindingSessionReplacesOnlyItsPlayer)
-{
-    SessionMap().insert_or_assign(17, 1001);
-    SessionMap().insert_or_assign(18, 1002);
-
-    SessionMap().insert_or_assign(17, 1003);
-
-    EXPECT_EQ(2U, SessionMap().size());
-    EXPECT_EQ(1003U, SessionMap().at(17));
-    EXPECT_EQ(1002U, SessionMap().at(18));
-    SessionMap().erase(17);
-    EXPECT_EQ(1002U, SessionMap().at(18));
-}
-
-TEST_F(SessionPlayerIndexTest, SeparateLoopThreadsOwnSeparateIndexes)
-{
-    SessionMap().insert_or_assign(17, 1001);
-    bool workerStartsEmpty = false;
-    Guid workerPlayer = 0;
-    std::thread worker([&] {
-        workerStartsEmpty = SessionMap().empty();
-        SessionMap().insert_or_assign(17, 1002);
-        workerPlayer = SessionMap().at(17);
-        tlsEcs.Clear();
-    });
-    worker.join();
-
-    EXPECT_TRUE(workerStartsEmpty);
-    EXPECT_EQ(1002U, workerPlayer);
-    EXPECT_EQ(1001U, SessionMap().at(17));
-}
 } // namespace

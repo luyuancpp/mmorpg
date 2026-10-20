@@ -23,9 +23,11 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	mathrand "math/rand/v2"
 	"time"
 
 	commonpb "proto/common/base"
+	"shared/gatepick"
 
 	"google.golang.org/protobuf/proto"
 )
@@ -48,9 +50,10 @@ type GateCandidate struct {
 	ZoneID      uint32
 }
 
-// PickAndSignGateToken selects the least-loaded gate from the candidate
-// list (already filtered by zone) and signs a one-time HMAC token. Returns
-// (admit, error) — admit is non-nil iff a gate was selected.
+// PickAndSignGateToken selects a gate from the candidate list (already
+// filtered by zone) with PickGate's two-random-choices rule and signs a
+// one-time HMAC token. Returns (admit, error) — admit is non-nil iff a gate
+// was selected.
 //
 // Returned AdmitToken matches the wire shape AssignGateResponse expects, so
 // callers can copy fields directly without re-marshalling.
@@ -60,7 +63,8 @@ type GateCandidate struct {
 // because there is no admit-cache delay between the two halves.
 //
 // The QUEUE path (PopAdmit + consumeAdmit) deliberately splits the two
-// stages: dispatcher PickGate at admit time, sign at consume time. See
+// stages: dispatcher picks at admit time (gatePicker via newBatchPickFn,
+// not PickGate), sign at consume time. See
 // the comment on `consumeAdmitAndSign` for the rationale (R17 R1 root
 // cause — admit could sit in Redis for 4-5 minutes and burn the token's
 // 5-min TTL before the client redeemed it).
@@ -73,18 +77,34 @@ func PickAndSignGateToken(candidates []GateCandidate, secret []byte, ttl time.Du
 }
 
 // PickGate is the gate-selection half of PickAndSignGateToken — chooses
-// the least-loaded candidate without signing. Returned value carries the
-// minimum endpoint info needed for a later SignGateToken call to produce
-// a fresh-TTL token.
+// a candidate without signing. Returned value carries the minimum endpoint
+// info needed for a later SignGateToken call to produce a fresh-TTL token.
 //
-// Splitting selection from signing lets the queue dispatcher decide
-// "this entry is admitted to gate X" at admit time but defer the token
-// HMAC + expire until the client actually polls for it.
+// 快速通道的挑法(2026-10-18 起):在候选里随机抽两台不同的 gate,取人数少的那台,同人数取第一次抽中的那台;
+// 只有一台就是它,恰好两台时等于取最少。不改调用方的切片,不跨调用记账。
+// 同人数不能按 NodeID 定胜负:开新区第一个上报窗口里所有 gate 都报 0,按 NodeID 定会让小号 gate 拿双倍份额、
+// NodeID 最大的那台一个人都分不到。抽样是均匀的有序对,同人数时两台各一半,全体就是均匀的。
 //
-// 挑选规则只有一份,在 gatePicker 里:人数最少,同数取 NodeID 最小。PickGate 是在一份新快照上只挑一次,
-// 快速通道用它;dispatcher 一拍放一批,在同一份快照上连续挑并记账(见 gatePicker)。
+// 为什么不再取全局最少:PlayerCount 来自 etcd,gate 每 10s 才上报一次。快速通道每个请求各挑各的,
+// 互相看不到别的请求刚分出去的人,确定性地取最少会让一个上报周期里本 zone 的新连接全部落到同一台 gate,
+// 开新区时一个窗口就是成千上万个(容量模型 §2.1「PickGate 集中度」、A0-7)。随机二选一在负载信息滞后时
+// 仍能把人摊开;最忙的那台只有和同样忙的 gate 比时才会被选中。
+//
+// dispatcher 一拍放一批,在同一份快照上连续挑并记账,用的是确定性的 gatePicker(同数取 NodeID 小的),规则不同。
 func PickGate(candidates []GateCandidate) (*GateCandidate, error) {
-	return newGatePicker(candidates).pick()
+	return pickTwoChoices(candidates, mathrand.IntN)
+}
+
+// pickTwoChoices 是 PickGate 的实现,随机源显式传入:intn(n) 返回 [0, n) 上均匀分布的整数
+// (生产用 math/rand/v2 的全局源,并发安全)。单测传固定序列钉住结果。
+// 挑选规则本身在 shared/gatepick(scene_manager 跨 zone 重定向共用同一份),这里只做 GateCandidate 的适配。
+func pickTwoChoices(candidates []GateCandidate, intn func(int) int) (*GateCandidate, error) {
+	i, ok := gatepick.TwoChoices(candidates, func(c GateCandidate) uint32 { return c.PlayerCount }, intn)
+	if !ok {
+		return nil, fmt.Errorf("no gate candidates")
+	}
+	gate := candidates[i]
+	return &gate, nil
 }
 
 // gatePicker 在一份候选快照上连续挑 gate,挑一次记一次账:负载 = PlayerCount + 本快照上已分给它的人数,
@@ -234,6 +254,10 @@ func signQueueToken(secret []byte, queueID string, zoneID uint32, expireTS int64
 //
 // 单密钥版本,保留给测试与不涉及轮换的调用方;生产路径请用
 // ParseAndVerifyQueueTokenMulti,它在密钥轮换期能同时认新旧 token。
+//
+// (2026-10-18 更正)上面「client polled slower than the TTL」已不成立:排队令牌的过期改为绝对上限
+// queueTokenMaxAge(24h),空闲过期由 Redis 侧的空闲 TTL 管、计为 meta_gone / queue_gone。reason=ttl 现在只表示
+// 这张令牌签发已超过 24h(或旧版本签发的 +QueueEntryTTL 令牌到期)。
 func ParseAndVerifyQueueToken(secret []byte, token string) (queueID string, zoneID uint32, err error) {
 	return ParseAndVerifyQueueTokenMulti([][]byte{secret}, token)
 }
@@ -243,6 +267,8 @@ func ParseAndVerifyQueueToken(secret []byte, token string) (queueID string, zone
 // 候选顺序是「主密钥在前,只验不签的旧密钥在后」。三段式不停服轮换靠的就是
 // 这个列表:新密钥先进候选(所有实例都能验旧 token),再提升为主密钥开始签,
 // 最后把旧密钥从候选里摘掉。任意一步都能单独滚动发布。
+// (2026-10-18 补注)最后一步(摘旧密钥)须在「提升为主密钥」全量生效后至少等 queueTokenMaxAge(24h):
+// 旧密钥签出的排队令牌最长 24h 内仍合法,提前摘掉会把仍在排队的玩家判成 bad_signature、打回队尾。
 //
 // 候选为空 = 密钥没配好,一律拒绝(fail-closed),绝不当成「无需校验」。
 func ParseAndVerifyQueueTokenMulti(secrets [][]byte, token string) (queueID string, zoneID uint32, err error) {

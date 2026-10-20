@@ -6,6 +6,7 @@
 #include <cstdint>
 #include <functional>
 #include <iterator>
+#include <optional>
 #include <string>
 
 #include "engine/core/type_define/type_define.h" // Guid
@@ -18,7 +19,8 @@
 //   * SavePlayerToRedisImpl 每次存盘 BeginSave → 每条 DBTask SendDbTask(失败时 MarkLocalFailure)→ FinishSave;
 //     dirty-save 快路径问 NeedsResave,有欠账就强制按当前内存整份重写(绝不重放旧载荷)。
 //   * 回执监听器在 KafkaProducer 的 dr_cb / 重建栈里同步执行(OnDeliveryReport):只改账本、只把玩家号压进待办,
-//     **不碰 ECS、不打逐条日志**。
+//     **不碰 ECS、不打逐条日志**。回执与同步拒绝的错误码都原样进账本,按 kafka_producer_policy::IsPermanentMessageError
+//     分成可重试 / 永久两种(PermanentFailure):永久失败时重存没有收益,下线收尾不再为它保留实体。
 //   * Pump 由 RedisSystem 的 50ms 定时器在 loop 顶层驱动:先 poll() 派发回执(空闲节点上 send() 不来,回执就没人派发),
 //     再做票据超时兜底,最后把待办玩家逐个交给 Initialize 时登记的 onSettled(PlayerLifecycleSystem::OnDbTaskDispatchSettled)。
 //   * 实体离开本节点时(DestroyPlayer,或 onSettled 发现实体已不在)调 OnPlayerGone 回收条目;离开时还欠 MySQL 一次写的
@@ -26,6 +28,8 @@
 //
 // 回调生命周期(AGENTS §11.7):监听器与 Pump 定时器都是无捕获 lambda,转调本类静态函数,不绑 this / 裸指针。
 // Shutdown 先注销监听器;KafkaProducer 析构时第一件事也是注销监听器,不依赖 thread_local 的析构顺序。
+// 停机收账的时刻:Node 的拆除前钩子(Node::SetBeforeTeardown → RedisSystem::StopDbTaskDispatch)先停 Pump 再调 Shutdown,
+// 那时 producer 最后一次有界 flush 已计入账本、日志仍在写文件;main.cpp 在 Node 析构之后的那次调用只是幂等兜底。
 // 线程模型:全部状态是本 .cpp 里的函数内 thread_local,只在 scene 主循环线程上读写。
 
 // 进程级计数(写法同 owner_epoch_stats:relaxed atomic,不接 Prometheus,玩家号绝不做 label)。
@@ -41,7 +45,8 @@
 //   exit_resave                 下线收尾因投递失败重存
 //   exit_resave_capped          下线收尾重存到上限仍投递失败,保留实体(每次判定计一次)
 //   exit_rekick                 被保留的实体又收到退出请求,重新开始重存
-//   exit_unsynced               下线收尾无法再重存(交接已发起),带着 MySQL 落后收尾
+//   exit_unsynced               下线收尾带着 MySQL 落后收尾:交接已发起、不得再重存;或欠账的那次失败是永久性的
+//                               (消息过大 / 无写权限等,重存必然失败,不再保留实体)
 //   orphan_unsynced             实体离开本节点时仍欠 MySQL 一次写(含 exit_unsynced 那一部分;被废黜、交接放行等路径)
 namespace db_task_dispatch_stats
 {
@@ -147,6 +152,9 @@ public:
 	static void FinishSave(Guid playerId, db_task_dispatch::SaveGeneration generation, bool allQueued);
 
 	static bool NeedsResave(Guid playerId);
+	// 欠 MySQL 的那一代里出过永久失败(kafka_producer_policy::IsPermanentMessageError:消息过大、无写权限等,
+	// 按当前内存重存也必然失败)时返回错误描述("<code> (<RdKafka::err2str>)",给日志用);否则返回空。
+	static std::optional<std::string> PermanentFailure(Guid playerId);
 	static std::uint32_t InFlight(Guid playerId);
 
 	// 实体已离开本节点:没有在途票据就回收条目;回收时仍欠 MySQL 一次写则计 orphan_unsynced 并打 WARN。
@@ -154,7 +162,11 @@ public:
 	static void OnPlayerGone(Guid playerId);
 
 	// 回执监听器的本体(也供单测直接驱动):只改账本、计数,需要处理的玩家号压进待办;不碰 ECS、不打逐条日志。
-	static void OnDeliveryReport(db_task_dispatch::Ticket ticket, bool delivered);
+	// kafkaErrorCode 是回执里 RdKafka::ErrorCode 的原值(0 = ERR_NO_ERROR = acks=all 已确认),原样进账本:
+	// 失败按 kafka_producer_policy::IsPermanentMessageError 分成可重试 / 永久两种(头文件不 include rdkafka,所以收整数)。
+	static void OnDeliveryReport(db_task_dispatch::Ticket ticket, std::int32_t kafkaErrorCode);
+	// 旧签名(bool delivered)已删除:true 会被静默转成错误码 1,把成功当失败记账。
+	static void OnDeliveryReport(db_task_dispatch::Ticket ticket, bool delivered) = delete;
 
 	// 50ms 定时器的本体,只能在 loop 顶层调用:poll() 派发回执 → 票据超时兜底 → 待办玩家排序去重后逐个交给 onSettled。
 	static void Pump();

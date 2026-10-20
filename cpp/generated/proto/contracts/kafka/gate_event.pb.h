@@ -1384,8 +1384,30 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED KickPlayerEvent final : public ::go
 
   // accessors -------------------------------------------------------
   enum : int {
+    kPlayerIdFieldNumber = 2,
+    kLoginGenerationFieldNumber = 3,
     kSessionIdFieldNumber = 1,
   };
+  // uint64 player_id = 2;
+  void clear_player_id() ;
+  [[nodiscard]] ::uint64_t player_id() const;
+  void set_player_id(::uint64_t value);
+
+  private:
+  ::uint64_t _internal_player_id() const;
+  void _internal_set_player_id(::uint64_t value);
+
+  public:
+  // uint64 login_generation = 3;
+  void clear_login_generation() ;
+  [[nodiscard]] ::uint64_t login_generation() const;
+  void set_login_generation(::uint64_t value);
+
+  private:
+  ::uint64_t _internal_login_generation() const;
+  void _internal_set_login_generation(::uint64_t value);
+
+  public:
   // uint32 session_id = 1;
   void clear_session_id() ;
   [[nodiscard]] ::uint32_t session_id() const;
@@ -1400,7 +1422,7 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED KickPlayerEvent final : public ::go
  private:
   class _Internal;
   using ParseTableT_ =
-      ::google::protobuf::internal::TcParseTable<0, 1,
+      ::google::protobuf::internal::TcParseTable<2, 3,
                           0, 0,
                           2>;
   static constexpr ParseTableT_ InternalGenerateParseTable_(
@@ -1429,6 +1451,8 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED KickPlayerEvent final : public ::go
         const KickPlayerEvent& from_msg);
     ::google::protobuf::internal::HasBits<1> _has_bits_;
     ::google::protobuf::internal::CachedSize _cached_size_;
+    ::uint64_t player_id_;
+    ::uint64_t login_generation_;
     ::uint32_t session_id_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
@@ -2781,7 +2805,7 @@ inline void RoutePlayerEvent::_internal_set_login_generation(::uint64_t value) {
 inline void KickPlayerEvent::clear_session_id() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.session_id_ = 0u;
-  ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
+  ClearHasBit(_impl_._has_bits_[0], 0x00000004U);
 }
 inline ::uint32_t KickPlayerEvent::session_id() const {
   // @@protoc_insertion_point(field_get:contracts.kafka.KickPlayerEvent.session_id)
@@ -2789,7 +2813,7 @@ inline ::uint32_t KickPlayerEvent::session_id() const {
 }
 inline void KickPlayerEvent::set_session_id(::uint32_t value) {
   _internal_set_session_id(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  SetHasBit(_impl_._has_bits_[0], 0x00000004U);
   // @@protoc_insertion_point(field_set:contracts.kafka.KickPlayerEvent.session_id)
 }
 inline ::uint32_t KickPlayerEvent::_internal_session_id() const {
@@ -2799,6 +2823,54 @@ inline ::uint32_t KickPlayerEvent::_internal_session_id() const {
 inline void KickPlayerEvent::_internal_set_session_id(::uint32_t value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.session_id_ = value;
+}
+
+// uint64 player_id = 2;
+inline void KickPlayerEvent::clear_player_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.player_id_ = ::uint64_t{0u};
+  ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
+}
+inline ::uint64_t KickPlayerEvent::player_id() const {
+  // @@protoc_insertion_point(field_get:contracts.kafka.KickPlayerEvent.player_id)
+  return _internal_player_id();
+}
+inline void KickPlayerEvent::set_player_id(::uint64_t value) {
+  _internal_set_player_id(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  // @@protoc_insertion_point(field_set:contracts.kafka.KickPlayerEvent.player_id)
+}
+inline ::uint64_t KickPlayerEvent::_internal_player_id() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.player_id_;
+}
+inline void KickPlayerEvent::_internal_set_player_id(::uint64_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.player_id_ = value;
+}
+
+// uint64 login_generation = 3;
+inline void KickPlayerEvent::clear_login_generation() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.login_generation_ = ::uint64_t{0u};
+  ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
+}
+inline ::uint64_t KickPlayerEvent::login_generation() const {
+  // @@protoc_insertion_point(field_get:contracts.kafka.KickPlayerEvent.login_generation)
+  return _internal_login_generation();
+}
+inline void KickPlayerEvent::set_login_generation(::uint64_t value) {
+  _internal_set_login_generation(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000002U);
+  // @@protoc_insertion_point(field_set:contracts.kafka.KickPlayerEvent.login_generation)
+}
+inline ::uint64_t KickPlayerEvent::_internal_login_generation() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.login_generation_;
+}
+inline void KickPlayerEvent::_internal_set_login_generation(::uint64_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.login_generation_ = value;
 }
 
 // -------------------------------------------------------------------

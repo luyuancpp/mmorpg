@@ -219,31 +219,38 @@ func plantInSeedWindow(t *testing.T, fake *fakeRegisterClient, plant func() erro
 }
 
 // requireRefusedAtSeedAndCompensated 是种子报 id 复用(设计 §10 P2,2026-10-15 定为拒绝)之后的共同断言:
-// 建角以 kLoginDataSerializeFailed 拒绝;名字(6c 确定已登记)按 reserve 时的 id / 名字释放恰好一次;
+// 建角以 kLoginDataSerializeFailed 拒绝;名字(6c 确定已登记)按 reserve 时的 id / 名字释放恰好一次
+// (同步一次,且没有经 afterFunc 排出的延迟二次释放);
 // 账号 blob 没有新角色、反查映射不写;建角锁已释放。6d 的 player:zone 已登记(撤不掉,与第 7 步失败同类),
 // 体现在调用序列里的 register 上。
-func requireRefusedAtSeedAndCompensated(t *testing.T, h *createPlayerHarness, fake *fakeRegisterClient,
-	resp *loginpb.CreatePlayerResponse, err error) {
+//
+// 2026-10-16:改收 *nameHarness。调用方原先用 newCreatePlayerHarnessWithNames,afterFunc 仍是真定时器,
+// 只比对同步那一刻的调用序列,看不到排到 10s 之后的那次释放;newNameHarness 把 afterFunc 换成同步执行并记进
+// n.scheduled,这里才断言得了「没有延迟二次释放」(同 TestCreatePlayerName_RegisterFailureReleasesOnce)。
+func requireRefusedAtSeedAndCompensated(t *testing.T, n *nameHarness, resp *loginpb.CreatePlayerResponse, err error) {
 	t.Helper()
 	if err != nil {
 		t.Fatalf("CreatePlayer must fail via tip, not transport error: %v", err)
 	}
 	requireTip(t, resp, table.LoginError_kLoginDataSerializeFailed)
-	if got := strings.Join(fake.events, ","); got != "reserve,register,release" {
+	if got := strings.Join(n.fake.events, ","); got != "reserve,register,release" {
 		t.Fatalf("data_service call order = %q, want reserve,register,release", got)
 	}
-	reserved, released := fake.reserveReqs[0], fake.releaseReqs[0]
+	if len(n.scheduled) != 0 {
+		t.Fatalf("delayed releases scheduled = %v, want none (the name was definitely reserved)", n.scheduled)
+	}
+	reserved, released := n.fake.reserveReqs[0], n.fake.releaseReqs[0]
 	if released.GetPlayerId() != reserved.GetPlayerId() || released.GetName() != reserved.GetName() {
 		t.Fatalf("released %d/%q, want the reservation %d/%q",
 			released.GetPlayerId(), released.GetName(), reserved.GetPlayerId(), reserved.GetName())
 	}
-	if players := storedPlayers(t, h.ctx, h.rdb); len(players) != 0 {
+	if players := storedPlayers(t, n.ctx, n.rdb); len(players) != 0 {
 		t.Fatalf("account blob persisted %d player(s) although the create was refused", len(players))
 	}
-	if h.mr.Exists(constants.PlayerToAccountKey(hzPlayerID)) {
+	if n.mr.Exists(constants.PlayerToAccountKey(hzPlayerID)) {
 		t.Fatal("reverse mapping written although the create was refused")
 	}
-	if h.mr.Exists(nameCreateKey) {
+	if n.mr.Exists(nameCreateKey) {
 		t.Fatal("create lock still held after a refused create")
 	}
 }
@@ -261,28 +268,32 @@ func requireRefusedAtSeedAndCompensated(t *testing.T, h *createPlayerHarness, fa
 //
 // 修复前:没有 6b' 探测,id_probe_total{clear} 不增长,前提断言处即红;即便去掉前提断言,种子报 parent_exists
 // 也只告警、建角成功,requireTip 处同样红。
+//
+// 2026-10-16:改用 newNameHarness(发号源换成同 id 的 countingSegment,其余不变),为的是让
+// requireRefusedAtSeedAndCompensated 断言得了「没有延迟二次释放」。把种子拒绝分支的 releaseName 改成
+// uncertain=true,本用例即红:同步执行的延迟释放让调用序列多出一次 release,n.scheduled 也不再为空
+// (此前照样绿,延迟那次排在真定时器上,断言时还没发生)。
 func TestCreatePlayer_SeedNeverOverwritesExistingParent(t *testing.T) {
 	setNewPlayerSeed(t, true)
-	fake := &fakeRegisterClient{}
-	h := newCreatePlayerHarnessWithNames(t, homezone.New(fake, 0, 0, 0), fake)
+	n := newNameHarness(t)
 	existing := existingParentBlob(t)
-	plantInSeedWindow(t, fake, func() error {
-		return h.rdb.Set(h.ctx, seedParentKeyFor(hzPlayerID), existing, 0).Err()
+	plantInSeedWindow(t, n.fake, func() error {
+		return n.rdb.Set(n.ctx, seedParentKeyFor(hzPlayerID), existing, 0).Err()
 	})
 	before := seedCount(t, "parent_exists")
 	probeClearBefore := idProbeCount(t, "clear")
 
-	resp, err := h.l.CreatePlayer(&loginpb.CreatePlayerRequest{})
+	resp, err := n.l.CreatePlayer(&loginpb.CreatePlayerRequest{})
 
 	// 先钉住前提:探测确实放行了,拒绝来自种子那一步。
 	if got := idProbeCount(t, "clear") - probeClearBefore; got != 1 {
 		t.Fatalf("id_probe_total{clear} delta = %v, want 1 (the parent key must appear after the probe)", got)
 	}
-	requireRefusedAtSeedAndCompensated(t, h, fake, resp, err)
-	if _, after := readSeededParent(t, h.ctx, h.rdb, hzPlayerID); !bytes.Equal(existing, after) {
+	requireRefusedAtSeedAndCompensated(t, n, resp, err)
+	if _, after := readSeededParent(t, n.ctx, n.rdb, hzPlayerID); !bytes.Equal(existing, after) {
 		t.Fatal("seed overwrote an existing parent key")
 	}
-	if ttl := h.mr.TTL(seedParentKeyFor(hzPlayerID)); ttl != 0 {
+	if ttl := n.mr.TTL(seedParentKeyFor(hzPlayerID)); ttl != 0 {
 		t.Fatalf("existing parent TTL = %v after create, want none", ttl)
 	}
 	if got := seedCount(t, "parent_exists") - before; got != 1 {
@@ -301,24 +312,25 @@ func TestCreatePlayer_SeedNeverOverwritesExistingParent(t *testing.T) {
 //
 // 修复前:没有 6b' 探测,前提断言处即红;即便去掉它,种子报 owner_epoch_exists 也只告警、建角成功,
 // requireTip 处同样红。
+//
+// 2026-10-16:改用 newNameHarness,理由同 TestCreatePlayer_SeedNeverOverwritesExistingParent。
 func TestCreatePlayer_SeedRefusedAfterOwnerEpochMinted(t *testing.T) {
 	setNewPlayerSeed(t, true)
-	fake := &fakeRegisterClient{}
-	h := newCreatePlayerHarnessWithNames(t, homezone.New(fake, 0, 0, 0), fake)
-	plantInSeedWindow(t, fake, func() error {
-		return h.rdb.Set(h.ctx, ownerepoch.OwnerEpochKey(hzPlayerID), "3", 0).Err()
+	n := newNameHarness(t)
+	plantInSeedWindow(t, n.fake, func() error {
+		return n.rdb.Set(n.ctx, ownerepoch.OwnerEpochKey(hzPlayerID), "3", 0).Err()
 	})
 	before := seedCount(t, "owner_epoch_exists")
 	probeClearBefore := idProbeCount(t, "clear")
 
-	resp, err := h.l.CreatePlayer(&loginpb.CreatePlayerRequest{})
+	resp, err := n.l.CreatePlayer(&loginpb.CreatePlayerRequest{})
 
 	// 先钉住前提:探测确实放行了,拒绝来自种子那一步。
 	if got := idProbeCount(t, "clear") - probeClearBefore; got != 1 {
 		t.Fatalf("id_probe_total{clear} delta = %v, want 1 (owner_epoch must appear after the probe)", got)
 	}
-	requireRefusedAtSeedAndCompensated(t, h, fake, resp, err)
-	if h.mr.Exists(seedParentKeyFor(hzPlayerID)) {
+	requireRefusedAtSeedAndCompensated(t, n, resp, err)
+	if n.mr.Exists(seedParentKeyFor(hzPlayerID)) {
 		t.Fatal("seed written although player:{id}:owner_epoch exists")
 	}
 	if got := seedCount(t, "owner_epoch_exists") - before; got != 1 {
@@ -457,6 +469,188 @@ func TestCreatePlayer_IDProbeErrorRefusesCreate(t *testing.T) {
 	}
 }
 
+// probePipelineHook 只拦 6b' 探测的那条 pipeline(参数里带新铸 id 的父键;拨号时 initConn 发的 HELLO /
+// CLIENT SETINFO 等 pipeline 不带它,不会误中):before 在交给 go-redis 之前跑,afterOK 在 pipeline 成功返回之后跑。
+// 单条命令与拨号原样放行 —— 种子脚本是单条 EVALSHA / EVAL,不经过这里。钩子与 CreatePlayer 在同一个 goroutine 里
+// 同步执行,hits 不需要锁。
+type probePipelineHook struct {
+	key     string
+	before  func(ctx context.Context)
+	afterOK func()
+	hits    int
+}
+
+func (h *probePipelineHook) DialHook(next redis.DialHook) redis.DialHook          { return next }
+func (h *probePipelineHook) ProcessHook(next redis.ProcessHook) redis.ProcessHook { return next }
+func (h *probePipelineHook) ProcessPipelineHook(next redis.ProcessPipelineHook) redis.ProcessPipelineHook {
+	return func(ctx context.Context, cmds []redis.Cmder) error {
+		if !pipelineTouchesKey(cmds, h.key) {
+			return next(ctx, cmds)
+		}
+		h.hits++
+		if h.before != nil {
+			h.before(ctx)
+		}
+		err := next(ctx, cmds)
+		if err == nil && h.afterOK != nil {
+			h.afterOK()
+		}
+		return err
+	}
+}
+
+func pipelineTouchesKey(cmds []redis.Cmder, key string) bool {
+	for _, cmd := range cmds {
+		for _, a := range cmd.Args() {
+			if fmt.Sprint(a) == key {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+// 回归(2026-10-16,设计 §9 第 1 条的 2026-10-16 更正注):6b' 探测不得另设比请求 ctx 更短的截止。
+// login 的 go-redis 没开 ContextTimeoutEnabled,ctx 截止不约束 socket 读写,但取连接(连接池排队)与拨号认 ctx;
+// 探测又是 fail-closed,另设 1s 子预算时,连接池等满超过 1s 的建角会被拒(handler 还剩约 3s,后续步骤本来做得完),
+// 还被记成一次探测出错。直接测「池等待在 1s 与 handler 剩余预算之间时建角成功」要真等墙钟,所以钉住它的确定性代理:
+// 交给 go-redis 的 ctx 截止时间必须就是请求 ctx 的截止时间(连接池排队与拨号认的正是它)。
+//
+// 修复前:probeMintedID 套 context.WithTimeout(l.ctx, 1s),钩子看到的截止约为发探测时刻 + 1s,
+// 在 probe ctx deadline 断言处即红。
+func TestCreatePlayer_IDProbeUsesTheRequestDeadline(t *testing.T) {
+	n := newNameHarness(t)
+	requestDeadline := time.Now().Add(time.Hour)
+	ctx, cancel := context.WithDeadline(n.l.ctx, requestDeadline)
+	defer cancel()
+	n.l.ctx = ctx
+	var probeDeadline time.Time
+	var probeHasDeadline bool
+	hook := &probePipelineHook{key: seedParentKeyFor(hzPlayerID), before: func(probeCtx context.Context) {
+		probeDeadline, probeHasDeadline = probeCtx.Deadline()
+	}}
+	n.rdb.AddHook(hook)
+	clearBefore := idProbeCount(t, "clear")
+
+	resp := n.create(t, "云中君")
+
+	if resp.ErrorMessage != nil {
+		t.Fatalf("unexpected tip %v", resp.ErrorMessage)
+	}
+	if hook.hits != 1 {
+		t.Fatalf("probe pipelines seen = %d, want 1", hook.hits)
+	}
+	if !probeHasDeadline || !probeDeadline.Equal(requestDeadline) {
+		t.Fatalf("probe ctx deadline = %v (set=%v), want the request deadline %v (no shorter sub-budget)",
+			probeDeadline, probeHasDeadline, requestDeadline)
+	}
+	if got := idProbeCount(t, "clear") - clearBefore; got != 1 {
+		t.Fatalf("id_probe_total{clear} delta = %v, want 1", got)
+	}
+}
+
+// 回归(2026-10-16):请求 ctx 在探测途中结束 —— 探测已越过 probeMintedID 开头的前置检查、交给了 go-redis,
+// go-redis 取连接时看到 ctx 已结束,以 context.Canceled 返回。探测没有结论,也不是 Redis 故障:仍拒绝建角
+// (kLoginDataSerializeFailed),但不计 id_probe_total(error、clear 都不动),与前置检查同一口径;名字、
+// player:zone 一个 RPC 都不发,不记孤儿,建角锁照常释放(走 WithoutCancel)。
+// 生产上对应:连接池排队或拨号期间请求截止 / 客户端断连。钩子在交给 go-redis 之前取消,走的是连接池排队那同一处
+// ctx 检查,不依赖墙钟,也不需要真把连接池占满。
+//
+// 修复前:探测出错一律计 error 并打 ERROR「probe failed」,在 id_probe_total{error} delta 断言处即红。
+func TestCreatePlayer_IDProbeRequestDoneMidProbeIsNotProbeError(t *testing.T) {
+	n := newNameHarness(t)
+	ctx, cancel := context.WithCancel(n.l.ctx)
+	defer cancel()
+	n.l.ctx = ctx
+	hook := &probePipelineHook{key: seedParentKeyFor(hzPlayerID), before: func(context.Context) { cancel() }}
+	n.rdb.AddHook(hook)
+	errorBefore := idProbeCount(t, "error")
+	clearBefore := idProbeCount(t, "clear")
+	orphansBefore := orphanCount(t)
+
+	resp := n.create(t, "云中君")
+
+	// 先钉住前提:探测越过了前置检查、真的交给了 go-redis,请求 ctx 是在那之后才结束的。
+	if hook.hits != 1 {
+		t.Fatalf("probe pipelines seen = %d, want 1 (the probe must get past its pre-check)", hook.hits)
+	}
+	if ctx.Err() == nil {
+		t.Fatal("scenario never ended the request ctx")
+	}
+	requireTip(t, resp, table.LoginError_kLoginDataSerializeFailed)
+	if got := idProbeCount(t, "error") - errorBefore; got != 0 {
+		t.Fatalf("id_probe_total{error} delta = %v, want 0 (the request ended mid-probe; that is not a Redis failure)", got)
+	}
+	if got := idProbeCount(t, "clear") - clearBefore; got != 0 {
+		t.Fatalf("id_probe_total{clear} delta = %v, want 0 (the probe reached no verdict)", got)
+	}
+	if got := strings.Join(n.fake.events, ","); got != "" {
+		t.Fatalf("data_service calls = %q, want none (refused before reserving the name)", got)
+	}
+	if got := orphanCount(t) - orphansBefore; got != 0 {
+		t.Fatalf("orphan_total delta = %v, want 0 (no name was reserved)", got)
+	}
+	if players := storedPlayers(t, n.ctx, n.rdb); len(players) != 0 {
+		t.Fatalf("account blob persisted %d player(s) although the create was refused", len(players))
+	}
+	if n.mr.Exists(constants.PlayerToAccountKey(hzPlayerID)) || n.mr.Exists(seedParentKeyFor(hzPlayerID)) {
+		t.Fatal("reverse mapping or seed written although the create was refused")
+	}
+	if n.mr.Exists(nameCreateKey) {
+		t.Fatal("create lock still held after CreatePlayer returned on an ended request ctx")
+	}
+}
+
+// 回归(docs/design/client-request-ordering.md §6.1):请求 ctx 恰好在 6b' 探测的 Redis 往返期间结束。login 的
+// go-redis 没开 ContextTimeoutEnabled,已发出的 pipeline 照样读回 clear,建角于是进入 6c;6c 必须在发 Reserve
+// 之前查 ctx 放弃:一个 data_service RPC 都不发,不释放,不排延迟释放。
+// TestCreatePlayer_RequestDoneMidCreateCommitsNothing 的「发号之后」子用例自 6b' 落地起停在探测开头的 ctx 预检,
+// 钉不住 tryReserveName 开头的预检,由本用例补上。
+//
+// 那条预检早已存在,本用例不属于「修复前红」,而是守住它:去掉 tryReserveName 开头的 ctx 预检(或挪到
+// reserveNameOnce 之后),假 data_service 不看 ctx、照样回 OK,6c” 随后放弃并释放,调用序列变成
+// reserve,release,在 data_service calls 断言处即红。
+func TestCreatePlayer_IDProbeClearThenDeadlineSendsNoReserve(t *testing.T) {
+	n := newNameHarness(t)
+	accountKey := constants.GetAccountDataKey(hzAccount)
+	before, err := n.mr.Get(accountKey)
+	if err != nil {
+		t.Fatalf("read seeded account blob: %v", err)
+	}
+	ctx, cancel := context.WithCancel(n.l.ctx)
+	defer cancel()
+	n.l.ctx = ctx
+	hook := &probePipelineHook{key: seedParentKeyFor(hzPlayerID), afterOK: cancel}
+	n.rdb.AddHook(hook)
+	clearBefore := idProbeCount(t, "clear")
+
+	resp := n.create(t, "云中君")
+
+	// 先钉住前提:探测确实放行了,请求 ctx 是在那之后才结束的。前提不成立时下面的断言说明不了问题。
+	if got := idProbeCount(t, "clear") - clearBefore; got != 1 {
+		t.Fatalf("id_probe_total{clear} delta = %v, want 1 (the probe must have let the create through)", got)
+	}
+	if ctx.Err() == nil {
+		t.Fatal("scenario never ended the request ctx")
+	}
+	requireTip(t, resp, table.LoginError_kLoginDataSerializeFailed)
+	if got := strings.Join(n.fake.events, ","); got != "" {
+		t.Fatalf("data_service calls = %q, want none (the request ctx ended before the name reservation was sent)", got)
+	}
+	if len(n.fake.releaseReqs) != 0 || len(n.scheduled) != 0 {
+		t.Fatalf("releases = %d, delayed = %v, want none (nothing was reserved)", len(n.fake.releaseReqs), n.scheduled)
+	}
+	if after, err := n.mr.Get(accountKey); err != nil || after != before {
+		t.Fatalf("account blob changed (err=%v) although the create was abandoned before reserving the name", err)
+	}
+	if n.mr.Exists(constants.PlayerToAccountKey(hzPlayerID)) || n.mr.Exists(seedParentKeyFor(hzPlayerID)) {
+		t.Fatal("reverse mapping or seed written although the create was abandoned")
+	}
+	if n.mr.Exists(nameCreateKey) {
+		t.Fatal("create lock still held after CreatePlayer returned on an ended request ctx")
+	}
+}
+
 // 种子脚本报错(父键是个 list,脚本里的 GET 回 WRONGTYPE):建角照常成功,账号 blob 与反查索引照写,
 // 计 error,父键原样不动。证明「种子结果不改变建角结果」对 error 分支同样成立。
 // 2026-10-15 改注入时机:list 键在 Reserve 回调里(6b' 探测之后)才写入。原先建角之前就预置,现在会被探测
@@ -534,5 +728,38 @@ func TestEnterGame_SeededNewPlayerTakesFastPath(t *testing.T) {
 	}
 	if n, err := h.rdb.Exists(ctx, seedSubCacheKeys(identityPlayerID)...).Result(); err != nil || n != 0 {
 		t.Fatalf("sub cache keys present = %d / err %v, want 0 (no DB read on the fast path)", n, err)
+	}
+}
+
+// 身份CAS之后、SceneManager铸造owner之前中断，不得把仍无任何资产的新号永久锁死。
+func TestSeededPlayerCanRetryAfterIdentityBackfillBeforeFirstOwner(t *testing.T) {
+	l, rc, _, _ := newIdentityBackfillHarness(t, &pbdb.PlayerDatabase{PlayerId: identityPlayerID})
+	ctx := context.Background()
+	if err := rc.Del(ctx, identityBlobKey()).Err(); err != nil {
+		t.Fatal(err)
+	}
+	if result, err := dataloader.SeedNewPlayerAllData(ctx, rc, identityPlayerID); err != nil || result != dataloader.SeedWritten {
+		t.Fatalf("正式建角种子失败: %v/%v", result, err)
+	}
+	state := identityState(3, "云中君")
+	state.appearanceID, state.gender = "appearance-verified", 2
+	if err := l.backfillPlayerIdentity(ctx, nil, state); err != nil {
+		t.Fatal(err)
+	}
+	before, player := readIdentityBlob(t, rc)
+	if player.GetUint32PbComponent().GetClass() != 3 || player.GetProfileComponent().GetAppearanceId() != state.appearanceID {
+		t.Fatal("正式身份补齐未执行")
+	}
+	// 未执行SetSession/EnterScene，重试必须走正式Ensure且不发SQL读、不重建父键。
+	calls := 0
+	dataloader.EnsurePlayerAllDataInRedisAsync(ctx, rc, nil, nil, identityPlayerID, 0, func(err error) {
+		calls++
+		if err != nil {
+			t.Errorf("首次owner之前的身份补齐种子被拒: %v", err)
+		}
+	})
+	after, _ := readIdentityBlob(t, rc)
+	if calls != 1 || !bytes.Equal(before, after) {
+		t.Fatal("重试改写了已有身份或没有完成一次")
 	}
 }

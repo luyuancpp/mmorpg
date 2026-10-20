@@ -5,6 +5,8 @@
 #include <limits>
 #include <string>
 #include <string_view>
+#include "google/protobuf/io/coded_stream.h"
+#include "google/protobuf/io/zero_copy_stream_impl_lite.h"
 
 #include "muduo/base/Logging.h"
 
@@ -30,7 +32,7 @@ static_assert(std::size(kAssetOpAuthVerdictNames) == static_cast<size_t>(AssetOp
 // 之前它一个字节也进不来,而不是默默放行。注意这与账本 IsAssetOpStreamValid 的取舍方向
 // 相反 —— 那里"拒"会把持有新流账本的玩家永久 fail-closed,这里"拒"只是让没登记的流发不了包。
 //
-// SYSTEM_CREDIT(邮件 / GM 发物,D1 预留)在 v1 没有合法调用方,故意不出现在表里。
+// SYSTEM_CREDIT只允许mail独占；榜奖与管理员先提交可信邮件意图，不各自占同一条seq流。
 struct AssetOpCallerRule
 {
 	std::string_view caller;    // canonical 串第 2 行;也是本表的查找键
@@ -49,6 +51,7 @@ constexpr AssetOpCallerRule kAssetOpCallerRules[] = {
 	 "MMORPG_ASSET_OP_SECRET_TRADE",
 	 {ASSET_OP_STREAM_TRADE_DEBIT, ASSET_OP_STREAM_TRADE_CREDIT},
 	 2},
+	{"mail", "MMORPG_ASSET_OP_SECRET_MAIL", {ASSET_OP_STREAM_SYSTEM_CREDIT, ASSET_OP_STREAM_UNSPECIFIED}, 1},
 };
 
 constexpr size_t kAssetOpCallerRuleCount = std::size(kAssetOpCallerRules);
@@ -76,7 +79,7 @@ const AssetOpCallerRule* FindCallerRuleForStream(AssetOpStream stream)
 // ── 默认密钥来源:环境变量 + 缓存 ───────────────────────────────────────────
 //
 // 运行模式与密钥在进程生命周期内不会变,而这个值每条资产 RPC 都要读一次,不能每次都 getenv。
-// 线程:只在 scene 的 loop 线程上被调用(三个入口都已 runInLoop 投递),故不加锁。
+// 线程:只在 scene 的 loop 线程上被调用(四个资产 RPC 入口都由 muduo_grpc 服务端在 loop 线程上派发),故不加锁。
 struct AssetOpSecretCacheEntry
 {
 	bool loaded{false};
@@ -116,8 +119,8 @@ std::string DefaultSecretLookup(std::string_view caller)
 // ";i=" 物品同理,";u=" 按 guid 扣的物品实例,";p=" 宝宝;全空则是 "c=;i=;u=;p=0"。
 // 宽度一律先提到 uint64 再转十进制,和 Go 的 strconv.FormatUint(uint64(x), 10) 同口径。
 //
-// **u/p 两段是安全边界,不是可选装饰**(2026-09-19 补):scene 的 gRPC 是
-// InsecureServerCredentials(),集群内任意进程可连可嗅。这两个字段会真改玩家资产
+// **u/p 两段是安全边界,不是可选装饰**(2026-09-19 补):scene 的 gRPC 端口是明文 h2c、不鉴权
+// (当时是 InsecureServerCredentials(),第 4 批起是 muduo_grpc::Server,同样明文),集群内任意进程可连可嗅。这两个字段会真改玩家资产
 // (按 guid 扣装备 / 扣宝宝),不进签名串的话,攻击者截下一条合法的 TRADE_DEBIT、
 // 只把 item_uuids 换成该玩家的其它装备再发出去,seq 没见过、签名照样通过,
 // scene 扣掉的就是被换的那件。seq 幂等与 300s 时间窗都挡不住这种"同 seq 抢跑改载荷"。
@@ -160,6 +163,28 @@ void AppendBundleCanonical(std::string& out, const ::AssetBundle& bundle)
 	// 单值,空缺写 0:宝宝 guid 恒非 0,所以 0 与"没带宝宝"不会混淆。
 	out.append(";p=");
 	out.append(std::to_string(bundle.pet_id()));
+	if (bundle.item_instances_size() > 0 || bundle.has_pet_instance())
+	{
+		out.append(";v2=");
+		auto appendInstance = [&](const google::protobuf::Message& instance) {
+			std::string bytes;
+			{
+				google::protobuf::io::StringOutputStream stream(&bytes);
+				google::protobuf::io::CodedOutputStream coded(&stream);
+				coded.SetSerializationDeterministic(true);
+				if (!instance.SerializeToCodedStream(&coded)) return false;
+			}
+			out.append(token_security::BytesToHex(reinterpret_cast<const unsigned char*>(bytes.data()), static_cast<unsigned int>(bytes.size())));
+			return true;
+		};
+		for (const auto& item : bundle.item_instances())
+		{
+			if (!appendInstance(item)) { out.append("!invalid"); return; }
+			out.push_back(',');
+		}
+		out.push_back(';');
+		if (bundle.has_pet_instance() && !appendInstance(bundle.pet_instance())) out.append("!invalid");
+	}
 }
 
 // ── 时间窗 ──────────────────────────────────────────────────────────────────

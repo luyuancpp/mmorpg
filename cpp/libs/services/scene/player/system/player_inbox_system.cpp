@@ -11,16 +11,17 @@
 #include <hiredis/hiredis.h>
 #include <muduo/contrib/hiredis/Hiredis.h>
 #include "muduo/base/Logging.h"
+#include "muduo_grpc/channel.h"
 
 #include <node_config_manager.h>
 #include "battle/system/player_battle.h"
 #include "engine/core/type_define/player_guid_comp.h"
-#include "grpc_client/grpc_call_tag.h"          // kGrpcStatusUnimplemented(与 grpc::StatusCode 同值)
+#include "core/network/grpc_call_types.h"          // kGrpcStatusUnimplemented
 #include "grpc_client/player_inbox/player_inbox_grpc_client.h"
 #include "muduo_grpc/channel.h"                 // 选点读 muduo_grpc::Channel::GetState / ConnectivityState
 #include "network/node_utils.h"                 // GetNodeInfo:Fetch 带上本节点 node_id(只用于对端日志)
 #include "node/system/grpc_call_deadline.h"     // 在途超时从 PlayerInboxNodeService 的 gRPC deadline 派生
-#include "node/system/node/muduo_grpc_channel_slot.h" // MuduoGrpcChannelPtr:节点实体上的 gRPC 通道组件
+#include "node/system/node/muduo_grpc_channel_slot.h"
 #include "player/comp/last_persisted_snapshot_comp.h"
 #include "player/comp/player_inbox_runtime_comp.h"
 #include "player/comp/player_ownership_comp.h"
@@ -40,10 +41,9 @@
 
 namespace
 {
-	using player_inbox_rules::DeliveryClass;
 	using player_inbox_rules::Durability;
+	using player_inbox_rules::ItemAction;
 
-	constexpr uint32_t kGrpcUnimplemented = kGrpcStatusUnimplemented; // 12,与 grpc::StatusCode::UNIMPLEMENTED 同值
 	// 在途请求的兜底期限 = 该类节点的 gRPC deadline + 5s(上游比下游宽,grpc-client-deadline-failure-callback.md §4.2)。
 	// 生成的客户端保证每次调用在 deadline 内以应答或失败之一收场,正常走不到这里;它只防"完成通知永远不来"。
 	constexpr uint64_t kInflightSlackMs = 5000;
@@ -58,11 +58,11 @@ namespace
 										 .count());
 	}
 
-	// 只在候选里挑**挂着 gRPC 通道且通道 READY** 的节点(照 id_segment_bootstrap.cpp 的 PickReadyDataServiceNode):
-	// ConnectToGrpcNode 先 emplace MuduoGrpcChannelPtr 再 emplace NodeInfo,两者同在才是可用连接(第 3 批起没有 stub
-	// 组件,grpc-muduo-transport.md §14);摘节点 / 关机阶段 0 先摘通道组件,正在拆的节点不会被挑中。
-	// 通道不 READY 时发出去也只会换回一次 UNAVAILABLE,直接回"发不出去",由调用方退避。
-	// tryToConnect=true 顺手把 IDLE 的通道(连接断开后回 IDLE;muduo 通道没有空闲超时)踢去重连。收件箱是全局服务,不比对 zone。
+	// 只在候选里挑**挂着 muduo_grpc 通道且通道 READY** 的节点(照 id_segment_bootstrap.cpp 的 PickReadyDataServiceNode):
+	// ConnectToGrpcNode 先 emplace MuduoGrpcChannelPtr 再 emplace NodeInfo,两者同在才是可用连接。
+	// 通道不 READY 时发出去,TRANSIENT_FAILURE 立即换回 UNAVAILABLE,IDLE / CONNECTING 则排队等连接、连不上就占着在途状态
+	// 直到 deadline;直接回"发不出去",由调用方退避。
+	// GetState(true) 顺手把 READY 连接断开后回到 IDLE 的通道踢回 CONNECTING。收件箱是全局服务,不比对 zone。
 	entt::entity PickReadyPlayerInboxNode()
 	{
 		auto &registry = tlsNodeContextManager.GetRegistry(common::base::PlayerInboxNodeService);
@@ -89,8 +89,20 @@ namespace
 		{
 			return false;
 		}
-		player_inbox::SendPlayerInboxFetchItems(tlsNodeContextManager.GetRegistry(common::base::PlayerInboxNodeService),
-												node, request);
+		player_inbox::SendPlayerInboxFetchItems(
+			tlsNodeContextManager.GetRegistry(common::base::PlayerInboxNodeService), node, request,
+			[playerId = request.player_id(), domain = static_cast<uint32_t>(request.domain()),
+			 correlationId = request.correlation_id()](const GrpcCallOutcome &outcome,
+													 const player_inbox::FetchPlayerInboxResponse *reply)
+			{
+				if (outcome.ok() && reply != nullptr)
+				{
+					PlayerInboxSystem::OnFetchReply(playerId, domain, correlationId, *reply);
+					return;
+				}
+				PlayerInboxSystem::OnFetchFailed(playerId, domain, correlationId,
+												 outcome.ok() ? kGrpcStatusInternal : outcome.code, outcome.message);
+			});
 		return true;
 	}
 
@@ -101,8 +113,20 @@ namespace
 		{
 			return false;
 		}
-		player_inbox::SendPlayerInboxAckItems(tlsNodeContextManager.GetRegistry(common::base::PlayerInboxNodeService),
-											  node, request);
+		player_inbox::SendPlayerInboxAckItems(
+			tlsNodeContextManager.GetRegistry(common::base::PlayerInboxNodeService), node, request,
+			[playerId = request.player_id(), domain = static_cast<uint32_t>(request.domain()),
+			 correlationId = request.correlation_id()](const GrpcCallOutcome &outcome,
+														 const player_inbox::AckPlayerInboxResponse *reply)
+			{
+				if (outcome.ok() && reply != nullptr)
+				{
+					PlayerInboxSystem::OnAckReply(playerId, domain, correlationId, *reply);
+					return;
+				}
+				PlayerInboxSystem::OnAckFailed(playerId, domain, correlationId,
+											   outcome.ok() ? kGrpcStatusInternal : outcome.code, outcome.message);
+			});
 		return true;
 	}
 
@@ -124,23 +148,33 @@ namespace
 	thread_local uint64_t tlsCorrelationSeq = 0;
 	// 注册表自检失败 = 本节点停用消费(PlayerInboxSystem::Initialize)。
 	thread_local bool tlsRegistryBroken = false;
+	// 自检失败的原因与下一次补打 ERROR 的时刻(单调时钟)。只在启动时打一次的话,[10m] 窗口的日志告警亮 10 分钟
+	// 就自己灭了,而本节点上所有在线玩家的处置一直不执行(评审 F3);Tick 按 kNodeStuckRelogIntervalMs 补打同一行。
+	thread_local std::string tlsRegistryBrokenDetail;
+	thread_local uint64_t tlsNextRegistryBrokenLogMs = 0;
+	// 消费开关关闭时下一次补打 WARN 的时刻(单调时钟,评审 H1)。0 = 未排期:开关开着,或还没打过首条;
+	// 开关一关,下一个 Tick 立即打首条。同一份节拍与 registry_broken 共用(TakeNodeRelogTurn)。
+	thread_local uint64_t tlsNextConsumerDisabledLogMs = 0;
 
 	uint64_t NextCorrelationId()
 	{
 		return ++tlsCorrelationSeq;
 	}
 
-	bool ConsumerEnabled()
+	// 配置开关本身,不含注册表自检。metric=inbox_consumer_disabled 只按它判:自检失败另有 metric=inbox_registry_broken。
+	bool ConfiguredConsumerEnabled()
 	{
-		if (tlsRegistryBroken)
-		{
-			return false;
-		}
 		if (gConfigOverride.active)
 		{
 			return gConfigOverride.consumerEnabled;
 		}
 		return tlsNodeConfigManager.GetGameConfig().player_inbox().consumer_enabled();
+	}
+
+	// 生效的消费开关:注册表自检失败时一律关。
+	bool ConsumerEnabled()
+	{
+		return !tlsRegistryBroken && ConfiguredConsumerEnabled();
 	}
 
 	uint32_t PeriodicFetchMinutes()
@@ -155,6 +189,39 @@ namespace
 	uint32_t JitterPermille()
 	{
 		return tlsRandom.Rand<uint32_t>(0, player_inbox_rules::kJitterPermilleMax);
+	}
+
+	// metric= 标记供日志告警(评审 L13):本节点上所有在线玩家的处置都不执行,表面上与离线无异。
+	void LogRegistryBroken()
+	{
+		LOG_ERROR << "[PlayerInbox] metric=inbox_registry_broken detail=" << tlsRegistryBrokenDetail
+				  << "; registry self-check failed, inbox consumption disabled on this node";
+	}
+
+	// metric= 标记供日志告警(评审 H1):开关关着时,收件箱服务照常收单(入箱回 created=true),本节点却一条都不执行;
+	// 条目停在 PENDING、delivery_count 为 0,服务端没有任何告警看得到。例行发布曾因开关不粘滞把它静默关掉。
+	// 启动时打一条,之后 Tick 按 kNodeStuckRelogIntervalMs 补打同一行。键名 metric=inbox_consumer_disabled 是
+	// 告警固定查询的契约,不要改。
+	void LogConsumerDisabled()
+	{
+		LOG_WARN << "[PlayerInbox] metric=inbox_consumer_disabled consumer_enabled=0"
+				 << " periodic_fetch_minutes=" << PeriodicFetchMinutes()
+				 << " consumer_domains=" << player_inbox_registry::ConsumerDomains().size()
+				 << "; player_inbox.consumer_enabled is off, inbox items are accepted by the service but not executed"
+				 << " on this node";
+	}
+
+	// 节点级停用的补打节拍,registry_broken 与 consumer_disabled 共用(评审 F3、H1)。这类停用没有逐玩家的退避可数,
+	// 只能按时间补打。nextLogMs 是下一条的时刻(单调时钟),0 = 未排期,立即到点。到点时返回 true,并把下一条
+	// 排到 kNodeStuckRelogIntervalMs 之后;该间隔由 player_inbox_rules 的 static_assert 钉在 [10m] 告警窗口之内。
+	bool TakeNodeRelogTurn(uint64_t &nextLogMs, uint64_t nowMs)
+	{
+		if (nextLogMs != 0 && nowMs < nextLogMs)
+		{
+			return false;
+		}
+		nextLogMs = nowMs + player_inbox_rules::kNodeStuckRelogIntervalMs;
+		return true;
 	}
 
 	uint64_t InflightTimeoutMs()
@@ -270,13 +337,24 @@ namespace
 
 	// ── 退避与停用 ──────────────────────────────────────────────────────────
 
+	// 不会自愈的延后原因:不经人工处置,这名玩家的处置会一直不执行,而表面上与离线无异(评审 L13)。
+	// 目前只有账本损坏 —— 损坏标签只在加载时挂、此后不摘,退避多少次都还是它。
+	bool IsStuckDeferReason(PlayerInboxDeferReason reason)
+	{
+		return reason == PlayerInboxDeferReason::kLedgerInvalid;
+	}
+
 	// 记下延后原因并在 delayMs 之后续做。同一原因连续出现只在第一次打 INFO,免得收件箱不可用时
 	// 每个在线玩家每分钟各刷一行(DEBUG 仍逐次记)。
+	// 不会自愈的原因另打 WARN:首次一次,之后按 failStreak 每 kStuckWarnEveryFailures 次一次(封顶后最多约 8 分钟),
+	// 节拍落在 scene 日志告警的 [10m] 窗口之内,玩家在线期间告警一直亮着、不会反复自愈(推导见
+	// player_inbox_rules::kSceneLogAlertWindowMs,评审 L13、F3)。只影响日志,不改 failStreak 与退避。
 	void ScheduleRetry(PlayerInboxDomainState &state, uint64_t playerId, PlayerInboxDeferReason reason,
 					   uint64_t delayMs, uint64_t nowMs)
 	{
 		state.nextCheckMs = nowMs + delayMs;
-		if (state.deferReason != reason)
+		const bool reasonChanged = state.deferReason != reason;
+		if (reasonChanged)
 		{
 			LOG_INFO << "[PlayerInbox] metric=inbox_deferred reason=" << PlayerInboxDeferReasonName(reason)
 					 << " player_id=" << playerId << " domain=" << state.domain
@@ -287,6 +365,12 @@ namespace
 			LOG_DEBUG << "[PlayerInbox] deferred again reason=" << PlayerInboxDeferReasonName(reason)
 					  << " player_id=" << playerId << " domain=" << state.domain << " streak=" << state.failStreak
 					  << " retry_in_ms=" << delayMs;
+		}
+		if (IsStuckDeferReason(reason) && (reasonChanged || player_inbox_rules::IsStuckWarnDue(state.failStreak)))
+		{
+			LOG_WARN << "[PlayerInbox] metric=inbox_ledger_invalid source=apply_gate player_id=" << playerId
+					 << " domain=" << state.domain << " streak=" << state.failStreak
+					 << "; inbox consumption stays deferred until the ledger is repaired (does not self-heal)";
 		}
 		state.deferReason = reason;
 	}
@@ -478,6 +562,8 @@ namespace
 		request.set_owner_epoch(epoch);
 		const uint64_t correlationId = NextCorrelationId();
 		request.set_correlation_id(correlationId);
+		// 只用于对端日志(与 Fetch 填的是同一个本节点 id):服务端围栏 / Ack 异常的 ERROR 据此定位发送方(评审 L10)。
+		request.set_scene_node_id(GetNodeInfo().node_id());
 		for (const auto &decision : state.ackQueue)
 		{
 			auto *report = request.add_decisions();
@@ -530,6 +616,15 @@ namespace
 		SendAck(player, playerId, state, nowMs);
 	}
 
+	// 只切进 kAwaitDurable、不当场推进(调用方 ackQueue 非空)。之后由 PING 回调或 tick 的 TryAck 推进。
+	void EnterAwaitDurable(PlayerInboxDomainState &state, uint64_t nowMs)
+	{
+		state.phase = PlayerInboxPhase::kAwaitDurable;
+		state.nextAckMs = nowMs;
+		state.ackFailStreak = 0;
+		state.durableMismatchReported = false;
+	}
+
 	// 本批条目处理完(或在某一条停下)之后:有新记账就请求存盘;有待确认的进 kAwaitDurable,否则本轮结束。
 	void AfterBatchDecided(entt::entity player, uint64_t playerId, PlayerInboxDomainState &state, bool recorded,
 						   uint64_t nowMs)
@@ -543,11 +638,110 @@ namespace
 			FinishRound(state, nowMs);
 			return;
 		}
-		state.phase = PlayerInboxPhase::kAwaitDurable;
-		state.nextAckMs = nowMs;
-		state.ackFailStreak = 0;
-		state.durableMismatchReported = false;
+		EnterAwaitDurable(state, nowMs);
 		TryAck(player, playerId, state, nowMs);
+	}
+
+	// 退出期即将丢掉本地缓存里**已投递、还没定结局**的条目时打一行可检索的 INFO(评审 M4 的缺口)。只记日志,不改状态。
+	// 这些行在服务端 delivery_count ≥ 1、仍是 PENDING,场景侧没有结局可确认,离开时的补发 Ack(OnPlayerLeaving)
+	// 管不到它们:退出被取消(重连)就照常重拉;否则只能等玩家下次落地重拉,或由 Go 侧的 24h 陈旧窗口
+	// (loops.go 的 deliveredStaleAfter)把它们移出"已投递未确认"告警。值班据此与"真正卡住"区分开。
+	// 必须在 DropPendingForRefetch 之前调(之后 pendingItems 已清空);pendingItems 按 seq 升序。
+	void LogDeliveredUndecided(uint64_t playerId, const PlayerInboxDomainState &state, const char *source)
+	{
+		if (state.pendingItems.empty())
+		{
+			return;
+		}
+		LOG_INFO << "[PlayerInbox] metric=inbox_leave_ack result=delivered_undecided source=" << source
+				 << " player_id=" << playerId << " domain=" << state.domain << " items=" << state.pendingItems.size()
+				 << " first_seq=" << state.pendingItems.front().seq() << " last_seq=" << state.pendingItems.back().seq()
+				 << "; delivered entries without a decision are dropped and stay delivered-but-unacknowledged"
+				 << " until they are fetched again";
+	}
+
+	// 丢掉本地缓存的条目,改为下次重新拉取(评审 L1;落地钩子里的归属变化同理,评审 L2)。
+	// 已记账的前缀(只可能来自执行器 DEFER 之后的续做)不能跟着丢,也不能留到下一批:那些条目在服务端仍是
+	// PENDING,下一次 Fetch 会再投一遍,按账本回放后同一 seq 在 ackQueue 里出现两次,服务端判 InvalidParameter。
+	// 所以 ackQueue 非空时先进 kAwaitDurable 把前缀确认掉,FinishRound 再按 recheckRequested 重拉
+	// (设计 §7.4「上一批全部确认之前不拉下一批」);重拉仍要先过前置闸,闸不过就在那里按原因退避。
+	// 返回 true = ackQueue 非空、已置 recheckRequested,调用方须把本域转入 kAwaitDurable(不要再安排检查);
+	// false = 已回到 kIdle,检查时刻由调用方安排。
+	bool DropPendingForRefetch(PlayerInboxDomainState &state)
+	{
+		state.pendingItems.clear();
+		state.hasMore = false; // 丢掉的那批的 has_more 已不可信,重拉时由新回包重新决定
+		if (state.ackQueue.empty())
+		{
+			state.phase = PlayerInboxPhase::kIdle;
+			return false;
+		}
+		state.recheckRequested = true;
+		return true;
+	}
+
+	// 水位已过这一条、原结局已不在环里时报的 UNKNOWN 结局(设计 §7.7)。ApplyPending 与退出期入队共用,一条口径。
+	PlayerInboxDecision UnknownDecisionFor(const player_inbox::PlayerInboxItem &item)
+	{
+		PlayerInboxDecision unknown;
+		unknown.set_seq(item.seq());
+		unknown.set_outcome(static_cast<uint32_t>(player_inbox::PLAYER_INBOX_OUTCOME_UNKNOWN));
+		unknown.set_reason(0);
+		unknown.set_request_id(item.request_id());
+		unknown.set_msg_type(static_cast<uint32_t>(item.msg_type()));
+		return unknown;
+	}
+
+	// 退出期前置闸不过时,先把批首「账本里已有结局」的条目(回放 / UNKNOWN)放进确认队列,只丢掉从第一条需要执行的
+	// 条目起的剩余部分(评审 LC-2)。这类条目只报告账本里的事实、不执行任何效果,确认也不受前置闸限制(头文件契约);
+	// 跟着新条目一起丢掉的话,离开时的补发确认管不到它们,每次短会话都会再留一行已投递未确认。
+	// 只在退出期做:其他闸(战斗、冻结、交接)下丢掉的条目之后还会被重拉、照常回放。
+	// 账本缺失或已判坏时不分类(分类依据不可信),整批照旧丢弃。批内 seq 升序,遇到第一条需要执行的条目就停,
+	// 所以 ackQueue 仍严格升序;DEFER 续做的批首必是新条目,这里什么都不会入队。
+	void QueueDecidedPrefixOnExit(entt::entity player, uint64_t playerId, PlayerInboxDomainState &state)
+	{
+		const auto &registry = tlsEcs.actorRegistry;
+		if (registry.any_of<PlayerInboxLedgerInvalidComp>(player))
+		{
+			return;
+		}
+		const auto *ledger = registry.try_get<PlayerInboxLedgerComp>(player);
+		if (ledger == nullptr)
+		{
+			return;
+		}
+		std::size_t queued = 0;
+		for (; queued < state.pendingItems.size(); ++queued)
+		{
+			const auto &item = state.pendingItems[queued];
+			PlayerInboxDecision replayed;
+			const auto deliveryClass = player_inbox_rules::ClassifyDelivery(
+				player_inbox_rules::FindCursor(*ledger, state.domain), item.seq(), item.request_id(),
+				static_cast<uint32_t>(item.msg_type()), &replayed);
+			const auto action = player_inbox_rules::PlanItem(deliveryClass, static_cast<uint32_t>(item.directive()));
+			if (action == ItemAction::kReplay)
+			{
+				state.ackQueue.push_back(replayed);
+				continue;
+			}
+			if (action == ItemAction::kAckUnknown)
+			{
+				state.ackQueue.push_back(UnknownDecisionFor(item));
+				continue;
+			}
+			break;
+		}
+		if (queued == 0)
+		{
+			return;
+		}
+		LOG_INFO << "[PlayerInbox] metric=inbox_leave_ack result=decided_prefix_queued source=apply_gate_exiting"
+				 << " player_id=" << playerId << " domain=" << state.domain << " items=" << queued
+				 << " first_seq=" << state.pendingItems.front().seq()
+				 << " last_seq=" << state.pendingItems[queued - 1].seq()
+				 << "; entries already decided in the ledger are acknowledged instead of being dropped";
+		state.pendingItems.erase(state.pendingItems.begin(),
+								 state.pendingItems.begin() + static_cast<std::ptrdiff_t>(queued));
 	}
 
 	// ── 应用(设计 §7.6 第 3 步)────────────────────────────────────────────
@@ -564,7 +758,25 @@ namespace
 		}
 		if (const auto reason = CheckApplyGate(player, state.domain); reason != PlayerInboxDeferReason::kNone)
 		{
-			// 条目留在本地(kApplying),闸过了再续做:不重新 Fetch,也就不白涨服务端的 delivery_count。
+			// 闸不过就丢掉本地副本、下次重新拉(评审 L1),不在本地等闸再续做:等闸的这段时间里(冻结、交接、战斗都
+			// 可能很久)服务端可能给条目挂上 VOID,按旧副本续做会把已作废的处置照样执行并报 APPLIED。
+			// 代价只是服务端 delivery_count 多 +1。只有执行器 DEFER(闸已过、条目已开始处理)才保留本地续做。
+			// 退出期丢掉的这批多半再也拉不回来(玩家正在下线):账本里已有结局的前缀先入确认队列(评审 LC-2),
+			// 其余留一行对账线索(评审 M4 的缺口)。按「是否挂着退出标记」判断,不按闸最终返回的原因:
+			// 冻结 / 交接与退出同时存在时闸先报 kFrozen / kHandoff,但玩家同样正在下线(评审 LC-1)。
+			if (tlsEcs.actorRegistry.any_of<UnregisterPlayer>(player))
+			{
+				QueueDecidedPrefixOnExit(player, playerId, state);
+				LogDeliveredUndecided(playerId, state, "apply_gate_exiting");
+			}
+			if (DropPendingForRefetch(state))
+			{
+				LOG_INFO << "[PlayerInbox] Apply gate closed (" << PlayerInboxDeferReasonName(reason)
+						 << "); acknowledging the decided prefix before refetching player_id=" << playerId
+						 << " domain=" << state.domain << " decisions=" << state.ackQueue.size();
+				AfterBatchDecided(player, playerId, state, false, nowMs);
+				return;
+			}
 			Defer(state, playerId, reason, nowMs);
 			return;
 		}
@@ -577,49 +789,41 @@ namespace
 			const uint64_t seq = item.seq();
 			const uint64_t requestId = item.request_id();
 			const uint32_t msgType = static_cast<uint32_t>(item.msg_type());
+			const auto directive = item.directive();
 
-			// 1. 本二进制不认识的类型,或类型不属于本域:版本错位(新类型先于 scene 升级被启用)。
-			//    在这一条停下、不记账、不确认这一条,停用该域 —— 绝不能当成终态的 REJECTED。
-			const auto executor = player_inbox_registry::FindExecutor(msgType, state.domain);
-			if (executor == nullptr)
-			{
-				LOG_ERROR << "[PlayerInbox] metric=inbox_unknown_type player_id=" << playerId << " domain=" << state.domain
-						  << " seq=" << seq << " msg_type=" << msgType << " request_id=" << requestId;
-				Halt(state, playerId, PlayerInboxHaltReason::kUnknownType, "msg_type=" + std::to_string(msgType));
-				AfterBatchDecided(player, playerId, state, recorded, nowMs);
-				return;
-			}
-
-			// 2. 重复投递:按 (seq, request_id, msg_type) 核对后回放(IB-9)。
+			// 先按账本分类,只有新条目才看指令,执行器最后才查(顺序的理由见 player_inbox_rules::PlanItem,评审 M1)。
 			PlayerInboxDecision replayed;
 			const auto deliveryClass = player_inbox_rules::ClassifyDelivery(
 				player_inbox_rules::FindCursor(ledger, state.domain), seq, requestId, msgType, &replayed);
-			if (deliveryClass == DeliveryClass::kReplay)
+			const auto action = player_inbox_rules::PlanItem(deliveryClass, static_cast<uint32_t>(directive));
+
+			// 1. 重复投递:按 (seq, request_id, msg_type) 核对后回放(IB-9)。只报告账本里已有的事实,
+			//    不需要执行器 —— 本二进制即使已不认识这个类型,回放原结局也是对的。
+			if (action == ItemAction::kReplay)
 			{
 				state.ackQueue.push_back(replayed);
 				continue;
 			}
-			if (deliveryClass == DeliveryClass::kUnknown)
+			if (action == ItemAction::kAckUnknown)
 			{
 				// 水位已过这一条、原结局已不在环里:只可能来自之前会话已落盘的水位,报 UNKNOWN(设计 §7.7)。
-				PlayerInboxDecision unknown;
-				unknown.set_seq(seq);
-				unknown.set_outcome(static_cast<uint32_t>(player_inbox::PLAYER_INBOX_OUTCOME_UNKNOWN));
-				unknown.set_reason(0);
-				unknown.set_request_id(requestId);
-				unknown.set_msg_type(msgType);
-				state.ackQueue.push_back(unknown);
+				state.ackQueue.push_back(UnknownDecisionFor(item));
 				LOG_WARN << "[PlayerInbox] Redelivered entry is below the ledger watermark but no longer in the recent ring;"
 						 << " acknowledging as UNKNOWN player_id=" << playerId << " domain=" << state.domain
 						 << " seq=" << seq << " request_id=" << requestId;
 				continue;
 			}
-			if (deliveryClass == DeliveryClass::kMismatch)
+			if (action == ItemAction::kHaltMismatch)
 			{
+				// ledger_* 是账本环里同一 seq 的那一条(ClassifyDelivery 在 kMismatch 时也拷出来,评审 F4):值班据此
+				// 一眼区分"同 seq 被另一个请求占用"(可走 FORCE_MISMATCH)与账本本身的问题。不再打 class=:走到这里恒为 mismatch。
 				LOG_ERROR << "[PlayerInbox] metric=inbox_replay_mismatch player_id=" << playerId << " domain=" << state.domain
 						  << " seq=" << seq << " delivered_request_id=" << requestId << " delivered_msg_type=" << msgType
 						  << " ledger_request_id=" << replayed.request_id() << " ledger_msg_type=" << replayed.msg_type();
-				// 什么都不确认(设计 §7.6):本批已记账的前缀照常随存盘落地,由之后的会话按账本补确认。
+				// 什么都不确认(设计 §7.6):本批已记账的前缀照常随存盘落地(效果与账本同一次落盘),但**不会**被之后的
+				// 会话自动补确认 —— 这条 MISMATCH 行还是 PENDING,每次落地都会排在那些前缀之后再投一遍、再次停用。
+				// 解卡靠服务端 VoidItem 的强制模式(FORCE_MISMATCH):服务端读该玩家已落盘的账本,自证环里同 seq 是另一个
+				// request_id 之后把这一行终结为 VOIDED(评审 M1);之后的落地才会按账本回放、确认前缀。
 				state.ackQueue.clear();
 				Halt(state, playerId, PlayerInboxHaltReason::kReplayMismatch, "seq=" + std::to_string(seq));
 				if (recorded)
@@ -630,22 +834,24 @@ namespace
 				return;
 			}
 
-			// 3. 新条目:作废指令不解码载荷,其余交给执行器。
+			// 2. 新条目(seq 在水位之上)。
 			PlayerInboxDecision decision;
 			decision.set_seq(seq);
 			decision.set_request_id(requestId);
 			decision.set_msg_type(msgType);
-			const auto directive = item.directive();
-			if (directive == player_inbox::PLAYER_INBOX_DIRECTIVE_VOID)
+			if (action == ItemAction::kSkipVoided)
 			{
+				// 作废:不查执行器、不解码载荷(设计 §7.9)。本二进制不认识这个类型也照样跳过 ——
+				// 这正是运维用 VoidItem 解开"未知类型停用"的路径(评审 M1)。
 				decision.set_outcome(static_cast<uint32_t>(player_inbox::PLAYER_INBOX_OUTCOME_SKIPPED));
 				decision.set_reason(static_cast<uint32_t>(item.void_reason()));
 			}
-			else if (directive != player_inbox::PLAYER_INBOX_DIRECTIVE_NONE)
+			else if (action != ItemAction::kExecute)
 			{
-				// 不认识的指令同样是版本错位:停在这一条,不猜。
+				// kHaltUnknownDirective:不认识的指令同样是版本错位,停在这一条,不猜。
 				LOG_ERROR << "[PlayerInbox] metric=inbox_unknown_type player_id=" << playerId << " domain=" << state.domain
-						  << " seq=" << seq << " directive=" << static_cast<int>(directive) << " request_id=" << requestId;
+						  << " seq=" << seq << " directive=" << static_cast<int>(directive) << " request_id=" << requestId
+						  << " action=" << player_inbox_rules::ItemActionName(action);
 				Halt(state, playerId, PlayerInboxHaltReason::kUnknownType,
 					 "directive=" + std::to_string(static_cast<int>(directive)));
 				AfterBatchDecided(player, playerId, state, recorded, nowMs);
@@ -653,6 +859,18 @@ namespace
 			}
 			else
 			{
+				// 本二进制不认识的类型,或类型不属于本域:版本错位(新类型先于 scene 升级被启用)。
+				// 在这一条停下、不记账、不确认这一条,停用该域 —— 绝不能当成终态的 REJECTED。
+				const auto executor = player_inbox_registry::FindExecutor(msgType, state.domain);
+				if (executor == nullptr)
+				{
+					LOG_ERROR << "[PlayerInbox] metric=inbox_unknown_type player_id=" << playerId
+							  << " domain=" << state.domain << " seq=" << seq << " msg_type=" << msgType
+							  << " request_id=" << requestId;
+					Halt(state, playerId, PlayerInboxHaltReason::kUnknownType, "msg_type=" + std::to_string(msgType));
+					AfterBatchDecided(player, playerId, state, recorded, nowMs);
+					return;
+				}
 				const PlayerInboxExecResult result = executor(player, item.payload());
 				if (result.kind == PlayerInboxExecKind::kApplied)
 				{
@@ -667,6 +885,8 @@ namespace
 				else
 				{
 					// DEFER:严格顺序,停在这一条;已处理的前缀从本地缓存里摘掉,剩下的按退避续做,不重新 Fetch。
+					// 已定的前缀留在 ackQueue,等整批做完一起确认。续做时仍先过前置闸:闸不过就丢掉剩下的本地副本,
+					// 先确认前缀再重拉(DropPendingForRefetch,评审 L1)。
 					LOG_WARN << "[PlayerInbox] Executor deferred player_id=" << playerId << " domain=" << state.domain
 							 << " seq=" << seq << " type=" << player_inbox_registry::TypeName(msgType)
 							 << " reason=" << result.reason;
@@ -712,6 +932,17 @@ namespace
 
 	void StartFetch(entt::entity player, uint64_t playerId, PlayerInboxDomainState &state, uint64_t nowMs)
 	{
+		if (!state.ackQueue.empty())
+		{
+			// 不变量:回到 kIdle 时 ackQueue 必为空(上一批全部确认之前不拉下一批,设计 §7.4)。走到这里只可能是缺陷。
+			// 照发 Fetch 会让重投的条目按账本回放后与队列里的同一 seq 重复,服务端判 InvalidParameter、本端随即停用该域
+			// (评审 L2);改为先确认、确认完再拉。确认不受前置闸限制,所以放在闸之前。
+			LOG_ERROR << "[PlayerInbox] Fetch requested while decisions are still unacknowledged; acknowledging first"
+					  << " player_id=" << playerId << " domain=" << state.domain << " decisions=" << state.ackQueue.size();
+			state.recheckRequested = true;
+			AfterBatchDecided(player, playerId, state, /*recorded=*/false, nowMs);
+			return;
+		}
 		if (const auto reason = CheckApplyGate(player, state.domain); reason != PlayerInboxDeferReason::kNone)
 		{
 			Defer(state, playerId, reason, nowMs);
@@ -815,13 +1046,23 @@ namespace
 
 void PlayerInboxSystem::Initialize()
 {
-	const std::string selfCheck = player_inbox_registry::SelfCheck();
-	tlsRegistryBroken = !selfCheck.empty();
+	tlsRegistryBrokenDetail = player_inbox_registry::SelfCheck();
+	tlsRegistryBroken = !tlsRegistryBrokenDetail.empty();
 	if (tlsRegistryBroken)
 	{
-		// 不阻断启动(IB-7):收件箱停用只是延迟处置,条目留在服务端 PENDING。
-		LOG_ERROR << "[PlayerInbox] Registry self-check failed; inbox consumption disabled on this node: " << selfCheck;
+		// 不阻断启动(IB-7):收件箱停用只是延迟处置,条目留在服务端 PENDING。之后由 Tick 周期性补打同一行。
+		LogRegistryBroken();
+		tlsNextRegistryBrokenLogMs = gNowMsFn() + player_inbox_rules::kNodeStuckRelogIntervalMs;
 	}
+	if (!ConfiguredConsumerEnabled())
+	{
+		// 开关关着(评审 H1):生效配置这一行升为 WARN、带 metric=,之后由 Tick 按同一节拍补打。
+		// 只升级别、不拒启:关着本身是合法状态,上线开消费之前就是关的。
+		LogConsumerDisabled();
+		tlsNextConsumerDisabledLogMs = gNowMsFn() + player_inbox_rules::kNodeStuckRelogIntervalMs;
+		return;
+	}
+	tlsNextConsumerDisabledLogMs = 0;
 	LOG_INFO << "[PlayerInbox] consumer_enabled=" << ConsumerEnabled()
 			 << " periodic_fetch_minutes=" << PeriodicFetchMinutes()
 			 << " consumer_domains=" << player_inbox_registry::ConsumerDomains().size();
@@ -871,8 +1112,16 @@ void PlayerInboxSystem::OnPlayerLanded(entt::entity player)
 		{
 		case PlayerInboxPhase::kApplying:
 			// 归属变过:本地缓存的条目是旧归属下拉到的,丢掉重拉(它们在服务端仍是 PENDING,不会丢)。
-			state.pendingItems.clear();
-			state.phase = PlayerInboxPhase::kIdle;
+			if (DropPendingForRefetch(state))
+			{
+				// 执行器 DEFER 之前已记账的前缀还在 ackQueue:先确认它们,FinishRound 再按 recheckRequested 重拉
+				// (设计 §7.4)。直接回 kIdle 会让下一次 Fetch 把这些条目再投一遍,回放后同一 seq 在 Ack 里出现两次(评审 L2)。
+				// 这里只切状态、不当场发 Ack / 压存盘:落地钩子要保持开销小,下一个 tick(≤ 1 秒)由 TryAck 推进。
+				state.failStreak = 0;
+				state.deferReason = PlayerInboxDeferReason::kNone;
+				EnterAwaitDurable(state, nowMs);
+				break;
+			}
 			[[fallthrough]];
 		case PlayerInboxPhase::kIdle:
 			// 新落地:无条件拉一次,不去抖(设计 §7.3 第 1 条)。
@@ -913,6 +1162,97 @@ void PlayerInboxSystem::OnBattleFreezeCleared(entt::entity player)
 			state.failStreak = 0;
 			state.nextCheckMs = nowMs;
 		}
+	}
+}
+
+// 实体销毁时 ackQueue 跟着丢,这些行在服务端就停在"已投递未确认",直到玩家下次落地才补确认(设计 §7.7、§8 #7)。
+// 典型场景是 GM 处置之后紧接着封号踢下线:玩家可能很久不再上线,告警被这一行一直顶着(评审 M4)。
+// 这里在销毁前尽力补发一次 Ack,只为减少残留,不改变正确性:发不出去、回包丢了、没落盘,都照旧等下次落地。
+// 覆盖范围只到"结局已定、已落盘"的行。已投递、还没定结局的行(退出时 Fetch 在途;Fetch 回包在退出期被前置闸丢掉;
+// 执行器 DEFER 剩下的本地条目)没有结局可确认,本函数与 ApplyPending 只为它们打 metric=inbox_leave_ack
+// result=fetch_inflight / delivered_undecided 供对账;这些行仍只能靠下次落地重拉,或 Go 侧的 24h 陈旧窗口。
+void PlayerInboxSystem::OnPlayerLeaving(entt::entity player)
+{
+	if (!tlsEcs.actorRegistry.valid(player))
+	{
+		return;
+	}
+	auto *runtime = tlsEcs.actorRegistry.try_get<PlayerInboxRuntimeComp>(player);
+	if (runtime == nullptr)
+	{
+		// 没在本节点落地过(或消费关闭):没有待确认的结局。离开路径不创建组件。
+		return;
+	}
+	const uint64_t playerId = GuidOf(player);
+	if (playerId == 0)
+	{
+		return;
+	}
+	const uint64_t nowMs = gNowMsFn();
+	for (auto &state : runtime->domains)
+	{
+		if (state.phase == PlayerInboxPhase::kFetching)
+		{
+			// 拉取在途(此时 ackQueue 必为空,StartFetch 的不变量):回包到达时实体已销毁,OnFetchReply 按 player_id 找不到
+			// 实体就丢弃。服务端若已把条目标记为投递,这些行停在"已投递未确认",场景侧没有结局可确认(评审 M4 的缺口);
+			// 这里不等回包,只留一行对账线索。
+			LOG_INFO << "[PlayerInbox] metric=inbox_leave_ack result=fetch_inflight player_id=" << playerId
+					 << " domain=" << state.domain << " corr=" << state.correlationId
+					 << "; the reply will be discarded, entries it delivered stay delivered-but-unacknowledged"
+					 << " until the player next lands";
+			continue;
+		}
+		if (state.phase == PlayerInboxPhase::kApplying)
+		{
+			// 执行器 DEFER 剩下、还没定结局的本地条目跟着实体丢弃,不论有没有已定前缀;前缀(若有)下面照常确认。
+			LogDeliveredUndecided(playerId, state, "leaving");
+		}
+		if (state.ackQueue.empty())
+		{
+			continue;
+		}
+		if (state.phase == PlayerInboxPhase::kAcking)
+		{
+			// 这批的 Ack 已在途:服务端照样会处理它,不依赖实体还在;回包到达时按 player_id 找不到实体就丢弃。
+			// 万一它随后失败,失败回调找不到实体只打 DEBUG,服务端这批会停在"已投递未确认";留一行带 corr 的对账线索
+			// (评审 LC-3),值班可按 corr 对上 scene 日志,与真正卡住的行区分开。
+			LOG_INFO << "[PlayerInbox] metric=inbox_leave_ack result=ack_inflight player_id=" << playerId
+					 << " domain=" << state.domain << " corr=" << state.correlationId
+					 << " decisions=" << state.ackQueue.size()
+					 << "; if this Ack fails after the entity is gone, these entries stay delivered-but-unacknowledged"
+					 << " until the player next lands";
+			continue;
+		}
+		if (state.phase == PlayerInboxPhase::kApplying)
+		{
+			// 执行器 DEFER 留下的已定前缀(ackQueue 非空,DropPendingForRefetch 必返回 true):剩下的本地条目跟着实体丢弃
+			// (服务端仍是 PENDING,下次落地重拉),前缀照常确认。与 L1 / L2 同一做法,实体万一没被销毁,状态机也自洽。
+			DropPendingForRefetch(state);
+			EnterAwaitDurable(state, nowMs);
+		}
+		else if (state.phase != PlayerInboxPhase::kAwaitDurable)
+		{
+			// kIdle 带着非空 ackQueue 违反不变量(StartFetch 开头已有守卫并打 ERROR),离开时不再处理;kFetching 已在上面处理。
+			continue;
+		}
+		// 落盘之后才确认(IB-3):只认最后一次落盘的快照。调用方在退出存盘收敛之后才调本函数,快照里应已有这些结局;
+		// 没有就什么都不做,也不再压存盘(退出存盘就是最后一次),等下次落地从账本补确认。
+		if (!AllDecisionsDurable(player, playerId, state))
+		{
+			LOG_INFO << "[PlayerInbox] metric=inbox_leave_ack result=not_durable player_id=" << playerId
+					 << " domain=" << state.domain << " decisions=" << state.ackQueue.size()
+					 << "; the entries stay delivered-but-unacknowledged until the player next lands";
+			continue;
+		}
+		// 离开是最后一次机会,不看 Ack 退避(nextAckMs)。owner_epoch 此刻仍是本节点的当前值,服务端应判 MATCH;
+		// 新 owner 若已推进围栏会判 STALE,无害:它加载的存档里已有这些结局,会自己补确认。
+		// SendAck 的完成回调只捕获调用身份:实体已销毁时 OnAckReply / OnAckFailed 丢弃;
+		// 同一玩家重新落地后的新实体关联号也对不上(节点级单调计数器),这里不登记额外等待状态。
+		SendAck(player, playerId, state, nowMs);
+		const bool sent = state.phase == PlayerInboxPhase::kAcking;
+		LOG_INFO << "[PlayerInbox] metric=inbox_leave_ack result=" << (sent ? "sent" : "not_sent")
+				 << " player_id=" << playerId << " domain=" << state.domain << " decisions=" << state.ackQueue.size()
+				 << " corr=" << state.correlationId << "; best effort, the reply is not awaited";
 	}
 }
 
@@ -961,6 +1301,22 @@ void PlayerInboxSystem::Tick()
 	const uint64_t nowMs = gNowMsFn();
 	const uint32_t periodicMinutes = PeriodicFetchMinutes();
 	const uint64_t inflightTimeoutMs = InflightTimeoutMs();
+
+	if (tlsRegistryBroken && TakeNodeRelogTurn(tlsNextRegistryBrokenLogMs, nowMs))
+	{
+		// 节点级停用不会自愈(要换二进制):按固定间隔补打,让 [10m] 窗口的告警在进程存活期间一直亮着(评审 F3)。
+		LogRegistryBroken();
+	}
+	// 开关关着也是节点级、不会自愈的停用(要改配置重启),同一节拍补打(评审 H1)。开关开着时清掉排期:
+	// 再关上时下一个 tick 立即打首条。这里只打日志,开关关着时不建运行时组件、不拉取的行为不变。
+	if (ConfiguredConsumerEnabled())
+	{
+		tlsNextConsumerDisabledLogMs = 0;
+	}
+	else if (TakeNodeRelogTurn(tlsNextConsumerDisabledLogMs, nowMs))
+	{
+		LogConsumerDisabled();
+	}
 
 	// 先只读遍历收集到期项,再逐项处理:处理里会调执行器、请求存盘,不在遍历中做这些。
 	// 本函数只用 view / try_get,不创建任何组件(AGENTS §7.5)。
@@ -1068,18 +1424,29 @@ void PlayerInboxSystem::Tick()
 
 // ── gRPC 回包 ───────────────────────────────────────────────────────────────
 
-void PlayerInboxSystem::OnFetchReply(const player_inbox::FetchPlayerInboxResponse &response)
+void PlayerInboxSystem::OnFetchReply(uint64_t playerId, uint32_t domain, uint64_t correlationId,
+								   const player_inbox::FetchPlayerInboxResponse &response)
 {
-	const uint64_t playerId = response.player_id();
-	const uint32_t domain = static_cast<uint32_t>(response.domain());
+	// 回显逐字段检查,不能因某一项为 0 而绕过其它项的不一致;丢弃后由在途超时收敛。
+	if ((response.player_id() != 0 && response.player_id() != playerId) ||
+		(response.domain() != 0 && static_cast<uint32_t>(response.domain()) != domain) ||
+		(response.correlation_id() != 0 && response.correlation_id() != correlationId))
+	{
+		LOG_ERROR << "[PlayerInbox] Fetch reply echo mismatch captured_player_id=" << playerId
+				  << " captured_domain=" << domain << " captured_corr=" << correlationId
+				  << " echoed_player_id=" << response.player_id()
+				  << " echoed_domain=" << static_cast<uint32_t>(response.domain())
+				  << " echoed_corr=" << response.correlation_id();
+		return;
+	}
 	entt::entity player = entt::null;
 	auto *state = FindLiveState(playerId, domain, player);
-	// 关联校验(设计 §7.6 第 1 步、§7.11):按回显的 player_id 找实体,domain 与 correlation_id 必须对上在途请求。
-	if (state == nullptr || state->phase != PlayerInboxPhase::kFetching || response.correlation_id() == 0 ||
-		state->correlationId != response.correlation_id())
+	// 按调用身份找实体,仍校验当前阶段和关联号,拒绝已超时、被顶替或实体重建前的调用。
+	if (state == nullptr || state->phase != PlayerInboxPhase::kFetching || correlationId == 0 ||
+		state->correlationId != correlationId)
 	{
 		LOG_DEBUG << "[PlayerInbox] Fetch reply discarded (entity gone, recreated or request superseded) player_id="
-				  << playerId << " domain=" << domain << " corr=" << response.correlation_id();
+				  << playerId << " domain=" << domain << " corr=" << correlationId;
 		return;
 	}
 	const uint64_t nowMs = gNowMsFn();
@@ -1148,15 +1515,13 @@ void PlayerInboxSystem::OnFetchReply(const player_inbox::FetchPlayerInboxRespons
 	ApplyPending(player, playerId, *state, nowMs);
 }
 
-void PlayerInboxSystem::OnFetchFailed(const player_inbox::FetchPlayerInboxRequest &request, uint32_t grpcCode,
+void PlayerInboxSystem::OnFetchFailed(uint64_t playerId, uint32_t domain, uint64_t correlationId, uint32_t grpcCode,
 									  const std::string &detail)
 {
-	const uint64_t playerId = request.player_id();
-	const uint32_t domain = static_cast<uint32_t>(request.domain());
 	entt::entity player = entt::null;
 	auto *state = FindLiveState(playerId, domain, player);
-	if (state == nullptr || state->phase != PlayerInboxPhase::kFetching || request.correlation_id() == 0 ||
-		state->correlationId != request.correlation_id())
+	if (state == nullptr || state->phase != PlayerInboxPhase::kFetching || correlationId == 0 ||
+		state->correlationId != correlationId)
 	{
 		LOG_DEBUG << "[PlayerInbox] Fetch failure discarded (entity gone or request superseded) player_id=" << playerId
 				  << " code=" << grpcCode;
@@ -1166,7 +1531,7 @@ void PlayerInboxSystem::OnFetchFailed(const player_inbox::FetchPlayerInboxReques
 	state->phase = PlayerInboxPhase::kIdle;
 	state->correlationId = 0;
 	state->inflightSinceMs = 0;
-	if (grpcCode == kGrpcUnimplemented)
+	if (grpcCode == kGrpcStatusUnimplemented)
 	{
 		// 收件箱还是旧版本:长退避,记 INFO,不计故障(设计 §3.3、§7.6)。
 		if (state->deferReason != PlayerInboxDeferReason::kUnimplemented)
@@ -1186,17 +1551,27 @@ void PlayerInboxSystem::OnFetchFailed(const player_inbox::FetchPlayerInboxReques
 	Defer(*state, playerId, PlayerInboxDeferReason::kTransport, nowMs);
 }
 
-void PlayerInboxSystem::OnAckReply(const player_inbox::AckPlayerInboxResponse &response)
+void PlayerInboxSystem::OnAckReply(uint64_t playerId, uint32_t domain, uint64_t correlationId,
+								 const player_inbox::AckPlayerInboxResponse &response)
 {
-	const uint64_t playerId = response.player_id();
-	const uint32_t domain = static_cast<uint32_t>(response.domain());
+	if ((response.player_id() != 0 && response.player_id() != playerId) ||
+		(response.domain() != 0 && static_cast<uint32_t>(response.domain()) != domain) ||
+		(response.correlation_id() != 0 && response.correlation_id() != correlationId))
+	{
+		LOG_ERROR << "[PlayerInbox] Ack reply echo mismatch captured_player_id=" << playerId
+				  << " captured_domain=" << domain << " captured_corr=" << correlationId
+				  << " echoed_player_id=" << response.player_id()
+				  << " echoed_domain=" << static_cast<uint32_t>(response.domain())
+				  << " echoed_corr=" << response.correlation_id();
+		return;
+	}
 	entt::entity player = entt::null;
 	auto *state = FindLiveState(playerId, domain, player);
-	if (state == nullptr || state->phase != PlayerInboxPhase::kAcking || response.correlation_id() == 0 ||
-		state->correlationId != response.correlation_id())
+	if (state == nullptr || state->phase != PlayerInboxPhase::kAcking || correlationId == 0 ||
+		state->correlationId != correlationId)
 	{
 		LOG_DEBUG << "[PlayerInbox] Ack reply discarded (entity gone, recreated or request superseded) player_id="
-				  << playerId << " domain=" << domain << " corr=" << response.correlation_id();
+				  << playerId << " domain=" << domain << " corr=" << correlationId;
 		return;
 	}
 	const uint64_t nowMs = gNowMsFn();
@@ -1212,8 +1587,13 @@ void PlayerInboxSystem::OnAckReply(const player_inbox::AckPlayerInboxResponse &r
 				 << " player_id=" << playerId << " domain=" << domain << " decisions=" << state->ackQueue.size();
 		state->ackQueue.clear();
 		FinishRound(*state, nowMs);
-		ScheduleRetry(*state, playerId, PlayerInboxDeferReason::kStaleOwner, player_inbox_rules::kStaleOwnerBackoffMs,
-					  nowMs);
+		// 已停用的域(停用前确认的是已定前缀)不再安排重试:FinishRound 已把 nextCheckMs 置 0,再排一次只会打出
+		// 「60 秒后重试」的 inbox_deferred,把永久停用伪装成暂时延后(评审 SM-1)。
+		if (!state->halted)
+		{
+			ScheduleRetry(*state, playerId, PlayerInboxDeferReason::kStaleOwner, player_inbox_rules::kStaleOwnerBackoffMs,
+						  nowMs);
+		}
 		return;
 	}
 	if (fence == player_inbox::PLAYER_INBOX_FENCE_EPOCH_REQUIRED || fence == player_inbox::PLAYER_INBOX_FENCE_EPOCH_AHEAD)
@@ -1228,6 +1608,18 @@ void PlayerInboxSystem::OnAckReply(const player_inbox::AckPlayerInboxResponse &r
 	}
 	if (const uint32_t tip = response.error_message().id(); !IsTipOk(tip))
 	{
+		if (tip == static_cast<uint32_t>(kInvalidParameter))
+		{
+			// 确定性协议错误(评审 L2):服务端判这份报告列表不合法(空、超过上限、seq 为 0 或不严格升序、结局未知、
+			// 域未知)。同一份 ackQueue 重发只会得到同一个答复,当故障退避就是无限重发 —— 按协议异常停用、不重试。
+			// 这些结局都已落盘(Ack 只在 durable 之后发),实体下次在本节点新建时会按账本回放、重新确认。
+			LOG_ERROR << "[PlayerInbox] metric=inbox_ack_anomaly player_id=" << playerId << " domain=" << domain
+					  << " detail=tip=" << tip << " decisions=" << state->ackQueue.size();
+			state->ackQueue.clear();
+			Halt(*state, playerId, PlayerInboxHaltReason::kAckAnomaly, "op=ack tip=" + std::to_string(tip));
+			FinishRound(*state, nowMs);
+			return;
+		}
 		// 服务端故障:保留 ackQueue,退避重发(设计 §7.7)。
 		if (state->ackFailStreak < std::numeric_limits<uint32_t>::max())
 		{
@@ -1285,15 +1677,13 @@ void PlayerInboxSystem::OnAckReply(const player_inbox::AckPlayerInboxResponse &r
 	FinishRound(*state, nowMs);
 }
 
-void PlayerInboxSystem::OnAckFailed(const player_inbox::AckPlayerInboxRequest &request, uint32_t grpcCode,
+void PlayerInboxSystem::OnAckFailed(uint64_t playerId, uint32_t domain, uint64_t correlationId, uint32_t grpcCode,
 									const std::string &detail)
 {
-	const uint64_t playerId = request.player_id();
-	const uint32_t domain = static_cast<uint32_t>(request.domain());
 	entt::entity player = entt::null;
 	auto *state = FindLiveState(playerId, domain, player);
-	if (state == nullptr || state->phase != PlayerInboxPhase::kAcking || request.correlation_id() == 0 ||
-		state->correlationId != request.correlation_id())
+	if (state == nullptr || state->phase != PlayerInboxPhase::kAcking || correlationId == 0 ||
+		state->correlationId != correlationId)
 	{
 		LOG_DEBUG << "[PlayerInbox] Ack failure discarded (entity gone or request superseded) player_id=" << playerId
 				  << " code=" << grpcCode;
@@ -1305,7 +1695,7 @@ void PlayerInboxSystem::OnAckFailed(const player_inbox::AckPlayerInboxRequest &r
 	state->inflightSinceMs = 0;
 	// Ack 请求失败:保留 ackQueue,退避重发。实体若在这期间被销毁,下次落地时 Fetch 会再次返回这些 PENDING 条目,
 	// 届时从账本补确认(设计 §7.7)。
-	if (grpcCode == kGrpcUnimplemented)
+	if (grpcCode == kGrpcStatusUnimplemented)
 	{
 		state->nextAckMs = nowMs + player_inbox_rules::kUnimplementedBackoffMs;
 		LOG_INFO << "[PlayerInbox] Inbox service does not implement AckItems yet (older version); backing off"

@@ -8,6 +8,7 @@ import (
 
 	"player_inbox/internal/constants"
 
+	componentpb "proto/common/component"
 	inboxpb "proto/player_inbox"
 
 	"github.com/go-sql-driver/mysql"
@@ -271,33 +272,35 @@ func TestClampFetchItems(t *testing.T) {
 	}
 }
 
-// TestReconcileDiff 钉住两类差异(设计 §9.3);管理员直接作废的行不在账本里,不比对。
+// TestReconcileDiff 钉住 ReconcilePlayer 的逐行判定(设计 §9.3):两类差异;终态行经 finalizedLedgerGap
+// 比水位也比最近结局环(评审 M6,谓词全表见 TestFinalizedLedgerGap);管理员终结的行不比对。
+// 账本是真实形状:消费方按 seq 升序裁决过 10(request 1)与 20(request 2),水位 = 环尾 20。
 func TestReconcileDiff(t *testing.T) {
-	consumer := uint32(inboxpb.PlayerInboxFinalizer_PLAYER_INBOX_FINALIZER_CONSUMER)
-	admin := uint32(inboxpb.PlayerInboxFinalizer_PLAYER_INBOX_FINALIZER_ADMIN)
-	mk := func(seq uint64, state inboxpb.PlayerInboxItemState, by uint32) *inboxpb.PlayerInboxItemRow {
-		return &inboxpb.PlayerInboxItemRow{Seq: seq, State: uint32(state), FinalizedBy: by}
-	}
 	const (
 		none   = inboxpb.PlayerInboxReconcileDiffKind_PLAYER_INBOX_RECONCILE_DIFF_UNSPECIFIED
 		final  = inboxpb.PlayerInboxReconcileDiffKind_PLAYER_INBOX_RECONCILE_FINAL_NOT_IN_LEDGER
 		decide = inboxpb.PlayerInboxReconcileDiffKind_PLAYER_INBOX_RECONCILE_PENDING_BUT_DECIDED
 	)
+	cursor := rcCursor(gmDomain, rcDecision(10, 1, outApplied, 0), rcDecision(20, 2, outApplied, 0))
 	cases := []struct {
-		name string
-		row  *inboxpb.PlayerInboxItemRow
-		dt   uint64
-		want inboxpb.PlayerInboxReconcileDiffKind
+		name   string
+		row    *inboxpb.PlayerInboxItemRow
+		cursor *componentpb.PlayerInboxDomainCursor
+		want   inboxpb.PlayerInboxReconcileDiffKind
 	}{
-		{"终态且账本已到", mk(10, stateApplied, consumer), 10, none},
-		{"终态但账本没到:回档或丢数据", mk(11, stateApplied, consumer), 10, final},
-		{"PENDING 且账本没到:正常", mk(11, statePending, 0), 10, none},
-		{"PENDING 但账本已过:确认丢了", mk(9, statePending, 0), 10, decide},
-		{"管理员作废:不比对", mk(11, stateVoided, admin), 10, none},
-		{"消费方 SKIPPED 的 VOIDED 也比对", mk(11, stateVoided, consumer), 10, final},
+		{"终态且在环里", rcRow(10, 1, stateApplied, byConsumer), cursor, none},
+		{"终态但账本没到:回档或丢数据", rcRow(21, 3, stateApplied, byConsumer), cursor, final},
+		{"终态、水位已过、环里查无此 seq:丢掉的结局被之后的条目掩盖", rcRow(15, 4, stateApplied, byConsumer), cursor, final},
+		{"终态、环里同 seq 是另一条", rcRow(20, 9, stateApplied, byConsumer), cursor, final},
+		{"PENDING 且账本没到:正常", rcRow(21, 3, statePending, 0), cursor, none},
+		{"PENDING 但账本已过:确认丢了", rcRow(20, 2, statePending, 0), cursor, decide},
+		{"管理员作废:不比对", rcRow(15, 4, stateVoided, byAdmin), cursor, none},
+		{"消费方 SKIPPED 的 VOIDED 也比对", rcRow(21, 3, stateVoided, byConsumer), cursor, final},
+		{"账本没有该域:终态按水位 0 报", rcRow(10, 1, stateApplied, byConsumer), nil, final},
+		{"账本没有该域:PENDING 不报", rcRow(10, 1, statePending, 0), nil, none},
 	}
 	for _, tc := range cases {
-		if got := reconcileDiff(tc.row, tc.dt); got != tc.want {
+		if got := reconcileDiff(tc.row, tc.cursor); got != tc.want {
 			t.Errorf("%s: reconcileDiff = %v, want %v", tc.name, got, tc.want)
 		}
 	}

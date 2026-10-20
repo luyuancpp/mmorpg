@@ -100,9 +100,28 @@
 
 - 存盘 topic 是 **`db_task_zone_{zone}`**,世代号 ≥ 2 时带后缀 `_g{gen}`(`tools/merge_zone/preflight.go::dbTaskTopic`,镜像 `go/db/internal/config.DbTaskTopicForGeneration`;C++ 侧读 `bin/etc/base_deploy_config.yaml` 的 `DbTaskTopicGeneration`)。
 - 世代号由三方共同决定,必须相等:C++ `DbTaskTopicGeneration`、`go/db/etc/db.yaml` 的 `ServerConfig.Kafka.TopicGeneration`、`go/login/etc/login.yaml` 的 `Kafka.TopicGeneration`。`start_game.ps1`、`k8s_deploy.ps1` 与契约测试会在不一致时拒绝。
-- 消费组是 `db_rpc_consumer_group`(`go/db/etc/db.yaml` → `Kafka.GroupID`)。
-- `dev_tools.ps1` 会从 `go/db/etc/db.yaml` 现读 GroupID 与 TopicGeneration,并转发 `-kafka-group` / `-kafka-topic-generation`;需要覆盖时用 `-MergeKafkaGroup` / `-MergeKafkaTopicGeneration`。**以前「必须绕过 ps1 手敲 `go run`」的变通已经不需要了。**
+- 消费组(2026-10-15 起按 zone 推导;已落码,未编译、未测试,待 Codex 验证;设计见 [db-consumer-group-per-zone.md](../design/db-consumer-group-per-zone.md) §7):
+  - go/db 的存盘消费组正逐 zone 从共用的 legacy 组 `db_rpc_consumer_group` 交接到 `db_rpc_consumer_group_z{zone}`。P3 的候选组是按 zone 推导的 `db_rpc_consumer_group_z{zone}`
+    (合服取 src,撤销取 dst;`tools/merge_zone/preflight.go::dbConsumerGroupForZone`,基名 `defaultKafkaGroup` 与 `go/db/etc/db.yaml` 的 `ServerConfig.Kafka.GroupID` 相同),
+    加上 legacy 组(`-kafka-legacy-group`,缺省 `db_rpc_consumer_group`,传空值则只看 zone 组)。
+  - 门禁只认在本 topic 上至少有一行数值 CURRENT-OFFSET 的**唯一权威组**,只对它算 LAG(`resolveAuthoritativeLag`)。两组都有位点就拒绝(`more than one candidate group holds committed offsets on topic …`),
+    先用 `tools/scripts/kafka_offset_reset.ps1 -FinalizeHandoff` 收尾;两组都没有位点(`no candidate group holds committed offsets on topic …`)或 CLI 读不出,同样拒绝。
+    不取「各组 LAG 最小值」:冻结在高位的旧组 LAG 可以是 0,会替真正在消费的组担保(fail-open)。
+  - 〔2026-10-17 补,R7 复核 scripts [3] / [8];已落码,未编译、未测试,待 Codex 验证〕
+    - 权威组的 LAG 合计为 0 之后,工具再用 `kafka-get-offsets --time -2 / -1` 取 topic 每个分区的日志边界,逐分区证明:每个非空分区(earliest ≠ latest)都有数值 CURRENT-OFFSET 的行,且该分区 LAG = 0;
+      earliest 与 latest 的分区集合要相同,describe 里出现的分区 get-offsets 里都要有(`tools/merge_zone/preflight.go::verifyAuthoritativeCoverage`)。不过时报 `cannot prove topic <T> is drained (<n> problem(s)): …`。
+      起因:源区 db 停了、权威组是 Empty 时,describe 只列出提交过位点的分区,从没提交过却已有消息的分区不出现,只看合计会放行。
+    - 「组不存在」文案只在 describe 没有表头时才认定组不存在;文案与本 topic 的数值位点同时出现,按矛盾输出拒绝(`groupMissingInDescribe`)。
+  - `-kafka-group` 显式给值时只看这一个组。本机单 zone 默认启动是裸名 `db_rpc_consumer_group`,`-Zone N` 启动是 `db_rpc_consumer_group_zN`,两种都在候选里;
+    本机混用过两种启动方式、两组都有位点时,用 `-MergeKafkaGroup` 显式指定实际在跑的组。
+- `dev_tools.ps1` 从 `go/db/etc/db.yaml` 现读 TopicGeneration 并转发 `-kafka-topic-generation`(`-MergeKafkaTopicGeneration` 覆盖)。**组名不再转发**(2026-10-15,`Get-MergeZoneArgs`):
+  由工具按 zone 推导并认定唯一权威组;`-MergeKafkaGroup` 只用于显式覆盖,非空才转成 `-kafka-group`。`dev_tools.ps1` 不转发 `-kafka-legacy-group`。
+  以前「必须绕过 ps1 手敲 `go run`」的变通已经不需要了。
 - 注意:`dev_tools.ps1` 里 `-RollbackKafkaTopic` 的默认值仍是旧名 `db_task_topic`,但那是 `k8s-zone-rollback` 的参数,与合服无关。
+  > 2026-10-16 更正:`-RollbackKafkaTopic` 缺省已是空串(`dev_tools.ps1` 参数块),由 `k8s_zone_rollback.ps1` 按 `-ZoneId` 推导为 `db_task_zone_<id>`。
+  > 该脚本推不出世代后缀:`go/db/etc/db.yaml` 的 `ServerConfig.Kafka.TopicGeneration` > 1 时真实名字是 `db_task_zone_<id>_g<gen>`,必须显式传 `-RollbackKafkaTopic`(脚本不读、也不校验世代号;漏传时 Step 5 重置的不是 go/db 实际消费的 topic)。
+  > 2026-10-17 再更正(R7 复核 scripts [6];已落码,未编译、未测试,待 Codex 验证):上一条的第二行已过时。`k8s_zone_rollback.ps1` 入口现在读 `ServerConfig.Kafka.TopicGeneration`(必须是非负整数),
+  > 用 lib 的 `Get-DbTaskTopicName` 推导出带世代后缀的名字;`-RollbackKafkaTopic` 留空即可,显式给了却与推导值不同会在入口拒绝。详见 [zone_data_rollback.md](../design/zone_data_rollback.md)「2026-10-15 修订」。
 
 ---
 
@@ -264,8 +283,8 @@ K8s 上 db Pod 因此 CrashLoop 时,集群里没有 db-migrate Job,db 镜像也�
 | 0 | collect | 扫一次 mapping 拿源区玩家 id(续跑从清单读,日志 `RESUME: ...`) | 首跑:释放围栏,exit 1;续跑:保留围栏(§3 ③) |
 | G | guard | 0 个玩家 ⇒ 拒绝(除非 `-MergeAllowEmptySource`);源库有行却没有任何映射 ⇒ 拒绝;`-MergeExpectedSrcPlayers` 对不上 ⇒ 拒绝 | 同上 |
 | P2 | preflight | `scene_nodes:zone:{src}:load` 必须空(源区无活节点) | 同上 |
-| P3 | preflight | `db_task_zone_{src}[_g{gen}]` 在 `db_rpc_consumer_group` 上的 LAG = 0 | 同上 |
-| P4 | preflight | `kafka:retry/processing/dead:queue:db_task_zone_{src}` 三个列表都空,且每个 db 实例各自的 `kafka:retry:processing:{topic}:{实例}` 也空 | 同上 |
+| P3 | preflight | `db_task_zone_{src}[_g{gen}]` 在**唯一权威组**上的 LAG = 0(2026-10-15 起):候选是 `db_rpc_consumer_group_z{src}` 加 legacy 组 `db_rpc_consumer_group`(或 `-kafka-group` 显式指定的一个),恰好一个组在本 topic 上有已提交位点才只对它算 LAG;两组都有 / 都没有 / CLI 读不出一律拒绝,见 §2.3。通过日志 `preflight P3 OK: authoritative group <g> lag=0 on <topic> [...]` | 同上 |
+| P4 | preflight | `kafka:retry/processing/dead:queue:db_task_zone_{src}` 三个列表都空,且每个 db 实例各自的 `kafka:retry:processing:{topic}:{实例}` 也空,以及按分区的 ready 列表 `kafka:retry:queue:db_task_zone_{src}:p*` 都空(2026-10-15 起,经 SCAN MATCH 发现,topic 先做 glob 转义,任一页出错整体拒绝) | 同上 |
 | P5 | preflight | 源区玩家没有在持的 `lock:player:{id}` | 同上 |
 | P6 | preflight | 源区玩家没有 `player:session:{id}` | 同上 |
 | P7 | preflight | 源区玩家**不在任何活队伍里**(`team:player:{id}` 的 tid 非 0 且 `team:rec:{tid}` 仍在)。队伍记录写着每个成员的 zone_id,合服不迁移 | 同上;处置见 §8 Step 1 |
@@ -295,6 +314,8 @@ K8s 上 db Pod 因此 CrashLoop 时,集群里没有 db-migrate Job,db 镜像也�
 
 **P3 的取证方式**:这条检查保护的是「玩家最后一次存盘有没有落库」,不能省。三选一:
 - `-MergeKafkaConsumerGroupsCmd <kafka-consumer-groups.sh|.bat>` + `-MergeKafkaBootstrap <host:port>`:**生产用法,真查**;
+  - 〔2026-10-17 补,已落码,未编译、未测试,待 Codex 验证〕执行机上还必须有**同目录、同扩展名**的 `kafka-get-offsets`(`…/kafka-consumer-groups.sh` → `…/kafka-get-offsets.sh`,`.bat` 同理;
+    由 `tools/merge_zone/preflight.go::kafkaGetOffsetsCmdFor` 推导)。P3 在 LAG 合计为 0 之后用它做全覆盖检查(§2.3),推导不出或执行失败 P3 即拒绝。传的路径文件名里必须含 `kafka-consumer-groups`。
 - `-MergeAssumeKafkaDrained`:运维显式声明「我用别的手段确认排空了」,日志里会留一条刺眼记录,**这条声明进事故复盘**;
 - 两个都不给 ⇒ **拒绝执行**(默认绝不是「查不到就当 0」)。
 
@@ -403,7 +424,7 @@ pwsh -File tools/scripts/dev_tools.ps1 -Command merge-zone-audit `
 | `source_scene_nodes` | `scene_nodes:zone:{src}:load` 必须空 | block | **必然 block**(在线),T-1 忽略 |
 | `online_presence` | `player:session:{pid}`(**DB 0**)必须为 0 | block | **必然 block**,T-1 忽略 |
 | `player_locks` | `lock:player:{id}`(mapping DB)+ `player:{id}:__lock`(data Redis,给了 `-MergeSourceDataRedis` 才查) | block | 可能 block,T-1 忽略 |
-| `kafka_db_task_queues` | `kafka:retry/processing/dead:queue:db_task_zone_{src}` 三个都空,且每个 db 实例各自的 processing 列表也空 | block | 在线时有也正常;**死信队列非空要在 T-1 查清** |
+| `kafka_db_task_queues` | `kafka:retry/processing/dead:queue:db_task_zone_{src}` 三个都空,且每个 db 实例各自的 processing 列表也空,以及按分区的 ready 列表 `kafka:retry:queue:db_task_zone_{src}:p*`(2026-10-15 起,经 SCAN 发现)也空 | block | 在线时有也正常;**死信队列非空要在 T-1 查清** |
 | `friend` / `friend_request` | 住独占库 `mmorpg_friend`,按 player_id 索引,合服后自然存活;只看量级。库 / 表查不到算 INFRA | info | 必须不是 INFRA |
 | `guild_member` | 按 player_id 索引,合服后自然存活;只看量级。库 / 表查不成或孤儿查询失败算 **INFRA**;同时给 `-MergeSkipGuildMySql -MergeSkipGuildRank` 时报 **SKIPPED(warn)** | info | 必须不是 INFRA |
 | `player.name (global)` | 角色名在 data_service 全局库 `player_name` 全服唯一,合服无冲突、不改名;不查库,只出说明行(§4.4) | info | — |
@@ -478,6 +499,9 @@ curl -X POST https://<gateway>/admin/zones/<DST_ID>/maintenance \
 ### Step 2 [15 min] 排空源区存盘,再 zone-down(source + target 都要)
 
 **先排空、再删 namespace。** 玩家下线时 scene 发出的最后一次存盘在 `db_task_zone_<src>` 上,由**源区自己的** go/db 消费落库。`k8s-zone-down` 连 go/db 一起删,删早了这些存盘就留在 topic 里,T-0 的 P3 / P4 必然不过。
+> 〔2026-10-17 补,R7 复核 scripts [3];已落码,未编译、未测试,待 Codex 验证〕「P3 必然不过」以前有一个漏洞:积压落在权威组**从没提交过位点**的分区上时(例如新 zone 或新世代 topic 刚收到第一批存盘,
+> 或 db 卡在某分区首条消息上 CrashLoop 到 zone-down),Empty 组的 describe 根本不列出这个分区,其余分区 LAG 都是 0,合计为 0,P3 会放行,那批存盘就此留在源 topic、再没人消费。
+> 现在 P3 在合计为 0 之后再用 `kafka-get-offsets` 逐个非空分区核对(§2.3),这句话才成立。执行机必须有与 `-MergeKafkaConsumerGroupsCmd` **同目录、同扩展名**的 `kafka-get-offsets`(§5「P3 的取证方式」)。
 
 1. **停源区的 gate 与所有 scene**,go 服务(尤其 db)保持运行:
    ```bash
@@ -486,7 +510,9 @@ curl -X POST https://<gateway>/admin/zones/<DST_ID>/maintenance \
    ```
 2. **等 go/db 把 `db_task_zone_<src>` 消费完**:
    ```bash
-   <kafka-consumer-groups.sh> --bootstrap-server <broker:9092> --describe --group db_rpc_consumer_group \
+   # 2026-10-15 起组名按 zone:切组收尾后是 db_rpc_consumer_group_z<src>。尚未切组的 zone(线上 go-svc-db-config 仍是
+   # GroupID: "db_rpc_consumer_group")查 legacy 组;交接没收尾时两组都看,以 ConfigMap 的有效组为准(§2.3)。
+   <kafka-consumer-groups.sh> --bootstrap-server <broker:9092> --describe --group db_rpc_consumer_group_z<src> \
      | grep db_task_zone_<src>                                   # 每个分区 LAG == 0
    redis-cli -h <shared-redis> -n 0 LLEN kafka:retry:queue:db_task_zone_<src>        # 下面每一个都 == 0
    redis-cli -h <shared-redis> -n 0 LLEN kafka:retry:processing:db_task_zone_<src>   # 旧版共享 processing(新版只回收不写入)
@@ -494,9 +520,16 @@ curl -X POST https://<gateway>/admin/zones/<DST_ID>/maintenance \
    # 2026-10 起 db 可以多实例,每个实例有自己的 processing 列表。先列出登记过的实例名,再逐个查:
    redis-cli -h <shared-redis> -n 0 ZRANGE kafka:retry:instances:db_task_zone_<src> 0 -1
    redis-cli -h <shared-redis> -n 0 LLEN kafka:retry:processing:db_task_zone_<src>:<实例名>
+   # 2026-10-15 起(④ 重试只交给分区属主)还有按原始分区拆开的 ready 列表 kafka:retry:queue:<topic>:p<N>。先 SCAN 列出,再逐个 LLEN == 0:
+   redis-cli -h <shared-redis> -n 0 --scan --pattern 'kafka:retry:queue:db_task_zone_<src>:p*'
+   redis-cli -h <shared-redis> -n 0 LLEN kafka:retry:queue:db_task_zone_<src>:p<N>
    ```
    - 〔2026-10-08 更正〕本节以前把第二个键写成了 `kafka:processing:queue:…`,那个键不存在,照着查恒为 0。
    - merge_zone 的 P4 门禁与 `kafka_db_task_queues` 审计已经会把每个实例的列表都查到(`dbTaskQueueKeys`)。
+   - 〔2026-10-15 补,已落码,未编译、未测试,待 Codex 验证〕P4 与 `kafka_db_task_queues` 也已用 SCAN MATCH 查到按分区的 ready 列表 p*
+     (`tools/merge_zone/preflight.go::dbRetryPartitionQueuePattern`,topic 先经 `escapeRedisGlob` 转义,`db_task_zone_1` 的模式不会扫到 `db_task_zone_11` / `db_task_zone_1_g2`;
+     不按 p0..p{N-1} 枚举;SCAN 任一页出错整体拒绝)。P4 通过日志变为 `preflight P4 OK: kafka retry/processing/dead queues for <topic> are empty (<n> keys incl. per-instance processing lists and partitioned ready lists)`。
+     键名与 go/db 侧 `go/db/internal/kafka/retry_routing.go::retryPartitionReadyKey` 一致。
    - 世代号 ≥ 2 的环境,topic 名带 `_g<gen>`。
    - **死信队列非空不会自己变空**:死信没有消费者。按其内容排查(常见是 `stale_topic` 或 `missing_required`,见 go/db 的 `db_placement_guard_total`),处理清楚再继续。
    - 冻结中的玩家(`frozen_deferred`)会让重试队列一直不空:合服前不应有进行中的搬库(§14.2)。
@@ -759,6 +792,8 @@ mapping Redis 整体丢失或被误删时(`player:zone:*`、`player:placement:*`
 
 **在哪跑**:本批只能在有 Go 工具链与仓库检出的机器上 `go run`(dev / 本机)。**K8s 镜像只构建单一入口**,生产上跑要等第 1b 批把它并进 data_service 主程序(提案 §11.2 偏离第 8 条)。
 
+> 2026-10-18 更正(映射持久化第 1b-1 批,代码未编译、未测试):入口已并进主程序,K8s 上用 `/app/service -f /app/etc/data_service.yaml -route-tool <子命令> [参数]`,子命令与参数和下面的 `route_tool …` 逐字相同;怎么在 K8s 上跑(默认一次性 Job / Pod,不 exec 进在役 Pod)见 §9.4。dev 上 `go run ./cmd/route_tool …` 照旧可用。
+
 **前置**:
 
 1. 全局库跑过迁移(`data_service -f <yaml> -migrate`,或 `Schema.AutoMigrate` 启动过),`route_meta(id=1)` 在。否则 route_tool 探针不过,退出码 2,提示先跑迁移。**若这个库跑过 2026-10-13 之前那一版(提交 `d5cbb8a8e`,行片模数还是 16)的迁移**:先 `SHOW CREATE TABLE player_route`,`chk_route_shard` 里是 `% 16` 就要在确认无数据后 DROP 全部五张路由表再迁移(提案 §11.2「行片 16 → 64」的前置)。这种旧表迁移不报错。2026-10-14 起 route_tool 与 db_first 的 data_service 建池时由探针 P5 认出(退出码 2,报错含 `route_shard modulus in CHECK chk_route_shard differs`),但 **redis 模式的 data_service 不建 route store、认不出**,所以这条人工核对仍要做。认出之后的处理同上(确认无数据后 DROP 五张路由表再迁移),不要改代码里的模数去迁就旧表;只重跑迁移修不好(`CREATE TABLE IF NOT EXISTS` 不改已有的表)。
@@ -841,6 +876,8 @@ stdout 只有一行:`route_import dry_run=… players_scanned=… inserted=… m
 
 **db_first 下 Redis 整体丢失**:本批还没有把库推回 Redis 的工具(第 1b 批的预热),仍按 §9.2 手工重放。全局库的路由表这时是最完整的一份记录,重放之后可以用 audit 核对结果。
 
+> 2026-10-18 注:第 1b-1 批仍没有「库 → Redis」的推送(全量预热与就绪标记属于第 1b-2 批),上一段照旧有效。反方向(**全局库被回档、Redis 较新**)的恢复见 §9.4。
+
 **`tidb-prepare`(TiDB-only,2026-10-12 G1a,代码未编译、未测试)**:对全局库的路由表设防合并、按片 / 按 zone 预切 Region。`player_route` 改成聚簇 `(route_shard, player_id)` 之后,不预切的话 64 条写入尾部在开服首日仍压在同一个 Region 上(提案 §11.2「第 1a 批热点修复」)。行片数 2026-10-13 由 16 改为 64(提案 §11.2「行片 16 → 64」):行数据与 `idx_route_updated` 每片一段;`idx_route_home` / `idx_route_storage` 每个 zone / 落点值切 8 个点(每 8 片一段)。
 
 ```powershell
@@ -858,6 +895,93 @@ go run ./cmd/route_tool -f etc/data_service.yaml tidb-prepare -zones=1,2 -storag
 - **退出码**:0 完成或 MySQL 跳过;2 参数非法(`-zones` 必填,每项 1..999999;`-storages` 每项 ≥ 1)、连接 / 探针失败、核对失败、某条语句失败(stderr 的 `FAILED` 行带第几步与语句;已执行的保留,重跑即可)。stdout 一行 `route_tidb_prepare engine=… skipped=… dry_run=… zones=… storages=… statements=… executed=… split_regions=…`。
 - **不许**为了「清干净」去关 `chk_route_shard`(`ALTER … NOT ENFORCED`)或把 `tidb_enable_check_constraint` 改回 OFF:`player_id` 的唯一性靠它。改过 DDL 或全局变量之后必跑一次 audit(方向 A 是唯一看得见错片行的检测器)。
 - K8s 上同样要等第 1b 批把 route_tool 并进主程序入口。
+  > 2026-10-18 更正:已并进(第 1b-1 批,未编译、未测试),K8s 上是 `/app/service -f /app/etc/data_service.yaml -route-tool tidb-prepare -zones=… [-dry-run=false]`,跑法见 §9.4。
+
+> 2026-10-19 补(映射持久化第 1b-2 批收尾,代码未编译、未测试):**`audit -require-maprev`(严格 maprev 口径,提案 §7 P3 的门禁)**。上面「maprev 缺席不算差异」只对默认口径成立。
+>
+> - 用法:`go run ./cmd/route_tool -f etc/data_service.yaml audit -require-maprev`(K8s:`/app/service -f /app/etc/data_service.yaml -route-tool audit -require-maprev`)。只在 `RouteStore.Mode=db_first` 下可用;redis 模式在连任何东西之前退出码 2(那时没有写者维护 `player:maprev`,每一行都会判落后)。
+> - 多一类差异 `redis_rev_behind`:库行不是墓碑、缓存里至少有它的一把键,而 `player:maprev` 缺席或小于库 rev(值相同也算 —— 缺 maprev 的键会被发布脚本的遗留值守卫挡住,maprev 落后会让下一次发布判错新旧)。三族键全无的行仍只计 `db_only_unpublished`,不重复计;墓碑、库行无效(`db_invalid`)、缓存值畸形(`redis_malformed`)不计。复核与首读同一口径。
+> - 输出:统计行在末尾多一段 ` redis_rev_behind=N`(默认口径的统计行逐字不变,脚本照旧解析);stderr 是 `DIFF kind=redis_rev_behind player=… db=… redis=…` 明细与一行 `NOTE: -require-maprev`。
+> - 退出码:0 = 含 `redis_rev_behind` 在内全部为 0;1 = 任一类非 0;2 = 失败,或 yaml 是 redis 模式。
+> - P3:二次导入(`-dry-run=false -allow-db-first`)之后、全部副本打开 `RouteStore.Reconcile.ArmReadyMarker` 之前,`audit -require-maprev` 必须退出码 0;非 0 时等对账 leader 的增量推送补齐 maprev(看 `data_service_route_reconcile_push_total{phase,result}`)后重跑,**不要**手工 `SET player:maprev:*`(绕过发布脚本的写者,提案 §8.3 第 1 条)。
+> - 与 `-frozen-recovery` 同用:`-frozen-recovery` 只豁免 `db_only_unpublished`,`redis_rev_behind` 照常计入退出码。冻结期反向修库之后「库 rev 领先缓存」的行要等解冻后 leader 推送补 maprev,冻结期内一般到不了 0,所以冻结期的门禁仍是 §9.4 第 3 步的 `audit -frozen-recovery`(不加 `-require-maprev`);两个开关同用只作核对。
+
+### 9.4 映射冻结、反向修库与 K8s 上的 route-tool(映射持久化第 1b-1 批,2026-10-18)
+
+> **代码未编译、未测试**(AGENTS.md §10.1)。首次执行前先确认 [player-route-mapping-durability-proposal.md](../design/player-route-mapping-durability-proposal.md) §11.2「第 1b-1 批」的「交 Codex 的验证」已跑绿。设计、偏离与风险都在那里,这里只写操作。
+
+**入口**
+
+- dev / 本机:`go run ./cmd/route_tool -f etc/data_service.yaml <子命令> …`(与 §9.3 逐字相同),或编出 data_service 后 `data_service -f etc/data_service.yaml -route-tool <子命令> …`。要看退出码就先 `go build` 再跑可执行文件,`go run` 对子进程非 0 一律自己退 1。
+- K8s:`/app/service -f /app/etc/data_service.yaml -route-tool <子命令> [参数]`。stdout 只有一行统计,版本行与明细都在 stderr。
+  - **默认用一次性 Job / Pod 跑**:照 `deploy/k8s/manifests/go-svc/data-service-migrate.yaml` 的形状(同一镜像、同一 ConfigMap `go-svc-data-service-config` 挂到 `/app/etc`、`restartPolicy: Never`),改 `metadata.name`、`labels`(不要用 `app: data-service`,否则会混进 Service)、`args: ["-f", "/app/etc/data_service.yaml", "-route-tool", "<子命令>", …]`,`backoffLimit: 0`(退出码 1 / 3 要人看,不能自动重跑),内存按全局库行数单独设。仓库里还没有现成的 Job 清单,它登记为第 1b-3 批的必做项。
+  - **exec 进在役 Pod 只限 dry-run 或小库**(`kubectl -n <ns> exec deploy/data-service -- /app/service -f /app/etc/data_service.yaml -route-tool audit`):data-service 容器的内存 limit 是 512Mi(`data-service.yaml`),import / audit 在内存里保留 O(N) 的已见 id 集合(100 万行约几十 MB,千万行就是几百 MB),在役容器里 OOM 会把正在服务的 data_service 一起杀掉;CPU 也与服务共享 500m 的 limit。reconcile-from-cache 不保留已见集合(内存只占一页),但它会持锁写全局库,同样建议走 Job。
+  - `-timeout`(缺省 30m)按行数设;超大表的耗时没有测过。
+
+**新子命令与退出码**
+
+| 子命令 | 做什么 | 0 | 1 | 2 | 3 |
+|---|---|---|---|---|---|
+| `freeze [-reason=…] [-freeze-timeout=5s]` | `route_meta.writable = 0`:之后的 W1(db_first)与导入一律拒写。只碰全局库,不连 Redis。redis 模式也能跑,但那时 W1 不读这个开关,stderr 打 WARN | 已冻结(含本来就冻结) | — | 失败 | — |
+| `reconcile-from-cache [-dry-run=true] [-resolve-ties=report\|cache] [-freeze-grace=10s] [-batch=500] [-max-report=200]` | 冻结态下把缓存里较新的映射修回库(缓存 maprev > 库 rev 或库里没有这一行) | 干净 | 有未覆盖的平局(TIE)、冲突、畸形 | 失败;没冻结;yaml 是 redis 模式 | 开头或结尾有生效的 `merge:in_progress:*` |
+| `audit -frozen-recovery` | 冻结期恢复口径:`db_only_unpublished` 照常计数、打明细,但不计入退出码,其余类别必须为 0 | 除 `db_only_unpublished` 外全为 0 | 其余任一类非 0 | 失败;没冻结;redis 模式 | — |
+| `unfreeze -confirm-audited [-cache-was-not-verified-acknowledged] [-freeze-timeout=5s]` | 解冻(先把 `route_reconcile.watermark_ms` 抬到可信标记的水位,再 `writable = 1`;generation 不换) | 已解冻(含本来就可写) | 就绪标记在途中被改过,重跑 | 失败;没加 `-confirm-audited`;确认不了缓存且没加 `-cache-was-not-verified-acknowledged`;redis 模式;MappingRedis 不是 node | — |
+
+> 2026-10-18 更正(修复评审,代码未编译、未测试):上表 `freeze` 行「redis 模式也能跑」与 `unfreeze` 行退出码 2 里的「redis 模式」原先不对称 —— `import-from-redis` 的写开关检查与模式无关,redis 模式下误跑 / 演练过一次 `freeze`(或从 db_first 回退到 redis 模式时带着冻结),P1 / P3 的导入就一直报 `route_meta: writable!=1, route writers are frozen`(`ErrRouteNotWritable`),切到 db_first 之后所有建角也从拒写开始,而工具里没有撤销路径。现在 redis 模式下这样撤销:
+>
+> `unfreeze -confirm-audited -cache-was-not-verified-acknowledged`
+>
+> 不连 mapping Redis、不读就绪标记(redis 模式没有标记语义,也跑不了 `audit -frozen-recovery`),最低水位取 0,stderr 打 `WARN: RouteStore.Mode=redis`,stdout 是 `marker=not_read_redis_mode`;没加 `-cache-was-not-verified-acknowledged` 仍是退出码 2(在连任何东西之前判),MappingRedis 不是 node 不再挡这条路径。所以 `unfreeze` 行退出码 2 的「redis 模式」应读作「redis 模式且没加 `-cache-was-not-verified-acknowledged`」,「MappingRedis 不是 node」只对 db_first 成立。**只在所有 data_service 副本都确实是 redis 模式时这样做**;手里的 yaml 若是旧的、实际已有副本在 db_first,改用那份 yaml 走下面「全局库被回档之后的恢复」第 4 步。**不要**手写 `UPDATE route_meta SET writable = 1`:它绕过「先抬水位再解冻」的顺序和 store 的写入守卫。
+
+`-freeze-timeout` 不得低于 5s;TiDB 把 `route_meta` 设成缓存表之后(TiDB Phase 1 的部署步骤,`tidb-prepare` 不做),冻结 / 解冻写要等一个读租约,时限要 ≥ `tidb_table_cache_lease` + 2s(缺省租约 3s,未核实)。
+
+**全局库被回档之后的恢复(`RouteStore.Mode=db_first`)**
+
+K8s 下全局库与 zone 库在同一个 mysql 实例,zone 回档(`docs/design/zone_data_rollback.md` 步骤 2)会连带回档全局库:库丢了回档点之后的映射写,而 mapping Redis 里还是较新的一份。第 1b-2 批之前**没有自动检测**,凡是对全局库所在实例做过 PITR / 备份恢复,都按下面做。所有档位当前仍是 redis 模式,本节在切 db_first(提案 §7 P2)之后才适用。
+
+0. **前提**:合服冻结窗口在(§12,db_first 下本来就禁止 merge_zone 写模式);**不要清 mapping Redis**(回档脚本的 FLUSHDB 防护不要用 `-ConfirmFlushSharedRedis` 放行):这时缓存才是较新的一边,清掉就只剩回档后的库。
+   > 2026-10-18 更正(修复评审):上句只说了「不要整库清」,没说回档步骤 3 本来要做的事该怎么完成 —— 清掉**本 zone** 回档点之后的玩家缓存,让 C++ 从回档后的 MySQL 重建。跳过它就是只回了一半:回档点之后的玩家缓存活过 PITR,节点按比 MySQL 更新的缓存继续运行、回写。db_first 下这一步仍必须做,只是要选择性地做:只清本 zone 的玩家缓存(键名以 go/db 与 C++ 的键名函数为准,本文不列,禁止按印象拼 pattern),保留全部全局键 —— `player:zone:*`、`player:placement:*`、`player:maprev:*`、`merge:*`、`mapping:route:ready`、go/db 的 `consumer:applied*` 游标与 `kafka:retry*` 重试收据、账号目录。K8s 上能安全执行这种选择性清理的载体(`k8s_zone_rollback.ps1` 不整库 FLUSHDB、按本 zone 处置玩家缓存)登记为第 1b-3 批的前置;**在它落地并验证之前,db_first 下 K8s 的 zone 回档不可执行**。所有档位当前仍是 redis 模式,本条在 P2 之前不影响现行回档。
+1. `freeze -reason="PITR <时间点>"`:建角从此 fail-closed(Unavailable + 30)。冻结之前已经过开关检查的建角仍可能提交并发布,第 2 步开头会等 `-freeze-grace`(缺省 10s)。
+2. `reconcile-from-cache`(默认 dry-run)看统计;再 `reconcile-from-cache -dry-run=false`。
+   - stdout:`route_reconcile_from_cache dry_run=… players_scanned=… inserted=… restored=… filled=… matched=… db_ahead=… ties=… ties_resolved=… conflicts=… malformed=… merged_into_inserted=… merged_into_matched=… merged_into_conflicts=… merged_into_malformed=…`;stderr 是 `TIE` / `TIE_RESOLVED` / `CONFLICT` / `MALFORMED` / `MERGED_INTO_CONFLICT` 明细。
+   - `restored` 是库被回档丢掉、由缓存补回的行(rev 置为缓存的 maprev);`db_ahead` 是库更新的行(不动);`TIE` 是同 rev 两份值,先人工判断哪边对,确认缓存对再加 `-resolve-ties=cache` 重跑;冲突与畸形按明细逐条处理。可以原样重跑(幂等,已修的行再判就是 matched)。
+   - 修库期间每批事务持 `route_meta` 的行锁:**不要滚动重启 db_first 的 data_service**,新副本建 route store 的探针最多等 1s,撞上就 1205、`Store.Required=true` 时拒启。
+3. `audit -frozen-recovery` 必须退出码 0。`db_only_unpublished` 是库独有的行(回档前就已提交但发布失败的孤儿行等),这个口径下不计入退出码;它们在第 1b-2 批 leader 落地之前解冻后仍不在缓存里,默认口径的 audit 会一直报。
+   > 2026-10-18 补(修复评审):还有一类同样「已提交、未发布」的孤儿行**不**被这个口径豁免,会让退出码停在 1:库里原本只有落点的行(P1 从 Redis 导入的「只有落点」玩家),建角时 W1 补上 home、rev + 1 之后发布失败。这时缓存里仍只有 `player:placement`、没有 `player:zone` 也没有 `player:maprev`,audit 把它计成 `missing_in_redis`(明细里 Redis 一侧只有落点、落点与库相同、`redis_maprev` 为空,库 rev ≥ 2)。`reconcile-from-cache` 修不了它(缓存没有 maprev 时走导入语义,库已有值就判 `db_ahead`),冻结期 W1 又被挡住,1b-1 也没有库到缓存的推送,所以冻结期内修不掉。逐条核对明细确认是这种形状(且回档时间点之后没有合服 / 搬库动过这名玩家)之后,记下这些 player_id,当作已知差异继续第 4 步(此时 `audit -frozen-recovery` 的退出码是 1,只因这些行);解冻后同一 player_id、同一 home 再走一次 W1 时,幂等分支会把它补发布,否则等第 1b-2 批的库到缓存推送补齐,补齐后再跑默认口径的 audit 核对。**不要**手工 `SET player:zone:*` 去「补」:那是绕过发布脚本的写者(提案 §8.3 第 1 条)。形状对不上的一律按真丢失处理,不要解冻。
+4. `unfreeze -confirm-audited`。
+   - 就绪标记(`mapping:route:ready`)可信 = 存在、可解码、标记里的 run_id / master_replid 等于当前 Redis:直接解冻。
+   - **第 1b-2 批之前没有任何写者挂这个标记**,所以 unfreeze 一律退出码 2,stderr 说明原因。这时冻结期间(或回档前后)Redis 可能也丢过东西(重启 / 切主 / 换实例),库与缓存可能同时缺同一批登记,audit 看不见两边都缺的行。先按 §9.2 的清单核对:收齐回档时间点之后的全部合服 / 搬库清单,确认它们改的映射在缓存与库里都在(db_first 期间合服本来就被冻结窗口禁止,通常这份清单是空的);有缺的按 §9.2 补齐后重跑第 2、3 步。确认完再 `unfreeze -confirm-audited -cache-was-not-verified-acknowledged`。
+   - 退出码 1 = 标记在途中被改过,原样重跑。
+5. 解冻后建角恢复。回档时间点之后、冻结之前提交的映射如果也不在缓存里(两边都丢),只能按清单与业务日志另行追查,本流程覆盖不到。
+
+**Redis 丢失(第 1b-2 批之后)**:db_first 且就绪标记打开时,leader 会自动全量预热并挂标记,§9.2 的手工重放只用于 redis 模式或库与 Redis 同时丢失。**第 1b-1 批还没有这一步**,仍按 §9.3 末尾「db_first 下 Redis 整体丢失」做。
+
+**在线清库与 db_first**:`stress_round19.ps1` / `currency_crash_window.ps1` 在服务运行中先 FLUSHALL 再清路由表、复位 `route_meta` / `route_reconcile`。第 1b-2 批的 leader 落地之后,db_first 下这样清库会与 leader 互相干扰(把将被清掉的行推回刚清空的 Redis,或把水位复位误判成回档)。脚本防护属于第 1b-3 批;在那之前,db_first 下清库前先停 data_service,或保持 redis 模式。
+
+> 2026-10-19 补(映射持久化第 1b-2 批收尾,代码未编译、未测试):**`rewarm` 与 `unfreeze` 的水位键出口**。设计见 [spec_D1_batch1b2_2_3.md](../handoff/launch-readiness-20261013/spec_D1_batch1b2_2_3.md) §2 M2 / M3 / M5、§13.1 第 4 / 6 条、§13.5 第 1 条(并入提案 §13 之前以它为准)。
+
+**`rewarm [-wait=0] [-poll=5s] [-timeout=30m]`**(撤掉三把映射控制键,让对账 leader 从头全量预热、重挂就绪标记)
+
+- 做什么:**一条** `DEL mapping:route:ready mapping:route:warm mapping:route:watermark`(就绪标记、预热令牌、水位键;单条命令是原子的,不会留下半撤的状态)。只碰这三把键:不碰 `player:*` 映射键与合服围栏,不推送,不挂标记(标记只由 leader 写)。stdout 一行 `route_rewarm deleted=… marker_was=… waited=… rearmed=… baseline_set_at_ms=… new_set_at_ms=…`;stderr 是 NOTE、被撤标记的原值(`MARKER …`,诊断用)与 `DROPPED …`。
+- `-wait=0`(缺省):只撤,不开全局库;两种模式都允许。**回退 redis 模式**时按这个顺序(规格 §13.5 第 1 条,紧急回退也不能跳过前两步):先关全部读方开关(`RouteStore.ReadRequiresReady`、`Placement.RequireRouteReady`、`MergeMarkerRedis.RequireRouteReady`)→ 全部副本 `RouteStore.Reconcile.ArmReadyMarker=false` 滚动,确认现任 leader 计了 `data_service_route_reconcile_event_total{event="marker_dropped_disarmed"}` → `RouteStore.Mode=redis` 滚动 → `rewarm -wait=0`(一并删令牌与水位键)。
+- `-wait=<时长>`:撤完等 leader 重挂,只许 db_first(redis 模式在连任何东西之前退出码 2:没有 leader)、映射写者没冻结(冻结期 leader 不预热,退出码 2,三把键都不动)、`-wait` 必须小于 `-timeout`。判据:出现可解码、且 `set_at_ms` 大于基线的新标记;基线 = 被撤标记的 `set_at_ms`,被撤时没有可解码的标记就取撤之前读的库时钟(挡住从旧 AOF / RDB 恢复回来的旧标记)。被撤标记是更新格式版本时 `-wait` 直接退出码 2、什么都不撤(换新版二进制,或用 `-wait=0`)。
+- **撤掉标记之后,打开了读方开关的服务全部 fail-closed,直到 leader 全量预热完重挂**:go/db 暂停消费(`db_route_ready_gate` 为 0,Kafka lag 增长)、data_service 回源 SQL、guild 当作合服封锁。全服规模下全量预热要几个小时(未压测),**低峰执行,事先确认能承受**。
+- 什么时候用:用拷贝方式(SCAN + DUMP / RESTORE 等)迁移过 mapping 实例之后(规格 M5:迁移时不得拷贝这三把控制键;拷了、或拿不准有没有拷,迁移后必须 rewarm);怀疑缓存不完整而 leader 没察觉时;leader 因淘汰类原因闩住不挂标记、原因已排除时(rewarm 之后 leader 重新取淘汰基线)。
+- 退出码:
+
+| 码 | 含义 |
+|---|---|
+| 0 | 已撤(`-wait` 时:已等到新标记,`rearmed=true`) |
+| 1 | 已撤,但 `-wait` 内没等到新标记(`rearmed=false`,统计行照出)。stderr 的 `TIMEOUT` 行列出要查的项:每个副本 `RouteStore.Mode=db_first`、`RouteStore.Reconcile.Enabled`、`RouteStore.Reconcile.ArmReadyMarker`;`data_service_route_reconcile_leader`(恰好一个副本为 1)与 `data_service_route_reconcile_arm_enabled`;`data_service_route_reconcile_event_total` 的 `arming_refused_eviction` / `arming_refused_unresolved` / `arming_refused_debug_enabled` 与 `task_aborted`;`data_service_route_reconcile_push_total` 的冲突类 result。原因排除后用更长的 `-wait` 重跑(重跑只会再撤一次,leader 从头预热) |
+| 2 | 失败:参数(`-wait` 为负、`-poll` 不为正、`-wait` 不小于 `-timeout`)、redis 模式下 `-wait`、冻结中 `-wait`、`MappingRedis.Type` 不是 node、连接 / 读 / DEL 出错、`-timeout` 先到。DEL 之后才出的错 stderr 写明 `keys ARE dropped`:leader 会自己重挂,看现任 leader 的 `data_service_route_ready_marker` |
+| 3 | 不用 |
+
+**`unfreeze` 的水位键出口**(db_first;redis 模式的 unfreeze 不读不碰水位键)
+
+- 解冻之前先读 `mapping:route:watermark`;交给解冻事务的最低水位取 max(可信标记的 `watermark_ms`, 世代与库相同的水位键的 `watermark_ms`),`-cache-was-not-verified-acknowledged` 放行时同样取水位键那一项。不这样抬,解冻之后 leader 下一拍就会按「水位键 > 库水位」再冻结(`freeze_watermark`)。别的世代的水位键不约束本世代。
+- `writable = 1` 之后(同一次 unfreeze 里),把水位键改成 `{库世代, 上面的最低水位}`:不在就 SET NX,在就按原值 compare-and-set;最低水位为 0 时,不在就留给 leader 下一拍建,是别的世代 / 畸形就按原值删掉(同样留给 leader 重建)。stderr 一行 `WATERMARK_KEY <处置> before=<原状态> generation=… watermark_ms=…`,处置取 `set_nx` / `compare_and_set` / `kept` / `left_absent` / `dropped` / `superseded` / `not_reset`;stdout 统计行格式不变(`min_watermark_ms` 已含水位键给的下限)。
+- 写进水位键的是交给解冻事务的下限,不是解冻后的精确库水位(解冻按 GREATEST 抬水位,解冻后库水位 ≥ 它,所以不会触发再冻结;leader 之后每拍按库水位推进它)。
+- 退出码(在上面 §9.4 表的 `unfreeze` 行之上补):水位键是更新格式版本(`v` 更大)或不是 string 类型 → **2**,在解冻之前、任何写之前拒绝,不动它(版本更新:换新版二进制;不是 string:人工确认后只 `DEL mapping:route:watermark` 再重跑);解冻之后水位键没改成(按原值写输了且复读到别的世代 / 畸形,或 Redis 出错)→ **1**:writable 已经是 1,原样重跑 —— 已可写时重跑什么都不做;若 leader 因 `freeze_generation` / `freeze_watermark` 又冻结了,重跑会再走一遍并重置水位键。写输了但复读到本世代的值(leader 已推进它)或键已不在,算完成(`superseded`,退出码 0)。
 
 ---
 
@@ -983,7 +1107,7 @@ S   清单玩家不得有冻结的落点记录(与搬库互斥);有「落点记�
 已闭合、从本表移除的旧项:
 - C++ 审计 topic 世代号改为配置(2026-09-09,`audit_topic.h`);
 - C++ db_task topic 世代号改为配置(本批,`DbTaskTopicGeneration`);
-- `dev_tools.ps1` 已转发 `-kafka-group` / `-kafka-topic-generation`;
+- `dev_tools.ps1` 已转发 `-kafka-topic-generation`(2026-10-15 更正:组名不再缺省转发,由工具按 zone 推导并认定唯一权威组;`-MergeKafkaGroup` 只用于显式覆盖,非空才转成 `-kafka-group`;世代号仍从 `go/db/etc/db.yaml` 现读。见 §2.3);
 - `dev_tools.ps1` 已转发帮会跳过开关与撤销的 Kafka 门禁。
 - 以下三项 2026-09-28 修复,未经运行验证,修复结论以 Codex 验证为准:
   - K8s 未部署 guild 时 `-VerifyMerged` 恒 exit 2:两个跳过开关同时给出时,`verify:guild_zone` / `verify:guild_rank` 改报 SKIPPED(warn);
@@ -1027,7 +1151,9 @@ S   清单玩家不得有冻结的落点记录(与搬库互斥);有「落点记�
   (-MergeFriendRedisAddr / -MergeFriendRedisDB 已于 2026-09-18 删除,见 §2.1)
   -MergeSceneRedisAddr  / -MergeSceneRedisDB                     默认 0
   -MergeTableListJson <path>            默认 generated/data/mysql_database_table_list.json
-  -MergeKafkaGroup / -MergeKafkaTopicGeneration                  默认从 go/db/etc/db.yaml 现读
+  -MergeKafkaGroup <g>                  留空 = 不转发,工具按 zone 推导候选组(db_rpc_consumer_group_z<zone> + legacy)并认定唯一权威组;
+                                        非空才转发 -kafka-group,P3 只看这一个组(2026-10-15,§2.3)
+  -MergeKafkaTopicGeneration <n>        默认 -1 = 从 go/db/etc/db.yaml 现读
   -MergeSourceDataRedis / -MergeTargetDataRedis / -MergeDataRedisPassword
   -MergeSourceDataRedisDB / -MergeTargetDataRedisDB
   -MergeExpectedSrcPlayers <n>          -1 = 不校验
@@ -1233,6 +1359,9 @@ go run ./cmd/migrate -f <db.yaml 副本> -storage-id 1000000 -command up -create
 
 ## 修订历史
 
+- **2026-10-18(映射持久化第 1b-1 批修复评审,代码未编译、未测试)**:§9.4 退出码表之后加更正注:redis 模式下误跑 / 演练的 `freeze` 用 `unfreeze -confirm-audited -cache-was-not-verified-acknowledged` 撤销(不连 mapping Redis、最低水位 0),不要手写 `UPDATE route_meta`;恢复流程第 0 步加更正注:db_first 下回档步骤 3 仍须清掉本 zone 的玩家缓存,只能选择性清、保留全局键,载体登记为第 1b-3 批前置,在那之前 db_first 下 K8s 的 zone 回档不可执行;第 3 步补「只有落点」的孤儿行(`missing_in_redis`,不被 `-frozen-recovery` 豁免)的来历与处置。
+- **2026-10-18(映射持久化第 1b-1 批同步,代码未编译、未测试)**:§9.3「在哪跑」、「db_first 下 Redis 整体丢失」与 tidb-prepare 的 K8s 一条加更正注(入口已并进主程序 `-route-tool`);新增 §9.4:K8s 上默认用一次性 Job / Pod 跑 route-tool(exec 只限 dry-run 或小库,512Mi 内存风险)、`freeze` / `reconcile-from-cache` / `audit -frozen-recovery` / `unfreeze` 的退出码、全局库回档后的恢复流程(没有可信就绪标记时 unfreeze 拒绝,先按 §9.2 清单核对再显式确认)。设计见 [player-route-mapping-durability-proposal.md](../design/player-route-mapping-durability-proposal.md) §11.2「第 1b-1 批」。
+- **2026-10-16(存盘管线 ③ 消费组按 zone 拆分与 ④ 按分区重试键同步;代码已落码,未编译、未测试,待 Codex 验证)**:§2.3 消费组改为「zone 组 `db_rpc_consumer_group_z{zone}` + legacy 候选,只认唯一权威组,两组都有位点先 `-FinalizeHandoff`」,dev_tools 不再缺省转发 `-kafka-group`(`-MergeKafkaGroup` 只用于显式覆盖,世代号仍现读);§5 P3 / P4 两行、§7.1 `kafka_db_task_queues` 行、§8 Step 2 命令块(describe 改 zone 组,补 `kafka:retry:queue:db_task_zone_<src>:p*` 的 SCAN 与 LLEN)、§12「已闭合」一行、§13 `-MergeKafkaGroup` / `-MergeKafkaTopicGeneration` 两行同步。设计见 [db-consumer-group-per-zone.md](../design/db-consumer-group-per-zone.md) §7。
 - **2026-10-12(映射持久化第 1a 批热点修复 G1a 同步,代码未编译、未测试)**:§9.3「重跑与恢复」的恢复 SQL 改为 `route_meta` 只复位 `writable`、另复位 `route_reconcile`(水位 / 租约从 `route_meta` 拆出),并注明 TiDB 上 TRUNCATE 后要重跑 `tidb-prepare`;§9.3 末尾新增 `route_tool tidb-prepare`(TiDB-only 预切与防合并,MySQL 自动跳过;开新 zone 时在开放前、低峰跑)。设计见 [player-route-mapping-durability-proposal.md](../design/player-route-mapping-durability-proposal.md) §11.2「第 1a 批热点修复」。
 - **2026-10-12(映射持久化第 1a 批同步,代码未编译、未测试)**:§3 围栏消费者表:`RegisterPlayerZone` 补 db_first 下由发布脚本复核围栏、库里已提交的行会留下;`RemapHomeZoneForMerge` 改为「已停用」。新增 §9.3 `route_tool` 导入与审计(P1 步骤、退出码、只能检测合服围栏、`db_only_unpublished` 的含义、P2 切换门禁)。§12 加一行:db_first 与 merge_zone 写模式不能共存。设计见 [player-route-mapping-durability-proposal.md](../design/player-route-mapping-durability-proposal.md) §11.2。同日评审修复:§9.3 写清 maprev 不是单独扫描的一族;import 结尾加 `merge:merged_into` 快照比对(窗口内跑完的合服也退出码 3),「原样重跑」改为按退出码分的「重跑与恢复」(结尾退出码 3 要在 P1 清表后从头导入);db_first 下真导入要显式 `-allow-db-first`;audit 方向 B 补比方向 A 之后提交的行;P2 门禁补 WAITAOF 启动探针与「发布未确认率」要连 `error` 一起看。
 - **2026-09-28 v3.2(`-MergeDbCapabilityZones` 去缺省,负责人决定;代码未编译、未测试)**:

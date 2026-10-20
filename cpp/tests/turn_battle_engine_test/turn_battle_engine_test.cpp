@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <functional>
 #include <memory>
 #include <random>
 #include <stdexcept>
@@ -3353,9 +3354,9 @@ TEST(TurnBattleEngineTest, CombatAilmentResistDoesNotApplyToOwnTeamBuffs) {
 
 TEST(TurnBattleEngineTest, CombatAilmentResistIsPerAilmentType) {
     struct AilmentCase {
-        const char* name;
+        std::string name;
         uint32_t buffTableId;
-        void (*setResist)(CombatAttributes& combat, uint64_t percent);
+        std::function<void(CombatAttributes&, uint64_t)> setResist;
     };
     // 映射(turn_battle_constants.h 的 kAilmentBuffMappings):中毒 → 抗中毒,冰冻 → 抗冰冻,
     // 眩晕 → 抗昏睡,沉默 → 抗遗忘

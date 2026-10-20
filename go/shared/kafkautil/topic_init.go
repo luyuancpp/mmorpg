@@ -17,10 +17,17 @@ import (
 
 // TopicSpec describes a topic to ensure exists with specific retention.
 type TopicSpec struct {
-	Name          string
-	Partitions    int32
-	RetentionMs   int64 // -1 = use broker default
-	ReplicaFactor int16 // 0 = use the deployment contract (DefaultReplicationFactor)
+	Name        string
+	Partitions  int32
+	RetentionMs int64 // -1 = use broker default
+	// RetentionBytes 是每分区的 topic 级 retention.bytes:0 = 不管理(沿用 broker 的 log.retention.bytes);
+	// >0 = 建 topic 时带上,并在每次启动时增量 SET;<0 拒绝 —— Kafka 里 -1 表示不限,会让磁盘无界。
+	// K8s 上由 k8s_deploy.ps1 按 Kafka 盘预算渲染(docs/design/db-task-delivery-and-retention.md §B)。
+	RetentionBytes int64
+	ReplicaFactor  int16 // 0 = use the deployment contract (DefaultReplicationFactor)
+	// 严格耐久消息必须显式指定至少三副本，并强制 minISR>=2、禁用非同步副本选主。
+	// 启动只配置并核验，不自动重分配已有副本；旧服务默认不启用。
+	RequireDurability bool
 }
 
 const (
@@ -104,6 +111,13 @@ func ensureTopics(admin topicAdmin, specs []TopicSpec, defaultReplica int16, now
 		if spec.Partitions <= 0 {
 			return fmt.Errorf("kafka topic %s has invalid partition contract %d", spec.Name, spec.Partitions)
 		}
+		if spec.RetentionBytes < 0 {
+			return fmt.Errorf("kafka topic %s has invalid retention.bytes %d (0 = unmanaged, > 0 = bytes per partition)",
+				spec.Name, spec.RetentionBytes)
+		}
+		if spec.RequireDurability && spec.ReplicaFactor < 3 {
+			return fmt.Errorf("kafka topic %s durability requires an explicit ReplicaFactor >= 3, got %d", spec.Name, spec.ReplicaFactor)
+		}
 		replica := spec.ReplicaFactor
 		if replica <= 0 {
 			replica = defaultReplica
@@ -113,16 +127,27 @@ func ensureTopics(admin topicAdmin, specs []TopicSpec, defaultReplica int16, now
 		}
 
 		retentionStr := fmt.Sprintf("%d", spec.RetentionMs)
+		retentionBytesStr := fmt.Sprintf("%d", spec.RetentionBytes)
+		minimumISR, uncleanElection := "2", "false"
 
 		if _, exists := existing[spec.Name]; !exists {
 			topicDetail := &sarama.TopicDetail{
 				NumPartitions:     spec.Partitions,
 				ReplicationFactor: replica,
 			}
+			createEntries := map[string]*string{}
 			if spec.RetentionMs > 0 {
-				topicDetail.ConfigEntries = map[string]*string{
-					"retention.ms": &retentionStr,
-				}
+				createEntries["retention.ms"] = &retentionStr
+			}
+			if spec.RetentionBytes > 0 {
+				createEntries["retention.bytes"] = &retentionBytesStr
+			}
+			if spec.RequireDurability {
+				createEntries["min.insync.replicas"] = &minimumISR
+				createEntries["unclean.leader.election.enable"] = &uncleanElection
+			}
+			if len(createEntries) > 0 {
+				topicDetail.ConfigEntries = createEntries
 			}
 			if err := admin.CreateTopic(spec.Name, topicDetail, false); err != nil && !errors.Is(err, sarama.ErrTopicAlreadyExists) {
 				return fmt.Errorf("kafka create topic %s: %w", spec.Name, err)
@@ -155,6 +180,17 @@ func ensureTopics(admin topicAdmin, specs []TopicSpec, defaultReplica int16, now
 			return fmt.Errorf("kafka topic %s replication contract mismatch: broker=%d config=%d (%s); the topic has fewer replicas than the deployment requires, raise it with kafka-reassign-partitions.sh or recreate the empty topic",
 				spec.Name, detail.ReplicationFactor, replica, EnvTopicReplicationFactor)
 		}
+		if spec.RequireDurability {
+			if err := validateDurableReplicas(spec.Name, detail, replica); err != nil {
+				return err
+			}
+			// 不降低运维已经明确设定的更高最小同步副本数。
+			if configured := detail.ConfigEntries["min.insync.replicas"]; configured != nil {
+				if value, err := strconv.ParseInt(*configured, 10, 32); err == nil && value > 2 {
+					minimumISR = strconv.FormatInt(value, 10)
+				}
+			}
+		}
 
 		markerPrefix, expectedMarker := partitionContractMarker(spec.Name, spec.Partitions)
 		markerExists := false
@@ -184,26 +220,65 @@ func ensureTopics(admin topicAdmin, specs []TopicSpec, defaultReplica int16, now
 				spec.Name, spec.Partitions, expectedMarker)
 		}
 
+		// 必须用增量接口:sarama 的 AlterConfig 走的是 Kafka 遗留 AlterConfigs
+		// 协议,语义是**全量替换**该 topic 的动态配置 —— 只提交 retention.ms
+		// 会把运维在 broker 上手工设过的其它覆盖项(cleanup.policy、
+		// max.message.bytes 等)全部抹回默认值,而且每次服务启动都抹一遍。
+		// IncrementalAlterConfigs(KIP-339,broker ≥2.3;上面 cfg.Version
+		// 已声明 3.0)按条目 SET,只动列出的键。两个保留项合进一次调用,不管理的项不出现在条目里。
+		entries := map[string]sarama.IncrementalAlterConfigsEntry{}
 		if spec.RetentionMs > 0 {
-			// 必须用增量接口:sarama 的 AlterConfig 走的是 Kafka 遗留 AlterConfigs
-			// 协议,语义是**全量替换**该 topic 的动态配置 —— 只提交 retention.ms
-			// 会把运维在 broker 上手工设过的其它覆盖项(cleanup.policy、
-			// max.message.bytes 等)全部抹回默认值,而且每次服务启动都抹一遍。
-			// IncrementalAlterConfigs(KIP-339,broker ≥2.3;上面 cfg.Version
-			// 已声明 3.0)按条目 SET,只动列出的键。
-			entries := map[string]sarama.IncrementalAlterConfigsEntry{
-				"retention.ms": {
-					Operation: sarama.IncrementalAlterConfigsOperationSet,
-					Value:     &retentionStr,
-				},
+			entries["retention.ms"] = sarama.IncrementalAlterConfigsEntry{
+				Operation: sarama.IncrementalAlterConfigsOperationSet,
+				Value:     &retentionStr,
 			}
+		}
+		if spec.RetentionBytes > 0 {
+			entries["retention.bytes"] = sarama.IncrementalAlterConfigsEntry{
+				Operation: sarama.IncrementalAlterConfigsOperationSet,
+				Value:     &retentionBytesStr,
+			}
+		}
+		if spec.RequireDurability {
+			entries["min.insync.replicas"] = sarama.IncrementalAlterConfigsEntry{
+				Operation: sarama.IncrementalAlterConfigsOperationSet, Value: &minimumISR,
+			}
+			entries["unclean.leader.election.enable"] = sarama.IncrementalAlterConfigsEntry{
+				Operation: sarama.IncrementalAlterConfigsOperationSet, Value: &uncleanElection,
+			}
+		}
+		if len(entries) > 0 {
 			if err := admin.IncrementalAlterConfig(sarama.TopicResource, spec.Name, entries, false); err != nil {
-				return fmt.Errorf("kafka alter topic %s retention: %w", spec.Name, err)
+				return fmt.Errorf("kafka alter topic %s managed configuration: %w", spec.Name, err)
 			}
-			logx.Infof("kafka topic %s retention updated to %dms", spec.Name, spec.RetentionMs)
+			logx.Infof("kafka topic %s retention updated: retention.ms=%d retention.bytes=%d",
+				spec.Name, spec.RetentionMs, spec.RetentionBytes)
 		}
 	}
 
+	return nil
+}
+
+// Sarama 的 ReplicationFactor 只来自第一个分区，严格路径必须逐分区核对真实分配。
+// 元数据缺失不能当作已达标；启动期间不发任何副本重分配操作。
+func validateDurableReplicas(topic string, detail sarama.TopicDetail, required int16) error {
+	if detail.ReplicationFactor < required || len(detail.ReplicaAssignment) != int(detail.NumPartitions) {
+		return fmt.Errorf("kafka topic %s durability replica metadata is unknown, incomplete or below %d", topic, required)
+	}
+	for partition := int32(0); partition < detail.NumPartitions; partition++ {
+		replicas := detail.ReplicaAssignment[partition]
+		brokers := make(map[int32]struct{}, len(replicas))
+		for _, broker := range replicas {
+			if broker < 0 {
+				return fmt.Errorf("kafka topic %s durability partition %d has invalid broker metadata", topic, partition)
+			}
+			brokers[broker] = struct{}{}
+		}
+		if len(brokers) != len(replicas) || len(brokers) < int(required) {
+			return fmt.Errorf("kafka topic %s durability partition %d needs at least %d distinct replicas, got %v; reassign replicas administratively before startup",
+				topic, partition, required, replicas)
+		}
+	}
 	return nil
 }
 

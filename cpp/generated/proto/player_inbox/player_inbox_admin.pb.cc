@@ -77,11 +77,11 @@ constexpr VoidPlayerInboxItemRequest::ParseTableT_ VoidPlayerInboxItemRequest::I
     {
       PROTOBUF_FIELD_OFFSET(VoidPlayerInboxItemRequest, _impl_._has_bits_),
       0, // no _extensions_
-      6, 56,  // max_field_number, fast_idx_mask
+      7, 56,  // max_field_number, fast_idx_mask
       offsetof(ParseTableT_, field_lookup_table),
-      4294967232,  // skipmap
+      4294967168,  // skipmap
       offsetof(ParseTableT_, field_entries),
-      6,  // num_field_entries
+      7,  // num_field_entries
       0,  // num_aux_entries
       offsetof(ParseTableT_, field_names),  // no aux_entries
       class_data,
@@ -116,7 +116,10 @@ constexpr VoidPlayerInboxItemRequest::ParseTableT_ VoidPlayerInboxItemRequest::I
       {::_pbi::TcParser::FastUS1,
        {50, 1, 0,
         PROTOBUF_FIELD_OFFSET(VoidPlayerInboxItemRequest, _impl_.note_)}},
-      {::_pbi::TcParser::MiniParse, {}},
+      // .player_inbox.PlayerInboxVoidMode mode = 7;
+      {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(VoidPlayerInboxItemRequest, _impl_.mode_), 6>(),
+       {56, 6, 0,
+        PROTOBUF_FIELD_OFFSET(VoidPlayerInboxItemRequest, _impl_.mode_)}},
     }}, {{
       65535, 65535
     }}, {{
@@ -132,6 +135,8 @@ constexpr VoidPlayerInboxItemRequest::ParseTableT_ VoidPlayerInboxItemRequest::I
       {PROTOBUF_FIELD_OFFSET(VoidPlayerInboxItemRequest, _impl_.operator__), _Internal::kHasBitsOffset + 0, 0, (0 | ::_fl::kFcOptional | ::_fl::kUtf8String | ::_fl::kRepAString)},
       // string note = 6;
       {PROTOBUF_FIELD_OFFSET(VoidPlayerInboxItemRequest, _impl_.note_), _Internal::kHasBitsOffset + 1, 0, (0 | ::_fl::kFcOptional | ::_fl::kUtf8String | ::_fl::kRepAString)},
+      // .player_inbox.PlayerInboxVoidMode mode = 7;
+      {PROTOBUF_FIELD_OFFSET(VoidPlayerInboxItemRequest, _impl_.mode_), _Internal::kHasBitsOffset + 6, 0, (0 | ::_fl::kFcOptional | ::_fl::kOpenEnum)},
     }},
     // no aux_entries
     {{
@@ -157,7 +162,8 @@ inline constexpr VoidPlayerInboxItemRequest::Impl_::Impl_(
         player_id_{::uint64_t{0u}},
         seq_{::uint64_t{0u}},
         domain_{static_cast< ::player_inbox::PlayerInboxDomain >(0)},
-        reason_{static_cast< ::player_inbox::PlayerInboxVoidReason >(0)} {}
+        reason_{static_cast< ::player_inbox::PlayerInboxVoidReason >(0)},
+        mode_{static_cast< ::player_inbox::PlayerInboxVoidMode >(0)} {}
 
 template <typename>
 constexpr VoidPlayerInboxItemRequest::VoidPlayerInboxItemRequest(::_pbi::ConstantInitialized,
@@ -1688,11 +1694,11 @@ constexpr VoidPlayerInboxItemResponse::ParseTableT_ VoidPlayerInboxItemResponse:
     {
       PROTOBUF_FIELD_OFFSET(VoidPlayerInboxItemResponse, _impl_._has_bits_),
       0, // no _extensions_
-      3, 24,  // max_field_number, fast_idx_mask
+      4, 24,  // max_field_number, fast_idx_mask
       offsetof(ParseTableT_, field_lookup_table),
-      4294967288,  // skipmap
+      4294967280,  // skipmap
       offsetof(ParseTableT_, field_entries),
-      3,  // num_field_entries
+      4,  // num_field_entries
       1,  // num_aux_entries
       offsetof(ParseTableT_, aux_entries),
       class_data,
@@ -1702,7 +1708,10 @@ constexpr VoidPlayerInboxItemResponse::ParseTableT_ VoidPlayerInboxItemResponse:
       ::_pbi::TcParser::GetTable<::player_inbox::VoidPlayerInboxItemResponse>(),  // to_prefetch
       #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
     }, {{
-      {::_pbi::TcParser::MiniParse, {}},
+      // .player_inbox.PlayerInboxForceVoidVerdict force_verdict = 4;
+      {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(VoidPlayerInboxItemResponse, _impl_.force_verdict_), 3>(),
+       {32, 3, 0,
+        PROTOBUF_FIELD_OFFSET(VoidPlayerInboxItemResponse, _impl_.force_verdict_)}},
       // .TipInfoMessage error_message = 1;
       {::_pbi::TcParser::FastMtS1,
        {10, 0, 0,
@@ -1724,6 +1733,8 @@ constexpr VoidPlayerInboxItemResponse::ParseTableT_ VoidPlayerInboxItemResponse:
       {PROTOBUF_FIELD_OFFSET(VoidPlayerInboxItemResponse, _impl_.state_), _Internal::kHasBitsOffset + 1, 0, (0 | ::_fl::kFcOptional | ::_fl::kOpenEnum)},
       // bool void_requested = 3;
       {PROTOBUF_FIELD_OFFSET(VoidPlayerInboxItemResponse, _impl_.void_requested_), _Internal::kHasBitsOffset + 2, 0, (0 | ::_fl::kFcOptional | ::_fl::kBool)},
+      // .player_inbox.PlayerInboxForceVoidVerdict force_verdict = 4;
+      {PROTOBUF_FIELD_OFFSET(VoidPlayerInboxItemResponse, _impl_.force_verdict_), _Internal::kHasBitsOffset + 3, 0, (0 | ::_fl::kFcOptional | ::_fl::kOpenEnum)},
     }},
     {{
         #ifndef PROTOBUF_MESSAGE_GLOBALS
@@ -1744,7 +1755,8 @@ inline constexpr VoidPlayerInboxItemResponse::Impl_::Impl_(
       : _cached_size_{0},
         error_message_{nullptr},
         state_{static_cast< ::player_inbox::PlayerInboxItemState >(0)},
-        void_requested_{false} {}
+        void_requested_{false},
+        force_verdict_{static_cast< ::player_inbox::PlayerInboxForceVoidVerdict >(0)} {}
 
 template <typename>
 constexpr VoidPlayerInboxItemResponse::VoidPlayerInboxItemResponse(::_pbi::ConstantInitialized,
@@ -2907,7 +2919,7 @@ const ::_pbi::ClassData* GetPlayerInboxSummaryResponse_get_class_data() {
 #endif  // PROTOBUF_CUSTOM_VTABLE
 }  // namespace player_inbox
 static const ::_pb::EnumDescriptor* PROTOBUF_NONNULL
-    file_level_enum_descriptors_proto_2fplayer_5finbox_2fplayer_5finbox_5fadmin_2eproto[1];
+    file_level_enum_descriptors_proto_2fplayer_5finbox_2fplayer_5finbox_5fadmin_2eproto[3];
 static constexpr const ::_pb::ServiceDescriptor* PROTOBUF_NONNULL* PROTOBUF_NULLABLE
     file_level_service_descriptors_proto_2fplayer_5finbox_2fplayer_5finbox_5fadmin_2eproto = nullptr;
 const ::uint32_t
@@ -3061,28 +3073,32 @@ const ::uint32_t
         1,
         0x081, // bitmap
         PROTOBUF_FIELD_OFFSET(::player_inbox::VoidPlayerInboxItemRequest, _impl_._has_bits_),
-        9, // hasbit index offset
+        10, // hasbit index offset
         PROTOBUF_FIELD_OFFSET(::player_inbox::VoidPlayerInboxItemRequest, _impl_.player_id_),
         PROTOBUF_FIELD_OFFSET(::player_inbox::VoidPlayerInboxItemRequest, _impl_.domain_),
         PROTOBUF_FIELD_OFFSET(::player_inbox::VoidPlayerInboxItemRequest, _impl_.seq_),
         PROTOBUF_FIELD_OFFSET(::player_inbox::VoidPlayerInboxItemRequest, _impl_.reason_),
         PROTOBUF_FIELD_OFFSET(::player_inbox::VoidPlayerInboxItemRequest, _impl_.operator__),
         PROTOBUF_FIELD_OFFSET(::player_inbox::VoidPlayerInboxItemRequest, _impl_.note_),
+        PROTOBUF_FIELD_OFFSET(::player_inbox::VoidPlayerInboxItemRequest, _impl_.mode_),
         2,
         4,
         3,
         5,
         0,
         1,
+        6,
         0x081, // bitmap
         PROTOBUF_FIELD_OFFSET(::player_inbox::VoidPlayerInboxItemResponse, _impl_._has_bits_),
-        6, // hasbit index offset
+        7, // hasbit index offset
         PROTOBUF_FIELD_OFFSET(::player_inbox::VoidPlayerInboxItemResponse, _impl_.error_message_),
         PROTOBUF_FIELD_OFFSET(::player_inbox::VoidPlayerInboxItemResponse, _impl_.state_),
         PROTOBUF_FIELD_OFFSET(::player_inbox::VoidPlayerInboxItemResponse, _impl_.void_requested_),
+        PROTOBUF_FIELD_OFFSET(::player_inbox::VoidPlayerInboxItemResponse, _impl_.force_verdict_),
         0,
         1,
         2,
+        3,
         0x081, // bitmap
         PROTOBUF_FIELD_OFFSET(::player_inbox::ReconcilePlayerInboxRequest, _impl_._has_bits_),
         5, // hasbit index offset
@@ -3138,11 +3154,11 @@ static const ::_pbi::MigrationSchema
         {130, sizeof(::player_inbox::LookupPlayerInboxRequest)},
         {139, sizeof(::player_inbox::LookupPlayerInboxResponse)},
         {146, sizeof(::player_inbox::VoidPlayerInboxItemRequest)},
-        {161, sizeof(::player_inbox::VoidPlayerInboxItemResponse)},
-        {170, sizeof(::player_inbox::ReconcilePlayerInboxRequest)},
-        {177, sizeof(::player_inbox::PlayerInboxReconcileDiff)},
-        {190, sizeof(::player_inbox::PlayerInboxReconcileCursor)},
-        {199, sizeof(::player_inbox::ReconcilePlayerInboxResponse)},
+        {163, sizeof(::player_inbox::VoidPlayerInboxItemResponse)},
+        {174, sizeof(::player_inbox::ReconcilePlayerInboxRequest)},
+        {181, sizeof(::player_inbox::PlayerInboxReconcileDiff)},
+        {194, sizeof(::player_inbox::PlayerInboxReconcileCursor)},
+        {203, sizeof(::player_inbox::ReconcilePlayerInboxResponse)},
 };
 static const ::_pbi::MessageGlobalsBase* PROTOBUF_NONNULL const
     file_message_globals[] = {
@@ -3222,54 +3238,68 @@ const char descriptor_table_protodef_proto_2fplayer_5finbox_2fplayer_5finbox_5fa
     "ducerKind\022\022\n\nrequest_id\030\003 \001(\004\"t\n\031LookupP"
     "layerInboxResponse\022&\n\rerror_message\030\001 \001("
     "\0132\017.TipInfoMessage\022/\n\004item\030\002 \001(\0132!.playe"
-    "r_inbox.PlayerInboxItemView\"\302\001\n\032VoidPlay"
+    "r_inbox.PlayerInboxItemView\"\363\001\n\032VoidPlay"
     "erInboxItemRequest\022\021\n\tplayer_id\030\001 \001(\004\022/\n"
     "\006domain\030\002 \001(\0162\037.player_inbox.PlayerInbox"
     "Domain\022\013\n\003seq\030\003 \001(\004\0223\n\006reason\030\004 \001(\0162#.pl"
     "ayer_inbox.PlayerInboxVoidReason\022\020\n\010oper"
-    "ator\030\005 \001(\t\022\014\n\004note\030\006 \001(\t\"\220\001\n\033VoidPlayerI"
-    "nboxItemResponse\022&\n\rerror_message\030\001 \001(\0132"
-    "\017.TipInfoMessage\0221\n\005state\030\002 \001(\0162\".player"
-    "_inbox.PlayerInboxItemState\022\026\n\016void_requ"
-    "ested\030\003 \001(\010\"a\n\033ReconcilePlayerInboxReque"
-    "st\022\021\n\tplayer_id\030\001 \001(\004\022/\n\006domain\030\002 \001(\0162\037."
-    "player_inbox.PlayerInboxDomain\"\331\001\n\030Playe"
-    "rInboxReconcileDiff\022/\n\006domain\030\001 \001(\0162\037.pl"
-    "ayer_inbox.PlayerInboxDomain\022\013\n\003seq\030\002 \001("
-    "\004\0228\n\004kind\030\003 \001(\0162*.player_inbox.PlayerInb"
-    "oxReconcileDiffKind\0221\n\005state\030\004 \001(\0162\".pla"
-    "yer_inbox.PlayerInboxItemState\022\022\n\nreques"
-    "t_id\030\005 \001(\004\"\205\001\n\032PlayerInboxReconcileCurso"
-    "r\022/\n\006domain\030\001 \001(\0162\037.player_inbox.PlayerI"
-    "nboxDomain\022\036\n\026ledger_decided_through\030\002 \001"
-    "(\004\022\026\n\016inbox_next_seq\030\003 \001(\004\"\316\001\n\034Reconcile"
-    "PlayerInboxResponse\022&\n\rerror_message\030\001 \001"
-    "(\0132\017.TipInfoMessage\022\024\n\014ledger_found\030\002 \001("
-    "\010\0229\n\007cursors\030\003 \003(\0132(.player_inbox.Player"
-    "InboxReconcileCursor\0225\n\005diffs\030\004 \003(\0132&.pl"
-    "ayer_inbox.PlayerInboxReconcileDiff*\253\001\n\034"
-    "PlayerInboxReconcileDiffKind\022+\n\'PLAYER_I"
-    "NBOX_RECONCILE_DIFF_UNSPECIFIED\020\000\022.\n*PLA"
-    "YER_INBOX_RECONCILE_FINAL_NOT_IN_LEDGER\020"
-    "\001\022.\n*PLAYER_INBOX_RECONCILE_PENDING_BUT_"
-    "DECIDED\020\0022\373\004\n\020PlayerInboxAdmin\022c\n\020GmSanc"
-    "tionPlayer\022%.player_inbox.GmSanctionPlay"
-    "erRequest\032&.player_inbox.GmSanctionPlaye"
-    "rResponse\"\000\022g\n\nGetSummary\022*.player_inbox"
-    ".GetPlayerInboxSummaryRequest\032+.player_i"
-    "nbox.GetPlayerInboxSummaryResponse\"\000\022d\n\t"
-    "ListItems\022).player_inbox.ListPlayerInbox"
-    "ItemsRequest\032*.player_inbox.ListPlayerIn"
-    "boxItemsResponse\"\000\022d\n\017LookupByRequest\022&."
-    "player_inbox.LookupPlayerInboxRequest\032\'."
-    "player_inbox.LookupPlayerInboxResponse\"\000"
-    "\022a\n\010VoidItem\022(.player_inbox.VoidPlayerIn"
-    "boxItemRequest\032).player_inbox.VoidPlayer"
-    "InboxItemResponse\"\000\022j\n\017ReconcilePlayer\022)"
-    ".player_inbox.ReconcilePlayerInboxReques"
-    "t\032*.player_inbox.ReconcilePlayerInboxRes"
-    "ponse\"\000B\036Z\031player_inbox/player_inbox\200\001\000b"
-    "\006proto3"
+    "ator\030\005 \001(\t\022\014\n\004note\030\006 \001(\t\022/\n\004mode\030\007 \001(\0162!"
+    ".player_inbox.PlayerInboxVoidMode\"\322\001\n\033Vo"
+    "idPlayerInboxItemResponse\022&\n\rerror_messa"
+    "ge\030\001 \001(\0132\017.TipInfoMessage\0221\n\005state\030\002 \001(\016"
+    "2\".player_inbox.PlayerInboxItemState\022\026\n\016"
+    "void_requested\030\003 \001(\010\022@\n\rforce_verdict\030\004 "
+    "\001(\0162).player_inbox.PlayerInboxForceVoidV"
+    "erdict\"a\n\033ReconcilePlayerInboxRequest\022\021\n"
+    "\tplayer_id\030\001 \001(\004\022/\n\006domain\030\002 \001(\0162\037.playe"
+    "r_inbox.PlayerInboxDomain\"\331\001\n\030PlayerInbo"
+    "xReconcileDiff\022/\n\006domain\030\001 \001(\0162\037.player_"
+    "inbox.PlayerInboxDomain\022\013\n\003seq\030\002 \001(\004\0228\n\004"
+    "kind\030\003 \001(\0162*.player_inbox.PlayerInboxRec"
+    "oncileDiffKind\0221\n\005state\030\004 \001(\0162\".player_i"
+    "nbox.PlayerInboxItemState\022\022\n\nrequest_id\030"
+    "\005 \001(\004\"\205\001\n\032PlayerInboxReconcileCursor\022/\n\006"
+    "domain\030\001 \001(\0162\037.player_inbox.PlayerInboxD"
+    "omain\022\036\n\026ledger_decided_through\030\002 \001(\004\022\026\n"
+    "\016inbox_next_seq\030\003 \001(\004\"\316\001\n\034ReconcilePlaye"
+    "rInboxResponse\022&\n\rerror_message\030\001 \001(\0132\017."
+    "TipInfoMessage\022\024\n\014ledger_found\030\002 \001(\010\0229\n\007"
+    "cursors\030\003 \003(\0132(.player_inbox.PlayerInbox"
+    "ReconcileCursor\0225\n\005diffs\030\004 \003(\0132&.player_"
+    "inbox.PlayerInboxReconcileDiff*c\n\023Player"
+    "InboxVoidMode\022!\n\035PLAYER_INBOX_VOID_MODE_"
+    "NORMAL\020\000\022)\n%PLAYER_INBOX_VOID_MODE_FORCE"
+    "_MISMATCH\020\001*\361\002\n\033PlayerInboxForceVoidVerd"
+    "ict\022\'\n#PLAYER_INBOX_FORCE_VOID_UNSPECIFI"
+    "ED\020\000\022\"\n\036PLAYER_INBOX_FORCE_VOID_PROVEN\020\001"
+    "\022)\n%PLAYER_INBOX_FORCE_VOID_NOT_DELIVERE"
+    "D\020\002\022)\n%PLAYER_INBOX_FORCE_VOID_LEDGER_AB"
+    "SENT\020\003\022\'\n#PLAYER_INBOX_FORCE_VOID_NOT_DE"
+    "CIDED\020\004\022+\n\'PLAYER_INBOX_FORCE_VOID_SEQ_N"
+    "OT_IN_RING\020\005\022-\n)PLAYER_INBOX_FORCE_VOID_"
+    "REQUEST_IN_LEDGER\020\006\022*\n&PLAYER_INBOX_FORC"
+    "E_VOID_LEDGER_INVALID\020\007*\253\001\n\034PlayerInboxR"
+    "econcileDiffKind\022+\n\'PLAYER_INBOX_RECONCI"
+    "LE_DIFF_UNSPECIFIED\020\000\022.\n*PLAYER_INBOX_RE"
+    "CONCILE_FINAL_NOT_IN_LEDGER\020\001\022.\n*PLAYER_"
+    "INBOX_RECONCILE_PENDING_BUT_DECIDED\020\0022\373\004"
+    "\n\020PlayerInboxAdmin\022c\n\020GmSanctionPlayer\022%"
+    ".player_inbox.GmSanctionPlayerRequest\032&."
+    "player_inbox.GmSanctionPlayerResponse\"\000\022"
+    "g\n\nGetSummary\022*.player_inbox.GetPlayerIn"
+    "boxSummaryRequest\032+.player_inbox.GetPlay"
+    "erInboxSummaryResponse\"\000\022d\n\tListItems\022)."
+    "player_inbox.ListPlayerInboxItemsRequest"
+    "\032*.player_inbox.ListPlayerInboxItemsResp"
+    "onse\"\000\022d\n\017LookupByRequest\022&.player_inbox"
+    ".LookupPlayerInboxRequest\032\'.player_inbox"
+    ".LookupPlayerInboxResponse\"\000\022a\n\010VoidItem"
+    "\022(.player_inbox.VoidPlayerInboxItemReque"
+    "st\032).player_inbox.VoidPlayerInboxItemRes"
+    "ponse\"\000\022j\n\017ReconcilePlayer\022).player_inbo"
+    "x.ReconcilePlayerInboxRequest\032*.player_i"
+    "nbox.ReconcilePlayerInboxResponse\"\000B\036Z\031p"
+    "layer_inbox/player_inbox\200\001\000b\006proto3"
 };
 static const ::_pbi::DescriptorTable* PROTOBUF_NONNULL const
     descriptor_table_proto_2fplayer_5finbox_2fplayer_5finbox_5fadmin_2eproto_deps[2] = {
@@ -3280,7 +3310,7 @@ static ::absl::once_flag descriptor_table_proto_2fplayer_5finbox_2fplayer_5finbo
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fplayer_5finbox_2fplayer_5finbox_5fadmin_2eproto = {
     false,
     false,
-    4167,
+    4755,
     descriptor_table_protodef_proto_2fplayer_5finbox_2fplayer_5finbox_5fadmin_2eproto,
     "proto/player_inbox/player_inbox_admin.proto",
     &descriptor_table_proto_2fplayer_5finbox_2fplayer_5finbox_5fadmin_2eproto_once,
@@ -3295,9 +3325,23 @@ PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fplayer
 };
 namespace player_inbox {
 [[nodiscard]] const ::google::protobuf::EnumDescriptor* PROTOBUF_NONNULL
-PlayerInboxReconcileDiffKind_descriptor() {
+PlayerInboxVoidMode_descriptor() {
   ::google::protobuf::internal::AssignDescriptors(&descriptor_table_proto_2fplayer_5finbox_2fplayer_5finbox_5fadmin_2eproto);
   return file_level_enum_descriptors_proto_2fplayer_5finbox_2fplayer_5finbox_5fadmin_2eproto[0];
+}
+PROTOBUF_CONSTINIT const uint32_t PlayerInboxVoidMode_internal_data_[] = {
+    131072u, 0u, };
+[[nodiscard]] const ::google::protobuf::EnumDescriptor* PROTOBUF_NONNULL
+PlayerInboxForceVoidVerdict_descriptor() {
+  ::google::protobuf::internal::AssignDescriptors(&descriptor_table_proto_2fplayer_5finbox_2fplayer_5finbox_5fadmin_2eproto);
+  return file_level_enum_descriptors_proto_2fplayer_5finbox_2fplayer_5finbox_5fadmin_2eproto[1];
+}
+PROTOBUF_CONSTINIT const uint32_t PlayerInboxForceVoidVerdict_internal_data_[] = {
+    524288u, 0u, };
+[[nodiscard]] const ::google::protobuf::EnumDescriptor* PROTOBUF_NONNULL
+PlayerInboxReconcileDiffKind_descriptor() {
+  ::google::protobuf::internal::AssignDescriptors(&descriptor_table_proto_2fplayer_5finbox_2fplayer_5finbox_5fadmin_2eproto);
+  return file_level_enum_descriptors_proto_2fplayer_5finbox_2fplayer_5finbox_5fadmin_2eproto[2];
 }
 PROTOBUF_CONSTINIT const uint32_t PlayerInboxReconcileDiffKind_internal_data_[] = {
     196608u, 0u, };
@@ -6821,9 +6865,9 @@ VoidPlayerInboxItemRequest::VoidPlayerInboxItemRequest(
                offsetof(Impl_, player_id_),
            reinterpret_cast<const char*>(&from._impl_) +
                offsetof(Impl_, player_id_),
-           offsetof(Impl_, reason_) -
+           offsetof(Impl_, mode_) -
                offsetof(Impl_, player_id_) +
-               sizeof(Impl_::reason_));
+               sizeof(Impl_::mode_));
 
   // @@protoc_insertion_point(copy_constructor:player_inbox.VoidPlayerInboxItemRequest)
 }
@@ -6839,9 +6883,9 @@ inline void VoidPlayerInboxItemRequest::SharedCtor(::_pb::Arena* PROTOBUF_NULLAB
   ::memset(reinterpret_cast<char*>(&_impl_) +
                offsetof(Impl_, player_id_),
            0,
-           offsetof(Impl_, reason_) -
+           offsetof(Impl_, mode_) -
                offsetof(Impl_, player_id_) +
-               sizeof(Impl_::reason_));
+               sizeof(Impl_::mode_));
 }
 VoidPlayerInboxItemRequest::~VoidPlayerInboxItemRequest() {
   // @@protoc_insertion_point(destructor:player_inbox.VoidPlayerInboxItemRequest)
@@ -6901,10 +6945,10 @@ PROTOBUF_NOINLINE void VoidPlayerInboxItemRequest::Clear() {
       _impl_.note_.ClearNonDefaultToEmpty();
     }
   }
-  if (BatchCheckHasBit(cached_has_bits, 0x0000003cU)) {
+  if (BatchCheckHasBit(cached_has_bits, 0x0000007cU)) {
     ::memset(&_impl_.player_id_, 0, static_cast<::size_t>(
-        reinterpret_cast<char*>(&_impl_.reason_) -
-        reinterpret_cast<char*>(&_impl_.player_id_)) + sizeof(_impl_.reason_));
+        reinterpret_cast<char*>(&_impl_.mode_) -
+        reinterpret_cast<char*>(&_impl_.player_id_)) + sizeof(_impl_.mode_));
   }
   _impl_._has_bits_.Clear();
   _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
@@ -6985,6 +7029,15 @@ PROTOBUF_NOINLINE void VoidPlayerInboxItemRequest::Clear() {
     }
   }
 
+  // .player_inbox.PlayerInboxVoidMode mode = 7;
+  if (CheckHasBit(cached_has_bits, 0x00000040U)) {
+    if (this_._internal_mode() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteEnumToArray(
+          7, this_._internal_mode(), target);
+    }
+  }
+
   if (ABSL_PREDICT_FALSE(this_._internal_metadata_.have_unknown_fields())) {
     target =
         ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
@@ -7010,7 +7063,7 @@ PROTOBUF_NOINLINE void VoidPlayerInboxItemRequest::Clear() {
 
   ::_pbi::Prefetch5LinesFrom7Lines(&this_);
   cached_has_bits = this_._impl_._has_bits_[0];
-  if (BatchCheckHasBit(cached_has_bits, 0x0000003fU)) {
+  if (BatchCheckHasBit(cached_has_bits, 0x0000007fU)) {
     // string operator = 5;
     if (CheckHasBit(cached_has_bits, 0x00000001U)) {
       if (!this_._internal_operator_().empty()) {
@@ -7053,6 +7106,13 @@ PROTOBUF_NOINLINE void VoidPlayerInboxItemRequest::Clear() {
                       ::_pbi::WireFormatLite::EnumSize(this_._internal_reason());
       }
     }
+    // .player_inbox.PlayerInboxVoidMode mode = 7;
+    if (CheckHasBit(cached_has_bits, 0x00000040U)) {
+      if (this_._internal_mode() != 0) {
+        total_size += 1 +
+                      ::_pbi::WireFormatLite::EnumSize(this_._internal_mode());
+      }
+    }
   }
   return this_.MaybeComputeUnknownFieldsSize(total_size,
                                              &this_._impl_._cached_size_);
@@ -7071,7 +7131,7 @@ void VoidPlayerInboxItemRequest::MergeImpl(::google::protobuf::MessageLite& to_m
   (void)cached_has_bits;
 
   cached_has_bits = from._impl_._has_bits_[0];
-  if (BatchCheckHasBit(cached_has_bits, 0x0000003fU)) {
+  if (BatchCheckHasBit(cached_has_bits, 0x0000007fU)) {
     if (CheckHasBit(cached_has_bits, 0x00000001U)) {
       if (!from._internal_operator_().empty()) {
         _this->_internal_set_operator_(from._internal_operator_());
@@ -7110,6 +7170,11 @@ void VoidPlayerInboxItemRequest::MergeImpl(::google::protobuf::MessageLite& to_m
         _this->_impl_.reason_ = from._impl_.reason_;
       }
     }
+    if (CheckHasBit(cached_has_bits, 0x00000040U)) {
+      if (from._internal_mode() != 0) {
+        _this->_impl_.mode_ = from._impl_.mode_;
+      }
+    }
   }
   _this->_impl_._has_bits_[0] |= cached_has_bits;
   _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
@@ -7133,8 +7198,8 @@ void VoidPlayerInboxItemRequest::InternalSwap(VoidPlayerInboxItemRequest* PROTOB
   ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.operator__, &other->_impl_.operator__, arena);
   ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.note_, &other->_impl_.note_, arena);
   ::google::protobuf::internal::memswap<
-      PROTOBUF_FIELD_OFFSET(VoidPlayerInboxItemRequest, _impl_.reason_)
-      + sizeof(VoidPlayerInboxItemRequest::_impl_.reason_)
+      PROTOBUF_FIELD_OFFSET(VoidPlayerInboxItemRequest, _impl_.mode_)
+      + sizeof(VoidPlayerInboxItemRequest::_impl_.mode_)
       - PROTOBUF_FIELD_OFFSET(VoidPlayerInboxItemRequest, _impl_.player_id_)>(
           reinterpret_cast<char*>(&_impl_.player_id_),
           reinterpret_cast<char*>(&other->_impl_.player_id_));
@@ -7188,9 +7253,9 @@ VoidPlayerInboxItemResponse::VoidPlayerInboxItemResponse(
                offsetof(Impl_, state_),
            reinterpret_cast<const char*>(&from._impl_) +
                offsetof(Impl_, state_),
-           offsetof(Impl_, void_requested_) -
+           offsetof(Impl_, force_verdict_) -
                offsetof(Impl_, state_) +
-               sizeof(Impl_::void_requested_));
+               sizeof(Impl_::force_verdict_));
 
   // @@protoc_insertion_point(copy_constructor:player_inbox.VoidPlayerInboxItemResponse)
 }
@@ -7204,9 +7269,9 @@ inline void VoidPlayerInboxItemResponse::SharedCtor(::_pb::Arena* PROTOBUF_NULLA
   ::memset(reinterpret_cast<char*>(&_impl_) +
                offsetof(Impl_, error_message_),
            0,
-           offsetof(Impl_, void_requested_) -
+           offsetof(Impl_, force_verdict_) -
                offsetof(Impl_, error_message_) +
-               sizeof(Impl_::void_requested_));
+               sizeof(Impl_::force_verdict_));
 }
 VoidPlayerInboxItemResponse::~VoidPlayerInboxItemResponse() {
   // @@protoc_insertion_point(destructor:player_inbox.VoidPlayerInboxItemResponse)
@@ -7261,10 +7326,10 @@ PROTOBUF_NOINLINE void VoidPlayerInboxItemResponse::Clear() {
     ABSL_DCHECK(_impl_.error_message_ != nullptr);
     _impl_.error_message_->Clear();
   }
-  if (BatchCheckHasBit(cached_has_bits, 0x00000006U)) {
+  if (BatchCheckHasBit(cached_has_bits, 0x0000000eU)) {
     ::memset(&_impl_.state_, 0, static_cast<::size_t>(
-        reinterpret_cast<char*>(&_impl_.void_requested_) -
-        reinterpret_cast<char*>(&_impl_.state_)) + sizeof(_impl_.void_requested_));
+        reinterpret_cast<char*>(&_impl_.force_verdict_) -
+        reinterpret_cast<char*>(&_impl_.state_)) + sizeof(_impl_.force_verdict_));
   }
   _impl_._has_bits_.Clear();
   _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
@@ -7314,6 +7379,15 @@ PROTOBUF_NOINLINE void VoidPlayerInboxItemResponse::Clear() {
     }
   }
 
+  // .player_inbox.PlayerInboxForceVoidVerdict force_verdict = 4;
+  if (CheckHasBit(cached_has_bits, 0x00000008U)) {
+    if (this_._internal_force_verdict() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteEnumToArray(
+          4, this_._internal_force_verdict(), target);
+    }
+  }
+
   if (ABSL_PREDICT_FALSE(this_._internal_metadata_.have_unknown_fields())) {
     target =
         ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
@@ -7339,7 +7413,7 @@ PROTOBUF_NOINLINE void VoidPlayerInboxItemResponse::Clear() {
 
   ::_pbi::Prefetch5LinesFrom7Lines(&this_);
   cached_has_bits = this_._impl_._has_bits_[0];
-  if (BatchCheckHasBit(cached_has_bits, 0x00000007U)) {
+  if (BatchCheckHasBit(cached_has_bits, 0x0000000fU)) {
     // .TipInfoMessage error_message = 1;
     if (CheckHasBit(cached_has_bits, 0x00000001U)) {
       total_size += 1 +
@@ -7356,6 +7430,13 @@ PROTOBUF_NOINLINE void VoidPlayerInboxItemResponse::Clear() {
     if (CheckHasBit(cached_has_bits, 0x00000004U)) {
       if (this_._internal_void_requested() != 0) {
         total_size += 2;
+      }
+    }
+    // .player_inbox.PlayerInboxForceVoidVerdict force_verdict = 4;
+    if (CheckHasBit(cached_has_bits, 0x00000008U)) {
+      if (this_._internal_force_verdict() != 0) {
+        total_size += 1 +
+                      ::_pbi::WireFormatLite::EnumSize(this_._internal_force_verdict());
       }
     }
   }
@@ -7377,7 +7458,7 @@ void VoidPlayerInboxItemResponse::MergeImpl(::google::protobuf::MessageLite& to_
   (void)cached_has_bits;
 
   cached_has_bits = from._impl_._has_bits_[0];
-  if (BatchCheckHasBit(cached_has_bits, 0x00000007U)) {
+  if (BatchCheckHasBit(cached_has_bits, 0x0000000fU)) {
     if (CheckHasBit(cached_has_bits, 0x00000001U)) {
       ABSL_DCHECK(from._impl_.error_message_ != nullptr);
       if (_this->_impl_.error_message_ == nullptr) {
@@ -7394,6 +7475,11 @@ void VoidPlayerInboxItemResponse::MergeImpl(::google::protobuf::MessageLite& to_
     if (CheckHasBit(cached_has_bits, 0x00000004U)) {
       if (from._internal_void_requested() != 0) {
         _this->_impl_.void_requested_ = from._impl_.void_requested_;
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000008U)) {
+      if (from._internal_force_verdict() != 0) {
+        _this->_impl_.force_verdict_ = from._impl_.force_verdict_;
       }
     }
   }
@@ -7415,8 +7501,8 @@ void VoidPlayerInboxItemResponse::InternalSwap(VoidPlayerInboxItemResponse* PROT
   _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
   ::google::protobuf::internal::memswap<
-      PROTOBUF_FIELD_OFFSET(VoidPlayerInboxItemResponse, _impl_.void_requested_)
-      + sizeof(VoidPlayerInboxItemResponse::_impl_.void_requested_)
+      PROTOBUF_FIELD_OFFSET(VoidPlayerInboxItemResponse, _impl_.force_verdict_)
+      + sizeof(VoidPlayerInboxItemResponse::_impl_.force_verdict_)
       - PROTOBUF_FIELD_OFFSET(VoidPlayerInboxItemResponse, _impl_.error_message_)>(
           reinterpret_cast<char*>(&_impl_.error_message_),
           reinterpret_cast<char*>(&other->_impl_.error_message_));

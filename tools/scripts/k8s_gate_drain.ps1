@@ -134,6 +134,11 @@ function Get-GateDrainContract {
         # Etcd.NodeTTLSeconds(180,进程被强杀、租约自然过期的最坏情况)再留 60s。
         # 改 NodeTTLSeconds 时同步改这里(测试钉住它必须更大)。
         StaleRecordWaitSeconds        = 240
+        # 旧记录在 etcd 里消失之后、清排空标记之前再等这么久(2026-10-18):login 读 gate 目录用的是进程内
+        # list-watch 镜像,watch 卡住时镜像最多晚 go/login/internal/logic/pkg/node/node_cache.go 的
+        # cacheStaleAfter(15s)才放弃旧记录;标记清早了,那段时间里 login 会把玩家分到已删 Pod 的陈旧记录上。
+        # 必须大于 cacheStaleAfter(测试钉住),改 cacheStaleAfter 时同步改这里。
+        LoginMirrorSettleSeconds      = 20
         # 删 Pod 的等待 = 该 Pod 自己的 terminationGracePeriodSeconds + 本余量。
         DeleteGraceMarginSeconds      = 60
         ProgressIntervalSeconds       = 30
@@ -529,11 +534,15 @@ function ConvertFrom-GateEtcdRecords {
     return ,$records.ToArray()
 }
 
-# exec 进 Service 背后的 Pod 再按 Service 地址连回(hairpin)失败时附在错误后面的提示。
-# 刻意不自动回落 127.0.0.1:回落后连的是 exec 恰好落到的那个 Pod,多副本时不一定是 login 用的那一个。
+# exec 进 Service 背后的 Pod(Redis:同名 StatefulSet 的 Pod)再按 Service 地址连回(hairpin)失败时附在错误后面的提示。
+# 刻意不自动回落 127.0.0.1:回落后连的是 exec 恰好落到的那个 Pod,多副本时不一定是 login 用的那一个(高可用形态下可能是从)。
 function Get-GateDrainHairpinHint {
-    param([Parameter(Mandatory = $true)]$Target)
-    return "(若是连接失败 / 超时:本脚本 exec 进 svc/$($Target.Service) 后按 login 配置里的 $($Target.Endpoint) 连回同一 Service,集群的 CNI / kube-proxy 须支持 hairpin)"
+    param(
+        [Parameter(Mandatory = $true)]$Target,
+        [string]$ExecTarget = ''
+    )
+    if ([string]::IsNullOrEmpty($ExecTarget)) { $ExecTarget = "svc/$($Target.Service)" }
+    return "(若是连接失败 / 超时:本脚本 exec 进 $ExecTarget 后按 login 配置里的 $($Target.Endpoint) 连回同一 Service,集群的 CNI / kube-proxy 须支持 hairpin)"
 }
 
 # exec 进 login 所连 etcd 的 Service 背后的 Pod,用它自带的 etcdctl 按 login 配置里的同一地址读 gate 前缀。
@@ -627,10 +636,19 @@ function Select-GateDrainPeers {
 
 # ─── Redis(login 所用的那个)───
 
-# exec 进 login 所连 Redis 的 Service 背后的 Pod,用它自带的 redis-cli 连 login 配置里的同一 host:port/DB。
+# 用哪个 Pod 里的 redis-cli:login 所连 Redis Service 同名的 StatefulSet(共享 Redis 的两种形态都叫 redis)里任一 Pod 的 redis 容器。
+# 不 exec svc/<Service>:高可用形态(redis-ha.yaml)下 Service redis 指向 haproxy 入口代理,代理镜像里没有 redis-cli。
+# 连哪台仍由 -h 决定(login 配置里的 Service 地址):高可用形态下经代理落到当前的主,单实例就是它自己 —— 与 login 写的是同一处,
+# 不随 exec 落到哪个 Pod(可能是从)而变。
+function Get-GateDrainRedisExecTarget {
+    param([Parameter(Mandatory = $true)]$Login)
+    return "statefulset/$($Login.Redis.Service)"
+}
+
+# exec 进 login 所连共享 Redis 的节点 Pod(Get-GateDrainRedisExecTarget),用它自带的 redis-cli 连 login 配置里的同一 host:port/DB。
 # 密码取该 Pod 自己的 REDIS_PASSWORD(Secret redis-auth,与 requirepass 同源),经 REDISCLI_AUTH 传给 redis-cli:
 # 不经本机命令行、不进日志;为空时不设(设成空串 redis-cli 会发 AUTH "" 并报错)。
-# 参数经 sh 的位置参数传入,不拼进脚本文本。--no-raw 让 nil 与空串可区分。
+# 参数经 sh 的位置参数传入,不拼进脚本文本。--no-raw 让 nil 与空串可区分。-c redis:高可用形态的节点 Pod 另有哨兵容器。
 function Invoke-GateDrainRedis {
     param(
         [Parameter(Mandatory = $true)]$Login,
@@ -638,7 +656,7 @@ function Invoke-GateDrainRedis {
         [ValidateRange(0.001, 2147483)][double]$TimeoutSeconds = 10
     )
     $shell = 'h=$1; p=$2; d=$3; shift 3; if [ -n "$REDIS_PASSWORD" ]; then REDISCLI_AUTH=$REDIS_PASSWORD; export REDISCLI_AUTH; fi; exec redis-cli --no-raw -h "$h" -p "$p" -n "$d" "$@"'
-    $arguments = @('exec', '-n', $Login.Redis.Namespace, "svc/$($Login.Redis.Service)", '--',
+    $arguments = @('exec', '-n', $Login.Redis.Namespace, (Get-GateDrainRedisExecTarget -Login $Login), '-c', 'redis', '--',
         'sh', '-c', $shell, 'sh', $Login.Redis.Host, [string]$Login.Redis.Port, [string]$Login.RedisDb) + $Command
     return Invoke-GateDrainKubectl -Arguments $arguments -TimeoutSeconds $TimeoutSeconds
 }
@@ -653,7 +671,7 @@ function Invoke-GateDrainRedisChecked {
     $contract = Get-GateDrainContract
     $result = Invoke-GateDrainRedis -Login $Login -Command $Command -TimeoutSeconds $contract.CallTimeoutSeconds
     if ($result.TimedOut -or $result.ExitCode -ne 0) {
-        throw "$What 失败(exit=$($result.ExitCode),timedOut=$($result.TimedOut)):$(Get-GateDrainErrorTail $result.ErrorOutput) $(Get-GateDrainHairpinHint -Target $Login.Redis)"
+        throw "$What 失败(exit=$($result.ExitCode),timedOut=$($result.TimedOut)):$(Get-GateDrainErrorTail $result.ErrorOutput) $(Get-GateDrainHairpinHint -Target $Login.Redis -ExecTarget (Get-GateDrainRedisExecTarget -Login $Login))"
     }
     $text = [string]$result.Output
     if ($text -match '(?m)^\s*(\d+\)\s*)?\(error\)') { throw "$What 失败:$(Get-GateDrainErrorTail $text)" }
@@ -959,7 +977,8 @@ function Wait-GateRecordGone {
     return $false
 }
 
-# 清掉两个标记。只在旧进程的 etcd 记录消失之后调用:清早了,login 会把玩家分到已删 Pod 的陈旧记录上。
+# 清掉两个标记。只在旧进程的 etcd 记录消失、并再等过 LoginMirrorSettleSeconds 之后调用:
+# 清早了,login 会把玩家分到已删 Pod 的陈旧记录上。
 function Clear-GateDrainMarks {
     param(
         [Parameter(Mandatory = $true)]$Login,
@@ -1024,7 +1043,7 @@ function Wait-GateStatefulSetReady {
     throw "等新 Pod $($Pod.Namespace)/$($Pod.Name) 与 StatefulSet/$($contract.GateStatefulSet) 就绪超过 ${TimeoutSeconds}s(最后状态:$last)"
 }
 
-# 删 Pod → 等旧进程的 etcd 记录消失 → 清标记 → 等新 Pod 与 STS 就绪。
+# 删 Pod → 等旧进程的 etcd 记录消失 → 再等 login 镜像跟上(LoginMirrorSettleSeconds)→ 清标记 → 等新 Pod 与 STS 就绪。
 # 标记必须清:新 gate 常会复用同一 node_id,不清就在 draining 的 TTL 内分不到新玩家。
 # 旧记录迟迟不消失或清除失败时不清(见 Clear-GateDrainMarks),返回 MarksCleared=$false。
 # 就绪超时不在这里 throw,而是带在 ReadyError 里返回:标记没清时,主流程要先报残留标记与人工 DEL 指引
@@ -1046,6 +1065,9 @@ function Invoke-GatePodReplacement {
 
     $marksCleared = $false
     if (Wait-GateRecordGone -Login $Login -Record $Record -TimeoutSeconds $contract.StaleRecordWaitSeconds -PollIntervalSeconds $contract.PollIntervalSeconds) {
+        # etcd 里没了不等于每个 login 的镜像都没了,见契约 LoginMirrorSettleSeconds。
+        Write-Host "[gate-drain] Old record gone; waiting $($contract.LoginMirrorSettleSeconds)s for login gate-directory mirrors before clearing drain marks"
+        Start-Sleep -Seconds $contract.LoginMirrorSettleSeconds
         try {
             Clear-GateDrainMarks -Login $Login -NodeId $Record.NodeId
             $marksCleared = $true
@@ -1120,7 +1142,7 @@ function Write-GateDrainDryRunPlan {
     $contract = Get-GateDrainContract
     $keys = Get-GateDrainKeys -NodeId $Record.NodeId
     $peerKeys = @($PeerNodeIds | ForEach-Object { (Get-GateDrainKeys -NodeId $_).Draining }) -join ' '
-    Write-Host "[dry-run] The following Redis operations will not execute (Redis $($Login.Redis.Endpoint) DB $($Login.RedisDb), via svc/$($Login.Redis.Service) exec):"
+    Write-Host "[dry-run] The following Redis operations will not execute (Redis $($Login.Redis.Endpoint) DB $($Login.RedisDb), via $(Get-GateDrainRedisExecTarget -Login $Login) -c redis exec):"
     Write-Host "[dry-run]   TIME; EVAL (atomic): DEL $($keys.Drained) only if at least one key in $peerKeys is absent,"
     Write-Host "[dry-run]     SET $($keys.Draining) <Redis TIME seconds> NX EX $DrainTtlSeconds; otherwise write nothing and reject"
     Write-Host "[dry-run]   Recheck Pod uid=$($Pod.Uid) and etcd process node_id/uuid=$($Record.NodeId)/$($Record.Uuid); revert this run's mark if either changed"

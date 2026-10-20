@@ -7,10 +7,12 @@
 #include <google/protobuf/reflection.h>
 #include <google/protobuf/message.h>
 
+// 顶层 repeated 字段的阈值用例。原先借用 RouteMessageRequest.route_nodes,Route 一族已在批 7 从 proto 删除,
+// 改用专为字段检查测试定义的 ProtoFieldCheckerTestSubPB.items;判据仍是「元素数 > threshold 才算超限」。
 TEST(ProtoFieldCheckerTest, NoFieldExceedsThreshold) {
-    RouteMessageRequest example;
-    example.add_route_nodes();
-    example.add_route_nodes();
+    ProtoFieldCheckerTestSubPB example;
+    example.add_items("x");
+    example.add_items("x");
 
     std::string output;
     bool result = ProtoFieldChecker::CheckFieldSizes(example, 5, output);
@@ -20,16 +22,16 @@ TEST(ProtoFieldCheckerTest, NoFieldExceedsThreshold) {
 }
 
 TEST(ProtoFieldCheckerTest, FieldExceedsThreshold) {
-    RouteMessageRequest example;
+    ProtoFieldCheckerTestSubPB example;
     for (int i = 0; i < 10; ++i) {
-        example.add_route_nodes();
+        example.add_items("x");
     }
 
     std::string output;
     bool result = ProtoFieldChecker::CheckFieldSizes(example, 5, output);
 
     EXPECT_TRUE(result);
-    EXPECT_NE(output.find("Field 'route_nodes' exceeds threshold"), std::string::npos);
+    EXPECT_NE(output.find("Field 'items' exceeds threshold"), std::string::npos);
 }
 
 TEST(ProtoFieldCheckerTest, NestedFieldExceedsThreshold) {

@@ -1,21 +1,31 @@
 module mail
 
-// 仓库统一使用 Go 1.27.2;schemamigrate(proto2mysql v0.2.0)最低要求 1.26.5(D-14 理由 3)。
+// 仓库统一使用 Go 1.27.2；schemamigrate(proto2mysql v0.2.0)最低要求 1.26.5(D-14 理由 3)。
+// friend 自带 `-migrate` 入口，与 trade / schemamigrate 使用仓库统一版本。
 go 1.27.2
 
 replace proto => ../proto
 
 replace shared => ../shared
 
-// mail 的表以 proto/mail/mail_table.proto 为唯一事实源,由本地的 go/schemamigrate 建表
-// (启动期 AutoMigrate 或 `mail -f etc/mail.yaml -migrate`),所以是路径 replace 而非发布版本。
+// mail 的表以本域proto为唯一事实源,由本地的 go/schemamigrate 建表
+// (启动期 AutoMigrate 或 `friend -f etc/friend.yaml -migrate`),所以是路径 replace 而非发布版本。
 replace schemamigrate => ../schemamigrate
 
-// 直接依赖块按 go/friend/go.mod 的版本对齐(同一条 go-zero / grpc / protobuf 线):各服务是独立 module,
-// 版本各走各的会让 shared/ 下的共享包在不同服务里编出不同行为。
+// 直接依赖块按 go/trade/go.mod 的版本对齐(同一条 go-zero / grpc / protobuf 线):
+// 各服务是独立 module,版本各走各的会让 shared/ 下的共享包在不同服务里编出不同行为。
 //
-// 刻意**不**直接依赖 github.com/redis/go-redis/v9:Redis 句柄统一用 go-zero 的 core/stores/redis(契约 §4),
-// 它只应作为 go-zero 的 indirect 出现。`go mod tidy` 之后若它落进直接依赖块,说明有一处 import 写错了。
+// 刻意**不再**直接依赖:
+//   - github.com/google/uuid:节点 uuid 由 shared/noderegistry 生成,friend 自己不再拼
+//     (原先只有已删除的 internal/node 包用它,全仓 friend 下已无 import)。
+//   - github.com/redis/go-redis/v9:Redis 句柄统一用 go-zero 的 core/stores/redis(契约 §4);
+//     同进程两套客户端 = 两套连接池与超时语义,排障对不上账。
+//     internal/data/friend_repo.go 与其 mysql 单测的句柄改型(规格 §3.8 第 3 条)已随本批完成,
+//     go/friend 下**零**直接 import 它,所以 require 块里不写它是正确的、不是漏写;
+//     go-redis 只应作为 go-zero 的 indirect 出现(go-zero 的 core/stores/redis 把 Pipeliner /
+//     IntCmd / Nil 都别名导出了,业务代码不需要直接依赖)。
+//     ⚠ 验收判据:`go mod tidy` 之后如果它又落进**直接依赖块**,说明还有一处 import 没改完 ——
+//     那是真实缺陷,先去找那处 import,不要直接接受 tidy 结果。
 require (
 	github.com/alicebob/miniredis/v2 v2.36.1
 	github.com/go-sql-driver/mysql v1.9.3
@@ -135,8 +145,9 @@ require (
 	sigs.k8s.io/yaml v1.3.0 // indirect
 )
 
-// indirect 依赖块与 go.sum 起步时取自 go/friend(mail 的依赖是它的子集,版本线相同),由构建方第一次
-// `go mod tidy` 收敛成 mail 自己的集合(docs/design/mail-system.md §12.2 的命令序列)。tidy 之后不要手改。
+// go.sum 与上面的 indirect 依赖块由 `go mod tidy` 生成(2026-09-21 首次执行;机器 B 上官方代理拉不到
+// github.com/luyuancpp/* 旧组织名的模块,当时用进程级 GOPROXY=https://goproxy.cn,... 跑的,未改 go env)。
+// 不要手改;tidy 之后按上面 go-redis 那条验收判据看一眼直接依赖块。
 
-// replace 不随依赖传递:与 schemamigrate 同步固定迁名后的发布包,保留旧 module/import 身份(D-14 §7)。
+// replace 不随依赖传递:与 schemamigrate 同步固定迁名后的发布包,保留旧 module/import 身份。
 replace github.com/luyuancpp/proto2mysql v0.2.0 => github.com/luyuan-cpp/proto2mysql v0.2.0

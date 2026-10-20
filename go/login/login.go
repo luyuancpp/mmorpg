@@ -9,6 +9,7 @@ import (
 	loginlogic "login/internal/logic/clientplayerlogin"
 	"login/internal/logic/pkg/callerauth"
 	"login/internal/logic/pkg/node"
+	"login/internal/rpclogging"
 	loginserver "login/internal/server/clientplayerlogin"
 	loginadminserver "login/internal/server/loginadmin"
 	loginpregateserver "login/internal/server/loginpregate"
@@ -67,6 +68,10 @@ func main() {
 	}
 
 	// Load config file
+	//
+	// 刻意不带 conf.UseEnv():它会对整份 yaml 做 os.ExpandEnv,任何含 `$` 的值(Redis 口令等)都会被静默改写。
+	// 需要从环境变量取的密钥一律写成 *Env 字段(PasswordAuth.DSNEnv、Secrets.*.Env、AuthProviders.WeChat.AppSecretEnv),
+	// 照旧文档写成 "${VAR}" 的字面量由下面的 ResolveSecrets 拒绝启动(config/auth_providers.go)。
 	conf.MustLoad(*configFile, &config.AppConfig)
 
 	// 密钥门禁必须跑在**任何外部连接之前**(Kafka / Redis / etcd 都在下面)。
@@ -97,9 +102,10 @@ func main() {
 	// (老的一节点一 topic gate-<id> / scene-<id> 已停用,login 是最后一个切换的生产者。)
 	if err := kafkautil.EnsureTopics(config.AppConfig.Kafka.Brokers, []kafkautil.TopicSpec{
 		{
-			Name:        config.AppConfig.Kafka.Topic,
-			Partitions:  config.AppConfig.Kafka.PartitionCnt,
-			RetentionMs: config.AppConfig.Kafka.RetentionMs,
+			Name:           config.AppConfig.Kafka.Topic,
+			Partitions:     config.AppConfig.Kafka.PartitionCnt,
+			RetentionMs:    config.AppConfig.Kafka.RetentionMs,
+			RetentionBytes: config.AppConfig.Kafka.RetentionBytes,
 		},
 	}); err != nil {
 		panic(fmt.Sprintf("Kafka db-task partition contract rejected: %v", err))
@@ -380,6 +386,7 @@ func newKillSwitch(watchCtx context.Context, cfg config.Config, cli *clientv3.Cl
 // startServer configures and starts the gRPC server.
 func startServer(watchCtx context.Context, cfg config.Config, ctx *svc.ServiceContext,
 	etcdCli *clientv3.Client) error {
+	rpclogging.ProtectCredentials(&cfg.RpcServerConf)
 	server := zrpc.MustNewServer(cfg.RpcServerConf, func(grpcServer *grpc.Server) {
 		login_proto_login.RegisterClientPlayerLoginServer(grpcServer, loginserver.NewClientPlayerLoginServer(ctx))
 		login_proto_login.RegisterLoginAdminServer(grpcServer, loginadminserver.NewLoginAdminServer(ctx))

@@ -5,28 +5,27 @@
 #include "node/system/node/node_util.h"
 #include "engine/core/type_define/type_define.h"
 
-// 选点只需要连接状态的类型,不需要通道本身:这里只做不透明声明(带固定底层类型的 enum class 声明后即是完整类型,
-// 能放进 std::optional),不把 muduo_grpc/channel.h 连同 muduo 网络头带进每个包含本头的翻译单元。
-// 底层类型必须与 muduo_grpc/channel.h 的定义一致;node_utils.cpp 两处都看得到,不一致会直接编译失败。
-// 要用枚举值(kReady 等)的翻译单元自己包含 "muduo_grpc/channel.h"。
+// 只前向声明连接状态枚举,不包含 muduo_grpc/channel.h:本头经 node.h 进入大量翻译单元,另有 scene 业务、网络工具与
+// 测试的 .cpp 直接包含,多数只用 GetNodeInfo / GetZoneId,包含 channel.h 会把 muduo TcpClient 与整套 muduo_grpc 头
+// 带给它们(与 muduo_grpc_channel_slot.h 只前向声明 Channel 同理)。带固定底层类型的枚举在不透明声明处即是完整类型,std::optional 可以直接用。
+// 底层类型必须与 channel.h 的定义一致:同时看到两处声明的翻译单元(node_utils.cpp、选点用例)不一致会直接编译报错。
+// 要用枚举项(kReady 等)的翻译单元自己包含 muduo_grpc/channel.h。
 namespace muduo_grpc
 {
-enum class ConnectivityState : uint8_t;
-} // namespace muduo_grpc
+	enum class ConnectivityState : uint8_t;
+}
 
-// 本节点身份的唯一所有者是 Node;底层模块只借用它的只读视图,不依赖 Node 的链接实现。
-// Node 在构造时安装、完成停机并析构时卸载;未安装时返回 protobuf 只读默认实例,不创建状态。
-// 安装/卸载仅用于所有者构造与排空后的析构(测试可用同线程夹具);访问限所属 loop 线程。
-// 返回引用不得越过所有者寿命。
-// 安装指针的原子发布不保护 NodeInfo 的并发读写,写入只经 Node::MutableNodeInfo()。
+// 所有者是 Node，构造时登记、析构时注销。
+// 未登记时返回只读默认实例，不创建状态。
+// 只在所属 loop 线程调用，返回引用不得越过所有者寿命。
 const NodeInfo &GetNodeInfo();
-const NodeInfo *InstallLocalNodeInfo(const NodeInfo *info);
+void InstallLocalNodeInfo(const NodeInfo *info);
 uint32_t GetZoneId();
 
 // 为本玩家的请求挑一个 SceneManager 实例(换图、跨 zone 传送、镜像副本、紧急疏散、组队跟随都经这里)。
 //
-// - 候选必须同时拥有 NodeInfo 和非空、未 SHUTDOWN 的 muduo_grpc 通道(MuduoGrpcChannelPtr 组件,见 HasUsableGrpcClient)。
-//   按 muduo_grpc::ConnectivityState 分级：READY → IDLE / CONNECTING → TRANSIENT_FAILURE / SHUTDOWN。
+// - 候选必须同时拥有 NodeInfo 和未关闭的 muduo_grpc 通道(HasUsableGrpcClient:挂着 MuduoGrpcChannelPtr 且非 SHUTDOWN)。
+//   按通道连接状态分级：READY → IDLE / CONNECTING → TRANSIENT_FAILURE / SHUTDOWN。
 // - 没有具备传输的候选时返回 entt::null，由调用方明确拒绝；不把只有 NodeInfo 的实体当成服务。
 // - 有传输但全部不可达时仍确定性挑一个，让本次调用经 UNAVAILABLE/既有看门狗收尾。
 //   不增加原地重挑或重发，保留失败代表「结果未知」的语义。

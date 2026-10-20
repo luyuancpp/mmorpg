@@ -65,7 +65,8 @@ TcpClient::TcpClient(EventLoop* loop,
 {
   connector_->setNewConnectionCallback(
       std::bind(&TcpClient::newConnection, this, _1));
-  // FIXME setConnectFailedCallback
+  // LOCAL DELTA:上游这里的 FIXME setConnectFailedCallback 由 setConnectFailedCallback() 补上,
+  // 回调直接存进 connector_(不经 TcpClient 转发、不捕获 this);不设时行为与上游相同。
   LOG_INFO << "TcpClient::TcpClient[" << name_
            << "] - connector " << get_pointer(connector_);
 }
@@ -127,6 +128,13 @@ void TcpClient::stop()
 {
   connect_ = false;
   connector_->stop();
+}
+
+// LOCAL DELTA:见 TcpClient.h。~TcpClient 没有连接时会 stop() Connector(connect_ 随即为 false),
+// 之后 Connector 不再回调,所以回调不会在本对象析构后触发;使用方仍应只捕获 weak_ptr。
+void TcpClient::setConnectFailedCallback(ConnectFailedCallback cb)
+{
+  connector_->setConnectFailedCallback(std::move(cb));
 }
 
 void TcpClient::newConnection(int sockfd)

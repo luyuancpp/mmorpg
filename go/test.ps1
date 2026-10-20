@@ -44,6 +44,20 @@
                                      回归(只用 sarama mocks;broker 集成用例没有
                                      KAFKA_INTEGRATION_BROKER 时 Skip)。
 
+    task:result 读回执通知按 login 实例分频道(2026-10-18,只用进程内 miniredis):
+
+      * shared/taskresult          – 旧频道字面值、实例频道拼法与回复目标校验。
+      * login/internal/dispatcher  – 双频道订阅、按频道送达与计数、TTL 兜底取回
+                                     (salvaged / timed_out,不依赖墙钟)。
+      * login/internal/logic/pkg/dataloader
+                                   – 读任务带回复目标,以及同包的新号种子、
+                                     冷恢复提交屏障用例。
+      * db/internal/metrics        – (2026-10-18 第 2 批起)db_task_result_notify_total
+                                     等预建序列与取值字面量(告警按它们写),以及与
+                                     stress_summarize.ps1 列名的对照;同包既有用例
+                                     钉住 db 的其余预建序列。只读仓库内文件。
+                                     go/db 侧的定向发布用例在 db/internal/kafka 里。
+
     Anything that imports a real broker (sarama integration tests) is left
     out — those go in the chaos_test.ps1 path instead.
 
@@ -80,6 +94,7 @@ $L1Suites = @(
             './internal/logic/pkg/proto_sql/...'
             './internal/config/...'
             './cmd/migrate/...'
+            './internal/metrics/...'
         )
     }
     @{
@@ -87,12 +102,15 @@ $L1Suites = @(
         Packages = @(
             './placement/...'
             './kafkautil/...'
+            './taskresult/...'
         )
     }
     @{
         Dir      = Join-Path $GoRoot 'login'
         Packages = @(
             './internal/kafka/...'
+            './internal/dispatcher/...'
+            './internal/logic/pkg/dataloader/...'
         )
     }
 )

@@ -1,6 +1,7 @@
 syntax = "proto3";
 option go_package = "proto/common/database";
 
+import "proto/db/proto_option.proto";
 import "proto/common/database/mysql_database_table.proto";
 import "proto/common/database/bag_quest_mail_data.proto";
 
@@ -27,11 +28,18 @@ import "proto/common/database/bag_quest_mail_data.proto";
 // — even if cpp Marshal/Unmarshal doesn't populate quest_data/mail_data
 // today, leaving them numbered prevents future schema drift between
 // the proto and any side-channel storage.
+//
+// 冻结(docs/design/mixed-version-persist-field-protection.md §3.2 R1):顶层不经 SQL,冷加载由骨架组装,
+// 存盘每次新拼,顶层新字段无处持久化。新数据一律加进两张表消息。bag_data / quest_data 是由数据库记录
+// 重算的兼容副本,mail_data 没有写入方,三者标 OptionPersistUncarried。
 message PlayerAllData {
+  option (OptionPersistFrozen) = true;
+
   player_database player_database_data = 2;
   player_database_1 player_database_1_data = 3;
 
-  BagAllData   bag_data   = 4;
-  QuestAllData quest_data = 5;
-  MailAllData  mail_data  = 6;
+  BagAllData   bag_data   = 4 [(OptionPersistUncarried) = true];
+  QuestAllData quest_data = 5 [(OptionPersistUncarried) = true];
+  MailAllData  mail_data  = 6 [(OptionPersistUncarried) = true];
+  uint64 last_save_seq = 7; // 存盘发号水位，跨重接和跨场景继承，不承载业务数据
 }

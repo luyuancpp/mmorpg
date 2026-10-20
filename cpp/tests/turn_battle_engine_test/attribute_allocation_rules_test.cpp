@@ -4,6 +4,7 @@
 #include <cmath>
 #include <cstdint>
 #include <map>
+#include <string>
 #include <vector>
 
 #include "services/scene/player/system/attribute_allocation_rules.h"
@@ -489,7 +490,7 @@ TEST(AllocFormulaTest, CappedPoolReachesFullRatioAtItsOwnCap) {
 TEST(AllocFormulaTest, EveryAllocatedPointRaisesEachStatByAtLeastOne) {
     const auto rule = PrimaryRule();
     struct Case {
-        const char* name;
+        std::string name;
         double standard;
         double ratio;
     };

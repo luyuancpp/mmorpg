@@ -1,10 +1,8 @@
 #include "muduo/base/Logging.h"
 
 #include "battle_node_grpc_client.h"
-#include <algorithm>
 #include <atomic>
 #include <chrono>
-#include <memory>
 #include <string>
 #include <utility>
 #include "core/network/grpc_client_runtime.h"
@@ -12,15 +10,14 @@
 #include "muduo_grpc/channel.h"
 
 namespace {
-// 本文件所有 unary 调用的 deadline(毫秒)。启动时 SetBattleNodeCallDeadline 按目标节点类型写入
-// (Node::Initialize → grpc_call_deadline::Apply);原子量:与应答处理器一样是进程级全局。
+// 每个 proto 文件独立的进程级 deadline;启动时按目标节点类型写入。
 std::atomic<uint32_t> callDeadlineMs{kDefaultGrpcCallDeadlineMs};
 
 std::chrono::milliseconds DefaultCallDeadline() {
     return std::chrono::milliseconds(callDeadlineMs.load(std::memory_order_relaxed));
 }
 
-GrpcCallOutcome LocalFailure(uint32_t code, std::string message) {
+GrpcCallOutcome MakeLocalFailureOutcome(uint32_t code, std::string message) {
     GrpcCallOutcome outcome;
     outcome.code = code;
     outcome.message = std::move(message);
@@ -28,99 +25,145 @@ GrpcCallOutcome LocalFailure(uint32_t code, std::string message) {
 }
 }
 
-#pragma region BattleNodeCreateBattle
-AsyncBattleNodeCreateBattleHandlerFunctionType AsyncBattleNodeCreateBattleHandler;
-AsyncBattleNodeCreateBattleFailedHandlerFunctionType AsyncBattleNodeCreateBattleFailedHandler;
-
+#pragma region BattleNodeQueryBattleCreation
 namespace {
-// 一次调用的状态:随完成回调走(shared_ptr),不进 ECS、不放对象池。
-// request 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
-struct BattleNodeCreateBattleCall {
-    ::CreateBattleRequest request;
-    GrpcSentMetadata sentMetadata;
-    // 每次调用回调;为空时走全局 AsyncBattleNodeCreateBattleHandler / FailedHandler。
-    GrpcDone<::CreateBattleResponse> done;
-};
-
-void CompleteBattleNodeCreateBattle(const BattleNodeCreateBattleCall& call, const GrpcCallOutcome& outcome,
-                                                const ::CreateBattleResponse* reply) {
-    if (call.done) {
-        // 带每次调用回调的调用只交给它,不再走全局应答 / 失败处理器。reply 只在回调期间有效。
-        call.done(outcome, outcome.ok() ? reply : nullptr);
-        return;
-    }
-    if (outcome.ok()) {
-        if (AsyncBattleNodeCreateBattleHandler) {
-            AsyncBattleNodeCreateBattleHandler(outcome, *reply);
-        } else {
-            // 应答到了却没人收:2026-04 起换图应答就是这样静默丢了约 5 个月。每个方法每线程报一次;
-            // 确实不需要应答的调用方显式装一个空处理器。
-            thread_local bool reportedMissingHandler = false;
-            if (!reportedMissingHandler) {
-                reportedMissingHandler = true;
-                LOG_ERROR << "gRPC BattleNode.CreateBattle reply dropped: AsyncBattleNodeCreateBattleHandler is not installed"
-                          << " (install one, or an empty one if the reply is intentionally ignored)";
-            }
-        }
-    } else if (AsyncBattleNodeCreateBattleFailedHandler) {
-        const GrpcCallFailure failure{ BattleNodeCreateBattleMessageId, "BattleNode.CreateBattle", outcome, call.sentMetadata};
-        AsyncBattleNodeCreateBattleFailedHandler(failure, call.request);
-    } else {
-        LOG_ERROR << "gRPC BattleNode.CreateBattle failed: code=" << outcome.code << " msg=" << outcome.message;
-    }
-}
-
-void QueueLocalBattleNodeCreateBattleFailure(std::shared_ptr<BattleNodeCreateBattleCall> call, uint32_t code, std::string message) {
-    QueueGrpcLocalCompletion([call = std::move(call), outcome = LocalFailure(code, std::move(message))] {
-        CompleteBattleNodeCreateBattle(*call, outcome, nullptr);
+void QueueLocalBattleNodeQueryBattleCreationFailure(GrpcDone<::QueryBattleCreationResponse> done, uint32_t code, std::string message) {
+    QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(code, std::move(message))] {
+        done(outcome, nullptr);
     });
 }
 }
 
-// 所有 unary Send 重载的唯一发送入口。deadline <= 0 用本文件默认 deadline;done 为空走全局处理器。
-void StartBattleNodeCreateBattleCall(entt::registry& registry, entt::entity nodeEntity, const ::CreateBattleRequest& request,
+// 请求必须在这里同步序列化:gate 的共享原型在下次调用会被覆盖。
+// 若将来改成异步序列化,必须先恢复请求的独立副本。
+void StartBattleNodeQueryBattleCreationCall(entt::registry& registry, entt::entity nodeEntity, const ::QueryBattleCreationRequest& request,
                                              GrpcSentMetadata metadata, std::chrono::milliseconds deadline,
-                                             GrpcDone<::CreateBattleResponse> done) {
-    auto call = std::make_shared<BattleNodeCreateBattleCall>();
-    call->request = request;
-    call->sentMetadata = std::move(metadata);
-    call->done = std::move(done);
-
+                                             GrpcDone<::QueryBattleCreationResponse> done) {
+    if (!done) {
+        LOG_FATAL << "gRPC BattleNode.QueryBattleCreation requires a done callback";
+    }
+    muduo_grpc::UnaryCallRequest unaryRequest;
+    unaryRequest.method = std::string(kBattleNodeQueryBattleCreationGrpcPath);
+    if (!request.SerializeToString(&unaryRequest.message)) {
+        QueueLocalBattleNodeQueryBattleCreationFailure(std::move(done), kGrpcStatusInternal, "failed to serialize the request");
+        return;
+    }
     const auto channel = FindGrpcChannel(registry, nodeEntity);
     if (!channel) {
-        QueueLocalBattleNodeCreateBattleFailure(std::move(call), kGrpcStatusUnavailable, "node transport missing or closing");
+        QueueLocalBattleNodeQueryBattleCreationFailure(std::move(done), kGrpcStatusUnavailable, "node transport missing or closing");
         return;
     }
-    muduo_grpc::UnaryCallRequest rpc;
-    rpc.method = std::string(kBattleNodeCreateBattleGrpcPath);
-    if (!call->request.SerializeToString(&rpc.message)) {
-        QueueLocalBattleNodeCreateBattleFailure(std::move(call), kGrpcStatusInternal, "failed to serialize the request");
-        return;
+    unaryRequest.metadata.reserve(metadata.size());
+    for (const auto& [key, value] : metadata) {
+        // Go 侧依赖这层应用编码;-bin 的线上编码另由传输层负责。
+        unaryRequest.metadata.emplace_back(key, Base64Encode(value));
     }
-    rpc.metadata.reserve(call->sentMetadata.size());
-    for (const auto& [key, value] : call->sentMetadata) {
-        // 应用层这一层 Base64 不能省:线上字节与改前一致,Go 侧按它解码、按原样回显(§4.2)。
-        rpc.metadata.emplace_back(key, Base64Encode(value));
-    }
-    rpc.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
-    channel->StartUnaryCall(std::move(rpc), [call](muduo_grpc::UnaryCallResult&& result) {
+    unaryRequest.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
+    channel->StartUnaryCall(std::move(unaryRequest), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
         GrpcCallOutcome outcome;
         outcome.code = result.status.code_value();
         outcome.message = result.status.message();
         outcome.initialMetadata = std::move(result.initialMetadata);
         outcome.trailingMetadata = std::move(result.trailingMetadata);
         if (!outcome.ok()) {
-            CompleteBattleNodeCreateBattle(*call, outcome, nullptr);
+            done(outcome, nullptr);
+            return;
+        }
+        ::QueryBattleCreationResponse reply;
+        if (!reply.ParseFromString(result.response)) {
+            outcome.code = kGrpcStatusInternal;
+            outcome.message = "failed to parse the BattleNode.QueryBattleCreation response";
+            done(outcome, nullptr);
+            return;
+        }
+        done(outcome, &reply);
+    });
+}
+
+void SendBattleNodeQueryBattleCreation(entt::registry& registry, entt::entity nodeEntity, const ::QueryBattleCreationRequest& request,
+                                            GrpcDone<::QueryBattleCreationResponse> done, const GrpcCallOptions& options) {
+    StartBattleNodeQueryBattleCreationCall(registry, nodeEntity, request, options.metadata, options.deadline, std::move(done));
+}
+
+void SendBattleNodeQueryBattleCreationErased(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message,
+                                                  GrpcMessageDone done, const GrpcCallOptions& options) {
+    if (!done) {
+        LOG_FATAL << "gRPC BattleNode.QueryBattleCreation requires a done callback";
+    }
+    if (message.GetDescriptor() != ::QueryBattleCreationRequest::descriptor()) {
+        const auto requestTypeName = message.GetDescriptor()->full_name();
+        LOG_ERROR << "gRPC BattleNode.QueryBattleCreation: request type " << std::string(requestTypeName.data(), requestTypeName.size())
+                  << " does not match; not sent";
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
+            done(outcome, nullptr);
+        });
+        return;
+    }
+    // descriptor 相同仍可能是 DynamicMessage;进入 typed 路径前必须核对真实 C++ 类型。
+    const auto* typedRequest = dynamic_cast<const ::QueryBattleCreationRequest*>(&message);
+    if (typedRequest == nullptr) {
+        LOG_ERROR << "gRPC BattleNode.QueryBattleCreation: request C++ type does not match; not sent";
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
+            done(outcome, nullptr);
+        });
+        return;
+    }
+    StartBattleNodeQueryBattleCreationCall(registry, nodeEntity, *typedRequest, options.metadata, options.deadline,
+        [done = std::move(done)](const GrpcCallOutcome& outcome, const ::QueryBattleCreationResponse* reply) { done(outcome, reply); });
+}
+#pragma endregion
+#pragma region BattleNodeCreateBattle
+namespace {
+void QueueLocalBattleNodeCreateBattleFailure(GrpcDone<::CreateBattleResponse> done, uint32_t code, std::string message) {
+    QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(code, std::move(message))] {
+        done(outcome, nullptr);
+    });
+}
+}
+
+// 请求必须在这里同步序列化:gate 的共享原型在下次调用会被覆盖。
+// 若将来改成异步序列化,必须先恢复请求的独立副本。
+void StartBattleNodeCreateBattleCall(entt::registry& registry, entt::entity nodeEntity, const ::CreateBattleRequest& request,
+                                             GrpcSentMetadata metadata, std::chrono::milliseconds deadline,
+                                             GrpcDone<::CreateBattleResponse> done) {
+    if (!done) {
+        LOG_FATAL << "gRPC BattleNode.CreateBattle requires a done callback";
+    }
+    muduo_grpc::UnaryCallRequest unaryRequest;
+    unaryRequest.method = std::string(kBattleNodeCreateBattleGrpcPath);
+    if (!request.SerializeToString(&unaryRequest.message)) {
+        QueueLocalBattleNodeCreateBattleFailure(std::move(done), kGrpcStatusInternal, "failed to serialize the request");
+        return;
+    }
+    const auto channel = FindGrpcChannel(registry, nodeEntity);
+    if (!channel) {
+        QueueLocalBattleNodeCreateBattleFailure(std::move(done), kGrpcStatusUnavailable, "node transport missing or closing");
+        return;
+    }
+    unaryRequest.metadata.reserve(metadata.size());
+    for (const auto& [key, value] : metadata) {
+        // Go 侧依赖这层应用编码;-bin 的线上编码另由传输层负责。
+        unaryRequest.metadata.emplace_back(key, Base64Encode(value));
+    }
+    unaryRequest.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
+    channel->StartUnaryCall(std::move(unaryRequest), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
+        GrpcCallOutcome outcome;
+        outcome.code = result.status.code_value();
+        outcome.message = result.status.message();
+        outcome.initialMetadata = std::move(result.initialMetadata);
+        outcome.trailingMetadata = std::move(result.trailingMetadata);
+        if (!outcome.ok()) {
+            done(outcome, nullptr);
             return;
         }
         ::CreateBattleResponse reply;
         if (!reply.ParseFromString(result.response)) {
             outcome.code = kGrpcStatusInternal;
             outcome.message = "failed to parse the BattleNode.CreateBattle response";
-            CompleteBattleNodeCreateBattle(*call, outcome, nullptr);
+            done(outcome, nullptr);
             return;
         }
-        CompleteBattleNodeCreateBattle(*call, outcome, &reply);
+        done(outcome, &reply);
     });
 }
 
@@ -129,119 +172,85 @@ void SendBattleNodeCreateBattle(entt::registry& registry, entt::entity nodeEntit
     StartBattleNodeCreateBattleCall(registry, nodeEntity, request, options.metadata, options.deadline, std::move(done));
 }
 
-void SendBattleNodeCreateBattle(entt::registry& registry, entt::entity nodeEntity, const ::CreateBattleRequest& request) {
-    // 显式写出空 vector:另有 (request, GrpcDone, GrpcCallOptions) 重载,两个 {} 会有二义性。
-    SendBattleNodeCreateBattle(registry, nodeEntity, request, std::vector<std::string>{}, std::vector<std::string>{});
-}
-
-void SendBattleNodeCreateBattle(entt::registry& registry, entt::entity nodeEntity, const ::CreateBattleRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues) {
-    const size_t count = std::min(metaKeys.size(), metaValues.size());
-    GrpcSentMetadata metadata;
-    metadata.reserve(count);
-    for (size_t i = 0; i < count; ++i) {
-        metadata.emplace_back(metaKeys[i], metaValues[i]);
+void SendBattleNodeCreateBattleErased(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message,
+                                                  GrpcMessageDone done, const GrpcCallOptions& options) {
+    if (!done) {
+        LOG_FATAL << "gRPC BattleNode.CreateBattle requires a done callback";
     }
-    StartBattleNodeCreateBattleCall(registry, nodeEntity, request, std::move(metadata), std::chrono::milliseconds{0}, nullptr);
-}
-
-void SendBattleNodeCreateBattle(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues) {
-    const ::CreateBattleRequest& derived = static_cast<const ::CreateBattleRequest&>(message);
-    SendBattleNodeCreateBattle(registry, nodeEntity, derived, metaKeys, metaValues);
+    if (message.GetDescriptor() != ::CreateBattleRequest::descriptor()) {
+        const auto requestTypeName = message.GetDescriptor()->full_name();
+        LOG_ERROR << "gRPC BattleNode.CreateBattle: request type " << std::string(requestTypeName.data(), requestTypeName.size())
+                  << " does not match; not sent";
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
+            done(outcome, nullptr);
+        });
+        return;
+    }
+    // descriptor 相同仍可能是 DynamicMessage;进入 typed 路径前必须核对真实 C++ 类型。
+    const auto* typedRequest = dynamic_cast<const ::CreateBattleRequest*>(&message);
+    if (typedRequest == nullptr) {
+        LOG_ERROR << "gRPC BattleNode.CreateBattle: request C++ type does not match; not sent";
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
+            done(outcome, nullptr);
+        });
+        return;
+    }
+    StartBattleNodeCreateBattleCall(registry, nodeEntity, *typedRequest, options.metadata, options.deadline,
+        [done = std::move(done)](const GrpcCallOutcome& outcome, const ::CreateBattleResponse* reply) { done(outcome, reply); });
 }
 #pragma endregion
 #pragma region BattleNodeDestroyBattle
-AsyncBattleNodeDestroyBattleHandlerFunctionType AsyncBattleNodeDestroyBattleHandler;
-AsyncBattleNodeDestroyBattleFailedHandlerFunctionType AsyncBattleNodeDestroyBattleFailedHandler;
-
 namespace {
-// 一次调用的状态:随完成回调走(shared_ptr),不进 ECS、不放对象池。
-// request 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
-struct BattleNodeDestroyBattleCall {
-    ::DestroyBattleRequest request;
-    GrpcSentMetadata sentMetadata;
-    // 每次调用回调;为空时走全局 AsyncBattleNodeDestroyBattleHandler / FailedHandler。
-    GrpcDone<::Empty> done;
-};
-
-void CompleteBattleNodeDestroyBattle(const BattleNodeDestroyBattleCall& call, const GrpcCallOutcome& outcome,
-                                                const ::Empty* reply) {
-    if (call.done) {
-        // 带每次调用回调的调用只交给它,不再走全局应答 / 失败处理器。reply 只在回调期间有效。
-        call.done(outcome, outcome.ok() ? reply : nullptr);
-        return;
-    }
-    if (outcome.ok()) {
-        if (AsyncBattleNodeDestroyBattleHandler) {
-            AsyncBattleNodeDestroyBattleHandler(outcome, *reply);
-        } else {
-            // 应答到了却没人收:2026-04 起换图应答就是这样静默丢了约 5 个月。每个方法每线程报一次;
-            // 确实不需要应答的调用方显式装一个空处理器。
-            thread_local bool reportedMissingHandler = false;
-            if (!reportedMissingHandler) {
-                reportedMissingHandler = true;
-                LOG_ERROR << "gRPC BattleNode.DestroyBattle reply dropped: AsyncBattleNodeDestroyBattleHandler is not installed"
-                          << " (install one, or an empty one if the reply is intentionally ignored)";
-            }
-        }
-    } else if (AsyncBattleNodeDestroyBattleFailedHandler) {
-        const GrpcCallFailure failure{ BattleNodeDestroyBattleMessageId, "BattleNode.DestroyBattle", outcome, call.sentMetadata};
-        AsyncBattleNodeDestroyBattleFailedHandler(failure, call.request);
-    } else {
-        LOG_ERROR << "gRPC BattleNode.DestroyBattle failed: code=" << outcome.code << " msg=" << outcome.message;
-    }
-}
-
-void QueueLocalBattleNodeDestroyBattleFailure(std::shared_ptr<BattleNodeDestroyBattleCall> call, uint32_t code, std::string message) {
-    QueueGrpcLocalCompletion([call = std::move(call), outcome = LocalFailure(code, std::move(message))] {
-        CompleteBattleNodeDestroyBattle(*call, outcome, nullptr);
+void QueueLocalBattleNodeDestroyBattleFailure(GrpcDone<::Empty> done, uint32_t code, std::string message) {
+    QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(code, std::move(message))] {
+        done(outcome, nullptr);
     });
 }
 }
 
-// 所有 unary Send 重载的唯一发送入口。deadline <= 0 用本文件默认 deadline;done 为空走全局处理器。
+// 请求必须在这里同步序列化:gate 的共享原型在下次调用会被覆盖。
+// 若将来改成异步序列化,必须先恢复请求的独立副本。
 void StartBattleNodeDestroyBattleCall(entt::registry& registry, entt::entity nodeEntity, const ::DestroyBattleRequest& request,
                                              GrpcSentMetadata metadata, std::chrono::milliseconds deadline,
                                              GrpcDone<::Empty> done) {
-    auto call = std::make_shared<BattleNodeDestroyBattleCall>();
-    call->request = request;
-    call->sentMetadata = std::move(metadata);
-    call->done = std::move(done);
-
+    if (!done) {
+        LOG_FATAL << "gRPC BattleNode.DestroyBattle requires a done callback";
+    }
+    muduo_grpc::UnaryCallRequest unaryRequest;
+    unaryRequest.method = std::string(kBattleNodeDestroyBattleGrpcPath);
+    if (!request.SerializeToString(&unaryRequest.message)) {
+        QueueLocalBattleNodeDestroyBattleFailure(std::move(done), kGrpcStatusInternal, "failed to serialize the request");
+        return;
+    }
     const auto channel = FindGrpcChannel(registry, nodeEntity);
     if (!channel) {
-        QueueLocalBattleNodeDestroyBattleFailure(std::move(call), kGrpcStatusUnavailable, "node transport missing or closing");
+        QueueLocalBattleNodeDestroyBattleFailure(std::move(done), kGrpcStatusUnavailable, "node transport missing or closing");
         return;
     }
-    muduo_grpc::UnaryCallRequest rpc;
-    rpc.method = std::string(kBattleNodeDestroyBattleGrpcPath);
-    if (!call->request.SerializeToString(&rpc.message)) {
-        QueueLocalBattleNodeDestroyBattleFailure(std::move(call), kGrpcStatusInternal, "failed to serialize the request");
-        return;
+    unaryRequest.metadata.reserve(metadata.size());
+    for (const auto& [key, value] : metadata) {
+        // Go 侧依赖这层应用编码;-bin 的线上编码另由传输层负责。
+        unaryRequest.metadata.emplace_back(key, Base64Encode(value));
     }
-    rpc.metadata.reserve(call->sentMetadata.size());
-    for (const auto& [key, value] : call->sentMetadata) {
-        // 应用层这一层 Base64 不能省:线上字节与改前一致,Go 侧按它解码、按原样回显(§4.2)。
-        rpc.metadata.emplace_back(key, Base64Encode(value));
-    }
-    rpc.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
-    channel->StartUnaryCall(std::move(rpc), [call](muduo_grpc::UnaryCallResult&& result) {
+    unaryRequest.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
+    channel->StartUnaryCall(std::move(unaryRequest), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
         GrpcCallOutcome outcome;
         outcome.code = result.status.code_value();
         outcome.message = result.status.message();
         outcome.initialMetadata = std::move(result.initialMetadata);
         outcome.trailingMetadata = std::move(result.trailingMetadata);
         if (!outcome.ok()) {
-            CompleteBattleNodeDestroyBattle(*call, outcome, nullptr);
+            done(outcome, nullptr);
             return;
         }
         ::Empty reply;
         if (!reply.ParseFromString(result.response)) {
             outcome.code = kGrpcStatusInternal;
             outcome.message = "failed to parse the BattleNode.DestroyBattle response";
-            CompleteBattleNodeDestroyBattle(*call, outcome, nullptr);
+            done(outcome, nullptr);
             return;
         }
-        CompleteBattleNodeDestroyBattle(*call, outcome, &reply);
+        done(outcome, &reply);
     });
 }
 
@@ -250,119 +259,85 @@ void SendBattleNodeDestroyBattle(entt::registry& registry, entt::entity nodeEnti
     StartBattleNodeDestroyBattleCall(registry, nodeEntity, request, options.metadata, options.deadline, std::move(done));
 }
 
-void SendBattleNodeDestroyBattle(entt::registry& registry, entt::entity nodeEntity, const ::DestroyBattleRequest& request) {
-    // 显式写出空 vector:另有 (request, GrpcDone, GrpcCallOptions) 重载,两个 {} 会有二义性。
-    SendBattleNodeDestroyBattle(registry, nodeEntity, request, std::vector<std::string>{}, std::vector<std::string>{});
-}
-
-void SendBattleNodeDestroyBattle(entt::registry& registry, entt::entity nodeEntity, const ::DestroyBattleRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues) {
-    const size_t count = std::min(metaKeys.size(), metaValues.size());
-    GrpcSentMetadata metadata;
-    metadata.reserve(count);
-    for (size_t i = 0; i < count; ++i) {
-        metadata.emplace_back(metaKeys[i], metaValues[i]);
+void SendBattleNodeDestroyBattleErased(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message,
+                                                  GrpcMessageDone done, const GrpcCallOptions& options) {
+    if (!done) {
+        LOG_FATAL << "gRPC BattleNode.DestroyBattle requires a done callback";
     }
-    StartBattleNodeDestroyBattleCall(registry, nodeEntity, request, std::move(metadata), std::chrono::milliseconds{0}, nullptr);
-}
-
-void SendBattleNodeDestroyBattle(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues) {
-    const ::DestroyBattleRequest& derived = static_cast<const ::DestroyBattleRequest&>(message);
-    SendBattleNodeDestroyBattle(registry, nodeEntity, derived, metaKeys, metaValues);
+    if (message.GetDescriptor() != ::DestroyBattleRequest::descriptor()) {
+        const auto requestTypeName = message.GetDescriptor()->full_name();
+        LOG_ERROR << "gRPC BattleNode.DestroyBattle: request type " << std::string(requestTypeName.data(), requestTypeName.size())
+                  << " does not match; not sent";
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
+            done(outcome, nullptr);
+        });
+        return;
+    }
+    // descriptor 相同仍可能是 DynamicMessage;进入 typed 路径前必须核对真实 C++ 类型。
+    const auto* typedRequest = dynamic_cast<const ::DestroyBattleRequest*>(&message);
+    if (typedRequest == nullptr) {
+        LOG_ERROR << "gRPC BattleNode.DestroyBattle: request C++ type does not match; not sent";
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
+            done(outcome, nullptr);
+        });
+        return;
+    }
+    StartBattleNodeDestroyBattleCall(registry, nodeEntity, *typedRequest, options.metadata, options.deadline,
+        [done = std::move(done)](const GrpcCallOutcome& outcome, const ::Empty* reply) { done(outcome, reply); });
 }
 #pragma endregion
 #pragma region BattleNodeAddObserver
-AsyncBattleNodeAddObserverHandlerFunctionType AsyncBattleNodeAddObserverHandler;
-AsyncBattleNodeAddObserverFailedHandlerFunctionType AsyncBattleNodeAddObserverFailedHandler;
-
 namespace {
-// 一次调用的状态:随完成回调走(shared_ptr),不进 ECS、不放对象池。
-// request 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
-struct BattleNodeAddObserverCall {
-    ::AddObserverRequest request;
-    GrpcSentMetadata sentMetadata;
-    // 每次调用回调;为空时走全局 AsyncBattleNodeAddObserverHandler / FailedHandler。
-    GrpcDone<::AddObserverResponse> done;
-};
-
-void CompleteBattleNodeAddObserver(const BattleNodeAddObserverCall& call, const GrpcCallOutcome& outcome,
-                                                const ::AddObserverResponse* reply) {
-    if (call.done) {
-        // 带每次调用回调的调用只交给它,不再走全局应答 / 失败处理器。reply 只在回调期间有效。
-        call.done(outcome, outcome.ok() ? reply : nullptr);
-        return;
-    }
-    if (outcome.ok()) {
-        if (AsyncBattleNodeAddObserverHandler) {
-            AsyncBattleNodeAddObserverHandler(outcome, *reply);
-        } else {
-            // 应答到了却没人收:2026-04 起换图应答就是这样静默丢了约 5 个月。每个方法每线程报一次;
-            // 确实不需要应答的调用方显式装一个空处理器。
-            thread_local bool reportedMissingHandler = false;
-            if (!reportedMissingHandler) {
-                reportedMissingHandler = true;
-                LOG_ERROR << "gRPC BattleNode.AddObserver reply dropped: AsyncBattleNodeAddObserverHandler is not installed"
-                          << " (install one, or an empty one if the reply is intentionally ignored)";
-            }
-        }
-    } else if (AsyncBattleNodeAddObserverFailedHandler) {
-        const GrpcCallFailure failure{ BattleNodeAddObserverMessageId, "BattleNode.AddObserver", outcome, call.sentMetadata};
-        AsyncBattleNodeAddObserverFailedHandler(failure, call.request);
-    } else {
-        LOG_ERROR << "gRPC BattleNode.AddObserver failed: code=" << outcome.code << " msg=" << outcome.message;
-    }
-}
-
-void QueueLocalBattleNodeAddObserverFailure(std::shared_ptr<BattleNodeAddObserverCall> call, uint32_t code, std::string message) {
-    QueueGrpcLocalCompletion([call = std::move(call), outcome = LocalFailure(code, std::move(message))] {
-        CompleteBattleNodeAddObserver(*call, outcome, nullptr);
+void QueueLocalBattleNodeAddObserverFailure(GrpcDone<::AddObserverResponse> done, uint32_t code, std::string message) {
+    QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(code, std::move(message))] {
+        done(outcome, nullptr);
     });
 }
 }
 
-// 所有 unary Send 重载的唯一发送入口。deadline <= 0 用本文件默认 deadline;done 为空走全局处理器。
+// 请求必须在这里同步序列化:gate 的共享原型在下次调用会被覆盖。
+// 若将来改成异步序列化,必须先恢复请求的独立副本。
 void StartBattleNodeAddObserverCall(entt::registry& registry, entt::entity nodeEntity, const ::AddObserverRequest& request,
                                              GrpcSentMetadata metadata, std::chrono::milliseconds deadline,
                                              GrpcDone<::AddObserverResponse> done) {
-    auto call = std::make_shared<BattleNodeAddObserverCall>();
-    call->request = request;
-    call->sentMetadata = std::move(metadata);
-    call->done = std::move(done);
-
+    if (!done) {
+        LOG_FATAL << "gRPC BattleNode.AddObserver requires a done callback";
+    }
+    muduo_grpc::UnaryCallRequest unaryRequest;
+    unaryRequest.method = std::string(kBattleNodeAddObserverGrpcPath);
+    if (!request.SerializeToString(&unaryRequest.message)) {
+        QueueLocalBattleNodeAddObserverFailure(std::move(done), kGrpcStatusInternal, "failed to serialize the request");
+        return;
+    }
     const auto channel = FindGrpcChannel(registry, nodeEntity);
     if (!channel) {
-        QueueLocalBattleNodeAddObserverFailure(std::move(call), kGrpcStatusUnavailable, "node transport missing or closing");
+        QueueLocalBattleNodeAddObserverFailure(std::move(done), kGrpcStatusUnavailable, "node transport missing or closing");
         return;
     }
-    muduo_grpc::UnaryCallRequest rpc;
-    rpc.method = std::string(kBattleNodeAddObserverGrpcPath);
-    if (!call->request.SerializeToString(&rpc.message)) {
-        QueueLocalBattleNodeAddObserverFailure(std::move(call), kGrpcStatusInternal, "failed to serialize the request");
-        return;
+    unaryRequest.metadata.reserve(metadata.size());
+    for (const auto& [key, value] : metadata) {
+        // Go 侧依赖这层应用编码;-bin 的线上编码另由传输层负责。
+        unaryRequest.metadata.emplace_back(key, Base64Encode(value));
     }
-    rpc.metadata.reserve(call->sentMetadata.size());
-    for (const auto& [key, value] : call->sentMetadata) {
-        // 应用层这一层 Base64 不能省:线上字节与改前一致,Go 侧按它解码、按原样回显(§4.2)。
-        rpc.metadata.emplace_back(key, Base64Encode(value));
-    }
-    rpc.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
-    channel->StartUnaryCall(std::move(rpc), [call](muduo_grpc::UnaryCallResult&& result) {
+    unaryRequest.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
+    channel->StartUnaryCall(std::move(unaryRequest), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
         GrpcCallOutcome outcome;
         outcome.code = result.status.code_value();
         outcome.message = result.status.message();
         outcome.initialMetadata = std::move(result.initialMetadata);
         outcome.trailingMetadata = std::move(result.trailingMetadata);
         if (!outcome.ok()) {
-            CompleteBattleNodeAddObserver(*call, outcome, nullptr);
+            done(outcome, nullptr);
             return;
         }
         ::AddObserverResponse reply;
         if (!reply.ParseFromString(result.response)) {
             outcome.code = kGrpcStatusInternal;
             outcome.message = "failed to parse the BattleNode.AddObserver response";
-            CompleteBattleNodeAddObserver(*call, outcome, nullptr);
+            done(outcome, nullptr);
             return;
         }
-        CompleteBattleNodeAddObserver(*call, outcome, &reply);
+        done(outcome, &reply);
     });
 }
 
@@ -371,119 +346,85 @@ void SendBattleNodeAddObserver(entt::registry& registry, entt::entity nodeEntity
     StartBattleNodeAddObserverCall(registry, nodeEntity, request, options.metadata, options.deadline, std::move(done));
 }
 
-void SendBattleNodeAddObserver(entt::registry& registry, entt::entity nodeEntity, const ::AddObserverRequest& request) {
-    // 显式写出空 vector:另有 (request, GrpcDone, GrpcCallOptions) 重载,两个 {} 会有二义性。
-    SendBattleNodeAddObserver(registry, nodeEntity, request, std::vector<std::string>{}, std::vector<std::string>{});
-}
-
-void SendBattleNodeAddObserver(entt::registry& registry, entt::entity nodeEntity, const ::AddObserverRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues) {
-    const size_t count = std::min(metaKeys.size(), metaValues.size());
-    GrpcSentMetadata metadata;
-    metadata.reserve(count);
-    for (size_t i = 0; i < count; ++i) {
-        metadata.emplace_back(metaKeys[i], metaValues[i]);
+void SendBattleNodeAddObserverErased(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message,
+                                                  GrpcMessageDone done, const GrpcCallOptions& options) {
+    if (!done) {
+        LOG_FATAL << "gRPC BattleNode.AddObserver requires a done callback";
     }
-    StartBattleNodeAddObserverCall(registry, nodeEntity, request, std::move(metadata), std::chrono::milliseconds{0}, nullptr);
-}
-
-void SendBattleNodeAddObserver(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues) {
-    const ::AddObserverRequest& derived = static_cast<const ::AddObserverRequest&>(message);
-    SendBattleNodeAddObserver(registry, nodeEntity, derived, metaKeys, metaValues);
+    if (message.GetDescriptor() != ::AddObserverRequest::descriptor()) {
+        const auto requestTypeName = message.GetDescriptor()->full_name();
+        LOG_ERROR << "gRPC BattleNode.AddObserver: request type " << std::string(requestTypeName.data(), requestTypeName.size())
+                  << " does not match; not sent";
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
+            done(outcome, nullptr);
+        });
+        return;
+    }
+    // descriptor 相同仍可能是 DynamicMessage;进入 typed 路径前必须核对真实 C++ 类型。
+    const auto* typedRequest = dynamic_cast<const ::AddObserverRequest*>(&message);
+    if (typedRequest == nullptr) {
+        LOG_ERROR << "gRPC BattleNode.AddObserver: request C++ type does not match; not sent";
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
+            done(outcome, nullptr);
+        });
+        return;
+    }
+    StartBattleNodeAddObserverCall(registry, nodeEntity, *typedRequest, options.metadata, options.deadline,
+        [done = std::move(done)](const GrpcCallOutcome& outcome, const ::AddObserverResponse* reply) { done(outcome, reply); });
 }
 #pragma endregion
 #pragma region BattleNodeRemoveObserver
-AsyncBattleNodeRemoveObserverHandlerFunctionType AsyncBattleNodeRemoveObserverHandler;
-AsyncBattleNodeRemoveObserverFailedHandlerFunctionType AsyncBattleNodeRemoveObserverFailedHandler;
-
 namespace {
-// 一次调用的状态:随完成回调走(shared_ptr),不进 ECS、不放对象池。
-// request 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
-struct BattleNodeRemoveObserverCall {
-    ::RemoveObserverRequest request;
-    GrpcSentMetadata sentMetadata;
-    // 每次调用回调;为空时走全局 AsyncBattleNodeRemoveObserverHandler / FailedHandler。
-    GrpcDone<::Empty> done;
-};
-
-void CompleteBattleNodeRemoveObserver(const BattleNodeRemoveObserverCall& call, const GrpcCallOutcome& outcome,
-                                                const ::Empty* reply) {
-    if (call.done) {
-        // 带每次调用回调的调用只交给它,不再走全局应答 / 失败处理器。reply 只在回调期间有效。
-        call.done(outcome, outcome.ok() ? reply : nullptr);
-        return;
-    }
-    if (outcome.ok()) {
-        if (AsyncBattleNodeRemoveObserverHandler) {
-            AsyncBattleNodeRemoveObserverHandler(outcome, *reply);
-        } else {
-            // 应答到了却没人收:2026-04 起换图应答就是这样静默丢了约 5 个月。每个方法每线程报一次;
-            // 确实不需要应答的调用方显式装一个空处理器。
-            thread_local bool reportedMissingHandler = false;
-            if (!reportedMissingHandler) {
-                reportedMissingHandler = true;
-                LOG_ERROR << "gRPC BattleNode.RemoveObserver reply dropped: AsyncBattleNodeRemoveObserverHandler is not installed"
-                          << " (install one, or an empty one if the reply is intentionally ignored)";
-            }
-        }
-    } else if (AsyncBattleNodeRemoveObserverFailedHandler) {
-        const GrpcCallFailure failure{ BattleNodeRemoveObserverMessageId, "BattleNode.RemoveObserver", outcome, call.sentMetadata};
-        AsyncBattleNodeRemoveObserverFailedHandler(failure, call.request);
-    } else {
-        LOG_ERROR << "gRPC BattleNode.RemoveObserver failed: code=" << outcome.code << " msg=" << outcome.message;
-    }
-}
-
-void QueueLocalBattleNodeRemoveObserverFailure(std::shared_ptr<BattleNodeRemoveObserverCall> call, uint32_t code, std::string message) {
-    QueueGrpcLocalCompletion([call = std::move(call), outcome = LocalFailure(code, std::move(message))] {
-        CompleteBattleNodeRemoveObserver(*call, outcome, nullptr);
+void QueueLocalBattleNodeRemoveObserverFailure(GrpcDone<::Empty> done, uint32_t code, std::string message) {
+    QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(code, std::move(message))] {
+        done(outcome, nullptr);
     });
 }
 }
 
-// 所有 unary Send 重载的唯一发送入口。deadline <= 0 用本文件默认 deadline;done 为空走全局处理器。
+// 请求必须在这里同步序列化:gate 的共享原型在下次调用会被覆盖。
+// 若将来改成异步序列化,必须先恢复请求的独立副本。
 void StartBattleNodeRemoveObserverCall(entt::registry& registry, entt::entity nodeEntity, const ::RemoveObserverRequest& request,
                                              GrpcSentMetadata metadata, std::chrono::milliseconds deadline,
                                              GrpcDone<::Empty> done) {
-    auto call = std::make_shared<BattleNodeRemoveObserverCall>();
-    call->request = request;
-    call->sentMetadata = std::move(metadata);
-    call->done = std::move(done);
-
+    if (!done) {
+        LOG_FATAL << "gRPC BattleNode.RemoveObserver requires a done callback";
+    }
+    muduo_grpc::UnaryCallRequest unaryRequest;
+    unaryRequest.method = std::string(kBattleNodeRemoveObserverGrpcPath);
+    if (!request.SerializeToString(&unaryRequest.message)) {
+        QueueLocalBattleNodeRemoveObserverFailure(std::move(done), kGrpcStatusInternal, "failed to serialize the request");
+        return;
+    }
     const auto channel = FindGrpcChannel(registry, nodeEntity);
     if (!channel) {
-        QueueLocalBattleNodeRemoveObserverFailure(std::move(call), kGrpcStatusUnavailable, "node transport missing or closing");
+        QueueLocalBattleNodeRemoveObserverFailure(std::move(done), kGrpcStatusUnavailable, "node transport missing or closing");
         return;
     }
-    muduo_grpc::UnaryCallRequest rpc;
-    rpc.method = std::string(kBattleNodeRemoveObserverGrpcPath);
-    if (!call->request.SerializeToString(&rpc.message)) {
-        QueueLocalBattleNodeRemoveObserverFailure(std::move(call), kGrpcStatusInternal, "failed to serialize the request");
-        return;
+    unaryRequest.metadata.reserve(metadata.size());
+    for (const auto& [key, value] : metadata) {
+        // Go 侧依赖这层应用编码;-bin 的线上编码另由传输层负责。
+        unaryRequest.metadata.emplace_back(key, Base64Encode(value));
     }
-    rpc.metadata.reserve(call->sentMetadata.size());
-    for (const auto& [key, value] : call->sentMetadata) {
-        // 应用层这一层 Base64 不能省:线上字节与改前一致,Go 侧按它解码、按原样回显(§4.2)。
-        rpc.metadata.emplace_back(key, Base64Encode(value));
-    }
-    rpc.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
-    channel->StartUnaryCall(std::move(rpc), [call](muduo_grpc::UnaryCallResult&& result) {
+    unaryRequest.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
+    channel->StartUnaryCall(std::move(unaryRequest), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
         GrpcCallOutcome outcome;
         outcome.code = result.status.code_value();
         outcome.message = result.status.message();
         outcome.initialMetadata = std::move(result.initialMetadata);
         outcome.trailingMetadata = std::move(result.trailingMetadata);
         if (!outcome.ok()) {
-            CompleteBattleNodeRemoveObserver(*call, outcome, nullptr);
+            done(outcome, nullptr);
             return;
         }
         ::Empty reply;
         if (!reply.ParseFromString(result.response)) {
             outcome.code = kGrpcStatusInternal;
             outcome.message = "failed to parse the BattleNode.RemoveObserver response";
-            CompleteBattleNodeRemoveObserver(*call, outcome, nullptr);
+            done(outcome, nullptr);
             return;
         }
-        CompleteBattleNodeRemoveObserver(*call, outcome, &reply);
+        done(outcome, &reply);
     });
 }
 
@@ -492,119 +433,85 @@ void SendBattleNodeRemoveObserver(entt::registry& registry, entt::entity nodeEnt
     StartBattleNodeRemoveObserverCall(registry, nodeEntity, request, options.metadata, options.deadline, std::move(done));
 }
 
-void SendBattleNodeRemoveObserver(entt::registry& registry, entt::entity nodeEntity, const ::RemoveObserverRequest& request) {
-    // 显式写出空 vector:另有 (request, GrpcDone, GrpcCallOptions) 重载,两个 {} 会有二义性。
-    SendBattleNodeRemoveObserver(registry, nodeEntity, request, std::vector<std::string>{}, std::vector<std::string>{});
-}
-
-void SendBattleNodeRemoveObserver(entt::registry& registry, entt::entity nodeEntity, const ::RemoveObserverRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues) {
-    const size_t count = std::min(metaKeys.size(), metaValues.size());
-    GrpcSentMetadata metadata;
-    metadata.reserve(count);
-    for (size_t i = 0; i < count; ++i) {
-        metadata.emplace_back(metaKeys[i], metaValues[i]);
+void SendBattleNodeRemoveObserverErased(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message,
+                                                  GrpcMessageDone done, const GrpcCallOptions& options) {
+    if (!done) {
+        LOG_FATAL << "gRPC BattleNode.RemoveObserver requires a done callback";
     }
-    StartBattleNodeRemoveObserverCall(registry, nodeEntity, request, std::move(metadata), std::chrono::milliseconds{0}, nullptr);
-}
-
-void SendBattleNodeRemoveObserver(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues) {
-    const ::RemoveObserverRequest& derived = static_cast<const ::RemoveObserverRequest&>(message);
-    SendBattleNodeRemoveObserver(registry, nodeEntity, derived, metaKeys, metaValues);
+    if (message.GetDescriptor() != ::RemoveObserverRequest::descriptor()) {
+        const auto requestTypeName = message.GetDescriptor()->full_name();
+        LOG_ERROR << "gRPC BattleNode.RemoveObserver: request type " << std::string(requestTypeName.data(), requestTypeName.size())
+                  << " does not match; not sent";
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
+            done(outcome, nullptr);
+        });
+        return;
+    }
+    // descriptor 相同仍可能是 DynamicMessage;进入 typed 路径前必须核对真实 C++ 类型。
+    const auto* typedRequest = dynamic_cast<const ::RemoveObserverRequest*>(&message);
+    if (typedRequest == nullptr) {
+        LOG_ERROR << "gRPC BattleNode.RemoveObserver: request C++ type does not match; not sent";
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
+            done(outcome, nullptr);
+        });
+        return;
+    }
+    StartBattleNodeRemoveObserverCall(registry, nodeEntity, *typedRequest, options.metadata, options.deadline,
+        [done = std::move(done)](const GrpcCallOutcome& outcome, const ::Empty* reply) { done(outcome, reply); });
 }
 #pragma endregion
 #pragma region BattleNodeIssueBattleTicket
-AsyncBattleNodeIssueBattleTicketHandlerFunctionType AsyncBattleNodeIssueBattleTicketHandler;
-AsyncBattleNodeIssueBattleTicketFailedHandlerFunctionType AsyncBattleNodeIssueBattleTicketFailedHandler;
-
 namespace {
-// 一次调用的状态:随完成回调走(shared_ptr),不进 ECS、不放对象池。
-// request 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
-struct BattleNodeIssueBattleTicketCall {
-    ::IssueBattleTicketRequest request;
-    GrpcSentMetadata sentMetadata;
-    // 每次调用回调;为空时走全局 AsyncBattleNodeIssueBattleTicketHandler / FailedHandler。
-    GrpcDone<::IssueBattleTicketResponse> done;
-};
-
-void CompleteBattleNodeIssueBattleTicket(const BattleNodeIssueBattleTicketCall& call, const GrpcCallOutcome& outcome,
-                                                const ::IssueBattleTicketResponse* reply) {
-    if (call.done) {
-        // 带每次调用回调的调用只交给它,不再走全局应答 / 失败处理器。reply 只在回调期间有效。
-        call.done(outcome, outcome.ok() ? reply : nullptr);
-        return;
-    }
-    if (outcome.ok()) {
-        if (AsyncBattleNodeIssueBattleTicketHandler) {
-            AsyncBattleNodeIssueBattleTicketHandler(outcome, *reply);
-        } else {
-            // 应答到了却没人收:2026-04 起换图应答就是这样静默丢了约 5 个月。每个方法每线程报一次;
-            // 确实不需要应答的调用方显式装一个空处理器。
-            thread_local bool reportedMissingHandler = false;
-            if (!reportedMissingHandler) {
-                reportedMissingHandler = true;
-                LOG_ERROR << "gRPC BattleNode.IssueBattleTicket reply dropped: AsyncBattleNodeIssueBattleTicketHandler is not installed"
-                          << " (install one, or an empty one if the reply is intentionally ignored)";
-            }
-        }
-    } else if (AsyncBattleNodeIssueBattleTicketFailedHandler) {
-        const GrpcCallFailure failure{ BattleNodeIssueBattleTicketMessageId, "BattleNode.IssueBattleTicket", outcome, call.sentMetadata};
-        AsyncBattleNodeIssueBattleTicketFailedHandler(failure, call.request);
-    } else {
-        LOG_ERROR << "gRPC BattleNode.IssueBattleTicket failed: code=" << outcome.code << " msg=" << outcome.message;
-    }
-}
-
-void QueueLocalBattleNodeIssueBattleTicketFailure(std::shared_ptr<BattleNodeIssueBattleTicketCall> call, uint32_t code, std::string message) {
-    QueueGrpcLocalCompletion([call = std::move(call), outcome = LocalFailure(code, std::move(message))] {
-        CompleteBattleNodeIssueBattleTicket(*call, outcome, nullptr);
+void QueueLocalBattleNodeIssueBattleTicketFailure(GrpcDone<::IssueBattleTicketResponse> done, uint32_t code, std::string message) {
+    QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(code, std::move(message))] {
+        done(outcome, nullptr);
     });
 }
 }
 
-// 所有 unary Send 重载的唯一发送入口。deadline <= 0 用本文件默认 deadline;done 为空走全局处理器。
+// 请求必须在这里同步序列化:gate 的共享原型在下次调用会被覆盖。
+// 若将来改成异步序列化,必须先恢复请求的独立副本。
 void StartBattleNodeIssueBattleTicketCall(entt::registry& registry, entt::entity nodeEntity, const ::IssueBattleTicketRequest& request,
                                              GrpcSentMetadata metadata, std::chrono::milliseconds deadline,
                                              GrpcDone<::IssueBattleTicketResponse> done) {
-    auto call = std::make_shared<BattleNodeIssueBattleTicketCall>();
-    call->request = request;
-    call->sentMetadata = std::move(metadata);
-    call->done = std::move(done);
-
+    if (!done) {
+        LOG_FATAL << "gRPC BattleNode.IssueBattleTicket requires a done callback";
+    }
+    muduo_grpc::UnaryCallRequest unaryRequest;
+    unaryRequest.method = std::string(kBattleNodeIssueBattleTicketGrpcPath);
+    if (!request.SerializeToString(&unaryRequest.message)) {
+        QueueLocalBattleNodeIssueBattleTicketFailure(std::move(done), kGrpcStatusInternal, "failed to serialize the request");
+        return;
+    }
     const auto channel = FindGrpcChannel(registry, nodeEntity);
     if (!channel) {
-        QueueLocalBattleNodeIssueBattleTicketFailure(std::move(call), kGrpcStatusUnavailable, "node transport missing or closing");
+        QueueLocalBattleNodeIssueBattleTicketFailure(std::move(done), kGrpcStatusUnavailable, "node transport missing or closing");
         return;
     }
-    muduo_grpc::UnaryCallRequest rpc;
-    rpc.method = std::string(kBattleNodeIssueBattleTicketGrpcPath);
-    if (!call->request.SerializeToString(&rpc.message)) {
-        QueueLocalBattleNodeIssueBattleTicketFailure(std::move(call), kGrpcStatusInternal, "failed to serialize the request");
-        return;
+    unaryRequest.metadata.reserve(metadata.size());
+    for (const auto& [key, value] : metadata) {
+        // Go 侧依赖这层应用编码;-bin 的线上编码另由传输层负责。
+        unaryRequest.metadata.emplace_back(key, Base64Encode(value));
     }
-    rpc.metadata.reserve(call->sentMetadata.size());
-    for (const auto& [key, value] : call->sentMetadata) {
-        // 应用层这一层 Base64 不能省:线上字节与改前一致,Go 侧按它解码、按原样回显(§4.2)。
-        rpc.metadata.emplace_back(key, Base64Encode(value));
-    }
-    rpc.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
-    channel->StartUnaryCall(std::move(rpc), [call](muduo_grpc::UnaryCallResult&& result) {
+    unaryRequest.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
+    channel->StartUnaryCall(std::move(unaryRequest), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
         GrpcCallOutcome outcome;
         outcome.code = result.status.code_value();
         outcome.message = result.status.message();
         outcome.initialMetadata = std::move(result.initialMetadata);
         outcome.trailingMetadata = std::move(result.trailingMetadata);
         if (!outcome.ok()) {
-            CompleteBattleNodeIssueBattleTicket(*call, outcome, nullptr);
+            done(outcome, nullptr);
             return;
         }
         ::IssueBattleTicketResponse reply;
         if (!reply.ParseFromString(result.response)) {
             outcome.code = kGrpcStatusInternal;
             outcome.message = "failed to parse the BattleNode.IssueBattleTicket response";
-            CompleteBattleNodeIssueBattleTicket(*call, outcome, nullptr);
+            done(outcome, nullptr);
             return;
         }
-        CompleteBattleNodeIssueBattleTicket(*call, outcome, &reply);
+        done(outcome, &reply);
     });
 }
 
@@ -613,82 +520,33 @@ void SendBattleNodeIssueBattleTicket(entt::registry& registry, entt::entity node
     StartBattleNodeIssueBattleTicketCall(registry, nodeEntity, request, options.metadata, options.deadline, std::move(done));
 }
 
-void SendBattleNodeIssueBattleTicket(entt::registry& registry, entt::entity nodeEntity, const ::IssueBattleTicketRequest& request) {
-    // 显式写出空 vector:另有 (request, GrpcDone, GrpcCallOptions) 重载,两个 {} 会有二义性。
-    SendBattleNodeIssueBattleTicket(registry, nodeEntity, request, std::vector<std::string>{}, std::vector<std::string>{});
-}
-
-void SendBattleNodeIssueBattleTicket(entt::registry& registry, entt::entity nodeEntity, const ::IssueBattleTicketRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues) {
-    const size_t count = std::min(metaKeys.size(), metaValues.size());
-    GrpcSentMetadata metadata;
-    metadata.reserve(count);
-    for (size_t i = 0; i < count; ++i) {
-        metadata.emplace_back(metaKeys[i], metaValues[i]);
+void SendBattleNodeIssueBattleTicketErased(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message,
+                                                  GrpcMessageDone done, const GrpcCallOptions& options) {
+    if (!done) {
+        LOG_FATAL << "gRPC BattleNode.IssueBattleTicket requires a done callback";
     }
-    StartBattleNodeIssueBattleTicketCall(registry, nodeEntity, request, std::move(metadata), std::chrono::milliseconds{0}, nullptr);
-}
-
-void SendBattleNodeIssueBattleTicket(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues) {
-    const ::IssueBattleTicketRequest& derived = static_cast<const ::IssueBattleTicketRequest&>(message);
-    SendBattleNodeIssueBattleTicket(registry, nodeEntity, derived, metaKeys, metaValues);
+    if (message.GetDescriptor() != ::IssueBattleTicketRequest::descriptor()) {
+        const auto requestTypeName = message.GetDescriptor()->full_name();
+        LOG_ERROR << "gRPC BattleNode.IssueBattleTicket: request type " << std::string(requestTypeName.data(), requestTypeName.size())
+                  << " does not match; not sent";
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
+            done(outcome, nullptr);
+        });
+        return;
+    }
+    // descriptor 相同仍可能是 DynamicMessage;进入 typed 路径前必须核对真实 C++ 类型。
+    const auto* typedRequest = dynamic_cast<const ::IssueBattleTicketRequest*>(&message);
+    if (typedRequest == nullptr) {
+        LOG_ERROR << "gRPC BattleNode.IssueBattleTicket: request C++ type does not match; not sent";
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
+            done(outcome, nullptr);
+        });
+        return;
+    }
+    StartBattleNodeIssueBattleTicketCall(registry, nodeEntity, *typedRequest, options.metadata, options.deadline,
+        [done = std::move(done)](const GrpcCallOutcome& outcome, const ::IssueBattleTicketResponse* reply) { done(outcome, reply); });
 }
 #pragma endregion
-
-void SetBattleNodeHandler(const std::function<void(const GrpcReplyContext&, const ::google::protobuf::Message& reply)>& handler) {
-    AsyncBattleNodeCreateBattleHandler = handler;
-    AsyncBattleNodeDestroyBattleHandler = handler;
-    AsyncBattleNodeAddObserverHandler = handler;
-    AsyncBattleNodeRemoveObserverHandler = handler;
-    AsyncBattleNodeIssueBattleTicketHandler = handler;
-    (void)handler;
-}
-
-void SetBattleNodeIfEmptyHandler(const std::function<void(const GrpcReplyContext&, const ::google::protobuf::Message& reply)>& handler) {
-    if (!AsyncBattleNodeCreateBattleHandler) {
-        AsyncBattleNodeCreateBattleHandler = handler;
-    }
-    if (!AsyncBattleNodeDestroyBattleHandler) {
-        AsyncBattleNodeDestroyBattleHandler = handler;
-    }
-    if (!AsyncBattleNodeAddObserverHandler) {
-        AsyncBattleNodeAddObserverHandler = handler;
-    }
-    if (!AsyncBattleNodeRemoveObserverHandler) {
-        AsyncBattleNodeRemoveObserverHandler = handler;
-    }
-    if (!AsyncBattleNodeIssueBattleTicketHandler) {
-        AsyncBattleNodeIssueBattleTicketHandler = handler;
-    }
-    (void)handler;
-}
-
-void SetBattleNodeFailedHandler(const std::function<void(const GrpcCallFailure&, const ::google::protobuf::Message& request)>& handler) {
-    AsyncBattleNodeCreateBattleFailedHandler = handler;
-    AsyncBattleNodeDestroyBattleFailedHandler = handler;
-    AsyncBattleNodeAddObserverFailedHandler = handler;
-    AsyncBattleNodeRemoveObserverFailedHandler = handler;
-    AsyncBattleNodeIssueBattleTicketFailedHandler = handler;
-    (void)handler;
-}
-
-void SetBattleNodeIfEmptyFailedHandler(const std::function<void(const GrpcCallFailure&, const ::google::protobuf::Message& request)>& handler) {
-    if (!AsyncBattleNodeCreateBattleFailedHandler) {
-        AsyncBattleNodeCreateBattleFailedHandler = handler;
-    }
-    if (!AsyncBattleNodeDestroyBattleFailedHandler) {
-        AsyncBattleNodeDestroyBattleFailedHandler = handler;
-    }
-    if (!AsyncBattleNodeAddObserverFailedHandler) {
-        AsyncBattleNodeAddObserverFailedHandler = handler;
-    }
-    if (!AsyncBattleNodeRemoveObserverFailedHandler) {
-        AsyncBattleNodeRemoveObserverFailedHandler = handler;
-    }
-    if (!AsyncBattleNodeIssueBattleTicketFailedHandler) {
-        AsyncBattleNodeIssueBattleTicketFailedHandler = handler;
-    }
-    (void)handler;
-}
 
 void SetBattleNodeCallDeadline(std::chrono::milliseconds deadline) {
     callDeadlineMs.store(static_cast<uint32_t>(deadline.count()), std::memory_order_relaxed);

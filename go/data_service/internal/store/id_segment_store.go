@@ -44,7 +44,7 @@ const (
 // 邮件 mail(docs/design/mail-system.md §3.7),
 // 与 config.DefaultIdSegmentBootstrapTags **必须一致**(config 包不能被本包 import,反向也不行)。
 // 迁移路径以 config 的 EffectiveBootstrapTags 为准;这份给 main 的 -migrate 摘要和测试用。
-var DefaultIdSegmentBootstrapTags = []string{"player", "guild", "item", "txlog", "snapshot", "trade_listing", "guild_asset_op", "friend_request", "mail"}
+var DefaultIdSegmentBootstrapTags = []string{"player", "guild", "item", "txlog", "snapshot", "trade_listing", "guild_asset_op", "friend_request", "trade_asset_op", "mail", "mail_asset_op", "rank_board", "rank_settlement", "rank_reward"}
 
 var (
 	// ErrIdSegmentExhausted:max_id + step 会越过 2^55,fail-closed,表状态零变更。

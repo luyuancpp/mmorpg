@@ -1,11 +1,11 @@
 #requires -Version 7
 <#
 .SYNOPSIS
-    邮件 MailAdmin 共享令牌(docs/design/mail-system.md §2.3 / §7.2)**本机开发值**的唯一来源。
+    邮件 MailAdmin admin 生产者签名密钥(docs/design/mail-system.md §2.3 / §7.2)**本机开发值**的唯一来源。
 
 .DESCRIPTION
     MailAdmin(SendPersonalMail / SendSystemMail)只认 gRPC metadata x-mail-admin-token 与进程环境变量
-    MMORPG_MAIL_ADMIN_TOKEN 逐字节一致的调用;变量缺失或去首尾空白后不足 32 字节,mail 把 MailAdmin 整个停用
+    MAIL_PRODUCER_SECRET_ADMIN 逐字节一致的调用;变量缺失或去首尾空白后不足 32 字节,mail 把 MailAdmin 整个停用
     (启动横幅 mail_admin=disabled,所有调用回 PermissionDenied)。本机要发信的有三方,必须拿到**同一把**:
       - mail 进程(由 go_services.ps1 的 Start-ServiceInstance 注入,只给 mail);
       - 运维 CLI go/mail/cmd/mailadmin(从同名环境变量读);
@@ -13,12 +13,12 @@
     所以本机必须有一份跨进程一致的值 —— 这正是本文件存在的理由。
 
     值不写死在脚本里:令牌不进仓库、不进日志、不进指标、不进错误文本(AGENTS §11.3)。
-    值只在本机生成一次,落在 run/secrets/mail-admin-dev.env;`run/*` 在 .gitignore 里,永远不会被提交。
+    值只在本机生成一次,落在 run/secrets/mail-admin-producer-dev.env;`run/*` 在 .gitignore 里,永远不会被提交。
     删掉那个文件会重新生成新值 —— 此时 mail 要重启,正在跑 robot / CLI 的 shell 也要重新取一次令牌。
 
     生成的值是 64 个十六进制字符,刻意不含空白(Go 侧 strings.TrimSpace 后再比长度,不给口径差异留机会)。
 
-    **仅限本机 dev 的约定**。预发 / 生产的令牌由部署侧从环境变量 MMORPG_MAIL_ADMIN_TOKEN 读入、
+    **仅限本机 dev 的约定**。预发 / 生产的令牌由部署侧从环境变量 MAIL_PRODUCER_SECRET_ADMIN 读入、
     经 Secret mail-admin-auth 注入容器(k8s_deploy.ps1),部署链从不调用本文件的任何函数。
 
     调用方(tools/scripts/go_services.ps1)的用法:
@@ -41,7 +41,7 @@
 Set-StrictMode -Off
 
 # 与 go/mail/internal/config/config.go 的 AdminTokenEnv 逐字一致(Go 侧写死这个名字,ConfigMap / yaml 一个字都不写)。
-$script:MailAdminDevTokenEnvName = 'MMORPG_MAIL_ADMIN_TOKEN'
+$script:MailAdminDevTokenEnvName = 'MAIL_PRODUCER_SECRET_ADMIN'
 
 # 与 go/mail/internal/config/config.go 的 MinAdminTokenBytes 同值。去首尾空白后不足这么长视同**未配置**,
 # mail 静默停用 MailAdmin —— 所以本机兜底值必须显著长于它。
@@ -62,10 +62,10 @@ $script:MailAdminDevTokenRepoMarker = 'go/mail/etc/mail.yaml'
 function Get-MailAdminDevTokenStorePath {
     <#
     .SYNOPSIS
-        本机开发令牌文件的路径(run/secrets/mail-admin-dev.env,已被 .gitignore 的 `run/*` 覆盖)。
+        本机开发签名密钥文件的路径(run/secrets/mail-admin-producer-dev.env,已被 .gitignore 的 `run/*` 覆盖)。
     #>
     param([Parameter(Mandatory = $true)][string]$RepoRoot)
-    return (Join-Path $RepoRoot 'run/secrets/mail-admin-dev.env')
+    return (Join-Path $RepoRoot 'run/secrets/mail-admin-producer-dev.env')
 }
 
 function Assert-MailAdminDevTokenRepoRoot {
@@ -80,14 +80,14 @@ function Assert-MailAdminDevTokenRepoRoot {
     param([Parameter(Mandatory = $true)][string]$RepoRoot)
     $marker = Join-Path $RepoRoot $script:MailAdminDevTokenRepoMarker
     if (-not (Test-Path -LiteralPath $marker -PathType Leaf)) {
-        throw "mail_admin_dev_token: '$RepoRoot' does not look like the repository root ($($script:MailAdminDevTokenRepoMarker) not found); refusing to create run/secrets/mail-admin-dev.env there. Call Initialize-MailAdminDevToken without -RepoRoot to use the repository this library belongs to."
+        throw "mail_admin_dev_token: '$RepoRoot' does not look like the repository root ($($script:MailAdminDevTokenRepoMarker) not found); refusing to create run/secrets/mail-admin-producer-dev.env there. Call Initialize-MailAdminDevToken without -RepoRoot to use the repository this library belongs to."
     }
 }
 
 function Backup-MailAdminDevToken {
     <#
     .SYNOPSIS
-        记下当前进程里 MMORPG_MAIL_ADMIN_TOKEN 的原值,供 Restore 还原。
+        记下当前进程里 MAIL_PRODUCER_SECRET_ADMIN 的原值,供 Restore 还原。
     .DESCRIPTION
         返回值**包一层哈希表**:单变量若直接返回字符串,"原本没设"($null)就和"没备份过"($null)分不开,
         Restore 会在入口的 $null 判断处直接返回,把注入的令牌留在父进程里。
@@ -114,7 +114,7 @@ function Restore-MailAdminDevToken {
 function New-MailAdminDevTokenValue {
     <#
     .SYNOPSIS
-        生成一把本机开发令牌(64 个十六进制字符)。用密码学随机源,不是 Get-Random。
+        生成一把本机开发签名密钥(64 个十六进制字符)。用密码学随机源,不是 Get-Random。
     #>
     $bytes = [byte[]]::new($script:MailAdminDevTokenRandomBytes)
     [System.Security.Cryptography.RandomNumberGenerator]::Fill($bytes)
@@ -125,9 +125,9 @@ function New-MailAdminDevTokenValue {
 function Read-MailAdminDevTokenStore {
     <#
     .SYNOPSIS
-        读 run/secrets/mail-admin-dev.env,返回令牌字符串;文件不在、读不动或值不足 32 字符返回 $null。
+        读 run/secrets/mail-admin-producer-dev.env,返回令牌字符串;文件不在、读不动或值不足 32 字符返回 $null。
     .DESCRIPTION
-        只认 `MMORPG_MAIL_ADMIN_TOKEN=<值>` 这一行,`#` 开头是注释。**不做任何回显**:返回值就是令牌,
+        只认 `MAIL_PRODUCER_SECRET_ADMIN=<值>` 这一行,`#` 开头是注释。**不做任何回显**:返回值就是令牌,
         调用方除了塞进子进程环境之外不许拿它做别的事。
     #>
     param([Parameter(Mandatory = $true)][string]$Path)
@@ -155,7 +155,7 @@ function Read-MailAdminDevTokenStore {
 function Write-MailAdminDevTokenStore {
     <#
     .SYNOPSIS
-        把令牌写回 run/secrets/mail-admin-dev.env(整文件重写,自带说明抬头)。
+        把令牌写回 run/secrets/mail-admin-producer-dev.env(整文件重写,自带说明抬头)。
     #>
     param(
         [Parameter(Mandatory = $true)][string]$Path,
@@ -165,7 +165,7 @@ function Write-MailAdminDevTokenStore {
     if (-not (Test-Path -LiteralPath $dir)) { New-Item -ItemType Directory -Path $dir -Force | Out-Null }
 
     $lines = New-Object System.Collections.Generic.List[string]
-    $lines.Add('# 邮件 MailAdmin 的**本机开发令牌**,由 tools/scripts/lib/mail_admin_dev_token.ps1 首次运行时随机生成。')
+    $lines.Add('# 邮件 MailAdmin 的**本机开发签名密钥**,由 tools/scripts/lib/mail_admin_dev_token.ps1 首次运行时随机生成。')
     $lines.Add('# 仅限本机 dev:预发 / 生产的令牌由部署侧注入(k8s_deploy.ps1 → Secret mail-admin-auth)。')
     $lines.Add('# run/* 在 .gitignore 里,本文件不会进仓库;不要手工拷贝到别的机器或别的环境。')
     $lines.Add('# 删掉本文件会重新生成新值 —— mail 要重启,正在跑 robot mail-smoke / mailadmin CLI 的 shell 也要重新取令牌。')
@@ -182,7 +182,7 @@ function Initialize-MailAdminDevToken {
     .DESCRIPTION
         取值优先级(与 assetop_dev_secret.ps1 同一条"只在没设时兜底"):
           1. 调用者已经显式设好且足够长的环境变量 —— 原样保留,一个字节都不改,也不碰文件;
-          2. run/secrets/mail-admin-dev.env 里已有的值 —— 复用,保证 mail 与 robot / CLI 拿到同一把;
+          2. run/secrets/mail-admin-producer-dev.env 里已有的值 —— 复用,保证 mail 与 robot / CLI 拿到同一把;
           3. 都没有 —— 随机生成并写入该文件。
 
         跨进程并发(多 zone 同时起 mail)用命名互斥量串起来:两个进程各生成一把不同的值再互相覆盖,
@@ -228,7 +228,7 @@ function Initialize-MailAdminDevToken {
     if (-not $script:MailAdminDevTokenAnnounced) {
         $script:MailAdminDevTokenAnnounced = $true
         # 只说出处,**不回显值**;相对路径让人知道去哪删,不至于以为它进了仓库。
-        Write-Host "[mail] Injected local MailAdmin development token (value hidden; loaded from run/secrets/mail-admin-dev.env; local dev only)" -ForegroundColor DarkGray
+        Write-Host "[mail] Injected local MailAdmin admin producer development secret (value hidden; loaded from run/secrets/mail-admin-producer-dev.env; local dev only)" -ForegroundColor DarkGray
     }
     return 1
 }

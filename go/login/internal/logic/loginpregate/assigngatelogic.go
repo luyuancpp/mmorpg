@@ -48,6 +48,8 @@ func NewAssignGateLogic(ctx context.Context, svcCtx *svc.ServiceContext) *Assign
 //  1. Reentry: req.queue_token already in queue
 //     → ParseAndVerifyQueueToken, Lookup, return current state
 //     (returns ADMITTED if dispatcher already promoted, else QUEUEING).
+//     (2026-10-18 补注:也可能回 EXPIRED——admit_window_passed / meta_gone / queue_gone,
+//     判定顺序见 loginqueue.Queue.Lookup;传给 Lookup 的 zone 一律取自已验签的令牌。)
 //  2. Reconnect/replace exemption: caller already has a live PlayerSession
 //     → bypass queue, sign gate token bound to the existing gate.
 //     (Disabled when Queue.Enabled=false; reconnect handling is unchanged.)
@@ -149,7 +151,10 @@ func (l *AssignGateLogic) AssignGate(in *loginpb.AssignGateRequest) (*loginpb.As
 // verification map to EXPIRED so the client falls back to a fresh
 // /assign-gate call.
 func (l *AssignGateLogic) handleReentry(token string) (*loginpb.AssignGateResponse, error) {
-	if _, _, err := loginqueue.ParseAndVerifyQueueTokenMulti(l.svcCtx.QueueTokenVerifySecrets(), token); err != nil {
+	// zoneID 必须取自已验签的排队令牌:Lookup 拿它拼队列键并核对 meta.zone_id(2026-10-18),
+	// 不得用请求里的 zone 或常量代替;传 0 会被当成损坏、回 EXPIRED(meta_gone)。
+	_, zoneID, err := loginqueue.ParseAndVerifyQueueTokenMulti(l.svcCtx.QueueTokenVerifySecrets(), token)
+	if err != nil {
 		logx.Infof("[loginqueue] reentry token rejected: %v", err)
 		return &loginpb.AssignGateResponse{Status: uint32(loginqueue.StatusExpired), Error: err.Error()}, nil
 	}
@@ -164,7 +169,7 @@ func (l *AssignGateLogic) handleReentry(token string) (*loginpb.AssignGateRespon
 			ZoneID: slot.ZoneID,
 		}, l.svcCtx.GateTokenSigningSecret(), gateTokenTTL)
 	}
-	state, err := l.svcCtx.LoginQueue.Lookup(l.ctx, token, signFn)
+	state, err := l.svcCtx.LoginQueue.Lookup(l.ctx, token, zoneID, signFn)
 	if err != nil {
 		return &loginpb.AssignGateResponse{Status: uint32(loginqueue.StatusError), Error: "queue lookup failed"}, nil
 	}

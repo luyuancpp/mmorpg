@@ -12,4 +12,4 @@ const (
 	ID_7 = 6
 )
 
-const MaxBitIndex = 7
+const BitmapCapacity = 7

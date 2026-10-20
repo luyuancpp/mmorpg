@@ -45,11 +45,12 @@ func (l *LeaveGameLogic) LeaveGame(in *login_proto.LeaveGameRequest) (*login_pro
 		}
 	}
 
-	cleanupLoginSessionState(l.ctx, l.svcCtx, sessionDetails.SessionId, "leave")
+	cleanupLoginSessionState(l.ctx, l.svcCtx, sessionDetails, "leave")
 
 	// Remove player session from Redis (replaces Centre notification)
+	// 带上本连接所在的 gate 实例号,语义同 Disconnect(docs/design/scene-enter-chain-residuals.md §6)。
 	for _, playerID := range sessionPlayersToSettle(sessionDetails.PlayerId, bound) {
-		deletePlayerSession(l.ctx, l.svcCtx, playerID, sessionDetails.SessionId)
+		deletePlayerSession(l.ctx, l.svcCtx, playerID, sessionDetails.SessionId, sessionDetails.GetGateInstanceId())
 	}
 
 	return resp, nil

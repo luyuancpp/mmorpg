@@ -51,6 +51,54 @@ public final class TradeErrorTip extends com.google.protobuf.GeneratedFile {
      * <code>kTradeFeatureDisabled = 20003;</code>
      */
     kTradeFeatureDisabled(20003),
+    /**
+     * <code>kTradeOrderNotFound = 20004;</code>
+     */
+    kTradeOrderNotFound(20004),
+    /**
+     * <code>kTradeOrderStateConflict = 20005;</code>
+     */
+    kTradeOrderStateConflict(20005),
+    /**
+     * <code>kTradeRequestConflict = 20006;</code>
+     */
+    kTradeRequestConflict(20006),
+    /**
+     * <code>kTradeOrderLimit = 20007;</code>
+     */
+    kTradeOrderLimit(20007),
+    /**
+     * <code>kTradeCannotTradeSelf = 20008;</code>
+     */
+    kTradeCannotTradeSelf(20008),
+    /**
+     * <code>kTradeCounterpartyUnknown = 20009;</code>
+     */
+    kTradeCounterpartyUnknown(20009),
+    /**
+     * <code>kTradeInsufficientAsset = 20010;</code>
+     */
+    kTradeInsufficientAsset(20010),
+    /**
+     * <code>kTradeBidTooLow = 20011;</code>
+     */
+    kTradeBidTooLow(20011),
+    /**
+     * <code>kTradeAuctionEnded = 20012;</code>
+     */
+    kTradeAuctionEnded(20012),
+    /**
+     * <code>kTradeAssetDeliveryPending = 20013;</code>
+     */
+    kTradeAssetDeliveryPending(20013),
+    /**
+     * <code>kTradeManualReview = 20014;</code>
+     */
+    kTradeManualReview(20014),
+    /**
+     * <code>kTradeAssetNotTradable = 20015;</code>
+     */
+    kTradeAssetNotTradable(20015),
     UNRECOGNIZED(-1),
     ;
 
@@ -83,6 +131,54 @@ public final class TradeErrorTip extends com.google.protobuf.GeneratedFile {
      * <code>kTradeFeatureDisabled = 20003;</code>
      */
     public static final int kTradeFeatureDisabled_VALUE = 20003;
+    /**
+     * <code>kTradeOrderNotFound = 20004;</code>
+     */
+    public static final int kTradeOrderNotFound_VALUE = 20004;
+    /**
+     * <code>kTradeOrderStateConflict = 20005;</code>
+     */
+    public static final int kTradeOrderStateConflict_VALUE = 20005;
+    /**
+     * <code>kTradeRequestConflict = 20006;</code>
+     */
+    public static final int kTradeRequestConflict_VALUE = 20006;
+    /**
+     * <code>kTradeOrderLimit = 20007;</code>
+     */
+    public static final int kTradeOrderLimit_VALUE = 20007;
+    /**
+     * <code>kTradeCannotTradeSelf = 20008;</code>
+     */
+    public static final int kTradeCannotTradeSelf_VALUE = 20008;
+    /**
+     * <code>kTradeCounterpartyUnknown = 20009;</code>
+     */
+    public static final int kTradeCounterpartyUnknown_VALUE = 20009;
+    /**
+     * <code>kTradeInsufficientAsset = 20010;</code>
+     */
+    public static final int kTradeInsufficientAsset_VALUE = 20010;
+    /**
+     * <code>kTradeBidTooLow = 20011;</code>
+     */
+    public static final int kTradeBidTooLow_VALUE = 20011;
+    /**
+     * <code>kTradeAuctionEnded = 20012;</code>
+     */
+    public static final int kTradeAuctionEnded_VALUE = 20012;
+    /**
+     * <code>kTradeAssetDeliveryPending = 20013;</code>
+     */
+    public static final int kTradeAssetDeliveryPending_VALUE = 20013;
+    /**
+     * <code>kTradeManualReview = 20014;</code>
+     */
+    public static final int kTradeManualReview_VALUE = 20014;
+    /**
+     * <code>kTradeAssetNotTradable = 20015;</code>
+     */
+    public static final int kTradeAssetNotTradable_VALUE = 20015;
 
 
     public final int getNumber() {
@@ -114,6 +210,18 @@ public final class TradeErrorTip extends com.google.protobuf.GeneratedFile {
         case 20001: return kTradeHomeZoneUnknown;
         case 20002: return kTradeFavoriteLimitReached;
         case 20003: return kTradeFeatureDisabled;
+        case 20004: return kTradeOrderNotFound;
+        case 20005: return kTradeOrderStateConflict;
+        case 20006: return kTradeRequestConflict;
+        case 20007: return kTradeOrderLimit;
+        case 20008: return kTradeCannotTradeSelf;
+        case 20009: return kTradeCounterpartyUnknown;
+        case 20010: return kTradeInsufficientAsset;
+        case 20011: return kTradeBidTooLow;
+        case 20012: return kTradeAuctionEnded;
+        case 20013: return kTradeAssetDeliveryPending;
+        case 20014: return kTradeManualReview;
+        case 20015: return kTradeAssetNotTradable;
         default: return null;
       }
     }
@@ -179,12 +287,21 @@ public final class TradeErrorTip extends com.google.protobuf.GeneratedFile {
       descriptor;
   static {
     java.lang.String[] descriptorData = {
-      "\n\025trade_error_tip.proto*\232\001\n\013trade_error\022" +
+      "\n\025trade_error_tip.proto*\362\003\n\013trade_error\022" +
       "\022\n\016kTrade_errorOK\020\000\022\033\n\025kTradeListingNotF" +
       "ound\020\240\234\001\022\033\n\025kTradeHomeZoneUnknown\020\241\234\001\022 \n" +
       "\032kTradeFavoriteLimitReached\020\242\234\001\022\033\n\025kTrad" +
-      "eFeatureDisabled\020\243\234\001B$\n\016com.game.tableZ\022" +
-      "generated/pb/tableb\006proto3"
+      "eFeatureDisabled\020\243\234\001\022\031\n\023kTradeOrderNotFo" +
+      "und\020\244\234\001\022\036\n\030kTradeOrderStateConflict\020\245\234\001\022" +
+      "\033\n\025kTradeRequestConflict\020\246\234\001\022\026\n\020kTradeOr" +
+      "derLimit\020\247\234\001\022\033\n\025kTradeCannotTradeSelf\020\250\234" +
+      "\001\022\037\n\031kTradeCounterpartyUnknown\020\251\234\001\022\035\n\027kT" +
+      "radeInsufficientAsset\020\252\234\001\022\025\n\017kTradeBidTo" +
+      "oLow\020\253\234\001\022\030\n\022kTradeAuctionEnded\020\254\234\001\022 \n\032kT" +
+      "radeAssetDeliveryPending\020\255\234\001\022\030\n\022kTradeMa" +
+      "nualReview\020\256\234\001\022\034\n\026kTradeAssetNotTradable" +
+      "\020\257\234\001B$\n\016com.game.tableZ\022generated/pb/tab" +
+      "leb\006proto3"
     };
     descriptor = com.google.protobuf.Descriptors.FileDescriptor
       .internalBuildGeneratedFileFrom(descriptorData,

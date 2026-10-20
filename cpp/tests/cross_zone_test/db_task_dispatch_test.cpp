@@ -2,9 +2,12 @@
 
 #include <chrono>
 #include <cstdint>
+#include <cstdio>
 #include <string>
+#include <string_view>
 #include <vector>
 
+#include "muduo/base/Logging.h" // Logger::setOutput:抓停机收账那一行 ERROR
 #include "thread_context/ecs_context.h"
 #include "engine/core/type_define/player_guid_comp.h"
 #include "engine/core/type_define/type_define.h"
@@ -169,6 +172,102 @@ TEST(DbTaskDispatchLedger, LocalFailureNeedsResave)
     EXPECT_TRUE(ledger.NeedsResave(kLedgerPlayer));
     EXPECT_EQ(ledger.InFlight(kLedgerPlayer), 0u);
     EXPECT_FALSE(ledger.IsSettled(kLedgerPlayer));
+    EXPECT_FALSE(ledger.PermanentFailureCode(kLedgerPlayer).has_value()) << "缺省按可重试记,与改动前同义";
+}
+
+// R7 [1]:错误码原样进账本,永久失败另记 —— 下线收尾据此不再为重存没有收益的玩家保留实体。
+// 账本对错误码不透明,这里直接写 RdKafka::ErrorCode 的值(ERR_MSG_SIZE_TOO_LARGE / ERR_TOPIC_AUTHORIZATION_FAILED /
+// ERR__QUEUE_FULL),分类由粘合层做。
+namespace
+{
+constexpr db_task_dispatch::Failure kPermanentTooLarge{db_task_dispatch::FailureKind::kPermanent,
+                                                       static_cast<std::int32_t>(RdKafka::ERR_MSG_SIZE_TOO_LARGE)};
+constexpr db_task_dispatch::Failure kPermanentNoAcl{db_task_dispatch::FailureKind::kPermanent,
+                                                    static_cast<std::int32_t>(RdKafka::ERR_TOPIC_AUTHORIZATION_FAILED)};
+constexpr db_task_dispatch::Failure kRetryableQueueFull{db_task_dispatch::FailureKind::kRetryable,
+                                                        static_cast<std::int32_t>(RdKafka::ERR__QUEUE_FULL)};
+} // namespace
+
+TEST(DbTaskDispatchLedger, PermanentSyncRejectionIsReportedWithItsCode)
+{
+    Ledger ledger;
+    const auto gen = ledger.BeginSave(kLedgerPlayer);
+    const auto tooLarge = ledger.IssueTicket(kLedgerPlayer, gen, At(std::chrono::seconds(0)));
+    ledger.IssueTicket(kLedgerPlayer, gen, At(std::chrono::seconds(0)));
+    ledger.OnProduceRejected(tooLarge, kPermanentTooLarge);
+    ledger.FinishSave(kLedgerPlayer, gen, /*allQueued=*/false);
+
+    EXPECT_TRUE(ledger.NeedsResave(kLedgerPlayer));
+    ASSERT_TRUE(ledger.PermanentFailureCode(kLedgerPlayer).has_value());
+    EXPECT_EQ(*ledger.PermanentFailureCode(kLedgerPlayer), kPermanentTooLarge.code);
+    EXPECT_EQ(ledger.InFlight(kLedgerPlayer), 1u) << "另一张子表照常在途";
+}
+
+TEST(DbTaskDispatchLedger, RetryableFailuresAreNotPermanent)
+{
+    Ledger ledger;
+    const auto gen = ledger.BeginSave(kLedgerPlayer);
+    const auto rejected = ledger.IssueTicket(kLedgerPlayer, gen, At(std::chrono::seconds(0)));
+    const auto timedOut = ledger.IssueTicket(kLedgerPlayer, gen, At(std::chrono::seconds(0)));
+    ledger.OnProduceRejected(rejected, kRetryableQueueFull);
+    ledger.FinishSave(kLedgerPlayer, gen, /*allQueued=*/false);
+    ledger.OnDelivery(timedOut, /*delivered=*/false); // 缺省 = 可重试
+
+    EXPECT_TRUE(ledger.NeedsResave(kLedgerPlayer));
+    EXPECT_FALSE(ledger.PermanentFailureCode(kLedgerPlayer).has_value());
+}
+
+TEST(DbTaskDispatchLedger, PermanentVerdictFollowsTheLatestFailingGeneration)
+{
+    Ledger ledger;
+    // 第 1 代:回执报永久失败。
+    const auto gen1 = ledger.BeginSave(kLedgerPlayer);
+    const auto t1 = ledger.IssueTicket(kLedgerPlayer, gen1, At(std::chrono::seconds(0)));
+    ledger.FinishSave(kLedgerPlayer, gen1, /*allQueued=*/true);
+    EXPECT_EQ(ledger.OnDelivery(t1, /*delivered=*/false, kPermanentNoAcl).effect, DeliveryEffect::kFailedNeedsResave);
+    ASSERT_TRUE(ledger.PermanentFailureCode(kLedgerPlayer).has_value());
+    EXPECT_EQ(*ledger.PermanentFailureCode(kLedgerPlayer), kPermanentNoAcl.code);
+
+    // 第 2 代:只出了可重试的失败 —— 最新一次失败可能靠重存补回,永久结论不再成立。
+    const auto gen2 = ledger.BeginSave(kLedgerPlayer);
+    const auto t2 = ledger.IssueTicket(kLedgerPlayer, gen2, At(std::chrono::seconds(1)));
+    ledger.OnProduceRejected(t2, kRetryableQueueFull);
+    ledger.FinishSave(kLedgerPlayer, gen2, /*allQueued=*/false);
+    EXPECT_TRUE(ledger.NeedsResave(kLedgerPlayer));
+    EXPECT_FALSE(ledger.PermanentFailureCode(kLedgerPlayer).has_value());
+
+    // 第 3 代:又撞上永久失败,结论回来,错误码是这一次的。
+    const auto gen3 = ledger.BeginSave(kLedgerPlayer);
+    const auto t3 = ledger.IssueTicket(kLedgerPlayer, gen3, At(std::chrono::seconds(2)));
+    ledger.OnProduceRejected(t3, kPermanentTooLarge);
+    ledger.FinishSave(kLedgerPlayer, gen3, /*allQueued=*/false);
+    ASSERT_TRUE(ledger.PermanentFailureCode(kLedgerPlayer).has_value());
+    EXPECT_EQ(*ledger.PermanentFailureCode(kLedgerPlayer), kPermanentTooLarge.code);
+
+    // 第 4 代整份入队:欠账被盖过,永久结论随 NeedsResave 一起解除。
+    const auto gen4 = ledger.BeginSave(kLedgerPlayer);
+    ledger.IssueTicket(kLedgerPlayer, gen4, At(std::chrono::seconds(3)));
+    ledger.FinishSave(kLedgerPlayer, gen4, /*allQueued=*/true);
+    EXPECT_FALSE(ledger.NeedsResave(kLedgerPlayer));
+    EXPECT_FALSE(ledger.PermanentFailureCode(kLedgerPlayer).has_value());
+}
+
+TEST(DbTaskDispatchLedger, StalePermanentFailureOfAnOlderGenerationDoesNotOverrideTheVerdict)
+{
+    // 更旧一代的永久失败回执晚到:最新的欠账是可重试的那一代,结论不变。
+    Ledger ledger;
+    const auto gen1 = ledger.BeginSave(kLedgerPlayer);
+    const auto old = ledger.IssueTicket(kLedgerPlayer, gen1, At(std::chrono::seconds(0)));
+    ledger.FinishSave(kLedgerPlayer, gen1, /*allQueued=*/true);
+    const auto gen2 = ledger.BeginSave(kLedgerPlayer);
+    const auto current = ledger.IssueTicket(kLedgerPlayer, gen2, At(std::chrono::seconds(1)));
+    ledger.FinishSave(kLedgerPlayer, gen2, /*allQueued=*/true);
+    ASSERT_EQ(ledger.OnDelivery(current, /*delivered=*/false, kRetryableQueueFull).effect,
+              DeliveryEffect::kFailedNeedsResave);
+
+    EXPECT_EQ(ledger.OnDelivery(old, /*delivered=*/false, kPermanentTooLarge).effect, DeliveryEffect::kFailedSuperseded);
+    EXPECT_TRUE(ledger.NeedsResave(kLedgerPlayer));
+    EXPECT_FALSE(ledger.PermanentFailureCode(kLedgerPlayer).has_value());
 }
 
 TEST(DbTaskDispatchLedger, DuplicateOrUnknownReportIsIgnored)
@@ -327,13 +426,29 @@ TEST(ExitDbTaskGate, DecisionTable)
     using D = player_exit::DbTaskGateDecision;
     constexpr uint8_t kMax = player_exit::kMaxExitDbTaskResaveRounds;
     static_assert(kMax == 3, "用例按上限 3 写的;改上限时同步核对下面的表");
-    EXPECT_EQ(player_exit::DecideDbTaskGate(0, false, 0, kMax), D::kFinish);
-    EXPECT_EQ(player_exit::DecideDbTaskGate(2, false, 0, kMax), D::kAwaitAck);
-    EXPECT_EQ(player_exit::DecideDbTaskGate(0, true, 0, kMax), D::kResave);
-    EXPECT_EQ(player_exit::DecideDbTaskGate(1, true, 2, kMax), D::kResave) << "确定的失败优先于等剩下的回执";
-    EXPECT_EQ(player_exit::DecideDbTaskGate(0, true, 3, kMax), D::kRetainExhausted);
-    EXPECT_EQ(player_exit::DecideDbTaskGate(5, true, 3, kMax), D::kRetainExhausted);
-    EXPECT_EQ(player_exit::DecideDbTaskGate(0, false, 3, kMax), D::kFinish) << "超限之后只要落定了照样收尾";
+    // 参数顺序:inFlight, needsResave, failureIsPermanent, rounds, maxRounds。
+    EXPECT_EQ(player_exit::DecideDbTaskGate(0, false, false, 0, kMax), D::kFinish);
+    EXPECT_EQ(player_exit::DecideDbTaskGate(2, false, false, 0, kMax), D::kAwaitAck);
+    EXPECT_EQ(player_exit::DecideDbTaskGate(0, true, false, 0, kMax), D::kResave);
+    EXPECT_EQ(player_exit::DecideDbTaskGate(1, true, false, 2, kMax), D::kResave) << "确定的失败优先于等剩下的回执";
+    EXPECT_EQ(player_exit::DecideDbTaskGate(0, true, false, 3, kMax), D::kRetainExhausted);
+    EXPECT_EQ(player_exit::DecideDbTaskGate(5, true, false, 3, kMax), D::kRetainExhausted);
+    EXPECT_EQ(player_exit::DecideDbTaskGate(0, false, false, 3, kMax), D::kFinish) << "超限之后只要落定了照样收尾";
+}
+
+TEST(ExitDbTaskGate, PermanentFailureFinishesUnsyncedRegardlessOfRoundsAndAcks)
+{
+    // R7 [1]:同步拒绝的永久错误(例如子表超过 message.max.bytes)在退出路径上几次 Redis RTT 就把轮次耗尽,
+    // 改动前随后进 kRetainExhausted、实体无限期保留。永久失败不再重存、也不保留。
+    using D = player_exit::DbTaskGateDecision;
+    constexpr uint8_t kMax = player_exit::kMaxExitDbTaskResaveRounds;
+    EXPECT_EQ(player_exit::DecideDbTaskGate(0, true, true, 0, kMax), D::kFinishUnsynced) << "第一轮就不重存";
+    EXPECT_EQ(player_exit::DecideDbTaskGate(0, true, true, kMax, kMax), D::kFinishUnsynced) << "已到上限也不保留";
+    EXPECT_EQ(player_exit::DecideDbTaskGate(2, true, true, 1, kMax), D::kFinishUnsynced)
+        << "剩下的回执成败都改变不了结论,不等";
+    // 不欠 MySQL 时永久标志没有意义(调用方也不会给出):照常按在途数决定。
+    EXPECT_EQ(player_exit::DecideDbTaskGate(0, false, true, 0, kMax), D::kFinish);
+    EXPECT_EQ(player_exit::DecideDbTaskGate(1, false, true, 0, kMax), D::kAwaitAck);
 }
 
 TEST(ExitDbTaskGate, RekickOnlyWhenRetainedExhaustedAndQuiet)
@@ -507,11 +622,11 @@ TEST_F(DbTaskDispatchEcs, LandedExitWaitsForInFlightAck)
     ASSERT_TRUE(snapshot->HasSnapshot());
     EXPECT_EQ(snapshot->snapshot->SerializeAsString(), landed.SerializeAsString());
 
-    DbTaskDispatchSystem::OnDeliveryReport(first, /*delivered=*/true);
+    DbTaskDispatchSystem::OnDeliveryReport(first, RdKafka::ERR_NO_ERROR);
     DbTaskDispatchSystem::Pump();
     ASSERT_TRUE(tlsEcs.actorRegistry.valid(player)) << "还有一张在途";
 
-    DbTaskDispatchSystem::OnDeliveryReport(second, /*delivered=*/true);
+    DbTaskDispatchSystem::OnDeliveryReport(second, RdKafka::ERR_NO_ERROR);
     DbTaskDispatchSystem::Pump();
     EXPECT_FALSE(tlsEcs.actorRegistry.valid(player)) << "两条 DBTask 都 acks=all 了:收尾销毁";
     EXPECT_EQ(tlsEcs.playerList.count(kDispatchPlayerId), 0u);
@@ -537,8 +652,8 @@ TEST_F(DbTaskDispatchEcs, FastPathExitWaitsForInFlightAck)
     EXPECT_EQ(Delta(before, Counter::kExitAwaitAck), 1u);
 
     // 两张票据都要落定。
-    DbTaskDispatchSystem::OnDeliveryReport(first, /*delivered=*/true);
-    DbTaskDispatchSystem::OnDeliveryReport(second, /*delivered=*/true);
+    DbTaskDispatchSystem::OnDeliveryReport(first, RdKafka::ERR_NO_ERROR);
+    DbTaskDispatchSystem::OnDeliveryReport(second, RdKafka::ERR_NO_ERROR);
     DbTaskDispatchSystem::Pump();
 
     EXPECT_FALSE(tlsEcs.actorRegistry.valid(player));
@@ -559,7 +674,7 @@ TEST_F(DbTaskDispatchEcs, FailedAckOnExitingPlayerRetainsWhenCapped)
     const auto first = IssueQueuedSave(kDispatchPlayerId, &second);
     const auto before = db_task_dispatch_stats::Read();
 
-    DbTaskDispatchSystem::OnDeliveryReport(first, /*delivered=*/false);
+    DbTaskDispatchSystem::OnDeliveryReport(first, RdKafka::ERR__MSG_TIMED_OUT);
     DbTaskDispatchSystem::Pump();
 
     ASSERT_TRUE(tlsEcs.actorRegistry.valid(player)) << "投递失败且重存已到上限:保留实体,不丢差额";
@@ -571,14 +686,63 @@ TEST_F(DbTaskDispatchEcs, FailedAckOnExitingPlayerRetainsWhenCapped)
     EXPECT_TRUE(DbTaskDispatchSystem::NeedsResave(kDispatchPlayerId));
 
     // 剩下那张成功了也补不回失败的那一份:仍然保留。
-    DbTaskDispatchSystem::OnDeliveryReport(second, /*delivered=*/true);
+    DbTaskDispatchSystem::OnDeliveryReport(second, RdKafka::ERR_NO_ERROR);
     DbTaskDispatchSystem::Pump();
     EXPECT_TRUE(tlsEcs.actorRegistry.valid(player));
 }
 
-TEST_F(DbTaskDispatchEcs, ExhaustedRekickWithMissingComponentRetainsEntity)
+TEST_F(DbTaskDispatchEcs, PermanentFailedAckOnExitingPlayerFinishesUnsynced)
 {
-    // 被闸门保留的实体再收到退出请求:轮次清零、重新开始重存;重存因持久组件缺失被拒 → fail-closed 保留,不收尾。
+    // R7 [1] 回归:与上一个用例同样已到重存上限、停在闸门上,但这次失败是永久性的(broker / topic 的
+    // max.message.bytes 比本端小,回执报 ERR_MSG_SIZE_TOO_LARGE)。改动前监听器把错误码折成 bool,闸门分不出种类,
+    // 进 kRetainExhausted 无限期保留(停机时必然跑满 drain 预算);现在不再保留,带着 MySQL 落后收尾。
+    const auto player = MakeExitingPlayer();
+    ASSERT_TRUE(MarkPersisted(player));
+    {
+        auto& intent = tlsEcs.actorRegistry.get<PlayerExitIntentComp>(player);
+        intent.dbTaskResaveRounds = player_exit::kMaxExitDbTaskResaveRounds;
+        intent.awaitingDbTaskAck = true;
+    }
+    db_task_dispatch::Ticket second = db_task_dispatch::kNoTicket;
+    const auto first = IssueQueuedSave(kDispatchPlayerId, &second);
+    const auto before = db_task_dispatch_stats::Read();
+
+    DbTaskDispatchSystem::OnDeliveryReport(first, RdKafka::ERR_MSG_SIZE_TOO_LARGE);
+    ASSERT_TRUE(DbTaskDispatchSystem::PermanentFailure(kDispatchPlayerId).has_value())
+        << "回执的错误码原样进账本,按永久失败记";
+    DbTaskDispatchSystem::Pump();
+
+    EXPECT_FALSE(tlsEcs.actorRegistry.valid(player)) << "重存必然失败:不保留实体";
+    EXPECT_EQ(tlsEcs.playerList.count(kDispatchPlayerId), 0u);
+    EXPECT_EQ(SessionMap().count(kDispatchSession), 0u);
+    EXPECT_EQ(Delta(before, Counter::kDeliveryFailed), 1u);
+    EXPECT_EQ(Delta(before, Counter::kExitUnsynced), 1u);
+    EXPECT_EQ(Delta(before, Counter::kExitResaveCapped), 0u) << "不走超限保留";
+    EXPECT_EQ(Delta(before, Counter::kExitResave), 0u) << "不重存";
+    EXPECT_EQ(Delta(before, Counter::kOrphanUnsynced), 0u) << "还有一张在途:条目留到它落定再回收";
+    EXPECT_EQ(DbTaskDispatchSystem::LedgerForTest().TrackedPlayers(), 1u);
+
+    // 剩下那张落定:实体已不在,回收条目并如实计「离开时仍欠 MySQL 一次写」。
+    DbTaskDispatchSystem::OnDeliveryReport(second, RdKafka::ERR_NO_ERROR);
+    DbTaskDispatchSystem::Pump();
+    EXPECT_EQ(Delta(before, Counter::kOrphanUnsynced), 1u);
+    EXPECT_EQ(DbTaskDispatchSystem::LedgerForTest().TrackedPlayers(), 0u);
+}
+
+TEST_F(DbTaskDispatchEcs, RetryableFailureIsNotReportedAsPermanent)
+{
+    // 可用性问题(超时、purge、没有 broker)照常按轮次重存 / 保留:PermanentFailure 必须为空。
+    db_task_dispatch::Ticket second = db_task_dispatch::kNoTicket;
+    const auto first = IssueQueuedSave(kDispatchPlayerId, &second);
+    DbTaskDispatchSystem::OnDeliveryReport(first, RdKafka::ERR__MSG_TIMED_OUT);
+    DbTaskDispatchSystem::OnDeliveryReport(second, RdKafka::ERR__PURGE_QUEUE);
+    EXPECT_TRUE(DbTaskDispatchSystem::NeedsResave(kDispatchPlayerId));
+    EXPECT_FALSE(DbTaskDispatchSystem::PermanentFailure(kDispatchPlayerId).has_value());
+}
+
+TEST_F(DbTaskDispatchEcs, ExhaustedRekickWithMissingComponentDiscardsWithoutReleaseMark)
+{
+    // 重存永久拒绝后不存盘丢弃,DestroyPlayer 负责把 MySQL 欠账记入 orphan_unsynced 并回收。
     const auto player = MakeExitingPlayer();
     ASSERT_TRUE(MarkPersisted(player));
     {
@@ -595,16 +759,14 @@ TEST_F(DbTaskDispatchEcs, ExhaustedRekickWithMissingComponentRetainsEntity)
 
     PlayerLifecycleSystem::HandleExitGameNode(player, ExitCause::kNodeShutdown);
 
-    ASSERT_TRUE(tlsEcs.actorRegistry.valid(player));
-    EXPECT_TRUE((tlsEcs.actorRegistry.all_of<UnregisterPlayer, PlayerExitIntentComp>(player)));
-    const auto& intent = tlsEcs.actorRegistry.get<PlayerExitIntentComp>(player);
-    EXPECT_EQ(intent.dbTaskResaveRounds, 1u) << "rekick 清零后闸门又重存了一轮";
-    EXPECT_TRUE(intent.awaitingDbTaskAck);
+    EXPECT_FALSE(tlsEcs.actorRegistry.valid(player));
+    EXPECT_EQ(tlsEcs.GetPlayer(kDispatchPlayerId), entt::entity{entt::null});
     EXPECT_EQ(Delta(before, Counter::kExitRekick), 1u);
     EXPECT_EQ(Delta(before, Counter::kExitResave), 1u);
-    EXPECT_EQ(Delta(before, Counter::kExitUnsynced), 0u) << "拒存不是「没法再补」:不带着落后收尾";
-    EXPECT_EQ(SessionMap().count(kDispatchSession), 1u);
-    EXPECT_TRUE(DbTaskDispatchSystem::NeedsResave(kDispatchPlayerId));
+    EXPECT_EQ(Delta(before, Counter::kExitUnsynced), 0u) << "不走已落盘退出收尾";
+    EXPECT_EQ(Delta(before, Counter::kOrphanUnsynced), 1u);
+    EXPECT_EQ(SessionMap().count(kDispatchSession), 0u);
+    EXPECT_FALSE(DbTaskDispatchSystem::NeedsResave(kDispatchPlayerId));
 }
 
 TEST_F(DbTaskDispatchEcs, OrphanFailureIsCountedAndForgotten)
@@ -612,10 +774,10 @@ TEST_F(DbTaskDispatchEcs, OrphanFailureIsCountedAndForgotten)
     // 实体已经不在本节点(被废黜 / 交接放行之后),它最后一次存盘的 DBTask 才回执失败。
     db_task_dispatch::Ticket second = db_task_dispatch::kNoTicket;
     const auto first = IssueQueuedSave(kDispatchPlayerId, &second);
-    DbTaskDispatchSystem::OnDeliveryReport(second, /*delivered=*/true);
+    DbTaskDispatchSystem::OnDeliveryReport(second, RdKafka::ERR_NO_ERROR);
     const auto before = db_task_dispatch_stats::Read();
 
-    DbTaskDispatchSystem::OnDeliveryReport(first, /*delivered=*/false);
+    DbTaskDispatchSystem::OnDeliveryReport(first, RdKafka::ERR__MSG_TIMED_OUT);
     DbTaskDispatchSystem::Pump();
 
     EXPECT_EQ(Delta(before, Counter::kOrphanUnsynced), 1u);
@@ -628,8 +790,8 @@ TEST_F(DbTaskDispatchEcs, DeliveredOrphanIsForgottenSilently)
     const auto first = IssueQueuedSave(kDispatchPlayerId, &second);
     const auto before = db_task_dispatch_stats::Read();
 
-    DbTaskDispatchSystem::OnDeliveryReport(first, /*delivered=*/true);
-    DbTaskDispatchSystem::OnDeliveryReport(second, /*delivered=*/true);
+    DbTaskDispatchSystem::OnDeliveryReport(first, RdKafka::ERR_NO_ERROR);
+    DbTaskDispatchSystem::OnDeliveryReport(second, RdKafka::ERR_NO_ERROR);
     DbTaskDispatchSystem::Pump();
 
     EXPECT_EQ(Delta(before, Counter::kOrphanUnsynced), 0u);
@@ -664,6 +826,8 @@ TEST_F(DbTaskDispatchEcs, SendDbTaskWithoutBrokersMarksResave)
     EXPECT_FALSE(sent.queued);
     EXPECT_FALSE(sent.error.empty());
     EXPECT_TRUE(DbTaskDispatchSystem::NeedsResave(kDispatchPlayerId)) << "没入队 = 欠 MySQL 一次整份写";
+    EXPECT_FALSE(DbTaskDispatchSystem::PermanentFailure(kDispatchPlayerId).has_value())
+        << "没有 broker(ERR__STATE)是可用性问题,不算永久失败";
     EXPECT_EQ(DbTaskDispatchSystem::InFlight(kDispatchPlayerId), 0u) << "没入队的不算在途,永远不会有回执";
     EXPECT_EQ(DbTaskDispatchSystem::InFlightTickets(), 0u);
     EXPECT_EQ(KafkaProducer::Instance().trackedInFlight(), 0u) << "没入队就不登记关联号";
@@ -686,7 +850,51 @@ TEST_F(DbTaskDispatchEcs, ExpiredTicketDuringPumpCountsAndEnqueues)
     EXPECT_EQ(DbTaskDispatchSystem::LedgerForTest().TrackedPlayers(), 0u);
 
     // 超时之后迟到的真回执:票据已销,什么都不改。
-    DbTaskDispatchSystem::OnDeliveryReport(second, /*delivered=*/true);
+    DbTaskDispatchSystem::OnDeliveryReport(second, RdKafka::ERR_NO_ERROR);
     DbTaskDispatchSystem::Pump();
     EXPECT_EQ(DbTaskDispatchSystem::LedgerForTest().TrackedPlayers(), 0u);
+}
+
+namespace
+{
+int g_shutdownUnsettledLines = 0;
+std::string g_shutdownUnsettledLine;
+
+void CaptureShutdownUnsettledLine(const char* msg, int len)
+{
+    const std::string_view line(msg, static_cast<std::size_t>(len));
+    if (line.find("[DbTaskDispatch] shutting down with ") != std::string_view::npos)
+    {
+        ++g_shutdownUnsettledLines;
+        g_shutdownUnsettledLine.assign(line);
+    }
+    std::fwrite(msg, 1, static_cast<std::size_t>(len), stdout);
+}
+
+void WriteDispatchLogToStdout(const char* msg, int len)
+{
+    std::fwrite(msg, 1, static_cast<std::size_t>(len), stdout);
+}
+} // namespace
+
+TEST_F(DbTaskDispatchEcs, ShutdownListsUnsettledPlayersExactlyOnce)
+{
+    // R7 [0]:停机收账现在先由 Node 的拆除前钩子(SetBeforeTeardown → RedisSystem::StopDbTaskDispatch)在日志仍活着时
+    // 调一次,main.cpp 里 Node 析构之后的 RedisSystem::Shutdown 再调一次兜底。未落定清单必须恰好一行、带玩家号,
+    // 第二次调用是空操作(否则兜底那次会在日志已停之后再打,或者打两行让人误以为有两批玩家)。
+    // 钩子调用时序本身(在 kafkaManager.Shutdown 之后、logSystem.stop 之前)要构造整个 Node 才能驱动,单测宿主做不到,
+    // 由交付说明里的手工步骤核对。
+    IssueQueuedSave(kDispatchPlayerId); // 两条 DBTask 在途,回执始终没来
+
+    g_shutdownUnsettledLines = 0;
+    g_shutdownUnsettledLine.clear();
+    muduo::Logger::setOutput(CaptureShutdownUnsettledLine);
+    DbTaskDispatchSystem::Shutdown(); // 拆除前钩子
+    DbTaskDispatchSystem::Shutdown(); // main.cpp 的幂等兜底
+    muduo::Logger::setOutput(WriteDispatchLogToStdout);
+
+    EXPECT_EQ(g_shutdownUnsettledLines, 1);
+    EXPECT_NE(g_shutdownUnsettledLine.find("shutting down with 1 player(s)"), std::string::npos) << g_shutdownUnsettledLine;
+    EXPECT_NE(g_shutdownUnsettledLine.find("ids=[" + std::to_string(kDispatchPlayerId) + "]"), std::string::npos)
+        << g_shutdownUnsettledLine;
 }

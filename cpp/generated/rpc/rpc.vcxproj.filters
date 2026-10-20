@@ -120,6 +120,9 @@
     <ClInclude Include="service_metadata\rank_service_metadata.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="service_metadata\rank_admin_service_metadata.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
     <ClInclude Include="service_metadata\mail_service_metadata.h">
       <Filter>头文件</Filter>
     </ClInclude>

@@ -91,11 +91,6 @@ void InterestSystem::RemoveAoiEntity(entt::entity watcher, entt::entity target)
     comp->entries.erase(target);
 }
 
-bool InterestSystem::PinAoiEntity(entt::entity watcher, entt::entity target)
-{
-    return AddAoiEntity(watcher, target, AoiPriority::kPinned);
-}
-
 void InterestSystem::UpgradePriority(entt::entity watcher, entt::entity target, AoiPriority priority)
 {
     if (watcher == entt::null || target == entt::null) return;

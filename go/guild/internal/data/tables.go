@@ -16,7 +16,7 @@ const DatabaseName = "mmorpg_guild"
 // 2026-09-21 死锁修复后以 docs/design/guild-phase2/92-handoff.md §12.2 的全序为准
 // (G guild < S guild_player_state < M guild_member < A guild_application < Q guild_player_op_seq
 // < O guild_asset_op < C guild_daily_counter,B6a 起接 P guild_activity_progress,
-// B6b 起再接 T guild_trial_battle < W guild_trial_reward_owed)。
+// B6b 起再接 T guild_trial_battle < W guild_trial_reward_owed,2026-10-15 起再接 R guild_client_request)。
 // 下游写事务按这里的先后取锁:任何事务都不得在持有靠后表的行锁之后回头去锁靠前的表。
 // B6a 曾在这里预先登记过一条例外(B6b 历练结算"逐人 (Q → O)"、靠"新插 O 行别人拿不到"才不成环)。
 // B6b 落码时**没有采用**它:结算改成"先按 player_id 升序锁全部 Q,再逐人插 O",严格守表间全序,不需要任何例外
@@ -103,5 +103,12 @@ func Tables() []proto.Message {
 		//   - 诊断计数:自动提交、只改无索引列 attempts(与 guild_asset_op 的领取同形:变更集合只有行 key,只会单向等待)。
 		// 解散不碰本表(物品属于玩家)。读路径一律普通读。
 		&pb.GuildTrialRewardOwedRecord{},
+		// 2026-10-15 客户端幂等键:锁序位置 11(记号 R)—— 全序变为 … < T < W < R。
+		// 写者与理由见 guild_db.proto 的 GuildClientRequestRecord 注释,这里只记取锁序列:
+		//   - 捐献 / 兑换预留(economy_repo.go 的 T-D / T-S):… → M(G,p) X → **普通读** R(p, 键)复核 → Q → O → C
+		//     →(T-S)再写已持有的 M → 插 R 新行。预留不碰 P / T / W,持着 C 直接取 R 不违反全序;
+		//     同一玩家的 R 插入者都先持他唯一的那一行 M(uk_guild_member),所以同一 (p, 键) 至多一个在途插入者。
+		//   - 清理(asset_store.go):只持 R 一行(主键点锁 → 点删),不与任何别的表组合。
+		&pb.GuildClientRequestRecord{},
 	}
 }

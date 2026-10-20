@@ -26,7 +26,8 @@ enum class PlayerInboxPhase : uint8_t
 {
 	kIdle,         // 没有在途请求,也没有待处理的条目;可能挂着 nextCheckMs
 	kFetching,     // FetchItems 在途(correlationId)
-	kApplying,     // 已拉到、尚未全部应用的条目在 pendingItems(前置闸未过或执行器 DEFER,按 nextCheckMs 续做)
+	kApplying,     // 已拉到、尚未全部应用的条目在 pendingItems(执行器 DEFER,按 nextCheckMs 续做;
+	               // 前置闸未过时不停在这里:丢掉本地副本重拉,有已定前缀就先确认,评审 L1)
 	kAwaitDurable, // 本批结局都已记账,等它们出现在最后一次落盘快照里(ackQueue)
 	kAcking,       // AckItems 在途(correlationId)
 	kCount
@@ -42,7 +43,9 @@ enum class PlayerInboxDeferReason : uint8_t
 	kHandoff,
 	kExiting,
 	kEpochZero,
-	kLedgerInvalid,    // PlayerInboxLedgerInvalidComp,或持久账本组件缺失(加载不变量被破坏)
+	kLedgerInvalid,    // PlayerInboxLedgerInvalidComp,或持久账本组件缺失(加载不变量被破坏)。
+	                   // 不会自愈:除首次外还按 failStreak 周期性打 WARN `metric=inbox_ledger_invalid`(评审 L13);
+	                   // 节拍对齐 scene 日志告警的 [10m] 窗口(player_inbox_rules::kStuckWarnEveryFailures,评审 F3)
 	kInBattle,         // 域规格 requires_out_of_battle 且 InBattleComp 在
 	kNoNode,           // 没有 READY 的 PlayerInboxNodeService 通道
 	kTransport,        // gRPC 非 OK(UNAVAILABLE / DEADLINE …)或在途超时
@@ -63,7 +66,8 @@ enum class PlayerInboxHaltReason : uint8_t
 	kReplayMismatch,   // 重复投递与账本里的同一 seq 对不上(IB-9)
 	kBatchMalformed,   // 回包超过一批上限、seq 不严格递增或为 0
 	kLedgerWrite,      // 记账前置被破坏(分类说未见、记账却拒绝)
-	kAckAnomaly,       // Ack 结果为 CONFLICT / UNKNOWN_SEQ / NOT_DELIVERED / SKIP_NOT_REQUESTED / MISMATCH
+	kAckAnomaly,       // Ack 结果为 CONFLICT / UNKNOWN_SEQ / NOT_DELIVERED / SKIP_NOT_REQUESTED / MISMATCH,
+	                   // 或整次 Ack 回 kInvalidParameter(报告列表不合法,重发不会变)
 	kCount
 };
 

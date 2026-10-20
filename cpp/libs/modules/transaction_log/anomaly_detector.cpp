@@ -231,14 +231,6 @@ uint32_t AnomalyDetector::GetCurrencyGainCount(entt::entity player, CurrencyType
     return count;
 }
 
-void AnomalyDetector::ClearPlayer(entt::entity player)
-{
-    if (tlsEcs.actorRegistry.valid(player))
-    {
-        tlsEcs.actorRegistry.remove<PlayerAnomalyWindowComp>(player);
-    }
-}
-
 void AnomalyDetector::ClearAll()
 {
     tlsEcs.actorRegistry.clear<PlayerAnomalyWindowComp>();

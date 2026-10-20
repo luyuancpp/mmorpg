@@ -1,10 +1,12 @@
 # 共享 Redis 的高可用形态:1 主 2 从 + 3 个哨兵 + 2 个入口代理
 # (docs/design/no-single-node-horizontal-scaling-20261001.md §5)。
-# k8s_deploy.ps1 在 -RedisReplicas 3(staging / prod 档默认)时 apply 本文件,**代替** redis.yaml;
-# 本机 kind / dev 档默认仍用 redis.yaml 的单实例。两份清单里的对象同名,所以可以原地从单实例切过来。
+# **接入(2026-10-19)**:k8s_deploy.ps1 在 -RedisReplicas 3 时 apply 本文件,**代替** redis.yaml;-RedisReplicas 0(缺省)按档位:
+# -ReleaseProfile 不是 dev 或 -OpsProfile 不是 custom → 3(本文件),其余 → 1(redis.yaml)。两份清单里的对象同名,所以可以原地从单实例切过来。
+# 同一个拓扑还决定 WAITAOF 要几个副本确认(单实例 0、本形态 1),data-service 与 go/db 的 ConfigMap 都按它渲染(Get-RouteStoreWaitAOFNumReplicas)。
 #
-# 连接上限(P0-E 的接入前置,2026-10-16 补齐):
-#   - 每个 redis-server 显式 --maxclients,取值 MAXCLIENTS 写在 StatefulSet 的 Pod 模板里,与 redis.yaml 同值;
+# 连接上限(P0-E 的接入前置):
+#   - 每个 redis-server 显式 --maxclients,取值 MAXCLIENTS 写在 StatefulSet 的 Pod 模板里,与 redis.yaml 同值
+#     (连接总账只从 redis.yaml 读,两种形态共用一份账;契约测试钉住两边同值);
 #   - 代理每副本的 maxconn 取值 PROXY_MAXCONN 写在 redis-proxy 的 Pod 模板里,并且必须满足
 #       PROXY_MAXCONN × (代理副本数 + maxSurge) + 预留 ≤ MAXCLIENTS。
 #     为什么要让代理先到线:Redis 一旦到线,代理对它的健康检查连接也会被拒,连续两次失败就把它判下线并踢掉
@@ -36,9 +38,10 @@
 #     这些写入在它被降级时会全部丢弃(锁、会话、存档游标都在里面)。代价:三个 Pod 里同时坏两个时 Redis 只读。
 #   - 哨兵的多数派是 2/3:同时坏两个 Pod 就不能自动切主。
 #
-# 从单实例原地切过来(脚本 Apply-Infra 的配套分支会处理):redis-0 保留原 PVC 与数据、以主身份重启,
-# redis-1 / redis-2 新建后从它全量同步。**这是一次有停机窗口的变更**(redis-0 重启期间全服登录不可用)。
-# 反方向(3 → 1)脚本拒绝:主可能不在 redis-0 上,直接缩容会丢数据。
+# 从单实例原地切过来(Apply-Infra 处理:Get-RedisTopologyChangeVerdict 判为 upgrade 时先 delete --cascade=orphan 旧 StatefulSet 再 apply):
+# redis-0 保留原 PVC 与数据、以主身份重启,redis-1 / redis-2 新建后从它全量同步。**这是一次有停机窗口的变更**
+# (redis-0 重启期间全服登录不可用),所以重启闸照样要求 -ConfirmRedisCoreRestart(闸在 orphan 删除之前读线上摘要)。
+# 反方向(3 → 1)脚本拒绝(Assert-RedisTopologyChangeIsSafe):主可能不在 redis-0 上,直接缩容会丢数据;要回退按 deploy/k8s/README.md 手工做。
 #
 # **Service redis 不能删了重建**:C++ 节点启动时把它解析成 IP 存下来,重连用的是同一个 IP;
 # 重建 Service 会换 ClusterIP,所有 gate / scene / battle 都要重启才连得上。改 selector 用 apply,不要 delete。
@@ -255,7 +258,8 @@ data:
 
     # 连接上限:MAXCLIENTS 由 Pod 模板注入(见 StatefulSet redis 的 command),这里不另写数字。
     # 与 redis.yaml 同一套检查:Redis 需要 maxclients + 32 个 fd,容器 nofile 硬限不够时 redis-server 会自己下调 maxclients,
-    # 只在启动日志里留一条;这一行是事后唯一的证据。只报错,不拒启(拒启 = 共享 Redis 起不来,比少一些连接名额更糟)。
+    # 只在启动日志里留一条;这一行是事后唯一的证据。只报错,不拒启(与 redis.yaml 同口径;部署后核对 Test-RedisLiveMaxClients
+    # 逐个节点读生效值,低于清单值时告警)。
     : "${MAXCLIENTS:?MAXCLIENTS 未注入(应由 Pod 模板的 command 设置)}"
     need=$((MAXCLIENTS + 32))
     soft=$(ulimit -Sn 2>/dev/null || echo unknown)
@@ -270,9 +274,12 @@ data:
     # --min-replicas-*:见文件头「数据安全的边界」。
     # --repl-diskless-sync-delay:从要做全量同步时,主默认先等 5 秒「攒一批」再开始。这里只有两个从,
     #   攒批没有意义,而切主时哨兵要等从同步完才算切换结束,白等 5 秒。
+    # --enable-debug-command no:这组节点接入后同时是 mapping Redis。DEBUG RELOAD NOSAVE / LOADAOF 在同一进程里整库替换数据而
+    #   run_id / master_replid 不变,读方「就绪标记绑定实例身份」的判据认不出(spec_D1_batch1b2_2_3.md §13.1 第 5 条);Redis 7 缺省即 no,显式写出防改。
     set -- redis-server \
       --appendonly yes \
       --maxclients "$MAXCLIENTS" \
+      --enable-debug-command no \
       --replica-announce-ip "$SELF" \
       --min-replicas-to-write 1 \
       --min-replicas-max-lag 10 \
@@ -459,7 +466,8 @@ data:
     # 口令的字符集限制(只在高可用形态下有):哨兵会把口令**原样、不加引号**写回它自己的配置文件
     # (sentinel auth-pass / sentinel-pass 两行,Redis 自身的行为),口令里有空白、引号或反斜杠时,
     # 这次能启动,下一次重启读这份文件就报 "Unbalanced quotes" 起不来(2026-10-08 实测)。
-    # 所以宁可现在就拒启、把话说清楚。k8s_deploy.ps1 在部署入口有同一条检查。
+    # 所以宁可现在就拒启、把话说清楚。k8s_deploy.ps1 的部署入口在选中本文件时同样拒绝空白与单引号
+    # (Assert-RedisPasswordSentinelSafe;`"`、`\` 与控制字符本来就由 Assert-RedisPasswordYamlSafe 拒绝),报错不回显口令。
     case "${REDIS_PASSWORD:-}" in
       *[[:space:]\"\'\\]*)
         echo "[sentinel-start] Refusing startup: Redis password contains whitespace, quotes, or backslashes. Sentinels cannot save such a password back to the configuration file; use a password containing only letters, digits, and ._~@%+=:,^-." >&2
@@ -550,7 +558,7 @@ data:
 
     {
       echo "global"
-      # 全局上限比前端多留一点,给本机诊断口与健康检查页;前端(业务连接)的上限在 defaults 里。
+      # 全局上限比前端多留一点,给本机诊断口与健康检查;前端(业务连接)的上限在 defaults 里。
       echo "  maxconn $((PROXY_MAXCONN + 100))"
       cat <<'EOF'
       log stdout format raw daemon notice
@@ -563,7 +571,7 @@ data:
 
     EOF
       echo "defaults"
-      # 前端的业务连接上限。不写时 haproxy 用它自己的缺省值,可能远低于预期,而且与 Redis 的 maxclients 对不上账。
+      # 前端的业务连接上限。不写时 haproxy 用它自己的缺省值,与 Redis 的 maxclients 对不上账。
       echo "  maxconn ${PROXY_MAXCONN}"
       cat <<'EOF'
       mode tcp
@@ -689,7 +697,8 @@ spec:
   replicas: 3
   # 三个 Pod 同时创建,而不是 0 → 1 → 2 逐个等就绪:整个集群断电重启时,上一任主可能是 redis-1,
   # 而 redis-0 作为从要等主起来才就绪 —— 按序创建会在这里互相等死。
-  # 这个字段创建后不能改:从单实例清单切过来时,脚本会先 `delete --cascade=orphan` 旧的 StatefulSet(Pod 与 PVC 原样保留)。
+  # 这个字段创建后不能改:从单实例清单切过来时,脚本先 `delete --cascade=orphan` 旧的 StatefulSet(Pod 与 PVC 原样保留)。
+  # P0-E 的 Redis 重启闸在删除**之前**读线上摘要,所以这次切换照样要求 -ConfirmRedisCoreRestart,不会落进「全新集群」的放行分支。
   # 滚动更新不受它影响,仍然一次换一个、等就绪再换下一个。
   podManagementPolicy: Parallel
   selector:
@@ -719,7 +728,7 @@ spec:
           image: redis:7.2
           # MAXCLIENTS 只在这里定义一次(与 redis.yaml 同值)。写在 Pod 模板里而不是脚本 ConfigMap 里:改它会改变模板摘要,
           # 由重启闸要求显式确认、滚动更新随即生效;放在 ConfigMap 里则只会等到下一次意外重启才悄悄生效。
-          # 部署脚本的连接总账从这一行读值(Get-RedisMaxClientsFromManifest),契约测试钉住它与 redis.yaml 相同。
+          # 契约测试钉住它与 redis.yaml 相同(连接总账只读 redis.yaml 那一份,Get-RedisMaxClientsFromManifest)。
           command:
             - sh
             - -c

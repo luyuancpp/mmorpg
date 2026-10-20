@@ -70,7 +70,7 @@ struct PlayerExitIntentComp
 	// 本次退出已打过一次 "save outran reconnect lease" WARN。退出分支现在一次退出可能落地多次(重存轮次、
 	// 超限保留后的周期存盘 / rekick),该 WARN 被帮会值班 LogQL 按"事件数"引用(§12.6.9),只许每次退出打一条。
 	bool leaseOverrunWarned{false};
-	// 退出发起那一刻所在场景的 scene_id(SceneInfoComp);0 = 当时不在任何场景 / 拿不到。必须在 DetachFromScene 之前抄:
+	// 退出发起那一刻所在场景的 scene_id(SceneInfoComp);0 = 当时不在任何场景 / 拿不到。必须在 LeaveCurrentScene 之前抄:
 	// 它一摘 SceneEntityComp 就再也拿不到了,而疏散 / 排空改派要在退出收敛之后才发。改派的确认核实拿它与 Redis 里
 	// location 的场景比:仍指向这个场景 = 改派没生效(relocate_confirm::ClassifyPlacement 的 sourceSceneId)。
 	// 0 时核实一律判"判不清"、不踢。
@@ -236,6 +236,7 @@ namespace player_exit
 
 	// 闸门因投递失败重存的轮次上限。Kafka 不可用时重存只会再次失败,多试无益;超限后保留实体,出口是周期存盘
 	// (欠账时强制真写)、再一次退出请求(HandleExitGameNode 的 rekick)或停机看门狗。
+	// 只管可重试的失败:永久失败(消息过大等)不重存、不保留,见 DecideDbTaskGate 的 kFinishUnsynced。
 	inline constexpr uint8_t kMaxExitDbTaskResaveRounds = 3;
 
 	enum class DbTaskGateDecision : uint8_t
@@ -244,6 +245,7 @@ namespace player_exit
 		kAwaitAck,        // 只有在途 DBTask:等回执(Pump 处理完回执后恢复收尾)
 		kResave,          // 有投递失败、还没到轮次上限:按当前内存重存一次
 		kRetainExhausted, // 有投递失败、已到上限:保留实体
+		kFinishUnsynced,  // 欠账的那次失败是永久性的(消息过大 / 无写权限等):重存必然失败,带着 MySQL 落后收尾销毁
 
 		kCount
 	};
@@ -255,6 +257,7 @@ namespace player_exit
 		"await_ack",
 		"resave",
 		"retain_exhausted",
+		"finish_unsynced",
 	};
 	static_assert(std::size(kDbTaskGateDecisionNames) == kDbTaskGateDecisionCount,
 				  "kDbTaskGateDecisionNames 必须与 DbTaskGateDecision 一一对应");
@@ -267,10 +270,20 @@ namespace player_exit
 
 	// 需要重存优先于等回执:失败已经确定,再等剩下的回执也补不回那一份;重存发的是当前内存整份,
 	// 剩下的旧票据之后成败都会被它盖过(db_task_dispatch::DeliveryEffect::kFailedSuperseded)。
-	constexpr DbTaskGateDecision DecideDbTaskGate(uint32_t inFlight, bool needsResave, uint8_t rounds, uint8_t maxRounds)
+	// failureIsPermanent(DbTaskDispatchSystem::PermanentFailure 有值;只在 needsResave 时有意义):欠账的那一代里有
+	// 永久失败 —— 例如某张子表超过 message.max.bytes,produce() 同步拒绝,重存在几次 Redis RTT 内就把轮次耗尽,
+	// 之后保留实体没有任何出口能补上(Kafka「恢复」不会让消息变小)。这时不论轮次、也不等剩下的回执(它们成败都改变不了
+	// 结论),直接收尾销毁;MySQL 的落后由新属主的首存补写(仍会撞同一个错误时同样补不上,有 ERROR 与计数可查)。
+	// 可重试的失败(队列满、fatal 冷却期、超时……)仍按轮次上限重存 / 保留,与改动前相同。
+	constexpr DbTaskGateDecision DecideDbTaskGate(uint32_t inFlight, bool needsResave, bool failureIsPermanent,
+												  uint8_t rounds, uint8_t maxRounds)
 	{
 		if (needsResave)
 		{
+			if (failureIsPermanent)
+			{
+				return DbTaskGateDecision::kFinishUnsynced;
+			}
 			return rounds < maxRounds ? DbTaskGateDecision::kResave : DbTaskGateDecision::kRetainExhausted;
 		}
 		return inFlight > 0 ? DbTaskGateDecision::kAwaitAck : DbTaskGateDecision::kFinish;

@@ -23,126 +23,6 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-type BindSessionToGateRequest struct {
-	state          protoimpl.MessageState `protogen:"open.v1"`
-	SessionId      uint32                 `protobuf:"varint,1,opt,name=session_id,json=sessionId,proto3" json:"session_id,omitempty"`
-	PlayerId       uint64                 `protobuf:"varint,2,opt,name=player_id,json=playerId,proto3" json:"player_id,omitempty"`
-	SessionVersion uint32                 `protobuf:"varint,3,opt,name=session_version,json=sessionVersion,proto3" json:"session_version,omitempty"`
-	unknownFields  protoimpl.UnknownFields
-	sizeCache      protoimpl.SizeCache
-}
-
-func (x *BindSessionToGateRequest) Reset() {
-	*x = BindSessionToGateRequest{}
-	mi := &file_proto_gate_gate_service_proto_msgTypes[0]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *BindSessionToGateRequest) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*BindSessionToGateRequest) ProtoMessage() {}
-
-func (x *BindSessionToGateRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_gate_gate_service_proto_msgTypes[0]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use BindSessionToGateRequest.ProtoReflect.Descriptor instead.
-func (*BindSessionToGateRequest) Descriptor() ([]byte, []int) {
-	return file_proto_gate_gate_service_proto_rawDescGZIP(), []int{0}
-}
-
-func (x *BindSessionToGateRequest) GetSessionId() uint32 {
-	if x != nil {
-		return x.SessionId
-	}
-	return 0
-}
-
-func (x *BindSessionToGateRequest) GetPlayerId() uint64 {
-	if x != nil {
-		return x.PlayerId
-	}
-	return 0
-}
-
-func (x *BindSessionToGateRequest) GetSessionVersion() uint32 {
-	if x != nil {
-		return x.SessionVersion
-	}
-	return 0
-}
-
-type BindSessionToGateResponse struct {
-	state          protoimpl.MessageState `protogen:"open.v1"`
-	SessionId      uint32                 `protobuf:"varint,1,opt,name=session_id,json=sessionId,proto3" json:"session_id,omitempty"`
-	PlayerId       uint64                 `protobuf:"varint,2,opt,name=player_id,json=playerId,proto3" json:"player_id,omitempty"`
-	SessionVersion uint32                 `protobuf:"varint,3,opt,name=session_version,json=sessionVersion,proto3" json:"session_version,omitempty"`
-	unknownFields  protoimpl.UnknownFields
-	sizeCache      protoimpl.SizeCache
-}
-
-func (x *BindSessionToGateResponse) Reset() {
-	*x = BindSessionToGateResponse{}
-	mi := &file_proto_gate_gate_service_proto_msgTypes[1]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *BindSessionToGateResponse) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*BindSessionToGateResponse) ProtoMessage() {}
-
-func (x *BindSessionToGateResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_gate_gate_service_proto_msgTypes[1]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use BindSessionToGateResponse.ProtoReflect.Descriptor instead.
-func (*BindSessionToGateResponse) Descriptor() ([]byte, []int) {
-	return file_proto_gate_gate_service_proto_rawDescGZIP(), []int{1}
-}
-
-func (x *BindSessionToGateResponse) GetSessionId() uint32 {
-	if x != nil {
-		return x.SessionId
-	}
-	return 0
-}
-
-func (x *BindSessionToGateResponse) GetPlayerId() uint64 {
-	if x != nil {
-		return x.PlayerId
-	}
-	return 0
-}
-
-func (x *BindSessionToGateResponse) GetSessionVersion() uint32 {
-	if x != nil {
-		return x.SessionVersion
-	}
-	return 0
-}
-
 type BroadcastToPlayersRequest struct {
 	state          protoimpl.MessageState `protogen:"open.v1"`
 	SessionList    []uint32               `protobuf:"varint,1,rep,packed,name=session_list,json=sessionList,proto3" json:"session_list,omitempty"`
@@ -160,7 +40,6 @@ type BroadcastToPlayersRequest struct {
 	//   - session_list 形态:发送方按升序填 session_list,两个列表逐项对应;
 	//   - bitmap 形态:gate 按 bit 序(= session_id 升序)遍历,第 i 个置位的
 	//     session 对应 player_list[i]。
-	//
 	// 两种形态都归结为同一条规则,不存在第二种解释。
 	// 留空 = 老发送方(灰度窗口),gate 放行不校验。
 	PlayerList    []uint64 `protobuf:"varint,5,rep,packed,name=player_list,json=playerList,proto3" json:"player_list,omitempty"`
@@ -170,7 +49,7 @@ type BroadcastToPlayersRequest struct {
 
 func (x *BroadcastToPlayersRequest) Reset() {
 	*x = BroadcastToPlayersRequest{}
-	mi := &file_proto_gate_gate_service_proto_msgTypes[2]
+	mi := &file_proto_gate_gate_service_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -182,7 +61,7 @@ func (x *BroadcastToPlayersRequest) String() string {
 func (*BroadcastToPlayersRequest) ProtoMessage() {}
 
 func (x *BroadcastToPlayersRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_gate_gate_service_proto_msgTypes[2]
+	mi := &file_proto_gate_gate_service_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -195,7 +74,7 @@ func (x *BroadcastToPlayersRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use BroadcastToPlayersRequest.ProtoReflect.Descriptor instead.
 func (*BroadcastToPlayersRequest) Descriptor() ([]byte, []int) {
-	return file_proto_gate_gate_service_proto_rawDescGZIP(), []int{2}
+	return file_proto_gate_gate_service_proto_rawDescGZIP(), []int{0}
 }
 
 func (x *BroadcastToPlayersRequest) GetSessionList() []uint32 {
@@ -243,7 +122,7 @@ type BroadcastToSceneRequest struct {
 
 func (x *BroadcastToSceneRequest) Reset() {
 	*x = BroadcastToSceneRequest{}
-	mi := &file_proto_gate_gate_service_proto_msgTypes[3]
+	mi := &file_proto_gate_gate_service_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -255,7 +134,7 @@ func (x *BroadcastToSceneRequest) String() string {
 func (*BroadcastToSceneRequest) ProtoMessage() {}
 
 func (x *BroadcastToSceneRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_gate_gate_service_proto_msgTypes[3]
+	mi := &file_proto_gate_gate_service_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -268,7 +147,7 @@ func (x *BroadcastToSceneRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use BroadcastToSceneRequest.ProtoReflect.Descriptor instead.
 func (*BroadcastToSceneRequest) Descriptor() ([]byte, []int) {
-	return file_proto_gate_gate_service_proto_rawDescGZIP(), []int{3}
+	return file_proto_gate_gate_service_proto_rawDescGZIP(), []int{1}
 }
 
 func (x *BroadcastToSceneRequest) GetSceneId() uint64 {
@@ -294,7 +173,7 @@ type BroadcastToAllRequest struct {
 
 func (x *BroadcastToAllRequest) Reset() {
 	*x = BroadcastToAllRequest{}
-	mi := &file_proto_gate_gate_service_proto_msgTypes[4]
+	mi := &file_proto_gate_gate_service_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -306,7 +185,7 @@ func (x *BroadcastToAllRequest) String() string {
 func (*BroadcastToAllRequest) ProtoMessage() {}
 
 func (x *BroadcastToAllRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_gate_gate_service_proto_msgTypes[4]
+	mi := &file_proto_gate_gate_service_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -319,7 +198,7 @@ func (x *BroadcastToAllRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use BroadcastToAllRequest.ProtoReflect.Descriptor instead.
 func (*BroadcastToAllRequest) Descriptor() ([]byte, []int) {
-	return file_proto_gate_gate_service_proto_rawDescGZIP(), []int{4}
+	return file_proto_gate_gate_service_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *BroadcastToAllRequest) GetMessageContent() *base.MessageContent {
@@ -333,17 +212,7 @@ var File_proto_gate_gate_service_proto protoreflect.FileDescriptor
 
 const file_proto_gate_gate_service_proto_rawDesc = "" +
 	"\n" +
-	"\x1dproto/gate/gate_service.proto\x1a\x1bproto/db/proto_option.proto\x1a\x1dproto/common/base/empty.proto\x1a\x1fproto/common/base/message.proto\x1a proto/common/base/gm_admin.proto\"\x7f\n" +
-	"\x18BindSessionToGateRequest\x12\x1d\n" +
-	"\n" +
-	"session_id\x18\x01 \x01(\rR\tsessionId\x12\x1b\n" +
-	"\tplayer_id\x18\x02 \x01(\x04R\bplayerId\x12'\n" +
-	"\x0fsession_version\x18\x03 \x01(\rR\x0esessionVersion\"\x80\x01\n" +
-	"\x19BindSessionToGateResponse\x12\x1d\n" +
-	"\n" +
-	"session_id\x18\x01 \x01(\rR\tsessionId\x12\x1b\n" +
-	"\tplayer_id\x18\x02 \x01(\x04R\bplayerId\x12'\n" +
-	"\x0fsession_version\x18\x03 \x01(\rR\x0esessionVersion\"\xf0\x01\n" +
+	"\x1dproto/gate/gate_service.proto\x1a\x1bproto/db/proto_option.proto\x1a\x1dproto/common/base/empty.proto\x1a\x1fproto/common/base/message.proto\x1a proto/common/base/gm_admin.proto\"\xf0\x01\n" +
 	"\x19BroadcastToPlayersRequest\x12!\n" +
 	"\fsession_list\x18\x01 \x03(\rR\vsessionList\x128\n" +
 	"\x0fmessage_content\x18\x02 \x01(\v2\x0f.MessageContentR\x0emessageContent\x12.\n" +
@@ -355,17 +224,13 @@ const file_proto_gate_gate_service_proto_rawDesc = "" +
 	"\bscene_id\x18\x01 \x01(\x04R\asceneId\x128\n" +
 	"\x0fmessage_content\x18\x02 \x01(\v2\x0f.MessageContentR\x0emessageContent\"Q\n" +
 	"\x15BroadcastToAllRequest\x128\n" +
-	"\x0fmessage_content\x18\x01 \x01(\v2\x0f.MessageContentR\x0emessageContent2\xa6\x05\n" +
-	"\x04Gate\x12X\n" +
-	"\x13PlayerEnterGameNode\x12\x1f.RegisterGameNodeSessionRequest\x1a .RegisterGameNodeSessionResponse\x127\n" +
-	"\x13SendMessageToPlayer\x12\x18.NodeRouteMessageRequest\x1a\x06.Empty\x12?\n" +
-	"\x10RouteNodeMessage\x12\x14.RouteMessageRequest\x1a\x15.RouteMessageResponse\x12M\n" +
-	"\x12RoutePlayerMessage\x12\x1a.RoutePlayerMessageRequest\x1a\x1b.RoutePlayerMessageResponse\x128\n" +
+	"\x0fmessage_content\x18\x01 \x01(\v2\x0f.MessageContentR\x0emessageContent2\xf0\x02\n" +
+	"\x04Gate\x127\n" +
+	"\x13SendMessageToPlayer\x12\x18.NodeRouteMessageRequest\x1a\x06.Empty\x128\n" +
 	"\x12BroadcastToPlayers\x12\x1a.BroadcastToPlayersRequest\x1a\x06.Empty\x124\n" +
 	"\x10BroadcastToScene\x12\x18.BroadcastToSceneRequest\x1a\x06.Empty\x120\n" +
 	"\x0eBroadcastToAll\x12\x16.BroadcastToAllRequest\x1a\x06.Empty\x12>\n" +
-	"\rNodeHandshake\x12\x15.NodeHandshakeRequest\x1a\x16.NodeHandshakeResponse\x12J\n" +
-	"\x11BindSessionToGate\x12\x19.BindSessionToGateRequest\x1a\x1a.BindSessionToGateResponse\x12M\n" +
+	"\rNodeHandshake\x12\x15.NodeHandshakeRequest\x1a\x16.NodeHandshakeResponse\x12M\n" +
 	"\x12GmGracefulShutdown\x12\x1a.GmGracefulShutdownRequest\x1a\x1b.GmGracefulShutdownResponseB\x13\x98\xd4a\x02Z\n" +
 	"proto/gate\x80\x01\x01b\x06proto3"
 
@@ -381,56 +246,40 @@ func file_proto_gate_gate_service_proto_rawDescGZIP() []byte {
 	return file_proto_gate_gate_service_proto_rawDescData
 }
 
-var file_proto_gate_gate_service_proto_msgTypes = make([]protoimpl.MessageInfo, 5)
+var file_proto_gate_gate_service_proto_msgTypes = make([]protoimpl.MessageInfo, 3)
 var file_proto_gate_gate_service_proto_goTypes = []any{
-	(*BindSessionToGateRequest)(nil),             // 0: BindSessionToGateRequest
-	(*BindSessionToGateResponse)(nil),            // 1: BindSessionToGateResponse
-	(*BroadcastToPlayersRequest)(nil),            // 2: BroadcastToPlayersRequest
-	(*BroadcastToSceneRequest)(nil),              // 3: BroadcastToSceneRequest
-	(*BroadcastToAllRequest)(nil),                // 4: BroadcastToAllRequest
-	(*base.MessageContent)(nil),                  // 5: MessageContent
-	(*base.RegisterGameNodeSessionRequest)(nil),  // 6: RegisterGameNodeSessionRequest
-	(*base.NodeRouteMessageRequest)(nil),         // 7: NodeRouteMessageRequest
-	(*base.RouteMessageRequest)(nil),             // 8: RouteMessageRequest
-	(*base.RoutePlayerMessageRequest)(nil),       // 9: RoutePlayerMessageRequest
-	(*base.NodeHandshakeRequest)(nil),            // 10: NodeHandshakeRequest
-	(*base.GmGracefulShutdownRequest)(nil),       // 11: GmGracefulShutdownRequest
-	(*base.RegisterGameNodeSessionResponse)(nil), // 12: RegisterGameNodeSessionResponse
-	(*base.Empty)(nil),                           // 13: Empty
-	(*base.RouteMessageResponse)(nil),            // 14: RouteMessageResponse
-	(*base.RoutePlayerMessageResponse)(nil),      // 15: RoutePlayerMessageResponse
-	(*base.NodeHandshakeResponse)(nil),           // 16: NodeHandshakeResponse
-	(*base.GmGracefulShutdownResponse)(nil),      // 17: GmGracefulShutdownResponse
+	(*BroadcastToPlayersRequest)(nil),       // 0: BroadcastToPlayersRequest
+	(*BroadcastToSceneRequest)(nil),         // 1: BroadcastToSceneRequest
+	(*BroadcastToAllRequest)(nil),           // 2: BroadcastToAllRequest
+	(*base.MessageContent)(nil),             // 3: MessageContent
+	(*base.NodeRouteMessageRequest)(nil),    // 4: NodeRouteMessageRequest
+	(*base.NodeHandshakeRequest)(nil),       // 5: NodeHandshakeRequest
+	(*base.GmGracefulShutdownRequest)(nil),  // 6: GmGracefulShutdownRequest
+	(*base.Empty)(nil),                      // 7: Empty
+	(*base.NodeHandshakeResponse)(nil),      // 8: NodeHandshakeResponse
+	(*base.GmGracefulShutdownResponse)(nil), // 9: GmGracefulShutdownResponse
 }
 var file_proto_gate_gate_service_proto_depIdxs = []int32{
-	5,  // 0: BroadcastToPlayersRequest.message_content:type_name -> MessageContent
-	5,  // 1: BroadcastToSceneRequest.message_content:type_name -> MessageContent
-	5,  // 2: BroadcastToAllRequest.message_content:type_name -> MessageContent
-	6,  // 3: Gate.PlayerEnterGameNode:input_type -> RegisterGameNodeSessionRequest
-	7,  // 4: Gate.SendMessageToPlayer:input_type -> NodeRouteMessageRequest
-	8,  // 5: Gate.RouteNodeMessage:input_type -> RouteMessageRequest
-	9,  // 6: Gate.RoutePlayerMessage:input_type -> RoutePlayerMessageRequest
-	2,  // 7: Gate.BroadcastToPlayers:input_type -> BroadcastToPlayersRequest
-	3,  // 8: Gate.BroadcastToScene:input_type -> BroadcastToSceneRequest
-	4,  // 9: Gate.BroadcastToAll:input_type -> BroadcastToAllRequest
-	10, // 10: Gate.NodeHandshake:input_type -> NodeHandshakeRequest
-	0,  // 11: Gate.BindSessionToGate:input_type -> BindSessionToGateRequest
-	11, // 12: Gate.GmGracefulShutdown:input_type -> GmGracefulShutdownRequest
-	12, // 13: Gate.PlayerEnterGameNode:output_type -> RegisterGameNodeSessionResponse
-	13, // 14: Gate.SendMessageToPlayer:output_type -> Empty
-	14, // 15: Gate.RouteNodeMessage:output_type -> RouteMessageResponse
-	15, // 16: Gate.RoutePlayerMessage:output_type -> RoutePlayerMessageResponse
-	13, // 17: Gate.BroadcastToPlayers:output_type -> Empty
-	13, // 18: Gate.BroadcastToScene:output_type -> Empty
-	13, // 19: Gate.BroadcastToAll:output_type -> Empty
-	16, // 20: Gate.NodeHandshake:output_type -> NodeHandshakeResponse
-	1,  // 21: Gate.BindSessionToGate:output_type -> BindSessionToGateResponse
-	17, // 22: Gate.GmGracefulShutdown:output_type -> GmGracefulShutdownResponse
-	13, // [13:23] is the sub-list for method output_type
-	3,  // [3:13] is the sub-list for method input_type
-	3,  // [3:3] is the sub-list for extension type_name
-	3,  // [3:3] is the sub-list for extension extendee
-	0,  // [0:3] is the sub-list for field type_name
+	3, // 0: BroadcastToPlayersRequest.message_content:type_name -> MessageContent
+	3, // 1: BroadcastToSceneRequest.message_content:type_name -> MessageContent
+	3, // 2: BroadcastToAllRequest.message_content:type_name -> MessageContent
+	4, // 3: Gate.SendMessageToPlayer:input_type -> NodeRouteMessageRequest
+	0, // 4: Gate.BroadcastToPlayers:input_type -> BroadcastToPlayersRequest
+	1, // 5: Gate.BroadcastToScene:input_type -> BroadcastToSceneRequest
+	2, // 6: Gate.BroadcastToAll:input_type -> BroadcastToAllRequest
+	5, // 7: Gate.NodeHandshake:input_type -> NodeHandshakeRequest
+	6, // 8: Gate.GmGracefulShutdown:input_type -> GmGracefulShutdownRequest
+	7, // 9: Gate.SendMessageToPlayer:output_type -> Empty
+	7, // 10: Gate.BroadcastToPlayers:output_type -> Empty
+	7, // 11: Gate.BroadcastToScene:output_type -> Empty
+	7, // 12: Gate.BroadcastToAll:output_type -> Empty
+	8, // 13: Gate.NodeHandshake:output_type -> NodeHandshakeResponse
+	9, // 14: Gate.GmGracefulShutdown:output_type -> GmGracefulShutdownResponse
+	9, // [9:15] is the sub-list for method output_type
+	3, // [3:9] is the sub-list for method input_type
+	3, // [3:3] is the sub-list for extension type_name
+	3, // [3:3] is the sub-list for extension extendee
+	0, // [0:3] is the sub-list for field type_name
 }
 
 func init() { file_proto_gate_gate_service_proto_init() }
@@ -444,7 +293,7 @@ func file_proto_gate_gate_service_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_proto_gate_gate_service_proto_rawDesc), len(file_proto_gate_gate_service_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   5,
+			NumMessages:   3,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

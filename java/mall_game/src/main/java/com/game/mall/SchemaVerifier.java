@@ -22,6 +22,7 @@ final class SchemaVerifier {
             throw new IllegalStateException("商城存储版本不兼容，必须使用独立迁移后的商城库");
         }
         try (Connection connection = source.getConnection()) {
+            for(String table:List.of("commerce_sku_grant","commerce_order_grant","commerce_delivery_receipt","commerce_refund_intent","commerce_refund_receipt"))try(var s=connection.createStatement();var rows=s.executeQuery("SELECT * FROM "+table+" WHERE 1=0")){rows.getMetaData();}
             if (connection.getTransactionIsolation() != Connection.TRANSACTION_READ_COMMITTED) { throw new IllegalStateException("商城连接必须使用 READ-COMMITTED"); }
             for (var table : COLUMNS.entrySet()) {
                 try (PreparedStatement statement = connection.prepareStatement("SELECT " + table.getValue() + " FROM " + table.getKey() + " WHERE 1=0"); ResultSet rows = statement.executeQuery()) {
@@ -44,6 +45,7 @@ final class SchemaVerifier {
             unique(connection, "oms_order_item", List.of("order_sn"));
             unique(connection, "commerce_payment_receipt", List.of("channel", "transaction_id")); unique(connection, "commerce_payment_receipt", List.of("order_sn"));
             unique(connection, "commerce_delivery_intent", List.of("order_sn"));
+            if(indexes(connection,"commerce_delivery_intent",false).values().stream().noneMatch(cols->cols.size()>=3&&cols.subList(0,3).equals(List.of("status","created_ms","order_sn"))))throw new IllegalStateException("商城交付待办缺可恢复扫描索引");
             unique(connection, "commerce_request_nonce", List.of("caller_role", "nonce"));
             if (indexes(connection, "oms_order", false).values().stream().noneMatch(cols -> cols.size() >= 2 && cols.subList(0, 2).equals(List.of("buyer_id", "status")))) {
                 throw new IllegalStateException("商城未支付订单计数缺买家状态索引");

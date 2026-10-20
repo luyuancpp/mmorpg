@@ -1,0 +1,230 @@
+syntax = "proto3";
+package match;
+
+import "proto/db/proto_option.proto";
+import "proto/common/base/empty.proto";
+import "proto/common/base/tip.proto";
+import "proto/battle/player_battle.proto";
+import "proto/match/match_network.proto";
+
+option go_package = "robot/proto/match";
+option (OptionFileDefaultNode) = NODE_MATCH;
+
+// MatchService:统一开局入口(回合制战斗一期启用,设计文档 turn-based-battle-server.md D3)。
+// 客户端经 gate 按文件路由选项直达 match 服务(照 login 模式,权威 player_id 取自
+// session metadata,请求内 player_id 仅内部调用使用)。
+// 凑单成功后走 gather 协议:scene.PrepareBattle 收快照 -> battle.CreateBattle,
+// 失败按补偿矩阵回滚(设计文档 §3.2)。
+service MatchService {
+  option (OptionIsClientProtocolService) = true;
+
+  // 获取受信地域探测端点；提交端点签名回执后才允许全球排队。
+  rpc GetNetworkProbePlan(GetNetworkProbePlanRequest) returns (GetNetworkProbePlanResponse) {}
+  rpc CommitNetworkProbe(CommitNetworkProbeRequest) returns (CommitNetworkProbeResponse) {}
+
+  // Player requests to join a match queue.
+  rpc JoinQueue(JoinQueueRequest) returns (JoinQueueResponse) {}
+
+  // Player cancels their queued match request.
+  rpc CancelQueue(CancelQueueRequest) returns (Empty) {}
+
+  // Query current queue status for a player.
+  rpc GetQueueStatus(GetQueueStatusRequest) returns (GetQueueStatusResponse) {}
+
+  // ---- 场景发起 PK(切磋):点名成局入口,与队列匹配汇入同一条 gather 开局管线 ----
+  rpc ChallengePlayer(ChallengePlayerRequest) returns (ChallengePlayerResponse) {}
+  rpc RespondChallenge(RespondChallengeRequest) returns (RespondChallengeResponse) {}
+  rpc NotifyChallengeInvite(ChallengeInviteS2C) returns (Empty) {}
+  rpc NotifyChallengeResult(ChallengeResultS2C) returns (Empty) {}
+
+  // ---- 二期:观战匹配(设计文档 §10) ----
+  // battle_id=0 表示随机观战(从活跃战斗索引里随机挑一场);成功后由 battle 节点
+  // 经 Kafka 推 NotifySpectateState 首帧,客户端收到首帧才算进入观战。
+  rpc WatchBattle(WatchBattleRequest) returns (WatchBattleResponse) {}
+
+  // ---- 战斗票据补签(客户端丢票 / 冷启动;turn-based-battle-server.md §18 D25) ----
+  // 大厅会话唯一的补签入口:match 按 spectate:battle:{battle_id} 索引定位房间所在 battle 节点,
+  // 调 BattleNode.IssueBattleTicket 由 battle 本地核对名单并自签;仅参战者 / 观众可得票。
+  // 曾是 BattleClientPlayer.RequestBattleTicket(gate→battle gRPC);gate 收成只连路由服后 gate 不再
+  // 认识 battle 节点,补签改由 match 转,请求 / 响应消息复用 player_battle.proto 里的定义。
+  rpc RequestBattleTicket(RequestBattleTicketRequest) returns (RequestBattleTicketResponse) {}
+  rpc ListWatchableBattles(ListWatchableBattlesRequest) returns (ListWatchableBattlesResponse) {}
+}
+
+// ----- Match mode config -----
+
+// Match mode determines team size, player count, and map config.
+enum MatchMode {
+  MATCH_MODE_UNSPECIFIED = 0;
+  MATCH_MODE_5V5         = 1; // 回合制 PVP 5v5(二期启用):FIFO 凑 10 人,前 5 后 5 各一队
+  MATCH_MODE_3V3         = 2; // 6 players total(未开放)
+  MATCH_MODE_1V1         = 3; // 2 players total(回合制 PVP,一期启用)
+  MATCH_MODE_PVE_SOLO    = 4; // 回合制 PVE 单人,即时开战(伪匹配)
+  MATCH_MODE_PVE_TEAM    = 5; // 回合制 PVE 组队:按 JoinQueueRequest.team_size 的人数档 FIFO 凑满(1 人档即时开战)
+  MATCH_MODE_PVP_CHALLENGE = 6; // 场景发起 PK(切磋):点名成局,不入队
+}
+
+// ----- Join queue -----
+
+message JoinQueueRequest {
+  uint64 player_id = 1;               // Initiating player
+  MatchMode mode = 2;                 // Desired match mode (5v5, 3v3, 1v1)
+  uint32 map_config_id = 3;           // Map template config ID (maps to scene_config_id)
+  // 从未生效(joinqueuelogic.go 只打一行日志后照单人入队);整队开战的唯一入口是
+  // ClientPlayerTeam.StartTeamMatch(docs/design/team-system.md DV-4)。字段号 4 保留不复用(AGENTS §4)。
+  repeated uint64 party_member_ids = 4 [deprecated = true];
+  uint32 zone_id = 5;                 // Player's current zone
+  uint32 battle_config_id = 6;        // 回合制战斗配置(DungeonTable id:怪物组/人数/回合上限)
+  // PVE 人数档(只有 MATCH_MODE_PVE_TEAM 读它,docs/design/pve-team-size-matching.md):想凑成几人的队伍。
+  // 怪物只数跟着实际参战人数走(每人一整组怪:单人打一组,N 人打 N 组)。
+  //   0        = 该副本的人数上限(加这个字段之前的行为;老客户端不填就是它)
+  //   1        = 不排队,即时开战
+  //   2..上限  = 进这个人数档的队列,凑满即开
+  //   超过上限 = 拒绝(kMatchModeNotOpen)
+  // 上限 = match 配置 PveTeamSizeByConfigId[battle_config_id],且不超过引擎每队上限 5。
+  uint32 team_size = 7;
+  // 同一玩家意图重放必须复用；为空只允许未启用全球权威的开发兼容模式。
+  string request_id = 8;
+  string network_plan_id = 9;
+}
+
+message JoinQueueResponse {
+  uint32 error_code = 1;              // 0 = success
+  string queue_ticket = 2;            // Ticket ID for tracking / cancellation
+  TipInfoMessage error_message = 3;
+}
+
+// ----- Cancel queue -----
+
+message CancelQueueRequest {
+  uint64 player_id = 1;
+  string queue_ticket = 2;            // Ticket to cancel
+  // 对未知结果的 Join 也能撤销；与原 Join 共用编号，服务端永久阻止该意图迟到入队。
+  string request_id = 3;
+}
+
+// ----- Queue status -----
+
+message GetQueueStatusRequest {
+  uint64 player_id = 1;
+  string request_id = 2; // 查询本次 Join 的撤销提交证据；不改变当前票据身份。
+}
+
+message GetQueueStatusResponse {
+  QueueState state = 1;
+  uint32 estimated_wait_seconds = 2;  // Server-estimated wait time
+  uint32 queued_seconds = 3;          // How long the player has been waiting
+  string queue_ticket = 4;
+  uint64 battle_id = 5;
+  uint32 selected_region = 6;
+  uint32 retry_after_ms = 7;
+  bool request_cancelled = 8; // 对上述 request_id 的 SQL 撤销墓碑已提交；NOT_QUEUED 单独不构成此证据。
+}
+
+enum QueueState {
+  QUEUE_STATE_UNSPECIFIED = 0;
+  QUEUE_STATE_QUEUED      = 1;  // Waiting for match
+  QUEUE_STATE_MATCHED     = 2;  // Match found, instance being created
+  QUEUE_STATE_READY       = 3;  // Instance created, waiting for player confirm
+  QUEUE_STATE_ENTERING    = 4;  // Players entering scene
+  QUEUE_STATE_NOT_QUEUED  = 5;  // Player is not in any queue
+}
+
+// ----- 场景发起 PK(切磋) -----
+// challenge_id 由 match 服务 snowflake 生产;挑战记录存 Redis(TTL 60s),超时自动作废。
+// 应战成功后与队列匹配共用 gather 开局管线(PrepareBattle -> CreateBattle),
+// 双方 battle:lock 校验在应战时刻做(发起时只做咨询性检查)。
+
+message ChallengePlayerRequest {
+  uint64 player_id = 1;          // 发起者(权威身份以 session metadata 为准)
+  uint64 target_player_id = 2;   // 被挑战者(客户端从场景 AOI 拿到)
+  uint32 battle_config_id = 3;   // PK 规则/场地配置(0 = 默认切磋规则)
+}
+
+message ChallengePlayerResponse {
+  uint64 challenge_id = 1;
+  TipInfoMessage error_message = 2;  // 对方不在线/在战斗中/自我挑战等拒绝原因
+}
+
+message RespondChallengeRequest {
+  uint64 player_id = 1;          // 应战者(权威身份以 session metadata 为准)
+  uint64 challenge_id = 2;
+  bool accept = 3;
+}
+
+message RespondChallengeResponse {
+  TipInfoMessage error_message = 1;  // 挑战已过期/发起者已进入其它战斗等
+}
+
+// 推给被挑战者的弹窗
+message ChallengeInviteS2C {
+  uint64 challenge_id = 1;
+  uint64 challenger_id = 2;
+  string challenger_name = 3;
+  uint32 battle_config_id = 4;
+  uint64 expires_at_ms = 5;      // Unix 毫秒,过期客户端自动收起弹窗
+}
+
+// 推给发起者(以及拒绝时推给双方)的结果
+message ChallengeResultS2C {
+  uint64 challenge_id = 1;
+  bool accepted = 2;             // false = 拒绝或超时
+  uint64 responder_id = 3;
+}
+
+// ----- 二期:观战匹配(设计文档 §10) -----
+// 活跃战斗索引由 match 维护:gather 开局成功后写 spectate:battle:{battle_id}
+// (SpectateBattleRecord pb,TTL = 战斗最长期限 + 余量)+ ZADD spectate:battles:active;
+// 清理靠 TTL + 观战失败(battle 节点报房间不存在)时懒剔除,battle 节点不碰 Redis。
+
+message WatchBattleRequest {
+  uint64 player_id = 1;      // 权威身份以 session metadata 为准
+  uint64 battle_id = 2;      // 0 = 随机观战
+}
+
+message WatchBattleResponse {
+  uint64 battle_id = 1;      // 实际观战的战斗(随机模式回填)
+  TipInfoMessage error_message = 2;  // 无可观战战斗/本人在战斗或队列中/战斗已结束
+}
+
+message ListWatchableBattlesRequest {
+  uint64 player_id = 1;
+  uint32 limit = 2;          // 0 = 服务端默认条数
+}
+
+message ListWatchableBattlesResponse {
+  repeated BattleWatchSummary battles = 1;
+}
+
+// 客户端观战列表条目(摘要在开局时刻生成,不含实时回合数)
+message BattleWatchSummary {
+  uint64 battle_id = 1;
+  MatchMode mode = 2;
+  uint32 battle_config_id = 3;
+  repeated string player_names = 4;
+  uint64 created_at_ms = 5;
+}
+
+// 内部登记记录(Redis value,含路由所需的 battle 节点 id,不下发客户端)
+message SpectateBattleRecord {
+  BattleWatchSummary summary = 1;
+  uint32 battle_node_id = 2;
+}
+
+// ----- Server-internal: match result (used between MatchService and SceneManager) -----
+
+// MatchResult is produced internally when matchmaking completes.
+// MatchService uses this to call SceneManager.CreateScene.
+message MatchResult {
+  string match_id = 1;                // Unique match identifier
+  MatchMode mode = 2;
+  uint32 map_config_id = 3;           // scene_config_id for CreateScene
+  uint32 dungeon_config_id = 4;       // dungeon_config_id for CreateScene
+  repeated MatchTeam teams = 5;
+  uint32 zone_id = 6;
+}
+
+message MatchTeam {
+  uint32 team_index = 1;              // 0 = team A, 1 = team B
+  repeated uint64 player_ids = 2;
+}

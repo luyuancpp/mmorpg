@@ -23,7 +23,9 @@ const subsystem = "match"
 const teamSubsystem = "team"
 
 var (
-	joinQueueTotal = prometheus.NewCounterVec(prometheus.CounterOpts{
+	globalFlowTotal = prometheus.NewCounterVec(prometheus.CounterOpts{Subsystem: subsystem, Name: "global_flow_total", Help: "全球事务匹配固定阶段与结果计数，不包含玩家或票据标签。"}, []string{"stage", "outcome"})
+	probeRTT        = prometheus.NewHistogram(prometheus.HistogramOpts{Subsystem: subsystem, Name: "network_probe_rtt_milliseconds", Help: "服务端签名回执实测RTT。", Buckets: []float64{10, 25, 50, 80, 120, 180, 250, 500, 1000}})
+	joinQueueTotal  = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Subsystem: subsystem,
 		Name:      "join_queue_total",
 		Help:      "JoinQueue requests by mode and outcome (ok|in_battle|already_queued|mode_not_open|no_team_size|team_size_over_limit|not_in_scene|internal).",
@@ -233,6 +235,7 @@ var registerOnce sync.Once
 func register() {
 	registerOnce.Do(func() {
 		prometheus.MustRegister(
+			globalFlowTotal, probeRTT,
 			joinQueueTotal,
 			gatherTotal,
 			gatherDuration,
@@ -265,6 +268,9 @@ func register() {
 		}
 	})
 }
+
+func ObserveGlobalFlow(stage, outcome string) { globalFlowTotal.WithLabelValues(stage, outcome).Inc() }
+func ObserveProbeRTT(ms uint32)               { probeRTT.Observe(float64(ms)) }
 
 // SetStarvedAnchorWait 更新某队列本轮凑不到候选的锚点的最长等待秒数(0 = 无)。
 // teamSize 是 PVE 人数档("2".."5";没有人数档的队列传 "0"),见 SetQueueDepth。

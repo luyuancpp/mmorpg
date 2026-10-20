@@ -22,17 +22,12 @@ namespace
 		return std::ref(*loop);
 	}
 
-	// AUTH 失败时给日志用的描述。口令绝不进日志:服务端错误文本里若含口令原文(某些代理会回显),
+	// 服务端给的错误文本进日志前的处理。口令绝不进日志:文本里若含口令原文(某些代理会回显),
 	// 只保留第一个空格前的错误码(WRONGPASS / ERR / NOAUTH ...)供运维区分原因,其余换成 <redacted>;
 	// 错误码本身也含口令(口令很短或恰是错误码的一部分)时整段换掉。
 	// 必须先在完整文本上查口令、再截断:先截断会把跨截断点的口令前半段放进日志。
-	std::string DescribeAuthFailure(const redisReply *reply, const std::string &password)
+	std::string RedactServerErrorText(std::string_view text, const std::string &password)
 	{
-		if (reply->type != REDIS_REPLY_ERROR || reply->str == nullptr)
-		{
-			return "unexpected reply type " + std::to_string(reply->type);
-		}
-		const std::string_view text(reply->str, reply->len);
 		if (password.empty() || text.find(password) == std::string_view::npos)
 		{
 			return std::string(text.substr(0, kMaxAuthErrorLogBytes));
@@ -43,6 +38,33 @@ namespace
 			return "<redacted>";
 		}
 		return std::string(code) + " <redacted>";
+	}
+
+	// AUTH 失败时给日志用的描述。
+	std::string DescribeAuthFailure(const redisReply *reply, const std::string &password)
+	{
+		if (reply->type != REDIS_REPLY_ERROR || reply->str == nullptr)
+		{
+			return "unexpected reply type " + std::to_string(reply->type);
+		}
+		return RedactServerErrorText(std::string_view(reply->str, reply->len), password);
+	}
+
+	// 建连失败 / 断线时 hiredis 记下的原因(redisAsyncContext::errstr,P0-E 第 3 批):I/O 错误的系统文本、
+	// "Server closed the connection"(读到 EOF)、协议错误,或建连后、发出第一条命令前服务端主动回的错误
+	// (到线时的 "ERR max number of clients reached":hiredis async.c 把这种回复当错误、写进 errstr 后断开)。
+	// 适配层没有暴露数值的 err,errstr 是它对应的文本;显式拆除(redisAsyncDisconnect)时为空串,打成 none。
+	// 只能在该连接自己的连接 / 断线回调栈内调用:此时 context 仍有效(hiredis 在回调返回后才释放它,
+	// Windows 适配层随后清空 context_,Linux 两份适配层不清)。
+	// errstr 可能是服务端原文,同 AUTH 失败一样过一遍口令遮挡。
+	std::string DescribeConnectionError(const hiredis::Hiredis &connection, const std::string &password)
+	{
+		const char *errstr = connection.errstr();
+		if (errstr == nullptr || *errstr == '\0')
+		{
+			return "none";
+		}
+		return RedactServerErrorText(errstr, password);
 	}
 
 	// 先清连接与断线回调再释放:避免显式拆除又走一遍断线 / 重连路径。
@@ -136,23 +158,24 @@ void RedisManager::StartHandshake()
 
 	// 回调在 connect() 之前装好:首个 SYN 就失败也能进 OnHandshakeConnected 挂上重连定时器。
 	handshakeRedis_ = std::make_unique<HiredisPtr::element_type>(&loop_->get(), redisAddr_);
-	handshakeRedis_->setConnectCallback([this](hiredis::Hiredis *, int status)
-										{ OnHandshakeConnected(status); });
+	handshakeRedis_->setConnectCallback([this](hiredis::Hiredis *me, int status)
+										{ OnHandshakeConnected(me, status); });
 	// 断线回调装在连接对象上,移交后继续有效:握手期间断开与移交后断开都走这里。
-	handshakeRedis_->setDisconnectCallback([this](hiredis::Hiredis *, int status)
+	// reason 是 hiredis 记下的断线原因(见 DescribeConnectionError):到线、被服务端踢、网络断开在日志里分得开。
+	handshakeRedis_->setDisconnectCallback([this](hiredis::Hiredis *me, int status)
 										   {
-		LOG_ERROR << "Redis disconnected (status=" << status << "), scheduling reconnect to "
-				  << redisAddr_.toIpPort();
+		LOG_ERROR << "Redis disconnected (status=" << status << ", reason=" << DescribeConnectionError(*me, options_.password)
+				  << "), scheduling reconnect to " << redisAddr_.toIpPort();
 		ScheduleReconnect(); });
 	handshakeRedis_->connect();
 }
 
-void RedisManager::OnHandshakeConnected(int status)
+void RedisManager::OnHandshakeConnected(hiredis::Hiredis *me, int status)
 {
 	if (status != REDIS_OK)
 	{
-		LOG_WARN << "Redis connect attempt failed (status=" << status
-				 << ") to " << redisAddr_.toIpPort() << ", will retry";
+		LOG_WARN << "Redis connect attempt failed (status=" << status << ", reason="
+				 << DescribeConnectionError(*me, options_.password) << ") to " << redisAddr_.toIpPort() << ", will retry";
 		ScheduleReconnect();
 		return;
 	}

@@ -12,7 +12,8 @@
 //  5. 握手中 Shutdown:安静释放,不回调、不重连;
 //  6. 重连间隔非正数时回落到默认值并打 WARN;
 //  7. 握手中服务端断开(AUTH 应答前,或回了拒绝之后):空应答不移交、不调回调,断线回调不打乱截止定时器,
-//     到点照常重建握手连接。
+//     到点照常重建握手连接;
+//  8. 断线日志带 hiredis 记下的原因(reason=<errstr>,P0-E 第 3 批),同样不含口令。
 //
 // 同一夹具还覆盖 2026-10 加的存活契约(RedisManagerLiveness.*,见 redis_manager.h Connect 注释的「存活契约」):
 //  8. 对端不回任何应答、也不断开(模拟代理所在机器整机消失):PING 截止后摘下连接,在途命令以空应答结束,
@@ -911,6 +912,9 @@ TEST_F(RedisManagerAuth, ReauthenticatesAfterServerDisconnect)
 
     const std::string log = CapturedLog();
     EXPECT_TRUE(Contains(log, "Redis disconnected")) << MaskPassword(log);
+    // 断线日志带 hiredis 记下的原因(P0-E 第 3 批):服务端半关写端,客户端读到 EOF,errstr 是 hiredis net.c 的固定文本。
+    // 以前这一行只有 status,到线、被踢、网络断开在日志里分不开。
+    EXPECT_TRUE(Contains(log, "reason=Server closed the connection")) << MaskPassword(log);
     EXPECT_EQ(CountOccurrences(log, "Redis AUTH ok to"), 2u) << MaskPassword(log);
     EXPECT_FALSE(Contains(log, kTestPassword)) << "password leaked into the log";
 }

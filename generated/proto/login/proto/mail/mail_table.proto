@@ -1,118 +1,144 @@
 syntax = "proto3";
 package mailpb;
-
 option go_package = "login/proto/mail";
-
 import "proto/db/proto_option.proto";
 
-// mail 独占库 mmorpg_mail 的表结构,唯一事实源(port-decisions D-14;设计 docs/design/mail-system.md §3.6)。
-// - 建表 / 加列只经 go/schemamigrate 的 ProtoSource(go/mail/internal/data/tables.go 列清单),
-//   本仓任何地方都不手写 mail 的 DDL;行直接扫进本文件的 message,不另写 Go struct(AGENTS §3)。
-// - D-14 约束:主键只用整数列;每表至多一个唯一键;string 列不进任何键。
-//   只用 uint32 / uint64 / string / bytes:schemamigrate 拒绝 sint* / fixed* / sfixed*
-//   (那些类型在 proto2mysql 里静默回落成 TEXT,建表成功、第一次写入才炸)。时间戳一律 uint64 毫秒。
-// - 不 import asset_op.proto:附件存序列化 AssetBundle 的 bytes(与 trade_asset_op.payload 同口径)。
-//   M2 领取时原样作为入账的 bundle —— 发件时校验过的就是将来入账的,同一份字节。
-// - 状态列一律 uint32,取值定义在 mail.proto 的 MailClaimState(不用 enum 作列类型的理由见那里与 friend_table.proto)。
-// - OptionIndex 的分组**只许追加到末尾、不得调序改列**:普通索引按位置命名(idx_<表>_<n>),
-//   schemamigrate 只比名字,调序等于"名字还在、列已经换了",缺索引拒启的闸也拦不住。
-// - proto2mysql 按字段号识别列:字段号上线后不复用,删列写 reserved(AGENTS §4)。
-// - 行里没有 zone_id / home_zone:所有行以全局唯一且合服不变的 player_id 或全局号段 id 为键,
-//   合服不需要 merge_zone 步骤(D-14 §9 的声明)。将来若加"按 zone 定向的系统邮件",要重做这条声明。
-// - 本文件不进客户端 gen_proto.ps1 清单。
-//
-// 唯一键列序与单列 OptionIndex 的写法已对着 proto2mysql v0.2.0 的源码核过(2026-10-10):
-// OptionUniqueKey 按逗号拆、逐项去空白、**按原顺序**拼成 UNIQUE KEY uk_<表名>;OptionIndex 按 `;` 分组,
-// 组内逗号保留,单列一组与多列一组是同一语法。
-
-// 定向邮件:一行 = 一个收件人的一封信。
-message MailPersonalRecord {
-  option(OptionTableName) = "mail_personal";
-  option(OptionPrimaryKey) = "mail_id";
-  // idx_mail_personal_0 (owner_player_id, mail_id):列表 / 邮箱现数 / 清理已读的主路径(deleted_ms、expire_ms 回表过滤)。
-  // idx_mail_personal_1 (expire_ms):sweep 找过期行(sweep 是唯一的物理删除者)。
-  option(OptionIndex) = "owner_player_id,mail_id;expire_ms";
-  // 发件幂等键(设计 §2.4)。它就在信这一行上,所以玩家删信只能软删:物理删掉行就删掉了键,
-  // 调用方拿同一个 request_id 重试会插进第二封(M2 带附件时就是重复发物)。
-  option(OptionUniqueKey) = "sender_kind,request_id,owner_player_id";
-  // 整数主键 + 追加写为主,按 TiDB 决策 D3 处方 NONCLUSTERED + 打散,避免号段单调递增时写入压在同一个 region 上。
-  option(OptionTiDBNonclusteredPK) = true;
-  option(OptionTiDBShardRowIDBits) = 4;
-  option(OptionTiDBPreSplitRegions) = 4;
-
-  uint64 mail_id = 1;             // id_segment biz_tag = mail(与 sys_mail_id 同一个号段,全局不撞号)
+// 独占邮箱库的权威记录；附件只保存共用AssetBundle字节，不保存背包/余额副本。
+message MailRecord {
+  option (OptionTableName) = "mail_message";
+  option (OptionPrimaryKey) = "mail_id";
+  option (OptionUniqueKey) = "sender_kind,request_id";
+  option (OptionIndex) = "owner_player_id,mail_id;kind,expire_ms;guild_id,mail_id";
+  option (OptionTiDBNonclusteredPK) = true;
+  option (OptionTiDBShardRowIDBits) = 4;
+  option (OptionTiDBPreSplitRegions) = 4;
+  uint64 mail_id = 1;
   uint64 owner_player_id = 2;
-  uint32 sender_kind = 3;         // mail_admin.proto 的 MailSenderKind
-  uint64 request_id = 4;          // 调用方幂等键,非 0
-  bytes  request_digest = 5;      // 规范化请求的 SHA-256:同键重放时比它,区分"重放"与"同键不同内容"
-  string sender_name = 6;         // 展示用署名(应用层限长),不是身份
-  string title = 7;
-  string body = 8;
-  bytes  attachments = 9;         // 序列化的 AssetBundle(只填 currencies / items);无附件为空
-  uint32 claim_state = 10;        // MailClaimState。建行时按附件推导:非空 1,否则 0 —— M1 就写推导值,不是恒 0
-  uint64 sent_ms = 11;            // 服务端发件时刻
-  uint64 expire_ms = 12;          // 必填,> sent_ms
-  uint64 read_ms = 13;            // 0 = 未读
-  uint64 updated_ms = 14;
-  uint64 deleted_ms = 15;         // 0 = 未删。玩家删除只打这个标记;所有读路径都带 deleted_ms = 0
+  uint64 guild_id = 3;
+  uint32 kind = 4;
+  uint32 sender_kind = 5;
+  uint64 request_id = 6;
+  string request_hash = 7;
+  string title = 8;
+  string body = 9;
+  bytes attachments = 10;
+  uint64 sent_ms = 11;
+  uint64 expire_ms = 12;
+  uint64 campaign_id = 13;
+  uint64 manifest_generation = 14;
 }
-
-// 系统(全服)邮件:一行 = 一封对所有人可见的信。读时合并,不做写时扇出(设计 §3.1)。
-message MailSystemRecord {
-  option(OptionTableName) = "mail_system";
-  option(OptionPrimaryKey) = "sys_mail_id";
-  // idx_mail_system_0 (expire_ms):有效集查询与 sweep。
-  option(OptionIndex) = "expire_ms";
-  option(OptionUniqueKey) = "sender_kind,request_id";   // 发件幂等键
-  option(OptionTiDBNonclusteredPK) = true;
-  option(OptionTiDBShardRowIDBits) = 4;
-  option(OptionTiDBPreSplitRegions) = 4;
-
-  uint64 sys_mail_id = 1;         // id_segment biz_tag = mail
-  uint32 sender_kind = 2;
-  uint64 request_id = 3;
-  bytes  request_digest = 4;
-  string sender_name = 5;
-  string title = 6;
-  string body = 7;
-  bytes  attachments = 8;
-  uint64 sent_ms = 9;             // 发出即可见;M1 不做定时生效
-  uint64 expire_ms = 10;          // 必填:有效系统邮件数必须有界,读时合并才不会越扫越多
-  uint64 updated_ms = 11;
+// 有附件的系统邮件只在名单完整seal的同事务插入mail_message；导入中的活动不可见。
+message MailCampaignRecord {
+  option (OptionTableName) = "mail_campaign";
+  option (OptionPrimaryKey) = "sender_kind,campaign_id,manifest_generation";
+  option (OptionUniqueKey) = "sender_kind,request_id";
+  option (OptionIndex) = "mail_id";
+  uint32 sender_kind = 1;
+  uint64 campaign_id = 2;
+  uint64 manifest_generation = 3;
+  uint64 mail_id = 4;
+  uint64 request_id = 5;
+  string producer = 6;
+  string request_hash = 7;
+  string title = 8;
+  string body = 9;
+  bytes attachments = 10;
+  uint64 expire_ms = 11;
+  uint64 expected_recipient_count = 12;
+  uint32 expected_shard_count = 13;
+  string manifest_hash = 14;
+  uint32 state = 15;
+  uint64 created_ms = 16;
+  uint64 sealed_ms = 17;
+  uint32 kind = 18;
+  uint64 guild_id = 19;
 }
-
-// 某玩家对某封系统邮件的交互状态。按需物化:首次已读 / 删除时才建行,没有行 = 未读未删。
-// 只能经"系统行存在且仍有效"的条件 upsert 建出(INSERT … SELECT … FROM mail_system WHERE … AND expire_ms > ?),
-// 不许凭客户端给的 id 直接插 —— 否则任何人都能给不存在的系统邮件造状态行。
-message MailSystemStateRecord {
-  option(OptionTableName) = "mail_system_state";
-  option(OptionPrimaryKey) = "player_id,sys_mail_id";
-  // idx_mail_system_state_0 (sys_mail_id):系统邮件过期后 sweep 按 id 清物化行。
-  option(OptionIndex) = "sys_mail_id";
-  option(OptionTiDBNonclusteredPK) = true;
-  option(OptionTiDBShardRowIDBits) = 4;
-  option(OptionTiDBPreSplitRegions) = 4;
-
-  uint64 player_id = 1;
-  uint64 sys_mail_id = 2;
-  uint64 read_ms = 3;             // 0 = 未读
-  uint64 deleted_ms = 4;          // 0 = 未删(删的是"我看不看得到",系统行本身不动)
-  uint32 claim_state = 5;         // MailClaimState。物化时从系统行的附件推导(非空 1,否则 0),M1 就写推导值
-  uint64 updated_ms = 6;
+message MailCampaignShardRecord {
+  option (OptionTableName) = "mail_campaign_shard";
+  option (OptionPrimaryKey) = "sender_kind,campaign_id,manifest_generation,shard_index";
+  uint32 sender_kind = 1;
+  uint64 campaign_id = 2;
+  uint64 manifest_generation = 3;
+  uint32 shard_index = 4;
+  string shard_hash = 5;
+  uint32 recipient_count = 6;
 }
-
-// 定向邮件的每玩家串行化守卫行:只作 SELECT … FOR UPDATE 的载体,**不存计数**(设计 §3.4)。
-// 邮箱上限靠"拿守卫 + 现数"实现。不存计数的理由:存了就要求每一条删除路径(玩家删、清理已读、sweep)
-// 都在同一事务里减它,漏一处就是计数上漂、玩家永远"满"而且零报错。
-// 行在发件事务之外 INSERT IGNORE 补齐(放进事务会形成 insert-intention 死锁,friend F8 同理);
-// 行数 ≤ 被发过定向邮件的玩家数,不需要回收。
+message MailCampaignRecipientRecord {
+  option (OptionTableName) = "mail_campaign_recipient";
+  option (OptionPrimaryKey) = "sender_kind,campaign_id,manifest_generation,player_id";
+  uint32 sender_kind = 1;
+  uint64 campaign_id = 2;
+  uint64 manifest_generation = 3;
+  uint64 player_id = 4;
+  uint32 shard_index = 5;
+}
 message MailBoxRecord {
-  option(OptionTableName) = "mail_box";
-  option(OptionPrimaryKey) = "player_id";
-  option(OptionTiDBNonclusteredPK) = true;
-  option(OptionTiDBShardRowIDBits) = 4;
-  option(OptionTiDBPreSplitRegions) = 4;
-
+  option (OptionTableName) = "mail_box";
+  option (OptionPrimaryKey) = "player_id";
   uint64 player_id = 1;
   uint64 created_ms = 2;
+}
+// 个人行发件时创建；广播行仅在有交互时物化。pending/manual永不由到期清理删除。
+message MailStateRecord {
+  option (OptionTableName) = "mail_state";
+  option (OptionPrimaryKey) = "player_id,mail_id";
+  option (OptionIndex) = "mail_id,claim_state;claim_state,updated_ms";
+  uint64 player_id = 1;
+  uint64 mail_id = 2;
+  uint64 read_ms = 3;
+  uint64 deleted_ms = 4;
+  uint32 claim_state = 5;
+  uint64 current_op_id = 6;
+  uint64 claim_version = 7;
+  uint32 reason_tip_id = 8;
+  uint64 updated_ms = 9;
+}
+message MailPlayerOpSeqRecord {
+  option (OptionTableName) = "mail_player_op_seq";
+  option (OptionPrimaryKey) = "player_id,stream";
+  uint64 player_id = 1;
+  uint32 stream = 2;
+  uint64 next_seq = 3;
+  uint64 updated_ms = 4;
+  uint64 epoch = 5;
+}
+enum MailAssetOpStatus {
+  MAIL_ASSET_OP_UNSPECIFIED = 0;
+  MAIL_ASSET_OP_PENDING = 1;
+  MAIL_ASSET_OP_APPLIED = 2;
+  MAIL_ASSET_OP_REJECTED = 3;
+  MAIL_ASSET_OP_MANUAL = 4;
+  MAIL_ASSET_OP_ABANDONED = 5;
+}
+message MailAssetOpRecord {
+  option (OptionTableName) = "mail_asset_op";
+  option (OptionPrimaryKey) = "op_id";
+  option (OptionUniqueKey) = "player_id,stream,stream_epoch,seq";
+  option (OptionIndex) = "status,next_attempt_ms;player_id,stream,stream_epoch,status,seq;player_id,mail_id,claim_version;mail_id,status";
+  option (OptionTiDBNonclusteredPK) = true;
+  option (OptionTiDBShardRowIDBits) = 4;
+  option (OptionTiDBPreSplitRegions) = 4;
+  uint64 op_id = 1;
+  uint64 player_id = 2;
+  uint32 stream = 3;
+  uint64 seq = 4;
+  uint64 stream_epoch = 5;
+  uint64 mail_id = 6;
+  uint64 claim_version = 7;
+  uint32 status = 8;
+  bytes payload = 9;
+  uint32 tx_type = 10;
+  uint32 attempts = 11;
+  uint64 next_attempt_ms = 12;
+  uint64 lease_until_ms = 13;
+  uint64 lease_token = 14;
+  uint32 last_outcome = 15;
+  uint32 last_reason = 16;
+  uint32 durable = 17;
+  uint32 reason_tip_id = 18;
+  uint64 created_ms = 19;
+  uint64 updated_ms = 20;
+  uint64 last_send_ms = 21;
+  string resolved_by = 22;
+  string resolve_reason = 23;
 }

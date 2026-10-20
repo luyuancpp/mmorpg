@@ -1,5 +1,10 @@
+# === GENERATED FILE -- DO NOT EDIT ===
+# Produced by tools/archived/vcxproj2cmake.py from battle.vcxproj.
+# Every Linux build regenerates it; hand edits are lost without warning.
+# Change the generator instead.
+
 cmake_minimum_required(VERSION 3.22)
-project(battle_node)
+project(battle)
 
 set(CMAKE_VERBOSE_MAKEFILE ON)
 set(CMAKE_CXX_STANDARD 23)
@@ -17,16 +22,27 @@ add_definitions(-D__linux__)
 add_definitions(-DNOMINMAX)
 add_definitions(-DENTT_ID_TYPE=uint64_t)
 add_definitions(-DABSL_PROPAGATE_CXX_STD=TRUE)
+add_definitions(-DGOOGLE_CHECK_EQ=ABSL_CHECK_EQ)
+add_definitions(-DGOOGLE_LOG=ABSL_LOG)
+add_definitions(-DGOOGLE_DCHECK=ABSL_DCHECK)
+add_definitions(-DMMORPG_AGONES_CURL=1)
 
 include_directories(
     ../../../third_party/
     ../../../third_party/boost/
+    ../../../third_party/entt/single_include
+    ../../../third_party/fmt/include
+    ../../../third_party/grpc/third_party/boringssl-with-bazel/include/
     ../../../third_party/librdkafka/src-cpp/
     ../../../third_party/muduo-linux/
+    ../../../third_party/openssl/include/
     ../../../third_party/redis/
     ../../../third_party/redis/deps/
+    ../../../third_party/spdlog/include
     ../../../third_party/spdlog/include/
+    ../../../third_party/ue5navmesh/Public/
     ../../../third_party/xxhash/
+    ../../../third_party/yaml-cpp/include/
     ../../../third_party/zlib/
     ../../generated/
     ../../libs/
@@ -41,21 +57,12 @@ include_directories(
     /usr/local/include
 )
 
-# Agones(集群外入口 D81–D85):生命周期与客户端地址来源在 libs/engine/infra/agones/(随 -linfra 链入),
-# 只在 Linux 构建里接 libcurl。MMORPG_AGONES_CURL 没定义时 MakeDefaultHttpTransport() 返回 nullptr,
-# lifecycle 退化成 Disabled、agones 地址来源工厂返回 nullptr(Windows / 本地开发构建走的就是这条路)。
-# 与 scene 同口径;Linux 正式构建由 tools/archived/vcxproj2cmake.py 重生成本文件,同一宏与 curl 链接在生成器里。
-add_definitions(-DMMORPG_AGONES_CURL=1)
-
 set(SOURCE_FILES
-    client/battle_client_edge.cpp
-    handler/event/event_handler.cpp
-    # handler/grpc/battle_node.cpp 由 proto 生成器写出(gRPC handler 骨架,
-    # 守护段内容见任务返回的 guard_fills),生成前本工程不可编译。
     handler/grpc/battle_node.cpp
     handler/rpc/battle_handler.cpp
     handler/rpc/player/player_service_interface.cpp
     logic/battle_room_manager.cpp
+    client/battle_client_edge.cpp
     main.cpp
     rpc_replies/register_handler.cpp
 )
@@ -63,8 +70,6 @@ set(SOURCE_FILES
 find_package(absl CONFIG REQUIRED)
 find_package(protobuf CONFIG REQUIRED)
 find_package(gRPC CONFIG REQUIRED)
-# 用系统 libcurl(与 scene 相同:deps 阶段 apt 装的 libcurl4-openssl-dev),只供 Agones sidecar 的回环 REST。
-find_package(CURL REQUIRED)
 
 link_directories(
     "${CMAKE_CURRENT_SOURCE_DIR}/../../../lib"
@@ -76,7 +81,11 @@ add_executable(battle ${SOURCE_FILES})
 
 target_link_libraries(battle
     -Wl,--start-group
+    -lgate
+    -lscene
     -lbattle
+    -lmodules
+    -lmuduo_grpc
     -lthread_context
     -linfra
     -lsession
@@ -88,28 +97,63 @@ target_link_libraries(battle
     -lrpc
     -lproto
     -lthird_party
-    # muduo_h2 etcd 传输(core 的 muduo_etcd_transport,NODE_ETCD_TRANSPORT 选择;docs/design/grpc-muduo-transport.md §13.4)
-    -lmuduo_grpc
     -Wl,--end-group
     gRPC::grpc++
     gRPC::grpc++_reflection
     gRPC::grpc
     gRPC::gpr
-    CURL::libcurl
     protobuf::libprotobuf
-    # 静态链入的 nghttp2(1.70)不得导出到动态符号表:系统 libcurl.so 依赖旧版 libnghttp2.so,
-    # 导出后 libcurl 的 nghttp2_* 调用会绑到我们的副本、两个版本混用(docs/design/grpc-muduo-transport.md §9)。
     -Wl,--exclude-libs,libnghttp2.a
     nghttp2
+    muduo_protobuf_codec
+    muduo_hiredis
     muduo_net
     muduo_base
     rdkafka++
     rdkafka
     yaml-cpp
     hiredis
+    curl
     z
+    zstd
     ssl
     crypto
     pthread
     dl
+    absl::absl_check
+    absl::absl_log
+    absl::algorithm
+    absl::base
+    absl::bind_front
+    absl::bits
+    absl::btree
+    absl::cleanup
+    absl::cord
+    absl::core_headers
+    absl::debugging
+    absl::die_if_null
+    absl::dynamic_annotations
+    absl::flags
+    absl::flags_parse
+    absl::flat_hash_map
+    absl::flat_hash_set
+    absl::function_ref
+    absl::hash
+    absl::layout
+    absl::log_initialize
+    absl::log_severity
+    absl::memory
+    absl::node_hash_map
+    absl::node_hash_set
+    absl::optional
+    absl::span
+    absl::status
+    absl::statusor
+    absl::strings
+    absl::synchronization
+    absl::time
+    absl::type_traits
+    absl::utility
+    absl::variant
 )
+

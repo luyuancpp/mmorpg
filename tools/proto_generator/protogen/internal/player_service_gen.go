@@ -57,7 +57,19 @@ public:
 		MethodHandlerFunctions:   getPlayerMethodHandlerFunctions(methods),
 	}
 
-	return utils.GlobalEngine.MustExecute("playerServiceHead", tmplStr, data)
+	return utils.GlobalEngine.Render("playerServiceHead", tmplStr, data)
+}
+
+// GetPlayerServiceHeadFromFileStr:先对同名 .cpp 做与 GetPlayerServiceHandlerCppStr 相同的取段预检(类名前缀与 handler.go
+// 传给 .cpp 生成的 CppHandlerClassName 一致),出错时 .h 也不写,理由见 GetServiceHandlerHeadFromFileStr。
+func GetPlayerServiceHeadFromFileStr(dst string, methods RPCMethods) (string, error) {
+	if len(methods) > 0 {
+		if err := precheckHandlerCppForHeader(dst, methods, GenerateMethodHandlerNameWithClassPrefixWrapper,
+			methods[0].CppHandlerClassName()); err != nil {
+			return "", err
+		}
+	}
+	return GetPlayerServiceHeadStr(methods)
 }
 
 // getPlayerMethodHandlerFunctions generates player method handler function declarations.
@@ -115,7 +127,7 @@ func getPlayerMethodHandlerFunctions(methods RPCMethods) string {
 		Methods:                methodList,
 	}
 
-	return utils.ExecuteTemplate("playerMethodFunctions", tmplStr, data)
+	return utils.RenderTemplateOrExit("playerMethodFunctions", tmplStr, data)
 }
 
 // PlayerHandlerMethod represents a player handler method.
@@ -156,7 +168,11 @@ void {{ $method.HandlerName }}{{ $.PlayerMethodController }}const {{ $method.Cpp
 		return includeName
 	}
 
-	yourCodesMap, firstCode, _ := ReadCodeSectionsFromFile(dst, &methods, GenerateMethodHandlerNameWithClassPrefixWrapper, className)
+	// 与 GetServiceHandlerCppStr 同一预检:结构损坏或带不走的非空段一律拒绝生成;字符串接口的调用方只在返回后才写文件。
+	yourCodesMap, firstCode, err := readCheckedCodeSections(dst, &methods, GenerateMethodHandlerNameWithClassPrefixWrapper, className)
+	if err != nil {
+		panic(err)
+	}
 
 	var methodList []PlayerHandlerMethod
 	for _, method := range methods {
@@ -185,5 +201,5 @@ void {{ $method.HandlerName }}{{ $.PlayerMethodController }}const {{ $method.Cpp
 		Methods:                methodList,
 	}
 
-	return utils.ExecuteTemplate("playerHandlerCpp", tmplStr, data)
+	return utils.RenderTemplateOrExit("playerHandlerCpp", tmplStr, data)
 }

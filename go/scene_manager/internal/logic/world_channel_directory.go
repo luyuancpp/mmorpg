@@ -36,8 +36,9 @@ const (
 	// WorldChannelLineNoKeyFmt:HASH per (zone, confId),field = scene_id(十进制),value = 线号(从 1 起)。
 	// 无 TTL:线号要在线的整个生命周期里保持不变。
 	//
-	// 这两把键刻意不用 world_channels:zone: 前缀:孤儿清理按那个前缀 SCAN(orphan_cleanup.go
-	// orphanKeyPrefix),会把它们当成频道集合来解析。
+	// 这两把键刻意不用 world_channels:zone: 前缀:旧版本 scene_manager 的孤儿清理按那个前缀 SCAN
+	// (orphan_cleanup.go orphanKeyPrefix;2026-10-16 起新版本改为点查,滚动窗口里旧版本仍可能在跑),
+	// 会把它们当成频道集合来解析;merge_zone 也按那个前缀清源 zone 的频道集合。
 	WorldChannelLineNoKeyFmt = "world_channel_lineno:zone:%d:%d"
 
 	// WorldChannelDirectoryKeyFmt:STRING per (zone, confId),值是 scenepb.SceneChannelDirectory 的

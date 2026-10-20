@@ -11,6 +11,7 @@ import (
 	"errors"
 	"fmt"
 	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -21,8 +22,10 @@ import (
 
 	"github.com/alicebob/miniredis/v2"
 	"github.com/alicebob/miniredis/v2/server"
+	goredis "github.com/redis/go-redis/v9"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/zeromicro/go-zero/core/breaker"
 	"github.com/zeromicro/go-zero/core/stores/redis"
 )
 
@@ -201,24 +204,32 @@ func TestPublishRouteScript_EmptyArgDeletes(t *testing.T) {
 
 // TestPublishRouteScript_RejectsBadRevAndMalformedMapRev:坏 rev 参数与畸形 maprev 都是错误回复,三把键零变更。
 func TestPublishRouteScript_RejectsBadRevAndMalformedMapRev(t *testing.T) {
-	r, mr := newDBFirstRouter(t, nil, nil)
-	ctx := context.Background()
-	before := [3]string{"5", "7:1", "3"}
-	presetRouteKeys(t, mr, 9006, before)
-	keys := placement.PublishRouteKeys(9006, 0)
-
+	// 每个拒绝场景用独立客户端:连续的预期 Lua 错误会触发 go-zero 的概率熔断,
+	// 后续调用可能根本没执行脚本,无法验证对应的错误与零写入契约。
+	// 由父测试持有清理,让各实例同时存活,避免端口复用命中按地址缓存的旧客户端。
 	for _, bad := range []string{"", "0", "01", "-1", "1a", " 1", "123456789012345678901"} {
-		_, err := r.mappingRedis.EvalCtx(ctx, placement.PublishRouteScript, keys, bad, "5", "7:1")
-		require.Error(t, err, "rev=%q", bad)
-		assert.Contains(t, err.Error(), "bad rev argument", "rev=%q", bad)
-		assert.Equal(t, before, routeKeysOf(t, mr, 9006), "rev=%q", bad)
+		r, mr := newDBFirstRouter(t, nil, nil)
+		t.Run(fmt.Sprintf("bad_rev_%q", bad), func(t *testing.T) {
+			before := [3]string{"5", "7:1", "3"}
+			presetRouteKeys(t, mr, 9006, before)
+			_, err := r.mappingRedis.EvalCtx(context.Background(), placement.PublishRouteScript,
+				placement.PublishRouteKeys(9006, 0), bad, "5", "7:1")
+			require.Error(t, err, "rev=%q", bad)
+			assert.Contains(t, err.Error(), "bad rev argument", "rev=%q", bad)
+			assert.Equal(t, before, routeKeysOf(t, mr, 9006), "rev=%q", bad)
+		})
 	}
 
-	require.NoError(t, mr.Set(placement.MapRevKey(9006), "abc"))
-	_, err := r.mappingRedis.EvalCtx(ctx, placement.PublishRouteScript, keys, "4", "5", "7:1")
-	require.Error(t, err)
-	assert.Contains(t, err.Error(), "malformed maprev")
-	assert.Equal(t, [3]string{"5", "7:1", "abc"}, routeKeysOf(t, mr, 9006))
+	r, mr := newDBFirstRouter(t, nil, nil)
+	t.Run("malformed_maprev", func(t *testing.T) {
+		before := [3]string{"5", "7:1", "abc"}
+		presetRouteKeys(t, mr, 9006, before)
+		_, err := r.mappingRedis.EvalCtx(context.Background(), placement.PublishRouteScript,
+			placement.PublishRouteKeys(9006, 0), "4", "5", "7:1")
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "malformed maprev")
+		assert.Equal(t, before, routeKeysOf(t, mr, 9006))
+	})
 }
 
 // TestPublishRouteScript_LegacyValuesWithoutMapRev 是 B2:缓存没有 maprev 时,遗留的 zone / placement 与本次不同
@@ -544,6 +555,114 @@ func TestDBFirstRegister_DeterministicScriptErrorNotRetried(t *testing.T) {
 	assert.Equal(t, "garbage", routeKeysOf(t, mr, 9235)[2])
 }
 
+// publishBreakerHook 只拦**含发布脚本 EVAL** 的 pipeline:前 reject 个这样的批不调下一层、直接回
+// breaker.ErrServiceUnavailable —— 与 go-zero 熔断打开时 breakerHook.ProcessPipelineHook 的行为逐字相同(命令的 Err() / Val()
+// 都留空);之后放行。rejected / passed 分别数被挡下与放行的发布批。
+//
+// 其余 pipeline 一律放行(2026-10-18 修正:第一版不分命令全拦):go-redis 每条新连接初始化时(initConn)经同一条钩子链用
+// pipeline 发两条 CLIENT SETINFO,挡了它新连接就建不起来 —— MustNewRedis 的连通性 PING 随之失败,logx.Must 直接 os.Exit(1),
+// 整个测试进程退出;侥幸不退出,后台补空闲连接也会吃掉计数,断言就取决于调度。过滤口径同 login createplayer_seed_test.go 的
+// probePipelineHook(按批内命令认人,不按次数)。
+// installed 由自检批(ECHO selfCheckEcho)置位,证明这个钩子确实挂在了本地址的客户端上;自检批不计入上面两个数。
+type publishBreakerHook struct {
+	reject    int32
+	rejected  atomic.Int32
+	passed    atomic.Int32
+	installed atomic.Bool
+}
+
+const selfCheckEcho = "route-publish-breaker-hook-self-check"
+
+func (h *publishBreakerHook) DialHook(next goredis.DialHook) goredis.DialHook { return next }
+
+func (h *publishBreakerHook) ProcessHook(next goredis.ProcessHook) goredis.ProcessHook { return next }
+
+func (h *publishBreakerHook) ProcessPipelineHook(next goredis.ProcessPipelineHook) goredis.ProcessPipelineHook {
+	return func(ctx context.Context, cmds []goredis.Cmder) error {
+		switch {
+		case pipelineHasCommand(cmds, "eval", placement.PublishRouteScript):
+			if h.rejected.Load() < h.reject {
+				h.rejected.Add(1)
+				return breaker.ErrServiceUnavailable
+			}
+			h.passed.Add(1)
+		case pipelineHasCommand(cmds, "echo", selfCheckEcho):
+			h.installed.Store(true)
+		}
+		return next(ctx, cmds)
+	}
+}
+
+// pipelineHasCommand 判断批里有没有一条名为 name(小写)、第一个参数恰为 arg 的命令(EVAL 的第一个参数是脚本正文)。
+func pipelineHasCommand(cmds []goredis.Cmder, name, arg string) bool {
+	for _, c := range cmds {
+		if args := c.Args(); c.Name() == name && len(args) > 1 {
+			if s, _ := args[1].(string); s == arg {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+// newRouterWithRejectedPipelines 建一个 db_first Router,它的 mapping Redis 上前 n 个发布批被「熔断」挡下。
+// go-zero 按地址缓存底层 go-redis 客户端,钩子只在第一次建客户端时挂上:所以先在一个全新的 miniredis 地址上用带钩子的
+// *redis.Redis 建出客户端,随后 NewRouter 拿到的就是同一个客户端。钩子挡满之后永远放行,端口日后被别的用例复用也不受影响。
+// 自检:发一条只含 ECHO selfCheckEcho 的 pipeline,钩子必须见到它 —— 端口恰好被本进程里更早的用例用过时,拿到的是那时
+// 缓存的旧客户端(没有本钩子),换一个新地址重来,而不是让用例的结论取决于端口分配。自检不消耗挡下的名额。
+func newRouterWithRejectedPipelines(t *testing.T, fake *routeFakeStore, n int32, attempts int) (*Router, *miniredis.Miniredis, *publishBreakerHook) {
+	t.Helper()
+	ctx := context.Background()
+	for try := 0; try < 3; try++ {
+		mr := miniredis.RunT(t)
+		hook := &publishBreakerHook{reject: n}
+		hooked := redis.MustNewRedis(redis.RedisConf{Host: mr.Addr(), Type: "node"}, redis.WithHook(hook))
+		selfCheck := hooked.PipelinedCtx(ctx, func(p redis.Pipeliner) error {
+			p.Echo(ctx, selfCheckEcho)
+			return nil
+		})
+		require.NoError(t, selfCheck, "自检批不该被挡")
+		if !hook.installed.Load() {
+			mr.Close()
+			continue
+		}
+		r := newDBFirstRouterOn(t, mr, fake, func(rc *config.RouteStoreConfig) { rc.PublishAttempts = attempts })
+		return r, mr, hook
+	}
+	t.Fatal("连续 3 个 miniredis 地址都拿到了没有钩子的缓存客户端")
+	return nil, nil, nil
+}
+
+// TestDBFirstRegister_PublishRetriesWhenPipelineNotExecuted(2026-10-18,第 1b-1 批核实 B0-5 的疑点):熔断打开时 pipeline 的回调
+// 照样被调用、命令排了队却一条都没执行(Err() 为 nil、Val() 为 nil)。以前这会落到 ClassifyPublishReply(nil) →
+// ErrUnexpectedPublishReply,被当成确定性错误、不再重试;现在按可重试的不可用处理:第一次被挡、第二次放行 → 登记成功、三键写入。
+// 一直被挡则重试用尽后失败,错误里认得出熔断拒绝,而不是「回复形状不对」。
+func TestDBFirstRegister_PublishRetriesWhenPipelineNotExecuted(t *testing.T) {
+	t.Run("第一次被挡_重试成功", func(t *testing.T) {
+		fake := &routeFakeStore{result: committed(store.RouteRegisterInserted, 9240, 5, 0, 0, 1)}
+		r, mr, hook := newRouterWithRejectedPipelines(t, fake, 1, 2)
+
+		require.NoError(t, r.RegisterPlayerZone(context.Background(), 9240, 5, 0))
+		assert.Equal(t, [3]string{"5", "", "1"}, routeKeysOf(t, mr, 9240))
+		assert.Equal(t, int32(1), hook.rejected.Load(), "恰好一个发布批被挡")
+		assert.Equal(t, int32(1), hook.passed.Load(), "恰好一个发布批放行")
+	})
+	t.Run("一直被挡_重试用尽_不是形状错误", func(t *testing.T) {
+		fake := &routeFakeStore{result: committed(store.RouteRegisterInserted, 9241, 5, 0, 0, 1)}
+		r, mr, hook := newRouterWithRejectedPipelines(t, fake, 3, 3)
+
+		err := r.RegisterPlayerZone(context.Background(), 9241, 5, 0)
+		require.Error(t, err)
+		assert.ErrorIs(t, err, breaker.ErrServiceUnavailable)
+		assert.NotErrorIs(t, err, placement.ErrUnexpectedPublishReply, "没执行不是「回复形状不对」")
+		assert.NotErrorIs(t, err, ErrRouteStore, "已提交之后的发布失败不是库故障")
+		assert.Contains(t, err.Error(), "after 3 attempt(s)")
+		assert.Equal(t, int32(3), hook.rejected.Load(), "按 PublishAttempts=3 重试满三次,三个发布批都被挡")
+		assert.Zero(t, hook.passed.Load())
+		assert.Equal(t, [3]string{}, routeKeysOf(t, mr, 9241), "一条命令都没执行,三键都不在")
+	})
+}
+
 // commandRecorder 记下 miniredis 收到的命令名(大写)。连接握手(HELLO / CLIENT / PING / AUTH / SELECT)不记:
 // go-zero 的连接池带 MinIdleConns,后台异步建连时 go-redis 会自己发握手,落在哪段测量里取决于调度,
 // 所以不用 CommandCount 的前后差(同 go/friend/internal/data/session_reader_test.go 的做法)。
@@ -595,7 +714,7 @@ func TestDBFirstRegister_RedisModeNeverCallsStore(t *testing.T) {
 	assert.Equal(t, [3]string{"5", "", ""}, routeKeysOf(t, mr, 9236))
 }
 
-// ── 纯函数(3 个)──────────────────────────────────────────────────
+// ── 纯函数(3 个;2026-10-18 起加 TestPublishPipelineNotExecuted 共 4 个)──────────────────
 
 func TestCheckWaitAOFReply(t *testing.T) {
 	require.NoError(t, checkWaitAOFReply([]any{int64(1), int64(0)}, 1, 0))
@@ -638,6 +757,38 @@ func TestWaitAOFBudgetMs(t *testing.T) {
 
 	_, ok = waitAOFBudgetMs(now, now.Add(-time.Second), true, configured, margin)
 	assert.False(t, ok, "截止时间已过")
+}
+
+// TestPublishPipelineNotExecuted(2026-10-18):pipeline 整批是否按「没执行」处理的判据,与 scene_manager 的
+// pipelineBatchRejected 同口径。命令的 err 用 SetErr 造(没执行的命令 Err() 为 nil)。
+func TestPublishPipelineNotExecuted(t *testing.T) {
+	ctx := context.Background()
+	cmd := func(err error) *goredis.Cmd {
+		c := goredis.NewCmd(ctx, "EVAL")
+		if err != nil {
+			c.SetErr(err)
+		}
+		return c
+	}
+	someErr := errors.New("boom")
+	for _, tc := range []struct {
+		name    string
+		pipeErr error
+		cmds    []*goredis.Cmd
+		want    bool
+	}{
+		{"executed cleanly", nil, []*goredis.Cmd{cmd(nil), cmd(nil)}, false},
+		{"redis.Nil is the first error", goredis.Nil, []*goredis.Cmd{cmd(goredis.Nil)}, false},
+		{"breaker open", breaker.ErrServiceUnavailable, []*goredis.Cmd{cmd(nil), cmd(nil)}, true},
+		{"breaker open even if a command carries an error", breaker.ErrServiceUnavailable, []*goredis.Cmd{cmd(someErr)}, true},
+		{"context done before exec", context.DeadlineExceeded, []*goredis.Cmd{cmd(nil)}, true},
+		{"error landed on no command", someErr, []*goredis.Cmd{cmd(nil), nil}, true},
+		{"a command carries its own error", someErr, []*goredis.Cmd{cmd(nil), cmd(someErr)}, false},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			assert.Equal(t, tc.want, publishPipelineNotExecuted(tc.pipeErr, tc.cmds...))
+		})
+	}
 }
 
 // TestNewRouterPanicsOnInvalidRouteStore:非法 RouteStore 段在 NewRouter 里就 panic(与 MustNewRedis 同口径),

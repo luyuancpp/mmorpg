@@ -47,9 +47,175 @@ PROTOBUF_CONSTINIT ::google::protobuf::internal::ReflectionData
         {&::_pbi::kDescriptorMethods, &::descriptor_table_proto_2fcommon_2fasset_2fasset_5fop_2eproto, /* tracker*/ nullptr,},
         // ::AssetOpResponse
         {&::_pbi::kDescriptorMethods, &::descriptor_table_proto_2fcommon_2fasset_2fasset_5fop_2eproto, /* tracker*/ nullptr,},
+        // ::PlayerAssetSQLCommit
+        {&::_pbi::kDescriptorMethods, &::descriptor_table_proto_2fcommon_2fasset_2fasset_5fop_2eproto, /* tracker*/ nullptr,},
 };
 }  // namespace
 #endif
+class PlayerAssetSQLCommit::_Internal {
+ public:
+  using HasBits = decltype(::std::declval<PlayerAssetSQLCommit>()._impl_._has_bits_);
+  static constexpr ::int32_t kHasBitsOffset =
+      8 * PROTOBUF_FIELD_OFFSET(PlayerAssetSQLCommit, _impl_._has_bits_);
+};
+
+constexpr PlayerAssetSQLCommit::ParseTableT_ PlayerAssetSQLCommit::InternalGenerateParseTable_(const ::_pbi::ClassData* class_data) {
+  return ParseTableT_{
+    {
+      PROTOBUF_FIELD_OFFSET(PlayerAssetSQLCommit, _impl_._has_bits_),
+      0, // no _extensions_
+      4, 24,  // max_field_number, fast_idx_mask
+      offsetof(ParseTableT_, field_lookup_table),
+      4294967280,  // skipmap
+      offsetof(ParseTableT_, field_entries),
+      4,  // num_field_entries
+      0,  // num_aux_entries
+      offsetof(ParseTableT_, field_names),  // no aux_entries
+      class_data,
+      nullptr,  // post_loop_handler
+      ::_pbi::TcParser::GenericFallback,  // fallback
+      #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
+      ::_pbi::TcParser::GetTable<::PlayerAssetSQLCommit>(),  // to_prefetch
+      #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
+    }, {{
+      // bytes ledger_proto = 4;
+      {::_pbi::TcParser::FastBS1,
+       {34, 0, 0,
+        PROTOBUF_FIELD_OFFSET(PlayerAssetSQLCommit, _impl_.ledger_proto_)}},
+      // uint64 player_id = 1;
+      {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(PlayerAssetSQLCommit, _impl_.player_id_), 1>(),
+       {8, 1, 0,
+        PROTOBUF_FIELD_OFFSET(PlayerAssetSQLCommit, _impl_.player_id_)}},
+      // uint64 owner_epoch = 2;
+      {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(PlayerAssetSQLCommit, _impl_.owner_epoch_), 2>(),
+       {16, 2, 0,
+        PROTOBUF_FIELD_OFFSET(PlayerAssetSQLCommit, _impl_.owner_epoch_)}},
+      // uint64 save_seq = 3;
+      {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(PlayerAssetSQLCommit, _impl_.save_seq_), 3>(),
+       {24, 3, 0,
+        PROTOBUF_FIELD_OFFSET(PlayerAssetSQLCommit, _impl_.save_seq_)}},
+    }}, {{
+      65535, 65535
+    }}, {{
+      // uint64 player_id = 1;
+      {PROTOBUF_FIELD_OFFSET(PlayerAssetSQLCommit, _impl_.player_id_), _Internal::kHasBitsOffset + 1, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
+      // uint64 owner_epoch = 2;
+      {PROTOBUF_FIELD_OFFSET(PlayerAssetSQLCommit, _impl_.owner_epoch_), _Internal::kHasBitsOffset + 2, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
+      // uint64 save_seq = 3;
+      {PROTOBUF_FIELD_OFFSET(PlayerAssetSQLCommit, _impl_.save_seq_), _Internal::kHasBitsOffset + 3, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
+      // bytes ledger_proto = 4;
+      {PROTOBUF_FIELD_OFFSET(PlayerAssetSQLCommit, _impl_.ledger_proto_), _Internal::kHasBitsOffset + 0, 0, (0 | ::_fl::kFcOptional | ::_fl::kBytes | ::_fl::kRepAString)},
+    }},
+    // no aux_entries
+    {{
+    }},
+  };
+}
+
+
+inline constexpr PlayerAssetSQLCommit::Impl_::Impl_(
+    [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
+    ::_pbi::ConstantInitialized) noexcept
+      : _cached_size_{0},
+        ledger_proto_(
+            &::google::protobuf::internal::fixed_address_empty_string,
+            ::_pbi::ConstantInitialized()),
+        player_id_{::uint64_t{0u}},
+        owner_epoch_{::uint64_t{0u}},
+        save_seq_{::uint64_t{0u}} {}
+
+template <typename>
+constexpr PlayerAssetSQLCommit::PlayerAssetSQLCommit(::_pbi::ConstantInitialized,
+                       const ::_pbi::ClassData* PROTOBUF_NONNULL class_data)
+    : ::google::protobuf::Message(
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+          class_data
+#endif  // PROTOBUF_CUSTOM_VTABLE
+          ),
+      _impl_(internal_visibility(), ::_pbi::ConstantInitialized()) {
+}
+inline void* PROTOBUF_NONNULL PlayerAssetSQLCommit::PlacementNew_(
+    const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena) {
+  return ::new (mem) PlayerAssetSQLCommit(arena);
+}
+constexpr auto PlayerAssetSQLCommit::InternalNewImpl_() {
+  return ::google::protobuf::internal::MessageCreator::CopyInit(sizeof(PlayerAssetSQLCommit), alignof(PlayerAssetSQLCommit));
+}
+constexpr auto PlayerAssetSQLCommit::InternalGenerateClassData_(
+    const MessageLite& prototype,
+    const ::google::protobuf::internal::TcParseTableBase* tc_table) {
+  return ::google::protobuf::internal::ClassDataFull{
+      ::google::protobuf::internal::ClassData{
+          &prototype,
+#ifndef PROTOBUF_MESSAGE_GLOBALS
+          &_table_.header,
+#else
+          tc_table,
+#endif
+          nullptr,  // IsInitialized
+          &PlayerAssetSQLCommit::MergeImpl,
+          ::google::protobuf::Message::GetNewImpl<PlayerAssetSQLCommit>(),
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+          &PlayerAssetSQLCommit::SharedDtor,
+          ::google::protobuf::Message::GetClearImpl<PlayerAssetSQLCommit>(), &PlayerAssetSQLCommit::ByteSizeLong,
+              &PlayerAssetSQLCommit::_InternalSerialize,
+#endif  // PROTOBUF_CUSTOM_VTABLE
+          PROTOBUF_FIELD_OFFSET(PlayerAssetSQLCommit, _impl_._cached_size_),
+          false,
+      },
+#ifdef PROTOBUF_MESSAGE_GLOBALS
+      &file_reflection_data[9],
+#else   // !PROTOBUF_MESSAGE_GLOBALS
+      &::_pbi::kDescriptorMethods,
+      &descriptor_table_proto_2fcommon_2fasset_2fasset_5fop_2eproto,
+      nullptr,  // tracker
+#endif  // PROTOBUF_MESSAGE_GLOBALS
+  };
+}
+struct PlayerAssetSQLCommitGlobalsTypeInternal : ::_pbi::MessageGlobalsBase {
+  constexpr PlayerAssetSQLCommitGlobalsTypeInternal()
+      :
+#ifndef PROTOBUF_MESSAGE_GLOBALS
+        _default(::_pbi::ConstantInitialized{},
+                 PlayerAssetSQLCommit_class_data_.base())
+#else   // !PROTOBUF_MESSAGE_GLOBALS
+        MessageGlobalsBase(PlayerAssetSQLCommit::InternalGenerateClassData_(
+            _default, &PlayerAssetSQLCommit_globals_._table.header)),
+        _default(::_pbi::ConstantInitialized{}, GetClassData()),
+        _table(::_pbi::PrivateAccess::GenerateParseTable<PlayerAssetSQLCommit>(
+            GetClassData()))
+#endif  // PROTOBUF_MESSAGE_GLOBALS
+  {
+  }
+  ~PlayerAssetSQLCommitGlobalsTypeInternal() {}
+  union {
+    alignas(::_pbi::kMaxMessageAlignment) PlayerAssetSQLCommit _default;
+  };
+#ifdef PROTOBUF_MESSAGE_GLOBALS
+  decltype(::_pbi::PrivateAccess::GenerateParseTable<PlayerAssetSQLCommit>(
+      ::std::declval<const ::_pbi::ClassData*>())) _table;
+#endif
+};
+#ifdef PROTOBUF_MESSAGE_GLOBALS
+static_assert(PROTOBUF_FIELD_OFFSET(PlayerAssetSQLCommitGlobalsTypeInternal, _default) ==
+              ::_pbi::MessageGlobalsBase::OffsetToDefault());
+#endif  // PROTOBUF_MESSAGE_GLOBALS
+
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 PROTOBUF_MESSAGE_GLOBALS_CONST PlayerAssetSQLCommitGlobalsTypeInternal PlayerAssetSQLCommit_globals_
+        PROTOBUF_MESSAGE_GLOBALS_SECTION(.data.rel.ro);
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+namespace {
+const ::_pbi::ClassData* PlayerAssetSQLCommit_get_class_data() {
+#ifdef PROTOBUF_MESSAGE_GLOBALS
+  return PlayerAssetSQLCommit_globals_.GetClassData();
+#else
+  return PlayerAssetSQLCommit_class_data_.base();
+#endif  // PROTOBUF_MESSAGE_GLOBALS
+}
+}  // namespace
+#endif  // PROTOBUF_CUSTOM_VTABLE
 class ItemGrant::_Internal {
  public:
   using HasBits = decltype(::std::declval<ItemGrant>()._impl_._has_bits_);
@@ -358,11 +524,11 @@ constexpr AssetPetInstance::ParseTableT_ AssetPetInstance::InternalGenerateParse
     {
       PROTOBUF_FIELD_OFFSET(AssetPetInstance, _impl_._has_bits_),
       0, // no _extensions_
-      4, 24,  // max_field_number, fast_idx_mask
+      5, 56,  // max_field_number, fast_idx_mask
       offsetof(ParseTableT_, field_lookup_table),
-      4294967280,  // skipmap
+      4294967264,  // skipmap
       offsetof(ParseTableT_, field_entries),
-      4,  // num_field_entries
+      5,  // num_field_entries
       0,  // num_aux_entries
       offsetof(ParseTableT_, field_names),  // no aux_entries
       class_data,
@@ -372,33 +538,42 @@ constexpr AssetPetInstance::ParseTableT_ AssetPetInstance::InternalGenerateParse
       ::_pbi::TcParser::GetTable<::AssetPetInstance>(),  // to_prefetch
       #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
     }, {{
-      // uint32 level = 4;
-      {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(AssetPetInstance, _impl_.level_), 3>(),
-       {32, 3, 0,
-        PROTOBUF_FIELD_OFFSET(AssetPetInstance, _impl_.level_)}},
+      {::_pbi::TcParser::MiniParse, {}},
       // uint64 pet_id = 1;
-      {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(AssetPetInstance, _impl_.pet_id_), 1>(),
-       {8, 1, 0,
+      {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(AssetPetInstance, _impl_.pet_id_), 2>(),
+       {8, 2, 0,
         PROTOBUF_FIELD_OFFSET(AssetPetInstance, _impl_.pet_id_)}},
       // uint32 pet_table_id = 2;
-      {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(AssetPetInstance, _impl_.pet_table_id_), 2>(),
-       {16, 2, 0,
+      {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(AssetPetInstance, _impl_.pet_table_id_), 3>(),
+       {16, 3, 0,
         PROTOBUF_FIELD_OFFSET(AssetPetInstance, _impl_.pet_table_id_)}},
       // string name = 3;
       {::_pbi::TcParser::FastUS1,
        {26, 0, 0,
         PROTOBUF_FIELD_OFFSET(AssetPetInstance, _impl_.name_)}},
+      // uint32 level = 4;
+      {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(AssetPetInstance, _impl_.level_), 4>(),
+       {32, 4, 0,
+        PROTOBUF_FIELD_OFFSET(AssetPetInstance, _impl_.level_)}},
+      // bytes instance_proto = 5;
+      {::_pbi::TcParser::FastBS1,
+       {42, 1, 0,
+        PROTOBUF_FIELD_OFFSET(AssetPetInstance, _impl_.instance_proto_)}},
+      {::_pbi::TcParser::MiniParse, {}},
+      {::_pbi::TcParser::MiniParse, {}},
     }}, {{
       65535, 65535
     }}, {{
       // uint64 pet_id = 1;
-      {PROTOBUF_FIELD_OFFSET(AssetPetInstance, _impl_.pet_id_), _Internal::kHasBitsOffset + 1, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
+      {PROTOBUF_FIELD_OFFSET(AssetPetInstance, _impl_.pet_id_), _Internal::kHasBitsOffset + 2, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
       // uint32 pet_table_id = 2;
-      {PROTOBUF_FIELD_OFFSET(AssetPetInstance, _impl_.pet_table_id_), _Internal::kHasBitsOffset + 2, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
+      {PROTOBUF_FIELD_OFFSET(AssetPetInstance, _impl_.pet_table_id_), _Internal::kHasBitsOffset + 3, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
       // string name = 3;
       {PROTOBUF_FIELD_OFFSET(AssetPetInstance, _impl_.name_), _Internal::kHasBitsOffset + 0, 0, (0 | ::_fl::kFcOptional | ::_fl::kUtf8String | ::_fl::kRepAString)},
       // uint32 level = 4;
-      {PROTOBUF_FIELD_OFFSET(AssetPetInstance, _impl_.level_), _Internal::kHasBitsOffset + 3, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
+      {PROTOBUF_FIELD_OFFSET(AssetPetInstance, _impl_.level_), _Internal::kHasBitsOffset + 4, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
+      // bytes instance_proto = 5;
+      {PROTOBUF_FIELD_OFFSET(AssetPetInstance, _impl_.instance_proto_), _Internal::kHasBitsOffset + 1, 0, (0 | ::_fl::kFcOptional | ::_fl::kBytes | ::_fl::kRepAString)},
     }},
     // no aux_entries
     {{
@@ -415,6 +590,9 @@ inline constexpr AssetPetInstance::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
       : _cached_size_{0},
         name_(
+            &::google::protobuf::internal::fixed_address_empty_string,
+            ::_pbi::ConstantInitialized()),
+        instance_proto_(
             &::google::protobuf::internal::fixed_address_empty_string,
             ::_pbi::ConstantInitialized()),
         pet_id_{::uint64_t{0u}},
@@ -689,11 +867,11 @@ constexpr AssetItemInstance::ParseTableT_ AssetItemInstance::InternalGeneratePar
     {
       PROTOBUF_FIELD_OFFSET(AssetItemInstance, _impl_._has_bits_),
       0, // no _extensions_
-      3, 24,  // max_field_number, fast_idx_mask
+      4, 24,  // max_field_number, fast_idx_mask
       offsetof(ParseTableT_, field_lookup_table),
-      4294967288,  // skipmap
+      4294967280,  // skipmap
       offsetof(ParseTableT_, field_entries),
-      3,  // num_field_entries
+      4,  // num_field_entries
       0,  // num_aux_entries
       offsetof(ParseTableT_, field_names),  // no aux_entries
       class_data,
@@ -703,28 +881,33 @@ constexpr AssetItemInstance::ParseTableT_ AssetItemInstance::InternalGeneratePar
       ::_pbi::TcParser::GetTable<::AssetItemInstance>(),  // to_prefetch
       #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
     }, {{
-      {::_pbi::TcParser::MiniParse, {}},
+      // bytes instance_proto = 4;
+      {::_pbi::TcParser::FastBS1,
+       {34, 0, 0,
+        PROTOBUF_FIELD_OFFSET(AssetItemInstance, _impl_.instance_proto_)}},
       // uint64 item_uuid = 1;
-      {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(AssetItemInstance, _impl_.item_uuid_), 0>(),
-       {8, 0, 0,
+      {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(AssetItemInstance, _impl_.item_uuid_), 1>(),
+       {8, 1, 0,
         PROTOBUF_FIELD_OFFSET(AssetItemInstance, _impl_.item_uuid_)}},
       // uint32 config_id = 2;
-      {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(AssetItemInstance, _impl_.config_id_), 1>(),
-       {16, 1, 0,
+      {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(AssetItemInstance, _impl_.config_id_), 2>(),
+       {16, 2, 0,
         PROTOBUF_FIELD_OFFSET(AssetItemInstance, _impl_.config_id_)}},
       // uint32 stack_size = 3;
-      {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(AssetItemInstance, _impl_.stack_size_), 2>(),
-       {24, 2, 0,
+      {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(AssetItemInstance, _impl_.stack_size_), 3>(),
+       {24, 3, 0,
         PROTOBUF_FIELD_OFFSET(AssetItemInstance, _impl_.stack_size_)}},
     }}, {{
       65535, 65535
     }}, {{
       // uint64 item_uuid = 1;
-      {PROTOBUF_FIELD_OFFSET(AssetItemInstance, _impl_.item_uuid_), _Internal::kHasBitsOffset + 0, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
+      {PROTOBUF_FIELD_OFFSET(AssetItemInstance, _impl_.item_uuid_), _Internal::kHasBitsOffset + 1, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
       // uint32 config_id = 2;
-      {PROTOBUF_FIELD_OFFSET(AssetItemInstance, _impl_.config_id_), _Internal::kHasBitsOffset + 1, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
+      {PROTOBUF_FIELD_OFFSET(AssetItemInstance, _impl_.config_id_), _Internal::kHasBitsOffset + 2, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
       // uint32 stack_size = 3;
-      {PROTOBUF_FIELD_OFFSET(AssetItemInstance, _impl_.stack_size_), _Internal::kHasBitsOffset + 2, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
+      {PROTOBUF_FIELD_OFFSET(AssetItemInstance, _impl_.stack_size_), _Internal::kHasBitsOffset + 3, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
+      // bytes instance_proto = 4;
+      {PROTOBUF_FIELD_OFFSET(AssetItemInstance, _impl_.instance_proto_), _Internal::kHasBitsOffset + 0, 0, (0 | ::_fl::kFcOptional | ::_fl::kBytes | ::_fl::kRepAString)},
     }},
     // no aux_entries
     {{
@@ -737,6 +920,9 @@ inline constexpr AssetItemInstance::Impl_::Impl_(
     [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
     ::_pbi::ConstantInitialized) noexcept
       : _cached_size_{0},
+        instance_proto_(
+            &::google::protobuf::internal::fixed_address_empty_string,
+            ::_pbi::ConstantInitialized()),
         item_uuid_{::uint64_t{0u}},
         config_id_{0u},
         stack_size_{0u} {}
@@ -757,7 +943,7 @@ inline void* PROTOBUF_NONNULL AssetItemInstance::PlacementNew_(
   return ::new (mem) AssetItemInstance(arena);
 }
 constexpr auto AssetItemInstance::InternalNewImpl_() {
-  return ::google::protobuf::internal::MessageCreator::ZeroInit(sizeof(AssetItemInstance), alignof(AssetItemInstance));
+  return ::google::protobuf::internal::MessageCreator::CopyInit(sizeof(AssetItemInstance), alignof(AssetItemInstance));
 }
 constexpr auto AssetItemInstance::InternalGenerateClassData_(
     const MessageLite& prototype,
@@ -1021,12 +1207,12 @@ constexpr AssetBundle::ParseTableT_ AssetBundle::InternalGenerateParseTable_(con
     {
       PROTOBUF_FIELD_OFFSET(AssetBundle, _impl_._has_bits_),
       0, // no _extensions_
-      4, 24,  // max_field_number, fast_idx_mask
+      6, 56,  // max_field_number, fast_idx_mask
       offsetof(ParseTableT_, field_lookup_table),
-      4294967280,  // skipmap
+      4294967232,  // skipmap
       offsetof(ParseTableT_, field_entries),
-      4,  // num_field_entries
-      2,  // num_aux_entries
+      6,  // num_field_entries
+      4,  // num_aux_entries
       offsetof(ParseTableT_, aux_entries),
       class_data,
       nullptr,  // post_loop_handler
@@ -1035,10 +1221,7 @@ constexpr AssetBundle::ParseTableT_ AssetBundle::InternalGenerateParseTable_(con
       ::_pbi::TcParser::GetTable<::AssetBundle>(),  // to_prefetch
       #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
     }, {{
-      // uint64 pet_id = 4;
-      {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(AssetBundle, _impl_.pet_id_), 3>(),
-       {32, 3, 0,
-        PROTOBUF_FIELD_OFFSET(AssetBundle, _impl_.pet_id_)}},
+      {::_pbi::TcParser::MiniParse, {}},
       // repeated .CurrencyAmount currencies = 1;
       {::_pbi::TcParser::FastMtR1,
        {10, 0, 0,
@@ -1051,6 +1234,19 @@ constexpr AssetBundle::ParseTableT_ AssetBundle::InternalGenerateParseTable_(con
       {::_pbi::TcParser::FastV64P1,
        {26, 2, 0,
         PROTOBUF_FIELD_OFFSET(AssetBundle, _impl_.item_uuids_)}},
+      // uint64 pet_id = 4;
+      {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(AssetBundle, _impl_.pet_id_), 5>(),
+       {32, 5, 0,
+        PROTOBUF_FIELD_OFFSET(AssetBundle, _impl_.pet_id_)}},
+      // repeated .AssetItemInstance item_instances = 5;
+      {::_pbi::TcParser::FastMtR1,
+       {42, 3, 2,
+        PROTOBUF_FIELD_OFFSET(AssetBundle, _impl_.item_instances_)}},
+      // .AssetPetInstance pet_instance = 6;
+      {::_pbi::TcParser::FastMtS1,
+       {50, 4, 3,
+        PROTOBUF_FIELD_OFFSET(AssetBundle, _impl_.pet_instance_)}},
+      {::_pbi::TcParser::MiniParse, {}},
     }}, {{
       65535, 65535
     }}, {{
@@ -1061,7 +1257,11 @@ constexpr AssetBundle::ParseTableT_ AssetBundle::InternalGenerateParseTable_(con
       // repeated uint64 item_uuids = 3;
       {PROTOBUF_FIELD_OFFSET(AssetBundle, _impl_.item_uuids_), _Internal::kHasBitsOffset + 2, 0, (0 | ::_fl::kFcRepeated | ::_fl::kPackedUInt64)},
       // uint64 pet_id = 4;
-      {PROTOBUF_FIELD_OFFSET(AssetBundle, _impl_.pet_id_), _Internal::kHasBitsOffset + 3, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
+      {PROTOBUF_FIELD_OFFSET(AssetBundle, _impl_.pet_id_), _Internal::kHasBitsOffset + 5, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
+      // repeated .AssetItemInstance item_instances = 5;
+      {PROTOBUF_FIELD_OFFSET(AssetBundle, _impl_.item_instances_), _Internal::kHasBitsOffset + 3, 2, (0 | ::_fl::kFcRepeated | ::_fl::kMessage | ::_fl::kTvTable)},
+      // .AssetPetInstance pet_instance = 6;
+      {PROTOBUF_FIELD_OFFSET(AssetBundle, _impl_.pet_instance_), _Internal::kHasBitsOffset + 4, 3, (0 | ::_fl::kFcOptional | ::_fl::kMessage | ::_fl::kTvTable)},
     }},
     {{
         #ifndef PROTOBUF_MESSAGE_GLOBALS
@@ -1073,6 +1273,16 @@ constexpr AssetBundle::ParseTableT_ AssetBundle::InternalGenerateParseTable_(con
         {::_pbi::TcParser::GetTable<::ItemGrant>()},
         #else
         {::_pbi::FieldAuxMessageGlobals(), &::ItemGrant_globals_},
+        #endif
+        #ifndef PROTOBUF_MESSAGE_GLOBALS
+        {::_pbi::TcParser::GetTable<::AssetItemInstance>()},
+        #else
+        {::_pbi::FieldAuxMessageGlobals(), &::AssetItemInstance_globals_},
+        #endif
+        #ifndef PROTOBUF_MESSAGE_GLOBALS
+        {::_pbi::TcParser::GetTable<::AssetPetInstance>()},
+        #else
+        {::_pbi::FieldAuxMessageGlobals(), &::AssetPetInstance_globals_},
         #endif
     }},
     {{
@@ -1101,6 +1311,12 @@ inline constexpr AssetBundle::Impl_::Impl_(
          }
         ,
         _item_uuids_cached_byte_size_{0},
+        item_instances_ { visibility, ::_pbi::InternalMetadataOffset::Build<
+            ::AssetBundle,
+            PROTOBUF_FIELD_OFFSET(::AssetBundle, _impl_.item_instances_)>()
+         }
+        ,
+        pet_instance_{nullptr},
         pet_id_{::uint64_t{0u}} {}
 
 template <typename>
@@ -1602,15 +1818,19 @@ const ::uint32_t
         1,
         0x081, // bitmap
         PROTOBUF_FIELD_OFFSET(::AssetBundle, _impl_._has_bits_),
-        7, // hasbit index offset
+        9, // hasbit index offset
         PROTOBUF_FIELD_OFFSET(::AssetBundle, _impl_.currencies_),
         PROTOBUF_FIELD_OFFSET(::AssetBundle, _impl_.items_),
         PROTOBUF_FIELD_OFFSET(::AssetBundle, _impl_.item_uuids_),
         PROTOBUF_FIELD_OFFSET(::AssetBundle, _impl_.pet_id_),
+        PROTOBUF_FIELD_OFFSET(::AssetBundle, _impl_.item_instances_),
+        PROTOBUF_FIELD_OFFSET(::AssetBundle, _impl_.pet_instance_),
         0,
         1,
         2,
+        5,
         3,
+        4,
         0x081, // bitmap
         PROTOBUF_FIELD_OFFSET(::AssetOpAuth, _impl_._has_bits_),
         6, // hasbit index offset
@@ -1641,24 +1861,28 @@ const ::uint32_t
         1,
         0x081, // bitmap
         PROTOBUF_FIELD_OFFSET(::AssetItemInstance, _impl_._has_bits_),
-        6, // hasbit index offset
+        7, // hasbit index offset
         PROTOBUF_FIELD_OFFSET(::AssetItemInstance, _impl_.item_uuid_),
         PROTOBUF_FIELD_OFFSET(::AssetItemInstance, _impl_.config_id_),
         PROTOBUF_FIELD_OFFSET(::AssetItemInstance, _impl_.stack_size_),
-        0,
+        PROTOBUF_FIELD_OFFSET(::AssetItemInstance, _impl_.instance_proto_),
         1,
         2,
+        3,
+        0,
         0x081, // bitmap
         PROTOBUF_FIELD_OFFSET(::AssetPetInstance, _impl_._has_bits_),
-        7, // hasbit index offset
+        8, // hasbit index offset
         PROTOBUF_FIELD_OFFSET(::AssetPetInstance, _impl_.pet_id_),
         PROTOBUF_FIELD_OFFSET(::AssetPetInstance, _impl_.pet_table_id_),
         PROTOBUF_FIELD_OFFSET(::AssetPetInstance, _impl_.name_),
         PROTOBUF_FIELD_OFFSET(::AssetPetInstance, _impl_.level_),
-        1,
+        PROTOBUF_FIELD_OFFSET(::AssetPetInstance, _impl_.instance_proto_),
         2,
-        0,
         3,
+        0,
+        4,
+        1,
         0x081, // bitmap
         PROTOBUF_FIELD_OFFSET(::AssetSnapshot, _impl_._has_bits_),
         6, // hasbit index offset
@@ -1681,6 +1905,17 @@ const ::uint32_t
         3,
         4,
         1,
+        0x081, // bitmap
+        PROTOBUF_FIELD_OFFSET(::PlayerAssetSQLCommit, _impl_._has_bits_),
+        7, // hasbit index offset
+        PROTOBUF_FIELD_OFFSET(::PlayerAssetSQLCommit, _impl_.player_id_),
+        PROTOBUF_FIELD_OFFSET(::PlayerAssetSQLCommit, _impl_.owner_epoch_),
+        PROTOBUF_FIELD_OFFSET(::PlayerAssetSQLCommit, _impl_.save_seq_),
+        PROTOBUF_FIELD_OFFSET(::PlayerAssetSQLCommit, _impl_.ledger_proto_),
+        1,
+        2,
+        3,
+        0,
 };
 
 static const ::_pbi::MigrationSchema
@@ -1688,12 +1923,13 @@ static const ::_pbi::MigrationSchema
         {0, sizeof(::CurrencyAmount)},
         {7, sizeof(::ItemGrant)},
         {14, sizeof(::AssetBundle)},
-        {25, sizeof(::AssetOpAuth)},
-        {34, sizeof(::AssetOpRequest)},
-        {53, sizeof(::AssetItemInstance)},
-        {62, sizeof(::AssetPetInstance)},
-        {73, sizeof(::AssetSnapshot)},
-        {82, sizeof(::AssetOpResponse)},
+        {29, sizeof(::AssetOpAuth)},
+        {38, sizeof(::AssetOpRequest)},
+        {57, sizeof(::AssetItemInstance)},
+        {68, sizeof(::AssetPetInstance)},
+        {81, sizeof(::AssetSnapshot)},
+        {90, sizeof(::AssetOpResponse)},
+        {103, sizeof(::PlayerAssetSQLCommit)},
 };
 static const ::_pbi::MessageGlobalsBase* PROTOBUF_NONNULL const
     file_message_globals[] = {
@@ -1706,6 +1942,7 @@ static const ::_pbi::MessageGlobalsBase* PROTOBUF_NONNULL const
         &::AssetPetInstance_globals_,
         &::AssetSnapshot_globals_,
         &::AssetOpResponse_globals_,
+        &::PlayerAssetSQLCommit_globals_,
 };
 const char descriptor_table_protodef_proto_2fcommon_2fasset_2fasset_5fop_2eproto[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
     protodesc_cold) = {
@@ -1713,38 +1950,44 @@ const char descriptor_table_protodef_proto_2fcommon_2fasset_2fasset_5fop_2eproto
     "to/common/base/tip.proto\"7\n\016CurrencyAmou"
     "nt\022\025\n\rcurrency_type\030\001 \001(\r\022\016\n\006amount\030\002 \001("
     "\004\"-\n\tItemGrant\022\021\n\tconfig_id\030\001 \001(\r\022\r\n\005cou"
-    "nt\030\002 \001(\r\"q\n\013AssetBundle\022#\n\ncurrencies\030\001 "
-    "\003(\0132\017.CurrencyAmount\022\031\n\005items\030\002 \003(\0132\n.It"
-    "emGrant\022\022\n\nitem_uuids\030\003 \003(\004\022\016\n\006pet_id\030\004 "
-    "\001(\004\"J\n\013AssetOpAuth\022\016\n\006caller\030\001 \001(\t\022\024\n\014ti"
-    "mestamp_ms\030\002 \001(\004\022\025\n\rsignature_hex\030\003 \001(\t\""
-    "\311\001\n\016AssetOpRequest\022\021\n\tplayer_id\030\001 \001(\004\022\036\n"
-    "\006stream\030\002 \001(\0162\016.AssetOpStream\022\013\n\003seq\030\003 \001"
-    "(\004\022\026\n\016correlation_id\030\004 \001(\004\022\017\n\007tx_type\030\005 "
-    "\001(\r\022\034\n\006bundle\030\006 \001(\0132\014.AssetBundle\022\024\n\014str"
-    "eam_epoch\030\007 \001(\004\022\032\n\004auth\030\010 \001(\0132\014.AssetOpA"
-    "uth\"M\n\021AssetItemInstance\022\021\n\titem_uuid\030\001 "
-    "\001(\004\022\021\n\tconfig_id\030\002 \001(\r\022\022\n\nstack_size\030\003 \001"
-    "(\r\"U\n\020AssetPetInstance\022\016\n\006pet_id\030\001 \001(\004\022\024"
-    "\n\014pet_table_id\030\002 \001(\r\022\014\n\004name\030\003 \001(\t\022\r\n\005le"
-    "vel\030\004 \001(\r\"u\n\rAssetSnapshot\022!\n\005items\030\001 \003("
-    "\0132\022.AssetItemInstance\022\036\n\003pet\030\002 \001(\0132\021.Ass"
-    "etPetInstance\022!\n\010currency\030\003 \001(\0132\017.Curren"
-    "cyAmount\"\230\001\n\017AssetOpResponse\022 \n\007outcome\030"
-    "\001 \001(\0162\017.AssetOpOutcome\022\037\n\006reason\030\002 \001(\0132\017"
-    ".TipInfoMessage\022\017\n\007durable\030\003 \001(\010\022\017\n\007part"
-    "ial\030\004 \001(\010\022 \n\010snapshot\030\005 \001(\0132\016.AssetSnaps"
-    "hot*\331\001\n\rAssetOpStream\022\037\n\033ASSET_OP_STREAM"
-    "_UNSPECIFIED\020\000\022\037\n\033ASSET_OP_STREAM_GUILD_"
-    "DEBIT\020\001\022 \n\034ASSET_OP_STREAM_GUILD_CREDIT\020"
-    "\002\022\037\n\033ASSET_OP_STREAM_TRADE_DEBIT\020\003\022 \n\034AS"
-    "SET_OP_STREAM_TRADE_CREDIT\020\004\022!\n\035ASSET_OP"
-    "_STREAM_SYSTEM_CREDIT\020\005*\246\001\n\016AssetOpOutco"
-    "me\022\034\n\030ASSET_OP_OUTCOME_UNKNOWN\020\000\022\034\n\030ASSE"
-    "T_OP_OUTCOME_APPLIED\020\001\022\035\n\031ASSET_OP_OUTCO"
-    "ME_REJECTED\020\002\022\032\n\026ASSET_OP_OUTCOME_RETRY\020"
-    "\003\022\035\n\031ASSET_OP_OUTCOME_NOT_HERE\020\004B\016Z\014comm"
-    "on/assetb\006proto3"
+    "nt\030\002 \001(\r\"\306\001\n\013AssetBundle\022#\n\ncurrencies\030\001"
+    " \003(\0132\017.CurrencyAmount\022\031\n\005items\030\002 \003(\0132\n.I"
+    "temGrant\022\022\n\nitem_uuids\030\003 \003(\004\022\016\n\006pet_id\030\004"
+    " \001(\004\022*\n\016item_instances\030\005 \003(\0132\022.AssetItem"
+    "Instance\022\'\n\014pet_instance\030\006 \001(\0132\021.AssetPe"
+    "tInstance\"J\n\013AssetOpAuth\022\016\n\006caller\030\001 \001(\t"
+    "\022\024\n\014timestamp_ms\030\002 \001(\004\022\025\n\rsignature_hex\030"
+    "\003 \001(\t\"\311\001\n\016AssetOpRequest\022\021\n\tplayer_id\030\001 "
+    "\001(\004\022\036\n\006stream\030\002 \001(\0162\016.AssetOpStream\022\013\n\003s"
+    "eq\030\003 \001(\004\022\026\n\016correlation_id\030\004 \001(\004\022\017\n\007tx_t"
+    "ype\030\005 \001(\r\022\034\n\006bundle\030\006 \001(\0132\014.AssetBundle\022"
+    "\024\n\014stream_epoch\030\007 \001(\004\022\032\n\004auth\030\010 \001(\0132\014.As"
+    "setOpAuth\"e\n\021AssetItemInstance\022\021\n\titem_u"
+    "uid\030\001 \001(\004\022\021\n\tconfig_id\030\002 \001(\r\022\022\n\nstack_si"
+    "ze\030\003 \001(\r\022\026\n\016instance_proto\030\004 \001(\014\"m\n\020Asse"
+    "tPetInstance\022\016\n\006pet_id\030\001 \001(\004\022\024\n\014pet_tabl"
+    "e_id\030\002 \001(\r\022\014\n\004name\030\003 \001(\t\022\r\n\005level\030\004 \001(\r\022"
+    "\026\n\016instance_proto\030\005 \001(\014\"u\n\rAssetSnapshot"
+    "\022!\n\005items\030\001 \003(\0132\022.AssetItemInstance\022\036\n\003p"
+    "et\030\002 \001(\0132\021.AssetPetInstance\022!\n\010currency\030"
+    "\003 \001(\0132\017.CurrencyAmount\"\230\001\n\017AssetOpRespon"
+    "se\022 \n\007outcome\030\001 \001(\0162\017.AssetOpOutcome\022\037\n\006"
+    "reason\030\002 \001(\0132\017.TipInfoMessage\022\017\n\007durable"
+    "\030\003 \001(\010\022\017\n\007partial\030\004 \001(\010\022 \n\010snapshot\030\005 \001("
+    "\0132\016.AssetSnapshot\"f\n\024PlayerAssetSQLCommi"
+    "t\022\021\n\tplayer_id\030\001 \001(\004\022\023\n\013owner_epoch\030\002 \001("
+    "\004\022\020\n\010save_seq\030\003 \001(\004\022\024\n\014ledger_proto\030\004 \001("
+    "\014*\331\001\n\rAssetOpStream\022\037\n\033ASSET_OP_STREAM_U"
+    "NSPECIFIED\020\000\022\037\n\033ASSET_OP_STREAM_GUILD_DE"
+    "BIT\020\001\022 \n\034ASSET_OP_STREAM_GUILD_CREDIT\020\002\022"
+    "\037\n\033ASSET_OP_STREAM_TRADE_DEBIT\020\003\022 \n\034ASSE"
+    "T_OP_STREAM_TRADE_CREDIT\020\004\022!\n\035ASSET_OP_S"
+    "TREAM_SYSTEM_CREDIT\020\005*\246\001\n\016AssetOpOutcome"
+    "\022\034\n\030ASSET_OP_OUTCOME_UNKNOWN\020\000\022\034\n\030ASSET_"
+    "OP_OUTCOME_APPLIED\020\001\022\035\n\031ASSET_OP_OUTCOME"
+    "_REJECTED\020\002\022\032\n\026ASSET_OP_OUTCOME_RETRY\020\003\022"
+    "\035\n\031ASSET_OP_OUTCOME_NOT_HERE\020\004B\016Z\014common"
+    "/assetb\006proto3"
 };
 static const ::_pbi::DescriptorTable* PROTOBUF_NONNULL const
     descriptor_table_proto_2fcommon_2fasset_2fasset_5fop_2eproto_deps[1] = {
@@ -1754,13 +1997,13 @@ static ::absl::once_flag descriptor_table_proto_2fcommon_2fasset_2fasset_5fop_2e
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fcommon_2fasset_2fasset_5fop_2eproto = {
     false,
     false,
-    1416,
+    1654,
     descriptor_table_protodef_proto_2fcommon_2fasset_2fasset_5fop_2eproto,
     "proto/common/asset/asset_op.proto",
     &descriptor_table_proto_2fcommon_2fasset_2fasset_5fop_2eproto_once,
     descriptor_table_proto_2fcommon_2fasset_2fasset_5fop_2eproto_deps,
     1,
-    9,
+    10,
     schemas,
     file_message_globals,
     TableStruct_proto_2fcommon_2fasset_2fasset_5fop_2eproto::offsets,
@@ -2275,7 +2518,14 @@ PROTOBUF_NDEBUG_INLINE AssetBundle::Impl_::Impl_(
           , from.item_uuids_
         }
         ,
-        _item_uuids_cached_byte_size_{0} {}
+        _item_uuids_cached_byte_size_{0},
+        item_instances_ {
+          visibility, ::_pbi::InternalMetadataOffset::Build<
+              ::AssetBundle,
+              PROTOBUF_FIELD_OFFSET(::AssetBundle, _impl_.item_instances_)>()
+          , from.item_instances_
+        }
+     {}
 
 AssetBundle::AssetBundle(
     ::google::protobuf::Arena* PROTOBUF_NULLABLE arena,
@@ -2291,6 +2541,10 @@ AssetBundle::AssetBundle(
   _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
       from._internal_metadata_);
   new (&_impl_) Impl_(internal_visibility(), arena, from._impl_, from);
+  ::uint32_t cached_has_bits = _impl_._has_bits_[0];
+  _impl_.pet_instance_ = (CheckHasBit(cached_has_bits, 0x00000010U))
+                ? ::google::protobuf::Message::CopyConstruct(arena, *from._impl_.pet_instance_)
+                : nullptr;
   _impl_.pet_id_ = from._impl_.pet_id_;
 
   // @@protoc_insertion_point(copy_constructor:AssetBundle)
@@ -2314,11 +2568,21 @@ PROTOBUF_NDEBUG_INLINE AssetBundle::Impl_::Impl_(
             PROTOBUF_FIELD_OFFSET(::AssetBundle, _impl_.item_uuids_)>()
          }
         ,
-        _item_uuids_cached_byte_size_{0} {}
+        _item_uuids_cached_byte_size_{0},
+        item_instances_ { visibility, ::_pbi::InternalMetadataOffset::Build<
+            ::AssetBundle,
+            PROTOBUF_FIELD_OFFSET(::AssetBundle, _impl_.item_instances_)>()
+         }
+     {}
 
 inline void AssetBundle::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
   new (&_impl_) Impl_(internal_visibility(), arena);
-  _impl_.pet_id_ = {};
+  ::memset(reinterpret_cast<char*>(&_impl_) +
+               offsetof(Impl_, pet_instance_),
+           0,
+           offsetof(Impl_, pet_id_) -
+               offsetof(Impl_, pet_instance_) +
+               sizeof(Impl_::pet_id_));
 }
 AssetBundle::~AssetBundle() {
   // @@protoc_insertion_point(destructor:AssetBundle)
@@ -2331,6 +2595,7 @@ inline void AssetBundle::SharedDtor(MessageLite& self) {
   }
   this_._internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
   ABSL_DCHECK(this_.GetArena() == nullptr);
+  delete this_._impl_.pet_instance_;
   this_._impl_.~Impl_();
 }
 
@@ -2368,7 +2633,7 @@ PROTOBUF_NOINLINE void AssetBundle::Clear() {
   (void) cached_has_bits;
 
   cached_has_bits = _impl_._has_bits_[0];
-  if (BatchCheckHasBit(cached_has_bits, 0x00000007U)) {
+  if (BatchCheckHasBit(cached_has_bits, 0x0000001fU)) {
     if (CheckHasBit(cached_has_bits, 0x00000001U)) {
       _impl_.currencies_.Clear();
     }
@@ -2377,6 +2642,13 @@ PROTOBUF_NOINLINE void AssetBundle::Clear() {
     }
     if (CheckHasBit(cached_has_bits, 0x00000004U)) {
       _impl_.item_uuids_.Clear();
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000008U)) {
+      _impl_.item_instances_.Clear();
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000010U)) {
+      ABSL_DCHECK(_impl_.pet_instance_ != nullptr);
+      _impl_.pet_instance_->Clear();
     }
   }
   _impl_.pet_id_ = ::uint64_t{0u};
@@ -2441,12 +2713,32 @@ PROTOBUF_NOINLINE void AssetBundle::Clear() {
   }
 
   // uint64 pet_id = 4;
-  if (CheckHasBit(cached_has_bits, 0x00000008U)) {
+  if (CheckHasBit(cached_has_bits, 0x00000020U)) {
     if (this_._internal_pet_id() != 0) {
       target = stream->EnsureSpace(target);
       target = ::_pbi::WireFormatLite::WriteUInt64ToArray(
           4, this_._internal_pet_id(), target);
     }
+  }
+
+  // repeated .AssetItemInstance item_instances = 5;
+  if (CheckHasBit(cached_has_bits, 0x00000008U)) {
+    for (unsigned i = 0, n = static_cast<unsigned>(
+                             this_._internal_item_instances_size());
+         i < n; i++) {
+      const auto& repfield = this_._internal_item_instances().Get(i);
+      target =
+          ::google::protobuf::internal::WireFormatLite::InternalWriteMessage(
+              5, repfield, repfield.GetCachedSize(),
+              target, stream);
+    }
+  }
+
+  // .AssetPetInstance pet_instance = 6;
+  if (CheckHasBit(cached_has_bits, 0x00000010U)) {
+    target = ::google::protobuf::internal::WireFormatLite::InternalWriteMessage(
+        6, *this_._impl_.pet_instance_, this_._impl_.pet_instance_->GetCachedSize(), target,
+        stream);
   }
 
   if (ABSL_PREDICT_FALSE(this_._internal_metadata_.have_unknown_fields())) {
@@ -2474,7 +2766,7 @@ PROTOBUF_NOINLINE void AssetBundle::Clear() {
 
   ::_pbi::Prefetch5LinesFrom7Lines(&this_);
   cached_has_bits = this_._impl_._has_bits_[0];
-  if (BatchCheckHasBit(cached_has_bits, 0x0000000fU)) {
+  if (BatchCheckHasBit(cached_has_bits, 0x0000003fU)) {
     // repeated .CurrencyAmount currencies = 1;
     if (CheckHasBit(cached_has_bits, 0x00000001U)) {
       total_size += 1UL * this_._internal_currencies_size();
@@ -2496,8 +2788,20 @@ PROTOBUF_NOINLINE void AssetBundle::Clear() {
               this_._internal_item_uuids(), 1,
               this_._impl_._item_uuids_cached_byte_size_);
     }
-    // uint64 pet_id = 4;
+    // repeated .AssetItemInstance item_instances = 5;
     if (CheckHasBit(cached_has_bits, 0x00000008U)) {
+      total_size += 1UL * this_._internal_item_instances_size();
+      for (const auto& msg : this_._internal_item_instances()) {
+        total_size += ::google::protobuf::internal::WireFormatLite::MessageSize(msg);
+      }
+    }
+    // .AssetPetInstance pet_instance = 6;
+    if (CheckHasBit(cached_has_bits, 0x00000010U)) {
+      total_size += 1 +
+                    ::google::protobuf::internal::WireFormatLite::MessageSize(*this_._impl_.pet_instance_);
+    }
+    // uint64 pet_id = 4;
+    if (CheckHasBit(cached_has_bits, 0x00000020U)) {
       if (this_._internal_pet_id() != 0) {
         total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(
             this_._internal_pet_id());
@@ -2522,7 +2826,7 @@ void AssetBundle::MergeImpl(::google::protobuf::MessageLite& to_msg,
   (void)cached_has_bits;
 
   cached_has_bits = from._impl_._has_bits_[0];
-  if (BatchCheckHasBit(cached_has_bits, 0x0000000fU)) {
+  if (BatchCheckHasBit(cached_has_bits, 0x0000003fU)) {
     if (CheckHasBit(cached_has_bits, 0x00000001U)) {
       _this->_internal_mutable_currencies()->InternalMergeFromWithArena(
           ::google::protobuf::MessageLite::internal_visibility(), arena,
@@ -2537,6 +2841,19 @@ void AssetBundle::MergeImpl(::google::protobuf::MessageLite& to_msg,
       _this->_internal_mutable_item_uuids()->MergeFrom(from._internal_item_uuids());
     }
     if (CheckHasBit(cached_has_bits, 0x00000008U)) {
+      _this->_internal_mutable_item_instances()->InternalMergeFromWithArena(
+          ::google::protobuf::MessageLite::internal_visibility(), arena,
+          from._internal_item_instances());
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000010U)) {
+      ABSL_DCHECK(from._impl_.pet_instance_ != nullptr);
+      if (_this->_impl_.pet_instance_ == nullptr) {
+        _this->_impl_.pet_instance_ = ::google::protobuf::Message::CopyConstruct(arena, *from._impl_.pet_instance_);
+      } else {
+        _this->_impl_.pet_instance_->MergeFrom(*from._impl_.pet_instance_);
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000020U)) {
       if (from._internal_pet_id() != 0) {
         _this->_impl_.pet_id_ = from._impl_.pet_id_;
       }
@@ -2562,7 +2879,13 @@ void AssetBundle::InternalSwap(AssetBundle* PROTOBUF_RESTRICT PROTOBUF_NONNULL o
   _impl_.currencies_.InternalSwap(&other->_impl_.currencies_);
   _impl_.items_.InternalSwap(&other->_impl_.items_);
   _impl_.item_uuids_.InternalSwap(&other->_impl_.item_uuids_);
-  swap(_impl_.pet_id_, other->_impl_.pet_id_);
+  _impl_.item_instances_.InternalSwap(&other->_impl_.item_instances_);
+  ::google::protobuf::internal::memswap<
+      PROTOBUF_FIELD_OFFSET(AssetBundle, _impl_.pet_id_)
+      + sizeof(AssetBundle::_impl_.pet_id_)
+      - PROTOBUF_FIELD_OFFSET(AssetBundle, _impl_.pet_instance_)>(
+          reinterpret_cast<char*>(&_impl_.pet_instance_),
+          reinterpret_cast<char*>(&other->_impl_.pet_instance_));
 }
 
 ::google::protobuf::Metadata AssetBundle::GetMetadata() const {
@@ -3248,21 +3571,43 @@ AssetItemInstance::AssetItemInstance(::google::protobuf::Arena* PROTOBUF_NULLABL
   SharedCtor(arena);
   // @@protoc_insertion_point(arena_constructor:AssetItemInstance)
 }
+PROTOBUF_NDEBUG_INLINE AssetItemInstance::Impl_::Impl_(
+    [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
+    [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
+    [[maybe_unused]] const ::AssetItemInstance& from_msg)
+      : _has_bits_{from._has_bits_},
+        _cached_size_{0},
+        instance_proto_(arena, from.instance_proto_) {}
+
 AssetItemInstance::AssetItemInstance(
-    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const AssetItemInstance& from)
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena,
+    const AssetItemInstance& from)
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-    : ::google::protobuf::Message(arena, AssetItemInstance_get_class_data()),
+    : ::google::protobuf::Message(arena, AssetItemInstance_get_class_data()) {
+
 #else   // PROTOBUF_CUSTOM_VTABLE
-    : ::google::protobuf::Message(arena),
+    : ::google::protobuf::Message(arena) {
 #endif  // PROTOBUF_CUSTOM_VTABLE
-      _impl_(from._impl_) {
+  AssetItemInstance* const _this = this;
+  (void)_this;
   _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
       from._internal_metadata_);
+  new (&_impl_) Impl_(internal_visibility(), arena, from._impl_, from);
+  ::memcpy(reinterpret_cast<char*>(&_impl_) +
+               offsetof(Impl_, item_uuid_),
+           reinterpret_cast<const char*>(&from._impl_) +
+               offsetof(Impl_, item_uuid_),
+           offsetof(Impl_, stack_size_) -
+               offsetof(Impl_, item_uuid_) +
+               sizeof(Impl_::stack_size_));
+
+  // @@protoc_insertion_point(copy_constructor:AssetItemInstance)
 }
 PROTOBUF_NDEBUG_INLINE AssetItemInstance::Impl_::Impl_(
     [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
     [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
-      : _cached_size_{0} {}
+      : _cached_size_{0},
+        instance_proto_(arena) {}
 
 inline void AssetItemInstance::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
   new (&_impl_) Impl_(internal_visibility(), arena);
@@ -3284,6 +3629,7 @@ inline void AssetItemInstance::SharedDtor(MessageLite& self) {
   }
   this_._internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
   ABSL_DCHECK(this_.GetArena() == nullptr);
+  this_._impl_.instance_proto_.Destroy();
   this_._impl_.~Impl_();
 }
 
@@ -3321,7 +3667,10 @@ PROTOBUF_NOINLINE void AssetItemInstance::Clear() {
   (void) cached_has_bits;
 
   cached_has_bits = _impl_._has_bits_[0];
-  if (BatchCheckHasBit(cached_has_bits, 0x00000007U)) {
+  if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+    _impl_.instance_proto_.ClearNonDefaultToEmpty();
+  }
+  if (BatchCheckHasBit(cached_has_bits, 0x0000000eU)) {
     ::memset(&_impl_.item_uuid_, 0, static_cast<::size_t>(
         reinterpret_cast<char*>(&_impl_.stack_size_) -
         reinterpret_cast<char*>(&_impl_.item_uuid_)) + sizeof(_impl_.stack_size_));
@@ -3350,7 +3699,7 @@ PROTOBUF_NOINLINE void AssetItemInstance::Clear() {
 
   cached_has_bits = this_._impl_._has_bits_[0];
   // uint64 item_uuid = 1;
-  if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+  if (CheckHasBit(cached_has_bits, 0x00000002U)) {
     if (this_._internal_item_uuid() != 0) {
       target = stream->EnsureSpace(target);
       target = ::_pbi::WireFormatLite::WriteUInt64ToArray(
@@ -3359,7 +3708,7 @@ PROTOBUF_NOINLINE void AssetItemInstance::Clear() {
   }
 
   // uint32 config_id = 2;
-  if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+  if (CheckHasBit(cached_has_bits, 0x00000004U)) {
     if (this_._internal_config_id() != 0) {
       target = stream->EnsureSpace(target);
       target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
@@ -3368,11 +3717,19 @@ PROTOBUF_NOINLINE void AssetItemInstance::Clear() {
   }
 
   // uint32 stack_size = 3;
-  if (CheckHasBit(cached_has_bits, 0x00000004U)) {
+  if (CheckHasBit(cached_has_bits, 0x00000008U)) {
     if (this_._internal_stack_size() != 0) {
       target = stream->EnsureSpace(target);
       target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
           3, this_._internal_stack_size(), target);
+    }
+  }
+
+  // bytes instance_proto = 4;
+  if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+    if (!this_._internal_instance_proto().empty()) {
+      const ::std::string& _s = this_._internal_instance_proto();
+      target = stream->WriteBytesMaybeAliased(4, _s, target);
     }
   }
 
@@ -3401,23 +3758,30 @@ PROTOBUF_NOINLINE void AssetItemInstance::Clear() {
 
   ::_pbi::Prefetch5LinesFrom7Lines(&this_);
   cached_has_bits = this_._impl_._has_bits_[0];
-  if (BatchCheckHasBit(cached_has_bits, 0x00000007U)) {
-    // uint64 item_uuid = 1;
+  if (BatchCheckHasBit(cached_has_bits, 0x0000000fU)) {
+    // bytes instance_proto = 4;
     if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+      if (!this_._internal_instance_proto().empty()) {
+        total_size += 1 + ::google::protobuf::internal::WireFormatLite::BytesSize(
+                                        this_._internal_instance_proto());
+      }
+    }
+    // uint64 item_uuid = 1;
+    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
       if (this_._internal_item_uuid() != 0) {
         total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(
             this_._internal_item_uuid());
       }
     }
     // uint32 config_id = 2;
-    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+    if (CheckHasBit(cached_has_bits, 0x00000004U)) {
       if (this_._internal_config_id() != 0) {
         total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
             this_._internal_config_id());
       }
     }
     // uint32 stack_size = 3;
-    if (CheckHasBit(cached_has_bits, 0x00000004U)) {
+    if (CheckHasBit(cached_has_bits, 0x00000008U)) {
       if (this_._internal_stack_size() != 0) {
         total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
             this_._internal_stack_size());
@@ -3441,18 +3805,27 @@ void AssetItemInstance::MergeImpl(::google::protobuf::MessageLite& to_msg,
   (void)cached_has_bits;
 
   cached_has_bits = from._impl_._has_bits_[0];
-  if (BatchCheckHasBit(cached_has_bits, 0x00000007U)) {
+  if (BatchCheckHasBit(cached_has_bits, 0x0000000fU)) {
     if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+      if (!from._internal_instance_proto().empty()) {
+        _this->_internal_set_instance_proto(from._internal_instance_proto());
+      } else {
+        if (_this->_impl_.instance_proto_.IsDefault()) {
+          _this->_internal_set_instance_proto("");
+        }
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
       if (from._internal_item_uuid() != 0) {
         _this->_impl_.item_uuid_ = from._impl_.item_uuid_;
       }
     }
-    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+    if (CheckHasBit(cached_has_bits, 0x00000004U)) {
       if (from._internal_config_id() != 0) {
         _this->_impl_.config_id_ = from._impl_.config_id_;
       }
     }
-    if (CheckHasBit(cached_has_bits, 0x00000004U)) {
+    if (CheckHasBit(cached_has_bits, 0x00000008U)) {
       if (from._internal_stack_size() != 0) {
         _this->_impl_.stack_size_ = from._impl_.stack_size_;
       }
@@ -3473,8 +3846,11 @@ void AssetItemInstance::CopyFrom(const AssetItemInstance& from) {
 
 void AssetItemInstance::InternalSwap(AssetItemInstance* PROTOBUF_RESTRICT PROTOBUF_NONNULL other) {
   using ::std::swap;
+  auto* arena = GetArena();
+  ABSL_DCHECK_EQ(arena, other->GetArena());
   _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
+  ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.instance_proto_, &other->_impl_.instance_proto_, arena);
   ::google::protobuf::internal::memswap<
       PROTOBUF_FIELD_OFFSET(AssetItemInstance, _impl_.stack_size_)
       + sizeof(AssetItemInstance::_impl_.stack_size_)
@@ -3503,7 +3879,8 @@ PROTOBUF_NDEBUG_INLINE AssetPetInstance::Impl_::Impl_(
     [[maybe_unused]] const ::AssetPetInstance& from_msg)
       : _has_bits_{from._has_bits_},
         _cached_size_{0},
-        name_(arena, from.name_) {}
+        name_(arena, from.name_),
+        instance_proto_(arena, from.instance_proto_) {}
 
 AssetPetInstance::AssetPetInstance(
     ::google::protobuf::Arena* PROTOBUF_NULLABLE arena,
@@ -3533,7 +3910,8 @@ PROTOBUF_NDEBUG_INLINE AssetPetInstance::Impl_::Impl_(
     [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
     [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
       : _cached_size_{0},
-        name_(arena) {}
+        name_(arena),
+        instance_proto_(arena) {}
 
 inline void AssetPetInstance::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
   new (&_impl_) Impl_(internal_visibility(), arena);
@@ -3556,6 +3934,7 @@ inline void AssetPetInstance::SharedDtor(MessageLite& self) {
   this_._internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
   ABSL_DCHECK(this_.GetArena() == nullptr);
   this_._impl_.name_.Destroy();
+  this_._impl_.instance_proto_.Destroy();
   this_._impl_.~Impl_();
 }
 
@@ -3593,10 +3972,15 @@ PROTOBUF_NOINLINE void AssetPetInstance::Clear() {
   (void) cached_has_bits;
 
   cached_has_bits = _impl_._has_bits_[0];
-  if (CheckHasBit(cached_has_bits, 0x00000001U)) {
-    _impl_.name_.ClearNonDefaultToEmpty();
+  if (BatchCheckHasBit(cached_has_bits, 0x00000003U)) {
+    if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+      _impl_.name_.ClearNonDefaultToEmpty();
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      _impl_.instance_proto_.ClearNonDefaultToEmpty();
+    }
   }
-  if (BatchCheckHasBit(cached_has_bits, 0x0000000eU)) {
+  if (BatchCheckHasBit(cached_has_bits, 0x0000001cU)) {
     ::memset(&_impl_.pet_id_, 0, static_cast<::size_t>(
         reinterpret_cast<char*>(&_impl_.level_) -
         reinterpret_cast<char*>(&_impl_.pet_id_)) + sizeof(_impl_.level_));
@@ -3625,7 +4009,7 @@ PROTOBUF_NOINLINE void AssetPetInstance::Clear() {
 
   cached_has_bits = this_._impl_._has_bits_[0];
   // uint64 pet_id = 1;
-  if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+  if (CheckHasBit(cached_has_bits, 0x00000004U)) {
     if (this_._internal_pet_id() != 0) {
       target = stream->EnsureSpace(target);
       target = ::_pbi::WireFormatLite::WriteUInt64ToArray(
@@ -3634,7 +4018,7 @@ PROTOBUF_NOINLINE void AssetPetInstance::Clear() {
   }
 
   // uint32 pet_table_id = 2;
-  if (CheckHasBit(cached_has_bits, 0x00000004U)) {
+  if (CheckHasBit(cached_has_bits, 0x00000008U)) {
     if (this_._internal_pet_table_id() != 0) {
       target = stream->EnsureSpace(target);
       target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
@@ -3653,11 +4037,19 @@ PROTOBUF_NOINLINE void AssetPetInstance::Clear() {
   }
 
   // uint32 level = 4;
-  if (CheckHasBit(cached_has_bits, 0x00000008U)) {
+  if (CheckHasBit(cached_has_bits, 0x00000010U)) {
     if (this_._internal_level() != 0) {
       target = stream->EnsureSpace(target);
       target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
           4, this_._internal_level(), target);
+    }
+  }
+
+  // bytes instance_proto = 5;
+  if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+    if (!this_._internal_instance_proto().empty()) {
+      const ::std::string& _s = this_._internal_instance_proto();
+      target = stream->WriteBytesMaybeAliased(5, _s, target);
     }
   }
 
@@ -3686,7 +4078,7 @@ PROTOBUF_NOINLINE void AssetPetInstance::Clear() {
 
   ::_pbi::Prefetch5LinesFrom7Lines(&this_);
   cached_has_bits = this_._impl_._has_bits_[0];
-  if (BatchCheckHasBit(cached_has_bits, 0x0000000fU)) {
+  if (BatchCheckHasBit(cached_has_bits, 0x0000001fU)) {
     // string name = 3;
     if (CheckHasBit(cached_has_bits, 0x00000001U)) {
       if (!this_._internal_name().empty()) {
@@ -3694,22 +4086,29 @@ PROTOBUF_NOINLINE void AssetPetInstance::Clear() {
                                         this_._internal_name());
       }
     }
-    // uint64 pet_id = 1;
+    // bytes instance_proto = 5;
     if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      if (!this_._internal_instance_proto().empty()) {
+        total_size += 1 + ::google::protobuf::internal::WireFormatLite::BytesSize(
+                                        this_._internal_instance_proto());
+      }
+    }
+    // uint64 pet_id = 1;
+    if (CheckHasBit(cached_has_bits, 0x00000004U)) {
       if (this_._internal_pet_id() != 0) {
         total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(
             this_._internal_pet_id());
       }
     }
     // uint32 pet_table_id = 2;
-    if (CheckHasBit(cached_has_bits, 0x00000004U)) {
+    if (CheckHasBit(cached_has_bits, 0x00000008U)) {
       if (this_._internal_pet_table_id() != 0) {
         total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
             this_._internal_pet_table_id());
       }
     }
     // uint32 level = 4;
-    if (CheckHasBit(cached_has_bits, 0x00000008U)) {
+    if (CheckHasBit(cached_has_bits, 0x00000010U)) {
       if (this_._internal_level() != 0) {
         total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
             this_._internal_level());
@@ -3733,7 +4132,7 @@ void AssetPetInstance::MergeImpl(::google::protobuf::MessageLite& to_msg,
   (void)cached_has_bits;
 
   cached_has_bits = from._impl_._has_bits_[0];
-  if (BatchCheckHasBit(cached_has_bits, 0x0000000fU)) {
+  if (BatchCheckHasBit(cached_has_bits, 0x0000001fU)) {
     if (CheckHasBit(cached_has_bits, 0x00000001U)) {
       if (!from._internal_name().empty()) {
         _this->_internal_set_name(from._internal_name());
@@ -3744,16 +4143,25 @@ void AssetPetInstance::MergeImpl(::google::protobuf::MessageLite& to_msg,
       }
     }
     if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      if (!from._internal_instance_proto().empty()) {
+        _this->_internal_set_instance_proto(from._internal_instance_proto());
+      } else {
+        if (_this->_impl_.instance_proto_.IsDefault()) {
+          _this->_internal_set_instance_proto("");
+        }
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000004U)) {
       if (from._internal_pet_id() != 0) {
         _this->_impl_.pet_id_ = from._impl_.pet_id_;
       }
     }
-    if (CheckHasBit(cached_has_bits, 0x00000004U)) {
+    if (CheckHasBit(cached_has_bits, 0x00000008U)) {
       if (from._internal_pet_table_id() != 0) {
         _this->_impl_.pet_table_id_ = from._impl_.pet_table_id_;
       }
     }
-    if (CheckHasBit(cached_has_bits, 0x00000008U)) {
+    if (CheckHasBit(cached_has_bits, 0x00000010U)) {
       if (from._internal_level() != 0) {
         _this->_impl_.level_ = from._impl_.level_;
       }
@@ -3779,6 +4187,7 @@ void AssetPetInstance::InternalSwap(AssetPetInstance* PROTOBUF_RESTRICT PROTOBUF
   _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
   ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.name_, &other->_impl_.name_, arena);
+  ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.instance_proto_, &other->_impl_.instance_proto_, arena);
   ::google::protobuf::internal::memswap<
       PROTOBUF_FIELD_OFFSET(AssetPetInstance, _impl_.level_)
       + sizeof(AssetPetInstance::_impl_.level_)
@@ -4415,6 +4824,308 @@ void AssetOpResponse::InternalSwap(AssetOpResponse* PROTOBUF_RESTRICT PROTOBUF_N
 }
 
 ::google::protobuf::Metadata AssetOpResponse::GetMetadata() const {
+  return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
+}
+// ===================================================================
+
+PlayerAssetSQLCommit::PlayerAssetSQLCommit(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, PlayerAssetSQLCommit_get_class_data()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  SharedCtor(arena);
+  // @@protoc_insertion_point(arena_constructor:PlayerAssetSQLCommit)
+}
+PROTOBUF_NDEBUG_INLINE PlayerAssetSQLCommit::Impl_::Impl_(
+    [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
+    [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
+    [[maybe_unused]] const ::PlayerAssetSQLCommit& from_msg)
+      : _has_bits_{from._has_bits_},
+        _cached_size_{0},
+        ledger_proto_(arena, from.ledger_proto_) {}
+
+PlayerAssetSQLCommit::PlayerAssetSQLCommit(
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena,
+    const PlayerAssetSQLCommit& from)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, PlayerAssetSQLCommit_get_class_data()) {
+
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  PlayerAssetSQLCommit* const _this = this;
+  (void)_this;
+  _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+  new (&_impl_) Impl_(internal_visibility(), arena, from._impl_, from);
+  ::memcpy(reinterpret_cast<char*>(&_impl_) +
+               offsetof(Impl_, player_id_),
+           reinterpret_cast<const char*>(&from._impl_) +
+               offsetof(Impl_, player_id_),
+           offsetof(Impl_, save_seq_) -
+               offsetof(Impl_, player_id_) +
+               sizeof(Impl_::save_seq_));
+
+  // @@protoc_insertion_point(copy_constructor:PlayerAssetSQLCommit)
+}
+PROTOBUF_NDEBUG_INLINE PlayerAssetSQLCommit::Impl_::Impl_(
+    [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
+    [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+      : _cached_size_{0},
+        ledger_proto_(arena) {}
+
+inline void PlayerAssetSQLCommit::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
+  new (&_impl_) Impl_(internal_visibility(), arena);
+  ::memset(reinterpret_cast<char*>(&_impl_) +
+               offsetof(Impl_, player_id_),
+           0,
+           offsetof(Impl_, save_seq_) -
+               offsetof(Impl_, player_id_) +
+               sizeof(Impl_::save_seq_));
+}
+PlayerAssetSQLCommit::~PlayerAssetSQLCommit() {
+  // @@protoc_insertion_point(destructor:PlayerAssetSQLCommit)
+  SharedDtor(*this);
+}
+inline void PlayerAssetSQLCommit::SharedDtor(MessageLite& self) {
+  PlayerAssetSQLCommit& this_ = static_cast<PlayerAssetSQLCommit&>(self);
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    this_.CheckHasBitConsistency();
+  }
+  this_._internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
+  ABSL_DCHECK(this_.GetArena() == nullptr);
+  this_._impl_.ledger_proto_.Destroy();
+  this_._impl_.~Impl_();
+}
+
+#ifndef PROTOBUF_MESSAGE_GLOBALS
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const
+    ::google::protobuf::internal::ClassDataFull PlayerAssetSQLCommit_class_data_ =
+        PlayerAssetSQLCommit::InternalGenerateClassData_(PlayerAssetSQLCommit_globals_._default);
+
+PROTOBUF_ATTRIBUTE_WEAK const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
+PlayerAssetSQLCommit::GetClassData() const {
+  ::google::protobuf::internal::PrefetchToLocalCache(&PlayerAssetSQLCommit_class_data_);
+  ::google::protobuf::internal::PrefetchToLocalCache(PlayerAssetSQLCommit_class_data_.tc_table);
+  return PlayerAssetSQLCommit_class_data_.base();
+}
+#else
+PROTOBUF_ATTRIBUTE_WEAK const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
+PlayerAssetSQLCommit::GetClassData() const {
+  ::google::protobuf::internal::PrefetchToLocalCache(&PlayerAssetSQLCommit_globals_);
+  ::google::protobuf::internal::PrefetchToLocalCache(
+      ::google::protobuf::internal::MessageGlobalsBase::ToParseTableBase(&PlayerAssetSQLCommit_globals_));
+  return PlayerAssetSQLCommit_globals_.GetClassData();
+}
+#endif  // !PROTOBUF_MESSAGE_GLOBALS
+#ifndef PROTOBUF_MESSAGE_GLOBALS
+PROTOBUF_CONSTINIT
+PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const PlayerAssetSQLCommit::ParseTableT_
+    PlayerAssetSQLCommit::_table_ =
+        PlayerAssetSQLCommit::InternalGenerateParseTable_(PlayerAssetSQLCommit_class_data_.base());
+#endif  // !PROTOBUF_MESSAGE_GLOBALS
+PROTOBUF_NOINLINE void PlayerAssetSQLCommit::Clear() {
+// @@protoc_insertion_point(message_clear_start:PlayerAssetSQLCommit)
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  cached_has_bits = _impl_._has_bits_[0];
+  if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+    _impl_.ledger_proto_.ClearNonDefaultToEmpty();
+  }
+  if (BatchCheckHasBit(cached_has_bits, 0x0000000eU)) {
+    ::memset(&_impl_.player_id_, 0, static_cast<::size_t>(
+        reinterpret_cast<char*>(&_impl_.save_seq_) -
+        reinterpret_cast<char*>(&_impl_.player_id_)) + sizeof(_impl_.save_seq_));
+  }
+  _impl_._has_bits_.Clear();
+  _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::uint8_t* PROTOBUF_NONNULL PlayerAssetSQLCommit::_InternalSerialize(
+    const ::google::protobuf::MessageLite& base, ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) {
+  const PlayerAssetSQLCommit& this_ = static_cast<const PlayerAssetSQLCommit&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::uint8_t* PROTOBUF_NONNULL PlayerAssetSQLCommit::_InternalSerialize(
+    ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
+  const PlayerAssetSQLCommit& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    this_.CheckHasBitConsistency();
+  }
+  // @@protoc_insertion_point(serialize_to_array_start:PlayerAssetSQLCommit)
+  ::uint32_t cached_has_bits = 0;
+  (void)cached_has_bits;
+
+  cached_has_bits = this_._impl_._has_bits_[0];
+  // uint64 player_id = 1;
+  if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+    if (this_._internal_player_id() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteUInt64ToArray(
+          1, this_._internal_player_id(), target);
+    }
+  }
+
+  // uint64 owner_epoch = 2;
+  if (CheckHasBit(cached_has_bits, 0x00000004U)) {
+    if (this_._internal_owner_epoch() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteUInt64ToArray(
+          2, this_._internal_owner_epoch(), target);
+    }
+  }
+
+  // uint64 save_seq = 3;
+  if (CheckHasBit(cached_has_bits, 0x00000008U)) {
+    if (this_._internal_save_seq() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteUInt64ToArray(
+          3, this_._internal_save_seq(), target);
+    }
+  }
+
+  // bytes ledger_proto = 4;
+  if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+    if (!this_._internal_ledger_proto().empty()) {
+      const ::std::string& _s = this_._internal_ledger_proto();
+      target = stream->WriteBytesMaybeAliased(4, _s, target);
+    }
+  }
+
+  if (ABSL_PREDICT_FALSE(this_._internal_metadata_.have_unknown_fields())) {
+    target =
+        ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
+            this_._internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
+  }
+  // @@protoc_insertion_point(serialize_to_array_end:PlayerAssetSQLCommit)
+  return target;
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::size_t PlayerAssetSQLCommit::ByteSizeLong(const MessageLite& base) {
+  const PlayerAssetSQLCommit& this_ = static_cast<const PlayerAssetSQLCommit&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::size_t PlayerAssetSQLCommit::ByteSizeLong() const {
+  const PlayerAssetSQLCommit& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  // @@protoc_insertion_point(message_byte_size_start:PlayerAssetSQLCommit)
+  ::size_t total_size = 0;
+
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void)cached_has_bits;
+
+  ::_pbi::Prefetch5LinesFrom7Lines(&this_);
+  cached_has_bits = this_._impl_._has_bits_[0];
+  if (BatchCheckHasBit(cached_has_bits, 0x0000000fU)) {
+    // bytes ledger_proto = 4;
+    if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+      if (!this_._internal_ledger_proto().empty()) {
+        total_size += 1 + ::google::protobuf::internal::WireFormatLite::BytesSize(
+                                        this_._internal_ledger_proto());
+      }
+    }
+    // uint64 player_id = 1;
+    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      if (this_._internal_player_id() != 0) {
+        total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(
+            this_._internal_player_id());
+      }
+    }
+    // uint64 owner_epoch = 2;
+    if (CheckHasBit(cached_has_bits, 0x00000004U)) {
+      if (this_._internal_owner_epoch() != 0) {
+        total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(
+            this_._internal_owner_epoch());
+      }
+    }
+    // uint64 save_seq = 3;
+    if (CheckHasBit(cached_has_bits, 0x00000008U)) {
+      if (this_._internal_save_seq() != 0) {
+        total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(
+            this_._internal_save_seq());
+      }
+    }
+  }
+  return this_.MaybeComputeUnknownFieldsSize(total_size,
+                                             &this_._impl_._cached_size_);
+}
+
+void PlayerAssetSQLCommit::MergeImpl(::google::protobuf::MessageLite& to_msg,
+                      const ::google::protobuf::MessageLite& from_msg) {
+   auto* const _this = static_cast<PlayerAssetSQLCommit*>(&to_msg);
+  auto& from = static_cast<const PlayerAssetSQLCommit&>(from_msg);
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    from.CheckHasBitConsistency();
+  }
+  // @@protoc_insertion_point(class_specific_merge_from_start:PlayerAssetSQLCommit)
+  ABSL_DCHECK_NE(&from, _this);
+  ::uint32_t cached_has_bits = 0;
+  (void)cached_has_bits;
+
+  cached_has_bits = from._impl_._has_bits_[0];
+  if (BatchCheckHasBit(cached_has_bits, 0x0000000fU)) {
+    if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+      if (!from._internal_ledger_proto().empty()) {
+        _this->_internal_set_ledger_proto(from._internal_ledger_proto());
+      } else {
+        if (_this->_impl_.ledger_proto_.IsDefault()) {
+          _this->_internal_set_ledger_proto("");
+        }
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      if (from._internal_player_id() != 0) {
+        _this->_impl_.player_id_ = from._impl_.player_id_;
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000004U)) {
+      if (from._internal_owner_epoch() != 0) {
+        _this->_impl_.owner_epoch_ = from._impl_.owner_epoch_;
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000008U)) {
+      if (from._internal_save_seq() != 0) {
+        _this->_impl_.save_seq_ = from._impl_.save_seq_;
+      }
+    }
+  }
+  _this->_impl_._has_bits_[0] |= cached_has_bits;
+  _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+}
+
+void PlayerAssetSQLCommit::CopyFrom(const PlayerAssetSQLCommit& from) {
+  // @@protoc_insertion_point(class_specific_copy_from_start:PlayerAssetSQLCommit)
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+
+void PlayerAssetSQLCommit::InternalSwap(PlayerAssetSQLCommit* PROTOBUF_RESTRICT PROTOBUF_NONNULL other) {
+  using ::std::swap;
+  auto* arena = GetArena();
+  ABSL_DCHECK_EQ(arena, other->GetArena());
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
+  swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
+  ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.ledger_proto_, &other->_impl_.ledger_proto_, arena);
+  ::google::protobuf::internal::memswap<
+      PROTOBUF_FIELD_OFFSET(PlayerAssetSQLCommit, _impl_.save_seq_)
+      + sizeof(PlayerAssetSQLCommit::_impl_.save_seq_)
+      - PROTOBUF_FIELD_OFFSET(PlayerAssetSQLCommit, _impl_.player_id_)>(
+          reinterpret_cast<char*>(&_impl_.player_id_),
+          reinterpret_cast<char*>(&other->_impl_.player_id_));
+}
+
+::google::protobuf::Metadata PlayerAssetSQLCommit::GetMetadata() const {
   return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
 }
 // @@protoc_insertion_point(namespace_scope)

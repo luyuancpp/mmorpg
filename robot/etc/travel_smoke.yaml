@@ -25,8 +25,9 @@
 #   4. scene_manager 的 GateTokenSecret 非空(为空时 AssignGateForZone 直接报错,签不出重定向票据)。
 #      要验证生产口径,请把 scene_manager 的 AllowUnsafeCrossNodeHandoff 设为 false 再跑:
 #      此时放行完全依赖「源端存盘落地 → handoff 标记 → owner_epoch」两道门,而不是 dev 旁路。
-#   5. robot_9601 **首次在 home_zone 建角**(home zone 在建角时登记,之后不随登录区变化);
-#      在别的区登录建过角的账号,"回家不回档"的前提不成立。前缀必须是 robot_ 才会命中 login 侧 DevPasswordAuth。
+#   5. 专用账号（默认 robot_9601，或 travel_smoke.account 显式指定）**首次在 home_zone 建角**(home zone 在建角时登记,之后不随登录区变化);
+#      在别的区登录建过角的账号,"回家不回档"的前提不成立。账号须使用 robot_ 前缀，并匹配本次 login 的开发账号白名单。
+#      例如白名单只有 robot_assetarrival_ 时，应显式配置 robot_assetarrival_travel_20261017，不放宽服务器白名单。
 #   6. scene_config_id 非 0 时,这张图必须两个 zone 都有主世界场景(去程与回程共用这一个值)。
 #   7. 从 robot/ 目录运行(table_dir 是相对路径)。
 #   8. **两个** zone 的 gate / scene 都放行 GM 客户端指令(GATE_RUN_MODE=dev、SCENE_RUN_MODE=dev;本地启动脚本缺省就是 dev)。
@@ -44,12 +45,12 @@
 # 失败排查:TRAVEL_SMOKE_FAIL 的 reason 会写明走到了哪一步;跟随 msg 124 本身失败的细节在同一份日志里
 #   搜 `follow gate redirect failed`(pkg.FollowRedirect 失败只打日志)或 `redirect ignored`。
 # 副作用:移动探针上报一个地图外的坐标来触发纠偏。场景没有导航网格时服务器 fail-open 会原样接受并存盘,
-#   只影响 robot_9601 这个冒烟专用账号。
+#   只影响本次配置的冒烟专用账号。
 
 gateway_addr: "http://127.0.0.1:8081" # Gateway HTTP endpoint(/api/assign-gate)
 zone_id: 1 # 本模式不用此字段选区(按 travel_smoke.home_zone 登录),保留骨架
 robot_count: 1 # 语义占位:本模式固定 1 个机器人
-account_fmt: "robot_%04d" # 保留骨架字段;本模式用固定账号 robot_9601
+account_fmt: "robot_%04d" # 保留骨架字段;本模式用 travel_smoke.account
 password: "123456"
 skill_ids: [] # 本模式不放技能
 table_dir: "../generated/tables"
@@ -59,7 +60,8 @@ report_interval: 5
 mode: "travel-smoke"
 
 travel_smoke:
-  home_zone: 1 # 出发并最终回到的 zone;必须是 robot_9601 首次建角的 zone
+  account: "" # 空串兼容旧账号 robot_9601；显式账号须无首尾空白、使用 robot_ 前缀且不超过191个字符
+  home_zone: 1 # 出发并最终回到的 zone;必须是本次配置账号首次建角的 zone
   visit_zone: 2 # 去做客的 zone;必须与 home_zone 不同
   scene_config_id: 0 # 目标地图(BaseScene id),去程回程共用;0 = 由目标 zone 的 scene_manager 挑默认大世界,此时不断言落地地图
   dwell_seconds: 35 # 访客区停留秒数;缺省 35 > home 区 login 断线租约 30s。0 = 不停留(只验链路)

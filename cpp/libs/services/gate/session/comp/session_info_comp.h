@@ -16,15 +16,15 @@ struct SessionInfo
 
 	SessionInfo() = default;
 
-	void SetNodeEntity(uint32_t nodeType, entt::entity entityId)
+	void SetNodeEntity(uint32_t nodeType, entt::entity node)
 	{
-		entityIds[nodeType] = entityId;
+		nodeEntities[nodeType] = node;
 	}
 
 	entt::entity GetNodeEntity(uint32_t nodeType) const
 	{
-		auto it = entityIds.find(nodeType);
-		if (it != entityIds.end())
+		auto it = nodeEntities.find(nodeType);
+		if (it != nodeEntities.end())
 		{
 			return it->second;
 		}
@@ -33,8 +33,8 @@ struct SessionInfo
 
 	bool HasNodeEntity(uint32_t nodeType) const
 	{
-		auto it = entityIds.find(nodeType);
-		if (it == entityIds.end())
+		auto it = nodeEntities.find(nodeType);
+		if (it == nodeEntities.end())
 		{
 			return false;
 		}
@@ -60,13 +60,27 @@ struct SessionInfo
 	// 会话销毁即随之消失,不需要额外清理路径。
 	uint32_t homeZoneId{0}; // 玩家归属 zone;0 = 未知(旧版 scene_manager 未填),scene 侧 fail-closed 落进程 zone 并计数
 	uint64_t ownerEpoch{0}; // 本次路由的归属 epoch;0 = 旧版未铸造(兼容窗口),scene 侧存盘跳过 CAS 并计数
+	// 上一次**实际转发给 scene** 的 PlayerEnterGameNodeRequest.owner_epoch(ownerEpoch 是"最近一次路由决策",转发前就被覆盖)。
+	// scene_route_helper.h ApplyRoute 第 4 条据此判断"同场景同节点、但归属换了代"的路由要不要再转发一次
+	// (docs/design/location-release-binding.md §3.5,审计 load-handover#0)。只由 ApplyRoute 在转发成功后写,ResetSceneRoute 清零。
+	uint64_t forwardedOwnerEpoch{0};
+	// 客户端 LeaveGame 之后、下一次登录真正把进场交给 scene 之前为 true(location-release-binding.md §3.5 R5)。
+	// 期间到达的、属于 LeaveGame 之前那条登录链的路由(登录代次为 0 或不大于 loginGenerationAtReset)一律丢弃,不进会话:
+	// 不丢的话它会重新填上 lastSceneRoute,下一次 BindSession 就按这条旧路由、带着旧 epoch 补发。
+	// 写入只经 scene_route_helper.h:ResetSceneRoute 置位并记下代次;ApplyRoute 转发成功、ApplyLoginBinding 换角色或收到
+	// 不带代次的旧版 Bind 时清除。
+	bool sceneRouteResetPending{false};
+	uint64_t loginGenerationAtReset{0};
 
 	// 登录代次(docs/design/scene-enter-session-fence.md §4):本会话、本角色见过的最高代次。来源是
 	// BindSessionEvent 与 RoutePlayerEvent,同一角色取 max;同一条连接上换了角色时以新角色的值为准(上一个
-	// 角色的代次与新角色无关)。只用于给 PlayerEnterGameNodeRequest 盖章,新旧由 scene 入场栅栏判;gate 不据此
+	// 角色的代次与新角色无关)。用于给 PlayerEnterGameNodeRequest 盖章,新旧由 scene 入场栅栏判;另由踢线身份栅栏
+	// (session_identity_fence.h ClassifyKick)只读比较:会话已见过不小于踢线者的代次时不踢
+	// (docs/design/scene-enter-chain-residuals.md §2.2 ④)。gate 不据此
 	// 拒绝或丢弃任何路由:一次失败的重登(Bind 已到、scene_manager 拒绝)会把会话代次抬高,之后同连接上
-	// scene 自发的换图路由带的是 0(由本字段盖章),按代次丢会把它们全吞掉。0 = 上游未带(旧版),原样透传。
-	// 写入只经 scene_route_helper.h 的 ApplyLoginBinding / ApplyRouteIdentity,且都必须先于转发:
+	// scene 自发的换图路由带实体代次(≤ 会话值),旧版 scene 为 0(都由本字段盖章),按代次丢会把它们全吞掉。
+	// 0 = 上游未带(旧版),原样透传。
+	// 写入仍只经 scene_route_helper.h 的 ApplyLoginBinding / ApplyRouteIdentity,且都必须先于转发:
 	// 转发从会话取值盖章。会话销毁即随之消失。
 	uint64_t loginGeneration{0};
 
@@ -99,6 +113,12 @@ struct SessionInfo
 	// Disconnect uses this to clean Login's session-id state without turning
 	// every verified-but-idle TCP close into a cross-service RPC.
 	bool loginStarted{false};
+	// 本连接至少收到过一次成功的 Login 回包(handler/rpc/login_admission.h)。CreatePlayer / EnterGame / LeaveGame
+	// 发出前要求它为真:login 的登录态已按 (gate_instance_id, 会话代次) 建键,这里是纵深防御,并在新旧 login
+	// 并存的滚动窗口里挡住「跳过 Login、撞上旧 gate 进程同号 session_id」的请求
+	// (docs/design/data-overwrite-rollback-audit-20261018.md §2.3)。只置真不复位:同一连接的后续登录失败
+	// 不撤销已成功的那次,本连接登录态是否仍有效由 login 判定。
+	bool loginSucceeded{false};
 
 	// Illegal-packet counter (todo.md #236). Increment whenever a packet is
 	// rejected by the gate's incoming validation chain (rate-limit exceeded,
@@ -112,7 +132,7 @@ struct SessionInfo
 
 	// Per-session HMAC key for message signing (todo.md #76 slice A).
 	//
-	// Populated by client_message_processor.cpp::HandleClientTokenVerify
+	// Populated by client_session_handler.cpp::HandleClientTokenVerify
 	// AFTER the gate token signature is verified, by unmarshalling the
 	// inner GateTokenPayload and copying its `hmac_session_key` field
 	// here. Empty bytes mean "client/server pair hasn't rolled out the
@@ -124,5 +144,5 @@ struct SessionInfo
 	// for the exact lines that activate this field.
 	std::string hmacSessionKey;
 private:
-	NodeEntityMap entityIds; // Sparse map, only stores assigned node entities
+	NodeEntityMap nodeEntities; // Sparse map, only stores assigned node entities
 };

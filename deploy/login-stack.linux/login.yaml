@@ -24,7 +24,10 @@
 # To switch from sandbox-mock to real WeChat/QQ:
 #   - delete AuthProviders.WeChat.Endpoint
 #   - delete AuthProviders.QQ.Endpoint
-#   - drop real AppId / AppSecret into the same block
+#   - put the real AppId in the block; replace AppSecret with
+#     AppSecretEnv: "LOGIN_WECHAT_APP_SECRET" and pass that variable to
+#     the container (inline AppSecret is accepted only because Mode=dev;
+#     any other Mode refuses to start, and "${VAR}" is never expanded)
 #   - restart only the `login` container
 # ────────────────────────────────────────────────────────────────
 
@@ -105,10 +108,12 @@ SceneManagerRpc:
       - host.docker.internal:2379
     Key: scenemanagerservice.rpc
 
-# DataService gRPC client (discovered via etcd)。login 只用它领 PlayerId 号段
-# (DataService.AllocateIdSegment);IdSegment.Enabled=false 时不拨号。
+# DataService gRPC client (discovered via etcd)。PlayerId 号段(DataService.AllocateIdSegment)、角色名登记,
+# 以及每次登录角色列表上的归属查询(BatchGetPlayerHomeZone)共用这一条连接(2026-10-18 更正:原注释「只用它领号段」已过时)。
 # NonBlock: true —— 号段是弱依赖(设计稿 §6.5):data_service 没起时 login 照常起服,
 # 领段失败按 IdSegment.FallbackToSnowflake 决定回退还是拒绝建角。
+# Breaker: true —— 与 go/login/etc/login.yaml、K8s ConfigMap 一致(2026-10-18 起):data_service 僵住但 etcd 键还在时,
+# 登录的归属查询快速失败、按「保留建角 zone」放行,不让每次登录都白等满查询预算。
 # ⚠️ 本 compose 栈没有 data_service 容器:要走建角,得在宿主上起 go/data_service
 # (它注册到同一个 host.docker.internal:2379 的 etcd,这里就能发现它),
 # 且宿主 MySQL 里要有它的库(deploy/mysql-init/00_init_zone_dbs.sql 建的 testdb)。
@@ -120,7 +125,7 @@ DataServiceRpc:
   Timeout: 3000
   NonBlock: true
   Middlewares:
-    Breaker: false
+    Breaker: true
 
 # PlayerId 号段发号(docs/design/node-id-overhaul-plan-20260908.md §6),与 go/login/etc/login.yaml 同值。
 # Enabled:**只有显式写 true 才开**;整块不写 = 关 = 纯 snowflake 老路径(回滚开关)。
@@ -164,6 +169,9 @@ TableDir: "/app/data"
 # Default to true preserves backward compatibility; flip to false
 # once T+1 telemetry shows the legacy_login_count is below threshold.
 # See ARCH §12 + docs/notes/todo.md #224.
+# 只关 gate 上的口令 / 第三方凭据登录;gate 上 auth_type=access_token 的
+# 会话绑定(新流程必经一步)不受影响;被关的请求在认证之前就回 kLoginUnknownError,
+# 见 go/login/etc/login.yaml 同名项。
 LegacyGateLoginEnabled: true
 
 TokenConfig:
@@ -186,16 +194,17 @@ Prometheus:
 
 AuthProviders:
   # WeChat — points at sandbox-mock for offline e2e. Replace with
-  # real AppId/AppSecret + delete the Endpoint line for production.
+  # real AppId + AppSecretEnv and delete the Endpoint line for production.
+  # RequireUnionId 缺省 true:mock 只对以 U 开头的 code 返回 unionid,其余 code 会被拒绝(故障码 LoginAuthProviderUnavailable)。
   WeChat:
     AppId: "wx_sandbox_appid"
     AppSecret: "sandbox_secret_keep_it_local"
     Endpoint: "http://sandbox-mock:18090"
 
-  # QQ — same pattern as WeChat.
+  # QQ — same pattern as WeChat. AppId 必须等于 sandbox-mock 固定返回的 client_id(100000001,
+  # go/login/cmd/sandbox_mock),否则每次都按 client_id mismatch 拒绝。QQ 不需要 AppKey。
   QQ:
-    AppId: "qq_sandbox_appid"
-    AppKey: "sandbox_qq_key"
+    AppId: "100000001"
     Endpoint: "http://sandbox-mock:18090"
 
 Kafka:

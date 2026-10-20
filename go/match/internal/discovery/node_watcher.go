@@ -23,10 +23,15 @@ import (
 // nodeRegistrationJSON 对应 etcd 里 protojson 序列化的 NodeInfo
 // (Go noderegistry 与 C++ MessageToJsonString 都是 camelCase 字段)。
 type nodeRegistrationJSON struct {
-	NodeId   uint32 `json:"nodeId"`
-	NodeType uint32 `json:"nodeType"`
-	NodeUuid string `json:"nodeUuid"`
-	ZoneId   uint32 `json:"zoneId"`
+	NodeId         uint32 `json:"nodeId"`
+	NodeType       uint32 `json:"nodeType"`
+	NodeUuid       string `json:"nodeUuid"`
+	ZoneId         uint32 `json:"zoneId"`
+	PhysicalRegion uint32 `json:"physicalRegion"`
+	ClientEndpoint struct {
+		IP   string `json:"ip"`
+		Port uint32 `json:"port"`
+	} `json:"clientEndpoint"`
 	Endpoint struct {
 		IP   string `json:"ip"`
 		Port uint32 `json:"port"`
@@ -39,9 +44,12 @@ type nodeRegistrationJSON struct {
 
 // NodeEntry 是 watch 镜像里的一个节点。
 type NodeEntry struct {
-	NodeId   uint32
-	ZoneId   uint32
-	NodeUuid string
+	NodeId         uint32
+	ZoneId         uint32
+	NodeUuid       string
+	PhysicalRegion uint32
+	ClientHost     string
+	ClientPort     uint32
 	// Endpoint 是 gRPC 地址 "ip:port"。只认 grpcEndpoint,绝不回退
 	// endpoint(那是 raw TCP protobuf 口,用 gRPC 拨会协议错乱,
 	// 先例见 scene_manager resolveFromKnownNodes 的注释)。
@@ -220,11 +228,25 @@ func (w *NodeWatcher) parse(key string, value []byte) (NodeEntry, bool) {
 		return NodeEntry{}, false
 	}
 	return NodeEntry{
-		NodeId:   reg.NodeId,
-		ZoneId:   reg.ZoneId,
-		NodeUuid: reg.NodeUuid,
-		Endpoint: fmt.Sprintf("%s:%d", reg.GrpcEndpoint.IP, reg.GrpcEndpoint.Port),
+		NodeId:         reg.NodeId,
+		ZoneId:         reg.ZoneId,
+		NodeUuid:       reg.NodeUuid,
+		PhysicalRegion: reg.PhysicalRegion,
+		ClientHost:     reg.ClientEndpoint.IP,
+		ClientPort:     reg.ClientEndpoint.Port,
+		Endpoint:       fmt.Sprintf("%s:%d", reg.GrpcEndpoint.IP, reg.GrpcEndpoint.Port),
 	}, true
+}
+
+// Snapshot 返回独立副本；全局匹配根据真实机房选择执行节点，不把逻辑zone当地域。
+func (w *NodeWatcher) Snapshot() []NodeEntry {
+	w.mu.RLock()
+	defer w.mu.RUnlock()
+	out := make([]NodeEntry, 0, len(w.nodes))
+	for _, n := range w.nodes {
+		out = append(out, n)
+	}
+	return out
 }
 
 func (w *NodeWatcher) reportCount(count int) {

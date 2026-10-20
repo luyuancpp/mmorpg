@@ -50,11 +50,12 @@ message CreateTeamRequest {}
 
 message GetMyTeamRequest {
   bool notify_online = 1;  // 进游戏后第一次拉取填 true:服务端把当前视图推给其他在线队员(在线态刷新)
+  string match_request_id = 2; // 查询该玩家原开战意图，不创建新一局。
   // 队员请求归队(点「归队」、跟随中看不到队长):调用者在队里且不是队长时,服务端给他所在的 scene 发一次
   // 组队刷新信号,scene 按既有跟随规则处理 —— 与队长同一场景实例、且互相看不见或相距超过 8 → 瞬移到队长脚下;
   // 队长在本节点的另一个场景 → 换过去;跨节点 / 跨 zone / 战斗中 → 不动(team-system.md「组队跟随 v1.1」V.9)。
   // 不认识本字段的服务端(旧版本)按普通 GetMyTeam 处理,只是不归队。
-  bool regroup = 2;
+  bool regroup = 3;
 }
 
 // expected_team_id = 客户端当前 TeamSnapshot.TeamId。服务端只在"调用者当前所在队伍 == expected_team_id"时操作,
@@ -104,9 +105,10 @@ message DisbandTeamRequest {
 message StartTeamMatchRequest {
   uint32 battle_config_id = 1;  // DungeonTable id;模式固定 PVE_TEAM
   uint64 expected_team_id = 2;
+  string request_id = 3; // 全球权威模式必填 UUID；重试原意图复用，旧空值明确拒绝。
   // 目标人数(team-backfill-matching.md):0 或等于当前队伍人数 = 有几个人就几个人直接开战(加字段前的行为);
   // 大于当前人数 = 整队进该人数档的队列等补位,凑满后同场开战;小于当前人数或超过副本上限 → kTeamSizeExceeded。
-  uint32 target_team_size = 3;
+  uint32 target_team_size = 4;
 }
 
 // ---------------- 回包 / 显示层视图(AGENTS §11.6:在线态只出现在这里) ----------------
@@ -114,6 +116,13 @@ message StartTeamMatchRequest {
 message TeamResponse {
   TipInfoMessage error_message = 1;  // id=0 成功;非 0 时 team 仍可能携带调用者当前视图(取自同一次 S_READ,照常按 §H.3 应用)
   TeamView team = 2;                 // 调用者视角;无队伍时 team_id=0
+  TeamMatchIntent match_intent = 3;
+}
+
+message TeamMatchIntent {
+  string request_id = 1;
+  uint64 battle_id = 2;
+  uint32 state = 3; // 1/2/3仍在恢复，4已建房，5已确认中止；0未找到，不代表迟到请求永不会提交。
 }
 
 message ListMyInvitesResponse {

@@ -16,6 +16,17 @@ namespace db_task_dispatch
 		return state.inFlight == 0 && !StateNeedsResave(state);
 	}
 
+	void Ledger::RecordFailure(PlayerState &state, SaveGeneration generation, Failure failure)
+	{
+		state.maxFailed = std::max(state.maxFailed, generation);
+		// 同一代先后出了多次永久失败(两张子表都超限)时记最后一次的错误码;更旧的一代来的永久失败不改结论。
+		if (failure.kind == FailureKind::kPermanent && generation >= state.maxPermanentFailed)
+		{
+			state.maxPermanentFailed = generation;
+			state.permanentFailureCode = failure.code;
+		}
+	}
+
 	void Ledger::DecrementInFlight(PlayerState &state, PlayerId playerId)
 	{
 		if (state.inFlight == 0)
@@ -45,7 +56,7 @@ namespace db_task_dispatch
 		return ticket;
 	}
 
-	void Ledger::OnProduceRejected(Ticket ticket)
+	void Ledger::OnProduceRejected(Ticket ticket, Failure failure)
 	{
 		const auto ticketIt = tickets_.find(ticket);
 		if (ticketIt == tickets_.end())
@@ -60,13 +71,13 @@ namespace db_task_dispatch
 			return;
 		}
 		DecrementInFlight(playerIt->second, info.playerId);
-		playerIt->second.maxFailed = std::max(playerIt->second.maxFailed, info.generation);
+		RecordFailure(playerIt->second, info.generation, failure);
 	}
 
-	void Ledger::MarkLocalFailure(PlayerId playerId, SaveGeneration generation)
+	void Ledger::MarkLocalFailure(PlayerId playerId, SaveGeneration generation, Failure failure)
 	{
 		auto &state = players_[playerId]; // 失败必须记下来,条目不在也要建
-		state.maxFailed = std::max(state.maxFailed, generation);
+		RecordFailure(state, generation, failure);
 	}
 
 	void Ledger::FinishSave(PlayerId playerId, SaveGeneration generation, bool allQueued)
@@ -80,7 +91,7 @@ namespace db_task_dispatch
 		state.maxFailed = std::max(state.maxFailed, generation);
 	}
 
-	DeliveryOutcome Ledger::OnDelivery(Ticket ticket, bool delivered)
+	DeliveryOutcome Ledger::OnDelivery(Ticket ticket, bool delivered, Failure failure)
 	{
 		DeliveryOutcome outcome;
 		const auto ticketIt = tickets_.find(ticket);
@@ -105,7 +116,7 @@ namespace db_task_dispatch
 		}
 		else
 		{
-			state.maxFailed = std::max(state.maxFailed, info.generation);
+			RecordFailure(state, info.generation, failure);
 			outcome.effect = info.generation >= state.lastFullyQueued ? DeliveryEffect::kFailedNeedsResave
 																	  : DeliveryEffect::kFailedSuperseded;
 		}
@@ -140,6 +151,22 @@ namespace db_task_dispatch
 	{
 		const auto playerIt = players_.find(playerId);
 		return playerIt != players_.end() && StateNeedsResave(playerIt->second);
+	}
+
+	std::optional<std::int32_t> Ledger::PermanentFailureCode(PlayerId playerId) const
+	{
+		const auto playerIt = players_.find(playerId);
+		if (playerIt == players_.end())
+		{
+			return std::nullopt;
+		}
+		const PlayerState &state = playerIt->second;
+		// 只看欠账的那一代:更新的一代只出了可重试的失败(maxPermanentFailed < maxFailed),重存仍可能成功。
+		if (!StateNeedsResave(state) || state.maxPermanentFailed == 0 || state.maxPermanentFailed != state.maxFailed)
+		{
+			return std::nullopt;
+		}
+		return state.permanentFailureCode;
 	}
 
 	std::uint32_t Ledger::InFlight(PlayerId playerId) const

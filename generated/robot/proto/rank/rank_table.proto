@@ -1,0 +1,102 @@
+syntax = "proto3";
+package rankpb;
+option go_package = "robot/proto/rank";
+import "proto/db/proto_option.proto";
+
+// SQL是写分、代次、封榜和奖励意图的唯一权威；Redis至多是可重建展示投影。
+message RankBoardRecord {
+  option (OptionTableName) = "rank_board";
+  option (OptionPrimaryKey) = "board_id";
+  option (OptionUniqueKey) = "board_type,scope,scope_id,period,generation";
+  uint64 board_id = 1;
+  uint32 board_type = 2;
+  uint32 scope = 3;
+  uint64 scope_id = 4;
+  string period = 5;
+  uint64 generation = 6;
+  string producer = 7;
+  uint64 source_epoch = 8;
+  uint64 committed_cursor = 9;
+  uint32 ascending = 10;
+  uint32 state = 11;
+  uint64 settlement_id = 12;
+  uint64 open_request_id = 13;
+  string open_request_hash = 14;
+  uint64 created_ms = 15;
+  uint64 sealed_ms = 16;
+  uint64 deleted_ms = 17;
+}
+message RankScoreRecord {
+  option (OptionTableName) = "rank_score";
+  option (OptionPrimaryKey) = "board_id,generation,entity_id";
+  option (OptionIndex) = "board_id,generation,score,achieved_ms,entity_id";
+  uint64 board_id = 1;
+  uint64 generation = 2;
+  uint64 entity_id = 3;
+  int64 score = 4;
+  uint64 achieved_ms = 5;
+  uint64 source_cursor = 6;
+}
+// 每一游标的完整请求摘要保留至本代保留窗结束，晚重试不能冒充新一批。
+message RankInputReceiptRecord {
+  option (OptionTableName) = "rank_input_receipt";
+  option (OptionPrimaryKey) = "board_id,generation,source_cursor";
+  uint64 board_id = 1;
+  uint64 generation = 2;
+  uint64 source_cursor = 3;
+  uint64 request_id = 4;
+  string request_hash = 5;
+  uint64 committed_ms = 6;
+}
+message RankSettlementRecord {
+  option (OptionTableName) = "rank_settlement";
+  option (OptionPrimaryKey) = "settlement_id";
+  option (OptionUniqueKey) = "board_id,generation";
+  uint64 settlement_id = 1;
+  uint64 board_id = 2;
+  uint64 generation = 3;
+  uint64 source_epoch = 4;
+  uint64 final_cursor = 5;
+  uint64 request_id = 6;
+  string request_hash = 7;
+  uint64 winner_count = 8;
+  uint64 sealed_ms = 9;
+}
+message RankSnapshotRecord {
+  option (OptionTableName) = "rank_snapshot";
+  option (OptionPrimaryKey) = "settlement_id,rank";
+  uint64 settlement_id = 1;
+  uint64 rank = 2;
+  uint64 entity_id = 3;
+  int64 score = 4;
+  uint64 achieved_ms = 5;
+}
+// 与seal及所有快照同事务插入。工作器只投MailAdmin，不直接发资产。
+message RankMailRewardRecord {
+  option (OptionTableName) = "rank_mail_reward";
+  option (OptionPrimaryKey) = "reward_id";
+  option (OptionUniqueKey) = "settlement_id,player_id";
+  option (OptionIndex) = "status,next_attempt_ms";
+  uint64 reward_id = 1;
+  uint64 settlement_id = 2;
+  uint64 player_id = 3;
+  uint64 rank = 4;
+  bytes attachments = 5;
+  uint32 status = 6;
+  uint64 mail_id = 7;
+  uint64 next_attempt_ms = 8;
+  uint64 lease_until_ms = 9;
+  uint64 lease_token = 10;
+  uint32 attempts = 11;
+  uint64 created_ms = 12;
+  uint64 updated_ms = 13;
+}
+message RankMutationRecord {
+  option (OptionTableName) = "rank_mutation";
+  option (OptionPrimaryKey) = "board_id,generation,request_id";
+  string request_hash = 1;
+  uint64 board_id = 2;
+  uint64 generation = 3;
+  uint64 request_id = 4;
+  uint64 created_ms = 5;
+}

@@ -34,6 +34,9 @@ package main
 //	M10. F 重新申请(APPLICATION_RECEIVED 有 60s 冷却,可能被抑制,**不**断言),解散之后列表必须空;
 //
 //	10. A 解散 → 自己不在帮会,帮会从本区榜上消失,并连带删掉 F 在 M10 留下的待审申请。
+//	11. 过期的 expected_guild_id(docs/design/client-request-ordering.md §6.4,批次 E2):A 另建临时帮 H、B 申请并获批;
+//	    B 发 LeaveGuild{expected_guild_id = 第 1 步的帮(B 第 8 步已退出、第 10 步已解散)} → kGuildNotInGuild,
+//	    B 仍是 H 的普通成员且 H 仍是 2 人;对照:B 带 H 的 id 退帮 → 受理且已不在帮会;A 解散 H 收尾。
 //
 // 结果约定(供外层脚本消费):
 //	管理段全过 → `GUILD_MGMT_OK guild_id=… leader=… officer=… kicked=… rejected=…`;
@@ -701,6 +704,71 @@ func RunGuildSmoke(cfg *config.Config) {
 	}
 	zap.L().Info(fmt.Sprintf("GUILD_MGMT_OK guild_id=%d leader=%d officer=%d kicked=%d rejected=%d",
 		guildID, a.gc.PlayerId, d.gc.PlayerId, e.gc.PlayerId, f.gc.PlayerId))
+
+	// ---- 步骤 11:迟到的退帮带着过期的 expected_guild_id,不得作用到玩家的新帮会 ----
+	// 要钉住的窗口(client-request-ordering.md §6.4):路由服回超时、gate 放行下一条之后,上一条退帮仍可能在 guild 里跑完,
+	// 玩家这时若已换到新帮,按「此刻所在的帮」执行就会把他从新帮移出。现有流程里没人「离开旧帮、身在新帮」,所以另建临时帮来造;
+	// 旧帮已在第 10 步解散,这也是服务端列明要拒的一种(预期帮已不存在),不能按旧客户端路径退回 operatorGuild。
+	// 「旧帮仍在」的那一种不另造:缓存新鲜时两种在 guild 里走同一条预检分支(本人映射 ≠ 预期即拒),已由 go/guild 的
+	// TestExpectedGuildMismatchRejectedWithoutWrite(integration)覆盖;这里要钉的是字段经 gate → 路由服真实带到、部署的二进制确有栅栏。
+	// B 必须是普通成员:帮主本来就退不了帮,「仍在 H」会变成帮主规则的功劳,栅栏坏了也看不出来。
+	// 末尾带 H 的 id 再退一次是对照:服务端若把一切非 0 的 expected_guild_id 都拒掉,前面的拒绝断言照样会过。
+	// 中途失败留下的 H 由下一轮步骤 0 解散(A 是帮主,B 若还在册会随解散离开),可重复运行。
+	tempGuildName := "烟测栅栏" + guildSmokeNonce()
+	tempCreated := &guildpb.CreateGuildResponse{}
+	if err := a.expect(game.GuildServiceCreateGuildMessageId,
+		&guildpb.CreateGuildRequest{Name: tempGuildName}, tempCreated, 0); err != nil {
+		fail("stale-expected-create", "%v", err)
+	}
+	tempGuildID := tempCreated.GetGuild().GetGuildId()
+	if tempGuildID == 0 || tempGuildID == guildID {
+		fail("stale-expected-create", "Temporary guild id=%d, expected a new guild different from the disbanded guild %d", tempGuildID, guildID)
+	}
+	if err := b.expect(game.GuildServiceApplyJoinGuildMessageId,
+		&guildpb.ApplyJoinGuildRequest{GuildId: tempGuildID}, &guildpb.ApplyJoinGuildResponse{}, 0); err != nil {
+		fail("stale-expected-apply", "%v", err)
+	}
+	tempReviewed := &guildpb.ReviewGuildApplicationResponse{}
+	if err := a.expect(game.GuildServiceReviewGuildApplicationMessageId,
+		&guildpb.ReviewGuildApplicationRequest{ApplicantPlayerId: b.gc.PlayerId, Approve: true}, tempReviewed, 0); err != nil {
+		fail("stale-expected-review", "%v", err)
+	}
+	if role, ok := guildSmokeRoleOf(tempReviewed.GetGuild(), b.gc.PlayerId); !ok || role != guildSmokeRoleMember {
+		fail("stale-expected-review", "In approval-response snapshot B=%d role=%d (member=%v), expected an ordinary member of temporary guild %d",
+			b.gc.PlayerId, role, ok, tempGuildID)
+	}
+	staleTip, err := b.rpc(game.GuildServiceLeaveGuildMessageId,
+		&guildpb.LeaveGuildRequest{ExpectedGuildId: guildID}, &guildpb.LeaveGuildResponse{})
+	if err != nil {
+		fail("stale-expected-leave", "%v", err)
+	}
+	if staleTip != tipGuildNotInGuild {
+		fail("stale-expected-leave", "B LeaveGuild with stale expected_guild_id=%d (B is now in guild %d) expected tip=%d, got tip=%d "+
+			"(tip=0 means the server ignored expected_guild_id, i.e. the guild binary predates E2 or the fence is broken, and B was removed from the new guild)",
+			guildID, tempGuildID, tipGuildNotInGuild, staleTip)
+	}
+	bTemp, err := b.myGuild()
+	if err != nil {
+		fail("stale-expected-verify", "%v", err)
+	}
+	if role, ok := guildSmokeRoleOf(bTemp, b.gc.PlayerId); bTemp.GetGuildId() != tempGuildID || !ok || role != guildSmokeRoleMember || len(bTemp.GetMembers()) != 2 {
+		fail("stale-expected-verify", "After the refused stale leave B guild=%d role=%d (member=%v) member count=%d, expected B still an ordinary member of guild %d with 2 members",
+			bTemp.GetGuildId(), role, ok, len(bTemp.GetMembers()), tempGuildID)
+	}
+	if err := b.expect(game.GuildServiceLeaveGuildMessageId,
+		&guildpb.LeaveGuildRequest{ExpectedGuildId: tempGuildID}, &guildpb.LeaveGuildResponse{}, 0); err != nil {
+		fail("stale-expected-control", "B LeaveGuild with matching expected_guild_id=%d should be accepted: %v", tempGuildID, err)
+	}
+	if err := b.expect(game.GuildServiceGetPlayerGuildMessageId,
+		&guildpb.GetPlayerGuildRequest{}, &guildpb.GetPlayerGuildResponse{}, tipGuildNotInGuild); err != nil {
+		fail("stale-expected-control", "B is still in a guild after leaving with matching expected_guild_id=%d: %v", tempGuildID, err)
+	}
+	if err := a.expect(game.GuildServiceDisbandGuildMessageId,
+		&guildpb.DisbandGuildRequest{}, &guildpb.DisbandGuildResponse{}, 0); err != nil {
+		fail("stale-expected-cleanup", "Disbanding temporary guild %d: %v", tempGuildID, err)
+	}
+	zap.L().Info("[guild-smoke] step 11: late LeaveGuild with a stale expected_guild_id refused and the player stayed in the new guild; matching expected_guild_id accepted",
+		zap.Uint64("stale_guild_id", guildID), zap.Uint64("new_guild_id", tempGuildID))
 
 	playerC := uint64(0)
 	if c != nil {

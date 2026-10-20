@@ -2918,25 +2918,9 @@ class Scene : public ::google::protobuf::Service {
                         const ::PlayerEnterGameNodeRequest* PROTOBUF_NONNULL request,
                         ::Empty* PROTOBUF_NONNULL response,
                         ::google::protobuf::Closure* PROTOBUF_NULLABLE done);
-  virtual void SendMessageToPlayer(::google::protobuf::RpcController* PROTOBUF_NULLABLE controller,
-                        const ::NodeRouteMessageRequest* PROTOBUF_NONNULL request,
-                        ::NodeRouteMessageResponse* PROTOBUF_NONNULL response,
-                        ::google::protobuf::Closure* PROTOBUF_NULLABLE done);
   virtual void ProcessClientPlayerMessage(::google::protobuf::RpcController* PROTOBUF_NULLABLE controller,
                         const ::ProcessClientPlayerMessageRequest* PROTOBUF_NONNULL request,
                         ::ProcessClientPlayerMessageResponse* PROTOBUF_NONNULL response,
-                        ::google::protobuf::Closure* PROTOBUF_NULLABLE done);
-  virtual void InvokePlayerService(::google::protobuf::RpcController* PROTOBUF_NULLABLE controller,
-                        const ::NodeRouteMessageRequest* PROTOBUF_NONNULL request,
-                        ::NodeRouteMessageResponse* PROTOBUF_NONNULL response,
-                        ::google::protobuf::Closure* PROTOBUF_NULLABLE done);
-  virtual void RouteNodeStringMsg(::google::protobuf::RpcController* PROTOBUF_NULLABLE controller,
-                        const ::RouteMessageRequest* PROTOBUF_NONNULL request,
-                        ::RouteMessageResponse* PROTOBUF_NONNULL response,
-                        ::google::protobuf::Closure* PROTOBUF_NULLABLE done);
-  virtual void RoutePlayerStringMsg(::google::protobuf::RpcController* PROTOBUF_NULLABLE controller,
-                        const ::RoutePlayerMessageRequest* PROTOBUF_NONNULL request,
-                        ::RoutePlayerMessageResponse* PROTOBUF_NONNULL response,
                         ::google::protobuf::Closure* PROTOBUF_NULLABLE done);
   virtual void UpdateSessionDetail(::google::protobuf::RpcController* PROTOBUF_NULLABLE controller,
                         const ::RegisterPlayerSessionRequest* PROTOBUF_NONNULL request,
@@ -2998,25 +2982,9 @@ class Scene_Stub final : public Scene {
                         const ::PlayerEnterGameNodeRequest* PROTOBUF_NONNULL request,
                         ::Empty* PROTOBUF_NONNULL response,
                         ::google::protobuf::Closure* PROTOBUF_NULLABLE done) override;
-  void SendMessageToPlayer(::google::protobuf::RpcController* PROTOBUF_NULLABLE controller,
-                        const ::NodeRouteMessageRequest* PROTOBUF_NONNULL request,
-                        ::NodeRouteMessageResponse* PROTOBUF_NONNULL response,
-                        ::google::protobuf::Closure* PROTOBUF_NULLABLE done) override;
   void ProcessClientPlayerMessage(::google::protobuf::RpcController* PROTOBUF_NULLABLE controller,
                         const ::ProcessClientPlayerMessageRequest* PROTOBUF_NONNULL request,
                         ::ProcessClientPlayerMessageResponse* PROTOBUF_NONNULL response,
-                        ::google::protobuf::Closure* PROTOBUF_NULLABLE done) override;
-  void InvokePlayerService(::google::protobuf::RpcController* PROTOBUF_NULLABLE controller,
-                        const ::NodeRouteMessageRequest* PROTOBUF_NONNULL request,
-                        ::NodeRouteMessageResponse* PROTOBUF_NONNULL response,
-                        ::google::protobuf::Closure* PROTOBUF_NULLABLE done) override;
-  void RouteNodeStringMsg(::google::protobuf::RpcController* PROTOBUF_NULLABLE controller,
-                        const ::RouteMessageRequest* PROTOBUF_NONNULL request,
-                        ::RouteMessageResponse* PROTOBUF_NONNULL response,
-                        ::google::protobuf::Closure* PROTOBUF_NULLABLE done) override;
-  void RoutePlayerStringMsg(::google::protobuf::RpcController* PROTOBUF_NULLABLE controller,
-                        const ::RoutePlayerMessageRequest* PROTOBUF_NONNULL request,
-                        ::RoutePlayerMessageResponse* PROTOBUF_NONNULL response,
                         ::google::protobuf::Closure* PROTOBUF_NULLABLE done) override;
   void UpdateSessionDetail(::google::protobuf::RpcController* PROTOBUF_NULLABLE controller,
                         const ::RegisterPlayerSessionRequest* PROTOBUF_NONNULL request,

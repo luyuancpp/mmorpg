@@ -27,7 +27,9 @@
 // 直连没有别的途径知道这条连接属于哪场战斗、哪个玩家。
 
 #include <cstdint>
+#include <chrono>
 #include <memory>
+#include <optional>
 #include <string>
 #include <unordered_map>
 
@@ -42,8 +44,9 @@
 
 #include "proto/battle/player_battle.pb.h"
 #include "proto/common/base/message.pb.h"
+#include "proto/match/match_network.pb.h"
 
-class BattleClientEdge : muduo::noncopyable
+class BattleClientEdge : muduo::noncopyable, public std::enable_shared_from_this<BattleClientEdge>
 {
 public:
     // 未验证连接的握手期限。gate 没有这一道(靠非法包计数),直连面加上它:
@@ -88,6 +91,11 @@ private:
         MessageLimiter messageLimiter;
         TimerTaskComp handshakeTimer;
         std::weak_ptr<muduo::net::TcpConnection> conn;
+        std::optional<match::NetworkProbeGrant> probeGrant;
+        std::string probeNonce;
+        uint32_t probeSamples = 0;
+        uint32_t probeRttMs = 0;
+        std::chrono::steady_clock::time_point probeSent;
     };
 
     void OnConnection(const muduo::net::TcpConnectionPtr &conn);
@@ -97,6 +105,9 @@ private:
     void OnTokenVerify(const muduo::net::TcpConnectionPtr &conn,
                        const std::shared_ptr<::BattleTokenVerifyRequest> &request,
                        muduo::Timestamp receiveTime);
+    void OnProbeStart(const muduo::net::TcpConnectionPtr&, const std::shared_ptr<match::NetworkProbeStart>&, muduo::Timestamp);
+    void OnProbeEcho(const muduo::net::TcpConnectionPtr&, const std::shared_ptr<match::NetworkProbeEcho>&, muduo::Timestamp);
+    void SendProbeChallenge(DirectSession&, const muduo::net::TcpConnectionPtr&);
     void OnClientRequest(const muduo::net::TcpConnectionPtr &conn,
                          const std::shared_ptr<::ClientRequest> &request,
                          muduo::Timestamp receiveTime);

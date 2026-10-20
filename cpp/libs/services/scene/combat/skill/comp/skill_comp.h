@@ -1,7 +1,6 @@
 #pragma once
 #include <memory>
 #include <unordered_map>
-#include <utility>
 #include "time/comp/timer_task_comp.h"
 #include "proto/common/component/skill_comp.pb.h"
 
@@ -14,7 +13,7 @@
 // 不存在是正常分支(没在这一相位),不是缺必需组件。
 //
 // CooldownTimeListComp / SkillContextCompMap 同样按需存在:分别在 StartCooldown 与
-// StoreSkillContextForWrite 第一次写入时创建;读取缺失表示没有冷却 / 在途上下文。
+// AddSkillContext 第一次写入时创建;读取缺失表示没有冷却 / 在途上下文。
 
 // Pre-cast timer
 struct CastingTimerComp
@@ -54,9 +53,5 @@ using SkillContextPtrComp = std::shared_ptr<SkillContextComp>;
 // 仅保存本实体作为施法者的在途上下文;目标不存镜像,销毁施法者时自然回收。
 struct SkillContextCompMap : std::unordered_map<uint64_t, SkillContextPtrComp>
 {
-    using Base = std::unordered_map<uint64_t, SkillContextPtrComp>;
-    using Base::Base;
-    SkillContextCompMap() = default;
-    explicit SkillContextCompMap(const Base& values) : Base(values) {}
-    explicit SkillContextCompMap(Base&& values) : Base(std::move(values)) {}
+    using unordered_map::unordered_map;
 };

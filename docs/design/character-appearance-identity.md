@@ -26,12 +26,12 @@ SQL 按 `PlayerDatabase` / `UserAccounts` 的顶层字段展开列；`profile_co
 
 本轮修复既有 `Account.CacheExpire=12h` 导致角色列表自动消失的问题：建角围栏 Lua、EnterGame self-heal、外观修复 CAS 和管理端移除角色四条更新路径统一使用无过期 SET；登录初始化同样不设 TTL。两种 Login 入口通过单条 Lua 原子执行 GET/PERSIST/缺失初始化，保留既有 protobuf 原字节，避免初始化空账号覆盖并发建角。旧配置字段仅兼容解析，不再影响账号寿命。会话、token、玩家缓存及分布式锁的 TTL 不变；没有增加 Redis/MySQL 双写。
 
-Compose 配置为 Redis `--appendonly yes`、`redis-data:/data` 持久卷，同时使用 `allkeys-lfu` 淘汰。Docker 当前无法启动，实际容器挂载、AOF 状态、fsync 及恢复效果未验证；配置意图不能作为运行证据。无 TTL 修复消除了新写入/已登录迁移账号的自动到期，但 AOF/持久卷不会阻止 LFU 淘汰。尚未登录或更新的旧 key 仍保留原 TTL，已经过期的历史目录无法凭空恢复。已有 player_to_account 和 profile 只能在持有 player_id 的 EnterGame self-heal 路径恢复某名角色，不能让空选角列表自动枚举账号全部角色；首次进场/scene 存盘前的创建记录尤其只有账号 Redis 一份。
+Compose 配置为 Redis `--appendonly yes`、`redis-data:/data` 持久卷，(当时)同时使用 `allkeys-lfu` 淘汰(2026-10-18 更正:2026-10-12 起 compose 已改为 `noeviction`,`deploy/docker-compose.yml:256`,与 K8s 一致)。Docker 当前无法启动，实际容器挂载、AOF 状态、fsync 及恢复效果未验证；配置意图不能作为运行证据。无 TTL 修复消除了新写入/已登录迁移账号的自动到期，但 AOF/持久卷不会阻止 LFU 淘汰。尚未登录或更新的旧 key 仍保留原 TTL，已经过期的历史目录无法凭空恢复。已有 player_to_account 和 profile 只能在持有 player_id 的 EnterGame self-heal 路径恢复某名角色，不能让空选角列表自动枚举账号全部角色；首次进场/scene 存盘前的创建记录尤其只有账号 Redis 一份。
 
 上线前需核实并补齐的前置：
 
 1. 每个目标 zone 用既有 `go/db/cmd/migrate -command plan` 核查 `profile_component` MEDIUMBLOB、主键与所有现行基础列。db 默认 `AutoMigrateSchema=false`，旧手工 SQL 文件还缺 profile 等列，不能据源码存在列就认为真库已迁移。需要补列时按现有部署迁移入口实施；本轮未连接或修改数据库。
-2. Redis 权威目录部署必须保证账号及其反向索引不被内存淘汰，并验证 AOF、持久卷和恢复策略。当前共享实例的 `allkeys-lfu` 仍是上线缺口；本轮没有全局更改其他服务的缓存策略。上线迁移还需保护尚未访问的旧 `account:*` key，不能仅等待它们在登录时 PERSIST；本轮未连接或批量改动实例。
+2. Redis 权威目录部署必须保证账号及其反向索引不被内存淘汰，并验证 AOF、持久卷和恢复策略。当前共享实例的 `allkeys-lfu` 仍是上线缺口(2026-10-18 更正:compose 与 K8s 均已是 `noeviction`,淘汰缺口已关;AOF / 卷 / 恢复验证仍待做)；本轮没有全局更改其他服务的缓存策略。上线迁移还需保护尚未访问的旧 `account:*` key，不能仅等待它们在登录时 PERSIST；本轮未连接或批量改动实例。
 3. 环境恢复后验证真实 MySQL profile 字节、正常重登、跨旧 TTL 时长重登和 Redis 服务重启恢复。新增 miniredis 用例覆盖两种 Login 入口、48 小时后选角身份、旧字节/未知字段保留、建角及两类 self-heal/管理端更新；这些是命令和逻辑契约测试，不是 AOF、实库或正式客户端流程证明。已丢失目录只能基于独立备份或可核验历史记录恢复，本轮未实现自动冷读重建。
 
 data_service 的全局 schema 管理 player_name / id_segment / snapshot / audit 等表；其字段读取接口读取 Redis 字节、快照保留字节载荷，不会自动为账号新增落盘消费者，也不负责迁移 zone 的 profile_component 列。
@@ -53,4 +53,4 @@ return 1
 ```
 
 6. 使用同一清单重新读取 GET/TTL，逐 key 确认 `TTL = -1`、字节 SHA256 与原样备份一致、protobuf 角色身份一致；出现改变时重新核对当前合法写入，不能写回旧备份覆盖新角色。复扫 `account:*`，检查没有遗漏的正 TTL，记录成功/变化/缺失/解析异常数量。保持业务写入窗口关闭直到清单核验完成，再恢复入口；不得以成功计数代替缺失账号处理。
-7. 选独立测试账号完成正式登录/选角、主城、战斗、退出重登，以及跨旧 12h 和 Redis 重启后恢复。恢复验证必须包括 AOF/卷和进程崩溃场景；本轮未执行。`allkeys-lfu` 仍可能淘汰无 TTL 账号，需要独立确定权威目录不被淘汰的部署措施，不能把上述 PERSIST 迁移称为完整耐久性闭环。
+7. 选独立测试账号完成正式登录/选角、主城、战斗、退出重登，以及跨旧 12h 和 Redis 重启后恢复。恢复验证必须包括 AOF/卷和进程崩溃场景；本轮未执行。`allkeys-lfu` 仍可能淘汰无 TTL 账号(2026-10-18 更正:compose 与 K8s 已是 `noeviction`,不再淘汰;剩余风险是写满时拒写(compose maxmemory 8gb)或 OOMKill(K8s 未设 maxmemory),AOF / 卷 / 恢复验证仍待做)，需要独立确定权威目录不被淘汰的部署措施，不能把上述 PERSIST 迁移称为完整耐久性闭环。

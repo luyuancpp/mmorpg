@@ -1,9 +1,45 @@
 syntax = "proto3";
 option go_package = "robot/proto/common/database";
 
+import "proto/db/proto_option.proto";
 import "proto/common/database/mysql_database_table.proto";
+import "proto/common/database/bag_quest_mail_data.proto";
 
+// PlayerAllData — full snapshot carried across cross-zone migration,
+// persisted by SavePlayerToRedis on logout, and snapshot'd for rollback.
+//
+// Until 2026-05-16 this only contained player_database_data and
+// player_database_1_data — meaning bag/quest/mail were silently dropped
+// on every logout and every cross-zone hop. cross-zone-readiness-audit.md
+// §3.2 件 1 designed the fix: add the three missing data classes as
+// independent sub-messages here (NOT inside player_database, which is
+// already a 7-component grab-bag).
+//
+// Sub-message status (2026-05-16):
+//   • bag_data   — schema landed (conservative subset; game-design
+//                  extensions tracked as TODOs in BagAllData proto)
+//   • quest_data — schema sketched; quest system itself doesn't exist
+//                  in cpp yet, so the field is reserved for when it does
+//   • mail_data  — schema sketched; default plan is mail rides over an
+//                  independent Go service, NOT via PlayerAllData.
+//                  See cross-zone-readiness-audit.md §3.3.
+//
+// Wire-compatibility note: field numbers 4/5/6 are the canonical slots
+// — even if cpp Marshal/Unmarshal doesn't populate quest_data/mail_data
+// today, leaving them numbered prevents future schema drift between
+// the proto and any side-channel storage.
+//
+// 冻结(docs/design/mixed-version-persist-field-protection.md §3.2 R1):顶层不经 SQL,冷加载由骨架组装,
+// 存盘每次新拼,顶层新字段无处持久化。新数据一律加进两张表消息。bag_data / quest_data 是由数据库记录
+// 重算的兼容副本,mail_data 没有写入方,三者标 OptionPersistUncarried。
 message PlayerAllData {
+  option (OptionPersistFrozen) = true;
+
   player_database player_database_data = 2;
   player_database_1 player_database_1_data = 3;
+
+  BagAllData   bag_data   = 4 [(OptionPersistUncarried) = true];
+  QuestAllData quest_data = 5 [(OptionPersistUncarried) = true];
+  MailAllData  mail_data  = 6 [(OptionPersistUncarried) = true];
+  uint64 last_save_seq = 7; // 存盘发号水位，跨重接和跨场景继承，不承载业务数据
 }

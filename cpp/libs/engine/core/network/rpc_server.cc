@@ -15,7 +15,6 @@
 #include <google/protobuf/descriptor.h>
 #include <google/protobuf/service.h>
 
-#include "rpc_connection_event.h"
 #include "node/system/node/node_util.h"   // NodeUtils::RemoveRpcSessionsBoundTo
 
 using namespace muduo;

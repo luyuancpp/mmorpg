@@ -37,3 +37,31 @@ func TestGenerateWithSuffixSkipsReservedEventIds(t *testing.T) {
 		t.Fatalf("consts = %q, want %q (tombstone line 1 must produce no constant)", consts, want)
 	}
 }
+
+// message_id.txt 与 event_id.txt 共用墓碑格式(批 7 删 Route 一族起出现):消息号常量生成同样整行跳过,
+// 否则会拼出 `const reserved:GateRouteNodeMessageMessageId = 41`,写进 robot 与各 Go 服务的
+// generated/pb/game/message_id.go 后全部编译失败。内容按磁盘格式逐字写出。
+func TestGenerateWithSuffixSkipsReservedMessageIds(t *testing.T) {
+	originalLogger := logger.Global
+	logger.Global = zap.NewNop()
+	t.Cleanup(func() { logger.Global = originalLogger })
+
+	path := filepath.Join(t.TempDir(), "message_id.txt")
+	content := "40=SceneInvokePlayerService\n41=reserved:GateRouteNodeMessage\n42=GatePlayerEnterGameNode\n"
+	if err := os.WriteFile(path, []byte(content), 0644); err != nil {
+		t.Fatalf("write %s: %v", path, err)
+	}
+
+	consts, err := NewConstantsGenerator(path).GenerateWithSuffix("MessageId")
+	if err != nil {
+		t.Fatalf("GenerateWithSuffix: %v", err)
+	}
+
+	want := []string{
+		"const SceneInvokePlayerServiceMessageId = 40",
+		"const GatePlayerEnterGameNodeMessageId = 42",
+	}
+	if !reflect.DeepEqual(consts, want) {
+		t.Fatalf("consts = %q, want %q (tombstone line 41 must produce no constant)", consts, want)
+	}
+}

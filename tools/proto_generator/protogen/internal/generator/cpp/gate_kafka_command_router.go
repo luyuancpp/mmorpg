@@ -19,6 +19,8 @@ import (
 type gateKafkaRouterCase struct {
 	EventIdConstant  string
 	EventMessageName string
+	ClassName        string
+	HandlerName      string
 	Assignments      []string
 }
 
@@ -96,6 +98,8 @@ func buildGateKafkaRouterCases() ([]gateKafkaRouterCase, error) {
 		caseData := gateKafkaRouterCase{
 			EventIdConstant:  eventIdConstant,
 			EventMessageName: eventMessageName,
+			ClassName:        "GateEventHandler",
+			HandlerName:      buildEventHandlerMethodName("GateEventHandler", eventMessageName),
 			Assignments:      make([]string, 0),
 		}
 

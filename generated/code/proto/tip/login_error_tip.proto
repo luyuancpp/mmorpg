@@ -79,4 +79,8 @@ enum login_error {
 
   kRoleNameSensitive = 2034;
 
+  kLoginAuthProviderUnavailable = 2035;
+
+  kLoginTokenIssueFailed = 2036;
+
 };

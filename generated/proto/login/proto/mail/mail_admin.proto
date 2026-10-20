@@ -1,76 +1,52 @@
 syntax = "proto3";
 package mailpb;
-
 option go_package = "login/proto/mail";
-// 显式写 false(未设置时同为 false):照 chat / trade / team / player_inbox。生成器据它决定注册形状与
-// 路由表是否收录本服务(docs/design/team-system.md 协议一节),写成 true 会让注册形状、路由表和协议号对不上。
-option cc_generic_services = false;
-
 import "proto/common/base/tip.proto";
+import "proto/common/base/service_call_auth.proto";
 import "proto/mail/mail.proto";
 
-// mail 内部发件入口(移植批次 M1,docs/design/mail-system.md §2 / §5.3)。
-//
-// 刻意**不标** OptionIsClientProtocolService、并与客户端协议分文件(照 proto/trade/trade_admin.proto):
-//   - gate 的 IsClientMessageId 不收这些消息号,客户端发来直接丢弃;
-//   - 路由服对 ClientProtocol=false 的条目回信封拒绝;
-//   - mail 的会话拦截器对带会话 metadata 的调用回 PermissionDenied(这两个方法不在白名单里);
-//   - 客户端 gen_proto.ps1 不列本文件,内部 schema 不进客户端包。
-// service 名字不含 ClientPlayer / GamePlayer,生成器不会给客户端出桩。它照样占消息号、也进路由表
-// (ClientProtocol: false),与 TradeAdmin 同。
-//
-// 鉴权:gRPC metadata `x-mail-admin-token` 必须等于 mail 进程环境变量 MMORPG_MAIL_ADMIN_TOKEN 的值
-// (去首尾空白后 ≥ 32 字节)。环境变量没配 = 整个 service 停用,两个方法一律 PermissionDenied;没有 dev 放行。
-// 令牌不进 yaml / ConfigMap / 日志 / 指标 / 错误文本。
-//
-// 幂等:调用方自带 (sender_kind, request_id)。同键、同内容重放返回首次的结果并置 duplicated = true(不再推送);
-// 同键、不同内容回 MailRequestConflict。先判重、后做依赖"现在"的校验(过期时间、邮箱上限),
-// 否则一次超时重试会因为"现在已经满了"而拿不回首次的结果。
-// "内容"包括 expire_ms:调用方重试时必须把首次算好的 expire_ms 原样带回(不要按"现在 + N 天"重新算),
-// 否则同一个 request_id 会被判成 MailRequestConflict。sent_ms 是服务端时刻,不在比较范围内。
-
-enum MailSenderKind {
-  MAIL_SENDER_KIND_UNSPECIFIED = 0;
-  MAIL_SENDER_KIND_OPS_TOOL = 1;   // 运维工具(go/mail/cmd/mailadmin)
-  MAIL_SENDER_KIND_ROBOT = 2;      // robot 冒烟。只在 Mode=dev|test 接受,其它 Mode 回 kInvalidParameter(在取号之前)
-}
-
-message SendPersonalMailRequest {
-  MailSenderKind sender_kind = 1;
-  // 非 0。键的最短有效期 = expire_ms + 保留期,与收件人删不删信无关(定向邮件是软删,物理删只归 sweep)。
+// 内部发件接口不标客户端服务。每个caller独立密钥和可发频道白名单。
+// 相同(sender_kind,request_id)重放先核载荷，不能因满箱/已过期重复发件。
+message SendMailRequest {
+  uint32 sender_kind = 1;
   uint64 request_id = 2;
-  uint64 recipient_player_id = 3;   // 不校验是否存在:mail 不读玩家名册,发给不存在的 id 只是一封没人看的信
-  string sender_name = 4;           // ≤ 16 个字符(Unicode 码点)
-  string title = 5;                 // ≤ 32 个字符
-  string body = 6;                  // ≤ 1000 个字符
-  MailAttachments attachments = 7;  // M1 生产(Mode 不是 dev / test)必须为空,否则 MailAttachmentNotOpen
-  uint64 expire_ms = 8;             // 必填;服务端发件时刻 < expire_ms ≤ 发件时刻 + 定向邮件最长有效期
+  uint64 recipient_player_id = 3;
+  uint64 guild_id = 4;
+  string title = 5;
+  string body = 6;
+  MailAttachments attachments = 7;
+  uint64 expire_ms = 8;
+  common.base.ServiceCallAuth auth = 9;
+  // 系统附件必须先导入冻结名单并seal。纯文本及个人邮件这些字段须为0/空。
+  uint64 campaign_id = 10;
+  uint64 manifest_generation = 11;
+  uint64 expected_recipient_count = 12;
+  uint32 expected_shard_count = 13;
+  // SHA256("v1\n" + 按shard_index升序拼接 "index:lowercase_sha256:count\n")。
+  // shard摘要是去重并按uint64升序的player_id十进制字符串，每个后接\n的SHA256。
+  string manifest_hash = 14;
 }
-
-message SendPersonalMailResponse {
-  TipInfoMessage error_message = 1;
-  uint64 mail_id = 2;
-  bool duplicated = 3;
+message SendMailResponse { TipInfoMessage error_message = 1; uint64 mail_id = 2; bool duplicated = 3; }
+message ImportMailRecipientsRequest {
+  uint32 sender_kind = 1;
+  uint64 campaign_id = 2;
+  uint64 manifest_generation = 3;
+  uint32 shard_index = 4;
+  repeated uint64 player_ids = 5;
+  common.base.ServiceCallAuth auth = 6;
 }
-
-message SendSystemMailRequest {
-  MailSenderKind sender_kind = 1;
-  uint64 request_id = 2;
-  string sender_name = 3;
-  string title = 4;
-  string body = 5;
-  MailAttachments attachments = 6;  // M1 生产必须为空
-  // 必填;服务端发件时刻 < expire_ms ≤ 发件时刻 + 系统邮件最长有效期。发出即可见,不做定时生效;M1 不可撤回。
-  uint64 expire_ms = 7;
+message ImportMailRecipientsResponse { TipInfoMessage error_message = 1; uint64 imported_count = 2; bool duplicated = 3; }
+message SealMailCampaignRequest {
+  uint32 sender_kind = 1;
+  uint64 campaign_id = 2;
+  uint64 manifest_generation = 3;
+  common.base.ServiceCallAuth auth = 4;
 }
-
-message SendSystemMailResponse {
-  TipInfoMessage error_message = 1;
-  uint64 sys_mail_id = 2;
-  bool duplicated = 3;
-}
-
 service MailAdmin {
-  rpc SendPersonalMail (SendPersonalMailRequest) returns (SendPersonalMailResponse);
-  rpc SendSystemMail (SendSystemMailRequest) returns (SendSystemMailResponse);
+  rpc SendPersonalMail(SendMailRequest) returns (SendMailResponse);
+  // 系统及帮会附件的领取资格须服务端判定；不得把广播通知当玩家资产直接入账。
+  rpc SendSystemMail(SendMailRequest) returns (SendMailResponse);
+  rpc SendGuildMail(SendMailRequest) returns (SendMailResponse);
+  rpc ImportMailRecipients(ImportMailRecipientsRequest) returns (ImportMailRecipientsResponse);
+  rpc SealMailCampaign(SealMailCampaignRequest) returns (SendMailResponse);
 }

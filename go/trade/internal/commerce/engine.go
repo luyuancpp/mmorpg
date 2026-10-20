@@ -1,0 +1,843 @@
+// Package commerce 管理交易合同、托管与SQL可靠待办，不拥有任何玩家资产。
+package commerce
+
+import (
+	"bytes"
+	"context"
+	"crypto/sha256"
+	"database/sql"
+	"encoding/hex"
+	"errors"
+	"fmt"
+	"google.golang.org/protobuf/proto"
+	"math"
+	assetpb "proto/common/asset"
+	rollbackpb "proto/common/rollback"
+	tradepb "proto/trade"
+	"shared/assetop"
+	"shared/generated/pb/table"
+	"sort"
+	"strconv"
+	"strings"
+	"time"
+	"trade/internal/data"
+)
+
+const (
+	Waiting       = uint32(1)
+	Escrowing     = uint32(3)
+	Delivering    = uint32(4)
+	Delivered     = uint32(5)
+	CancelPending = uint32(6)
+	Cancelled     = uint32(7)
+	Manual        = uint32(10)
+	Settled       = uint32(11)
+	BidKind       = uint32(100)
+)
+
+type Rejection uint32
+
+func (e Rejection) Error() string { return "交易请求被拒绝" }
+
+var (
+	ErrInvalid     = Rejection(table.CommonError_kInvalidParameter)
+	ErrMissing     = Rejection(table.TradeError_kTradeOrderNotFound)
+	ErrConflict    = Rejection(table.TradeError_kTradeOrderStateConflict)
+	ErrReplay      = Rejection(table.TradeError_kTradeRequestConflict)
+	ErrSelf        = Rejection(table.TradeError_kTradeCannotTradeSelf)
+	ErrNotTradable = Rejection(table.TradeError_kTradeAssetNotTradable)
+	ErrBid         = Rejection(table.TradeError_kTradeBidTooLow)
+	ErrEnded       = Rejection(table.TradeError_kTradeAuctionEnded)
+)
+
+type IDs interface {
+	Next(context.Context) (uint64, error)
+}
+type Policy struct {
+	Items          []uint32
+	ItemTitles     map[uint32]string
+	Pets           []uint32
+	Currencies     []uint32
+	AllowInstances bool
+}
+
+func contains(values []uint32, n uint32) bool {
+	for _, v := range values {
+		if v == n {
+			return true
+		}
+	}
+	return false
+}
+func (p Policy) Selection(v *tradepb.TradeAssetSelection) error {
+	if v == nil || len(v.Items) > 16 || len(v.ItemUuids) > 8 || len(v.Items)+len(v.ItemUuids) == 0 && v.PetId == 0 && v.CurrencyAmount == 0 {
+		return ErrInvalid
+	}
+	if v.CurrencyAmount == 0 && v.CurrencyType != 0 || v.CurrencyAmount > math.MaxInt64 {
+		return ErrInvalid
+	}
+	if v.CurrencyAmount > 0 && !contains(p.Currencies, v.CurrencyType) {
+		return ErrNotTradable
+	}
+	var total uint64
+	for id, n := range v.Items {
+		if id == 0 || n == 0 || n > 4096 || !contains(p.Items, id) {
+			return ErrNotTradable
+		}
+		total += uint64(n)
+		if total > 4096 {
+			return ErrInvalid
+		}
+	}
+	seen := map[uint64]bool{}
+	for _, id := range v.ItemUuids {
+		if id == 0 || seen[id] {
+			return ErrInvalid
+		}
+		seen[id] = true
+	}
+	if (len(v.ItemUuids) > 0 || v.PetId != 0) && !p.AllowInstances {
+		return ErrNotTradable
+	}
+	return nil
+}
+func (p Policy) Snapshot(v *assetpb.AssetSnapshot) bool {
+	if v == nil {
+		return true
+	}
+	for _, i := range v.Items {
+		if !contains(p.Items, i.ConfigId) {
+			return false
+		}
+	}
+	return v.Pet == nil || contains(p.Pets, v.Pet.PetTableId)
+}
+
+type Engine struct {
+	Repo    *data.CommerceRepo
+	IDs     IDs
+	OpIDs   IDs
+	Policy  Policy
+	Applier assetop.Applier
+	Ledger  assetop.LedgerReader
+	Now     func() time.Time
+}
+
+func (e *Engine) now() uint64 { return uint64(e.Now().UnixMilli()) }
+func Bundle(v *tradepb.TradeAssetSelection) *assetpb.AssetBundle {
+	b := &assetpb.AssetBundle{ItemUuids: append([]uint64(nil), v.GetItemUuids()...), PetId: v.GetPetId()}
+	if v.GetCurrencyAmount() > 0 {
+		b.Currencies = []*assetpb.CurrencyAmount{{CurrencyType: v.CurrencyType, Amount: v.CurrencyAmount}}
+	}
+	keys := make([]uint32, 0, len(v.GetItems()))
+	for id := range v.GetItems() {
+		keys = append(keys, id)
+	}
+	sort.Slice(keys, func(i, j int) bool { return keys[i] < keys[j] })
+	for _, id := range keys {
+		b.Items = append(b.Items, &assetpb.ItemGrant{ConfigId: id, Count: v.Items[id]})
+	}
+	return b
+}
+
+// 返回或换主时仅补入scene提取的完整实例，不以config重新铸造装备/宝宝。
+func Transfer(b *assetpb.AssetBundle, s *assetpb.AssetSnapshot) (*assetpb.AssetBundle, error) {
+	if b == nil || len(b.ItemInstances) > 0 || b.PetInstance != nil {
+		return nil, errors.New("托管请求包含非扣出字段")
+	}
+	out := proto.Clone(b).(*assetpb.AssetBundle)
+	if (len(b.ItemUuids) > 0 || b.PetId > 0) && s == nil {
+		return nil, errors.New("托管完整快照缺失")
+	}
+	if s != nil {
+		out.ItemInstances = append(out.ItemInstances, s.Items...)
+		out.PetInstance = s.Pet
+	}
+	if len(out.ItemUuids) != len(out.ItemInstances) || (out.PetId != 0) != (out.PetInstance != nil) {
+		return nil, errors.New("托管快照与合同不符")
+	}
+	wanted := make(map[uint64]bool, len(b.ItemUuids))
+	for _, id := range b.ItemUuids {
+		if id == 0 || wanted[id] {
+			return nil, errors.New("托管实例选择损坏")
+		}
+		wanted[id] = true
+	}
+	for _, item := range out.ItemInstances {
+		if item == nil || !wanted[item.ItemUuid] {
+			return nil, errors.New("托管物品身份与合同不符")
+		}
+		delete(wanted, item.ItemUuid)
+	}
+	if len(wanted) > 0 || out.PetInstance != nil && out.PetInstance.PetId != b.PetId {
+		return nil, errors.New("托管实例身份与合同不符")
+	}
+	// 扣出用GUID选择，入账只用可信完整原件；两种资产命令不能混带字段。
+	out.ItemUuids = nil
+	out.PetId = 0
+	return out, nil
+}
+func RequestKey(scope string, player uint64, id string) string {
+	h := sha256.Sum256([]byte(scope + ":" + strconv.FormatUint(player, 10) + ":" + id))
+	return hex.EncodeToString(h[:])
+}
+func digest(v proto.Message) []byte {
+	raw, _ := proto.MarshalOptions{Deterministic: true}.Marshal(v)
+	h := sha256.Sum256(raw)
+	return h[:]
+}
+func (e *Engine) Create(ctx context.Context, player uint64, id string, input proto.Message, r *tradepb.TradeCommerceRecord, w *tradepb.TradeCommerceWorkflow) (*tradepb.TradeCommerceRecord, error) {
+	if e == nil || e.Repo == nil || e.Repo.Ops == nil {
+		return nil, errors.New("交易资产通道未配置")
+	}
+	if player == 0 || len(id) < 8 || len(id) > 80 {
+		return nil, ErrInvalid
+	}
+	r.RequestKey = RequestKey("player", player, id)
+	r.RequestDigest = digest(input)
+	if old, err := e.Repo.ByRequest(ctx, r.RequestKey); err == nil {
+		if !bytes.Equal(old.RequestDigest, r.RequestDigest) {
+			return nil, ErrReplay
+		}
+		return old, nil
+	} else if !errors.Is(err, sql.ErrNoRows) {
+		return nil, err
+	}
+	n, err := e.IDs.Next(ctx)
+	if err != nil {
+		return nil, err
+	}
+	r.CommerceId = n
+	r.CreatedMs = e.now()
+	r.UpdatedMs = r.CreatedMs
+	r.Version = 1
+	r.WorkflowProto, err = proto.MarshalOptions{Deterministic: true}.Marshal(w)
+	if err != nil {
+		return nil, err
+	}
+	err = e.Repo.Tx(ctx, func(tx *sql.Tx) error { return e.Repo.Insert(ctx, tx, r) })
+	if err != nil {
+		if old, readErr := e.Repo.ByRequest(ctx, r.RequestKey); readErr == nil {
+			if !bytes.Equal(old.RequestDigest, r.RequestDigest) {
+				return nil, ErrReplay
+			}
+			return old, nil
+		}
+		return nil, err
+	}
+	return r, nil
+}
+func (e *Engine) CreatePlayerTrade(ctx context.Context, me uint64, in *tradepb.CreatePlayerTradeRequest) (*tradepb.TradeCommerceRecord, error) {
+	if in.GetBuyerPlayerId() == 0 {
+		return nil, ErrInvalid
+	}
+	if in.BuyerPlayerId == me {
+		return nil, ErrSelf
+	}
+	if err := e.Policy.Selection(in.SellerAssets); err != nil {
+		return nil, err
+	}
+	if err := e.Policy.Selection(in.BuyerAssets); err != nil {
+		return nil, err
+	}
+	return e.Create(ctx, me, in.ClientRequestId, in, &tradepb.TradeCommerceRecord{Kind: 2, Status: Escrowing, SellerPlayerId: me, BuyerPlayerId: in.BuyerPlayerId, ExpiresMs: e.now() + 15*60*1000}, &tradepb.TradeCommerceWorkflow{SellerAssets: in.SellerAssets, BuyerAssets: in.BuyerAssets, Stage: "offer_escrow"})
+}
+func validPrice(p uint64, c uint32, policy Policy) bool {
+	return p > 0 && p <= math.MaxInt64 && contains(policy.Currencies, c)
+}
+func (e *Engine) CreateConsignment(ctx context.Context, me uint64, in *tradepb.CreateConsignmentRequest) (*tradepb.TradeCommerceRecord, error) {
+	if err := e.Policy.Selection(in.GetAssets()); err != nil {
+		return nil, err
+	}
+	if !validPrice(in.Price, in.CurrencyType, e.Policy) || in.DurationMs < 60000 || in.DurationMs > 30*24*3600000 {
+		return nil, ErrInvalid
+	}
+	return e.Create(ctx, me, in.ClientRequestId, in, &tradepb.TradeCommerceRecord{Kind: 3, Status: Escrowing, SellerPlayerId: me, UnitPrice: in.Price, CurrencyType: in.CurrencyType, ExpiresMs: e.now() + in.DurationMs}, &tradepb.TradeCommerceWorkflow{SellerAssets: in.Assets, Stage: "escrow"})
+}
+func (e *Engine) CreateLot(ctx context.Context, me uint64, in *tradepb.CreateAuctionLotRequest) (*tradepb.TradeCommerceRecord, error) {
+	if err := e.Policy.Selection(in.GetAssets()); err != nil {
+		return nil, err
+	}
+	if !validPrice(in.OpeningPrice, in.CurrencyType, e.Policy) || in.MinimumIncrement == 0 || in.MinimumIncrement > math.MaxInt64 || in.DurationMs < 60000 || in.DurationMs > 7*24*3600000 {
+		return nil, ErrInvalid
+	}
+	return e.Create(ctx, me, in.ClientRequestId, in, &tradepb.TradeCommerceRecord{Kind: 5, Status: Escrowing, SellerPlayerId: me, UnitPrice: in.OpeningPrice, CurrencyType: in.CurrencyType, ExpiresMs: e.now() + in.DurationMs}, &tradepb.TradeCommerceWorkflow{SellerAssets: in.Assets, Stage: "escrow", MinimumIncrement: in.MinimumIncrement})
+}
+func (e *Engine) PlaceMarket(ctx context.Context, me uint64, in *tradepb.PlaceMarketOrderRequest) (*tradepb.TradeCommerceRecord, error) {
+	if in.Quantity == 0 || in.Quantity > 4096 || in.MarketId != 1 || len(e.Policy.Currencies) == 0 || in.CurrencyType != e.Policy.Currencies[0] || !contains(e.Policy.Items, in.ItemConfigId) || !validPrice(in.UnitPrice, in.CurrencyType, e.Policy) || in.UnitPrice > math.MaxInt64/uint64(in.Quantity) || (in.Side != 1 && in.Side != 2) {
+		return nil, ErrInvalid
+	}
+	sel := &tradepb.TradeAssetSelection{}
+	if in.Side == 1 {
+		sel.CurrencyType = in.CurrencyType
+		sel.CurrencyAmount = in.UnitPrice * uint64(in.Quantity)
+	} else {
+		sel.Items = map[uint32]uint32{in.ItemConfigId: in.Quantity}
+	}
+	return e.Create(ctx, me, in.ClientRequestId, in, &tradepb.TradeCommerceRecord{Kind: 4, Status: Escrowing, SellerPlayerId: me, MarketId: in.MarketId, ItemConfigId: in.ItemConfigId, Side: uint32(in.Side), UnitPrice: in.UnitPrice, Quantity: in.Quantity, CurrencyType: in.CurrencyType}, &tradepb.TradeCommerceWorkflow{SellerAssets: sel, Stage: "escrow"})
+}
+func (e *Engine) Mutate(ctx context.Context, me, id uint64, action string, requestID ...string) (*tradepb.TradeCommerceRecord, error) {
+	var result *tradepb.TradeCommerceRecord
+	err := e.Repo.Tx(ctx, func(tx *sql.Tx) error {
+		r, err := e.Repo.Lock(ctx, tx, id)
+		if errors.Is(err, sql.ErrNoRows) {
+			return ErrMissing
+		}
+		if err != nil {
+			return err
+		}
+		w, err := data.Workflow(r)
+		if err != nil {
+			return err
+		}
+		var now uint64
+		if err := tx.QueryRowContext(ctx, "SELECT CAST(UNIX_TIMESTAMP(CURRENT_TIMESTAMP(3))*1000 AS UNSIGNED)").Scan(&now); err != nil {
+			return err
+		}
+		switch action {
+		case "confirm":
+			if r.Kind != 2 || w.Stage != "confirm" {
+				return ErrConflict
+			}
+			if r.ExpiresMs <= now || w.CancelRequested {
+				return ErrConflict
+			}
+			if me == r.SellerPlayerId {
+				if !w.BuyerConfirmed || !applied(leg(w, "buyer_debit")) {
+					return ErrConflict
+				}
+				w.SellerConfirmed = true
+			} else if me == r.BuyerPlayerId {
+				if !applied(leg(w, "seller_debit")) {
+					return ErrConflict
+				}
+				w.BuyerConfirmed = true
+				if !applied(leg(w, "buyer_debit")) {
+					w.Stage = "buyer_escrow"
+					r.Status = Escrowing
+				}
+			} else {
+				return ErrMissing
+			}
+			if w.SellerConfirmed && w.BuyerConfirmed {
+				w.Stage = "escrow"
+				r.Status = Escrowing
+			}
+		case "buy":
+			if len(requestID) != 1 || len(requestID[0]) < 8 || len(requestID[0]) > 80 {
+				return ErrInvalid
+			}
+			key := RequestKey("consignment_buy", me, requestID[0])
+			for _, l := range w.Legs {
+				if strings.HasSuffix(l.Role, "_"+key) {
+					if r.BuyerPlayerId == me && (w.Stage == "pay" || w.Stage == "deliver" || w.Stage == "done") {
+						result = r
+						return nil
+					}
+					return ErrConflict
+				}
+			}
+			if r.Kind == 3 && r.BuyerPlayerId == me && (w.Stage == "pay" || w.Stage == "deliver" || w.Stage == "done") {
+				result = r
+				return nil
+			}
+			if r.Kind != 3 || w.Stage != "open" || r.ExpiresMs <= now || r.BuyerPlayerId != 0 {
+				return ErrConflict
+			}
+			if me == r.SellerPlayerId {
+				return ErrSelf
+			}
+			if w.QuantityReserved >= 32 {
+				return ErrConflict
+			}
+			r.BuyerPlayerId = me
+			w.BuyerAssets = &tradepb.TradeAssetSelection{CurrencyType: r.CurrencyType, CurrencyAmount: r.UnitPrice}
+			w.QuantityReserved++
+			addLeg(w, "buyer_debit_"+strconv.FormatUint(w.QuantityReserved, 10)+"_"+key, me, 3, Bundle(w.BuyerAssets))
+			w.Stage = "pay"
+			r.Status = Escrowing
+		case "cancel":
+			if me != r.SellerPlayerId && me != r.BuyerPlayerId {
+				return ErrMissing
+			}
+			if r.Status == Cancelled {
+				result = r
+				return nil
+			}
+			if r.Kind == 2 && (w.Stage == "confirm" || w.Stage == "offer_escrow" || w.Stage == "buyer_escrow") {
+				w.CancelRequested = true
+				r.Status = CancelPending
+			} else if me == r.SellerPlayerId && (w.Stage == "open" || w.Stage == "market_open" || w.Stage == "lot_open" && w.HighestBidder == 0) {
+				w.CancelRequested = true
+				r.Status = CancelPending
+			} else {
+				return ErrConflict
+			}
+			// 取消不删原扣款待办；截止后由同一seq的Abort固定结局，已经扣出的仍原样退还。
+			// 逐行主键点锁 + 点改(不按 ref 批量 UPDATE),锁序与终结同向,见 ExpireCommerceEscrowDebitsTx。
+			if err := e.Repo.Ops.ExpireCommerceEscrowDebitsTx(ctx, tx, r.CommerceId, now); err != nil {
+				return err
+			}
+		default:
+			return ErrInvalid
+		}
+		if err := e.Repo.Save(ctx, tx, r, w, e.now()); err != nil {
+			return err
+		}
+		result = r
+		return nil
+	})
+	return result, err
+}
+func (e *Engine) Get(ctx context.Context, me, id uint64) (*tradepb.TradeCommerceRecord, error) {
+	r, err := e.Repo.Get(ctx, id)
+	if errors.Is(err, sql.ErrNoRows) {
+		return nil, ErrMissing
+	}
+	if err != nil {
+		return nil, err
+	}
+	if r.SellerPlayerId != me && r.BuyerPlayerId != me && r.Kind != 3 && r.Kind != 5 {
+		return nil, ErrMissing
+	}
+	return r, nil
+}
+
+func addLeg(w *tradepb.TradeCommerceWorkflow, role string, player uint64, stream uint32, bundle *assetpb.AssetBundle) {
+	for _, l := range w.Legs {
+		if l.Role == role {
+			return
+		}
+	}
+	w.Legs = append(w.Legs, &tradepb.TradeCommerceLeg{Role: role, PlayerId: player, Stream: stream, Bundle: bundle})
+}
+func leg(w *tradepb.TradeCommerceWorkflow, role string) *tradepb.TradeCommerceLeg {
+	for _, l := range w.Legs {
+		if l.Role == role {
+			return l
+		}
+	}
+	return nil
+}
+func transferLeg(w *tradepb.TradeCommerceWorkflow, role string, to uint64, from *tradepb.TradeCommerceLeg) error {
+	b, err := Transfer(from.Bundle, from.Snapshot)
+	if err != nil {
+		return err
+	}
+	addLeg(w, role, to, 4, b)
+	return nil
+}
+func done(l *tradepb.TradeCommerceLeg) bool    { return l != nil && l.Outcome != 0 }
+func applied(l *tradepb.TradeCommerceLeg) bool { return l != nil && l.Outcome == 2 }
+func finalCredits(w *tradepb.TradeCommerceWorkflow) (bool, bool) {
+	for _, l := range w.Legs {
+		if l.Stream == 4 {
+			if !done(l) {
+				return false, false
+			}
+			if !applied(l) {
+				return true, false
+			}
+		}
+	}
+	return true, true
+}
+
+// plan只决定下一批幂等腿；副作用仅为同一SQL事务写outbox，RPC在提交后由既有Loop发送。
+func (e *Engine) plan(r *tradepb.TradeCommerceRecord, w *tradepb.TradeCommerceWorkflow, now uint64) error {
+	if w.Stage == "official_deliver" {
+		addLeg(w, "official_credit", r.BuyerPlayerId, 4, w.OfficialBundle)
+		l := leg(w, "official_credit")
+		if !done(l) {
+			return nil
+		}
+		if applied(l) {
+			w.Stage = "done"
+			r.Status = Settled
+		} else {
+			w.Stage = "official_refund"
+			r.Status = 8
+		}
+		return nil
+	}
+	if w.Stage == "offer_escrow" {
+		addLeg(w, "seller_debit", r.SellerPlayerId, 3, Bundle(w.SellerAssets))
+		a := leg(w, "seller_debit")
+		if !done(a) {
+			return nil
+		}
+		if !applied(a) {
+			w.Stage = "done"
+			r.Status = Cancelled
+			return nil
+		}
+		if !e.Policy.Snapshot(a.Snapshot) {
+			w.CancelRequested = true
+		}
+		w.Stage = "confirm"
+		r.Status = Waiting
+	}
+	if w.Stage == "buyer_escrow" {
+		addLeg(w, "buyer_debit", r.BuyerPlayerId, 3, Bundle(w.BuyerAssets))
+		b := leg(w, "buyer_debit")
+		if !done(b) {
+			return nil
+		}
+		if !applied(b) || !e.Policy.Snapshot(b.Snapshot) {
+			w.CancelRequested = true
+		}
+		w.Stage = "confirm"
+		r.Status = Waiting
+	}
+	if r.Kind == 2 && w.Stage == "confirm" && (w.CancelRequested || r.ExpiresMs <= now) {
+		w.Stage = "return"
+		r.Status = CancelPending
+		if applied(leg(w, "seller_debit")) {
+			if err := transferLeg(w, "seller_return", r.SellerPlayerId, leg(w, "seller_debit")); err != nil {
+				return err
+			}
+		}
+		if applied(leg(w, "buyer_debit")) {
+			if err := transferLeg(w, "buyer_return", r.BuyerPlayerId, leg(w, "buyer_debit")); err != nil {
+				return err
+			}
+		}
+	}
+	if w.Stage == "bid_freeze" {
+		addLeg(w, "bid_debit", r.SellerPlayerId, 3, Bundle(w.SellerAssets))
+		b := leg(w, "bid_debit")
+		if done(b) {
+			if applied(b) {
+				w.Stage = "bid_ready"
+			} else {
+				w.Stage = "done"
+				r.Status = Cancelled
+			}
+		}
+	}
+	if w.Stage == "bid_refund" {
+		b := leg(w, "bid_debit")
+		if !applied(b) {
+			return errors.New("竞价退款缺已提交扣款")
+		}
+		if err := transferLeg(w, "bid_return", r.SellerPlayerId, b); err != nil {
+			return err
+		}
+		w.Stage = "return"
+		r.Status = CancelPending
+	}
+	if w.Stage == "escrow" {
+		addLeg(w, "seller_debit", r.SellerPlayerId, 3, Bundle(w.SellerAssets))
+		if r.Kind == 2 {
+			addLeg(w, "buyer_debit", r.BuyerPlayerId, 3, Bundle(w.BuyerAssets))
+		}
+		a, b := leg(w, "seller_debit"), leg(w, "buyer_debit")
+		if !done(a) || r.Kind == 2 && !done(b) {
+			return nil
+		}
+		if !applied(a) || r.Kind == 2 && !applied(b) || applied(a) && !e.Policy.Snapshot(a.Snapshot) || applied(b) && !e.Policy.Snapshot(b.Snapshot) {
+			w.Stage = "return"
+			r.Status = CancelPending
+			if applied(a) {
+				if err := transferLeg(w, "seller_return", r.SellerPlayerId, a); err != nil {
+					return err
+				}
+			}
+			if applied(b) {
+				if err := transferLeg(w, "buyer_return", r.BuyerPlayerId, b); err != nil {
+					return err
+				}
+			}
+		} else if r.Kind == 2 {
+			w.Stage = "deliver"
+			r.Status = Delivering
+			if err := transferLeg(w, "seller_receive", r.SellerPlayerId, b); err != nil {
+				return err
+			}
+			if err := transferLeg(w, "buyer_receive", r.BuyerPlayerId, a); err != nil {
+				return err
+			}
+		} else if r.Kind == 4 {
+			w.Stage = "market_open"
+		} else if r.Kind == 5 {
+			w.Stage = "lot_open"
+		} else {
+			w.Stage = "open"
+		}
+	}
+	if w.Stage == "pay" {
+		name := "buyer_debit_" + strconv.FormatUint(w.QuantityReserved, 10)
+		b := leg(w, name)
+		for _, l := range w.Legs {
+			if strings.HasPrefix(l.Role, name+"_") {
+				b = l
+				break
+			}
+		}
+		if b == nil {
+			addLeg(w, name, r.BuyerPlayerId, 3, Bundle(w.BuyerAssets))
+			b = leg(w, name)
+		}
+		if !done(b) {
+			return nil
+		}
+		if !applied(b) {
+			w.Stage = "open"
+			r.BuyerPlayerId = 0
+		} else {
+			w.Stage = "deliver"
+			r.Status = Delivering
+			if err := transferLeg(w, "buyer_receive", r.BuyerPlayerId, leg(w, "seller_debit")); err != nil {
+				return err
+			}
+			if err := transferLeg(w, "seller_receive", r.SellerPlayerId, b); err != nil {
+				return err
+			}
+		}
+	}
+	if w.Stage == "lot_open" && r.ExpiresMs <= now && w.HighestBidder != 0 {
+		w.Stage = "deliver"
+		r.Status = Delivering
+		if err := transferLeg(w, "buyer_receive", w.HighestBidder, leg(w, "seller_debit")); err != nil {
+			return err
+		}
+		addLeg(w, "seller_receive", r.SellerPlayerId, 4, Bundle(w.BuyerAssets))
+	}
+	if (w.Stage == "open" || w.Stage == "lot_open") && r.ExpiresMs <= now {
+		w.CancelRequested = true
+	}
+	if w.CancelRequested && (w.Stage == "open" || w.Stage == "lot_open" && w.HighestBidder == 0 || w.Stage == "market_open") {
+		w.Stage = "return"
+		r.Status = CancelPending
+		b, err := Transfer(leg(w, "seller_debit").Bundle, leg(w, "seller_debit").Snapshot)
+		if err != nil {
+			return err
+		}
+		if r.Kind == 4 {
+			remaining := r.Quantity - r.FilledQuantity
+			if remaining == 0 {
+				b = &assetpb.AssetBundle{}
+			} else if r.Side == 1 {
+				b = &assetpb.AssetBundle{Currencies: []*assetpb.CurrencyAmount{{CurrencyType: r.CurrencyType, Amount: uint64(remaining) * r.UnitPrice}}}
+			} else {
+				b = &assetpb.AssetBundle{Items: []*assetpb.ItemGrant{{ConfigId: r.ItemConfigId, Count: remaining}}}
+			}
+		}
+		if len(b.Currencies)+len(b.Items)+len(b.ItemInstances) > 0 || b.PetInstance != nil {
+			addLeg(w, "seller_return", r.SellerPlayerId, 4, b)
+		}
+	}
+	if w.Stage == "deliver" || w.Stage == "return" {
+		ready, ok := finalCredits(w)
+		if ready {
+			w.Stage = "done"
+			if !ok {
+				r.Status = Manual
+			} else if r.Status == CancelPending {
+				r.Status = Cancelled
+			} else {
+				r.Status = Settled
+			}
+		}
+	}
+	return nil
+}
+
+func (e *Engine) advance(ctx context.Context, old *tradepb.TradeCommerceRecord) error {
+	w, err := data.Workflow(old)
+	if err != nil {
+		return err
+	}
+	keys := []data.SeqKey{}
+	for _, player := range []uint64{old.SellerPlayerId, old.BuyerPlayerId, w.HighestBidder} {
+		if player > 0 {
+			keys = append(keys, data.SeqKey{PlayerID: player, Stream: 3}, data.SeqKey{PlayerID: player, Stream: 4})
+		}
+	}
+	if err := e.Repo.Ops.EnsureSeqRows(ctx, e.now(), keys...); err != nil {
+		return err
+	}
+	ids := make([]uint64, 8)
+	for i := range ids {
+		ids[i], err = e.OpIDs.Next(ctx)
+		if err != nil {
+			return err
+		}
+	}
+	return e.Repo.Tx(ctx, func(tx *sql.Tx) error {
+		r, err := e.Repo.Lock(ctx, tx, old.CommerceId)
+		if err != nil {
+			return err
+		}
+		w, err := data.Workflow(r)
+		if err != nil {
+			return err
+		}
+		for _, l := range w.Legs {
+			if l.OpId == 0 || l.Outcome != 0 {
+				continue
+			}
+			st, raw, durable, err := e.Repo.LegResult(ctx, tx, l.OpId)
+			if err != nil {
+				return err
+			}
+			if !durable {
+				continue
+			}
+			if st == 5 {
+				r.Status = Manual
+				w.Stage = "manual"
+				return e.Repo.Save(ctx, tx, r, w, e.now())
+			}
+			if st != 1 {
+				l.Outcome = uint32(st)
+				if len(raw) > 0 {
+					l.Snapshot = &assetpb.AssetSnapshot{}
+					if err := proto.Unmarshal(raw, l.Snapshot); err != nil {
+						return err
+					}
+				}
+			}
+		}
+		var now uint64
+		if err := tx.QueryRowContext(ctx, "SELECT CAST(UNIX_TIMESTAMP(CURRENT_TIMESTAMP(3))*1000 AS UNSIGNED)").Scan(&now); err != nil {
+			return err
+		}
+		if err := e.plan(r, w, now); err != nil {
+			return err
+		}
+		if err := e.marketBarrier(ctx, tx, r, w); err != nil {
+			return err
+		}
+		pending := []*tradepb.TradeCommerceLeg{}
+		for _, l := range w.Legs {
+			if l.OpId == 0 {
+				pending = append(pending, l)
+			}
+		}
+		sort.Slice(pending, func(i, j int) bool {
+			if pending[i].PlayerId != pending[j].PlayerId {
+				return pending[i].PlayerId < pending[j].PlayerId
+			}
+			if pending[i].Stream != pending[j].Stream {
+				return pending[i].Stream < pending[j].Stream
+			}
+			return pending[i].Role < pending[j].Role
+		})
+		for i, l := range pending {
+			if i >= len(ids) {
+				return errors.New("交易单步腿数超过8")
+			}
+			a, err := e.Repo.Ops.AllocateSeqsTx(ctx, tx, e.now(), data.SeqKey{PlayerID: l.PlayerId, Stream: assetpb.AssetOpStream(l.Stream)})
+			if err != nil {
+				return err
+			}
+			n := a[data.SeqKey{PlayerID: l.PlayerId, Stream: assetpb.AssetOpStream(l.Stream)}]
+			raw, err := proto.MarshalOptions{Deterministic: true}.Marshal(l.Bundle)
+			if err != nil {
+				return err
+			}
+			kind := tradepb.TradeAssetOpKind_TRADE_ASSET_OP_KIND_DELIVER_CREDIT
+			if l.Stream == 3 {
+				kind = tradepb.TradeAssetOpKind_TRADE_ASSET_OP_KIND_ESCROW_DEBIT
+			}
+			txType := uint32(rollbackpb.TransactionType_TX_AUCTION_BUY)
+			if l.Stream == 3 {
+				txType = uint32(rollbackpb.TransactionType_TX_AUCTION_SELL)
+			}
+			l.OpId = ids[i]
+			deadline := uint64(0)
+			if l.Stream == 3 {
+				deadline = r.ExpiresMs
+				if w.CancelRequested {
+					deadline = now
+				}
+			}
+			if err := e.Repo.Ops.InsertOp(ctx, tx, &tradepb.TradeAssetOpRecord{OpId: l.OpId, PlayerId: l.PlayerId, Stream: l.Stream, StreamEpoch: n.Epoch, Seq: n.Seq, Kind: kind, Status: 1, NextAttemptMs: e.now(), DeadlineMs: deadline, TxType: txType, RefKind: 2, RefId: r.CommerceId, Payload: raw, CreatedMs: e.now(), UpdatedMs: e.now()}); err != nil {
+				return err
+			}
+		}
+		if w.Stage == "done" {
+			if err := e.Repo.Ops.MarkCommerceOpsConsumedTx(ctx, tx, r.CommerceId); err != nil {
+				return err
+			}
+		}
+		return e.Repo.Save(ctx, tx, r, w, e.now())
+	})
+}
+func (e *Engine) Tick(ctx context.Context) error {
+	rows, err := e.Repo.Due(ctx, 100)
+	if err != nil {
+		return err
+	}
+	for _, r := range rows {
+		w, err := data.Workflow(r)
+		if err != nil {
+			return err
+		}
+		if w.Stage == "bid_ready" {
+			if err := e.acceptBid(ctx, r.CommerceId); err != nil {
+				return err
+			}
+			continue
+		}
+		if w.Stage == "bid_held" {
+			parent, err := e.Repo.Get(ctx, r.ParentId)
+			if err != nil {
+				return err
+			}
+			if parent.Status == Settled {
+				if err := e.Repo.Tx(ctx, func(tx *sql.Tx) error {
+					current, err := e.Repo.Lock(ctx, tx, r.CommerceId)
+					if err != nil {
+						return err
+					}
+					cw, err := data.Workflow(current)
+					if err != nil {
+						return err
+					}
+					if cw.Stage == "bid_held" {
+						current.Status = Settled
+						cw.Stage = "done"
+						if err := e.Repo.Ops.MarkCommerceOpsConsumedTx(ctx, tx, current.CommerceId); err != nil {
+							return err
+						}
+						return e.Repo.Save(ctx, tx, current, cw, e.now())
+					}
+					return nil
+				}); err != nil {
+					return err
+				}
+			}
+			continue
+		}
+		if err := e.advance(ctx, r); err != nil {
+			return fmt.Errorf("推进交易合同: %w", err)
+		}
+		if r.Kind == 4 && r.Side != 0 {
+			if err := e.matchMarket(ctx, r.CommerceId); err != nil {
+				return err
+			}
+		}
+	}
+	if e.Applier != nil && e.Ledger != nil {
+		ops, err := e.Repo.AckDue(ctx, 100)
+		if err != nil {
+			return err
+		}
+		for _, op := range ops {
+			child, cancel := context.WithTimeout(ctx, 1500*time.Millisecond)
+			ok, err := assetop.AcknowledgeReceipt(child, e.Applier, e.Ledger, op.Request())
+			cancel()
+			if err != nil {
+				continue
+			}
+			if ok {
+				if err := e.Repo.Acked(ctx, op.OpID); err != nil {
+					return err
+				}
+			}
+		}
+	}
+	return nil
+}

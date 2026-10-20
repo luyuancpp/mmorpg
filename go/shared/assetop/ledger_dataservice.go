@@ -10,8 +10,9 @@ import (
 	dspb "proto/data_service"
 )
 
-// DataServiceLedger 用 data_service.GetPlayerAssetOpLedger 实现 LedgerReader
-// (docs/design/guild-phase2/07-rollback-fail-closed.md §7.8.3,90 清单 Y-06)。
+// DataServiceLedger 用 data_service.GetPlayerAssetOpLedger 实现 LedgerReader 与 SQLCommitLedgerReader
+// (docs/design/guild-phase2/07-rollback-fail-closed.md §7.8.3,90 清单 Y-06;SQL 证据读法见
+// docs/design/db-write-fencing-mysql.md §6.6)。两个方法只差请求里的 require_sql_commit。
 //
 // 放在 shared 而不是 guild:trade 的重投循环留着同一个空位(go/trade/internal/reconcile/pipeline.go
 // 只设了 Manual),两个服务各写一份迟早分叉。
@@ -25,7 +26,7 @@ import (
 // 【不重试】下一次读账本本身就是重试,节律由 Loop 的退避决定;在这里重试只会吃掉投递预算。
 //
 // 【超时】Timeout > 0 时在调用方 ctx 上再套一层上限(调用方 ctx 更早到期时以它为准)。
-// 调用方传入的是投递预算的剩余部分;读账本只是"可能省一次卡死"的优化,不值得吃掉预算里的大头,
+// 调用方传入的是投递预算的剩余部分,单次读账本不值得吃掉预算里的大头(读不到只是本轮不终结、下轮再读),
 // guild 配 300ms。Timeout <= 0 表示只受调用方 ctx 约束。
 //
 // 并发安全:构造后只读,可被 Loop 的多个 worker 同时调用(dspb.DataServiceClient 本身并发安全)。
@@ -38,8 +39,20 @@ type DataServiceLedger struct {
 // 并继续退避,行为与"data_service 不可达"一致(fail-closed,不终结任何行)。
 var errDataServiceLedgerNoClient = errors.New("assetop: DataServiceLedger 未装配 data_service 客户端")
 
-// ReadPersistedLedger 实现 LedgerReader。
+// ReadPersistedLedger 实现 LedgerReader:读 zone Redis 里的玩家父键 blob(require_sql_commit=false,HEAD 口径)。
 func (d *DataServiceLedger) ReadPersistedLedger(ctx context.Context, playerID uint64) (*componentpb.PlayerAssetOpLedgerComp, error) {
+	return d.read(ctx, playerID, false)
+}
+
+// ReadSQLCommittedLedger 实现 SQLCommitLedgerReader:只读 go/db 发布的资产 SQL 提交证据(require_sql_commit=true,
+// docs/design/db-write-fencing-mysql.md §6.6)。证据缺失回 found=false → (nil, nil),调用方继续等;
+// 旧版 data_service 不认识这个字段、照旧回 Redis blob(sql_committed=false),必须当错误拒绝,不能冒充 SQL 证据
+// (上线顺序见同文 §8.7 第 ① 步)。映射的其余部分与 ReadPersistedLedger 相同。
+func (d *DataServiceLedger) ReadSQLCommittedLedger(ctx context.Context, playerID uint64) (*componentpb.PlayerAssetOpLedgerComp, error) {
+	return d.read(ctx, playerID, true)
+}
+
+func (d *DataServiceLedger) read(ctx context.Context, playerID uint64, requireSQLCommit bool) (*componentpb.PlayerAssetOpLedgerComp, error) {
 	if d == nil || d.Client == nil {
 		return nil, errDataServiceLedgerNoClient
 	}
@@ -49,13 +62,16 @@ func (d *DataServiceLedger) ReadPersistedLedger(ctx context.Context, playerID ui
 		defer cancel()
 	}
 
-	resp, err := d.Client.GetPlayerAssetOpLedger(ctx, &dspb.GetPlayerAssetOpLedgerRequest{PlayerId: playerID})
+	resp, err := d.Client.GetPlayerAssetOpLedger(ctx, &dspb.GetPlayerAssetOpLedgerRequest{PlayerId: playerID, RequireSqlCommit: requireSQLCommit})
 	if err != nil {
 		// %w 保留 gRPC status:调用方可用 status.Code(err) 取原 code。
 		return nil, fmt.Errorf("data_service.GetPlayerAssetOpLedger player_id=%d: %w", playerID, err)
 	}
 	if !resp.GetFound() {
 		return nil, nil
+	}
+	if requireSQLCommit && !resp.GetSqlCommitted() {
+		return nil, errors.New("data_service 未提供 SQL 提交证据，不能以 Redis 快照终结资产操作")
 	}
 	if ledger := resp.GetLedger(); ledger != nil {
 		return ledger, nil

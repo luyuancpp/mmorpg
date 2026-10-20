@@ -137,8 +137,9 @@ func newCreatePlayerHarnessWithNames(t *testing.T, resolver *homezone.Resolver, 
 	config.AppConfig.Account.MaxPlayersPerAccount = 5
 	config.AppConfig.Account.CacheExpire = time.Hour
 
-	ctx := ctxkeys.WithSessionDetails(context.Background(), &pbbase.SessionDetails{SessionId: hzSessionID})
-	if err := loginsession.Save(ctx, rdb, hzSessionID, hzAccount); err != nil {
+	details := &pbbase.SessionDetails{SessionId: hzSessionID}
+	ctx := ctxkeys.WithSessionDetails(context.Background(), details)
+	if err := loginsession.Save(ctx, rdb, loginsession.RefOf(details), hzAccount); err != nil {
 		t.Fatalf("seed session: %v", err)
 	}
 	blob, err := proto.Marshal(&pbdb.UserAccounts{})

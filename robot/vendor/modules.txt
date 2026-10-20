@@ -198,5 +198,6 @@ proto/trade
 ## explicit; go 1.27.2
 shared/generated/pb/table
 shared/generated/table
+shared/serviceauth
 # proto => ../go/proto
 # shared => ../go/shared
