@@ -158,6 +158,80 @@ func TestRouteReadSideDB_PagesThroughMoreThanOneBatch(t *testing.T) {
 	}
 }
 
+// TestScanRouteDBPages_OneLoopForPagesAndRows(R8-6):包内唯一的翻页循环。恰好满一页时还要再翻一页(空页也交给按页回调,
+// 与 scanZoneHomeRows 改动前一致),逐行包装不为空页调 visit;回调报错即停、不再翻页。
+func TestScanRouteDBPages_OneLoopForPagesAndRows(t *testing.T) {
+	db := newMemRouteDB()
+	for id := uint64(1); id <= routeReadBatchLimit; id++ {
+		db.rows[id] = mergeRouteRow{PlayerID: id, HomeZone: 906, Rev: 1}
+	}
+	var pageSizes []int
+	if err := scanZoneHomeRows(context.Background(), db, 906, func(page []mergeRouteRow) error {
+		pageSizes = append(pageSizes, len(page))
+		return nil
+	}); err != nil || !reflect.DeepEqual(pageSizes, []int{routeReadBatchLimit, 0}) {
+		t.Fatalf("page sizes = %v (%v), want one full page then an empty one", pageSizes, err)
+	}
+
+	rowsSeen := 0
+	if err := scanZoneHomeRows(context.Background(), db, 906, eachRouteDBRow(func(mergeRouteRow) error {
+		rowsSeen++
+		return nil
+	})); err != nil || rowsSeen != routeReadBatchLimit {
+		t.Fatalf("rows seen = %d (%v), want %d", rowsSeen, err, routeReadBatchLimit)
+	}
+
+	stop := errors.New("stop")
+	pages := 0
+	err := scanRouteDBPages(func(after routeScanCursor) ([]mergeRouteRow, error) {
+		pages++
+		return db.ScanByHome(context.Background(), 906, after, routeReadBatchLimit)
+	}, eachRouteDBRow(func(row mergeRouteRow) error {
+		if row.PlayerID == 3 {
+			return stop
+		}
+		return nil
+	}))
+	if !errors.Is(err, stop) || pages != 1 {
+		t.Fatalf("visit error = %v after %d pages, want stop after the first page", err, pages)
+	}
+
+	db.readErr = errors.New("1205")
+	if _, err := playerIDsWithHomeZoneDB(context.Background(), db, 906); err == nil {
+		t.Fatal("a scan failure must surface")
+	}
+}
+
+// TestRouteDBReadHelpers_SharedByMergeAndReadSide(R8-6):合服侧的 readPlacementsDB / collectPlayerIDsWithHomeZoneDB 与只读读方
+// 走同一份编码与翻页,对同一组行给出同一个结论;空 ids 时读方不碰库(与改动前一致)。
+func TestRouteDBReadHelpers_SharedByMergeAndReadSide(t *testing.T) {
+	db := storageAuditDBFixture()
+	ids := []uint64{9905, 9903, 9901, 9906}
+	direct, err := placementsFromRouteDB(context.Background(), db, ids)
+	if err != nil {
+		t.Fatal(err)
+	}
+	viaReadSide, err := routeReadSideDB{db: db}.placements(context.Background(), ids)
+	if err != nil || !reflect.DeepEqual(direct, viaReadSide) {
+		t.Fatalf("read side = (%+v, %v), want the shared encoding %+v", viaReadSide, err, direct)
+	}
+	if direct[3].RecordErr == nil {
+		t.Fatalf("9906 carries a malformed frozen run_id: %+v, want RecordErr", direct[3])
+	}
+	homes, err := playerIDsWithHomeZoneDB(context.Background(), db, 901)
+	if err != nil || !reflect.DeepEqual(homes, []uint64{9901, 9902, 9905}) {
+		t.Fatalf("home 901 = (%v, %v)", homes, err)
+	}
+	viaHome, err := routeReadSideDB{db: db}.playersWithHome(context.Background(), 901)
+	if err != nil || !reflect.DeepEqual(viaHome, homes) {
+		t.Fatalf("read side home 901 = (%v, %v), want %v", viaHome, err, homes)
+	}
+	broken := &memRouteDB{readErr: errors.New("boom")}
+	if reads, err := (routeReadSideDB{db: broken}).placements(context.Background(), nil); err != nil || reads == nil || len(reads) != 0 {
+		t.Fatalf("empty ids = (%v, %v), want an empty result without touching the DB", reads, err)
+	}
+}
+
 // TestRouteReadSideDB_PlacementsUseTheRedisEncoding:读库给出的值串与 Redis 里同一编码;没有行 = 两键都不存在。
 func TestRouteReadSideDB_PlacementsUseTheRedisEncoding(t *testing.T) {
 	reads, err := routeReadSideDB{db: storageAuditDBFixture()}.placements(context.Background(), []uint64{9905, 9903, 9901})

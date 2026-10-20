@@ -237,7 +237,14 @@ type relocateRouteBackend struct {
 // openRelocateRouteBackend 核对库与 mapping Redis 成对之后装出落点读写(openRouteBackend:redis 时见到水位键即拒,
 // db 时要求水位键世代等于库世代,规格 §13.3 第 3 条)。runID 进写者标识(player_route.updated_by)。
 // readOnly(dry-run)时 db 源的 read 不发布、cas 拒绝;redis 源不受影响(dry-run 本来就不调 cas)。
-// 不复用 openRunRouteBackend(merge_run.go):它交出的库接口 routeDBOps 不含 RelocateCAS / ScanByStorage,搬库要的是具体的 store。
+//
+// 不并进 openRunRouteBackend(merge_run.go;交接 handoff-d1-remaining-20261019 §2.1 末尾要求两套入口「能合并就合并」,
+// 2026-10-20 评审 R8-6 / MZ2-7 复核后只合并了库读 helper,入口保留三个,理由如下):三个入口共用的只有 openRouteBackend
+// (成对核对 + 探针),那一步已经只有一份;各自剩下的几行恰好是彼此不同的部分 —— durability(这里 dry-run 也按 -waitaof-* 装,
+// 合服只在写路径装,只读读方 openRouteReadSide 用零值)、写者标识(这里是搬库 run_id,合服是合服 run_id,读方是用途名)、
+// 日志(合服按「先写库再发布」说)与交出的形状(这里要具体的 *mergeRouteStore 装 sqlRelocatePlacements 与 routeReadSideDB,
+// 合服交 routeDBOps,它不含 RelocateCAS / ScanByStorage)。合成一个就得加 readOnly / 写者 / 日志开关再在调用方拆开,
+// 并让 routeDBOps 的全部测试替身补方法;在未编译阶段这比三段十来行的装配更容易出错。
 func openRelocateRouteBackend(ctx context.Context, ro routeEntryOptions, mapRdb *redis.Client, runID string, readOnly bool) (relocateRouteBackend, error) {
 	dur := routeDurability{}
 	if ro.source == routeSourceDB {

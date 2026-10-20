@@ -7094,8 +7094,9 @@ function Get-RouteSwitchKeepArgs {
 	  只认名字以 "<-NamespacePrefix>-" 开头的 namespace(与 Read-PlayerInboxGateLiveFacts 同一口径;用别的前缀部署的 zone 看不到)。
 	  读全部 zone 而不只读本次部署的 zone:Mode / Arm / ReadRequiresReady 是全服单值,本 zone 的 namespace 刚被删掉重建
 	  (zone 回档 Step 1)或是新 zone 时,只读它自己等于不核对。
-	- -DbZoneNames:逐个读这些 zone 的 go-svc-db-config(Placement.RequireRouteReady 逐 zone 打开,只核对本次部署的 zone)。
-	  ConfigMap 不存在(新 zone、namespace 被删)= 没有现状,不比对。
+	- -ReadDb:同样一次 --all-namespaces 读全部 zone 的 go-svc-db-config(前缀过滤相同)。Placement.RequireRouteReady 逐 zone 打开,
+	  粘滞比对只比本次部署的 zone(由 Assert-RouteSwitchClusterState 按 Namespace 分);其它 zone 的值用来兜住「本 zone 的
+	  namespace 刚被删掉重建、ConfigMap 不在」与回退顺序(关 Arm / 切 redis 之前其它 zone 的读方必须已关)。
 	- -ReadGuild:读 infra namespace 的 go-svc-guild-config;不存在 = 没有现状。
 	kubectl 失败、输出不是 JSON、ConfigMap 在却没有服务 yaml 那个数据键,一律 throw:读不到不等于没开(fail-closed,同 Read-LiveDbConfigMapYaml)。
 	Invoke-ClientEntryKubectl 不看 $DryRun,DryRun 判断由调用方(Assert-RouteSwitchPreflight)负责。
@@ -7103,7 +7104,7 @@ function Get-RouteSwitchKeepArgs {
 function Read-LiveRouteSwitchFacts {
 	param(
 		[bool]$ReadDataService,
-		[AllowEmptyCollection()][string[]]$DbZoneNames = @(),
+		[bool]$ReadDb,
 		[bool]$ReadGuild
 	)
 	$facts = New-Object System.Collections.Generic.List[object]
@@ -7136,28 +7137,28 @@ function Read-LiveRouteSwitchFacts {
 		return [pscustomobject]@{ Scope = $Scope; Namespace = $Namespace; Values = (ConvertFrom-RouteSwitchLiveYaml -Scope $Scope -Text $yaml) }
 	}
 
-	if ($ReadDataService) {
-		$info = $GoSvcCatalogue['data-service']
-		$result = Invoke-ClientEntryKubectl -KubectlArgs @('get', 'configmap', '--all-namespaces', '--field-selector', "metadata.name=$($info.ConfigMap)", '-o', 'json') `
+	# 一次 --all-namespaces 读全部 zone 的同名 ConfigMap,只认 "<-NamespacePrefix>-" 开头的 namespace。
+	$readAllZones = {
+		param($Info, [string]$Scope)
+		$result = Invoke-ClientEntryKubectl -KubectlArgs @('get', 'configmap', '--all-namespaces', '--field-selector', "metadata.name=$($Info.ConfigMap)", '-o', 'json') `
 			-KubeContext $KubeContext -KubeConfig $KubeConfig -CaptureOutput -AllowFailure
 		if ($result.ExitCode -ne 0) {
-			throw "读取各 zone 线上的 ConfigMap $($info.ConfigMap) 失败(kubectl 退出码 $($result.ExitCode)):$($result.Stderr)。fail-closed:读不到不等于还是 redis 模式,$failClosed"
+			throw "读取各 zone 线上的 ConfigMap $($Info.ConfigMap) 失败(kubectl 退出码 $($result.ExitCode)):$($result.Stderr)。fail-closed:读不到不等于还是 redis 模式 / 读方没开,$failClosed"
 		}
 		try { $list = ([string]$result.Stdout) | ConvertFrom-Json -ErrorAction Stop }
-		catch { throw "各 zone 线上 ConfigMap $($info.ConfigMap) 的 kubectl 输出不是合法 JSON,$failClosed$($_.Exception.Message)" }
+		catch { throw "各 zone 线上 ConfigMap $($Info.ConfigMap) 的 kubectl 输出不是合法 JSON,$failClosed$($_.Exception.Message)" }
 		$prefix = "$NamespacePrefix-"
 		foreach ($item in @($list.items)) {
 			if ($null -eq $item) { continue }
 			$namespace = [string]$item.metadata.namespace
 			if (-not $namespace.StartsWith($prefix, [System.StringComparison]::Ordinal)) { continue }
-			$yaml = & $configFileText $item $info.ConfigFile "namespace $namespace 的 ConfigMap $($info.ConfigMap)"
-			$facts.Add([pscustomobject]@{ Scope = 'data-service'; Namespace = $namespace; Values = (ConvertFrom-RouteSwitchLiveYaml -Scope 'data-service' -Text $yaml) })
+			$yaml = & $configFileText $item $Info.ConfigFile "namespace $namespace 的 ConfigMap $($Info.ConfigMap)"
+			$facts.Add([pscustomobject]@{ Scope = $Scope; Namespace = $namespace; Values = (ConvertFrom-RouteSwitchLiveYaml -Scope $Scope -Text $yaml) })
 		}
 	}
-	foreach ($dbZoneName in @($DbZoneNames | Where-Object { -not [string]::IsNullOrWhiteSpace($_) })) {
-		$fact = & $readOne (Get-ZoneNamespace -Name $dbZoneName) $GoSvcCatalogue['db'] 'db'
-		if ($null -ne $fact) { $facts.Add($fact) }
-	}
+
+	if ($ReadDataService) { & $readAllZones $GoSvcCatalogue['data-service'] 'data-service' }
+	if ($ReadDb) { & $readAllZones $GoSvcCatalogue['db'] 'db' }
 	if ($ReadGuild) {
 		$fact = & $readOne $InfraNamespace $GoSvcCatalogue['guild'] 'guild'
 		if ($null -ne $fact) { $facts.Add($fact) }

@@ -4,7 +4,7 @@
 //
 // 为什么单独成一个纯头(docs/design/routing-identity-audit-20260908.md R13):
 // 广播里目标玩家身份是**按位置对应**的 —— player_list[i] 对应"按 session_id 升序"
-// 的第 i 个目标。编码在 scene(player_message_utils.cpp)、解码在 gate
+// 的第 i 个目标。编码在 scene(client_message_sender.cpp)、解码在 gate
 // (gate_service_handler.cpp),两边错开一格就是把每个人的身份都比对成别人的,
 // 而这种错位编译器看不见、集成测试也未必碰得到。把两侧收进同一个头,
 // 让一个单测直接跑 Encode→ForEach 的往返(cpp/tests/routing_identity_test)。

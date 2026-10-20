@@ -102,19 +102,15 @@ func (l *CancelQueueLogic) CancelQueue(in *matchpb.CancelQueueRequest) (*base.Em
 			playerId, ticket.TeamId, ticket.Config, ticket.QueueKey, members)
 		return &base.Empty{}, nil
 	}
-	// 出队用票据里记录的 QueueKey(决策 D4);改 key 格式前写的旧票据没有
-	// 该字段,新旧两种 key 各摘一次(旧 list 无 TTL,漏了就永久残留;
-	// 见 keys.go legacyMatchQueueKey)。新格式 key 的 list 与评分镜像 ZSET 一条
-	// 同 slot Lua 原子摘出(§11),旧格式 key 单 key LREM,集群安全。
-	queueKeys := ticketQueueKeys(ticket)
-	for _, queueKey := range queueKeys {
-		if err := dequeueMemberCtx(l.ctx, l.svcCtx, queueKey, playerId); err != nil {
-			// 出队失败留下的残留队列项会被 matcher 的票据校验丢弃,只记日志。
-			l.Errorf("[match] CancelQueue failed to dequeue (matcher ticket validation will handle remnants) player=%d queue=%s: %v",
-				playerId, queueKey, err)
-		}
+	// 出队用票据里记录的 QueueKey(决策 D4,见 ticketQueueKey):list 与评分镜像 ZSET
+	// 一条同 slot Lua 原子摘出(§11),集群安全。
+	queueKey := ticketQueueKey(ticket)
+	if err := dequeueMemberCtx(l.ctx, l.svcCtx, queueKey, playerId); err != nil {
+		// 出队失败留下的残留队列项会被 matcher 的票据校验丢弃,只记日志。
+		l.Errorf("[match] CancelQueue failed to dequeue (matcher ticket validation will handle remnants) player=%d queue=%s: %v",
+			playerId, queueKey, err)
 	}
-	l.Infof("[match] Queue cancellation succeeded player=%d mode=%d config=%d queue=%v",
-		playerId, ticket.Mode, ticket.Config, queueKeys)
+	l.Infof("[match] Queue cancellation succeeded player=%d mode=%d config=%d queue=%s",
+		playerId, ticket.Mode, ticket.Config, queueKey)
 	return &base.Empty{}, nil
 }

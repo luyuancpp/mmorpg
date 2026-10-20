@@ -825,7 +825,8 @@ const (
 // ── 读方就绪闸(D1 第 3 批,spec_D1_batch1b2_2_3.md §5.3 / §13.2)────────────────────────
 //
 // 只在 Placement.RequireRouteReady=true 时注册(PrimeRouteReady):开关缺省 false 时 /metrics 的输出与引入之前相同。
-// verdict 的取值由调用方传入(shared/placement.RouteReadyVerdictNames),本包不依赖 placement;集合有界(7 个)。
+// verdict 的取值由调用方传入(shared/placement.RouteReadyVerdictNames 加 RouteReadyVerdictScriptError),本包不依赖 placement;
+// 集合有界(7 个 verdict + script_error)。
 var (
 	routeReadyGate = prometheus.NewGauge(prometheus.GaugeOpts{
 		Subsystem: subsystem,
@@ -836,7 +837,7 @@ var (
 	routeReadyVerdictTotal = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Subsystem: subsystem,
 		Name:      "route_ready_verdict_total",
-		Help:      "Route ready read verdicts (spec D1 M1) from the gate refresh, the placement lookup and the post-write recheck. verdict: trusted | absent | malformed | newer_version | identity_unavailable | not_master | identity_mismatch. Script errors are not verdicts (see db_placement_guard_total{outcome=\"lookup_error\"}). Not exported while Placement.RequireRouteReady=false.",
+		Help:      "Route ready read verdicts (spec D1 M1) from the gate refresh, the placement lookup and the post-write recheck. verdict: trusted | absent | malformed | newer_version | identity_unavailable | not_master | identity_mismatch, or script_error (a gate refresh whose read script failed or replied in an unexpected shape: mapping Redis unreachable, timeout, INFO not allowed; same label value as data_service and guild). A script error in a per-task lookup or recheck is counted as db_placement_guard_total{outcome=\"lookup_error\"} instead. Not exported while Placement.RequireRouteReady=false.",
 	}, []string{"verdict"})
 
 	routeReadyOnce sync.Once
@@ -868,11 +869,18 @@ func SetRouteReadyGate(open bool) {
 	routeReadyGate.Set(0)
 }
 
-// CountRouteReadyVerdict 记一次读脚本的结论,verdict 取 placement.RouteReadyVerdict.String()。
+// CountRouteReadyVerdict 记一次读脚本的结论,verdict 取 placement.RouteReadyVerdict.String() 或 RouteReadyVerdictScriptError。
 func CountRouteReadyVerdict(verdict string) {
 	registerRouteReady()
 	routeReadyVerdictTotal.WithLabelValues(verdict).Inc()
 }
+
+// RouteReadyVerdictScriptError 是 db_route_ready_verdict_total{verdict} 在 placement 的 7 个 verdict 之外的一个取值:
+// 读脚本没执行成功或回复形状不对(连不上 mapping Redis、超时、脚本里调不了 INFO),没有得到 verdict。
+// 取值与 data_service(metrics.RouteReadyVerdictScriptError)、guild(guild_route_ready_verdict_total)逐字相同,
+// 跨服务的「读方 verdict 非 trusted」面板与告警按同一个字符串过滤。调用方把它追加在 placement.RouteReadyVerdictNames()
+// 之后交给 PrimeRouteReady 预置。
+const RouteReadyVerdictScriptError = "script_error"
 
 // 按需打开落点库的 result label 取值。
 const (

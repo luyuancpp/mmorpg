@@ -9,7 +9,7 @@
 #include "proto/common/component/actor_comp.pb.h"
 #include "proto/scene/player_state_attribute_sync.pb.h"
 #include "generated/attribute/actorbaseattributess2c_attribute_sync.h"
-#include "network/player_message_utils.h"
+#include "network/client_message_sender.h"
 #include "rpc/service_metadata/player_movement_service_metadata.h"
 #include "spatial/comp/nav_comp.h"
 #include "spatial/constants/nav.h"

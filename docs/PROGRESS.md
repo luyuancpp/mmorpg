@@ -13803,3 +13803,24 @@ PROGRESS 一直没有条目)。上面 2026-09-21 条里"第 7–9 步未跑""修
   2. 可选:抽出 `deploy/k8s/scene-manager-alerts.yaml` 的 `spec.groups`,跑 `promtool check rules`,期望 `SUCCESS: 25 rules found`。这份文件至今没有 promtool 证据。
   3. 跨 zone 主线的待跑项见交接说明「2026-10-20 现状」第 1 类。
 - **Java 版(AGENTS §12)**:不适用。只改服务端文档与注释,不涉及客户端契约。对应 Java 版本号无,不登记 PARITY。Java 侧跨 zone 各项的登记现状(`PARITY.md`:跨 zone 传送「Java 进行中」、CPP-3「Java 待做」等)归 Java 线。
+
+## 2026-10-20 Claude：混版本持久字段保护 §5.2 改为写方令牌（设计 v0.6），第 3b 批（C++ C3）与第 4 批（login C4）落码（未编译、未测试，待 Codex 验证）
+
+- 同一份交接被贴进两个会话，开工时用 ListAgents 发现后分工：本会话做 §5.2 修订、3b、4（含两批共用的 `k8s_deploy.ps1` 与契约测试、barrierrestore 白名单）；另一会话做 3a′ 与第 5 批（见同日另一条与交接 §10）。
+- §5.2：交接给的 (a) owner 前缀、(b) C++ 首存状态机经取证都不成立（同一实体会换 owner 代次、同一代次会先后加载出两个实体；被顶替的元素不执行任何回调），中间方案 (a′) 实体基线世代仍有"首存已提交回包丢失 + 换代"的永久拒存竞态。采纳写方令牌：每个加载实体一个随机 UUID（`PlayerPersistWriterComp`，存盘写入口懒建），随屏障写进 `save_barrier` 的 `schema_writer`，Lua 只在令牌不同且不是同版本重放时比较，`ARGV[9]` 永远是真实加载世代。取舍表见设计 §15 v0.6。
+- 3b：严格 Lua 11 参（`num_gt`、C3 排在 owner / 版本判定之后、warn 返回 2 照写、enforce 返回 3 不写、`schema_gen` 只升不降）；`RedisSaveSchemaGen` 入队前同口径校验；`OnSaved` 2 = 提交证据 + 计数回调，3 = 不重试不准入、排队值 guard 与令牌都相同才丢、走新回调；scene 分派（退出中不存盘销毁、交接标记未发解冻、在线保留）与 `[PersistSchema]` 30 秒汇总；`BaseDeployConfig.persist_schema_regression_mode = 23`（**proto 待重新生成**）、读配置归一化（非法值拒绝启动）、`bin/etc` 默认 warn、node / login ConfigMap 镜像与生成期校验、契约测试、`start_game.ps1` 校验；`save_barrier_restore` 白名单接受 `schema_writer`；`deploy/k8s/README.md` 的 LogQL 值班查询（ruler 未接线，告警未配）。
+- 4：login `beginParentLoad` 追加 `schema_gen` 与存在标记（空串按损坏），快路径在身份 / 水位 / 种子校验之后判；`login_persist_schema_regression_total{reason,mode}` 起服预置；`LoginPersistSchemaRegression` 告警；`login.yaml` / `login-stack.linux/login.yaml` 默认 warn，非法值拒绝启动。落码代理之后的两路评审发现 3 条低危（空串口径、计数未预置、C4 顺序无用例），修复代理撞额度没跑，本会话核实后修正。
+- 自查加固：返回 3 时，guard 相同但写方令牌不同的排队值（同一代次下另一个加载实体的存盘）照发，不连带丢弃。
+- 新登记的待拍板（切 enforce 前）：`save_barrier_restore` 取两行戳最大值且不降，与 C3 / C4 取最小值冲突，恢复后的玩家会被判倒退（设计 §13 第 8 条，推荐恢复时按回档重置为两行最小值）。
+- Codex 验证命令见交接 §11.4（顺序：proto-gen-run no-unity → game.sln → currency_test / cross_zone_test → 真 Redis 7.2 与 8.10.x 各一轮 → go/login 与 go/db barrierrestore → k8s_deploy 契约测试）。
+- 文件：见交接 §11.6。代码已随用户快照 `c35e1133d` / `10fa5d939` 入库，之后的修正（返回 3 的令牌判定、login 三条评审修正、告警、文档）可能仍在工作区。
+- Java 版（0.1.0-SNAPSHOT）：待做。`PARITY.md` 的「混版本持久字段保护」行（另一会话登记）备注里追加了写方令牌口径，未提交。
+
+
+## 2026-10-20 Codex：gRPC 客户端调用头更名完成，生成与独立头文件编译检查通过
+
+- 负责人要求将 `grpc_call_types.h` 改为更明确的 `grpc_client_call.h`。当前分支 `main`，新路径为 `cpp/libs/engine/core/network/grpc_client_call.h`；旧文件删除，手写引用、两份生成模板、core 工程及 filters、三处配置源/说明、现行设计入口同步。新头仅改一行职责说明，类型、默认值、inline 实现与 ABI 不变；现行代码/模板/配置/共享绑定/vendor 中两轮旧文件名均已清零，历史记录保留。
+- 当前生成器 `go test ./internal/... ./cmd -count=1`、正式 no-unity `proto-gen-run -UseGoRun`（含 mail/rank 后处理）、robot `go mod vendor` 均实际退出 0。独立核对 26 个生成头相对本轮前像只替换 include；26 个文件的 177 个守护段与消息/事件/存盘世代台账不变；共享 `config.pb.go` 与 vendor 副本逐字节一致。现有部署文档与协议绑定的其他并行改动未回退，也不归入本次命名变更。
+- C++ 证据限定为：独立 MSVC `/Zs /utf-8 /std:c++latest` 聚合编译全部 25 个生成客户端头与 RPC 注册头，实际退出 0；core 工程 XML 可解析且 ClCompile 登记不变；定向 `git diff --check` 通过。其他会话持续占用串行 MSBuild 窗口，本轮没有执行工程全量构建、链接或 C++ 运行测试，不将语法编译称为全量构建通过。纯命名变更未新增测试。
+- 保留首次失败原件：生成器源码 `unity_client_rpc.go:423` 的字面 BOM 被 Go 拒绝，随后由并行会话改为等价 `\ufeff`；下一次包装内 go build 成功，但复制 exe 被并行生成进程占用，故正式生成选当前源码 `-UseGoRun`。独立头文件检查首轮漏配现有 utf8_range 包含目录，补齐检查命令后通过；未为这些情况修改业务逻辑、关闭检查或使用旧生成器。
+- 原件：`build/verification/grpc-client-call-20261020/`，含文件前像、生成器日志、静态比对、独立编译命令/日志及 `result.json`。本聊天未提交、推送或操作客户端仓。Java 版 `0.1.0-SNAPSHOT`：仅 C++ 内部命名，不适用对应功能改造，不修改共享客户端契约。

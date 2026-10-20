@@ -10,7 +10,7 @@
 
 #include "rpc/service_metadata/player_scene_service_metadata.h"
 
-#include "network/player_message_utils.h"
+#include "network/client_message_sender.h"
 #include "network/network_utils.h"
 #include "engine/thread_context/node_context_manager.h"
 #include "proto/scene_manager/scene_manager_service.pb.h"

@@ -159,13 +159,15 @@ func runUnmerge(o options) {
 	gate := writeGate(fence.check)
 	// abortKeepingFence:MySQL / 公会缓存改回到一半的失败走这里,围栏故意不释放并给出续跑指引
 	// (撤销口径的文案,见 fenceKeptAbortMessage;db 源见 routeFenceKeptAbortMessage)。
-	// dry-run 从没写过围栏,只报原因。
-	abortKeepingFence := func(cause string) {
+	// dry-run 从没写过围栏,只报原因。errs 是本步骤带回的错误(可省):db 源里批事务内的 fencing token 复核判了 errRouteFenceLost
+	// 而本地判据还没察觉时,文案照样按失权写(routeFenceAbortLost)。redis 源与 dry-run 不看它。
+	abortKeepingFence := func(cause string, errs ...error) {
 		if o.dryRun {
 			log.Fatal(cause)
 		}
 		if rb != nil {
-			log.Fatal(routeFenceKeptAbortMessage(cause, fencedOpUnmerge, src, dst, runID, fence.check()))
+			log.Fatal(routeFenceKeptAbortMessage(cause, fencedOpUnmerge, src, dst, runID, o.manifestPath,
+				routeFenceAbortLost(fence.check(), errs...)))
 		}
 		log.Fatal(fenceKeptAbortMessage(cause, fencedOpUnmerge, src, dst, runID, o.mappingAddr, o.mappingDB))
 	}
@@ -189,9 +191,19 @@ func runUnmerge(o options) {
 		log.Printf("RESUME: some manifest players already map to zone %d — a previous unmerge stopped half-way; "+
 			"a refusal below keeps the merge fence", src)
 	}
+	// -take-over-fence(只有 db 源)一律按半撤销处理:接手的前提就是上一次写到一半、围栏故意留着(那次可能是合服,也可能是撤销),
+	// 本次刚接手的围栏若在拒绝出口释放,就是在半截状态下解封。
+	resumedByMapping := halfUndone
+	if o.takeOverFenceRunID != "" {
+		halfUndone = true
+	}
 	// refuse:P / S 段的统一拒绝出口。abortKeepingFence 走 log.Fatal,不跑 defer 的 release,围栏留在本次 run_id 上。
 	refuse := func(format string, args ...any) {
 		if halfUndone {
+			if !resumedByMapping {
+				abortKeepingFence(fmt.Sprintf("本次以 -take-over-fence 接手了 run_id=%s 留下的围栏(那次运行可能已写到一半),本次不释放围栏:"+format,
+					append([]any{o.takeOverFenceRunID}, args...)...))
+			}
 			abortKeepingFence(fmt.Sprintf("半撤销状态(上一次撤销已把部分清单玩家改回源区),本次不释放围栏:"+format, args...))
 		}
 		fence.refuseAndRelease(format, args...)

@@ -14,7 +14,7 @@
 #include "engine/thread_context/node_context_manager.h"
 #include "network/network_utils.h"
 #include "network/node_utils.h"
-#include "network/player_message_utils.h"
+#include "network/client_message_sender.h"
 #include "rpc/service_metadata/player_scene_service_metadata.h"
 #include "player/system/player_scene.h"
 #include "player/system/player_lifecycle.h"

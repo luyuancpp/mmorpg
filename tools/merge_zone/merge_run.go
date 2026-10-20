@@ -201,12 +201,14 @@ func runMerge(o options) {
 	gate := writeGate(fence.check)
 	// abortKeepingFence:清单落盘之后的失败走这里,围栏故意不释放并给出续跑指引(见 fenceKeptAbortMessage;db 源见
 	// routeFenceKeptAbortMessage,失权时文案改成「先查清是谁接手」)。dry-run 从没写过围栏,只报原因。
-	abortKeepingFence := func(cause string) {
+	// errs 是本步骤带回的错误(可省):db 源里批事务内的 fencing token 复核判了 errRouteFenceLost 而本地判据还没察觉时,
+	// 文案照样按失权写(routeFenceAbortLost)。redis 源与 dry-run 不看它。
+	abortKeepingFence := func(cause string, errs ...error) {
 		if o.dryRun {
 			log.Fatal(cause)
 		}
 		if rb != nil {
-			log.Fatal(routeFenceKeptAbortMessage(cause, fencedOpMerge, src, dst, runID, fence.check()))
+			log.Fatal(routeFenceKeptAbortMessage(cause, fencedOpMerge, src, dst, runID, manifestPath, routeFenceAbortLost(fence.check(), errs...)))
 		}
 		log.Fatal(fenceKeptAbortMessage(cause, fencedOpMerge, src, dst, runID, o.mappingAddr, o.mappingDB))
 	}
@@ -224,11 +226,18 @@ func runMerge(o options) {
 	//     它会被留在已下线的源区。所以同样走 abortKeepingFence,围栏留在本次 run_id 上。
 	//     判据用「清单存在」而不是某一步的完成标记:清单落盘之后、步骤 1 标完成之前也可能已提交了几张表。
 	//   - 例外:清单已标记步骤 7 完成 = 上一次已跑完全程,此时 dst 可能已经开服,保留围栏只会挡住 dst,照常释放。
-	halfDone := existing != nil && !existing.stepDone(stepPostMerge)
+	//   - -take-over-fence(只有 db 源)一律算续跑:接手的前提就是上一次写到一半、围栏故意留着;本次刚接手的围栏若在拒绝出口释放,
+	//     就是在半合服状态下解封。与清单在不在、是否标记了步骤 7 都无关(清单路径已由接手事务按 holder_json 核对)。
+	resumedFence := existing != nil && !existing.stepDone(stepPostMerge)
+	halfDone := resumedFence || o.takeOverFenceRunID != ""
 	refuse := func(format string, args ...any) {
 		if halfDone {
-			abortKeepingFence("续跑在清单更新之前被拒(上一次 -apply 已落清单,可能已写到一半,两个 zone 处于半合服状态," +
-				"本次不释放围栏):" + fmt.Sprintf(format, args...))
+			why := "续跑在清单更新之前被拒(上一次 -apply 已落清单,可能已写到一半,两个 zone 处于半合服状态,本次不释放围栏):"
+			if !resumedFence {
+				why = fmt.Sprintf("续跑在清单更新之前被拒(本次以 -take-over-fence 接手了 run_id=%s 留下的围栏,那次运行可能已写到一半,"+
+					"两个 zone 处于半合服状态,本次不释放围栏):", o.takeOverFenceRunID)
+			}
+			abortKeepingFence(why + fmt.Sprintf(format, args...))
 		}
 		fence.refuseAndRelease(format, args...)
 	}
@@ -469,7 +478,7 @@ func runMerge(o options) {
 		requireFence(stepPinPlacement)
 		rep, perr := stepPinManifestPlacements(ctx, rb, mapRdb, playerIDs, m.placementExistingMap(), src, dst, runID, gate, o.dryRun)
 		if perr != nil {
-			abortKeepingFence(fmt.Sprintf("pin placement:步骤 %s 未标记完成(%s):%v", stepPinPlacement, rep, perr))
+			abortKeepingFence(fmt.Sprintf("pin placement:步骤 %s 未标记完成(%s):%v", stepPinPlacement, rep, perr), perr)
 		}
 		summary.pin = rep
 		log.Printf("Placement pin (%s): %s — player rows stay in %s, nothing is copied", verbWrite(o.dryRun), rep, srcSchema)
@@ -655,7 +664,7 @@ func runMerge(o options) {
 		// 才推进(下一批 / 完成判据加「全员发布确认」),见 runPlayerMappingStep。
 		rep, merr := runPlayerMappingStep(ctx, rb, mapRdb, m.PlayerIDs, src, dst, runID, m.RunID, gate, o.dryRun)
 		if merr != nil {
-			abortKeepingFence(merr.Error())
+			abortKeepingFence(merr.Error(), merr)
 		}
 		// 全量扫描只为告警(A2):清单之外仍指向源区的玩家不会被改,合服后留在已下线的 zone 里。
 		// 清单是改映射的唯一依据 —— 这里不替人决定要不要搬他们,-verify-merged 的 verify:mapping_src 会拦住开服。
@@ -676,8 +685,14 @@ func runMerge(o options) {
 				len(outside), src, sampleUint64(outside))
 		}
 		summary.mapChanged, summary.mapAlready, summary.mapOutside = rep.Changed, rep.Already, len(outside)
-		log.Printf("Mapping Redis: %d manifest players %s to home_zone=%d, %d already there; %d outside the manifest still at %d  (%s db=%d)",
-			rep.Changed, verbWrite(o.dryRun), dst, rep.Already, len(outside), src, o.mappingAddr, o.mappingDB)
+		if rb != nil {
+			// db 源:改的是 player_route(库先提交,再发布到 mapping Redis),措辞按库写;redis 源下面那行逐字不变。
+			log.Printf("Mapping (player_route, published to the mapping Redis): %d manifest players %s to home_zone=%d, %d already there; "+
+				"%d outside the manifest still at %d", rep.Changed, verbWrite(o.dryRun), dst, rep.Already, len(outside), src)
+		} else {
+			log.Printf("Mapping Redis: %d manifest players %s to home_zone=%d, %d already there; %d outside the manifest still at %d  (%s db=%d)",
+				rep.Changed, verbWrite(o.dryRun), dst, rep.Already, len(outside), src, o.mappingAddr, o.mappingDB)
+		}
 		if !o.dryRun {
 			persist(stepPlayerMapping, fmt.Sprintf("changed=%d already=%d outside=%d", rep.Changed, rep.Already, len(outside)))
 		}
@@ -711,6 +726,17 @@ func runMerge(o options) {
 			notice, verbWrite(o.dryRun), o.noticeAddr, o.noticeDB, rename)
 		if !o.dryRun && serr == nil {
 			persist(stepPostMerge, fmt.Sprintf("notice=%d rename=%d", notice, rename))
+		}
+	}
+
+	// db 源:步骤 7 之前只在开始时查过围栏;打标中途被看门狗以失权取消时,上面只记 WARN、不 persist。打 Done 之前再查一次,
+	// 失权就按失权中止、退出非 0(规格「失权后退出非 0」),不让运维看着 Done 去开服。redis 源的 gate 恒为 nil,行为不变。
+	if rb != nil && !o.dryRun {
+		if err := gate.check(); err != nil {
+			if m.stepDone(stepPostMerge) {
+				abortKeepingFence(fmt.Sprintf("步骤 %s 已标记完成,但围栏随后失权(合服各步都已在围栏下提交;按失权处置):%v", stepPostMerge, err), err)
+			}
+			abortKeepingFence(fmt.Sprintf("步骤 %s 执行中围栏失权,步骤未标记完成:%v", stepPostMerge, err), err)
 		}
 	}
 
@@ -767,8 +793,20 @@ func (s mergeSummary) String() string {
 //
 // 还顺手核对 -expected-src-players:T-1 彩排记的数与现在不一致 = 源区在彩排
 // 之后还有人写过,zone-down 不彻底。
+//
+// -route-source=db 时名单与 presence 都来自全局库 player_route(调用方注入 routeDBMappingPresence),文案按库措辞
+// (指错的是 -route-db-dsn、没跑的是导入 / 回填,不是 -mapping-redis-db);redis 源文案逐字不变。
 func guardPlayerSet(ctx context.Context, rows playerIDSource, mapped mappingPresence, ids []uint64, o options, resumed bool) error {
+	dbSource := o.routeSource == routeSourceDB
 	if len(ids) == 0 && !o.allowEmptySource {
+		if dbSource {
+			return fmt.Errorf("collected 0 players with home_zone=%d from player_route (-route-db-dsn). "+
+				"A merge with an empty mapping is a silent no-op. Most likely causes: "+
+				"(a) wrong -route-db-dsn, or import-from-redis / -backfill-home-zone was not run for this zone, or "+
+				"(b) legacy players were never backfilled — run `-backfill-home-zone -zone %d` for BOTH zones first. "+
+				"Pass -allow-empty-source only if you really intend to merge a zone with no players",
+				o.sourceZone, o.sourceZone)
+		}
 		return fmt.Errorf("collected 0 players with home_zone=%d from %s db=%d. "+
 			"A merge with an empty mapping is a silent no-op. Most likely causes: "+
 			"(a) -mapping-redis-db is wrong (data_service MappingRedis is always DB %d — "+
@@ -778,19 +816,24 @@ func guardPlayerSet(ctx context.Context, rows playerIDSource, mapped mappingPres
 			o.sourceZone, o.mappingAddr, o.mappingDB, defaultMappingRedisDB, o.sourceZone)
 	}
 
+	// mappingTerm 是文案里「有归属」的说法:redis 源是 player:zone 键,db 源是 player_route 的 home_zone。
+	mappingTerm := "player:zone mapping"
+	if dbSource {
+		mappingTerm = "home_zone in player_route"
+	}
 	srcTable := zoneDBName(o.sourceZone) + ".player_database"
 	scan, err := findUnmappedPlayers(ctx, rows, mapped)
 	if err != nil {
-		return fmt.Errorf("guard: compare %s with the player:zone mapping: %w", srcTable, err)
+		return fmt.Errorf("guard: compare %s with the %s: %w", srcTable, mappingTerm, err)
 	}
 	if scan.Unmapped > 0 {
-		return fmt.Errorf("%s has %d rows and %d of them have NO player:zone mapping at all (first ids: %v). "+
+		return fmt.Errorf("%s has %d rows and %d of them have NO %s at all (first ids: %v). "+
 			"Those players would be left behind pointing at a dead zone. "+
 			"Run `-backfill-home-zone -zone %d -apply` first, then re-run this merge",
-			srcTable, scan.Rows, scan.Unmapped, scan.Sample, o.sourceZone)
+			srcTable, scan.Rows, scan.Unmapped, mappingTerm, scan.Sample, o.sourceZone)
 	}
-	log.Printf("guard OK: all %d rows of %s have a player:zone mapping (%d map to home_zone=%d)",
-		scan.Rows, srcTable, len(ids), o.sourceZone)
+	log.Printf("guard OK: all %d rows of %s have a %s (%d map to home_zone=%d)",
+		scan.Rows, srcTable, mappingTerm, len(ids), o.sourceZone)
 
 	if o.expectedSrcPlayers >= 0 && !resumed && int64(len(ids)) != o.expectedSrcPlayers {
 		return fmt.Errorf("expected %d source players (-expected-src-players, recorded at the T-1 rehearsal) "+

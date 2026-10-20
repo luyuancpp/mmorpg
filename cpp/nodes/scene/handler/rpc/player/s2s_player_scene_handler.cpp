@@ -12,7 +12,7 @@
 #include "proto/scene/player_scene.pb.h"
 #include "modules/scene/comp/scene_comp.h"
 #include "rpc/service_metadata/player_scene_service_metadata.h"
-#include "network/player_message_utils.h"
+#include "network/client_message_sender.h"
 
 ///<<< END WRITING YOUR CODE
 

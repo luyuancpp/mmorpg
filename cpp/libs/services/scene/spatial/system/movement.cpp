@@ -8,7 +8,7 @@
 
 #include "generated/attribute/actorbaseattributess2c_attribute_sync.h"
 #include "modules/scene/comp/scene_comp.h"  // SceneEntityComp:瞬移落位等待只对当时的场景有效
-#include "network/player_message_utils.h"
+#include "network/client_message_sender.h"
 #include "player/comp/afk_comp.h"
 #include "player/comp/player_frozen_comp.h"
 #include "proto/common/component/battle_comp.pb.h"  // InBattleComp:战斗在途不积分位移
@@ -178,7 +178,7 @@ void MovementSystem::BroadcastMove(const entt::entity entity)
 	move.set_server_time_ms(TimeSystem::NowMilliseconds());
 	move.set_move_state(moving ? kMoveStateWalking : kMoveStateStopped);
 
-	BroadcastMessageToPlayers(SceneMovementClientPlayerNotifyActorMoveMessageId, move, observers);
+	BroadcastToPlayerClients(SceneMovementClientPlayerNotifyActorMoveMessageId, move, observers);
 }
 
 

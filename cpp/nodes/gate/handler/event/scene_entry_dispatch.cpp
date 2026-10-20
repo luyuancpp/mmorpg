@@ -84,7 +84,7 @@ int64_t ElapsedMs(const Clock::time_point from, const Clock::time_point to)
 //   - RpcClient::SendRequest 在未连接时返回 false 并计数,但它只知道"有没有连接",不知道"当前连接上握过手没有";
 //   - TCP 连上后 registration_manager 要 RunAfter(0.5) 才发 NodeHandshake,scene 收到握手才为本 gate 挂
 //     RpcSession;在那之前发出的进场,scene 会照常载入玩家,但 NotifyEnterScene 等推送找不到 RpcSession
-//     会被丢掉(player_message_utils.cpp)。所以要求"已连上,且在**当前**连接上握过手"。
+//     会被丢掉(client_message_sender.cpp)。所以要求"已连上,且在**当前**连接上握过手"。
 // 这些都是"本地确定没发出去",调用方可以安全地补发(I1);一旦返回 kSent 就不再重发。
 //
 // playerId / homeZoneId / ownerEpoch / loginGeneration 一律从会话取:路由到达时已把最新决策写进会话,BindSession

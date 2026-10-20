@@ -1271,7 +1271,37 @@ func (s *mergeRouteStore) TakeOverFence(ctx context.Context, req routeFenceAcqui
 	return s.acquireFence(ctx, "take over merge fence", req, previousRunID)
 }
 
+// checkTakeOverShard 是接手时对一片「生效且 run_id == previousRunID」分片的核对(纯函数):
+//   - zone 对(src_zone / dst_zone)必须与本次相同。不比 purpose:合服中止后改跑撤销是 runbook 认可的续跑路径(zone 对相同、
+//     purpose 不同)。zone 对写错时若照样接手,点对的那一区被接走,另一区仍挂在已死的那次运行上、过期后在半截状态下解封。
+//   - holder_json 里记着 manifest_path 时,必须与本次的清单路径(filepath.Clean 后)相同:续跑落到别的清单(合服没给 -manifest-path
+//     时是带时间戳的新路径)会被当成首跑 —— 收集出漏人的清单,或在拒绝出口释放刚接手的围栏。
+//
+// 不满足一律 errRouteInvalidArgument:事务回滚,旧围栏原样留在 previousRunID 上。
+func checkTakeOverShard(zone uint32, st routeFenceShardState, req routeFenceAcquire) error {
+	if st.srcZone != req.Src || st.dstZone != req.Dst {
+		return fmt.Errorf("%w: take over zone %d shard %d from run_id=%q: that fence is for zone pair %d → %d, this run is %d → %d "+
+			"(wrong -source-zone / -target-zone, or the wrong -take-over-fence run_id)", errRouteInvalidArgument, zone, st.shard, st.runID,
+			st.srcZone, st.dstZone, req.Src, req.Dst)
+	}
+	if st.holderJSON == "" {
+		return nil
+	}
+	var h mergeInProgressValue
+	if err := json.Unmarshal([]byte(st.holderJSON), &h); err != nil {
+		return fmt.Errorf("%w: take over zone %d shard %d from run_id=%q: holder_json is not readable (%v), so its manifest_path cannot "+
+			"be compared with this run's: %s", errRouteInvalidArgument, zone, st.shard, st.runID, err, st.holderJSON)
+	}
+	if h.ManifestPath != "" && filepath.Clean(h.ManifestPath) != filepath.Clean(req.Holder.ManifestPath) {
+		return fmt.Errorf("%w: take over zone %d shard %d from run_id=%q: that run used -manifest-path %q, this run uses %q — re-run "+
+			"with -manifest-path %q (a resume on another manifest starts over as a first run)", errRouteInvalidArgument, zone, st.shard,
+			st.runID, h.ManifestPath, req.Holder.ManifestPath, h.ManifestPath)
+	}
+	return nil
+}
+
 // acquireFence 是 AcquireFence / TakeOverFence 的事务体。previousRunID 为空 = 不接手任何人(AcquireFence 的原语义)。
+// 接手时被接手的分片逐片过 checkTakeOverShard,且每个 zone 接手 0 片或全部 64 片。
 func (s *mergeRouteStore) acquireFence(ctx context.Context, op string, req routeFenceAcquire, previousRunID string) (routeFenceGrant, error) {
 	zones, err := req.validate()
 	if err != nil {
@@ -1293,16 +1323,27 @@ func (s *mergeRouteStore) acquireFence(ctx context.Context, op string, req route
 			if err != nil {
 				return err
 			}
+			zoneTaken := 0
 			for _, st := range states {
 				if st.active && st.runID != req.RunID {
 					if previousRunID == "" || st.runID != previousRunID {
-						return fmt.Errorf("%w: zone %d shard %d run_id=%q holder=%s (if that run is dead, wait for its expires_at_ms or "+
-							"release it through the tool that owns it)", errRouteFenceHeld, zone, st.shard, st.runID, st.holderJSON)
+						return fmt.Errorf("%w: zone %d shard %d run_id=%q holder=%s (if run %s is no longer running, re-run the same "+
+							"command — same -manifest-path — with -take-over-fence %s; otherwise wait for it to finish or for its "+
+							"expires_at_ms)", errRouteFenceHeld, zone, st.shard, st.runID, st.holderJSON, st.runID, st.runID)
 					}
-					takenOver++
+					if err := checkTakeOverShard(zone, st, req); err != nil {
+						return err
+					}
+					zoneTaken++
 				}
 				maxEpoch = max(maxEpoch, st.epoch)
 			}
+			// 接手按 zone 要么全接、要么一片不接(那次运行的围栏已整体过期 = 普通获取):只接到一部分说明分片状态不一致,不在它上面续跑。
+			if previousRunID != "" && zoneTaken != 0 && zoneTaken != int(routeFenceShards) {
+				return fmt.Errorf("%w: take over zone %d from run_id=%q: only %d of %d shards are live under that run_id — the shard rows "+
+					"are inconsistent; check zone_merge_fence by hand", errRouteInvalidArgument, zone, previousRunID, zoneTaken, routeFenceShards)
+			}
+			takenOver += zoneTaken
 		}
 		if maxEpoch == math.MaxUint64 {
 			return fmt.Errorf("%w: fence_epoch exhausted on zones %v", errRouteInvariant, zones)
@@ -1476,7 +1517,7 @@ type routeFenceRenewer interface {
 }
 
 // routeFenceGuard 维护「本次运行仍持有围栏」的本地判据(规格 §6.3 W12 续期、§13.3 第 4 条):
-//   - 续期 goroutine 每 ttl/3 续一次;成功把 lastOK 推到这次续期**开始**的本地单调时刻(保守:库里的新过期时刻
+//   - 续期 goroutine 每 min(ttl/3, routeFenceRenewMaxInterval) 续一次;成功把 lastOK 推到这次续期**开始**的本地单调时刻(保守:库里的新过期时刻
 //     不早于它 + ttl);
 //   - 续期回 errRouteFenceLost(受影响行数不足)= 确定失权:置 lost,goroutine 退出;
 //   - 1205 / 网络错误:WARN,routeFenceRetryWait 后重试,不当失权;
@@ -1520,7 +1561,7 @@ func newRouteFenceGuard(renewer routeFenceRenewer, zones []uint32, runID string,
 		zones:     zs,
 		runID:     runID,
 		ttl:       ttl,
-		interval:  ttl / 3,
+		interval:  min(ttl/3, routeFenceRenewMaxInterval),
 		retryWait: routeFenceRetryWait,
 		now:       time.Now,
 		sleep:     sleepCtx,

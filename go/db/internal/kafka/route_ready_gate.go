@@ -203,10 +203,14 @@ const (
 	// 返回后先判 ctx、取消之后不再 apply;刷新 goroutine 不在 c.wg 里,Stop 不等它,它最多比 Stop 多活一个 ReadTimeout。
 	routeReadyRefreshTimeout = 2 * time.Second
 	routeReadyProbeTimeout   = 5 * time.Second
-	// routeReadyGateLogEvery:闸一直关着时,至多每分钟一条 INFO(带关了多久与当前状态),免得长时间全量预热期间无声无息。
+	// routeReadyGateLogEvery:闸一直关着时,至多每分钟一条 INFO(带关了多久与当前状态),免得长时间全量预热期间无声无息;
+	// 闸来回翻时,关上(ERROR)与重开(INFO)也各自至多每分钟一条(见 apply)。
 	routeReadyGateLogEvery = time.Minute
-	// routeReadyGateStateReadError 是读脚本执行出错时日志里的状态名(不是 verdict,不进 verdict 计数)。
-	routeReadyGateStateReadError = "read_error"
+	// routeReadyGateStateScriptError 是闸刷新时读脚本执行出错(或回复形状不对)的状态名:日志里的 state=,也作为
+	// db_route_ready_verdict_total 的一个 verdict 取值计数 —— 与 data_service 的 route_ready_verdict_total、leader 自检
+	// route_ready_selfcheck 同名。它不是 placement 的结论,不在 RouteReadyVerdictNames 里,由 newRouteReadyGating 另行预置。
+	// 逐条选库 / 复核时脚本出错不计它,计 db_placement_guard_total{outcome="lookup_error"}。
+	routeReadyGateStateScriptError = "script_error"
 )
 
 // routeReadyGate 是进程级就绪闸(规格 §13.2 第 1 条)。
@@ -256,7 +260,7 @@ func newRouteReadyGating(cfg db_config.PlacementConfig, placementRedis redis.Cmd
 			db_config.MinPlacementRouteReadyGateIntervalMs, db_config.MaxPlacementRouteReadyGateIntervalMs, ms)
 	}
 	reader := redisRouteReadyReader{rc: placementRedis}
-	metrics.PrimeRouteReady(placement.RouteReadyVerdictNames())
+	metrics.PrimeRouteReady(append(placement.RouteReadyVerdictNames(), routeReadyGateStateScriptError))
 	return reader, newRouteReadyGate(reader, time.Duration(ms)*time.Millisecond), nil
 }
 

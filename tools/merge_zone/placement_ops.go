@@ -731,17 +731,9 @@ func pinManifestPlacements(ctx context.Context, rdb *redis.Client, ids []uint64,
 
 // readPlacementsDB 是 readPlacements 的库版(R8):一致读 player_route,按 ids 顺序编码成与 Redis 读同形状的结果
 // (routePlacementRead:值串与 Redis 里的编码逐字节相同,下游判定不必区分来源)。库里没有行 = 两键都不存在。
+// 本体与只读读方共用 placementsFromRouteDB(storage_audit.go)。
 func readPlacementsDB(ctx context.Context, db routeDBOps, ids []uint64) ([]placementRead, error) {
-	rows, err := db.ReadRoutes(ctx, ids)
-	if err != nil {
-		return nil, err
-	}
-	out := make([]placementRead, len(ids))
-	for i, id := range ids {
-		row, ok := rows[id]
-		out[i] = routePlacementRead(row, ok)
-	}
-	return out, nil
+	return placementsFromRouteDB(ctx, db, ids)
 }
 
 // stepReadPlacements 按源分派清单玩家的落点扫描(合服 S 段、撤销 S 段):rb == nil → readPlacements(MGET,逐字不变);否则读库。

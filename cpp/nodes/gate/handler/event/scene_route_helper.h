@@ -368,7 +368,7 @@ inline bool IsRetryableForwardResult(const SceneForwardResult result)
 // scene 链路是否可交付进场。返回 nullopt = 就绪;否则返回未就绪的原因。
 // "TCP 连上"不等于"可交付":gate 每次连上 scene,registration_manager 要再等 0.5s 才发 NodeHandshake,
 // scene 收到握手才为本 gate 挂 RpcSession;在此之前发出的进场 scene 会照常载入玩家,但 NotifyEnterScene
-// 等下行推送找不到 RpcSession 会被丢掉(player_message_utils.cpp)。所以要求"在**当前**这条连接上握过手"。
+// 等下行推送找不到 RpcSession 会被丢掉(client_message_sender.cpp)。所以要求"在**当前**这条连接上握过手"。
 // 按连接对象的地址比对:重连后旧章自然失效(调用方传的是 weak_ptr::lock() 的结果,旧连接已析构时为空,
 // 不会与复用了同一地址的新连接混淆),不需要挂断线钩子。
 // 参数用 const void* 而不是 TcpConnection*:判定只需要身份,单测可以用局部变量的地址充当连接。

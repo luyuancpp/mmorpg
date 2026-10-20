@@ -14,7 +14,7 @@
 #include "spatial/comp/scene_node_scene_comp.h"
 
 #include "engine/core/type_define/type_define.h"
-#include "network/player_message_utils.h"
+#include "network/client_message_sender.h"
 #include "thread_context/ecs_context.h"
 
 bool ViewSystem::ShouldSendNpcEnterMessage(entt::entity observer, entt::entity entrant)
@@ -128,7 +128,7 @@ void ViewSystem::BroadcastMessageToVisiblePlayers(entt::entity entity, const uin
 {
     EntityUnorderedSet entities;
     GridSystem::GetEntitiesInViewAndNearby(entity, entities);
-    BroadcastMessageToPlayers(message_id, message, entities);
+    BroadcastToPlayerClients(message_id, message, entities);
 }
 
 void ViewSystem::LookAtPosition(entt::entity entity, const Vector3 &pos)

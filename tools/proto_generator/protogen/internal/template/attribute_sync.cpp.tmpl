@@ -5,7 +5,7 @@
 
 #include "thread_context/ecs_context.h"
 #include "engine/core/type_define/player_guid_comp.h"
-#include "network/player_message_utils.h"
+#include "network/client_message_sender.h"
 #include "muduo/base/Logging.h"
 
 // ============================================================================
@@ -62,7 +62,7 @@ void {{ .MessageName }}SyncAttributesCore(entt::entity entity, uint32_t message_
         return;
     }
 
-    BroadcastMessageToPlayers(message_id, syncMsg, targetPlayers);
+    BroadcastToPlayerClients(message_id, syncMsg, targetPlayers);
 }
 
 void {{ .MessageName }}SyncAttributes(entt::entity entity, uint32_t message_id, const EntityUnorderedSet& targetPlayers)

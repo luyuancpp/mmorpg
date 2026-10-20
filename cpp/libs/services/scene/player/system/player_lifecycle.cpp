@@ -63,7 +63,7 @@
 #include "player/comp/afk_comp.h"
 #include "frame/manager/frame_time.h"
 #include "network/network_utils.h"
-#include "network/player_message_utils.h"
+#include "network/client_message_sender.h"
 #include "network/rpc_session.h"
 #include "thread_context/node_context_manager.h"
 #include "rpc/service_metadata/client_player_common_service_metadata.h"
@@ -190,7 +190,7 @@ namespace
 				return relocate_confirm::GatePushResult::kGateReplaced;
 			}
 		}
-		SendMessageToClientViaGate(messageId, message, *gateSessionPtr, sessionId, playerId);
+		SendMessageToClientSessionViaGate(messageId, message, *gateSessionPtr, sessionId, playerId);
 		return relocate_confirm::GatePushResult::kSent;
 	}
 
@@ -309,7 +309,7 @@ namespace
 
 	// 受理后未成、又没法在原地恢复(epoch 已被推进、玩家已不在本节点)时的客户端出口:先回失败 tip,
 	// 紧跟踢线 KickPlayer(34,reason.id = 同一个 tip),客户端断线回选服重登。
-	// 两条消息走同一条 scene→gate 连接(同一个 RpcSession),实际按发送顺序到达;player_message_utils.h
+	// 两条消息走同一条 scene→gate 连接(同一个 RpcSession),实际按发送顺序到达;client_message_sender.h
 	// 声明 scene→玩家的推送不保证顺序,颠倒时客户端只是少显示一条 tip,踢线本身不受影响。
 	// 必须在 DestroyDeposedPlayer **之前**调:它会摘会话(RemovePlayerSession),之后两条都发不出去。
 	void SendTipAndKickToClient(entt::entity player, uint32_t tipId)

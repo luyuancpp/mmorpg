@@ -336,7 +336,7 @@ func (l *GuildLogic) mergeFenceTip(ctx context.Context, zoneID uint32) *base.Tip
 	}
 	merging, err := l.mergeFence.MergeInProgress(ctx, zoneID)
 	if err != nil {
-		logx.Errorf("[guild] merge fence unreadable for zone %d, refusing (fail closed): %v", zoneID, err)
+		logMergeFenceRefusal("guild", zoneID, err) // 副本不可信只打 DEBUG + 每分钟汇总,其余读失败 ERROR(merge_fence.go)
 		return tipErr(constants.ErrZoneMerging, "merge fence unreadable")
 	}
 	if merging {

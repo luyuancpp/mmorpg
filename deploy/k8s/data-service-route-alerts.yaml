@@ -297,6 +297,13 @@ spec:
           annotations:
             summary: "guild 合服闸门持续读到不可信的 mapping Redis 副本({{ $labels.verdict }})"
             description: >-
-              每秒约 {{ $value | printf "%.2f" }} 次。经闸门的公会写全部按「合服中」拒绝。script_error = 读脚本执行失败(与 go/db、data_service 同名);
-              其余 verdict 的含义同 go/db。紧急回退:把 guild ConfigMap 的 MergeMarkerRedis.RequireRouteReady 改回 false
-              (k8s_deploy.ps1 不带 -GuildRequireRouteReady 重跑 infra-up,粘滞核对要加 -ConfirmRouteSwitchChange)并滚动 guild。
+              每秒约 {{ $value | printf "%.2f" }} 次。经闸门的公会写全部按「合服中」拒绝(fail-closed,不写错数据)。script_error = 读脚本执行失败(与 go/db、data_service 同名);
+              其余 verdict 的含义同 go/db。先按 GoDbRouteGateClosed 同样的顺序定位:DataServiceRouteReadyMissing / DataServiceRouteNoLeader、
+              现任 leader 的 data_service_route_ready_selfcheck{verdict} 与 data_service_route_reconcile_event_total{event="task_started"};
+              标记重新挂上后闸门自动恢复。合服围栏镜像(merge:in_progress:*)由对账 leader 每拍按全局库 zone_merge_fence 补回,与标记是否挂上无关,
+              刚切主 / 重启时先等一拍再判断。
+              不要先关 MergeMarkerRedis.RequireRouteReady:verdict 是 absent / identity_mismatch / not_master(mapping Redis 重启、切主、
+              从旧备份恢复、换实例)时镜像可能刚丢,关掉开关后 guild 退回只看 EXISTS 的老路径,镜像补回之前正在合服的 zone 不再被封锁。
+              只有确认映射数据完整(例如 newer_version 这类混跑原因,或 script_error 只出在 guild 这一侧)且经负责人确认时,才按
+              runbook §9.4「rewarm」一节写的回退顺序(先读方、后写方)关掉它:k8s_deploy.ps1 不带 -GuildRequireRouteReady 重跑 infra-up
+              (粘滞核对要加 -ConfirmRouteSwitchChange)并滚动 guild。

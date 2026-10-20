@@ -94,36 +94,16 @@ type routeDBReader interface {
 type routeReadSideDB struct{ db routeDBReader }
 
 // placements:库里没有这一行 = 两键都不存在(权威缺席);落点三列不自洽 = RecordErr(调用方 fail-closed)。
+// 空 ids 不碰库(与改动前一致)。
 func (r routeReadSideDB) placements(ctx context.Context, ids []uint64) ([]placementRead, error) {
-	out := make([]placementRead, len(ids))
 	if len(ids) == 0 {
-		return out, nil
+		return make([]placementRead, 0), nil
 	}
-	rows, err := r.db.ReadRoutes(ctx, ids)
-	if err != nil {
-		return nil, err
-	}
-	for i, id := range ids {
-		row, ok := rows[id]
-		out[i] = routePlacementRead(row, ok)
-	}
-	return out, nil
+	return placementsFromRouteDB(ctx, r.db, ids)
 }
 
 func (r routeReadSideDB) playersWithHome(ctx context.Context, zone uint32) ([]uint64, error) {
-	var out []uint64
-	err := scanRouteDBPages(
-		func(after routeScanCursor) ([]mergeRouteRow, error) {
-			return r.db.ScanByHome(ctx, zone, after, routeReadBatchLimit)
-		},
-		func(row mergeRouteRow) error {
-			out = append(out, row.PlayerID)
-			return nil
-		})
-	if err != nil {
-		return nil, err
-	}
-	return sortedUint64(out), nil
+	return playerIDsWithHomeZoneDB(ctx, r.db, zone)
 }
 
 // storagePlayers 是 collectStoragePlayers 的库版,口径相同(有记录看记录,无记录看 home),只有 Malformed 的范围不同:
@@ -136,7 +116,7 @@ func (r routeReadSideDB) storagePlayers(ctx context.Context, storage uint32) (st
 		func(after routeScanCursor) ([]mergeRouteRow, error) {
 			return r.db.ScanByStorage(ctx, storage, after, routeReadBatchLimit)
 		},
-		func(row mergeRouteRow) error {
+		eachRouteDBRow(func(row mergeRouteRow) error {
 			rec, ok, perr := row.placement()
 			switch {
 			case perr != nil:
@@ -150,26 +130,22 @@ func (r routeReadSideDB) storagePlayers(ctx context.Context, storage uint32) (st
 				return fmt.Errorf("%w: scan by storage_id=%d returned player %d without that placement", errRouteInvariant, storage, row.PlayerID)
 			}
 			return nil
-		})
+		}))
 	if err != nil {
 		return out, err
 	}
 	if isZoneStorage(storage) {
-		err = scanRouteDBPages(
-			func(after routeScanCursor) ([]mergeRouteRow, error) {
-				return r.db.ScanByHome(ctx, storage, after, routeReadBatchLimit)
-			},
-			func(row mergeRouteRow) error {
-				if row.StorageID != 0 {
-					return nil // 有落点:按 storage_id 计(上一段),不看 home
-				}
-				if _, _, perr := row.placement(); perr != nil {
-					out.Malformed = append(out.Malformed, row.PlayerID)
-					return nil
-				}
-				out.ByHome = append(out.ByHome, row.PlayerID)
+		err = scanZoneHomeRows(ctx, r.db, storage, eachRouteDBRow(func(row mergeRouteRow) error {
+			if row.StorageID != 0 {
+				return nil // 有落点:按 storage_id 计(上一段),不看 home
+			}
+			if _, _, perr := row.placement(); perr != nil {
+				out.Malformed = append(out.Malformed, row.PlayerID)
 				return nil
-			})
+			}
+			out.ByHome = append(out.ByHome, row.PlayerID)
+			return nil
+		}))
 		if err != nil {
 			return out, err
 		}
@@ -182,19 +158,22 @@ func (r routeReadSideDB) storagePlayers(ctx context.Context, storage uint32) (st
 
 func (routeReadSideDB) source() string { return routeSourceDB }
 
-// scanRouteDBPages 按键集游标翻完一个索引范围:每页 routeReadBatchLimit 行,不足一页即翻完,下一页从上一页最后一行的
-// 聚簇键接着翻(页内的校验由 ScanByHome / ScanByStorage 做);逐行交给 visit,visit 报错即停。
-func scanRouteDBPages(page func(after routeScanCursor) ([]mergeRouteRow, error), visit func(mergeRouteRow) error) error {
+// ── 库读的共用 helper(R8-6:翻页循环与行编码各只有一份)────────────────────────────────────────
+//
+// 合服 / 撤销 / pin(routeDBOps)与只读读方(routeDBReader)的库接口不同,共用部分按它们都有的那一个方法收窄成小接口。
+
+// scanRouteDBPages 是包内唯一的 player_route 键集翻页循环:每页 routeReadBatchLimit 行,不足一页即翻完,下一页从上一页最后一行的
+// 聚簇键接着翻(页内的校验由 ScanByHome / ScanByStorage 做);整页交给 visitPage(最后一页可能为空),visitPage 报错即停。
+// 按页的调用方(pin_placement 经 scanZoneHomeRows)直接用;逐行的经 eachRouteDBRow 包一层。
+func scanRouteDBPages(page func(after routeScanCursor) ([]mergeRouteRow, error), visitPage func([]mergeRouteRow) error) error {
 	var after routeScanCursor
 	for {
 		rows, err := page(after)
 		if err != nil {
 			return err
 		}
-		for _, row := range rows {
-			if err := visit(row); err != nil {
-				return err
-			}
+		if err := visitPage(rows); err != nil {
+			return err
 		}
 		if len(rows) < routeReadBatchLimit {
 			return nil
@@ -203,11 +182,67 @@ func scanRouteDBPages(page func(after routeScanCursor) ([]mergeRouteRow, error),
 	}
 }
 
+// eachRouteDBRow 把逐行的 visit 包成 scanRouteDBPages 要的按页回调:一页里逐行交给 visit,visit 报错即停。
+func eachRouteDBRow(visit func(mergeRouteRow) error) func([]mergeRouteRow) error {
+	return func(rows []mergeRouteRow) error {
+		for _, row := range rows {
+			if err := visit(row); err != nil {
+				return err
+			}
+		}
+		return nil
+	}
+}
+
+// routeRowReader 是按 id 一致读路由行的原语(routeDBOps、routeDBReader、relocateRouteStore 都含它)。
+type routeRowReader interface {
+	ReadRoutes(ctx context.Context, ids []uint64) (map[uint64]mergeRouteRow, error)
+}
+
+// routeHomeScanner 是按 home_zone 键集翻页的原语(routeDBOps、routeDBReader 都含它)。
+type routeHomeScanner interface {
+	ScanByHome(ctx context.Context, zone uint32, after routeScanCursor, limit int) ([]mergeRouteRow, error)
+}
+
+// placementsFromRouteDB 一致读 player_route,按 ids 顺序编码成与 Redis 读同形状的结果(routePlacementRead:值串与 Redis 里的
+// 编码逐字节相同,下游判定不必区分来源)。库里没有行 = 两键都不存在。错误原样返回。
+// readPlacementsDB(合服 / 撤销 S 段)与 routeReadSideDB.placements(只读读方)共用这一份。
+func placementsFromRouteDB(ctx context.Context, db routeRowReader, ids []uint64) ([]placementRead, error) {
+	rows, err := db.ReadRoutes(ctx, ids)
+	if err != nil {
+		return nil, err
+	}
+	out := make([]placementRead, len(ids))
+	for i, id := range ids {
+		row, ok := rows[id]
+		out[i] = routePlacementRead(row, ok)
+	}
+	return out, nil
+}
+
+// playerIDsWithHomeZoneDB 按 home_zone 翻完 player_route(scanZoneHomeRows),返回升序去重的 player_id。翻页游标是聚簇键
+// (route_shard, player_id),与 player_id 顺序不同,所以最后统一排序。错误原样返回。
+// collectPlayerIDsWithHomeZoneDB(合服清单收集,另包一层错误上下文)与 routeReadSideDB.playersWithHome 共用这一份。
+func playerIDsWithHomeZoneDB(ctx context.Context, db routeHomeScanner, zone uint32) ([]uint64, error) {
+	var out []uint64
+	err := scanZoneHomeRows(ctx, db, zone, eachRouteDBRow(func(row mergeRouteRow) error {
+		out = append(out, row.PlayerID)
+		return nil
+	}))
+	if err != nil {
+		return nil, err
+	}
+	return sortedUint64(out), nil
+}
+
 // openRouteReadSide 按 -route-source 装出只读读方,并先核对全局库与 mapping Redis 是否成对(openRouteBackend:redis 时
 // 见到 mapping:route:watermark 即拒;db 时要求它存在、世代等于库的 route_meta.generation,规格 §13.3 第 3 条)。
 // db 时返回的 store 由调用方 Close。读方从不写:开库时的探针 P4 / P5 在必然回滚的事务里插行(与 data_service 启动时
 // 同一探针),不留任何数据;发布器只用来读水位键,WAITAOF 参数用不到。purpose 只进写者标识(只读用不到,但开库要求合法)。
-// 不复用 openRunRouteBackend(merge_run.go):那是写入方的入口(日志按「先写库再发布」说),且它的库接口不含 ScanByStorage。
+// 不并进 openRunRouteBackend(merge_run.go;交接 handoff-d1-remaining-20261019 §2.1 末尾要求「能合并就合并」,评审 R8-6 /
+// MZ2-7 复核后只合并了库读 helper,入口保留,理由同 openRelocateRouteBackend 的注释):共用的成对核对 + 探针已经只有
+// openRouteBackend 一份;剩下的正是三处不同的部分 —— 这里 durability 是零值(只读,不发布)、写者标识是用途名、
+// 不打「先写库再发布」那条写入方日志,交出的是 routeDBReader(含 ScanByStorage / ReadFence,routeDBOps 没有 ScanByStorage)。
 func openRouteReadSide(ctx context.Context, ro routeEntryOptions, mapping *redis.Client, purpose string) (routeReadSide, *mergeRouteStore, error) {
 	if ro.source == "" {
 		return nil, nil, errors.New("internal: -route-source was not passed to this mode (the main.go wiring is missing); " +

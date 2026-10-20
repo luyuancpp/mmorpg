@@ -303,7 +303,7 @@ func TestRouteReadyMergeFence_UntrustedVerdictsAreErrors(t *testing.T) {
 }
 
 // TestRouteReadyMergeFence_ReadFailuresAreErrors:脚本执行出错与回复形状不对都是 error(不是 RouteNotReady),
-// label 记 read_error。
+// label 记 script_error。
 func TestRouteReadyMergeFence_ReadFailuresAreErrors(t *testing.T) {
 	good := routeReadyTestMarker(t, rrTestRunID, rrTestReplID)
 	cases := []struct {
@@ -328,7 +328,7 @@ func TestRouteReadyMergeFence_ReadFailuresAreErrors(t *testing.T) {
 				assert.ErrorIs(t, err, tc.is)
 			}
 			assert.Empty(t, tc.reader.existsKeys)
-			assert.Equal(t, []string{routeReadyVerdictReadError}, *labels)
+			assert.Equal(t, []string{routeReadyVerdictScriptError}, *labels)
 		})
 	}
 }
@@ -404,8 +404,9 @@ func TestRouteReadyMergeFence_Probe(t *testing.T) {
 	})
 }
 
-// TestRouteReadyVerdictLabelsAreClosed:label 全集 = placement 的全部 verdict + read_error,无重复;
-// 每个 verdict 的 String() 都在集合里(PrimeRouteReadyMetrics 按它预置)。
+// TestRouteReadyVerdictLabelsAreClosed:label 全集 = placement 的全部 verdict + script_error,无重复;
+// 每个 verdict 的 String() 都在集合里(PrimeRouteReadyMetrics 按它预置)。读脚本失败的 label 用字面量钉住:
+// 与 data_service、go/db 的 route_ready_verdict_total 同名,跨服务面板按同一个字符串过滤,改名先红。
 func TestRouteReadyVerdictLabelsAreClosed(t *testing.T) {
 	labels := routeReadyVerdictLabels()
 	seen := map[string]bool{}
@@ -413,7 +414,8 @@ func TestRouteReadyVerdictLabelsAreClosed(t *testing.T) {
 		assert.False(t, seen[l], "label %q 重复", l)
 		seen[l] = true
 	}
-	assert.True(t, seen[routeReadyVerdictReadError])
+	assert.Equal(t, "script_error", routeReadyVerdictScriptError)
+	assert.True(t, seen[routeReadyVerdictScriptError])
 	for _, v := range []placement.RouteReadyVerdict{
 		placement.RouteReadyTrusted, placement.RouteReadyAbsent, placement.RouteReadyMalformed, placement.RouteReadyNewerVersion,
 		placement.RouteReadyIdentityUnavailable, placement.RouteReadyNotMaster, placement.RouteReadyIdentityMismatch,

@@ -170,6 +170,8 @@
 
 merge_zone 合服与撤销时会按玩家删缓存（`playerCacheKeys`）；清单同时含资产 SQL 提交证据和 `save_barrier`。删除屏障后必须维持维护闸，从权威 SQL 核对同版两行并恢复归属/屏障才能放流，历史数据不能当新号补种。PITR 同规，见 `db-write-fencing-mysql.md` 的追加恢复门禁。
 
+> **(2026-10-20 更正,r2-mz#1,上段原文保留)** 前向 copy 合服改用 `playerCacheKeysKeepBarrier`,**不再删 `save_barrier`**:屏障与父快照、owner_epoch 同在本节的核心实例,目标库两行是源库的逐字节拷贝,原 pending / ACK 对它们仍成立;`-verify-merged` 的 `verify:save_barrier` 逐人核对。撤销与 PITR 仍删屏障并按上段重建(合服手册 §10.1「屏障重建」)。见 `db-write-fencing-mysql.md` 文末「上线状态」之前的同日附注。
+
 `save_barrier` 的 `outbox_*` 字段暂存两条完整 DBTask，`player:save_pending:<home_zone>:<player_id % 64>` 为同实例 ZSET 索引。每 zone 固定64桶；每个未完成玩家会额外占一份任务字节，容量按实际两表快照大小和最大积压计算，不能只按 hash 字段数估算。DB补投器专用连接池启用context截止，父Redis和mappingRedis同指针时最多2条连接，否则各最多2条；每副本均计入连接预算。只在两表 SQL ACK 与 pending 同版时原子回收字段/member；合服 P4 要求全部桶空，PITR 不得直接丢弃未提交意图。当前单实例 Redis/AOF 仍是父提交与补投恢复的前提。
 
 **存盘协议世代与补投状态(2026-10-18 登记,`db-write-fencing-mysql.md` 文末同日附注)**:以下键与字段都和父快照、`save_barrier`、补投桶在同一核心 Redis 实例上,判定与 C++ 写入看到的是同一份事实。

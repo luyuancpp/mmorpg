@@ -53,9 +53,9 @@ import (
 // 只能同库(team-system.md §C.1 / §C.2)。写入范围只限这四类前缀;本包(logic)
 // 不写任何 team:* key,对上面三类契约 key 只读。
 //
-// 本包唯一的 SharedRedis 写:matcher.go 的 migrateLegacyQueues 在 SharedRedis 上 SCAN + RPOP
-// 改造前实例写下的旧格式队列 match:queue:*,搬进 MatchRedis。它只碰 match 自己的旧 key,
-// 不碰契约 key(cross-zone-matchmaking.md D2 的 2026-10-12 更正)。
+// 本包不写 SharedRedis。原先唯一的例外是旧格式队列 match:queue:* 的搬迁
+// (migrateLegacyQueues),项目未上线、没有存量旧 key,2026-10-20 已整体删除
+// (cross-zone-matchmaking.md D2 的 2026-10-20 更正)。
 
 // matchQueueHashTag 队列相关 key 的 hash tag,所有队列 Lua 的 key 必须共用。
 const matchQueueHashTag = "{mq}"
@@ -153,21 +153,6 @@ func matchRatingKey(playerId uint64) string {
 // 它(TTL 7d),已存在即重复投递,跳过 —— Kafka at-least-once 下同一局不会算两次。
 func matchRatingAppliedKey(battleId uint64) string {
 	return fmt.Sprintf("match:rating:applied:%d", battleId)
-}
-
-// legacyMatchQueueScanPattern / legacyMatchQueueKey 是加 hash tag 之前的队列 key
-// 形态(`match:queue:<mode>:<config>`,无 tag,不在注册集里)。滚动升级的混跑
-// 窗口内旧实例仍往这里 RPUSH,且旧票据没有 queue_key 字段;新 matcher 只遍历
-// 注册集,永远不会再读到这些 list。两处兜底:
-//   - matcher 启动与定期 SCAN 旧 key 把成员搬进新队列(migrateLegacyQueues);
-//   - CancelQueue 对无 queue_key 的旧票据新旧两个 key 各 Lrem 一次。
-//
-// glob `match:queue:*` 不会匹配到 `match:{mq}:queue:…`,不会把新队列当旧的搬。
-// 旧 key 只存在于单库形态(改造前没有集群部署),SCAN 在这里可用。
-const legacyMatchQueueScanPattern = "match:queue:*"
-
-func legacyMatchQueueKey(mode int32, battleConfigId uint32) string {
-	return fmt.Sprintf("match:queue:%d:%d", mode, battleConfigId)
 }
 
 // parseQueueKey 从队列 key 尾部解析 (mode, config):只认最后两段,前缀

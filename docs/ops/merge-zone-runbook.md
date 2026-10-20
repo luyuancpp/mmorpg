@@ -1037,7 +1037,7 @@ S   清单玩家不得有冻结的落点记录(与搬库互斥);有「落点记�
 7'  清掉 player_merge_notice:{pid} / player_force_rename:{pid}
 5'  player:zone:{id} 改回 src(只改当前值确实是 dst 的那些)
 5'a 删 merge:merged_into:{src}(dst 与 run_id 都对得上才删)
-5'b 共享玩家缓存失效(copy 模式)
+5'b 共享玩家缓存失效(copy 模式;连 player:{id}:save_barrier 一起删,开服前必须重建,见下文「屏障重建」)
 4'  guild_rank ZSET 成员按原分数 ZADD 回 src、从 dst ZREM
 3b' trade_listing.market_zone 改回 src(只改清单里、当前确实在 dst 的 listing_id)
 3'  guild.zone_id 改回 src(只改清单里的 guild_id)+ guild:v2 缓存失效
@@ -1062,7 +1062,41 @@ S   清单玩家不得有冻结的落点记录(与搬库互斥);有「落点记�
 - **1' 只删逐字节相同的行**。任何一行在合服后被改过(玩家登录过、打过一场、领过邮件)就**拒绝删除并报出来**:那时删掉的不是「拷贝」,而是合服后产生的唯一一份数据。源库的行从来没删过,所以留一份多余副本是安全的(mapping 已经指回源区,不会被读到)。
 - `player:{id}:*` blob **不自动删**。mapping 指回源区后没人读它们;确认源副本无误后再手动清。
 
-撤销完成后:`k8s-zone-up` 把 source 与 target 都拉起来(2026-09-29:两区各自照传上一次部署的 `-GateRouterMode` / 集群外入口 / Ingress / `-ReleaseProfile` 参数,口径同 §8 Step 6);pin 模式清单的撤销,在两区 `/open` 之前跑 `merge-zone-capability-check -MergeDbCapabilityZones <SRC_ID>,<DST_ID>`,**必须 exit 0**,否则不开服、先把对应 zone 的 go/db 换成新版。之后再发「合服延期」公告。
+**屏障重建:copy 模式撤销之后、zone-up 之前必做**(2026-10-20 修复 r2-mz#1,未经运行验证)
+
+5'b 对**全部清单玩家**连父快照提交屏障 `player:{id}:save_barrier` 一起删:改回源区后玩家读源库,合服后在目标库提交的 pending / 两表 ACK 不再对应他要读的行。删完之后,`owner_epoch≠0`(进过场景)的人冷登录会被 login 以「历史玩家父快照与提交屏障缺失」拒绝 —— fail-closed、不丢数据,但**屏障重建完成之前不许开服**。pin 模式撤销不删缓存也不删屏障,跳过本段。前向 copy 合服从 2026-10-20 起保留屏障,不需要本段;它的 `verify:save_barrier` 报 block 时见本段末尾。
+
+1. **保持维护闸**:source / target 保持 §8 Step 1 的维护标记与 Step 2 的 zone-down,不 `k8s-zone-up`、不 `/open`;scene / login / go/db 与合服、pin、relocate、回填工具都不运行。`save_barrier_restore` 的 `-writers-stopped -queues-drained` 只是声明,工具查不了这一条。
+2. **列出要重建的人**:清单 `player_ids` 里 `player:<id>:owner_epoch` 存在且不为 `0` 的玩家。owner_epoch、屏障与父快照都在 §2.1 表 login / shared 那一行的实例(`-MergeNoticeRedisAddr` / `-MergeNoticeRedisDB`,DB 0)。owner_epoch 不存在或为 `0` 的人从没进过场景,不需要屏障,也不能放进计划(工具以「归属计数器缺失」拒绝)。再按此刻的落点记录 `player:placement:<id>` 分组:
+   - **没有记录**(copy 模式被拷的人都是):home 已改回 `<SRC>`,行在 `zone_<SRC>_db`。用下面的命令,plan 带 `-allow-home-fallback`。
+   - **有记录**:记录是 `<SRC>:<版本>` 的用同一条命令、不带 `-allow-home-fallback`;指向别的库(钉在 dst、搬过库)的按 [mysql-backup-pitr-runbook.md](mysql-backup-pitr-runbook.md)「2026-10-18 第二批」走 v2(要独立审定的 `-audited-owner-upper-bound`)。
+
+   每份计划最多 1000 人,超出就分批,每批一个计划文件。
+3. **建维护标记**:在同一实例 DB 0 上 `SET player:save_barrier:maintenance:<SRC> <维护工单号>`,**不设 TTL**。它只供工具校验,不会让任何进程停写。合服围栏 `merge:in_progress:<SRC>` 必须已由撤销释放,工具见到它就拒绝。映射(`-MergeRedisAddr` 的 DB 0)与共享 Redis 不是同一实例时,改用 `-routing-mode redis-split -mapping-redis <映射实例>`(v2,先 `-mode guard`);`-MergeZoneRouteSource db` 的环境按 PITR 手册第二批走 `db_first`,那条路径本来就接受本区空落点,不需要 `-allow-home-fallback`。
+4. **plan → 审查 → apply**。工作目录 `go/db`;`SAVE_BARRIER_RESTORE_DSN` / `SAVE_BARRIER_RESTORE_REDIS_PASSWORD` 由受控环境注入,不打印:
+
+```powershell
+go run ./cmd/save_barrier_restore -mode plan -schema zone_<SRC>_db -zone <SRC> `
+  -players <逗号分隔的玩家号> -redis <共享 Redis host:port> -redis-db 0 -routing-mode redis-same-instance `
+  -maintenance-id '<维护工单号>' -plan '<受控目录>/barrier-plan-<SRC>-<批号>.json' `
+  -allow-home-fallback -writers-stopped -queues-drained
+
+go run ./cmd/save_barrier_restore -mode apply -schema zone_<SRC>_db -zone <SRC> `
+  -redis <同上> -redis-db 0 -routing-mode redis-same-instance `
+  -maintenance-id '<同一维护工单号>' -plan '<同一计划文件>' `
+  -plan-sha256 '<plan 输出的 SHA-256>' -writers-stopped -queues-drained
+```
+
+   `-allow-home-fallback` 只在 plan 给,写进计划、计入 SHA-256;apply 不接受它,以审定计划为准。它只放宽一件事:`player:placement:<id>` **不存在**且 `player:zone:<id>` 恰为 `-zone` 的人,按该区自己的 zone 库(`-schema` 必须就是它)恢复。以下照旧拒绝:home≠zone;落点键存在(空串、他库、冻结、畸形);两表 SQL 围栏不同版;父 / 子缓存、资产证据或交接标记仍在;补投桶非空;合服围栏仍在。「落点记录仍不存在」在写屏障的同一段 Lua 里原子复核。屏障按 SQL 两行的当前围栏重建,不会把任何旧屏障恢复回来。任一人失败立刻退出、已完成前缀不回退,修复原因后按**同一计划**重跑。
+5. **验证后再开服**:按 PITR 手册「整批成功后」那段,用受控测试号验证缺父键冷登录读到同版两行;再按原值删掉 `player:save_barrier:maintenance:<SRC>`,然后才按下一段 zone-up。
+
+**合服 Step 5 的 `verify:save_barrier` 报 block**(2026-10-20 新增):前向 copy 合服保留屏障,这一行逐人复刻 login 冷加载的拒绝条件 —— 清单里 owner_epoch≠0 的玩家,屏障 pending 合法且不超过 owner_epoch、两表 ACK 都等于 pending、有效落点库(记录 ?? `zone_<DST>_db`)两张表的行内围栏都等于 pending。Notes 按原因分组,带前几个 id。不进 Step 6,保持维护闸,再按原因处置:
+
+- `barrier_missing`:多半是用 2026-10-20 之前的二进制跑了 copy 合服(旧版删屏障)。目标库的行是源库的逐字节拷贝,就地重建即可:按上面第 1~5 步,把 `<SRC>` 换成 `<DST>`(`-zone <DST> -schema zone_<DST>_db`,维护标记 `player:save_barrier:maintenance:<DST>`),无记录者带 `-allow-home-fallback`;重建后重跑 `-VerifyMerged`,直到这一行是 info。
+- 其余原因(`ack_not_equal_pending`、`sql_row_fence_not_equal_pending`、`sql_row_missing`、`owner_epoch_behind_pending`、各类 `*_malformed`):屏障或行与登录要求不一致,说明 P4 之后有写入或数据损坏。**不要就地重建,也不要为了让这一行变绿而手工删屏障** —— 屏障里可能还有未提交的存盘意图(`outbox_*`),按目标库旧行重建可能丢掉更新的数据。按 §10.2 的单玩家事故查清,或整体撤销。
+- 读失败是 INFRA(没查成),不是通过。
+
+撤销完成后(copy 模式先完成上面的屏障重建):`k8s-zone-up` 把 source 与 target 都拉起来(2026-09-29:两区各自照传上一次部署的 `-GateRouterMode` / 集群外入口 / Ingress / `-ReleaseProfile` 参数,口径同 §8 Step 6);pin 模式清单的撤销,在两区 `/open` 之前跑 `merge-zone-capability-check -MergeDbCapabilityZones <SRC_ID>,<DST_ID>`,**必须 exit 0**,否则不开服、先把对应 zone 的 go/db 换成新版。之后再发「合服延期」公告。
 
 ### 10.2 什么时候 unmerge 不够
 

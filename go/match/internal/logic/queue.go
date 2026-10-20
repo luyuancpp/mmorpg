@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"strconv"
-	"strings"
 	"time"
 
 	"match/internal/constants"
@@ -111,7 +110,7 @@ return redis.call("LPUSH", KEYS[2], ARGV[2])`
 // removeQueueMembersScript 把一批成员从队列 list、评分镜像与版本 hash 原子摘出。
 // KEYS=[queue, rank, versions],ARGV=[guarded, member...] 或 ["1", member, expectedVersion...]。
 // guarded=1 时仅摘版本仍等于快照的项:撤单删票后成员可能已成功重排,不能摘掉新项。
-// 无版本的静态遗留项以空字符串比较,新 push 一定写非空版本;不支持旧实例继续无版本写入。
+// 版本缺失(HGET 为 nil)两侧都按空字符串比较;新 push 一定写非空版本。
 // 逐个 LREM 0(同一玩家的重复项一并
 // 清掉,组内只留一份)+ ZREM,返回**实际从 list 摘出**的成员列表 —— 校验与
 // 摘出之间被 CancelQueue 摘走的人不在其中,调用方据此判断组是否凑齐。
@@ -215,14 +214,6 @@ const queueContainsScript = `if redis.call("LPOS", KEYS[1], ARGV[1]) == false th
 	return 0
 end
 return 1`
-
-// ticketSetQueueKeyScript 给已存在的票据补 queue_key(KEYS=[ticketKey],
-// ARGV=[queueKey]):票据不存在时不写,避免 HSET 凭空造出一个没有 TTL 的 hash。
-// 旧队列迁移(migrateLegacyQueues)用。
-const ticketSetQueueKeyScript = `if redis.call("EXISTS", KEYS[1]) == 0 then
-	return 0
-end
-return redis.call("HSET", KEYS[1], "` + ticketFieldQueueKey + `", ARGV[1])`
 
 // 测试注入点(生产恒为 nil):把并发时序里的"另一实例"插进两步之间,证明
 // 调换顺序后不再产生孤儿票据。照 runGatherFn / setQueueDepthFn 的包级变量模式。
@@ -364,13 +355,14 @@ func createTicketIfAbsentCtx(ctx context.Context, svcCtx *svc.ServiceContext, pl
 	return n == 1, nil
 }
 
-// ticketQueueKeys 返回该票据的成员可能所在的队列 key:有 queue_key 就只看它;
-// 旧票据(无该字段)新旧两种格式都看(见 keys.go legacyMatchQueueKey)。
-func ticketQueueKeys(t *queueTicket) []string {
+// ticketQueueKey 返回该票据的成员所在的队列 key(决策 D4):JoinQueue 与补位单写票时都记 queue_key,
+// 缺字段只可能是损坏数据,按不带人数段的 (mode, config) 队列兜底。加 hash tag 之前的旧格式
+// key 不再看(项目未上线、没有存量,2026-10-20 删除旧格式兼容)。
+func ticketQueueKey(t *queueTicket) string {
 	if t.QueueKey != "" {
-		return []string{t.QueueKey}
+		return t.QueueKey
 	}
-	return []string{matchQueueKey(t.Mode, t.Config), legacyMatchQueueKey(t.Mode, t.Config)}
+	return matchQueueKey(t.Mode, t.Config)
 }
 
 // isQueuedTicketInQueue 探测 queued 态票据的玩家是否真的在队列里(见 queueContainsScript)。
@@ -379,17 +371,12 @@ func ticketQueueKeys(t *queueTicket) []string {
 // LPUSH 之间崩溃,都会留下"票据 queued、队列无人"的残留 —— matcher 永远弹不到他,
 // JoinQueue 一直 ErrAlreadyQueued,直到 6h 过期。JoinQueue 据此自愈。
 func isQueuedTicketInQueue(svcCtx *svc.ServiceContext, playerId uint64, t *queueTicket) (bool, error) {
-	member := strconv.FormatUint(playerId, 10)
-	for _, key := range ticketQueueKeys(t) {
-		res, err := svcCtx.MatchRedis.Eval(queueContainsScript, []string{key}, member)
-		if err != nil {
-			return false, err
-		}
-		if n, _ := res.(int64); n == 1 {
-			return true, nil
-		}
+	res, err := svcCtx.MatchRedis.Eval(queueContainsScript, []string{ticketQueueKey(t)}, strconv.FormatUint(playerId, 10))
+	if err != nil {
+		return false, err
 	}
-	return false, nil
+	n, _ := res.(int64)
+	return n == 1, nil
 }
 
 // cancelTicketIfQueued 取消排队的删票:ticket id 一致且仍是 queued 才删
@@ -629,20 +616,15 @@ func removeQueueMembersVersionedCtx(ctx context.Context, svcCtx *svc.ServiceCont
 	return removed, nil
 }
 
-// dequeueMemberCtx 取消 / 剔除时把单个玩家从队列摘出。新格式 key(带 hash tag,
-// 有评分镜像)走 list+ZSET 原子 Lua;旧格式 key(`match:queue:<mode>:<config>`,
-// 无 tag、从未有过镜像)只做单 key LREM —— 旧 key 与按它推出的 rank key 不同
-// slot,集群下不能放进同一条 Lua。
+// dequeueMemberCtx 取消 / 剔除时把单个玩家从队列摘出:list、评分镜像与版本 hash
+// 走同 slot 原子 Lua(removeQueueMembersCtx)。加 hash tag 之前的旧格式 key 曾在这里
+// 单独走单 key LREM,项目未上线、没有存量,2026-10-20 随旧格式兼容一起删除。
 //
 // Redis 往返受调用方 ctx 约束。客户端 CancelQueue 传请求 ctx:
 // 出队如果晚于 gate 放行的下一条 JoinQueue 落地,会把新入队的同一玩家 LREM 掉,
 // 留下「票据 queued、队列无人」的孤儿(docs/design/client-request-ordering.md §6.1)。
 // 截止之后不发出时只留下没有票的残留队列项,由 matcher 的票据校验摘掉,是良性的。
 func dequeueMemberCtx(ctx context.Context, svcCtx *svc.ServiceContext, queueKey string, playerId uint64) error {
-	if !strings.Contains(queueKey, matchQueueHashTag) {
-		_, err := svcCtx.MatchRedis.LremCtx(ctx, queueKey, 0, strconv.FormatUint(playerId, 10))
-		return err
-	}
 	_, err := removeQueueMembersCtx(ctx, svcCtx, queueKey, []uint64{playerId})
 	return err
 }

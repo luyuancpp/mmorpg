@@ -124,11 +124,6 @@ func warnStarvedAnchor(queueKey string, anchor uint64, waitSeconds int64, tol fl
 		waitSeconds, tol, queueKey, anchor)
 }
 
-// legacyQueueSweepInterval 旧格式队列的定期搬迁间隔(见 migrateLegacyQueues):
-// 启动时先搬一次,之后每隔这么久再扫 —— 滚动升级混跑窗口内旧实例仍会往旧 key
-// RPUSH,只搬一次不够;SCAN 走的是共享库全键空间,不能每轮 500ms 都做。
-const legacyQueueSweepInterval = time.Minute
-
 // StartMatcherLoop 启动 matcher 定时循环(调用方放 goroutine)。
 // 多实例安全:每个 (mode, battle_config_id) 队列的凑单临界区由
 // match:{mq}:lock:{mode}:{config} 的 SETNX 锁保护,拿不到锁跳过本轮
@@ -144,96 +139,7 @@ func StartMatcherLoop(ctx context.Context, svcCtx *svc.ServiceContext) {
 	if interval <= 0 {
 		interval = 500 * time.Millisecond
 	}
-	migrateLegacyQueues(svcCtx)
-	lastSweep := time.Now()
-	safego.Loop(ctx, "match.matcher", interval, func(ctx context.Context) {
-		if time.Since(lastSweep) >= legacyQueueSweepInterval {
-			migrateLegacyQueues(svcCtx)
-			lastSweep = time.Now()
-		}
-		runMatcherRound(ctx, svcCtx)
-	})
-}
-
-// migrateLegacyQueues 把加 hash tag 之前写入的旧格式队列(`match:queue:<mode>:<config>`,
-// 见 keys.go legacyMatchQueueKey)搬进新队列。新 matcher 只遍历注册集,旧 list
-// 既不在注册集也不会再被读:滚动升级前已入队的玩家永远弹不到,GetQueueStatus
-// 永远 QUEUED、JoinQueue 一直 ErrAlreadyQueued(6h),而无 TTL 的旧 list 永久残留。
-//
-// 旧 key 由改造前的实例写在共享库(SharedRedis;MatchRedis 未配置时两者同一句柄),
-// 所以在 SharedRedis 上 SCAN,成员搬进 MatchRedis 的新队列。逐个 RPOP 旧队尾 →
-// LPUSH 新队首,旧队列整体保持原相对顺序并排在新队列现有成员之前(他们等得更久);
-// 顺手给票据补 queue_key。RPOP 与 LPUSH 之间崩溃会丢一个成员,他的票据仍是
-// queued 而队列无人 —— 由 JoinQueue 的 isQueuedTicketInQueue 自愈,不做跨 key 原子。
-// MatchRedis 独立于共享库时,旧票据留在共享库里、新实例读不到,搬进来的成员会在
-// popGroup 因票据缺失被丢弃,玩家重排即可;只保证旧 list 不再残留。
-// 多实例重复执行幂等(RPOP 到空即停)。
-func migrateLegacyQueues(svcCtx *svc.ServiceContext) {
-	var cursor uint64
-	moved := 0
-	for {
-		keys, next, err := svcCtx.SharedRedis.Scan(cursor, legacyMatchQueueScanPattern, 256)
-		if err != nil {
-			logx.Errorf("[matcher] Failed to scan legacy queues: %v", err)
-			return
-		}
-		for _, legacyKey := range keys {
-			moved += migrateLegacyQueue(svcCtx, legacyKey)
-		}
-		if next == 0 {
-			break
-		}
-		cursor = next
-	}
-	if moved > 0 {
-		logx.Infof("[matcher] Moved %d legacy queue members to new queues", moved)
-	}
-}
-
-// migrateLegacyQueue 搬空一条旧队列,返回搬迁人数。
-func migrateLegacyQueue(svcCtx *svc.ServiceContext, legacyKey string) int {
-	mode, config, err := parseQueueKey(legacyKey)
-	if err != nil {
-		logx.Errorf("[matcher] Could not parse legacy queue key %q; skipping: %v", legacyKey, err)
-		return 0
-	}
-	queueKey := matchQueueKey(mode, config)
-	moved := 0
-	for {
-		raw, err := svcCtx.SharedRedis.Rpop(legacyKey)
-		if err != nil {
-			if !errors.Is(err, redis.Nil) {
-				logx.Errorf("[matcher] Failed to Rpop legacy queue %s: %v", legacyKey, err)
-			}
-			break
-		}
-		if raw == "" {
-			// go-zero 对空列表返回 ("", nil)。
-			break
-		}
-		// 评分镜像按玩家当前评分写(旧实例的票据没有 rating 字段);
-		// 非法成员按默认分照搬,由 popGroup 丢弃。
-		playerId, parseErr := strconv.ParseUint(raw, 10, 64)
-		rating := float64(defaultRating)
-		if parseErr == nil {
-			rating = loadRatingOrDefault(svcCtx, playerId)
-		}
-		if err := pushFrontRegistered(svcCtx, queueKey, raw, rating); err != nil {
-			logx.Errorf("[matcher] Failed to move legacy queue member %s into %s (JoinQueue will recover ticket remnants): %v", raw, queueKey, err)
-			continue
-		}
-		moved++
-		if parseErr != nil {
-			continue
-		}
-		if _, err := svcCtx.MatchRedis.Eval(ticketSetQueueKeyScript, []string{matchTicketKey(playerId)}, queueKey); err != nil {
-			logx.Errorf("[matcher] Failed to backfill queue_key in legacy ticket player=%d: %v", playerId, err)
-		}
-	}
-	if moved > 0 {
-		logx.Infof("[matcher] Legacy queue %s moved into %s, %d players total", legacyKey, queueKey, moved)
-	}
-	return moved
+	safego.Loop(ctx, "match.matcher", interval, func(ctx context.Context) { runMatcherRound(ctx, svcCtx) })
 }
 
 // runMatcherRound 遍历注册集里的队列 key 并逐个尝试凑单。

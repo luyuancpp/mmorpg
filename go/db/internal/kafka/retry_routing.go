@@ -597,6 +597,9 @@ func (c *KeyOrderedKafkaConsumer) consumeRetryQueueOwner(s retryQueueSample) {
 			if c.pullStopped() || c.ctx.Err() != nil {
 				return // 停机撤拉取之后不再认领(Stop 第①步)
 			}
+			if !c.routeGate.opened() {
+				return // 读方就绪闸在本拍中途关上:剩下的收据留在 p{N}(nil 闸恒放行,开关关着时不走这里)
+			}
 			i := (start + k) % len(leases)
 			if quota[i] <= 0 {
 				continue

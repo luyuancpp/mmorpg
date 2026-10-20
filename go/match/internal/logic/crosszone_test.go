@@ -8,7 +8,6 @@ package logic
 import (
 	"context"
 	"sort"
-	"strconv"
 	"testing"
 	"time"
 
@@ -266,39 +265,6 @@ func TestCancelQueueUsesTicketQueueKey(t *testing.T) {
 
 	require.False(t, mr.Exists(matchTicketKey(5001)))
 	require.False(t, mr.Exists(customKey), "玩家应从票据记录的队列 key 出队")
-}
-
-// writeLegacyTicket 模拟改造前实例写的票据:无 queue_key / zone_id 字段。
-func writeLegacyTicket(t *testing.T, mr *miniredis.Miniredis, playerId uint64, ticketId string, mode matchpb.MatchMode, config uint32) {
-	t.Helper()
-	key := matchTicketKey(playerId)
-	mr.HSet(key, ticketFieldTicket, ticketId)
-	mr.HSet(key, ticketFieldMode, strconv.Itoa(int(mode)))
-	mr.HSet(key, ticketFieldConfig, strconv.FormatUint(uint64(config), 10))
-	mr.HSet(key, ticketFieldState, ticketStateQueued)
-	mr.HSet(key, ticketFieldEnqueuedAt, strconv.FormatUint(nowMs(), 10))
-	mr.SetTTL(key, 21600*time.Second)
-}
-
-// 旧票据没有 queue_key 字段,成员在**真正的旧格式** key `match:queue:<mode>:<config>`
-// (无 hash tag、不在注册集)里:CancelQueue 必须把旧 list 里的成员也摘掉,
-// 否则无 TTL 的旧 list 永久残留。新格式 key 上若也有一份(迁移后)同样摘掉。
-func TestCancelQueueLegacyTicketFallsBack(t *testing.T) {
-	svcCtx, mr := newTestSvcCtx(t)
-	legacyKey := legacyMatchQueueKey(int32(matchpb.MatchMode_MATCH_MODE_1V1), 0)
-	require.Equal(t, "match:queue:3:0", legacyKey, "必须是改造前的无 tag 格式")
-	newKey := matchQueueKey(int32(matchpb.MatchMode_MATCH_MODE_1V1), 0)
-	writeLegacyTicket(t, mr, 5002, "tk-5002", matchpb.MatchMode_MATCH_MODE_1V1, 0)
-	_, err := mr.RPush(legacyKey, "5002")
-	require.NoError(t, err)
-	_, err = mr.RPush(newKey, "5002")
-	require.NoError(t, err)
-
-	_, err = NewCancelQueueLogic(context.Background(), svcCtx).CancelQueue(&matchpb.CancelQueueRequest{PlayerId: 5002})
-	require.NoError(t, err)
-	require.False(t, mr.Exists(matchTicketKey(5002)))
-	require.False(t, mr.Exists(legacyKey), "旧格式 list 里的成员必须被摘掉")
-	require.False(t, mr.Exists(newKey), "新格式 key 上的一份同样摘掉")
 }
 
 // 挑战记录双 key DEL 拆成两条单 key DEL(D7),两 key 都要删掉。

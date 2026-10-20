@@ -93,7 +93,7 @@ comments as English to dodge a hazard the build already handled.
 - **Three levels**: `BroadcastToPlayers` (AOI subset), `BroadcastToScene` (scene-wide), `BroadcastToAll` (server-wide).
 - **Bitmap encoding**: `BroadcastToPlayers` auto-selects bitmap when `count >= 32 && bitmapBytes + 6 < count * 3`. Session IDs encoded as `session_bitmap_base` (uint32) + `session_bitmap` (bytes). 750 players: ~2250 → ~155 bytes (-93%).
 - **Session ID layout**: `uint32`, upper 15 bits = gate node_id, lower 17 bits = sequence. All sessions on one gate share upper bits → bitmap span bounded.
-- **C++ API**（`player_message_utils.h/cpp`）：三种 `BroadcastMessageTo*()` 均经 `RpcSession::SendRequest` 走 muduo TCP RPC；玩家子集自动编码 bitmap，场景广播按 scene_id 筛选。
+- **C++ API**（`client_message_sender.h/cpp`）：`BroadcastToPlayerClients()`、`BroadcastToSceneClients()`、`BroadcastToAllClientsOnKnownGates()` 均经 `RpcSession::SendRequest` 走 muduo TCP RPC；玩家子集自动编码 bitmap，场景广播按 scene_id 筛选，后者只覆盖当前线程注册表中拥有 `RpcSession` 的 Gate 上的全部客户端会话。
 - **Go API** (`go/shared/kafkautil/gate_push.go`): `BroadcastToPlayers()`, `BroadcastToScene()`, `BroadcastToAll()` — Kafka-based, same three levels. `EncodeBitmapFields()` for auto bitmap in Go.
 - **Gate handlers**：muduo RPC 在 `gate_service_handler.cpp`，Kafka 在 `gate_event_handler.cpp`；两者实现对应的目标解码与广播。
 - **Proto**：`proto/gate/gate_service.proto`（C++ 节点 RPC）、`proto/contracts/kafka/gate_event.proto`（Kafka 命令）。
