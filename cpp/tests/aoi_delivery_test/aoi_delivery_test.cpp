@@ -80,10 +80,10 @@ protected:
 void SendMessageToClientViaGate(uint32_t id, const google::protobuf::Message& message, entt::entity receiver) {
     deliveries.push_back({id, receiver, message.SerializeAsString()});
 }
-void BroadcastMessageToPlayers(uint32_t id, const google::protobuf::Message& message, const EntityUnorderedSet& receivers) {
+void BroadcastToPlayerClients(uint32_t id, const google::protobuf::Message& message, const EntityUnorderedSet& receivers) {
     for (auto receiver : receivers) SendMessageToClientViaGate(id, message, receiver);
 }
-void BroadcastMessageToPlayers(uint32_t id, const google::protobuf::Message& message, const EntityVector& receivers) {
+void BroadcastToPlayerClients(uint32_t id, const google::protobuf::Message& message, const EntityVector& receivers) {
     for (auto receiver : receivers) SendMessageToClientViaGate(id, message, receiver);
 }
 

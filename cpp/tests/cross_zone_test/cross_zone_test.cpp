@@ -82,9 +82,11 @@ class LocalNodeInfoResetListener : public ::testing::EmptyTestEventListener
 //                                 PlayerAllData snapshot (the node taking
 //                                 over after an ownership handoff) doesn't
 //                                 have to pre-emplace.
-//   5. BagUnmarshalDropsBadType — bag_type >= kBagTypeCount in incoming
-//                                 BagAllData is dropped with WARN, not
-//                                 crashed.
+//   5. BagUnmarshalCarriesBadType — bag_type >= kBagTypeCount in incoming
+//                                 BagAllData stays out of the runtime bags
+//                                 and is carried verbatim back to the
+//                                 snapshot (mixed-version §12, batch 5),
+//                                 not dropped, not crashed.
 //   6. FrozenCompMarker         — PlayerFrozenComp emplace/remove +
 //                                 IsCrossZoneFrozen() semantics.
 //   7. HandoffMarkWithdrawQueue — the pending-withdrawal table for handoff
@@ -411,12 +413,21 @@ TEST(CrossZoneBagMarshal, UnmarshalCreatesPlayerBagsComp)
     EXPECT_EQ(items[0].bagType, static_cast<uint32_t>(kInventory));
 }
 
-TEST(CrossZoneBagMarshal, UnmarshalDropsOutOfRangeBagType)
+// 本版本不认识的包类型(新版本加的包)的条目与容量:不进任何运行时包、不崩,整份原样携带,存盘原样写回
+// (docs/design/mixed-version-persist-field-protection.md §12,第 5 批)。以前这里直接丢弃 —— 新版本加了包类型后
+// 回滚 scene,旧版本一存盘,新包里的物品就全没了。
+TEST(CrossZoneBagMarshal, UnmarshalCarriesOutOfRangeBagTypeVerbatim)
 {
     tlsEcs.actorRegistry.clear();
 
     const auto player = tlsEcs.actorRegistry.create();
     BagAllData wire;
+    for (uint32_t bagType = 0; bagType < static_cast<uint32_t>(kBagTypeCount); ++bagType)
+    {
+        wire.add_capacities(20 + bagType);
+    }
+    wire.add_capacities(77); // 下标 kBagTypeCount:新版本加的第一个包
+    wire.add_capacities(88);
     // Two items: one valid (kInventory), one bag_type out of range.
     auto* good = wire.add_items();
     good->set_item_uuid(1);
@@ -428,15 +439,44 @@ TEST(CrossZoneBagMarshal, UnmarshalDropsOutOfRangeBagType)
     auto* bad = wire.add_items();
     bad->set_item_uuid(2);
     bad->set_config_id(200);
-    bad->set_stack_size(1);
-    bad->set_pos(0);
+    bad->set_stack_size(3);
+    bad->set_pos(5);
     bad->set_bag_type(static_cast<uint32_t>(kBagTypeCount) + 5);  // future / corrupt
+    bad->mutable_instance()->set_item_id(2);
+    bad->mutable_instance()->set_config_id(200);
+    bad->mutable_instance()->set_size(3);
+    bad->mutable_instance()->mutable_unknown_fields()->AddVarint(412345, 9); // 新版本的物品属性
+    const ItemEntry badCopy = *bad;
 
     bag_marshal::Unmarshal(player, wire);
     const auto items = SnapshotPlayerBags(player);
-    EXPECT_EQ(items.size(), 1u) << "out-of-range bag_type must be dropped, "
-                                << "not crash. Forward-compat for future bag types.";
+    ASSERT_EQ(items.size(), 1u) << "out-of-range bag_type must not enter any runtime bag, and must not crash";
     EXPECT_EQ(items[0].guid, 1u);
+    const auto& bags = tlsEcs.actorRegistry.get<PlayerBagsComp>(player);
+    ASSERT_EQ(1u, bags.unsupportedBagTypes.items.size());
+    EXPECT_EQ(std::vector<uint32_t>({77u, 88u}), bags.unsupportedBagTypes.capacities);
+
+    BagAllData saved;
+    bag_marshal::Marshal(player, saved);
+    ASSERT_EQ(static_cast<int>(kBagTypeCount) + 2, saved.capacities_size());
+    EXPECT_EQ(77u, saved.capacities(static_cast<int>(kBagTypeCount)));
+    EXPECT_EQ(88u, saved.capacities(static_cast<int>(kBagTypeCount) + 1));
+    ASSERT_EQ(2, saved.items_size());
+    EXPECT_EQ(1u, saved.items(0).item_uuid());
+    EXPECT_TRUE(google::protobuf::util::MessageDifferencer::Equals(badCopy, saved.items(1)))
+        << "the unknown bag type's entry must be written back verbatim, unknown fields included";
+    EXPECT_EQ(saved.items(1).SerializeAsString(), badCopy.SerializeAsString());
+
+    // 重新还原(回档到已有实体):载荷里没有越界记录时,上一次携带的不得残留。
+    BagAllData withoutUnsupported;
+    *withoutUnsupported.add_items() = wire.items(0);
+    bag_marshal::Unmarshal(player, withoutUnsupported);
+    EXPECT_TRUE(bags.unsupportedBagTypes.items.empty());
+    EXPECT_TRUE(bags.unsupportedBagTypes.capacities.empty());
+    BagAllData resaved;
+    bag_marshal::Marshal(player, resaved);
+    EXPECT_EQ(static_cast<int>(kBagTypeCount), resaved.capacities_size());
+    EXPECT_EQ(1, resaved.items_size());
 }
 
 // ============================================================================
@@ -742,6 +782,8 @@ TEST(TravelOutcomeReset, NoRecordedEvidenceKeepsIncoming)
 #include <limits>
 #include "player/comp/last_persisted_snapshot_comp.h"
 #include "player/system/player_data_loader.h"
+#include "player/system/player_persist_marshal.h"
+#include "player/comp/player_persist_carry_comp.h"
 #include "modules/currency/comp/player_currency_comp.h"
 #include "modules/mission/comp/mission_comp.h"
 #include "proto/common/component/asset_op_ledger_comp.pb.h"
@@ -938,6 +980,9 @@ void CreatePersistedPlayerComps(entt::entity player)
     registry.emplace<PlayerMysteryMerchantComp>(player);
     registry.emplace<CurrencyComp>(player);
     registry.emplace<PlayerCurrencyComp>(player);
+    // 两表顶层未知字段的载体(混版本持久字段保护 §4.2 L1),生产里由两张表的 Unmarshal 创建。
+    registry.emplace<PlayerDatabaseCarryComp>(player);
+    registry.emplace<PlayerDatabase1CarryComp>(player);
 }
 
 // 构造一个"退出存盘在途"的玩家:当前绑定 currentSession(已写进 SessionMap、映射到本玩家)、
@@ -974,16 +1019,10 @@ PlayerAllData IdentifiedPlayerLoadData(Guid playerId)
     return data;
 }
 
-// 与 SavePlayerToRedis 写盘时同一个形状:marshal + 两张子表的 player_id。
+// 与 SavePlayerToRedis 写盘时同一个形状:走同一个统一入口(拼装 + 两张子表的 player_id + 持久 schema 世代)。
 bool MarshalAsSaved(entt::entity player, PlayerAllData& data)
 {
-    if (!PlayerAllDataMessageFieldsMarshal(player, data))
-    {
-        return false;
-    }
-    data.mutable_player_database_data()->set_player_id(kExitPlayerId);
-    data.mutable_player_database_1_data()->set_player_id(kExitPlayerId);
-    return true;
+    return player_persist::MarshalPlayerForPersist(player, kExitPlayerId, data);
 }
 } // namespace
 
@@ -1327,6 +1366,86 @@ TEST(ExitPersistEcs, StaleEpochRejectOnOnlinePlayerKeepsEntity)
     EXPECT_FALSE(tlsEcs.actorRegistry.any_of<UnregisterPlayer>(player));
     EXPECT_EQ(tlsEcs.GetPlayer(kExitPlayerId), player);
     EXPECT_EQ(SessionMap().count(kSessionAtExit), 1u);
+}
+
+// ── 严格屏障覆盖世代校验 C3 的结局分派(docs/design/mixed-version-persist-field-protection.md §5.2、§10)──────────
+
+// enforce 拒写发生在退出存盘上:不会再有落地回调,必须不存盘收尾,否则退出永远收不了尾。
+TEST(ExitPersistEcs, SchemaRejectOnExitingPlayerDiscardsWithoutReleaseMark)
+{
+    ScopedPersistedPlayerCleanup cleanup;
+    const auto player = MakeExitingPlayer(kSessionAtExit, kSessionAtExit);
+    ASSERT_TRUE(MarkPersisted(player));
+    const auto before = exit_release_stats::Read();
+    const auto schemaBefore = persist_schema_stats::Read();
+
+    PlayerLifecycleSystem::HandlePlayerSaveSchemaRejected(kExitPlayerId, "player-save-test", "6");
+
+    EXPECT_FALSE(tlsEcs.actorRegistry.valid(player));
+    EXPECT_EQ(tlsEcs.GetPlayer(kExitPlayerId), entt::entity{entt::null});
+    EXPECT_EQ(SessionMap().count(kSessionAtExit), 0u);
+    EXPECT_EQ(exit_release_stats::Read().decisions, before.decisions) << "不写释放标记、不发改派";
+    EXPECT_EQ(persist_schema_stats::Read().regressionRejected, schemaBefore.regressionRejected + 1);
+}
+
+// 交接在等这次存盘落地(标记未发,requestedAtMs = 0):解冻、摘交接意图,玩家留在本节点。
+TEST(ExitPersistEcs, SchemaRejectDuringHandoffBeforeMarkAbortsHandoff)
+{
+    ScopedPersistedPlayerCleanup cleanup;
+    const auto player = MakeOnlinePlayer(kSessionAtExit);
+    ASSERT_TRUE(MarkPersisted(player));
+    const auto travelBefore = travel_handoff_stats::Read();
+    auto& travel = tlsEcs.actorRegistry.emplace<PlayerTravelHandoffComp>(player);
+    travel.requestedAtMs = 0;
+    travel.targetZoneId = 8;
+    tlsEcs.actorRegistry.emplace<PlayerFrozenComp>(player);
+
+    PlayerLifecycleSystem::HandlePlayerSaveSchemaRejected(kExitPlayerId, "player-save-test", "6");
+
+    ASSERT_TRUE(tlsEcs.actorRegistry.valid(player));
+    EXPECT_FALSE(tlsEcs.actorRegistry.any_of<PlayerTravelHandoffComp>(player));
+    EXPECT_FALSE(tlsEcs.actorRegistry.any_of<PlayerFrozenComp>(player)) << "SET 还没发,解冻安全";
+    EXPECT_EQ(tlsEcs.GetPlayer(kExitPlayerId), player);
+    EXPECT_EQ(SessionMap().count(kSessionAtExit), 1u);
+    EXPECT_EQ(travel_handoff_stats::Read().aborted, travelBefore.aborted + 1);
+}
+
+// 在线:保留实体与会话,本次不落盘;不能按"已废黜"销毁(那是 owner CAS 拒绝的语义)。
+TEST(ExitPersistEcs, SchemaRejectOnOnlinePlayerKeepsEntity)
+{
+    ScopedPersistedPlayerCleanup cleanup;
+    const auto player = MakeOnlinePlayer(kSessionAtExit);
+    ASSERT_TRUE(MarkPersisted(player));
+    const auto ownerBefore = owner_epoch_stats::Read();
+
+    PlayerLifecycleSystem::HandlePlayerSaveSchemaRejected(kExitPlayerId, "player-save-test", "6");
+
+    ASSERT_TRUE(tlsEcs.actorRegistry.valid(player));
+    EXPECT_FALSE(tlsEcs.actorRegistry.any_of<UnregisterPlayer>(player));
+    EXPECT_EQ(tlsEcs.GetPlayer(kExitPlayerId), player);
+    EXPECT_EQ(SessionMap().count(kSessionAtExit), 1u);
+    EXPECT_EQ(owner_epoch_stats::Read().staleOwnerWriteRejected, ownerBefore.staleOwnerWriteRejected)
+        << "C3 拒写不计入双主证据";
+}
+
+// warn 照写只计数,不改实体状态;实体已不在时两种回调都是空操作。
+TEST(ExitPersistEcs, SchemaWarnOnlyCountsAndGonePlayerIsNoop)
+{
+    ScopedPersistedPlayerCleanup cleanup;
+    const auto player = MakeExitingPlayer(kSessionAtExit, kSessionAtExit);
+    ASSERT_TRUE(MarkPersisted(player));
+    const auto schemaBefore = persist_schema_stats::Read();
+
+    PlayerLifecycleSystem::HandlePlayerSaveSchemaWarned(kExitPlayerId, "player-save-test");
+
+    ASSERT_TRUE(tlsEcs.actorRegistry.valid(player)) << "warn 已照写,退出照常等落地回调收尾";
+    EXPECT_TRUE(tlsEcs.actorRegistry.any_of<UnregisterPlayer>(player));
+    EXPECT_EQ(persist_schema_stats::Read().regressionWarned, schemaBefore.regressionWarned + 1);
+
+    constexpr Guid kGonePlayerId = 987650001;
+    ASSERT_EQ(tlsEcs.GetPlayer(kGonePlayerId), entt::entity{entt::null});
+    PlayerLifecycleSystem::HandlePlayerSaveSchemaRejected(kGonePlayerId, "player-save-test", "6");
+    EXPECT_EQ(persist_schema_stats::Read().regressionRejected, schemaBefore.regressionRejected + 1);
 }
 
 TEST(ExitPersistEcs, CancelExitOnReconnectRemovesBothMarkers)
@@ -2800,9 +2919,8 @@ TEST(TravelOwnershipEcs, RollbackWithMissingPersistedComponentKeepsFrozenState)
     tlsEcs.actorRegistry.emplace<PlayerOwnerEpochComp>(player).epoch = kCachedEpoch;
 
     PlayerAllData persisted;
-    ASSERT_TRUE(PlayerAllDataMessageFieldsMarshal(player, persisted));
-    persisted.mutable_player_database_data()->set_player_id(kCapPlayerId);
-    persisted.mutable_player_database_1_data()->set_player_id(kCapPlayerId);
+    // 与写盘同一个形状(统一入口,带持久 schema 世代),落盘快照才与生产的 marshal 结果可比。
+    ASSERT_TRUE(player_persist::MarshalPlayerForPersist(player, kCapPlayerId, persisted));
     tlsEcs.actorRegistry.emplace<PlayerLastPersistedSnapshotComp>(player).Replace(persisted);
     const auto persistedBytes = persisted.SerializeAsString();
     tlsEcs.actorRegistry.remove<PlayerAssetOpLedgerComp>(player);
@@ -6137,7 +6255,7 @@ TEST(EnterFenceEcs, StaleEnterDoesNotSupersedeRelocateEntry)
 //     另一半:CreateScene 的业务失败应答不回显 creator_ids,旧的全局处理器找不到创建者,客户端收不到任何提示。
 //     这里直接驱动 RequestEnterMirrorScene 的闸与 HandleMirrorCreateDone(每次调用回调的落点),不发真实 RPC。
 // ============================================================================
-#include "core/network/grpc_call_types.h"                    // GrpcCallOutcome
+#include "core/network/grpc_client_call.h"                    // GrpcCallOutcome
 #include "player/system/player_tip.h"                     // 校准迟到完成不得推提示的日志观察器
 #include "player/system/db_task_dispatch_system.h"          // 复用账本测试钩子,让真实退出等回执时保留实体
 #include "proto/common/component/battle_comp.pb.h"       // InBattleComp

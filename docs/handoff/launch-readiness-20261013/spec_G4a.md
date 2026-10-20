@@ -4,6 +4,8 @@
 > `docs/design/shared-redis-split-by-purpose.md`;附录 A 是 `docs/README.md` 登记行与 `tools/scripts/gen_docs_index.py` 的分类规则补丁。
 > 本阶段只读代码与文档,除本文件外未改任何文件;没有运行任何编译、测试、生成、部署命令(AGENTS.md §10.1)。
 > 2026-10-12 已吸收一轮对抗式评审(逐条回到代码核对),处理结果见文末「评审处理记录」。
+>
+> **(2026-10-19 注,本文原文保留)** 本规格对应 G4a 原稿,已被 2026-10-18 修订取代,以 [shared-redis-split-by-purpose.md](../../design/shared-redis-split-by-purpose.md) 为准:第 2 批「dbctl 并入 redis-mapping」改为按 zone 组分实例(§18),第 3 批 redis-cache 从「可选」改为必做(§19),核心路线见 §20,新分批见 §24(取代原 §3.4)。修订的调研规格是同目录的 `spec_G4a_revision_scout.md`。另:本文的 `admitted:zone:{z}` SET 与「`FreeSlots` 读 SCARD」已过时,现为 `admitted:zset:zone:{z}` ZSET,计数走 `admittedCountScript`(ZREMRANGEBYSCORE + ZCARD),见设计稿 §2.2 A 表后的 2026-10-15 更正。
 
 ==== 正文开始 ====
 

@@ -47,9 +47,10 @@ message_content: msg_id=70, serialized_message ~20 bytes
 - 只发 `scene_id + message_content`，Gate 遍历已连接 session 按 `info.sceneId` 过滤分发。
 - 用于场景全员广播（非 AOI 子集），~30 bytes，与玩家数无关。
 
-#### 3. BroadcastToAll (全服广播)
+#### 3. BroadcastToAll（目标 Gate 上全部客户端会话）
 - 只发 `message_content`，Gate 向所有已连接 session 分发。
 - 用于系统公告、维护通知等，~25 bytes。
+- C++ 调用只覆盖当前节点 Gate 注册表中拥有 `RpcSession` 的 Gate；跨节点或跨 zone 的全服覆盖需要调用方另行编排。
 
 ## API 总览
 
@@ -57,9 +58,13 @@ message_content: msg_id=70, serialized_message ~20 bytes
 
 | 函数 | 传输 | 场景 |
 |------|------|------|
-| `BroadcastMessageToPlayers(msgId, msg, playerList)` | 每 Gate 一次 muduo TCP RPC | AOI 子集（自动 bitmap） |
-| `BroadcastMessageToScene(msgId, msg, sceneId, playerList)` | 每 Gate 一次 muduo TCP RPC | 场景全员 |
-| `BroadcastMessageToAll(msgId, msg)` | 向已连接 Gate 发送 muduo TCP RPC | 全服 |
+| `BroadcastToPlayerClients(messageId, message, playerEntities)` | 每 Gate 一次 muduo TCP RPC | 指定玩家客户端，适用于 AOI 子集（自动 bitmap） |
+| `BroadcastToSceneClients(messageId, message, sceneId, scenePlayerEntities)` | 每 Gate 一次 muduo TCP RPC | 玩家集合只用于发现 Gate，实际收件人由 Gate 按 `sceneId` 筛选 |
+| `BroadcastToAllClientsOnKnownGates(messageId, message)` | 向当前线程注册表中拥有 `RpcSession` 的 Gate 发送 muduo TCP RPC | 这些 Gate 上的全部客户端会话，不保证全服覆盖 |
+
+发送接口位于 `client_message_sender.h`，只在所属节点的 EventLoop 线程调用。单发按玩家 ID / 实体调用
+`SendMessageToClientViaGate`；已经持有 Gate RPC 会话与客户端会话号的路径调用
+`SendMessageToClientSessionViaGate`。这些接口均不等待客户端确认；此次改名不改变身份栅栏、广播编码或发送行为。
 
 ### Go (Service → Gate, Kafka)
 
@@ -76,7 +81,7 @@ message_content: msg_id=70, serialized_message ~20 bytes
 - `proto/contracts/kafka/gate_event.proto` — bitmap fields (3,4) + `BroadcastToSceneEvent` + `BroadcastToAllEvent`
 
 **C++ 发送侧 (scene node):**
-- `cpp/libs/engine/core/network/player_message_utils.cpp/h` — 三种广播的组包与 `RpcSession::SendRequest`
+- `cpp/libs/engine/core/network/client_message_sender.cpp/h` — 单发与三种广播的组包及 `RpcSession::SendRequest`
 - `cpp/libs/engine/core/network/broadcast_target_codec.h` — `broadcast_targets::Encode`，与 Gate 共用目标顺序和身份栅栏编码
 
 **C++ Gate 接收侧:**

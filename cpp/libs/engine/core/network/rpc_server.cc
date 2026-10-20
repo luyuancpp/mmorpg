@@ -90,7 +90,7 @@ void RpcServer::onConnection(const TcpConnectionPtr& conn)
     // 入站节点链路断开:摘掉所有仍引用这条连接的 RpcSession 组件。
     // RpcSession 只存 weak,不摘也不会把连接或 channel 钉住;仍要摘,是为了让路由方**立刻**看到"节点不可达"
     // (try_get<RpcSession> 为空),而不是留一个 lock() 永远失败的空壳,等到对端 etcd 键过期(NodeTTLSeconds,
-    // 默认 180s)触发 DestroyEntity 才消失。消费方(player_message_utils / scene_handler ...)本来就按
+    // 默认 180s)触发 DestroyEntity 才消失。消费方(client_message_sender / scene_handler ...)本来就按
     // try_get<RpcSession> 为空处理"节点不可达";重注册时 tryRegister 先 remove 再 emplace,组件已不在也无副作用。
     // 见 docs/ops/incident-gate-tcpconnection-dtor-assert-2026-09-13.md §7.4。
     NodeUtils::RemoveRpcSessionsBoundTo(conn);

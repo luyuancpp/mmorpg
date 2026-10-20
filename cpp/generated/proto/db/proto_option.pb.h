@@ -54,6 +54,8 @@ extern const ::google::protobuf::internal::DescriptorTable descriptor_table_prot
 }  // extern "C"
 enum BS_RESULT_TYPE : int;
 extern const uint32_t BS_RESULT_TYPE_internal_data_[];
+enum ClientRpcKind : int;
+extern const uint32_t ClientRpcKind_internal_data_[];
 enum MessagePriority : int;
 extern const uint32_t MessagePriority_internal_data_[];
 enum NodeType : int;
@@ -65,6 +67,9 @@ namespace protobuf {
 template <>
 internal::EnumTraitsT<::BS_RESULT_TYPE_internal_data_>
     internal::EnumTraitsImpl::value<::BS_RESULT_TYPE>;
+template <>
+internal::EnumTraitsT<::ClientRpcKind_internal_data_>
+    internal::EnumTraitsImpl::value<::ClientRpcKind>;
 template <>
 internal::EnumTraitsT<::MessagePriority_internal_data_>
     internal::EnumTraitsImpl::value<::MessagePriority>;
@@ -145,6 +150,48 @@ template <>
 [[nodiscard]] inline bool NodeType_Parse(
     ::absl::string_view name, NodeType* PROTOBUF_NONNULL value) {
   return ::google::protobuf::internal::ParseNamedEnum<NodeType>(NodeType_descriptor(), name,
+                                           value);
+}
+enum ClientRpcKind : int {
+  CLIENT_RPC_REQUEST = 0,
+  CLIENT_RPC_ONE_WAY = 1,
+  CLIENT_RPC_PUSH = 2,
+  CLIENT_RPC_SERVER_ONLY = 3,
+  ClientRpcKind_INT_MIN_SENTINEL_DO_NOT_USE_ =
+      ::std::numeric_limits<::int32_t>::min(),
+  ClientRpcKind_INT_MAX_SENTINEL_DO_NOT_USE_ =
+      ::std::numeric_limits<::int32_t>::max(),
+};
+
+extern const uint32_t ClientRpcKind_internal_data_[];
+inline constexpr ClientRpcKind ClientRpcKind_MIN =
+    static_cast<ClientRpcKind>(0);
+inline constexpr ClientRpcKind ClientRpcKind_MAX =
+    static_cast<ClientRpcKind>(3);
+[[nodiscard]] inline bool ClientRpcKind_IsValid(int value) {
+  return 0 <= value && value <= 3;
+}
+inline constexpr int ClientRpcKind_ARRAYSIZE = 3 + 1;
+[[nodiscard]] const ::google::protobuf::EnumDescriptor* PROTOBUF_NONNULL
+ClientRpcKind_descriptor();
+[[nodiscard]] inline auto ProtobufInternalGetEnumDescriptor(ClientRpcKind) {
+  return ClientRpcKind_descriptor();
+}
+template <typename T>
+[[nodiscard]] const ::std::string& ClientRpcKind_Name(T value) {
+  static_assert(::std::is_same<T, ClientRpcKind>::value ||
+                    ::std::is_integral<T>::value,
+                "Incorrect type passed to ClientRpcKind_Name().");
+  return ClientRpcKind_Name(static_cast<ClientRpcKind>(value));
+}
+template <>
+[[nodiscard]] inline const ::std::string& ClientRpcKind_Name(ClientRpcKind value) {
+  return ::google::protobuf::internal::NameOfDenseEnum<ClientRpcKind_descriptor, 0, 3>(
+      static_cast<int>(value));
+}
+[[nodiscard]] inline bool ClientRpcKind_Parse(
+    ::absl::string_view name, ClientRpcKind* PROTOBUF_NONNULL value) {
+  return ::google::protobuf::internal::ParseNamedEnum<ClientRpcKind>(ClientRpcKind_descriptor(), name,
                                            value);
 }
 enum OPERATE_TYPE : int {
@@ -298,6 +345,9 @@ extern ::google::protobuf::internal::ExtensionIdentifier<
 inline constexpr int kOptionMessagePriorityFieldNumber = 410000;
 extern ::google::protobuf::internal::ExtensionIdentifier<
     ::google::protobuf::MethodOptions, ::google::protobuf::internal::EnumTypeTraits< ::MessagePriority>, 14, false>(OptionMessagePriority);
+inline constexpr int kOptionClientRpcKindFieldNumber = 410001;
+extern ::google::protobuf::internal::ExtensionIdentifier<
+    ::google::protobuf::MethodOptions, ::google::protobuf::internal::EnumTypeTraits< ::ClientRpcKind>, 14, false>(OptionClientRpcKind);
 inline constexpr int kOptionTableIdFieldNumber = 500000;
 extern ::google::protobuf::internal::ExtensionIdentifier<
     ::google::protobuf::MessageOptions, ::google::protobuf::internal::PrimitiveTypeTraits< ::uint32_t >, 13, false>(OptionTableId);
@@ -411,6 +461,12 @@ struct is_proto_enum<::NodeType> : std::true_type {};
 template <>
 inline const EnumDescriptor* PROTOBUF_NONNULL GetEnumDescriptor<::NodeType>() {
   return ::NodeType_descriptor();
+}
+template <>
+struct is_proto_enum<::ClientRpcKind> : std::true_type {};
+template <>
+inline const EnumDescriptor* PROTOBUF_NONNULL GetEnumDescriptor<::ClientRpcKind>() {
+  return ::ClientRpcKind_descriptor();
 }
 template <>
 struct is_proto_enum<::OPERATE_TYPE> : std::true_type {};

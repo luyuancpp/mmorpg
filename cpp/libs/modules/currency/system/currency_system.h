@@ -80,11 +80,20 @@ public:
     // 这一条是 APPLIED 还是 REJECTED,原先的 void 只能记日志,调用方分不出是否生效。
     //   成功 -> kSuccess
     //   oweAmount<=0 / 类型越界 / 缺 PlayerCurrencyComp / owed 溢出 -> kInvalidParameter(未改动任何状态)
+    //   已有同币种欠款带本版本不认识的字段 -> kFeatureUnavailable(未改动任何状态)。这是版本错位,不是确定性拒绝:
+    //     调用方要先用 DebtCarriesUnknownFields 判定、按版本错位处理,不能拿这个通用码反推,也不能记成终态拒绝。
     // 判定顺序同 AddCurrency:零副作用的纯参数校验(oweAmount、类型)排在组件查找之前。
     static uint32_t AttachDebt(entt::entity player, CurrencyType type, int64_t oweAmount,
                                const std::string &reason = {},
                                const std::string &gmOperator = {},
                                uint64_t expiresAt = 0);
+
+    // 该币种的既有欠款是否带着本版本不认识的字段(新版本给 CurrencyDebtEntry 加的)。只读,不建组件:
+    // 缺 PlayerCurrencyComp、类型越界、没有这种币种的欠款都返回 false。
+    // AttachDebt 遇到 true 拒绝合并;收件箱执行器在调用 AttachDebt 之前先判,命中回 kVersionSkew
+    // (收件箱停用本域、下次落地重拉;docs/design/mixed-version-persist-field-protection.md §4.4)。
+    // 结果会在会话内变化(欠款被还清删除后变 false),调用方不能把一次 true 当成"本会话一直做不了"。
+    static bool DebtCarriesUnknownFields(entt::entity player, CurrencyType type);
 
     // Write off all remaining debt for the given currency type.
     static uint64_t WaiveDebt(entt::entity player, CurrencyType type,

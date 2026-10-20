@@ -4294,7 +4294,7 @@ const char descriptor_table_protodef_proto_2ffriend_2ffriend_2eproto[] ABSL_ATTR
     "TED\020\003*\214\001\n\021FriendEventReason\022#\n\037FRIEND_EV"
     "ENT_REASON_UNSPECIFIED\020\000\022(\n$FRIEND_EVENT"
     "_REASON_REQUEST_RECEIVED\020\001\022(\n$FRIEND_EVE"
-    "NT_REASON_REQUEST_ACCEPTED\020\0022\326\006\n\022ClientP"
+    "NT_REASON_REQUEST_ACCEPTED\020\0022\335\006\n\022ClientP"
     "layerFriend\022D\n\tAddFriend\022\032.friendpb.AddF"
     "riendRequest\032\033.friendpb.AddFriendRespons"
     "e\022M\n\014AcceptFriend\022\035.friendpb.AcceptFrien"
@@ -4314,9 +4314,10 @@ const char descriptor_table_protodef_proto_2ffriend_2ffriend_2eproto[] ABSL_ATTR
     "ndpb.ListBlocksRequest\032\034.friendpb.ListBl"
     "ocksResponse\022Y\n\020RecommendFriends\022!.frien"
     "dpb.RecommendFriendsRequest\032\".friendpb.R"
-    "ecommendFriendsResponse\0225\n\021NotifyFriendE"
-    "vent\022\030.friendpb.FriendEventS2C\032\006.Empty\032\005"
-    "\210\250\303\001\001B\025Z\023friend/proto/friendb\006proto3"
+    "ecommendFriendsResponse\022<\n\021NotifyFriendE"
+    "vent\022\030.friendpb.FriendEventS2C\032\006.Empty\"\005"
+    "\210\231\310\001\002\032\005\210\250\303\001\001B\025Z\023friend/proto/friendb\006pro"
+    "to3"
 };
 static const ::_pbi::DescriptorTable* PROTOBUF_NONNULL const
     descriptor_table_proto_2ffriend_2ffriend_2eproto_deps[3] = {
@@ -4328,7 +4329,7 @@ static ::absl::once_flag descriptor_table_proto_2ffriend_2ffriend_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2ffriend_2ffriend_2eproto = {
     false,
     false,
-    3516,
+    3523,
     descriptor_table_protodef_proto_2ffriend_2ffriend_2eproto,
     "proto/friend/friend.proto",
     &descriptor_table_proto_2ffriend_2ffriend_2eproto_once,

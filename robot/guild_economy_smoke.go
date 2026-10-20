@@ -572,7 +572,7 @@ func econItemCount(bag *scene.BagInfo, configID uint32) uint64 {
 }
 
 // econGmAdd / econGmDeduct 照 gmAddGold(currency_crash_window_scenario.go)发 GM 货币请求,只在 dev 运行模式下被放行
-// (cpp/nodes/gate/SECURITY.md §3)。回包由 guildSmokeBot 按消息号认领,见 guildEconomyIsSceneMessage。
+// (cpp/nodes/gate/SECURITY.md §3)。经 bot.expect → smokeCaller 按请求号认领回包,见 smoke_rpc_call.go。
 func econGmAdd(bot *guildSmokeBot, fail econFail, step string, currencyType uint32, amount uint64) {
 	if err := bot.expect(game.SceneCurrencyClientPlayerGmAddCurrencyMessageId,
 		&scene.GmAddCurrencyRequest{CurrencyType: currencyType, Amount: int64(amount)}, &scene.GmAddCurrencyResponse{}, 0); err != nil {
@@ -613,8 +613,9 @@ func econTipHint(tip uint32) string {
 	return "见 data/tip/Tip.xlsx"
 }
 
-// guildEconomyIsSceneMessage:经济段自己发的 scene 请求(读背包、GM 加 / 扣货币)。它们的回包由
-// guildSmokeBot 按消息号认领,不交给通用分发 —— 通用处理器只记最后一次余额,认领不了"这一次请求的回包"。
+// guildEconomyIsSceneMessage:经济段自己发的 scene 请求(读背包、GM 加 / 扣货币)。它们的回包经 smokeCaller
+// 按请求号认领,不到 onMessage;onMessage 只用本函数拦下同号却 id = 0 的消息,不交给通用分发
+// —— 通用处理器只记最后一次余额,信封拒绝还会被解成全零响应。
 func guildEconomyIsSceneMessage(messageId uint32) bool {
 	switch messageId {
 	case game.SceneBagClientPlayerGetBagMessageId,

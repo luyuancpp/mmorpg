@@ -7,9 +7,9 @@ package routing
 // player:placement / player:maprev 只是发布出去的副本:库先提交,再用 placement.PublishRouteScript
 // 按 maprev 做 set-if-newer,并在**同一条连接**上用 WAITAOF 确认落盘,三步都过才算登记成功。
 //
-// 第 1a 批的硬前提(规格「开工前六件事」第 4 条):db_first 只能在冻结窗口内打开。merge_zone 第 2 批之前
-// 仍只写 Redis、从不写 zone_merge_fence,库内围栏恒不生效;提交点的合服围栏复核靠发布脚本的 KEYS[4]
-// (merge:in_progress:{home})。
+// 合服围栏:第 2 批起 merge_zone 以 -route-source=db 在 zone_merge_fence 持有围栏(W1 在库内锁围栏分片复核);
+// 发布脚本的 KEYS[4](merge:in_progress:{home})是围栏的镜像,作为发布时的第二道复核。切换顺序见提案 §13.4,
+// 旧版 merge_zone 二进制(直写 Redis、不写库)P4 起禁用。
 //
 // 本文件不碰 SQL(store 的职责),也不改 redis 模式的任何一行(router.go 里那段 SETNX 脚本)。
 
@@ -250,7 +250,8 @@ func registerOutcomeLabel(o store.RouteRegisterOutcome) string {
 //     只重发 WAITAOF 不行:新连接的写偏移可能比上次写入低,会误报已落盘;脚本在「缓存已是这一版或更新」的分支
 //     会把 maprev 原值写回一次(touch),所以重发后的 WAITAOF 仍覆盖缓存此刻的状态;
 //   - 回复形状不对 → fail-closed,不重试;Fenced → ErrZoneMergeInProgress;Conflict / LegacyConflict、
-//     以及 Superseded 而 home 不同(第 1a 批 home 一旦写定不再改,只可能是库被回档或有写者绕过了脚本)→ ErrRoutePublishConflict;
+//     以及 Superseded 而 home 不同(W1 只建 home、不改 home;home 只由持围栏的 merge_zone 改写,而 W1 撞不进围栏,
+//     所以只可能是库被回档或有写者绕过了脚本)→ ErrRoutePublishConflict;
 //   - Applied / Confirmed / home 相同的 Superseded:WAITAOF 满足才算成功。
 //
 // 叠加的重试:go-redis 自己也会按 MaxRetries 在新连接上把整条 pipeline 重发。两层叠加后总时长仍受 ctx 截止时间约束

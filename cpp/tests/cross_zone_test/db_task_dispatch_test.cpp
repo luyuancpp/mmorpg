@@ -18,6 +18,8 @@
 #include "player/comp/last_persisted_snapshot_comp.h"
 #include "player/system/db_task_dispatch_system.h"
 #include "player/system/player_data_loader.h"
+#include "player/system/player_persist_marshal.h"
+#include "player/comp/player_persist_carry_comp.h"
 #include "player/system/player_lifecycle.h"
 #include "proto/common/component/actor_comp.pb.h"
 #include "proto/common/component/asset_op_ledger_comp.pb.h"
@@ -504,6 +506,9 @@ void CreatePersistedPlayerComps(entt::entity player)
     registry.emplace<PlayerMysteryMerchantComp>(player);
     registry.emplace<CurrencyComp>(player);
     registry.emplace<PlayerCurrencyComp>(player);
+    // 两表顶层未知字段的载体(混版本持久字段保护 §4.2 L1),生产里由两张表的 Unmarshal 创建。
+    registry.emplace<PlayerDatabaseCarryComp>(player);
+    registry.emplace<PlayerDatabase1CarryComp>(player);
 }
 
 // 在线(未退出)的玩家:绑定会话、写进 SessionMap。
@@ -532,16 +537,10 @@ entt::entity MakeExitingPlayer()
     return player;
 }
 
-// 与 SavePlayerToRedis 写盘时同一个形状:marshal + 两张子表的 player_id。
+// 与 SavePlayerToRedis 写盘时同一个形状:走同一个统一入口(拼装 + 两张子表的 player_id + 持久 schema 世代)。
 bool MarshalAsSaved(entt::entity player, PlayerAllData& data)
 {
-    if (!PlayerAllDataMessageFieldsMarshal(player, data))
-    {
-        return false;
-    }
-    data.mutable_player_database_data()->set_player_id(kDispatchPlayerId);
-    data.mutable_player_database_1_data()->set_player_id(kDispatchPlayerId);
-    return true;
+    return player_persist::MarshalPlayerForPersist(player, kDispatchPlayerId, data);
 }
 
 // 让快照等于当前内存(= Redis 里已是同一份):快路径不写盘,收敛核对判收敛。

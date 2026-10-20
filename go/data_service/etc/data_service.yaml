@@ -167,18 +167,27 @@ GuildCheckBudgetSeconds: 120
 # 玩家归属 / 落点映射的提交点(docs/design/player-route-mapping-durability-proposal.md §4、§11.2)。
 # redis(默认):与 2026-10-12 之前逐字相同。db_first:先写全局库 player_route,再按 maprev set-if-newer 发布到 mapping Redis。
 # 切 db_first 的前提(缺一不可):
-#   1) 已在冻结窗口内:第 2 批落地前禁止 merge_zone 任何写模式(merge/unmerge/relocate/pin-placement/backfill);
+#   1) 已在冻结窗口内(proposal §13.4 的 P1–P3):P4 之前不跑 merge_zone 任何写模式(merge/unmerge/relocate/pin-placement/backfill);
+#      P4 起只许第 2 批新版 merge_zone 并显式 -route-source=db -route-db-dsn,旧二进制禁用;Arm=true 之前 `audit -require-maprev`
+#      退出 0(P3);
 #   2) P1 导入完成且 audit 为 0:
 #        go run ./cmd/route_tool -f etc/data_service.yaml import-from-redis -dry-run=false
 #        go run ./cmd/route_tool -f etc/data_service.yaml audit
 #   3) mapping Redis 为 noeviction + appendonly yes、版本 ≥ 7.2(WAITAOF);
 #   4) 建角压测已出 W1 p99 与发布未确认率(AGENTS.md §6)。
-# 非法值 = 拒启。WAITAOF 两项都显式写 0 = 不等落盘(只给没有 AOF 的环境 / 单测用);redis-ha 档 NumReplicas 要写 1。
+# 非法值 = 拒启。WAITAOF 两项都显式写 0 = 不等落盘(只给没有 AOF 的环境 / 单测用)。WaitAOFNumReplicas:K8s 上由
+# k8s_deploy.ps1 按共享 Redis 形态渲染(单实例 0、高可用 1,与 go/db 同一个函数),本文件保持 0 给本机 compose 单实例:
+# 写 1 时本机没有副本可等,db_first 下每次发布都确认不足(ErrRoutePublishNotDurable)。
 # FenceShards(围栏分片数,同一 zone 的建角分摊到几把围栏行锁上;与 player_route 的行片 64 无关):
 #   MySQL 档 16(本文件);TiDB 档 64(docs/design/capacity-model-hok-scale.md §4.1 的连带修正)。只改配置,
 #   任何时候都可以改,各副本取值也可以不同 —— 围栏持有者总是锁满 0..63 全部分片行(placement.MaxRouteFenceShards)。
-#   代码默认值是 8(不写这个键时)。K8s ConfigMap 目前不镜像这个键(RouteStore 段只有固定的 Mode: redis 和镜像来的
-#   两项连接池),K8s 上取代码默认 8;切 db_first 之前按档位补进 ConfigMap。
+#   代码默认值是 8(不写这个键时)。K8s 上 k8s_deploy.ps1 按全局库档位把本键渲染进 data-service ConfigMap(MySQL 档取本文件
+#   的值,越界在 apply 之前失败;TiDB 档 64 待 TiDB Phase 1 定部署方式后补);Mode / ReadRequiresReady / Reconcile.ArmReadyMarker
+#   取 -RouteStoreMode / -RouteReadRequiresReady / -RouteReconcileArm,不镜像本文件;MaxOpenConn / MaxIdleConn / WaitAOFTimeoutMs
+#   取本文件,这里改了下次部署就生效。
+# PublishRedisPoolSize(2026-10-20):db_first 下 W1 发布 + WAITAOF 专用 go-redis 客户端的池上限(连 MappingRedis 同一个实例,
+#   与读路径的 go-zero 客户端分池、不经熔断器);缺省 20 的论证见 internal/config DefaultRouteStorePublishRedisPoolSize。
+#   redis 模式不建、不开连接;db_first 下每个副本最多多占 mapping Redis 这么多条连接(进共享 Redis 连接总账)。
 RouteStore:
   Mode: redis
   FenceShards: 16
@@ -188,6 +197,7 @@ RouteStore:
   WaitAOFNumLocal: 1        # 本机 compose redis 开着 --appendonly yes(deploy/docker-compose.yml)
   WaitAOFNumReplicas: 0
   WaitAOFTimeoutMs: 1500
+  PublishRedisPoolSize: 20
   # 第 3 批读方门禁(docs/handoff/launch-readiness-20261013/spec_D1_batch1b2_2_3.md §5.2):true 时归属查询只在就绪标记
   # 绑定本实例身份时信任缓存,否则回源全局库 player_route(库故障回 Unavailable,绝不 NotFound)。只许 db_first(否则拒启)。
   # 打开是 P5 的显式运维动作(对账 leader 已挂标记之后,规格 §8);回退时先把它改回 false,再关 ArmReadyMarker、再切回 redis。
@@ -202,7 +212,9 @@ RouteStore:
   #   - 在线清库(tools/scripts/currency_crash_window.ps1、stress_round19.ps1)之前,db_first 下**必须先停 data_service**:
   #     那两个脚本先 FLUSHALL 再清表、复位 route_reconcile,运行中的 leader 会把将被清掉的行推回刚清空的 Redis,
   #     或把水位复位误判成回档而冻结建角。
-  #   - Enabled: false 是急停(不再补发孤儿行、不再检测回档);RedisPoolSize 是 leader 独立 go-redis 池的上限(进 Redis 连接总账)。
+  #   - Enabled: false 是急停(本副本不构造 leader:不再补发孤儿行、不再检测回档,也**不撤**现存就绪标记)。读方开着时不许急停:
+  #     ReadRequiresReady=true 配 Enabled=false 拒启;顺序是先关全部读方开关(同上三个)→ ArmReadyMarker=false 并看到
+  #     marker_dropped_disarmed → 最后才 Enabled=false。RedisPoolSize 是 leader 独立 go-redis 池的上限(进 Redis 连接总账)。
   Reconcile:
     Enabled: true
     ArmReadyMarker: false
@@ -221,11 +233,12 @@ RouteStore:
     RedisFailureReleaseMs: 10000
     ArmingBlockedReportLimit: 1000
 
-# 全局库的建表策略:proto 驱动的五张(transaction_log / player_snapshot / rollback_audit_log / id_segment / player_name)
-# + 还没有 proto 的路由表(player_route / zone_merge_fence / zone_merged_into / route_meta / route_reconcile,映射持久化第 1a 批)。
+# 全局库的建表策略:十张表都在 rollback_database_table.proto 里有 message:transaction_log / player_snapshot /
+# rollback_audit_log / id_segment / player_name + 路由表(player_route / zone_merge_fence / zone_merged_into / route_meta /
+# route_reconcile,映射持久化第 1a 批;proto 2026-10-19 补)。
 # 其中 id_segment 与 player_name 走 schema.go 里手写的 bootstrap DDL(proto2mysql 把 string 渲染成
 # MEDIUMTEXT,而 player_name 的唯一键必须建在 VARCHAR 上),迁移对这两张只做列漂移校验;
-# 路由表同样走手写 DDL,迁移只守列名与主键,并种 route_meta / route_reconcile(id=1)。redis 模式同样依赖它们建成。
+# 路由表同样走手写 DDL,迁移按 proto 只守列名与主键,并种 route_meta / route_reconcile(id=1)。redis 模式同样依赖它们建成。
 # TiDB 上建表之后另跑 `route_tool -f <yaml> tidb-prepare -zones=<全部 zone> -dry-run=false` 预切路由表(MySQL 自动跳过)。
 # AutoMigrate=true:启动时按 proto(rollback_database_table.proto)用 proto2mysql 建表/补列。
 # 生产必须**显式**设 false(多副本并发 ALTER 会互相 MDL 阻塞),改在部署阶段跑一次:

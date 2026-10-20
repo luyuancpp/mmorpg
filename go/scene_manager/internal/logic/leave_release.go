@@ -3,9 +3,9 @@ package logic
 import (
 	"fmt"
 	"strconv"
-	"strings"
 	"time"
 
+	"github.com/zeromicro/go-zero/core/logx"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
@@ -32,7 +32,8 @@ const (
 	leaveReleaseLegacyEpochZero
 	// leaveReleaseNoHolder:location 的 node_id 为空(跨 zone 传送的等待落点),此刻没有任何节点持有该玩家。
 	leaveReleaseNoHolder
-	// leaveReleaseOwnerDead:持有节点确认已死且再入屏障已过,或所在 zone 已无任何节点(与 EnterScene 死节点接管同一判据)。
+	// leaveReleaseOwnerDead:持有节点在 etcd 注册表里正面消失且再入屏障已过(playerLocationOwnerDead)。不认"zone 负载集为空"
+	// (playerLocationOwnerGone 修复前的判据):负载键丢失时它会把活节点判死(第二轮审计 r2-sm#3)。
 	leaveReleaseOwnerDead
 	// leaveReleaseReleased:handoff 标记的 epoch 等于当前代 E —— 持有者已把 E 代状态落盘并不再写(A1′ / 交接 / 改派 / 凭证)。
 	// 删除 Lua 里原子复核(R2)。
@@ -90,7 +91,7 @@ type holderReleaseFacts struct {
 	enabled        bool   // 整项检查开着(EffectiveLeaveSceneHolderReleaseWait 的 enabled)
 	epoch          uint64 // 当前代 E:owner_epoch 键,键为 0 时取 location 记的 epoch
 	noHolder       bool   // location 的 node_id 为空
-	ownerDead      bool   // 持有节点已死 / zone 已无节点
+	ownerDead      bool   // 持有节点已死(只认 playerLocationOwnerDead 的正面证据)
 	markerReleased bool   // handoff 标记的 epoch == E
 	waitExceeded   bool   // 等待计时已到上限
 	identityProven bool   // 离场身份判定为 deleted(location 的登录身份 ≤ 离场会话)
@@ -149,6 +150,11 @@ func newHolderReleasePendingError(playerID, sceneID uint64, nodeID string, epoch
 // player:{id}:leave_release_wait = "{E}:{node}:{sid}:{gen}:{first_ms}",EX = 上限 + leaveReleaseWaitKeyMargin。
 // 第一次拿不到证据时写入;location 的 (E, 节点, 登录身份) 变了就当作一次新的等待重新计时。删 location 的 Lua 顺手删掉它。
 // 读写失败一律按"刚开始等"处理:宁可多等一轮,也不因为计时读不出来而提前 forced。
+//
+// 时钟只用 Redis 服务端的(脚本里 TIME):first_ms 的写入与"已等多久"的计算都在同一段 Lua 里取同一个时钟。以前用各 scene_manager
+// 副本自己的墙钟,副本 A 写下 first_ms、时钟快 Δ 的副本 B 来算,就多算 Δ、提前 forced;NTP 跳变同理(第二轮审计 r2-sm#2)。
+// 现在剩下的只有 Redis 服务端自己的时钟跳变(单一时钟,不再有副本间偏差);往回跳时等待时长钳在 0,只会多等。
+// 脚本里调 TIME:Redis 5+ 按效果复制脚本,非确定性命令合法;部署用的是 Redis 7。
 
 const leaveReleaseWaitKeyMargin = 10 * time.Minute
 
@@ -161,35 +167,46 @@ func leaveReleaseWaitScope(epoch uint64, loc *scene_manager.PlayerLocation) stri
 	return fmt.Sprintf("%d:%s:%d:%d", epoch, loc.GetNodeId(), loc.GetSessionId(), loc.GetLoginGeneration())
 }
 
-// parseLeaveReleaseWait 解析等待计时的值,返回 (scope, 首次拒绝的毫秒时间, ok)。
-func parseLeaveReleaseWait(raw string) (string, int64, bool) {
-	idx := strings.LastIndexByte(raw, ':')
-	if idx <= 0 || idx == len(raw)-1 {
-		return "", 0, false
-	}
-	firstMs, err := strconv.ParseInt(raw[idx+1:], 10, 64)
-	if err != nil || firstMs <= 0 {
-		return "", 0, false
-	}
-	return raw[:idx], firstMs, true
-}
+// luaNoteLeaveReleaseWait:读或登记等待计时,返回这份 location 已经等了多少毫秒(第一次登记返回 0)。
+// KEYS[1]=player:{id}:leave_release_wait  ARGV[1]=scope("{E}:{node}:{sid}:{gen}")  ARGV[2]=键的 TTL 秒数
+// 值的格式 "{scope}:{first_ms}";scope 里也有冒号,所以按最后一个冒号切(贪婪匹配)。first_ms 用 '%.0f' 写:毫秒时间戳约 1.8e12,
+// 在 double 里无损;不用 '%d'(Lua 实现可能截成 32 位)。
+const luaNoteLeaveReleaseWait = `
+local t = redis.call('TIME')
+local nowMs = tonumber(t[1]) * 1000 + math.floor(tonumber(t[2]) / 1000)
+local v = redis.call('GET', KEYS[1])
+if v then
+    local scope, first = string.match(v, '^(.*):(%d+)$')
+    if scope ~= nil and scope == ARGV[1] then
+        local waited = nowMs - tonumber(first)
+        if waited < 0 then
+            waited = 0
+        end
+        return waited
+    end
+end
+redis.call('SET', KEYS[1], ARGV[1] .. ':' .. string.format('%.0f', nowMs), 'EX', ARGV[2])
+return 0
+`
 
-// noteLeaveReleaseWait 返回这份 location 已经等了多久(第一次见到时登记并返回 0)。now 由调用方传入,本函数不读时钟。
-func noteLeaveReleaseWait(svcCtx *svc.ServiceContext, playerID uint64, scope string, now time.Time,
-	budget time.Duration) time.Duration {
-	key := leaveReleaseWaitKey(playerID)
-	if raw, err := svcCtx.Redis.Get(key); err == nil {
-		if storedScope, firstMs, ok := parseLeaveReleaseWait(raw); ok && storedScope == scope {
-			if waited := now.Sub(time.UnixMilli(firstMs)); waited > 0 {
-				return waited
-			}
-			return 0
-		}
+// noteLeaveReleaseWait 返回这份 location 已经等了多久(第一次见到时登记并返回 0)。时钟取 Redis 服务端的(见上),
+// 不读本进程墙钟;脚本出错按"刚开始等"返回 0(只会多等)。
+func noteLeaveReleaseWait(svcCtx *svc.ServiceContext, playerID uint64, scope string, budget time.Duration) time.Duration {
+	ttlSeconds := int64((budget + leaveReleaseWaitKeyMargin) / time.Second)
+	result, err := svcCtx.Redis.Eval(luaNoteLeaveReleaseWait, []string{leaveReleaseWaitKey(playerID)}, scope,
+		strconv.FormatInt(ttlSeconds, 10))
+	if err != nil {
+		logx.Errorf("[LeaveRelease] wait timer unavailable, treating as just started: player=%d scope=%s err=%v",
+			playerID, scope, err)
+		return 0
 	}
-	ttl := budget + leaveReleaseWaitKeyMargin
-	value := scope + ":" + strconv.FormatInt(now.UnixMilli(), 10)
-	_ = svcCtx.Redis.Setex(key, value, int(ttl/time.Second))
-	return 0
+	waitedMs, ok := result.(int64)
+	if !ok || waitedMs < 0 {
+		logx.Errorf("[LeaveRelease] wait timer returned unexpected value, treating as just started: player=%d scope=%s result=%v",
+			playerID, scope, result)
+		return 0
+	}
+	return time.Duration(waitedMs) * time.Millisecond
 }
 
 // ── 删除 ─────────────────────────────────────────────────────────────────────

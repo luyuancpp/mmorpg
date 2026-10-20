@@ -234,3 +234,93 @@ message player_name
   // 超窗的孤儿行只能由运维带 x-admin-token 清 —— 没有这一列就没法区分两者。
   uint64 created_ms = 4;
 }
+
+// ============================================================================
+// 路由表(玩家归属与落点映射持久化 D1,docs/design/player-route-mapping-durability-proposal.md §3.2 / §13)。
+//
+// 下面五个 message **只作列漂移守卫的事实源**(与 id_segment / player_name 同一模式):
+// 表由 go/data_service/internal/store/schema.go 的 bootstrap DDL 预建(要 VARCHAR、可空列、CHECK、
+// 带片前缀的二级索引,proto2mysql 都生成不了),**不交给 proto2mysql 建表或同步**。迁移期按这里的字段名
+// 查线上表的列齐不齐、按 OptionPrimaryKey 查主键列序(schema.go 的 assertRouteTableShapes)。
+// 所以:改了这里必须同步改 bootstrap DDL,反之亦然,否则启动期迁移直接拒绝。
+//
+// 字段号:player_route 沿用 DDL 列注释里预留的 pb:1..10(route_shard 是 10,player_id 仍是 1);
+// 另外四张的字段号按 DDL 列序新定,并同步写进 DDL 的列注释 pb:N(route_store_test 钉住两边一致)。
+// 与 §4.3 同规矩:上线后不复用,删字段写 reserved。
+// 库里可为 NULL 的列在这里用零值表达(0 / 空串 = NULL),与 store.RouteRow 的约定一致;
+// 本 message 不是读写载体,读写只在 store 的 SQL 里,所以不用 optional。
+// 主键是聚簇的(TiDB CLUSTERED,见 schema.go 注释),不声明 OptionTiDBNonclusteredPK;
+// 二级索引只写在 DDL 里,这里不声明 OptionIndex(这几张表不跑 ensureIndexes)。
+// 放在本文件而不是 mysql_database_table.proto 的原因与 id_segment 相同:路由表只在全局库。
+// ============================================================================
+
+// player_route:每个玩家一行,home 与落点同行。
+message player_route
+{
+  option(OptionTableName) = "player_route";
+  option(OptionPrimaryKey) = "route_shard,player_id";
+
+  uint64 player_id         = 1;
+  uint32 home_zone         = 2;  // 0 = NULL(没有归属区)
+  uint32 storage_id        = 3;  // 0 = NULL;与 placement_version 同 NULL(chk_route_place)
+  uint64 placement_version = 4;  // 0 = NULL;有落点时 >= 1
+  string frozen_run_id     = 5;  // 空串 = NULL;非空 = 搬库冻结态
+  uint64 rev               = 6;  // 本行任一列变化 +1,只供缓存排序(player:maprev)
+  string updated_by        = 7;  // 写者标识(ASCII,<= 96)
+  uint64 created_at_ms     = 8;  // 库时钟 Unix 毫秒
+  uint64 updated_at_ms     = 9;  // 库时钟 Unix 毫秒
+  uint32 route_shard       = 10; // = player_id % 64(placement.RouteRowShards,chk_route_shard)
+}
+
+// zone_merge_fence:合服围栏真源,按 (zone_id, shard) 存 N 份相同内容。
+message zone_merge_fence
+{
+  option(OptionTableName) = "zone_merge_fence";
+  option(OptionPrimaryKey) = "zone_id,shard";
+
+  uint32 zone_id       = 1;
+  uint32 shard         = 2;
+  string run_id        = 3;  // 空串 = NULL(未封锁);与 expires_at_ms 同 NULL(chk_fence_pair)
+  string purpose       = 4;  // 空串 = NULL
+  uint32 src_zone      = 5;  // 0 = NULL
+  uint32 dst_zone      = 6;  // 0 = NULL
+  uint64 expires_at_ms = 7;  // 0 = NULL;库时钟 Unix 毫秒
+  string holder_json   = 8;  // 空串 = NULL;排障用持有者描述
+  uint64 fence_epoch   = 9;  // 每次获取 +1,围栏镜像 set-if-newer 的依据
+}
+
+// zone_merged_into:「源区已合走」的永久标记。
+message zone_merged_into
+{
+  option(OptionTableName) = "zone_merged_into";
+  option(OptionPrimaryKey) = "src_zone";
+
+  uint32 src_zone     = 1;
+  uint32 dst_zone     = 2;
+  string run_id       = 3;
+  uint64 merged_at_ms = 4;  // 库时钟 Unix 毫秒
+}
+
+// route_meta:开关表,单行(id=1),库世代与可写开关。
+message route_meta
+{
+  option(OptionTableName) = "route_meta";
+  option(OptionPrimaryKey) = "id";
+
+  uint32 id         = 1;
+  string generation = 2;  // 1..32 位 hex
+  uint32 writable   = 3;  // 0 = 全体映射写者拒写
+}
+
+// route_reconcile:对账表,单行(id=1),对账 leader 的租约、水位与缓存校验时刻。
+message route_reconcile
+{
+  option(OptionTableName) = "route_reconcile";
+  option(OptionPrimaryKey) = "id";
+
+  uint32 id                = 1;
+  string leader            = 2;  // 空串 = NULL
+  uint64 lease_until_ms    = 3;  // 0 = NULL;库时钟 Unix 毫秒
+  uint64 watermark_ms      = 4;
+  uint64 cache_verified_ms = 5;
+}

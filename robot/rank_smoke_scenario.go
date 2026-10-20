@@ -27,8 +27,8 @@ package main
 //
 // 可重复运行:每轮都是新的一局,games 只增不减;不做预清理(榜键清空要按 §3.5 的 runbook,冒烟不碰)。
 //
-// 消息号常量 game.ClientPlayerRankGetRankPageMessageId 来自 robot/generated/pb/game/message_id.go(2026-10-17 全量 proto-gen 后为 275);
-// 它是无类型常量,绑定到变量时要显式写 uint32(见 call)。
+// 消息号常量 game.ClientPlayerRankGetRankPageMessageId 来自 robot/generated/pb/game/message_id.go(数值随 proto-gen 变化,以该文件为准,这里不抄写,免得排障时按过期号查日志);
+// 它是无类型常量:直接传给 uint32 形参即可(见 call);若先绑定到变量,要显式写 uint32,否则推成 int。
 
 import (
 	"context"
@@ -41,7 +41,6 @@ import (
 	"time"
 
 	"go.uber.org/zap"
-	"google.golang.org/protobuf/proto"
 
 	"proto/battle"
 	"proto/common/base"
@@ -93,10 +92,8 @@ type rankSmokeBot struct {
 
 	requestSpacing time.Duration
 
-	// RecvLoop goroutine 写、场景主流程读,mu 保护。
-	mu       sync.Mutex
-	replies  map[uint32]*base.MessageContent
-	awaiting uint32
+	// caller 发 GetRankPage 并只等它自己的回包(按请求号认领,见 smoke_rpc_call.go)。
+	caller *smokeCaller
 
 	lastRequestAt time.Time // 仅主流程读写
 }
@@ -368,7 +365,7 @@ func rankSmokeCheckPage(resp *rankpb.GetRankPageResponse, wantPage, size uint32)
 }
 
 // rankSmokeLogin 走完 AssignGate → 连接 → 登录 → 进场,挂上本场景自己的 RecvLoop 回调(与 mailSmokeLogin 同形)。
-// 排行榜回包由本场景认领,其余消息(含战斗推送)交给通用分发,所以同一会话也能跑 runCrossZoneFighter。
+// GetRankPage 的回包带请求号、由 GameClient 交给 caller,其余消息(含战斗推送)交给通用分发,所以同一会话也能跑 runCrossZoneFighter。
 func rankSmokeLogin(cfg *config.Config, account string, spacing time.Duration, stats *metrics.Stats) (*rankSmokeBot, error) {
 	host, portStr, tokenPayload, tokenSig, err := resolveGateAddrLocal(cfg)
 	if err != nil {
@@ -394,7 +391,7 @@ func rankSmokeLogin(cfg *config.Config, account string, spacing time.Duration, s
 		player:         gameobject.NewPlayer(gc.PlayerId),
 		stats:          stats,
 		requestSpacing: spacing,
-		replies:        make(map[uint32]*base.MessageContent),
+		caller:         newSmokeCaller(gc, stats, account, rankSmokeRpcTimeout, errRankSmokeTimeout),
 	}
 	bot.battle = &battleSmokeBot{account: account, gate: host + ":" + portStr, gc: gc, player: bot.player}
 	gameobject.PlayerList.Set(gc.PlayerId, bot.player)
@@ -417,65 +414,40 @@ func (b *rankSmokeBot) gateAddr() string {
 	return net.JoinHostPort(ip, strconv.Itoa(port))
 }
 
-// onMessage:GetRankPage 的回包(含信封拒绝)由本场景认领;其余交给通用分发。
-// ⚠ 信封拒绝(error_message 非空、body 为空)落进 MessageBodyHandler 会被解成全零响应、看上去像受理 —— 所以必须先认领。
+// onMessage:GetRankPage 的回包带请求号,由 GameClient 交给 caller,不会到这里;gate 的 SendTipToClient 交给 caller
+// 供快速失败;其余(含战斗推送)交给通用分发。
+// ⚠ GetRankPage 消息号上 id = 0 的消息(没回显请求号的回包)必须先拦下丢弃:其中的信封拒绝(error_message 非空、
+// body 为空)落进 MessageBodyHandler 会被解成全零响应、看上去像受理。
 func (b *rankSmokeBot) onMessage(client *pkg.GameClient, msg *base.MessageContent) {
 	b.stats.MsgRecv()
-	if id := msg.GetMessageId(); id == game.ClientPlayerRankGetRankPageMessageId {
-		b.mu.Lock()
-		if b.awaiting == id {
-			if _, seen := b.replies[id]; !seen {
-				b.replies[id] = msg
-			}
-		}
-		// 没人在等的回包 = 上一次请求超时之后才到的那一个,丢掉,免得被下一次请求误读成本次的回包。
-		b.mu.Unlock()
+	id := msg.GetMessageId()
+	if id == game.ClientPlayerRankGetRankPageMessageId {
+		smokeDropUncorrelatedReply(b.account, msg)
 		return
+	}
+	if id == game.SceneClientPlayerCommonSendTipToClientMessageId {
+		b.caller.onGateTipMessage(msg)
 	}
 	handler.MessageBodyHandler(client, msg)
 }
 
-// call 发一次 GetRankPage 并等第一个回包。envelopeTip 非 0 = gate / 路由服级拒绝(此时 resp 未填充)。
+// call 发一次 GetRankPage 并只等它自己的回包(smokeCaller.call,按请求号认领;上一次超时请求的迟到回包由 GameClient
+// 计数后丢弃,不会被本次误认)。envelopeTip 非 0 = gate / 路由服级拒绝(此时 resp 未填充)。
+// honourSpacing = false 时不等 request_interval_ms(限流步骤要在一个窗口内连发),但照样记 lastRequestAt。
+// 超时返回包裹 errRankSmokeTimeout 的 error;gate 推 kServiceUnavailable 立刻返回 error,不等满超时。
+// 错误统一加 "GetRankPage: " 前缀,保留改造前文案里的方法名(smokeCaller 的文案只带 message_id)。
 func (b *rankSmokeBot) call(req *rankpb.GetRankPageRequest, resp *rankpb.GetRankPageResponse, honourSpacing bool) (envelopeTip uint32, err error) {
 	if honourSpacing {
 		if wait := b.requestSpacing - time.Since(b.lastRequestAt); wait > 0 {
 			time.Sleep(wait)
 		}
 	}
-	// 生成的消息号是无类型常量,这里显式落成 uint32(SendRequest / replies 的键都是 uint32;同 chat_smoke_scenario.go)。
-	id := uint32(game.ClientPlayerRankGetRankPageMessageId)
-	b.mu.Lock()
-	delete(b.replies, id)
-	b.awaiting = id
-	b.mu.Unlock()
-	defer func() {
-		b.mu.Lock()
-		b.awaiting = 0
-		b.mu.Unlock()
-	}()
-	if err := b.gc.SendRequest(id, req); err != nil {
-		return 0, fmt.Errorf("send GetRankPage: %w", err)
-	}
 	b.lastRequestAt = time.Now()
-	b.stats.MsgSent()
-
-	deadline := time.Now().Add(rankSmokeRpcTimeout)
-	for time.Now().Before(deadline) {
-		b.mu.Lock()
-		reply := b.replies[id]
-		b.mu.Unlock()
-		if reply != nil {
-			if tip := reply.GetErrorMessage().GetId(); tip != 0 {
-				return tip, nil
-			}
-			if err := proto.Unmarshal(reply.GetSerializedMessage(), resp); err != nil {
-				return 0, fmt.Errorf("decode GetRankPage: %w", err)
-			}
-			return 0, nil
-		}
-		time.Sleep(50 * time.Millisecond)
+	envelopeTip, err = b.caller.call(game.ClientPlayerRankGetRankPageMessageId, req, resp)
+	if err != nil {
+		return 0, fmt.Errorf("GetRankPage: %w", err)
 	}
-	return 0, fmt.Errorf("account=%s GetRankPage %w(%s)", b.account, errRankSmokeTimeout, rankSmokeRpcTimeout)
+	return envelopeTip, nil
 }
 
 // page 读一页(按间隔节流);信封拒绝、超时、业务 tip 一律报错并给出可读原因。

@@ -267,5 +267,5 @@ service ClientPlayerFriend {
   // 推送方向是服务端 → 客户端。它与上面 10 个 C2S 方法同处一个 service,
   // 所以服务端**必须**在会话拦截器的方法白名单里排除它:否则客户端可以直接
   // 调这个方法伪造一条好友事件。服务端也不实现它(继承 Unimplemented)。
-  rpc NotifyFriendEvent (FriendEventS2C) returns (Empty);
+  rpc NotifyFriendEvent (FriendEventS2C) returns (Empty) { option (OptionClientRpcKind) = CLIENT_RPC_PUSH; }
 }

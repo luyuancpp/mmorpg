@@ -704,9 +704,9 @@ void ApplyCredit(entt::entity player, PlayerAssetOpLedgerComp& ledgerComp, const
 		{ RejectAndRecord(player, ledgerComp, request, kAssetInvalidBundle, nowMs, response); return; }
 		if (GainBlockService::IsGainBlocked(GainBlockService::GainType::kItem, item.config_id()))
 		{ RejectAndRecord(player, ledgerComp, request, kAssetBlocked, nowMs, response); return; }
-		for (auto& bag : destinationBags->bags) if (bag.GetItemCompByGuid(item.item_id()) != nullptr)
-		{ RejectAndRecord(player, ledgerComp, request, kAssetInvalidBundle, nowMs, response); return; }
-		for (auto& entry : destinationBags->dynamicBags_) if (entry.second.GetItemCompByGuid(item.item_id()) != nullptr)
+		// 名下已有这个实例身份就拒:固定包、动态包,以及携带着的本版本不认识的包类型记录都要查
+		// (PlayerBagsComp::ContainsGuid,混版本设计 §12 第 5 批)。
+		if (destinationBags->ContainsGuid(item.item_id()))
 		{ RejectAndRecord(player, ledgerComp, request, kAssetInvalidBundle, nowMs, response); return; }
 		++totalIncoming[item.config_id()];
 		item.clear_acquire_seq();

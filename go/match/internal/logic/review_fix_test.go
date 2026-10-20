@@ -2,8 +2,8 @@ package logic
 
 // 复审修复(cross-zone-matchmaking.md 2026-09-02 复审)的 miniredis 测试:
 // requeueFront 先 CAS 后 LPUSH / 弹出后被取消的成员不进 gather / CancelQueue 的
-// Lua CAS / JoinQueue 孤儿票据自愈 / 票据条件创建 / 组内去重 / 旧格式队列迁移 /
-// 补偿前续期。并发时序里的"另一实例"用 requeueFrontHook / matcherAfterPopHook 插入。
+// Lua CAS / JoinQueue 孤儿票据自愈 / 票据条件创建 / 组内去重 / 补偿前续期
+// (旧格式队列迁移的用例 2026-10-20 随迁移代码一起删除)。并发时序里的"另一实例"用 requeueFrontHook / matcherAfterPopHook 插入。
 
 import (
 	"context"
@@ -259,15 +259,6 @@ func TestJoinQueueStillRejectsLiveTickets(t *testing.T) {
 	resp = joinQueue1v1(t, svcCtx, 8303)
 	require.Equal(t, constants.ErrAlreadyQueued, resp.ErrorCode)
 	require.Equal(t, ticketStateMatched, mr.HGet(matchTicketKey(8303), ticketFieldState))
-
-	// 旧票据(无 queue_key)、成员在旧格式 key 里:视为在途,不误判成孤儿。
-	setPlayerLocation(t, mr, 8304, 1)
-	writeLegacyTicket(t, mr, 8304, "tk-legacy", matchpb.MatchMode_MATCH_MODE_1V1, 0)
-	_, err = mr.RPush(legacyMatchQueueKey(int32(matchpb.MatchMode_MATCH_MODE_1V1), 0), "8304")
-	require.NoError(t, err)
-	resp = joinQueue1v1(t, svcCtx, 8304)
-	require.Equal(t, constants.ErrAlreadyQueued, resp.ErrorCode)
-	require.Equal(t, "tk-legacy", resp.QueueTicket)
 }
 
 // ---- 票据"不存在才创建" ----
@@ -333,61 +324,6 @@ func TestPopGroupDedupesDuplicateEntries(t *testing.T) {
 	require.Equal(t, []uint64{8501, 8502}, members, "同评分按等待先后弹出")
 	require.Len(t, tickets, 2)
 	require.False(t, mr.Exists(queueKey), "多余的一份被丢弃,队列弹空")
-}
-
-// ---- 旧格式队列迁移 ----
-
-// 改造前的 `match:queue:<mode>:<config>` 里的成员搬进新队列并排在现有成员之前
-// (原相对顺序不变),票据补 queue_key,旧 list 消失;新格式 key 不被当旧 key 搬。
-func TestMigrateLegacyQueuesMovesMembersToFront(t *testing.T) {
-	svcCtx, mr := newTestSvcCtx(t)
-	legacyKey := legacyMatchQueueKey(int32(matchpb.MatchMode_MATCH_MODE_1V1), 0)
-	newKey := matchQueueKey(int32(matchpb.MatchMode_MATCH_MODE_1V1), 0)
-	writeLegacyTicket(t, mr, 8601, "tk-a", matchpb.MatchMode_MATCH_MODE_1V1, 0)
-	writeLegacyTicket(t, mr, 8602, "tk-b", matchpb.MatchMode_MATCH_MODE_1V1, 0)
-	_, err := mr.RPush(legacyKey, "8601", "8602")
-	require.NoError(t, err)
-	setPlayerLocation(t, mr, 8603, 1)
-	require.Zero(t, joinQueue1v1(t, svcCtx, 8603).ErrorCode)
-	// 别的模式的旧队列也一起搬;票据缺失的成员照搬(popGroup 会丢弃)。
-	legacyOther := legacyMatchQueueKey(int32(matchpb.MatchMode_MATCH_MODE_5V5), 7)
-	_, err = mr.RPush(legacyOther, "8604")
-	require.NoError(t, err)
-
-	migrateLegacyQueues(svcCtx)
-
-	list, err := mr.List(newKey)
-	require.NoError(t, err)
-	require.Equal(t, []string{"8601", "8602", "8603"}, list, "旧成员排前面且保持原序")
-	require.False(t, mr.Exists(legacyKey), "旧 list 必须消失")
-	require.False(t, mr.Exists(legacyOther))
-	otherList, err := mr.List(matchQueueKey(int32(matchpb.MatchMode_MATCH_MODE_5V5), 7))
-	require.NoError(t, err)
-	require.Equal(t, []string{"8604"}, otherList)
-	for _, key := range []string{newKey, matchQueueKey(int32(matchpb.MatchMode_MATCH_MODE_5V5), 7)} {
-		inIndex, err := mr.IsMember(matchQueueIndexKey, key)
-		require.NoError(t, err)
-		require.True(t, inIndex, "搬进的队列必须在注册集 %s", key)
-	}
-	require.Equal(t, newKey, mr.HGet(matchTicketKey(8601), ticketFieldQueueKey), "旧票据补 queue_key")
-	require.Equal(t, newKey, mr.HGet(matchTicketKey(8602), ticketFieldQueueKey))
-	require.False(t, mr.Exists(matchTicketKey(8604)), "票据缺失的成员不得被凭空造出 hash")
-
-	// 幂等:再跑一次什么都不变。
-	migrateLegacyQueues(svcCtx)
-	list, err = mr.List(newKey)
-	require.NoError(t, err)
-	require.Equal(t, []string{"8601", "8602", "8603"}, list)
-
-	// 搬进来的旧票据玩家能被正常凑组。
-	groups := stubGather(t)
-	runMatcherRound(context.Background(), svcCtx)
-	select {
-	case call := <-groups:
-		require.Equal(t, []uint64{8601, 8602}, call.members, "同评分按等待先后弹出")
-	case <-time.After(3 * time.Second):
-		t.Fatal("迁移后的旧票据没有成组")
-	}
 }
 
 // ---- 补偿前续期 ----

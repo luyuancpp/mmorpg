@@ -173,12 +173,13 @@ type guildSmokeBot struct {
 	player  *gameobject.Player
 	stats   *metrics.Stats
 
+	// caller 发请求并只等它自己的回包(按请求号认领,见 smoke_rpc_call.go)。
+	caller *smokeCaller
+
 	// RecvLoop goroutine 写、场景主流程读,mu 保护。
-	mu       sync.Mutex
-	replies  map[uint32]*base.MessageContent // 公会消息号 → 本次请求发出后收到的第一个回包
-	gateTips []uint32                        // 本次请求期间收到的 SendTipToClient
-	// 收到的 NotifyGuildChanged,按到达顺序追加。推送是服务端主动下行,与请求不成对,
-	// 所以不能放进 replies(会被下一次同号等待误认成回包);由 clearPushes / waitPush 消费。
+	mu sync.Mutex
+	// 收到的 NotifyGuildChanged,按到达顺序追加。推送是服务端主动下行(id = 0),与请求不成对;
+	// 由 clearPushes / waitPush 消费。
 	pushes []*guildpb.GuildChangedS2C
 
 	lastRequestAt time.Time // 仅主流程读写
@@ -789,7 +790,8 @@ func RunGuildSmoke(cfg *config.Config) {
 }
 
 // guildSmokeLogin 走完 AssignGate → 连接 → 登录 → 进场,并挂上本场景自己的 RecvLoop 回调。
-// 与 chatSmokeLogin 同形:公会回包由本场景按消息号认领,不交给通用分发(生成的分发表不含 GuildService)。
+// 与 chatSmokeLogin 同形:公会请求的回包带请求号,经 caller(smokeCaller)认领;同号却 id = 0 的消息在 onMessage 里丢弃,
+// 不交给通用分发(生成的分发表不含 GuildService)。
 func guildSmokeLogin(cfg *config.Config, account string, stats *metrics.Stats) (*guildSmokeBot, error) {
 	host, portStr, tokenPayload, tokenSig, err := resolveGateAddrLocal(cfg)
 	if err != nil {
@@ -815,7 +817,7 @@ func guildSmokeLogin(cfg *config.Config, account string, stats *metrics.Stats) (
 		gc:      gc,
 		player:  gameobject.NewPlayer(gc.PlayerId),
 		stats:   stats,
-		replies: make(map[uint32]*base.MessageContent),
+		caller:  newSmokeCaller(gc, stats, account, guildSmokeRpcTimeout, errGuildSmokeTimeout),
 	}
 	gameobject.PlayerList.Set(gc.PlayerId, bot.player)
 	go gc.RecvLoop(bot.onMessage)
@@ -831,16 +833,16 @@ func guildSmokeLogin(cfg *config.Config, account string, stats *metrics.Stats) (
 	return bot, nil
 }
 
-// onMessage:公会消息号的回包(含信封拒绝)由本场景认领;NotifyGuildChanged 解码留底;
-// gate 的 SendTipToClient 记下来供快速失败;其余交给通用分发。
+// onMessage:公会请求的回包(含信封拒绝)带请求号,由 GameClient 交给 caller,不会到这里;
+// NotifyGuildChanged 解码留底;gate 的 SendTipToClient 交给 caller 供快速失败;其余交给通用分发。
 //
 // 战斗推送(大厅连接上的 NotifyBattleAssigned / NotifyBattleStart / NotifyBattleEnd)属于"其余":
 // 通用分发把它们转成 gameobject.Player 上的开战 / 落点 / 终局信号,活动段的同道历练(S10)就等在这些信号上,
 // 与 battle-smoke 同一套。所以这里**不要**把战斗消息号加进认领名单 —— 认领了,Player 就再也收不到信号。
 func (b *guildSmokeBot) onMessage(client *pkg.GameClient, msg *base.MessageContent) {
 	b.stats.MsgRecv()
-	// NotifyGuildChanged 是服务端主动下行,不是任何请求的回包:放进 replies 会被下一次同号等待
-	// 误当成结果,交给通用分发又只会得到一条"未知消息号"。本场景是它唯一的消费者,留底后即返回。
+	// NotifyGuildChanged 是服务端主动下行,不是任何请求的回包:交给通用分发只会得到一条"未知消息号"。
+	// 本场景是它唯一的消费者,留底后即返回。
 	if msg.GetMessageId() == game.GuildServiceNotifyGuildChangedMessageId {
 		change := &guildpb.GuildChangedS2C{}
 		if err := proto.Unmarshal(msg.GetSerializedMessage(), change); err != nil {
@@ -855,70 +857,27 @@ func (b *guildSmokeBot) onMessage(client *pkg.GameClient, msg *base.MessageConte
 		b.mu.Unlock()
 		return
 	}
-	// 经济段自己发的 scene 请求(读背包、GM 货币)同样按消息号认领,见 guildEconomyIsSceneMessage。
+	// 公会请求与经济段自己发的 scene 请求(读背包、GM 货币,见 guildEconomyIsSceneMessage)的回包都带请求号;
+	// 同号却 id = 0 的消息不交给通用分发(信封拒绝会被解成全零响应),记一行后丢弃。
 	if guildSmokeIsGuildMessage(msg.GetMessageId()) || guildEconomyIsSceneMessage(msg.GetMessageId()) {
-		b.mu.Lock()
-		if _, seen := b.replies[msg.GetMessageId()]; !seen {
-			b.replies[msg.GetMessageId()] = msg
-		}
-		b.mu.Unlock()
+		smokeDropUncorrelatedReply(b.account, msg)
 		return
 	}
 	if msg.GetMessageId() == game.SceneClientPlayerCommonSendTipToClientMessageId {
-		var tipInfo base.TipInfoMessage
-		if err := proto.Unmarshal(msg.GetSerializedMessage(), &tipInfo); err == nil && tipInfo.GetId() != 0 {
-			b.mu.Lock()
-			b.gateTips = append(b.gateTips, tipInfo.GetId())
-			b.mu.Unlock()
-		}
+		b.caller.onGateTipMessage(msg)
 	}
 	handler.MessageBodyHandler(client, msg)
 }
 
-// call 发一个公会请求并等同消息号的第一个回包。
+// call 发一个公会请求并只等它自己的回包(smokeCaller.call)。
 // 返回的 envelopeTip 非 0 表示 gate / 路由服级拒绝(信封 error_message,body 为空),此时 response 未填充;
 // 为 0 时 response 已解码。gate 推 kServiceUnavailable 或超时返回 error。
 func (b *guildSmokeBot) call(messageId uint32, request, response proto.Message) (envelopeTip uint32, err error) {
 	if wait := guildSmokeRequestSpacing - time.Since(b.lastRequestAt); wait > 0 {
 		time.Sleep(wait)
 	}
-	b.mu.Lock()
-	delete(b.replies, messageId)
-	b.gateTips = nil
-	b.mu.Unlock()
-
-	if err := b.gc.SendRequest(messageId, request); err != nil {
-		return 0, fmt.Errorf("send message_id=%d: %w", messageId, err)
-	}
 	b.lastRequestAt = time.Now()
-	b.stats.MsgSent()
-
-	deadline := time.Now().Add(guildSmokeRpcTimeout)
-	for time.Now().Before(deadline) {
-		b.mu.Lock()
-		reply := b.replies[messageId]
-		gateUnavailable := false
-		for _, tip := range b.gateTips {
-			gateUnavailable = gateUnavailable || tip == tipGuildServiceUnavailable
-		}
-		b.mu.Unlock()
-
-		if reply != nil {
-			if tip := reply.GetErrorMessage().GetId(); tip != 0 {
-				return tip, nil
-			}
-			if err := proto.Unmarshal(reply.GetSerializedMessage(), response); err != nil {
-				return 0, fmt.Errorf("decode message_id=%d: %w", messageId, err)
-			}
-			return 0, nil
-		}
-		if gateUnavailable {
-			return 0, fmt.Errorf("gate SendTipToClient tip=%d(gate 选不到路由服实例,或未以 GATE_CLIENT_RPC_ROUTER=1 启动)",
-				tipGuildServiceUnavailable)
-		}
-		time.Sleep(50 * time.Millisecond)
-	}
-	return 0, fmt.Errorf("message_id=%d account=%s %w(%s)", messageId, b.account, errGuildSmokeTimeout, guildSmokeRpcTimeout)
+	return b.caller.call(messageId, request, response)
 }
 
 // rpc 发请求并返回业务 tip(响应体 error_message.id,0 = 受理)。

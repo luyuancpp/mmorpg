@@ -223,6 +223,22 @@ param(
 	# 用字符串而不是 [bool]/[switch]:值原样写进 env,两边字面值一致,kubectl 里看到的就是传进来的。
 	[ValidateSet("0", "1")]
 	[string]$GateRouterMode = "1",
+	# B0-4 运维豁免开关:写进本次部署全部 C++ 工作负载的环境变量 NODE_OPEN_FILE_LIMIT_MODE
+	# (cpp/libs/engine/core/node/system/node/open_file_limit.h 的 kModeEnv / ParseMode;负责人 2026-10-17 拍板:缺省拒启 + 显式豁免)。
+	#   留空(缺省)= 不写这个变量,生成物与引入开关之前逐字相同,进程按 enforce:软限抬到硬限后仍低于需求
+	#               (gate GateMaxConnections + 4096、battle BattleMaxConnections + 4096、scene 4096)就拒启,Pod 进 CrashLoop;
+	#               -WaitReady 失败时会把容器日志里的 "FATAL open file limit" 行捞出来打印(Write-CppOpenFileLimitRefusals)。
+	#   warn  = 不够也继续启动、只打 WARN。代价:客户端连接可能先占满 fd 表,之后节点间 / Redis / Kafka / etcd 重连与日志滚动都会 EMFILE,
+	#           节点可能被 etcd 摘除或崩溃,只作「硬限暂时改不了、必须先起服」的短时应急。gate / battle 的应急首选是把准入上限调到
+	#           ≤ 软限 − 4096(检查直接通过,不需要豁免),见 docs/ops/gate-kernel-tuning-runbook.md §3.1。
+	#   enforce 显式传也照写进 env,kubectl get 一眼看出取值。
+	# 覆盖范围:zone-up 的 gate(Deployment / external StatefulSet)与 scene(Deployment / Agones Fleet),infra-up 的 battle
+	# (Deployment / hostPort Deployment / Agones Fleet)。只开 zone-up 不影响 battle,反之亦然。与 *_RUN_MODE、GM 开关无关。
+	# external gate 是 OnDelete:模板改了不重建 Pod,要按 k8s_gate_drain.ps1 逐台排空删 Pod 才生效。
+	# 不粘滞(同 -GateRouterMode):脚本不从集群读回旧值,以 warn 运行的环境下一次部署不传就落回 enforce,硬限仍不够会再次拒启。
+	# 区分大小写:C++ 只认小写,其余值按 enforce 处理;ValidateSet 缺省不分大小写,所以 IgnoreCase = $false,大写或拼错在入口就拒。
+	[ValidateSet("enforce", "warn", IgnoreCase = $false)]
+	[string]$NodeOpenFileLimitMode = "",
 	# go/db 存盘消费组的渲染模式(docs/design/db-consumer-group-per-zone.md §2 / §4;决策表见 Resolve-DbConsumerGroupPlan):
 	#   keep(缺省)  按线上 go-svc-db-config 现状渲染:最终形状原样保留;未收尾的交接形状在对方组已没有位点时自动收尾成最终形状
 	#                (去掉 GroupHandoffFrom,db 滚动一次);全新 namespace(读不到 ConfigMap)按 Kafka 位点只渲染最终形状。
@@ -259,8 +275,9 @@ param(
 	# zone 回档的 Step 6 重建 namespace 时尤其如此。所以非 DryRun 时写路径入口在任何写操作之前读线上现状(Assert-RouteSwitchClusterState):
 	# data-service 读**全部** zone namespace(Mode / Arm / ReadRequiresReady 是全服单值:所有 zone 共用同一个全局库与 mapping Redis),
 	# db 读本次部署的 zone,guild 读 infra namespace;与本次参数不一致就整条拒绝,报错给出照传现状的参数串。
-	# 确要切换时加 -ConfirmRouteSwitchChange。包装入口(dev_tools.ps1 / k8s_image.ps1 / k8s_zone_rollback.ps1)尚未透传这几个参数
-	# (下一批统一加转发):集群已切 db_first 之后经包装入口部署会被粘滞核对拒绝,那时直接调本脚本并照传现状。
+	# 确要切换时加 -ConfirmRouteSwitchChange。包装入口:dev_tools.ps1 的 k8s-infra-up / k8s-zone-up / k8s-all-up 同名透传这六个参数
+	# (2026-10-19,留空不传);k8s_image.ps1 不部署 Go 服务,dev_tools 的 k8s-image-* / k8s-release-* 显式给了即拒绝;
+	# k8s_zone_rollback.ps1 的 Step 6 尚未透传(R9 重写中):集群已切 db_first 之后经它重建 zone 会被粘滞核对拒绝。
 	# ValidateSet 不分大小写,参数绑定后规范成小写(data_service 的 Mode 区分大小写,`DB_FIRST` 会被它拒启)。
 	[ValidateSet("redis", "db_first")]
 	[string]$RouteStoreMode = "redis",
@@ -651,6 +668,10 @@ $script:LoginQueueOn = Resolve-LoginQueueSwitch -Value $LoginQueue -ReleaseProfi
 # -GrpcServerMaxPollers 已退役(见参数处注释):只提示,不 throw —— 旧命令带着它照常部署,生成物里不再有该环境变量。
 if ($GrpcServerMaxPollers -gt 0) {
 	Write-Warning "-GrpcServerMaxPollers is retired (the C++ gRPC server has no poller threads since batch 4, see docs/design/grpc-muduo-transport.md section 15.11); ignoring value=$GrpcServerMaxPollers. GRPC_SERVER_MAX_POLLERS is no longer injected."
+}
+# B0-4 豁免开关(见参数处注释):warn 只用于短时应急,每次部署都打一行,免得被当成常态配置。
+if ($NodeOpenFileLimitMode -ceq 'warn') {
+	Write-Warning "-NodeOpenFileLimitMode warn: C++ workloads rendered by this run get NODE_OPEN_FILE_LIMIT_MODE=warn and start even when the nofile hard limit is below the requirement; once the fd table is full, reconnects and log rotation fail with EMFILE. Emergency use only; prefer lowering GateMaxConnections / BattleMaxConnections (docs/ops/gate-kernel-tuning-runbook.md section 3.1). Not sticky: the next deploy without it falls back to enforce."
 }
 
 . (Join-Path $ScriptDir "lib\release_common.ps1")
@@ -1512,7 +1533,7 @@ function Get-GrpcClientMethodsNotCalledFromCpp {
 
 	判定口径(每一项都是违例,不是警告):
 	  - 目标必须在 GrpcClient.CallDeadlineMs 里显式写成正整数:缺席 / 0 在 C++ 侧落到内置默认 10000
-	    (grpc_call_types.h kDefaultGrpcCallDeadlineMs),预算不能依赖一个只写在 C++ 头文件里的隐式值。
+	    (grpc_client_call.h kDefaultGrpcCallDeadlineMs),预算不能依赖一个只写在 C++ 头文件里的隐式值。
 	  - 服务 yaml 不写 Timeout = go-zero 默认 2000(go.mod 钉的 v1.9.2 / v1.10.0 的 zrpc/config.go 里
 	    RpcServerConf.Timeout 都是 `default=2000`);写了就必须是正整数 —— 0 = go-zero 不装超时拦截器
 	    (zrpc/server.go 只在 Timeout > 0 时装),服务端没有上界,「下游先超时」无从成立。
@@ -2823,16 +2844,21 @@ function Get-RedisPodTemplateDigest {
 #                      再建 StatefulSet = 停机切换且数据不迁移,要求 -ConfirmRedisCoreRestart
 #   unchanged          线上注解与本次摘要相同:相对「上次经本脚本 apply 的模板」没变,放行(带外改动看不见,见 Assert-RedisCoreRestartConfirmed)
 #   restart            摘要不同,或线上没有注解(P0-E 之前部署的、或注解被删):apply 会重启 redis-0,要求 -ConfirmRedisCoreRestart
+#   orphan-pods        线上没有 sts/redis、也没有旧 Deployment,但还有 StatefulSet 形态的 redis-<n> Pod 在服务(--cascade=orphan 之后,
+#                      包括 1 → 3 切换在 orphan 删除之后 apply 失败的半截状态):本次 apply 新建的 StatefulSet 会收养并按新模板重建它们,
+#                      要求 -ConfirmRedisCoreRestart(以前这里判 absent 放行,是上面「另一个盲区」;2026-10-19 补上)
 function Get-RedisCoreRestartVerdict {
 	param(
 		[Parameter(Mandatory = $true)][bool]$LiveExists,
 		[AllowNull()][AllowEmptyString()][string]$LiveDigest,
 		[Parameter(Mandatory = $true)][string]$DesiredDigest,
-		[bool]$LegacyDeployment = $false
+		[bool]$LegacyDeployment = $false,
+		[int]$OrphanPodCount = 0
 	)
 
 	if (-not $LiveExists) {
 		if ($LegacyDeployment) { return 'legacy-deployment' }
+		if ($OrphanPodCount -gt 0) { return 'orphan-pods' }
 		return 'absent'
 	}
 	if (-not [string]::IsNullOrWhiteSpace($LiveDigest) -and $LiveDigest.Trim() -ceq $DesiredDigest) { return 'unchanged' }
@@ -2866,7 +2892,11 @@ function Get-LiveRedisCoreTemplateDigest {
 			throw "查询线上 Deployment redis 失败(namespace=$Namespace)。fail-closed:不知道现状就无法判断这次 apply 会不会停掉旧的 Redis。"
 		}
 		$legacyText = ([string]($legacyOut | Out-String)).Trim()
-		return [pscustomobject]@{ Exists = $false; Digest = ''; LegacyDeployment = (-not [string]::IsNullOrEmpty($legacyText)) }
+		$legacy = (-not [string]::IsNullOrEmpty($legacyText))
+		# 旧 Deployment 的 Pod 同样带 app=redis,但名字不是 redis-<n>;它的切换由 legacy-deployment 分支管,这里不再查孤儿 Pod。
+		$orphans = @()
+		if (-not $legacy) { $orphans = @(Get-LiveRedisOrphanPodOrdinals -Namespace $Namespace) }
+		return [pscustomobject]@{ Exists = $false; Digest = ''; LegacyDeployment = $legacy; OrphanPods = $orphans }
 	}
 	$annotations = ($text | ConvertFrom-Json).metadata.annotations
 	$digest = ''
@@ -2892,9 +2922,9 @@ function Get-LiveRedisCoreTemplateDigest {
 	盲区:比较的是线上注解(= 上次经本脚本 apply 的模板摘要),不是线上真实的 spec.template。有人用 kubectl edit / set image / patch
 	带外改过 redis.yaml 里声明了的字段时,这里判 unchanged 放行,而 apply 的三方合并会把那些字段改回清单值、照样重启 redis-0。
 	改成拿 server-side dry-run 的模板与线上模板比较可以补上,待负责人拍板与实测(交接 handoff-global-singletons-p0-20261015.md)。
-	另一个盲区:有人 `kubectl delete sts redis --cascade=orphan`(改 volumeClaimTemplates 之类不可变字段的常规做法)后,redis-0 Pod 与 PVC
-	仍在服务,但这里查不到 sts、也查不到旧 Deployment,判 absent 放行;apply 新建的 StatefulSet 收养孤儿 Pod,模板不一致就重建 redis-0。
-	做过这类操作后,下一次 infra-up 前先确认 redis.yaml 的 Pod 模板与线上一致,或在维护窗口里做。
+	以前的另一个盲区(2026-10-19 已补):有人 `kubectl delete sts redis --cascade=orphan`(改 volumeClaimTemplates 之类不可变字段的常规做法,
+	或 1 → 3 切换在 orphan 删除之后 apply 失败)后,redis-<n> Pod 与 PVC 仍在服务,以前这里查不到 sts、也查不到旧 Deployment,判 absent 放行。
+	现在没有 sts 与旧 Deployment 时再查带 app=redis 的 redis-<n> Pod(Get-LiveRedisOrphanPodOrdinals),有就判 orphan-pods,同样要求确认。
 #>
 function Assert-RedisCoreRestartConfirmed {
 	param(
@@ -2911,8 +2941,23 @@ function Assert-RedisCoreRestartConfirmed {
 		return
 	}
 	$live = Get-LiveRedisCoreTemplateDigest -Namespace $InfraNamespace
+	$orphanPods = @()
+	if ($null -ne $live.PSObject.Properties['OrphanPods']) { $orphanPods = @($live.OrphanPods) }
 	$verdict = Get-RedisCoreRestartVerdict -LiveExists $live.Exists -LiveDigest $live.Digest -DesiredDigest $DesiredDigest `
-		-LegacyDeployment ([bool]$live.LegacyDeployment)
+		-LegacyDeployment ([bool]$live.LegacyDeployment) -OrphanPodCount $orphanPods.Count
+	if ($verdict -eq 'orphan-pods') {
+		$orphanText = (@($orphanPods | ForEach-Object { "redis-$_" }) -join ', ')
+		if ($ConfirmRedisCoreRestart) {
+			Write-Warning "[RedisCoreRestart]Confirmed:-ConfirmRedisCoreRestart supplied, statefulset/redis is gone but orphan pods $orphanText are still serving in namespace $InfraNamespace (after --cascade=orphan, e.g. an interrupted 1 -> 3 switch). The StatefulSet applied now adopts them and recreates them with the new template, digest=$DesiredDigest."
+			return
+		}
+		throw @"
+拒绝 apply 共享 Redis(namespace=$InfraNamespace):线上没有 statefulset/redis,但 Pod $orphanText 仍在服务
+(--cascade=orphan 之后的状态,常见于上一次 1 → 3 切换在 orphan 删除之后 apply 失败)。本次 apply 新建的 StatefulSet 会收养它们并按新模板重建 =
+一次共享 Redis 重启(单实例时全服登录中断)。本次未做任何写操作。确认要在本次维护窗口继续,加 -ConfirmRedisCoreRestart 重跑
+(经 dev_tools.ps1 / k8s_image.ps1 同名参数透传);步骤见 deploy/k8s/README.md「共享 Redis:高可用形态 → 切换与回退」。
+"@
+	}
 	if ($verdict -eq 'absent') {
 		Write-Host "Redis restart gate: neither statefulset/redis nor the legacy deployment/redis exists in namespace $InfraNamespace (first deployment), digest=$DesiredDigest"
 		return
@@ -2954,7 +2999,7 @@ function Assert-RedisCoreRestartConfirmed {
 		return
 	}
 	throw @"
-拒绝 apply 共享 Redis(namespace=$InfraNamespace):本次 redis.yaml 的 Pod 模板摘要 $DesiredDigest 与线上 statefulset/redis 的 $liveText 不同
+拒绝 apply 共享 Redis(namespace=$InfraNamespace):本次所选 Redis 清单(-RedisReplicas 1 = redis.yaml,1 → 3 切换 = redis-ha.yaml)的 Pod 模板摘要 $DesiredDigest 与线上 statefulset/redis 的 $liveText 不同
 (<none> = 线上还没有摘要注解:P0-E 之前部署的,或注解被删过)。apply 会重启 redis-0,全服登录中断并重放 AOF。
 本次未做任何写操作。确认要在本次维护窗口重启,加 -ConfirmRedisCoreRestart 重跑(经 dev_tools.ps1 / k8s_image.ps1 同名参数透传);
 在存盘关键写补上 WAITAOF 之前,重启前先停写,确认 db_task 积压、重试队列与死信都为 0。
@@ -3080,6 +3125,80 @@ function Get-MappingRedisTopologyFor {
 	return 'single'
 }
 
+# 线上带 app=redis 标签、名字是 StatefulSet 形态 redis-<n> 的 Pod 序号(升序)。只在 sts/redis 不存在时有意义:那时这些 Pod 是
+# --cascade=orphan 留下的孤儿,仍在服务(包括 1 → 3 切换在 orphan 删除之后 apply 失败的半截状态)。代理 Pod 的标签是 app=redis-proxy,
+# 旧 Deployment 的 Pod 名字是 redis-<hash>-<hash>,都不计。DryRun 不连集群,返回空;查询失败一律 throw(查不到不等于不存在,fail-closed)。
+function Get-LiveRedisOrphanPodOrdinals {
+	param([Parameter(Mandatory = $true)][string]$Namespace)
+
+	if ($DryRun) { return @() }
+	$baseArgs = Build-KubectlBaseArgs
+	$allArgs = @()
+	$allArgs += $baseArgs
+	$allArgs += @("get", "pods", "-n", $Namespace, "-l", "app=redis", "--ignore-not-found", "-o", "name")
+	$out = & kubectl @allArgs
+	if ($LASTEXITCODE -ne 0) {
+		throw "查询线上 redis Pod 失败(namespace=$Namespace)。fail-closed:sts/redis 不在时还要确认没有孤儿 Pod 在服务,否则会把半截的切换当成全新集群。"
+	}
+	$ordinals = [System.Collections.Generic.List[int]]::new()
+	foreach ($line in @(([string]($out | Out-String)) -split "`r?`n")) {
+		$m = [regex]::Match($line.Trim(), '^(?:pod/)?redis-(\d+)$')
+		if ($m.Success) { $ordinals.Add([int]$m.Groups[1].Value) }
+	}
+	return @($ordinals | Sort-Object)
+}
+
+# 孤儿 Pod 序号 → 推算的线上副本数(纯函数):没有 → $null(真的不存在);序号恰好是 0 .. n-1 → n;
+# 不连续(中间缺号、只剩 redis-1 之类)→ -1:不知道它经历过什么,交给变更判定当作「本脚本从不产生的数量」拒绝。
+function Get-RedisReplicasFromOrphanOrdinals {
+	param([AllowNull()][AllowEmptyCollection()][int[]]$Ordinals)
+
+	$list = @($Ordinals | Where-Object { $null -ne $_ } | Sort-Object -Unique)
+	if ($list.Count -eq 0) { return $null }
+	for ($i = 0; $i -lt $list.Count; $i++) {
+		if ($list[$i] -ne $i) { return -1 }
+	}
+	return $list.Count
+}
+
+# 线上共享 Redis 的一次读数:{ Replicas; Source; Ordinals }。
+#   Source = 'sts'          Replicas = sts/redis 的 spec.replicas
+#   Source = 'orphan-pods'  sts 不在,Replicas 按孤儿 redis-<n> Pod 推算(Get-RedisReplicasFromOrphanOrdinals,缺号 = -1),Ordinals = 孤儿序号
+#   Source = 'none'         两样都没有(全新集群),Replicas = $null;DryRun 不连集群,也返回这一种
+# 拓扑变更闸与 zone 写路径的跟随线上共用这一处、只读一次:判定用的副本数与拒绝文本里点名的 Pod 出自同一次读取。
+# 半截切换(orphan 删除之后 apply 失败)不会被当成全新集群。
+function Get-LiveRedisReplicas {
+	$live = Get-LiveStatefulSetReplicas -Namespace $InfraNamespace -Name 'redis'
+	if ($null -ne $live) { return [pscustomobject]@{ Replicas = [int]$live; Source = 'sts'; Ordinals = @() } }
+	if ($DryRun) { return [pscustomobject]@{ Replicas = $null; Source = 'none'; Ordinals = @() } }
+	$ordinals = @(Get-LiveRedisOrphanPodOrdinals -Namespace $InfraNamespace)
+	if ($ordinals.Count -eq 0) { return [pscustomobject]@{ Replicas = $null; Source = 'none'; Ordinals = @() } }
+	return [pscustomobject]@{ Replicas = (Get-RedisReplicasFromOrphanOrdinals -Ordinals $ordinals); Source = 'orphan-pods'; Ordinals = $ordinals }
+}
+
+# 线上读数(Get-LiveRedisReplicas)→ 拒绝文本里描述线上的那半句(纯函数)。sts 不在时不说「sts/redis 有 N 个副本」,点名孤儿 Pod。
+function Format-RedisLiveShape {
+	param([Parameter(Mandatory = $true)]$Reading)
+
+	switch ([string]$Reading.Source) {
+		'sts' { return "statefulset/redis 有 $($Reading.Replicas) 个副本" }
+		'orphan-pods' {
+			$pods = (@($Reading.Ordinals) | ForEach-Object { "redis-$_" }) -join ', '
+			$tail = if ([int]$Reading.Replicas -eq -1) { '序号不连续,推算不出形态' } else { "按序号推算为 $($Reading.Replicas) 个" }
+			return "没有 statefulset/redis,但带 app=redis 的孤儿 Pod $pods 仍在(可能含 Terminating 中的;$tail)"
+		}
+		default { return '没有 statefulset/redis,也没有孤儿 redis Pod' }
+	}
+}
+
+# 线上形态不是本脚本能接手的样子时(副本数不是 1 / 3:sts 上 0 / 2,孤儿推算出 2 或缺号 -1),拒绝文本里的处置(纯函数)。
+# 这时不能建议「传 -RedisReplicas <线上值>」:参数只认 0 / 1 / 3(0 = 按档位),zone-up 与 infra-up 都会拒绝,只能先人工整理。
+function Get-RedisLiveShapeManualFix {
+	return ("不要靠参数绕过:-RedisReplicas 只认 0 / 1 / 3,zone-up 与 infra-up 都会拒绝这种线上形态。在维护窗口里停写,用哨兵(SENTINEL get-master-addr-by-name)或 " +
+		"INFO replication 确认最新数据在哪个 Pod,把主切到要保留的序号,再删掉多余的 Pod 与它们的 PVC,整理成只剩 redis-0(单实例)或 redis-0..2 齐全(高可用);" +
+		"sts 上是 0 / 2 个副本时先手工 kubectl scale 回 1 或 3。步骤见 deploy/k8s/README.md「共享 Redis:高可用形态 → 切换与回退」。")
+}
+
 # 线上 sts/redis 的副本数 → 目标副本数,这次变更算哪一类(纯函数,契约测试直接喂值;写法同 Get-KafkaTopologyChangeVerdict):
 #   absent     线上没有 sts/redis(全新集群)
 #   unchanged  副本数不变
@@ -3104,23 +3223,36 @@ function Get-RedisTopologyChangeVerdict {
 function Assert-RedisTopologyChangeIsSafe {
 	param([Parameter(Mandatory = $true)]$Topology)
 
-	$live = Get-LiveStatefulSetReplicas -Namespace $InfraNamespace -Name 'redis'
+	# sts/redis 不在时按孤儿 Pod 推算(Get-LiveRedisReplicas):1 → 3 切换在 orphan 删除之后失败、重跑时仍判 upgrade(orphan 删除带
+	# --ignore-not-found,再做一次是空操作);只剩 redis-0 而目标 1(README 回退步骤)判 unchanged;3 个孤儿而目标 1 照样拒绝。
+	$reading = Get-LiveRedisReplicas
+	$live = $reading.Replicas
 	$verdict = Get-RedisTopologyChangeVerdict -LiveReplicas $live -DesiredReplicas $Topology.Replicas
 	if ($verdict -eq 'upgrade') {
-		Write-Warning "[RedisTopology]Upgrade:shared Redis 1 -> 3 (single instance -> primary + 2 replicas + sentinels + 2 proxies). redis-0 restarts with its data and becomes the primary; redis-1 / redis-2 full-sync from it; Service redis switches to the proxies. Logins in all zones are interrupted while redis-0 restarts (maintenance window, needs -ConfirmRedisCoreRestart). Afterwards re-run zone-up for every zone and rollout restart deploy/db and deploy/data-service so WAITAOF waits for 1 replica."
+		Write-Warning "[RedisTopology]Upgrade:shared Redis 1 -> 3 (single instance -> primary + 2 replicas + sentinels + 2 proxies). redis-0 restarts with its data and becomes the primary; redis-1 / redis-2 full-sync from it; Service redis switches to the proxies. Logins in all zones are interrupted while redis-0 restarts (maintenance window, needs -ConfirmRedisCoreRestart). Afterwards re-run zone-up for every zone and rollout restart deploy/db and deploy/data-service so WAITAOF waits for 1 replica. To keep the single instance this time, re-run with -RedisReplicas 1."
 	}
 	if ($verdict -ne 'refuse') { return $verdict }
+	$advice = if ($live -ne 1 -and $live -ne 3) {
+		Get-RedisLiveShapeManualFix
+	}
+	elseif ($reading.Source -eq 'orphan-pods') {
+		# 只可能是 3 个连续孤儿而目标 1:多半是正在按 README 回退单实例,第 2 步还没删干净。
+		"若正在按 README「高可用 → 单实例」回退:第 2 步还没删干净 pod/redis-1、pod/redis-2 与它们的 PVC(redis-data-redis-1 / -2),删完并等 Terminating 结束(kubectl -n $InfraNamespace get pods -l app=redis 只剩 redis-0)后重跑。"
+	}
+	else {
+		"确实要回到单实例:先在维护窗口里把主切回 redis-0(redis-cli -p 26379 SENTINEL FAILOVER mymaster,直到哨兵答 redis-0),停写后按 deploy/k8s/README.md「共享 Redis:高可用形态」的回退步骤做;只是这次不想改形态,显式传 -RedisReplicas $live。"
+	}
 	throw @"
-拒绝变更共享 Redis 的形态:线上 sts/redis 有 $live 个副本 → 目标 $($Topology.Replicas) 个(namespace=$InfraNamespace)。
+拒绝变更共享 Redis 的形态:线上$(Format-RedisLiveShape -Reading $reading) → 目标 $($Topology.Replicas) 个(namespace=$InfraNamespace)。
 只支持 1 → 3(单实例原地切高可用)。3 → 1 不能原地做:主可能在 redis-1 / redis-2 上,缩到只剩 redis-0 会丢掉主上的最新数据;
-线上是 0 / 2 这类本脚本从不产生的副本数时,不知道它经历过什么,也不猜。本次未做任何写操作。
-确实要回到单实例:先在维护窗口里把主切回 redis-0(redis-cli -p 26379 SENTINEL FAILOVER mymaster,直到哨兵答 redis-0),
-停写后按 deploy/k8s/README.md「共享 Redis:高可用形态」的回退步骤做;只是这次不想改形态,显式传 -RedisReplicas $live。
+线上是 0 / 2 这类本脚本从不产生的副本数、或孤儿 Pod 序号不连续时,不知道它经历过什么,也不猜。本次未做任何写操作。
+$advice
 "@
 }
 
 # zone 写路径(不经 Apply-Infra)的拓扑取哪个值(纯函数,契约测试直接喂值):
-#   resolved  线上没有 sts/redis(infra 还没部署,zone 本来就起不来,不替 infra-up 做判断),或线上与本次解析值一致:照本次解析值
+#   resolved  线上既没有 sts/redis 也没有孤儿 redis-<n> Pod(infra 还没部署,或只剩 2026-09-19 之前的旧 Deployment —— 那种集群要先 infra-up 迁移,
+#             zone 本来就起不来,不替 infra-up 做判断),或线上与本次解析值一致:照本次解析值
 #   live      没给 -RedisReplicas(RequestedReplicas ≤ 0),线上是 1 或 3 且与档位缺省不同:跟随线上
 #   refuse    显式给了且与线上不同,或线上是 0 / 2 这类本脚本从不产生的副本数(不知道它经历过什么,不猜)
 function Get-RedisZoneTopologyDecision {
@@ -3145,197 +3277,28 @@ function Get-RedisZoneTopologyDecision {
 # 显式给了而与线上不同即拒绝(那是参数写错,或想切形态却没先跑 infra-up)。DryRun 不查集群,按本次参数与档位渲染。
 function Resolve-RedisTopologyFromLive {
 	$resolved = Get-RedisTopology
-	$live = Get-LiveStatefulSetReplicas -Namespace $InfraNamespace -Name 'redis'
+	$reading = Get-LiveRedisReplicas
+	$live = $reading.Replicas
 	$decision = Get-RedisZoneTopologyDecision -LiveReplicas $live -RequestedReplicas $RedisReplicas -ResolvedReplicas $resolved.Replicas
 	if ($decision -eq 'resolved') { return }
 	if ($decision -eq 'live') {
 		$script:RedisReplicasFollowedLive = [int]$live
 		$followed = Get-RedisTopology
-		Write-Host "Redis topology: following live statefulset/redis replicas=$($followed.Replicas) (profile default was $($resolved.Replicas); -RedisReplicas not given) manifest=$($followed.Manifest) high_availability=$(([string]$followed.HighAvailability).ToLowerInvariant()) waitaof_replicas=$(Get-RouteStoreWaitAOFNumReplicas -Topology (Get-MappingRedisTopology))"
+		$source = if ($reading.Source -eq 'orphan-pods') {
+			"orphan redis pods $((@($reading.Ordinals) | ForEach-Object { "redis-$_" }) -join ',') (statefulset/redis absent)"
+		}
+		else { 'statefulset/redis' }
+		Write-Host "Redis topology: following live $source replicas=$($followed.Replicas) (profile default was $($resolved.Replicas); -RedisReplicas not given) manifest=$($followed.Manifest) high_availability=$(([string]$followed.HighAvailability).ToLowerInvariant()) waitaof_replicas=$(Get-RouteStoreWaitAOFNumReplicas -Topology (Get-MappingRedisTopology))"
 		return
 	}
+	$advice = if ($live -eq 1 -or $live -eq 3) {
+		"去掉 -RedisReplicas(跟随线上)或传 -RedisReplicas $live;要切换形态,先跑 infra-up(1 → 3 见 deploy/k8s/README.md「共享 Redis:高可用形态」)。"
+	}
+	else { Get-RedisLiveShapeManualFix }
 	throw @"
-共享 Redis 的形态与线上不一致:线上 sts/redis 有 $live 个副本,本次 -RedisReplicas $RedisReplicas(解析为 $($resolved.Replicas))(namespace=$InfraNamespace,命令 $Command)。
+共享 Redis 的形态与线上不一致:线上$(Format-RedisLiveShape -Reading $reading),本次 -RedisReplicas $RedisReplicas(解析为 $($resolved.Replicas))(namespace=$InfraNamespace,命令 $Command)。
 这个值决定 data-service / go/db 的 WAITAOF 要几个副本确认(单实例 0、高可用 1),渲染错了要么静默丢掉切主时的已确认写入、要么 go/db 拒启。
-本次未做任何写操作。去掉 -RedisReplicas(跟随线上)或传与线上一致的值;要切换形态,先跑 infra-up(1 → 3 见 deploy/k8s/README.md「共享 Redis:高可用形态」)。
-"@
-}
-
-# 高可用形态下口令的额外字符集限制(纯函数)。双引号、反斜杠与控制字符已由 Assert-RedisPasswordYamlSafe 拒绝;
-# 这里再拒绝空白与单引号:哨兵把口令**原样、不加引号**写回它自己的配置文件(sentinel auth-pass / sentinel-pass,Redis 自身的行为),
-# 下次重启按配置语法读回时,空白会把口令拆成两段、引号会被当成引号 —— 报 "Unbalanced quotes" 起不来(2026-10-08 实测)。
-# 报错只点变量名,不回显值。空串放行(dev 档不认证)。
-function Assert-RedisPasswordSentinelSafe {
-	param([AllowEmptyString()][AllowNull()][string]$Password)
-
-	if ([string]::IsNullOrEmpty($Password)) { return }
-	if ($Password -match "[\s']") {
-		throw "MMORPG_REDIS_PASSWORD 含空白或单引号:共享 Redis 的高可用形态(-RedisReplicas 3)里,哨兵会把口令原样、不加引号地写回它自己的配置文件,下次重启读不回来。请换一个只含字母、数字与 ._~@%+=:,^- 之类符号的口令。"
-	}
-}
-
-<#
-.SYNOPSIS
-	从 redis-ha.yaml 读连接上限并核对:PROXY_MAXCONN × (代理副本数 + maxSurge) + 预留 ≤ MAXCLIENTS,且 MAXCLIENTS 与 redis.yaml 同值。
-
-.DESCRIPTION
-	为什么要让代理先到线:Redis 一旦到线,代理对它的健康检查连接也会被拒,连续两次失败就把它判下线、踢掉全部会话,
-	客户端一起重连又撞线 —— 小故障被放大成全服断线;代理到线只是新连接排队。所以代理全部副本(含滚动时多出的那个)
-	加起来也不能把 Redis 用满,留出的预留给复制、哨兵、代理健康检查、探针与运维 redis-cli。
-	MAXCLIENTS 必须与 redis.yaml 相同:Redis 连接总账(Get-RedisConnectionLedgerInputs)只从 redis.yaml 读,两种形态共用一份账。
-	纯函数(不读文件):找不到恰好一处取值、Deployment redis-proxy 的 replicas / maxSurge 不是恰好一处、或不等式不成立即 throw。
-#>
-function Get-RedisHaLimits {
-	param(
-		[Parameter(Mandatory = $true)][string]$ManifestContent,
-		[Parameter(Mandatory = $true)][int]$SingleInstanceMaxClients
-	)
-
-	# 预留名额:复制 2 条、哨兵每个对主 / 对每个从各 2 条、两个代理的健康检查、探针与运维 redis-cli。估计值,取得宽裕。
-	$reserved = 1000
-	$text = $ManifestContent -replace "`r`n", "`n"
-	$readOne = {
-		param([string]$Name)
-		$found = [regex]::Matches($text, "(?m)^[ \t]*$Name=(\d+)[ \t]*$")
-		if ($found.Count -ne 1) {
-			throw "redis-ha.yaml:$Name=<数字> 应恰好出现 1 次,实际 $($found.Count) 次(fail-closed:不替你猜连接上限)"
-		}
-		$value = 0
-		if (-not [int]::TryParse($found[0].Groups[1].Value, [ref]$value) -or $value -le 0) {
-			throw "redis-ha.yaml:$Name='$($found[0].Groups[1].Value)' 必须是正整数"
-		}
-		return $value
-	}
-	$maxClients = & $readOne 'MAXCLIENTS'
-	$proxyMaxConn = & $readOne 'PROXY_MAXCONN'
-
-	$proxyDocs = @(($text -split '(?m)^---[ \t]*$') | Where-Object { $_ -cmatch '(?m)^kind:[ \t]*Deployment[ \t]*$' -and $_ -cmatch '(?m)^  name:[ \t]*redis-proxy[ \t]*$' })
-	if ($proxyDocs.Count -ne 1) {
-		throw "redis-ha.yaml:kind: Deployment、metadata.name 为 redis-proxy 的文档应恰好 1 份,实际 $($proxyDocs.Count) 份"
-	}
-	$replicaMatches = [regex]::Matches($proxyDocs[0], '(?m)^  replicas:[ \t]*(\d+)[ \t]*$')
-	$surgeMatches = [regex]::Matches($proxyDocs[0], '(?m)^[ \t]+maxSurge:[ \t]*(\d+)[ \t]*$')
-	if ($replicaMatches.Count -ne 1 -or $surgeMatches.Count -ne 1) {
-		throw "redis-ha.yaml:Deployment redis-proxy 的 spec.replicas 与 maxSurge 应各恰好一处(整数),实际 $($replicaMatches.Count) / $($surgeMatches.Count) 处"
-	}
-	$proxyReplicas = [int]$replicaMatches[0].Groups[1].Value
-	$proxyMaxSurge = [int]$surgeMatches[0].Groups[1].Value
-
-	if ($maxClients -ne $SingleInstanceMaxClients) {
-		throw "redis-ha.yaml 的 MAXCLIENTS=$maxClients 与 redis.yaml 的 $SingleInstanceMaxClients 不同:两种形态共用一份 Redis 连接总账(只从 redis.yaml 读),必须同值。"
-	}
-	$proxyTotal = $proxyMaxConn * ($proxyReplicas + $proxyMaxSurge)
-	if ($proxyTotal + $reserved -gt $maxClients) {
-		throw "redis-ha.yaml:PROXY_MAXCONN=$proxyMaxConn × (代理副本 $proxyReplicas + maxSurge $proxyMaxSurge) + 预留 $reserved = $($proxyTotal + $reserved) 超过 MAXCLIENTS=$maxClients。代理必须比 Redis 先到线(否则到线时代理的健康检查失败、踢掉全部会话),调小 PROXY_MAXCONN 或在维护窗口调大两份清单的 MAXCLIENTS。"
-	}
-	return [pscustomobject]@{
-		MaxClients    = $maxClients
-		ProxyMaxConn  = $proxyMaxConn
-		ProxyReplicas = $proxyReplicas
-		ProxyMaxSurge = $proxyMaxSurge
-		Reserved      = $reserved
-		ProxyTotal    = $proxyTotal
-	}
-}
-
-# 脚本 ConfigMap(redis-ha-scripts)内容的摘要,取 SHA-256 前 16 位(纯函数)。写进代理的 Pod 模板注解:代理只在启动时
-# 按脚本生成配置,内容一变模板就变、Deployment 自动滚动。整块文档原样参与(只统一换行),脚本里的注释改了也会滚动 ——
-# 代理是无状态的,多滚一次只是客户端重连一次,比漏滚一次(新脚本不生效)便宜。
-function Get-RedisHaScriptsDigest {
-	param([Parameter(Mandatory = $true)][string]$ManifestContent)
-
-	$documents = @(($ManifestContent -replace "`r`n", "`n") -split '(?m)^---[ \t]*$')
-	$configMaps = @($documents | Where-Object { $_ -cmatch '(?m)^kind:[ \t]*ConfigMap[ \t]*$' -and $_ -cmatch '(?m)^  name:[ \t]*redis-ha-scripts[ \t]*$' })
-	if ($configMaps.Count -ne 1) {
-		throw "redis-ha.yaml:kind: ConfigMap、metadata.name 为 redis-ha-scripts 的文档应恰好 1 份,实际 $($configMaps.Count) 份"
-	}
-	$sha256 = [System.Security.Cryptography.SHA256]::Create()
-	try {
-		$bytes = $sha256.ComputeHash([System.Text.Encoding]::UTF8.GetBytes($configMaps[0].Trim()))
-	}
-	finally {
-		$sha256.Dispose()
-	}
-	return ((($bytes | ForEach-Object { $_.ToString('x2') }) -join '').Substring(0, 16))
-}
-
-# ─────────────────────────────────────────────────────────────────
-# 共享 Redis 的拓扑:单实例(redis.yaml)或高可用(redis-ha.yaml)
-# (docs/design/no-single-node-horizontal-scaling-20261001.md §5;deploy/k8s/README.md「共享 Redis:高可用形态」)
-# ─────────────────────────────────────────────────────────────────
-# 高可用形态 = 1 主 2 从 + 每个 redis Pod 一个哨兵容器 + 2 个 haproxy 入口代理。Service redis 的名字与 ClusterIP 不变,
-# 只是 selector 从 redis Pod 换成代理;代理只把连接交给「自己答 role:master、且多数哨兵认它是主」的节点。
-# 所有客户端(C++ / Go / Java)零改动,仍连 redis.<infra>:6379。故障转移、滚动更新、整体停机再拉起、从单实例原地切换,
-# 2026-10-08 都在本机 kind 的隔离命名空间里实测过(数字见设计文档 §5)。
-# Get-RedisTopologyFor / Get-RedisTopologyChangeVerdict / Get-RedisHaLimits / Get-RedisHaScriptsDigest /
-# Assert-RedisPasswordSentinelSafe 是纯函数,契约测试按 AST 抽出直接调用;Get-RedisTopology 读脚本参数,
-# Assert-RedisTopologyChangeIsSafe 读集群(DryRun 不查,一律当全新集群)。
-
-# 代理 Pod 模板上的脚本摘要占位(redis-ha.yaml 的 Deployment redis-proxy),由 Apply-Infra 换成 Get-RedisHaScriptsDigest 的结果。
-$script:RedisHaScriptsDigestPlaceholder = '__REDIS_HA_SCRIPTS_DIGEST__'
-
-# 副本数 → 拓扑(纯函数)。只认 1 和 3:哨兵要凑多数派,两个节点挂一个就没有多数派,比单实例还脆;
-# 更多副本没有收益(读写都只走主),还会拖慢每次滚动。
-function Get-RedisTopologyFor {
-	param([Parameter(Mandatory = $true)][int]$Replicas)
-
-	if ($Replicas -ne 1 -and $Replicas -ne 3) {
-		throw "共享 Redis 的副本数只能是 1(单实例,redis.yaml)或 3(1 主 2 从 + 哨兵 + 代理,redis-ha.yaml),实际 $Replicas。两个节点的哨兵多数派挂一个就没了,比单实例还脆。"
-	}
-	$ha = ($Replicas -eq 3)
-	return [pscustomobject]@{
-		Replicas            = $Replicas
-		HighAvailability    = $ha
-		Manifest            = if ($ha) { 'redis-ha.yaml' } else { 'redis.yaml' }
-		PodManagementPolicy = if ($ha) { 'Parallel' } else { 'OrderedReady' }
-	}
-}
-
-# 按命令行与档位解析出本次部署的 Redis 拓扑。-RedisReplicas 0(缺省)= 按档位,判据与 Get-KafkaTopology 相同。
-function Get-RedisTopology {
-	$replicas = $RedisReplicas
-	if ($replicas -le 0) {
-		$replicas = if ($ReleaseProfile -ne 'dev' -or $OpsProfile -ne 'custom') { 3 } else { 1 }
-	}
-	return Get-RedisTopologyFor -Replicas $replicas
-}
-
-# 线上 sts/redis 的副本数 → 目标副本数,这次变更算哪一类(纯函数,契约测试直接喂值;写法同 Get-KafkaTopologyChangeVerdict):
-#   absent     线上没有 sts/redis(全新集群)
-#   unchanged  副本数不变
-#   upgrade    1 → 3:单实例原地切高可用。redis-0 带着 PVC 上的数据以主身份回来,redis-1 / redis-2 新建后从它全量同步
-#   refuse     其余一律拒绝 —— 3 → 1(主可能在 redis-1 / redis-2 上,缩到只剩 redis-0 = 丢掉主上的最新数据),
-#              以及线上是 0 / 2 这类本脚本从不产生的数量(不知道它经历过什么,不猜)
-function Get-RedisTopologyChangeVerdict {
-	param(
-		[AllowNull()]$LiveReplicas,
-		[Parameter(Mandatory = $true)][int]$DesiredReplicas
-	)
-
-	if ($null -eq $LiveReplicas) { return 'absent' }
-	$live = [int]$LiveReplicas
-	if ($live -eq $DesiredReplicas) { return 'unchanged' }
-	if ($live -eq 1 -and $DesiredReplicas -eq 3) { return 'upgrade' }
-	return 'refuse'
-}
-
-# apply 共享 Redis 之前调用(Apply-Infra 里,早于任何写操作)。拒绝的变更直接 throw;返回判定,upgrade 时 Apply-Infra 要先
-# 「只删 StatefulSet 对象、留下 Pod 与 PVC」(podManagementPolicy 创建后不可改,见 Apply-Infra 的 redis 分支)。
-function Assert-RedisTopologyChangeIsSafe {
-	param([Parameter(Mandatory = $true)]$Topology)
-
-	$live = Get-LiveStatefulSetReplicas -Namespace $InfraNamespace -Name 'redis'
-	$verdict = Get-RedisTopologyChangeVerdict -LiveReplicas $live -DesiredReplicas $Topology.Replicas
-	if ($verdict -eq 'upgrade') {
-		Write-Warning "[RedisTopology]Upgrade:shared Redis 1 -> 3 (single instance -> primary + 2 replicas + sentinels + 2 proxies). redis-0 restarts with its data and becomes the primary; redis-1 / redis-2 full-sync from it; Service redis switches to the proxies. Logins in all zones are interrupted while redis-0 restarts (maintenance window, needs -ConfirmRedisCoreRestart)."
-	}
-	if ($verdict -ne 'refuse') { return $verdict }
-	throw @"
-拒绝变更共享 Redis 的形态:线上 sts/redis 有 $live 个副本 → 目标 $($Topology.Replicas) 个(namespace=$InfraNamespace)。
-只支持 1 → 3(单实例原地切高可用)。3 → 1 不能原地做:主可能在 redis-1 / redis-2 上,缩到只剩 redis-0 会丢掉主上的最新数据;
-线上是 0 / 2 这类本脚本从不产生的副本数时,不知道它经历过什么,也不猜。本次未做任何写操作。
-确实要回到单实例:先在维护窗口里把主切回 redis-0(redis-cli -p 26379 SENTINEL FAILOVER mymaster,直到哨兵答 redis-0),
-停写后按 deploy/k8s/README.md「共享 Redis:高可用形态」的回退步骤做;只是这次不想改形态,显式传 -RedisReplicas $live。
+本次未做任何写操作。$advice
 "@
 }
 
@@ -5362,6 +5325,15 @@ function New-NodeConfigMapYaml {
 		throw "生成 node ConfigMap 失败:go/db ServerConfig.Kafka.TopicGeneration($dbTaskTopicGeneration)与 go/login Kafka.TopicGeneration($loginDbTaskTopicGeneration)不一致;db_task topic 换代必须 login/db/C++ 三方同一次改。"
 	}
 
+	# 混版本持久字段保护:scene 严格提交屏障 C3 的模式(docs/design/mixed-version-persist-field-protection.md §5.2)。
+	# 真源是 bin/etc/base_deploy_config.yaml(只有 C++ 读这一键)。这份 ConfigMap 整目录遮蔽镜像里的 bin/etc,
+	# 不镜像 = C++ 读到缺键按 warn:仓库切到 enforce 时集群里悄悄不生效。只认 warn / enforce(区分大小写),
+	# 其余在生成期就 throw —— C++ 读到非法值会拒绝启动,不能等 pod 起不来才发现。
+	$persistSchemaRegressionMode = Get-AuthoritativeScalar -RelativePath 'bin/etc/base_deploy_config.yaml' -KeyPath 'PersistSchemaRegressionMode'
+	if ($persistSchemaRegressionMode -cne 'warn' -and $persistSchemaRegressionMode -cne 'enforce') {
+		throw "生成 node ConfigMap 失败:bin/etc/base_deploy_config.yaml 的 PersistSchemaRegressionMode 只能是 warn 或 enforce(当前 '$persistSchemaRegressionMode')。"
+	}
+
 	$baseDeployConfig = (@"
 Etcd:
   Hosts:
@@ -5417,6 +5389,10 @@ AuditTopicGeneration: ${auditTopicGeneration}
 # services/scene/player/constants/player.h。值从 go/db/etc/db.yaml 的 ServerConfig.Kafka.TopicGeneration 取
 # (生成期已核对与 login 相等):缺这一键 C++ 回落第一代,go/db 若已换代就是存盘写进没人消费的旧 topic。
 DbTaskTopicGeneration: ${dbTaskTopicGeneration}
+# 混版本持久字段保护:scene 严格提交屏障 C3 的模式(warn = 照写并计数,enforce = 拒写、本次进度不落盘)。
+# 读法见 config.cpp::readBaseDeployConfig 的 PersistSchemaRegressionMode 分支;值从 bin/etc/base_deploy_config.yaml 镜像,
+# 生成期已校验只能是两个字面量之一。缺这一键 C++ 按 warn:仓库切到 enforce 时集群里不生效。
+PersistSchemaRegressionMode: ${persistSchemaRegressionMode}
 Kafka:
   Brokers:
     - "kafka.${InfraNamespace}:9092"
@@ -5502,6 +5478,21 @@ function Get-SceneAssetSecretEnvLines {
 	}
 }
 
+# B0-4 豁免开关的 env 行(-NodeOpenFileLimitMode,见参数处注释),给本脚本自己的两个 C++ 模板用(New-NodeDeploymentYaml、New-SceneFleetYaml);
+# lib 的三个生成器经 PodCommon.OpenFileLimitMode 写同一个变量(Get-ClientEntryNodeBaseEnv)。env 名取 lib 契约,两边同一份。
+# 留空返回空数组:模板与引入开关之前逐字相同。-ItemIndent = 列表项「- name:」所在缩进(Deployment 模板用制表符、Fleet 模板用空格)。
+function New-CppOpenFileLimitModeEnvLines {
+	param([Parameter(Mandatory = $true)][string]$ItemIndent)
+
+	if ([string]::IsNullOrEmpty($NodeOpenFileLimitMode)) {
+		return @()
+	}
+	return @(
+		"${ItemIndent}- name: $((Get-ClientEntryContract).NodeOpenFileLimitModeEnv)",
+		"${ItemIndent}  value: `"$NodeOpenFileLimitMode`""
+	)
+}
+
 function New-NodeDeploymentYaml {
 	param(
 		[Parameter(Mandatory = $true)][string]$NodeName,
@@ -5567,6 +5558,8 @@ function New-NodeDeploymentYaml {
 		$extraEnvLines += "`t`t`t- name: GATE_CLIENT_RPC_ROUTER"
 		$extraEnvLines += "`t`t`t  value: `"$GateRouterMode`""
 	}
+	# B0-4 豁免开关(-NodeOpenFileLimitMode):gate / scene / battle 都读,留空不写。
+	$extraEnvLines += @(New-CppOpenFileLimitModeEnvLines -ItemIndent "`t`t`t")
 	# node-logs emptyDir 会遮住镜像目录；Node 构造器立即打开 logs/cpp_nodes/<role>，先建父目录。
 	$grpcEnvBlock = $extraEnvLines -join "`n"
 	# 端口与探针按角色拼在 ports 列表之后(推导与证据见 PROGRESS「2026-09-25 C++ 节点就绪探针」)。
@@ -5648,6 +5641,12 @@ function New-NodeDeploymentYaml {
 "@
 	}
 
+	# 滚动策略显式写 maxUnavailable 0(B0-4 部署侧后续项,2026-10-20):新 Pod 就绪之前不缩旧 Pod。
+	# 不写时按 K8s 缺省 25% 向下取整:scene 缺省 4 副本会先缩掉 1 台旧 scene(该台玩家按关机流程退出),新 Pod 若因节点池
+	# nofile 硬限不够而拒启(open_file_limit.h),这份容量一直缺到回滚;写成 0 之后拒启只会让滚动停住,旧 Pod 继续服务。
+	# gate / battle 在 4 副本以下按缺省本来就是 0,行为不变。maxSurge 不写,仍取 K8s 缺省 25%(向上取整,至少 1 个新 Pod),
+	# 滚动节奏与改动前相同;两者不能同为 0(K8s 拒收)。battle 的 hostPort 形态走 lib New-BattleHostPortDeploymentYaml,
+	# 固定 maxSurge 0 / maxUnavailable 1(hostPort 独占,D86),不经过这里。
 	return @"
 apiVersion: apps/v1
 kind: Deployment
@@ -5655,6 +5654,10 @@ metadata:
   name: $NodeName
 spec:
   replicas: $Replicas
+  strategy:
+	type: RollingUpdate
+	rollingUpdate:
+	  maxUnavailable: 0
   selector:
 	matchLabels:
 	  app: $NodeName
@@ -6144,6 +6147,8 @@ function New-SceneFleetYaml {
 
 	$sceneAssetEnvLines = @(Get-SceneAssetSecretEnvLines -Indent '                ')
 	if ($script:AssetOpsOn) { $sceneAssetEnvLines += @(New-SceneAssetOpEnvLines -ItemIndent (' ' * 16) -Step '    ') }
+	# B0-4 豁免开关(-NodeOpenFileLimitMode)借用资产密钥 env 的插入点接在其后,模板 here-string 不动;留空不写,Fleet 逐字不变。
+	$sceneAssetEnvLines += @(New-CppOpenFileLimitModeEnvLines -ItemIndent (' ' * 16))
 	$sceneAssetEnvBlock = $sceneAssetEnvLines -join "`n"
 	# GRPC_SERVER_MAX_POLLERS 已退役(grpc-muduo-transport.md §15.11),Fleet 不再注入。
 
@@ -6423,7 +6428,7 @@ function New-CppPodAnnotationBlock {
 <#
 .SYNOPSIS
 	把本脚本的 C++ 节点公共参数(镜像、拉取策略、发号槽缓存、日志卷与清理循环、日志 sidecar、
-	zone Redis 口令指纹注解)打包成 lib/k8s_client_entry.ps1 生成器要的 PodCommon。与 New-NodeDeploymentYaml 同一组脚本变量,一处取值。
+	zone Redis 口令指纹注解、B0-4 豁免开关 -NodeOpenFileLimitMode)打包成 lib/k8s_client_entry.ps1 生成器要的 PodCommon。与 New-NodeDeploymentYaml 同一组脚本变量,一处取值。
 	-GrpcServerMaxPollers 已退役(grpc-muduo-transport.md §15.11),固定透传 0,库里也不再据它注入任何 env。
 	口令指纹要求 Initialize-InjectedSecrets 已经跑过(Get-CppZoneRedisPassword 对未解析 fail-closed),所以只在写路径入口之后调用:
 	Apply-Zone(New-ExternalGateManifests)与 Apply-Infra(New-BattleWorkloadManifest)。
@@ -6443,7 +6448,7 @@ function New-CppNodePodCommon {
 	}
 	return New-ClientEntryPodCommon -Image $NodeImage -ImagePullPolicy $ImagePullPolicy -SnowflakeCacheDir $SnowflakeCacheDir `
 		-LogVolumeSizeLimit $script:CppLogVolumeSizeLimit -LogPrunerCommand $script:CppLogPrunerCommand `
-		-GrpcServerMaxPollers 0 -PodAnnotations (Get-CppZoneRedisAuthAnnotations) @sidecar
+		-GrpcServerMaxPollers 0 -PodAnnotations (Get-CppZoneRedisAuthAnnotations) -OpenFileLimitMode $NodeOpenFileLimitMode @sidecar
 }
 
 <#
@@ -6552,10 +6557,86 @@ function Apply-ExternalGate {
 	Write-Host "Gate (external): StatefulSet replicas=$($Manifests.Replicas) service_type=$($plan.ServiceType) etp=$GateExternalTrafficPolicy $hostSource $portSource"
 }
 
+<#
+.SYNOPSIS
+	-WaitReady 等 C++ 工作负载(gate / scene / battle)失败后,把容器日志里的 B0-4 拒启行捞出来打印。
+
+.DESCRIPTION
+	节点池 nofile 硬限低于需求时进程缺省拒启(open_file_limit.h),Pod 进 CrashLoop;拒启原因只在**上一个**容器实例的
+	stderr 里(kubectl logs --previous),rollout status / describe 都看不到,不捞的话运维只看到「rollout 超时」。
+	- 只看本工作负载里容器未就绪的 Pod(标签 app=<名字>,容器名 = <名字>:New-NodeDeploymentYaml、New-SceneFleetYaml 与
+	  lib 三个生成器都按这个约定),已就绪的旧 Pod 不读;最多读 10 个,控制失败路径上的耗时。
+	- 每个 Pod 先读 --previous;没有上一个实例(Agones GameServer 是 restartPolicy: Never,或刚崩第一次还没重启)时读当前实例。
+	- 只读、尽力而为:kubectl 失败只告警不 throw,也不改变调用方的失败判定(调用方随后照常 throw)。DryRun 不调用集群。
+#>
+function Write-CppOpenFileLimitRefusals {
+	param(
+		[Parameter(Mandatory = $true)][string]$Namespace,
+		[Parameter(Mandatory = $true)][string]$WorkloadName
+	)
+
+	# 拒启行的固定前缀:node.cpp FatalStartupConfig("open file limit", ...) 写 stderr 的 "FATAL open file limit config: ..."。
+	# 改那边的文案要同改这里;docs/ops/gate-kernel-tuning-runbook.md §3.1 与 tools/scripts/deploy-staging.sh 按同一行 grep。
+	$marker = 'FATAL open file limit'
+	$podScanLimit = 10
+	# 拒启行是进程退出前最后几行之一(之后只有致命信号处理的输出),200 行足够,不拉整份日志。
+	$tailLines = '200'
+
+	if ($DryRun) {
+		return
+	}
+	try {
+		$baseArgs = @() + (Build-KubectlBaseArgs)
+		$getArgs = $baseArgs + @('get', 'pods', '-n', $Namespace, '-l', "app=$WorkloadName", '-o', 'json')
+		$out = & kubectl @getArgs 2>$null
+		if ($LASTEXITCODE -ne 0) {
+			Write-Warning "open file limit check skipped: kubectl get pods -l app=$WorkloadName -n $Namespace failed (exit $LASTEXITCODE)"
+			return
+		}
+		$items = @((($out | Out-String) | ConvertFrom-Json -ErrorAction Stop).items | Where-Object { $null -ne $_ })
+		# 容器状态缺席(还没调度 / 还在 Init)也算未就绪:sidecar 镜像拉不到时业务容器一次都不会启动,读日志失败即跳过。
+		$notReady = @($items | Where-Object {
+				$status = @($_.status.containerStatuses | Where-Object { $_.name -eq $WorkloadName })
+				$status.Count -eq 0 -or $status[0].ready -ne $true
+			})
+		$scanned = @($notReady | Select-Object -First $podScanLimit)
+		$hits = 0
+		foreach ($pod in $scanned) {
+			$podName = [string]$pod.metadata.name
+			$currentArgs = $baseArgs + @('logs', $podName, '-n', $Namespace, '-c', $WorkloadName, '--tail', $tailLines)
+			$previousArgs = $currentArgs + @('--previous')
+			$source = 'previous'
+			$logs = & kubectl @previousArgs 2>$null
+			if ($LASTEXITCODE -ne 0) {
+				$source = 'current'
+				$logs = & kubectl @currentArgs 2>$null
+				if ($LASTEXITCODE -ne 0) { continue }
+			}
+			foreach ($line in @($logs)) {
+				if (([string]$line).Contains($marker)) {
+					Write-Host "  [open_file_limit] pod=$podName ($source): $line"
+					$hits++
+				}
+			}
+		}
+		if ($hits -gt 0) {
+			Write-Host "  -> $WorkloadName refused to start: the nofile hard limit of this node pool is below the requirement. Lower GateMaxConnections / BattleMaxConnections, raise the container runtime LimitNOFILE, or redeploy with -NodeOpenFileLimitMode warn as a short-lived exemption (docs/ops/gate-kernel-tuning-runbook.md section 3.1)."
+		}
+		else {
+			Write-Host "  no '$marker' line in the logs of $($scanned.Count) not-ready pod(s) (app=$WorkloadName, $($notReady.Count) not ready of $($items.Count))"
+		}
+	}
+	catch {
+		Write-Warning "open file limit check failed for app=$WorkloadName -n ${Namespace}: $($_.Exception.Message)"
+	}
+}
+
 function Wait-ForDeploymentReady {
 	param(
 		[Parameter(Mandatory = $true)][string]$Namespace,
-		[Parameter(Mandatory = $true)][string]$DeploymentName
+		[Parameter(Mandatory = $true)][string]$DeploymentName,
+		# C++ 节点(gate / scene 池 / battle):失败时多捞一遍 B0-4 拒启行(Write-CppOpenFileLimitRefusals)。Go / Java 服务不传。
+		[switch]$CppNode
 	)
 
 	if ($DryRun) {
@@ -6571,6 +6652,9 @@ function Wait-ForDeploymentReady {
 	Write-Host "Deployment not ready: namespace=$Namespace deployment=$DeploymentName"
 	Invoke-Kubectl -Args @("get", "pods", "-n", $Namespace, "-o", "wide") -AllowFailure
 	Invoke-Kubectl -Args @("describe", "deployment", $DeploymentName, "-n", $Namespace) -AllowFailure
+	if ($CppNode) {
+		Write-CppOpenFileLimitRefusals -Namespace $Namespace -WorkloadName $DeploymentName
+	}
 	throw "Deployment rollout failed: namespace=$Namespace deployment=$DeploymentName"
 }
 
@@ -6649,11 +6733,18 @@ function Wait-ForZoneReady {
 	if ($ClientEntryMode -eq "external") {
 		# 不能用 Wait-ForStatefulSetReady:kubectl rollout status 对 updateStrategy: OnDelete 的 StatefulSet 直接报错。
 		# 库函数有界轮询 readyReplicas;OnDelete 下等到的是"现存 Pod 已就绪",新模板何时生效由排空脚本逐个删 Pod 决定。
-		Wait-ForGateStatefulSetReady -Namespace $Namespace -ExpectedReplicas $GateReplicas -TimeoutSeconds $WaitTimeoutSeconds `
-			-KubeContext $KubeContext -KubeConfig $KubeConfig -DryRun:$DryRun
+		# 失败时先捞 B0-4 拒启行再原样抛出(库函数不读本脚本变量,诊断留在这一侧)。
+		try {
+			Wait-ForGateStatefulSetReady -Namespace $Namespace -ExpectedReplicas $GateReplicas -TimeoutSeconds $WaitTimeoutSeconds `
+				-KubeContext $KubeContext -KubeConfig $KubeConfig -DryRun:$DryRun
+		}
+		catch {
+			Write-CppOpenFileLimitRefusals -Namespace $Namespace -WorkloadName 'gate'
+			throw
+		}
 	}
 	else {
-		Wait-ForDeploymentReady -Namespace $Namespace -DeploymentName "gate"
+		Wait-ForDeploymentReady -Namespace $Namespace -DeploymentName "gate" -CppNode
 	}
 
 	if ($SceneOrchestrator -eq "agones") {
@@ -6664,11 +6755,13 @@ function Wait-ForZoneReady {
 			Write-Host "  [agones] scene fleet '$fleetName' readiness is NOT waited on by this script."
 			Write-Host "           kubectl -n $Namespace get fleet $fleetName -o jsonpath='{.status.readyReplicas}'"
 			Write-Host "           kubectl -n $Namespace get gameservers -l app=$fleetName"
+			# 没有等待也就没有失败诊断:B0-4 拒启(nofile 硬限不够)要运维自己看。GameServer Pod 不重启,读当前实例日志。
+			Write-Host "           kubectl -n $Namespace logs -l app=$fleetName -c $fleetName --tail 200 | Select-String 'FATAL open file limit'"
 		}
 	}
 	else {
 		foreach ($sceneDeployment in $SceneDeploymentNames) {
-			Wait-ForDeploymentReady -Namespace $Namespace -DeploymentName $sceneDeployment
+			Wait-ForDeploymentReady -Namespace $Namespace -DeploymentName $sceneDeployment -CppNode
 		}
 	}
 
@@ -7138,8 +7231,9 @@ function Get-RouteSwitchKeepArgs {
 	  只认名字以 "<-NamespacePrefix>-" 开头的 namespace(与 Read-PlayerInboxGateLiveFacts 同一口径;用别的前缀部署的 zone 看不到)。
 	  读全部 zone 而不只读本次部署的 zone:Mode / Arm / ReadRequiresReady 是全服单值,本 zone 的 namespace 刚被删掉重建
 	  (zone 回档 Step 1)或是新 zone 时,只读它自己等于不核对。
-	- -DbZoneNames:逐个读这些 zone 的 go-svc-db-config(Placement.RequireRouteReady 逐 zone 打开,只核对本次部署的 zone)。
-	  ConfigMap 不存在(新 zone、namespace 被删)= 没有现状,不比对。
+	- -ReadDb:同样一次 --all-namespaces 读全部 zone 的 go-svc-db-config(前缀过滤相同)。Placement.RequireRouteReady 逐 zone 打开,
+	  粘滞比对只比本次部署的 zone(由 Assert-RouteSwitchClusterState 按 Namespace 分);其它 zone 的值用来兜住「本 zone 的
+	  namespace 刚被删掉重建、ConfigMap 不在」与回退顺序(关 Arm / 切 redis 之前其它 zone 的读方必须已关)。
 	- -ReadGuild:读 infra namespace 的 go-svc-guild-config;不存在 = 没有现状。
 	kubectl 失败、输出不是 JSON、ConfigMap 在却没有服务 yaml 那个数据键,一律 throw:读不到不等于没开(fail-closed,同 Read-LiveDbConfigMapYaml)。
 	Invoke-ClientEntryKubectl 不看 $DryRun,DryRun 判断由调用方(Assert-RouteSwitchPreflight)负责。
@@ -7147,7 +7241,7 @@ function Get-RouteSwitchKeepArgs {
 function Read-LiveRouteSwitchFacts {
 	param(
 		[bool]$ReadDataService,
-		[AllowEmptyCollection()][string[]]$DbZoneNames = @(),
+		[bool]$ReadDb,
 		[bool]$ReadGuild
 	)
 	$facts = New-Object System.Collections.Generic.List[object]
@@ -7180,28 +7274,28 @@ function Read-LiveRouteSwitchFacts {
 		return [pscustomobject]@{ Scope = $Scope; Namespace = $Namespace; Values = (ConvertFrom-RouteSwitchLiveYaml -Scope $Scope -Text $yaml) }
 	}
 
-	if ($ReadDataService) {
-		$info = $GoSvcCatalogue['data-service']
-		$result = Invoke-ClientEntryKubectl -KubectlArgs @('get', 'configmap', '--all-namespaces', '--field-selector', "metadata.name=$($info.ConfigMap)", '-o', 'json') `
+	# 一次 --all-namespaces 读全部 zone 的同名 ConfigMap,只认 "<-NamespacePrefix>-" 开头的 namespace。
+	$readAllZones = {
+		param($Info, [string]$Scope)
+		$result = Invoke-ClientEntryKubectl -KubectlArgs @('get', 'configmap', '--all-namespaces', '--field-selector', "metadata.name=$($Info.ConfigMap)", '-o', 'json') `
 			-KubeContext $KubeContext -KubeConfig $KubeConfig -CaptureOutput -AllowFailure
 		if ($result.ExitCode -ne 0) {
-			throw "读取各 zone 线上的 ConfigMap $($info.ConfigMap) 失败(kubectl 退出码 $($result.ExitCode)):$($result.Stderr)。fail-closed:读不到不等于还是 redis 模式,$failClosed"
+			throw "读取各 zone 线上的 ConfigMap $($Info.ConfigMap) 失败(kubectl 退出码 $($result.ExitCode)):$($result.Stderr)。fail-closed:读不到不等于还是 redis 模式 / 读方没开,$failClosed"
 		}
 		try { $list = ([string]$result.Stdout) | ConvertFrom-Json -ErrorAction Stop }
-		catch { throw "各 zone 线上 ConfigMap $($info.ConfigMap) 的 kubectl 输出不是合法 JSON,$failClosed$($_.Exception.Message)" }
+		catch { throw "各 zone 线上 ConfigMap $($Info.ConfigMap) 的 kubectl 输出不是合法 JSON,$failClosed$($_.Exception.Message)" }
 		$prefix = "$NamespacePrefix-"
 		foreach ($item in @($list.items)) {
 			if ($null -eq $item) { continue }
 			$namespace = [string]$item.metadata.namespace
 			if (-not $namespace.StartsWith($prefix, [System.StringComparison]::Ordinal)) { continue }
-			$yaml = & $configFileText $item $info.ConfigFile "namespace $namespace 的 ConfigMap $($info.ConfigMap)"
-			$facts.Add([pscustomobject]@{ Scope = 'data-service'; Namespace = $namespace; Values = (ConvertFrom-RouteSwitchLiveYaml -Scope 'data-service' -Text $yaml) })
+			$yaml = & $configFileText $item $Info.ConfigFile "namespace $namespace 的 ConfigMap $($Info.ConfigMap)"
+			$facts.Add([pscustomobject]@{ Scope = $Scope; Namespace = $namespace; Values = (ConvertFrom-RouteSwitchLiveYaml -Scope $Scope -Text $yaml) })
 		}
 	}
-	foreach ($dbZoneName in @($DbZoneNames | Where-Object { -not [string]::IsNullOrWhiteSpace($_) })) {
-		$fact = & $readOne (Get-ZoneNamespace -Name $dbZoneName) $GoSvcCatalogue['db'] 'db'
-		if ($null -ne $fact) { $facts.Add($fact) }
-	}
+
+	if ($ReadDataService) { & $readAllZones $GoSvcCatalogue['data-service'] 'data-service' }
+	if ($ReadDb) { & $readAllZones $GoSvcCatalogue['db'] 'db' }
 	if ($ReadGuild) {
 		$fact = & $readOne $InfraNamespace $GoSvcCatalogue['guild'] 'guild'
 		if ($null -ne $fact) { $facts.Add($fact) }
@@ -8167,6 +8261,13 @@ function New-GoSvcConfigMapYaml {
 	# PlayerId 号段长度(node-id-overhaul-plan §6.2:按「10 分钟峰值建角量」配)。IdSegment.Enabled 与
 	# FallbackToSnowflake **不**从 yaml 取:那两个是部署决策,在 login 模板里显式写死并注释。
 	$loginIdSegmentStep     = Get-AuthoritativeScalar -RelativePath 'go/login/etc/login.yaml' -KeyPath 'IdSegment.Step'
+	# 混版本持久字段保护:login C4 的模式(docs/design/mixed-version-persist-field-protection.md §5.1)。从 login.yaml 镜像:
+	# 这份 ConfigMap 替代镜像里的 yaml,不镜像 = Go 读到空串按 warn,仓库切 enforce 时集群里悄悄不生效。
+	# 只认 warn / enforce(区分大小写),其余生成期 throw(login 启动同样会拒,不能等 pod 起不来才发现)。
+	$loginPersistSchemaRegressionMode = Get-AuthoritativeScalar -RelativePath 'go/login/etc/login.yaml' -KeyPath 'PersistSchemaRegressionMode'
+	if ($loginPersistSchemaRegressionMode -cne 'warn' -and $loginPersistSchemaRegressionMode -cne 'enforce') {
+		throw "生成 ConfigMap 失败:go/login/etc/login.yaml 的 PersistSchemaRegressionMode 只能是 warn 或 enforce(当前 '$loginPersistSchemaRegressionMode')。"
+	}
 	# zrpc 服务端 Timeout(毫秒)从服务 yaml 镜像,与 scene-manager / match 同一条纪律。以前模板里写死 100000:
 	# 部署门禁 Assert-GrpcClientDeadlineBudget 核对的是 login.yaml,两边一分家,门禁放行的就不是集群里真正生效的值。
 	# 非正整数在这里就拒 —— 0 = go-zero 不装超时拦截器(服务端没有上界),非数字 go-zero 起服即失败,都不该写进 ConfigMap。
@@ -8898,7 +8999,8 @@ Schema:
 Store:
   Required: true
 # 映射提交点(player-route-mapping-durability-proposal.md §4、§11.2):Mode 不镜像服务 yaml,取 k8s_deploy.ps1 的 -RouteStoreMode(缺省 redis)——
-# 切 db_first 是 P2 的显式运维动作:先进冻结窗口(第 2 批前禁 merge_zone 一切写模式)、P1 导入 + audit 为 0、建角压测、告警抓取就位
+# 切 db_first 是 P2 的显式运维动作:先进冻结窗口(P1–P3 不跑 merge_zone 任何写模式;P4 起只许第 2 批新版 merge_zone 显式
+# -route-source=db,旧二进制禁用)、P1 导入 + audit 为 0、建角压测、告警抓取就位
 # (docs/handoff/launch-readiness-20261013/spec_D1_batch1b2_2_3.md §8)。全部 zone 同一取值;部署前脚本读线上现状做粘滞核对,
 # 不一致要显式 -ConfirmRouteSwitchChange。K8s 上跑 route-tool 用 tools/scripts/k8s_route_tool.ps1(一次性 Job,不 exec 进本 Pod)。
 # 连接池大小两项(G2b)镜像服务 yaml:route store 的独立池只在 db_first 下装配,redis 模式下不开连接;MySQL 连接总账的规划档
@@ -8987,6 +9089,9 @@ ClusterId: ${CurrentClusterId}
 # PlayerId 槽位本地缓存目录(生成器顶部 $SnowflakeCacheDir):manifests/go-svc/login.yaml 在同一
 # 路径挂 emptyDir。Go 默认的 ../../run/snowflake 在容器里落到 /run/snowflake,不该赌它可写。
 SnowflakeCacheDir: ${SnowflakeCacheDir}
+# 混版本持久字段保护 C4 的模式(warn = 照常进游戏并计数,enforce = 判定截断时拒绝进游戏),
+# 从 go/login/etc/login.yaml 镜像,生成期已校验只能是两个字面量之一。
+PersistSchemaRegressionMode: ${loginPersistSchemaRegressionMode}
 Node:
   ZoneId: ${CurrentZoneId}
   SessionExpireMin: ${loginSessionExpireMin}
@@ -9513,7 +9618,10 @@ Redis:
 # FriendRedis(friend 私有 key:好友列表缓存 / 申请配额 / 限流)在 K8s 上**刻意整段不配**,回落到上面的共享库。
 # F2 的缓存键已带 hash tag、全是单 key 操作,Redis Cluster 安全,所以将来换独立实例不需要改代码;
 # ⚠ 但 staging/prod 若要配独立实例,必须 maxmemory-policy=noeviction:好友列表缓存被淘汰只是多打一次 MySQL,
-#   **配额 / 限流 key 被淘汰等于限流静默失效**。共享库现在是 allkeys-lfu(2026-10-18 更正:compose 与 K8s 现均为 noeviction,不再淘汰、写满时拒写),这条风险已经存在,写在这里不是假装没有。
+#   **配额 / 限流 key 被淘汰等于限流静默失效**。回落时这些 key 在共享库上:共享库是 noeviction 且不设 maxmemory
+#   (infra/redis.yaml 与 redis-ha.yaml 同一取舍;本地 compose 自 2026-10-12 起也是 noeviction),今天不会被淘汰,
+#   但会和契约 key 抢内存;共享库将来设了上限、写满即拒写(连带契约 key),所以回落只是过渡。
+#   (2026-10-19 更正:原文称共享库是 LFU 全键淘汰型,K8s 清单从未用过淘汰型策略,那是本地 compose 2026-10-12 之前的配置。)
 # 全局池:ZoneId 只影响 etcd 注册路径,路由服对 FriendNodeService 不做 zone 过滤(ZoneScopedNodeTypes 默认仅 Login),
 # 任何 zone 的玩家都被路由到这里的实例;业务代码**禁止**读它做分支 —— 好友关系天然跨 zone,按 zone 过滤会把
 # 跨区好友判成"不存在"。取命令行 -ZoneId(Apply-GlobalGoSvcManifests),与 chat / trade 同口径;Go 侧 Validate 拒 0。
@@ -11629,15 +11737,23 @@ function Apply-BattlePool {
 		Invoke-KubectlWithInputFile -Args @('apply', '-n', $InfraNamespace) -InputContent $battleYaml
 		if ($WaitReady) {
 			# 下限 300s(ingress_final WP9):GameServer 从调度、端口分配到 SDK Ready,单实例最坏约 135s,另有镜像拉取与排队。
-			Wait-ForFleetReady -Namespace $InfraNamespace -FleetName 'battle' -ExpectedReplicas $BattleReplicas `
-				-TimeoutSeconds ([Math]::Max($WaitTimeoutSeconds, 300)) -KubeContext $KubeContext -KubeConfig $KubeConfig -DryRun:$DryRun
+			# 失败时先捞 B0-4 拒启行再原样抛出(GameServer Pod 没有上一个实例,诊断函数会改读当前实例)。
+			try {
+				Wait-ForFleetReady -Namespace $InfraNamespace -FleetName 'battle' -ExpectedReplicas $BattleReplicas `
+					-TimeoutSeconds ([Math]::Max($WaitTimeoutSeconds, 300)) -KubeContext $KubeContext -KubeConfig $KubeConfig -DryRun:$DryRun
+			}
+			catch {
+				Write-CppOpenFileLimitRefusals -Namespace $InfraNamespace -WorkloadName 'battle'
+				throw
+			}
 		}
 		return
 	}
 
 	Invoke-KubectlWithInputFile -Args @('apply', '-n', $InfraNamespace) -InputContent $battleYaml
 	if ($WaitReady) {
-		Wait-ForDeploymentReady -Namespace $InfraNamespace -DeploymentName 'battle'
+		# Deployment 与 hostPort Deployment 同名 battle、同标签同容器名。
+		Wait-ForDeploymentReady -Namespace $InfraNamespace -DeploymentName 'battle' -CppNode
 	}
 }
 
@@ -11782,6 +11898,8 @@ stringData:
 				# 所以先只删 StatefulSet 对象本身(--cascade=orphan:redis-0 这个 Pod 与它的 PVC 原样保留、继续服务),紧接着 apply 新的
 				# StatefulSet,它按同名、同标签接管 redis-0,再按滚动更新把它换成高可用模板,redis-1 / redis-2 新建后从它全量同步。
 				# 2026-10-08 在本机 kind 上实测:数据不丢,Service redis 的 ClusterIP 不变。重启闸已在函数开头(删除之前)判过。
+				# 删除之后、下面 apply 之前失败(apply 被拒、网络、进程中断)会留下孤儿 redis-0:重跑时拓扑闸按孤儿 Pod 仍判 upgrade,
+				# 重启闸判 orphan-pods,同样要 -ConfirmRedisCoreRestart(Get-LiveRedisReplicas / Get-LiveRedisOrphanPodOrdinals)。
 				Invoke-Kubectl -Args @("delete", "statefulset", "redis", "-n", $InfraNamespace, "--cascade=orphan", "--ignore-not-found")
 			}
 		}

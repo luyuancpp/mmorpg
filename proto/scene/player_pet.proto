@@ -162,6 +162,6 @@ service ScenePetClientPlayer {
   rpc ResetPetPoints (ResetPetPointsRequest) returns (ResetPetPointsResponse);
   rpc AutoAllocatePetPoints (AutoAllocatePetPointsRequest) returns (AutoAllocatePetPointsResponse);
   rpc RenamePet (RenamePetRequest) returns (RenamePetResponse);
-  rpc NotifyPetListChanged (PetListChangedS2C) returns (Empty);
+  rpc NotifyPetListChanged (PetListChangedS2C) returns (Empty) { option (OptionClientRpcKind) = CLIENT_RPC_PUSH; }
   rpc GmGrantPet (GmGrantPetRequest) returns (GmGrantPetResponse);
 }

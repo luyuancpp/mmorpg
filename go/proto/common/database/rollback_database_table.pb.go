@@ -900,6 +900,439 @@ func (x *PlayerName) GetCreatedMs() uint64 {
 	return 0
 }
 
+// player_route:每个玩家一行,home 与落点同行。
+type PlayerRoute struct {
+	state            protoimpl.MessageState `protogen:"open.v1"`
+	PlayerId         uint64                 `protobuf:"varint,1,opt,name=player_id,json=playerId,proto3" json:"player_id,omitempty"`
+	HomeZone         uint32                 `protobuf:"varint,2,opt,name=home_zone,json=homeZone,proto3" json:"home_zone,omitempty"`                         // 0 = NULL(没有归属区)
+	StorageId        uint32                 `protobuf:"varint,3,opt,name=storage_id,json=storageId,proto3" json:"storage_id,omitempty"`                      // 0 = NULL;与 placement_version 同 NULL(chk_route_place)
+	PlacementVersion uint64                 `protobuf:"varint,4,opt,name=placement_version,json=placementVersion,proto3" json:"placement_version,omitempty"` // 0 = NULL;有落点时 >= 1
+	FrozenRunId      string                 `protobuf:"bytes,5,opt,name=frozen_run_id,json=frozenRunId,proto3" json:"frozen_run_id,omitempty"`               // 空串 = NULL;非空 = 搬库冻结态
+	Rev              uint64                 `protobuf:"varint,6,opt,name=rev,proto3" json:"rev,omitempty"`                                                   // 本行任一列变化 +1,只供缓存排序(player:maprev)
+	UpdatedBy        string                 `protobuf:"bytes,7,opt,name=updated_by,json=updatedBy,proto3" json:"updated_by,omitempty"`                       // 写者标识(ASCII,<= 96)
+	CreatedAtMs      uint64                 `protobuf:"varint,8,opt,name=created_at_ms,json=createdAtMs,proto3" json:"created_at_ms,omitempty"`              // 库时钟 Unix 毫秒
+	UpdatedAtMs      uint64                 `protobuf:"varint,9,opt,name=updated_at_ms,json=updatedAtMs,proto3" json:"updated_at_ms,omitempty"`              // 库时钟 Unix 毫秒
+	RouteShard       uint32                 `protobuf:"varint,10,opt,name=route_shard,json=routeShard,proto3" json:"route_shard,omitempty"`                  // = player_id % 64(placement.RouteRowShards,chk_route_shard)
+	unknownFields    protoimpl.UnknownFields
+	sizeCache        protoimpl.SizeCache
+}
+
+func (x *PlayerRoute) Reset() {
+	*x = PlayerRoute{}
+	mi := &file_proto_common_database_rollback_database_table_proto_msgTypes[7]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *PlayerRoute) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*PlayerRoute) ProtoMessage() {}
+
+func (x *PlayerRoute) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_common_database_rollback_database_table_proto_msgTypes[7]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use PlayerRoute.ProtoReflect.Descriptor instead.
+func (*PlayerRoute) Descriptor() ([]byte, []int) {
+	return file_proto_common_database_rollback_database_table_proto_rawDescGZIP(), []int{7}
+}
+
+func (x *PlayerRoute) GetPlayerId() uint64 {
+	if x != nil {
+		return x.PlayerId
+	}
+	return 0
+}
+
+func (x *PlayerRoute) GetHomeZone() uint32 {
+	if x != nil {
+		return x.HomeZone
+	}
+	return 0
+}
+
+func (x *PlayerRoute) GetStorageId() uint32 {
+	if x != nil {
+		return x.StorageId
+	}
+	return 0
+}
+
+func (x *PlayerRoute) GetPlacementVersion() uint64 {
+	if x != nil {
+		return x.PlacementVersion
+	}
+	return 0
+}
+
+func (x *PlayerRoute) GetFrozenRunId() string {
+	if x != nil {
+		return x.FrozenRunId
+	}
+	return ""
+}
+
+func (x *PlayerRoute) GetRev() uint64 {
+	if x != nil {
+		return x.Rev
+	}
+	return 0
+}
+
+func (x *PlayerRoute) GetUpdatedBy() string {
+	if x != nil {
+		return x.UpdatedBy
+	}
+	return ""
+}
+
+func (x *PlayerRoute) GetCreatedAtMs() uint64 {
+	if x != nil {
+		return x.CreatedAtMs
+	}
+	return 0
+}
+
+func (x *PlayerRoute) GetUpdatedAtMs() uint64 {
+	if x != nil {
+		return x.UpdatedAtMs
+	}
+	return 0
+}
+
+func (x *PlayerRoute) GetRouteShard() uint32 {
+	if x != nil {
+		return x.RouteShard
+	}
+	return 0
+}
+
+// zone_merge_fence:合服围栏真源,按 (zone_id, shard) 存 N 份相同内容。
+type ZoneMergeFence struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	ZoneId        uint32                 `protobuf:"varint,1,opt,name=zone_id,json=zoneId,proto3" json:"zone_id,omitempty"`
+	Shard         uint32                 `protobuf:"varint,2,opt,name=shard,proto3" json:"shard,omitempty"`
+	RunId         string                 `protobuf:"bytes,3,opt,name=run_id,json=runId,proto3" json:"run_id,omitempty"`                      // 空串 = NULL(未封锁);与 expires_at_ms 同 NULL(chk_fence_pair)
+	Purpose       string                 `protobuf:"bytes,4,opt,name=purpose,proto3" json:"purpose,omitempty"`                               // 空串 = NULL
+	SrcZone       uint32                 `protobuf:"varint,5,opt,name=src_zone,json=srcZone,proto3" json:"src_zone,omitempty"`               // 0 = NULL
+	DstZone       uint32                 `protobuf:"varint,6,opt,name=dst_zone,json=dstZone,proto3" json:"dst_zone,omitempty"`               // 0 = NULL
+	ExpiresAtMs   uint64                 `protobuf:"varint,7,opt,name=expires_at_ms,json=expiresAtMs,proto3" json:"expires_at_ms,omitempty"` // 0 = NULL;库时钟 Unix 毫秒
+	HolderJson    string                 `protobuf:"bytes,8,opt,name=holder_json,json=holderJson,proto3" json:"holder_json,omitempty"`       // 空串 = NULL;排障用持有者描述
+	FenceEpoch    uint64                 `protobuf:"varint,9,opt,name=fence_epoch,json=fenceEpoch,proto3" json:"fence_epoch,omitempty"`      // 每次获取 +1,围栏镜像 set-if-newer 的依据
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ZoneMergeFence) Reset() {
+	*x = ZoneMergeFence{}
+	mi := &file_proto_common_database_rollback_database_table_proto_msgTypes[8]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ZoneMergeFence) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ZoneMergeFence) ProtoMessage() {}
+
+func (x *ZoneMergeFence) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_common_database_rollback_database_table_proto_msgTypes[8]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ZoneMergeFence.ProtoReflect.Descriptor instead.
+func (*ZoneMergeFence) Descriptor() ([]byte, []int) {
+	return file_proto_common_database_rollback_database_table_proto_rawDescGZIP(), []int{8}
+}
+
+func (x *ZoneMergeFence) GetZoneId() uint32 {
+	if x != nil {
+		return x.ZoneId
+	}
+	return 0
+}
+
+func (x *ZoneMergeFence) GetShard() uint32 {
+	if x != nil {
+		return x.Shard
+	}
+	return 0
+}
+
+func (x *ZoneMergeFence) GetRunId() string {
+	if x != nil {
+		return x.RunId
+	}
+	return ""
+}
+
+func (x *ZoneMergeFence) GetPurpose() string {
+	if x != nil {
+		return x.Purpose
+	}
+	return ""
+}
+
+func (x *ZoneMergeFence) GetSrcZone() uint32 {
+	if x != nil {
+		return x.SrcZone
+	}
+	return 0
+}
+
+func (x *ZoneMergeFence) GetDstZone() uint32 {
+	if x != nil {
+		return x.DstZone
+	}
+	return 0
+}
+
+func (x *ZoneMergeFence) GetExpiresAtMs() uint64 {
+	if x != nil {
+		return x.ExpiresAtMs
+	}
+	return 0
+}
+
+func (x *ZoneMergeFence) GetHolderJson() string {
+	if x != nil {
+		return x.HolderJson
+	}
+	return ""
+}
+
+func (x *ZoneMergeFence) GetFenceEpoch() uint64 {
+	if x != nil {
+		return x.FenceEpoch
+	}
+	return 0
+}
+
+// zone_merged_into:「源区已合走」的永久标记。
+type ZoneMergedInto struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	SrcZone       uint32                 `protobuf:"varint,1,opt,name=src_zone,json=srcZone,proto3" json:"src_zone,omitempty"`
+	DstZone       uint32                 `protobuf:"varint,2,opt,name=dst_zone,json=dstZone,proto3" json:"dst_zone,omitempty"`
+	RunId         string                 `protobuf:"bytes,3,opt,name=run_id,json=runId,proto3" json:"run_id,omitempty"`
+	MergedAtMs    uint64                 `protobuf:"varint,4,opt,name=merged_at_ms,json=mergedAtMs,proto3" json:"merged_at_ms,omitempty"` // 库时钟 Unix 毫秒
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ZoneMergedInto) Reset() {
+	*x = ZoneMergedInto{}
+	mi := &file_proto_common_database_rollback_database_table_proto_msgTypes[9]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ZoneMergedInto) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ZoneMergedInto) ProtoMessage() {}
+
+func (x *ZoneMergedInto) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_common_database_rollback_database_table_proto_msgTypes[9]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ZoneMergedInto.ProtoReflect.Descriptor instead.
+func (*ZoneMergedInto) Descriptor() ([]byte, []int) {
+	return file_proto_common_database_rollback_database_table_proto_rawDescGZIP(), []int{9}
+}
+
+func (x *ZoneMergedInto) GetSrcZone() uint32 {
+	if x != nil {
+		return x.SrcZone
+	}
+	return 0
+}
+
+func (x *ZoneMergedInto) GetDstZone() uint32 {
+	if x != nil {
+		return x.DstZone
+	}
+	return 0
+}
+
+func (x *ZoneMergedInto) GetRunId() string {
+	if x != nil {
+		return x.RunId
+	}
+	return ""
+}
+
+func (x *ZoneMergedInto) GetMergedAtMs() uint64 {
+	if x != nil {
+		return x.MergedAtMs
+	}
+	return 0
+}
+
+// route_meta:开关表,单行(id=1),库世代与可写开关。
+type RouteMeta struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            uint32                 `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
+	Generation    string                 `protobuf:"bytes,2,opt,name=generation,proto3" json:"generation,omitempty"` // 1..32 位 hex
+	Writable      uint32                 `protobuf:"varint,3,opt,name=writable,proto3" json:"writable,omitempty"`    // 0 = 全体映射写者拒写
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *RouteMeta) Reset() {
+	*x = RouteMeta{}
+	mi := &file_proto_common_database_rollback_database_table_proto_msgTypes[10]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RouteMeta) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RouteMeta) ProtoMessage() {}
+
+func (x *RouteMeta) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_common_database_rollback_database_table_proto_msgTypes[10]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RouteMeta.ProtoReflect.Descriptor instead.
+func (*RouteMeta) Descriptor() ([]byte, []int) {
+	return file_proto_common_database_rollback_database_table_proto_rawDescGZIP(), []int{10}
+}
+
+func (x *RouteMeta) GetId() uint32 {
+	if x != nil {
+		return x.Id
+	}
+	return 0
+}
+
+func (x *RouteMeta) GetGeneration() string {
+	if x != nil {
+		return x.Generation
+	}
+	return ""
+}
+
+func (x *RouteMeta) GetWritable() uint32 {
+	if x != nil {
+		return x.Writable
+	}
+	return 0
+}
+
+// route_reconcile:对账表,单行(id=1),对账 leader 的租约、水位与缓存校验时刻。
+type RouteReconcile struct {
+	state           protoimpl.MessageState `protogen:"open.v1"`
+	Id              uint32                 `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
+	Leader          string                 `protobuf:"bytes,2,opt,name=leader,proto3" json:"leader,omitempty"`                                    // 空串 = NULL
+	LeaseUntilMs    uint64                 `protobuf:"varint,3,opt,name=lease_until_ms,json=leaseUntilMs,proto3" json:"lease_until_ms,omitempty"` // 0 = NULL;库时钟 Unix 毫秒
+	WatermarkMs     uint64                 `protobuf:"varint,4,opt,name=watermark_ms,json=watermarkMs,proto3" json:"watermark_ms,omitempty"`
+	CacheVerifiedMs uint64                 `protobuf:"varint,5,opt,name=cache_verified_ms,json=cacheVerifiedMs,proto3" json:"cache_verified_ms,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
+}
+
+func (x *RouteReconcile) Reset() {
+	*x = RouteReconcile{}
+	mi := &file_proto_common_database_rollback_database_table_proto_msgTypes[11]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RouteReconcile) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RouteReconcile) ProtoMessage() {}
+
+func (x *RouteReconcile) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_common_database_rollback_database_table_proto_msgTypes[11]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RouteReconcile.ProtoReflect.Descriptor instead.
+func (*RouteReconcile) Descriptor() ([]byte, []int) {
+	return file_proto_common_database_rollback_database_table_proto_rawDescGZIP(), []int{11}
+}
+
+func (x *RouteReconcile) GetId() uint32 {
+	if x != nil {
+		return x.Id
+	}
+	return 0
+}
+
+func (x *RouteReconcile) GetLeader() string {
+	if x != nil {
+		return x.Leader
+	}
+	return ""
+}
+
+func (x *RouteReconcile) GetLeaseUntilMs() uint64 {
+	if x != nil {
+		return x.LeaseUntilMs
+	}
+	return 0
+}
+
+func (x *RouteReconcile) GetWatermarkMs() uint64 {
+	if x != nil {
+		return x.WatermarkMs
+	}
+	return 0
+}
+
+func (x *RouteReconcile) GetCacheVerifiedMs() uint64 {
+	if x != nil {
+		return x.CacheVerifiedMs
+	}
+	return 0
+}
+
 var File_proto_common_database_rollback_database_table_proto protoreflect.FileDescriptor
 
 const file_proto_common_database_rollback_database_table_proto_rawDesc = "" +
@@ -1001,7 +1434,54 @@ const file_proto_common_database_rollback_database_table_proto_rawDesc = "" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x1b\n" +
 	"\tname_norm\x18\x03 \x01(\tR\bnameNorm\x12\x1d\n" +
 	"\n" +
-	"created_ms\x18\x04 \x01(\x04R\tcreatedMs:;\x8a\x92\xf4\x01\vplayer_name\x92\x92\xf4\x01\tplayer_id\xe2\x92\xf4\x01\tname_norm\xa8\x93\xf4\x01\x01\xb0\x93\xf4\x01\x04\xb8\x93\xf4\x01\x04B\x17Z\x15proto/common/databaseb\x06proto3"
+	"created_ms\x18\x04 \x01(\x04R\tcreatedMs:;\x8a\x92\xf4\x01\vplayer_name\x92\x92\xf4\x01\tplayer_id\xe2\x92\xf4\x01\tname_norm\xa8\x93\xf4\x01\x01\xb0\x93\xf4\x01\x04\xb8\x93\xf4\x01\x04\"\xff\x02\n" +
+	"\fplayer_route\x12\x1b\n" +
+	"\tplayer_id\x18\x01 \x01(\x04R\bplayerId\x12\x1b\n" +
+	"\thome_zone\x18\x02 \x01(\rR\bhomeZone\x12\x1d\n" +
+	"\n" +
+	"storage_id\x18\x03 \x01(\rR\tstorageId\x12+\n" +
+	"\x11placement_version\x18\x04 \x01(\x04R\x10placementVersion\x12\"\n" +
+	"\rfrozen_run_id\x18\x05 \x01(\tR\vfrozenRunId\x12\x10\n" +
+	"\x03rev\x18\x06 \x01(\x04R\x03rev\x12\x1d\n" +
+	"\n" +
+	"updated_by\x18\a \x01(\tR\tupdatedBy\x12\"\n" +
+	"\rcreated_at_ms\x18\b \x01(\x04R\vcreatedAtMs\x12\"\n" +
+	"\rupdated_at_ms\x18\t \x01(\x04R\vupdatedAtMs\x12\x1f\n" +
+	"\vroute_shard\x18\n" +
+	" \x01(\rR\n" +
+	"routeShard:+\x8a\x92\xf4\x01\fplayer_route\x92\x92\xf4\x01\x15route_shard,player_id\"\xb7\x02\n" +
+	"\x10zone_merge_fence\x12\x17\n" +
+	"\azone_id\x18\x01 \x01(\rR\x06zoneId\x12\x14\n" +
+	"\x05shard\x18\x02 \x01(\rR\x05shard\x12\x15\n" +
+	"\x06run_id\x18\x03 \x01(\tR\x05runId\x12\x18\n" +
+	"\apurpose\x18\x04 \x01(\tR\apurpose\x12\x19\n" +
+	"\bsrc_zone\x18\x05 \x01(\rR\asrcZone\x12\x19\n" +
+	"\bdst_zone\x18\x06 \x01(\rR\adstZone\x12\"\n" +
+	"\rexpires_at_ms\x18\a \x01(\x04R\vexpiresAtMs\x12\x1f\n" +
+	"\vholder_json\x18\b \x01(\tR\n" +
+	"holderJson\x12\x1f\n" +
+	"\vfence_epoch\x18\t \x01(\x04R\n" +
+	"fenceEpoch:'\x8a\x92\xf4\x01\x10zone_merge_fence\x92\x92\xf4\x01\rzone_id,shard\"\xa5\x01\n" +
+	"\x10zone_merged_into\x12\x19\n" +
+	"\bsrc_zone\x18\x01 \x01(\rR\asrcZone\x12\x19\n" +
+	"\bdst_zone\x18\x02 \x01(\rR\adstZone\x12\x15\n" +
+	"\x06run_id\x18\x03 \x01(\tR\x05runId\x12 \n" +
+	"\fmerged_at_ms\x18\x04 \x01(\x04R\n" +
+	"mergedAtMs:\"\x8a\x92\xf4\x01\x10zone_merged_into\x92\x92\xf4\x01\bsrc_zone\"p\n" +
+	"\n" +
+	"route_meta\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\rR\x02id\x12\x1e\n" +
+	"\n" +
+	"generation\x18\x02 \x01(\tR\n" +
+	"generation\x12\x1a\n" +
+	"\bwritable\x18\x03 \x01(\rR\bwritable:\x16\x8a\x92\xf4\x01\n" +
+	"route_meta\x92\x92\xf4\x01\x02id\"\xcb\x01\n" +
+	"\x0froute_reconcile\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\rR\x02id\x12\x16\n" +
+	"\x06leader\x18\x02 \x01(\tR\x06leader\x12$\n" +
+	"\x0elease_until_ms\x18\x03 \x01(\x04R\fleaseUntilMs\x12!\n" +
+	"\fwatermark_ms\x18\x04 \x01(\x04R\vwatermarkMs\x12*\n" +
+	"\x11cache_verified_ms\x18\x05 \x01(\x04R\x0fcacheVerifiedMs:\x1b\x8a\x92\xf4\x01\x0froute_reconcile\x92\x92\xf4\x01\x02idB\x17Z\x15proto/common/databaseb\x06proto3"
 
 var (
 	file_proto_common_database_rollback_database_table_proto_rawDescOnce sync.Once
@@ -1015,7 +1495,7 @@ func file_proto_common_database_rollback_database_table_proto_rawDescGZIP() []by
 	return file_proto_common_database_rollback_database_table_proto_rawDescData
 }
 
-var file_proto_common_database_rollback_database_table_proto_msgTypes = make([]protoimpl.MessageInfo, 7)
+var file_proto_common_database_rollback_database_table_proto_msgTypes = make([]protoimpl.MessageInfo, 12)
 var file_proto_common_database_rollback_database_table_proto_goTypes = []any{
 	(*TransactionLog)(nil),   // 0: transaction_log
 	(*PlayerSnapshot)(nil),   // 1: player_snapshot
@@ -1024,6 +1504,11 @@ var file_proto_common_database_rollback_database_table_proto_goTypes = []any{
 	(*RollbackAudit)(nil),    // 4: rollback_audit
 	(*IdSegment)(nil),        // 5: id_segment
 	(*PlayerName)(nil),       // 6: player_name
+	(*PlayerRoute)(nil),      // 7: player_route
+	(*ZoneMergeFence)(nil),   // 8: zone_merge_fence
+	(*ZoneMergedInto)(nil),   // 9: zone_merged_into
+	(*RouteMeta)(nil),        // 10: route_meta
+	(*RouteReconcile)(nil),   // 11: route_reconcile
 }
 var file_proto_common_database_rollback_database_table_proto_depIdxs = []int32{
 	0, // [0:0] is the sub-list for method output_type
@@ -1044,7 +1529,7 @@ func file_proto_common_database_rollback_database_table_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_proto_common_database_rollback_database_table_proto_rawDesc), len(file_proto_common_database_rollback_database_table_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   7,
+			NumMessages:   12,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

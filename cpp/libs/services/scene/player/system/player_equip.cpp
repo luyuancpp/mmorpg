@@ -19,6 +19,7 @@
 #include "battle/system/player_battle.h"
 #include "modules/bag/bag_service.h"
 #include "modules/bag/comp/player_bags_comp.h"
+#include "modules/bag/item_store.h"
 #include "modules/currency/constants/currency.h"
 #include "modules/currency/system/currency_system.h"
 #include "player/comp/player_frozen_comp.h"
@@ -433,13 +434,18 @@ ItemComp* RefetchInitializedInstance(Bag& bag, Guid itemId) {
 	return (instance != nullptr && instance->has_equip()) ? instance : nullptr;
 }
 
-// 包里有没有哪一堆 configId 还塞得下至少 1 个。判据与容器层入包时的并堆一致:同 config、不带 equip 段、
-// 没到堆叠上限。静默、只读:给「背包满」这类玩家随手能触发的常规拒绝
-// 做预检用,不让它走到容器层会打 ERROR + 调用栈的不足分支。
+// 包里有没有哪一堆 configId 还塞得下至少 1 个。判据直接用容器层入包并堆的 ItemStore::CanStack
+// (同 config,双方都不是独立实例:不带 equip 段、不带本版本不认识的字段),再加没到堆叠上限。
+// 不自己另写一份判据:容器层的判定一变(例如混版本保护让带未知字段的堆不收并入),这里自己写的那份就会放行、
+// 落到容器层的不足分支(docs/design/mixed-version-persist-field-protection.md §4.4)。
+// 静默、只读:给「背包满」这类玩家随手能触发的常规拒绝做预检用,不让它走到容器层会打 ERROR + 调用栈的不足分支
+// (CheckSpaceFor 失败时同样走 PrintStackAndReturnError,不能拿来代替)。
 bool HasStackWithRoom(const Bag& bag, uint32_t configId, uint32_t maxStackSize) {
+	ItemComp incoming;  // 入包的那 1 颗:新发放的普通物品,只有 config
+	incoming.set_config_id(configId);
 	bool found = false;
-	bag.ForEachItem([&found, configId, maxStackSize](Guid, const ItemComp& item) {
-		if (item.config_id() == configId && !item.has_equip() && item.size() < maxStackSize) {
+	bag.ForEachItem([&found, &incoming, maxStackSize](Guid, const ItemComp& item) {
+		if (ItemStore::CanStack(item, incoming) && item.size() < maxStackSize) {
 			found = true;
 		}
 	});

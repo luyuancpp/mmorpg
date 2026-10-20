@@ -24,7 +24,7 @@
 |---|---|---|
 | 周期性全量 save | `cpp/libs/services/scene/core/system/redis.cpp:75-90` | 默认每 300s 扫一次 `tlsEcs.playerList`,每个在线玩家都 marshal 一次。`SCENE_PLAYER_SAVE_INTERVAL_SECONDS=0` 可关 |
 | 玩家退出 | `player_lifecycle.cpp:438` | `HandleExitGameNode` 路径,正常下线必走 |
-| 跨服迁移 | `player_lifecycle.cpp:671` | 跨 zone 完成时 |
+| 跨服迁移 | `player_lifecycle.cpp:671` | 跨 zone 完成时。**2026-10-20 更正**:这条搬数据链(player_migrate)已下线。现在跨 zone 传送与同 zone 跨节点换图在交接开始时存一次盘:`StartTravelHandoff` 先冻结再 `SavePlayerToRedis`,存盘落地后才写 handoff 标记,见 cross-zone-scene-travel.md §11.3、§13.2 |
 | GM 加金币 | ❌ **没有** | `GmAddCurrency` handler 调 `CurrencySystem::AddCurrency` 后**没有**主动 SavePlayerToRedis,变更只在内存里 |
 
 **即默认 300s 周期**: 加金币 → 等 0~300s → 周期 save → 之间崩了就丢这段时间的 delta。

@@ -431,11 +431,10 @@ func leaveQueueForOtherBattle(svcCtx *svc.ServiceContext, playerId uint64) {
 		cancelParty(svcCtx, ticket, constants.PartyEndMemberNotReady, playerId)
 		return
 	}
-	for _, queueKey := range ticketQueueKeys(ticket) {
-		if err := dequeueMemberCtx(context.Background(), svcCtx, queueKey, playerId); err != nil {
-			logx.Errorf("[match] Failed to dequeue a player who entered another battle (matcher ticket validation will handle remnants) player=%d queue=%s: %v",
-				playerId, queueKey, err)
-		}
+	queueKey := ticketQueueKey(ticket)
+	if err := dequeueMemberCtx(context.Background(), svcCtx, queueKey, playerId); err != nil {
+		logx.Errorf("[match] Failed to dequeue a player who entered another battle (matcher ticket validation will handle remnants) player=%d queue=%s: %v",
+			playerId, queueKey, err)
 	}
 }
 

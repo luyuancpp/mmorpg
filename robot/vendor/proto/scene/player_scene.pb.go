@@ -1271,20 +1271,20 @@ const file_proto_scene_player_scene_proto_rawDesc = "" +
 	"\x1aSYNC_DOMAIN_GUILD_ACTIVITY\x10\t*Q\n" +
 	"\x10SyncDigestStatus\x12\x19\n" +
 	"\x15SYNC_DIGEST_STATUS_OK\x10\x00\x12\"\n" +
-	"\x1eSYNC_DIGEST_STATUS_UNAVAILABLE\x10\x012\xc7\x04\n" +
+	"\x1eSYNC_DIGEST_STATUS_UNAVAILABLE\x10\x012\x86\x05\n" +
 	"\x16SceneSceneClientPlayer\x12;\n" +
 	"\n" +
-	"EnterScene\x12\x15.EnterSceneC2SRequest\x1a\x16.EnterSceneC2SResponse\x12*\n" +
-	"\x10NotifyEnterScene\x12\x0e.EnterSceneS2C\x1a\x06.Empty\x12)\n" +
-	"\fSceneInfoC2S\x12\x11.SceneInfoRequest\x1a\x06.Empty\x12(\n" +
-	"\x0fNotifySceneInfo\x12\r.SceneInfoS2C\x1a\x06.Empty\x12,\n" +
-	"\x11NotifyActorCreate\x12\x0f.ActorCreateS2C\x1a\x06.Empty\x12.\n" +
-	"\x12NotifyActorDestroy\x12\x10.ActorDestroyS2C\x1a\x06.Empty\x124\n" +
-	"\x15NotifyActorListCreate\x12\x13.ActorListCreateS2C\x1a\x06.Empty\x126\n" +
-	"\x16NotifyActorListDestroy\x12\x14.ActorListDestroyS2C\x1a\x06.Empty\x12;\n" +
-	"\fTravelToZone\x12\x14.TravelToZoneRequest\x1a\x15.TravelToZoneResponse\x12.\n" +
-	"\rGetSyncDigest\x12\x15.GetSyncDigestRequest\x1a\x06.Empty\x12*\n" +
-	"\x10NotifySyncDigest\x12\x0e.SyncDigestS2C\x1a\x06.Empty\x1a\n" +
+	"EnterScene\x12\x15.EnterSceneC2SRequest\x1a\x16.EnterSceneC2SResponse\x121\n" +
+	"\x10NotifyEnterScene\x12\x0e.EnterSceneS2C\x1a\x06.Empty\"\x05\x88\x99\xc8\x01\x02\x120\n" +
+	"\fSceneInfoC2S\x12\x11.SceneInfoRequest\x1a\x06.Empty\"\x05\x88\x99\xc8\x01\x01\x12/\n" +
+	"\x0fNotifySceneInfo\x12\r.SceneInfoS2C\x1a\x06.Empty\"\x05\x88\x99\xc8\x01\x02\x123\n" +
+	"\x11NotifyActorCreate\x12\x0f.ActorCreateS2C\x1a\x06.Empty\"\x05\x88\x99\xc8\x01\x02\x125\n" +
+	"\x12NotifyActorDestroy\x12\x10.ActorDestroyS2C\x1a\x06.Empty\"\x05\x88\x99\xc8\x01\x02\x12;\n" +
+	"\x15NotifyActorListCreate\x12\x13.ActorListCreateS2C\x1a\x06.Empty\"\x05\x88\x99\xc8\x01\x02\x12=\n" +
+	"\x16NotifyActorListDestroy\x12\x14.ActorListDestroyS2C\x1a\x06.Empty\"\x05\x88\x99\xc8\x01\x02\x12;\n" +
+	"\fTravelToZone\x12\x14.TravelToZoneRequest\x1a\x15.TravelToZoneResponse\x125\n" +
+	"\rGetSyncDigest\x12\x15.GetSyncDigestRequest\x1a\x06.Empty\"\x05\x88\x99\xc8\x01\x01\x121\n" +
+	"\x10NotifySyncDigest\x12\x0e.SyncDigestS2C\x1a\x06.Empty\"\x05\x88\x99\xc8\x01\x02\x1a\n" +
 	"\x80\xa8\xc3\x01\x01\x88\xa8\xc3\x01\x01B\x14\x98\xd4a\x03Z\vproto/scene\x80\x01\x01b\x06proto3"
 
 var (

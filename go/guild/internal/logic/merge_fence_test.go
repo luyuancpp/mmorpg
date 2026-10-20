@@ -2,8 +2,11 @@ package logic
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
+	"fmt"
 	"os"
+	"strings"
 	"testing"
 	"time"
 
@@ -12,8 +15,10 @@ import (
 	goredis "github.com/redis/go-redis/v9"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/zeromicro/go-zero/core/logx/logtest"
 
 	"guild/internal/constants"
+	"guild/internal/data"
 	pb "proto/guild"
 	"shared/placement"
 )
@@ -303,7 +308,7 @@ func TestRouteReadyMergeFence_UntrustedVerdictsAreErrors(t *testing.T) {
 }
 
 // TestRouteReadyMergeFence_ReadFailuresAreErrors:脚本执行出错与回复形状不对都是 error(不是 RouteNotReady),
-// label 记 read_error。
+// label 记 script_error。
 func TestRouteReadyMergeFence_ReadFailuresAreErrors(t *testing.T) {
 	good := routeReadyTestMarker(t, rrTestRunID, rrTestReplID)
 	cases := []struct {
@@ -328,7 +333,7 @@ func TestRouteReadyMergeFence_ReadFailuresAreErrors(t *testing.T) {
 				assert.ErrorIs(t, err, tc.is)
 			}
 			assert.Empty(t, tc.reader.existsKeys)
-			assert.Equal(t, []string{routeReadyVerdictReadError}, *labels)
+			assert.Equal(t, []string{routeReadyVerdictScriptError}, *labels)
 		})
 	}
 }
@@ -363,6 +368,126 @@ func TestCreateGuild_RouteNotReadyRefusedAsMerging(t *testing.T) {
 	assert.Equal(t, constants.ErrZoneMerging, resp.GetErrorMessage().GetId())
 	assert.Equal(t, []string{"merge fence unreadable"}, resp.GetErrorMessage().GetParameters())
 	assert.Nil(t, resp.GetGuild())
+}
+
+// countLevelLines 数 logtest 收集到的、级别为 level 且 content 含 substr 的日志行(go-zero 缺省 JSON 编码,一行一条)。
+func countLevelLines(t *testing.T, logs *logtest.Buffer, level, substr string) int {
+	t.Helper()
+	n := 0
+	for _, line := range strings.Split(logs.String(), "\n") {
+		if strings.TrimSpace(line) == "" {
+			continue
+		}
+		var entry struct {
+			Level   string `json:"level"`
+			Content string `json:"content"`
+		}
+		require.NoError(t, json.Unmarshal([]byte(line), &entry), "log line is not JSON: %s", line)
+		if entry.Level == level && strings.Contains(entry.Content, substr) {
+			n++
+		}
+	}
+	return n
+}
+
+// TestLogMergeFenceRefusal_RouteNotReadyIsNotAnError(M1-4):副本不可信时的拒绝(全量预热期间经闸门的每一次写都会走到这里)
+// 不打「merge fence unreadable」ERROR,建帮(mergeFenceTip)与经济(economyFence)两个调用点都钉住;拒绝本身不变
+// (kGuildZoneMerging / data.ErrZoneMerging)。带 verdict 的错误包装不改错误文本。
+// 对照组:闸门键读失败与读脚本执行出错是真故障,两个调用点各打一行 ERROR,文案与改动前逐字相同 —— 同时证明日志收集是通的。
+// 红证据:把 logMergeFenceRefusal 的 errors.Is 分支删掉(一律 ERROR),route_not_ready 子用例的 ERROR 计数变成 6。
+func TestLogMergeFenceRefusal_RouteNotReadyIsNotAnError(t *testing.T) {
+	ctx := context.Background()
+	t.Run("route_not_ready", func(t *testing.T) {
+		logs := logtest.NewCollector(t)
+		fence, _ := newObservedRouteReadyFence(&fakeRouteReadyReader{reply: routeReadyReply(nil, rrTestRunID, "master", rrTestReplID, nil)})
+		l := NewGuildLogic(nil, nil, nil, fence, nil)
+		for i := 0; i < 3; i++ {
+			tip := l.mergeFenceTip(ctx, 7)
+			require.NotNil(t, tip, "an untrusted replica still refuses the write")
+			assert.Equal(t, constants.ErrZoneMerging, tip.GetId())
+			require.ErrorIs(t, l.economyFence(ctx, 7), data.ErrZoneMerging)
+		}
+		assert.Zero(t, countLevelLines(t, logs, "error", ""), "an untrusted replica is an expected state, not a fence read failure")
+
+		_, err := fence.MergeInProgress(ctx, 7)
+		require.ErrorIs(t, err, ErrMergeFenceRouteNotReady)
+		assert.Equal(t, "absent", mergeFenceRouteNotReadyVerdict(err))
+		assert.Contains(t, err.Error(), "merge fence check for zone 7: "+ErrMergeFenceRouteNotReady.Error()+": verdict=absent",
+			"the typed wrapper keeps the error text unchanged")
+	})
+	for _, tc := range []struct {
+		name  string
+		fence func() MergeFence
+	}{
+		{"redis_down", func() MergeFence { return &fakeFence{err: errors.New("dial tcp: connection refused")} }},
+		{"script_error", func() MergeFence {
+			f, _ := newObservedRouteReadyFence(&fakeRouteReadyReader{err: errors.New("ERR This Redis command is not allowed from script")})
+			return f
+		}},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			logs := logtest.NewCollector(t)
+			l := NewGuildLogic(nil, nil, nil, tc.fence(), nil)
+			require.NotNil(t, l.mergeFenceTip(ctx, 7))
+			require.ErrorIs(t, l.economyFence(ctx, 7), data.ErrZoneMerging)
+			assert.Equal(t, 1, countLevelLines(t, logs, "error", "[guild] merge fence unreadable for zone 7, refusing (fail closed)"))
+			assert.Equal(t, 1, countLevelLines(t, logs, "error", "[GuildEconomy] merge fence unreadable for zone 7, refusing (fail closed)"))
+		})
+	}
+	assert.Equal(t, "unknown", mergeFenceRouteNotReadyVerdict(errors.New("other")))
+}
+
+// TestRouteNotReadyRefusals_AtMostOneLinePerInterval(M1-4):副本不可信的拒绝第一次立即汇总一条,之后至多每个周期一条,
+// 按「调用点/verdict」排序累计;副本恢复可信后,周期满了的下一次可信判定把最后一段补出来;没有新拒绝时可信判定不打。
+// 时钟与输出都注入,不依赖墙钟。用例临时换掉进程内的汇总器(本包单测不并行),结束时换回。
+func TestRouteNotReadyRefusals_AtMostOneLinePerInterval(t *testing.T) {
+	logtest.Discard(t)
+	clock := time.Date(2026, 10, 20, 0, 0, 0, 0, time.UTC)
+	var lines []string
+	prev := mergeFenceRouteNotReadyLog
+	mergeFenceRouteNotReadyLog = newRouteNotReadyRefusals(func() time.Time { return clock }, time.Minute, func(format string, args ...any) {
+		lines = append(lines, fmt.Sprintf(format, args...))
+	})
+	t.Cleanup(func() { mergeFenceRouteNotReadyLog = prev })
+
+	ctx := context.Background()
+	good := routeReadyTestMarker(t, rrTestRunID, rrTestReplID)
+	absentFence, _ := newObservedRouteReadyFence(&fakeRouteReadyReader{reply: routeReadyReply(nil, rrTestRunID, "master", rrTestReplID, nil)})
+	mismatchFence, _ := newObservedRouteReadyFence(&fakeRouteReadyReader{reply: routeReadyReply(good, rrTestOtherRunID, "master", rrTestReplID, nil)})
+	trustedFence, _ := newObservedRouteReadyFence(&fakeRouteReadyReader{reply: routeReadyReply(good, rrTestRunID, "master", rrTestReplID, nil)})
+	absent := NewGuildLogic(nil, nil, nil, absentFence, nil)
+	mismatch := NewGuildLogic(nil, nil, nil, mismatchFence, nil)
+	trustedRead := func() {
+		t.Helper()
+		merging, err := trustedFence.MergeInProgress(ctx, 7)
+		require.NoError(t, err)
+		require.False(t, merging)
+	}
+
+	require.NotNil(t, absent.mergeFenceTip(ctx, 7))
+	require.Len(t, lines, 1)
+	assert.Contains(t, lines[0], "first occurrence: guild/absent=1")
+	assert.Contains(t, lines[0], "guild_route_ready_verdict_total", "the summary points at the verdict metric")
+
+	clock = clock.Add(10 * time.Second)
+	require.NotNil(t, absent.mergeFenceTip(ctx, 7))
+	require.ErrorIs(t, absent.economyFence(ctx, 7), data.ErrZoneMerging)
+	require.ErrorIs(t, mismatch.economyFence(ctx, 8), data.ErrZoneMerging)
+	clock = clock.Add(20 * time.Second)
+	trustedRead()
+	require.Len(t, lines, 1, "nothing more within the interval, not even on a trusted read")
+
+	clock = clock.Add(30 * time.Second)
+	trustedRead()
+	require.Len(t, lines, 2, "the first trusted read after a full interval prints the last batch")
+	assert.Contains(t, lines[1], "last 1m0s: GuildEconomy/absent=1 GuildEconomy/identity_mismatch=1 guild/absent=1")
+
+	clock = clock.Add(5 * time.Minute)
+	trustedRead()
+	require.Len(t, lines, 2, "a trusted read without new refusals prints nothing")
+	require.NotNil(t, absent.mergeFenceTip(ctx, 7))
+	require.Len(t, lines, 3)
+	assert.Contains(t, lines[2], "last 5m0s: guild/absent=1")
 }
 
 func TestRouteReadyMergeFence_Probe(t *testing.T) {
@@ -404,8 +529,9 @@ func TestRouteReadyMergeFence_Probe(t *testing.T) {
 	})
 }
 
-// TestRouteReadyVerdictLabelsAreClosed:label 全集 = placement 的全部 verdict + read_error,无重复;
-// 每个 verdict 的 String() 都在集合里(PrimeRouteReadyMetrics 按它预置)。
+// TestRouteReadyVerdictLabelsAreClosed:label 全集 = placement 的全部 verdict + script_error,无重复;
+// 每个 verdict 的 String() 都在集合里(PrimeRouteReadyMetrics 按它预置)。读脚本失败的 label 用字面量钉住:
+// 与 data_service、go/db 的 route_ready_verdict_total 同名,跨服务面板按同一个字符串过滤,改名先红。
 func TestRouteReadyVerdictLabelsAreClosed(t *testing.T) {
 	labels := routeReadyVerdictLabels()
 	seen := map[string]bool{}
@@ -413,7 +539,8 @@ func TestRouteReadyVerdictLabelsAreClosed(t *testing.T) {
 		assert.False(t, seen[l], "label %q 重复", l)
 		seen[l] = true
 	}
-	assert.True(t, seen[routeReadyVerdictReadError])
+	assert.Equal(t, "script_error", routeReadyVerdictScriptError)
+	assert.True(t, seen[routeReadyVerdictScriptError])
 	for _, v := range []placement.RouteReadyVerdict{
 		placement.RouteReadyTrusted, placement.RouteReadyAbsent, placement.RouteReadyMalformed, placement.RouteReadyNewerVersion,
 		placement.RouteReadyIdentityUnavailable, placement.RouteReadyNotMaster, placement.RouteReadyIdentityMismatch,

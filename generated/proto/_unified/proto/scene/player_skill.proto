@@ -55,7 +55,7 @@ service SceneSkillClientPlayer {
   option (OptionIsClientProtocolService) = true;
   
   rpc ReleaseSkill (ReleaseSkillRequest) returns (ReleaseSkillResponse);
-  rpc NotifySkillUsed (SkillUsedS2C) returns (Empty);
-  rpc NotifySkillInterrupted (SkillInterruptedS2C) returns (Empty);
+  rpc NotifySkillUsed (SkillUsedS2C) returns (Empty) { option (OptionClientRpcKind) = CLIENT_RPC_PUSH; }
+  rpc NotifySkillInterrupted (SkillInterruptedS2C) returns (Empty) { option (OptionClientRpcKind) = CLIENT_RPC_PUSH; }
   rpc ListSkills (ListSkillsRequest) returns (ListSkillsResponse);
 }

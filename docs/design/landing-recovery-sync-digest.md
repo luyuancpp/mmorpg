@@ -310,6 +310,7 @@ message SyncDigestS2C {
    - `GUILD_CREDIT` 的商店兑换：同 REJECTED，退回帮贡、退回限购占用（`used_count`）。
    - `GUILD_CREDIT` 的活动发奖、历练奖励：没有可退的东西，奖励作废，审计行留痕。
    - trade：对侧账尚未实现（P3 TODO）[C]，v1 只终结并留痕。
+     - **2026-10-20 修复**（第一轮审计 §2.5 go-asset-services#1）：交易合同的扣款腿（`ref_kind=ORDER`）不等这条 TODO。合同引擎读腿结局时只看 `status`，不看 `durable`（`CommerceRepo.LegResult`）。读到 `ABANDONED` 按「没扣到」走与 scene 判拒同一条补偿，在合同自己的事务里做，不在 `Abandon` 的事务里。人工终结同理，详见 [jubaozhai-market.md](jubaozhai-market.md) §15.3。TODO 只剩旧 P1 商品（`ref_kind=LISTING`）。
 
 **为什么这是 I7 的窄例外而不破坏它**：I7 禁止 Go 自判中止，理由是「scene 没记账，就不能保证晚到的请求不会再应用它」。在上述条件下：
 

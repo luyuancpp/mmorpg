@@ -20,7 +20,11 @@ if redis.call('TYPE',KEYS[2]).ok ~= 'string' or redis.call('GET',KEYS[2]) ~= ARG
     or redis.call('PTTL',KEYS[2]) ~= -1 then return redis.error_reply('owner changed or expires') end
 if #KEYS == 75 then
 for i=73,74 do
-    if redis.call('TYPE',KEYS[i]).ok ~= 'string' or redis.call('GET',KEYS[i]) ~= ARGV[i-67]
+    if i == 74 and ARGV[7] == '' then
+        -- 2026-10-20 修复(r2-mz#1):计划显式允许的本区空落点(AllowHomeFallback)按 home 回退,要求落点记录此刻
+        -- 仍不存在,与写屏障同一原子段复核;home 仍须是上一轮核过的永久原值。空串只可能来自已校验的计划。
+        if redis.call('EXISTS',KEYS[i]) ~= 0 then return redis.error_reply('authoritative route changed or expires') end
+    elseif redis.call('TYPE',KEYS[i]).ok ~= 'string' or redis.call('GET',KEYS[i]) ~= ARGV[i-67]
         or redis.call('PTTL',KEYS[i]) ~= -1 then return redis.error_reply('authoritative route changed or expires') end
 end
 if redis.call('EXISTS',KEYS[75]) ~= 0 then return redis.error_reply('zone merge fence exists') end
@@ -33,7 +37,10 @@ if t ~= 'none' and t ~= 'hash' then return redis.error_reply('barrier wrong type
 if t == 'hash' then
     if ARGV[5] ~= '1' then return redis.error_reply('barrier exists before SQL migration') end
     for _,field in ipairs(redis.call('HKEYS',KEYS[8])) do
-        if field ~= 'pending' and field ~= 'player_database' and field ~= 'player_database_1' and field ~= 'schema_gen' then
+        -- schema_writer 是 C++ 严格屏障写入的写方令牌(混版本持久字段保护 §5.2),只供 Lua 判"上次是不是本实体写的";
+        -- 恢复不解释也不改写它:恢复要求停写、父缓存已不在,旧令牌只属于已不存在的实体,新实体的令牌不会与之相等。
+        if field ~= 'pending' and field ~= 'player_database' and field ~= 'player_database_1' and field ~= 'schema_gen'
+            and field ~= 'schema_writer' then
             return redis.error_reply('barrier or outbox conflicts')
         end
     end

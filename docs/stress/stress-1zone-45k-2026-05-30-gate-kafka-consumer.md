@@ -204,5 +204,6 @@ if (key.find("/allocated/") != std::string::npos) {
 
 ## 6. 没改但可能踩的下一颗雷
 
+- *(2026-10-20 批注:下面这条描述的 player_migrate / player_migrate_ack 订阅属于已下线的跨 zone 搬数据链,scene 已不再订阅这两个 topic,见 cross-zone-scene-travel.md §11.3。原文保留作历史记录。)*
 - **scene 节点也用同一个 `KafkaConsumer` 单例(thread_local)**:scene main.cpp `RegisterKafkaMessageHandler({"player_migrate", "player_migrate_ack"})` 走同样路径,scene 主线程一样跑 World::Update 帧逻辑 + RPC,如果稳态玩家多 + 跨 zone migrate 多,scene 的 `scene-cross-zone-<id>` group 会同样症状。本次修复在基础设施层,scene 自动受益,但要在 Round 10 一并看 scene-cross-zone-* group 的 active members。
 - **librdkafka 后台线程数量**:每个 KafkaConsumer 实例创建后 librdkafka 会拉 N 个 background thread(broker thread + cgrp thread)。thread_local 单例 + 多 worker thread 的话,thread 数会乘倍。本次未压测期间 verify thread count,Round 10 用 `Get-Process | Select ... Threads.Count` 抓一下。

@@ -410,3 +410,42 @@ func TestIntegrationPlayerSQLFenceLegacyCompatibilityKeepsCommittedFence(t *test
 	require.Equal(t, writeStaleOwner, outcome.kind)
 	require.Equal(t, uint64(20), outcome.storedEpoch)
 }
+
+// C1b(persist_schema.go,docs/design/mixed-version-persist-field-protection.md §6.2):body 的持久 schema 世代低于已落库行时,
+// dual 与 legacy 都在同一把行锁下拒写,行保持原样;同世代或更高世代照常写。未盖戳(0)按世代 1 比较。
+func TestIntegrationPlayerSQLRejectsPersistSchemaRegression(t *testing.T) {
+	for _, mode := range []string{db_config.FencingModeDual, db_config.FencingModeLegacy} {
+		t.Run(mode, func(t *testing.T) {
+			model := openAssetFenceFixture(t)
+			require.NoError(t, SetFencingMode(mode))
+			save := func(epoch, seq, balance uint64, gen uint32) string {
+				t.Helper()
+				row := fenceRow(balance)
+				row.PersistSchemaGen = gen
+				handled, outcome, err := savePlayerRow(context.Background(), model, &dbpb.DBTask{Key: 42, OwnerEpoch: epoch, SaveSeq: seq}, row)
+				require.True(t, handled, "玩家行未进入 SQL 围栏")
+				require.NoError(t, err)
+				return outcome.kind
+			}
+			load := func() *playerpb.PlayerDatabase {
+				t.Helper()
+				got := &playerpb.PlayerDatabase{PlayerId: 42}
+				require.NoError(t, model.FindOneByPK(got))
+				return got
+			}
+
+			require.Equal(t, writeApplied, save(10, 1, 100, 3))
+			require.Equal(t, writeSchemaRegression, save(10, 2, 50, 2), "低世代 body 不得盖高世代行")
+			require.Equal(t, writeSchemaRegression, save(10, 3, 40, 0), "未盖戳按 1,同样低于 3")
+			got := load()
+			require.EqualValues(t, 3, got.PersistSchemaGen)
+			require.EqualValues(t, 100, got.Currency.Values[1], "倒退写不得改动行")
+
+			require.Equal(t, writeApplied, save(10, 4, 70, 3))
+			require.Equal(t, writeApplied, save(10, 5, 60, 4), "更高世代照常写")
+			got = load()
+			require.EqualValues(t, 4, got.PersistSchemaGen)
+			require.EqualValues(t, 60, got.Currency.Values[1])
+		})
+	}
+}

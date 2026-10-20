@@ -16,7 +16,7 @@
 #include <node_config_manager.h>
 #include "battle/system/player_battle.h"
 #include "engine/core/type_define/player_guid_comp.h"
-#include "core/network/grpc_call_types.h"          // kGrpcStatusUnimplemented
+#include "core/network/grpc_client_call.h"          // kGrpcStatusUnimplemented
 #include "grpc_client/player_inbox/player_inbox_grpc_client.h"
 #include "muduo_grpc/channel.h"                 // 选点读 muduo_grpc::Channel::GetState / ConnectivityState
 #include "network/node_utils.h"                 // GetNodeInfo:Fetch 带上本节点 node_id(只用于对端日志)
@@ -881,6 +881,21 @@ namespace
 				{
 					decision.set_outcome(static_cast<uint32_t>(player_inbox::PLAYER_INBOX_OUTCOME_REJECTED));
 					decision.set_reason(result.reason);
+				}
+				else if (result.kind == PlayerInboxExecKind::kVersionSkew)
+				{
+					// 版本错位:与未知类型同口径 —— 停在这一条、不记账、不确认这一条,停用该域,已定前缀照常确认。
+					// 不走下面 DEFER 的本地续做:这类错位会在会话内消失(例如那笔带新字段的欠款被还清删除),
+					// 按本地旧副本续做看不到服务端之后挂的 VOID,会把已作废的处置执行掉并报 APPLIED(评审 L1)。
+					// 这一行留在服务端 PENDING,下次落地重拉:已作废就记 SKIPPED,落到新版本节点就正常执行。
+					// 告警走 Halt 打的 metric=inbox_halted reason=version_skew;这一行只补条目上下文。
+					LOG_ERROR << "[PlayerInbox] Executor reported version skew player_id=" << playerId
+							  << " domain=" << state.domain << " seq=" << seq
+							  << " type=" << player_inbox_registry::TypeName(msgType) << " request_id=" << requestId
+							  << " reason=" << result.reason;
+					Halt(state, playerId, PlayerInboxHaltReason::kVersionSkew, "seq=" + std::to_string(seq));
+					AfterBatchDecided(player, playerId, state, recorded, nowMs);
+					return;
 				}
 				else
 				{

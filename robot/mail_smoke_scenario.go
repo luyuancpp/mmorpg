@@ -139,17 +139,16 @@ type mailSmokeBot struct {
 	// pushTimeout 是等一条 S2C 邮件事件的预算(mail_smoke.push_timeout_ms)。
 	pushTimeout time.Duration
 
+	// caller 发请求并只等它自己的回包(按请求号认领,见 smoke_rpc_call.go)。
+	caller *smokeCaller
+
 	// RecvLoop goroutine 写、场景主流程读,mu 保护。
 	mu sync.Mutex
-	// replies:本次请求发出后收到的第一个同消息号回包(含信封拒绝)。
-	replies map[uint32]*base.MessageContent
 	// pushes:收到的 S2C 邮件事件,按到达顺序。断言前用 resetPushes 清空。
 	pushes []*mailpb.MailChangedEvent
-	// gateTips:本次请求期间收到的 SendTipToClient(gate 选不到路由服时走这条)。
-	gateTips []uint32
-	// awaiting:主流程当前正在等的消息号,0 = 没在等。第 7 步 O 对**推送消息号本身**发请求,
-	// 那一刻同一个号上既可能来信封拒绝也可能来真推送 —— 所以第 7 步只让**不收定向邮件的 O** 去发(理由见 onMessage)。
-	awaiting uint32
+	// uncorrelated:按消息号累计 onMessage 丢弃的「没回显请求号的回包」。在 Call 看来它与「gate 丢弃」一样都是超时,
+	// 第 7 步的反向断言靠这个计数把两者分开(改造前按消息号认领,这类回包会被当成本次结果判失败)。
+	uncorrelated map[uint32]int
 
 	lastRequestAt time.Time // 仅主流程读写
 }
@@ -473,10 +472,25 @@ func RunMailSmoke(cfg *config.Config) {
 	// ---- 步骤 7:D-9 反向断言 ----
 	// NotifyMailEvent 与 5 个 C2S 方法同处 ClientPlayerMail(客户端协议服务),gate 白名单收这个号、请求会进到 mail;
 	// 挡它的是 mail 的会话拦截器(方法级白名单),路由服把上游 gRPC 错误统一翻成信封 kServiceUnavailable。
-	// 由**不收定向邮件的 O** 来发:awaiting 分支优先于推送分支,若由 R 发,一条迟到的真推送会被记成本步的回包。
+	// 本步回包带请求号、真推送 id = 0,两者按 id 分开(见 onMessage),谁发都不会互相误认;
+	// 仍由**不收定向邮件的 O** 来发,让 R 的推送留底与本步无关。
+	// 超时有三种来源要分开报:gate 回了信封但没回显请求号(onMessage 丢弃并计数)、回了不带错误也没回显请求号的
+	// 业务回包(onMessage 当成推送留底,O 在本步本不该收到推送)、真没回包。前两种按超时报会把排障引向「gate 丢弃」。
+	// 等待预算 10s 大于路由服 ForwardTimeoutMs(5s),这类回包会落在等待期内。
+	notifyDropsBefore := o.uncorrelatedReplies(game.ClientPlayerMailNotifyMailChangedMessageId)
+	notifyPushesBefore := o.pushCount()
 	envelopeTip, err := o.call(game.ClientPlayerMailNotifyMailChangedMessageId,
 		&mailpb.MailChangedEvent{MailId: sysID}, &base.Empty{})
 	switch {
+	case errors.Is(err, errMailSmokeTimeout) &&
+		o.uncorrelatedReplies(game.ClientPlayerMailNotifyMailChangedMessageId) > notifyDropsBefore:
+		fail("notify-via-gate", "Timed out, but gate replied on message_id=%d without echoing the request id (see the "+
+			"\"reply without request id dropped\" warning): the reply path does not carry ClientRequest.id, so this step cannot read the envelope",
+			game.ClientPlayerMailNotifyMailChangedMessageId)
+	case errors.Is(err, errMailSmokeTimeout) && o.pushCount() > notifyPushesBefore:
+		fail("notify-via-gate", "Timed out, but a NotifyMailChanged message without request id and without error arrived meanwhile "+
+			"and was taken as a push: likely a business response to this request whose reply path does not echo ClientRequest.id. "+
+			"If so, the S2C push method is exposed to clients (D-9)")
 	case errors.Is(err, errMailSmokeTimeout):
 		fail("notify-via-gate", "Expected envelope tip=%d, but timed out: gate dropped the NotifyMailEvent message ID (not in the allowlist), "+
 			"or the request never reached the routing service. This assertion checks rejection by the mail session layer and proves nothing when the transport path is broken",
@@ -508,8 +522,14 @@ func RunMailSmoke(cfg *config.Config) {
 				Title: "smoke via gate " + nonce, ExpireMs: expireMs},
 			&mailpb.SendMailResponse{}},
 	} {
+		// 超时前若这个号上有过被丢弃的无请求号回包,说明 gate 收了这个号并回了包(只是没回显请求号),不是丢弃。
+		adminDropsBefore := o.uncorrelatedReplies(adminCall.messageID)
 		envelopeTip, err := o.call(adminCall.messageID, adminCall.request, adminCall.response)
 		switch {
+		case errors.Is(err, errMailSmokeTimeout) && o.uncorrelatedReplies(adminCall.messageID) > adminDropsBefore:
+			fail("admin-via-gate", "MailAdmin.%s: expected gate to drop the request, but a reply without request id arrived on message_id=%d "+
+				"(see the \"reply without request id dropped\" warning): the gate client allowlist includes MailAdmin message IDs",
+				adminCall.name, adminCall.messageID)
 		case errors.Is(err, errMailSmokeTimeout):
 			// 期望:gate 丢弃
 		case err != nil:
@@ -559,7 +579,8 @@ func mailSmokeLogin(cfg *config.Config, account string, spacing, pushTimeout tim
 		stats:          stats,
 		requestSpacing: spacing,
 		pushTimeout:    pushTimeout,
-		replies:        make(map[uint32]*base.MessageContent),
+		caller:         newSmokeCaller(gc, stats, account, mailSmokeRpcTimeout, errMailSmokeTimeout),
+		uncorrelated:   make(map[uint32]int),
 	}
 	gameobject.PlayerList.Set(gc.PlayerId, bot.player)
 	go gc.RecvLoop(bot.onMessage)
@@ -581,41 +602,36 @@ func (b *mailSmokeBot) gateAddr() string {
 	return net.JoinHostPort(ip, strconv.Itoa(port))
 }
 
-// onMessage:邮件消息号的回包与推送由本场景认领;gate 的 SendTipToClient 记下来供快速失败;其余交给通用分发。
+// onMessage:邮件推送留底;邮件请求的回包带请求号,由 GameClient 交给 caller,不会到这里;
+// gate 的 SendTipToClient 交给 caller 供快速失败;其余交给通用分发。
 //
-// ⚠ 必须在分发前认领 ClientPlayerMail 的**全部 6 个**消息号与 MailAdmin 的 2 个(mailSmokeIsMailMessage):
-// 信封拒绝(error_message 非空、body 为空)一旦落进 MessageBodyHandler 会被解成全零响应,看上去像 tip=0 受理 ——
-// 失败会显示为通过。
+// ⚠ 必须在分发前拦下 ClientPlayerMail 的**全部 6 个**消息号与 MailAdmin 的 2 个(mailSmokeIsMailMessage):
+// 落到这里的是没回显请求号的回包,其中的信封拒绝(error_message 非空、body 为空)一旦落进 MessageBodyHandler
+// 会被解成全零响应,看上去像 tip=0 受理 —— 失败会显示为通过。
+// 第 7 步对推送号 NotifyMailChanged 本身发请求:它的回包带请求号、推送 id = 0,按 id 即可分开,不再需要 awaiting 标记。
+// 这个号上 id = 0 却带信封错误的不是推送(推送从不带 error_message),而是没回显请求号的信封拒绝,同样丢弃,
+// 不记成一条 mail_id = 0 的假推送。丢弃时按消息号计数(uncorrelated),第 7 步据此区分「gate 丢弃」与「回了包但没回显请求号」。
 func (b *mailSmokeBot) onMessage(client *pkg.GameClient, msg *base.MessageContent) {
 	b.stats.MsgRecv()
 	id := msg.GetMessageId()
-	if mailSmokeIsMailMessage(id) {
-		b.mu.Lock()
-		switch {
-		case b.awaiting == id:
-			// 主流程正在等这个号:一律当回包(信封拒绝与业务回包都在这条路上)。本分支**优先于**推送分支,
-			// 所以第 7 步对 NotifyMailEvent 号的请求只由不收定向邮件的 O 发(见 RunMailSmoke 第 7 步注释)。
-			if _, seen := b.replies[id]; !seen {
-				b.replies[id] = msg
-			}
-		case id == game.ClientPlayerMailNotifyMailChangedMessageId:
-			evt := &mailpb.MailChangedEvent{}
-			if err := proto.Unmarshal(msg.GetSerializedMessage(), evt); err == nil {
-				b.pushes = append(b.pushes, evt)
-			}
-		default:
-			// 没人在等的回包 = 上一次请求超时之后才姗姗来迟的那一个。丢掉,否则会被下一次同号请求误读成本次的回包。
+	if id == game.ClientPlayerMailNotifyMailChangedMessageId && msg.GetErrorMessage().GetId() == 0 {
+		evt := &mailpb.MailChangedEvent{}
+		if err := proto.Unmarshal(msg.GetSerializedMessage(), evt); err == nil {
+			b.mu.Lock()
+			b.pushes = append(b.pushes, evt)
+			b.mu.Unlock()
 		}
+		return
+	}
+	if mailSmokeIsMailMessage(id) {
+		smokeDropUncorrelatedReply(b.account, msg)
+		b.mu.Lock()
+		b.uncorrelated[id]++
 		b.mu.Unlock()
 		return
 	}
 	if id == game.SceneClientPlayerCommonSendTipToClientMessageId {
-		var tipInfo base.TipInfoMessage
-		if err := proto.Unmarshal(msg.GetSerializedMessage(), &tipInfo); err == nil && tipInfo.GetId() != 0 {
-			b.mu.Lock()
-			b.gateTips = append(b.gateTips, tipInfo.GetId())
-			b.mu.Unlock()
-		}
+		b.caller.onGateTipMessage(msg)
 	}
 	handler.MessageBodyHandler(client, msg)
 }
@@ -625,6 +641,20 @@ func (b *mailSmokeBot) resetPushes() {
 	b.mu.Lock()
 	b.pushes = nil
 	b.mu.Unlock()
+}
+
+// pushCount 返回当前留底的邮件推送条数(第 7 步诊断用:没回显请求号、也不带错误的回包会被当成推送留底)。
+func (b *mailSmokeBot) pushCount() int {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	return len(b.pushes)
+}
+
+// uncorrelatedReplies 返回 messageId 上至今被 onMessage 丢弃的「没回显请求号的回包」个数。
+func (b *mailSmokeBot) uncorrelatedReplies(messageId uint32) int {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	return b.uncorrelated[messageId]
 }
 
 // waitPush 等一条指定 reason 的邮件事件,返回是否在预算内收到(弱断言,由调用方只打印不判失败)。
@@ -724,56 +754,18 @@ func mailSmokeCheckUnreadAfterRead(before, after *mailSmokeListing, readID uint6
 		before.unread, after.unread, readID, expected, before.unread, expired, arrived, exact)
 }
 
-// call 发一个邮件请求并等同消息号的第一个回包(形状照 friendSmokeBot.call)。
+// call 发一个邮件请求并只等它自己的回包(smokeCaller.call,按请求号认领;形状照 friendSmokeBot.call)。
+// 上一次超时请求的迟到回包由 GameClient 计数后丢弃,不会被本次误认。
 //
 // 返回的 envelopeTip 非 0 表示 gate / 路由服级拒绝(信封 error_message,body 为空),此时 response 未填充;
-// 为 0 时 response 已解码。gate 推 kServiceUnavailable 返回 error;超时返回包裹 errMailSmokeTimeout 的 error。
+// 为 0 时 response 已解码。gate 推 kServiceUnavailable(tipMailServiceUnavailable 与 smokeCaller 判的是同一个
+// CommonError_kServiceUnavailable)返回 error;超时返回包裹 errMailSmokeTimeout 的 error。
 func (b *mailSmokeBot) call(messageId uint32, request, response proto.Message) (envelopeTip uint32, err error) {
 	if wait := b.requestSpacing - time.Since(b.lastRequestAt); wait > 0 {
 		time.Sleep(wait)
 	}
-	b.mu.Lock()
-	delete(b.replies, messageId)
-	b.gateTips = nil
-	b.awaiting = messageId
-	b.mu.Unlock()
-	defer func() {
-		b.mu.Lock()
-		b.awaiting = 0
-		b.mu.Unlock()
-	}()
-
-	if err := b.gc.SendRequest(messageId, request); err != nil {
-		return 0, fmt.Errorf("send message_id=%d: %w", messageId, err)
-	}
 	b.lastRequestAt = time.Now()
-	b.stats.MsgSent()
-
-	deadline := time.Now().Add(mailSmokeRpcTimeout)
-	for time.Now().Before(deadline) {
-		b.mu.Lock()
-		reply := b.replies[messageId]
-		gateUnavailable := false
-		for _, tip := range b.gateTips {
-			gateUnavailable = gateUnavailable || tip == tipMailServiceUnavailable
-		}
-		b.mu.Unlock()
-
-		if reply != nil {
-			if tip := reply.GetErrorMessage().GetId(); tip != 0 {
-				return tip, nil
-			}
-			if err := proto.Unmarshal(reply.GetSerializedMessage(), response); err != nil {
-				return 0, fmt.Errorf("decode message_id=%d: %w", messageId, err)
-			}
-			return 0, nil
-		}
-		if gateUnavailable {
-			return 0, fmt.Errorf("gate SendTipToClient tip=%d(gate 选不到路由服实例,或未以 GATE_CLIENT_RPC_ROUTER=1 启动)", tipMailServiceUnavailable)
-		}
-		time.Sleep(50 * time.Millisecond)
-	}
-	return 0, fmt.Errorf("message_id=%d account=%s %w(%s)", messageId, b.account, errMailSmokeTimeout, mailSmokeRpcTimeout)
+	return b.caller.call(messageId, request, response)
 }
 
 // rpc 发请求并返回业务 tip(响应体 error_message.id,0 = 受理)。信封拒绝与超时一律 error:
@@ -900,7 +892,7 @@ func mailSmokeSendPersonal(client mailpb.MailAdminClient, token string, req *mai
 // ---------------------------------------------------------------------------
 
 // mailSmokeIsMailMessage 列出 ClientPlayerMail 的全部 6 个消息号与 MailAdmin 的 2 个。
-// 新增 rpc 必须同步加进来 —— 漏一个就是"该号的回包被通用分发解成全零响应"。
+// 新增 rpc 必须同步加进来 —— 漏一个,该号上没回显请求号的信封拒绝就会落进通用分发、被解成全零响应。
 func mailSmokeIsMailMessage(messageId uint32) bool {
 	switch messageId {
 	case game.ClientPlayerMailListMailsMessageId,

@@ -69,9 +69,10 @@ func RebalanceWorldChannelsForZone(ctx context.Context, svcCtx *svc.ServiceConte
 	migrated, skipped := 0, 0
 	run := func(list []channelMigration) {
 		for _, c := range list {
-			// 降级即停:迁移改写路由且无 CAS 保护,是降级窗口里新旧领导者
-			// 并发时最危险的写路径(双迁同一频道 = 计数双减 + 名额错挂)。
-			// 逐条重查把在途窗口压到单次迁移;剩余的由新领导者重新规划。
+			// 降级即停:降级窗口里新旧领导者会各按自己的计划迁移。归属改写
+			// 有 CAS(reassignSceneNode),同一频道只有一边能落地,输的一边回收
+			// 自己预建的实体、不动名额与计数;逐条重查仍能省掉那些白跑的
+			// CreateScene / DestroyScene。剩余的由新领导者重新规划。
 			if !isLeader() {
 				logx.Infof("[Rebalance] zone=%d: lost leadership mid-run, aborting; successor will re-plan", zoneId)
 				return
@@ -211,7 +212,9 @@ func PlanWorldChannelRebalance(svcCtx *svc.ServiceContext, zoneId uint32, confId
 //  2. Rewrite scene:{sid}:node in Redis. Any EnterScene that races this
 //     write sees either oldNode (still valid, scene still exists) or
 //     newNode (also valid after step 1) — both serve the same sceneId.
-//  3. Update per-node scene_count counters.
+//     这一步是 CAS(reassignSceneNode),归属已不是 oldNode 就整次作废,
+//     并回收第 1 步在 newNode 上建的实体(destroyUnownedMigrationTarget)。
+//  3. Update per-node scene_count counters —— 与第 2 步在同一个 Lua 脚本里完成。
 //  4. Best-effort DestroyScene on the old node. A failure here is logged
 //     but not fatal: the old scene will be cleaned up on the next node
 //     restart or by the lifecycle manager's stale-scene sweep.
@@ -244,40 +247,28 @@ func migrateWorldChannel(ctx context.Context, svcCtx *svc.ServiceContext, zoneId
 	// already-existing mirrors on oldNode are now stranded.
 	dependentMirrors, _ := svcCtx.Redis.Smembers(sceneMirrorsKey(sceneId))
 
-	// Use reassignSceneNode so node:zone:{zoneId}:{nodeId}:scenes stays in sync
-	// (otherwise node-death reconciliation would miss migrated channels).
-	// reassignSceneNode logs its own Set error but doesn't surface it; verify
-	// the mapping landed before declaring success.
-	// 计划阶段到这里之间隔了一次 CreateScene RPC,老节点的死亡时刻可能刚写进
-	// Redis。reassignSceneNode 里的第二道屏障判定挡住这个竞态:返回 false 时
-	// 归属一个字节没改,本次迁移作废(newNode 上那个幂等的实体留到下一拍复用)。
+	// 归属改写走 reassignSceneNode 的 CAS:scene:{id}:node、两侧反向索引
+	// (node-death reconciliation 靠它找到迁走的频道)与两侧 scene_count 在
+	// 一个脚本里一起改,返回 true 就是全部落地,不用再回读核对。
+	//
+	// 返回 false 有两类竞态,都意味着本次迁移作废:
+	//   - 计划阶段到这里隔了一次 CreateScene RPC,老节点的死亡时刻可能刚写进
+	//     Redis,第二道屏障判定拦下;
+	//   - 计划是陈旧的:本进程不持 zone 锁,任意副本上的 initWorldScenesForZone
+	//     或 EnterScene 的懒改派可能已经把频道派到别的节点。
+	// 两种情况下 newNode 上刚建的实体都没有归属,回收掉;名额与计数都没动。
 	if !reassignSceneNode(svcCtx, zoneId, sceneId, oldNode, newNode) {
-		logx.Infof("[Rebalance] zone=%d conf=%d scene=%d: ownership not updated (reentry barrier or Redis write failure); migration invalidated",
+		logx.Infof("[Rebalance] zone=%d conf=%d scene=%d: ownership not updated (reentry barrier, owner changed concurrently, or Redis failure); migration invalidated",
 			zoneId, confId, sceneId)
-		return false
-	}
-	if cur, _ := svcCtx.Redis.Get(fmt.Sprintf("scene:%d:node", sceneId)); cur != newNode {
-		logx.Errorf("[Rebalance] zone=%d conf=%d scene=%d: scene->node mapping did not stick (got %q, want %q)",
-			zoneId, confId, sceneId, cur, newNode)
-		// The ECS entity on newNode is effectively orphaned until the
-		// next rebalance tick retries. Since CreateScene is idempotent
-		// this is safe; we just wasted an RPC.
+		destroyUnownedMigrationTarget(ctx, svcCtx, zoneId, confId, sceneId, newNode)
 		return false
 	}
 
 	// Agones 名额跟着频道走。不转移的话旧 GameServer 的计数永远不还
 	// (容量凭空蒸发)、新的没记账(容量被超卖),两个方向都会让
 	// FleetAutoscaler 算错。先占新的再还旧的,见 TransferAgonesRoomForScene。
+	// scene_count 已在 reassignSceneNode 的脚本里挪好,这里不再调。
 	TransferAgonesRoomForScene(ctx, svcCtx, sceneId, newNode, zoneId)
-
-	if oldNode != "" {
-		if _, err := svcCtx.Redis.Decr(nodeSceneCountKey(zoneId, oldNode)); err != nil {
-			logx.Errorf("[Rebalance] failed to decrement scene_count on old node %s: %v", oldNode, err)
-		}
-	}
-	if _, err := svcCtx.Redis.Incr(nodeSceneCountKey(zoneId, newNode)); err != nil {
-		logx.Errorf("[Rebalance] failed to increment scene_count on new node %s: %v", newNode, err)
-	}
 
 	// Best-effort cleanup of the old scene entity. Skip when the old node
 	// is already gone — nothing to clean up — or when oldNode appears dead
@@ -294,6 +285,40 @@ func migrateWorldChannel(ctx context.Context, svcCtx *svc.ServiceContext, zoneId
 	logx.Infof("[Rebalance] zone=%d conf=%d scene=%d migrated %s -> %s (%s) cascaded_mirrors=%d",
 		zoneId, confId, sceneId, oldNode, newNode, reason, len(dependentMirrors))
 	return true
+}
+
+// destroyUnownedMigrationTarget 回收一次作废迁移在 newNode 上预建的场景实体(尽力而为)。
+//
+// 先重读归属,**确认** newNode 不是当前属主才发 DestroyScene:
+//   - 并发的另一个写者可能恰好也把频道派到了 newNode。CreateScene 按 scene_id 幂等,
+//     newNode 上那个实体就是它的活场景,销毁就是把在用频道拆掉;
+//   - reassignSceneNode 在 Redis 出错时返回 false,但脚本可能已经执行;重读失败
+//     就无从确认,宁可留一个空实体,也不冒拆掉活场景的险。
+//
+// 残余窗口:重读之后、DestroyScene 到达之前,若别的写者恰好把归属改到 newNode 并先完成
+// CreateScene,这次销毁会拆掉它的实体。窗口只有一次 RPC 长,且可自愈:fullSync 每轮
+// initWorldScenesForZone 都对全部频道补发 CreateScene。
+func destroyUnownedMigrationTarget(ctx context.Context, svcCtx *svc.ServiceContext, zoneId uint32,
+	confId, sceneId uint64, newNode string) {
+
+	owner, err := svcCtx.Redis.Get(sceneNodeKey(sceneId))
+	if err != nil {
+		logx.Errorf("[Rebalance] zone=%d conf=%d scene=%d: cannot re-read owner (%v); leaving the entity pre-created on %s",
+			zoneId, confId, sceneId, err, newNode)
+		return
+	}
+	if owner == newNode {
+		logx.Infof("[Rebalance] zone=%d conf=%d scene=%d: another writer already moved it to %s; keeping that entity",
+			zoneId, confId, sceneId, newNode)
+		return
+	}
+	if err := RequestNodeDestroyScene(ctx, svcCtx, zoneId, newNode, sceneId); err != nil {
+		logx.Errorf("[Rebalance] zone=%d conf=%d scene=%d: DestroyScene of unowned entity on %s failed (owner=%q): %v",
+			zoneId, confId, sceneId, newNode, owner, err)
+		return
+	}
+	logx.Infof("[Rebalance] zone=%d conf=%d scene=%d: destroyed unowned entity on %s (owner=%q)",
+		zoneId, confId, sceneId, newNode, owner)
 }
 
 // cascadeMirrorsOnSourceMigration force-destroys mirrors that were co-located

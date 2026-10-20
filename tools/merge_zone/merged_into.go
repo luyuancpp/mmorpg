@@ -18,6 +18,10 @@ package main
 //	reader : -backfill-home-zone(refuseBackfillOfMergedZone,存在即拒绝);合服清单落盘之前
 //	         (checkMergedIntoBeforeMerge:源区已合进别处 / 目标区自己已被合走 即拒绝)
 //	delete : -mode unmerge 把映射改回源区之后(clearMergedInto),只删 dst 与 run_id 都对得上的那一把
+//
+// -route-source=db(规格 §6.3 W6 / 5'a):真源是全局库的 zone_merged_into(route_store.go 的 MarkMergedInto / ClearMergedInto,
+// 事务内校验围栏属于本次),上面的 Redis 键降为镜像:库提交 → 镜像 SET + WAITAOF(写)/ 按完整值 compare-and-delete(删)。
+// 读方(合服前置核对、回填、pin-placement)在 db 源下读库,Redis 丢了也拦得住。见文件末尾的 *DB 函数与 step* 分派。
 
 import (
 	"context"
@@ -167,4 +171,125 @@ func clearMergedInto(ctx context.Context, rdb *redis.Client, src, dst uint32, ru
 		return false, fmt.Errorf("del %s: %w", key, err)
 	}
 	return true, nil
+}
+
+// ── -route-source=db(W6 / 5'a / R8)───────────────────────────────────────────
+
+// routeMergedIntoValue 把库里读到的 zone_merged_into 行还原成与 Redis 版同形状的读结果(值与原文),供 mergedIntoConflict 复用。
+func routeMergedIntoValue(dst uint32, runID string, found bool) (*mergedIntoValue, string) {
+	if !found {
+		return nil, ""
+	}
+	v := &mergedIntoValue{Dst: dst, RunID: runID}
+	raw, err := encodeRouteMergedIntoValue(dst, runID)
+	if err != nil {
+		raw = fmt.Sprintf("{dst:%d run_id:%s}", dst, runID)
+	}
+	return v, raw
+}
+
+// checkMergedIntoBeforeMergeDB 是 checkMergedIntoBeforeMerge 的库版(R8):读 zone_merged_into,判定与 Redis 版同一个纯函数。
+func checkMergedIntoBeforeMergeDB(ctx context.Context, db routeDBOps, src, dst uint32) error {
+	sd, sr, sf, srcErr := db.ReadMergedInto(ctx, src)
+	srcCur, srcRaw := routeMergedIntoValue(sd, sr, sf)
+	dd, dr, df, dstErr := db.ReadMergedInto(ctx, dst)
+	dstCur, dstRaw := routeMergedIntoValue(dd, dr, df)
+	return mergedIntoConflict(src, dst, srcCur, srcRaw, srcErr, dstCur, dstRaw, dstErr)
+}
+
+// stepCheckMergedIntoBeforeMerge 按源分派合服前置核对 X:rb == nil → Redis 版(逐字不变);否则读库。
+func stepCheckMergedIntoBeforeMerge(ctx context.Context, rb *routeBackend, rdb *redis.Client, src, dst uint32) error {
+	if rb == nil {
+		return checkMergedIntoBeforeMerge(ctx, rdb, src, dst)
+	}
+	return checkMergedIntoBeforeMergeDB(ctx, rb.db, src, dst)
+}
+
+// markMergedIntoDB 是 markMergedInto 的库版(W6,规格 §6.3):一个库事务(围栏属于本次 fenceRunID → 加锁读 zone_merged_into(src)
+// → 无行插入 / 同 dst 改 run_id 为 markRunID / 异 dst 拒绝)→ 提交 → 镜像 SET + WAITAOF。镜像确认之后才返回,调用方才改映射。
+// 库已写、镜像未确认时返回错误:库里的标记已能拦住 W9 / W10(它们读库),重跑同 dst 走幂等分支、再写一次镜像。
+// dry-run 只读库,按同一判定预报。
+func markMergedIntoDB(ctx context.Context, rb *routeBackend, src, dst uint32, fenceRunID, markRunID string, dryRun bool) error {
+	key := mergedIntoKey(src)
+	if dryRun {
+		cur, run, found, err := rb.db.ReadMergedInto(ctx, src)
+		if err != nil {
+			return err
+		}
+		if found && cur != dst {
+			return fmt.Errorf("zone_merged_into(%d) already says zone %d was merged into zone %d (run_id %s) — refusing to overwrite it with %d",
+				src, src, cur, run, dst)
+		}
+		log.Printf("[DRY-RUN] would record zone_merged_into(%d) = dst %d run_id %s and mirror it to %s (no TTL) before remapping",
+			src, dst, markRunID, key)
+		return nil
+	}
+	value, err := rb.db.MarkMergedInto(ctx, src, dst, fenceRunID, markRunID)
+	if err != nil {
+		return err
+	}
+	if err := rb.pub.setMergedIntoMirror(ctx, src, value); err != nil {
+		return fmt.Errorf("zone_merged_into(%d) is committed, but its mirror %s was not confirmed (re-run: the marker takes the "+
+			"idempotent branch and the mirror is written again): %w", src, key, err)
+	}
+	log.Printf("merged_into marker recorded in zone_merged_into and mirrored: %s = %s", key, value)
+	return nil
+}
+
+// stepMarkMergedInto 按源分派 W6:rb == nil → markMergedInto(Redis 先读后写,逐字不变,只认 markRunID);否则 markMergedIntoDB。
+func stepMarkMergedInto(ctx context.Context, rb *routeBackend, rdb *redis.Client, src, dst uint32, fenceRunID, markRunID string, dryRun bool) error {
+	if rb == nil {
+		return markMergedInto(ctx, rdb, src, dst, markRunID, dryRun)
+	}
+	return markMergedIntoDB(ctx, rb, src, dst, fenceRunID, markRunID, dryRun)
+}
+
+// clearMergedIntoDB 是 clearMergedInto 的库版(撤销 5'a,规格 §6.3):库事务(围栏属于本次撤销 fenceRunID)按
+// (src, dst, run_id = 当初合服的清单 run_id markRunID)删 → 提交 → 镜像按完整值 compare-and-delete。
+// 库里没删到(本来不在 / 是另一次合服写的)只打 WARN、留给人判断;镜像照样按本次的完整值删(上一次删了库、没删镜像的也补上;
+// 值不是本次的不会被删,另一次合服的标记由 leader 按库补回镜像)。返回库里是否删了一行。dry-run 只读库预报。
+func clearMergedIntoDB(ctx context.Context, rb *routeBackend, src, dst uint32, fenceRunID, markRunID string, dryRun bool) (bool, error) {
+	key := mergedIntoKey(src)
+	value, err := encodeRouteMergedIntoValue(dst, markRunID)
+	if err != nil {
+		return false, err
+	}
+	if dryRun {
+		cur, run, found, err := rb.db.ReadMergedInto(ctx, src)
+		if err != nil {
+			return false, err
+		}
+		would := found && cur == dst && run == markRunID
+		switch {
+		case would:
+			log.Printf("[DRY-RUN] would DELETE zone_merged_into(%d) and compare-and-delete its mirror %s", src, key)
+		case found:
+			log.Printf("WARN: zone_merged_into(%d) = dst %d run_id %s was written by another merge (manifest: dst=%d run_id=%s) — "+
+				"it would be left untouched", src, cur, run, dst, markRunID)
+		}
+		return would, nil
+	}
+	deleted, err := rb.db.ClearMergedInto(ctx, src, dst, fenceRunID, markRunID)
+	if err != nil {
+		return false, err
+	}
+	if !deleted {
+		log.Printf("WARN: zone_merged_into(%d) had no row for dst=%d run_id=%s (never written, already cleared, or written by another "+
+			"merge) — any other merge's marker is left untouched; -backfill-home-zone -zone %d stays refused while one exists",
+			src, dst, markRunID, src)
+	}
+	mirrorDeleted, err := rb.pub.deleteMergedIntoMirror(ctx, src, value)
+	if err != nil {
+		return deleted, fmt.Errorf("zone_merged_into(%d) cleared=%v, but the compare-and-delete of its mirror %s failed: %w", src, deleted, key, err)
+	}
+	log.Printf("merged_into mirror %s: compare-and-delete removed=%v", key, mirrorDeleted)
+	return deleted, nil
+}
+
+// stepClearMergedInto 按源分派撤销 5'a:rb == nil → clearMergedInto(Redis,逐字不变);否则 clearMergedIntoDB。
+func stepClearMergedInto(ctx context.Context, rb *routeBackend, rdb *redis.Client, src, dst uint32, fenceRunID, markRunID string, dryRun bool) (bool, error) {
+	if rb == nil {
+		return clearMergedInto(ctx, rdb, src, dst, markRunID, dryRun)
+	}
+	return clearMergedIntoDB(ctx, rb, src, dst, fenceRunID, markRunID, dryRun)
 }

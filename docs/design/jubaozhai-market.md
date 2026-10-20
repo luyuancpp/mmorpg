@@ -385,3 +385,59 @@ TRADE_DEBIT,只把 `item_uuids` 换成该玩家的其它装备再发出去,这�
 - Java 独立源码快照 `build/commerce-finish-java-20261016/source-v5` 的 16 模块反应堆成功；交易 25、商城 18、scene 39、Gate 24 项通过，商城包含 7 项真 TiDB。交易随后修边界并补跑上述 27 项。真实玩家 SQL 回归 `commerce-regression-v3.log` 的 `PlayerStoreSqlTest` 42 项通过，包含完整物品/宝宝与收据同记录提交、新读取者恢复、旧 epoch 写入拒绝、收据删除持久化。
 - C++/Go 侧独立商城 `java/mall_game` 的真实 TiDB 运行 24 项、0 失败、0 跳过：`build/commerce-contracts-20261015/mall-game-tidb-v4.log`。此前 fixture DDL 的请求超时、测试漂移构造与清理失败日志保留；安装连接单独使用 30 秒预算，生产请求池仍为 6 秒，未跳过断言。唯一已知自有残留随机库已精确清理，见 `mall-owned-fixture-cleanup.log`。
 - 这些证据不覆盖真实渠道支付/退款沙箱、多区域完整 Gate→scene→SQL 故障切换、全局玩家归属围栏关闭或两千万在线压测。上线状态仍受 §15 的全局强一致边界约束。
+
+### 15.3 2026-10-20 修复：合同推进单行隔离、放弃与人工终结的扣款腿
+
+对应第一轮审计（[data-overwrite-rollback-audit-20261018.md](data-overwrite-rollback-audit-20261018.md) §2.5）的 go-asset-services#0、#1，门控 `AssetOp.Enabled`。**状态：已落码，未编译、未测试，待 Codex 验证。** 实现在 `go/trade/internal/commerce/tick_isolation.go`、`engine.go`（`advance` / `Tick`）、`auction.go`，以及 `go/trade/internal/data/commerce_repo.go`。
+
+**#0：一条合同出错，全服交易停摆。**
+
+- 原问题：`Engine.Tick` 遇到任何一行出错就整轮返回。失败行回滚后 `updated_ms` 不变，下一轮仍排在 `Due` 队头。最容易触发的是对方离线、未决 credit 攒满 16 条后的 `ErrTooManyPending`。持有中的竞价（`bid_held`）在拍品结算前也不改 `updated_ms`；有出价的在拍拍品数一到 `Due` 上限，队头就被它们占满。
+- `updated_ms` 兼作调度键：`Save` 写当前时刻（立即到期），新增的 `CommerceRepo.Defer` 写将来时刻（推迟）；`Due` 只取 `updated_ms <= now` 的行。`updated_ms` 不进任何客户端视图，不动对外契约。`acceptBid` 写 `updated_ms` 改用引擎时钟，截止判定仍用库时钟。
+- 每行 5s 子预算，失败分三类。指标 `trade_commerce_tick_row_failures_total{class}`：
+  - `retry`：存储超时、死锁重试用尽等。按 10s ±20% 推迟。
+  - `too_many_pending`：按 60s ±20% 推迟。要等那位玩家的未决指令终结，日志只记 INFO。
+  - `corrupt`：合同自身持久数据坏了，包括 workflow 解不开、已发出的腿缺 outbox 行、腿状态非法、托管快照解不开、`plan` 判错、已扣出的托管转不动。这类失败隔离为 `Manual`，移出 `Due`，计 `trade_commerce_quarantined_total`。
+- 推迟与隔离都以 `Due` 读到的 `version` 为条件，锁序与 `Save` 相同（主键点锁合同行，再带版本条件点改）。推迟不改 `version`，所以并发的 `Save` 不会被挡住：它在同一行锁上排在后面，照常提交并把 `updated_ms` 改回现在，推进优先于推迟。行在 `Due` 之后被推进过，两者都落空，不会用旧观察覆盖新行。
+- 隔离只改合同状态，不发出、不退回任何资产。workflow 解得开时 `stage` 改成 `manual`，与 partial 隔离同形，玩家操作与撮合都不会再把它拉回推进；解不开时只改状态列（`SaveStatus`），坏字节原样留作取证。op 行不标业务消费，证据不被清理。
+- 其余循环：
+  - `bid_held`：拍品未结算时推迟到拍品截止，至少 30s、至多 1h。被超价时接受新出价的那次 `Save` 会把它拉回当前时刻。
+  - `acceptBid`：`bid_ready` 的出价还没被拍品接受，拍品不引用它。拍品行缺失或解不开时按不合格原币退款，不再每轮报错。原最高价出价读不到或不在 `bid_held` 时，按暂时失败推迟；拍品截止后这条出价不再合格，自动退款。
+  - 撮合失败：`advance` 已提交，只计一次失败，下一轮重撮。
+  - 收据 ACK：按 `op_id` 翻页（游标归驱动 `Tick` 的单个 goroutine）。payload 解不开的行跳过并打 ERROR，不清 ACK 待办。
+  - 商城交付意图：单条失败不挡同批其余意图，错误汇总返回。
+
+**#1：放弃或人工终结的托管扣款腿，合同永远读不到。**
+
+- 原问题：`ResolveManually` 与 `Abandon` 刻意不置 `durable`，用来区分「scene 答过」与「人判定 / 自动放弃」。合同推进却只认 `durable=1`，这两种终局永远读不到。合同停在 pay / escrow，卖家托管的资产被扣住；买家点击购买后下线，就能把卖家资产扣作人质。
+- 修复：`CommerceRepo.LegResult` 改回 `data.LegOutcome`，终局只看 `status`，不看 `durable` 与来源。来源（scene / manual / abandoned）只进 INFO 日志。
+- 补偿语义：
+  - `ABANDONED`、`REJECTED`、`ABORTED` 一律按「没扣到」处理，走与 scene 判拒同一条 `plan` 路径：退回另一方已托管的资产，寄售重新开放，竞价冻结失败即结案。
+  - `APPLIED_PARTIAL` 照旧转人工。
+  - 人工判 `APPLIED` 按已扣到处理。实例扣款被人工判 `APPLIED` 时没有托管原件：`ResolveManually` 不写 `escrow_snapshot`，自动路径缺原件根本不终结。`advance` 在记下结局时即用 `Transfer` 核对已扣出的托管转得动，转不动就隔离。这样不会先上架，等买家付了款才在发货时撞错。
+- 不误退：`ABANDONED` 只出现在 TRADE_DEBIT。[landing-recovery-sync-digest.md](landing-recovery-sync-digest.md) §6.3 的六条证据保证 scene 不可能再收到这条 seq，即「确实没扣」。人工终结的结论由操作人按 scene 流水 correlation_id 判定并留痕。
+- 补偿只一次：
+  - 腿的 `Outcome` 写进合同 workflow，与合同版本 CAS 同一事务提交；`Outcome != 0` 的腿不再读。
+  - 补偿腿按角色名 `addLeg` 只建一次。
+  - 多副本推进同一合同时，在合同行锁上串行。
+- 与放弃 / 终结入口的并发：`Finalize`、`ResolveManually`、`Abandon` 都只主键点锁 op 行，从不碰合同行。合同推进先锁合同行，再普通读 op 行。两边不成环。三个写者都以 `status = PENDING` 为 CAS 条件，一行只终结一次，终态之后不再变化：合同这一轮读到 PENDING 就等下一轮，下一轮必然读到终态。
+- 残余：
+  - 买家下单后离线不归时，卖家托管仍要被占到自动放弃（`AssetOp.AbandonAfterDays`，默认 180 天、最小 30 天）或人工终结。这条现在有界，但不短。缩短它要另立设计，例如「已过截止的扣款腿凭已落盘账本证据提前放弃」。I7 的窄例外要重新论证，不在本修复范围。
+  - 旧 P1 商品（`ref_kind=LISTING`）的放弃对侧账仍是 `Abandon` 里的 P3 TODO。
+
+**回归测试**（真库用例每例新建随机库）：
+
+- 单测：
+  - `go/trade/internal/commerce/tick_isolation_test.go`：失败分类、退避有界且带抖动。
+  - `go/trade/internal/data/commerce_leg_outcome_test.go`：终局判定不看来源；枚举里每个终态都必须被合同认作终局。
+- 真库：`go/trade/internal/commerce/tick_isolation_db_test.go`。
+  - 门控：`COMMERCE_TEST_MYSQL_DSN` + `COMMERCE_REQUIRE_MYSQL=1`，或沿用 `COMMERCE_TEST_DSN` + `COMMERCE_REQUIRE_TIDB=1`。
+  - 覆盖：
+    - 队头 `ErrTooManyPending` 不挡其余合同，被推迟且推迟期内不重试，积压消化后照常推进；
+    - 坏数据隔离且不再被 `Due` 取到；
+    - 买家扣款被放弃后寄售重新开放，到期只退卖家一次；
+    - 人工终结的腿推进合同；
+    - 人工判 `APPLIED` 的实例扣款立即隔离；
+    - 拍品缺失的 `bid_ready` 出价只退一次；
+    - 持有竞价不占队头；
+    - 收据 ACK 翻页越过卡住的表头，并跳过坏 payload。

@@ -228,6 +228,10 @@ go/db 这条线（R1 → R2 → R3）**必须串行**：三项都改 `key_ordere
 > **2026-10-19 现状**：R9 设计已写进 [zone_data_rollback_discard_tool.md](../design/zone_data_rollback_discard_tool.md)，包括 7 项与三个小项的决定、完整设计、9 个落码批次、测试和风险。设计预计改动 **73 个文件**，超过 AGENTS §10.2 的 30 文件门槛，**落码前须负责人确认规模**。两面对抗复核共 28 条意见，其中 7 条 high，**尚未并入**，列在该文 §6；落码第一步就是并入这些意见。另外，维护围栏和三个小项这两路专项调研因 403 认证错误没跑完，落码前要补一轮核实。
 >
 > **2026-10-19 负责人授权**（原话）：「同意按 73 个文件、9 批的规模开工 R9：先并入 28 条复核意见并补齐缺的两路调研，再按 B1→B6 分批落码，每批交 Codex 验证。」
+>
+> **2026-10-19 设计 v3**：两路调研已补；28 条复核意见已并入（v2）；之后按「尚未上线」范围收窄（§6.3，删掉的内容移入 §8「上线后再补」），复查轮 11 条也已处理（§6.4）。**总文件数 109，比授权多 36，未落码，等负责人定规模。** 按存盘围栏设计「上线状态」一节，回档 `-Apply` 在上线前不是阻塞项。109 个文件里属于上线前该修的只有 B4（死信去重，15 个）和 B5（探针剥离与 op="other" 告警，8 个），再加 B4 依赖的 B1 中 `dead_dedup.go` / `dead_dedup_test.go` 2 个，共 25 个。持久副本目录（`-ArchiveDir`）放在哪是运维部署问题，代码里只是一个必填参数，不阻塞落码。
+>
+> **2026-10-19 负责人换账号继续**：R9 的后续工作交接在 [zone-rollback-r9-handoff-20261019.md](zone-rollback-r9-handoff-20261019.md)。
 
 > 负责人 2026-10-18 原话：「你就按最标准的去做就行，数据一致性而且可水平扩展」。下面 7 项与三个小项，由接手会话按业界标准做法拍板并落码（R9）。取舍顺序：正确性 / 数据一致性 / 向后兼容 > 简单 > 可维护 > 性能；要求可水平扩展，不引入全局单点，可分片、可断点续跑。R9 的决定与设计会写进 `docs/design/zone_data_rollback.md`。
 
@@ -299,6 +303,21 @@ go/db 这条线（R1 → R2 → R3）**必须串行**：三项都改 `key_ordere
     - `docs/handoff/launch-readiness-20261013/spec_B0-3_task_result_channel.md` 文末「第 2 批交付」节，含权威验证命令；
     - `deploy/k8s/README.md` 的告警安装说明。
   - 上线顺序：login 已经上了第 1 批的 zone，go/db 要按 zone 金丝雀发布，不要一次升全部 zone。
+- **「D1 玩家归属与存储持久化」会话**：2026-10-19 在 go/db 落完 D1 第 3 批「读方门禁」，未编译。对方回报的改动：
+  - 新文件 `internal/kafka/route_ready_gate.go`（读方接口与 go-redis 实现、lookupReady、routeNotReadyError、进程级就绪闸、启动探针、装配函数），以及 `route_ready_gate_test.go`、`route_ready_integration_test.go`；
+  - `placement_route.go`：lookup 与 confirm 共用一个读取入口。`Placement.RequireRouteReady=true` 时走 `placement.RouteReadyReadScript`。新哨兵 `errRouteNotReady` 写进了 `retryBudgetExempt`，读任务不豁免；复核时按「路由变了」处理；
+  - `store_failure.go`：新增延后原因常量 `route_not_ready`，没改既有判定顺序；
+  - `key_ordered_consumer.go`：两处查闸，一处在 ConsumeClaim 取消息前，一处在重试循环采样后、分拣认领前；另有 deferFailedTask 的一个 DEBUG 分支和装配传参；
+  - `config.go` 的 Placement 段加了两个字段；`etc/db.yaml` 的 Placement 段同步；
+  - `metrics.go` 追加 `db_route_ready_gate`、`db_route_ready_verdict_total` 和 outcome `route_not_ready`，只在开关打开时才注册和预置。
+  - ~~**未核对**：本线提醒过「就绪闸要能被 pullStop / ctx 打断，并保留重新入组退避」，对方还没评审核对。Codex 验证 go/db 时，要重点跑停机用例（`consumer_shutdown_test.go`），确认开关打开后 Stop 不会被闸卡住。~~
+  - **2026-10-20 已由本线静态核对，补了修复与用例**（未编译、未测试，待 Codex 验证；详见 PROGRESS 2026-10-20「go/db 就绪闸停机与退避接缝核对」）：
+    - 两条接缝在代码上成立。
+      - 闸只在 ConsumeClaim 顶层 select 里替换通道值，与 pullStop、会话 ctx、yieldDone、failureCh 同在一个 select。c.ctx 取消经 consumeCtx 传到会话 ctx。
+      - 重试循环的闸检查不阻塞。刷新 goroutine 随 c.ctx 退出。
+      - R7 的消费循环、`waitRejoinBackoff`、`claimFailed` 都没改。闸关期间 ConsumeClaim 不返回，不制造入组抖动。
+    - 修了一个 minor：闸由开转关时，空闲分区上等消息的 claim 不被唤醒，闸关后不论隔多久，仍会漏取一条，推进重试队列。改法在 `route_ready_gate.go` 的 `gatedMessages`：闸放行时也带上刷新通道。另顺手更正了刷新 / 探针时限的注释：ctx 管不到 go-redis 的在途读写。
+    - **更正验证口径**：`consumer_shutdown_test.go` 里的闸全是 nil，单跑它证明不了「开关打开后 Stop 不卡」。改为跑 `route_ready_gate_shutdown_test.go`（9 条）与 `route_ready_gate_test.go` 的闸用例，命令见 launch-todo §停机。
 
 ### 7.8 与「落地恢复与围栏」会话（已停，交其接手方）
 

@@ -293,6 +293,7 @@ spec:
         # 它有过一段恒为空向量、永远不会响的时期(Prometheus 对恒空表达式不报错):
         #   - "scene_gone" 的唯一发射点在提交 a0152a5b8(2026-05-02)随 destroy-while-entering
         #     分支一起被删。这条分支在提交 d41219ca7(2026-05-30)加了回来(go/scene_manager/internal/logic/enterscenelogic.go
+        #     (2026-10-12 历史改写后,这两个提交号分别是 0e26844b5 与 f3f08e2ad,旧号在本仓已查不到。)
         #     里 AtomicIncrPlayerCountIfSceneExists 返回 <0 → ErrNoAvailableNode
         #     "scene %d disappeared during enter"),但当时**没有**带回 enter_scene_rejected_total,
         #     只记了 enter_scene_stage_seconds{stage="reserve"} 的耗时。
@@ -302,6 +303,12 @@ spec:
         #
         # 现在真实发射的 reason:下面 9 个(metrics.go 的 Help;发射点在 enterscenelogic.go / home_zone.go),
         # 外加列在它们之后的 channel_* 5 个(玩家主动选线预检,发射点在 channel_pick.go):
+        # (2026-10-20 补:Help 里另有 3 个本清单没列的 reason,本组都不按它们告警。
+        #   home_zone_merging:归属 zone 处于合服围栏内,zone_id 是 gate zone,只应在合服窗口里非 0;
+        #   session_stale:落点会话身份裁决拒绝,顶号竞态下偶发属正常;
+        #   session_conflict:同上一类裁决,应恒 0,已由下面 scene-manager.placement-identity 组按
+        #   placement_identity_total 告警。
+        #  逐个 reason 的含义以 metrics.go 里 enterSceneRejectedTotal 的注释为准。)
         #   handoff_pending_no_marker     **不告警**。生产配置(AllowUnsafeCrossNodeHandoff=false)下,
         #                                 客户端每一次跨节点换图的第一跳都注定拿到它:源 scene 收到 18 才
         #                                 冻结 → 存盘 → 写 handoff 标记 → 重发(docs/design/
@@ -446,8 +453,9 @@ spec:
               原地收 tip;第二条腿上是目标 zone,玩家已离开源 scene、落不了地,优先处理(指标与
               日志都不区分两条腿,要看该玩家的 player:{id}:location 是否为无 node_id 的等待落点)。
               处置:跑 tools/merge_zone 的 -backfill-home-zone 回填映射;若此前已回填过,查 data_service
-              的映射 Redis 是否丢过数据。scene_manager 日志搜 "[home-zone] 跨 zone 传送被拒" 可看到
-              具体 player(每次拒绝一条 ERROR,由玩家操作直接触发)。
+              的映射 Redis 是否丢过数据。scene_manager 日志搜 "[home-zone] Cross-zone travel rejected"
+              可看到具体 player(每次拒绝一条 ERROR,由玩家操作直接触发;2026-10-13 日志英文化之前的
+              原文是 "[home-zone] 跨 zone 传送被拒")。
             runbook_url: docs/design/cross-zone-scene-travel.md
 
         - alert: SceneManagerZoneTravelMapUnavailable

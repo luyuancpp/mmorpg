@@ -205,6 +205,59 @@ func TestPlayerFields_CorruptKeysFailClosed(t *testing.T) {
 	}
 }
 
+// 版本位数上限(≤15 位)。版本经 tonumber 与 INCR 进入 Lua 都是 double,只在 2^53 以内精确:上限内的最大值照常存盘,
+// 新版本与戳都精确;16 位起按损坏拒写、零副作用。2^53+1 那一组在旧守卫(≤18 位)下是红的:它与 ExpectedVersion=2^53
+// 经 tonumber 都舍入成 2^53,CAS 误放行并写入。gopher-lua 的 tonumber 同样落到 float64,miniredis 上复现得出来。
+func TestSave_VersionPrecisionCap(t *testing.T) {
+	ctx := context.Background()
+	const maxVersion uint64 = 999999999999999 // 15 位最大值
+	maxStr := strconv.FormatUint(maxVersion, 10)
+	nextStr := strconv.FormatUint(maxVersion+1, 10) // 10^15,16 位
+
+	// 上界:已索引玩家,当前版本是 15 位最大值。INCR 后的 10^15 仍在 2^53 以内,NewVersion 精确;戳取 GET 出来的串,
+	// 不是 Lua 数字转串("1e+15")。
+	tc := newTestCtx(t, 9320)
+	require.NoError(t, tc.mr.Set(playerField(tc.pid, "bag"), "b0"))
+	require.NoError(t, tc.mr.Set(versionKey(tc.pid), maxStr))
+	tc.mr.HSet(fieldIndexKey(tc.pid), "bag", "", fieldIndexStampField, maxStr)
+	saved, err := SavePlayerData(ctx, tc.svc, &SavePlayerDataReq{
+		PlayerID: tc.pid, Data: map[string][]byte{"bag": []byte("b1")}, ExpectedVersion: maxVersion,
+	})
+	require.NoError(t, err)
+	require.Equal(t, constants.ErrCodeOK, saved.ErrorCode)
+	assert.Equal(t, maxVersion+1, saved.NewVersion)
+	ver, _ := tc.mr.Get(versionKey(tc.pid))
+	assert.Equal(t, nextStr, ver)
+	assert.Equal(t, nextStr, tc.mr.HGet(fieldIndexKey(tc.pid), fieldIndexStampField))
+
+	// 再存一次:当前版本已是 16 位,按损坏拒写,字段、版本、戳都不动。
+	saved, err = SavePlayerData(ctx, tc.svc, &SavePlayerDataReq{
+		PlayerID: tc.pid, Data: map[string][]byte{"bag": []byte("b2")}, ExpectedVersion: maxVersion + 1,
+	})
+	require.Error(t, err)
+	assert.Equal(t, constants.ErrCodeRedis, saved.ErrorCode)
+	assert.Contains(t, err.Error(), "version value malformed")
+	bag, _ := tc.mr.Get(playerField(tc.pid, "bag"))
+	assert.Equal(t, "b1", bag)
+	ver, _ = tc.mr.Get(versionKey(tc.pid))
+	assert.Equal(t, nextStr, ver)
+	assert.Equal(t, nextStr, tc.mr.HGet(fieldIndexKey(tc.pid), fieldIndexStampField))
+
+	// 2^53+1 带过期一格的 ExpectedVersion=2^53:必须在比较之前按位数拒绝,不能让舍入后的「相等」放行。
+	tc = newTestCtx(t, 9321)
+	makeLegacyPlayer(t, tc.mr, tc.pid, map[string]string{"bag": "b0"}, "9007199254740993")
+	saved, err = SavePlayerData(ctx, tc.svc, &SavePlayerDataReq{
+		PlayerID: tc.pid, Data: map[string][]byte{"bag": []byte("stale")}, ExpectedVersion: 9007199254740992,
+	})
+	require.Error(t, err)
+	assert.Equal(t, constants.ErrCodeRedis, saved.ErrorCode)
+	assert.Contains(t, err.Error(), "version value malformed")
+	bag, _ = tc.mr.Get(playerField(tc.pid, "bag"))
+	assert.Equal(t, "b0", bag, "过期的 ExpectedVersion 不能因舍入相等而写入")
+	ver, _ = tc.mr.Get(versionKey(tc.pid))
+	assert.Equal(t, "9007199254740993", ver)
+}
+
 // 保留名(内部键前缀 __、别的模块的 save_barrier / asset_sql_commit):四个入口都拒绝,别家的键原样不动。
 func TestReservedNamesRejected(t *testing.T) {
 	ctx := context.Background()

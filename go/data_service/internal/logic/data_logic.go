@@ -183,8 +183,10 @@ func loadSelectedPlayerFields(ctx context.Context, client goredis.Cmdable, playe
 // loadAllFieldsScript 是全量读(只读)。KEYS[1] = 版本键,KEYS[2] = 字段索引,ARGV[1] = 前缀 player:{id}:。
 // 返回 {0}(无数据)、{1, ver, 名1, 值1|false, ...}(已索引:字段集合、值、版本同一瞬间)或 {2, ver|false}(未索引,需回退)。
 // GET 缺失回 false,在表里占位、不截断返回数组;名字对应的键不是 string 时 redis.call 报错,整体 fail-closed。
-// 按名字拼出的字段键没有在 KEYS 里声明,但与 KEYS 同 slot:单实例没有限制,Redis 7 Cluster 允许访问同 slot 的未声明键,
-// 跨 slot 会报错而不是静默(先例见 routing.getHomeZoneAndMergeFenceScript);改键格式要同步这里。
+// 按名字拼出的字段键没有在 KEYS 里声明,但与 KEYS 同 {id} slot:单实例没有限制,Cluster 放行同 slot 的未声明键。
+// 不能指望 Redis 替拼错的键报错:本仓脚本无 shebang,是 EVAL 兼容模式(带 SCRIPT_ALLOW_CROSS_SLOT),跨 slot 但仍在
+// 本节点的未声明键**静默放行**,只有落在别的节点才报 "non local key"(两种情形由 TestRealRedisClusterUndeclaredKeys 钉住)。
+// 正确性只靠拼出的键与 KEYS 共用 {id} hash tag;改键格式要同步这里。
 const loadAllFieldsScript = `
 local vtype = redis.call('TYPE', KEYS[1]).ok
 if vtype ~= 'none' and vtype ~= 'string' then
@@ -445,10 +447,17 @@ func acquirePlayerLock(ctx context.Context, svcCtx *svc.ServiceContext, op strin
 // 合法拿走。所有 player:{id}:* key 共享 {id} hash-tag(见 playerDataPrefix),
 // 同一 slot,Cluster 下单脚本可覆盖。
 //
-// Lua 出错不会回滚已执行的写,所以所有可失败的检查都在第一条 SET 之前:版本键类型与格式(规范十进制:无前导零、≤18 位。
-// 真 Redis 的 INCR 拒绝 "007" 这类前导零串,miniredis 却接受,所以守卫不能只查「全是数字」;≤18 位保证 INCR 不溢出)、
+// Lua 出错不会回滚已执行的写,所以所有可失败的检查都在第一条 SET 之前:版本键类型与格式(规范十进制:无前导零、≤15 位)、
 // 锁 token、期望版本、索引类型、每个字段键的类型(不是 none / string 就零副作用拒写,防止把别家的 HASH 覆盖成 string)。
 // 「写成功必 INCR」是全量读回退兜底的前提。
+//
+// 版本格式守卫的两条理由:
+//   - 规范十进制:真 Redis 的 INCR 拒绝 "007" 这类前导零串,miniredis 却接受,所以守卫不能只查「全是数字」;
+//   - ≤15 位是精度上限,不是格式:版本经 tonumber 与 INCR 进入 Lua 都是 double,只在 2^53 以内精确。超过之后相邻整数
+//     舍入成同一个数,过期的 expected_version 会被当成相等放行(2^53+1 与 2^53 都变成 2^53),返回的 new_version 也不准。
+//     ≤15 位时当前版本 < 10^15、INCR 后 ≤ 10^15,都在 2^53 以内;expected_version 超过 2^53 时 tonumber 也会舍入,
+//     但舍入后仍 ≥ 2^53,不会与当前版本相等。更大的版本只可能是带外写坏的,按损坏拒写(单玩家存盘次数到不了 10^15)。
+//     读路径不经 Lua 数字(版本以字符串回到 Go,ParseUint 精确),所以 parseVersionValue 只查规范十进制、不设位数上限。
 //
 // 字段索引(见上文「字段索引」):
 //   - 新玩家(版本、索引都不存在)或索引可信 → 把本次字段名加进索引并把戳盖成新版本;
@@ -467,7 +476,7 @@ if vtype ~= 'none' and vtype ~= 'string' then
 	return redis.error_reply('PLAYER_FIELDS version key wrong type: ' .. vtype)
 end
 local ver = redis.call('GET', KEYS[2])
-if ver and (not (ver == '0' or string.match(ver, '^[1-9]%d*$')) or #ver > 18) then
+if ver and (not (ver == '0' or string.match(ver, '^[1-9]%d*$')) or #ver > 15) then
 	return redis.error_reply('PLAYER_FIELDS version value malformed')
 end
 local cur = tonumber(ver or '0')
@@ -698,6 +707,7 @@ func parseVersionValue(playerID uint64, val string) (uint64, error) {
 	}
 	// 非规范十进制(前导零等)按损坏处理,与 saveFieldsScript 的守卫同一口径:真 Redis 的 INCR 不接受它,
 	// 读路径若照常回 Version,调用方据此存盘只会撞上写侧的 fail-closed。
+	// 写侧的 ≤15 位上限这里不跟:那是 Lua double 的精度限制,读路径不经 Lua 数字,ParseUint 对整个 uint64 都精确。
 	if strconv.FormatUint(v, 10) != val {
 		return 0, fmt.Errorf("corrupt version value %q for player %d: not canonical decimal", val, playerID)
 	}

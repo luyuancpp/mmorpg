@@ -47,7 +47,7 @@
 4. **双属主窗口与排空超时后的重叠**：只靠排序锁与 applied 游标兜底，彻底封死要靠 MySQL 条件写。见 §6.3、§12.3。
 5. **WAITAOF 不覆盖游标、收据 ack 与重试源搬移**：AOF 尾巴丢失时游标可能回退，旧 seq 收据重放会把 MySQL 覆盖回旧档，只能由 MySQL 条件写封死。见 §7.7。
 6. **位点语义**：再平衡、交接让出与失败收尾走 `drainAfterStop`，之后等到的确认不再标记位点，这些 offset 由新属主重投；MySQL 故障期间每次再平衡每分区多重投约 100～200 条（推算）。见 §7.4。
-7. **WAITAOF fail-closed 的可用性代价**：确认不足时 claim 失败并触发再平衡；入队层吞吐上限约每次 fsync 一批，超出时背压成 Kafka lag；redis-ha 接入、`WaitAOFNumReplicas=1` 后，副本维护期间失败路径上的分区都会停滞。见 §7.5、§7.10、§10.2「redis-ha 接入时」。
+7. **WAITAOF fail-closed 的可用性代价**：确认不足时 claim 失败并触发再平衡；入队层吞吐上限约每次 fsync 一批，超出时背压成 Kafka lag；K8s 共享 Redis 切到 redis-ha 后，`k8s_deploy.ps1` 把 db ConfigMap 的 `WaitAOFNumReplicas` 渲染成 1（2026-10-19 部署侧落码，未运行，待 Codex 验证），副本维护期间失败路径上的分区都会停滞。见 §7.5、§7.10、§10.2「redis-ha 接入时」。
 8. **重复副本**：来源有五类，死信里的副本没有硬上界，需人工按 taskID 或 (topic, partition, offset) 去重。见 §7.6、§7.10。
 9. **防重记录与待重搬表的边界**：Redis 卡顿超过 5 分钟（记录 TTL）时可能重复 POP / LREM；待重搬表随进程崩溃丢失，靠租约过期后别的实例回收。见 §7.8、§7.9。
 10. **回滚到 S1 之前的镜像**：DbRetryPartitionedStranded 只在 6h 窗口内有效，过后只能靠 `retry_requeue -check`；退出码 5 看不见不登记模式的早期 S1 镜像，三项人工核对不能省。见 §10.3–§10.5、§11。
@@ -81,7 +81,7 @@
 | `go/db/internal/metrics/metrics.go` | §11 用到的全部指标与常量 |
 | `go/db/cmd/retry_requeue/main.go` | 回滚工具（§10.4） |
 | `go/db/etc/db.yaml` | `ServerConfig.Kafka.RetryRouting: shared`；`ServerConfig.RedisClient.WaitAOFNumLocal: 1` / `WaitAOFNumReplicas: 0` / `WaitAOFTimeoutMs: 1500` |
-| `tools/scripts/k8s_deploy.ps1` | db ConfigMap 原样镜像这四个键（`$dbRetryRouting`、`$dbWaitAOF*`）；`Test-DbReplicaPartitionBudget`、`Assert-DbReplicasWithinPartitionContract`；Redis 连接总账 db 行 `Fixed = 2` |
+| `tools/scripts/k8s_deploy.ps1` | db ConfigMap 原样镜像其中三个键（`$dbRetryRouting`、`$dbWaitAOFNumLocal`、`$dbWaitAOFTimeoutMs`），`$dbWaitAOFNumReplicas` 按共享 Redis 形态渲染（`Get-MappingRedisTopology` → `Get-RouteStoreWaitAOFNumReplicas`，与 data-service 的 `RouteStore.WaitAOFNumReplicas` 同一个函数：单实例 0、redis-ha 1；2026-10-19 起，未运行，待 Codex 验证）；`Test-DbReplicaPartitionBudget`、`Assert-DbReplicasWithinPartitionContract`；Redis 连接总账 db 行 `Fixed = 2` |
 | `deploy/k8s/db-task-retry-alerts.yaml` | 组 `db-task.retry-and-dead-letter` 里的 ④ / WAITAOF 告警（§11） |
 | `tools/merge_zone/preflight.go`、`audit_checks.go` | `dbRetryPartitionQueuePrefix`、`dbRetryPartitionQueuePattern`、`escapeRedisGlob`、`dbTaskQueueKeys`（SCAN 发现 p*，出错 fail-closed） |
 
@@ -474,14 +474,14 @@ type durableEnqueue interface {
 |---|---|---|---|---|
 | `ServerConfig.Kafka.RetryRouting` | string | 空串 = `shared` | `shared` \| `owner`（大小写敏感） | 环境变量 `DB_RETRY_ROUTING` 去掉首尾空白后非空时优先，只用于单 zone 金丝雀；非法值拒启（`ResolveRetryRouting`，日志 `retry routing rejected: …`）；空串不在 Normalize 里回填，好让启动日志区分 `default` 与 `config` |
 | `ServerConfig.RedisClient.WaitAOFNumLocal` | *int | nil = 1 | 0 \| 1 | |
-| `ServerConfig.RedisClient.WaitAOFNumReplicas` | *int | nil = 0 | [0, 16] | redis-ha（有副本）接入时写 1 |
+| `ServerConfig.RedisClient.WaitAOFNumReplicas` | *int | nil = 0 | [0, 16] | db.yaml 保持 0，给本机 compose 单实例用（写 1 本机 go/db 的启动探针等不到副本而拒启）；K8s 上 db ConfigMap 的这一项不镜像 db.yaml，由 `k8s_deploy.ps1` 按共享 Redis 形态渲染：单实例 0、redis-ha 1（见本节末条） |
 | `ServerConfig.RedisClient.WaitAOFTimeoutMs` | int | 0 / 不写 = 1500 | [1, 2000]，负数拒启 | 默认不取 1000：everysec 下本地确认最长约 1s，再加事件循环延迟，1000 正压在边界上 |
 
 - **份数用 *int 的原因**：默认值 1 不是零值，而「显式写 0」又有合法语义。两项都写 0 = 关闭确认：退回 `directEnqueue`，启动打一行 ERROR `retry enqueue WAITAOF disabled …`。只给确实没开 AOF 的环境用。
 - **校验**：`(*Config).Validate` 在 `db.go` 的 Normalize 与 ResolveRetryRouting 之后调用，错误文本英文并点名键。
 - **启动日志**：`retry routing: mode=<shared|owner> source=<default|config|env DB_RETRY_ROUTING>`；横幅一行 `retry: routing=… (…) waitaof=<local>/<replicas>/<ms>ms`；开启时另有 `retry enqueue WAITAOF enabled: numlocal=… numreplicas=… timeout=… batchBudget=…`。
-- **Redis 要求**：≥ 7.2 且 `appendonly yes`。K8s `manifests/infra/redis.yaml` 以 `--appendonly yes` 启动；`deploy/docker-compose.yml` 的 redis 服务也开了 AOF。本机没开 AOF 的开发环境默认会拒启，需要显式写 0/0。appendfsync 不是 everysec 的部署（例如 `no`），WAITAOF 的本地确认行为没有核实，探针会拦。
-- **K8s 上改值必须 rollout restart**：ConfigMap 由 `k8s_deploy.ps1` 原样镜像 `go/db/etc/db.yaml` 的四个键，四个键在 db.yaml 里必须显式写出，`Get-AuthoritativeScalar` 查不到即 throw。只改 ConfigMap 不会滚动 db。
+- **Redis 要求**：≥ 7.2 且 `appendonly yes`。K8s `manifests/infra/redis.yaml` 以 `--appendonly yes` 启动（高可用形态 `redis-ha.yaml` 的每个 redis 节点同样开 AOF，镜像 `redis:7.2`）；`deploy/docker-compose.yml` 的 redis 服务也开了 AOF。本机没开 AOF 的开发环境默认会拒启，需要显式写 0/0。appendfsync 不是 everysec 的部署（例如 `no`），WAITAOF 的本地确认行为没有核实，探针会拦。
+- **K8s 上改值必须 rollout restart**：ConfigMap 由 `k8s_deploy.ps1` 原样镜像 `go/db/etc/db.yaml` 的 `RetryRouting`、`WaitAOFNumLocal`、`WaitAOFTimeoutMs` 三个键；`WaitAOFNumReplicas` 例外，按共享 Redis 形态渲染（`Get-RouteStoreWaitAOFNumReplicas`，与 data-service 的 `RouteStore.WaitAOFNumReplicas` 同一个函数：单实例 0、redis-ha 1；形态取 `-RedisReplicas` 与档位，zone 写路径没给参数时跟随线上 `statefulset/redis` 副本数）。db.yaml 的那一项保持 0 给本机 compose 单实例。四个键在 db.yaml 里仍必须显式写出，`Get-AuthoritativeScalar` 查不到即 throw。只改 ConfigMap 不会滚动 db。（渲染规则 2026-10-19 落码，未运行，待 Codex 验证。）
 
 ### 7.13 计数口径
 
@@ -536,7 +536,7 @@ B2 本轮不做（负责人拍板）。日后要做时，以下四条是硬约�
     - **滚动重启**：`db_durable_enqueue_total{result="canceled"}` 可以增长；`not_durable` / `error` 必须为 0；DbDurableEnqueueNotConfirmed 不响。
   - 原规格风险第 6 条要求的演练：
     - **MySQL 恢复期的重试回落时间**：同一负载、同一积压量下，分别在 `shared` 与 `owner` 两种模式下暂停本 zone 主库造出重试积压，恢复后记录 `db_retry_queue_length{queue=~"ready|partitioned"}`（口径同 DbTaskRetryQueueGrowing：先按 pod 把两项相加，再按 namespace 取 max；各 Pod 采的是同一组 Redis 列表，不能跨 Pod 相加）从峰值回落到 0 的时间，并对比两种模式。owner 明显更慢、而 MySQL 仍有余量时，按 B0 调 `ServerConfig.Kafka.SubShardCount`（本批不做）；结果写回 PROGRESS（§6.1「MySQL 恢复期 p* 只由属主排空」）。
-- **第 2 步：发布 S1 镜像**，`RetryRouting: shared`，WaitAOF 1/0/1500。`k8s_deploy.ps1 zone-up` 生成 ConfigMap，镜像变化会触发滚动。
+- **第 2 步：发布 S1 镜像**，`RetryRouting: shared`，WaitAOF 1/0/1500（db.yaml 的值；K8s 上副本份数按共享 Redis 形态渲染，redis-ha 形态为 1/1/1500，见 §7.12）。`k8s_deploy.ps1 zone-up` 生成 ConfigMap，镜像变化会触发滚动。
   - 每换一个 Pod 核对：`db_retry_routing_mode{mode="shared"} = 1`；`db_retry_queue_length{queue="partitioned"} = 0`；`db_durable_enqueue_total{result=~"not_durable|error"}` 不增（canceled 允许增长）；启动没有被拒（探针通过）；DbZoneNoPartitionClaims 不响。
   - 记录基线：`executed_nonowner` / `executed` 的比例、`db_ordering_lock_busy_total`、死信增速、`db_task_result_total{result="error"}`、Kafka lag。
   - 回滚：回旧镜像，不会残留 p*。
@@ -551,7 +551,9 @@ B2 本轮不做（负责人拍板）。日后要做时，以下四条是硬约�
   - 验收：每个 Pod 启动日志 `retry routing: mode=owner source=config`；24 小时内 `executed_nonowner = 0`；死信速率不升；p* 无长期积压；lag = 0；DbDurableEnqueueNotConfirmed、DbZoneNoPartitionClaims 不响。
   - 回滚到 shared：db.yaml 改回 `shared` → zone-up → rollout restart 加 status。
 - **告警**：`kubectl apply -n observability -f deploy/k8s/db-task-retry-alerts.yaml`（PrometheusRule）。
-- **redis-ha 接入时**：把 db.yaml 的 `WaitAOFNumReplicas` 改 1，再 zone-up 加 rollout restart，并重新评估 fail-closed 的可用性代价。副本维护期间所有失败路径上的分区都会停滞。
+- **redis-ha 接入时**：不改 db.yaml（`WaitAOFNumReplicas` 保持 0，给本机 compose 单实例；写 1 本机 go/db 的启动探针等不到副本而拒启）。K8s 上 db ConfigMap 的 `WaitAOFNumReplicas` 由 `k8s_deploy.ps1` 按共享 Redis 形态渲染（与 data-service 同一个 `Get-RouteStoreWaitAOFNumReplicas`：单实例 0、高可用 1；2026-10-19 部署侧落码，未运行，待 Codex 验证）。单实例切到高可用后，对每个 zone 重跑 zone-up（副本份数变 1），再 `kubectl -n mmorpg-zone-<z> rollout restart deploy/db` 加 `rollout status`（只改 ConfigMap 不会滚动），并重新评估 fail-closed 的可用性代价：
+  - 副本维护期间所有失败路径上的分区都会停滞；
+  - 三个 Redis Pod 同时坏两个时写入被拒（`min-replicas-to-write 1`）；切主后几秒内新主还没有从时，WAITAOF 确认失败（消息重投），此期间刚启动的 go/db 会被启动探针拒启。
 
 ### 10.3 回滚到 S1 之前的镜像（前置，已写进 release-checklist）
 
@@ -742,7 +744,7 @@ $env:GODB_REDIS_ITEST_ADDR='127.0.0.1:6379'; go test -count=1 -v -run 'TestDurab
 ### 13.2 其它目录
 
 - `tools/merge_zone`：`go vet ./...`；`go test -count=1 ./...`。
-- 仓库根：`pwsh -NoProfile -File tools/scripts/tests/k8s_deploy_contract.tests.ps1`（db ConfigMap 的 RetryRouting 与三项 WaitAOF == go/db/etc/db.yaml；`Test-DbReplicaPartitionBudget` 11 > 10 throw、10 == 10 放行、PartitionCnt = 0 throw；仓库 manifest 副本数 ≤ PartitionCnt）；`pwsh -NoProfile -File tools/scripts/test_stress_summarize.ps1`。0 失败。
+- 仓库根：`pwsh -NoProfile -File tools/scripts/tests/k8s_deploy_contract.tests.ps1`（db ConfigMap 的 RetryRouting、WaitAOFNumLocal、WaitAOFTimeoutMs == go/db/etc/db.yaml，WaitAOFNumReplicas 按共享 Redis 形态：dev 档缺省单实例 0、prod 档缺省高可用 1，db.yaml 那一项为 0；`Test-DbReplicaPartitionBudget` 11 > 10 throw、10 == 10 放行、PartitionCnt = 0 throw；仓库 manifest 副本数 ≤ PartitionCnt）；`pwsh -NoProfile -File tools/scripts/test_stress_summarize.ps1`。0 失败。
 - 可选：本机有 `promtool` 时，把 `deploy/k8s/db-task-retry-alerts.yaml` 的 `spec` 抽成规则文件跑 `promtool check rules`；没有就报告「告警语法未验证」。
 
 ### 13.3 本机端到端（Codex，非文件）

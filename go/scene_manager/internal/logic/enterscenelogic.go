@@ -326,12 +326,12 @@ func (l *EnterSceneLogic) EnterScene(in *scene_manager.EnterSceneRequest) (respo
 			currentZoneID = GetSceneZone(l.svcCtx, currentLoc.SceneId)
 		}
 	}
-	// 合服 / 下线 zone 留下的陈旧 location:旧 zone 里已经没有任何活着的场景
-	// 节点,就不存在「老节点还在存盘」这件事,下面两道交接门禁守护的对象已经
+	// 合服 / 下线 zone 留下的陈旧 location:旧 zone 在 etcd 注册表里已经没有任何
+	// 场景节点,就不存在「老节点还在存盘」这件事,下面两道交接门禁守护的对象已经
 	// 消失。此时把它当作没有位置记录处理,否则玩家从两条腿(经源区 Gate 走
 	// 重定向、经目标区 Gate 直接落点)都会被换手门(ErrHandoffPending:死掉的
-	// 源永远写不出落盘标记)永久挡在门外。判定规则见 playerLocationOwnerGone;
-	// 拿不准一律沿用原拒绝。
+	// 源永远写不出落盘标记)永久挡在门外。判定规则见 playerLocationOwnerGone
+	// (只认注册表的正面证据,负载集为空不算);拿不准一律沿用原拒绝。
 	if currentLoc != nil && l.playerLocationOwnerGone(currentLoc, currentZoneID) {
 		l.Logger.Infof("Ignoring stale player location in offline zone: player=%d stale_zone=%d stale_node=%s stale_scene=%d gate_zone=%d target_zone=%d",
 			in.PlayerId, currentZoneID, currentLoc.GetNodeId(), currentLoc.GetSceneId(), in.GateZoneId, targetZoneId)
@@ -583,8 +583,8 @@ func (l *EnterSceneLogic) EnterScene(in *scene_manager.EnterSceneRequest) (respo
 	//     正在消费「等待落点」= 跨 zone 传送的第二条腿,gate zone 是目标 zone,未映射必须拒绝
 	//     (纵深防御:第一条腿已经前置拒过,走到这里是两条腿之间映射丢了,或旧版本留下的记录)。
 	//     过期的等待落点只要还被采用就同样拒:玩家此刻从哪个 zone 的 gate 进来都证明不了那就是他的
-	//     归属。「被采用」= 没在上面被 playerLocationOwnerGone 过滤掉;等待落点所在 zone 已无任何
-	//     存活节点时 currentLoc 已是 nil,这里按首次落点回落 gate zone(该旁路只对未映射且已有
+	//     归属。「被采用」= 没在上面被 playerLocationOwnerGone 过滤掉;等待落点所在 zone 已整 zone
+	//     下线(注册表里没有任何节点)时 currentLoc 已是 nil,这里按首次落点回落 gate zone(该旁路只对未映射且已有
 	//     等待落点的玩家可达,即旧版本遗留 / 映射丢失)。
 	//     归属 zone 正在合服(home_zone_merging)时 resolveHomeZone 回 ErrHomeZoneMerging:同区落点、
 	//     同落点重连、第二条腿一律拒。走到这里之前本请求只动过去重占位与场景预占(下面成对释放),
@@ -1028,20 +1028,33 @@ func (l *EnterSceneLogic) playerLocationOwnerDead(loc *scene_manager.PlayerLocat
 // playerLocationOwnerGone 判定 loc 记录的属主节点是否已经**不可能**再写这名
 // 玩家的数据 —— 只有这时才允许把这条位置记录当作不存在,绕过交接门禁。
 //
-// 三个条件全部成立才算「已消失」,任何一个拿不准都 fail-closed(返回 false,
+// 以下条件全部成立才算「已消失」,任何一个拿不准都 fail-closed(返回 false,
 // 沿用换手门的拒绝):
 //
-//  1. loc 所在 zone 的节点负载集 scene_nodes:zone:{z}:load 为空 —— 整个 zone
-//     没有任何活着的场景节点(合服后源区永久下线就是这个形态)。只看单个
-//     node 不够:node_id 会被回收复用,老 zone 里换代顶上来的同号进程仍可能
-//     在写;zone 级别的空集才是「没人在写」的证据。
-//  2. IsNodeAlive(zone, node) 为 false —— 与 1 冗余,但它内部把 Redis 抖动
-//     当作存活、把重复 (zone,node) 身份当作不可信,正好补上 1 与本调用之间
-//     的状态变化窗口。
-//  3. 再入屏障已过(node:zone:{z}:{n}:death_at 不存在或已超过屏障时长)——
+//  1. etcd 注册表里 loc 所在 zone 已没有任何场景节点(isZoneGoneFromRegistry)——
+//     整个 zone 已下线的正面证据(合服后源区永久下线就是这个形态);本副本尚未
+//     完成首次全量同步时拿不到。只看单个 node 不够:node_id 会被回收复用,老 zone
+//     里换代顶上来的同号进程仍可能在写;zone 级别「一个注册都没有」才是「没人在写」
+//     的证据。
+//     **不能**只看负载集 scene_nodes:zone:{z}:load 为空:负载键丢失 / 被淘汰时
+//     ZCARD 读作 0、ZSCORE 为空、也没有 death_at,活着的持有节点会被判死 —— 玩家
+//     从别区 gate 登录时陈旧位置被过滤,在 gate zone 直接落点并铸造新 epoch,持有
+//     节点之后的存盘全被 owner CAS 拒绝,未落盘的进度回档(第二轮审计 r2-sm#3 的
+//     同源缺陷,2026-10-19 起;LeaveScene 一侧见 judgeHolderRelease)。
+//  2. 本副本亲眼看到 loc 的节点从注册表消失还不到一个屏障时长 → 不放行
+//     (localGoneBarrierBlocks,与 playerLocationOwnerDead 同一口径,不依赖 leader 写的 death_at)。
+//  3. 负载集为空 —— 注册已消失、leader 还没把成员摘干净(先写 death_at 再摘)时不抢跑。
+//  4. IsNodeAlive(zone, node) 为 false —— 与 3 冗余,但它内部把 Redis 抖动
+//     当作存活,正好补上 3 与本调用之间的状态变化窗口。
+//  5. 再入屏障已过(node:zone:{z}:{n}:death_at 不存在或已超过屏障时长)——
 //     节点刚从 etcd 消失时 C++ 老进程还有 kDrainBudget 的 emergency relocate
 //     在 SavePlayerToRedis;这段时间内它虽已不在负载集,却仍在写。屏障就是
 //     为这段窗口设的,这里不能绕过它。
+//
+// 有持有节点的位置,1 蕴含该节点不在注册表、也不可能身份歧义,1–5 合起来不弱于
+// playerLocationOwnerDead 的全部条件:这里放行的,单节点判死也一定放行。两者分开只为口径 ——
+// 整 zone 下线不计 dead_owner_takeover、不还旧场景人数,屏障计数记在 stale_location 站点。
+// 等待落点(node_id 为空)没有持有节点,2、5 不适用。
 //
 // zone 无法确定(zone_id=0 且 scene:{id}:zone 也没了)时同样 fail-closed:
 // 没有 zone 就无法证明物理节点身份,与门禁本身的口径一致。
@@ -1049,19 +1062,26 @@ func (l *EnterSceneLogic) playerLocationOwnerGone(loc *scene_manager.PlayerLocat
 	if loc == nil || zoneID == 0 {
 		return false
 	}
+	if !isZoneGoneFromRegistry(zoneID) {
+		return false
+	}
+	nodeID := loc.GetNodeId()
+	if nodeID != "" && localGoneBarrierBlocks(l.svcCtx, zoneID, nodeID) {
+		return false
+	}
 	liveNodes, err := l.svcCtx.Redis.Zcard(nodeLoadKey(zoneID))
 	if err != nil {
 		l.Logger.Errorf("Failed to read zone node load set; stale-location check remains fail-closed: zone=%d node=%s err=%v",
-			zoneID, loc.GetNodeId(), err)
+			zoneID, nodeID, err)
 		return false
 	}
 	if liveNodes > 0 {
 		return false
 	}
-	if IsNodeAlive(l.svcCtx, zoneID, loc.GetNodeId()) {
+	if IsNodeAlive(l.svcCtx, zoneID, nodeID) {
 		return false
 	}
-	if loc.GetNodeId() != "" && reentryBarrierBlocks(l.svcCtx, zoneID, loc.GetNodeId(), barrierSiteStaleLocation) {
+	if nodeID != "" && reentryBarrierBlocks(l.svcCtx, zoneID, nodeID, barrierSiteStaleLocation) {
 		return false
 	}
 	return true

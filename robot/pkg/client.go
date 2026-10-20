@@ -226,6 +226,19 @@ func (gc *GameClient) Call(messageId uint32, body proto.Message, timeout time.Du
 // ⚠️ 禁止在 RecvLoop 所在的 goroutine 上调用(消息处理器、done 回调、pkg/redirect.go 的重定向重登录都在那里):
 // 回包只能由 RecvLoop 派发,在那里阻塞等回包就是自锁,只能以超时收场。
 func (gc *GameClient) CallSync(ctx context.Context, messageId uint32, body proto.Message, timeout time.Duration) (*base.MessageContent, error) {
+	return gc.CallSyncThen(ctx, messageId, body, timeout, nil)
+}
+
+// CallSyncThen 与 CallSync 相同,只多一个 onReply:本次请求的回包(成功或信封错误)到达时,先在派发它的
+// goroutine(RecvLoop,或同步握手里的 RecvOne)上以 (reply, err) 调用 onReply,再唤醒调用方。
+// 超时、断线、ctx 先结束、本地未发出这些没有回包的结局不调用 onReply。
+//
+// 用于回包的副作用必须按收包顺序执行的调用方:例如把回包交给生成的 handler 写 Player 状态。在调用方
+// goroutine 上补跑会与 RecvLoop 上同连接后到的推送处理器交错,较旧的回包可能盖掉较新的推送。onReply 返回后
+// CallSyncThen 才返回,所以调用方随后读到的就是这次回包写下的状态。onReply 与 Call 的 done 一样**不得阻塞**;
+// 为 nil 时等同 CallSync。CallSync 的 goroutine 限制同样适用。
+func (gc *GameClient) CallSyncThen(ctx context.Context, messageId uint32, body proto.Message, timeout time.Duration,
+	onReply func(*base.MessageContent, error)) (*base.MessageContent, error) {
 	if ctx.Err() != nil {
 		return nil, context.Cause(ctx)
 	}
@@ -236,6 +249,9 @@ func (gc *GameClient) CallSync(ctx context.Context, messageId uint32, body proto
 	// 容量 1:done 恰好写一次且从不阻塞,哪怕本函数已经因 ctx 返回。
 	result := make(chan outcome, 1)
 	id := gc.startCall(messageId, body, timeout, func(reply *base.MessageContent, err error) {
+		if reply != nil && onReply != nil {
+			onReply(reply, err)
+		}
 		result <- outcome{reply: reply, err: err}
 	})
 	select {

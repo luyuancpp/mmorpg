@@ -43,13 +43,17 @@ const RouteReadyKey = "mapping:route:ready"
 const RouteReadyFormatVersion = 1
 
 // RouteReadyMarker 是 mapping:route:ready 的值(提案 §11.2「第 1b 批」)。必须存成 **string** 类型的 JSON:
-// 第 3 批的 go/db 用 MGET 一并读它,MGET 对非 string 类型的键回 nil,会被当成缺席。
+// 读方(go/db、data_service、guild)经 RouteReadyReadScript 的 redis.pcall('GET') 读它,键不是 string 类型时按缺席处理
+// (verdict=absent),整段脚本不报错;读方不再用 MGET 读标记(2026-10-20 更正,原句写的是第 3 批之前的 MGET 设计)。
 //
 //   - Generation:写标记时 route_meta.generation(库世代),与库不等即说明库被重置过;
 //   - RedisRunID / MasterReplID:写标记时 mapping Redis 的 INFO server run_id 与 INFO replication master_replid,
 //     与当前实例不等 = Redis 重启 / 切主 / 换实例,标记不再可信;
 //   - SetAtMs:写标记时的库时钟(诊断;第 1b-2 批 rewarm 用它判「新标记」);
-//   - WatermarkMs:最近一次提交的 route_reconcile.watermark_ms,即「缓存截至」的库时钟,回档检测与回看修补都用它;
+//   - WatermarkMs:写 / 每拍 CAS 更新标记时的 route_reconcile.cache_verified_ms(cvm,「缓存已验证到」的库时钟;
+//     spec_D1_batch1b2_2_3.md §13.1 第 2 条),不是库水位 watermark_ms。只用于两处:身份变化后的回看修补起点
+//     max(0, min(WatermarkMs, 库 cvm) − RepairLookbackMs),以及 route_tool unfreeze 取库水位下限。**库回档检测不用它**,
+//     只看水位键 RouteWatermarkKey(M3)、世代与 cache_ahead —— 不要拿它当库水位或回档判据;
 //   - Leader:写标记的 leader 标识(诊断),字符集与 player_route.updated_by 相同。
 type RouteReadyMarker struct {
 	V            int    `json:"v"`

@@ -173,7 +173,17 @@
   - sarama 自身的网络调用(提交、心跳、JoinGroup、LeaveGroup)慢时,Close 照样要等,只受它的 Net 超时(默认 30s)和 `terminationGracePeriodSeconds: 45` 兜底,不受我们控制;
   - ④ 要等在途写 SQL 的读超时;②③④ 累加可能超过 45s,超出部分由 SIGKILL 截断,没标记的位点由新属主重放。
 - 另一处缺口(未修,建议单独立项):`routeToSubShard` 在 `subShardCount ≤ 1` 时对子 shard 通道做阻塞发送,没有 `w.ctx` 出口。④ 取消之后,如果子 shard 先退出而通道已满,路由会永久阻塞,`c.wg.Wait` 随之挂住。生产 `SubShardCount: 8`(go/db/etc/db.yaml)碰不到。
-- 回归测试在 `go/db/internal/kafka/consumer_shutdown_test.go`,替身 `fakeConsumerGroup` 已按 sarama 的锁语义改写:Consume 持锁直到会话释放,Close 先关 closed 再拿锁。
+- 读方就绪闸(D1 第 3 批;2026-10-20 核对补记,未编译、未测试,待 Codex 验证):`Placement.RequireRouteReady=true` 时 ConsumeClaim 顶层 select 多一个等待点。
+  - 闸只替换 select 里的通道值(`gatedMessages`):
+    - 闸关时消息通道为 nil,另带「下一次刷新完成」一路;
+    - 闸放行时消息通道照常,也带这一路,刷新把闸关上时立即醒来、停在闸前,不会在闸关之后再漏取一条。
+  - 它与 `pullStop`、会话 ctx、`yieldDone`、`failureCh` 同在一个 select。撤拉取照常转 `drainClaimForShutdown`;c.ctx 取消经 consumeCtx 传到会话 ctx。
+  - 约束:
+    - 闸不得挪进 Start 的入组循环:被闸住的成员不该离组,而且那样会和重新入组退避(R7)互相绕开;
+    - 也不得写成 select 之外的阻塞等待:那样 Stop 会被闸卡住。
+  - 重试循环的闸检查不阻塞。刷新 goroutine 随 c.ctx 退出,不在 `c.wg` 里,Stop 不等它。
+  - 规格 `spec_D1_batch1b2_2_3.md` §13.2 第 1 条说的「消费循环」指 ConsumeClaim 的主循环,不是 Start 的入组循环。
+- 回归测试在 `go/db/internal/kafka/consumer_shutdown_test.go`,替身 `fakeConsumerGroup` 已按 sarama 的锁语义改写:Consume 持锁直到会话释放,Close 先关 closed 再拿锁。这个文件里的闸全是 nil;开关打开的情形在 `route_ready_gate_shutdown_test.go`,覆盖 Stop、再平衡、交接让出、停机排空、退避、闸由开转关。
   - claimAcker:`TestClaimAcker_UntrackRemovesOnlyUndispatchedTail`、`TestClaimAcker_UntrackConcurrentWithAck`;
   - ConsumeClaim:`TestConsumeClaim_ShutdownWhileDispatchBlockedUntracks`、`…DispatchBlockedReturnsWithinDrainTimeout`、`…DrainStopsWhenWorkersCanceled`、`…DrainIgnoresHandoffYield`、`…WhileDrainingClosedMessagesMarks`、`…WhileDrainingClosedMessagesReturnsWithinDrainTimeout`(后两条用 `probedSession` / `probedClaim` 计 select 求值次数,确定地停在关闭分支的排空 select 上);
   - Stop:`TestStop_FullWorkerQueueDoesNotStallLeave`、`TestStop_DrainTimeoutCancelsWorkersBeforeLeave`、`TestStop_WhileHandoffGateWaitingReturnsPromptly`、`TestStop_MemberWithoutClaimsReturnsPromptly`。
@@ -364,6 +374,7 @@
 - 整批一个 Lua,或把判定规则写进 Lua:前者长时间阻塞登录同步路径也在用的 Redis,后者造出两份真相。
 - 缓存落点省 MGET、把复核挪到 SQL 之前、做了条件写后删复核:违反 player-storage-placement.md 的 P-3 与 §6.3。
 - 为 Redis Cluster 改 hash tag 键名:破坏滚动升级兼容与 merge_zone 的锁键镜像。
+  - **(2026-10-19 指向注,上条原文保留)** 本条不再作为否决理由:负责人 2026-10-13 已定 Redis 分片 hash tag「以按 player_id 分片为准」(PROGRESS「2026-10-14 存盘管线接手」条目 §5 拍板记录第 16 条),2026-10-17 又拍板核心走「单元化 + 单元内 Redis Cluster 按 `{player_id}` 分片」。上面两点改为分片迁移必须满足的约束:排序锁改名与 `tools/merge_zone/relocate.go` 的 `orderingLockKey` 镜像同批改;核心闭包键改名不做双读,走停写切换或版本门禁([shared-redis-split-by-purpose.md](shared-redis-split-by-purpose.md) §20.7)。分片时还要算进 db-write-fencing-mysql.md §6.4 的同 tag 约束:令牌发布脚本里的排序锁、子表缓存、资产证据与 `save_barrier` 同 tag(若该稿 §18.7 选 A 值封装,缓存可以脱离);围栏 §5.5 推进脚本里的排序锁、游标、已落库 epoch 同 tag。详见该稿 §20、§21.6(纯设计,未落码)。
 
 ### 6.6 proto2mysql 条件写原语(2026-10-13,已推分支,未验证)
 

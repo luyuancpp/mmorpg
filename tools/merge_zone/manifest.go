@@ -160,7 +160,43 @@ type mergeManifest struct {
 	// (§4.4):清单玩家的落点 = 这里的值,不在这里的 = "{src}:1"(pin)/ 无记录(copy)。
 	PlacementExisting []manifestPlacement `json:"placement_existing,omitempty"`
 
+	// RouteSource 是写这份清单的运行用的映射来源(-route-source db|redis,D1 第 2 批)。合服续跑必须同一个来源
+	// (checkManifestRouteSource):换来源续跑 = 前一半写在 mapping Redis、后一半写在全局库(或反过来),另一边看不见前一半
+	// —— 典型是跨提案 §13.4 的 P2 / P4 边界续跑,而 P1~P4 的冻结窗口本来就禁止 merge_zone 写模式。
+	// 撤销(-mode unmerge)不要求一致:合服在 P1 之前做完、撤销在 P4 之后做是合法的(P3 的导入与审计保证库与 Redis 一致),
+	// 只打一行日志。本字段之前写的清单没有它 = redis(那时只有直写 Redis 这一种做法)。
+	// 新增字段不升 manifestVersion:既有字段语义没变;旧版工具读到它会忽略。
+	RouteSource string `json:"route_source,omitempty"`
+
 	Steps map[string]manifestStep `json:"steps"`
+}
+
+// recordedRouteSource 返回清单记录的映射来源;没有记录(route_source 字段之前写的清单)按 redis。
+func recordedRouteSource(recorded string) string {
+	if recorded == "" {
+		return routeSourceRedis
+	}
+	return recorded
+}
+
+// checkManifestRouteSource 核对清单记录的映射来源与本次 -route-source 一致(合服续跑、搬库续跑与放弃搬库共用)。
+// kind 只进报错文案("merge" / "relocate")。记录了不认识的值同样拒绝:宁可停下来,也不猜它当初写在哪。
+func checkManifestRouteSource(kind, recorded, current string) error {
+	got := recordedRouteSource(recorded)
+	if got != routeSourceDB && got != routeSourceRedis {
+		return fmt.Errorf("the %s manifest records an unknown route_source %q — refuse to guess", kind, recorded)
+	}
+	if got == current {
+		return nil
+	}
+	note := ""
+	if recorded == "" {
+		note = " (no route_source field: written before -route-source existed, i.e. by the Redis-only tool)"
+	}
+	return fmt.Errorf("the %s manifest was written with -route-source %s%s but this run uses -route-source %s: switching the route "+
+		"source half-way leaves the earlier writes where the other source cannot see them. Finish (or undo) this run with "+
+		"-route-source %s; if that source is no longer usable here (the rollout crossed P2 / P4 while it was half done), stop "+
+		"and escalate (docs/ops/merge-zone-runbook.md §15)", kind, got, note, current, got)
 }
 
 // rowsMode 返回清单记录的玩家行模式;没有记录(本字段之前写的清单)按 copy。

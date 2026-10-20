@@ -10,7 +10,7 @@
 
 #include "rpc/service_metadata/player_scene_service_metadata.h"
 
-#include "network/player_message_utils.h"
+#include "network/client_message_sender.h"
 #include "network/network_utils.h"
 #include "engine/thread_context/node_context_manager.h"
 #include "proto/scene_manager/scene_manager_service.pb.h"
@@ -27,7 +27,7 @@
 #include "player/system/enter_fence.h"
 #include "player/system/player_lifecycle.h" // IsSceneChangeBusy / RequestSceneChange:换图发送侧闸与 EnterScene 唯一发送入口
 #include "player/system/player_tip.h"
-#include "core/network/grpc_call_types.h"      // GrpcCallOutcome:镜像 CreateScene 的每次调用回调
+#include "core/network/grpc_client_call.h"      // GrpcCallOutcome:镜像 CreateScene 的每次调用回调
 #include "proto/common/base/node.pb.h"      // NodeInfo:自动进场 EnterScene 的 gate_instance_id
 #include "time/system/time.h"
 #include "table/proto/tip/common_error_tip.pb.h"

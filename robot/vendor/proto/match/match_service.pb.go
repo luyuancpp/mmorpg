@@ -1469,7 +1469,7 @@ const file_proto_match_match_service_proto_rawDesc = "" +
 	"\x13QUEUE_STATE_MATCHED\x10\x02\x12\x15\n" +
 	"\x11QUEUE_STATE_READY\x10\x03\x12\x18\n" +
 	"\x14QUEUE_STATE_ENTERING\x10\x04\x12\x1a\n" +
-	"\x16QUEUE_STATE_NOT_QUEUED\x10\x052\xbf\a\n" +
+	"\x16QUEUE_STATE_NOT_QUEUED\x10\x052\xc9\a\n" +
 	"\fMatchService\x12^\n" +
 	"\x13GetNetworkProbePlan\x12!.match.GetNetworkProbePlanRequest\x1a\".match.GetNetworkProbePlanResponse\"\x00\x12[\n" +
 	"\x12CommitNetworkProbe\x12 .match.CommitNetworkProbeRequest\x1a!.match.CommitNetworkProbeResponse\"\x00\x12@\n" +
@@ -1477,9 +1477,9 @@ const file_proto_match_match_service_proto_rawDesc = "" +
 	"\vCancelQueue\x12\x19.match.CancelQueueRequest\x1a\x06.Empty\"\x00\x12O\n" +
 	"\x0eGetQueueStatus\x12\x1c.match.GetQueueStatusRequest\x1a\x1d.match.GetQueueStatusResponse\"\x00\x12R\n" +
 	"\x0fChallengePlayer\x12\x1d.match.ChallengePlayerRequest\x1a\x1e.match.ChallengePlayerResponse\"\x00\x12U\n" +
-	"\x10RespondChallenge\x12\x1e.match.RespondChallengeRequest\x1a\x1f.match.RespondChallengeResponse\"\x00\x12<\n" +
-	"\x15NotifyChallengeInvite\x12\x19.match.ChallengeInviteS2C\x1a\x06.Empty\"\x00\x12<\n" +
-	"\x15NotifyChallengeResult\x12\x19.match.ChallengeResultS2C\x1a\x06.Empty\"\x00\x12F\n" +
+	"\x10RespondChallenge\x12\x1e.match.RespondChallengeRequest\x1a\x1f.match.RespondChallengeResponse\"\x00\x12A\n" +
+	"\x15NotifyChallengeInvite\x12\x19.match.ChallengeInviteS2C\x1a\x06.Empty\"\x05\x88\x99\xc8\x01\x02\x12A\n" +
+	"\x15NotifyChallengeResult\x12\x19.match.ChallengeResultS2C\x1a\x06.Empty\"\x05\x88\x99\xc8\x01\x02\x12F\n" +
 	"\vWatchBattle\x12\x19.match.WatchBattleRequest\x1a\x1a.match.WatchBattleResponse\"\x00\x12R\n" +
 	"\x13RequestBattleTicket\x12\x1b.RequestBattleTicketRequest\x1a\x1c.RequestBattleTicketResponse\"\x00\x12a\n" +
 	"\x14ListWatchableBattles\x12\".match.ListWatchableBattlesRequest\x1a#.match.ListWatchableBattlesResponse\"\x00\x1a\x05\x88\xa8\xc3\x01\x01B\x11\x98\xd4a\x15Z\vproto/matchb\x06proto3"

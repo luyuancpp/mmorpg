@@ -5,6 +5,7 @@
 #include <map>
 
 #include "engine/core/error_handling/error_handling.h"
+#include "engine/core/utils/proto/unknown_field_carry.h"
 #include "table/code/item_table.h"
 
 #include <chrono>
@@ -175,10 +176,10 @@ ItemCountMap ItemStore::MeasureFreeRoomPerConfig(const ItemCountMap &wanted,
         {
             continue;
         }
-        // 带实例数据的堆不收任何并入(见 CanStack)。这里是 reserve 侧的估算,不跟着跳过的话
+        // 独立实例的堆不收任何并入(见 CanStack)。这里是 reserve 侧的估算,不跟着跳过的话
         // 它会把这种堆的空余算进去,而 commit 侧的 PlanStackIntoExistingStacks 并不往里填 ——
         // reserve 比 commit 乐观,就是"预检通过、写到一半放不下"。
-        if (item.has_equip())
+        if (IsIndependentInstance(item))
         {
             continue;
         }
@@ -318,7 +319,12 @@ bool ItemStore::HasMergeablePartials() const
 
 bool ItemStore::IsMergeCandidate(const ItemComp &item, uint32_t maxStack)
 {
-    return !item.has_equip() && maxStack > 1 && item.size() > 0 && item.size() < maxStack;
+    return !IsIndependentInstance(item) && maxStack > 1 && item.size() > 0 && item.size() < maxStack;
+}
+
+bool ItemStore::IsIndependentInstance(const ItemComp &item)
+{
+    return item.has_equip() || unknown_field_carry::HasUnknown(item);
 }
 
 void ItemStore::MergePartialStacks()
@@ -407,7 +413,8 @@ bool ItemStore::CanStack(const ItemComp &leftItem, const ItemComp &rightItem)
     // 堆叠路径(docs/design/equipment-attributes.md §5 不变量 7,由玩法层启动时逐行校验);
     // 这是表被误配成可堆叠时的兜底。判的是 presence 而不是"有几条属性":
     // has_equip() 且 0 条属性同样是一件已经初始化过的独立实例。
-    if (leftItem.has_equip() || rightItem.has_equip())
+    // 带着本版本不认识字段的实例同样不并(头文件 CanStack 注释,混版本设计 §4.4)。
+    if (IsIndependentInstance(leftItem) || IsIndependentInstance(rightItem))
     {
         return false;
     }

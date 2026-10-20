@@ -20,7 +20,7 @@
 #include "engine/core/time/system/time.h"
 #include "network/network_utils.h"
 #include "network/node_utils.h"
-#include "network/player_message_utils.h"
+#include "network/client_message_sender.h"
 #include "thread_context/ecs_context.h"
 #include "thread_context/node_context_manager.h"
 #include "thread_context/redis_manager.h"
@@ -106,7 +106,8 @@ namespace
 	//   battle 先落库再投递,scene 应用后**条件销账**(id 匹配才删),未销账的由 battle
 	//   有界重投。因此 scene 的每一条"结算已定局"路径都必须销账 —— 漏一条的后果是
 	//   battle 一直重投到次数用尽,而且玩家下次登录会被登录钩子**再发一次奖励**。
-	constexpr char kBattleLockKeyFmt[] = "battle:lock:%llu";
+	// 锁键 battle 节点也要读(确认模式落库判「已被别的局取代」),所以与 pending 键一样以 settlement_outbox.h 为准。
+	constexpr const char *kBattleLockKeyFmt = battle_settlement::kBattleLockKeyFmt;
 	constexpr char kBattleCtxKeyFmt[] = "battle:ctx:%llu";
 	constexpr const char *kPendingSettlementKeyFmt = battle_settlement::kPendingSettlementKeyFmt;
 	constexpr const char *kPendingSettlementIdKeyFmt = battle_settlement::kPendingSettlementIdKeyFmt;

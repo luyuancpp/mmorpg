@@ -15,7 +15,7 @@
 #include "rpc/service_metadata/player_scene_service_metadata.h"
 #include "core/utils/stat/stat.h"
 #include "proto/scene/player_scene.pb.h"
-#include "network/player_message_utils.h"
+#include "network/client_message_sender.h"
 #include <modules/scene/comp/scene_comp.h>
 
 // Determine the interest priority tag that |observer| should assign to |target|.
@@ -335,7 +335,7 @@ void AoiSystem::BroadcastEntityLeave(const SceneGridListComp& gridList, entt::en
     }
 
     if (netId != 0) {
-        BroadcastMessageToPlayers(SceneSceneClientPlayerNotifyActorDestroyMessageId, destroyMsg, observersToNotify);
+        BroadcastToPlayerClients(SceneSceneClientPlayerNotifyActorDestroyMessageId, destroyMsg, observersToNotify);
     } else {
         LOG_ERROR << "AOI: actor leave notification skipped, network id missing";
     }

@@ -317,7 +317,7 @@ func (x *IdSegmentConfig) GetKinds() []*IdSegmentKindConfig {
 }
 
 // C++ 节点发出的 unary gRPC 调用的 deadline(docs/design/grpc-client-deadline-failure-callback.md §4)。
-// 按**目标**节点类型配;没配到的类型用生成代码里的 kDefaultGrpcCallDeadlineMs(grpc_client/grpc_call_tag.h)。
+// 按**目标**节点类型配;没配到的类型用客户端调用公共头中的 kDefaultGrpcCallDeadlineMs(core/network/grpc_client_call.h)。
 // 取值遵守「上游比下游宽」:大于目标服务的服务端超时,小于依赖这次调用结果的 C++ 看门狗。
 type GrpcClientConfig struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
@@ -445,8 +445,15 @@ type BaseDeployConfig struct {
 	// 换代后 scene 仍写旧代 topic,存盘静默积压在一个已排空、没人消费的 topic 里。
 	// 换代流程见 docs/design/db-task-kafka-partition-contract.md;设计见 player-storage-placement.md §7。
 	DbTaskTopicGeneration uint32 `protobuf:"varint,22,opt,name=db_task_topic_generation,json=dbTaskTopicGeneration,proto3" json:"db_task_topic_generation,omitempty"`
-	unknownFields         protoimpl.UnknownFields
-	sizeCache             protoimpl.SizeCache
+	// 混版本持久字段保护:严格提交屏障 C3 的模式(docs/design/mixed-version-persist-field-protection.md §5.2)。
+	// 只认 "warn" / "enforce":warn 照写并计数,enforce 拒写、本次在线进度不落盘。
+	// readBaseDeployConfig 读入时归一化(cpp/libs/engine/config/persist_schema_regression_mode.h):
+	// 缺键 / 空串 = "warn"(proto3 无 presence,存量 yaml 不写也能起);其余非法值拒绝启动。
+	// 运行期这里只会是两个字面量之一,原样作为严格屏障 Lua 的 ARGV[10]。
+	// 切 enforce 的放行条件见设计 §8.1 第 5 步;k8s 侧由 k8s_deploy.ps1 从 bin/etc/base_deploy_config.yaml 镜像。
+	PersistSchemaRegressionMode string `protobuf:"bytes,23,opt,name=persist_schema_regression_mode,json=persistSchemaRegressionMode,proto3" json:"persist_schema_regression_mode,omitempty"`
+	unknownFields               protoimpl.UnknownFields
+	sizeCache                   protoimpl.SizeCache
 }
 
 func (x *BaseDeployConfig) Reset() {
@@ -631,6 +638,13 @@ func (x *BaseDeployConfig) GetDbTaskTopicGeneration() uint32 {
 		return x.DbTaskTopicGeneration
 	}
 	return 0
+}
+
+func (x *BaseDeployConfig) GetPersistSchemaRegressionMode() string {
+	if x != nil {
+		return x.PersistSchemaRegressionMode
+	}
+	return ""
 }
 
 // Game config
@@ -858,7 +872,7 @@ const file_proto_common_base_config_proto_rawDesc = "" +
 	"\x10call_deadline_ms\x18\x01 \x03(\v2%.GrpcClientConfig.CallDeadlineMsEntryR\x0ecallDeadlineMs\x1aA\n" +
 	"\x13CallDeadlineMsEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
-	"\x05value\x18\x02 \x01(\rR\x05value:\x028\x01\"\x9f\b\n" +
+	"\x05value\x18\x02 \x01(\rR\x05value:\x028\x01\"\xe4\b\n" +
 	"\x10BaseDeployConfig\x12\x1d\n" +
 	"\n" +
 	"etcd_hosts\x18\x01 \x03(\tR\tetcdHosts\x12\x1b\n" +
@@ -886,7 +900,8 @@ const file_proto_common_base_config_proto_rawDesc = "" +
 	"\x16audit_topic_generation\x18\x14 \x01(\rR\x14auditTopicGeneration\x122\n" +
 	"\vgrpc_client\x18\x15 \x01(\v2\x11.GrpcClientConfigR\n" +
 	"grpcClient\x127\n" +
-	"\x18db_task_topic_generation\x18\x16 \x01(\rR\x15dbTaskTopicGeneration\"\xa8\x03\n" +
+	"\x18db_task_topic_generation\x18\x16 \x01(\rR\x15dbTaskTopicGeneration\x12C\n" +
+	"\x1epersist_schema_regression_mode\x18\x17 \x01(\tR\x1bpersistSchemaRegressionMode\"\xa8\x03\n" +
 	"\n" +
 	"GameConfig\x12&\n" +
 	"\x0fscene_node_type\x18\x01 \x01(\rR\rsceneNodeType\x12\x17\n" +

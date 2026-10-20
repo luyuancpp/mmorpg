@@ -12,8 +12,9 @@ package main
 // TestNoRouteTableWritesOutsideMergeRouteStore 用 AST 守住;route_meta / route_reconcile 本工具一律不写)。
 // 事务里绝不做 Redis 读写:发布在提交之后,由 route_publish.go 完成;每个批原语把「本批处于目标状态的全部行」交给它。
 //
-// 本批只建原语:各写入点(fence.go / merged_into.go / merge_run.go / placement_ops.go / pin_placement.go / unmerge.go /
-// backfill_home_zone.go / relocate*.go)的流程由下一波改成调用这里。
+// 各写入点(fence.go / merged_into.go / merge_run.go / placement_ops.go / pin_placement.go / unmerge.go /
+// backfill_home_zone.go / relocate*.go)在 -route-source=db 时调用这里的原语(第 2 批第二波接线;分派规则见 merge_run.go
+// 「-route-source=db:装配、读方与步骤 5」)。TakeOverFence 是接线时补的(续跑接手,fence.go -take-over-fence)。
 //
 // 不变量(与 data_service store/route_store.go 文件头同口径):
 //  1. 判定只认加锁读(FOR UPDATE)。新行一律 ODKU no-op、撞键 = 受影响 0 行,不用 INSERT IGNORE(它把 CHECK 违例降成 warning)。
@@ -38,6 +39,7 @@ import (
 	"log"
 	"math"
 	"math/rand/v2"
+	"path/filepath"
 	"sort"
 	"strconv"
 	"strings"
@@ -88,6 +90,11 @@ const (
 	routeFenceLocalSafety = 60 * time.Second
 	// routeFenceRetryWait 是续期遇到 1205 / 网络错误后的重试间隔。
 	routeFenceRetryWait = 5 * time.Second
+	// routeFenceRenewMaxInterval 是续期间隔的上限:interval = min(ttl/3, 它)。被 -take-over-fence 接手而其实还活着的旧进程,
+	// 映射批次立刻被库按 fencing token 拒绝,但不碰映射的步骤(拷行、帮会、交易、榜单、热状态)只靠下一次续期失败才停 ——
+	// 按 ttl/3(≥20 分钟)两边会交错写这么久,压到 30s 量级。每次续期是 128 行 UPDATE 加两次镜像 EVAL + WAITAOF,开销可忽略;
+	// 本地截止时刻(最后一次成功续期 + ttl − 60s)不变。
+	routeFenceRenewMaxInterval = 30 * time.Second
 	// mysqlErrCheckConstraintViolated 3819:探针 P4 期望收到的那一个。
 	mysqlErrCheckConstraintViolated = 3819
 	// mysqlErrTableAccessDenied 1142:账号对表没有该权限(P4 / P5 要 player_route 的 INSERT 权限)。
@@ -186,9 +193,9 @@ const (
 	// 围栏:一个分片行在不在(事务外一致读,只为少发一次 ODKU)。实参:zone、shard。
 	routeFenceShardExistsSQL = "SELECT 1 FROM zone_merge_fence WHERE zone_id = ? AND shard = ?"
 	// 围栏:按 shard 升序锁一个 zone 的全部分片(获取用)。active 为 NULL(run_id 非空而 expires_at_ms 为 NULL,
-	// 只有 CHECK 不生效时可能)按生效处理。实参:zone、分片数(64)。
+	// 只有 CHECK 不生效时可能)按生效处理。src_zone / dst_zone 给接手核对被接手分片的 zone 对(TakeOverFence)。实参:zone、分片数(64)。
 	routeLockFenceAllSQL = "SELECT shard, run_id, (run_id IS NOT NULL AND expires_at_ms > " + routeDBNowMsSQL + ") AS active," +
-		" fence_epoch, holder_json FROM zone_merge_fence WHERE zone_id = ? AND shard < ? ORDER BY shard FOR UPDATE"
+		" fence_epoch, holder_json, src_zone, dst_zone FROM zone_merge_fence WHERE zone_id = ? AND shard < ? ORDER BY shard FOR UPDATE"
 	// 围栏:获取 —— 把一个 zone 的全部分片写成本次运行。实参:run_id、purpose、src、dst、expires_at_ms、holder_json、
 	// fence_epoch、zone、分片数(64)。fence_epoch 严格变大,所以受影响行数恒为 64(不依赖「值没变」的口径)。
 	routeAcquireFenceSQL = "UPDATE zone_merge_fence SET run_id = ?, purpose = ?, src_zone = ?, dst_zone = ?, expires_at_ms = ?," +
@@ -1073,6 +1080,8 @@ type routeFenceShardState struct {
 	active     bool
 	epoch      uint64
 	holderJSON string
+	// srcZone / dstZone 是分片上记着的 zone 对(0 = NULL,即未封锁)。
+	srcZone, dstZone uint32
 }
 
 // lockAllFenceShards 按 shard 升序锁一个 zone 的全部 64 片。少一行(或多出 / 乱序)一律 errRouteFenceRowMissing / errRouteInvariant。
@@ -1088,11 +1097,16 @@ func lockAllFenceShards(ctx context.Context, tx *sql.Tx, zone uint32) ([]routeFe
 		var run, holder sql.NullString
 		var active sql.Null[int64]
 		var epoch uint64
-		if err := rows.Scan(&shard, &run, &active, &epoch, &holder); err != nil {
+		var srcZone, dstZone sql.Null[uint64]
+		if err := rows.Scan(&shard, &run, &active, &epoch, &holder, &srcZone, &dstZone); err != nil {
 			return nil, fmt.Errorf("lock zone_merge_fence zone %d: %w", zone, err)
 		}
 		if shard != uint64(len(out)) {
 			return nil, fmt.Errorf("%w: zone_merge_fence zone %d returned shard %d at position %d", errRouteInvariant, zone, shard, len(out))
+		}
+		if srcZone.V > math.MaxUint32 || dstZone.V > math.MaxUint32 {
+			return nil, fmt.Errorf("%w: zone_merge_fence zone %d shard %d has src_zone=%d dst_zone=%d", errRouteInvariant, zone, shard,
+				srcZone.V, dstZone.V)
 		}
 		out = append(out, routeFenceShardState{
 			shard:      uint32(shard),
@@ -1100,6 +1114,8 @@ func lockAllFenceShards(ctx context.Context, tx *sql.Tx, zone uint32) ([]routeFe
 			active:     !active.Valid || active.V != 0,
 			epoch:      epoch,
 			holderJSON: holder.String,
+			srcZone:    uint32(srcZone.V),
+			dstZone:    uint32(dstZone.V),
 		})
 	}
 	if err := rows.Err(); err != nil {
@@ -1238,6 +1254,55 @@ func encodeRouteFenceHolder(req routeFenceAcquire, epoch, expiresAtMs uint64) (s
 // 同 run_id 重入(续跑)允许,epoch 照样 +1。返回之后调用方写镜像(setFenceMirror)+ WAITAOF,确认了才能收集清单。
 // 冻结(writable=0)时拒绝获取;续期与释放不看 writable(保住围栏 / 解除封锁都是安全方向)。
 func (s *mergeRouteStore) AcquireFence(ctx context.Context, req routeFenceAcquire) (routeFenceGrant, error) {
+	return s.acquireFence(ctx, "acquire merge fence", req, "")
+}
+
+// TakeOverFence 是续跑接手(W12 获取的变体,fence.go 的 -take-over-fence):与 AcquireFence 同一个事务形状,只多放行一种
+// 「生效且 run_id ≠ 本次」—— run_id == previousRunID(运维已确认那次运行的进程不在了)。接手与获取在同一个事务里完成,
+// 两区在库里一刻都不解封(对照 redis 源「DEL 镜像 → 重跑」之间那几秒无围栏的窗口)。旧进程若其实还活着,它的下一个批事务
+// 按 run_id 复核失败(errRouteFenceLost)、下一次续期确定失权,映射写入被拦在库这一层。
+// 生效且属于第三个 run_id 的分片照样 errRouteFenceHeld。previousRunID 必须合法且不同于本次。
+// (前一波原语里没有它:续跑接手是本波接线 db 源的中止 / 续跑流程时补的;AcquireFence 的语义不变,只是与它共用事务体。)
+func (s *mergeRouteStore) TakeOverFence(ctx context.Context, req routeFenceAcquire, previousRunID string) (routeFenceGrant, error) {
+	if !validRunID(previousRunID) || previousRunID == req.RunID {
+		return routeFenceGrant{}, fmt.Errorf("%w: take over the merge fence from run_id %q (this run is %q)",
+			errRouteInvalidArgument, previousRunID, req.RunID)
+	}
+	return s.acquireFence(ctx, "take over merge fence", req, previousRunID)
+}
+
+// checkTakeOverShard 是接手时对一片「生效且 run_id == previousRunID」分片的核对(纯函数):
+//   - zone 对(src_zone / dst_zone)必须与本次相同。不比 purpose:合服中止后改跑撤销是 runbook 认可的续跑路径(zone 对相同、
+//     purpose 不同)。zone 对写错时若照样接手,点对的那一区被接走,另一区仍挂在已死的那次运行上、过期后在半截状态下解封。
+//   - holder_json 里记着 manifest_path 时,必须与本次的清单路径(filepath.Clean 后)相同:续跑落到别的清单(合服没给 -manifest-path
+//     时是带时间戳的新路径)会被当成首跑 —— 收集出漏人的清单,或在拒绝出口释放刚接手的围栏。
+//
+// 不满足一律 errRouteInvalidArgument:事务回滚,旧围栏原样留在 previousRunID 上。
+func checkTakeOverShard(zone uint32, st routeFenceShardState, req routeFenceAcquire) error {
+	if st.srcZone != req.Src || st.dstZone != req.Dst {
+		return fmt.Errorf("%w: take over zone %d shard %d from run_id=%q: that fence is for zone pair %d → %d, this run is %d → %d "+
+			"(wrong -source-zone / -target-zone, or the wrong -take-over-fence run_id)", errRouteInvalidArgument, zone, st.shard, st.runID,
+			st.srcZone, st.dstZone, req.Src, req.Dst)
+	}
+	if st.holderJSON == "" {
+		return nil
+	}
+	var h mergeInProgressValue
+	if err := json.Unmarshal([]byte(st.holderJSON), &h); err != nil {
+		return fmt.Errorf("%w: take over zone %d shard %d from run_id=%q: holder_json is not readable (%v), so its manifest_path cannot "+
+			"be compared with this run's: %s", errRouteInvalidArgument, zone, st.shard, st.runID, err, st.holderJSON)
+	}
+	if h.ManifestPath != "" && filepath.Clean(h.ManifestPath) != filepath.Clean(req.Holder.ManifestPath) {
+		return fmt.Errorf("%w: take over zone %d shard %d from run_id=%q: that run used -manifest-path %q, this run uses %q — re-run "+
+			"with -manifest-path %q (a resume on another manifest starts over as a first run)", errRouteInvalidArgument, zone, st.shard,
+			st.runID, h.ManifestPath, req.Holder.ManifestPath, h.ManifestPath)
+	}
+	return nil
+}
+
+// acquireFence 是 AcquireFence / TakeOverFence 的事务体。previousRunID 为空 = 不接手任何人(AcquireFence 的原语义)。
+// 接手时被接手的分片逐片过 checkTakeOverShard,且每个 zone 接手 0 片或全部 64 片。
+func (s *mergeRouteStore) acquireFence(ctx context.Context, op string, req routeFenceAcquire, previousRunID string) (routeFenceGrant, error) {
 	zones, err := req.validate()
 	if err != nil {
 		return routeFenceGrant{}, err
@@ -1246,23 +1311,39 @@ func (s *mergeRouteStore) AcquireFence(ctx context.Context, req routeFenceAcquir
 		return routeFenceGrant{}, err
 	}
 	var grant routeFenceGrant
-	err = s.runTx(ctx, "acquire merge fence", func(tx *sql.Tx) error {
+	var takenOver int
+	err = s.runTx(ctx, op, func(tx *sql.Tx) error {
 		if err := requireRouteWritable(ctx, tx); err != nil {
 			return err
 		}
 		var maxEpoch uint64
+		takenOver = 0
 		for _, zone := range zones {
 			states, err := lockAllFenceShards(ctx, tx, zone)
 			if err != nil {
 				return err
 			}
+			zoneTaken := 0
 			for _, st := range states {
 				if st.active && st.runID != req.RunID {
-					return fmt.Errorf("%w: zone %d shard %d run_id=%q holder=%s (if that run is dead, wait for its expires_at_ms or "+
-						"release it through the tool that owns it)", errRouteFenceHeld, zone, st.shard, st.runID, st.holderJSON)
+					if previousRunID == "" || st.runID != previousRunID {
+						return fmt.Errorf("%w: zone %d shard %d run_id=%q holder=%s (if run %s is no longer running, re-run the same "+
+							"command — same -manifest-path — with -take-over-fence %s; otherwise wait for it to finish or for its "+
+							"expires_at_ms)", errRouteFenceHeld, zone, st.shard, st.runID, st.holderJSON, st.runID, st.runID)
+					}
+					if err := checkTakeOverShard(zone, st, req); err != nil {
+						return err
+					}
+					zoneTaken++
 				}
 				maxEpoch = max(maxEpoch, st.epoch)
 			}
+			// 接手按 zone 要么全接、要么一片不接(那次运行的围栏已整体过期 = 普通获取):只接到一部分说明分片状态不一致,不在它上面续跑。
+			if previousRunID != "" && zoneTaken != 0 && zoneTaken != int(routeFenceShards) {
+				return fmt.Errorf("%w: take over zone %d from run_id=%q: only %d of %d shards are live under that run_id — the shard rows "+
+					"are inconsistent; check zone_merge_fence by hand", errRouteInvalidArgument, zone, previousRunID, zoneTaken, routeFenceShards)
+			}
+			takenOver += zoneTaken
 		}
 		if maxEpoch == math.MaxUint64 {
 			return fmt.Errorf("%w: fence_epoch exhausted on zones %v", errRouteInvariant, zones)
@@ -1292,6 +1373,11 @@ func (s *mergeRouteStore) AcquireFence(ctx context.Context, req routeFenceAcquir
 	})
 	if err != nil {
 		return routeFenceGrant{}, err
+	}
+	if previousRunID != "" {
+		log.Printf("merge fence taken over in zone_merge_fence from run_id=%s (%d live shards): zones=%v run_id=%s purpose=%s fence_epoch=%d expires_at_ms=%d",
+			previousRunID, takenOver, zones, req.RunID, req.Purpose, grant.Epoch, grant.ExpiresAtMs)
+		return grant, nil
 	}
 	log.Printf("merge fence acquired in zone_merge_fence: zones=%v run_id=%s purpose=%s fence_epoch=%d expires_at_ms=%d",
 		zones, req.RunID, req.Purpose, grant.Epoch, grant.ExpiresAtMs)
@@ -1431,7 +1517,7 @@ type routeFenceRenewer interface {
 }
 
 // routeFenceGuard 维护「本次运行仍持有围栏」的本地判据(规格 §6.3 W12 续期、§13.3 第 4 条):
-//   - 续期 goroutine 每 ttl/3 续一次;成功把 lastOK 推到这次续期**开始**的本地单调时刻(保守:库里的新过期时刻
+//   - 续期 goroutine 每 min(ttl/3, routeFenceRenewMaxInterval) 续一次;成功把 lastOK 推到这次续期**开始**的本地单调时刻(保守:库里的新过期时刻
 //     不早于它 + ttl);
 //   - 续期回 errRouteFenceLost(受影响行数不足)= 确定失权:置 lost,goroutine 退出;
 //   - 1205 / 网络错误:WARN,routeFenceRetryWait 后重试,不当失权;
@@ -1475,7 +1561,7 @@ func newRouteFenceGuard(renewer routeFenceRenewer, zones []uint32, runID string,
 		zones:     zs,
 		runID:     runID,
 		ttl:       ttl,
-		interval:  ttl / 3,
+		interval:  min(ttl/3, routeFenceRenewMaxInterval),
 		retryWait: routeFenceRetryWait,
 		now:       time.Now,
 		sleep:     sleepCtx,

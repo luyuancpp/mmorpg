@@ -24,8 +24,10 @@
 #include <string>
 #include <vector>
 
+#include <google/protobuf/unknown_field_set.h>
+
 #include "engine/core/type_define/player_guid_comp.h"
-#include "core/network/grpc_call_types.h" // kGrpcStatusUnavailable
+#include "core/network/grpc_client_call.h" // kGrpcStatusUnavailable
 #include "modules/currency/comp/player_currency_comp.h"
 #include "modules/currency/constants/currency.h"
 #include "modules/currency/system/currency_system.h"
@@ -1133,6 +1135,57 @@ TEST_F(PlayerInboxSystemTest, ExecutorDeferResumesLocallyWithoutRefetching)
 	ASSERT_EQ(2, ack.decisions_size());
 	ExpectDecision(ack.decisions(0), 10, player_inbox::PLAYER_INBOX_OUTCOME_SKIPPED, kCancelled, 1001);
 	ExpectDecision(ack.decisions(1), 11, player_inbox::PLAYER_INBOX_OUTCOME_APPLIED, 0, 1101);
+}
+
+// 执行器报版本错位(混版本保护:同币种欠款带本版本不认识的字段)与未知类型同口径:停用本域,已定前缀照常确认,
+// 这一条不记账、不确认。**不按本地副本续做**:错位在会话内消失(欠款被还清删除)之后,本地旧副本也不得被执行 ——
+// 服务端可能已给这一行挂了 VOID,只有重拉才看得到(设计 §7.5 评审 L1;mixed-version-persist-field-protection.md §4.4)。
+TEST_F(PlayerInboxSystemTest, ExecutorVersionSkewHaltsAfterConfirmingThePrefixAndNeverResumesLocally)
+{
+	player_inbox::FetchPlayerInboxRequest fetch;
+	ASSERT_NO_FATAL_FAILURE(LandAndFetch(player_, fetch));
+
+	// 新版本 scene 写下的金币欠款:带本版本不认识的字段。
+	CurrencyComp persisted;
+	auto *entry = persisted.add_debts();
+	entry->set_currency_type(kGold);
+	entry->set_owed(500);
+	entry->mutable_unknown_fields()->AddVarint(9999, 1);
+	auto &currency = tlsEcs.actorRegistry.get<PlayerCurrencyComp>(player_);
+	currency.LoadFromProto(persisted);
+
+	player_inbox::GmCurrencyDebtPayload debt;
+	debt.set_currency_type(kGold);
+	debt.set_owe_amount(100);
+	PlayerInboxSystem::OnFetchReply(
+		fetch.player_id(), static_cast<uint32_t>(fetch.domain()), fetch.correlation_id(),
+		FetchReplyFor(fetch, {BlockGold(10, 1001), MakeItem(11, kDebtType, 1101, debt.SerializeAsString()),
+				MakeItem(12, kUnblockType, 1201, GainPayload(kGold))}));
+	ASSERT_NE(nullptr, GmState(player_));
+	EXPECT_TRUE(GmState(player_)->halted);
+	EXPECT_EQ(PlayerInboxHaltReason::kVersionSkew, GmState(player_)->haltReason);
+	EXPECT_EQ(10u, DecidedThrough(player_)) << "停在版本错位这一条:不记账,绝不当成 REJECTED";
+	EXPECT_TRUE(GoldBlocked(player_)) << "停用点之后的条目不执行";
+	EXPECT_TRUE(GmState(player_)->pendingItems.empty()) << "不留本地副本";
+	EXPECT_EQ(500u, currency.debts.at(kGold).owed) << "没有并进带新字段的欠款";
+
+	// 已定的前缀照常落盘后确认;版本错位这一条不在确认里。
+	player_inbox::AckPlayerInboxRequest ack;
+	ASSERT_NO_FATAL_FAILURE(SaveAndAck(player_, ack));
+	ASSERT_EQ(1, ack.decisions_size());
+	ExpectDecision(ack.decisions(0), 10, player_inbox::PLAYER_INBOX_OUTCOME_APPLIED, 0, 1001);
+	PlayerInboxSystem::OnAckReply(
+		ack.player_id(), static_cast<uint32_t>(ack.domain()), ack.correlation_id(), AckReplyFor(ack));
+
+	// 会话内错位消失:那笔欠款被还清删除。本地旧副本已丢弃,之后的 tick 不得把这笔欠款挂上,也不再拉取。
+	currency.debts.erase(kGold);
+	PlayerInboxSystem::OnNotifyEvent(kTestPlayerId, kGmDomain);
+	Advance(kBeyondAnyBackoffMs);
+	PlayerInboxSystem::Tick();
+	EXPECT_TRUE(currency.debts.find(kGold) == currency.debts.end()) << "不得按本地旧副本把(可能已作废的)欠款挂上";
+	EXPECT_EQ(10u, DecidedThrough(player_));
+	EXPECT_EQ(1u, g_sentFetches.size()) << "停用对当前实体一直有效,实体重建后才重拉";
+	EXPECT_EQ(1u, g_sentAcks.size());
 }
 
 // DEFER 之后续做时闸不过:同样丢掉剩下的本地副本,但已定前缀既不丢、也不留到下一批 —— 先确认,再重拉。

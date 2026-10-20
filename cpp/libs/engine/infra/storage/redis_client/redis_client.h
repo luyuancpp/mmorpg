@@ -21,7 +21,7 @@
 
 // 普通存盘(无归属校验)。KEYS[1]=数据键, ARGV[1]=payload。
 // 仍走脚本并恒返回 1,而不是裸 SET:三条存盘共用 ScriptSlot 的 EVALSHA / NOSCRIPT 回退
-// 通道,OnSaved 也只把整数 1 当作提交证据。
+// 通道,OnSaved 也只把整数 1 当作提交证据(严格屏障另有 2 = warn 模式下 C3 判定倒退但已照写)。
 // 约束(对本文件全部存盘脚本成立):脚本只访问 KEYS[] 声明的键,不得写任何写死的全局键。
 // 原因:全服共享 Redis 上的单键会随累计存盘玩家数无界增长、所有 scene 都打同一个键,
 // 未声明的键也挡住 Redis Cluster(见 docs/design/capacity-model-hok-scale.md A0-4)。
@@ -60,9 +60,26 @@ static constexpr const char* kSaveIfGuardLuaScript = R"(
 )";
 
 // 严格提交屏障:KEYS = 父缓存 / 旧 owner 键 / save_barrier hash / 分桶待投 ZSET。
-// ARGV = 父 bytes / owner / 41 字节版本 / topic / 两条完整 DBTask bytes / 玩家十进制。
+// ARGV = 父 bytes / owner / 41 字节版本 / topic / 两条完整 DBTask bytes / 玩家十进制
+//        / 输出世代 / 加载世代 / 模式(warn | enforce)/ 写方令牌。
 // owner 缺失必须由恢复流程处置,禁止沿用旧脚本的自动补种。全部校验先于 SET / HSET:Lua 错误不会回滚写入。
 // 版本按字节比较,不转 double;当前键未同槽,部署前提是同一 Redis 实例。
+//
+// 覆盖世代校验 C3(docs/design/mixed-version-persist-field-protection.md §5.2):
+//   - hash 的 schema_gen 是"这名玩家最近一次经屏障写入的覆盖世代",只升不降;写入成功时同一个 HSET 里写
+//     max(存储值, ARGV[8]),存储值损坏时取 ARGV[8]。同一个 HSET 里把 schema_writer 写成 ARGV[11]。
+//   - 写方令牌 ARGV[11] 由 C++ 每个加载实体生成一次(全局唯一,实体销毁即作废)。只有"上一次屏障写入不是本实体
+//     写的"(schema_writer ≠ ARGV[11])时才比较:那正是接手别人写的数据、截断可能被引入的时刻。本实体的后续写入
+//     (包括它换了 owner 代次之后、首存回包丢失后被排队值顶替时)基底都是它自己的上一次写入,跳过。不用 owner
+//     代次判"是不是自己写的":同一实体会换代次(E→E+1 复用、B5 采纳),同一代次也会先后加载出两个实体(同落点重连)。
+//   - 同版本重放(pending == ARGV[3])显式跳过:同版本分支不提前返回,会落到写入。
+//   - 比较放在 owner / 版本判定之后:已被废黜的旧持有者必须拿到 0(DestroyDeposedPlayer),不能先拿到 3。
+//   - 加载世代 ARGV[9] < 存储值,或存储值不是合法十进制 uint32 = 倒退证据:warn 照写、返回 2;
+//     enforce 不写任何键、返回 3(下一次仍会比较)。hash 或 schema_gen 字段不存在 = 不比较。
+//   - 参数非法(世代不是 1..4294967295、ARGV[9] > ARGV[8]、模式不是两个字面量、令牌为空 / 超过 64 字节 /
+//     含字母数字与 ':' '-' 以外的字符)返回 error_reply:那是 C++ 的编程错误,SaveWithCommitBarrier 入队前已校验。
+// 旧二进制自带 7 参旧脚本(ScriptSlot 按脚本文本算 SHA),不受影响;它不写 schema_gen / schema_writer,
+// 不会把 hash 拉低;它留下的旧令牌只属于已被取代的实体,新实体的令牌不会与之相等。
 static constexpr const char* kSaveWithCommitBarrierLuaScript = R"(
     local function gt(a, b)
         for i = 1, #a do
@@ -70,6 +87,11 @@ static constexpr const char* kSaveWithCommitBarrierLuaScript = R"(
             if x ~= y then return x > y end
         end
         return false
+    end
+    -- 无前导零的十进制数比较:先比长度,再按字节比。gt 只适用于等长串。
+    local function num_gt(a, b)
+        if #a ~= #b then return #a > #b end
+        return gt(a, b)
     end
     local function is_version(s)
         if type(s) ~= 'string' or #s ~= 41 or string.sub(s, 21, 21) ~= ':'
@@ -95,7 +117,7 @@ static constexpr const char* kSaveWithCommitBarrierLuaScript = R"(
         if not is_zone(z) or not is_u32(generation) or generation == '1' then return false end
         return z
     end
-    if #KEYS ~= 4 or #ARGV ~= 7 then
+    if #KEYS ~= 4 or #ARGV ~= 11 then
         return redis.error_reply('SAVE_BARRIER invalid argument count')
     end
     for i = 1, 4 do
@@ -134,6 +156,11 @@ static constexpr const char* kSaveWithCommitBarrierLuaScript = R"(
         expected_bucket = (expected_bucket * 10 + string.byte(ARGV[7], i) - 48) % 64
     end
     if bucket ~= tostring(expected_bucket) then return redis.error_reply('SAVE_BARRIER invalid bucket') end
+    if not is_u32(ARGV[8]) or not is_u32(ARGV[9]) or num_gt(ARGV[9], ARGV[8])
+        or (ARGV[10] ~= 'warn' and ARGV[10] ~= 'enforce')
+        or #ARGV[11] == 0 or #ARGV[11] > 64 or not string.match(ARGV[11], '^[%w:%-]+$') then
+        return redis.error_reply('SAVE_BARRIER invalid schema argument')
+    end
     local owner = redis.call('GET', KEYS[2])
     local pending = redis.call('HGET', KEYS[3], 'pending')
     if not is_owner(owner) or (pending and not is_version(pending)) then
@@ -160,10 +187,24 @@ static constexpr const char* kSaveWithCommitBarrierLuaScript = R"(
             return redis.error_reply('SAVE_BARRIER same version conflict')
         end
     end
+    -- C3 放在 owner / 版本 / 同版本冲突判定之后(见头注释)。同版本重放(上面那支不提前返回)显式跳过;
+    -- 上一次屏障写入就是本实体写的(写方令牌相同)同样跳过:基底是它自己的上一次写入。
+    local stored_gen = redis.call('HGET', KEYS[3], 'schema_gen')
+    local stored_gen_valid = stored_gen and is_u32(stored_gen)
+    local stored_writer = redis.call('HGET', KEYS[3], 'schema_writer')
+    local regression = false
+    if stored_gen and pending ~= ARGV[3] and stored_writer ~= ARGV[11] then
+        regression = not stored_gen_valid or num_gt(stored_gen, ARGV[9])
+    end
+    if regression and ARGV[10] == 'enforce' then return 3 end
+    local schema_gen = ARGV[8]
+    if stored_gen_valid and num_gt(stored_gen, schema_gen) then schema_gen = stored_gen end
     redis.call('SET', KEYS[1], ARGV[1])
     redis.call('HSET', KEYS[3], 'pending', ARGV[3], 'outbox_version', ARGV[3],
-        'outbox_topic', ARGV[4], 'outbox_player_database', ARGV[5], 'outbox_player_database_1', ARGV[6])
+        'outbox_topic', ARGV[4], 'outbox_player_database', ARGV[5], 'outbox_player_database_1', ARGV[6],
+        'schema_gen', schema_gen, 'schema_writer', ARGV[11])
     redis.call('ZADD', KEYS[4], 0, ARGV[7])
+    if regression then return 2 end
     return 1
 )";
 
@@ -188,6 +229,34 @@ struct RedisSaveCommitIntent
     std::string player_database_task;
     std::string player_database_1_task;
 };
+
+// 严格屏障的覆盖世代参数(docs/design/mixed-version-persist-field-protection.md §5.2),对应 Lua 的 ARGV[8..11]。
+// 本类不解释世代含义,只在入队前校验形状,保证非法值不会让脚本返回 error_reply 而无限重试。
+struct RedisSaveSchemaGen
+{
+    uint32_t output_gen = 0; // ARGV[8]:本次写入盖的覆盖世代(两张表的戳),必须 >= 1
+    uint32_t load_gen = 0;   // ARGV[9]:写方实体的加载世代,1 <= load_gen <= output_gen
+    std::string mode;        // ARGV[10]:只认 "warn" / "enforce"
+    std::string writer;      // ARGV[11]:写方令牌,每个加载实体一个、全局唯一;1..64 字节,只含字母数字与 ':' '-'
+};
+
+// 写方令牌的形状校验,与严格 Lua 的 ARGV[11] 校验同口径。
+[[nodiscard]] inline bool IsValidRedisSaveSchemaWriter(const std::string& writer)
+{
+    if (writer.empty() || writer.size() > 64)
+    {
+        return false;
+    }
+    for (const char c : writer)
+    {
+        const bool alnum = (c >= '0' && c <= '9') || (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z');
+        if (!alnum && c != ':' && c != '-')
+        {
+            return false;
+        }
+    }
+    return true;
+}
 
 // 仅供单测在不连接真实 Redis 的情况下驱动异步回包；生产代码不定义或使用。
 template <class MessageKey, class MessageValue>
@@ -258,6 +327,12 @@ public:
 		std::string barrier_key;
 		std::string barrier_version;
 		std::shared_ptr<const RedisSaveCommitIntent> commit_intent;
+		// 严格屏障的 ARGV[8..11](覆盖世代、加载世代的十进制文本,模式,写方令牌),发起时定好。与 guard 同理随
+		// element 走:重试、NOSCRIPT 重发、重连回收都发同一组参数,不回头问调用方。非屏障路径为空。
+		std::string schema_output_gen;
+		std::string schema_load_gen;
+		std::string schema_mode;
+		std::string schema_writer;
 		// 每份真正写入 Redis 的快照成功时执行一次;未下发就被合并的值不执行。
 		// 即使有更新值排队也先登记本次 SQL 票据;全局回调仍只发布最新值。
 		// 钩子与存盘回包同线程,允许重入 Save:本次在途登记保留到钩子结束,同 key 新值只排队。
@@ -300,6 +375,17 @@ public:
 	// 期望值不同 → 它带着更新的归属,照常发出,此时不回调(那笔旧写已被它取代)。
 	using SaveRejectedCallback = std::function<void(MessageKey, const std::string& redisKey, const std::string& guardExpected)>;
 
+	// 严格屏障覆盖世代校验 C3 的两种结局(docs/design/mixed-version-persist-field-protection.md §5.2)。
+	//
+	// 返回 2(warn 模式判定倒退但照写):Redis 已提交,是提交证据,照常执行提交钩子、发布 save_callback_。
+	// SaveSchemaWarnedCallback 只用于计数与日志,在提交钩子之前同步调用,不得重入 Save。
+	//
+	// 返回 3(enforce 模式拒写,一个键都没动):与 owner 拒绝(0)一样不重试、不执行提交钩子、不发布 save_callback_,
+	// 同 key 排队值的处置也同 0 分支(期望值相同丢弃;不同则照发、不回调)。语义却不同于"已被废黜",
+	// 所以不复用 SaveRejectedCallback(那条会按 epoch 重存而无限循环,或按废黜销毁),由调用方按实体状态分派。
+	using SaveSchemaWarnedCallback = std::function<void(MessageKey, const std::string& redisKey)>;
+	using SaveSchemaRejectedCallback = std::function<void(MessageKey, const std::string& redisKey, const std::string& guardExpected)>;
+
 	using HiredisPtr = std::unique_ptr<hiredis::Hiredis>;
 
 	// 回调绑定约定:本类所有 hiredis 回调都以裸 this 经 std::bind 绑定,而不是
@@ -321,11 +407,13 @@ public:
 	void SetLoadFailedCallback(const FailedCallback& cb) { load_failed_callback_ = cb; }
 	void SetSaveFailedCallback(const SaveFailedCallback& cb) { save_failed_callback_ = cb; }
 	void SetSaveRejectedCallback(const SaveRejectedCallback& cb) { save_rejected_callback_ = cb; }
+	void SetSaveSchemaWarnedCallback(const SaveSchemaWarnedCallback& cb) { save_schema_warned_callback_ = cb; }
+	void SetSaveSchemaRejectedCallback(const SaveSchemaRejectedCallback& cb) { save_schema_rejected_callback_ = cb; }
 
 
 	void Save(const MessageValuePtr& message, const MessageKey& key, CommittedCallback committed = {})
 	{
-		EnqueueSave(message, key, std::string(), std::string(), {}, {}, {}, std::move(committed));
+		EnqueueSave(message, key, std::string(), std::string(), {}, {}, {}, nullptr, std::move(committed));
 	}
 
 	// 带归属校验的存盘:只有 Redis 里 guardKey 的当前值 == guardExpected 时才
@@ -336,15 +424,18 @@ public:
 	void Save(const MessageValuePtr& message, const MessageKey& key,
 			  const std::string& guardKey, const std::string& guardExpected, CommittedCallback committed = {})
 	{
-		EnqueueSave(message, key, guardKey, guardExpected, {}, {}, {}, std::move(committed));
+		EnqueueSave(message, key, guardKey, guardExpected, {}, {}, {}, nullptr, std::move(committed));
 	}
 
 	// 严格路径必须显式携带完整持久意图,不能降级成普通 Save。参数 / 序列化失败返回 false;
 	// 已排队的 Redis 错误保留最新快照重试,owner 不等才通知废黜,两者均不执行提交钩子。
+	// schemaGen 是覆盖世代校验 C3 的参数(见 RedisSaveSchemaGen 与严格 Lua 头注释):形状不合法同样返回 false,
+	// 不能让脚本因参数错误返回 error_reply —— OnSaved 对 ERROR 无限重试,这名玩家就永远存不进盘。
 	bool SaveWithCommitBarrier(const MessageValuePtr& message, const MessageKey& key,
 		const std::string& guardKey, const std::string& guardExpected,
 		const std::string& barrierKey, const std::string& version,
-		std::shared_ptr<const RedisSaveCommitIntent> intent, CommittedCallback committed = {})
+		std::shared_ptr<const RedisSaveCommitIntent> intent, const RedisSaveSchemaGen& schemaGen,
+		CommittedCallback committed = {})
 	{
 		if (guardKey.empty() || barrierKey.empty() || !intent || intent->index_key.empty() || intent->topic.empty() ||
 			intent->player_database_task.empty() || intent->player_database_1_task.empty())
@@ -352,7 +443,16 @@ public:
 			LOG_ERROR << "SaveWithCommitBarrier requires owner, barrier and complete outbox for player " << key;
 			return false;
 		}
-		return EnqueueSave(message, key, guardKey, guardExpected, barrierKey, version, std::move(intent), std::move(committed));
+		if (schemaGen.output_gen == 0 || schemaGen.load_gen == 0 || schemaGen.load_gen > schemaGen.output_gen ||
+			(schemaGen.mode != "warn" && schemaGen.mode != "enforce") || !IsValidRedisSaveSchemaWriter(schemaGen.writer))
+		{
+			LOG_ERROR << "SaveWithCommitBarrier rejects invalid persist schema arguments for player " << key
+					  << ": output_gen=" << schemaGen.output_gen << " load_gen=" << schemaGen.load_gen
+					  << " mode='" << schemaGen.mode << "' writer_bytes=" << schemaGen.writer.size();
+			return false;
+		}
+		return EnqueueSave(message, key, guardKey, guardExpected, barrierKey, version, std::move(intent), &schemaGen,
+						   std::move(committed));
 	}
 
 	void AsyncLoad(const MessageKey& key, int retry_count = 0)
@@ -635,10 +735,12 @@ private:
 	//     与 OnReconnected 各自在当时无排队值时):写入那一刻没有在途,不变量天然成立。
 	// 新增入队路径时必须守住它 —— 历史上唯一破坏它的就是本函数"无在途但有排队旧值时直接发新值"
 	// 那一支,见下方顶替分支与 docs/design/guild-phase2/08-save-owner-fence.md §8.2.2。
+	// schemaGen 只在严格屏障路径非空(SaveWithCommitBarrier 已校验形状),其余路径传 nullptr。
 	bool EnqueueSave(const MessageValuePtr& message, const MessageKey& key,
 					 const std::string& guardKey, const std::string& guardExpected,
 					 const std::string& barrierKey, const std::string& barrierVersion,
-					 std::shared_ptr<const RedisSaveCommitIntent> intent, CommittedCallback committed)
+					 std::shared_ptr<const RedisSaveCommitIntent> intent, const RedisSaveSchemaGen* schemaGen,
+					 CommittedCallback committed)
 	{
 		ElementPtr element = std::make_shared<Element>();
 		element->message_key = key;
@@ -649,6 +751,13 @@ private:
 		element->barrier_key = barrierKey;
 		element->barrier_version = barrierVersion;
 		element->commit_intent = std::move(intent);
+		if (schemaGen != nullptr)
+		{
+			element->schema_output_gen = std::to_string(schemaGen->output_gen);
+			element->schema_load_gen = std::to_string(schemaGen->load_gen);
+			element->schema_mode = schemaGen->mode;
+			element->schema_writer = schemaGen->writer;
+		}
 		element->committed_callback = std::move(committed);
 
 		// Serialize once; retry path re-uses this buffer.
@@ -740,7 +849,7 @@ private:
 	// 此时把脚本全文随命令发出,保证不因缓存缺失而丢一次存盘。
 	// 参数顺序是与 Lua 脚本的契约:普通版 KEYS[1]=数据键 / ARGV[1]=payload;
 	// guard 版 KEYS[1]=数据键, KEYS[2]=guard 键 / ARGV[1]=payload, ARGV[2]=期望值。
-	// 屏障版另加 KEYS[3]=屏障 hash、KEYS[4]=分桶索引;七个 ARGV 顺序见严格 Lua 头注释。
+	// 屏障版另加 KEYS[3]=屏障 hash、KEYS[4]=分桶索引;十一个 ARGV 顺序见严格 Lua 头注释。
 	int SendSaveCommand(const ElementPtr &element, bool useEvalSha)
 	{
 		const hiredis::Hiredis::CommandCallback onSaved =
@@ -752,7 +861,7 @@ private:
 			const std::string member = std::to_string(element->message_key);
 			if (useEvalSha)
 			{
-				return hiredis_->command(onSaved, "EVALSHA %b 4 %b %b %b %b %b %b %b %b %b %b %b",
+				return hiredis_->command(onSaved, "EVALSHA %b 4 %b %b %b %b %b %b %b %b %b %b %b %b %b %b %b",
 					slot.sha1.data(), slot.sha1.size(),
 					element->redis_key.data(), element->redis_key.size(),
 					element->guard_key.data(), element->guard_key.size(),
@@ -764,9 +873,13 @@ private:
 					intent.topic.data(), intent.topic.size(),
 					intent.player_database_task.data(), intent.player_database_task.size(),
 					intent.player_database_1_task.data(), intent.player_database_1_task.size(),
-					member.data(), member.size());
+					member.data(), member.size(),
+					element->schema_output_gen.data(), element->schema_output_gen.size(),
+					element->schema_load_gen.data(), element->schema_load_gen.size(),
+					element->schema_mode.data(), element->schema_mode.size(),
+					element->schema_writer.data(), element->schema_writer.size());
 			}
-			return hiredis_->command(onSaved, "EVAL %s 4 %b %b %b %b %b %b %b %b %b %b %b", slot.source.data(),
+			return hiredis_->command(onSaved, "EVAL %s 4 %b %b %b %b %b %b %b %b %b %b %b %b %b %b %b", slot.source.data(),
 				element->redis_key.data(), element->redis_key.size(),
 				element->guard_key.data(), element->guard_key.size(),
 				element->barrier_key.data(), element->barrier_key.size(),
@@ -777,7 +890,11 @@ private:
 				intent.topic.data(), intent.topic.size(),
 				intent.player_database_task.data(), intent.player_database_task.size(),
 				intent.player_database_1_task.data(), intent.player_database_1_task.size(),
-				member.data(), member.size());
+				member.data(), member.size(),
+				element->schema_output_gen.data(), element->schema_output_gen.size(),
+				element->schema_load_gen.data(), element->schema_load_gen.size(),
+				element->schema_mode.data(), element->schema_mode.size(),
+				element->schema_writer.data(), element->schema_writer.size());
 		}
 		if (element->guard_key.empty())
 		{
@@ -889,6 +1006,34 @@ private:
 				 << " for key: " << element->redis_key << " in " << backoff.count() << "ms";
 	}
 
+	// 在途写被原子拒绝(owner guard 返回 0,或严格屏障 C3 enforce 返回 3)之后,同 key 排队值的处置:
+	// 排队值的 guard 期望值与被拒的不同 → 调用方在这笔写在途期间拿到了更新的归属,照常发出它并返回 true,
+	// 调用方此时不回调(那笔旧写已被它取代,由它的结果决定后续);相同 → 同一份已作废的期望值,一并丢弃,返回 false。
+	// sameWriterOnly(C3 用):排队值的写方令牌与被拒的不同时同样照发 —— 它来自另一个加载实体,C3 的判定只看
+	// 写方自己的加载世代,被拒的那份不能替它下结论;owner 拒绝只看 guard,不传。
+	// 调用前在途记录必须已摘除。
+	bool IssuePendingWithNewerGuard(const ElementPtr& element, const char* rejectedBy, bool sameWriterOnly = false)
+	{
+		auto newer = pending_save_queue_.find(element->redis_key);
+		if (newer == pending_save_queue_.end())
+		{
+			return false;
+		}
+		auto next = newer->second;
+		pending_save_queue_.erase(newer);
+		const bool otherWriter = sameWriterOnly && next->schema_writer != element->schema_writer;
+		if (next->guard_expected == element->guard_expected && !otherWriter)
+		{
+			return false;
+		}
+		LOG_WARN << "Redis Save rejected by " << rejectedBy << " for key: " << element->redis_key
+				 << " expected=" << element->guard_expected
+				 << " -- superseded by a pending value with newer guard=" << next->guard_expected
+				 << (otherWriter ? " from another loaded entity" : "") << ", issuing it";
+		IssueSave(next);
+		return true;
+	}
+
 	void OnSaved(hiredis::Hiredis * /*c*/, redisReply *reply, ElementPtr element)
 	{
 		// Ignore a callback from a connection that was superseded during
@@ -944,20 +1089,9 @@ private:
 		if (!element->guard_key.empty() && reply->type == REDIS_REPLY_INTEGER && reply->integer == 0)
 		{
 			saving_queue_.erase(inFlight);
-			if (auto newer = pending_save_queue_.find(element->redis_key);
-				newer != pending_save_queue_.end())
+			if (IssuePendingWithNewerGuard(element, "owner guard"))
 			{
-				auto next = newer->second;
-				pending_save_queue_.erase(newer);
-				if (next->guard_expected != element->guard_expected)
-				{
-					LOG_WARN << "Redis Save rejected by owner guard for key: " << element->redis_key
-							 << " expected=" << element->guard_expected
-							 << " -- superseded by a pending value with newer guard=" << next->guard_expected
-							 << ", issuing it";
-					IssueSave(next);
-					return;
-				}
+				return;
 			}
 			LOG_WARN << "Redis Save rejected by owner guard for key: " << element->redis_key
 					 << " guard=" << element->guard_key << " expected=" << element->guard_expected
@@ -969,13 +1103,50 @@ private:
 			return;
 		}
 
-		// 只有整数 1 是提交证据,不能把损坏 / 未知回包送进 SQL 准入钩子。
-		if (reply->type != REDIS_REPLY_INTEGER || reply->integer != 1)
+		// 严格屏障返回 3 = enforce 模式下覆盖世代校验 C3 判定倒退、拒写(一个键都没动)。只对屏障元素解释 3。
+		// 处置同上面的 0:不重试(同一份数据再发只会再被拒)、不执行提交钩子、不发布 save_callback_;
+		// 同 key 排队值 guard 与写方令牌都相同才一并丢弃(同一实体、同一归属,再发只会再被拒),
+		// 否则照发、不回调(它带着更新的归属,或来自另一个加载实体,由它自己的结果决定后续)。
+		if (!element->barrier_key.empty() && reply->type == REDIS_REPLY_INTEGER && reply->integer == 3)
+		{
+			saving_queue_.erase(inFlight);
+			if (IssuePendingWithNewerGuard(element, "persist schema regression check", /*sameWriterOnly=*/true))
+			{
+				return;
+			}
+			LOG_ERROR << "Redis Save refused by persist schema regression check (enforce) for key: " << element->redis_key
+					  << " expected=" << element->guard_expected << " output_gen=" << element->schema_output_gen
+					  << " load_gen=" << element->schema_load_gen
+					  << " -- nothing written, dropping in-flight and same-guard pending values";
+			if (save_schema_rejected_callback_)
+			{
+				save_schema_rejected_callback_(element->message_key, element->redis_key, element->guard_expected);
+			}
+			return;
+		}
+
+		// 只有整数 1 是提交证据,不能把损坏 / 未知回包送进 SQL 准入钩子。唯一的例外是严格屏障的 2:
+		// warn 模式下 C3 判定倒退但已照写,同样是提交证据,另外通知一次用于计数与日志。
+		const bool schemaRegressionWarned =
+			!element->barrier_key.empty() && reply->type == REDIS_REPLY_INTEGER && reply->integer == 2;
+		if (reply->type != REDIS_REPLY_INTEGER || (reply->integer != 1 && !schemaRegressionWarned))
 		{
 			LOG_ERROR << "Redis Save received no commit acknowledgement for key: " << element->redis_key;
 			saving_queue_.erase(inFlight);
 			QueueSaveForRetry(element);
 			return;
+		}
+		if (schemaRegressionWarned)
+		{
+			if (save_schema_warned_callback_)
+			{
+				save_schema_warned_callback_(element->message_key, element->redis_key);
+			}
+			else
+			{
+				LOG_WARN << "Redis Save committed despite persist schema regression (warn) for key: " << element->redis_key
+						 << " output_gen=" << element->schema_output_gen << " load_gen=" << element->schema_load_gen;
+			}
 		}
 		// 已提交的父快照必须有对应 SQL 任务;更新值尚未成功,不能拿它代替本次恢复证据。
 		// 只丢弃未下发就被合并的快照钩子。先移动确保本次钩子至多执行一次。
@@ -1141,6 +1312,8 @@ private:
 	EventCallback save_callback_;
 	SaveFailedCallback save_failed_callback_;
 	SaveRejectedCallback save_rejected_callback_;
+	SaveSchemaWarnedCallback save_schema_warned_callback_;
+	SaveSchemaRejectedCallback save_schema_rejected_callback_;
 	EventCallback load_callback_;
 	FailedCallback load_failed_callback_;
 };

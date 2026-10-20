@@ -250,33 +250,45 @@ func (m *Mall) accept(ctx context.Context, in mallIntent) (*tradepb.TradeCommerc
 }
 
 // 领取无需破坏性出队：多个副本会得到同一意图，同库唯一request_key保证只有一条资产seq。
+// 单条意图失败不挡同批其余意图(2026-10-20,与 Engine.Tick 的单行隔离同一条修复):各条错误汇总后一并返回,
+// 本轮预算用完才提前结束。
 func (m *Mall) Tick(ctx context.Context) error {
 	var intents []mallIntent
 	if err := m.call(ctx, "delivery", "trade", "POST", "/internal/deliveries/poll", map[string]int{"limit": 20}, &intents); err != nil {
 		return err
 	}
+	var errs []error
 	for _, in := range intents {
-		r, err := m.accept(ctx, in)
-		if err != nil {
-			return err
+		if err := ctx.Err(); err != nil {
+			errs = append(errs, err)
+			break
 		}
-		state := ""
-		switch r.Status {
-		case Settled:
-			state = "DELIVERED"
-		case 8:
-			state = "REFUND_PENDING"
-		case Manual:
-			state = "MANUAL"
-		}
-		if state == "" {
-			continue
-		}
-		sum := sha256.Sum256(r.WorkflowProto)
-		receipt := map[string]string{"orderId": in.OrderID, "tradeOrderId": strconv.FormatUint(r.CommerceId, 10), "state": state, "proof": hex.EncodeToString(sum[:])}
-		if err := m.call(ctx, "delivery", "trade", "POST", "/internal/deliveries/receipt", receipt, nil); err != nil {
-			return err
+		if err := m.deliverIntent(ctx, in); err != nil {
+			errs = append(errs, fmt.Errorf("商城交付意图 %q: %w", in.OrderID, err))
 		}
 	}
-	return nil
+	return errors.Join(errs...)
+}
+
+// deliverIntent 为一条已付款意图建(或找回)交付合同;合同已有终局时回报商城。
+func (m *Mall) deliverIntent(ctx context.Context, in mallIntent) error {
+	r, err := m.accept(ctx, in)
+	if err != nil {
+		return err
+	}
+	state := ""
+	switch r.Status {
+	case Settled:
+		state = "DELIVERED"
+	case 8:
+		state = "REFUND_PENDING"
+	case Manual:
+		state = "MANUAL"
+	}
+	if state == "" {
+		return nil
+	}
+	sum := sha256.Sum256(r.WorkflowProto)
+	receipt := map[string]string{"orderId": in.OrderID, "tradeOrderId": strconv.FormatUint(r.CommerceId, 10), "state": state, "proof": hex.EncodeToString(sum[:])}
+	return m.call(ctx, "delivery", "trade", "POST", "/internal/deliveries/receipt", receipt, nil)
 }

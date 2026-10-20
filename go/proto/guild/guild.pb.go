@@ -5048,7 +5048,7 @@ const file_proto_guild_guild_proto_rawDesc = "" +
 	"\x1fGUILD_TRIAL_LOBBY_STATE_PENDING\x10\x01\x12%\n" +
 	"!GUILD_TRIAL_LOBBY_STATE_LAUNCHING\x10\x02\x12$\n" +
 	" GUILD_TRIAL_LOBBY_STATE_LAUNCHED\x10\x03\x12!\n" +
-	"\x1dGUILD_TRIAL_LOBBY_STATE_ENDED\x10\x042\xbc\x13\n" +
+	"\x1dGUILD_TRIAL_LOBBY_STATE_ENDED\x10\x042\xca\x13\n" +
 	"\fGuildService\x12H\n" +
 	"\vCreateGuild\x12\x1b.guildpb.CreateGuildRequest\x1a\x1c.guildpb.CreateGuildResponse\x12?\n" +
 	"\bGetGuild\x12\x18.guildpb.GetGuildRequest\x1a\x19.guildpb.GetGuildResponse\x12Q\n" +
@@ -5064,9 +5064,9 @@ const file_proto_guild_guild_proto_rawDesc = "" +
 	"\x16CancelGuildApplication\x12&.guildpb.CancelGuildApplicationRequest\x1a'.guildpb.CancelGuildApplicationResponse\x12l\n" +
 	"\x17ListMyGuildApplications\x12'.guildpb.ListMyGuildApplicationsRequest\x1a(.guildpb.ListMyGuildApplicationsResponse\x12f\n" +
 	"\x15ListGuildApplications\x12%.guildpb.ListGuildApplicationsRequest\x1a&.guildpb.ListGuildApplicationsResponse\x12i\n" +
-	"\x16ReviewGuildApplication\x12&.guildpb.ReviewGuildApplicationRequest\x1a'.guildpb.ReviewGuildApplicationResponse\x126\n" +
-	"\x12NotifyGuildChanged\x12\x18.guildpb.GuildChangedS2C\x1a\x06.Empty\x12W\n" +
-	"\x10UpdateGuildScore\x12 .guildpb.UpdateGuildScoreRequest\x1a!.guildpb.UpdateGuildScoreResponse\x12K\n" +
+	"\x16ReviewGuildApplication\x12&.guildpb.ReviewGuildApplicationRequest\x1a'.guildpb.ReviewGuildApplicationResponse\x12=\n" +
+	"\x12NotifyGuildChanged\x12\x18.guildpb.GuildChangedS2C\x1a\x06.Empty\"\x05\x88\x99\xc8\x01\x02\x12^\n" +
+	"\x10UpdateGuildScore\x12 .guildpb.UpdateGuildScoreRequest\x1a!.guildpb.UpdateGuildScoreResponse\"\x05\x88\x99\xc8\x01\x03\x12K\n" +
 	"\fGetGuildRank\x12\x1c.guildpb.GetGuildRankRequest\x1a\x1d.guildpb.GetGuildRankResponse\x12`\n" +
 	"\x13GetGuildRankByGuild\x12#.guildpb.GetGuildRankByGuildRequest\x1a$.guildpb.GetGuildRankByGuildResponse\x12f\n" +
 	"\x15GetGuildDonateOptions\x12%.guildpb.GetGuildDonateOptionsRequest\x1a&.guildpb.GetGuildDonateOptionsResponse\x12N\n" +

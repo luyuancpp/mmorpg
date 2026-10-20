@@ -27,6 +27,10 @@ void RedisSystem::Initialize(muduo::net::EventLoop* loop)
     // owner_epoch CAS 拒绝(Lua 比对 player:{id}:owner_epoch 不等)与"存盘失败"是两种语义:
     // 失败要重试、拒绝是终态(本节点已被废黜,再试也是拒)。分开接线,别让废黜走进重试队列。
     playerRedis->SetSaveRejectedCallback(PlayerLifecycleSystem::HandlePlayerSaveRejected);
+    // 严格屏障覆盖世代校验 C3(混版本持久字段保护 §5.2)的两种结局:warn 照写只计数;enforce 拒写按实体状态分派。
+    // 都不是"已被废黜",不能接到上面那条回调上。
+    playerRedis->SetSaveSchemaWarnedCallback(PlayerLifecycleSystem::HandlePlayerSaveSchemaWarned);
+    playerRedis->SetSaveSchemaRejectedCallback(PlayerLifecycleSystem::HandlePlayerSaveSchemaRejected);
     // DBTask 投递记账:登记本线程 KafkaProducer 的逐条回执监听器,DBTask 落定后交给生命周期(下线收尾的回执闸门)。
     // 必须早于任何存盘(存盘只可能发生在玩家进场之后)。函数指针,不绑任何对象。
     DbTaskDispatchSystem::Initialize(&PlayerLifecycleSystem::OnDbTaskDispatchSettled);
@@ -129,6 +133,14 @@ void RedisSystem::Initialize(muduo::net::EventLoop* loop)
                      << " home_zone_unknown=" << ownerStats.homeZoneUnknown
                      << " owner_epoch_unknown=" << ownerStats.ownerEpochUnknown
                      << " stale_owner_rejected_exiting=" << ownerStats.staleOwnerRejectedExiting;
+        }
+        // 混版本持久字段保护 C3 的结局计数(persist_schema_stats),单独一行、单独前缀,不动上面几行的解析格式。
+        // 两项正常都应恒 0;非 0 时逐次的 metric=persist_schema_regression 日志里有玩家号与 key。
+        const auto schemaStats = persist_schema_stats::Read();
+        if (schemaStats.Any())
+        {
+            LOG_WARN << "[PersistSchema] regression_warned=" << schemaStats.regressionWarned
+                     << " regression_rejected=" << schemaStats.regressionRejected;
         }
         // 存盘序号发号器的异常计数(save_seq.h 的 save_seq_stats;db-write-fencing-mysql.md §7.2)。单独一行、单独前缀,
         // 不动上面几行的解析格式。key=value 平铺、进程启动以来的累计值;三项正常都应恒 0,任一非 0 才打,级别 WARN

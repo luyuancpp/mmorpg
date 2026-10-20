@@ -2,7 +2,7 @@
 #include <chrono>
 #include <string_view>
 #include "entt/src/entt/entity/registry.hpp"
-#include "core/network/grpc_call_types.h"
+#include "core/network/grpc_client_call.h"
 
 #include "rpc/service_metadata/battle_node_service_metadata.h"
 

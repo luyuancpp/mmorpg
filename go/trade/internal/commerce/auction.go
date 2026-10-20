@@ -7,6 +7,8 @@ import (
 	"math"
 	tradepb "proto/trade"
 	"trade/internal/data"
+
+	"github.com/zeromicro/go-zero/core/logx"
 )
 
 func (e *Engine) PlaceBid(ctx context.Context, me, lotID uint64, in *tradepb.PlaceAuctionBidRequest) (*tradepb.TradeCommerceRecord, error) {
@@ -45,13 +47,18 @@ func (e *Engine) acceptBid(ctx context.Context, bidID uint64) error {
 		if err := tx.QueryRowContext(ctx, "SELECT guard_id FROM trade_commerce_guard WHERE guard_id=? FOR UPDATE", candidate.ParentId).Scan(&guard); err != nil {
 			return err
 		}
+		// 拍品行不存在或 workflow 解不开时这条出价按"不合格"退款,不整轮报错(2026-10-20,第一轮审计 §2.5 go-asset-services#0):
+		// bid_ready 的出价还没被拍品接受(接受与 WinningBidId 在同一事务里写),拍品不引用它,原币退回只动出价人自己的冻结资金;
+		// 以前这里直接返回错误,拍品坏了的话这条出价每轮重试、冻结的钱永远退不回来。拍品自己由它那一行的推进隔离为人工。
 		lot, err := e.Repo.Lock(ctx, tx, candidate.ParentId)
-		if err != nil {
+		if err != nil && !errors.Is(err, sql.ErrNoRows) {
 			return err
 		}
-		lw, err := data.Workflow(lot)
-		if err != nil {
-			return err
+		var lw *tradepb.TradeCommerceWorkflow
+		if err == nil {
+			if lw, err = data.Workflow(lot); err != nil {
+				lw = nil
+			}
 		}
 		bid, err := e.Repo.Lock(ctx, tx, bidID)
 		if err != nil {
@@ -59,21 +66,29 @@ func (e *Engine) acceptBid(ctx context.Context, bidID uint64) error {
 		}
 		bw, err := data.Workflow(bid)
 		if err != nil {
-			return err
+			return corrupt(err)
 		}
 		if bw.Stage != "bid_ready" {
 			return nil
+		}
+		if lw == nil {
+			logx.Errorf("[Commerce] Bid refunded because its lot is missing or undecodable bid_id=%d lot_id=%d", bid.CommerceId, candidate.ParentId)
 		}
 		var now uint64
 		if err := tx.QueryRowContext(ctx, "SELECT CAST(UNIX_TIMESTAMP(CURRENT_TIMESTAMP(3))*1000 AS UNSIGNED)").Scan(&now); err != nil {
 			return err
 		}
-		eligible := lw.Stage == "lot_open" && !lw.CancelRequested && lot.ExpiresMs > now && bid.UnitPrice >= lot.UnitPrice && (lw.HighestBid == 0 || lw.MinimumIncrement <= math.MaxInt64-lw.HighestBid && bid.UnitPrice >= lw.HighestBid+lw.MinimumIncrement)
+		eligible := lw != nil && lw.Stage == "lot_open" && !lw.CancelRequested && lot.ExpiresMs > now && bid.UnitPrice >= lot.UnitPrice && (lw.HighestBid == 0 || lw.MinimumIncrement <= math.MaxInt64-lw.HighestBid && bid.UnitPrice >= lw.HighestBid+lw.MinimumIncrement)
+		// 截止判定用库时钟(多副本同一把尺);updated_ms 用引擎时钟,与其它 Save 一致 —— 它是 Due 的调度键,
+		// Due 按引擎时钟取到期行,库时钟领先时用它写 updated_ms 会让刚改好的行晚到期(2026-10-20)。
+		saveMs := e.now()
 		if !eligible {
 			bw.Stage = "bid_refund"
 			bid.Status = CancelPending
-			return e.Repo.Save(ctx, tx, bid, bw, now)
+			return e.Repo.Save(ctx, tx, bid, bw, saveMs)
 		}
+		// 原最高价出价读不到 / 不在 bid_held 是拍品自相矛盾,不是这条出价坏了,所以不标 corrupt(那会把这条出价连同冻结资金隔离成人工):
+		// 按暂时失败推迟,拍品截止后这条出价不再 eligible,走上面的退款分支自动退回。
 		if lw.WinningBidId != 0 {
 			old, err := e.Repo.Lock(ctx, tx, lw.WinningBidId)
 			if err != nil {
@@ -88,7 +103,7 @@ func (e *Engine) acceptBid(ctx context.Context, bidID uint64) error {
 			}
 			ow.Stage = "bid_refund"
 			old.Status = CancelPending
-			if err := e.Repo.Save(ctx, tx, old, ow, now); err != nil {
+			if err := e.Repo.Save(ctx, tx, old, ow, saveMs); err != nil {
 				return err
 			}
 		}
@@ -98,9 +113,9 @@ func (e *Engine) acceptBid(ctx context.Context, bidID uint64) error {
 		lw.BuyerAssets = bw.SellerAssets
 		lot.BuyerPlayerId = bid.SellerPlayerId
 		bw.Stage = "bid_held"
-		if err := e.Repo.Save(ctx, tx, lot, lw, now); err != nil {
+		if err := e.Repo.Save(ctx, tx, lot, lw, saveMs); err != nil {
 			return err
 		}
-		return e.Repo.Save(ctx, tx, bid, bw, now)
+		return e.Repo.Save(ctx, tx, bid, bw, saveMs)
 	})
 }

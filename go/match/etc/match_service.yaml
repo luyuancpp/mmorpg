@@ -126,8 +126,10 @@ PveTeamSizeByConfigId:
 MetricsListenAddr: ":9170"
 
 # ---- 评分匹配(设计文档 cross-zone-matchmaking.md §11)----
-# 评分存 MatchRedis 的 match:rating:{player_id}(无 TTL,默认 1500)。⚠ MatchRedis 缺省
-# 回落共享库时,共享库若配了 allkeys-lfu 之类的淘汰策略,评分可能被淘汰回落 1500;
+# 评分存 MatchRedis 的 match:rating:{player_id}(无 TTL,默认 1500)。GlobalMatch.Enabled=true 时评分改由
+# TiDB 权威库读写(rating.go 的 Authority 分支;非 dev / test 档强制开启),下面的风险只在关闭时成立。⚠ MatchRedis 缺省
+# 回落共享库时,评分能否存活取决于共享库的淘汰策略(compose 自 2026-10-12 起与 K8s 同为 noeviction):
+# 一旦配成 allkeys-* 之类的淘汰型,评分可能被淘汰回落 1500;即使不淘汰,无 TTL 的评分也在与契约 key 争内存。
 # 生产必须配独立 MatchRedis。
 # RatingEnabled:消费 Kafka 对局结果更新 Elo;关闭后评分停在 1500,匹配退化为纯等待序。
 RatingEnabled: true

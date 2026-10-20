@@ -156,7 +156,17 @@ public:
     //
     // MeasureFreeRoomPerConfig 和合并两处的 IsMergeCandidate 同样排除 equip。
     // size>0 约束合并，空堆不参与幸存者选择。
+    //
+    // 同理,带着本版本不认识的字段(新版本加的物品属性,例如绑定、限时)的实例也不并堆:旧代码看不懂这些属性,
+    // 并堆会把带属性的物品并进普通堆、或把属性抹成其中一份(docs/design/mixed-version-persist-field-protection.md §4.4)。
+    // 包里既有的堆:MeasureFreeRoomPerConfig、IsMergeCandidate 与本函数共用 IsIndependentInstance 一个判定,
+    // 预检与提交(PlanStackIntoExistingStacks)不会分叉。传入物品一侧同样只认这一个判定:
+    // Bag::AddItems 的规划按它把传入物品分进「单独计实例」或「可并堆」,与提交时 CanStack(既有堆, 传入物品) 同口径。
     [[nodiscard]] static bool CanStack(const ItemComp &leftItem, const ItemComp &rightItem);
+
+    // 不与任何实例并堆的独立实例:带实例数据(has_equip(),presence 即判据),或带着本版本不认识的字段(见 CanStack)。
+    // 包内既有的堆与传入物品都用它判,任何"能不能并"的预检、规划、提交不得另写一份判据。
+    [[nodiscard]] static bool IsIndependentInstance(const ItemComp &item);
 
     // totalSize 个单位、每堆最多 maxStackSize 个,要拆成几个实例。
     // 拆分前它叫 GridsNeededFor("要几格"),名字把实例数和格子数混为一谈;

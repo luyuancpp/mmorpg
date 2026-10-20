@@ -9,6 +9,8 @@
 #include "modules/bag/comp/player_bags_comp.h"       // 存盘前确认背包组件在场(bag_marshal 对缺组件输出空记录)
 #include "modules/mission/comp/mission_comp.h"       // 同上,任务容器
 #include "modules/currency/comp/player_currency_comp.h"
+#include "engine/core/utils/proto/unknown_field_carry.h"
+#include "services/scene/player/comp/player_persist_carry_comp.h"
 #include "player_skill.h"
 #include "player_attribute.h"
 #include "player_pet.h"
@@ -114,6 +116,10 @@ void ReviveBaseAttributesIfDead(BaseAttributesComp& attrs, uint64_t maxHealth, u
 }
 
 void PlayerDatabaseMessageFieldsUnmarshal(entt::entity player, const player_database& message){
+	// 本表顶层的未知字段(新版本加的整列)与加载世代,存盘时由 PlayerDatabaseMessageFieldsMarshal 原样带回
+	// (docs/design/mixed-version-persist-field-protection.md §4.2 L1)。持久数据类,唯一创建点。
+	tlsEcs.actorRegistry.emplace<PlayerDatabaseCarryComp>(
+		player, PlayerDatabaseCarryComp{unknown_field_carry::Capture(message), message.persist_schema_gen()});
 	tlsEcs.actorRegistry.emplace<Transform>(player, message.transform());
 	tlsEcs.actorRegistry.emplace<PlayerUint64Comp>(player, message.uint64_pb_component());
 	tlsEcs.actorRegistry.emplace<PlayerSkillListComp>(player, message.skill_list());
@@ -216,6 +222,8 @@ bool PlayerDatabaseMessageFieldsMarshal(entt::entity player, player_database& me
 		FindPersistedComp<PlayerMysteryMerchantComp>(player, "PlayerMysteryMerchantComp", missing);
 	const auto* currency = FindPersistedComp<CurrencyComp>(player, "CurrencyComp", missing);
 	const auto* currencyRuntime = FindPersistedComp<PlayerCurrencyComp>(player, "PlayerCurrencyComp", missing);
+	// 顶层未知字段缺了载体同样整份拒存:补空等于把新版本写进来的整列抹掉(混版本设计 §4.2 L1)。
+	const auto* carry = FindPersistedComp<PlayerDatabaseCarryComp>(player, "PlayerDatabaseCarryComp", missing);
 	if (!missing.empty())
 	{
 		const auto* guid = tlsEcs.actorRegistry.try_get<PlayerGuidComp>(player);
@@ -223,6 +231,14 @@ bool PlayerDatabaseMessageFieldsMarshal(entt::entity player, player_database& me
 				  << " (load invariant broken; nothing is written): entity=" << entt::to_integral(player)
 				  << " player_id=" << (guid != nullptr ? guid->value : kInvalidGuid) << " missing=" << missing
 				  << " " << DescribeEntity(tlsEcs.actorRegistry, player);
+		return false;
+	}
+	// 校验前置:携带的字节先解析好,解析失败时 message 一个字段都还没动。
+	google::protobuf::UnknownFieldSet carriedUnknown;
+	if (!unknown_field_carry::Parse(carry->topLevelUnknown, carriedUnknown))
+	{
+		LOG_ERROR << "[PlayerSave] carried top-level unknown fields of player_database are corrupt; refusing to marshal: entity="
+				  << entt::to_integral(player);
 		return false;
 	}
 
@@ -255,6 +271,14 @@ bool PlayerDatabaseMessageFieldsMarshal(entt::entity player, player_database& me
 	message.mutable_currency()->CopyFrom(*currency);
 	// 必须在 CopyFrom 之后:CopyFrom 会覆盖整个 currency 子消息(含 debts),
 	// 反序会把刚写进去的欠款抹掉。
-	currencyRuntime->SaveToProto(*message.mutable_currency());
+	if (!currencyRuntime->SaveToProto(*message.mutable_currency()))
+	{
+		// 欠款携带的未知字段坏了(只可能是内存被破坏)。唯一调用方 PlayerAllDataMessageFieldsMarshal 在副本上写,
+		// 返回 false 时原输出不动。
+		LOG_ERROR << "[PlayerSave] carried unknown fields of a currency debt are corrupt; refusing to marshal: entity="
+				  << entt::to_integral(player);
+		return false;
+	}
+	unknown_field_carry::Replace(carriedUnknown, message);
 	return true;
 }

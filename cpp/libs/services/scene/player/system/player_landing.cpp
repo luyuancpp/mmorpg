@@ -14,7 +14,7 @@
 // 这里显式再包含一次,不靠传递包含拿这些符号(同 player_scene.cpp / player_team.h)。
 #include <hiredis/hiredis.h>
 
-#include "network/player_message_utils.h"
+#include "network/client_message_sender.h"
 #include "rpc/service_metadata/player_scene_service_metadata.h"
 
 #include "player/comp/player_frozen_comp.h"

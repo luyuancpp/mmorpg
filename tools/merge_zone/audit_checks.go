@@ -70,12 +70,13 @@ func isInfraAudit(r ResourceAudit) bool {
 // 断线时维护,是「这个玩家还连着」的权威来源;friend:online 当年即便写了也只是它的派生物。
 func auditOnlinePresence(ctx context.Context, cfg auditConfig) ResourceAudit {
 	r := ResourceAudit{Name: "online_presence", UniqueScope: "per_zone"}
-	if cfg.mappingDB == nil {
-		return infraAudit(r.Name, "no mapping Redis handle — cannot enumerate source-zone players")
-	}
-	pids, err := collectPlayerIDsWithHomeZone(ctx, cfg.mappingDB, cfg.src)
+	routes, err := cfg.routeReads()
 	if err != nil {
-		return infraAudit(r.Name, "mapping scan failed: %v", err)
+		return infraAudit(r.Name, "%v — cannot enumerate source-zone players", err)
+	}
+	pids, err := routes.playersWithHome(ctx, cfg.src)
+	if err != nil {
+		return infraAudit(r.Name, "mapping scan (%s) failed: %v", routes.source(), err)
 	}
 	r.SourceCount = int64(len(pids))
 
@@ -110,9 +111,13 @@ func auditPlayerLocks(ctx context.Context, cfg auditConfig) ResourceAudit {
 	if cfg.mappingDB == nil {
 		return infraAudit(r.Name, "no mapping Redis handle")
 	}
-	pids, err := collectPlayerIDsWithHomeZone(ctx, cfg.mappingDB, cfg.src)
+	routes, err := cfg.routeReads()
 	if err != nil {
-		return infraAudit(r.Name, "mapping scan failed: %v", err)
+		return infraAudit(r.Name, "%v — cannot enumerate source-zone players", err)
+	}
+	pids, err := routes.playersWithHome(ctx, cfg.src)
+	if err != nil {
+		return infraAudit(r.Name, "mapping scan (%s) failed: %v", routes.source(), err)
 	}
 	r.SourceCount = int64(len(pids))
 
@@ -213,16 +218,17 @@ func auditSourceZoneNodes(ctx context.Context, cfg auditConfig) ResourceAudit {
 // 漏改几个照样过线 —— 已由 verifyManifestMapping 逐 id 核对取代(A6)。
 func verifyMappingDrained(ctx context.Context, cfg auditConfig) ResourceAudit {
 	r := ResourceAudit{Name: "verify:mapping_src", UniqueScope: "global"}
-	if cfg.mappingDB == nil {
-		return infraAudit(r.Name, "no mapping Redis handle")
-	}
-	pids, err := collectPlayerIDsWithHomeZone(ctx, cfg.mappingDB, cfg.src)
+	routes, err := cfg.routeReads()
 	if err != nil {
-		return infraAudit(r.Name, "mapping scan failed: %v", err)
+		return infraAudit(r.Name, "%v", err)
 	}
-	dstIDs, err := collectPlayerIDsWithHomeZone(ctx, cfg.mappingDB, cfg.dst)
+	pids, err := routes.playersWithHome(ctx, cfg.src)
 	if err != nil {
-		return infraAudit(r.Name, "mapping scan (dst) failed: %v", err)
+		return infraAudit(r.Name, "mapping scan (%s) failed: %v", routes.source(), err)
+	}
+	dstIDs, err := routes.playersWithHome(ctx, cfg.dst)
+	if err != nil {
+		return infraAudit(r.Name, "mapping scan (%s, dst) failed: %v", routes.source(), err)
 	}
 	r.SourceCount = int64(len(pids))
 	r.TargetCount = int64(len(dstIDs))
@@ -255,17 +261,23 @@ func verifyManifestMapping(ctx context.Context, cfg auditConfig) ResourceAudit {
 			"is this the manifest of the merge being verified?", r.SourceCount, cfg.expectedSrcPlayers)
 		return r
 	}
-	if cfg.mappingDB == nil {
-		return infraAudit(r.Name, "no mapping Redis handle")
-	}
-	vals, present, err := readPlayerZones(ctx, cfg.mappingDB, m.PlayerIDs)
+	routes, err := cfg.routeReads()
 	if err != nil {
 		return infraAudit(r.Name, "%v", err)
+	}
+	// db 源读库里的 home_zone(真源),redis 源读 player:zone。按原值逐字节比(与以前的 readPlayerZones 同一口径):
+	// 缺席、非规范写法("0902")、指向别的 zone 都算没过来。库里的值由 homeValue 规范成十进制,两种来源可比。
+	reads, err := routes.placements(ctx, m.PlayerIDs)
+	if err != nil {
+		return infraAudit(r.Name, "%v", err)
+	}
+	if len(reads) != len(m.PlayerIDs) {
+		return infraAudit(r.Name, "placement read returned %d answers for %d players", len(reads), len(m.PlayerIDs))
 	}
 	want := strconv.FormatUint(uint64(cfg.dst), 10)
 	var wrong []uint64
 	for i, id := range m.PlayerIDs {
-		if !present[i] || vals[i] != want {
+		if reads[i].HomeRaw != want {
 			wrong = append(wrong, id)
 		}
 	}
@@ -282,10 +294,11 @@ func verifyManifestMapping(ctx context.Context, cfg auditConfig) ResourceAudit {
 	return r
 }
 
-// playerMainRowCheck 是「清单玩家的主数据行合服后应当在哪」的判据(A6)。
+// playerMainRowCheck 是「清单玩家的主数据行合服后应当在哪」的判据(A6)。落点记录经 routes 读:
+// -route-source=db 读全局库(真源),redis 读 mapping Redis(规格 §13.3 第 6 条)。
 type playerMainRowCheck struct {
 	where   string // 进 Notes:查的是哪里
-	missing func(ctx context.Context, db *sql.DB, mapping *redis.Client, ids []uint64) ([]uint64, error)
+	missing func(ctx context.Context, db *sql.DB, routes routeReadSide, ids []uint64) ([]uint64, error)
 }
 
 // expectedMainRowStore 是纯判定:一名清单玩家的主数据行合服后应在的落点库(player-storage-placement.md §10)。
@@ -313,10 +326,13 @@ func expectedMainRowStore(rd placementRead, dst uint32) (uint32, bool) {
 func mainRowCheckFor(_ *mergeManifest, dst uint32) playerMainRowCheck {
 	return playerMainRowCheck{
 		where: fmt.Sprintf("player_database of each player's placement store (player:placement record, else %s)", zoneDBName(dst)),
-		missing: func(ctx context.Context, db *sql.DB, mapping *redis.Client, ids []uint64) ([]uint64, error) {
-			reads, err := readPlacements(ctx, mapping, ids)
+		missing: func(ctx context.Context, db *sql.DB, routes routeReadSide, ids []uint64) ([]uint64, error) {
+			reads, err := routes.placements(ctx, ids)
 			if err != nil {
 				return nil, err
+			}
+			if len(reads) != len(ids) {
+				return nil, fmt.Errorf("placement read returned %d answers for %d players", len(reads), len(ids))
 			}
 			var missing []uint64
 			byStore := map[uint32][]uint64{}
@@ -373,11 +389,12 @@ func verifyManifestRows(ctx context.Context, cfg auditConfig) ResourceAudit {
 	if cfg.db == nil {
 		return infraAudit(r.Name, "no MySQL handle")
 	}
-	if cfg.mappingDB == nil {
-		return infraAudit(r.Name, "no mapping Redis handle (placement records decide where each player's rows live)")
+	routes, err := cfg.routeReads()
+	if err != nil {
+		return infraAudit(r.Name, "%v (placement records decide where each player's rows live)", err)
 	}
 	check := mainRowCheckFor(m, cfg.dst)
-	missing, err := check.missing(ctx, cfg.db, cfg.mappingDB, m.PlayerIDs)
+	missing, err := check.missing(ctx, cfg.db, routes, m.PlayerIDs)
 	if err != nil {
 		return infraAudit(r.Name, "%v", err)
 	}
@@ -543,6 +560,16 @@ func verifyFenceReleased(ctx context.Context, cfg auditConfig) ResourceAudit {
 		if n > 0 {
 			held = append(held, key)
 		}
+		// -route-source=db:围栏的真源是库(W1 在库内复核它),镜像只是给 scene_manager / guild 读的副本 —— 两边都要已释放。
+		if cfg.routeDB != nil {
+			st, err := cfg.routeDB.ReadFence(ctx, z)
+			if err != nil {
+				return infraAudit(r.Name, "read zone_merge_fence(%d): %v", z, err)
+			}
+			if st.Active {
+				held = append(held, fmt.Sprintf("zone_merge_fence(zone=%d, run_id=%s)", z, st.RunID))
+			}
+		}
 	}
 	r.SourceCount = int64(len(held))
 	if len(held) > 0 {
@@ -554,4 +581,137 @@ func verifyFenceReleased(ctx context.Context, cfg auditConfig) ResourceAudit {
 	r.Severity = "info"
 	r.Notes = "no merge:in_progress:* fence left behind"
 	return r
+}
+
+// ── verify:route_cache(D1 第 2 批,规格 §6.3 R8、P-6)──────────────────────────
+
+// verifyRouteCache(只在 -route-source=db 时跑):清单里每一个玩家在 mapping Redis 里的那一份必须与库逐字节一致 ——
+// player:maprev 等于库 rev,player:zone / player:placement 等于库值的编码(库里为 NULL 的,缓存里也必须不存在)。
+//
+// 为什么开 dst 之前必须跑:合服每批只在「本批全员发布确认」之后推进,但那是发布那一刻的确认;之后 Redis 切主、从旧快照恢复、
+// 或有绕过脚本的写者(旧版 merge_zone、手工 redis-cli),缓存都可能与库分叉。第 3 批读方门禁打开之前,go/db 选库与
+// data_service 路由只读缓存:开服之前必须证明它们看到的就是库里的结论。不一致一律 block,修法是让对账 leader 补推
+// (或重跑写这批的那一步,发布是幂等的),再验一遍;不要手工改 Redis。
+func verifyRouteCache(ctx context.Context, cfg auditConfig) ResourceAudit {
+	r := ResourceAudit{Name: "verify:route_cache", UniqueScope: "global"}
+	m, err := cfg.verifyManifest()
+	if err != nil {
+		return infraAudit(r.Name, "%v", err)
+	}
+	r.SourceCount = int64(len(m.PlayerIDs))
+	if cfg.routeDB == nil {
+		if cfg.routeErr != nil {
+			return infraAudit(r.Name, "%v", cfg.routeErr)
+		}
+		return infraAudit(r.Name, "no route DB handle (-route-source=db)")
+	}
+	if cfg.mappingDB == nil {
+		return infraAudit(r.Name, "no mapping Redis handle")
+	}
+	bad, sample, err := routeCacheMismatches(ctx, cfg.routeDB, cfg.mappingDB, m.PlayerIDs)
+	if err != nil {
+		return infraAudit(r.Name, "%v", err)
+	}
+	r.TargetCount = r.SourceCount - int64(bad)
+	r.ConflictCount = int64(bad)
+	if bad > 0 {
+		r.Severity = "block"
+		r.Notes = fmt.Sprintf("%d of the %d manifest players have a mapping-Redis copy that differs from player_route (first: %v) — "+
+			"do NOT open zone %d: let the data_service reconcile leader push them (or re-run the merge step that wrote them; "+
+			"publishing is idempotent) and verify again", bad, len(m.PlayerIDs), sample, cfg.dst)
+		return r
+	}
+	r.Severity = "info"
+	r.Notes = fmt.Sprintf("all %d manifest players: player:maprev == player_route.rev and the cached values equal the DB", len(m.PlayerIDs))
+	return r
+}
+
+// routeCacheMismatches 逐人比对库行与缓存三键(库:一次 ReadRoutes;缓存:每 routeCatchUpReadBatch 人一次 MGET),
+// 返回不一致的人数与样本。库读或 MGET 失败、MGET 回复形状不对 = 查不成(error)。
+func routeCacheMismatches(ctx context.Context, db routeDBReader, rdb *redis.Client, ids []uint64) (int, []string, error) {
+	if len(ids) == 0 {
+		return 0, nil, nil
+	}
+	rows, err := db.ReadRoutes(ctx, ids)
+	if err != nil {
+		return 0, nil, err
+	}
+	bad := 0
+	var sample []string
+	for _, chunk := range chunkUint64(ids, routeCatchUpReadBatch) {
+		keys := make([]string, 0, 3*len(chunk))
+		for _, id := range chunk {
+			keys = append(keys, playerZoneKey(id), placementKey(id), mapRevKey(id))
+		}
+		vals, err := rdb.MGet(ctx, keys...).Result()
+		if err != nil {
+			return 0, nil, fmt.Errorf("route cache mget (%d keys): %w", len(keys), err)
+		}
+		if len(vals) != len(keys) {
+			return 0, nil, fmt.Errorf("%w: route cache mget returned %d values for %d keys", errUnexpectedRouteScriptReply, len(vals), len(keys))
+		}
+		for i, id := range chunk {
+			row, present := rows[id]
+			same, why, err := routeCacheMatches(row, present, vals[3*i], vals[3*i+1], vals[3*i+2])
+			if err != nil {
+				return 0, nil, fmt.Errorf("player %d: %w", id, err)
+			}
+			if !same {
+				bad++
+				if len(sample) < unmappedSampleSize {
+					sample = append(sample, fmt.Sprintf("%d: %s", id, why))
+				}
+			}
+		}
+	}
+	return bad, sample, nil
+}
+
+// routeCacheMatches 是 verify:route_cache 对一名玩家的纯判定。cacheHome / cachePlc / cacheRev 是 MGET 的元素(nil = 键不存在)。
+// 一致 ⇔ 库里有这一行、行自洽、maprev 存在且与库 rev 逐字节相同、player:zone 与 player:placement 分别等于库值的编码
+// (库里为 NULL 的缓存里也必须不存在)。缓存 rev 比库新同样算不一致(库回档的征兆,不是「更新了」)。
+// 不一致时 why 说明哪一键不对;err 只用于 MGET 元素类型不对(查不成,不是数据问题)。
+func routeCacheMatches(row mergeRouteRow, present bool, cacheHome, cachePlc, cacheRev any) (bool, string, error) {
+	var vals [3]string
+	var has [3]bool
+	for i, v := range []any{cacheHome, cachePlc, cacheRev} {
+		switch s := v.(type) {
+		case nil:
+		case string:
+			vals[i], has[i] = s, true
+		default:
+			return false, "", fmt.Errorf("%w: MGET element %d is %T", errUnexpectedRouteScriptReply, i, v)
+		}
+	}
+	if !present {
+		return false, fmt.Sprintf("no player_route row (cache: player:zone=%s player:maprev=%s)",
+			routeCacheValueDesc(vals[0], has[0]), routeCacheValueDesc(vals[2], has[2])), nil
+	}
+	plc, err := row.placementValue()
+	if err != nil {
+		return false, fmt.Sprintf("player_route row is malformed: %v", err), nil
+	}
+	wantRev := formatRouteRev(row.Rev)
+	home := row.homeValue()
+	switch {
+	case !has[2]:
+		return false, fmt.Sprintf("player:maprev is absent (DB rev %s)", wantRev), nil
+	case vals[2] != wantRev:
+		return false, fmt.Sprintf("player:maprev %q != DB rev %s", vals[2], wantRev), nil
+	case has[0] != (home != "") || vals[0] != home:
+		return false, fmt.Sprintf("player:zone %s != DB home_zone %s", routeCacheValueDesc(vals[0], has[0]),
+			routeCacheValueDesc(home, home != "")), nil
+	case has[1] != (plc != "") || vals[1] != plc:
+		return false, fmt.Sprintf("player:placement %s != DB placement %s", routeCacheValueDesc(vals[1], has[1]),
+			routeCacheValueDesc(plc, plc != "")), nil
+	}
+	return true, "", nil
+}
+
+// routeCacheValueDesc 给文案用:不存在写 <absent>,否则带引号的原值。
+func routeCacheValueDesc(v string, present bool) string {
+	if !present {
+		return "<absent>"
+	}
+	return strconv.Quote(v)
 }

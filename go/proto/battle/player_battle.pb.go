@@ -1393,20 +1393,20 @@ const file_proto_battle_player_battle_proto_rawDesc = "" +
 	"\x11eBattleTicketRole\x12\x1b\n" +
 	"\x17BATTLE_TICKET_ROLE_NONE\x10\x00\x12\"\n" +
 	"\x1eBATTLE_TICKET_ROLE_PARTICIPANT\x10\x01\x12\x1f\n" +
-	"\x1bBATTLE_TICKET_ROLE_OBSERVER\x10\x022\xad\x05\n" +
+	"\x1bBATTLE_TICKET_ROLE_OBSERVER\x10\x022\xe5\x05\n" +
 	"\x12BattleClientPlayer\x12M\n" +
 	"\x12SubmitBattleAction\x12\x1a.SubmitBattleActionRequest\x1a\x1b.SubmitBattleActionResponse\x129\n" +
-	"\x0eGetBattleState\x12\x16.GetBattleStateRequest\x1a\x0f.BattleStateS2C\x12,\n" +
-	"\x11NotifyBattleStart\x12\x0f.BattleStartS2C\x1a\x06.Empty\x12*\n" +
-	"\x10NotifyTurnResult\x12\x0e.TurnResultS2C\x1a\x06.Empty\x12(\n" +
-	"\x0fNotifyBattleEnd\x12\r.BattleEndS2C\x1a\x06.Empty\x124\n" +
-	"\x15NotifyBattleReconnect\x12\x13.BattleReconnectS2C\x1a\x06.Empty\x12D\n" +
+	"\x0eGetBattleState\x12\x16.GetBattleStateRequest\x1a\x0f.BattleStateS2C\x123\n" +
+	"\x11NotifyBattleStart\x12\x0f.BattleStartS2C\x1a\x06.Empty\"\x05\x88\x99\xc8\x01\x02\x121\n" +
+	"\x10NotifyTurnResult\x12\x0e.TurnResultS2C\x1a\x06.Empty\"\x05\x88\x99\xc8\x01\x02\x12/\n" +
+	"\x0fNotifyBattleEnd\x12\r.BattleEndS2C\x1a\x06.Empty\"\x05\x88\x99\xc8\x01\x02\x12;\n" +
+	"\x15NotifyBattleReconnect\x12\x13.BattleReconnectS2C\x1a\x06.Empty\"\x05\x88\x99\xc8\x01\x02\x12D\n" +
 	"\x0fStopWatchBattle\x12\x17.StopWatchBattleRequest\x1a\x18.StopWatchBattleResponse\x12>\n" +
-	"\rSetAutoBattle\x12\x15.SetAutoBattleRequest\x1a\x16.SetAutoBattleResponse\x120\n" +
-	"\x13NotifySpectateState\x12\x11.SpectateStateS2C\x1a\x06.Empty\x122\n" +
-	"\x18NotifySpectateTurnResult\x12\x0e.TurnResultS2C\x1a\x06.Empty\x12,\n" +
-	"\x11NotifySpectateEnd\x12\x0f.SpectateEndS2C\x1a\x06.Empty\x122\n" +
-	"\x14NotifyBattleAssigned\x12\x12.BattleAssignedS2C\x1a\x06.Empty\x1a\x05\x88\xa8\xc3\x01\x01B\x12\x98\xd4a\x1eZ\fproto/battleb\x06proto3"
+	"\rSetAutoBattle\x12\x15.SetAutoBattleRequest\x1a\x16.SetAutoBattleResponse\x127\n" +
+	"\x13NotifySpectateState\x12\x11.SpectateStateS2C\x1a\x06.Empty\"\x05\x88\x99\xc8\x01\x02\x129\n" +
+	"\x18NotifySpectateTurnResult\x12\x0e.TurnResultS2C\x1a\x06.Empty\"\x05\x88\x99\xc8\x01\x02\x123\n" +
+	"\x11NotifySpectateEnd\x12\x0f.SpectateEndS2C\x1a\x06.Empty\"\x05\x88\x99\xc8\x01\x02\x129\n" +
+	"\x14NotifyBattleAssigned\x12\x12.BattleAssignedS2C\x1a\x06.Empty\"\x05\x88\x99\xc8\x01\x02\x1a\x05\x88\xa8\xc3\x01\x01B\x12\x98\xd4a\x1eZ\fproto/battleb\x06proto3"
 
 var (
 	file_proto_battle_player_battle_proto_rawDescOnce sync.Once

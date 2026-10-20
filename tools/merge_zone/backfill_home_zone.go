@@ -27,10 +27,17 @@ package main
 // pin 模式行还是真源、但归属已是目标区);
 // SET NX 虽然不覆盖已有映射,但映射一旦丢失(Redis 整体丢数据正是想起回填的典型时刻),回填就会把
 // 已合走的玩家整批钉回死区。dry-run 同样拒绝,彩排就能暴露。
+//
+// -route-source=db(W9,规格 §6.3):真源是全局库的 player_route。定位降级为「只给从未登记过的存量号补 home」,不再是 Redis
+// 丢失后的恢复手段(那由 data_service 的对账 leader 按库全量预热)。每批一个库事务(BackfillHomeBatch:该 zone 的 63 号片围栏
+// **未生效**(新增,原实现不看围栏)→ 库里的 zone_merged_into 有该 zone 作 src 就拒绝(Redis 丢了也拦得住)→ 无行插入 home /
+// home 为 NULL 补 home / 已是本 zone 计 already / 别的 zone 不动)→ 提交 → 本批目标状态的全部行发布 + WAITAOF。读 zone 库也改走
+// RC 会话(readCommittedDSN);不再有逐键 GET,也就没有「单键读错误被当成缺席」的口子。
 
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 	"log"
 	"strconv"
@@ -50,6 +57,8 @@ type backfillEntryParams struct {
 	mappingPwd  string
 	mappingDB   int
 	dryRun      bool
+	// route 是 -route-source 与路由库参数(main 装配,routeEntryOptionsOf)。
+	route routeEntryOptions
 }
 
 // runBackfillEntry 是 -backfill-home-zone 的入口。
@@ -60,17 +69,24 @@ func runBackfillEntry(p backfillEntryParams) {
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Hour)
 	defer cancel()
 
-	log.Printf("=== Backfill player:zone for zone %d from %s.player_database (dry-run=%v, mapping=%s db=%d) ===",
-		p.zone, zoneDBName(p.zone), p.dryRun, p.mappingAddr, p.mappingDB)
+	log.Printf("=== Backfill player:zone for zone %d from %s.player_database (dry-run=%v, mapping=%s db=%d, route-source=%s) ===",
+		p.zone, zoneDBName(p.zone), p.dryRun, p.mappingAddr, p.mappingDB, p.route.source)
 
-	db, err := sql.Open("mysql", p.mysqlDSN)
-	if err != nil {
-		log.Fatalf("mysql open: %v", err)
+	var db *sql.DB
+	if p.route.source == routeSourceDB {
+		// W9:读 zone 库同样走 RC 会话(与合服 / 撤销同一口径,mustOpenMySQL → readCommittedDSN)。
+		db = mustOpenMySQL(ctx, p.mysqlDSN)
+	} else {
+		var err error
+		db, err = sql.Open("mysql", p.mysqlDSN)
+		if err != nil {
+			log.Fatalf("mysql open: %v", err)
+		}
+		if err := db.PingContext(ctx); err != nil {
+			log.Fatalf("mysql ping: %v", err)
+		}
 	}
 	defer db.Close()
-	if err := db.PingContext(ctx); err != nil {
-		log.Fatalf("mysql ping: %v", err)
-	}
 	if err := assertSchemaExists(ctx, db, zoneDBName(p.zone)); err != nil {
 		log.Fatalf("backfill: %v", err)
 	}
@@ -80,8 +96,13 @@ func runBackfillEntry(p backfillEntryParams) {
 	if err := mapRdb.Ping(ctx).Err(); err != nil {
 		log.Fatalf("mapping redis ping: %v", err)
 	}
+	rb, err := openRunRouteBackend(ctx, p.route, mapRdb, newToolRunID("backfill", p.zone, time.Now()))
+	if err != nil {
+		log.Fatalf("backfill: route source: %v", err)
+	}
+	defer rb.Close()
 
-	rep, err := backfillHomeZone(ctx, mapRdb, newMySQLPlayerIDSource(db, p.zone), p.zone, p.dryRun)
+	rep, err := stepBackfillHomeZone(ctx, rb, mapRdb, newMySQLPlayerIDSource(db, p.zone), p.zone, p.dryRun)
 	if err != nil {
 		log.Fatalf("backfill: %v (partial progress: %s)", err, rep)
 	}
@@ -242,4 +263,109 @@ func backfillHomeZone(ctx context.Context, mapRdb *redis.Client, src playerIDSou
 		}
 	}
 	return rep, nil
+}
+
+// ── -route-source=db(W9,见文件头)──────────────────────────────────────────────
+
+// stepBackfillHomeZone 按源分派回填:rb == nil → backfillHomeZone(Redis SET NX,逐字不变);否则 backfillHomeZoneDB。
+func stepBackfillHomeZone(ctx context.Context, rb *routeBackend, mapRdb *redis.Client, src playerIDSource, zone uint32, dryRun bool) (backfillReport, error) {
+	if rb == nil {
+		return backfillHomeZone(ctx, mapRdb, src, zone, dryRun)
+	}
+	return backfillHomeZoneDB(ctx, rb, src, zone, dryRun)
+}
+
+// refuseBackfillDB 是库版回填的只读前置(dry-run 与 apply 同一口径,先于任何写):该 zone 的围栏生效、或库里记着它已被合走,
+// 即拒绝;读失败同样拒绝(fail-closed)。apply 的每个批事务在库里再复核一次,那才是权威判据。
+func refuseBackfillDB(ctx context.Context, db routeDBOps, zone uint32) error {
+	fs, err := db.ReadFence(ctx, zone)
+	if err != nil {
+		return fmt.Errorf("cannot prove zone %d is not being merged (zone_merge_fence): %w — refusing to backfill", zone, err)
+	}
+	if fs.Active {
+		return fmt.Errorf("zone %d is being merged (zone_merge_fence run_id=%s holder=%s): backfill after that run finishes",
+			zone, fs.RunID, fs.HolderJSON)
+	}
+	dst, run, found, err := db.ReadMergedInto(ctx, zone)
+	if err != nil {
+		return fmt.Errorf("cannot prove zone %d was not merged away (zone_merged_into): %w — refusing to backfill", zone, err)
+	}
+	if found {
+		return fmt.Errorf("%w: zone %d was merged into zone %d by run %s (zone_merged_into): its players were re-homed by that merge, "+
+			"and backfilling would pin them back to a dead zone. Restore lost mappings by replaying the merge manifest (runbook), "+
+			"not by backfill", errRouteZoneMergedAway, zone, dst, run)
+	}
+	return nil
+}
+
+// backfillHomeZoneDB 是 backfillHomeZone 的库版(W9):逐批读 zone 库的 player_id(keyset 分页,口径与 Redis 版相同)→ 每
+// routeWriteBatchLimit 人一个库事务(BackfillHomeBatch)→ 本批目标状态的全部行(插入的、补上的、早已是本 zone 的)发布 +
+// WAITAOF → 下一批。计数与 Redis 版同口径:插入与补 home 计 Created,已是本 zone 计 AlreadyMapped,别的 zone 计 Mismatched(不动)。
+// 任何一批发布失败即停(重跑时已写的走「已是本 zone」分支、重新发布)。dry-run 只读库分类。
+func backfillHomeZoneDB(ctx context.Context, rb *routeBackend, src playerIDSource, zone uint32, dryRun bool) (backfillReport, error) {
+	var rep backfillReport
+	if err := refuseBackfillDB(ctx, rb.db, zone); err != nil {
+		return rep, err
+	}
+	warnConflict := func(id uint64) {
+		log.Printf("WARN: player %d already has a home_zone other than %d in player_route — kept as-is", id, zone)
+	}
+	var after uint64
+	for {
+		ids, err := src.NextBatch(ctx, after, backfillBatchSize)
+		if err != nil {
+			return rep, err
+		}
+		if len(ids) == 0 {
+			return rep, nil
+		}
+		rep.RowsScanned += len(ids)
+		after = ids[len(ids)-1]
+		if dryRun {
+			rows, err := rb.db.ReadRoutes(ctx, ids)
+			if err != nil {
+				return rep, err
+			}
+			for _, id := range ids {
+				switch row, ok := rows[id]; {
+				case !ok || row.HomeZone == 0:
+					rep.WouldCreate++
+				case row.HomeZone == zone:
+					rep.AlreadyMapped++
+				default:
+					rep.Mismatched++
+					warnConflict(id)
+				}
+			}
+			continue
+		}
+		for _, chunk := range chunkUint64(ids, routeWriteBatchLimit) {
+			res, err := rb.db.BackfillHomeBatch(ctx, zone, chunk)
+			if err != nil {
+				if errors.Is(err, errRouteZoneFenced) || errors.Is(err, errRouteZoneMergedAway) {
+					return rep, fmt.Errorf("zone %d became fenced or merged away while backfilling — stopped: %w", zone, err)
+				}
+				return rep, fmt.Errorf("backfill a batch of %d players (nothing of this batch committed): %w", len(chunk), err)
+			}
+			for _, id := range chunk {
+				switch v := res.Verdicts[id]; v {
+				case routeBackfillInserted, routeBackfillFilled:
+					rep.Created++
+					rep.WouldCreate++
+				case routeBackfillAlready:
+					rep.AlreadyMapped++
+				case routeBackfillConflict:
+					rep.Mismatched++
+					warnConflict(id)
+				default:
+					return rep, fmt.Errorf("%w: the backfill batch returned verdict %d for player %d", errRouteInvariant, v, id)
+				}
+			}
+			if _, err := rb.pub.publishRoutes(ctx, res.Target); err != nil {
+				return rep, fmt.Errorf("a backfill batch of %d players committed in player_route (%d written) but publishing its %d "+
+					"target rows failed — re-run (rows already on zone %d are republished): %w",
+					len(chunk), res.Changed, len(res.Target), zone, err)
+			}
+		}
+	}
 }

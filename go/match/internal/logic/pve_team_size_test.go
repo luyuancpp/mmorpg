@@ -123,7 +123,6 @@ func TestSizedQueueKeyRoundTrip(t *testing.T) {
 		lockKey, err := lockKeyForQueue(plain)
 		require.NoError(t, err)
 		require.Equal(t, matcherLockKey(c.mode, c.config), lockKey)
-		require.Zero(t, queueTeamSize(legacyMatchQueueKey(c.mode, c.config)))
 	}
 
 	// 异物:不是队列 key 就读不出人数,也推不出锁 key。

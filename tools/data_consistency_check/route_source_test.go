@@ -15,7 +15,6 @@ import (
 	"go/token"
 	"io"
 	"os"
-	"sort"
 	"strconv"
 	"strings"
 	"sync"
@@ -230,16 +229,16 @@ func TestRedisCountAndHasHome(t *testing.T) {
 
 // ── 假 routeTable(驱动 dbRouteSource 的循环)─────────────────────
 
-// fakeRouteTable:homes 是 player_id → home_zone(nil 指针 = NULL);next / page 非 nil 时覆盖默认实现;
-// errOn 是 HomeOf 返回的错误;pageCalls 记下每次 PageByHome 的游标。
+// fakeRouteTable:homes 是 player_id → home_zone(nil 指针 = NULL);next 非 nil 时覆盖默认实现;
+// countErr 是 CountWithHome 返回的错误,errOn 是 HomeOf 返回的错误;countCalls 记 CountWithHome 的调用次数。
 type fakeRouteTable struct {
 	homes map[uint64]*uint32
 
-	next  func(from uint64) (uint32, bool, error)
-	page  func(zone uint32, after routeKey, limit int) ([]routeKey, error)
-	errOn error
+	next     func(from uint64) (uint32, bool, error)
+	countErr error
+	errOn    error
 
-	pageCalls []routeKey
+	countCalls int
 }
 
 func zonePtr(z uint32) *uint32 {
@@ -262,26 +261,18 @@ func (f *fakeRouteTable) NextHomeZone(_ context.Context, from uint64) (uint32, b
 	return best, found, nil
 }
 
-func (f *fakeRouteTable) PageByHome(_ context.Context, zone uint32, after routeKey, limit int) ([]routeKey, error) {
-	f.pageCalls = append(f.pageCalls, after)
-	if f.page != nil {
-		return f.page(zone, after, limit)
+func (f *fakeRouteTable) CountWithHome(context.Context) (int64, error) {
+	f.countCalls++
+	if f.countErr != nil {
+		return 0, f.countErr
 	}
-	var keys []routeKey
-	for id, h := range f.homes {
-		if h == nil || *h != zone {
-			continue
-		}
-		k := routeKey{Shard: id % routeRowShards, PlayerID: id}
-		if after.less(k) {
-			keys = append(keys, k)
+	var n int64
+	for _, h := range f.homes {
+		if h != nil {
+			n++
 		}
 	}
-	sort.Slice(keys, func(i, j int) bool { return keys[i].less(keys[j]) })
-	if len(keys) > limit {
-		keys = keys[:limit]
-	}
-	return keys, nil
+	return n, nil
 }
 
 func (f *fakeRouteTable) HomeOf(_ context.Context, playerID uint64) (uint32, bool, error) {
@@ -296,10 +287,11 @@ func (f *fakeRouteTable) HomeOf(_ context.Context, playerID uint64) (uint32, boo
 }
 
 // TestDBRouteSourceLiveZonesAndCount:越界 zone 计畸形、不进活区但玩家照样计数;NULL 归属不计;
-// 一个 zone 跨两页时第二页的游标是第一页的最后一行。
+// 玩家数是一条计数查询(不按 zone 逐页拉主键)。
 func TestDBRouteSourceLiveZonesAndCount(t *testing.T) {
+	const zone3Players = 25
 	homes := map[uint64]*uint32{}
-	for i := uint64(1); i <= routePageSize+500; i++ {
+	for i := uint64(1); i <= zone3Players; i++ {
 		homes[i] = zonePtr(3)
 	}
 	homes[900001] = zonePtr(5)
@@ -324,61 +316,27 @@ func TestDBRouteSourceLiveZonesAndCount(t *testing.T) {
 		t.Fatalf("samples = %q", got)
 	}
 
-	f.pageCalls = nil
 	n, err := src.CountPlayers(context.Background())
 	if err != nil {
 		t.Fatalf("CountPlayers: %v", err)
 	}
-	if want := int64(routePageSize + 500 + 3); n != want {
+	// zone 3 的 25 个 + zone 5 + 越界的 zone 0 / 1000000,NULL 两个不计。
+	if want := int64(zone3Players + 3); n != want {
 		t.Fatalf("CountPlayers = %d, want %d", n, want)
 	}
-	// zone 0 / 3 / 5 / 1000000 各从 {0,0} 起一页,zone 3 另有第二页。
-	if len(f.pageCalls) != 5 {
-		t.Fatalf("page calls = %d, want 5: %v", len(f.pageCalls), f.pageCalls)
-	}
-	var zone3Second routeKey
-	for _, c := range f.pageCalls {
-		if c != (routeKey{}) {
-			zone3Second = c
-		}
-	}
-	if zone3Second == (routeKey{}) {
-		t.Fatal("zone 3 的第二页没有从第一页的最后一行续上")
+	if f.countCalls != 1 {
+		t.Fatalf("CountWithHome calls = %d, want 1 (one indexed count, no per-zone paging)", f.countCalls)
 	}
 	if !strings.Contains(src.Describe(), `"testdb"`) || !strings.Contains(src.Describe(), "route source: db") {
 		t.Fatalf("Describe() = %q", src.Describe())
 	}
 }
 
-// TestDBRouteSourceRejectsBrokenOrdering:游标不前进时报错,不死循环、不重复计数。
+// TestDBRouteSourceRejectsBrokenOrdering:home_zone 游标不前进时报错,不死循环。
 func TestDBRouteSourceRejectsBrokenOrdering(t *testing.T) {
 	stuck := &fakeRouteTable{next: func(uint64) (uint32, bool, error) { return 3, true, nil }}
 	if _, _, err := (dbRouteSource{t: stuck}).LiveZones(context.Background()); err == nil {
 		t.Fatal("home_zone 不递增必须报错")
-	}
-
-	once := false
-	repeat := &fakeRouteTable{
-		next: func(from uint64) (uint32, bool, error) {
-			if from <= 3 {
-				return 3, true, nil
-			}
-			return 0, false, nil
-		},
-		page: func(_ uint32, after routeKey, limit int) ([]routeKey, error) {
-			if !once {
-				once = true
-				page := make([]routeKey, limit)
-				for i := range page {
-					page[i] = routeKey{Shard: 1, PlayerID: uint64(i + 1)}
-				}
-				return page, nil
-			}
-			return []routeKey{after}, nil // 第二页回到游标本身
-		},
-	}
-	if _, err := (dbRouteSource{t: repeat}).CountPlayers(context.Background()); err == nil {
-		t.Fatal("页内的行不在游标之后必须报错")
 	}
 }
 
@@ -388,13 +346,9 @@ func TestDBRouteSourceErrorsAreErrors(t *testing.T) {
 	if _, _, err := (dbRouteSource{t: nextErr}).LiveZones(context.Background()); !errors.Is(err, boom) {
 		t.Fatalf("LiveZones err = %v", err)
 	}
-	if _, err := (dbRouteSource{t: nextErr}).CountPlayers(context.Background()); !errors.Is(err, boom) {
-		t.Fatalf("CountPlayers err = %v", err)
-	}
-	pageErr := &fakeRouteTable{homes: map[uint64]*uint32{1: zonePtr(3)},
-		page: func(uint32, routeKey, int) ([]routeKey, error) { return nil, boom }}
-	if _, err := (dbRouteSource{t: pageErr}).CountPlayers(context.Background()); !errors.Is(err, boom) {
-		t.Fatalf("CountPlayers err = %v", err)
+	countErr := &fakeRouteTable{homes: map[uint64]*uint32{1: zonePtr(3)}, countErr: boom}
+	if n, err := (dbRouteSource{t: countErr}).CountPlayers(context.Background()); !errors.Is(err, boom) || n != 0 {
+		t.Fatalf("CountPlayers = %d, %v; want 0 + %v", n, err, boom)
 	}
 	homeErr := &fakeRouteTable{errOn: boom}
 	if has, err := (dbRouteSource{t: homeErr}).HasHome(context.Background(), 1); !errors.Is(err, boom) || has {
@@ -517,7 +471,7 @@ func openFakeSQL(t *testing.T, handle func(query string, args []any) ([]string, 
 // TestSQLRouteTableStatementsAndArgs:三条语句与参数顺序(含点查的行片 = player_id % 64)、NULL 与无行的口径。
 func TestSQLRouteTableStatementsAndArgs(t *testing.T) {
 	boom := errors.New("Error 2013: lost connection")
-	var failNext bool
+	var failNext, failCount bool
 	db, srv := openFakeSQL(t, func(query string, args []any) ([]string, [][]driver.Value, error) {
 		switch query {
 		case sqlNextHomeZone:
@@ -528,8 +482,11 @@ func TestSQLRouteTableStatementsAndArgs(t *testing.T) {
 				return []string{"home_zone"}, [][]driver.Value{{int64(3)}}, nil
 			}
 			return []string{"home_zone"}, nil, nil
-		case sqlPageByHome:
-			return []string{"route_shard", "player_id"}, [][]driver.Value{{int64(5), int64(133)}, {int64(6), int64(6)}}, nil
+		case sqlCountWithHome:
+			if failCount {
+				return nil, nil, boom
+			}
+			return []string{"COUNT(*)"}, [][]driver.Value{{int64(7)}}, nil
 		case sqlHomeOf:
 			switch args[1] {
 			case int64(130):
@@ -557,9 +514,12 @@ func TestSQLRouteTableStatementsAndArgs(t *testing.T) {
 		t.Fatalf("NextHomeZone error = %v", err)
 	}
 
-	page, err := tbl.PageByHome(ctx, 3, routeKey{Shard: 5, PlayerID: 69}, routePageSize)
-	if err != nil || fmt.Sprint(page) != "[{5 133} {6 6}]" {
-		t.Fatalf("PageByHome = %v, %v", page, err)
+	if n, err := tbl.CountWithHome(ctx); err != nil || n != 7 {
+		t.Fatalf("CountWithHome = %d, %v; want 7", n, err)
+	}
+	failCount = true
+	if n, err := tbl.CountWithHome(ctx); !errors.Is(err, boom) || n != 0 {
+		t.Fatalf("CountWithHome error = %d, %v; want 0 + %v", n, err, boom)
 	}
 
 	if z, ok, err := tbl.HomeOf(ctx, 130); err != nil || !ok || z != 9 {
@@ -579,7 +539,8 @@ func TestSQLRouteTableStatementsAndArgs(t *testing.T) {
 		{sqlNextHomeZone, []any{int64(0)}},
 		{sqlNextHomeZone, []any{int64(4)}},
 		{sqlNextHomeZone, []any{int64(4)}},
-		{sqlPageByHome, []any{int64(3), int64(5), int64(5), int64(69), int64(routePageSize)}},
+		{sqlCountWithHome, []any{}},
+		{sqlCountWithHome, []any{}},
 		{sqlHomeOf, []any{int64(130 % 64), int64(130)}},
 		{sqlHomeOf, []any{int64(131 % 64), int64(131)}},
 		{sqlHomeOf, []any{int64(129 % 64), int64(129)}},
@@ -590,16 +551,11 @@ func TestSQLRouteTableStatementsAndArgs(t *testing.T) {
 	}
 }
 
-// TestSQLStatementsFollowReadTemplate:语句形状钉住提案 §11.2 G1a 的读方模板(键集游标用 OR 展开、按聚簇键排序、
-// 点查带行片),改语句时要同时想清楚索引。
+// TestSQLStatementsFollowReadTemplate:语句形状钉住提案 §11.2 G1a 的读方模板(活区在 idx_route_home 上跳取、玩家数是
+// 一条范围计数、点查带行片),改语句时要同时想清楚索引。
 func TestSQLStatementsFollowReadTemplate(t *testing.T) {
-	for _, want := range []string{
-		"WHERE home_zone = ? AND (route_shard > ? OR (route_shard = ? AND player_id > ?))",
-		"ORDER BY route_shard, player_id LIMIT ?",
-	} {
-		if !strings.Contains(sqlPageByHome, want) {
-			t.Errorf("sqlPageByHome %q missing %q", sqlPageByHome, want)
-		}
+	if sqlCountWithHome != "SELECT COUNT(*) FROM player_route WHERE home_zone IS NOT NULL" {
+		t.Errorf("sqlCountWithHome %q must stay a single count over idx_route_home (no paging, no GROUP BY)", sqlCountWithHome)
 	}
 	if !strings.Contains(sqlNextHomeZone, "WHERE home_zone >= ? ORDER BY home_zone LIMIT 1") {
 		t.Errorf("sqlNextHomeZone %q is not a skip scan on idx_route_home", sqlNextHomeZone)
@@ -607,7 +563,7 @@ func TestSQLStatementsFollowReadTemplate(t *testing.T) {
 	if !strings.Contains(sqlHomeOf, "WHERE route_shard = ? AND player_id = ?") {
 		t.Errorf("sqlHomeOf %q must be a primary key point read", sqlHomeOf)
 	}
-	for _, q := range []string{sqlNextHomeZone, sqlPageByHome, sqlHomeOf} {
+	for _, q := range []string{sqlNextHomeZone, sqlCountWithHome, sqlHomeOf} {
 		if strings.Contains(strings.ToUpper(q), "FOR UPDATE") || strings.Contains(strings.ToUpper(q), "DISTINCT") {
 			t.Errorf("read-only tool statement %q must not lock or use DISTINCT", q)
 		}
@@ -659,11 +615,13 @@ func TestMirroredRouteConstantsMatchSources(t *testing.T) {
 
 // ── checkFriendOrphans:归属查询失败整条判 fail ────────────────────
 
-// fakeRoutes 是 routeSource 的最小假实现,只给好友检查用。
+// fakeRoutes 是 routeSource 的最小假实现,给好友检查与玩家数检查用;count / countErr 是 CountPlayers 的回答。
 type fakeRoutes struct {
-	has    map[uint64]bool
-	errOn  map[uint64]error
-	called []uint64
+	has      map[uint64]bool
+	errOn    map[uint64]error
+	called   []uint64
+	count    int64
+	countErr error
 }
 
 func (f *fakeRoutes) Describe() string {
@@ -675,7 +633,7 @@ func (f *fakeRoutes) LiveZones(context.Context) (map[uint32]struct{}, zoneShapeR
 }
 
 func (f *fakeRoutes) CountPlayers(context.Context) (int64, error) {
-	return 0, errors.New("not used")
+	return f.count, f.countErr
 }
 
 func (f *fakeRoutes) HasHome(_ context.Context, id uint64) (bool, error) {
@@ -736,5 +694,75 @@ func TestFriendOrphansCountsMissingHomes(t *testing.T) {
 	// 1/3 ≥ 5% → block。
 	if r.Severity != "block" || r.BadCount != 1 {
 		t.Fatalf("result = %+v, want block with 1 orphan", r)
+	}
+}
+
+// TestFriendOrphansScanErrorFailsWholeCheck:样本行扫描失败整条检查判 fail(2026-10-20 之前 continue,样本静默变少)。
+func TestFriendOrphansScanErrorFailsWholeCheck(t *testing.T) {
+	db, _ := openFakeSQL(t, func(query string, _ []any) ([]string, [][]driver.Value, error) {
+		switch {
+		case query == "SELECT COUNT(*) FROM friend":
+			return []string{"n"}, [][]driver.Value{{int64(2)}}, nil
+		case strings.HasPrefix(query, "SELECT player_id, friend_player_id FROM friend"):
+			return []string{"player_id", "friend_player_id"}, [][]driver.Value{{int64(1), int64(11)}, {int64(1), "not-a-number"}}, nil
+		}
+		return nil, nil, fmt.Errorf("unexpected query %q", query)
+	})
+	routes := &fakeRoutes{has: map[uint64]bool{11: true}}
+	r := checkFriendOrphans(context.Background(), runConfig{friendDB: db, routes: routes})
+
+	if r.Severity != "fail" || r.BadCount != 0 {
+		t.Fatalf("result = %+v, want fail with BadCount 0", r)
+	}
+	if !strings.Contains(r.SampleNotes, "scan sample row after 1 sampled") {
+		t.Fatalf("notes = %q", r.SampleNotes)
+	}
+	if fmt.Sprint(routes.called) != "[11]" {
+		t.Fatalf("lookups = %v, want only the row before the bad one", routes.called)
+	}
+}
+
+// ── checkPlayerHomeZoneVsAccount:玩家数读失败判 fail ──────────────
+
+// TestPlayerHomeZoneCountFailureFailsCheck:CountPlayers 读失败判 fail、进程退出 1(2026-10-20 之前报 warn,
+// 其余检查干净时打印 "all checks pass." 并退出 0);失败时不再去数 user_accounts(cfg.db 为 nil 也不能碰到)。
+func TestPlayerHomeZoneCountFailureFailsCheck(t *testing.T) {
+	routes := &fakeRoutes{countErr: errors.New("context deadline exceeded")}
+	r := checkPlayerHomeZoneVsAccount(context.Background(), runConfig{routes: routes})
+
+	if r.Severity != "fail" || r.BadCount != 0 || r.TotalCount != 0 {
+		t.Fatalf("result = %+v, want fail with zero counts", r)
+	}
+	if !strings.Contains(r.SampleNotes, "CHECK FAILED") || !strings.Contains(r.SampleNotes, "context deadline exceeded") {
+		t.Fatalf("notes = %q", r.SampleNotes)
+	}
+	if n := printReport([]CheckResult{r}, "route source: fake"); n != 1 {
+		t.Fatalf("printReport counted %d failing rows, want 1 (a failed count must exit non-zero)", n)
+	}
+}
+
+// TestPlayerHomeZoneHeuristicUnchanged:读成功时 5 倍启发式与改动前相同(超出报 warn 不报 block,未超报 info)。
+func TestPlayerHomeZoneHeuristicUnchanged(t *testing.T) {
+	for _, tc := range []struct {
+		name     string
+		players  int64
+		severity string
+		bad      int64
+	}{
+		{name: "above_5x", players: 12, severity: "warn", bad: 2},
+		{name: "within_5x", players: 10, severity: "info", bad: 0},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			db, _ := openFakeSQL(t, func(query string, _ []any) ([]string, [][]driver.Value, error) {
+				if query == "SELECT COUNT(*) FROM user_accounts" {
+					return []string{"n"}, [][]driver.Value{{int64(2)}}, nil
+				}
+				return nil, nil, fmt.Errorf("unexpected query %q", query)
+			})
+			r := checkPlayerHomeZoneVsAccount(context.Background(), runConfig{db: db, routes: &fakeRoutes{count: tc.players}})
+			if r.Severity != tc.severity || r.BadCount != tc.bad || r.TotalCount != tc.players {
+				t.Fatalf("result = %+v, want %s bad=%d total=%d", r, tc.severity, tc.bad, tc.players)
+			}
+		})
 	}
 }

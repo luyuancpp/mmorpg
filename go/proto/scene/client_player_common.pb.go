@@ -166,12 +166,12 @@ const file_proto_scene_client_player_common_proto_rawDesc = "" +
 	"targetPort\x12#\n" +
 	"\rtoken_payload\x18\x03 \x01(\fR\ftokenPayload\x12'\n" +
 	"\x0ftoken_signature\x18\x04 \x01(\fR\x0etokenSignature\x12%\n" +
-	"\x0etoken_deadline\x18\x05 \x01(\x03R\rtokenDeadline2\xb0\x01\n" +
-	"\x17SceneClientPlayerCommon\x12*\n" +
-	"\x0fSendTipToClient\x12\x0f.TipInfoMessage\x1a\x06.Empty\x12,\n" +
+	"\x0etoken_deadline\x18\x05 \x01(\x03R\rtokenDeadline2\xc5\x01\n" +
+	"\x17SceneClientPlayerCommon\x121\n" +
+	"\x0fSendTipToClient\x12\x0f.TipInfoMessage\x1a\x06.Empty\"\x05\x88\x99\xc8\x01\x02\x123\n" +
 	"\n" +
-	"KickPlayer\x12\x16.GameKickPlayerRequest\x1a\x06.Empty\x12/\n" +
-	"\x0eRedirectToGate\x12\x15.RedirectToGateNotify\x1a\x06.Empty\x1a\n" +
+	"KickPlayer\x12\x16.GameKickPlayerRequest\x1a\x06.Empty\"\x05\x88\x99\xc8\x01\x02\x126\n" +
+	"\x0eRedirectToGate\x12\x15.RedirectToGateNotify\x1a\x06.Empty\"\x05\x88\x99\xc8\x01\x02\x1a\n" +
 	"\x80\xa8\xc3\x01\x01\x88\xa8\xc3\x01\x01B\x14\x98\xd4a\x03Z\vproto/scene\x80\x01\x01b\x06proto3"
 
 var (

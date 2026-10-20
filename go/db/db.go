@@ -327,10 +327,18 @@ func main() {
 		placementRedisHosts = fmt.Sprintf("%s db=%d", pr.Hosts, pr.DB)
 	}
 	pc := config.AppConfig.Placement
-	fmt.Printf("  placement:   redis=%s required=%v storeFamilies=%v zoneStorePool=%d/%d nonZoneStorePool=%d/%d extraStoreIdleTimeout=%v\n",
+	// 读方门禁开关与闸间隔也打在 placement 这一行(db.yaml:这一行是核对依据):回退「先关读方」之后,运维看这一行确认
+	// requireRouteReady=false 已生效,不必靠「闸的 open/closed 日志没出现」反推。间隔打生效值,与 newRouteReadyGating
+	// 同口径(0 取缺省);开关关着时间隔不生效,照样打出来便于核对 ConfigMap 渲染。
+	routeReadyGateIntervalMs := pc.RouteReadyGateIntervalMs
+	if routeReadyGateIntervalMs == 0 {
+		routeReadyGateIntervalMs = config.DefaultPlacementRouteReadyGateIntervalMs
+	}
+	fmt.Printf("  placement:   redis=%s required=%v storeFamilies=%v zoneStorePool=%d/%d nonZoneStorePool=%d/%d extraStoreIdleTimeout=%v requireRouteReady=%v routeReadyGateInterval=%v\n",
 		placementRedisHosts, pc.Required, pc.StoreFamiliesAllowed(),
 		pc.ZoneStoreMaxOpenConn, pc.ZoneStoreMaxIdleConn, pc.NonZoneStoreMaxOpenConn, pc.NonZoneStoreMaxIdleConn,
-		time.Duration(pc.ExtraStoreConnMaxIdleSeconds)*time.Second)
+		time.Duration(pc.ExtraStoreConnMaxIdleSeconds)*time.Second,
+		pc.RequireRouteReady, time.Duration(routeReadyGateIntervalMs)*time.Millisecond)
 	fmt.Printf("  kafka:       %v\n", config.AppConfig.ServerConfig.Kafka.Brokers)
 	fmt.Printf("  kafka topic: %s\n", config.AppConfig.ServerConfig.Kafka.Topic)
 	redisCfg := config.AppConfig.ServerConfig.RedisClient

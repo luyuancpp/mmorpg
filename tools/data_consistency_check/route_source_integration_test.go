@@ -2,7 +2,7 @@
 
 package main
 
-// 真库用例:sqlRouteTable 的三条语句在真 MySQL / TiDB 上的语义(键集游标、NULL 归属、主键点查)。
+// 真库用例:sqlRouteTable 的三条语句在真 MySQL / TiDB 上的语义(跳取 home_zone、计数不含 NULL 归属、主键点查)。
 //
 // 运行(Codex):
 //
@@ -115,14 +115,6 @@ func TestRouteDBIntegration(t *testing.T) {
 	if err != nil || !ok || next <= zoneA {
 		t.Errorf("NextHomeZone(%d) = %d, %v, %v; want a zone > %d", zoneA, next, ok, err, zoneA)
 	}
-	first, err := tbl.PageByHome(ctx, zoneA, routeKey{}, 2)
-	if err != nil || len(first) != 2 || !first[0].less(first[1]) {
-		t.Fatalf("PageByHome first page = %v, %v; want 2 ascending keys", first, err)
-	}
-	second, err := tbl.PageByHome(ctx, zoneA, first[1], 2)
-	if err != nil || len(second) != 1 || !first[1].less(second[0]) {
-		t.Fatalf("PageByHome second page = %v, %v; want 1 key after %v", second, err, first[1])
-	}
 
 	for id, want := range map[uint64]bool{base + 1: true, base + 4: true, base + 5: false, base + 6: false} {
 		has, err := src.HasHome(ctx, id)
@@ -131,8 +123,8 @@ func TestRouteDBIntegration(t *testing.T) {
 		}
 	}
 
-	// 只记录执行计划,不断言(小表上优化器可能选主键);回报里看 key 列是不是 idx_route_home。
-	if plan, err := db.QueryContext(ctx, "EXPLAIN "+sqlPageByHome, zoneA, 0, 0, 0, routePageSize); err == nil {
+	// 只记录执行计划,不断言(小表上优化器可能选主键或全表);回报里看 key 列是不是 idx_route_home。
+	if plan, err := db.QueryContext(ctx, "EXPLAIN "+sqlCountWithHome); err == nil {
 		cols, _ := plan.Columns()
 		for plan.Next() {
 			vals := make([]sql.RawBytes, len(cols))

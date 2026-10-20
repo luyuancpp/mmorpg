@@ -73,7 +73,7 @@ scene_manager 跨 zone 重定向共用；Java 版 `game-discovery` 的 `GatePick
 读失败放行；键名 `gate:%d:draining` 在 scene_manager 里抄了一份，由 `tools/scripts/tests/k8s_gate_drain.tests.ps1`
 钉住与 login、排空脚本三处一致。scene_manager 经**自己的** Redis 连接读标记，今天与 login 的 `Node.RedisClient` 是同一实例；
 **拆 Redis（G4a）把排空标记挪到 redis-queue 时，scene_manager 这条读也要一起指过去**（G4a 修订稿需把 scene_manager 列为
-`gate:{id}:draining` 的读者），否则读不到标记、退回不过滤。另一个隐含前提：go-zero 的 `RedisConf` 没有 DB 字段，scene_manager
+`gate:{id}:draining` 的读者；2026-10-19 注：已在 `shared-redis-split-by-purpose.md` §2.2 A 表、§3.2.1 约束 1 与 §20.5 登记），否则读不到标记、退回不过滤。另一个隐含前提：go-zero 的 `RedisConf` 没有 DB 字段，scene_manager
 只能读 DB 0；login 的 `Node.RedisClient.DB` 改成非 0 时要同步处理。排空过滤的纯逻辑在 login（`loginqueue.FilterDrainingGates`）
 与 scene_manager（`filterDrainingTargets`）各一份：两边的读客户端不同（go-redis / go-zero）、候选类型不同，login 那份又被
 `k8s_gate_drain.tests.ps1` 按文本钉住，本次没有合并进 go/shared。

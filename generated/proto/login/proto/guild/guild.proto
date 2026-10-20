@@ -581,10 +581,10 @@ service GuildService {
 
   // 推送占位(B2):只为分配 message id;服务端实现恒返回 Empty。
   // **不进** go/guild session.ClientMethods —— 客户端发这个 id 会被 PermissionDenied。
-  rpc NotifyGuildChanged (GuildChangedS2C) returns (Empty);
+  rpc NotifyGuildChanged (GuildChangedS2C) returns (Empty) { option (OptionClientRpcKind) = CLIENT_RPC_PUSH; }
 
   // Ranking
-  rpc UpdateGuildScore (UpdateGuildScoreRequest) returns (UpdateGuildScoreResponse);
+  rpc UpdateGuildScore (UpdateGuildScoreRequest) returns (UpdateGuildScoreResponse) { option (OptionClientRpcKind) = CLIENT_RPC_SERVER_ONLY; }
   rpc GetGuildRank (GetGuildRankRequest) returns (GetGuildRankResponse);
   rpc GetGuildRankByGuild (GetGuildRankByGuildRequest) returns (GetGuildRankByGuildResponse);
 

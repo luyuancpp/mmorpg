@@ -16,6 +16,7 @@ import (
 	dskafka "data_service/internal/kafka"
 	"data_service/internal/metrics"
 	"data_service/internal/noderegistry"
+	"data_service/internal/routereconcile"
 	"data_service/internal/routetoolcli"
 	"data_service/internal/server"
 	"data_service/internal/store"
@@ -181,6 +182,19 @@ func main() {
 	}
 	defer svcCtx.Close()
 
+	// ── 对账 leader(D1 第 1b-2 批,internal/routereconcile)──────────────
+	// 只在 db_first 且 Reconcile.Enabled 时装配(svcCtx.RouteReconciler 非 nil);redis 模式下什么都不做。
+	// 关停顺序(规格 spec_D1_batch1b2_2_3.md §4.2「关停顺序」):这个 defer 注册在 `defer svcCtx.Close()` 之后、Kafka 的 defer
+	// 之前,按 LIFO 在 Kafka flush **之后**、关连接池**之前**执行:只 cancel、最多等 routeReconcilerStopWait(500ms),
+	// 释放租约是尽力而为(独立 1s 时限,失败不重试,租约 LeaseMs 后自然过期)。它不挤占 Kafka 的 flush。
+	// 总预算(2026-10-20 更正,原文「整个关停 ≤ 5.5s、leader 只占其中 ≤ 500ms」与 kafkaShutdownGrace=8s 矛盾):go-zero proc 收到
+	// SIGTERM 后约 1s 才停 gRPC、5.5s 强杀进程,下面这些 defer 只剩约 4.5s;排在 leader 前面的 Kafka 等待上限是 8s,比它长。
+	// Kafka flush 慢的那次关停里,进程会在 Kafka 等待阶段就被强杀,leader 跑不到释放租约,新 leader 最多晚 LeaseMs 接手。
+	// 不影响正确性(leader 的库写有租约 fencing、推送 set-if-newer、在途推送幂等);顺序按规格保持「Kafka 先、leader 后」,
+	// 宁可换主慢一个 LeaseMs,也不让 leader 的 500ms 挤掉 Kafka 本来就不够的 flush 时间。
+	stopRouteReconciler := startRouteReconciler(svcCtx)
+	defer stopRouteReconciler()
+
 	// ── Kafka 落库消费者(transaction_log / player_snapshot)────────────
 	// Kafka 不可达绝不能拖死 data_service:Load/Save 是玩家数据热路径。启动失败只记日志,
 	// 后台每 30s 重试;消费者内部 DB 故障时停下不提交(见 internal/kafka 包注释)。
@@ -288,9 +302,13 @@ func main() {
 	// 22 自 2026-10-19 写门禁起也以 in-band error_code 出现在 SavePlayerData / SetPlayerField / DeletePlayerData 与 Rollback*
 	// 的响应里,这层拦截器能看到。仍刻意不进集合:那是围栏在正常工作(规则拒绝,口径同 RegisterPlayerZone 的拒绝)。
 	// 可见性来自 data_service_player_lock_total{outcome="merge_fenced"} 与 `[PlayerWriteLock]` 的 ERROR 日志。
-	// 映射持久化的 ErrCodeRouteStoreError(30)同理:只出现在 db_first 下 RegisterPlayerZone 的 gRPC status
-	// message 里(Unavailable),这层看不到;它的可见性来自 data_service_route_register_total{outcome="store_error"}
-	// 与 `[RegisterPlayerZone][db_first]` 的 ERROR 日志。
+	// 映射持久化的 ErrCodeRouteStoreError(30)同理:只出现在 gRPC status message 里(Unavailable),这层看不到。
+	// 产码点有两类(2026-10-19 更正:此前写的「只用于 RegisterPlayerZone」已不成立):
+	//   - db_first 下 RegisterPlayerZone 的库这一段故障 —— 可见性来自 data_service_route_register_total{outcome="store_error"}
+	//     与 `[RegisterPlayerZone][db_first]` 的 ERROR 日志;
+	//   - 第 3 批读方门禁(ReadRequiresReady=true)下 GetPlayerHomeZone / BatchGetPlayerHomeZone 缓存不可信、回源全局库又失败
+	//     (routing.ErrRouteReadUnavailable)—— 可见性来自 data_service_route_read_total{result="sql_error"}。
+	// in-band 入口(Load / Save / SetPlayerField 等)的回源失败折成 ErrCodeRedis(1),不出 30;原因在 `[DataRoute]` 日志里。
 	// 回档帮会闸三个码(27..29,docs/design/guild-phase2/07-rollback-fail-closed.md §7.3.3)里算故障的两个:
 	//   ErrCodeRollbackGuildCheckFailed(28)       —— 帮会检查没做成(guild 未配 / 不可达 / 超时 / 预算耗尽…),
 	//                                                此时**所有**回档都被拒,不告警就等于回档工具悄悄失灵
@@ -343,6 +361,8 @@ func main() {
 	if c.RouteStore.DBFirst() {
 		fmt.Printf("  WARN:        %s\n", routeStoreDBFirstWarning)
 	}
+	fmt.Printf("  reconcile:   %s\n", routeReconcileBanner(c.RouteStore, svcCtx.RouteReconciler))
+	fmt.Printf("  read gate:   RouteStore.ReadRequiresReady=%t\n", c.RouteStore.ReadRequiresReady)
 	if c.MetricsListenAddr != "" {
 		fmt.Printf("  metrics:     %s/metrics\n", c.MetricsListenAddr)
 	}
@@ -373,10 +393,50 @@ func runMigration(c config.Config) int {
 	return 0
 }
 
-// routeStoreDBFirstWarning 是 RouteStore.Mode=db_first 时启动日志与横幅里的那条 WARN(规格 d 节,M4):
-// 第 1a 批里 merge_zone 仍只写 Redis、从不写 zone_merge_fence,db_first 的安全前提是冻结窗口。
-const routeStoreDBFirstWarning = "RouteStore.Mode=db_first: 第 2 批落地前,禁止 merge_zone 任何写模式(merge/unmerge/relocate/pin-placement/backfill);" +
-	"库内合服围栏在本批恒不生效,提交点复核靠发布脚本里的 merge:in_progress(proposal §11.2)"
+// routeStoreDBFirstWarning 是 RouteStore.Mode=db_first 时启动日志与横幅里的那条 WARN(规格 d 节,M4)。
+// 第 2 批起 merge_zone 以 -route-source=db 库先写并在 zone_merge_fence 持围栏;仍要提醒的是:旧版 merge_zone 二进制直写 Redis、
+// 不写库(对账 leader 看不见它写的东西),P4 起一律禁用;切换与回退顺序按提案 §13.4。
+// 2026-10-20 补「围栏真源」一句:db 源下 merge:in_progress 只是镜像,运维不得再按 redis 源的旧流程手工 GET / DEL 它(runbook §15)。
+const routeStoreDBFirstWarning = "RouteStore.Mode=db_first: merge_zone 写模式只许第 2 批新版二进制,且显式 -route-source=db " +
+	"-route-db-dsn=<本全局库>(旧版直写 Redis、不写 zone_merge_fence,一律禁用);P4 解除冻结窗口之前不跑合服写模式;" +
+	"合服围栏以 zone_merge_fence 为真源,merge:in_progress 只是镜像,不要手工 SET / DEL(merge-zone-runbook §15);" +
+	"ArmReadyMarker 与读方开关按 proposal §13.4 切换,回退先关读方、再 Arm=false"
+
+// routeReconcilerStopWait 是关停时等对账 leader 退出的上限(规格 §4.2「关停顺序」:只 cancel、等待 ≤ 500ms)。
+// 超时就不等了:在途推送幂等且带租约校验,租约 LeaseMs 后自然过期,别的副本接手。
+const routeReconcilerStopWait = 500 * time.Millisecond
+
+// startRouteReconciler 启动对账 leader(svcCtx.RouteReconciler 为 nil 时什么都不做),返回给 defer 用的停止函数。
+// 指标在这里预置(只在装配了 leader 的副本上:assembled=1、leader=0、arm_enabled 按配置,计数器的封闭集合全部为 0)。
+// Start 不阻塞:决策循环跑在 safego goroutine 里,第一拍才连 mapping Redis、抢租约。
+func startRouteReconciler(svcCtx *svc.ServiceContext) func() {
+	rec := svcCtx.RouteReconciler
+	if rec == nil {
+		return func() {}
+	}
+	metrics.PrimeRouteReconcile(rec.ArmEnabled())
+	stop := rec.Start(context.Background())
+	logx.Infof("[startup] route reconcile leader started: leader_id=%s arm_ready_marker=%t", rec.LeaderID(), rec.ArmEnabled())
+	return func() {
+		if !stop(routeReconcilerStopWait) {
+			logx.Errorf("[RouteReconcile] did not stop within %s; continuing the shutdown (its lease expires on its own)", routeReconcilerStopWait)
+		}
+	}
+}
+
+// routeReconcileBanner 是启动横幅里对账 leader 那一行:装配了就是 on + 标识 + Arm 取值;没装配写明原因。
+// rec 取具体指针类型而不是接口:nil 的 *Reconciler 转成接口就不再等于 nil(「非 nil 接口包着 nil 指针」)。
+func routeReconcileBanner(rs config.RouteStoreConfig, rec *routereconcile.Reconciler) string {
+	switch {
+	case !rs.DBFirst():
+		return "off (redis mode)"
+	case !rs.Reconcile.On():
+		return "off (RouteStore.Reconcile.Enabled=false)"
+	case rec == nil:
+		return "NOT ASSEMBLED (see the [ServiceContext] errors above)"
+	}
+	return fmt.Sprintf("leader=on arm_ready=%t leader_id=%s", rec.ArmEnabled(), rec.LeaderID())
+}
 
 // migrateExitLockBusy 与 go/schemamigrate 的 ExitLockBusy 同值:迁移锁被另一个实例(另一个副本的启动路径,
 // 或上一次还没结束的迁移 Job)持有。K8s 的迁移 Job 按这个码重试,而不是当成迁移本身失败。

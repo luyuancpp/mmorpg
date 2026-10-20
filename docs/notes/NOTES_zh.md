@@ -471,7 +471,7 @@
 | #77 | 整数溢出 | currency int64_t + DeductCurrency 校验 | 通用 SafeAdd 工具 | S | — |
 | #97 | RPC 错误统一 reason | error_tip 表 + client_message_processor | call site 未全覆盖 | **M** | — |
 | #103 | c2s string 长度 | gate kMaxClientMessageSize=1024 | string 字段独立校验 | S | #192 |
-| #127 | 换场景消息丢失 | `cross_scene_player_messaging.md` + `player_migration_event_handler` | 队列化方案 TODO | M | #208 |
+| #127 | 换场景消息丢失 | `cross_scene_player_messaging.md` + `cross-zone-scene-travel.md` §14(2026-10-20 更正:`player_migration_event_handler` 属于已下线的 player_migrate 搬数据链,已在 `e7bb46070` 删除) | 队列化方案 TODO | M | #208 |
 | #206 | 客户端数据大小 | codec kMaxMessageLen=64MB | gate 侧客户端包专项 | S | #103 |
 | #247 | 协议兼容 | proto3 天然 + `proto3_enum_zero_requirement.md` | 专项版本兼容层 | M | #255 |
 

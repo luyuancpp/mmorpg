@@ -8,6 +8,7 @@ import (
 	"login/internal/config"
 	loginlogic "login/internal/logic/clientplayerlogin"
 	"login/internal/logic/pkg/callerauth"
+	"login/internal/logic/pkg/dataloader"
 	"login/internal/logic/pkg/node"
 	"login/internal/rpclogging"
 	loginserver "login/internal/server/clientplayerlogin"
@@ -85,6 +86,15 @@ func main() {
 		panic(fmt.Sprintf("HMAC 密钥配置不合格,拒绝启动: %v", err))
 	}
 	config.ActiveSecrets = secrets
+
+	// 持久 schema 倒退判定(C4)的模式同样在任何外部连接之前校验:缺键 / 空串按 warn,
+	// 只认 warn / enforce,其余拒绝启动 —— 拼错的 enforce 静默按 warn 跑,比起不来更危险
+	// (docs/design/mixed-version-persist-field-protection.md §5.1;切 enforce 的条件见 §8.1 第 5 步)。
+	regressionMode, err := config.ParsePersistSchemaRegressionMode(config.AppConfig.PersistSchemaRegressionMode)
+	if err != nil {
+		panic(fmt.Sprintf("持久 schema 倒退判定模式配置不合格,拒绝启动: %v", err))
+	}
+	logx.Infof("persist schema regression check (C4) mode=%s", regressionMode)
 
 	// Derive zone-specific Kafka topic from ZoneId
 	config.AppConfig.Kafka.Topic = config.DbTaskTopicForGeneration(
@@ -401,6 +411,7 @@ func startServer(watchCtx context.Context, cfg config.Config, ctx *svc.ServiceCo
 	// 全局开关,在那之前写的样本会被直接丢弃(理由与告警口径见 PrimeCreatePlayerMetrics)。
 	loginlogic.PrimeCreatePlayerMetrics()
 	loginlogic.PrimeEnterGameMetrics()
+	dataloader.PrimePersistSchemaRegressionMetrics()
 
 	// 拦截器顺序有讲究(go-zero 把它们交给 grpc.ChainUnaryInterceptor,
 	// **排在前面的在外层、先执行**;注意 recover/timeout/stat 等 go-zero

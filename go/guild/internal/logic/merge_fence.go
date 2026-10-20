@@ -4,9 +4,14 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"sort"
 	"strconv"
+	"strings"
+	"sync"
+	"time"
 
 	"github.com/redis/go-redis/v9"
+	"github.com/zeromicro/go-zero/core/logx"
 	"github.com/zeromicro/go-zero/core/metric"
 
 	"shared/placement"
@@ -92,6 +97,28 @@ func (f *RedisMergeFence) MergeInProgress(ctx context.Context, zoneID uint32) (b
 // MergeInProgress 返回包了它的 error,调用方按封锁处理。
 var ErrMergeFenceRouteNotReady = errors.New("merge fence: mapping redis replica is not trusted by the route ready marker")
 
+// mergeFenceRouteNotReadyError 是带着 verdict 的 ErrMergeFenceRouteNotReady:errors.Is 认哨兵,errors.As 取 verdict
+// (拒绝日志的汇总按它分组)。Error() 与 fmt.Errorf("%w: %s", ErrMergeFenceRouteNotReady, detail) 逐字相同。
+type mergeFenceRouteNotReadyError struct {
+	verdict placement.RouteReadyVerdict
+	detail  string
+}
+
+func (e mergeFenceRouteNotReadyError) Error() string {
+	return ErrMergeFenceRouteNotReady.Error() + ": " + e.detail
+}
+
+func (e mergeFenceRouteNotReadyError) Unwrap() error { return ErrMergeFenceRouteNotReady }
+
+// mergeFenceRouteNotReadyVerdict 取错误链里的 verdict 名;链里没有 mergeFenceRouteNotReadyError 时回 "unknown"。
+func mergeFenceRouteNotReadyVerdict(err error) string {
+	var e mergeFenceRouteNotReadyError
+	if errors.As(err, &e) {
+		return e.verdict.String()
+	}
+	return "unknown"
+}
+
 // RouteReadyReader 是 RouteReadyMergeFence 对 mapping Redis 的全部读法。抽成接口是为了让单测逐个 verdict 注入回复:
 // miniredis 不支持 INFO 的 server / replication 段,读脚本的执行语义只能在真 Redis 上测。
 type RouteReadyReader interface {
@@ -159,14 +186,17 @@ func (f *RouteReadyMergeFence) MergeInProgress(ctx context.Context, zoneID uint3
 	key := placement.MergeFenceKey(zoneID)
 	read, err := f.read(ctx, placement.RouteReadyReadKeys(key), 1)
 	if err != nil {
-		f.observeLabel(routeReadyVerdictReadError)
+		f.observeLabel(routeReadyVerdictScriptError)
 		return false, fmt.Errorf("merge fence check for zone %d: %w", zoneID, err)
 	}
 	verdict, marker := placement.VerifyRouteReady(read)
 	f.observeLabel(verdict.String())
 	if verdict != placement.RouteReadyTrusted {
-		return false, fmt.Errorf("merge fence check for zone %d: %w: %s", zoneID, ErrMergeFenceRouteNotReady, describeRouteReady(verdict, marker, read))
+		return false, fmt.Errorf("merge fence check for zone %d: %w", zoneID,
+			mergeFenceRouteNotReadyError{verdict: verdict, detail: describeRouteReady(verdict, marker, read)})
 	}
+	// 副本可信:不可信期间累计的拒绝若已满一个汇总周期,在这里补打最后一段(见 mergeFenceRouteNotReadyLog)。
+	mergeFenceRouteNotReadyLog.flush()
 	if read.Values[0] != nil {
 		return true, nil
 	}
@@ -235,11 +265,13 @@ func shortRedisID(s string) string {
 
 // ── 指标 guild_route_ready_verdict_total{verdict} ──────────────────
 
-// routeReadyVerdictReadError 是读脚本执行出错或回复形状不对时的 label(没有得到 verdict)。
-const routeReadyVerdictReadError = "read_error"
+// routeReadyVerdictScriptError 是读脚本执行出错或回复形状不对时的 label(没有得到 verdict)。
+// 取值与 data_service 的 data_service_route_ready_verdict_total、go/db 的 db_route_ready_verdict_total 逐字相同
+// (三个读方同一口径,跨服务面板按同一个字符串过滤;2026-10-20 之前 guild 这里叫 read_error)。
+const routeReadyVerdictScriptError = "script_error"
 
 // guildRouteReadyVerdictTotal:RequireRouteReady=true 时每次闸门判定计一次。label 是封闭集合
-// (placement.RouteReadyVerdictNames() + read_error),不放 zone / player_id。
+// (placement.RouteReadyVerdictNames() + script_error),不放 zone / player_id。
 // 写法与 activity_metrics.go 相同(go-zero core/metric,与 guild 其余指标同一套注册)。
 var guildRouteReadyVerdictTotal = metric.NewCounterVec(&metric.CounterVecOpts{
 	Namespace: "guild",
@@ -247,13 +279,14 @@ var guildRouteReadyVerdictTotal = metric.NewCounterVec(&metric.CounterVecOpts{
 	Name:      "verdict_total",
 	Help: "MergeMarkerRedis.RequireRouteReady=true 时合服闸门每次读到的 mapping Redis 副本判定。" +
 		"verdict: trusted(按闸门键判)/ absent / malformed / newer_version / identity_unavailable / not_master / identity_mismatch" +
-		"(副本不可信,经闸门的公会写按封锁拒绝)/ read_error(读脚本执行出错或回复形状不对,同样拒绝)。非 trusted 持续增长 = 合服闸门在 fail-closed。",
+		"(副本不可信,经闸门的公会写按封锁拒绝)/ script_error(读脚本执行出错或回复形状不对,同样拒绝;与 data_service、go/db 同名)。" +
+		"非 trusted 持续增长 = 合服闸门在 fail-closed。",
 	Labels: []string{"verdict"},
 })
 
 // routeReadyVerdictLabels 是 verdict label 的全集,PrimeRouteReadyMetrics 逐个预置。
 func routeReadyVerdictLabels() []string {
-	return append(placement.RouteReadyVerdictNames(), routeReadyVerdictReadError)
+	return append(placement.RouteReadyVerdictNames(), routeReadyVerdictScriptError)
 }
 
 func countRouteReadyVerdict(label string) {
@@ -266,4 +299,96 @@ func PrimeRouteReadyMetrics() {
 	for _, label := range routeReadyVerdictLabels() {
 		guildRouteReadyVerdictTotal.Add(0, label)
 	}
+}
+
+// ── 闸门读不到时的拒绝日志 ──────────────────────────────────────
+
+// logMergeFenceRefusal 记一次「闸门读不到 → 按封锁拒绝」,mergeFenceTip 与 economyFence 共用;site 是两处原有的日志前缀
+// ("guild" / "GuildEconomy")。拒绝本身(fail-closed)由调用方决定,这里只管日志分级:
+//   - 副本不可信(ErrMergeFenceRouteNotReady,只有 RouteReadyMergeFence 会返回):mapping Redis 重启 / 切主之后、对账 leader
+//     重新挂上就绪标记之前的预期状态,全量预热期间可能持续数小时,经闸门的每一次写都会走到这里。逐条只打 DEBUG,另由
+//     mergeFenceRouteNotReadyLog 至多每分钟一条 INFO 汇总(规格 §13.2 第 1 条,与 go/db 的 route not ready 延后同口径);
+//     不打「merge fence unreadable」的 ERROR,免得值班当成闸门键读失败去查 Redis;
+//   - 其余错误(Redis 读失败、读脚本执行出错、回复形状不对、可信之后 EXISTS 失败):真故障,照旧逐条 ERROR,文案不变。
+//
+// MergeMarkerRedis.RequireRouteReady=false(缺省,RedisMergeFence)时不会出现前一种错误,日志与改动前逐字相同。
+func logMergeFenceRefusal(site string, zoneID uint32, err error) {
+	if errors.Is(err, ErrMergeFenceRouteNotReady) {
+		logx.Debugf("[%s] merge fence route not ready for zone %d, refusing (fail closed): %v", site, zoneID, err)
+		mergeFenceRouteNotReadyLog.note(site + "/" + mergeFenceRouteNotReadyVerdict(err))
+		return
+	}
+	logx.Errorf("[%s] merge fence unreadable for zone %d, refusing (fail closed): %v", site, zoneID, err)
+}
+
+// mergeFenceRouteNotReadyEvery:副本不可信的拒绝至多每分钟一条 INFO 汇总。
+const mergeFenceRouteNotReadyEvery = time.Minute
+
+// mergeFenceRouteNotReadyLog 是进程内唯一的汇总器(写法同 go/db route_ready_gate.go 的 routeNotReadySummary)。
+var mergeFenceRouteNotReadyLog = newRouteNotReadyRefusals(time.Now, mergeFenceRouteNotReadyEvery, logx.Infof)
+
+// routeNotReadyRefusals 按「调用点/verdict」累计副本不可信的拒绝,至多每 every 打一条汇总。并发安全。
+// 第一次立即打一条(值班不必等满一分钟才知道开始拒绝);之后的累计在下一次拒绝时,或闸门下一次判 Trusted 时(flush,
+// 副本恢复之后最后一段累计也能补出来),距上一条满 every 才打。now / logf 注入,单测不依赖墙钟。
+type routeNotReadyRefusals struct {
+	mu     sync.Mutex
+	now    func() time.Time
+	every  time.Duration
+	logf   func(format string, args ...any)
+	last   time.Time
+	counts map[string]int
+}
+
+func newRouteNotReadyRefusals(now func() time.Time, every time.Duration, logf func(format string, args ...any)) *routeNotReadyRefusals {
+	return &routeNotReadyRefusals{now: now, every: every, logf: logf, counts: map[string]int{}}
+}
+
+// routeNotReadyRefusalsFormat 是汇总行的格式:写明拒绝的口径(按合服封锁回 kGuildZoneMerging)与看哪个指标。
+const routeNotReadyRefusalsFormat = "[guild] merge fence route not ready (mapping Redis replica untrusted), " +
+	"guild writes refused as merging (fail closed; see guild_route_ready_verdict_total): %s"
+
+func (s *routeNotReadyRefusals) note(key string) {
+	s.mu.Lock()
+	s.counts[key]++
+	line, ok := s.takeLocked()
+	s.mu.Unlock()
+	if ok {
+		s.logf(routeNotReadyRefusalsFormat, line)
+	}
+}
+
+func (s *routeNotReadyRefusals) flush() {
+	s.mu.Lock()
+	line, ok := s.takeLocked()
+	s.mu.Unlock()
+	if ok {
+		s.logf(routeNotReadyRefusalsFormat, line)
+	}
+}
+
+// takeLocked 在该打汇总时返回汇总行并清零累计。调用方持有 s.mu。
+func (s *routeNotReadyRefusals) takeLocked() (string, bool) {
+	if len(s.counts) == 0 {
+		return "", false
+	}
+	now := s.now()
+	window := "first occurrence"
+	if !s.last.IsZero() {
+		if now.Sub(s.last) < s.every {
+			return "", false
+		}
+		window = "last " + now.Sub(s.last).Round(time.Second).String()
+	}
+	keys := make([]string, 0, len(s.counts))
+	for k := range s.counts {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	parts := make([]string, 0, len(keys))
+	for _, k := range keys {
+		parts = append(parts, k+"="+strconv.Itoa(s.counts[k]))
+	}
+	s.counts = map[string]int{}
+	s.last = now
+	return window + ": " + strings.Join(parts, " "), true
 }

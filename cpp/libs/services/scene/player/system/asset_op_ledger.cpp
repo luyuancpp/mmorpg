@@ -315,14 +315,12 @@ bool IsAssetOpPartial(const AssetOpStreamLedger& ledger, uint64_t seq) {
 }
 
 void ResetAssetOpStreamForEpoch(AssetOpStreamLedger& ledger, uint64_t epoch) {
-    ledger.set_watermark(0);
-    ledger.set_max_seq(0);
+    // 整体 Clear 再重设身份字段,不逐字段清:逐字段清会让本版本不认识的字段(新版本加的纪元内状态)跨纪元存活,
+    // 把旧纪元的状态带进新纪元(docs/design/mixed-version-persist-field-protection.md §4.2 L7)。
+    const auto stream = ledger.stream();
+    ledger.Clear();
+    ledger.set_stream(stream);
     ledger.set_stream_epoch(epoch);
-    ledger.clear_seen_bits();
-    ledger.clear_applied_bits();
-    ledger.clear_rejections();
-    ledger.clear_partial_seqs();
-    ledger.clear_receipts();
     EnsureWindowWords(ledger);
 }
 

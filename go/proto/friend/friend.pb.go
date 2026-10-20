@@ -1628,7 +1628,7 @@ const file_proto_friend_friend_proto_rawDesc = "" +
 	"\x11FriendEventReason\x12#\n" +
 	"\x1fFRIEND_EVENT_REASON_UNSPECIFIED\x10\x00\x12(\n" +
 	"$FRIEND_EVENT_REASON_REQUEST_RECEIVED\x10\x01\x12(\n" +
-	"$FRIEND_EVENT_REASON_REQUEST_ACCEPTED\x10\x022\xd6\x06\n" +
+	"$FRIEND_EVENT_REASON_REQUEST_ACCEPTED\x10\x022\xdd\x06\n" +
 	"\x12ClientPlayerFriend\x12D\n" +
 	"\tAddFriend\x12\x1a.friendpb.AddFriendRequest\x1a\x1b.friendpb.AddFriendResponse\x12M\n" +
 	"\fAcceptFriend\x12\x1d.friendpb.AcceptFriendRequest\x1a\x1e.friendpb.AcceptFriendResponse\x12M\n" +
@@ -1640,8 +1640,8 @@ const file_proto_friend_friend_proto_rawDesc = "" +
 	"\aUnblock\x12\x18.friendpb.UnblockRequest\x1a\x19.friendpb.UnblockResponse\x12G\n" +
 	"\n" +
 	"ListBlocks\x12\x1b.friendpb.ListBlocksRequest\x1a\x1c.friendpb.ListBlocksResponse\x12Y\n" +
-	"\x10RecommendFriends\x12!.friendpb.RecommendFriendsRequest\x1a\".friendpb.RecommendFriendsResponse\x125\n" +
-	"\x11NotifyFriendEvent\x12\x18.friendpb.FriendEventS2C\x1a\x06.Empty\x1a\x05\x88\xa8\xc3\x01\x01B\x0eZ\fproto/friendb\x06proto3"
+	"\x10RecommendFriends\x12!.friendpb.RecommendFriendsRequest\x1a\".friendpb.RecommendFriendsResponse\x12<\n" +
+	"\x11NotifyFriendEvent\x12\x18.friendpb.FriendEventS2C\x1a\x06.Empty\"\x05\x88\x99\xc8\x01\x02\x1a\x05\x88\xa8\xc3\x01\x01B\x0eZ\fproto/friendb\x06proto3"
 
 var (
 	file_proto_friend_friend_proto_rawDescOnce sync.Once

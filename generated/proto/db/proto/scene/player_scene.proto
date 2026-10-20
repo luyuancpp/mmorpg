@@ -177,17 +177,17 @@ service SceneSceneClientPlayer
   option (OptionIsClientProtocolService) = true;
 
   rpc EnterScene (EnterSceneC2SRequest) returns (EnterSceneC2SResponse);
-  rpc NotifyEnterScene (EnterSceneS2C) returns (Empty);
-  rpc SceneInfoC2S (SceneInfoRequest) returns (Empty);
-  rpc NotifySceneInfo (SceneInfoS2C) returns (Empty);
-  rpc NotifyActorCreate (ActorCreateS2C) returns (Empty);
-  rpc NotifyActorDestroy (ActorDestroyS2C) returns (Empty);
-  rpc NotifyActorListCreate (ActorListCreateS2C) returns (Empty);
-  rpc NotifyActorListDestroy (ActorListDestroyS2C) returns (Empty);
+  rpc NotifyEnterScene (EnterSceneS2C) returns (Empty) { option (OptionClientRpcKind) = CLIENT_RPC_PUSH; }
+  rpc SceneInfoC2S (SceneInfoRequest) returns (Empty) { option (OptionClientRpcKind) = CLIENT_RPC_ONE_WAY; }
+  rpc NotifySceneInfo (SceneInfoS2C) returns (Empty) { option (OptionClientRpcKind) = CLIENT_RPC_PUSH; }
+  rpc NotifyActorCreate (ActorCreateS2C) returns (Empty) { option (OptionClientRpcKind) = CLIENT_RPC_PUSH; }
+  rpc NotifyActorDestroy (ActorDestroyS2C) returns (Empty) { option (OptionClientRpcKind) = CLIENT_RPC_PUSH; }
+  rpc NotifyActorListCreate (ActorListCreateS2C) returns (Empty) { option (OptionClientRpcKind) = CLIENT_RPC_PUSH; }
+  rpc NotifyActorListDestroy (ActorListDestroyS2C) returns (Empty) { option (OptionClientRpcKind) = CLIENT_RPC_PUSH; }
   // 只能追加在末尾:CallMethod 按 method index 分发,插到中间会让后面所有方法移位。
   rpc TravelToZone (TravelToZoneRequest) returns (TravelToZoneResponse);
   // 落地恢复(docs/design/landing-recovery-sync-digest.md §4.1):客户端落地后取摘要。应答是 Empty,
   // 数据走 NotifySyncDigest 推送;handler 里禁止 SetTip,所有失败都推 status = UNAVAILABLE。
-  rpc GetSyncDigest (GetSyncDigestRequest) returns (Empty);
-  rpc NotifySyncDigest (SyncDigestS2C) returns (Empty);
+  rpc GetSyncDigest (GetSyncDigestRequest) returns (Empty) { option (OptionClientRpcKind) = CLIENT_RPC_ONE_WAY; }
+  rpc NotifySyncDigest (SyncDigestS2C) returns (Empty) { option (OptionClientRpcKind) = CLIENT_RPC_PUSH; }
 }

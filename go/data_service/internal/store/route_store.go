@@ -25,14 +25,15 @@ import (
 //   - player_route:每个玩家一行,home_zone 与落点同行;rev 本行任何列变化 +1,只供缓存排序。
 //     聚簇主键 (route_shard, player_id),route_shard = placement.RouteRowShard(player_id)(G1a,TiDB 写热点修复):
 //     **按 player_id 的每一条读写都必须同时带 route_shard**,片一律经 placement.RouteRowShard 算;
-//   - zone_merge_fence:合服围栏真源,按 (zone, shard) 分片。**第 1a 批没有任何写者写 run_id,围栏恒不生效**,
-//     到第 2 批 merge_zone 改成库先写之后才成为真正的提交点复核(规格 c.3);
-//   - zone_merged_into:合走标记,第 1a 批只由 route_tool 从 Redis 导入;
+//   - zone_merge_fence:合服围栏真源,按 (zone, shard) 分片。第 2 批起由 tools/merge_zone(-route-source=db)获取、续期、释放
+//     (写满 0..63 全部片,批事务锁 63 号片);本文件的 W1 只锁 player_id % FenceShards 那一片复核(规格 c.3);
+//   - zone_merged_into:合走标记,由 route_tool 从 Redis 导入,第 2 批起由 merge_zone 的合服 / 撤销写入与删除;
 //   - route_meta:开关表,单行(id=1),writable=0 = 全体映射写者拒写;很少写;
-//   - route_reconcile:对账表,单行(id=1),第 1b 批 leader 的租约与水位;第 1a 批只由迁移种行,不读不写。
+//   - route_reconcile:对账表,单行(id=1),对账 leader(route_reconcile.go)的租约、水位与 cache_verified_ms。
 //
-// 本文件是这些表**唯一的写入方**(route_store_test.go 的 TestNoPlayerRouteWritesOutsideRouteStore
-// 用 AST 机械守住 player_route)。Redis 一侧的发布(set-if-newer)在 routing 包,不在这里:
+// 写入方:data_service 进程内只有本文件与 route_reconcile.go(route_store_test.go 的 TestNoPlayerRouteWritesOutsideRouteStore /
+// TestRouteMetaAndReconcileWritesOnlyInStoreFiles 用 AST 机械守住);进程外只有 tools/merge_zone/route_store.go
+// (它自己的 TestNoRouteTableWritesOutsideMergeRouteStore 与源码比对守卫)。Redis 一侧的发布(set-if-newer)在 routing 包,不在这里:
 // 事务里绝不做 Redis 读写 —— 预检在开事务之前,发布在提交之后(规格 c.2 第 3 条)。
 //
 // 2026-10-18(第 1b-1 批)补:route_meta / route_reconcile 的写语句同样只在本文件(TestRouteMetaAndReconcileWritesOnlyInStoreFiles
@@ -67,7 +68,8 @@ import (
 // (RC 在 STATEMENT 格式下会报 1665;本批不探测,与其它 store 同口径)。
 
 const (
-	// PlayerRouteTableName 等是路由表名;建表语句在 schema.go,形状守卫见 routeTableShapes。
+	// PlayerRouteTableName 等是路由表名(= proto 的 OptionTableName);建表语句在 schema.go,
+	// 形状守卫的事实源是 rollback_database_table.proto 的同名 message(schema.go 的 routeTableMessages)。
 	PlayerRouteTableName    = "player_route"
 	ZoneMergeFenceTableName = "zone_merge_fence"
 	ZoneMergedIntoTableName = "zone_merged_into"
@@ -793,7 +795,11 @@ func validRouteWriter(w string) bool {
 
 // ── 行 ──────────────────────────────────────────────────────────────────────────
 
-// RouteRow 是 player_route 的一行(领域类型;第 2 批补 proto 时要么改用生成类型,要么写清转换,规格 g.2 第 1 条)。
+// RouteRow 是 player_route 的一行,**领域类型**:带 HasHome / Placement / HomeValue 等判定,是 SQL 扫描与发布的载体。
+// 表的列契约是 proto 的 dbpb.PlayerRoute(只作列漂移守卫,不作读写载体,见 schema.go routeTableMessages)。
+// 两者逐字段对应(proto 字段名 snake_case → 这里的 CamelCase,类型相同,0 / 空串 = NULL 的约定也相同);
+// 唯一的例外是 route_shard:它由 player_id 唯一决定(placement.RouteRowShard,chk_route_shard),这里不存,
+// SQL 绑定时现算。新增列 = proto、DDL、这里三处同改,route_store_test 的 TestRouteRowMirrorsPlayerRouteProto 钉住对应关系。
 // 「0 / 空串 = NULL」:HomeZone、StorageID(与 PlacementVersion 同 NULL)、FrozenRunID。
 type RouteRow struct {
 	PlayerID         uint64

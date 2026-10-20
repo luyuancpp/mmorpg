@@ -4,8 +4,8 @@ package main
 // 提案 docs/design/player-route-mapping-durability-proposal.md §5 R7 / R8)。
 //
 // 两种口径:
-//   - db(给了 -route-db-dsn):读全局库 player_route —— db_first 下映射的真源。SQL 照抄提案 §11.2 G1a「后续批次的读方模板」:
-//     按 zone 枚举走 idx_route_home、键集游标 (route_shard, player_id);按 id 点查走主键 (route_shard, player_id)。
+//   - db(给了 -route-db-dsn):读全局库 player_route —— db_first 下映射的真源。活区在 idx_route_home 上逐个跳取 home_zone,
+//     玩家数在 idx_route_home 上一条 COUNT(*) 数完;按 id 点查走主键 (route_shard, player_id)(提案 §11.2 G1a「读方模板」)。
 //   - redis(缺省):今天的 SCAN player:zone:* 口径。db_first 下 Redis 只是缓存,缺键 / 旧值都不权威,
 //     报告里固定打印 "route source: redis (not authoritative under db_first)"。
 //
@@ -30,9 +30,6 @@ const routeRowShards uint64 = 64
 // maxHomeZone 镜像 player_route 的 chk_route_home(home_zone BETWEEN 1 AND 999999)。
 // CHECK 在 MySQL < 8.0.16 / TiDB 未开 tidb_enable_check_constraint 时不生效,所以读方仍按它判畸形。
 const maxHomeZone uint32 = 999999
-
-// routePageSize 是按 zone 枚举时每页的行数。
-const routePageSize = 2000
 
 // shapeSampleLimit 是报告里列出的畸形样本上限。
 const shapeSampleLimit = 10
@@ -210,38 +207,29 @@ func truncateSample(s string) string {
 
 // ── db 口径 ───────────────────────────────────────────────────────
 
-// routeKey 是 player_route 的聚簇主键,也是按 zone 枚举的键集游标。
-type routeKey struct {
-	Shard    uint64
-	PlayerID uint64
-}
-
-func (k routeKey) less(o routeKey) bool {
-	return k.Shard < o.Shard || (k.Shard == o.Shard && k.PlayerID < o.PlayerID)
-}
-
 // routeTable 是 db 口径用到的三条只读查询;sqlRouteTable 是生产实现,单测用假实现驱动 dbRouteSource 的循环与判定。
 type routeTable interface {
 	// NextHomeZone 返回不小于 from 的最小 home_zone(from 取 0 表示从头);没有了回 ok=false。
 	// 参数取「不小于」而不是「大于 -1」:不让负数常量去比 int unsigned 列,两种引擎的有无符号比较口径不必再核对。
 	NextHomeZone(ctx context.Context, from uint64) (zone uint32, ok bool, err error)
-	// PageByHome 返回 home_zone = zone 且主键大于 after 的至多 limit 行的主键,按 (route_shard, player_id) 升序。
-	PageByHome(ctx context.Context, zone uint32, after routeKey, limit int) ([]routeKey, error)
+	// CountWithHome 返回 home_zone 非 NULL 的行数(含越界 zone)。
+	CountWithHome(ctx context.Context) (int64, error)
 	// HomeOf 点查 playerID 的 home_zone;无行或 home_zone 为 NULL 回 present=false。
 	HomeOf(ctx context.Context, playerID uint64) (zone uint32, present bool, err error)
 }
 
-// SQL 照抄提案 §11.2 G1a「后续批次的读方模板」。
+// SQL 按提案 §11.2 G1a「后续批次的读方模板」的索引口径。
 //
 //   - sqlNextHomeZone:在 idx_route_home 上跳着取下一个 home_zone(每次一个范围起点 + LIMIT 1,次数 = zone 数),
 //     不用 SELECT DISTINCT:TiDB 没有 loose index scan,DISTINCT 会扫完整条索引;
-//   - sqlPageByHome:按 zone 枚举的模板原文(键集游标 (route_shard, player_id),起点 {0, 0},走 idx_route_home、无 filesort);
-//     游标谓词写成 OR 展开而不是行比较 —— MySQL 不对行比较做 range 优化;
+//   - sqlCountWithHome:idx_route_home 上一次范围计数(MySQL 只扫索引不回表,TiDB 把 COUNT 下推到存储层)。
+//     2026-10-20 之前按 zone 逐页拉主键(每页 2000 行)再在进程里数,大表要几千次往返,在单项 60s 预算内跑不完;
+//     那时失败只报 warn,改成读失败报 fail 之后必须一起换成单条计数,否则大服每次都会 exit 1;
 //   - sqlHomeOf:「按 id 回源」的不加锁形态,主键点查。
 const (
-	sqlNextHomeZone = "SELECT home_zone FROM player_route WHERE home_zone >= ? ORDER BY home_zone LIMIT 1"
-	sqlPageByHome   = "SELECT route_shard, player_id FROM player_route WHERE home_zone = ? AND (route_shard > ? OR (route_shard = ? AND player_id > ?)) ORDER BY route_shard, player_id LIMIT ?"
-	sqlHomeOf       = "SELECT home_zone FROM player_route WHERE route_shard = ? AND player_id = ?"
+	sqlNextHomeZone  = "SELECT home_zone FROM player_route WHERE home_zone >= ? ORDER BY home_zone LIMIT 1"
+	sqlCountWithHome = "SELECT COUNT(*) FROM player_route WHERE home_zone IS NOT NULL"
+	sqlHomeOf        = "SELECT home_zone FROM player_route WHERE route_shard = ? AND player_id = ?"
 )
 
 type sqlRouteTable struct {
@@ -260,24 +248,12 @@ func (t sqlRouteTable) NextHomeZone(ctx context.Context, from uint64) (uint32, b
 	return zone, true, nil
 }
 
-func (t sqlRouteTable) PageByHome(ctx context.Context, zone uint32, after routeKey, limit int) ([]routeKey, error) {
-	rows, err := t.db.QueryContext(ctx, sqlPageByHome, zone, after.Shard, after.Shard, after.PlayerID, limit)
-	if err != nil {
-		return nil, fmt.Errorf("page player_route home_zone=%d after (%d, %d): %w", zone, after.Shard, after.PlayerID, err)
+func (t sqlRouteTable) CountWithHome(ctx context.Context) (int64, error) {
+	var n int64
+	if err := t.db.QueryRowContext(ctx, sqlCountWithHome).Scan(&n); err != nil {
+		return 0, fmt.Errorf("count player_route rows with home_zone: %w", err)
 	}
-	defer rows.Close()
-	page := make([]routeKey, 0, limit)
-	for rows.Next() {
-		var k routeKey
-		if err := rows.Scan(&k.Shard, &k.PlayerID); err != nil {
-			return nil, fmt.Errorf("scan player_route row home_zone=%d: %w", zone, err)
-		}
-		page = append(page, k)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("iterate player_route home_zone=%d: %w", zone, err)
-	}
-	return page, nil
+	return n, nil
 }
 
 func (t sqlRouteTable) HomeOf(ctx context.Context, playerID uint64) (uint32, bool, error) {
@@ -343,34 +319,14 @@ func (s dbRouteSource) LiveZones(ctx context.Context) (map[uint32]struct{}, zone
 	return out, rep, nil
 }
 
-// CountPlayers 按 zone 逐页数 home_zone 非 NULL 的行(含越界 zone,与 redis 口径数全部 player:zone:* 键对应)。
+// CountPlayers 数 home_zone 非 NULL 的行(含越界 zone,与 redis 口径数全部 player:zone:* 键对应)。
 func (s dbRouteSource) CountPlayers(ctx context.Context) (int64, error) {
-	zones, err := s.homeZones(ctx)
+	n, err := s.t.CountWithHome(ctx)
 	if err != nil {
 		return 0, err
 	}
-	var n int64
-	for _, z := range zones {
-		after := routeKey{}
-		for {
-			page, err := s.t.PageByHome(ctx, z, after, routePageSize)
-			if err != nil {
-				return 0, err
-			}
-			if len(page) > routePageSize {
-				return 0, fmt.Errorf("page for home_zone=%d returned %d rows, limit %d", z, len(page), routePageSize)
-			}
-			for _, k := range page {
-				if !after.less(k) {
-					return 0, fmt.Errorf("page for home_zone=%d is not strictly after cursor (%d, %d)", z, after.Shard, after.PlayerID)
-				}
-				after = k
-			}
-			n += int64(len(page))
-			if len(page) < routePageSize {
-				break
-			}
-		}
+	if n < 0 {
+		return 0, fmt.Errorf("count player_route rows with home_zone returned %d", n)
 	}
 	return n, nil
 }

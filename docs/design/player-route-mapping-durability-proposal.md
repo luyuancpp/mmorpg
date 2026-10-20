@@ -1,4 +1,4 @@
-# 玩家归属与落点映射持久化:库为真源 + Redis 完整副本 + 就绪标记(已拍板,分批落码:第 0、1a 批已落码,未验证)
+# 玩家归属与落点映射持久化:库为真源 + Redis 完整副本 + 就绪标记(已拍板;第 0 ~ 3 批已落码,未验证;2026-10-19 起读方按身份绑定的就绪标记判可信,见 §13)
 
 > **状态**:**已拍板(2026-10-12,负责人),分批落码中**。2026-10-12 起草;拍板结果与落码进度见文末「§11 拍板与落码记录」。
 > **起因**:用户提出「逻辑服 id(home_zone)和 storage_id 应该存到 TiDB,Redis 只做缓存,不然 Redis 丢了映射无法恢复」。这正是 [TiDB 决策](./global-data-layer-tidb-decision.md) D1「映射持久化兜底」与 [player-storage-placement.md](./player-storage-placement.md) §4.4 / §11.4 的遗留项。
@@ -440,8 +440,8 @@ leader 由 `route_meta` 租约选出（10s 租期，3s 续一次）。每拍 1s�
 | 第 0 批 | 已落码(2026-10-12),**未编译、未测试** | 见下 |
 | 第 1a 批 | 已落码(2026-10-12),**未编译、未测试** | 存储底座(四张表 + route store)、W1 的 db_first 开关(所有档位默认 redis)、`route_tool` 导入 / 审计、W2 / W3 停用。见下「第 1a 批」 |
 | 第 1a 批热点修复(G1a) | 已落码(2026-10-12),**未编译、未测试** | TiDB 写热点:`player_route` 聚簇 `(route_shard, player_id)` + 片前缀索引、`route_meta` 拆出 `route_reconcile`、建池探针 P4、`route_tool tidb-prepare`。见下「第 1a 批热点修复」 |
-| 第 1b 批 | 1b-1 已落码(2026-10-18),**未编译、未测试**;1b-2、1b-3 未开始 | §9 第 1 批的剩余项:对账 leader、全量预热与 `mapping:route:ready`、回档检测与反向修库(`-route-rewarm` / `-route-reconcile-from-cache`)、`route_tool` 并进 data_service 主程序入口(K8s 上可跑)。范围以 1b 开工时的规格为准。2026-10-18 起按调研规格(`docs/handoff/launch-readiness-20261013/spec_D1_batch1b_scout.md`)拆成三步:1b-1 工具、入口、库原语(见下「第 1b-1 批」);1b-2 对账 leader、就绪标记写者、rewarm、audit `-require-maprev`;1b-3 K8s 配置载体(FenceShards / Reconcile / WaitAOF)、route-tool Job 清单、告警、清库脚本防护 |
-| 第 2、3 批 | 未开始 | 第 2 批另含:四张表补 proto 守卫(替换 `routeTableShapes`,见第 1a 批偏离第 1 条) |
+| 第 1b 批 | 1b-1 已落码(2026-10-18);1b-2、1b-3 已落码(2026-10-19);**全部未编译、未测试** | (2026-10-19 补)1b-2 / 1b-3 的设计修订 M1–M5 与落码见 §13 | §9 第 1 批的剩余项:对账 leader、全量预热与 `mapping:route:ready`、回档检测与反向修库(`-route-rewarm` / `-route-reconcile-from-cache`)、`route_tool` 并进 data_service 主程序入口(K8s 上可跑)。范围以 1b 开工时的规格为准。2026-10-18 起按调研规格(`docs/handoff/launch-readiness-20261013/spec_D1_batch1b_scout.md`)拆成三步:1b-1 工具、入口、库原语(见下「第 1b-1 批」);1b-2 对账 leader、就绪标记写者、rewarm、audit `-require-maprev`;1b-3 K8s 配置载体(FenceShards / Reconcile / WaitAOF)、route-tool Job 清单、告警、清库脚本防护 |
+| 第 2、3 批 | 已落码(2026-10-19),**未编译、未测试**,见 §13 | 第 2 批另含:四张表补 proto 守卫(替换 `routeTableShapes`,见第 1a 批偏离第 1 条)——**仍未做**,登记在 §13 未完成项 |
 
 **第 0 批(2026-10-12)改动**:
 - `deploy/docker-compose.yml`:redis 的 `maxmemory-policy` 由 `allkeys-lfu` 改为 `noeviction`(保留 `maxmemory 8gb`),注释写明原因。
@@ -464,6 +464,8 @@ leader 由 `route_meta` 租约选出（10s 租期，3s 续一次）。每拍 1s�
 **已知未改**:chat、friend、match、scene_manager 共 9 处代码注释仍写「共享库是 allkeys-lfu」(如 `go/chat/etc/chat.yaml:44`、`go/friend/internal/svc/servicecontext.go:157`、`go/scene_manager/internal/logic/enterscenelogic.go:596`),现已过时。注释本身的结论(staging/prod 要用独立的 noeviction 实例)仍然成立,留作后续统一更正。
 
 *(2026-10-16 更正:实际 go 下 10 处,另有 tools/scripts/k8s_deploy.ps1、deploy/k8s/README.md 各 1 处,共 12 处。chat、friend、match 的 internal/logic/keys.go、scene_manager 共 9 处已更正(只改注释,未编译);go/match/etc/match_service.yaml、k8s_deploy.ps1、README 3 处待对应会话收尾。见 docs/PROGRESS.md 同日「共享 Redis 淘汰策略过时注释更正」条目。)*
+
+*(2026-10-19 结案:剩下的 3 处(`go/match/etc/match_service.yaml`、`tools/scripts/k8s_deploy.ps1` 的 friend here-string、`deploy/k8s/README.md` 的 friend 段)已更正,12 处全部改完,只改注释,未编译。结论不变。见 docs/PROGRESS.md「2026-10-19 G4a 收尾:剩余 3 处过时注释与其他文档指向注」条目。)*
 
 ---
 
@@ -1277,7 +1279,7 @@ tidb-phase1-and-launch-readiness.md §5.1 单行热点一行与 §7 L-12 已加�
 
 > 怎么来的：多代理只读核对代码与文档（login、data_service、进场 / 存盘消费者、Redis 部署、文档与压测证据、Java 版各一路，每路一名质疑者复核），再经两轮评审订正（2026-10-19）；没有编译、测试或压测。代码位置写函数名，不写易漂移的行号；初稿核对的是第 3 批读方（`8b9592de3`）落码之前的树。本节订正上面 §12 的两条说法（第 2 条一次推翻两句；第 3 条是附加条件，不是更正）。改动与验证命令见 `docs/PROGRESS.md`「2026-10-19 登录吞吐第二轮」与「2026-10-19 scene_manager 跨 zone 重定向选 gate 改随机二选一……」两条。
 
-**一句话**：登录只取逻辑服（home_zone），不取物理落点（storage_id）；这一步本身很轻（1 次 RPC + 1 次 MGET，R 个键，每个值只是几字节的 zone 号十进制串），不是瓶颈。卡水平扩展的是它所在的那台 Redis：账号目录、会话、锁、映射、PlayerAllData、存盘控制面全挤在全服唯一的单实例上。数据面进程（login / data_service / scene_manager 的请求处理）无状态、能加副本，存储层今天不能扩。
+**一句话**：登录只取逻辑服（home_zone），不取物理落点（storage_id）；这一步本身很轻（1 次 RPC + 1 次 MGET，R 个键，每个值只是几字节的 zone 号十进制串），不是瓶颈。卡水平扩展的是它所在的那台 Redis：账号目录、会话、锁、映射、PlayerAllData、存盘控制面全挤在全服唯一的单实例上（2026-10-19 补：切到已接入部署路径的高可用形态后也只是同一个主，见下表「共享 Redis」行）。数据面进程（login / data_service / scene_manager 的请求处理）无状态、能加副本，存储层今天不能扩。
 
 **登录链路上对归属 / 落点的实际读写**
 
@@ -1299,7 +1301,7 @@ tidb-phase1-and-launch-readiness.md §5.1 单行热点一行与 §7 L-12 已加�
 
 | 环节 | 现状 | 加机器能扩吗 | 要做的事 / 状态（2026-10-19） |
 |---|---|---|---|
-| 共享 Redis | K8s 上 login、data_service（MappingRedis）、scene_manager、player_locator 全指向 `redis.${InfraNamespace}:6379`：单实例、replicas 1；`redis-ha.yaml` 未接入任何部署路径 | **不能** | 第一步 mapping 拆独立实例（G4a，设计稿未落码）并上 HA；上 Cluster 的阻塞见下「映射链路的 Cluster 阻塞点」；10-17 已拍板「单元化 + 单元内 Cluster」，修订稿与代码都未做 |
+| 共享 Redis | K8s 上 login、data_service（MappingRedis）、scene_manager、player_locator 全指向 `redis.${InfraNamespace}:6379`：全服同一个主。（2026-10-19 订正）原写「单实例、replicas 1；`redis-ha.yaml` 未接入任何部署路径」已过时：形态由 `k8s_deploy.ps1 -RedisReplicas` 决定，dev 档缺省单实例（`redis.yaml`，replicas 1），staging / prod 档缺省 3 = `redis-ha.yaml`（1 主 2 从 + 每 Pod 一个哨兵 + 2 个 haproxy 代理，Service redis 指向代理，客户端地址不变）；2026-10-16 接入、10-19 补齐连接上限与 WAITAOF 副本份数按拓扑渲染，均未运行、待 Codex 验证，未在任何真实集群切换过。高可用只消除单点故障，读写仍压在一个主上，不改变右列「不能」 | **不能** | 第一步 mapping 拆独立实例（G4a，设计稿未落码）并上 HA；上 Cluster 的阻塞见下「映射链路的 Cluster 阻塞点」；10-17 已拍板「单元化 + 单元内 Cluster」，修订稿与代码都未做 |
 | AssignGate 读 gate 目录 | 原为每请求一次 etcd 线性一致 Range | 部分 | **已落码、未验证**：list-watch 进程内镜像，镜像不新鲜回落直读（`gate-load-balancing-design.md`「gate 目录怎么读、怎么挑」） |
 | PickGate | 原为按 10s 刷新的人数确定性取最少，开新区一个窗口可把 4.5k~5 万连接压到同一台 | 部分 | **已落码、未验证**：随机二选一（`go/shared/gatepick`，login 快路径与 scene_manager 跨 zone 重定向共用，重定向并补排空过滤；Java `GatePicker` 同步）。K8s 默认每 zone 2 台时：两台人数不等与旧规则相同；全体同人数（开新区第一个上报窗口）时从全落 NodeID 最小的一台变为两台各半；之后的窗口里羊群依旧，充分摊开要每 zone ≥3 台。单台连接上限感知、死 gate 新鲜度过滤未做 |
 | task:result | 全服一个频道广播 | 部分 | B0-3 按 login 实例定向两批已落码，待 Codex 验证 |
@@ -1347,7 +1349,8 @@ tidb-phase1-and-launch-readiness.md §5.1 单行热点一行与 §7 L-12 已加�
    - data_service：`BatchGetPlayerHomeZone`、`GetPlayerHomeZoneAndMergeFence` 是否仍只读 mapping Redis；`RouteStore.Mode` 与 `ReadRequiresReady` 的现网取值（打开回源后，每次登录 / 进场在标记挂上前各打一条 SQL）。
    - scene_manager：每次进场 / 换图的归属查询是否仍是 1 次 EVAL；go/db：每条读写任务的映射 MGET 次数。
    - 新增的任何「每次登录都要做」的跨服务调用，都按「全服单份 / 每 zone / 每实例」三类归档。
-2. **存储拓扑有没有变**：`k8s_deploy.ps1` 里 login `Node.RedisClient`、data_service `MappingRedis`、scene_manager、go/db `Placement.Redis` 实际指向哪些实例；G4a（mapping 独立实例）、`redis-ha.yaml`、单元化 / Cluster 是否已落地；单实例的 `maxclients`、`maxmemory`、淘汰策略与 PVC。仍是全服单实例就仍然「不能水平扩」，结论不变。
+2. **存储拓扑有没有变**：`k8s_deploy.ps1` 里 login `Node.RedisClient`、data_service `MappingRedis`、scene_manager、go/db `Placement.Redis` 实际指向哪些实例；G4a（mapping 独立实例）、`redis-ha.yaml`、单元化 / Cluster 是否已落地（`redis-ha.yaml` 2026-10-16 起已接入部署路径、staging / prod 档缺省，但接入不等于线上已切：以线上 `sts/redis` 的副本数为准，1 = 单实例、3 = 高可用）；单实例的 `maxclients`、`maxmemory`、淘汰策略与 PVC。仍是全服单实例就仍然「不能水平扩」，结论不变；切到高可用也只是一个主，结论同样不变。
+   - （2026-10-19 补）核对各 zone 的 data-service ConfigMap 的 `RouteStore.WaitAOFNumReplicas` 与 go/db ConfigMap 的 `ServerConfig.RedisClient.WaitAOFNumReplicas` 与线上 Redis 形态一致：单实例 0、高可用 1（两处由 `k8s_deploy.ps1` 的同一个 `Get-RouteStoreWaitAOFNumReplicas` 按拓扑渲染，对照部署输出的 `Redis topology: ... waitaof_replicas=` 行）；运行中的 db / data-service Pod 也要已在该 ConfigMap 之后重启过（只改 ConfigMap 不会滚动它们）。高可用下仍是 0 = 切主时已答复的写可能不在新主上；单实例下写成 1 = WAITAOF 启动探针等不到副本，go/db 拒启（data-service 在 db_first 下同样不装配 route store、拒启）。部署脚本这部分未运行、待 Codex 验证。
 3. **db_first 是否已开**：开了的话核对 §12.1 更正第 2 条（WAITAOF 与读共用连接池）是否已改为独立连接池，没改就把「建角尖峰饿住登录 / 进场」列为开服风险。
 4. **gate 侧**：每 zone gate 台数（≥3 台随机二选一才有实际收益）；`login_gate_directory_reads_total{source}` 在压测里是否以 `cache` 为主；单台连接上限感知、死 gate 新鲜度过滤是否已做。
 5. **压测证据**（交 Codex，按 AGENTS §6 全流程，即 L-14）：
@@ -1355,3 +1358,50 @@ tidb-phase1-and-launch-readiness.md §5.1 单行热点一行与 §7 L-12 已加�
    - 看：登录与进场速率的饱和点（不是爬坡斜率）、各阶段 p99、mapping 与核心 Redis 的 ops 与 CPU、`login_gate_directory_reads_total` 的 source 分布、gate 落点分布。
    - 没有与 `prev-summary.txt` 的对比表，不下「是 / 不是瓶颈」的结论。
 6. **写回**：结论更新到 §12.1 两张表（状态列写复核日期），追加一条 PROGRESS（写明复核依据的 commit 与压测轮次），L-18 标为已复核；仍不能扩的环节列出要拍板的事项。Java 版同步核对（`game.player.zone_id` 单库点查、`GatePicker`），在 Java `PARITY.md` 记录结论。
+
+
+---
+
+## 13. 第 1b-2 / 1b-3 / 第 2 / 第 3 批:最小设计修订与落码(2026-10-18 ~ 19)
+
+> 状态:**已落码,未编译、未测试**(AGENTS.md §10.1,待 Codex 按 PROGRESS 2026-10-19「D1 剩余批次落码完成」条目执行)。开关全部保持安全缺省(Mode=redis、ArmReadyMarker=false、三个读方开关 false),**代码完成不等于启用**,任何环境的切换按 §13.4 逐阶段由负责人决定。
+> 落码规格(逐条细节、评审吸收、偏离与用例清单)是 [spec_D1_batch1b2_2_3.md](../handoff/launch-readiness-20261013/spec_D1_batch1b2_2_3.md);本节只记结论,两者冲突以本节为准。
+
+### 13.1 为什么要修订:已批准方案会写错库
+
+§5.1 的判据「标记在 ⇒ 缺键是权威缺席」要求标记与数据同生同灭。实际上下面几种情况,标记会和回退了的数据一起留下来,要等 leader 下一拍(无上界)才撤得掉,期间读方把缺键当「没有归属」、go/db 走 legacy 写本进程 zone 库:Redis 从旧备份恢复;哨兵提升落后副本(`WAITAOF 1 1` 的确认可能不在被提升的那台);全量预热途中 FLUSH;旧 leader 迟到挂标记;映射实例被部分拷贝。「每秒对账最终修好」消除不了这些窗口。
+
+### 13.2 修订(不改 DDL、不改已有键格式、不改客户端契约)
+
+| # | 修订 | 关掉的窗口 |
+|---|---|---|
+| M1 | 读方用同一段只读 Lua(`placement.RouteReadyReadScript`)取标记、本实例身份(INFO run_id / role / master_replid)与映射键;`VerifyRouteReady` 只有「标记可解码且身份等于本次读所在的主实例」才 Trusted。不可信时值与缺键都不用:go/db 写延后不耗预算并暂停取消息(就绪闸),读耗预算;data_service 回源 SQL(SQL 故障回 Unavailable,绝不 NotFound);guild 当封锁 | 重启、切主、旧备份、拷贝、多实例 |
+| M2 | 预热令牌 `mapping:route:warm`:挂标记用 `RouteReadyArmScript`(令牌未变 + 标记不在 + 脚本内身份复核)+ 同连接 WAITAOF | 预热途中 FLUSH、旧 leader 迟到挂标记、rewarm |
+| M3 | 水位键 `mapping:route:watermark`:库回档判据改为「水位键世代 ≠ 库世代 或 水位键水位 > 库水位」(容差 0),不依赖标记;unfreeze / rewarm 有显式出口 | ArmReadyMarker=false 期间的库回档 |
+| M4 | ArmReadyMarker=false 时 leader 每拍撤标记 | 回退时忘了 rewarm |
+| M5 | 标记不在一律全量预热;回看修补只用于「标记在、身份不符」(同一份数据的延续);部分拷贝迁移必须 rewarm | 空实例重启、部分拷贝 |
+| — | 围栏镜像按 `fence_epoch` set-if-newer、TTL = 库 expires_at_ms + 10 分钟,由 leader 双向对账;旧格式镜像不删只告警(foreign_fence) | 失权旧工具覆盖新持有者的镜像;镜像残留永久封区 |
+
+**不换 generation**(沿用 1b-1 的 B1,也是对任务原文「新 generation」的取舍):M1 + 水位键已能认出旧快照与再次回档;换代会让标记失效,S3 下读方要 fail-closed 到全量预热完成(数小时)。
+
+### 13.3 各批落码
+
+- **1b-2**:`internal/store/route_reconcile.go`(R23–R30,库时钟租约、AdvanceReconcile、FreezeByLeader、按片增量扫描);`internal/routereconcile/`(leader:每拍顺序、M2–M5、围栏镜像对账、armingBlocked 闩锁、cvm 持久化语义、关停有界);config `RouteStore.Reconcile`;metrics;svc 装配与 MissingStores;`data_service.go` 启停;`routetool/rewarm.go`、audit `-require-maprev`、unfreeze 水位键出口。
+- **1b-3**:`k8s_deploy.ps1` 五个转发开关 + `-ConfirmRouteSwitchChange` 粘滞防翻转 + 非法组合拒绝 + Redis 连接总账计入 leader 池,契约测试;`deploy/k8s/data-service-route-alerts.yaml`;`tools/scripts/k8s_route_tool.ps1` 与 Job 模板;清库脚本在任 leader 防护;mapping Redis `--enable-debug-command no`。`k8s_zone_rollback.ps1` 未改(另一项改动在重写):db_first 下 K8s zone 回档在 zone_rollback_discard 落地前不可执行。
+- **第 2 批**:`tools/merge_zone/route_store.go`(merge_zone 唯一写路由表的文件,开写前 P1–P5 探针、围栏 64 片获取 / 续期 / 释放、批事务锁 63 号片且先确保行存在、全部批原语)、`route_publish.go`(镜像 shared 脚本,单连接 pipeline + WAITAOF、catchUp)与源码比对守卫;W5–W12 与 relocate(只换 `relocatePlacements` 实现)、R8 读方、`verify:route_cache`;`-route-source db|redis` 必填并用水位键核对库与 Redis 成对;dev_tools 必填转发;集成测试 harness 区分 PASS / FAIL / SKIP。W2 / W3 保持停用。
+- **第 3 批**:go/db(`route_ready_gate.go`、`placement_route.go`、`Placement.RequireRouteReady`)、data_service(`store/route_reads.go`、`routing/route_read.go`、`RouteStore.ReadRequiresReady`、R7 db_first 读库)、guild(`MergeMarkerRedis.RequireRouteReady`)、`tools/data_consistency_check`(`-route-db-dsn`、不再吞错)。
+
+### 13.4 上线顺序与回退
+
+前进:P1 冻结窗口 + 导入 + 审计 → P2 data_service 切 db_first(leader 运行、Arm=false,补发孤儿行、做回档检测)→ P3 二次导入 + `audit -require-maprev` 为 0 → 全服 Arm=true → leader 预热挂标记 → P4 新版 merge_zone(`-route-source=db`)、禁用旧二进制、解除冻结窗口 → P5 读方逐个打开(go/db 逐 zone → data_service → guild),门禁看 `data_service_route_ready_selfcheck`。
+回退:**先关全部读方开关 → Arm=false(看到 `marker_dropped_disarmed`)→ Mode=redis → `rewarm -wait=0`**;不删表。项目尚未上线(AGENTS.md 启动门禁「上线状态」),混跑窗口类残余上线前不阻塞,首次上线按上面顺序整批起步。
+
+### 13.5 仍未完成 / 残余风险
+
+1. ~~四张路由表的 proto 列漂移守卫(第 1a 批偏离第 1 条)仍未做。~~ **已做(2026-10-20 D1 收尾,未编译,待 Codex 重生成 proto 并验证)**:实为五张(player_route、zone_merge_fence、zone_merged_into、route_meta、route_reconcile)。`proto/common/database/rollback_database_table.proto` 追加五个 message(player_route 沿用 DDL 预留的 pb:1..10,另四张按列序新定字段号;可空列用零值表达,与 `store.RouteRow` 同约定);`schema.go` 的 `routeTableShapes` 删除,`routeTableMessages()` 进 `TableMessages()`(只为表名守卫,同步循环跳过),迁移期按 proto 字段查列名、按 `OptionPrimaryKey` 查主键列序;`route_store_test` 双向比对 proto 字段与 DDL 列、player_route 的 pb 注释与字段号、`RouteRow` 与 `dbpb.PlayerRoute` 逐字段对应(`RouteRow` 保留为领域类型,写明映射,AGENTS §3 的并行 struct 由该用例机械守住)。DDL 不改。
+2. INFO 在 Lua 里的可用性(Redis 7.2)与每次读多两次 INFO 的开销未实测;mapping Redis 若用 ACL,账号要放行 INFO(@dangerous)。
+3. `DEBUG RELOAD NOSAVE` / `LOADAOF` 在进程内换数据不换身份:靠 `enable-debug-command no` 与 leader 自检;淘汰策略被改到下一拍之间的键丢失只能靠 leader 每拍自检。
+4. redis-ha 网络分区时被隔离的旧主仍自报 master 的情形【推断】;WAITAOF 按全局偏移覆盖此前写是推断。
+5. S3 规模全量预热数小时(先单标记,压测后再定是否按片)。
+6. 第 1b-2 / 1b-3 / 2 / 3 批叠在未验证的 1a / G1a / P5 / 1b-1 之上,验证必须按顺序。
+7. Java:副本机制不适用;合服围栏、撤销合服、归属变更审计随 7.3 **待做**(PARITY D1 行已改)。

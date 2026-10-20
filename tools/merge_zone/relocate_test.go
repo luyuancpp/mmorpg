@@ -255,7 +255,7 @@ func TestRelocateEngine_SwitchesEligiblePlayersAndSkipsTheRest(t *testing.T) {
 		t.Errorf("player 2 = %+v, want cold_copy_rows=3 final=1000000:2 version=1 home=901", got)
 	}
 	for id, want := range map[uint64]string{3: "effective storage is 902", 4: "already frozen by run reloc-other",
-		5: "home zone 902", 6: "being merged", 7: "no player:zone", 8: "not capability-checked"} {
+		5: "home zone 902", 6: "being merged", 7: "no home zone", 8: "not capability-checked"} {
 		if r := relocPlayer(m, id).Reason; !strings.Contains(r, want) {
 			t.Errorf("player %d reason %q does not contain %q", id, r, want)
 		}
@@ -530,8 +530,8 @@ func TestDecideFreeze(t *testing.T) {
 		{"no record, home elsewhere", relocatePlayer{}, placementReadOf(t, nil, "902"), freezeSkip, 0, "home zone 902"},
 		{"frozen by another run", relocatePlayer{}, placementReadOf(t, "901:3:frozen:other", "901"), freezeSkip, 0, "already frozen by run other"},
 		{"malformed record", relocatePlayer{}, placementReadOf(t, "901:x", "901"), freezeSkip, 0, "malformed placement record"},
-		{"malformed home", relocatePlayer{}, placementReadOf(t, "901:1", "abc"), freezeSkip, 0, "player:zone is malformed"},
-		{"no home", relocatePlayer{}, placementReadOf(t, "901:1", nil), freezeSkip, 0, "no player:zone"},
+		{"malformed home", relocatePlayer{}, placementReadOf(t, "901:1", "abc"), freezeSkip, 0, "home zone is malformed"},
+		{"no home", relocatePlayer{}, placementReadOf(t, "901:1", nil), freezeSkip, 0, "no home zone"},
 		{"home not capability-checked", relocatePlayer{}, placementReadOf(t, "901:1", "903"), freezeSkip, 0, "not capability-checked"},
 		{"adopt this run's freeze", relocatePlayer{}, placementReadOf(t, "901:4:frozen:"+relocTestRun, "901"), freezeAdoptFrozen, 4, ""},
 		{"adopt this run's switch", relocatePlayer{Version: 4}, placementReadOf(t, "1000000:5", "901"), freezeAdoptSwitched, 0, ""},

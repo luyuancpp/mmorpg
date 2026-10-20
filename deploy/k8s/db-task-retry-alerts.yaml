@@ -495,7 +495,8 @@ spec:
             summary: "{{ $labels.namespace }} 有存盘意图补投已达上限仍未落库"
             description: >-
               过去 15 分钟复查到约 {{ $value | printf "%.0f" }} 次停在 exhausted 的意图:同一版本已补投 MaxAttempts 次(缺省 8 次,退避封顶 10 分钟),
-              两张玩家表的 SQL ACK 仍不齐。补投器不再重投;原意图字节、pending 与补投桶成员都保留,MySQL 落后于父快照,
+              两张玩家表的 SQL ACK 仍不齐。次数只在两条任务都经 broker 确认后才计(意图本身不合法也计),Kafka 生产不可用不会把意图耗到这里,
+              所以归因看消费侧(go/db 落库)或意图本身。补投器不再重投;原意图字节、pending 与补投桶成员都保留,MySQL 落后于父快照,
               这些玩家冷登录与跨场景交接会被提交屏障拒绝。go/db 日志搜「补投已达上限」拿到玩家号,按同期的延后 / 死信原因归因
               (db_task_deferred_total、db_task_dead_letter_total)。原因消除后对该玩家 HDEL player:{<id>}:save_barrier outbox_attempts
               重新开始计数;不要删除 outbox_* 其余字段或补投桶成员,那是这笔存盘唯一的待投副本。

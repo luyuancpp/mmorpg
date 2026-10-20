@@ -56,9 +56,9 @@ package main
 // 不同区时 guild 回 kGuildNotFound(不向客户端透露帮会在别区)。
 //
 // 为什么不直接调 guild / friend 冒烟里的 cancelAllApplications / leaveAnyGuild / friendSmokePreclean:它们是绑在
-// guildSmokeBot / friendSmokeBot 上的方法,而一条连接只能挂一个收包循环;friendSmokeBot 只认领「正在等」的那一个
-// 消息号,流水线的第二条回包会被它丢掉。所以三组统一用 orderingSmokeBot(mark / send / waitReplies),
-// 只复用那两个文件里的纯函数与 tip 常量。
+// guildSmokeBot / friendSmokeBot 上的方法,而一条连接只能挂一个收包循环;它们的 call 经 smokeCaller 同步等一次调用,
+// 没法在同一连接上流水线连发两条再一起等。所以三组统一用 orderingSmokeBot 的 callAll(每条请求一个 gc.Call,
+// 回包按请求号各自认领),只复用那两个文件里的纯函数与 tip 常量。
 
 import (
 	"context"
@@ -616,7 +616,8 @@ func orderingLoginRound(cfg *config.Config, playerID uint64, stats *metrics.Stat
 	defer waitCancel()
 	if err := bot.player.WaitSceneReady(waitCtx); err != nil {
 		return false, orderingStepFail("O7-enter", "round=%d/%d EnterGame 受理了,但 %s 内没有收到进场推送"+
-			"(进场链失败时 gate 会推 SendTipToClient kEnterSceneFailed,login 日志查 EnterGame preload / apply session failed): %v",
+			"(进场链失败时 gate 会推 SendTipToClient kEnterSceneFailed,本场景把它记成一行 [ordering-smoke] Gate pushed SendTipToClient;"+
+			"login 日志查 EnterGame preload / apply session failed): %v",
 			round, orderingLoginRounds, orderingSmokeSceneReadyTimeout, err)
 	}
 	return false, nil
@@ -632,7 +633,7 @@ func orderingLoginListsPlayer(resp *login.LoginResponse, playerID uint64) bool {
 }
 
 // ---------------------------------------------------------------------------
-// 连接与请求的公共部分(都建立在 orderingSmokeBot 的 mark / send / waitReplies 上)
+// 连接与请求的公共部分(请求都经 orderingSmokeBot.callAll 发出并按请求号认领回包)
 // ---------------------------------------------------------------------------
 
 // orderingGroupLogin 登录一个组内账号并登记到 opened,让组的 defer 无论成败都能收尾它。
@@ -688,17 +689,13 @@ func orderingSmokeCloseBots(bots []*orderingSmokeBot) {
 	}
 }
 
-// pipeline 不等回包连发 first → second(模拟客户端连点),等两条回包都到,按顺序返回两条的业务 tip,回包体解进各自的 response。
+// pipeline 不等回包连发 first → second(模拟客户端连点),等两条各自的回包(按请求号认领,与到达顺序无关),
+// 按发送顺序返回两条的业务 tip,回包体解进各自的 response。
 // 任一条被 gate / 路由服在信封上拒绝都按 error 返回:请求没到业务逻辑,本轮的顺序无从判断。
 func (b *orderingSmokeBot) pipeline(first, second orderingSmokeCall) (uint32, uint32, error) {
-	since := b.mark()
-	if err := b.send(first.messageId, first.request); err != nil {
-		return 0, 0, err
-	}
-	if err := b.send(second.messageId, second.request); err != nil {
-		return 0, 0, err
-	}
-	replies, err := b.waitReplies(since, first.messageId, second.messageId)
+	replies, err := b.callAll(
+		orderingSmokeRequest{first.messageId, first.request},
+		orderingSmokeRequest{second.messageId, second.request})
 	if err != nil {
 		return 0, 0, err
 	}
@@ -713,13 +710,9 @@ func (b *orderingSmokeBot) pipeline(first, second orderingSmokeCall) (uint32, ui
 	return firstTip, secondTip, nil
 }
 
-// rpcTip 发一条请求并等它的回包,返回业务 tip(0 = 受理)。
+// rpcTip 发一条请求并只等它自己的回包,返回业务 tip(0 = 受理)。
 func (b *orderingSmokeBot) rpcTip(messageId uint32, request proto.Message, response orderingTipResponse) (uint32, error) {
-	since := b.mark()
-	if err := b.send(messageId, request); err != nil {
-		return 0, err
-	}
-	replies, err := b.waitReplies(since, messageId)
+	replies, err := b.callAll(orderingSmokeRequest{messageId, request})
 	if err != nil {
 		return 0, err
 	}
@@ -738,7 +731,7 @@ func (b *orderingSmokeBot) expectTip(messageId uint32, request proto.Message, re
 	return nil
 }
 
-// orderingBusinessTip 解出一条留底回包的业务 tip(0 = 受理),回包体解进 response。
+// orderingBusinessTip 解出 callAll 认领到的一条回包的业务 tip(0 = 受理),回包体解进 response。
 // 信封拒绝(body 为空)按 error 返回:它说明请求没到业务逻辑,不能当成业务码去断言。
 func orderingBusinessTip(record orderingSmokeRecord, response orderingTipResponse) (uint32, error) {
 	if record.envelopeTip != 0 {

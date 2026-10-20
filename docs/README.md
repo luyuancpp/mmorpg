@@ -46,6 +46,7 @@ ECS 改造交接见 [总索引](handoff/ecs-refactor/README.md);当前修正与�
 - [ecs-component-access-rules.md](design/ecs-component-access-rules.md) — ECS Component Access Rules
 - [ecs-entt-misuse-audit-20261015.md](design/ecs-entt-misuse-audit-20261015.md) — entt 误用审计（2026-10-15）
 - [data-overwrite-rollback-audit-20261018.md](design/data-overwrite-rollback-audit-20261018.md) — 全仓数据问题与覆盖回档审计（2026-10-18）
+- [data-consistency-guarantee-map-20261020.md](design/data-consistency-guarantee-map-20261020.md) — 数据一致性等级核对：各类数据实际做到哪一级、Redis 回退一族与战斗到期结算丢失（2026-10-20）
 - [onboarding.md](design/onboarding.md) — 开发者上手指南 — MMO Server
 - [root_level_cleanup_findings.md](design/root_level_cleanup_findings.md) — Root Level & Tools Directory Audit (2026-03-24) · [EN](design/root_level_cleanup_findings_en.md) · [中文](design/root_level_cleanup_findings_zh.md)
 - [script_directory_rules.md](design/script_directory_rules.md) — Script Directory Rules · [EN](design/script_directory_rules_en.md) · [中文](design/script_directory_rules_zh.md)
@@ -160,12 +161,12 @@ ECS 改造交接见 [总索引](handoff/ecs-refactor/README.md);当前修正与�
 - [db_write_behind_dirty_flag_race.md](design/db_write_behind_dirty_flag_race.md) — DB Write-Behind 脏标记方案竞态分析 · [EN](design/db_write_behind_dirty_flag_race_en.md) · [中文](design/db_write_behind_dirty_flag_race_zh.md)
 - [db_zone_isolation.md](design/db_zone_isolation.md) — DB Zone Isolation (2026-04-11)
 - [global-data-layer-tidb-decision.md](design/global-data-layer-tidb-decision.md) — 全区全服数据层 + TiDB 架构决策
-- [mixed-version-persist-field-protection.md](design/mixed-version-persist-field-protection.md) — 新旧版本混跑时的玩家持久字段保护：存盘嫁接未知字段、覆盖世代校验、go/db 按写方已知列写（设计稿，未落码）
+- [mixed-version-persist-field-protection.md](design/mixed-version-persist-field-protection.md) — 新旧版本混跑时的玩家持久字段保护：未知字段跟着对象走、覆盖世代校验、go/db 超前延后与倒退拒写（v0.5 已拍板；第 1 批已验证，第 2 批构建通过、单测未跑，第 3a 批已落码未编译，3b / 4 / 5 未开工；交接见 handoff/mixed-version-persist-handoff-20261019.md）
 - [landing-recovery-sync-digest.md](design/landing-recovery-sync-digest.md) — 落地恢复：按域版本摘要、场景侧待办唤醒与超窗处置（2026-10-14）
 - [new-player-first-enter-no-cold-read.md](design/new-player-first-enter-no-cold-read.md) — 新号首次进场免冷读:建角时写入 PlayerAllData 种子
 - [player-async-save-loss-windows.md](design/player-async-save-loss-windows.md) — 玩家异步存盘的丢失窗口（置脏 / 快照跳过 / 重试耗尽）
 - [player-inbox-service.md](design/player-inbox-service.md) — 玩家持久收件箱服务（player_inbox）设计
-- [player-route-mapping-durability-proposal.md](design/player-route-mapping-durability-proposal.md) — 玩家归属与落点映射持久化:库为真源 + Redis 完整副本 + 就绪标记(已拍板,分批落码:第 0、1a 批已落码,未验证)
+- [player-route-mapping-durability-proposal.md](design/player-route-mapping-durability-proposal.md) — 玩家归属与落点映射持久化:库为真源 + Redis 完整副本 + 就绪标记(已拍板;第 0 ~ 3 批已落码,未验证;2026-10-19 起读方按身份绑定的就绪标记判可信,见 §13)
 - [player-storage-placement.md](design/player-storage-placement.md) — 玩家存储落点(Placement):归属与存储拆分、单玩家搬库、Phase 2 全局库
 - [player_live_data_export_runbook.md](design/player_live_data_export_runbook.md) — 玩家线上数据下线导出操作记录
 - [proto-compare-dirty-save.md](design/proto-compare-dirty-save.md) — Proto-Compare-Driven Dirty Save — Design (todo.md #204 + #226)
@@ -324,6 +325,10 @@ ECS 改造交接见 [总索引](handoff/ecs-refactor/README.md);当前修正与�
 
 ### 交接说明(`handoff/`)
 
+- [client-rpc-callback-handoff-20261019.md](handoff/client-rpc-callback-handoff-20261019.md) — 交接:客户端请求自带回调(按请求号认领回包),Unity / robot / gate 进度、未提交文件、待拍板的 Java Empty 回包与 scene 早退(2026-10-19)
+- [client-rpc-callback-robot-handoff-20261019.md](handoff/client-rpc-callback-robot-handoff-20261019.md) — 交接:robot 按请求号认领回包——已迁 friend / guild / team / trade,静态复核结论、逐处待迁清单与迁移陷阱(2026-10-19)
+- [configurable-templates-handoff-20261019.md](handoff/configurable-templates-handoff-20261019.md) — 交接：战斗策略 / 活动 / 玩法模板可配置化（含玩家自定义模板）——设计 v0.2 已定稿、代码未开工，待授权与拍板后按批落码（2026-10-19）
+- [data-overwrite-audit-r2-20261019/README.md](handoff/data-overwrite-audit-r2-20261019/README.md) — 交接：第二轮数据与覆盖回档审计——第一、二波已完成（3 medium + 22 low），第三、四波与定稿待续，含工作流脚本副本（2026-10-19）
 - [friend-handoff-20260920.md](handoff/friend-handoff-20260920.md) — friend 服务移植 —— 交接文档(2026-09-20)
 - [global-singletons-p0-codex-tasksheet-20261014.md](handoff/global-singletons-p0-codex-tasksheet-20261014.md) — Codex 任务单:全局单点 P0 五项的实测核实(2026-10-14)
 - [global-singletons-p0-findings-20261014.md](handoff/global-singletons-p0-findings-20261014.md) — 全局单点 P0 五项:静态调查记录与修复设计(2026-10-14)
@@ -336,23 +341,30 @@ ECS 改造交接见 [总索引](handoff/ecs-refactor/README.md);当前修正与�
 - [handoff-backlog-2026-09-05.md](handoff/handoff-backlog-2026-09-05.md) — 交接清单:2026-09-02 ~ 09-05 三天工作的留档待办(经代码核实)
 - [handoff-client-request-ordering-20261015.md](handoff/handoff-client-request-ordering-20261015.md) — 交接:客户端请求按会话保序(路由服水平扩展下的乱序修复,2026-10-15)
 - [handoff-crosszone-20260920.md](handoff/handoff-crosszone-20260920.md) — 跨 zone 场景传送:交接说明(2026-09-20)
+- [handoff-d1-remaining-20261019.md](handoff/handoff-d1-remaining-20261019.md) — 交接:D1 归属与落点映射持久化——剩余收尾(2026-10-19)
+- [handoff-data-service-field-lua-real-redis-20261019.md](handoff/handoff-data-service-field-lua-real-redis-20261019.md) — 交接:data_service 字段索引三段 Lua 的真 Redis 集成测试(已写未跑,7.2 / 8.10.2 两轮验证步骤,2026-10-19)
 - [handoff-gate-dtor-fix-verify-and-stress-20260914.md](handoff/handoff-gate-dtor-fix-verify-and-stress-20260914.md) — 交接:gate `~TcpConnection` 事故第二批修复 —— 构建 / 验证 / 压测(执行方:ChatGPT;方案方:Claude Code)
 - [handoff-global-singletons-10m-ccu-20261013.md](handoff/handoff-global-singletons-10m-ccu-20261013.md) — 交接:全局单点盘点、解法与 1000 万在线容量核算(2026-10-13)
 - [handoff-global-singletons-p0-20261015.md](handoff/handoff-global-singletons-p0-20261015.md) — 交接:全局单点 P0 五项的落码现状与剩余工作(2026-10-15)
 - [handoff-global-singletons-p0-20261015-appendix.md](handoff/handoff-global-singletons-p0-20261015-appendix.md) — 附录:全局单点 P0 部署侧四批的实现报告(2026-10-15)
 - [handoff-landing-recovery-and-fencing-20261016.md](handoff/handoff-landing-recovery-and-fencing-20261016.md) — 交接:落地恢复、超窗处置、进场链余项 a–e 与 MySQL 行内围栏的落码现状与剩余工作(2026-10-16)
 - [landing-fencing-takeover-20261016/README.md](handoff/landing-fencing-takeover-20261016/README.md) — 接手记录:上条交接的复核结论(客户端/robot/在途围栏/v0.3/a–e)、负责人拍板、选定做法与落码批次(2026-10-16)
+- [handoff-launch-line-remaining-20261019.md](handoff/handoff-launch-line-remaining-20261019.md) — 交接:开服线剩余工作(2026-10-19)
 - [handoff-launch-readiness-and-d1-20261013.md](handoff/handoff-launch-readiness-and-d1-20261013.md) — 交接:开服首日瓶颈修复、D1 映射持久化与 S3 容量目标(2026-10-13)
 - [handoff-launch-readiness-decisions-20261015.md](handoff/handoff-launch-readiness-decisions-20261015.md) — 交接:开服瓶颈负责人四项决定的收尾与验证(2026-10-15)
 - [handoff-orcontinue-closure-20260914.md](handoff/handoff-orcontinue-closure-20260914.md) — 交接：`Lookup*OrContinue` 修复收尾 + exporter-tests CI 复活
 - [handoff-tip-axis-and-port-20260903.md](handoff/handoff-tip-axis-and-port-20260903.md) — 交接清单：tip 码轴收尾 + 玄冥移植未开工项
 - [handoff-tip-fault-gateway-500-20261018.md](handoff/handoff-tip-fault-gateway-500-20261018.md) — 交接：两版 Java 网关按 fault 列回 500，补丁对账、验证证据与剩余验收
+- [mixed-version-persist-handoff-20261019.md](handoff/mixed-version-persist-handoff-20261019.md) — 交接：新旧版本混跑的玩家持久字段保护——各批状态、待 Codex 验证命令、第 3b / 4 / 5 批开工清单与坑（2026-10-19）
+- [placement-line-handoff-20261019.md](handoff/placement-line-handoff-20261019.md) — 交接:玩家存储落点这条线——完成度核查与剩余工作(落点 + D1 映射持久化,2026-10-19)
 - [placement-reverify-checklist-20261012.md](handoff/placement-reverify-checklist-20261012.md) — 玩家存储落点:当前 HEAD 复验清单(交 Codex)
 - [player-inbox-handoff-20261015.md](handoff/player-inbox-handoff-20261015.md) — 玩家持久收件箱：实现交接（2026-10-15）
+- [redis-ha-deploy-path-handoff-20261019.md](handoff/redis-ha-deploy-path-handoff-20261019.md) — 交接：共享 Redis 高可用形态接进部署路径（maxclients、连接总账、WAITAOF 副本份数按拓扑、zone 跟随线上、半截切换闸）——提交清单、待 Codex 验证命令与剩余事项（2026-10-19）
 - [repo-layout-20261007.md](handoff/repo-layout-20261007.md) — 仓库目录整理:交接说明(2026-10-07)
 - [rpc-channel-batch7-handoff-20261015.md](handoff/rpc-channel-batch7-handoff-20261015.md) — 交接:RpcChannel 改造收尾——第 7 批、剩余调用点迁移与玩家级延后完成(2026-10-15)
 - [session-summary-20260908-09.md](handoff/session-summary-20260908-09.md) — 本轮会话总览与遗留清单（2026-09-08 ~ 09-09）
 - [zone-home-and-physical-storage-conversation-20260924.md](handoff/zone-home-and-physical-storage-conversation-20260924.md) — 逻辑归属、物理存储与合服：完整对话记录（mmorpg）
+- [zone-rollback-r9-handoff-20261019.md](handoff/zone-rollback-r9-handoff-20261019.md) — 交接：整 zone 回档清理工具（R9）与两个小项的落码（2026-10-19）
 
 ### 笔记(`notes/`)
 

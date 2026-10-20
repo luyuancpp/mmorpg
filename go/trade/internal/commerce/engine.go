@@ -121,6 +121,9 @@ type Engine struct {
 	Applier assetop.Applier
 	Ledger  assetop.LedgerReader
 	Now     func() time.Time
+
+	// ackAfterOpID 是收据 ACK 的翻页游标(见 ackReceipts),只归驱动 Tick 的那一个 goroutine。
+	ackAfterOpID uint64
 }
 
 func (e *Engine) now() uint64 { return uint64(e.Now().UnixMilli()) }
@@ -643,10 +646,12 @@ func (e *Engine) plan(r *tradepb.TradeCommerceRecord, w *tradepb.TradeCommerceWo
 	return nil
 }
 
+// advance 推进一条合同。合同自身的持久数据坏了(解不开、腿缺 outbox 行、腿状态非法、plan 判错)一律用 corrupt 包装:
+// 那是重试只会每轮撞同一个错的确定性失败,由 Tick 隔离为 Manual(deferCommerce),不再按暂时失败无限重试。
 func (e *Engine) advance(ctx context.Context, old *tradepb.TradeCommerceRecord) error {
 	w, err := data.Workflow(old)
 	if err != nil {
-		return err
+		return corrupt(err)
 	}
 	keys := []data.SeqKey{}
 	for _, player := range []uint64{old.SellerPlayerId, old.BuyerPlayerId, w.HighestBidder} {
@@ -671,40 +676,59 @@ func (e *Engine) advance(ctx context.Context, old *tradepb.TradeCommerceRecord) 
 		}
 		w, err := data.Workflow(r)
 		if err != nil {
-			return err
+			return corrupt(err)
 		}
 		for _, l := range w.Legs {
 			if l.OpId == 0 || l.Outcome != 0 {
 				continue
 			}
-			st, raw, durable, err := e.Repo.LegResult(ctx, tx, l.OpId)
+			out, err := e.Repo.LegResult(ctx, tx, l.OpId)
+			if errors.Is(err, sql.ErrNoRows) {
+				// 腿已发出却查不到 outbox 行:结局证据丢了,不能凭空判定。清理只删已业务消费(合同结案)的行,走到这里是数据事故。
+				return corrupt(fmt.Errorf("腿 %s op_id=%d 的资产待办行不存在", l.Role, l.OpId))
+			}
 			if err != nil {
 				return err
 			}
-			if !durable {
+			if out.Pending() {
 				continue
 			}
-			if st == 5 {
+			if !out.Final() {
+				return corrupt(fmt.Errorf("腿 %s op_id=%d 的资产待办状态非法 (%d)", l.Role, l.OpId, int32(out.Status)))
+			}
+			// 终局不分来源一律推进(2026-10-20,第一轮审计 §2.5 go-asset-services#1,见 data.LegOutcome.Final):
+			// 自动放弃(6)与人工判定的 REJECTED / ABORTED 都是"没扣到",由 plan 走与 scene 拒绝同一条补偿路径
+			// (退回另一方已托管的资产、寄售重新开放);腿的 Outcome 只记一次,补偿腿按角色名只建一次,不会退两次。
+			if out.Status == tradepb.TradeAssetOpStatus_TRADE_ASSET_OP_STATUS_APPLIED_PARTIAL {
 				r.Status = Manual
 				w.Stage = "manual"
 				return e.Repo.Save(ctx, tx, r, w, e.now())
 			}
-			if st != 1 {
-				l.Outcome = uint32(st)
-				if len(raw) > 0 {
-					l.Snapshot = &assetpb.AssetSnapshot{}
-					if err := proto.Unmarshal(raw, l.Snapshot); err != nil {
-						return err
-					}
+			l.Outcome = uint32(out.Status)
+			if len(out.Snapshot) > 0 {
+				l.Snapshot = &assetpb.AssetSnapshot{}
+				if err := proto.Unmarshal(out.Snapshot, l.Snapshot); err != nil {
+					return corrupt(fmt.Errorf("腿 %s op_id=%d 的托管快照损坏: %w", l.Role, l.OpId, err))
 				}
 			}
+			// 已扣出的托管迟早要原样转给对方或退回(Transfer),在记下结局的这一刻就核对它转得动。
+			// 典型是人工终结为 APPLIED 的实例扣款:ResolveManually 不写 escrow_snapshot,自动路径缺原件则根本不终结
+			// (assetop escrowAwaitsReceipt)。若不在这里拦,寄售 / 拍品会照常上架,等买家付了款才在发货时判错,
+			// 把第二个玩家的钱也一起压进人工单;在这里拦则只隔离卖家这一份托管。
+			if l.Stream == 3 && applied(l) {
+				if _, err := Transfer(l.Bundle, l.Snapshot); err != nil {
+					return corrupt(fmt.Errorf("腿 %s op_id=%d 已扣出但托管原件不可转交(%s 终局): %w", l.Role, l.OpId, out.Source(), err))
+				}
+			}
+			logOffbandLegOutcome(r.CommerceId, l, out)
 		}
 		var now uint64
 		if err := tx.QueryRowContext(ctx, "SELECT CAST(UNIX_TIMESTAMP(CURRENT_TIMESTAMP(3))*1000 AS UNSIGNED)").Scan(&now); err != nil {
 			return err
 		}
 		if err := e.plan(r, w, now); err != nil {
-			return err
+			// plan 是 (合同, 腿结局, 时刻) 的纯函数,它判错只可能是持久数据自相矛盾(托管快照缺失 / 与合同不符等)。
+			return corrupt(err)
 		}
 		if err := e.marketBarrier(ctx, tx, r, w); err != nil {
 			return err
@@ -726,7 +750,7 @@ func (e *Engine) advance(ctx context.Context, old *tradepb.TradeCommerceRecord) 
 		})
 		for i, l := range pending {
 			if i >= len(ids) {
-				return errors.New("交易单步腿数超过8")
+				return corrupt(errors.New("交易单步腿数超过8"))
 			}
 			a, err := e.Repo.Ops.AllocateSeqsTx(ctx, tx, e.now(), data.SeqKey{PlayerID: l.PlayerId, Stream: assetpb.AssetOpStream(l.Stream)})
 			if err != nil {
@@ -765,79 +789,35 @@ func (e *Engine) advance(ctx context.Context, old *tradepb.TradeCommerceRecord) 
 		return e.Repo.Save(ctx, tx, r, w, e.now())
 	})
 }
+
+// Tick 推进一批到期合同,再轮转发一页收据 ACK。由 svc 的单个 goroutine(trade.commerce.reconcile)每秒调用一次;
+// **不得并发调用同一个 Engine**:ACK 翻页游标 ackAfterOpID 只归这一个 goroutine。
+//
+// 单行失败不再整轮返回(2026-10-20,第一轮审计 §2.5 go-asset-services#0;实现见 tick_isolation.go):
+//   - 每行各有 tickRowBudget 子预算,一行卡住不吃光整轮预算;
+//   - 暂时失败(存储超时、ErrTooManyPending 等)按 tickFailureBackoff 推迟这一行的下次到期,本轮其余行照常推进;
+//   - 确定性坏数据(corrupt)隔离为 Manual,移出 Due,等人工处理,不再无限重试。
+//
+// 只有 Due / AckDue 查询本身失败(存储级),或本轮总预算用完时才返回错误;后者不推迟任何行(不是那一行的错)。
 func (e *Engine) Tick(ctx context.Context) error {
-	rows, err := e.Repo.Due(ctx, 100)
+	rows, err := e.Repo.Due(ctx, e.now(), tickDueLimit)
 	if err != nil {
 		return err
 	}
 	for _, r := range rows {
-		w, err := data.Workflow(r)
-		if err != nil {
+		if err := ctx.Err(); err != nil {
 			return err
 		}
-		if w.Stage == "bid_ready" {
-			if err := e.acceptBid(ctx, r.CommerceId); err != nil {
-				return err
-			}
+		rowCtx, cancel := context.WithTimeout(ctx, tickRowBudget)
+		err := e.step(rowCtx, r)
+		cancel()
+		if err == nil {
 			continue
 		}
-		if w.Stage == "bid_held" {
-			parent, err := e.Repo.Get(ctx, r.ParentId)
-			if err != nil {
-				return err
-			}
-			if parent.Status == Settled {
-				if err := e.Repo.Tx(ctx, func(tx *sql.Tx) error {
-					current, err := e.Repo.Lock(ctx, tx, r.CommerceId)
-					if err != nil {
-						return err
-					}
-					cw, err := data.Workflow(current)
-					if err != nil {
-						return err
-					}
-					if cw.Stage == "bid_held" {
-						current.Status = Settled
-						cw.Stage = "done"
-						if err := e.Repo.Ops.MarkCommerceOpsConsumedTx(ctx, tx, current.CommerceId); err != nil {
-							return err
-						}
-						return e.Repo.Save(ctx, tx, current, cw, e.now())
-					}
-					return nil
-				}); err != nil {
-					return err
-				}
-			}
-			continue
+		if ctx.Err() != nil {
+			return ctx.Err()
 		}
-		if err := e.advance(ctx, r); err != nil {
-			return fmt.Errorf("推进交易合同: %w", err)
-		}
-		if r.Kind == 4 && r.Side != 0 {
-			if err := e.matchMarket(ctx, r.CommerceId); err != nil {
-				return err
-			}
-		}
+		e.deferCommerce(ctx, r, err)
 	}
-	if e.Applier != nil && e.Ledger != nil {
-		ops, err := e.Repo.AckDue(ctx, 100)
-		if err != nil {
-			return err
-		}
-		for _, op := range ops {
-			child, cancel := context.WithTimeout(ctx, 1500*time.Millisecond)
-			ok, err := assetop.AcknowledgeReceipt(child, e.Applier, e.Ledger, op.Request())
-			cancel()
-			if err != nil {
-				continue
-			}
-			if ok {
-				if err := e.Repo.Acked(ctx, op.OpID); err != nil {
-					return err
-				}
-			}
-		}
-	}
-	return nil
+	return e.ackReceipts(ctx)
 }

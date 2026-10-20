@@ -34,8 +34,8 @@ service MatchService {
   // ---- 场景发起 PK(切磋):点名成局入口,与队列匹配汇入同一条 gather 开局管线 ----
   rpc ChallengePlayer(ChallengePlayerRequest) returns (ChallengePlayerResponse) {}
   rpc RespondChallenge(RespondChallengeRequest) returns (RespondChallengeResponse) {}
-  rpc NotifyChallengeInvite(ChallengeInviteS2C) returns (Empty) {}
-  rpc NotifyChallengeResult(ChallengeResultS2C) returns (Empty) {}
+  rpc NotifyChallengeInvite(ChallengeInviteS2C) returns (Empty) { option (OptionClientRpcKind) = CLIENT_RPC_PUSH; }
+  rpc NotifyChallengeResult(ChallengeResultS2C) returns (Empty) { option (OptionClientRpcKind) = CLIENT_RPC_PUSH; }
 
   // ---- 二期:观战匹配(设计文档 §10) ----
   // battle_id=0 表示随机观战(从活跃战斗索引里随机挑一场);成功后由 battle 节点

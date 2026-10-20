@@ -305,7 +305,7 @@ func (l *GuildLogic) economyFence(ctx context.Context, zoneID uint32) error {
 	}
 	merging, err := l.mergeFence.MergeInProgress(ctx, zoneID)
 	if err != nil {
-		logx.Errorf("[GuildEconomy] merge fence unreadable for zone %d, refusing (fail closed): %v", zoneID, err)
+		logMergeFenceRefusal("GuildEconomy", zoneID, err) // 副本不可信只打 DEBUG + 每分钟汇总,其余读失败 ERROR(merge_fence.go)
 		return fmt.Errorf("%w: fence unreadable: %v", data.ErrZoneMerging, err)
 	}
 	if merging {

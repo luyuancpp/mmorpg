@@ -9,7 +9,7 @@
 
 namespace google::protobuf { class Message; }
 
-// 手工维护的 gRPC 调用公共类型:tools/proto_generator 的 grpc_async_client / service_header 模板
+// 手工维护的 gRPC 客户端调用契约:tools/proto_generator 的 grpc_async_client / service_header 模板
 // 生成的代码引用这里的类型。设计见 docs/design/grpc-client-deadline-failure-callback.md 与
 // docs/design/grpc-muduo-transport.md §14。
 //

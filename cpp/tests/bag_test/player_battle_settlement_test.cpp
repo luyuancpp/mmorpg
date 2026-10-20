@@ -1014,19 +1014,49 @@ struct SettlementReplyDeleter {
 struct SettlementRedisFixture {
     using Reply = std::unique_ptr<redisReply, SettlementReplyDeleter>;
     std::unique_ptr<redisContext, decltype(&redisFree)> context{nullptr, &redisFree};
+    // 0=pending blob,1=pending:id,2=battle:lock,3=battle:ctx,4=积压索引(kAckSettlementScript 的 KEYS 顺序)。
     std::array<std::string, 5> keys;
+    // 确认模式落库标记,每局一个(kStagedSettlementMembersKeyFmt;审计 r2-battle#1)。
+    std::array<std::string, 3> markers;
 
     SettlementRedisFixture() {
         const auto nonce = std::chrono::steady_clock::now().time_since_epoch().count();
         const auto prefix = "test:{settlement-ack-" + std::to_string(nonce) + "}:";
         for (std::size_t index = 0; index < keys.size(); ++index)
             keys[index] = prefix + std::to_string(index);
+        for (std::size_t index = 0; index < markers.size(); ++index)
+            markers[index] = prefix + "staged:" + std::to_string(index);
     }
     ~SettlementRedisFixture() {
         if (context == nullptr || context->err != 0) return;
         std::vector<std::string> command{"DEL"};
         command.insert(command.end(), keys.begin(), keys.end());
+        command.insert(command.end(), markers.begin(), markers.end());
         (void)Run(command);
+    }
+    // address = "host:port"(MMORPG_TEST_REDIS_ADDR)。
+    void Connect(const std::string& endpoint) {
+        const auto colon = endpoint.rfind(':');
+        ASSERT_NE(std::string::npos, colon);
+        ASSERT_GT(colon, 0u);
+        char* tail = nullptr;
+        const long port = std::strtol(endpoint.c_str() + colon + 1, &tail, 10);
+        ASSERT_NE(nullptr, tail);
+        ASSERT_EQ('\0', *tail);
+        ASSERT_GT(port, 0);
+        ASSERT_LE(port, 65535);
+        const timeval timeout{1, 0};
+        context.reset(redisConnectWithTimeout(endpoint.substr(0, colon).c_str(), static_cast<int>(port), timeout));
+        ASSERT_NE(nullptr, context);
+        ASSERT_EQ(0, context->err);
+        ASSERT_EQ(REDIS_OK, redisSetTimeout(context.get(), timeout));
+    }
+    // 生产 StagePersonalSettlements 的 EVAL 参数顺序:blob、id、积压索引、锁、标记;blob、battle、now、player、TTL。
+    Reply Stage(const std::string& blob, const std::string& battle, std::size_t marker) {
+        return Run({"EVAL", battle_settlement::kStagePendingSettlementOnceScript, "5",
+                    keys[0], keys[1], keys[4], keys[2], markers.at(marker),
+                    blob, battle, "1", "player",
+                    std::to_string(battle_settlement::kStagedSettlementMembersTtlSec)});
     }
     Reply Run(const std::vector<std::string>& command) {
         std::vector<const char*> arguments;
@@ -1125,6 +1155,176 @@ TEST(PendingSettlementContract, AckRemovesIndexMemberOnlyTogetherWithPending) {
     ASSERT_NO_FATAL_FAILURE(expectAck("old", 0));
     ASSERT_NO_FATAL_FAILURE(expectValue(0, "blob"));
     ASSERT_NO_FATAL_FAILURE(expectValue(2, "current"));
+}
+
+// ---------------------------------------------------------------------------
+// 2026-10-19 审计 r2-battle#1(data-overwrite-rollback-audit-r2-20261019.md §3.3):确认模式(全球对局)
+// 发结果之前的个人结算落库 kStagePendingSettlementOnceScript。
+// ---------------------------------------------------------------------------
+
+namespace {
+void ExpectInteger(const SettlementRedisFixture::Reply& reply, long long expected) {
+    ASSERT_NE(nullptr, reply);
+    ASSERT_EQ(REDIS_REPLY_INTEGER, reply->type);
+    EXPECT_EQ(expected, reply->integer);
+}
+
+void ExpectString(const SettlementRedisFixture::Reply& reply, const std::string& expected) {
+    ASSERT_NE(nullptr, reply);
+    ASSERT_EQ(REDIS_REPLY_STRING, reply->type);
+    EXPECT_EQ(expected, std::string(reply->str, reply->len));
+}
+
+void ExpectNil(const SettlementRedisFixture::Reply& reply) {
+    ASSERT_NE(nullptr, reply);
+    EXPECT_EQ(REDIS_REPLY_NIL, reply->type);
+}
+}  // namespace
+
+// 真实 Redis 上复现缺陷时序:第 1 轮给 A 落库,命令执行了但应答丢了(空应答 / ERROR),整轮判失败;
+// 退避期间 A 的 scene 读到 pending、应用、落盘,销账脚本删掉 pending 与锁、回调摘掉账本条目;第 2 轮再写 A。
+// 修复前第 2 轮是无条件 SET,pending 复活,A 下次登录时登录钩子读到它、账本里没有这一局,整笔再发一次。
+// 修复后第 2 轮读到本局落库标记返回 2,什么都不写。
+TEST(PendingSettlementContract, ConfirmedStagingRetryNeverRevivesAcknowledgedPending) {
+    const char* address = std::getenv("MMORPG_TEST_REDIS_ADDR");
+    if (address == nullptr || *address == '\0')
+        GTEST_SKIP() << "未设置 MMORPG_TEST_REDIS_ADDR，跳过真实 Redis 落库契约";
+    SettlementRedisFixture redis;
+    ASSERT_NO_FATAL_FAILURE(redis.Connect(address));
+
+    // PrepareBattle 写的战斗锁(值 = battle_id)。
+    {
+        const auto reply = redis.Run({"SET", redis.keys[2], "851"});
+        ASSERT_NE(nullptr, reply);
+        ASSERT_EQ(REDIS_REPLY_STATUS, reply->type);
+    }
+    // 第 1 轮:脚本执行了(调用方没拿到应答,只能当「结论未知」)。
+    ASSERT_NO_FATAL_FAILURE(ExpectInteger(redis.Stage("blob-851", "851", 0), 1));
+    ASSERT_NO_FATAL_FAILURE(ExpectString(redis.Run({"GET", redis.keys[0]}), "blob-851"));
+    ASSERT_NO_FATAL_FAILURE(ExpectString(redis.Run({"GET", redis.keys[1]}), "851"));
+    ASSERT_NO_FATAL_FAILURE(ExpectInteger(redis.Run({"SISMEMBER", redis.markers[0], "player"}), 1));
+    {
+        const auto ttl = redis.Run({"TTL", redis.markers[0]});
+        ASSERT_NE(nullptr, ttl);
+        ASSERT_EQ(REDIS_REPLY_INTEGER, ttl->type);
+        EXPECT_GT(ttl->integer, 0);
+        EXPECT_LE(ttl->integer, static_cast<long long>(battle_settlement::kStagedSettlementMembersTtlSec));
+    }
+    // pending 两键不带 TTL(landing-recovery §7)。
+    ASSERT_NO_FATAL_FAILURE(ExpectInteger(redis.Run({"TTL", redis.keys[0]}), -1));
+    ASSERT_NO_FATAL_FAILURE(ExpectInteger(redis.Run({"TTL", redis.keys[1]}), -1));
+
+    // scene 应用并落盘后销账:pending 两键、索引成员与锁一起删(返回位掩码 1|2)。
+    ASSERT_NO_FATAL_FAILURE(ExpectInteger(redis.Ack("851"), 3));
+
+    // 第 2 轮重写 A:标记证明本局写过,不重写。
+    ASSERT_NO_FATAL_FAILURE(ExpectInteger(redis.Stage("blob-851", "851", 0), 2));
+    ASSERT_NO_FATAL_FAILURE(ExpectNil(redis.Run({"GET", redis.keys[0]})));  // 修复前:pending 复活
+    ASSERT_NO_FATAL_FAILURE(ExpectNil(redis.Run({"GET", redis.keys[1]})));
+    ASSERT_NO_FATAL_FAILURE(ExpectNil(redis.Run({"ZSCORE", redis.keys[4], "player"})));
+}
+
+// 锁在落库之前就可能合法缺席(续期没落地时战斗中途自然过期、整场期限到时 scene reaper 先删):
+// 锁不在时照写,不能当成「已收尾」丢掉合法结算。锁属于别的局时不写:那一局的单槽 pending 不能被旧局覆盖。
+TEST(PendingSettlementContract, ConfirmedStagingWritesWithoutLockButNeverOverAnotherBattle) {
+    const char* address = std::getenv("MMORPG_TEST_REDIS_ADDR");
+    if (address == nullptr || *address == '\0')
+        GTEST_SKIP() << "未设置 MMORPG_TEST_REDIS_ADDR，跳过真实 Redis 落库契约";
+    SettlementRedisFixture redis;
+    ASSERT_NO_FATAL_FAILURE(redis.Connect(address));
+
+    // 锁不在:照写。
+    ASSERT_NO_FATAL_FAILURE(ExpectInteger(redis.Stage("blob-850", "850", 0), 1));
+    ASSERT_NO_FATAL_FAILURE(ExpectString(redis.Run({"GET", redis.keys[1]}), "850"));
+
+    // 下一局 852 拿到锁并落了自己的 pending。
+    for (const auto& [index, value] : std::vector<std::pair<std::size_t, std::string>>{
+             {2, "852"}, {0, "blob-852"}, {1, "852"}}) {
+        const auto reply = redis.Run({"SET", redis.keys[index], value});
+        ASSERT_NE(nullptr, reply);
+        ASSERT_EQ(REDIS_REPLY_STATUS, reply->type);
+    }
+    // 另一局 849 此刻才落库(从没写过):锁属于 852,返回 3,不写、不进标记。
+    ASSERT_NO_FATAL_FAILURE(ExpectInteger(redis.Stage("blob-849", "849", 1), 3));
+    ASSERT_NO_FATAL_FAILURE(ExpectString(redis.Run({"GET", redis.keys[0]}), "blob-852"));
+    ASSERT_NO_FATAL_FAILURE(ExpectString(redis.Run({"GET", redis.keys[1]}), "852"));
+    ASSERT_NO_FATAL_FAILURE(ExpectInteger(redis.Run({"EXISTS", redis.markers[1]}), 0));
+
+    // 锁属于本局:照写(852 自己的重试轮,第一次写)。
+    ASSERT_NO_FATAL_FAILURE(ExpectInteger(redis.Stage("blob-852-v", "852", 2), 1));
+    ASSERT_NO_FATAL_FAILURE(ExpectString(redis.Run({"GET", redis.keys[0]}), "blob-852-v"));
+}
+
+// 判定都在第一条写之前;标记写在两键之后;ZADD 最后;EXPIRE 只作用在标记上;锁不在时不提前返回。
+// 键位与 battle_room_manager.cpp StagePersonalSettlements 的 EVAL 参数顺序一一对应,改脚本时这里先红。
+TEST(PendingSettlementContract, ConfirmedStagingDecidesBeforeAnyWriteAndMarksAfterPending) {
+    const std::string script = battle_settlement::kStagePendingSettlementOnceScript;
+    const auto marker = script.find("if redis.call('SISMEMBER', KEYS[5], ARGV[4]) == 1 then return 2 end");
+    const auto lock = script.find("if lock and lock ~= ARGV[2] then return 3 end");
+    const auto blobSet = script.find("redis.call('SET', KEYS[1], ARGV[1])");
+    const auto idSet = script.find("redis.call('SET', KEYS[2], ARGV[2])");
+    const auto sadd = script.find("redis.call('SADD', KEYS[5], ARGV[4])");
+    const auto expire = script.find("redis.call('EXPIRE', KEYS[5], ARGV[5])");
+    const auto zadd = script.find("redis.call('ZADD', KEYS[3], ARGV[3], ARGV[4])");
+    for (const auto position : {marker, lock, blobSet, idSet, sadd, expire, zadd}) {
+        ASSERT_NE(std::string::npos, position);
+    }
+    EXPECT_LT(marker, lock);
+    EXPECT_LT(lock, blobSet);
+    EXPECT_LT(blobSet, sadd);
+    EXPECT_LT(idSet, sadd);
+    EXPECT_LT(sadd, zadd);
+    EXPECT_LT(expire, zadd);
+    // 锁不在必须照写:不能出现「锁不在就返回」的分支(审计建议的纯锁纪律在全球模式下会静默丢结算)。
+    EXPECT_EQ(std::string::npos, script.find("if not lock"));
+    // pending 两键不过期:EXPIRE 只出现一次(标记),也不带 EX / PX / KEEPTTL。
+    EXPECT_EQ(script.find("EXPIRE"), script.rfind("EXPIRE"));
+    EXPECT_FALSE(ScriptContains(battle_settlement::kStagePendingSettlementOnceScript, "'EX'"));
+    EXPECT_FALSE(ScriptContains(battle_settlement::kStagePendingSettlementOnceScript, "'PX'"));
+    EXPECT_FALSE(ScriptContains(battle_settlement::kStagePendingSettlementOnceScript, "KEEPTTL"));
+}
+
+TEST(PendingSettlementContract, ConfirmedStagingKeysAreFormatSafeAndDistinct) {
+    EXPECT_STREQ("battle:lock:%llu", battle_settlement::kBattleLockKeyFmt);
+    const std::string marker = battle_settlement::kStagedSettlementMembersKeyFmt;
+    EXPECT_EQ(std::string::npos, marker.find(' '));
+    ASSERT_NE(std::string::npos, marker.find("%llu"));
+    EXPECT_EQ(marker.find('%'), marker.rfind('%'));  // 只有一个格式说明符(battle_id)
+    char staged[128];
+    char pending[128];
+    char pendingId[128];
+    for (const unsigned long long id : {1ull, 851ull, std::numeric_limits<unsigned long long>::max()}) {
+        std::snprintf(staged, sizeof(staged), battle_settlement::kStagedSettlementMembersKeyFmt, id);
+        std::snprintf(pending, sizeof(pending), battle_settlement::kPendingSettlementKeyFmt, id);
+        std::snprintf(pendingId, sizeof(pendingId), battle_settlement::kPendingSettlementIdKeyFmt, id);
+        EXPECT_STRNE(staged, pending);
+        EXPECT_STRNE(staged, pendingId);
+        EXPECT_STRNE(staged, battle_settlement::kPendingSettlementIndexKey);
+    }
+    // 标记必须活过落库轮次之间的间隔:至少覆盖一整轮用尽窗口(约 9.5 分钟)外加单边断连的余量。
+    EXPECT_GE(battle_settlement::kStagedSettlementMembersTtlSec, 3600u);
+}
+
+// 只有脚本的三种整数结论算落定;空应答、ERROR、意外形状或取值都按未确认,下一轮重写该成员。
+TEST(PendingSettlementContract, ConfirmedStagingReplyClassification) {
+    using battle_settlement::ClassifyStageReply;
+    using battle_settlement::ReplyShape;
+    using battle_settlement::StageVerdict;
+    EXPECT_EQ(StageVerdict::kStored, ClassifyStageReply(ReplyShape::kInteger, 1));
+    EXPECT_EQ(StageVerdict::kAlreadyStored, ClassifyStageReply(ReplyShape::kInteger, 2));
+    EXPECT_EQ(StageVerdict::kSuperseded, ClassifyStageReply(ReplyShape::kInteger, 3));
+    for (const int64_t unexpected : {int64_t{0}, int64_t{4}, int64_t{-1}}) {
+        EXPECT_EQ(StageVerdict::kUnconfirmed, ClassifyStageReply(ReplyShape::kInteger, unexpected)) << unexpected;
+    }
+    for (const auto shape : {ReplyShape::kNoReply, ReplyShape::kError, ReplyShape::kNil, ReplyShape::kString,
+                             ReplyShape::kStatus, ReplyShape::kArray, ReplyShape::kOther}) {
+        // integer 只在 kInteger 时有意义:别的形状即使带 1 也不算写入。
+        EXPECT_EQ(StageVerdict::kUnconfirmed, ClassifyStageReply(shape, 1)) << battle_settlement::ReplyShapeName(shape);
+    }
+    EXPECT_TRUE(battle_settlement::IsStageSettled(StageVerdict::kStored));
+    EXPECT_TRUE(battle_settlement::IsStageSettled(StageVerdict::kAlreadyStored));
+    EXPECT_TRUE(battle_settlement::IsStageSettled(StageVerdict::kSuperseded));
+    EXPECT_FALSE(battle_settlement::IsStageSettled(StageVerdict::kUnconfirmed));
 }
 
 TEST(PendingSettlementContract, CorruptRecordCleanupAlsoRemovesIndexMember) {

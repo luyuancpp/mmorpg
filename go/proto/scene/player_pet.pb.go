@@ -1403,7 +1403,7 @@ const file_proto_scene_player_pet_proto_rawDesc = "" +
 	"\x12GmGrantPetResponse\x124\n" +
 	"\rerror_message\x18\x01 \x01(\v2\x0f.TipInfoMessageR\ferrorMessage\x12 \n" +
 	"\x04pets\x18\x02 \x01(\v2\f.PetListInfoR\x04pets\x12\x15\n" +
-	"\x06pet_id\x18\x03 \x01(\x04R\x05petId2\xc7\x04\n" +
+	"\x06pet_id\x18\x03 \x01(\x04R\x05petId2\xce\x04\n" +
 	"\x14ScenePetClientPlayer\x125\n" +
 	"\n" +
 	"GetPetList\x12\x12.GetPetListRequest\x1a\x13.GetPetListResponse\x122\n" +
@@ -1412,8 +1412,8 @@ const file_proto_scene_player_pet_proto_rawDesc = "" +
 	"\x11AllocatePetPoints\x12\x19.AllocatePetPointsRequest\x1a\x1a.AllocatePetPointsResponse\x12A\n" +
 	"\x0eResetPetPoints\x12\x16.ResetPetPointsRequest\x1a\x17.ResetPetPointsResponse\x12V\n" +
 	"\x15AutoAllocatePetPoints\x12\x1d.AutoAllocatePetPointsRequest\x1a\x1e.AutoAllocatePetPointsResponse\x122\n" +
-	"\tRenamePet\x12\x11.RenamePetRequest\x1a\x12.RenamePetResponse\x122\n" +
-	"\x14NotifyPetListChanged\x12\x12.PetListChangedS2C\x1a\x06.Empty\x125\n" +
+	"\tRenamePet\x12\x11.RenamePetRequest\x1a\x12.RenamePetResponse\x129\n" +
+	"\x14NotifyPetListChanged\x12\x12.PetListChangedS2C\x1a\x06.Empty\"\x05\x88\x99\xc8\x01\x02\x125\n" +
 	"\n" +
 	"GmGrantPet\x12\x12.GmGrantPetRequest\x1a\x13.GmGrantPetResponse\x1a\n" +
 	"\x80\xa8\xc3\x01\x01\x88\xa8\xc3\x01\x01B\x14\x98\xd4a\x03Z\vproto/scene\x80\x01\x01b\x06proto3"

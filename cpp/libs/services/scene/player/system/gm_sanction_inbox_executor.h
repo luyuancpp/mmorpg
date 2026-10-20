@@ -12,6 +12,10 @@
 //   * 原语返回 kSuccess → kApplied;原语返回其他 tip 码 → kRejected(该码),例如 AttachDebt 的 owed 溢出;
 //   * CurrencyComp / PlayerCurrencyComp 缺失(加载不变量被破坏)→ kDefer:不改任何状态,不把一条 GM 处置
 //     因本地缺陷钉成终态 REJECTED;此时存盘本身也会被 Marshal 整份拒绝,结局落不了盘。
+//   * ATTACH_DEBT 时同币种的既有欠款带本版本不认识的字段(CurrencySystem::DebtCarriesUnknownFields)→ kVersionSkew:
+//     版本错位,AttachDebt 不会合并;不记终态,收件箱停用本域、下次落地重拉(已作废记 SKIPPED,落到新版本节点再挂)。
+//     不用 kDefer:这种错位会在会话内消失(欠款还清被删),DEFER 的本地续做看不到之后挂的 VOID
+//     (docs/design/mixed-version-persist-field-protection.md §4.4,player-inbox-service.md §7.5 评审 L1)。
 //
 // 不判冻结 / 战斗 / 可改:那是 PlayerInboxSystem 前置闸的事(闸**不下沉**到 CurrencySystem,D48 红线)。
 // 契约见 player_inbox_registry.h 的 PlayerInboxExecutorFn。单测:cpp/tests/currency_test/gm_sanction_inbox_executor_test.cpp。

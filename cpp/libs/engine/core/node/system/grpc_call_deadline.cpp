@@ -5,7 +5,7 @@
 #include <sstream>
 
 #include "muduo/base/Logging.h"
-#include "core/network/grpc_call_types.h"
+#include "core/network/grpc_client_call.h"
 #include "grpc_client/grpc_init_client.h"
 #include "proto/common/base/node.pb.h"
 

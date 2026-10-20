@@ -7,9 +7,15 @@ package kafka
 //     只有 Trusted 才按读到的值选库(lookupReady);否则返回 errRouteNotReady —— 不可信时值与缺键都不可信,
 //     缺键绝不解释为「没有落点」,也绝不回落到本进程 zone 的库。
 //   - 进程级就绪闸(调度,routeReadyGate):每 RouteReadyGateIntervalMs 用读脚本(不带映射键)刷新一次 verdict;不是 Trusted
-//     时消费循环不从 claim 取新消息、重试循环不分拣也不认领 —— 不 ack、不往 Redis 重试队列推,消息留在 Kafka(lag 增长由
-//     既有告警覆盖),每次刷新之后复查。闸只决定「取不取新任务」,不替逐条判:闸刚放行、逐条判不可信的竞态走
-//     errRouteNotReady 的延后(写不耗预算、读耗预算),量级限于一个刷新间隔内的在途任务。
+//     时消费循环不从 claim 取新消息、重试循环不分拣也不认领 —— 新任务不 ack、不往 Redis 重试队列推,消息留在 Kafka(lag
+//     增长由既有告警覆盖),每次刷新之后复查。闸只决定「取不取新任务」,不替逐条判,已经派进 worker 的任务不再看闸。
+//     走 errRouteNotReady 延后(写不耗预算、读耗预算)的有两类:
+//       ① 闸关上那一刻已在 worker 里的任务:每分区 taskCh 1000 条 + SubShardCount×256 条子 shard 缓冲(buildWorker),
+//          加上重试循环当拍正在认领的那一条(内层循环每认领一条前看一次闸)。积压追赶期这是通道深度量级(按 etc/db.yaml 的
+//          10 分区 × (1000 + 8×256) 约 3 万条),不是「一个刷新间隔内的在途任务」:Kafka 来源的带整条 DBTask(含 Body)经
+//          persistBeforeAck 的 WAITAOF 组提交进主 Redis 重试队列,估主 Redis 内存与 AOF 时按这个量级算。要做到这批也不入队,
+//          得让 worker 在 handleTask 之前等闸,会改停机排空(drainClaimForShutdown)与 claim 收尾语义,需单独设计,本批不做;
+//       ② 闸刚放行、逐条判不可信的竞态,落在一个刷新间隔之内。
 //
 // Placement.RequireRouteReady=false(缺省)时 placementRouter.ready 与 KeyOrderedKafkaConsumer.routeGate 都是 nil:
 // lookup 仍是 MGET 两键,消费循环与重试循环的闸检查恒放行,两个新指标不注册 —— 行为与引入之前相同。
@@ -191,14 +197,19 @@ func (s *routeNotReadySummary) takeLocked() (string, bool) {
 // ───────────────────────────── 进程级就绪闸 ─────────────────────────────
 
 const (
-	// routeReadyRefreshTimeout 是就绪闸单次刷新(一次读脚本)的上限;实际还受 go-redis 客户端自身读超时约束。
+	// routeReadyRefreshTimeout / routeReadyProbeTimeout 是就绪闸单次刷新与启动探针的 ctx 时限。落点 Redis 客户端没开
+	// ContextTimeoutEnabled,ctx 只约束取连接、拨号与重试间隔;在途的读写由 go-redis 的 ReadTimeout(缺省 3s)约束。
+	// 所以 Redis 接受连接却不回包时,一次刷新最长约一个 ReadTimeout,探针约两次,都比这里写的长。停机不受影响:run 在读
+	// 返回后先判 ctx、取消之后不再 apply;刷新 goroutine 不在 c.wg 里,Stop 不等它,它最多比 Stop 多活一个 ReadTimeout。
 	routeReadyRefreshTimeout = 2 * time.Second
-	// routeReadyProbeTimeout 是启动探针的上限。
-	routeReadyProbeTimeout = 5 * time.Second
+	routeReadyProbeTimeout   = 5 * time.Second
 	// routeReadyGateLogEvery:闸一直关着时,至多每分钟一条 INFO(带关了多久与当前状态),免得长时间全量预热期间无声无息。
 	routeReadyGateLogEvery = time.Minute
-	// routeReadyGateStateReadError 是读脚本执行出错时日志里的状态名(不是 verdict,不进 verdict 计数)。
-	routeReadyGateStateReadError = "read_error"
+	// routeReadyGateStateScriptError 是闸刷新时读脚本执行出错(或回复形状不对)的状态名:日志里的 state=,也作为
+	// db_route_ready_verdict_total 的一个 verdict 取值计数 —— 与 data_service 的 route_ready_verdict_total、leader 自检
+	// route_ready_selfcheck 同名。它不是 placement 的结论,不在 RouteReadyVerdictNames 里,由 newRouteReadyGating 另行预置。
+	// 逐条选库 / 复核时脚本出错不计它,计 db_placement_guard_total{outcome="lookup_error"}。取值只在 metrics 定义一处。
+	routeReadyGateStateScriptError = metrics.RouteReadyVerdictScriptError
 )
 
 // routeReadyGate 是进程级就绪闸(规格 §13.2 第 1 条)。
@@ -248,7 +259,7 @@ func newRouteReadyGating(cfg db_config.PlacementConfig, placementRedis redis.Cmd
 			db_config.MinPlacementRouteReadyGateIntervalMs, db_config.MaxPlacementRouteReadyGateIntervalMs, ms)
 	}
 	reader := redisRouteReadyReader{rc: placementRedis}
-	metrics.PrimeRouteReady(placement.RouteReadyVerdictNames())
+	metrics.PrimeRouteReady(append(placement.RouteReadyVerdictNames(), routeReadyGateStateScriptError))
 	return reader, newRouteReadyGate(reader, time.Duration(ms)*time.Millisecond), nil
 }
 
@@ -257,12 +268,22 @@ func (g *routeReadyGate) opened() bool {
 	return g == nil || g.open.Load()
 }
 
-// recheck 返回一个在下一次刷新完成时关闭的 channel;闸关着时等它,醒来再看 opened。nil 闸返回 nil(select 里永不就绪)。
+// recheck 返回一个在下一次刷新完成时关闭的 channel,并记一次等待;闸关着时等它,醒来再看 opened。
+// nil 闸返回 nil(select 里永不就绪)。
 func (g *routeReadyGate) recheck() <-chan struct{} {
 	if g == nil {
 		return nil
 	}
 	g.waits.Add(1)
+	return g.nextRefresh()
+}
+
+// nextRefresh 返回一个在下一次刷新完成时关闭的 channel,不记等待次数(闸放行时的 claim 也要拿它,见 gatedMessages)。
+// nil 闸返回 nil。
+func (g *routeReadyGate) nextRefresh() <-chan struct{} {
+	if g == nil {
+		return nil
+	}
 	g.mu.Lock()
 	defer g.mu.Unlock()
 	return g.wake
@@ -280,14 +301,15 @@ func (g *routeReadyGate) read(ctx context.Context, timeout time.Duration) (place
 	return verdict, nil
 }
 
-// apply 记下一次刷新的结论并唤醒全部等待者。读脚本出错(err 非 nil)按闸关处理(fail-closed),不计 verdict。
+// apply 记下一次刷新的结论并唤醒全部等待者。读脚本出错(err 非 nil)按闸关处理(fail-closed),verdict 计 script_error
+// (routeReadyGateStateScriptError),让「读不了」与「标记不在」在 db_route_ready_verdict_total 上分得开。
 func (g *routeReadyGate) apply(verdict placement.RouteReadyVerdict, err error) {
 	open := err == nil && verdict == placement.RouteReadyTrusted
-	state := routeReadyGateStateReadError
+	state := routeReadyGateStateScriptError
 	if err == nil {
 		state = verdict.String()
-		metrics.CountRouteReadyVerdict(state)
 	}
+	metrics.CountRouteReadyVerdict(state)
 	metrics.SetRouteReadyGate(open)
 
 	g.mu.Lock()
@@ -350,6 +372,13 @@ func (g *routeReadyGate) run(ctx context.Context, ticks <-chan time.Time) {
 
 // startRouteReadyGate 在 Start 的第一步调用:开关关着(routeGate 为 nil)什么都不做;打开时先跑启动探针(出错即返回,
 // Start 据此拒启),再起按间隔刷新的 goroutine,随 c.ctx(Stop 第④步)退出。消费循环与重试循环的闸检查都在它之后才开始。
+// 探针通过、Start 的后续步骤(入队层探针、重试归属)失败时,刷新 goroutine 已经在跑,要等调用方 Stop 取消 c.ctx 才退出
+// (db.go 在 Start 之前就 defer 了 Stop)。
+//
+// 停机接缝(docs/design/db-task-pipeline-bottlenecks.md G6「就绪闸」):闸只在 ConsumeClaim 顶层 select 里替换通道值,
+// 与撤拉取、会话 ctx、交接让出、failureCh 同在一个 select;重试循环的闸检查不阻塞。闸不得挪进 Start 的入组循环(被闸住的
+// 成员会离组,并和重新入组退避互相绕开),也不得写成 select 之外的阻塞等待(Stop 会被闸卡住)。回归用例见
+// route_ready_gate_shutdown_test.go。
 func (c *KeyOrderedKafkaConsumer) startRouteReadyGate() error {
 	g := c.routeGate
 	if g == nil {
@@ -366,18 +395,25 @@ func (c *KeyOrderedKafkaConsumer) startRouteReadyGate() error {
 	return nil
 }
 
-// gatedMessages 给 ConsumeClaim 的主循环用:闸放行时返回 claim 的消息通道与 nil;闸关着时返回 nil 通道(select 里永不
-// 就绪 = 不取新消息、不 track、不派发)与「下一次刷新完成」的通道,醒来后主循环重新判一次。
-// 先拿通道、再判状态:两步之间刚好刷新放行时,拿到的通道已经关闭,不会白等一个间隔。
+// gatedMessages 给 ConsumeClaim 的主循环用,返回本轮 select 的消息通道与「下一次刷新完成」的通道(醒来后主循环重新判一次):
+//   - 闸为 nil(开关关着):claim 的消息通道与 nil,行为与引入之前相同;
+//   - 闸放行:claim 的消息通道与刷新通道。刷新把闸关上时 select 立即醒来、回到循环顶停在闸前。只返回消息通道的话,空闲分区上
+//     等消息的 claim 醒不过来:闸关之后不论隔多久,下一条到达的消息照样被取走,逐条判不可信后写推进重试队列、读耗预算,
+//     与「闸关着不取新消息、不推重试队列」不符。代价是每个 claim 每个刷新间隔(≥200ms)空转一圈;
+//   - 闸关着:nil 通道(select 里永不就绪 = 不取新消息、不 track、不派发)与刷新通道,并记一次等待(waits)。
+//
+// 先拿通道、再判状态:两步之间刚好刷新时,拿到的通道已经关闭,不会白等一个间隔。剩下的竞态只有「刷新关闸的那一刻 wake 关闭
+// 与消息同时就绪、select 选中了消息」,落在一个刷新间隔之内,由逐条判(lookupReady)兜住。
 func (c *KeyOrderedKafkaConsumer) gatedMessages(claim sarama.ConsumerGroupClaim) (<-chan *sarama.ConsumerMessage, <-chan struct{}) {
 	g := c.routeGate
-	if g.opened() {
+	if g == nil {
 		return claim.Messages(), nil
 	}
-	wake := g.recheck()
+	wake := g.nextRefresh()
 	if g.opened() {
-		return claim.Messages(), nil
+		return claim.Messages(), wake
 	}
+	g.waits.Add(1)
 	return nil, wake
 }
 

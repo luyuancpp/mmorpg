@@ -10,7 +10,7 @@
 #include "core/utils/registry/actor_log.h"
 #include "engine/core/time/system/time.h"
 #include "network/node_utils.h"
-#include "network/player_message_utils.h"
+#include "network/client_message_sender.h"
 #include "thread_context/ecs_context.h"
 #include "thread_context/redis_manager.h"
 
@@ -216,7 +216,7 @@ void FillPublicInfo(const ::MysteryMerchantState &state, uint64_t nowMs, ::Myste
 // 向本节点的全部在线玩家发一次出现公告。
 //
 // 每个 scene 节点只管自己身上的玩家:全 zone 的玩家分布在各个节点上,各节点各发各的,合起来恰好
-// 每人一条。刻意不用 BroadcastMessageToAll(发给本节点连着的每个 gate 上的全部会话):那样每个节点
+// 每人一条。刻意不用 BroadcastToAllClientsOnKnownGates(发给本节点连着的每个 gate 上的全部会话):那样每个节点
 // 都会让全服收到一条,玩家会收到「节点数」条重复公告。
 void Announce(const ::MysteryMerchantState &state, uint64_t nowMs)
 {
@@ -239,7 +239,7 @@ void Announce(const ::MysteryMerchantState &state, uint64_t nowMs)
 	}
 	::MysteryMerchantNotify notify;
 	FillPublicInfo(state, nowMs, *notify.mutable_info());
-	BroadcastMessageToPlayers(SceneMysteryMerchantClientPlayerNotifyMysteryMerchantMessageId, notify, players);
+	BroadcastToPlayerClients(SceneMysteryMerchantClientPlayerNotifyMysteryMerchantMessageId, notify, players);
 	LOG_INFO << "[MysteryMerchant] Appearance announcement sent: round_id=" << state.round_id() << " revision=" << state.revision()
 			 << " scene_config_id=" << state.scene_config_id() << " channel_no=" << state.channel_no()
 			 << " scene_id=" << state.scene_id() << " players=" << players.size();

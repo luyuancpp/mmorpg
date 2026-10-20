@@ -50,6 +50,7 @@ import (
 	"db/internal/stresstest"
 	dbpb "proto/common/database"
 	taskpb "proto/db"
+	"shared/generated/persistschema"
 	"shared/kafkautil"
 
 	"github.com/IBM/sarama"
@@ -202,9 +203,12 @@ func driveOnePlayer(
 		}
 
 		msgType := string((&dbpb.PlayerDatabase{}).ProtoReflect().Descriptor().FullName())
+		// 盖本二进制的持久 schema 世代:引导期关闭后未盖戳的写会被 go/db 送进死信
+		// (docs/design/mixed-version-persist-field-protection.md §6.2 C0)。
 		row := &dbpb.PlayerDatabase{
-			PlayerId:        playerID,
-			StressTestProbe: stresstest.MakeProbe(playerID, msgType, seq),
+			PlayerId:         playerID,
+			StressTestProbe:  stresstest.MakeProbe(playerID, msgType, seq),
+			PersistSchemaGen: persistschema.Gen,
 		}
 		body, err := proto.Marshal(row)
 		if err != nil {

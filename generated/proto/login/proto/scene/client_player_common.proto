@@ -28,7 +28,7 @@ service SceneClientPlayerCommon
   option (OptionIsPlayerService) = true;
   option (OptionIsClientProtocolService) = true;
   
-  rpc SendTipToClient (TipInfoMessage) returns (Empty);
-  rpc KickPlayer (GameKickPlayerRequest) returns (Empty);
-  rpc RedirectToGate (RedirectToGateNotify) returns (Empty);
+  rpc SendTipToClient (TipInfoMessage) returns (Empty) { option (OptionClientRpcKind) = CLIENT_RPC_PUSH; }
+  rpc KickPlayer (GameKickPlayerRequest) returns (Empty) { option (OptionClientRpcKind) = CLIENT_RPC_PUSH; }
+  rpc RedirectToGate (RedirectToGateNotify) returns (Empty) { option (OptionClientRpcKind) = CLIENT_RPC_PUSH; }
 }

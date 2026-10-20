@@ -198,6 +198,8 @@
 
 ### 5.1 架构结论
 
+> **(2026-10-18 指向注,本节原文保留)** 负责人 2026-10-17 已拍板第 1、3 条的路线:核心 Redis 走「单元化 + 单元内 Redis Cluster 按 `{player_id}` 分片」,两者叠加;D12 / CZ-2 改写为「逻辑单一、物理按 `{player_id}` 分片」,C++ 要接集群客户端或支持 MOVED / ASK。第 1、3 条的展开设计已并入 [G4a 2026-10-18 修订稿](../design/shared-redis-split-by-purpose.md) §20,第 2 条的全局键见同稿 §17、§20,第 4 条账号权威落库见同稿 §22,不另起设计;以上都是纯设计,未落码。本节数字按 1000 万推算,只作历史参考,2000 万口径见同稿 §16。
+
 1. **改写 D12 / CZ-2 契约**。真正要保住的不变量是:「同一玩家的契约键(location、session、battle:lock、PlayerAllData、owner_epoch、handoff)只有一个权威存储,任何 zone 都能寻址到它」。应改写为「逻辑单一、物理按 player_id 分片,同一玩家的键用 `{player_id}` hash tag 落在同一 slot」,底层用 Redis Cluster 或固定 slot 表做客户端分片。这是破坏性的键名变更,必须按 AGENTS.md §11.3 走双读迁移和回滚窗口;C++ 要接入集群客户端(或支持 MOVED 与重新解析地址)。
 2. **全局键要么删除,要么按 zone 或分片拆开**:`player:leases*`、`dirty_keys_set`、`scene_manager:leader:lock`、`task:result:notify`,以及依赖 SCAN MATCH 的 `scene_nodes` / `world_channels`。
 3. **部署形态是两者叠加**:
@@ -243,6 +245,7 @@
 ## 8. 待负责人拍板
 
 1. 是否接受「D12 / CZ-2 改写为逻辑单一、物理按 player_id 分片」。
+   - **(2026-10-18 指向注)** 已拍板(2026-10-17):接受,并与单元化叠加,即「单元化 + 单元内 Redis Cluster 按 `{player_id}` 分片」。设计并入 [G4a 修订稿](../design/shared-redis-split-by-purpose.md) §20。第 3 条冷卸载见同稿 §23,第 5 条账号落库见同稿 §22;第 2 条的单元规模仍待定,列在同稿 §25。
 2. cell 划分口径(每 cell 多少 zone 和在线人数),以及跨 cell 传送是否在范围内。
 3. 冷玩家卸载的阈值(离线 24h?),以及它与 noeviction 口径的关系(G4a §13 第 5 条)。
 4. 审计快照与流水的保留期,以及是否转对象存储或列存。

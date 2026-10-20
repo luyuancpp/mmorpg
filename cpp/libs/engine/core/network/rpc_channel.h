@@ -77,7 +77,7 @@ bool IsDispatchableMessageId(uint32_t messageId);
 //       所以不得把资源释放只挂在 done 上;gRPC sync handler 也不得用 future 阻塞等待一次 RPC0 调用的结果。
 using ClientDoneCallback = std::function<void(const RpcStatus& status, const MessagePtr& response)>;
 
-// 与 gRPC 默认 deadline(grpc_call_types.h kDefaultGrpcCallDeadlineMs)同值。调用点应按预算链显式传值(§4.5)。
+// 与 gRPC 默认 deadline(grpc_client_call.h kDefaultGrpcCallDeadlineMs)同值。调用点应按预算链显式传值(§4.5)。
 inline constexpr std::chrono::milliseconds kDefaultRpcCallTimeout{10000};
 // 每个 channel 的在途上限,与 muduo_grpc::ChannelOptions::maxOutstandingCalls 同值;超出以 kNotSent 失败。
 inline constexpr std::size_t kMaxOutstandingRpcCalls = 65536;

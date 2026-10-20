@@ -62,7 +62,16 @@ void SceneSkillClientPlayerHandler::ListSkills(entt::entity player,const ::ListS
 	if (const auto* skillList = tlsEcs.actorRegistry.try_get<PlayerSkillListComp>(player);
 		skillList != nullptr)
 	{
-		response->mutable_skill_list()->CopyFrom(*skillList);
+		// 只下发本版本生效的技能:列表里可能留着新版本技能表才有的技能,它们保留但不生效
+		// (PlayerSkillSystem::IsActiveSkill,混版本设计 §12 第 5 批)。下发了客户端也施放不了(ReleaseSkill 按表拒)。
+		auto* out = response->mutable_skill_list();
+		for (const auto& skill : skillList->skill_list())
+		{
+			if (PlayerSkillSystem::IsActiveSkill(skill.skill_table_id()))
+			{
+				out->add_skill_list()->CopyFrom(skill);
+			}
+		}
 		return;
 	}
 	// Force the skill_list field to be present (even if empty) so the

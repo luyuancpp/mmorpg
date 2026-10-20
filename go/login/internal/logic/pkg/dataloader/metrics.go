@@ -123,7 +123,47 @@ var (
 			"Result: success | failed | timeout.",
 		Labels: []string{"result"},
 	})
+
+	// persistSchemaRegressionTotal 计 C4(docs/design/mixed-version-persist-field-protection.md §5.1):
+	// 父快照快路径上加载世代低于 save_barrier 记录的 schema_gen(reason=regression),
+	// 或 schema_gen 存储值损坏(reason=malformed)。mode=warn 照常入场,mode=enforce 本次 EnterGame 失败。
+	// 合法流程恒为 0(设计 §5.3),任何增长都要按 §8.4 的 PersistSchemaRegression 处置。
+	// 名字不跟本包的 dataloader_preload 前缀:它是设计里约定的告警名。不带 player_id(高基数)。
+	// 四条序列(reason × mode)起服时由 PrimePersistSchemaRegressionMetrics 预置成 0。
+	persistSchemaRegressionTotal = metric.NewCounterVec(&metric.CounterVecOpts{
+		Namespace: "login",
+		Subsystem: "",
+		Name:      "persist_schema_regression_total",
+		Help: "EnterGame parent-snapshot fast-path loads whose persist schema generation is below the " +
+			"save barrier's recorded schema_gen (reason=regression) or whose recorded schema_gen is malformed " +
+			"(reason=malformed). mode=warn admits the load, mode=enforce fails the EnterGame. Expected to stay 0.",
+		Labels: []string{"reason", "mode"},
+	})
 )
+
+// login_persist_schema_regression_total 的 reason 取值,集合封闭。
+const (
+	schemaRegressionReasonRegression = "regression"
+	schemaRegressionReasonMalformed  = "malformed"
+)
+
+// PrimePersistSchemaRegressionMetrics 把 login_persist_schema_regression_total 的全部四条序列(reason × mode)预置成 0,
+// 让它们从起服起就存在。
+//
+// 理由与 clientplayerlogin.PrimeCreatePlayerMetrics 相同:带 label 的 CounterVec 在某个组合第一次写入之前不输出序列,
+// 序列从"不存在"直接跳到 1 时 `increase(...) > 0` 算不出增量,会漏掉第一次。这个计数合法流程恒为 0、出现就要处置,
+// 也是切 enforce 的放行依据(设计 §8.1 第 5 步要求 warn 观察期为 0),第一次绝不能漏。
+// 两种模式都预置:运行中改模式要重启,但看板与告警按全集写,不依赖当前模式。
+//
+// 调用时机同 PrimeCreatePlayerMetrics:必须在 zrpc.MustNewServer 之后(login.go startServer),
+// 之前 go-zero 的指标开关没打开,写入会被丢弃。
+func PrimePersistSchemaRegressionMetrics() {
+	for _, reason := range []string{schemaRegressionReasonRegression, schemaRegressionReasonMalformed} {
+		for _, mode := range []string{"warn", "enforce"} {
+			persistSchemaRegressionTotal.Add(0, reason, mode)
+		}
+	}
+}
 
 const (
 	resultSuccess = "success"

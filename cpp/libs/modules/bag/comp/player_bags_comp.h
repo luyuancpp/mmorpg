@@ -1,11 +1,14 @@
 #pragma once
 
 #include <array>
+#include <cstdint>
 #include <memory>
 #include <unordered_map>
+#include <vector>
 
 #include "entt/src/entt/entity/registry.hpp"
 #include "modules/bag/bag_system.h"
+#include "proto/common/database/bag_quest_mail_data.pb.h"
 
 // PlayerBagsComp — ECS component that holds all four Bag instances for
 // one player on a scene node.
@@ -93,4 +96,47 @@ struct PlayerBagsComp
     // 动态背包沿用 Bag 的默认布局(FlatLayout / kDefaultCapacity),
     // 容量由创建方或快照还原决定 —— 它们没有固定的类型语义。
     std::unordered_map<uint64_t, Bag> dynamicBags_;
+
+    // 本版本不认识的固定包类型的存档记录:BagAllData 里 bag_type ≥ kBagTypeCount 的条目,以及
+    // capacities 下标 ≥ kBagTypeCount 的容量。新版本加了包类型、旧版本(或回滚后的版本)接手这名玩家时,
+    // 这些记录原样携带、存盘原样写回,不丢(docs/design/mixed-version-persist-field-protection.md §12,第 5 批)。
+    // 本版本的玩法看不到、也不碰它们:不计入任何包的数量与容量,不参与入包、整理、淘汰。
+    // 只由 bag_marshal::Unmarshal 整体重填(重新还原时先清空)、bag_marshal::Marshal 原样追加;全网同版本时两者皆空。
+    // 存的是整份 ItemEntry(含其中实例的未知字段),拷贝不会失败,存盘不需要另一道失败分支。
+    struct UnsupportedBagTypeRecords
+    {
+        std::vector<ItemEntry> items;     // 读入顺序
+        std::vector<uint32_t> capacities; // BagAllData.capacities[kBagTypeCount..],下标顺序
+    };
+    UnsupportedBagTypeRecords unsupportedBagTypes;
+
+    // 这名玩家名下是否已有这个实例身份:固定包、动态包,以及携带着的本版本不认识的包类型记录都算。
+    // 跨包的 guid 唯一性检查(例如资产通道入账)必须用它,不能只扫运行时包 —— 携带记录虽然本版本的玩法不碰,
+    // 存盘时仍原样写回;漏查会让同一实例在新包与旧包里各落一份,升回新版本后两份都还原(物品复制)。
+    // 携带记录按 item_uuid 或整份实例的 item_id 任一命中算存在(Unmarshal 以 instance 为准,旧档只有 item_uuid)。
+    [[nodiscard]] bool ContainsGuid(Guid guid) const
+    {
+        for (const auto &bag : bags)
+        {
+            if (bag.ContainsGuid(guid))
+            {
+                return true;
+            }
+        }
+        for (const auto &dynamicBag : dynamicBags_)
+        {
+            if (dynamicBag.second.ContainsGuid(guid))
+            {
+                return true;
+            }
+        }
+        for (const auto &entry : unsupportedBagTypes.items)
+        {
+            if (entry.item_uuid() == guid || (entry.has_instance() && entry.instance().item_id() == guid))
+            {
+                return true;
+            }
+        }
+        return false;
+    }
 };

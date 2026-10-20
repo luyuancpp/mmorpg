@@ -29,7 +29,7 @@ package main
 //	   每段都跟着走、A 停下后它也停下并停在身后约 1.4 处;
 //	C5 A 解散。全过 → `TEAM_FOLLOW_CLIENT_OK … leg0=ok(…) …`;失败同样是 `TEAM_FOLLOW_SMOKE_FAIL step=C… reason=…`。
 //
-// 组队请求 / 回包复用 team-smoke 的 teamSmokeBot(同一套按消息号认领回包、信封拒绝与业务 tip 分开的口径);
+// 组队请求 / 回包复用 team-smoke 的 teamSmokeBot(同一套经 smokeCaller 按请求号认领回包、信封拒绝与业务 tip 分开的口径);
 // 本场景另把**所有**下行消息按到达顺序留底(records),因为要断言的 ActorCreate / ActorMove / Teleport / MoveAck
 // 不在 team-smoke 的留底名单里。每步在触发动作**之前**记下标,之后从下标起扫描。
 
@@ -563,7 +563,7 @@ func teamFollowSmokeLogin(cfg *config.Config, name, account string, stats *metri
 		gc:      gc,
 		player:  gameobject.NewPlayer(gc.PlayerId),
 		stats:   stats,
-		replies: make(map[uint32]*base.MessageContent),
+		caller:  newSmokeCaller(gc, stats, account, teamSmokeRpcTimeout, errTeamSmokeTimeout),
 	}}
 	gameobject.PlayerList.Set(gc.PlayerId, bot.player)
 	go gc.RecvLoop(bot.onMessage)

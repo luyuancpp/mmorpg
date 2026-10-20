@@ -134,9 +134,15 @@ func mappingKey(playerID uint64) string {
 //	Key    : merge:in_progress:{zone}   zone = 十进制 zone id,无 hash tag
 //	Value  : JSON,{"started_at": <RFC3339 UTC>, "started_at_unix_ms": <int>, ...}
 //	         —— **本服务从不解析**,只看键在不在
-//	TTL    : 由工具设定,须长于整次合服;仅作进程被杀时的兜底,不是正常清除手段
-//	谁清除 : tools/merge_zone 跑完(成功或失败退出)显式 DEL;TTL 到期是兜底
-//	判据   : **键存在即封锁**,不看值、不看剩余 TTL
+//	TTL / 谁写 / 谁清除:按 merge_zone 的映射来源分两种(2026-10-20 更正,原文只写了 redis 源一种):
+//	  - redis 源(-route-source=redis,data_service 全部是 Mode=redis):本键就是围栏真源。TTL 由工具设定,须长于整次合服,
+//	    仅作进程被杀时的兜底;tools/merge_zone 跑完(成功或失败退出)显式 DEL,TTL 到期是兜底。
+//	  - db 源(-route-source=db,第 2 批起,data_service 为 db_first):真源是全局库 zone_merge_fence,本键只是**镜像**:
+//	    值 = 库里的 holder_json(带 fence_epoch),由 merge_zone 与对账 leader 按 fence_epoch set-if-newer 写入
+//	    (placement.MergeFenceMirrorSetScript),PEXPIREAT = 库 expires_at_ms + placement.MergeFenceMirrorMarginMs;
+//	    释放时先清库、再按完整值 compare-and-delete 本键,删不掉由 leader 按库双向对账删除。运维不手工 SET / DEL(runbook §15)。
+//	    db_first 的 W1 另在库内锁围栏分片复核(route_publish.go),本键是发布脚本 KEYS[4] 的第二道复核。
+//	判据   : 两种来源相同 —— **键存在即封锁**,不看值、不看剩余 TTL
 //
 // 为什么判据只有"存在":任何更复杂的判据(解析 started_at、比较时间窗)都会引入
 // "值坏了/时钟歪了怎么办"的分支,而闸门唯一正确的失败方向是拒绝。存在性检查
@@ -386,9 +392,11 @@ func (r *Router) GetPlayerHomeZoneAndMergeFence(ctx context.Context, playerID ui
 // fence 取 EXISTS 的结果(0/1),围栏读失败时为 mergeFenceUnreadable(-1)。
 //
 // 围栏键在脚本里由 ARGV[1](前缀,取自 mergeFenceKeyPrefix)拼上 home 值得到,不在 KEYS 里 ——
-// 事先不知道 home 就没法声明它。这只在单实例上成立:mapping Redis 是 go-zero 的 node 类型
-// (恒 DB 0,见 router_integration_test.go),不是 Cluster;将来若换成 Cluster,未声明键会跨 slot,
-// 那时 EXISTS 报错,会走 pcall 的失败分支(按合服处理 → 拒绝进场),不会静默放行。
+// 事先不知道 home 就没法声明它。今天 mapping Redis 是 go-zero 的 node 类型(恒 DB 0,见 router_integration_test.go),
+// 不是 Cluster。将来若换成 Cluster,围栏键一般与映射键不同 slot;本脚本无 shebang,是 EVAL 兼容模式(带 SCRIPT_ALLOW_CROSS_SLOT):
+// 围栏键的 slot 在本节点时**静默放行**,EXISTS 读到的就是本节点上的真围栏键;在别的节点时报 "non local key",
+// 走 pcall 的失败分支(按合服处理 → 拒绝进场)。两种情形都不会把已立的围栏读成不存在,但「跨 slot 必报错」并不成立
+// (data_service 侧的实测见 logic 包 TestRealRedisClusterUndeclaredKeys)。
 const getHomeZoneAndMergeFenceScript = `
 local home = redis.call('GET', KEYS[1])
 if not home then

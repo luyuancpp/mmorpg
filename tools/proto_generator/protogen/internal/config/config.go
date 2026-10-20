@@ -114,6 +114,7 @@ type Paths struct {
 
 	// Unity client output paths.
 	UnityClientDir           string `yaml:"unity_client_dir"`
+	UnityRpcDir              string `yaml:"unity_rpc_dir"`
 	UnityHandlerDir          string `yaml:"unity_handler_dir"`
 	UnityHandlerRegistryFile string `yaml:"unity_handler_registry_file"`
 

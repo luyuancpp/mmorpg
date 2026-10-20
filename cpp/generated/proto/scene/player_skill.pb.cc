@@ -1101,14 +1101,14 @@ const char descriptor_table_protodef_proto_2fscene_2fplayer_5fskill_2eproto[] AB
     "amp\030\005 \001(\004\"\023\n\021ListSkillsRequest\"f\n\022ListSk"
     "illsResponse\022&\n\rerror_message\030\001 \001(\0132\017.Ti"
     "pInfoMessage\022(\n\nskill_list\030\002 \001(\0132\024.Playe"
-    "rSkillListComp2\372\001\n\026SceneSkillClientPlaye"
+    "rSkillListComp2\210\002\n\026SceneSkillClientPlaye"
     "r\022;\n\014ReleaseSkill\022\024.ReleaseSkillRequest\032"
-    "\025.ReleaseSkillResponse\022(\n\017NotifySkillUse"
-    "d\022\r.SkillUsedS2C\032\006.Empty\0226\n\026NotifySkillI"
-    "nterrupted\022\024.SkillInterruptedS2C\032\006.Empty"
-    "\0225\n\nListSkills\022\022.ListSkillsRequest\032\023.Lis"
-    "tSkillsResponse\032\n\200\250\303\001\001\210\250\303\001\001B\016Z\005scene\200\001\001\230"
-    "\324a\003b\006proto3"
+    "\025.ReleaseSkillResponse\022/\n\017NotifySkillUse"
+    "d\022\r.SkillUsedS2C\032\006.Empty\"\005\210\231\310\001\002\022=\n\026Notif"
+    "ySkillInterrupted\022\024.SkillInterruptedS2C\032"
+    "\006.Empty\"\005\210\231\310\001\002\0225\n\nListSkills\022\022.ListSkill"
+    "sRequest\032\023.ListSkillsResponse\032\n\200\250\303\001\001\210\250\303\001"
+    "\001B\016Z\005scene\200\001\001\230\324a\003b\006proto3"
 };
 static const ::_pbi::DescriptorTable* PROTOBUF_NONNULL const
     descriptor_table_proto_2fscene_2fplayer_5fskill_2eproto_deps[6] = {
@@ -1123,7 +1123,7 @@ static ::absl::once_flag descriptor_table_proto_2fscene_2fplayer_5fskill_2eproto
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fscene_2fplayer_5fskill_2eproto = {
     false,
     false,
-    1091,
+    1105,
     descriptor_table_protodef_proto_2fscene_2fplayer_5fskill_2eproto,
     "proto/scene/player_skill.proto",
     &descriptor_table_proto_2fscene_2fplayer_5fskill_2eproto_once,

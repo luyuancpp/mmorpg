@@ -23,14 +23,6 @@ func TestParseQueueKeyRoundTrip(t *testing.T) {
 		require.NoError(t, err, key)
 		require.Equal(t, c.mode, mode, key)
 		require.Equal(t, c.config, config, key)
-
-		// 旧格式 key(无 tag)同样能解析:迁移路径靠它取 (mode, config)。
-		legacy := legacyMatchQueueKey(c.mode, c.config)
-		require.NotContains(t, legacy, "{")
-		mode, config, err = parseQueueKey(legacy)
-		require.NoError(t, err, legacy)
-		require.Equal(t, c.mode, mode, legacy)
-		require.Equal(t, c.config, config, legacy)
 	}
 	require.Contains(t, matchQueueIndexKey, matchQueueHashTag)
 	require.Contains(t, matcherLockKey(3, 0), matchQueueHashTag)
@@ -142,7 +134,6 @@ func TestPerEntityKeysHaveNoHashTag(t *testing.T) {
 		challengeKey(9001), challengeTargetKey(6002),
 		spectateBattleKey(42), spectateWatchingKey(7), spectateBattlesActiveKey,
 		battleLockKey(1), getPlayerLocationKey(1), playerSessionKey(1),
-		legacyMatchQueueKey(3, 0),
 	} {
 		require.NotContains(t, key, "{", key)
 		require.NotContains(t, key, "}", key)
@@ -151,15 +142,11 @@ func TestPerEntityKeysHaveNoHashTag(t *testing.T) {
 	require.NotEqual(t, redisHashSlot(matchTicketKey(1)), redisHashSlot(matchTicketKey(2)))
 	require.NotEqual(t, redisHashSlot(matchRatingKey(1)), redisHashSlot(matchRatingKey(2)))
 
-	// 自定义前缀的队列 key(票据里记录的任意形态)推出的镜像 key 保留前缀;
-	// 旧格式 key(无 tag)推出的镜像 key 也无 tag —— 所以取消旧 key 必须走单 key LREM。
+	// 自定义前缀的队列 key(票据里记录的任意形态)推出的镜像 key 保留前缀、与队列同 slot。
 	derived, err := rankKeyForQueue("match:{other}:queue:3:7")
 	require.NoError(t, err)
 	require.Equal(t, "match:{other}:rank:3:7", derived)
 	require.Equal(t, redisHashSlot("match:{other}:queue:3:7"), redisHashSlot(derived))
-	derived, err = rankKeyForQueue(legacyMatchQueueKey(3, 0))
-	require.NoError(t, err)
-	require.Equal(t, "match:rank:3:0", derived)
 	_, err = rankKeyForQueue("match:{mq}:index")
 	require.Error(t, err)
 }

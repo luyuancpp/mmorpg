@@ -296,8 +296,9 @@ func (w *worker) routeTask(task *workerTask, dbTask *db_proto.DBTask) (*placemen
 	metrics.ObserveRedisStep(op, metrics.RedisStepPlacementLookup, time.Since(lookupStart))
 	if err != nil && errors.Is(err, errRouteNotReady) {
 		// 副本不可信(规格 §5.1):不选库、不碰 MySQL,缺键绝不当「没有落点」回落 home_zone / 本进程 zone。
-		// 写延后不耗预算、读耗预算(retryBudgetExempt)。就绪闸关着时取不到新任务,走到这里的是闸刷新间隔内的在途任务
-		// 与闸刚放行时的竞态,与冻结同口径只打 DEBUG,每分钟一条 INFO 汇总(noteRouteNotReady)。
+		// 写延后不耗预算、读耗预算(retryBudgetExempt)。就绪闸关着时取不到新任务,走到这里的是闸关上那一刻已派进 worker
+		// 的任务(每分区 taskCh 1000 + SubShardCount×256,积压追赶期是通道深度量级,Kafka 来源的带 Body 进主 Redis 重试队列,
+		// 见 route_ready_gate.go 文件头)与闸刚放行时的竞态。与冻结同口径只打 DEBUG,每分钟一条 INFO 汇总(noteRouteNotReady)。
 		metrics.CountPlacementGuard(op, metrics.PlacementRouteNotReady)
 		noteRouteNotReady(op, routeNotReadyAtLookup, err)
 		logx.Debugf("placement route not ready, task deferred: key=%d taskID=%s msgType=%s op=%s err=%v",

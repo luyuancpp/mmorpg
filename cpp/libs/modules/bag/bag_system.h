@@ -269,6 +269,8 @@ public:
     const PosMap &GridSlots() const { return layout_->Slots(); }
 
     std::size_t GetTotalItemCount(uint32_t config_id) const;
+    // 只读:本包里有没有这个实例身份。不改任何状态,可在 const 路径上用(GetItemCompByGuid 是非 const)。
+    [[nodiscard]] bool ContainsGuid(Guid guid) const { return store_.Contains(guid); }
     ItemComp *GetItemCompByGuid(Guid guid);
     ItemComp *GetItemCompByPos(uint32_t pos);
 

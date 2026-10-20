@@ -472,7 +472,7 @@ Pulled from ❌ Not done — infrastructure gaps that hurt when production break
 | #77 | Integer overflow | currency int64_t + DeductCurrency check | Generic SafeAdd utility | S | — |
 | #97 | Unified RPC error reason | error_tip table + client_message_processor | Call sites not fully covered | **M** | — |
 | #103 | c2s string length | gate kMaxClientMessageSize=1024 | Per-string-field check | S | #192 |
-| #127 | Lost-message during scene switch | `cross_scene_player_messaging.md` + `player_migration_event_handler` | Queue-based plan still TODO | M | #208 |
+| #127 | Lost-message during scene switch | `cross_scene_player_messaging.md` + `cross-zone-scene-travel.md` §14 (2026-10-20 correction: `player_migration_event_handler` belonged to the removed player_migrate data-move chain and was deleted in `e7bb46070`) | Queue-based plan still TODO | M | #208 |
 | #206 | Client-data size | codec kMaxMessageLen=64MB | Gate-side dedicated client-packet check | S | #103 |
 | #247 | Protocol compatibility | proto3 native + `proto3_enum_zero_requirement.md` | Dedicated version compat layer | M | #255 |
 

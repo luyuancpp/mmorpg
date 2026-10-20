@@ -727,6 +727,115 @@ func pinManifestPlacements(ctx context.Context, rdb *redis.Client, ids []uint64,
 	return rep, nil
 }
 
+// ── -route-source=db:读方与 pin 步骤(R8 / W7,规格 §6.3、§13.3 第 2 条)──────────
+
+// readPlacementsDB 是 readPlacements 的库版(R8):一致读 player_route,按 ids 顺序编码成与 Redis 读同形状的结果
+// (routePlacementRead:值串与 Redis 里的编码逐字节相同,下游判定不必区分来源)。库里没有行 = 两键都不存在。
+// 本体与只读读方共用 placementsFromRouteDB(storage_audit.go)。
+func readPlacementsDB(ctx context.Context, db routeDBOps, ids []uint64) ([]placementRead, error) {
+	return placementsFromRouteDB(ctx, db, ids)
+}
+
+// stepReadPlacements 按源分派清单玩家的落点扫描(合服 S 段、撤销 S 段):rb == nil → readPlacements(MGET,逐字不变);否则读库。
+func stepReadPlacements(ctx context.Context, rb *routeBackend, rdb *redis.Client, ids []uint64) ([]placementRead, error) {
+	if rb == nil {
+		return readPlacements(ctx, rdb, ids)
+	}
+	return readPlacementsDB(ctx, rb.db, ids)
+}
+
+// pinManifestPlacementsDB 是 pinManifestPlacements 的库版(W7,规格 §6.3):每 routeWriteBatchLimit 人一个事务(PinPlacementBatch:
+// src、dst 围栏属于本次 → 行锁 → decidePin → 无记录且 home == src 的钉 "{src}:1")→ 本批处于目标状态的全部行(本批钉的、早已是
+// "{src}:1" 的、保留的已有记录)发布 + WAITAOF → 下一批。每批之前查 gate。
+//
+// 判定口径与 Redis 版相同:已有记录必须等于清单阶段记下的原值(清单阶段在 db 源下同样读库),无记录且 home 不是 src 记异常;
+// 异常不阻止本批发布(提交了的就是真源,发布只是追平缓存),全部批次之后整步报错。钉的值等于 home,有效落点不变,
+// 发布早晚都安全;任何一批发布失败即停、整步未完成(重跑时已钉的走 already_pinned、重新发布)。dry-run 只读库分类。
+func pinManifestPlacementsDB(ctx context.Context, rb *routeBackend, ids []uint64, existing map[uint64]string,
+	src, dst uint32, fenceRunID string, gate writeGate, dryRun bool) (pinReport, error) {
+	var rep pinReport
+	if dryRun {
+		reads, err := readPlacementsDB(ctx, rb.db, ids)
+		if err != nil {
+			return rep, err
+		}
+		for i, id := range ids {
+			countManifestPinDB(&rep, id, decidePin(reads[i].RecordRaw, reads[i].HomeRaw, src), reads[i].RecordRaw, existing, src)
+		}
+		return rep, manifestPinAnomalies(rep, src)
+	}
+	for _, batch := range chunkUint64(ids, routeWriteBatchLimit) {
+		if err := gate.check(); err != nil {
+			return rep, err
+		}
+		res, err := rb.db.PinPlacementBatch(ctx, src, dst, fenceRunID, batch)
+		if err != nil {
+			return rep, fmt.Errorf("pin a batch of %d players (nothing of this batch committed): %w", len(batch), err)
+		}
+		target := make(map[uint64]mergeRouteRow, len(res.Target))
+		for _, row := range res.Target {
+			target[row.PlayerID] = row
+		}
+		for _, id := range batch {
+			v, ok := res.Verdicts[id]
+			if !ok {
+				return rep, fmt.Errorf("%w: the pin batch returned no verdict for player %d", errRouteInvariant, id)
+			}
+			recordRaw := ""
+			if row, ok := target[id]; ok {
+				if recordRaw, err = row.placementValue(); err != nil {
+					return rep, err
+				}
+			}
+			countManifestPinDB(&rep, id, v, recordRaw, existing, src)
+		}
+		if _, err := rb.pub.publishRoutes(ctx, res.Target); err != nil {
+			return rep, fmt.Errorf("a pin batch of %d players committed in player_route (%d pinned) but publishing its %d target rows "+
+				"failed — the step is NOT done; a re-run republishes them (pinned rows count as already_pinned): %w",
+				len(batch), res.Changed, len(res.Target), err)
+		}
+	}
+	return rep, manifestPinAnomalies(rep, src)
+}
+
+// countManifestPinDB 把合服 pin 步骤里一名玩家的判定计进报告(与 Redis 版 classify 同口径;recordRaw 是该玩家此刻的记录原值)。
+func countManifestPinDB(rep *pinReport, id uint64, v pinVerdict, recordRaw string, existing map[uint64]string, src uint32) {
+	rep.Candidates++
+	switch v {
+	case pinVerdictPin:
+		rep.Pinned++
+	case pinVerdictAlreadyPinned:
+		rep.AlreadyPinned++
+	case pinVerdictKept:
+		if want, ok := existing[id]; ok && want == recordRaw {
+			rep.Kept++
+			return
+		}
+		rep.anomaly("%d: record %q appeared or changed under the merge fence (manifest recorded %q)", id, recordRaw, existing[id])
+	default:
+		rep.anomaly("%d: no placement record and player_route has no row for it or its home_zone is not %d", id, src)
+	}
+}
+
+// manifestPinAnomalies 是合服 pin 步骤的整步判据(与 Redis 版同一文案):有异常即报错,调用方保留围栏中止。
+func manifestPinAnomalies(rep pinReport, src uint32) error {
+	if rep.AnomalyCount == 0 {
+		return nil
+	}
+	return fmt.Errorf("%d manifest players could not be pinned to storage %d (first: %v) — the merge fence should "+
+		"have kept everyone else away from their placement / home_zone; find out who changed them before re-running",
+		rep.AnomalyCount, src, rep.Anomalies)
+}
+
+// stepPinManifestPlacements 按源分派合服 pin 步骤:rb == nil → pinManifestPlacements(Redis CAS,逐字不变);否则 pinManifestPlacementsDB。
+func stepPinManifestPlacements(ctx context.Context, rb *routeBackend, rdb *redis.Client, ids []uint64, existing map[uint64]string,
+	src, dst uint32, fenceRunID string, gate writeGate, dryRun bool) (pinReport, error) {
+	if rb == nil {
+		return pinManifestPlacements(ctx, rdb, ids, existing, src, dryRun)
+	}
+	return pinManifestPlacementsDB(ctx, rb, ids, existing, src, dst, fenceRunID, gate, dryRun)
+}
+
 // ── 全量枚举:有效落点为某个库的玩家(搬库整库、-mode storage-audit)──────
 
 // storagePlayers 是「有效落点 == storage」的玩家(§1:有记录看记录,无记录看 home)。

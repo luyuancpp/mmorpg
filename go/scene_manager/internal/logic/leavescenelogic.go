@@ -238,11 +238,6 @@ func (l *LeaveSceneLogic) LeaveScene(in *scene_manager.LeaveSceneRequest) (*base
 	if release.verdict == leaveReleaseReleased {
 		mode = leaveDeleteModeReleased
 	}
-	if release.verdict == leaveReleaseForced {
-		// 有记录的 fail-open(§3.6):等满上限仍拿不到证据。持有节点若仍在写,它之后的存盘会被 owner CAS 拒绝。
-		l.Logger.Errorf("[LeaveRelease] holder release not proven within %s; deleting location anyway (rollback risk accepted): player=%d scene=%d node=%s owner_epoch=%d waited=%s",
-			release.budget, in.PlayerId, in.SceneId, currentLoc.NodeId, release.epoch, release.waited.Truncate(time.Second))
-	}
 
 	outcome, err := deletePlayerLocationGuarded(l.svcCtx, in.PlayerId, raw, currentLoc.ZoneId, in.SceneId, mode, release.epoch)
 	if err != nil {
@@ -254,19 +249,26 @@ func (l *LeaveSceneLogic) LeaveScene(in *scene_manager.LeaveSceneRequest) (*base
 		// 预读到的标记在删除之前被撤回 / 换代(R2):按没拿到证据处理,这一次不删。
 		release.verdict = pendingVerdictFor(identityVerdict)
 		release.waited = noteLeaveReleaseWait(l.svcCtx, in.PlayerId, leaveReleaseWaitScope(release.epoch, currentLoc),
-			time.Now(), release.budget)
+			release.budget)
 		return l.keepLocationUntilReleased(in, currentLoc, release)
 	}
-	metrics.ObserveLeaveHolderRelease(release.verdict.String())
 	if outcome != leaveOutcomeDeleted {
 		// already_gone:别的调用(或 go-redis 重发的首发)已经删过并在同一段脚本里减过人数;
 		// superseded:GET 之后有 EnterScene 写入了新落点(它已减过旧场景人数),或同落点重连写了新身份
 		// (玩家仍在这个场景里,人数本就不该减)。两种都不动人数。
-		l.Logger.Infof("Player %d leave scene %d: location not deleted by this call (outcome=%s), player counts untouched",
-			in.PlayerId, in.SceneId, outcome)
+		// 这一次没有删,所以既不计释放判定(released / forced …),也不打 forced 的 ERROR:它们只记真正删掉的那一次
+		// (第二轮审计 r2-sm#1:以前在删除之前就记,并发改写时 SceneManagerLeaveReleaseForced 会误报)。
+		l.Logger.Infof("Player %d leave scene %d: location not deleted by this call (outcome=%s holder_release=%s), player counts untouched",
+			in.PlayerId, in.SceneId, outcome, release.verdict)
 		return &base.Empty{}, nil
 	}
 
+	metrics.ObserveLeaveHolderRelease(release.verdict.String())
+	if release.verdict == leaveReleaseForced {
+		// 有记录的 fail-open(§3.6):等满上限仍拿不到证据,已经删了。持有节点若仍在写,它之后的存盘会被 owner CAS 拒绝。
+		l.Logger.Errorf("[LeaveRelease] holder release not proven within %s; deleted location anyway (rollback risk accepted): player=%d scene=%d node=%s owner_epoch=%d waited=%s",
+			release.budget, in.PlayerId, in.SceneId, currentLoc.NodeId, release.epoch, release.waited.Truncate(time.Second))
+	}
 	l.Logger.Infof("Player %d left scene %d on node %s (holder_release=%s owner_epoch=%d)",
 		in.PlayerId, in.SceneId, currentLoc.NodeId, release.verdict, release.epoch)
 	return &base.Empty{}, nil
@@ -290,8 +292,12 @@ func pendingVerdictFor(identityVerdict leaveVerdict) leaveReleaseVerdict {
 }
 
 // judgeHolderRelease 采集 decideHolderRelease 的输入并判定。只读,唯一的写是没拿到证据时登记等待计时。
-// 持有节点存活的判据直接复用 EnterScene 死节点接管的 playerLocationOwnerGone / playerLocationOwnerDead(同一套
-// 正面死亡证据与再入屏障;屏障拦下时的计数记在 dead_owner_takeover 站点上)。
+// 持有节点已死只认 playerLocationOwnerDead(etcd 注册表里正面消失 + 本副本观察 / death_at 再入屏障已过 + 不在负载集,
+// 屏障拦下时的计数记在 dead_owner_takeover 站点上)。**不用** playerLocationOwnerGone:它当时把"zone 负载集为空"当整 zone 已死
+// (同日 EnterScene 一侧也改为要求注册表正面证据,改后它放行的 Dead 必放行,LeaveScene 不需要整 zone 口径),
+// 负载键丢失 / 被淘汰时 ZCARD 读作 0、ZSCORE 为空、也没有 death_at,会把活着的持有节点判死,于是每次登出 / 断线清理都按 any
+// 模式立刻删 location,回到 §2.1 的回档路径(第二轮审计 r2-sm#3)。真正下线的 zone 在 etcd 里同样已注销,走 OwnerDead 照样能删;
+// 拿不准的情形落到 §3.6 的等待上限,只伤活性。
 func (l *LeaveSceneLogic) judgeHolderRelease(in *scene_manager.LeaveSceneRequest, loc *scene_manager.PlayerLocation,
 	identityVerdict leaveVerdict) (holderReleaseJudgement, error) {
 	budget, enabled := l.svcCtx.Config.EffectiveLeaveSceneHolderReleaseWait()
@@ -311,7 +317,7 @@ func (l *LeaveSceneLogic) judgeHolderRelease(in *scene_manager.LeaveSceneRequest
 		}
 		if j.epoch != 0 && !facts.noHolder {
 			owner := NewEnterSceneLogic(l.ctx, l.svcCtx)
-			facts.ownerDead = owner.playerLocationOwnerGone(loc, j.zoneID) || owner.playerLocationOwnerDead(loc, j.zoneID)
+			facts.ownerDead = owner.playerLocationOwnerDead(loc, j.zoneID)
 			markerRaw, err := l.svcCtx.Redis.Get(ownerepoch.HandoffKey(in.PlayerId))
 			if err != nil {
 				return j, fmt.Errorf("read handoff marker of player %d: %w", in.PlayerId, err)
@@ -321,7 +327,7 @@ func (l *LeaveSceneLogic) judgeHolderRelease(in *scene_manager.LeaveSceneRequest
 	}
 	j.verdict = decideHolderRelease(facts)
 	if j.verdict.waits() {
-		j.waited = noteLeaveReleaseWait(l.svcCtx, in.PlayerId, leaveReleaseWaitScope(j.epoch, loc), time.Now(), budget)
+		j.waited = noteLeaveReleaseWait(l.svcCtx, in.PlayerId, leaveReleaseWaitScope(j.epoch, loc), budget)
 		facts.waitExceeded = j.waited >= budget
 		j.verdict = decideHolderRelease(facts)
 	}

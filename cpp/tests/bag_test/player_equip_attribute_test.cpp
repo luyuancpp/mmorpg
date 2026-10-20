@@ -67,6 +67,7 @@
 #include "services/scene/player/system/equip_attribute_rules.h"
 #include "services/scene/player/system/player_attribute.h"
 #include "services/scene/player/system/player_data_loader.h"
+#include "services/scene/player/comp/player_persist_carry_comp.h"
 #include "services/scene/player/system/player_equip.h"
 #include "services/scene/player/system/player_mission.h"
 #include "table/code/attributeallocratio_table.h"
@@ -673,7 +674,7 @@ bool ArmItemSegment(uint64_t lo, uint64_t hi)
 // SendMessageToClientViaGate 时留下一条 WARN 就返回 —— 本测试进程里没有 gate 连接可以收包,这条 WARN
 // 是「推过一次面板」唯一看得见的痕迹。照 cross_zone_test.cpp 数 WARN 条数的做法:临时接管 muduo 的
 // 日志出口,数这句原文出现了几次(muduo 的 WARN 不受日志级别开关影响)。原文在
-// engine/core/network/player_message_utils.cpp;那边改了措辞,用到探针的用例会红在各自开头的校准断言上
+// engine/core/network/client_message_sender.cpp;那边改了措辞,用到探针的用例会红在各自开头的校准断言上
 // (直接推一次必须恰好数到 1),而不是把「没推」和「数不到」混为一谈。
 const char *const kPanelPushTrace = "Player node info not found for player entity";
 int gPanelPushTraces = 0;
@@ -946,6 +947,9 @@ protected:
 		EmplaceIfAbsent<BattleSettlementLedgerComp>(entity);
 		EmplaceIfAbsent<PlayerInboxLedgerComp>(entity);
 		EmplaceIfAbsent<PlayerMysteryMerchantComp>(entity);
+		// 两表顶层未知字段的载体(混版本持久字段保护 §4.2 L1),生产里由两张表的 Unmarshal 创建。
+		EmplaceIfAbsent<PlayerDatabaseCarryComp>(entity);
+		EmplaceIfAbsent<PlayerDatabase1CarryComp>(entity);
 	}
 
 	template <typename Comp>
@@ -1200,7 +1204,7 @@ protected:
 		PlayerAttributeSystem::PushPanel(entity);
 		ASSERT_EQ(1, probe.Count())
 			<< "a direct PushPanel did not leave exactly one countable trace: the WARN text in "
-			   "player_message_utils.cpp changed, or the fixture player gained a session component";
+			   "client_message_sender.cpp changed, or the fixture player gained a session component";
 		probe.Reset();
 	}
 

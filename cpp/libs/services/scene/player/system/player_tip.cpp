@@ -1,7 +1,7 @@
 #include "player_tip.h"
 
 #include "rpc/service_metadata/client_player_common_service_metadata.h"
-#include "network/player_message_utils.h"
+#include "network/client_message_sender.h"
 #include "thread_context/ecs_context.h"
 
 void PlayerTipSystem::SendToPlayer(entt::entity player, uint32_t tipId, const StringVector &strParam)

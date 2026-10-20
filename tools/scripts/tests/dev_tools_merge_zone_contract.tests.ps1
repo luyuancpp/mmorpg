@@ -22,7 +22,7 @@ $ast = [System.Management.Automation.Language.Parser]::ParseFile($devToolsPath, 
 if ($parseErrors.Count) { throw ($parseErrors | Out-String) }
 $devToolsSource = Get-Content -LiteralPath $devToolsPath -Raw
 
-$functionNames = @('Get-MergeMappingRedis', 'Get-MergeDbKafka', 'Get-MergeZoneArgs', 'Get-MergeKafkaGateArgs', 'Resolve-MergeFullPath', 'Get-MergeZoneCommandArgs')
+$functionNames = @('Get-MergeMappingRedis', 'Get-MergeDbKafka', 'Get-MergeZoneArgs', 'Get-MergeKafkaGateArgs', 'Get-MergeRouteSourceArgs', 'Resolve-MergeFullPath', 'Get-MergeZoneCommandArgs', 'Get-K8sRouteToolArgs')
 $loaded = @()
 foreach ($definition in $ast.FindAll({ param($node) $node -is [System.Management.Automation.Language.FunctionDefinitionAst] -and $node.Name -in $functionNames }, $false)) {
     . ([scriptblock]::Create($definition.Extent.Text))
@@ -35,8 +35,22 @@ foreach ($name in $functionNames) {
 # 被测函数按 PowerShell 的动态作用域读 $Merge* / $DryRun / $VerifyMerged / $ScriptDir,
 # 这里把它们放在本脚本作用域。默认值一律取 dev_tools.ps1 param 块的真实默认值。
 $mergeParams = @($ast.ParamBlock.Parameters | Where-Object { $_.Name.VariablePath.UserPath -match '^(Merge|VerifyMerged$|DryRun$)' })
-function Reset-MergeParams {
+# -RouteSource:-MergeZoneRouteSource 在 param 块里没有缺省值(必填,D1 第 2 批)。既有用例钉的是别的转发,
+# 复位时缺省填 redis 让它们照常组装;专测必填的用例显式传 -RouteSource ''。
+function Reset-MergeParams([string]$RouteSource = 'redis') {
     foreach ($p in $mergeParams) {
+        $value = if ($null -ne $p.DefaultValue) { & ([scriptblock]::Create($p.DefaultValue.Extent.Text)) }
+                 elseif ($p.StaticType -eq [switch]) { $false }
+                 else { $null }
+        Set-Variable -Name $p.Name.VariablePath.UserPath -Value $value -Scope Script
+    }
+    $script:MergeZoneRouteSource = $RouteSource
+}
+
+# k8s-route-tool 的转发读 $ZoneName / $NamespacePrefix / $KubeContext / $KubeConfig / $DryRun / $RouteTool*,默认值同样现取。
+$routeToolParamNames = @('ZoneName', 'NamespacePrefix', 'KubeContext', 'KubeConfig', 'DryRun', 'RouteToolArgs', 'RouteToolReportDir', 'RouteToolTimeoutSeconds', 'RouteToolImage')
+function Reset-RouteToolParams {
+    foreach ($p in @($ast.ParamBlock.Parameters | Where-Object { $_.Name.VariablePath.UserPath -in $routeToolParamNames })) {
         $value = if ($null -ne $p.DefaultValue) { & ([scriptblock]::Create($p.DefaultValue.Extent.Text)) }
                  elseif ($p.StaticType -eq [switch]) { $false }
                  else { $null }
@@ -70,8 +84,9 @@ try {
     New-Item -ItemType Directory -Path (Join-Path $testRoot 'go/db/etc') -Force | Out-Null
     New-Item -ItemType Directory -Path (Join-Path $testRoot 'generated/data') -Force | Out-Null
     # 与真实 data_service.yaml 同形:MappingRedis 不写 DB 键(go-zero RedisConf 没有 DB 字段)。
+    # RouteStore.Mode 故意写 db_first:-MergeZoneRouteSource 不许从 yaml 推断,下面的用例据此断言「没给就拒绝」。
     Set-Content -LiteralPath (Join-Path $testRoot 'go/data_service/etc/data_service.yaml') -Encoding utf8 -Value @(
-        'MappingRedis:', '  Host: 10.9.9.9:6379', '  Type: node', 'Regions:', '  - Id: 1')
+        'MappingRedis:', '  Host: 10.9.9.9:6379', '  Type: node', 'RouteStore:', '  Mode: db_first', 'Regions:', '  - Id: 1')
     Set-Content -LiteralPath (Join-Path $testRoot 'go/db/etc/db.yaml') -Encoding utf8 -Value @(
         'ServerConfig:', '  Kafka:', '    GroupID: "db_rpc_consumer_group"', '    TopicGeneration: 3')
     Set-Content -LiteralPath (Join-Path $testRoot 'generated/data/mysql_database_table_list.json') -Encoding utf8 -Value '[]'
@@ -347,6 +362,196 @@ try {
         Assert-True (-not ($a -contains '-apply' -or $a -contains '-dry-run')) '只读模式不转发写意图'
     }
 
+    # ── 映射来源(D1 第 2 批,规格 §13.3 第 3 条)────────────────────────
+    # 每个读写映射的命令都要一份「最小可组装」的参数(除映射来源之外的必填项都给齐),才能单独钉住映射来源这一条。
+    $routeCommands = [ordered]@{
+        'merge-zone'                = { $script:MergeSourceZone = 1; $script:MergeTargetZone = 2; $script:MergeDbCapabilityZones = 'none' }
+        'merge-zone(backfill)'      = { $script:MergeBackfillZone = 5 }
+        'merge-zone-unmerge'        = { $script:MergeManifestPath = $manifestFile }
+        'merge-zone-audit'          = { $script:MergeSourceZone = 1; $script:MergeTargetZone = 2 }
+        'merge-zone-pin-placement'  = { $script:MergePinPlacementZone = 4 }
+        'merge-zone-relocate'       = { $script:MergeRelocateSourceStorage = 101; $script:MergeRelocateTargetStorage = 1000000; $script:MergeDbCapabilityZones = '101' }
+        'merge-zone-relocate-abort' = { $script:MergeManifestPath = $manifestFile }
+        'merge-zone-storage-audit'  = { $script:MergeAuditStorage = 1000000 }
+    }
+    function Get-RouteCmdArgs([string]$Label) {
+        return Get-CmdArgs ($Label -replace '\(backfill\)$', '')
+    }
+
+    Test-Case '映射来源:-MergeZoneRouteSource 没有缺省值、不从 data_service.yaml 推断,读写映射的命令缺了一律点名拒绝' {
+        $param = $ast.ParamBlock.Parameters | Where-Object { $_.Name.VariablePath.UserPath -eq 'MergeZoneRouteSource' }
+        Assert-True ($null -ne $param) 'param 块必须有 -MergeZoneRouteSource'
+        $validateSet = $param.Attributes | Where-Object { $_.TypeName.Name -eq 'ValidateSet' }
+        Assert-Equal '|db|redis' (@($validateSet.PositionalArguments | ForEach-Object { $_.Value }) -join '|') 'ValidateSet 必须是 空 / db / redis'
+        Assert-Equal '' $param.DefaultValue.Value '缺省必须为空(必填),不能偷偷给一个模式'
+        foreach ($name in @('MergeZoneRouteDbDsn', 'MergeZoneWaitAofLocal', 'MergeZoneWaitAofReplicas', 'MergeZoneWaitAofTimeoutMs')) {
+            Assert-True ($name -in @($ast.ParamBlock.Parameters | ForEach-Object { $_.Name.VariablePath.UserPath })) "param 块必须有 -$name"
+        }
+        foreach ($label in $routeCommands.Keys) {
+            Reset-MergeParams -RouteSource ''
+            & $routeCommands[$label]
+            $msg = Get-ThrownMessage { Get-RouteCmdArgs $label }
+            Assert-Match $msg 'MergeZoneRouteSource' "$label 缺 -MergeZoneRouteSource 必须点名拒绝(fixture 的 yaml 写着 db_first,也不许据此推断)"
+            Assert-Match $msg ([regex]::Escape('never inferred')) "$label 的提示必须说明不从 yaml 推断"
+        }
+        # capability-check 不读写映射:不要求、不转发。
+        Reset-MergeParams -RouteSource ''
+        $script:MergeDbCapabilityZones = '2'
+        $a = Get-CmdArgs 'merge-zone-capability-check'
+        Assert-True (-not ($a -contains '-route-source')) 'merge-zone-capability-check 不读写映射,不转发 -route-source'
+    }
+
+    Test-Case '映射来源:redis 只转发 -route-source redis;db 时 -MergeZoneRouteDbDsn 必填并原样转发;WAITAOF 只在给出时转发' {
+        foreach ($label in $routeCommands.Keys) {
+            Reset-MergeParams -RouteSource 'redis'
+            & $routeCommands[$label]
+            $a = Get-RouteCmdArgs $label
+            Assert-Equal 'redis' (Get-ArgValue $a '-route-source') "$label 必须转发 -route-source redis"
+            foreach ($flag in @('-route-db-dsn', '-waitaof-local', '-waitaof-replicas', '-waitaof-timeout-ms')) {
+                Assert-Equal $null (Get-ArgValue $a $flag) "$label 没给 $flag 对应的参数就不转发"
+            }
+
+            Reset-MergeParams -RouteSource 'db'
+            & $routeCommands[$label]
+            Assert-Match (Get-ThrownMessage { Get-RouteCmdArgs $label }) 'MergeZoneRouteDbDsn' "$label -MergeZoneRouteSource db 缺 DSN 必须点名拒绝"
+            $script:MergeZoneRouteDbDsn = 'route:secret@tcp(10.0.0.9:3306)/testdb'
+            $script:MergeZoneWaitAofLocal = 1; $script:MergeZoneWaitAofReplicas = 1; $script:MergeZoneWaitAofTimeoutMs = 1200
+            $a = Get-RouteCmdArgs $label
+            Assert-Equal 'db' (Get-ArgValue $a '-route-source') "$label 必须转发 -route-source db"
+            Assert-Equal 'route:secret@tcp(10.0.0.9:3306)/testdb' (Get-ArgValue $a '-route-db-dsn') "$label 必须原样转发 -route-db-dsn"
+            Assert-Equal '1' (Get-ArgValue $a '-waitaof-local') "$label 转发 -waitaof-local"
+            Assert-Equal '1' (Get-ArgValue $a '-waitaof-replicas') "$label 转发 -waitaof-replicas(redis-ha 档)"
+            Assert-Equal '1200' (Get-ArgValue $a '-waitaof-timeout-ms') "$label 转发 -waitaof-timeout-ms"
+        }
+        # redis 配 DSN 由工具拒绝(给了却不用会让人以为库被写过):ps1 原样转发,不复制这条规则。
+        Reset-MergeParams -RouteSource 'redis'
+        & $routeCommands['merge-zone-audit']
+        $script:MergeZoneRouteDbDsn = 'x@tcp(h:1)/db'
+        Assert-Equal 'x@tcp(h:1)/db' (Get-ArgValue (Get-CmdArgs 'merge-zone-audit') '-route-db-dsn') 'redis 配 DSN 原样转发,由工具拒绝'
+        # DSN 含口令:组装函数不得把它打到控制台。
+        $fn = $ast.Find({ param($node) $node -is [System.Management.Automation.Language.FunctionDefinitionAst] -and $node.Name -eq 'Get-MergeRouteSourceArgs' }, $true)
+        Assert-NotMatch $fn.Extent.Text 'Write-Host' 'Get-MergeRouteSourceArgs 不得 Write-Host(DSN 含口令)'
+    }
+
+    Test-Case '库围栏续跑接手:-MergeZoneTakeOverFence 留空不转发;给了就原样转发 -take-over-fence(适用范围由工具判);capability-check 给了即拒绝' {
+        $param = $ast.ParamBlock.Parameters | Where-Object { $_.Name.VariablePath.UserPath -eq 'MergeZoneTakeOverFence' }
+        Assert-True ($null -ne $param) 'param 块必须有 -MergeZoneTakeOverFence'
+        Assert-Equal '' $param.DefaultValue.Value '缺省必须为空(不接手任何围栏)'
+        foreach ($label in $routeCommands.Keys) {
+            Reset-MergeParams -RouteSource 'db'
+            & $routeCommands[$label]
+            $script:MergeZoneRouteDbDsn = 'route:secret@tcp(10.0.0.9:3306)/testdb'
+            Assert-Equal $null (Get-ArgValue (Get-RouteCmdArgs $label) '-take-over-fence') "$label 没给 -MergeZoneTakeOverFence 就不转发"
+            $script:MergeZoneTakeOverFence = 'merge_1_to_2_old'
+            # 只有 merge / unmerge 持围栏;其余命令照样转发,由工具点名拒绝(规则只在 checkTakeOverFenceFlag 一处),不在 ps1 里静默丢掉。
+            Assert-Equal 'merge_1_to_2_old' (Get-ArgValue (Get-RouteCmdArgs $label) '-take-over-fence') "$label 必须原样转发 -take-over-fence"
+        }
+        Reset-MergeParams -RouteSource ''
+        $script:MergeDbCapabilityZones = '2'
+        $script:MergeZoneTakeOverFence = 'merge_1_to_2_old'
+        Assert-Match (Get-ThrownMessage { Get-CmdArgs 'merge-zone-capability-check' }) 'MergeZoneTakeOverFence' 'capability-check 不持围栏、不调 Get-MergeRouteSourceArgs,给了 -MergeZoneTakeOverFence 必须点名拒绝'
+        Assert-Match $devToolsSource ([regex]::Escape('-MergeZoneTakeOverFence <run_id>')) '帮助文本必须列出 -MergeZoneTakeOverFence'
+    }
+
+    # ── k8s-route-tool(D1 第 1b-3 批,§13.4 第 3 条)───────────────────
+    $routeToolPath = Join-Path $PSScriptRoot '../k8s_route_tool.ps1'
+    $routeToolErrors = $null
+    $routeToolAst = [System.Management.Automation.Language.Parser]::ParseFile($routeToolPath, [ref]$null, [ref]$routeToolErrors)
+    if ($routeToolErrors.Count) { throw ($routeToolErrors | Out-String) }
+    $routeToolParams = @($routeToolAst.ParamBlock.Parameters | ForEach-Object { $_.Name.VariablePath.UserPath })
+
+    Test-Case 'k8s-route-tool:入口、分发与帮助;hashtable 的键与 k8s_route_tool.ps1 的参数名逐字相同,留空不转发' {
+        $commandParam = $ast.ParamBlock.Parameters | Where-Object { $_.Name.VariablePath.UserPath -eq 'Command' }
+        $allowed = @(($commandParam.Attributes | Where-Object { $_.TypeName.Name -eq 'ValidateSet' }).PositionalArguments | ForEach-Object { $_.Value })
+        Assert-True ('k8s-route-tool' -in $allowed) '-Command 的 ValidateSet 必须含 k8s-route-tool'
+        Assert-Match $devToolsSource '"k8s-route-tool"\s*\{\s*Invoke-K8sRouteTool\s*\}' 'k8s-route-tool 必须经 Invoke-K8sRouteTool 分发'
+        Assert-Match $devToolsSource ('-Command ' + [regex]::Escape('k8s-route-tool') + '\s') '帮助文本必须列出 k8s-route-tool'
+        $invoke = $ast.Find({ param($node) $node -is [System.Management.Automation.Language.FunctionDefinitionAst] -and $node.Name -eq 'Invoke-K8sRouteTool' }, $true)
+        Assert-True ($null -ne $invoke) 'dev_tools.ps1 里必须有 Invoke-K8sRouteTool'
+        Assert-Match $invoke.Extent.Text ([regex]::Escape('k8s_route_tool.ps1') + '"\)\s*@rtArgs') '必须 hashtable splatting 调 k8s_route_tool.ps1'
+        Assert-Match $invoke.Extent.Text 'exit \$LASTEXITCODE' '必须以 route-tool 的退出码结束(pwsh -File 正常结束恒为 0)'
+        foreach ($name in @('RouteToolArgs', 'RouteToolReportDir', 'RouteToolTimeoutSeconds', 'RouteToolImage')) {
+            Assert-True ($name -in @($ast.ParamBlock.Parameters | ForEach-Object { $_.Name.VariablePath.UserPath })) "param 块必须有 -$name"
+        }
+
+        Reset-RouteToolParams
+        $script:ZoneName = 'z1'; $script:RouteToolArgs = @('audit', '-frozen-recovery')
+        $h = Get-K8sRouteToolArgs
+        Assert-Equal 'NamespacePrefix|RouteToolArgs|ZoneName' ((@($h.Keys) | Sort-Object) -join '|') '缺省只转发 zone / 子命令 / namespace 前缀,其余默认值只在 k8s_route_tool.ps1'
+        Assert-Equal 'audit|-frozen-recovery' (@($h.RouteToolArgs) -join '|') '子命令与参数逐项原样转发(不拼成一个字符串)'
+        Assert-Equal 'mmorpg-zone' $h.NamespacePrefix 'namespace 前缀取本脚本的 -NamespacePrefix'
+
+        $script:RouteToolReportDir = 'C:\reports'; $script:RouteToolTimeoutSeconds = 4200; $script:RouteToolImage = 'ghcr.io/x/data-service:abc'
+        $script:DryRun = $true; $script:KubeContext = 'kind-mmorpg'; $script:KubeConfig = 'C:\kube\config'
+        $h = Get-K8sRouteToolArgs
+        foreach ($key in @($h.Keys)) {
+            Assert-True ($key -in $routeToolParams) "转发的键 $key 必须是 k8s_route_tool.ps1 的参数(逐字对齐,拼错会以「找不到参数」失败)"
+        }
+        Assert-Equal 'C:\reports' $h.ReportDir '-RouteToolReportDir → -ReportDir'
+        Assert-Equal 4200 $h.TimeoutSeconds '-RouteToolTimeoutSeconds → -TimeoutSeconds'
+        Assert-Equal 'ghcr.io/x/data-service:abc' $h.Image '-RouteToolImage → -Image'
+        Assert-True ($h.DryRun -eq $true) '-DryRun 同名转发'
+        Assert-Equal 'kind-mmorpg' $h.KubeContext '-KubeContext 同名转发'
+        Assert-Equal 'C:\kube\config' $h.KubeConfig '-KubeConfig 同名转发'
+        Reset-RouteToolParams
+    }
+
+    Test-Case 'k8s-route-tool:pwsh -File 下原样透传 k8s_route_tool.ps1 的退出码 0/1/2/3;没给子命令在调用之前拒绝' {
+        $names = @('Get-K8sRouteToolArgs', 'Invoke-K8sRouteTool')
+        $defs = @($ast.FindAll({ param($node) $node -is [System.Management.Automation.Language.FunctionDefinitionAst] -and $node.Name -in $names }, $false))
+        $childDir = Join-Path $testRoot 'route_tool_child'
+        New-Item -ItemType Directory -Path $childDir -Force | Out-Null
+        # 假 k8s_route_tool.ps1:参数块与真脚本同名(按真脚本的参数名现生成),记下收到的参数,按环境变量退出。
+        $fakeParams = @($routeToolAst.ParamBlock.Parameters | ForEach-Object {
+            $n = $_.Name.VariablePath.UserPath
+            if ($_.StaticType -eq [switch]) { "[switch]`$$n" } elseif ($_.StaticType -eq [string[]]) { "[string[]]`$$n" } else { "`$$n" }
+        })
+        Set-Content -LiteralPath (Join-Path $childDir 'k8s_route_tool.ps1') -Encoding utf8 -Value @(
+            ('param(' + ($fakeParams -join ', ') + ')'),
+            'Set-Content -LiteralPath $env:RT_TEST_RECORD -Value @("zone=$ZoneName", "args=$($RouteToolArgs -join ''|'')", "dry=$DryRun")',
+            'exit [int]$env:RT_TEST_EXIT')
+        $childPath = Join-Path $childDir 'run_route_tool.ps1'
+        $record = Join-Path $childDir 'record.txt'
+        $writeChild = {
+            param([string]$ArgsLiteral)
+            Set-Content -LiteralPath $childPath -Encoding utf8 -Value (@('$ErrorActionPreference = ''Stop''') + @($defs | ForEach-Object { $_.Extent.Text }) + @(
+                ('$ScriptDir = ''{0}''' -f $childDir.Replace("'", "''")), '$ZoneName = ''z1''', '$NamespacePrefix = ''mmorpg-zone''',
+                ('$RouteToolArgs = {0}' -f $ArgsLiteral), '$RouteToolReportDir = ''''', '$RouteToolTimeoutSeconds = 0', '$RouteToolImage = ''''',
+                '$DryRun = $false', '$KubeContext = ''''', '$KubeConfig = ''''', 'Invoke-K8sRouteTool', 'exit 99'))
+        }
+        $pwshPath = (Get-Process -Id $PID).Path
+        $saved = @{ RT_TEST_RECORD = $env:RT_TEST_RECORD; RT_TEST_EXIT = $env:RT_TEST_EXIT }
+        try {
+            & $writeChild "@('audit', '-frozen-recovery')"
+            foreach ($code in @(0, 1, 2, 3)) {
+                Remove-Item -LiteralPath $record -Force -ErrorAction SilentlyContinue
+                $env:RT_TEST_RECORD = $record; $env:RT_TEST_EXIT = [string]$code
+                $ErrorActionPreference = 'Continue'
+                $out = & $pwshPath -NoProfile -NonInteractive -File $childPath 2>&1 | Out-String
+                $got = $LASTEXITCODE
+                $ErrorActionPreference = 'Stop'
+                Assert-Equal $code $got "k8s_route_tool.ps1 退出 $code 时 dev_tools 必须原样退出 $code(99 = 漏了 exit)。输出: $out"
+            }
+            $rec = @(Get-Content -LiteralPath $record)
+            Assert-Equal 'zone=z1' $rec[0] 'zone 原样转发'
+            Assert-Equal 'args=audit|-frozen-recovery' $rec[1] '子命令数组逐项转发'
+            Assert-Equal 'dry=False' $rec[2] '没给 -DryRun 不转发'
+
+            Remove-Item -LiteralPath $record -Force -ErrorAction SilentlyContinue
+            & $writeChild '@()'
+            $ErrorActionPreference = 'Continue'
+            $out = & $pwshPath -NoProfile -NonInteractive -File $childPath 2>&1 | Out-String
+            $got = $LASTEXITCODE
+            $ErrorActionPreference = 'Stop'
+            Assert-True ($got -ne 0 -and $got -ne 99) "没给 -RouteToolArgs 必须在调用之前失败(exit=$got)"
+            Assert-Match $out 'RouteToolArgs' '提示必须点名 -RouteToolArgs'
+            Assert-True (-not (Test-Path -LiteralPath $record)) '没给子命令时不得调用 k8s_route_tool.ps1'
+        }
+        finally {
+            foreach ($n in $saved.Keys) { [Environment]::SetEnvironmentVariable($n, $saved[$n], 'Process') }
+        }
+    }
+
     # 退出码透传:以前 Invoke-MergeZoneGo 是 `& go run ...` 且没有 exit,经 `pwsh -File` 调用时进程退出码
     # 恒为 0(合服 apply 失败 / storage-audit 连不上库都报「成功」),交互读 $LASTEXITCODE 又被 go run 压成 1。
     # 这里在子进程里用 `pwsh -File` 真跑 Invoke-MergeZoneGo:`go` 换成假函数(记录调用、按环境变量决定
@@ -383,7 +588,7 @@ function go {
             '$ErrorActionPreference = ''Stop''') +
             @($definitions | ForEach-Object { $_.Extent.Text }) +
             @($paramAssignments) +
-            @(('$ScriptDir = ''{0}''' -f $script:ScriptDir.Replace("'", "''")), '$MergeAuditStorage = 1000000', $fakeGo,
+            @(('$ScriptDir = ''{0}''' -f $script:ScriptDir.Replace("'", "''")), '$MergeAuditStorage = 1000000', '$MergeZoneRouteSource = ''redis''', $fakeGo,
               'Invoke-MergeZoneGo -MergeCommand ''merge-zone-storage-audit''', 'exit 99'))
 
         $pwshPath = (Get-Process -Id $PID).Path

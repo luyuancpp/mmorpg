@@ -1532,7 +1532,7 @@ const file_proto_scene_player_attribute_proto_rawDesc = "" +
 	"\x05level\x18\x01 \x01(\rR\x05level\"{\n" +
 	"\x18GmSetPlayerLevelResponse\x124\n" +
 	"\rerror_message\x18\x01 \x01(\v2\x0f.TipInfoMessageR\ferrorMessage\x12)\n" +
-	"\x05panel\x18\x02 \x01(\v2\x13.AttributePanelInfoR\x05panel2\xa4\x06\n" +
+	"\x05panel\x18\x02 \x01(\v2\x13.AttributePanelInfoR\x05panel2\xab\x06\n" +
 	"\x1aSceneAttributeClientPlayer\x12J\n" +
 	"\x11GetAttributePanel\x12\x19.GetAttributePanelRequest\x1a\x1a.GetAttributePanelResponse\x12\\\n" +
 	"\x17AllocateAttributePoints\x12\x1f.AllocateAttributePointsRequest\x1a .AllocateAttributePointsResponse\x12S\n" +
@@ -1540,8 +1540,8 @@ const file_proto_scene_player_attribute_proto_rawDesc = "" +
 	"\x1bAutoAllocateAttributePoints\x12#.AutoAllocateAttributePointsRequest\x1a$.AutoAllocateAttributePointsResponse\x12V\n" +
 	"\x15CreateAttributeScheme\x12\x1d.CreateAttributeSchemeRequest\x1a\x1e.CreateAttributeSchemeResponse\x12V\n" +
 	"\x15SwitchAttributeScheme\x12\x1d.SwitchAttributeSchemeRequest\x1a\x1e.SwitchAttributeSchemeResponse\x12V\n" +
-	"\x15RenameAttributeScheme\x12\x1d.RenameAttributeSchemeRequest\x1a\x1e.RenameAttributeSchemeResponse\x12@\n" +
-	"\x1bNotifyAttributePanelChanged\x12\x19.AttributePanelChangedS2C\x1a\x06.Empty\x12G\n" +
+	"\x15RenameAttributeScheme\x12\x1d.RenameAttributeSchemeRequest\x1a\x1e.RenameAttributeSchemeResponse\x12G\n" +
+	"\x1bNotifyAttributePanelChanged\x12\x19.AttributePanelChangedS2C\x1a\x06.Empty\"\x05\x88\x99\xc8\x01\x02\x12G\n" +
 	"\x10GmSetPlayerLevel\x12\x18.GmSetPlayerLevelRequest\x1a\x19.GmSetPlayerLevelResponse\x1a\n" +
 	"\x80\xa8\xc3\x01\x01\x88\xa8\xc3\x01\x01B\x14\x98\xd4a\x03Z\vproto/scene\x80\x01\x01b\x06proto3"
 

@@ -45,6 +45,10 @@ package main
 //
 // blob 拷贝(player:{id}:*)同理不自动删:它们在目标 data Redis 上,
 // mapping 指回源区之后没人会读,留着比删错安全。报告里会提示。
+//
+// -route-source=db(规格 §6.3 W8 / 5'a / R8):围栏是库围栏(fence.go);5' 每批一个库事务按 CAS 改回(home == dst 才改)→ 发布 +
+// WAITAOF;5'a 先删库里的 zone_merged_into、再按完整值删镜像;半撤销判定与 S 段读库。每一步开始之前、每批之前查围栏失权判据,
+// 失权即停;写到一半的失败一律保留围栏(routeFenceKeptAbortMessage,续跑用 -take-over-fence)。
 
 import (
 	"context"
@@ -101,6 +105,11 @@ func runUnmerge(o options) {
 	log.Printf("    scope: %d trade listings (schema=%s; restored only where market_zone is still %d)",
 		len(m.TradeListingIDs), o.tradeSchema, dst)
 	log.Printf("    scope: guild schema=%s (restored only where zone_id is still %d)", o.guildSchema, dst)
+	// 撤销不要求与合服同一个映射来源(理由见 mergeManifest.RouteSource):合服在 P1 之前、撤销在 P4 之后是合法的。只记一行供复盘。
+	if got := recordedRouteSource(m.RouteSource); got != o.routeSource {
+		log.Printf("    route source: the merge ran with -route-source %s, this unmerge uses %s (allowed: the rollout gates P1–P3 "+
+			"import and audit the mappings into the global DB before P4)", got, o.routeSource)
+	}
 	log.Printf("    NOTHING outside this list is touched — target-zone natives are safe by construction.")
 
 	db := mustOpenMySQL(ctx, o.mysqlDSN)
@@ -133,26 +142,47 @@ func runUnmerge(o options) {
 
 	// 撤销期间同样上围栏:别人不许在这两个 zone 里建新对象。
 	runID := newRunID(src, dst, time.Now())
-	fence, err := acquireMergeFence(ctx, mapRdb, src, dst, runID, o.manifestPath, o.timeout, o.dryRun)
+	// -route-source(规格 §6.4、§13.3 第 3 条):db 源开路由库并核对库与 mapping Redis 成对;rb == nil = redis 源(逐字不变)。
+	rb, err := openRunRouteBackend(ctx, routeEntryOptionsOf(o), mapRdb, runID)
+	if err != nil {
+		log.Fatalf("route source: %v", err)
+	}
+	defer rb.Close()
+	fence, err := acquireRunFence(ctx, rb, mapRdb, routeFenceParams{src: src, dst: dst, runID: runID, purpose: routeFencePurposeUnmerge,
+		manifestPath: o.manifestPath, runTimeout: o.timeout, dryRun: o.dryRun, takeOverRunID: o.takeOverFenceRunID})
 	if err != nil {
 		log.Fatalf("merge fence: %v", err)
 	}
 	defer fence.release(context.Background())
+	// db 源:围栏一旦失权,看门狗取消之后的一切写;gate 是每批之前的显式判据。redis 源两者都不生效。
+	ctx = fence.writeContext(ctx)
+	gate := writeGate(fence.check)
 	// abortKeepingFence:MySQL / 公会缓存改回到一半的失败走这里,围栏故意不释放并给出续跑指引
-	// (撤销口径的文案,见 fenceKeptAbortMessage)。
-	// dry-run 从没写过围栏,只报原因。
-	abortKeepingFence := func(cause string) {
+	// (撤销口径的文案,见 fenceKeptAbortMessage;db 源见 routeFenceKeptAbortMessage)。
+	// dry-run 从没写过围栏,只报原因。errs 是本步骤带回的错误(可省):db 源里批事务内的 fencing token 复核判了 errRouteFenceLost
+	// 而本地判据还没察觉时,文案照样按失权写(routeFenceAbortLost)。redis 源与 dry-run 不看它。
+	abortKeepingFence := func(cause string, errs ...error) {
 		if o.dryRun {
 			log.Fatal(cause)
 		}
+		if rb != nil {
+			log.Fatal(routeFenceKeptAbortMessage(cause, fencedOpUnmerge, src, dst, runID, o.manifestPath,
+				routeFenceAbortLost(fence.check(), errs...)))
+		}
 		log.Fatal(fenceKeptAbortMessage(cause, fencedOpUnmerge, src, dst, runID, o.mappingAddr, o.mappingDB))
+	}
+	// requireFence 是 db 源每个撤销步骤开始之前的围栏判据(redis 源恒通过,行为不变)。
+	requireFence := func(step string) {
+		if err := gate.check(); err != nil {
+			abortKeepingFence(fmt.Sprintf("撤销步骤 %s 开始之前围栏判据失败,本步一个字节都没写:%v", step, err))
+		}
 	}
 
 	// 半撤销判定(只读):撤销不记步骤进度,「这次还没写」不等于「上一次没写过」。合服把清单玩家全部 CAS 成 dst;
 	// 撤销里 5' 之前的写只有 7'(删公告标记,放开围栏也无害),5' 之后的任何中止都必然留下 player:zone == src。
 	// 所以只看映射就够了。不用「merged_into 标记已不在」判:旧合服可能根本没写过这个标记,会误判成半撤销。
-	// 读失败按半撤销处理(fail-closed:证明不了没写过,就不放开围栏)。
-	halfUndone, herr := manifestPlayersBackAt(ctx, mapRdb, m.PlayerIDs, src)
+	// 读失败按半撤销处理(fail-closed:证明不了没写过,就不放开围栏)。db 源读库(R8)。
+	halfUndone, herr := stepManifestPlayersBackAt(ctx, rb, mapRdb, m.PlayerIDs, src)
 	if herr != nil {
 		log.Printf("WARN: cannot tell whether a previous unmerge already restored some manifest players (%v); "+
 			"treating this run as a resume — a refusal below keeps the merge fence", herr)
@@ -161,9 +191,19 @@ func runUnmerge(o options) {
 		log.Printf("RESUME: some manifest players already map to zone %d — a previous unmerge stopped half-way; "+
 			"a refusal below keeps the merge fence", src)
 	}
+	// -take-over-fence(只有 db 源)一律按半撤销处理:接手的前提就是上一次写到一半、围栏故意留着(那次可能是合服,也可能是撤销),
+	// 本次刚接手的围栏若在拒绝出口释放,就是在半截状态下解封。
+	resumedByMapping := halfUndone
+	if o.takeOverFenceRunID != "" {
+		halfUndone = true
+	}
 	// refuse:P / S 段的统一拒绝出口。abortKeepingFence 走 log.Fatal,不跑 defer 的 release,围栏留在本次 run_id 上。
 	refuse := func(format string, args ...any) {
 		if halfUndone {
+			if !resumedByMapping {
+				abortKeepingFence(fmt.Sprintf("本次以 -take-over-fence 接手了 run_id=%s 留下的围栏(那次运行可能已写到一半),本次不释放围栏:"+format,
+					append([]any{o.takeOverFenceRunID}, args...)...))
+			}
 			abortKeepingFence(fmt.Sprintf("半撤销状态(上一次撤销已把部分清单玩家改回源区),本次不释放围栏:"+format, args...))
 		}
 		fence.refuseAndRelease(format, args...)
@@ -188,7 +228,7 @@ func runUnmerge(o options) {
 
 	// S 清单玩家的落点记录:冻结中的(搬库正在挪)一律拒绝 —— 撤销同样改 home(连带存盘 topic),与搬库互斥
 	// (§9 末条)。同时记下此刻有记录的人,copy 模式的 1' 不删他们的行(理由见文件头)。还没写任何东西(围栏处置见 refuse)。
-	placeReads, perr := readPlacements(ctx, mapRdb, m.PlayerIDs)
+	placeReads, perr := stepReadPlacements(ctx, rb, mapRdb, m.PlayerIDs)
 	if perr != nil {
 		refuse("unmerge refused: read the manifest players' placement records: %v", perr)
 	}
@@ -228,6 +268,7 @@ func runUnmerge(o options) {
 	}
 
 	// 7' 公告 flag。
+	requireFence("7'")
 	if n, err := deleteNoticeFlags(ctx, sharedRdb, m.PlayerIDs, o.dryRun); err != nil {
 		log.Fatalf("clear post-merge flags: %v", err)
 	} else {
@@ -235,15 +276,20 @@ func runUnmerge(o options) {
 	}
 
 	// 5' mapping 改回 src。逐 id 写(而不是全量 SCAN):只有清单里的人回去。
-	if n, err := restoreMappingForIDs(ctx, mapRdb, m.PlayerIDs, src, dst, o.dryRun); err != nil {
+	// db 源(W8):每批库事务 CAS home dst → src(原来是无条件 SET)→ 发布 + WAITAOF;写到一半的失败保留围栏。
+	if n, err := stepRestoreMapping(ctx, rb, mapRdb, m.PlayerIDs, src, dst, runID, gate, o.dryRun); err != nil {
+		if rb != nil {
+			abortKeepingFence(fmt.Sprintf("restore mapping:改回中途失败(本次已改回 %d 个):%v", n, err))
+		}
 		log.Fatalf("restore mapping: %v", err)
 	} else {
 		log.Printf("Mapping: %d players restored to home_zone=%d", n, src)
 	}
 
 	// 5'a 合走标记(A10)。映射已改回源区,源区不再是「被合走的 zone」;留着它,源区以后就再也回填不了。
-	// 只删与清单 dst / run_id 都对得上的那一把(clearMergedInto)。
-	cleared, merr := clearMergedInto(ctx, mapRdb, src, dst, m.RunID, o.dryRun)
+	// 只删与清单 dst / run_id 都对得上的那一把(clearMergedInto;db 源先删库、再按完整值删镜像)。
+	requireFence("5'a")
+	cleared, merr := stepClearMergedInto(ctx, rb, mapRdb, src, dst, runID, m.RunID, o.dryRun)
 	if merr != nil {
 		abortKeepingFence(fmt.Sprintf("clear %s:映射已改回源区,但标记删除失败:%v", mergedIntoKey(src), merr))
 	}
@@ -256,6 +302,10 @@ func runUnmerge(o options) {
 	if rowsMode == playerRowsModePin {
 		log.Printf("Player caches: kept (pin mode — no player's placement changed, so the cached data is still the live copy)")
 	} else {
+		requireFence("5'b")
+		// 与合服步骤 1 不同,撤销**连 save_barrier 一起删**(2026-10-20 修复 r2-mz#1 时复核保留):改回源区后玩家读源库,
+		// 合服后在目标库提交的 pending / ACK 不再对应他要读的行。删后保持维护闸,按 runbook §10.1 用 save_barrier_restore
+		// 从源库重建屏障,才能 zone-up / 放流。
 		inv, ierr := invalidatePlayerCaches(ctx, sharedRdb, m.PlayerIDs, m.Tables, o.dryRun)
 		if ierr != nil {
 			abortKeepingFence(fmt.Sprintf("invalidate player caches:映射已改回源区,但共享缓存失效失败:%v", ierr))
@@ -265,6 +315,7 @@ func runUnmerge(o options) {
 
 	// 4' ZSET。
 	if len(m.RankMembers) > 0 {
+		requireFence("4'")
 		release, lerr := acquireGuildRankLock(ctx, guildRdb, o.dryRun)
 		if lerr != nil {
 			log.Fatalf("guild rank lock: %v", lerr)
@@ -282,7 +333,7 @@ func runUnmerge(o options) {
 	// (旧清单 / 合服时 -skip-trade-mysql)就什么都不做。
 	tradeRestored := 0
 	if len(m.TradeListingIDs) > 0 {
-		n, terr := restoreTradeMarketZone(ctx, db, o.tradeSchema, m.TradeListingIDs, src, dst, o.dryRun)
+		n, terr := restoreTradeMarketZoneGated(ctx, db, o.tradeSchema, m.TradeListingIDs, src, dst, o.dryRun, gate)
 		if terr != nil {
 			// mapping / ZSET 已经改回,围栏与 3' 同理不提前释放。
 			abortKeepingFence(fmt.Sprintf("restore trade market_zone:改回中途失败:%v", terr))
@@ -298,7 +349,7 @@ func runUnmerge(o options) {
 	// 3' guild.zone_id 改回,只针对清单里的 guild_id,逐条主键点更新(锁序见 restoreGuildZone):
 	// 原先的 `zone_id = dst AND guild_id IN (...)` 可能被规划成 idx_guild_0 range,与目标区公会的解散反序成环。
 	if len(m.GuildIDs) > 0 {
-		n, gerr := restoreGuildZone(ctx, db, o.guildSchema, m.GuildIDs, src, dst, o.dryRun)
+		n, gerr := restoreGuildZoneGated(ctx, db, o.guildSchema, m.GuildIDs, src, dst, o.dryRun, gate)
 		if gerr != nil {
 			abortKeepingFence(fmt.Sprintf("restore guild zone_id:改回中途失败:%v", gerr))
 		}
@@ -309,6 +360,7 @@ func runUnmerge(o options) {
 		log.Printf("MySQL: %d of %d manifest guilds %s to zone_id=%d", n, len(m.GuildIDs), verb, src)
 		// 失效失败时 zone_id 已经改回,与 3' 写失败同属「改回到一半」:围栏同样保留、给续跑指引。
 		// 重跑时 3' 按 `zone_id = dst` 幂等(已改回的影响 0 行),失效对全清单再做一遍。
+		requireFence("3'")
 		inv, ierr := invalidateGuildCaches(ctx, guildRdb, m.GuildIDs, o.dryRun)
 		if ierr != nil {
 			abortKeepingFence(fmt.Sprintf("restore guild zone_id:已改回 %d 行,但 guild:v2 缓存失效失败:%v", n, ierr))
@@ -332,6 +384,7 @@ func runUnmerge(o options) {
 	totalDeleted, totalRefused := 0, 0
 	var refusedSample []uint64
 	for _, t := range tablesToClean {
+		requireFence("1'")
 		deleted, refused, err := deletePlayerRows(ctx, db, srcSchema, dstSchema, t, deleteIDs, o.dryRun)
 		if err != nil {
 			log.Fatalf("delete target rows for %s: %v", t, err)
@@ -430,6 +483,94 @@ func restoreMappingForIDs(ctx context.Context, rdb *redis.Client, ids []uint64, 
 		}
 	}
 	return restored, nil
+}
+
+// ── -route-source=db(W8 / R8,规格 §6.3)──────────────────────────────────────
+
+// manifestPlayersBackAtDB 是 manifestPlayersBackAt 的库版(R8):清单玩家里是否已有人在 player_route 里 home_zone == zone。
+func manifestPlayersBackAtDB(ctx context.Context, db routeDBOps, ids []uint64, zone uint32) (bool, error) {
+	rows, err := db.ReadRoutes(ctx, ids)
+	if err != nil {
+		return false, err
+	}
+	for _, id := range ids {
+		if r, ok := rows[id]; ok && r.HomeZone == zone {
+			return true, nil
+		}
+	}
+	return false, nil
+}
+
+// stepManifestPlayersBackAt 按源分派半撤销判定:rb == nil → MGET(逐字不变);否则读库。
+func stepManifestPlayersBackAt(ctx context.Context, rb *routeBackend, rdb *redis.Client, ids []uint64, zone uint32) (bool, error) {
+	if rb == nil {
+		return manifestPlayersBackAt(ctx, rdb, ids, zone)
+	}
+	return manifestPlayersBackAtDB(ctx, rb.db, ids, zone)
+}
+
+// restoreMappingForIDsDB 是 restoreMappingForIDs 的库版(W8 5',规格 §6.3):每 routeWriteBatchLimit 人一个事务(RestoreHomeBatch:
+// 两区围栏属于本次撤销 fenceRunID → 行锁 → home == dst 的 CAS 改回 src;原来是 pipeline 无条件 SET)→ 本批处于目标状态的全部行
+// (本批改回的 + 早已是 src 的)发布 + WAITAOF → 下一批。每批之前查 gate。
+// 第三个 zone 的不动(WARN,与 Redis 版同口径);库里没有行 / home 为 NULL 的跳过 —— 在库里那是权威缺席,不是丢键。
+// 返回本次改回的人数。任何一批发布失败即停(重跑时已改回的走「已是 src」分支、重新发布)。dry-run 只读库计数。
+func restoreMappingForIDsDB(ctx context.Context, rb *routeBackend, ids []uint64, src, dst uint32, fenceRunID string,
+	gate writeGate, dryRun bool) (int, error) {
+	restored := 0
+	warnForeign := func(id uint64) {
+		log.Printf("WARN: player %d maps to a third zone in player_route (neither %d nor %d) — left untouched", id, src, dst)
+	}
+	if dryRun {
+		rows, err := rb.db.ReadRoutes(ctx, ids)
+		if err != nil {
+			return 0, err
+		}
+		for _, id := range ids {
+			row, ok := rows[id]
+			switch classifyRouteHome(row, ok, dst, src) {
+			case mappingChanged:
+				restored++
+			case mappingForeign:
+				warnForeign(id)
+			}
+		}
+		return restored, nil
+	}
+	for _, batch := range chunkUint64(ids, routeWriteBatchLimit) {
+		if err := gate.check(); err != nil {
+			return restored, err
+		}
+		res, err := rb.db.RestoreHomeBatch(ctx, src, dst, fenceRunID, batch)
+		if err != nil {
+			return restored, fmt.Errorf("restore a batch of %d players (nothing of this batch committed): %w", len(batch), err)
+		}
+		for _, id := range batch {
+			v, ok := res.Verdicts[id]
+			if !ok {
+				return restored, fmt.Errorf("%w: the restore batch returned no verdict for player %d", errRouteInvariant, id)
+			}
+			if v == mappingForeign {
+				warnForeign(id)
+			}
+		}
+		restored += res.Changed
+		if _, err := rb.pub.publishRoutes(ctx, res.Target); err != nil {
+			return restored, fmt.Errorf("a restore batch of %d players committed in player_route (%d restored) but publishing its %d "+
+				"target rows failed — re-run (restored rows take the idempotent branch and are republished): %w",
+				len(batch), res.Changed, len(res.Target), err)
+		}
+	}
+	return restored, nil
+}
+
+// stepRestoreMapping 按源分派撤销 5':rb == nil → restoreMappingForIDs(Redis,逐字不变);否则 restoreMappingForIDsDB。
+// 两条路径的中止处置不同(redis 源的 log.Fatalf 原样保留,db 源保留围栏给续跑指引),在 runUnmerge 的调用点分开写。
+func stepRestoreMapping(ctx context.Context, rb *routeBackend, rdb *redis.Client, ids []uint64, src, dst uint32, fenceRunID string,
+	gate writeGate, dryRun bool) (int, error) {
+	if rb == nil {
+		return restoreMappingForIDs(ctx, rdb, ids, src, dst, dryRun)
+	}
+	return restoreMappingForIDsDB(ctx, rb, ids, src, dst, fenceRunID, gate, dryRun)
 }
 
 // deleteNoticeFlags 清掉合服公告标记。撤销之后「合服」没有发生过,

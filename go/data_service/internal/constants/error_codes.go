@@ -163,5 +163,10 @@ const (
 	// 与 ErrCodeRedis(1)分开:告警要能一眼分清"全局库坏了"与"mapping Redis 坏了"—— 前者查全局库与迁移,
 	// 后者查 Redis;混成一个码,值班只能两边都翻。只出现在 gRPC status 的 message 里(`error_code=30`,
 	// RegisterPlayerZone 的响应体是 emptypb.Empty),gRPC code 仍是 Unavailable,码集合与 redis 模式相同。
+	//
+	// 2026-10-19 更正:不只 RegisterPlayerZone。第 3 批读方门禁(RouteStore.ReadRequiresReady=true)下,GetPlayerHomeZone /
+	// BatchGetPlayerHomeZone 在缓存不可信、回源 player_route 又失败时(routing.ErrRouteReadUnavailable)同样回 Unavailable + 30
+	// (同样只在 status message 里;绝不回 NotFound)。in-band 入口(LoadPlayerData / SavePlayerData 等)的回源失败仍折成
+	// ErrCodeRedis(1),不出 30。
 	ErrCodeRouteStoreError uint32 = 30
 )

@@ -425,12 +425,13 @@ const char descriptor_table_protodef_proto_2fscene_2fclient_5fplayer_5fcommon_2e
     "\002 \001(\t\"\206\001\n\024RedirectToGateNotify\022\021\n\ttarget"
     "_ip\030\001 \001(\t\022\023\n\013target_port\030\002 \001(\r\022\025\n\rtoken_"
     "payload\030\003 \001(\014\022\027\n\017token_signature\030\004 \001(\014\022\026"
-    "\n\016token_deadline\030\005 \001(\0032\260\001\n\027SceneClientPl"
-    "ayerCommon\022*\n\017SendTipToClient\022\017.TipInfoM"
-    "essage\032\006.Empty\022,\n\nKickPlayer\022\026.GameKickP"
-    "layerRequest\032\006.Empty\022/\n\016RedirectToGate\022\025"
-    ".RedirectToGateNotify\032\006.Empty\032\n\200\250\303\001\001\210\250\303\001"
-    "\001B\016Z\005scene\200\001\001\230\324a\003b\006proto3"
+    "\n\016token_deadline\030\005 \001(\0032\305\001\n\027SceneClientPl"
+    "ayerCommon\0221\n\017SendTipToClient\022\017.TipInfoM"
+    "essage\032\006.Empty\"\005\210\231\310\001\002\0223\n\nKickPlayer\022\026.Ga"
+    "meKickPlayerRequest\032\006.Empty\"\005\210\231\310\001\002\0226\n\016Re"
+    "directToGate\022\025.RedirectToGateNotify\032\006.Em"
+    "pty\"\005\210\231\310\001\002\032\n\200\250\303\001\001\210\250\303\001\001B\016Z\005scene\200\001\001\230\324a\003b\006"
+    "proto3"
 };
 static const ::_pbi::DescriptorTable* PROTOBUF_NONNULL const
     descriptor_table_proto_2fscene_2fclient_5fplayer_5fcommon_2eproto_deps[3] = {
@@ -442,7 +443,7 @@ static ::absl::once_flag descriptor_table_proto_2fscene_2fclient_5fplayer_5fcomm
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fscene_2fclient_5fplayer_5fcommon_2eproto = {
     false,
     false,
-    545,
+    566,
     descriptor_table_protodef_proto_2fscene_2fclient_5fplayer_5fcommon_2eproto,
     "proto/scene/client_player_common.proto",
     &descriptor_table_proto_2fscene_2fclient_5fplayer_5fcommon_2eproto_once,

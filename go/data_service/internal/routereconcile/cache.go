@@ -44,9 +44,10 @@ type RedisCache struct {
 // fenceMirrorKeyPrefix 是 merge:in_progress:{zone} 的前缀,从 placement.MergeFenceKey 推出来(不另抄一份字面量)。
 var fenceMirrorKeyPrefix = strings.TrimSuffix(placement.MergeFenceKey(0), "0")
 
-// fenceScanCount 是 SCAN merge:in_progress:* 每次的 COUNT;fenceMGetChunk 是随后 MGET 的分块。
+// fenceScanCount 是 SCAN merge:in_progress:* 每页的 COUNT(Redis 每页大致遍历这么多个键);fenceMGetChunk 是 MGET 的分块。
+// 每拍翻几页由 leader 的 fenceScanPagesPerTick 决定(reconciler.go)。
 const (
-	fenceScanCount = 500
+	fenceScanCount = 1000
 	fenceMGetChunk = 500
 )
 
@@ -191,13 +192,16 @@ func (c *RedisCache) SelfCheck(ctx context.Context) (placement.RouteReadyRead, e
 
 // ── 控制键 ────────────────────────────────────────────────────────────────────
 
-// ReadControl 一个 pipeline:MGET ready warm watermark + TYPE ready(区分「不在」与「不是 string」)。
+// ReadControl 一个 pipeline:MGET ready warm watermark + TYPE ready + TYPE watermark(区分「不在」与「不是 string」)。
+// 水位键也要 TYPE(核实意见 A1-8):不是 string 时 MGET 回 nil,不区分就会被当成「缺席」—— SET NX 因键在而每拍失败、M3 永久失效,
+// Arm=false 下还会被当成「副本被清空」反复作废 cache_verified_ms。
 func (c *RedisCache) ReadControl(ctx context.Context) (Control, error) {
 	var mget *goredis.SliceCmd
-	var typ *goredis.StatusCmd
+	var readyType, watermarkType *goredis.StatusCmd
 	_, pipeErr := c.rdb.Pipelined(ctx, func(p goredis.Pipeliner) error {
 		mget = p.MGet(ctx, placement.RouteReadyKey, placement.RouteWarmKey, placement.RouteWatermarkKey)
-		typ = p.Type(ctx, placement.RouteReadyKey)
+		readyType = p.Type(ctx, placement.RouteReadyKey)
+		watermarkType = p.Type(ctx, placement.RouteWatermarkKey)
 		return nil
 	})
 	if mget == nil {
@@ -210,12 +214,17 @@ func (c *RedisCache) ReadControl(ctx context.Context) (Control, error) {
 	if len(vals) != 3 {
 		return Control{}, fmt.Errorf("MGET control keys returned %d values, want 3", len(vals))
 	}
-	t, err := typ.Result()
+	rt, err := readyType.Result()
 	if err != nil {
 		return Control{}, fmt.Errorf("TYPE %s: %w", placement.RouteReadyKey, err)
 	}
+	wt, err := watermarkType.Result()
+	if err != nil {
+		return Control{}, fmt.Errorf("TYPE %s: %w", placement.RouteWatermarkKey, err)
+	}
 	ctl := Control{Ready: strPtr(vals[0]), Warm: strPtr(vals[1]), Watermark: strPtr(vals[2])}
-	ctl.ReadyWrongType = ctl.Ready == nil && t != "none" && t != "string"
+	ctl.ReadyWrongType = ctl.Ready == nil && rt != "none" && rt != "string"
+	ctl.WatermarkWrongType = ctl.Watermark == nil && wt != "none" && wt != "string"
 	return ctl, nil
 }
 
@@ -292,6 +301,12 @@ func (c *RedisCache) CompareAndDeleteReady(ctx context.Context, old string) (boo
 // 与「刚被挂上的 string 标记」赛跑时会误删它 —— 那是撤销信任的方向(fail-closed),leader 下一拍重新判。
 func (c *RedisCache) DeleteReadyWrongType(ctx context.Context) error {
 	return c.rdb.Del(ctx, placement.RouteReadyKey).Err()
+}
+
+// DeleteWatermarkWrongType 无条件 DEL 水位键:只给「键在但不是 string」用(核实意见 A1-8;CAS 脚本对它报 WRONGTYPE、SET NX 因键在而失败)。
+// 与「刚被 SET NX 的 string 水位键」赛跑时会误删它 —— 只丢一拍的 M3 证据,leader 下一拍按库值重建。
+func (c *RedisCache) DeleteWatermarkWrongType(ctx context.Context) error {
+	return c.rdb.Del(ctx, placement.RouteWatermarkKey).Err()
 }
 
 // AdvanceWatermark 推进水位键:prev 为 nil 时 SET NX,否则按原值 CAS(复用就绪标记的 CAS 脚本,KEYS[1] 换成水位键)。
@@ -550,16 +565,22 @@ func (c *RedisCache) MirrorMergedInto(ctx context.Context, rows []store.MergedIn
 	return res, nil
 }
 
-// ListFenceMirrors SCAN merge:in_progress:*(去重)后分块 MGET 取值;值为 nil 的键再 TYPE 一次:不在了(并发删除)就跳过,
-// 不是 string 的记 WrongType(不是本方案写的,不删)。键后缀不是 [1, RouteHomeZoneMax] 的规范十进制数 → Zone=0。
-func (c *RedisCache) ListFenceMirrors(ctx context.Context) ([]FenceMirror, error) {
+// ScanFenceMirrors 从 cursor 起 SCAN merge:in_progress:* 至多 pages 页(每页 COUNT fenceScanCount;cursor 0 = 新一轮的起点),
+// 这几页里的键去重后按 GetFenceMirrors 取值。返回下一游标:0 = 这一轮扫完。
+//
+// 不一次扫到底(核实意见 A1-4 / LR-1):SCAN MATCH 仍要遍历整个 DB 0(每名玩家三把映射键),亿级键空间一拍扫不完,
+// 还会持续占用与登录读 / W1 发布共用的单线程 Redis。leader 把一轮分摊到多拍,游标存在它自己手里;SCAN 的保证
+// (一轮开始前就在、一直没删的键至少返回一次;可能重复)跨多次调用同样成立。
+func (c *RedisCache) ScanFenceMirrors(ctx context.Context, cursor uint64, pages int) ([]FenceMirror, uint64, error) {
+	if pages < 1 {
+		return nil, cursor, fmt.Errorf("scan merge fence mirrors: pages %d < 1", pages)
+	}
 	seen := map[string]bool{}
 	var keys []string
-	var cursor uint64
-	for {
+	for i := 0; i < pages; i++ {
 		batch, next, err := c.rdb.Scan(ctx, cursor, fenceMirrorKeyPrefix+"*", fenceScanCount).Result()
 		if err != nil {
-			return nil, fmt.Errorf("SCAN %s*: %w", fenceMirrorKeyPrefix, err)
+			return nil, cursor, fmt.Errorf("SCAN %d %s*: %w", cursor, fenceMirrorKeyPrefix, err)
 		}
 		for _, k := range batch {
 			if !seen[k] {
@@ -567,10 +588,26 @@ func (c *RedisCache) ListFenceMirrors(ctx context.Context) ([]FenceMirror, error
 				keys = append(keys, k)
 			}
 		}
+		cursor = next
 		if next == 0 {
 			break
 		}
-		cursor = next
+	}
+	mirrors, err := c.GetFenceMirrors(ctx, keys)
+	if err != nil {
+		return nil, cursor, err
+	}
+	return mirrors, cursor, nil
+}
+
+// GetFenceMirrors 按键分块 MGET 围栏镜像;值为 nil 的键再 TYPE 一次:不在了(并发删除)就跳过,不是 string 的记 WrongType
+// (不是本方案写的,不删)。键后缀不是 [1, RouteHomeZoneMax] 的规范十进制数 → Zone=0。keys 必须都在 merge:in_progress: 前缀下
+// (否则报错、不发命令),由调用方去重。
+func (c *RedisCache) GetFenceMirrors(ctx context.Context, keys []string) ([]FenceMirror, error) {
+	for _, k := range keys {
+		if !strings.HasPrefix(k, fenceMirrorKeyPrefix) {
+			return nil, fmt.Errorf("%q is not a merge fence mirror key", k)
+		}
 	}
 	out := make([]FenceMirror, 0, len(keys))
 	for start := 0; start < len(keys); start += fenceMGetChunk {

@@ -191,6 +191,27 @@ func isNodeGoneFromRegistry(zoneID uint32, nodeID string) bool {
 	return knownNodeIdentityMatchCount(zoneID, nodeID) == 0
 }
 
+// isZoneGoneFromRegistry 报告 zone 是否已经确认**在 etcd 注册表里没有任何场景节点**:整 zone 下线(合服后源区
+// 永久下线)的正面证据,EnterScene 的陈旧位置判定(playerLocationOwnerGone)靠它。
+//
+// 与 isNodeGoneFromRegistry 同源、同前提:尚未完成首次全量同步时返回 false(拿不到证据)。「zone 负载集为空」
+// 替代不了它:负载键丢失 / 被淘汰时 ZCARD 读作 0,节点却都活着、都还在注册表里(第二轮审计 r2-sm#3 同源缺陷)。
+// 依赖 knownNodes 是**全服**注册表的镜像(watch 前缀不分 zone)。将来把 watch 收窄到本 zone(容量模型 A1)时,
+// 别的 zone 在这里恒为「没有节点」,必须先改成按 zone 查注册表,否则跨 zone 的陈旧位置会被一律判成已下线。
+func isZoneGoneFromRegistry(zoneID uint32) bool {
+	if !knownNodesSynced.Load() {
+		return false
+	}
+	knownNodesMu.RLock()
+	defer knownNodesMu.RUnlock()
+	for _, entry := range knownNodes {
+		if entry.reg.ZoneId == zoneID {
+			return false
+		}
+	}
+	return true
+}
+
 // parseNodeEntry parses a raw etcd value into a nodeEntry. Also validates
 // scene_node_type: anything outside constants.SceneNodeType* is a
 // misconfiguration (usually a stale image or env typo) — we keep the node

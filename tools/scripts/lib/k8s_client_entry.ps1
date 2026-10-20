@@ -63,7 +63,7 @@
 	    New-ClientEntryPodCommon        -Image -ImagePullPolicy -SnowflakeCacheDir -LogVolumeSizeLimit
 	                                    [-LogPrunerCommand ''] [-GrpcServerMaxPollers 0(已退役,取值被忽略)]
 	                                    [-SidecarContainerYaml ''] [-SidecarVolumeYaml ''] [-SidecarConfigHash '']
-	                                    [-PodAnnotations $null]
+	                                    [-PodAnnotations $null] [-OpenFileLimitMode ''(B0-4 豁免开关,留空不写)]
 	    New-GateStatefulSetYaml         -PodCommon -Plan -RpcPort -StartCommand -ConfigMapName -GateRouterMode
 	                                    [-TerminationGracePeriodSeconds 30]
 	    New-GateOrdinalServicesYaml     -Plan [-ExternalTrafficPolicy Local]              → gate-<i> 用 --- 连接
@@ -203,6 +203,11 @@ function Get-ClientEntryContract {
 		# GATE_CLIENT_PORT_MODE 的取值(Resolve-GateClientEndpointPlan 的 PortMode):nodeport = 基址 + 序号;service = Service 端口。
 		GateClientPortModeNodePort = 'nodeport'
 		GateClientPortModeService  = 'service'
+		# B0-4 运维豁免开关:C++ open_file_limit.h kModeEnv 与 ParseMode 认的取值(只认小写;其余值进程按 enforce 处理)。
+		# k8s_deploy.ps1 -NodeOpenFileLimitMode 经 PodCommon.OpenFileLimitMode 写进本库三个 C++ 生成器(Get-ClientEntryNodeBaseEnv),
+		# 该脚本自己的两个模板(New-CppOpenFileLimitModeEnvLines)也取这里的 env 名。
+		NodeOpenFileLimitModeEnv   = 'NODE_OPEN_FILE_LIMIT_MODE'
+		NodeOpenFileLimitModes     = @('enforce', 'warn')
 	}
 }
 
@@ -638,7 +643,10 @@ function New-ClientEntryPodCommon {
 		[AllowEmptyString()][string]$SidecarConfigHash = '',
 		# 附加的 Pod 模板注解(键 = 注解名,值 = 注解值),按迭代顺序写在 sidecar 配置指纹之后;要稳定顺序就传 [ordered]。
 		# 留空或空表 = 不加,生成物与不传时逐字相同。键名与 sidecar 注解重名、值为空或含控制字符,在渲染时 throw。
-		[AllowNull()][System.Collections.IDictionary]$PodAnnotations = $null
+		[AllowNull()][System.Collections.IDictionary]$PodAnnotations = $null,
+		# B0-4 运维豁免开关 NODE_OPEN_FILE_LIMIT_MODE 的取值(k8s_deploy.ps1 -NodeOpenFileLimitMode)。留空 = 不写这个 env
+		# (C++ 缺省 enforce),生成物与不传时逐字相同;非空只收小写 enforce / warn,在渲染时(Get-ClientEntryNodeBaseEnv)校验。
+		[AllowEmptyString()][string]$OpenFileLimitMode = ''
 	)
 
 	$given = @($SidecarContainerYaml, $SidecarVolumeYaml, $SidecarConfigHash | Where-Object { -not [string]::IsNullOrWhiteSpace($_) })
@@ -666,6 +674,7 @@ function New-ClientEntryPodCommon {
 		SidecarVolumeYaml    = $SidecarVolumeYaml
 		SidecarConfigHash    = $SidecarConfigHash
 		PodAnnotations       = $podAnnotationsCopy
+		OpenFileLimitMode    = $OpenFileLimitMode
 	}
 }
 
@@ -705,6 +714,17 @@ function Get-ClientEntryNodeBaseEnv {
 		@{ Name = 'RPC_PORT'; Value = [string]$RpcPort }
 	)
 	$entries += @{ Name = 'SNOWFLAKE_CACHE_DIR'; Value = $PodCommon.SnowflakeCacheDir }
+	# B0-4 运维豁免开关:只有显式给值才写(缺省不写 = C++ 按 enforce),与 k8s_deploy.ps1 的 New-NodeDeploymentYaml / New-SceneFleetYaml 同口径。
+	# 经 Get-ClientEntryMember 读:调用方自己拼的 PodCommon 可能没有这个成员(缺席 = 不写)。校验放在这里而不是 New-ClientEntryPodCommon:
+	# 这是值写进 YAML 的唯一入口,手拼的 PodCommon 也绕不过去。区分大小写(-cnotin):C++ 只认小写,大写会被进程静默当成 enforce。
+	$contract = Get-ClientEntryContract
+	$openFileLimitMode = [string](Get-ClientEntryMember -Object $PodCommon -Path @('OpenFileLimitMode'))
+	if (-not [string]::IsNullOrEmpty($openFileLimitMode)) {
+		if ($openFileLimitMode -cnotin $contract.NodeOpenFileLimitModes) {
+			throw "Get-ClientEntryNodeBaseEnv: PodCommon.OpenFileLimitMode 只收小写 $($contract.NodeOpenFileLimitModes -join ' / ')(留空 = 不写 $($contract.NodeOpenFileLimitModeEnv)),实际 '$openFileLimitMode'。"
+		}
+		$entries += @{ Name = $contract.NodeOpenFileLimitModeEnv; Value = $openFileLimitMode }
+	}
 	return ,$entries
 }
 

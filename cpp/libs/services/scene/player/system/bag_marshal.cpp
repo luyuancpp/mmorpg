@@ -138,10 +138,17 @@ void Marshal(entt::entity player, BagAllData& out)
     // Capacity slot per BagType, in order kInventory/kWarehouse/kEquipment/
     // kTemporary. We always emit kBagTypeCount entries so the consumer can
     // index bag_type → capacity directly without a sparse map.
-    out.mutable_capacities()->Reserve(static_cast<int>(kBagTypeCount));
+    const auto& unsupported = bags->unsupportedBagTypes;
+    out.mutable_capacities()->Reserve(static_cast<int>(kBagTypeCount + unsupported.capacities.size()));
     for (uint32_t bagType = 0; bagType < static_cast<uint32_t>(kBagTypeCount); ++bagType)
     {
         out.add_capacities(static_cast<uint32_t>(bags->bags[bagType].Capacity()));
+    }
+    // 本版本不认识的包类型的容量(新版本加的包)原样接在后面:下标仍与 bag_type 一一对应
+    // (混版本设计 §12,第 5 批;见 PlayerBagsComp::unsupportedBagTypes)。
+    for (const auto capacity : unsupported.capacities)
+    {
+        out.add_capacities(capacity);
     }
 
     // Items across all four bags. ItemEntry.bag_type tags which bag
@@ -151,6 +158,12 @@ void Marshal(entt::entity player, BagAllData& out)
     {
         const auto& bag = bags->bags[bagType];
         MarshalItems(bag, bagType, *out.mutable_items());
+    }
+    // 本版本不认识的包类型的条目整份原样追加(含其中实例的未知字段)。它们的 bag_type 都 ≥ kBagTypeCount,
+    // 接在已知包之后仍保持「按 bag_type 升序」的写盘顺序;同一份输入每次写出的字节相同,脏比较不会因此抖动。
+    for (const auto& entry : unsupported.items)
+    {
+        *out.add_items() = entry;
     }
 
     // Transient runtime bags (event bags / per-pet bags). Each gets its
@@ -207,24 +220,37 @@ void Unmarshal(entt::entity player, const BagAllData& in)
         }
     }
 
-    // Items replay. Out-of-range bag_type values (corruption / future
-    // bag types we don't support) are dropped with a WARN — better
-    // than crashing, and the player just loses those items.
+    // 本版本不认识的包类型(新版本加的包,或回滚前的版本留下的):整体重填,重新还原(回档到已有实体)时不留旧的。
+    // 以前这里直接丢弃越界条目 —— 新版本加了包类型后回滚 scene,旧版本一存盘,新包里的物品就全没了
+    // (混版本设计 §12、§8.3「scene 有条件回滚」的前提,第 5 批)。现在原样携带,存盘时由 Marshal 原样写回。
+    auto& unsupported = bags.unsupportedBagTypes;
+    unsupported = {};
+    for (int index = static_cast<int>(kBagTypeCount); index < caps; ++index)
+    {
+        unsupported.capacities.push_back(in.capacities(index));
+    }
+
+    // Items replay. bag_type 越界的条目(新版本的包类型,或数据损坏)不进任何运行时包,整份原样携带。
     std::array<std::vector<std::pair<ItemComp, uint32_t>>, kBagTypeCount> perBag;
+    uint32_t maxUnsupportedBagType = 0;
     for (const auto& entry : in.items())
     {
         const uint32_t bagType = entry.bag_type();
         if (bagType >= static_cast<uint32_t>(kBagTypeCount))
         {
-            LOG_WARN << "[bag_marshal] dropping ItemEntry with bag_type="
-                     << bagType << " (out of range, kBagTypeCount="
-                     << static_cast<uint32_t>(kBagTypeCount) << ") "
-                     << "item_uuid=" << entry.item_uuid()
-                     << " config_id=" << entry.config_id()
-                     << " " << ActorLog(player);
+            unsupported.items.push_back(entry);
+            maxUnsupportedBagType = std::max(maxUnsupportedBagType, bagType);
             continue;
         }
         perBag[bagType].emplace_back(ItemFromEntry(entry), entry.pos());
+    }
+    if (!unsupported.items.empty() || !unsupported.capacities.empty())
+    {
+        // 每次还原只打一行汇总:混版本窗口里这是正常现象,逐条打会刷屏;数据损坏时同一行也足够定位。
+        LOG_WARN << "[bag_marshal] carrying records of bag types unknown to this version verbatim: entries="
+                 << unsupported.items.size() << " extra_capacities=" << unsupported.capacities.size()
+                 << " max_bag_type=" << maxUnsupportedBagType
+                 << " (kBagTypeCount=" << static_cast<uint32_t>(kBagTypeCount) << ") " << ActorLog(player);
     }
     for (uint32_t bagType = 0; bagType < static_cast<uint32_t>(kBagTypeCount); ++bagType)
     {

@@ -50,6 +50,7 @@ namespace bag_marshal
     // Read all bag/warehouse/equipment/temp items off the player's ECS
     // representation, write them to `out`.
     // 固定包按 bag_type、槽位升序，动态包按 bag_id、槽位升序；零数量实例不写出。
+    // 本版本不认识的包类型(PlayerBagsComp::unsupportedBagTypes)的条目与容量原样追加在已知包之后。
     //
     // A player entity with no PlayerBagsComp yields an empty BagAllData
     // (that is the correct payload for an entity that hasn't been through
@@ -67,7 +68,8 @@ namespace bag_marshal
     // from Redis, and on rollback when restoring a snapshot.
     //
     // get_or_emplace's the component, so it works on a fresh entity.
-    // Entries whose bag_type is out of range are dropped with a WARN.
+    // bag_type 越界的条目(本版本不认识的包类型)与下标 ≥ kBagTypeCount 的容量不进运行时包,
+    // 存进 PlayerBagsComp::unsupportedBagTypes 原样携带,Marshal 时原样写回(打一行汇总 WARN,不丢)。
     // An entry whose recorded pos is unusable (out of range, or already
     // taken by another restored item) is relocated to a free slot rather
     // than dropped — position can change, the item must not vanish.

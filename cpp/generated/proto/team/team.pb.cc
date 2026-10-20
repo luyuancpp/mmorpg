@@ -5024,7 +5024,7 @@ const char descriptor_table_protodef_proto_2fteam_2fteam_2eproto[] ABSL_ATTRIBUT
     "REASON_MATCH_QUEUE_CANCELED\020\020*~\n\rTeamEve"
     "ntType\022\037\n\033TEAM_EVENT_TYPE_UNSPECIFIED\020\000\022"
     "(\n$TEAM_EVENT_TYPE_APPLICATION_REJECTED\020"
-    "\001\022\"\n\036TEAM_EVENT_TYPE_INVITE_REVOKED\020\0022\201\010"
+    "\001\022\"\n\036TEAM_EVENT_TYPE_INVITE_REVOKED\020\0022\220\010"
     "\n\020ClientPlayerTeam\022\?\n\nCreateTeam\022\031.teamp"
     "b.CreateTeamRequest\032\024.teampb.TeamRespons"
     "e\"\000\022=\n\tGetMyTeam\022\030.teampb.GetMyTeamReque"
@@ -5046,12 +5046,12 @@ const char descriptor_table_protodef_proto_2fteam_2fteam_2eproto[] ABSL_ATTRIBUT
     "\013DisbandTeam\022\032.teampb.DisbandTeamRequest"
     "\032\024.teampb.TeamResponse\"\000\022G\n\016StartTeamMat"
     "ch\022\035.teampb.StartTeamMatchRequest\032\024.team"
-    "pb.TeamResponse\"\000\0227\n\022NotifyTeamSnapshot\022"
-    "\027.teampb.TeamSnapshotS2C\032\006.Empty\"\000\0223\n\020No"
-    "tifyTeamInvite\022\025.teampb.TeamInviteS2C\032\006."
-    "Empty\"\000\0221\n\017NotifyTeamEvent\022\024.teampb.Team"
-    "EventS2C\032\006.Empty\"\000\032\005\210\250\303\001\001B\rZ\004team\200\001\000\230\324a\017"
-    "b\006proto3"
+    "pb.TeamResponse\"\000\022<\n\022NotifyTeamSnapshot\022"
+    "\027.teampb.TeamSnapshotS2C\032\006.Empty\"\005\210\231\310\001\002\022"
+    "8\n\020NotifyTeamInvite\022\025.teampb.TeamInviteS"
+    "2C\032\006.Empty\"\005\210\231\310\001\002\0226\n\017NotifyTeamEvent\022\024.t"
+    "eampb.TeamEventS2C\032\006.Empty\"\005\210\231\310\001\002\032\005\210\250\303\001\001"
+    "B\rZ\004team\200\001\000\230\324a\017b\006proto3"
 };
 static const ::_pbi::DescriptorTable* PROTOBUF_NONNULL const
     descriptor_table_proto_2fteam_2fteam_2eproto_deps[3] = {
@@ -5063,7 +5063,7 @@ static ::absl::once_flag descriptor_table_proto_2fteam_2fteam_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fteam_2fteam_2eproto = {
     false,
     false,
-    5248,
+    5263,
     descriptor_table_protodef_proto_2fteam_2fteam_2eproto,
     "proto/team/team.proto",
     &descriptor_table_proto_2fteam_2fteam_2eproto_once,

@@ -11,7 +11,7 @@
 
 #include "core/utils/random/random.h"
 #include "engine/core/time/system/time.h"
-#include "network/player_message_utils.h"
+#include "network/client_message_sender.h"
 #include "thread_context/ecs_context.h"
 #include "modules/id_segment/guid_segment_registry.h"
 

@@ -2920,22 +2920,24 @@ const char descriptor_table_protodef_proto_2fscene_2fplayer_5fscene_2eproto[] AB
     "N_GUILD_ECONOMY\020\010\022\036\n\032SYNC_DOMAIN_GUILD_A"
     "CTIVITY\020\t*Q\n\020SyncDigestStatus\022\031\n\025SYNC_DI"
     "GEST_STATUS_OK\020\000\022\"\n\036SYNC_DIGEST_STATUS_U"
-    "NAVAILABLE\020\0012\307\004\n\026SceneSceneClientPlayer\022"
+    "NAVAILABLE\020\0012\206\005\n\026SceneSceneClientPlayer\022"
     ";\n\nEnterScene\022\025.EnterSceneC2SRequest\032\026.E"
-    "nterSceneC2SResponse\022*\n\020NotifyEnterScene"
-    "\022\016.EnterSceneS2C\032\006.Empty\022)\n\014SceneInfoC2S"
-    "\022\021.SceneInfoRequest\032\006.Empty\022(\n\017NotifySce"
-    "neInfo\022\r.SceneInfoS2C\032\006.Empty\022,\n\021NotifyA"
-    "ctorCreate\022\017.ActorCreateS2C\032\006.Empty\022.\n\022N"
-    "otifyActorDestroy\022\020.ActorDestroyS2C\032\006.Em"
-    "pty\0224\n\025NotifyActorListCreate\022\023.ActorList"
-    "CreateS2C\032\006.Empty\0226\n\026NotifyActorListDest"
-    "roy\022\024.ActorListDestroyS2C\032\006.Empty\022;\n\014Tra"
-    "velToZone\022\024.TravelToZoneRequest\032\025.Travel"
-    "ToZoneResponse\022.\n\rGetSyncDigest\022\025.GetSyn"
-    "cDigestRequest\032\006.Empty\022*\n\020NotifySyncDige"
-    "st\022\016.SyncDigestS2C\032\006.Empty\032\n\200\250\303\001\001\210\250\303\001\001B\016"
-    "Z\005scene\200\001\001\230\324a\003b\006proto3"
+    "nterSceneC2SResponse\0221\n\020NotifyEnterScene"
+    "\022\016.EnterSceneS2C\032\006.Empty\"\005\210\231\310\001\002\0220\n\014Scene"
+    "InfoC2S\022\021.SceneInfoRequest\032\006.Empty\"\005\210\231\310\001"
+    "\001\022/\n\017NotifySceneInfo\022\r.SceneInfoS2C\032\006.Em"
+    "pty\"\005\210\231\310\001\002\0223\n\021NotifyActorCreate\022\017.ActorC"
+    "reateS2C\032\006.Empty\"\005\210\231\310\001\002\0225\n\022NotifyActorDe"
+    "stroy\022\020.ActorDestroyS2C\032\006.Empty\"\005\210\231\310\001\002\022;"
+    "\n\025NotifyActorListCreate\022\023.ActorListCreat"
+    "eS2C\032\006.Empty\"\005\210\231\310\001\002\022=\n\026NotifyActorListDe"
+    "stroy\022\024.ActorListDestroyS2C\032\006.Empty\"\005\210\231\310"
+    "\001\002\022;\n\014TravelToZone\022\024.TravelToZoneRequest"
+    "\032\025.TravelToZoneResponse\0225\n\rGetSyncDigest"
+    "\022\025.GetSyncDigestRequest\032\006.Empty\"\005\210\231\310\001\001\0221"
+    "\n\020NotifySyncDigest\022\016.SyncDigestS2C\032\006.Emp"
+    "ty\"\005\210\231\310\001\002\032\n\200\250\303\001\001\210\250\303\001\001B\016Z\005scene\200\001\001\230\324a\003b\006p"
+    "roto3"
 };
 static const ::_pbi::DescriptorTable* PROTOBUF_NONNULL const
     descriptor_table_proto_2fscene_2fplayer_5fscene_2eproto_deps[5] = {
@@ -2949,7 +2951,7 @@ static ::absl::once_flag descriptor_table_proto_2fscene_2fplayer_5fscene_2eproto
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fscene_2fplayer_5fscene_2eproto = {
     false,
     false,
-    2862,
+    2925,
     descriptor_table_protodef_proto_2fscene_2fplayer_5fscene_2eproto,
     "proto/scene/player_scene.proto",
     &descriptor_table_proto_2fscene_2fplayer_5fscene_2eproto_once,

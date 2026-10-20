@@ -8,16 +8,22 @@ import (
 	"go/token"
 	"io/fs"
 	"path/filepath"
+	"reflect"
 	"regexp"
 	"slices"
 	"strconv"
 	"strings"
 	"testing"
 
+	dbpb "proto/common/database"
+	dbopts "proto/db"
 	"shared/placement"
 
 	"github.com/go-sql-driver/mysql"
 	"github.com/luyuancpp/proto2mysql"
+	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/reflect/protoreflect"
+	"google.golang.org/protobuf/types/descriptorpb"
 )
 
 // RouteStore 不连库的单测:DSN、DDL 契约、SQL 文本形状、写入点守卫、导入判定、行的编解码、写者标识。
@@ -135,32 +141,153 @@ func TestRouteBootstrapDDLContract(t *testing.T) {
 		}
 	}
 
-	// routeTableShapes 的键恰好是这几张表,每一列 / 主键都在对应 DDL 里出现。
-	if len(routeTableShapes) != len(ddls) {
-		t.Fatalf("routeTableShapes 有 %d 张表,want %d", len(routeTableShapes), len(ddls))
+	// 列漂移守卫的事实源是 proto(routeTableMessages):每张路由表的 proto 字段集合 = DDL 列集合(双向,多一列少一列都拒),
+	// OptionPrimaryKey = DDL 主键列序;它们都在 TableMessages 里(表名守卫)、都是 bootstrap 表、都被认作路由表
+	// (同步循环跳过,不交给 proto2mysql)。启动期的 assertRouteTableShapes 只能查「proto 有的列线上都有」,
+	// 「DDL 多出 proto 没有的列」只有这里查得到。
+	routeMsgs := routeTableMessages()
+	if len(routeMsgs) != len(ddls) {
+		t.Fatalf("routeTableMessages 有 %d 张表,want %d", len(routeMsgs), len(ddls))
 	}
-	for name, shape := range routeTableShapes {
-		ddl, ok := ddls[name]
-		if !ok {
-			t.Fatalf("routeTableShapes 里多了 %s", name)
+	inTableMessages := make(map[string]bool)
+	for _, m := range TableMessages() {
+		name, _ := proto2mysql.TableNameFromDescriptor(m.ProtoReflect().Descriptor())
+		inTableMessages[name] = true
+	}
+	ddlColumnRe := regexp.MustCompile("(?m)^  `([a-z_]+)` ")
+	prevName := ""
+	for _, m := range routeMsgs {
+		md := m.ProtoReflect().Descriptor()
+		name, ok := proto2mysql.TableNameFromDescriptor(md)
+		ddl, known := ddls[name]
+		if !ok || !known {
+			t.Fatalf("routeTableMessages 里的 %s 表名 %q 不是五张路由表之一", md.FullName(), name)
 		}
-		for _, col := range shape.columns {
-			if !strings.Contains(ddl, "`"+col+"` ") {
-				t.Fatalf("routeTableShapes[%s] 的列 %s 不在 DDL 里", name, col)
-			}
+		if name <= prevName {
+			t.Fatalf("routeTableMessages 没有按表名升序(%s 排在 %s 之后):守卫的日志与失败顺序要稳定", name, prevName)
 		}
-		pk := "PRIMARY KEY (`" + strings.Join(shape.primaryKey, "`, `") + "`)"
-		if !strings.Contains(ddl, pk) {
-			t.Fatalf("routeTableShapes[%s] 的主键 %v 与 DDL 不符(want %q)", name, shape.primaryKey, pk)
+		prevName = name
+		if !inTableMessages[name] || !isRouteTable(name) || !isBootstrapTable(name) {
+			t.Fatalf("路由表 %s:在 TableMessages=%v、isRouteTable=%v、isBootstrapTable=%v,want 全为 true",
+				name, inTableMessages[name], isRouteTable(name), isBootstrapTable(name))
+		}
+
+		fields := md.Fields()
+		protoCols := make([]string, 0, fields.Len())
+		for i := 0; i < fields.Len(); i++ {
+			protoCols = append(protoCols, string(fields.Get(i).Name()))
+		}
+		var ddlCols []string
+		for _, mm := range ddlColumnRe.FindAllStringSubmatch(ddl, -1) {
+			ddlCols = append(ddlCols, mm[1])
+		}
+		slices.Sort(protoCols)
+		slices.Sort(ddlCols)
+		if !slices.Equal(protoCols, ddlCols) {
+			t.Fatalf("%s 的 proto 字段 %v 与 DDL 列 %v 不一致:改了 DDL 就要同步改 rollback_database_table.proto,反之亦然",
+				name, protoCols, ddlCols)
+		}
+
+		pk, err := routeTablePrimaryKey(m)
+		if err != nil {
+			t.Fatalf("%s: %v", name, err)
+		}
+		if want := "PRIMARY KEY (`" + strings.Join(pk, "`, `") + "`)"; !strings.Contains(ddl, want) {
+			t.Fatalf("%s 的 proto OptionPrimaryKey %v 与 DDL 主键不符(want DDL 含 %q)", name, pk, want)
 		}
 	}
 
-	// 路由表没有 proto,不能出现在 TableMessages 里(否则会被 proto 同步循环与 TestGlobalTableDDLContract 误伤)。
-	for _, m := range TableMessages() {
-		name, _ := proto2mysql.TableNameFromDescriptor(m.ProtoReflect().Descriptor())
-		if _, isRoute := routeTableShapes[name]; isRoute {
-			t.Fatalf("路由表 %s 出现在 TableMessages 里", name)
+	// 五张表每列的注释 pb:N 都等于 proto 字段号:player_route 的 pb:1..10 是 1a 批预留、补 proto 时沿用的;
+	// 另外四张补 proto 时按列序新定、同时补进 DDL。字段号上线后不复用(AGENTS §4),只有这里能钉住两边不各自重编号。
+	pbCommentRe := regexp.MustCompile("(?m)^  `([a-z_]+)` .*COMMENT 'pb:(\\d+)'")
+	for _, m := range routeMsgs {
+		md := m.ProtoReflect().Descriptor()
+		name, _ := proto2mysql.TableNameFromDescriptor(md)
+		fields := md.Fields()
+		pbComments := pbCommentRe.FindAllStringSubmatch(ddls[name], -1)
+		if len(pbComments) != fields.Len() {
+			t.Fatalf("%s 有 %d 个 pb:N 列注释,proto 有 %d 个字段:每列都要写 COMMENT 'pb:<字段号>'", name, len(pbComments), fields.Len())
 		}
+		for _, mm := range pbComments {
+			fd := fields.ByName(protoreflect.Name(mm[1]))
+			if fd == nil {
+				t.Fatalf("%s 的列 %s 在 proto 里没有字段", name, mm[1])
+			}
+			if got := strconv.Itoa(int(fd.Number())); got != mm[2] {
+				t.Fatalf("%s.%s:DDL 注释 pb:%s,proto 字段号 %s", name, mm[1], mm[2], got)
+			}
+		}
+	}
+}
+
+// TestRouteTablePrimaryKeyRejectsMalformedOption 钉住主键读取的 fail-closed:没声明 / 空分量一律报错,不猜。
+func TestRouteTablePrimaryKeyRejectsMalformedOption(t *testing.T) {
+	if _, err := primaryKeyFromOption("test.no_option", &descriptorpb.MessageOptions{}); err == nil {
+		t.Fatal("没声明 OptionPrimaryKey 应被拒绝")
+	}
+	for _, raw := range []string{"", ",", "route_shard,", " , player_id"} {
+		opts := &descriptorpb.MessageOptions{}
+		proto.SetExtension(opts, dbopts.E_OptionPrimaryKey, raw)
+		if _, err := primaryKeyFromOption("test.player_route", opts); err == nil {
+			t.Fatalf("OptionPrimaryKey=%q 应被拒绝", raw)
+		}
+	}
+	opts := &descriptorpb.MessageOptions{}
+	proto.SetExtension(opts, dbopts.E_OptionPrimaryKey, " zone_id , shard ")
+	if got, err := primaryKeyFromOption("test.zone_merge_fence", opts); err != nil || !slices.Equal(got, []string{"zone_id", "shard"}) {
+		t.Fatalf("primaryKeyFromOption(%q) = %v, %v; want [zone_id shard](分量去首尾空白)", " zone_id , shard ", got, err)
+	}
+	got, err := routeTablePrimaryKey(&dbpb.PlayerRoute{})
+	if err != nil || !slices.Equal(got, []string{"route_shard", "player_id"}) {
+		t.Fatalf("routeTablePrimaryKey(player_route) = %v, %v; want [route_shard player_id]", got, err)
+	}
+}
+
+// TestRouteRowMirrorsPlayerRouteProto 钉住领域类型 RouteRow 与列契约 dbpb.PlayerRoute 逐字段对应
+// (AGENTS.md §3:不许有与 proto 漂移的并行 struct)。字段名 snake_case → CamelCase(id → ID),类型相同;
+// 唯一例外 route_shard 由 player_id 推出、RouteRow 不存。新增列忘了改 RouteRow(或反过来)这里就红。
+func TestRouteRowMirrorsPlayerRouteProto(t *testing.T) {
+	camel := func(snake string) string {
+		parts := strings.Split(snake, "_")
+		for i, p := range parts {
+			if p == "id" {
+				parts[i] = "ID"
+				continue
+			}
+			parts[i] = strings.ToUpper(p[:1]) + p[1:]
+		}
+		return strings.Join(parts, "")
+	}
+	kindOf := map[protoreflect.Kind]reflect.Kind{
+		protoreflect.Uint64Kind: reflect.Uint64,
+		protoreflect.Uint32Kind: reflect.Uint32,
+		protoreflect.StringKind: reflect.String,
+	}
+	rowType := reflect.TypeOf(RouteRow{})
+	fields := (&dbpb.PlayerRoute{}).ProtoReflect().Descriptor().Fields()
+	mirrored := 0
+	for i := 0; i < fields.Len(); i++ {
+		fd := fields.Get(i)
+		if fd.Name() == "route_shard" {
+			continue
+		}
+		goName := camel(string(fd.Name()))
+		sf, ok := rowType.FieldByName(goName)
+		if !ok {
+			t.Fatalf("proto 字段 player_route.%s 在 RouteRow 里没有对应字段 %s", fd.Name(), goName)
+		}
+		want, known := kindOf[fd.Kind()]
+		if !known {
+			t.Fatalf("player_route.%s 是 %s:本用例只认 uint64 / uint32 / string,新类型要先想清楚 NULL 约定", fd.Name(), fd.Kind())
+		}
+		if sf.Type.Kind() != want {
+			t.Fatalf("RouteRow.%s 是 %s,proto player_route.%s 是 %s", goName, sf.Type.Kind(), fd.Name(), fd.Kind())
+		}
+		mirrored++
+	}
+	if rowType.NumField() != mirrored {
+		t.Fatalf("RouteRow 有 %d 个字段,proto 里能对上的只有 %d 个:RouteRow 多出的字段要么补进 proto 与 DDL,要么移出 RouteRow",
+			rowType.NumField(), mirrored)
 	}
 }
 

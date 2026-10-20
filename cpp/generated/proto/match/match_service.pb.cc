@@ -3498,7 +3498,7 @@ const char descriptor_table_protodef_proto_2fmatch_2fmatch_5fservice_2eproto[] A
     "\000\022\026\n\022QUEUE_STATE_QUEUED\020\001\022\027\n\023QUEUE_STATE"
     "_MATCHED\020\002\022\025\n\021QUEUE_STATE_READY\020\003\022\030\n\024QUE"
     "UE_STATE_ENTERING\020\004\022\032\n\026QUEUE_STATE_NOT_Q"
-    "UEUED\020\0052\277\007\n\014MatchService\022^\n\023GetNetworkPr"
+    "UEUED\020\0052\311\007\n\014MatchService\022^\n\023GetNetworkPr"
     "obePlan\022!.match.GetNetworkProbePlanReque"
     "st\032\".match.GetNetworkProbePlanResponse\"\000"
     "\022[\n\022CommitNetworkProbe\022 .match.CommitNet"
@@ -3512,17 +3512,18 @@ const char descriptor_table_protodef_proto_2fmatch_2fmatch_5fservice_2eproto[] A
     "ChallengePlayerRequest\032\036.match.Challenge"
     "PlayerResponse\"\000\022U\n\020RespondChallenge\022\036.m"
     "atch.RespondChallengeRequest\032\037.match.Res"
-    "pondChallengeResponse\"\000\022<\n\025NotifyChallen"
+    "pondChallengeResponse\"\000\022A\n\025NotifyChallen"
     "geInvite\022\031.match.ChallengeInviteS2C\032\006.Em"
-    "pty\"\000\022<\n\025NotifyChallengeResult\022\031.match.C"
-    "hallengeResultS2C\032\006.Empty\"\000\022F\n\013WatchBatt"
-    "le\022\031.match.WatchBattleRequest\032\032.match.Wa"
-    "tchBattleResponse\"\000\022R\n\023RequestBattleTick"
-    "et\022\033.RequestBattleTicketRequest\032\034.Reques"
-    "tBattleTicketResponse\"\000\022a\n\024ListWatchable"
-    "Battles\022\".match.ListWatchableBattlesRequ"
-    "est\032#.match.ListWatchableBattlesResponse"
-    "\"\000\032\005\210\250\303\001\001B\021Z\013match/match\230\324a\025b\006proto3"
+    "pty\"\005\210\231\310\001\002\022A\n\025NotifyChallengeResult\022\031.ma"
+    "tch.ChallengeResultS2C\032\006.Empty\"\005\210\231\310\001\002\022F\n"
+    "\013WatchBattle\022\031.match.WatchBattleRequest\032"
+    "\032.match.WatchBattleResponse\"\000\022R\n\023Request"
+    "BattleTicket\022\033.RequestBattleTicketReques"
+    "t\032\034.RequestBattleTicketResponse\"\000\022a\n\024Lis"
+    "tWatchableBattles\022\".match.ListWatchableB"
+    "attlesRequest\032#.match.ListWatchableBattl"
+    "esResponse\"\000\032\005\210\250\303\001\001B\021Z\013match/match\230\324a\025b\006"
+    "proto3"
 };
 static const ::_pbi::DescriptorTable* PROTOBUF_NONNULL const
     descriptor_table_proto_2fmatch_2fmatch_5fservice_2eproto_deps[5] = {
@@ -3536,7 +3537,7 @@ static ::absl::once_flag descriptor_table_proto_2fmatch_2fmatch_5fservice_2eprot
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fmatch_2fmatch_5fservice_2eproto = {
     false,
     false,
-    3556,
+    3566,
     descriptor_table_protodef_proto_2fmatch_2fmatch_5fservice_2eproto,
     "proto/match/match_service.proto",
     &descriptor_table_proto_2fmatch_2fmatch_5fservice_2eproto_once,

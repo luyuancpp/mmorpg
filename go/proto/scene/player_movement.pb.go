@@ -665,16 +665,16 @@ const file_proto_scene_player_movement_proto_rawDesc = "" +
 	"\ttransform\x18\x02 \x01(\v2\n" +
 	".TransformR\ttransform\x12\x1b\n" +
 	"\tinput_seq\x18\x03 \x01(\rR\binputSeq\x12\x16\n" +
-	"\x06reason\x18\x04 \x01(\rR\x06reason2\xfe\x02\n" +
-	"\x19SceneMovementClientPlayer\x12\"\n" +
-	"\tMoveStart\x12\r.MoveStartC2S\x1a\x06.Empty\x12 \n" +
-	"\bMoveStop\x12\f.MoveStopC2S\x1a\x06.Empty\x12 \n" +
-	"\bMoveSync\x12\f.MoveSyncC2S\x1a\x06.Empty\x12C\n" +
-	"\x0fTeleportRequest\x12\x13.TeleportRequestC2S\x1a\x1b.TeleportRequestC2SResponse\x12$\n" +
-	"\rNotifyMoveAck\x12\v.MoveAckS2C\x1a\x06.Empty\x12(\n" +
-	"\x0fNotifyActorMove\x12\r.ActorMoveS2C\x1a\x06.Empty\x120\n" +
-	"\x13NotifyActorMoveList\x12\x11.ActorMoveListS2C\x1a\x06.Empty\x12&\n" +
-	"\x0eNotifyTeleport\x12\f.TeleportS2C\x1a\x06.Empty\x1a\n" +
+	"\x06reason\x18\x04 \x01(\rR\x06reason2\xaf\x03\n" +
+	"\x19SceneMovementClientPlayer\x12)\n" +
+	"\tMoveStart\x12\r.MoveStartC2S\x1a\x06.Empty\"\x05\x88\x99\xc8\x01\x01\x12'\n" +
+	"\bMoveStop\x12\f.MoveStopC2S\x1a\x06.Empty\"\x05\x88\x99\xc8\x01\x01\x12'\n" +
+	"\bMoveSync\x12\f.MoveSyncC2S\x1a\x06.Empty\"\x05\x88\x99\xc8\x01\x01\x12C\n" +
+	"\x0fTeleportRequest\x12\x13.TeleportRequestC2S\x1a\x1b.TeleportRequestC2SResponse\x12+\n" +
+	"\rNotifyMoveAck\x12\v.MoveAckS2C\x1a\x06.Empty\"\x05\x88\x99\xc8\x01\x02\x12/\n" +
+	"\x0fNotifyActorMove\x12\r.ActorMoveS2C\x1a\x06.Empty\"\x05\x88\x99\xc8\x01\x02\x127\n" +
+	"\x13NotifyActorMoveList\x12\x11.ActorMoveListS2C\x1a\x06.Empty\"\x05\x88\x99\xc8\x01\x02\x12-\n" +
+	"\x0eNotifyTeleport\x12\f.TeleportS2C\x1a\x06.Empty\"\x05\x88\x99\xc8\x01\x02\x1a\n" +
 	"\x80\xa8\xc3\x01\x01\x88\xa8\xc3\x01\x01B\x14\x98\xd4a\x03Z\vproto/scene\x80\x01\x01b\x06proto3"
 
 var (

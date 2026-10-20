@@ -3096,3 +3096,320 @@ func TestIT_ClearHotState_RemovesZoneFromSceneManagerRegistry(t *testing.T) {
 		t.Error("another zone was removed from the registry")
 	}
 }
+
+// ── -route-source=db 的写入点(D1 第 2 批;规格 §6.3、§13.3 第 1–5 条)──────────────────────
+//
+// 要求 MERGE_ZONE_IT_ROUTE_DB_DSN 指向已 `data_service -migrate` 建好路由表的一次性库(见 route_store_integration_test.go),
+// mapping Redis(DB 9)支持 WAITAOF 1 0;缺任一项 SKIP(MERGE_ZONE_IT_REQUIRE=1 时 FAIL)。
+
+// itRouteDBPlayers 是端到端用例的玩家,落在行片 0、1、63(9_000_000_640 % 64 = 0)。
+var itRouteDBPlayers = []uint64{9_000_000_640, 9_000_000_641, 9_000_000_703}
+
+// itRouteDBReset 清掉 db 源端到端用例在路由库里会碰的东西:zone 901 / 902 的围栏与合走标记、home 或落点在 901 / 902 的行
+// (一次性库;收集清单按 home_zone 扫,残留行会混进清单)。开始与结束各清一次。
+func itRouteDBReset(t *testing.T, st *mergeRouteStore) {
+	t.Helper()
+	clean := func() {
+		ctx := context.Background()
+		zones := []any{uint64(itSrcZone), uint64(itDstZone)}
+		for _, q := range []string{
+			"DELETE FROM zone_merge_fence WHERE zone_id IN (?, ?)",
+			"DELETE FROM zone_merged_into WHERE src_zone IN (?, ?)",
+			"DELETE FROM player_route WHERE home_zone IN (?, ?)",
+			"DELETE FROM player_route WHERE storage_id IN (?, ?)",
+		} {
+			if _, err := st.db.ExecContext(ctx, q, zones...); err != nil {
+				t.Fatalf("%s: %v", q, err)
+			}
+		}
+	}
+	clean()
+	t.Cleanup(clean)
+}
+
+// itSeedRouteWatermark 写 mapping:route:watermark(世代 = 路由库 route_meta.generation):db 源开写前的「库与 Redis 成对」核对要它。
+func itSeedRouteWatermark(t *testing.T, st *mergeRouteStore, rdb *redis.Client) {
+	t.Helper()
+	ctx := context.Background()
+	meta, err := readRouteMeta(ctx, st.db)
+	if err != nil {
+		t.Fatalf("read route_meta: %v", err)
+	}
+	raw := fmt.Sprintf(`{"v":%d,"generation":%q,"watermark_ms":1}`, routeWatermarkFormatVersion, meta.Generation)
+	if _, err := decodeRouteWatermark(raw); err != nil {
+		t.Fatalf("route_meta.generation %q does not make a valid watermark: %v", meta.Generation, err)
+	}
+	if err := rdb.Set(ctx, routeWatermarkKey, raw, 0).Err(); err != nil {
+		t.Fatal(err)
+	}
+}
+
+// itRunRouteDB 跑真二进制,走 -route-source=db(itRun 的 -route-source redis 被后面的同名参数覆盖)。
+func itRunRouteDB(t *testing.T, args ...string) (string, int) {
+	t.Helper()
+	return itRun(t, append([]string{"-route-source", routeSourceDB, "-route-db-dsn", os.Getenv(itRouteDBEnv)}, args...)...)
+}
+
+// itRouteCacheKeys 读一名玩家缓存里的三把键(不存在为空串)。
+func itRouteCacheKeys(t *testing.T, rdb *redis.Client, id uint64) (home, plc, rev string) {
+	t.Helper()
+	vals, err := rdb.MGet(context.Background(), playerZoneKey(id), placementKey(id), mapRevKey(id)).Result()
+	if err != nil {
+		t.Fatal(err)
+	}
+	out := make([]string, 3)
+	for i, v := range vals {
+		out[i], _ = v.(string)
+	}
+	return out[0], out[1], out[2]
+}
+
+// TestIT_RouteDB_MergeThenUnmergeEndToEnd:db 源下 pin 合服全流程跑通(库围栏 → 收集读库 → W7 钉落点 → W6 合走标记 → W5 改 home,
+// 每批发布 + WAITAOF),缓存三键与库逐字节一致、maprev = 库 rev;围栏库与镜像都已释放;再撤销(W8 CAS 改回、5'a 删库与镜像)。
+func TestIT_RouteDB_MergeThenUnmergeEndToEnd(t *testing.T) {
+	requireIT(t)
+	itReset(t)
+	st := itRouteStore(t)
+	rdb := itRouteRedis(t)
+	itRouteDBReset(t, st)
+	ctx := context.Background()
+	ids := itRouteDBPlayers
+	itSeedPlayers(t, ids, false)
+	itSeedRoutes(t, st, itSrcZone, ids...)
+	itSeedRouteWatermark(t, st, rdb)
+
+	manifest := filepath.Join(t.TempDir(), "merge.json")
+	out, code := itRunRouteDB(t, "-source-zone", "901", "-target-zone", "902", "-manifest-path", manifest, "-apply",
+		"-expected-src-players", "3", "-db-capability-zones", "none")
+	if code != 0 {
+		t.Fatalf("db-source merge exit=%d\n%s", code, out)
+	}
+	if !strings.Contains(out, "route source: db") || !strings.Contains(out, "3 players with home_zone=901 (player_route") {
+		t.Errorf("the merge did not run on the DB source:\n%s", out)
+	}
+	rows, err := st.ReadRoutes(ctx, ids)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, id := range ids {
+		row := rows[id]
+		if row.HomeZone != itDstZone || row.StorageID != itSrcZone || row.PlacementVersion != 1 {
+			t.Fatalf("player %d row = %+v, want home 902 and placement 901:1", id, row)
+		}
+		home, plc, rev := itRouteCacheKeys(t, rdb, id)
+		if home != "902" || plc != "901:1" || rev != strconv.FormatUint(row.Rev, 10) {
+			t.Fatalf("player %d cache = (%q, %q, %q), want (902, 901:1, %d) — the published copy must equal the DB",
+				id, home, plc, rev, row.Rev)
+		}
+	}
+	if dst, _, found, err := st.ReadMergedInto(ctx, itSrcZone); err != nil || !found || dst != itDstZone {
+		t.Fatalf("zone_merged_into(901) = (%d, %v, %v)", dst, found, err)
+	}
+	if n, _ := rdb.Exists(ctx, mergedIntoKey(itSrcZone)).Result(); n != 1 {
+		t.Error("the merged_into mirror is missing")
+	}
+	for _, z := range []uint32{itSrcZone, itDstZone} {
+		if fs, err := st.ReadFence(ctx, z); err != nil || fs.Active {
+			t.Errorf("zone %d fence after the merge = %+v (%v), want released", z, fs, err)
+		}
+		if n, _ := rdb.Exists(ctx, mergeFenceKey(z)).Result(); n != 0 {
+			t.Errorf("fence mirror %s survived the merge", mergeFenceKey(z))
+		}
+	}
+
+	out, code = itRunRouteDB(t, "-mode", "unmerge", "-manifest-path", manifest, "-apply", "-db-capability-zones", "none")
+	if code != 0 {
+		t.Fatalf("db-source unmerge exit=%d\n%s", code, out)
+	}
+	rows, err = st.ReadRoutes(ctx, ids)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, id := range ids {
+		if home, _, rev := itRouteCacheKeys(t, rdb, id); rows[id].HomeZone != itSrcZone || home != "901" || rev != strconv.FormatUint(rows[id].Rev, 10) {
+			t.Fatalf("player %d after unmerge: row %+v cache home %q rev %q", id, rows[id], home, rev)
+		}
+	}
+	if _, _, found, err := st.ReadMergedInto(ctx, itSrcZone); err != nil || found {
+		t.Fatalf("zone_merged_into(901) after unmerge: found=%v err=%v", found, err)
+	}
+	if n, _ := rdb.Exists(ctx, mergedIntoKey(itSrcZone)).Result(); n != 0 {
+		t.Error("the merged_into mirror survived the unmerge")
+	}
+}
+
+// TestIT_RouteDB_RenewLossRefusesLaterBatches:另一次运行在库里接手围栏 → 本次续期确定失权 → check 失败;之后的批被闸门拦住
+// (一个事务都不开),绕过闸门直接下批事务也被库按 fencing token 拒绝,库与缓存都一字未改。
+func TestIT_RouteDB_RenewLossRefusesLaterBatches(t *testing.T) {
+	requireIT(t)
+	st := itRouteStore(t)
+	rdb := itRouteRedis(t)
+	ctx := context.Background()
+	pub := newRoutePublisher(rdb, itRouteDurability(t))
+	rb := &routeBackend{db: st, pub: pub}
+	itSeedRoutes(t, st, itRouteZoneA, itRoutePlayers...)
+
+	fa, err := acquireRouteFence(ctx, st, pub, routeFenceParams{src: itRouteZoneA, dst: itRouteZoneB, runID: itRouteRunA,
+		purpose: routeFencePurposeMerge, runTimeout: time.Hour})
+	if err != nil {
+		t.Fatalf("acquire: %v", err)
+	}
+	defer fa.release(ctx)
+	if _, err := st.TakeOverFence(ctx, itRouteFence(itRouteRunB, routeFencePurposeMerge), itRouteRunA); err != nil {
+		t.Fatalf("run B takes the fence over: %v", err)
+	}
+	defer func() { _, _ = st.ReleaseFence(ctx, []uint32{itRouteZoneA, itRouteZoneB}, itRouteRunB) }()
+	if err := fa.guard.renewOnce(ctx); !errors.Is(err, errRouteFenceLost) {
+		t.Fatalf("renewal after the take-over = %v, want errRouteFenceLost", err)
+	}
+	if err := fa.check(); !errors.Is(err, errRouteFenceLost) {
+		t.Fatalf("check = %v, want errRouteFenceLost", err)
+	}
+	if _, err := remapPlayerMappingDB(ctx, rb, itRoutePlayers, itRouteZoneA, itRouteZoneB, itRouteRunA, writeGate(fa.check), false); !errors.Is(err, errRouteFenceLost) {
+		t.Fatalf("gated batch = %v, want errRouteFenceLost", err)
+	}
+	if _, err := remapPlayerMappingDB(ctx, rb, itRoutePlayers, itRouteZoneA, itRouteZoneB, itRouteRunA, nil, false); !errors.Is(err, errRouteFenceLost) {
+		t.Fatalf("ungated batch = %v, want the DB fencing token to refuse it", err)
+	}
+	rows, err := st.ReadRoutes(ctx, itRoutePlayers)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, id := range itRoutePlayers {
+		if rows[id].HomeZone != itRouteZoneA || rows[id].Rev != 1 {
+			t.Fatalf("player %d row = %+v: a lost fence must not write", id, rows[id])
+		}
+		if home, _, _ := itRouteCacheKeys(t, rdb, id); home != "" {
+			t.Fatalf("player %d was published (%q) by a run that lost its fence", id, home)
+		}
+	}
+}
+
+// TestIT_RouteDB_BackfillRefusedByTheDBMergedInto:库里记着 zone 已被合走、Redis 镜像丢了(Redis 版回填拦不住)→ db 源回填照样拒绝,
+// 一行都不写;直接下批事务也被库拒绝。
+func TestIT_RouteDB_BackfillRefusedByTheDBMergedInto(t *testing.T) {
+	requireIT(t)
+	st := itRouteStore(t)
+	rdb := itRouteRedis(t)
+	ctx := context.Background()
+	if _, err := st.AcquireFence(ctx, itRouteFence(itRouteRunA, routeFencePurposeMerge)); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := st.MarkMergedInto(ctx, itRouteZoneA, itRouteZoneB, itRouteRunA, itRouteRunA); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := st.ReleaseFence(ctx, []uint32{itRouteZoneA, itRouteZoneB}, itRouteRunA); err != nil {
+		t.Fatal(err)
+	}
+	if err := refuseBackfillOfMergedZone(ctx, rdb, itRouteZoneA); err != nil {
+		t.Fatalf("precondition: the Redis mirror is gone, so the redis-source check passes (%v)", err)
+	}
+	rb := &routeBackend{db: st, pub: newRoutePublisher(rdb, itRouteDurability(t))}
+	if _, err := backfillHomeZoneDB(ctx, rb, sliceSource(itRoutePlayers), itRouteZoneA, false); !errors.Is(err, errRouteZoneMergedAway) {
+		t.Fatalf("db-source backfill = %v, want errRouteZoneMergedAway", err)
+	}
+	if _, err := st.BackfillHomeBatch(ctx, itRouteZoneA, itRoutePlayers); !errors.Is(err, errRouteZoneMergedAway) {
+		t.Fatalf("batch transaction = %v, want errRouteZoneMergedAway", err)
+	}
+	if rows, err := st.ReadRoutes(ctx, itRoutePlayers); err != nil || len(rows) != 0 {
+		t.Fatalf("rows after the refused backfill = %v (%v), want none", rows, err)
+	}
+}
+
+// TestIT_RouteDB_PinZonePagesAcrossShards:W10 每批 ≤ limit 人,键集游标跨行片(0 → 1 → 63)翻完;钉的行发布确认、maprev = 库 rev;
+// 重跑不再钉人,收尾 catch-up 认出缓存已是当前版本。
+func TestIT_RouteDB_PinZonePagesAcrossShards(t *testing.T) {
+	requireIT(t)
+	st := itRouteStore(t)
+	rdb := itRouteRedis(t)
+	ctx := context.Background()
+	itSeedRoutes(t, st, itRouteZoneA, itRoutePlayers...)
+	rb := &routeBackend{db: st, pub: newRoutePublisher(rdb, itRouteDurability(t))}
+	rep, err := pinZonePlacementsDB(ctx, rb, itRouteZoneA, 2, false)
+	if err != nil || rep.Pinned != len(itRoutePlayers) {
+		t.Fatalf("pin = (%s, %v)", rep, err)
+	}
+	rows, err := st.ReadRoutes(ctx, itRoutePlayers)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, id := range itRoutePlayers {
+		row := rows[id]
+		if row.StorageID != itRouteZoneA || row.PlacementVersion != 1 || row.Rev != 2 {
+			t.Fatalf("player %d row = %+v, want placement 981:1 rev 2", id, row)
+		}
+		if home, plc, rev := itRouteCacheKeys(t, rdb, id); home != "981" || plc != "981:1" || rev != "2" {
+			t.Fatalf("player %d cache = (%q, %q, %q)", id, home, plc, rev)
+		}
+	}
+	again, err := pinZonePlacementsDB(ctx, rb, itRouteZoneA, 2, false)
+	if err != nil || again.Pinned != 0 {
+		t.Fatalf("rerun = (%s, %v), want nothing left to pin", again, err)
+	}
+}
+
+// TestIT_RouteDB_FenceMirrorEpochBlocksAStaleTool:B 在库里接手 A 的围栏并以更大的 fence_epoch 写镜像;失权的 A 迟到刷新镜像被脚本拒绝
+// (镜像仍是 B 的),A 因此判失权;A 释放时库里已不是它,镜像不动;B 释放后库与镜像都清掉。旧格式镜像(没有 fence_epoch)拒绝获取并清库。
+func TestIT_RouteDB_FenceMirrorEpochBlocksAStaleTool(t *testing.T) {
+	requireIT(t)
+	st := itRouteStore(t)
+	rdb := itRouteRedis(t)
+	ctx := context.Background()
+	pub := newRoutePublisher(rdb, itRouteDurability(t))
+	params := func(run, takeOver string) routeFenceParams {
+		return routeFenceParams{src: itRouteZoneA, dst: itRouteZoneB, runID: run, purpose: routeFencePurposeMerge,
+			runTimeout: time.Hour, takeOverRunID: takeOver}
+	}
+	key := mergeFenceKey(itRouteZoneA)
+
+	if err := rdb.Set(ctx, key, `{"tool":"tools/merge_zone","run_id":"old-binary"}`, 0).Err(); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := acquireRouteFence(ctx, st, pub, params(itRouteRunA, "")); !errors.Is(err, errRouteFenceMirrorForeign) {
+		t.Fatalf("acquire over an old-format mirror = %v, want errRouteFenceMirrorForeign", err)
+	}
+	if fs, err := st.ReadFence(ctx, itRouteZoneA); err != nil || fs.Active {
+		t.Fatalf("the DB fence must be released again after the mirror refusal: %+v (%v)", fs, err)
+	}
+	if err := rdb.Del(ctx, key).Err(); err != nil {
+		t.Fatal(err)
+	}
+
+	fa, err := acquireRouteFence(ctx, st, pub, params(itRouteRunA, ""))
+	if err != nil {
+		t.Fatalf("A acquires: %v", err)
+	}
+	defer fa.release(ctx)
+	fb, err := acquireRouteFence(ctx, st, pub, params(itRouteRunB, itRouteRunA))
+	if err != nil {
+		t.Fatalf("B takes over: %v", err)
+	}
+	defer fb.release(ctx)
+	if fb.grant.Epoch <= fa.grant.Epoch {
+		t.Fatalf("epochs A=%d B=%d: the take-over must raise fence_epoch", fa.grant.Epoch, fb.grant.Epoch)
+	}
+	if v, _ := rdb.Get(ctx, key).Result(); v != fb.grant.HolderJSON {
+		t.Fatalf("mirror = %q, want B's holder", v)
+	}
+	err = fa.refreshMirrors(ctx, map[uint32]uint64{itRouteZoneA: fa.grant.ExpiresAtMs + 1, itRouteZoneB: fa.grant.ExpiresAtMs + 1})
+	if !errors.Is(err, errRouteFenceMirrorStale) {
+		t.Fatalf("A's late mirror refresh = %v, want errRouteFenceMirrorStale", err)
+	}
+	if v, _ := rdb.Get(ctx, key).Result(); v != fb.grant.HolderJSON {
+		t.Fatalf("A's stale refresh overwrote the mirror: %q", v)
+	}
+	if err := fa.check(); !errors.Is(err, errRouteFenceLost) {
+		t.Fatalf("A check = %v, want errRouteFenceLost", err)
+	}
+	fa.release(ctx)
+	if v, _ := rdb.Get(ctx, key).Result(); v != fb.grant.HolderJSON {
+		t.Fatalf("A's release touched B's mirror: %q", v)
+	}
+	fb.release(ctx)
+	if n, _ := rdb.Exists(ctx, key, mergeFenceKey(itRouteZoneB)).Result(); n != 0 {
+		t.Fatalf("%d fence mirrors left after B released", n)
+	}
+	if fs, err := st.ReadFence(ctx, itRouteZoneA); err != nil || fs.Active {
+		t.Fatalf("DB fence after B released = %+v (%v)", fs, err)
+	}
+}

@@ -877,11 +877,11 @@ const file_proto_scene_player_mystery_merchant_proto_rawDesc = "" +
 	"\x04info\x18\x02 \x01(\v2\x14.MysteryMerchantInfoR\x04info\x12\x1a\n" +
 	"\x03bag\x18\x03 \x01(\v2\b.BagInfoR\x03bag\"A\n" +
 	"\x15MysteryMerchantNotify\x12(\n" +
-	"\x04info\x18\x01 \x01(\v2\x14.MysteryMerchantInfoR\x04info2\xa0\x02\n" +
+	"\x04info\x18\x01 \x01(\v2\x14.MysteryMerchantInfoR\x04info2\xa7\x02\n" +
 	" SceneMysteryMerchantClientPlayer\x12Y\n" +
 	"\x16GetMysteryMerchantInfo\x12\x1e.GetMysteryMerchantInfoRequest\x1a\x1f.GetMysteryMerchantInfoResponse\x12\\\n" +
-	"\x17BuyMysteryMerchantGoods\x12\x1f.BuyMysteryMerchantGoodsRequest\x1a .BuyMysteryMerchantGoodsResponse\x127\n" +
-	"\x15NotifyMysteryMerchant\x12\x16.MysteryMerchantNotify\x1a\x06.Empty\x1a\n" +
+	"\x17BuyMysteryMerchantGoods\x12\x1f.BuyMysteryMerchantGoodsRequest\x1a .BuyMysteryMerchantGoodsResponse\x12>\n" +
+	"\x15NotifyMysteryMerchant\x12\x16.MysteryMerchantNotify\x1a\x06.Empty\"\x05\x88\x99\xc8\x01\x02\x1a\n" +
 	"\x80\xa8\xc3\x01\x01\x88\xa8\xc3\x01\x01B\x14\x98\xd4a\x03Z\vproto/scene\x80\x01\x01b\x06proto3"
 
 var (

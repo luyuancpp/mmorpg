@@ -9,7 +9,7 @@
 #include "rpc/service_metadata/player_state_attribute_sync_service_metadata.h"
 
 #include "frame/manager/frame_time.h"
-#include "network/player_message_utils.h"
+#include "network/client_message_sender.h"
 #include <generated/attribute/actorbaseattributess2c_attribute_sync.h>
 #include <generated/attribute/attributedelta60framess2c_attribute_sync.h>
 #include <generated/attribute/attributedelta30framess2c_attribute_sync.h>

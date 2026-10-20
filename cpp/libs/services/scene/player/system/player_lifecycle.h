@@ -160,6 +160,45 @@ namespace owner_epoch_stats
 	}
 } // namespace owner_epoch_stats
 
+// 混版本持久字段保护:严格提交屏障覆盖世代校验 C3 的结局计数(docs/design/mixed-version-persist-field-protection.md §5.2)。
+// 与 owner_epoch_stats 同一套写法(relaxed atomic、不接 Prometheus;C++ 节点没有 Prometheus 出口),由 core/system/redis.cpp
+// 每 30s 打成一行 [PersistSchema] 日志(有计数才打,级别 WARN)。逐次另有一条带 metric=persist_schema_regression 的日志
+// 供 LogQL 查询(deploy/k8s/README.md「玩家持久 schema 世代」小节)。两项正常都应恒 0:
+//   regression_warned    warn 模式下判定倒退(加载世代 < 屏障记录的世代,或记录值损坏)但照写的次数。非 0 就不能切 enforce。
+//   regression_rejected  enforce 模式下判定倒退、拒写的次数。该玩家本次在线进度不落盘。
+namespace persist_schema_stats
+{
+	inline std::atomic<uint64_t>& RegressionWarned()
+	{
+		static std::atomic<uint64_t> g_counter{0};
+		return g_counter;
+	}
+
+	inline std::atomic<uint64_t>& RegressionRejected()
+	{
+		static std::atomic<uint64_t> g_counter{0};
+		return g_counter;
+	}
+
+	inline void IncRegressionWarned() { RegressionWarned().fetch_add(1, std::memory_order_relaxed); }
+	inline void IncRegressionRejected() { RegressionRejected().fetch_add(1, std::memory_order_relaxed); }
+
+	struct Snapshot
+	{
+		uint64_t regressionWarned;
+		uint64_t regressionRejected;
+
+		bool Any() const { return regressionWarned + regressionRejected > 0; }
+	};
+
+	inline Snapshot Read()
+	{
+		return Snapshot{
+			RegressionWarned().load(std::memory_order_relaxed),
+			RegressionRejected().load(std::memory_order_relaxed)};
+	}
+} // namespace persist_schema_stats
+
 // 归属交接(跨 zone 传送 / 同 zone 跨节点换图)的成败计数。与 owner_epoch_stats 同一套写法
 // (relaxed atomic、不接 Prometheus),由 player_lifecycle.cpp 每 30s 打成一行 [TravelHandoff]
 // 日志:key=value 平铺、数值都是进程启动以来的累计值,有变化才打,级别 INFO。
@@ -971,6 +1010,21 @@ public:
 	// DBTask.owner_epoch 独立拒绝(reentry-barrier §6.3),这里不用管。
 	// 由 MessageAsyncClient::SetSaveRejectedCallback 接线(core/system/redis.cpp)。
 	static void HandlePlayerSaveRejected(Guid player_id, const std::string& redisKey, const std::string& rejectedEpoch);
+
+	// 严格屏障覆盖世代校验 C3 的两种结局(docs/design/mixed-version-persist-field-protection.md §5.2)。
+	// 由 MessageAsyncClient::SetSaveSchemaWarnedCallback / SetSaveSchemaRejectedCallback 接线(core/system/redis.cpp)。
+	//
+	// Warned(脚本返回 2,warn 模式):已照写、照常提交,这里只计数 regression_warned 并打一条 metric 日志。
+	// 在提交钩子之前同步调用,不得重入存盘。
+	//
+	// Rejected(脚本返回 3,enforce 模式):这份数据被判为截断过,Redis 一个键都没动,也不会有落地回调。
+	// 不能复用 HandlePlayerSaveRejected:那条按 epoch 重存会无限循环,或按"已废黜"销毁,语义都不对。按实体状态分派:
+	//   退出中(UnregisterPlayer)        → DestroyDeposedPlayer 不存盘收尾(否则退出永远等不到落地回调);
+	//   交接中且标记未发(requestedAtMs=0) → AbortTravelHandoff 解冻回 tip(SET 还没发,解冻安全);
+	//   其余                            → 保留实体、打 ERROR、本次不落盘;之后每次存盘仍会被比较、仍会被拒。
+	// 计数 regression_rejected。
+	static void HandlePlayerSaveSchemaWarned(Guid player_id, const std::string& redisKey);
+	static void HandlePlayerSaveSchemaRejected(Guid player_id, const std::string& redisKey, const std::string& guardExpected);
 
 	// 存盘连续失败达到告警阈值后的通知。底层仍保留最新 payload 继续重试。
 	//

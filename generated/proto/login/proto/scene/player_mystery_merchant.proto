@@ -144,6 +144,6 @@ service SceneMysteryMerchantClientPlayer
 	// 购买。必须与商人在同一条线、站在 interact_range 以内;战斗中、跨区冻结中拒绝。
 	rpc BuyMysteryMerchantGoods (BuyMysteryMerchantGoodsRequest) returns (BuyMysteryMerchantGoodsResponse);
 	// S2C 推送:出现公告。
-	rpc NotifyMysteryMerchant (MysteryMerchantNotify) returns (Empty);
+	rpc NotifyMysteryMerchant (MysteryMerchantNotify) returns (Empty) { option (OptionClientRpcKind) = CLIENT_RPC_PUSH; }
 	// ── 以下只许在末尾追加:生成的 CallMethod 按 method index 分发 ──
 }

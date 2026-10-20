@@ -1110,6 +1110,125 @@ TEST_F(BagInstanceDataTest, StacksCarryingEquipAreNeverMergedInto)
 	ExpectUnchanged(before, oneCell);
 }
 
+// ── 带未知字段的实例同样不并堆(docs/design/mixed-version-persist-field-protection.md §4.4)──────
+//
+// 新版本给 ItemComp 加的属性(例如绑定、限时),本版本解析时落在未知字段里。并堆只加数量,会把带属性的物品
+// 并进普通堆、或把属性抹成其中一份。判定与 equip 共用 ItemStore::IsIndependentInstance,下面两段各钉一层。
+namespace
+{
+constexpr int kNewerVersionFieldNumber = 412345;
+
+ItemComp MakeInstanceFromNewerVersion(Guid guid, uint32_t configId)
+{
+	ItemComp item = MakeInstance(guid, configId);
+	item.mutable_unknown_fields()->AddVarint(kNewerVersionFieldNumber, 1);
+	return item;
+}
+} // namespace
+
+TEST_F(BagInstanceDataTest, CanStackRefusesAnySideCarryingUnknownFields)
+{
+	const ItemComp plain = MakeInstance(kGuidA, kStackable);
+	const ItemComp fromNewerVersion = MakeInstanceFromNewerVersion(kGuidB, kStackable);
+	EXPECT_TRUE(ItemStore::CanStack(plain, MakeInstance(kGuidC, kStackable)));
+	EXPECT_FALSE(ItemStore::CanStack(plain, fromNewerVersion));
+	EXPECT_FALSE(ItemStore::CanStack(fromNewerVersion, plain));
+	EXPECT_FALSE(ItemStore::CanStack(fromNewerVersion, fromNewerVersion));
+}
+
+// 行为级:入包并堆、整理(早退判据与合并)、reserve 侧的空余估算都不碰这种堆,未知字段原样留在实例上。
+TEST_F(BagInstanceDataTest, StacksCarryingUnknownFieldsAreNeverMergedInto)
+{
+	const auto expectUnknownKept = [](const Bag &bag)
+	{
+		const ItemComp *kept = bag.GetItemCompByGuid(kGuidE);
+		ASSERT_NE(nullptr, kept);
+		EXPECT_EQ(1u, kept->size());
+		const auto &unknown = kept->unknown_fields();
+		ASSERT_EQ(1, unknown.field_count());
+		EXPECT_EQ(kNewerVersionFieldNumber, unknown.field(0).number());
+		EXPECT_EQ(1u, unknown.field(0).varint());
+	};
+
+	Bag bag;
+	bag.RestoreItems({{MakeInstanceFromNewerVersion(kGuidE, kStackable), 0}});
+
+	// ① 入包并堆:进来的数量另开一堆。
+	std::vector<Guid> written;
+	ASSERT_EQ(kSuccess, bag.AddItem(MakeParam(kStackable, 4), &written));
+	ASSERT_EQ(1u, written.size());
+	EXPECT_NE(kGuidE, written.front()) << "incoming units must open a new stack";
+	EXPECT_EQ(2u, bag.OccupiedGridCount());
+	ASSERT_NO_FATAL_FAILURE(expectUnknownKept(bag));
+
+	// ② 整理的早退判据:同 config 两个未满堆,但其中一个是独立实例,没什么可合并的。
+	EXPECT_FALSE(bag.MergeAndCompact(nullptr, CompactPolicy::kMergeOnly));
+	// ③ 整理的合并:布局不满足 (config 升序, size 降序),必然越过早退真的跑一遍合并。
+	std::vector<DestroyedInstance> destroyed;
+	ASSERT_TRUE(bag.MergeAndCompact(&destroyed, CompactPolicy::kMergeAndReorder));
+	EXPECT_TRUE(destroyed.empty()) << "nothing may be merged away";
+	EXPECT_EQ(2u, bag.OccupiedGridCount());
+	EXPECT_EQ(5u, bag.GetTotalItemCount(kStackable));
+	ASSERT_NO_FATAL_FAILURE(expectUnknownKept(bag));
+	EXPECT_TRUE(bag.IsLayerConsistent());
+
+	// ④ reserve 侧的空余估算:唯一一格被这种堆占着,再来 1 个单位也要新格子。
+	Bag oneCell;
+	oneCell.SetProfile(BagProfile::Flat(1));
+	oneCell.RestoreItems({{MakeInstanceFromNewerVersion(kGuidE, kStackable), 0}});
+	const BagState before = Capture(oneCell);
+	ItemCountMap oneMoreUnit;
+	oneMoreUnit[kStackable] = 1;
+	EXPECT_EQ(kBagItemNotStacked, oneCell.CheckSpaceFor(oneMoreUnit));
+	ExpectUnchanged(before, oneCell);
+}
+
+// 传入物品一侧:Bag::AddItems 的规划与提交侧 CanStack 用同一个判定(ItemStore::IsIndependentInstance)。
+// 规划若仍只看 has_equip(),带未知字段、可叠加的传入物品会被算成"并进既有半堆、不用新实例",少铸号;
+// 提交时 CanStack 却不让它并,另开新堆要的号不够 —— Debug 撞"规划与预取身份数不一致"的 assert,Release 整批失败。
+// vector<InitItemParam> 入口本来就是为搬完整实例准备的,这条路迟早会有调用方。
+TEST_F(BagInstanceDataTest, AddItemsPlansIncomingInstancesCarryingUnknownFieldsAsSeparate)
+{
+	Bag bag;
+	bag.RestoreItems({{MakeInstance(kGuidA, kStackable), 0}}); // 同 config 的普通半堆
+
+	InitItemParam fromNewerVersion = MakeParam(kStackable, 3);
+	fromNewerVersion.itemPBComp.mutable_unknown_fields()->AddVarint(kNewerVersionFieldNumber, 5);
+
+	std::vector<GuidVector> written;
+	ASSERT_EQ(kSuccess, bag.AddItems(std::vector<InitItemParam>{fromNewerVersion}, nullptr, &written));
+	ASSERT_EQ(1u, written.size());
+	ASSERT_EQ(1u, written.front().size());
+	const Guid opened = written.front().front();
+	EXPECT_NE(kGuidA, opened) << "带未知字段的传入物品不得并进既有半堆";
+	const ItemComp *halfStack = bag.GetItemCompByGuid(kGuidA);
+	ASSERT_NE(nullptr, halfStack);
+	EXPECT_EQ(1u, halfStack->size()) << "既有半堆不变";
+	const ItemComp *carried = bag.GetItemCompByGuid(opened);
+	ASSERT_NE(nullptr, carried);
+	EXPECT_EQ(3u, carried->size());
+	ASSERT_EQ(1, carried->unknown_fields().field_count()) << "未知字段跟着新实例走";
+	EXPECT_EQ(kNewerVersionFieldNumber, carried->unknown_fields().field(0).number());
+	EXPECT_EQ(5u, carried->unknown_fields().field(0).varint());
+	EXPECT_EQ(2u, bag.OccupiedGridCount());
+	EXPECT_TRUE(bag.IsLayerConsistent());
+
+	// 同批两条同 config、都带未知字段:彼此不并,也不并进上一批开的那堆,建出 2 个实例。
+	InitItemParam another = MakeParam(kStackable, 2);
+	another.itemPBComp.mutable_unknown_fields()->AddVarint(kNewerVersionFieldNumber, 6);
+	written.clear();
+	ASSERT_EQ(kSuccess, bag.AddItems(std::vector<InitItemParam>{fromNewerVersion, another}, nullptr, &written));
+	ASSERT_EQ(2u, written.size());
+	ASSERT_EQ(1u, written[0].size());
+	ASSERT_EQ(1u, written[1].size());
+	EXPECT_NE(written[0].front(), written[1].front());
+	EXPECT_NE(opened, written[0].front());
+	EXPECT_NE(opened, written[1].front());
+	EXPECT_EQ(4u, bag.OccupiedGridCount());
+	EXPECT_EQ(1u + 3u + 3u + 2u, bag.GetTotalItemCount(kStackable));
+	EXPECT_TRUE(bag.IsLayerConsistent());
+}
+
 // ── 具名槽的还原:PutInstance 指定的槽位撑得过存档往返 ──────────────────────
 //
 // 部位 1 有 0 / 1 两个槽。PutInstance 让"落在同部位的哪个槽"成了编排层可指定的东西

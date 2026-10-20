@@ -67,11 +67,12 @@ const (
 	orderingSmokeRounds = 20
 	// 两轮之间的间隔:每个消息号每轮至多 2 次(148 在乱序轮会多发一次收尾),1.1s 保证滑动 1 秒内不超过 3 次。
 	orderingSmokeRoundSpacing = 1100 * time.Millisecond
-	// 等回包的预算:正常是毫秒级;8s 覆盖 gate→路由服 deadline(base_deploy_config.yaml 8000)。
-	orderingSmokeReplyTimeout = 8 * time.Second
+	// 每条请求等回包的预算(gc.Call 的超时,从发出时起算):正常是毫秒级。按不变式 I4(client-request-ordering.md §5.2)
+	// 不得低于 gate→路由服 deadline 8000(base_deploy_config.yaml)+ lane 排队上限 kMaxLaneWait 5000 + 1000:
+	// 流水线的第二条在 lane 里排在第一条完成之后才发出,定时器却从客户端发出时就起算。与大厅 GameClient.RpcTimeoutSec 同为 15s。
+	orderingSmokeReplyTimeout = 15 * time.Second
 	// 首登等进场的预算,与 channel-smoke / team-smoke 同值。
 	orderingSmokeSceneReadyTimeout = 15 * time.Second
-	orderingSmokePollInterval      = 20 * time.Millisecond
 )
 
 // tip id 一律读导表器生成的枚举,不写字面量(AGENTS.md §7 不变量 5)。
@@ -79,12 +80,24 @@ var tipOrderingAlreadyQueued = uint32(tiptable.MatchError_kMatchAlreadyQueued)
 
 var errOrderingSmokeTimeout = errors.New("在等待窗口内没有收到回包")
 
-// orderingSmokeRecord 是一条留底的回包。gate 级拒绝(限流 / 无路由服)走信封 error_message,body 为空;
-// 批次 C 之前,gate 的 gRPC 失败回执是 SendTipToClient(23),不带请求 id,也一并留底。
+// orderingSmokeRecord 是 callAll 认领到的一条回包。gate / 路由服级拒绝(限流 / lane 满 / 排队超时 / 无路由服 /
+// 后端失败)走带请求号的信封 error_message:envelopeTip 非 0,body 为空。
 type orderingSmokeRecord struct {
 	messageId   uint32
 	envelopeTip uint32
 	body        []byte
+}
+
+// orderingSmokeRequest 是 callAll 的一条请求。
+type orderingSmokeRequest struct {
+	messageId uint32
+	request   proto.Message
+}
+
+// orderingSmokeOutcome 是一次 gc.Call 的结局,形状与 done 的参数相同。
+type orderingSmokeOutcome struct {
+	reply *base.MessageContent
+	err   error
 }
 
 type orderingSmokeBot struct {
@@ -94,9 +107,9 @@ type orderingSmokeBot struct {
 	player  *gameobject.Player
 	stats   *metrics.Stats
 
-	// RecvLoop goroutine 写、主流程读,mu 保护。records 只追加。
-	mu      sync.Mutex
-	records []orderingSmokeRecord
+	// mu 保护 abort:主流程在 callAll 里写,RecvLoop goroutine 在 onGateTip 里读。
+	mu    sync.Mutex
+	abort context.CancelCauseFunc // 正在进行的 callAll;nil = 没在等
 }
 
 // RunOrderingSmoke 是 main.go `mode: ordering-smoke` 的入口。任一步失败以退出码 1 结束进程。
@@ -239,16 +252,16 @@ func orderingSmokeLogin(cfg *config.Config, account string, stats *metrics.Stats
 	return bot, nil
 }
 
-// orderingSmokeIsRecorded:本场景按到达顺序留底的消息号。
-func orderingSmokeIsRecorded(messageId uint32) bool {
+// orderingSmokeIsRequestMessage:本场景经 callAll 发出的请求消息号。它们的回包带请求号,由 GameClient 交给 callAll,
+// 不进 onMessage;同号却 id = 0 的消息由 onMessage 丢弃。
+func orderingSmokeIsRequestMessage(messageId uint32) bool {
 	switch messageId {
 	case game.MatchServiceJoinQueueMessageId,
 		game.MatchServiceCancelQueueMessageId,
-		game.MatchServiceGetQueueStatusMessageId,
-		game.SceneClientPlayerCommonSendTipToClientMessageId:
+		game.MatchServiceGetQueueStatusMessageId:
 		return true
-	// O5–O7(ordering_smoke_groups.go)等的帮会 / 好友 / 登录回包。两边的推送(NotifyGuildChanged、NotifyFriendEvent)
-	// 不是任何请求的回包,不留底,照旧交给通用分发。
+	// O5–O7(ordering_smoke_groups.go)发的帮会 / 好友 / 登录请求。两边的推送(NotifyGuildChanged、NotifyFriendEvent)
+	// 不是任何请求的回包,不在此列,照旧交给通用分发。
 	case game.GuildServiceCreateGuildMessageId,
 		game.GuildServiceGetPlayerGuildMessageId,
 		game.GuildServiceLeaveGuildMessageId,
@@ -270,88 +283,133 @@ func orderingSmokeIsRecorded(messageId uint32) bool {
 	return false
 }
 
-// onMessage:先留底,再转发给通用分发(进场推送等靠通用 handler 更新 Player)。
+// onMessage:本场景请求的回包带请求号,由 GameClient 交给 callAll 的 done,不会到这里;同号却 id = 0 的消息
+// 记一行后丢弃,不交给通用分发(信封拒绝会被解成全零响应,看上去像受理)。gate 的 SendTipToClient 先交给 onGateTip;
+// 推送(进场推送等)照旧交给通用分发更新 Player。
 func (b *orderingSmokeBot) onMessage(client *pkg.GameClient, msg *base.MessageContent) {
 	b.stats.MsgRecv()
-	if orderingSmokeIsRecorded(msg.GetMessageId()) {
-		b.mu.Lock()
-		b.records = append(b.records, orderingSmokeRecord{
-			messageId:   msg.GetMessageId(),
-			envelopeTip: msg.GetErrorMessage().GetId(),
-			body:        msg.GetSerializedMessage(),
-		})
-		b.mu.Unlock()
+	if orderingSmokeIsRequestMessage(msg.GetMessageId()) {
+		smokeDropUncorrelatedReply(b.account, msg)
+		return
+	}
+	if msg.GetMessageId() == game.SceneClientPlayerCommonSendTipToClientMessageId {
+		b.onGateTip(msg)
 	}
 	handler.MessageBodyHandler(client, msg)
 }
 
-// mark 返回当前留底条数,作为"从这之后到达的回包"的扫描起点。必须在发请求之前调用。
-func (b *orderingSmokeBot) mark() int {
+// onGateTip 处理 gate 推的 SendTipToClient(RecvLoop goroutine 上调用)。它不带请求号,不再代表「某一条请求失败」:
+// gate / 路由服对一条请求的拒绝与失败,直连与路由两种模式现在都回带请求号的信封错误,由 callAll 按条认领。
+// 只有 kServiceUnavailable 让正在进行的 callAll 立刻失败:gate 转发失败却认领不到请求(既不在路由 lane、也不是直连调用)
+// 时推的是它,对应的请求不会再有回包,不中止就只能等满超时。其余码(如进场链失败的 kEnterSceneFailed)只记一行留作诊断。
+func (b *orderingSmokeBot) onGateTip(msg *base.MessageContent) {
+	tipInfo := &base.TipInfoMessage{}
+	if err := proto.Unmarshal(msg.GetSerializedMessage(), tipInfo); err != nil || tipInfo.GetId() == 0 {
+		return
+	}
+	tip := tipInfo.GetId()
+	zap.L().Warn("[ordering-smoke] Gate pushed SendTipToClient, which carries no request id",
+		zap.String("account", b.account), zap.Uint32("tip", tip))
+	if tip != smokeTipServiceUnavailable {
+		return
+	}
 	b.mu.Lock()
-	defer b.mu.Unlock()
-	return len(b.records)
+	abort := b.abort
+	b.mu.Unlock()
+	if abort != nil {
+		abort(fmt.Errorf("收到 gate 的失败回执 SendTipToClient tip=%d(没有请求 id,分不清是哪一条)", tip))
+	}
 }
 
-// waitReplies 等 since 之后、按 wantIds 顺序各认领一条回包;收到 SendTipToClient(23)直接按失败返回
-// (批次 C 之前 gate 的 gRPC 失败回执不带请求 id,分不清是哪一条)。返回与 wantIds 一一对应的记录。
-func (b *orderingSmokeBot) waitReplies(since int, wantIds ...uint32) ([]orderingSmokeRecord, error) {
-	deadline := time.Now().Add(orderingSmokeReplyTimeout)
-	for {
+// callAll 不等回包依次发出 requests(每条一个 gc.Call,各自分配请求号),再等每一条自己的结局,返回与 requests
+// 一一对应的回包记录。回包只按 MessageContent.id 认领(docs/design/client-rpc-callback.md §6):结果按请求对应,
+// 与到达顺序无关;上一次超时请求的迟到回包由 GameClient 计数后丢弃,不会被认成本次的。
+//
+// 信封拒绝不算 error,记在 record.envelopeTip 里交调用方判断。返回 error 的情形:某条本地没发出(其后的不再发);
+// 任一条在 orderingSmokeReplyTimeout 内没有回包(包裹 errOrderingSmokeTimeout,等齐全部结局后报,列出哪几条收到了);
+// 连接被关 / 换掉;gate 推 SendTipToClient(kServiceUnavailable)(见 onGateTip,立刻返回,不等满超时)。
+//
+// 只能在驱动本机器人的那个 goroutine 上调用,不得在 RecvLoop 上(onMessage、done):回包只能由 RecvLoop 派发,
+// 在那里阻塞等回包就是自锁。同一时刻只服务一次等待:abort 只有一个槽位。
+func (b *orderingSmokeBot) callAll(requests ...orderingSmokeRequest) ([]orderingSmokeRecord, error) {
+	ctx, cancel := context.WithCancelCause(context.Background())
+	defer cancel(nil)
+	b.mu.Lock()
+	b.abort = cancel
+	b.mu.Unlock()
+	defer func() {
 		b.mu.Lock()
-		got := make([]orderingSmokeRecord, len(wantIds))
-		found := make([]bool, len(wantIds))
-		var tipErr error
-		for _, r := range b.records[since:] {
-			if r.messageId == game.SceneClientPlayerCommonSendTipToClientMessageId {
-				tip := &base.TipInfoMessage{}
-				_ = proto.Unmarshal(r.body, tip)
-				tipErr = fmt.Errorf("收到 gate 的失败回执 SendTipToClient tip=%d(没有请求 id,分不清是哪一条)", tip.GetId())
-				continue
-			}
-			for i, id := range wantIds {
-				if !found[i] && r.messageId == id {
-					got[i], found[i] = r, true
-					break
-				}
-			}
-		}
+		b.abort = nil
 		b.mu.Unlock()
-		if tipErr != nil {
-			return nil, tipErr
-		}
-		all := true
-		for _, f := range found {
-			all = all && f
-		}
-		if all {
-			return got, nil
-		}
-		if time.Now().After(deadline) {
-			return nil, fmt.Errorf("%w(等待 message_id=%v,已收到 %v)", errOrderingSmokeTimeout, wantIds, found)
-		}
-		time.Sleep(orderingSmokePollInterval)
-	}
-}
+	}()
 
-func (b *orderingSmokeBot) send(messageId uint32, request proto.Message) error {
-	if err := b.gc.SendRequest(messageId, request); err != nil {
-		return fmt.Errorf("send message_id=%d account=%s: %w", messageId, b.account, err)
+	// 每条一个容量 1 的槽:done 恰好写一次、从不阻塞(它跑在 RecvLoop / 定时器 goroutine 上),
+	// 哪怕本函数已经因 abort 或后一条没发出而提前返回。
+	slots := make([]chan orderingSmokeOutcome, len(requests))
+	for i, r := range requests {
+		slot := make(chan orderingSmokeOutcome, 1)
+		slots[i] = slot
+		b.gc.Call(r.messageId, r.request, orderingSmokeReplyTimeout, func(reply *base.MessageContent, err error) {
+			if reply != nil {
+				b.stats.MsgRecv() // 回包与信封错误不再经过 onMessage,在这里计数
+			}
+			slot <- orderingSmokeOutcome{reply: reply, err: err}
+		})
+		// 本地没发出(已 Close / 无连接)在 Call 返回前同步完成:后面的不再发,也不计发送。
+		select {
+		case outcome := <-slot:
+			if errors.Is(outcome.err, pkg.ErrRPCNotSent) {
+				return nil, fmt.Errorf("send message_id=%d account=%s: %w", r.messageId, b.account, outcome.err)
+			}
+			// 已完成但不是本地未发出(回包 / 信封错误抢先到,或并发的 Close / SwapConn 以 ErrRPCDisconnected 完成):
+			// 放回槽里(done 只写一次,槽此刻是空的,不会阻塞),下面统一归类。
+			slot <- outcome
+		default:
+		}
+		b.stats.MsgSent()
 	}
-	b.stats.MsgSent()
-	return nil
+
+	records := make([]orderingSmokeRecord, len(requests))
+	received := make([]bool, len(requests))
+	timedOut := false
+	for i, r := range requests {
+		var outcome orderingSmokeOutcome
+		select {
+		case outcome = <-slots[i]:
+		case <-ctx.Done():
+			return nil, context.Cause(ctx)
+		}
+		var tipErr *pkg.ServerTipError
+		switch {
+		case outcome.err == nil:
+			records[i] = orderingSmokeRecord{messageId: r.messageId, body: outcome.reply.GetSerializedMessage()}
+		case errors.As(outcome.err, &tipErr):
+			records[i] = orderingSmokeRecord{messageId: r.messageId, envelopeTip: tipErr.Tip}
+		case errors.Is(outcome.err, pkg.ErrRPCTimeout):
+			// 先不报:其余各条的定时器几乎同时起算,等齐后一并说明哪几条收到了。
+			timedOut = true
+			continue
+		default:
+			return nil, fmt.Errorf("message_id=%d account=%s: %w", r.messageId, b.account, outcome.err)
+		}
+		received[i] = true
+	}
+	if timedOut {
+		wantIds := make([]uint32, len(requests))
+		for i, r := range requests {
+			wantIds[i] = r.messageId
+		}
+		return nil, fmt.Errorf("%w(等待 message_id=%v,已收到 %v)", errOrderingSmokeTimeout, wantIds, received)
+	}
+	return records, nil
 }
 
 // pipelineJoinThenCancel 不等回包连发 JoinQueue → CancelQueue(不带票号,模拟「点了匹配马上又点取消」),
-// 等两条回包都到。返回 Join 回包里的票号(乱序时用来收尾)。
+// 等两条各自的回包(按请求号认领)。返回 Join 回包里的票号(乱序时用来收尾)。
 func (b *orderingSmokeBot) pipelineJoinThenCancel() (string, error) {
-	since := b.mark()
-	if err := b.send(game.MatchServiceJoinQueueMessageId, &match.JoinQueueRequest{Mode: match.MatchMode_MATCH_MODE_1V1}); err != nil {
-		return "", err
-	}
-	if err := b.send(game.MatchServiceCancelQueueMessageId, &match.CancelQueueRequest{}); err != nil {
-		return "", err
-	}
-	replies, err := b.waitReplies(since, game.MatchServiceJoinQueueMessageId, game.MatchServiceCancelQueueMessageId)
+	replies, err := b.callAll(
+		orderingSmokeRequest{game.MatchServiceJoinQueueMessageId, &match.JoinQueueRequest{Mode: match.MatchMode_MATCH_MODE_1V1}},
+		orderingSmokeRequest{game.MatchServiceCancelQueueMessageId, &match.CancelQueueRequest{}})
 	if err != nil {
 		return "", err
 	}
@@ -375,11 +433,7 @@ func (b *orderingSmokeBot) pipelineJoinThenCancel() (string, error) {
 
 // queueState 查一次权威队列状态(GetQueueStatus)。
 func (b *orderingSmokeBot) queueState() (match.QueueState, error) {
-	since := b.mark()
-	if err := b.send(game.MatchServiceGetQueueStatusMessageId, &match.GetQueueStatusRequest{}); err != nil {
-		return match.QueueState_QUEUE_STATE_UNSPECIFIED, err
-	}
-	replies, err := b.waitReplies(since, game.MatchServiceGetQueueStatusMessageId)
+	replies, err := b.callAll(orderingSmokeRequest{game.MatchServiceGetQueueStatusMessageId, &match.GetQueueStatusRequest{}})
 	if err != nil {
 		return match.QueueState_QUEUE_STATE_UNSPECIFIED, err
 	}
@@ -395,11 +449,7 @@ func (b *orderingSmokeBot) queueState() (match.QueueState, error) {
 
 // cancelWithTicket 带票号取消(乱序轮的收尾)。
 func (b *orderingSmokeBot) cancelWithTicket(ticket string) error {
-	since := b.mark()
-	if err := b.send(game.MatchServiceCancelQueueMessageId, &match.CancelQueueRequest{QueueTicket: ticket}); err != nil {
-		return err
-	}
-	replies, err := b.waitReplies(since, game.MatchServiceCancelQueueMessageId)
+	replies, err := b.callAll(orderingSmokeRequest{game.MatchServiceCancelQueueMessageId, &match.CancelQueueRequest{QueueTicket: ticket}})
 	if err != nil {
 		return err
 	}

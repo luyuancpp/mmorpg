@@ -1626,7 +1626,8 @@ func (c *KeyOrderedKafkaConsumer) consumeRetryQueue() {
 	s := c.sampleRetryQueues()
 	// 读方就绪闸关着(route_ready_gate.go,D1 第 3 批):本拍不分拣、不认领 —— 认领出来的任务逐条判也只会不可信、再搬回去,
 	// 读还要白耗预算。收据留在原列表,下一拍(retryConsumeInterval)再看。上面两步只是收尾已认领的收据,照做;
-	// 长度采样照做,队列指标不断档。闸为 nil(开关关着)时恒放行。
+	// 长度采样照做,队列指标不断档。闸为 nil(开关关着)时恒放行。闸在本拍中途关上时,两路的认领循环每认领一条之前
+	// 再看一次(opened,不记等待次数),当拍至多多认领正在认领的那一条,而不是把预算用完。
 	if c.retryClaimsPaused() {
 		return
 	}
@@ -1667,6 +1668,9 @@ func (c *KeyOrderedKafkaConsumer) consumeRetryQueueShared(s retryQueueSample) {
 		for ; quota > 0 && budget > 0; quota-- {
 			if c.ctx.Err() != nil || c.pullStopped() {
 				return // 停机撤拉取之后不再认领(Stop 第①步)
+			}
+			if !c.routeGate.opened() {
+				return // 读方就绪闸在本拍中途关上:剩下的收据留在原列表(nil 闸恒放行,开关关着时不走这里)
 			}
 			if !c.consumeOneRetryFrom(src.readyKey) {
 				break

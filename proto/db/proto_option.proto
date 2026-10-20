@@ -67,10 +67,24 @@ extend google.protobuf.ServiceOptions {
 	bool OptionIsClientProtocolService = 400001;
 }
 
+// 客户端协议方法的调用形态(docs/design/client-rpc-callback.md §5.1)。只对标了 OptionIsClientProtocolService 的服务有意义;
+// protogen 据此生成客户端调用桩并做生成期校验(§5.2),gate 的单向判定仍以响应类型恰好是 Empty 为准,两者由校验对齐。
+// 本文件没有 package,枚举值在全局作用域:新增值必须带 CLIENT_RPC_ 前缀,避免与其它无 package 的 proto 撞名。
+enum ClientRpcKind {
+	CLIENT_RPC_REQUEST     = 0;  // 客户端发起,恰好一个回包(默认,不用显式标注)
+	CLIENT_RPC_ONE_WAY     = 1;  // 客户端发起,成功不回包,以 id = 0 发送;只用于 scene TCP 路径上响应恰好是 Empty 的方法
+	CLIENT_RPC_PUSH        = 2;  // 服务端推送,客户端不发起;载荷为方法输入类型
+	CLIENT_RPC_SERVER_ONLY = 3;  // 服务端内部或 gate 代发,客户端不得发起;不生成任何客户端成员
+}
+
 // Method-level options (RPC routing/delivery strategy)
 extend google.protobuf.MethodOptions {
 	// Message delivery priority, to distinguish important vs normal messages
 	MessagePriority OptionMessagePriority = 410000;
+	// 客户端协议方法的调用形态(见上方 ClientRpcKind,docs/design/client-rpc-callback.md §5.1)。
+	// 生成器从描述符原始字节按字段号读取本选项,不依赖外部 protooption 模块的编译绑定(同 OptionPersistFrozen)。
+	// 410001 已核对未被本仓 proto、third_party 描述符扩展与 Java 仓 game-proto 占用(2026-10-19)。
+	ClientRpcKind OptionClientRpcKind = 410001;
 }
 
 // Message-level options (database related)

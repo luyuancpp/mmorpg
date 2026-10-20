@@ -3,6 +3,7 @@ package dataloader
 import (
 	"context"
 	"fmt"
+	"login/internal/config"
 	"login/internal/dispatcher"
 	db_proto "proto/db"
 	"strconv"
@@ -58,9 +59,17 @@ func EnsurePlayerAllDataInRedisAsync(
 	parent := newPlayerAllDataSkeleton(playerId)
 	parentKey := buildParentKey(parent, playerId)
 
+	// C4 的模式:login.go 启动期已拒绝非法取值,这里解析失败只可能是运行期改写了配置,
+	// 按入场失败处理,不猜一个模式继续。
+	regressionMode, modeErr := config.ParsePersistSchemaRegressionMode(config.AppConfig.PersistSchemaRegressionMode)
+	if modeErr != nil {
+		onComplete(modeErr)
+		return
+	}
+
 	// 预检与最终发布都复核归属和 SQL 提交屏障；Redis 故障不能按缓存未命中继续。
 	cacheCheckStart := time.Now()
-	snapshot, snapshotErr := beginParentLoad(ctx, rc, parentKey, playerId)
+	snapshot, snapshotErr := beginParentLoad(ctx, rc, parentKey, playerId, regressionMode)
 	hitLabel := "miss"
 	if snapshotErr == nil && snapshot.raw != "" {
 		hitLabel = "hit"

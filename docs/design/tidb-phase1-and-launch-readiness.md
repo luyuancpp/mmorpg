@@ -53,6 +53,8 @@
 | BR + PITR runbook，备份 CR 在目标环境真实运行，重写 zone 灾难回档（§6） | |
 | MySQL 退役步骤（R1 窗口结束后，§3.4） | |
 
+> （2026-10-20 指向注，原文不删）表中「全部库同批迁到同一个 TiDB 集群」只是针对现网 2 个 zone 量级的结论。[容量模型](./capacity-model-hok-scale.md) §4.5 的口径是：S1 以上 OLTP（zone 库加全局薄层）与审计至少分两套集群，单元化后每个单元一套。两者的冲突尚未拍板，见 §2.7 末尾的注与 §9.3 第 12 条。
+
 ### 1.3 TiDB 能扩什么、扩不了什么
 
 | 维度 | 加机器能不能扩 | 依据 / 本仓对应物 |
@@ -124,6 +126,15 @@
 | staging | 3 | 3 | 2 | 形态同 prod，缩配 | 可能有要保留的数据（§3.0），所以**不做**登录压测。Retain |
 | 压测环境（新增） | 3 | 3 | 2 | 与 staging 同拓扑 | 可以随时清空，开服尖峰压测在这一档做（§3.5、L-14）。`pvReclaimPolicy: Delete` |
 | kind / 本机 | 1 | 1 | 1 | — | PD `replication.max-replicas=1`，否则只有 1 个 TiKV 会长期欠副本。只做功能验证，不出性能结论 |
+
+> （2026-10-20 补注，原文不删）上表 prod 档是现网 2 个 zone 的量级。按 S 档定规格时，用[容量模型](./capacity-model-hok-scale.md) §4.5 的公式，以下数字都是推算 [I]：
+> - **tidb-server 台数**：N ≥ 1 + 1.5·T_peak / max_connections，max_connections 取 2000 时，S1 需 4~8 台，S3 需 28~61 台。
+> - **逻辑写**：S1 为 24~183 MB/s，S3 为 0.24~1.83 GB/s；Raft 写是它的 3 倍，还要再乘 LSM 放大（未测）。
+> - **MVCC 旧版本**：S1 为 44~330 GB，S3 为 0.44~3.3 TB。
+> - **玩家主数据存量**（3 副本）：S1 约 6 TB，S3 约 60 TB。
+> - **TiKV 台数**：待 V5 实测。
+>
+> 「一套集群还是多套」见 §2.7 末尾的注与 §9.3 第 3、12 条。
 
 - **namespace**：TiDB 放在独立 namespace，暂定 `mmorpg-tidb`，**不放** `${InfraNamespace}`。
   - 原因：`infra-down` 走的 `Remove-Infra` 会直接 `delete namespace $InfraNamespace`（`k8s_deploy.ps1:5888-5890`）。TiDB 放在里面，infra-down / all-down 就等于删集群；Retain 策略下 PV 还会变成孤儿。
@@ -244,6 +255,13 @@
    推论：**不能按 zone 分批切**，所有 zone 的 go/db 必须同时切。
 2. **merge_zone 只有一个 `-mysql-dsn`**。它要求在同一实例上同时访问账号表、各 `zone_<N>_db`，以及 guild、trade、friend 三个服务库（`tools/merge_zone/main.go:246-249`）。D1 第 2 批还会给它加一个 `-route-db-dsn`，用来读写全局库的映射表（提案 :303）。
    推论：决策 D9 写的「friend / guild 失败可单独回退留 MySQL」与此冲突。**本文改为同批迁、同批回退**。如果确实有某个服务单独回退，合服就冻结，直到重新合一。
+
+> （2026-10-20 补注：回写容量模型 §4.5，原文不删）
+> - [容量模型](./capacity-model-hok-scale.md) §4.5 / §6 #11 的拓扑建议是：OLTP（zone 库加全局薄层）与审计分开，快照 blob 不进 TiDB、只迁元数据，流水用独立集群或列存；「全部库同批迁到同一个集群」在 S1 以上改成至少两套；单元化后每个单元一套同城三 AZ 集群，全球薄层在单一写入地域一套（与 §8 第 1 条同义）。
+> - 上面两条硬约束只约束 OLTP 侧：go/db 与 merge_zone 要能在同一集群里访问所有 zone 库、落点库、账号表和三个服务库。审计表（`player_snapshot`、`transaction_log`）不在其中，可以另起集群（推断）。
+> - 但拆出审计之前，要先给 data_service 加独立的审计 DSN（推断）。原因：data_service 目前只有一个 `SnapshotMySQL` DSN（`go/data_service/internal/config/config.go` 的 SnapshotMySQLConfig），同时承载 id_segment、player_name、transaction_log、player_snapshot 和 D1 路由表。
+> - merge_zone、回档、data_consistency_check 是否读审计表，未核实。
+> - 两份文档的结论冲突，尚未拍板，列为 §9.3 第 12 条；开服线拍板清单 [decisions_launch_line_20261020.md](../handoff/launch-readiness-20261013/decisions_launch_line_20261020.md) 记为 T-12。§9.2 的分批与文件数估算可能要随之上调（推断）。
 
 | 服务 | 连的库 | 本地配置 | K8s 生成段（`tools/scripts/k8s_deploy.ps1`） | 切法 |
 |---|---|---|---|---|
@@ -751,6 +769,7 @@ Redis `FLUSHALL`、etcd、Kafka offset reset 照旧执行。AGENTS §6.2 第 6 �
 - 没有异地归档（runbook §7 :205）。
 - PITR 的做法是在影子 Pod 里手工跑 `mysqlbinlog`（runbook §4.1）。
 - 同类问题：`redis-ha.yaml:3` 声称 `k8s_deploy.ps1` 会按 `-RedisReplicas 3` apply 它，但脚本里没有这个参数（grep 0 命中）。这一条与 L-06 相关，列入 §9.5。
+  - **（2026-10-19 更正，上一条原文保留）已接入**：`k8s_deploy.ps1 -RedisReplicas`（0 / 1 / 3，0 = 按档位，staging / prod 档缺省 3）取 3 时 apply `redis-ha.yaml` 代替 `redis.yaml`，`redis-ha.yaml` 文件头已改写为接入说明。origin `43284eb0b`（10-16）接入、本地 10-19 补齐；已落码，契约测试未运行、未在 kind 复测，待 Codex 验证。详见 L-06 同日更正。本节 MySQL 备份 CronJob 不在部署脚本里的问题不受影响。
 
 **决策 D8**：runbook 没改完之前不许迁生产。本文把门禁从「runbook 已写」**收紧为**同时满足下面三条：
 - `docs/ops/tidb-br-pitr-runbook.md` 已写；
@@ -841,13 +860,13 @@ Phase 1 的逻辑库仍按 zone 分开，用按库过滤恢复就能表达「只
 | L-03 | P0 | 数据层：完成 Phase 1（本文）。若未完成就开服，按连接总账重配 MySQL 规格和 `max_connections` | 本文 | **是** | 已拍板（B） | §9.1 |
 | L-04 | P0 | go/db 遇到 1040 或拿不到连接时改为延后，不消耗重试预算（上限 3 次）；死信加消费者和告警。问题见 PROGRESS.md:7181，建议见 :7188<br>**（2026-10-14 第 1 批已落码，未编译、未测试）** 延后不耗预算、库级冷却、读任务快速失败、业务池读写超时、延后 / 死信计数与告警已写，设计 [db-task-store-unavailable-deferral.md](db-task-store-unavailable-deferral.md)；死信的查看与重放工具（第 2 批）未做，本条仍未关闭 | go/db | 否，两种后端都要 | 设计评审 | 单测 + 故障注入 |
 | L-05 | P0 | 设计评审「新号首次进场免 DB 读」：建角时写一个空的 `PlayerAllData`，或打新号标记。号段 id 不复用，读到空就是真值。现状是新号首读一定冷读：每张子表一条 Kafka 读任务，玩家同步等待 8s（`entergamelogic.go:380`）<br>**（2026-10-14）已落码，未编译、未验证**：G3 建角后写新号种子，开关 `NewPlayerSeed.Enabled` 默认关，见 `new-player-first-enter-no-cold-read.md` §13 | login、go/db | 否 | 负责人 | 压测首次进场 p99 与 db_task 读量 |
-| L-06 | P0/P1 | 共享 Redis 按用途拆实例：排队与限流 / 会话与锁 / PlayerAllData / mapping。`task:result` 改为按 login 实例分频道。压测后再定 `maxmemory` 和 limits，保持 noeviction（`redis.yaml:137-143` 现在只设了 requests；`redis-ha.yaml:9-13` 说明为什么上不了 Cluster）。注意：`redis-ha.yaml` 的 apply 路径在部署脚本里不存在（§6.1）<br>**（2026-10-18 B0-3 第 1 批已落码，未编译、未验证）** `task:result` 按 login 实例分频道：DBTask 加 `reply_instance = 10`，频道名与校验收口到 `go/shared/taskresult`，login 一条 SUBSCRIBE 同订旧频道与本实例频道并给读任务填回复目标，新增 `login_task_result_delivery_total{outcome}`。先用 PUBLISH，SPUBLISH 随上 Redis Cluster 那批切。go/db 按回复目标定向发布是第 2 批，未开工；在它上线前 go/db 仍只发旧频道，投递量不变。规格与验证命令见 `docs/handoff/launch-readiness-20261013/spec_B0-3_task_result_channel.md` 文末「第 1 批交付」，进度见 PROGRESS 对应条目。拆实例部分不受影响<br>**（2026-10-18 B0-3 第 2 批已落码，未编译、未验证）** go/db 按 reply_instance 定向发布：只发一次，空或不合法回落旧频道。另有 `db_task_result_notify_total{target,result}` 与独立告警 `deploy/k8s/task-result-notify-alerts.yaml`。上一句「第 2 批未开工」同此更正，见规格文末「第 2 批交付」。 | deploy、go/login | 否 | 负责人 | 压测出 Redis 主的 CPU / ops / 内存曲线 |
+| L-06 | P0/P1 | 共享 Redis 按用途拆实例：排队与限流 / 会话与锁 / PlayerAllData / mapping。`task:result` 改为按 login 实例分频道。压测后再定 `maxmemory` 和 limits，保持 noeviction（`redis.yaml:137-143` 现在只设了 requests；`redis-ha.yaml:9-13` 说明为什么上不了 Cluster）。注意：`redis-ha.yaml` 的 apply 路径在部署脚本里不存在（§6.1）<br>**（2026-10-18 B0-3 第 1 批已落码，未编译、未验证）** `task:result` 按 login 实例分频道：DBTask 加 `reply_instance = 10`，频道名与校验收口到 `go/shared/taskresult`，login 一条 SUBSCRIBE 同订旧频道与本实例频道并给读任务填回复目标，新增 `login_task_result_delivery_total{outcome}`。先用 PUBLISH，SPUBLISH 随上 Redis Cluster 那批切。go/db 按回复目标定向发布是第 2 批，未开工；在它上线前 go/db 仍只发旧频道，投递量不变。规格与验证命令见 `docs/handoff/launch-readiness-20261013/spec_B0-3_task_result_channel.md` 文末「第 1 批交付」，进度见 PROGRESS 对应条目。拆实例部分不受影响<br>**（2026-10-18 B0-3 第 2 批已落码，未编译、未验证）** go/db 按 reply_instance 定向发布：只发一次，空或不合法回落旧频道。另有 `db_task_result_notify_total{target,result}` 与独立告警 `deploy/k8s/task-result-notify-alerts.yaml`。上一句「第 2 批未开工」同此更正，见规格文末「第 2 批交付」。<br>**（2026-10-19 更正，上文「`redis-ha.yaml` 的 apply 路径在部署脚本里不存在」原文保留；已落码，契约测试未运行、未在 kind 复测，待 Codex 验证）** 核心实例的高可用形态已接入：`k8s_deploy.ps1 -RedisReplicas`（0 / 1 / 3，0 = 按档位，staging / prod 档缺省 3）取 3 时 apply `redis-ha.yaml`（1 主 2 从 + 哨兵 + 2 个 haproxy 入口代理）代替 `redis.yaml`；origin `43284eb0b`（10-16）接入，本地 10-19 补齐。同一个拓扑决定 WAITAOF 副本份数：data-service 的 `RouteStore.WaitAOFNumReplicas` 与 go/db 的 `ServerConfig.RedisClient.WaitAOFNumReplicas` 两处 ConfigMap 都按拓扑渲染（单实例 0、高可用 1，服务 yaml 里保持 0 供本机单实例用）；zone-up 没给 `-RedisReplicas` 时跟随线上 `sts/redis`，显式值与线上不同即拒绝。单实例切到高可用后要对每个 zone 重跑 zone-up 并滚动 db / data-service。高可用只解决可用性，核心仍是全服单主，本行的按用途拆实例与 maxmemory 不受影响。见 `no-single-node-horizontal-scaling-20261001.md` §5.1<br>**（2026-10-19 指向注，本行原文保留）** 本行开头的四路拆法照字面做不了：「会话与锁」不能单独成实例，「PlayerAllData」只有子表缓存和读结果能挪走，以 [shared-redis-split-by-purpose.md](shared-redis-split-by-purpose.md) §1 第 2 条为准。拆分设计已按 2000 万口径修订（该稿 2026-10-18 修订稿 §16~§26，纯设计，各批未落码）：控制面按 zone 组分实例（§18）、redis-cache 必做（§19）、核心走负责人 2026-10-17 拍板的「单元化 + 单元内 Redis Cluster 按 `{player_id}` 分片」（§20），新分批见 §24，核心 `maxmemory` 与冷卸载见 §23（S1 前拍板），待拍板项见 §25.2 | deploy、go/login | 否 | 负责人 | 压测出 Redis 主的 CPU / ops / 内存曲线 |
 | L-07 | P1 | 全球审计管道：消息上限、积压保留、容量预算，见表后展开<br>**（2026-10-14）积压与观测部分已落码，未编译、未验证**：G2a 按分区并发消费、批量落库旋钮（默认逐条）、lag 探针（含单分区最大积压）与告警 `deploy/k8s/data-service-audit-alerts.yaml`；消息上限与容量预算未做 | data_service、C++ snapshot、Kafka 部署 | 部分：落库耗时要在 TiDB 上重测 | 回档负责人 | consumer lag 指标；`snapshot_system` 发送失败计数 |
 | L-08 | P1 | 连接预算：<br>• 导出 `sql.DBStats`，label 只用池类别；<br>• TiDB 每实例 `max_connections` 按 §2.4 取值（TiDB 默认不限，1040 只在设了上限时出现）；<br>• 拆开全局库池与访客池两个旋钮<br>**（2026-10-13 G2b，已落码，未编译、未测试）** 第 1、3 条已落码，第 2 条随 Phase 1：<br>• 池指标 `mmorpg_sql_pool_*{sql_client,pool}`（`go/shared/sqlpoolstats`，label 只有池类别）：go/db 在 K8s 上打开 `:9160`，data_service 在 `:9260`；告警文件 `deploy/k8s/mysql-connection-alerts.yaml`；friend / trade / Java gateway 没有导出；<br>• 额外落点库池拆成 `Placement.ZoneStore*` / `NonZoneStore*` 两组旋钮，另加 `ExtraStoreConnMaxIdleSeconds`（默认 60），旧键 `ExtraStore*` 只作回落；<br>• MySQL 档的 `max_connections` 500 → 1800，滚动余量按 R=2，总账写成部署脚本里的可执行函数并有契约测试（§2.4 状态注）；数值均待压测确认 | go/db、data_service | 是，上限参数随后端变 | — | DBStats 指标 |
 | L-09 | P1 | go/db 消费组按 zone 命名。K8s 上全部 zone 共用 `db_rpc_consumer_group`（`k8s_deploy.ps1:3437`），任何一个 db Pod 变动，全球存盘一起停几秒；它还让单 zone 的 offset reset 变成全服操作（§6.3 第 7 步）。要同步改 merge_zone 等依赖方（no-single-node §3.4）。go/db 不配 HPA；首日冻结 db 和 data_service 的发布与扩缩容<br>**（2026-10-16）已落码，未编译、未测试，待 Codex 验证**（[db-consumer-group-per-zone.md](db-consumer-group-per-zone.md)）：组名 `db_rpc_consumer_group_z<ZoneId>`；go/db 入组前的交接闸（`go/db/internal/kafka/group_handoff.go`）；`k8s_deploy.ps1 -DbConsumerGroup keep\|zone\|legacy` 按线上 ConfigMap 与 Kafka 位点渲染最终形状（只写 `GroupID`）或交接形状（`ConsumerGroup` + `GroupHandoffFrom`）；`kafka_offset_reset.ps1 -FinalizeHandoff` 收尾；回档 Step 5 只重置本 zone 组、Step 6 落到 zone 组（§6.3 第 7 步更正行）；merge_zone P3 只认唯一权威组。切组要逐 zone 执行，没切的 zone 仍在共享组上，本条在全部 zone 切完并收尾之前不关闭；「kind 上删一个 Pod，只影响本 zone」尚未验证 | go/db、脚本 | 否 | 负责人 | kind 上删一个 Pod，只影响本 zone |
 | L-10 | P1 | 号段开服档 Step=1000（§5.2 第 4 条） | login 配置 | 否 | 只改配置 | `login_create_player_stage_seconds` |
 | L-11 | P1 | 名字表：<br>• `PRIMARY(name_norm)` 预切并设 `merge_option=deny`；<br>• `uk_player_name_owner` 的单调尾部与 §5.3 联动；<br>• 名字池 Z×2×20（`data_service.yaml:109-110`）计入连接总账；<br>• ODKU 行数语义在 TiDB 上回归（§4 #12） | data_service、runbook | 是 | — | PD 热点数据；`name` 阶段耗时 |
-| L-12 | P1 | D1 的 `player_route` 同步事务：<br>• 压测定分片数 N 和 WAITAOF 的实际延迟；<br>• 评估去掉单调的 `idx_route_updated`；<br>• 4 条索引的尾部见 §5.1<br>**（2026-10-12 G1a）**`idx_route_updated` 已改为 `(route_shard, updated_at_ms, player_id)` 并保留（1b 增量推送要用，以后补索引要另写收敛代码）；四条索引都带 16 片前缀，TiDB 上由 `route_tool tidb-prepare` 预切（§5.2 第 7 条）<br>**（2026-10-14）**分片数 N 已按容量模型 §4.1 定为 64（建表前），不再由压测定；WAITAOF 延迟仍待压测<br>**（2026-10-15 更正，上一条不删）**上一条说的「定为 64（建表前）」是 `player_route` 的**行片** `RouteRowShards`（建表后不可改）。本行原文「压测定分片数 N」写于 G1a 引入行片之前，N 指的是 `zone_merge_fence` 的**围栏分片数**（D1 提案 :376、:409、§12 :1067），二者不是一个参数。围栏分片数是配置 `RouteStore.FenceShards`，按容量模型 §4.1「连带修正」取 MySQL 档 16、TiDB 档 64，任何时候可改；建角压测的 `register` p99 与 1213 / 1205 计数仍用来复核它够不够。TiDB 档 64 目前没有配置载体，见 §5.1 单行热点一行的更正 | data_service（D1） | 部分 | D1 负责人 | 建角压测：`register` 阶段 p99、1213 / 1205 计数；PD 热点里路由表（`player_route`、`zone_merge_fence`）的 Region |
+| L-12 | P1 | D1 的 `player_route` 同步事务：<br>• 压测定分片数 N 和 WAITAOF 的实际延迟；<br>• 评估去掉单调的 `idx_route_updated`；<br>• 4 条索引的尾部见 §5.1<br>**（2026-10-12 G1a）**`idx_route_updated` 已改为 `(route_shard, updated_at_ms, player_id)` 并保留（1b 增量推送要用，以后补索引要另写收敛代码）；四条索引都带 16 片前缀，TiDB 上由 `route_tool tidb-prepare` 预切（§5.2 第 7 条）<br>**（2026-10-14）**分片数 N 已按容量模型 §4.1 定为 64（建表前），不再由压测定；WAITAOF 延迟仍待压测<br>**（2026-10-15 更正，上一条不删）**上一条说的「定为 64（建表前）」是 `player_route` 的**行片** `RouteRowShards`（建表后不可改）。本行原文「压测定分片数 N」写于 G1a 引入行片之前，N 指的是 `zone_merge_fence` 的**围栏分片数**（D1 提案 :376、:409、§12 :1067），二者不是一个参数。围栏分片数是配置 `RouteStore.FenceShards`，按容量模型 §4.1「连带修正」取 MySQL 档 16、TiDB 档 64，任何时候可改；建角压测的 `register` p99 与 1213 / 1205 计数仍用来复核它够不够。TiDB 档 64 目前没有配置载体，见 §5.1 单行热点一行的更正<br>**（2026-10-19）** K8s 上 WAITAOF 副本份数按共享 Redis 形态渲染（单实例 0、高可用 1；data-service 与 go/db 两处同源，见 L-06 同日更正；已落码，未运行，待 Codex 验证）。staging / prod 档缺省是高可用，WAITAOF 要等 1 个副本的 AOF 落盘确认，所以 WAITAOF 的实际延迟要在高可用形态上压测，单实例上测出的数字不能代替 | data_service（D1） | 部分 | D1 负责人 | 建角压测：`register` 阶段 p99、1213 / 1205 计数；PD 热点里路由表（`player_route`、`zone_merge_fence`）的 Region |
 | L-13 | P1 | TiDB 写热点：`tidb_scatter_region=global`；发号方案（§5.3）；存量 id 审计 | 本文 §5 | 是 | 负责人 | PD 热点数据 / Key Visualizer |
 | L-14 | P1 | 交给 Codex 跑一轮开服尖峰压测，按 AGENTS §6 全流程，**环境是 §3.5 的专用压测环境**，同环境先跑 MySQL 基线。<br>场景：多 zone，0–30s 尖峰，同时覆盖建角、首次进场、周期存盘、进退场快照。用 `stress_summarize` 出对比表；没有这张表，不下容量结论 | Codex | 是 | 负责人点名环境（§9.3 #13） | 对比表 |
 | L-15 | P2 | 首日按地域多开 zone，按负载分流选区。db_task 的 10 个分区不能在线扩，要扩只能走离线换代（`db-task-kafka-partition-contract.md`） | 运营、部署 | 否 | 负责人 | — |
@@ -966,6 +985,7 @@ Phase 1 的逻辑库仍按 zone 分开，用按库过滤恢复就能表达「只
 10. friend 推荐查询：全局绑定 / SQL 提示 / 方言 SQL，至少落一个。
 11. 备份存储（S3 / OSS / MinIO）、保留期、PITR 的 RPO 目标。
 12. 确认「全部库同批迁、同批回退」，并修订决策 D9 里「单独回退」的表述（理由见 §2.7）。
+    - （2026-10-20 补，原文不删）容量模型 §4.5 / §6 #11 主张 S1 以上 OLTP 与审计至少分两套集群、单元化后每单元一套，与本条的「同一集群」冲突，拍板时一并定，见 §2.7 末尾的注。第 3 条的 prod 规格同样改按 §4.5 的公式定（§2.2 表后注）。
 13. **点名 Codex 可以操作的环境**（AGENTS §9）：专用压测环境、kind、staging，逐个授权。
 14. Phase 1 超过 30 个文件的改动面授权。
 15. **安装 helm、TiDB Operator、CRD、tiup 的授权**（AGENTS §10.2）。
@@ -1042,6 +1062,7 @@ Phase 1 的逻辑库仍按 zone 分开，用按库过滤恢复就能表达「只
 - **`deploy/k8s/AGENTS.md`**：`:24`、`:82`「redis / kafka / mysql 单副本 Deployment」。
 - **AGENTS.md §6.2 第 6 条**：清空数据库的 TiDB 口径，由负责人修改。
 - **`redis-ha.yaml:3`**：说明它的 apply 路径在部署脚本里不存在。
+  - **（2026-10-19 更正，上一条原文保留）不再需要**：apply 路径已接入（`-RedisReplicas`，见 §6.1、L-06 同日更正），`redis-ha.yaml` 文件头已改写为接入说明；已落码，未运行，待 Codex 验证。
 - **Java `PARITY.md`**：登记本文的状态（§10）。
 
 ---

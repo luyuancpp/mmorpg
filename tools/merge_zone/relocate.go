@@ -268,10 +268,13 @@ func decideFreeze(p relocatePlayer, rd placementRead, s, t uint32, runID string,
 		return freezeDecision{kind: freezeSkip, reason: fmt.Sprintf(format, args...)}
 	}
 	switch {
+	// 文案两种映射来源都对:home 在 db 源来自 player_route.home_zone,在 redis 源来自 player:zone(读法各自实现,值串同口径)。
 	case rd.HomeErr != nil:
-		return skip("player:zone is malformed (%q): %v", rd.HomeRaw, rd.HomeErr)
+		return skip("home zone is malformed (%q; player_route.home_zone with -route-source=db, player:zone with -route-source=redis): %v",
+			rd.HomeRaw, rd.HomeErr)
 	case !rd.HomePresent:
-		return skip("no player:zone — the db_task topic of the in-flight writes cannot be derived")
+		return skip("no home zone (player_route.home_zone with -route-source=db, player:zone with -route-source=redis) — " +
+			"the db_task topic of the in-flight writes cannot be derived")
 	case !capZones[rd.Home]:
 		return skip("home zone %d was not capability-checked (-db-capability-zones)", rd.Home)
 	}
@@ -351,9 +354,12 @@ func (e *relocateEngine) freeze(ctx context.Context, idx []int) error {
 			p.Version, p.HomeZone = d.version, d.home
 			e.stamp(p, relocFrozen, "")
 		case placementCASFenced:
-			e.stamp(p, relocSkipped, fmt.Sprintf("home zone %d is being merged (%s present at freeze time)", d.home, mergeFenceKey(d.home)))
+			// 文案两种映射来源都对:db 源看全局库 zone_merge_fence,redis 源看 merge:in_progress 键(cas 实现各自判)。
+			e.stamp(p, relocSkipped, fmt.Sprintf("home zone %d is being merged (its merge fence was active at freeze time: "+
+				"zone_merge_fence with -route-source=db, %s with -route-source=redis)", d.home, mergeFenceKey(d.home)))
 		case placementCASHomeChanged:
-			e.stamp(p, relocSkipped, fmt.Sprintf("player:zone changed between the read and the freeze (now %q)", res.CurrentHome))
+			e.stamp(p, relocSkipped, fmt.Sprintf("home zone changed between the read and the freeze (now %q; "+
+				"player_route.home_zone with -route-source=db, player:zone with -route-source=redis)", res.CurrentHome))
 		default:
 			e.stamp(p, relocSkipped, fmt.Sprintf("placement record changed between the read and the freeze (now %q)", res.CurrentRecord))
 		}

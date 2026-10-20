@@ -153,13 +153,16 @@ go vet ./...
 go build ./...
 go test ./internal/kafka/... ./internal/metrics/... ./internal/logic/pkg/proto_sql/... ./internal/migrate/... -count=1 -v
 # race 需要 CGO 与 gcc;Windows 上没有就到 Linux / WSL 跑,并写明平台
-go test -race ./internal/kafka/ -run 'TestOrderingLease|TestConsumeClaim_Shutdown|TestStop_|TestRunDBOp|TestRetryConsumer_StopsClaiming|TestClaimAcker_Untrack' -count=1
+go test -race ./internal/kafka/ -run 'TestOrderingLease|TestConsumeClaim_Shutdown|TestStop_|TestRunDBOp|TestRetryConsumer_StopsClaiming|TestClaimAcker_Untrack|RouteReadyGate|TestWaitRejoinBackoff_|TestConsumeClaim_DurabilityFailureArmsRejoinBackoff' -count=1
+# 就绪闸时序用例另跑 20 遍排除调度抖动(2026-10-20 补)
+go test ./internal/kafka/ -run 'RouteReadyGate' -count=20
 ```
 
 重点用例（都必须出现在 `-v` 输出里并 PASS）：
 - 租约：`ordering_lease_test.go` 的 `TestOrderingLease_*`（续租成功 / 退避恢复 / 用尽失租并取消 SQL / 截止时间 / 易主立即失租 / 停 worker 不取消 SQL / 过截止不发 SQL / abandoned 不删锁 / 释放三种结果 / 释放取消 SQL ctx / 已取消 ctx 的核锁不算失租）、`TestLeaseMarginCoversLockWaits`、`TestOrderingLeaseTiming_Backoff`。
 - runDBOp：`run_db_op_test.go` 的 `TestRunDBOp_*` 与 `TestHandleTask_LeaseLostAfterSQLDoesNotPublishCache`（在改动前的代码上应为红）。
 - 停机：`consumer_shutdown_test.go` 的 `TestConsumeClaim_Shutdown*`、`TestConsumeClaim_RebalanceStillCancelsClaim`、`TestClaimAcker_Untrack*`、`TestStop_*`、`TestRetryConsumer_StopsClaimingAfterPullStop`。
+- 停机 × 读方就绪闸（D1 第 3 批，2026-10-20 补）：`consumer_shutdown_test.go` 的闸全是 nil，覆盖不到 `Placement.RequireRouteReady=true`。开关打开时的停机与退避看 `route_ready_gate_shutdown_test.go` 全部 9 条：`TestStop_RouteReadyGate*` 3 条、`TestConsumeClaim_RouteReadyGate*` 5 条、`TestConsumeRetryQueue_RouteReadyGateClosedOwnerModeForwardsNothing`。另有 `route_ready_gate_test.go` 的 `TestConsumeClaim_RouteReadyGate*` 2 条、`TestConsumeRetryQueue_RouteReadyGateClosedClaimsNothing`，以及 `rejoin_backoff_test.go` 全部。`-v` 输出里都必须出现并 PASS；出现「Stop did not return within 2s」即判失败。
 - 打点：`instrumentation_test.go`（`TestRedisSteps_*`、`TestOrderingGuardCounter_Outcomes`、`TestSubShardBatchSizeObserved`、`TestStages_QueueWaitTaskTotalKafkaE2E`）；`metrics_test.go` 的 `TestRedisStepNamesPinned`、`TestRedisStepNamesMatchStressSummarize`、`TestRedisPoolCollector_*`、`TestPipelineCountersPrecreated`。
 - Lua：`applied_epoch_lua_test.go` 的 `TestMarkAppliedEpoch_*`（存量 2^53 写入 2^53+1 必须推进，旧脚本为红）。
 - §2.3 的 11 条见 §2.3 表。
@@ -511,7 +514,7 @@ go run ./cmd/verifier -config etc/db.yaml -mode strict -wait 180s
 | 9.5.3 | **第 3 步 金丝雀**（建议在该 zone 完成 S2 切组之后）：前提是第 2 步完成、该 zone 每个 Pod 都暴露 `db_retry_routing_mode`；冻结其它 zone 发布；`kubectl -n <zone ns> set env deploy/db DB_RETRY_ROUTING=owner` + `rollout status`。只被动观察：各 Pod `db_owned_partitions` 之和 = PartitionCnt；executed_nonowner = 0；forwarded 之后共享收件箱 1–2 拍归零；requeued_revoked 只在再平衡时刻出现；`db_ordering_lock_busy_total{origin="retry"}` 接近 0；死信速率不高于基线；没有 "processing receipt not found"。需要积压时只对合成测试玩家持带 TTL 的排序锁。回滚：`set env deploy/db DB_RETRY_ROUTING-`（触发滚动），shared 实例自动排空 p* | 待做 |
 | 9.5.4 | **第 4 步 全量**：`db.yaml` 改 `RetryRouting: owner` → zone-up → `kubectl -n <zone ns> rollout restart deploy/db` + `rollout status`（只改 ConfigMap 不会滚动）→ 去掉金丝雀 env（`set env … DB_RETRY_ROUTING-`）。验收：每个 Pod 启动日志 `retry routing: mode=owner source=config`；24 小时内 executed_nonowner = 0、死信速率不升、p* 无长期积压、lag = 0、DbDurableEnqueueNotConfirmed 不响。回滚：改回 shared → zone-up → rollout restart + status | 待做 |
 | 9.5.5 | **回滚到 S1 之前的镜像**：按发布清单 §4 那一条：切 shared 并等滚动完成 → 三项人工核对 → `go run ./cmd/retry_requeue -f etc/db.yaml -zone <z> -check` 退出码 0（3 / 4 / 5 / 1 的处置见该条）→ 认准 revision 回滚；已经回滚的立即搬回（DbRetryPartitionedStranded 约 10 分钟内响） | 每次回滚 |
-| 9.5.6 | redis-ha 接入时把 `WaitAOFNumReplicas` 改 1 并 `rollout restart deploy/db`，重新评估 WAITAOF 的可用性代价（副本不可用时确认恒不足，见 9.6） | 视 redis-ha 进度 |
+| 9.5.6 | redis-ha 接入时 go/db 的 `WaitAOFNumReplicas`：**不再手改 db.yaml**（保持 0，给本机 compose 单实例；写 1 本机 go/db 的启动探针等不到副本而拒启）。取值来源：K8s 上 db ConfigMap 的这一项由 `tools/scripts/k8s_deploy.ps1` 按共享 Redis 形态渲染（`Get-MappingRedisTopology` → `Get-RouteStoreWaitAOFNumReplicas`，与 data-service 的 `RouteStore.WaitAOFNumReplicas` 同一个函数：单实例 0、redis-ha 1；形态由 `-RedisReplicas` 与档位决定，zone 写路径没给参数时跟随线上 `statefulset/redis` 副本数），`WaitAOFNumLocal` / `WaitAOFTimeoutMs` 仍镜像 db.yaml。剩下的运维动作：单实例切到 redis-ha 后对每个 zone 重跑 zone-up，再 `rollout restart deploy/db`（data-service 同样要 `rollout restart deploy/data-service`；只改 ConfigMap 不会滚动），并重新评估 WAITAOF 的可用性代价（副本不可用时确认恒不足，见 9.6；切主后几秒内新主没有从时确认失败、刚启动的 go/db 被探针拒启） | 部署侧已落码（2026-10-19，未运行，待 Codex 验证）；切换演练与可用性复评视 redis-ha 进度 |
 | 9.5.7 | Java 仓 `PARITY.md` 登记「不适用」（Java 没有 Kafka 存盘链与重试队列），由主会话统一登记 | 待做 |
 
 ### 9.6 状态
