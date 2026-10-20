@@ -6,6 +6,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"unicode/utf8"
 
@@ -99,6 +100,9 @@ type Config struct {
 	// MerchantSmoke 是 "merchant-smoke" 模式的子开关(见 MerchantSmokeConfig / mystery_merchant_smoke_scenario.go)。
 	// 整块可缺省。
 	MerchantSmoke MerchantSmokeConfig `yaml:"merchant_smoke"`
+
+	// MallArrivalSmoke 是 "mall-arrival-smoke" 模式的子开关(见 MallArrivalSmokeConfig / mall_arrival_smoke_scenario.go)。
+	MallArrivalSmoke MallArrivalSmokeConfig `yaml:"mall_arrival_smoke"`
 
 	// EquipForgeTopup 是 "equip-forge-topup" 模式的子开关(见 EquipForgeTopupConfig / equip_forge_topup_scenario.go)。
 	EquipForgeTopup EquipForgeTopupConfig `yaml:"equip_forge_topup"`
@@ -792,6 +796,66 @@ func (c *MerchantSmokeConfig) validate() error {
 	return nil
 }
 
+// MallArrivalSmokeConfig 是官方商品到账冒烟(下单 → 模拟付款 → 发货进背包 → 订单已发货)的参数。
+// 模拟付款器只许连本机商城、只许 mock- 渠道,所以 run_mode 必须显式写 dev;sku_id 没有缺省值,
+// 必须与 etc/mall_arrival_smoke_seed.sql 种进商城库的那条一致,item_config_id / count_per_unit 是它的发放内容
+// (SKU 应答里不带发放内容,冒烟按这里的期望核对背包增量)。
+type MallArrivalSmokeConfig struct {
+	RunMode               string `yaml:"run_mode"`                // 必须写 "dev"
+	MallURL               string `yaml:"mall_url"`                // 商城地址,只允许 http://<回环IP>:<端口>;缺省 http://127.0.0.1:18120
+	PaymentSubject        string `yaml:"payment_subject"`         // 与商城 COMMERCE_PAYMENT_SUBJECT 一致;缺省 payment-adapter
+	Channel               string `yaml:"channel"`                 // 模拟渠道名,必须 mock- 前缀;缺省 mock-dev
+	SkuID                 uint64 `yaml:"sku_id"`                  // 官方商品号,必填
+	Quantity              uint32 `yaml:"quantity"`                // 下单份数 1..16;缺省 1
+	ItemConfigID          uint32 `yaml:"item_config_id"`          // 期望发放的物品;缺省 10(可叠加的回血药)
+	CountPerUnit          uint32 `yaml:"count_per_unit"`          // 期望每份发放数量;缺省 2
+	DeliverTimeoutSeconds int    `yaml:"deliver_timeout_seconds"` // 付款后等「已发货」的上限 10..600;缺省 90
+	PollIntervalMs        int    `yaml:"poll_interval_ms"`        // 轮询订单状态的间隔 1100..10000;缺省 1500(gate 对未登记限流的消息默认 3 次/秒)
+}
+
+// Validate 必须在任何网络操作之前完成(由 Config.validate 在 Load 里调用)。
+func (c *MallArrivalSmokeConfig) Validate() error {
+	if c.RunMode != "dev" {
+		return fmt.Errorf("run_mode must be explicitly \"dev\": the mock payer records payments and is only allowed against a local dev mall")
+	}
+	endpoint, err := url.Parse(c.MallURL)
+	if err != nil || endpoint.Scheme != "http" || endpoint.User != nil || endpoint.RawQuery != "" || endpoint.Fragment != "" ||
+		(endpoint.Path != "" && endpoint.Path != "/") || endpoint.Port() == "" {
+		return fmt.Errorf("mall_url must be http://<loopback IP>:<port> without credentials, path or query")
+	}
+	if ip := net.ParseIP(endpoint.Hostname()); ip == nil || !ip.IsLoopback() {
+		return fmt.Errorf("mall_url must use a literal loopback IP (dev only)")
+	}
+	if !mallSubjectPattern.MatchString(c.PaymentSubject) {
+		return fmt.Errorf("payment_subject must match [a-z][a-z0-9-]{2,63} (same as the mall's COMMERCE_PAYMENT_SUBJECT)")
+	}
+	if !strings.HasPrefix(c.Channel, "mock-") || !mallChannelPattern.MatchString(c.Channel) {
+		return fmt.Errorf("channel must start with mock- and match [a-z][a-z0-9_-]{1,31} (got %q)", c.Channel)
+	}
+	if c.SkuID == 0 {
+		return fmt.Errorf("sku_id must be set (the one seeded by etc/mall_arrival_smoke_seed.sql)")
+	}
+	if c.Quantity == 0 || c.Quantity > 16 {
+		return fmt.Errorf("quantity must be in 1..16 (got %d)", c.Quantity)
+	}
+	if c.ItemConfigID == 0 || c.CountPerUnit == 0 || uint64(c.Quantity)*uint64(c.CountPerUnit) > 4096 {
+		return fmt.Errorf("item_config_id must be nonzero and quantity × count_per_unit must be in 1..4096 (trade caps one delivery at 4096)")
+	}
+	if c.DeliverTimeoutSeconds < 10 || c.DeliverTimeoutSeconds > 600 {
+		return fmt.Errorf("deliver_timeout_seconds must be in 10..600 (got %d)", c.DeliverTimeoutSeconds)
+	}
+	if c.PollIntervalMs < 1100 || c.PollIntervalMs > 10000 {
+		return fmt.Errorf("poll_interval_ms must be in 1100..10000 (got %d)", c.PollIntervalMs)
+	}
+	return nil
+}
+
+// 与 java/mall_game HmacAuthentication / CommerceApi.Payment 的校验正则一致。
+var (
+	mallSubjectPattern = regexp.MustCompile(`^[a-z][a-z0-9-]{2,63}$`)
+	mallChannelPattern = regexp.MustCompile(`^[a-z][a-z0-9_-]{1,31}$`)
+)
+
 type LLMConfig struct {
 	Enabled  bool   `yaml:"enabled"`
 	Endpoint string `yaml:"endpoint"` // e.g. "http://localhost:11434/v1/chat/completions"
@@ -825,6 +889,10 @@ func Load(path string) (*Config, error) {
 		ChannelSmoke: ChannelSmokeConfig{ArriveTimeoutSeconds: 20, MaxCooldownWaitSeconds: 60},
 		// merchant-smoke 缺省:切到商人所在线时等到达 20s。
 		MerchantSmoke: MerchantSmokeConfig{ArriveTimeoutSeconds: 20},
+		// mall-arrival-smoke 缺省:本机商城 18120、默认 payment subject、mock-dev 渠道、1 份 × 2 瓶回血药(config 10);
+		// run_mode 与 sku_id 刻意没有缺省值,必须在 yaml 里显式写出。
+		MallArrivalSmoke: MallArrivalSmokeConfig{MallURL: "http://127.0.0.1:18120", PaymentSubject: "payment-adapter",
+			Channel: "mock-dev", Quantity: 1, ItemConfigID: 10, CountPerUnit: 2, DeliverTimeoutSeconds: 90, PollIntervalMs: 1500},
 		// equip-forge-topup 缺省补给 equip-forge-smoke 用的那个账号。
 		EquipForgeTopup: EquipForgeTopupConfig{Account: "robot_9104"},
 	}
@@ -867,10 +935,10 @@ func (c *Config) validate() error {
 		return fmt.Errorf("account_fmt must be set")
 	}
 	switch c.Mode {
-	case "", "stress", "login-test", "data-stress", "currency-crash-snapshot", "battle-smoke", "attribute-smoke", "pet-smoke", "equip-smoke", "equip-forge-smoke", "chat-smoke", "guild-smoke", "trade-smoke", "team-smoke", "team-follow-smoke", "team-backfill-smoke", "travel-smoke", "friend-smoke", "mail-smoke", "rank-smoke", "channel-smoke", "ordering-smoke", "sync-smoke", "features-smoke", "merchant-smoke", "equip-forge-topup", "asset-arrival-prepare":
+	case "", "stress", "login-test", "data-stress", "currency-crash-snapshot", "battle-smoke", "attribute-smoke", "pet-smoke", "equip-smoke", "equip-forge-smoke", "chat-smoke", "guild-smoke", "trade-smoke", "team-smoke", "team-follow-smoke", "team-backfill-smoke", "travel-smoke", "friend-smoke", "mail-smoke", "rank-smoke", "channel-smoke", "ordering-smoke", "sync-smoke", "features-smoke", "merchant-smoke", "mall-arrival-smoke", "equip-forge-topup", "asset-arrival-prepare":
 		// valid
 	default:
-		return fmt.Errorf("unknown mode %q (expected stress, login-test, data-stress, currency-crash-snapshot, battle-smoke, attribute-smoke, pet-smoke, equip-smoke, equip-forge-smoke, chat-smoke, guild-smoke, trade-smoke, team-smoke, team-follow-smoke, team-backfill-smoke, travel-smoke, friend-smoke, mail-smoke, rank-smoke, channel-smoke, ordering-smoke, sync-smoke, features-smoke, merchant-smoke, equip-forge-topup, or asset-arrival-prepare)", c.Mode)
+		return fmt.Errorf("unknown mode %q (expected stress, login-test, data-stress, currency-crash-snapshot, battle-smoke, attribute-smoke, pet-smoke, equip-smoke, equip-forge-smoke, chat-smoke, guild-smoke, trade-smoke, team-smoke, team-follow-smoke, team-backfill-smoke, travel-smoke, friend-smoke, mail-smoke, rank-smoke, channel-smoke, ordering-smoke, sync-smoke, features-smoke, merchant-smoke, mall-arrival-smoke, equip-forge-topup, or asset-arrival-prepare)", c.Mode)
 	}
 	if c.Mode == "asset-arrival-prepare" {
 		return c.ValidateAssetArrivalPrepare()
@@ -941,6 +1009,14 @@ func (c *Config) validate() error {
 	if c.Mode == "merchant-smoke" {
 		if err := c.MerchantSmoke.validate(); err != nil {
 			return fmt.Errorf("merchant_smoke: %w", err)
+		}
+	}
+	if c.Mode == "mall-arrival-smoke" {
+		if c.RobotCount != 1 || (c.AuthType != "" && c.AuthType != "password") || c.UseHttpLogin || c.LLM.Enabled {
+			return fmt.Errorf("mall_arrival_smoke: single robot with password auth only, no HTTP login, no AI")
+		}
+		if err := c.MallArrivalSmoke.Validate(); err != nil {
+			return fmt.Errorf("mall_arrival_smoke: %w", err)
 		}
 	}
 	if c.Mode == "equip-forge-topup" {

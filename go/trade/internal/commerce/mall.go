@@ -69,6 +69,17 @@ func NewMall(base, gateway, delivery string, e *Engine) (*Mall, error) {
 	}
 	return &Mall{Base: strings.TrimRight(base, "/"), GatewaySecret: gateway, DeliverySecret: delivery, HTTP: &http.Client{Timeout: 2500 * time.Millisecond, CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }}, Engine: e}, nil
 }
+// commerceSignature 是商城 X-Commerce-Signature 的 v1 算法：正文 SHA-256 小写 hex，与其余七项按 \n 拼成规范串，
+// HMAC-SHA256 后取小写 hex。必须与 java/mall_game HmacAuthentication.sign、robot commerceSign 逐字一致；
+// 三边用同一组输入核对同一个期望值（mall_signature_test.go），改任一边都要同批改三边，否则线上表现是全部 401。
+// path 是商城看到的原始 URI（含部署前缀），body 是实际发出的字节。
+func commerceSignature(secret, role, subject, timestamp, nonce, method, path string, body []byte) string {
+	hash := sha256.Sum256(body)
+	mac := hmac.New(sha256.New, []byte(secret))
+	_, _ = mac.Write([]byte(strings.Join([]string{"v1", role, subject, timestamp, nonce, method, path, hex.EncodeToString(hash[:])}, "\n")))
+	return hex.EncodeToString(mac.Sum(nil))
+}
+
 func (m *Mall) call(ctx context.Context, role, subject, method, path string, input, output any) error {
 	var body []byte
 	var err error
@@ -88,18 +99,15 @@ func (m *Mall) call(ctx context.Context, role, subject, method, path string, inp
 		return err
 	}
 	nonce := hex.EncodeToString(nonceRaw)
-	hash := sha256.Sum256(body)
 	secret := m.GatewaySecret
 	if role == "delivery" {
 		secret = m.DeliverySecret
 	}
-	mac := hmac.New(sha256.New, []byte(secret))
-	_, _ = mac.Write([]byte(strings.Join([]string{"v1", role, subject, stamp, nonce, method, path, hex.EncodeToString(hash[:])}, "\n")))
 	request.Header.Set("Content-Type", "application/json")
 	request.Header.Set("X-Commerce-Subject", subject)
 	request.Header.Set("X-Commerce-Timestamp", stamp)
 	request.Header.Set("X-Commerce-Nonce", nonce)
-	request.Header.Set("X-Commerce-Signature", hex.EncodeToString(mac.Sum(nil)))
+	request.Header.Set("X-Commerce-Signature", commerceSignature(secret, role, subject, stamp, nonce, method, path, body))
 	response, err := m.HTTP.Do(request)
 	if err != nil {
 		return err
