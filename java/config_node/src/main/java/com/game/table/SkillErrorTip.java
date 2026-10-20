@@ -63,6 +63,34 @@ public final class SkillErrorTip extends com.google.protobuf.GeneratedFile {
      * <code>kSkillCannotBeCastStunRestriction = 7006;</code>
      */
     kSkillCannotBeCastStunRestriction(7006),
+    /**
+     * <code>kSkillNotInClass = 7007;</code>
+     */
+    kSkillNotInClass(7007),
+    /**
+     * <code>kSkillRankChanged = 7008;</code>
+     */
+    kSkillRankChanged(7008),
+    /**
+     * <code>kSkillUpgradeCountInvalid = 7009;</code>
+     */
+    kSkillUpgradeCountInvalid(7009),
+    /**
+     * <code>kSkillLevelNotEnough = 7010;</code>
+     */
+    kSkillLevelNotEnough(7010),
+    /**
+     * <code>kSkillMaxRankReached = 7011;</code>
+     */
+    kSkillMaxRankReached(7011),
+    /**
+     * <code>kSkillGoldNotEnough = 7012;</code>
+     */
+    kSkillGoldNotEnough(7012),
+    /**
+     * <code>kSkillUpgradeBusy = 7013;</code>
+     */
+    kSkillUpgradeBusy(7013),
     UNRECOGNIZED(-1),
     ;
 
@@ -107,6 +135,34 @@ public final class SkillErrorTip extends com.google.protobuf.GeneratedFile {
      * <code>kSkillCannotBeCastStunRestriction = 7006;</code>
      */
     public static final int kSkillCannotBeCastStunRestriction_VALUE = 7006;
+    /**
+     * <code>kSkillNotInClass = 7007;</code>
+     */
+    public static final int kSkillNotInClass_VALUE = 7007;
+    /**
+     * <code>kSkillRankChanged = 7008;</code>
+     */
+    public static final int kSkillRankChanged_VALUE = 7008;
+    /**
+     * <code>kSkillUpgradeCountInvalid = 7009;</code>
+     */
+    public static final int kSkillUpgradeCountInvalid_VALUE = 7009;
+    /**
+     * <code>kSkillLevelNotEnough = 7010;</code>
+     */
+    public static final int kSkillLevelNotEnough_VALUE = 7010;
+    /**
+     * <code>kSkillMaxRankReached = 7011;</code>
+     */
+    public static final int kSkillMaxRankReached_VALUE = 7011;
+    /**
+     * <code>kSkillGoldNotEnough = 7012;</code>
+     */
+    public static final int kSkillGoldNotEnough_VALUE = 7012;
+    /**
+     * <code>kSkillUpgradeBusy = 7013;</code>
+     */
+    public static final int kSkillUpgradeBusy_VALUE = 7013;
 
 
     public final int getNumber() {
@@ -141,6 +197,13 @@ public final class SkillErrorTip extends com.google.protobuf.GeneratedFile {
         case 7004: return kSkillCannotBeCastInCurrentState;
         case 7005: return kSkillCannotBeCastSilenceRestriction;
         case 7006: return kSkillCannotBeCastStunRestriction;
+        case 7007: return kSkillNotInClass;
+        case 7008: return kSkillRankChanged;
+        case 7009: return kSkillUpgradeCountInvalid;
+        case 7010: return kSkillLevelNotEnough;
+        case 7011: return kSkillMaxRankReached;
+        case 7012: return kSkillGoldNotEnough;
+        case 7013: return kSkillUpgradeBusy;
         default: return null;
       }
     }
@@ -206,15 +269,20 @@ public final class SkillErrorTip extends com.google.protobuf.GeneratedFile {
       descriptor;
   static {
     java.lang.String[] descriptorData = {
-      "\n\025skill_error_tip.proto*\212\002\n\013skill_error\022" +
+      "\n\025skill_error_tip.proto*\301\003\n\013skill_error\022" +
       "\022\n\016kSkill_errorOK\020\000\022\032\n\025kSkillUnInterrupt" +
       "ible\020\3306\022\032\n\025kSkillInvalidTargetId\020\3316\022\030\n\023k" +
       "SkillInvalidTarget\020\3326\022\033\n\026kSkillCooldownN" +
       "otReady\020\3336\022%\n kSkillCannotBeCastInCurren" +
       "tState\020\3346\022)\n$kSkillCannotBeCastSilenceRe" +
       "striction\020\3356\022&\n!kSkillCannotBeCastStunRe" +
-      "striction\020\3366B$\n\016com.game.tableZ\022generate" +
-      "d/pb/tableb\006proto3"
+      "striction\020\3366\022\025\n\020kSkillNotInClass\020\3376\022\026\n\021k" +
+      "SkillRankChanged\020\3406\022\036\n\031kSkillUpgradeCoun" +
+      "tInvalid\020\3416\022\031\n\024kSkillLevelNotEnough\020\3426\022\031" +
+      "\n\024kSkillMaxRankReached\020\3436\022\030\n\023kSkillGoldN" +
+      "otEnough\020\3446\022\026\n\021kSkillUpgradeBusy\020\3456B$\n\016c" +
+      "om.game.tableZ\022generated/pb/tableb\006proto" +
+      "3"
     };
     descriptor = com.google.protobuf.Descriptors.FileDescriptor
       .internalBuildGeneratedFileFrom(descriptorData,

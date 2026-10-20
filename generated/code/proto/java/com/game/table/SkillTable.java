@@ -32,6 +32,11 @@ private static final long serialVersionUID = 0L;
     targetingMode_ = emptyIntList();
     effect_ = emptyIntList();
     damage_ = "";
+    name_ = "";
+    description_ = "";
+    iconKey_ = "";
+    category_ = "";
+    passiveStat_ = "";
     requiredItem_ = java.util.Collections.emptyList();
     requiredResource_ = java.util.Collections.emptyList();
     costResource_ = java.util.Collections.emptyList();
@@ -382,6 +387,377 @@ private static final long serialVersionUID = 0L;
     return attackMultiplier_;
   }
 
+  public static final int CLASS_ID_FIELD_NUMBER = 26;
+  private int classId_ = 0;
+  /**
+   * <code>uint32 class_id = 26;</code>
+   * @return The classId.
+   */
+  @java.lang.Override
+  public int getClassId() {
+    return classId_;
+  }
+
+  public static final int NAME_FIELD_NUMBER = 27;
+  @SuppressWarnings("serial")
+  private volatile java.lang.Object name_ = "";
+  /**
+   * <code>string name = 27;</code>
+   * @return The name.
+   */
+  @java.lang.Override
+  public java.lang.String getName() {
+    java.lang.Object ref = name_;
+    if (ref instanceof java.lang.String) {
+      return (java.lang.String) ref;
+    } else {
+      com.google.protobuf.ByteString bs = 
+          (com.google.protobuf.ByteString) ref;
+      java.lang.String s = bs.toStringUtf8();
+      name_ = s;
+      return s;
+    }
+  }
+  /**
+   * <code>string name = 27;</code>
+   * @return The bytes for name.
+   */
+  @java.lang.Override
+  public com.google.protobuf.ByteString
+      getNameBytes() {
+    java.lang.Object ref = name_;
+    if (ref instanceof java.lang.String) {
+      com.google.protobuf.ByteString b = 
+          com.google.protobuf.ByteString.copyFromUtf8(
+              (java.lang.String) ref);
+      name_ = b;
+      return b;
+    } else {
+      return (com.google.protobuf.ByteString) ref;
+    }
+  }
+
+  public static final int DESCRIPTION_FIELD_NUMBER = 28;
+  @SuppressWarnings("serial")
+  private volatile java.lang.Object description_ = "";
+  /**
+   * <code>string description = 28;</code>
+   * @return The description.
+   */
+  @java.lang.Override
+  public java.lang.String getDescription() {
+    java.lang.Object ref = description_;
+    if (ref instanceof java.lang.String) {
+      return (java.lang.String) ref;
+    } else {
+      com.google.protobuf.ByteString bs = 
+          (com.google.protobuf.ByteString) ref;
+      java.lang.String s = bs.toStringUtf8();
+      description_ = s;
+      return s;
+    }
+  }
+  /**
+   * <code>string description = 28;</code>
+   * @return The bytes for description.
+   */
+  @java.lang.Override
+  public com.google.protobuf.ByteString
+      getDescriptionBytes() {
+    java.lang.Object ref = description_;
+    if (ref instanceof java.lang.String) {
+      com.google.protobuf.ByteString b = 
+          com.google.protobuf.ByteString.copyFromUtf8(
+              (java.lang.String) ref);
+      description_ = b;
+      return b;
+    } else {
+      return (com.google.protobuf.ByteString) ref;
+    }
+  }
+
+  public static final int ICON_KEY_FIELD_NUMBER = 29;
+  @SuppressWarnings("serial")
+  private volatile java.lang.Object iconKey_ = "";
+  /**
+   * <code>string icon_key = 29;</code>
+   * @return The iconKey.
+   */
+  @java.lang.Override
+  public java.lang.String getIconKey() {
+    java.lang.Object ref = iconKey_;
+    if (ref instanceof java.lang.String) {
+      return (java.lang.String) ref;
+    } else {
+      com.google.protobuf.ByteString bs = 
+          (com.google.protobuf.ByteString) ref;
+      java.lang.String s = bs.toStringUtf8();
+      iconKey_ = s;
+      return s;
+    }
+  }
+  /**
+   * <code>string icon_key = 29;</code>
+   * @return The bytes for iconKey.
+   */
+  @java.lang.Override
+  public com.google.protobuf.ByteString
+      getIconKeyBytes() {
+    java.lang.Object ref = iconKey_;
+    if (ref instanceof java.lang.String) {
+      com.google.protobuf.ByteString b = 
+          com.google.protobuf.ByteString.copyFromUtf8(
+              (java.lang.String) ref);
+      iconKey_ = b;
+      return b;
+    } else {
+      return (com.google.protobuf.ByteString) ref;
+    }
+  }
+
+  public static final int CATEGORY_FIELD_NUMBER = 30;
+  @SuppressWarnings("serial")
+  private volatile java.lang.Object category_ = "";
+  /**
+   * <code>string category = 30;</code>
+   * @return The category.
+   */
+  @java.lang.Override
+  public java.lang.String getCategory() {
+    java.lang.Object ref = category_;
+    if (ref instanceof java.lang.String) {
+      return (java.lang.String) ref;
+    } else {
+      com.google.protobuf.ByteString bs = 
+          (com.google.protobuf.ByteString) ref;
+      java.lang.String s = bs.toStringUtf8();
+      category_ = s;
+      return s;
+    }
+  }
+  /**
+   * <code>string category = 30;</code>
+   * @return The bytes for category.
+   */
+  @java.lang.Override
+  public com.google.protobuf.ByteString
+      getCategoryBytes() {
+    java.lang.Object ref = category_;
+    if (ref instanceof java.lang.String) {
+      com.google.protobuf.ByteString b = 
+          com.google.protobuf.ByteString.copyFromUtf8(
+              (java.lang.String) ref);
+      category_ = b;
+      return b;
+    } else {
+      return (com.google.protobuf.ByteString) ref;
+    }
+  }
+
+  public static final int UNLOCK_LEVEL_FIELD_NUMBER = 31;
+  private int unlockLevel_ = 0;
+  /**
+   * <code>uint32 unlock_level = 31;</code>
+   * @return The unlockLevel.
+   */
+  @java.lang.Override
+  public int getUnlockLevel() {
+    return unlockLevel_;
+  }
+
+  public static final int MAX_RANK_FIELD_NUMBER = 32;
+  private int maxRank_ = 0;
+  /**
+   * <code>uint32 max_rank = 32;</code>
+   * @return The maxRank.
+   */
+  @java.lang.Override
+  public int getMaxRank() {
+    return maxRank_;
+  }
+
+  public static final int TARGET_TEAM_FIELD_NUMBER = 33;
+  private int targetTeam_ = 0;
+  /**
+   * <code>uint32 target_team = 33;</code>
+   * @return The targetTeam.
+   */
+  @java.lang.Override
+  public int getTargetTeam() {
+    return targetTeam_;
+  }
+
+  public static final int MAX_TARGETS_FIELD_NUMBER = 34;
+  private int maxTargets_ = 0;
+  /**
+   * <code>uint32 max_targets = 34;</code>
+   * @return The maxTargets.
+   */
+  @java.lang.Override
+  public int getMaxTargets() {
+    return maxTargets_;
+  }
+
+  public static final int MANA_PERCENT_FIELD_NUMBER = 35;
+  private double manaPercent_ = 0D;
+  /**
+   * <code>double mana_percent = 35;</code>
+   * @return The manaPercent.
+   */
+  @java.lang.Override
+  public double getManaPercent() {
+    return manaPercent_;
+  }
+
+  public static final int COOLDOWN_ROUNDS_FIELD_NUMBER = 36;
+  private int cooldownRounds_ = 0;
+  /**
+   * <code>uint32 cooldown_rounds = 36;</code>
+   * @return The cooldownRounds.
+   */
+  @java.lang.Override
+  public int getCooldownRounds() {
+    return cooldownRounds_;
+  }
+
+  public static final int HEAL_MULTIPLIER_FIELD_NUMBER = 37;
+  private double healMultiplier_ = 0D;
+  /**
+   * <code>double heal_multiplier = 37;</code>
+   * @return The healMultiplier.
+   */
+  @java.lang.Override
+  public double getHealMultiplier() {
+    return healMultiplier_;
+  }
+
+  public static final int HEAL_PER_LEVEL_FIELD_NUMBER = 38;
+  private double healPerLevel_ = 0D;
+  /**
+   * <code>double heal_per_level = 38;</code>
+   * @return The healPerLevel.
+   */
+  @java.lang.Override
+  public double getHealPerLevel() {
+    return healPerLevel_;
+  }
+
+  public static final int EXECUTE_HEAL_THRESHOLD_FIELD_NUMBER = 39;
+  private double executeHealThreshold_ = 0D;
+  /**
+   * <code>double execute_heal_threshold = 39;</code>
+   * @return The executeHealThreshold.
+   */
+  @java.lang.Override
+  public double getExecuteHealThreshold() {
+    return executeHealThreshold_;
+  }
+
+  public static final int EXECUTE_HEAL_BONUS_FIELD_NUMBER = 40;
+  private double executeHealBonus_ = 0D;
+  /**
+   * <code>double execute_heal_bonus = 40;</code>
+   * @return The executeHealBonus.
+   */
+  @java.lang.Override
+  public double getExecuteHealBonus() {
+    return executeHealBonus_;
+  }
+
+  public static final int RESTORE_MANA_PERCENT_FIELD_NUMBER = 41;
+  private double restoreManaPercent_ = 0D;
+  /**
+   * <code>double restore_mana_percent = 41;</code>
+   * @return The restoreManaPercent.
+   */
+  @java.lang.Override
+  public double getRestoreManaPercent() {
+    return restoreManaPercent_;
+  }
+
+  public static final int DISPEL_COUNT_FIELD_NUMBER = 42;
+  private int dispelCount_ = 0;
+  /**
+   * <code>uint32 dispel_count = 42;</code>
+   * @return The dispelCount.
+   */
+  @java.lang.Override
+  public int getDispelCount() {
+    return dispelCount_;
+  }
+
+  public static final int INITIATIVE_FIELD_NUMBER = 43;
+  private int initiative_ = 0;
+  /**
+   * <code>int32 initiative = 43;</code>
+   * @return The initiative.
+   */
+  @java.lang.Override
+  public int getInitiative() {
+    return initiative_;
+  }
+
+  public static final int PASSIVE_STAT_FIELD_NUMBER = 44;
+  @SuppressWarnings("serial")
+  private volatile java.lang.Object passiveStat_ = "";
+  /**
+   * <code>string passive_stat = 44;</code>
+   * @return The passiveStat.
+   */
+  @java.lang.Override
+  public java.lang.String getPassiveStat() {
+    java.lang.Object ref = passiveStat_;
+    if (ref instanceof java.lang.String) {
+      return (java.lang.String) ref;
+    } else {
+      com.google.protobuf.ByteString bs = 
+          (com.google.protobuf.ByteString) ref;
+      java.lang.String s = bs.toStringUtf8();
+      passiveStat_ = s;
+      return s;
+    }
+  }
+  /**
+   * <code>string passive_stat = 44;</code>
+   * @return The bytes for passiveStat.
+   */
+  @java.lang.Override
+  public com.google.protobuf.ByteString
+      getPassiveStatBytes() {
+    java.lang.Object ref = passiveStat_;
+    if (ref instanceof java.lang.String) {
+      com.google.protobuf.ByteString b = 
+          com.google.protobuf.ByteString.copyFromUtf8(
+              (java.lang.String) ref);
+      passiveStat_ = b;
+      return b;
+    } else {
+      return (com.google.protobuf.ByteString) ref;
+    }
+  }
+
+  public static final int PASSIVE_PERCENT_FIELD_NUMBER = 45;
+  private double passivePercent_ = 0D;
+  /**
+   * <code>double passive_percent = 45;</code>
+   * @return The passivePercent.
+   */
+  @java.lang.Override
+  public double getPassivePercent() {
+    return passivePercent_;
+  }
+
+  public static final int BUFF_PERCENT_FIELD_NUMBER = 46;
+  private double buffPercent_ = 0D;
+  /**
+   * <code>double buff_percent = 46;</code>
+   * @return The buffPercent.
+   */
+  @java.lang.Override
+  public double getBuffPercent() {
+    return buffPercent_;
+  }
+
   public static final int REQUIRED_ITEM_FIELD_NUMBER = 21;
   @SuppressWarnings("serial")
   private java.util.List<com.game.table.Skillrequired_item> requiredItem_;
@@ -607,6 +983,69 @@ private static final long serialVersionUID = 0L;
     if (java.lang.Double.doubleToRawLongBits(attackMultiplier_) != 0) {
       output.writeDouble(25, attackMultiplier_);
     }
+    if (classId_ != 0) {
+      output.writeUInt32(26, classId_);
+    }
+    if (!com.google.protobuf.GeneratedMessage.isStringEmpty(name_)) {
+      com.google.protobuf.GeneratedMessage.writeString(output, 27, name_);
+    }
+    if (!com.google.protobuf.GeneratedMessage.isStringEmpty(description_)) {
+      com.google.protobuf.GeneratedMessage.writeString(output, 28, description_);
+    }
+    if (!com.google.protobuf.GeneratedMessage.isStringEmpty(iconKey_)) {
+      com.google.protobuf.GeneratedMessage.writeString(output, 29, iconKey_);
+    }
+    if (!com.google.protobuf.GeneratedMessage.isStringEmpty(category_)) {
+      com.google.protobuf.GeneratedMessage.writeString(output, 30, category_);
+    }
+    if (unlockLevel_ != 0) {
+      output.writeUInt32(31, unlockLevel_);
+    }
+    if (maxRank_ != 0) {
+      output.writeUInt32(32, maxRank_);
+    }
+    if (targetTeam_ != 0) {
+      output.writeUInt32(33, targetTeam_);
+    }
+    if (maxTargets_ != 0) {
+      output.writeUInt32(34, maxTargets_);
+    }
+    if (java.lang.Double.doubleToRawLongBits(manaPercent_) != 0) {
+      output.writeDouble(35, manaPercent_);
+    }
+    if (cooldownRounds_ != 0) {
+      output.writeUInt32(36, cooldownRounds_);
+    }
+    if (java.lang.Double.doubleToRawLongBits(healMultiplier_) != 0) {
+      output.writeDouble(37, healMultiplier_);
+    }
+    if (java.lang.Double.doubleToRawLongBits(healPerLevel_) != 0) {
+      output.writeDouble(38, healPerLevel_);
+    }
+    if (java.lang.Double.doubleToRawLongBits(executeHealThreshold_) != 0) {
+      output.writeDouble(39, executeHealThreshold_);
+    }
+    if (java.lang.Double.doubleToRawLongBits(executeHealBonus_) != 0) {
+      output.writeDouble(40, executeHealBonus_);
+    }
+    if (java.lang.Double.doubleToRawLongBits(restoreManaPercent_) != 0) {
+      output.writeDouble(41, restoreManaPercent_);
+    }
+    if (dispelCount_ != 0) {
+      output.writeUInt32(42, dispelCount_);
+    }
+    if (initiative_ != 0) {
+      output.writeInt32(43, initiative_);
+    }
+    if (!com.google.protobuf.GeneratedMessage.isStringEmpty(passiveStat_)) {
+      com.google.protobuf.GeneratedMessage.writeString(output, 44, passiveStat_);
+    }
+    if (java.lang.Double.doubleToRawLongBits(passivePercent_) != 0) {
+      output.writeDouble(45, passivePercent_);
+    }
+    if (java.lang.Double.doubleToRawLongBits(buffPercent_) != 0) {
+      output.writeDouble(46, buffPercent_);
+    }
     getUnknownFields().writeTo(output);
   }
   private int computeSerializedSize_0() {
@@ -755,6 +1194,89 @@ private static final long serialVersionUID = 0L;
       size += com.google.protobuf.CodedOutputStream
         .computeDoubleSize(25, attackMultiplier_);
     }
+    if (classId_ != 0) {
+      size += com.google.protobuf.CodedOutputStream
+        .computeUInt32Size(26, classId_);
+    }
+    if (!com.google.protobuf.GeneratedMessage.isStringEmpty(name_)) {
+      size += com.google.protobuf.GeneratedMessage.computeStringSize(27, name_);
+    }
+    if (!com.google.protobuf.GeneratedMessage.isStringEmpty(description_)) {
+      size += com.google.protobuf.GeneratedMessage.computeStringSize(28, description_);
+    }
+    if (!com.google.protobuf.GeneratedMessage.isStringEmpty(iconKey_)) {
+      size += com.google.protobuf.GeneratedMessage.computeStringSize(29, iconKey_);
+    }
+    if (!com.google.protobuf.GeneratedMessage.isStringEmpty(category_)) {
+      size += com.google.protobuf.GeneratedMessage.computeStringSize(30, category_);
+    }
+    if (unlockLevel_ != 0) {
+      size += com.google.protobuf.CodedOutputStream
+        .computeUInt32Size(31, unlockLevel_);
+    }
+    if (maxRank_ != 0) {
+      size += com.google.protobuf.CodedOutputStream
+        .computeUInt32Size(32, maxRank_);
+    }
+    return size;
+  }
+  private int computeSerializedSize_1() {
+    int size = 0;
+    if (targetTeam_ != 0) {
+      size += com.google.protobuf.CodedOutputStream
+        .computeUInt32Size(33, targetTeam_);
+    }
+    if (maxTargets_ != 0) {
+      size += com.google.protobuf.CodedOutputStream
+        .computeUInt32Size(34, maxTargets_);
+    }
+    if (java.lang.Double.doubleToRawLongBits(manaPercent_) != 0) {
+      size += com.google.protobuf.CodedOutputStream
+        .computeDoubleSize(35, manaPercent_);
+    }
+    if (cooldownRounds_ != 0) {
+      size += com.google.protobuf.CodedOutputStream
+        .computeUInt32Size(36, cooldownRounds_);
+    }
+    if (java.lang.Double.doubleToRawLongBits(healMultiplier_) != 0) {
+      size += com.google.protobuf.CodedOutputStream
+        .computeDoubleSize(37, healMultiplier_);
+    }
+    if (java.lang.Double.doubleToRawLongBits(healPerLevel_) != 0) {
+      size += com.google.protobuf.CodedOutputStream
+        .computeDoubleSize(38, healPerLevel_);
+    }
+    if (java.lang.Double.doubleToRawLongBits(executeHealThreshold_) != 0) {
+      size += com.google.protobuf.CodedOutputStream
+        .computeDoubleSize(39, executeHealThreshold_);
+    }
+    if (java.lang.Double.doubleToRawLongBits(executeHealBonus_) != 0) {
+      size += com.google.protobuf.CodedOutputStream
+        .computeDoubleSize(40, executeHealBonus_);
+    }
+    if (java.lang.Double.doubleToRawLongBits(restoreManaPercent_) != 0) {
+      size += com.google.protobuf.CodedOutputStream
+        .computeDoubleSize(41, restoreManaPercent_);
+    }
+    if (dispelCount_ != 0) {
+      size += com.google.protobuf.CodedOutputStream
+        .computeUInt32Size(42, dispelCount_);
+    }
+    if (initiative_ != 0) {
+      size += com.google.protobuf.CodedOutputStream
+        .computeInt32Size(43, initiative_);
+    }
+    if (!com.google.protobuf.GeneratedMessage.isStringEmpty(passiveStat_)) {
+      size += com.google.protobuf.GeneratedMessage.computeStringSize(44, passiveStat_);
+    }
+    if (java.lang.Double.doubleToRawLongBits(passivePercent_) != 0) {
+      size += com.google.protobuf.CodedOutputStream
+        .computeDoubleSize(45, passivePercent_);
+    }
+    if (java.lang.Double.doubleToRawLongBits(buffPercent_) != 0) {
+      size += com.google.protobuf.CodedOutputStream
+        .computeDoubleSize(46, buffPercent_);
+    }
     return size;
   }
   @java.lang.Override
@@ -764,6 +1286,7 @@ private static final long serialVersionUID = 0L;
 
     size = 0;
     size += computeSerializedSize_0();
+    size += computeSerializedSize_1();
     size += getUnknownFields().getSerializedSize();
     memoizedSize = size;
     return size;
@@ -829,6 +1352,56 @@ private static final long serialVersionUID = 0L;
     if (java.lang.Double.doubleToLongBits(getAttackMultiplier())
         != java.lang.Double.doubleToLongBits(
             other.getAttackMultiplier())) return false;
+    if (getClassId()
+        != other.getClassId()) return false;
+    if (!getName()
+        .equals(other.getName())) return false;
+    if (!getDescription()
+        .equals(other.getDescription())) return false;
+    if (!getIconKey()
+        .equals(other.getIconKey())) return false;
+    if (!getCategory()
+        .equals(other.getCategory())) return false;
+    if (getUnlockLevel()
+        != other.getUnlockLevel()) return false;
+    if (getMaxRank()
+        != other.getMaxRank()) return false;
+    if (getTargetTeam()
+        != other.getTargetTeam()) return false;
+    if (getMaxTargets()
+        != other.getMaxTargets()) return false;
+    if (java.lang.Double.doubleToLongBits(getManaPercent())
+        != java.lang.Double.doubleToLongBits(
+            other.getManaPercent())) return false;
+    if (getCooldownRounds()
+        != other.getCooldownRounds()) return false;
+    if (java.lang.Double.doubleToLongBits(getHealMultiplier())
+        != java.lang.Double.doubleToLongBits(
+            other.getHealMultiplier())) return false;
+    if (java.lang.Double.doubleToLongBits(getHealPerLevel())
+        != java.lang.Double.doubleToLongBits(
+            other.getHealPerLevel())) return false;
+    if (java.lang.Double.doubleToLongBits(getExecuteHealThreshold())
+        != java.lang.Double.doubleToLongBits(
+            other.getExecuteHealThreshold())) return false;
+    if (java.lang.Double.doubleToLongBits(getExecuteHealBonus())
+        != java.lang.Double.doubleToLongBits(
+            other.getExecuteHealBonus())) return false;
+    if (java.lang.Double.doubleToLongBits(getRestoreManaPercent())
+        != java.lang.Double.doubleToLongBits(
+            other.getRestoreManaPercent())) return false;
+    if (getDispelCount()
+        != other.getDispelCount()) return false;
+    if (getInitiative()
+        != other.getInitiative()) return false;
+    if (!getPassiveStat()
+        .equals(other.getPassiveStat())) return false;
+    if (java.lang.Double.doubleToLongBits(getPassivePercent())
+        != java.lang.Double.doubleToLongBits(
+            other.getPassivePercent())) return false;
+    if (java.lang.Double.doubleToLongBits(getBuffPercent())
+        != java.lang.Double.doubleToLongBits(
+            other.getBuffPercent())) return false;
     if (!getRequiredItemList()
         .equals(other.getRequiredItemList())) return false;
     if (!getRequiredResourceList()
@@ -902,6 +1475,56 @@ private static final long serialVersionUID = 0L;
     hash = (37 * hash) + ATTACK_MULTIPLIER_FIELD_NUMBER;
     hash = (53 * hash) + com.google.protobuf.Internal.hashLong(
         java.lang.Double.doubleToLongBits(getAttackMultiplier()));
+    hash = (37 * hash) + CLASS_ID_FIELD_NUMBER;
+    hash = (53 * hash) + getClassId();
+    hash = (37 * hash) + NAME_FIELD_NUMBER;
+    hash = (53 * hash) + getName().hashCode();
+    hash = (37 * hash) + DESCRIPTION_FIELD_NUMBER;
+    hash = (53 * hash) + getDescription().hashCode();
+    hash = (37 * hash) + ICON_KEY_FIELD_NUMBER;
+    hash = (53 * hash) + getIconKey().hashCode();
+    hash = (37 * hash) + CATEGORY_FIELD_NUMBER;
+    hash = (53 * hash) + getCategory().hashCode();
+    hash = (37 * hash) + UNLOCK_LEVEL_FIELD_NUMBER;
+    hash = (53 * hash) + getUnlockLevel();
+    hash = (37 * hash) + MAX_RANK_FIELD_NUMBER;
+    hash = (53 * hash) + getMaxRank();
+    hash = (37 * hash) + TARGET_TEAM_FIELD_NUMBER;
+    hash = (53 * hash) + getTargetTeam();
+    hash = (37 * hash) + MAX_TARGETS_FIELD_NUMBER;
+    hash = (53 * hash) + getMaxTargets();
+    hash = (37 * hash) + MANA_PERCENT_FIELD_NUMBER;
+    hash = (53 * hash) + com.google.protobuf.Internal.hashLong(
+        java.lang.Double.doubleToLongBits(getManaPercent()));
+    hash = (37 * hash) + COOLDOWN_ROUNDS_FIELD_NUMBER;
+    hash = (53 * hash) + getCooldownRounds();
+    hash = (37 * hash) + HEAL_MULTIPLIER_FIELD_NUMBER;
+    hash = (53 * hash) + com.google.protobuf.Internal.hashLong(
+        java.lang.Double.doubleToLongBits(getHealMultiplier()));
+    hash = (37 * hash) + HEAL_PER_LEVEL_FIELD_NUMBER;
+    hash = (53 * hash) + com.google.protobuf.Internal.hashLong(
+        java.lang.Double.doubleToLongBits(getHealPerLevel()));
+    hash = (37 * hash) + EXECUTE_HEAL_THRESHOLD_FIELD_NUMBER;
+    hash = (53 * hash) + com.google.protobuf.Internal.hashLong(
+        java.lang.Double.doubleToLongBits(getExecuteHealThreshold()));
+    hash = (37 * hash) + EXECUTE_HEAL_BONUS_FIELD_NUMBER;
+    hash = (53 * hash) + com.google.protobuf.Internal.hashLong(
+        java.lang.Double.doubleToLongBits(getExecuteHealBonus()));
+    hash = (37 * hash) + RESTORE_MANA_PERCENT_FIELD_NUMBER;
+    hash = (53 * hash) + com.google.protobuf.Internal.hashLong(
+        java.lang.Double.doubleToLongBits(getRestoreManaPercent()));
+    hash = (37 * hash) + DISPEL_COUNT_FIELD_NUMBER;
+    hash = (53 * hash) + getDispelCount();
+    hash = (37 * hash) + INITIATIVE_FIELD_NUMBER;
+    hash = (53 * hash) + getInitiative();
+    hash = (37 * hash) + PASSIVE_STAT_FIELD_NUMBER;
+    hash = (53 * hash) + getPassiveStat().hashCode();
+    hash = (37 * hash) + PASSIVE_PERCENT_FIELD_NUMBER;
+    hash = (53 * hash) + com.google.protobuf.Internal.hashLong(
+        java.lang.Double.doubleToLongBits(getPassivePercent()));
+    hash = (37 * hash) + BUFF_PERCENT_FIELD_NUMBER;
+    hash = (53 * hash) + com.google.protobuf.Internal.hashLong(
+        java.lang.Double.doubleToLongBits(getBuffPercent()));
     if (getRequiredItemCount() > 0) {
       hash = (37 * hash) + REQUIRED_ITEM_FIELD_NUMBER;
       hash = (53 * hash) + getRequiredItemList().hashCode();
@@ -1045,6 +1668,7 @@ private static final long serialVersionUID = 0L;
     public Builder clear() {
       super.clear();
       bitField0_ = 0;
+      bitField1_ = 0;
       id_ = 0;
       skillType_ = emptyIntList();
       targetingMode_ = emptyIntList();
@@ -1067,27 +1691,48 @@ private static final long serialVersionUID = 0L;
       damage_ = "";
       damageType_ = 0;
       attackMultiplier_ = 0D;
+      classId_ = 0;
+      name_ = "";
+      description_ = "";
+      iconKey_ = "";
+      category_ = "";
+      unlockLevel_ = 0;
+      maxRank_ = 0;
+      targetTeam_ = 0;
+      maxTargets_ = 0;
+      manaPercent_ = 0D;
+      cooldownRounds_ = 0;
+      healMultiplier_ = 0D;
+      healPerLevel_ = 0D;
+      executeHealThreshold_ = 0D;
+      executeHealBonus_ = 0D;
+      restoreManaPercent_ = 0D;
+      dispelCount_ = 0;
+      initiative_ = 0;
+      passiveStat_ = "";
+      passivePercent_ = 0D;
+      buffPercent_ = 0D;
       if (requiredItemBuilder_ == null) {
         requiredItem_ = java.util.Collections.emptyList();
       } else {
         requiredItem_ = null;
         requiredItemBuilder_.clear();
       }
-      bitField0_ = (bitField0_ & ~0x00400000);
+      bitField1_ = (bitField1_ & ~0x00000800);
       if (requiredResourceBuilder_ == null) {
         requiredResource_ = java.util.Collections.emptyList();
       } else {
         requiredResource_ = null;
         requiredResourceBuilder_.clear();
       }
-      bitField0_ = (bitField0_ & ~0x00800000);
+      bitField1_ = (bitField1_ & ~0x00001000);
       if (costResourceBuilder_ == null) {
         costResource_ = java.util.Collections.emptyList();
       } else {
         costResource_ = null;
         costResourceBuilder_.clear();
       }
-      bitField0_ = (bitField0_ & ~0x01000000);
+      bitField1_ = (bitField1_ & ~0x00002000);
       return this;
     }
 
@@ -1116,33 +1761,34 @@ private static final long serialVersionUID = 0L;
       com.game.table.SkillTable result = new com.game.table.SkillTable(this);
       buildPartialRepeatedFields(result);
       if (bitField0_ != 0) { buildPartial0(result); }
+      if (bitField1_ != 0) { buildPartial1(result); }
       onBuilt();
       return result;
     }
 
     private void buildPartialRepeatedFields(com.game.table.SkillTable result) {
       if (requiredItemBuilder_ == null) {
-        if (((bitField0_ & 0x00400000) != 0)) {
+        if (((bitField1_ & 0x00000800) != 0)) {
           requiredItem_ = java.util.Collections.unmodifiableList(requiredItem_);
-          bitField0_ = (bitField0_ & ~0x00400000);
+          bitField1_ = (bitField1_ & ~0x00000800);
         }
         result.requiredItem_ = requiredItem_;
       } else {
         result.requiredItem_ = requiredItemBuilder_.build();
       }
       if (requiredResourceBuilder_ == null) {
-        if (((bitField0_ & 0x00800000) != 0)) {
+        if (((bitField1_ & 0x00001000) != 0)) {
           requiredResource_ = java.util.Collections.unmodifiableList(requiredResource_);
-          bitField0_ = (bitField0_ & ~0x00800000);
+          bitField1_ = (bitField1_ & ~0x00001000);
         }
         result.requiredResource_ = requiredResource_;
       } else {
         result.requiredResource_ = requiredResourceBuilder_.build();
       }
       if (costResourceBuilder_ == null) {
-        if (((bitField0_ & 0x01000000) != 0)) {
+        if (((bitField1_ & 0x00002000) != 0)) {
           costResource_ = java.util.Collections.unmodifiableList(costResource_);
-          bitField0_ = (bitField0_ & ~0x01000000);
+          bitField1_ = (bitField1_ & ~0x00002000);
         }
         result.costResource_ = costResource_;
       } else {
@@ -1220,6 +1866,73 @@ private static final long serialVersionUID = 0L;
       }
       if (((from_bitField0_ & 0x00200000) != 0)) {
         result.attackMultiplier_ = attackMultiplier_;
+      }
+      if (((from_bitField0_ & 0x00400000) != 0)) {
+        result.classId_ = classId_;
+      }
+      if (((from_bitField0_ & 0x00800000) != 0)) {
+        result.name_ = name_;
+      }
+      if (((from_bitField0_ & 0x01000000) != 0)) {
+        result.description_ = description_;
+      }
+      if (((from_bitField0_ & 0x02000000) != 0)) {
+        result.iconKey_ = iconKey_;
+      }
+      if (((from_bitField0_ & 0x04000000) != 0)) {
+        result.category_ = category_;
+      }
+      if (((from_bitField0_ & 0x08000000) != 0)) {
+        result.unlockLevel_ = unlockLevel_;
+      }
+      if (((from_bitField0_ & 0x10000000) != 0)) {
+        result.maxRank_ = maxRank_;
+      }
+      if (((from_bitField0_ & 0x20000000) != 0)) {
+        result.targetTeam_ = targetTeam_;
+      }
+      if (((from_bitField0_ & 0x40000000) != 0)) {
+        result.maxTargets_ = maxTargets_;
+      }
+      if (((from_bitField0_ & 0x80000000) != 0)) {
+        result.manaPercent_ = manaPercent_;
+      }
+    }
+
+    private void buildPartial1(com.game.table.SkillTable result) {
+      int from_bitField1_ = bitField1_;
+      if (((from_bitField1_ & 0x00000001) != 0)) {
+        result.cooldownRounds_ = cooldownRounds_;
+      }
+      if (((from_bitField1_ & 0x00000002) != 0)) {
+        result.healMultiplier_ = healMultiplier_;
+      }
+      if (((from_bitField1_ & 0x00000004) != 0)) {
+        result.healPerLevel_ = healPerLevel_;
+      }
+      if (((from_bitField1_ & 0x00000008) != 0)) {
+        result.executeHealThreshold_ = executeHealThreshold_;
+      }
+      if (((from_bitField1_ & 0x00000010) != 0)) {
+        result.executeHealBonus_ = executeHealBonus_;
+      }
+      if (((from_bitField1_ & 0x00000020) != 0)) {
+        result.restoreManaPercent_ = restoreManaPercent_;
+      }
+      if (((from_bitField1_ & 0x00000040) != 0)) {
+        result.dispelCount_ = dispelCount_;
+      }
+      if (((from_bitField1_ & 0x00000080) != 0)) {
+        result.initiative_ = initiative_;
+      }
+      if (((from_bitField1_ & 0x00000100) != 0)) {
+        result.passiveStat_ = passiveStat_;
+      }
+      if (((from_bitField1_ & 0x00000200) != 0)) {
+        result.passivePercent_ = passivePercent_;
+      }
+      if (((from_bitField1_ & 0x00000400) != 0)) {
+        result.buffPercent_ = buffPercent_;
       }
     }
 
@@ -1327,11 +2040,84 @@ private static final long serialVersionUID = 0L;
       if (java.lang.Double.doubleToRawLongBits(other.getAttackMultiplier()) != 0) {
         setAttackMultiplier(other.getAttackMultiplier());
       }
+      if (other.getClassId() != 0) {
+        setClassId(other.getClassId());
+      }
+      if (!other.getName().isEmpty()) {
+        name_ = other.name_;
+        bitField0_ |= 0x00800000;
+        onChanged();
+      }
+      if (!other.getDescription().isEmpty()) {
+        description_ = other.description_;
+        bitField0_ |= 0x01000000;
+        onChanged();
+      }
+      if (!other.getIconKey().isEmpty()) {
+        iconKey_ = other.iconKey_;
+        bitField0_ |= 0x02000000;
+        onChanged();
+      }
+      if (!other.getCategory().isEmpty()) {
+        category_ = other.category_;
+        bitField0_ |= 0x04000000;
+        onChanged();
+      }
+      if (other.getUnlockLevel() != 0) {
+        setUnlockLevel(other.getUnlockLevel());
+      }
+      if (other.getMaxRank() != 0) {
+        setMaxRank(other.getMaxRank());
+      }
+      if (other.getTargetTeam() != 0) {
+        setTargetTeam(other.getTargetTeam());
+      }
+      if (other.getMaxTargets() != 0) {
+        setMaxTargets(other.getMaxTargets());
+      }
+      if (java.lang.Double.doubleToRawLongBits(other.getManaPercent()) != 0) {
+        setManaPercent(other.getManaPercent());
+      }
+      if (other.getCooldownRounds() != 0) {
+        setCooldownRounds(other.getCooldownRounds());
+      }
+      if (java.lang.Double.doubleToRawLongBits(other.getHealMultiplier()) != 0) {
+        setHealMultiplier(other.getHealMultiplier());
+      }
+      if (java.lang.Double.doubleToRawLongBits(other.getHealPerLevel()) != 0) {
+        setHealPerLevel(other.getHealPerLevel());
+      }
+      if (java.lang.Double.doubleToRawLongBits(other.getExecuteHealThreshold()) != 0) {
+        setExecuteHealThreshold(other.getExecuteHealThreshold());
+      }
+      if (java.lang.Double.doubleToRawLongBits(other.getExecuteHealBonus()) != 0) {
+        setExecuteHealBonus(other.getExecuteHealBonus());
+      }
+      if (java.lang.Double.doubleToRawLongBits(other.getRestoreManaPercent()) != 0) {
+        setRestoreManaPercent(other.getRestoreManaPercent());
+      }
+      if (other.getDispelCount() != 0) {
+        setDispelCount(other.getDispelCount());
+      }
+      if (other.getInitiative() != 0) {
+        setInitiative(other.getInitiative());
+      }
+      if (!other.getPassiveStat().isEmpty()) {
+        passiveStat_ = other.passiveStat_;
+        bitField1_ |= 0x00000100;
+        onChanged();
+      }
+      if (java.lang.Double.doubleToRawLongBits(other.getPassivePercent()) != 0) {
+        setPassivePercent(other.getPassivePercent());
+      }
+      if (java.lang.Double.doubleToRawLongBits(other.getBuffPercent()) != 0) {
+        setBuffPercent(other.getBuffPercent());
+      }
       if (requiredItemBuilder_ == null) {
         if (!other.requiredItem_.isEmpty()) {
           if (requiredItem_.isEmpty()) {
             requiredItem_ = other.requiredItem_;
-            bitField0_ = (bitField0_ & ~0x00400000);
+            bitField1_ = (bitField1_ & ~0x00000800);
           } else {
             ensureRequiredItemIsMutable();
             requiredItem_.addAll(other.requiredItem_);
@@ -1344,7 +2130,7 @@ private static final long serialVersionUID = 0L;
             requiredItemBuilder_.dispose();
             requiredItemBuilder_ = null;
             requiredItem_ = other.requiredItem_;
-            bitField0_ = (bitField0_ & ~0x00400000);
+            bitField1_ = (bitField1_ & ~0x00000800);
             requiredItemBuilder_ = 
               com.google.protobuf.GeneratedMessage.alwaysUseFieldBuilders ?
                  internalGetRequiredItemFieldBuilder() : null;
@@ -1357,7 +2143,7 @@ private static final long serialVersionUID = 0L;
         if (!other.requiredResource_.isEmpty()) {
           if (requiredResource_.isEmpty()) {
             requiredResource_ = other.requiredResource_;
-            bitField0_ = (bitField0_ & ~0x00800000);
+            bitField1_ = (bitField1_ & ~0x00001000);
           } else {
             ensureRequiredResourceIsMutable();
             requiredResource_.addAll(other.requiredResource_);
@@ -1370,7 +2156,7 @@ private static final long serialVersionUID = 0L;
             requiredResourceBuilder_.dispose();
             requiredResourceBuilder_ = null;
             requiredResource_ = other.requiredResource_;
-            bitField0_ = (bitField0_ & ~0x00800000);
+            bitField1_ = (bitField1_ & ~0x00001000);
             requiredResourceBuilder_ = 
               com.google.protobuf.GeneratedMessage.alwaysUseFieldBuilders ?
                  internalGetRequiredResourceFieldBuilder() : null;
@@ -1383,7 +2169,7 @@ private static final long serialVersionUID = 0L;
         if (!other.costResource_.isEmpty()) {
           if (costResource_.isEmpty()) {
             costResource_ = other.costResource_;
-            bitField0_ = (bitField0_ & ~0x01000000);
+            bitField1_ = (bitField1_ & ~0x00002000);
           } else {
             ensureCostResourceIsMutable();
             costResource_.addAll(other.costResource_);
@@ -1396,7 +2182,7 @@ private static final long serialVersionUID = 0L;
             costResourceBuilder_.dispose();
             costResourceBuilder_ = null;
             costResource_ = other.costResource_;
-            bitField0_ = (bitField0_ & ~0x01000000);
+            bitField1_ = (bitField1_ & ~0x00002000);
             costResourceBuilder_ = 
               com.google.protobuf.GeneratedMessage.alwaysUseFieldBuilders ?
                  internalGetCostResourceFieldBuilder() : null;
@@ -1613,6 +2399,111 @@ private static final long serialVersionUID = 0L;
               bitField0_ |= 0x00200000;
               break;
             } // case 201
+            case 208: {
+              classId_ = input.readUInt32();
+              bitField0_ |= 0x00400000;
+              break;
+            } // case 208
+            case 218: {
+              name_ = input.readStringRequireUtf8();
+              bitField0_ |= 0x00800000;
+              break;
+            } // case 218
+            case 226: {
+              description_ = input.readStringRequireUtf8();
+              bitField0_ |= 0x01000000;
+              break;
+            } // case 226
+            case 234: {
+              iconKey_ = input.readStringRequireUtf8();
+              bitField0_ |= 0x02000000;
+              break;
+            } // case 234
+            case 242: {
+              category_ = input.readStringRequireUtf8();
+              bitField0_ |= 0x04000000;
+              break;
+            } // case 242
+            case 248: {
+              unlockLevel_ = input.readUInt32();
+              bitField0_ |= 0x08000000;
+              break;
+            } // case 248
+            case 256: {
+              maxRank_ = input.readUInt32();
+              bitField0_ |= 0x10000000;
+              break;
+            } // case 256
+            case 264: {
+              targetTeam_ = input.readUInt32();
+              bitField0_ |= 0x20000000;
+              break;
+            } // case 264
+            case 272: {
+              maxTargets_ = input.readUInt32();
+              bitField0_ |= 0x40000000;
+              break;
+            } // case 272
+            case 281: {
+              manaPercent_ = input.readDouble();
+              bitField0_ |= 0x80000000;
+              break;
+            } // case 281
+            case 288: {
+              cooldownRounds_ = input.readUInt32();
+              bitField1_ |= 0x00000001;
+              break;
+            } // case 288
+            case 297: {
+              healMultiplier_ = input.readDouble();
+              bitField1_ |= 0x00000002;
+              break;
+            } // case 297
+            case 305: {
+              healPerLevel_ = input.readDouble();
+              bitField1_ |= 0x00000004;
+              break;
+            } // case 305
+            case 313: {
+              executeHealThreshold_ = input.readDouble();
+              bitField1_ |= 0x00000008;
+              break;
+            } // case 313
+            case 321: {
+              executeHealBonus_ = input.readDouble();
+              bitField1_ |= 0x00000010;
+              break;
+            } // case 321
+            case 329: {
+              restoreManaPercent_ = input.readDouble();
+              bitField1_ |= 0x00000020;
+              break;
+            } // case 329
+            case 336: {
+              dispelCount_ = input.readUInt32();
+              bitField1_ |= 0x00000040;
+              break;
+            } // case 336
+            case 344: {
+              initiative_ = input.readInt32();
+              bitField1_ |= 0x00000080;
+              break;
+            } // case 344
+            case 354: {
+              passiveStat_ = input.readStringRequireUtf8();
+              bitField1_ |= 0x00000100;
+              break;
+            } // case 354
+            case 361: {
+              passivePercent_ = input.readDouble();
+              bitField1_ |= 0x00000200;
+              break;
+            } // case 361
+            case 369: {
+              buffPercent_ = input.readDouble();
+              bitField1_ |= 0x00000400;
+              break;
+            } // case 369
             default: {
               if (!super.parseUnknownField(input, extensionRegistry, tag)) {
                 done = true; // was an endgroup tag
@@ -1629,6 +2520,7 @@ private static final long serialVersionUID = 0L;
       return this;
     }
     private int bitField0_;
+    private int bitField1_;
 
     private int id_ ;
     /**
@@ -2530,12 +3422,884 @@ private static final long serialVersionUID = 0L;
       return this;
     }
 
+    private int classId_ ;
+    /**
+     * <code>uint32 class_id = 26;</code>
+     * @return The classId.
+     */
+    @java.lang.Override
+    public int getClassId() {
+      return classId_;
+    }
+    /**
+     * <code>uint32 class_id = 26;</code>
+     * @param value The classId to set.
+     * @return This builder for chaining.
+     */
+    public Builder setClassId(int value) {
+
+      classId_ = value;
+      bitField0_ |= 0x00400000;
+      onChanged();
+      return this;
+    }
+    /**
+     * <code>uint32 class_id = 26;</code>
+     * @return This builder for chaining.
+     */
+    public Builder clearClassId() {
+      bitField0_ = (bitField0_ & ~0x00400000);
+      classId_ = 0;
+      onChanged();
+      return this;
+    }
+
+    private java.lang.Object name_ = "";
+    /**
+     * <code>string name = 27;</code>
+     * @return The name.
+     */
+    public java.lang.String getName() {
+      java.lang.Object ref = name_;
+      if (!(ref instanceof java.lang.String)) {
+        com.google.protobuf.ByteString bs =
+            (com.google.protobuf.ByteString) ref;
+        java.lang.String s = bs.toStringUtf8();
+        name_ = s;
+        return s;
+      } else {
+        return (java.lang.String) ref;
+      }
+    }
+    /**
+     * <code>string name = 27;</code>
+     * @return The bytes for name.
+     */
+    public com.google.protobuf.ByteString
+        getNameBytes() {
+      java.lang.Object ref = name_;
+      if (ref instanceof String) {
+        com.google.protobuf.ByteString b = 
+            com.google.protobuf.ByteString.copyFromUtf8(
+                (java.lang.String) ref);
+        name_ = b;
+        return b;
+      } else {
+        return (com.google.protobuf.ByteString) ref;
+      }
+    }
+    /**
+     * <code>string name = 27;</code>
+     * @param value The name to set.
+     * @return This builder for chaining.
+     */
+    public Builder setName(
+        java.lang.String value) {
+      if (value == null) { throw new NullPointerException(); }
+      name_ = value;
+      bitField0_ |= 0x00800000;
+      onChanged();
+      return this;
+    }
+    /**
+     * <code>string name = 27;</code>
+     * @return This builder for chaining.
+     */
+    public Builder clearName() {
+      name_ = getDefaultInstance().getName();
+      bitField0_ = (bitField0_ & ~0x00800000);
+      onChanged();
+      return this;
+    }
+    /**
+     * <code>string name = 27;</code>
+     * @param value The bytes for name to set.
+     * @return This builder for chaining.
+     */
+    public Builder setNameBytes(
+        com.google.protobuf.ByteString value) {
+      if (value == null) { throw new NullPointerException(); }
+      checkByteStringIsUtf8(value);
+      name_ = value;
+      bitField0_ |= 0x00800000;
+      onChanged();
+      return this;
+    }
+
+    private java.lang.Object description_ = "";
+    /**
+     * <code>string description = 28;</code>
+     * @return The description.
+     */
+    public java.lang.String getDescription() {
+      java.lang.Object ref = description_;
+      if (!(ref instanceof java.lang.String)) {
+        com.google.protobuf.ByteString bs =
+            (com.google.protobuf.ByteString) ref;
+        java.lang.String s = bs.toStringUtf8();
+        description_ = s;
+        return s;
+      } else {
+        return (java.lang.String) ref;
+      }
+    }
+    /**
+     * <code>string description = 28;</code>
+     * @return The bytes for description.
+     */
+    public com.google.protobuf.ByteString
+        getDescriptionBytes() {
+      java.lang.Object ref = description_;
+      if (ref instanceof String) {
+        com.google.protobuf.ByteString b = 
+            com.google.protobuf.ByteString.copyFromUtf8(
+                (java.lang.String) ref);
+        description_ = b;
+        return b;
+      } else {
+        return (com.google.protobuf.ByteString) ref;
+      }
+    }
+    /**
+     * <code>string description = 28;</code>
+     * @param value The description to set.
+     * @return This builder for chaining.
+     */
+    public Builder setDescription(
+        java.lang.String value) {
+      if (value == null) { throw new NullPointerException(); }
+      description_ = value;
+      bitField0_ |= 0x01000000;
+      onChanged();
+      return this;
+    }
+    /**
+     * <code>string description = 28;</code>
+     * @return This builder for chaining.
+     */
+    public Builder clearDescription() {
+      description_ = getDefaultInstance().getDescription();
+      bitField0_ = (bitField0_ & ~0x01000000);
+      onChanged();
+      return this;
+    }
+    /**
+     * <code>string description = 28;</code>
+     * @param value The bytes for description to set.
+     * @return This builder for chaining.
+     */
+    public Builder setDescriptionBytes(
+        com.google.protobuf.ByteString value) {
+      if (value == null) { throw new NullPointerException(); }
+      checkByteStringIsUtf8(value);
+      description_ = value;
+      bitField0_ |= 0x01000000;
+      onChanged();
+      return this;
+    }
+
+    private java.lang.Object iconKey_ = "";
+    /**
+     * <code>string icon_key = 29;</code>
+     * @return The iconKey.
+     */
+    public java.lang.String getIconKey() {
+      java.lang.Object ref = iconKey_;
+      if (!(ref instanceof java.lang.String)) {
+        com.google.protobuf.ByteString bs =
+            (com.google.protobuf.ByteString) ref;
+        java.lang.String s = bs.toStringUtf8();
+        iconKey_ = s;
+        return s;
+      } else {
+        return (java.lang.String) ref;
+      }
+    }
+    /**
+     * <code>string icon_key = 29;</code>
+     * @return The bytes for iconKey.
+     */
+    public com.google.protobuf.ByteString
+        getIconKeyBytes() {
+      java.lang.Object ref = iconKey_;
+      if (ref instanceof String) {
+        com.google.protobuf.ByteString b = 
+            com.google.protobuf.ByteString.copyFromUtf8(
+                (java.lang.String) ref);
+        iconKey_ = b;
+        return b;
+      } else {
+        return (com.google.protobuf.ByteString) ref;
+      }
+    }
+    /**
+     * <code>string icon_key = 29;</code>
+     * @param value The iconKey to set.
+     * @return This builder for chaining.
+     */
+    public Builder setIconKey(
+        java.lang.String value) {
+      if (value == null) { throw new NullPointerException(); }
+      iconKey_ = value;
+      bitField0_ |= 0x02000000;
+      onChanged();
+      return this;
+    }
+    /**
+     * <code>string icon_key = 29;</code>
+     * @return This builder for chaining.
+     */
+    public Builder clearIconKey() {
+      iconKey_ = getDefaultInstance().getIconKey();
+      bitField0_ = (bitField0_ & ~0x02000000);
+      onChanged();
+      return this;
+    }
+    /**
+     * <code>string icon_key = 29;</code>
+     * @param value The bytes for iconKey to set.
+     * @return This builder for chaining.
+     */
+    public Builder setIconKeyBytes(
+        com.google.protobuf.ByteString value) {
+      if (value == null) { throw new NullPointerException(); }
+      checkByteStringIsUtf8(value);
+      iconKey_ = value;
+      bitField0_ |= 0x02000000;
+      onChanged();
+      return this;
+    }
+
+    private java.lang.Object category_ = "";
+    /**
+     * <code>string category = 30;</code>
+     * @return The category.
+     */
+    public java.lang.String getCategory() {
+      java.lang.Object ref = category_;
+      if (!(ref instanceof java.lang.String)) {
+        com.google.protobuf.ByteString bs =
+            (com.google.protobuf.ByteString) ref;
+        java.lang.String s = bs.toStringUtf8();
+        category_ = s;
+        return s;
+      } else {
+        return (java.lang.String) ref;
+      }
+    }
+    /**
+     * <code>string category = 30;</code>
+     * @return The bytes for category.
+     */
+    public com.google.protobuf.ByteString
+        getCategoryBytes() {
+      java.lang.Object ref = category_;
+      if (ref instanceof String) {
+        com.google.protobuf.ByteString b = 
+            com.google.protobuf.ByteString.copyFromUtf8(
+                (java.lang.String) ref);
+        category_ = b;
+        return b;
+      } else {
+        return (com.google.protobuf.ByteString) ref;
+      }
+    }
+    /**
+     * <code>string category = 30;</code>
+     * @param value The category to set.
+     * @return This builder for chaining.
+     */
+    public Builder setCategory(
+        java.lang.String value) {
+      if (value == null) { throw new NullPointerException(); }
+      category_ = value;
+      bitField0_ |= 0x04000000;
+      onChanged();
+      return this;
+    }
+    /**
+     * <code>string category = 30;</code>
+     * @return This builder for chaining.
+     */
+    public Builder clearCategory() {
+      category_ = getDefaultInstance().getCategory();
+      bitField0_ = (bitField0_ & ~0x04000000);
+      onChanged();
+      return this;
+    }
+    /**
+     * <code>string category = 30;</code>
+     * @param value The bytes for category to set.
+     * @return This builder for chaining.
+     */
+    public Builder setCategoryBytes(
+        com.google.protobuf.ByteString value) {
+      if (value == null) { throw new NullPointerException(); }
+      checkByteStringIsUtf8(value);
+      category_ = value;
+      bitField0_ |= 0x04000000;
+      onChanged();
+      return this;
+    }
+
+    private int unlockLevel_ ;
+    /**
+     * <code>uint32 unlock_level = 31;</code>
+     * @return The unlockLevel.
+     */
+    @java.lang.Override
+    public int getUnlockLevel() {
+      return unlockLevel_;
+    }
+    /**
+     * <code>uint32 unlock_level = 31;</code>
+     * @param value The unlockLevel to set.
+     * @return This builder for chaining.
+     */
+    public Builder setUnlockLevel(int value) {
+
+      unlockLevel_ = value;
+      bitField0_ |= 0x08000000;
+      onChanged();
+      return this;
+    }
+    /**
+     * <code>uint32 unlock_level = 31;</code>
+     * @return This builder for chaining.
+     */
+    public Builder clearUnlockLevel() {
+      bitField0_ = (bitField0_ & ~0x08000000);
+      unlockLevel_ = 0;
+      onChanged();
+      return this;
+    }
+
+    private int maxRank_ ;
+    /**
+     * <code>uint32 max_rank = 32;</code>
+     * @return The maxRank.
+     */
+    @java.lang.Override
+    public int getMaxRank() {
+      return maxRank_;
+    }
+    /**
+     * <code>uint32 max_rank = 32;</code>
+     * @param value The maxRank to set.
+     * @return This builder for chaining.
+     */
+    public Builder setMaxRank(int value) {
+
+      maxRank_ = value;
+      bitField0_ |= 0x10000000;
+      onChanged();
+      return this;
+    }
+    /**
+     * <code>uint32 max_rank = 32;</code>
+     * @return This builder for chaining.
+     */
+    public Builder clearMaxRank() {
+      bitField0_ = (bitField0_ & ~0x10000000);
+      maxRank_ = 0;
+      onChanged();
+      return this;
+    }
+
+    private int targetTeam_ ;
+    /**
+     * <code>uint32 target_team = 33;</code>
+     * @return The targetTeam.
+     */
+    @java.lang.Override
+    public int getTargetTeam() {
+      return targetTeam_;
+    }
+    /**
+     * <code>uint32 target_team = 33;</code>
+     * @param value The targetTeam to set.
+     * @return This builder for chaining.
+     */
+    public Builder setTargetTeam(int value) {
+
+      targetTeam_ = value;
+      bitField0_ |= 0x20000000;
+      onChanged();
+      return this;
+    }
+    /**
+     * <code>uint32 target_team = 33;</code>
+     * @return This builder for chaining.
+     */
+    public Builder clearTargetTeam() {
+      bitField0_ = (bitField0_ & ~0x20000000);
+      targetTeam_ = 0;
+      onChanged();
+      return this;
+    }
+
+    private int maxTargets_ ;
+    /**
+     * <code>uint32 max_targets = 34;</code>
+     * @return The maxTargets.
+     */
+    @java.lang.Override
+    public int getMaxTargets() {
+      return maxTargets_;
+    }
+    /**
+     * <code>uint32 max_targets = 34;</code>
+     * @param value The maxTargets to set.
+     * @return This builder for chaining.
+     */
+    public Builder setMaxTargets(int value) {
+
+      maxTargets_ = value;
+      bitField0_ |= 0x40000000;
+      onChanged();
+      return this;
+    }
+    /**
+     * <code>uint32 max_targets = 34;</code>
+     * @return This builder for chaining.
+     */
+    public Builder clearMaxTargets() {
+      bitField0_ = (bitField0_ & ~0x40000000);
+      maxTargets_ = 0;
+      onChanged();
+      return this;
+    }
+
+    private double manaPercent_ ;
+    /**
+     * <code>double mana_percent = 35;</code>
+     * @return The manaPercent.
+     */
+    @java.lang.Override
+    public double getManaPercent() {
+      return manaPercent_;
+    }
+    /**
+     * <code>double mana_percent = 35;</code>
+     * @param value The manaPercent to set.
+     * @return This builder for chaining.
+     */
+    public Builder setManaPercent(double value) {
+
+      manaPercent_ = value;
+      bitField0_ |= 0x80000000;
+      onChanged();
+      return this;
+    }
+    /**
+     * <code>double mana_percent = 35;</code>
+     * @return This builder for chaining.
+     */
+    public Builder clearManaPercent() {
+      bitField0_ = (bitField0_ & ~0x80000000);
+      manaPercent_ = 0D;
+      onChanged();
+      return this;
+    }
+
+    private int cooldownRounds_ ;
+    /**
+     * <code>uint32 cooldown_rounds = 36;</code>
+     * @return The cooldownRounds.
+     */
+    @java.lang.Override
+    public int getCooldownRounds() {
+      return cooldownRounds_;
+    }
+    /**
+     * <code>uint32 cooldown_rounds = 36;</code>
+     * @param value The cooldownRounds to set.
+     * @return This builder for chaining.
+     */
+    public Builder setCooldownRounds(int value) {
+
+      cooldownRounds_ = value;
+      bitField1_ |= 0x00000001;
+      onChanged();
+      return this;
+    }
+    /**
+     * <code>uint32 cooldown_rounds = 36;</code>
+     * @return This builder for chaining.
+     */
+    public Builder clearCooldownRounds() {
+      bitField1_ = (bitField1_ & ~0x00000001);
+      cooldownRounds_ = 0;
+      onChanged();
+      return this;
+    }
+
+    private double healMultiplier_ ;
+    /**
+     * <code>double heal_multiplier = 37;</code>
+     * @return The healMultiplier.
+     */
+    @java.lang.Override
+    public double getHealMultiplier() {
+      return healMultiplier_;
+    }
+    /**
+     * <code>double heal_multiplier = 37;</code>
+     * @param value The healMultiplier to set.
+     * @return This builder for chaining.
+     */
+    public Builder setHealMultiplier(double value) {
+
+      healMultiplier_ = value;
+      bitField1_ |= 0x00000002;
+      onChanged();
+      return this;
+    }
+    /**
+     * <code>double heal_multiplier = 37;</code>
+     * @return This builder for chaining.
+     */
+    public Builder clearHealMultiplier() {
+      bitField1_ = (bitField1_ & ~0x00000002);
+      healMultiplier_ = 0D;
+      onChanged();
+      return this;
+    }
+
+    private double healPerLevel_ ;
+    /**
+     * <code>double heal_per_level = 38;</code>
+     * @return The healPerLevel.
+     */
+    @java.lang.Override
+    public double getHealPerLevel() {
+      return healPerLevel_;
+    }
+    /**
+     * <code>double heal_per_level = 38;</code>
+     * @param value The healPerLevel to set.
+     * @return This builder for chaining.
+     */
+    public Builder setHealPerLevel(double value) {
+
+      healPerLevel_ = value;
+      bitField1_ |= 0x00000004;
+      onChanged();
+      return this;
+    }
+    /**
+     * <code>double heal_per_level = 38;</code>
+     * @return This builder for chaining.
+     */
+    public Builder clearHealPerLevel() {
+      bitField1_ = (bitField1_ & ~0x00000004);
+      healPerLevel_ = 0D;
+      onChanged();
+      return this;
+    }
+
+    private double executeHealThreshold_ ;
+    /**
+     * <code>double execute_heal_threshold = 39;</code>
+     * @return The executeHealThreshold.
+     */
+    @java.lang.Override
+    public double getExecuteHealThreshold() {
+      return executeHealThreshold_;
+    }
+    /**
+     * <code>double execute_heal_threshold = 39;</code>
+     * @param value The executeHealThreshold to set.
+     * @return This builder for chaining.
+     */
+    public Builder setExecuteHealThreshold(double value) {
+
+      executeHealThreshold_ = value;
+      bitField1_ |= 0x00000008;
+      onChanged();
+      return this;
+    }
+    /**
+     * <code>double execute_heal_threshold = 39;</code>
+     * @return This builder for chaining.
+     */
+    public Builder clearExecuteHealThreshold() {
+      bitField1_ = (bitField1_ & ~0x00000008);
+      executeHealThreshold_ = 0D;
+      onChanged();
+      return this;
+    }
+
+    private double executeHealBonus_ ;
+    /**
+     * <code>double execute_heal_bonus = 40;</code>
+     * @return The executeHealBonus.
+     */
+    @java.lang.Override
+    public double getExecuteHealBonus() {
+      return executeHealBonus_;
+    }
+    /**
+     * <code>double execute_heal_bonus = 40;</code>
+     * @param value The executeHealBonus to set.
+     * @return This builder for chaining.
+     */
+    public Builder setExecuteHealBonus(double value) {
+
+      executeHealBonus_ = value;
+      bitField1_ |= 0x00000010;
+      onChanged();
+      return this;
+    }
+    /**
+     * <code>double execute_heal_bonus = 40;</code>
+     * @return This builder for chaining.
+     */
+    public Builder clearExecuteHealBonus() {
+      bitField1_ = (bitField1_ & ~0x00000010);
+      executeHealBonus_ = 0D;
+      onChanged();
+      return this;
+    }
+
+    private double restoreManaPercent_ ;
+    /**
+     * <code>double restore_mana_percent = 41;</code>
+     * @return The restoreManaPercent.
+     */
+    @java.lang.Override
+    public double getRestoreManaPercent() {
+      return restoreManaPercent_;
+    }
+    /**
+     * <code>double restore_mana_percent = 41;</code>
+     * @param value The restoreManaPercent to set.
+     * @return This builder for chaining.
+     */
+    public Builder setRestoreManaPercent(double value) {
+
+      restoreManaPercent_ = value;
+      bitField1_ |= 0x00000020;
+      onChanged();
+      return this;
+    }
+    /**
+     * <code>double restore_mana_percent = 41;</code>
+     * @return This builder for chaining.
+     */
+    public Builder clearRestoreManaPercent() {
+      bitField1_ = (bitField1_ & ~0x00000020);
+      restoreManaPercent_ = 0D;
+      onChanged();
+      return this;
+    }
+
+    private int dispelCount_ ;
+    /**
+     * <code>uint32 dispel_count = 42;</code>
+     * @return The dispelCount.
+     */
+    @java.lang.Override
+    public int getDispelCount() {
+      return dispelCount_;
+    }
+    /**
+     * <code>uint32 dispel_count = 42;</code>
+     * @param value The dispelCount to set.
+     * @return This builder for chaining.
+     */
+    public Builder setDispelCount(int value) {
+
+      dispelCount_ = value;
+      bitField1_ |= 0x00000040;
+      onChanged();
+      return this;
+    }
+    /**
+     * <code>uint32 dispel_count = 42;</code>
+     * @return This builder for chaining.
+     */
+    public Builder clearDispelCount() {
+      bitField1_ = (bitField1_ & ~0x00000040);
+      dispelCount_ = 0;
+      onChanged();
+      return this;
+    }
+
+    private int initiative_ ;
+    /**
+     * <code>int32 initiative = 43;</code>
+     * @return The initiative.
+     */
+    @java.lang.Override
+    public int getInitiative() {
+      return initiative_;
+    }
+    /**
+     * <code>int32 initiative = 43;</code>
+     * @param value The initiative to set.
+     * @return This builder for chaining.
+     */
+    public Builder setInitiative(int value) {
+
+      initiative_ = value;
+      bitField1_ |= 0x00000080;
+      onChanged();
+      return this;
+    }
+    /**
+     * <code>int32 initiative = 43;</code>
+     * @return This builder for chaining.
+     */
+    public Builder clearInitiative() {
+      bitField1_ = (bitField1_ & ~0x00000080);
+      initiative_ = 0;
+      onChanged();
+      return this;
+    }
+
+    private java.lang.Object passiveStat_ = "";
+    /**
+     * <code>string passive_stat = 44;</code>
+     * @return The passiveStat.
+     */
+    public java.lang.String getPassiveStat() {
+      java.lang.Object ref = passiveStat_;
+      if (!(ref instanceof java.lang.String)) {
+        com.google.protobuf.ByteString bs =
+            (com.google.protobuf.ByteString) ref;
+        java.lang.String s = bs.toStringUtf8();
+        passiveStat_ = s;
+        return s;
+      } else {
+        return (java.lang.String) ref;
+      }
+    }
+    /**
+     * <code>string passive_stat = 44;</code>
+     * @return The bytes for passiveStat.
+     */
+    public com.google.protobuf.ByteString
+        getPassiveStatBytes() {
+      java.lang.Object ref = passiveStat_;
+      if (ref instanceof String) {
+        com.google.protobuf.ByteString b = 
+            com.google.protobuf.ByteString.copyFromUtf8(
+                (java.lang.String) ref);
+        passiveStat_ = b;
+        return b;
+      } else {
+        return (com.google.protobuf.ByteString) ref;
+      }
+    }
+    /**
+     * <code>string passive_stat = 44;</code>
+     * @param value The passiveStat to set.
+     * @return This builder for chaining.
+     */
+    public Builder setPassiveStat(
+        java.lang.String value) {
+      if (value == null) { throw new NullPointerException(); }
+      passiveStat_ = value;
+      bitField1_ |= 0x00000100;
+      onChanged();
+      return this;
+    }
+    /**
+     * <code>string passive_stat = 44;</code>
+     * @return This builder for chaining.
+     */
+    public Builder clearPassiveStat() {
+      passiveStat_ = getDefaultInstance().getPassiveStat();
+      bitField1_ = (bitField1_ & ~0x00000100);
+      onChanged();
+      return this;
+    }
+    /**
+     * <code>string passive_stat = 44;</code>
+     * @param value The bytes for passiveStat to set.
+     * @return This builder for chaining.
+     */
+    public Builder setPassiveStatBytes(
+        com.google.protobuf.ByteString value) {
+      if (value == null) { throw new NullPointerException(); }
+      checkByteStringIsUtf8(value);
+      passiveStat_ = value;
+      bitField1_ |= 0x00000100;
+      onChanged();
+      return this;
+    }
+
+    private double passivePercent_ ;
+    /**
+     * <code>double passive_percent = 45;</code>
+     * @return The passivePercent.
+     */
+    @java.lang.Override
+    public double getPassivePercent() {
+      return passivePercent_;
+    }
+    /**
+     * <code>double passive_percent = 45;</code>
+     * @param value The passivePercent to set.
+     * @return This builder for chaining.
+     */
+    public Builder setPassivePercent(double value) {
+
+      passivePercent_ = value;
+      bitField1_ |= 0x00000200;
+      onChanged();
+      return this;
+    }
+    /**
+     * <code>double passive_percent = 45;</code>
+     * @return This builder for chaining.
+     */
+    public Builder clearPassivePercent() {
+      bitField1_ = (bitField1_ & ~0x00000200);
+      passivePercent_ = 0D;
+      onChanged();
+      return this;
+    }
+
+    private double buffPercent_ ;
+    /**
+     * <code>double buff_percent = 46;</code>
+     * @return The buffPercent.
+     */
+    @java.lang.Override
+    public double getBuffPercent() {
+      return buffPercent_;
+    }
+    /**
+     * <code>double buff_percent = 46;</code>
+     * @param value The buffPercent to set.
+     * @return This builder for chaining.
+     */
+    public Builder setBuffPercent(double value) {
+
+      buffPercent_ = value;
+      bitField1_ |= 0x00000400;
+      onChanged();
+      return this;
+    }
+    /**
+     * <code>double buff_percent = 46;</code>
+     * @return This builder for chaining.
+     */
+    public Builder clearBuffPercent() {
+      bitField1_ = (bitField1_ & ~0x00000400);
+      buffPercent_ = 0D;
+      onChanged();
+      return this;
+    }
+
     private java.util.List<com.game.table.Skillrequired_item> requiredItem_ =
       java.util.Collections.emptyList();
     private void ensureRequiredItemIsMutable() {
-      if (!((bitField0_ & 0x00400000) != 0)) {
+      if (!((bitField1_ & 0x00000800) != 0)) {
         requiredItem_ = new java.util.ArrayList<com.game.table.Skillrequired_item>(requiredItem_);
-        bitField0_ |= 0x00400000;
+        bitField1_ |= 0x00000800;
        }
     }
 
@@ -2685,7 +4449,7 @@ private static final long serialVersionUID = 0L;
     public Builder clearRequiredItem() {
       if (requiredItemBuilder_ == null) {
         requiredItem_ = java.util.Collections.emptyList();
-        bitField0_ = (bitField0_ & ~0x00400000);
+        bitField1_ = (bitField1_ & ~0x00000800);
         onChanged();
       } else {
         requiredItemBuilder_.clear();
@@ -2762,7 +4526,7 @@ private static final long serialVersionUID = 0L;
         requiredItemBuilder_ = new com.google.protobuf.RepeatedFieldBuilder<
             com.game.table.Skillrequired_item, com.game.table.Skillrequired_item.Builder, com.game.table.Skillrequired_itemOrBuilder>(
                 requiredItem_,
-                ((bitField0_ & 0x00400000) != 0),
+                ((bitField1_ & 0x00000800) != 0),
                 getParentForChildren(),
                 isClean());
         requiredItem_ = null;
@@ -2773,9 +4537,9 @@ private static final long serialVersionUID = 0L;
     private java.util.List<com.game.table.Skillrequired_resource> requiredResource_ =
       java.util.Collections.emptyList();
     private void ensureRequiredResourceIsMutable() {
-      if (!((bitField0_ & 0x00800000) != 0)) {
+      if (!((bitField1_ & 0x00001000) != 0)) {
         requiredResource_ = new java.util.ArrayList<com.game.table.Skillrequired_resource>(requiredResource_);
-        bitField0_ |= 0x00800000;
+        bitField1_ |= 0x00001000;
        }
     }
 
@@ -2925,7 +4689,7 @@ private static final long serialVersionUID = 0L;
     public Builder clearRequiredResource() {
       if (requiredResourceBuilder_ == null) {
         requiredResource_ = java.util.Collections.emptyList();
-        bitField0_ = (bitField0_ & ~0x00800000);
+        bitField1_ = (bitField1_ & ~0x00001000);
         onChanged();
       } else {
         requiredResourceBuilder_.clear();
@@ -3002,7 +4766,7 @@ private static final long serialVersionUID = 0L;
         requiredResourceBuilder_ = new com.google.protobuf.RepeatedFieldBuilder<
             com.game.table.Skillrequired_resource, com.game.table.Skillrequired_resource.Builder, com.game.table.Skillrequired_resourceOrBuilder>(
                 requiredResource_,
-                ((bitField0_ & 0x00800000) != 0),
+                ((bitField1_ & 0x00001000) != 0),
                 getParentForChildren(),
                 isClean());
         requiredResource_ = null;
@@ -3013,9 +4777,9 @@ private static final long serialVersionUID = 0L;
     private java.util.List<com.game.table.Skillcost_resource> costResource_ =
       java.util.Collections.emptyList();
     private void ensureCostResourceIsMutable() {
-      if (!((bitField0_ & 0x01000000) != 0)) {
+      if (!((bitField1_ & 0x00002000) != 0)) {
         costResource_ = new java.util.ArrayList<com.game.table.Skillcost_resource>(costResource_);
-        bitField0_ |= 0x01000000;
+        bitField1_ |= 0x00002000;
        }
     }
 
@@ -3165,7 +4929,7 @@ private static final long serialVersionUID = 0L;
     public Builder clearCostResource() {
       if (costResourceBuilder_ == null) {
         costResource_ = java.util.Collections.emptyList();
-        bitField0_ = (bitField0_ & ~0x01000000);
+        bitField1_ = (bitField1_ & ~0x00002000);
         onChanged();
       } else {
         costResourceBuilder_.clear();
@@ -3242,7 +5006,7 @@ private static final long serialVersionUID = 0L;
         costResourceBuilder_ = new com.google.protobuf.RepeatedFieldBuilder<
             com.game.table.Skillcost_resource, com.game.table.Skillcost_resource.Builder, com.game.table.Skillcost_resourceOrBuilder>(
                 costResource_,
-                ((bitField0_ & 0x01000000) != 0),
+                ((bitField1_ & 0x00002000) != 0),
                 getParentForChildren(),
                 isClean());
         costResource_ = null;

@@ -10,9 +10,8 @@
    "init_speed": 240,
    "init_strength": 20,
    "skill": [
-    1,
-    2,
-    13
+    1101,
+    1106
    ]
   },
   {
@@ -25,9 +24,8 @@
    "init_speed": 240,
    "init_strength": 20,
    "skill": [
-    1,
-    1,
-    1
+    1201,
+    1206
    ]
   },
   {
@@ -40,9 +38,8 @@
    "init_speed": 240,
    "init_strength": 20,
    "skill": [
-    1,
-    1,
-    1
+    1301,
+    1306
    ]
   },
   {
@@ -55,9 +52,8 @@
    "init_speed": 240,
    "init_strength": 20,
    "skill": [
-    1,
-    1,
-    1
+    1401,
+    1406
    ]
   },
   {

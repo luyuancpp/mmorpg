@@ -131,6 +131,132 @@ public final class SkillTableComp {
         }
     }
 
+    public record Class_id(int value) {
+        public static Class_id from(SkillTable row) {
+            return new Class_id(row.getClassId());
+        }
+    }
+
+    public record Name(String value) {
+        public static Name from(SkillTable row) {
+            return new Name(row.getName());
+        }
+    }
+
+    public record Description(String value) {
+        public static Description from(SkillTable row) {
+            return new Description(row.getDescription());
+        }
+    }
+
+    public record Icon_key(String value) {
+        public static Icon_key from(SkillTable row) {
+            return new Icon_key(row.getIconKey());
+        }
+    }
+
+    public record Category(String value) {
+        public static Category from(SkillTable row) {
+            return new Category(row.getCategory());
+        }
+    }
+
+    public record Unlock_level(int value) {
+        public static Unlock_level from(SkillTable row) {
+            return new Unlock_level(row.getUnlockLevel());
+        }
+    }
+
+    public record Max_rank(int value) {
+        public static Max_rank from(SkillTable row) {
+            return new Max_rank(row.getMaxRank());
+        }
+    }
+
+    public record Target_team(int value) {
+        public static Target_team from(SkillTable row) {
+            return new Target_team(row.getTargetTeam());
+        }
+    }
+
+    public record Max_targets(int value) {
+        public static Max_targets from(SkillTable row) {
+            return new Max_targets(row.getMaxTargets());
+        }
+    }
+
+    public record Mana_percent(double value) {
+        public static Mana_percent from(SkillTable row) {
+            return new Mana_percent(row.getManaPercent());
+        }
+    }
+
+    public record Cooldown_rounds(int value) {
+        public static Cooldown_rounds from(SkillTable row) {
+            return new Cooldown_rounds(row.getCooldownRounds());
+        }
+    }
+
+    public record Heal_multiplier(double value) {
+        public static Heal_multiplier from(SkillTable row) {
+            return new Heal_multiplier(row.getHealMultiplier());
+        }
+    }
+
+    public record Heal_per_level(double value) {
+        public static Heal_per_level from(SkillTable row) {
+            return new Heal_per_level(row.getHealPerLevel());
+        }
+    }
+
+    public record Execute_heal_threshold(double value) {
+        public static Execute_heal_threshold from(SkillTable row) {
+            return new Execute_heal_threshold(row.getExecuteHealThreshold());
+        }
+    }
+
+    public record Execute_heal_bonus(double value) {
+        public static Execute_heal_bonus from(SkillTable row) {
+            return new Execute_heal_bonus(row.getExecuteHealBonus());
+        }
+    }
+
+    public record Restore_mana_percent(double value) {
+        public static Restore_mana_percent from(SkillTable row) {
+            return new Restore_mana_percent(row.getRestoreManaPercent());
+        }
+    }
+
+    public record Dispel_count(int value) {
+        public static Dispel_count from(SkillTable row) {
+            return new Dispel_count(row.getDispelCount());
+        }
+    }
+
+    public record Initiative(int value) {
+        public static Initiative from(SkillTable row) {
+            return new Initiative(row.getInitiative());
+        }
+    }
+
+    public record Passive_stat(String value) {
+        public static Passive_stat from(SkillTable row) {
+            return new Passive_stat(row.getPassiveStat());
+        }
+    }
+
+    public record Passive_percent(double value) {
+        public static Passive_percent from(SkillTable row) {
+            return new Passive_percent(row.getPassivePercent());
+        }
+    }
+
+    public record Buff_percent(double value) {
+        public static Buff_percent from(SkillTable row) {
+            return new Buff_percent(row.getBuffPercent());
+        }
+    }
+
     public record Skill_type(List<Integer> values) {
         public static Skill_type from(SkillTable row) {
             return new Skill_type(row.getSkillTypeList());

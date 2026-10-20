@@ -49,6 +49,7 @@
 #include "modules/condition/condition_type.h"
 #include "modules/mission/mission_events.h"
 #include "player/system/player_revive.h"
+#include "player/system/player_skill.h"
 #include "player/system/player_team.h"
 // PublishAssetWake:战斗冻结解除后唤醒资产通道(landing-recovery-sync-digest.md §5.2)。
 #include "player/system/player_landing.h"
@@ -1080,41 +1081,10 @@ bool PlayerBattleSystem::BuildBattleSnapshot(entt::entity player, ::BattlePlayer
 		*snapshot.add_pets() = petSnapshot;
 	}
 
-	// —— 技能列表:只带回合制真能施放的(G6)——
-	// 被动技能没有施放动作、开关技能是状态切换、持续施法依赖引擎已删除的相位概念;
-	// 三者若进了快照,引擎会把它们当普通技能按 damage 表达式打出伤害。
-	// 这里是第一道过滤,引擎 InitPlayers 还有一道(快照来自本进程也不能单点信任)。
-	const auto& skillList = registry.get<PlayerSkillListComp>(player);
-	for (const auto& skill : skillList.skill_list())
-	{
-		if (skill.skill_table_id() == 0)
-		{
-			continue;
-		}
-		const auto* skillRow =
-			SkillTableManager::Instance().FindByIdSilent(skill.skill_table_id()).first;
-		if (skillRow == nullptr)
-		{
-			continue;
-		}
-		bool castableInTurnBattle = true;
-		// 表里存的是位号(0..5)不是掩码,别和 scene 侧 eSkillType 的 1<<n 混用
-		for (const auto skillTypeBit : skillRow->skill_type())
-		{
-			if (skillTypeBit == turnbattle::kSkillTypeBitPassive ||
-				skillTypeBit == turnbattle::kSkillTypeBitToggle ||
-				skillTypeBit == turnbattle::kSkillTypeBitChannel)
-			{
-				castableInTurnBattle = false;
-				break;
-			}
-		}
-		if (!castableInTurnBattle)
-		{
-			continue;
-		}
-		snapshot.add_skill_table_ids(skill.skill_table_id());
-	}
+	// —— 技能列表:只带回合制真能施放的(G6)+ 职业技能生效等级(class-skills.md §6.1)——
+	// 被动 / 开关 / 持续施法不进 skill_table_ids;不生效的条目(别的职业 / 已退役的占位技能 / 等级不够)一律不带。
+	// 过滤规则只在 PlayerSkillSystem 一处,引擎 InitPlayers 再复核一道。
+	PlayerSkillSystem::FillBattleSnapshot(player, snapshot);
 
 	// —— 参战持续 buff(时长换算为回合)——
 	if (const auto* buffList = tlsEcs.actorRegistry.try_get<BuffListComp>(player))

@@ -79,6 +79,38 @@ inline constexpr uint32_t kBuffTypePoison = 50;
 inline constexpr uint32_t kBuffTypeBurn = 51;
 inline constexpr uint32_t kBuffTypeFreeze = 52;
 
+// 属性增强类(同文件 eBuffType 10..13)。四职业技能的增减益借这三种类型标明"改哪一项",
+// 幅度不读 Buff 表,读局内 BattleBuffEntry.stat_percent(施加时按施法者技能等级算定,带符号,负 = 减益)
+inline constexpr uint32_t kBuffTypeIncreaseAttack = 10;
+inline constexpr uint32_t kBuffTypeIncreaseDefense = 11;
+inline constexpr uint32_t kBuffTypeMovementSpeedBoost = 13;
+
+// 四职业技能增减益作用的属性(docs/design/class-skills.md §6.4)
+enum class ClassBuffStat : uint8_t {
+    kNone = 0,
+    kPhysicalAttack,  // 物伤:普攻与物理技能取攻击时乘上
+    kDefense,         // 防御:受击方的减伤公式里乘上
+    kSpeed,           // 速度:回合开始排出手序时乘上(所以本回合施加的从下一回合起生效)、逃跑判定同口径
+    kCount,
+};
+
+// buff_type → 作用属性;不是这三种类型的返回 kNone(老 buff 一律不按比例改属性)
+constexpr ClassBuffStat ClassSkillStatOfBuffType(uint32_t buffType) {
+    switch (buffType) {
+    case kBuffTypeIncreaseAttack:
+        return ClassBuffStat::kPhysicalAttack;
+    case kBuffTypeIncreaseDefense:
+        return ClassBuffStat::kDefense;
+    case kBuffTypeMovementSpeedBoost:
+        return ClassBuffStat::kSpeed;
+    default:
+        return ClassBuffStat::kNone;
+    }
+}
+
+// 同一属性增减叠加后的倍率下限:减益再多,属性也只降到原值的 10%,不归零(归零会让伤害公式与出手序退化)
+inline constexpr double kMinClassBuffStatMultiplier = 0.1;
+
 // ---- 战斗状态(镜像 cpp/libs/services/scene/combat_state/constants/combat_state.h,
 //      作为 SkillPermission 表行 id 使用) ----
 

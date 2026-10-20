@@ -13664,6 +13664,18 @@ PROGRESS 一直没有条目)。上面 2026-09-21 条里"第 7–9 步未跑""修
   4. `gen_docs_index.py --check` 的判据同上一条更正:看本条改过的文档,README 条目与首个 `#` 标题逐字一致即可;整体退出 1 的原因与本条无关。
 - **G4a 状态**:修订与收尾全部完成。剩下的只有两件:§25.2 的 12 处待负责人拍板;各批落码(第 1a 批门禁是「与 L-02 的先后」拍板,即原 §13 第 10 条,且改动超过 30 个文件需授权)。
 - **Java 版(AGENTS §12)**:注释与文档在 Java 不适用;对应 Java 版本 0.1.0-SNAPSHOT,Java 仓 PARITY 不加行,G4a 那一行不变。
+## 2026-10-19 Claude:四职业 32 技能接进服务端(查询 / 学习修习 / 战斗施放),未 proto-gen、未编译
+
+- 分支 `feat/class-skills`(工作树 `E:/work/xuanming-server-mmo-wt-skills`,基于 origin/main `c63b22dca2`),设计 [class-skills.md](design/class-skills.md),
+  交 Codex 的命令与 §7 清单对照 [class-skills-handoff-20261019.md](handoff/class-skills-handoff-20261019.md)。
+- 配表:Skill 追加 21 列 + 32 行(1101..1408)、Buff 6 行、Class 1~4 初始技能改为本职业首主动 + 首被动、Tip `skill_error` 7007..7013;沙盒导表拷回(manifest v30)。
+- 协议:`PlayerSkillComp.rank=3`;`ListSkillsResponse` 3..6 + `SkillCatalogEntry`;`UpgradeSkill`(消息号 317,已在 message_id.txt 登记);
+  战斗 `BattleBuffEntry` 6/7、`BattlePlayerSnapshot.skill_ranks=21`、`BattleActorState.skill_ranks=28`、`BattleEventItem.mana_delta=15`。
+- 逻辑:修掉 RegisterPlayer 遍历所有职业种子;加载期整理 + 补初始技能;技能书 / 修习(1 / 10 次、乐观等级防重放、战斗 / 冻结 / 交接拒写);
+  被动只进 scene 属性重算(`kSkillChanged`),治疗加成只进引擎;快照带等级;引擎实现职业技能的目标 / 冷却 / 比例耗蓝 / 等级系数 / 治疗 / 回蓝 / 驱散 / 增减益 / 先手 / mana_delta。
+- 测试已写未跑:engine 5 + 17 + 真表契约 1,skill_test 13;skill_test 补链 battle.lib / rdkafka.lib。
+- 未做:宠物技能、截图新机制、联机冒烟;**proto-gen 必须由 Codex 先编生成器再跑**(仓内 exe 旧于 10-19 生成器源码)。
+- Java 版(AGENTS §12):本机没有 `D:/luyuan/xuanming-server-mmo`,未登记 `PARITY.md`,待做(proto 字段号、消息号 317、tip 7007..7013、Skill/Buff/Class 数据须同批对齐)。对应 Java 版本号:无。
 ## 2026-10-19 真钱充值设计(苹果 IAP / Google Play / 国内安卓 / 小游戏)(Claude,只有设计,未写代码)
 
 - **结论**:新增设计稿 `docs/design/payment-recharge.md`(第 4 版,已登记 `tools/scripts/gen_docs_index.py` 与 `docs/README.md`)。用户 10-19 拍板国内、海外都要,先做苹果 + 谷歌骨架,国内渠道第二批;目前没有任何开发者账号,先用本地 mock 渠道跑通。
