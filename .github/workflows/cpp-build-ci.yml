@@ -9,7 +9,7 @@ name: C++ 构建门禁
 #
 # ── 分层与取舍（重要，别删）─────────────────────────────────────────────
 # 完整编译的依赖极重：deploy/k8s/Dockerfile.cpp 的 deps 阶段要从源码编
-# gRPC v1.83.0（连带 protobuf v35.1 / BoringSSL / abseil），Dockerfile 自
+# gRPC v1.84.0（连带 protobuf v35.1 / BoringSSL / abseil），Dockerfile 自
 # 己的注释写着「首次构建 ~30–60 min」，后面还有 muduo / librdkafka / redis /
 # yaml-cpp / zlib，再往后才是 cpp/generated/proto 这堆巨型生成物。
 # 而且 cpp/generated 的 protobuf 版本硬校验（7035001）钉死了必须用这一套
@@ -188,6 +188,7 @@ jobs:
             third_party/librdkafka
             third_party/yaml-cpp
             third_party/zlib
+            third_party/curl
             third_party/boost
             third_party/entt
             third_party/fmt
@@ -217,6 +218,16 @@ jobs:
             echo "::warning::Shallow non-recursive submodule clone failed; falling back to a full-depth fetch"
             git submodule update --init -- "${SUBMODULES_NO_RECURSE[@]}" || exit 1
           fi
+          # 镜像构建前复放已登记的源码兼容补丁，尤其是 ue5navmesh 的 cassert 修正。
+          # gRPC 在 Docker 内按独立固定 SHA 构建，OpenSSL 不属于该构建目标。
+          LOCK_ARGS=(--apply-patches)
+          for path in "${SUBMODULES[@]}" "${SUBMODULES_NO_RECURSE[@]}"; do
+            LOCK_ARGS+=(--path "$path")
+          done
+          python3 tools/scripts/third_party/verify_release_lock.py "${LOCK_ARGS[@]}" || exit 1
+          # Boost Git 仓库按模块分散存放头文件；COPY 前生成普通文件聚合树。
+          python3 tools/scripts/third_party/refresh_boost_headers.py \
+            --archive build/verification/boost-copy-ci || exit 1
           df -h /
 
       - uses: docker/setup-buildx-action@v3

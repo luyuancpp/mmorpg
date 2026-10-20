@@ -345,9 +345,10 @@ func TestCheckTakeOverFenceFlag(t *testing.T) {
 
 // TestRouteFenceKeptAbortMessage:db 源的中止文案给 -take-over-fence 指引、不给「DEL 镜像」指引;失权时改成「先查清是谁接手」。
 func TestRouteFenceKeptAbortMessage(t *testing.T) {
-	kept := routeFenceKeptAbortMessage("step X failed", fencedOpMerge, testDBSrc, testDBDst, testDBRun, nil)
+	const manifest = "merge_901_to_902_test.json"
+	kept := routeFenceKeptAbortMessage("step X failed", fencedOpMerge, testDBSrc, testDBDst, testDBRun, manifest, nil)
 	for _, want := range []string{"step X failed", "zone_merge_fence", "run_id=" + testDBRun, "-take-over-fence " + testDBRun,
-		"merge:in_progress:901", "merge:in_progress:902", "不要手工 DEL 镜像"} {
+		"merge:in_progress:901", "merge:in_progress:902", "不要手工 DEL 镜像", "-manifest-path " + manifest} {
 		if !strings.Contains(kept, want) {
 			t.Fatalf("kept message lacks %q:\n%s", want, kept)
 		}
@@ -355,7 +356,7 @@ func TestRouteFenceKeptAbortMessage(t *testing.T) {
 	if strings.Contains(kept, "(4) DEL") {
 		t.Fatalf("db-source message must not tell the operator to DEL the mirror:\n%s", kept)
 	}
-	lost := routeFenceKeptAbortMessage("step X failed", fencedOpUnmerge, testDBSrc, testDBDst, testDBRun,
+	lost := routeFenceKeptAbortMessage("step X failed", fencedOpUnmerge, testDBSrc, testDBDst, testDBRun, manifest,
 		fmt.Errorf("%w: renewed 0/64", errRouteFenceLost))
 	if !strings.Contains(lost, "失去合服围栏") || strings.Contains(lost, "立即用原命令加 -take-over-fence") {
 		t.Fatalf("lost message:\n%s", lost)

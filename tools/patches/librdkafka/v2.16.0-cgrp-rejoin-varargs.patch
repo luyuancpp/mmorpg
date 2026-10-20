@@ -1,0 +1,22 @@
+--- a/src/rdkafka_cgrp.c
++++ b/src/rdkafka_cgrp.c
+@@ -1602,14 +1602,14 @@
+         char reason[512];
+         va_list ap;
+         char astr[128];
+-        if (rkcg->rkcg_group_protocol == RD_KAFKA_GROUP_PROTOCOL_CONSUMER) {
+-                rd_kafka_cgrp_consumer_rejoin(rkcg, fmt, ap);
+-                return;
+-        }
+-
+         va_start(ap, fmt);
+         rd_vsnprintf(reason, sizeof(reason), fmt, ap);
+         va_end(ap);
++
++        if (rkcg->rkcg_group_protocol == RD_KAFKA_GROUP_PROTOCOL_CONSUMER) {
++                rd_kafka_cgrp_consumer_rejoin(rkcg, "%s", reason);
++                return;
++        }
+ 
+         if (rkcg->rkcg_group_assignment)
+                 rd_snprintf(astr, sizeof(astr), " with %d owned partition(s)",

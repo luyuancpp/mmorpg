@@ -7981,6 +7981,76 @@ Test-Case 'D1 1b-3 mapping Redis 启动参数:redis.yaml 的两条 exec、redis-
     Assert-Match -Text $redisService.Groups['body'].Value -Pattern '(?m)^\s+--enable-debug-command no\s*$' -Because '本机 compose 的 redis 同样是 mapping Redis'
 }
 
+# ── 告警引用的指标名与标签取值从 Go 源码核对(D1 映射与落点告警;照 mail-alerts / rank-alerts 用例读 metrics.go 的做法)──
+# 改名后告警表达式恒为空、不报错,与「一切正常」长得一样;手写名单拦不住(review B3-6 / OPS-7)。读到的 Go 文件同步列在
+# .github/workflows/deploy-config-tests.yml 的 paths 里,只改这些 Go 文件也会重跑本用例。
+
+# 一个 metrics 包里注册的指标全名:`const subsystem = "..."` + 每个 `Name: "..."`(prometheus.*Opts,包内都写 Subsystem: subsystem)。
+# 读目录下全部非 _test.go 的 .go 文件(go/db 的指标分在 metrics.go / pipeline.go / task_result_notify.go 里)。换了写法要同步本函数。
+function Get-GoSubsystemMetricNames {
+    param([Parameter(Mandatory = $true)][string]$RelativeDir)
+    $dir = Join-Path (Get-RepoRoot) $RelativeDir
+    $sources = @(Get-ChildItem -LiteralPath $dir -Filter '*.go' -File | Where-Object { $_.Name -notlike '*_test.go' } | Sort-Object Name |
+            ForEach-Object { [IO.File]::ReadAllText($_.FullName) })
+    $subsystems = @($sources | ForEach-Object { [regex]::Matches($_, '(?m)^const subsystem = "(?<s>[a-z_]+)"') } | ForEach-Object { $_.Groups['s'].Value } | Sort-Object -Unique)
+    if ($subsystems.Count -ne 1) { throw "$RelativeDir 里应当恰好一个 const subsystem = `"...`"(实际 $($subsystems -join ',')),换了写法要同步 Get-GoSubsystemMetricNames" }
+    return @($sources | ForEach-Object { [regex]::Matches($_, '(?m)^\s*Name:\s*"(?<n>[a-z0-9_]+)"') } | ForEach-Object { $subsystems[0] + '_' + $_.Groups['n'].Value } | Sort-Object -Unique)
+}
+
+# 一个 Go 文件里以 -Prefix 开头的字符串常量的取值(`<Prefix>Xxx = "value"`,const 块里对齐写法也认)。
+function Get-GoPrefixedStringConsts {
+    param([Parameter(Mandatory = $true)][string]$RelativePath, [Parameter(Mandatory = $true)][string]$Prefix)
+    $source = [IO.File]::ReadAllText((Join-Path (Get-RepoRoot) $RelativePath))
+    $values = @([regex]::Matches($source, ('(?m)^\s*{0}[A-Za-z0-9]*\s*=\s*"(?<v>[a-z0-9_]+)"' -f [regex]::Escape($Prefix))) | ForEach-Object { $_.Groups['v'].Value } | Sort-Object -Unique)
+    if ($values.Count -eq 0) { throw "$RelativePath 里找不到以 $Prefix 开头的字符串常量(改名了?要同步本用例)" }
+    return $values
+}
+
+# 三个读方共用的 verdict 取值:shared/placement 的 7 个名字(routeReadyVerdictNames 数组字面量)加 script_error(data_service 的常量)。
+function Get-RouteReadyVerdictLabelValues {
+    $source = [IO.File]::ReadAllText((Join-Path (Get-RepoRoot) 'go/shared/placement/route_ready.go'))
+    $table = [regex]::Match($source, '(?s)routeReadyVerdictNames\s*=\s*\[routeReadyVerdictCount\]string\{(?<body>[^}]*)\}')
+    if (-not $table.Success) { throw 'go/shared/placement/route_ready.go 里找不到 routeReadyVerdictNames 的数组字面量(换了写法要同步本用例)' }
+    $names = @([regex]::Matches($table.Groups['body'].Value, '"(?<v>[a-z_]+)"') | ForEach-Object { $_.Groups['v'].Value })
+    return @($names + @(Get-GoPrefixedStringConsts -RelativePath 'go/data_service/internal/metrics/metrics.go' -Prefix 'RouteReadyVerdictScriptError'))
+}
+
+# 告警文件里全部 expr 块拼成一段文本(`expr: |` 到同一规则的 `for:` 之前)。
+function Get-AlertExprText {
+    param([Parameter(Mandatory = $true)][string]$Text)
+    return (@([regex]::Matches($Text, '(?ms)^          expr: \|\n(?<e>.*?)(?=^          for:)') | ForEach-Object { $_.Groups['e'].Value }) -join "`n")
+}
+
+# 表达式里 <Metric>{...} 选择器中 <Label> 的每个匹配都要落在 -Allowed 里:= / != 的字面量必须是其中之一;=~ / !~ 是纯 | 分隔的字面量时
+# 逐个必须是其中之一,否则(如 freeze_.*)至少要匹配到一个取值。写错取值的表达式不报错,只会永远不响(或 unless / != 永远不过滤)。
+function Assert-AlertLabelValues {
+    param(
+        [Parameter(Mandatory = $true)][string]$Exprs,
+        [Parameter(Mandatory = $true)][string]$Metric,
+        [Parameter(Mandatory = $true)][string]$Label,
+        [Parameter(Mandatory = $true)][string[]]$Allowed,
+        [Parameter(Mandatory = $true)][string]$Source
+    )
+    $selectors = @([regex]::Matches($Exprs, ('\b{0}\{{(?<sel>[^}}]*)\}}' -f [regex]::Escape($Metric))) | ForEach-Object { $_.Groups['sel'].Value })
+    foreach ($selector in $selectors) {
+        foreach ($m in [regex]::Matches($selector, ('\b{0}\s*(?<op>=~|!~|!=|=)\s*"(?<v>[^"]*)"' -f [regex]::Escape($Label)))) {
+            $op = $m.Groups['op'].Value
+            $value = $m.Groups['v'].Value
+            $matcher = '{0}{{{1}{2}"{3}"}}' -f $Metric, $Label, $op, $value
+            $allowedText = $Allowed -join ' | '
+            if ($op -in @('=', '!=') -or $value -match '^[a-z0-9_]+(\|[a-z0-9_]+)*$') {
+                foreach ($literal in ($value -split '\|')) {
+                    Assert-True -Condition ($Allowed -ccontains $literal) -Because ('{0}:取值 {1} 必须是 {2} 定义的常量之一({3})' -f $matcher, $literal, $Source, $allowedText)
+                }
+            }
+            else {
+                $hits = @($Allowed | Where-Object { $_ -cmatch ('^(?:' + $value + ')$') })
+                Assert-True -Condition ($hits.Count -gt 0) -Because ('{0}:正则至少要匹配到 {1} 的一个取值({2})' -f $matcher, $Source, $allowedText)
+            }
+        }
+    }
+}
+
 Test-Case 'D1 1b-3 告警 data-service-route-alerts.yaml:PrometheusRule 形状、interval 30s、每条规则有 severity / summary / description;规格点名的规则都在;NoLeader 兜住缺序列,ReadyMissing 用 max(arm_enabled);抓取前提写在文件头' {
     $path = 'deploy/k8s/data-service-route-alerts.yaml'
     $text = [IO.File]::ReadAllText((Join-Path (Get-RepoRoot) $path)) -replace "`r`n", "`n"
@@ -7990,8 +8060,11 @@ Test-Case 'D1 1b-3 告警 data-service-route-alerts.yaml:PrometheusRule 形状�
     $alertNames = @([regex]::Matches($text, '(?m)^        - alert:[ ]*(\S+)[ ]*$') | ForEach-Object { $_.Groups[1].Value })
     foreach ($name in @('DataServiceRouteNoLeader', 'DataServiceRouteMultiLeader', 'DataServiceRouteArmMixed', 'DataServiceRouteReadyMissing', 'DataServiceRouteWritesFrozen',
             'DataServiceRouteRollbackOrCacheAhead', 'DataServiceRouteArmingRefused', 'DataServiceRouteForeignFence', 'DataServiceRoutePushConflicts',
-            'DataServiceRouteCacheVerifyStale', 'GoDbRouteGateClosed', 'DataServiceRouteReadSQLErrors', 'GuildRouteNotReady')) {
-        Assert-True -Condition ($alertNames -contains $name) -Because "规格 §7 / §13.4 点名的告警 $name 必须在"
+            'DataServiceRouteCacheVerifyStale', 'GoDbRouteGateClosed', 'DataServiceRouteReadSQLErrors', 'GuildRouteNotReady',
+            # 规格 §7 第 2 条的 RouteNotReadyDeferrals、leader 让出租约;评审补的读方持续不可信(A2-6)与 W1 发布 / 登记失败(B3-9)。
+            'GoDbRouteNotReadyDeferrals', 'DataServiceRouteLeaderRedisUnreachable', 'DataServiceRouteReadNotTrusted',
+            'DataServiceRoutePublishUnconfirmed', 'DataServiceRouteRegisterFailures')) {
+        Assert-True -Condition ($alertNames -contains $name) -Because "规格 §7 / §13.4 点名(或评审补上)的告警 $name 必须在"
     }
     Assert-Equal -Expected $alertNames.Count -Actual (@($alertNames | Sort-Object -Unique).Count) -Because '告警名不重复'
     $rules = @(($text -split '(?m)^        - alert:') | Select-Object -Skip 1)
@@ -8007,15 +8080,129 @@ Test-Case 'D1 1b-3 告警 data-service-route-alerts.yaml:PrometheusRule 形状�
     Assert-Match -Text $noLeader -Pattern ([regex]::Escape('(sum(data_service_route_reconcile_leader) or vector(0)) == 0 and sum(data_service_route_reconcile_assembled) > 0')) -Because 'NoLeader 用 or vector(0) 兜住「一个序列都没有」,并按装配过滤(规格 §13.4 第 2 条)'
     $readyMissing = $rules | Where-Object { $_ -match '^\s*DataServiceRouteReadyMissing\b' }
     Assert-Match -Text $readyMissing -Pattern ([regex]::Escape('max(data_service_route_reconcile_arm_enabled) == 1 and (max(data_service_route_ready_marker) or vector(0)) == 0')) -Because 'ReadyMissing 用 max(arm_enabled) 作闸,ready_marker 缺序列按不在'
-    $known = @('data_service_route_reconcile_leader', 'data_service_route_reconcile_assembled', 'data_service_route_reconcile_arm_enabled', 'data_service_route_ready_marker',
-        'data_service_route_writable', 'data_service_route_cache_verified_age_seconds', 'data_service_route_ready_selfcheck', 'data_service_route_reconcile_tick_total',
-        'data_service_route_reconcile_event_total', 'data_service_route_reconcile_push_total', 'data_service_route_reconcile_mirror_total',
-        'data_service_route_read_total', 'data_service_route_ready_verdict_total')
-    $exprs = (@([regex]::Matches($text, '(?ms)^          expr: \|\n(?<e>.*?)(?=^          for:)') | ForEach-Object { $_.Groups['e'].Value }) -join "`n")
-    foreach ($metric in @([regex]::Matches($exprs, 'data_service_route_[a-z_]+') | ForEach-Object { $_.Value } | Sort-Object -Unique)) {
-        Assert-True -Condition ($known -contains $metric) -Because "表达式里的 $metric 不在规格给的指标名单里(名字必须与 data_service 代码逐字一致)"
+    # 指标名从源码拼全名(不再手写名单):data_service / go/db 读 metrics 包的 subsystem + Name,guild 读 merge_fence.go 的 Namespace / Subsystem / Name。
+    $registered = @(Get-GoSubsystemMetricNames -RelativeDir 'go/data_service/internal/metrics') + @(Get-GoSubsystemMetricNames -RelativeDir 'go/db/internal/metrics')
+    $guildSource = [IO.File]::ReadAllText((Join-Path (Get-RepoRoot) 'go/guild/internal/logic/merge_fence.go'))
+    $guildMetric = [regex]::Match($guildSource, 'guildRouteReadyVerdictTotal\s*=\s*metric\.NewCounterVec\(&metric\.CounterVecOpts\{\s*Namespace:\s*"(?<ns>[a-z_]+)",\s*Subsystem:\s*"(?<ss>[a-z_]+)",\s*Name:\s*"(?<n>[a-z_]+)"')
+    Assert-True -Condition $guildMetric.Success -Because 'go/guild/internal/logic/merge_fence.go 应当用 metric.NewCounterVec 定义 guildRouteReadyVerdictTotal(Namespace / Subsystem / Name 依次写出;换了写法要同步本用例)'
+    $registered += ('{0}_{1}_{2}' -f $guildMetric.Groups['ns'].Value, $guildMetric.Groups['ss'].Value, $guildMetric.Groups['n'].Value)
+    $exprs = Get-AlertExprText -Text $text
+    $referenced = @([regex]::Matches($exprs, '\b(?:data_service|db|guild)_[a-z0-9_]+') | ForEach-Object { $_.Value } | Sort-Object -Unique)
+    Assert-True -Condition ($referenced -contains 'db_route_ready_gate' -and $referenced -contains 'guild_route_ready_verdict_total') -Because '夹具前提:表达式里有 go/db 与 guild 的读方指标'
+    foreach ($metric in $referenced) {
+        Assert-True -Condition ($registered -contains $metric) -Because "表达式里的 $metric 必须由 data_service / go/db / guild 的代码注册(名字逐字一致,改名后告警会静默失效)"
+    }
+    # db_route_ready_gate 必须是不带 label 的 Gauge:规格 §13.2 原文写过 {state},真加成 one-hot 的 GaugeVec 时 min == 0 会恒为真。
+    $dbMetricsGo = [IO.File]::ReadAllText((Join-Path (Get-RepoRoot) 'go/db/internal/metrics/metrics.go'))
+    Assert-Match -Text $dbMetricsGo -Pattern 'routeReadyGate\s*=\s*prometheus\.NewGauge\(prometheus\.GaugeOpts\{\s*Subsystem:\s*subsystem,\s*Name:\s*"route_ready_gate"' -Because 'GoDbRouteGateClosed 按 min by (namespace) (db_route_ready_gate) == 0 判,指标必须是不带 label 的 NewGauge'
+    # 标签取值从常量核对(写错取值的表达式不报错、只会永远不响)。
+    $dsMetrics = 'go/data_service/internal/metrics/metrics.go'
+    $dbMetrics = 'go/db/internal/metrics/metrics.go'
+    $verdicts = Get-RouteReadyVerdictLabelValues
+    foreach ($check in @(
+            @{ Metric = 'data_service_route_reconcile_event_total'; Label = 'event'; Path = $dsMetrics; Prefix = 'RouteReconcileEvent' }
+            @{ Metric = 'data_service_route_reconcile_push_total'; Label = 'result'; Path = $dsMetrics; Prefix = 'RouteReconcilePush' }
+            @{ Metric = 'data_service_route_reconcile_push_total'; Label = 'phase'; Path = $dsMetrics; Prefix = 'RouteReconcilePhase' }
+            @{ Metric = 'data_service_route_reconcile_tick_total'; Label = 'result'; Path = $dsMetrics; Prefix = 'RouteReconcileTick' }
+            @{ Metric = 'data_service_route_reconcile_mirror_total'; Label = 'result'; Path = $dsMetrics; Prefix = 'RouteReconcileMirror' }
+            @{ Metric = 'data_service_route_publish_total'; Label = 'result'; Path = $dsMetrics; Prefix = 'RoutePublish' }
+            @{ Metric = 'data_service_route_register_total'; Label = 'outcome'; Path = $dsMetrics; Prefix = 'RouteRegister' }
+            @{ Metric = 'data_service_route_read_total'; Label = 'result'; Path = $dsMetrics; Prefix = 'RouteReadResult' }
+            @{ Metric = 'data_service_route_read_total'; Label = 'path'; Path = $dsMetrics; Prefix = 'RouteReadPath' }
+            @{ Metric = 'db_placement_guard_total'; Label = 'outcome'; Path = $dbMetrics; Prefix = 'Placement' }
+        )) {
+        Assert-AlertLabelValues -Exprs $exprs -Metric $check.Metric -Label $check.Label -Allowed (Get-GoPrefixedStringConsts -RelativePath $check.Path -Prefix $check.Prefix) -Source "$($check.Path) 的 $($check.Prefix)*"
+    }
+    foreach ($metric in @('data_service_route_ready_verdict_total', 'db_route_ready_verdict_total', 'guild_route_ready_verdict_total', 'data_service_route_ready_selfcheck')) {
+        Assert-AlertLabelValues -Exprs $exprs -Metric $metric -Label 'verdict' -Allowed $verdicts -Source 'shared/placement 的 verdict 名加 script_error'
+    }
+    foreach ($check in @(
+            @{ Rule = 'DataServiceRouteReadNotTrusted'; Pattern = 'data_service_route_ready_verdict_total\{verdict!="trusted"\}' }
+            @{ Rule = 'DataServiceRoutePublishUnconfirmed'; Pattern = 'data_service_route_publish_total\{result=~"not_durable\|error"\}' }
+            @{ Rule = 'DataServiceRouteRegisterFailures'; Pattern = 'data_service_route_register_total\{outcome=~"store_error\|precheck_error"\}' }
+        )) {
+        $body = $rules | Where-Object { $_ -match ('^\s*' + $check.Rule + '\b') }
+        Assert-Match -Text $body -Pattern $check.Pattern -Because "$($check.Rule) 的选择器(评审 A2-6 / B3-9 定的口径)"
     }
     Assert-Match -Text $text -Pattern 'ServiceMonitor' -Because '文件头写明抓取前提:data-service 只有 Prometheus 注解、没有 ServiceMonitor,接入方式是 P2 门禁一项'
+}
+
+Test-Case '落点告警 player-placement-alerts.yaml:PrometheusRule 形状;设计 §13 / 种子 §9 要求的规则都在;指标名与 outcome / result / reason 取值都由 go/db、scene_manager 源码定义;出现即报的四条带「新序列」分支' {
+    # 设计 docs/design/player-storage-placement.md §13 / §14(09-28 只写了告警建议)与 new-player-first-enter-no-cold-read.md §9 第 3 条:
+    # 打开 login 的 NewPlayerSeed 之前,missing_required 与 db_placement_store_open_total{result=~"error|rejected"} 两类告警必须就位。
+    $text = [IO.File]::ReadAllText((Join-Path (Get-RepoRoot) 'deploy/k8s/player-placement-alerts.yaml')) -replace "`r`n", "`n"
+    Assert-Match -Text $text -Pattern '(?m)^kind:[ ]*PrometheusRule[ ]*$' -Because '必须是 PrometheusRule(与 owner-epoch-alerts.yaml 同一安装方式)'
+    $intervals = @([regex]::Matches($text, '(?m)^      interval:[ ]*(\S+)[ ]*$') | ForEach-Object { $_.Groups[1].Value } | Sort-Object -Unique)
+    Assert-Equal -Expected '30s' -Actual ($intervals -join ',') -Because '每个组 interval: 30s'
+    $alertNames = @([regex]::Matches($text, '(?m)^        - alert:[ ]*(\S+)[ ]*$') | ForEach-Object { $_.Groups[1].Value })
+    foreach ($name in @('DbPlacementStaleTopic', 'DbPlacementMissingRequired', 'DbPlacementStoreRejected', 'DbPlacementStoreOpenErrors',
+            'DbPlacementFrozenStuck', 'DbPlacementRecheckMoved', 'SceneManagerHomeZoneMerging')) {
+        Assert-True -Condition ($alertNames -contains $name) -Because "设计 §13 / §14 与种子 §9 要求的告警 $name 必须在"
+    }
+    Assert-Equal -Expected $alertNames.Count -Actual (@($alertNames | Sort-Object -Unique).Count) -Because '告警名不重复'
+    $rules = @(($text -split '(?m)^        - alert:') | Select-Object -Skip 1)
+    Assert-Equal -Expected $alertNames.Count -Actual $rules.Count -Because '按 - alert: 切出的规则块数等于告警数'
+    foreach ($rule in $rules) {
+        $ruleName = ($rule -split "`n")[0].Trim()
+        Assert-Match -Text $rule -Pattern '(?m)^            severity:[ ]*(critical|warning|info)[ ]*$' -Because "$ruleName 要有 severity(critical / warning / info)"
+        Assert-Match -Text $rule -Pattern '(?m)^            summary:' -Because "$ruleName 要有 summary"
+        Assert-Match -Text $rule -Pattern '(?m)^            description:' -Because "$ruleName 要有 description"
+        Assert-Match -Text $rule -Pattern '(?m)^          for:[ ]*\d+[ms][ ]*$' -Because "$ruleName 要写 for"
+    }
+    # 同名告警在 Alertmanager 里按 alertname 分组,会与别的文件的规则混在一起、互相掩盖:落点规则名不得与相邻几份告警文件重名。
+    foreach ($other in @('deploy/k8s/db-task-retry-alerts.yaml', 'deploy/k8s/scene-manager-alerts.yaml', 'deploy/k8s/data-service-route-alerts.yaml')) {
+        $otherText = [IO.File]::ReadAllText((Join-Path (Get-RepoRoot) $other)) -replace "`r`n", "`n"
+        $otherNames = @([regex]::Matches($otherText, '(?m)^\s+- alert:[ ]*(\S+)[ ]*$') | ForEach-Object { $_.Groups[1].Value })
+        foreach ($name in $alertNames) {
+            Assert-True -Condition (-not ($otherNames -contains $name)) -Because "落点告警 $name 不得与 $other 里的规则重名"
+        }
+    }
+
+    # 指标名从源码拼全名(go/db 与 scene_manager 的 metrics 包),逐个核对表达式引用的名字。
+    $registered = @(Get-GoSubsystemMetricNames -RelativeDir 'go/db/internal/metrics') + @(Get-GoSubsystemMetricNames -RelativeDir 'go/scene_manager/internal/metrics')
+    $exprs = Get-AlertExprText -Text $text
+    $referenced = @([regex]::Matches($exprs, '\b(?:db|scene_manager)_[a-z0-9_]+') | ForEach-Object { $_.Value } | Sort-Object -Unique)
+    foreach ($expected in @('db_placement_guard_total', 'db_placement_store_open_total', 'scene_manager_enter_scene_rejected_total')) {
+        Assert-True -Condition ($referenced -contains $expected) -Because "夹具前提:表达式里引用 $expected"
+    }
+    foreach ($metric in $referenced) {
+        Assert-True -Condition ($registered -contains $metric) -Because "表达式里的 $metric 必须由 go/db / scene_manager 的 metrics 包注册(名字逐字一致,改名后告警会静默失效)"
+    }
+    $dbMetrics = 'go/db/internal/metrics/metrics.go'
+    Assert-AlertLabelValues -Exprs $exprs -Metric 'db_placement_guard_total' -Label 'outcome' -Allowed (Get-GoPrefixedStringConsts -RelativePath $dbMetrics -Prefix 'Placement') -Source "$dbMetrics 的 Placement*"
+    Assert-AlertLabelValues -Exprs $exprs -Metric 'db_placement_guard_total' -Label 'op' -Allowed @('read', 'write') -Source 'CountPlacementGuard 的 op(read / write)'
+    Assert-AlertLabelValues -Exprs $exprs -Metric 'db_placement_store_open_total' -Label 'result' -Allowed (Get-GoPrefixedStringConsts -RelativePath $dbMetrics -Prefix 'StoreOpen') -Source "$dbMetrics 的 StoreOpen*"
+    # scene_manager 的 reason:home_zone_merging 是 home_zone.go 的常量,必须同时列在 metrics.go 的 Help 里(Help 是 reason 的权威清单)。
+    $homeZoneGo = [IO.File]::ReadAllText((Join-Path (Get-RepoRoot) 'go/scene_manager/internal/logic/home_zone.go'))
+    $merging = [regex]::Match($homeZoneGo, '(?m)^\s*rejectReasonHomeZoneMerging\s*=\s*"(?<v>[a-z_]+)"')
+    Assert-True -Condition $merging.Success -Because 'go/scene_manager/internal/logic/home_zone.go 应当定义 rejectReasonHomeZoneMerging(改名了要同步本用例)'
+    Assert-AlertLabelValues -Exprs $exprs -Metric 'scene_manager_enter_scene_rejected_total' -Label 'reason' -Allowed @($merging.Groups['v'].Value) -Source 'home_zone.go 的 rejectReasonHomeZoneMerging'
+    $smMetricsGo = [IO.File]::ReadAllText((Join-Path (Get-RepoRoot) 'go/scene_manager/internal/metrics/metrics.go'))
+    Assert-Match -Text $smMetricsGo -Pattern ('EnterScene rejections by reason \([^)]*\b{0}\b' -f [regex]::Escape($merging.Groups['v'].Value)) -Because 'enter_scene_rejected_total 的 Help 必须列出 home_zone_merging'
+
+    # 规则口径(评审 B3-4 定的选择器;种子 §9 的两类硬门禁)。
+    $ruleOf = { param([string]$Name) $rules | Where-Object { $_ -match ('^\s*' + $Name + '\b') } }
+    foreach ($check in @(
+            @{ Rule = 'DbPlacementStaleTopic'; Pattern = 'db_placement_guard_total\{outcome="stale_topic"\}'; Severity = 'critical' }
+            @{ Rule = 'DbPlacementMissingRequired'; Pattern = 'db_placement_guard_total\{outcome="missing_required"\}'; Severity = 'critical' }
+            @{ Rule = 'DbPlacementStoreRejected'; Pattern = 'db_placement_store_open_total\{result="rejected"\}'; Severity = 'critical' }
+            @{ Rule = 'DbPlacementStoreOpenErrors'; Pattern = 'db_placement_store_open_total\{result="error"\}'; Severity = 'warning' }
+            @{ Rule = 'DbPlacementFrozenStuck'; Pattern = 'db_placement_guard_total\{op="write", outcome="frozen_deferred"\}'; Severity = 'warning' }
+            @{ Rule = 'DbPlacementRecheckMoved'; Pattern = 'db_placement_guard_total\{outcome="recheck_moved"\}'; Severity = 'warning' }
+            @{ Rule = 'SceneManagerHomeZoneMerging'; Pattern = 'scene_manager_enter_scene_rejected_total\{reason="home_zone_merging"\}'; Severity = 'warning' }
+        )) {
+        $body = & $ruleOf $check.Rule
+        Assert-Match -Text $body -Pattern $check.Pattern -Because "$($check.Rule) 的选择器"
+        Assert-Match -Text $body -Pattern ('(?m)^            severity:[ ]*' + $check.Severity + '[ ]*$') -Because "$($check.Rule) 的级别是 $($check.Severity)"
+    }
+    # MissingRequired 不按 op 过滤:写进死信与读失败(冷登录失败,读不进死信,别处没有告警)都要报。
+    Assert-NotMatch -Text (& $ruleOf 'DbPlacementMissingRequired') -Pattern 'outcome="missing_required", op=|op="[a-z]+", outcome="missing_required"' -Because 'MissingRequired 要同时覆盖 op=read(读失败只有这一条告警)'
+    # go/db 的两个计数器启动时没有以 0 预置:出现即报的四条要有 `unless … offset 10m` 第二支(带 > 0),漏掉「从无到 1」的第一次就是漏报。
+    foreach ($name in @('DbPlacementStaleTopic', 'DbPlacementMissingRequired', 'DbPlacementStoreRejected', 'DbPlacementStoreOpenErrors')) {
+        $body = & $ruleOf $name
+        Assert-Match -Text $body -Pattern '(?s)\bor\b.*\bunless\b[^\n]*\boffset 10m\b.*\)\s*>\s*0' -Because "$name 要用 unless … offset 10m 把 10 分钟内新出现的序列也算进来,并以 > 0 过滤(以后预置 0 时不误报)"
+    }
+    Assert-Match -Text $text -Pattern 'NewPlayerSeed' -Because '文件头写明它是打开 NewPlayerSeed 的前置(种子 §9 第 3 条)'
 }
 
 exit (Complete-TestRun -SuiteName "k8s_deploy contract")

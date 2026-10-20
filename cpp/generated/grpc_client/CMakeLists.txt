@@ -68,10 +68,7 @@ set(SOURCE_FILES
     scene_manager/scene_manager_service_grpc_client.cpp
     scene_manager/scene_node_service_grpc_client.cpp
     team/team_grpc_client.cpp
-    mail/mail_admin_grpc_client.cpp
-    mail/mail_grpc_client.cpp
     rank/rank_admin_grpc_client.cpp
-    rank/rank_grpc_client.cpp
     player_locator/player_locator_grpc_client.cpp
 )
 

@@ -44,6 +44,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libssl-dev \
     libboost-dev \
     libzstd-dev \
+    libpsl-dev \
     libcurl4-openssl-dev \
     && rm -rf /var/lib/apt/lists/*
 
@@ -54,9 +55,8 @@ WORKDIR /src
 # gRPC version MUST match the checked-out third_party/grpc submodule, which is
 # what the Windows build (and therefore the source tree) actually compiles
 # against. Evidence, not preference:
-#   git -C third_party/grpc describe --tags   -> v1.83.0
-#   git submodule status third_party/grpc     -> (v1.83.0)
-#   .gitmodules                               -> branch = v1.83.x
+#   third_party/releases.lock.json 与主仓库 gitlink 固定 v1.84.0。
+#   内部 protobuf / Abseil / BoringSSL 与上一正式版的提交相同。
 # This line used to say v1.78.x -- the only place in the repo that disagreed,
 # so the Docker image would have been built against a different gRPC major
 # than the code was developed on.
@@ -79,7 +79,7 @@ COPY tools/patches/grpc/v1.83.0-boringssl-windows-x509-name.patch \
 RUN set -eux; \
     for attempt in 1 2 3; do \
         rm -rf third_party/grpc; \
-        if git clone --depth 1 --branch v1.83.0 \
+        if git clone --depth 1 --branch v1.84.0 \
             https://github.com/grpc/grpc.git third_party/grpc; then \
             break; \
         fi; \
@@ -95,7 +95,7 @@ RUN set -eux; \
         sleep 5; \
     done; \
     grpc_sha="$(git -C third_party/grpc rev-parse HEAD)"; \
-    if [ "$grpc_sha" != "c876f4da50f7da2f331888b88b2a7243514139fe" ]; then \
+    if [ "$grpc_sha" != "3252a89f10d8e92997862167ca7d095ecda85973" ]; then \
         echo "Unexpected gRPC revision: $grpc_sha" >&2; \
         exit 1; \
     fi; \
@@ -139,8 +139,14 @@ RUN set -eux; \
 COPY third_party/muduo-linux/ third_party/muduo-linux/
 COPY third_party/redis/       third_party/redis/
 COPY third_party/librdkafka/  third_party/librdkafka/
+COPY tools/patches/librdkafka/v2.16.0-cgrp-rejoin-varargs.patch \
+    tools/patches/librdkafka/v2.16.0-cgrp-rejoin-varargs.patch
 COPY third_party/yaml-cpp/    third_party/yaml-cpp/
 COPY third_party/zlib/        third_party/zlib/
+COPY third_party/curl/        third_party/curl/
+# muduo 的公开类含 boost::any，依赖库与节点必须使用同一套锁定头文件。
+# 放在 gRPC 重层之后，使 Boost 变更只重建消费它的依赖与节点。
+COPY third_party/boost/boost/ third_party/boost/boost/
 # nghttp2:muduo_grpc 的 HTTP/2 编解码核心库(docs/design/grpc-muduo-transport.md §9)。
 # setup_dependencies.sh 只编静态核心库并装到 /usr/local;Windows 的安装目录
 # third_party/nghttp2/install_vs2026_dbg/ 已被 .dockerignore 排除。

@@ -1,15 +1,12 @@
 [submodule "third_party/entt"]
 	path = third_party/entt
 	url = https://github.com/skypjack/entt.git
-	branch = v3.13.x
 [submodule "third_party/sol2"]
 	path = third_party/sol2
 	url = https://github.com/ThePhD/sol2.git
-	branch = main
 [submodule "third_party/redis"]
 	path = third_party/redis
 	url = https://github.com/redis/redis.git
-	branch = 8.4
 [submodule "third_party/muduo-linux"]
 	path = third_party/muduo-linux
 	url = https://github.com/chenshuo/muduo.git
@@ -19,18 +16,12 @@
 [submodule "third_party/spdlog"]
 	path = third_party/spdlog
 	url = https://github.com/gabime/spdlog.git
-	branch = v1.x
 [submodule "third_party/ue5navmesh"]
 	path = third_party/ue5navmesh
 	url = https://github.com/lhl-cpp/ue5navmesh.git
-[submodule "pkg/muduo_windows/src"]
-	path = cpp/libs/engine/muduo_windows/src/muduo/net
-	url = https://github.com/luyuan-cpp/muduo-windows.git
-	ignore = dirty
 [submodule "third_party/zlib"]
 	path = third_party/zlib
 	url = https://github.com/madler/zlib.git
-	branch = master
 	ignore = dirty
 [submodule "third_party/hexagons_grids"]
 	path = third_party/hexagons_grids
@@ -45,12 +36,10 @@
 [submodule "third_party/boost"]
 	path = third_party/boost
 	url = https://github.com/boostorg/boost.git
-	branch = master
 	ignore = dirty
 [submodule "third_party/grpc"]
 	path = third_party/grpc
 	url = https://github.com/grpc/grpc.git
-	branch = v1.83.x
 	ignore = dirty
 [submodule "third_party/curl"]
 	path = third_party/curl
@@ -62,18 +51,15 @@
 [submodule "third_party/xxhash"]
 	path = third_party/xxhash
 	url = https://github.com/Cyan4973/xxHash.git
-	branch = release
 [submodule "third_party/librdkafka"]
 	path = third_party/librdkafka
 	url = https://github.com/confluentinc/librdkafka.git
-	branch = master
 [submodule "third_party/fmt"]
 	path = third_party/fmt
 	url = https://github.com/fmtlib/fmt.git
 [submodule "third_party/openssl"]
 	path = third_party/openssl
 	url = https://github.com/openssl/openssl.git
-	branch = openssl-3.6
 [submodule "third_party/nghttp2"]
 	path = third_party/nghttp2
 	url = https://github.com/nghttp2/nghttp2.git

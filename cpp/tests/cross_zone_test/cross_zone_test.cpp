@@ -5793,6 +5793,101 @@ TEST_F(SceneLifecycleTest, ResidentDrainKeepsSceneAndUnitUntilResidentLeaves)
     EXPECT_EQ(unitsBefore + 1, agones::GameServerLifecycle::Instance().UnitCount());
 }
 
+TEST_F(SceneLifecycleTest, DisconnectedExitingResidentKeepsSceneUntilBindingIsRemoved)
+{
+    // 已断线的退出中玩家不会登记改派票据,但残留绑定仍须阻止场景销毁。
+    const auto player = MakeExitingPlayer(kSessionAtExit, kInvalidSessionId);
+    SessionMap().clear();
+    CreateSceneResponse response;
+    CreateAtEntry(Request(), response);
+    const auto scene = PlayerSceneSystem::FindSceneById(4242);
+    ASSERT_NE(SceneEntity{entt::null}, scene);
+    tlsEcs.actorRegistry.emplace<SceneEntityComp>(player).sceneEntity = scene;
+
+    EXPECT_EQ(1u, SceneLifecycle::DestroyScene(scene));
+
+    ASSERT_TRUE(tlsEcs.sceneRegistry.valid(scene));
+    ASSERT_TRUE(tlsEcs.actorRegistry.valid(player));
+    EXPECT_EQ(scene, tlsEcs.actorRegistry.get<SceneEntityComp>(player).sceneEntity);
+    EXPECT_EQ(scene, PlayerSceneSystem::FindSceneById(4242));
+    EXPECT_EQ(unitsBefore + 1, agones::GameServerLifecycle::Instance().UnitCount());
+
+    PlayerSceneSystem::LeaveCurrentScene(player);
+    EXPECT_EQ(0u, SceneLifecycle::DestroyScene(scene));
+    EXPECT_FALSE(tlsEcs.sceneRegistry.valid(scene));
+    EXPECT_EQ(SceneEntity{entt::null}, PlayerSceneSystem::FindSceneById(4242));
+    EXPECT_EQ(unitsBefore, agones::GameServerLifecycle::Instance().UnitCount());
+}
+
+TEST_F(SceneLifecycleTest, MissingAndInvalidGuidBindingsKeepSceneUntilBothAreRemoved)
+{
+    CreateSceneResponse response;
+    CreateAtEntry(Request(), response);
+    const auto scene = PlayerSceneSystem::FindSceneById(4242);
+    ASSERT_NE(SceneEntity{entt::null}, scene);
+    auto& registry = tlsEcs.actorRegistry;
+    const auto missingGuid = registry.create();
+    registry.emplace<Player>(missingGuid);
+    registry.emplace<SceneEntityComp>(missingGuid, SceneEntityComp{scene});
+    const auto invalidGuid = registry.create();
+    registry.emplace<Player>(invalidGuid);
+    registry.emplace<PlayerGuidComp>(invalidGuid, kInvalidGuid);
+    registry.emplace<SceneEntityComp>(invalidGuid, SceneEntityComp{scene});
+
+    // 身份不完整会阻止改派,不能据此推断场景已经没有绑定者。
+    EXPECT_EQ(2u, SceneLifecycle::DestroyScene(scene));
+    ASSERT_TRUE(tlsEcs.sceneRegistry.valid(scene));
+    ASSERT_TRUE(registry.all_of<SceneEntityComp>(missingGuid));
+    ASSERT_TRUE(registry.all_of<SceneEntityComp>(invalidGuid));
+    EXPECT_EQ(scene, registry.get<SceneEntityComp>(missingGuid).sceneEntity);
+    EXPECT_EQ(scene, registry.get<SceneEntityComp>(invalidGuid).sceneEntity);
+    EXPECT_EQ(unitsBefore + 1, agones::GameServerLifecycle::Instance().UnitCount());
+
+    PlayerSceneSystem::LeaveCurrentScene(missingGuid);
+    EXPECT_EQ(1u, SceneLifecycle::DestroyScene(scene));
+    ASSERT_TRUE(tlsEcs.sceneRegistry.valid(scene));
+    EXPECT_EQ(scene, PlayerSceneSystem::FindSceneById(4242));
+    EXPECT_EQ(unitsBefore + 1, agones::GameServerLifecycle::Instance().UnitCount());
+
+    PlayerSceneSystem::LeaveCurrentScene(invalidGuid);
+    EXPECT_EQ(0u, SceneLifecycle::DestroyScene(scene));
+    EXPECT_FALSE(tlsEcs.sceneRegistry.valid(scene));
+    EXPECT_EQ(SceneEntity{entt::null}, PlayerSceneSystem::FindSceneById(4242));
+    EXPECT_EQ(unitsBefore, agones::GameServerLifecycle::Instance().UnitCount());
+}
+
+TEST_F(SceneLifecycleTest, DestroyedSceneHandleCannotDestroyReusedSlotOrChangeUnitCount)
+{
+    CreateSceneResponse first;
+    CreateAtEntry(Request(), first);
+    const auto destroyed = PlayerSceneSystem::FindSceneById(4242);
+    ASSERT_NE(SceneEntity{entt::null}, destroyed);
+    ASSERT_EQ(0u, SceneLifecycle::DestroyScene(destroyed));
+    ASSERT_FALSE(tlsEcs.sceneRegistry.valid(destroyed));
+    EXPECT_EQ(unitsBefore, agones::GameServerLifecycle::Instance().UnitCount());
+
+    auto request = Request();
+    request.set_scene_id(4243);
+    CreateSceneResponse second;
+    CreateAtEntry(request, second);
+    const auto replacement = PlayerSceneSystem::FindSceneById(4243);
+    ASSERT_NE(SceneEntity{entt::null}, replacement);
+    // 复用实体槽位但版本不同:旧句柄不能越过版本围栏删除新场景。
+    ASSERT_EQ(entt::to_entity(destroyed), entt::to_entity(replacement));
+    ASSERT_NE(destroyed, replacement);
+
+    EXPECT_EQ(0u, SceneLifecycle::DestroyScene(destroyed));
+    EXPECT_FALSE(tlsEcs.sceneRegistry.valid(destroyed));
+    ASSERT_TRUE(tlsEcs.sceneRegistry.valid(replacement));
+    EXPECT_EQ(replacement, PlayerSceneSystem::FindSceneById(4243));
+    EXPECT_EQ(4243u, tlsEcs.sceneRegistry.get<SceneInfoComp>(replacement).scene_id());
+    EXPECT_EQ(unitsBefore + 1, agones::GameServerLifecycle::Instance().UnitCount());
+
+    EXPECT_EQ(0u, SceneLifecycle::DestroyScene(replacement));
+    EXPECT_FALSE(tlsEcs.sceneRegistry.valid(replacement));
+    EXPECT_EQ(unitsBefore, agones::GameServerLifecycle::Instance().UnitCount());
+}
+
 TEST_F(SceneLifecycleTest, EmptySceneDestroyRemovesLookupAndRestoresUnitCount)
 {
     CreateSceneResponse response;

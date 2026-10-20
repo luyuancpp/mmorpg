@@ -1334,7 +1334,7 @@ tidb-phase1-and-launch-readiness.md §5.1 单行热点一行与 §7 L-12 已加�
 - EnterGame 账号目录自愈原为无锁 GET + 整块 SET，改为账号锁 + 锁内重读 + 整字节 CAS，提交点复核反向索引；
 - 运维 `RemovePlayersFromAccounts` 的实现改为同一把账号锁内原子摘孤儿并删反向索引（脚本可重发）。**它目前没有生产入口**：gRPC `LoginAdmin.RemovePlayersFromAccounts` 原是返回空成功的生成桩，已改为明确返回 Unimplemented，接线另开任务。
 
-**开服前复核**：本节结论不能直接沿用到开服，开服前由 AI 按 §12.2 对着当时的代码、部署与压测重做一遍（L-18）。
+**开服前复核**：本节结论不能直接沿用到开服，开服前由 AI 按 §12.2 对着当时的代码、部署与压测重做一遍（L-18）。（2026-10-20 补：静态部分已按 §12.2 第 1~4、6 步复核，结论不变，订正与补漏见 §12.3；第 5 步压测未做。）
 
 **仍待负责人决定**：拆 Redis 与 HA 的排期；hash tag 改键与 §6.5 的冲突；读脚本拼键与就绪标记在 Cluster 下的改法（随 D1 围栏挪库）；账号目录落库位置；打开新号免冷读；单台 gate 连接上限如何让 login 知道；运维摘孤儿要不要接上 gRPC 入口。
 
@@ -1358,6 +1358,117 @@ tidb-phase1-and-launch-readiness.md §5.1 单行热点一行与 §7 L-12 已加�
    - 看：登录与进场速率的饱和点（不是爬坡斜率）、各阶段 p99、mapping 与核心 Redis 的 ops 与 CPU、`login_gate_directory_reads_total` 的 source 分布、gate 落点分布。
    - 没有与 `prev-summary.txt` 的对比表，不下「是 / 不是瓶颈」的结论。
 6. **写回**：结论更新到 §12.1 两张表（状态列写复核日期），追加一条 PROGRESS（写明复核依据的 commit 与压测轮次），L-18 标为已复核；仍不能扩的环节列出要拍板的事项。Java 版同步核对（`game.player.zone_id` 单库点查、`GatePicker`），在 Java `PARITY.md` 记录结论。
+
+### 12.3 2026-10-20 L-18 静态复核（§12.2 第 1~4、6 步；第 5 步压测未做）
+
+> 怎么来的：负责人 10-20 再问「登录拿逻辑服和物理服还是不是瓶颈、能不能水平扩展」。本节由四路只读核对完成：login 路径；归属读方（data_service / scene_manager / go/db）；存储拓扑与进程扩展；选 gate、压测证据与 Java。每路再由一名质疑者逐条复核，并与开服线交接会话 10-19 晚的静态结果（未经复核）交叉比对。没有编译、测试或压测。
+> 基线：核对开始时 HEAD 为 `c63b22dca` 加工作区，核对期间前进到 `49b1aa889`。期间 `c35e1133d` 把下文提到的对账 leader 接线、`isZoneGoneFromRegistry`、router.go 注释订正、k8s_deploy 拓扑函数去重等改动入了库。`10fa5d939` 之后的两次提交只改了 go/db 就绪闸的认领细节与注释，不改变下面的计数。代码位置写函数名。§12.1 原文不改，订正与补漏都写在本节。
+
+**一句话**：结论与 §12.1 相同。
+- 登录只取逻辑服（home_zone），不取物理落点（storage_id），也不读路由库 `player_route`。
+- 取逻辑服这一步很轻：每次 Login 1 次 data_service RPC，落到 mapping Redis 是 1 次 MGET（R 个键）。
+- 卡水平扩展的仍是存储。K8s 上下面这些全部连 `redis.${InfraNamespace}:6379`，是全服同一个主：login、data_service、scene_manager、player_locator、go/db（含落点句柄）、C++ gate / scene / battle（`zoneredis` 名字像每 zone 一份，其实也是它）、Java gateway 限流。G4a、单元化、Cluster 都没有任何代码。
+- 进程层能加副本。
+- L-18 本次只算「静态部分已复核」。第 5 步没做，而且做之前要先补观测（见下「压测前置」）。所以「是不是瓶颈」仍然没有数据回答。
+
+**每次操作打到共享 Redis 的命令数**
+
+前提是 K8s 缺省开关：`RouteStore.Mode=redis`，`ReadRequiresReady`、`Placement.RequireRouteReady` 都关，登录排队被合入门槛强制关。
+
+| 操作 | 映射键（mapping） | 同一实例上的其他往返（login 直接发起） | 说明 |
+|---|---|---|---|
+| 一次完整热登录：AssignGate + HTTP Login + gate Login + EnterGame | 2 次 MGET（R 键）+ 1 次 EVAL（scene_manager 第 3b 步，GET + EXISTS，不调 INFO） | AssignGate 1 次排空标记 MGET；HTTP Login 约 5 次；gate Login 约 7+D 次（D = 设备集成员数，K8s 上限 3）；EnterGame 约 15 次（同步段与预加载、异步链合计） | R=0（未建角）时不发 MGET。staging / prod 另有 Java gateway 限流：`/api/assign-gate` 与 `/api/login` 各过一次 zone 桶 + IP 桶，Bucket4j CAS 模式每个桶至少 2 次往返，合计至少 8 次 |
+| 冷登录（父键缺失）再加 | go/db 4 次 MGET（2 条读任务 × 选库 + 复核，两键） | 每条读回执 LPUSH + EXPIRE + PUBLISH，login 侧各 LPOP 1 次 | 这 2 条读任务本身各打 1 次 zone 库 SQL |
+| 进场 / 换图 | 1 次 EVAL | — | 跨 zone 传送 2 次 EVAL，另有 1 次 etcd 前缀直读和 1 次排空标记 MGET |
+| 一次存盘 | 4 次 MGET（2 条写任务 × 2，两键） | — | 2 条写任务本身是 zone 库 SQL |
+
+映射读只是这个实例负载的一小部分。会话、锁、PlayerAllData、存盘游标、epoch 守卫、缓存回写都打在同一个主上，本节没有逐条去数。
+
+**开关打开后计数怎么变**
+- 只开 `Mode=db_first`：三列的读不变。变的有三处：
+  - 建角 W1 变成 EXISTS + 三键 MGET + SQL + EVAL + WAITAOF。
+  - 全服多出一个对账 leader，见下「新增的全服单点」。
+  - §12.1 更正第 2 条**仍未修**：发布与 WAITAOF 仍走 `r.mappingRedis.PipelinedCtx`，和读路径共用 go-zero 同地址客户端的池与熔断器。K8s 只开 `--appendonly yes`，appendfsync 用缺省 everysec，每次 WAITAOF 最长约 1s。500m 限额下 automaxprocs 把 GOMAXPROCS 定为 1，池约 10 条（推断，待 Pod 实测）。同一副本约 10 个并发建角就能占满这个池。
+- 打开 `ReadRequiresReady`：登录的 2 次 MGET 和进场的 EVAL，都换成含 2 次 INFO 的就绪读脚本（`EvalCtx`，每次发完整脚本正文）。标记不可信时，每次再回源 1 条 SQL，不回填缓存，也没有限流。
+- 打开 `Placement.RequireRouteReady`：存盘 / 冷登录的 4 次 MGET 换成 4 次 EVALSHA，共 8 次 INFO；每个 go/db 进程另加每秒 1 次闸刷新。不可信时停止消费，不回源。
+
+**相对 §12.1 的订正**
+1. 补外观的成本被低估了：
+   - `CreatePlayer` 接受空 `appearance_id`，robot 建角恒为空。这类角色每次 Login（一次完整登录 ×2）都在核心 Redis 上整份 MGET PlayerAllData 父键，永远修不好。
+   - `roleListWithCurrentHomeZone` 实际是三段串行：归属 500ms、外观 1s、名字 500ms。注释里的「两次串行」已过时。
+   - 这些预算只限制 ctx，限制不住单次 socket 读：login 的核心 Redis 客户端（`servicecontext.go` 的 `redis.NewClient`）只传了 Addr / Password / DB / PoolSize。ConfigMap 里的 Dial / Read / WriteTimeout 3s 没有传进去，实际用的是 go-redis 缺省值（读超时 3s、重试 3 次）。核心 Redis 变慢时，这一段最坏约 4s，不是 2s（推断）。
+   - Unity 客户端建角带不带外观，本次未核（需客户端授权）。
+2. EnterGame 不只「首登」读整份存档。凡是判为 FirstLogin 的进场，即 player_locator 里没有在线会话，包括老号每天的正常登录，都会读两份整存档加一份账号目录：`beginParentLoad` 脚本带回整份，`backfillPlayerIdentity` 再 GET 一次。
+3. 「K8s 固定 `Mode=redis`」已过时。`-RouteStoreMode` 现在是带粘滞核对的可切换开关，缺省 redis。`data_service.yaml` 与 `k8s_deploy.ps1` 各留了一句旧注释。
+4. task:result 的「现状」列已过时：已按 login 实例定向，但仍在同一个 Redis 上，用的是 PUBLISH 而不是 SPUBLISH。
+5. Cluster 阻塞点第 2 条的后果要细化：读脚本按 EVAL 兼容模式执行，拼出的围栏键在本节点时静默放行，在别的节点才报错并按合服拒绝。N 个主节点时约 (N−1)/N 的已映射玩家被拒，不是「一律」被拒。用例 `TestRealRedisClusterUndeclaredKeys` 已入库，但没有设集群地址就 Skip，至今没有运行证据。`route_read.go` 的 `getHomeZoneFenceReadyScript` 注释仍是旧口径。
+6. 「login 排队 dispatcher 每 zone 一个 leader」今天不存在：排队被 `$script:LoginQueueMergeGateCleared=$false` 强制关闭。
+7. Java 那段的表述订正：
+   - 「登录时主键点查」实际发生在 EnterGame，同时读一次 `game:location`，送回原实例时读 2 次；每次 EnterGame 还至少跑一次单库 `claimOwnership` 写事务。
+   - 账号登录是 `INSERT IGNORE account` + 按 `idx_player_account` 查角色列表，一次完整登录做两遍。
+   - Java 的 gate 目录每次 AssignGate 整表读 Redis RMapCache，没有进程内镜像，TTL 15s。
+   - PARITY「选 gate 随机二选一」行的 mmorpg commit 列仍写「未提交」，实际已随 `e611b5d8d` 入库。
+
+**§12.1 漏列的环节**
+
+| 环节 | 现状 | 加机器能扩吗 | 备注 |
+|---|---|---|---|
+| Java gateway 限流（staging / prod 缺省开） | 每 zone 一个 `rl:zone:{id}` 桶，被该 zone 全部 gateway 副本 CAS 争用；单次桶操作时限 500ms，超时或出错时放行（fail-open） | 不能（每 zone 单键写热点） | 开服洪峰时冲突重试会放大往返，超过时限就不扣桶直接放行 |
+| gate Login 经 client-rpc-router（K8s 缺省 `-GateRouterMode 1`） | 多一跳 gRPC；全局池，不连 Redis，用 list-watch 镜像 | 能 | — |
+| player_locator 会话对账 leader | 全服一个（`player_locator:session_reconciler:leader`），后台任务 | 不能 | 不在登录同步路径上 |
+| data_service 路由对账 leader | 全服一个，租约在全局库 `route_reconcile` id=1；只在 db_first 下装配（已在 HEAD 接线，未编译、未测试） | 不能 | 每拍对共享 DB 0 做一次全库 `SCAN merge:in_progress:*`。这一步不看 Arm，从 P2 起就跑。三把映射键都没有 TTL，所以扫描量随累计注册人数增长；一拍扫不完 3s，标记就一直挂不上。预热 / 修补峰值约 20000 EVALSHA/s，外加约 6 万键/s 的 MGET，正好和读方回源、go/db 闸关着的窗口重叠。成本均未评估 |
+| data_service / scene_manager / player_locator 的发现键 | `dataservice.rpc` / `scenemanagerservice.rpc` / `playerlocator.rpc` 不带 zone，实际是 2×Z 副本的全服共用池 | RPC 数据面能 | 「每 zone 2 副本」不能按 zone 独立算容量。data_service 的 Kafka 消费组不带 zone，并行度被分区数封顶（交易流水 6、快照 3）。go/db 每 zone 副本被 `PartitionCnt=10` 封顶，不能配 HPA |
+| 其他经 data_service 读映射的服务 | friend（好友列表、推荐）、match、trade 走 BatchGet；guild、player_inbox 每次操作 1 次 EVAL | — | 客户端进游戏就拉好友列表的话，每次登录还要多 MGET。本次未核客户端行为 |
+
+**Cluster 阻塞点补 4 条**（接 §12.1 的 7 条）
+
+8. 登录在线路径本身：`BatchGetPlayerHomeZone` 对 R 个**不同玩家**的键一次 MGET，即使加上 `{player_id}` hash tag 也跨 slot，要改成按 slot / 节点拆分的 pipeline。就绪读路径 `batchGetPlayerHomeZoneReady` 同样如此。
+9. db_first 的发布脚本 `PublishRouteKeys` 有 4 个 KEYS，含 `merge:in_progress:{zone}`。hash tag 能把前三把放进同一个 slot，第四把放不进去。
+10. `routereconcile.NewRedisCache` 拒绝非 node 类型的 MappingRedis，所以 mapping 一上 Cluster，对账 leader 就整体不可用。guild 也是就绪标记读方（`MergeMarkerRedis.RequireRouteReady`），与第 5 条同病。
+11. 登录路径的多键脚本：`backfillPlayerClassScript`、`commitLoginScript`、`beginParentLoadScript` / `publishParentLoadScript`、`accountRecordCASScript`。它们把 login、player_locator、scene_manager 的键绑在同一实例上。共享库那份清单（`shared-redis-split-by-purpose.md`）已登记，§12.1 漏列。
+
+**存储层的数值与新事实**（§12.1 没写）
+- Redis 单实例与高可用两种形态：
+  - 两份清单都是 `maxclients 40000`、AOF 开。
+  - 都不设 `maxmemory`，淘汰策略取缺省 noeviction（刻意为之，上界待 G4a §23 与压测再定）。
+  - 只设 requests、不设 limits，PVC 8Gi。
+- 高可用形态的代理比主节点更早到线：
+  - 业务连接全部经 2 个 haproxy，每台 `PROXY_MAXCONN=13000`。稳态上限 26000，一台不在时只剩 13000，告警线 10400。
+  - 按规划档每 zone 约 264 条推算，Z=36 触发代理告警；单实例形态 Z=118 才触发。
+  - `13000×(2+1)+1000` 恰好等于 40000，没有余量。要加代理副本，必须同时调小 `PROXY_MAXCONN` 或调大 `MAXCLIENTS`，否则 `Get-RedisHaLimits` 会 throw。
+  - 代理吞吐与多出这一跳的延迟都没有数据。
+- 部署脚本拓扑函数重复定义：旧 HEAD `c63b22dca` 的 `k8s_deploy.ps1` 有 7 个 Redis 拓扑函数各定义两遍，后定义的旧版生效，「zone 写路径跟随线上 `sts/redis`」因此不生效。已由 `c35e1133d` 去重入库，未运行，部署前要交 Codex 验证。
+- G4a 落码时有两个耦合要同批解开：`k8s_zone_rollback.ps1` 硬性要求 MappingRedis 与 go/db RedisClient 同一实例同一 DB，契约测试也钉住了这一点。
+- 共享 MySQL 是单个 `mysql:8.0` Deployment（replicas 1，`max_connections 2100`），全局库与全部 zone 库都在上面。按连接总账公式推算（最坏假设每个 go/db 常驻其余全部 zone 库）：规划档（db_first）Z=5 峰值约 2292，超限；今天的 redis 模式 Z=6 约 2428 才超。超限只告警，不阻断。以 DryRun 的「MySQL connection ledger」行为准。
+- 全部 zone 共用 infra 里一套 3 节点 etcd。登录在线路径只读、gate 目录已改为镜像，推断今天不会先撞到它。
+- （推断，未运行）go/db 的 K8s ConfigMap 原样镜像 `go/db/etc/db.yaml` 的 `ServerConfig.Database.RequireTiDB: true`，但 `Database.Hosts` 固定是 `mysql.${InfraNamespace}:3306`，k8s_deploy 也没有 go/db 的 TiDB 主机参数。按 ConfigMap 注释与 `proto_sql/db.go` 的 `authoritysql.AssertCurrentSession`，K8s 上 go/db 会在启动断言处拒启。zone 库在 K8s 上的后端是 MySQL 还是 TiDB 要先定；上面以 MySQL 连接数为墙的推算，前提也取决于这一点。
+
+**gate 侧（第 4 步）**
+- 每 zone 仍是 2 台，此时随机二选一基本等于取最少。镜像与 `gatepick.TwoChoices` 已入库（`e611b5d8d`），未编译、未测试。
+- 单台连接上限感知没做，死 gate 新鲜度过滤也没做：没在原地址重启的死 gate 会在候选里留满 etcd 租约 180s。
+- scene_manager 跨 zone 重定向每次直读 etcd，没有镜像。断线租约内从别区 gate 重登，或打开 `RedirectOnEnterEnabled` 后，登录也会走这条路。
+- 每个 login 副本另有一条后台直读：排空监视每 5s 一次 etcd 前缀 Range。
+
+**压测前置（第 5 步做之前）**
+- 光改 `stress_summarize.ps1` 不够：
+  - scene_manager 的 `resolveHomeZone` 不在任何 `enter_scene_stage` 计时段里。
+  - data_service 没有归属读耗时直方图（`route_read_total` 只在 ReadRequiresReady=true 时计数），它的 prometheus 开关也是关的，go-zero 内置的 `rpc_server_*` 替代不了。
+  - 这两侧要先在代码里加指标。
+- login 侧本机裸进程跑时不用改代码：go-zero 客户端拦截器缺省就记 `rpc_client_requests_duration_ms` / `rpc_client_requests_code_total{method=".../BatchGetPlayerHomeZone"}`，超时与熔断拒绝按 code 计入，改汇总脚本解析 :9101 即可。
+- **K8s 上 login 没有任何指标端点**：ConfigMap 没有 Prometheus / DevServer 段，manifest 只开 50000。`login_gate_directory_reads_total`、`entergame_*`、`dataloader_*`、`rpc_client_*` 全部不计数。L-14 若在 K8s 专用压测环境跑（开服线拍板清单 T-13 的推荐），login 侧一张表都出不来。
+- `stress_snap.ps1` 不抓 data_service 的 :9260；mapping Redis 服务端的 ops / CPU / 延迟也没有采集入口。
+- 以上已登记为开服线拍板清单 X-3（`docs/handoff/launch-readiness-20261013/decisions_launch_line_20261020.md`）。R19（2026-06-18）之后没有任何压测，本工作区也没有 `robot/logs`。
+
+**仍待负责人决定**（§12.1 原列各项仍有效，下面是新增）
+- 补外观是否改成只取需要的字段，或者要求建角必带外观（降核心 Redis 带宽）；
+- K8s 每 zone gate 是否提到 ≥3 台；
+- X-3 指派：加指标、开 K8s login 指标端口、改汇总脚本；
+- 对账 leader 的围栏镜像对账是否从全库 SCAN 改为按库里的 zone 清单逐把读；
+- 全局库何时拆到独立 MySQL 实例，Z≥5 时连接预算超限；
+- go/db 在 K8s 上 `RequireTiDB` 与 MySQL 主机的矛盾怎么定；
+- login 核心 Redis 客户端是否接上配置的超时。
+
+**Java 版**：结论不变。进程能多开，存储是单库加单 Redis（`useSingleServer`），这是 Java 单库的既定设计。没有新的 Java 待做项，按「Java 仓只记待做」的约定，不往 `PARITY.md` 加行。上面第 7 条的 commit 列过时属于账本卫生，留给维护 Java 仓的会话顺手回填。对应 Java 版本号 0.1.0-SNAPSHOT。
 
 
 ---

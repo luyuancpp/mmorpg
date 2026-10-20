@@ -1,46 +1,20 @@
-﻿Write-Host ">>> Running Sync-SubmoduleBranches.ps1..." -ForegroundColor Green
+﻿$ErrorActionPreference = 'Stop'
 
-$repoRoot = git rev-parse --show-toplevel
-Set-Location $repoRoot
-Write-Host ">>> Repository root: $repoRoot" -ForegroundColor Cyan
-
-git submodule update --init --recursive
-Write-Host ">>> Submodules initialized" -ForegroundColor Cyan
-
-$submodules = git config -f .gitmodules --get-regexp path
-
-if (-not $submodules) {
-    Write-Host "⚠️  No submodules found. Please check your .gitmodules file." -ForegroundColor Red
-    exit
+# 只检出父仓 gitlink 记录的提交，不跟踪分支尖端；已有本地修改由 Git 自行保护。
+$taskRepoRoot = git rev-parse --show-toplevel
+if ($LASTEXITCODE -ne 0) {
+    throw '无法确定仓库根目录。'
 }
 
-foreach ($line in $submodules) {
-    Write-Host "`n>>> Processing: $line" -ForegroundColor Yellow
-
-    $parts = $line -split '\s+'
-    if ($parts.Length -ne 2) { continue }
-
-    $key = $parts[0]
-    $path = $parts[1]
-
-    $name = $key -replace '^submodule\.', '' -replace '\.path$', ''
-    $branch = git config -f .gitmodules submodule.$name.branch
-
-    if (![string]::IsNullOrEmpty($branch)) {
-        Write-Host ">>> Setting submodule '$name' at '$path' to track branch '$branch'" -ForegroundColor Cyan
-
-        git config submodule.$name.branch "$branch"
-
-        Push-Location $path
-        Write-Host ">>> Entering $path" -ForegroundColor DarkGray
-        git fetch origin 2>&1 | Write-Host
-        git checkout "$branch" 2>&1 | Write-Host
-        git pull origin "$branch" 2>&1 | Write-Host
-        Pop-Location
-    }
-    else {
-        Write-Host ">>> Submodule '$name' has no branch configured. Skipping." -ForegroundColor DarkYellow
-    }
+Write-Host ">>> 按 gitlink 同步子模块: $taskRepoRoot" -ForegroundColor Cyan
+git -C $taskRepoRoot submodule sync --recursive
+if ($LASTEXITCODE -ne 0) {
+    throw '同步子模块地址失败，未开始检出。'
 }
 
-Write-Host "`n✅ All submodules processed." -ForegroundColor Green
+git -C $taskRepoRoot submodule update --init --recursive --checkout
+if ($LASTEXITCODE -ne 0) {
+    throw '按 gitlink 初始化或检出子模块失败；请保留错误输出和本地修改。'
+}
+
+Write-Host '>>> 子模块已按父仓记录的提交检出。' -ForegroundColor Green

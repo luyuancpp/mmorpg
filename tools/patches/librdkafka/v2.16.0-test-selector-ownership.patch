@@ -1,0 +1,17 @@
+diff --git a/tests/test.c b/tests/test.c
+--- a/tests/test.c
++++ b/tests/test.c
+@@ -2085,9 +2085,10 @@
+                                         exit(1);
+                                 }
+                         }
+-                } else if (*argv[i] != '-')
+-                        tests_to_run = argv[i];
+-                else {
++                } else if (*argv[i] != '-') {
++                        RD_IF_FREE(tests_to_run, rd_free);
++                        tests_to_run = rd_strdup(argv[i]);
++                } else {
+                         printf(
+                             "Unknown option: %s\n"
+                             "\n"

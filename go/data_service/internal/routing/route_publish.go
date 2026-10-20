@@ -243,10 +243,12 @@ func registerOutcomeLabel(o store.RouteRegisterOutcome) string {
 //
 // 每次尝试是一个 pipeline,在同一条连接上发 EVAL(PublishRouteScript,带第 4 把围栏键)与 WAITAOF ——
 // 不能用 go-redis 的 WaitAOF:它返回 *IntCmd,而 WAITAOF 回的是两元素数组,会被当成解析错误(规格 d 节末)。
+// pipeline 走 r.publishRedis(publish_redis.go:与 mapping Redis 同一实例、独立连接池、不经 go-zero 熔断器;2026-10-20 起,
+// 此前走 r.mappingRedis,与读路径共用池与熔断器)。预检(IsMergeInProgress、MGET)仍走 mappingRedis:那两次是普通短读。
 //
 // 判定:
 //   - Redis 错误回复(脚本拒绝坏 rev / 畸形 maprev、WRONGTYPE、OOM,appendonly 关着时 WAITAOF 的 ERR)是确定性的,不重试;
-//   - 网络错误(含 go-zero 取连接失败 / 熔断拒绝)与 WAITAOF 确认份数不足:退避 10–50ms 后**整条 pipeline 一起重发**。
+//   - 网络错误(含取连接失败 / 池满等到 ctx 截止)与 WAITAOF 确认份数不足:退避 10–50ms 后**整条 pipeline 一起重发**。
 //     只重发 WAITAOF 不行:新连接的写偏移可能比上次写入低,会误报已落盘;脚本在「缓存已是这一版或更新」的分支
 //     会把 maprev 原值写回一次(touch),所以重发后的 WAITAOF 仍覆盖缓存此刻的状态;
 //   - 回复形状不对 → fail-closed,不重试;Fenced → ErrZoneMergeInProgress;Conflict / LegacyConflict、
@@ -254,12 +256,19 @@ func registerOutcomeLabel(o store.RouteRegisterOutcome) string {
 //     所以只可能是库被回档或有写者绕过了脚本)→ ErrRoutePublishConflict;
 //   - Applied / Confirmed / home 相同的 Superseded:WAITAOF 满足才算成功。
 //
-// 叠加的重试:go-redis 自己也会按 MaxRetries 在新连接上把整条 pipeline 重发。两层叠加后总时长仍受 ctx 截止时间约束
+// 重试只有一层(2026-10-20 更正,原文「go-redis 也会按 MaxRetries 重发、两层叠加」只对 go-zero 客户端成立):发布客户端
+// MaxRetries=-1,go-redis 不自动重发,重发全由本函数的 PublishAttempts 负责;总时长受 ctx 截止时间约束
 // (每次 WAITAOF 的 timeout 都按剩余时间重算),脚本是 set-if-newer + touch,重发幂等。
 // 每次调用的最终结果计一次 route_publish_total{result}。
 func (r *Router) publishRoute(ctx context.Context, row store.RouteRow) error {
 	result := metrics.RoutePublishError
 	defer func() { metrics.ObserveRoutePublish(result) }()
+
+	if r.publishRedis == nil {
+		// 只在 db_first 下才会走到这里,而 NewRouter 在 db_first 下恒建发布客户端;到这里说明装配被绕过,fail-closed、不重试。
+		return fmt.Errorf("route publish for player %d: publish client not assembled (RouteStore.Mode=db_first); player_route row rev=%d committed but unpublished",
+			row.PlayerID, row.Rev)
+	}
 
 	home := row.HomeValue()
 	plc, err := row.PlacementValue()
@@ -297,13 +306,16 @@ func (r *Router) publishRoute(ctx context.Context, row store.RouteRow) error {
 		}
 
 		var evalCmd, waitCmd *goredis.Cmd
-		pipeErr := r.mappingRedis.PipelinedCtx(ctx, func(p redis.Pipeliner) error {
+		_, pipeErr := r.publishRedis.Pipelined(ctx, func(p goredis.Pipeliner) error {
 			evalCmd = p.Eval(ctx, placement.PublishRouteScript, keys, rev, home, plc)
 			if r.publish.waitAOF {
 				waitCmd = p.Do(ctx, "WAITAOF", r.publish.numLocal, r.publish.numReplicas, waitMs)
 			}
 			return nil
 		})
+		// 2026-10-20:发布客户端不再挂 go-zero 熔断器,下面「熔断打开」那一支在生产上已不会出现;判据保留:发布客户端上的钩子
+		// (单测用它模拟没执行的批)与将来若再挂熔断器都按同一口径处理。取连接失败 / ctx 已结束时 go-redis 把错误回填到每条命令
+		// (generalProcessPipeline 的 setCmdsErr),走下面逐条命令的网络错误分支,同样重试。
 		// 2026-10-18 更正(原注释「回调根本没被调用(取连接失败、熔断器拒绝)」只对了前一半):回调没被调用只发生在取连接失败时;
 		// 熔断打开时回调**照样被调用**、命令照样排进队列,但 go-zero 的 breakerHook.ProcessPipelineHook 直接返回
 		// breaker.ErrServiceUnavailable、不调下一层(ctx 已结束时 DoWithAcceptableCtx 先回 ctx.Err(),同理),队列里的命令一条都没
@@ -394,35 +406,28 @@ func (r *Router) publishRoute(ctx context.Context, row store.RouteRow) error {
 // 套的熔断器只把 nil / redis.Nil / context.Canceled 当成功,pipeline 回的 Redis 错误回复都记成熔断失败 ——
 // 熔断器一开,同一个客户端上无关的 GetPlayerHomeZone、BatchGet、玩家锁也会被按概率丢弃,影响面从建角扩大到登录。
 //
-// 用自己新建的 *redis.Redis(go-zero 按地址复用底层连接池,不多开池),熔断器与 Router 的互不相干。
-// 2026-10-18 更正:上一句的后半不成立。go-zero v1.10.0 的底层 go-redis 客户端按地址缓存(redisclientmanager.go getClient),
-// 熔断钩子在**第一次**建客户端时用当时那个 *redis.Redis 的熔断器挂上;之后同地址新建的 *redis.Redis 拿到的是同一个客户端、
-// 同一个熔断器。所以本探针与 Router 共用一个熔断器(谁先建谁的),探针的失败同样计进 Router 的熔断。原文不删,风险登记在提案 §11.2 第 1b-1 批。
-// 新连接上没有写过东西(WAITAOF 等的是本连接的写偏移),本地确认会立即返回;timeout 仍取配置值而不是 1ms,
-// 免得池里某条刚写过的连接赶上 everysec 的 fsync 间隙,被误判成「不满足」。
+// 探针用一个临时的 go-redis 客户端(与发布客户端同一个构造口径 mappingRedisOptions,池 1 条,探完即关),不经 go-zero。
+// 2026-10-20(A2-1):此前用 go-zero 的 *redis.Redis,而 go-zero 按地址缓存底层客户端、熔断钩子挂在第一次建客户端时,
+// 探针与 Router 共用一个熔断器,探针的失败同样计进 Router 的熔断(2026-10-18 更正登记的风险);现在两边互不相干,该风险销项。
+// 代价:启动期对 mapping Redis 多一条短连接(探完即关)。
+// 新连接上没有写过东西(WAITAOF 等的是本连接的写偏移),本地确认会立即返回;timeout 仍取配置值而不是 1ms。
 func ProbeWaitAOF(ctx context.Context, mapping redis.RedisConf, rc config.RouteStoreConfig) error {
 	rc = rc.Normalize()
 	if !rc.WaitsForAOF() {
 		return nil
 	}
-	rds, err := redis.NewRedis(mapping)
+	opts, err := mappingRedisOptions(mapping, probeRedisPoolSize, publishRedisReadTimeout(rc))
 	if err != nil {
 		return fmt.Errorf("WAITAOF probe: mapping redis %s: %w", mapping.Host, err)
 	}
-	var waitCmd *goredis.Cmd
-	pipeErr := rds.PipelinedCtx(ctx, func(p redis.Pipeliner) error {
-		waitCmd = p.Do(ctx, "WAITAOF", rc.NumLocal(), rc.NumReplicas(), rc.WaitAOFTimeoutMs)
-		return nil
-	})
-	// 没执行(取连接失败、熔断打开、ctx 已结束)单独报:否则会落到下面的 Slice() 报成「needs appendonly yes」,把运维引错方向。
-	if waitCmd == nil || publishPipelineNotExecuted(pipeErr, waitCmd) {
-		if pipeErr == nil {
-			pipeErr = errors.New("pipeline callback was not invoked")
-		}
-		return fmt.Errorf("WAITAOF probe not executed on mapping redis %s: %w", mapping.Host, pipeErr)
-	}
-	acks, err := waitCmd.Slice()
+	rdb := goredis.NewClient(opts)
+	defer func() { _ = rdb.Close() }()
+	acks, err := rdb.Do(ctx, "WAITAOF", rc.NumLocal(), rc.NumReplicas(), rc.WaitAOFTimeoutMs).Slice()
 	if err != nil {
+		// 没执行(连不上、ctx 已结束)单独报:否则会报成「needs appendonly yes」,把运维引错方向。只有 Redis 的错误回复才是能力问题。
+		if !isRedisErrorReply(err) {
+			return fmt.Errorf("WAITAOF probe not executed on mapping redis %s (connection / context): %w", mapping.Host, err)
+		}
 		return fmt.Errorf("WAITAOF %d %d %d on mapping redis %s failed (needs appendonly yes and Redis >= 7.2): %w",
 			rc.NumLocal(), rc.NumReplicas(), rc.WaitAOFTimeoutMs, mapping.Host, err)
 	}

@@ -129,6 +129,8 @@ type fakeStore struct {
 	fences     []store.ActiveMergeFence
 	// fenceListHook 非 nil 时按调用序号(从 1 起)给 ListActiveMergeFences 的结果。
 	fenceListHook func(n int) []store.ActiveMergeFence
+	// fenceZones 保留出现过围栏行的 zone，覆盖已释放但 63 号片仍有行的情况。
+	fenceZones map[uint32]struct{}
 
 	peeks, renews, releases, fenceLists int
 	releaseErr                          error
@@ -142,7 +144,7 @@ type fakeStore struct {
 }
 
 func newFakeStore() *fakeStore {
-	return &fakeStore{nowMs: 1_000_000, generation: testGen, writable: true, rows: map[uint64]store.RouteRow{}}
+	return &fakeStore{nowMs: 1_000_000, generation: testGen, writable: true, rows: map[uint64]store.RouteRow{}, fenceZones: map[uint32]struct{}{}}
 }
 
 func (s *fakeStore) setRow(r store.RouteRow) {
@@ -301,7 +303,9 @@ func (s *fakeStore) ScanRoutesUpdatedSince(_ context.Context, shard uint32, afte
 	defer s.mu.Unlock()
 	s.scans = append(s.scans, scanCall{shard: shard, after: after, limit: limit, updated: true})
 	var out []store.RouteRow
-	for _, r := range s.sortedRows(func(a, b store.RouteRow) bool { return store.RouteUpdatedCursorAt(a).Less(store.RouteUpdatedCursorAt(b)) }) {
+	for _, r := range s.sortedRows(func(a, b store.RouteRow) bool {
+		return store.RouteUpdatedCursorAt(a).Less(store.RouteUpdatedCursorAt(b))
+	}) {
 		if placement.RouteRowShard(r.PlayerID) == shard && after.Less(store.RouteUpdatedCursorAt(r)) && len(out) < limit {
 			out = append(out, r)
 		}
@@ -335,7 +339,21 @@ func (s *fakeStore) ListActiveMergeFences(context.Context) (store.ActiveMergeFen
 	if s.fenceListHook != nil {
 		fences = s.fenceListHook(s.fenceLists)
 	}
+	for _, fence := range fences {
+		s.fenceZones[fence.ZoneID] = struct{}{}
+	}
 	return store.ActiveMergeFences{DBNowMs: s.nowMs, Fences: append([]store.ActiveMergeFence(nil), fences...)}, nil
+}
+
+func (s *fakeStore) ListMergeFenceZones(context.Context) ([]uint32, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	var zones []uint32
+	for zone := range s.fenceZones {
+		zones = append(zones, zone)
+	}
+	sort.Slice(zones, func(i, j int) bool { return zones[i] < zones[j] })
+	return zones, nil
 }
 
 func (s *fakeStore) DBNowMs(context.Context) (uint64, error) {
@@ -364,6 +382,16 @@ type fakeCache struct {
 	arms     int
 	pexpire  map[string]uint64
 	closed   bool
+	// 钩子在不持 c.mu 时调用，可通过同一 Cache 接口读取本拍模拟页面中的键。
+	fenceScanHook func(context.Context, uint64, int) ([]FenceMirror, uint64, error)
+	fenceGetHook  func(context.Context, []string) ([]FenceMirror, error)
+	fenceScans    []fenceScanCall
+	fenceGets     [][]string
+}
+
+type fenceScanCall struct {
+	cursor uint64
+	pages  int
 }
 
 func newFakeCache() *fakeCache {
@@ -644,10 +672,17 @@ func (c *fakeCache) MirrorMergedInto(_ context.Context, rows []store.MergedIntoR
 	return res, nil
 }
 
-func (c *fakeCache) ListFenceMirrors(context.Context) ([]FenceMirror, error) {
+func (c *fakeCache) ScanFenceMirrors(ctx context.Context, cursor uint64, pages int) ([]FenceMirror, uint64, error) {
+	c.mu.Lock()
+	c.record("ScanFenceMirrors")
+	c.fenceScans = append(c.fenceScans, fenceScanCall{cursor: cursor, pages: pages})
+	hook := c.fenceScanHook
+	c.mu.Unlock()
+	if hook != nil {
+		return hook(ctx, cursor, pages)
+	}
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	c.record("ListFenceMirrors")
 	var out []FenceMirror
 	for k, v := range c.kv {
 		if strings.HasPrefix(k, fenceMirrorKeyPrefix) {
@@ -655,6 +690,26 @@ func (c *fakeCache) ListFenceMirrors(context.Context) ([]FenceMirror, error) {
 		}
 	}
 	sort.Slice(out, func(i, j int) bool { return out[i].Key < out[j].Key })
+	return out, 0, nil
+}
+
+func (c *fakeCache) GetFenceMirrors(ctx context.Context, keys []string) ([]FenceMirror, error) {
+	c.mu.Lock()
+	c.record("GetFenceMirrors")
+	c.fenceGets = append(c.fenceGets, append([]string(nil), keys...))
+	hook := c.fenceGetHook
+	c.mu.Unlock()
+	if hook != nil {
+		return hook(ctx, keys)
+	}
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	var out []FenceMirror
+	for _, key := range keys {
+		if value, ok := c.kv[key]; ok {
+			out = append(out, FenceMirror{Key: key, Zone: fenceMirrorZone(key), Value: value})
+		}
+	}
 	return out, nil
 }
 
@@ -1630,10 +1685,12 @@ func TestFailoverIncrementalStartsFromPersistedCvm(t *testing.T) {
 // TestIncrementalAfterPrewarmStartsAtPrewarmStart:长任务(预热)结束后的首次增量从预热开始时的库时钟 − Overlap 开始,
 // cvm 写成预热开始时刻,而不是结束时刻。
 func TestIncrementalAfterPrewarmStartsAtPrewarmStart(t *testing.T) {
-	h := newHarness(t, true, nil)
+	// 本例只验证长预热后的起点 / cvm 窗口；50 秒超过默认增量间隔，但仍在合法的 60 秒租约内。
+	// 租约中途过期由 TestLeaseExpiryMidPrewarmAbortsBeforeNextBatch 单独验证。
+	h := newHarness(t, true, func(rc *config.RouteReconcileConfig) { rc.LeaseMs = 60_000 })
 	h.st.nowMs = 2_000_000
 	h.st.setRow(homeRow(7, 3, 1, 1_000))
-	h.c.pushHook = func(*fakeCache, []store.RouteRow) { h.st.addNow(500_000) }
+	h.c.pushHook = func(*fakeCache, []store.RouteRow) { h.st.addNow(50_000) }
 	h.mustTick(metrics.RouteReconcileTickOK)
 	h.c.pushHook = nil
 	scansBefore := h.scanCount()
@@ -1680,10 +1737,10 @@ func TestIncrementalWindowCursorMath(t *testing.T) {
 	h := newHarness(t, true, func(rc *config.RouteReconcileConfig) { rc.PushBatch = 2 })
 	h.st.cvm, h.st.wm, h.st.nowMs = 1_000_000, 1_000_000, 1_000_000
 	h.c.set(placement.RouteReadyKey, markerFor(t, idA, testGen, 1_000_000))
-	h.st.setRow(homeRow(3, 3, 1, 984_999))       // 窗口之前
-	h.st.setRow(homeRow(3+64, 3, 1, 985_000))    // 恰在起点
-	h.st.setRow(homeRow(3+128, 3, 1, 990_000))   // 窗口内
-	h.st.setRow(homeRow(3+192, 3, 1, 999_000))   // 窗口内,第二页
+	h.st.setRow(homeRow(3, 3, 1, 984_999))     // 窗口之前
+	h.st.setRow(homeRow(3+64, 3, 1, 985_000))  // 恰在起点
+	h.st.setRow(homeRow(3+128, 3, 1, 990_000)) // 窗口内
+	h.st.setRow(homeRow(3+192, 3, 1, 999_000)) // 窗口内,第二页
 	h.mustTick(metrics.RouteReconcileTickOK)
 	if h.started() != phaseIncremental {
 		t.Fatalf("task = %s, want incremental", h.started())

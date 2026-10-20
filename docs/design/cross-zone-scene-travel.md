@@ -5,6 +5,8 @@
 
 **2026-10-13 补充:** §14 记录其他玩家 / 服务器向玩家发消息、目标连续换场景时的寻址与可靠投递设计参考；该节尚未实施，不属于上文“代码全部已落码”的范围。
 
+**2026-10-20 源码核对补充:** §15 汇总当前 C++/Go 跨 zone 的完整节点图、源端双表 SQL ACK 交接时序、目标重登入场时序、抵达后的存盘时序与水平扩展边界。该节是源码及配置说明，不是本轮构建、联机或容量验收；早期章节的 Redis 落地交接示意按 §15 的 SQL 屏障补充理解。
+
 > 用户 2026-09-16 拍板:客户端直连 battle 与跨 zone 场景传送"两个都做",先直连。本文只管传送。
 > 一句话:**玩家仍归属 home_zone,只是人换到目标 zone 的 gate/scene 上玩;数据不搬家,存盘按 home_zone 路由;换手必须过"源已落盘 + epoch"两道门。**
 
@@ -42,6 +44,8 @@
 > **(2026-10-19 指向注,CZ-2 原文保留)** 负责人 2026-10-17 拍板核心走「单元化 + 单元内 Redis Cluster 按 `{player_id}` 分片」,CZ-2 的「生产 Redis 物理共享」改写为「逻辑单一、物理按 `{player_id}` 分片」:同一玩家的契约键只有一个权威存储(所在单元核心 Cluster 里该玩家的 slot),一名玩家同一时刻只属于一个单元,跨单元按「转区」处理。改写内容与待拍板项见 [shared-redis-split-by-purpose.md](shared-redis-split-by-purpose.md) §20.1、§25.2 第 20 条(纯设计,第 4 批未落码)。**第 4 批落码之前,CZ-2 照旧有效**;正文里「不支持 Redis Cluster」「物理共享单库」等说法同此。
 
 ## 4. 数据流
+
+> 本节保留早期链路示意。当前完整节点图与严格交接条件见 [§15](#15-跨-zone-完整节点与数据流程2026-10-20源码核对)：源端必须等两张玩家表的 SQL ACK 与本次快照同版，才能写 handoff 并请求改派。
 
 ```
 客户端(A区 gate) ──TravelToZone{B, scene_cfg}──▶ scene(A)
@@ -2079,3 +2083,336 @@ Akka 的 Reliable Delivery 是另加的处理确认协议：业务处理完才�
 例如，给玩家 42 发奖励，操作 ID 为 R123。玩家从 B 换到 C，只影响投递位置；R123 是否待处理、是否已发过奖励，由独立持久记录判定。完成确认应表示奖励已按业务契约提交。此处 R123 对应 §14.3 的业务 `operation_id`，不是协议消息类型号。
 
 两篇路由文章支持“按稳定身份定位当前实例”；重要消息保存到业务完成还需要独立的持久保管、确认、重试和幂等机制。本文记录的是职责与保证边界，不意味着当前 C++/Go 版或 Java 版已实现统一可靠消息投递。
+
+## 15. 跨 zone 完整节点与数据流程（2026-10-20，源码核对）
+
+本节按当前 C++/Go 工作区源码与配置记录，示例为 **home_zone=1 的玩家从 zone 1 去 zone 2 游玩**，采用正常本地启动与 K8s 默认的 `GATE_CLIENT_RPC_ROUTER=1` 路由模式。图中的“池”表示可部署多个服务副本，不代表已经完成对应规模的联机或容量验收。直接启动 Gate 且未设该变量时仍可能走保留的直连 Go 服务模式，见 [client-rpc-router.md](client-rpc-router.md) D34 修订。
+
+本节只保存流程说明，不修改业务代码、协议或运行环境；本次未构建、未启动服务、未做真实跨区或 Mermaid 渲染验收。独立 Java 版未在本节重新核对，不据此宣称两版实现相同。
+
+### 15.1 四类数据各自回答什么问题
+
+| 数据 | 从 zone 1 到 zone 2 后 | 权威维护方 |
+|---|---|---|
+| 当前 Gate 与会话 | 新 Gate、新会话版本与登录代次 | `player_locator` 的会话记录 |
+| 当前 Scene 位置 | zone 2 的目标 Scene；交接中先有一个等待落点 | `scene_manager` 的 `player:<id>:location` |
+| 逻辑归属 `home_zone` | 仍为 1，游玩传送不改归属 | `data_service` 的玩家目录 |
+| 存储落点 `placement` | 保持现有落点；没有显式记录时通常是 `zone_1_db` | 目录维护落点，`go/db` 在处理任务时按当前记录选库 |
+
+`player_locator` 管 Gate 会话；SceneManager 管 Scene 位置。前者历史 `SetLocation` 接口已经停用，不能把它的历史位置键当成当前场景路由真源。
+
+Scene 运行时仍以本进程 ECS 为当前执行状态。存盘只序列化需持久保存的组件；Redis 保存玩家快照、存盘待办与部分路由状态，不是整个 Scene/ECS 的镜像，AOI、连接、定时器等运行态不整体落入玩家档案。普通玩家快照的存盘链不经 `data_service.SavePlayerData` 中转。
+
+### 15.2 参与节点总图
+
+实线为正常路径，虚线为条件冷读、持久补投、旧连接清理或服务发现。Redis 框表示相关逻辑用途，当前部署可以共用同一物理实例；它不表示这些跨键原子协议已经支持 Redis Cluster。
+
+```mermaid
+flowchart TB
+    C["同一个客户端<br/>从旧 Gate 换到新 Gate"]
+
+    subgraph Z1["源区 zone 1"]
+        G1["Gate 1"]
+        S1["Scene 1<br/>原玩家 ECS 实体"]
+        L1["Login 1<br/>旧连接清理"]
+    end
+
+    subgraph Z2["目标区 zone 2"]
+        G2["Gate 2"]
+        S2["Scene 2<br/>重建玩家 ECS 实体"]
+        L2["Login 2<br/>重登与数据预加载"]
+    end
+
+    subgraph CTRL["共享控制服务：均可多副本"]
+        RT["client_rpc_router<br/>按 Gate 的 zone 选择 Login"]
+        SM["SceneManager<br/>选择 Gate / Scene，提交位置与归属代次"]
+        PL["player_locator<br/>当前 Gate、会话版本、租约"]
+        DS["data_service<br/>home_zone / placement 目录"]
+    end
+
+    subgraph STORE["共享数据与消息基础设施"]
+        R[("共享 Redis<br/>玩家快照、会话、位置、目录<br/>owner_epoch、交接屏障、存盘待办")]
+        KC["Kafka 节点命令<br/>Redirect / BindSession / RoutePlayer"]
+        KW["Kafka：db_task_zone_1<br/>玩家存盘写任务"]
+        KR["Kafka：db_task_zone_2<br/>目标 Login 的冷读任务"]
+        DB1["go/db：zone 1 副本池<br/>处理归属区的存盘"]
+        DB2["go/db：zone 2 副本池<br/>处理目标区登录冷读"]
+        SQL[("玩家 SQL 存储落点<br/>无显式 placement 时为 zone_1_db<br/>player_database + player_database_1")]
+        E["etcd 集群<br/>服务注册与发现"]
+    end
+
+    C <-->|"原 TCP 连接"| G1
+    C <-->|"新 TCP 连接"| G2
+    G1 <-->|"muduo TCP RPC"| S1
+    G2 <-->|"muduo TCP RPC"| S2
+
+    G2 -->|"Login / EnterGame"| RT
+    RT -->|"选择 zone 2 Login"| L2
+    G1 -.->|"旧连接断开通知"| RT
+    RT -.->|"选择 zone 1 Login"| L1
+    L1 -.->|"条件清理旧会话"| PL
+
+    L2 -->|"查询、提交新会话"| PL
+    L2 -->|"EnterScene"| SM
+    S1 -->|"请求跨区交接"| SM
+    SM -->|"查询 home_zone"| DS
+    DS -->|"归属及存储目录"| R
+    PL -->|"会话原子更新"| R
+    SM -->|"位置与 epoch 原子提交、校验 handoff"| R
+
+    S1 -->|"源快照与持久存盘意图"| R
+    R -->|"目标快照加载"| S2
+    S2 -->|"后续快照与存盘意图"| R
+    S1 -->|"两表写任务"| KW
+    S2 -->|"仍按 home_zone=1 写"| KW
+    KW --> DB1
+    DB1 -->|"查询当前 placement 后写库"| SQL
+    DB1 -->|"两表 SQL ACK、缓存更新"| R
+    R -.->|"待办认领与持久补投"| DB1
+    DB1 -.->|"重投原任务"| KW
+
+    L2 -->|"检查父快照及存盘屏障"| R
+    L2 -.->|"缓存缺失时读两表"| KR
+    KR -.-> DB2
+    DB2 -.->|"按 placement 读原存储库"| SQL
+    DB2 -.->|"缓存及任务结果，供 Login 重建父快照"| R
+
+    SM -->|"Redirect / RoutePlayer"| KC
+    L2 -->|"BindSession"| KC
+    KC --> G1
+    KC --> G2
+
+    E -.->|"发现服务实例"| RT
+    E -.->|"发现各区节点"| SM
+```
+
+- 图中两条客户端 TCP 连接表示切换前后，只有短暂的新旧连接重叠，不表示玩家长期同时在两个区执行。
+- 三个 Kafka 框是同一 Kafka 基础设施上的不同 topic 用途，不是三套独立 Kafka 集群；topic 世代与共享分区命令寻址以部署配置为准。
+- Java Gateway 用于首次 HTTP 认证、选服和 Gate 分配；这次游戏内跨区由重定向通知提供目标 Gate 地址和票据，不重新进行 HTTP 选服。
+- etcd 负责各服务的注册发现，图中仅画 Router 与 SceneManager 两条代表线，其他节点的注册发现连接省略。普通跨区传送不调用 match / battle；战斗中禁止传送等准入规则见 CZ-6。
+
+### 15.3 源端保存、SQL 屏障与改派
+
+以下为成功主路径。SceneManager 的只读预检先于目标 Gate 准备；**先选 Gate 并签票据，再 CAS 提交等待落点，最后向 Kafka 投递重定向并等待 broker ACK**。准备票据不是位置提交点，更不是客户端已经换区。
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant S1 as Scene 1
+    participant R as 共享 Redis
+    participant K as Kafka
+    participant DB as go/db zone 1
+    participant SQL as 玩家存储库
+    participant SM as SceneManager
+    participant C as 客户端
+
+    Note over S1: 客户端经 Gate 1 发来 TravelToZone(2)
+    S1->>S1: 校验传送条件，冻结输入，打包持久组件
+    S1->>R: 原子校验旧 owner_epoch<br/>写父快照、pending 版本、两表补投意图
+    R-->>S1: 快照提交回调
+    S1->>K: 两条 DBTask，同一玩家 ID<br/>同一 owner_epoch / save_seq
+    K->>DB: 消费 db_task_zone_1
+
+    loop 两张表分别执行，各自一个事务
+        DB->>R: 查询当前 home_zone / placement
+        DB->>SQL: 行锁与版本条件写
+        SQL-->>DB: 本表事务提交结果
+        DB->>R: 复核存储落点，发布本表 SQL ACK
+    end
+
+    S1->>R: 检查两表 ACK 是否都等于 pending
+    Note over S1,R: 未齐则等待；齐备且仍持有旧 epoch 才写 handoff
+    R-->>S1: handoff 标记发布成功
+    S1->>SM: EnterScene，目标 zone=2
+    SM->>SM: 预检目标地图、归属与 handoff<br/>选择 Gate 2，准备目标票据
+    SM->>R: 原子复核旧位置、epoch、handoff<br/>提交目标区等待落点，推进 epoch
+    SM->>K: 向 Gate 1 投递 RedirectToGate，等 broker ACK
+    K-->>SM: broker 确认命令投递
+
+    par 源端收尾
+        SM-->>S1: 重定向已受理
+        S1->>S1: 收尾旧实体，不再作为有效写入者
+    and 客户端收到通知
+        K-->>C: 经 Gate 1 推送 Gate 2 地址与票据
+    end
+```
+
+两张 SQL 表是两条独立 DBTask、两个独立事务，没有跨双表事务。`player:{<id>}:save_barrier` 的 `pending` 与两个表名 ACK 必须精确同版，才可发布 handoff。仅 Redis 保存成功、任务进入本地生产队列或 Kafka broker ACK 均不能代替 SQL ACK。
+
+持久 outbox 与父快照、pending 同次提交；源进程在 Redis 提交后、Kafka 投递前崩溃时，`go/db` 的补投器可认领待办并重投原始任务。只有双表 SQL ACK 齐备才清补投意图；broker ACK 不清原意图。SQL 的 `(owner_epoch, save_seq)` 围栏防止旧属主或旧快照覆盖更新版本，重复投递仍按幂等路径处理。
+
+跨区位置先写成目标 zone 的等待落点（`scene_id=0`、`node_id` 空），不表示目标 Scene 已加载。源端成功回包与客户端接收重定向异步发生；源实体收尾不以目标客户端已经落地为前提。实际源端收尾和应答丢失核实仍遵循 §12、§13 的代际与冻结预算。
+
+### 15.4 目标端换连接、预加载与入场
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant C as 客户端
+    participant G2 as Gate 2
+    participant RT as RPC Router
+    participant L2 as Login 2
+    participant R as 共享 Redis
+    participant PL as player_locator
+    participant SM as SceneManager
+    participant S2 as Scene 2
+
+    C->>G2: 建立新 TCP，成功后关闭旧连接
+    C->>G2: 提交重定向票据
+    G2->>G2: 验签、核对目标 Gate 并保存票据身份
+
+    C->>G2: Login，使用现有认证信息
+    G2->>RT: 转发，携带 Gate 所在 zone=2
+    RT->>L2: 选择 zone 2 的 Login 实例
+    L2->>R: 建立新连接的登录态
+    L2-->>C: 经 Router、Gate 返回登录结果
+
+    C->>G2: EnterGame，沿用原角色
+    G2->>RT: 转发 EnterGame
+    RT->>L2: EnterGame
+    L2->>L2: 校验持票玩家与角色归属，取得玩家锁
+    L2->>R: 先检查玩家父快照及存盘屏障
+
+    opt 父快照缺失，需要冷读
+        Note over L2,R: 经 Kafka db_task_zone_2 → go/db zone 2<br/>按 placement 读原 SQL 库，再重建父快照
+    end
+
+    L2->>PL: 查询旧会话，决定首次登录 / 重连 / 替换登录
+    L2->>PL: 原子提交新 Gate、新会话版本与登录代次
+    PL->>R: 更新会话、租约和 Gate 索引
+    Note over L2,PL: 重连与替换登录是分支，不是连续执行<br/>旧连接的迟到清理不能覆盖新会话
+
+    L2-->>G2: 经 Kafka 发送 BindSession
+    L2->>SM: EnterScene，票据指定 zone=2
+    SM->>SM: 查询 home_zone，选择 Scene 2
+    SM->>R: 原子提交正式 Scene 位置与 owner_epoch
+    SM-->>G2: 经 Kafka 发送 RoutePlayer
+    Note over G2: BindSession 与 RoutePlayer 可任意先到<br/>汇齐后才派发入场
+
+    G2->>S2: muduo RPC 入场<br/>携带 home_zone、owner_epoch、登录代次
+    S2->>R: 读取已准备好的 PlayerAllData
+    R-->>S2: 玩家持久化快照
+    S2->>S2: 创建 ECS 实体，恢复组件与派生运行状态
+    S2-->>G2: NotifyEnterScene
+    G2-->>C: 通知真正入场，恢复操作
+```
+
+目标 Gate 本地完成票据验签，持票玩家与实际 `EnterGame.player_id` 的一致性由 Login 的入场校验最终复核。客户端收到 `EnterGame` 无错应答只表示请求已受理，不等于已抵达；真正抵达看目标 Scene 的入场通知。
+
+预加载必须早于 locator 会话提交和 `SceneManager.EnterScene`。父快照缺失时不能直接把旧子缓存拼成最新档案；冷读与父快照重建受 SQL 提交屏障约束。目标区的读取任务发到目标 Login 所在区 topic，但 `go/db` 仍按玩家的当前 placement / home_zone 选原存储库，不因读任务来自 zone 2 就读 `zone_2_db`。
+
+同账号断线租约内的 `Reconnect`、旧会话在线时的 `ReplaceLogin`、没有旧会话的首次登录为互斥分支；替换登录先提交新会话，再清理或踢旧连接。两个 Kafka 控制事件可以乱序到达，Gate 汇齐 `BindSession` 与 `RoutePlayer` 后才经 muduo 派发 Scene 入场；不是 SceneManager 直接调用目标 Scene 加载玩家。
+
+### 15.5 抵达后的存盘与失败边界
+
+#### 15.5.1 zone 2 Scene 正常存盘的完整时序
+
+玩家已经在 zone 2 落地，`home_zone` 仍为 1。触发一次需要实际写入的存盘后，目标 Scene 自行走下面的链路；不需要源 Scene、Gate、Login、SceneManager 或 player_locator 参与本次存盘。图中“共享 Redis”与“mapping Redis”区分用途，当前可以指向同一物理实例。
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant S2 as zone 2 Scene
+    participant R as 共享 Redis
+    participant K as Kafka db_task_zone_1
+    participant DB as go/db zone 1 副本池
+    participant M as mapping Redis
+    participant SQL as 配置指定的 MySQL / TiDB
+
+    Note over S2: 玩家在本 Scene 的 ECS 中继续游玩<br/>本次确实需要存盘，home_zone=1
+    S2->>S2: 打包持久组件，发 save_seq<br/>两表 DBTask 携带同一 owner_epoch / save_seq
+    S2->>R: Lua 校验当前 owner_epoch<br/>原子写父快照、pending、完整两表补投意图
+    R-->>S2: 快照提交回调
+    S2->>K: 两条原始 DBTask，key=player_id<br/>topic 按 home_zone=1 选择
+    K->>DB: 同消费组分配分区并消费
+
+    par 存盘消费者逐表处理
+        loop player_database 与 player_database_1 各自处理
+            DB->>DB: 排序租约与版本守卫<br/>粒度为 topic + player_id + msgType
+            DB->>M: 直接读取当前 player:placement 与 player:zone<br/>默认一次 MGET，不调用 data_service RPC
+            M-->>DB: 当前 placement 记录与 home_zone
+            DB->>DB: 选择 storage_id 对应的连接池和数据库名<br/>有稳定 placement 用落点；本例无落点则用 zone_1_db
+            DB->>SQL: 在选定 schema 内执行本表事务<br/>行锁与 owner_epoch / save_seq 条件写
+            SQL-->>DB: 本表 SQL 提交结果
+            DB->>M: SQL 之后重新读取并复核存储落点
+            M-->>DB: 落点稳定且允许发布
+            DB->>R: 核租约并发布本表缓存、SQL ACK
+            DB->>R: 发布成功后推进已应用游标与 epoch
+            DB-->>K: 登记本条完成，按连续位点确认
+        end
+    and 独立的持久补投后台
+        DB->>R: 扫描、认领存盘待办并检查当前版本
+        alt 两表 ACK 都等于 pending
+            R-->>DB: 原子清理对应补投意图与待办索引
+        else ACK 未齐且满足补投时间与预算
+            R-->>DB: 原始两表 DBTask 字节与原目标 topic
+            DB->>K: 退避重投，保留原任务身份
+        end
+    end
+
+    Note over R,DB: 清理只依赖双表 ACK 同版，不以游标或 Kafka 位点推进为前提<br/>broker ACK 不清唯一意图，重复写由 SQL 围栏与游标判定处理
+    Note over S2,R: Scene 的 Redis 保存回调与 SQL 完成是两个时刻<br/>日常游玩不逐次经 SceneManager 改派
+```
+
+图中的循环是两张表各自处理的成功路径，不表示跨两张表的事务。Kafka 位点的实际提交还受同分区前序任务和 claim 的连续确认约束，不以某一张表的 ACK 解释为整份玩家快照已经完成。
+
+补投器是独立后台，双 ACK 齐备后即可清意图，不要求等待已应用游标或 Kafka 位点推进；不能从图中推出它们之间存在额外提交屏障。补投分支属于尚未完成的欠账处理，与双 ACK 齐备后清意图互斥，不表示正常完成后还会主动重投。归属失效、落点冻结/变化或 SQL 失败时，按现有拒绝、延后或隔离语义处理，不凭这张成功图跳过错误分支；完整落库和补投契约见 [db-write-fencing-mysql.md](db-write-fencing-mysql.md) 与 [db-task-delivery-and-retention.md](db-task-delivery-and-retention.md)。
+
+#### 15.5.2 go/db、data_service 与 TiDB 的职责
+
+**当前普通存盘路径不是“go/db 调 data_service，再由 data_service 解析 TiDB 的 home_zone”。** `home_zone` 与 `placement` 是本项目的业务目录；TiDB / MySQL 执行已经选好 schema 的 SQL，不负责解释玩家应属于哪个 zone。
+
+| 环节 | 当前执行方与数据来源 |
+|---|---|
+| Scene 选择存盘 topic | Scene 使用入场路由携带的 `PlayerHomeZoneComp`；本例人在 zone 2，仍发 `db_task_zone_1` |
+| 维护 home_zone / placement 目录 | `data_service` 和受控的合服/搬库工具维护；不是每次存盘重新登记 |
+| go/db 查询目录 | `placementRouter.lookup` 直接用 `PlacementRedis` 读取 mapping Redis 的两把键，不构造 data_service RPC |
+| 选择实际 SQL 库 | `go/db` 解析记录，由 `placement.StoreDBName(storage_id)` 派生库名，`StoreRegistry` 提供该库独立连接池 |
+| 数据库连接到哪里 | 由 `go/db` 的 `ServerConfig.Database.Hosts` 等配置决定；`OpenPlacementStore` 替换 DSN 的数据库名，不按玩家改数据库机器 |
+| SQL 提交后 | go/db 再读目录，复核选库记录未变且写入仍可发布，再发布缓存/ACK 与游标；变化则不冒充当前真源已完成 |
+
+本次核对的配置为 `data_service.RouteStore.Mode=redis`、`go/db.Placement.Required=false`、`go/db.Placement.RequireRouteReady=false`。因此正常选库时，有合法稳定落点就用它，没有落点但有 `home_zone=1` 就用 `zone_1_db`。显式配置 `Required=true` 时缺落点会拒绝，不能把这个回落说成所有模式都适用；畸形记录也不能当作缺席。
+
+如果显式启用 `db_first`，目录真源与恢复机制会变化，但读副本的 `PlacementRedis` 仍要与 data_service 的 mapping Redis 对齐。启用 `RequireRouteReady` 后，go/db 使用就绪读闸验证副本身份，不会因不可信就悄悄改成调用 data_service 解释 home_zone。该模式的部署、就绪与维护前提见 [player-route-mapping-durability-proposal.md](player-route-mapping-durability-proposal.md)，不能由本例推定实际环境已经启用。
+
+跨区不复制玩家 SQL 行到 zone 2，也不经 SceneManager / data_service 转运整份玩家数据。源 Scene 退出后，目标 Scene 的日常存盘不再依赖源 Scene。TiDB 的使用与实际部署状态另见 [global-data-layer-tidb-decision.md](global-data-layer-tidb-decision.md)；这里的 SQL 节点兼指配置所连接的 MySQL 或 TiDB，不是实际集群运行状态声明。
+
+#### 15.5.3 失败边界
+
+| 时刻 | 不能越过的边界 |
+|---|---|
+| 快照、SQL ACK 或 handoff 条件未齐 | 不凭 Redis 快照或 Kafka ACK 宣称交接成功；按现有冻结预算与失败收尾处理 |
+| SceneManager 已提交等待落点，但重定向投递失败 | 条件回滚位置，epoch 保持单调；不能无条件改回旧位置或降低 epoch |
+| 重定向已受理，目标连接、重登或入场失败 | 不能宣称已抵达，也不能假定源实体仍可继续游玩；按现有失败提示、断线及后续重登恢复路径处理 |
+| 旧 Scene / 旧 Gate 的迟到保存与清理 | 继续受 owner_epoch、存盘版本、会话版本及实例身份约束，不能覆盖新属主状态 |
+
+本节的成功图不代替 §7、§12、§13 的故障与消息丢失限制，也不证明在途每一条 S2C 都可靠送达。
+
+### 15.6 多副本与尚存的扩展边界
+
+| 服务 | 已有多副本机制 | 当前边界 |
+|---|---|---|
+| SceneManager | 各副本并行接 RPC；共享 Redis 上去重、位置与 epoch/handoff CAS | 均衡、补频道、回收、伸缩等后台工作由 Redis 锁选出的一个 leader 执行，各副本仍发现全服节点 |
+| player_locator | 各副本共享会话；整字节 CAS 原子更新版本、租约与索引；租约任务以 token 认领 | 死 Gate 会话对账仍为一个 leader；会话 Redis 与跨键 Lua 尚未完成 Cluster 同槽改造 |
+| data_service | 全局服务发现池；Redis 目录登记原子化；SQL 号段发放有锁与版本控制；审计按 Kafka 分区分工 | 当前 `RouteStore.Mode=redis`，SQL 真源及就绪闸不是默认启用；启用 SQL 对账后的后台仍有一个 leader，审计并行度受 topic 分区数限制 |
+| go/db | 同消费组分担分区；排序锁按 `topic + player_id + msgType`；SQL 围栏、游标、按实例租约与持久补投处理重复和故障 | 正常消费并行度受分区数限制；当前 `RetryRouting=shared`，不能把已实现的 owner 重试模式说成默认启用；Redis 与 SQL 仍决定最终吞吐 |
+
+增加服务副本能分担 RPC 或分区任务，不等于共享存储及后台单 leader 同时线性扩容。核心 Redis 的“单元化 + 单元内按玩家分片 Cluster”仍属后续实施路线；不能把当前共享 Redis 图当成已经完成分片部署，见 [shared-redis-split-by-purpose.md](shared-redis-split-by-purpose.md) §20。K8s 模板副本数也不等于本机或实际集群此刻的运行副本数。
+
+### 15.7 源码核对入口
+
+以下使用路径与符号定位，避免把会漂移的行号当成长期契约：
+
+| 入口 | 核对内容 |
+|---|---|
+| [player_lifecycle.cpp](../../cpp/libs/services/scene/player/system/player_lifecycle.cpp)：`SavePlayerToRedisImpl`、`BeginTravelHandoff` | 持久组件序列化、按 home_zone 选 topic、原始两表任务、SQL 交接屏障 |
+| [handoff_sql_barrier.h](../../cpp/libs/services/scene/player/system/handoff_sql_barrier.h)：`kPublishMarkLua` | 两表 ACK 与 pending 同版、旧 owner 复核后才写 handoff |
+| [enterscenelogic.go](../../go/scene_manager/internal/logic/enterscenelogic.go)：`handleCrossZoneRedirect` | Gate 票据准备 → 等待落点 CAS → Kafka ACK → 应答及条件回滚 |
+| [changesceneutil.go](../../go/scene_manager/internal/logic/changesceneutil.go)：`placePlayerLocation` | location、owner_epoch、handoff 的原子提交 |
+| [entergamelogic.go](../../go/login/internal/logic/clientplayerlogin/entergamelogic.go)：`EnterGame`、`applyLoadedPlayerSession` | 目标预加载、会话分支、BindSession、EnterScene 的顺序 |
+| [ensure_player_all_data_async.go](../../go/login/internal/logic/pkg/dataloader/ensure_player_all_data_async.go)：`EnsurePlayerAllDataInRedisAsync` | 父快照快路径与受屏障约束的冷加载 |
+| [scene_entry_dispatch.cpp](../../cpp/nodes/gate/handler/event/scene_entry_dispatch.cpp)；[scene_handler.cpp](../../cpp/nodes/scene/handler/rpc/scene_handler.cpp) | Gate 汇齐绑定/路由后转入场，Scene 从 Redis 异步加载 |
+| [placement_route.go](../../go/db/internal/kafka/placement_route.go)；[player_cache_publish.go](../../go/db/internal/kafka/player_cache_publish.go) | 处理时选库、SQL 后复核与单表 ACK |
+| [db/internal/svc/servicecontext.go](../../go/db/internal/svc/servicecontext.go)：`PlacementRedis`；[store_registry.go](../../go/db/internal/logic/pkg/proto_sql/store_registry.go)：`OpenPlacementStore`；[placement.go](../../go/shared/placement/placement.go)：`StoreDBName` | go/db 直接读取目录 Redis、按库名选择连接池；不是逐笔调用 data_service 解析 home_zone |
+| [saveoutbox/scripts.go](../../go/db/internal/saveoutbox/scripts.go)；[saveoutbox/replay.go](../../go/db/internal/saveoutbox/replay.go) | 持久待办认领、原任务补投、双 ACK 后清理 |
+| [data_service_role_and_scope.md](data_service_role_and_scope.md)；[player-locator-gate-session-index.md](player-locator-gate-session-index.md) | 目录、玩家存档链与会话索引的职责边界 |

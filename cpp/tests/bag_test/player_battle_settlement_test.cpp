@@ -1645,3 +1645,110 @@ TEST_F(PlayerBattleSettlementTest, ExpiredBattleSlotDiesWithTheEntity) {
 }
 
 }  // namespace
+
+// ============================================================================
+// 备战与换图在途互斥(2026-10-15;turn-based-battle-server.md §23,Java 版对应 HandOffBattleExclusionTest
+// 互斥表的 RESOLVING / FREEZING 两行)
+// ============================================================================
+#include "engine/core/time/system/time.h"
+#include "proto/scene/scene.pb.h"
+#include "services/scene/player/system/player_lifecycle.h"
+
+namespace {
+
+PrepareBattleRequest MakePrepareRequest(uint64_t playerId, uint64_t battleId) {
+    PrepareBattleRequest request;
+    request.set_player_id(playerId);
+    request.set_battle_id(battleId);
+    request.set_battle_node_id(3);
+    request.set_deadline_ms(TimeSystem::NowMillisecondsUTC() + 300000);
+    return request;
+}
+
+// 本夹具没挂等级 / 技能 / 背包等加载组件:过了换图闸之后会停在组快照那一步(kServiceUnavailable),
+// 同样不留冻结。用它区分"被换图闸拒绝"与"放过了换图闸"。
+constexpr uint32_t kRefusedAtSnapshot = kServiceUnavailable;
+
+// 普通 EnterScene 的应答还没回(在途槽未过期):备战回 1006、不出快照、不挂冻结,也不动换图的在途记录。
+// 修复前这里会放过换图闸(本夹具停在组快照;真实玩家会挂上 InBattleComp),随后落地的同节点路由
+// 把战斗中的玩家换到别的场景。路由落地(EnterScene 3.1 摘在途槽)之后备战照常往下走。
+TEST_F(PlayerBattleSettlementTest, PrepareRejectedWhileSceneChangeInFlight) {
+    auto& pending = tlsEcs.actorRegistry.emplace<PlayerSceneChangeInFlightComp>(player);
+    pending.sceneId = 2;
+    pending.sentAtMs = TimeSystem::NowMillisecondsUTC();
+    pending.correlationId = 77;
+    ASSERT_TRUE(PlayerLifecycleSystem::IsSceneChangeBusy(player));
+
+    PrepareBattleResponse response;
+    PlayerBattleSystem::PrepareBattle(MakePrepareRequest(playerId, 801), response);
+
+    EXPECT_EQ(response.error_message().id(), static_cast<uint32_t>(kFeatureUnavailable));
+    EXPECT_FALSE(response.has_snapshot());
+    EXPECT_FALSE(tlsEcs.actorRegistry.any_of<InBattleComp>(player));
+    const auto* stillPending = tlsEcs.actorRegistry.try_get<PlayerSceneChangeInFlightComp>(player);
+    ASSERT_NE(stillPending, nullptr) << "备战拒绝不得收掉换图的在途记录";
+    EXPECT_EQ(stillPending->correlationId, 77u);
+
+    tlsEcs.actorRegistry.remove<PlayerSceneChangeInFlightComp>(player);
+    PrepareBattleResponse afterLanding;
+    PlayerBattleSystem::PrepareBattle(MakePrepareRequest(playerId, 802), afterLanding);
+    EXPECT_EQ(afterLanding.error_message().id(), kRefusedAtSnapshot);
+    EXPECT_FALSE(tlsEcs.actorRegistry.any_of<InBattleComp>(player));
+}
+
+// 镜像 CreateScene 在途(自动进场的 EnterScene 还没发)同样占着换图闸:备战回 1006,镜像在途记录原样,
+// 完成回调仍能按令牌认领。完成回调摘槽之后备战照常往下走。
+TEST_F(PlayerBattleSettlementTest, PrepareRejectedWhileMirrorCreateInFlight) {
+    auto& mirror = tlsEcs.actorRegistry.emplace<PlayerMirrorCreateInFlightComp>(player);
+    mirror.token = 5;
+    mirror.sentAtMs = TimeSystem::NowMillisecondsUTC();
+    mirror.mirrorConfigId = 9;
+    ASSERT_TRUE(PlayerLifecycleSystem::IsSceneChangeBusy(player));
+
+    PrepareBattleResponse response;
+    PlayerBattleSystem::PrepareBattle(MakePrepareRequest(playerId, 805), response);
+
+    EXPECT_EQ(response.error_message().id(), static_cast<uint32_t>(kFeatureUnavailable));
+    EXPECT_FALSE(response.has_snapshot());
+    EXPECT_FALSE(tlsEcs.actorRegistry.any_of<InBattleComp>(player));
+    const auto* stillMirror = tlsEcs.actorRegistry.try_get<PlayerMirrorCreateInFlightComp>(player);
+    ASSERT_NE(stillMirror, nullptr) << "备战拒绝不得收掉镜像的在途记录";
+    EXPECT_EQ(stillMirror->token, 5u);
+
+    tlsEcs.actorRegistry.remove<PlayerMirrorCreateInFlightComp>(player);
+    PrepareBattleResponse afterDone;
+    PlayerBattleSystem::PrepareBattle(MakePrepareRequest(playerId, 806), afterDone);
+    EXPECT_EQ(afterDone.error_message().id(), kRefusedAtSnapshot);
+    EXPECT_FALSE(tlsEcs.actorRegistry.any_of<InBattleComp>(player));
+}
+
+// 交接冻结照旧拒绝:原来单独判 PlayerFrozenComp,改为 IsSceneChangeBusy 之后这一条不能丢。
+TEST_F(PlayerBattleSettlementTest, PrepareRejectedWhileHandoffFrozen) {
+    tlsEcs.actorRegistry.emplace<PlayerFrozenComp>(player);
+
+    PrepareBattleResponse response;
+    PlayerBattleSystem::PrepareBattle(MakePrepareRequest(playerId, 803), response);
+
+    EXPECT_EQ(response.error_message().id(), static_cast<uint32_t>(kFeatureUnavailable));
+    EXPECT_FALSE(response.has_snapshot());
+    EXPECT_FALSE(tlsEcs.actorRegistry.any_of<InBattleComp>(player));
+}
+
+// 在途槽过了 TTL(应答与失败通知都没来),或时钟回拨(sent_at_ms 在未来):与发送侧闸同一个判据,
+// 不再挡备战 —— 丢一条应答不能把玩家长期挡在战斗之外。
+TEST_F(PlayerBattleSettlementTest, PrepareNotBlockedByExpiredSceneChangeSlot) {
+    tlsEcs.actorRegistry.emplace<PlayerSceneChangeInFlightComp>(player);
+    const uint64_t nowMs = TimeSystem::NowMillisecondsUTC();
+    const uint64_t sentAtCases[] = {1, nowMs + 600000};
+    for (const uint64_t sentAtMs : sentAtCases) {
+        tlsEcs.actorRegistry.get<PlayerSceneChangeInFlightComp>(player).sentAtMs = sentAtMs;
+        ASSERT_FALSE(PlayerLifecycleSystem::IsSceneChangeBusy(player)) << "sent_at_ms=" << sentAtMs;
+
+        PrepareBattleResponse response;
+        PlayerBattleSystem::PrepareBattle(MakePrepareRequest(playerId, 804), response);
+        EXPECT_EQ(response.error_message().id(), kRefusedAtSnapshot) << "sent_at_ms=" << sentAtMs;
+        EXPECT_FALSE(tlsEcs.actorRegistry.any_of<InBattleComp>(player)) << "sent_at_ms=" << sentAtMs;
+    }
+}
+
+}  // namespace

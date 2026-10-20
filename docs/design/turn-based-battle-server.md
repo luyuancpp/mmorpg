@@ -84,7 +84,7 @@ PrepareBattle 的 scene 侧校验里。切磋结算规则(是否死亡惩罚)一
 
 | 故障点 | 表现 | 补偿 |
 |--------|------|------|
-| PrepareBattle 部分失败(某参与者掉线/已在战斗) | gather 凑不齐 | match 对已冻结者逐个调 `CancelBattlePrepare` 解冻;其余人回队首(todo #7) |
+| PrepareBattle 部分失败(某参与者掉线/已在战斗/换图在途,§23) | gather 凑不齐 | match 对已冻结者逐个调 `CancelBattlePrepare` 解冻;其余人回队首(todo #7) |
 | CreateBattle 失败 | 战斗没建起来 | match 调各 scene `CancelBattlePrepare`;battle 若半建则 `DestroyBattle` |
 | battle 节点崩溃 | 结算永远不来 | scene 侧 reaper:`InBattleComp.deadline_ms` 过期 → 解冻 + DEL lock + 记 metric(战斗作废) |
 | 结算重复投递(Kafka at-least-once) | 二次应用 | scene 按 `InBattleComp.battle_id` 匹配才应用;摘除后再来的同 id 结算丢弃并记日志 |
@@ -201,7 +201,7 @@ class TurnBattleEngine {
 ### 5.3 scene 集成 `cpp/libs/services/scene/battle/` + handler 守护段
 
 `PlayerBattleSystem`(手写,静态方法风格):
-- `PrepareBattle`:校验(在线/未在战斗/未冻结)→ 挂 `InBattleComp` → SET `battle:lock:{player_id}`
+- `PrepareBattle`:校验(在线/未在战斗/无换图在途,§23)→ 挂 `InBattleComp` → SET `battle:lock:{player_id}`
   (EX = 战斗最大时长+60s)→ 组 `BattlePlayerSnapshot`(属性含 speed、技能列表、参战 buff、
   可战斗道具副本、session/gate/scene 路由信息)→ 返回;
 - `CancelBattlePrepare` / reaper 过期:摘 comp + DEL lock;
@@ -1263,6 +1263,53 @@ battle-transport-decision.md §6 和 D37 要删的东西全部还在,也都参�
 | 15 | §21.5 第 6 条 | 本地端口冲突,给 battle 设 `RPC_PORT=20010` 绕过 | 补出处与现状:见 `PROGRESS.md:4201`;根因是 `etcd_service.cpp:275`(端口 CAS 失败后重试时不清零端口)加 `node_allocator.cpp:227`(把残留端口当预设端口),代码**未修**;绕法只在 `start_game.ps1:585-586`(当前工作树;核验时为 :583-584),`cpp_nodes.ps1` / `dev_tools.ps1 cpp-node-start` 不设 `RPC_PORT`,仍会踩到 | 09-29 核验遗漏项(风险类) |
 
 > **2026-10-17 契约勘误**：本表第 5 / 6 行是当时核验记录。当前通用出口为 `gate_rpc_reply_bridge::DeliverReply`（含响应类型到消息号的反查），不再是 gate main 的全局处理器；直连按发送时会话，路由按响应头回显会话交桥。
+
+## 23. 备战与换图在途互斥(2026-10-15；2026-10-20 编译与定向回归通过)
+
+来源:处理 [client-request-ordering.md](./client-request-ordering.md) §7.2 第 7 条(镜像 CreateScene 在途标记)时对照 Java 版发现的两版差异。本节只管战斗准入与换图在途的互斥,不改镜像逻辑。
+
+### 23.1 问题
+
+- `PlayerBattleSystem::PrepareBattle` 原来只拒两种:交接冻结(`PlayerFrozenComp`)、已有 `InBattleComp`。普通 EnterScene 已发出、应答还没回(`PlayerSceneChangeInFlightComp`),或镜像 CreateScene 在途(`PlayerMirrorCreateInFlightComp`)时,备战照样放行。
+- 放行之后的后果按落点分三种:
+  - **同节点**:scene_manager 先写 location 再发路由,路由落地时 `PlayerLifecycleSystem::EnterScene` 第 3 步把挂着 `InBattleComp` 的玩家换到新场景,破坏 §5.3 冻结清单的「切场景」。客户端入口的 `IsInBattle` 闸只挡发送那一刻。
+  - **跨节点**:第一跳必拿 18,`StartTravelHandoff` 复查 `InBattleComp` 后拒绝,客户端收到一条换图失败。发出时合法的请求,被后到的备战判输。
+  - **镜像**:自动进场的提交点由 `PlayerSceneSystem::HandleMirrorCreateDone` 复核战斗(见 [scene-creation-architecture.md](./scene-creation-architecture.md)),但建镜像期间仍能进备战:镜像建好后进场被拒、客户端收到进入场景失败,建好的空镜像由 scene_manager 回收。
+- Java 版 `PlayerBattleService.prepare` 早已在 `world.switchInFlight(player)` 为真时回 1006。用例见 `HandOffBattleExclusionTest` 互斥表的 RESOLVING / FREEZING 两行。
+
+### 23.2 决策
+
+| # | 决策 | 理由与代价 |
+|---|------|-----------|
+| B1 | `PrepareBattle` 用 `PlayerLifecycleSystem::IsSceneChangeBusy` 判换图在途,在途回 `kFeatureUnavailable`(1006):不挂冻结、不出快照、不碰 Redis。原来单独判 `PlayerFrozenComp` 的那一条并入其中(它是子集) | 与客户端 EnterScene 的发送侧闸、组队跟随用同一个判据,「换图在途」只有一个定义;普通换图与镜像建场景两个在途组件都由它判。在途槽过了 TTL(SceneManager gRPC deadline + 1s)自动放行,丢一条应答不会长期挡住战斗 |
+| B2 | 作废交接留下的 handoff 标记未确认撤回期间(待撤回表里有该玩家),备战同样被拒 | 按 `IsSceneChangeBusy` 整体判,不为备战开例外。这种状态只在 Redis 不通时出现,最长约 305s;这段时间战斗锁、ctx、结算本来也依赖 zone Redis。代价:Redis 抖动期间,该玩家所在的局会因 1006 凑不齐,他本人作为肇事者出局 |
+| B3 | match 不改 | 补偿矩阵对任何备战拒绝都不分原因:已冻结者 `CancelBattlePrepare`,肇事者删票出局,其余人回队首(§3.2;`go/match/internal/logic/gather.go` 的 `fail`)。Java 同码同补偿 |
+| B4 | 进场路由落地(`EnterScene` 第 3 步)**不**复查战斗 | 活玩家的路由直接落地只有同节点一种:实体不离开节点,战斗冻结随人换场景,结算照常落地。scene_manager 已先写了 location,落地时拒绝只会让 location 与实体所在场景分叉。Java 同口径:选中本节点照常同步换场景,冻结随人走 |
+
+### 23.3 剩余窗口(两版一致,不处理)
+
+- 在途期间,迟到的 `BattleConfirmedEvent` 按锁重建 FIGHTING(备战已作废但锁还在)。同节点落地照常换场景;跨节点被 `StartTravelHandoff` 拒绝,客户端收到换图失败。Java 有同名的两条用例。
+- 在途槽过了 TTL 之后才到的路由:备战此时已经放行,同节点落地照常换场景。
+
+### 23.4 改动与验证
+
+- 代码:
+  - `cpp/libs/services/scene/battle/system/player_battle.cpp` 的 `PrepareBattle`;
+  - `player_battle.h` 的契约注释;
+  - `cpp/libs/services/scene/player/system/player_lifecycle.cpp` 的 `EnterScene` 第 3 步注释(无逻辑改动)。
+- 回归:`cpp/tests/bag_test/player_battle_settlement_test.cpp` 末尾四条,未改 vcxproj:
+  - `PrepareRejectedWhileSceneChangeInFlight`:普通换图在途时 1006,在途记录原样;路由落地摘槽后放过换图闸;
+  - `PrepareRejectedWhileMirrorCreateInFlight`:镜像建场景在途时 1006,镜像令牌原样;完成回调摘槽后放过;
+  - `PrepareRejectedWhileHandoffFrozen`:交接冻结照旧拒;
+  - `PrepareNotBlockedByExpiredSceneChangeSlot`:槽过期或时钟回拨时不挡。
+  - 夹具没挂等级、技能等加载组件,所以放过换图闸后会停在组快照那一步(`kServiceUnavailable`),用例用它来区分拒绝原因。
+- Java 版:原本就对(`PlayerBattleService.prepare` 的 `switchInFlight` → 1006),没有待做项,Java 仓 `PARITY.md` 不登记。
+- Codex 验证(仓库根,串行):
+  1. `msbuild game.sln /m:1 /p:Configuration=Debug /p:Platform=x64`,0 error。
+  2. `build\cpp\tests\bag_test.exe --gtest_filter=PlayerBattleSettlementTest.*:PlayerBattleSettlementItemTest.*`,全部 PASS,新增四条在列。
+  3. `build\cpp\tests\cross_zone_test.exe --gtest_filter=EnterSceneTransportFailureEcs.*:HandoffMarkWithdrawQueue.*`,全部 PASS(`IsSceneChangeBusy` 语义未改,只做回归)。
+
+2026-10-20 Codex 验证：当前工作区 Windows Debug|x64 全量串行构建退出 0；备战结算回归 49/49、换图与交接撤回回归 12/12 全部通过，新增四条均实际执行，零失败、零跳过。三处既有测试编译适配修复另有 6/6 回归通过。构建与本项代码的输入哈希一致，原件见 `build/verification/prepare-battle-scene-change-resume-20261020/`；本次不包含真实跨节点联机或压测验收。
 
 ## 24. 全球对局终态先于通知的耐久结果提交（2026-10-16，实施中）
 

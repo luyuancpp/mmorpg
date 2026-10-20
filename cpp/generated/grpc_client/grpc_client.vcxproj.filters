@@ -54,19 +54,10 @@
     <ClCompile Include="client_rpc_router\client_rpc_router_grpc_client.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="mail\mail_admin_grpc_client.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="mail\mail_grpc_client.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
     <ClCompile Include="match\match_service_grpc_client.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="rank\rank_admin_grpc_client.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="rank\rank_grpc_client.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
     <ClInclude Include="battle\battle_node_grpc_client.h">
@@ -78,19 +69,10 @@
     <ClInclude Include="client_rpc_router\client_rpc_router_grpc_client.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="mail\mail_admin_grpc_client.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="mail\mail_grpc_client.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
     <ClInclude Include="match\match_service_grpc_client.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="rank\rank_admin_grpc_client.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="rank\rank_grpc_client.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

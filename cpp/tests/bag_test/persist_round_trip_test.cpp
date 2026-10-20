@@ -55,6 +55,11 @@
 #include "table/code/skill_table.h"
 #include "thread_context/ecs_context.h"
 
+// Windows SDK 的同名宏会改写 protobuf 反射方法名，此处隔离宏污染。
+#ifdef GetMessage
+#undef GetMessage
+#endif
+
 namespace
 {
 

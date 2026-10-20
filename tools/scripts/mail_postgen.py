@@ -23,6 +23,7 @@ mail_table 的 pb 与 friend_table 一样**不登记**(C++ 没有任何代码引
 
 register-cpp 是两阶段的:先在内存里算出全部登记,缺文件、出现不认识的 mail 产物、找不到 friend 锚点时
 在写盘之前中止(非 0 退出、点名);全部通过才统一写。每一条按"是否已登记"单独判断,中途失败后重跑不会写出重复条目。
+合并后已有的等价重复登记也会收敛为第一条；带条件或不同编译元数据的重复项拒绝自动处理，保留原工程供人工核对。
 --allow-missing 只登记已存在的文件,给"导表已跑、proto-gen 还没跑"的阶段用(那时只有 table 工程的 mail_error_tip 存在);
 --allow-unknown 在确认不认识的产物不需要登记之后才用。
 
@@ -35,11 +36,13 @@ from __future__ import annotations
 import argparse
 import filecmp
 import io
+import ntpath
 import re
 import shutil
 import subprocess
 import sys
 from pathlib import Path
+import xml.etree.ElementTree as ET
 
 REPO = Path(__file__).resolve().parents[2]
 BS = chr(92)
@@ -183,11 +186,23 @@ class Entry:
         self.lines = lines
         self.key = key
         self.cmake_path = cmake_path   # CMakeLists 里的条目按"整行等于该路径"判断,避免子串误判
+        if cmake_path is None:
+            item = ET.fromstring("\n".join(lines))
+            self.tag = item.tag
+            self.include = ntpath.normpath(item.attrib["Include"]).casefold()
+
+    def xml_items(self, text: str) -> tuple[ET.Element, list[ET.Element]]:
+        root = ET.fromstring(text)
+        items = [item for item in root.iter()
+                 if item.tag.rsplit("}", 1)[-1] == self.tag
+                 and "Include" in item.attrib
+                 and ntpath.normpath(item.attrib["Include"]).casefold() == self.include]
+        return root, items
 
     def present(self, text: str) -> bool:
         if self.cmake_path is not None:
             return re.search(r"(?m)^[ \t]*" + re.escape(self.cmake_path) + r"[ \t]*\r?$", text) is not None
-        return self.key in text
+        return bool(self.xml_items(text)[1])
 
 
 class ProjectEdit:
@@ -204,6 +219,51 @@ class ProjectEdit:
         self.bom = data.startswith(b"\xef\xbb\xbf")
         self.text = data.decode("utf-8-sig")
         self.changed = 0
+        self.removed = 0
+
+    def _deduplicate(self, entry: Entry) -> None:
+        if entry.cmake_path is not None:
+            lists = list(re.finditer(r"(?ms)^set\(SOURCE_FILES[ \t]*\r?\n(.*?)^\)", self.text))
+            if len(lists) != 1:
+                fail(f"{self.rel}: SOURCE_FILES 必须恰好一段，不能安全去重")
+            source_list = lists[0]
+            pattern = r"(?m)^[ \t]*" + re.escape(entry.cmake_path) + r"[ \t]*(?:\r?\n|$)"
+            matches = list(re.finditer(pattern, self.text[source_list.start(1):source_list.end(1)]))
+            spans = [(source_list.start(1) + item.start(), source_list.start(1) + item.end()) for item in matches]
+        else:
+            root, items = entry.xml_items(self.text)
+            if len(items) < 2:
+                return
+            parents = {child: parent for parent in root.iter() for child in parent}
+            for item in items:
+                current = item
+                while current is not None:
+                    if "Condition" in current.attrib:
+                        fail(f"{self.rel}: 重复登记带 Condition，不能自动去重: {entry.key}")
+                    current = parents.get(current)
+                children = list(item)
+                default_filter = SRC if entry.tag == "ClCompile" else HDR
+                safe_filter = (self.rel.endswith(".filters") and len(children) == 1
+                               and children[0].tag.rsplit("}", 1)[-1] == "Filter"
+                               and not children[0].attrib and not list(children[0])
+                               and children[0].text == default_filter)
+                if set(item.attrib) != {"Include"} or (children and not safe_filter):
+                    fail(f"{self.rel}: 重复登记的元数据不等价，不能自动去重: {entry.key}")
+            # 只剪掉重复项所在的原始片段，不重新序列化 XML，保留其余字节与换行。
+            pattern = (r"(?ms)^[ \t]*<(?P<tag>ClCompile|ClInclude)\b[^>]*?"
+                       r"(?:/>|>.*?</(?P=tag)>)[ \t]*(?:\r?\n|$)")
+            spans = []
+            for match in re.finditer(pattern, self.text):
+                item = ET.fromstring(match.group().strip())
+                if (item.tag == entry.tag and "Include" in item.attrib
+                        and ntpath.normpath(item.attrib["Include"]).casefold() == entry.include):
+                    spans.append(match.span())
+            if len(spans) != len(items):
+                fail(f"{self.rel}: 重复登记不是独立条目，不能安全去重: {entry.key}")
+        for start, end in reversed(spans[1:]):
+            self.text = self.text[:start] + self.text[end:]
+            self.changed += 1
+            self.removed += 1
 
     def _find_anchor(self, anchor_lines: list[str]) -> tuple[int, str]:
         for eol in ("\r\n", "\n"):
@@ -217,6 +277,9 @@ class ProjectEdit:
              f" —— friend 的登记被人改过,先看清再改本脚本")
 
     def plan(self, anchor_lines: list[str], entries: list[Entry]) -> None:
+        # 合并可能同时保留域钩子与通用生成器的登记；先收敛已有重复，再补缺项。
+        for entry in entries:
+            self._deduplicate(entry)
         pending = [e for e in entries if not e.present(self.text)]
         if not pending:
             return
@@ -233,7 +296,8 @@ class ProjectEdit:
     def save(self, dry_run: bool) -> None:
         if self.changed and not dry_run:
             self.path.write_bytes((b"\xef\xbb\xbf" if self.bom else b"") + self.text.encode("utf-8"))
-        print(f"  {self.rel:<52} {'would insert' if dry_run else 'inserted'} {self.changed} entr{'y' if self.changed == 1 else 'ies'}")
+        print(f"  {self.rel:<52} {'planned' if dry_run else 'applied'}: "
+              f"inserted {self.changed - self.removed}, removed duplicates {self.removed}")
 
 
 def compile_line(path: str) -> str:

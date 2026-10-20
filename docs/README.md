@@ -31,6 +31,8 @@ python tools/scripts/gen_docs_index.py
 
 ECS 改造交接见 [总索引](handoff/ecs-refactor/README.md);当前修正与未验收项见 [第 1 批 Codex 实施回执](handoff/ecs-refactor/batch1-codex-receipt.md)。第 1–5 批的代码审查结论见 [审查报告](handoff/ecs-refactor/review-report-20261015.md),修复任务见 [第 6 批任务单](handoff/ecs-refactor/batch6-review-fixes.md)。早期在途证据保留在 [Codex 只读回执](handoff/ecs-refactor/codex-readonly-receipt.md),运行时与存盘采样稿由该回执索引。
 
+跨 zone 的完整节点图、源端双表 SQL ACK 交接时序、目标重登入场时序、[抵达后存盘与 go/db 选库](design/cross-zone-scene-travel.md#1551-zone-2-scene-正常存盘的完整时序)及水平扩展边界见 [跨 zone 场景传送 §15](design/cross-zone-scene-travel.md#15-跨-zone-完整节点与数据流程2026-10-20源码核对)（2026-10-20 源码核对，非本轮运行验收）。
+
 ## 索引
 
 <!-- BEGIN GENERATED INDEX: tools/scripts/gen_docs_index.py -->

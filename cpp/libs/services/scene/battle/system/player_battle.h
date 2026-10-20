@@ -56,7 +56,8 @@ class PlayerBattleSystem
 {
 public:
 	// match -> scene:冻结玩家并返回战斗快照。
-	// 校验:在线(实体在本节点且有 gate 会话)/ 无 InBattleComp / 未处于跨 zone 冻结。
+	// 校验:在线(实体在本节点且有 gate 会话)/ 无 InBattleComp / 无换图在途
+	// (PlayerLifecycleSystem::IsSceneChangeBusy:交接冻结、普通 EnterScene / 镜像建场景应答未回等,回 kFeatureUnavailable)。
 	// 成功:挂 InBattleComp{state=PREPARING, deadline_ms, prepare_deadline_ms(0 时取 deadline_ms)}
 	// + SET battle:lock:{player_id}=battle_id(EX 按 prepare_deadline_ms+60s,咨询性锁,
 	// 权威判定仍是 InBattleComp)+ 返回 BattlePlayerSnapshot(含 table_fingerprint)

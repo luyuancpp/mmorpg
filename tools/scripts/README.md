@@ -13,6 +13,14 @@ PowerShell and shell scripts for common development tasks.
 
 ## Available Scripts
 
+### prepare_docker_debug.py（独立 Docker 断点调试环境）
+
+在仓库根执行 `python tools/scripts/prepare_docker_debug.py`，从当前 10 份源配置派生容器配置、初始化 SQL 与 topic 契约，输出到 Git 忽略的 `build/docker-debug-current/`。需要本机 Python、PyYAML 和运行中的 Docker；脚本只读检查现有 Docker 子网，不构建、不启动容器、不删除数据。首次生成随机密钥，后续保留原值，不把密钥写进受管文件或输出。
+
+预先用当前源码构建镜像后，运行 `docker compose --env-file build/docker-debug-current/.env -f deploy/debug/compose.game.yml -f deploy/debug/compose.debug.yml up -d`。镜像构建沿用 `deploy/k8s/Dockerfile.cpp`、`Dockerfile.go-svc`（上下文 `go/`、命名上下文 `tables=generated/tables`）及 `Dockerfile.java-svc`；C++ 调试层见 `deploy/debug/Dockerfile`。Compose 禁止自动拉取，初始化任务成功后才启动 15 个常驻容器。
+
+默认客户端入口为 `http://127.0.0.1:8081`，同一网关另保留 `http://127.0.0.1:18081`；gate 为 `127.0.0.1:28000`，battle 为 `127.0.0.1:28010`。可用 `--gateway-port` 调整附加 HTTP 端口、用 `--gate-port` / `--battle-port` 调整对应入口；`8081` 保留给客户端默认网关。VS Code 附加到固定名称的三个调试容器。此栈只启用登录、建角、主世界进场与战斗所需服务，未启动域的请求按现有路由契约失败。校验配置时使用 `docker compose ... config --quiet`，不要把展开后的配置与 `.env` 打印或上传。
+
 ### start_game.ps1（本机游戏一键启动）
 
 电脑重启后双击仓库根目录 `start-server.cmd`；双击 `start-game.cmd` 可同时打开客户端。
@@ -38,6 +46,8 @@ Supported commands include:
 - `tree`
 - `naming-audit`
 - `naming-apply`
+- `third-party-lock-check`（默认只读校验，`-ApplyPatches` 恢复登记补丁）
+- `third-party-zlib-build`（隔离构建 Debug/MDd zlib 并执行上游测试）
 - `third-party-grpc-build`
 - `no-raw-pointer-setup`
 - `iwyu-run`
@@ -120,6 +130,88 @@ Dependencies:
 - `clang-tidy` (required)
 - `include-what-you-use` (optional but preferred when available)
 
+### 第三方版本固定与补丁恢复
+
+版本表及补丁清单在 [third_party/releases.lock.json](../../third_party/releases.lock.json)。
+当前固定 20 个顶层子模块：17 个正式 release，3 个没有正式 release 的依赖保留当前提交。
+父仓的 gitlink 才是真正的版本锁；`.gitmodules` 的分支配置不能代替提交锁。
+不要使用 `git submodule update --remote` 或逐库 `git pull`，否则会越过固定提交。
+
+首次检出或按父仓更新依赖后，先运行同步脚本，再恢复已登记的兼容补丁：
+
+```powershell
+pwsh -File tools/archived/sync_submodules.ps1
+pwsh -File tools/scripts/dev_tools.ps1 -Command third-party-lock-check -ApplyPatches
+
+# 日常只读检查，不修改子模块或补丁。
+pwsh -File tools/scripts/dev_tools.ps1 -Command third-party-lock-check
+```
+
+Linux 同步入口为 `bash tools/archived/sync_submodules.sh`，之后执行
+`python3 tools/scripts/third_party/verify_release_lock.py --apply-patches`。
+校验器检查清单路径、实际提交与已登记补丁；包装入口保留 Python 的原生退出码。
+默认校验发现缺少补丁也会失败，不会静默应用。升级依赖须同时复核并更新 gitlink、固定清单和兼容补丁。
+
+Redis 8.10.2 的登记补丁保留 hiredis DNS 测试的错误码与文本检查，Windows 预期文本改由
+`gai_strerror(EAI_NONAME)` 生成，适配系统语言；其他平台保留原有断言。
+sol2 v3.3.0 的引用 `optional::emplace` 补丁回补上游已有的引用重绑定修复，使用
+`std::addressof` 支持重载取地址运算符，并拒绝临时对象，避免 const 引用悬垂。
+librdkafka v2.16.0 的补丁同时保留 Windows 工程调整与重入组变参修正：先完成格式化，
+再以 `"%s"` 传递原因，避免读取未初始化的 `va_list` 或将它误传给普通变参函数。
+
+版本宏与运行字符串须按上游实际记录，版本来源以清单中的官方 tag 和精确 SHA 为准。
+curl 的 `curl-8_23_0` 源码仍标为 `8.23.0-DEV`（数字 `0x081700`）；官方发布脚本在生成
+tarball 时才准备发布版本头。直接从该 tag 构建时保留真实字符串，校验数字版本与源码宏一致，
+不改头文件伪装输出。sol2 的 `v3.3.0` 源码版本宏仍为 `3.2.3`，同样不能据此改写锁定源码或冒称另一版本。
+
+### third_party/refresh_boost_headers.py（复制聚合头）
+
+Boost 1.92 的头文件分布在直属模块的 `include/boost/`，单独初始化顶层 gitlink 不会生成
+工程引用的 `third_party/boost/boost/`。先按 Boost 父提交初始化全部内部子模块，再运行普通复制：
+
+```powershell
+git -C third_party/boost submodule update --init --recursive
+$boostArchive = "build/verification/boost-copy-$(Get-Date -Format yyyyMMdd-HHmmss)"
+python tools/scripts/third_party/refresh_boost_headers.py --archive $boostArchive
+```
+
+Linux 对应使用 `python3`，`--archive` 同样必须指定本轮全新目录。
+归档目录必须位于本仓库内、Boost 源码树外且与目标在同一文件系统；不能复用已有目录。
+工具按 `.gitmodules` 与父 gitlink 校验模块 HEAD，只复制直属 `include/boost/` 中的普通文件，
+不扫描测试或示例，也不创建符号链接、目录联接或硬链接。
+完整文件集合、SHA256 与 `BOOST_VERSION=109200` 核查通过后，旧聚合树才移入归档的
+`previous-boost/`，再发布新树；失败保留现场，不删除旧树。
+归档同时保存 `modules.json`、`files.sha256.json` 和成功或失败回执。
+干净 CI 必须在子模块初始化后、Docker 的 Boost 聚合头 `COPY` 前完成这一步。
+标准 `tools/scripts/build_linux.sh` 在未指定 `--skip-deps` 时，会在初始化全部依赖后自动执行
+固定清单校验、登记补丁恢复和本轮 Boost 聚合头复制；`--dry-run` 只显示计划，不创建归档目录。
+Docker builder 保持 `--skip-deps`，复用 CI 已准备的源码和 deps 阶段产物，不读取 `.git`。
+
+### third_party/build_zlib.ps1
+
+只使用已安装的 Visual Studio/MSVC、CMake 与 Ninja，不安装工具。
+固定源码构建 Debug/MDd，串行编译，全部上游 ctest 通过后才安装。
+`-BuildRoot` 必须是仓库内的全新目录；默认 `build/third_party/zlib-v1.3.2-dbg`，
+产物分别位于其 `build/` 与 `install/`，安装目录含 `lib/zlibd.lib`、`lib/zlibstaticd.lib` 与 `bin/zlibd.dll`。
+
+```powershell
+pwsh -File tools/scripts/dev_tools.ps1 -Command third-party-zlib-build -BuildRoot build/third_party/zlib-v1.3.2-dbg -Jobs 1
+```
+
+### third_party/build_gtest.ps1
+
+gRPC 关闭上游测试时不安装 GoogleTest。Windows 工程使用 gRPC 固定的 GoogleTest 1.17.0
+源码，单独构建四个静态库，不能保留旧 SDK 中的库代替新构建。
+入口通过 `vswhere` 查找已有工具，默认 MSVC 14.51、Debug `/MDd`、Ninja 串行构建，
+`-BuildRoot` 必须是仓库内全新的 ignored 目录；不下载或安装工具。
+
+```powershell
+pwsh -File tools/scripts/third_party/build_gtest.ps1 -BuildRoot build/third_party/googletest-v1.17.0-dbg
+```
+
+`install/lib/` 中的 `gtest.lib`、`gtest_main.lib`、`gmock.lib`、`gmock_main.lib`
+用于现有工程的根 `lib/`。发布前先归档旧库，使用同一构建的完整四库，保持头文件与库版本一致。
+
 ### third_party/build_grpc.ps1
 
 Canonical Windows PowerShell entrypoint for building vendored gRPC from [third_party/grpc](../../third_party/grpc).
@@ -131,8 +223,16 @@ pwsh -File tools/scripts/third_party/build_grpc.ps1
 Features:
 
 - Auto-detects Visual Studio / MSVC with `vswhere`
-- Auto-installs or upgrades `cmake` and `ninja` through `winget` when needed
+- 只使用已有 CMake/Ninja；缺少工具时明确失败，不自动安装或升级
 - Builds both Release and Debug into `third_party/grpc/install_vs2026` and `third_party/grpc/install_vs2026_dbg`
+- `dev_tools.ps1` 原样透传显式指定的 `-BuildRoot` 与 `-ZlibInstallRoot`；后者指向上述 zlib 的 `install/`，确保 gRPC 使用本轮构建的固定 zlib。
+
+上述 zlib 入口只生成 Debug 库，传给 gRPC 时必须明确只构建 Debug；
+默认同时构建 Release 会因缺少 `zlibstatic.lib` 在配置前拒绝，不能用 Debug 库代替。
+
+```powershell
+pwsh -File tools/scripts/dev_tools.ps1 -Command third-party-grpc-build '-BuildRelease:$false' '-BuildDebug:$true' -UseVSGenerator -BuildRoot build/third_party/grpc-upgrade-dbg -ZlibInstallRoot build/third_party/zlib-v1.3.2-dbg/install -Jobs 1
+```
 
 Legacy batch launcher is also available at [tools/scripts/third_party/build_grpc_vs2026_v145.bat](third_party/build_grpc_vs2026_v145.bat).
 
@@ -202,7 +302,7 @@ pwsh -File dev_tools.ps1 -Command k8s-all-status -ZonesConfigPath deploy/k8s/zon
 pwsh -File dev_tools.ps1 -Command k8s-all-down -ZonesConfigPath deploy/k8s/zones.yaml
 
 # gRPC release-only rebuild with explicit flags
-pwsh -File dev_tools.ps1 -Command third-party-grpc-build -BuildDebug:$false -Clean -Jobs 8
+pwsh -File dev_tools.ps1 -Command third-party-grpc-build '-BuildDebug:$false' -Clean -Jobs 1
 
 # Preflight/build/push/release runtime image for k8s
 pwsh -File dev_tools.ps1 -Command k8s-stage-runtime -BinarySourceRoot D:/linux-build/bin -ZoneInfoSource bin/zoneinfo -TableSource generated/tables

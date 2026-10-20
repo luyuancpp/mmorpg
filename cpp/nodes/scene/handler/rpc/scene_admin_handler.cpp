@@ -187,7 +187,7 @@ void SceneSceneHandler::GmDescribeEntity(::google::protobuf::RpcController* cont
         {
             continue;
         }
-        const auto formatter = kPersistedValueFormatters.find(storage.type().hash());
+        const auto formatter = kPersistedValueFormatters.find(storage.info().hash());
         if (formatter == kPersistedValueFormatters.end())
         {
             continue;
@@ -197,7 +197,7 @@ void SceneSceneHandler::GmDescribeEntity(::google::protobuf::RpcController* cont
         {
             continue;
         }
-        const auto line = "\n" + std::string(storage.type().name()) + "=" +
+        const auto line = "\n" + std::string(storage.info().name()) + "=" +
             formatter->second(value).substr(0, kMaxValueLength);
         description.append(line, 0, kMaxDescriptionLength - description.size());
     }

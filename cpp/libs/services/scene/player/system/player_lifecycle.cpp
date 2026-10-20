@@ -2822,6 +2822,11 @@ bool PlayerLifecycleSystem::EnterScene(const entt::entity player, const PlayerEn
 	};
 
 	// 3. Enter the scene: bind player to scene entity and send client notification.
+	//    这里有意不复查战斗(InBattleComp):活玩家的路由直接落地只有同节点一种(跨节点第一跳必拿 18,
+	//    由 StartTravelHandoff 复查战斗),实体留在本节点,战斗冻结随人换场景,结算照常落地;scene_manager
+	//    已先写了 location,这里拒绝只会让两边对不上。换图在途时新的备战由 PrepareBattle 挡掉
+	//    (IsSceneChangeBusy);剩下的窗口(在途期间迟到的确认按锁重建 FIGHTING、在途槽过期之后才到的路由)
+	//    与 Java 版同口径放行。
 	if (!PlayerSceneSystem::HandleEnterScene(player, targetScene))
 	{
 		LOG_ERROR << "EnterScene: scene transition interrupted, player_id=" << playerId;

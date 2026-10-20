@@ -9,8 +9,7 @@
     to locate the newest MSVC toolchain, then runs CMake with the Ninja
     generator (default) or Visual Studio generator (-UseVSGenerator).
 
-    If cmake or ninja is missing or outdated, the script will auto-install /
-    upgrade them via winget (requires Windows 10 1709+ or Windows 11).
+    缺少或低于最低版本的 cmake / ninja 会明确失败；本脚本不安装或升级工具。
     Visual Studio with C++ Desktop workload must be installed.
 
 .PARAMETER BuildRelease
@@ -18,9 +17,16 @@
 .PARAMETER BuildDebug
     Build the Debug configuration (default: true).
 .PARAMETER SkipToolCheck
-    Skip the cmake/ninja version check and auto-install step.
+    跳过 cmake / ninja 版本检查，仍要求工具存在；不会安装或升级工具。
 .PARAMETER Jobs
-    Parallel build jobs passed to the build system (-j). Default: number of logical CPUs.
+    构建并行数，固定为 1，避免共享工具链的并发编译。
+.PARAMETER BuildRoot
+    可选的仓库内产物根目录；相对路径以仓库根为基准。
+    未指定时沿用 third_party/grpc；指定后 build 与 install 均放在该根目录下，
+    安装子目录仍为 install_vs2026 / install_vs2026_dbg，便于验证后发布 SDK。
+.PARAMETER ZlibInstallRoot
+    可选的外部 zlib 安装目录；显式使用该目录的头文件和静态库，避免回退到内置旧版。
+    Debug 需要 lib/zlibstaticd.lib，Release 需要 lib/zlibstatic.lib。
 .PARAMETER Clean
     设置后，在构建前同时删除已有 build 与 install 目录。
     新版 gRPC/Abseil 的安装清单不会主动删除上游已移除的库，因此 install
@@ -35,20 +41,23 @@
     # Build using Visual Studio generator (workaround for CMake 4.2.0 + Ninja bug)
     .\build_grpc.ps1 -UseVSGenerator
 
-    # Release only, 8 parallel jobs
-    .\build_grpc.ps1 -BuildDebug:$false -Jobs 8
+    # 仅构建 Release，串行执行
+    .\build_grpc.ps1 -BuildDebug:$false -Jobs 1
 
     # Clean rebuild
     .\build_grpc.ps1 -Clean
 
-    # Skip auto-install of cmake/ninja
+    # 跳过 cmake / ninja 的版本检查
     .\build_grpc.ps1 -SkipToolCheck
 #>
 [CmdletBinding()]
 param(
     [bool]$BuildRelease  = $true,
     [bool]$BuildDebug    = $true,
-    [int]   $Jobs          = 0,
+    [ValidateRange(1, 1)]
+    [int]$Jobs = 1,
+    [string]$BuildRoot = '',
+    [string]$ZlibInstallRoot = '',
     [string]$PreferredMsvcVersion = '14.51',
     [switch]$Clean,
     [switch]$SkipToolCheck,
@@ -65,7 +74,7 @@ if (-not (Test-Path (Join-Path $GrpcRoot 'CMakeLists.txt'))) {
     Write-Error "Cannot find grpc CMakeLists.txt at $GrpcRoot."
 }
 
-$ExpectedGrpcSha = 'c876f4da50f7da2f331888b88b2a7243514139fe'
+$ExpectedGrpcSha = '3252a89f10d8e92997862167ca7d095ecda85973'
 $ExpectedBoringSslSha = '2b44a3701a4788e1ef866ddc7f143060a3d196c9'
 $BoringSslRoot = Join-Path $GrpcRoot 'third_party\boringssl-with-bazel'
 $BoringSslPatch = Join-Path $RepoRoot 'tools\patches\grpc\v1.83.0-boringssl-windows-x509-name.patch'
@@ -82,6 +91,35 @@ function Get-GitHead([string]$RepositoryPath) {
     }
 
     return ($output | Select-Object -Last 1).ToString().Trim()
+}
+
+function Assert-GrpcProtoSource {
+    $git = (Get-Command git -ErrorAction Stop).Source
+    $relativePath = 'third_party/grpc-proto'
+    $protoRoot = Join-Path $GrpcRoot $relativePath
+    $repair = 'git -C third_party/grpc submodule update --init --recursive'
+    $entry = & $git -C $GrpcRoot ls-tree HEAD -- $relativePath
+    if ($LASTEXITCODE -ne 0 -or $entry -notmatch '^160000 commit ([0-9a-f]{40})\s+third_party/grpc-proto$') {
+        throw "gRPC 父版本缺少有效的 grpc-proto gitlink，拒绝配置。请核对源码版本并执行：$repair"
+    }
+    $expectedSha = $Matches[1]
+    if (-not (Test-Path -LiteralPath (Join-Path $protoRoot '.git'))) {
+        throw "grpc-proto 尚未初始化，父版本要求 $expectedSha。请执行：$repair"
+    }
+    $actualRoot = & $git -C $protoRoot rev-parse --show-toplevel
+    if ($LASTEXITCODE -ne 0 -or -not [IO.Path]::GetFullPath($actualRoot).Equals([IO.Path]::GetFullPath($protoRoot), [StringComparison]::OrdinalIgnoreCase)) {
+        throw "grpc-proto 不是独立的预期 Git 根目录，拒绝借用父仓库。请执行：$repair"
+    }
+    $actualSha = Get-GitHead $protoRoot
+    if ($actualSha -ne $expectedSha) {
+        throw "grpc-proto 提交不符，父版本要求 $expectedSha，实际 $actualSha。请执行：$repair"
+    }
+    foreach ($file in @('grpc/channelz/v1/channelz.proto', 'grpc/reflection/v1/reflection.proto', 'grpc/reflection/v1alpha/reflection.proto')) {
+        if (-not (Test-Path -LiteralPath (Join-Path $protoRoot $file) -PathType Leaf)) {
+            throw "grpc-proto 缺少 $file，拒绝配置。请执行：$repair"
+        }
+    }
+    Write-Host "[info] grpc-proto 与父版本 gitlink 一致：$expectedSha"
 }
 
 function Initialize-BoringSslWindowsPatch {
@@ -124,17 +162,11 @@ function Initialize-BoringSslWindowsPatch {
 }
 
 Initialize-BoringSslWindowsPatch
-
-function Ensure-WingetAvailable {
-    $wg = Get-Command winget -ErrorAction SilentlyContinue
-    if (-not $wg) {
-        Write-Error "winget is not available. Install cmake and ninja manually, or install winget (App Installer) from the Microsoft Store."
-    }
-}
+Assert-GrpcProtoSource
 
 $ToolDefs = @{
-    cmake = @{ WingetId = 'Kitware.CMake';      MinVersion = [version]'3.20.0' }
-    ninja = @{ WingetId = 'Ninja-build.Ninja';  MinVersion = [version]'1.11.0' }
+    cmake = @{ MinVersion = [version]'3.20.0' }
+    ninja = @{ MinVersion = [version]'1.11.0' }
 }
 
 function Get-ToolVersion([string]$Name) {
@@ -164,38 +196,7 @@ function Ensure-Tool([string]$Name) {
         return
     }
 
-    Ensure-WingetAvailable
-
-    if (-not $currentVer) {
-        Write-Host "[install] $Name not found - installing via winget ..."
-        winget install --id $def.WingetId --accept-source-agreements --accept-package-agreements --silent
-    } else {
-        Write-Host "[upgrade] $Name $currentVer is below minimum $($def.MinVersion) - upgrading via winget ..."
-        winget upgrade --id $def.WingetId --accept-source-agreements --accept-package-agreements --silent
-    }
-
-    $wingetExit = $LASTEXITCODE
-
-    # Refresh PATH so the new/existing binary is visible in this session.
-    $machinePath = [System.Environment]::GetEnvironmentVariable('Path', 'Machine')
-    $userPath    = [System.Environment]::GetEnvironmentVariable('Path', 'User')
-    $env:Path    = "$machinePath;$userPath"
-
-    $newVer = Get-ToolVersion $Name
-    if ($newVer -and $newVer -ge $def.MinVersion) {
-        Write-Host "[info] $Name $newVer is OK after winget (>= $($def.MinVersion))"
-        return
-    }
-
-    if ($wingetExit -ne 0) {
-        Write-Error "winget $Name install/upgrade failed (exit code $wingetExit) and $Name $newVer is still not adequate. Install manually."
-    }
-
-    if (-not $newVer) {
-        Write-Error "$Name still not found on PATH after install. You may need to restart your terminal."
-    }
-
-    Write-Host "[info] $Name $newVer installed successfully"
+    Write-Error "$Name 缺失、版本无法识别或低于 $($def.MinVersion)（当前：$currentVer）。请先准备受支持的工具并加入 PATH，再重新执行；本脚本不会安装或升级工具。"
 }
 
 if (-not $SkipToolCheck) {
@@ -219,25 +220,72 @@ function Convert-ToCMakePath([string]$Path) {
     return $Path -replace '\\', '/'
 }
 
-function Remove-DirectoryRobust([string]$Path) {
-    if (-not (Test-Path $Path)) {
-        return
+# 产物目录必须留在当前仓库内；拒绝通过链接或联接跳到其他目录。
+function Get-ArtifactPath([string]$Path) {
+    $fullPath = [IO.Path]::TrimEndingDirectorySeparator([IO.Path]::GetFullPath($Path))
+    $workspacePrefix = $RepoRoot.TrimEnd('\', '/') + [IO.Path]::DirectorySeparatorChar
+    if (-not $fullPath.StartsWith($workspacePrefix, [StringComparison]::OrdinalIgnoreCase)) {
+        throw "产物路径必须位于仓库根目录内，且不能等于仓库根目录：$fullPath"
     }
 
-    try {
-        Remove-Item -Recurse -Force $Path -ErrorAction Stop
-    } catch {
-        $quotedPath = '"' + $Path + '"'
-        $quotedChildren = '"' + (Join-Path $Path '*') + '"'
-        cmd.exe /d /s /c "attrib -r -s -h /s /d $quotedChildren >nul 2>&1 & rd /s /q $quotedPath"
-        if (Test-Path $Path) {
-            Start-Sleep -Milliseconds 500
-            cmd.exe /d /s /c "rd /s /q $quotedPath"
+    $currentPath = $fullPath
+    while (-not $currentPath.Equals($RepoRoot, [StringComparison]::OrdinalIgnoreCase)) {
+        if (Test-Path -LiteralPath $currentPath) {
+            $item = Get-Item -LiteralPath $currentPath -Force -ErrorAction Stop
+            if (($item.Attributes -band [IO.FileAttributes]::ReparsePoint) -ne 0) {
+                throw "产物路径不能经过链接或目录联接：$currentPath"
+            }
         }
-        if (Test-Path $Path) {
-            throw
+        $currentPath = [IO.Directory]::GetParent($currentPath).FullName
+    }
+    return $fullPath
+}
+
+$ArtifactRoot = if ([string]::IsNullOrWhiteSpace($BuildRoot)) {
+    $GrpcRoot
+} elseif ([IO.Path]::IsPathRooted($BuildRoot)) {
+    Get-ArtifactPath $BuildRoot
+} else {
+    Get-ArtifactPath (Join-Path $RepoRoot $BuildRoot)
+}
+
+$ExternalZlibRoot = $null
+if (-not [string]::IsNullOrWhiteSpace($ZlibInstallRoot)) {
+    $ExternalZlibRoot = if ([IO.Path]::IsPathRooted($ZlibInstallRoot)) {
+        Get-ArtifactPath $ZlibInstallRoot
+    } else {
+        Get-ArtifactPath (Join-Path $RepoRoot $ZlibInstallRoot)
+    }
+    $requiredZlibFiles = @('include/zlib.h', 'include/zconf.h')
+    if ($BuildDebug) { $requiredZlibFiles += 'lib/zlibstaticd.lib' }
+    if ($BuildRelease) { $requiredZlibFiles += 'lib/zlibstatic.lib' }
+    foreach ($relativePath in $requiredZlibFiles) {
+        $requiredPath = Join-Path $ExternalZlibRoot $relativePath
+        if (-not (Test-Path -LiteralPath $requiredPath -PathType Leaf)) {
+            throw "外部 zlib 安装不完整，拒绝回退到其他版本：$requiredPath"
         }
     }
+    if (-not (Select-String -LiteralPath (Join-Path $ExternalZlibRoot 'include/zlib.h') -Pattern '^#define ZLIB_VERSION "1\.3\.2"' -Quiet)) {
+        throw "外部 zlib 必须为 1.3.2：$ExternalZlibRoot"
+    }
+}
+
+function Remove-DirectoryRobust([string]$Path) {
+    $fullPath = Get-ArtifactPath $Path
+    if ($fullPath.Equals($GrpcRoot, [StringComparison]::OrdinalIgnoreCase) -or
+        $fullPath.Equals($ArtifactRoot, [StringComparison]::OrdinalIgnoreCase)) {
+        throw "拒绝删除源码根目录或产物根目录：$fullPath"
+    }
+    if (-not (Test-Path -LiteralPath $fullPath)) { return }
+    if (-not (Test-Path -LiteralPath $fullPath -PathType Container)) {
+        throw "待清理的产物路径不是目录：$fullPath"
+    }
+
+    $link = Get-ChildItem -LiteralPath $fullPath -Recurse -Force -ErrorAction Stop |
+        Where-Object { ($_.Attributes -band [IO.FileAttributes]::ReparsePoint) -ne 0 } |
+        Select-Object -First 1
+    if ($link) { throw "拒绝递归删除包含链接或目录联接的产物目录：$($link.FullName)" }
+    Remove-Item -LiteralPath $fullPath -Recurse -Force -ErrorAction Stop
 }
 
 $CMake = Resolve-Tool 'cmake'
@@ -308,6 +356,21 @@ Write-Host "[info] MSVC  : $($msvc.MsvcVer)"
 Write-Host "[info] cl.exe: $($msvc.ClExe)"
 
 $GrpcExtraArgs = @()
+if ($ExternalZlibRoot) {
+    $zlibCMakePath = Convert-ToCMakePath $ExternalZlibRoot
+    # 固定 FindZLIB 的所有输入；当前构建配置的库已经前置检查，不接受系统库或旧缓存兜底。
+    $GrpcExtraArgs += @(
+        '-DgRPC_ZLIB_PROVIDER=package',
+        '-DCMAKE_FIND_PACKAGE_PREFER_CONFIG=OFF',
+        '-UZLIB_LIBRARY',
+        '-UZLIB_LIBRARIES',
+        "-DZLIB_ROOT=$zlibCMakePath",
+        '-DZLIB_USE_STATIC_LIBS=ON',
+        "-DZLIB_INCLUDE_DIR=$zlibCMakePath/include",
+        "-DZLIB_LIBRARY_DEBUG=$zlibCMakePath/lib/zlibstaticd.lib",
+        "-DZLIB_LIBRARY_RELEASE=$zlibCMakePath/lib/zlibstatic.lib"
+    )
+}
 if ($Nasm) {
     $nasmCMakePath = Convert-ToCMakePath $Nasm
     $GrpcExtraArgs += "-DCMAKE_ASM_NASM_COMPILER=$nasmCMakePath"
@@ -341,9 +404,6 @@ if (-not $clOnPath) {
 }
 Write-Host "[info] cl.exe on PATH: $($clOnPath.Source)"
 
-if ($Jobs -le 0) {
-    $Jobs = [System.Environment]::ProcessorCount
-}
 Write-Host "[info] Parallel jobs: $Jobs"
 
 # Use short name 'cl' since vcvars64 has put cl.exe on PATH.
@@ -385,8 +445,8 @@ function Invoke-GrpcBuild {
         [string]$InstallDir
     )
 
-    $buildPath   = Join-Path $GrpcRoot $BuildDir
-    $installPath = Join-Path $GrpcRoot $InstallDir
+    $buildPath = Get-ArtifactPath (Join-Path $ArtifactRoot $BuildDir)
+    $installPath = Get-ArtifactPath (Join-Path $ArtifactRoot $InstallDir)
 
     Write-Host "`n=============================================="
     Write-Host "  gRPC $BuildType build"
@@ -441,23 +501,8 @@ function Invoke-GrpcBuild {
         $GrpcRoot
     )
 
-    $configured = $false
-    for ($attempt = 1; $attempt -le 2 -and -not $configured; $attempt++) {
-        & $CMake @configArgs -B $buildPath
-        if ($LASTEXITCODE -eq 0) {
-            $configured = $true
-            break
-        }
-
-        if ($attempt -eq 1) {
-            Write-Host "[retry] CMake configure failed for $BuildType. Resetting $buildPath and retrying once ..."
-            if (Test-Path $buildPath) {
-                Remove-DirectoryRobust $buildPath
-            }
-            New-Item -ItemType Directory -Path $buildPath | Out-Null
-        }
-    }
-    if (-not $configured) { Write-Error "CMake configure failed for $BuildType" }
+    & $CMake @configArgs -B $buildPath
+    if ($LASTEXITCODE -ne 0) { Write-Error "CMake configure failed for $BuildType; build directory preserved: $buildPath" }
 
     Write-Host "[2/3] Building ($BuildType) ..."
     & $CMake --build $buildPath --config $BuildType -j $Jobs
@@ -474,16 +519,32 @@ $sw = [System.Diagnostics.Stopwatch]::StartNew()
 
 $buildDirSuffix = if ($UseVSGenerator) { '_vs' } else { '_ninja' }
 
-if ($BuildRelease) {
-    Invoke-GrpcBuild -BuildType 'Release' `
-                     -BuildDir  ".build${buildDirSuffix}_release" `
-                     -InstallDir 'install_vs2026'
-}
+# 第三方 VS 工程不继承仓库的语言模式、/MP、额外包含目录与业务检查。
+# 编译器探测也会启动 MSBuild，因此隔离必须覆盖配置、构建和安装，失败后仍恢复。
+$savedImportProps = $env:ImportDirectoryBuildProps
+$savedImportTargets = $env:ImportDirectoryBuildTargets
+try {
+    if ($UseVSGenerator) {
+        $env:ImportDirectoryBuildProps = 'false'
+        $env:ImportDirectoryBuildTargets = 'false'
+    }
 
-if ($BuildDebug) {
-    Invoke-GrpcBuild -BuildType 'Debug' `
-                     -BuildDir  ".build${buildDirSuffix}_debug" `
-                     -InstallDir 'install_vs2026_dbg'
+    if ($BuildRelease) {
+        Invoke-GrpcBuild -BuildType 'Release' `
+                         -BuildDir  ".build${buildDirSuffix}_release" `
+                         -InstallDir 'install_vs2026'
+    }
+
+    if ($BuildDebug) {
+        Invoke-GrpcBuild -BuildType 'Debug' `
+                         -BuildDir  ".build${buildDirSuffix}_debug" `
+                         -InstallDir 'install_vs2026_dbg'
+    }
+} finally {
+    if ($UseVSGenerator) {
+        $env:ImportDirectoryBuildProps = $savedImportProps
+        $env:ImportDirectoryBuildTargets = $savedImportTargets
+    }
 }
 
 $sw.Stop()

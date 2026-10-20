@@ -343,6 +343,135 @@ TEST_F(SkillUtilTest, ReleaseSkill_FrozenTarget_ReturnsError) {
     EXPECT_EQ(kSkillInvalidTargetId, SkillSystem::ReleaseSkill(caster, &request));
 }
 
+TEST_F(SkillUtilTest, ReleaseSkillRejectsDestroyedSceneAfterItsSlotIsReused) {
+    const auto scene = tlsEcs.sceneRegistry.create();
+    const auto caster = CreateLoadedPlayerInScene(scene);
+    const auto target = CreateLoadedPlayerInScene(scene);
+    auto request = TargetedRequest(target);
+    tlsEcs.sceneRegistry.destroy(scene);
+    const auto replacement = tlsEcs.sceneRegistry.create();
+    ASSERT_EQ(entt::to_entity(scene), entt::to_entity(replacement));
+    ASSERT_NE(scene, replacement);
+    ASSERT_FALSE(tlsEcs.sceneRegistry.valid(scene));
+    ASSERT_TRUE(tlsEcs.sceneRegistry.valid(replacement));
+
+    // 两个玩家仍保存同一个旧句柄，不能把「值相等」当作仍在同一存活场景。
+    EXPECT_NE(kSuccess, SkillSystem::ReleaseSkill(caster, &request));
+
+    EXPECT_FALSE((tlsEcs.actorRegistry.any_of<CooldownTimeListComp, SkillContextCompMap,
+        ActorStateComp, CastingTimerComp, RecoveryTimerComp,
+        ChannelFinishTimerComp, ChannelIntervalTimerComp>(caster)));
+    EXPECT_FALSE((tlsEcs.actorRegistry.any_of<SkillContextCompMap, BuffListComp>(target)));
+    EXPECT_EQ(100u, tlsEcs.actorRegistry.get<BaseAttributesComp>(target).health());
+}
+
+TEST_F(SkillUtilTest, DestroyedSceneBeforeCastPointHasNoDamageOrBuffSideEffects) {
+    const auto scene = tlsEcs.sceneRegistry.create();
+    const auto caster = CreateLoadedPlayerInScene(scene);
+    const auto target = CreateLoadedPlayerInScene(scene);
+    auto request = TargetedRequest(target);
+    ASSERT_EQ(kSuccess, SkillSystem::ReleaseSkill(caster, &request));
+    const auto* contexts = tlsEcs.actorRegistry.try_get<SkillContextCompMap>(caster);
+    ASSERT_NE(nullptr, contexts);
+    ASSERT_EQ(1u, contexts->size());
+    const auto skillId = contexts->begin()->first;
+    const auto* skillRow = SkillTableManager::Instance().FindById(1).first;
+    ASSERT_NE(nullptr, skillRow);
+    ASSERT_GT(skillRow->cast_point(), 0.0);
+    const auto [buffError, bonusBuffId] = BuffSystem::AddOrUpdateBuff(caster, 19);
+    ASSERT_EQ(kSuccess, buffError);
+    ASSERT_NE(UINT64_MAX, bonusBuffId);
+    tlsEcs.sceneRegistry.destroy(scene);
+
+    // 驱动真实前摇回调，检查延迟落点会重新验证场景，而非只在施法入口检查。
+    ASSERT_TRUE(RunUntil([caster = caster, skillId = skillId] {
+        const auto* current = tlsEcs.actorRegistry.try_get<SkillContextCompMap>(caster);
+        return current == nullptr || !current->contains(skillId);
+    }));
+
+    EXPECT_EQ(100u, tlsEcs.actorRegistry.get<BaseAttributesComp>(target).health());
+    const auto* buffs = tlsEcs.actorRegistry.try_get<BuffListComp>(caster);
+    ASSERT_NE(nullptr, buffs);
+    EXPECT_TRUE(buffs->contains(bonusBuffId)) << "场景已销毁的落点不得消费下一次攻击加成";
+    EXPECT_FALSE(tlsEcs.actorRegistry.all_of<BuffListComp>(target));
+    EXPECT_FALSE(tlsEcs.actorRegistry.all_of<SkillContextCompMap>(target));
+    EXPECT_FALSE((tlsEcs.actorRegistry.any_of<CastingTimerComp, RecoveryTimerComp,
+        ChannelFinishTimerComp, ChannelIntervalTimerComp>(caster)));
+}
+
+TEST_F(SkillUtilTest, GeneralSkillCallbackImmediatelyAbortsDestroyedCasterScene) {
+    const auto scene = tlsEcs.sceneRegistry.create();
+    const auto caster = CreateLoadedPlayerInScene(scene);
+    const auto target = CreateLoadedPlayerInScene(scene);
+    auto request = TargetedRequest(target);
+    ASSERT_EQ(kSuccess, SkillSystem::ReleaseSkill(caster, &request));
+    const auto* contexts = tlsEcs.actorRegistry.try_get<SkillContextCompMap>(caster);
+    ASSERT_NE(nullptr, contexts);
+    ASSERT_EQ(1u, contexts->size());
+    const auto skillId = contexts->begin()->first;
+    ASSERT_TRUE(tlsEcs.actorRegistry.all_of<CastingTimerComp>(caster));
+    tlsEcs.sceneRegistry.destroy(scene);
+
+    // 直接进入真实前摇处理函数，不等后摇自然结束；失效场景须立即撤销本次施法。
+    SkillSystem::HandleGeneralSkillSpell(caster, skillId);
+
+    const auto* remaining = tlsEcs.actorRegistry.try_get<SkillContextCompMap>(caster);
+    EXPECT_TRUE(remaining == nullptr || !remaining->contains(skillId));
+    EXPECT_FALSE((tlsEcs.actorRegistry.any_of<CastingTimerComp, RecoveryTimerComp,
+        ChannelFinishTimerComp, ChannelIntervalTimerComp>(caster)));
+    EXPECT_EQ(100u, tlsEcs.actorRegistry.get<BaseAttributesComp>(target).health());
+    EXPECT_FALSE(tlsEcs.actorRegistry.all_of<BuffListComp>(target));
+}
+
+TEST_F(SkillUtilTest, TriggerSkillEffectRejectsDestroyedSceneBinding) {
+    constexpr uint32_t kSkillWithPersistentEffects = 13;
+    const auto* skillRow = SkillTableManager::Instance().FindById(kSkillWithPersistentEffects).first;
+    ASSERT_NE(nullptr, skillRow);
+    ASSERT_GT(skillRow->effect_size(), 0);
+    const auto scene = tlsEcs.sceneRegistry.create();
+    const auto caster = CreateLoadedPlayerInScene(scene);
+    const auto target = CreateLoadedPlayerInScene(scene);
+    auto request = TargetedRequest(target);
+    request.set_skill_table_id(kSkillWithPersistentEffects);
+    ASSERT_EQ(kSuccess, SkillSystem::ReleaseSkill(caster, &request));
+    const auto* contexts = tlsEcs.actorRegistry.try_get<SkillContextCompMap>(caster);
+    ASSERT_NE(nullptr, contexts);
+    ASSERT_EQ(1u, contexts->size());
+    const auto skillId = contexts->begin()->first;
+    ASSERT_FALSE(tlsEcs.actorRegistry.all_of<BuffListComp>(target));
+    tlsEcs.sceneRegistry.destroy(scene);
+
+    SkillSystem::TriggerSkillEffect(caster, skillId);
+
+    EXPECT_FALSE(tlsEcs.actorRegistry.all_of<BuffListComp>(target))
+        << "技能效果入口也必须拒绝双方共同持有的已销毁场景句柄";
+}
+
+TEST_F(SkillUtilTest, ReleaseAreaSkillWithoutResolvedTargetRejectsDestroyedCasterScene) {
+    constexpr uint32_t kAreaGeneralSkill = 2;
+    const auto* skillRow = SkillTableManager::Instance().FindById(kAreaGeneralSkill).first;
+    ASSERT_NE(nullptr, skillRow);
+    ASSERT_TRUE(SkillSystem::IsSkillOfType(kAreaGeneralSkill, kGeneralSkill));
+    ASSERT_GT(skillRow->targeting_mode_size(), 0);
+    ASSERT_EQ(kAreaOfEffect, 1u << skillRow->targeting_mode(0));
+    const auto scene = tlsEcs.sceneRegistry.create();
+    const auto caster = CreateLoadedPlayerInScene(scene);
+    ::ReleaseSkillRequest request;
+    request.set_skill_table_id(kAreaGeneralSkill);
+    // 当前目标协议仍要求非零编号；位置技能无需解析到某个 actor。
+    request.set_target_id(std::numeric_limits<uint64_t>::max());
+    request.mutable_position()->set_x(1.0);
+    ASSERT_EQ(entt::null, actor_net_id::Resolve(tlsEcs.actorRegistry, request.target_id()));
+    ASSERT_EQ(kSuccess, SkillSystem::ValidateTarget(caster, &request, entt::null));
+    tlsEcs.sceneRegistry.destroy(scene);
+
+    EXPECT_NE(kSuccess, SkillSystem::ReleaseSkill(caster, &request));
+
+    EXPECT_FALSE((tlsEcs.actorRegistry.any_of<CooldownTimeListComp, SkillContextCompMap,
+        ActorStateComp, CastingTimerComp, RecoveryTimerComp,
+        ChannelFinishTimerComp, ChannelIntervalTimerComp>(caster)));
+}
+
 // 对自己施放的技能结束时,施法者表里的这一条只能删一次(以前先按 key 删、再用失效迭代器删)。
 TEST_F(SkillUtilTest, HandleSkillFinish_SelfTargetedContextIsErasedOnce) {
     const auto caster = CreateSkillActor();

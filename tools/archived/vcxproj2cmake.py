@@ -279,6 +279,10 @@ def write_cmake(vcxproj_dir, project_name, source_files, include_dirs, target_ty
         abs_extra = root_rel + extra
         if abs_extra not in linux_includes:
             linux_includes.append(abs_extra)
+    if project_name == "infra" and target_type == "lib":
+        # infra 直接编译 librdkafka C++ 包装层，须复用依赖自身 CMake 生成的配置。
+        # 上游特设 dummy 目录，使头文件里的 ../config.h 命中 generated/config.h。
+        linux_includes.append(root_rel + "third_party/librdkafka/.build_linux/generated/dummy")
     if linux_includes:
         lines.append("include_directories(")
         for inc in sorted(set(linux_includes)):

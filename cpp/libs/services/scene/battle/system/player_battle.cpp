@@ -42,7 +42,7 @@
 // PlayerLastPersistedSnapshotComp:上一次**确实写进 Redis** 的那份 PlayerAllData。
 // 判「可不可以销账」只认它,不另建已持久化水位(与通用资产通道同一条纪律)。
 #include "player/comp/last_persisted_snapshot_comp.h"
-#include "player/system/player_lifecycle.h"  // IsCrossZoneFrozen / SavePlayerToRedis
+#include "player/system/player_lifecycle.h"  // IsCrossZoneFrozen / SavePlayerToRedis / IsSceneChangeBusy
 #include "player/system/player_mission.h"
 #include "core/system/redis.h"  // tlsRedisSystem:判断该玩家是否还有未落地的存盘
 #include "player/system/player_pet.h"
@@ -1246,11 +1246,18 @@ void PlayerBattleSystem::PrepareBattle(const ::PrepareBattleRequest& request, ::
 		return;
 	}
 
-	// 跨 zone 迁移在途:实体只读,不接受新战斗
-	if (tlsEcs.actorRegistry.any_of<PlayerFrozenComp>(player))
+	// 换图在途:交接冻结(PlayerFrozenComp,实体只读)、交接意图、普通 EnterScene / 镜像建场景的应答还没回、
+	// 作废交接的 handoff 标记未确认撤回 —— 判据与客户端 EnterScene 的发送侧闸是同一个 IsSceneChangeBusy。
+	// 先到先得:换图先发出,备战就让路。放进来的话,随后落地的同节点路由会把战斗中的玩家换到别的场景
+	// (破坏"战斗在途不切场景"),18 起交接时才被 StartTravelHandoff 的战斗复查挡下,客户端收到一条换图失败。
+	// match 对任何备战拒绝走同一条补偿(肇事者出局、其余回队首),不分原因;与 Java 版
+	// PlayerBattleService.prepare 的 switchInFlight → 1006 同口径(turn-based-battle-server.md §23)。
+	if (PlayerLifecycleSystem::IsSceneChangeBusy(player))
 	{
-		LOG_WARN << "[PlayerBattle] PrepareBattle rejected: player frozen for cross-zone travel, player_id=" << playerId
-				 << " battle_id=" << battleId;
+		const bool handoffInFlight =
+			tlsEcs.actorRegistry.any_of<PlayerFrozenComp, PlayerTravelHandoffComp>(player);
+		LOG_WARN << "[PlayerBattle] PrepareBattle rejected: scene change in flight, player_id=" << playerId
+				 << " battle_id=" << battleId << " handoff_in_flight=" << handoffInFlight;
 		response.mutable_error_message()->set_id(kFeatureUnavailable);
 		return;
 	}

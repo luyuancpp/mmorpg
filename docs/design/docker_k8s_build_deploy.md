@@ -124,3 +124,45 @@ pwsh -File tools/scripts/dev_tools.ps1 -Command k8s-build-image `
 - K8s 基础设施 (mysql/redis/kafka/etcd) 使用 `emptyDir`，仅限开发，生产需配 PVC
 - Gate 暴露方式：托管云 → `LoadBalancer`；自建裸金属 → `NodePort` + 外部 L4
 - 每个 zone = 1 个 K8s namespace (`mmorpg-zone-{name}`)
+
+## 本机 Docker Desktop 与 VS Code 断点（2026-10-20）
+
+本机完整开发栈入口为 `deploy/debug/compose.game.yml`，调试覆盖为同目录 `compose.debug.yml`。它包含 15 个常驻服务与 3 个初始化任务，使用独立网络及持久卷；不复用已有容器或历史演示数据。只启用登录、建角、主世界进场和战斗所需的服务。
+
+在仓库根准备配置：
+
+```powershell
+python tools/scripts/prepare_docker_debug.py
+docker --context desktop-linux compose --env-file build/docker-debug-current/.env -f deploy/debug/compose.game.yml -f deploy/debug/compose.debug.yml config --quiet
+```
+
+准备程序从当前十份源配置派生容器配置，随机密钥仅写入被 Git 忽略的 `build/docker-debug-current/`，再次执行保留原密钥。不要打印、上传或提交展开后的 Compose、`.env` 和带口令的派生配置。
+
+C++ 调试镜像通过 `deploy/debug/Dockerfile` 继承同一次构建的运行镜像与 builder 镜像，增加容器内 GDB，并把对应的分离符号放到 `/app/bin/`。三个节点通过 `SYS_PTRACE` 支持附加，不开放 SSH 或调试 TCP 端口。本节启停命令使用本轮已构建的 `local/*:debug-20261020` 镜像，不会采用上文的注册表 `v1` 镜像。各服务镜像成功构建后，在仓库根执行：
+
+```powershell
+$dc = @('--context', 'desktop-linux', 'compose',
+  '--env-file', 'build/docker-debug-current/.env',
+  '-f', 'deploy/debug/compose.game.yml',
+  '-f', 'deploy/debug/compose.debug.yml')
+docker @dc up -d --no-build --pull never --wait --wait-timeout 300
+docker @dc ps --all --format json |
+  ConvertFrom-Json | Select-Object Service,State,Health,ExitCode
+
+# 日常停止，保留本轮数据卷；下次使用同一条 up 命令恢复。
+docker @dc stop
+```
+
+本轮配置已经准备好，日常启停不必重跑准备程序。修改 C++ 源码后须重新构建镜像并重建对应容器，再附加调试；仅重启原容器不会更新二进制。
+
+本机客户端默认 HTTP 入口为 `http://127.0.0.1:8081`，同一网关保留 `http://127.0.0.1:18081` 供本轮已有工具使用（该附加端口可用 `GATEWAY_PORT` 调整）。`GET /api/server-list` 正常返回 `zones` 数组；本轮可选区服为 `zone-1`。如果客户端未设置过网关地址，它使用 `8081`，因此 Docker 必须映射这个端口。配置准备程序将 `8081` 保留给 HTTP，Gate、Battle 不可使用该端口。
+
+Gate 入口为 `127.0.0.1:28000`、Battle 为 `127.0.0.1:28010`，通过 `CLIENT_ENDPOINT_*` 发布给客户端；内部 `NODE_IP` 仍为容器地址。Scene 与 gRPC 不发布到宿主机。
+
+本机 `.vscode/launch.json` 提供「Docker：附加 Gate / Scene / Battle」：VS Code 的 C/C++ 扩展通过 `docker --context desktop-linux exec` 调用容器内 GDB，`sourceFileMap` 把编译路径 `/src` 映射为当前工作区。用 VS Code 打开本仓库根目录，在自己的 C++ 源码设置断点，从「运行和调试」下拉选择「Docker：附加 Scene」，按 `F5` 后选择 `scene`（PID 为 `1`）。Gate、Battle 选择各自的入口与同名进程。源码必须与镜像构建输入一致；当前 `RelWithDebInfo` 有优化，部分局部变量可能不可见。长时间断点仍会触发正常的分布式超时与租约处理。
+
+**本轮验证状态（已完成）**：Gate、Scene、Battle 的 Linux `RelWithDebInfo` 构建、运行镜像与调试镜像均成功；镜像内 1,456 个 C++ 源文件与本地逐一 SHA256 匹配。七个 Go 服务及 DB 迁移工具共八个 Linux 镜像、Java 网关镜像均已构建。最终调试配置下 15 个常驻服务运行，11 个带健康检查的服务均为 healthy，3 个初始化任务正常退出；网关健康接口为 UP，HTTP 登录返回业务码 0。
+
+三个节点通过与 VS Code 相同的 Docker/GDB MI 管道完成附加和解除附加；Scene 实际命中本仓 `cpp/libs/engine/core/node/system/node/node.cpp:159`，随后恢复运行，三个节点的 `TracerPid` 均为 0。切换到最终调试镜像后，双玩家功能冒烟再次退出 0，登录、进场、战斗与观战通过，战斗直连和观战直连各收到 9 个回合结果。本轮验证了 GDB 管道与真实源码断点，没有操作 VS Code 界面按 F5。
+
+负责人已授权补齐 `data_service` 的分页围栏接口；对账包 73 项测试、`go vet`、真实 Redis 的 6 项围栏测试通过且无跳过。Java 网关 Maven 测试 205 项通过、5 项数据库条件测试跳过、无失败。首轮构建失败及本机 gRPC 精确快照适配原件均保留；负责人收紧范围后未再运行或排查第三方测试。证据位于 `build/verification/docker-debug-20261020-052903/`，最终结果见 `cpp-runtime/package-result.json`、`cpp-debug-up-result.json` 和 `smoke/` 中的源码匹配、GDB、功能冒烟记录。

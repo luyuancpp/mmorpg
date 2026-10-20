@@ -34,6 +34,7 @@ include_directories(
     ../../../../third_party/boost/
     ../../../../third_party/entt/single_include
     ../../../../third_party/fmt/include
+    ../../../../third_party/librdkafka/.build_linux/generated/dummy
     ../../../../third_party/librdkafka/src-cpp/
     ../../../../third_party/muduo-linux/
     ../../../../third_party/redis/

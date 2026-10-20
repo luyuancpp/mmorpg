@@ -1,6 +1,6 @@
 ﻿param(
     [Parameter(Mandatory = $true)]
-    [ValidateSet("help", "pbgen-build", "pbgen-run", "proto-gen-build", "proto-gen-run", "tree", "naming-audit", "naming-apply", "third-party-grpc-build", "no-raw-pointer-setup", "iwyu-run", "k8s-infra-up", "k8s-infra-down", "k8s-infra-status", "k8s-zone-up", "k8s-zone-down", "k8s-zone-status", "k8s-zone-rollback", "k8s-all-up", "k8s-all-down", "k8s-all-status", "k8s-build-all", "k8s-exposure-preflight", "k8s-stage-runtime", "k8s-image-preflight", "k8s-build-image", "k8s-push-image", "k8s-release-zone", "k8s-release-all", "k8s-route-tool", "go-svc-start", "go-svc-start-exe", "go-svc-stop", "go-svc-status", "go-svc-list", "go-svc-build", "go-svc-build-images", "go-svc-push-images", "java-svc-build-image", "java-svc-push-image", "cpp-node-start", "cpp-node-stop", "cpp-node-status", "cpp-node-list", "dev-start", "dev-start-exe", "dev-start-zones", "dev-stop", "dev-status", "dev-robot-zones", "merge-zone", "merge-zone-audit", "merge-zone-unmerge", "merge-zone-relocate", "merge-zone-relocate-abort", "merge-zone-pin-placement", "merge-zone-storage-audit", "merge-zone-capability-check", "kafka-offset-reset", "git-stats")]
+    [ValidateSet("help", "pbgen-build", "pbgen-run", "proto-gen-build", "proto-gen-run", "tree", "naming-audit", "naming-apply", "third-party-lock-check", "third-party-zlib-build", "third-party-grpc-build", "no-raw-pointer-setup", "iwyu-run", "k8s-infra-up", "k8s-infra-down", "k8s-infra-status", "k8s-zone-up", "k8s-zone-down", "k8s-zone-status", "k8s-zone-rollback", "k8s-all-up", "k8s-all-down", "k8s-all-status", "k8s-build-all", "k8s-exposure-preflight", "k8s-stage-runtime", "k8s-image-preflight", "k8s-build-image", "k8s-push-image", "k8s-release-zone", "k8s-release-all", "k8s-route-tool", "go-svc-start", "go-svc-start-exe", "go-svc-stop", "go-svc-status", "go-svc-list", "go-svc-build", "go-svc-build-images", "go-svc-push-images", "java-svc-build-image", "java-svc-push-image", "cpp-node-start", "cpp-node-stop", "cpp-node-status", "cpp-node-list", "dev-start", "dev-start-exe", "dev-start-zones", "dev-stop", "dev-status", "dev-robot-zones", "merge-zone", "merge-zone-audit", "merge-zone-unmerge", "merge-zone-relocate", "merge-zone-relocate-abort", "merge-zone-pin-placement", "merge-zone-storage-audit", "merge-zone-capability-check", "kafka-offset-reset", "git-stats")]
     [string]$Command,
 
     [string]$ConfigPath = "",
@@ -18,6 +18,10 @@
 
     [int]$MaxChanges = 0,
     [int]$Jobs = 0,
+    # 第三方固定版本检查与隔离构建；留空时沿用对应脚本默认值。
+    [switch]$ApplyPatches,
+    [string]$BuildRoot = "",
+    [string]$ZlibInstallRoot = "",
 
     [string]$ZoneName = "yesterday",
     [int]$ZoneId = 101,
@@ -741,6 +745,41 @@ function Invoke-NamingApply {
     & $scriptPath -Mode apply -Style $Style -MaxChanges $MaxChanges -Confirm:$false
 }
 
+function Invoke-ThirdPartyLockCheck {
+    # 仅在本函数内关闭原生命令自动抛错，确保检查器非零退出码原样返回。
+    $PSNativeCommandUseErrorActionPreference = $false
+    $scriptPath = Join-Path $ScriptDir "third_party\verify_release_lock.py"
+    if (-not (Test-Path -LiteralPath $scriptPath -PathType Leaf)) {
+        throw "第三方固定版本检查脚本不存在: $scriptPath"
+    }
+    $python = Resolve-ProtoGenHookPython
+    if ($null -eq $python) {
+        throw '找不到可用的 Python 3（PYTHON_EXE / py -3 / python）；未执行固定版本检查。'
+    }
+    $checkerArgs = @($scriptPath)
+    if ($ApplyPatches) { $checkerArgs += '--apply-patches' }
+    & $python @checkerArgs
+    # 直接保留校验器退出码，不让包装入口将失败伪装成成功。
+    exit $LASTEXITCODE
+}
+
+function Invoke-ThirdPartyZlibBuild {
+    $scriptPath = Join-Path $ScriptDir "third_party\build_zlib.ps1"
+    if (-not (Test-Path -LiteralPath $scriptPath -PathType Leaf)) {
+        throw "第三方 zlib 构建脚本不存在: $scriptPath"
+    }
+    $bound = $script:PSBoundParameters
+    $buildArgs = @{}
+    if (-not [string]::IsNullOrWhiteSpace($BuildRoot)) {
+        $buildArgs.BuildRoot = $BuildRoot
+    }
+    if ($bound.ContainsKey('Jobs')) {
+        $buildArgs.Jobs = $Jobs
+    }
+    & $scriptPath @buildArgs
+    exit $LASTEXITCODE
+}
+
 function Invoke-ThirdPartyGrpcBuild {
     $scriptPath = Join-Path $ScriptDir "third_party\build_grpc.ps1"
     if (-not (Test-Path $scriptPath)) {
@@ -767,8 +806,15 @@ function Invoke-ThirdPartyGrpcBuild {
     if ($UseVSGenerator) {
         $args.UseVSGenerator = $true
     }
+    if (-not [string]::IsNullOrWhiteSpace($BuildRoot)) {
+        $args.BuildRoot = $BuildRoot
+    }
+    if (-not [string]::IsNullOrWhiteSpace($ZlibInstallRoot)) {
+        $args.ZlibInstallRoot = $ZlibInstallRoot
+    }
 
     & $scriptPath @args
+    exit $LASTEXITCODE
 }
 
 function Invoke-IwyuRun {
@@ -1679,7 +1725,11 @@ Other common commands:
     -Command tree
     -Command naming-audit
     -Command naming-apply
-    -Command third-party-grpc-build
+    -Command third-party-lock-check [-ApplyPatches]
+        默认只读校验 third_party/releases.lock.json；显式 -ApplyPatches 时恢复登记补丁。
+    -Command third-party-zlib-build [-BuildRoot <全新目录>] [-Jobs 1]
+        隔离构建 Debug/MDd zlib，必须通过上游 ctest 后才安装。
+    -Command third-party-grpc-build [-BuildRoot <目录>] [-ZlibInstallRoot <zlib安装目录>]
     -Command no-raw-pointer-setup [-LlvmRoot <path>] [-DownloadOnly] [-DryRun]
         自动下载 LLVM/Clang 开发库并串行编译裸指针成员检查器。
     -Command iwyu-run
@@ -1796,6 +1846,8 @@ switch ($Command) {
     "tree" { Invoke-Tree }
     "naming-audit" { Invoke-NamingAudit }
     "naming-apply" { Invoke-NamingApply }
+    "third-party-lock-check" { Invoke-ThirdPartyLockCheck }
+    "third-party-zlib-build" { Invoke-ThirdPartyZlibBuild }
     "third-party-grpc-build" { Invoke-ThirdPartyGrpcBuild }
     "no-raw-pointer-setup" {
         & (Join-Path $ScriptDir "third_party/setup_no_raw_pointer_check.ps1") -LlvmRoot $LlvmRoot -DownloadOnly:$DownloadOnly -DryRun:$DryRun

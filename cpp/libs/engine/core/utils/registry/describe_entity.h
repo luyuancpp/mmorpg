@@ -23,7 +23,7 @@ std::string DescribeEntity(const Registry& registry, typename Registry::entity_t
         {
             continue;
         }
-        std::string_view name = storage.type().name();
+        std::string_view name = storage.info().name();
         for (std::string_view prefix : {"struct ", "class ", "enum "})
         {
             if (name.starts_with(prefix))

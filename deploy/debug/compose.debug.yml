@@ -1,0 +1,23 @@
+# 叠加在完整游戏服 Compose 后使用，不单独定义服务配置或基础设施。
+# NODE_DEBUG_IMAGE 必须与本次服务二进制对应；允许覆盖为其他本地调试镜像。
+services:
+  gate:
+    image: ${NODE_DEBUG_IMAGE:-local/xuanming-node:debug-20261020}
+    container_name: xuanming-debug-gate
+    cap_add:
+      - SYS_PTRACE
+    restart: "no"
+
+  scene:
+    image: ${NODE_DEBUG_IMAGE:-local/xuanming-node:debug-20261020}
+    container_name: xuanming-debug-scene
+    cap_add:
+      - SYS_PTRACE
+    restart: "no"
+
+  battle:
+    image: ${NODE_DEBUG_IMAGE:-local/xuanming-node:debug-20261020}
+    container_name: xuanming-debug-battle
+    cap_add:
+      - SYS_PTRACE
+    restart: "no"
