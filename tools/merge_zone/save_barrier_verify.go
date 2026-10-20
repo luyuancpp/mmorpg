@@ -8,8 +8,9 @@ package main
 // 合服后任何一条不成立,这名玩家开服后都登录不进来(fail-closed,要停写恢复)。
 //
 // 前向 copy 合服从此保留屏障(player_rows.go 的 playerCacheKeysKeepBarrier);这一行逐人核对它赖以成立的前提,把「开服后
-// 才发现整批进不来」提前到 Step 5:旧二进制删过屏障、续跑之间有人动过行、P4 被绕过,都会在这里 block。处置是
-// docs/ops/merge-zone-runbook.md §10.1 的 save_barrier_restore 流程(保持维护闸,不 zone-up)。
+// 才发现整批进不来」提前到 Step 5:旧二进制删过屏障、续跑之间有人动过行、P4 被绕过,都会在这里 block。处置见
+// docs/ops/merge-zone-runbook.md §10.1 末段(保持维护闸,不 zone-up):barrier_missing 用 save_barrier_restore 重建;
+// 其余原因说明 P4 之后有写入或数据损坏,先查清,不就地重建也不删屏障(屏障里可能有未提交意图)。
 //
 // owner_epoch 为 0 或不存在的人(从没进过场景)不要求屏障,只计数。读失败一律 INFRA(没查成,不是通过)。
 // 键与版本格式都是镜像字面量(本模块是独立 go.mod,不引 shared),单测钉住。
@@ -233,8 +234,9 @@ func verifySaveBarriersWith(ctx context.Context, cfg auditConfig, readFences row
 		}
 		r.Severity = "block"
 		r.Notes = fmt.Sprintf("%d of the %d manifest players with a non-zero owner_epoch would be refused by the login cold load: %s. "+
-			"Keep the maintenance gate and rebuild their barriers with save_barrier_restore (docs/ops/merge-zone-runbook.md §10.1) "+
-			"before zone-up", bad, len(required), strings.Join(parts, "; "))
+			"Keep the maintenance gate and do not zone-up; follow docs/ops/merge-zone-runbook.md §10.1: %s players get their "+
+			"barriers rebuilt with save_barrier_restore, any other reason must be investigated first (do not rebuild or delete "+
+			"those barriers)", bad, len(required), strings.Join(parts, "; "), barrierVerdictMissing)
 		return r
 	}
 	r.Severity = "info"

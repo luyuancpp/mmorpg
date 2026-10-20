@@ -2,7 +2,7 @@ package logic
 
 // 评分匹配(cross-zone-matchmaking.md §11)的 miniredis 测试:容差曲线 / 新号立即
 // 互配 / 分差超容差等待放宽后再配 / 候选按分差就近 / 队首凑不到不阻塞后面的锚点 /
-// PVE 不看评分 / list 与评分镜像 ZSET 在入队、取消、回队首、剔除、迁移后一致 /
+// PVE 不看评分 / list 与评分镜像 ZSET 在入队、取消、回队首、剔除、镜像补写后一致 /
 // Elo 更新与幂等 / 5v5 蛇形分队(纯函数 + gather 真跑到 CreateBattle)。
 
 import (
@@ -316,24 +316,17 @@ func TestQueueMirrorStaysConsistentAcrossOperations(t *testing.T) {
 	assertQueueMirrorConsistent(t, mr, queue1v1)
 }
 
-// 旧格式队列迁移时也写评分镜像(评分读不到用 1500);镜像缺失的 list 成员
-// (滚动升级窗口内旧实例只写 list)由 matcher 按票据评分补写。
-func TestMigrateLegacyQueuesWritesRankMirror(t *testing.T) {
+// 镜像缺失的 list 成员由 matcher 按票据评分补写并能成组。原先挂在旧格式队列迁移用例的后半段,
+// 2026-10-20 迁移代码删除后单列,补写路径本身不变。
+func TestMatcherBackfillsMissingRankMirror(t *testing.T) {
 	svcCtx, mr := newTestSvcCtx(t)
-	legacyKey := legacyMatchQueueKey(int32(matchpb.MatchMode_MATCH_MODE_1V1), 0)
-	writeLegacyTicket(t, mr, 11601, "tk-a", matchpb.MatchMode_MATCH_MODE_1V1, 0)
-	writeLegacyTicket(t, mr, 11602, "tk-b", matchpb.MatchMode_MATCH_MODE_1V1, 0)
-	setRating(t, mr, 11601, 1700)
-	_, err := mr.RPush(legacyKey, "11601", "11602")
-	require.NoError(t, err)
-
-	migrateLegacyQueues(svcCtx)
-
-	require.Equal(t, 1700.0, zscore(t, mr, queue1v1, 11601), "有评分记录的按记录写")
-	require.Equal(t, float64(defaultRating), zscore(t, mr, queue1v1, 11602), "无记录按默认 1500")
+	for _, pid := range []uint64{11601, 11602} {
+		setPlayerLocation(t, mr, pid, 1)
+		require.Zero(t, joinQueue1v1(t, svcCtx, pid).ErrorCode)
+	}
 	assertQueueMirrorConsistent(t, mr, queue1v1)
 
-	// 只写 list 不写 ZSET 的成员(旧实例入队):matcher 校验时补写镜像并能成组。
+	// 摘掉一名成员的镜像:matcher 校验时补写镜像并能成组。
 	rankKey, err := rankKeyForQueue(queue1v1)
 	require.NoError(t, err)
 	_, err = mr.ZRem(rankKey, "11602")

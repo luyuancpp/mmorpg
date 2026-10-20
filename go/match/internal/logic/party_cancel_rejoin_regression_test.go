@@ -15,16 +15,8 @@ import (
 // 队员甲撤整单时，队员乙的独立会话可在旧票删除后重新单排。
 // 旧撤单最后摘 list 时必须保留乙刚成功入队的新票对应的项。
 // 复用现有 miniredis 顶层 EVAL 钩子，确定性插入该跨玩家时序。
+// (无版本遗留单的变体 2026-10-20 随旧格式兼容一起删除:项目未上线,没有旧实例留下的无版本数据。)
 func TestCancelPartyPreservesMemberRequeuedBeforeOldDequeue(t *testing.T) {
-	testCancelPartyPreservesMemberRequeuedBeforeOldDequeue(t, false)
-}
-
-func TestCancelPartyLegacyQueuePreservesRequeuedMember(t *testing.T) {
-	testCancelPartyPreservesMemberRequeuedBeforeOldDequeue(t, true)
-}
-
-func testCancelPartyPreservesMemberRequeuedBeforeOldDequeue(t *testing.T, legacy bool) {
-	t.Helper()
 	svcCtx, mr, _ := newPartySvcCtx(t)
 	const captain = uint64(32901)
 	const member = uint64(32902)
@@ -35,10 +27,6 @@ func testCancelPartyPreservesMemberRequeuedBeforeOldDequeue(t *testing.T, legacy
 		setPlayerLocation(t, mr, pid, 1)
 	}
 	enqueueParty(t, svcCtx, teamID, 5, captain, member, third)
-	if legacy {
-		// 只兼容停止写入的旧实例留下的无版本数据。
-		mr.Del(queueVersionsKey(queueKey))
-	}
 
 	type joinResult struct {
 		response *matchpb.JoinQueueResponse
@@ -174,30 +162,20 @@ func TestCancelPartyPreservesNewPartyBeforeOldDequeue(t *testing.T) {
 	}
 }
 
-// 正常旧单与静态无版本遗留单都必须真正清理;版本保护不能把所有取消变成无操作。
+// 版本未变的旧单必须真正清理;版本保护不能把所有取消变成无操作。
+// (无版本遗留单的子用例 2026-10-20 随旧格式兼容一起删除。)
 func TestCancelPartyCleansUnchangedQueueVersions(t *testing.T) {
-	for _, legacy := range []bool{false, true} {
-		name := "带版本旧单"
-		if legacy {
-			name = "无版本遗留单"
-		}
-		t.Run(name, func(t *testing.T) {
-			svcCtx, mr, port := newPartySvcCtx(t)
-			const captain, member = uint64(32921), uint64(32922)
-			queueKey := matchSizedQueueKey(pveTeamMode, partyTestConfig, 5)
-			enqueueParty(t, svcCtx, 9402, 5, captain, member)
-			if legacy {
-				mr.Del(queueVersionsKey(queueKey))
-			}
-			cancelQueueAs(t, svcCtx, captain)
-			requireNoTicket(t, svcCtx, captain, member)
-			require.Empty(t, queueMembers(t, svcCtx, queueKey))
-			require.False(t, mr.Exists(queueVersionsKey(queueKey)))
-			require.True(t, mr.Exists(matchQueueVersionSequenceKey), "取消不能回收全局序列")
-			assertQueueMirrorConsistent(t, mr, queueKey)
-			require.Len(t, port.endedCalls(), 1)
-		})
-	}
+	svcCtx, mr, port := newPartySvcCtx(t)
+	const captain, member = uint64(32921), uint64(32922)
+	queueKey := matchSizedQueueKey(pveTeamMode, partyTestConfig, 5)
+	enqueueParty(t, svcCtx, 9402, 5, captain, member)
+	cancelQueueAs(t, svcCtx, captain)
+	requireNoTicket(t, svcCtx, captain, member)
+	require.Empty(t, queueMembers(t, svcCtx, queueKey))
+	require.False(t, mr.Exists(queueVersionsKey(queueKey)))
+	require.True(t, mr.Exists(matchQueueVersionSequenceKey), "取消不能回收全局序列")
+	assertQueueMirrorConsistent(t, mr, queueKey)
+	require.Len(t, port.endedCalls(), 1)
 }
 
 // 版本快照失败时可继续按 ticket id 撤旧票,但绝不能降级成无条件摘队列。

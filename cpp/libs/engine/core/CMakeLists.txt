@@ -63,7 +63,7 @@ set(SOURCE_FILES
     network/message_statistics.cpp
     network/network_utils.cpp
     network/node_utils.cpp
-    network/player_message_utils.cpp
+    network/client_message_sender.cpp
     network/process_info.cpp
     network/rpc_server.cc
     network/traffic_statistics.cpp

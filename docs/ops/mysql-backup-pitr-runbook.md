@@ -337,6 +337,8 @@ go run ./cmd/save_barrier_restore -mode apply -schema zone_17_db -zone 17 `
 
 整批成功后，先以受控测试号验证缺父键登录确实强读到同版两行、资产收据与 SQL 一致，再按发布单恢复写者、维护入口及删除本次维护标记。工具不会自动开放流量；本地隔离工具验证不代表完整 PITR、跨洲灾备或目标容量验收。2026-10-18 的 Linux 真 TiDB/Redis 四项集成与同包单元共 38 项通过、零跳过，原始收据见 `build/barrierrestore-linux-20261018-030237-63a67b/final-proof.json`；高位自增分配器边界与真实旧写者复活仍未覆盖。
 
+**2026-10-20 补充（r2-mz#1，未编译、未测试，待 Codex 验证）**：上面「显式稳定 placement」的限制新增一个显式例外。plan 加 `-allow-home-fallback` 后，**没有落点记录**、home 恰为 `-zone`、`-schema` 就是该区 zone 库的玩家，按 go/db 的有效落点（记录 ?? home）恢复。copy 合服撤销后的玩家天然是这种形态，流程见 [merge-zone-runbook.md](merge-zone-runbook.md) §10.1「屏障重建」。开关写进计划、计入 SHA-256，apply 与 guard 拒收它；落点记录仍不存在在写屏障的同一段 Lua 里原子复核；落点键存在（含空串）、home≠zone 等其余拒绝条件不变。
+
 ### 2026-10-18 第二批：db_first、独立映射和全局落点（实现后须核本批验证收据）
 
 第二批计划为 v2，v1 计划仍按上一节同实例本区边界执行。支持 `db_first`、`redis-split`、非零父缓存 DB、稳定异区 zone 库和 `player_store_*_db`；映射始终 DB0，SQL 路由库与玩家库必须同一 TiDB 实例。Redis Cluster 仍不是现行全链协议支持的部署方式。连接地址、DB、schema、强读模式及路由证明全部绑定计划，不得用改参数替换重审。

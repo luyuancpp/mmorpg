@@ -5,7 +5,7 @@
 
 #include "thread_context/ecs_context.h"
 #include "engine/core/type_define/player_guid_comp.h"
-#include "network/player_message_utils.h"
+#include "network/client_message_sender.h"
 #include "muduo/base/Logging.h"
 
 // ============================================================================
@@ -67,7 +67,7 @@ void ActorBaseAttributesS2CSyncAttributesCore(entt::entity entity, uint32_t mess
         return;
     }
 
-    BroadcastMessageToPlayers(message_id, syncMsg, targetPlayers);
+    BroadcastToPlayerClients(message_id, syncMsg, targetPlayers);
 }
 
 void ActorBaseAttributesS2CSyncAttributes(entt::entity entity, uint32_t message_id, const EntityUnorderedSet& targetPlayers)

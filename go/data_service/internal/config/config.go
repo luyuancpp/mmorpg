@@ -1,6 +1,7 @@
 package config
 
 import (
+	"errors"
 	"fmt"
 	"time"
 
@@ -287,6 +288,19 @@ const (
 	MaxRouteStoreWaitAOFTimeoutMs   = 1500
 )
 
+// RouteStore.PublishRedisPoolSize 的缺省值与上界(A2-1 / LR-4,2026-10-20;见该字段的注释)。
+//
+// 缺省 20 的论证(W1 并发):每次 W1 的发布 + WAITAOF 从取到连接起占住它,直到 WAITAOF 返回;appendfsync everysec 下
+// 平均约 0.5s、最长约 1s 多(上限 WaitAOFTimeoutMs)。单副本 W1 吞吐上限 ≈ 池大小 / 平均占用 ≈ 2 × 池大小 次/s。
+// 改动前发布与读共用 go-zero 的 mapping 池(K8s 上 GOMAXPROCS=2 时 10 × 2 = 20 条),W1 的上限约 40 次/s/副本,
+// 代价是建角尖峰把读饿死。缺省取同一个 20:W1 的吞吐上限不低于改动前,而读路径的 20 条从此不再被 W1 占用。
+// 更大的建角峰值(容量模型的开服尖峰)靠加池补不上(要几百条),属于 WAITAOF 组提交 / 拓扑的设计问题,以压测为准再定。
+// 上界 128:单副本 128 条已是共享 Redis 连接总账里最大的一项,再大应先改设计而不是加连接。
+const (
+	DefaultRouteStorePublishRedisPoolSize = 20
+	MaxRouteStorePublishRedisPoolSize     = 128
+)
+
 // RouteStoreConfig 是映射提交点的运行参数。整段可缺失。
 //
 // 【为什么零值 = "没配"、默认值由 Normalize 填】理由同 PlayerNameConfig:go-zero 不下钻一个未出现的
@@ -315,12 +329,18 @@ type RouteStoreConfig struct {
 	// 默认不是 1000:appendfsync everysec 下本地确认最长要等到下一次 fsync(约 1s)再加事件循环延迟,
 	// 1000ms 正压在边界上,会系统性地抬高"已提交未确认"的比例(规格 d 节 M2)。
 	WaitAOFTimeoutMs int `json:",optional"`
+	// PublishRedisPoolSize:db_first 下 W1 发布 + WAITAOF 专用 go-redis 客户端的连接池上限,[1, 128];0 = 缺省 20
+	// (论证见 DefaultRouteStorePublishRedisPoolSize)。连接参数取 MappingRedis(同一个实例),但池与 go-zero 的 mapping 客户端
+	// (GetPlayerHomeZone / BatchGet / 玩家锁 / 读脚本)分开、不经 go-zero 熔断器,建角尖峰不再饿住读路径(routing/publish_redis.go)。
+	// redis 模式不建这个客户端、不开连接;db_first 下是每个副本额外占 mapping Redis 的连接上限,要进共享 Redis 连接总账。
+	PublishRedisPoolSize int `json:",optional"`
 	// ReadRequiresReady:第 3 批读方门禁(docs/handoff/launch-readiness-20261013/spec_D1_batch1b2_2_3.md §5.2)。
 	// true 时 GetPlayerHomeZone / BatchGetPlayerHomeZone / 内部路由的 home 查询只在就绪标记绑定的就是本次读所在的
 	// mapping Redis 实例(placement.VerifyRouteReady = Trusted)时信任缓存,否则回源全局库 player_route(库故障回 Unavailable,
 	// 绝不 NotFound)。只许 Mode=db_first(redis 模式下库不是真源,没有可回源的东西);启动期试跑一次读脚本,跑不起来按
 	// Store.Required 拒启。缺省 false = 与今天逐字相同。所有副本应取同一值;打开前提是对账 leader 已挂标记(规格 §8 P5),
-	// 回退时先关它、再关 ArmReadyMarker、再切回 redis(规格 §13.5 第 1 条)。
+	// 回退时先关它、再关 ArmReadyMarker、再切回 redis(规格 §13.5 第 1 条)。打开时还要求 Reconcile.Enabled 不是 false
+	// (没有 leader 就没人撤 / 维护就绪标记,见 RouteReconcileConfig.Enabled;Validate 拒启)。
 	ReadRequiresReady bool `json:",optional"`
 	// Reconcile 是 db_first 下对账 leader 的运行参数(第 1b-2 批,见 RouteReconcileConfig)。整段可缺失,缺失 = 全部默认值;
 	// redis 模式下不构造 leader,但非法值照样拒启(与本段其它键同口径)。
@@ -356,6 +376,9 @@ func (r RouteStoreConfig) Normalize() RouteStoreConfig {
 	}
 	if r.WaitAOFTimeoutMs == 0 {
 		r.WaitAOFTimeoutMs = DefaultRouteStoreWaitAOFTimeoutMs
+	}
+	if r.PublishRedisPoolSize == 0 {
+		r.PublishRedisPoolSize = DefaultRouteStorePublishRedisPoolSize
 	}
 	return r
 }
@@ -394,6 +417,20 @@ func (r RouteStoreConfig) Validate() error {
 		// 回退顺序写反(先切回 redis、读方开关还开着)时在这里拒启,而不是让读方在没有真源可回源的模式下静默跑(规格 §13.5)。
 		return fmt.Errorf("RouteStore.ReadRequiresReady=true requires Mode=%q (in %q mode the mapping Redis is the source of truth and there is no player_route to fall back to; turn ReadRequiresReady off first), got Mode=%q",
 			RouteStoreModeDBFirst, RouteStoreModeRedis, r.Mode)
+	}
+	if r.ReadRequiresReady && !r.Reconcile.On() {
+		// A1-6 / A2-2 / M1-1 / LR-6(2026-10-20):Enabled=false 时本副本不构造 leader。就绪标记没有 TTL、读方只核身份不看新鲜度,
+		// 全服都这样配时现存标记无人撤销(M4)、无人维护(孤儿行补发、M3 回档检测、淘汰 / DEBUG 自检全停),读方却继续判 Trusted,
+		// 缺键被当成权威缺席(login 退回建角 zone、go/db 写进 legacy 库)。所以读方开着时不许急停 leader;顺序见报错文案。
+		// go/db 的 Placement.RequireRouteReady 与 guild 的 MergeMarkerRedis.RequireRouteReady 本服务校验不到,只能靠 runbook 约束。
+		return errors.New("RouteStore.ReadRequiresReady=true requires RouteStore.Reconcile.Enabled not false: without the reconcile leader " +
+			"nobody withdraws or maintains mapping:route:ready (no disarm withdrawal, no orphan-row republish, no rollback detection, " +
+			"no eviction / debug self-check) while readers keep trusting it. Before an emergency stop of the leader, turn off every reader switch first " +
+			"(RouteStore.ReadRequiresReady, go/db Placement.RequireRouteReady, guild MergeMarkerRedis.RequireRouteReady), then set " +
+			"Reconcile.ArmReadyMarker=false and wait for data_service_route_reconcile_event_total{event=\"marker_dropped_disarmed\"}, and only then set Enabled=false")
+	}
+	if r.PublishRedisPoolSize < 1 || r.PublishRedisPoolSize > MaxRouteStorePublishRedisPoolSize {
+		return fmt.Errorf("RouteStore.PublishRedisPoolSize must be in [1, %d], got %d", MaxRouteStorePublishRedisPoolSize, r.PublishRedisPoolSize)
 	}
 	if err := r.Reconcile.validate(r.Mode); err != nil {
 		return err
@@ -478,7 +515,11 @@ const (
 //     满足之后才改 true;回退时先关全部读方开关,再改 false(false = leader 每拍撤掉现存标记,撤销信任);
 //   - 共享同一全局库的副本必须指向同一个 MappingRedis(不变量 I4;指错时另一实例上的标记身份不符,读方不信任,安全由 M1 兜住)。
 type RouteReconcileConfig struct {
-	// Enabled:nil = true。写 false 是急停:不再补发孤儿行、不再做回档检测(第 3 批读方开启前可以接受)。
+	// Enabled:nil = true。写 false 是急停:本副本不构造 leader —— 不再补发孤儿行、不再做回档检测、不做淘汰 / DEBUG 自检,
+	// **也不撤现存的就绪标记**(撤标记是 leader 在 ArmReadyMarker=false 时每拍做的事,leader 不在就没人做)。
+	// 所以只许在读方全部关闭之后急停(2026-10-20,Validate 拒绝 ReadRequiresReady=true 时写 false):顺序是先关全部读方开关
+	// (RouteStore.ReadRequiresReady、go/db Placement.RequireRouteReady、guild MergeMarkerRedis.RequireRouteReady)→ Arm=false 并看到
+	// marker_dropped_disarmed → 最后才 Enabled=false。go/db 与 guild 的开关本服务校验不到,靠 runbook 约束。
 	Enabled *bool `json:",optional"`
 	// ArmReadyMarker:true 才挂就绪标记(mapping:route:ready)。只许 Mode=db_first 且 Enabled 不是 false。
 	ArmReadyMarker bool `json:",optional"`

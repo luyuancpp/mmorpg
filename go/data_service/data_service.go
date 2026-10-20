@@ -186,8 +186,12 @@ func main() {
 	// 只在 db_first 且 Reconcile.Enabled 时装配(svcCtx.RouteReconciler 非 nil);redis 模式下什么都不做。
 	// 关停顺序(规格 spec_D1_batch1b2_2_3.md §4.2「关停顺序」):这个 defer 注册在 `defer svcCtx.Close()` 之后、Kafka 的 defer
 	// 之前,按 LIFO 在 Kafka flush **之后**、关连接池**之前**执行:只 cancel、最多等 routeReconcilerStopWait(500ms),
-	// 释放租约是尽力而为(独立 1s 时限,失败不重试,租约 LeaseMs 后自然过期)。它不挤占 Kafka 的 flush;
-	// 整个关停受 go-zero proc 的 5.5s 强杀约束,leader 自己只占其中 ≤ 500ms。
+	// 释放租约是尽力而为(独立 1s 时限,失败不重试,租约 LeaseMs 后自然过期)。它不挤占 Kafka 的 flush。
+	// 总预算(2026-10-20 更正,原文「整个关停 ≤ 5.5s、leader 只占其中 ≤ 500ms」与 kafkaShutdownGrace=8s 矛盾):go-zero proc 收到
+	// SIGTERM 后约 1s 才停 gRPC、5.5s 强杀进程,下面这些 defer 只剩约 4.5s;排在 leader 前面的 Kafka 等待上限是 8s,比它长。
+	// Kafka flush 慢的那次关停里,进程会在 Kafka 等待阶段就被强杀,leader 跑不到释放租约,新 leader 最多晚 LeaseMs 接手。
+	// 不影响正确性(leader 的库写有租约 fencing、推送 set-if-newer、在途推送幂等);顺序按规格保持「Kafka 先、leader 后」,
+	// 宁可换主慢一个 LeaseMs,也不让 leader 的 500ms 挤掉 Kafka 本来就不够的 flush 时间。
 	stopRouteReconciler := startRouteReconciler(svcCtx)
 	defer stopRouteReconciler()
 
@@ -392,8 +396,10 @@ func runMigration(c config.Config) int {
 // routeStoreDBFirstWarning 是 RouteStore.Mode=db_first 时启动日志与横幅里的那条 WARN(规格 d 节,M4)。
 // 第 2 批起 merge_zone 以 -route-source=db 库先写并在 zone_merge_fence 持围栏;仍要提醒的是:旧版 merge_zone 二进制直写 Redis、
 // 不写库(对账 leader 看不见它写的东西),P4 起一律禁用;切换与回退顺序按提案 §13.4。
+// 2026-10-20 补「围栏真源」一句:db 源下 merge:in_progress 只是镜像,运维不得再按 redis 源的旧流程手工 GET / DEL 它(runbook §15)。
 const routeStoreDBFirstWarning = "RouteStore.Mode=db_first: merge_zone 写模式只许第 2 批新版二进制,且显式 -route-source=db " +
 	"-route-db-dsn=<本全局库>(旧版直写 Redis、不写 zone_merge_fence,一律禁用);P4 解除冻结窗口之前不跑合服写模式;" +
+	"合服围栏以 zone_merge_fence 为真源,merge:in_progress 只是镜像,不要手工 SET / DEL(merge-zone-runbook §15);" +
 	"ArmReadyMarker 与读方开关按 proposal §13.4 切换,回退先关读方、再 Arm=false"
 
 // routeReconcilerStopWait 是关停时等对账 leader 退出的上限(规格 §4.2「关停顺序」:只 cancel、等待 ≤ 500ms)。

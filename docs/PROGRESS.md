@@ -13824,3 +13824,42 @@ PROGRESS 一直没有条目)。上面 2026-09-21 条里"第 7–9 步未跑""修
 - C++ 证据限定为：独立 MSVC `/Zs /utf-8 /std:c++latest` 聚合编译全部 25 个生成客户端头与 RPC 注册头，实际退出 0；core 工程 XML 可解析且 ClCompile 登记不变；定向 `git diff --check` 通过。其他会话持续占用串行 MSBuild 窗口，本轮没有执行工程全量构建、链接或 C++ 运行测试，不将语法编译称为全量构建通过。纯命名变更未新增测试。
 - 保留首次失败原件：生成器源码 `unity_client_rpc.go:423` 的字面 BOM 被 Go 拒绝，随后由并行会话改为等价 `\ufeff`；下一次包装内 go build 成功，但复制 exe 被并行生成进程占用，故正式生成选当前源码 `-UseGoRun`。独立头文件检查首轮漏配现有 utf8_range 包含目录，补齐检查命令后通过；未为这些情况修改业务逻辑、关闭检查或使用旧生成器。
 - 原件：`build/verification/grpc-client-call-20261020/`，含文件前像、生成器日志、静态比对、独立编译命令/日志及 `result.json`。本聊天未提交、推送或操作客户端仓。Java 版 `0.1.0-SNAPSHOT`：仅 C++ 内部命名，不适用对应功能改造，不修改共享客户端契约。
+
+## 2026-10-20 Claude:客户端请求自带回调续做——生成器、客户端引用迁移、R1 两版(未编译、未测试,待 Codex 验证)
+
+- 接手 [client-rpc-callback-handoff-20261019.md](handoff/client-rpc-callback-handoff-20261019.md)。用户拍板:R6 先不改(记 Java 待做);R1 两版一起改;生成器源码由 Claude 写,只有跑生成、编译、冒烟交给 Codex(10-20 在另一会话里确认同一口径);范围全部做完。
+- 三会话分工:robot 场景迁移(A / B / C 类)归会话「Robot handoff documentation」;`robot/pkg/client.go` 的 `CallSyncThen` 与 Java `PARITY.md` 第 171、172 行由会话「Client RPC callback handoff [53a2d1]」写;其余(生成器、客户端引用迁移、R1 两版、设计文档 §3 / §5 / §7 / §8 / §9 第 1、3、6 步、Java `PARITY.md` 第 173 行)归本会话。
+- 生成器(设计 §5.7):`proto/db/proto_option.proto` 新增 `ClientRpcKind` / `OptionClientRpcKind = 410001`;14 个 proto 文件 42 处方法标注(PUSH 35、ONE_WAY 5、SERVER_ONLY 2);新增共享层 `tools/proto_generator/protogen/internal/{client_rpc_kind.go,method_comment.go}`、Unity 生成器 `internal/generator/unity/{unity_client_rpc.go,csharp_type.go}`、模板 `internal/template/unity_client_rpc.cs.tmpl`(工作流 `wf_637722ca-207` 代理 G 写到一半撞额度中断,随快照 `c35e1133d` 入库)。Codex 在 `10fa5d939` 接通流水线 / 配置 / 两份 yaml 并跑生成,客户端仓 `4472db1d` 生成 21 个 `Net/Generated/Rpc/<Service>Rpc.cs`、`e80926a1` 删孤立 Handler 元数据。
+- 客户端引用迁移(设计 §5.6,代理 CL):15 个文件 60 处 `XxxHandler.MessageId` → `<Service>Rpc.<Method>MessageId`(表格外补 3 个文件);删旧 `Net/Generated/Handlers/`、`Handlers.meta`、`HandlerRegistry.cs(.meta)`;注释与 `tools/gen_proto.ps1` 注释。与生成产物逐个核对常量名一致。已随客户端仓快照入库。
+- R1(设计 §7):C++ gate 新增纯判定 `cpp/nodes/gate/handler/rpc/scene_client_call_reply.h`,`client_session_handler.cpp` 的 `ForwardSceneClientCallResult` 改为请求号非 0 且无 `message_content` 时回 1003;回归测试 `cpp/tests/routing_identity_test/scene_client_call_reply_test.cpp`(7 条)与 vcxproj 一行;`robot/mystery_merchant_smoke_scenario.go:81` 一行注释(已告知 robot 会话)。随 `c35e1133d` 入库。Java `game-scene` 的 `ClientRequestHandler`(`replyNotDispatched`)、`SceneWorld`(`sendToSession`)、`ClientRequestHandlerTest`、`CurrencyFeatureTest`,随 Java 快照 `0d672e3` 入库;Java 代理撞额度中断,主会话核对后确认主体与测试已完整。双回包排查结论见设计 §7 R1。
+- PARITY:Java 仓 `PARITY.md` 第 173 行登记 R1(Java 0.1.0-SNAPSHOT,`0d672e3`)。
+- 未做 / 剩余:① 删旧 `unity_client_handler.go` 与两个旧模板、`config.go` 两个旧字段;② §5.4 生成器单测;③ §5.5 robot 生成器——等 Codex 当前的生成器改动停手后由 Claude 续做。两条工作流的语义复核代理撞额度未跑:R1 由主会话自查替代,生成器复核留到剩余项完成后一起做。
+- 验证命令:设计 §9 第 1 步(含 R1 的 `SceneClientCallReplyTest.*`)、第 2 步 Unity EditMode、第 3 步生成器、第 6 步 Java(ContractSync 与 game-scene 测试)。
+- 本条目本会话改的文件:`docs/design/client-rpc-callback.md`、`docs/PROGRESS.md`(本条)、`docs/handoff/client-rpc-callback-handoff-20261019.md`(末尾续做段)、Java 仓 `PARITY.md`(第 173 行);代码文件见上,均已被用户快照提交。
+
+## 2026-10-20 数据一致性等级核对（Claude，只读审计，只改文档，未编译、未运行）
+
+- **问题**：负责人问"服务器代码里还有没有数据问题和覆盖回档问题，数据强一致做到了没有"。
+- **结论**：没有做到强一致，按目前的架构玩家数据本来也不是强一致设计。各类数据的实际等级如下。
+  - 玩家存档：单写者 + 代际围栏 + 写回。缺省无故障时不会旧盖新、不会复制，崩溃丢 ≤300s 进度。
+  - 跨服务资产：没有 2PC，是 outbox + 同行幂等账本 + 落盘证据，等级 at-least-once-idempotent。
+  - 帮会、好友、排行分数、全球评分、号段、角色名：库内 strong-atomic。
+  - 最大的结构性前提是 zone Redis 不回退：Redis 是加载真源，全仓只有路由发布用了 WAITAOF。
+- **新发现（复核后）**：
+  - 1 条 medium，缺省可达：战斗打满时限时，scene reaper 在到期当刻删锁，随后到达的合法结算被当作已作废，唯一的 pending 被删掉。
+  - 15 条 low。其中 6 条同出"Redis 回退后新 epoch 越过 SQL 行围栏 / ACK 高于 pending 永久拒登"这一根因，建议合并写设计。
+  - 1 条被推翻。
+  - 另有 6 处设计文档与代码不符。
+- **文档**：[docs/design/data-consistency-guarantee-map-20261020.md](design/data-consistency-guarantee-map-20261020.md)（新），`docs/README.md` 设计索引登记一行。
+- **范围**：与第二轮审计第三、四波（另一会话在跑）互补，不重复；Java 版未审。
+- **方法**：工作流 `wf_491f0544-5ec`，5 域梳理 + 5 名复核员，子代理约 358 万 token；中途撞 5 小时额度一次，续跑完成。
+- **文件**：`docs/design/data-consistency-guarantee-map-20261020.md`、`docs/README.md`、`docs/PROGRESS.md`（本条）。
+- **Java 版**：未核对；修复 §2.1、§2.2 时再按 AGENTS §12 只读核对是否同构。
+
+## 2026-10-20 Codex：robot CallSyncThen 编译、静态检查与 race 验证通过
+
+- **范围**：验证 `c35e1133d` 中 `robot/pkg/client.go` 的 `CallSyncThen` 与三条 `TestCallSyncThen*`；没有修改 robot 源码。此前 vendor 清单不一致导致首轮 build 失败；用户授权继续后，清单稳定，本轮三个门禁完成。
+- **Windows / Go 1.27.2**：在 `robot/` 下依次执行 `go build -mod=vendor ./...`、`go vet -mod=vendor ./...`，退出码均为 0；补跑 `go test -mod=vendor -count=1 -v ./pkg/...`，26 个顶层用例全部 PASS（包耗时 4.096s）。
+- **Linux / amd64 race**：Windows 无兼容的 C 编译器，经用户明确授权，在现有 Go 1.27.2 Alpine 临时容器中安装 gcc 15.2.0 与 musl-dev；仓库只读挂载，`CGO_ENABLED=1`、`GOTOOLCHAIN=local`、`GOPROXY=off`。执行 `go test -mod=vendor -race -count=1 -v ./pkg/...`，退出码 0，26 个顶层用例全部 PASS（包耗时 1.173s），0 FAIL、0 SKIP、无 DATA RACE。三条 `TestCallSyncThen*` 与 `TestCallDoneExactlyOnceUnderConcurrentOutcomes` 均通过。Windows 原生 race 未执行。
+- **收尾**：临时容器已自动删除；`vendor/modules.txt`、`go.mod`、`pkg/client.go`、`pkg/client_test.go` 验证前后 SHA256 相同。完整日志保存在本机临时目录 `C:/Users/luyua/AppData/Local/Temp/codex-robot-callsyncthen-continue-20261020-032508/`。
+- **剩余范围与 Java 状态**：本条只完成上述验证；生成器、客户端引用迁移与 robot 后续场景迁移仍由用户指定的另两个窗口继续，本条没有功能整体完成结论。Java Empty 应答回包仍按用户交接记为待做；本轮未运行 Java 构建、Unity 测试或真实环境冒烟。

@@ -1,4 +1,4 @@
-# Prometheus alert rules for D1 玩家归属与落点映射持久化(data_service 对账 leader、就绪标记与三个读方门禁)。
+# Prometheus alert rules for D1 玩家归属与落点映射持久化(data_service 对账 leader、就绪标记、三个读方门禁与 W1 建角登记 / 发布)。
 #
 # 来源:docs/handoff/launch-readiness-20261013/spec_D1_batch1b2_2_3.md §7 第 2 条、§13.1 第 6 / 8 / 9 条、§13.4 第 2 条
 #       (第 1b-3 批;设计结论并入 docs/design/player-route-mapping-durability-proposal.md §13 之前以该规格为准)。
@@ -12,6 +12,8 @@
 #                                                  leader 观测型 gauge:**只有现任 leader 导出**,掉主时删掉序列
 #       data_service_route_reconcile_tick_total{result} / _event_total{event} / _push_total{phase,result} / _mirror_total{result}
 #                                                  计数器,event / result 的全部取值启动时以 0 预置(increase 抓得到第一次)
+#   - W1 写入(第 1a 批,只在 RouteStore.Mode=db_first 时有数,PrimeRoute 以 0 预置全部取值):
+#       data_service_route_register_total{outcome}(每次 db_first 建角登记恰好计一次)、data_service_route_publish_total{result}(每次发布的最终结果)
 #   - 读方(第 3 批,开关缺省 false,只有打开后才有序列):
 #       go/db:db_route_ready_gate(进程级就绪闸 0/1)、db_route_ready_verdict_total{verdict}、db_placement_guard_total{op,outcome="route_not_ready"}
 #       data_service:data_service_route_read_total{path,result}、data_service_route_ready_verdict_total{verdict}
@@ -37,7 +39,10 @@
 #   - Arm 是**全服单值**(规格 §13.1 第 6 条):tools/scripts/k8s_deploy.ps1 的 -RouteReconcileArm 对每个 zone 渲染同一值,
 #     粘滞核对读全部 zone 的线上 ConfigMap;滚动切换的窗口里会短暂出现两种取值,超过 15 分钟由 ArmMixed 报。
 #   - 只进看板、不设告警:tick_total(按 result 看每拍结论)、mirror_total、event 里的 marker_armed / marker_dropped_identity /
-#     marker_dropped_malformed / marker_dropped_disarmed / task_started / task_completed / task_aborted、selfcheck 的分布。
+#     marker_dropped_eviction / marker_dropped_malformed / marker_dropped_disarmed / task_started / task_completed / task_aborted、
+#     selfcheck 的分布;route_register_total 除 store_error / precheck_error 以外的 outcome(含合服期间属预期的 fenced / precheck_fenced、
+#     业务冲突 conflict / precheck_conflict)、route_publish_total 除 not_durable / error 以外的 result(fenced 合服期间属预期;
+#     conflict / legacy_conflict 是否单独告警待负责人定,leader 推送侧的同类冲突由 DataServiceRoutePushConflicts 报)。
 #     marker_dropped_disarmed 是回退第 2 步(Arm=false)的确认信号(规格 §13.5 第 1 条),回退时去看板核对它,不靠告警。
 #   - 全量预热(rewarm 之后、空实例重启之后)在 S3 规模下要数小时(规格 §12 第 3 条):这期间 ReadyMissing 与 CacheVerifyStale 会响,
 #     是预期内的;读方开关打开的服务在这期间 fail-closed(go/db 暂停存盘消费,lag 由既有告警覆盖)。
@@ -287,6 +292,31 @@ spec:
               过去 5 分钟 {{ $value | printf "%.0f" }} 次。这时缓存不可信(就绪标记不在 / 身份不符)、全局库也不可用,
               登录选区 / 内部路由会拿到 Unavailable。先看全局库(MySQL 连接数、锁等待),再看为什么缓存不可信(DataServiceRouteReadyMissing)。
 
+        # data_service 读方持续判 mapping Redis 副本不可信,每次 R2(home_fence,含写门禁里的两次)/ R3(batch)/ R6(home)都回源全局库。
+        # 回源结果是对的,所以上一条 ReadSQLErrors 不响;leader 所在副本看到的是 trusted,ReadyMissing 也不响 —— 典型是部分副本的
+        # MappingRedis 指到了另一个实例或副本(迁移 mapping 实例、ConfigMap 漂移),或 ACL 让脚本里的 INFO 报错。这些副本的归属读会
+        # 静默压到 route store 的独立连接池上,直到库扛不住才以 sql_error 暴露。规格 §8 P5 把 verdict!="trusted" 稳定为 0 当作人工门禁,
+        # 本条是它的运行期版本(guild 有 GuildRouteNotReady,go/db 有 GoDbRouteGateClosed)。
+        # 只在 RouteStore.ReadRequiresReady=true 之后有序列(PrimeRouteRead 以 0 预置 8 个 verdict),开关关着时不会误报。
+        # 阈值没有实测基线(任何非 trusted 持续 10 分钟即报),P5 之后按压测回头校准。
+        - alert: DataServiceRouteReadNotTrusted
+          expr: |
+            sum by (namespace, verdict) (rate(data_service_route_ready_verdict_total{verdict!="trusted"}[5m])) > 0
+          for: 10m
+          labels:
+            severity: warning
+          annotations:
+            summary: "{{ $labels.namespace }} 的 data_service 读方持续判 mapping Redis 不可信({{ $labels.verdict }}),归属读在回源全局库"
+            description: >-
+              每秒约 {{ $value | printf "%.2f" }} 次就绪读判成 {{ $labels.verdict }},这些读全部回源全局库 player_route(结果正确,RPC 不报错)。
+              rewarm 之后、mapping Redis 空实例重启之后的全量预热期间响属预期:对照 DataServiceRouteReadyMissing 是否同时在响、
+              data_service_route_reconcile_event_total{event="task_started"} 是否在走。不在预热时去掉聚合按 pod 看是哪几个副本,再按 verdict 查:
+              identity_mismatch / not_master = 这些副本 ConfigMap 里的 MappingRedis 指向的实例或角色与 leader 挂标记的不是同一个
+              (迁移过 mapping 实例、各 zone 的 go-svc-data-service-config 漂移、哨兵切主后连到了副本);
+              script_error = 读脚本执行失败(ACL 不放行 EVALSHA / INFO、超时、连不上),看 data_service 日志 `[RouteRead]` 行。
+              回源量大时同时看全局库连接数(route store 的独立池)与 DataServiceRouteReadSQLErrors。不需要关 RouteStore.ReadRequiresReady:
+              回源本身就是不可信时的正确行为。
+
         # guild 的合服闸门读到不可信的副本:经闸门的公会写按封锁拒绝(kGuildZoneMerging)。
         - alert: GuildRouteNotReady
           expr: |
@@ -307,3 +337,47 @@ spec:
               只有确认映射数据完整(例如 newer_version 这类混跑原因,或 script_error 只出在 guild 这一侧)且经负责人确认时,才按
               runbook §9.4「rewarm」一节写的回退顺序(先读方、后写方)关掉它:k8s_deploy.ps1 不带 -GuildRequireRouteReady 重跑 infra-up
               (粘滞核对要加 -ConfirmRouteSwitchChange)并滚动 guild。
+
+    # W1 写入:db_first 下建角登记(RegisterPlayerZone)先在全局库 player_route 提交,再发布到 mapping Redis(set-if-newer + WAITAOF)。
+    # 来源:docs/design/player-route-mapping-durability-proposal.md §4 / §11.2(P2 门禁量的「发布未确认率」= not_durable + error)。
+    # 两个计数器只在 RouteStore.Mode=db_first 时有数,PrimeRoute 启动时以 0 预置全部取值,increase 抓得到第一次;redis 模式没有序列,不会误报。
+    # 按 namespace 聚合(每个 zone 的 data_service 各自登记本 zone 的新角色)。阈值没有实测基线(任何一次持续即报),
+    # P2 的建角压测出对比表之后回头校准。
+    - name: data-service.route-writes
+      interval: 30s
+      rules:
+        # 库行已提交、发布没确认:not_durable = WAITAOF 在 RouteStore.WaitAOFTimeoutMs 预算内没拿到足够确认(appendfsync everysec 下
+        # 本地确认最长约 1s);error = 发布脚本或 WAITAOF 回复确定性出错(不重试)。每一次都在库里留下一行已提交、缓存没确认的映射,
+        # 由对账 leader 的增量推送补齐;玩家侧不报错(建角已提交)。fenced(合服围栏)与 superseded 属预期,不进本条。
+        - alert: DataServiceRoutePublishUnconfirmed
+          expr: |
+            sum by (namespace, result) (rate(data_service_route_publish_total{result=~"not_durable|error"}[5m])) > 0
+          for: 10m
+          labels:
+            severity: warning
+          annotations:
+            summary: "{{ $labels.namespace }} 的 data_service 映射发布持续未确认({{ $labels.result }})"
+            description: >-
+              每秒约 {{ $value | printf "%.2f" }} 次 W1 发布以 {{ $labels.result }} 结束:player_route 的行已提交,mapping Redis 那一份没确认
+              (not_durable 时值多半已写入、只是没拿到落盘确认)。这些行由现任对账 leader 的增量推送补齐,同时看 DataServiceRouteNoLeader /
+              DataServiceRouteCacheVerifyStale 是否在响(没有 leader 或增量停了时补不上)。not_durable 持续:查 mapping Redis 的 AOF / fsync
+              (INFO persistence、磁盘延迟)、redis-ha 下副本是否在线,以及 RouteStore.WaitAOFTimeoutMs 预算;error:看 data_service 日志
+              `[RegisterPlayerZone][db_first]` 的 ERROR 行。不要靠把 WaitAOFNumLocal / WaitAOFNumReplicas 写 0 止血,除非负责人同意。
+
+        # db_first 建角登记失败,建角 fail-closed(login 回错误,玩家重试):store_error = 全局库 player_route 的提交失败,或映射写者被
+        # 冻结(route_meta.writable=0 时 W1 同样计 store_error,冻结本身由 DataServiceRouteWritesFrozen critical 报);
+        # precheck_error = mapping Redis 预检本身出错(合服围栏 EXISTS / 三键 MGET 失败、缓存里的 zone 解析不了)。
+        - alert: DataServiceRouteRegisterFailures
+          expr: |
+            sum by (namespace, outcome) (increase(data_service_route_register_total{outcome=~"store_error|precheck_error"}[5m])) > 0
+          for: 5m
+          labels:
+            severity: critical
+          annotations:
+            summary: "{{ $labels.namespace }} 的 db_first 建角登记持续失败({{ $labels.outcome }})"
+            description: >-
+              过去 5 分钟约 {{ $value | printf "%.0f" }} 次 RegisterPlayerZone 以 {{ $labels.outcome }} 失败,对应的建角都被拒绝。
+              store_error:先看 DataServiceRouteWritesFrozen 是否同时在响(冻结按 runbook §9.4 处理,不要直接 unfreeze);否则查全局库
+              (MySQL 连接数、锁等待、route store 的独立连接池 RouteStore.MaxOpenConn)。precheck_error:查 mapping Redis 的可用性与连接数
+              (INFO stats 的 rejected_connections),以及有没有被写坏的 player:zone 值。逐条明细在 data_service 日志
+              `[RegisterPlayerZone][db_first]` 的 ERROR 行。

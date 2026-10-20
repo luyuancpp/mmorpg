@@ -53,3 +53,11 @@
 
 - 只读摸底 `wf_fcd259cb-0bb`(5 个代理:服务端回显审计、Unity、robot、生成器、Java),结论见设计附录 A。
 - 语义复核 `wf_447ef09d-9bf`(3 维度查找 + 每条 2 个对抗复核,5 条发现全部成立,大厅维度无发现),结论见设计 §10。
+
+## 7. 2026-10-20 续做状态(接手会话「Client RPC callback handoff」,Claude)
+
+- 本文 §3 第 2 步(生成器)与第 4 步(R1)、§4 的三项拍板都已推进。实施记录以设计文档为准:生成器见 [§5.7](../design/client-rpc-callback.md),R1 / R6 见 §7,PARITY 见 §8,验证命令见 §9(第 1 步补了 R1 测试,第 6 步是 Java)。
+- 拍板结果:R6 先不改(Java `PARITY.md` 第 172 行「Java 待做」);R1 两版一起改,已落码(Java `PARITY.md` 第 173 行);生成器源码由 Claude 写,跑生成、编译、冒烟交给 Codex;Java PARITY 写入已获同意。
+- 第 3 步(robot 剩余迁移)归会话「Robot handoff documentation」:A / B 类已迁,C 类因额度暂缓。方案见 [robot 交接](client-rpc-callback-robot-handoff-20261019.md) §8,接手 robot 的会话以那份为准。
+- 生成器还剩三项:删旧 Unity handler 生成器与旧配置字段、§5.4 单测、§5.5 robot 生成器。10-20 凌晨 Codex 正在改生成器(已提交 `10fa5d939`),续做前先 `git status tools/proto_generator`,确认没有别人在改。
+- 全部改动都已被用户快照提交(本仓 `c35e1133d` / `10fa5d939`,客户端仓 `4472db1d` 等,Java `0d672e3`),仍然没有 Claude 侧的编译或测试证据。

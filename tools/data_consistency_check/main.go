@@ -434,10 +434,12 @@ func checkPlayerHomeZoneVsAccount(ctx context.Context, cfg runConfig) CheckResul
 	// own player_ids — a known scenario after admin tooling crashes.
 	//
 	// 玩家数按 cfg.routes 数:db 口径是 player_route 里 home_zone 非 NULL 的行,redis 口径是 player:zone:* 键数。
+	// 读失败判 fail(进程退出 1):2026-10-20 之前报 warn,其余检查都干净时打印 "all checks pass." 并退出 0,
+	// 把「没数成」伪装成通过,与 CheckResult 的 fail 纪律、route_source.go「读失败一律报错」不符。
 	mappingCount, err := cfg.routes.CountPlayers(ctx)
 	if err != nil {
-		r.Severity = "warn"
-		r.SampleNotes = fmt.Sprintf("mapping scan failed: %v", err)
+		r.Severity = "fail"
+		r.SampleNotes = fmt.Sprintf("CHECK FAILED (player count unknown): %v", err)
 		return r
 	}
 	r.TotalCount = mappingCount
@@ -502,7 +504,8 @@ func checkFriendOrphans(ctx context.Context, cfg runConfig) CheckResult {
 	for rows.Next() {
 		var pid, fid uint64
 		if err := rows.Scan(&pid, &fid); err != nil {
-			continue
+			// 2026-10-20 之前 continue:扫描失败的行既不算样本也不算孤儿,样本静默变少、结论看似完整。
+			return friendCheckFailed(r, fmt.Sprintf("scan sample row after %d sampled: %v", sampled, err))
 		}
 		// 查不到归属 ≠ 没有归属:读失败时整条检查判 fail,已数的孤儿作废(2026-10-18 之前 Exists(...).Val() 吞掉错误,
 		// Redis 一抖就把好友整批算成孤儿)。

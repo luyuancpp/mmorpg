@@ -66,16 +66,17 @@ func (g *countingConsumerGroup) Consume(ctx context.Context, topics []string, ha
 	return g.fakeConsumerGroup.Consume(ctx, topics, handler)
 }
 
-// gateClosingEnqueue 扣下请求(holdingEnqueue)的同一刻关闸(代替一次刷新)。persistPoisonMessage 在 claim 的 goroutine 里
+// gateClosingEnqueue 先关闸(代替一次刷新)、再扣下请求(holdingEnqueue)。persistPoisonMessage 在 claim 的 goroutine 里
 // 同步调 submit,所以 claim 回到主循环顶部时闸一定已经关了:之后到达的确认结果,落在 claim 停在闸前的时候。
+// 先关闸后记请求:用例看到请求时闸一定已经关了(反过来的顺序,用例可能在两步之间读到闸还开着)。
 type gateClosingEnqueue struct {
 	*holdingEnqueue
 	closeGate func()
 }
 
 func (e gateClosingEnqueue) submit(ctx context.Context, target, queueKey string, payload []byte, done func(error)) {
-	e.holdingEnqueue.submit(ctx, target, queueKey, payload, done)
 	e.closeGate()
+	e.holdingEnqueue.submit(ctx, target, queueKey, payload, done)
 }
 
 var _ durableEnqueue = gateClosingEnqueue{}
@@ -114,7 +115,8 @@ func TestStop_RouteReadyGateClosedClaimParkedReturnsPromptly(t *testing.T) {
 
 // 开关打开、闸关着,本实例没分到分区(副本数多于分区数的热备成员),只有重试循环在跑:每一拍都停在闸前,收据留在 ready
 // (不认领、不进死信);Stop 很快返回,重试协程随撤拉取退出,第④步的 wg.Wait 不被卡住。
-// 红证据:删掉 consumeRetryQueue 里的 retryClaimsPaused 判断,畸形收据会被认领进死信,ready 断言与等待计数都失败。
+// 红证据:删掉 consumeRetryQueue 里的 retryClaimsPaused 判断,等待计数不再增长,本用例在「the retry loop must pause on the
+// closed gate on every tick」处失败(Condition never satisfied)。
 func TestStop_RouteReadyGateClosedRetryLoopPausedReturnsPromptly(t *testing.T) {
 	c, group, rc := newStopTestConsumer(t)
 	group.noClaims = true

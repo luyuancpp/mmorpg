@@ -182,7 +182,12 @@ GuildCheckBudgetSeconds: 120
 #   MySQL 档 16(本文件);TiDB 档 64(docs/design/capacity-model-hok-scale.md §4.1 的连带修正)。只改配置,
 #   任何时候都可以改,各副本取值也可以不同 —— 围栏持有者总是锁满 0..63 全部分片行(placement.MaxRouteFenceShards)。
 #   代码默认值是 8(不写这个键时)。K8s 上 k8s_deploy.ps1 按全局库档位把本键渲染进 data-service ConfigMap(MySQL 档取本文件
-#   的值,越界在 apply 之前失败;TiDB 档 64 待 TiDB Phase 1 定部署方式后补);Mode 取 -RouteStoreMode,不镜像本文件。
+#   的值,越界在 apply 之前失败;TiDB 档 64 待 TiDB Phase 1 定部署方式后补);Mode / ReadRequiresReady / Reconcile.ArmReadyMarker
+#   取 -RouteStoreMode / -RouteReadRequiresReady / -RouteReconcileArm,不镜像本文件;MaxOpenConn / MaxIdleConn / WaitAOFTimeoutMs
+#   取本文件,这里改了下次部署就生效。
+# PublishRedisPoolSize(2026-10-20):db_first 下 W1 发布 + WAITAOF 专用 go-redis 客户端的池上限(连 MappingRedis 同一个实例,
+#   与读路径的 go-zero 客户端分池、不经熔断器);缺省 20 的论证见 internal/config DefaultRouteStorePublishRedisPoolSize。
+#   redis 模式不建、不开连接;db_first 下每个副本最多多占 mapping Redis 这么多条连接(进共享 Redis 连接总账)。
 RouteStore:
   Mode: redis
   FenceShards: 16
@@ -192,6 +197,7 @@ RouteStore:
   WaitAOFNumLocal: 1        # 本机 compose redis 开着 --appendonly yes(deploy/docker-compose.yml)
   WaitAOFNumReplicas: 0
   WaitAOFTimeoutMs: 1500
+  PublishRedisPoolSize: 20
   # 第 3 批读方门禁(docs/handoff/launch-readiness-20261013/spec_D1_batch1b2_2_3.md §5.2):true 时归属查询只在就绪标记
   # 绑定本实例身份时信任缓存,否则回源全局库 player_route(库故障回 Unavailable,绝不 NotFound)。只许 db_first(否则拒启)。
   # 打开是 P5 的显式运维动作(对账 leader 已挂标记之后,规格 §8);回退时先把它改回 false,再关 ArmReadyMarker、再切回 redis。
@@ -206,7 +212,9 @@ RouteStore:
   #   - 在线清库(tools/scripts/currency_crash_window.ps1、stress_round19.ps1)之前,db_first 下**必须先停 data_service**:
   #     那两个脚本先 FLUSHALL 再清表、复位 route_reconcile,运行中的 leader 会把将被清掉的行推回刚清空的 Redis,
   #     或把水位复位误判成回档而冻结建角。
-  #   - Enabled: false 是急停(不再补发孤儿行、不再检测回档);RedisPoolSize 是 leader 独立 go-redis 池的上限(进 Redis 连接总账)。
+  #   - Enabled: false 是急停(本副本不构造 leader:不再补发孤儿行、不再检测回档,也**不撤**现存就绪标记)。读方开着时不许急停:
+  #     ReadRequiresReady=true 配 Enabled=false 拒启;顺序是先关全部读方开关(同上三个)→ ArmReadyMarker=false 并看到
+  #     marker_dropped_disarmed → 最后才 Enabled=false。RedisPoolSize 是 leader 独立 go-redis 池的上限(进 Redis 连接总账)。
   Reconcile:
     Enabled: true
     ArmReadyMarker: false

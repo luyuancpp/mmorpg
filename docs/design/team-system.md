@@ -2334,7 +2334,7 @@ cd robot && .\robot.exe -c etc\team_smoke.yaml          # 形态一:expect_cross
    `cpp/libs/services/scene/scene.vcxproj` → `cpp/nodes/scene/scene.vcxproj` → `cpp/tests/aoi_test/aoi_test.vcxproj`。
    本轮没有改 proto / 生成物,前面的 proto / table / rpc / grpc_client 工程按平时的增量即可。
    通过标准:三个工程 0 error。重点看:
-   - `movement.cpp` 新增的 include(`network/player_message_utils.h`、`rpc/service_metadata/player_movement_service_metadata.h`、`modules/scene/comp/scene_comp.h`、`spatial/comp/scene_node_scene_comp.h`、`spatial/system/aoi.h`、`time/system/time.h`、`proto/common/component/player_network_comp.pb.h`)在 `libs/services/scene` 工程的包含目录下是否都解析得到;
+   - `movement.cpp` 新增的 include(`network/client_message_sender.h`、`rpc/service_metadata/player_movement_service_metadata.h`、`modules/scene/comp/scene_comp.h`、`spatial/comp/scene_node_scene_comp.h`、`spatial/system/aoi.h`、`time/system/time.h`、`proto/common/component/player_network_comp.pb.h`)在 `libs/services/scene` 工程的包含目录下是否都解析得到;
    - `emplace_or_replace<TeleportSettleComp>(entity)`(无参、聚合体带默认成员初值)在本仓库的 entt 版本下是否能编;不能的话改成 `emplace_or_replace<TeleportSettleComp>(entity, TeleportSettleComp{})`;
    - 其它链接 `scene.lib` 并拉进 `player_team.obj` 的测试工程(`cross_zone_test`、`bag_test`、`currency_test`)是否因 `player_team.obj → movement.obj → aoi.obj` 多出未解析符号(预期不会:它们链接的库集合相同)。
 2. **单测**:`pwsh tools/scripts/run_cpp_tests.ps1 -Build -Filter aoi_test`(不带 `-Build` 只会跑旧的 exe)。

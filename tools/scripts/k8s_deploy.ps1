@@ -223,6 +223,22 @@ param(
 	# 用字符串而不是 [bool]/[switch]:值原样写进 env,两边字面值一致,kubectl 里看到的就是传进来的。
 	[ValidateSet("0", "1")]
 	[string]$GateRouterMode = "1",
+	# B0-4 运维豁免开关:写进本次部署全部 C++ 工作负载的环境变量 NODE_OPEN_FILE_LIMIT_MODE
+	# (cpp/libs/engine/core/node/system/node/open_file_limit.h 的 kModeEnv / ParseMode;负责人 2026-10-17 拍板:缺省拒启 + 显式豁免)。
+	#   留空(缺省)= 不写这个变量,生成物与引入开关之前逐字相同,进程按 enforce:软限抬到硬限后仍低于需求
+	#               (gate GateMaxConnections + 4096、battle BattleMaxConnections + 4096、scene 4096)就拒启,Pod 进 CrashLoop;
+	#               -WaitReady 失败时会把容器日志里的 "FATAL open file limit" 行捞出来打印(Write-CppOpenFileLimitRefusals)。
+	#   warn  = 不够也继续启动、只打 WARN。代价:客户端连接可能先占满 fd 表,之后节点间 / Redis / Kafka / etcd 重连与日志滚动都会 EMFILE,
+	#           节点可能被 etcd 摘除或崩溃,只作「硬限暂时改不了、必须先起服」的短时应急。gate / battle 的应急首选是把准入上限调到
+	#           ≤ 软限 − 4096(检查直接通过,不需要豁免),见 docs/ops/gate-kernel-tuning-runbook.md §3.1。
+	#   enforce 显式传也照写进 env,kubectl get 一眼看出取值。
+	# 覆盖范围:zone-up 的 gate(Deployment / external StatefulSet)与 scene(Deployment / Agones Fleet),infra-up 的 battle
+	# (Deployment / hostPort Deployment / Agones Fleet)。只开 zone-up 不影响 battle,反之亦然。与 *_RUN_MODE、GM 开关无关。
+	# external gate 是 OnDelete:模板改了不重建 Pod,要按 k8s_gate_drain.ps1 逐台排空删 Pod 才生效。
+	# 不粘滞(同 -GateRouterMode):脚本不从集群读回旧值,以 warn 运行的环境下一次部署不传就落回 enforce,硬限仍不够会再次拒启。
+	# 区分大小写:C++ 只认小写,其余值按 enforce 处理;ValidateSet 缺省不分大小写,所以 IgnoreCase = $false,大写或拼错在入口就拒。
+	[ValidateSet("enforce", "warn", IgnoreCase = $false)]
+	[string]$NodeOpenFileLimitMode = "",
 	# go/db 存盘消费组的渲染模式(docs/design/db-consumer-group-per-zone.md §2 / §4;决策表见 Resolve-DbConsumerGroupPlan):
 	#   keep(缺省)  按线上 go-svc-db-config 现状渲染:最终形状原样保留;未收尾的交接形状在对方组已没有位点时自动收尾成最终形状
 	#                (去掉 GroupHandoffFrom,db 滚动一次);全新 namespace(读不到 ConfigMap)按 Kafka 位点只渲染最终形状。
@@ -652,6 +668,10 @@ $script:LoginQueueOn = Resolve-LoginQueueSwitch -Value $LoginQueue -ReleaseProfi
 # -GrpcServerMaxPollers 已退役(见参数处注释):只提示,不 throw —— 旧命令带着它照常部署,生成物里不再有该环境变量。
 if ($GrpcServerMaxPollers -gt 0) {
 	Write-Warning "-GrpcServerMaxPollers is retired (the C++ gRPC server has no poller threads since batch 4, see docs/design/grpc-muduo-transport.md section 15.11); ignoring value=$GrpcServerMaxPollers. GRPC_SERVER_MAX_POLLERS is no longer injected."
+}
+# B0-4 豁免开关(见参数处注释):warn 只用于短时应急,每次部署都打一行,免得被当成常态配置。
+if ($NodeOpenFileLimitMode -ceq 'warn') {
+	Write-Warning "-NodeOpenFileLimitMode warn: C++ workloads rendered by this run get NODE_OPEN_FILE_LIMIT_MODE=warn and start even when the nofile hard limit is below the requirement; once the fd table is full, reconnects and log rotation fail with EMFILE. Emergency use only; prefer lowering GateMaxConnections / BattleMaxConnections (docs/ops/gate-kernel-tuning-runbook.md section 3.1). Not sticky: the next deploy without it falls back to enforce."
 }
 
 . (Join-Path $ScriptDir "lib\release_common.ps1")
@@ -5458,6 +5478,21 @@ function Get-SceneAssetSecretEnvLines {
 	}
 }
 
+# B0-4 豁免开关的 env 行(-NodeOpenFileLimitMode,见参数处注释),给本脚本自己的两个 C++ 模板用(New-NodeDeploymentYaml、New-SceneFleetYaml);
+# lib 的三个生成器经 PodCommon.OpenFileLimitMode 写同一个变量(Get-ClientEntryNodeBaseEnv)。env 名取 lib 契约,两边同一份。
+# 留空返回空数组:模板与引入开关之前逐字相同。-ItemIndent = 列表项「- name:」所在缩进(Deployment 模板用制表符、Fleet 模板用空格)。
+function New-CppOpenFileLimitModeEnvLines {
+	param([Parameter(Mandatory = $true)][string]$ItemIndent)
+
+	if ([string]::IsNullOrEmpty($NodeOpenFileLimitMode)) {
+		return @()
+	}
+	return @(
+		"${ItemIndent}- name: $((Get-ClientEntryContract).NodeOpenFileLimitModeEnv)",
+		"${ItemIndent}  value: `"$NodeOpenFileLimitMode`""
+	)
+}
+
 function New-NodeDeploymentYaml {
 	param(
 		[Parameter(Mandatory = $true)][string]$NodeName,
@@ -5523,6 +5558,8 @@ function New-NodeDeploymentYaml {
 		$extraEnvLines += "`t`t`t- name: GATE_CLIENT_RPC_ROUTER"
 		$extraEnvLines += "`t`t`t  value: `"$GateRouterMode`""
 	}
+	# B0-4 豁免开关(-NodeOpenFileLimitMode):gate / scene / battle 都读,留空不写。
+	$extraEnvLines += @(New-CppOpenFileLimitModeEnvLines -ItemIndent "`t`t`t")
 	# node-logs emptyDir 会遮住镜像目录；Node 构造器立即打开 logs/cpp_nodes/<role>，先建父目录。
 	$grpcEnvBlock = $extraEnvLines -join "`n"
 	# 端口与探针按角色拼在 ports 列表之后(推导与证据见 PROGRESS「2026-09-25 C++ 节点就绪探针」)。
@@ -5604,6 +5641,12 @@ function New-NodeDeploymentYaml {
 "@
 	}
 
+	# 滚动策略显式写 maxUnavailable 0(B0-4 部署侧后续项,2026-10-20):新 Pod 就绪之前不缩旧 Pod。
+	# 不写时按 K8s 缺省 25% 向下取整:scene 缺省 4 副本会先缩掉 1 台旧 scene(该台玩家按关机流程退出),新 Pod 若因节点池
+	# nofile 硬限不够而拒启(open_file_limit.h),这份容量一直缺到回滚;写成 0 之后拒启只会让滚动停住,旧 Pod 继续服务。
+	# gate / battle 在 4 副本以下按缺省本来就是 0,行为不变。maxSurge 不写,仍取 K8s 缺省 25%(向上取整,至少 1 个新 Pod),
+	# 滚动节奏与改动前相同;两者不能同为 0(K8s 拒收)。battle 的 hostPort 形态走 lib New-BattleHostPortDeploymentYaml,
+	# 固定 maxSurge 0 / maxUnavailable 1(hostPort 独占,D86),不经过这里。
 	return @"
 apiVersion: apps/v1
 kind: Deployment
@@ -5611,6 +5654,10 @@ metadata:
   name: $NodeName
 spec:
   replicas: $Replicas
+  strategy:
+	type: RollingUpdate
+	rollingUpdate:
+	  maxUnavailable: 0
   selector:
 	matchLabels:
 	  app: $NodeName
@@ -6100,6 +6147,8 @@ function New-SceneFleetYaml {
 
 	$sceneAssetEnvLines = @(Get-SceneAssetSecretEnvLines -Indent '                ')
 	if ($script:AssetOpsOn) { $sceneAssetEnvLines += @(New-SceneAssetOpEnvLines -ItemIndent (' ' * 16) -Step '    ') }
+	# B0-4 豁免开关(-NodeOpenFileLimitMode)借用资产密钥 env 的插入点接在其后,模板 here-string 不动;留空不写,Fleet 逐字不变。
+	$sceneAssetEnvLines += @(New-CppOpenFileLimitModeEnvLines -ItemIndent (' ' * 16))
 	$sceneAssetEnvBlock = $sceneAssetEnvLines -join "`n"
 	# GRPC_SERVER_MAX_POLLERS 已退役(grpc-muduo-transport.md §15.11),Fleet 不再注入。
 
@@ -6379,7 +6428,7 @@ function New-CppPodAnnotationBlock {
 <#
 .SYNOPSIS
 	把本脚本的 C++ 节点公共参数(镜像、拉取策略、发号槽缓存、日志卷与清理循环、日志 sidecar、
-	zone Redis 口令指纹注解)打包成 lib/k8s_client_entry.ps1 生成器要的 PodCommon。与 New-NodeDeploymentYaml 同一组脚本变量,一处取值。
+	zone Redis 口令指纹注解、B0-4 豁免开关 -NodeOpenFileLimitMode)打包成 lib/k8s_client_entry.ps1 生成器要的 PodCommon。与 New-NodeDeploymentYaml 同一组脚本变量,一处取值。
 	-GrpcServerMaxPollers 已退役(grpc-muduo-transport.md §15.11),固定透传 0,库里也不再据它注入任何 env。
 	口令指纹要求 Initialize-InjectedSecrets 已经跑过(Get-CppZoneRedisPassword 对未解析 fail-closed),所以只在写路径入口之后调用:
 	Apply-Zone(New-ExternalGateManifests)与 Apply-Infra(New-BattleWorkloadManifest)。
@@ -6399,7 +6448,7 @@ function New-CppNodePodCommon {
 	}
 	return New-ClientEntryPodCommon -Image $NodeImage -ImagePullPolicy $ImagePullPolicy -SnowflakeCacheDir $SnowflakeCacheDir `
 		-LogVolumeSizeLimit $script:CppLogVolumeSizeLimit -LogPrunerCommand $script:CppLogPrunerCommand `
-		-GrpcServerMaxPollers 0 -PodAnnotations (Get-CppZoneRedisAuthAnnotations) @sidecar
+		-GrpcServerMaxPollers 0 -PodAnnotations (Get-CppZoneRedisAuthAnnotations) -OpenFileLimitMode $NodeOpenFileLimitMode @sidecar
 }
 
 <#
@@ -6508,10 +6557,86 @@ function Apply-ExternalGate {
 	Write-Host "Gate (external): StatefulSet replicas=$($Manifests.Replicas) service_type=$($plan.ServiceType) etp=$GateExternalTrafficPolicy $hostSource $portSource"
 }
 
+<#
+.SYNOPSIS
+	-WaitReady 等 C++ 工作负载(gate / scene / battle)失败后,把容器日志里的 B0-4 拒启行捞出来打印。
+
+.DESCRIPTION
+	节点池 nofile 硬限低于需求时进程缺省拒启(open_file_limit.h),Pod 进 CrashLoop;拒启原因只在**上一个**容器实例的
+	stderr 里(kubectl logs --previous),rollout status / describe 都看不到,不捞的话运维只看到「rollout 超时」。
+	- 只看本工作负载里容器未就绪的 Pod(标签 app=<名字>,容器名 = <名字>:New-NodeDeploymentYaml、New-SceneFleetYaml 与
+	  lib 三个生成器都按这个约定),已就绪的旧 Pod 不读;最多读 10 个,控制失败路径上的耗时。
+	- 每个 Pod 先读 --previous;没有上一个实例(Agones GameServer 是 restartPolicy: Never,或刚崩第一次还没重启)时读当前实例。
+	- 只读、尽力而为:kubectl 失败只告警不 throw,也不改变调用方的失败判定(调用方随后照常 throw)。DryRun 不调用集群。
+#>
+function Write-CppOpenFileLimitRefusals {
+	param(
+		[Parameter(Mandatory = $true)][string]$Namespace,
+		[Parameter(Mandatory = $true)][string]$WorkloadName
+	)
+
+	# 拒启行的固定前缀:node.cpp FatalStartupConfig("open file limit", ...) 写 stderr 的 "FATAL open file limit config: ..."。
+	# 改那边的文案要同改这里;docs/ops/gate-kernel-tuning-runbook.md §3.1 与 tools/scripts/deploy-staging.sh 按同一行 grep。
+	$marker = 'FATAL open file limit'
+	$podScanLimit = 10
+	# 拒启行是进程退出前最后几行之一(之后只有致命信号处理的输出),200 行足够,不拉整份日志。
+	$tailLines = '200'
+
+	if ($DryRun) {
+		return
+	}
+	try {
+		$baseArgs = @() + (Build-KubectlBaseArgs)
+		$getArgs = $baseArgs + @('get', 'pods', '-n', $Namespace, '-l', "app=$WorkloadName", '-o', 'json')
+		$out = & kubectl @getArgs 2>$null
+		if ($LASTEXITCODE -ne 0) {
+			Write-Warning "open file limit check skipped: kubectl get pods -l app=$WorkloadName -n $Namespace failed (exit $LASTEXITCODE)"
+			return
+		}
+		$items = @((($out | Out-String) | ConvertFrom-Json -ErrorAction Stop).items | Where-Object { $null -ne $_ })
+		# 容器状态缺席(还没调度 / 还在 Init)也算未就绪:sidecar 镜像拉不到时业务容器一次都不会启动,读日志失败即跳过。
+		$notReady = @($items | Where-Object {
+				$status = @($_.status.containerStatuses | Where-Object { $_.name -eq $WorkloadName })
+				$status.Count -eq 0 -or $status[0].ready -ne $true
+			})
+		$scanned = @($notReady | Select-Object -First $podScanLimit)
+		$hits = 0
+		foreach ($pod in $scanned) {
+			$podName = [string]$pod.metadata.name
+			$currentArgs = $baseArgs + @('logs', $podName, '-n', $Namespace, '-c', $WorkloadName, '--tail', $tailLines)
+			$previousArgs = $currentArgs + @('--previous')
+			$source = 'previous'
+			$logs = & kubectl @previousArgs 2>$null
+			if ($LASTEXITCODE -ne 0) {
+				$source = 'current'
+				$logs = & kubectl @currentArgs 2>$null
+				if ($LASTEXITCODE -ne 0) { continue }
+			}
+			foreach ($line in @($logs)) {
+				if (([string]$line).Contains($marker)) {
+					Write-Host "  [open_file_limit] pod=$podName ($source): $line"
+					$hits++
+				}
+			}
+		}
+		if ($hits -gt 0) {
+			Write-Host "  -> $WorkloadName refused to start: the nofile hard limit of this node pool is below the requirement. Lower GateMaxConnections / BattleMaxConnections, raise the container runtime LimitNOFILE, or redeploy with -NodeOpenFileLimitMode warn as a short-lived exemption (docs/ops/gate-kernel-tuning-runbook.md section 3.1)."
+		}
+		else {
+			Write-Host "  no '$marker' line in the logs of $($scanned.Count) not-ready pod(s) (app=$WorkloadName, $($notReady.Count) not ready of $($items.Count))"
+		}
+	}
+	catch {
+		Write-Warning "open file limit check failed for app=$WorkloadName -n ${Namespace}: $($_.Exception.Message)"
+	}
+}
+
 function Wait-ForDeploymentReady {
 	param(
 		[Parameter(Mandatory = $true)][string]$Namespace,
-		[Parameter(Mandatory = $true)][string]$DeploymentName
+		[Parameter(Mandatory = $true)][string]$DeploymentName,
+		# C++ 节点(gate / scene 池 / battle):失败时多捞一遍 B0-4 拒启行(Write-CppOpenFileLimitRefusals)。Go / Java 服务不传。
+		[switch]$CppNode
 	)
 
 	if ($DryRun) {
@@ -6527,6 +6652,9 @@ function Wait-ForDeploymentReady {
 	Write-Host "Deployment not ready: namespace=$Namespace deployment=$DeploymentName"
 	Invoke-Kubectl -Args @("get", "pods", "-n", $Namespace, "-o", "wide") -AllowFailure
 	Invoke-Kubectl -Args @("describe", "deployment", $DeploymentName, "-n", $Namespace) -AllowFailure
+	if ($CppNode) {
+		Write-CppOpenFileLimitRefusals -Namespace $Namespace -WorkloadName $DeploymentName
+	}
 	throw "Deployment rollout failed: namespace=$Namespace deployment=$DeploymentName"
 }
 
@@ -6605,11 +6733,18 @@ function Wait-ForZoneReady {
 	if ($ClientEntryMode -eq "external") {
 		# 不能用 Wait-ForStatefulSetReady:kubectl rollout status 对 updateStrategy: OnDelete 的 StatefulSet 直接报错。
 		# 库函数有界轮询 readyReplicas;OnDelete 下等到的是"现存 Pod 已就绪",新模板何时生效由排空脚本逐个删 Pod 决定。
-		Wait-ForGateStatefulSetReady -Namespace $Namespace -ExpectedReplicas $GateReplicas -TimeoutSeconds $WaitTimeoutSeconds `
-			-KubeContext $KubeContext -KubeConfig $KubeConfig -DryRun:$DryRun
+		# 失败时先捞 B0-4 拒启行再原样抛出(库函数不读本脚本变量,诊断留在这一侧)。
+		try {
+			Wait-ForGateStatefulSetReady -Namespace $Namespace -ExpectedReplicas $GateReplicas -TimeoutSeconds $WaitTimeoutSeconds `
+				-KubeContext $KubeContext -KubeConfig $KubeConfig -DryRun:$DryRun
+		}
+		catch {
+			Write-CppOpenFileLimitRefusals -Namespace $Namespace -WorkloadName 'gate'
+			throw
+		}
 	}
 	else {
-		Wait-ForDeploymentReady -Namespace $Namespace -DeploymentName "gate"
+		Wait-ForDeploymentReady -Namespace $Namespace -DeploymentName "gate" -CppNode
 	}
 
 	if ($SceneOrchestrator -eq "agones") {
@@ -6620,11 +6755,13 @@ function Wait-ForZoneReady {
 			Write-Host "  [agones] scene fleet '$fleetName' readiness is NOT waited on by this script."
 			Write-Host "           kubectl -n $Namespace get fleet $fleetName -o jsonpath='{.status.readyReplicas}'"
 			Write-Host "           kubectl -n $Namespace get gameservers -l app=$fleetName"
+			# 没有等待也就没有失败诊断:B0-4 拒启(nofile 硬限不够)要运维自己看。GameServer Pod 不重启,读当前实例日志。
+			Write-Host "           kubectl -n $Namespace logs -l app=$fleetName -c $fleetName --tail 200 | Select-String 'FATAL open file limit'"
 		}
 	}
 	else {
 		foreach ($sceneDeployment in $SceneDeploymentNames) {
-			Wait-ForDeploymentReady -Namespace $Namespace -DeploymentName $sceneDeployment
+			Wait-ForDeploymentReady -Namespace $Namespace -DeploymentName $sceneDeployment -CppNode
 		}
 	}
 
@@ -11600,15 +11737,23 @@ function Apply-BattlePool {
 		Invoke-KubectlWithInputFile -Args @('apply', '-n', $InfraNamespace) -InputContent $battleYaml
 		if ($WaitReady) {
 			# 下限 300s(ingress_final WP9):GameServer 从调度、端口分配到 SDK Ready,单实例最坏约 135s,另有镜像拉取与排队。
-			Wait-ForFleetReady -Namespace $InfraNamespace -FleetName 'battle' -ExpectedReplicas $BattleReplicas `
-				-TimeoutSeconds ([Math]::Max($WaitTimeoutSeconds, 300)) -KubeContext $KubeContext -KubeConfig $KubeConfig -DryRun:$DryRun
+			# 失败时先捞 B0-4 拒启行再原样抛出(GameServer Pod 没有上一个实例,诊断函数会改读当前实例)。
+			try {
+				Wait-ForFleetReady -Namespace $InfraNamespace -FleetName 'battle' -ExpectedReplicas $BattleReplicas `
+					-TimeoutSeconds ([Math]::Max($WaitTimeoutSeconds, 300)) -KubeContext $KubeContext -KubeConfig $KubeConfig -DryRun:$DryRun
+			}
+			catch {
+				Write-CppOpenFileLimitRefusals -Namespace $InfraNamespace -WorkloadName 'battle'
+				throw
+			}
 		}
 		return
 	}
 
 	Invoke-KubectlWithInputFile -Args @('apply', '-n', $InfraNamespace) -InputContent $battleYaml
 	if ($WaitReady) {
-		Wait-ForDeploymentReady -Namespace $InfraNamespace -DeploymentName 'battle'
+		# Deployment 与 hostPort Deployment 同名 battle、同标签同容器名。
+		Wait-ForDeploymentReady -Namespace $InfraNamespace -DeploymentName 'battle' -CppNode
 	}
 }
 

@@ -237,8 +237,8 @@ func TestNewRouteLeaderIDUniqueAndValid(t *testing.T) {
 	}
 }
 
-// TestRouteReconcileSQLShapes 钉住 R23–R30 的文本形状:每条 route_reconcile 写都带租约判据(fencing)、库时钟用 dbNowMsSQL、
-// R28 只从可写翻到冻结、R29 照提案 G1a 模板(片等值 + 键集,不是行比较)、只有 R26 加锁。
+// TestRouteReconcileSQLShapes 钉住 R23–R31 的文本形状:每条 route_reconcile 写都带租约判据(fencing)、库时钟用 dbNowMsSQL、
+// R28 只从可写翻到冻结、R29 照提案 G1a 模板(片等值 + 键集,不是行比较)、R31 只读 63 号片、只有 R26 加锁。
 func TestRouteReconcileSQLShapes(t *testing.T) {
 	contains := func(name, stmt string, parts ...string) {
 		t.Helper()
@@ -299,10 +299,16 @@ func TestRouteReconcileSQLShapes(t *testing.T) {
 		t.Fatalf("R30 = %q", routeDBNowSQL)
 	}
 
+	// R31(核实意见 A1-4 / LR-1):只读 63 号片(与 RD4 同一片)上有行的 zone,按 zone_id 升序,不加锁。
+	if routeListFenceZonesSQL != "SELECT zone_id FROM zone_merge_fence WHERE shard = ? ORDER BY zone_id" {
+		t.Fatalf("R31 = %q", routeListFenceZonesSQL)
+	}
+
 	ws := regexp.MustCompile(`\s+`)
 	for name, stmt := range map[string]string{
 		"R23": routeRenewLeaseSQL, "R24": routePeekLeaseSQL, "R25": routeReleaseLeaseSQL, "R26": routeLockReconcileSQL,
 		"R27": routeAdvanceReconcileSQL, "R28": routeLeaderFreezeSQL, "R29": routeScanUpdatedSinceSQL, "R30": routeDBNowSQL,
+		"R31": routeListFenceZonesSQL,
 	} {
 		norm := ws.ReplaceAllString(strings.ToUpper(stmt), " ")
 		if strings.Contains(norm, "INSERT IGNORE") || strings.Contains(norm, "REPLACE INTO") {
@@ -322,6 +328,7 @@ func TestRouteReconcileFileDoesNotWritePlayerRoute(t *testing.T) {
 	for name, stmt := range map[string]string{
 		"R23": routeRenewLeaseSQL, "R24": routePeekLeaseSQL, "R25": routeReleaseLeaseSQL, "R26": routeLockReconcileSQL,
 		"R27": routeAdvanceReconcileSQL, "R28": routeLeaderFreezeSQL, "R29": routeScanUpdatedSinceSQL, "R30": routeDBNowSQL,
+		"R31": routeListFenceZonesSQL,
 	} {
 		if write.MatchString(stmt) {
 			t.Fatalf("%s writes player_route / zone_merge_fence / zone_merged_into: %q", name, stmt)
