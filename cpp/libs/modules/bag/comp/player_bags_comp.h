@@ -109,4 +109,34 @@ struct PlayerBagsComp
         std::vector<uint32_t> capacities; // BagAllData.capacities[kBagTypeCount..],下标顺序
     };
     UnsupportedBagTypeRecords unsupportedBagTypes;
+
+    // 这名玩家名下是否已有这个实例身份:固定包、动态包,以及携带着的本版本不认识的包类型记录都算。
+    // 跨包的 guid 唯一性检查(例如资产通道入账)必须用它,不能只扫运行时包 —— 携带记录虽然本版本的玩法不碰,
+    // 存盘时仍原样写回;漏查会让同一实例在新包与旧包里各落一份,升回新版本后两份都还原(物品复制)。
+    // 携带记录按 item_uuid 或整份实例的 item_id 任一命中算存在(Unmarshal 以 instance 为准,旧档只有 item_uuid)。
+    [[nodiscard]] bool ContainsGuid(Guid guid) const
+    {
+        for (const auto &bag : bags)
+        {
+            if (bag.ContainsGuid(guid))
+            {
+                return true;
+            }
+        }
+        for (const auto &dynamicBag : dynamicBags_)
+        {
+            if (dynamicBag.second.ContainsGuid(guid))
+            {
+                return true;
+            }
+        }
+        for (const auto &entry : unsupportedBagTypes.items)
+        {
+            if (entry.item_uuid() == guid || (entry.has_instance() && entry.instance().item_id() == guid))
+            {
+                return true;
+            }
+        }
+        return false;
+    }
 };

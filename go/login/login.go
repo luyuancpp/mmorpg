@@ -8,6 +8,7 @@ import (
 	"login/internal/config"
 	loginlogic "login/internal/logic/clientplayerlogin"
 	"login/internal/logic/pkg/callerauth"
+	"login/internal/logic/pkg/dataloader"
 	"login/internal/logic/pkg/node"
 	"login/internal/rpclogging"
 	loginserver "login/internal/server/clientplayerlogin"
@@ -410,6 +411,7 @@ func startServer(watchCtx context.Context, cfg config.Config, ctx *svc.ServiceCo
 	// 全局开关,在那之前写的样本会被直接丢弃(理由与告警口径见 PrimeCreatePlayerMetrics)。
 	loginlogic.PrimeCreatePlayerMetrics()
 	loginlogic.PrimeEnterGameMetrics()
+	dataloader.PrimePersistSchemaRegressionMetrics()
 
 	// 拦截器顺序有讲究(go-zero 把它们交给 grpc.ChainUnaryInterceptor,
 	// **排在前面的在外层、先执行**;注意 recover/timeout/stat 等 go-zero

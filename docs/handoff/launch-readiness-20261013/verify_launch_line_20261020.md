@@ -2,6 +2,12 @@
 
 > **用途**:交接 [handoff-launch-line-remaining-20261019.md](../handoff-launch-line-remaining-20261019.md) §3 第 1 项。本单**取代**各规格文末的 `verify_commands`,以及 PROGRESS 各条目里给 Codex 的命令;两边冲突时以本单为准。
 > **状态**:未执行。Claude 只读核对了 HEAD `c63b22dca` 加 2026-10-20 的工作区,没有跑任何编译、测试或生成(AGENTS §10.1)。
+>
+> 核对之后,用户提交了 `c35e1133d`,又合并成 `9a9390035`。这两次提交里涉及本线文件的只有两类,都是把核对时已在工作区的内容入库,不是新改动:
+> - `redis_client.h`、`currency_test.cpp`:他人的改动;
+> - `load_refresh.go`、`load_reporter.go`:EnterScene 陈旧位置会话的改动。
+>
+> 两个存盘脚本常量与本线用例都没变。
 > **覆盖范围**:B0-2、B0-5、B0-4、B0-3 两批、B0-1,外加 S5a 投递账本的 C++ 用例(交接 §3 第 6 项最后一条)。**D1 1b-1 不在本单里**:D1 的文件现归落点线,验证单由 [placement-line-handoff-20261019.md](../placement-line-handoff-20261019.md) §4 第 2 步重写。
 
 ## 0. 为什么重写
@@ -116,7 +122,11 @@
 - `cpp/tests/client_endpoint_test/open_file_limit_test.cpp` 及其 vcxproj 登记。
 
 1. **哈希核对**:`Get-FileHash` 这四个文件:`open_file_limit.h`、`node.cpp`、`open_file_limit_test.cpp`、`client_endpoint_test.vcxproj`。
-   - 期望依次为 `31BE1A48…5A981`、`2486EE28…B1683`、`495A77A2…D4789`、`CAF7F5B8…CEB74`(全长见核查记录)。
+   - 期望依次为(2026-10-20 实测,与 10-18 Codex 证据相同):
+     - `31BE1A484834E2E80A257E8C84735C1BA0CE147F7CBD53BA3D55A3B4ACD5A981`
+     - `2486EE2842D699F932545E57FBAC29445C0B461E6FEC25717A3559737CCB1683`
+     - `495A77A283AC5C4595315A0D60C618311D60724C429F9FAB160066265A2D4789`
+     - `CAF7F5B83BD346F661E9C50BA012E9CDEF358122720EE91F8F5217156B1CEB74`
    - 相同,说明 10-18 的 Windows 证据对应当前字节;不同就以新跑结果为准。
 2. **整解 Build**(与总顺序第 4 步是同一次,不另起 MSBuild):
    - 命令:`msbuild game.sln /t:Build /m:1 /nr:false /p:Configuration=Debug /p:Platform=x64 /p:CL_MPCount=1`。

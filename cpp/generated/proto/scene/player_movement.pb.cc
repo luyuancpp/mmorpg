@@ -1741,17 +1741,19 @@ const char descriptor_table_protodef_proto_2fscene_2fplayer_5fmovement_2eproto[]
     "\r\"0\n\020ActorMoveListS2C\022\034\n\005moves\030\001 \003(\0132\r.A"
     "ctorMoveS2C\"_\n\013TeleportS2C\022\016\n\006entity\030\001 \001"
     "(\004\022\035\n\ttransform\030\002 \001(\0132\n.Transform\022\021\n\tinp"
-    "ut_seq\030\003 \001(\r\022\016\n\006reason\030\004 \001(\r2\376\002\n\031SceneMo"
-    "vementClientPlayer\022\"\n\tMoveStart\022\r.MoveSt"
-    "artC2S\032\006.Empty\022 \n\010MoveStop\022\014.MoveStopC2S"
-    "\032\006.Empty\022 \n\010MoveSync\022\014.MoveSyncC2S\032\006.Emp"
-    "ty\022C\n\017TeleportRequest\022\023.TeleportRequestC"
-    "2S\032\033.TeleportRequestC2SResponse\022$\n\rNotif"
-    "yMoveAck\022\013.MoveAckS2C\032\006.Empty\022(\n\017NotifyA"
-    "ctorMove\022\r.ActorMoveS2C\032\006.Empty\0220\n\023Notif"
-    "yActorMoveList\022\021.ActorMoveListS2C\032\006.Empt"
-    "y\022&\n\016NotifyTeleport\022\014.TeleportS2C\032\006.Empt"
-    "y\032\n\200\250\303\001\001\210\250\303\001\001B\016Z\005scene\200\001\001\230\324a\003b\006proto3"
+    "ut_seq\030\003 \001(\r\022\016\n\006reason\030\004 \001(\r2\257\003\n\031SceneMo"
+    "vementClientPlayer\022)\n\tMoveStart\022\r.MoveSt"
+    "artC2S\032\006.Empty\"\005\210\231\310\001\001\022\'\n\010MoveStop\022\014.Move"
+    "StopC2S\032\006.Empty\"\005\210\231\310\001\001\022\'\n\010MoveSync\022\014.Mov"
+    "eSyncC2S\032\006.Empty\"\005\210\231\310\001\001\022C\n\017TeleportReque"
+    "st\022\023.TeleportRequestC2S\032\033.TeleportReques"
+    "tC2SResponse\022+\n\rNotifyMoveAck\022\013.MoveAckS"
+    "2C\032\006.Empty\"\005\210\231\310\001\002\022/\n\017NotifyActorMove\022\r.A"
+    "ctorMoveS2C\032\006.Empty\"\005\210\231\310\001\002\0227\n\023NotifyActo"
+    "rMoveList\022\021.ActorMoveListS2C\032\006.Empty\"\005\210\231"
+    "\310\001\002\022-\n\016NotifyTeleport\022\014.TeleportS2C\032\006.Em"
+    "pty\"\005\210\231\310\001\002\032\n\200\250\303\001\001\210\250\303\001\001B\016Z\005scene\200\001\001\230\324a\003b\006"
+    "proto3"
 };
 static const ::_pbi::DescriptorTable* PROTOBUF_NONNULL const
     descriptor_table_proto_2fscene_2fplayer_5fmovement_2eproto_deps[4] = {
@@ -1764,7 +1766,7 @@ static ::absl::once_flag descriptor_table_proto_2fscene_2fplayer_5fmovement_2epr
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fscene_2fplayer_5fmovement_2eproto = {
     false,
     false,
-    1597,
+    1646,
     descriptor_table_protodef_proto_2fscene_2fplayer_5fmovement_2eproto,
     "proto/scene/player_movement.proto",
     &descriptor_table_proto_2fscene_2fplayer_5fmovement_2eproto_once,

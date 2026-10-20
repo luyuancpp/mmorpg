@@ -3732,27 +3732,27 @@ const char descriptor_table_protodef_proto_2flogin_2flogin_2eproto[] ABSL_ATTRIB
     "mAccountsRequest\022\022\n\nplayer_ids\030\001 \003(\004\"i\n!"
     "RemovePlayersFromAccountsResponse\022\025\n\rrem"
     "oved_count\030\001 \001(\r\022\027\n\017not_found_count\030\002 \001("
-    "\r\022\024\n\014failed_count\030\003 \001(\r2\305\003\n\021ClientPlayer"
+    "\r\022\024\n\014failed_count\030\003 \001(\r2\314\003\n\021ClientPlayer"
     "Login\0226\n\005Login\022\025.loginpb.LoginRequest\032\026."
     "loginpb.LoginResponse\022K\n\014CreatePlayer\022\034."
     "loginpb.CreatePlayerRequest\032\035.loginpb.Cr"
     "eatePlayerResponse\022B\n\tEnterGame\022\031.loginp"
     "b.EnterGameRequest\032\032.loginpb.EnterGameRe"
     "sponse\022C\n\tLeaveGame\022\031.loginpb.LeaveGameR"
-    "equest\032\033.loginpb.LoginEmptyResponse\022N\n\nD"
+    "equest\032\033.loginpb.LoginEmptyResponse\022U\n\nD"
     "isconnect\022#.loginpb.LoginNodeDisconnectR"
-    "equest\032\033.loginpb.LoginEmptyResponse\022K\n\014R"
-    "efreshToken\022\034.loginpb.RefreshTokenReques"
-    "t\032\035.loginpb.RefreshTokenResponse\032\005\210\250\303\001\0012"
-    "\256\001\n\014LoginPreGate\022E\n\nAssignGate\022\032.loginpb"
-    ".AssignGateRequest\032\033.loginpb.AssignGateR"
-    "esponse\022W\n\020QueryQueueStatus\022 .loginpb.Qu"
-    "eryQueueStatusRequest\032!.loginpb.QueryQue"
-    "ueStatusResponse2\200\001\n\nLoginAdmin\022r\n\031Remov"
-    "ePlayersFromAccounts\022).loginpb.RemovePla"
-    "yersFromAccountsRequest\032*.loginpb.Remove"
-    "PlayersFromAccountsResponseB\023Z\021login/pro"
-    "to/loginb\006proto3"
+    "equest\032\033.loginpb.LoginEmptyResponse\"\005\210\231\310"
+    "\001\003\022K\n\014RefreshToken\022\034.loginpb.RefreshToke"
+    "nRequest\032\035.loginpb.RefreshTokenResponse\032"
+    "\005\210\250\303\001\0012\256\001\n\014LoginPreGate\022E\n\nAssignGate\022\032."
+    "loginpb.AssignGateRequest\032\033.loginpb.Assi"
+    "gnGateResponse\022W\n\020QueryQueueStatus\022 .log"
+    "inpb.QueryQueueStatusRequest\032!.loginpb.Q"
+    "ueryQueueStatusResponse2\200\001\n\nLoginAdmin\022r"
+    "\n\031RemovePlayersFromAccounts\022).loginpb.Re"
+    "movePlayersFromAccountsRequest\032*.loginpb"
+    ".RemovePlayersFromAccountsResponseB\023Z\021lo"
+    "gin/proto/loginb\006proto3"
 };
 static const ::_pbi::DescriptorTable* PROTOBUF_NONNULL const
     descriptor_table_proto_2flogin_2flogin_2eproto_deps[4] = {
@@ -3765,7 +3765,7 @@ static ::absl::once_flag descriptor_table_proto_2flogin_2flogin_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2flogin_2flogin_2eproto = {
     false,
     false,
-    3096,
+    3103,
     descriptor_table_protodef_proto_2flogin_2flogin_2eproto,
     "proto/login/login.proto",
     &descriptor_table_proto_2flogin_2flogin_2eproto_once,

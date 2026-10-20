@@ -224,7 +224,7 @@ namespace MmorpgClient.Net.Generated
 
 核对命令:`rg -n "Handler\.MessageId|HandlerRegistry" Assets --glob '*.cs' --glob '!Assets/Scripts/Proto/Generated/**'` 结果为空。注释里提到 `HandlerRegistry` 的三处(`GameClient.cs` 重定向处理器注释、`LandingSyncClient.cs:175`、`SceneChannelClient.cs:239`)改为说明「推送注册以 OnNotify / `<Service>Rpc.On<Method>` 为准」。
 
-## 6. robot 运行时改造细则(第 1–3、5、6 条与第 4 步首批已实施,见 §6.1;未编译)
+## 6. robot 运行时改造细则(第 1–3、5、6 条已实施;第 4 步 A / B 类已迁、C 类待迁,见 §6.1;未编译)
 
 `robot/pkg/client.go`:
 
@@ -264,13 +264,20 @@ namespace MmorpgClient.Net.Generated
 
 | 状态 | 场景 / 帮助函数 |
 |---|---|
-| 已迁(Call) | friend / guild(含 guild_economy、guild_activity 经同一 `call`)/ team(含 team_follow、team_backfill 复用的 `teamSmokeBot.call`)/ trade |
-| 待迁:同形 call(有 awaiting 兜底) | `mail_smoke_scenario.go`、`rank_smoke_scenario.go`(10-19 合入主干,本轮范围外)|
-| 待迁:其余等待帮助函数 | chat / channel / ordering / travel / sync / currency_crash_window / battle_smoke(大厅侧)/ battle_direct_conn / team 的 `send`(换场景、JoinQueue)/ mystery_merchant / data_stress / `logic/ai/robot_ai.go` |
-| 最后迁:依赖生成 handler 副作用 | pet / attribute / features / equip(状态序号等待) |
-| 不迁 | 登录与重定向重登录的同步握手(`login.go`、`login_test_scenarios.go`、`main.go`、`pkg/redirect.go`):跑在 RecvLoop 前或 RecvLoop 上,只能 `SendRequest + RecvOne` |
+| 已迁(Call,10-19) | friend / guild(含 guild_economy、guild_activity 经同一 `call`)/ team(含 team_follow、team_backfill 复用的 `teamSmokeBot.call`)/ trade |
+| 已迁(Call,10-20 第一批) | A 类:mail、rank、sync 的 `friendRpc`。B 类:travel 与 sync 的 `travelTo`、travel 的 `expectTravelRejected` 与金币读写、channel 的 `requestEnterScene`、mystery_merchant 的 `merchantCall`、ordering 的单发与流水线等待(`callAll`)、team 的排队请求(`matchCall`:JoinQueue / CancelQueue / GetQueueStatus,含 team_backfill)与 `startSoloBattle` |
+| 待迁:依赖生成 handler 副作用(C 类) | attribute / pet / equip(含 equip_forge、equip_forge_topup、asset_arrival_prepare)/ features(含 features_battle_smoke 直连)/ currency_crash_window 的 `readGoldBalance`、`gmAddGold` / chat / battle 大厅侧与 battle_direct_conn 的 GetBattleState 补拉 / main.go 与 login_test_scenarios 的 ListSkills、技能、换场景。分组与做法见 robot 交接 §8 |
+| 不迁 | 登录与重定向重登录的同步握手(`login.go`、`login_test_scenarios.go`、`main.go`、`pkg/redirect.go`):跑在 RecvLoop 前或 RecvLoop 上,只能 `SendRequest + RecvOne`。scene TCP 上响应恰好是 Empty 的单向方法(Move*、SceneInfoC2S、GetSyncDigest)与发出即走的请求保留 `SendRequest` |
 
 逐处待迁清单(带行号)、按等待对象的重新归类(chat / currency_crash_window / battle_smoke 大厅侧 / channel requestSceneInfo 实属「依赖生成 handler 副作用」)与迁移陷阱见 [robot 交接](../handoff/client-rpc-callback-robot-handoff-20261019.md) §5;以那里为准。
+
+**10-20 续做(第一批,工作流 `wf_26396b1d-800`,sync / travel 补评审 `wf_0f932c90-afc`;未编译)**:
+
+- 运行时补充 `CallSyncThen(ctx, messageId, body, timeout, onReply)`(会话「Client RPC callback handoff [53a2d1]」所加):本次请求的回包(成功或信封错误)先在派发它的 goroutine(RecvLoop,或同步握手里的 RecvOne)上调 `onReply`,再唤醒调用方;超时、断线、ctx 先结束、本地未发出都不调;`CallSync` 等于 `CallSyncThen(..., nil)`。新增单测 3 条 `TestCallSyncThen*`。用途是 C 类:回包的副作用(交给生成 handler 写 Player 状态)与迁移前同一 goroutine、同一收包顺序,调用方返回时状态已写好。
+- `smokeCaller` 补充:`callWithin`(这一次的超时预算单独指定);`callDispatch`(基于 `CallSyncThen`,成功回包在 RecvLoop 上交给 dispatch 后才返回;信封错误**不交** dispatch、照常作为 envelopeTip 返回;response 可为 nil)。`stats` 可为 nil;`timeoutErr` 为 nil 时包裹 `pkg.ErrRPCTimeout`。
+- 迁移的三种形状:同形 call 直接换 `smokeCaller`;回包可有可无的传送(`travelTo`)用 `gc.Call` 异步登记、done 只把结局写进带锁的结构,原轮询循环照旧等 msg 124 → 严格重登 → NotifyEnterScene,`ErrRPCDisconnected`(124 之后 `SwapConn`)按正常路径处理;流水线(ordering)用多个 `gc.Call` 各自登记,结果按请求号对应。所有改动场景的 onMessage 把请求消息号上 `id = 0` 的消息交 `smokeDropUncorrelatedReply` 丢弃,推送照旧留底。
+- 评审修复:mail 第 7 步的反向断言(「MailAdmin 号应被 gate 丢弃 → 超时」)加了「无请求号回包」计数,未回显请求号的信封不再被当成 gate 丢弃;ordering 的回包超时由 8s 提到 15s(满足 §2.3 不变式 I4:流水线里第二条的定时器从发出起算,而 lane 要等第一条完成才转发);其余是陈旧注释。
+- 已随用户快照 `c35e1133d`(10-20 03:08)入库;评审的修复在其后,见 robot 交接 §1。
 
 **未覆盖**:`smokeCaller` 没有单测,靠四个冒烟验证。muduo 被对端断开后会静默重拨,在途调用只能以超时收场(第 5 条)。
 
@@ -298,7 +305,7 @@ namespace MmorpgClient.Net.Generated
    通过标准:全部 EditMode 通过,重点 `MmorpgClient.Tests.EditMode.Net.OutstandingCallsTests`(9 条,TearDown 断言回调无异常)、`ActorWorldFoundationTests.MovementEmptyReplies_AreConsumedWithoutFourHertzUnhandledLogs`、`BattleDirectLinkTests`(含新增 `Call_FailsImmediately_WhenNewAssignmentReplacesTheConnection`)、`DirectRoutingBattleTransportTests`(错误串不变;两类都在 TearDown 断言回调无异常)。失败保留 xml 与 log 中 `error CS` / 失败用例段落。
 3. **生成器(§5)**:实施后在 `tools/proto_generator/protogen` 下 `go test ./...`;再 `pwsh -File tools/scripts/dev_tools.ps1 -Command proto-gen-build`、`pwsh -File tools/scripts/dev_tools.ps1 -Command proto-gen-run`(默认配置,写客户端仓;本任务已获客户端授权)。期望:客户端仓 `Net/Generated/Handlers/` 与 `HandlerRegistry.cs` 消失,`Net/Generated/Rpc/*.cs` + `.meta` 出现;本仓除 proto option 标注带来的生成物外无意外 diff;再跑一次生成为零 diff。之后按 §5.6 迁移引用,重跑第 2 步。
 4. **冒烟**(直连模式与路由模式各一次;直连 = gate 进程不设 `GATE_CLIENT_RPC_ROUTER`):`pwsh -File tools/run_crosszone_pair.ps1`(客户端仓)走完登录 → 建角 → 进场 → 传送;客户端日志里 `[rpc] late reply dropped` 为 0、没有 `rpc timeout`;直连模式下 Login / CreatePlayer / EnterGame 回包的 `MessageContent.id` 非 0(gate TRACE 或客户端日志可见)。
-5. robot(§6,已实施):在 `robot/` 下依次执行 `go build -mod=vendor ./...`、`go vet -mod=vendor ./...`、`go test -mod=vendor -race ./pkg/...`,再执行 `go test -mod=vendor ./...`,确认主包既有单测不受影响。通过标准:全绿;`-race` 无 DATA RACE;`TestCallDoneExactlyOnceUnderConcurrentOutcomes` 不超时。随后跑四个冒烟。前置条件见各自 yaml 文件头与设计文档,包括两区 gate 以 `GATE_CLIENT_RPC_ROUTER=1` 启动、对应服务就绪。gate 须是含 §3 修复的新编译版,否则直连模式的回包不带请求号。在 `robot/` 下执行:`.\robot.exe -c etc/friend_smoke.yaml`、`etc/guild_smoke.yaml`、`etc/team_smoke.yaml`、`etc/trade_smoke.yaml`;改了构造的 `etc/team_follow_smoke.yaml` 可选加跑。通过标准:各自输出 `*_SMOKE_OK` 并退出 0;日志里 `reply without request id dropped` 与 `[rpc] late reply dropped` 都为 0(trade 第 2 步的超时是 gate 丢弃请求,本就不会有回包)。失败时保留 robot 输出中的 `*_SMOKE_FAIL step=… reason=…` 行,以及同窗口的 gate、路由服日志。
+5. robot(§6,已实施):**10-20 起完整命令、冒烟清单与通过标准以 [robot 交接](../handoff/client-rpc-callback-robot-handoff-20261019.md) §2 为准**(新增 `TestCallSyncThen*` 与第一批迁移的冒烟)。以下是 10-19 首批的原文,保留备查。在 `robot/` 下依次执行 `go build -mod=vendor ./...`、`go vet -mod=vendor ./...`、`go test -mod=vendor -race ./pkg/...`,再执行 `go test -mod=vendor ./...`,确认主包既有单测不受影响。通过标准:全绿;`-race` 无 DATA RACE;`TestCallDoneExactlyOnceUnderConcurrentOutcomes` 不超时。随后跑四个冒烟。前置条件见各自 yaml 文件头与设计文档,包括两区 gate 以 `GATE_CLIENT_RPC_ROUTER=1` 启动、对应服务就绪。gate 须是含 §3 修复的新编译版,否则直连模式的回包不带请求号。在 `robot/` 下执行:`.\robot.exe -c etc/friend_smoke.yaml`、`etc/guild_smoke.yaml`、`etc/team_smoke.yaml`、`etc/trade_smoke.yaml`;改了构造的 `etc/team_follow_smoke.yaml` 可选加跑。通过标准:各自输出 `*_SMOKE_OK` 并退出 0;日志里 `reply without request id dropped` 与 `[rpc] late reply dropped` 都为 0(trade 第 2 步的超时是 gate 丢弃请求,本就不会有回包)。失败时保留 robot 输出中的 `*_SMOKE_FAIL step=… reason=…` 行,以及同窗口的 gate、路由服日志。
 
 ## 10. 语义复核记录(2026-10-19,`wf_447ef09d-9bf`)
 

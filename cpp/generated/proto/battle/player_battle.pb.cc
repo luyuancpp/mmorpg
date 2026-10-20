@@ -3532,25 +3532,26 @@ const char descriptor_table_protodef_proto_2fbattle_2fplayer_5fbattle_2eproto[] 
     "\n\024SPECTATE_END_REMOVED\020\003*u\n\021eBattleTicke"
     "tRole\022\033\n\027BATTLE_TICKET_ROLE_NONE\020\000\022\"\n\036BA"
     "TTLE_TICKET_ROLE_PARTICIPANT\020\001\022\037\n\033BATTLE"
-    "_TICKET_ROLE_OBSERVER\020\0022\255\005\n\022BattleClient"
+    "_TICKET_ROLE_OBSERVER\020\0022\345\005\n\022BattleClient"
     "Player\022M\n\022SubmitBattleAction\022\032.SubmitBat"
     "tleActionRequest\032\033.SubmitBattleActionRes"
     "ponse\0229\n\016GetBattleState\022\026.GetBattleState"
-    "Request\032\017.BattleStateS2C\022,\n\021NotifyBattle"
-    "Start\022\017.BattleStartS2C\032\006.Empty\022*\n\020Notify"
-    "TurnResult\022\016.TurnResultS2C\032\006.Empty\022(\n\017No"
-    "tifyBattleEnd\022\r.BattleEndS2C\032\006.Empty\0224\n\025"
-    "NotifyBattleReconnect\022\023.BattleReconnectS"
-    "2C\032\006.Empty\022D\n\017StopWatchBattle\022\027.StopWatc"
-    "hBattleRequest\032\030.StopWatchBattleResponse"
-    "\022>\n\rSetAutoBattle\022\025.SetAutoBattleRequest"
-    "\032\026.SetAutoBattleResponse\0220\n\023NotifySpecta"
-    "teState\022\021.SpectateStateS2C\032\006.Empty\0222\n\030No"
-    "tifySpectateTurnResult\022\016.TurnResultS2C\032\006"
-    ".Empty\022,\n\021NotifySpectateEnd\022\017.SpectateEn"
-    "dS2C\032\006.Empty\0222\n\024NotifyBattleAssigned\022\022.B"
-    "attleAssignedS2C\032\006.Empty\032\005\210\250\303\001\001B\014Z\006battl"
-    "e\230\324a\036b\006proto3"
+    "Request\032\017.BattleStateS2C\0223\n\021NotifyBattle"
+    "Start\022\017.BattleStartS2C\032\006.Empty\"\005\210\231\310\001\002\0221\n"
+    "\020NotifyTurnResult\022\016.TurnResultS2C\032\006.Empt"
+    "y\"\005\210\231\310\001\002\022/\n\017NotifyBattleEnd\022\r.BattleEndS"
+    "2C\032\006.Empty\"\005\210\231\310\001\002\022;\n\025NotifyBattleReconne"
+    "ct\022\023.BattleReconnectS2C\032\006.Empty\"\005\210\231\310\001\002\022D"
+    "\n\017StopWatchBattle\022\027.StopWatchBattleReque"
+    "st\032\030.StopWatchBattleResponse\022>\n\rSetAutoB"
+    "attle\022\025.SetAutoBattleRequest\032\026.SetAutoBa"
+    "ttleResponse\0227\n\023NotifySpectateState\022\021.Sp"
+    "ectateStateS2C\032\006.Empty\"\005\210\231\310\001\002\0229\n\030NotifyS"
+    "pectateTurnResult\022\016.TurnResultS2C\032\006.Empt"
+    "y\"\005\210\231\310\001\002\0223\n\021NotifySpectateEnd\022\017.Spectate"
+    "EndS2C\032\006.Empty\"\005\210\231\310\001\002\0229\n\024NotifyBattleAss"
+    "igned\022\022.BattleAssignedS2C\032\006.Empty\"\005\210\231\310\001\002"
+    "\032\005\210\250\303\001\001B\014Z\006battle\230\324a\036b\006proto3"
 };
 static const ::_pbi::DescriptorTable* PROTOBUF_NONNULL const
     descriptor_table_proto_2fbattle_2fplayer_5fbattle_2eproto_deps[4] = {
@@ -3563,7 +3564,7 @@ static ::absl::once_flag descriptor_table_proto_2fbattle_2fplayer_5fbattle_2epro
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fbattle_2fplayer_5fbattle_2eproto = {
     false,
     false,
-    2973,
+    3029,
     descriptor_table_protodef_proto_2fbattle_2fplayer_5fbattle_2eproto,
     "proto/battle/player_battle.proto",
     &descriptor_table_proto_2fbattle_2fplayer_5fbattle_2eproto_once,

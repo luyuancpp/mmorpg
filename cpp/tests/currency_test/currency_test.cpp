@@ -1253,6 +1253,36 @@ TEST(CurrencyTest, RedisCommitBarrierSchemaRejectedIssuesPendingWithNewerGuard)
     EXPECT_EQ(2u, MarkerOf(*next->message_value));
 }
 
+// 返回 3 时排队值 guard 相同、写方令牌不同(同一代次下另一个加载实体的存盘):C3 只看写方自己的加载世代,
+// 被拒的那份不能替它下结论 —— 照发、不回调;否则它若是退出存盘,会被当成"退出中被拒"不存盘销毁。
+TEST(CurrencyTest, RedisCommitBarrierSchemaRejectedIssuesPendingFromAnotherWriter)
+{
+    using Client = MessageAsyncClient<Guid, CurrencyComp>;
+    using Peer = MessageAsyncClientTestPeer<Guid, CurrencyComp>;
+    Client::HiredisPtr hiredis;
+    Client client(hiredis);
+    int schemaRejected = 0;
+    client.SetSaveSchemaRejectedCallback([&](Guid, const std::string&, const std::string&) { ++schemaRejected; });
+    constexpr Guid kPlayerId = 10031;
+    ASSERT_TRUE(client.SaveWithCommitBarrier(MarkedCurrency(1), kPlayerId, "player:10031:owner_epoch", "7",
+        "player:{10031}:save_barrier", "00000000000000000007:00000000000000000001", CommitIntentForTest(kPlayerId),
+        SchemaGenForTest()));
+    const auto first = Peer::IssuePendingForTest(client, kPlayerId);
+    ASSERT_NE(nullptr, first);
+    auto otherWriter = SchemaGenForTest();
+    otherWriter.writer = "writer-another-entity";
+    ASSERT_TRUE(client.SaveWithCommitBarrier(MarkedCurrency(2), kPlayerId, "player:10031:owner_epoch", "7",
+        "player:{10031}:save_barrier", "00000000000000000007:00000000000000000002", CommitIntentForTest(kPlayerId),
+        otherWriter));
+    auto refused = IntegerReply(3);
+    Peer::DeliverSaved(client, &refused, first);
+    EXPECT_EQ(0, schemaRejected);
+    const auto next = Peer::PendingSave(client, kPlayerId);
+    ASSERT_NE(nullptr, next) << "另一个实体的存盘不能被连带丢弃";
+    EXPECT_EQ("writer-another-entity", next->schema_writer);
+    EXPECT_EQ(2u, MarkerOf(*next->message_value));
+}
+
 // 覆盖世代参数随 element 走(重试、NOSCRIPT 重发、重连回收发同一组参数),形状非法时入队前就拒绝:
 // 否则脚本返回 error_reply,OnSaved 对 ERROR 无限重试,这名玩家永远存不进盘。
 TEST(CurrencyTest, RedisCommitBarrierCarriesAndValidatesSchemaArguments)

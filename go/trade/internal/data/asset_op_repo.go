@@ -883,6 +883,8 @@ func (r *AssetOpRepo) Finalize(ctx context.Context, op assetop.Op, status asseto
 //
 // durable 刻意**不**置 1:这一行的终局来自人工判定,不是 scene 确认的落盘结局,
 // 把它标成 durable 会让事后对账分不清"scene 真的答过"和"人写上去的"。
+// 交易合同推进只看 status(CommerceRepo.LegResult,2026-10-20),人工终结的腿照常推进合同:
+// REJECTED / ABORTED 走与 scene 判拒同一条补偿;实例扣款判 APPLIED 时本行没有托管原件,合同隔离为人工,不自动上架或发货。
 func (r *AssetOpRepo) ResolveManually(ctx context.Context, m assetop.ManualResolution, nowMs uint64) (bool, error) {
 	// 状态合法性、操作人与理由的长度由 assetop.Loop.ResolveManually 在进来之前校验;
 	// 这里兜住本表自己的那一份:映射不出库值(落成 UNSPECIFIED 会让客服查不到结局)、PENDING,
@@ -1016,6 +1018,8 @@ const (
 	// sqlAbandonAssetOp:放弃 CAS,以 (op_id, status=PENDING, lease_token) 为条件(assetop.Abandoner 契约)。
 	// 不置 durable(不是 scene 确认的结局)、不改 last_outcome(保留最后一次真实答复作证据);
 	// next_attempt_ms 同写终结时刻(与 sqlFinalizeAssetOp 一致,清理按它判龄)。
+	// 交易合同的腿读结局只看 status、不看 durable(CommerceRepo.LegResult / LegOutcome.Final,2026-10-20),
+	// 所以这里不置 durable 不会再让合同停在托管阶段。
 	sqlAbandonAssetOp = "UPDATE " + AssetOpTableName +
 		" SET `status` = ?, `lease_until_ms` = 0, `next_attempt_ms` = ?, `updated_ms` = ?" +
 		" WHERE `op_id` = ? AND `status` = ? AND `lease_token` = ?"
@@ -1184,6 +1188,11 @@ func (r *AssetOpRepo) Abandon(ctx context.Context, op assetop.Op, nowMs uint64) 
 		// 在那之前 CREDIT 流由 abandonableStream 挡在候选与本方法之外(存储层 fail-closed,不靠这段注释);
 		// 补齐 CREDIT 两行之后再放开 abandonableStream。v1 只放弃 ESCROW_DEBIT,只终结并留痕
 		// (审计依据:本行的 op_id / ref_id、assetop_abandoned_total 与 assetop 打的放弃日志)。
+		//
+		// 交易合同的扣款腿(ref_kind=ORDER)不等这条 TODO(2026-10-20,第一轮审计 §2.5 go-asset-services#1):
+		// 合同引擎在锁住合同行的事务里读到 ABANDONED,按"没扣到"走与 scene 判拒同一条补偿(退回另一方已托管的资产、
+		// 寄售重新开放),见 commerce.Engine.advance。补偿不在本事务里做:本方法只锁 op 行、合同推进只锁合同行再普通读 op 行,
+		// 两边不成环;终态不再变化,合同下一轮必然读到。上面三行 TODO 只剩旧 P1 商品(ref_kind=LISTING)。
 		return nil
 	})
 }

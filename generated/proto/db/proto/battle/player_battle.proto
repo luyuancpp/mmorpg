@@ -187,18 +187,18 @@ service BattleClientPlayer {
 
   rpc SubmitBattleAction (SubmitBattleActionRequest) returns (SubmitBattleActionResponse);
   rpc GetBattleState (GetBattleStateRequest) returns (BattleStateS2C);
-  rpc NotifyBattleStart (BattleStartS2C) returns (Empty);
-  rpc NotifyTurnResult (TurnResultS2C) returns (Empty);
-  rpc NotifyBattleEnd (BattleEndS2C) returns (Empty);
-  rpc NotifyBattleReconnect (BattleReconnectS2C) returns (Empty);
+  rpc NotifyBattleStart (BattleStartS2C) returns (Empty) { option (OptionClientRpcKind) = CLIENT_RPC_PUSH; }
+  rpc NotifyTurnResult (TurnResultS2C) returns (Empty) { option (OptionClientRpcKind) = CLIENT_RPC_PUSH; }
+  rpc NotifyBattleEnd (BattleEndS2C) returns (Empty) { option (OptionClientRpcKind) = CLIENT_RPC_PUSH; }
+  rpc NotifyBattleReconnect (BattleReconnectS2C) returns (Empty) { option (OptionClientRpcKind) = CLIENT_RPC_PUSH; }
 
   // ---- 二期:观战 + 自动战斗(设计文档 §10/§11) ----
   rpc StopWatchBattle (StopWatchBattleRequest) returns (StopWatchBattleResponse);
   rpc SetAutoBattle (SetAutoBattleRequest) returns (SetAutoBattleResponse);
-  rpc NotifySpectateState (SpectateStateS2C) returns (Empty);
-  rpc NotifySpectateTurnResult (TurnResultS2C) returns (Empty);
-  rpc NotifySpectateEnd (SpectateEndS2C) returns (Empty);
+  rpc NotifySpectateState (SpectateStateS2C) returns (Empty) { option (OptionClientRpcKind) = CLIENT_RPC_PUSH; }
+  rpc NotifySpectateTurnResult (TurnResultS2C) returns (Empty) { option (OptionClientRpcKind) = CLIENT_RPC_PUSH; }
+  rpc NotifySpectateEnd (SpectateEndS2C) returns (Empty) { option (OptionClientRpcKind) = CLIENT_RPC_PUSH; }
 
   // ---- 客户端直连(设计文档 §18):落点分配推送;丢票补签见 MatchService.RequestBattleTicket ----
-  rpc NotifyBattleAssigned (BattleAssignedS2C) returns (Empty);
+  rpc NotifyBattleAssigned (BattleAssignedS2C) returns (Empty) { option (OptionClientRpcKind) = CLIENT_RPC_PUSH; }
 }

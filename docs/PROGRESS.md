@@ -13673,3 +13673,81 @@ PROGRESS 一直没有条目)。上面 2026-09-21 条里"第 7–9 步未跑""修
 - **前置 / 待拍板**(设计 §17、§18):snapshot 分支 `origin/snapshot/all-changes-20261018` 合入 main(阻塞 R1);`java/mall_game` 的 K8s 部署;R1 预计 30+ 文件,须用户批准分批计划(AGENTS §10.2);钻石档位、未成年人日上限、审核区与测试白名单、限速阈值等 8 项待决。
 - **验证**:无代码,无编译、无测试。
 - **Java 版(AGENTS §12)**:待做(设计 R4);本机未核对 `PARITY.md`,对应 Java 版本号:无。
+
+## 2026-10-20 开服线接手:Codex 验证单重写、拍板清单汇总、无主小项核对(Claude,只改文档,未编译、未测试)
+
+- **范围**:交接 `docs/handoff/handoff-launch-line-remaining-20261019.md` §3 第 1、4、5、6 项。第 2 项(G4a)已由 G4a 会话收尾。第 3 项 L-18 与「账号登录逻辑/物理服瓶颈」会话分了工:静态复核与写回由那个会话做;压测前置要先加指标、再改脚本,待负责人指派。
+- **做法**:9 名只读核查员,外加 1 名复核员,只读代码、git 历史与 Codex 回执,没有跑任何编译、测试或生成。第一轮另有 5 名(B0-2 核查与 4 个复核)撞上 5 小时额度失败;周额度已到 81%,没有重跑。B0-2 改由主会话手工核对,其余几项高 / 中风险问题由主会话抽查。
+- **结论:第 1 项**
+  - B0-2、B0-5、B0-4、B0-3 两批、B0-1 在当前树里**都完整生效**。fc3ff045e 合并没有带回旧逻辑,`k8s_deploy.ps1` / `dev_tools.ps1` 也没有重复的函数定义(AST 查过)。
+  - 10-20 的 `c35e1133d` / `9a9390035` 对本线文件只是把他人在途改动入库,没有新改动。
+  - 但交给 Codex 的原命令多处过时:红灯基线写成 HEAD、用例正则漏项、`etcd-up` / `open_file_limit_test` 不存在、集成测试 SKIP 会冒充通过、范围核对必然误报。
+  - 已按当前树重写成 `docs/handoff/launch-readiness-20261013/verify_launch_line_20261020.md`,它取代各规格与本文件各条目里的命令。D1 1b-1 的验证移交落点线。
+- **结论:第 4 项**:拍板清单汇总成 `docs/handoff/launch-readiness-20261013/decisions_launch_line_20261020.md`。
+  - 去重后 60 项;文首列出建议先定的 8 项:T-13 Codex 可操作环境、T-9 发号、T-8 AUTO_INCREMENT、T-12 一套还是多套集群、G-13 核心键名、G-7 mapping tag、U-2 单 zone C_z、X-3 压测观测。
+  - 已定的 3 项单列。
+  - 容量模型 §4.5 已回写 tidb-phase1:§1.2、§2.2 表后、§2.7 末、§9.3 第 12 条各加了 2026-10-20 注。「一套还是多套」的冲突没有替负责人定。
+- **结论:第 5、6 项**
+  - 过时注释 3 处已由 G4a 会话改完。
+  - B0-2 提交号 `e76f6f747` 已回填到 release-checklist §6.1;cross-zone-matchmaking、player-inbox-service 的行号引用已更正。
+  - B0-1 的「回档守卫补模式」后续项已过时,关闭。
+  - B0-3 第 1 批的 Java 契约同步已完成。
+  - 「Kafka 存盘失败后 MySQL 永久落后」已由 S5a 处理:不作废快照,改成投递账本加强制重存,代码已落、未验证,用例并入验证单 §9。
+  - 仍未做:refresh token 32 枚、C_z 5000(二者已列入清单 U-1、U-2)、`reassignSceneNode` 无 CAS、`migrateLegacyQueues`、每次存盘两条 INFO、B0-4 部署接线三条、B0-5 A1、B0-1 etcd 合理性闸门(清单 B1-1)。
+- **文件**:
+  - 新增:`docs/handoff/launch-readiness-20261013/verify_launch_line_20261020.md`(初版已被 `c35e1133d` 快照收进,之后又补了 B0-4 全长哈希与 HEAD 变更注)、`docs/handoff/launch-readiness-20261013/decisions_launch_line_20261020.md`;
+  - 修改:`docs/handoff/handoff-launch-line-remaining-20261019.md`(文首与 §3 第 1、3、4、5、6 项、§4 各追加 2026-10-20 注,原文不删)、`docs/design/tidb-phase1-and-launch-readiness.md`、`docs/ops/release-checklist.md`、`docs/design/cross-zone-matchmaking.md`、`docs/design/player-inbox-service.md`;
+  - 本条。
+  - 两份新文档在 `handoff/` 的子目录里,`gen_docs_index.py` 只索引 `handoff/` 第一层,不需要登记 `docs/README.md`。
+- **交 Codex**:
+  - 按验证单 §3 的总顺序执行;
+  - 本条只改文档,另跑 `python tools/scripts/gen_docs_index.py --check`,只记录不归因,可能因他人新增的文档报漂移。
+- **Java 版(AGENTS §12)**:本条只改文档,对应 Java 版本号无。
+  - B0-3 第 1 批的 Java PARITY 行,等 Java 线确认 game-proto 构建通过后收口;
+  - B0-4 PARITY 行的 commit 列,留给 Java 线回填;
+  - 本会话没有改 Java 仓。
+
+## 2026-10-20 Codex：继续统一 main
+
+- 保存三主仓新增改动，正常合并远端 main 的后续复核及设计记录，无冲突。
+- 接通现有 Unity RPC 调用桩生成入口与两份配置，修正源码中的非法 BOM 字符表示；正式重建生成器并完整生成 21 个服务调用桩，客户端协议及消息号和机器人 vendor 同步成功。旧 Handler 删除由现役 Rpc 调用桩替代。
+- 本地旧分支均先核对为 main 祖先；关联工作树按原 HEAD 脱离分支，文件逐 SHA 与状态核对保持不变，未删除工作树或历史恢复引用。当前各仓本地及远端分支统一为 main。
+- 按本聊天用户指令跳过测试和服务构建；生成器构建及协议生成成功不代表服务或客户端编译、集成及真实故障验证通过。
+
+## 2026-10-20 go/db 就绪闸停机与退避接缝核对(Claude,静态核对 + 小修复 + 补用例;未编译、未测试,待 Codex 验证)
+
+- **来由**:D1 第 3 批「读方门禁」在 go/db 加了进程级就绪闸。go/db 管线一线提醒过「闸要能被 pullStop / ctx 打断,并保留重新入组退避」,D1 没核对。总交接 §7.7、R9 交接 §5、D1 收尾交接「评审 A」三处都挂着这一条。负责人 10-19 让本会话做完。
+- **核对方式**:四个视角(阻塞点 / 退避与入组抖动 / Stop 六步端到端 / 测试覆盖),每条发现 3 票对抗验证,最后做一轮完整性评审。sarama v1.43.1 源码只读核对。全程没有编译、没有运行测试。
+- **结论(静态)**:
+  1. **能被打断**:闸只在 ConsumeClaim 顶层 select 里替换通道值,与 `pullStop`、会话 ctx、`yieldDone`、`failureCh` 同在一个 select;撤拉取照常转 `drainClaimForShutdown`,c.ctx 取消经 consumeCtx 传到会话 ctx。重试循环的闸检查(`retryClaimsPaused`)不阻塞,重试协程的 select 带 `pullStop` / `c.ctx`。刷新 goroutine 随 c.ctx 退出,不进 `c.wg`;db.go 在 Start 之前就 defer 了 Stop,探针通过、Start 后续步骤失败时也能收尾。
+  2. **退避保留**:D1 的提交没动 `rejoin_backoff.go`,也没动 Start 的入组循环;`waitRejoinBackoff`、`claimFailed` 原样。闸关期间 ConsumeClaim 只在 recheck 上 continue,从不返回,不制造入组抖动。闸关之前已交给入队层的请求,确认失败仍经 `failureCh` 带错返回、记入退避。
+  3. **sarama**:闸关期间不读 `claim.Messages()`,sarama 只在 MaxProcessingTime 后放弃该分区订阅。不报错、不停心跳、不触发再平衡;收尾时 `dying` 解除阻塞。这与 worker 背压时的状态相同,不是闸新引入的。
+- **修复(minor,3/3 票确认)**:原来闸放行时 `gatedMessages` 只返回消息通道。闸由开转关后,空闲分区上等消息的 claim 醒不过来,闸关之后不论隔多久,下一条到达的消息照样被取走:写推进重试队列,读耗一次预算。这与规格 §13.2 第 1 条「闸不是 Trusted 不取新消息、不往重试队列推」不符。改法:闸放行时也带上「下一次刷新」通道(新增不计等待的 `nextRefresh`),刷新关闸时 claim 立即醒来、停在闸前。代价是每个 claim 每个刷新间隔空转一圈。闸为 nil(开关缺省关)时行为逐字节不变。
+- **注释更正(nit)**:刷新 2s / 探针 5s 只是 ctx 时限。落点 Redis 客户端没开 `ContextTimeoutEnabled`,在途读写由 go-redis `ReadTimeout`(缺省 3s)约束。刷新 goroutine 最多比 Stop 多活一个 ReadTimeout,不影响停机。另在 `startRouteReadyGate` 注释写明停机接缝与禁止的写法。
+- **验证口径更正**:交接原写「Codex 重点跑 `consumer_shutdown_test.go`」。这个文件的两个夹具都不设 `routeGate`,跑全绿也证明不了「开关打开后 Stop 不卡」。已改为跑下面的新文件,launch-todo 的 `-race` 正则同步补上。
+- **文件**:
+  - 代码:`go/db/internal/kafka/route_ready_gate.go`。只改 `gatedMessages`、`recheck`,新增 `nextRefresh`,另改注释;没碰 `key_ordered_consumer.go`。
+  - 用例 `go/db/internal/kafka/route_ready_gate_shutdown_test.go`,共 9 条。前 5 条 10-19 写成,已被保存提交 `c35e1133d` 收进;后 4 条本次追加。每条注释里写了红证据:
+    - Stop 3 条:`TestStop_RouteReadyGateClosedClaimParkedReturnsPromptly`、`…ClosedRetryLoopPausedReturnsPromptly`(热备成员 + 重试循环)、`TestStop_RouteReadyGateOnRejoinBackoffKeptAndInterrupted`;
+    - ConsumeClaim 5 条:`TestConsumeClaim_RouteReadyGateClosedRebalanceReturnsNil`、`…ClosedDurabilityFailureArmsRejoinBackoff`、`…ClosingWakesIdleClaim`(本次修复的回归)、`…ClosedShutdownMarksInFlight`、`…ClosedHandoffYieldReturnsNil`;
+    - 重试 1 条:`TestConsumeRetryQueue_RouteReadyGateClosedOwnerModeForwardsNothing`。
+  - 文档:
+    - 总交接 `godb-pipeline-impl-handoff-20261015.md` §7.7;
+    - R9 交接 `zone-rollback-r9-handoff-20261019.md` §5;
+    - D1 收尾交接 `handoff-d1-remaining-20261019.md` 评审 A:这一子项标为已核对,另登记下面的范围疑问;
+    - `docs/ops/godb-pipeline-launch-todo.md` §停机;
+    - `docs/design/db-task-pipeline-bottlenecks.md` G6:新增就绪闸一条。
+- **没做 / 留给别人**:
+  - `go/db/internal/saveoutbox/replay.go` 跨 zone 迁移索引前直接 `GET player:zone:{id}`,不走 `RouteReadyReadScript`。它算不算第 3 批读方,交 D1 评审 A 定;该文件有别的会话在途改动,本次没碰。
+  - 「探针通过、Start 后续步骤失败」时刷新 goroutine 的收尾没有用例(要靠墙钟判 goroutine 退出,不写)。
+  - `read_error` 只关本副本时:分区停着,健康副本空闲,没有再平衡把分区让出去。这是「不让 ConsumeClaim 返回、避免入组抖动」的取舍,不加闸时同一实例会把每条任务 fail-closed 推进重试队列,总体不比原来差;作为残留风险记在这里。
+  - 真 Kafka 冒烟没做,建议在开关打开的冒烟里各看一次:关闸几分钟后挂上标记,消费能恢复;闸关着时 Stop,日志里没有 `consumer loop did not exit within`。
+- **交 Codex 的验证**:工作目录 `go/db`;`GOTOOLCHAIN=local`、`GOPROXY=off`;红了就停下归因,不连续重试、不改用例迁就。
+  1. `gofmt -l internal/kafka/route_ready_gate.go internal/kafka/route_ready_gate_shutdown_test.go` 应无输出(Claude 已只读跑过,无输出);`go vet ./internal/kafka/`。
+  2. `go test ./internal/kafka/ -count=1 -v -run 'RouteReadyGate|TestStop_|TestConsumeClaim_Shutdown|TestConsumeClaim_RebalanceStillCancelsClaim|TestRetryConsumer_StopsClaimingAfterPullStop|TestWaitRejoinBackoff_|TestConsumeClaim_DurabilityFailureArmsRejoinBackoff|TestDurableFailureBackoff_|TestRejoinBackoffFor|TestConfirmingEnqueue_'`。通过标准:
+     - `-v` 里出现上面 9 条新用例,以及 `route_ready_gate_test.go` 的 `TestConsumeClaim_RouteReadyGateClosedTakesNoMessages`、`…ClosedStillShutsDown`、`TestConsumeRetryQueue_RouteReadyGateClosedClaimsNothing`,全部 PASS;
+     - 没有「Stop did not return within 2s」。
+  3. `go test ./internal/kafka/ -count=20 -run 'RouteReadyGate'` 排除调度抖动;同一正则在 Linux / WSL 加 `-race` 再跑一轮(Windows 的 `-race` 需要 cgo),写明平台。
+  4. `go test ./internal/kafka/ ./internal/config/ ./internal/metrics/ -count=1` 全量,既有失败逐个点名归因。
+  5. 红跑(可选,不回退主仓代码,禁止 stash / reset):建临时 worktree 检出 `9a9390035`,只拷入当前的 `route_ready_gate_shutdown_test.go`,跑 `-run 'RouteReadyGateClosingWakesIdleClaim'`。期望 FAIL,报 `the refresh that closes the gate must wake the idle claim`。用完删掉临时 worktree。
+- **Java 版(AGENTS §12)**:不适用。这是 go/db 内部的 Kafka 消费停机与读方门禁实现,不涉及客户端契约。对应 Java 版本号无,不登记 PARITY。

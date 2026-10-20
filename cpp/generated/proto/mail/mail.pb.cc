@@ -2864,7 +2864,7 @@ const char descriptor_table_protodef_proto_2fmail_2fmail_2eproto[] ABSL_ATTRIBUT
     "ilClaimState\022\023\n\017MAIL_CLAIM_NONE\020\000\022\030\n\024MAI"
     "L_CLAIM_UNCLAIMED\020\001\022\026\n\022MAIL_CLAIM_PENDIN"
     "G\020\002\022\026\n\022MAIL_CLAIM_CLAIMED\020\003\022\025\n\021MAIL_CLAI"
-    "M_MANUAL\020\0042\337\003\n\020ClientPlayerMail\022@\n\tListM"
+    "M_MANUAL\020\0042\346\003\n\020ClientPlayerMail\022@\n\tListM"
     "ails\022\030.mailpb.ListMailsRequest\032\031.mailpb."
     "ListMailsResponse\022=\n\010ReadMail\022\027.mailpb.R"
     "eadMailRequest\032\030.mailpb.ReadMailResponse"
@@ -2874,10 +2874,10 @@ const char descriptor_table_protodef_proto_2fmail_2fmail_2eproto[] ABSL_ATTRIBUT
     "lpb.DeleteMailsRequest\032\033.mailpb.DeleteMa"
     "ilsResponse\022O\n\016ClearReadMails\022\035.mailpb.C"
     "learReadMailsRequest\032\036.mailpb.ClearReadM"
-    "ailsResponse\022G\n\021NotifyMailChanged\022\030.mail"
+    "ailsResponse\022N\n\021NotifyMailChanged\022\030.mail"
     "pb.MailChangedEvent\032\030.mailpb.MailChanged"
-    "Event\032\005\210\250\303\001\001B\025Z\017mail/proto/mail\230\324a\rb\006pro"
-    "to3"
+    "Event\"\005\210\231\310\001\002\032\005\210\250\303\001\001B\025Z\017mail/proto/mail\230\324"
+    "a\rb\006proto3"
 };
 static const ::_pbi::DescriptorTable* PROTOBUF_NONNULL const
     descriptor_table_proto_2fmail_2fmail_2eproto_deps[2] = {
@@ -2888,7 +2888,7 @@ static ::absl::once_flag descriptor_table_proto_2fmail_2fmail_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fmail_2fmail_2eproto = {
     false,
     false,
-    2363,
+    2370,
     descriptor_table_protodef_proto_2fmail_2fmail_2eproto,
     "proto/mail/mail.proto",
     &descriptor_table_proto_2fmail_2fmail_2eproto_once,

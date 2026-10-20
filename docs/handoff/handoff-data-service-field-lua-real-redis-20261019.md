@@ -1,11 +1,11 @@
 # 交接:data_service 字段索引三段 Lua 的真 Redis 集成测试(2026-10-19)
 
-> 一句话状态:**测试代码已写完(7 个集成用例 + 1 个新单测),一次都没有编译、没有运行。** 剩下的工作是在 Redis 7.2 与 8.10.2 两个版本上各跑一轮、把结果回填文档。第 4 节两个尾巴已于 2026-10-19 第二个会话改完(注释更正、版本守卫收紧到 ≤15 位),同样未编译。
+> 一句话状态:**测试代码已写完(7 个集成用例 + 1 个新单测),已随 `c35e1133d` 入库,但一次都没有编译、没有运行。** 剩下的工作只有交 Codex:在 Redis 7.2 与 8.10.2 两个版本上各跑一轮、把结果回填文档。第 4 节两个尾巴已于 2026-10-19 第二个会话改完(注释更正、版本守卫收紧到 ≤15 位),同样未编译。Claude 侧没有待做项。
 > 接手前照 `AGENTS.md`「会话启动门禁」读一遍;Claude 不跑编译 / 测试(§10.1),本文第 3 节的命令交 Codex 执行。
 
 ## 0. 换账号接手
 
-**工作区**:必须在 `D:\luyuan\xuanming-server-mmo-cpp` 这份工作区接手。截至本文写成,Cluster 用例、两版本说明、第 4 节两个尾巴的改动、本交接文档都还是**未提交**的工作区改动(见第 2 节);换机器或换 clone 看不到它们。
+**代码位置**:本线全部改动(含本交接文档)已随负责人 2026-10-20 的保存提交 `c35e1133d` 入库,任何不早于该提交的 clone 都能接手,不再限定本机工作区。接手前先 `git log -1 --format=%h -- go/data_service/internal/logic/data_logic_integration_test.go`:不是 `c35e1133d` 就说明之后又有人改过,先看 diff。
 
 **给 Codex 的开场提示**(直接粘贴):
 
@@ -36,13 +36,13 @@ Codex 的运行结果,按第 3.4 节核对回填是否正确;没有结果就不�
 | 项 | 位置 | 提交状态 |
 |---|---|---|
 | 单实例 6 个用例 | `go/data_service/internal/logic/data_logic_integration_test.go`(`//go:build integration`) | 已随 `53361d055` 入库 |
-| Cluster 用例 `TestRealRedisClusterUndeclaredKeys`、SCAN 辅助函数抽成 `scanRealRedisPlayerKeys`、文件头改成「7.2 与 8.10.2 两轮」 | 同上文件 | **工作区未提交** |
-| 设计文档「仍未处理」一条:标注「已补集成测试,待运行」,并更正「跨 slot 会报错」的说法 | `docs/design/data_service_role_and_scope.md` | 第一处已入库,其余未提交 |
-| 进度记录 | `docs/PROGRESS.md` 三条:「真 Redis 7.2 集成测试」「补 Redis Cluster 未声明键集成用例」「改为两版本验证并交接」 | 第一条已入库,其余未提交 |
-| 第 4 节尾巴 1:注释口径更正 | `data_logic.go` 的 `loadAllFieldsScript` 注释、`routing/router.go` 的 `getHomeZoneAndMergeFenceScript` 注释;设计文档那条更正标注「已改正」 | **工作区未提交** |
-| 第 4 节尾巴 2:版本守卫 ≤18 位 → ≤15 位 | `data_logic.go` 的 `saveFieldsScript`(守卫字面量与注释)、`parseVersionValue` 注释;新单测 `player_fields_test.go: TestSave_VersionPrecisionCap`;集成测试用例 3 加上界段、用例 4 加两行坏版本;设计文档「版本格式」后加「版本精度上限」一条 | **工作区未提交** |
-| 静态评审修正:Cluster 用例的就绪判断 | 集成测试用例 7:改为逐个种子节点等 `cluster_state:ok`(最多 30 秒)之后再建集群客户端,并断言 `CLUSTER SLOTS` 覆盖满 16384;第 3.2 节容器步骤改为三个节点都等到 ok | **工作区未提交** |
-| 进度记录 | `docs/PROGRESS.md`「第 4 节两个尾巴」一条 | **工作区未提交** |
+| Cluster 用例 `TestRealRedisClusterUndeclaredKeys`、SCAN 辅助函数抽成 `scanRealRedisPlayerKeys`、文件头改成「7.2 与 8.10.2 两轮」 | 同上文件 | 已随 `c35e1133d` 入库 |
+| 设计文档「仍未处理」一条:标注「已补集成测试,待运行」,并更正「跨 slot 会报错」的说法 | `docs/design/data_service_role_and_scope.md` | 第一处随 `53361d055`、其余随 `c35e1133d` 入库 |
+| 进度记录 | `docs/PROGRESS.md` 三条:「真 Redis 7.2 集成测试」「补 Redis Cluster 未声明键集成用例」「改为两版本验证并交接」 | 第一条随 `53361d055`、其余随 `c35e1133d` 入库 |
+| 第 4 节尾巴 1:注释口径更正 | `data_logic.go` 的 `loadAllFieldsScript` 注释、`routing/router.go` 的 `getHomeZoneAndMergeFenceScript` 注释;设计文档那条更正标注「已改正」 | 已随 `c35e1133d` 入库 |
+| 第 4 节尾巴 2:版本守卫 ≤18 位 → ≤15 位 | `data_logic.go` 的 `saveFieldsScript`(守卫字面量与注释)、`parseVersionValue` 注释;新单测 `player_fields_test.go: TestSave_VersionPrecisionCap`;集成测试用例 3 加上界段、用例 4 加两行坏版本;设计文档「版本格式」后加「版本精度上限」一条 | 已随 `c35e1133d` 入库 |
+| 静态评审修正:Cluster 用例的就绪判断 | 集成测试用例 7:改为逐个种子节点等 `cluster_state:ok`(最多 30 秒)之后再建集群客户端,并断言 `CLUSTER SLOTS` 覆盖满 16384;第 3.2 节容器步骤改为三个节点都等到 ok | 已随 `c35e1133d` 入库 |
+| 进度记录 | `docs/PROGRESS.md`「第 4 节两个尾巴」一条 | 已随 `c35e1133d` 入库 |
 
 7 个用例各钉什么:
 
@@ -87,7 +87,7 @@ Codex 的运行结果,按第 3.4 节核对回填是否正确;没有结果就不�
    - `gofmt -l internal/logic internal/routing`(期望无输出);
    - `go build ./...` → `go vet ./internal/logic/ ./internal/routing/` → `go vet -tags=integration ./internal/logic/`(同包 `id_segment_integration_test.go` 同 tag,会一起编译;它要 MySQL,但 `-run RealRedis` 不会跑它);
    - `go test -count=1 ./internal/logic/`(miniredis 单测,全绿;其中 `TestSave_VersionPrecisionCap` 是本线新增,必须 PASS)。`router.go` 只改了注释,编译与 vet 过即可,不单跑 routing 包测试;
-   - 工作区与别的会话共用(`internal/svc`、`internal/routereconcile`、`cmd/debug_import` 等有别的线的未提交改动):`go build` / `go vet` 若报在本线文件(第 6 节)之外,记下文件与报错、归给对应那条线,不在本线里修。
+   - `c35e1133d` 一并收进了别的线(D1 路由对账、debug_import 等)同样未编译的改动:`go build` / `go vet` 若报在本线文件(第 6 节)之外,记下文件与报错、归给对应那条线,不在本线里修。
 4. 跑测:
 
    ```powershell

@@ -79,7 +79,7 @@
     <ClInclude Include="network\rpc_channel_stats.h" />
     <ClInclude Include="network\rpc_controller.h" />
     <ClInclude Include="network\rpc_done_callback.h" />
-    <ClInclude Include="network\grpc_call_types.h" />
+    <ClInclude Include="network\grpc_client_call.h" />
     <ClInclude Include="network\grpc_unary_call.h" />
     <ClInclude Include="network\rpc_status.h" />
     <ClInclude Include="network\message_statistics.h" />

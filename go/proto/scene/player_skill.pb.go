@@ -408,11 +408,11 @@ const file_proto_scene_player_skill_proto_rawDesc = "" +
 	"\x12ListSkillsResponse\x124\n" +
 	"\rerror_message\x18\x01 \x01(\v2\x0f.TipInfoMessageR\ferrorMessage\x123\n" +
 	"\n" +
-	"skill_list\x18\x02 \x01(\v2\x14.PlayerSkillListCompR\tskillList2\xfa\x01\n" +
+	"skill_list\x18\x02 \x01(\v2\x14.PlayerSkillListCompR\tskillList2\x88\x02\n" +
 	"\x16SceneSkillClientPlayer\x12;\n" +
-	"\fReleaseSkill\x12\x14.ReleaseSkillRequest\x1a\x15.ReleaseSkillResponse\x12(\n" +
-	"\x0fNotifySkillUsed\x12\r.SkillUsedS2C\x1a\x06.Empty\x126\n" +
-	"\x16NotifySkillInterrupted\x12\x14.SkillInterruptedS2C\x1a\x06.Empty\x125\n" +
+	"\fReleaseSkill\x12\x14.ReleaseSkillRequest\x1a\x15.ReleaseSkillResponse\x12/\n" +
+	"\x0fNotifySkillUsed\x12\r.SkillUsedS2C\x1a\x06.Empty\"\x05\x88\x99\xc8\x01\x02\x12=\n" +
+	"\x16NotifySkillInterrupted\x12\x14.SkillInterruptedS2C\x1a\x06.Empty\"\x05\x88\x99\xc8\x01\x02\x125\n" +
 	"\n" +
 	"ListSkills\x12\x12.ListSkillsRequest\x1a\x13.ListSkillsResponse\x1a\n" +
 	"\x80\xa8\xc3\x01\x01\x88\xa8\xc3\x01\x01B\x14\x98\xd4a\x03Z\vproto/scene\x80\x01\x01b\x06proto3"

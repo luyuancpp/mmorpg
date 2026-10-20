@@ -247,7 +247,7 @@ IdSegments:
 # docs/design/microservice-zone-contract-20260914.md §3):
 #   1. deadline > 目标服务的服务端超时(+2000 余量):下游先超时,C++ 才收得到带真实错误码的应答;
 #   2. 依赖调用结果的 C++ 看门狗 > deadline:号段 fetchTimeout、换图在途 TTL 都从这里派生,不另写常数。
-# 没列出的类型用内置默认 10000(grpc_client/grpc_call_tag.h kDefaultGrpcCallDeadlineMs);
+# 没列出的类型用内置默认 10000(core/network/grpc_client_call.h kDefaultGrpcCallDeadlineMs);
 # 不认识的键、0(= 不限时)被忽略并记 ERROR。改服务端超时时同步改这里。流式调用(etcd Watch / KeepAlive)不设。
 # 第 1 条对下面有 Go 服务端的六个目标(SceneManager / DataService / ClientRpcRouter / Match / Login / PlayerInbox)是部署门禁:
 # k8s_deploy.ps1 的 Assert-GrpcClientDeadlineBudget 在 zone-up / infra-up / all-up 写集群之前核对

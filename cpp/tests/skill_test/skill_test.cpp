@@ -1067,9 +1067,12 @@ TEST(PlayerSkillSystemTest, SanitizeSkillListKeepsUnknownSkillsInactiveAndRemove
     skillList.add_skill_list()->set_skill_table_id(0);
     skillList.add_skill_list()->set_skill_table_id(1);
     skillList.add_skill_list()->set_skill_table_id(1001);
+    skillList.mutable_unknown_fields()->AddVarint(412345, 5); // 新版本给组件本层加的字段
 
     PlayerSkillSystem::SanitizeSkillList(player);
 
+    ASSERT_EQ(1, skillList.unknown_fields().field_count()) << "整体替换时组件本层未知字段并回(设计 §4.2 L5)";
+    EXPECT_EQ(412345, skillList.unknown_fields().field(0).number());
     ASSERT_EQ(skillList.skill_list_size(), 2) << "only 0 and duplicates are removed";
     EXPECT_EQ(skillList.skill_list(0).skill_table_id(), 1);
     EXPECT_EQ(skillList.skill_list(1).skill_table_id(), 1001) << "unknown skill is kept, not deleted";
@@ -1080,7 +1083,7 @@ TEST(PlayerSkillSystemTest, SanitizeSkillListKeepsUnknownSkillsInactiveAndRemove
     EXPECT_FALSE(PlayerSkillSystem::IsActiveSkill(0));
 }
 
-// 列表里只有已知技能时不整体替换:组件本层未知字段与逐条技能都原样不动。
+// 列表里没有 0 与重复项时不整体替换(查不到表的技能也不算要改):组件本层未知字段与逐条技能都原样不动。
 TEST(PlayerSkillSystemTest, SanitizeSkillListLeavesACleanListUntouched)
 {
     entt::entity player = CreateSkillActor();

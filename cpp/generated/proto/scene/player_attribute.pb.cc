@@ -4451,7 +4451,7 @@ const char descriptor_table_protodef_proto_2fscene_2fplayer_5fattribute_2eproto[
     "o\"(\n\027GmSetPlayerLevelRequest\022\r\n\005level\030\001 "
     "\001(\r\"f\n\030GmSetPlayerLevelResponse\022&\n\rerror"
     "_message\030\001 \001(\0132\017.TipInfoMessage\022\"\n\005panel"
-    "\030\002 \001(\0132\023.AttributePanelInfo2\244\006\n\032SceneAtt"
+    "\030\002 \001(\0132\023.AttributePanelInfo2\253\006\n\032SceneAtt"
     "ributeClientPlayer\022J\n\021GetAttributePanel\022"
     "\031.GetAttributePanelRequest\032\032.GetAttribut"
     "ePanelResponse\022\\\n\027AllocateAttributePoint"
@@ -4468,11 +4468,11 @@ const char descriptor_table_protodef_proto_2fscene_2fplayer_5fattribute_2eproto[
     "est\032\036.SwitchAttributeSchemeResponse\022V\n\025R"
     "enameAttributeScheme\022\035.RenameAttributeSc"
     "hemeRequest\032\036.RenameAttributeSchemeRespo"
-    "nse\022@\n\033NotifyAttributePanelChanged\022\031.Att"
-    "ributePanelChangedS2C\032\006.Empty\022G\n\020GmSetPl"
-    "ayerLevel\022\030.GmSetPlayerLevelRequest\032\031.Gm"
-    "SetPlayerLevelResponse\032\n\200\250\303\001\001\210\250\303\001\001B\016Z\005sc"
-    "ene\200\001\001\230\324a\003b\006proto3"
+    "nse\022G\n\033NotifyAttributePanelChanged\022\031.Att"
+    "ributePanelChangedS2C\032\006.Empty\"\005\210\231\310\001\002\022G\n\020"
+    "GmSetPlayerLevel\022\030.GmSetPlayerLevelReque"
+    "st\032\031.GmSetPlayerLevelResponse\032\n\200\250\303\001\001\210\250\303\001"
+    "\001B\016Z\005scene\200\001\001\230\324a\003b\006proto3"
 };
 static const ::_pbi::DescriptorTable* PROTOBUF_NONNULL const
     descriptor_table_proto_2fscene_2fplayer_5fattribute_2eproto_deps[3] = {
@@ -4484,7 +4484,7 @@ static ::absl::once_flag descriptor_table_proto_2fscene_2fplayer_5fattribute_2ep
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fscene_2fplayer_5fattribute_2eproto = {
     false,
     false,
-    3538,
+    3545,
     descriptor_table_protodef_proto_2fscene_2fplayer_5fattribute_2eproto,
     "proto/scene/player_attribute.proto",
     &descriptor_table_proto_2fscene_2fplayer_5fattribute_2eproto_once,

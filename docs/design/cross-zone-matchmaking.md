@@ -297,7 +297,7 @@ MULTI、MGET(§10.0)。所以 SharedRedis **必须保持单实例(或主从哨�
 
 | 服务 | 阻塞项 |
 |---|---|
-| C++ scene | hiredis 裸连接无 MOVED/ASK;存盘 Lua 访问未声明的全局 key `dirty_keys_set`(`redis_client.h:18-22,461-475`)|
+| C++ scene | hiredis 裸连接无 MOVED/ASK;存盘 Lua 访问未声明的全局 key `dirty_keys_set`(`redis_client.h:18-22,461-475`)。(2026-10-20 更正:B0-2 已随 `e76f6f747` 删掉这项写入,两段存盘脚本 `kSaveLuaScript` / `kSaveIfGuardLuaScript` 现在只访问 KEYS[] 声明的键,未编译、待 Codex 验证。本行剩下的阻塞是:无 MOVED/ASK,以及守卫脚本的两个键没有共同 hash tag)|
 | player_locator | 8 个 Lua 把 per-player key 与全局租约容器原子绑定(CROSSSLOT);`claimExpiredLeasesScript` 脚本内拼 key |
 | login | 排队/token 4 处跨 slot MULTI/EXEC;gate 排空查询跨 slot MGET |
 | scene_manager | 场景生命周期 Lua 7 key/3N key 跨 slot |

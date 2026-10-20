@@ -1,7 +1,7 @@
 # 入场会话栅栏:登录代次(login_generation)
 
 - 日期:2026-10-14
-- 状态:已定稿,代码落在同一批改动里;**未编译、未测试,待 Codex 验证**(验证步骤见 §11)。
+- 状态:已定稿,代码落在同一批改动里;**未编译、未测试,待 Codex 验证**(验证步骤见 §11)。*2026-10-20 回填(只读核对 PROGRESS 回执):单测已绿。`cross_zone_test` 随机全量 313/313 含 `EnterFence` 5 个、`EnterFenceEcs` 15 个;`routing_identity_test` 113/113 含 `LoginGeneration` 10 个。出处是 PROGRESS「2026-10-19 Codex:会话释放夹具修复核验完成,跨区随机全量313项通过」,跑的是合并前源码。真实环境的同节点顶号场景(两台设备连不同 gate)没有实跑。*
 - 范围:login → player_locator → scene_manager → gate → scene 的入场链。存盘链不改(见 §8)。
 - 来源:`cross-zone-scene-travel.md` §13.9「scene 侧会话栅栏」、§13.8、§13.3 L4 登记的待办;
   本文取代那几处"遇到过期 epoch 应直接拒绝"的口径(epoch 修不了同节点顶号,见 §1)。

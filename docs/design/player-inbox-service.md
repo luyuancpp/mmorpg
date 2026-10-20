@@ -1037,7 +1037,7 @@ func (s *Store) Enqueue(ctx context.Context, p EnqueueParams, inTx func(*sql.Tx,
 0. **快路径（不加锁）**：普通读流行。
    - 流行不存在：返回 NO_STREAM。这是绝大多数玩家的路径，结束。
    - `open_count == 0`，且没有 CursorAhead（见第 2 步）：按快照计算围栏结局，直接返回空，**不写任何东西**。
-   - 不写围栏是安全的。围栏保护的是「投递」和「确认」，而这两者都走下面的加锁路径。僵尸 scene 即使拿到条目，它的存盘也会被 Redis 的 Lua CAS 拒绝（`redis_client.h:42`），效果不会落盘，也就无法确认。
+   - 不写围栏是安全的。围栏保护的是「投递」和「确认」，而这两者都走下面的加锁路径。僵尸 scene 即使拿到条目，它的存盘也会被 Redis 的 Lua CAS 拒绝（`redis_client.h:42`；2026-10-20 注：行号已漂移，以常量 `kSaveIfGuardLuaScript` 为准），效果不会落盘，也就无法确认。
 1. 否则开事务，对流行执行 `FOR UPDATE`，调 `DecideFence`。结局是 STALE、EPOCH_REQUIRED 或 EPOCH_AHEAD 时，回滚并返回。
 2. **CursorAhead**：如果 `consumer_decided_through ≥ next_seq`，说明全局库被恢复过。处理是：
    - 记 `player_inbox_cursor_ahead_total` 并告警；
@@ -1103,7 +1103,7 @@ func (s *Store) Enqueue(ctx context.Context, p EnqueueParams, inTx func(*sql.Tx,
 - **已经应用、正在等落盘时开始交接**：交接时的那次存盘就是落盘点。源 scene 随后发出的 Ack 有两种结局：
   - 目标 scene 还没拉过：围栏仍是旧 epoch，判 MATCH，照常接受。
   - 目标 scene 已经拉过：判 STALE。目标加载的存档里已经带着账本，它会自己补确认。
-- **源 scene 已经应用、但没落盘就失去归属**：新 epoch 铸造之后，旧 scene 的存盘会被 Redis Lua CAS 拒绝（`kSaveIfGuardLuaScript`，`redis_client.h:42-52`）。它的效果随实体一起消失，由新 owner 重做一次，所以只生效一次。
+- **源 scene 已经应用、但没落盘就失去归属**：新 epoch 铸造之后，旧 scene 的存盘会被 Redis Lua CAS 拒绝（`kSaveIfGuardLuaScript`，`redis_client.h:42-52`；2026-10-20 注：行号已漂移，按常量名查）。它的效果随实体一起消失，由新 owner 重做一次，所以只生效一次。
 - **目标 scene**：落地钩子判定为新落地、并且通过前置闸之后才开始拉。它带的 epoch 更大，会把围栏推上去（不超过 R）。
 
 保证的边界只覆盖 Redis 层，不覆盖 MySQL（`reliable-player-inbox-20261014.md:100`）。原稿写「与资产通道相同」，这个前提已经不成立，见下面的残余风险。

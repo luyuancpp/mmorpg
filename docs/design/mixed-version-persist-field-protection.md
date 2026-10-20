@@ -17,7 +17,7 @@
    - **机制一 · 未知字段跟着对象走**：
      - 重建层改为把未知字段保存在运行时对象里；做不到的消息类型一律冻结，冻结类型不许再加字段。
      - 一个通用的**往返一致性测试**机械地守住这条规则。
-     - 有一类语义耦合，"跟着对象走"也挡不住：合堆、等价判定、逻辑重置、跨实体引用。对这类情况，旧版代码对"带着未知字段的对象"拒绝执行这些操作（§4.4）。
+     - 有一类语义耦合，"跟着对象走"也挡不住：合堆、等价判定、逻辑重置、跨实体引用。其中合堆、欠款合并、纪元重置三类，旧版代码对"带着未知字段的对象"拒绝执行（§4.4）；按 config 计数和扣数量、跨实体引用没有通用守卫，这类字段按 R5 走破坏性变更流程。
    - **机制二 · 覆盖世代校验**：
      - Redis 严格提交屏障**只在上一次屏障写入不是本实体写的时候**（hash 里的写方令牌与本实体不同）比较"加载时世代 ≥ 已记录世代"，同版本重放跳过比较；hash 只升不降（§5.2，v0.6）。
      - login 加载时做同样的门禁。
@@ -145,7 +145,7 @@ login → go/db 读任务 → SELECT 本版本认识的列 → 读回执 → log
 | R2 | 给已有的持久 oneof 加新成员（生成期强制） | 字段放到 oneof 之外，或者走破坏性变更流程（整批停机换版，或 expand / contract） |
 | R3 | 改号、改类型、复用号（生成期强制） | 用 `reserved` |
 | R4 | 字段迁移：子消息字段提升为列、拆分、换存储位置。生成器只能检测"同一世代内既删又增"并给出提示 | expand / contract：新旧位置双写一个完整版本周期，然后再切换读方 |
-| R5 | **语义耦合字段**：会参与等价判定、合堆、合并、逻辑重置的字段，或者按 ID 引用其他实体、而这类实体旧代码能删除后重建的字段。生成器无法检测，列入评审清单 | 依赖 §4.4 的守卫（旧代码遇到带未知字段的对象就拒绝做这类操作）；守卫覆盖不到的场景，走破坏性变更流程。跨实体引用只能用永不复用的实例 ID |
+| R5 | **语义耦合字段**：会参与等价判定、合堆、合并、逻辑重置的字段，或者按 ID 引用其他实体、而这类实体旧代码能删除后重建的字段。生成器无法检测，列入评审清单 | 依赖 §4.4 的守卫（旧代码遇到带未知字段的对象就拒绝做这类操作）；守卫覆盖不到的场景，走破坏性变更流程。§4.4 表里标"暂无守卫"的就是覆盖不到的场景：凡是影响可叠加物品可交易性、可消耗性或等价性的 `ItemComp` 字段（例如 bound_state、expire_at），在补上按数量扣除的守卫之前一律按破坏性变更处理。跨实体引用只能用永不复用的实例 ID |
 
 **两个 option**，都定义在 `proto/db/proto_option.proto`。生成器从描述符的原始字节按字段号动态读取，不需要升级外部模块 `protooption`：
 
@@ -240,7 +240,8 @@ v0.1 的做法是在实体上保存加载原件，存盘时按身份键把原件
 | 操作 | 现状 [C] | 守卫 |
 |---|---|---|
 | 合堆、等价判定 | `ItemStore::CanStack` 只判断 `has_equip`；`ApplyStackFill` / `MergePartialStacks` 按配置合堆。`ItemEntry` 的 TODO 里已规划 bound_state、expire_at | 如果任一方 `ItemComp` 带有未知字段，`CanStack` 返回 false。旧版不会把带新属性（比如绑定、限时）的物品并进普通堆。判定只有一份（`ItemStore::IsIndependentInstance`，公开）：包内既有堆的空余估算与整理、传入物品一侧 `Bag::AddItems` 的规划分流、宝石拆卸的静默预检（直接调 `CanStack`）都用它，预检、规划与提交不分叉（后两处为第 3a′ 批） |
-| 合并 | `AttachDebt` 会把新欠款并进已有欠款 | 已有欠款带未知字段时，`AttachDebt` 按 fail-closed 返回失败，不做合并。这是版本错位，不是确定性拒绝：调用方必须延后，等玩家落到新版本节点再挂，不得记成终态拒绝。调用方用只读谓词 `CurrencySystem::DebtCarriesUnknownFields` 先判，不拿通用返回码反推；收件箱执行器命中即回 `kDefer`（第 3a′ 批） |
+| 按 config 计数和扣数量 | `ItemStore::TotalCountOf` / `HasAll` / `DrainStacks` 只按 config 过滤，不看 `IsIndependentInstance`。调用方：资产通道数量扣出（快照只记 config 与数量，对端按 `ItemCountMap` 新建普通实例）、强化扣材料、镶嵌扣宝石（装备上只记 config，拆下时生成普通宝石）、战斗消耗 `RemoveItemsClamped`（2026-10-19 对抗复核 B-1） | **暂无守卫**。带新属性的可叠加物品在旧版里会被当成普通单位计数、扣走或交易出去，属性无声消失。在补守卫之前，这类字段按 R5 走破坏性变更流程。将来补守卫要另立一批：计数、预检、扣除三处同口径跳过带未知字段的实例（谓词用 `unknown_field_carry::HasUnknown`，不改 `has_equip` 实例的现有行为）；普通单位不够时资产通道回 RETRY（版本错位，不记终态），玩法入口回非终态拒绝码 |
+| 合并 | `AttachDebt` 会把新欠款并进已有欠款 | 已有欠款带未知字段时，`AttachDebt` 按 fail-closed 返回失败，不做合并。这是版本错位，不是确定性拒绝：不得记成终态拒绝，也不能按本地副本原地重试（这笔欠款可能在会话内被还清删除，而那条处置可能已被作废）。调用方用只读谓词 `CurrencySystem::DebtCarriesUnknownFields` 先判，不拿通用返回码反推；收件箱执行器命中回 `kVersionSkew`，收件箱停用本域、下次落地重拉（第 3a′ 批，对抗复核 A-1 后由 `kDefer` 改来，`player-inbox-service.md` §7.6 第 3 步）。`AdjustDebt` / `WaiveDebt` / `FreezeDebt` 目前没有生产调用方（GM RPC 仍是桩），实现时要补同样的守卫 |
 | 逻辑重置 | `ResetAssetOpStreamForEpoch` 逐字段清空 | 改为 `Clear()` 后重设（§4.2 L7） |
 
 跨实体引用（比如新列按 pet_id 引用宠物，而旧代码能按同一个 pet_id 恢复宠物）没有通用守卫。归入 R5：只能引用永不复用的实例 ID，否则按不可携带处理。
@@ -327,7 +328,7 @@ v0.2 要求每次存盘都满足"加载世代 ≥ hash"，而写入成功后 has
 | go/db 读回执与子表缓存 | 经过 C2 后原样包含行戳 |
 | go/db 写后发布缓存 / ACK / 资产证据 | 不改。机制三不做部分写入，body 就是整行 |
 | go/db 补投 | 无。投递的字节里已经带戳 |
-| `go/db/cmd/save_barrier_restore` | 接受 `schema_gen` 字段：把 `HLEN == 3` 改为字段白名单。重建 hash 时写 `schema_gen = max(1, 两行戳的最大值)` |
+| `go/db/cmd/save_barrier_restore` | 接受 `schema_gen` 字段：把 `HLEN == 3` 改为字段白名单（v0.6 起也接受 `schema_writer`，不解释不改写）。重建 hash 时写 `schema_gen = max(1, 两行戳的最大值)`。**与 C3 / C4 取最小值的口径冲突，切 enforce 前须拍板，见 §13 第 8 条** |
 | `go/db/cmd/retry_requeue` | 重放的任务照常经过 §6.2 的判定 |
 | `tools/merge_zone` | 无。戳随列复制；hash 被删除后视为"不比较" |
 | `go/data_service/cmd/debug_import`（只在本地用） | 增加前置检查：行戳 > 工具世代时拒绝导入 |
@@ -442,7 +443,7 @@ v0.2 要求每次存盘都满足"加载世代 ≥ hash"，而写入成功后 has
 | 对象 | 能否回滚 | 说明 |
 |---|---|---|
 | login | 可以回滚到任何一个带本机制的版本 | Go 原样保留 |
-| scene | **有条件** | 对象内携带保证未知字段不丢。但**持久值域扩展**不在台账里：比如新增包类型后回滚，旧版 `bag_marshal::Unmarshal` 会丢掉越界物品；新增技能后回滚，`SanitizeSkillList` 会删掉表里查不到的技能。§12 的这两处已在第 5 批落码（越界包类型原样携带、查不到表的技能保留但不生效），**未编译、未验证**；能回滚到的旧版本还必须本身带着第 5 批。在 Codex 验证通过、且回滚目标版本含第 5 批之前，发布单仍须写明本版本"没有扩展持久值域"，否则不能回滚 scene。其他持久值域（例如新物品配置、新任务、新宠物）是否也会被旧版删掉，见 §12 待核对行 |
+| scene | **有条件** | 对象内携带保证未知字段不丢。但**持久值域扩展**不在台账里：比如新增包类型后回滚，旧版 `bag_marshal::Unmarshal` 会丢掉越界物品；新增技能后回滚，`SanitizeSkillList` 会删掉表里查不到的技能。§12 的这两处已在第 5 批落码（越界包类型原样携带、查不到表的技能保留但不生效），**未编译、未验证**；能回滚到的旧版本还必须本身带着第 5 批。第 5 批经 Codex 验证、且回滚目标版本含第 5 批之后，解除的只是"包类型""技能"两类值域的限制；其余持久值域（新物品配置、新任务、新宠物等）在 §12「持久值域：其他按配置表解释的持久值」一行核对完毕之前，发布单仍须写明本版本没有扩展这些值域，否则不能回滚 scene |
 | go/db | 只能回滚到世代 ≥ 数据最高戳的版本 | 回滚得更低会卡住存盘和冷加载，但不丢数据，处置方式是升回去 |
 | 回到机制上线前的二进制 | 禁止 | 引导期关闭后，C0 与 C3 / C4 会兜底 |
 
@@ -480,13 +481,19 @@ v0.2 要求每次存盘都满足"加载世代 ≥ hash"，而写入成功后 has
     - `Bag::AddItems` 规划仍只按 `has_equip()` 分流，与提交侧判定不一致；
     - 宝石拆卸预检 `HasStackWithRoom` 判据未跟上。
 - **第 3a′ 批：已落码，未编译、未测试（Claude，2026-10-19）。** 三条缺陷各自修正并配用例：
-  - `CurrencySystem::DebtCarriesUnknownFields`（只读谓词，`AttachDebt` 与执行器共用）；`GmSanctionInboxExecutor::AttachCurrencyDebt` 命中回 `kDefer`；用例 `GmSanctionInboxExecutorTest.AttachCurrencyDebtDefersWhenExistingDebtCarriesUnknownFields`，`CurrencyTest.AttachDebtRefusesToMergeIntoDebtWithUnknownFields` 补谓词断言；`player-inbox-service.md` §7.6 同步；
+  - `CurrencySystem::DebtCarriesUnknownFields`（只读谓词，`AttachDebt` 与执行器共用）；`GmSanctionInboxExecutor::AttachCurrencyDebt` 命中回新结局 `kVersionSkew`（对抗复核 A-1 后由 `kDefer` 改来），`PlayerInboxSystem` 据此停用本域（`PlayerInboxHaltReason::kVersionSkew`）并确认已定前缀；用例 `GmSanctionInboxExecutorTest.AttachCurrencyDebtReportsVersionSkewWhenExistingDebtCarriesUnknownFields`、`PlayerInboxSystemTest.ExecutorVersionSkewHaltsAfterConfirmingThePrefixAndNeverResumesLocally`，`CurrencyTest.AttachDebtRefusesToMergeIntoDebtWithUnknownFields` 补谓词断言；`player-inbox-service.md` §7.5 / §7.6 与 `docs/ops/player-inbox-runbook.md` §5.2 A′ 同步；
   - `ItemStore::IsIndependentInstance` 改为公开，`Bag::AddItems` 规划按它分流；用例 `BagInstanceDataTest.AddItemsPlansIncomingInstancesCarryingUnknownFieldsAsSeparate`；
   - 宝石拆卸预检 `HasStackWithRoom` 改为直接调 `ItemStore::CanStack`；用例 `PlayerEquipTest.RemoveGemPrecheckSkipsAStackCarryingUnknownFields`（用日志出口探针确认没有走到容器层的调用栈分支）。
 - **第 5 批：已落码，未编译、未测试（Claude，2026-10-19）。** 见 §12 两行：
-  - 越界包类型：`PlayerBagsComp::unsupportedBagTypes` 携带 bag_type ≥ `kBagTypeCount` 的整份 `ItemEntry` 与下标 ≥ `kBagTypeCount` 的容量，`bag_marshal::Unmarshal` 整体重填、`Marshal` 原样追加；用例 `CrossZoneBagMarshal.UnmarshalCarriesOutOfRangeBagTypeVerbatim`（原 `UnmarshalDropsOutOfRangeBagType` 改写）；
+  - 越界包类型：`PlayerBagsComp::unsupportedBagTypes` 携带 bag_type ≥ `kBagTypeCount` 的整份 `ItemEntry` 与下标 ≥ `kBagTypeCount` 的容量，`bag_marshal::Unmarshal` 整体重填、`Marshal` 原样追加；用例 `CrossZoneBagMarshal.UnmarshalCarriesOutOfRangeBagTypeVerbatim`（原 `UnmarshalDropsOutOfRangeBagType` 改写）。携带记录参与跨包 guid 唯一性检查：新增 `Bag::ContainsGuid`、`PlayerBagsComp::ContainsGuid`，资产通道入账改用后者（对抗复核 D-1）；用例 `AssetOpSystemTest.CreditRejectsAnInstanceAlreadyCarriedInAnUnsupportedBagType`；
   - 查不到表的技能：`SanitizeSkillList` 只去 0 与重复项，查不到表的保留；新增 `PlayerSkillSystem::IsActiveSkill`，`HasSkill`、`ListSkills` 下发只认生效的项，战斗快照原本就跳过查不到表的项；`ReleaseSkill` 原本先按表拒。用例 `PlayerSkillSystemTest.SanitizeSkillListKeepsUnknownSkillsInactiveAndRemovesDuplicates`（原 `SanitizeSkillListRemovesUnknownAndDuplicateSkills` 改写）、`SanitizeSkillListLeavesACleanListUntouched`。`ListSkills` 的过滤没有单测（处理器不在任何测试工程里）。
-- **第 3b、4 批：未开工（2026-10-19 起由另一会话接手）。** 3b 开工前先修订 §5.2（见该节开头的提示）。
+- **第 3b 批：已落码，未编译、未测试（Claude，2026-10-19～20）。** §5.2 先改为写方令牌（v0.6，§15）再落码：
+  - 严格屏障 Lua 11 参（`num_gt`、C3 放在 owner / 版本判定之后、同版本重放与本实体令牌跳过、warn 返回 2 照写、enforce 返回 3 不写、`schema_gen` 只升不降、`schema_writer`）；`RedisSaveSchemaGen` 与入队前同口径校验；`OnSaved` 的 2 / 3 分支与两个新回调（返回 3 时排队值 guard 与令牌都相同才丢）；
+  - scene：`PlayerPersistWriterComp`（令牌，存盘写入口懒建）、调用点传输出 / 加载世代与模式、`HandlePlayerSaveSchemaWarned` / `HandlePlayerSaveSchemaRejected` 分派、`persist_schema_stats` 与 30 秒 `[PersistSchema]` 汇总；
+  - 配置：`BaseDeployConfig.persist_schema_regression_mode`（字段 23，**proto 待 Codex 重新生成**）、`readBaseDeployConfig` 归一化、`bin/etc` 默认 `warn`、`k8s_deploy.ps1` 镜像与生成期校验、契约测试、`start_game.ps1` 启动前校验；
+  - `save_barrier_restore` 字段白名单接受 `schema_writer`；运维 LogQL 固定查询（`deploy/k8s/README.md`）。
+- **第 4 批：已落码，未编译、未测试（Claude，2026-10-19～20）。** login C4：`beginParentLoad` 追加 `schema_gen` 与存在标记（字段存在但为空串按损坏），快路径在身份 / 水位 / 种子校验之后判；warn 计数放行、enforce 返回错误走现有失败路径；`login_persist_schema_regression_total{reason,mode}` 起服预置 4 条序列；`login.yaml` 键与启动期归一化（非法值拒绝启动）；`k8s_deploy.ps1` login ConfigMap 镜像与契约测试；告警 `LoginPersistSchemaRegression`；种子不盖戳与 backfill 往返用例。
+- **切 enforce 之前还必须拍板**：`save_barrier_restore` 的 `schema_gen` 取值口径与 C3 / C4 的加载世代口径不一致（§13 第 8 条）。
 
 | 批 | 内容 | 主要改动 | Codex 验证 |
 |---|---|---|---|
@@ -495,7 +502,7 @@ v0.2 要求每次存盘都满足"加载世代 ≥ hash"，而写入成功后 has
 | 3a | C++ 携带：两个 Carry 组件（在手写 loader 里创建）、统一入口、欠款与任务列表的携带、`SanitizeSkillList` 保留顶层未知字段、`ResetAssetOpStreamForEpoch` 改为 `Clear()`、§4.4 的两个守卫、回档快照改入口、盖戳、往返一致性测试与全组件夹具、受影响测试的修正 | `services/scene/player/{comp,system}/...`、`modules/currency/...`、`mission_marshal.cpp`、`player_skill.cpp`、`asset_op_ledger.cpp`、`modules/bag/item_store.cpp`、`snapshot_system.cpp`、bag_test 及 §4.3 列出的测试、vcxproj / CMakeLists。文件可能接近 30 个，必要时把守卫拆成 3a′ | `game.sln` 串行 `/m:1` 完整编译；新测试和所有存盘相关单测 |
 | 3b | C++ 校验：严格屏障 Lua 增加到 11 个参数、`num_gt`、写方令牌（v0.6）、返回值 2 / 3、`OnSaved` 的处理与新回调（`core/system/redis.cpp`）、`BaseDeployConfig` 及部署渲染、`save_barrier_restore` 字段白名单 | `redis_client.h`、`core/system/redis.cpp`、`player_lifecycle.cpp`、`currency_test.cpp`（现有用例断言"返回 2 是坏回包"、字面量白名单、以 7 个参数直接 EVAL 的真 Redis 用例、调用文本契约，这几处都要改写）、`base_deploy_config` 的 proto / `config.cpp` / yaml、`k8s_deploy.ps1` 及其契约测试、`start_game.ps1` | `game.sln` 完整编译；Redis 脚本测试；k8s_deploy 契约测试 |
 | 4 | login：C4（`beginParentLoad` 增加第 4 个返回元素并比较）、种子保持不盖戳的测试、backfill 往返测试、`login.yaml`；可选的能力心跳与部署预检；运维手册 | `go/login/internal/logic/pkg/dataloader/...`、`go/login/etc/login.yaml`、`deploy/k8s/README.md` | login 跑 `go test ./...`、`go vet` |
-| 5 | §12 中持久值域的两个删数据点（这是 scene 无条件回滚的前提） | `player_skill.{h,cpp}`、`player_skill_handler.cpp`（`ListSkills`）、`bag_marshal.{h,cpp}`、`modules/bag/comp/player_bags_comp.h`；测试 `cross_zone_test.cpp`、`skill_test.cpp`、`persist_round_trip_test.cpp`（注释） | 同 3a，另跑 `skill_test` |
+| 5 | §12 中持久值域的两个删数据点（这是 scene 无条件回滚的前提） | `player_skill.{h,cpp}`、`player_skill_handler.cpp`（`ListSkills`）、`bag_marshal.{h,cpp}`、`modules/bag/comp/player_bags_comp.h`、`modules/bag/bag_system.h`（`ContainsGuid`）、`asset_op_system.cpp`（入账查重）；测试 `cross_zone_test.cpp`、`skill_test.cpp`、`asset_op_system_test.cpp`、`persist_round_trip_test.cpp`（注释） | 同 3a，另跑 `skill_test` |
 
 每批完成后在 `docs/PROGRESS.md` 追加一条，并注明 Java 版的状态（§11）。
 
@@ -557,8 +564,9 @@ v0.2 要求每次存盘都满足"加载世代 ≥ hash"，而写入成功后 has
 
 | 问题 | 现状 [C] | 建议 |
 |---|---|---|
-| 持久值域：旧配置表删掉新技能 | `SanitizeSkillList` 删除表里查不到的技能 | **第 5 批已落码（未编译）**：保留，但不生效（`PlayerSkillSystem::IsActiveSkill`；`HasSkill`、`ListSkills`、战斗快照、`ReleaseSkill` 都只认生效的项） |
-| 持久值域：越界的包类型 | `bag_marshal::Unmarshal` 丢弃越界条目；`capacities` 只输出 `kBagTypeCount` 个 | **第 5 批已落码（未编译）**：越界条目与多出的容量存进 `PlayerBagsComp::unsupportedBagTypes`，原样存回；本版本的玩法看不到也不碰它们 |
+| 持久值域：旧配置表删掉新技能 | `SanitizeSkillList` 删除表里查不到的技能 | **第 5 批已落码（未编译）**：保留，但不生效（`PlayerSkillSystem::IsActiveSkill`；`HasSkill`、`ListSkills`、战斗快照、`ReleaseSkill` 都只认生效的项）。附带约束：技能表行 id 删除后**不得复用**给另一个技能，否则留在老玩家数据里的不生效 id 会在复用后自动生效 |
+| 持久值域：越界的包类型 | `bag_marshal::Unmarshal` 丢弃越界条目；`capacities` 只输出 `kBagTypeCount` 个 | **第 5 批已落码（未编译）**：越界条目与多出的容量存进 `PlayerBagsComp::unsupportedBagTypes`，原样存回；本版本的玩法看不到也不碰它们，但它们仍参与跨包 guid 唯一性检查（`PlayerBagsComp::ContainsGuid`，资产通道入账用它；漏查会让同一实例在新旧两个包各落一份，2026-10-19 对抗复核 D-1） |
+| 持久值域：其他按配置表解释的持久值（物品 config_id、任务 / 条件 config_id、宠物种类、越界币种等） | **未核对**：旧版 scene 加载、marshal、存盘时遇到查不到配置行的 id，是删除、忽略还是保留，没有逐项确认。已知线索：`mission_marshal.cpp` 加载时按 `MissionTableManager` 查表，查不到时跳过补齐进度（看起来不删数据）；`Bag::InsertItemForRestore` 对查不到表的物品不丢弃 | 按第 5 批的做法，逐个列出 scene 加载、marshal、存盘路径里按配置表过滤或丢弃的点；确认会删的改成"原样携带、不生效"，不删的标明不适用。核对完之前，§8.3 的 scene 回滚门禁对这些值域不解除 |
 | 收件箱、资产通道载荷的新字段 | 旧版执行器会忽略新字段，记为 APPLIED | 给载荷加版本号，或执行器遇到未知字段时 fail-closed；开启收件箱消费之前必须修 |
 | Kafka 控制面命令 | 遇到未知事件直接丢弃 | 新增事件类型时配发件箱或重投机制 |
 | guild、mail、trade 的库表 | 未核对 | 按本文的不变量逐个评估 |
@@ -589,7 +597,7 @@ v0.2 要求每次存盘都满足"加载世代 ≥ hash"，而写入成功后 has
    - 是否在主干上发号；
    - 冻结类型有没有被加字段；
    - 有没有字段迁移（R4）；
-   - 有没有语义耦合字段（R5）：等价判定、合堆、合并、逻辑重置、跨实体引用；
+   - 有没有语义耦合字段（R5）：等价判定、合堆、合并、逻辑重置、跨实体引用；可叠加物品上影响可交易性、可消耗性的字段在按数量扣除补上守卫之前按破坏性变更处理（§4.4）；
    - 有没有扩展持久值域（发布单要写明"scene 不可回滚到此前版本"）；
    - 新字段被旧写方原样携带时，语义是否仍然成立。
 
@@ -679,6 +687,19 @@ v0.2 要求每次存盘都满足"加载世代 ≥ hash"，而写入成功后 has
 | 入队前校验 | `SaveWithCommitBarrier` 用与 Lua 同口径的校验拒绝非法覆盖世代参数（返回 false = 本次存盘拒绝） | 同上：不能让参数错误变成无限重试 |
 | 返回 3 的排队值处置 | 与 owner 拒绝（0）共用 `IssuePendingWithNewerGuard` | 两处语义相同，分开写会分叉 |
 | 观测 | 逐次 ERROR 日志带 `metric=persist_schema_regression`，30 秒汇总 `[PersistSchema]`；LogQL 写成值班固定查询，**不宣称告警已配** | Loki ruler 未接线（归上线批 BK8s），与 `[OwnerEpoch]` 同一先例 |
+
+### v0.7（第 3a′ / 第 5 批落码与对抗复核，2026-10-19）
+
+落码后做了一次七视角只读对抗复核（编译、收件箱、合堆、越界包类型、技能、测试、文档），每条发现两名复核者尝试驳倒；确认的都已在本批修掉或写进文档。
+
+| 项 | 调整 | 原因 |
+|---|---|---|
+| 欠款版本错位的结局（§4.4） | 收件箱执行器从 `kDefer` 改为新结局 `kVersionSkew`：收件箱停用本域（`reason=version_skew`），已定前缀照常确认，这一条不记账、不确认，下次落地重拉 | 复核 A-1：DEFER 按本地旧副本续做、看不到服务端之后挂的 VOID；而欠款可能在会话内被还清删除，错位随之消失，续做就会把一条已作废的 GM 欠款挂上并报 APPLIED。不选"每次重拉"：每次 Fetch 让 `delivery_count` +1，几分钟内就触发毒消息告警 |
+| 越界包类型的载体（§12） | 不新增独立的持久数据组件，作为 `PlayerBagsComp` 的成员 `unsupportedBagTypes`，存整份 `ItemEntry` | 与固定包同生共死，不需要单独的创建点和缺失语义，也就不触发整套同步清单；整份拷贝不会失败，`bag_marshal::Marshal` 不必改成返回 bool |
+| 携带记录与 guid 唯一性（§12） | 新增 `PlayerBagsComp::ContainsGuid`（固定包、动态包、携带记录都查），资产通道入账的跨包查重改用它 | 复核 D-1：漏查会让同一实例在新包与背包里各落一份，升回新版本后两份都还原 |
+| 按数量扣除（§4.4、R5、§13） | 新增"按 config 计数和扣数量"一行，标"暂无守卫"；§0 收窄"等价判定"的说法 | 复核 B-1：资产通道数量扣出、强化材料、镶嵌宝石、战斗消耗都不看 `IsIndependentInstance`；文档原先读起来像已经守住 |
+| 其他持久值域（§8.3、§12） | §12 新增"其他按配置表解释的持久值：未核对"一行，§8.3 的 scene 回滚门禁对这些值域不随第 5 批解除 | 复核 F-1：§8.3 原文引用了不存在的"待核对行" |
+| 技能表行 id（§12） | 删除的技能 id 不得复用 | 查不到表的技能会一直留在老玩家数据里，复用后会自动生效 |
 
 ### v0.3（第二轮评审）
 

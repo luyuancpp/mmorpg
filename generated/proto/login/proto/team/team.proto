@@ -39,9 +39,9 @@ service ClientPlayerTeam {
   rpc StartTeamMatch(StartTeamMatchRequest) returns (TeamResponse) {}
 
   // ---- S2C 推送占位(服务端空操作) ----
-  rpc NotifyTeamSnapshot(TeamSnapshotS2C) returns (Empty) {}
-  rpc NotifyTeamInvite(TeamInviteS2C) returns (Empty) {}
-  rpc NotifyTeamEvent(TeamEventS2C) returns (Empty) {}
+  rpc NotifyTeamSnapshot(TeamSnapshotS2C) returns (Empty) { option (OptionClientRpcKind) = CLIENT_RPC_PUSH; }
+  rpc NotifyTeamInvite(TeamInviteS2C) returns (Empty) { option (OptionClientRpcKind) = CLIENT_RPC_PUSH; }
+  rpc NotifyTeamEvent(TeamEventS2C) returns (Empty) { option (OptionClientRpcKind) = CLIENT_RPC_PUSH; }
 }
 
 // ---------------- 请求 ----------------

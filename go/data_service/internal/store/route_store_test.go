@@ -197,20 +197,25 @@ func TestRouteBootstrapDDLContract(t *testing.T) {
 		}
 	}
 
-	// player_route 的列注释 pb:N 就是 proto 字段号(1a 批预留,补 proto 时必须沿用)。
+	// 五张表每列的注释 pb:N 都等于 proto 字段号:player_route 的 pb:1..10 是 1a 批预留、补 proto 时沿用的;
+	// 另外四张补 proto 时按列序新定、同时补进 DDL。字段号上线后不复用(AGENTS §4),只有这里能钉住两边不各自重编号。
 	pbCommentRe := regexp.MustCompile("(?m)^  `([a-z_]+)` .*COMMENT 'pb:(\\d+)'")
-	routeFields := (&dbpb.PlayerRoute{}).ProtoReflect().Descriptor().Fields()
-	pbComments := pbCommentRe.FindAllStringSubmatch(playerRouteBootstrapDDL, -1)
-	if len(pbComments) != routeFields.Len() {
-		t.Fatalf("player_route 有 %d 个 pb:N 列注释,proto 有 %d 个字段", len(pbComments), routeFields.Len())
-	}
-	for _, mm := range pbComments {
-		fd := routeFields.ByName(protoreflect.Name(mm[1]))
-		if fd == nil {
-			t.Fatalf("player_route 的列 %s 在 proto 里没有字段", mm[1])
+	for _, m := range routeMsgs {
+		md := m.ProtoReflect().Descriptor()
+		name, _ := proto2mysql.TableNameFromDescriptor(md)
+		fields := md.Fields()
+		pbComments := pbCommentRe.FindAllStringSubmatch(ddls[name], -1)
+		if len(pbComments) != fields.Len() {
+			t.Fatalf("%s 有 %d 个 pb:N 列注释,proto 有 %d 个字段:每列都要写 COMMENT 'pb:<字段号>'", name, len(pbComments), fields.Len())
 		}
-		if got := strconv.Itoa(int(fd.Number())); got != mm[2] {
-			t.Fatalf("player_route.%s:DDL 注释 pb:%s,proto 字段号 %s", mm[1], mm[2], got)
+		for _, mm := range pbComments {
+			fd := fields.ByName(protoreflect.Name(mm[1]))
+			if fd == nil {
+				t.Fatalf("%s 的列 %s 在 proto 里没有字段", name, mm[1])
+			}
+			if got := strconv.Itoa(int(fd.Number())); got != mm[2] {
+				t.Fatalf("%s.%s:DDL 注释 pb:%s,proto 字段号 %s", name, mm[1], mm[2], got)
+			}
 		}
 	}
 }

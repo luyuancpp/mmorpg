@@ -151,7 +151,7 @@ service ClientPlayerLogin  {
   rpc CreatePlayer (CreatePlayerRequest) returns (CreatePlayerResponse);
   rpc EnterGame (EnterGameRequest) returns (EnterGameResponse);
   rpc LeaveGame (LeaveGameRequest) returns (LoginEmptyResponse);
-  rpc Disconnect (LoginNodeDisconnectRequest) returns (LoginEmptyResponse);
+  rpc Disconnect (LoginNodeDisconnectRequest) returns (LoginEmptyResponse) { option (OptionClientRpcKind) = CLIENT_RPC_SERVER_ONLY; }
   rpc RefreshToken (RefreshTokenRequest) returns (RefreshTokenResponse);
 }
 

@@ -212,6 +212,8 @@ func Workflow(v *tradepb.TradeCommerceRecord) (*tradepb.TradeCommerceWorkflow, e
 
 // ACK只读已提交的托管快照；完成标志不能先于远端玩家SQL证明写入。
 // 按 op_id 翻页(op_id > afterOpID):离线卖家的 ACK 一直 done=false,只从表头取会让它们永远占住名额(2026-10-20)。
+// payload 解不开的行照样按序返回、Bundle 为 nil,由调用方跳过并告警:以前整页报错返回,翻页游标停在它前面,
+// 一行坏数据让全服收据 ACK 停摆(2026-10-20,第一轮审计 §2.5 go-asset-services#0)。解得开的行 Bundle 一律非 nil。
 func (r *CommerceRepo) AckDue(ctx context.Context, afterOpID uint64, limit int) ([]assetop.Op, error) {
 	rows, err := r.DB.QueryContext(ctx, "SELECT op_id,player_id,stream,stream_epoch,seq,tx_type,payload FROM trade_asset_op WHERE receipt_ack_pending=1 AND status=2 AND durable=1 AND op_id>? ORDER BY op_id LIMIT ?", afterOpID, limit)
 	if err != nil {
@@ -228,7 +230,7 @@ func (r *CommerceRepo) AckDue(ctx context.Context, afterOpID uint64, limit int) 
 		op.CorrelationID = op.OpID
 		op.Bundle = &assetpb.AssetBundle{}
 		if err := proto.Unmarshal(payload, op.Bundle); err != nil {
-			return nil, err
+			op.Bundle = nil
 		}
 		out = append(out, op)
 	}

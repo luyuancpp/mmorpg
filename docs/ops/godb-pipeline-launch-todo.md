@@ -153,13 +153,16 @@ go vet ./...
 go build ./...
 go test ./internal/kafka/... ./internal/metrics/... ./internal/logic/pkg/proto_sql/... ./internal/migrate/... -count=1 -v
 # race 需要 CGO 与 gcc;Windows 上没有就到 Linux / WSL 跑,并写明平台
-go test -race ./internal/kafka/ -run 'TestOrderingLease|TestConsumeClaim_Shutdown|TestStop_|TestRunDBOp|TestRetryConsumer_StopsClaiming|TestClaimAcker_Untrack' -count=1
+go test -race ./internal/kafka/ -run 'TestOrderingLease|TestConsumeClaim_Shutdown|TestStop_|TestRunDBOp|TestRetryConsumer_StopsClaiming|TestClaimAcker_Untrack|RouteReadyGate|TestWaitRejoinBackoff_|TestConsumeClaim_DurabilityFailureArmsRejoinBackoff' -count=1
+# 就绪闸时序用例另跑 20 遍排除调度抖动(2026-10-20 补)
+go test ./internal/kafka/ -run 'RouteReadyGate' -count=20
 ```
 
 重点用例（都必须出现在 `-v` 输出里并 PASS）：
 - 租约：`ordering_lease_test.go` 的 `TestOrderingLease_*`（续租成功 / 退避恢复 / 用尽失租并取消 SQL / 截止时间 / 易主立即失租 / 停 worker 不取消 SQL / 过截止不发 SQL / abandoned 不删锁 / 释放三种结果 / 释放取消 SQL ctx / 已取消 ctx 的核锁不算失租）、`TestLeaseMarginCoversLockWaits`、`TestOrderingLeaseTiming_Backoff`。
 - runDBOp：`run_db_op_test.go` 的 `TestRunDBOp_*` 与 `TestHandleTask_LeaseLostAfterSQLDoesNotPublishCache`（在改动前的代码上应为红）。
 - 停机：`consumer_shutdown_test.go` 的 `TestConsumeClaim_Shutdown*`、`TestConsumeClaim_RebalanceStillCancelsClaim`、`TestClaimAcker_Untrack*`、`TestStop_*`、`TestRetryConsumer_StopsClaimingAfterPullStop`。
+- 停机 × 读方就绪闸（D1 第 3 批，2026-10-20 补）：`consumer_shutdown_test.go` 的闸全是 nil，覆盖不到 `Placement.RequireRouteReady=true`。开关打开时的停机与退避看 `route_ready_gate_shutdown_test.go` 全部 9 条：`TestStop_RouteReadyGate*` 3 条、`TestConsumeClaim_RouteReadyGate*` 5 条、`TestConsumeRetryQueue_RouteReadyGateClosedOwnerModeForwardsNothing`。另有 `route_ready_gate_test.go` 的 `TestConsumeClaim_RouteReadyGate*` 2 条、`TestConsumeRetryQueue_RouteReadyGateClosedClaimsNothing`，以及 `rejoin_backoff_test.go` 全部。`-v` 输出里都必须出现并 PASS；出现「Stop did not return within 2s」即判失败。
 - 打点：`instrumentation_test.go`（`TestRedisSteps_*`、`TestOrderingGuardCounter_Outcomes`、`TestSubShardBatchSizeObserved`、`TestStages_QueueWaitTaskTotalKafkaE2E`）；`metrics_test.go` 的 `TestRedisStepNamesPinned`、`TestRedisStepNamesMatchStressSummarize`、`TestRedisPoolCollector_*`、`TestPipelineCountersPrecreated`。
 - Lua：`applied_epoch_lua_test.go` 的 `TestMarkAppliedEpoch_*`（存量 2^53 写入 2^53+1 必须推进，旧脚本为红）。
 - §2.3 的 11 条见 §2.3 表。

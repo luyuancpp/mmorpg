@@ -7,7 +7,7 @@
 # persist_schema_gen / persist_schema_bootstrap_closed / persist_schema_unstamped_write_total)。
 # 这些取值在 go/db 启动时就以 0 建出序列,increase 能抓到第一次。
 #
-# C++ 侧(严格提交屏障 C3)与 login 侧(加载门禁 C4)的告警随第 3b / 4 批落码后补进本文件;在那之前本文件只覆盖 go/db。
+# login 侧(加载门禁 C4)的告警在文末 login.persist-schema 组;C++ 侧(严格提交屏障 C3)没有 Prometheus 出口,只有 LogQL 值班查询(README)。
 # persist_unstamped 与 schema_regression 两类死信同时也会触发 db-task-retry-alerts.yaml 的 DbTaskDeadLetterAdded(warning);
 # 本文件的 critical 才带处置说明,以本文件为准。
 #
@@ -103,3 +103,27 @@ spec:
             description: >-
               同一 zone 的 go/db Pod 编译进了不同的持久 schema 世代(最大与最小相差 {{ $value }})。
               滚动发布期间短暂出现属正常;持续存在说明发布卡住,低世代 Pod 会让新世代的写延后、读失败。
+
+    # login 侧 C4(第 4 批,2026-10-19;未编译、未在集群上验证):父快照快路径上加载世代低于屏障记录的 schema_gen,
+    # 或记录值损坏。指标定义 go/login/internal/logic/pkg/dataloader/metrics.go 的 login_persist_schema_regression_total{reason,mode},
+    # 起服时由 PrimePersistSchemaRegressionMetrics 以 0 建出全部 4 条序列,increase 能抓到第一次。
+    # 抓取前提:login 的 :9101 指标端点(go/login/etc/login.yaml Prometheus 段)与对应的 ServiceMonitor / PodMonitor。
+    # scene 侧 C3 没有 Prometheus 出口,只有 LogQL 值班固定查询(README 同一节;Loki ruler 未接线,不在这里配)。
+    - name: login.persist-schema
+      interval: 30s
+      rules:
+        - alert: LoginPersistSchemaRegression
+          expr: |
+            sum by (namespace, reason, mode) (increase(login_persist_schema_regression_total[10m])) > 0
+          for: 0m
+          labels:
+            severity: critical
+          annotations:
+            summary: "{{ $labels.namespace }} 的 login 判定父快照被截断({{ $labels.reason }},{{ $labels.mode }})"
+            description: >-
+              过去 10 分钟约 {{ $value | printf "%.0f" }} 次进游戏时,Redis 父快照的持久 schema 世代低于屏障记录的世代
+              (reason=regression),或屏障记录值已损坏(reason=malformed):链路上有写方截断过这名玩家的数据。
+              mode=warn 时照常进了游戏(之后 scene 存盘还会被 C3 再判一次);mode=enforce 时这次进游戏失败,客户端收到通用的进场失败。
+              合法流程恒为 0;warn 期间只要非 0 就不能切 enforce。
+              处置:按 login 日志 "persist schema regression on parent snapshot fast path" 行(带 playerId)定位玩家,
+              按 README「玩家持久 schema 世代」一节找出截断数据的写方并暂停其发布,确认以 SQL 为准后清理父快照走冷加载。

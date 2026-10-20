@@ -9,7 +9,7 @@
 #include <vector>
 
 #include "engine/core/type_define/player_guid_comp.h"
-#include "core/network/grpc_call_types.h"
+#include "core/network/grpc_client_call.h"
 #include "modules/currency/comp/player_currency_comp.h"
 #include "node/system/grpc_call_deadline.h"
 #include "player/comp/last_persisted_snapshot_comp.h"

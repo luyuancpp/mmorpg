@@ -4058,7 +4058,7 @@ const char descriptor_table_protodef_proto_2fscene_2fplayer_5fpet_2eproto[] ABSL
     "Info\")\n\021GmGrantPetRequest\022\024\n\014pet_table_i"
     "d\030\001 \001(\r\"h\n\022GmGrantPetResponse\022&\n\rerror_m"
     "essage\030\001 \001(\0132\017.TipInfoMessage\022\032\n\004pets\030\002 "
-    "\001(\0132\014.PetListInfo\022\016\n\006pet_id\030\003 \001(\0042\307\004\n\024Sc"
+    "\001(\0132\014.PetListInfo\022\016\n\006pet_id\030\003 \001(\0042\316\004\n\024Sc"
     "enePetClientPlayer\0225\n\nGetPetList\022\022.GetPe"
     "tListRequest\032\023.GetPetListResponse\0222\n\tSum"
     "monPet\022\021.SummonPetRequest\032\022.SummonPetRes"
@@ -4070,11 +4070,11 @@ const char descriptor_table_protodef_proto_2fscene_2fplayer_5fpet_2eproto[] ABSL
     "\022V\n\025AutoAllocatePetPoints\022\035.AutoAllocate"
     "PetPointsRequest\032\036.AutoAllocatePetPoints"
     "Response\0222\n\tRenamePet\022\021.RenamePetRequest"
-    "\032\022.RenamePetResponse\0222\n\024NotifyPetListCha"
-    "nged\022\022.PetListChangedS2C\032\006.Empty\0225\n\nGmGr"
-    "antPet\022\022.GmGrantPetRequest\032\023.GmGrantPetR"
-    "esponse\032\n\200\250\303\001\001\210\250\303\001\001B\016Z\005scene\200\001\001\230\324a\003b\006pro"
-    "to3"
+    "\032\022.RenamePetResponse\0229\n\024NotifyPetListCha"
+    "nged\022\022.PetListChangedS2C\032\006.Empty\"\005\210\231\310\001\002\022"
+    "5\n\nGmGrantPet\022\022.GmGrantPetRequest\032\023.GmGr"
+    "antPetResponse\032\n\200\250\303\001\001\210\250\303\001\001B\016Z\005scene\200\001\001\230\324"
+    "a\003b\006proto3"
 };
 static const ::_pbi::DescriptorTable* PROTOBUF_NONNULL const
     descriptor_table_proto_2fscene_2fplayer_5fpet_2eproto_deps[3] = {
@@ -4086,7 +4086,7 @@ static ::absl::once_flag descriptor_table_proto_2fscene_2fplayer_5fpet_2eproto_o
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fscene_2fplayer_5fpet_2eproto = {
     false,
     false,
-    2843,
+    2850,
     descriptor_table_protodef_proto_2fscene_2fplayer_5fpet_2eproto,
     "proto/scene/player_pet.proto",
     &descriptor_table_proto_2fscene_2fplayer_5fpet_2eproto_once,

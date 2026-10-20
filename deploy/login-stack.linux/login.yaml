@@ -163,6 +163,11 @@ Placement:
 NewPlayerSeed:
   Enabled: false
 
+# 混版本持久字段保护 C4 的模式(docs/design/mixed-version-persist-field-protection.md §5.1):warn = 判定父快照被截断时
+# 照常进游戏并计数,enforce = 拒绝这次进游戏。缺键 / 空串 = warn,其余值启动即拒。与 go/login/etc/login.yaml 同名项一致;
+# 切 enforce 的条件见设计 §8.1 第 5 步。
+PersistSchemaRegressionMode: warn
+
 GateTokenSecret: "change-me-in-production-use-a-strong-random-key"
 TableDir: "/app/data"
 

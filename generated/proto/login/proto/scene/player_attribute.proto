@@ -178,6 +178,6 @@ service SceneAttributeClientPlayer {
   rpc CreateAttributeScheme (CreateAttributeSchemeRequest) returns (CreateAttributeSchemeResponse);
   rpc SwitchAttributeScheme (SwitchAttributeSchemeRequest) returns (SwitchAttributeSchemeResponse);
   rpc RenameAttributeScheme (RenameAttributeSchemeRequest) returns (RenameAttributeSchemeResponse);
-  rpc NotifyAttributePanelChanged (AttributePanelChangedS2C) returns (Empty);
+  rpc NotifyAttributePanelChanged (AttributePanelChangedS2C) returns (Empty) { option (OptionClientRpcKind) = CLIENT_RPC_PUSH; }
   rpc GmSetPlayerLevel (GmSetPlayerLevelRequest) returns (GmSetPlayerLevelResponse);
 }

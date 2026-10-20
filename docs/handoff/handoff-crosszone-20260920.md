@@ -3,6 +3,46 @@
 > **给接手的 Claude Code 会话**:整份读完再动手。每一条都标了证据等级——
 > 「**已核实**」= 本会话在代码上沿路径走通过;「**上一会话报出,未核实**」= 只见于上一会话的聊天记录,本机没有对应代码,无法复核。
 > 设计与落码记录的权威出处是 [`cross-zone-scene-travel.md`](../design/cross-zone-scene-travel.md)(本轮内容在 §12);本文只讲"现在是什么状态、接下来做什么、别踩什么"。
+>
+> **2026-10-20 现状(一屏版,先读这段)**。本次只做了只读核对和文档订正,没有改代码,也没有跑构建或测试。
+> - **代码:本线没有"还没落的码"**。下面这些都已进 main:
+>   - 09-21 那一轮:Z1、A′、GO-5、epoch==0 铸造;
+>   - 09-28 第二轮:设计文档 §13.1–§13.6;
+>   - GO-2(§13.7)与 CPP-3(§13.8)。
+> - **单测:已绿,但跑的是合并前的源码**:
+>   - `cross_zone_test` 313/313、`routing_identity_test` 113/113;
+>   - `go/scene_manager`、`go/login` 全量单测全过;
+>   - `rpc_controller_test` 80 项、0 失败。
+>   - 出处与限定见设计文档 §13 开头的「2026-10-20 验证状态回填」。
+> - **HEAD 没有构建证据**:
+>   - 合并 `fc3ff045e` 按负责人指令跳过了构建与测试。
+>   - 10-20 的保存提交 `c35e1133d` 又带进了 `player_lifecycle.{h,cpp}` 与 gate 四个文件的改动,其中 `HandlePlayerSaveSchemaRejected` 是 Z1 收敛之外的新销毁出口、也是交接的新中止来源,需要本线复审。
+>   - 本机 `main` 与 `origin/main` 已分叉(10-20 按本机跟踪引用:领先 1、落后 7)。
+> - **剩下的分三类**:
+>   1. **只差运行**(Codex 或真实环境):
+>      - 当前 main 串行 `/m:1` 构建后,随机全量重跑三个 C++ 测试工程与两个 Go 模块;
+>      - runbook 全部故障场景(A–F、B3a–d、H、SE / SE2、V、Z、R、E2),以及 §12.6.10 的 11b(暂停 etcd);
+>      - `scene-manager-alerts.yaml` 的 promtool 校验(25 条);
+>      - 客户端 Unity EditMode:`CityTravelRequestTests` 27 例、`GateTcpClientLifecycleTests` 10 例,在客户端 `origin/main` 的干净检出上跑。
+>   2. **要负责人拍板**:
+>      - GO-3 的两种根治方案(§4 第 2 条、设计文档 §13.9);
+>      - 客户端 `Assets/Editor/CityTiles4KReview/` 下 34 张 4K 审图 PNG,约 543 MB(§2.1);
+>      - login 的 `SceneManagerRpc.Timeout` 5000 小于 scene_manager 服务端的 8000(设计文档 §13.5);
+>      - §13.2 记的"RequestTravelEnterScene 只看 gate_session_id"残余;
+>      - "标记残留"的根治(要改 proto);
+>      - A′ 的 M13 `redis.call('TIME')`;
+>      - 客户端改动:gate 信封码 1003 在传送窗口显示裸编号,以及 §13.6 末尾列的三处客户端过时注释。
+>   3. **归别的线,或文件被在途改动占着**:
+>      - `player_battle.cpp` 的过时注释"跨 zone 迁移在途":归 Battle 线,文件在途;
+>      - robot travel-smoke 单跳预算改为可配置且 ≥75s:归 robot 属主,文件在途;
+>      - `SendTipAndKickToClient` 收敛到按会话推送(DRY,§13.9);
+>      - `handleWatchEvent` 同键换 zone 时不写 `death_at`(§13.9,`load_reporter.go` 在途);
+>      - GO-6 放弃分支补调 `RequestLoadReporterResync()`,可选加固(§13.4);
+>      - 删 `player_migration_event.proto`,并改三份 proto 注释:要整树 regen,而 `proto/` 下有别的会话在途,见 §4 第 3 条的 10-20 清单;
+>      - `handoff_pending_no_marker` 比值告警:等压测基线;
+>      - 合服工具 `assertZoneDown` 只看 `ZCARD` 负载集:归合服工具线;
+>      - CZ-2 已改写为"单元化 + 按 `{player_id}` 分片"(第 4 批未落码),它对整条传送链的影响归 Redis 拆分线。
+>
 > **验证现状(2026-09-29 更新)**:
 > - **2026-09-21**:C++ 由 Codex 按 `msbuild game.sln /m:1 /nr:false /p:Configuration=Debug /p:Platform=x64` 整体编译通过(退出码 0,见 PROGRESS.md 同日 Codex 条目)。那次编译早于同日落码的 Z1 / A′ / GO-5 / epoch==0 铸造(提交 `440fe26b6`、`586849bed`)。
 > - **2026-09-28 03:41**:属性数值线代 Codex 又跑了一次 `game.sln`(Debug x64,`/m:1 /nr:false`),exit 0,见 PROGRESS.md 09-28「防御 ×12 / 法力 ×4 联机验收通过」。证据在 `run/verify-attribute-20260928/build-game.log`,该目录被 gitignore,只在机器 A 上。
@@ -57,7 +97,7 @@
 
 ### 2.1 把客户端推上去(~~阻塞项~~ 已完成,以下留作"大包推送"的经验记录)
 
-> **2026-09-20 晚更新**:用户已从机器 A 推送成功,远端 `main = 120e2d8`。下面的做法与坑不再是待办,保留是因为同一条慢上行以后还会推大包。那批 4K 审图 PNG(`Assets/Editor/CityTiles4KReview/`,53 个文件)**已随推送进了远端历史**,要不要清仍需用户拍板。
+> **2026-09-20 晚更新**:用户已从机器 A 推送成功,远端 `main = 120e2d8`。下面的做法与坑不再是待办,保留是因为同一条慢上行以后还会推大包。那批 4K 审图 PNG(`Assets/Editor/CityTiles4KReview/`,53 个文件)**已随推送进了远端历史**,要不要清仍需用户拍板。*2026-10-20 复核:该目录现跟踪 85 个条目,包括 34 张 PNG(单张 14.6–19.5 MB,合计约 543 MB,不是 LFS)、34 个 `.png.meta`,以及 catalog 等 json;`.gitignore` 没有覆盖。运行时资源不引用这些图,只有编辑器审图工具 `CityTileCandidateReview` 经 `AssetDatabase` 加载。可选做法有三种:(A) 加 `.gitignore` 并 `git rm --cached`,历史体积不变;(B) 挪出 `Assets/`,要同步改造审图工具;(C) 改写历史,要强推,并且服务端文档里引用的客户端提交号会整体失效。三种都是客户端改动,需要授权。*
 
 上一会话的推送失败过多次,根因与做法如下(**上一会话报出,未核实**——机器 B 看不到那些提交;但远端现状"`main = d2b165a`、无任何含 `3447cc1` 的分支"是本会话 `git ls-remote` **已核实**的,说明分段推的中间分支也没留下):
 
@@ -202,7 +242,7 @@
        - `RoutePlayerEvent` 带目标进程 uuid,由 gate / scene 校验(还要改协议);
        - 或由持有节点在 A2′ 的 Lua 里自己盖章。
      - 推迟的代价:GO-3 本身是活性问题,回可重试的 18,租约到期后自愈,推迟不引入数据风险。
-     - 以后落码要 rebase 到 scene_manager P3 那批之上,并补一个用例:推迟摘除期间来一条不同 uuid 的 PUT,仍判 Replaced 且仍被屏障挡住。`PlayerLocation` 的 7 号已被 GO-2 占用,GO-3 的新字段从 8 起。
+     - 以后落码要 rebase 到 scene_manager P3 那批之上,并补一个用例:推迟摘除期间来一条不同 uuid 的 PUT,仍判 Replaced 且仍被屏障挡住。`PlayerLocation` 的 7 号已被 GO-2 占用,GO-3 的新字段从 8 起。*2026-10-20 更正:8 / 9 已被 `session_id` / `login_generation` 占用,GO-3 的新字段从 10 起(见 `storage.proto` 注释)。*
      - 规格:设计与 R1 全文已入档到设计文档 §13.9「本轮不落」。原始规格 `spec-go3.md` 只在机器 A 主会话的 scratchpad 里,仅作备注。
    - GO-5 R7 / R8 从 login 不可达——要动 `go/login`(本轮有「帮会二期」会话在改那个目录,先对一下);*2026-09-21:其中"访客 / 快速重登卡在 18"的根因修复不在 login,而在 C++ scene(Z1 + 断线释放标记),见 0d / 设计文档 §12.6;GO-3 的 300s 内缓解同在 §12.6*;*同日稍后 GO-5 已按用户决定两侧落码待验证(login 发 `ZoneId=0`、scene_manager 只跟随具体节点的 location,§12.7),见 0g*;
    - CPP-2 gate 丢路由无补发、CPP-3 疏散改派 fire-and-forget——都需要"补发 / 待确认表 + 超限发 tip 并踢线"的设计。它们与冻结硬上限共用的前置 C-5 **已解除**(客户端收到 34 一定回选服),三者现在都可以落。2026-09-28 三者的状态如下。
@@ -224,11 +264,34 @@
        - robot 的 travel-smoke 单跳预算是 60s,短于 70s,所以 robot 看不到上限分支。上限分支(runbook 场景 H)要用 Unity 客户端验。
    - 客户端侧:CL-3 / CL-4(回家入口消失)已随 §12.5.5 修复;~~CL-2 仍未修~~ **CL-2 已落码待验证**(2026-09-21,`ValidateRedirectTarget` 只打日志不拦截,以 gate(B) 验票为准,§12.5.6);CL-7 已入库;CL-5(手动重进无冷却)的根因修复见 0d(已落码待验证,见 0g)。CL-6 / CL-8 已落码待验证,见设计文档 §13.6(客户端分支 `crosszone/client-cl6-cl8` 的 `54034fe`,已随合并提交 `96d36da` 推到客户端 `origin/main`,09-29 05:25,按本机跟踪引用;见本文 §2.2 末行)。
 3. **需要随一次全量 regen 做的**:真删 `proto/common/event/player_migration_event.proto`(整条 DEPRECATED、无调用方,仍占着 event id 27 / 41,清单写在该文件头注释里);`proto/common/database/player_cache.proto:7` 与 `bag_quest_mail_data.proto:7-8` 的注释仍把 `PlayerAllData` 说成"跨 zone 迁移携带的快照"。「Friend 服务移植后续工作」会话计划跑 regen,可与它同批。*2026-09-29 仍未做*:`player_migration_event.proto` 仍在,`player_cache.proto:7` 的注释未改。09-28 gRPC 失败回调那次 regen 是在隔离 worktree 里跑的,只拷回了 40 个文件,不算全量 regen。本轮 proto 一律走窄面 regen,只动 `scene_manager_service.proto` / `storage.proto`。
+   *2026-10-20 仍未做,下面是按当前生成器核过的完整清单*。没做的原因:要整树 `proto-gen-run`,而 `proto/common/base/config.proto` 有别的会话的在途改动,一跑就会被卷进生成物。要等它落地,或与属主协调后再做。
+   - **事件号不会平移**:
+     - 台账 `proto/event_id.txt` 里是 `27=PlayerMigrationEvent`、`41=PlayerMigrationAckEvent`。
+     - 生成器 `tools/proto_generator/protogen/internal/generator/cpp/event_id.go` 的 `assignEventIds` 对"台账里有、proto 里没了"的号写成墓碑 `N=reserved:<名>`,其余号不动。
+     - 一次新增 2 个墓碑,不超过 `maxNewTombstonesPerRun = 4`;`kMaxEventCount` 仍是 51。
+   - **步骤**:
+     1. Claude 删除 `proto/common/event/player_migration_event.proto`。三处 proto 注释同批改:`player_cache.proto` 文件头说 `PlayerAllData` 是 "full snapshot carried across cross-zone migration",`bag_quest_mail_data.proto` 的 BagAllData 段、背景段、mail 假设段也写着 cross-zone migration。
+        - **不要整删 `ChangeSceneInfoComp`**:`proto/scene/s2s_player_scene.proto` 的 `GsLeaveSceneRequest.change_scene_info` 还在用它,最多只删它已标 DEPRECATED 的 11 / 12 / 13 号字段。
+        - 删这几个字段还要重新 vendor robot 里的 `scene_comp.pb.go`(robot 用 `-mod=vendor`)。
+     2. Codex 在仓库根执行 `pwsh -File tools/scripts/dev_tools.ps1 -Command proto-gen-run -ConfigPath tools/proto_generator/protogen/etc/proto_gen.no-unity.yaml`。生成器源码没变,不需要 `proto-gen-build`。期望结果:
+        - 出现 2 条 "Event no longer in proto; its ID is now reserved" 的 WARN;
+        - 五份台账(`proto/event_id.txt` 与 `generated/proto/{_unified,db,login}/proto/event_id.txt`、`generated/robot/proto/event_id.txt`)出现两条墓碑;
+        - 13 个服务的 `go/<svc>/generated/pb/game/event_id.go` 去掉这两个常量;
+        - `rpc_event_registry.cpp` 去掉对应 include。
+     3. 生成器不会删旧产物,要手删以下文件:
+        - `cpp/generated/proto/common/event/player_migration_event.pb.{h,cc}`;
+        - `cpp/generated/rpc/service_metadata/common_event_player_migration_event_event_id.h`;
+        - `go/proto/common/event/player_migration_event.pb.go`;
+        - `generated/proto/{db,login}/proto/common/event/` 与 `generated/robot/proto/common/event/` 下的 `.proto` 副本(`_unified` 那份随暂存目录每轮整删,会表现为一条删除)。
+        - 同时从 `cpp/generated/proto/CMakeLists.txt`、`proto.vcxproj(.filters)`、`cpp/generated/rpc/rpc.vcxproj(.filters)` 摘掉对应条目。
+        - 文件头注释里那份"手删清单"已过时:scene 侧 handler 已在 `e7bb46070` 删掉,清单又漏了上面这些文件。以本条为准。
+     4. Codex 构建:`msbuild game.sln /m:1 /nr:false /p:Configuration=Debug /p:Platform=x64`,含 `kafka_command_test` 与 `cross_zone_test`;再对 `go/proto`、上面 13 个服务和 robot 跑 `go build` / `go vet`。
+     5. Java 版:`game-proto` 下的契约副本与 `event_id.txt` 墓碑由 Java 线的 ContractSync 同步。这个事件只走内部 Kafka,客户端不可见。
 4. **本轮因归属没碰、只登记的过期文字**:`go/login/internal/logic/clientplayerlogin/entergamelogic.go:470`、`:575` 附近(仍写 14 `ErrUnsafeCrossNodeHandoff` 与"重定向前先解析场景");`docs/design/guild-phase2/04-asset-channel.md:29 / :300 / :335 / :352`(C6 的正确性论证依赖已删的"迁移包");`cpp/libs/services/scene/battle/system/player_battle.cpp:838`;`docs/notes/` 下 3 处。*2026-09-29 状态*:
    - `entergamelogic.go`:已改,现在两处都写成"历史上的 14 `ErrUnsafeCrossNodeHandoff` 已不再发出"。
-   - `04-asset-channel.md`::29 / :300 / :335 / :352 仍以已删的迁移包 / `HandleCrossZoneTransfer` 作论据(`HandleCrossZoneTransfer` 在 `cpp/` 下已无定义)。替换文本由帮会会话交用户,转给 09-21 接手人,本线不改。
+   - `04-asset-channel.md`::29 / :300 / :335 / :352 仍以已删的迁移包 / `HandleCrossZoneTransfer` 作论据(`HandleCrossZoneTransfer` 在 `cpp/` 下已无定义)。替换文本由帮会会话交用户,转给 09-21 接手人,本线不改。*2026-10-20:帮会二期 10-09 已收口,这四处一直没人改,本线已按现行交接路径直接改写。C6 的结论不变,理由换成:先冻结再存盘;交接存盘是同 key 的最新值;标记在存盘落地后才写;目标节点载入的是同一份数据。前提 CZ-2 与"强制存盘分支没有单测"两个缺口也已一并写明。请负责人过目。*
    - `player_battle.cpp`:注释"跨 zone 迁移在途:实体只读"行号已漂到 :1107,由 Battle 会话改,措辞在冻结上限定稿后发给它。
-   - `docs/notes/`:主会话 09-28 复核为无残留,本文未逐条复核。
+   - `docs/notes/`:主会话 09-28 复核为无残留,本文未逐条复核。*2026-10-20 更正:其实还剩 3 处,本次已改。它们是 `NOTES_en.md` / `NOTES_zh.md` 的 #127(指向已删的 `player_migration_event_handler`),以及 `currency-crash-window-verification.md` 把"跨服迁移"列为存盘触发点那一行。帮会 `04-asset-channel.md` 的 C6 论证也已按现行交接路径重写,结论不变,见该文 :29 / :300 / :335 / :352 的 10-20 更正。*
 5. **P3**:GO-6(`death_at` 写失败仍 ZREM——注意"写失败就不 ZREM"是错的修法)、GO-4 残余(`LeaveScene` 改 compare-and-delete)、告警盲区(整 zone 节点全灭无从触发)、`Hiredis.cc` 在 `redisvAsyncCommand` 返回 ERR 时泄漏 `CommandCallback`、`robot/connected()` 是个被 git 跟踪的 0 字节空文件(疑似 shell 重定向误操作残留)。2026-09-28 各项状态如下。
    - **GO-6、GO-4 残余、告警盲区:已落码待验证**,见设计文档「P3 收尾:GO-6 / GO-4 残余 / 告警盲区」。提交 `ccd4ba7f8`,未编译、未测试。
      - GO-6:`death_at` 没写进、或摘负载集失败时,不摘,改进有截止时间的推迟队列(`retryDeferredNodeDetaches`,日志前缀 `[ReentryBarrier][DeferDetach]`,计数 `node_detach_deferred_total{zone_id,outcome}`)。`world_init` 的改派补上 `!IsNodeAlive`。没有用原文写的"fullSync 返回 error"。

@@ -310,7 +310,14 @@ go/db 这条线（R1 → R2 → R3）**必须串行**：三项都改 `key_ordere
   - `key_ordered_consumer.go`：两处查闸，一处在 ConsumeClaim 取消息前，一处在重试循环采样后、分拣认领前；另有 deferFailedTask 的一个 DEBUG 分支和装配传参；
   - `config.go` 的 Placement 段加了两个字段；`etc/db.yaml` 的 Placement 段同步；
   - `metrics.go` 追加 `db_route_ready_gate`、`db_route_ready_verdict_total` 和 outcome `route_not_ready`，只在开关打开时才注册和预置。
-  - **未核对**：本线提醒过「就绪闸要能被 pullStop / ctx 打断，并保留重新入组退避」，对方还没评审核对，已登记在 PROGRESS 2026-10-19「D1 剩余批次落码完成」的未做项。Codex 验证 go/db 时，要重点跑停机用例（`consumer_shutdown_test.go`），确认开关打开后 Stop 不会被闸卡住。
+  - ~~**未核对**：本线提醒过「就绪闸要能被 pullStop / ctx 打断，并保留重新入组退避」，对方还没评审核对。Codex 验证 go/db 时，要重点跑停机用例（`consumer_shutdown_test.go`），确认开关打开后 Stop 不会被闸卡住。~~
+  - **2026-10-20 已由本线静态核对，补了修复与用例**（未编译、未测试，待 Codex 验证；详见 PROGRESS 2026-10-20「go/db 就绪闸停机与退避接缝核对」）：
+    - 两条接缝在代码上成立。
+      - 闸只在 ConsumeClaim 顶层 select 里替换通道值，与 pullStop、会话 ctx、yieldDone、failureCh 同在一个 select。c.ctx 取消经 consumeCtx 传到会话 ctx。
+      - 重试循环的闸检查不阻塞。刷新 goroutine 随 c.ctx 退出。
+      - R7 的消费循环、`waitRejoinBackoff`、`claimFailed` 都没改。闸关期间 ConsumeClaim 不返回，不制造入组抖动。
+    - 修了一个 minor：闸由开转关时，空闲分区上等消息的 claim 不被唤醒，闸关后不论隔多久，仍会漏取一条，推进重试队列。改法在 `route_ready_gate.go` 的 `gatedMessages`：闸放行时也带上刷新通道。另顺手更正了刷新 / 探针时限的注释：ctx 管不到 go-redis 的在途读写。
+    - **更正验证口径**：`consumer_shutdown_test.go` 里的闸全是 nil，单跑它证明不了「开关打开后 Stop 不卡」。改为跑 `route_ready_gate_shutdown_test.go`（9 条）与 `route_ready_gate_test.go` 的闸用例，命令见 launch-todo §停机。
 
 ### 7.8 与「落地恢复与围栏」会话（已停，交其接手方）
 

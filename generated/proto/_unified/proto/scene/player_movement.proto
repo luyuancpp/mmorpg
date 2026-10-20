@@ -103,14 +103,14 @@ service SceneMovementClientPlayer {
   option (OptionIsClientProtocolService) = true;
 
   // C2S input
-  rpc MoveStart       (MoveStartC2S)        returns (Empty);
-  rpc MoveStop        (MoveStopC2S)         returns (Empty);
-  rpc MoveSync        (MoveSyncC2S)         returns (Empty);
+  rpc MoveStart       (MoveStartC2S)        returns (Empty) { option (OptionClientRpcKind) = CLIENT_RPC_ONE_WAY; }
+  rpc MoveStop        (MoveStopC2S)         returns (Empty) { option (OptionClientRpcKind) = CLIENT_RPC_ONE_WAY; }
+  rpc MoveSync        (MoveSyncC2S)         returns (Empty) { option (OptionClientRpcKind) = CLIENT_RPC_ONE_WAY; }
   rpc TeleportRequest (TeleportRequestC2S)  returns (TeleportRequestC2SResponse);
 
   // S2C notifications
-  rpc NotifyMoveAck       (MoveAckS2C)       returns (Empty);
-  rpc NotifyActorMove     (ActorMoveS2C)     returns (Empty);
-  rpc NotifyActorMoveList (ActorMoveListS2C) returns (Empty);
-  rpc NotifyTeleport      (TeleportS2C)      returns (Empty);
+  rpc NotifyMoveAck       (MoveAckS2C)       returns (Empty) { option (OptionClientRpcKind) = CLIENT_RPC_PUSH; }
+  rpc NotifyActorMove     (ActorMoveS2C)     returns (Empty) { option (OptionClientRpcKind) = CLIENT_RPC_PUSH; }
+  rpc NotifyActorMoveList (ActorMoveListS2C) returns (Empty) { option (OptionClientRpcKind) = CLIENT_RPC_PUSH; }
+  rpc NotifyTeleport      (TeleportS2C)      returns (Empty) { option (OptionClientRpcKind) = CLIENT_RPC_PUSH; }
 }

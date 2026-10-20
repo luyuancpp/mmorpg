@@ -191,10 +191,12 @@ func (s *routeNotReadySummary) takeLocked() (string, bool) {
 // ───────────────────────────── 进程级就绪闸 ─────────────────────────────
 
 const (
-	// routeReadyRefreshTimeout 是就绪闸单次刷新(一次读脚本)的上限;实际还受 go-redis 客户端自身读超时约束。
+	// routeReadyRefreshTimeout / routeReadyProbeTimeout 是就绪闸单次刷新与启动探针的 ctx 时限。落点 Redis 客户端没开
+	// ContextTimeoutEnabled,ctx 只约束取连接、拨号与重试间隔;在途的读写由 go-redis 的 ReadTimeout(缺省 3s)约束。
+	// 所以 Redis 接受连接却不回包时,一次刷新最长约一个 ReadTimeout,探针约两次,都比这里写的长。停机不受影响:run 在读
+	// 返回后先判 ctx、取消之后不再 apply;刷新 goroutine 不在 c.wg 里,Stop 不等它,它最多比 Stop 多活一个 ReadTimeout。
 	routeReadyRefreshTimeout = 2 * time.Second
-	// routeReadyProbeTimeout 是启动探针的上限。
-	routeReadyProbeTimeout = 5 * time.Second
+	routeReadyProbeTimeout   = 5 * time.Second
 	// routeReadyGateLogEvery:闸一直关着时,至多每分钟一条 INFO(带关了多久与当前状态),免得长时间全量预热期间无声无息。
 	routeReadyGateLogEvery = time.Minute
 	// routeReadyGateStateReadError 是读脚本执行出错时日志里的状态名(不是 verdict,不进 verdict 计数)。
@@ -257,12 +259,22 @@ func (g *routeReadyGate) opened() bool {
 	return g == nil || g.open.Load()
 }
 
-// recheck 返回一个在下一次刷新完成时关闭的 channel;闸关着时等它,醒来再看 opened。nil 闸返回 nil(select 里永不就绪)。
+// recheck 返回一个在下一次刷新完成时关闭的 channel,并记一次等待;闸关着时等它,醒来再看 opened。
+// nil 闸返回 nil(select 里永不就绪)。
 func (g *routeReadyGate) recheck() <-chan struct{} {
 	if g == nil {
 		return nil
 	}
 	g.waits.Add(1)
+	return g.nextRefresh()
+}
+
+// nextRefresh 返回一个在下一次刷新完成时关闭的 channel,不记等待次数(闸放行时的 claim 也要拿它,见 gatedMessages)。
+// nil 闸返回 nil。
+func (g *routeReadyGate) nextRefresh() <-chan struct{} {
+	if g == nil {
+		return nil
+	}
 	g.mu.Lock()
 	defer g.mu.Unlock()
 	return g.wake
@@ -350,6 +362,13 @@ func (g *routeReadyGate) run(ctx context.Context, ticks <-chan time.Time) {
 
 // startRouteReadyGate 在 Start 的第一步调用:开关关着(routeGate 为 nil)什么都不做;打开时先跑启动探针(出错即返回,
 // Start 据此拒启),再起按间隔刷新的 goroutine,随 c.ctx(Stop 第④步)退出。消费循环与重试循环的闸检查都在它之后才开始。
+// 探针通过、Start 的后续步骤(入队层探针、重试归属)失败时,刷新 goroutine 已经在跑,要等调用方 Stop 取消 c.ctx 才退出
+// (db.go 在 Start 之前就 defer 了 Stop)。
+//
+// 停机接缝(docs/design/db-task-pipeline-bottlenecks.md G6「就绪闸」):闸只在 ConsumeClaim 顶层 select 里替换通道值,
+// 与撤拉取、会话 ctx、交接让出、failureCh 同在一个 select;重试循环的闸检查不阻塞。闸不得挪进 Start 的入组循环(被闸住的
+// 成员会离组,并和重新入组退避互相绕开),也不得写成 select 之外的阻塞等待(Stop 会被闸卡住)。回归用例见
+// route_ready_gate_shutdown_test.go。
 func (c *KeyOrderedKafkaConsumer) startRouteReadyGate() error {
 	g := c.routeGate
 	if g == nil {
@@ -366,18 +385,25 @@ func (c *KeyOrderedKafkaConsumer) startRouteReadyGate() error {
 	return nil
 }
 
-// gatedMessages 给 ConsumeClaim 的主循环用:闸放行时返回 claim 的消息通道与 nil;闸关着时返回 nil 通道(select 里永不
-// 就绪 = 不取新消息、不 track、不派发)与「下一次刷新完成」的通道,醒来后主循环重新判一次。
-// 先拿通道、再判状态:两步之间刚好刷新放行时,拿到的通道已经关闭,不会白等一个间隔。
+// gatedMessages 给 ConsumeClaim 的主循环用,返回本轮 select 的消息通道与「下一次刷新完成」的通道(醒来后主循环重新判一次):
+//   - 闸为 nil(开关关着):claim 的消息通道与 nil,行为与引入之前相同;
+//   - 闸放行:claim 的消息通道与刷新通道。刷新把闸关上时 select 立即醒来、回到循环顶停在闸前。只返回消息通道的话,空闲分区上
+//     等消息的 claim 醒不过来:闸关之后不论隔多久,下一条到达的消息照样被取走,逐条判不可信后写推进重试队列、读耗预算,
+//     与「闸关着不取新消息、不推重试队列」不符。代价是每个 claim 每个刷新间隔(≥200ms)空转一圈;
+//   - 闸关着:nil 通道(select 里永不就绪 = 不取新消息、不 track、不派发)与刷新通道,并记一次等待(waits)。
+//
+// 先拿通道、再判状态:两步之间刚好刷新时,拿到的通道已经关闭,不会白等一个间隔。剩下的竞态只有「刷新关闸的那一刻 wake 关闭
+// 与消息同时就绪、select 选中了消息」,落在一个刷新间隔之内,由逐条判(lookupReady)兜住。
 func (c *KeyOrderedKafkaConsumer) gatedMessages(claim sarama.ConsumerGroupClaim) (<-chan *sarama.ConsumerMessage, <-chan struct{}) {
 	g := c.routeGate
-	if g.opened() {
+	if g == nil {
 		return claim.Messages(), nil
 	}
-	wake := g.recheck()
+	wake := g.nextRefresh()
 	if g.opened() {
-		return claim.Messages(), nil
+		return claim.Messages(), wake
 	}
+	g.waits.Add(1)
 	return nil, wake
 }
 

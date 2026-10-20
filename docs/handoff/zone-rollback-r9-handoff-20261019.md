@@ -84,7 +84,7 @@ docs/PROGRESS.md 只追加。全部用中文，运行期日志与错误文本用
   - **2026-10-19 它已落完 D1 第 3 批**（未编译），清单见上游总交接 §7.7。R9 落码时要注意：
     - `placement_route.go` 的 lookup / confirm 现在共用一个读取入口，`Placement.RequireRouteReady=true` 时走 `placement.RouteReadyReadScript`；
     - `key_ordered_consumer.go` 的 ConsumeClaim 取消息前、重试循环分拣认领前，各有一道就绪闸；
-    - 「闸能被 pullStop / ctx 打断」这一条它还没核对。
+    - ~~「闸能被 pullStop / ctx 打断」这一条它还没核对。~~ 2026-10-20 已由 go/db 交接会话静态核对：成立，R7 退避也原样保留。顺带修了「闸由开转关时空闲 claim 仍漏取一条」（只改 `route_ready_gate.go` 的 `gatedMessages`），补了 `route_ready_gate_shutdown_test.go`。都未编译，待 Codex 验证。见上游总交接 §7.7 与 PROGRESS 2026-10-20 同名条目。
 
     R9 若要导出键名或碰这些函数，先读它的最新代码。
 - **有他人未提交改动的文件**（设计 §3「文件归属」，截至 `c63b22dca`）：

@@ -27,8 +27,7 @@ paths:
 
   # Unity 客户端位于服务端同级的独立 mmorpg-client 仓库。
   unity_client_dir: "{{output_root}}../mmorpg-client/"
-  unity_handler_dir: "{{unity_client_dir}}Assets/Scripts/Net/Generated/Handlers/"
-  unity_handler_registry_file: "{{unity_client_dir}}Assets/Scripts/Net/Generated/HandlerRegistry.cs"
+  unity_rpc_dir: "{{unity_client_dir}}Assets/Scripts/Net/Generated/Rpc/"
 
   # Tools and temporary directories
   tool_dir: "tools/"
@@ -235,7 +234,7 @@ generators:
   enable_robot_proto: true # Enable robot proto generation
   enable_robot_go_zero: true # Enable robot go-zero proto generation
   enable_attribute_sync: true
-  enable_unity_client: true # Generate Unity client handler stubs + registry
+  enable_unity_client: true # 生成 Unity 类型化 RPC 调用桩，生成前校验方法形态
 
 # Template mapping configuration
 mappings:

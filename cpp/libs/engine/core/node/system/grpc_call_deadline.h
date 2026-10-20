@@ -10,7 +10,7 @@
 // C++ 节点发出的 unary gRPC 调用的 deadline(docs/design/grpc-client-deadline-failure-callback.md §4)。
 //
 // 真源是 BaseDeployConfig.grpc_client(bin/etc/base_deploy_config.yaml 的 GrpcClient 块),按**目标**节点类型配;
-// 没配到的类型用生成代码的 kDefaultGrpcCallDeadlineMs(core/network/grpc_call_types.h)。
+// 没配到的类型用客户端调用公共头中的 kDefaultGrpcCallDeadlineMs(core/network/grpc_client_call.h)。
 // Apply 把解析结果写进生成的客户端(SetGrpcCallDeadline),并留一份供业务查询:依赖某次调用结果的
 // 看门狗 / 在途记录必须比 deadline 宽(上游比下游宽),一律从 Get 派生,不另写常数。
 //

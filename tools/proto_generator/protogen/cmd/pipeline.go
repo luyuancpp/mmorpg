@@ -69,7 +69,7 @@ func runGenerationPipeline(runner *ExecutionRunner) {
 		{Name: "goGen.GenerateDBResource", Run: goGen.GenerateDBResource},
 		{Name: "goGen.GoRobotHandlerGenerator", Run: goGen.GoRobotHandlerGenerator},
 		{Name: "goGen.GoRobotTotalHandlerGenerator", Run: goGen.GoRobotTotalHandlerGenerator},
-		{Name: "unityGen.UnityClientHandlerGenerator", Run: unityGen.UnityClientHandlerGenerator},
+		{Name: "unityGen.UnityClientRpcGenerator", Run: unityGen.UnityClientRpcGenerator},
 		{Name: "cppGen.CppPlayerDataLoadGenerator", Run: cppGen.CppPlayerDataLoadGenerator},
 		// 玩家持久 schema 世代台账:违反可携带性规则时整次生成失败(docs/design/mixed-version-persist-field-protection.md §3)。
 		{Name: "persistschema.Generate", Run: persistschema.Generate},

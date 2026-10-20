@@ -250,6 +250,8 @@ func (e *Engine) quarantine(ctx context.Context, r *tradepb.TradeCommerceRecord)
 // ackReceipts 轮转发一页收据 ACK。按 op_id 翻页(CommerceRepo.AckDue 的 afterOpID):离线卖家的 ACK 一直 done=false,
 // 只从表头取会让它们永远占住名额,后面的 ACK 永远轮不到。每尝试一条就把游标推到它;本页不满说明到了表尾,下一轮从头。
 // 预算用完或 Acked 落库失败时游标停在最后一条已完整处理的 op 上,下一轮从没处理的那条接着来。
+// payload 解不开的行(AckDue 回 Bundle=nil)跳过并告警、游标照常越过它:托管原件仍在 escrow_snapshot 里,
+// 只是这条 ACK 发不出去,要人工按 op_id 查;不能让它挡住同页其余卖家的 ACK。
 func (e *Engine) ackReceipts(ctx context.Context) error {
 	if e.Applier == nil || e.Ledger == nil {
 		return nil
@@ -261,6 +263,11 @@ func (e *Engine) ackReceipts(ctx context.Context) error {
 	for _, op := range ops {
 		if err := ctx.Err(); err != nil {
 			return err
+		}
+		if op.Bundle == nil {
+			logx.Errorf("[Commerce] Receipt ack skipped: asset op payload undecodable op_id=%d stream=%d", op.OpID, int32(op.Stream))
+			e.ackAfterOpID = op.OpID
+			continue
 		}
 		child, cancel := context.WithTimeout(ctx, 1500*time.Millisecond)
 		ok, err := assetop.AcknowledgeReceipt(child, e.Applier, e.Ledger, op.Request())

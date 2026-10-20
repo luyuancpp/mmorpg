@@ -392,7 +392,7 @@ Java 仓在 `D:\luyuan\xuanming-server-mmo`，版本 0.1.0-SNAPSHOT。
 ### 10.2 第 3a′ 批（§3.1 三条）
 
 均**未编译、未测试**。
-- ① `CurrencySystem::DebtCarriesUnknownFields`（只读谓词，缺组件 / 越界币种 / 无欠款都返回 false）；`AttachDebt` 改为调它；`GmSanctionInboxExecutor::AttachCurrencyDebt` 在 `HasCurrencyState` 之后、调原语之前判，命中打 WARN 回 `kDefer`。同步：执行器头文件的结局清单、`AttachDebt` 头注释的返回码列表、`player-inbox-service.md` §7.6 DEFER 一段、设计稿 §4.4。
+- ① `CurrencySystem::DebtCarriesUnknownFields`（只读谓词，缺组件 / 越界币种 / 无欠款都返回 false）；`AttachDebt` 改为调它；`GmSanctionInboxExecutor::AttachCurrencyDebt` 在 `HasCurrencyState` 之后、调原语之前判，命中打 WARN 回 **`kVersionSkew`**（最初写的是 `kDefer`，对抗复核 A-1 后改掉，见 §10.6）。同步：执行器头文件的结局清单、`AttachDebt` 头注释的返回码列表、`player-inbox-service.md` §7.5 / §7.6、`player-inbox-runbook.md` §5.2 A′、设计稿 §4.4。
 - ② `ItemStore::IsIndependentInstance` 移到 public（紧挨 `CanStack`），`Bag::AddItems` 规划按它分流；`item_store.h` 那段"已知缺口"注释改为正式口径。
 - ③ `HasStackWithRoom` 改为用只有 `config_id` 的探针实例调 `ItemStore::CanStack`，再加 `size < maxStackSize`。
 - 用例：
@@ -421,7 +421,9 @@ Java 仓在 `D:\luyuan\xuanming-server-mmo`，版本 0.1.0-SNAPSHOT。
 第 3a、3a′、第 5 批落在同一批文件里，按 §5.2 一起编译、一起跑即可，另加：
 1. `pwsh tools/scripts/run_cpp_tests.ps1 -Build -Filter skill_test -LogDir build/verification/persist-3a`
 2. 通过标准在 §5.2 的清单上追加这些用例在列且通过：
-   - `GmSanctionInboxExecutorTest.AttachCurrencyDebtDefersWhenExistingDebtCarriesUnknownFields`
+   - `GmSanctionInboxExecutorTest.AttachCurrencyDebtReportsVersionSkewWhenExistingDebtCarriesUnknownFields`
+   - `PlayerInboxSystemTest.ExecutorVersionSkewHaltsAfterConfirmingThePrefixAndNeverResumesLocally`
+   - `AssetOpSystemTest.CreditRejectsAnInstanceAlreadyCarriedInAnUnsupportedBagType`
    - `BagInstanceDataTest.AddItemsPlansIncomingInstancesCarryingUnknownFieldsAsSeparate`
    - `PlayerEquipTest.RemoveGemPrecheckSkipsAStackCarryingUnknownFields`
    - `CrossZoneBagMarshal.UnmarshalCarriesOutOfRangeBagTypeVerbatim`
@@ -448,3 +450,28 @@ Java 仓在 `D:\luyuan\xuanming-server-mmo`，版本 0.1.0-SNAPSHOT。
 §7 里的文件本节又改过的：`currency_system.cpp`、`item_store.h`、`player_skill.cpp`、`currency_test.cpp`、`bag_instance_data_test.cpp`、`cross_zone_test.cpp`、`persist_round_trip_test.cpp`（一处注释）、设计稿。
 
 Java 仓 `PARITY.md` 已补登一行「Java 待做」（§9 要求的那一行），未提交。
+
+对抗复核后的修正（§10.6）又改了：
+- `cpp/libs/services/scene/player/system/player_inbox_registry.h`（新结局 `kVersionSkew`）
+- `cpp/libs/services/scene/player/comp/player_inbox_runtime_comp.h`（停用原因 `kVersionSkew` 与名字表）
+- `cpp/libs/services/scene/player/system/player_inbox_system.cpp`（执行器分支）
+- `cpp/tests/currency_test/player_inbox_system_test.cpp`
+- `docs/ops/player-inbox-runbook.md`（§5 告警表、§5.2 A′）
+- `cpp/libs/modules/bag/bag_system.h`（`Bag::ContainsGuid`）
+- `cpp/libs/services/scene/player/system/asset_op_system.cpp`（入账查重改用 `PlayerBagsComp::ContainsGuid`）
+- `cpp/tests/currency_test/asset_op_system_test.cpp`
+
+### 10.6 对抗复核与修正（2026-10-19 ~ 10-20）
+
+落码后跑了一次七视角只读对抗复核（编译、收件箱、合堆、越界包类型、技能、测试、文档），每条发现由两名复核者尝试驳倒。第一轮"测试""文档"两个视角因额度上限没跑完，已续跑，并加了一个视角专门复核下面的修正（结果见本节末）。确认的发现与处理：
+
+| 编号 | 严重度 | 发现 | 处理 |
+|---|---|---|---|
+| A-1 | 中 | 版本错位用 DEFER 会按本地旧副本续做，看不到服务端之后挂的 VOID；欠款在旧节点被还清删除后错位消失，续做就把一条可能已作废的 GM 欠款挂上并报 APPLIED（违反收件箱设计 §7.5 评审 L1 的前提） | 已修：新结局 `kVersionSkew`，收件箱停用本域（`reason=version_skew`）、已定前缀照常确认、下次落地重拉。没选"每次重拉"：每次 Fetch 让 `delivery_count` +1，几分钟内就触发毒消息告警 |
+| D-1 | 低 | 资产通道入账的跨包 guid 查重只扫运行时包，看不到第 5 批携带的越界包类型记录；同一实例可能在新旧两个包各落一份，升回新版本后两份都还原 | 已修：`PlayerBagsComp::ContainsGuid`（固定包、动态包、携带记录的 item_uuid 或实例 item_id） |
+| B-1 | 低 | 按 config 计数和扣数量（资产通道数量扣出、强化材料、镶嵌宝石、战斗消耗）不看 `IsIndependentInstance`；文档读起来像已守住 | 只改文档：设计 §4.4 新增一行标"暂无守卫"，§0、R5、§13 评审清单收窄说法；补代码守卫要另立一批，修法写在 §4.4 那一行 |
+| F-1 | 低 | 设计 §8.3 引用了不存在的"§12 待核对行" | 已修：§12 新增"其他按配置表解释的持久值：未核对"一行；§8.3 写明第 5 批只解除包类型、技能两类值域 |
+| E 附注 | — | 技能表行 id 若被复用，留在老玩家数据里的不生效 id 会自动生效 | 设计 §12 加约束：删除的技能 id 不得复用 |
+
+复核还确认了这些没有问题（摘要）：A–E 没有确定的编译缺陷；规划与提交铸号数在各种组合下相等；越界包类型往返字节稳定、重新还原清干净、容量下标不错位；技能的五条消费路径都只认生效的项。以上都来自读码，没有编译。
+

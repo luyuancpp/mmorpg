@@ -1,6 +1,6 @@
 # 跨 Zone 传送 / 归属交接 失败场景测试 Runbook
 
-> **状态**: v2 — 2026-09-20(整篇重写,v1 的四个场景全部作废,见 §0);v2.2 — 2026-09-21 补 S3L1-1 第二层出口的观测点与场景 B3(见 Changelog);v2.4 — 2026-09-21 补 Z1 修复 / 断线释放标记 A′ / GO-5 的观测点与场景 Z、R,并按 A′ 改写 §3.3 / §3.4 / B2 / C1 / C2 / D2 / F3 的期望(代码已落码,C++ 未重新编译、Go 未编译,均未测试;设计文档 §12.6.10 / §12.7);**v2.5 — 2026-09-29 补冻结硬上限 + 晚发闸 +「标记已发出」统一收口(D-2 的修复)、EnterScene 应答关联号、gRPC 失败回调、CPP-2 gate 侧进场转发补发、GO-6 推迟摘除的观测点与场景 H / SE / E2,并改写 §2.3 / §2.4 / §3.2 K-SM / §3.3 / B1 / F3 / §5 / §6 / §7(代码 2026-09-28 已进 main,**全部未编译、未测试;本版同样是静态编写、未实跑**,见 Changelog)**;v2.5 修订 — 2026-09-29 按 HEAD `a812187e8` 复核:GO-2 已进 main(未编译),取证改为单条原子 EVAL、新增第 5 个收口点与 3 个计数,B3 在 HEAD 上记 SKIP;CPP-2 之后 G7 的第二种形态在场景 A / E / E2 同步改写;v2.5 表格去掉行号(见 Changelog);**v2.6 — 2026-10-08(2026-10-01 起稿,当次撰写中途中断;10-08 按合并远端之后的 HEAD 复核补完)GO-2 根治(owner_epoch 严格单调:回滚再 INCR + 回滚回执 + 转写标记 + 源端原子取证)落码完成后的复核与 B3 重写:按 HEAD 逐条核对 GO-2 相关的日志原文 / 计数名 / outcome / site,场景 B3 重写为 B3a(回滚执行了 → 源端凭回执采纳解冻)/ B3b(回滚没执行 → 已放行销毁 + 踢线)/ B3c(unpause 后的迟到投递)/ B3d(凭标记的迟到回滚:所凭标记已不在 → `marker_gone`,一个字节不动),新增 H1c(取证脚本被 Redis 整体拒绝 → 不解冻),补 GO-2 专属验收点与已登记的偏离 / 残余 GR-1–GR-11,§7 结果表同步(GO-2 代码已全部在 main:c6ba557e4 / a812187e8 / 11973ad27 / e43074ae4 / b307403dd / 1d831acb5;其后 d970a050f 与 2026-10-08 的远端合并 4433668d52 / b0f0760ac0 碰到的落点已一并按当前代码核对,**均未编译、未测试;本版同样是静态编写、未实跑**,见 Changelog)**;**v2.7 — 2026-10-09 补 CPP-3 疏散 / 排空改派待确认表的观测点、场景 V 与缺口 RC-1 – RC-16(代码已进 main,未编译、未测试;设计文档「CPP-3 疏散 / 排空改派的待确认表」一节)**;**v2.8 — 2026-10-13 按日志英文化(`946ffd216d`)同步文中引用的 scene_manager / gate / login / robot 日志原文(只改引用,不改场景与判据)**
+> **状态**: v2 — 2026-09-20(整篇重写,v1 的四个场景全部作废,见 §0);v2.2 — 2026-09-21 补 S3L1-1 第二层出口的观测点与场景 B3(见 Changelog);v2.4 — 2026-09-21 补 Z1 修复 / 断线释放标记 A′ / GO-5 的观测点与场景 Z、R,并按 A′ 改写 §3.3 / §3.4 / B2 / C1 / C2 / D2 / F3 的期望(代码已落码,C++ 未重新编译、Go 未编译,均未测试;设计文档 §12.6.10 / §12.7);**v2.5 — 2026-09-29 补冻结硬上限 + 晚发闸 +「标记已发出」统一收口(D-2 的修复)、EnterScene 应答关联号、gRPC 失败回调、CPP-2 gate 侧进场转发补发、GO-6 推迟摘除的观测点与场景 H / SE / E2,并改写 §2.3 / §2.4 / §3.2 K-SM / §3.3 / B1 / F3 / §5 / §6 / §7(代码 2026-09-28 已进 main,**全部未编译、未测试;本版同样是静态编写、未实跑**,见 Changelog)**;v2.5 修订 — 2026-09-29 按 HEAD `a812187e8` 复核:GO-2 已进 main(未编译),取证改为单条原子 EVAL、新增第 5 个收口点与 3 个计数,B3 在 HEAD 上记 SKIP;CPP-2 之后 G7 的第二种形态在场景 A / E / E2 同步改写;v2.5 表格去掉行号(见 Changelog);**v2.6 — 2026-10-08(2026-10-01 起稿,当次撰写中途中断;10-08 按合并远端之后的 HEAD 复核补完)GO-2 根治(owner_epoch 严格单调:回滚再 INCR + 回滚回执 + 转写标记 + 源端原子取证)落码完成后的复核与 B3 重写:按 HEAD 逐条核对 GO-2 相关的日志原文 / 计数名 / outcome / site,场景 B3 重写为 B3a(回滚执行了 → 源端凭回执采纳解冻)/ B3b(回滚没执行 → 已放行销毁 + 踢线)/ B3c(unpause 后的迟到投递)/ B3d(凭标记的迟到回滚:所凭标记已不在 → `marker_gone`,一个字节不动),新增 H1c(取证脚本被 Redis 整体拒绝 → 不解冻),补 GO-2 专属验收点与已登记的偏离 / 残余 GR-1–GR-11,§7 结果表同步(GO-2 代码已全部在 main:c6ba557e4 / a812187e8 / 11973ad27 / e43074ae4 / b307403dd / 1d831acb5;其后 d970a050f 与 2026-10-08 的远端合并 4433668d52 / b0f0760ac0 碰到的落点已一并按当前代码核对,**均未编译、未测试;本版同样是静态编写、未实跑**,见 Changelog)**;**v2.7 — 2026-10-09 补 CPP-3 疏散 / 排空改派待确认表的观测点、场景 V 与缺口 RC-1 – RC-16(代码已进 main,未编译、未测试;设计文档「CPP-3 疏散 / 排空改派的待确认表」一节)**;**v2.8 — 2026-10-13 按日志英文化(`946ffd216d`)同步文中引用的 scene_manager / gate / login / robot 日志原文(只改引用,不改场景与判据)**;**v2.9 — 2026-10-20 补记 10-18 两次未登记的正文改动,回填验证状态,并给场景 Z 补一条新出口的观测点(见 Changelog)。故障场景至今仍一个都没实跑过**
 > **⚠ 静态编写声明**: 本文依据 2026-09-20 的 `main`(`21474af9b`)**只读代码**写成。它描述的链路(跨 zone 场景传送阶段 1/2/3 + 同 zone 跨节点换图 + 单节点硬崩接管)**尚未编译、尚未实跑**(`docs/design/cross-zone-scene-travel.md` §11 / §11.4)。文中每条日志原文、键名、指标名、错误码都逐字 grep 核对过,但**注入手法的时序、期望现象的先后**是从代码推出来的,没有一条被执行验证过。**首次执行的人发现与实际不符处,应回改本文**(并在 Changelog 记一笔),不要照着错的文档去"修"代码。凡标了「拿不准」的地方,就是首跑时最该记录实际现象的地方。
 > **范围**: 归属交接链(`StartTravelHandoff → 冻结 → 存盘 → BeginTravelHandoff 写 handoff 标记 → scene_manager.EnterScene → 放行销毁 / 未成解冻`)与属主接管(`playerLocationOwnerDead`)的失败场景 SOP。设计参考 `docs/design/cross-zone-scene-travel.md` §4 / §6 / §7 / §10.3 / §11,以及 `docs/design/scene-owner-reentry-barrier.md`。
 > **执行环境**: 本地双 zone(`dev_tools.ps1 -Command dev-start-zones -Zones 1,2`,共享同一个 docker `redis` / `kafka`)。K8s 双 zone 的对应手法见 §3.5,**未逐条核对**。
@@ -14,7 +14,7 @@
 
 v1(2026-05-19)测的是「跨 zone 三件套」:`PlayerFrozenComp` + Kafka `player_migrate` / `player_migrate_ack` 事件 + `[CrossZoneReaper]` 超时重发,现场靠 `metric=migration_start / migration_done / reaper_failed` 日志与 Redis 键 `player_migration:{P}` 判断。
 
-**这条搬数据链已在阶段 3 整条删除**(设计文档 §11.3,决策 CZ-1):`HandleCrossZoneTransfer / HandlePlayerMigration / HandlePlayerMigrationAck`、`cross_zone_reaper.{h,cpp}`、`kafka/system/kafka.{h,cpp}`、`main.cpp` 的两个 topic 订阅与 reaper 启停全部删掉了。源码里现在只剩注释提到它们(`cpp/nodes/scene/main.cpp:258-265`、`player_frozen_comp.h:25`)。照 v1 跑,四个场景必然全失败——**那不是回归,是被测对象没了**。
+**这条搬数据链已在阶段 3 整条删除**(设计文档 §11.3,决策 CZ-1):`HandleCrossZoneTransfer / HandlePlayerMigration / HandlePlayerMigrationAck`、`cross_zone_reaper.{h,cpp}`、`kafka/system/kafka.{h,cpp}`、`main.cpp` 的两个 topic 订阅与 reaper 启停全部删掉了。源码里现在只剩注释提到它们(`cpp/nodes/scene/main.cpp:258-265`、`player_frozen_comp.h:25`;*2026-10-20:行号已漂到 `main.cpp:342` 一带与 `player_frozen_comp.h:30`,按注释里的 `player_migrate` grep 即可*)。照 v1 跑,四个场景必然全失败——**那不是回归,是被测对象没了**。
 
 - ❌ **不要恢复 reaper / `player_migrate` 订阅 / `player_migration:*` 键**。它被删的原因:摸底证实是运行期死代码(全仓无人触发),且与「数据不搬家、按 home_zone 落库」(CZ-1 / CZ-2)冲突。
 - 现在「冻结了谁来解」的答案:EnterScene 应答 + 两道 30s 看门狗(存盘看门狗 / 应答看门狗)+ 按 `owner_epoch` 核实去留(`ResolveTravelOutcome`)+「退出优先」+(v2.5)70s 冻结硬上限(`EnforceTravelFreezeCaps`)。不需要 reaper。
@@ -814,6 +814,9 @@ Z1 = 真写盘的正常断线退出不销毁实体(僵尸)。**必须先用修�
 - **汇总行**(30s 内):`[ExitRelease]` 的 `attempted` 与 `written` 各 +1;`[ExitPersist]` 行若出现,`exit_superseded=0 exit_intent_missing=0 exit_resave_capped=0`。
 - **重登**:30s 内同一节点重登 → `[ExitRelease][InheritClear] player=<P> epoch=<E> result=inherit_deleted_exact` → `HandlePlayerAsyncLoaded: Loading player <P>`(从 Redis 重载,不再复用旧实体)→ handoff 键为 nil;金币 = 退出前的值。
 - **通过标准**:✅ Z-pre 出现 `ignoring stale UnregisterPlayer` 且无 `Destroying`;✅ Z-post 出现 `Destroying player` 与 `[ExitRelease] mark written`;✅ Z-post 全程**不出现** `ignoring stale UnregisterPlayer`(出现 = 跑的是旧二进制)与 `superseded by a newer session`;✅ 重登后数据不回档。
+- **v2.9 补充观测点(2026-10-20,静态核对 HEAD `c35e1133d`)**:混版本持久字段保护落地后,退出存盘多了一个出口。persist schema 在 enforce 模式下拒存时,不再走 Z1 的"收敛才销毁",而是直接不存盘销毁(`HandlePlayerSaveSchemaRejected`)。日志依次为 ERROR `[PersistSchema] save refused: the loaded data is older than the recorded schema generation … exiting=1 …` 和 WARN `[exit_save_refused_persist_schema] local entity for player <P> destroyed without persisting (local state abandoned)`。
+  - Z-post 里出现这两行,说明这名玩家本次会话的进度没有落盘。这不算 Z1 修复失败,要单独记录,并核对屏障世代的来源。
+  - 若交接还没写标记,同一拒存会走 `AbortTravelHandoff`,原因串是 `handoff save refused by persist schema regression check`。这是交接的新中止来源,B 类场景里看到它也要记下。
 - **附加(可选)**:`SCENE_EXIT_RELEASE_MARK=0` 启动 scene 重做 Z-post → 开关日志 `[ExitRelease] SCENE_EXIT_RELEASE_MARK=0 -> off`,仍有 `Destroying player`,汇总行 `skip_disabled` +1,**没有** handoff 键(Z1 修复与 A1′ 相互独立)。M1 注入:R-PAUSE 撑住退出存盘时让另一个仍在线的会话 / GM 对该玩家发背包操作 → `exit_client_msg_rejected` +1;战斗结算期间退出 → 结算走离线暂存、不销账。
 
 ### 场景 R:GO-5 重连落点(v2.4 新增;设计文档 §12.7,代码未编译、本场景未实跑)
@@ -1191,6 +1194,23 @@ Go 侧的两条(`DbStaleOwnerWriteRejected`、`DbOwnerEpochLegacyZero`)是可部
 
 ## Changelog
 
+- **2026-10-20 v2.9**(只读核对 + 文档订正;没有实跑任何场景):
+  - **补登 10-18 两次未登记的正文改动**。两次都没升版本、没记 Changelog,这里补上:
+    - `e7bb46070` 改了四处:
+      - `watchdog_early_fire` 的含义:muduo 定时器 10-16 起按单调时钟到期,这个计数应恒为 0;
+      - `[SavePlayerToRedis] … saved to Redis …` 的原文多了 `home_zone=` 和 `save_seq=`;
+      - 晚发闸 / 看门狗两行的说明随之改写;
+      - FC-1(墙钟回拨推迟上限)划掉。
+    - `8b9592de3` 改了两处:
+      - 不存盘销毁的日志尾巴从 `(ownership moved away)` 改为 `(local state abandoned)`;
+      - `SceneManager.EnterScene error` 一行的说明改为"每次调用完成回调先分发应答、后打这一行"(2026-10-17 契约勘误)。
+  - **验证状态**:
+    - 单测已绿,但跑的是合并前的源码:`cross_zone_test` 313/313、`routing_identity_test` 113/113、`go/scene_manager` 与 `go/login` 全量单测。出处与"HEAD 本身未构建"的限定见设计文档 §13 开头的 2026-10-20 回填。
+    - 本文所有故障场景(A–F、B3a–d、H、SE / SE2、V、Z、R、E2)仍**没有任何实跑记录**,§7 的结果模板没填过。
+    - 唯一的实跑是 PROGRESS「2026-10-17 附件/交易到账与 SQL 围栏双区闭环补验」里的严格交接往返 1/1(robot,1 区 → 2 区 → 回家,`AllowUnsafeCrossNodeHandoff` 未开)。它只相当于 §3.3 基线里 robot 那一半,§3.3 要求核对的日志序列(z2 存盘 topic、每腿 epoch +1、各 `[TravelHandoff]` 计数为 0 等)没有记录,**不能记成基线 PASS**。
+  - **场景 Z**:补了混版本持久字段保护带来的新出口的观测点,见场景 Z 通过标准之后的"v2.9 补充观测点"。
+  - **§0**:两处已漂移的行号,改为按注释原文 grep。
+  - **场景 H**:还是只能用 Unity 客户端跑。robot travel-smoke 的单跳预算仍写死为 60s;改成可配置且 ≥75s 归 robot 属主,该文件目前有别的会话在途改动。
 - **2026-10-13 v2.8**(日志英文化同步;静态编写、未实跑):提交 `946ffd216d`「日志文案统一为英文,保留业务逻辑」把 scene_manager / gate / login / robot 等处的中文日志文案改成了英文(只改日志字符串,不改逻辑),本文按日志原文逐字 grep 判读的引用随之对不上代码。本版把这些引用同步成当前代码里的英文原文,**只改引用,不改场景、时序与判据**,占位写法与截取范围照旧;每一条都在基于 `946ffd216d` 的工作树上对着 `go/scene_manager/internal/logic/` 的 `enterscenelogic.go` / `owner_epoch.go` / `reentry_barrier.go` / `home_zone.go`、`go/login/internal/logic/clientplayerlogin/entergamelogic.go`、`cpp/nodes/gate/handler/event/scene_entry_dispatch.cpp`、`cpp/libs/services/scene/player/system/player_lifecycle.cpp`、`robot/travel_smoke_scenario.go` grep 核对过。
   - **§2.2**:21 号码(`ErrHomeZoneMerging`)一行引的 `[home-zone] Home zone inside merge fence; rejecting EnterScene…`。
   - **§2.4 scene_manager 表**:`[Handoff]` 四条(`<site> temporarily rejected: …` / 两条 `Source scene withdrew handoff marker …` / `Dev bypass …`);`[RouteRollback]` 各 outcome 的说明文字(`already_rolled_back` / `superseded` / `marker_gone` / `redis_error` 三种 / `plan_error` / 没有 `outcome=` 的那一条)与"grep 口径"一行;`[Travel]` 两条;属主接管与陈旧位置两条;`[ReentryBarrier]` 两条与 `[ReentryBarrier][DeferDetach]` 全部各行。`[RouteRollback] outcome=rolled_back mode=bump …`、各条 `Cross-zone …` / `Failed to … to gate …` / `Player <P> entered scene …` 本来就是英文,未动。

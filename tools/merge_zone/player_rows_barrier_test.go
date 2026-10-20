@@ -3,7 +3,7 @@ package main
 // r2-mz#1(2026-10-20 修复)的回归:前向 copy 合服保留 player:{id}:save_barrier,撤销照删;-verify-merged 的
 // verify:save_barrier 逐人核对屏障与两表行内围栏。本 module 没有 miniredis / sqlmock(见 gap_fixes_test.go 头注释):
 // Redis 一侧用 route_publish_test.go 的 newFakeRouteRedis(go-redis 钩子,不拨号),SQL 一侧经 rowFenceReader 注入替身。
-// 真库端到端见 save_barrier_integration_test.go(build tag merge_integration)。
+// 真 MySQL / Redis 上的读口径(行围栏 SELECT、HMGET 只取三字段)见 save_barrier_integration_test.go(build tag merge_integration)。
 
 import (
 	"context"
@@ -12,6 +12,7 @@ import (
 	"go/parser"
 	"go/token"
 	"sort"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -125,7 +126,7 @@ func containsString(list []string, s string) bool {
 }
 
 // TestBarrierWiring_CopyMergeKeepsUnmergeDeletes 钉住两处调用点:runMerge / runUnmerge 用 log.Fatalf 收尾,
-// 不能在进程内调,真库端到端在 save_barrier_integration_test.go;这里只证接线没被改回去。
+// 不能在进程内调;这里只证接线没被改回去(-route-source=db / redis 走的是同一个调用点)。
 func TestBarrierWiring_CopyMergeKeepsUnmergeDeletes(t *testing.T) {
 	for _, c := range []struct {
 		file, fn  string
@@ -244,12 +245,20 @@ func TestJudgeSaveBarrier_MirrorsTheLoginColdLoad(t *testing.T) {
 
 // barrierWorld 是 verify:save_barrier 的替身世界:共享 Redis(owner_epoch / save_barrier)、落点读方、SQL 行围栏。
 type barrierWorld struct {
-	owners   map[uint64]string
-	barriers map[uint64][3]string // pending / player_database / player_database_1;没有的玩家 = hash 不存在
-	records  map[uint64]string    // 落点记录原值;没有 = 无记录
+	owners map[uint64]string
+	// barriers:屏障 hash 的全部字段(字段名 → 值);没有的玩家 = hash 不存在。HMGET 按请求的字段逐个应答,
+	// 所以 hash 里多出来的字段(schema_gen / schema_writer / outbox_*)与真 Redis 一样不影响结果。
+	barriers map[uint64]map[string]string
+	records  map[uint64]string // 落点记录原值;没有 = 无记录
 	fences   map[string]map[uint64]string
-	reads    []string // readFences 收到的 "schema.table"
+	reads    []string   // readFences 收到的 "schema.table"
+	hmgets   [][]string // 每条 HMGET 请求的字段
 	hmgetErr error
+}
+
+// committedBarrier 是 pending 与两表 ACK 同版的屏障 hash(稳态)。
+func committedBarrier(v string) map[string]string {
+	return map[string]string{saveBarrierPendingField: v, saveBarrierAckTables[0]: v, saveBarrierAckTables[1]: v}
 }
 
 func (w *barrierWorld) reply(_ int, cmd redis.Cmder) (any, error) {
@@ -273,28 +282,26 @@ func (w *barrierWorld) reply(_ int, cmd redis.Cmder) (any, error) {
 			return nil, w.hmgetErr
 		}
 		key := args[1].(string)
+		fields := make([]string, 0, len(args)-2)
+		for _, a := range args[2:] {
+			fields = append(fields, a.(string))
+		}
+		w.hmgets = append(w.hmgets, fields)
+		var hash map[string]string
 		for id, b := range w.barriers {
-			if key == "player:{"+uintString(id)+"}:save_barrier" {
-				return []any{b[0], b[1], b[2]}, nil
+			if key == playerSaveBarrierKey(strconv.FormatUint(id, 10)) {
+				hash = b
 			}
 		}
-		return []any{nil, nil, nil}, nil
+		out := make([]any, len(fields))
+		for i, f := range fields {
+			if v, ok := hash[f]; ok {
+				out[i] = v
+			}
+		}
+		return out, nil
 	}
 	return nil, errors.New("unexpected command " + cmd.Name())
-}
-
-func uintString(v uint64) string { return strings.TrimSpace(strings.Repeat(" ", 0) + itoaU(v)) }
-
-func itoaU(v uint64) string {
-	if v == 0 {
-		return "0"
-	}
-	var b []byte
-	for v > 0 {
-		b = append([]byte{byte('0' + v%10)}, b...)
-		v /= 10
-	}
-	return string(b)
 }
 
 func (w *barrierWorld) readFences(_ context.Context, schema, table string, ids []uint64) (map[uint64]string, error) {
@@ -318,7 +325,7 @@ func (r barrierRoutes) placements(_ context.Context, ids []uint64) ([]placementR
 		if !ok {
 			continue
 		}
-		rec, err := parsePlacementRecord(raw)
+		rec, err := parsePlacement(raw)
 		out[i] = placementRead{RecordRaw: raw, RecordPresent: true, Record: rec, RecordErr: err}
 	}
 	return out, nil
@@ -348,7 +355,7 @@ func newBarrierWorld() *barrierWorld {
 	v1, v2 := saveBarrierVersion(8, 90), saveBarrierVersion(6, 4)
 	w := &barrierWorld{
 		owners:   map[uint64]string{1: "9", 2: "6"},
-		barriers: map[uint64][3]string{1: {v1, v1, v1}, 2: {v2, v2, v2}},
+		barriers: map[uint64]map[string]string{1: committedBarrier(v1), 2: committedBarrier(v2)},
 		records:  map[uint64]string{2: "901:1"},
 	}
 	for _, table := range saveBarrierAckTables {
@@ -382,6 +389,32 @@ func TestVerifySaveBarriers_PassesWhenEveryBarrierMatchesItsRows(t *testing.T) {
 		"zone_902_db.player_database", "zone_902_db.player_database_1"}
 	if strings.Join(w.reads, ",") != strings.Join(want, ",") {
 		t.Errorf("fence reads = %v, want %v", w.reads, want)
+	}
+}
+
+// TestVerifySaveBarriers_AcceptsSchemaGenAndWriterFields:混版本持久字段保护第 3b 批起,C++ 严格屏障 Lua 会在 hash 里
+// 多写 schema_gen(覆盖世代)与 schema_writer(写方令牌)。它们是合法字段:前向 copy 合服原样保留,verify 不按字段集合
+// 判,只取 pending 与两表 ACK 三个字段,不得因多出这两个字段报 block。合服后新实体的令牌必然不同、照常做一次世代比较,
+// 那是 C++ 存盘时的期望行为,不是 login 冷加载的拒绝条件。
+func TestVerifySaveBarriers_AcceptsSchemaGenAndWriterFields(t *testing.T) {
+	w := newBarrierWorld()
+	w.barriers[1]["schema_gen"] = "3"
+	w.barriers[1]["schema_writer"] = "6f1c2a9e-4b7d-4e0a-9c3f-2d8b1e5a7c40"
+	w.barriers[2]["schema_gen"] = "1"
+	w.barriers[2]["schema_writer"] = "0b9e8d7c-6a5f-4e3d-8c2b-1a0f9e8d7c6b"
+	r := verifySaveBarriersWith(context.Background(), barrierVerifyConfig(t, w, true), w.readFences)
+	if r.Severity != "info" || r.TargetCount != 2 || r.ConflictCount != 0 {
+		t.Fatalf("schema_gen / schema_writer must not fail the check: %+v", r)
+	}
+	// 每名 owner_epoch≠0 的玩家一条 HMGET(1、2 两人),字段恰为这三个。
+	want := strings.Join([]string{saveBarrierPendingField, saveBarrierAckTables[0], saveBarrierAckTables[1]}, ",")
+	if len(w.hmgets) != 2 {
+		t.Fatalf("want one HMGET per required player, got %v", w.hmgets)
+	}
+	for _, fields := range w.hmgets {
+		if strings.Join(fields, ",") != want {
+			t.Fatalf("verify must HMGET exactly %s (got %v)", want, fields)
+		}
 	}
 }
 

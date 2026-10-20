@@ -1009,8 +1009,10 @@ private:
 	// 在途写被原子拒绝(owner guard 返回 0,或严格屏障 C3 enforce 返回 3)之后,同 key 排队值的处置:
 	// 排队值的 guard 期望值与被拒的不同 → 调用方在这笔写在途期间拿到了更新的归属,照常发出它并返回 true,
 	// 调用方此时不回调(那笔旧写已被它取代,由它的结果决定后续);相同 → 同一份已作废的期望值,一并丢弃,返回 false。
+	// sameWriterOnly(C3 用):排队值的写方令牌与被拒的不同时同样照发 —— 它来自另一个加载实体,C3 的判定只看
+	// 写方自己的加载世代,被拒的那份不能替它下结论;owner 拒绝只看 guard,不传。
 	// 调用前在途记录必须已摘除。
-	bool IssuePendingWithNewerGuard(const ElementPtr& element, const char* rejectedBy)
+	bool IssuePendingWithNewerGuard(const ElementPtr& element, const char* rejectedBy, bool sameWriterOnly = false)
 	{
 		auto newer = pending_save_queue_.find(element->redis_key);
 		if (newer == pending_save_queue_.end())
@@ -1019,14 +1021,15 @@ private:
 		}
 		auto next = newer->second;
 		pending_save_queue_.erase(newer);
-		if (next->guard_expected == element->guard_expected)
+		const bool otherWriter = sameWriterOnly && next->schema_writer != element->schema_writer;
+		if (next->guard_expected == element->guard_expected && !otherWriter)
 		{
 			return false;
 		}
 		LOG_WARN << "Redis Save rejected by " << rejectedBy << " for key: " << element->redis_key
 				 << " expected=" << element->guard_expected
 				 << " -- superseded by a pending value with newer guard=" << next->guard_expected
-				 << ", issuing it";
+				 << (otherWriter ? " from another loaded entity" : "") << ", issuing it";
 		IssueSave(next);
 		return true;
 	}
@@ -1102,11 +1105,12 @@ private:
 
 		// 严格屏障返回 3 = enforce 模式下覆盖世代校验 C3 判定倒退、拒写(一个键都没动)。只对屏障元素解释 3。
 		// 处置同上面的 0:不重试(同一份数据再发只会再被拒)、不执行提交钩子、不发布 save_callback_;
-		// 同 key 排队值 guard 相同一并丢弃,不同则照发、不回调(它带着更新的归属,由它的结果决定后续)。
+		// 同 key 排队值 guard 与写方令牌都相同才一并丢弃(同一实体、同一归属,再发只会再被拒),
+		// 否则照发、不回调(它带着更新的归属,或来自另一个加载实体,由它自己的结果决定后续)。
 		if (!element->barrier_key.empty() && reply->type == REDIS_REPLY_INTEGER && reply->integer == 3)
 		{
 			saving_queue_.erase(inFlight);
-			if (IssuePendingWithNewerGuard(element, "persist schema regression check"))
+			if (IssuePendingWithNewerGuard(element, "persist schema regression check", /*sameWriterOnly=*/true))
 			{
 				return;
 			}

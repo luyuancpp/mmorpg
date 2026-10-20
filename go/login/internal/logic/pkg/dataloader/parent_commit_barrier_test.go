@@ -10,6 +10,7 @@ import (
 	dbpb "proto/db"
 	"shared/ownerepoch"
 	"shared/savebarrier"
+	"strings"
 	"testing"
 	"time"
 
@@ -452,8 +453,9 @@ func TestParentFastPathPersistSchemaRegression(t *testing.T) {
 // 其余一律是损坏 = 倒退证据,不当成「不比较」。加载世代给到 uint32 上界:任何脏值都不会因为
 // 「数值上不倒退」而漏判。
 func TestParentFastPathMalformedBarrierSchemaGenIsRegressionEvidence(t *testing.T) {
+	// "" 是"字段存在但值为空":与字段不存在分开判,按损坏处理(与 scene C3、go/db save_barrier_restore 同一口径)。
 	for _, raw := range []string{
-		"0", "00", "007", "01", "4294967296", "18446744073709551616", "-1", "+3", " 3", "3 ", "1.0", "0x10", "1e3", "abc", "３",
+		"", "0", "00", "007", "01", "4294967296", "18446744073709551616", "-1", "+3", " 3", "3 ", "1.0", "0x10", "1e3", "abc", "３",
 	} {
 		t.Run(fmt.Sprintf("%q", raw), func(t *testing.T) {
 			_, rc := newSeedTestRedis(t)
@@ -465,6 +467,59 @@ func TestParentFastPathMalformedBarrierSchemaGenIsRegressionEvidence(t *testing.
 			}
 			requireSchemaRegressionDelta(t, before, schemaRegressionKey{"malformed", "enforce"})
 		})
+	}
+}
+
+// 起服预置:四条序列都要从起服起就存在,否则 `increase(...) > 0` 会漏掉第一次倒退。预置只写 0,不改变任何计数。
+func TestPrimePersistSchemaRegressionMetricsExposesAllSeries(t *testing.T) {
+	before := schemaRegressionCounts(t)
+	PrimePersistSchemaRegressionMetrics()
+	after := schemaRegressionCounts(t)
+	for _, key := range allSchemaRegressionKeys {
+		if _, ok := after[key]; !ok {
+			t.Errorf("%s{reason=%q,mode=%q} missing after PrimePersistSchemaRegressionMetrics",
+				persistSchemaRegressionMetric, key.reason, key.mode)
+		}
+	}
+	requireSchemaRegressionDelta(t, before, schemaRegressionKey{})
+}
+
+// C4 排在身份、水位校验之后:父快照本来就会被这两项拒绝时,不能先计一次倒退、也不能把错误归因成 C4。
+// 屏障 schema_gen 高于两表戳,同时父快照水位不符或身份不符,两种模式都应返回原来的错误且计数不变。
+func TestParentSchemaRegressionCheckRunsAfterIdentityAndWatermark(t *testing.T) {
+	for _, tc := range []struct {
+		name    string
+		mutate  func(parent *databasepb.PlayerAllData)
+		wantErr string
+	}{
+		{"水位不符", func(parent *databasepb.PlayerAllData) { parent.LastSaveSeq = 98 }, "水位"},
+		{"身份不符", func(parent *databasepb.PlayerAllData) { parent.PlayerDatabase_1Data.PlayerId = seedTestPlayerID + 1 }, "身份"},
+	} {
+		for _, mode := range []config.PersistSchemaRegressionMode{config.PersistSchemaRegressionWarn, config.PersistSchemaRegressionEnforce} {
+			t.Run(tc.name+"/"+string(mode), func(t *testing.T) {
+				_, rc := newSeedTestRedis(t)
+				installFastPathParent(t, rc, 1, 1, "9", true)
+				ctx := context.Background()
+				parent := newPlayerAllDataSkeleton(seedTestPlayerID)
+				parent.LastSaveSeq = 99
+				parent.PlayerDatabaseData.PersistSchemaGen = 1
+				parent.PlayerDatabase_1Data.PersistSchemaGen = 1
+				tc.mutate(parent)
+				raw, err := proto.Marshal(parent)
+				if err != nil {
+					t.Fatal(err)
+				}
+				if err := rc.Set(ctx, seedParentKey(seedTestPlayerID), raw, time.Hour).Err(); err != nil {
+					t.Fatal(err)
+				}
+				before := schemaRegressionCounts(t)
+				_, err = beginParentLoad(ctx, rc, seedParentKey(seedTestPlayerID), seedTestPlayerID, mode)
+				if err == nil || !strings.Contains(err.Error(), tc.wantErr) {
+					t.Fatalf("beginParentLoad err = %v, want an error mentioning %q", err, tc.wantErr)
+				}
+				requireSchemaRegressionDelta(t, before, schemaRegressionKey{})
+			})
+		}
 	}
 }
 

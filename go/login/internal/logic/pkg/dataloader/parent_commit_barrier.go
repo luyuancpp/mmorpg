@@ -22,9 +22,11 @@ type parentLoadSnapshot struct {
 	owner   string
 	pending string
 	raw     string
-	// schemaGen 是屏障 hash 里 scene 记录的持久 schema 世代原文(C4 用);空串 = hash 不存在或没有该字段。
+	// schemaGen 是屏障 hash 里 scene 记录的持久 schema 世代原文(C4 用),hasSchemaGen 表示该字段是否存在。
+	// 两者分开:字段存在但值为空串是损坏(与 scene C3、go/db save_barrier_restore 同一口径),不能当成"不存在"放过。
 	// 只是索引不是权威(设计 §3.3),publish 不复核它。
-	schemaGen string
+	schemaGen    string
+	hasSchemaGen bool
 }
 
 const parentBarrierLua = savebarrier.LuaVersionHelpers + `
@@ -52,12 +54,15 @@ local function inspect()
 end
 `
 
-// 在 inspect 的三元组后追加第 4 个元素:屏障 hash 的 schema_gen(不存在时为空串),供 C4 比较。
+// 在 inspect 的三元组后追加第 4、5 个元素:屏障 hash 的 schema_gen 原文(不存在时为空串)与存在标记('1' / '0'),
+// 供 C4 比较。存在标记把"字段存在但值为空串"(损坏)与"字段不存在"(不比较)分开。
 // 只在这里追加、不改共享的 inspect:publish 只读前 3 个元素,不受影响。
 var beginParentLoadScript = redis.NewScript(parentBarrierLua + `
 local state, err = inspect()
 if err then return redis.error_reply(err) end
-state[4] = redis.call('HGET', KEYS[3], 'schema_gen') or ''
+local schema_gen = redis.call('HGET', KEYS[3], 'schema_gen')
+state[4] = schema_gen or ''
+state[5] = schema_gen and '1' or '0'
 return state
 `)
 
@@ -85,10 +90,11 @@ func beginParentLoad(ctx context.Context, rc redis.Cmdable, parentKey string, pl
 	if err != nil {
 		return snapshot, fmt.Errorf("读取父快照提交屏障: %w", err)
 	}
-	if len(values) != 4 {
+	if len(values) != 5 || (values[4] != "0" && values[4] != "1") {
 		return snapshot, fmt.Errorf("父快照屏障回复长度错误")
 	}
-	snapshot = parentLoadSnapshot{raw: values[0], owner: values[1], pending: values[2], schemaGen: values[3]}
+	snapshot = parentLoadSnapshot{raw: values[0], owner: values[1], pending: values[2],
+		schemaGen: values[3], hasSchemaGen: values[4] == "1"}
 	ownerEpoch, err := ownerepoch.ParseEpoch(snapshot.owner)
 	if err != nil || (snapshot.owner != "" && strconv.FormatUint(ownerEpoch, 10) != snapshot.owner) {
 		return snapshot, fmt.Errorf("父快照归属计数器不规范")
@@ -120,7 +126,7 @@ func beginParentLoad(ctx context.Context, rc redis.Cmdable, parentKey string, pl
 		}
 		// C4 放在身份、水位、种子校验之后,只判快路径:冷加载要求两表 SQL ACK 等于 pending,
 		// 行戳必然 ≥ 屏障记录的世代(设计 §5.3、§5.4),不需要也不应该在这里判。
-		if err := checkParentSchemaRegression(parent, snapshot.schemaGen, playerID, regressionMode); err != nil {
+		if err := checkParentSchemaRegression(parent, snapshot.schemaGen, snapshot.hasSchemaGen, playerID, regressionMode); err != nil {
 			return snapshot, err
 		}
 	} else if snapshot.pending == "" && ownerEpoch != 0 {
@@ -131,12 +137,13 @@ func beginParentLoad(ctx context.Context, rc redis.Cmdable, parentKey string, pl
 
 // checkParentSchemaRegression 是 C4(设计 §5.1):父快照的加载世代低于屏障记录的 schema_gen,
 // 或 schema_gen 存在但不是规范的十进制 uint32,都算倒退证据(数据可能已被不认识新字段的旧写方截断)。
-// 屏障里没有 schema_gen(机制前的存量玩家、merge_zone 删过 hash、新号种子)一律不比较(设计 §3.3)。
+// 屏障里没有 schema_gen 字段(机制前的存量玩家、merge_zone 删过 hash、新号种子)一律不比较(设计 §3.3);
+// 字段存在但为空串属于损坏,照常判定。
 // 两种模式都计数并打日志;只有 enforce 返回错误,走 EnterGame 现有失败路径(固定 kEnterSceneFailed,
 // 原因不外发给客户端,不新增 tip)。
-func checkParentSchemaRegression(parent *databasepb.PlayerAllData, barrierGen string, playerID uint64,
-	mode config.PersistSchemaRegressionMode) error {
-	if barrierGen == "" {
+func checkParentSchemaRegression(parent *databasepb.PlayerAllData, barrierGen string, hasBarrierGen bool,
+	playerID uint64, mode config.PersistSchemaRegressionMode) error {
+	if !hasBarrierGen {
 		return nil
 	}
 	loaded := loadedSchemaGen(parent)

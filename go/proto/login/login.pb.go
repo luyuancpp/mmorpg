@@ -1464,14 +1464,14 @@ const file_proto_login_login_proto_rawDesc = "" +
 	"!RemovePlayersFromAccountsResponse\x12#\n" +
 	"\rremoved_count\x18\x01 \x01(\rR\fremovedCount\x12&\n" +
 	"\x0fnot_found_count\x18\x02 \x01(\rR\rnotFoundCount\x12!\n" +
-	"\ffailed_count\x18\x03 \x01(\rR\vfailedCount2\xc5\x03\n" +
+	"\ffailed_count\x18\x03 \x01(\rR\vfailedCount2\xcc\x03\n" +
 	"\x11ClientPlayerLogin\x126\n" +
 	"\x05Login\x12\x15.loginpb.LoginRequest\x1a\x16.loginpb.LoginResponse\x12K\n" +
 	"\fCreatePlayer\x12\x1c.loginpb.CreatePlayerRequest\x1a\x1d.loginpb.CreatePlayerResponse\x12B\n" +
 	"\tEnterGame\x12\x19.loginpb.EnterGameRequest\x1a\x1a.loginpb.EnterGameResponse\x12C\n" +
-	"\tLeaveGame\x12\x19.loginpb.LeaveGameRequest\x1a\x1b.loginpb.LoginEmptyResponse\x12N\n" +
+	"\tLeaveGame\x12\x19.loginpb.LeaveGameRequest\x1a\x1b.loginpb.LoginEmptyResponse\x12U\n" +
 	"\n" +
-	"Disconnect\x12#.loginpb.LoginNodeDisconnectRequest\x1a\x1b.loginpb.LoginEmptyResponse\x12K\n" +
+	"Disconnect\x12#.loginpb.LoginNodeDisconnectRequest\x1a\x1b.loginpb.LoginEmptyResponse\"\x05\x88\x99\xc8\x01\x03\x12K\n" +
 	"\fRefreshToken\x12\x1c.loginpb.RefreshTokenRequest\x1a\x1d.loginpb.RefreshTokenResponse\x1a\x05\x88\xa8\xc3\x01\x012\xae\x01\n" +
 	"\fLoginPreGate\x12E\n" +
 	"\n" +

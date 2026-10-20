@@ -114,7 +114,8 @@ var (
 	// 未到、Redis 读写失败、Kafka 路由失败等快速失败路径只回错误码,不记这条指标。
 	// scene_gone = destroy-while-entering(AtomicIncrPlayerCountIfSceneExists 返回 <0,场景在解析
 	// 之后、预占之前被回收;只有请求指定 scene_id 的进入走这条预占路径)。这个发射点曾在 a0152a5b8
-	// 被删、d41219ca7 加回分支时漏带,2026-09-20 补回。
+	// 被删、d41219ca7 加回分支时漏带,2026-09-20 补回。(2026-10-12 历史改写后,这两个提交号
+	// 分别是 0e26844b5 与 f3f08e2ad。)
 	//
 	// 读数注意:handoff_pending_no_marker 在生产配置(AllowUnsafeCrossNodeHandoff=false)下是
 	// 跨节点换图的常规第一跳,恒非 0,不能拿来告警;告警口径见 deploy/k8s/scene-manager-alerts.yaml。

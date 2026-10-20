@@ -1398,7 +1398,7 @@ tidb-phase1-and-launch-readiness.md §5.1 单行热点一行与 §7 L-12 已加�
 
 ### 13.5 仍未完成 / 残余风险
 
-1. 四张路由表的 proto 列漂移守卫(第 1a 批偏离第 1 条)仍未做。
+1. ~~四张路由表的 proto 列漂移守卫(第 1a 批偏离第 1 条)仍未做。~~ **已做(2026-10-20 D1 收尾,未编译,待 Codex 重生成 proto 并验证)**:实为五张(player_route、zone_merge_fence、zone_merged_into、route_meta、route_reconcile)。`proto/common/database/rollback_database_table.proto` 追加五个 message(player_route 沿用 DDL 预留的 pb:1..10,另四张按列序新定字段号;可空列用零值表达,与 `store.RouteRow` 同约定);`schema.go` 的 `routeTableShapes` 删除,`routeTableMessages()` 进 `TableMessages()`(只为表名守卫,同步循环跳过),迁移期按 proto 字段查列名、按 `OptionPrimaryKey` 查主键列序;`route_store_test` 双向比对 proto 字段与 DDL 列、player_route 的 pb 注释与字段号、`RouteRow` 与 `dbpb.PlayerRoute` 逐字段对应(`RouteRow` 保留为领域类型,写明映射,AGENTS §3 的并行 struct 由该用例机械守住)。DDL 不改。
 2. INFO 在 Lua 里的可用性(Redis 7.2)与每次读多两次 INFO 的开销未实测;mapping Redis 若用 ACL,账号要放行 INFO(@dangerous)。
 3. `DEBUG RELOAD NOSAVE` / `LOADAOF` 在进程内换数据不换身份:靠 `enable-debug-command no` 与 leader 自检;淘汰策略被改到下一拍之间的键丢失只能靠 leader 每拍自检。
 4. redis-ha 网络分区时被隔离的旧主仍自报 master 的情形【推断】;WAITAOF 按全局偏移覆盖此前写是推断。

@@ -3,6 +3,12 @@
 > **给新账号**:先按 AGENTS.md「会话启动门禁」读完规定材料,再读本文,然后从 §3 第 1 项开始。开场指令见 §7,可直接复制。
 >
 > **上游**:[handoff-launch-readiness-and-d1-20261013.md](handoff-launch-readiness-and-d1-20261013.md)(10-13 起的开服线交接,文首按日期追加了 10-15 ~ 10-18 的进度段)。本文接它在 10-18 收尾之后的状态,上游正文里的「剩余工作」以本文为准。
+>
+> **(2026-10-20 进度,接手会话追加)**
+> - 第 1 项:五项落码只读核对完毕,在当前树里都完整生效。原有的 Codex 命令多处过时,已按当前树重写成 [verify_launch_line_20261020.md](launch-readiness-20261013/verify_launch_line_20261020.md);**仍未执行**,等 Codex 跑。
+> - 第 3 项 L-18:静态部分由「账号登录逻辑/物理服瓶颈」会话做,写回提案 §12.3;压测前置要先加指标、再改脚本,是一项单独的代码任务,待负责人指派。
+> - 第 4 项:拍板清单已汇总成 [decisions_launch_line_20261020.md](launch-readiness-20261013/decisions_launch_line_20261020.md),等负责人逐项定。
+> - 第 5、6 项:现状见各项下的 2026-10-20 注。
 
 ## 0. 一句话
 
@@ -54,6 +60,15 @@
 - 每项的细节命令、修复前红的取证方法(基线提交写在各条目里,多为 `360d56ae5` 或 `a105c3efd`)、通过标准,都在各自的 PROGRESS 条目和规格文末。
 - 红了先归因:工作区和主干里有大量别的会话的改动,先判断失败是不是落在本线文件上。本线的就修,修完给出新的验证命令;别人的就如实报告,不要顺手改。
 - 本线没有编译、也没有运行证据。在 Codex 跑绿之前,任何文档都不得写「已验证」。
+- **(2026-10-20 更正,原文不删)**
+  - 命令以 [verify_launch_line_20261020.md](launch-readiness-20261013/verify_launch_line_20261020.md) 为准,它取代各规格文末与 PROGRESS 条目里的命令。原命令的问题包括:
+    - 红灯基线写成了 HEAD,会取到假绿;
+    - 用例正则漏项,或引用了已删除的用例;
+    - `etcd-up`、`open_file_limit_test` 工程这些命令或工程并不存在;
+    - 集成测试的 SKIP 会冒充通过;
+    - 用工作区 `git diff` 核对改动范围,必然误报。
+  - 「没有运行证据」也不准确:B0-5、B0-1 已被别的验收顺带跑过一遍;B0-4 在 Windows 上 21/21,而且哈希与当前一致。但这些都是针对当时的输入,不能代替本单,详见验证单 §2。
+  - D1 1b-1 的验证移交落点线重写,见 placement-line-handoff §4 第 2 步。
 
 ### 第 2 项:G4a 拆 Redis 设计稿修订
 
@@ -75,6 +90,13 @@
 - 负责人 10-19 要求:上线前重新查一遍账号登录时取 home_zone(逻辑服)和 storage_id(物理服)这两步是不是瓶颈、能不能水平扩展。10-18 那次的结论全是推算,不能直接沿用。
 - 按 [player-route-mapping-durability-proposal.md](../design/player-route-mapping-durability-proposal.md) §12.2 的六步做,登记为 `tidb-phase1-and-launch-readiness.md` §7 L-18 和 `docs/ops/release-checklist.md` A.1。
 - 结论写回提案 §12.1 和 PROGRESS;压测与汇总交 Codex,按 AGENTS §6。
+- **(2026-10-20 分工)**
+  - 静态部分(§12.2 第 1~4 步与 Java 核对)由「账号登录逻辑/物理服瓶颈」会话做:结论写成提案 §12.3,§12.1 只加一行指向,L-18 标「静态部分已复核、压测未做」,不标完成。
+  - 第 5 步的压测前置不只是改 `stress_summarize.ps1`。该会话核对后指出,还缺这几项指标:
+    - scene_manager 的 `resolveHomeZone` 不在任何 `enter_scene_stage` 计时段里;
+    - data_service 没有归属读的耗时直方图;
+    - login 的 `RefreshRoleZones` 回落连计数都没有。
+  - 所以压测前置要先加指标、再改 stress_snap / stress_summarize / test_stress_summarize,是一项单独的代码任务,待负责人指派。调研输入是本会话草稿里的 `l18_stress-prereq.json`,该会话会把路径写进任务说明;清单里记为 X-3。
 
 ### 第 4 项:需要负责人拍板或运维执行的事项(整理好后问负责人)
 
@@ -85,11 +107,20 @@
 5. **B0-3 上线顺序**:login 已经是第 1 批的 zone,改为按 zone 金丝雀发 go/db,不要一次升全部 zone;告警等两侧全量之后再 apply。
 6. **G4a 修订稿产出的拍板清单**:mapping 三族 hash tag 的时机与键名、控制面 zone 组大小、redis-cache 形态、账号目录落库位置、核心内存上界与冷玩家卸载阈值(S1 前必须定)、三键同实例与值封装二选一等。
 
+- **(2026-10-20)以上 6 条与第 6 项里要拍板的两条已汇总**,见 [decisions_launch_line_20261020.md](launch-readiness-20261013/decisions_launch_line_20261020.md):
+  - 共 60 项,去重后按 TiDB / 拆 Redis / 运维前置 / 登录与其他分组,文首列出建议先定的 8 项;
+  - 已定的 3 项单列,不再问。
+- 第 1 条后半「容量模型 §4.5 回写 Phase 1 文档」已做:tidb-phase1 §1.2、§2.2 表后、§2.7 末、§9.3 第 12 条各加了 2026-10-20 注。两份文档在「一套集群还是多套」上的冲突没有替负责人定,列为清单 T-12。
+
 ### 第 5 项:已登记的后续小项(不阻塞,按需另开任务)
 
 - **过时注释还剩 3 处**:`go/match/etc/match_service.yaml`、`tools/scripts/k8s_deploy.ps1` 的 friend here-string、`deploy/k8s/README.md` 的 friend 段。建议文案在「共享 Redis 淘汰策略过时注释更正」条目里。k8s_deploy.ps1 那行在可展开的 here-string 里,替换文案不得含 `$` 和反引号。
   - **(2026-10-19 已完成)** 3 处都已改完,12 处过时注释全部收尾(只改注释,未编译);见 PROGRESS「2026-10-19 G4a 收尾」条目。
 - **B0-2**:提交号要回填到 release-checklist §6.1;`cross-zone-matchmaking.md:298`、`player-inbox-service.md:965` 的行号引用要更新;`MessageSyncRedisClient` 与死工程 `cpp/tests/redis_test` 可以一起删。
+  - **(2026-10-20)**
+    - 提交号已回填:B0-2 随 `e76f6f747` 入库,用 `git log -S` 核实过。
+    - `cross-zone-matchmaking.md` 那一行(现约第 300 行)加了「已删除」的更正注。`player-inbox-service.md` 原来的 :965 引用已不存在,现约第 1040、1106 行两处写的是 `redis_client.h:42`,改成按常量名 `kSaveIfGuardLuaScript` 查。
+    - 删 `MessageSyncRedisClient` 与死工程 `redis_test` 还没做:要改 game.sln,单独开任务。
 - **B0-4**:
   - k8s_deploy.ps1 给 `NODE_OPEN_FILE_LIMIT_MODE` 接线;
   - C++ Deployment 显式写 `maxUnavailable: 0`;
@@ -97,9 +128,24 @@
   - `deploy/k8s/AGENTS.md` 加一条「启动壳不加 ulimit」;
   - 用实测重新核 `kNonClientReserve`;
   - **Java 版待做**:启动时打印 `UnixOperatingSystemMXBean.getMaxFileDescriptorCount()` 并与需求比较,`start-slice.sh` 启动前打印 `ulimit -Sn` / `-Hn`(PARITY 已登记)。
+  - **(2026-10-20 核对)**
+    - 前四条都还没做:`k8s_deploy.ps1` 里没有 `NODE_OPEN_FILE_LIMIT_MODE`;`New-NodeDeploymentYaml` 没有 strategy 段;没有地方 grep 拒启行;`deploy/k8s/AGENTS.md` 也没加那一条。改这个 AGENTS 文件要负责人确认,见清单 X-2。
+    - `kNonClientReserve` = 4096 仍是推算。
+    - B0-4 已在 main 里,从 main 出的镜像缺省拒启:硬限低于 24096 / 8192 / 4096 的集群会 CrashLoop。所以前三条应在第一次从 main 出镜像部署之前做。
+    - Java PARITY 第 240 行 B0-4 的 commit 列仍写「提交后回填」,实际已随 `e7bb46070` / `8b9592de3` 入库,留给 Java 线回填。
 - **B0-5**:A1 还没做:scene_manager 按 zone 选主、watch 与 knownNodes 收窄到本 zone,以及 rebalance 等领导者循环限定到本 zone。`handleWatchEvent` 的 PUT 换 zone 分支没有按领导者门控。
+  - **(2026-10-20 核对)** 两条都仍未做,也没人认领。A1 多了一个新前置:10-19 EnterScene 陈旧位置会话新增的 `isZoneGoneFromRegistry`,以及既有的 `isNodeGoneFromRegistry`,都依赖 knownNodes 是全服镜像。watch 收窄之前,这两处要先改成按 zone 查注册表,否则别的 zone 会一律被判成已下线。另外,上 Cluster 后 `pipelineBatchRejected` 的整批判定要复核(G4a §17)。
 - **B0-3**:stress_summarize 补 login 侧的回执送达小表;dispatch 线程池饱和时的回退路径仍不可观测;`TriggerPlayerDataPreload` 是死代码。
+  - **(2026-10-20 核对)**
+    - 三条都仍在。补充:`task_result_dispatcher.go` 的注释引用了 `pubsub_dispatch_overflow_total`,但这个指标全仓都不存在。
+    - 小表并入 L-18 压测前置的指标任务(清单 X-3)。
+    - 风险登记:task:result 所在 Redis 切到 Cluster 时,发布还用 PUBLISH 的话,`no_receiver` 与 NoReceiver 告警会误报。要先改 SPUBLISH 再切,已在 10-17 拍板的「SPUBLISH 推迟到上 Cluster 那批」范围内。
 - **B0-1**:etcd 成功返回空的或残缺的存活集时没有合理性闸门(这是既有行为,需要另做设计);接线 /metrics 之后用压测校准告警阈值。
+  - **(2026-10-20 核对)**
+    - 闸门仍没有设计。后果是 etcd 重建、回滚或连错时,约 2 拍后会把全部在线会话判死,按每秒 1000 条转成 DISCONNECTING,30s 后全员被踢。已列入拍板清单 B1-1,阈值请负责人定。
+    - 校准告警还缺数据通道:stress_snap 不抓 9190。
+    - 另一条后续「给 `k8s_zone_rollback.ps1` 的 `Get-SharedRedisGuardPatterns` 补模式」已过时:该函数已随 8b9592de3 删除,关闭。
+    - 文档债仍在:login `session_lifecycle.go` 约第 85 行的「#B-1 SCAN 巡检」、`disconnectlogic.go` 约第 50 行的 TTL 描述。
 - **D1**:1b-2、1b-3、第 2 批、第 3 批归「D1 玩家归属与存储持久化」会话,见 §5。
 
 ### 第 6 项:至今没有归属的小项(来自全局单点交接 10-16 订正,做之前先核对当时的代码)
@@ -111,12 +157,23 @@
 - 每次存盘都打一条 LOG_INFO;
 - 任务卡片「修复 Kafka 存盘失败后 MySQL 永久落后」(scene 发 DBTask 失败后,脏比较快照没有作废):10-15 由 go/db 存盘管线会话认领,该会话 10-18 说代码已全部落完,但没提这一项。接手前先在 PROGRESS 里搜索,确认是否已修。
 
+**(2026-10-20 核对结果,只读,原文不删)**
+
+| 项 | 现状 | 建议 |
+|---|---|---|
+| refresh token 32 枚、不作废 | 仍在。签发方是 go/login 的 `token.go`(`maxRefreshTokensPerAccount = 32`);本仓 java/gateway_node 只转调。Java 版有同样的问题 | 要拍板:收紧上限或签发时作废旧枚,还是加 device_id(客户端契约)。见清单 U-1 |
+| gateway 单 zone 准入容量默认 5000 | 仍是 5000:`schema.sql`、`ZoneConfig.java`、`k8s_deploy.ps1` 的 `LoginQueueZoneCapacity`。排队门禁关着,今天不会拒登;本仓 gateway 只拿它算负载档。Java 版排队直接拿它当放行预算 | 先定 C_z(清单 U-2),再同批改 |
+| `reassignSceneNode` 无 CAS | 仍无。领导者的 rebalance 与任意副本的 `initWorldScenesForZone` 可能同时改派同一个 scene 到不同节点,留下孤儿 scene 实体,scene_count 也会算错 | 改成 Lua CAS,失败时补 DestroyScene;2~3 个文件,可单独开任务。Java 已有令牌 + 版本号 CAS 的等价实现 |
+| match 的 `migrateLegacyQueues` | 仍在。GlobalMatch 关闭时(dev / 本地)每个副本每分钟 SCAN 一次 `match:queue:*` | 项目未上线,可以整体删掉旧格式兼容,约 10 个文件 |
+| 每次存盘打 LOG_INFO | 仍在,而且每次真写盘打两条(`player_lifecycle.cpp` 的 enqueued 行与 `HandlePlayerAsyncSaved` 开头);`cross-zone-failure-test-runbook.md` 用这两行取证 | 降为 DEBUG,同时改演练手册的取证方式,2~4 个文件 |
+| Kafka 存盘失败后 MySQL 永久落后 | **已由 S5a 处理**(代码已落,未编译):不作废快照,改成按玩家记投递账本,投递失败后强制重存;MySQL 最多落后一个存盘周期。所以上面「该会话没提这一项」的说法不准确 | 不用再写代码;用例已并入验证单 §9 |
+
 ## 4. 硬约束
 
 - **AGENTS §10.1**:Claude 只改代码与文档,不跑编译、测试、gofmt、proto 生成或压测;也不要派「能不能编过」的静态评审,评审只看语义和运行期。每项交付都要附 Codex 可执行的命令。
 - **不 `git add -A`,不提交,不 push**;提交等用户发话。
 - **多会话并行**:工作区随时会被整区快照提交。改文件前先 `git diff` 分清改动归属;一律用 Edit 精确替换,不回退、不覆盖别人的改动。
-- **Java 仓**(`D:\luyuan\xuanming-server-mmo`)**只记待做项**:核对下来「不适用 / 已有等价」的,不往 PARITY.md 加行,结论写回本仓文档。10-19 已撤掉本线之前加的 4 行纯「不适用」(B0-2、B0-5、B0-3 第 2 批、B0-1)。保留的 3 行:B0-4(Java 待做)、B0-3 第 1 批(db_task.proto 的 ContractSync 同步待做)、D1(由 D1 会话维护)。
+- **Java 仓**(`D:\luyuan\xuanming-server-mmo`)**只记待做项**:核对下来「不适用 / 已有等价」的,不往 PARITY.md 加行,结论写回本仓文档。10-19 已撤掉本线之前加的 4 行纯「不适用」(B0-2、B0-5、B0-3 第 2 批、B0-1)。保留的 3 行:B0-4(Java 待做)、B0-3 第 1 批(db_task.proto 的 ContractSync 同步待做)、D1(由 D1 会话维护)。(2026-10-20 核对:B0-3 第 1 批的同步其实已经做完。Java 副本从 cea4d88 起含 `reply_instance = 10`,Codex 10-19 跑过 ContractSync 的 fullsync / fullcheck,原生 0。那一行等 Java 线确认 game-proto 构建通过后收口;本会话没有改 Java 仓。)
 - **文档**:PROGRESS 只追加;更正一律追加带日期的更正注,不删原文;新增文档要在 `docs/README.md` 登记,格式与 `tools/scripts/gen_docs_index.py` 一致。
 - **额度**:开多代理工作流前先看用量。落码类代理按「代理数 × 5%」估算 5 小时窗口;同一账号上的多个会话共用额度,不够就分批。每个实现代理的提示里都带续做说明(先看现状、在半截改动上续做)。
 

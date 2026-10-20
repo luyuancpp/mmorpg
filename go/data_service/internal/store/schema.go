@@ -162,8 +162,10 @@ const playerNameBootstrapDDL = "CREATE TABLE IF NOT EXISTS `player_name` (\n" +
 // MEDIUMTEXT、标量一律 NOT NULL DEFAULT 0(见 idSegmentBootstrapDDL 的注释)。列漂移守卫的事实源是
 // proto/common/database/rollback_database_table.proto 的同名 message(routeTableMessages):它们进 TableMessages
 // 只为表名守卫,同步循环跳过它们,形状由 ensureRouteTables 守。改了 DDL 就要同步改 proto,反之亦然。
-// player_route 的列注释 pb:1..10 就是 proto 的字段号(route_shard 是 10,player_id 仍是 1;route_store_test 钉住);
-// 另外四张的 DDL 没有 pb 注释(建表时没预留),字段号以 proto 为准,存量表的 DDL 不为加注释而改。
+// 五张表每列的注释 pb:N 都等于 proto 字段号(route_store_test 的 TestRouteBootstrapDDLContract 钉住):player_route 的
+// pb:1..10 是第 1a 批预留的(route_shard 是 10,player_id 仍是 1);另外四张是 2026-10-20 补 proto 时按列序新定、同时补进
+// DDL 的。CREATE TABLE IF NOT EXISTS 不改已存在的表,所以补注释前建过表的库列上仍没有这些注释:形状守卫只按列名比对,
+// 不受影响;项目尚未上线,只是这类库的 SHOW CREATE TABLE 与新建库差在列注释上。
 //
 // 读写只在 route_store.go(RouteStore);表名常量也在那里。TiDB 上的预切与防合并在 route_tidb.go(PrepareTiDB)。
 //
@@ -231,15 +233,15 @@ const playerRouteBootstrapDDL = "CREATE TABLE IF NOT EXISTS `player_route` (\n" 
 // 只有聚簇主键才能按 (zone_id, shard) 的值 SPLIT 出按 zone 分的 Region(route_tool tidb-prepare);MySQL 上没有影响。
 // 整表只有「zone 数 × N」行,不预切就必然落在一个 Region 上,每次 W1 的 FOR UPDATE 都压同一个 leader。
 const zoneMergeFenceBootstrapDDL = "CREATE TABLE IF NOT EXISTS `zone_merge_fence` (\n" +
-	"  `zone_id` int unsigned NOT NULL,\n" +
-	"  `shard` tinyint unsigned NOT NULL,\n" +
-	"  `run_id` varchar(64) CHARACTER SET ascii COLLATE ascii_bin NULL,\n" +
-	"  `purpose` varchar(16) CHARACTER SET ascii COLLATE ascii_bin NULL,\n" +
-	"  `src_zone` int unsigned NULL,\n" +
-	"  `dst_zone` int unsigned NULL,\n" +
-	"  `expires_at_ms` bigint unsigned NULL,\n" +
-	"  `holder_json` varchar(1024) NULL,\n" +
-	"  `fence_epoch` bigint unsigned NOT NULL DEFAULT 0,\n" +
+	"  `zone_id` int unsigned NOT NULL COMMENT 'pb:1',\n" +
+	"  `shard` tinyint unsigned NOT NULL COMMENT 'pb:2',\n" +
+	"  `run_id` varchar(64) CHARACTER SET ascii COLLATE ascii_bin NULL COMMENT 'pb:3',\n" +
+	"  `purpose` varchar(16) CHARACTER SET ascii COLLATE ascii_bin NULL COMMENT 'pb:4',\n" +
+	"  `src_zone` int unsigned NULL COMMENT 'pb:5',\n" +
+	"  `dst_zone` int unsigned NULL COMMENT 'pb:6',\n" +
+	"  `expires_at_ms` bigint unsigned NULL COMMENT 'pb:7',\n" +
+	"  `holder_json` varchar(1024) NULL COMMENT 'pb:8',\n" +
+	"  `fence_epoch` bigint unsigned NOT NULL DEFAULT 0 COMMENT 'pb:9',\n" +
 	"  PRIMARY KEY (`zone_id`, `shard`) /*T![clustered_index] CLUSTERED */,\n" +
 	"  CONSTRAINT `chk_fence_pair` CHECK ((`run_id` IS NULL) = (`expires_at_ms` IS NULL))\n" +
 	") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin COMMENT='zone_merge_fence';"
@@ -247,10 +249,10 @@ const zoneMergeFenceBootstrapDDL = "CREATE TABLE IF NOT EXISTS `zone_merge_fence
 // zoneMergedIntoBootstrapDDL 是「源区已合走」的永久标记,契约同 tools/merge_zone/merged_into.go。
 // 第 1a 批只由 route_tool 从 Redis 的 merge:merged_into:* 导入(merged_at_ms 取导入时刻的库时钟)。
 const zoneMergedIntoBootstrapDDL = "CREATE TABLE IF NOT EXISTS `zone_merged_into` (\n" +
-	"  `src_zone` int unsigned NOT NULL,\n" +
-	"  `dst_zone` int unsigned NOT NULL,\n" +
-	"  `run_id` varchar(64) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,\n" +
-	"  `merged_at_ms` bigint unsigned NOT NULL,\n" +
+	"  `src_zone` int unsigned NOT NULL COMMENT 'pb:1',\n" +
+	"  `dst_zone` int unsigned NOT NULL COMMENT 'pb:2',\n" +
+	"  `run_id` varchar(64) CHARACTER SET ascii COLLATE ascii_bin NOT NULL COMMENT 'pb:3',\n" +
+	"  `merged_at_ms` bigint unsigned NOT NULL COMMENT 'pb:4',\n" +
 	"  PRIMARY KEY (`src_zone`)\n" +
 	") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin COMMENT='zone_merged_into';"
 
@@ -261,9 +263,9 @@ const zoneMergedIntoBootstrapDDL = "CREATE TABLE IF NOT EXISTS `zone_merged_into
 // 分开的原因(G1a):1b leader 每秒写的水位、每 3 秒续的租约如果还在这一行上,TiDB 的读会间歇地被更早的未提交写锁
 // 拖住(抖动直接进建角 p99),也没法把它设成缓存表(ALTER TABLE route_meta CACHE 要求表很少写)。
 const routeMetaBootstrapDDL = "CREATE TABLE IF NOT EXISTS `route_meta` (\n" +
-	"  `id` tinyint unsigned NOT NULL,\n" +
-	"  `generation` varchar(32) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,\n" +
-	"  `writable` tinyint unsigned NOT NULL DEFAULT 1,\n" +
+	"  `id` tinyint unsigned NOT NULL COMMENT 'pb:1',\n" +
+	"  `generation` varchar(32) CHARACTER SET ascii COLLATE ascii_bin NOT NULL COMMENT 'pb:2',\n" +
+	"  `writable` tinyint unsigned NOT NULL DEFAULT 1 COMMENT 'pb:3',\n" +
 	"  PRIMARY KEY (`id`)\n" +
 	") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin COMMENT='route_meta';"
 
@@ -273,11 +275,11 @@ const routeMetaBootstrapDDL = "CREATE TABLE IF NOT EXISTS `route_meta` (\n" +
 // leader 用 ascii(原 route_meta.leader 是 utf8mb4):leader 标识与写者标识同源(NewRouteWriterID 只产
 // [A-Za-z0-9._@:-]),第 1b 批的 leader 标识必须是同一形态的 ASCII,非 ASCII 字节在严格模式下会被库拒绝。
 const routeReconcileBootstrapDDL = "CREATE TABLE IF NOT EXISTS `route_reconcile` (\n" +
-	"  `id` tinyint unsigned NOT NULL,\n" +
-	"  `leader` varchar(96) CHARACTER SET ascii COLLATE ascii_bin NULL,\n" +
-	"  `lease_until_ms` bigint unsigned NULL,\n" +
-	"  `watermark_ms` bigint unsigned NOT NULL DEFAULT 0,\n" +
-	"  `cache_verified_ms` bigint unsigned NOT NULL DEFAULT 0,\n" +
+	"  `id` tinyint unsigned NOT NULL COMMENT 'pb:1',\n" +
+	"  `leader` varchar(96) CHARACTER SET ascii COLLATE ascii_bin NULL COMMENT 'pb:2',\n" +
+	"  `lease_until_ms` bigint unsigned NULL COMMENT 'pb:3',\n" +
+	"  `watermark_ms` bigint unsigned NOT NULL DEFAULT 0 COMMENT 'pb:4',\n" +
+	"  `cache_verified_ms` bigint unsigned NOT NULL DEFAULT 0 COMMENT 'pb:5',\n" +
 	"  PRIMARY KEY (`id`)\n" +
 	") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin COMMENT='route_reconcile';"
 

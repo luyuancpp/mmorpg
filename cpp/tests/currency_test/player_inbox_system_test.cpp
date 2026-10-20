@@ -27,7 +27,7 @@
 #include <google/protobuf/unknown_field_set.h>
 
 #include "engine/core/type_define/player_guid_comp.h"
-#include "core/network/grpc_call_types.h" // kGrpcStatusUnavailable
+#include "core/network/grpc_client_call.h" // kGrpcStatusUnavailable
 #include "modules/currency/comp/player_currency_comp.h"
 #include "modules/currency/constants/currency.h"
 #include "modules/currency/system/currency_system.h"

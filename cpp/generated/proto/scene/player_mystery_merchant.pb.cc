@@ -1912,15 +1912,15 @@ const char descriptor_table_protodef_proto_2fscene_2fplayer_5fmystery_5fmerchant
     "(\0132\017.TipInfoMessage\022\"\n\004info\030\002 \001(\0132\024.Myst"
     "eryMerchantInfo\022\025\n\003bag\030\003 \001(\0132\010.BagInfo\";"
     "\n\025MysteryMerchantNotify\022\"\n\004info\030\001 \001(\0132\024."
-    "MysteryMerchantInfo2\240\002\n SceneMysteryMerc"
+    "MysteryMerchantInfo2\247\002\n SceneMysteryMerc"
     "hantClientPlayer\022Y\n\026GetMysteryMerchantIn"
     "fo\022\036.GetMysteryMerchantInfoRequest\032\037.Get"
     "MysteryMerchantInfoResponse\022\\\n\027BuyMyster"
     "yMerchantGoods\022\037.BuyMysteryMerchantGoods"
     "Request\032 .BuyMysteryMerchantGoodsRespons"
-    "e\0227\n\025NotifyMysteryMerchant\022\026.MysteryMerc"
-    "hantNotify\032\006.Empty\032\n\200\250\303\001\001\210\250\303\001\001B\016Z\005scene\200"
-    "\001\001\230\324a\003b\006proto3"
+    "e\022>\n\025NotifyMysteryMerchant\022\026.MysteryMerc"
+    "hantNotify\032\006.Empty\"\005\210\231\310\001\002\032\n\200\250\303\001\001\210\250\303\001\001B\016Z"
+    "\005scene\200\001\001\230\324a\003b\006proto3"
 };
 static const ::_pbi::DescriptorTable* PROTOBUF_NONNULL const
     descriptor_table_proto_2fscene_2fplayer_5fmystery_5fmerchant_2eproto_deps[5] = {
@@ -1934,7 +1934,7 @@ static ::absl::once_flag descriptor_table_proto_2fscene_2fplayer_5fmystery_5fmer
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fscene_2fplayer_5fmystery_5fmerchant_2eproto = {
     false,
     false,
-    2054,
+    2061,
     descriptor_table_protodef_proto_2fscene_2fplayer_5fmystery_5fmerchant_2eproto,
     "proto/scene/player_mystery_merchant.proto",
     &descriptor_table_proto_2fscene_2fplayer_5fmystery_5fmerchant_2eproto_once,

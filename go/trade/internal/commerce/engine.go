@@ -711,6 +711,14 @@ func (e *Engine) advance(ctx context.Context, old *tradepb.TradeCommerceRecord) 
 					return corrupt(fmt.Errorf("腿 %s op_id=%d 的托管快照损坏: %w", l.Role, l.OpId, err))
 				}
 			}
+			// 已扣出的托管迟早要原样转给对方或退回(Transfer),在记下结局的这一刻就核对它转得动。
+			// 人工终结为 APPLIED 的实例扣款没有托管原件(ResolveManually 不写 escrow_snapshot):不在这里拦,
+			// 寄售 / 拍品会照常上架,等买家付了款才在发货时判错,把第二个玩家的钱也一起压进人工单。
+			if l.Stream == 3 && applied(l) {
+				if _, err := Transfer(l.Bundle, l.Snapshot); err != nil {
+					return corrupt(fmt.Errorf("腿 %s op_id=%d 已扣出但托管原件不可转交(%s 终局): %w", l.Role, l.OpId, out.Source(), err))
+				}
+			}
 			logOffbandLegOutcome(r.CommerceId, l, out)
 		}
 		var now uint64
@@ -719,7 +727,6 @@ func (e *Engine) advance(ctx context.Context, old *tradepb.TradeCommerceRecord) 
 		}
 		if err := e.plan(r, w, now); err != nil {
 			// plan 是 (合同, 腿结局, 时刻) 的纯函数,它判错只可能是持久数据自相矛盾(托管快照缺失 / 与合同不符等)。
-			// 人工终结为 APPLIED 的实例扣款没有托管原件,也会在这里判错并被隔离 —— 原件只能人工补,不能自动发货。
 			return corrupt(err)
 		}
 		if err := e.marketBarrier(ctx, tx, r, w); err != nil {

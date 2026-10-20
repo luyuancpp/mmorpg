@@ -6,7 +6,7 @@
 #include <vector>
 #include <entt/src/entt/entity/registry.hpp>
 #include <google/protobuf/message.h>
-#include "core/network/grpc_call_types.h"
+#include "core/network/grpc_client_call.h"
 // RpcMethodMeta 已不含 Service 成员;service.h 仍保留:多处靠本头传递拿到 Service / Closure / RpcController。
 #include <google/protobuf/service.h>
 

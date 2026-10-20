@@ -165,6 +165,61 @@ func (NodeType) EnumDescriptor() ([]byte, []int) {
 	return file_proto_db_proto_option_proto_rawDescGZIP(), []int{0}
 }
 
+// 客户端协议方法的调用形态(docs/design/client-rpc-callback.md §5.1)。只对标了 OptionIsClientProtocolService 的服务有意义;
+// protogen 据此生成客户端调用桩并做生成期校验(§5.2),gate 的单向判定仍以响应类型恰好是 Empty 为准,两者由校验对齐。
+// 本文件没有 package,枚举值在全局作用域:新增值必须带 CLIENT_RPC_ 前缀,避免与其它无 package 的 proto 撞名。
+type ClientRpcKind int32
+
+const (
+	ClientRpcKind_CLIENT_RPC_REQUEST     ClientRpcKind = 0 // 客户端发起,恰好一个回包(默认,不用显式标注)
+	ClientRpcKind_CLIENT_RPC_ONE_WAY     ClientRpcKind = 1 // 客户端发起,成功不回包,以 id = 0 发送;只用于 scene TCP 路径上响应恰好是 Empty 的方法
+	ClientRpcKind_CLIENT_RPC_PUSH        ClientRpcKind = 2 // 服务端推送,客户端不发起;载荷为方法输入类型
+	ClientRpcKind_CLIENT_RPC_SERVER_ONLY ClientRpcKind = 3 // 服务端内部或 gate 代发,客户端不得发起;不生成任何客户端成员
+)
+
+// Enum value maps for ClientRpcKind.
+var (
+	ClientRpcKind_name = map[int32]string{
+		0: "CLIENT_RPC_REQUEST",
+		1: "CLIENT_RPC_ONE_WAY",
+		2: "CLIENT_RPC_PUSH",
+		3: "CLIENT_RPC_SERVER_ONLY",
+	}
+	ClientRpcKind_value = map[string]int32{
+		"CLIENT_RPC_REQUEST":     0,
+		"CLIENT_RPC_ONE_WAY":     1,
+		"CLIENT_RPC_PUSH":        2,
+		"CLIENT_RPC_SERVER_ONLY": 3,
+	}
+)
+
+func (x ClientRpcKind) Enum() *ClientRpcKind {
+	p := new(ClientRpcKind)
+	*p = x
+	return p
+}
+
+func (x ClientRpcKind) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (ClientRpcKind) Descriptor() protoreflect.EnumDescriptor {
+	return file_proto_db_proto_option_proto_enumTypes[1].Descriptor()
+}
+
+func (ClientRpcKind) Type() protoreflect.EnumType {
+	return &file_proto_db_proto_option_proto_enumTypes[1]
+}
+
+func (x ClientRpcKind) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use ClientRpcKind.Descriptor instead.
+func (ClientRpcKind) EnumDescriptor() ([]byte, []int) {
+	return file_proto_db_proto_option_proto_rawDescGZIP(), []int{1}
+}
+
 // Database operation type
 type OPERATE_TYPE int32
 
@@ -217,11 +272,11 @@ func (x OPERATE_TYPE) String() string {
 }
 
 func (OPERATE_TYPE) Descriptor() protoreflect.EnumDescriptor {
-	return file_proto_db_proto_option_proto_enumTypes[1].Descriptor()
+	return file_proto_db_proto_option_proto_enumTypes[2].Descriptor()
 }
 
 func (OPERATE_TYPE) Type() protoreflect.EnumType {
-	return &file_proto_db_proto_option_proto_enumTypes[1]
+	return &file_proto_db_proto_option_proto_enumTypes[2]
 }
 
 func (x OPERATE_TYPE) Number() protoreflect.EnumNumber {
@@ -230,7 +285,7 @@ func (x OPERATE_TYPE) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use OPERATE_TYPE.Descriptor instead.
 func (OPERATE_TYPE) EnumDescriptor() ([]byte, []int) {
-	return file_proto_db_proto_option_proto_rawDescGZIP(), []int{1}
+	return file_proto_db_proto_option_proto_rawDescGZIP(), []int{2}
 }
 
 // Business operation result type
@@ -267,11 +322,11 @@ func (x BS_RESULT_TYPE) String() string {
 }
 
 func (BS_RESULT_TYPE) Descriptor() protoreflect.EnumDescriptor {
-	return file_proto_db_proto_option_proto_enumTypes[2].Descriptor()
+	return file_proto_db_proto_option_proto_enumTypes[3].Descriptor()
 }
 
 func (BS_RESULT_TYPE) Type() protoreflect.EnumType {
-	return &file_proto_db_proto_option_proto_enumTypes[2]
+	return &file_proto_db_proto_option_proto_enumTypes[3]
 }
 
 func (x BS_RESULT_TYPE) Number() protoreflect.EnumNumber {
@@ -280,7 +335,7 @@ func (x BS_RESULT_TYPE) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use BS_RESULT_TYPE.Descriptor instead.
 func (BS_RESULT_TYPE) EnumDescriptor() ([]byte, []int) {
-	return file_proto_db_proto_option_proto_rawDescGZIP(), []int{2}
+	return file_proto_db_proto_option_proto_rawDescGZIP(), []int{3}
 }
 
 // RPC message priority (for cross-scene/cross-node delivery strategy)
@@ -314,11 +369,11 @@ func (x MessagePriority) String() string {
 }
 
 func (MessagePriority) Descriptor() protoreflect.EnumDescriptor {
-	return file_proto_db_proto_option_proto_enumTypes[3].Descriptor()
+	return file_proto_db_proto_option_proto_enumTypes[4].Descriptor()
 }
 
 func (MessagePriority) Type() protoreflect.EnumType {
-	return &file_proto_db_proto_option_proto_enumTypes[3]
+	return &file_proto_db_proto_option_proto_enumTypes[4]
 }
 
 func (x MessagePriority) Number() protoreflect.EnumNumber {
@@ -327,7 +382,7 @@ func (x MessagePriority) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use MessagePriority.Descriptor instead.
 func (MessagePriority) EnumDescriptor() ([]byte, []int) {
-	return file_proto_db_proto_option_proto_rawDescGZIP(), []int{3}
+	return file_proto_db_proto_option_proto_rawDescGZIP(), []int{4}
 }
 
 var file_proto_db_proto_option_proto_extTypes = []protoimpl.ExtensionInfo{
@@ -361,6 +416,14 @@ var file_proto_db_proto_option_proto_extTypes = []protoimpl.ExtensionInfo{
 		Field:         410000,
 		Name:          "OptionMessagePriority",
 		Tag:           "varint,410000,opt,name=OptionMessagePriority,enum=MessagePriority",
+		Filename:      "proto/db/proto_option.proto",
+	},
+	{
+		ExtendedType:  (*descriptorpb.MethodOptions)(nil),
+		ExtensionType: (*ClientRpcKind)(nil),
+		Field:         410001,
+		Name:          "OptionClientRpcKind",
+		Tag:           "varint,410001,opt,name=OptionClientRpcKind,enum=ClientRpcKind",
 		Filename:      "proto/db/proto_option.proto",
 	},
 	{
@@ -629,51 +692,57 @@ var (
 	//
 	// optional MessagePriority OptionMessagePriority = 410000;
 	E_OptionMessagePriority = &file_proto_db_proto_option_proto_extTypes[3]
+	// 客户端协议方法的调用形态(见上方 ClientRpcKind,docs/design/client-rpc-callback.md §5.1)。
+	// 生成器从描述符原始字节按字段号读取本选项,不依赖外部 protooption 模块的编译绑定(同 OptionPersistFrozen)。
+	// 410001 已核对未被本仓 proto、third_party 描述符扩展与 Java 仓 game-proto 占用(2026-10-19)。
+	//
+	// optional ClientRpcKind OptionClientRpcKind = 410001;
+	E_OptionClientRpcKind = &file_proto_db_proto_option_proto_extTypes[4]
 )
 
 // Extension fields to descriptorpb.MessageOptions.
 var (
 	// optional uint32 OptionTableId = 500000;
-	E_OptionTableId = &file_proto_db_proto_option_proto_extTypes[4] // Table ID
+	E_OptionTableId = &file_proto_db_proto_option_proto_extTypes[5] // Table ID
 	// optional string OptionTableName = 500001;
-	E_OptionTableName = &file_proto_db_proto_option_proto_extTypes[5] // Table name
+	E_OptionTableName = &file_proto_db_proto_option_proto_extTypes[6] // Table name
 	// optional string OptionPrimaryKey = 500002;
-	E_OptionPrimaryKey = &file_proto_db_proto_option_proto_extTypes[6] // Primary key
+	E_OptionPrimaryKey = &file_proto_db_proto_option_proto_extTypes[7] // Primary key
 	// optional string OptionForeignKey = 500003;
-	E_OptionForeignKey = &file_proto_db_proto_option_proto_extTypes[7] // Foreign key
+	E_OptionForeignKey = &file_proto_db_proto_option_proto_extTypes[8] // Foreign key
 	// optional string OptionForeignReferences = 500005;
-	E_OptionForeignReferences = &file_proto_db_proto_option_proto_extTypes[8] // Foreign key referenced table
+	E_OptionForeignReferences = &file_proto_db_proto_option_proto_extTypes[9] // Foreign key referenced table
 	// optional string OptionAutoIncrementKey = 500006;
-	E_OptionAutoIncrementKey = &file_proto_db_proto_option_proto_extTypes[9] // Auto-increment key
+	E_OptionAutoIncrementKey = &file_proto_db_proto_option_proto_extTypes[10] // Auto-increment key
 	// optional string OptionBackupTableName = 500007;
-	E_OptionBackupTableName = &file_proto_db_proto_option_proto_extTypes[10] // Backup table name
+	E_OptionBackupTableName = &file_proto_db_proto_option_proto_extTypes[11] // Backup table name
 	// optional bool OptionLoadOnly = 500008;
-	E_OptionLoadOnly = &file_proto_db_proto_option_proto_extTypes[11] // Load-only (no write)
+	E_OptionLoadOnly = &file_proto_db_proto_option_proto_extTypes[12] // Load-only (no write)
 	// optional string OptionProcedureName = 500009;
-	E_OptionProcedureName = &file_proto_db_proto_option_proto_extTypes[12] // Stored procedure name
+	E_OptionProcedureName = &file_proto_db_proto_option_proto_extTypes[13] // Stored procedure name
 	// optional string OptionProcedureResult = 500010;
-	E_OptionProcedureResult = &file_proto_db_proto_option_proto_extTypes[13] // Stored procedure result PB message name
+	E_OptionProcedureResult = &file_proto_db_proto_option_proto_extTypes[14] // Stored procedure result PB message name
 	// optional string OptionIndex = 500011;
-	E_OptionIndex = &file_proto_db_proto_option_proto_extTypes[14] // Index definition
+	E_OptionIndex = &file_proto_db_proto_option_proto_extTypes[15] // Index definition
 	// optional string OptionUniqueKey = 500012;
-	E_OptionUniqueKey = &file_proto_db_proto_option_proto_extTypes[15] // Unique key
+	E_OptionUniqueKey = &file_proto_db_proto_option_proto_extTypes[16] // Unique key
 	// optional bool OptionIsPlayerDatabase = 500013;
-	E_OptionIsPlayerDatabase = &file_proto_db_proto_option_proto_extTypes[16] // Whether this is a player database
+	E_OptionIsPlayerDatabase = &file_proto_db_proto_option_proto_extTypes[17] // Whether this is a player database
 	// optional OPERATE_TYPE OptionOperateType = 500014;
-	E_OptionOperateType = &file_proto_db_proto_option_proto_extTypes[17]
+	E_OptionOperateType = &file_proto_db_proto_option_proto_extTypes[18]
 	// —— TiDB 方言选项(生成 /*T!*/ 扩展注释语法的双方言 DDL,MySQL 视为注释忽略)——
 	// 字段号与 proto2mysql 新版选项(pbopt)刻意同号(500021-500024):库侧按字段号
 	// 反射读取选项,同号即可被识别,无需引入 pbopt 依赖(避免扩展号注册冲突)。
 	// 决策与参数依据见 docs/design/global-data-layer-tidb-decision.md §D3/§D6。
 	//
 	// optional bool OptionTiDBNonclusteredPK = 500021;
-	E_OptionTiDBNonclusteredPK = &file_proto_db_proto_option_proto_extTypes[18] // 主键追加 /*T![clustered_index] NONCLUSTERED */(雪花主键防写热点的前提)
+	E_OptionTiDBNonclusteredPK = &file_proto_db_proto_option_proto_extTypes[19] // 主键追加 /*T![clustered_index] NONCLUSTERED */(雪花主键防写热点的前提)
 	// optional uint32 OptionTiDBShardRowIDBits = 500022;
-	E_OptionTiDBShardRowIDBits = &file_proto_db_proto_option_proto_extTypes[19] // /*T! SHARD_ROW_ID_BITS=N */ 按 _tidb_rowid 打散写入,仅非聚簇表生效
+	E_OptionTiDBShardRowIDBits = &file_proto_db_proto_option_proto_extTypes[20] // /*T! SHARD_ROW_ID_BITS=N */ 按 _tidb_rowid 打散写入,仅非聚簇表生效
 	// optional uint32 OptionTiDBPreSplitRegions = 500023;
-	E_OptionTiDBPreSplitRegions = &file_proto_db_proto_option_proto_extTypes[20] // /*T! PRE_SPLIT_REGIONS=N */ 建表预切 region,须 ≤ SHARD_ROW_ID_BITS
+	E_OptionTiDBPreSplitRegions = &file_proto_db_proto_option_proto_extTypes[21] // /*T! PRE_SPLIT_REGIONS=N */ 建表预切 region,须 ≤ SHARD_ROW_ID_BITS
 	// optional bool OptionTiDBAutoIDCacheOne = 500024;
-	E_OptionTiDBAutoIDCacheOne = &file_proto_db_proto_option_proto_extTypes[21] // /*T![auto_id_cache] AUTO_ID_CACHE=1 */ 自增集中分配(近似连续)
+	E_OptionTiDBAutoIDCacheOne = &file_proto_db_proto_option_proto_extTypes[22] // /*T![auto_id_cache] AUTO_ID_CACHE=1 */ 自增集中分配(近似连续)
 	// —— 玩家持久字段的混版本保护(docs/design/mixed-version-persist-field-protection.md §3.2)——
 	// 冻结类型:由手写代码重建、不携带未知字段的持久消息。proto 生成器拒绝给它新增字段(R1);
 	// C++ 往返一致性测试不在它的节点上注入未知字段,但继续向下遍历(其中会被整份携带的子消息照常检查)。
@@ -681,37 +750,37 @@ var (
 	// 编号避开 proto2mysql pbopt 已用的 500000-500024 与 600100-600101。
 	//
 	// optional bool OptionPersistFrozen = 500040;
-	E_OptionPersistFrozen = &file_proto_db_proto_option_proto_extTypes[22]
+	E_OptionPersistFrozen = &file_proto_db_proto_option_proto_extTypes[23]
 )
 
 // Extension fields to descriptorpb.FieldOptions.
 var (
 	// optional uint32 OptionRepeatLimit = 600000;
-	E_OptionRepeatLimit = &file_proto_db_proto_option_proto_extTypes[23] // Repeated field max count
+	E_OptionRepeatLimit = &file_proto_db_proto_option_proto_extTypes[24] // Repeated field max count
 	// optional string OptionDBFieldExtra = 600001;
-	E_OptionDBFieldExtra = &file_proto_db_proto_option_proto_extTypes[24] // Extra DB field info; absence means non-DB field
+	E_OptionDBFieldExtra = &file_proto_db_proto_option_proto_extTypes[25] // Extra DB field info; absence means non-DB field
 	// optional bool OptionDBReadOnly = 600002;
-	E_OptionDBReadOnly = &file_proto_db_proto_option_proto_extTypes[25] // Whether field is read-only in DB
+	E_OptionDBReadOnly = &file_proto_db_proto_option_proto_extTypes[26] // Whether field is read-only in DB
 	// optional string OptionDBNamePrefix = 600003;
-	E_OptionDBNamePrefix = &file_proto_db_proto_option_proto_extTypes[26] // DB name prefix
+	E_OptionDBNamePrefix = &file_proto_db_proto_option_proto_extTypes[27] // DB name prefix
 	// optional string OptionDBLoadSql = 600004;
-	E_OptionDBLoadSql = &file_proto_db_proto_option_proto_extTypes[27] // Data load SQL statement
+	E_OptionDBLoadSql = &file_proto_db_proto_option_proto_extTypes[28] // Data load SQL statement
 	// optional bool OptionDBNeedEscape = 600005;
-	E_OptionDBNeedEscape = &file_proto_db_proto_option_proto_extTypes[28] // Whether field needs escape for storage
+	E_OptionDBNeedEscape = &file_proto_db_proto_option_proto_extTypes[29] // Whether field needs escape for storage
 	// optional bool OptionDBProcParam = 600006;
-	E_OptionDBProcParam = &file_proto_db_proto_option_proto_extTypes[29] // Whether this is a stored procedure parameter
+	E_OptionDBProcParam = &file_proto_db_proto_option_proto_extTypes[30] // Whether this is a stored procedure parameter
 	// optional string OptionOldName = 600007;
-	E_OptionOldName = &file_proto_db_proto_option_proto_extTypes[30] // Used for auto-renaming fields
+	E_OptionOldName = &file_proto_db_proto_option_proto_extTypes[31] // Used for auto-renaming fields
 	// optional string OptionTable = 600008;
-	E_OptionTable = &file_proto_db_proto_option_proto_extTypes[31] // Table name for DDL
+	E_OptionTable = &file_proto_db_proto_option_proto_extTypes[32] // Table name for DDL
 	// optional string OptionBackUpTabel = 600009;
-	E_OptionBackUpTabel = &file_proto_db_proto_option_proto_extTypes[32] // Backup table
+	E_OptionBackUpTabel = &file_proto_db_proto_option_proto_extTypes[33] // Backup table
 	// 存盘时不原样携带的持久字段:由别的载体重算的投影,或 scene 每次存盘重新生成 / 清空的字段
 	// (docs/design/mixed-version-persist-field-protection.md §3.2)。C++ 往返一致性测试不经由它注入;
 	// 只经这类字段可达的消息类型不进入往返测试,也不受冻结规则约束。编号说明同 OptionPersistFrozen。
 	//
 	// optional bool OptionPersistUncarried = 600040;
-	E_OptionPersistUncarried = &file_proto_db_proto_option_proto_extTypes[33]
+	E_OptionPersistUncarried = &file_proto_db_proto_option_proto_extTypes[34]
 )
 
 var File_proto_db_proto_option_proto protoreflect.FileDescriptor
@@ -758,7 +827,12 @@ const file_proto_db_proto_option_proto_rawDesc = "" +
 	"\aNODE_GM\x10\x1c\x12\x17\n" +
 	"\x13NODE_PLAYER_LOCATOR\x10\x1d\x12\x0f\n" +
 	"\vNODE_BATTLE\x10\x1e\x12\x1a\n" +
-	"\x16NODE_CLIENT_RPC_ROUTER\x10\x1f*\xcf\x01\n" +
+	"\x16NODE_CLIENT_RPC_ROUTER\x10\x1f*p\n" +
+	"\rClientRpcKind\x12\x16\n" +
+	"\x12CLIENT_RPC_REQUEST\x10\x00\x12\x16\n" +
+	"\x12CLIENT_RPC_ONE_WAY\x10\x01\x12\x13\n" +
+	"\x0fCLIENT_RPC_PUSH\x10\x02\x12\x1a\n" +
+	"\x16CLIENT_RPC_SERVER_ONLY\x10\x03*\xcf\x01\n" +
 	"\fOPERATE_TYPE\x12\x10\n" +
 	"\fOPERATE_NONE\x10\x00\x12\x12\n" +
 	"\x0eOPERATE_INSERT\x10\x01\x12\x12\n" +
@@ -779,7 +853,8 @@ const file_proto_db_proto_option_proto_rawDesc = "" +
 	"\x15OptionFileDefaultNode\x12\x1c.google.protobuf.FileOptions\x18Ú\f \x01(\x0e2\t.NodeTypeR\x15OptionFileDefaultNode:W\n" +
 	"\x15OptionIsPlayerService\x12\x1f.google.protobuf.ServiceOptions\x18\x80\xb5\x18 \x01(\bR\x15OptionIsPlayerService:g\n" +
 	"\x1dOptionIsClientProtocolService\x12\x1f.google.protobuf.ServiceOptions\x18\x81\xb5\x18 \x01(\bR\x1dOptionIsClientProtocolService:h\n" +
-	"\x15OptionMessagePriority\x12\x1e.google.protobuf.MethodOptions\x18\x90\x83\x19 \x01(\x0e2\x10.MessagePriorityR\x15OptionMessagePriority:J\n" +
+	"\x15OptionMessagePriority\x12\x1e.google.protobuf.MethodOptions\x18\x90\x83\x19 \x01(\x0e2\x10.MessagePriorityR\x15OptionMessagePriority:b\n" +
+	"\x13OptionClientRpcKind\x12\x1e.google.protobuf.MethodOptions\x18\x91\x83\x19 \x01(\x0e2\x0e.ClientRpcKindR\x13OptionClientRpcKind:J\n" +
 	"\rOptionTableId\x12\x1f.google.protobuf.MessageOptions\x18\xa0\xc2\x1e \x01(\rR\rOptionTableId\x88\x01\x01:N\n" +
 	"\x0fOptionTableName\x12\x1f.google.protobuf.MessageOptions\x18\xa1\xc2\x1e \x01(\tR\x0fOptionTableName\x88\x01\x01:P\n" +
 	"\x10OptionPrimaryKey\x12\x1f.google.protobuf.MessageOptions\x18\xa2\xc2\x1e \x01(\tR\x10OptionPrimaryKey\x88\x01\x01:P\n" +
@@ -823,60 +898,63 @@ func file_proto_db_proto_option_proto_rawDescGZIP() []byte {
 	return file_proto_db_proto_option_proto_rawDescData
 }
 
-var file_proto_db_proto_option_proto_enumTypes = make([]protoimpl.EnumInfo, 4)
+var file_proto_db_proto_option_proto_enumTypes = make([]protoimpl.EnumInfo, 5)
 var file_proto_db_proto_option_proto_goTypes = []any{
 	(NodeType)(0),                       // 0: NodeType
-	(OPERATE_TYPE)(0),                   // 1: OPERATE_TYPE
-	(BS_RESULT_TYPE)(0),                 // 2: BS_RESULT_TYPE
-	(MessagePriority)(0),                // 3: MessagePriority
-	(*descriptorpb.FileOptions)(nil),    // 4: google.protobuf.FileOptions
-	(*descriptorpb.ServiceOptions)(nil), // 5: google.protobuf.ServiceOptions
-	(*descriptorpb.MethodOptions)(nil),  // 6: google.protobuf.MethodOptions
-	(*descriptorpb.MessageOptions)(nil), // 7: google.protobuf.MessageOptions
-	(*descriptorpb.FieldOptions)(nil),   // 8: google.protobuf.FieldOptions
+	(ClientRpcKind)(0),                  // 1: ClientRpcKind
+	(OPERATE_TYPE)(0),                   // 2: OPERATE_TYPE
+	(BS_RESULT_TYPE)(0),                 // 3: BS_RESULT_TYPE
+	(MessagePriority)(0),                // 4: MessagePriority
+	(*descriptorpb.FileOptions)(nil),    // 5: google.protobuf.FileOptions
+	(*descriptorpb.ServiceOptions)(nil), // 6: google.protobuf.ServiceOptions
+	(*descriptorpb.MethodOptions)(nil),  // 7: google.protobuf.MethodOptions
+	(*descriptorpb.MessageOptions)(nil), // 8: google.protobuf.MessageOptions
+	(*descriptorpb.FieldOptions)(nil),   // 9: google.protobuf.FieldOptions
 }
 var file_proto_db_proto_option_proto_depIdxs = []int32{
-	4,  // 0: OptionFileDefaultNode:extendee -> google.protobuf.FileOptions
-	5,  // 1: OptionIsPlayerService:extendee -> google.protobuf.ServiceOptions
-	5,  // 2: OptionIsClientProtocolService:extendee -> google.protobuf.ServiceOptions
-	6,  // 3: OptionMessagePriority:extendee -> google.protobuf.MethodOptions
-	7,  // 4: OptionTableId:extendee -> google.protobuf.MessageOptions
-	7,  // 5: OptionTableName:extendee -> google.protobuf.MessageOptions
-	7,  // 6: OptionPrimaryKey:extendee -> google.protobuf.MessageOptions
-	7,  // 7: OptionForeignKey:extendee -> google.protobuf.MessageOptions
-	7,  // 8: OptionForeignReferences:extendee -> google.protobuf.MessageOptions
-	7,  // 9: OptionAutoIncrementKey:extendee -> google.protobuf.MessageOptions
-	7,  // 10: OptionBackupTableName:extendee -> google.protobuf.MessageOptions
-	7,  // 11: OptionLoadOnly:extendee -> google.protobuf.MessageOptions
-	7,  // 12: OptionProcedureName:extendee -> google.protobuf.MessageOptions
-	7,  // 13: OptionProcedureResult:extendee -> google.protobuf.MessageOptions
-	7,  // 14: OptionIndex:extendee -> google.protobuf.MessageOptions
-	7,  // 15: OptionUniqueKey:extendee -> google.protobuf.MessageOptions
-	7,  // 16: OptionIsPlayerDatabase:extendee -> google.protobuf.MessageOptions
-	7,  // 17: OptionOperateType:extendee -> google.protobuf.MessageOptions
-	7,  // 18: OptionTiDBNonclusteredPK:extendee -> google.protobuf.MessageOptions
-	7,  // 19: OptionTiDBShardRowIDBits:extendee -> google.protobuf.MessageOptions
-	7,  // 20: OptionTiDBPreSplitRegions:extendee -> google.protobuf.MessageOptions
-	7,  // 21: OptionTiDBAutoIDCacheOne:extendee -> google.protobuf.MessageOptions
-	7,  // 22: OptionPersistFrozen:extendee -> google.protobuf.MessageOptions
-	8,  // 23: OptionRepeatLimit:extendee -> google.protobuf.FieldOptions
-	8,  // 24: OptionDBFieldExtra:extendee -> google.protobuf.FieldOptions
-	8,  // 25: OptionDBReadOnly:extendee -> google.protobuf.FieldOptions
-	8,  // 26: OptionDBNamePrefix:extendee -> google.protobuf.FieldOptions
-	8,  // 27: OptionDBLoadSql:extendee -> google.protobuf.FieldOptions
-	8,  // 28: OptionDBNeedEscape:extendee -> google.protobuf.FieldOptions
-	8,  // 29: OptionDBProcParam:extendee -> google.protobuf.FieldOptions
-	8,  // 30: OptionOldName:extendee -> google.protobuf.FieldOptions
-	8,  // 31: OptionTable:extendee -> google.protobuf.FieldOptions
-	8,  // 32: OptionBackUpTabel:extendee -> google.protobuf.FieldOptions
-	8,  // 33: OptionPersistUncarried:extendee -> google.protobuf.FieldOptions
-	0,  // 34: OptionFileDefaultNode:type_name -> NodeType
-	3,  // 35: OptionMessagePriority:type_name -> MessagePriority
-	1,  // 36: OptionOperateType:type_name -> OPERATE_TYPE
-	37, // [37:37] is the sub-list for method output_type
-	37, // [37:37] is the sub-list for method input_type
-	34, // [34:37] is the sub-list for extension type_name
-	0,  // [0:34] is the sub-list for extension extendee
+	5,  // 0: OptionFileDefaultNode:extendee -> google.protobuf.FileOptions
+	6,  // 1: OptionIsPlayerService:extendee -> google.protobuf.ServiceOptions
+	6,  // 2: OptionIsClientProtocolService:extendee -> google.protobuf.ServiceOptions
+	7,  // 3: OptionMessagePriority:extendee -> google.protobuf.MethodOptions
+	7,  // 4: OptionClientRpcKind:extendee -> google.protobuf.MethodOptions
+	8,  // 5: OptionTableId:extendee -> google.protobuf.MessageOptions
+	8,  // 6: OptionTableName:extendee -> google.protobuf.MessageOptions
+	8,  // 7: OptionPrimaryKey:extendee -> google.protobuf.MessageOptions
+	8,  // 8: OptionForeignKey:extendee -> google.protobuf.MessageOptions
+	8,  // 9: OptionForeignReferences:extendee -> google.protobuf.MessageOptions
+	8,  // 10: OptionAutoIncrementKey:extendee -> google.protobuf.MessageOptions
+	8,  // 11: OptionBackupTableName:extendee -> google.protobuf.MessageOptions
+	8,  // 12: OptionLoadOnly:extendee -> google.protobuf.MessageOptions
+	8,  // 13: OptionProcedureName:extendee -> google.protobuf.MessageOptions
+	8,  // 14: OptionProcedureResult:extendee -> google.protobuf.MessageOptions
+	8,  // 15: OptionIndex:extendee -> google.protobuf.MessageOptions
+	8,  // 16: OptionUniqueKey:extendee -> google.protobuf.MessageOptions
+	8,  // 17: OptionIsPlayerDatabase:extendee -> google.protobuf.MessageOptions
+	8,  // 18: OptionOperateType:extendee -> google.protobuf.MessageOptions
+	8,  // 19: OptionTiDBNonclusteredPK:extendee -> google.protobuf.MessageOptions
+	8,  // 20: OptionTiDBShardRowIDBits:extendee -> google.protobuf.MessageOptions
+	8,  // 21: OptionTiDBPreSplitRegions:extendee -> google.protobuf.MessageOptions
+	8,  // 22: OptionTiDBAutoIDCacheOne:extendee -> google.protobuf.MessageOptions
+	8,  // 23: OptionPersistFrozen:extendee -> google.protobuf.MessageOptions
+	9,  // 24: OptionRepeatLimit:extendee -> google.protobuf.FieldOptions
+	9,  // 25: OptionDBFieldExtra:extendee -> google.protobuf.FieldOptions
+	9,  // 26: OptionDBReadOnly:extendee -> google.protobuf.FieldOptions
+	9,  // 27: OptionDBNamePrefix:extendee -> google.protobuf.FieldOptions
+	9,  // 28: OptionDBLoadSql:extendee -> google.protobuf.FieldOptions
+	9,  // 29: OptionDBNeedEscape:extendee -> google.protobuf.FieldOptions
+	9,  // 30: OptionDBProcParam:extendee -> google.protobuf.FieldOptions
+	9,  // 31: OptionOldName:extendee -> google.protobuf.FieldOptions
+	9,  // 32: OptionTable:extendee -> google.protobuf.FieldOptions
+	9,  // 33: OptionBackUpTabel:extendee -> google.protobuf.FieldOptions
+	9,  // 34: OptionPersistUncarried:extendee -> google.protobuf.FieldOptions
+	0,  // 35: OptionFileDefaultNode:type_name -> NodeType
+	4,  // 36: OptionMessagePriority:type_name -> MessagePriority
+	1,  // 37: OptionClientRpcKind:type_name -> ClientRpcKind
+	2,  // 38: OptionOperateType:type_name -> OPERATE_TYPE
+	39, // [39:39] is the sub-list for method output_type
+	39, // [39:39] is the sub-list for method input_type
+	35, // [35:39] is the sub-list for extension type_name
+	0,  // [0:35] is the sub-list for extension extendee
 	0,  // [0:0] is the sub-list for field type_name
 }
 
@@ -890,9 +968,9 @@ func file_proto_db_proto_option_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_proto_db_proto_option_proto_rawDesc), len(file_proto_db_proto_option_proto_rawDesc)),
-			NumEnums:      4,
+			NumEnums:      5,
 			NumMessages:   0,
-			NumExtensions: 34,
+			NumExtensions: 35,
 			NumServices:   0,
 		},
 		GoTypes:           file_proto_db_proto_option_proto_goTypes,

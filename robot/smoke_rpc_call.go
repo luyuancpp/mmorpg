@@ -43,7 +43,12 @@ type smokeCaller struct {
 	abort context.CancelCauseFunc // 当前这次等待;nil = 没在等
 }
 
+// newSmokeCaller 构造一个 smokeCaller。stats 可为 nil(不计数,战斗直连等路径的 stats 本就可选);
+// timeoutErr 为 nil 时超时包裹 pkg.ErrRPCTimeout,场景没有自己的超时哨兵时用。
 func newSmokeCaller(gc *pkg.GameClient, stats *metrics.Stats, account string, timeout time.Duration, timeoutErr error) *smokeCaller {
+	if timeoutErr == nil {
+		timeoutErr = pkg.ErrRPCTimeout
+	}
 	return &smokeCaller{gc: gc, stats: stats, account: account, timeout: timeout, timeoutErr: timeoutErr}
 }
 
@@ -94,13 +99,13 @@ func (c *smokeCaller) exchange(messageId uint32, request, response proto.Message
 	}()
 
 	reply, err := c.gc.CallSyncThen(ctx, messageId, request, timeout, onReply)
-	if !errors.Is(err, pkg.ErrRPCNotSent) {
+	if c.stats != nil && !errors.Is(err, pkg.ErrRPCNotSent) {
 		c.stats.MsgSent()
 	}
 	var tipErr *pkg.ServerTipError
 	switch {
 	case err == nil:
-		c.stats.MsgRecv()
+		c.countRecv()
 		if response == nil {
 			return 0, nil
 		}
@@ -109,7 +114,7 @@ func (c *smokeCaller) exchange(messageId uint32, request, response proto.Message
 		}
 		return 0, nil
 	case errors.As(err, &tipErr):
-		c.stats.MsgRecv()
+		c.countRecv()
 		return tipErr.Tip, nil
 	case errors.Is(err, pkg.ErrRPCTimeout):
 		return 0, fmt.Errorf("message_id=%d account=%s %w(%s)", messageId, c.account, c.timeoutErr, timeout)
@@ -118,6 +123,12 @@ func (c *smokeCaller) exchange(messageId uint32, request, response proto.Message
 			smokeTipServiceUnavailable)
 	default:
 		return 0, fmt.Errorf("message_id=%d account=%s: %w", messageId, c.account, err)
+	}
+}
+
+func (c *smokeCaller) countRecv() {
+	if c.stats != nil {
+		c.stats.MsgRecv()
 	}
 }
 

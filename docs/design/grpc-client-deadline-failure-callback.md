@@ -3,7 +3,7 @@
 > 状态(2026-09-28):两批均已落码,第一批 regen 已完成(897ac8241)。**全部未编译、未测试**,编译与单测交 Codex
 > (AGENTS.md §10.1),步骤见 §9.2。
 > 2026-10-17：删除全局处理器 A–C 落地后的现行接口与调用点见 §12；旧选型和落地记录保留作历史，验证结果须另据实际运行记录。
-> 2026-10-19：现行公共类型头为 `cpp/libs/engine/core/network/grpc_call_types.h`，职责与生成边界见 §12.1；此前章节中的旧路径保留为迁移历史。
+> 2026-10-19：现行公共类型头为 `cpp/libs/engine/core/network/grpc_client_call.h`，职责与生成边界见 §12.1；此前章节中的旧路径保留为迁移历史。
 > 2026-10-15:传输换成 muduo_grpc([grpc-muduo-transport.md](grpc-muduo-transport.md) §14),本文的处理器 / 失败回调
 > 契约不变、签名去 grpc 化;手写调用方的适配见那边 §14.3,**未编译**,当前有效的验证步骤以 §12 为准。
 > 相关:`docs/design/microservice-zone-contract-20260914.md` §3「超时预算」、`docs/design/cross-zone-scene-travel.md` §12.2、
@@ -297,7 +297,7 @@ GrpcClient:
 > 契约不变,下面 §11.3 中关于 CQ、`BeginShutdownGrpcNode`、对象池的条目已按新传输改写。`GrpcCallFailure` 新形状为
 > `{messageId, method, const GrpcCallOutcome& outcome, sentMetadata}`,另有 `code()` / `message()` / `FindSentMetadata()`;
 > 全局应答处理器的第一个参数由 `grpc::ClientContext` 改为 `GrpcReplyContext`(= `GrpcCallOutcome`,带响应头 / trailers
-> 的 metadata)。§3.2 的代码块是 09 月的历史形状,以 `cpp/generated/grpc_client/grpc_call_tag.h` 为准。
+> 的 metadata)。§3.2 的代码块是 09 月的历史形状,现行定义以 `cpp/libs/engine/core/network/grpc_client_call.h` 为准。
 > 接口与 muduo HTTP/2 gRPC 会话(`docs/design/grpc-muduo-transport.md`)共同商定;RPC0 侧的同类能力见
 > `docs/design/muduo-rpc-channel.md`(`RpcChannel::CallMethod` 的每次调用 lambda)。
 
@@ -375,7 +375,7 @@ void Send<Svc><Method>(entt::registry&, entt::entity nodeEntity, const Request&,
 
 ### 12.1 接口与保留边界
 
-`GrpcCallOutcome`、`GrpcDone`、`GrpcMessageDone`、`GrpcCallOptions` 与 metadata 的权威定义统一放在手写公共头 `cpp/libs/engine/core/network/grpc_call_types.h`，调用方与生成客户端均以 `core/network/grpc_call_types.h` 引用。`GrpcTag` 已删除，旧名 `grpc_call_tag.h` 不再表达内容；将公共类型移出 `cpp/generated/grpc_client/`，使文件职责与生成边界一致。生成器模板必须直接引用新头，公共类型不由生成器产出；变更不改变调用、回调或线上协议语义。
+`GrpcCallOutcome`、`GrpcDone`、`GrpcMessageDone`、`GrpcCallOptions` 与 metadata 的权威定义统一放在手写公共头 `cpp/libs/engine/core/network/grpc_client_call.h`，调用方与生成客户端均以 `core/network/grpc_client_call.h` 引用。`GrpcTag` 已删除，旧名 `grpc_call_tag.h` 不再表达内容；将公共类型移出 `cpp/generated/grpc_client/`，使文件职责与生成边界一致。生成器模板必须直接引用新头，公共类型不由生成器产出；变更不改变调用、回调或线上协议语义。
 
 每个 unary 方法必须显式接收 `GrpcDone<Resp>`；gate 通用 sender 使用对应的 `Send<Svc><Method>Erased` 与 `GrpcMessageDone`，两者汇到同一个发送入口。`GrpcCallOptions` 的 deadline 与原值 metadata、`GrpcCallOutcome` 的状态与响应 metadata、逐文件和总入口的 deadline 设置继续保留。
 

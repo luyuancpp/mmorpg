@@ -53,6 +53,8 @@
 | BR + PITR runbook，备份 CR 在目标环境真实运行，重写 zone 灾难回档（§6） | |
 | MySQL 退役步骤（R1 窗口结束后，§3.4） | |
 
+> （2026-10-20 指向注，原文不删）表中「全部库同批迁到同一个 TiDB 集群」只是针对现网 2 个 zone 量级的结论。[容量模型](./capacity-model-hok-scale.md) §4.5 的口径是：S1 以上 OLTP（zone 库加全局薄层）与审计至少分两套集群，单元化后每个单元一套。两者的冲突尚未拍板，见 §2.7 末尾的注与 §9.3 第 12 条。
+
 ### 1.3 TiDB 能扩什么、扩不了什么
 
 | 维度 | 加机器能不能扩 | 依据 / 本仓对应物 |
@@ -124,6 +126,15 @@
 | staging | 3 | 3 | 2 | 形态同 prod，缩配 | 可能有要保留的数据（§3.0），所以**不做**登录压测。Retain |
 | 压测环境（新增） | 3 | 3 | 2 | 与 staging 同拓扑 | 可以随时清空，开服尖峰压测在这一档做（§3.5、L-14）。`pvReclaimPolicy: Delete` |
 | kind / 本机 | 1 | 1 | 1 | — | PD `replication.max-replicas=1`，否则只有 1 个 TiKV 会长期欠副本。只做功能验证，不出性能结论 |
+
+> （2026-10-20 补注，原文不删）上表 prod 档是现网 2 个 zone 的量级。按 S 档定规格时，用[容量模型](./capacity-model-hok-scale.md) §4.5 的公式，以下数字都是推算 [I]：
+> - **tidb-server 台数**：N ≥ 1 + 1.5·T_peak / max_connections，max_connections 取 2000 时，S1 需 4~8 台，S3 需 28~61 台。
+> - **逻辑写**：S1 为 24~183 MB/s，S3 为 0.24~1.83 GB/s；Raft 写是它的 3 倍，还要再乘 LSM 放大（未测）。
+> - **MVCC 旧版本**：S1 为 44~330 GB，S3 为 0.44~3.3 TB。
+> - **玩家主数据存量**（3 副本）：S1 约 6 TB，S3 约 60 TB。
+> - **TiKV 台数**：待 V5 实测。
+>
+> 「一套集群还是多套」见 §2.7 末尾的注与 §9.3 第 3、12 条。
 
 - **namespace**：TiDB 放在独立 namespace，暂定 `mmorpg-tidb`，**不放** `${InfraNamespace}`。
   - 原因：`infra-down` 走的 `Remove-Infra` 会直接 `delete namespace $InfraNamespace`（`k8s_deploy.ps1:5888-5890`）。TiDB 放在里面，infra-down / all-down 就等于删集群；Retain 策略下 PV 还会变成孤儿。
@@ -244,6 +255,13 @@
    推论：**不能按 zone 分批切**，所有 zone 的 go/db 必须同时切。
 2. **merge_zone 只有一个 `-mysql-dsn`**。它要求在同一实例上同时访问账号表、各 `zone_<N>_db`，以及 guild、trade、friend 三个服务库（`tools/merge_zone/main.go:246-249`）。D1 第 2 批还会给它加一个 `-route-db-dsn`，用来读写全局库的映射表（提案 :303）。
    推论：决策 D9 写的「friend / guild 失败可单独回退留 MySQL」与此冲突。**本文改为同批迁、同批回退**。如果确实有某个服务单独回退，合服就冻结，直到重新合一。
+
+> （2026-10-20 补注：回写容量模型 §4.5，原文不删）
+> - [容量模型](./capacity-model-hok-scale.md) §4.5 / §6 #11 的拓扑建议是：OLTP（zone 库加全局薄层）与审计分开，快照 blob 不进 TiDB、只迁元数据，流水用独立集群或列存；「全部库同批迁到同一个集群」在 S1 以上改成至少两套；单元化后每个单元一套同城三 AZ 集群，全球薄层在单一写入地域一套（与 §8 第 1 条同义）。
+> - 上面两条硬约束只约束 OLTP 侧：go/db 与 merge_zone 要能在同一集群里访问所有 zone 库、落点库、账号表和三个服务库。审计表（`player_snapshot`、`transaction_log`）不在其中，可以另起集群（推断）。
+> - 但拆出审计之前，要先给 data_service 加独立的审计 DSN（推断）。原因：data_service 目前只有一个 `SnapshotMySQL` DSN（`go/data_service/internal/config/config.go` 的 SnapshotMySQLConfig），同时承载 id_segment、player_name、transaction_log、player_snapshot 和 D1 路由表。
+> - merge_zone、回档、data_consistency_check 是否读审计表，未核实。
+> - 两份文档的结论冲突，尚未拍板，列为 §9.3 第 12 条；开服线拍板清单 [decisions_launch_line_20261020.md](../handoff/launch-readiness-20261013/decisions_launch_line_20261020.md) 记为 T-12。§9.2 的分批与文件数估算可能要随之上调（推断）。
 
 | 服务 | 连的库 | 本地配置 | K8s 生成段（`tools/scripts/k8s_deploy.ps1`） | 切法 |
 |---|---|---|---|---|
@@ -967,6 +985,7 @@ Phase 1 的逻辑库仍按 zone 分开，用按库过滤恢复就能表达「只
 10. friend 推荐查询：全局绑定 / SQL 提示 / 方言 SQL，至少落一个。
 11. 备份存储（S3 / OSS / MinIO）、保留期、PITR 的 RPO 目标。
 12. 确认「全部库同批迁、同批回退」，并修订决策 D9 里「单独回退」的表述（理由见 §2.7）。
+    - （2026-10-20 补，原文不删）容量模型 §4.5 / §6 #11 主张 S1 以上 OLTP 与审计至少分两套集群、单元化后每单元一套，与本条的「同一集群」冲突，拍板时一并定，见 §2.7 末尾的注。第 3 条的 prod 规格同样改按 §4.5 的公式定（§2.2 表后注）。
 13. **点名 Codex 可以操作的环境**（AGENTS §9）：专用压测环境、kind、staging，逐个授权。
 14. Phase 1 超过 30 个文件的改动面授权。
 15. **安装 helm、TiDB Operator、CRD、tiup 的授权**（AGENTS §10.2）。

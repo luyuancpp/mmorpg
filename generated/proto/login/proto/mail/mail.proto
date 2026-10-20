@@ -59,5 +59,5 @@ service ClientPlayerMail {
   rpc DeleteMails(DeleteMailsRequest) returns (DeleteMailsResponse);
   rpc ClearReadMails(ClearReadMailsRequest) returns (ClearReadMailsResponse);
   // S2C提醒可丢；权威状态由ListMails恢复，客户端来源禁止调用。
-  rpc NotifyMailChanged(MailChangedEvent) returns (MailChangedEvent);
+  rpc NotifyMailChanged(MailChangedEvent) returns (MailChangedEvent) { option (OptionClientRpcKind) = CLIENT_RPC_PUSH; }
 }

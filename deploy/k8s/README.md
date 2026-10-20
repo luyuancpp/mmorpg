@@ -1888,7 +1888,7 @@ kubectl logs -n mmorpg-zone-<name> deploy/data-service | grep NodeRegistry
 
 C++ 节点(gate / scene / battle)发出的每次 unary gRPC 调用现在都带 deadline,按**目标**节点类型配在
 `bin/etc/base_deploy_config.yaml` 的顶层 `GrpcClient.CallDeadlineMs`(键 = `ENodeType` 枚举名,单位毫秒)。
-没列出的类型、`0`、不认识的键都落到 C++ 内置默认 10000(`grpc_call_tag.h` 的 `kDefaultGrpcCallDeadlineMs`,后两者另记 ERROR)。
+没列出的类型、`0`、不认识的键都落到 C++ 内置默认 10000(`grpc_client_call.h` 的 `kDefaultGrpcCallDeadlineMs`,后两者另记 ERROR)。
 
 - **node ConfigMap 整块搬运**:`node-config` 与 `battle-node-config` 以 readOnly 整目录挂到 `/app/bin/etc`,**完全遮蔽**镜像里那份。
   `New-NodeConfigMapYaml` 用 `Get-AuthoritativeYamlBlock -Key 'GrpcClient'` 把整块(含行尾注释)逐行原样搬进去,与 `IdSegments` 同法;
@@ -2421,6 +2421,12 @@ kubectl -n <infra> exec kafka-0 -c kafka -- /bin/sh -c "KAFKA_HEAP_OPTS='-Xms16m
     **只要非 0 就不能切 enforce**(设计 §8.1 第 5 步)。
   - `mode=enforce` 非 0:该玩家本次在线进度不落盘(在线时保留实体、退出时不存盘丢弃、交接中解冻留在本节点)。同样按上一条从 SQL 恢复;
     在写方被定位、下线之前,这名玩家每次存盘都会被拒。
+- **login 侧 C4(第 4 批,2026-10-19;未编译、未在集群上验证)**:EnterGame 走父快照快路径时,加载世代(两表戳最小值,0 按 1)
+  低于屏障 `schema_gen`,或该字段存在但不是规范十进制 uint32,计 `login_persist_schema_regression_total{reason=regression|malformed,mode}`
+  并打一行 `persist schema regression on parent snapshot fast path`(带 playerId)。warn 照常进游戏;enforce 这次进游戏失败,
+  客户端收到通用的进场失败(不新增 tip)。冷加载不判。模式键 `PersistSchemaRegressionMode` 在 `go/login/etc/login.yaml`,
+  `k8s_deploy.ps1` 镜像进 login ConfigMap,生成期只认两个字面量;login 读到其他值拒绝启动。告警 `LoginPersistSchemaRegression`
+  在 `persist-schema-alerts.yaml` 的 `login.persist-schema` 组,四条序列起服即以 0 建出。处置同上一条「处置 `PersistSchemaRegression`」。
 - **切 enforce**:改 `bin/etc/base_deploy_config.yaml`(scene)与 `go/login/etc/login.yaml`(login,C4)的 `PersistSchemaRegressionMode`,
   按正常发布流程滚动;两边可分别切。前提见设计 §8.1 第 5 步:staging 真实升世代演练中 C3 / C4 倒退计数为 0,且线上 warn 观察期计数为 0。
 

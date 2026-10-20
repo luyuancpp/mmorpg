@@ -1132,14 +1132,14 @@ const file_proto_mail_mail_proto_rawDesc = "" +
 	"\x14MAIL_CLAIM_UNCLAIMED\x10\x01\x12\x16\n" +
 	"\x12MAIL_CLAIM_PENDING\x10\x02\x12\x16\n" +
 	"\x12MAIL_CLAIM_CLAIMED\x10\x03\x12\x15\n" +
-	"\x11MAIL_CLAIM_MANUAL\x10\x042\xdf\x03\n" +
+	"\x11MAIL_CLAIM_MANUAL\x10\x042\xe6\x03\n" +
 	"\x10ClientPlayerMail\x12@\n" +
 	"\tListMails\x12\x18.mailpb.ListMailsRequest\x1a\x19.mailpb.ListMailsResponse\x12=\n" +
 	"\bReadMail\x12\x17.mailpb.ReadMailRequest\x1a\x18.mailpb.ReadMailResponse\x12a\n" +
 	"\x14ClaimMailAttachments\x12#.mailpb.ClaimMailAttachmentsRequest\x1a$.mailpb.ClaimMailAttachmentsResponse\x12F\n" +
 	"\vDeleteMails\x12\x1a.mailpb.DeleteMailsRequest\x1a\x1b.mailpb.DeleteMailsResponse\x12O\n" +
-	"\x0eClearReadMails\x12\x1d.mailpb.ClearReadMailsRequest\x1a\x1e.mailpb.ClearReadMailsResponse\x12G\n" +
-	"\x11NotifyMailChanged\x12\x18.mailpb.MailChangedEvent\x1a\x18.mailpb.MailChangedEvent\x1a\x05\x88\xa8\xc3\x01\x01B\x10\x98\xd4a\rZ\n" +
+	"\x0eClearReadMails\x12\x1d.mailpb.ClearReadMailsRequest\x1a\x1e.mailpb.ClearReadMailsResponse\x12N\n" +
+	"\x11NotifyMailChanged\x12\x18.mailpb.MailChangedEvent\x1a\x18.mailpb.MailChangedEvent\"\x05\x88\x99\xc8\x01\x02\x1a\x05\x88\xa8\xc3\x01\x01B\x10\x98\xd4a\rZ\n" +
 	"proto/mailb\x06proto3"
 
 var (

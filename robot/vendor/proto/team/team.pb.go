@@ -2183,7 +2183,7 @@ const file_proto_team_team_proto_rawDesc = "" +
 	"\rTeamEventType\x12\x1f\n" +
 	"\x1bTEAM_EVENT_TYPE_UNSPECIFIED\x10\x00\x12(\n" +
 	"$TEAM_EVENT_TYPE_APPLICATION_REJECTED\x10\x01\x12\"\n" +
-	"\x1eTEAM_EVENT_TYPE_INVITE_REVOKED\x10\x022\x81\b\n" +
+	"\x1eTEAM_EVENT_TYPE_INVITE_REVOKED\x10\x022\x90\b\n" +
 	"\x10ClientPlayerTeam\x12?\n" +
 	"\n" +
 	"CreateTeam\x12\x19.teampb.CreateTeamRequest\x1a\x14.teampb.TeamResponse\"\x00\x12=\n" +
@@ -2198,10 +2198,10 @@ const file_proto_team_team_proto_rawDesc = "" +
 	"KickMember\x12\x19.teampb.KickMemberRequest\x1a\x14.teampb.TeamResponse\"\x00\x12G\n" +
 	"\x0eTransferLeader\x12\x1d.teampb.TransferLeaderRequest\x1a\x14.teampb.TeamResponse\"\x00\x12A\n" +
 	"\vDisbandTeam\x12\x1a.teampb.DisbandTeamRequest\x1a\x14.teampb.TeamResponse\"\x00\x12G\n" +
-	"\x0eStartTeamMatch\x12\x1d.teampb.StartTeamMatchRequest\x1a\x14.teampb.TeamResponse\"\x00\x127\n" +
-	"\x12NotifyTeamSnapshot\x12\x17.teampb.TeamSnapshotS2C\x1a\x06.Empty\"\x00\x123\n" +
-	"\x10NotifyTeamInvite\x12\x15.teampb.TeamInviteS2C\x1a\x06.Empty\"\x00\x121\n" +
-	"\x0fNotifyTeamEvent\x12\x14.teampb.TeamEventS2C\x1a\x06.Empty\"\x00\x1a\x05\x88\xa8\xc3\x01\x01B\x13\x98\xd4a\x0fZ\n" +
+	"\x0eStartTeamMatch\x12\x1d.teampb.StartTeamMatchRequest\x1a\x14.teampb.TeamResponse\"\x00\x12<\n" +
+	"\x12NotifyTeamSnapshot\x12\x17.teampb.TeamSnapshotS2C\x1a\x06.Empty\"\x05\x88\x99\xc8\x01\x02\x128\n" +
+	"\x10NotifyTeamInvite\x12\x15.teampb.TeamInviteS2C\x1a\x06.Empty\"\x05\x88\x99\xc8\x01\x02\x126\n" +
+	"\x0fNotifyTeamEvent\x12\x14.teampb.TeamEventS2C\x1a\x06.Empty\"\x05\x88\x99\xc8\x01\x02\x1a\x05\x88\xa8\xc3\x01\x01B\x13\x98\xd4a\x0fZ\n" +
 	"proto/team\x80\x01\x00b\x06proto3"
 
 var (

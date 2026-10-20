@@ -2,7 +2,7 @@
 #include <chrono>
 #include <string_view>
 #include "entt/src/entt/entity/registry.hpp"
-#include "core/network/grpc_call_types.h"
+#include "core/network/grpc_client_call.h"
 {{- /* 消息类型来自服务元数据头;传输不依赖官方 gRPC 生成头。 */}}
 {{ range $index, $m := .ServiceInfo }}
   {{- if eq $index 0 }}

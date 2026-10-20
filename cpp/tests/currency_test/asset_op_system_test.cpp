@@ -1197,4 +1197,47 @@ TEST_F(AssetOpSystemTest, CompleteItemEscrowReplayAndCreditKeepIdentityGrowthAnd
 	PlayerAssetOpSystem::Credit(credit, delivered);
 	EXPECT_EQ(1u, inventory.GetTotalItemCount(1)) << "同一入账请求不能复制实例";
 }
+
+// 携带着的本版本不认识的包类型记录(PlayerBagsComp::unsupportedBagTypes,混版本设计 §12 第 5 批)同样参与入账的
+// guid 唯一性检查。漏查会让同一实例在新包与背包里各落一份,存盘原样写回,升回新版本后两份都还原(物品复制)。
+// 携带记录的两种形状各验一次:只有 item_uuid 的旧档条目、只有整份实例的条目。
+TEST_F(AssetOpSystemTest, CreditRejectsAnInstanceAlreadyCarriedInAnUnsupportedBagType)
+{
+	ASSERT_TRUE(ItemTableAvailable()) << "真实物品配置是本用例的前置";
+	ASSERT_NE(nullptr, ItemTableManager::Instance().FindByIdSilent(1).first);
+	GiveBags();
+	auto& bags = tlsEcs.actorRegistry.get<PlayerBagsComp>(player_);
+	ItemComp carried;
+	carried.set_item_id(950199997); carried.set_config_id(1); carried.set_size(1);
+
+	for (uint64_t shape = 0; shape < 2; ++shape)
+	{
+		bags.unsupportedBagTypes = {};
+		ItemEntry entry;
+		entry.set_bag_type(static_cast<uint32_t>(kBagTypeCount));
+		if (shape == 0)
+		{
+			entry.set_item_uuid(carried.item_id()); entry.set_config_id(1); entry.set_stack_size(1);
+		}
+		else
+		{
+			*entry.mutable_instance() = carried;
+		}
+		bags.unsupportedBagTypes.items.push_back(entry);
+		ASSERT_TRUE(bags.ContainsGuid(carried.item_id())) << "shape=" << shape;
+
+		::AssetOpRequest credit = MakeCurrencyRequest(ASSET_OP_STREAM_TRADE_CREDIT, 1 + shape, 1, TX_TRADE);
+		credit.clear_bundle();
+		auto* transfer = credit.mutable_bundle()->add_item_instances();
+		transfer->set_item_uuid(carried.item_id()); transfer->set_config_id(1); transfer->set_stack_size(1);
+		transfer->set_instance_proto(carried.SerializeAsString());
+		SignForTest("credit", credit, "trade");
+		::AssetOpResponse response;
+		PlayerAssetOpSystem::Credit(credit, response);
+		EXPECT_EQ(ASSET_OP_OUTCOME_REJECTED, response.outcome()) << "shape=" << shape;
+		EXPECT_EQ(static_cast<uint32_t>(kAssetInvalidBundle), response.reason().id()) << "shape=" << shape;
+		EXPECT_EQ(nullptr, bags.bags[kInventory].GetItemCompByGuid(carried.item_id())) << "背包零改动 shape=" << shape;
+		EXPECT_EQ(1u, bags.unsupportedBagTypes.items.size()) << "携带记录不动 shape=" << shape;
+	}
+}
 } // namespace
