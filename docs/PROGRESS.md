@@ -13043,6 +13043,95 @@ PROGRESS 一直没有条目)。上面 2026-09-21 条里"第 7–9 步未跑""修
   - `settlement_outbox.h` 有一处注释把累计次数写成了「连续」。
 - **文档**:no-single-node 设计文档 §5.3 与 `deploy/k8s/README.md`「代理整机消失」条已同步为已验证状态。
 - **Java 版(AGENTS §12)**:不涉及客户端契约,无对应改动;本机没有 Java 仓,未核对 `PARITY.md`,对应 Java 版本号:无。
+## 2026-10-19 zone Redis 空应答修复的评审收尾:reaper 判作废的局不再按锁重建冻结(Claude,未编译,待 Codex 验证)
+
+- **上一条的验证状态(补记)**:`b0f87c24f3` 经合并提交 `d3da69a99e` 进 main 后,Codex 10-17 在合并后的 main 上全量编译并跑了测试:
+  `routing_identity_test` 98 / `bag_test` 629 / `currency_test` 186 / `cross_zone_test` 240,全部 0 失败;上一条新增的用例都在结果里
+  (证据 `run/merge-validation-20261017/cpp-final-test-*.xml`)。**本条的改动在那之后,重新回到「未编译」状态。**
+- **来由**:上一条(`b0f87c24f3`,已由合并提交 `d3da69a99e` 进 main)之后的第二轮只读评审(共享笔记 `zone-redis-null-reply-review2.md`)没有 P0~P2,有 1 条 P3:
+  冻结到期补读没读到时挂的复查会重跑完整的登录第一步;若同一拍 reaper 的条件删锁也没落地,复查读到「没有挂起结算」后按锁重建一场**已结束**的战斗,
+  玩家被冻最长约一个 reaper 节拍(30 秒)、收到一次多余的重连提示;`ConfirmRebuiltFreeze` 每次重建都把锁续到「现在 + 60 秒」,删锁与补读反复失败时回路没有硬上限。
+- **第一版修法被否掉**:先按评审建议 a 做了「复查范围」(冻结到期挂的复查只重读挂起结算、不按锁重建),对抗复核(工作流,3 个角度 + 逐条反驳,5 个 agent)
+  确认它只堵住了「读到没有挂起结算」这一条路;另两条路照样会按锁重建刚作废的那一局(两条 P3,都没被反驳):
+  ① 复查读到**另一局** W 的挂起结算 → `ApplyPendingSettlement(W)` 末尾的按锁重建读到锁 X,账本里没有 X → 重建 X;
+  ② 登录挂的完整复查恰好赶上同一实体 X 冻结到期 → 范围合并后仍是完整复查 → 读到 NIL 后按锁重建 X。
+  所以撤掉「复查范围」(未提交过),改成下面这个盖住所有路径的不变量。
+- **修法**:**本实体上 reaper 已按期限判作废的那一局,不再按锁重建冻结。**
+  - reaper 判定 FIGHTING 到期后的收尾抽成 `PlayerBattleSystem::ReleaseExpiredFightingFreeze`:先记下作废局(运行时单槽组件 `BattleFreezeExpiredComp`,
+    不入库、随实体销毁),再条件删锁 + 摘冻结,再补读挂起结算(与改动前同一顺序)。只记 FIGHTING 到期;PREPARING 到期刻意留锁等迟到确认重建,不记。
+  - 按锁重建的两个入口(`RestoreBattleFreezeOnLogin`、`RebuildBattleFreezeFromLock`)改用同一个纯函数裁决 `ClassifyLockRebuild`(`settlement_outbox.h`):
+    **已应用 > 已作废 > 重建**。已应用照旧推进销账;锁值等于作废局时不重建,打 `metric=battle_freeze_rebuild_skipped_expired`,补一次条件删锁(完成 reaper 没做完的事)。
+    「已应用」必须排在前面:作废后删锁没落地时迟到结算会按锁匹配应用,锁要留到它落盘销账才删,这时补删锁会提前放开排队。
+  - 单槽够用:锁还在时 match 对锁 fail-closed,玩家排不进下一局;锁没了才可能有下一局,那时旧值已无锁可比。实体重建(重登、跨节点换场景 / 跨 zone 交接后在目的地新建)后槽位为空,
+    登录重建对同一把锁的行为与改动前相同(即上一条说的「与这段时间内重登一致」),这一点没改。
+- **同批顺手**(第二轮评审指出):
+  - `RunLoginRechecks` 的「摘 / 留 / 跑」抽成纯函数 `ClassifyLoginRecheckEntry`(退出中 > 交接中 > Redis 不可用 > 重跑),补上「交接中保留」与「Redis 不可用保留」分不开的测试缺口;
+  - `undeterminedRounds` 的注释从「连续」改成「条目寿命内累计」,并写明连接卡住时同一条目可能叠两条在途探测、计数 +2,所以「60 轮 ≈ 10 分钟」只是墙钟上界。代码未改。
+  - `docs/design/ecs-component-access-rules.md` 的按需组件表登记 `BattleFreezeExpiredComp`。
+- **测试**(未编译):`routing_identity_test` 新增 `SettlementLoginHook.LockRebuildSkipsTheBattleThisEntityAlreadyExpired`、`LockRebuildAppliedBeatsExpired`、
+  `RecheckEntryDecisionCoversEveryState`(8 种状态逐格);`bag_test` 新增 `PlayerBattleSettlementTest.FightingExpiryRemembersTheExpiredBattle`、
+  `ExpiredBattleSlotKeepsOnlyTheLatest`、`ExitingPlayerFightingExpiryRemembersButDoesNotRecover`、`ExpiredBattleSlotDiesWithTheEntity`。
+  裁决本身在 Redis 回调里,单测没有 Redis,接线(回调里真的走到不重建 + 补删锁)靠评审与冒烟。
+- **Codex 验证**(未编译,待 Codex 验证):本分支是在已合并的 `b0f87c24f3` 之上追加的新提交,先在主工作区把 `fix/zone-redis-null-reply` 再合一次(不要 rebase / amend 已合并的提交),
+  然后在仓库根执行(`$msb` 用 `tools/scripts/run_cpp_tests.ps1` 里 `Resolve-MSBuild` 找到的那个;一律串行 `/m:1`;不需要真实 Redis,先 `Remove-Item Env:ZONE_REDIS_PASSWORD -ErrorAction SilentlyContinue`):
+  1. `& $msb game.sln /m:1 /p:Configuration=Debug /p:Platform=x64 /nologo /v:minimal`(scene 库 / 节点要重编:`player_battle.{h,cpp}`、`settlement_outbox.h` 变了;battle 只改了注释)
+  2. `& $msb cpp\tests\routing_identity_test\routing_identity_test.vcxproj /m:1 /p:Configuration=Debug /p:Platform=x64 /nologo /v:minimal`
+  3. `pwsh -NoProfile -File tools/scripts/run_cpp_tests.ps1 -Build -Filter bag_test`,再 `-Filter cross_zone_test`(经 `EnterScene` 走到登录钩子与 reaper 收尾)
+  4. `.\build\cpp\tests\routing_identity_test.exe` 与 `.\build\cpp\tests\bag_test.exe` 全量跑;新增的在 `--gtest_filter=SettlementLoginHook.*` 与 `PlayerBattleSettlementTest.*`。
+  **通过标准**:本次改动的文件没有 `error C` / `LNK`(scene.lib / battle.lib 是 `/W3 /WX`,告警即错误);本条新增 7 例全过;
+  `routing_identity_test` / `bag_test` / `cross_zone_test` 的既有用例照旧全过(10-17 基线:98 / 629 / 240,加上本条新增后应为 101 / 633 / 240)。失败时保留 gtest 输出与第一条编译错误原文。
+- **对抗复核(第二次,针对本条最终改动)**:工作流 3 个角度(正确性 / 编译 / 回归)+ 逐条反驳,5 个 agent,只读、未编译。编译与回归**无发现**;
+  正确性提出 2 条,**都被反驳**:
+  ① `kSkipExpired` 的补删锁可能与在途的「迟到结算按锁应用」赛跑,在「已应用、未落盘」时删锁 —— 反驳理由:FIGHTING 到期的正常路径(先条件删锁、再补读应用)本来就进入同一状态,最坏结果不超过设计已接受的风险面;
+     复核者另提「只跳过重建、不补删锁」更干净,作为可选改进,本次未采纳(补删锁能更早放开排队,且不再续锁)。
+  ② 槽位挂在实体上,跨节点换场景 / 交接后目的地新建实体仍会按锁重建作废局一次 —— 反驳理由:与改动前相同,属于已写明的「实体重建后槽位为空」范围;注释与本条措辞已补全这几种情形。
+  P0~P2:无。
+- **另一份实现(未合并)**:复审会话开出的「修冻结到期复查误按锁重建已结束战斗」会话在消息到达前做了另一套修法(复查标记带来源、冻结到期那条线不按锁重建),
+  提交在分支 `fix/freeze-expiry-recheck-source`(`c352e94b26`,worktree `E:\work\xuanming-server-mmo-wt-recheck`,基于 main `72e4be6426`)。它与本条改的是同一批函数,**只能合一份**;
+  它自己的残余里列着「同一实体上登录钩子仍会按旧锁重建一次」,本条的守卫盖住了这条。该分支已停手、未推送、未合并,留待用户决定是否删除。
+- **没做**:复查窗口内 `IsInBattle` 不看复查标记(上一条已列的后续项);评审提到的「`HandlePlayerAsyncSaved` 两处摘 `UnregisterPlayer` 保留实体后不重跑登录钩子」只记一笔(一处正常流程走不到,一处是不变量被破坏),未改。
+- **Java 版(AGENTS §12)**:同上一条,服务端内部实现,本机无 Java 仓,未核对;对应 Java 版本号:无。
+
+## 2026-10-19 按锁重建守卫的合并前复核收尾:补删锁后补组队跟随、裁决接线进单测(Claude,未编译,待 Codex 验证)
+
+- **来由**:上一条(`0c0c419c10`)已由合并提交 `ed75b64c88` 进本机 main(未推送)。合并前「给 C++ zone Redis 连接加存活探测」会话的独立只读复核(3 个角度 + 逐条反驳,7 个 agent)
+  没有 P0~P2,确认 3 条 P3,本条逐条修掉。改动在 `fix/zone-redis-null-reply` 上追加新提交,没有 amend / rebase 已合并的提交。
+- **P3-1 补删锁落地后不补组队跟随**:reaper 那一拍删锁没落地时,`RemoveInBattleComp` 触发的跟随链读到锁 X(或读失败)按 fail-closed 跳过;
+  守卫 `kSkipExpired` 的补删之后落地了,却没有任何东西再触发跟随,队员一直留在原场景(改动前的路径是误冻约 30 秒、下一拍 reaper 到期再走 `ClearBattleFreeze` → 跟随)。
+  修法照 `ClearPendingSettlementIfMatch` 既有约定:`DeleteBattleLockIfMatch` 加可选参数 `refollowOnDelete`(默认 `entt::null`,既有调用方不变),
+  锁**确实被这条命令删掉**、且回调时实体仍有效、Guid 仍是这个玩家、身上没有 `InBattleComp` 时,补调一次 `PlayerTeamSystem::OnBattleFreezeCleared`。
+  只有两处守卫补删传了实体;先删锁再摘组件的调用方(`ClearBattleFreeze` 等)不传(摘组件那一刻已触发跟随,且排在删锁之后)。
+- **P3-2 守卫接线没有单测走到**:「作废槽位 + 活账本 → `ClassifyLockRebuild`」抽成匿名命名空间的 `DecideLockRebuild`,两个重建入口的回调都改调它,
+  单测经新的只读静态 `PlayerBattleSystem::DecideLockRebuildFor` 走同一个函数(缺账本返回 false,不打 ERROR)。
+  **仍不覆盖**:回调里 switch 各分支(不重建 + 补删 + 补跟随)本身 —— 单测没有 Redis,走不进回调。真实接线检查**需人工场景,本批不做**:
+  要让 reaper 那一拍 `RedisReady()` 为假(连接断开)而锁键又在 Redis 恢复后仍在(不能重启丢数据的 Redis 实例,要断代理 / 网络),再在锁 TTL(deadline+60 秒)内恢复,
+  然后 grep scene 日志 `metric=battle_freeze_rebuild_skipped_expired`、确认没有紧随其后的 `metric=battle_freeze_rebuilt`,`redis-cli EXISTS battle:lock:<player_id>` 为 0,队员被跟随拉走。
+- **P3-3 `expiredBattleId != 0` 守卫测不到**:`routing_identity_test` 的 `LockRebuildSkipsTheBattleThisEntityAlreadyExpired` 补 `ClassifyLockRebuild(0, 0, false) == kRebuild`,
+  注释改成与断言相符(去掉守卫这一条就红)。
+- **测试**(未编译):`bag_test` 新增 `PlayerBattleSettlementTest.LockRebuildWiringReadsThisEntitysExpiredSlot`、`LockRebuildWiringWithoutExpiryRebuilds`、
+  `LockRebuildWiringPrefersTheLedgerOverTheExpiredSlot`、`LockRebuildWiringWithoutLedgerDecidesNothing`;`routing_identity_test` 在既有用例里加 1 条断言(用例数不变)。
+  补跟随这一条没有单测(同样在回调里)。
+- **Codex 验证**(未编译,待 Codex 验证):先在主工作区把 `fix/zone-redis-null-reply` 再合一次(不要 rebase / amend 已合并的提交),命令同上一条 1~4 步。
+  **通过标准**:本次改动的文件没有 `error C` / `LNK`(scene.lib 是 `/W3 /WX`);期望用例数 `routing_identity_test` 101(本条只加断言)/ `bag_test` 637(上一条 633 + 本条 4)/
+  `cross_zone_test` 240,全部 0 失败。失败时保留 gtest 输出与第一条编译错误原文。
+- **对抗复核(本条改动)**:工作流 2 个角度(正确性 / 编译与测试)+ 逐条反驳,只读、未编译:**0 条发现**。
+  核对过的要点:`kDeleteLockIfMatchScript` 返回 1 才是「这条命令删掉了锁」;既有两处调用方走默认值、行为不变;`OnBattleFreezeCleared` 每一跳都复核身份并读锁 fail-closed,
+  重复触发无害、只补一次;`DecideLockRebuild` 抽取前后参数与顺序逐字一致。期望用例数与 diff 一致(粗 grep `bag_test` 的 TEST 宏数比实测基线少 1,与 10-17 基线同样差 1,以实跑为准)。
+- **没做**:同上一条;复核里被反驳的「槽位随实体销毁,重登 / 换场景时可能再冻一次」按设计不覆盖。
+  改动前就有的残余:reaper 那一拍删锁其实已在服务端执行、只是应答丢了,或锁在复查前先到 TTL 过期了,这两种走不到守卫,跟随链在解冻那一刻若已 fail-closed 跳过,之后也不会再补跟随。
+- **两份实现的取舍(用户 10-19 拍板)**:P3-1 用本分支 `fix/zone-redis-null-reply` 的修法;`fix/freeze-expiry-recheck-source`(`c352e94b26`)不合 main,分支与 worktree
+  `E:\work\xuanming-server-mmo-wt-recheck` 先留着别删。
+- **Java 版(AGENTS §12)**:同上一条,服务端内部实现,本机无 Java 仓,未核对;对应 Java 版本号:无。
+
+## 2026-10-19 摆摊系统设计草案(Claude,只有设计,未写代码)
+
+- **结论**:仓库(两仓主干、全部分支、全部提交历史)里此前没有任何摆摊代码或文档。新增设计稿 `docs/design/stall-system.md`(已登记 `tools/scripts/gen_docs_index.py` 与 `docs/README.md`)。
+- **方向**:摆摊 = 寄售 + 主城摊棚门面。成交走快照分支 `origin/snapshot/all-changes-20261018` 的寄售引擎(go/trade `internal/commerce`,Java `game-trade/commerce`),不在 scene 内两人直接互换(两人存档各自落盘,崩溃会复制)。摊棚由客户端按 `ListCityStalls` 画,服务端不建摊位实体;C++ 手写逻辑不改,但方法加进已有的 `jubaozhai.proto`、消息和枚举加进 `commerce.proto`,改完要重新生成并重编 gate。
+- **负责人拍板(2026-10-19)**:设计稿 §1 共 19 道选择题,点名的前 4 道都选推荐项:支持离线摆摊、只用银两、只收成交税 5%、天墉城固定摊位点;其余 15 道按推荐项执行。
+- **前置**(都不是摆摊本身的活):P-1 快照寄售引擎合入 main;P-1b 引擎推进循环单条出错不得中断整轮(否则一个玩家未决满 16 笔就堵死全服交易推进);P-2 消息号与 Tip 发号状态两套契约统一;P-3 `RequireSQLCommit` + go/db `dual`(本机联调也要);P-5 玩家归属围栏边界关闭;P-6 回档闸门接入交易流。
+- **评审**:初稿经 4 路只读对抗评审(62 条,P0 4 条),修订后又经 2 路只读复核(补了离线时截止时间无效、待打钱单空转等 5 条 P1),处理记录见设计稿 §13、§13.1;最后一轮修改没有再复核;评审不是编译或运行。
+- **验证**:无代码,无编译、无测试。
+- **Java 版(AGENTS §12)**:待做;本机没有 Java 仓,未核对 `PARITY.md`,对应 Java 版本号:无。
 
 
 ## 2026-10-19 Codex：gRPC 调用公共类型归位，C++ 验证被并行合并冲突阻断
@@ -13575,3 +13664,12 @@ PROGRESS 一直没有条目)。上面 2026-09-21 条里"第 7–9 步未跑""修
   4. `gen_docs_index.py --check` 的判据同上一条更正:看本条改过的文档,README 条目与首个 `#` 标题逐字一致即可;整体退出 1 的原因与本条无关。
 - **G4a 状态**:修订与收尾全部完成。剩下的只有两件:§25.2 的 12 处待负责人拍板;各批落码(第 1a 批门禁是「与 L-02 的先后」拍板,即原 §13 第 10 条,且改动超过 30 个文件需授权)。
 - **Java 版(AGENTS §12)**:注释与文档在 Java 不适用;对应 Java 版本 0.1.0-SNAPSHOT,Java 仓 PARITY 不加行,G4a 那一行不变。
+## 2026-10-19 真钱充值设计(苹果 IAP / Google Play / 国内安卓 / 小游戏)(Claude,只有设计,未写代码)
+
+- **结论**:新增设计稿 `docs/design/payment-recharge.md`(第 4 版,已登记 `tools/scripts/gen_docs_index.py` 与 `docs/README.md`)。用户 10-19 拍板国内、海外都要,先做苹果 + 谷歌骨架,国内渠道第二批;目前没有任何开发者账号,先用本地 mock 渠道跑通。
+- **方向**:充值 = 商城(`java/mall_game`)里的官方固定价钻石包(货币发放物、无限库存、数量恒 1),订单与钱包各只有一份权威(D-17)。新增 Go 全局服务 `go/payment`(复用 `PaymentNodeService=19`)做收据核验、付款事实与修订号、推进商城、退款通知与补漏、合规闸;发钻 / 扣钻只由 `go/trade` 按订单收敛执行;C++ 新增充值扣回原语(先扣余额、差额记充值欠款)、核销原语,欠款按 (币种, 来源) 分条;`TX_RECHARGE / TX_RECHARGE_REVERSAL / TX_RECHARGE_WAIVE` 暂定 30/31/32。
+- **评审**:三轮只读对抗评审(第一轮 5 角度 47 条;第二轮 15 条新发现含 4 条 P0;第三轮 15 条含 2 条 P0),核实成立的都已改进设计;**第 4 版的修改未再评审**,建议 R1 动工前再复核一轮。评审不是编译或运行。
+- **协作**:会话「微信抖音充值接入」负责微信 / 抖音小游戏渠道插件与小游戏登录,平台事实已并入附录 A;会话「道具交易系统代码」经同意在 robot 里放仅限开发环境的 mock 付款器(设计 §7 登记例外)。
+- **前置 / 待拍板**(设计 §17、§18):snapshot 分支 `origin/snapshot/all-changes-20261018` 合入 main(阻塞 R1);`java/mall_game` 的 K8s 部署;R1 预计 30+ 文件,须用户批准分批计划(AGENTS §10.2);钻石档位、未成年人日上限、审核区与测试白名单、限速阈值等 8 项待决。
+- **验证**:无代码,无编译、无测试。
+- **Java 版(AGENTS §12)**:待做(设计 R4);本机未核对 `PARITY.md`,对应 Java 版本号:无。

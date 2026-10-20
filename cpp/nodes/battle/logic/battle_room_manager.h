@@ -207,7 +207,9 @@ public:
     // 探测「没问到」(命令发出去了,应答是空应答 / ERROR)的轮次上限:这类轮次不消耗 kSettlementRetryMaxAttempts
     // (一次断线不该烧掉重投窗口),但也不能无限挂着 —— 持续 ERROR(口令轮换后 NOAUTH、ACL 拒绝、长时间 LOADING)时,
     // 每局结算都会进 outbox 却永远到不了次数用尽,payload 随对局数无界增长(AGENTS §11.3 重试必须有上限)。
-    // 60 轮 × 10s = 10 分钟,远大于一次主切换;Redis 未连接的轮次 RetryPendingSettlements 直接跳过,不计在内。
+    // 按条目寿命**累计**计数(问到的轮次不清零;问到的轮次另有 kSettlementRetryMaxAttempts 上限,条目寿命两头都有界)。
+    // 60 轮 × 10s ≈ 10 分钟,远大于一次主切换;Redis 未连接的轮次 RetryPendingSettlements 直接跳过,不计在内。
+    // 10 分钟只是墙钟时间的上界:连接卡住、等存活探测摘连接时,同一条目可能叠着两条在途探测,摘连接时各拿一次空应答、计数 +2。
     // 到上限摘条目并打 metric=battle_settlement_undelivered reason=probe_undetermined;记录若已落库仍由登录钩子兜底。
     static constexpr uint32_t kSettlementProbeUndeterminedMaxRounds = 60;
 
@@ -411,7 +413,7 @@ private:
         // 开局时抓到的 scene 落点,只用于日志对照:重投**一律**用重新解析出来的 node_id。
         uint32_t originalSceneNodeId = 0;
         uint32_t attempts = 0;
-        // 探测没问到的轮次(不计入 attempts,上限 kSettlementProbeUndeterminedMaxRounds)。
+        // 探测没问到的轮次,条目寿命内累计、不清零(不计入 attempts,上限 kSettlementProbeUndeterminedMaxRounds)。
         uint32_t undeterminedRounds = 0;
     };
 
