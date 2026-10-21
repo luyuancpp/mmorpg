@@ -1,8 +1,11 @@
 #include "system/turn_battle_engine.h"
 
 #include <algorithm>
+#include <cmath>
 #include <cstdint>
+#include <map>
 #include <optional>
+#include <string>
 
 #include "data/table_battle_data_provider.h"
 #include "system/battle_result_activity.h"
@@ -79,6 +82,17 @@ std::optional<uint64_t> AilmentResistPercent(const CombatAttributes& combat, uin
         return std::nullopt;
     }
     return std::nullopt;
+}
+
+// Buff 表里标减益的 tag(职业技能的减益行都带它;驱散按它认)
+constexpr char kDebuffTag[] = "Debuff";
+
+// 气血比例(0 上限按满血算,治疗目标排序用)
+double HealthRatio(const BattleActorState& actor) {
+    if (actor.max_health() == 0) {
+        return 1.0;
+    }
+    return static_cast<double>(actor.attributes().health()) / static_cast<double>(actor.max_health());
 }
 
 }  // namespace
@@ -214,12 +228,29 @@ bool TurnBattleEngine::InitPlayers(const CreateBattleRequest& request) {
                 nextBuffInstanceId = buff.buff_id() + 1;
             }
         }
+        // 职业技能等级(class-skills.md §6.1):快照里的等级按 scene 同一规则复核 ——
+        // 表里有这一行、是本单位职业的技能、夹到当前角色等级的上限;复核完为 0 的丢掉
+        for (const auto& [skillTableId, rank] : snapshot.skill_ranks()) {
+            const auto* skillRow = dataProvider->FindSkill(skillTableId);
+            if (skillRow == nullptr || !IsClassSkill(*skillRow) || skillRow->class_id() != actor.class_id()) {
+                continue;
+            }
+            const uint32_t effectiveRank = classskill::EffectiveRank(rank, actor.level(), skillRow->unlock_level(),
+                                                                     skillRow->max_rank());
+            if (effectiveRank > 0) {
+                (*actor.mutable_skill_ranks())[skillTableId] = effectiveRank;
+            }
+        }
         // 技能只收回合制可施放的(G6):被动/开关/持续施法进来会被当成普通技能打出伤害。
         // scene 出快照时已过滤一遍,这里是引擎侧兜底 —— 快照来自另一进程,不能只信它。
+        // 职业技能还要在上面复核出等级才算拥有。
         // actor.skill_table_ids 同时是客户端可见的"本局可用技能"列表。
         for (const auto skillTableId : snapshot.skill_table_ids()) {
             const auto* skillRow = dataProvider->FindSkill(skillTableId);
             if (skillRow == nullptr || !IsTurnBattleCastableSkill(*skillRow)) {
+                continue;
+            }
+            if (IsClassSkill(*skillRow) && ClassSkillRank(actor, *skillRow) == 0) {
                 continue;
             }
             actor.add_skill_table_ids(skillTableId);
@@ -288,7 +319,8 @@ bool TurnBattleEngine::InitPets(const CreateBattleRequest& request) {
             actor.set_is_auto(true);
             for (const auto skillTableId : pet.skill_table_ids()) {
                 const auto* skillRow = dataProvider->FindSkill(skillTableId);
-                if (skillRow == nullptr || !IsTurnBattleCastableSkill(*skillRow)) {
+                // 宝宝没有职业,职业技能不会是它的(宠物技能另行设计,class-skills.md §9)
+                if (skillRow == nullptr || !IsTurnBattleCastableSkill(*skillRow) || IsClassSkill(*skillRow)) {
                     continue;
                 }
                 actor.add_skill_table_ids(skillTableId);
@@ -496,8 +528,17 @@ uint32_t TurnBattleEngine::CheckActionPrerequisites(const BattleActorState& acto
         if (!IsTurnBattleCastableSkill(*skillRow)) {
             return kSkillCannotBeCastInCurrentState;
         }
-        if (const auto result = ValidateSkillTarget(actor, *skillRow, action.target_id());
-            result != kSuccess) {
+        if (IsClassSkill(*skillRow)) {
+            // 职业技能:列表里有还不够,等级必须复核为正;目标按阵营校验
+            if (ClassSkillRank(actor, *skillRow) == 0) {
+                return kInvalidParameter;
+            }
+            if (const auto result = ValidateClassSkillTarget(actor, *skillRow, action.target_id());
+                result != kSuccess) {
+                return result;
+            }
+        } else if (const auto result = ValidateSkillTarget(actor, *skillRow, action.target_id());
+                   result != kSuccess) {
             return result;
         }
         if (const auto result = CheckCooldown(actor, *skillRow); result != kSuccess) {
@@ -563,6 +604,10 @@ bool TurnBattleEngine::IsTurnBattleCastableSkill(const SkillTable& skillRow) con
     // 黑名单而不是白名单:表里存量技能未必都填了 skill_type,白名单会把没填的一律判死。
     // 被动技能没有施放动作;开关技能是状态切换;持续施法依赖引擎已删除的相位概念 ——
     // 这三类若被当成普通技能提交,会按 damage 表达式打出玩家本不该有的伤害。
+    // 职业被动认 passive_stat(被动位号 0 在表里写不出来,见头文件)
+    if (!skillRow.passive_stat().empty()) {
+        return false;
+    }
     for (const auto skillTypeBit : skillRow.skill_type()) {
         if (skillTypeBit == kSkillTypeBitPassive || skillTypeBit == kSkillTypeBitToggle ||
             skillTypeBit == kSkillTypeBitChannel) {
@@ -576,7 +621,7 @@ uint32_t TurnBattleEngine::CheckSkillCost(const BattleActorState& actor,
                                           const SkillTable& skillRow) const {
     // 耗蓝不足:提交期不落账(回合超时默认普攻兜底),出手期降级为普攻(ExecuteSkill)。
     // tip 表暂无"法力不足"专用码,借用"当前状态不可施放"(见任务 open_issues)
-    if (SkillManaCost(skillRow) > actor.attributes().mana()) {
+    if (SkillManaCost(actor, skillRow) > actor.attributes().mana()) {
         return kSkillCannotBeCastInCurrentState;
     }
     return kSuccess;
@@ -614,6 +659,11 @@ uint32_t TurnBattleEngine::ValidateSkillTarget(const BattleActorState& actor,
 
 uint32_t TurnBattleEngine::CheckCooldown(const BattleActorState& actor,
                                          const SkillTable& skillRow) const {
+    // 职业技能按技能各自冷却(Skill.cooldown_rounds,键就是 skill_table_id),不参与 cooldown_id 分组
+    if (IsClassSkill(skillRow)) {
+        const auto it = actor.skill_cooldown_rounds().find(skillRow.id());
+        return it != actor.skill_cooldown_rounds().end() && it->second > 0 ? kSkillCooldownNotReady : kSuccess;
+    }
     // 冷却按 cooldown_id 分组共享(镜像实时的 CooldownTimeListComp 键语义);
     // 状态 map 的键按 proto 契约是 skill_table_id,分组语义靠反查各在冷技能的 cooldown_id。
     // map 遍历序不定,但结果是"是否存在"布尔,不影响确定性
@@ -622,7 +672,9 @@ uint32_t TurnBattleEngine::CheckCooldown(const BattleActorState& actor,
             continue;
         }
         const auto* coolingRow = dataProvider->FindSkill(coolingEntry.first);
-        if (coolingRow != nullptr && coolingRow->cooldown_id() == skillRow.cooldown_id()) {
+        // 在冷的职业技能 cooldown_id 都是 0,不能把 cooldown_id 同为 0 的老技能一起锁住
+        if (coolingRow != nullptr && !IsClassSkill(*coolingRow) &&
+            coolingRow->cooldown_id() == skillRow.cooldown_id()) {
             return kSkillCooldownNotReady;
         }
     }
@@ -792,10 +844,22 @@ std::vector<uint64_t> TurnBattleEngine::BuildTurnOrder() const {
             ordered.push_back(&actor);
         }
     }
+    // 先手优先级(职业技能 Skill.initiative)排在速度之前;速度吃职业技能的增减益。
+    // 两者都在回合开始时一次算定:本回合里新挂上的速度增减益从下一回合起生效。
+    // 没有职业技能的对局里优先级全 0、速度原样,出手序与改动前逐位一致
+    std::map<uint64_t, std::pair<int32_t, uint64_t>> sortKeys;
+    for (const auto* actor : ordered) {
+        sortKeys[actor->actor_id()] = {ActionInitiative(*actor), EffectiveSpeed(*actor)};
+    }
     std::sort(ordered.begin(), ordered.end(),
-              [](const BattleActorState* lhs, const BattleActorState* rhs) {
-                  if (lhs->attributes().speed() != rhs->attributes().speed()) {
-                      return lhs->attributes().speed() > rhs->attributes().speed();
+              [&sortKeys](const BattleActorState* lhs, const BattleActorState* rhs) {
+                  const auto& lhsKey = sortKeys.at(lhs->actor_id());
+                  const auto& rhsKey = sortKeys.at(rhs->actor_id());
+                  if (lhsKey.first != rhsKey.first) {
+                      return lhsKey.first > rhsKey.first;
+                  }
+                  if (lhsKey.second != rhsKey.second) {
+                      return lhsKey.second > rhsKey.second;
                   }
                   return lhs->actor_id() < rhs->actor_id();
               });
@@ -897,7 +961,7 @@ bool TurnBattleEngine::ResolveBasicAttackHit(BattleActorState& attacker, BattleA
     bool isCritical = false;
     // 普攻是物理攻击:吃物伤、倍率 1、物理必杀率与目标的抗物理;技能按表选物伤 / 法伤(见 ApplySkillToTarget)
     double finalDamage = CalculateFinalDamage(attacker, target, kBasicAttackBaseDamage,
-                                              attacker.physical_attack(), 1.0,
+                                              EffectivePhysicalAttack(attacker), 1.0,
                                               combatdamage::kPhysicalDamage, isCritical);
     if (hitKind == BATTLE_HIT_COMBO) {
         // 连击追加段:独立结算(上面已经独立掷过必杀)后再打折。只有这一种段做缩放 ——
@@ -983,6 +1047,13 @@ void TurnBattleEngine::TryCounterAttack(BattleActorState& attacker, BattleActorS
 
 void TurnBattleEngine::ExecuteSkill(BattleActorState& actor, const BattleAction& action,
                                     TurnResultS2C& result) {
+    // 职业技能走自己的目标 / 冷却 / 耗蓝 / 效果规则(class-skills.md §6)
+    if (const auto* classRow = dataProvider->FindSkill(action.skill_table_id());
+        classRow != nullptr && IsClassSkill(*classRow)) {
+        ExecuteClassSkill(actor, action, *classRow, result);
+        return;
+    }
+
     // 结算前重跑校验链(提交后到出手前,冷却/沉默/目标状态都可能已变化);
     // 校验不过降级为默认普攻,保证回合不空转
     if (CheckActionPrerequisites(actor, action) != kSuccess) {
@@ -1076,7 +1147,7 @@ void TurnBattleEngine::ApplySkillToTarget(BattleActorState& actor, const BattleA
     if (baseDamage > 0) {
         bool isCritical = false;
         const uint64_t attack = combatdamage::SelectAttack(
-            skillRow.damage_type(), actor.physical_attack(), actor.magic_attack());
+            skillRow.damage_type(), EffectivePhysicalAttack(actor), actor.magic_attack());
         // 伤害类型同时决定吃物理还是法术的必杀率 / 抗性(与上面选攻击用的是同一列)
         const double finalDamage =
             CalculateFinalDamage(actor, target, baseDamage, attack, skillRow.attack_multiplier(),
@@ -1115,7 +1186,11 @@ bool TurnBattleEngine::IsAreaSkill(const SkillTable& skillRow) const {
     return false;
 }
 
-uint64_t TurnBattleEngine::SkillManaCost(const SkillTable& skillRow) const {
+uint64_t TurnBattleEngine::SkillManaCost(const BattleActorState& actor, const SkillTable& skillRow) const {
+    // 职业技能按最大法力的比例(class-skills.md §6.3);多目标也只在出手时扣这一次
+    if (IsClassSkill(skillRow)) {
+        return classskill::ManaCost(actor.max_mana(), skillRow.mana_percent());
+    }
     // cost_resource[] 平铺多列,Excel 空格补 {0,0};只认法力资源 id
     uint64_t cost = 0;
     for (const auto& entry : skillRow.cost_resource()) {
@@ -1128,7 +1203,7 @@ uint64_t TurnBattleEngine::SkillManaCost(const SkillTable& skillRow) const {
 
 void TurnBattleEngine::ConsumeSkillMana(BattleActorState& actor, const SkillTable& skillRow,
                                         uint32_t skillTableId, TurnResultS2C& result) {
-    const uint64_t manaCost = SkillManaCost(skillRow);
+    const uint64_t manaCost = SkillManaCost(actor, skillRow);
     if (manaCost == 0) {
         return;  // 无耗蓝技能不产出 MANA 事件
     }
@@ -1140,8 +1215,337 @@ void TurnBattleEngine::ConsumeSkillMana(BattleActorState& actor, const SkillTabl
     auto* manaEvent = AppendEvent(result, BATTLE_EVENT_MANA, actor.actor_id(), actor.actor_id());
     manaEvent->set_skill_table_id(skillTableId);
     manaEvent->set_value(manaBefore - manaAfter);  // 实际消耗量(客户端按 MANA 语义显示为负)
+    manaEvent->set_mana_delta(-static_cast<int64_t>(manaBefore - manaAfter));
     manaEvent->set_target_health_after(actor.attributes().health());
     manaEvent->set_target_mana_after(manaAfter);
+}
+
+// ---------------------------------------------------------------------------
+// 四职业技能(docs/design/class-skills.md §6)
+// ---------------------------------------------------------------------------
+
+uint32_t TurnBattleEngine::ClassSkillRank(const BattleActorState& actor, const SkillTable& skillRow) const {
+    if (!IsClassSkill(skillRow) || skillRow.class_id() != actor.class_id()) {
+        return 0;
+    }
+    const auto it = actor.skill_ranks().find(skillRow.id());
+    return it == actor.skill_ranks().end() ? 0 : it->second;
+}
+
+uint32_t TurnBattleEngine::ValidateClassSkillTarget(const BattleActorState& actor, const SkillTable& skillRow,
+                                                    uint64_t targetId) const {
+    switch (static_cast<classskill::TargetTeam>(skillRow.target_team())) {
+    case classskill::TargetTeam::kSelf:
+        return targetId == 0 || targetId == actor.actor_id() ? kSuccess : kSkillInvalidTarget;
+    case classskill::TargetTeam::kEnemy:
+    case classskill::TargetTeam::kAlly: {
+        if (targetId == 0) {
+            return kSuccess;  // 由引擎按规则选
+        }
+        const auto* target = FindActor(targetId);
+        if (target == nullptr) {
+            return kSkillInvalidTargetId;
+        }
+        const bool sameTeam = target->team_index() == actor.team_index();
+        const bool wantAlly = skillRow.target_team() == static_cast<uint32_t>(classskill::TargetTeam::kAlly);
+        // 阵营不对一律拒:友方技能不能拿敌人当目标,反过来也一样(阵亡 / 逃离的单位阵营不变,照样判)
+        return sameTeam == wantAlly ? kSuccess : kSkillInvalidTarget;
+    }
+    case classskill::TargetTeam::kNone:
+        break;
+    }
+    return kInvalidTableData;  // 表里 target_team 没填 / 填了认不出的值
+}
+
+std::vector<uint64_t> TurnBattleEngine::SelectClassSkillTargets(const BattleActorState& actor,
+                                                                const SkillTable& skillRow,
+                                                                uint64_t primaryTargetId) const {
+    const auto team = static_cast<classskill::TargetTeam>(skillRow.target_team());
+    if (team == classskill::TargetTeam::kSelf) {
+        if (!IsActorActive(actor)) {
+            return {};
+        }
+        return {actor.actor_id()};
+    }
+    if (team != classskill::TargetTeam::kEnemy && team != classskill::TargetTeam::kAlly) {
+        return {};
+    }
+
+    const bool wantAlly = team == classskill::TargetTeam::kAlly;
+    std::vector<const BattleActorState*> candidates;
+    for (const auto& other : actors) {
+        // 只选存活未逃的:治疗不复活,阵亡的友方不会被补进来
+        if (!IsActorActive(other) || (other.team_index() == actor.team_index()) != wantAlly) {
+            continue;
+        }
+        candidates.push_back(&other);
+    }
+    const bool healing = skillRow.heal_multiplier() > 0 || skillRow.heal_per_level() > 0;
+    std::sort(candidates.begin(), candidates.end(),
+              [primaryTargetId, healing](const BattleActorState* lhs, const BattleActorState* rhs) {
+                  const bool lhsPrimary = primaryTargetId != 0 && lhs->actor_id() == primaryTargetId;
+                  const bool rhsPrimary = primaryTargetId != 0 && rhs->actor_id() == primaryTargetId;
+                  if (lhsPrimary != rhsPrimary) {
+                      return lhsPrimary;
+                  }
+                  if (healing) {
+                      const double lhsRatio = HealthRatio(*lhs);
+                      const double rhsRatio = HealthRatio(*rhs);
+                      if (lhsRatio != rhsRatio) {
+                          return lhsRatio < rhsRatio;
+                      }
+                  }
+                  if (lhs->formation_slot() != rhs->formation_slot()) {
+                      return lhs->formation_slot() < rhs->formation_slot();
+                  }
+                  return lhs->actor_id() < rhs->actor_id();
+              });
+
+    const size_t limit = std::max<size_t>(1, skillRow.max_targets());
+    std::vector<uint64_t> targetIds;
+    for (const auto* candidate : candidates) {
+        if (targetIds.size() >= limit) {
+            break;
+        }
+        targetIds.push_back(candidate->actor_id());
+    }
+    return targetIds;
+}
+
+void TurnBattleEngine::ExecuteClassSkill(BattleActorState& actor, const BattleAction& action,
+                                         const SkillTable& skillRow, TurnResultS2C& result) {
+    // 出手前重跑校验链(提交后到出手前,冷却 / 沉默 / 法力都可能已变化)
+    if (CheckActionPrerequisites(actor, action) != kSuccess) {
+        // 敌方技能放不出来,按老规则降级成普攻;友方 / 自身技能不降级 —— 降级就是去打一个随机敌人,
+        // 与玩家的本意相反(class-skills.md §6.2),这一手作废、不出事件
+        if (skillRow.target_team() == static_cast<uint32_t>(classskill::TargetTeam::kEnemy)) {
+            ExecuteAttack(actor, action.target_id(), result);
+        }
+        return;
+    }
+
+    // 选目标不消耗随机数:选中的合法主目标优先,主目标已倒下时按规则补位
+    const auto targetIds = SelectClassSkillTargets(actor, skillRow, action.target_id());
+    if (targetIds.empty()) {
+        return;  // 一个合法目标都没有:不扣蓝、不进冷却、不出事件
+    }
+    const uint32_t rank = ClassSkillRank(actor, skillRow);
+
+    // 冷却按回合:+1 是因为本回合末的 DecayCooldowns 会先扣掉一回合,
+    // cooldown_rounds = 3 意味着接下来整整 3 个回合放不了
+    if (skillRow.cooldown_rounds() > 0) {
+        (*actor.mutable_skill_cooldown_rounds())[skillRow.id()] = skillRow.cooldown_rounds() + 1;
+    }
+
+    auto* skillEvent = AppendEvent(result, BATTLE_EVENT_SKILL, actor.actor_id(), targetIds.front());
+    skillEvent->set_skill_table_id(skillRow.id());
+
+    // 耗蓝:多目标也只扣这一次(校验链已保证蓝够)
+    ConsumeSkillMana(actor, skillRow, skillRow.id(), result);
+
+    // 伤害基数沿用老技能的表达式求值(职业技能表里是常数 10),多目标共用
+    double baseDamage = 0.0;
+    if (skillRow.target_team() == static_cast<uint32_t>(classskill::TargetTeam::kEnemy)) {
+        baseDamage = dataProvider->GetSkillDamage(
+            skillRow.id(), static_cast<double>(SaturatingAdd(actor.level(), actor.combat().skill_level_bonus())));
+    }
+
+    for (size_t hitIndex = 0; hitIndex < targetIds.size(); ++hitIndex) {
+        auto* target = FindActor(targetIds[hitIndex]);
+        if (target == nullptr || !IsActorActive(*target)) {
+            continue;
+        }
+        currentHitIndex = static_cast<uint32_t>(hitIndex);
+        ApplyClassSkillToTarget(actor, skillRow, rank, baseDamage, *target, result);
+    }
+    currentHitIndex = 0;
+}
+
+void TurnBattleEngine::ApplyClassSkillToTarget(BattleActorState& actor, const SkillTable& skillRow, uint32_t rank,
+                                               double baseDamage, BattleActorState& target,
+                                               TurnResultS2C& result) {
+    const bool hostile = skillRow.target_team() == static_cast<uint32_t>(classskill::TargetTeam::kEnemy);
+    if (hostile) {
+        // 命中判定只对敌方技能做(一期命中率 100%,不消耗随机数)
+        if (!RollHit(actor, target)) {
+            auto* missEvent = AppendEvent(result, BATTLE_EVENT_MISS, actor.actor_id(), target.actor_id());
+            missEvent->set_skill_table_id(skillRow.id());
+            missEvent->set_value(0);
+            missEvent->set_target_health_after(target.attributes().health());
+            missEvent->set_target_mana_after(target.attributes().mana());
+            return;
+        }
+        if (baseDamage > 0) {
+            bool isCritical = false;
+            const uint64_t attack = combatdamage::SelectAttack(skillRow.damage_type(), EffectivePhysicalAttack(actor),
+                                                               actor.magic_attack());
+            // 等级系数乘在最终伤害上(与暴击倍率同为线性,先后无关)
+            const double finalDamage =
+                CalculateFinalDamage(actor, target, baseDamage, attack, skillRow.attack_multiplier(),
+                                     skillRow.damage_type(), isCritical) *
+                classskill::DamageRankFactor(rank);
+            const uint64_t dealt = ApplyDamage(target, finalDamage);
+
+            auto* damageEvent = AppendEvent(result, BATTLE_EVENT_DAMAGE, actor.actor_id(), target.actor_id());
+            damageEvent->set_skill_table_id(skillRow.id());
+            damageEvent->set_value(dealt);
+            damageEvent->set_is_critical(isCritical);
+            damageEvent->set_target_health_after(target.attributes().health());
+            damageEvent->set_target_mana_after(target.attributes().mana());
+            if (target.attributes().health() == 0) {
+                HandleDeath(target, actor.actor_id(), result);
+            }
+        }
+    }
+    if (target.is_dead()) {
+        return;  // 死了就不再挂任何效果
+    }
+
+    // 治疗 = (法伤 × 倍率 + 施法者等级 × 每级加值) × 等级系数 × (1 + 治疗加成被动),目标残血时再加成
+    if (skillRow.heal_multiplier() > 0 || skillRow.heal_per_level() > 0) {
+        double amount = (static_cast<double>(actor.magic_attack()) * skillRow.heal_multiplier() +
+                         static_cast<double>(actor.level()) * skillRow.heal_per_level()) *
+                        classskill::DamageRankFactor(rank) * (1.0 + OutgoingHealBonus(actor));
+        if (skillRow.execute_heal_threshold() > 0 && HealthRatio(target) < skillRow.execute_heal_threshold()) {
+            amount *= 1.0 + skillRow.execute_heal_bonus();
+        }
+        const uint64_t healed = ApplyHeal(target, amount);
+        // 满血也发一条(value = 0):演出要知道这一下奶给了谁
+        auto* healEvent = AppendEvent(result, BATTLE_EVENT_HEAL, actor.actor_id(), target.actor_id());
+        healEvent->set_skill_table_id(skillRow.id());
+        healEvent->set_value(healed);
+        healEvent->set_target_health_after(target.attributes().health());
+        healEvent->set_target_mana_after(target.attributes().mana());
+    }
+
+    // 回蓝:按目标最大法力的比例(× 辅助等级系数),按缺口封顶,事件只报实际回复量
+    if (skillRow.restore_mana_percent() > 0) {
+        const uint64_t manaBefore = target.attributes().mana();
+        const uint64_t missing = target.max_mana() > manaBefore ? target.max_mana() - manaBefore : 0;
+        const uint64_t restored = std::min(
+            missing, classskill::CeilRatio(target.max_mana(),
+                                           skillRow.restore_mana_percent() * classskill::SupportRankFactor(rank)));
+        target.mutable_attributes()->set_mana(manaBefore + restored);
+        auto* manaEvent = AppendEvent(result, BATTLE_EVENT_MANA, actor.actor_id(), target.actor_id());
+        manaEvent->set_skill_table_id(skillRow.id());
+        manaEvent->set_value(restored);
+        manaEvent->set_mana_delta(static_cast<int64_t>(restored));
+        manaEvent->set_target_health_after(target.attributes().health());
+        manaEvent->set_target_mana_after(target.attributes().mana());
+    }
+
+    if (skillRow.dispel_count() > 0) {
+        DispelDebuffs(target, skillRow.dispel_count(), result);
+    }
+
+    // 增减益:幅度 = 表里的基础幅度 × 辅助等级系数,施加时算定后存进局内 buff
+    const double statPercent = skillRow.buff_percent() * classskill::SupportRankFactor(rank);
+    for (const auto effectBuffId : skillRow.effect()) {
+        AddBuffToActor(target, effectBuffId, actor.actor_id(), 0, result, statPercent);
+    }
+}
+
+int32_t TurnBattleEngine::ActionInitiative(const BattleActorState& actor) const {
+    const auto it = pendingActions.find(actor.actor_id());
+    if (it == pendingActions.end() || it->second.action_type() != BATTLE_ACTION_SKILL) {
+        return 0;
+    }
+    const auto* skillRow = dataProvider->FindSkill(it->second.skill_table_id());
+    if (skillRow == nullptr || !IsClassSkill(*skillRow) || skillRow->initiative() == 0) {
+        return 0;
+    }
+    // 只有这一手真能放出去才抢先手:放不出来(法力不够 / 冷却 / 沉默)的不能借优先级插队
+    return CheckActionPrerequisites(actor, it->second) == kSuccess ? skillRow->initiative() : 0;
+}
+
+double TurnBattleEngine::OutgoingHealBonus(const BattleActorState& actor) const {
+    // protobuf map 遍历序不固定;浮点求和按 skill_table_id 升序做,结果才逐位稳定
+    const std::map<uint32_t, uint32_t> ranks(actor.skill_ranks().begin(), actor.skill_ranks().end());
+    double bonus = 0.0;
+    for (const auto& [skillTableId, rank] : ranks) {
+        const auto* skillRow = dataProvider->FindSkill(skillTableId);
+        if (skillRow == nullptr ||
+            classskill::ParsePassiveStat(skillRow->passive_stat()) != classskill::PassiveStat::kOutgoingHeal) {
+            continue;
+        }
+        bonus += skillRow->passive_percent() * classskill::PassiveRankFactor(rank);
+    }
+    return bonus;
+}
+
+double TurnBattleEngine::ClassBuffStatMultiplier(const BattleActorState& actor, ClassBuffStat stat) const {
+    double strongestGain = 0.0;
+    double strongestLoss = 0.0;
+    bool found = false;
+    for (const auto& entry : actor.buffs()) {
+        if (entry.stat_percent() == 0.0) {
+            continue;
+        }
+        const auto* buffRow = dataProvider->FindBuff(entry.buff_table_id());
+        if (buffRow == nullptr || ClassSkillStatOfBuffType(buffRow->buff_type()) != stat) {
+            continue;
+        }
+        found = true;
+        // 同方向同属性只取最强的一个,不累加
+        strongestGain = std::max(strongestGain, entry.stat_percent());
+        strongestLoss = std::min(strongestLoss, entry.stat_percent());
+    }
+    if (!found) {
+        return 1.0;
+    }
+    return std::max(kMinClassBuffStatMultiplier, 1.0 + strongestGain + strongestLoss);
+}
+
+uint64_t TurnBattleEngine::EffectivePhysicalAttack(const BattleActorState& actor) const {
+    const double multiplier = ClassBuffStatMultiplier(actor, ClassBuffStat::kPhysicalAttack);
+    return multiplier == 1.0 ? actor.physical_attack() : classskill::FloorRatio(actor.physical_attack(), multiplier);
+}
+
+uint64_t TurnBattleEngine::EffectiveDefense(const BattleActorState& actor) const {
+    const double multiplier = ClassBuffStatMultiplier(actor, ClassBuffStat::kDefense);
+    return multiplier == 1.0 ? actor.defense() : classskill::FloorRatio(actor.defense(), multiplier);
+}
+
+uint64_t TurnBattleEngine::EffectiveSpeed(const BattleActorState& actor) const {
+    const double multiplier = ClassBuffStatMultiplier(actor, ClassBuffStat::kSpeed);
+    return multiplier == 1.0 ? actor.attributes().speed() : classskill::FloorRatio(actor.attributes().speed(), multiplier);
+}
+
+bool TurnBattleEngine::IsDebuffEntry(const BattleBuffEntry& entry) const {
+    if (entry.stat_percent() < 0.0) {
+        return true;
+    }
+    const auto* buffRow = dataProvider->FindBuff(entry.buff_table_id());
+    if (buffRow == nullptr) {
+        return false;
+    }
+    if (buffRow->tag().contains(std::string(kDebuffTag))) {
+        return true;
+    }
+    switch (buffRow->buff_type()) {
+    case kBuffTypePoison:
+    case kBuffTypeBurn:
+    case kBuffTypeStun:
+    case kBuffTypeSilence:
+    case kBuffTypeFreeze:
+        return true;
+    default:
+        return false;
+    }
+}
+
+uint32_t TurnBattleEngine::DispelDebuffs(BattleActorState& target, uint32_t count, TurnResultS2C& result) {
+    uint32_t removed = 0;
+    // 按身上的先后顺序驱散(先挂上的先走),顺序确定、不消耗随机数
+    for (int index = 0; index < target.buffs_size() && removed < count;) {
+        if (IsDebuffEntry(target.buffs(index))) {
+            RemoveBuffAt(target, index, result);
+            ++removed;
+        } else {
+            ++index;
+        }
+    }
+    return removed;
 }
 
 void TurnBattleEngine::ExecuteDefend(BattleActorState& actor, TurnResultS2C& result) {
@@ -1212,6 +1616,10 @@ void TurnBattleEngine::ExecuteItem(BattleActorState& actor, const BattleAction& 
     auto* itemEvent = AppendEvent(result, BATTLE_EVENT_ITEM, actor.actor_id(), target->actor_id());
     itemEvent->set_item_table_id(effective.item_table_id());
     itemEvent->set_value(healed > 0 ? healed : restoredMana);
+    if (itemRow->battle_heal_mp() > 0) {
+        // 回蓝药:带上实际回复量(满蓝时为 0),客户端据此区分回蓝与扣蓝
+        itemEvent->set_mana_delta(static_cast<int64_t>(restoredMana));
+    }
     itemEvent->set_target_health_after(target->attributes().health());
     itemEvent->set_target_mana_after(target->attributes().mana());
 }
@@ -1220,7 +1628,7 @@ void TurnBattleEngine::ExecuteFlee(BattleActorState& actor, TurnResultS2C& resul
     bool success = false;
     if (IsPveMatch()) {
         // 成功率基于速度差:base + 系数 * (自身速度 - 存活敌方最高速度),夹在上下限内
-        const double speedDiff = static_cast<double>(actor.attributes().speed()) -
+        const double speedDiff = static_cast<double>(EffectiveSpeed(actor)) -
                                  static_cast<double>(MaxAliveEnemySpeed(actor));
         const double chance = std::clamp(kFleeBaseChance + kFleeSpeedFactor * speedDiff,
                                          kFleeMinChance, kFleeMaxChance);
@@ -1310,6 +1718,10 @@ void TurnBattleEngine::TickActorBuffs(BattleActorState& actor, TurnResultS2C& re
         }
         auto* entry = actor.mutable_buffs(index);
         if (entry->remain_rounds() == 0) {
+            continue;
+        }
+        // 本回合刚施加 / 刷新的职业技能增减益不在本回合末扣持续:"持续 2 回合"是完整的 2 回合
+        if (entry->applied_round() != 0 && entry->applied_round() == roundIndex) {
             continue;
         }
         if (entry->remain_rounds() == 1) {
@@ -1469,6 +1881,9 @@ void TurnBattleEngine::SanitizeSnapshotBuffs(BattleActorState& actor) {
             continue;
         }
         BattleBuffEntry entry = buff;
+        // 局内字段只能由引擎自己写:快照带进来的一律清掉(场景里的 buff 没有职业技能幅度)
+        entry.clear_stat_percent();
+        entry.clear_applied_round();
         // caster 认不出来就置 0(= 无施法者):FindActor 找不到 0,叠层按"不同施法者"处理,
         // BUFF_TICK/BUFF_REMOVE 事件的 source 也不会指向一个不相干的玩家
         if (entry.caster_id() != 0 && FindActor(entry.caster_id()) == nullptr) {
@@ -1548,7 +1963,7 @@ double TurnBattleEngine::CalculateFinalDamage(const BattleActorState& caster,
     // 抗性之和交给规则头夹取:它与护甲 / 防御共用 60% 常驻减伤封顶(规则头与实时技能共用,不在这里另夹)
     double finalDamage = combatdamage::DamageBeforeCritical(
         baseDamage, caster.attributes().strength(), attack, attackMultiplier,
-        target.attributes().armor(), target.defense(),
+        target.attributes().armor(), EffectiveDefense(target),
         SaturatingAdd(target.attributes().resistance(), resistBonus), target.level());
     if (!IsPveMatch()) {
         finalDamage *= kPvpDamageScale;
@@ -1583,13 +1998,15 @@ uint64_t TurnBattleEngine::ApplyDamage(BattleActorState& target, double rawDamag
 }
 
 uint64_t TurnBattleEngine::ApplyHeal(BattleActorState& target, double rawHeal) {
-    if (rawHeal <= 0 || target.is_dead()) {
+    // !(> 0) 同时挡住 NaN;治疗量按缺口封顶后再转整数,高血量 + 大倍率也不会越界
+    if (!(rawHeal > 0) || !std::isfinite(rawHeal) || target.is_dead()) {
         return 0;
     }
     const uint64_t healthBefore = target.attributes().health();
-    const auto healthAfter = std::min<uint64_t>(
-        target.max_health(),
-        static_cast<uint64_t>(static_cast<double>(healthBefore) + rawHeal));
+    const uint64_t missing = target.max_health() > healthBefore ? target.max_health() - healthBefore : 0;
+    const long double cappedHeal = std::min<long double>(static_cast<long double>(rawHeal),
+                                                         static_cast<long double>(missing));
+    const auto healthAfter = healthBefore + static_cast<uint64_t>(cappedHeal);
     target.mutable_attributes()->set_health(healthAfter);
     return healthAfter - healthBefore;
 }
@@ -1624,7 +2041,8 @@ void TurnBattleEngine::HandleDeath(BattleActorState& target, uint64_t sourceActo
 // ---------------------------------------------------------------------------
 
 void TurnBattleEngine::AddBuffToActor(BattleActorState& target, uint32_t buffTableId,
-                                      uint64_t casterId, uint32_t depth, TurnResultS2C& result) {
+                                      uint64_t casterId, uint32_t depth, TurnResultS2C& result,
+                                      double statPercent) {
     // 子 buff 递归深度上限,防表配环
     if (depth > kMaxSubBuffDepth || target.is_dead()) {
         return;
@@ -1659,7 +2077,7 @@ void TurnBattleEngine::AddBuffToActor(BattleActorState& target, uint32_t buffTab
     }
 
     // 同表同施法者:叠层/刷新,不新建条目
-    if (StackOrRefreshExistingBuff(target, *buffRow, casterId, result)) {
+    if (StackOrRefreshExistingBuff(target, *buffRow, casterId, result, statPercent)) {
         return;
     }
 
@@ -1669,6 +2087,11 @@ void TurnBattleEngine::AddBuffToActor(BattleActorState& target, uint32_t buffTab
     entry->set_buff_table_id(buffTableId);
     entry->set_layer(1);
     entry->set_caster_id(casterId);
+    if (statPercent != 0.0) {
+        // 职业技能增减益:幅度按施法者此刻的等级算定后就不再变;本回合末不扣持续(TickActorBuffs)
+        entry->set_stat_percent(statPercent);
+        entry->set_applied_round(roundIndex);
+    }
     // 持续时间换算:infinite_duration → 0 哨兵(无限);其余按秒→回合
     if (buffRow->infinite_duration() != 0) {
         entry->set_remain_rounds(0);
@@ -1780,7 +2203,7 @@ void TurnBattleEngine::DispelBuffsByTag(BattleActorState& target, const BuffTabl
 
 bool TurnBattleEngine::StackOrRefreshExistingBuff(BattleActorState& target,
                                                   const BuffTable& buffRow, uint64_t casterId,
-                                                  TurnResultS2C& result) {
+                                                  TurnResultS2C& result, double statPercent) {
     for (auto& existing : *target.mutable_buffs()) {
         if (existing.buff_table_id() != buffRow.id()) {
             continue;
@@ -1796,6 +2219,13 @@ bool TurnBattleEngine::StackOrRefreshExistingBuff(BattleActorState& target,
         // 刷新持续回合(实时 OnBuffRefresh 为 TODO;回合侧采用"重挂满时"口径)
         if (existing.remain_rounds() > 0 && buffRow.duration() > 0) {
             existing.set_remain_rounds(RoundsFromSeconds(buffRow.duration()));
+        }
+        if (statPercent != 0.0) {
+            // 同一行(同方向同属性)重挂:取更强的幅度,刷新持续,本回合末同样不扣
+            if (std::abs(statPercent) > std::abs(existing.stat_percent())) {
+                existing.set_stat_percent(statPercent);
+            }
+            existing.set_applied_round(roundIndex);
         }
 
         auto* addEvent = AppendEvent(result, BATTLE_EVENT_BUFF_ADD, casterId, target.actor_id());
@@ -2003,7 +2433,7 @@ uint64_t TurnBattleEngine::MaxAliveEnemySpeed(const BattleActorState& actor) con
         if (other.team_index() == actor.team_index() || !IsActorActive(other)) {
             continue;
         }
-        maxSpeed = std::max(maxSpeed, other.attributes().speed());
+        maxSpeed = std::max(maxSpeed, EffectiveSpeed(other));
     }
     return maxSpeed;
 }

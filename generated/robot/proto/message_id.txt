@@ -315,7 +315,7 @@
 314=SceneMysteryMerchantClientPlayerGetMysteryMerchantInfo
 315=SceneMysteryMerchantClientPlayerBuyMysteryMerchantGoods
 316=SceneMysteryMerchantClientPlayerNotifyMysteryMerchant
-317=BattleNodeQueryObserver
+317=SceneSkillClientPlayerUpgradeSkill
 318=DataServiceReadAccountDirectory
 319=DataServiceCreateAccountRole
 320=DataServiceLookupAccountRole
@@ -342,3 +342,4 @@
 341=ClientPlayerJubaozhaiListSellerIncomes
 342=ClientPlayerJubaozhaiCreateWithdrawal
 343=ClientPlayerJubaozhaiGetWithdrawal
+344=BattleNodeQueryObserver

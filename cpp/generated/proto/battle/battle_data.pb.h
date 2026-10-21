@@ -104,6 +104,14 @@ extern const ::google::protobuf::internal::ClassDataFull BattleActorState_SkillC
 #else
 extern const BattleActorState_SkillCooldownRoundsEntry_DoNotUseGlobalsTypeInternal BattleActorState_SkillCooldownRoundsEntry_DoNotUse_globals_;
 #endif  // PROTOBUF_MESSAGE_GLOBALS
+class BattleActorState_SkillRanksEntry_DoNotUse;
+struct BattleActorState_SkillRanksEntry_DoNotUseGlobalsTypeInternal;
+#ifndef PROTOBUF_MESSAGE_GLOBALS
+extern BattleActorState_SkillRanksEntry_DoNotUseGlobalsTypeInternal BattleActorState_SkillRanksEntry_DoNotUse_globals_;
+extern const ::google::protobuf::internal::ClassDataFull BattleActorState_SkillRanksEntry_DoNotUse_class_data_;
+#else
+extern const BattleActorState_SkillRanksEntry_DoNotUseGlobalsTypeInternal BattleActorState_SkillRanksEntry_DoNotUse_globals_;
+#endif  // PROTOBUF_MESSAGE_GLOBALS
 class BattleBuffEntry;
 struct BattleBuffEntryGlobalsTypeInternal;
 #ifndef PROTOBUF_MESSAGE_GLOBALS
@@ -159,6 +167,14 @@ extern BattlePlayerSnapshotGlobalsTypeInternal BattlePlayerSnapshot_globals_;
 extern const ::google::protobuf::internal::ClassDataFull BattlePlayerSnapshot_class_data_;
 #else
 extern const BattlePlayerSnapshotGlobalsTypeInternal BattlePlayerSnapshot_globals_;
+#endif  // PROTOBUF_MESSAGE_GLOBALS
+class BattlePlayerSnapshot_SkillRanksEntry_DoNotUse;
+struct BattlePlayerSnapshot_SkillRanksEntry_DoNotUseGlobalsTypeInternal;
+#ifndef PROTOBUF_MESSAGE_GLOBALS
+extern BattlePlayerSnapshot_SkillRanksEntry_DoNotUseGlobalsTypeInternal BattlePlayerSnapshot_SkillRanksEntry_DoNotUse_globals_;
+extern const ::google::protobuf::internal::ClassDataFull BattlePlayerSnapshot_SkillRanksEntry_DoNotUse_class_data_;
+#else
+extern const BattlePlayerSnapshot_SkillRanksEntry_DoNotUseGlobalsTypeInternal BattlePlayerSnapshot_SkillRanksEntry_DoNotUse_globals_;
 #endif  // PROTOBUF_MESSAGE_GLOBALS
 class BattleRouting;
 struct BattleRoutingGlobalsTypeInternal;
@@ -742,6 +758,55 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED BattleRouting final : public ::goog
 };
 // -------------------------------------------------------------------
 
+class PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED BattlePlayerSnapshot_SkillRanksEntry_DoNotUse final
+    : public ::google::protobuf::internal::MapEntry<::uint32_t, ::uint32_t,
+                             ::google::protobuf::internal::WireFormatLite::TYPE_UINT32,
+                             ::google::protobuf::internal::WireFormatLite::TYPE_UINT32> {
+ public:
+  using SuperType =
+      ::google::protobuf::internal::MapEntry<::uint32_t, ::uint32_t,
+                      ::google::protobuf::internal::WireFormatLite::TYPE_UINT32,
+                      ::google::protobuf::internal::WireFormatLite::TYPE_UINT32>;
+  BattlePlayerSnapshot_SkillRanksEntry_DoNotUse();
+  template <typename = void>
+  explicit constexpr BattlePlayerSnapshot_SkillRanksEntry_DoNotUse(::google::protobuf::internal::ConstantInitialized,
+                           const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
+                               class_data);
+  explicit BattlePlayerSnapshot_SkillRanksEntry_DoNotUse(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static constexpr const void* PROTOBUF_NONNULL internal_message_globals() {
+    return &BattlePlayerSnapshot_SkillRanksEntry_DoNotUse_globals_;
+  }
+
+
+  static constexpr auto InternalGenerateClassData_(
+      const ::google::protobuf::MessageLite& prototype,
+      const ::google::protobuf::internal::TcParseTableBase* PROTOBUF_NULLABLE tc_table = nullptr);
+
+ private:
+  friend class ::google::protobuf::MessageLite;
+  friend struct ::TableStruct_proto_2fbattle_2fbattle_5fdata_2eproto;
+  friend ::google::protobuf::internal::PrivateAccess;
+  friend BattlePlayerSnapshot_SkillRanksEntry_DoNotUseGlobalsTypeInternal;
+
+  using ParseTableT_ =
+      ::google::protobuf::internal::TcParseTable<1, 2,
+                          0, 0,
+                          2>;
+  static constexpr ParseTableT_ InternalGenerateParseTable_(
+      const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL class_data);
+  friend class ::google::protobuf::internal::TcParser;
+  #ifndef PROTOBUF_MESSAGE_GLOBALS
+  static const ParseTableT_ _table_;
+  #endif
+
+  const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL GetClassData() const PROTOBUF_FINAL;
+  static void* PROTOBUF_NONNULL PlacementNew_(
+      const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static constexpr auto InternalNewImpl_();
+};
+// -------------------------------------------------------------------
+
 class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED BattlePetSettlementData final : public ::google::protobuf::Message
 /* @@protoc_insertion_point(class_definition:BattlePetSettlementData) */ {
  public:
@@ -798,7 +863,7 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED BattlePetSettlementData final : pub
   [[nodiscard]] static const BattlePetSettlementData& default_instance() {
     return *::google::protobuf::internal::MessageGlobalsBase::ToDefaultInstance<BattlePetSettlementData>(&BattlePetSettlementData_globals_);
   }
-  static constexpr int kIndexInFileMessages = 11;
+  static constexpr int kIndexInFileMessages = 13;
   friend void swap(BattlePetSettlementData& a, BattlePetSettlementData& b) { a.Swap(&b); }
   inline void Swap(BattlePetSettlementData* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -1035,7 +1100,7 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED BattleMonsterDefeat final : public 
   [[nodiscard]] static const BattleMonsterDefeat& default_instance() {
     return *::google::protobuf::internal::MessageGlobalsBase::ToDefaultInstance<BattleMonsterDefeat>(&BattleMonsterDefeat_globals_);
   }
-  static constexpr int kIndexInFileMessages = 9;
+  static constexpr int kIndexInFileMessages = 11;
   friend void swap(BattleMonsterDefeat& a, BattleMonsterDefeat& b) { a.Swap(&b); }
   inline void Swap(BattleMonsterDefeat* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -1461,7 +1526,7 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED BattleEventItem final : public ::go
   [[nodiscard]] static const BattleEventItem& default_instance() {
     return *::google::protobuf::internal::MessageGlobalsBase::ToDefaultInstance<BattleEventItem>(&BattleEventItem_globals_);
   }
-  static constexpr int kIndexInFileMessages = 8;
+  static constexpr int kIndexInFileMessages = 10;
   friend void swap(BattleEventItem& a, BattleEventItem& b) { a.Swap(&b); }
   inline void Swap(BattleEventItem* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -1567,6 +1632,7 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED BattleEventItem final : public ::go
     kTargetManaAfterFieldNumber = 13,
     kHitIndexFieldNumber = 12,
     kHitKindFieldNumber = 14,
+    kManaDeltaFieldNumber = 15,
   };
   // uint64 source_id = 2;
   void clear_source_id() ;
@@ -1708,11 +1774,23 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED BattleEventItem final : public ::go
   void _internal_set_hit_kind(::eBattleHitKind value);
 
   public:
+  // optional sint64 mana_delta = 15;
+  [[nodiscard]] bool has_mana_delta()
+      const;
+  void clear_mana_delta() ;
+  [[nodiscard]] ::int64_t mana_delta() const;
+  void set_mana_delta(::int64_t value);
+
+  private:
+  ::int64_t _internal_mana_delta() const;
+  void _internal_set_mana_delta(::int64_t value);
+
+  public:
   // @@protoc_insertion_point(class_scope:BattleEventItem)
  private:
   class _Internal;
   using ParseTableT_ =
-      ::google::protobuf::internal::TcParseTable<4, 14,
+      ::google::protobuf::internal::TcParseTable<4, 15,
                           0, 0,
                           2>;
   static constexpr ParseTableT_ InternalGenerateParseTable_(
@@ -1755,6 +1833,7 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED BattleEventItem final : public ::go
     ::uint64_t target_mana_after_;
     ::uint32_t hit_index_;
     int hit_kind_;
+    ::int64_t mana_delta_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
   union { Impl_ _impl_; };
@@ -1915,6 +1994,8 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED BattleBuffEntry final : public ::go
     kLayerFieldNumber = 3,
     kCasterIdFieldNumber = 5,
     kRemainRoundsFieldNumber = 4,
+    kAppliedRoundFieldNumber = 7,
+    kStatPercentFieldNumber = 6,
   };
   // uint64 buff_id = 1;
   void clear_buff_id() ;
@@ -1966,11 +2047,31 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED BattleBuffEntry final : public ::go
   void _internal_set_remain_rounds(::uint32_t value);
 
   public:
+  // uint32 applied_round = 7;
+  void clear_applied_round() ;
+  [[nodiscard]] ::uint32_t applied_round() const;
+  void set_applied_round(::uint32_t value);
+
+  private:
+  ::uint32_t _internal_applied_round() const;
+  void _internal_set_applied_round(::uint32_t value);
+
+  public:
+  // double stat_percent = 6;
+  void clear_stat_percent() ;
+  [[nodiscard]] double stat_percent() const;
+  void set_stat_percent(double value);
+
+  private:
+  double _internal_stat_percent() const;
+  void _internal_set_stat_percent(double value);
+
+  public:
   // @@protoc_insertion_point(class_scope:BattleBuffEntry)
  private:
   class _Internal;
   using ParseTableT_ =
-      ::google::protobuf::internal::TcParseTable<3, 5,
+      ::google::protobuf::internal::TcParseTable<3, 7,
                           0, 0,
                           2>;
   static constexpr ParseTableT_ InternalGenerateParseTable_(
@@ -2004,10 +2105,61 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED BattleBuffEntry final : public ::go
     ::uint32_t layer_;
     ::uint64_t caster_id_;
     ::uint32_t remain_rounds_;
+    ::uint32_t applied_round_;
+    double stat_percent_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
   union { Impl_ _impl_; };
   friend struct ::TableStruct_proto_2fbattle_2fbattle_5fdata_2eproto;
+};
+// -------------------------------------------------------------------
+
+class PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED BattleActorState_SkillRanksEntry_DoNotUse final
+    : public ::google::protobuf::internal::MapEntry<::uint32_t, ::uint32_t,
+                             ::google::protobuf::internal::WireFormatLite::TYPE_UINT32,
+                             ::google::protobuf::internal::WireFormatLite::TYPE_UINT32> {
+ public:
+  using SuperType =
+      ::google::protobuf::internal::MapEntry<::uint32_t, ::uint32_t,
+                      ::google::protobuf::internal::WireFormatLite::TYPE_UINT32,
+                      ::google::protobuf::internal::WireFormatLite::TYPE_UINT32>;
+  BattleActorState_SkillRanksEntry_DoNotUse();
+  template <typename = void>
+  explicit constexpr BattleActorState_SkillRanksEntry_DoNotUse(::google::protobuf::internal::ConstantInitialized,
+                           const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
+                               class_data);
+  explicit BattleActorState_SkillRanksEntry_DoNotUse(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static constexpr const void* PROTOBUF_NONNULL internal_message_globals() {
+    return &BattleActorState_SkillRanksEntry_DoNotUse_globals_;
+  }
+
+
+  static constexpr auto InternalGenerateClassData_(
+      const ::google::protobuf::MessageLite& prototype,
+      const ::google::protobuf::internal::TcParseTableBase* PROTOBUF_NULLABLE tc_table = nullptr);
+
+ private:
+  friend class ::google::protobuf::MessageLite;
+  friend struct ::TableStruct_proto_2fbattle_2fbattle_5fdata_2eproto;
+  friend ::google::protobuf::internal::PrivateAccess;
+  friend BattleActorState_SkillRanksEntry_DoNotUseGlobalsTypeInternal;
+
+  using ParseTableT_ =
+      ::google::protobuf::internal::TcParseTable<1, 2,
+                          0, 0,
+                          2>;
+  static constexpr ParseTableT_ InternalGenerateParseTable_(
+      const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL class_data);
+  friend class ::google::protobuf::internal::TcParser;
+  #ifndef PROTOBUF_MESSAGE_GLOBALS
+  static const ParseTableT_ _table_;
+  #endif
+
+  const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL GetClassData() const PROTOBUF_FINAL;
+  static void* PROTOBUF_NONNULL PlacementNew_(
+      const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static constexpr auto InternalNewImpl_();
 };
 // -------------------------------------------------------------------
 
@@ -2116,7 +2268,7 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED BattleActivityContext final : publi
   [[nodiscard]] static const BattleActivityContext& default_instance() {
     return *::google::protobuf::internal::MessageGlobalsBase::ToDefaultInstance<BattleActivityContext>(&BattleActivityContext_globals_);
   }
-  static constexpr int kIndexInFileMessages = 12;
+  static constexpr int kIndexInFileMessages = 14;
   friend void swap(BattleActivityContext& a, BattleActivityContext& b) { a.Swap(&b); }
   inline void Swap(BattleActivityContext* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -2389,7 +2541,7 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED BattleAction final : public ::googl
   [[nodiscard]] static const BattleAction& default_instance() {
     return *::google::protobuf::internal::MessageGlobalsBase::ToDefaultInstance<BattleAction>(&BattleAction_globals_);
   }
-  static constexpr int kIndexInFileMessages = 7;
+  static constexpr int kIndexInFileMessages = 9;
   friend void swap(BattleAction& a, BattleAction& b) { a.Swap(&b); }
   inline void Swap(BattleAction* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -2626,7 +2778,7 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED BattleSettlementData final : public
   [[nodiscard]] static const BattleSettlementData& default_instance() {
     return *::google::protobuf::internal::MessageGlobalsBase::ToDefaultInstance<BattleSettlementData>(&BattleSettlementData_globals_);
   }
-  static constexpr int kIndexInFileMessages = 10;
+  static constexpr int kIndexInFileMessages = 12;
   friend void swap(BattleSettlementData& a, BattleSettlementData& b) { a.Swap(&b); }
   inline void Swap(BattleSettlementData* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -3039,7 +3191,7 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED BattlePetSnapshot final : public ::
   [[nodiscard]] static const BattlePetSnapshot& default_instance() {
     return *::google::protobuf::internal::MessageGlobalsBase::ToDefaultInstance<BattlePetSnapshot>(&BattlePetSnapshot_globals_);
   }
-  static constexpr int kIndexInFileMessages = 4;
+  static constexpr int kIndexInFileMessages = 5;
   friend void swap(BattlePetSnapshot& a, BattlePetSnapshot& b) { a.Swap(&b); }
   inline void Swap(BattlePetSnapshot* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -3394,7 +3546,7 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED BattleActorState final : public ::g
   [[nodiscard]] static const BattleActorState& default_instance() {
     return *::google::protobuf::internal::MessageGlobalsBase::ToDefaultInstance<BattleActorState>(&BattleActorState_globals_);
   }
-  static constexpr int kIndexInFileMessages = 6;
+  static constexpr int kIndexInFileMessages = 8;
   friend void swap(BattleActorState& a, BattleActorState& b) { a.Swap(&b); }
   inline void Swap(BattleActorState* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -3513,6 +3665,7 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED BattleActorState final : public ::g
     kClassIdFieldNumber = 25,
     kGenderFieldNumber = 26,
     kSkillCooldownRoundsFieldNumber = 15,
+    kSkillRanksFieldNumber = 28,
   };
   // repeated .BattleBuffEntry buffs = 12;
   [[nodiscard]] int buffs_size()
@@ -3833,12 +3986,28 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED BattleActorState final : public ::g
   ::google::protobuf::Map<::uint32_t, ::uint32_t>* PROTOBUF_NONNULL _internal_mutable_skill_cooldown_rounds();
 
   public:
+  // map<uint32, uint32> skill_ranks = 28;
+  [[nodiscard]] int skill_ranks_size()
+      const;
+  private:
+  int _internal_skill_ranks_size() const;
+
+  public:
+  void clear_skill_ranks() ;
+  [[nodiscard]] const ::google::protobuf::Map<::uint32_t, ::uint32_t>& skill_ranks() const;
+  [[nodiscard]] ::google::protobuf::Map<::uint32_t, ::uint32_t>* PROTOBUF_NONNULL mutable_skill_ranks();
+
+  private:
+  const ::google::protobuf::Map<::uint32_t, ::uint32_t>& _internal_skill_ranks() const;
+  ::google::protobuf::Map<::uint32_t, ::uint32_t>* PROTOBUF_NONNULL _internal_mutable_skill_ranks();
+
+  public:
   // @@protoc_insertion_point(class_scope:BattleActorState)
  private:
   class _Internal;
   using ParseTableT_ =
-      ::google::protobuf::internal::TcParseTable<5, 27,
-                          4, 66,
+      ::google::protobuf::internal::TcParseTable<5, 28,
+                          5, 66,
                           2>;
   static constexpr ParseTableT_ InternalGenerateParseTable_(
       const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL class_data);
@@ -3894,6 +4063,7 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED BattleActorState final : public ::g
     ::uint32_t class_id_;
     ::uint32_t gender_;
     ::google::protobuf::internal::MapField<BattleActorState_SkillCooldownRoundsEntry_DoNotUse, ::uint32_t, ::uint32_t> skill_cooldown_rounds_;
+    ::google::protobuf::internal::MapField<BattleActorState_SkillRanksEntry_DoNotUse, ::uint32_t, ::uint32_t> skill_ranks_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
   union { Impl_ _impl_; };
@@ -3957,7 +4127,7 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED BattlePlayerSnapshot final : public
   [[nodiscard]] static const BattlePlayerSnapshot& default_instance() {
     return *::google::protobuf::internal::MessageGlobalsBase::ToDefaultInstance<BattlePlayerSnapshot>(&BattlePlayerSnapshot_globals_);
   }
-  static constexpr int kIndexInFileMessages = 3;
+  static constexpr int kIndexInFileMessages = 4;
   friend void swap(BattlePlayerSnapshot& a, BattlePlayerSnapshot& b) { a.Swap(&b); }
   inline void Swap(BattlePlayerSnapshot* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -4069,6 +4239,7 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED BattlePlayerSnapshot final : public
     kDefenseFieldNumber = 15,
     kClassIdFieldNumber = 18,
     kGenderFieldNumber = 19,
+    kSkillRanksFieldNumber = 21,
   };
   // repeated uint32 skill_table_ids = 7;
   [[nodiscard]] int skill_table_ids_size()
@@ -4346,12 +4517,28 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED BattlePlayerSnapshot final : public
   void _internal_set_gender(::uint32_t value);
 
   public:
+  // map<uint32, uint32> skill_ranks = 21;
+  [[nodiscard]] int skill_ranks_size()
+      const;
+  private:
+  int _internal_skill_ranks_size() const;
+
+  public:
+  void clear_skill_ranks() ;
+  [[nodiscard]] const ::google::protobuf::Map<::uint32_t, ::uint32_t>& skill_ranks() const;
+  [[nodiscard]] ::google::protobuf::Map<::uint32_t, ::uint32_t>* PROTOBUF_NONNULL mutable_skill_ranks();
+
+  private:
+  const ::google::protobuf::Map<::uint32_t, ::uint32_t>& _internal_skill_ranks() const;
+  ::google::protobuf::Map<::uint32_t, ::uint32_t>* PROTOBUF_NONNULL _internal_mutable_skill_ranks();
+
+  public:
   // @@protoc_insertion_point(class_scope:BattlePlayerSnapshot)
  private:
   class _Internal;
   using ParseTableT_ =
-      ::google::protobuf::internal::TcParseTable<5, 20,
-                          6, 86,
+      ::google::protobuf::internal::TcParseTable<5, 21,
+                          7, 86,
                           2>;
   static constexpr ParseTableT_ InternalGenerateParseTable_(
       const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL class_data);
@@ -4400,6 +4587,7 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED BattlePlayerSnapshot final : public
     ::uint64_t defense_;
     ::uint32_t class_id_;
     ::uint32_t gender_;
+    ::google::protobuf::internal::MapField<BattlePlayerSnapshot_SkillRanksEntry_DoNotUse, ::uint32_t, ::uint32_t> skill_ranks_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
   union { Impl_ _impl_; };
@@ -4770,6 +4958,54 @@ inline void BattleBuffEntry::_internal_set_caster_id(::uint64_t value) {
   _impl_.caster_id_ = value;
 }
 
+// double stat_percent = 6;
+inline void BattleBuffEntry::clear_stat_percent() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.stat_percent_ = 0;
+  ClearHasBit(_impl_._has_bits_[0], 0x00000040U);
+}
+inline double BattleBuffEntry::stat_percent() const {
+  // @@protoc_insertion_point(field_get:BattleBuffEntry.stat_percent)
+  return _internal_stat_percent();
+}
+inline void BattleBuffEntry::set_stat_percent(double value) {
+  _internal_set_stat_percent(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000040U);
+  // @@protoc_insertion_point(field_set:BattleBuffEntry.stat_percent)
+}
+inline double BattleBuffEntry::_internal_stat_percent() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.stat_percent_;
+}
+inline void BattleBuffEntry::_internal_set_stat_percent(double value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.stat_percent_ = value;
+}
+
+// uint32 applied_round = 7;
+inline void BattleBuffEntry::clear_applied_round() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.applied_round_ = 0u;
+  ClearHasBit(_impl_._has_bits_[0], 0x00000020U);
+}
+inline ::uint32_t BattleBuffEntry::applied_round() const {
+  // @@protoc_insertion_point(field_get:BattleBuffEntry.applied_round)
+  return _internal_applied_round();
+}
+inline void BattleBuffEntry::set_applied_round(::uint32_t value) {
+  _internal_set_applied_round(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000020U);
+  // @@protoc_insertion_point(field_set:BattleBuffEntry.applied_round)
+}
+inline ::uint32_t BattleBuffEntry::_internal_applied_round() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.applied_round_;
+}
+inline void BattleBuffEntry::_internal_set_applied_round(::uint32_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.applied_round_ = value;
+}
+
 // -------------------------------------------------------------------
 
 // BattleItemEntry
@@ -4821,6 +5057,8 @@ inline void BattleItemEntry::_internal_set_count(::uint64_t value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.count_ = value;
 }
+
+// -------------------------------------------------------------------
 
 // -------------------------------------------------------------------
 
@@ -5758,6 +5996,37 @@ inline void BattlePlayerSnapshot::set_allocated_combat(::CombatAttributes* PROTO
   // @@protoc_insertion_point(field_set_allocated:BattlePlayerSnapshot.combat)
 }
 
+// map<uint32, uint32> skill_ranks = 21;
+inline int BattlePlayerSnapshot::_internal_skill_ranks_size() const {
+  return _internal_skill_ranks().size();
+}
+inline int BattlePlayerSnapshot::skill_ranks_size() const {
+  return _internal_skill_ranks_size();
+}
+inline void BattlePlayerSnapshot::clear_skill_ranks() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.skill_ranks_.Clear();
+  ClearHasBit(_impl_._has_bits_[0], 0x00100000U);
+}
+inline const ::google::protobuf::Map<::uint32_t, ::uint32_t>& BattlePlayerSnapshot::_internal_skill_ranks() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.skill_ranks_.GetMap();
+}
+inline const ::google::protobuf::Map<::uint32_t, ::uint32_t>& BattlePlayerSnapshot::skill_ranks() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_map:BattlePlayerSnapshot.skill_ranks)
+  return _internal_skill_ranks();
+}
+inline ::google::protobuf::Map<::uint32_t, ::uint32_t>* PROTOBUF_NONNULL BattlePlayerSnapshot::_internal_mutable_skill_ranks() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  return _impl_.skill_ranks_.MutableMap();
+}
+inline ::google::protobuf::Map<::uint32_t, ::uint32_t>* PROTOBUF_NONNULL BattlePlayerSnapshot::mutable_skill_ranks()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  SetHasBit(_impl_._has_bits_[0], 0x00100000U);
+  // @@protoc_insertion_point(field_mutable_map:BattlePlayerSnapshot.skill_ranks)
+  return _internal_mutable_skill_ranks();
+}
+
 // -------------------------------------------------------------------
 
 // BattlePetSnapshot
@@ -6185,6 +6454,8 @@ BattlePetSnapshot::_internal_mutable_skill_table_ids() {
   ::google::protobuf::internal::TSanRead(&_impl_);
   return &_impl_.skill_table_ids_;
 }
+
+// -------------------------------------------------------------------
 
 // -------------------------------------------------------------------
 
@@ -7123,6 +7394,37 @@ inline void BattleActorState::set_allocated_combat(::CombatAttributes* PROTOBUF_
   // @@protoc_insertion_point(field_set_allocated:BattleActorState.combat)
 }
 
+// map<uint32, uint32> skill_ranks = 28;
+inline int BattleActorState::_internal_skill_ranks_size() const {
+  return _internal_skill_ranks().size();
+}
+inline int BattleActorState::skill_ranks_size() const {
+  return _internal_skill_ranks_size();
+}
+inline void BattleActorState::clear_skill_ranks() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.skill_ranks_.Clear();
+  ClearHasBit(_impl_._has_bits_[0], 0x08000000U);
+}
+inline const ::google::protobuf::Map<::uint32_t, ::uint32_t>& BattleActorState::_internal_skill_ranks() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.skill_ranks_.GetMap();
+}
+inline const ::google::protobuf::Map<::uint32_t, ::uint32_t>& BattleActorState::skill_ranks() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_map:BattleActorState.skill_ranks)
+  return _internal_skill_ranks();
+}
+inline ::google::protobuf::Map<::uint32_t, ::uint32_t>* PROTOBUF_NONNULL BattleActorState::_internal_mutable_skill_ranks() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  return _impl_.skill_ranks_.MutableMap();
+}
+inline ::google::protobuf::Map<::uint32_t, ::uint32_t>* PROTOBUF_NONNULL BattleActorState::mutable_skill_ranks()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  SetHasBit(_impl_._has_bits_[0], 0x08000000U);
+  // @@protoc_insertion_point(field_mutable_map:BattleActorState.skill_ranks)
+  return _internal_mutable_skill_ranks();
+}
+
 // -------------------------------------------------------------------
 
 // BattleAction
@@ -7561,6 +7863,34 @@ inline ::eBattleHitKind BattleEventItem::_internal_hit_kind() const {
 inline void BattleEventItem::_internal_set_hit_kind(::eBattleHitKind value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.hit_kind_ = value;
+}
+
+// optional sint64 mana_delta = 15;
+inline bool BattleEventItem::has_mana_delta() const {
+  bool value = CheckHasBit(_impl_._has_bits_[0], 0x00004000U);
+  return value;
+}
+inline void BattleEventItem::clear_mana_delta() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.mana_delta_ = ::int64_t{0};
+  ClearHasBit(_impl_._has_bits_[0], 0x00004000U);
+}
+inline ::int64_t BattleEventItem::mana_delta() const {
+  // @@protoc_insertion_point(field_get:BattleEventItem.mana_delta)
+  return _internal_mana_delta();
+}
+inline void BattleEventItem::set_mana_delta(::int64_t value) {
+  _internal_set_mana_delta(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00004000U);
+  // @@protoc_insertion_point(field_set:BattleEventItem.mana_delta)
+}
+inline ::int64_t BattleEventItem::_internal_mana_delta() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.mana_delta_;
+}
+inline void BattleEventItem::_internal_set_mana_delta(::int64_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.mana_delta_ = value;
 }
 
 // -------------------------------------------------------------------

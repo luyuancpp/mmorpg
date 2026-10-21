@@ -469,12 +469,18 @@ func (x *BattleRouting) GetZoneId() uint32 {
 
 // ---- 参战 buff(时间维度已换算为回合,见设计文档 §5.1 换算策略) ----
 type BattleBuffEntry struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	BuffId        uint64                 `protobuf:"varint,1,opt,name=buff_id,json=buffId,proto3" json:"buff_id,omitempty"`                   // buff 实例 SnowFlake id
-	BuffTableId   uint32                 `protobuf:"varint,2,opt,name=buff_table_id,json=buffTableId,proto3" json:"buff_table_id,omitempty"`  // BuffTable 表 id
-	Layer         uint32                 `protobuf:"varint,3,opt,name=layer,proto3" json:"layer,omitempty"`                                   // 叠层数
-	RemainRounds  uint32                 `protobuf:"varint,4,opt,name=remain_rounds,json=remainRounds,proto3" json:"remain_rounds,omitempty"` // 剩余回合(0 = 无限持续)
-	CasterId      uint64                 `protobuf:"varint,5,opt,name=caster_id,json=casterId,proto3" json:"caster_id,omitempty"`
+	state        protoimpl.MessageState `protogen:"open.v1"`
+	BuffId       uint64                 `protobuf:"varint,1,opt,name=buff_id,json=buffId,proto3" json:"buff_id,omitempty"`                   // buff 实例 SnowFlake id
+	BuffTableId  uint32                 `protobuf:"varint,2,opt,name=buff_table_id,json=buffTableId,proto3" json:"buff_table_id,omitempty"`  // BuffTable 表 id
+	Layer        uint32                 `protobuf:"varint,3,opt,name=layer,proto3" json:"layer,omitempty"`                                   // 叠层数
+	RemainRounds uint32                 `protobuf:"varint,4,opt,name=remain_rounds,json=remainRounds,proto3" json:"remain_rounds,omitempty"` // 剩余回合(0 = 无限持续)
+	CasterId     uint64                 `protobuf:"varint,5,opt,name=caster_id,json=casterId,proto3" json:"caster_id,omitempty"`
+	// 四职业技能的属性增减(docs/design/class-skills.md §6.4):带符号比例,0.25 = +25%、-0.15 = -15%。
+	// 施加时按施法者当时的技能等级算定并存在这里,之后升级 / 换人都不改它;0 = 不是这类 buff(老 buff 全为 0)。
+	// 改的是哪一项由 Buff 表的 buff_type 决定(turn_battle_constants.h ClassSkillStatOfBuffType)。
+	StatPercent float64 `protobuf:"fixed64,6,opt,name=stat_percent,json=statPercent,proto3" json:"stat_percent,omitempty"`
+	// 施加(或刷新)它的回合号。回合末结算时不扣它这一回合,所以"持续 2 回合"是完整的 2 回合;0 = 老口径(当回合末就扣)。
+	AppliedRound  uint32 `protobuf:"varint,7,opt,name=applied_round,json=appliedRound,proto3" json:"applied_round,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -540,6 +546,20 @@ func (x *BattleBuffEntry) GetRemainRounds() uint32 {
 func (x *BattleBuffEntry) GetCasterId() uint64 {
 	if x != nil {
 		return x.CasterId
+	}
+	return 0
+}
+
+func (x *BattleBuffEntry) GetStatPercent() float64 {
+	if x != nil {
+		return x.StatPercent
+	}
+	return 0
+}
+
+func (x *BattleBuffEntry) GetAppliedRound() uint32 {
+	if x != nil {
+		return x.AppliedRound
 	}
 	return 0
 }
@@ -623,7 +643,11 @@ type BattlePlayerSnapshot struct {
 	Gender       uint32               `protobuf:"varint,19,opt,name=gender,proto3" json:"gender,omitempty"`
 	// 战斗类属性的装备加成(必杀 / 连击 / 反击 / 反震 / 抗性等,equipment-attributes.md §3.3)。
 	// scene 侧原样拷自 DerivedAttributesComp.combat;不带 = 全 0 = 引擎行为与装备系统落地前逐位一致。
-	Combat        *component.CombatAttributes `protobuf:"bytes,20,opt,name=combat,proto3" json:"combat,omitempty"`
+	Combat *component.CombatAttributes `protobuf:"bytes,20,opt,name=combat,proto3" json:"combat,omitempty"`
+	// 已学职业技能的生效等级(skill_table_id -> 等级,含被动;docs/design/class-skills.md §6.1)。
+	// scene 按职业 / 角色等级夹好再填,引擎再按同一规则复核一次。旧通用技能不进这里。
+	// 被动的属性加成 scene 已算进上面的派生属性,引擎只消费战斗专用被动(治疗加成),不重复叠加。
+	SkillRanks    map[uint32]uint32 `protobuf:"bytes,21,rep,name=skill_ranks,json=skillRanks,proto3" json:"skill_ranks,omitempty" protobuf_key:"varint,1,opt,name=key" protobuf_val:"varint,2,opt,name=value"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -798,6 +822,13 @@ func (x *BattlePlayerSnapshot) GetCombat() *component.CombatAttributes {
 	return nil
 }
 
+func (x *BattlePlayerSnapshot) GetSkillRanks() map[uint32]uint32 {
+	if x != nil {
+		return x.SkillRanks
+	}
+	return nil
+}
+
 // ---- 宝宝战斗快照:与主人同队、独立行动的战斗单位(设计文档 player-pet.md §5)----
 // 属性口径与玩家快照逐项对齐:base_attributes 带 speed(出手序)与当前 HP/MP,
 // max_* 与物伤/法伤/防御来自 PetSystem 现算的二级属性。
@@ -966,7 +997,9 @@ type BattleActorState struct {
 	Gender              uint32                        `protobuf:"varint,26,opt,name=gender,proto3" json:"gender,omitempty"`
 	// 战斗类属性的装备加成(来自快照;怪物 / 宝宝全 0)。只供引擎判定用:
 	// 下发给客户端的状态快照里会被清空,不暴露对手的装备概率。
-	Combat        *component.CombatAttributes `protobuf:"bytes,27,opt,name=combat,proto3" json:"combat,omitempty"`
+	Combat *component.CombatAttributes `protobuf:"bytes,27,opt,name=combat,proto3" json:"combat,omitempty"`
+	// 本局职业技能生效等级(来自快照 skill_ranks,引擎复核后的值;怪物 / 宝宝为空)。
+	SkillRanks    map[uint32]uint32 `protobuf:"bytes,28,rep,name=skill_ranks,json=skillRanks,proto3" json:"skill_ranks,omitempty" protobuf_key:"varint,1,opt,name=key" protobuf_val:"varint,2,opt,name=value"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1190,6 +1223,13 @@ func (x *BattleActorState) GetCombat() *component.CombatAttributes {
 	return nil
 }
 
+func (x *BattleActorState) GetSkillRanks() map[uint32]uint32 {
+	if x != nil {
+		return x.SkillRanks
+	}
+	return nil
+}
+
 type BattleAction struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	ActionType    EBattleActionType      `protobuf:"varint,1,opt,name=action_type,json=actionType,proto3,enum=EBattleActionType" json:"action_type,omitempty"`
@@ -1274,8 +1314,12 @@ type BattleEventItem struct {
 	HitIndex          uint32                 `protobuf:"varint,12,opt,name=hit_index,json=hitIndex,proto3" json:"hit_index,omitempty"`                        // 多段攻击的段序(0 起)
 	TargetManaAfter   uint64                 `protobuf:"varint,13,opt,name=target_mana_after,json=targetManaAfter,proto3" json:"target_mana_after,omitempty"` // 目标结算后法力(BATTLE_EVENT_MANA 与技能耗蓝演出用)
 	HitKind           EBattleHitKind         `protobuf:"varint,14,opt,name=hit_kind,json=hitKind,proto3,enum=EBattleHitKind" json:"hit_kind,omitempty"`       // 连击 / 反击 / 反震标注;普通出手为 0
-	unknownFields     protoimpl.UnknownFields
-	sizeCache         protoimpl.SizeCache
+	// 法力的实际变化量(带符号):负 = 消耗,正 = 恢复,0 = 实际没变(例如满蓝回蓝)。
+	// 只在法力真的被结算过的事件上带(MANA / ITEM);value 仍是绝对值,老客户端不读本字段照旧。
+	// target_mana_after 才是权威终值,客户端演出与它不一致时以它为准。
+	ManaDelta     *int64 `protobuf:"zigzag64,15,opt,name=mana_delta,json=manaDelta,proto3,oneof" json:"mana_delta,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *BattleEventItem) Reset() {
@@ -1404,6 +1448,13 @@ func (x *BattleEventItem) GetHitKind() EBattleHitKind {
 		return x.HitKind
 	}
 	return EBattleHitKind_BATTLE_HIT_NORMAL
+}
+
+func (x *BattleEventItem) GetManaDelta() int64 {
+	if x != nil && x.ManaDelta != nil {
+		return *x.ManaDelta
+	}
+	return 0
 }
 
 // ---- 单个玩家的结算数据(battle -> scene,scene 是唯一应用者) ----
@@ -1790,16 +1841,18 @@ const file_proto_battle_battle_data_proto_rawDesc = "" +
 	"\x10gate_instance_id\x18\x03 \x01(\tR\x0egateInstanceId\x12\"\n" +
 	"\rscene_node_id\x18\x04 \x01(\rR\vsceneNodeId\x12*\n" +
 	"\x11scene_instance_id\x18\x05 \x01(\tR\x0fsceneInstanceId\x12\x17\n" +
-	"\azone_id\x18\x06 \x01(\rR\x06zoneId\"\xa6\x01\n" +
+	"\azone_id\x18\x06 \x01(\rR\x06zoneId\"\xee\x01\n" +
 	"\x0fBattleBuffEntry\x12\x17\n" +
 	"\abuff_id\x18\x01 \x01(\x04R\x06buffId\x12\"\n" +
 	"\rbuff_table_id\x18\x02 \x01(\rR\vbuffTableId\x12\x14\n" +
 	"\x05layer\x18\x03 \x01(\rR\x05layer\x12#\n" +
 	"\rremain_rounds\x18\x04 \x01(\rR\fremainRounds\x12\x1b\n" +
-	"\tcaster_id\x18\x05 \x01(\x04R\bcasterId\"K\n" +
+	"\tcaster_id\x18\x05 \x01(\x04R\bcasterId\x12!\n" +
+	"\fstat_percent\x18\x06 \x01(\x01R\vstatPercent\x12#\n" +
+	"\rapplied_round\x18\a \x01(\rR\fappliedRound\"K\n" +
 	"\x0fBattleItemEntry\x12\"\n" +
 	"\ritem_table_id\x18\x01 \x01(\rR\vitemTableId\x12\x14\n" +
-	"\x05count\x18\x02 \x01(\x04R\x05count\"\xe1\x05\n" +
+	"\x05count\x18\x02 \x01(\x04R\x05count\"\xe8\x06\n" +
 	"\x14BattlePlayerSnapshot\x12\x1b\n" +
 	"\tplayer_id\x18\x01 \x01(\x04R\bplayerId\x12\x1f\n" +
 	"\vplayer_name\x18\x02 \x01(\tR\n" +
@@ -1824,7 +1877,12 @@ const file_proto_battle_battle_data_proto_rawDesc = "" +
 	"\rappearance_id\x18\x11 \x01(\tR\fappearanceId\x12\x19\n" +
 	"\bclass_id\x18\x12 \x01(\rR\aclassId\x12\x16\n" +
 	"\x06gender\x18\x13 \x01(\rR\x06gender\x12)\n" +
-	"\x06combat\x18\x14 \x01(\v2\x11.CombatAttributesR\x06combat\"\xab\x03\n" +
+	"\x06combat\x18\x14 \x01(\v2\x11.CombatAttributesR\x06combat\x12F\n" +
+	"\vskill_ranks\x18\x15 \x03(\v2%.BattlePlayerSnapshot.SkillRanksEntryR\n" +
+	"skillRanks\x1a=\n" +
+	"\x0fSkillRanksEntry\x12\x10\n" +
+	"\x03key\x18\x01 \x01(\rR\x03key\x12\x14\n" +
+	"\x05value\x18\x02 \x01(\rR\x05value:\x028\x01\"\xab\x03\n" +
 	"\x11BattlePetSnapshot\x12\x15\n" +
 	"\x06pet_id\x18\x01 \x01(\x04R\x05petId\x12&\n" +
 	"\x0fowner_player_id\x18\x02 \x01(\x04R\rownerPlayerId\x12\x19\n" +
@@ -1840,7 +1898,7 @@ const file_proto_battle_battle_data_proto_rawDesc = "" +
 	"\fmagic_attack\x18\n" +
 	" \x01(\x04R\vmagicAttack\x12\x18\n" +
 	"\adefense\x18\v \x01(\x04R\adefense\x12&\n" +
-	"\x0fskill_table_ids\x18\f \x03(\rR\rskillTableIds\"\x93\b\n" +
+	"\x0fskill_table_ids\x18\f \x03(\rR\rskillTableIds\"\x96\t\n" +
 	"\x10BattleActorState\x12\x19\n" +
 	"\bactor_id\x18\x01 \x01(\x04R\aactorId\x120\n" +
 	"\n" +
@@ -1875,8 +1933,13 @@ const file_proto_battle_battle_data_proto_rawDesc = "" +
 	"\rappearance_id\x18\x18 \x01(\tR\fappearanceId\x12\x19\n" +
 	"\bclass_id\x18\x19 \x01(\rR\aclassId\x12\x16\n" +
 	"\x06gender\x18\x1a \x01(\rR\x06gender\x12)\n" +
-	"\x06combat\x18\x1b \x01(\v2\x11.CombatAttributesR\x06combat\x1aF\n" +
+	"\x06combat\x18\x1b \x01(\v2\x11.CombatAttributesR\x06combat\x12B\n" +
+	"\vskill_ranks\x18\x1c \x03(\v2!.BattleActorState.SkillRanksEntryR\n" +
+	"skillRanks\x1aF\n" +
 	"\x18SkillCooldownRoundsEntry\x12\x10\n" +
+	"\x03key\x18\x01 \x01(\rR\x03key\x12\x14\n" +
+	"\x05value\x18\x02 \x01(\rR\x05value:\x028\x01\x1a=\n" +
+	"\x0fSkillRanksEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\rR\x03key\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\rR\x05value:\x028\x01\"\xaa\x01\n" +
 	"\fBattleAction\x123\n" +
@@ -1884,7 +1947,7 @@ const file_proto_battle_battle_data_proto_rawDesc = "" +
 	"actionType\x12$\n" +
 	"\x0eskill_table_id\x18\x02 \x01(\rR\fskillTableId\x12\x1b\n" +
 	"\ttarget_id\x18\x03 \x01(\x04R\btargetId\x12\"\n" +
-	"\ritem_table_id\x18\x04 \x01(\rR\vitemTableId\"\xfc\x03\n" +
+	"\ritem_table_id\x18\x04 \x01(\rR\vitemTableId\"\xaf\x04\n" +
 	"\x0fBattleEventItem\x120\n" +
 	"\n" +
 	"event_type\x18\x01 \x01(\x0e2\x11.eBattleEventTypeR\teventType\x12\x1b\n" +
@@ -1902,7 +1965,10 @@ const file_proto_battle_battle_data_proto_rawDesc = "" +
 	"\bgroup_id\x18\v \x01(\rR\agroupId\x12\x1b\n" +
 	"\thit_index\x18\f \x01(\rR\bhitIndex\x12*\n" +
 	"\x11target_mana_after\x18\r \x01(\x04R\x0ftargetManaAfter\x12*\n" +
-	"\bhit_kind\x18\x0e \x01(\x0e2\x0f.eBattleHitKindR\ahitKind\"W\n" +
+	"\bhit_kind\x18\x0e \x01(\x0e2\x0f.eBattleHitKindR\ahitKind\x12\"\n" +
+	"\n" +
+	"mana_delta\x18\x0f \x01(\x12H\x00R\tmanaDelta\x88\x01\x01B\r\n" +
+	"\v_mana_delta\"W\n" +
 	"\x13BattleMonsterDefeat\x12*\n" +
 	"\x11monster_config_id\x18\x01 \x01(\rR\x0fmonsterConfigId\x12\x14\n" +
 	"\x05count\x18\x02 \x01(\rR\x05count\"\xba\x04\n" +
@@ -1995,7 +2061,7 @@ func file_proto_battle_battle_data_proto_rawDescGZIP() []byte {
 }
 
 var file_proto_battle_battle_data_proto_enumTypes = make([]protoimpl.EnumInfo, 6)
-var file_proto_battle_battle_data_proto_msgTypes = make([]protoimpl.MessageInfo, 13)
+var file_proto_battle_battle_data_proto_msgTypes = make([]protoimpl.MessageInfo, 15)
 var file_proto_battle_battle_data_proto_goTypes = []any{
 	(EBattleActorType)(0),                // 0: eBattleActorType
 	(EBattleActionType)(0),               // 1: eBattleActionType
@@ -2015,37 +2081,41 @@ var file_proto_battle_battle_data_proto_goTypes = []any{
 	(*BattleSettlementData)(nil),         // 15: BattleSettlementData
 	(*BattlePetSettlementData)(nil),      // 16: BattlePetSettlementData
 	(*BattleActivityContext)(nil),        // 17: BattleActivityContext
-	nil,                                  // 18: BattleActorState.SkillCooldownRoundsEntry
-	(*component.BaseAttributesComp)(nil), // 19: BaseAttributesComp
-	(*component.CombatAttributes)(nil),   // 20: CombatAttributes
+	nil,                                  // 18: BattlePlayerSnapshot.SkillRanksEntry
+	nil,                                  // 19: BattleActorState.SkillCooldownRoundsEntry
+	nil,                                  // 20: BattleActorState.SkillRanksEntry
+	(*component.BaseAttributesComp)(nil), // 21: BaseAttributesComp
+	(*component.CombatAttributes)(nil),   // 22: CombatAttributes
 }
 var file_proto_battle_battle_data_proto_depIdxs = []int32{
-	19, // 0: BattlePlayerSnapshot.base_attributes:type_name -> BaseAttributesComp
+	21, // 0: BattlePlayerSnapshot.base_attributes:type_name -> BaseAttributesComp
 	7,  // 1: BattlePlayerSnapshot.buffs:type_name -> BattleBuffEntry
 	8,  // 2: BattlePlayerSnapshot.items:type_name -> BattleItemEntry
 	6,  // 3: BattlePlayerSnapshot.routing:type_name -> BattleRouting
 	10, // 4: BattlePlayerSnapshot.pets:type_name -> BattlePetSnapshot
-	20, // 5: BattlePlayerSnapshot.combat:type_name -> CombatAttributes
-	19, // 6: BattlePetSnapshot.base_attributes:type_name -> BaseAttributesComp
-	0,  // 7: BattleActorState.actor_type:type_name -> eBattleActorType
-	19, // 8: BattleActorState.attributes:type_name -> BaseAttributesComp
-	7,  // 9: BattleActorState.buffs:type_name -> BattleBuffEntry
-	18, // 10: BattleActorState.skill_cooldown_rounds:type_name -> BattleActorState.SkillCooldownRoundsEntry
-	20, // 11: BattleActorState.combat:type_name -> CombatAttributes
-	1,  // 12: BattleAction.action_type:type_name -> eBattleActionType
-	2,  // 13: BattleEventItem.event_type:type_name -> eBattleEventType
-	3,  // 14: BattleEventItem.hit_kind:type_name -> eBattleHitKind
-	4,  // 15: BattleSettlementData.outcome:type_name -> eBattleOutcome
-	8,  // 16: BattleSettlementData.items_consumed:type_name -> BattleItemEntry
-	8,  // 17: BattleSettlementData.items_gained:type_name -> BattleItemEntry
-	16, // 18: BattleSettlementData.pets:type_name -> BattlePetSettlementData
-	14, // 19: BattleSettlementData.defeated_monsters:type_name -> BattleMonsterDefeat
-	5,  // 20: BattleActivityContext.kind:type_name -> eBattleActivityKind
-	21, // [21:21] is the sub-list for method output_type
-	21, // [21:21] is the sub-list for method input_type
-	21, // [21:21] is the sub-list for extension type_name
-	21, // [21:21] is the sub-list for extension extendee
-	0,  // [0:21] is the sub-list for field type_name
+	22, // 5: BattlePlayerSnapshot.combat:type_name -> CombatAttributes
+	18, // 6: BattlePlayerSnapshot.skill_ranks:type_name -> BattlePlayerSnapshot.SkillRanksEntry
+	21, // 7: BattlePetSnapshot.base_attributes:type_name -> BaseAttributesComp
+	0,  // 8: BattleActorState.actor_type:type_name -> eBattleActorType
+	21, // 9: BattleActorState.attributes:type_name -> BaseAttributesComp
+	7,  // 10: BattleActorState.buffs:type_name -> BattleBuffEntry
+	19, // 11: BattleActorState.skill_cooldown_rounds:type_name -> BattleActorState.SkillCooldownRoundsEntry
+	22, // 12: BattleActorState.combat:type_name -> CombatAttributes
+	20, // 13: BattleActorState.skill_ranks:type_name -> BattleActorState.SkillRanksEntry
+	1,  // 14: BattleAction.action_type:type_name -> eBattleActionType
+	2,  // 15: BattleEventItem.event_type:type_name -> eBattleEventType
+	3,  // 16: BattleEventItem.hit_kind:type_name -> eBattleHitKind
+	4,  // 17: BattleSettlementData.outcome:type_name -> eBattleOutcome
+	8,  // 18: BattleSettlementData.items_consumed:type_name -> BattleItemEntry
+	8,  // 19: BattleSettlementData.items_gained:type_name -> BattleItemEntry
+	16, // 20: BattleSettlementData.pets:type_name -> BattlePetSettlementData
+	14, // 21: BattleSettlementData.defeated_monsters:type_name -> BattleMonsterDefeat
+	5,  // 22: BattleActivityContext.kind:type_name -> eBattleActivityKind
+	23, // [23:23] is the sub-list for method output_type
+	23, // [23:23] is the sub-list for method input_type
+	23, // [23:23] is the sub-list for extension type_name
+	23, // [23:23] is the sub-list for extension extendee
+	0,  // [0:23] is the sub-list for field type_name
 }
 
 func init() { file_proto_battle_battle_data_proto_init() }
@@ -2053,13 +2123,14 @@ func file_proto_battle_battle_data_proto_init() {
 	if File_proto_battle_battle_data_proto != nil {
 		return
 	}
+	file_proto_battle_battle_data_proto_msgTypes[7].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_proto_battle_battle_data_proto_rawDesc), len(file_proto_battle_battle_data_proto_rawDesc)),
 			NumEnums:      6,
-			NumMessages:   13,
+			NumMessages:   15,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

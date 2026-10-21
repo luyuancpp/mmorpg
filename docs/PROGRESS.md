@@ -13664,6 +13664,18 @@ PROGRESS 一直没有条目)。上面 2026-09-21 条里"第 7–9 步未跑""修
   4. `gen_docs_index.py --check` 的判据同上一条更正:看本条改过的文档,README 条目与首个 `#` 标题逐字一致即可;整体退出 1 的原因与本条无关。
 - **G4a 状态**:修订与收尾全部完成。剩下的只有两件:§25.2 的 12 处待负责人拍板;各批落码(第 1a 批门禁是「与 L-02 的先后」拍板,即原 §13 第 10 条,且改动超过 30 个文件需授权)。
 - **Java 版(AGENTS §12)**:注释与文档在 Java 不适用;对应 Java 版本 0.1.0-SNAPSHOT,Java 仓 PARITY 不加行,G4a 那一行不变。
+## 2026-10-19 Claude:四职业 32 技能接进服务端(查询 / 学习修习 / 战斗施放),未 proto-gen、未编译
+
+- 分支 `feat/class-skills`(工作树 `E:/work/xuanming-server-mmo-wt-skills`,基于 origin/main `c63b22dca2`),设计 [class-skills.md](design/class-skills.md),
+  交 Codex 的命令与 §7 清单对照 [class-skills-handoff-20261019.md](handoff/class-skills-handoff-20261019.md)。
+- 配表:Skill 追加 21 列 + 32 行(1101..1408)、Buff 6 行、Class 1~4 初始技能改为本职业首主动 + 首被动、Tip `skill_error` 7007..7013;沙盒导表拷回(manifest v30)。
+- 协议:`PlayerSkillComp.rank=3`;`ListSkillsResponse` 3..6 + `SkillCatalogEntry`;`UpgradeSkill`(消息号 317,已在 message_id.txt 登记);
+  战斗 `BattleBuffEntry` 6/7、`BattlePlayerSnapshot.skill_ranks=21`、`BattleActorState.skill_ranks=28`、`BattleEventItem.mana_delta=15`。
+- 逻辑:修掉 RegisterPlayer 遍历所有职业种子;加载期整理 + 补初始技能;技能书 / 修习(1 / 10 次、乐观等级防重放、战斗 / 冻结 / 交接拒写);
+  被动只进 scene 属性重算(`kSkillChanged`),治疗加成只进引擎;快照带等级;引擎实现职业技能的目标 / 冷却 / 比例耗蓝 / 等级系数 / 治疗 / 回蓝 / 驱散 / 增减益 / 先手 / mana_delta。
+- 测试已写未跑:engine 5 + 17 + 真表契约 1,skill_test 13;skill_test 补链 battle.lib / rdkafka.lib。
+- 未做:宠物技能、截图新机制、联机冒烟;**proto-gen 必须由 Codex 先编生成器再跑**(仓内 exe 旧于 10-19 生成器源码)。
+- Java 版(AGENTS §12):本机没有 `D:/luyuan/xuanming-server-mmo`,未登记 `PARITY.md`,待做(proto 字段号、消息号 317、tip 7007..7013、Skill/Buff/Class 数据须同批对齐)。对应 Java 版本号:无。
 ## 2026-10-19 真钱充值设计(苹果 IAP / Google Play / 国内安卓 / 小游戏)(Claude,只有设计,未写代码)
 
 - **结论**:新增设计稿 `docs/design/payment-recharge.md`(第 4 版,已登记 `tools/scripts/gen_docs_index.py` 与 `docs/README.md`)。用户 10-19 拍板国内、海外都要,先做苹果 + 谷歌骨架,国内渠道第二批;目前没有任何开发者账号,先用本地 mock 渠道跑通。
@@ -14547,3 +14559,56 @@ PROGRESS 一直没有条目)。上面 2026-09-21 条里"第 7–9 步未跑""修
 - 恢复串行增量构建后，proto、muduo、thread_context、infra、session、rpc、grpc_client成功。期间来源守卫检出player_inbox_table.proto字节变化，先停止并保存原件；从正式生成暂存件精确恢复旧文、核对原SHA后，确认只有3条中文注释变化，无类型/字段/编号/option/服务差异。`resume-20261021T141707282Z/comment-change-review.json`保留逐行复核，未篡改原停止结果。
 - 在新快照中按原成功凭据与实际库SHA复用上述7项，core、battle继续增量构建成功。scene在项目原有静态门禁失败：player_lifecycle.cpp:3069使用player_exit::ExitCause::kRoleTradeFrozen，但ExitCause实际定义在全局作用域。源码全仓仅此一处错误限定；最小修正为去掉player_exit::。该业务文件属于另一任务，尚未代改。
 - 按AGENTS.md §10.2保留失败原件并向负责人询问“由本任务修正这一行后继续”或“等原任务自行修正”；截至本条等待决定，四组恢复回归尚未执行，主仓未提交推送。当前证据 `build/verification/muduo-windows-interface-20261020/resume-20261021T143101260Z/`，含成功/失败构建退出码、来源快照及日志。独立库888bf58及18条通过结果不变，未重复构建。
+## 2026-10-21 Codex：服务器全部分支与归档工作树整合审计
+
+负责人要求所有分支的有效改动合入主干并推送、合并后清理多余工作目录。本轮在既有 main 上完成 no-unity 全量协议生成，生成器与邮件/排行登记钩子均实际退出 0；生成清单去重提交为 `d1d415cdc4`，最新远程 `6ecf275fa8`、`1c9c1e6c19` 已通过 `b820a9d60e` 合入。生成不写客户端仓。原有技能生成/测试等 82 文件已由同仓另一任务提交为 `e826a3b446`，本轮保留并验证，不覆盖其工作。
+
+### 分支逐项结论
+
+- 以下 13 个非 main 本地分支均经 `merge-base --is-ancestor <ref> main` 实测为 0，无唯一待合提交：`codex/backup-before-generation-20261016`、`codex/backup-before-sync-20261015`、`feat/class-skills`、`feat/equip-forge-topup`、`feat/grpc-callers-muduo`、`feat/jubaozhai-rmb-consignment`、`feat/mystery-merchant`、`feat/no-single-node-2`、`feat/team-backfill`、`fix/freeze-expiry-recheck-source`、`fix/team-backfill-cancel-rejoin`、`fix/zone-redis-null-reply`、`test/mall-official-arrival`。
+- fetch 前的远程 `snapshot/all-changes-20261016`、`snapshot/all-changes-20261018` 也都是 main 祖先；fetch --prune 确认两条远程分支已被远程删除。本轮不主动删本地分支。
+
+| 剩余历史引用 | 有效改动在主干的证据与处理 |
+| --- | --- |
+| `feat/equip-attributes` (`7158f6e75d`) | 旧装备一期 `d69d50be7d` 与主干 `10cca6b660` 的 stable patch-id 均为 `28bbca2b741c51867e1d2a3ccbaa537dd4691c9c`；反向合并已映射为 `acd0f1b8e7`。属于改写历史的同一功能，保留主干后继。 |
+| `backup/main-before-reconcile-20261013` (`3db1057e15`) | 对应主干 `898c803ea0`；旧提交涉及的 148 个文件中 146 个 blob 完全相同，其余是 `data/AGENTS.md` 后继索引与 manifest 的生成来源记录。其前序 WIP/首次 match 实跑分别已映射为 `a9bfffc2b7`、`73b852f323`。 |
+| `feat/equip-enhance-inlay` (`e6defe0311`) | 核心 `1e2edced63` 对应主干 `6e212616bf`，53 个变更文件中 47 个 blob 完全相同；其余是日志/工具输出翻译、后继跨区用例与文档索引。261 文件的旧生成提交有 182 个 blob 与主干生成 `0b40715d06` 相同，其余消息号、限流、vendor 随主干权威源重生。当前 EnhanceEquip/InlayGem/RemoveGem 分别为 251/250/252，服务端元数据、消息台账与 vendor 接口均存在；后继验证记录为 `341620b481`。不回退到旧台账。 |
+| `feat/pve-team-size-match` (`0bf44e8131`) | 人数档核心 `21d5b25120` 与主干 `19a3b8980d` 的 stable patch-id 均为 `a5c3a7c33f2bb48ca1e8ee6c30757f2788d46b01`。分支尾部 WIP 仅为早期补位接口骨架，完整实现已由 `bd0f9d1ae3` 及撤单/重排 CAS 修复 `9c573e58dc` 覆盖；当前 request_id/target_team_size 字段分配与全球权威模式优先。 |
+| `feat/class-skills-localmain` (`65afc655d0`) | `docs/handoff/class-skills-handoff-20261019.md` §0 明确废弃本地旧基线草稿（UpgradeSkill 旧号 276）。有效版 `feat/class-skills` 已合，当前正式消息号 317；不重新带回作废的生成物和旧契约。 |
+
+上述 4 个改写历史引用相对主干有约 7 千个双向重复提交；本轮不把它们通过 ours merge 挂回公共历史。判定是有效内容已整合或明确废弃，不冒称这 5 条引用都已成为 Git 祖先。
+
+### 归档工作树的未提交内容
+
+- 逐一检查了 Git 登记的全部工作树。归档 equip、forgetopup、merchant、nosingle、teamfill-rb、channel-team-runtime 以及 Temp/codex-team-backfill-integration-20261016 均 clean。
+- `channel-team-server-src-20261009` 的失效子模块元数据会让普通 status 报错；以 `--ignore-submodules=all` 补查，未提交 21 文件。另有 `server-src` 未提交 62 文件、`xuanming-server-mmo-wt-pvematch` 未提交 39 文件，合计 122 文件（包括旧生成物和未跟踪文件）全部原字节复制到 `build/verification/work-cleanup-20261020/archived-dirty-sources/`，逐一比对来源与副本 SHA256；`manifest.json` 保存原路径、状态、来源/当前主干哈希。未删除原件。
+- 前两棵树的去裸指针、Redis unique_ptr、鉴权 string_view、战斗连接可选引用、AOI 反向进入/离开通知在 main 已有对应或更完整实现；Node 的必需 EventLoop 已用引用表达，clang-query 低内存检查已从旧 4 文件一批升级为逐单元执行。旧测试更改也已有后继，不用旧文件覆盖主干。
+- pvematch 的 `constants/party.go`、`logic/party_match.go`、`logic/party_test.go`、playercontract 实现/测试、`logic/team_battle_test.go` 与 main 逐字相同；其他差异是主干后继的队列版本 CAS、防旧撤单误删重新入队、独立读超时/熔断、全球权威模式与部署入口。保全全部原件，不重新导入早期未完成的匹配器。
+
+### 目前已完成的验证与实际限制
+
+- no-unity 完整 proto-gen：退出 0，日志 `build/verification/work-cleanup-20261020/proto-gen-oct21-fixedpath.log`。此前一轮裸 protoc 缺 PATH，本轮补入仓内既有 protoc 路径后完成；10-20 的生成曾因内存不足失败，不冒充成功。
+- 生成器 C++ 工程登记定向回归：通过；mail_postgen 回归实际执行 9 条，通过；两个正式登记钩子退出 0。之前 MSB8027 的邮件/排行重复源已通过权威生成逻辑去重。
+- 最新 origin 将路由发布移到独立 publishRedis，旧故障注入测试仍把 hook 挂到 mappingRedis，导致原断言红。只修该 helper 到实际发布客户端，保留全部重试/失败/键值断言；原失败两个子用例通过，完整 `data_service/internal/routereconcile` 与 `internal/routing` 随后均通过（routing 7.164s）。
+- C++ 本轮用 `/m:1 /p:MultiProcessorCompilation=false /p:CL_MPCount=1 /p:BuildInParallel=false` 验证，结果另行追加，不用旧 exe 冒充新源码已测。当前 native 裸指针检查器未安装，构建明确输出 SKIP，不能报成静态检查通过。
+- 最新远程升级了 third_party 的 gitlink，当前本机已有子模块 checkout 与这些引用不同；保留本地依赖/补丁，不把该状态误提交为 gitlink 回退。本机已有依赖上的构建结果不等同于全新 checkout 锁定依赖的完整验收。
+
+### 2026-10-21 服务器整合续记：依赖 API、主机重启与旧引用祖先关系
+
+- 本轮首次 native 编译实际遇到 EnTT 版本不一致：主干已采用 EnTT 4 的 `storage.info()`，本机仍为 3.13.2。确认子模块 clean 且目标 commit 已存在后，仅将 EnTT 同步到主干 pin `85c6bba014`。其余 15 个旧 checkout 保留。Boost 的 5 个新增库目录与 gRPC 的 2 个安装目录均为未跟踪资产，并非已跟踪源码补丁；两份 tracked diff 均为 0 字节，精确状态见 `build/verification/work-cleanup-20261020/third-party-checkout-oct21.json`。
+- 同仓另一任务曾把诊断 header 暂改为 EnTT 3 的 `storage.type()`。本轮按整合要求使用依赖 Storage 的泛型 lambda：公开 `info().name()` 优先、否则 `type().name()`，未选分支不实例化；在既有 ecs_context_test 新增两种 storage 形状的完整输出测试，其中旧形状故意有同名私有 info 成员。只读独立复核已通过，运行结果另行追加，未以复核代替编译。
+- 主机在 UTC 2026-10-21 07:22:42.500 重启，旧必要目标构建日志停在 07:20:26.926，未获得完成退出码，不能认定通过。07:38:51 实查没有 MSBuild/cl 后，从已有 obj 恢复同一组 scene/battle/bag_test/skill_test/turn_battle_engine_test，仍 `/m:1`、`CL_MPCount=1`、禁用 `/MP`，不 Rebuild、不清理对象文件。中断收据为 `native-reboot-receipt-oct21.json`，恢复日志为 `msbuild-targets-entt4-afterboot-oct21.log`（均在上述 verification 目录）。保留其他聊天的新 Unity 进程。
+- 负责人本次明确要求“合并完所有分支”，整合决策改为：对已经逐项证明由正式 main 覆盖的 4 条历史改写旧引用，以及正式技能 317 方案替代的 276 草稿引用，补一条保持当前文件树的纯祖先吸收合并。旧进度“作废不要合并”针对旧实现不能覆盖正式实现；本次依最新指令只补 Git 历史关系，不引回旧协议、旧生成物或旧装备稿，不宣称增加功能。
+- 吸收对象：`backup/main-before-reconcile-20261013`、`feat/equip-attributes`、`feat/equip-enhance-inlay`、`feat/pve-team-size-match`、`feat/class-skills-localmain`。前四条与正式主干无共同祖先，需 `-s ours --allow-unrelated-histories`。只读清点五条相对 main 合计 7581 个提交，旧对象实际磁盘占用 1.26 GiB；四条旧史的 184039 个对象全部本地存在（missing=0）。代价是把重复旧历史重新纳入公共可达关系，保留其审计来源。
+- 执行前后 tree hash 必须相同；所有本地和当前 origin 引用必须通过 main 祖先检查，证据保存 `old-history-absorption-oct21.json`。该合并只改图关系，不因此重复已完成的 runtime 验证；最终 push 使用普通快进，禁止 force。此前“本轮不吸收旧历史”的记录保留为先前策略，由本条按最新要求更新。
+
+### 2026-10-21 服务器全部分支整合：最终必要验证
+
+- `game.sln` 是手工维护的 solution；生成器 `cpp_build_projects.go` 仅维护 proto/grpc_client 的 CMakeLists/vcxproj/filters，没有 solution 生成写入。实际复验发现 scene 节点已链接 `battle.lib` 却漏了 battle 库构建依赖，首次链接报 LNK2038（battle 对象 EnTT 3.13.2、scene 对象 4.0.0）。仅给 scene ProjectDependencies 补既有 battle GUID 一行，保持主干 EnTT 4 pin；同一命名目标随后先增量构建 battle 库，再成功链接 scene，未回退依赖或绕过检测。
+- 必要 native 目标 scene/battle 节点与 bag_test/skill_test/turn_battle_engine_test 实际构建退出 0；独立 ecs_context_test 构建也退出 0。最后有效日志为 `msbuild-targets-dependency-fixed-oct21.log`、`msbuild-ecs-context-oct21.log`，全部采用 `/m:1`、禁用 `/MP`、`CL_MPCount=1`，没有重跑无关测试工程。
+- 实际运行四组 C++：ecs_context 8/8、turn_battle_engine 269/269、skill 68/68、bag 664 通过/3 跳过（667 总数），合计 **1009 通过、3 跳过、0 失败**，四进程退出码均 0。bag 三条 PendingSettlementContract 用例明确因未设置 `MMORPG_TEST_REDIS_ADDR` 而跳过，未冒称真实 Redis 已测。新增用例实跑数逐条核过：ClassSkillRules 5、ClassSkillEngine 17、真实表 catalog 契约 1、PlayerSkillBook 13、两版 storage API 形状 2。
+- 本轮 Go：data_service 的完整 routereconcile/routing 两包通过（路由故障注入修复前失败、修复后原断言与完整包复验均绿）；scene_manager 的所有权 CAS、WorldChannelRace 与 TestIntegration_ 定向组通过。此前同一整合阶段保留的 trade/robot/match 验证见原日志，没有为纯祖先关系合并重复 runtime 测试。
+- Java 在 native 结束后串行验证：config_node 正式 Maven compile 退出 0；mall_game 的 HmacSignatureGoldenTest **2 通过、0 失败/错误/跳过**，实际 Surefire XML 已核。使用既有 JDK 26.0.2/Maven、限制单核与 JVM 堆，没有安装工具。原来在 java 根目录以不存在 reactor 模块运行的旧失败日志保留，不计通过。
+- 验证边界：第三方 Protobuf 的 C4244、缺 absl PDB 的 LNK4099 警告仍存在；native 裸指针检查器未安装，构建脚本明确 SKIP，不能视为静态检查通过。EnTT 已同步主干 pin 4，其余 15 个本机第三方 checkout 与远程新 gitlink 不同；本结果基于这些实际依赖及既有安装目录，不等于全新 checkout 锁定依赖的完整验收。没有执行真实数据库/跨区联机冒烟或独立 Java 玩法服务器验收。
+- 本轮证据统一在 `build/verification/work-cleanup-20261020/`：`final-verification-oct21.json` 保存退出码、实跑数和源码 SHA；`cpp-tests-oct21/` 保存四套原始输出；Java JSON/XML 与完整日志可核。Git 纯祖先吸收 `6c7f507cc6` 的前后 tree 均 `6b48d84ef236fdaf2a957c88ae16ed8787f53b3c`，18 条非 main 本地分支及当前 origin 引用均已纳入 main，未重新带回旧实现。
+- 归档清理证据：`archive-removal-readiness-oct21.json` 列出 10 个精确路径和已合 HEAD；122 个 dirty 原件再次 SHA 复核 0 变化；忽略目录的 822 个非编译二进制文件原字节保全，1107 个剩余文件均为可重建编译二进制/对象缓存，详细 manifest 保留。原目录只由根任务在普通快进 push 完成后统一清理。本任务不自行删除外部目录或分支。

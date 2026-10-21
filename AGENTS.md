@@ -151,6 +151,7 @@
 
 ## 9. 禁止事项与权限边界
 
+- **工作目录约束（2026-10-20，用户要求）**：`E:\work` 根目录只保留 `mmorpg-client`、`xuanming-server-mmo`、`image`、`proto2mysql` 四个主项目。临时产物、验证包、构建日志放在所属项目已忽略的目录或系统 `%TEMP%`；Git worktree 使用 Codex 托管目录或 `E:\work` 以外的位置，不再在根目录新建 `*-wt-*`、`builds`、`tmp`、`.codex-artifacts` 等目录。
 - ❌ 客户端统一使用同级独立仓库 `../mmorpg-client/`；服务端不再维护 `client/` 目录，未获客户端任务授权时不要读取或修改独立客户端
 - ❌ 不要手改生成产物（见 §3）
 - ❌ 不要在 `docs/design/` 之外随便建 README，不要为记录改动新建 markdown（除非用户要求）

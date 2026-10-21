@@ -3,6 +3,7 @@
 
 ///<<< BEGIN WRITING YOUR CODE
 #include "table/proto/tip/common_error_tip.pb.h"
+#include "table/proto/tip/skill_error_tip.pb.h"
 #include "proto/common/base/tip.pb.h"
 #include "combat/skill/system/skill.h"
 #include "macros/return_define.h"
@@ -34,6 +35,14 @@ if (!PlayerSkillSystem::HasSkill(player, skillTableId))
 	return;
 }
 
+// 职业被动只在属性里生效,没有施放动作(class-skills.md §3.1)
+if (const auto *skillRow = SkillTableManager::Instance().FindByIdSilent(skillTableId).first;
+	skillRow != nullptr && PlayerSkillSystem::IsPassiveSkill(*skillRow))
+{
+	response->mutable_error_message()->set_id(kSkillCannotBeCastInCurrentState);
+	return;
+}
+
 	CHECK_PLAYER_REQUEST(request, SkillSystem::ReleaseSkill);
 ///<<< END WRITING YOUR CODE
 
@@ -59,29 +68,25 @@ void SceneSkillClientPlayerHandler::ListSkills(entt::entity player,const ::ListS
 	::ListSkillsResponse* response)
 {
 ///<<< BEGIN WRITING YOUR CODE
-	if (const auto* skillList = tlsEcs.actorRegistry.try_get<PlayerSkillListComp>(player);
-		skillList != nullptr)
+	// 已拥有列表 + 当前职业完整目录 + 等级 + 余额(class-skills.md §4)。
+	// BuildSkillBook 成功时 skill_list 一定在场(哪怕是空表):robot 的
+	// SceneSkillClientPlayerListSkillsHandler 把缺字段读成"技能被清空"(SetOwnedSkillIDs(nil)),
+	// 显式的空列表才能让首登的就绪信号照常触发。
+	if (const auto err = PlayerSkillSystem::BuildSkillBook(player, *response); err != kSuccess)
 	{
-		// 只下发本版本生效的技能:列表里可能留着新版本技能表才有的技能,它们保留但不生效
-		// (PlayerSkillSystem::IsActiveSkill,混版本设计 §12 第 5 批)。下发了客户端也施放不了(ReleaseSkill 按表拒)。
-		auto* out = response->mutable_skill_list();
-		for (const auto& skill : skillList->skill_list())
-		{
-			if (PlayerSkillSystem::IsActiveSkill(skill.skill_table_id()))
-			{
-				out->add_skill_list()->CopyFrom(skill);
-			}
-		}
-		return;
+		response->Clear();
+		response->mutable_error_message()->set_id(err);
 	}
-	// Force the skill_list field to be present (even if empty) so the
-	// client/robot can distinguish "we replied with no skills yet" from
-	// "the response was dropped". Robot's
-	// SceneSkillClientPlayerListSkillsHandler treats a nil SkillList as
-	// "skills cleared" via SetOwnedSkillIDs(nil)+SignalSkillsReady, so an
-	// explicit empty list keeps that signal firing on first login. Do not
-	// remove this line.
-	response->mutable_skill_list();
+///<<< END WRITING YOUR CODE
+
+}
+
+void SceneSkillClientPlayerHandler::UpgradeSkill(entt::entity player,const ::UpgradeSkillRequest* request,
+	::UpgradeSkillResponse* response)
+{
+///<<< BEGIN WRITING YOUR CODE
+	// 修习者只认会话绑定的 player 实体,请求里没有、也不接受角色身份
+	PlayerSkillSystem::UpgradeSkill(player, *request, *response);
 ///<<< END WRITING YOUR CODE
 
 }

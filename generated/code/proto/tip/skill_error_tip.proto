@@ -23,4 +23,18 @@ enum skill_error {
 
   kSkillCannotBeCastStunRestriction = 7006;
 
+  kSkillNotInClass = 7007;
+
+  kSkillRankChanged = 7008;
+
+  kSkillUpgradeCountInvalid = 7009;
+
+  kSkillLevelNotEnough = 7010;
+
+  kSkillMaxRankReached = 7011;
+
+  kSkillGoldNotEnough = 7012;
+
+  kSkillUpgradeBusy = 7013;
+
 };

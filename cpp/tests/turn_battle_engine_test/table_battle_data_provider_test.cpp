@@ -1,12 +1,17 @@
 #include <gtest/gtest.h>
 
 #include <filesystem>
+#include <string>
 #include <system_error>
 #include <vector>
 
 #include "../test_config_helper.h"
+#include "constants/turn_battle_constants.h"
 #include "data/table_battle_data_provider.h"
+#include "system/class_skill_rules.h"
+#include "table/code/buff_table.h"
 #include "table/code/class_table.h"
+#include "table/code/skill_table.h"
 #include "table/code/dungeon_table.h"
 #include "table/code/monster_table.h"
 
@@ -63,6 +68,8 @@ protected:
         ClassTableManager::Instance().Load();
         DungeonTableManager::Instance().Load();
         MonsterTableManager::Instance().Load();
+        SkillTableManager::Instance().Load();
+        BuffTableManager::Instance().Load();
     }
 
     static void TearDownTestSuite() {
@@ -170,5 +177,75 @@ TEST_F(TableBattleDataProviderTest, AllClassRowsShareSameInitialAttributes) {
         EXPECT_EQ(row.init_resistance(), first.init_resistance()) << "class id=" << row.id();
         EXPECT_EQ(row.init_critchance(), first.init_critchance()) << "class id=" << row.id();
         EXPECT_EQ(row.init_speed(), first.init_speed()) << "class id=" << row.id();
+    }
+}
+
+// 四职业 32 个技能(docs/design/class-skills.md §2,内容基线 catalog.json)导进真表之后的形状:
+// 每职业 8 个、ID 1x01..1x08、前 5 个主动后 3 个被动、最高 10 重、图标键 UI/Skills/<id>、
+// 目标阵营与被动属性都是引擎认得的值、附带的增减益行存在且方向与幅度符号一致,
+// 职业 1~4 的初始技能是本职业首个主动 + 首个被动(都 1 级可学)。
+TEST_F(TableBattleDataProviderTest, ClassSkillCatalogMatchesContentBaseline) {
+    uint32_t classSkillCount = 0;
+    for (const auto& row : SkillTableManager::Instance().FindAll().data()) {
+        if (row.class_id() == 0) {
+            continue;
+        }
+        ++classSkillCount;
+        const uint32_t classId = row.class_id();
+        const uint32_t index = row.id() - (1000 + classId * 100);  // 1..8
+        ASSERT_GE(classId, 1u) << "skill " << row.id();
+        ASSERT_LE(classId, 4u) << "skill " << row.id();
+        ASSERT_GE(index, 1u) << "skill " << row.id();
+        ASSERT_LE(index, 8u) << "skill " << row.id();
+        const bool passive = index >= 6;
+        EXPECT_EQ(!row.passive_stat().empty(), passive) << "skill " << row.id();
+        EXPECT_EQ(row.max_rank(), 10u) << "skill " << row.id();
+        EXPECT_FALSE(row.name().empty()) << "skill " << row.id();
+        EXPECT_FALSE(row.description().empty()) << "skill " << row.id();
+        EXPECT_EQ(row.icon_key(), "UI/Skills/" + std::to_string(row.id())) << "skill " << row.id();
+        EXPECT_GE(row.target_team(), 1u) << "skill " << row.id();
+        EXPECT_LE(row.target_team(), 3u) << "skill " << row.id();
+        EXPECT_GE(row.max_targets(), 1u) << "skill " << row.id();
+        EXPECT_GE(row.unlock_level(), 1u) << "skill " << row.id();
+        EXPECT_GE(row.mana_percent(), 0.0) << "skill " << row.id();
+        if (passive) {
+            EXPECT_NE(classskill::ParsePassiveStat(row.passive_stat()), classskill::PassiveStat::kNone)
+                << "skill " << row.id() << " passive_stat=" << row.passive_stat();
+            EXPECT_GT(row.passive_percent(), 0.0) << "skill " << row.id();
+        } else {
+            bool general = false;
+            for (const auto bit : row.skill_type()) {
+                general |= bit == turnbattle::kSkillTypeBitGeneral;
+            }
+            EXPECT_TRUE(general) << "主动技能要带普通施放位 skill " << row.id();
+        }
+        for (const auto buffId : row.effect()) {
+            const auto* buff = BuffTableManager::Instance().FindByIdSilent(buffId).first;
+            ASSERT_NE(buff, nullptr) << "skill " << row.id() << " 引用了不存在的 buff " << buffId;
+            EXPECT_NE(turnbattle::ClassSkillStatOfBuffType(buff->buff_type()), turnbattle::ClassBuffStat::kNone)
+                << "buff " << buffId;
+            EXPECT_EQ(turnbattle::RoundsFromSeconds(buff->duration()), 2u) << "buff " << buffId;
+            EXPECT_NE(row.buff_percent(), 0.0) << "skill " << row.id();
+            EXPECT_EQ(buff->tag().contains("Debuff"), row.buff_percent() < 0.0) << "buff " << buffId;
+        }
+    }
+    EXPECT_EQ(classSkillCount, 32u);
+
+    for (uint32_t classId = 1; classId <= 4; ++classId) {
+        const auto* cls = ClassTableManager::Instance().FindByIdSilent(classId).first;
+        ASSERT_NE(cls, nullptr) << "class " << classId;
+        std::vector<uint32_t> seeds;
+        for (const auto skillId : cls->skill()) {
+            if (skillId != 0) {
+                seeds.push_back(skillId);
+            }
+        }
+        EXPECT_EQ(seeds, (std::vector<uint32_t>{1000 + classId * 100 + 1, 1000 + classId * 100 + 6}))
+            << "class " << classId;
+        for (const auto skillId : seeds) {
+            const auto* skill = SkillTableManager::Instance().FindByIdSilent(skillId).first;
+            ASSERT_NE(skill, nullptr) << "seed " << skillId;
+            EXPECT_EQ(skill->unlock_level(), 1u) << "初始技能必须 1 级可学 seed " << skillId;
+        }
     }
 }

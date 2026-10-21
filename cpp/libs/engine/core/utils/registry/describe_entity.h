@@ -23,7 +23,18 @@ std::string DescribeEntity(const Registry& registry, typename Registry::entity_t
         {
             continue;
         }
-        std::string_view name = storage.info().name();
+        // 主干 EnTT 4 使用 info，本机尚在使用的 EnTT 3 构建使用 type。
+        // 让分支依赖 Storage，未选中的 API 不参与实例化。
+        std::string_view name = []<typename Storage>(const Storage& value) -> std::string_view {
+            if constexpr (requires { value.info().name(); })
+            {
+                return value.info().name();
+            }
+            else
+            {
+                return value.type().name();
+            }
+        }(storage);
         for (std::string_view prefix : {"struct ", "class ", "enum "})
         {
             if (name.starts_with(prefix))

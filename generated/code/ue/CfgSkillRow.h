@@ -188,6 +188,86 @@ struct FCfgSkillRow : public FTableRowBase
 	UPROPERTY(BlueprintReadOnly, Category = "Config|Skill")
 	double attack_multiplier = 0.0;
 
+	/** ---- 四职业技能(2026-10-19,docs/design/class-skills.md;内容基线 image/designs/class-skills-20260928/catalog.json)---- class_id = 0 的老行一律不读下面这些列,行为不变。比例列统一用 0~1 小数:0.20 = 20%。 职业(Class 表 id);0 = 旧通用技能(不分等级,不进技能书) */
+	UPROPERTY(BlueprintReadOnly, Category = "Config|Skill")
+	int32 class_id = 0;
+
+	UPROPERTY(BlueprintReadOnly, Category = "Config|Skill")
+	FString name;
+
+	UPROPERTY(BlueprintReadOnly, Category = "Config|Skill")
+	FString description;
+
+	/** 客户端图标的 Resources 相对键,不带扩展名(如 UI/Skills/1101) */
+	UPROPERTY(BlueprintReadOnly, Category = "Config|Skill")
+	FString icon_key;
+
+	/** 展示分类(主动 / 被动),只用于展示 */
+	UPROPERTY(BlueprintReadOnly, Category = "Config|Skill")
+	FString category;
+
+	/** 学习所需角色等级;等级上限 = min(max_rank, 1 + (角色等级 - unlock_level) / 2),未到解锁等级为 0 */
+	UPROPERTY(BlueprintReadOnly, Category = "Config|Skill")
+	int32 unlock_level = 0;
+
+	/** 最高重数(四职业统一 10) */
+	UPROPERTY(BlueprintReadOnly, Category = "Config|Skill")
+	int32 max_rank = 0;
+
+	/** 目标阵营:1 = 敌方,2 = 友方(含自己与宝宝),3 = 仅自身 */
+	UPROPERTY(BlueprintReadOnly, Category = "Config|Skill")
+	int32 target_team = 0;
+
+	/** 最多命中几个目标(选中的合法主目标优先,其余按规则补足) */
+	UPROPERTY(BlueprintReadOnly, Category = "Config|Skill")
+	int32 max_targets = 0;
+
+	/** 耗蓝 = ceil(最大法力 × 本值),本值 > 0 时至少 1 */
+	UPROPERTY(BlueprintReadOnly, Category = "Config|Skill")
+	double mana_percent = 0.0;
+
+	/** 施放后要隔几个完整回合才能再放;0 = 无冷却 */
+	UPROPERTY(BlueprintReadOnly, Category = "Config|Skill")
+	int32 cooldown_rounds = 0;
+
+	/** 治疗量 = (法伤 × heal_multiplier + 角色等级 × heal_per_level) × 等级系数 × (1 + 治疗加成被动) */
+	UPROPERTY(BlueprintReadOnly, Category = "Config|Skill")
+	double heal_multiplier = 0.0;
+
+	UPROPERTY(BlueprintReadOnly, Category = "Config|Skill")
+	double heal_per_level = 0.0;
+
+	/** 目标气血比例低于 threshold 时,治疗量再 × (1 + bonus) */
+	UPROPERTY(BlueprintReadOnly, Category = "Config|Skill")
+	double execute_heal_threshold = 0.0;
+
+	UPROPERTY(BlueprintReadOnly, Category = "Config|Skill")
+	double execute_heal_bonus = 0.0;
+
+	/** 回复目标最大法力的比例(按实际回复量封顶) */
+	UPROPERTY(BlueprintReadOnly, Category = "Config|Skill")
+	double restore_mana_percent = 0.0;
+
+	/** 驱散目标身上几个减益 */
+	UPROPERTY(BlueprintReadOnly, Category = "Config|Skill")
+	int32 dispel_count = 0;
+
+	/** 先手优先级:本回合用它出手时排在速度之前(大的先动);0 = 不改出手序 */
+	UPROPERTY(BlueprintReadOnly, Category = "Config|Skill")
+	int32 initiative = 0;
+
+	/** 被动加成的属性:defense / physicalAttack / magicAttack / maxHp / maxMp / speed / crit / outgoingHeal;空 = 不是被动 */
+	UPROPERTY(BlueprintReadOnly, Category = "Config|Skill")
+	FString passive_stat;
+
+	/** 被动基础幅度(crit 为暴击率百分点 / 100,其余为比例) */
+	UPROPERTY(BlueprintReadOnly, Category = "Config|Skill")
+	double passive_percent = 0.0;
+
+	/** effect[] 里那个增益 / 减益的基础幅度(带符号比例);生效值按施法者技能等级放大后存进局内 buff */
+	UPROPERTY(BlueprintReadOnly, Category = "Config|Skill")
+	double buff_percent = 0.0;
+
 	UPROPERTY(BlueprintReadOnly, Category = "Config|Skill")
 	TArray<FCfgSkillRequiredItem> required_item;
 

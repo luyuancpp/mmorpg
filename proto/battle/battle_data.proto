@@ -26,6 +26,12 @@ message BattleBuffEntry {
   uint32 layer = 3;          // 叠层数
   uint32 remain_rounds = 4;  // 剩余回合(0 = 无限持续)
   uint64 caster_id = 5;
+  // 四职业技能的属性增减(docs/design/class-skills.md §6.4):带符号比例,0.25 = +25%、-0.15 = -15%。
+  // 施加时按施法者当时的技能等级算定并存在这里,之后升级 / 换人都不改它;0 = 不是这类 buff(老 buff 全为 0)。
+  // 改的是哪一项由 Buff 表的 buff_type 决定(turn_battle_constants.h ClassSkillStatOfBuffType)。
+  double stat_percent = 6;
+  // 施加(或刷新)它的回合号。回合末结算时不扣它这一回合,所以"持续 2 回合"是完整的 2 回合;0 = 老口径(当回合末就扣)。
+  uint32 applied_round = 7;
 }
 
 // ---- 战斗内道具副本 ----
@@ -60,6 +66,10 @@ message BattlePlayerSnapshot {
   // 战斗类属性的装备加成(必杀 / 连击 / 反击 / 反震 / 抗性等,equipment-attributes.md §3.3)。
   // scene 侧原样拷自 DerivedAttributesComp.combat;不带 = 全 0 = 引擎行为与装备系统落地前逐位一致。
   CombatAttributes combat = 20;
+  // 已学职业技能的生效等级(skill_table_id -> 等级,含被动;docs/design/class-skills.md §6.1)。
+  // scene 按职业 / 角色等级夹好再填,引擎再按同一规则复核一次。旧通用技能不进这里。
+  // 被动的属性加成 scene 已算进上面的派生属性,引擎只消费战斗专用被动(治疗加成),不重复叠加。
+  map<uint32, uint32> skill_ranks = 21;
 }
 
 // ---- 宝宝战斗快照:与主人同队、独立行动的战斗单位(设计文档 player-pet.md §5)----
@@ -121,6 +131,8 @@ message BattleActorState {
   // 战斗类属性的装备加成(来自快照;怪物 / 宝宝全 0)。只供引擎判定用:
   // 下发给客户端的状态快照里会被清空,不暴露对手的装备概率。
   CombatAttributes combat = 27;
+  // 本局职业技能生效等级(来自快照 skill_ranks,引擎复核后的值;怪物 / 宝宝为空)。
+  map<uint32, uint32> skill_ranks = 28;
 }
 
 // ---- 玩家行动指令 ----
@@ -183,6 +195,10 @@ message BattleEventItem {
   uint32 hit_index = 12;            // 多段攻击的段序(0 起)
   uint64 target_mana_after = 13;    // 目标结算后法力(BATTLE_EVENT_MANA 与技能耗蓝演出用)
   eBattleHitKind hit_kind = 14;     // 连击 / 反击 / 反震标注;普通出手为 0
+  // 法力的实际变化量(带符号):负 = 消耗,正 = 恢复,0 = 实际没变(例如满蓝回蓝)。
+  // 只在法力真的被结算过的事件上带(MANA / ITEM);value 仍是绝对值,老客户端不读本字段照旧。
+  // target_mana_after 才是权威终值,客户端演出与它不一致时以它为准。
+  optional sint64 mana_delta = 15;
 }
 
 // ---- 胜负 ----

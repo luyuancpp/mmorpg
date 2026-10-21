@@ -48,11 +48,11 @@ constexpr PlayerSkillComp::ParseTableT_ PlayerSkillComp::InternalGenerateParseTa
     {
       PROTOBUF_FIELD_OFFSET(PlayerSkillComp, _impl_._has_bits_),
       0, // no _extensions_
-      2, 8,  // max_field_number, fast_idx_mask
+      3, 24,  // max_field_number, fast_idx_mask
       offsetof(ParseTableT_, field_lookup_table),
-      4294967292,  // skipmap
+      4294967288,  // skipmap
       offsetof(ParseTableT_, field_entries),
-      2,  // num_field_entries
+      3,  // num_field_entries
       0,  // num_aux_entries
       offsetof(ParseTableT_, field_names),  // no aux_entries
       class_data,
@@ -62,14 +62,19 @@ constexpr PlayerSkillComp::ParseTableT_ PlayerSkillComp::InternalGenerateParseTa
       ::_pbi::TcParser::GetTable<::PlayerSkillComp>(),  // to_prefetch
       #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
     }, {{
-      // uint32 skill_table_id = 2;
-      {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(PlayerSkillComp, _impl_.skill_table_id_), 1>(),
-       {16, 1, 0,
-        PROTOBUF_FIELD_OFFSET(PlayerSkillComp, _impl_.skill_table_id_)}},
+      {::_pbi::TcParser::MiniParse, {}},
       // uint64 id = 1;
       {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(PlayerSkillComp, _impl_.id_), 0>(),
        {8, 0, 0,
         PROTOBUF_FIELD_OFFSET(PlayerSkillComp, _impl_.id_)}},
+      // uint32 skill_table_id = 2;
+      {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(PlayerSkillComp, _impl_.skill_table_id_), 1>(),
+       {16, 1, 0,
+        PROTOBUF_FIELD_OFFSET(PlayerSkillComp, _impl_.skill_table_id_)}},
+      // uint32 rank = 3;
+      {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(PlayerSkillComp, _impl_.rank_), 2>(),
+       {24, 2, 0,
+        PROTOBUF_FIELD_OFFSET(PlayerSkillComp, _impl_.rank_)}},
     }}, {{
       65535, 65535
     }}, {{
@@ -77,6 +82,8 @@ constexpr PlayerSkillComp::ParseTableT_ PlayerSkillComp::InternalGenerateParseTa
       {PROTOBUF_FIELD_OFFSET(PlayerSkillComp, _impl_.id_), _Internal::kHasBitsOffset + 0, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
       // uint32 skill_table_id = 2;
       {PROTOBUF_FIELD_OFFSET(PlayerSkillComp, _impl_.skill_table_id_), _Internal::kHasBitsOffset + 1, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
+      // uint32 rank = 3;
+      {PROTOBUF_FIELD_OFFSET(PlayerSkillComp, _impl_.rank_), _Internal::kHasBitsOffset + 2, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
     }},
     // no aux_entries
     {{
@@ -90,7 +97,8 @@ inline constexpr PlayerSkillComp::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
       : _cached_size_{0},
         id_{::uint64_t{0u}},
-        skill_table_id_{0u} {}
+        skill_table_id_{0u},
+        rank_{0u} {}
 
 template <typename>
 constexpr PlayerSkillComp::PlayerSkillComp(::_pbi::ConstantInitialized,
@@ -344,11 +352,13 @@ const ::uint32_t
         protodesc_cold) = {
         0x081, // bitmap
         PROTOBUF_FIELD_OFFSET(::PlayerSkillComp, _impl_._has_bits_),
-        5, // hasbit index offset
+        6, // hasbit index offset
         PROTOBUF_FIELD_OFFSET(::PlayerSkillComp, _impl_.id_),
         PROTOBUF_FIELD_OFFSET(::PlayerSkillComp, _impl_.skill_table_id_),
+        PROTOBUF_FIELD_OFFSET(::PlayerSkillComp, _impl_.rank_),
         0,
         1,
+        2,
         0x081, // bitmap
         PROTOBUF_FIELD_OFFSET(::PlayerSkillListComp, _impl_._has_bits_),
         4, // hasbit index offset
@@ -359,7 +369,7 @@ const ::uint32_t
 static const ::_pbi::MigrationSchema
     schemas[] ABSL_ATTRIBUTE_SECTION_VARIABLE(protodesc_cold) = {
         {0, sizeof(::PlayerSkillComp)},
-        {7, sizeof(::PlayerSkillListComp)},
+        {9, sizeof(::PlayerSkillListComp)},
 };
 static const ::_pbi::MessageGlobalsBase* PROTOBUF_NONNULL const
     file_message_globals[] = {
@@ -369,16 +379,17 @@ static const ::_pbi::MessageGlobalsBase* PROTOBUF_NONNULL const
 const char descriptor_table_protodef_proto_2fcommon_2fcomponent_2fplayer_5fskill_5fcomp_2eproto[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
     protodesc_cold) = {
     "\n.proto/common/component/player_skill_co"
-    "mp.proto\"5\n\017PlayerSkillComp\022\n\n\002id\030\001 \001(\004\022"
-    "\026\n\016skill_table_id\030\002 \001(\r\";\n\023PlayerSkillLi"
-    "stComp\022$\n\nskill_list\030\001 \003(\0132\020.PlayerSkill"
-    "CompB\022Z\020common/componentb\006proto3"
+    "mp.proto\"C\n\017PlayerSkillComp\022\n\n\002id\030\001 \001(\004\022"
+    "\026\n\016skill_table_id\030\002 \001(\r\022\014\n\004rank\030\003 \001(\r\";\n"
+    "\023PlayerSkillListComp\022$\n\nskill_list\030\001 \003(\013"
+    "2\020.PlayerSkillCompB\022Z\020common/componentb\006"
+    "proto3"
 };
 static ::absl::once_flag descriptor_table_proto_2fcommon_2fcomponent_2fplayer_5fskill_5fcomp_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fcommon_2fcomponent_2fplayer_5fskill_5fcomp_2eproto = {
     false,
     false,
-    192,
+    206,
     descriptor_table_protodef_proto_2fcommon_2fcomponent_2fplayer_5fskill_5fcomp_2eproto,
     "proto/common/component/player_skill_comp.proto",
     &descriptor_table_proto_2fcommon_2fcomponent_2fplayer_5fskill_5fcomp_2eproto_once,
@@ -423,9 +434,9 @@ inline void PlayerSkillComp::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
   ::memset(reinterpret_cast<char*>(&_impl_) +
                offsetof(Impl_, id_),
            0,
-           offsetof(Impl_, skill_table_id_) -
+           offsetof(Impl_, rank_) -
                offsetof(Impl_, id_) +
-               sizeof(Impl_::skill_table_id_));
+               sizeof(Impl_::rank_));
 }
 PlayerSkillComp::~PlayerSkillComp() {
   // @@protoc_insertion_point(destructor:PlayerSkillComp)
@@ -475,10 +486,10 @@ PROTOBUF_NOINLINE void PlayerSkillComp::Clear() {
   (void) cached_has_bits;
 
   cached_has_bits = _impl_._has_bits_[0];
-  if (BatchCheckHasBit(cached_has_bits, 0x00000003U)) {
+  if (BatchCheckHasBit(cached_has_bits, 0x00000007U)) {
     ::memset(&_impl_.id_, 0, static_cast<::size_t>(
-        reinterpret_cast<char*>(&_impl_.skill_table_id_) -
-        reinterpret_cast<char*>(&_impl_.id_)) + sizeof(_impl_.skill_table_id_));
+        reinterpret_cast<char*>(&_impl_.rank_) -
+        reinterpret_cast<char*>(&_impl_.id_)) + sizeof(_impl_.rank_));
   }
   _impl_._has_bits_.Clear();
   _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
@@ -521,6 +532,15 @@ PROTOBUF_NOINLINE void PlayerSkillComp::Clear() {
     }
   }
 
+  // uint32 rank = 3;
+  if (CheckHasBit(cached_has_bits, 0x00000004U)) {
+    if (this_._internal_rank() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
+          3, this_._internal_rank(), target);
+    }
+  }
+
   if (ABSL_PREDICT_FALSE(this_._internal_metadata_.have_unknown_fields())) {
     target =
         ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
@@ -546,7 +566,7 @@ PROTOBUF_NOINLINE void PlayerSkillComp::Clear() {
 
   ::_pbi::Prefetch5LinesFrom7Lines(&this_);
   cached_has_bits = this_._impl_._has_bits_[0];
-  if (BatchCheckHasBit(cached_has_bits, 0x00000003U)) {
+  if (BatchCheckHasBit(cached_has_bits, 0x00000007U)) {
     // uint64 id = 1;
     if (CheckHasBit(cached_has_bits, 0x00000001U)) {
       if (this_._internal_id() != 0) {
@@ -559,6 +579,13 @@ PROTOBUF_NOINLINE void PlayerSkillComp::Clear() {
       if (this_._internal_skill_table_id() != 0) {
         total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
             this_._internal_skill_table_id());
+      }
+    }
+    // uint32 rank = 3;
+    if (CheckHasBit(cached_has_bits, 0x00000004U)) {
+      if (this_._internal_rank() != 0) {
+        total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
+            this_._internal_rank());
       }
     }
   }
@@ -579,7 +606,7 @@ void PlayerSkillComp::MergeImpl(::google::protobuf::MessageLite& to_msg,
   (void)cached_has_bits;
 
   cached_has_bits = from._impl_._has_bits_[0];
-  if (BatchCheckHasBit(cached_has_bits, 0x00000003U)) {
+  if (BatchCheckHasBit(cached_has_bits, 0x00000007U)) {
     if (CheckHasBit(cached_has_bits, 0x00000001U)) {
       if (from._internal_id() != 0) {
         _this->_impl_.id_ = from._impl_.id_;
@@ -588,6 +615,11 @@ void PlayerSkillComp::MergeImpl(::google::protobuf::MessageLite& to_msg,
     if (CheckHasBit(cached_has_bits, 0x00000002U)) {
       if (from._internal_skill_table_id() != 0) {
         _this->_impl_.skill_table_id_ = from._impl_.skill_table_id_;
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000004U)) {
+      if (from._internal_rank() != 0) {
+        _this->_impl_.rank_ = from._impl_.rank_;
       }
     }
   }
@@ -609,8 +641,8 @@ void PlayerSkillComp::InternalSwap(PlayerSkillComp* PROTOBUF_RESTRICT PROTOBUF_N
   _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
   ::google::protobuf::internal::memswap<
-      PROTOBUF_FIELD_OFFSET(PlayerSkillComp, _impl_.skill_table_id_)
-      + sizeof(PlayerSkillComp::_impl_.skill_table_id_)
+      PROTOBUF_FIELD_OFFSET(PlayerSkillComp, _impl_.rank_)
+      + sizeof(PlayerSkillComp::_impl_.rank_)
       - PROTOBUF_FIELD_OFFSET(PlayerSkillComp, _impl_.id_)>(
           reinterpret_cast<char*>(&_impl_.id_),
           reinterpret_cast<char*>(&other->_impl_.id_));

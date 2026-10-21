@@ -66,7 +66,7 @@ public final class SkillTableOuterClass extends com.google.protobuf.GeneratedFil
       "urce\022\036\n\026required_resource_type\030\001 \001(\r\022\037\n\027" +
       "required_resource_value\030\002 \001(\r\"J\n\022Skillco" +
       "st_resource\022\030\n\020cost_resource_id\030\001 \001(\r\022\032\n" +
-      "\022cost_resource_cost\030\002 \001(\r\"\342\004\n\nSkillTable" +
+      "\022cost_resource_cost\030\002 \001(\r\"\266\010\n\nSkillTable" +
       "\022\n\n\002id\030\001 \001(\r\022\022\n\nskill_type\030\002 \003(\r\022\026\n\016targ" +
       "eting_mode\030\003 \003(\r\022\026\n\016require_target\030\004 \001(\r" +
       "\022\025\n\rtarget_status\030\005 \001(\r\022\022\n\ncast_point\030\006 " +
@@ -78,13 +78,25 @@ public final class SkillTableOuterClass extends com.google.protobuf.GeneratedFil
       "e\030\020 \001(\001\022\023\n\013self_status\030\021 \001(\r\022\027\n\017required" +
       "_status\030\022 \001(\r\022\023\n\013cooldown_id\030\023 \001(\r\022\016\n\006da" +
       "mage\030\024 \001(\t\022\023\n\013damage_type\030\030 \001(\r\022\031\n\021attac" +
-      "k_multiplier\030\031 \001(\001\022*\n\rrequired_item\030\025 \003(" +
-      "\0132\023.Skillrequired_item\0222\n\021required_resou" +
-      "rce\030\026 \003(\0132\027.Skillrequired_resource\022*\n\rco" +
-      "st_resource\030\027 \003(\0132\023.Skillcost_resource\"+" +
-      "\n\016SkillTableData\022\031\n\004data\030\001 \003(\0132\013.SkillTa" +
-      "bleB<\n\016com.game.tableB\024SkillTableOuterCl" +
-      "assP\001Z\022generated/pb/tableb\006proto3"
+      "k_multiplier\030\031 \001(\001\022\020\n\010class_id\030\032 \001(\r\022\014\n\004" +
+      "name\030\033 \001(\t\022\023\n\013description\030\034 \001(\t\022\020\n\010icon_" +
+      "key\030\035 \001(\t\022\020\n\010category\030\036 \001(\t\022\024\n\014unlock_le" +
+      "vel\030\037 \001(\r\022\020\n\010max_rank\030  \001(\r\022\023\n\013target_te" +
+      "am\030! \001(\r\022\023\n\013max_targets\030\" \001(\r\022\024\n\014mana_pe" +
+      "rcent\030# \001(\001\022\027\n\017cooldown_rounds\030$ \001(\r\022\027\n\017" +
+      "heal_multiplier\030% \001(\001\022\026\n\016heal_per_level\030" +
+      "& \001(\001\022\036\n\026execute_heal_threshold\030\' \001(\001\022\032\n" +
+      "\022execute_heal_bonus\030( \001(\001\022\034\n\024restore_man" +
+      "a_percent\030) \001(\001\022\024\n\014dispel_count\030* \001(\r\022\022\n" +
+      "\ninitiative\030+ \001(\005\022\024\n\014passive_stat\030, \001(\t\022" +
+      "\027\n\017passive_percent\030- \001(\001\022\024\n\014buff_percent" +
+      "\030. \001(\001\022*\n\rrequired_item\030\025 \003(\0132\023.Skillreq" +
+      "uired_item\0222\n\021required_resource\030\026 \003(\0132\027." +
+      "Skillrequired_resource\022*\n\rcost_resource\030" +
+      "\027 \003(\0132\023.Skillcost_resource\"+\n\016SkillTable" +
+      "Data\022\031\n\004data\030\001 \003(\0132\013.SkillTableB<\n\016com.g" +
+      "ame.tableB\024SkillTableOuterClassP\001Z\022gener" +
+      "ated/pb/tableb\006proto3"
     };
     descriptor = com.google.protobuf.Descriptors.FileDescriptor
       .internalBuildGeneratedFileFrom(descriptorData,
@@ -113,7 +125,7 @@ public final class SkillTableOuterClass extends com.google.protobuf.GeneratedFil
     internal_static_SkillTable_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessage.FieldAccessorTable(
         internal_static_SkillTable_descriptor,
-        new java.lang.String[] { "Id", "SkillType", "TargetingMode", "RequireTarget", "TargetStatus", "CastPoint", "RecoveryTime", "Immediate", "Effect", "ChannelThink", "ChannelFinish", "ThinkInterval", "ChannelTime", "Range", "MaxRange", "MinRange", "SelfStatus", "RequiredStatus", "CooldownId", "Damage", "DamageType", "AttackMultiplier", "RequiredItem", "RequiredResource", "CostResource", });
+        new java.lang.String[] { "Id", "SkillType", "TargetingMode", "RequireTarget", "TargetStatus", "CastPoint", "RecoveryTime", "Immediate", "Effect", "ChannelThink", "ChannelFinish", "ThinkInterval", "ChannelTime", "Range", "MaxRange", "MinRange", "SelfStatus", "RequiredStatus", "CooldownId", "Damage", "DamageType", "AttackMultiplier", "ClassId", "Name", "Description", "IconKey", "Category", "UnlockLevel", "MaxRank", "TargetTeam", "MaxTargets", "ManaPercent", "CooldownRounds", "HealMultiplier", "HealPerLevel", "ExecuteHealThreshold", "ExecuteHealBonus", "RestoreManaPercent", "DispelCount", "Initiative", "PassiveStat", "PassivePercent", "BuffPercent", "RequiredItem", "RequiredResource", "CostResource", });
     internal_static_SkillTableData_descriptor =
       getDescriptor().getMessageType(4);
     internal_static_SkillTableData_fieldAccessorTable = new

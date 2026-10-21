@@ -309,6 +309,15 @@ func main() {
 		return
 	}
 
+	// mall-arrival-smoke: 单机器人官方商品到账冒烟(D-17)
+	// (登录 → 清理上一轮没付款的单 → 下单并核对同号重发拿回同一张单 → 错金额付款被商城拒
+	//  → 以 dev 模拟渠道付款 → 等订单变已发货 → 背包正好多出应得数量且不重复发 → 重登后仍在)。
+	// 见 mall_arrival_smoke_scenario.go 与 commerce_mock_payer.go;前置条件写在 etc/mall_arrival_smoke.yaml 文件头。
+	if cfg.Mode == "mall-arrival-smoke" {
+		RunMallArrivalSmoke(cfg)
+		return
+	}
+
 	stopReport := make(chan struct{})
 	reportInterval := time.Duration(cfg.ReportInterval) * time.Second
 	if reportInterval <= 0 {

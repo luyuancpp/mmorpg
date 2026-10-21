@@ -3,7 +3,7 @@
 
 #include "proto/battle/battle_node.pb.h"
 
-constexpr uint32_t BattleNodeQueryObserverMessageId = 317;
+constexpr uint32_t BattleNodeQueryObserverMessageId = 344;
 constexpr uint32_t BattleNodeQueryObserverIndex = 0;
 #define BattleNodeQueryObserverMethod  ::BattleNode_Stub::descriptor()->method(0)
 

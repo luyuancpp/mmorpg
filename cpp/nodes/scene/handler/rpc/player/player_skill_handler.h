@@ -26,6 +26,9 @@ public:
     static void ListSkills(entt::entity player,
         const ::ListSkillsRequest* request,
         ::ListSkillsResponse* response);
+    static void UpgradeSkill(entt::entity player,
+        const ::UpgradeSkillRequest* request,
+        ::UpgradeSkillResponse* response);
 
     void CallMethod(const ::google::protobuf::MethodDescriptor* method,
         entt::entity player,
@@ -64,6 +67,15 @@ public:
             ListSkills(player,
                 static_cast<const ::ListSkillsRequest*>(request),
                 static_cast<::ListSkillsResponse*>(response));
+			}
+            break;
+        case 4:
+			{
+            static_assert(std::is_same_v<decltype(std::declval<::UpgradeSkillResponse&>().mutable_error_message()), ::TipInfoMessage*>,
+                "玩家 RPC 非 Empty 应答必须提供 TipInfoMessage error_message");
+            UpgradeSkill(player,
+                static_cast<const ::UpgradeSkillRequest*>(request),
+                static_cast<::UpgradeSkillResponse*>(response));
 			}
             break;
         default:

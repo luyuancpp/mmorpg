@@ -182,6 +182,162 @@ public interface SkillTableOrBuilder extends
   double getAttackMultiplier();
 
   /**
+   * <code>uint32 class_id = 26;</code>
+   * @return The classId.
+   */
+  int getClassId();
+
+  /**
+   * <code>string name = 27;</code>
+   * @return The name.
+   */
+  java.lang.String getName();
+  /**
+   * <code>string name = 27;</code>
+   * @return The bytes for name.
+   */
+  com.google.protobuf.ByteString
+      getNameBytes();
+
+  /**
+   * <code>string description = 28;</code>
+   * @return The description.
+   */
+  java.lang.String getDescription();
+  /**
+   * <code>string description = 28;</code>
+   * @return The bytes for description.
+   */
+  com.google.protobuf.ByteString
+      getDescriptionBytes();
+
+  /**
+   * <code>string icon_key = 29;</code>
+   * @return The iconKey.
+   */
+  java.lang.String getIconKey();
+  /**
+   * <code>string icon_key = 29;</code>
+   * @return The bytes for iconKey.
+   */
+  com.google.protobuf.ByteString
+      getIconKeyBytes();
+
+  /**
+   * <code>string category = 30;</code>
+   * @return The category.
+   */
+  java.lang.String getCategory();
+  /**
+   * <code>string category = 30;</code>
+   * @return The bytes for category.
+   */
+  com.google.protobuf.ByteString
+      getCategoryBytes();
+
+  /**
+   * <code>uint32 unlock_level = 31;</code>
+   * @return The unlockLevel.
+   */
+  int getUnlockLevel();
+
+  /**
+   * <code>uint32 max_rank = 32;</code>
+   * @return The maxRank.
+   */
+  int getMaxRank();
+
+  /**
+   * <code>uint32 target_team = 33;</code>
+   * @return The targetTeam.
+   */
+  int getTargetTeam();
+
+  /**
+   * <code>uint32 max_targets = 34;</code>
+   * @return The maxTargets.
+   */
+  int getMaxTargets();
+
+  /**
+   * <code>double mana_percent = 35;</code>
+   * @return The manaPercent.
+   */
+  double getManaPercent();
+
+  /**
+   * <code>uint32 cooldown_rounds = 36;</code>
+   * @return The cooldownRounds.
+   */
+  int getCooldownRounds();
+
+  /**
+   * <code>double heal_multiplier = 37;</code>
+   * @return The healMultiplier.
+   */
+  double getHealMultiplier();
+
+  /**
+   * <code>double heal_per_level = 38;</code>
+   * @return The healPerLevel.
+   */
+  double getHealPerLevel();
+
+  /**
+   * <code>double execute_heal_threshold = 39;</code>
+   * @return The executeHealThreshold.
+   */
+  double getExecuteHealThreshold();
+
+  /**
+   * <code>double execute_heal_bonus = 40;</code>
+   * @return The executeHealBonus.
+   */
+  double getExecuteHealBonus();
+
+  /**
+   * <code>double restore_mana_percent = 41;</code>
+   * @return The restoreManaPercent.
+   */
+  double getRestoreManaPercent();
+
+  /**
+   * <code>uint32 dispel_count = 42;</code>
+   * @return The dispelCount.
+   */
+  int getDispelCount();
+
+  /**
+   * <code>int32 initiative = 43;</code>
+   * @return The initiative.
+   */
+  int getInitiative();
+
+  /**
+   * <code>string passive_stat = 44;</code>
+   * @return The passiveStat.
+   */
+  java.lang.String getPassiveStat();
+  /**
+   * <code>string passive_stat = 44;</code>
+   * @return The bytes for passiveStat.
+   */
+  com.google.protobuf.ByteString
+      getPassiveStatBytes();
+
+  /**
+   * <code>double passive_percent = 45;</code>
+   * @return The passivePercent.
+   */
+  double getPassivePercent();
+
+  /**
+   * <code>double buff_percent = 46;</code>
+   * @return The buffPercent.
+   */
+  double getBuffPercent();
+
+  /**
    * <code>repeated .Skillrequired_item required_item = 21;</code>
    */
   java.util.List<com.game.table.Skillrequired_item> 

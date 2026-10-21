@@ -90,6 +90,90 @@ struct SkillAttack_multiplierComp {
     double value;
 };
 
+struct SkillClass_idComp {
+    uint32_t value;
+};
+
+struct SkillNameComp {
+    std::string_view value;
+};
+
+struct SkillDescriptionComp {
+    std::string_view value;
+};
+
+struct SkillIcon_keyComp {
+    std::string_view value;
+};
+
+struct SkillCategoryComp {
+    std::string_view value;
+};
+
+struct SkillUnlock_levelComp {
+    uint32_t value;
+};
+
+struct SkillMax_rankComp {
+    uint32_t value;
+};
+
+struct SkillTarget_teamComp {
+    uint32_t value;
+};
+
+struct SkillMax_targetsComp {
+    uint32_t value;
+};
+
+struct SkillMana_percentComp {
+    double value;
+};
+
+struct SkillCooldown_roundsComp {
+    uint32_t value;
+};
+
+struct SkillHeal_multiplierComp {
+    double value;
+};
+
+struct SkillHeal_per_levelComp {
+    double value;
+};
+
+struct SkillExecute_heal_thresholdComp {
+    double value;
+};
+
+struct SkillExecute_heal_bonusComp {
+    double value;
+};
+
+struct SkillRestore_mana_percentComp {
+    double value;
+};
+
+struct SkillDispel_countComp {
+    uint32_t value;
+};
+
+struct SkillInitiativeComp {
+    int32_t value;
+};
+
+struct SkillPassive_statComp {
+    std::string_view value;
+};
+
+struct SkillPassive_percentComp {
+    double value;
+};
+
+struct SkillBuff_percentComp {
+    double value;
+};
+
 struct SkillSkill_typeComp {
     std::span<const uint32_t> values;
 };
@@ -163,6 +247,69 @@ inline SkillDamage_typeComp MakeSkillDamage_typeComp(const SkillTable& row) {
 }
 inline SkillAttack_multiplierComp MakeSkillAttack_multiplierComp(const SkillTable& row) {
     return { row.attack_multiplier() };
+}
+inline SkillClass_idComp MakeSkillClass_idComp(const SkillTable& row) {
+    return { row.class_id() };
+}
+inline SkillNameComp MakeSkillNameComp(const SkillTable& row) {
+    return { std::string_view(row.name()) };
+}
+inline SkillDescriptionComp MakeSkillDescriptionComp(const SkillTable& row) {
+    return { std::string_view(row.description()) };
+}
+inline SkillIcon_keyComp MakeSkillIcon_keyComp(const SkillTable& row) {
+    return { std::string_view(row.icon_key()) };
+}
+inline SkillCategoryComp MakeSkillCategoryComp(const SkillTable& row) {
+    return { std::string_view(row.category()) };
+}
+inline SkillUnlock_levelComp MakeSkillUnlock_levelComp(const SkillTable& row) {
+    return { row.unlock_level() };
+}
+inline SkillMax_rankComp MakeSkillMax_rankComp(const SkillTable& row) {
+    return { row.max_rank() };
+}
+inline SkillTarget_teamComp MakeSkillTarget_teamComp(const SkillTable& row) {
+    return { row.target_team() };
+}
+inline SkillMax_targetsComp MakeSkillMax_targetsComp(const SkillTable& row) {
+    return { row.max_targets() };
+}
+inline SkillMana_percentComp MakeSkillMana_percentComp(const SkillTable& row) {
+    return { row.mana_percent() };
+}
+inline SkillCooldown_roundsComp MakeSkillCooldown_roundsComp(const SkillTable& row) {
+    return { row.cooldown_rounds() };
+}
+inline SkillHeal_multiplierComp MakeSkillHeal_multiplierComp(const SkillTable& row) {
+    return { row.heal_multiplier() };
+}
+inline SkillHeal_per_levelComp MakeSkillHeal_per_levelComp(const SkillTable& row) {
+    return { row.heal_per_level() };
+}
+inline SkillExecute_heal_thresholdComp MakeSkillExecute_heal_thresholdComp(const SkillTable& row) {
+    return { row.execute_heal_threshold() };
+}
+inline SkillExecute_heal_bonusComp MakeSkillExecute_heal_bonusComp(const SkillTable& row) {
+    return { row.execute_heal_bonus() };
+}
+inline SkillRestore_mana_percentComp MakeSkillRestore_mana_percentComp(const SkillTable& row) {
+    return { row.restore_mana_percent() };
+}
+inline SkillDispel_countComp MakeSkillDispel_countComp(const SkillTable& row) {
+    return { row.dispel_count() };
+}
+inline SkillInitiativeComp MakeSkillInitiativeComp(const SkillTable& row) {
+    return { row.initiative() };
+}
+inline SkillPassive_statComp MakeSkillPassive_statComp(const SkillTable& row) {
+    return { std::string_view(row.passive_stat()) };
+}
+inline SkillPassive_percentComp MakeSkillPassive_percentComp(const SkillTable& row) {
+    return { row.passive_percent() };
+}
+inline SkillBuff_percentComp MakeSkillBuff_percentComp(const SkillTable& row) {
+    return { row.buff_percent() };
 }
 inline SkillSkill_typeComp MakeSkillSkill_typeComp(const SkillTable& row) {
     const auto& rf = row.skill_type();
