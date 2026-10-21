@@ -605,32 +605,23 @@ func pipelineHasCommand(cmds []goredis.Cmder, name, arg string) bool {
 	return false
 }
 
-// newRouterWithRejectedPipelines 建一个 db_first Router,它的 mapping Redis 上前 n 个发布批被「熔断」挡下。
-// go-zero 按地址缓存底层 go-redis 客户端,钩子只在第一次建客户端时挂上:所以先在一个全新的 miniredis 地址上用带钩子的
-// *redis.Redis 建出客户端,随后 NewRouter 拿到的就是同一个客户端。钩子挡满之后永远放行,端口日后被别的用例复用也不受影响。
-// 自检:发一条只含 ECHO selfCheckEcho 的 pipeline,钩子必须见到它 —— 端口恰好被本进程里更早的用例用过时,拿到的是那时
-// 缓存的旧客户端(没有本钩子),换一个新地址重来,而不是让用例的结论取决于端口分配。自检不消耗挡下的名额。
+// newRouterWithRejectedPipelines 建一个 db_first Router,前 n 个发布批被测试钩子挡下。
+// 发布已使用独立的 publishRedis,钩子必须挂在这个客户端上;mappingRedis 的 go-zero 地址缓存不再承载发布。
+// 自检只发 ECHO,确认钩子安装在实际发布客户端上,不消耗挡下的名额。
 func newRouterWithRejectedPipelines(t *testing.T, fake *routeFakeStore, n int32, attempts int) (*Router, *miniredis.Miniredis, *publishBreakerHook) {
 	t.Helper()
 	ctx := context.Background()
-	for try := 0; try < 3; try++ {
-		mr := miniredis.RunT(t)
-		hook := &publishBreakerHook{reject: n}
-		hooked := redis.MustNewRedis(redis.RedisConf{Host: mr.Addr(), Type: "node"}, redis.WithHook(hook))
-		selfCheck := hooked.PipelinedCtx(ctx, func(p redis.Pipeliner) error {
-			p.Echo(ctx, selfCheckEcho)
-			return nil
-		})
-		require.NoError(t, selfCheck, "自检批不该被挡")
-		if !hook.installed.Load() {
-			mr.Close()
-			continue
-		}
-		r := newDBFirstRouterOn(t, mr, fake, func(rc *config.RouteStoreConfig) { rc.PublishAttempts = attempts })
-		return r, mr, hook
-	}
-	t.Fatal("连续 3 个 miniredis 地址都拿到了没有钩子的缓存客户端")
-	return nil, nil, nil
+	mr := miniredis.RunT(t)
+	r := newDBFirstRouterOn(t, mr, fake, func(rc *config.RouteStoreConfig) { rc.PublishAttempts = attempts })
+	hook := &publishBreakerHook{reject: n}
+	r.publishRedis.AddHook(hook)
+	_, selfCheck := r.publishRedis.Pipelined(ctx, func(p goredis.Pipeliner) error {
+		p.Echo(ctx, selfCheckEcho)
+		return nil
+	})
+	require.NoError(t, selfCheck, "自检批不该被挡")
+	require.True(t, hook.installed.Load(), "实际发布客户端必须装有测试钩子")
+	return r, mr, hook
 }
 
 // TestDBFirstRegister_PublishRetriesWhenPipelineNotExecuted(2026-10-18,第 1b-1 批核实 B0-5 的疑点):熔断打开时 pipeline 的回调
