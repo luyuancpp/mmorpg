@@ -159,6 +159,10 @@ docker @dc stop
 
 Gate 入口为 `127.0.0.1:28000`、Battle 为 `127.0.0.1:28010`，通过 `CLIENT_ENDPOINT_*` 发布给客户端；内部 `NODE_IP` 仍为容器地址。Scene 与 gRPC 不发布到宿主机。
 
+本栈启用受限的开发口令认证，账号须以 `dev_` 或 `robot_` 开头，密码来自本轮 `.env` 的 `LOGIN_DEV_PASSWORD_SHARED_SECRET`。本机已验证的账号为 `dev_demo`；完整登录信息保存在忽略目录 `build/docker-debug-current/client-login-docker.txt`，密码仅在本机文件中提供。HTTP 登录须同时检查响应业务码为 `0` 且令牌存在；HTTP 200 本身也可能携带认证拒绝。新账号尚无角色属于正常结果，进入游戏还需后续选角／建角与进场。
+
+调试多个新账号时，分别使用 `dev_test_001`、`dev_test_002` 或 `robot_000001` 等不同账号名，密码仍取同一份本机登录信息文件，无需为每个账号修改容器配置。登录后按各自账号的角色列表选角或建角；多客户端测试时使用不同账号名。
+
 本机 `.vscode/launch.json` 提供「Docker：附加 Gate / Scene / Battle」：VS Code 的 C/C++ 扩展通过 `docker --context desktop-linux exec` 调用容器内 GDB，`sourceFileMap` 把编译路径 `/src` 映射为当前工作区。用 VS Code 打开本仓库根目录，在自己的 C++ 源码设置断点，从「运行和调试」下拉选择「Docker：附加 Scene」，按 `F5` 后选择 `scene`（PID 为 `1`）。Gate、Battle 选择各自的入口与同名进程。源码必须与镜像构建输入一致；当前 `RelWithDebInfo` 有优化，部分局部变量可能不可见。长时间断点仍会触发正常的分布式超时与租约处理。
 
 **本轮验证状态（已完成）**：Gate、Scene、Battle 的 Linux `RelWithDebInfo` 构建、运行镜像与调试镜像均成功；镜像内 1,456 个 C++ 源文件与本地逐一 SHA256 匹配。七个 Go 服务及 DB 迁移工具共八个 Linux 镜像、Java 网关镜像均已构建。最终调试配置下 15 个常驻服务运行，11 个带健康检查的服务均为 healthy，3 个初始化任务正常退出；网关健康接口为 UP，HTTP 登录返回业务码 0。

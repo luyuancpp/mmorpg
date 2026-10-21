@@ -76,7 +76,8 @@ EXTERNAL_LIBS = [
     # other third-party (installed to /usr/local/lib)
     "rdkafka++", "rdkafka",
     "yaml-cpp", "hiredis", "curl",
-    "z", "zstd", "ssl", "crypto",
+    # TLS 显式使用 gRPC 同套静态目标，避免裸库名解析到系统共享库而混用两套 ABI。
+    "z", "zstd", "gRPC::SSL", "gRPC::Crypto",
     # system
     "pthread", "dl",
 ]

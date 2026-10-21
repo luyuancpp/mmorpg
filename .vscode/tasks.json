@@ -1,501 +1,766 @@
 {
-	"version": "2.0.0",
-	"tasks": [
-		{
-			"label": "proto-gen: help",
-			"type": "shell",
-			"command": "pwsh",
-			"args": [
-				"-File",
-				"${workspaceFolder}/tools/scripts/dev_tools.ps1",
-				"-Command",
-				"help"
-			],
-			"problemMatcher": []
-		},
-		{
-			"label": "proto-gen: build",
-			"type": "shell",
-			"command": "pwsh",
-			"args": [
-				"-File",
-				"${workspaceFolder}/tools/scripts/dev_tools.ps1",
-				"-Command",
-				"proto-gen-build"
-			],
-			"group": "build",
-			"problemMatcher": [
-				"$go"
-			]
-		},
-		{
-			"label": "proto-gen: run",
-			"type": "shell",
-			"command": "pwsh",
-			"args": [
-				"-File",
-				"${workspaceFolder}/tools/scripts/dev_tools.ps1",
-				"-Command",
-				"proto-gen-run",
-				"-ConfigPath",
-				"${workspaceFolder}/tools/proto_generator/protogen/etc/proto_gen.yaml"
-			],
-			"problemMatcher": [
-				"$go"
-			]
-		},
-		{
-			"label": "proto-gen: run (pprof)",
-			"type": "shell",
-			"command": "pwsh",
-			"args": [
-				"-File",
-				"${workspaceFolder}/tools/scripts/dev_tools.ps1",
-				"-Command",
-				"proto-gen-run",
-				"-ConfigPath",
-				"${workspaceFolder}/tools/proto_generator/protogen/etc/proto_gen.yaml",
-				"-EnablePprof"
-			],
-			"problemMatcher": [
-				"$go"
-			]
-		},
-		{
-			"label": "proto-gen: run (exe fast)",
-			"type": "shell",
-			"command": "pwsh",
-			"args": [
-				"-File",
-				"${workspaceFolder}/tools/scripts/dev_tools.ps1",
-				"-Command",
-				"proto-gen-run",
-				"-ConfigPath",
-				"${workspaceFolder}/tools/proto_generator/protogen/etc/proto_gen.yaml",
-				"-UseBinary"
-			],
-			"problemMatcher": [
-				"$go"
-			]
-		},
-		{
-			"label": "proto-gen: run (go run)",
-			"type": "shell",
-			"command": "pwsh",
-			"args": [
-				"-File",
-				"${workspaceFolder}/tools/scripts/dev_tools.ps1",
-				"-Command",
-				"proto-gen-run",
-				"-ConfigPath",
-				"${workspaceFolder}/tools/proto_generator/protogen/etc/proto_gen.yaml",
-				"-UseGoRun"
-			],
-			"problemMatcher": [
-				"$go"
-			]
-		},
-		{
-			"label": "tools: tree",
-			"type": "shell",
-			"command": "pwsh",
-			"args": [
-				"-File",
-				"${workspaceFolder}/tools/scripts/dev_tools.ps1",
-				"-Command",
-				"tree"
-			],
-			"problemMatcher": []
-		},
-		{
-			"label": "verify: grpc_client build",
-			"type": "shell",
-			"command": "pwsh",
-			"args": [
-				"-NoProfile",
-				"-File",
-				"${workspaceFolder}/tools/scripts/verify_grpc_client_build.ps1"
-			],
-			"isBackground": false,
-			"group": "build"
-		},
-		{
-			"label": "third_party: grpc build",
-			"type": "shell",
-			"command": "pwsh",
-			"args": [
-				"-NoProfile",
-				"-File",
-				"${workspaceFolder}/tools/scripts/dev_tools.ps1",
-				"-Command",
-				"third-party-grpc-build"
-			],
-			"group": "build",
-			"problemMatcher": []
-		},
-		{
-			"label": "third_party: grpc build release",
-			"type": "shell",
-			"command": "pwsh",
-			"args": [
-				"-NoProfile",
-				"-File",
-				"${workspaceFolder}/tools/scripts/dev_tools.ps1",
-				"-Command",
-				"third-party-grpc-build",
-				"-BuildDebug:$false"
-			],
-			"group": "build",
-			"problemMatcher": []
-		},
-		{
-			"label": "third_party: grpc build debug",
-			"type": "shell",
-			"command": "pwsh",
-			"args": [
-				"-NoProfile",
-				"-File",
-				"${workspaceFolder}/tools/scripts/dev_tools.ps1",
-				"-Command",
-				"third-party-grpc-build",
-				"-BuildRelease:$false"
-			],
-			"group": "build",
-			"problemMatcher": []
-		},
-		{
-			"label": "go-svc: start all",
-			"type": "shell",
-			"command": "pwsh",
-			"args": [
-				"-File",
-				"${workspaceFolder}/tools/scripts/dev_tools.ps1",
-				"-Command",
-				"go-svc-start"
-			],
-			"problemMatcher": []
-		},
-		{
-			"label": "go-svc: stop all",
-			"type": "shell",
-			"command": "pwsh",
-			"args": [
-				"-File",
-				"${workspaceFolder}/tools/scripts/dev_tools.ps1",
-				"-Command",
-				"go-svc-stop"
-			],
-			"problemMatcher": []
-		},
-		{
-			"label": "go-svc: status",
-			"type": "shell",
-			"command": "pwsh",
-			"args": [
-				"-File",
-				"${workspaceFolder}/tools/scripts/dev_tools.ps1",
-				"-Command",
-				"go-svc-status"
-			],
-			"problemMatcher": []
-		},
-		{
-			"label": "go-svc: list",
-			"type": "shell",
-			"command": "pwsh",
-			"args": [
-				"-File",
-				"${workspaceFolder}/tools/scripts/dev_tools.ps1",
-				"-Command",
-				"go-svc-list"
-			],
-			"problemMatcher": []
-		},
-		{
-			"label": "go-svc: build",
-			"type": "shell",
-			"command": "pwsh",
-			"args": [
-				"-File",
-				"${workspaceFolder}/tools/scripts/dev_tools.ps1",
-				"-Command",
-				"go-svc-build"
-			],
-			"group": "build",
-			"problemMatcher": []
-		},
-		{
-			"label": "go-svc: build images",
-			"type": "shell",
-			"command": "pwsh",
-			"args": [
-				"-File",
-				"${workspaceFolder}/tools/scripts/dev_tools.ps1",
-				"-Command",
-				"go-svc-build-images"
-			],
-			"group": "build",
-			"problemMatcher": []
-		},
-		{
-			"label": "go-svc: push images",
-			"type": "shell",
-			"command": "pwsh",
-			"args": [
-				"-File",
-				"${workspaceFolder}/tools/scripts/dev_tools.ps1",
-				"-Command",
-				"go-svc-push-images"
-			],
-			"problemMatcher": []
-		},
-		{
-			"label": "cpp-node: start all",
-			"type": "shell",
-			"command": "pwsh",
-			"args": [
-				"-File",
-				"${workspaceFolder}/tools/scripts/dev_tools.ps1",
-				"-Command",
-				"cpp-node-start"
-			],
-			"problemMatcher": []
-		},
-		{
-			"label": "cpp-node: stop all",
-			"type": "shell",
-			"command": "pwsh",
-			"args": [
-				"-File",
-				"${workspaceFolder}/tools/scripts/dev_tools.ps1",
-				"-Command",
-				"cpp-node-stop"
-			],
-			"problemMatcher": []
-		},
-		{
-			"label": "cpp-node: status",
-			"type": "shell",
-			"command": "pwsh",
-			"args": [
-				"-File",
-				"${workspaceFolder}/tools/scripts/dev_tools.ps1",
-				"-Command",
-				"cpp-node-status"
-			],
-			"problemMatcher": []
-		},
-		{
-			"label": "dev: start all (C++ + Go)",
-			"type": "shell",
-			"command": "pwsh",
-			"args": [
-				"-File",
-				"${workspaceFolder}/tools/scripts/dev_tools.ps1",
-				"-Command",
-				"dev-start"
-			],
-			"problemMatcher": []
-		},
-		{
-			"label": "dev: stop all (C++ + Go)",
-			"type": "shell",
-			"command": "pwsh",
-			"args": [
-				"-File",
-				"${workspaceFolder}/tools/scripts/dev_tools.ps1",
-				"-Command",
-				"dev-stop"
-			],
-			"problemMatcher": []
-		},
-		{
-			"label": "dev: status (C++ + Go)",
-			"type": "shell",
-			"command": "pwsh",
-			"args": [
-				"-File",
-				"${workspaceFolder}/tools/scripts/dev_tools.ps1",
-				"-Command",
-				"dev-status"
-			],
-			"problemMatcher": []
-		},
-		{
-			"label": "dev: mprocs dashboard",
-			"type": "shell",
-			"command": "pwsh",
-			"args": [
-				"-NoProfile",
-				"-File",
-				"${workspaceFolder}/tools/scripts/start_mprocs.ps1",
-				"-ConfigPath",
-				"${workspaceFolder}/tools/dev/mprocs.yaml"
-			],
-			"problemMatcher": []
-		},
-		{
-			"label": "dev: mprocs dashboard (2 gate + 4 scene)",
-			"type": "shell",
-			"command": "pwsh",
-			"args": [
-				"-NoProfile",
-				"-File",
-				"${workspaceFolder}/tools/scripts/start_mprocs.ps1",
-				"-ConfigPath",
-				"${workspaceFolder}/tools/dev/mprocs.2g4s.yaml"
-			],
-			"problemMatcher": []
-		},
-		{
-			"label": "dev: mprocs dashboard (Go only)",
-			"type": "shell",
-			"command": "pwsh",
-			"args": [
-				"-NoProfile",
-				"-File",
-				"${workspaceFolder}/tools/scripts/start_mprocs.ps1",
-				"-ConfigPath",
-				"${workspaceFolder}/tools/dev/mprocs.go-only.yaml"
-			],
-			"problemMatcher": []
-		},
-		{
-			"label": "dev: mprocs dashboard (C++ only)",
-			"type": "shell",
-			"command": "pwsh",
-			"args": [
-				"-NoProfile",
-				"-File",
-				"${workspaceFolder}/tools/scripts/start_mprocs.ps1",
-				"-ConfigPath",
-				"${workspaceFolder}/tools/dev/mprocs.cpp-only.yaml"
-			],
-			"problemMatcher": []
-		},
-		{
-			"label": "dev: build + start (exe)",
-			"type": "shell",
-			"command": "pwsh",
-			"args": [
-				"-NoProfile",
-				"-ExecutionPolicy",
-				"Bypass",
-				"-Command",
-				"& '${workspaceFolder}/tools/scripts/dev_tools.ps1' -Command go-svc-build; if ($LASTEXITCODE -eq 0) { & '${workspaceFolder}/tools/scripts/dev_tools.ps1' -Command dev-start-exe -GateCount 2 -SceneCount 4 }"
-			],
-			"problemMatcher": []
-		},
-		{
-			"label": "dev: tail log",
-			"type": "shell",
-			"command": "powershell",
-			"args": [
-				"-NoProfile",
-				"-Command",
-				"$f = Get-ChildItem '${workspaceFolder}/run/logs/go_services/${input:processName}.stderr.log','${workspaceFolder}/run/logs/cpp_nodes/${input:processName}.stderr.log','${workspaceFolder}/bin/logs/go_services/${input:processName}.stderr.log','${workspaceFolder}/bin/logs/cpp_nodes/${input:processName}.stderr.log' -ErrorAction SilentlyContinue | Select-Object -First 1; if ($f) { Get-Content $f.FullName -Tail 100 -Wait } else { Write-Host 'Log not found for: ${input:processName}'; pause }"
-			],
-			"problemMatcher": [],
-			"presentation": {
-				"reveal": "always",
-				"panel": "dedicated",
-				"focus": true
-			}
-		},
-		{
-			"label": "dev: restart (exe)",
-			"type": "shell",
-			"command": "pwsh",
-			"args": [
-				"-NoProfile",
-				"-ExecutionPolicy",
-				"Bypass",
-				"-Command",
-				"& '${workspaceFolder}/tools/scripts/dev_tools.ps1' -Command dev-stop; & '${workspaceFolder}/tools/scripts/dev_tools.ps1' -Command go-svc-build; if ($LASTEXITCODE -eq 0) { & '${workspaceFolder}/tools/scripts/dev_tools.ps1' -Command dev-start-exe -GateCount 2 -SceneCount 4 }"
-			],
-			"problemMatcher": []
-		},
-		{
-			"label": "dev: infra up (docker compose)",
-			"type": "shell",
-			"command": "docker",
-			"args": [
-				"compose",
-				"-f",
-				"${workspaceFolder}/deploy/docker-compose.yml",
-				"up",
-				"-d"
-			],
-			"problemMatcher": []
-		},
-		{
-			"label": "dev: infra down (docker compose)",
-			"type": "shell",
-			"command": "docker",
-			"args": [
-				"compose",
-				"-f",
-				"${workspaceFolder}/deploy/docker-compose.yml",
-				"down"
-			],
-			"problemMatcher": []
-		},
-		{
-			"label": "dev: build (C++ + Go)",
-			"type": "shell",
-			"command": "cmd",
-			"args": [
-				"/c",
-				"${workspaceFolder}/dev.bat",
-				"build"
-			],
-			"group": "build",
-			"problemMatcher": []
-		},
-		{
-			"label": "dev: proto (regenerate)",
-			"type": "shell",
-			"command": "cmd",
-			"args": [
-				"/c",
-				"${workspaceFolder}/dev.bat",
-				"proto"
-			],
-			"problemMatcher": []
-		},
-		{
-			"label": "dev: robot (build + run)",
-			"type": "shell",
-			"command": "cmd",
-			"args": [
-				"/c",
-				"${workspaceFolder}/dev.bat",
-				"robot"
-			],
-			"problemMatcher": []
-		}
-	],
-	"inputs": [
-		{
-			"id": "processName",
-			"type": "pickString",
-			"description": "Select process to tail log",
-			"options": [
-				"login",
-				"db",
-				"data_service",
-				"player_locator",
-				"scene_manager",
-				"gate",
-				"gate_1",
-				"gate_2",
-				"scene",
-				"scene_1",
-				"scene_2",
-				"scene_3",
-				"scene_4"
-			],
-			"default": "login"
-		}
-	]
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "proto-gen: help",
+      "type": "shell",
+      "command": "pwsh",
+      "args": [
+        "-File",
+        "${workspaceFolder}/tools/scripts/dev_tools.ps1",
+        "-Command",
+        "help"
+      ],
+      "problemMatcher": []
+    },
+    {
+      "label": "proto-gen: build",
+      "type": "shell",
+      "command": "pwsh",
+      "args": [
+        "-File",
+        "${workspaceFolder}/tools/scripts/dev_tools.ps1",
+        "-Command",
+        "proto-gen-build"
+      ],
+      "group": "build",
+      "problemMatcher": [
+        "$go"
+      ]
+    },
+    {
+      "label": "proto-gen: run",
+      "type": "shell",
+      "command": "pwsh",
+      "args": [
+        "-File",
+        "${workspaceFolder}/tools/scripts/dev_tools.ps1",
+        "-Command",
+        "proto-gen-run",
+        "-ConfigPath",
+        "${workspaceFolder}/tools/proto_generator/protogen/etc/proto_gen.yaml"
+      ],
+      "problemMatcher": [
+        "$go"
+      ]
+    },
+    {
+      "label": "proto-gen: run (pprof)",
+      "type": "shell",
+      "command": "pwsh",
+      "args": [
+        "-File",
+        "${workspaceFolder}/tools/scripts/dev_tools.ps1",
+        "-Command",
+        "proto-gen-run",
+        "-ConfigPath",
+        "${workspaceFolder}/tools/proto_generator/protogen/etc/proto_gen.yaml",
+        "-EnablePprof"
+      ],
+      "problemMatcher": [
+        "$go"
+      ]
+    },
+    {
+      "label": "proto-gen: run (exe fast)",
+      "type": "shell",
+      "command": "pwsh",
+      "args": [
+        "-File",
+        "${workspaceFolder}/tools/scripts/dev_tools.ps1",
+        "-Command",
+        "proto-gen-run",
+        "-ConfigPath",
+        "${workspaceFolder}/tools/proto_generator/protogen/etc/proto_gen.yaml",
+        "-UseBinary"
+      ],
+      "problemMatcher": [
+        "$go"
+      ]
+    },
+    {
+      "label": "proto-gen: run (go run)",
+      "type": "shell",
+      "command": "pwsh",
+      "args": [
+        "-File",
+        "${workspaceFolder}/tools/scripts/dev_tools.ps1",
+        "-Command",
+        "proto-gen-run",
+        "-ConfigPath",
+        "${workspaceFolder}/tools/proto_generator/protogen/etc/proto_gen.yaml",
+        "-UseGoRun"
+      ],
+      "problemMatcher": [
+        "$go"
+      ]
+    },
+    {
+      "label": "tools: tree",
+      "type": "shell",
+      "command": "pwsh",
+      "args": [
+        "-File",
+        "${workspaceFolder}/tools/scripts/dev_tools.ps1",
+        "-Command",
+        "tree"
+      ],
+      "problemMatcher": []
+    },
+    {
+      "label": "verify: grpc_client build",
+      "type": "shell",
+      "command": "pwsh",
+      "args": [
+        "-NoProfile",
+        "-File",
+        "${workspaceFolder}/tools/scripts/verify_grpc_client_build.ps1"
+      ],
+      "isBackground": false,
+      "group": "build"
+    },
+    {
+      "label": "third_party: grpc build",
+      "type": "shell",
+      "command": "pwsh",
+      "args": [
+        "-NoProfile",
+        "-File",
+        "${workspaceFolder}/tools/scripts/dev_tools.ps1",
+        "-Command",
+        "third-party-grpc-build"
+      ],
+      "group": "build",
+      "problemMatcher": []
+    },
+    {
+      "label": "third_party: grpc build release",
+      "type": "shell",
+      "command": "pwsh",
+      "args": [
+        "-NoProfile",
+        "-File",
+        "${workspaceFolder}/tools/scripts/dev_tools.ps1",
+        "-Command",
+        "third-party-grpc-build",
+        "-BuildDebug:$false"
+      ],
+      "group": "build",
+      "problemMatcher": []
+    },
+    {
+      "label": "third_party: grpc build debug",
+      "type": "shell",
+      "command": "pwsh",
+      "args": [
+        "-NoProfile",
+        "-File",
+        "${workspaceFolder}/tools/scripts/dev_tools.ps1",
+        "-Command",
+        "third-party-grpc-build",
+        "-BuildRelease:$false"
+      ],
+      "group": "build",
+      "problemMatcher": []
+    },
+    {
+      "label": "go-svc: start all",
+      "type": "shell",
+      "command": "pwsh",
+      "args": [
+        "-File",
+        "${workspaceFolder}/tools/scripts/dev_tools.ps1",
+        "-Command",
+        "go-svc-start"
+      ],
+      "problemMatcher": []
+    },
+    {
+      "label": "go-svc: stop all",
+      "type": "shell",
+      "command": "pwsh",
+      "args": [
+        "-File",
+        "${workspaceFolder}/tools/scripts/dev_tools.ps1",
+        "-Command",
+        "go-svc-stop"
+      ],
+      "problemMatcher": []
+    },
+    {
+      "label": "go-svc: status",
+      "type": "shell",
+      "command": "pwsh",
+      "args": [
+        "-File",
+        "${workspaceFolder}/tools/scripts/dev_tools.ps1",
+        "-Command",
+        "go-svc-status"
+      ],
+      "problemMatcher": []
+    },
+    {
+      "label": "go-svc: list",
+      "type": "shell",
+      "command": "pwsh",
+      "args": [
+        "-File",
+        "${workspaceFolder}/tools/scripts/dev_tools.ps1",
+        "-Command",
+        "go-svc-list"
+      ],
+      "problemMatcher": []
+    },
+    {
+      "label": "go-svc: build",
+      "type": "shell",
+      "command": "pwsh",
+      "args": [
+        "-File",
+        "${workspaceFolder}/tools/scripts/dev_tools.ps1",
+        "-Command",
+        "go-svc-build"
+      ],
+      "group": "build",
+      "problemMatcher": []
+    },
+    {
+      "label": "go-svc: build images",
+      "type": "shell",
+      "command": "pwsh",
+      "args": [
+        "-File",
+        "${workspaceFolder}/tools/scripts/dev_tools.ps1",
+        "-Command",
+        "go-svc-build-images"
+      ],
+      "group": "build",
+      "problemMatcher": []
+    },
+    {
+      "label": "go-svc: push images",
+      "type": "shell",
+      "command": "pwsh",
+      "args": [
+        "-File",
+        "${workspaceFolder}/tools/scripts/dev_tools.ps1",
+        "-Command",
+        "go-svc-push-images"
+      ],
+      "problemMatcher": []
+    },
+    {
+      "label": "cpp-node: start all",
+      "type": "shell",
+      "command": "pwsh",
+      "args": [
+        "-File",
+        "${workspaceFolder}/tools/scripts/dev_tools.ps1",
+        "-Command",
+        "cpp-node-start"
+      ],
+      "problemMatcher": []
+    },
+    {
+      "label": "cpp-node: stop all",
+      "type": "shell",
+      "command": "pwsh",
+      "args": [
+        "-File",
+        "${workspaceFolder}/tools/scripts/dev_tools.ps1",
+        "-Command",
+        "cpp-node-stop"
+      ],
+      "problemMatcher": []
+    },
+    {
+      "label": "cpp-node: status",
+      "type": "shell",
+      "command": "pwsh",
+      "args": [
+        "-File",
+        "${workspaceFolder}/tools/scripts/dev_tools.ps1",
+        "-Command",
+        "cpp-node-status"
+      ],
+      "problemMatcher": []
+    },
+    {
+      "label": "dev: start all (C++ + Go)",
+      "type": "shell",
+      "command": "pwsh",
+      "args": [
+        "-File",
+        "${workspaceFolder}/tools/scripts/dev_tools.ps1",
+        "-Command",
+        "dev-start"
+      ],
+      "problemMatcher": []
+    },
+    {
+      "label": "dev: stop all (C++ + Go)",
+      "type": "shell",
+      "command": "pwsh",
+      "args": [
+        "-File",
+        "${workspaceFolder}/tools/scripts/dev_tools.ps1",
+        "-Command",
+        "dev-stop"
+      ],
+      "problemMatcher": []
+    },
+    {
+      "label": "dev: status (C++ + Go)",
+      "type": "shell",
+      "command": "pwsh",
+      "args": [
+        "-File",
+        "${workspaceFolder}/tools/scripts/dev_tools.ps1",
+        "-Command",
+        "dev-status"
+      ],
+      "problemMatcher": []
+    },
+    {
+      "label": "dev: mprocs dashboard",
+      "type": "shell",
+      "command": "pwsh",
+      "args": [
+        "-NoProfile",
+        "-File",
+        "${workspaceFolder}/tools/scripts/start_mprocs.ps1",
+        "-ConfigPath",
+        "${workspaceFolder}/tools/dev/mprocs.yaml"
+      ],
+      "problemMatcher": []
+    },
+    {
+      "label": "dev: mprocs dashboard (2 gate + 4 scene)",
+      "type": "shell",
+      "command": "pwsh",
+      "args": [
+        "-NoProfile",
+        "-File",
+        "${workspaceFolder}/tools/scripts/start_mprocs.ps1",
+        "-ConfigPath",
+        "${workspaceFolder}/tools/dev/mprocs.2g4s.yaml"
+      ],
+      "problemMatcher": []
+    },
+    {
+      "label": "dev: mprocs dashboard (Go only)",
+      "type": "shell",
+      "command": "pwsh",
+      "args": [
+        "-NoProfile",
+        "-File",
+        "${workspaceFolder}/tools/scripts/start_mprocs.ps1",
+        "-ConfigPath",
+        "${workspaceFolder}/tools/dev/mprocs.go-only.yaml"
+      ],
+      "problemMatcher": []
+    },
+    {
+      "label": "dev: mprocs dashboard (C++ only)",
+      "type": "shell",
+      "command": "pwsh",
+      "args": [
+        "-NoProfile",
+        "-File",
+        "${workspaceFolder}/tools/scripts/start_mprocs.ps1",
+        "-ConfigPath",
+        "${workspaceFolder}/tools/dev/mprocs.cpp-only.yaml"
+      ],
+      "problemMatcher": []
+    },
+    {
+      "label": "dev: build + start (exe)",
+      "type": "shell",
+      "command": "pwsh",
+      "args": [
+        "-NoProfile",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-Command",
+        "& '${workspaceFolder}/tools/scripts/dev_tools.ps1' -Command go-svc-build; if ($LASTEXITCODE -eq 0) { & '${workspaceFolder}/tools/scripts/dev_tools.ps1' -Command dev-start-exe -GateCount 2 -SceneCount 4 }"
+      ],
+      "problemMatcher": []
+    },
+    {
+      "label": "dev: tail log",
+      "type": "shell",
+      "command": "powershell",
+      "args": [
+        "-NoProfile",
+        "-Command",
+        "$f = Get-ChildItem '${workspaceFolder}/run/logs/go_services/${input:processName}.stderr.log','${workspaceFolder}/run/logs/cpp_nodes/${input:processName}.stderr.log','${workspaceFolder}/bin/logs/go_services/${input:processName}.stderr.log','${workspaceFolder}/bin/logs/cpp_nodes/${input:processName}.stderr.log' -ErrorAction SilentlyContinue | Select-Object -First 1; if ($f) { Get-Content $f.FullName -Tail 100 -Wait } else { Write-Host 'Log not found for: ${input:processName}'; pause }"
+      ],
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "focus": true
+      }
+    },
+    {
+      "label": "dev: restart (exe)",
+      "type": "shell",
+      "command": "pwsh",
+      "args": [
+        "-NoProfile",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-Command",
+        "& '${workspaceFolder}/tools/scripts/dev_tools.ps1' -Command dev-stop; & '${workspaceFolder}/tools/scripts/dev_tools.ps1' -Command go-svc-build; if ($LASTEXITCODE -eq 0) { & '${workspaceFolder}/tools/scripts/dev_tools.ps1' -Command dev-start-exe -GateCount 2 -SceneCount 4 }"
+      ],
+      "problemMatcher": []
+    },
+    {
+      "label": "dev: infra up (docker compose)",
+      "type": "shell",
+      "command": "docker",
+      "args": [
+        "compose",
+        "-f",
+        "${workspaceFolder}/deploy/docker-compose.yml",
+        "up",
+        "-d"
+      ],
+      "problemMatcher": []
+    },
+    {
+      "label": "dev: infra down (docker compose)",
+      "type": "shell",
+      "command": "docker",
+      "args": [
+        "compose",
+        "-f",
+        "${workspaceFolder}/deploy/docker-compose.yml",
+        "down"
+      ],
+      "problemMatcher": []
+    },
+    {
+      "label": "dev: build (C++ + Go)",
+      "type": "shell",
+      "command": "cmd",
+      "args": [
+        "/c",
+        "${workspaceFolder}/dev.bat",
+        "build"
+      ],
+      "group": "build",
+      "problemMatcher": []
+    },
+    {
+      "label": "dev: proto (regenerate)",
+      "type": "shell",
+      "command": "cmd",
+      "args": [
+        "/c",
+        "${workspaceFolder}/dev.bat",
+        "proto"
+      ],
+      "problemMatcher": []
+    },
+    {
+      "label": "dev: robot (build + run)",
+      "type": "shell",
+      "command": "cmd",
+      "args": [
+        "/c",
+        "${workspaceFolder}/dev.bat",
+        "robot"
+      ],
+      "problemMatcher": []
+    },
+    {
+      "label": "Docker：检查 gate 源码",
+      "type": "process",
+      "command": "python",
+      "args": [
+        "${workspaceFolder}/tools/scripts/rebuild_docker_debug.py",
+        "check",
+        "--services",
+        "gate"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "silent",
+        "panel": "dedicated"
+      }
+    },
+    {
+      "label": "Docker：检查 scene 源码",
+      "type": "process",
+      "command": "python",
+      "args": [
+        "${workspaceFolder}/tools/scripts/rebuild_docker_debug.py",
+        "check",
+        "--services",
+        "scene"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "silent",
+        "panel": "dedicated"
+      }
+    },
+    {
+      "label": "Docker：检查 battle 源码",
+      "type": "process",
+      "command": "python",
+      "args": [
+        "${workspaceFolder}/tools/scripts/rebuild_docker_debug.py",
+        "check",
+        "--services",
+        "battle"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "silent",
+        "panel": "dedicated"
+      }
+    },
+    {
+      "label": "Docker：检查 login 源码",
+      "type": "process",
+      "command": "python",
+      "args": [
+        "${workspaceFolder}/tools/scripts/rebuild_docker_debug.py",
+        "check",
+        "--services",
+        "login"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "silent",
+        "panel": "dedicated"
+      }
+    },
+    {
+      "label": "Docker：检查 db 源码",
+      "type": "process",
+      "command": "python",
+      "args": [
+        "${workspaceFolder}/tools/scripts/rebuild_docker_debug.py",
+        "check",
+        "--services",
+        "db"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "silent",
+        "panel": "dedicated"
+      }
+    },
+    {
+      "label": "Docker：检查 data-service 源码",
+      "type": "process",
+      "command": "python",
+      "args": [
+        "${workspaceFolder}/tools/scripts/rebuild_docker_debug.py",
+        "check",
+        "--services",
+        "data-service"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "silent",
+        "panel": "dedicated"
+      }
+    },
+    {
+      "label": "Docker：检查 scene-manager 源码",
+      "type": "process",
+      "command": "python",
+      "args": [
+        "${workspaceFolder}/tools/scripts/rebuild_docker_debug.py",
+        "check",
+        "--services",
+        "scene-manager"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "silent",
+        "panel": "dedicated"
+      }
+    },
+    {
+      "label": "Docker：检查 player-locator 源码",
+      "type": "process",
+      "command": "python",
+      "args": [
+        "${workspaceFolder}/tools/scripts/rebuild_docker_debug.py",
+        "check",
+        "--services",
+        "player-locator"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "silent",
+        "panel": "dedicated"
+      }
+    },
+    {
+      "label": "Docker：检查 client-rpc-router 源码",
+      "type": "process",
+      "command": "python",
+      "args": [
+        "${workspaceFolder}/tools/scripts/rebuild_docker_debug.py",
+        "check",
+        "--services",
+        "client-rpc-router"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "silent",
+        "panel": "dedicated"
+      }
+    },
+    {
+      "label": "Docker：检查 match 源码",
+      "type": "process",
+      "command": "python",
+      "args": [
+        "${workspaceFolder}/tools/scripts/rebuild_docker_debug.py",
+        "check",
+        "--services",
+        "match"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "silent",
+        "panel": "dedicated"
+      }
+    },
+    {
+      "label": "Docker：检查 gateway 源码",
+      "type": "process",
+      "command": "python",
+      "args": [
+        "${workspaceFolder}/tools/scripts/rebuild_docker_debug.py",
+        "check",
+        "--services",
+        "gateway"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "silent",
+        "panel": "dedicated"
+      }
+    },
+    {
+      "label": "Docker：重编并更新 C++ 节点",
+      "type": "process",
+      "command": "python",
+      "args": [
+        "${workspaceFolder}/tools/scripts/rebuild_docker_debug.py",
+        "cpp"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Docker：重编并更新 Go Login",
+      "type": "process",
+      "command": "python",
+      "args": [
+        "${workspaceFolder}/tools/scripts/rebuild_docker_debug.py",
+        "go",
+        "--services",
+        "login"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Docker：重编并更新全部 Go 服务",
+      "type": "process",
+      "command": "python",
+      "args": [
+        "${workspaceFolder}/tools/scripts/rebuild_docker_debug.py",
+        "go",
+        "--services",
+        "login,db,data-service,scene-manager,player-locator,client-rpc-router,match"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Docker：重编并更新 Java 网关",
+      "type": "process",
+      "command": "python",
+      "args": [
+        "${workspaceFolder}/tools/scripts/rebuild_docker_debug.py",
+        "java"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "problemMatcher": []
+    }
+  ],
+  "inputs": [
+    {
+      "id": "processName",
+      "type": "pickString",
+      "description": "Select process to tail log",
+      "options": [
+        "login",
+        "db",
+        "data_service",
+        "player_locator",
+        "scene_manager",
+        "gate",
+        "gate_1",
+        "gate_2",
+        "scene",
+        "scene_1",
+        "scene_2",
+        "scene_3",
+        "scene_4"
+      ],
+      "default": "login"
+    }
+  ]
 }

@@ -514,10 +514,22 @@ else
     echo "ERROR: librdkafka 重入组变参补丁既不能应用，也未完整应用。" >&2
     exit 1
 fi
+RDKAFKA_BORINGSSL_PATCH="$REPO_ROOT/tools/patches/librdkafka/v2.16.0-boringssl-compat.patch"
+# 只规范本补丁涉及的两个文件，使无 .git 的 Docker 副本也能按相同字节幂等恢复。
+sed -i 's/\r$//' "$RDKAFKA_DIR/src/rdrand.c" "$RDKAFKA_DIR/src/rdkafka_ssl.c"
+if git -C "$RDKAFKA_DIR" apply --reverse --check "$RDKAFKA_BORINGSSL_PATCH" >/dev/null 2>&1; then
+    echo "librdkafka BoringSSL 兼容补丁已应用"
+elif git -C "$RDKAFKA_DIR" apply --check "$RDKAFKA_BORINGSSL_PATCH"; then
+    git -C "$RDKAFKA_DIR" apply "$RDKAFKA_BORINGSSL_PATCH"
+else
+    echo "ERROR: librdkafka BoringSSL 兼容补丁既不能应用，也未完整应用。" >&2
+    exit 1
+fi
+RDKAFKA_BORINGSSL_PATCH_ID="$(sha256sum "$RDKAFKA_BORINGSSL_PATCH" | awk '{print $1}')"
 RDKAFKA_PATCH_ID="$(sha256sum "$RDKAFKA_PATCH" | awk '{print $1}')"
 RDKAFKA_SOURCE_ID="$(source_identity librdkafka "$RDKAFKA_DIR")"
 # Git 提交号不包含本地补丁；摘要必须进入 stamp，避免复用修复前的静态库。
-RDKAFKA_EXPECTED_STAMP="librdkafka-linux-v4:source=$RDKAFKA_SOURCE_ID:patch=$RDKAFKA_PATCH_ID:zlib=$ZLIB_SOURCE_ID:curl=$CURL_EXPECTED_STAMP"
+RDKAFKA_EXPECTED_STAMP="librdkafka-linux-v5:source=$RDKAFKA_SOURCE_ID:patch=$RDKAFKA_PATCH_ID:boringssl_patch=$RDKAFKA_BORINGSSL_PATCH_ID:implicit-declarations=error:zlib=$ZLIB_SOURCE_ID:curl=$CURL_EXPECTED_STAMP"
 RDKAFKA_INSTALLED_STAMP="$(read_stamp "$RDKAFKA_STAMP_FILE")"
 RDKAFKA_ARTIFACTS=(
     "$LIB_DIR/librdkafka.a"
@@ -536,6 +548,7 @@ else
     rm -rf "$RDKAFKA_BUILD"
     cmake -S "$RDKAFKA_DIR" -B "$RDKAFKA_BUILD" \
         -DCMAKE_BUILD_TYPE=Release \
+        -DCMAKE_C_FLAGS=-Werror=implicit-function-declaration \
         -DCMAKE_INSTALL_PREFIX=/usr/local \
         -DCMAKE_INSTALL_LIBDIR=lib \
         -DRDKAFKA_BUILD_EXAMPLES=OFF \

@@ -21,3 +21,40 @@ services:
     cap_add:
       - SYS_PTRACE
     restart: "no"
+
+  # 迁移任务必须直接运行并退出，不能由长驻调试器包装。
+  data-migrate:
+    entrypoint: [/app/service]
+
+  login:
+    cap_add: [SYS_PTRACE]
+    ports: ["127.0.0.1:2345:40000"]
+
+  db:
+    cap_add: [SYS_PTRACE]
+    ports: ["127.0.0.1:2346:40000"]
+
+  data-service:
+    cap_add: [SYS_PTRACE]
+    ports: ["127.0.0.1:2347:40000"]
+
+  scene-manager:
+    cap_add: [SYS_PTRACE]
+    ports: ["127.0.0.1:2348:40000"]
+
+  player-locator:
+    cap_add: [SYS_PTRACE]
+    ports: ["127.0.0.1:2349:40000"]
+
+  client-rpc-router:
+    cap_add: [SYS_PTRACE]
+    ports: ["127.0.0.1:2350:40000"]
+
+  match:
+    cap_add: [SYS_PTRACE]
+    ports: ["127.0.0.1:2351:40000"]
+
+  gateway:
+    environment:
+      JAVA_TOOL_OPTIONS: "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005"
+    ports: ["127.0.0.1:5005:5005"]

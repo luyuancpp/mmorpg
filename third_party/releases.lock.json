@@ -170,6 +170,10 @@
         {
           "path": "tools/patches/librdkafka/v2.16.0-test-selector-ownership.patch",
           "sha256": "ab283c7fe07e6dacf323f3c24786c62c981d0dca54e794854c84cb549f3e043f"
+        },
+        {
+          "path": "tools/patches/librdkafka/v2.16.0-boringssl-compat.patch",
+          "sha256": "fe43b217bcc55041f5a8ffb33715048b4d2e443b14968823e0e56e6d924474f6"
         }
       ]
     },

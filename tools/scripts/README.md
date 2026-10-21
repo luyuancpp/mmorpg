@@ -159,6 +159,11 @@ sol2 v3.3.0 的引用 `optional::emplace` 补丁回补上游已有的引用重�
 librdkafka v2.16.0 的补丁同时保留 Windows 工程调整与重入组变参修正：先完成格式化，
 再以 `"%s"` 传递原因，避免读取未初始化的 `va_list` 或将它误传给普通变参函数。
 
+Linux 的 gRPC、curl 与 librdkafka 统一使用 gRPC 固定版本自带的 BoringSSL 头文件及静态归档。
+不要将这些头文件与系统 OpenSSL 库混用。librdkafka 的 BoringSSL 补丁适配密码学随机数、
+HMAC 声明及 PKCS#12 证书、私钥和证书链加载；构建将缺失函数声明视为错误。
+独立 `third_party/openssl` 固定源码版本，本构建流程不安装或使用它。
+
 版本宏与运行字符串须按上游实际记录，版本来源以清单中的官方 tag 和精确 SHA 为准。
 curl 的 `curl-8_23_0` 源码仍标为 `8.23.0-DEV`（数字 `0x081700`）；官方发布脚本在生成
 tarball 时才准备发布版本头。直接从该 tag 构建时保留真实字符串，校验数字版本与源码宏一致，

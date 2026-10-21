@@ -14332,3 +14332,64 @@ PROGRESS 一直没有条目)。上面 2026-09-21 条里"第 7–9 步未跑""修
 - **最小修正**：仅给本地 Compose 网关补上 127.0.0.1:8081→8081，保留原18081入口；配置准备程序阻止 Gate／Battle 占用保留的8081，现有脚本入口和 Docker 文档同步。客户端只读核对相关网络配置及调用链，没有修改客户端源码或 PlayerPrefs。按此前持续授权只重建网关容器，没有重新编译、清数据、重启其它服务或扩展第三方排障。
 - **实际验证**：配置语法及 Compose 模型校验通过；GATEWAY_PORT=18081 时映射两个不同入口，设为8081时 Compose 去重为一个入口，无重复绑定。网关更新退出0，8081与18081健康接口均UP；同一客户端默认URL探针再次退出0，HTTP200、zones=1、OPEN=1。未代替用户点击客户端界面，交付操作为刷新或重新打开选择服务器窗口。
 - **证据**：build/verification/docker-client-server-list-20261020/ 下 probe.py、probe-20261020T140002.*.json（失败原件）、probe-20261020T140133.*.json（通过原件）及 gateway-port-up.log／gateway-port-up-result.json。未提交或推送。
+
+
+## 2026-10-20 Codex：客户端停在“正在登录账号”的阶段核对，界面问题尚待运行证据
+
+- **负责人现象**：客户端修正选服入口后，一直显示“正在登录账号”。本轮确认15个常驻服务仍运行、11个health均正常；14:18:22 UTC登录服记录type=password、tip=2000、invalid credentials，说明该请求在账号认证阶段未放行。2000是统一拒绝桶，不能据此认定具体为用户密码输错，也不能单凭该条日志解释界面为什么不结束等待。
+- **可用凭据交付**：不改认证开关、前缀限制或既有密码，使用当前独立Docker环境的已有开发口令对8081执行一次dev_demo登录，HTTP200、业务code0、access/refresh令牌均存在，角色列表0（新账号正常）。实际密码仅写在Git忽略的build/docker-debug-current/client-login-docker.txt供本机使用，未输出到日志或跟踪文件；认证结果原件为build/verification/docker-client-login-20261020/http-login-20261020T142437.*.json。该证据只证明HTTP认证，不冒称本次Unity进场成功。
+- **界面证据限制**：只读核客户端EnterZone／GatewayHttpClient／QdaoServerSelectView正常401路径会onError并清_busy；尚未复现本次界面卡住，不能无证据改异常／世代退出路径。已尝试本机Unity日志的脱敏定向读取，现有文件未给出本次回调异常；已向负责人请求点击登录后第一条Unity Console红色错误和调用栈，或确认无红字。未修改客户端、PlayerPrefs或用户输入，未停止Unity、重跑第三方或宣称修复完成。现有Docker设计文档补充本栈登录规则与本机凭据文件位置。
+
+### 2026-10-20 root：接收提交截止点后核新HEAD实际字节，Java旧构建元数据禁止冒当前验收
+
+- owner在其人类授权下报告Git保存/推送；根仅只读核实际本地HEAD：main=`6ecf275fa8cbde09307d54b1e6418f7b5979254f`，Java=`425f1daeef7286149b2a209706f7eafdb3bac429`，client=`4418d2ced3895a62cd7cb7a2ce558abfd4fb1b3f`（已不是消息中较早97bbe）。根未执行commit/push/tag或远端ls-remote，不继承owner提交权限，不把报告的根代码干净扩大成三仓及应用态子模块全部干净。旧206647/d1b22b/e80926和各原收据保留原作用域。
+- 根纯文件观察`build/verification/post-owner-commit-current-readonly-20261020T1428Z/review.json` SHA256=`07D1EE76762DA08A7447687DDCF8DD7CC99241E1F06D3EE8062C101394B86139`：完整生成器六域125、完整proto树126，以及已知guard26/runtime6/工程11/台账3相对C433/R3均0差异。此次未重封19058依赖/完整SDK工具，也不是全C++、Go18或client runtime闭包。C433不是硬绑旧HEAD的入口，后续只有完整来源仍相等且fresh资源/串行满足才可执行；04B4只是同字节历史Go构建证据，不冒6ecf新构建。首个只读包装因漏提取AssertSafeExistingPath在生成快照前停止，补齐原AAA已pin纯函数依赖后完成观察，原诊断写在收据；没有调用目标工具或更改源码。
+- Java一次轻量全源观察`build/verification/java-new-head-source-readonly-20261020T142907596Z/receipt.json` SHA256=`0834A4EB0C514E89D9571DA2536661E85D257C8620F91C6A355CD50CCF4385C8`：正确250managed绑定，实际2542完整来源/250受管相对5C64路径与字节全部diff[]。Java新提交的5路径已包含在旧dirty快照，不把Git提交误报成新源码实现；未重hash253工具或6506tail，未执行ContractSync/Prepare/Maven，5C64空head保留未耗用。
+- **当前执行边界**：7AF不直接核Git HEAD，旧字节guard可能仍过，但正常30参数仍`game.build.commit=d1b22b…`/`game.build.contract=206647…`，FEA与global/maps仍旧HEAD元数据，不能冒6ecf/425f新HEAD正规sync或Jar来源。后续必须按新HEAD正规sync并显式重绑构建参数/计划，再按实际来源决定新的正常30准备；不直接复用7AF作当前验收，也不因资源不足重做旧Prepare。没有放宽任何source或文档guard。
+- UTC14:25只读可用295756KiB且有未知dotnet，未启动任何重型/infra；根native0/新Prepare0，无活跃或未收会话。只读子线已结束，无ACL/系统/JavaPARITY或canonical改动；续跑及automation继续ACTIVE，真SQL158/双区旧实例CAS与延迟SQL ACK等完整目标仍未验收。
+
+
+### 2026-10-20 Codex：20 个子模块的 release 锁定与兼容验证收尾
+
+- 按负责人授权，将 20 个顶层子模块固定为 17 个最新正式 release 与 3 个无 release 的原提交；嵌套依赖服从父版本 gitlink，清单在 `third_party/releases.lock.json`。20 项 HEAD/索引检查通过，7 份登记补丁的工作区与索引字节摘要均匹配。原 53 份已跟踪改动通过自动 52 份与一份 Windows 工程人工逐块复核保留，原 40 个未跟踪路径仍存在；并行任务改动及其已创建的 6ecf275fa 提交保留。本会话未执行 Git commit、push 或 tag。
+- 兼容适配包括 EnTT 4 的 storage.info()、sol2 引用 optional 重绑定、hiredis 本地化 DNS 断言、Boost 普通聚合头与构建脚本。librdkafka 保留并行任务的重入组变参和测试选择器修正，新增 BoringSSL 随机数、HMAC 声明与 PKCS#12 证书/私钥/链适配。Linux 的 gRPC、curl、librdkafka 统一 BoringSSL；节点生成器显式链接 gRPC::SSL/Crypto，实际三个节点均无系统 libssl/libcrypto 动态依赖。独立 OpenSSL 4.0.3 仅固定源码，未装入该运行链。
+- Windows Debug|x64 的 game.sln 与 27 个正式测试工程串行编译通过。经负责人明确授权修正两处既有资产测试前提与预期后，最新 RDK DLL 上正式 27 工程重跑：2334 项登记，2327 通过、5 项条件互通跳过、2 项原有禁用 benchmark；独立 Redis 8.10.2 上 9 项实际通过且清理退出 0。早先额外两工程 150 项及独立 ServerInterop 1 项、GoRouter 4 项实际通过，合计 29 工程跨阶段覆盖 2482 个非禁用 C++ 用例；不声称全部 29 工程均在最新 DLL 下重跑。最新 RDK SDK 保留 /MDd、/RTC1 与原 5 项能力，当前 fatal-close 定向再次通过。
+- Linux 使用实际固定 SDK 完成依赖重编译与三节点重链。V4 四阶段退出码全 0：运行版本与锁定来源一致、TLS 加载闭包通过；112 次 SSL 正负配置/销毁、4 个 HMAC 向量共 8 次检查及安全 RAND 路径通过，ASAN/LSAN 仅 instrument 探针自身。三套 portable 测试登记 218 项，213 通过、5 项 Go 互通条件跳过，另有真实 TZif 时区测试 1 项通过；CTest 4/4。最终源码审计保留两份未参与该 Linux 编译范围的测试 fixture 差异，其余 guard 匹配，显式编译输入范围核对通过；没有把非全等改写为全等。
+- 未解决的上游验证记录仍保留：librdkafka 完整 Windows local 为 64 运行、61 通过、3 失败、130 跳过；失败项为 0055_producer_latency_mock、0176_share_consumer_commit_sync_local、0192_cgrp_static_session_timeout_mock，隔离诊断仍失败或超时。未通过放宽阈值、关闭断言或过滤用例宣称全绿；最新 SDK 未重复完整 local。真实 Kafka broker TLS 握手与完整 Linux 测试目录未执行。Java 版无对应的本次 C++ 子模块与构建链变更，客户端契约未变，不产生新功能对齐项。
+- 本机证据：`build/verification/submodule-release-upgrade-20261020/`，重点为 `windows-results-current-summary.json`、`linux-boringssl-validation-v4/result.json`、`linux-validated-image.json`、`linux-compiled-input-scope-v2-final.json` 与保留审计。此前失败及原始输出均保留，未上传日志。
+
+### 2026-10-20 Codex：新RDK部署与Linux收尾仅作有限原件观察，C433已知72成员未漂移
+
+- 本线程纯文件核对其它线4份原件SHA：Windows当前汇总1BACA12D、Linux V4结果273E0C22、验证镜像68DC5E18、最终编译输入范围8371837E。这些包含13:30Z后的新工作，不只属于先前11:34Z的gRPC SDK部署。Windows RDK构建/部署3份所引原件匹配；当前6个部署目标与正规install来源实际SHA一致，其中2个lib字节未变、bin与tests的4个DLL目标已换为E261A26F/290CA373。未复制或加载DLL，未借用/inspect其它线容器。
+- 正式27工程2334登记/2327通过/5条件跳过/2禁用及跨阶段2482仅保留该线保存口径，根未重算全XML，不冒本线程标准game→独立RPC/NoRaw/21库或真实故障通过。Linux V4保存complete=true/exit0；最终范围仍明确all_filtered_source_bytes_equal=false，3874中3872相等、两份未参与该Linux构建的fixture差异保留，未将非全等改为全等。
+- 根对C433已知固定成员runtime6/project11/ledger3/guard26/tool8/生成器EXE2/标准proto16共72份重新读SHA全部0diff；没有重枚举全路径集合/19058依赖或当前完整SDK库，不能当新执行准入。C433仍未执行，后续C++完整来源/库/DLL封存必须纳入新RDK，旧库存不自动沿用。原件：build/verification/submodule-sdk-followup-finite-readonly-20261020T1519Z/review.json，SHA46ED8F4204A3614EEB8D66E13D04D194D1D8AF6273EF239B3C9525C2162278F6。
+- 本轮root重型native0/新Prepare0，无活跃或未收会话；15:17只读442756KiB及未知dotnet仍不满足资源/串行门禁。新HEAD Java正规sync/构建绑定停点、人类维持权限决定均不变，没有Git写操作或其它进程控制。
+
+
+## 2026-10-20 Codex：无红字登录等待，已准备真实 Unity UI 复现，等待编辑器导入
+
+- 负责人确认无 Console 红字；本轮实际对照8081登录接口，错误凭据109ms返回HTTP200／code401／tip2000，正确dev_demo凭据142ms返回code0及两类令牌。只能排除这次接口对照中的网关长时间等待，尚未确认原始Unity界面的卡住原因；正常客户端源码401路径会清busy并显示拒绝。
+- 现有Unity MCP并未安装；使用本机已有Mono调试库的只读连接尝试失败，尚未暂停目标。Windows PowerShell文件执行被本机策略阻止后停止该路径，未修改或绕过系统执行策略。相关脱敏失败收据留在build/verification/docker-client-login-20261020/。
+- 在用户当前客户端登录问题范围内，仅新增临时Editor诊断Assets/Editor/Diagnostics/CodexLoginPipelineProbe.cs，无生产客户端、凭据或PlayerPrefs修改。它由客户端Library/CodexLoginProbe/request.json显式开关控制，初始记录注明发生在probe编译/域重载之后，不冒原始现场；受控重进Play后，沿真实UI先测错误口令是否清等待，再用本机开发凭据选角／建角及进场。结果只含阶段、bool、代数、焦点、后台运行与帧计数，无密码／令牌，输出至客户端忽略目录Logs/CodexLoginProbe/。总90秒，暂停直接报固定失败；完成后移除自己的开关，旧请求10分钟到期后不再触发未来编辑会话。
+- 最终诊断源码SHA256 f841242e217f1d336b99cfc4f98457308945d3f3f1c7db1c589cd74088831855；复用当前Unity Roslyn及项目response中的引用／检查选项，单文件独立编译退出0，日志为客户端Logs/CodexLoginProbe/compile-20261020T160611.077372Z/。这不是Unity真实UI通过。当前Editor尚未导入脚本，已请负责人在Unity执行Assets→Refresh；开关runId b114f4eb-98f3-4102-8019-b0edaa8f1343，运行结果预定于客户端Logs/CodexLoginProbe/20261020T160212.047983Z/。当前仍待实际复现和修复，不宣称登录问题已解决；不提交／推送。
+
+
+## 2026-10-20 Codex：本机 Unity 登录仍待真实 UI 验证，已确认本次点击被认证拒绝
+
+- 用户仍反馈“正在登录”，并在本机美东22:14附近再次点击。本线程只读核对UTC2026-10-21 02:13:21–02:15:21窗口，两次密码认证在02:13:51.687与02:13:59.314被拒绝（tip2000／invalid_credentials），未观察到令牌签发；开发认证对空账号、前缀不符和密码不符故意返回同一码，不能仅据此断言密码是哪处输错。未读取或输出用户输入的密码。当前15常驻运行、11healthy、3init退出0，两HTTP入口health均UP、区服1为OPEN。
+- 上轮Unity诊断开关到期后才被导入，无state/journal/result；本轮重新arm后确实在UTC02:12:42启动，但初始isPlaying=false，下一条更新隔28.8秒，旧诊断先判停止超时而未确认已停止，输出stop_play_timeout。它未发登录请求，不能当成游戏卡登录的复现，也不能用该导入后的初始状态解释用户原先现场。结果保留在客户端Logs/CodexLoginProbe/20261021T021113.064469Z/。
+- 仅修临时诊断initial/stopping/starting三处Play状态与超时判定顺序；未改生产客户端、服务端逻辑、凭据或PlayerPrefs。源码SHA256=405826e9f23cc3f75022d2cb12992ade3d87d1f8c8562855ae6bbda96e83bb63，用Unity现有Roslyn与项目引用独立编译退出0；日志在客户端Logs/CodexLoginProbe/compile-20261021T021700.098893Z/。这不是实际UI通过。
+- 新诊断开关runId=9b560ba1-9028-48a4-8129-1943c3ed6b10，独占结果目录客户端Logs/CodexLoginProbe/20261021T021714.862821Z/，首次激活有效期到UTC03:02:14／本机23:02:14；运行仍总90秒有界，完成移除开关。已请用户停止Play→Assets/Refresh，导入后自动走真实UI验证错误提示与正确开发凭据进场。截至UTC02:19:21，Editor程序集仍为02:12:39版本，尚未导入新诊断／无新journal。当前仍未修复或完成验收，不把HTTP认证对照或源码静态审计当UI成功。保留失败证据，不提交、不推送、不改系统或第三方。
+
+
+## 2026-10-20 Codex：真实 Unity 登录与进场验证完成
+
+- 负责人确认“进去了”，并确认使用本轮dev_demo与本机文件中的密码。实际UI诊断result.json在UTC2026-10-21 02:20:27.178（本机10月20日22:20:27）记录success=true、eventKind=entered_game、inGame/playerPresent/scenePresent均true、busy=false。此前错误密码分支实际清busy并显示auth_rejected，wrongPasswordPassed=true；正确开发凭据经真实按钮进入选角／建角及游戏。原件：客户端Logs/CodexLoginProbe/20261021T021714.862821Z/result.json；该文件SHA256如下行收据。
+- 本轮没有修改生产客户端或服务器业务代码，也没有证据把原始等待归因到单一缺陷。只确认刷新／重启Play后的真实UI两条路径均通过；先前用户点击的认证拒绝与诊断启动超时均保留原口径，不覆盖原失败记录。临时探针已结束更新并移除自己的Library/request.json，无开关不会自动启动；保留在明确Diagnostics目录，避免在用户当前Play中删除源码触发重载。未修改密码、PlayerPrefs、系统环境或第三方；未提交、未推送。
+- 结果原件SHA256=c6f533b7bce522728ea77a4db4be0eee85fcb9c098f3af238950829ef135135b。
+
+### 2026-10-20 root：其它线真实Unity错误拒绝与建角进场仅作有限原件收口
+
+- 根与已交付只读子线独立核结果C6F533B7、11条journal 6C3C0CF8、finished状态4F726C34、当前临时探针405826E9的实际SHA。保存UTC2026-10-21 02:20:27.1783174（本机10月20日22:20:27）success=true/eventKind=entered_game、inGame/playerPresent/scenePresent均true、busy=false、wrongPasswordPassed=true，累计59.659秒。journal先记录错误提交busy=true/authenticating，随后busy=false/auth_rejected，再经正确凭据实际建角后进场；不把建角扩大成已有角色选择分支也已实跑。
+- 当前探针成功判据为GameClient.InGame且PlayerId/CurrentSceneId非0，通过真实视图OnEnterClicked提交；result的flow=empty，不冒成功状态文案。开关仅核存在性为false，state的runId/输出目录匹配。本结果只覆盖探针导入并重进Play后的该次UI路径，不解释原始等待根因；旧认证拒绝/诊断启动超时保留。未封完整当前client源码、工具或Unity程序集来源，不提升为根新SDK正式生成/完整client runtime、Java30/SQL158或双区故障验收。
+- 有限审原件：build/verification/other-line-unity-ui-success-finite-readonly-20261021T024157248Z/review.json，SHA256=789E4526B558FB49E58D8D4789325CCB7376647F89CEAD719EEE8CAEB05CDFCC。本轮根native0/Prepare0，无目标工具、凭据读取、容器或进程控制、ACL/系统/Git写入。02:37观察1131560KiB及未知dotnet仍不满足重型门禁；C433完整准入、新HEAD Java正规sync与构建绑定等续跑停点不变。

@@ -141,6 +141,8 @@ COPY third_party/redis/       third_party/redis/
 COPY third_party/librdkafka/  third_party/librdkafka/
 COPY tools/patches/librdkafka/v2.16.0-cgrp-rejoin-varargs.patch \
     tools/patches/librdkafka/v2.16.0-cgrp-rejoin-varargs.patch
+COPY tools/patches/librdkafka/v2.16.0-boringssl-compat.patch \
+    tools/patches/librdkafka/v2.16.0-boringssl-compat.patch
 COPY third_party/yaml-cpp/    third_party/yaml-cpp/
 COPY third_party/zlib/        third_party/zlib/
 COPY third_party/curl/        third_party/curl/
