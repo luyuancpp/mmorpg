@@ -94,6 +94,12 @@ func init() {
 
 // step 推进 Due 里的一行。返回的错误由 Tick 交给 deferCommerce 分流;合同自身的持久数据坏了用 corrupt 包装。
 func (e *Engine) step(ctx context.Context, r *tradepb.TradeCommerceRecord) error {
+	if r.Kind == 6 {
+		if e.Rmb == nil {
+			return errors.New("人民币寄售恢复器未装配")
+		}
+		return e.Rmb.step(ctx, r)
+	}
 	w, err := data.Workflow(r)
 	if err != nil {
 		return corrupt(err)
@@ -249,7 +255,8 @@ func (e *Engine) quarantine(ctx context.Context, r *tradepb.TradeCommerceRecord)
 
 // ackReceipts 轮转发一页收据 ACK。按 op_id 翻页(CommerceRepo.AckDue 的 afterOpID):离线卖家的 ACK 一直 done=false,
 // 只从表头取会让它们永远占住名额,后面的 ACK 永远轮不到。每尝试一条就把游标推到它;本页不满说明到了表尾,下一轮从头。
-// 预算用完或 Acked 落库失败时游标停在最后一条已完整处理的 op 上,下一轮从没处理的那条接着来。
+// RPC / SQL 依赖错误保留待办、推进游标并继续本页,页末汇总给 Tick 调用者统一记录;
+// 正常离线(done=false、err=nil)不算故障。预算用完时游标停在最后一条已尝试的 op 上。
 // payload 解不开的行(AckDue 回 Bundle=nil)跳过并告警、游标照常越过它:托管原件仍在 escrow_snapshot 里,
 // 只是这条 ACK 发不出去,要人工按 op_id 查;不能让它挡住同页其余卖家的 ACK。
 func (e *Engine) ackReceipts(ctx context.Context) error {
@@ -260,9 +267,10 @@ func (e *Engine) ackReceipts(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
+	var failures error
 	for _, op := range ops {
 		if err := ctx.Err(); err != nil {
-			return err
+			return errors.Join(failures, err)
 		}
 		if op.Bundle == nil {
 			logx.Errorf("[Commerce] Receipt ack skipped: asset op payload undecodable op_id=%d stream=%d", op.OpID, int32(op.Stream))
@@ -272,9 +280,11 @@ func (e *Engine) ackReceipts(ctx context.Context) error {
 		child, cancel := context.WithTimeout(ctx, 1500*time.Millisecond)
 		ok, err := assetop.AcknowledgeReceipt(child, e.Applier, e.Ledger, op.Request())
 		cancel()
-		if err == nil && ok {
+		if err != nil {
+			failures = errors.Join(failures, fmt.Errorf("交易收据确认依赖失败 op_id=%d: %w", op.OpID, err))
+		} else if ok {
 			if err := e.Repo.Acked(ctx, op.OpID); err != nil {
-				return err
+				failures = errors.Join(failures, fmt.Errorf("交易收据待办清理失败 op_id=%d: %w", op.OpID, err))
 			}
 		}
 		e.ackAfterOpID = op.OpID
@@ -282,7 +292,7 @@ func (e *Engine) ackReceipts(ctx context.Context) error {
 	if len(ops) < tickAckLimit {
 		e.ackAfterOpID = 0
 	}
-	return nil
+	return failures
 }
 
 // logOffbandLegOutcome 记下"合同腿的终局不是 scene 落盘给的"(人工终结或自动放弃)。只是观察日志:

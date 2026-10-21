@@ -4,8 +4,10 @@
 
 // PlayerFrozenComp —— 归属交接在途的"冻结输入"标记。
 //
-// 与 PlayerTravelHandoffComp(player_ownership_comp.h)成对挂、成对摘,只由
-// PlayerLifecycleSystem::StartTravelHandoff 挂上。覆盖两种交接:跨 zone 传送,以及同 zone
+// 通常与 PlayerTravelHandoffComp(player_ownership_comp.h)成对挂、成对摘，由
+// PlayerLifecycleSystem::StartTravelHandoff挂上；账号角色交易另由FreezeRoleForTrade安装，
+// 目录世代封存持续到实体卸载，不能由travel超时/Abort摘掉，也不据此声称SQL已提交。
+// 交接覆盖两种:跨 zone 传送,以及同 zone
 // 跨节点换图(被 scene_manager 以 18 暂拒之后的"先存盘、出示标记、再请求")。
 //
 // 为什么要冻结:交接的前提是"盘上就是最新状态"。从挂上它到交接出结果(放行 → 销毁本地实体;

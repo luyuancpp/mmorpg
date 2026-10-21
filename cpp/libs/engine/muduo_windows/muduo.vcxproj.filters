@@ -114,6 +114,9 @@
     <ClCompile Include="src\muduo\net\TimerQueue.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\muduo\net\WindowsWakeup.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="src\muduo\net\protobuf\ProtobufCodecLite.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -279,6 +282,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\muduo\net\TimerQueue.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\muduo\net\WindowsWakeup.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\muduo\net\ZlibStream.h">

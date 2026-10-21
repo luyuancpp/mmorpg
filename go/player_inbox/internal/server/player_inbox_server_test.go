@@ -10,13 +10,60 @@ import (
 	"player_inbox/internal/constants"
 
 	inboxpb "proto/player_inbox"
+	"shared/serviceauth"
 
 	"github.com/zeromicro/go-zero/core/logx/logtest"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 type fakeConsumer struct {
 	err         error
 	sawDeadline bool
+}
+
+const consumerFixtureSecret = "fixture-only-scene-inbox-signing-secret-000000"
+
+func newTestConsumer(t *testing.T, store ConsumerStore, budget time.Duration) *PlayerInboxServer {
+	t.Helper()
+	verifier, err := serviceauth.New(map[string]string{"scene": consumerFixtureSecret})
+	if err != nil {
+		t.Fatal(err)
+	}
+	return NewPlayerInboxServer(store, budget, verifier)
+}
+func callFetch(t *testing.T, server *PlayerInboxServer, request *inboxpb.FetchPlayerInboxRequest) (*inboxpb.FetchPlayerInboxResponse, error) {
+	t.Helper()
+	if err := serviceauth.Sign("/player_inbox.PlayerInbox/FetchItems", request, "scene", consumerFixtureSecret, uint64(time.Now().UnixMilli())); err != nil {
+		t.Fatal(err)
+	}
+	return server.FetchItems(context.Background(), request)
+}
+func callAck(t *testing.T, server *PlayerInboxServer, request *inboxpb.AckPlayerInboxRequest) (*inboxpb.AckPlayerInboxResponse, error) {
+	t.Helper()
+	if err := serviceauth.Sign("/player_inbox.PlayerInbox/AckItems", request, "scene", consumerFixtureSecret, uint64(time.Now().UnixMilli())); err != nil {
+		t.Fatal(err)
+	}
+	return server.AckItems(context.Background(), request)
+}
+
+func TestConsumerRejectsUnsignedAndChangedOriginalRequest(t *testing.T) {
+	store := &fakeConsumer{}
+	server := newTestConsumer(t, store, time.Second)
+	request := &inboxpb.FetchPlayerInboxRequest{PlayerId: 7}
+	if _, err := server.FetchItems(context.Background(), request); status.Code(err) != codes.PermissionDenied {
+		t.Fatalf("缺场景签名应拒绝: %v", err)
+	}
+	if err := serviceauth.Sign("/player_inbox.PlayerInbox/FetchItems", request, "scene", consumerFixtureSecret, uint64(time.Now().UnixMilli())); err != nil {
+		t.Fatal(err)
+	}
+	request.PlayerId = 8
+	if _, err := server.FetchItems(context.Background(), request); status.Code(err) != codes.PermissionDenied {
+		t.Fatalf("原请求被修改应拒绝: %v", err)
+	}
+	if store.sawDeadline {
+		t.Fatal("验签失败不得进入存储")
+	}
 }
 
 func (f *fakeConsumer) Fetch(ctx context.Context, req *inboxpb.FetchPlayerInboxRequest) (*inboxpb.FetchPlayerInboxResponse, error) {
@@ -40,8 +87,8 @@ func (f *fakeConsumer) Ack(ctx context.Context, req *inboxpb.AckPlayerInboxReque
 func TestConsumerServerFoldsFaultsInBand(t *testing.T) {
 	logtest.Discard(t)
 	store := &fakeConsumer{err: errors.New("db down")}
-	s := NewPlayerInboxServer(store, 2500*time.Millisecond)
-	fetch, err := s.FetchItems(context.Background(), &inboxpb.FetchPlayerInboxRequest{
+	s := newTestConsumer(t, store, 2500*time.Millisecond)
+	fetch, err := callFetch(t, s, &inboxpb.FetchPlayerInboxRequest{
 		PlayerId: 7, Domain: inboxpb.PlayerInboxDomain_PLAYER_INBOX_DOMAIN_SCENE_GM_SANCTION, CorrelationId: 11,
 	})
 	if err != nil || fetch.GetErrorMessage().GetId() != constants.ErrStoreUnavailable ||
@@ -51,13 +98,13 @@ func TestConsumerServerFoldsFaultsInBand(t *testing.T) {
 	if !store.sawDeadline {
 		t.Fatal("请求应带整请求预算截止时间")
 	}
-	ack, err := s.AckItems(context.Background(), &inboxpb.AckPlayerInboxRequest{PlayerId: 7, CorrelationId: 12})
+	ack, err := callAck(t, s, &inboxpb.AckPlayerInboxRequest{PlayerId: 7, CorrelationId: 12})
 	if err != nil || ack.GetErrorMessage().GetId() != constants.ErrStoreUnavailable || ack.GetCorrelationId() != 12 {
 		t.Fatalf("AckItems = %+v, %v", ack, err)
 	}
 
 	store.err = nil
-	fetch, err = s.FetchItems(context.Background(), &inboxpb.FetchPlayerInboxRequest{PlayerId: 8})
+	fetch, err = callFetch(t, s, &inboxpb.FetchPlayerInboxRequest{PlayerId: 8})
 	if err != nil || fetch.GetErrorMessage() != nil || fetch.GetFence() != inboxpb.PlayerInboxFenceVerdict_PLAYER_INBOX_FENCE_NO_STREAM {
 		t.Fatalf("成功路径应原样透传: %+v, %v", fetch, err)
 	}
@@ -68,12 +115,12 @@ func TestConsumerServerFoldsFaultsInBand(t *testing.T) {
 // 查 Loki 时不会漏掉这两条。原实现写的是 scene_node=。
 func TestConsumerServerFaultLogsUseSceneNodeIDKey(t *testing.T) {
 	logs := logtest.NewCollector(t)
-	s := NewPlayerInboxServer(&fakeConsumer{err: errors.New("db down")}, 2500*time.Millisecond)
+	s := newTestConsumer(t, &fakeConsumer{err: errors.New("db down")}, 2500*time.Millisecond)
 	domain := inboxpb.PlayerInboxDomain_PLAYER_INBOX_DOMAIN_SCENE_GM_SANCTION
-	if _, err := s.FetchItems(context.Background(), &inboxpb.FetchPlayerInboxRequest{PlayerId: 7, Domain: domain, SceneNodeId: 9}); err != nil {
+	if _, err := callFetch(t, s, &inboxpb.FetchPlayerInboxRequest{PlayerId: 7, Domain: domain, SceneNodeId: 9}); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := s.AckItems(context.Background(), &inboxpb.AckPlayerInboxRequest{PlayerId: 7, Domain: domain, SceneNodeId: 9}); err != nil {
+	if _, err := callAck(t, s, &inboxpb.AckPlayerInboxRequest{PlayerId: 7, Domain: domain, SceneNodeId: 9}); err != nil {
 		t.Fatal(err)
 	}
 	out := logs.String()

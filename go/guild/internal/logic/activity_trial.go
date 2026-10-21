@@ -710,6 +710,22 @@ func (l *GuildLogic) startTrialBattle(ctx context.Context, d *ActivityDeps, lobb
 		GuildPeriodKey:    activity.GuildPeriodKey(row, now),
 		InitiatorPlayerID: lobby.InitiatorID,
 	}
+	if err := prepareOriginalTrialLaunch(ctx, d, lobby, &battle, row.GetDungeonId(), nowMs); err != nil {
+		return data.TrialBattleKey{}, trialEnd{}, err
+	}
+	if battle.LaunchRequestID != 0 {
+		// 与持久恢复保持同一规范顺序；match请求摘要不能因名单传入顺序不同而变化。
+		lobbyCopy := *lobby
+		lobbyCopy.Roster = []uint64{lobby.InitiatorID}
+		others := slices.Clone(lobby.Roster)
+		slices.Sort(others)
+		for _, p := range others {
+			if p != lobby.InitiatorID {
+				lobbyCopy.Roster = append(lobbyCopy.Roster, p)
+			}
+		}
+		lobby = &lobbyCopy
+	}
 	battleID, end := callTrialMatch(ctx, d, lobby, row.GetDungeonId(), battle)
 	if end.failed() {
 		return data.TrialBattleKey{}, end, nil
@@ -734,7 +750,7 @@ func callTrialMatch(ctx context.Context, d *ActivityDeps, lobby *data.TrialLobby
 	callCtx, cancel := context.WithTimeout(ctx, budget)
 	defer cancel()
 	resp, err := d.Match.StartActivityBattle(callCtx, &matchpb.StartActivityBattleRequest{
-		RequestId: lobby.LobbyID,
+		RequestId:       lobby.LobbyID,
 		BattleConfigId:  dungeonID,
 		MemberPlayerIds: slices.Clone(lobby.Roster),
 		ActivityContext: &battlepb.BattleActivityContext{
@@ -744,6 +760,7 @@ func callTrialMatch(ctx context.Context, d *ActivityDeps, lobby *data.TrialLobby
 			PeriodKey:         battle.PeriodKey,
 			InitiatorPlayerId: battle.InitiatorPlayerID,
 			GuildPeriodKey:    battle.GuildPeriodKey,
+			LaunchRequestId:   battle.LaunchRequestID,
 		},
 	})
 	if err != nil {
@@ -888,6 +905,7 @@ func (l *GuildLogic) SettleTrialResult(ctx context.Context, ev *kafkapb.BattleRe
 		PeriodKey:         actx.GetPeriodKey(),
 		GuildPeriodKey:    actx.GetGuildPeriodKey(),
 		InitiatorPlayerID: actx.GetInitiatorPlayerId(),
+		LaunchRequestID:   actx.GetLaunchRequestId(),
 	}
 	if battle.BattleID == 0 || battle.GuildID == 0 || battle.ActivityID == 0 || battle.PeriodKey == 0 || battle.GuildPeriodKey == 0 ||
 		ev.GetMatchMode() != uint32(matchpb.MatchMode_MATCH_MODE_PVE_TEAM) {

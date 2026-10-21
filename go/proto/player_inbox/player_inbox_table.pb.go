@@ -186,7 +186,7 @@ func (x *PlayerInboxStream) GetUpdatedMs() uint64 {
 	return 0
 }
 
-// 收件箱条目。终态行保留 30 天后物理删除;PENDING 行永不自动删除(IB-1)。
+// 收件箱条目。终态仍保留原唯一收据，旧生产请求不能在角色换主后重新生效。
 // 表行类型加 row，避免 Go 驼峰名与 RPC 消息 PlayerInboxItem 冲突；数据库表名保持不变。
 type PlayerInboxItemRow struct {
 	state              protoimpl.MessageState `protogen:"open.v1"`
@@ -211,8 +211,10 @@ type PlayerInboxItemRow struct {
 	IssuedAtMs         uint64                 `protobuf:"varint,19,opt,name=issued_at_ms,json=issuedAtMs,proto3" json:"issued_at_ms,omitempty"`        // 生产方签发时刻
 	CreatedMs          uint64                 `protobuf:"varint,20,opt,name=created_ms,json=createdMs,proto3" json:"created_ms,omitempty"`
 	UpdatedMs          uint64                 `protobuf:"varint,21,opt,name=updated_ms,json=updatedMs,proto3" json:"updated_ms,omitempty"`
-	OperatorName       string                 `protobuf:"bytes,22,opt,name=operator_name,json=operatorName,proto3" json:"operator_name,omitempty"` // ≤ 64B,入箱时校验
-	Note               string                 `protobuf:"bytes,23,opt,name=note,proto3" json:"note,omitempty"`                                     // ≤ 256B,入箱时校验
+	OperatorName       string                 `protobuf:"bytes,22,opt,name=operator_name,json=operatorName,proto3" json:"operator_name,omitempty"`     // ≤ 64B,入箱时校验
+	Note               string                 `protobuf:"bytes,23,opt,name=note,proto3" json:"note,omitempty"`                                         // ≤ 256B,入箱时校验
+	OwnerAccount       string                 `protobuf:"bytes,24,opt,name=owner_account,json=ownerAccount,proto3" json:"owner_account,omitempty"`     // 首次入箱在同account_role首锁内捕获，重投不得补新主
+	OwnerRevision      uint64                 `protobuf:"varint,25,opt,name=owner_revision,json=ownerRevision,proto3" json:"owner_revision,omitempty"` // 与owner_account组成原归属，不以当前目录修补历史
 	unknownFields      protoimpl.UnknownFields
 	sizeCache          protoimpl.SizeCache
 }
@@ -408,6 +410,20 @@ func (x *PlayerInboxItemRow) GetNote() string {
 	return ""
 }
 
+func (x *PlayerInboxItemRow) GetOwnerAccount() string {
+	if x != nil {
+		return x.OwnerAccount
+	}
+	return ""
+}
+
+func (x *PlayerInboxItemRow) GetOwnerRevision() uint64 {
+	if x != nil {
+		return x.OwnerRevision
+	}
+	return 0
+}
+
 // 运维审计,与入箱 / 作废同库同事务(设计 §6.1)。每条目每种动作一行;重复调用 INSERT IGNORE。
 // 审计行永不自动删除,而条目终态行 30 天后物理删除:「做了什么」(10–14)必须在审计行里自足(评审 L9)。
 // 10–14 一律由 inbox.InsertAudit 从**同一事务里的条目行**原样复制,调用方传入的同名字段被忽略(条目内容入箱后不再改)。
@@ -585,7 +601,7 @@ const file_proto_player_inbox_player_inbox_table_proto_rawDesc = "" +
 	"\n" +
 	"created_ms\x18\b \x01(\x04R\tcreatedMs\x12\x1d\n" +
 	"\n" +
-	"updated_ms\x18\t \x01(\x04R\tupdatedMs:Z\x8a\x92\xf4\x01\x13player_inbox_stream\x92\x92\xf4\x01\x16shard,player_id,domainڒ\xf4\x01\x13shard,notify_due_ms\xa8\x93\xf4\x01\x01\xb0\x93\xf4\x01\x04\xb8\x93\xf4\x01\x04\"\x85\a\n" +
+	"updated_ms\x18\t \x01(\x04R\tupdatedMs:Z\x8a\x92\xf4\x01\x13player_inbox_stream\x92\x92\xf4\x01\x16shard,player_id,domainڒ\xf4\x01\x13shard,notify_due_ms\xa8\x93\xf4\x01\x01\xb0\x93\xf4\x01\x04\xb8\x93\xf4\x01\x04\"\xe7\a\n" +
 	"\x15player_inbox_item_row\x12\x14\n" +
 	"\x05shard\x18\x01 \x01(\rR\x05shard\x12\x1b\n" +
 	"\tplayer_id\x18\x02 \x01(\x04R\bplayerId\x12\x16\n" +
@@ -615,7 +631,9 @@ const file_proto_player_inbox_player_inbox_table_proto_rawDesc = "" +
 	"\n" +
 	"updated_ms\x18\x15 \x01(\x04R\tupdatedMs\x12#\n" +
 	"\roperator_name\x18\x16 \x01(\tR\foperatorName\x12\x12\n" +
-	"\x04note\x18\x17 \x01(\tR\x04note:\x8c\x01\x8a\x92\xf4\x01\x11player_inbox_item\x92\x92\xf4\x01\x1ashard,player_id,domain,seqڒ\xf4\x01\x16shard,state,updated_ms\xe2\x92\xf4\x01(shard,player_id,producer_kind,request_id\xa8\x93\xf4\x01\x01\xb0\x93\xf4\x01\x04\xb8\x93\xf4\x01\x04\"\x80\x04\n" +
+	"\x04note\x18\x17 \x01(\tR\x04note\x12#\n" +
+	"\rowner_account\x18\x18 \x01(\tR\fownerAccount\x12%\n" +
+	"\x0eowner_revision\x18\x19 \x01(\x04R\rownerRevision:\xa2\x01\x8a\x92\xf4\x01\x11player_inbox_item\x92\x92\xf4\x01\x1ashard,player_id,domain,seqڒ\xf4\x01,shard,state,updated_ms;shard,player_id,state\xe2\x92\xf4\x01(shard,player_id,producer_kind,request_id\xa8\x93\xf4\x01\x01\xb0\x93\xf4\x01\x04\xb8\x93\xf4\x01\x04\"\x80\x04\n" +
 	"\x12player_inbox_audit\x12\x14\n" +
 	"\x05shard\x18\x01 \x01(\rR\x05shard\x12\x1b\n" +
 	"\tplayer_id\x18\x02 \x01(\x04R\bplayerId\x12\x16\n" +

@@ -116,3 +116,47 @@ func ReplacePlayerRow(ctx context.Context, tx Execer, msg proto.Message) error {
 	}
 	return nil
 }
+
+// ReplaceFencedPlayerRow 只供受控 bundle 导入，在调用者的同一事务内替换完整玩家行。
+// 较新围栏或较新覆盖世代不删除；随后 INSERT 撞键使整个双表事务回滚，不能倒退已有存档。
+// 普通 legacy 显式覆盖继续使用上面的旧入口，不以维护工具改变 go/db 的提交协议。
+func ReplaceFencedPlayerRow(ctx context.Context, tx Execer, msg proto.Message) error {
+	if msg == nil {
+		return errors.New("围栏导入缺玩家原件")
+	}
+	name := proto2mysql.GetTableName(msg)
+	if name != "player_database" && name != "player_database_1" {
+		return errors.New("围栏导入只允许两张玩家表")
+	}
+	epoch, seq, ok := RowFence(msg)
+	if !ok || epoch == 0 || seq == 0 {
+		return errors.New("围栏导入必须带完整非零版本")
+	}
+	m := msg.ProtoReflect()
+	fields := m.Descriptor().Fields()
+	idField, genField := fields.ByName("player_id"), fields.ByName("persist_schema_gen")
+	if idField == nil || genField == nil || m.Get(idField).Uint() == 0 {
+		return errors.New("围栏导入缺玩家身份或覆盖世代")
+	}
+	gen := m.Get(genField).Uint()
+	if gen == 0 {
+		gen = 1
+	}
+	table, err := messageTable(msg)
+	if err != nil {
+		return err
+	}
+	ins, err := table.GetInsertSQLWithArgs(msg)
+	if err != nil {
+		return fmt.Errorf("构造完整玩家插入失败: %w", err)
+	}
+	// 表名仅来自两个固定 proto，不接受输入字符串；所有值都参数化。
+	query := "DELETE FROM `" + name + "` WHERE player_id=? AND (fence_owner_epoch<? OR (fence_owner_epoch=? AND fence_save_seq<=?)) AND (persist_schema_gen=0 OR persist_schema_gen<=?)"
+	if _, err = tx.ExecContext(ctx, query, m.Get(idField).Uint(), epoch, epoch, seq, gen); err != nil {
+		return err
+	}
+	if _, err = tx.ExecContext(ctx, ins.Sql, ins.Args...); err != nil {
+		return fmt.Errorf("围栏玩家替换拒绝或SQL失败: %w", err)
+	}
+	return nil
+}

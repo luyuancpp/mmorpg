@@ -62,7 +62,7 @@ func TestEnterScene_HomeZoneMergingGatesSameZoneLanding(t *testing.T) {
 			countBefore, _ := sc.Redis.Get(fmt.Sprintf(InstancePlayerCountKey, targetID))
 			rejectedBefore := enterSceneRejectedCount(t, testZoneId, rejectReasonMergingForTest)
 
-			resp, err := NewEnterSceneLogic(context.Background(), sc).EnterScene(&scene_manager.EnterSceneRequest{
+			resp, err := NewEnterSceneLogic(context.Background(), sc).EnterScene(&scene_manager.EnterSceneRequest{OwnerRevision: 1,
 				PlayerId: playerID, SceneId: targetID, ZoneId: testZoneId,
 				GateZoneId: testZoneId, GateId: "1", GateInstanceId: "gate-uuid-test", RequestId: "merge-fence",
 			})
@@ -125,7 +125,7 @@ func TestEnterScene_HomeZoneMergingRejectsBeforeSameNodeEpochReseed(t *testing.T
 			require.False(t, mr.Exists(ownerepoch.OwnerEpochKey(playerID)))
 			withReachableSceneNode(t, sc, "10")
 
-			resp, err := NewEnterSceneLogic(context.Background(), sc).EnterScene(&scene_manager.EnterSceneRequest{
+			resp, err := NewEnterSceneLogic(context.Background(), sc).EnterScene(&scene_manager.EnterSceneRequest{OwnerRevision: 1,
 				PlayerId: playerID, SceneId: targetID, ZoneId: testZoneId,
 				GateZoneId: testZoneId, GateId: "1", GateInstanceId: "gate-uuid-test",
 			})
@@ -186,7 +186,7 @@ func TestEnterScene_HomeZoneMergingRejectsTravelFirstLegWithoutSideEffects(t *te
 		t.Error("合服围栏内不该去签目标 zone 的票据")
 		return nil, errors.New("unexpected redirect")
 	}
-	resp, err := logic.EnterScene(&scene_manager.EnterSceneRequest{
+	resp, err := logic.EnterScene(&scene_manager.EnterSceneRequest{OwnerRevision: 1,
 		PlayerId: playerID, ZoneId: 2,
 		GateZoneId: 1, GateId: "1", GateInstanceId: "gate-uuid-test",
 	})
@@ -224,7 +224,7 @@ func TestEnterScene_HomeZoneMergingRejectsTravelSecondLeg(t *testing.T) {
 	require.Equal(t, uint64(1), placed.epoch)
 	awaitingRaw, _ := sc.Redis.Get(getPlayerLocationKey(playerID))
 
-	resp, err := NewEnterSceneLogic(context.Background(), sc).EnterScene(&scene_manager.EnterSceneRequest{
+	resp, err := NewEnterSceneLogic(context.Background(), sc).EnterScene(&scene_manager.EnterSceneRequest{OwnerRevision: 1,
 		PlayerId: playerID, SceneId: targetID, ZoneId: 2,
 		GateZoneId: 2, GateId: "1", GateInstanceId: "gate-uuid-test",
 	})
@@ -256,7 +256,7 @@ func TestEnterScene_HomeZoneMergingIgnoredWhenUnmapped(t *testing.T) {
 	seedSceneOnNode(mr, testZoneId, targetID, "10", "0")
 	rejectedBefore := enterSceneRejectedCount(t, testZoneId, rejectReasonMergingForTest)
 
-	resp, err := NewEnterSceneLogic(context.Background(), sc).EnterScene(&scene_manager.EnterSceneRequest{
+	resp, err := NewEnterSceneLogic(context.Background(), sc).EnterScene(&scene_manager.EnterSceneRequest{OwnerRevision: 1,
 		PlayerId: playerID, SceneId: targetID, ZoneId: testZoneId,
 		GateZoneId: testZoneId, GateId: "1", GateInstanceId: "gate-uuid-test",
 	})

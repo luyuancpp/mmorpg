@@ -7,8 +7,43 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.Test;
 
 class CommerceStoreTest {
-    private CommerceApi.CreateOrder request(String key, long sku, int quantity) { return new CommerceApi.CreateOrder(key, sku, quantity); }
+    private CommerceApi.CreateOrder request(String key, long sku, int quantity) { return new CommerceApi.CreateOrder(key, sku, quantity, "测试账号", "1"); }
     private CommerceApi.Payment payment(CommerceApi.Order order, String transaction) { return new CommerceApi.Payment(order.orderId(), "test", transaction, order.amountMinor(), order.currency()); }
+
+    @Test void 支付只读查单保留冻结金额和终态_不修改订单或库存() {
+        try (var f = new CommerceFixture()) {
+            f.sku(1, 8, 125);
+            var first = f.store.create("18446744073709551615", request("payment-view-001", 1, 2));
+            f.jdbc.update("UPDATE pms_sku_stock SET price_minor=999 WHERE id=1");
+            String orderProjection = "SELECT id,order_sn,buyer_id,sku_id,quantity,pay_amount,currency,status,"
+                + "create_time_ms,payment_deadline_ms,payment_time_ms FROM oms_order ORDER BY id";
+            var orders = f.jdbc.queryForList(orderProjection);
+            var stocks = f.jdbc.queryForList("SELECT * FROM pms_sku_stock ORDER BY id");
+            var grants = f.jdbc.queryForList("SELECT * FROM commerce_order_grant ORDER BY order_sn");
+            assertEquals(first, f.store.paymentOrderView(first.orderId()));
+            assertEquals(orders, f.jdbc.queryForList(orderProjection));
+            assertEquals(stocks, f.jdbc.queryForList("SELECT * FROM pms_sku_stock ORDER BY id"));
+            assertEquals(grants, f.jdbc.queryForList("SELECT * FROM commerce_order_grant ORDER BY order_sn"));
+            var paid = f.store.recordTrustedPayment(payment(first, "payment-view-paid"));
+            assertEquals(paid, f.store.paymentOrderView(first.orderId()));
+            assertEquals("DELIVERY_PENDING", paid.state());
+            assertEquals(1, f.count("commerce_payment_receipt"));
+            assertEquals(1, f.count("commerce_delivery_intent"));
+        }
+    }
+
+    @Test void 支付只读查单拒绝非规范订单号_缺失返回未找到() {
+        try (var f = new CommerceFixture()) {
+            for (String invalid : new String[] {null, "", " ", "ABCDEF00-0000-0000-0000-000000000001", "x".repeat(257)}) {
+                assertEquals(400, assertThrows(CommerceException.class, () -> f.store.paymentOrderView(invalid)).status());
+            }
+            assertEquals(404, assertThrows(CommerceException.class,
+                () -> f.store.paymentOrderView("00000000-0000-0000-0000-000000000001")).status());
+            assertEquals(0, f.count("oms_order"));
+            assertEquals(0, f.count("commerce_payment_receipt"));
+            assertEquals(0, f.count("commerce_delivery_intent"));
+        }
+    }
 
     @Test void requestRetryKeepsOriginalPriceAndRejectsParameterChanges() {
         try (var f = new CommerceFixture()) {
@@ -18,7 +53,7 @@ class CommerceStoreTest {
             assertEquals(first, f.store.create("18446744073709551615", request("request-001", 1, 2)));
             assertEquals(250, first.amountMinor()); assertEquals(2, f.value("pms_sku_stock", "lock_stock"));
             assertEquals(409, assertThrows(CommerceException.class, () -> f.store.create("18446744073709551615", request("request-001", 1, 1))).status());
-            assertEquals(404, assertThrows(CommerceException.class, () -> f.store.get("2", first.orderId())).status());
+            assertEquals(404, assertThrows(CommerceException.class, () -> f.store.get("2", new CommerceApi.OwnedOrder(first.orderId(), "测试账号", "1"))).status());
             assertEquals(1_760_000_900_000L, first.paymentDeadlineMs());
         }
     }
@@ -63,10 +98,10 @@ class CommerceStoreTest {
         try (var f = new CommerceFixture()) {
             f.sku(1, 1, 100); var order = f.store.create("1", request("pay-cancel-001", 1, 1));
             parallel(2, index -> {
-                try { if (index == 0) { f.store.cancel("1", order.orderId()); } else { f.store.recordTrustedPayment(payment(order, "pay-race")); } }
+                try { if (index == 0) { f.store.cancel("1", new CommerceApi.OwnedOrder(order.orderId(), "测试账号", "1")); } else { f.store.recordTrustedPayment(payment(order, "pay-race")); } }
                 catch (CommerceException refused) { assertEquals(409, refused.status()); }
             });
-            String state = f.store.get("1", order.orderId()).state();
+            String state = f.store.get("1", new CommerceApi.OwnedOrder(order.orderId(), "测试账号", "1")).state();
             assertEquals(0, f.value("pms_sku_stock", "lock_stock"));
             if (state.equals("REFUND_PENDING")) { assertEquals(1, f.value("pms_sku_stock", "stock")); assertEquals(1, f.count("commerce_payment_receipt")); assertEquals(0, f.count("commerce_delivery_intent"));assertEquals(1,f.count("commerce_refund_intent")); }
             else { assertEquals("DELIVERY_PENDING", state); assertEquals(0, f.value("pms_sku_stock", "stock")); assertEquals(1, f.count("commerce_payment_receipt")); assertEquals(1, f.count("commerce_delivery_intent")); }
@@ -79,14 +114,14 @@ class CommerceStoreTest {
             assertEquals(paid, f.store.recordTrustedPayment(payment(order, "paid-001")));
             assertEquals("DELIVERY_PENDING", paid.state()); assertEquals(1, f.value("pms_sku_stock", "stock"));
             assertEquals(1, f.count("commerce_delivery_intent")); assertEquals(1, f.count("commerce_payment_receipt"));
-            assertEquals(409, assertThrows(CommerceException.class, () -> f.store.cancel("1", order.orderId())).status());
+            assertEquals(409, assertThrows(CommerceException.class, () -> f.store.cancel("1", new CommerceApi.OwnedOrder(order.orderId(), "测试账号", "1"))).status());
             assertEquals(409, assertThrows(CommerceException.class, () -> f.store.recordTrustedPayment(payment(order, "paid-002"))).status());
         }
     }
     @Test void cancelIsIdempotentAndLatePaymentRequiresRefundHandling() {
         try (var f = new CommerceFixture()) {
             f.sku(1, 2, 100); var order = f.store.create("1", request("cancel-001", 1, 1));
-            assertEquals(f.store.cancel("1", order.orderId()), f.store.cancel("1", order.orderId()));
+            assertEquals(f.store.cancel("1", new CommerceApi.OwnedOrder(order.orderId(), "测试账号", "1")), f.store.cancel("1", new CommerceApi.OwnedOrder(order.orderId(), "测试账号", "1")));
             assertEquals(0, f.value("pms_sku_stock", "lock_stock")); assertEquals(2, f.value("pms_sku_stock", "stock"));
             assertEquals("REFUND_PENDING", f.store.recordTrustedPayment(payment(order, "late-payment")).state());
             assertEquals(1, f.count("commerce_payment_receipt"));
@@ -101,7 +136,7 @@ class CommerceStoreTest {
             f.jdbc.update("UPDATE pms_sku_stock SET lock_stock=0 WHERE id=1");
             assertThrows(CommerceException.class, () -> f.store.recordTrustedPayment(payment(order, "broken-reservation")));
             assertEquals(0, f.count("commerce_payment_receipt")); assertEquals(0, f.count("commerce_delivery_intent"));
-            assertEquals("AWAITING_PAYMENT", f.store.get("1", order.orderId()).state()); assertEquals(2, f.value("pms_sku_stock", "stock"));
+            assertEquals("AWAITING_PAYMENT", f.store.get("1", new CommerceApi.OwnedOrder(order.orderId(), "测试账号", "1")).state()); assertEquals(2, f.value("pms_sku_stock", "stock"));
         }
     }
     @Test void concurrentOrdersCannotShareOnePaymentTransaction() throws Exception {
@@ -126,7 +161,7 @@ class CommerceStoreTest {
             assertEquals(2, f.count("commerce_payment_receipt")); assertEquals(8, f.value("pms_sku_stock", "stock"));
             var third = f.store.create("1", request("third-key-001", 1, 1));
             assertThrows(CommerceException.class, () -> f.store.recordTrustedPayment(payment(third, "PaymentCase")));
-            assertEquals("AWAITING_PAYMENT", f.store.get("1", third.orderId()).state());
+            assertEquals("AWAITING_PAYMENT", f.store.get("1", new CommerceApi.OwnedOrder(third.orderId(), "测试账号", "1")).state());
         }
     }
     @Test void unpublishedAndOverflowingProductsNeverReserve() {

@@ -19,6 +19,8 @@ import (
 
 	guildpb "proto/guild"
 	loginpb "proto/login"
+	"shared/accountdirectory"
+	"shared/serviceauth"
 	"shared/sqlpoolstats"
 
 	"github.com/zeromicro/go-zero/core/logx"
@@ -110,14 +112,21 @@ type RollbackFence interface {
 }
 
 type ServiceContext struct {
-	Config           config.Config
-	Router           *routing.Router
-	SnapshotStore    SnapshotStore
-	TxLogStore       TransactionLogStore
-	IdSegmentStore   IdSegmentStore
-	PlayerNameStore  PlayerNameStore // nil = 名字注册表不可用,Reserve/Release/BatchGet 全部 fail-closed
-	RollbackFence    RollbackFence
-	LoginAdminClient loginpb.LoginAdminClient // nil when not configured
+	AccountDirectory       accountdirectory.Directory
+	AccountDirectoryAuth   *serviceauth.Verifier
+	AccountRoleTrades      accountdirectory.RoleTrades
+	AccountRoleTradeAuth   *serviceauth.Verifier
+	RoleAdmissions         accountdirectory.Admissions
+	RoleAdmissionAuth      *serviceauth.Verifier
+	accountDirectoryCloser interface{ Close() error }
+	Config                 config.Config
+	Router                 *routing.Router
+	SnapshotStore          SnapshotStore
+	TxLogStore             TransactionLogStore
+	IdSegmentStore         IdSegmentStore
+	PlayerNameStore        PlayerNameStore // nil = 名字注册表不可用,Reserve/Release/BatchGet 全部 fail-closed
+	RollbackFence          RollbackFence
+	LoginAdminClient       loginpb.LoginAdminClient // nil when not configured
 
 	// PlayerRouteStore 是 db_first 下 RegisterPlayerZone 的库内提交点(已经注入进 Router,这里只为 Close 与
 	// MissingStores 留一份引用)。nil = redis 模式,或 db_first 但没装配起来(此时 RegisterPlayerZone fail-closed)。
@@ -172,6 +181,9 @@ func MySQLConfigOf(c config.Config) store.MySQLConfig {
 // player_route 缺席时它必然也缺,两项各自上报。
 func (s *ServiceContext) MissingStores() []string {
 	var missing []string
+	if s.AccountDirectory == nil || s.AccountDirectoryAuth == nil {
+		missing = append(missing, "account_directory")
+	}
 	if s.SnapshotStore == nil {
 		missing = append(missing, "snapshot")
 	}
@@ -274,6 +286,18 @@ func NewServiceContext(c config.Config) *ServiceContext {
 			}
 		}
 	}
+	var directory *store.AccountDirectoryStore
+	var directoryAuth *serviceauth.Verifier
+	if schemaReady {
+		if auth, err := serviceauth.New(map[string]string{"login": os.Getenv(accountdirectory.SecretEnv)}); err != nil {
+			logx.Errorf("[account-directory] internal caller key is unavailable; account directory RPCs disabled")
+		} else if ds, err := store.NewAccountDirectoryStore(mysqlCfg, c.AccountDirectory.RoleTradeSQLProof.Enabled || (c.Mode != "dev" && c.Mode != "test"), c.AccountDirectory.MaxRoles()); err != nil {
+			logx.Errorf("[account-directory] SQL store init failed: %v", err)
+		} else {
+			directory = ds
+			directoryAuth = auth
+		}
+	}
 
 	// 映射提交点的库(docs/design/player-route-mapping-durability-proposal.md §4,第 1a 批):只在 db_first 时装配。
 	// 失败只记 ERROR、保持 nil:RegisterPlayerZone 届时 fail-closed(ErrRouteStore),Store.Required=true 时
@@ -317,18 +341,53 @@ func NewServiceContext(c config.Config) *ServiceContext {
 		metrics.PrimeRouteRead()
 	}
 
-	return &ServiceContext{
-		Config:           c,
-		Router:           routing.NewRouter(c, routerOpts...),
-		SnapshotStore:    snapshotStore,
-		TxLogStore:       transactionLogStore,
-		IdSegmentStore:   idSegmentStore,
-		PlayerNameStore:  playerNameStore,
-		PlayerRouteStore: playerRouteStore,
-		RouteReconciler:  routeReconciler,
-		LoginAdminClient: loginClient,
-		GuildDivergence:  newGuildDivergenceChecker(c),
+	s := &ServiceContext{
+		Config:               c,
+		Router:               routing.NewRouter(c, routerOpts...),
+		SnapshotStore:        snapshotStore,
+		AccountDirectoryAuth: directoryAuth,
+		TxLogStore:           transactionLogStore,
+		IdSegmentStore:       idSegmentStore,
+		PlayerNameStore:      playerNameStore,
+		PlayerRouteStore:     playerRouteStore,
+		RouteReconciler:      routeReconciler,
+		LoginAdminClient:     loginClient,
+		GuildDivergence:      newGuildDivergenceChecker(c),
 	}
+	if directory != nil {
+		s.AccountDirectory = directory
+		s.accountDirectoryCloser = directory
+		var verifier store.RoleFreezeVerifier
+		if c.AccountDirectory.RoleTradeSQLProof.Enabled && c.RouteStore.DBFirst() {
+			if v, err := store.NewSQLRoleFreezeVerifier(c.AccountDirectory.RoleTradeSQLProof.AllowedStorageIDs); err != nil {
+				logx.Errorf("[account-role-trade] SQL proof storage allowlist invalid; Confirm disabled")
+			} else {
+				verifier = v
+			}
+		} else {
+			logx.Info("[account-role-trade] explicit TiDB SQL proof/db_first configuration absent; Confirm disabled")
+		}
+		trades := store.NewAccountRoleTradeStore(directory, verifier)
+		if err := trades.ConfigureGuildExit(c.AccountDirectory.MustLeaveGuild(), c.AccountDirectory.RoleTradeGuildSchema); err != nil {
+			logx.Error("[account-role-trade] guild authority schema absent; new role freezing disabled")
+		}
+		if err := trades.ConfigureAssetContracts(c.AccountDirectory.RoleTradeTradeSchema, c.AccountDirectory.RoleTradeGuildSchema, c.AccountDirectory.RoleTradeMailSchema, c.AccountDirectory.RoleTradeMatchSchema, c.AccountDirectory.RoleTradeInboxSchema); err != nil {
+			logx.Error("[account-role-trade] 跨域挂起权威schema或表列不可用；冻结、删除及维护导入保持拒绝")
+		}
+		s.AccountRoleTrades = trades
+		s.RoleAdmissions = store.NewAccountRoleAdmissionStore(directory)
+		if auth, err := serviceauth.New(map[string]string{"scene": os.Getenv(accountdirectory.SceneSecretEnv)}); err != nil {
+			logx.Errorf("[role-admission] internal scene key unavailable; admission/drain RPCs disabled")
+		} else {
+			s.RoleAdmissionAuth = auth
+		}
+		if auth, err := serviceauth.New(map[string]string{"trade": os.Getenv(accountdirectory.TradeSecretEnv)}); err != nil {
+			logx.Errorf("[account-role-trade] internal trade key unavailable; role trade RPCs disabled")
+		} else {
+			s.AccountRoleTradeAuth = auth
+		}
+	}
+	return s
 }
 
 // routeReconcilerDeps 是 newRouteReconciler 的外部依赖(单测接缝):mapping Redis 客户端的构造、本机名、预热令牌与 leader 标识的随机源。
@@ -551,6 +610,9 @@ func sqlPoolSamples(stores []namedStore, statsOf func(any) (sql.DBStats, bool)) 
 
 // Close releases every store and the router. nil-safe on each member.
 func (s *ServiceContext) Close() {
+	if s.accountDirectoryCloser != nil {
+		_ = s.accountDirectoryCloser.Close()
+	}
 	if s == nil {
 		return
 	}

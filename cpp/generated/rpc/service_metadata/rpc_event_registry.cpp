@@ -42,6 +42,7 @@
 #include "proto/scene_manager/scene_manager_service.pb.h"
 #include "proto/scene_manager/scene_node_service.pb.h"
 #include "proto/team/team.pb.h"
+#include "proto/team/team_authority.pb.h"
 #include "proto/trade/jubaozhai.pb.h"
 #include "proto/trade/trade_admin.pb.h"
 
@@ -85,6 +86,7 @@
 #include "rpc/service_metadata/scene_manager_service_service_metadata.h"
 #include "rpc/service_metadata/scene_node_service_service_metadata.h"
 #include "rpc/service_metadata/team_service_metadata.h"
+#include "rpc/service_metadata/team_authority_service_metadata.h"
 #include "rpc/service_metadata/jubaozhai_service_metadata.h"
 #include "rpc/service_metadata/trade_admin_service_metadata.h"
 
@@ -108,6 +110,7 @@ void SendBattleClientPlayerNotifySpectateStateErased(entt::registry& , entt::ent
 void SendBattleClientPlayerNotifySpectateTurnResultErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );
 void SendBattleClientPlayerNotifySpectateEndErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );
 void SendBattleClientPlayerNotifyBattleAssignedErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );
+void SendBattleNodeQueryObserverErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );
 void SendBattleNodeQueryBattleCreationErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );
 void SendBattleNodeCreateBattleErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );
 void SendBattleNodeDestroyBattleErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );
@@ -117,6 +120,18 @@ void SendBattleNodeIssueBattleTicketErased(entt::registry& , entt::entity , cons
 namespace chatpb{void SendClientPlayerChatSendChatErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
 namespace chatpb{void SendClientPlayerChatPullChatHistoryErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
 namespace client_rpc_router{void SendClientRpcRouterForwardErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
+namespace data_service{void SendDataServiceReadAccountDirectoryErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
+namespace data_service{void SendDataServiceCreateAccountRoleErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
+namespace data_service{void SendDataServiceLookupAccountRoleErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
+namespace data_service{void SendDataServiceRepairAccountRoleErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
+namespace data_service{void SendDataServiceRemoveAccountRolesErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
+namespace data_service{void SendDataServiceBeginAccountRoleTradeErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
+namespace data_service{void SendDataServiceConfirmAccountRoleTradeFreezeErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
+namespace data_service{void SendDataServiceCancelAccountRoleTradeErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
+namespace data_service{void SendDataServiceTransferAccountRoleErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
+namespace data_service{void SendDataServiceRegisterRoleAdmissionErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
+namespace data_service{void SendDataServiceCloseRoleAdmissionsErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
+namespace data_service{void SendDataServiceAckRoleTradeDrainErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
 namespace data_service{void SendDataServiceLoadPlayerDataErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
 namespace data_service{void SendDataServiceSavePlayerDataErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
 namespace data_service{void SendDataServiceGetPlayerFieldErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
@@ -211,6 +226,7 @@ namespace mailpb{void SendMailAdminSendGuildMailErased(entt::registry& , entt::e
 namespace mailpb{void SendMailAdminImportMailRecipientsErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
 namespace mailpb{void SendMailAdminSealMailCampaignErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
 namespace match{void SendMatchInternalStartActivityBattleErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
+namespace match{void SendMatchInternalCancelActivityBattleErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
 namespace match{void SendMatchServiceGetNetworkProbePlanErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
 namespace match{void SendMatchServiceCommitNetworkProbeErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
 namespace match{void SendMatchServiceJoinQueueErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
@@ -254,6 +270,7 @@ namespace scene_node{void SendSceneNodeGrpcDestroySceneErased(entt::registry& , 
 namespace scene_node{void SendSceneNodeGrpcReleasePlayerErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
 namespace scene_node{void SendSceneNodeGrpcPrepareBattleErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
 namespace scene_node{void SendSceneNodeGrpcCancelBattlePrepareErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
+namespace scene_node{void SendSceneNodeGrpcSealAccountRoleTradeErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
 namespace scene_node{void SendSceneNodeGrpcAssetDebitErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
 namespace scene_node{void SendSceneNodeGrpcAssetAbortDebitErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
 namespace scene_node{void SendSceneNodeGrpcAssetCreditErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
@@ -273,6 +290,7 @@ namespace teampb{void SendClientPlayerTeamStartTeamMatchErased(entt::registry& ,
 namespace teampb{void SendClientPlayerTeamNotifyTeamSnapshotErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
 namespace teampb{void SendClientPlayerTeamNotifyTeamInviteErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
 namespace teampb{void SendClientPlayerTeamNotifyTeamEventErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
+namespace teampb{void SendTeamAuthorityReadMembershipErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
 namespace trade{void SendClientPlayerJubaozhaiBrowseListingsErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
 namespace trade{void SendClientPlayerJubaozhaiGetListingDetailErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
 namespace trade{void SendClientPlayerJubaozhaiSetFavoriteErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
@@ -297,12 +315,23 @@ namespace trade{void SendClientPlayerJubaozhaiGetAuctionLotErased(entt::registry
 namespace trade{void SendClientPlayerJubaozhaiCancelAuctionLotErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
 namespace trade{void SendClientPlayerJubaozhaiBrowseCommerceOffersErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
 namespace trade{void SendClientPlayerJubaozhaiListTradeMarketsErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
+namespace trade{void SendClientPlayerJubaozhaiCreateRmbConsignmentErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
+namespace trade{void SendClientPlayerJubaozhaiGetRmbConsignmentErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
+namespace trade{void SendClientPlayerJubaozhaiListRmbConsignmentsErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
+namespace trade{void SendClientPlayerJubaozhaiBuyRmbConsignmentErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
+namespace trade{void SendClientPlayerJubaozhaiCancelRmbConsignmentErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
+namespace trade{void SendClientPlayerJubaozhaiGetRmbOrderErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
+namespace trade{void SendClientPlayerJubaozhaiListRmbOrdersErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
+namespace trade{void SendClientPlayerJubaozhaiCancelRmbOrderErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
+namespace trade{void SendClientPlayerJubaozhaiListSellerIncomesErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
+namespace trade{void SendClientPlayerJubaozhaiCreateWithdrawalErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
+namespace trade{void SendClientPlayerJubaozhaiGetWithdrawalErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
 namespace trade{void SendTradeAdminSeedListingErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
 
 // 容量以 rpc_event_registry.h 的 kMaxRpcMethodCount 为准;static_assert 把
 // "半途 regen 导致头文件容量落后于本轮 message id 数"的事故(2026-09-01,
 // InitMessageInfo 越界写导致节点启动断言)变成编译错误而不是运行期崩溃。
-static_assert(kMaxRpcMethodCount == 317,
+static_assert(kMaxRpcMethodCount == 344,
     "kMaxRpcMethodCount out of sync with this generation run - rerun the full proto generator");
 std::array<RpcMethodMeta, kMaxRpcMethodCount> gRpcMethodRegistry;
 
@@ -371,6 +400,11 @@ void InitMessageInfo()
         1, common::base::eNodeType::BattleNodeService, ::SendBattleClientPlayerNotifyBattleAssignedErased};
 
     // --- BattleNode ---
+    gRpcMethodRegistry[BattleNodeQueryObserverMessageId] = RpcMethodMeta{
+        "BattleNode", "QueryObserver",
+        std::make_unique<::QueryObserverRequest>(),
+        std::make_unique<::QueryObserverResponse>(),
+        1, common::base::eNodeType::BattleNodeService, ::SendBattleNodeQueryObserverErased};
     gRpcMethodRegistry[BattleNodeQueryBattleCreationMessageId] = RpcMethodMeta{
         "BattleNode", "QueryBattleCreation",
         std::make_unique<::QueryBattleCreationRequest>(),
@@ -394,7 +428,7 @@ void InitMessageInfo()
     gRpcMethodRegistry[BattleNodeRemoveObserverMessageId] = RpcMethodMeta{
         "BattleNode", "RemoveObserver",
         std::make_unique<::RemoveObserverRequest>(),
-        std::make_unique<::Empty>(),
+        std::make_unique<::RemoveObserverResponse>(),
         1, common::base::eNodeType::BattleNodeService, ::SendBattleNodeRemoveObserverErased};
     gRpcMethodRegistry[BattleNodeIssueBattleTicketMessageId] = RpcMethodMeta{
         "BattleNode", "IssueBattleTicket",
@@ -422,6 +456,66 @@ void InitMessageInfo()
         1, common::base::eNodeType::ClientRpcRouterNodeService, client_rpc_router::SendClientRpcRouterForwardErased};
 
     // --- DataService ---
+    gRpcMethodRegistry[DataServiceReadAccountDirectoryMessageId] = RpcMethodMeta{
+        "DataService", "ReadAccountDirectory",
+        std::make_unique<::data_service::ReadAccountDirectoryRequest>(),
+        std::make_unique<::data_service::AccountDirectoryResponse>(),
+        1, common::base::eNodeType::DataServiceNodeService, data_service::SendDataServiceReadAccountDirectoryErased};
+    gRpcMethodRegistry[DataServiceCreateAccountRoleMessageId] = RpcMethodMeta{
+        "DataService", "CreateAccountRole",
+        std::make_unique<::data_service::CreateAccountRoleRequest>(),
+        std::make_unique<::data_service::AccountDirectoryResponse>(),
+        1, common::base::eNodeType::DataServiceNodeService, data_service::SendDataServiceCreateAccountRoleErased};
+    gRpcMethodRegistry[DataServiceLookupAccountRoleMessageId] = RpcMethodMeta{
+        "DataService", "LookupAccountRole",
+        std::make_unique<::data_service::LookupAccountRoleRequest>(),
+        std::make_unique<::data_service::AccountRoleOwnership>(),
+        1, common::base::eNodeType::DataServiceNodeService, data_service::SendDataServiceLookupAccountRoleErased};
+    gRpcMethodRegistry[DataServiceRepairAccountRoleMessageId] = RpcMethodMeta{
+        "DataService", "RepairAccountRole",
+        std::make_unique<::data_service::RepairAccountRoleRequest>(),
+        std::make_unique<::data_service::AccountDirectoryResponse>(),
+        1, common::base::eNodeType::DataServiceNodeService, data_service::SendDataServiceRepairAccountRoleErased};
+    gRpcMethodRegistry[DataServiceRemoveAccountRolesMessageId] = RpcMethodMeta{
+        "DataService", "RemoveAccountRoles",
+        std::make_unique<::data_service::RemoveAccountRolesRequest>(),
+        std::make_unique<::google::protobuf::Empty>(),
+        1, common::base::eNodeType::DataServiceNodeService, data_service::SendDataServiceRemoveAccountRolesErased};
+    gRpcMethodRegistry[DataServiceBeginAccountRoleTradeMessageId] = RpcMethodMeta{
+        "DataService", "BeginAccountRoleTrade",
+        std::make_unique<::data_service::BeginAccountRoleTradeRequest>(),
+        std::make_unique<::data_service::AccountRoleTradeReceipt>(),
+        1, common::base::eNodeType::DataServiceNodeService, data_service::SendDataServiceBeginAccountRoleTradeErased};
+    gRpcMethodRegistry[DataServiceConfirmAccountRoleTradeFreezeMessageId] = RpcMethodMeta{
+        "DataService", "ConfirmAccountRoleTradeFreeze",
+        std::make_unique<::data_service::ConfirmAccountRoleTradeFreezeRequest>(),
+        std::make_unique<::data_service::AccountRoleTradeReceipt>(),
+        1, common::base::eNodeType::DataServiceNodeService, data_service::SendDataServiceConfirmAccountRoleTradeFreezeErased};
+    gRpcMethodRegistry[DataServiceCancelAccountRoleTradeMessageId] = RpcMethodMeta{
+        "DataService", "CancelAccountRoleTrade",
+        std::make_unique<::data_service::CancelAccountRoleTradeRequest>(),
+        std::make_unique<::data_service::AccountRoleTradeReceipt>(),
+        1, common::base::eNodeType::DataServiceNodeService, data_service::SendDataServiceCancelAccountRoleTradeErased};
+    gRpcMethodRegistry[DataServiceTransferAccountRoleMessageId] = RpcMethodMeta{
+        "DataService", "TransferAccountRole",
+        std::make_unique<::data_service::TransferAccountRoleRequest>(),
+        std::make_unique<::data_service::AccountRoleTransferReceipt>(),
+        1, common::base::eNodeType::DataServiceNodeService, data_service::SendDataServiceTransferAccountRoleErased};
+    gRpcMethodRegistry[DataServiceRegisterRoleAdmissionMessageId] = RpcMethodMeta{
+        "DataService", "RegisterRoleAdmission",
+        std::make_unique<::data_service::RegisterRoleAdmissionRequest>(),
+        std::make_unique<::data_service::RegisterRoleAdmissionResponse>(),
+        1, common::base::eNodeType::DataServiceNodeService, data_service::SendDataServiceRegisterRoleAdmissionErased};
+    gRpcMethodRegistry[DataServiceCloseRoleAdmissionsMessageId] = RpcMethodMeta{
+        "DataService", "CloseRoleAdmissions",
+        std::make_unique<::data_service::CloseRoleAdmissionsRequest>(),
+        std::make_unique<::data_service::CloseRoleAdmissionsResponse>(),
+        1, common::base::eNodeType::DataServiceNodeService, data_service::SendDataServiceCloseRoleAdmissionsErased};
+    gRpcMethodRegistry[DataServiceAckRoleTradeDrainMessageId] = RpcMethodMeta{
+        "DataService", "AckRoleTradeDrain",
+        std::make_unique<::data_service::AckRoleTradeDrainRequest>(),
+        std::make_unique<::google::protobuf::Empty>(),
+        1, common::base::eNodeType::DataServiceNodeService, data_service::SendDataServiceAckRoleTradeDrainErased};
     gRpcMethodRegistry[DataServiceLoadPlayerDataMessageId] = RpcMethodMeta{
         "DataService", "LoadPlayerData",
         std::make_unique<::data_service::LoadPlayerDataRequest>(),
@@ -958,6 +1052,11 @@ void InitMessageInfo()
         std::make_unique<::match::StartActivityBattleRequest>(),
         std::make_unique<::match::StartActivityBattleResponse>(),
         1, common::base::eNodeType::MatchNodeService, match::SendMatchInternalStartActivityBattleErased};
+    gRpcMethodRegistry[MatchInternalCancelActivityBattleMessageId] = RpcMethodMeta{
+        "MatchInternal", "CancelActivityBattle",
+        std::make_unique<::match::CancelActivityBattleRequest>(),
+        std::make_unique<::match::CancelActivityBattleResponse>(),
+        1, common::base::eNodeType::MatchNodeService, match::SendMatchInternalCancelActivityBattleErased};
 
     // --- MatchService ---
     gRpcMethodRegistry[MatchServiceGetNetworkProbePlanMessageId] = RpcMethodMeta{
@@ -1713,6 +1812,11 @@ void InitMessageInfo()
         std::make_unique<::CancelBattlePrepareRequest>(),
         std::make_unique<::Empty>(),
         1, common::base::eNodeType::SceneManagerNodeService, scene_node::SendSceneNodeGrpcCancelBattlePrepareErased};
+    gRpcMethodRegistry[SceneNodeGrpcSealAccountRoleTradeMessageId] = RpcMethodMeta{
+        "SceneNodeGrpc", "SealAccountRoleTrade",
+        std::make_unique<::SealAccountRoleTradeRequest>(),
+        std::make_unique<::Empty>(),
+        1, common::base::eNodeType::SceneManagerNodeService, scene_node::SendSceneNodeGrpcSealAccountRoleTradeErased};
     gRpcMethodRegistry[SceneNodeGrpcAssetDebitMessageId] = RpcMethodMeta{
         "SceneNodeGrpc", "AssetDebit",
         std::make_unique<::AssetOpRequest>(),
@@ -1810,6 +1914,13 @@ void InitMessageInfo()
         std::make_unique<::teampb::TeamEventS2C>(),
         std::make_unique<::Empty>(),
         1, common::base::eNodeType::TeamNodeService, teampb::SendClientPlayerTeamNotifyTeamEventErased};
+
+    // --- TeamAuthority ---
+    gRpcMethodRegistry[TeamAuthorityReadMembershipMessageId] = RpcMethodMeta{
+        "TeamAuthority", "ReadMembership",
+        std::make_unique<::teampb::ReadTeamMembershipRequest>(),
+        std::make_unique<::teampb::ReadTeamMembershipResponse>(),
+        1, common::base::eNodeType::TeamNodeService, teampb::SendTeamAuthorityReadMembershipErased};
 
     // --- ClientPlayerJubaozhai ---
     gRpcMethodRegistry[ClientPlayerJubaozhaiBrowseListingsMessageId] = RpcMethodMeta{
@@ -1932,6 +2043,61 @@ void InitMessageInfo()
         std::make_unique<::trade::ListTradeMarketsRequest>(),
         std::make_unique<::trade::ListTradeMarketsResponse>(),
         1, common::base::eNodeType::TradeNodeService, trade::SendClientPlayerJubaozhaiListTradeMarketsErased};
+    gRpcMethodRegistry[ClientPlayerJubaozhaiCreateRmbConsignmentMessageId] = RpcMethodMeta{
+        "ClientPlayerJubaozhai", "CreateRmbConsignment",
+        std::make_unique<::trade::CreateRmbConsignmentRequest>(),
+        std::make_unique<::trade::RmbConsignmentResponse>(),
+        1, common::base::eNodeType::TradeNodeService, trade::SendClientPlayerJubaozhaiCreateRmbConsignmentErased};
+    gRpcMethodRegistry[ClientPlayerJubaozhaiGetRmbConsignmentMessageId] = RpcMethodMeta{
+        "ClientPlayerJubaozhai", "GetRmbConsignment",
+        std::make_unique<::trade::GetRmbConsignmentRequest>(),
+        std::make_unique<::trade::RmbConsignmentResponse>(),
+        1, common::base::eNodeType::TradeNodeService, trade::SendClientPlayerJubaozhaiGetRmbConsignmentErased};
+    gRpcMethodRegistry[ClientPlayerJubaozhaiListRmbConsignmentsMessageId] = RpcMethodMeta{
+        "ClientPlayerJubaozhai", "ListRmbConsignments",
+        std::make_unique<::trade::ListRmbConsignmentsRequest>(),
+        std::make_unique<::trade::ListRmbConsignmentsResponse>(),
+        1, common::base::eNodeType::TradeNodeService, trade::SendClientPlayerJubaozhaiListRmbConsignmentsErased};
+    gRpcMethodRegistry[ClientPlayerJubaozhaiBuyRmbConsignmentMessageId] = RpcMethodMeta{
+        "ClientPlayerJubaozhai", "BuyRmbConsignment",
+        std::make_unique<::trade::BuyRmbConsignmentRequest>(),
+        std::make_unique<::trade::CommerceOrderResponse>(),
+        1, common::base::eNodeType::TradeNodeService, trade::SendClientPlayerJubaozhaiBuyRmbConsignmentErased};
+    gRpcMethodRegistry[ClientPlayerJubaozhaiCancelRmbConsignmentMessageId] = RpcMethodMeta{
+        "ClientPlayerJubaozhai", "CancelRmbConsignment",
+        std::make_unique<::trade::CancelRmbConsignmentRequest>(),
+        std::make_unique<::trade::RmbConsignmentResponse>(),
+        1, common::base::eNodeType::TradeNodeService, trade::SendClientPlayerJubaozhaiCancelRmbConsignmentErased};
+    gRpcMethodRegistry[ClientPlayerJubaozhaiGetRmbOrderMessageId] = RpcMethodMeta{
+        "ClientPlayerJubaozhai", "GetRmbOrder",
+        std::make_unique<::trade::GetCommerceOrderRequest>(),
+        std::make_unique<::trade::CommerceOrderResponse>(),
+        1, common::base::eNodeType::TradeNodeService, trade::SendClientPlayerJubaozhaiGetRmbOrderErased};
+    gRpcMethodRegistry[ClientPlayerJubaozhaiListRmbOrdersMessageId] = RpcMethodMeta{
+        "ClientPlayerJubaozhai", "ListRmbOrders",
+        std::make_unique<::trade::ListCommerceOrdersRequest>(),
+        std::make_unique<::trade::ListCommerceOrdersResponse>(),
+        1, common::base::eNodeType::TradeNodeService, trade::SendClientPlayerJubaozhaiListRmbOrdersErased};
+    gRpcMethodRegistry[ClientPlayerJubaozhaiCancelRmbOrderMessageId] = RpcMethodMeta{
+        "ClientPlayerJubaozhai", "CancelRmbOrder",
+        std::make_unique<::trade::CancelCommerceOrderRequest>(),
+        std::make_unique<::trade::CommerceOrderResponse>(),
+        1, common::base::eNodeType::TradeNodeService, trade::SendClientPlayerJubaozhaiCancelRmbOrderErased};
+    gRpcMethodRegistry[ClientPlayerJubaozhaiListSellerIncomesMessageId] = RpcMethodMeta{
+        "ClientPlayerJubaozhai", "ListSellerIncomes",
+        std::make_unique<::trade::ListSellerIncomesRequest>(),
+        std::make_unique<::trade::ListSellerIncomesResponse>(),
+        1, common::base::eNodeType::TradeNodeService, trade::SendClientPlayerJubaozhaiListSellerIncomesErased};
+    gRpcMethodRegistry[ClientPlayerJubaozhaiCreateWithdrawalMessageId] = RpcMethodMeta{
+        "ClientPlayerJubaozhai", "CreateWithdrawal",
+        std::make_unique<::trade::CreateWithdrawalRequest>(),
+        std::make_unique<::trade::WithdrawalResponse>(),
+        1, common::base::eNodeType::TradeNodeService, trade::SendClientPlayerJubaozhaiCreateWithdrawalErased};
+    gRpcMethodRegistry[ClientPlayerJubaozhaiGetWithdrawalMessageId] = RpcMethodMeta{
+        "ClientPlayerJubaozhai", "GetWithdrawal",
+        std::make_unique<::trade::GetWithdrawalRequest>(),
+        std::make_unique<::trade::WithdrawalResponse>(),
+        1, common::base::eNodeType::TradeNodeService, trade::SendClientPlayerJubaozhaiGetWithdrawalErased};
 
     // --- TradeAdmin ---
     gRpcMethodRegistry[TradeAdminSeedListingMessageId] = RpcMethodMeta{
@@ -2126,6 +2292,17 @@ bool IsClientMessageId(uint32_t messageId)
 	case ClientPlayerJubaozhaiCancelAuctionLotMessageId:
 	case ClientPlayerJubaozhaiBrowseCommerceOffersMessageId:
 	case ClientPlayerJubaozhaiListTradeMarketsMessageId:
+	case ClientPlayerJubaozhaiCreateRmbConsignmentMessageId:
+	case ClientPlayerJubaozhaiGetRmbConsignmentMessageId:
+	case ClientPlayerJubaozhaiListRmbConsignmentsMessageId:
+	case ClientPlayerJubaozhaiBuyRmbConsignmentMessageId:
+	case ClientPlayerJubaozhaiCancelRmbConsignmentMessageId:
+	case ClientPlayerJubaozhaiGetRmbOrderMessageId:
+	case ClientPlayerJubaozhaiListRmbOrdersMessageId:
+	case ClientPlayerJubaozhaiCancelRmbOrderMessageId:
+	case ClientPlayerJubaozhaiListSellerIncomesMessageId:
+	case ClientPlayerJubaozhaiCreateWithdrawalMessageId:
+	case ClientPlayerJubaozhaiGetWithdrawalMessageId:
 		return true;
 	default:
 		return false;

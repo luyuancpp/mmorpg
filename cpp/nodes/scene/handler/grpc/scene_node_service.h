@@ -29,6 +29,7 @@ public:
     static constexpr std::string_view kReleasePlayerPath = "/scene_node.SceneNodeGrpc/ReleasePlayer";
     static constexpr std::string_view kPrepareBattlePath = "/scene_node.SceneNodeGrpc/PrepareBattle";
     static constexpr std::string_view kCancelBattlePreparePath = "/scene_node.SceneNodeGrpc/CancelBattlePrepare";
+    static constexpr std::string_view kSealAccountRoleTradePath = "/scene_node.SceneNodeGrpc/SealAccountRoleTrade";
     static constexpr std::string_view kAssetDebitPath = "/scene_node.SceneNodeGrpc/AssetDebit";
     static constexpr std::string_view kAssetAbortDebitPath = "/scene_node.SceneNodeGrpc/AssetAbortDebit";
     static constexpr std::string_view kAssetCreditPath = "/scene_node.SceneNodeGrpc/AssetCredit";
@@ -40,6 +41,7 @@ private:
     using ReleasePlayerCall = GrpcUnaryCall<::scene_node::ReleasePlayerRequest, ::Empty>;
     using PrepareBattleCall = GrpcUnaryCall<::PrepareBattleRequest, ::PrepareBattleResponse>;
     using CancelBattlePrepareCall = GrpcUnaryCall<::CancelBattlePrepareRequest, ::Empty>;
+    using SealAccountRoleTradeCall = GrpcUnaryCall<::SealAccountRoleTradeRequest, ::Empty>;
     using AssetDebitCall = GrpcUnaryCall<::AssetOpRequest, ::AssetOpResponse>;
     using AssetAbortDebitCall = GrpcUnaryCall<::AssetOpRequest, ::AssetOpResponse>;
     using AssetCreditCall = GrpcUnaryCall<::AssetOpRequest, ::AssetOpResponse>;
@@ -49,6 +51,7 @@ private:
     void ReleasePlayer(const std::shared_ptr<ReleasePlayerCall>& call);
     void PrepareBattle(const std::shared_ptr<PrepareBattleCall>& call);
     void CancelBattlePrepare(const std::shared_ptr<CancelBattlePrepareCall>& call);
+    void SealAccountRoleTrade(const std::shared_ptr<SealAccountRoleTradeCall>& call);
     void AssetDebit(const std::shared_ptr<AssetDebitCall>& call);
     void AssetAbortDebit(const std::shared_ptr<AssetAbortDebitCall>& call);
     void AssetCredit(const std::shared_ptr<AssetCreditCall>& call);
@@ -58,6 +61,7 @@ private:
     static void HandleReleasePlayer(const ::scene_node::ReleasePlayerRequest* request);
     static void HandlePrepareBattle(const ::PrepareBattleRequest* request, ::PrepareBattleResponse* response);
     static void HandleCancelBattlePrepare(const ::CancelBattlePrepareRequest* request);
+    static void HandleSealAccountRoleTrade(const ::SealAccountRoleTradeRequest* request);
     static void HandleAssetDebit(const ::AssetOpRequest* request, ::AssetOpResponse* response);
     static void HandleAssetAbortDebit(const ::AssetOpRequest* request, ::AssetOpResponse* response);
     static void HandleAssetCredit(const ::AssetOpRequest* request, ::AssetOpResponse* response);

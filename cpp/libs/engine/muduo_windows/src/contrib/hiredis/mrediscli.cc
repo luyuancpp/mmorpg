@@ -112,28 +112,34 @@ int main(int argc, char** argv)
   EventLoop loop;
 
   InetAddress serverAddr("127.0.0.1", 6379);
-  hiredis::Hiredis hiredis(&loop, serverAddr);
+  auto client = hiredis::Hiredis::Create(&loop, serverAddr);
 
-  hiredis.setConnectCallback(connectCallback);
-  hiredis.setDisconnectCallback(disconnectCallback);
-  hiredis.connect();
+  client->setConnectCallback(connectCallback);
+  client->setDisconnectCallback(disconnectCallback);
+  client->connect();
 
-  //hiredis.ping();
-  loop.runEvery(1.0, std::bind(&hiredis::Hiredis::ping, &hiredis));
+  const std::weak_ptr<hiredis::Hiredis> weakClient = client;
+  loop.runEvery(1.0, [weakClient]
+  {
+    if (const auto client = weakClient.lock()) client->ping();
+  });
 
-  hiredis.command(timeCallback, "time");
+  client->command(timeCallback, "time");
 
   string hi = "hi";
-  hiredis.command(std::bind(echoCallback, _1, _2, &hi), "echo %s", hi.c_str());
-  loop.runEvery(2.0, std::bind(echo, &hiredis, &hi));
+  client->command(std::bind(echoCallback, _1, _2, &hi), "echo %s", hi.c_str());
+  loop.runEvery(2.0, [weakClient, &hi]
+  {
+    if (const auto client = weakClient.lock()) echo(client.get(), &hi);
+  });
 
-  hiredis.command(dbsizeCallback, "dbsize");
+  client->command(dbsizeCallback, "dbsize");
 
   uint16_t index = 8;
-  hiredis.command(std::bind(selectCallback, _1, _2, &index), "select %d", index);
+  client->command(std::bind(selectCallback, _1, _2, &index), "select %d", index);
 
   string password = "password";
-  hiredis.command(std::bind(authCallback, _1, _2, &password), "auth %s", password.c_str());
+  client->command(std::bind(authCallback, _1, _2, &password), "auth %s", password.c_str());
 
   loop.loop();
 

@@ -8,6 +8,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.Clock;
 import java.util.*;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.context.annotation.DependsOn;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -24,18 +25,28 @@ public class CommerceStore {
     private final TransactionTemplate tx;
     private final Clock clock;
     private final int maxUnpaid;
+    private final PaymentPolicy paymentPolicy;
+    private final RmbConsignmentStore consignments;
     public CommerceStore(JdbcTemplate jdbc, PlatformTransactionManager manager, Clock clock, CommerceProperties props) {
+        this(jdbc, manager, clock, props, new RmbConsignmentStore(jdbc, manager, clock,
+            new RmbConsignmentProperties(), (RmbConsignmentStore.PayoutEvidenceVerifier) null));
+    }
+    @Autowired public CommerceStore(JdbcTemplate jdbc, PlatformTransactionManager manager, Clock clock,
+            CommerceProperties props, RmbConsignmentStore consignments) {
         this.jdbc = jdbc; this.clock = clock;
+        this.consignments = consignments;
         maxUnpaid = props.getMaxUnpaidOrders();
+        paymentPolicy = new PaymentPolicy(jdbc, props);
         tx = new TransactionTemplate(manager); tx.setIsolationLevel(TransactionDefinition.ISOLATION_READ_COMMITTED); tx.setTimeout(5);
         jdbc.setQueryTimeout(5);
     }
 
     public CommerceApi.Order create(String buyer, CommerceApi.CreateOrder in) {
         HmacAuthentication.requirePlayer(buyer);
-        if (in.requestId() == null || !in.requestId().matches("[A-Za-z0-9_-]{8,128}") || in.skuId() <= 0 || in.quantity() < 1 || in.quantity() > 10000) {
+        if (in == null || in.requestId() == null || !in.requestId().matches("[A-Za-z0-9_-]{8,128}") || in.skuId() <= 0 || in.quantity() < 1 || in.quantity() > 10000) {
             throw new CommerceException(400, "下单参数非法");
         }
+        CommerceIdentity.account(in.buyerAccount()); CommerceIdentity.revision(in.buyerOwnerRevision());
         Stored prior = byRequest(buyer, in.requestId());
         if (prior != null) { return sameRequest(prior, in); }
         // 首次建 guard 为单条独立提交，行从不删除；没有全服共享锁行。
@@ -69,6 +80,8 @@ public class CommerceStore {
                 // 15 分钟支付窗口供渠道适配器使用；超时仍保留预占，未接关单确认前不自动释放。
                 jdbc.update("INSERT INTO oms_order(order_sn,buyer_id,request_id,sku_id,quantity,pay_amount,currency,status,create_time_ms,payment_deadline_ms) VALUES (?,?,?,?,?,?,?,0,?,?)",
                         orderId, buyer, ascii(in.requestId()), in.skuId(), in.quantity(), total, sku.currency(), now, now + 900_000);
+                jdbc.update("INSERT INTO commerce_official_owner(order_sn,buyer_account,buyer_owner_revision) VALUES(?,?,?)",
+                    orderId, in.buyerAccount().getBytes(StandardCharsets.UTF_8), ascii(in.buyerOwnerRevision()));
                 // 改自上游库存双计数：持主键行锁，预占条件在写入时原子复核，绝不先读后绝对值覆盖。
                 int changed = jdbc.update("UPDATE pms_sku_stock SET lock_stock=lock_stock+? WHERE id=? AND published=1 AND stock-lock_stock>=?",
                         in.quantity(), in.skuId(), in.quantity());
@@ -88,27 +101,122 @@ public class CommerceStore {
 
     public CommerceApi.Order get(String buyer, String orderId) {
         HmacAuthentication.requirePlayer(buyer); requireOrderId(orderId);
-        return view(owned(byId(orderId, false), buyer));
+        throw new CommerceException(404, "订单查询需要原账号和归属修订");
+    }
+    public CommerceApi.Order get(String buyer, CommerceApi.OwnedOrder input) {
+        HmacAuthentication.requirePlayer(buyer);
+        return view(officialOwned(input, buyer, false));
+    }
+
+    public CommerceApi.Order createConsignment(RmbConsignmentApi.Buy input) {
+        if (input == null) { throw new CommerceException(400, "寄售购买参数缺失"); }
+        RmbConsignmentStore.account(input.buyerAccount()); RmbConsignmentStore.player(input.buyerPlayerId());
+        CommerceIdentity.revision(input.buyerOwnerRevision());
+        RmbConsignmentStore.player(input.listingId()); RmbConsignmentStore.request(input.requestId());
+        String prior = consignments.orderByRequest(input.buyerAccount(), input.requestId());
+        if (prior != null) { return sameConsignment(prior, input); }
+        jdbc.update("INSERT INTO commerce_buyer_guard(buyer_id) VALUES(?) ON DUPLICATE KEY UPDATE buyer_id=buyer_id", input.buyerPlayerId());
+        try {
+            return Objects.requireNonNull(tx.execute(status -> {
+                jdbc.queryForObject("SELECT buyer_id FROM commerce_buyer_guard WHERE buyer_id=? FOR UPDATE", String.class, input.buyerPlayerId());
+                String replay = consignments.orderByRequest(input.buyerAccount(), input.requestId());
+                if (replay != null) { return sameConsignment(replay, input); }
+                if (byRequest(input.buyerPlayerId(), input.requestId()) != null) {
+                    throw new CommerceException(409, "请求号已用于其它订单");
+                }
+                Integer unpaid = jdbc.queryForObject("SELECT COUNT(*) FROM oms_order WHERE buyer_id=? AND status=0", Integer.class, input.buyerPlayerId());
+                if (unpaid == null || unpaid >= maxUnpaid) { throw new CommerceException(429, "未支付订单数量已达上限"); }
+                String orderId = UUID.randomUUID().toString();
+                var frozen = consignments.reserve(input, orderId);
+                long now = clock.millis();
+                // 寄售仍写同一OMS，sku_id=0明确区分唯一托管资产，不改PMS库存。
+                jdbc.update("INSERT INTO oms_order(order_sn,buyer_id,request_id,sku_id,quantity,pay_amount,currency,status,create_time_ms,payment_deadline_ms)"
+                    + " VALUES(?,?,?,0,1,?,'CNY',0,?,?)", orderId, input.buyerPlayerId(), ascii(input.requestId()), frozen.priceFen(), now, now + 900_000);
+                jdbc.update("INSERT INTO oms_order_item(order_sn,product_id,product_sku_id,product_sku_code,product_quantity,product_price_minor)"
+                    + " VALUES(?,0,0,?,1,?)", orderId, "consignment-" + frozen.listingId(), frozen.priceFen());
+                return view(Objects.requireNonNull(byId(orderId, false)));
+            }));
+        } catch (DuplicateKeyException conflict) {
+            String existing = consignments.orderByRequest(input.buyerAccount(), input.requestId());
+            if (existing != null) { return sameConsignment(existing, input); }
+            throw new CommerceException(409, "寄售购买请求冲突，请使用原请求号重试");
+        }
+    }
+    private CommerceApi.Order sameConsignment(String orderId, RmbConsignmentApi.Buy input) {
+        consignments.sameOrder(orderId, input);
+        Stored original = byId(orderId, false);
+        if (original == null || !original.buyer().equals(input.buyerPlayerId())) {
+            throw new CommerceException(409, "购买请求号的角色原件不符");
+        }
+        return view(original);
+    }
+    public CommerceApi.Order getConsignment(RmbConsignmentApi.OrderQuery input) {
+        if (input == null) { throw new CommerceException(400, "寄售订单查询参数缺失"); }
+        return view(consignmentOwned(input, false));
+    }
+    public List<CommerceApi.Order> listConsignments(RmbConsignmentApi.OrderPage input) {
+        if (input == null || input.afterOrderId() == null || input.limit() < 1 || input.limit() > 100) {
+            throw new CommerceException(400, "寄售订单分页非法");
+        }
+        RmbConsignmentStore.account(input.account());
+        long after = input.afterOrderId().isEmpty() ? 0 : consignmentOwned(new RmbConsignmentApi.OrderQuery(input.account(), input.afterOrderId()), false).model().getId();
+        return jdbc.query("SELECT o.* FROM oms_order o JOIN commerce_consignment_order c ON c.order_sn=o.order_sn "
+            + "WHERE c.buyer_account=? AND o.id>? ORDER BY o.id LIMIT ?", (row, index) -> view(stored(row)),
+            input.account().getBytes(StandardCharsets.UTF_8), after, input.limit());
+    }
+    private Stored consignmentOwned(RmbConsignmentApi.OrderQuery input, boolean lock) {
+        RmbConsignmentStore.account(input.account()); requireOrderId(input.orderId());
+        Stored original = byId(input.orderId(), lock);
+        var mapping = consignments.mapping(input.orderId());
+        if (original == null || mapping == null || !mapping.buyerAccount().equals(input.account())) {
+            throw new CommerceException(404, "寄售订单不存在");
+        }
+        return original;
+    }
+    // 只供内部payment/admin只读控制器使用，均再次核角色；不接受外部买家或金额。
+    CommerceApi.Order paymentOrderView(String orderId) {
+        requireOrderId(orderId);
+        Stored order = byId(orderId, false);
+        if (order == null) { throw new CommerceException(404, "订单不存在"); }
+        return view(order);
     }
     public List<CommerceApi.Order> list(String buyer,DeliveryApi.OrderPage page){
         HmacAuthentication.requirePlayer(buyer);if(page==null||page.limit()<1||page.limit()>100||page.afterOrderId()==null)throw new CommerceException(400,"订单分页非法");
-        long after=0;if(!page.afterOrderId().isEmpty()){requireOrderId(page.afterOrderId());after=owned(byId(page.afterOrderId(),false),buyer).model().getId();}
-        return jdbc.query("SELECT * FROM oms_order WHERE buyer_id=? AND id>? ORDER BY id LIMIT ?",(row,n)->view(stored(row)),buyer,after,page.limit());
+        CommerceIdentity.account(page.buyerAccount()); CommerceIdentity.revision(page.buyerOwnerRevision());
+        long after=0;if(!page.afterOrderId().isEmpty()){after=officialOwned(new CommerceApi.OwnedOrder(page.afterOrderId(),page.buyerAccount(),page.buyerOwnerRevision()),buyer,false).model().getId();}
+        return jdbc.query("SELECT o.* FROM oms_order o JOIN commerce_official_owner p ON p.order_sn=o.order_sn "
+            + "WHERE o.buyer_id=? AND p.buyer_account=? AND p.buyer_owner_revision=? AND o.sku_id<>0 AND o.id>? ORDER BY o.id LIMIT ?",
+            (row,n)->view(stored(row)),buyer,page.buyerAccount().getBytes(StandardCharsets.UTF_8),ascii(page.buyerOwnerRevision()),after,page.limit());
     }
 
     public CommerceApi.Order cancel(String buyer, String orderId) {
         HmacAuthentication.requirePlayer(buyer); requireOrderId(orderId);
+        throw new CommerceException(404, "订单取消需要原账号和归属修订");
+    }
+    public CommerceApi.Order cancel(String buyer, CommerceApi.OwnedOrder input) {
+        HmacAuthentication.requirePlayer(buyer);
         return Objects.requireNonNull(tx.execute(status -> {
-            Stored order = owned(byId(orderId, true), buyer);
+            return cancelOrder(officialOwned(input, buyer, true));
+        }));
+    }
+    public CommerceApi.Order cancelConsignment(RmbConsignmentApi.OrderQuery input) {
+        if (input == null) { throw new CommerceException(400, "寄售订单取消参数缺失"); }
+        return Objects.requireNonNull(tx.execute(status -> cancelOrder(consignmentOwned(input, true))));
+    }
+    private CommerceApi.Order cancelOrder(Stored order) {
+            String orderId = order.model().getOrderSn();
             if (order.model().getStatus() == 4) { return view(order); }
             if (order.model().getStatus() != 0) { throw new CommerceException(409, "已支付订单不能直接取消"); }
-            int released = jdbc.update("UPDATE pms_sku_stock SET lock_stock=lock_stock-? WHERE id=? AND lock_stock>=?",
+            if (order.skuId() == 0) {
+                if (!consignments.cancelled(orderId)) { throw new CommerceException(503, "寄售订单关联缺失"); }
+            } else {
+                int released = jdbc.update("UPDATE pms_sku_stock SET lock_stock=lock_stock-? WHERE id=? AND lock_stock>=?",
                     order.quantity(), order.skuId(), order.quantity());
-            if (released != 1) { throw new CommerceException(409, "库存预占状态异常"); }
+                if (released != 1) { throw new CommerceException(409, "库存预占状态异常"); }
+            }
             int changed = jdbc.update("UPDATE oms_order SET status=4 WHERE order_sn=? AND status=0", orderId);
             if (changed != 1) { throw new CommerceException(409, "订单状态冲突"); }
             order.model().setStatus(4); return view(order);
-        }));
     }
 
     public CommerceApi.Order recordTrustedPayment(CommerceApi.Payment in) {
@@ -120,9 +228,11 @@ public class CommerceStore {
             return Objects.requireNonNull(tx.execute(status -> {
                 Stored order = byId(in.orderId(), true);
                 if (order == null) { throw new CommerceException(404, "订单不存在"); }
+                if (order.skuId() != 0) { officialOwner(in.orderId()); }
                 if (order.model().getPayAmount().longValueExact() != in.amountMinor() || !order.currency().equals(in.currency())) {
                     throw new CommerceException(409, "支付金额或币种不匹配");
                 }
+                paymentPolicy.payment(in);
                 if (java.util.Set.of(1,2,5,6,7).contains(order.model().getStatus())) {
                     Integer matches = jdbc.queryForObject("SELECT COUNT(*) FROM commerce_payment_receipt WHERE order_sn=? AND channel=? AND transaction_id=? AND amount_minor=? AND currency=?", Integer.class,
                             in.orderId(), ascii(in.channel()), ascii(in.transactionId()), in.amountMinor(), in.currency());
@@ -138,9 +248,13 @@ public class CommerceStore {
                 jdbc.update("INSERT INTO commerce_payment_receipt(channel,transaction_id,order_sn,amount_minor,currency) VALUES (?,?,?,?,?)",
                         ascii(in.channel()), ascii(in.transactionId()), in.orderId(), in.amountMinor(), in.currency());
                 // 复用上游 stock/lock_stock 一并扣减结构；补足状态 CAS、幂等收据及非负条件。
-                int deducted = jdbc.update("UPDATE pms_sku_stock SET stock=stock-?,lock_stock=lock_stock-? WHERE id=? AND stock>=? AND lock_stock>=?",
+                if (order.skuId() == 0) {
+                    if (!consignments.paid(in.orderId())) { throw new CommerceException(503, "寄售订单关联缺失"); }
+                } else {
+                    int deducted = jdbc.update("UPDATE pms_sku_stock SET stock=stock-?,lock_stock=lock_stock-? WHERE id=? AND stock>=? AND lock_stock>=?",
                         order.quantity(), order.quantity(), order.skuId(), order.quantity(), order.quantity());
-                if (deducted != 1) { throw new CommerceException(409, "库存预占状态异常"); }
+                    if (deducted != 1) { throw new CommerceException(409, "库存预占状态异常"); }
+                }
                 int changed = jdbc.update("UPDATE oms_order SET status=1,payment_time_ms=? WHERE order_sn=? AND status=0", clock.millis(), in.orderId());
                 if (changed != 1) { throw new CommerceException(409, "订单状态冲突"); }
                 jdbc.update("INSERT INTO commerce_delivery_intent(order_sn,buyer_id,sku_id,quantity,status,created_ms) VALUES (?,?,?,?,?,?)",
@@ -165,7 +279,29 @@ public class CommerceStore {
     }
     private CommerceApi.Order sameRequest(Stored prior, CommerceApi.CreateOrder in) {
         if (prior.skuId() != in.skuId() || prior.quantity() != in.quantity()) { throw new CommerceException(409, "请求号已用于不同下单参数"); }
+        var original = officialOwner(prior.model().getOrderSn());
+        if (!original.account().equals(in.buyerAccount()) || !original.revision().equals(in.buyerOwnerRevision())) {
+            throw new CommerceException(409, "请求号的原账号或归属修订不符");
+        }
         return view(prior);
+    }
+    private Stored officialOwned(CommerceApi.OwnedOrder input, String buyer, boolean lock) {
+        if (input == null) { throw new CommerceException(400, "订单身份缺失"); }
+        requireOrderId(input.orderId()); CommerceIdentity.account(input.buyerAccount()); CommerceIdentity.revision(input.buyerOwnerRevision());
+        Stored order = owned(byId(input.orderId(), lock), buyer);
+        if (order.skuId() == 0) { throw new CommerceException(404, "请通过原账号的寄售订单入口操作"); }
+        var original = officialOwner(input.orderId());
+        if (!original.account().equals(input.buyerAccount()) || !original.revision().equals(input.buyerOwnerRevision())) {
+            throw new CommerceException(404, "订单不存在");
+        }
+        return order;
+    }
+    private record OfficialOwner(String account, String revision) {}
+    private OfficialOwner officialOwner(String orderId) {
+        var rows = jdbc.query("SELECT buyer_account,buyer_owner_revision FROM commerce_official_owner WHERE order_sn=?",
+            (row,index)->new OfficialOwner(CommerceIdentity.storedAccount(row.getBytes(1)),CommerceIdentity.storedRevision(row.getBytes(2))),orderId);
+        if (rows.size() != 1) { throw new CommerceException(503, "官方订单原身份缺失"); }
+        return rows.getFirst();
     }
     private CommerceApi.Order view(Stored value) {
         String state = switch (value.model().getStatus()) { case 0 -> "AWAITING_PAYMENT"; case 1 -> "DELIVERY_PENDING"; case 2 -> "DELIVERED"; case 4 -> "CANCELLED"; case 5 -> "REFUND_PENDING"; case 6 -> "REFUNDED"; case 7 -> "MANUAL"; default -> throw new CommerceException(503, "订单状态无法处理"); };

@@ -223,6 +223,37 @@ message TradeCommerceWorkflow {
   AssetBundle official_bundle = 17;
   string external_currency = 18;
   uint64 external_amount = 19;
+  TradeRmbConsignmentWorkflow rmb = 20;
+  TradeRoleIdentity seller_identity = 21;
+  TradeRoleIdentity buyer_identity = 22;
+}
+
+// 合同原件中的角色归属；后台恢复只能复用此原件，不能借用过户后的当前账号或修订。
+message TradeRoleIdentity {
+  string account = 1;
+  uint64 owner_revision = 2;
+}
+
+// 人民币价格及原账号身份随托管合同冻结，付款/过户重试不能重新推导或替换。
+// 非表消息；资产仍复用legs与原outbox，不另造玩家余额或存档副本。
+message TradeRmbConsignmentWorkflow {
+  string seller_account = 1;
+  uint64 seller_owner_revision = 2;
+  uint64 character_player_id = 3;
+  string title = 4;
+  string asset_kind = 5;
+  string escrow_reference = 6;
+  string escrow_proof = 7;
+  string buyer_account = 8;
+  string mall_order_id = 9;
+  uint64 transfer_tx_id = 10;
+  bytes freeze_receipt = 11;
+  uint32 market_zone = 12;
+  uint64 price_fen = 13;
+  string client_request_id = 14;
+  RmbConsignmentView registered_listing = 15;
+  bytes delivery_digest = 16;
+  uint64 buyer_owner_revision = 17;
 }
 
 message TradeCommerceLeg {

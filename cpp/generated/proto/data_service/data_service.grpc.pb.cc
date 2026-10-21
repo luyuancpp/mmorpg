@@ -23,6 +23,18 @@
 namespace data_service {
 
 static const char* DataService_method_names[] = {
+  "/data_service.DataService/ReadAccountDirectory",
+  "/data_service.DataService/CreateAccountRole",
+  "/data_service.DataService/LookupAccountRole",
+  "/data_service.DataService/RepairAccountRole",
+  "/data_service.DataService/RemoveAccountRoles",
+  "/data_service.DataService/BeginAccountRoleTrade",
+  "/data_service.DataService/ConfirmAccountRoleTradeFreeze",
+  "/data_service.DataService/CancelAccountRoleTrade",
+  "/data_service.DataService/TransferAccountRole",
+  "/data_service.DataService/RegisterRoleAdmission",
+  "/data_service.DataService/CloseRoleAdmissions",
+  "/data_service.DataService/AckRoleTradeDrain",
   "/data_service.DataService/LoadPlayerData",
   "/data_service.DataService/SavePlayerData",
   "/data_service.DataService/GetPlayerField",
@@ -56,31 +68,319 @@ std::unique_ptr< DataService::Stub> DataService::NewStub(const std::shared_ptr< 
 }
 
 DataService::Stub::Stub(const std::shared_ptr< ::grpc::ChannelInterface>& channel, const ::grpc::StubOptions& options)
-  : channel_(channel), rpcmethod_LoadPlayerData_(DataService_method_names[0], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
-  , rpcmethod_SavePlayerData_(DataService_method_names[1], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
-  , rpcmethod_GetPlayerField_(DataService_method_names[2], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
-  , rpcmethod_SetPlayerField_(DataService_method_names[3], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
-  , rpcmethod_RegisterPlayerZone_(DataService_method_names[4], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
-  , rpcmethod_GetPlayerHomeZone_(DataService_method_names[5], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
-  , rpcmethod_BatchGetPlayerHomeZone_(DataService_method_names[6], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
-  , rpcmethod_RemapHomeZoneForMerge_(DataService_method_names[7], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
-  , rpcmethod_DeletePlayerData_(DataService_method_names[8], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
-  , rpcmethod_CreatePlayerSnapshot_(DataService_method_names[9], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
-  , rpcmethod_ListPlayerSnapshots_(DataService_method_names[10], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
-  , rpcmethod_GetPlayerSnapshotDiff_(DataService_method_names[11], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
-  , rpcmethod_RollbackPlayer_(DataService_method_names[12], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
-  , rpcmethod_RollbackZone_(DataService_method_names[13], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
-  , rpcmethod_RollbackAll_(DataService_method_names[14], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
-  , rpcmethod_BatchRecallItems_(DataService_method_names[15], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
-  , rpcmethod_QueryTransactionLog_(DataService_method_names[16], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
-  , rpcmethod_CreateEventSnapshot_(DataService_method_names[17], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
-  , rpcmethod_AllocateIdSegment_(DataService_method_names[18], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
-  , rpcmethod_ReservePlayerName_(DataService_method_names[19], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
-  , rpcmethod_ReleasePlayerName_(DataService_method_names[20], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
-  , rpcmethod_BatchGetPlayerName_(DataService_method_names[21], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
-  , rpcmethod_GetPlayerAssetOpLedger_(DataService_method_names[22], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
-  , rpcmethod_GetPlayerInboxLedger_(DataService_method_names[23], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
+  : channel_(channel), rpcmethod_ReadAccountDirectory_(DataService_method_names[0], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
+  , rpcmethod_CreateAccountRole_(DataService_method_names[1], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
+  , rpcmethod_LookupAccountRole_(DataService_method_names[2], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
+  , rpcmethod_RepairAccountRole_(DataService_method_names[3], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
+  , rpcmethod_RemoveAccountRoles_(DataService_method_names[4], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
+  , rpcmethod_BeginAccountRoleTrade_(DataService_method_names[5], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
+  , rpcmethod_ConfirmAccountRoleTradeFreeze_(DataService_method_names[6], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
+  , rpcmethod_CancelAccountRoleTrade_(DataService_method_names[7], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
+  , rpcmethod_TransferAccountRole_(DataService_method_names[8], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
+  , rpcmethod_RegisterRoleAdmission_(DataService_method_names[9], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
+  , rpcmethod_CloseRoleAdmissions_(DataService_method_names[10], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
+  , rpcmethod_AckRoleTradeDrain_(DataService_method_names[11], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
+  , rpcmethod_LoadPlayerData_(DataService_method_names[12], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
+  , rpcmethod_SavePlayerData_(DataService_method_names[13], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
+  , rpcmethod_GetPlayerField_(DataService_method_names[14], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
+  , rpcmethod_SetPlayerField_(DataService_method_names[15], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
+  , rpcmethod_RegisterPlayerZone_(DataService_method_names[16], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
+  , rpcmethod_GetPlayerHomeZone_(DataService_method_names[17], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
+  , rpcmethod_BatchGetPlayerHomeZone_(DataService_method_names[18], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
+  , rpcmethod_RemapHomeZoneForMerge_(DataService_method_names[19], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
+  , rpcmethod_DeletePlayerData_(DataService_method_names[20], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
+  , rpcmethod_CreatePlayerSnapshot_(DataService_method_names[21], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
+  , rpcmethod_ListPlayerSnapshots_(DataService_method_names[22], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
+  , rpcmethod_GetPlayerSnapshotDiff_(DataService_method_names[23], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
+  , rpcmethod_RollbackPlayer_(DataService_method_names[24], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
+  , rpcmethod_RollbackZone_(DataService_method_names[25], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
+  , rpcmethod_RollbackAll_(DataService_method_names[26], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
+  , rpcmethod_BatchRecallItems_(DataService_method_names[27], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
+  , rpcmethod_QueryTransactionLog_(DataService_method_names[28], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
+  , rpcmethod_CreateEventSnapshot_(DataService_method_names[29], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
+  , rpcmethod_AllocateIdSegment_(DataService_method_names[30], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
+  , rpcmethod_ReservePlayerName_(DataService_method_names[31], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
+  , rpcmethod_ReleasePlayerName_(DataService_method_names[32], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
+  , rpcmethod_BatchGetPlayerName_(DataService_method_names[33], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
+  , rpcmethod_GetPlayerAssetOpLedger_(DataService_method_names[34], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
+  , rpcmethod_GetPlayerInboxLedger_(DataService_method_names[35], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
   {}
+
+::grpc::Status DataService::Stub::ReadAccountDirectory(::grpc::ClientContext* context, const ::data_service::ReadAccountDirectoryRequest& request, ::data_service::AccountDirectoryResponse* response) {
+  return ::grpc::internal::BlockingUnaryCall< ::data_service::ReadAccountDirectoryRequest, ::data_service::AccountDirectoryResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), rpcmethod_ReadAccountDirectory_, context, request, response);
+}
+
+void DataService::Stub::async::ReadAccountDirectory(::grpc::ClientContext* context, const ::data_service::ReadAccountDirectoryRequest* request, ::data_service::AccountDirectoryResponse* response, std::function<void(::grpc::Status)> f) {
+  ::grpc::internal::CallbackUnaryCall< ::data_service::ReadAccountDirectoryRequest, ::data_service::AccountDirectoryResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_ReadAccountDirectory_, context, request, response, std::move(f));
+}
+
+void DataService::Stub::async::ReadAccountDirectory(::grpc::ClientContext* context, const ::data_service::ReadAccountDirectoryRequest* request, ::data_service::AccountDirectoryResponse* response, ::grpc::ClientUnaryReactor* reactor) {
+  ::grpc::internal::ClientCallbackUnaryFactory::Create< ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_ReadAccountDirectory_, context, request, response, reactor);
+}
+
+::grpc::ClientAsyncResponseReader< ::data_service::AccountDirectoryResponse>* DataService::Stub::PrepareAsyncReadAccountDirectoryRaw(::grpc::ClientContext* context, const ::data_service::ReadAccountDirectoryRequest& request, ::grpc::CompletionQueue* cq) {
+  return ::grpc::internal::ClientAsyncResponseReaderHelper::Create< ::data_service::AccountDirectoryResponse, ::data_service::ReadAccountDirectoryRequest, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), cq, rpcmethod_ReadAccountDirectory_, context, request);
+}
+
+::grpc::ClientAsyncResponseReader< ::data_service::AccountDirectoryResponse>* DataService::Stub::AsyncReadAccountDirectoryRaw(::grpc::ClientContext* context, const ::data_service::ReadAccountDirectoryRequest& request, ::grpc::CompletionQueue* cq) {
+  auto* result =
+    this->PrepareAsyncReadAccountDirectoryRaw(context, request, cq);
+  result->StartCall();
+  return result;
+}
+
+::grpc::Status DataService::Stub::CreateAccountRole(::grpc::ClientContext* context, const ::data_service::CreateAccountRoleRequest& request, ::data_service::AccountDirectoryResponse* response) {
+  return ::grpc::internal::BlockingUnaryCall< ::data_service::CreateAccountRoleRequest, ::data_service::AccountDirectoryResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), rpcmethod_CreateAccountRole_, context, request, response);
+}
+
+void DataService::Stub::async::CreateAccountRole(::grpc::ClientContext* context, const ::data_service::CreateAccountRoleRequest* request, ::data_service::AccountDirectoryResponse* response, std::function<void(::grpc::Status)> f) {
+  ::grpc::internal::CallbackUnaryCall< ::data_service::CreateAccountRoleRequest, ::data_service::AccountDirectoryResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_CreateAccountRole_, context, request, response, std::move(f));
+}
+
+void DataService::Stub::async::CreateAccountRole(::grpc::ClientContext* context, const ::data_service::CreateAccountRoleRequest* request, ::data_service::AccountDirectoryResponse* response, ::grpc::ClientUnaryReactor* reactor) {
+  ::grpc::internal::ClientCallbackUnaryFactory::Create< ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_CreateAccountRole_, context, request, response, reactor);
+}
+
+::grpc::ClientAsyncResponseReader< ::data_service::AccountDirectoryResponse>* DataService::Stub::PrepareAsyncCreateAccountRoleRaw(::grpc::ClientContext* context, const ::data_service::CreateAccountRoleRequest& request, ::grpc::CompletionQueue* cq) {
+  return ::grpc::internal::ClientAsyncResponseReaderHelper::Create< ::data_service::AccountDirectoryResponse, ::data_service::CreateAccountRoleRequest, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), cq, rpcmethod_CreateAccountRole_, context, request);
+}
+
+::grpc::ClientAsyncResponseReader< ::data_service::AccountDirectoryResponse>* DataService::Stub::AsyncCreateAccountRoleRaw(::grpc::ClientContext* context, const ::data_service::CreateAccountRoleRequest& request, ::grpc::CompletionQueue* cq) {
+  auto* result =
+    this->PrepareAsyncCreateAccountRoleRaw(context, request, cq);
+  result->StartCall();
+  return result;
+}
+
+::grpc::Status DataService::Stub::LookupAccountRole(::grpc::ClientContext* context, const ::data_service::LookupAccountRoleRequest& request, ::data_service::AccountRoleOwnership* response) {
+  return ::grpc::internal::BlockingUnaryCall< ::data_service::LookupAccountRoleRequest, ::data_service::AccountRoleOwnership, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), rpcmethod_LookupAccountRole_, context, request, response);
+}
+
+void DataService::Stub::async::LookupAccountRole(::grpc::ClientContext* context, const ::data_service::LookupAccountRoleRequest* request, ::data_service::AccountRoleOwnership* response, std::function<void(::grpc::Status)> f) {
+  ::grpc::internal::CallbackUnaryCall< ::data_service::LookupAccountRoleRequest, ::data_service::AccountRoleOwnership, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_LookupAccountRole_, context, request, response, std::move(f));
+}
+
+void DataService::Stub::async::LookupAccountRole(::grpc::ClientContext* context, const ::data_service::LookupAccountRoleRequest* request, ::data_service::AccountRoleOwnership* response, ::grpc::ClientUnaryReactor* reactor) {
+  ::grpc::internal::ClientCallbackUnaryFactory::Create< ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_LookupAccountRole_, context, request, response, reactor);
+}
+
+::grpc::ClientAsyncResponseReader< ::data_service::AccountRoleOwnership>* DataService::Stub::PrepareAsyncLookupAccountRoleRaw(::grpc::ClientContext* context, const ::data_service::LookupAccountRoleRequest& request, ::grpc::CompletionQueue* cq) {
+  return ::grpc::internal::ClientAsyncResponseReaderHelper::Create< ::data_service::AccountRoleOwnership, ::data_service::LookupAccountRoleRequest, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), cq, rpcmethod_LookupAccountRole_, context, request);
+}
+
+::grpc::ClientAsyncResponseReader< ::data_service::AccountRoleOwnership>* DataService::Stub::AsyncLookupAccountRoleRaw(::grpc::ClientContext* context, const ::data_service::LookupAccountRoleRequest& request, ::grpc::CompletionQueue* cq) {
+  auto* result =
+    this->PrepareAsyncLookupAccountRoleRaw(context, request, cq);
+  result->StartCall();
+  return result;
+}
+
+::grpc::Status DataService::Stub::RepairAccountRole(::grpc::ClientContext* context, const ::data_service::RepairAccountRoleRequest& request, ::data_service::AccountDirectoryResponse* response) {
+  return ::grpc::internal::BlockingUnaryCall< ::data_service::RepairAccountRoleRequest, ::data_service::AccountDirectoryResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), rpcmethod_RepairAccountRole_, context, request, response);
+}
+
+void DataService::Stub::async::RepairAccountRole(::grpc::ClientContext* context, const ::data_service::RepairAccountRoleRequest* request, ::data_service::AccountDirectoryResponse* response, std::function<void(::grpc::Status)> f) {
+  ::grpc::internal::CallbackUnaryCall< ::data_service::RepairAccountRoleRequest, ::data_service::AccountDirectoryResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_RepairAccountRole_, context, request, response, std::move(f));
+}
+
+void DataService::Stub::async::RepairAccountRole(::grpc::ClientContext* context, const ::data_service::RepairAccountRoleRequest* request, ::data_service::AccountDirectoryResponse* response, ::grpc::ClientUnaryReactor* reactor) {
+  ::grpc::internal::ClientCallbackUnaryFactory::Create< ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_RepairAccountRole_, context, request, response, reactor);
+}
+
+::grpc::ClientAsyncResponseReader< ::data_service::AccountDirectoryResponse>* DataService::Stub::PrepareAsyncRepairAccountRoleRaw(::grpc::ClientContext* context, const ::data_service::RepairAccountRoleRequest& request, ::grpc::CompletionQueue* cq) {
+  return ::grpc::internal::ClientAsyncResponseReaderHelper::Create< ::data_service::AccountDirectoryResponse, ::data_service::RepairAccountRoleRequest, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), cq, rpcmethod_RepairAccountRole_, context, request);
+}
+
+::grpc::ClientAsyncResponseReader< ::data_service::AccountDirectoryResponse>* DataService::Stub::AsyncRepairAccountRoleRaw(::grpc::ClientContext* context, const ::data_service::RepairAccountRoleRequest& request, ::grpc::CompletionQueue* cq) {
+  auto* result =
+    this->PrepareAsyncRepairAccountRoleRaw(context, request, cq);
+  result->StartCall();
+  return result;
+}
+
+::grpc::Status DataService::Stub::RemoveAccountRoles(::grpc::ClientContext* context, const ::data_service::RemoveAccountRolesRequest& request, ::google::protobuf::Empty* response) {
+  return ::grpc::internal::BlockingUnaryCall< ::data_service::RemoveAccountRolesRequest, ::google::protobuf::Empty, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), rpcmethod_RemoveAccountRoles_, context, request, response);
+}
+
+void DataService::Stub::async::RemoveAccountRoles(::grpc::ClientContext* context, const ::data_service::RemoveAccountRolesRequest* request, ::google::protobuf::Empty* response, std::function<void(::grpc::Status)> f) {
+  ::grpc::internal::CallbackUnaryCall< ::data_service::RemoveAccountRolesRequest, ::google::protobuf::Empty, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_RemoveAccountRoles_, context, request, response, std::move(f));
+}
+
+void DataService::Stub::async::RemoveAccountRoles(::grpc::ClientContext* context, const ::data_service::RemoveAccountRolesRequest* request, ::google::protobuf::Empty* response, ::grpc::ClientUnaryReactor* reactor) {
+  ::grpc::internal::ClientCallbackUnaryFactory::Create< ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_RemoveAccountRoles_, context, request, response, reactor);
+}
+
+::grpc::ClientAsyncResponseReader< ::google::protobuf::Empty>* DataService::Stub::PrepareAsyncRemoveAccountRolesRaw(::grpc::ClientContext* context, const ::data_service::RemoveAccountRolesRequest& request, ::grpc::CompletionQueue* cq) {
+  return ::grpc::internal::ClientAsyncResponseReaderHelper::Create< ::google::protobuf::Empty, ::data_service::RemoveAccountRolesRequest, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), cq, rpcmethod_RemoveAccountRoles_, context, request);
+}
+
+::grpc::ClientAsyncResponseReader< ::google::protobuf::Empty>* DataService::Stub::AsyncRemoveAccountRolesRaw(::grpc::ClientContext* context, const ::data_service::RemoveAccountRolesRequest& request, ::grpc::CompletionQueue* cq) {
+  auto* result =
+    this->PrepareAsyncRemoveAccountRolesRaw(context, request, cq);
+  result->StartCall();
+  return result;
+}
+
+::grpc::Status DataService::Stub::BeginAccountRoleTrade(::grpc::ClientContext* context, const ::data_service::BeginAccountRoleTradeRequest& request, ::data_service::AccountRoleTradeReceipt* response) {
+  return ::grpc::internal::BlockingUnaryCall< ::data_service::BeginAccountRoleTradeRequest, ::data_service::AccountRoleTradeReceipt, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), rpcmethod_BeginAccountRoleTrade_, context, request, response);
+}
+
+void DataService::Stub::async::BeginAccountRoleTrade(::grpc::ClientContext* context, const ::data_service::BeginAccountRoleTradeRequest* request, ::data_service::AccountRoleTradeReceipt* response, std::function<void(::grpc::Status)> f) {
+  ::grpc::internal::CallbackUnaryCall< ::data_service::BeginAccountRoleTradeRequest, ::data_service::AccountRoleTradeReceipt, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_BeginAccountRoleTrade_, context, request, response, std::move(f));
+}
+
+void DataService::Stub::async::BeginAccountRoleTrade(::grpc::ClientContext* context, const ::data_service::BeginAccountRoleTradeRequest* request, ::data_service::AccountRoleTradeReceipt* response, ::grpc::ClientUnaryReactor* reactor) {
+  ::grpc::internal::ClientCallbackUnaryFactory::Create< ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_BeginAccountRoleTrade_, context, request, response, reactor);
+}
+
+::grpc::ClientAsyncResponseReader< ::data_service::AccountRoleTradeReceipt>* DataService::Stub::PrepareAsyncBeginAccountRoleTradeRaw(::grpc::ClientContext* context, const ::data_service::BeginAccountRoleTradeRequest& request, ::grpc::CompletionQueue* cq) {
+  return ::grpc::internal::ClientAsyncResponseReaderHelper::Create< ::data_service::AccountRoleTradeReceipt, ::data_service::BeginAccountRoleTradeRequest, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), cq, rpcmethod_BeginAccountRoleTrade_, context, request);
+}
+
+::grpc::ClientAsyncResponseReader< ::data_service::AccountRoleTradeReceipt>* DataService::Stub::AsyncBeginAccountRoleTradeRaw(::grpc::ClientContext* context, const ::data_service::BeginAccountRoleTradeRequest& request, ::grpc::CompletionQueue* cq) {
+  auto* result =
+    this->PrepareAsyncBeginAccountRoleTradeRaw(context, request, cq);
+  result->StartCall();
+  return result;
+}
+
+::grpc::Status DataService::Stub::ConfirmAccountRoleTradeFreeze(::grpc::ClientContext* context, const ::data_service::ConfirmAccountRoleTradeFreezeRequest& request, ::data_service::AccountRoleTradeReceipt* response) {
+  return ::grpc::internal::BlockingUnaryCall< ::data_service::ConfirmAccountRoleTradeFreezeRequest, ::data_service::AccountRoleTradeReceipt, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), rpcmethod_ConfirmAccountRoleTradeFreeze_, context, request, response);
+}
+
+void DataService::Stub::async::ConfirmAccountRoleTradeFreeze(::grpc::ClientContext* context, const ::data_service::ConfirmAccountRoleTradeFreezeRequest* request, ::data_service::AccountRoleTradeReceipt* response, std::function<void(::grpc::Status)> f) {
+  ::grpc::internal::CallbackUnaryCall< ::data_service::ConfirmAccountRoleTradeFreezeRequest, ::data_service::AccountRoleTradeReceipt, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_ConfirmAccountRoleTradeFreeze_, context, request, response, std::move(f));
+}
+
+void DataService::Stub::async::ConfirmAccountRoleTradeFreeze(::grpc::ClientContext* context, const ::data_service::ConfirmAccountRoleTradeFreezeRequest* request, ::data_service::AccountRoleTradeReceipt* response, ::grpc::ClientUnaryReactor* reactor) {
+  ::grpc::internal::ClientCallbackUnaryFactory::Create< ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_ConfirmAccountRoleTradeFreeze_, context, request, response, reactor);
+}
+
+::grpc::ClientAsyncResponseReader< ::data_service::AccountRoleTradeReceipt>* DataService::Stub::PrepareAsyncConfirmAccountRoleTradeFreezeRaw(::grpc::ClientContext* context, const ::data_service::ConfirmAccountRoleTradeFreezeRequest& request, ::grpc::CompletionQueue* cq) {
+  return ::grpc::internal::ClientAsyncResponseReaderHelper::Create< ::data_service::AccountRoleTradeReceipt, ::data_service::ConfirmAccountRoleTradeFreezeRequest, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), cq, rpcmethod_ConfirmAccountRoleTradeFreeze_, context, request);
+}
+
+::grpc::ClientAsyncResponseReader< ::data_service::AccountRoleTradeReceipt>* DataService::Stub::AsyncConfirmAccountRoleTradeFreezeRaw(::grpc::ClientContext* context, const ::data_service::ConfirmAccountRoleTradeFreezeRequest& request, ::grpc::CompletionQueue* cq) {
+  auto* result =
+    this->PrepareAsyncConfirmAccountRoleTradeFreezeRaw(context, request, cq);
+  result->StartCall();
+  return result;
+}
+
+::grpc::Status DataService::Stub::CancelAccountRoleTrade(::grpc::ClientContext* context, const ::data_service::CancelAccountRoleTradeRequest& request, ::data_service::AccountRoleTradeReceipt* response) {
+  return ::grpc::internal::BlockingUnaryCall< ::data_service::CancelAccountRoleTradeRequest, ::data_service::AccountRoleTradeReceipt, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), rpcmethod_CancelAccountRoleTrade_, context, request, response);
+}
+
+void DataService::Stub::async::CancelAccountRoleTrade(::grpc::ClientContext* context, const ::data_service::CancelAccountRoleTradeRequest* request, ::data_service::AccountRoleTradeReceipt* response, std::function<void(::grpc::Status)> f) {
+  ::grpc::internal::CallbackUnaryCall< ::data_service::CancelAccountRoleTradeRequest, ::data_service::AccountRoleTradeReceipt, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_CancelAccountRoleTrade_, context, request, response, std::move(f));
+}
+
+void DataService::Stub::async::CancelAccountRoleTrade(::grpc::ClientContext* context, const ::data_service::CancelAccountRoleTradeRequest* request, ::data_service::AccountRoleTradeReceipt* response, ::grpc::ClientUnaryReactor* reactor) {
+  ::grpc::internal::ClientCallbackUnaryFactory::Create< ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_CancelAccountRoleTrade_, context, request, response, reactor);
+}
+
+::grpc::ClientAsyncResponseReader< ::data_service::AccountRoleTradeReceipt>* DataService::Stub::PrepareAsyncCancelAccountRoleTradeRaw(::grpc::ClientContext* context, const ::data_service::CancelAccountRoleTradeRequest& request, ::grpc::CompletionQueue* cq) {
+  return ::grpc::internal::ClientAsyncResponseReaderHelper::Create< ::data_service::AccountRoleTradeReceipt, ::data_service::CancelAccountRoleTradeRequest, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), cq, rpcmethod_CancelAccountRoleTrade_, context, request);
+}
+
+::grpc::ClientAsyncResponseReader< ::data_service::AccountRoleTradeReceipt>* DataService::Stub::AsyncCancelAccountRoleTradeRaw(::grpc::ClientContext* context, const ::data_service::CancelAccountRoleTradeRequest& request, ::grpc::CompletionQueue* cq) {
+  auto* result =
+    this->PrepareAsyncCancelAccountRoleTradeRaw(context, request, cq);
+  result->StartCall();
+  return result;
+}
+
+::grpc::Status DataService::Stub::TransferAccountRole(::grpc::ClientContext* context, const ::data_service::TransferAccountRoleRequest& request, ::data_service::AccountRoleTransferReceipt* response) {
+  return ::grpc::internal::BlockingUnaryCall< ::data_service::TransferAccountRoleRequest, ::data_service::AccountRoleTransferReceipt, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), rpcmethod_TransferAccountRole_, context, request, response);
+}
+
+void DataService::Stub::async::TransferAccountRole(::grpc::ClientContext* context, const ::data_service::TransferAccountRoleRequest* request, ::data_service::AccountRoleTransferReceipt* response, std::function<void(::grpc::Status)> f) {
+  ::grpc::internal::CallbackUnaryCall< ::data_service::TransferAccountRoleRequest, ::data_service::AccountRoleTransferReceipt, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_TransferAccountRole_, context, request, response, std::move(f));
+}
+
+void DataService::Stub::async::TransferAccountRole(::grpc::ClientContext* context, const ::data_service::TransferAccountRoleRequest* request, ::data_service::AccountRoleTransferReceipt* response, ::grpc::ClientUnaryReactor* reactor) {
+  ::grpc::internal::ClientCallbackUnaryFactory::Create< ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_TransferAccountRole_, context, request, response, reactor);
+}
+
+::grpc::ClientAsyncResponseReader< ::data_service::AccountRoleTransferReceipt>* DataService::Stub::PrepareAsyncTransferAccountRoleRaw(::grpc::ClientContext* context, const ::data_service::TransferAccountRoleRequest& request, ::grpc::CompletionQueue* cq) {
+  return ::grpc::internal::ClientAsyncResponseReaderHelper::Create< ::data_service::AccountRoleTransferReceipt, ::data_service::TransferAccountRoleRequest, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), cq, rpcmethod_TransferAccountRole_, context, request);
+}
+
+::grpc::ClientAsyncResponseReader< ::data_service::AccountRoleTransferReceipt>* DataService::Stub::AsyncTransferAccountRoleRaw(::grpc::ClientContext* context, const ::data_service::TransferAccountRoleRequest& request, ::grpc::CompletionQueue* cq) {
+  auto* result =
+    this->PrepareAsyncTransferAccountRoleRaw(context, request, cq);
+  result->StartCall();
+  return result;
+}
+
+::grpc::Status DataService::Stub::RegisterRoleAdmission(::grpc::ClientContext* context, const ::data_service::RegisterRoleAdmissionRequest& request, ::data_service::RegisterRoleAdmissionResponse* response) {
+  return ::grpc::internal::BlockingUnaryCall< ::data_service::RegisterRoleAdmissionRequest, ::data_service::RegisterRoleAdmissionResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), rpcmethod_RegisterRoleAdmission_, context, request, response);
+}
+
+void DataService::Stub::async::RegisterRoleAdmission(::grpc::ClientContext* context, const ::data_service::RegisterRoleAdmissionRequest* request, ::data_service::RegisterRoleAdmissionResponse* response, std::function<void(::grpc::Status)> f) {
+  ::grpc::internal::CallbackUnaryCall< ::data_service::RegisterRoleAdmissionRequest, ::data_service::RegisterRoleAdmissionResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_RegisterRoleAdmission_, context, request, response, std::move(f));
+}
+
+void DataService::Stub::async::RegisterRoleAdmission(::grpc::ClientContext* context, const ::data_service::RegisterRoleAdmissionRequest* request, ::data_service::RegisterRoleAdmissionResponse* response, ::grpc::ClientUnaryReactor* reactor) {
+  ::grpc::internal::ClientCallbackUnaryFactory::Create< ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_RegisterRoleAdmission_, context, request, response, reactor);
+}
+
+::grpc::ClientAsyncResponseReader< ::data_service::RegisterRoleAdmissionResponse>* DataService::Stub::PrepareAsyncRegisterRoleAdmissionRaw(::grpc::ClientContext* context, const ::data_service::RegisterRoleAdmissionRequest& request, ::grpc::CompletionQueue* cq) {
+  return ::grpc::internal::ClientAsyncResponseReaderHelper::Create< ::data_service::RegisterRoleAdmissionResponse, ::data_service::RegisterRoleAdmissionRequest, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), cq, rpcmethod_RegisterRoleAdmission_, context, request);
+}
+
+::grpc::ClientAsyncResponseReader< ::data_service::RegisterRoleAdmissionResponse>* DataService::Stub::AsyncRegisterRoleAdmissionRaw(::grpc::ClientContext* context, const ::data_service::RegisterRoleAdmissionRequest& request, ::grpc::CompletionQueue* cq) {
+  auto* result =
+    this->PrepareAsyncRegisterRoleAdmissionRaw(context, request, cq);
+  result->StartCall();
+  return result;
+}
+
+::grpc::Status DataService::Stub::CloseRoleAdmissions(::grpc::ClientContext* context, const ::data_service::CloseRoleAdmissionsRequest& request, ::data_service::CloseRoleAdmissionsResponse* response) {
+  return ::grpc::internal::BlockingUnaryCall< ::data_service::CloseRoleAdmissionsRequest, ::data_service::CloseRoleAdmissionsResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), rpcmethod_CloseRoleAdmissions_, context, request, response);
+}
+
+void DataService::Stub::async::CloseRoleAdmissions(::grpc::ClientContext* context, const ::data_service::CloseRoleAdmissionsRequest* request, ::data_service::CloseRoleAdmissionsResponse* response, std::function<void(::grpc::Status)> f) {
+  ::grpc::internal::CallbackUnaryCall< ::data_service::CloseRoleAdmissionsRequest, ::data_service::CloseRoleAdmissionsResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_CloseRoleAdmissions_, context, request, response, std::move(f));
+}
+
+void DataService::Stub::async::CloseRoleAdmissions(::grpc::ClientContext* context, const ::data_service::CloseRoleAdmissionsRequest* request, ::data_service::CloseRoleAdmissionsResponse* response, ::grpc::ClientUnaryReactor* reactor) {
+  ::grpc::internal::ClientCallbackUnaryFactory::Create< ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_CloseRoleAdmissions_, context, request, response, reactor);
+}
+
+::grpc::ClientAsyncResponseReader< ::data_service::CloseRoleAdmissionsResponse>* DataService::Stub::PrepareAsyncCloseRoleAdmissionsRaw(::grpc::ClientContext* context, const ::data_service::CloseRoleAdmissionsRequest& request, ::grpc::CompletionQueue* cq) {
+  return ::grpc::internal::ClientAsyncResponseReaderHelper::Create< ::data_service::CloseRoleAdmissionsResponse, ::data_service::CloseRoleAdmissionsRequest, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), cq, rpcmethod_CloseRoleAdmissions_, context, request);
+}
+
+::grpc::ClientAsyncResponseReader< ::data_service::CloseRoleAdmissionsResponse>* DataService::Stub::AsyncCloseRoleAdmissionsRaw(::grpc::ClientContext* context, const ::data_service::CloseRoleAdmissionsRequest& request, ::grpc::CompletionQueue* cq) {
+  auto* result =
+    this->PrepareAsyncCloseRoleAdmissionsRaw(context, request, cq);
+  result->StartCall();
+  return result;
+}
+
+::grpc::Status DataService::Stub::AckRoleTradeDrain(::grpc::ClientContext* context, const ::data_service::AckRoleTradeDrainRequest& request, ::google::protobuf::Empty* response) {
+  return ::grpc::internal::BlockingUnaryCall< ::data_service::AckRoleTradeDrainRequest, ::google::protobuf::Empty, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), rpcmethod_AckRoleTradeDrain_, context, request, response);
+}
+
+void DataService::Stub::async::AckRoleTradeDrain(::grpc::ClientContext* context, const ::data_service::AckRoleTradeDrainRequest* request, ::google::protobuf::Empty* response, std::function<void(::grpc::Status)> f) {
+  ::grpc::internal::CallbackUnaryCall< ::data_service::AckRoleTradeDrainRequest, ::google::protobuf::Empty, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_AckRoleTradeDrain_, context, request, response, std::move(f));
+}
+
+void DataService::Stub::async::AckRoleTradeDrain(::grpc::ClientContext* context, const ::data_service::AckRoleTradeDrainRequest* request, ::google::protobuf::Empty* response, ::grpc::ClientUnaryReactor* reactor) {
+  ::grpc::internal::ClientCallbackUnaryFactory::Create< ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_AckRoleTradeDrain_, context, request, response, reactor);
+}
+
+::grpc::ClientAsyncResponseReader< ::google::protobuf::Empty>* DataService::Stub::PrepareAsyncAckRoleTradeDrainRaw(::grpc::ClientContext* context, const ::data_service::AckRoleTradeDrainRequest& request, ::grpc::CompletionQueue* cq) {
+  return ::grpc::internal::ClientAsyncResponseReaderHelper::Create< ::google::protobuf::Empty, ::data_service::AckRoleTradeDrainRequest, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), cq, rpcmethod_AckRoleTradeDrain_, context, request);
+}
+
+::grpc::ClientAsyncResponseReader< ::google::protobuf::Empty>* DataService::Stub::AsyncAckRoleTradeDrainRaw(::grpc::ClientContext* context, const ::data_service::AckRoleTradeDrainRequest& request, ::grpc::CompletionQueue* cq) {
+  auto* result =
+    this->PrepareAsyncAckRoleTradeDrainRaw(context, request, cq);
+  result->StartCall();
+  return result;
+}
 
 ::grpc::Status DataService::Stub::LoadPlayerData(::grpc::ClientContext* context, const ::data_service::LoadPlayerDataRequest& request, ::data_service::LoadPlayerDataResponse* response) {
   return ::grpc::internal::BlockingUnaryCall< ::data_service::LoadPlayerDataRequest, ::data_service::LoadPlayerDataResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), rpcmethod_LoadPlayerData_, context, request, response);
@@ -638,6 +938,126 @@ DataService::Service::Service() {
   AddMethod(new ::grpc::internal::RpcServiceMethod(
       DataService_method_names[0],
       ::grpc::internal::RpcMethod::NORMAL_RPC,
+      new ::grpc::internal::RpcMethodHandler< DataService::Service, ::data_service::ReadAccountDirectoryRequest, ::data_service::AccountDirectoryResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(
+          [](DataService::Service* service,
+             ::grpc::ServerContext* ctx,
+             const ::data_service::ReadAccountDirectoryRequest* req,
+             ::data_service::AccountDirectoryResponse* resp) {
+               return service->ReadAccountDirectory(ctx, req, resp);
+             }, this)));
+  AddMethod(new ::grpc::internal::RpcServiceMethod(
+      DataService_method_names[1],
+      ::grpc::internal::RpcMethod::NORMAL_RPC,
+      new ::grpc::internal::RpcMethodHandler< DataService::Service, ::data_service::CreateAccountRoleRequest, ::data_service::AccountDirectoryResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(
+          [](DataService::Service* service,
+             ::grpc::ServerContext* ctx,
+             const ::data_service::CreateAccountRoleRequest* req,
+             ::data_service::AccountDirectoryResponse* resp) {
+               return service->CreateAccountRole(ctx, req, resp);
+             }, this)));
+  AddMethod(new ::grpc::internal::RpcServiceMethod(
+      DataService_method_names[2],
+      ::grpc::internal::RpcMethod::NORMAL_RPC,
+      new ::grpc::internal::RpcMethodHandler< DataService::Service, ::data_service::LookupAccountRoleRequest, ::data_service::AccountRoleOwnership, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(
+          [](DataService::Service* service,
+             ::grpc::ServerContext* ctx,
+             const ::data_service::LookupAccountRoleRequest* req,
+             ::data_service::AccountRoleOwnership* resp) {
+               return service->LookupAccountRole(ctx, req, resp);
+             }, this)));
+  AddMethod(new ::grpc::internal::RpcServiceMethod(
+      DataService_method_names[3],
+      ::grpc::internal::RpcMethod::NORMAL_RPC,
+      new ::grpc::internal::RpcMethodHandler< DataService::Service, ::data_service::RepairAccountRoleRequest, ::data_service::AccountDirectoryResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(
+          [](DataService::Service* service,
+             ::grpc::ServerContext* ctx,
+             const ::data_service::RepairAccountRoleRequest* req,
+             ::data_service::AccountDirectoryResponse* resp) {
+               return service->RepairAccountRole(ctx, req, resp);
+             }, this)));
+  AddMethod(new ::grpc::internal::RpcServiceMethod(
+      DataService_method_names[4],
+      ::grpc::internal::RpcMethod::NORMAL_RPC,
+      new ::grpc::internal::RpcMethodHandler< DataService::Service, ::data_service::RemoveAccountRolesRequest, ::google::protobuf::Empty, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(
+          [](DataService::Service* service,
+             ::grpc::ServerContext* ctx,
+             const ::data_service::RemoveAccountRolesRequest* req,
+             ::google::protobuf::Empty* resp) {
+               return service->RemoveAccountRoles(ctx, req, resp);
+             }, this)));
+  AddMethod(new ::grpc::internal::RpcServiceMethod(
+      DataService_method_names[5],
+      ::grpc::internal::RpcMethod::NORMAL_RPC,
+      new ::grpc::internal::RpcMethodHandler< DataService::Service, ::data_service::BeginAccountRoleTradeRequest, ::data_service::AccountRoleTradeReceipt, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(
+          [](DataService::Service* service,
+             ::grpc::ServerContext* ctx,
+             const ::data_service::BeginAccountRoleTradeRequest* req,
+             ::data_service::AccountRoleTradeReceipt* resp) {
+               return service->BeginAccountRoleTrade(ctx, req, resp);
+             }, this)));
+  AddMethod(new ::grpc::internal::RpcServiceMethod(
+      DataService_method_names[6],
+      ::grpc::internal::RpcMethod::NORMAL_RPC,
+      new ::grpc::internal::RpcMethodHandler< DataService::Service, ::data_service::ConfirmAccountRoleTradeFreezeRequest, ::data_service::AccountRoleTradeReceipt, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(
+          [](DataService::Service* service,
+             ::grpc::ServerContext* ctx,
+             const ::data_service::ConfirmAccountRoleTradeFreezeRequest* req,
+             ::data_service::AccountRoleTradeReceipt* resp) {
+               return service->ConfirmAccountRoleTradeFreeze(ctx, req, resp);
+             }, this)));
+  AddMethod(new ::grpc::internal::RpcServiceMethod(
+      DataService_method_names[7],
+      ::grpc::internal::RpcMethod::NORMAL_RPC,
+      new ::grpc::internal::RpcMethodHandler< DataService::Service, ::data_service::CancelAccountRoleTradeRequest, ::data_service::AccountRoleTradeReceipt, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(
+          [](DataService::Service* service,
+             ::grpc::ServerContext* ctx,
+             const ::data_service::CancelAccountRoleTradeRequest* req,
+             ::data_service::AccountRoleTradeReceipt* resp) {
+               return service->CancelAccountRoleTrade(ctx, req, resp);
+             }, this)));
+  AddMethod(new ::grpc::internal::RpcServiceMethod(
+      DataService_method_names[8],
+      ::grpc::internal::RpcMethod::NORMAL_RPC,
+      new ::grpc::internal::RpcMethodHandler< DataService::Service, ::data_service::TransferAccountRoleRequest, ::data_service::AccountRoleTransferReceipt, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(
+          [](DataService::Service* service,
+             ::grpc::ServerContext* ctx,
+             const ::data_service::TransferAccountRoleRequest* req,
+             ::data_service::AccountRoleTransferReceipt* resp) {
+               return service->TransferAccountRole(ctx, req, resp);
+             }, this)));
+  AddMethod(new ::grpc::internal::RpcServiceMethod(
+      DataService_method_names[9],
+      ::grpc::internal::RpcMethod::NORMAL_RPC,
+      new ::grpc::internal::RpcMethodHandler< DataService::Service, ::data_service::RegisterRoleAdmissionRequest, ::data_service::RegisterRoleAdmissionResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(
+          [](DataService::Service* service,
+             ::grpc::ServerContext* ctx,
+             const ::data_service::RegisterRoleAdmissionRequest* req,
+             ::data_service::RegisterRoleAdmissionResponse* resp) {
+               return service->RegisterRoleAdmission(ctx, req, resp);
+             }, this)));
+  AddMethod(new ::grpc::internal::RpcServiceMethod(
+      DataService_method_names[10],
+      ::grpc::internal::RpcMethod::NORMAL_RPC,
+      new ::grpc::internal::RpcMethodHandler< DataService::Service, ::data_service::CloseRoleAdmissionsRequest, ::data_service::CloseRoleAdmissionsResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(
+          [](DataService::Service* service,
+             ::grpc::ServerContext* ctx,
+             const ::data_service::CloseRoleAdmissionsRequest* req,
+             ::data_service::CloseRoleAdmissionsResponse* resp) {
+               return service->CloseRoleAdmissions(ctx, req, resp);
+             }, this)));
+  AddMethod(new ::grpc::internal::RpcServiceMethod(
+      DataService_method_names[11],
+      ::grpc::internal::RpcMethod::NORMAL_RPC,
+      new ::grpc::internal::RpcMethodHandler< DataService::Service, ::data_service::AckRoleTradeDrainRequest, ::google::protobuf::Empty, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(
+          [](DataService::Service* service,
+             ::grpc::ServerContext* ctx,
+             const ::data_service::AckRoleTradeDrainRequest* req,
+             ::google::protobuf::Empty* resp) {
+               return service->AckRoleTradeDrain(ctx, req, resp);
+             }, this)));
+  AddMethod(new ::grpc::internal::RpcServiceMethod(
+      DataService_method_names[12],
+      ::grpc::internal::RpcMethod::NORMAL_RPC,
       new ::grpc::internal::RpcMethodHandler< DataService::Service, ::data_service::LoadPlayerDataRequest, ::data_service::LoadPlayerDataResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(
           [](DataService::Service* service,
              ::grpc::ServerContext* ctx,
@@ -646,7 +1066,7 @@ DataService::Service::Service() {
                return service->LoadPlayerData(ctx, req, resp);
              }, this)));
   AddMethod(new ::grpc::internal::RpcServiceMethod(
-      DataService_method_names[1],
+      DataService_method_names[13],
       ::grpc::internal::RpcMethod::NORMAL_RPC,
       new ::grpc::internal::RpcMethodHandler< DataService::Service, ::data_service::SavePlayerDataRequest, ::data_service::SavePlayerDataResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(
           [](DataService::Service* service,
@@ -656,7 +1076,7 @@ DataService::Service::Service() {
                return service->SavePlayerData(ctx, req, resp);
              }, this)));
   AddMethod(new ::grpc::internal::RpcServiceMethod(
-      DataService_method_names[2],
+      DataService_method_names[14],
       ::grpc::internal::RpcMethod::NORMAL_RPC,
       new ::grpc::internal::RpcMethodHandler< DataService::Service, ::data_service::GetPlayerFieldRequest, ::data_service::GetPlayerFieldResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(
           [](DataService::Service* service,
@@ -666,7 +1086,7 @@ DataService::Service::Service() {
                return service->GetPlayerField(ctx, req, resp);
              }, this)));
   AddMethod(new ::grpc::internal::RpcServiceMethod(
-      DataService_method_names[3],
+      DataService_method_names[15],
       ::grpc::internal::RpcMethod::NORMAL_RPC,
       new ::grpc::internal::RpcMethodHandler< DataService::Service, ::data_service::SetPlayerFieldRequest, ::data_service::SetPlayerFieldResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(
           [](DataService::Service* service,
@@ -676,7 +1096,7 @@ DataService::Service::Service() {
                return service->SetPlayerField(ctx, req, resp);
              }, this)));
   AddMethod(new ::grpc::internal::RpcServiceMethod(
-      DataService_method_names[4],
+      DataService_method_names[16],
       ::grpc::internal::RpcMethod::NORMAL_RPC,
       new ::grpc::internal::RpcMethodHandler< DataService::Service, ::data_service::RegisterPlayerZoneRequest, ::google::protobuf::Empty, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(
           [](DataService::Service* service,
@@ -686,7 +1106,7 @@ DataService::Service::Service() {
                return service->RegisterPlayerZone(ctx, req, resp);
              }, this)));
   AddMethod(new ::grpc::internal::RpcServiceMethod(
-      DataService_method_names[5],
+      DataService_method_names[17],
       ::grpc::internal::RpcMethod::NORMAL_RPC,
       new ::grpc::internal::RpcMethodHandler< DataService::Service, ::data_service::GetPlayerHomeZoneRequest, ::data_service::GetPlayerHomeZoneResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(
           [](DataService::Service* service,
@@ -696,7 +1116,7 @@ DataService::Service::Service() {
                return service->GetPlayerHomeZone(ctx, req, resp);
              }, this)));
   AddMethod(new ::grpc::internal::RpcServiceMethod(
-      DataService_method_names[6],
+      DataService_method_names[18],
       ::grpc::internal::RpcMethod::NORMAL_RPC,
       new ::grpc::internal::RpcMethodHandler< DataService::Service, ::data_service::BatchGetPlayerHomeZoneRequest, ::data_service::BatchGetPlayerHomeZoneResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(
           [](DataService::Service* service,
@@ -706,7 +1126,7 @@ DataService::Service::Service() {
                return service->BatchGetPlayerHomeZone(ctx, req, resp);
              }, this)));
   AddMethod(new ::grpc::internal::RpcServiceMethod(
-      DataService_method_names[7],
+      DataService_method_names[19],
       ::grpc::internal::RpcMethod::NORMAL_RPC,
       new ::grpc::internal::RpcMethodHandler< DataService::Service, ::data_service::RemapHomeZoneForMergeRequest, ::data_service::RemapHomeZoneForMergeResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(
           [](DataService::Service* service,
@@ -716,7 +1136,7 @@ DataService::Service::Service() {
                return service->RemapHomeZoneForMerge(ctx, req, resp);
              }, this)));
   AddMethod(new ::grpc::internal::RpcServiceMethod(
-      DataService_method_names[8],
+      DataService_method_names[20],
       ::grpc::internal::RpcMethod::NORMAL_RPC,
       new ::grpc::internal::RpcMethodHandler< DataService::Service, ::data_service::DeletePlayerDataRequest, ::data_service::DeletePlayerDataResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(
           [](DataService::Service* service,
@@ -726,7 +1146,7 @@ DataService::Service::Service() {
                return service->DeletePlayerData(ctx, req, resp);
              }, this)));
   AddMethod(new ::grpc::internal::RpcServiceMethod(
-      DataService_method_names[9],
+      DataService_method_names[21],
       ::grpc::internal::RpcMethod::NORMAL_RPC,
       new ::grpc::internal::RpcMethodHandler< DataService::Service, ::data_service::CreatePlayerSnapshotRequest, ::data_service::CreatePlayerSnapshotResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(
           [](DataService::Service* service,
@@ -736,7 +1156,7 @@ DataService::Service::Service() {
                return service->CreatePlayerSnapshot(ctx, req, resp);
              }, this)));
   AddMethod(new ::grpc::internal::RpcServiceMethod(
-      DataService_method_names[10],
+      DataService_method_names[22],
       ::grpc::internal::RpcMethod::NORMAL_RPC,
       new ::grpc::internal::RpcMethodHandler< DataService::Service, ::data_service::ListPlayerSnapshotsRequest, ::data_service::ListPlayerSnapshotsResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(
           [](DataService::Service* service,
@@ -746,7 +1166,7 @@ DataService::Service::Service() {
                return service->ListPlayerSnapshots(ctx, req, resp);
              }, this)));
   AddMethod(new ::grpc::internal::RpcServiceMethod(
-      DataService_method_names[11],
+      DataService_method_names[23],
       ::grpc::internal::RpcMethod::NORMAL_RPC,
       new ::grpc::internal::RpcMethodHandler< DataService::Service, ::data_service::GetPlayerSnapshotDiffRequest, ::data_service::GetPlayerSnapshotDiffResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(
           [](DataService::Service* service,
@@ -756,7 +1176,7 @@ DataService::Service::Service() {
                return service->GetPlayerSnapshotDiff(ctx, req, resp);
              }, this)));
   AddMethod(new ::grpc::internal::RpcServiceMethod(
-      DataService_method_names[12],
+      DataService_method_names[24],
       ::grpc::internal::RpcMethod::NORMAL_RPC,
       new ::grpc::internal::RpcMethodHandler< DataService::Service, ::data_service::RollbackPlayerRequest, ::data_service::RollbackPlayerResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(
           [](DataService::Service* service,
@@ -766,7 +1186,7 @@ DataService::Service::Service() {
                return service->RollbackPlayer(ctx, req, resp);
              }, this)));
   AddMethod(new ::grpc::internal::RpcServiceMethod(
-      DataService_method_names[13],
+      DataService_method_names[25],
       ::grpc::internal::RpcMethod::NORMAL_RPC,
       new ::grpc::internal::RpcMethodHandler< DataService::Service, ::data_service::RollbackZoneRequest, ::data_service::RollbackZoneResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(
           [](DataService::Service* service,
@@ -776,7 +1196,7 @@ DataService::Service::Service() {
                return service->RollbackZone(ctx, req, resp);
              }, this)));
   AddMethod(new ::grpc::internal::RpcServiceMethod(
-      DataService_method_names[14],
+      DataService_method_names[26],
       ::grpc::internal::RpcMethod::NORMAL_RPC,
       new ::grpc::internal::RpcMethodHandler< DataService::Service, ::data_service::RollbackAllRequest, ::data_service::RollbackAllResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(
           [](DataService::Service* service,
@@ -786,7 +1206,7 @@ DataService::Service::Service() {
                return service->RollbackAll(ctx, req, resp);
              }, this)));
   AddMethod(new ::grpc::internal::RpcServiceMethod(
-      DataService_method_names[15],
+      DataService_method_names[27],
       ::grpc::internal::RpcMethod::NORMAL_RPC,
       new ::grpc::internal::RpcMethodHandler< DataService::Service, ::data_service::BatchRecallItemsRequest, ::data_service::BatchRecallItemsResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(
           [](DataService::Service* service,
@@ -796,7 +1216,7 @@ DataService::Service::Service() {
                return service->BatchRecallItems(ctx, req, resp);
              }, this)));
   AddMethod(new ::grpc::internal::RpcServiceMethod(
-      DataService_method_names[16],
+      DataService_method_names[28],
       ::grpc::internal::RpcMethod::NORMAL_RPC,
       new ::grpc::internal::RpcMethodHandler< DataService::Service, ::data_service::QueryTransactionLogRequest, ::data_service::QueryTransactionLogResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(
           [](DataService::Service* service,
@@ -806,7 +1226,7 @@ DataService::Service::Service() {
                return service->QueryTransactionLog(ctx, req, resp);
              }, this)));
   AddMethod(new ::grpc::internal::RpcServiceMethod(
-      DataService_method_names[17],
+      DataService_method_names[29],
       ::grpc::internal::RpcMethod::NORMAL_RPC,
       new ::grpc::internal::RpcMethodHandler< DataService::Service, ::data_service::CreateEventSnapshotRequest, ::data_service::CreateEventSnapshotResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(
           [](DataService::Service* service,
@@ -816,7 +1236,7 @@ DataService::Service::Service() {
                return service->CreateEventSnapshot(ctx, req, resp);
              }, this)));
   AddMethod(new ::grpc::internal::RpcServiceMethod(
-      DataService_method_names[18],
+      DataService_method_names[30],
       ::grpc::internal::RpcMethod::NORMAL_RPC,
       new ::grpc::internal::RpcMethodHandler< DataService::Service, ::data_service::AllocateIdSegmentRequest, ::data_service::AllocateIdSegmentResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(
           [](DataService::Service* service,
@@ -826,7 +1246,7 @@ DataService::Service::Service() {
                return service->AllocateIdSegment(ctx, req, resp);
              }, this)));
   AddMethod(new ::grpc::internal::RpcServiceMethod(
-      DataService_method_names[19],
+      DataService_method_names[31],
       ::grpc::internal::RpcMethod::NORMAL_RPC,
       new ::grpc::internal::RpcMethodHandler< DataService::Service, ::data_service::ReservePlayerNameRequest, ::data_service::ReservePlayerNameResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(
           [](DataService::Service* service,
@@ -836,7 +1256,7 @@ DataService::Service::Service() {
                return service->ReservePlayerName(ctx, req, resp);
              }, this)));
   AddMethod(new ::grpc::internal::RpcServiceMethod(
-      DataService_method_names[20],
+      DataService_method_names[32],
       ::grpc::internal::RpcMethod::NORMAL_RPC,
       new ::grpc::internal::RpcMethodHandler< DataService::Service, ::data_service::ReleasePlayerNameRequest, ::google::protobuf::Empty, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(
           [](DataService::Service* service,
@@ -846,7 +1266,7 @@ DataService::Service::Service() {
                return service->ReleasePlayerName(ctx, req, resp);
              }, this)));
   AddMethod(new ::grpc::internal::RpcServiceMethod(
-      DataService_method_names[21],
+      DataService_method_names[33],
       ::grpc::internal::RpcMethod::NORMAL_RPC,
       new ::grpc::internal::RpcMethodHandler< DataService::Service, ::data_service::BatchGetPlayerNameRequest, ::data_service::BatchGetPlayerNameResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(
           [](DataService::Service* service,
@@ -856,7 +1276,7 @@ DataService::Service::Service() {
                return service->BatchGetPlayerName(ctx, req, resp);
              }, this)));
   AddMethod(new ::grpc::internal::RpcServiceMethod(
-      DataService_method_names[22],
+      DataService_method_names[34],
       ::grpc::internal::RpcMethod::NORMAL_RPC,
       new ::grpc::internal::RpcMethodHandler< DataService::Service, ::data_service::GetPlayerAssetOpLedgerRequest, ::data_service::GetPlayerAssetOpLedgerResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(
           [](DataService::Service* service,
@@ -866,7 +1286,7 @@ DataService::Service::Service() {
                return service->GetPlayerAssetOpLedger(ctx, req, resp);
              }, this)));
   AddMethod(new ::grpc::internal::RpcServiceMethod(
-      DataService_method_names[23],
+      DataService_method_names[35],
       ::grpc::internal::RpcMethod::NORMAL_RPC,
       new ::grpc::internal::RpcMethodHandler< DataService::Service, ::data_service::GetPlayerInboxLedgerRequest, ::data_service::GetPlayerInboxLedgerResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(
           [](DataService::Service* service,
@@ -878,6 +1298,90 @@ DataService::Service::Service() {
 }
 
 DataService::Service::~Service() {
+}
+
+::grpc::Status DataService::Service::ReadAccountDirectory(::grpc::ServerContext* context, const ::data_service::ReadAccountDirectoryRequest* request, ::data_service::AccountDirectoryResponse* response) {
+  (void) context;
+  (void) request;
+  (void) response;
+  return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+}
+
+::grpc::Status DataService::Service::CreateAccountRole(::grpc::ServerContext* context, const ::data_service::CreateAccountRoleRequest* request, ::data_service::AccountDirectoryResponse* response) {
+  (void) context;
+  (void) request;
+  (void) response;
+  return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+}
+
+::grpc::Status DataService::Service::LookupAccountRole(::grpc::ServerContext* context, const ::data_service::LookupAccountRoleRequest* request, ::data_service::AccountRoleOwnership* response) {
+  (void) context;
+  (void) request;
+  (void) response;
+  return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+}
+
+::grpc::Status DataService::Service::RepairAccountRole(::grpc::ServerContext* context, const ::data_service::RepairAccountRoleRequest* request, ::data_service::AccountDirectoryResponse* response) {
+  (void) context;
+  (void) request;
+  (void) response;
+  return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+}
+
+::grpc::Status DataService::Service::RemoveAccountRoles(::grpc::ServerContext* context, const ::data_service::RemoveAccountRolesRequest* request, ::google::protobuf::Empty* response) {
+  (void) context;
+  (void) request;
+  (void) response;
+  return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+}
+
+::grpc::Status DataService::Service::BeginAccountRoleTrade(::grpc::ServerContext* context, const ::data_service::BeginAccountRoleTradeRequest* request, ::data_service::AccountRoleTradeReceipt* response) {
+  (void) context;
+  (void) request;
+  (void) response;
+  return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+}
+
+::grpc::Status DataService::Service::ConfirmAccountRoleTradeFreeze(::grpc::ServerContext* context, const ::data_service::ConfirmAccountRoleTradeFreezeRequest* request, ::data_service::AccountRoleTradeReceipt* response) {
+  (void) context;
+  (void) request;
+  (void) response;
+  return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+}
+
+::grpc::Status DataService::Service::CancelAccountRoleTrade(::grpc::ServerContext* context, const ::data_service::CancelAccountRoleTradeRequest* request, ::data_service::AccountRoleTradeReceipt* response) {
+  (void) context;
+  (void) request;
+  (void) response;
+  return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+}
+
+::grpc::Status DataService::Service::TransferAccountRole(::grpc::ServerContext* context, const ::data_service::TransferAccountRoleRequest* request, ::data_service::AccountRoleTransferReceipt* response) {
+  (void) context;
+  (void) request;
+  (void) response;
+  return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+}
+
+::grpc::Status DataService::Service::RegisterRoleAdmission(::grpc::ServerContext* context, const ::data_service::RegisterRoleAdmissionRequest* request, ::data_service::RegisterRoleAdmissionResponse* response) {
+  (void) context;
+  (void) request;
+  (void) response;
+  return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+}
+
+::grpc::Status DataService::Service::CloseRoleAdmissions(::grpc::ServerContext* context, const ::data_service::CloseRoleAdmissionsRequest* request, ::data_service::CloseRoleAdmissionsResponse* response) {
+  (void) context;
+  (void) request;
+  (void) response;
+  return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+}
+
+::grpc::Status DataService::Service::AckRoleTradeDrain(::grpc::ServerContext* context, const ::data_service::AckRoleTradeDrainRequest* request, ::google::protobuf::Empty* response) {
+  (void) context;
+  (void) request;
+  (void) response;
+  return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
 }
 
 ::grpc::Status DataService::Service::LoadPlayerData(::grpc::ServerContext* context, const ::data_service::LoadPlayerDataRequest* request, ::data_service::LoadPlayerDataResponse* response) {

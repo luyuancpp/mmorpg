@@ -95,7 +95,7 @@ func TestEnterScene_MissingLoadSetWhileZoneRegisteredKeepsHandoffGate(t *testing
 	logic := NewEnterSceneLogic(context.Background(), sc)
 	require.False(t, logic.playerLocationOwnerGone(identLocation(t, sc, playerID), 1), "负载键丢失不是整 zone 下线的证据")
 
-	resp, err := logic.EnterScene(&scene_manager.EnterSceneRequest{
+	resp, err := logic.EnterScene(&scene_manager.EnterSceneRequest{OwnerRevision: 1,
 		PlayerId: playerID, SceneId: targetID, ZoneId: 2,
 		GateZoneId: 2, GateId: "1", GateInstanceId: "gate-uuid-test",
 	})
@@ -151,7 +151,7 @@ func TestEnterScene_LoginOverMissingLoadSetDecidedByRegistry(t *testing.T) {
 				redirectZones = append(redirectZones, zone)
 				return &scene_manager.RedirectToGateInfo{TargetGateIp: "10.1.0.8", TargetGatePort: 7001}, nil
 			}
-			resp, err := logic.EnterScene(&scene_manager.EnterSceneRequest{
+			resp, err := logic.EnterScene(&scene_manager.EnterSceneRequest{OwnerRevision: 1,
 				PlayerId: playerID, GateZoneId: 2, GateId: "1", GateInstanceId: "gate-uuid-test",
 			})
 			require.NoError(t, err)

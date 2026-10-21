@@ -84,7 +84,8 @@ type ActivityDeps struct {
 	// Match 是 match 内部服务(MatchInternal.StartActivityBattle)。
 	// 注意 nil 接口的坑:必须传 nil **接口**,不能把一个 nil 的具体类型指针装进来(那样 `Match == nil` 为假,
 	// 第一次开战就 nil 解引用)。svc.ServiceContext.MatchInternal 本身就是接口类型,原样赋值即可。
-	Match TrialBattleStarter
+	Match        TrialBattleStarter
+	Cancellation TrialCancellation
 	// Results 读、销 battle 落在 PlayerLocatorRedis(K8s 的 SharedRedis)上的对局结果记录:结算有了定论之后销账,
 	// 巡检器靠它兜住"Kafka 把事件弄丢了"。
 	Results *data.TrialResultRecords
@@ -103,7 +104,13 @@ type ActivityDeps struct {
 // trialAvailable 报告同道历练此刻是否开放(依赖齐全)。为假时视图强制未开放,两个历练写 RPC 回 kGuildActivityNotOpen。
 // 只管"能不能发起新的对局";已发起对局的结算与后台循环不看它。
 func (d *ActivityDeps) trialAvailable() bool {
-	return d != nil && d.Lobby != nil && d.Match != nil && d.Results != nil && d.trials != nil
+	if d == nil || d.Lobby == nil || d.Match == nil || d.Results == nil || d.trials == nil {
+		return false
+	}
+	if store, ok := d.trials.(trialLaunchStore); ok && store.TrialLaunchEnabled() && d.Cancellation == nil {
+		return false
+	}
+	return true
 }
 
 // WithActivities 注入活动依赖,写进 GuildLogic.activities(90 Y-02 的函数式 Option,与 WithEconomy / WithPlayerNames 同一写法)。

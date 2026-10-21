@@ -7,8 +7,10 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"errors"
+	redv9 "github.com/redis/go-redis/v9"
 	"strings"
 	"testing"
+	"time"
 
 	"friend/internal/config"
 	"friend/internal/constants"
@@ -57,12 +59,22 @@ func chainUnary(
 // 身份只能从这里来,所以凡是"像客户端来的"测试都必须带上它。
 func incomingSessionContext(t *testing.T, playerId uint64) context.Context {
 	t.Helper()
-	bin, err := proto.Marshal(&base.SessionDetails{SessionId: 1, PlayerId: playerId})
+	bin, err := proto.Marshal(&base.SessionDetails{SessionId: 1, PlayerId: playerId, GateInstanceId: "原gate", SessionIncarnation: 9, OwnerRevision: 7})
 	if err != nil {
 		t.Fatalf("序列化 SessionDetails 失败: %v", err)
 	}
 	md := metadata.Pairs(session.MetadataKey, base64.StdEncoding.EncodeToString(bin))
 	return metadata.NewIncomingContext(context.Background(), md)
+}
+
+type testLoginReader struct{}
+
+func (testLoginReader) Get(context.Context, string) *redv9.StringCmd {
+	return redv9.NewStringResult("original", nil)
+}
+func testOriginalIdentityGuard() grpc.UnaryServerInterceptor {
+	// 纯拦截器测试显式提供登录态与 SQL 检查替身，真库身份由 data 用例证明。
+	return session.OriginalIdentityInterceptor(testLoginReader{}, time.Second, func(context.Context) error { return nil })
 }
 
 // TestBuildUnaryInterceptorsOrder 钉住链长与顺序:grpcstats → killswitch → session → serverbase。
@@ -82,7 +94,7 @@ func TestBuildUnaryInterceptorsOrder(t *testing.T) {
 	ks.SetRules(map[string]killswitch.Rule{
 		strings.TrimPrefix(friendpb.ClientPlayerFriend_AddFriend_FullMethodName, "/"): {Deny: true, Reason: "单测:顺序探针"},
 	})
-	chain := buildUnaryInterceptors(ks)
+	chain := buildUnaryInterceptors(ks, testOriginalIdentityGuard())
 	if len(chain) != 4 {
 		t.Fatalf("拦截器链长度应为 4(grpcstats/killswitch/session/serverbase),实际 %d", len(chain))
 	}
@@ -149,7 +161,7 @@ func TestKillSwitchWiredIntoUnaryChain(t *testing.T) {
 		blocked: {Deny: true, Reason: "单测:好友库过载"},
 	})
 
-	chain := buildUnaryInterceptors(ks)
+	chain := buildUnaryInterceptors(ks, testOriginalIdentityGuard())
 
 	t.Run("命中规则的方法被短路", func(t *testing.T) {
 		handlerCalled := false
@@ -206,7 +218,7 @@ func TestKillSwitchFailOpenWithoutRules(t *testing.T) {
 
 	handlerCalled := false
 	info := &grpc.UnaryServerInfo{FullMethod: friendpb.ClientPlayerFriend_AddFriend_FullMethodName}
-	h := chainUnary(buildUnaryInterceptors(ks), info, func(ctx context.Context, req any) (any, error) {
+	h := chainUnary(buildUnaryInterceptors(ks, testOriginalIdentityGuard()), info, func(ctx context.Context, req any) (any, error) {
 		handlerCalled = true
 		return &friendpb.AddFriendResponse{}, nil
 	})
@@ -233,7 +245,7 @@ func TestSessionRejectsNotifyFriendEventFromClient(t *testing.T) {
 
 	handlerCalled := false
 	info := &grpc.UnaryServerInfo{FullMethod: friendpb.ClientPlayerFriend_NotifyFriendEvent_FullMethodName}
-	h := chainUnary(buildUnaryInterceptors(killswitch.New(killswitch.Config{})), info,
+	h := chainUnary(buildUnaryInterceptors(killswitch.New(killswitch.Config{}), testOriginalIdentityGuard()), info,
 		func(ctx context.Context, req any) (any, error) {
 			handlerCalled = true
 			return &base.Empty{}, nil
@@ -255,7 +267,7 @@ func TestBrokenSessionRejectedInChain(t *testing.T) {
 
 	handlerCalled := false
 	info := &grpc.UnaryServerInfo{FullMethod: friendpb.ClientPlayerFriend_AddFriend_FullMethodName}
-	h := chainUnary(buildUnaryInterceptors(killswitch.New(killswitch.Config{})), info,
+	h := chainUnary(buildUnaryInterceptors(killswitch.New(killswitch.Config{}), testOriginalIdentityGuard()), info,
 		func(ctx context.Context, req any) (any, error) {
 			handlerCalled = true
 			return &friendpb.AddFriendResponse{}, nil

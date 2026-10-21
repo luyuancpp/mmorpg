@@ -181,4 +181,16 @@ service ClientPlayerJubaozhai {
   rpc CancelAuctionLot (CancelAuctionLotRequest) returns (AuctionLotResponse);
   rpc BrowseCommerceOffers (BrowseCommerceOffersRequest) returns (BrowseCommerceOffersResponse);
   rpc ListTradeMarkets (ListTradeMarketsRequest) returns (ListTradeMarketsResponse);
+  // 人民币分、原账号订单权及卖家逐单结算；支付/退款/出款原件只来自内部适配器。
+  rpc CreateRmbConsignment (CreateRmbConsignmentRequest) returns (RmbConsignmentResponse);
+  rpc GetRmbConsignment (GetRmbConsignmentRequest) returns (RmbConsignmentResponse);
+  rpc ListRmbConsignments (ListRmbConsignmentsRequest) returns (ListRmbConsignmentsResponse);
+  rpc BuyRmbConsignment (BuyRmbConsignmentRequest) returns (CommerceOrderResponse);
+  rpc CancelRmbConsignment (CancelRmbConsignmentRequest) returns (RmbConsignmentResponse);
+  rpc GetRmbOrder (GetCommerceOrderRequest) returns (CommerceOrderResponse);
+  rpc ListRmbOrders (ListCommerceOrdersRequest) returns (ListCommerceOrdersResponse);
+  rpc CancelRmbOrder (CancelCommerceOrderRequest) returns (CommerceOrderResponse);
+  rpc ListSellerIncomes (ListSellerIncomesRequest) returns (ListSellerIncomesResponse);
+  rpc CreateWithdrawal (CreateWithdrawalRequest) returns (WithdrawalResponse);
+  rpc GetWithdrawal (GetWithdrawalRequest) returns (WithdrawalResponse);
 }

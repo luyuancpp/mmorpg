@@ -302,7 +302,63 @@ message GuildTrialBattleRecord {              // 锁序位置 9
   uint32 rewarded_count = 9;           // 得帮贡人数(审计)
   uint64 created_ms = 10;              // 登记时刻;结算时补登记的行取对局结束时刻
   uint64 settled_ms = 11;              // 进入 SETTLED / EXPIRED 的时刻;STARTED 为 0
-  // 追加区:从 12 起。
+  uint64 launch_request_id = 12;       // 开战前已提交的原请求；不能在结算时从当前归属补造
+  // 追加区:从 13 起。
+}
+
+// 以下三个非表消息保存服务端私有原件；账号不能进入客户端可见的房间成员视图。
+message GuildTrialRoleIdentity {
+  uint64 player_id = 1;
+  string account = 2;
+  uint64 owner_revision = 3;
+}
+message GuildTrialLobbyConsent {
+  uint64 lobby_id = 1;
+  GuildTrialRoleIdentity identity = 2;
+}
+message GuildTrialLaunchOriginal {
+  uint64 request_id = 1;
+  uint64 guild_id = 2;
+  uint32 activity_id = 3;
+  uint32 period_key = 4;
+  uint32 guild_period_key = 5;
+  uint64 initiator_player_id = 6;
+  uint32 dungeon_id = 7;
+  repeated GuildTrialRoleIdentity roster = 8;
+  uint64 created_ms = 9;
+}
+
+// 外部开战前同全员角色首锁与帮会锁提交；未知结果只重放原请求，不换名单/周期/归属。
+message GuildTrialLaunchRecord {
+  option(OptionTableName) = "guild_trial_launch";
+  option(OptionPrimaryKey) = "request_id";
+  option(OptionIndex) = "state,updated_ms;battle_id";
+  option(OptionTiDBNonclusteredPK) = true;
+  option(OptionTiDBShardRowIDBits) = 4;
+  option(OptionTiDBPreSplitRegions) = 4;
+  uint64 request_id = 1;
+  uint64 battle_id = 2;
+  uint32 state = 3;                    // 1=PREPARED，2=STARTED，3=TERMINAL
+  bytes original_proto = 4;             // GuildTrialLaunchOriginal确定性原字节
+  bytes request_digest = 5;
+  uint64 created_ms = 6;
+  uint64 updated_ms = 7;
+  bytes cancel_receipt = 8;             // 提交时已核签且绑定原请求的CancelActivityBattleResponse原字节
+}
+
+// 原件的可索引投影；与launch同事务写入/终结，防止角色过户漏过尚未发奖的对局。
+message GuildTrialLaunchRoleRecord {
+  option(OptionTableName) = "guild_trial_launch_role";
+  option(OptionPrimaryKey) = "player_id,request_id";
+  option(OptionIndex) = "request_id,player_id;player_id,state,request_id";
+  option(OptionTiDBNonclusteredPK) = true;
+  option(OptionTiDBShardRowIDBits) = 4;
+  option(OptionTiDBPreSplitRegions) = 4;
+  uint64 player_id = 1;
+  uint64 request_id = 2;
+  string account = 3;
+  uint64 owner_revision = 4;
+  uint32 state = 5;                    // 1=ACTIVE，2=TERMINAL
 }
 
 // 历练结算时某位得奖者的 GUILD_CREDIT 流未决指令已满(assetop.ErrTooManyPending):物品先记在这里,

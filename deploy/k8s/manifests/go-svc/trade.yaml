@@ -83,6 +83,9 @@ spec:
           image: PLACEHOLDER_IMAGE
           imagePullPolicy: PLACEHOLDER_PULL_POLICY
           env:
+            - name: MMORPG_ACCOUNT_DIRECTORY_SECRET_TRADE
+              valueFrom:
+                secretKeyRef: {name: domain-service-secrets, key: account-directory-trade, optional: false}
             - name: GOLANG_PROTOBUF_REGISTRATION_CONFLICT
               value: warn
             # C++ 约定注册(TradeNodeService.rpc)写进 NodeInfo 的对外 IP:ListenOn 是 0.0.0.0,不能原样写;

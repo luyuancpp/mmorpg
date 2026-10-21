@@ -4,6 +4,9 @@
     <ClCompile Include="cross_zone_test.cpp">
       <Filter>source</Filter>
     </ClCompile>
+    <ClCompile Include="role_admission_test.cpp">
+      <Filter>source</Filter>
+    </ClCompile>
     <ClCompile Include="db_task_dispatch_test.cpp">
       <Filter>source</Filter>
     </ClCompile>

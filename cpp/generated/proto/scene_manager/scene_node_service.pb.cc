@@ -269,7 +269,7 @@ const char descriptor_table_protodef_proto_2fscene_5fmanager_2fscene_5fnode_5fse
     "get_scene_id\030\002 \001(\004\022\026\n\016target_node_id\030\003 \001"
     "(\t\022\034\n\024expected_owner_epoch\030\004 \001(\004\022\025\n\rsess"
     "ion_ended\030\005 \001(\010\022\032\n\022covered_session_id\030\006 "
-    "\001(\r\022 \n\030covered_login_generation\030\007 \001(\0042\217\004"
+    "\001(\r\022 \n\030covered_login_generation\030\007 \001(\0042\317\004"
     "\n\rSceneNodeGrpc\022:\n\013CreateScene\022\023.CreateS"
     "ceneRequest\032\024.CreateSceneResponse\"\000\022.\n\014D"
     "estroyScene\022\024.DestroySceneRequest\032\006.Empt"
@@ -277,14 +277,15 @@ const char descriptor_table_protodef_proto_2fscene_5fmanager_2fscene_5fnode_5fse
     "ePlayerRequest\032\006.Empty\"\000\022@\n\rPrepareBattl"
     "e\022\025.PrepareBattleRequest\032\026.PrepareBattle"
     "Response\"\000\022<\n\023CancelBattlePrepare\022\033.Canc"
-    "elBattlePrepareRequest\032\006.Empty\"\000\0221\n\nAsse"
+    "elBattlePrepareRequest\032\006.Empty\"\000\022>\n\024Seal"
+    "AccountRoleTrade\022\034.SealAccountRoleTradeR"
+    "equest\032\006.Empty\"\000\0221\n\nAssetDebit\022\017.AssetOp"
+    "Request\032\020.AssetOpResponse\"\000\0226\n\017AssetAbor"
     "tDebit\022\017.AssetOpRequest\032\020.AssetOpRespons"
-    "e\"\000\0226\n\017AssetAbortDebit\022\017.AssetOpRequest\032"
-    "\020.AssetOpResponse\"\000\0222\n\013AssetCredit\022\017.Ass"
-    "etOpRequest\032\020.AssetOpResponse\"\000\0226\n\017Asset"
-    "AckReceipt\022\017.AssetOpRequest\032\020.AssetOpRes"
-    "ponse\"\000B\035Z\033scene_manager/scene_managerb\006"
-    "proto3"
+    "e\"\000\0222\n\013AssetCredit\022\017.AssetOpRequest\032\020.As"
+    "setOpResponse\"\000\0226\n\017AssetAckReceipt\022\017.Ass"
+    "etOpRequest\032\020.AssetOpResponse\"\000B\035Z\033scene"
+    "_manager/scene_managerb\006proto3"
 };
 static const ::_pbi::DescriptorTable* PROTOBUF_NONNULL const
     descriptor_table_proto_2fscene_5fmanager_2fscene_5fnode_5fservice_2eproto_deps[3] = {
@@ -296,7 +297,7 @@ static ::absl::once_flag descriptor_table_proto_2fscene_5fmanager_2fscene_5fnode
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fscene_5fmanager_2fscene_5fnode_5fservice_2eproto = {
     false,
     false,
-    926,
+    990,
     descriptor_table_protodef_proto_2fscene_5fmanager_2fscene_5fnode_5fservice_2eproto,
     "proto/scene_manager/scene_node_service.proto",
     &descriptor_table_proto_2fscene_5fmanager_2fscene_5fnode_5fservice_2eproto_once,

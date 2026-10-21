@@ -148,6 +148,7 @@
     <ClCompile Include="player\system\db_task_dispatch_ledger.cpp" />
     <ClCompile Include="player\system\db_task_dispatch_system.cpp" />
     <ClCompile Include="player\system\player_lifecycle.cpp" />
+    <ClCompile Include="player\system\role_admission_system.cpp" />
     <ClCompile Include="player\system\player_scene.cpp" />
     <ClCompile Include="player\system\player_team.cpp" />
     <ClCompile Include="player\system\player_team_aoi.cpp" />

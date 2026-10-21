@@ -140,7 +140,7 @@ func TestEnterScene_StaleLoginAfterNewerSamePlacementRejected(t *testing.T) {
 		SessionId: 11, LoginGeneration: identGenA,
 	})
 
-	respB, err := NewEnterSceneLogic(context.Background(), sc).EnterScene(&scene_manager.EnterSceneRequest{
+	respB, err := NewEnterSceneLogic(context.Background(), sc).EnterScene(&scene_manager.EnterSceneRequest{OwnerRevision: 1,
 		PlayerId: playerID, SceneId: s1, ZoneId: testZoneId, SessionId: 22, LoginGeneration: identGenB,
 		GateZoneId: testZoneId, GateId: "2", GateInstanceId: "gate-b-uuid",
 	})
@@ -149,7 +149,7 @@ func TestEnterScene_StaleLoginAfterNewerSamePlacementRejected(t *testing.T) {
 	require.Len(t, *captured, 1)
 	afterB := identLocationRaw(t, sc, playerID)
 
-	respA, err := NewEnterSceneLogic(context.Background(), sc).EnterScene(&scene_manager.EnterSceneRequest{
+	respA, err := NewEnterSceneLogic(context.Background(), sc).EnterScene(&scene_manager.EnterSceneRequest{OwnerRevision: 1,
 		PlayerId: playerID, SceneId: s2, ZoneId: testZoneId, SessionId: 11, LoginGeneration: identGenA,
 		GateZoneId: testZoneId, GateId: "1", GateInstanceId: "gate-a-uuid",
 	})
@@ -181,7 +181,7 @@ func TestEnterScene_StaleSessionSceneChangeRejected(t *testing.T) {
 	staleBefore := enterSceneRejectedCount(t, testZoneId, "session_stale")
 	verdictBefore := placementIdentityCount(t, "enter", "stale")
 
-	resp, err := NewEnterSceneLogic(context.Background(), sc).EnterScene(&scene_manager.EnterSceneRequest{
+	resp, err := NewEnterSceneLogic(context.Background(), sc).EnterScene(&scene_manager.EnterSceneRequest{OwnerRevision: 1,
 		PlayerId: playerID, SceneId: s2, ZoneId: testZoneId, SessionId: 11, LoginGeneration: identGenA,
 		CorrelationId: 9001, GateZoneId: testZoneId, GateId: "1", GateInstanceId: "gate-a-uuid",
 	})
@@ -212,7 +212,7 @@ func TestEnterScene_SameSessionWithoutGenerationAdmittedPreservesGeneration(t *t
 		SessionId: 22, LoginGeneration: identGenB,
 	})
 
-	resp, err := NewEnterSceneLogic(context.Background(), sc).EnterScene(&scene_manager.EnterSceneRequest{
+	resp, err := NewEnterSceneLogic(context.Background(), sc).EnterScene(&scene_manager.EnterSceneRequest{OwnerRevision: 1,
 		PlayerId: playerID, SceneId: s2, ZoneId: testZoneId, SessionId: 22, CorrelationId: 9002,
 		GateZoneId: testZoneId, GateId: "1", GateInstanceId: "gate-b-uuid",
 	})
@@ -242,7 +242,7 @@ func TestEnterScene_UnversionedDifferentSessionAdmittedAsLegacy(t *testing.T) {
 	})
 	legacyBefore := placementIdentityCount(t, "enter", "legacy")
 
-	resp, err := NewEnterSceneLogic(context.Background(), sc).EnterScene(&scene_manager.EnterSceneRequest{
+	resp, err := NewEnterSceneLogic(context.Background(), sc).EnterScene(&scene_manager.EnterSceneRequest{OwnerRevision: 1,
 		PlayerId: playerID, SceneId: s2, ZoneId: testZoneId, SessionId: 22,
 		GateZoneId: testZoneId, GateId: "1", GateInstanceId: "gate-uuid-test",
 	})
@@ -271,7 +271,7 @@ func TestEnterScene_LegacyAdmitDoesNotDowngradeIdentity(t *testing.T) {
 		SessionId: 22, LoginGeneration: identGenB,
 	})
 
-	resp, err := NewEnterSceneLogic(context.Background(), sc).EnterScene(&scene_manager.EnterSceneRequest{
+	resp, err := NewEnterSceneLogic(context.Background(), sc).EnterScene(&scene_manager.EnterSceneRequest{OwnerRevision: 1,
 		PlayerId: playerID, SceneId: s2, ZoneId: testZoneId, SessionId: 11, CorrelationId: 9003,
 		GateZoneId: testZoneId, GateId: "1", GateInstanceId: "gate-a-uuid",
 	})
@@ -302,7 +302,7 @@ func TestEnterScene_SamePlacementUpdatesIdentityPreservingOtherFields(t *testing
 	}
 	identSeedLocation(t, sc, playerID, seeded)
 
-	resp, err := NewEnterSceneLogic(context.Background(), sc).EnterScene(&scene_manager.EnterSceneRequest{
+	resp, err := NewEnterSceneLogic(context.Background(), sc).EnterScene(&scene_manager.EnterSceneRequest{OwnerRevision: 1,
 		PlayerId: playerID, SceneId: s1, ZoneId: testZoneId, SessionId: 22, LoginGeneration: identGenB,
 		GateZoneId: testZoneId, GateId: "2", GateInstanceId: "gate-b-uuid",
 	})
@@ -340,7 +340,7 @@ func TestEnterScene_SamePlacementIdentityCASFailsWhenLocationDeleted(t *testing.
 	locKey := getPlayerLocationKey(playerID)
 	fired := identHookOnceBeforeEval(t, mr, locKey, func() { mr.Del(locKey) })
 
-	resp, err := NewEnterSceneLogic(context.Background(), sc).EnterScene(&scene_manager.EnterSceneRequest{
+	resp, err := NewEnterSceneLogic(context.Background(), sc).EnterScene(&scene_manager.EnterSceneRequest{OwnerRevision: 1,
 		PlayerId: playerID, SceneId: s1, ZoneId: testZoneId, SessionId: 22, LoginGeneration: identGenB,
 		GateZoneId: testZoneId, GateId: "2", GateInstanceId: "gate-b-uuid",
 	})
@@ -373,7 +373,7 @@ func TestEnterScene_PlacementRejectedWhenIdentityChangedSinceObservation(t *test
 	locKey := getPlayerLocationKey(playerID)
 	fired := identHookOnceBeforeEval(t, mr, locKey, func() { _ = mr.Set(locKey, concurrent) })
 
-	resp, err := NewEnterSceneLogic(context.Background(), sc).EnterScene(&scene_manager.EnterSceneRequest{
+	resp, err := NewEnterSceneLogic(context.Background(), sc).EnterScene(&scene_manager.EnterSceneRequest{OwnerRevision: 1,
 		PlayerId: playerID, SceneId: s2, ZoneId: testZoneId, SessionId: 11, LoginGeneration: identGenA,
 		GateZoneId: testZoneId, GateId: "1", GateInstanceId: "gate-a-uuid",
 	})
@@ -404,7 +404,7 @@ func TestEnterScene_FirstPlacementRejectedWhenLocationAppearedSinceObservation(t
 	locKey := getPlayerLocationKey(playerID)
 	fired := identHookOnceBeforeEval(t, mr, locKey, func() { _ = mr.Set(locKey, appeared) })
 
-	resp, err := NewEnterSceneLogic(context.Background(), sc).EnterScene(&scene_manager.EnterSceneRequest{
+	resp, err := NewEnterSceneLogic(context.Background(), sc).EnterScene(&scene_manager.EnterSceneRequest{OwnerRevision: 1,
 		PlayerId: playerID, SceneId: s1, ZoneId: testZoneId, SessionId: 11, LoginGeneration: identGenA,
 		GateZoneId: testZoneId, GateId: "1", GateInstanceId: "gate-a-uuid",
 	})
@@ -443,7 +443,7 @@ func TestEnterScene_CrossZoneFirstLegRejectedWhenLocationChangedSinceObservation
 	logic.assignGateForZone = func(context.Context, *svc.ServiceContext, uint32, uint64) (*scene_manager.RedirectToGateInfo, error) {
 		return &scene_manager.RedirectToGateInfo{TargetGateIp: "10.2.0.8", TargetGatePort: 7001}, nil
 	}
-	resp, err := logic.EnterScene(&scene_manager.EnterSceneRequest{
+	resp, err := logic.EnterScene(&scene_manager.EnterSceneRequest{OwnerRevision: 1,
 		PlayerId: playerID, ZoneId: 2, SessionId: 11, LoginGeneration: identGenA,
 		GateZoneId: 1, GateId: "1", GateInstanceId: "gate-uuid-test",
 	})
@@ -473,7 +473,7 @@ func TestEnterScene_SamePlacementRouteFailureKeepsIdentity(t *testing.T) {
 		SessionId: 11, LoginGeneration: identGenA,
 	})
 
-	resp, err := NewEnterSceneLogic(context.Background(), sc).EnterScene(&scene_manager.EnterSceneRequest{
+	resp, err := NewEnterSceneLogic(context.Background(), sc).EnterScene(&scene_manager.EnterSceneRequest{OwnerRevision: 1,
 		PlayerId: playerID, SceneId: s1, ZoneId: testZoneId, SessionId: 22, LoginGeneration: identGenB,
 		GateZoneId: testZoneId, GateId: "2", GateInstanceId: "gate-b-uuid",
 	})
@@ -511,7 +511,7 @@ func TestEnterScene_CrossZoneFirstLegStaleRejected(t *testing.T) {
 		assigned = true
 		return &scene_manager.RedirectToGateInfo{TargetGateIp: "10.2.0.8", TargetGatePort: 7001}, nil
 	}
-	resp, err := logic.EnterScene(&scene_manager.EnterSceneRequest{
+	resp, err := logic.EnterScene(&scene_manager.EnterSceneRequest{OwnerRevision: 1,
 		PlayerId: playerID, ZoneId: 2, SessionId: 11, LoginGeneration: identGenA,
 		GateZoneId: 1, GateId: "1", GateInstanceId: "gate-uuid-test",
 	})

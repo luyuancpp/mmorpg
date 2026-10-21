@@ -23,4 +23,6 @@ message SessionDetails
   // 0 = 不受 lane 管理(gate 合成的断线通知)。路由服原值回写响应头,gate 据此认领 lane 队头。
   // 业务服务不得把它当幂等键(它按调用编号,不按客户端意图编号);可以作为 (session_incarnation, 本字段) 水位栅栏。
   uint64 gate_call_seq = 8;
+  // gate绑定角色时确认的原归属修订；换图原样保留，解绑清零。业务提交须与原账号一起复核，禁止反查当前归属补值。
+  uint64 owner_revision = 9;
 }

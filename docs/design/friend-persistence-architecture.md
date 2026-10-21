@@ -1,5 +1,7 @@
 # Friend Service Persistence Architecture
 
+> **当前口径（2026-10-20）**：生产好友权威表在全服共享的同一 TiDB 事务域，申请状态、双向边和容量同事务提交；好友与申请列表直接读 SQL。原 Go 设计的逐项移植与发布限制见 [friend-port-20260918.md §9.4–9.5](./friend-port-20260918.md)。下列 9 月验证仅绑定当时输入，不能代替当前双副本或真实双区验证。
+>
 > **2026-09-18/19 已随 friend 移植更新到新形态**(见 [friend-port-20260918.md](./friend-port-20260918.md))。
 > 本次改动的段落:Data Characteristics(独占库 `mmorpg_friend` + 四张表 + 双 Redis 句柄)、
 > 「实现: 显式容量锁行」、「锁序纪律」(新增)、「拉黑表 `friend_block`」(新增)、
@@ -10,25 +12,29 @@
 
 ## Data Characteristics
 - **Global cross-zone**: friend 全服一份、多副本、进程无状态;业务代码禁止读 `cfg.ZoneId` 做分支,ZoneId 只影响 etcd 注册路径
-- **独占逻辑库 `mmorpg_friend`**(port-decisions D-14 第 1 条):本地与 K8s 同名,不落 `zone_{N}_db`、不借 `mmorpg_global`、不往共享库 `mmorpg` 加表。表结构的唯一事实源是 `proto/friend/friend_table.proto`,建表 / 加列只经 `go/schemamigrate`(服务二进制 `-migrate`)
+- **独占逻辑库 `mmorpg_friend`**(port-decisions D-14 第 1 条):生产各区所有副本连同一个 TiDB 事务域，不落 `zone_{N}_db`、不按区各建独立好友权威库。本地开发允许 MySQL；生产 `RequireTiDB` 门禁禁止退回 MySQL。表结构的唯一事实源是 `proto/friend/friend_table.proto`,建表 / 加列只经 `go/schemamigrate`(服务二进制 `-migrate`)
 - **四张表**:`friend`(双向边,每对好友两行)/ `friend_request`(每对 (from,to) 一行)/ `friend_capacity`(显式计数锁行)/ `friend_block`(单向拉黑,本次新增)
 - **两个 Redis 句柄**(契约 §4),`Redis DB 3` 的写法已作废:
   - `SharedRedis`:跨运行时契约 key(`player:session:{id}`)的**唯一句柄**,禁 Cluster 分片;
-  - `FriendRedis`:friend 私有 key(好友列表缓存、申请缓存、频率配额),可 Cluster;未配置时回落共享库并打 WARN
+  - `FriendRedis`:friend 私有 key（频率配额、资料等派生数据），可 Cluster；历史好友/申请列表键只保留失效兼容，不参与权威列表读。未配置时回落共享库并打 WARN
 - **Low-frequency writes**: add/remove friend = a few ops per player per day
 - **Relationship data**: bidirectional (A<->B), needs transactional consistency
 - **Hard upper limit**: MaxFriends=200, must never exceed (no soft tolerance)
 
-## Persistence Pattern: Direct MySQL + Redis Cache-Aside
+## 持久化方式：直接 SQL（生产 TiDB）
 
-Friend/Guild 这类低频关系型数据不适合 Kafka write-behind（那是给玩家高频数据用的），直接写 MySQL + cache-aside。
+好友关系低频写，直接在 SQL 事务里完成权威校验与双边提交。TiDB 的 MySQL 协议允许继续使用 `database/sql`、`BeginTx` 和行锁；方法名或驱动名中的 MySQL 不表示数据只在单机。
 
 ```
-写路径: 业务操作 -> MySQL 事务(先写) -> 成功后 -> 删 Redis 缓存
-读路径: Redis GET -> miss -> singleflight MySQL load -> 回填 Redis
+写路径: 业务操作 -> TiDB RC 悲观事务（容量守卫、申请代次、双向边、容量）-> 提交 -> 历史缓存失效与通知
+读路径: 权威 SQL 列表 -> 补全资料及在线投影
 ```
+
+缓存失效、通知和在线投影不属于 SQL 提交点；失败不能将已提交写改报失败，也不能成功返回旧关系缓存。生产每条物理连接固定 `pessimistic + READ-COMMITTED + strict + leader`，关闭历史快照、陈旧读与低精度 TSO，启动时复核。Go 的装配在 `internal/svc/servicecontext.go`；Java 在 `FriendConnectionPolicy` 与 `FriendConfiguration.verifyFriendDatabase`。
 
 ### 与玩家数据持久化的对比
+
+以下为 9 月选型时的历史比较，玩家当前写回及 SQL 回执保证以 [db-write-fencing-mysql.md](./db-write-fencing-mysql.md) 为准，不能用表中“最终一致即可”放宽当前玩家资产门禁。
 
 | 特征 | 玩家数据 | Friend / Guild |
 |------|----------|----------------|
@@ -100,7 +106,7 @@ COMMIT;
 
 - `friend_capacity` 的固定主键行让共享任一玩家的写事务串行化,不依赖
   `COUNT ... FOR UPDATE` 在不同隔离级别下不稳定的 gap-lock 语义
-- 单 MySQL 实例,一个事务搞定,不需要分布式事务
+- 应用提交一个 SQL 事务；生产由 TiDB 在底层跨 TiKV Region 保证该事务，不在应用层拆成多库 RPC 或补偿事务
 - 低频操作(每天几次),行锁开销可忽略
 
 ### 锁序纪律(2026-09-18 新增,**改任何写路径之前必须读完**)
@@ -224,25 +230,21 @@ COMMIT;
 
 拉黑 `ErrBlocked` **刻意不区分方向**:告诉申请人"是对方拉黑了你"等于把别人的拉黑设置泄露给他。
 
-## 未来分片方案 (1亿+ 玩家)
+## 全球同服与扩容边界
 
-### 分片策略
-- `shard_id = player_id % N`，每个玩家的好友列表固定落在一个分片
-- 每人一行存序列化的好友列表，1亿玩家/16分片 = 每片 ~625万行
+当前采用全服共享 TiDB 事务域，底层按 Region 分布。原文“按玩家独立分库，再用两次 RPC + Kafka 补偿建双边”已被确认的 TiDB 路线取代；该方案不能保持当前要求的双边原子性、双方硬上限和立即可见性，不再作为未来默认实现。
 
-### 跨分片加好友
-```
-B 同意:
-  1. 同步 RPC -> A 的分片: FOR UPDATE 检查 + 写入(原子)
-     A 满了 -> 返回失败，结束
-     成功 -> 继续
-  2. 本地事务 -> B 的分片: FOR UPDATE 检查 + 写入
-     B 满了 -> 同步回滚 A（失败则 Kafka 补偿队列兜底）
-     成功 -> 完成
-```
+原 Go 仓 `D:/luyuan/xuanming-server` 的对应实现是 `services/social/friend/internal/data/friend_repo.go:353` 的 `MySQLFriendRepo.AcceptRequest`。其 `friend-distributed-scaling.md` 前半为历史待决提案，后续 TiDB 决定、`deploy/tidb-init/01-social-tidb.sql` 与实际 `friend-dev-tidb.yaml` 配置才反映后来的路线。不能只读前半段就移植 Kafka 软上限方案。
 
-### 扩容
-翻倍扩容(16->32)，每个分片拆成两半，简单且可预测。
+| 不变量 | 原 Go 实现 | 当前 C++/Go 与 Java 实现 |
+|---|---|---|
+| 同对关系写互斥、同玩家容量不超限 | pair 守卫 → 升序 player 守卫 → 业务行 | 双方容量行升序守卫同时承担两项职责；不重复增加 pair 表 |
+| 接收者授权与迟到请求隔离 | 按 request_id 定位、锁内复核目标和状态；重发轮换 ID | 同一契约；非唯一索引遇重复 ID 失败关闭，旧零 ID 在守卫内安全补号 |
+| 接受的提交点 | 申请状态、双边、反向 pending 在同一 SQL 事务 | 同一 SQL 事务另同步双方显式容量；只按实际新增边计数 |
+| 重复接受与删除/拉黑后迟到重放 | 终态不重复建边 | 同代次已接受返回成功且无变化，不能复活已删除的关系；重发后旧 ID 拒绝 |
+| 跨副本可见性 | 共享 SQL 权威 | 两版关系与申请列表直接 SQL；另一副本或另一地区的缓存不参与决定 |
+
+两版已实现上述事务边界，并具有生产 TiDB 后端/会话门禁；这不是当前真实双区域部署或故障验收的通过声明。Go 新增的 `TestTiDBFriendReplicas_*` 和 Java `FriendReplicasTiDBTest` 使用独立连接池核验共享 TiDB 双副本契约，当前未运行。它们也不代替真实跨区网络、法定多数、历史恢复和归属围栏演练；容量仍须用真实负载与拓扑另验。
 
 ## Online/Offline 状态
 
@@ -292,8 +294,7 @@ GetFriendList / RecommendFriends
 ⚠ 一条容易写错的:**MGET 的返回长度与入参长度不等时必须整批判离线**,不能按下标取值 ——
 错位会把 A 的在线状态贴到 B 身上,那比"全部离线"严重得多。
 
-**在线状态不进缓存**:好友列表缓存(`friend:{f:<pid>}:list:v3`,TTL 30 分钟)里只存 id 与 `since_ms`;
-`is_online` / `last_active_ms` 每次请求现读。把它写进 30 分钟 TTL 的缓存等于故意返回过期在线状态。
+**在线状态不进关系权威记录或列表缓存**：`is_online` / `last_active_ms` 每次请求现读。当前好友列表本身也已直接读 SQL，历史 `friend:{f:<pid>}:list:v3` 不能用于返回权限关系。
 
 ### 为什么不用 Push
 | | Pull | Push |
@@ -321,3 +322,15 @@ friend 现在**有**一条 S2C 推送通道,但它与在线状态无关,只做�
 客户端收到后必须去拉 `GetPendingRequests` / `GetFriendList`。推送只在 MySQL 提交之后、事务之外发,
 失败只打日志 + 计指标,**绝不影响 RPC 结果**(`internal/logic/push.go` 里所有函数都不返回 error,
 从签名上堵死"顺手 return err")。
+
+## 2026-10-21 原会话归属与角色交易互锁（源码候选，未运行）
+
+角色过户后，好友入口不能只保留会话 player_id。客户端会话先经原方法白名单，再在同一请求预算内用 `shared/loginsession` 读取部署明确指定的全局 login 实例/DB，按原 gate UUID/incarnation 定位账号；`SessionDetails.owner_revision=9` 是发出时原件，零值拒绝，禁止从当前 SQL 归属补造。`shared/roleidentity.Capture` 克隆原账号/角色/修订并显式随 context 传到业务与 Repo；十个客户端业务入口缺捕获原件均拒绝。纯逻辑测试显式注入原件，不能作为真实身份校验证据。
+
+`AccountRoleSchema` 显式声明与好友库同一 TiDB 集群的全局目录；启动时验证强读悲观会话与 account_role 接缝。`GlobalLoginSessions=true`、`LoginRedis.Host/DB/PoolSize` 必须由部署实际指定；原本 SharedRedis 仅在线投影和摘要用途，不能据此推测登录态实例。新增登录态只读池独立限定大小/DB/超时、关闭重试，本地 yaml 保留未授权占位并明确拒启，配置测试只补齐内存副本。全局部署模板与 Redis 连接预算由同批主控统一接线，不能只部署旧 ConfigMap。
+
+绑定 Repo 的容量补建、最终守卫写、Unblock 单写及全部客户端权威读，均在同一个 SQL 事务首锁 account_role（P）复核原账号原字节、原 owner_revision 与未冻结；涉及双方时先按 uint64 玩家号升序锁 P，再沿用原容量守卫与完整主键关系锁。存在的冻结目标也不能修改关系；目标缺行保留原好友语义。容量补建仍为独立短事务，随后最终写必须重新验证原件，预检成功不能替代提交授权。过户前已完成的合法容量补建可能保留，关系写拒绝后由既有 sweep 回收。账号过户、同账号 ABA、交易冻结和缺原件均 fail-closed。Go 仍保留完整 uint64 修订；Java native 明确只接受 1..Long.MAX_VALUE，高半区拒绝而不截断。
+
+好友/申请/黑名单及推荐关系 SQL 的 P 锁保持到行读取结束，读事务以回滚释放锁；推荐随机范围读在下一条候选查询前释放，避免同请求跨连接等待自己的 P。只读 Redis 的在线目录受相同受理验证。后台 sweep 不带客户端身份，使用单独命名的系统事务入口，维持原清理语义；未配置目录的旧独立仓储构造器只接受无客户端原件的系统/夹具调用，捕获原件不能静默走该路径。
+
+新增接口、miniredis 指定 DB、真实 TiDB 双池源码回归覆盖原 gate 修订/账号保留、缺原件/旧连接/旧登录态拒绝、所有读写在过户/ABA/冻结后的零关系与容量副作用、原会话正常关系操作、被冻结目标拒写和 uint64 最大值。真库复用 FRIEND_TEST_TIDB_DSN 与 FRIEND_REQUIRE_TIDB_TESTS 门控，只新增随机角色目录库并清理自己的目录输入，不改既有两份在途 TiDB 测试。本批没有运行 gofmt、Go build/test、真库或双区验收；静态检查不等同编译或运行证据。

@@ -54,6 +54,7 @@ import (
 	base "proto/common/base"
 	pb "proto/friend"
 	scenepb "proto/scene"
+	"shared/roleidentity"
 )
 
 func tipErr(id uint32, msg string) *base.TipInfoMessage {
@@ -140,9 +141,10 @@ type SessionStore interface {
 // 保留 SvcCtx 整体而不是只拷需要的几个字段:推送要 KafkaWriter / GateCommandBuilder,
 // 频控要 FriendRedis,预算要 Config —— 拆开只会让每加一处依赖就改一次 main 的装配。
 type Deps struct {
-	SvcCtx   *svc.ServiceContext
-	Repo     FriendStore
-	Sessions SessionStore
+	CheckOriginalRole func(context.Context) error
+	SvcCtx            *svc.ServiceContext
+	Repo              FriendStore
+	Sessions          SessionStore
 	// Sweeps 只被后台清理循环用(sweep.go),与请求路径无关,所以单独一个字段:
 	// 假 store 测请求路径时不必连带实现清理方法。
 	Sweeps SweepStore
@@ -181,9 +183,13 @@ func NewDeps(svcCtx *svc.ServiceContext) *Deps {
 		SQLDialect:                svcCtx.SQLDialect,
 		RecommendStatementTimeout: svcCtx.Config.RequestBudget(),
 	})
+	if err := repo.ConfigureRoleAuthority(svcCtx.Config.AccountRoleSchema); err != nil {
+		panic("好友原会话 SQL 权威装配失败：" + err.Error())
+	}
 	return &Deps{
-		SvcCtx: svcCtx,
-		Repo:   repo,
+		CheckOriginalRole: repo.CheckOriginalRole,
+		SvcCtx:            svcCtx,
+		Repo:              repo,
 		// 在线状态必须走 SharedRedis:player:session:{id} 是 player_locator 写的跨运行时
 		// 契约 key,FriendRedis 可能是另一套(甚至 Cluster)实例,读不到它。
 		// 一次 MGET 的 key 数按 ListReadHardLimit 分批,上限与列表读同源。
@@ -236,6 +242,8 @@ func (l *FriendLogic) withRequestBudget(ctx context.Context) (context.Context, c
 // (那是 fault 码,会把误用打成故障告警)。这里打一条 Error 日志,因为它必然是代码缺陷。
 func (l *FriendLogic) requireCaller(ctx context.Context, method string) (uint64, bool) {
 	me, ok := session.ClientPlayerID(ctx)
+	original, captured := roleidentity.Original(ctx)
+	ok = ok && captured && original.Role.GetPlayerId() == me
 	if !ok {
 		logx.WithContext(ctx).Errorf("[friend] %s missing session identity: method accepts only client requests forwarded through gate -> router (D-9)", method)
 	}

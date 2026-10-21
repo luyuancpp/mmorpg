@@ -7,8 +7,10 @@
 #include <optional>
 #include <set>
 #include <string>
+#include <string_view>
 #include <utility>
 #include <vector>
+#include <tuple>
 #include <unordered_map>
 
 #include "muduo/net/TcpConnection.h"
@@ -111,7 +113,10 @@ public:
     // 同一玩家已有直连(重连)则关闭旧连接、换成新的。成功时回填该玩家的 gate 会话号
     // (合成 SessionDetails 用,仅日志对齐),返回 false = 拒绝握手。
     bool AttachDirectConnection(uint64_t battleId, uint64_t playerId, ::eBattleTicketRole role,
-                                const muduo::net::TcpConnectionPtr &conn, uint32_t *gateSessionId);
+                                const muduo::net::TcpConnectionPtr &conn, uint32_t *gateSessionId,
+                                std::string_view spectatorOperation = {});
+    bool OwnsDirectConnection(uint64_t battleId, uint64_t playerId, ::eBattleTicketRole role,
+                             const muduo::net::TcpConnectionPtr &conn, std::string_view spectatorOperation);
 
     // 直连握手成功应答写出之后调用(snapshot on connect,turn-based §22 D69):
     // 观众立刻经直连收一份当前 SpectateStateS2C 作为首帧 —— 观战首帧只随直连下发,
@@ -156,7 +161,8 @@ public:
     void HandleAddObserver(const ::AddObserverRequest &request, ::AddObserverResponse &response);
 
     // 幂等移除(match 互斥清退路径):经直连向该观众推 SpectateEnd(REMOVED)并关直连。
-    void HandleRemoveObserver(const ::RemoveObserverRequest &request);
+    void HandleRemoveObserver(const ::RemoveObserverRequest &request, ::RemoveObserverResponse &response);
+    void HandleQueryObserver(const ::QueryObserverRequest &request, ::QueryObserverResponse &response);
 
     // ---- 客户端直连消息(BattleClientEdge 派发;权威身份来自已验证的票据,不信请求体) ----
     //
@@ -252,6 +258,7 @@ private:
         // 无结算,绝不向观众的 scene 发任何事件(不变量 6);gate 字段只给无直连时的
         // 大厅公告(落点分配包)回落用。
         std::map<uint64_t, ::BattleRouting> routingByObserver;
+        std::map<uint64_t, std::string> observerOperations;
         // 观众名字(AddObserverRequest.observer_name,仅日志/后续观众列表用)
         std::map<uint64_t, std::string> observerNames;
         TimerTaskComp roundTimer;      // 回合 action_deadline
@@ -380,7 +387,7 @@ private:
     // 否则 required=false 时回落 endpoint,required=true(CLIENT_ENDPOINT_REQUIRED=1)时拒签。
     // NodeInfo 由 Node 持有、只在 loop 线程写;跨线程读写不同步,本函数仍只能在 loop 线程调用。
     bool BuildAssignment(const BattleRoom &room, uint64_t playerId, ::eBattleTicketRole role,
-                         ::BattleAssignedS2C &out) const;
+                            ::BattleAssignedS2C &out, std::string_view spectatorOperation = {}) const;
 
     // 下发调用方预签好的落点分配包(NotifyBattleAssigned,大厅公告出口)。
     // 签票与失败处置在调用方(CreateBattle / AddObserver),这里不再签。
@@ -504,6 +511,12 @@ private:
     // 本实例操作墓碑只在loop线程访问；进程重启后精确target_instance使旧RPC失效。
     struct CreationOperation {std::string operationId;std::string canonicalRequest;uint64_t expiresMs=0;bool aborted=false;};
     std::unordered_map<uint64_t,CreationOperation> creationOperations_;
+    // 取消先于Add时房间可能尚不存在；墓碑在manager而非room，保留到原准入截止。
+    struct SpectatorOperation { uint64_t admitBeforeMs{0}; std::string canonicalRequest; bool cancelled{true}; };
+    using SpectatorKey = std::tuple<uint64_t, uint64_t, std::string>;
+    std::map<SpectatorKey, SpectatorOperation> spectatorOperations_;
+    std::multimap<uint64_t, SpectatorKey> spectatorDeadlines_;
+    void PruneSpectatorOperations(uint64_t now);
     // producer listener 只登记回执，pump 在 poll 返回后才执行终局副作用，禁止回执栈递归 send。
     bool resultListenerInstalled_ = false;
     uint64_t nextResultCorrelation_ = 0;

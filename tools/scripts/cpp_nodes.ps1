@@ -121,6 +121,7 @@ $LegacyPidFile = Join-Path $RepoRoot "bin\cpp_nodes.pid.json"
 # scene 用 MMORPG_ASSET_OP_SECRET_<CALLER> 验签,guild / trade 用同名变量签名,值必须一致,
 # 否则每一次资产 RPC 都回 27008(AssetAuthFailed)。密钥值不写进仓库,见该文件的说明。
 . (Join-Path $ScriptDir "lib\assetop_dev_secret.ps1")
+. (Join-Path $ScriptDir "lib\account_directory_dev_secret.ps1")
 
 # ── Node catalogue ───────────────────────────────────────────────
 $NodeCatalogue = [ordered]@{
@@ -384,7 +385,12 @@ function Invoke-Start {
             # 按最小权限给（AGENTS §11.3）：多注入一个进程就多一处密钥可能被打印、被 dump 的地方。
             $prevAssetOpSecrets = $null
             $injectAssetOpSecrets = ($name -eq 'scene')
+            $previousAccountDirectorySecrets = $null
             try {
+                if ($name -eq 'scene') {
+                    $previousAccountDirectorySecrets = Backup-AccountDirectoryDevSecrets -Service 'scene'
+                    Initialize-AccountDirectoryDevSecrets -RepoRoot $RepoRoot -Service 'scene'
+                }
                 if ($injectAssetOpSecrets) {
                     # Backup 必须在 try **之内**：Initialize 抛错时环境变量可能已经被改了一半，
                     # 放在 try 外面就进不了下面的 finally，那一半改动会留在父 shell 里。
@@ -408,6 +414,7 @@ function Invoke-Start {
                 else { $env:SCENE_RUN_MODE = $prevSceneRunMode }
                 # 没注入过就没什么可还原的（$prevAssetOpSecrets 仍是 $null）。
                 if ($injectAssetOpSecrets) { Restore-AssetOpDevSecrets $prevAssetOpSecrets }
+                Restore-AccountDirectoryDevSecrets $previousAccountDirectorySecrets
             }
 
             $pids | Add-Member -NotePropertyName $instanceKey -NotePropertyValue $proc.Id -Force

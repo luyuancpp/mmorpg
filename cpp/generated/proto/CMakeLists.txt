@@ -201,6 +201,9 @@ set(SOURCE_FILES
     trade/commerce.pb.cc
     player_locator/player_locator.grpc.pb.cc
     player_locator/player_locator.pb.cc
+    common/base/role_admission.pb.cc
+    team/team_authority.grpc.pb.cc
+    team/team_authority.pb.cc
 )
 
 add_library(proto STATIC ${SOURCE_FILES})

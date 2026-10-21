@@ -34,6 +34,7 @@ import (
 	"shared/grpcstats"
 	sharedregistry "shared/noderegistry"
 	"shared/safego"
+	"shared/serviceauth"
 
 	"github.com/zeromicro/go-zero/core/conf"
 	"github.com/zeromicro/go-zero/core/logx"
@@ -78,6 +79,15 @@ func main() {
 	var c config.Config
 	conf.MustLoad(*configFile, &c)
 	svcCtx := svc.NewServiceContext(c)
+	// 独立内部取消证明；未配置时保持nil并在RPC入口拒绝，绝不降级为无签名取消。
+	if secret := strings.TrimSpace(os.Getenv("MMORPG_MATCH_INTERNAL_SECRET_GUILD")); secret != "" {
+		verifier, err := serviceauth.New(map[string]string{"guild": secret})
+		if err != nil {
+			logx.Must(fmt.Errorf("活动取消独立签名配置非法"))
+		}
+		svcCtx.ActivityCancelAuth = verifier
+		svcCtx.ActivityCancelSecret = secret
+	}
 
 	ctx, cancel := context.WithCancel(context.Background())
 	resultConfig := matchkafka.ResultConsumerConfig{
@@ -203,6 +213,16 @@ func main() {
 		team.NewDataServiceHomeZone(svcCtx.DataServiceClient, team.DefaultHomeZoneLookupTimeout),
 		matchlogic.NewTeamBattleStarter(svcCtx))
 	svcCtx.SetPartyTeam(teamService)
+	teamAuthority, teamAuthorityErr := team.NewAuthorityServer(svcCtx)
+	if teamAuthorityErr != nil {
+		logx.Errorf("SQL队伍场景读取契约未就绪，拒绝启动: %v", teamAuthorityErr)
+		cancel()
+		svcCtx.Stop()
+		os.Exit(1)
+	}
+	teamService.StartSQLMaintenance(ctx)
+	matchlogic.StartGlobalTeamMatcher(ctx, svcCtx)
+	matchlogic.StartGlobalSpectatorRecovery(ctx, svcCtx)
 	// 完整结果归档与队伍反向端口均就绪后才开放成局。
 	matchlogic.StartMatcherLoop(ctx, svcCtx)
 
@@ -212,6 +232,9 @@ func main() {
 		// 客户端来源由 sessionInterceptor 拒绝(PermissionDenied)。
 		matchpb.RegisterMatchInternalServer(grpcServer, server.NewMatchInternalServer(svcCtx))
 		teampb.RegisterClientPlayerTeamServer(grpcServer, team.NewServer(teamService))
+		if teamAuthority != nil {
+			teampb.RegisterTeamAuthorityServer(grpcServer, teamAuthority)
+		}
 
 		if c.Mode == service.DevMode || c.Mode == service.TestMode {
 			reflection.Register(grpcServer)
@@ -223,6 +246,7 @@ func main() {
 	// zrpc 顶层 Timeout 保持 5000:改小会截断 WatchBattle 同步链;team 在每个方法入口自设 3500ms 预算(§A.3 第 7 条)。
 	s.AddUnaryInterceptors(
 		sessionInterceptor,
+		originalRoleInterceptor(svcCtx),
 		grpcstats.New(grpcstats.Options{}).UnaryServerInterceptor(),
 	)
 

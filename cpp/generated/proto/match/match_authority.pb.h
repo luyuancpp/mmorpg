@@ -80,6 +80,14 @@ extern const ::google::protobuf::internal::ClassDataFull MatchBattleSettlementSo
 #else
 extern const MatchBattleSettlementSourceRecordGlobalsTypeInternal MatchBattleSettlementSourceRecord_globals_;
 #endif  // PROTOBUF_MESSAGE_GLOBALS
+class MatchChallengeInvitationRecord;
+struct MatchChallengeInvitationRecordGlobalsTypeInternal;
+#ifndef PROTOBUF_MESSAGE_GLOBALS
+extern MatchChallengeInvitationRecordGlobalsTypeInternal MatchChallengeInvitationRecord_globals_;
+extern const ::google::protobuf::internal::ClassDataFull MatchChallengeInvitationRecord_class_data_;
+#else
+extern const MatchChallengeInvitationRecordGlobalsTypeInternal MatchChallengeInvitationRecord_globals_;
+#endif  // PROTOBUF_MESSAGE_GLOBALS
 class MatchDirectIntentRecord;
 struct MatchDirectIntentRecordGlobalsTypeInternal;
 #ifndef PROTOBUF_MESSAGE_GLOBALS
@@ -87,6 +95,14 @@ extern MatchDirectIntentRecordGlobalsTypeInternal MatchDirectIntentRecord_global
 extern const ::google::protobuf::internal::ClassDataFull MatchDirectIntentRecord_class_data_;
 #else
 extern const MatchDirectIntentRecordGlobalsTypeInternal MatchDirectIntentRecord_globals_;
+#endif  // PROTOBUF_MESSAGE_GLOBALS
+class MatchDirectStartOriginal;
+struct MatchDirectStartOriginalGlobalsTypeInternal;
+#ifndef PROTOBUF_MESSAGE_GLOBALS
+extern MatchDirectStartOriginalGlobalsTypeInternal MatchDirectStartOriginal_globals_;
+extern const ::google::protobuf::internal::ClassDataFull MatchDirectStartOriginal_class_data_;
+#else
+extern const MatchDirectStartOriginalGlobalsTypeInternal MatchDirectStartOriginal_globals_;
 #endif  // PROTOBUF_MESSAGE_GLOBALS
 class MatchFormationMember;
 struct MatchFormationMemberGlobalsTypeInternal;
@@ -103,6 +119,14 @@ extern MatchFormationRecordGlobalsTypeInternal MatchFormationRecord_globals_;
 extern const ::google::protobuf::internal::ClassDataFull MatchFormationRecord_class_data_;
 #else
 extern const MatchFormationRecordGlobalsTypeInternal MatchFormationRecord_globals_;
+#endif  // PROTOBUF_MESSAGE_GLOBALS
+class MatchGlobalPolicyRecord;
+struct MatchGlobalPolicyRecordGlobalsTypeInternal;
+#ifndef PROTOBUF_MESSAGE_GLOBALS
+extern MatchGlobalPolicyRecordGlobalsTypeInternal MatchGlobalPolicyRecord_globals_;
+extern const ::google::protobuf::internal::ClassDataFull MatchGlobalPolicyRecord_class_data_;
+#else
+extern const MatchGlobalPolicyRecordGlobalsTypeInternal MatchGlobalPolicyRecord_globals_;
 #endif  // PROTOBUF_MESSAGE_GLOBALS
 class MatchJoinIntentRecord;
 struct MatchJoinIntentRecordGlobalsTypeInternal;
@@ -168,6 +192,38 @@ extern const ::google::protobuf::internal::ClassDataFull MatchRatingRecord_class
 #else
 extern const MatchRatingRecordGlobalsTypeInternal MatchRatingRecord_globals_;
 #endif  // PROTOBUF_MESSAGE_GLOBALS
+class MatchSpectatorHeadRecord;
+struct MatchSpectatorHeadRecordGlobalsTypeInternal;
+#ifndef PROTOBUF_MESSAGE_GLOBALS
+extern MatchSpectatorHeadRecordGlobalsTypeInternal MatchSpectatorHeadRecord_globals_;
+extern const ::google::protobuf::internal::ClassDataFull MatchSpectatorHeadRecord_class_data_;
+#else
+extern const MatchSpectatorHeadRecordGlobalsTypeInternal MatchSpectatorHeadRecord_globals_;
+#endif  // PROTOBUF_MESSAGE_GLOBALS
+class MatchSpectatorIntentRecord;
+struct MatchSpectatorIntentRecordGlobalsTypeInternal;
+#ifndef PROTOBUF_MESSAGE_GLOBALS
+extern MatchSpectatorIntentRecordGlobalsTypeInternal MatchSpectatorIntentRecord_globals_;
+extern const ::google::protobuf::internal::ClassDataFull MatchSpectatorIntentRecord_class_data_;
+#else
+extern const MatchSpectatorIntentRecordGlobalsTypeInternal MatchSpectatorIntentRecord_globals_;
+#endif  // PROTOBUF_MESSAGE_GLOBALS
+class MatchSpectatorRecord;
+struct MatchSpectatorRecordGlobalsTypeInternal;
+#ifndef PROTOBUF_MESSAGE_GLOBALS
+extern MatchSpectatorRecordGlobalsTypeInternal MatchSpectatorRecord_globals_;
+extern const ::google::protobuf::internal::ClassDataFull MatchSpectatorRecord_class_data_;
+#else
+extern const MatchSpectatorRecordGlobalsTypeInternal MatchSpectatorRecord_globals_;
+#endif  // PROTOBUF_MESSAGE_GLOBALS
+class MatchTicketRegionRecord;
+struct MatchTicketRegionRecordGlobalsTypeInternal;
+#ifndef PROTOBUF_MESSAGE_GLOBALS
+extern MatchTicketRegionRecordGlobalsTypeInternal MatchTicketRegionRecord_globals_;
+extern const ::google::protobuf::internal::ClassDataFull MatchTicketRegionRecord_class_data_;
+#else
+extern const MatchTicketRegionRecordGlobalsTypeInternal MatchTicketRegionRecord_globals_;
+#endif  // PROTOBUF_MESSAGE_GLOBALS
 }  // namespace match
 namespace google {
 namespace protobuf {
@@ -179,6 +235,1237 @@ namespace match {
 // ===================================================================
 
 
+// -------------------------------------------------------------------
+
+class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED MatchTicketRegionRecord final : public ::google::protobuf::Message
+/* @@protoc_insertion_point(class_definition:match.MatchTicketRegionRecord) */ {
+ public:
+  inline MatchTicketRegionRecord() : MatchTicketRegionRecord(nullptr) {}
+  ~MatchTicketRegionRecord() PROTOBUF_FINAL;
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+  void operator delete(MatchTicketRegionRecord* PROTOBUF_NONNULL msg, ::std::destroying_delete_t) {
+    SharedDtor(*msg);
+    ::google::protobuf::internal::SizedDelete(msg, sizeof(MatchTicketRegionRecord));
+  }
+#endif
+
+  template <typename = void>
+  explicit constexpr MatchTicketRegionRecord(::google::protobuf::internal::ConstantInitialized,
+                           const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
+                               class_data);
+
+  inline MatchTicketRegionRecord(const MatchTicketRegionRecord& from) : MatchTicketRegionRecord(nullptr, from) {}
+  inline MatchTicketRegionRecord(MatchTicketRegionRecord&& from) noexcept : MatchTicketRegionRecord(nullptr, ::std::move(from)) {}
+  inline MatchTicketRegionRecord& operator=(const MatchTicketRegionRecord& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline MatchTicketRegionRecord& operator=(MatchTicketRegionRecord&& from) noexcept {
+    if (this == &from) return *this;
+    if (::google::protobuf::internal::CanMoveWithInternalSwap(GetArena(), from.GetArena())) {
+      InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  [[nodiscard]] inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance);
+  }
+  [[nodiscard]] inline ::google::protobuf::UnknownFieldSet* PROTOBUF_NONNULL
+  mutable_unknown_fields() ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.mutable_unknown_fields<::google::protobuf::UnknownFieldSet>();
+  }
+
+  [[nodiscard]] static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL descriptor() {
+    return GetDescriptor();
+  }
+  [[nodiscard]] static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL
+  GetDescriptor() {
+    return default_instance().GetMetadata().descriptor;
+  }
+  [[nodiscard]] static const ::google::protobuf::Reflection* PROTOBUF_NONNULL GetReflection() {
+    return default_instance().GetMetadata().reflection;
+  }
+  [[nodiscard]] static const MatchTicketRegionRecord& default_instance() {
+    return *::google::protobuf::internal::MessageGlobalsBase::ToDefaultInstance<MatchTicketRegionRecord>(&MatchTicketRegionRecord_globals_);
+  }
+  static constexpr int kIndexInFileMessages = 6;
+  friend void swap(MatchTicketRegionRecord& a, MatchTicketRegionRecord& b) { a.Swap(&b); }
+  inline void Swap(MatchTicketRegionRecord* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    if (::google::protobuf::internal::CanUseInternalSwap(GetArena(), other->GetArena())) {
+      InternalSwap(other);
+    } else {
+      ::google::protobuf::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(MatchTicketRegionRecord* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    ABSL_DCHECK(GetArena() == other->GetArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  [[nodiscard]] MatchTicketRegionRecord* PROTOBUF_NONNULL
+  New(::google::protobuf::Arena* PROTOBUF_NULLABLE arena = nullptr) const {
+    return ::google::protobuf::Message::DefaultConstruct<MatchTicketRegionRecord>(arena);
+  }
+  using ::google::protobuf::Message::CopyFrom;
+  void CopyFrom(const MatchTicketRegionRecord& from);
+  using ::google::protobuf::Message::MergeFrom;
+  void MergeFrom(const MatchTicketRegionRecord& from) { MatchTicketRegionRecord::MergeImpl(*this, from); }
+
+  private:
+  static void MergeImpl(::google::protobuf::MessageLite& to_msg,
+                        const ::google::protobuf::MessageLite& from_msg);
+
+  public:
+  [[nodiscard]] bool IsInitialized() const {
+    return true;
+  }
+  ABSL_ATTRIBUTE_REINITIALIZES void Clear() PROTOBUF_FINAL;
+  #if defined(PROTOBUF_CUSTOM_VTABLE)
+  private:
+  [[nodiscard]] static ::size_t ByteSizeLong(const ::google::protobuf::MessageLite& msg);
+  [[nodiscard]] static ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      const ::google::protobuf::MessageLite& msg, ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream);
+
+  public:
+  [[nodiscard]] ::size_t ByteSizeLong() const { return ByteSizeLong(*this); }
+  [[nodiscard]] ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
+    return _InternalSerialize(*this, target, stream);
+  }
+  #else   // PROTOBUF_CUSTOM_VTABLE
+  [[nodiscard]] ::size_t ByteSizeLong() const final;
+  [[nodiscard]] ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const final;
+  #endif  // PROTOBUF_CUSTOM_VTABLE
+  [[nodiscard]] int GetCachedSize() const {
+    return _impl_._cached_size_.Get();
+  }
+
+  private:
+  void SharedCtor(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static void SharedDtor(MessageLite& self);
+  void InternalSwap(MatchTicketRegionRecord* PROTOBUF_NONNULL other);
+ private:
+  template <typename T>
+  friend ::absl::string_view(::google::protobuf::internal::GetAnyMessageName)();
+  static ::absl::string_view FullMessageName() { return "match.MatchTicketRegionRecord"; }
+
+  explicit MatchTicketRegionRecord(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  MatchTicketRegionRecord(::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const MatchTicketRegionRecord& from);
+  MatchTicketRegionRecord(
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, MatchTicketRegionRecord&& from) noexcept
+      : MatchTicketRegionRecord(arena) {
+    *this = ::std::move(from);
+  }
+  const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL GetClassData() const PROTOBUF_FINAL;
+  static void* PROTOBUF_NONNULL PlacementNew_(
+      const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static constexpr auto InternalNewImpl_();
+
+ public:
+  static constexpr auto InternalGenerateClassData_(
+      const MessageLite& prototype,
+      const ::google::protobuf::internal::TcParseTableBase* PROTOBUF_NULLABLE tc_table = nullptr);
+
+  [[nodiscard]] ::google::protobuf::Metadata GetMetadata() const;
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+  enum : int {
+    kTicketFieldNumber = 3,
+    kPlayerIdFieldNumber = 1,
+    kPhysicalRegionFieldNumber = 2,
+    kModeFieldNumber = 4,
+    kConfigIdFieldNumber = 5,
+    kTeamSizeFieldNumber = 6,
+    kEnqueuedMsFieldNumber = 8,
+    kPreferredRegionFieldNumber = 7,
+    kRttMsFieldNumber = 10,
+    kRatingCentiFieldNumber = 9,
+    kExpiresMsFieldNumber = 11,
+    kHomeZoneFieldNumber = 12,
+  };
+  // string ticket = 3;
+  void clear_ticket() ;
+  [[nodiscard]] const ::std::string& ticket() const;
+  template <typename Arg_ = const ::std::string&, typename... Args_>
+  void set_ticket(Arg_&& arg, Args_... args);
+  ::std::string* PROTOBUF_NONNULL mutable_ticket();
+  [[nodiscard]] ::std::string* PROTOBUF_NULLABLE release_ticket();
+  void set_allocated_ticket(::std::string* PROTOBUF_NULLABLE value);
+
+  private:
+  const ::std::string& _internal_ticket() const;
+  PROTOBUF_ALWAYS_INLINE void _internal_set_ticket(const ::std::string& value);
+  ::std::string* PROTOBUF_NONNULL _internal_mutable_ticket();
+
+  public:
+  // uint64 player_id = 1;
+  void clear_player_id() ;
+  [[nodiscard]] ::uint64_t player_id() const;
+  void set_player_id(::uint64_t value);
+
+  private:
+  ::uint64_t _internal_player_id() const;
+  void _internal_set_player_id(::uint64_t value);
+
+  public:
+  // uint32 physical_region = 2;
+  void clear_physical_region() ;
+  [[nodiscard]] ::uint32_t physical_region() const;
+  void set_physical_region(::uint32_t value);
+
+  private:
+  ::uint32_t _internal_physical_region() const;
+  void _internal_set_physical_region(::uint32_t value);
+
+  public:
+  // uint32 mode = 4;
+  void clear_mode() ;
+  [[nodiscard]] ::uint32_t mode() const;
+  void set_mode(::uint32_t value);
+
+  private:
+  ::uint32_t _internal_mode() const;
+  void _internal_set_mode(::uint32_t value);
+
+  public:
+  // uint32 config_id = 5;
+  void clear_config_id() ;
+  [[nodiscard]] ::uint32_t config_id() const;
+  void set_config_id(::uint32_t value);
+
+  private:
+  ::uint32_t _internal_config_id() const;
+  void _internal_set_config_id(::uint32_t value);
+
+  public:
+  // uint32 team_size = 6;
+  void clear_team_size() ;
+  [[nodiscard]] ::uint32_t team_size() const;
+  void set_team_size(::uint32_t value);
+
+  private:
+  ::uint32_t _internal_team_size() const;
+  void _internal_set_team_size(::uint32_t value);
+
+  public:
+  // uint64 enqueued_ms = 8;
+  void clear_enqueued_ms() ;
+  [[nodiscard]] ::uint64_t enqueued_ms() const;
+  void set_enqueued_ms(::uint64_t value);
+
+  private:
+  ::uint64_t _internal_enqueued_ms() const;
+  void _internal_set_enqueued_ms(::uint64_t value);
+
+  public:
+  // uint32 preferred_region = 7;
+  void clear_preferred_region() ;
+  [[nodiscard]] ::uint32_t preferred_region() const;
+  void set_preferred_region(::uint32_t value);
+
+  private:
+  ::uint32_t _internal_preferred_region() const;
+  void _internal_set_preferred_region(::uint32_t value);
+
+  public:
+  // uint32 rtt_ms = 10;
+  void clear_rtt_ms() ;
+  [[nodiscard]] ::uint32_t rtt_ms() const;
+  void set_rtt_ms(::uint32_t value);
+
+  private:
+  ::uint32_t _internal_rtt_ms() const;
+  void _internal_set_rtt_ms(::uint32_t value);
+
+  public:
+  // int64 rating_centi = 9;
+  void clear_rating_centi() ;
+  [[nodiscard]] ::int64_t rating_centi() const;
+  void set_rating_centi(::int64_t value);
+
+  private:
+  ::int64_t _internal_rating_centi() const;
+  void _internal_set_rating_centi(::int64_t value);
+
+  public:
+  // uint64 expires_ms = 11;
+  void clear_expires_ms() ;
+  [[nodiscard]] ::uint64_t expires_ms() const;
+  void set_expires_ms(::uint64_t value);
+
+  private:
+  ::uint64_t _internal_expires_ms() const;
+  void _internal_set_expires_ms(::uint64_t value);
+
+  public:
+  // uint32 home_zone = 12;
+  void clear_home_zone() ;
+  [[nodiscard]] ::uint32_t home_zone() const;
+  void set_home_zone(::uint32_t value);
+
+  private:
+  ::uint32_t _internal_home_zone() const;
+  void _internal_set_home_zone(::uint32_t value);
+
+  public:
+  // @@protoc_insertion_point(class_scope:match.MatchTicketRegionRecord)
+ private:
+  class _Internal;
+  using ParseTableT_ =
+      ::google::protobuf::internal::TcParseTable<4, 12,
+                          0, 52,
+                          2>;
+  static constexpr ParseTableT_ InternalGenerateParseTable_(
+      const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL class_data);
+  friend class ::google::protobuf::internal::TcParser;
+  #ifndef PROTOBUF_MESSAGE_GLOBALS
+  static const ParseTableT_ _table_;
+  #endif
+
+  friend class ::google::protobuf::MessageLite;
+  friend class ::google::protobuf::Arena;
+  friend ::google::protobuf::internal::PrivateAccess;
+  template <typename T>
+  friend class ::google::protobuf::Arena::InternalHelper;
+  using InternalArenaConstructable_ = void;
+  using DestructorSkippable_ = void;
+  struct Impl_ {
+    inline explicit constexpr Impl_(::google::protobuf::internal::InternalVisibility visibility,
+                                    ::google::protobuf::internal::ConstantInitialized) noexcept;
+    inline explicit Impl_(
+        ::google::protobuf::internal::InternalVisibility visibility,
+        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+    inline explicit Impl_(
+        ::google::protobuf::internal::InternalVisibility visibility,
+        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
+        const MatchTicketRegionRecord& from_msg);
+    ::google::protobuf::internal::HasBits<1> _has_bits_;
+    ::google::protobuf::internal::CachedSize _cached_size_;
+    ::google::protobuf::internal::ArenaStringPtr ticket_;
+    ::uint64_t player_id_;
+    ::uint32_t physical_region_;
+    ::uint32_t mode_;
+    ::uint32_t config_id_;
+    ::uint32_t team_size_;
+    ::uint64_t enqueued_ms_;
+    ::uint32_t preferred_region_;
+    ::uint32_t rtt_ms_;
+    ::int64_t rating_centi_;
+    ::uint64_t expires_ms_;
+    ::uint32_t home_zone_;
+    PROTOBUF_TSAN_DECLARE_MEMBER
+  };
+  union { Impl_ _impl_; };
+  friend struct ::TableStruct_proto_2fmatch_2fmatch_5fauthority_2eproto;
+};
+// -------------------------------------------------------------------
+
+class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED MatchSpectatorRecord final : public ::google::protobuf::Message
+/* @@protoc_insertion_point(class_definition:match.MatchSpectatorRecord) */ {
+ public:
+  inline MatchSpectatorRecord() : MatchSpectatorRecord(nullptr) {}
+  ~MatchSpectatorRecord() PROTOBUF_FINAL;
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+  void operator delete(MatchSpectatorRecord* PROTOBUF_NONNULL msg, ::std::destroying_delete_t) {
+    SharedDtor(*msg);
+    ::google::protobuf::internal::SizedDelete(msg, sizeof(MatchSpectatorRecord));
+  }
+#endif
+
+  template <typename = void>
+  explicit constexpr MatchSpectatorRecord(::google::protobuf::internal::ConstantInitialized,
+                           const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
+                               class_data);
+
+  inline MatchSpectatorRecord(const MatchSpectatorRecord& from) : MatchSpectatorRecord(nullptr, from) {}
+  inline MatchSpectatorRecord(MatchSpectatorRecord&& from) noexcept : MatchSpectatorRecord(nullptr, ::std::move(from)) {}
+  inline MatchSpectatorRecord& operator=(const MatchSpectatorRecord& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline MatchSpectatorRecord& operator=(MatchSpectatorRecord&& from) noexcept {
+    if (this == &from) return *this;
+    if (::google::protobuf::internal::CanMoveWithInternalSwap(GetArena(), from.GetArena())) {
+      InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  [[nodiscard]] inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance);
+  }
+  [[nodiscard]] inline ::google::protobuf::UnknownFieldSet* PROTOBUF_NONNULL
+  mutable_unknown_fields() ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.mutable_unknown_fields<::google::protobuf::UnknownFieldSet>();
+  }
+
+  [[nodiscard]] static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL descriptor() {
+    return GetDescriptor();
+  }
+  [[nodiscard]] static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL
+  GetDescriptor() {
+    return default_instance().GetMetadata().descriptor;
+  }
+  [[nodiscard]] static const ::google::protobuf::Reflection* PROTOBUF_NONNULL GetReflection() {
+    return default_instance().GetMetadata().reflection;
+  }
+  [[nodiscard]] static const MatchSpectatorRecord& default_instance() {
+    return *::google::protobuf::internal::MessageGlobalsBase::ToDefaultInstance<MatchSpectatorRecord>(&MatchSpectatorRecord_globals_);
+  }
+  static constexpr int kIndexInFileMessages = 1;
+  friend void swap(MatchSpectatorRecord& a, MatchSpectatorRecord& b) { a.Swap(&b); }
+  inline void Swap(MatchSpectatorRecord* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    if (::google::protobuf::internal::CanUseInternalSwap(GetArena(), other->GetArena())) {
+      InternalSwap(other);
+    } else {
+      ::google::protobuf::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(MatchSpectatorRecord* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    ABSL_DCHECK(GetArena() == other->GetArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  [[nodiscard]] MatchSpectatorRecord* PROTOBUF_NONNULL
+  New(::google::protobuf::Arena* PROTOBUF_NULLABLE arena = nullptr) const {
+    return ::google::protobuf::Message::DefaultConstruct<MatchSpectatorRecord>(arena);
+  }
+  using ::google::protobuf::Message::CopyFrom;
+  void CopyFrom(const MatchSpectatorRecord& from);
+  using ::google::protobuf::Message::MergeFrom;
+  void MergeFrom(const MatchSpectatorRecord& from) { MatchSpectatorRecord::MergeImpl(*this, from); }
+
+  private:
+  static void MergeImpl(::google::protobuf::MessageLite& to_msg,
+                        const ::google::protobuf::MessageLite& from_msg);
+
+  public:
+  [[nodiscard]] bool IsInitialized() const {
+    return true;
+  }
+  ABSL_ATTRIBUTE_REINITIALIZES void Clear() PROTOBUF_FINAL;
+  #if defined(PROTOBUF_CUSTOM_VTABLE)
+  private:
+  [[nodiscard]] static ::size_t ByteSizeLong(const ::google::protobuf::MessageLite& msg);
+  [[nodiscard]] static ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      const ::google::protobuf::MessageLite& msg, ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream);
+
+  public:
+  [[nodiscard]] ::size_t ByteSizeLong() const { return ByteSizeLong(*this); }
+  [[nodiscard]] ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
+    return _InternalSerialize(*this, target, stream);
+  }
+  #else   // PROTOBUF_CUSTOM_VTABLE
+  [[nodiscard]] ::size_t ByteSizeLong() const final;
+  [[nodiscard]] ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const final;
+  #endif  // PROTOBUF_CUSTOM_VTABLE
+  [[nodiscard]] int GetCachedSize() const {
+    return _impl_._cached_size_.Get();
+  }
+
+  private:
+  void SharedCtor(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static void SharedDtor(MessageLite& self);
+  void InternalSwap(MatchSpectatorRecord* PROTOBUF_NONNULL other);
+ private:
+  template <typename T>
+  friend ::absl::string_view(::google::protobuf::internal::GetAnyMessageName)();
+  static ::absl::string_view FullMessageName() { return "match.MatchSpectatorRecord"; }
+
+  explicit MatchSpectatorRecord(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  MatchSpectatorRecord(::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const MatchSpectatorRecord& from);
+  MatchSpectatorRecord(
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, MatchSpectatorRecord&& from) noexcept
+      : MatchSpectatorRecord(arena) {
+    *this = ::std::move(from);
+  }
+  const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL GetClassData() const PROTOBUF_FINAL;
+  static void* PROTOBUF_NONNULL PlacementNew_(
+      const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static constexpr auto InternalNewImpl_();
+
+ public:
+  static constexpr auto InternalGenerateClassData_(
+      const MessageLite& prototype,
+      const ::google::protobuf::internal::TcParseTableBase* PROTOBUF_NULLABLE tc_table = nullptr);
+
+  [[nodiscard]] ::google::protobuf::Metadata GetMetadata() const;
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+  enum : int {
+    kOperationIdFieldNumber = 2,
+    kTargetEndpointFieldNumber = 4,
+    kTargetInstanceIdFieldNumber = 5,
+    kRequestPayloadFieldNumber = 7,
+    kOwnerAccountFieldNumber = 8,
+    kAddRequestFieldNumber = 10,
+    kPlayerIdFieldNumber = 1,
+    kBattleIdFieldNumber = 3,
+    kOwnerRevisionFieldNumber = 9,
+    kUpdatedMsFieldNumber = 11,
+    kRequestHighFieldNumber = 12,
+    kRequestLowFieldNumber = 13,
+    kStateFieldNumber = 6,
+  };
+  // string operation_id = 2;
+  void clear_operation_id() ;
+  [[nodiscard]] const ::std::string& operation_id() const;
+  template <typename Arg_ = const ::std::string&, typename... Args_>
+  void set_operation_id(Arg_&& arg, Args_... args);
+  ::std::string* PROTOBUF_NONNULL mutable_operation_id();
+  [[nodiscard]] ::std::string* PROTOBUF_NULLABLE release_operation_id();
+  void set_allocated_operation_id(::std::string* PROTOBUF_NULLABLE value);
+
+  private:
+  const ::std::string& _internal_operation_id() const;
+  PROTOBUF_ALWAYS_INLINE void _internal_set_operation_id(const ::std::string& value);
+  ::std::string* PROTOBUF_NONNULL _internal_mutable_operation_id();
+
+  public:
+  // string target_endpoint = 4;
+  void clear_target_endpoint() ;
+  [[nodiscard]] const ::std::string& target_endpoint() const;
+  template <typename Arg_ = const ::std::string&, typename... Args_>
+  void set_target_endpoint(Arg_&& arg, Args_... args);
+  ::std::string* PROTOBUF_NONNULL mutable_target_endpoint();
+  [[nodiscard]] ::std::string* PROTOBUF_NULLABLE release_target_endpoint();
+  void set_allocated_target_endpoint(::std::string* PROTOBUF_NULLABLE value);
+
+  private:
+  const ::std::string& _internal_target_endpoint() const;
+  PROTOBUF_ALWAYS_INLINE void _internal_set_target_endpoint(const ::std::string& value);
+  ::std::string* PROTOBUF_NONNULL _internal_mutable_target_endpoint();
+
+  public:
+  // string target_instance_id = 5;
+  void clear_target_instance_id() ;
+  [[nodiscard]] const ::std::string& target_instance_id() const;
+  template <typename Arg_ = const ::std::string&, typename... Args_>
+  void set_target_instance_id(Arg_&& arg, Args_... args);
+  ::std::string* PROTOBUF_NONNULL mutable_target_instance_id();
+  [[nodiscard]] ::std::string* PROTOBUF_NULLABLE release_target_instance_id();
+  void set_allocated_target_instance_id(::std::string* PROTOBUF_NULLABLE value);
+
+  private:
+  const ::std::string& _internal_target_instance_id() const;
+  PROTOBUF_ALWAYS_INLINE void _internal_set_target_instance_id(const ::std::string& value);
+  ::std::string* PROTOBUF_NONNULL _internal_mutable_target_instance_id();
+
+  public:
+  // bytes request_payload = 7;
+  void clear_request_payload() ;
+  [[nodiscard]] const ::std::string& request_payload() const;
+  template <typename Arg_ = const ::std::string&, typename... Args_>
+  void set_request_payload(Arg_&& arg, Args_... args);
+  ::std::string* PROTOBUF_NONNULL mutable_request_payload();
+  [[nodiscard]] ::std::string* PROTOBUF_NULLABLE release_request_payload();
+  void set_allocated_request_payload(::std::string* PROTOBUF_NULLABLE value);
+
+  private:
+  const ::std::string& _internal_request_payload() const;
+  PROTOBUF_ALWAYS_INLINE void _internal_set_request_payload(const ::std::string& value);
+  ::std::string* PROTOBUF_NONNULL _internal_mutable_request_payload();
+
+  public:
+  // string owner_account = 8;
+  void clear_owner_account() ;
+  [[nodiscard]] const ::std::string& owner_account() const;
+  template <typename Arg_ = const ::std::string&, typename... Args_>
+  void set_owner_account(Arg_&& arg, Args_... args);
+  ::std::string* PROTOBUF_NONNULL mutable_owner_account();
+  [[nodiscard]] ::std::string* PROTOBUF_NULLABLE release_owner_account();
+  void set_allocated_owner_account(::std::string* PROTOBUF_NULLABLE value);
+
+  private:
+  const ::std::string& _internal_owner_account() const;
+  PROTOBUF_ALWAYS_INLINE void _internal_set_owner_account(const ::std::string& value);
+  ::std::string* PROTOBUF_NONNULL _internal_mutable_owner_account();
+
+  public:
+  // bytes add_request = 10;
+  void clear_add_request() ;
+  [[nodiscard]] const ::std::string& add_request() const;
+  template <typename Arg_ = const ::std::string&, typename... Args_>
+  void set_add_request(Arg_&& arg, Args_... args);
+  ::std::string* PROTOBUF_NONNULL mutable_add_request();
+  [[nodiscard]] ::std::string* PROTOBUF_NULLABLE release_add_request();
+  void set_allocated_add_request(::std::string* PROTOBUF_NULLABLE value);
+
+  private:
+  const ::std::string& _internal_add_request() const;
+  PROTOBUF_ALWAYS_INLINE void _internal_set_add_request(const ::std::string& value);
+  ::std::string* PROTOBUF_NONNULL _internal_mutable_add_request();
+
+  public:
+  // uint64 player_id = 1;
+  void clear_player_id() ;
+  [[nodiscard]] ::uint64_t player_id() const;
+  void set_player_id(::uint64_t value);
+
+  private:
+  ::uint64_t _internal_player_id() const;
+  void _internal_set_player_id(::uint64_t value);
+
+  public:
+  // uint64 battle_id = 3;
+  void clear_battle_id() ;
+  [[nodiscard]] ::uint64_t battle_id() const;
+  void set_battle_id(::uint64_t value);
+
+  private:
+  ::uint64_t _internal_battle_id() const;
+  void _internal_set_battle_id(::uint64_t value);
+
+  public:
+  // uint64 owner_revision = 9;
+  void clear_owner_revision() ;
+  [[nodiscard]] ::uint64_t owner_revision() const;
+  void set_owner_revision(::uint64_t value);
+
+  private:
+  ::uint64_t _internal_owner_revision() const;
+  void _internal_set_owner_revision(::uint64_t value);
+
+  public:
+  // uint64 updated_ms = 11;
+  void clear_updated_ms() ;
+  [[nodiscard]] ::uint64_t updated_ms() const;
+  void set_updated_ms(::uint64_t value);
+
+  private:
+  ::uint64_t _internal_updated_ms() const;
+  void _internal_set_updated_ms(::uint64_t value);
+
+  public:
+  // uint64 request_high = 12;
+  void clear_request_high() ;
+  [[nodiscard]] ::uint64_t request_high() const;
+  void set_request_high(::uint64_t value);
+
+  private:
+  ::uint64_t _internal_request_high() const;
+  void _internal_set_request_high(::uint64_t value);
+
+  public:
+  // uint64 request_low = 13;
+  void clear_request_low() ;
+  [[nodiscard]] ::uint64_t request_low() const;
+  void set_request_low(::uint64_t value);
+
+  private:
+  ::uint64_t _internal_request_low() const;
+  void _internal_set_request_low(::uint64_t value);
+
+  public:
+  // uint32 state = 6;
+  void clear_state() ;
+  [[nodiscard]] ::uint32_t state() const;
+  void set_state(::uint32_t value);
+
+  private:
+  ::uint32_t _internal_state() const;
+  void _internal_set_state(::uint32_t value);
+
+  public:
+  // @@protoc_insertion_point(class_scope:match.MatchSpectatorRecord)
+ private:
+  class _Internal;
+  using ParseTableT_ =
+      ::google::protobuf::internal::TcParseTable<4, 13,
+                          0, 101,
+                          2>;
+  static constexpr ParseTableT_ InternalGenerateParseTable_(
+      const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL class_data);
+  friend class ::google::protobuf::internal::TcParser;
+  #ifndef PROTOBUF_MESSAGE_GLOBALS
+  static const ParseTableT_ _table_;
+  #endif
+
+  friend class ::google::protobuf::MessageLite;
+  friend class ::google::protobuf::Arena;
+  friend ::google::protobuf::internal::PrivateAccess;
+  template <typename T>
+  friend class ::google::protobuf::Arena::InternalHelper;
+  using InternalArenaConstructable_ = void;
+  using DestructorSkippable_ = void;
+  struct Impl_ {
+    inline explicit constexpr Impl_(::google::protobuf::internal::InternalVisibility visibility,
+                                    ::google::protobuf::internal::ConstantInitialized) noexcept;
+    inline explicit Impl_(
+        ::google::protobuf::internal::InternalVisibility visibility,
+        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+    inline explicit Impl_(
+        ::google::protobuf::internal::InternalVisibility visibility,
+        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
+        const MatchSpectatorRecord& from_msg);
+    ::google::protobuf::internal::HasBits<1> _has_bits_;
+    ::google::protobuf::internal::CachedSize _cached_size_;
+    ::google::protobuf::internal::ArenaStringPtr operation_id_;
+    ::google::protobuf::internal::ArenaStringPtr target_endpoint_;
+    ::google::protobuf::internal::ArenaStringPtr target_instance_id_;
+    ::google::protobuf::internal::ArenaStringPtr request_payload_;
+    ::google::protobuf::internal::ArenaStringPtr owner_account_;
+    ::google::protobuf::internal::ArenaStringPtr add_request_;
+    ::uint64_t player_id_;
+    ::uint64_t battle_id_;
+    ::uint64_t owner_revision_;
+    ::uint64_t updated_ms_;
+    ::uint64_t request_high_;
+    ::uint64_t request_low_;
+    ::uint32_t state_;
+    PROTOBUF_TSAN_DECLARE_MEMBER
+  };
+  union { Impl_ _impl_; };
+  friend struct ::TableStruct_proto_2fmatch_2fmatch_5fauthority_2eproto;
+};
+// -------------------------------------------------------------------
+
+class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED MatchSpectatorIntentRecord final : public ::google::protobuf::Message
+/* @@protoc_insertion_point(class_definition:match.MatchSpectatorIntentRecord) */ {
+ public:
+  inline MatchSpectatorIntentRecord() : MatchSpectatorIntentRecord(nullptr) {}
+  ~MatchSpectatorIntentRecord() PROTOBUF_FINAL;
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+  void operator delete(MatchSpectatorIntentRecord* PROTOBUF_NONNULL msg, ::std::destroying_delete_t) {
+    SharedDtor(*msg);
+    ::google::protobuf::internal::SizedDelete(msg, sizeof(MatchSpectatorIntentRecord));
+  }
+#endif
+
+  template <typename = void>
+  explicit constexpr MatchSpectatorIntentRecord(::google::protobuf::internal::ConstantInitialized,
+                           const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
+                               class_data);
+
+  inline MatchSpectatorIntentRecord(const MatchSpectatorIntentRecord& from) : MatchSpectatorIntentRecord(nullptr, from) {}
+  inline MatchSpectatorIntentRecord(MatchSpectatorIntentRecord&& from) noexcept : MatchSpectatorIntentRecord(nullptr, ::std::move(from)) {}
+  inline MatchSpectatorIntentRecord& operator=(const MatchSpectatorIntentRecord& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline MatchSpectatorIntentRecord& operator=(MatchSpectatorIntentRecord&& from) noexcept {
+    if (this == &from) return *this;
+    if (::google::protobuf::internal::CanMoveWithInternalSwap(GetArena(), from.GetArena())) {
+      InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  [[nodiscard]] inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance);
+  }
+  [[nodiscard]] inline ::google::protobuf::UnknownFieldSet* PROTOBUF_NONNULL
+  mutable_unknown_fields() ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.mutable_unknown_fields<::google::protobuf::UnknownFieldSet>();
+  }
+
+  [[nodiscard]] static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL descriptor() {
+    return GetDescriptor();
+  }
+  [[nodiscard]] static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL
+  GetDescriptor() {
+    return default_instance().GetMetadata().descriptor;
+  }
+  [[nodiscard]] static const ::google::protobuf::Reflection* PROTOBUF_NONNULL GetReflection() {
+    return default_instance().GetMetadata().reflection;
+  }
+  [[nodiscard]] static const MatchSpectatorIntentRecord& default_instance() {
+    return *::google::protobuf::internal::MessageGlobalsBase::ToDefaultInstance<MatchSpectatorIntentRecord>(&MatchSpectatorIntentRecord_globals_);
+  }
+  static constexpr int kIndexInFileMessages = 2;
+  friend void swap(MatchSpectatorIntentRecord& a, MatchSpectatorIntentRecord& b) { a.Swap(&b); }
+  inline void Swap(MatchSpectatorIntentRecord* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    if (::google::protobuf::internal::CanUseInternalSwap(GetArena(), other->GetArena())) {
+      InternalSwap(other);
+    } else {
+      ::google::protobuf::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(MatchSpectatorIntentRecord* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    ABSL_DCHECK(GetArena() == other->GetArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  [[nodiscard]] MatchSpectatorIntentRecord* PROTOBUF_NONNULL
+  New(::google::protobuf::Arena* PROTOBUF_NULLABLE arena = nullptr) const {
+    return ::google::protobuf::Message::DefaultConstruct<MatchSpectatorIntentRecord>(arena);
+  }
+  using ::google::protobuf::Message::CopyFrom;
+  void CopyFrom(const MatchSpectatorIntentRecord& from);
+  using ::google::protobuf::Message::MergeFrom;
+  void MergeFrom(const MatchSpectatorIntentRecord& from) { MatchSpectatorIntentRecord::MergeImpl(*this, from); }
+
+  private:
+  static void MergeImpl(::google::protobuf::MessageLite& to_msg,
+                        const ::google::protobuf::MessageLite& from_msg);
+
+  public:
+  [[nodiscard]] bool IsInitialized() const {
+    return true;
+  }
+  ABSL_ATTRIBUTE_REINITIALIZES void Clear() PROTOBUF_FINAL;
+  #if defined(PROTOBUF_CUSTOM_VTABLE)
+  private:
+  [[nodiscard]] static ::size_t ByteSizeLong(const ::google::protobuf::MessageLite& msg);
+  [[nodiscard]] static ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      const ::google::protobuf::MessageLite& msg, ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream);
+
+  public:
+  [[nodiscard]] ::size_t ByteSizeLong() const { return ByteSizeLong(*this); }
+  [[nodiscard]] ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
+    return _InternalSerialize(*this, target, stream);
+  }
+  #else   // PROTOBUF_CUSTOM_VTABLE
+  [[nodiscard]] ::size_t ByteSizeLong() const final;
+  [[nodiscard]] ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const final;
+  #endif  // PROTOBUF_CUSTOM_VTABLE
+  [[nodiscard]] int GetCachedSize() const {
+    return _impl_._cached_size_.Get();
+  }
+
+  private:
+  void SharedCtor(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static void SharedDtor(MessageLite& self);
+  void InternalSwap(MatchSpectatorIntentRecord* PROTOBUF_NONNULL other);
+ private:
+  template <typename T>
+  friend ::absl::string_view(::google::protobuf::internal::GetAnyMessageName)();
+  static ::absl::string_view FullMessageName() { return "match.MatchSpectatorIntentRecord"; }
+
+  explicit MatchSpectatorIntentRecord(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  MatchSpectatorIntentRecord(::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const MatchSpectatorIntentRecord& from);
+  MatchSpectatorIntentRecord(
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, MatchSpectatorIntentRecord&& from) noexcept
+      : MatchSpectatorIntentRecord(arena) {
+    *this = ::std::move(from);
+  }
+  const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL GetClassData() const PROTOBUF_FINAL;
+  static void* PROTOBUF_NONNULL PlacementNew_(
+      const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static constexpr auto InternalNewImpl_();
+
+ public:
+  static constexpr auto InternalGenerateClassData_(
+      const MessageLite& prototype,
+      const ::google::protobuf::internal::TcParseTableBase* PROTOBUF_NULLABLE tc_table = nullptr);
+
+  [[nodiscard]] ::google::protobuf::Metadata GetMetadata() const;
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+  enum : int {
+    kOriginalFieldNumber = 4,
+    kRequestPayloadFieldNumber = 5,
+    kOwnerAccountFieldNumber = 6,
+    kPlayerIdFieldNumber = 1,
+    kRequestHighFieldNumber = 2,
+    kRequestLowFieldNumber = 3,
+    kOwnerRevisionFieldNumber = 7,
+    kStateFieldNumber = 8,
+  };
+  // bytes original = 4;
+  void clear_original() ;
+  [[nodiscard]] const ::std::string& original() const;
+  template <typename Arg_ = const ::std::string&, typename... Args_>
+  void set_original(Arg_&& arg, Args_... args);
+  ::std::string* PROTOBUF_NONNULL mutable_original();
+  [[nodiscard]] ::std::string* PROTOBUF_NULLABLE release_original();
+  void set_allocated_original(::std::string* PROTOBUF_NULLABLE value);
+
+  private:
+  const ::std::string& _internal_original() const;
+  PROTOBUF_ALWAYS_INLINE void _internal_set_original(const ::std::string& value);
+  ::std::string* PROTOBUF_NONNULL _internal_mutable_original();
+
+  public:
+  // bytes request_payload = 5;
+  void clear_request_payload() ;
+  [[nodiscard]] const ::std::string& request_payload() const;
+  template <typename Arg_ = const ::std::string&, typename... Args_>
+  void set_request_payload(Arg_&& arg, Args_... args);
+  ::std::string* PROTOBUF_NONNULL mutable_request_payload();
+  [[nodiscard]] ::std::string* PROTOBUF_NULLABLE release_request_payload();
+  void set_allocated_request_payload(::std::string* PROTOBUF_NULLABLE value);
+
+  private:
+  const ::std::string& _internal_request_payload() const;
+  PROTOBUF_ALWAYS_INLINE void _internal_set_request_payload(const ::std::string& value);
+  ::std::string* PROTOBUF_NONNULL _internal_mutable_request_payload();
+
+  public:
+  // string owner_account = 6;
+  void clear_owner_account() ;
+  [[nodiscard]] const ::std::string& owner_account() const;
+  template <typename Arg_ = const ::std::string&, typename... Args_>
+  void set_owner_account(Arg_&& arg, Args_... args);
+  ::std::string* PROTOBUF_NONNULL mutable_owner_account();
+  [[nodiscard]] ::std::string* PROTOBUF_NULLABLE release_owner_account();
+  void set_allocated_owner_account(::std::string* PROTOBUF_NULLABLE value);
+
+  private:
+  const ::std::string& _internal_owner_account() const;
+  PROTOBUF_ALWAYS_INLINE void _internal_set_owner_account(const ::std::string& value);
+  ::std::string* PROTOBUF_NONNULL _internal_mutable_owner_account();
+
+  public:
+  // uint64 player_id = 1;
+  void clear_player_id() ;
+  [[nodiscard]] ::uint64_t player_id() const;
+  void set_player_id(::uint64_t value);
+
+  private:
+  ::uint64_t _internal_player_id() const;
+  void _internal_set_player_id(::uint64_t value);
+
+  public:
+  // uint64 request_high = 2;
+  void clear_request_high() ;
+  [[nodiscard]] ::uint64_t request_high() const;
+  void set_request_high(::uint64_t value);
+
+  private:
+  ::uint64_t _internal_request_high() const;
+  void _internal_set_request_high(::uint64_t value);
+
+  public:
+  // uint64 request_low = 3;
+  void clear_request_low() ;
+  [[nodiscard]] ::uint64_t request_low() const;
+  void set_request_low(::uint64_t value);
+
+  private:
+  ::uint64_t _internal_request_low() const;
+  void _internal_set_request_low(::uint64_t value);
+
+  public:
+  // uint64 owner_revision = 7;
+  void clear_owner_revision() ;
+  [[nodiscard]] ::uint64_t owner_revision() const;
+  void set_owner_revision(::uint64_t value);
+
+  private:
+  ::uint64_t _internal_owner_revision() const;
+  void _internal_set_owner_revision(::uint64_t value);
+
+  public:
+  // uint32 state = 8;
+  void clear_state() ;
+  [[nodiscard]] ::uint32_t state() const;
+  void set_state(::uint32_t value);
+
+  private:
+  ::uint32_t _internal_state() const;
+  void _internal_set_state(::uint32_t value);
+
+  public:
+  // @@protoc_insertion_point(class_scope:match.MatchSpectatorIntentRecord)
+ private:
+  class _Internal;
+  using ParseTableT_ =
+      ::google::protobuf::internal::TcParseTable<3, 8,
+                          0, 62,
+                          2>;
+  static constexpr ParseTableT_ InternalGenerateParseTable_(
+      const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL class_data);
+  friend class ::google::protobuf::internal::TcParser;
+  #ifndef PROTOBUF_MESSAGE_GLOBALS
+  static const ParseTableT_ _table_;
+  #endif
+
+  friend class ::google::protobuf::MessageLite;
+  friend class ::google::protobuf::Arena;
+  friend ::google::protobuf::internal::PrivateAccess;
+  template <typename T>
+  friend class ::google::protobuf::Arena::InternalHelper;
+  using InternalArenaConstructable_ = void;
+  using DestructorSkippable_ = void;
+  struct Impl_ {
+    inline explicit constexpr Impl_(::google::protobuf::internal::InternalVisibility visibility,
+                                    ::google::protobuf::internal::ConstantInitialized) noexcept;
+    inline explicit Impl_(
+        ::google::protobuf::internal::InternalVisibility visibility,
+        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+    inline explicit Impl_(
+        ::google::protobuf::internal::InternalVisibility visibility,
+        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
+        const MatchSpectatorIntentRecord& from_msg);
+    ::google::protobuf::internal::HasBits<1> _has_bits_;
+    ::google::protobuf::internal::CachedSize _cached_size_;
+    ::google::protobuf::internal::ArenaStringPtr original_;
+    ::google::protobuf::internal::ArenaStringPtr request_payload_;
+    ::google::protobuf::internal::ArenaStringPtr owner_account_;
+    ::uint64_t player_id_;
+    ::uint64_t request_high_;
+    ::uint64_t request_low_;
+    ::uint64_t owner_revision_;
+    ::uint32_t state_;
+    PROTOBUF_TSAN_DECLARE_MEMBER
+  };
+  union { Impl_ _impl_; };
+  friend struct ::TableStruct_proto_2fmatch_2fmatch_5fauthority_2eproto;
+};
+// -------------------------------------------------------------------
+
+class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED MatchSpectatorHeadRecord final : public ::google::protobuf::Message
+/* @@protoc_insertion_point(class_definition:match.MatchSpectatorHeadRecord) */ {
+ public:
+  inline MatchSpectatorHeadRecord() : MatchSpectatorHeadRecord(nullptr) {}
+  ~MatchSpectatorHeadRecord() PROTOBUF_FINAL;
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+  void operator delete(MatchSpectatorHeadRecord* PROTOBUF_NONNULL msg, ::std::destroying_delete_t) {
+    SharedDtor(*msg);
+    ::google::protobuf::internal::SizedDelete(msg, sizeof(MatchSpectatorHeadRecord));
+  }
+#endif
+
+  template <typename = void>
+  explicit constexpr MatchSpectatorHeadRecord(::google::protobuf::internal::ConstantInitialized,
+                           const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
+                               class_data);
+
+  inline MatchSpectatorHeadRecord(const MatchSpectatorHeadRecord& from) : MatchSpectatorHeadRecord(nullptr, from) {}
+  inline MatchSpectatorHeadRecord(MatchSpectatorHeadRecord&& from) noexcept : MatchSpectatorHeadRecord(nullptr, ::std::move(from)) {}
+  inline MatchSpectatorHeadRecord& operator=(const MatchSpectatorHeadRecord& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline MatchSpectatorHeadRecord& operator=(MatchSpectatorHeadRecord&& from) noexcept {
+    if (this == &from) return *this;
+    if (::google::protobuf::internal::CanMoveWithInternalSwap(GetArena(), from.GetArena())) {
+      InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  [[nodiscard]] inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance);
+  }
+  [[nodiscard]] inline ::google::protobuf::UnknownFieldSet* PROTOBUF_NONNULL
+  mutable_unknown_fields() ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.mutable_unknown_fields<::google::protobuf::UnknownFieldSet>();
+  }
+
+  [[nodiscard]] static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL descriptor() {
+    return GetDescriptor();
+  }
+  [[nodiscard]] static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL
+  GetDescriptor() {
+    return default_instance().GetMetadata().descriptor;
+  }
+  [[nodiscard]] static const ::google::protobuf::Reflection* PROTOBUF_NONNULL GetReflection() {
+    return default_instance().GetMetadata().reflection;
+  }
+  [[nodiscard]] static const MatchSpectatorHeadRecord& default_instance() {
+    return *::google::protobuf::internal::MessageGlobalsBase::ToDefaultInstance<MatchSpectatorHeadRecord>(&MatchSpectatorHeadRecord_globals_);
+  }
+  static constexpr int kIndexInFileMessages = 3;
+  friend void swap(MatchSpectatorHeadRecord& a, MatchSpectatorHeadRecord& b) { a.Swap(&b); }
+  inline void Swap(MatchSpectatorHeadRecord* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    if (::google::protobuf::internal::CanUseInternalSwap(GetArena(), other->GetArena())) {
+      InternalSwap(other);
+    } else {
+      ::google::protobuf::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(MatchSpectatorHeadRecord* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    ABSL_DCHECK(GetArena() == other->GetArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  [[nodiscard]] MatchSpectatorHeadRecord* PROTOBUF_NONNULL
+  New(::google::protobuf::Arena* PROTOBUF_NULLABLE arena = nullptr) const {
+    return ::google::protobuf::Message::DefaultConstruct<MatchSpectatorHeadRecord>(arena);
+  }
+  using ::google::protobuf::Message::CopyFrom;
+  void CopyFrom(const MatchSpectatorHeadRecord& from);
+  using ::google::protobuf::Message::MergeFrom;
+  void MergeFrom(const MatchSpectatorHeadRecord& from) { MatchSpectatorHeadRecord::MergeImpl(*this, from); }
+
+  private:
+  static void MergeImpl(::google::protobuf::MessageLite& to_msg,
+                        const ::google::protobuf::MessageLite& from_msg);
+
+  public:
+  [[nodiscard]] bool IsInitialized() const {
+    return true;
+  }
+  ABSL_ATTRIBUTE_REINITIALIZES void Clear() PROTOBUF_FINAL;
+  #if defined(PROTOBUF_CUSTOM_VTABLE)
+  private:
+  [[nodiscard]] static ::size_t ByteSizeLong(const ::google::protobuf::MessageLite& msg);
+  [[nodiscard]] static ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      const ::google::protobuf::MessageLite& msg, ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream);
+
+  public:
+  [[nodiscard]] ::size_t ByteSizeLong() const { return ByteSizeLong(*this); }
+  [[nodiscard]] ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
+    return _InternalSerialize(*this, target, stream);
+  }
+  #else   // PROTOBUF_CUSTOM_VTABLE
+  [[nodiscard]] ::size_t ByteSizeLong() const final;
+  [[nodiscard]] ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const final;
+  #endif  // PROTOBUF_CUSTOM_VTABLE
+  [[nodiscard]] int GetCachedSize() const {
+    return _impl_._cached_size_.Get();
+  }
+
+  private:
+  void SharedCtor(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static void SharedDtor(MessageLite& self);
+  void InternalSwap(MatchSpectatorHeadRecord* PROTOBUF_NONNULL other);
+ private:
+  template <typename T>
+  friend ::absl::string_view(::google::protobuf::internal::GetAnyMessageName)();
+  static ::absl::string_view FullMessageName() { return "match.MatchSpectatorHeadRecord"; }
+
+  explicit MatchSpectatorHeadRecord(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  MatchSpectatorHeadRecord(::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const MatchSpectatorHeadRecord& from);
+  MatchSpectatorHeadRecord(
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, MatchSpectatorHeadRecord&& from) noexcept
+      : MatchSpectatorHeadRecord(arena) {
+    *this = ::std::move(from);
+  }
+  const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL GetClassData() const PROTOBUF_FINAL;
+  static void* PROTOBUF_NONNULL PlacementNew_(
+      const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static constexpr auto InternalNewImpl_();
+
+ public:
+  static constexpr auto InternalGenerateClassData_(
+      const MessageLite& prototype,
+      const ::google::protobuf::internal::TcParseTableBase* PROTOBUF_NULLABLE tc_table = nullptr);
+
+  [[nodiscard]] ::google::protobuf::Metadata GetMetadata() const;
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+  enum : int {
+    kOperationIdFieldNumber = 2,
+    kPlayerIdFieldNumber = 1,
+  };
+  // string operation_id = 2;
+  void clear_operation_id() ;
+  [[nodiscard]] const ::std::string& operation_id() const;
+  template <typename Arg_ = const ::std::string&, typename... Args_>
+  void set_operation_id(Arg_&& arg, Args_... args);
+  ::std::string* PROTOBUF_NONNULL mutable_operation_id();
+  [[nodiscard]] ::std::string* PROTOBUF_NULLABLE release_operation_id();
+  void set_allocated_operation_id(::std::string* PROTOBUF_NULLABLE value);
+
+  private:
+  const ::std::string& _internal_operation_id() const;
+  PROTOBUF_ALWAYS_INLINE void _internal_set_operation_id(const ::std::string& value);
+  ::std::string* PROTOBUF_NONNULL _internal_mutable_operation_id();
+
+  public:
+  // uint64 player_id = 1;
+  void clear_player_id() ;
+  [[nodiscard]] ::uint64_t player_id() const;
+  void set_player_id(::uint64_t value);
+
+  private:
+  ::uint64_t _internal_player_id() const;
+  void _internal_set_player_id(::uint64_t value);
+
+  public:
+  // @@protoc_insertion_point(class_scope:match.MatchSpectatorHeadRecord)
+ private:
+  class _Internal;
+  using ParseTableT_ =
+      ::google::protobuf::internal::TcParseTable<1, 2,
+                          0, 51,
+                          2>;
+  static constexpr ParseTableT_ InternalGenerateParseTable_(
+      const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL class_data);
+  friend class ::google::protobuf::internal::TcParser;
+  #ifndef PROTOBUF_MESSAGE_GLOBALS
+  static const ParseTableT_ _table_;
+  #endif
+
+  friend class ::google::protobuf::MessageLite;
+  friend class ::google::protobuf::Arena;
+  friend ::google::protobuf::internal::PrivateAccess;
+  template <typename T>
+  friend class ::google::protobuf::Arena::InternalHelper;
+  using InternalArenaConstructable_ = void;
+  using DestructorSkippable_ = void;
+  struct Impl_ {
+    inline explicit constexpr Impl_(::google::protobuf::internal::InternalVisibility visibility,
+                                    ::google::protobuf::internal::ConstantInitialized) noexcept;
+    inline explicit Impl_(
+        ::google::protobuf::internal::InternalVisibility visibility,
+        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+    inline explicit Impl_(
+        ::google::protobuf::internal::InternalVisibility visibility,
+        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
+        const MatchSpectatorHeadRecord& from_msg);
+    ::google::protobuf::internal::HasBits<1> _has_bits_;
+    ::google::protobuf::internal::CachedSize _cached_size_;
+    ::google::protobuf::internal::ArenaStringPtr operation_id_;
+    ::uint64_t player_id_;
+    PROTOBUF_TSAN_DECLARE_MEMBER
+  };
+  union { Impl_ _impl_; };
+  friend struct ::TableStruct_proto_2fmatch_2fmatch_5fauthority_2eproto;
+};
 // -------------------------------------------------------------------
 
 class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED MatchRatingRecord final : public ::google::protobuf::Message
@@ -237,7 +1524,7 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED MatchRatingRecord final : public ::
   [[nodiscard]] static const MatchRatingRecord& default_instance() {
     return *::google::protobuf::internal::MessageGlobalsBase::ToDefaultInstance<MatchRatingRecord>(&MatchRatingRecord_globals_);
   }
-  static constexpr int kIndexInFileMessages = 8;
+  static constexpr int kIndexInFileMessages = 15;
   friend void swap(MatchRatingRecord& a, MatchRatingRecord& b) { a.Swap(&b); }
   inline void Swap(MatchRatingRecord* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -474,7 +1761,7 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED MatchRatingAppliedRecord final : pu
   [[nodiscard]] static const MatchRatingAppliedRecord& default_instance() {
     return *::google::protobuf::internal::MessageGlobalsBase::ToDefaultInstance<MatchRatingAppliedRecord>(&MatchRatingAppliedRecord_globals_);
   }
-  static constexpr int kIndexInFileMessages = 9;
+  static constexpr int kIndexInFileMessages = 16;
   friend void swap(MatchRatingAppliedRecord& a, MatchRatingAppliedRecord& b) { a.Swap(&b); }
   inline void Swap(MatchRatingAppliedRecord* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -704,7 +1991,7 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED MatchRankSourceRecord final : publi
   [[nodiscard]] static const MatchRankSourceRecord& default_instance() {
     return *::google::protobuf::internal::MessageGlobalsBase::ToDefaultInstance<MatchRankSourceRecord>(&MatchRankSourceRecord_globals_);
   }
-  static constexpr int kIndexInFileMessages = 10;
+  static constexpr int kIndexInFileMessages = 17;
   friend void swap(MatchRankSourceRecord& a, MatchRankSourceRecord& b) { a.Swap(&b); }
   inline void Swap(MatchRankSourceRecord* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -953,7 +2240,7 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED MatchRankOutboxRecord final : publi
   [[nodiscard]] static const MatchRankOutboxRecord& default_instance() {
     return *::google::protobuf::internal::MessageGlobalsBase::ToDefaultInstance<MatchRankOutboxRecord>(&MatchRankOutboxRecord_globals_);
   }
-  static constexpr int kIndexInFileMessages = 11;
+  static constexpr int kIndexInFileMessages = 18;
   friend void swap(MatchRankOutboxRecord& a, MatchRankOutboxRecord& b) { a.Swap(&b); }
   inline void Swap(MatchRankOutboxRecord* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -1195,7 +2482,7 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED MatchPreparedEndpoint final : publi
   [[nodiscard]] static const MatchPreparedEndpoint& default_instance() {
     return *::google::protobuf::internal::MessageGlobalsBase::ToDefaultInstance<MatchPreparedEndpoint>(&MatchPreparedEndpoint_globals_);
   }
-  static constexpr int kIndexInFileMessages = 7;
+  static constexpr int kIndexInFileMessages = 14;
   friend void swap(MatchPreparedEndpoint& a, MatchPreparedEndpoint& b) { a.Swap(&b); }
   inline void Swap(MatchPreparedEndpoint* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -1413,7 +2700,7 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED MatchNetworkProfileRecord final : p
   [[nodiscard]] static const MatchNetworkProfileRecord& default_instance() {
     return *::google::protobuf::internal::MessageGlobalsBase::ToDefaultInstance<MatchNetworkProfileRecord>(&MatchNetworkProfileRecord_globals_);
   }
-  static constexpr int kIndexInFileMessages = 1;
+  static constexpr int kIndexInFileMessages = 4;
   friend void swap(MatchNetworkProfileRecord& a, MatchNetworkProfileRecord& b) { a.Swap(&b); }
   inline void Swap(MatchNetworkProfileRecord* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -1643,7 +2930,7 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED MatchJoinIntentRecord final : publi
   [[nodiscard]] static const MatchJoinIntentRecord& default_instance() {
     return *::google::protobuf::internal::MessageGlobalsBase::ToDefaultInstance<MatchJoinIntentRecord>(&MatchJoinIntentRecord_globals_);
   }
-  static constexpr int kIndexInFileMessages = 3;
+  static constexpr int kIndexInFileMessages = 7;
   friend void swap(MatchJoinIntentRecord& a, MatchJoinIntentRecord& b) { a.Swap(&b); }
   inline void Swap(MatchJoinIntentRecord* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -1737,10 +3024,16 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED MatchJoinIntentRecord final : publi
   enum : int {
     kRequestIdFieldNumber = 2,
     kTicketRecordFieldNumber = 3,
+    kOwnerAccountFieldNumber = 7,
+    kSpectatorExitFieldNumber = 9,
+    kRequestPayloadFieldNumber = 11,
     kPlayerIdFieldNumber = 1,
     kRequestHighFieldNumber = 5,
     kRequestLowFieldNumber = 6,
+    kOwnerRevisionFieldNumber = 8,
     kCancelledFieldNumber = 4,
+    kExitPreparedFieldNumber = 10,
+    kStateFieldNumber = 12,
   };
   // string request_id = 2;
   void clear_request_id() ;
@@ -1770,6 +3063,51 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED MatchJoinIntentRecord final : publi
   const ::std::string& _internal_ticket_record() const;
   PROTOBUF_ALWAYS_INLINE void _internal_set_ticket_record(const ::std::string& value);
   ::std::string* PROTOBUF_NONNULL _internal_mutable_ticket_record();
+
+  public:
+  // string owner_account = 7;
+  void clear_owner_account() ;
+  [[nodiscard]] const ::std::string& owner_account() const;
+  template <typename Arg_ = const ::std::string&, typename... Args_>
+  void set_owner_account(Arg_&& arg, Args_... args);
+  ::std::string* PROTOBUF_NONNULL mutable_owner_account();
+  [[nodiscard]] ::std::string* PROTOBUF_NULLABLE release_owner_account();
+  void set_allocated_owner_account(::std::string* PROTOBUF_NULLABLE value);
+
+  private:
+  const ::std::string& _internal_owner_account() const;
+  PROTOBUF_ALWAYS_INLINE void _internal_set_owner_account(const ::std::string& value);
+  ::std::string* PROTOBUF_NONNULL _internal_mutable_owner_account();
+
+  public:
+  // bytes spectator_exit = 9;
+  void clear_spectator_exit() ;
+  [[nodiscard]] const ::std::string& spectator_exit() const;
+  template <typename Arg_ = const ::std::string&, typename... Args_>
+  void set_spectator_exit(Arg_&& arg, Args_... args);
+  ::std::string* PROTOBUF_NONNULL mutable_spectator_exit();
+  [[nodiscard]] ::std::string* PROTOBUF_NULLABLE release_spectator_exit();
+  void set_allocated_spectator_exit(::std::string* PROTOBUF_NULLABLE value);
+
+  private:
+  const ::std::string& _internal_spectator_exit() const;
+  PROTOBUF_ALWAYS_INLINE void _internal_set_spectator_exit(const ::std::string& value);
+  ::std::string* PROTOBUF_NONNULL _internal_mutable_spectator_exit();
+
+  public:
+  // bytes request_payload = 11;
+  void clear_request_payload() ;
+  [[nodiscard]] const ::std::string& request_payload() const;
+  template <typename Arg_ = const ::std::string&, typename... Args_>
+  void set_request_payload(Arg_&& arg, Args_... args);
+  ::std::string* PROTOBUF_NONNULL mutable_request_payload();
+  [[nodiscard]] ::std::string* PROTOBUF_NULLABLE release_request_payload();
+  void set_allocated_request_payload(::std::string* PROTOBUF_NULLABLE value);
+
+  private:
+  const ::std::string& _internal_request_payload() const;
+  PROTOBUF_ALWAYS_INLINE void _internal_set_request_payload(const ::std::string& value);
+  ::std::string* PROTOBUF_NONNULL _internal_mutable_request_payload();
 
   public:
   // uint64 player_id = 1;
@@ -1802,6 +3140,16 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED MatchJoinIntentRecord final : publi
   void _internal_set_request_low(::uint64_t value);
 
   public:
+  // uint64 owner_revision = 8;
+  void clear_owner_revision() ;
+  [[nodiscard]] ::uint64_t owner_revision() const;
+  void set_owner_revision(::uint64_t value);
+
+  private:
+  ::uint64_t _internal_owner_revision() const;
+  void _internal_set_owner_revision(::uint64_t value);
+
+  public:
   // bool cancelled = 4;
   void clear_cancelled() ;
   [[nodiscard]] bool cancelled() const;
@@ -1812,12 +3160,32 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED MatchJoinIntentRecord final : publi
   void _internal_set_cancelled(bool value);
 
   public:
+  // bool exit_prepared = 10;
+  void clear_exit_prepared() ;
+  [[nodiscard]] bool exit_prepared() const;
+  void set_exit_prepared(bool value);
+
+  private:
+  bool _internal_exit_prepared() const;
+  void _internal_set_exit_prepared(bool value);
+
+  public:
+  // uint32 state = 12;
+  void clear_state() ;
+  [[nodiscard]] ::uint32_t state() const;
+  void set_state(::uint32_t value);
+
+  private:
+  ::uint32_t _internal_state() const;
+  void _internal_set_state(::uint32_t value);
+
+  public:
   // @@protoc_insertion_point(class_scope:match.MatchJoinIntentRecord)
  private:
   class _Internal;
   using ParseTableT_ =
-      ::google::protobuf::internal::TcParseTable<3, 6,
-                          0, 46,
+      ::google::protobuf::internal::TcParseTable<4, 12,
+                          0, 67,
                           2>;
   static constexpr ParseTableT_ InternalGenerateParseTable_(
       const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL class_data);
@@ -1847,10 +3215,234 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED MatchJoinIntentRecord final : publi
     ::google::protobuf::internal::CachedSize _cached_size_;
     ::google::protobuf::internal::ArenaStringPtr request_id_;
     ::google::protobuf::internal::ArenaStringPtr ticket_record_;
+    ::google::protobuf::internal::ArenaStringPtr owner_account_;
+    ::google::protobuf::internal::ArenaStringPtr spectator_exit_;
+    ::google::protobuf::internal::ArenaStringPtr request_payload_;
     ::uint64_t player_id_;
     ::uint64_t request_high_;
     ::uint64_t request_low_;
+    ::uint64_t owner_revision_;
     bool cancelled_;
+    bool exit_prepared_;
+    ::uint32_t state_;
+    PROTOBUF_TSAN_DECLARE_MEMBER
+  };
+  union { Impl_ _impl_; };
+  friend struct ::TableStruct_proto_2fmatch_2fmatch_5fauthority_2eproto;
+};
+// -------------------------------------------------------------------
+
+class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED MatchGlobalPolicyRecord final : public ::google::protobuf::Message
+/* @@protoc_insertion_point(class_definition:match.MatchGlobalPolicyRecord) */ {
+ public:
+  inline MatchGlobalPolicyRecord() : MatchGlobalPolicyRecord(nullptr) {}
+  ~MatchGlobalPolicyRecord() PROTOBUF_FINAL;
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+  void operator delete(MatchGlobalPolicyRecord* PROTOBUF_NONNULL msg, ::std::destroying_delete_t) {
+    SharedDtor(*msg);
+    ::google::protobuf::internal::SizedDelete(msg, sizeof(MatchGlobalPolicyRecord));
+  }
+#endif
+
+  template <typename = void>
+  explicit constexpr MatchGlobalPolicyRecord(::google::protobuf::internal::ConstantInitialized,
+                           const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
+                               class_data);
+
+  inline MatchGlobalPolicyRecord(const MatchGlobalPolicyRecord& from) : MatchGlobalPolicyRecord(nullptr, from) {}
+  inline MatchGlobalPolicyRecord(MatchGlobalPolicyRecord&& from) noexcept : MatchGlobalPolicyRecord(nullptr, ::std::move(from)) {}
+  inline MatchGlobalPolicyRecord& operator=(const MatchGlobalPolicyRecord& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline MatchGlobalPolicyRecord& operator=(MatchGlobalPolicyRecord&& from) noexcept {
+    if (this == &from) return *this;
+    if (::google::protobuf::internal::CanMoveWithInternalSwap(GetArena(), from.GetArena())) {
+      InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  [[nodiscard]] inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance);
+  }
+  [[nodiscard]] inline ::google::protobuf::UnknownFieldSet* PROTOBUF_NONNULL
+  mutable_unknown_fields() ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.mutable_unknown_fields<::google::protobuf::UnknownFieldSet>();
+  }
+
+  [[nodiscard]] static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL descriptor() {
+    return GetDescriptor();
+  }
+  [[nodiscard]] static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL
+  GetDescriptor() {
+    return default_instance().GetMetadata().descriptor;
+  }
+  [[nodiscard]] static const ::google::protobuf::Reflection* PROTOBUF_NONNULL GetReflection() {
+    return default_instance().GetMetadata().reflection;
+  }
+  [[nodiscard]] static const MatchGlobalPolicyRecord& default_instance() {
+    return *::google::protobuf::internal::MessageGlobalsBase::ToDefaultInstance<MatchGlobalPolicyRecord>(&MatchGlobalPolicyRecord_globals_);
+  }
+  static constexpr int kIndexInFileMessages = 11;
+  friend void swap(MatchGlobalPolicyRecord& a, MatchGlobalPolicyRecord& b) { a.Swap(&b); }
+  inline void Swap(MatchGlobalPolicyRecord* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    if (::google::protobuf::internal::CanUseInternalSwap(GetArena(), other->GetArena())) {
+      InternalSwap(other);
+    } else {
+      ::google::protobuf::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(MatchGlobalPolicyRecord* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    ABSL_DCHECK(GetArena() == other->GetArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  [[nodiscard]] MatchGlobalPolicyRecord* PROTOBUF_NONNULL
+  New(::google::protobuf::Arena* PROTOBUF_NULLABLE arena = nullptr) const {
+    return ::google::protobuf::Message::DefaultConstruct<MatchGlobalPolicyRecord>(arena);
+  }
+  using ::google::protobuf::Message::CopyFrom;
+  void CopyFrom(const MatchGlobalPolicyRecord& from);
+  using ::google::protobuf::Message::MergeFrom;
+  void MergeFrom(const MatchGlobalPolicyRecord& from) { MatchGlobalPolicyRecord::MergeImpl(*this, from); }
+
+  private:
+  static void MergeImpl(::google::protobuf::MessageLite& to_msg,
+                        const ::google::protobuf::MessageLite& from_msg);
+
+  public:
+  [[nodiscard]] bool IsInitialized() const {
+    return true;
+  }
+  ABSL_ATTRIBUTE_REINITIALIZES void Clear() PROTOBUF_FINAL;
+  #if defined(PROTOBUF_CUSTOM_VTABLE)
+  private:
+  [[nodiscard]] static ::size_t ByteSizeLong(const ::google::protobuf::MessageLite& msg);
+  [[nodiscard]] static ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      const ::google::protobuf::MessageLite& msg, ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream);
+
+  public:
+  [[nodiscard]] ::size_t ByteSizeLong() const { return ByteSizeLong(*this); }
+  [[nodiscard]] ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
+    return _InternalSerialize(*this, target, stream);
+  }
+  #else   // PROTOBUF_CUSTOM_VTABLE
+  [[nodiscard]] ::size_t ByteSizeLong() const final;
+  [[nodiscard]] ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const final;
+  #endif  // PROTOBUF_CUSTOM_VTABLE
+  [[nodiscard]] int GetCachedSize() const {
+    return _impl_._cached_size_.Get();
+  }
+
+  private:
+  void SharedCtor(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static void SharedDtor(MessageLite& self);
+  void InternalSwap(MatchGlobalPolicyRecord* PROTOBUF_NONNULL other);
+ private:
+  template <typename T>
+  friend ::absl::string_view(::google::protobuf::internal::GetAnyMessageName)();
+  static ::absl::string_view FullMessageName() { return "match.MatchGlobalPolicyRecord"; }
+
+  explicit MatchGlobalPolicyRecord(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  MatchGlobalPolicyRecord(::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const MatchGlobalPolicyRecord& from);
+  MatchGlobalPolicyRecord(
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, MatchGlobalPolicyRecord&& from) noexcept
+      : MatchGlobalPolicyRecord(arena) {
+    *this = ::std::move(from);
+  }
+  const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL GetClassData() const PROTOBUF_FINAL;
+  static void* PROTOBUF_NONNULL PlacementNew_(
+      const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static constexpr auto InternalNewImpl_();
+
+ public:
+  static constexpr auto InternalGenerateClassData_(
+      const MessageLite& prototype,
+      const ::google::protobuf::internal::TcParseTableBase* PROTOBUF_NULLABLE tc_table = nullptr);
+
+  [[nodiscard]] ::google::protobuf::Metadata GetMetadata() const;
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+  enum : int {
+    kContractDigestFieldNumber = 2,
+    kPolicyIdFieldNumber = 1,
+  };
+  // bytes contract_digest = 2;
+  void clear_contract_digest() ;
+  [[nodiscard]] const ::std::string& contract_digest() const;
+  template <typename Arg_ = const ::std::string&, typename... Args_>
+  void set_contract_digest(Arg_&& arg, Args_... args);
+  ::std::string* PROTOBUF_NONNULL mutable_contract_digest();
+  [[nodiscard]] ::std::string* PROTOBUF_NULLABLE release_contract_digest();
+  void set_allocated_contract_digest(::std::string* PROTOBUF_NULLABLE value);
+
+  private:
+  const ::std::string& _internal_contract_digest() const;
+  PROTOBUF_ALWAYS_INLINE void _internal_set_contract_digest(const ::std::string& value);
+  ::std::string* PROTOBUF_NONNULL _internal_mutable_contract_digest();
+
+  public:
+  // uint32 policy_id = 1;
+  void clear_policy_id() ;
+  [[nodiscard]] ::uint32_t policy_id() const;
+  void set_policy_id(::uint32_t value);
+
+  private:
+  ::uint32_t _internal_policy_id() const;
+  void _internal_set_policy_id(::uint32_t value);
+
+  public:
+  // @@protoc_insertion_point(class_scope:match.MatchGlobalPolicyRecord)
+ private:
+  class _Internal;
+  using ParseTableT_ =
+      ::google::protobuf::internal::TcParseTable<1, 2,
+                          0, 0,
+                          2>;
+  static constexpr ParseTableT_ InternalGenerateParseTable_(
+      const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL class_data);
+  friend class ::google::protobuf::internal::TcParser;
+  #ifndef PROTOBUF_MESSAGE_GLOBALS
+  static const ParseTableT_ _table_;
+  #endif
+
+  friend class ::google::protobuf::MessageLite;
+  friend class ::google::protobuf::Arena;
+  friend ::google::protobuf::internal::PrivateAccess;
+  template <typename T>
+  friend class ::google::protobuf::Arena::InternalHelper;
+  using InternalArenaConstructable_ = void;
+  using DestructorSkippable_ = void;
+  struct Impl_ {
+    inline explicit constexpr Impl_(::google::protobuf::internal::InternalVisibility visibility,
+                                    ::google::protobuf::internal::ConstantInitialized) noexcept;
+    inline explicit Impl_(
+        ::google::protobuf::internal::InternalVisibility visibility,
+        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+    inline explicit Impl_(
+        ::google::protobuf::internal::InternalVisibility visibility,
+        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
+        const MatchGlobalPolicyRecord& from_msg);
+    ::google::protobuf::internal::HasBits<1> _has_bits_;
+    ::google::protobuf::internal::CachedSize _cached_size_;
+    ::google::protobuf::internal::ArenaStringPtr contract_digest_;
+    ::uint32_t policy_id_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
   union { Impl_ _impl_; };
@@ -1914,7 +3506,7 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED MatchFormationMember final : public
   [[nodiscard]] static const MatchFormationMember& default_instance() {
     return *::google::protobuf::internal::MessageGlobalsBase::ToDefaultInstance<MatchFormationMember>(&MatchFormationMember_globals_);
   }
-  static constexpr int kIndexInFileMessages = 5;
+  static constexpr int kIndexInFileMessages = 12;
   friend void swap(MatchFormationMember& a, MatchFormationMember& b) { a.Swap(&b); }
   inline void Swap(MatchFormationMember* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -2076,31 +3668,31 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED MatchFormationMember final : public
 };
 // -------------------------------------------------------------------
 
-class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED MatchDirectIntentRecord final : public ::google::protobuf::Message
-/* @@protoc_insertion_point(class_definition:match.MatchDirectIntentRecord) */ {
+class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED MatchChallengeInvitationRecord final : public ::google::protobuf::Message
+/* @@protoc_insertion_point(class_definition:match.MatchChallengeInvitationRecord) */ {
  public:
-  inline MatchDirectIntentRecord() : MatchDirectIntentRecord(nullptr) {}
-  ~MatchDirectIntentRecord() PROTOBUF_FINAL;
+  inline MatchChallengeInvitationRecord() : MatchChallengeInvitationRecord(nullptr) {}
+  ~MatchChallengeInvitationRecord() PROTOBUF_FINAL;
 
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-  void operator delete(MatchDirectIntentRecord* PROTOBUF_NONNULL msg, ::std::destroying_delete_t) {
+  void operator delete(MatchChallengeInvitationRecord* PROTOBUF_NONNULL msg, ::std::destroying_delete_t) {
     SharedDtor(*msg);
-    ::google::protobuf::internal::SizedDelete(msg, sizeof(MatchDirectIntentRecord));
+    ::google::protobuf::internal::SizedDelete(msg, sizeof(MatchChallengeInvitationRecord));
   }
 #endif
 
   template <typename = void>
-  explicit constexpr MatchDirectIntentRecord(::google::protobuf::internal::ConstantInitialized,
+  explicit constexpr MatchChallengeInvitationRecord(::google::protobuf::internal::ConstantInitialized,
                            const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
                                class_data);
 
-  inline MatchDirectIntentRecord(const MatchDirectIntentRecord& from) : MatchDirectIntentRecord(nullptr, from) {}
-  inline MatchDirectIntentRecord(MatchDirectIntentRecord&& from) noexcept : MatchDirectIntentRecord(nullptr, ::std::move(from)) {}
-  inline MatchDirectIntentRecord& operator=(const MatchDirectIntentRecord& from) {
+  inline MatchChallengeInvitationRecord(const MatchChallengeInvitationRecord& from) : MatchChallengeInvitationRecord(nullptr, from) {}
+  inline MatchChallengeInvitationRecord(MatchChallengeInvitationRecord&& from) noexcept : MatchChallengeInvitationRecord(nullptr, ::std::move(from)) {}
+  inline MatchChallengeInvitationRecord& operator=(const MatchChallengeInvitationRecord& from) {
     CopyFrom(from);
     return *this;
   }
-  inline MatchDirectIntentRecord& operator=(MatchDirectIntentRecord&& from) noexcept {
+  inline MatchChallengeInvitationRecord& operator=(MatchChallengeInvitationRecord&& from) noexcept {
     if (this == &from) return *this;
     if (::google::protobuf::internal::CanMoveWithInternalSwap(GetArena(), from.GetArena())) {
       InternalSwap(&from);
@@ -2129,12 +3721,12 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED MatchDirectIntentRecord final : pub
   [[nodiscard]] static const ::google::protobuf::Reflection* PROTOBUF_NONNULL GetReflection() {
     return default_instance().GetMetadata().reflection;
   }
-  [[nodiscard]] static const MatchDirectIntentRecord& default_instance() {
-    return *::google::protobuf::internal::MessageGlobalsBase::ToDefaultInstance<MatchDirectIntentRecord>(&MatchDirectIntentRecord_globals_);
+  [[nodiscard]] static const MatchChallengeInvitationRecord& default_instance() {
+    return *::google::protobuf::internal::MessageGlobalsBase::ToDefaultInstance<MatchChallengeInvitationRecord>(&MatchChallengeInvitationRecord_globals_);
   }
-  static constexpr int kIndexInFileMessages = 4;
-  friend void swap(MatchDirectIntentRecord& a, MatchDirectIntentRecord& b) { a.Swap(&b); }
-  inline void Swap(MatchDirectIntentRecord* PROTOBUF_NONNULL other) {
+  static constexpr int kIndexInFileMessages = 10;
+  friend void swap(MatchChallengeInvitationRecord& a, MatchChallengeInvitationRecord& b) { a.Swap(&b); }
+  inline void Swap(MatchChallengeInvitationRecord* PROTOBUF_NONNULL other) {
     if (other == this) return;
     if (::google::protobuf::internal::CanUseInternalSwap(GetArena(), other->GetArena())) {
       InternalSwap(other);
@@ -2142,7 +3734,7 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED MatchDirectIntentRecord final : pub
       ::google::protobuf::internal::GenericSwap(this, other);
     }
   }
-  void UnsafeArenaSwap(MatchDirectIntentRecord* PROTOBUF_NONNULL other) {
+  void UnsafeArenaSwap(MatchChallengeInvitationRecord* PROTOBUF_NONNULL other) {
     if (other == this) return;
     ABSL_DCHECK(GetArena() == other->GetArena());
     InternalSwap(other);
@@ -2150,14 +3742,14 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED MatchDirectIntentRecord final : pub
 
   // implements Message ----------------------------------------------
 
-  [[nodiscard]] MatchDirectIntentRecord* PROTOBUF_NONNULL
+  [[nodiscard]] MatchChallengeInvitationRecord* PROTOBUF_NONNULL
   New(::google::protobuf::Arena* PROTOBUF_NULLABLE arena = nullptr) const {
-    return ::google::protobuf::Message::DefaultConstruct<MatchDirectIntentRecord>(arena);
+    return ::google::protobuf::Message::DefaultConstruct<MatchChallengeInvitationRecord>(arena);
   }
   using ::google::protobuf::Message::CopyFrom;
-  void CopyFrom(const MatchDirectIntentRecord& from);
+  void CopyFrom(const MatchChallengeInvitationRecord& from);
   using ::google::protobuf::Message::MergeFrom;
-  void MergeFrom(const MatchDirectIntentRecord& from) { MatchDirectIntentRecord::MergeImpl(*this, from); }
+  void MergeFrom(const MatchChallengeInvitationRecord& from) { MatchChallengeInvitationRecord::MergeImpl(*this, from); }
 
   private:
   static void MergeImpl(::google::protobuf::MessageLite& to_msg,
@@ -2195,17 +3787,17 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED MatchDirectIntentRecord final : pub
   private:
   void SharedCtor(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
   static void SharedDtor(MessageLite& self);
-  void InternalSwap(MatchDirectIntentRecord* PROTOBUF_NONNULL other);
+  void InternalSwap(MatchChallengeInvitationRecord* PROTOBUF_NONNULL other);
  private:
   template <typename T>
   friend ::absl::string_view(::google::protobuf::internal::GetAnyMessageName)();
-  static ::absl::string_view FullMessageName() { return "match.MatchDirectIntentRecord"; }
+  static ::absl::string_view FullMessageName() { return "match.MatchChallengeInvitationRecord"; }
 
-  explicit MatchDirectIntentRecord(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
-  MatchDirectIntentRecord(::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const MatchDirectIntentRecord& from);
-  MatchDirectIntentRecord(
-      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, MatchDirectIntentRecord&& from) noexcept
-      : MatchDirectIntentRecord(arena) {
+  explicit MatchChallengeInvitationRecord(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  MatchChallengeInvitationRecord(::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const MatchChallengeInvitationRecord& from);
+  MatchChallengeInvitationRecord(
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, MatchChallengeInvitationRecord&& from) noexcept
+      : MatchChallengeInvitationRecord(arena) {
     *this = ::std::move(from);
   }
   const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL GetClassData() const PROTOBUF_FINAL;
@@ -2224,59 +3816,140 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED MatchDirectIntentRecord final : pub
 
   // accessors -------------------------------------------------------
   enum : int {
-    kPayloadFieldNumber = 5,
-    kOwnerIdFieldNumber = 2,
-    kRequestHighFieldNumber = 3,
-    kRequestLowFieldNumber = 4,
-    kBattleIdFieldNumber = 6,
-    kKindFieldNumber = 1,
+    kChallengerAccountFieldNumber = 5,
+    kTargetAccountFieldNumber = 7,
+    kChallengeIdFieldNumber = 1,
+    kChallengerPlayerIdFieldNumber = 2,
+    kTargetPlayerIdFieldNumber = 3,
+    kChallengerRevisionFieldNumber = 6,
+    kConfigIdFieldNumber = 4,
+    kStateFieldNumber = 11,
+    kTargetRevisionFieldNumber = 8,
+    kCreatedMsFieldNumber = 9,
+    kExpiresMsFieldNumber = 10,
+    kBattleIdFieldNumber = 12,
   };
-  // bytes payload = 5;
-  void clear_payload() ;
-  [[nodiscard]] const ::std::string& payload() const;
+  // string challenger_account = 5;
+  void clear_challenger_account() ;
+  [[nodiscard]] const ::std::string& challenger_account() const;
   template <typename Arg_ = const ::std::string&, typename... Args_>
-  void set_payload(Arg_&& arg, Args_... args);
-  ::std::string* PROTOBUF_NONNULL mutable_payload();
-  [[nodiscard]] ::std::string* PROTOBUF_NULLABLE release_payload();
-  void set_allocated_payload(::std::string* PROTOBUF_NULLABLE value);
+  void set_challenger_account(Arg_&& arg, Args_... args);
+  ::std::string* PROTOBUF_NONNULL mutable_challenger_account();
+  [[nodiscard]] ::std::string* PROTOBUF_NULLABLE release_challenger_account();
+  void set_allocated_challenger_account(::std::string* PROTOBUF_NULLABLE value);
 
   private:
-  const ::std::string& _internal_payload() const;
-  PROTOBUF_ALWAYS_INLINE void _internal_set_payload(const ::std::string& value);
-  ::std::string* PROTOBUF_NONNULL _internal_mutable_payload();
+  const ::std::string& _internal_challenger_account() const;
+  PROTOBUF_ALWAYS_INLINE void _internal_set_challenger_account(const ::std::string& value);
+  ::std::string* PROTOBUF_NONNULL _internal_mutable_challenger_account();
 
   public:
-  // uint64 owner_id = 2;
-  void clear_owner_id() ;
-  [[nodiscard]] ::uint64_t owner_id() const;
-  void set_owner_id(::uint64_t value);
+  // string target_account = 7;
+  void clear_target_account() ;
+  [[nodiscard]] const ::std::string& target_account() const;
+  template <typename Arg_ = const ::std::string&, typename... Args_>
+  void set_target_account(Arg_&& arg, Args_... args);
+  ::std::string* PROTOBUF_NONNULL mutable_target_account();
+  [[nodiscard]] ::std::string* PROTOBUF_NULLABLE release_target_account();
+  void set_allocated_target_account(::std::string* PROTOBUF_NULLABLE value);
 
   private:
-  ::uint64_t _internal_owner_id() const;
-  void _internal_set_owner_id(::uint64_t value);
+  const ::std::string& _internal_target_account() const;
+  PROTOBUF_ALWAYS_INLINE void _internal_set_target_account(const ::std::string& value);
+  ::std::string* PROTOBUF_NONNULL _internal_mutable_target_account();
 
   public:
-  // uint64 request_high = 3;
-  void clear_request_high() ;
-  [[nodiscard]] ::uint64_t request_high() const;
-  void set_request_high(::uint64_t value);
+  // uint64 challenge_id = 1;
+  void clear_challenge_id() ;
+  [[nodiscard]] ::uint64_t challenge_id() const;
+  void set_challenge_id(::uint64_t value);
 
   private:
-  ::uint64_t _internal_request_high() const;
-  void _internal_set_request_high(::uint64_t value);
+  ::uint64_t _internal_challenge_id() const;
+  void _internal_set_challenge_id(::uint64_t value);
 
   public:
-  // uint64 request_low = 4;
-  void clear_request_low() ;
-  [[nodiscard]] ::uint64_t request_low() const;
-  void set_request_low(::uint64_t value);
+  // uint64 challenger_player_id = 2;
+  void clear_challenger_player_id() ;
+  [[nodiscard]] ::uint64_t challenger_player_id() const;
+  void set_challenger_player_id(::uint64_t value);
 
   private:
-  ::uint64_t _internal_request_low() const;
-  void _internal_set_request_low(::uint64_t value);
+  ::uint64_t _internal_challenger_player_id() const;
+  void _internal_set_challenger_player_id(::uint64_t value);
 
   public:
-  // uint64 battle_id = 6;
+  // uint64 target_player_id = 3;
+  void clear_target_player_id() ;
+  [[nodiscard]] ::uint64_t target_player_id() const;
+  void set_target_player_id(::uint64_t value);
+
+  private:
+  ::uint64_t _internal_target_player_id() const;
+  void _internal_set_target_player_id(::uint64_t value);
+
+  public:
+  // uint64 challenger_revision = 6;
+  void clear_challenger_revision() ;
+  [[nodiscard]] ::uint64_t challenger_revision() const;
+  void set_challenger_revision(::uint64_t value);
+
+  private:
+  ::uint64_t _internal_challenger_revision() const;
+  void _internal_set_challenger_revision(::uint64_t value);
+
+  public:
+  // uint32 config_id = 4;
+  void clear_config_id() ;
+  [[nodiscard]] ::uint32_t config_id() const;
+  void set_config_id(::uint32_t value);
+
+  private:
+  ::uint32_t _internal_config_id() const;
+  void _internal_set_config_id(::uint32_t value);
+
+  public:
+  // uint32 state = 11;
+  void clear_state() ;
+  [[nodiscard]] ::uint32_t state() const;
+  void set_state(::uint32_t value);
+
+  private:
+  ::uint32_t _internal_state() const;
+  void _internal_set_state(::uint32_t value);
+
+  public:
+  // uint64 target_revision = 8;
+  void clear_target_revision() ;
+  [[nodiscard]] ::uint64_t target_revision() const;
+  void set_target_revision(::uint64_t value);
+
+  private:
+  ::uint64_t _internal_target_revision() const;
+  void _internal_set_target_revision(::uint64_t value);
+
+  public:
+  // uint64 created_ms = 9;
+  void clear_created_ms() ;
+  [[nodiscard]] ::uint64_t created_ms() const;
+  void set_created_ms(::uint64_t value);
+
+  private:
+  ::uint64_t _internal_created_ms() const;
+  void _internal_set_created_ms(::uint64_t value);
+
+  public:
+  // uint64 expires_ms = 10;
+  void clear_expires_ms() ;
+  [[nodiscard]] ::uint64_t expires_ms() const;
+  void set_expires_ms(::uint64_t value);
+
+  private:
+  ::uint64_t _internal_expires_ms() const;
+  void _internal_set_expires_ms(::uint64_t value);
+
+  public:
+  // uint64 battle_id = 12;
   void clear_battle_id() ;
   [[nodiscard]] ::uint64_t battle_id() const;
   void set_battle_id(::uint64_t value);
@@ -2286,22 +3959,12 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED MatchDirectIntentRecord final : pub
   void _internal_set_battle_id(::uint64_t value);
 
   public:
-  // uint32 kind = 1;
-  void clear_kind() ;
-  [[nodiscard]] ::uint32_t kind() const;
-  void set_kind(::uint32_t value);
-
-  private:
-  ::uint32_t _internal_kind() const;
-  void _internal_set_kind(::uint32_t value);
-
-  public:
-  // @@protoc_insertion_point(class_scope:match.MatchDirectIntentRecord)
+  // @@protoc_insertion_point(class_scope:match.MatchChallengeInvitationRecord)
  private:
   class _Internal;
   using ParseTableT_ =
-      ::google::protobuf::internal::TcParseTable<3, 6,
-                          0, 0,
+      ::google::protobuf::internal::TcParseTable<4, 12,
+                          0, 85,
                           2>;
   static constexpr ParseTableT_ InternalGenerateParseTable_(
       const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL class_data);
@@ -2326,15 +3989,21 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED MatchDirectIntentRecord final : pub
     inline explicit Impl_(
         ::google::protobuf::internal::InternalVisibility visibility,
         ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
-        const MatchDirectIntentRecord& from_msg);
+        const MatchChallengeInvitationRecord& from_msg);
     ::google::protobuf::internal::HasBits<1> _has_bits_;
     ::google::protobuf::internal::CachedSize _cached_size_;
-    ::google::protobuf::internal::ArenaStringPtr payload_;
-    ::uint64_t owner_id_;
-    ::uint64_t request_high_;
-    ::uint64_t request_low_;
+    ::google::protobuf::internal::ArenaStringPtr challenger_account_;
+    ::google::protobuf::internal::ArenaStringPtr target_account_;
+    ::uint64_t challenge_id_;
+    ::uint64_t challenger_player_id_;
+    ::uint64_t target_player_id_;
+    ::uint64_t challenger_revision_;
+    ::uint32_t config_id_;
+    ::uint32_t state_;
+    ::uint64_t target_revision_;
+    ::uint64_t created_ms_;
+    ::uint64_t expires_ms_;
     ::uint64_t battle_id_;
-    ::uint32_t kind_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
   union { Impl_ _impl_; };
@@ -2398,7 +4067,7 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED MatchBattleSettlementSourceRecord f
   [[nodiscard]] static const MatchBattleSettlementSourceRecord& default_instance() {
     return *::google::protobuf::internal::MessageGlobalsBase::ToDefaultInstance<MatchBattleSettlementSourceRecord>(&MatchBattleSettlementSourceRecord_globals_);
   }
-  static constexpr int kIndexInFileMessages = 13;
+  static constexpr int kIndexInFileMessages = 20;
   friend void swap(MatchBattleSettlementSourceRecord& a, MatchBattleSettlementSourceRecord& b) { a.Swap(&b); }
   inline void Swap(MatchBattleSettlementSourceRecord* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -2657,7 +4326,7 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED MatchBattleCompletionRecord final :
   [[nodiscard]] static const MatchBattleCompletionRecord& default_instance() {
     return *::google::protobuf::internal::MessageGlobalsBase::ToDefaultInstance<MatchBattleCompletionRecord>(&MatchBattleCompletionRecord_globals_);
   }
-  static constexpr int kIndexInFileMessages = 12;
+  static constexpr int kIndexInFileMessages = 19;
   friend void swap(MatchBattleCompletionRecord& a, MatchBattleCompletionRecord& b) { a.Swap(&b); }
   inline void Swap(MatchBattleCompletionRecord* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -2957,7 +4626,7 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED MatchAuthorityTicketRecord final : 
   [[nodiscard]] static const MatchAuthorityTicketRecord& default_instance() {
     return *::google::protobuf::internal::MessageGlobalsBase::ToDefaultInstance<MatchAuthorityTicketRecord>(&MatchAuthorityTicketRecord_globals_);
   }
-  static constexpr int kIndexInFileMessages = 2;
+  static constexpr int kIndexInFileMessages = 5;
   friend void swap(MatchAuthorityTicketRecord& a, MatchAuthorityTicketRecord& b) { a.Swap(&b); }
   inline void Swap(MatchAuthorityTicketRecord* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -3052,6 +4721,7 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED MatchAuthorityTicketRecord final : 
     kTicketFieldNumber = 2,
     kRequestIdFieldNumber = 3,
     kNetworkProfileFieldNumber = 14,
+    kOwnerAccountFieldNumber = 18,
     kPlayerIdFieldNumber = 1,
     kModeFieldNumber = 4,
     kConfigIdFieldNumber = 5,
@@ -3065,6 +4735,8 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED MatchAuthorityTicketRecord final : 
     kZoneIdFieldNumber = 10,
     kSelectedRegionFieldNumber = 16,
     kExpiresMsFieldNumber = 15,
+    kOwnerRevisionFieldNumber = 19,
+    kPreferredRegionFieldNumber = 17,
   };
   // string ticket = 2;
   void clear_ticket() ;
@@ -3109,6 +4781,21 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED MatchAuthorityTicketRecord final : 
   const ::std::string& _internal_network_profile() const;
   PROTOBUF_ALWAYS_INLINE void _internal_set_network_profile(const ::std::string& value);
   ::std::string* PROTOBUF_NONNULL _internal_mutable_network_profile();
+
+  public:
+  // string owner_account = 18;
+  void clear_owner_account() ;
+  [[nodiscard]] const ::std::string& owner_account() const;
+  template <typename Arg_ = const ::std::string&, typename... Args_>
+  void set_owner_account(Arg_&& arg, Args_... args);
+  ::std::string* PROTOBUF_NONNULL mutable_owner_account();
+  [[nodiscard]] ::std::string* PROTOBUF_NULLABLE release_owner_account();
+  void set_allocated_owner_account(::std::string* PROTOBUF_NULLABLE value);
+
+  private:
+  const ::std::string& _internal_owner_account() const;
+  PROTOBUF_ALWAYS_INLINE void _internal_set_owner_account(const ::std::string& value);
+  ::std::string* PROTOBUF_NONNULL _internal_mutable_owner_account();
 
   public:
   // uint64 player_id = 1;
@@ -3241,12 +4928,32 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED MatchAuthorityTicketRecord final : 
   void _internal_set_expires_ms(::uint64_t value);
 
   public:
+  // uint64 owner_revision = 19;
+  void clear_owner_revision() ;
+  [[nodiscard]] ::uint64_t owner_revision() const;
+  void set_owner_revision(::uint64_t value);
+
+  private:
+  ::uint64_t _internal_owner_revision() const;
+  void _internal_set_owner_revision(::uint64_t value);
+
+  public:
+  // uint32 preferred_region = 17;
+  void clear_preferred_region() ;
+  [[nodiscard]] ::uint32_t preferred_region() const;
+  void set_preferred_region(::uint32_t value);
+
+  private:
+  ::uint32_t _internal_preferred_region() const;
+  void _internal_set_preferred_region(::uint32_t value);
+
+  public:
   // @@protoc_insertion_point(class_scope:match.MatchAuthorityTicketRecord)
  private:
   class _Internal;
   using ParseTableT_ =
-      ::google::protobuf::internal::TcParseTable<4, 16,
-                          0, 73,
+      ::google::protobuf::internal::TcParseTable<5, 19,
+                          0, 86,
                           2>;
   static constexpr ParseTableT_ InternalGenerateParseTable_(
       const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL class_data);
@@ -3277,6 +4984,7 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED MatchAuthorityTicketRecord final : 
     ::google::protobuf::internal::ArenaStringPtr ticket_;
     ::google::protobuf::internal::ArenaStringPtr request_id_;
     ::google::protobuf::internal::ArenaStringPtr network_profile_;
+    ::google::protobuf::internal::ArenaStringPtr owner_account_;
     ::uint64_t player_id_;
     ::uint32_t mode_;
     ::uint32_t config_id_;
@@ -3290,6 +4998,8 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED MatchAuthorityTicketRecord final : 
     ::uint32_t zone_id_;
     ::uint32_t selected_region_;
     ::uint64_t expires_ms_;
+    ::uint64_t owner_revision_;
+    ::uint32_t preferred_region_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
   union { Impl_ _impl_; };
@@ -3353,7 +5063,7 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED MatchFormationRecord final : public
   [[nodiscard]] static const MatchFormationRecord& default_instance() {
     return *::google::protobuf::internal::MessageGlobalsBase::ToDefaultInstance<MatchFormationRecord>(&MatchFormationRecord_globals_);
   }
-  static constexpr int kIndexInFileMessages = 6;
+  static constexpr int kIndexInFileMessages = 13;
   friend void swap(MatchFormationRecord& a, MatchFormationRecord& b) { a.Swap(&b); }
   inline void Swap(MatchFormationRecord* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -3737,6 +5447,365 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED MatchFormationRecord final : public
 };
 // -------------------------------------------------------------------
 
+class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED MatchDirectIntentRecord final : public ::google::protobuf::Message
+/* @@protoc_insertion_point(class_definition:match.MatchDirectIntentRecord) */ {
+ public:
+  inline MatchDirectIntentRecord() : MatchDirectIntentRecord(nullptr) {}
+  ~MatchDirectIntentRecord() PROTOBUF_FINAL;
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+  void operator delete(MatchDirectIntentRecord* PROTOBUF_NONNULL msg, ::std::destroying_delete_t) {
+    SharedDtor(*msg);
+    ::google::protobuf::internal::SizedDelete(msg, sizeof(MatchDirectIntentRecord));
+  }
+#endif
+
+  template <typename = void>
+  explicit constexpr MatchDirectIntentRecord(::google::protobuf::internal::ConstantInitialized,
+                           const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
+                               class_data);
+
+  inline MatchDirectIntentRecord(const MatchDirectIntentRecord& from) : MatchDirectIntentRecord(nullptr, from) {}
+  inline MatchDirectIntentRecord(MatchDirectIntentRecord&& from) noexcept : MatchDirectIntentRecord(nullptr, ::std::move(from)) {}
+  inline MatchDirectIntentRecord& operator=(const MatchDirectIntentRecord& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline MatchDirectIntentRecord& operator=(MatchDirectIntentRecord&& from) noexcept {
+    if (this == &from) return *this;
+    if (::google::protobuf::internal::CanMoveWithInternalSwap(GetArena(), from.GetArena())) {
+      InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  [[nodiscard]] inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance);
+  }
+  [[nodiscard]] inline ::google::protobuf::UnknownFieldSet* PROTOBUF_NONNULL
+  mutable_unknown_fields() ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.mutable_unknown_fields<::google::protobuf::UnknownFieldSet>();
+  }
+
+  [[nodiscard]] static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL descriptor() {
+    return GetDescriptor();
+  }
+  [[nodiscard]] static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL
+  GetDescriptor() {
+    return default_instance().GetMetadata().descriptor;
+  }
+  [[nodiscard]] static const ::google::protobuf::Reflection* PROTOBUF_NONNULL GetReflection() {
+    return default_instance().GetMetadata().reflection;
+  }
+  [[nodiscard]] static const MatchDirectIntentRecord& default_instance() {
+    return *::google::protobuf::internal::MessageGlobalsBase::ToDefaultInstance<MatchDirectIntentRecord>(&MatchDirectIntentRecord_globals_);
+  }
+  static constexpr int kIndexInFileMessages = 8;
+  friend void swap(MatchDirectIntentRecord& a, MatchDirectIntentRecord& b) { a.Swap(&b); }
+  inline void Swap(MatchDirectIntentRecord* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    if (::google::protobuf::internal::CanUseInternalSwap(GetArena(), other->GetArena())) {
+      InternalSwap(other);
+    } else {
+      ::google::protobuf::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(MatchDirectIntentRecord* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    ABSL_DCHECK(GetArena() == other->GetArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  [[nodiscard]] MatchDirectIntentRecord* PROTOBUF_NONNULL
+  New(::google::protobuf::Arena* PROTOBUF_NULLABLE arena = nullptr) const {
+    return ::google::protobuf::Message::DefaultConstruct<MatchDirectIntentRecord>(arena);
+  }
+  using ::google::protobuf::Message::CopyFrom;
+  void CopyFrom(const MatchDirectIntentRecord& from);
+  using ::google::protobuf::Message::MergeFrom;
+  void MergeFrom(const MatchDirectIntentRecord& from) { MatchDirectIntentRecord::MergeImpl(*this, from); }
+
+  private:
+  static void MergeImpl(::google::protobuf::MessageLite& to_msg,
+                        const ::google::protobuf::MessageLite& from_msg);
+
+  public:
+  [[nodiscard]] bool IsInitialized() const {
+    return true;
+  }
+  ABSL_ATTRIBUTE_REINITIALIZES void Clear() PROTOBUF_FINAL;
+  #if defined(PROTOBUF_CUSTOM_VTABLE)
+  private:
+  [[nodiscard]] static ::size_t ByteSizeLong(const ::google::protobuf::MessageLite& msg);
+  [[nodiscard]] static ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      const ::google::protobuf::MessageLite& msg, ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream);
+
+  public:
+  [[nodiscard]] ::size_t ByteSizeLong() const { return ByteSizeLong(*this); }
+  [[nodiscard]] ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
+    return _InternalSerialize(*this, target, stream);
+  }
+  #else   // PROTOBUF_CUSTOM_VTABLE
+  [[nodiscard]] ::size_t ByteSizeLong() const final;
+  [[nodiscard]] ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const final;
+  #endif  // PROTOBUF_CUSTOM_VTABLE
+  [[nodiscard]] int GetCachedSize() const {
+    return _impl_._cached_size_.Get();
+  }
+
+  private:
+  void SharedCtor(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static void SharedDtor(MessageLite& self);
+  void InternalSwap(MatchDirectIntentRecord* PROTOBUF_NONNULL other);
+ private:
+  template <typename T>
+  friend ::absl::string_view(::google::protobuf::internal::GetAnyMessageName)();
+  static ::absl::string_view FullMessageName() { return "match.MatchDirectIntentRecord"; }
+
+  explicit MatchDirectIntentRecord(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  MatchDirectIntentRecord(::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const MatchDirectIntentRecord& from);
+  MatchDirectIntentRecord(
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, MatchDirectIntentRecord&& from) noexcept
+      : MatchDirectIntentRecord(arena) {
+    *this = ::std::move(from);
+  }
+  const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL GetClassData() const PROTOBUF_FINAL;
+  static void* PROTOBUF_NONNULL PlacementNew_(
+      const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static constexpr auto InternalNewImpl_();
+
+ public:
+  static constexpr auto InternalGenerateClassData_(
+      const MessageLite& prototype,
+      const ::google::protobuf::internal::TcParseTableBase* PROTOBUF_NULLABLE tc_table = nullptr);
+
+  [[nodiscard]] ::google::protobuf::Metadata GetMetadata() const;
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+  enum : int {
+    kSpectatorExitsFieldNumber = 10,
+    kPayloadFieldNumber = 5,
+    kOwnerAccountFieldNumber = 8,
+    kStartOriginalFieldNumber = 12,
+    kOwnerIdFieldNumber = 2,
+    kRequestHighFieldNumber = 3,
+    kRequestLowFieldNumber = 4,
+    kBattleIdFieldNumber = 6,
+    kKindFieldNumber = 1,
+    kCancelledFieldNumber = 7,
+    kExitPreparedFieldNumber = 11,
+    kOwnerRevisionFieldNumber = 9,
+  };
+  // repeated .match.MatchSpectatorRecord spectator_exits = 10;
+  [[nodiscard]] int spectator_exits_size()
+      const;
+  private:
+  int _internal_spectator_exits_size() const;
+
+  public:
+  void clear_spectator_exits() ;
+  [[nodiscard]] const ::match::MatchSpectatorRecord& spectator_exits(int index) const;
+  [[nodiscard]] ::match::MatchSpectatorRecord* PROTOBUF_NONNULL mutable_spectator_exits(int index);
+  ::match::MatchSpectatorRecord* PROTOBUF_NONNULL add_spectator_exits();
+  [[nodiscard]] const ::google::protobuf::RepeatedPtrField<::match::MatchSpectatorRecord>&
+  spectator_exits() const;
+  [[nodiscard]] ::google::protobuf::RepeatedPtrField<::match::MatchSpectatorRecord>* PROTOBUF_NONNULL
+  mutable_spectator_exits();
+
+  private:
+  const ::google::protobuf::RepeatedPtrField<::match::MatchSpectatorRecord>& _internal_spectator_exits() const;
+  ::google::protobuf::RepeatedPtrField<::match::MatchSpectatorRecord>* PROTOBUF_NONNULL _internal_mutable_spectator_exits();
+
+  public:
+  // bytes payload = 5;
+  void clear_payload() ;
+  [[nodiscard]] const ::std::string& payload() const;
+  template <typename Arg_ = const ::std::string&, typename... Args_>
+  void set_payload(Arg_&& arg, Args_... args);
+  ::std::string* PROTOBUF_NONNULL mutable_payload();
+  [[nodiscard]] ::std::string* PROTOBUF_NULLABLE release_payload();
+  void set_allocated_payload(::std::string* PROTOBUF_NULLABLE value);
+
+  private:
+  const ::std::string& _internal_payload() const;
+  PROTOBUF_ALWAYS_INLINE void _internal_set_payload(const ::std::string& value);
+  ::std::string* PROTOBUF_NONNULL _internal_mutable_payload();
+
+  public:
+  // string owner_account = 8;
+  void clear_owner_account() ;
+  [[nodiscard]] const ::std::string& owner_account() const;
+  template <typename Arg_ = const ::std::string&, typename... Args_>
+  void set_owner_account(Arg_&& arg, Args_... args);
+  ::std::string* PROTOBUF_NONNULL mutable_owner_account();
+  [[nodiscard]] ::std::string* PROTOBUF_NULLABLE release_owner_account();
+  void set_allocated_owner_account(::std::string* PROTOBUF_NULLABLE value);
+
+  private:
+  const ::std::string& _internal_owner_account() const;
+  PROTOBUF_ALWAYS_INLINE void _internal_set_owner_account(const ::std::string& value);
+  ::std::string* PROTOBUF_NONNULL _internal_mutable_owner_account();
+
+  public:
+  // bytes start_original = 12;
+  void clear_start_original() ;
+  [[nodiscard]] const ::std::string& start_original() const;
+  template <typename Arg_ = const ::std::string&, typename... Args_>
+  void set_start_original(Arg_&& arg, Args_... args);
+  ::std::string* PROTOBUF_NONNULL mutable_start_original();
+  [[nodiscard]] ::std::string* PROTOBUF_NULLABLE release_start_original();
+  void set_allocated_start_original(::std::string* PROTOBUF_NULLABLE value);
+
+  private:
+  const ::std::string& _internal_start_original() const;
+  PROTOBUF_ALWAYS_INLINE void _internal_set_start_original(const ::std::string& value);
+  ::std::string* PROTOBUF_NONNULL _internal_mutable_start_original();
+
+  public:
+  // uint64 owner_id = 2;
+  void clear_owner_id() ;
+  [[nodiscard]] ::uint64_t owner_id() const;
+  void set_owner_id(::uint64_t value);
+
+  private:
+  ::uint64_t _internal_owner_id() const;
+  void _internal_set_owner_id(::uint64_t value);
+
+  public:
+  // uint64 request_high = 3;
+  void clear_request_high() ;
+  [[nodiscard]] ::uint64_t request_high() const;
+  void set_request_high(::uint64_t value);
+
+  private:
+  ::uint64_t _internal_request_high() const;
+  void _internal_set_request_high(::uint64_t value);
+
+  public:
+  // uint64 request_low = 4;
+  void clear_request_low() ;
+  [[nodiscard]] ::uint64_t request_low() const;
+  void set_request_low(::uint64_t value);
+
+  private:
+  ::uint64_t _internal_request_low() const;
+  void _internal_set_request_low(::uint64_t value);
+
+  public:
+  // uint64 battle_id = 6;
+  void clear_battle_id() ;
+  [[nodiscard]] ::uint64_t battle_id() const;
+  void set_battle_id(::uint64_t value);
+
+  private:
+  ::uint64_t _internal_battle_id() const;
+  void _internal_set_battle_id(::uint64_t value);
+
+  public:
+  // uint32 kind = 1;
+  void clear_kind() ;
+  [[nodiscard]] ::uint32_t kind() const;
+  void set_kind(::uint32_t value);
+
+  private:
+  ::uint32_t _internal_kind() const;
+  void _internal_set_kind(::uint32_t value);
+
+  public:
+  // bool cancelled = 7;
+  void clear_cancelled() ;
+  [[nodiscard]] bool cancelled() const;
+  void set_cancelled(bool value);
+
+  private:
+  bool _internal_cancelled() const;
+  void _internal_set_cancelled(bool value);
+
+  public:
+  // bool exit_prepared = 11;
+  void clear_exit_prepared() ;
+  [[nodiscard]] bool exit_prepared() const;
+  void set_exit_prepared(bool value);
+
+  private:
+  bool _internal_exit_prepared() const;
+  void _internal_set_exit_prepared(bool value);
+
+  public:
+  // uint64 owner_revision = 9;
+  void clear_owner_revision() ;
+  [[nodiscard]] ::uint64_t owner_revision() const;
+  void set_owner_revision(::uint64_t value);
+
+  private:
+  ::uint64_t _internal_owner_revision() const;
+  void _internal_set_owner_revision(::uint64_t value);
+
+  public:
+  // @@protoc_insertion_point(class_scope:match.MatchDirectIntentRecord)
+ private:
+  class _Internal;
+  using ParseTableT_ =
+      ::google::protobuf::internal::TcParseTable<4, 12,
+                          1, 59,
+                          2>;
+  static constexpr ParseTableT_ InternalGenerateParseTable_(
+      const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL class_data);
+  friend class ::google::protobuf::internal::TcParser;
+  #ifndef PROTOBUF_MESSAGE_GLOBALS
+  static const ParseTableT_ _table_;
+  #endif
+
+  friend class ::google::protobuf::MessageLite;
+  friend class ::google::protobuf::Arena;
+  friend ::google::protobuf::internal::PrivateAccess;
+  template <typename T>
+  friend class ::google::protobuf::Arena::InternalHelper;
+  using InternalArenaConstructable_ = void;
+  using DestructorSkippable_ = void;
+  struct Impl_ {
+    inline explicit constexpr Impl_(::google::protobuf::internal::InternalVisibility visibility,
+                                    ::google::protobuf::internal::ConstantInitialized) noexcept;
+    inline explicit Impl_(
+        ::google::protobuf::internal::InternalVisibility visibility,
+        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+    inline explicit Impl_(
+        ::google::protobuf::internal::InternalVisibility visibility,
+        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
+        const MatchDirectIntentRecord& from_msg);
+    ::google::protobuf::internal::HasBits<1> _has_bits_;
+    ::google::protobuf::internal::CachedSize _cached_size_;
+    ::google::protobuf::RepeatedPtrField< ::match::MatchSpectatorRecord > spectator_exits_;
+    ::google::protobuf::internal::ArenaStringPtr payload_;
+    ::google::protobuf::internal::ArenaStringPtr owner_account_;
+    ::google::protobuf::internal::ArenaStringPtr start_original_;
+    ::uint64_t owner_id_;
+    ::uint64_t request_high_;
+    ::uint64_t request_low_;
+    ::uint64_t battle_id_;
+    ::uint32_t kind_;
+    bool cancelled_;
+    bool exit_prepared_;
+    ::uint64_t owner_revision_;
+    PROTOBUF_TSAN_DECLARE_MEMBER
+  };
+  union { Impl_ _impl_; };
+  friend struct ::TableStruct_proto_2fmatch_2fmatch_5fauthority_2eproto;
+};
+// -------------------------------------------------------------------
+
 class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED MatchNetworkProfile final : public ::google::protobuf::Message
 /* @@protoc_insertion_point(class_definition:match.MatchNetworkProfile) */ {
  public:
@@ -3888,6 +5957,8 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED MatchNetworkProfile final : public 
     kReceiptsFieldNumber = 3,
     kPlanIdFieldNumber = 1,
     kSessionBindingFieldNumber = 2,
+    kOwnerAccountFieldNumber = 4,
+    kOwnerRevisionFieldNumber = 5,
   };
   // repeated .match.NetworkProbeReceipt receipts = 3;
   [[nodiscard]] int receipts_size()
@@ -3940,12 +6011,37 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED MatchNetworkProfile final : public 
   ::std::string* PROTOBUF_NONNULL _internal_mutable_session_binding();
 
   public:
+  // string owner_account = 4;
+  void clear_owner_account() ;
+  [[nodiscard]] const ::std::string& owner_account() const;
+  template <typename Arg_ = const ::std::string&, typename... Args_>
+  void set_owner_account(Arg_&& arg, Args_... args);
+  ::std::string* PROTOBUF_NONNULL mutable_owner_account();
+  [[nodiscard]] ::std::string* PROTOBUF_NULLABLE release_owner_account();
+  void set_allocated_owner_account(::std::string* PROTOBUF_NULLABLE value);
+
+  private:
+  const ::std::string& _internal_owner_account() const;
+  PROTOBUF_ALWAYS_INLINE void _internal_set_owner_account(const ::std::string& value);
+  ::std::string* PROTOBUF_NONNULL _internal_mutable_owner_account();
+
+  public:
+  // uint64 owner_revision = 5;
+  void clear_owner_revision() ;
+  [[nodiscard]] ::uint64_t owner_revision() const;
+  void set_owner_revision(::uint64_t value);
+
+  private:
+  ::uint64_t _internal_owner_revision() const;
+  void _internal_set_owner_revision(::uint64_t value);
+
+  public:
   // @@protoc_insertion_point(class_scope:match.MatchNetworkProfile)
  private:
   class _Internal;
   using ParseTableT_ =
-      ::google::protobuf::internal::TcParseTable<2, 3,
-                          1, 56,
+      ::google::protobuf::internal::TcParseTable<3, 5,
+                          1, 69,
                           2>;
   static constexpr ParseTableT_ InternalGenerateParseTable_(
       const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL class_data);
@@ -3976,6 +6072,238 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED MatchNetworkProfile final : public 
     ::google::protobuf::RepeatedPtrField< ::match::NetworkProbeReceipt > receipts_;
     ::google::protobuf::internal::ArenaStringPtr plan_id_;
     ::google::protobuf::internal::ArenaStringPtr session_binding_;
+    ::google::protobuf::internal::ArenaStringPtr owner_account_;
+    ::uint64_t owner_revision_;
+    PROTOBUF_TSAN_DECLARE_MEMBER
+  };
+  union { Impl_ _impl_; };
+  friend struct ::TableStruct_proto_2fmatch_2fmatch_5fauthority_2eproto;
+};
+// -------------------------------------------------------------------
+
+class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED MatchDirectStartOriginal final : public ::google::protobuf::Message
+/* @@protoc_insertion_point(class_definition:match.MatchDirectStartOriginal) */ {
+ public:
+  inline MatchDirectStartOriginal() : MatchDirectStartOriginal(nullptr) {}
+  ~MatchDirectStartOriginal() PROTOBUF_FINAL;
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+  void operator delete(MatchDirectStartOriginal* PROTOBUF_NONNULL msg, ::std::destroying_delete_t) {
+    SharedDtor(*msg);
+    ::google::protobuf::internal::SizedDelete(msg, sizeof(MatchDirectStartOriginal));
+  }
+#endif
+
+  template <typename = void>
+  explicit constexpr MatchDirectStartOriginal(::google::protobuf::internal::ConstantInitialized,
+                           const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
+                               class_data);
+
+  inline MatchDirectStartOriginal(const MatchDirectStartOriginal& from) : MatchDirectStartOriginal(nullptr, from) {}
+  inline MatchDirectStartOriginal(MatchDirectStartOriginal&& from) noexcept : MatchDirectStartOriginal(nullptr, ::std::move(from)) {}
+  inline MatchDirectStartOriginal& operator=(const MatchDirectStartOriginal& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline MatchDirectStartOriginal& operator=(MatchDirectStartOriginal&& from) noexcept {
+    if (this == &from) return *this;
+    if (::google::protobuf::internal::CanMoveWithInternalSwap(GetArena(), from.GetArena())) {
+      InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  [[nodiscard]] inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance);
+  }
+  [[nodiscard]] inline ::google::protobuf::UnknownFieldSet* PROTOBUF_NONNULL
+  mutable_unknown_fields() ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.mutable_unknown_fields<::google::protobuf::UnknownFieldSet>();
+  }
+
+  [[nodiscard]] static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL descriptor() {
+    return GetDescriptor();
+  }
+  [[nodiscard]] static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL
+  GetDescriptor() {
+    return default_instance().GetMetadata().descriptor;
+  }
+  [[nodiscard]] static const ::google::protobuf::Reflection* PROTOBUF_NONNULL GetReflection() {
+    return default_instance().GetMetadata().reflection;
+  }
+  [[nodiscard]] static const MatchDirectStartOriginal& default_instance() {
+    return *::google::protobuf::internal::MessageGlobalsBase::ToDefaultInstance<MatchDirectStartOriginal>(&MatchDirectStartOriginal_globals_);
+  }
+  static constexpr int kIndexInFileMessages = 9;
+  friend void swap(MatchDirectStartOriginal& a, MatchDirectStartOriginal& b) { a.Swap(&b); }
+  inline void Swap(MatchDirectStartOriginal* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    if (::google::protobuf::internal::CanUseInternalSwap(GetArena(), other->GetArena())) {
+      InternalSwap(other);
+    } else {
+      ::google::protobuf::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(MatchDirectStartOriginal* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    ABSL_DCHECK(GetArena() == other->GetArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  [[nodiscard]] MatchDirectStartOriginal* PROTOBUF_NONNULL
+  New(::google::protobuf::Arena* PROTOBUF_NULLABLE arena = nullptr) const {
+    return ::google::protobuf::Message::DefaultConstruct<MatchDirectStartOriginal>(arena);
+  }
+  using ::google::protobuf::Message::CopyFrom;
+  void CopyFrom(const MatchDirectStartOriginal& from);
+  using ::google::protobuf::Message::MergeFrom;
+  void MergeFrom(const MatchDirectStartOriginal& from) { MatchDirectStartOriginal::MergeImpl(*this, from); }
+
+  private:
+  static void MergeImpl(::google::protobuf::MessageLite& to_msg,
+                        const ::google::protobuf::MessageLite& from_msg);
+
+  public:
+  [[nodiscard]] bool IsInitialized() const {
+    return true;
+  }
+  ABSL_ATTRIBUTE_REINITIALIZES void Clear() PROTOBUF_FINAL;
+  #if defined(PROTOBUF_CUSTOM_VTABLE)
+  private:
+  [[nodiscard]] static ::size_t ByteSizeLong(const ::google::protobuf::MessageLite& msg);
+  [[nodiscard]] static ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      const ::google::protobuf::MessageLite& msg, ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream);
+
+  public:
+  [[nodiscard]] ::size_t ByteSizeLong() const { return ByteSizeLong(*this); }
+  [[nodiscard]] ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
+    return _InternalSerialize(*this, target, stream);
+  }
+  #else   // PROTOBUF_CUSTOM_VTABLE
+  [[nodiscard]] ::size_t ByteSizeLong() const final;
+  [[nodiscard]] ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const final;
+  #endif  // PROTOBUF_CUSTOM_VTABLE
+  [[nodiscard]] int GetCachedSize() const {
+    return _impl_._cached_size_.Get();
+  }
+
+  private:
+  void SharedCtor(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static void SharedDtor(MessageLite& self);
+  void InternalSwap(MatchDirectStartOriginal* PROTOBUF_NONNULL other);
+ private:
+  template <typename T>
+  friend ::absl::string_view(::google::protobuf::internal::GetAnyMessageName)();
+  static ::absl::string_view FullMessageName() { return "match.MatchDirectStartOriginal"; }
+
+  explicit MatchDirectStartOriginal(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  MatchDirectStartOriginal(::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const MatchDirectStartOriginal& from);
+  MatchDirectStartOriginal(
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, MatchDirectStartOriginal&& from) noexcept
+      : MatchDirectStartOriginal(arena) {
+    *this = ::std::move(from);
+  }
+  const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL GetClassData() const PROTOBUF_FINAL;
+  static void* PROTOBUF_NONNULL PlacementNew_(
+      const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static constexpr auto InternalNewImpl_();
+
+ public:
+  static constexpr auto InternalGenerateClassData_(
+      const MessageLite& prototype,
+      const ::google::protobuf::internal::TcParseTableBase* PROTOBUF_NULLABLE tc_table = nullptr);
+
+  [[nodiscard]] ::google::protobuf::Metadata GetMetadata() const;
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+  enum : int {
+    kTicketsFieldNumber = 2,
+    kFormationFieldNumber = 1,
+  };
+  // repeated .match.MatchAuthorityTicketRecord tickets = 2;
+  [[nodiscard]] int tickets_size()
+      const;
+  private:
+  int _internal_tickets_size() const;
+
+  public:
+  void clear_tickets() ;
+  [[nodiscard]] const ::match::MatchAuthorityTicketRecord& tickets(int index) const;
+  [[nodiscard]] ::match::MatchAuthorityTicketRecord* PROTOBUF_NONNULL mutable_tickets(int index);
+  ::match::MatchAuthorityTicketRecord* PROTOBUF_NONNULL add_tickets();
+  [[nodiscard]] const ::google::protobuf::RepeatedPtrField<::match::MatchAuthorityTicketRecord>&
+  tickets() const;
+  [[nodiscard]] ::google::protobuf::RepeatedPtrField<::match::MatchAuthorityTicketRecord>* PROTOBUF_NONNULL
+  mutable_tickets();
+
+  private:
+  const ::google::protobuf::RepeatedPtrField<::match::MatchAuthorityTicketRecord>& _internal_tickets() const;
+  ::google::protobuf::RepeatedPtrField<::match::MatchAuthorityTicketRecord>* PROTOBUF_NONNULL _internal_mutable_tickets();
+
+  public:
+  // .match.MatchFormationRecord formation = 1;
+  [[nodiscard]] bool has_formation()
+      const;
+  void clear_formation() ;
+  [[nodiscard]] const ::match::MatchFormationRecord& formation() const;
+  [[nodiscard]] ::match::MatchFormationRecord* PROTOBUF_NULLABLE release_formation();
+  ::match::MatchFormationRecord* PROTOBUF_NONNULL mutable_formation();
+  void set_allocated_formation(::match::MatchFormationRecord* PROTOBUF_NULLABLE value);
+  void unsafe_arena_set_allocated_formation(::match::MatchFormationRecord* PROTOBUF_NULLABLE value);
+  ::match::MatchFormationRecord* PROTOBUF_NULLABLE unsafe_arena_release_formation();
+
+  private:
+  const ::match::MatchFormationRecord& _internal_formation() const;
+  ::match::MatchFormationRecord* PROTOBUF_NONNULL _internal_mutable_formation();
+
+  public:
+  // @@protoc_insertion_point(class_scope:match.MatchDirectStartOriginal)
+ private:
+  class _Internal;
+  using ParseTableT_ =
+      ::google::protobuf::internal::TcParseTable<1, 2,
+                          2, 0,
+                          2>;
+  static constexpr ParseTableT_ InternalGenerateParseTable_(
+      const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL class_data);
+  friend class ::google::protobuf::internal::TcParser;
+  #ifndef PROTOBUF_MESSAGE_GLOBALS
+  static const ParseTableT_ _table_;
+  #endif
+
+  friend class ::google::protobuf::MessageLite;
+  friend class ::google::protobuf::Arena;
+  friend ::google::protobuf::internal::PrivateAccess;
+  template <typename T>
+  friend class ::google::protobuf::Arena::InternalHelper;
+  using InternalArenaConstructable_ = void;
+  using DestructorSkippable_ = void;
+  struct Impl_ {
+    inline explicit constexpr Impl_(::google::protobuf::internal::InternalVisibility visibility,
+                                    ::google::protobuf::internal::ConstantInitialized) noexcept;
+    inline explicit Impl_(
+        ::google::protobuf::internal::InternalVisibility visibility,
+        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+    inline explicit Impl_(
+        ::google::protobuf::internal::InternalVisibility visibility,
+        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
+        const MatchDirectStartOriginal& from_msg);
+    ::google::protobuf::internal::HasBits<1> _has_bits_;
+    ::google::protobuf::internal::CachedSize _cached_size_;
+    ::google::protobuf::RepeatedPtrField< ::match::MatchAuthorityTicketRecord > tickets_;
+    ::match::MatchFormationRecord* PROTOBUF_NULLABLE formation_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
   union { Impl_ _impl_; };
@@ -4176,6 +6504,1058 @@ MatchNetworkProfile::_internal_mutable_receipts() {
   return &_impl_.receipts_;
 }
 
+// string owner_account = 4;
+inline void MatchNetworkProfile::clear_owner_account() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.owner_account_.ClearToEmpty();
+  ClearHasBit(_impl_._has_bits_[0], 0x00000008U);
+}
+inline const ::std::string& MatchNetworkProfile::owner_account() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:match.MatchNetworkProfile.owner_account)
+  return _internal_owner_account();
+}
+template <typename Arg_, typename... Args_>
+PROTOBUF_ALWAYS_INLINE void MatchNetworkProfile::set_owner_account(Arg_&& arg, Args_... args) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  SetHasBit(_impl_._has_bits_[0], 0x00000008U);
+  _impl_.owner_account_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
+  // @@protoc_insertion_point(field_set:match.MatchNetworkProfile.owner_account)
+}
+inline ::std::string* PROTOBUF_NONNULL MatchNetworkProfile::mutable_owner_account()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  SetHasBit(_impl_._has_bits_[0], 0x00000008U);
+  ::std::string* _s = _internal_mutable_owner_account();
+  // @@protoc_insertion_point(field_mutable:match.MatchNetworkProfile.owner_account)
+  return _s;
+}
+inline const ::std::string& MatchNetworkProfile::_internal_owner_account() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.owner_account_.Get();
+}
+inline void MatchNetworkProfile::_internal_set_owner_account(const ::std::string& value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.owner_account_.Set(value, GetArena());
+}
+inline ::std::string* PROTOBUF_NONNULL MatchNetworkProfile::_internal_mutable_owner_account() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  return _impl_.owner_account_.Mutable( GetArena());
+}
+inline ::std::string* PROTOBUF_NULLABLE MatchNetworkProfile::release_owner_account() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:match.MatchNetworkProfile.owner_account)
+  if (!CheckHasBit(_impl_._has_bits_[0], 0x00000008U)) {
+    return nullptr;
+  }
+  ClearHasBit(_impl_._has_bits_[0], 0x00000008U);
+  auto* released = _impl_.owner_account_.Release();
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString()) {
+    _impl_.owner_account_.Set("", GetArena());
+  }
+  return released;
+}
+inline void MatchNetworkProfile::set_allocated_owner_account(::std::string* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (value != nullptr) {
+    SetHasBit(_impl_._has_bits_[0], 0x00000008U);
+  } else {
+    ClearHasBit(_impl_._has_bits_[0], 0x00000008U);
+  }
+  _impl_.owner_account_.SetAllocated(value, GetArena());
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.owner_account_.IsDefault()) {
+    _impl_.owner_account_.Set("", GetArena());
+  }
+  // @@protoc_insertion_point(field_set_allocated:match.MatchNetworkProfile.owner_account)
+}
+
+// uint64 owner_revision = 5;
+inline void MatchNetworkProfile::clear_owner_revision() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.owner_revision_ = ::uint64_t{0u};
+  ClearHasBit(_impl_._has_bits_[0], 0x00000010U);
+}
+inline ::uint64_t MatchNetworkProfile::owner_revision() const {
+  // @@protoc_insertion_point(field_get:match.MatchNetworkProfile.owner_revision)
+  return _internal_owner_revision();
+}
+inline void MatchNetworkProfile::set_owner_revision(::uint64_t value) {
+  _internal_set_owner_revision(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000010U);
+  // @@protoc_insertion_point(field_set:match.MatchNetworkProfile.owner_revision)
+}
+inline ::uint64_t MatchNetworkProfile::_internal_owner_revision() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.owner_revision_;
+}
+inline void MatchNetworkProfile::_internal_set_owner_revision(::uint64_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.owner_revision_ = value;
+}
+
+// -------------------------------------------------------------------
+
+// MatchSpectatorRecord
+
+// uint64 player_id = 1;
+inline void MatchSpectatorRecord::clear_player_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.player_id_ = ::uint64_t{0u};
+  ClearHasBit(_impl_._has_bits_[0], 0x00000040U);
+}
+inline ::uint64_t MatchSpectatorRecord::player_id() const {
+  // @@protoc_insertion_point(field_get:match.MatchSpectatorRecord.player_id)
+  return _internal_player_id();
+}
+inline void MatchSpectatorRecord::set_player_id(::uint64_t value) {
+  _internal_set_player_id(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000040U);
+  // @@protoc_insertion_point(field_set:match.MatchSpectatorRecord.player_id)
+}
+inline ::uint64_t MatchSpectatorRecord::_internal_player_id() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.player_id_;
+}
+inline void MatchSpectatorRecord::_internal_set_player_id(::uint64_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.player_id_ = value;
+}
+
+// string operation_id = 2;
+inline void MatchSpectatorRecord::clear_operation_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.operation_id_.ClearToEmpty();
+  ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
+}
+inline const ::std::string& MatchSpectatorRecord::operation_id() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:match.MatchSpectatorRecord.operation_id)
+  return _internal_operation_id();
+}
+template <typename Arg_, typename... Args_>
+PROTOBUF_ALWAYS_INLINE void MatchSpectatorRecord::set_operation_id(Arg_&& arg, Args_... args) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  _impl_.operation_id_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
+  // @@protoc_insertion_point(field_set:match.MatchSpectatorRecord.operation_id)
+}
+inline ::std::string* PROTOBUF_NONNULL MatchSpectatorRecord::mutable_operation_id()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  ::std::string* _s = _internal_mutable_operation_id();
+  // @@protoc_insertion_point(field_mutable:match.MatchSpectatorRecord.operation_id)
+  return _s;
+}
+inline const ::std::string& MatchSpectatorRecord::_internal_operation_id() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.operation_id_.Get();
+}
+inline void MatchSpectatorRecord::_internal_set_operation_id(const ::std::string& value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.operation_id_.Set(value, GetArena());
+}
+inline ::std::string* PROTOBUF_NONNULL MatchSpectatorRecord::_internal_mutable_operation_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  return _impl_.operation_id_.Mutable( GetArena());
+}
+inline ::std::string* PROTOBUF_NULLABLE MatchSpectatorRecord::release_operation_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:match.MatchSpectatorRecord.operation_id)
+  if (!CheckHasBit(_impl_._has_bits_[0], 0x00000001U)) {
+    return nullptr;
+  }
+  ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
+  auto* released = _impl_.operation_id_.Release();
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString()) {
+    _impl_.operation_id_.Set("", GetArena());
+  }
+  return released;
+}
+inline void MatchSpectatorRecord::set_allocated_operation_id(::std::string* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (value != nullptr) {
+    SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  } else {
+    ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
+  }
+  _impl_.operation_id_.SetAllocated(value, GetArena());
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.operation_id_.IsDefault()) {
+    _impl_.operation_id_.Set("", GetArena());
+  }
+  // @@protoc_insertion_point(field_set_allocated:match.MatchSpectatorRecord.operation_id)
+}
+
+// uint64 battle_id = 3;
+inline void MatchSpectatorRecord::clear_battle_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.battle_id_ = ::uint64_t{0u};
+  ClearHasBit(_impl_._has_bits_[0], 0x00000080U);
+}
+inline ::uint64_t MatchSpectatorRecord::battle_id() const {
+  // @@protoc_insertion_point(field_get:match.MatchSpectatorRecord.battle_id)
+  return _internal_battle_id();
+}
+inline void MatchSpectatorRecord::set_battle_id(::uint64_t value) {
+  _internal_set_battle_id(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000080U);
+  // @@protoc_insertion_point(field_set:match.MatchSpectatorRecord.battle_id)
+}
+inline ::uint64_t MatchSpectatorRecord::_internal_battle_id() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.battle_id_;
+}
+inline void MatchSpectatorRecord::_internal_set_battle_id(::uint64_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.battle_id_ = value;
+}
+
+// string target_endpoint = 4;
+inline void MatchSpectatorRecord::clear_target_endpoint() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.target_endpoint_.ClearToEmpty();
+  ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
+}
+inline const ::std::string& MatchSpectatorRecord::target_endpoint() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:match.MatchSpectatorRecord.target_endpoint)
+  return _internal_target_endpoint();
+}
+template <typename Arg_, typename... Args_>
+PROTOBUF_ALWAYS_INLINE void MatchSpectatorRecord::set_target_endpoint(Arg_&& arg, Args_... args) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  SetHasBit(_impl_._has_bits_[0], 0x00000002U);
+  _impl_.target_endpoint_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
+  // @@protoc_insertion_point(field_set:match.MatchSpectatorRecord.target_endpoint)
+}
+inline ::std::string* PROTOBUF_NONNULL MatchSpectatorRecord::mutable_target_endpoint()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  SetHasBit(_impl_._has_bits_[0], 0x00000002U);
+  ::std::string* _s = _internal_mutable_target_endpoint();
+  // @@protoc_insertion_point(field_mutable:match.MatchSpectatorRecord.target_endpoint)
+  return _s;
+}
+inline const ::std::string& MatchSpectatorRecord::_internal_target_endpoint() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.target_endpoint_.Get();
+}
+inline void MatchSpectatorRecord::_internal_set_target_endpoint(const ::std::string& value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.target_endpoint_.Set(value, GetArena());
+}
+inline ::std::string* PROTOBUF_NONNULL MatchSpectatorRecord::_internal_mutable_target_endpoint() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  return _impl_.target_endpoint_.Mutable( GetArena());
+}
+inline ::std::string* PROTOBUF_NULLABLE MatchSpectatorRecord::release_target_endpoint() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:match.MatchSpectatorRecord.target_endpoint)
+  if (!CheckHasBit(_impl_._has_bits_[0], 0x00000002U)) {
+    return nullptr;
+  }
+  ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
+  auto* released = _impl_.target_endpoint_.Release();
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString()) {
+    _impl_.target_endpoint_.Set("", GetArena());
+  }
+  return released;
+}
+inline void MatchSpectatorRecord::set_allocated_target_endpoint(::std::string* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (value != nullptr) {
+    SetHasBit(_impl_._has_bits_[0], 0x00000002U);
+  } else {
+    ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
+  }
+  _impl_.target_endpoint_.SetAllocated(value, GetArena());
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.target_endpoint_.IsDefault()) {
+    _impl_.target_endpoint_.Set("", GetArena());
+  }
+  // @@protoc_insertion_point(field_set_allocated:match.MatchSpectatorRecord.target_endpoint)
+}
+
+// string target_instance_id = 5;
+inline void MatchSpectatorRecord::clear_target_instance_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.target_instance_id_.ClearToEmpty();
+  ClearHasBit(_impl_._has_bits_[0], 0x00000004U);
+}
+inline const ::std::string& MatchSpectatorRecord::target_instance_id() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:match.MatchSpectatorRecord.target_instance_id)
+  return _internal_target_instance_id();
+}
+template <typename Arg_, typename... Args_>
+PROTOBUF_ALWAYS_INLINE void MatchSpectatorRecord::set_target_instance_id(Arg_&& arg, Args_... args) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  SetHasBit(_impl_._has_bits_[0], 0x00000004U);
+  _impl_.target_instance_id_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
+  // @@protoc_insertion_point(field_set:match.MatchSpectatorRecord.target_instance_id)
+}
+inline ::std::string* PROTOBUF_NONNULL MatchSpectatorRecord::mutable_target_instance_id()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  SetHasBit(_impl_._has_bits_[0], 0x00000004U);
+  ::std::string* _s = _internal_mutable_target_instance_id();
+  // @@protoc_insertion_point(field_mutable:match.MatchSpectatorRecord.target_instance_id)
+  return _s;
+}
+inline const ::std::string& MatchSpectatorRecord::_internal_target_instance_id() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.target_instance_id_.Get();
+}
+inline void MatchSpectatorRecord::_internal_set_target_instance_id(const ::std::string& value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.target_instance_id_.Set(value, GetArena());
+}
+inline ::std::string* PROTOBUF_NONNULL MatchSpectatorRecord::_internal_mutable_target_instance_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  return _impl_.target_instance_id_.Mutable( GetArena());
+}
+inline ::std::string* PROTOBUF_NULLABLE MatchSpectatorRecord::release_target_instance_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:match.MatchSpectatorRecord.target_instance_id)
+  if (!CheckHasBit(_impl_._has_bits_[0], 0x00000004U)) {
+    return nullptr;
+  }
+  ClearHasBit(_impl_._has_bits_[0], 0x00000004U);
+  auto* released = _impl_.target_instance_id_.Release();
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString()) {
+    _impl_.target_instance_id_.Set("", GetArena());
+  }
+  return released;
+}
+inline void MatchSpectatorRecord::set_allocated_target_instance_id(::std::string* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (value != nullptr) {
+    SetHasBit(_impl_._has_bits_[0], 0x00000004U);
+  } else {
+    ClearHasBit(_impl_._has_bits_[0], 0x00000004U);
+  }
+  _impl_.target_instance_id_.SetAllocated(value, GetArena());
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.target_instance_id_.IsDefault()) {
+    _impl_.target_instance_id_.Set("", GetArena());
+  }
+  // @@protoc_insertion_point(field_set_allocated:match.MatchSpectatorRecord.target_instance_id)
+}
+
+// uint32 state = 6;
+inline void MatchSpectatorRecord::clear_state() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.state_ = 0u;
+  ClearHasBit(_impl_._has_bits_[0], 0x00001000U);
+}
+inline ::uint32_t MatchSpectatorRecord::state() const {
+  // @@protoc_insertion_point(field_get:match.MatchSpectatorRecord.state)
+  return _internal_state();
+}
+inline void MatchSpectatorRecord::set_state(::uint32_t value) {
+  _internal_set_state(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00001000U);
+  // @@protoc_insertion_point(field_set:match.MatchSpectatorRecord.state)
+}
+inline ::uint32_t MatchSpectatorRecord::_internal_state() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.state_;
+}
+inline void MatchSpectatorRecord::_internal_set_state(::uint32_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.state_ = value;
+}
+
+// bytes request_payload = 7;
+inline void MatchSpectatorRecord::clear_request_payload() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.request_payload_.ClearToEmpty();
+  ClearHasBit(_impl_._has_bits_[0], 0x00000008U);
+}
+inline const ::std::string& MatchSpectatorRecord::request_payload() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:match.MatchSpectatorRecord.request_payload)
+  return _internal_request_payload();
+}
+template <typename Arg_, typename... Args_>
+PROTOBUF_ALWAYS_INLINE void MatchSpectatorRecord::set_request_payload(Arg_&& arg, Args_... args) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  SetHasBit(_impl_._has_bits_[0], 0x00000008U);
+  _impl_.request_payload_.SetBytes(static_cast<Arg_&&>(arg), args..., GetArena());
+  // @@protoc_insertion_point(field_set:match.MatchSpectatorRecord.request_payload)
+}
+inline ::std::string* PROTOBUF_NONNULL MatchSpectatorRecord::mutable_request_payload()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  SetHasBit(_impl_._has_bits_[0], 0x00000008U);
+  ::std::string* _s = _internal_mutable_request_payload();
+  // @@protoc_insertion_point(field_mutable:match.MatchSpectatorRecord.request_payload)
+  return _s;
+}
+inline const ::std::string& MatchSpectatorRecord::_internal_request_payload() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.request_payload_.Get();
+}
+inline void MatchSpectatorRecord::_internal_set_request_payload(const ::std::string& value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.request_payload_.Set(value, GetArena());
+}
+inline ::std::string* PROTOBUF_NONNULL MatchSpectatorRecord::_internal_mutable_request_payload() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  return _impl_.request_payload_.Mutable( GetArena());
+}
+inline ::std::string* PROTOBUF_NULLABLE MatchSpectatorRecord::release_request_payload() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:match.MatchSpectatorRecord.request_payload)
+  if (!CheckHasBit(_impl_._has_bits_[0], 0x00000008U)) {
+    return nullptr;
+  }
+  ClearHasBit(_impl_._has_bits_[0], 0x00000008U);
+  auto* released = _impl_.request_payload_.Release();
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString()) {
+    _impl_.request_payload_.Set("", GetArena());
+  }
+  return released;
+}
+inline void MatchSpectatorRecord::set_allocated_request_payload(::std::string* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (value != nullptr) {
+    SetHasBit(_impl_._has_bits_[0], 0x00000008U);
+  } else {
+    ClearHasBit(_impl_._has_bits_[0], 0x00000008U);
+  }
+  _impl_.request_payload_.SetAllocated(value, GetArena());
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.request_payload_.IsDefault()) {
+    _impl_.request_payload_.Set("", GetArena());
+  }
+  // @@protoc_insertion_point(field_set_allocated:match.MatchSpectatorRecord.request_payload)
+}
+
+// string owner_account = 8;
+inline void MatchSpectatorRecord::clear_owner_account() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.owner_account_.ClearToEmpty();
+  ClearHasBit(_impl_._has_bits_[0], 0x00000010U);
+}
+inline const ::std::string& MatchSpectatorRecord::owner_account() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:match.MatchSpectatorRecord.owner_account)
+  return _internal_owner_account();
+}
+template <typename Arg_, typename... Args_>
+PROTOBUF_ALWAYS_INLINE void MatchSpectatorRecord::set_owner_account(Arg_&& arg, Args_... args) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  SetHasBit(_impl_._has_bits_[0], 0x00000010U);
+  _impl_.owner_account_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
+  // @@protoc_insertion_point(field_set:match.MatchSpectatorRecord.owner_account)
+}
+inline ::std::string* PROTOBUF_NONNULL MatchSpectatorRecord::mutable_owner_account()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  SetHasBit(_impl_._has_bits_[0], 0x00000010U);
+  ::std::string* _s = _internal_mutable_owner_account();
+  // @@protoc_insertion_point(field_mutable:match.MatchSpectatorRecord.owner_account)
+  return _s;
+}
+inline const ::std::string& MatchSpectatorRecord::_internal_owner_account() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.owner_account_.Get();
+}
+inline void MatchSpectatorRecord::_internal_set_owner_account(const ::std::string& value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.owner_account_.Set(value, GetArena());
+}
+inline ::std::string* PROTOBUF_NONNULL MatchSpectatorRecord::_internal_mutable_owner_account() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  return _impl_.owner_account_.Mutable( GetArena());
+}
+inline ::std::string* PROTOBUF_NULLABLE MatchSpectatorRecord::release_owner_account() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:match.MatchSpectatorRecord.owner_account)
+  if (!CheckHasBit(_impl_._has_bits_[0], 0x00000010U)) {
+    return nullptr;
+  }
+  ClearHasBit(_impl_._has_bits_[0], 0x00000010U);
+  auto* released = _impl_.owner_account_.Release();
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString()) {
+    _impl_.owner_account_.Set("", GetArena());
+  }
+  return released;
+}
+inline void MatchSpectatorRecord::set_allocated_owner_account(::std::string* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (value != nullptr) {
+    SetHasBit(_impl_._has_bits_[0], 0x00000010U);
+  } else {
+    ClearHasBit(_impl_._has_bits_[0], 0x00000010U);
+  }
+  _impl_.owner_account_.SetAllocated(value, GetArena());
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.owner_account_.IsDefault()) {
+    _impl_.owner_account_.Set("", GetArena());
+  }
+  // @@protoc_insertion_point(field_set_allocated:match.MatchSpectatorRecord.owner_account)
+}
+
+// uint64 owner_revision = 9;
+inline void MatchSpectatorRecord::clear_owner_revision() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.owner_revision_ = ::uint64_t{0u};
+  ClearHasBit(_impl_._has_bits_[0], 0x00000100U);
+}
+inline ::uint64_t MatchSpectatorRecord::owner_revision() const {
+  // @@protoc_insertion_point(field_get:match.MatchSpectatorRecord.owner_revision)
+  return _internal_owner_revision();
+}
+inline void MatchSpectatorRecord::set_owner_revision(::uint64_t value) {
+  _internal_set_owner_revision(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000100U);
+  // @@protoc_insertion_point(field_set:match.MatchSpectatorRecord.owner_revision)
+}
+inline ::uint64_t MatchSpectatorRecord::_internal_owner_revision() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.owner_revision_;
+}
+inline void MatchSpectatorRecord::_internal_set_owner_revision(::uint64_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.owner_revision_ = value;
+}
+
+// bytes add_request = 10;
+inline void MatchSpectatorRecord::clear_add_request() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.add_request_.ClearToEmpty();
+  ClearHasBit(_impl_._has_bits_[0], 0x00000020U);
+}
+inline const ::std::string& MatchSpectatorRecord::add_request() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:match.MatchSpectatorRecord.add_request)
+  return _internal_add_request();
+}
+template <typename Arg_, typename... Args_>
+PROTOBUF_ALWAYS_INLINE void MatchSpectatorRecord::set_add_request(Arg_&& arg, Args_... args) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  SetHasBit(_impl_._has_bits_[0], 0x00000020U);
+  _impl_.add_request_.SetBytes(static_cast<Arg_&&>(arg), args..., GetArena());
+  // @@protoc_insertion_point(field_set:match.MatchSpectatorRecord.add_request)
+}
+inline ::std::string* PROTOBUF_NONNULL MatchSpectatorRecord::mutable_add_request()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  SetHasBit(_impl_._has_bits_[0], 0x00000020U);
+  ::std::string* _s = _internal_mutable_add_request();
+  // @@protoc_insertion_point(field_mutable:match.MatchSpectatorRecord.add_request)
+  return _s;
+}
+inline const ::std::string& MatchSpectatorRecord::_internal_add_request() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.add_request_.Get();
+}
+inline void MatchSpectatorRecord::_internal_set_add_request(const ::std::string& value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.add_request_.Set(value, GetArena());
+}
+inline ::std::string* PROTOBUF_NONNULL MatchSpectatorRecord::_internal_mutable_add_request() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  return _impl_.add_request_.Mutable( GetArena());
+}
+inline ::std::string* PROTOBUF_NULLABLE MatchSpectatorRecord::release_add_request() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:match.MatchSpectatorRecord.add_request)
+  if (!CheckHasBit(_impl_._has_bits_[0], 0x00000020U)) {
+    return nullptr;
+  }
+  ClearHasBit(_impl_._has_bits_[0], 0x00000020U);
+  auto* released = _impl_.add_request_.Release();
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString()) {
+    _impl_.add_request_.Set("", GetArena());
+  }
+  return released;
+}
+inline void MatchSpectatorRecord::set_allocated_add_request(::std::string* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (value != nullptr) {
+    SetHasBit(_impl_._has_bits_[0], 0x00000020U);
+  } else {
+    ClearHasBit(_impl_._has_bits_[0], 0x00000020U);
+  }
+  _impl_.add_request_.SetAllocated(value, GetArena());
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.add_request_.IsDefault()) {
+    _impl_.add_request_.Set("", GetArena());
+  }
+  // @@protoc_insertion_point(field_set_allocated:match.MatchSpectatorRecord.add_request)
+}
+
+// uint64 updated_ms = 11;
+inline void MatchSpectatorRecord::clear_updated_ms() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.updated_ms_ = ::uint64_t{0u};
+  ClearHasBit(_impl_._has_bits_[0], 0x00000200U);
+}
+inline ::uint64_t MatchSpectatorRecord::updated_ms() const {
+  // @@protoc_insertion_point(field_get:match.MatchSpectatorRecord.updated_ms)
+  return _internal_updated_ms();
+}
+inline void MatchSpectatorRecord::set_updated_ms(::uint64_t value) {
+  _internal_set_updated_ms(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000200U);
+  // @@protoc_insertion_point(field_set:match.MatchSpectatorRecord.updated_ms)
+}
+inline ::uint64_t MatchSpectatorRecord::_internal_updated_ms() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.updated_ms_;
+}
+inline void MatchSpectatorRecord::_internal_set_updated_ms(::uint64_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.updated_ms_ = value;
+}
+
+// uint64 request_high = 12;
+inline void MatchSpectatorRecord::clear_request_high() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.request_high_ = ::uint64_t{0u};
+  ClearHasBit(_impl_._has_bits_[0], 0x00000400U);
+}
+inline ::uint64_t MatchSpectatorRecord::request_high() const {
+  // @@protoc_insertion_point(field_get:match.MatchSpectatorRecord.request_high)
+  return _internal_request_high();
+}
+inline void MatchSpectatorRecord::set_request_high(::uint64_t value) {
+  _internal_set_request_high(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000400U);
+  // @@protoc_insertion_point(field_set:match.MatchSpectatorRecord.request_high)
+}
+inline ::uint64_t MatchSpectatorRecord::_internal_request_high() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.request_high_;
+}
+inline void MatchSpectatorRecord::_internal_set_request_high(::uint64_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.request_high_ = value;
+}
+
+// uint64 request_low = 13;
+inline void MatchSpectatorRecord::clear_request_low() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.request_low_ = ::uint64_t{0u};
+  ClearHasBit(_impl_._has_bits_[0], 0x00000800U);
+}
+inline ::uint64_t MatchSpectatorRecord::request_low() const {
+  // @@protoc_insertion_point(field_get:match.MatchSpectatorRecord.request_low)
+  return _internal_request_low();
+}
+inline void MatchSpectatorRecord::set_request_low(::uint64_t value) {
+  _internal_set_request_low(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000800U);
+  // @@protoc_insertion_point(field_set:match.MatchSpectatorRecord.request_low)
+}
+inline ::uint64_t MatchSpectatorRecord::_internal_request_low() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.request_low_;
+}
+inline void MatchSpectatorRecord::_internal_set_request_low(::uint64_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.request_low_ = value;
+}
+
+// -------------------------------------------------------------------
+
+// MatchSpectatorIntentRecord
+
+// uint64 player_id = 1;
+inline void MatchSpectatorIntentRecord::clear_player_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.player_id_ = ::uint64_t{0u};
+  ClearHasBit(_impl_._has_bits_[0], 0x00000008U);
+}
+inline ::uint64_t MatchSpectatorIntentRecord::player_id() const {
+  // @@protoc_insertion_point(field_get:match.MatchSpectatorIntentRecord.player_id)
+  return _internal_player_id();
+}
+inline void MatchSpectatorIntentRecord::set_player_id(::uint64_t value) {
+  _internal_set_player_id(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000008U);
+  // @@protoc_insertion_point(field_set:match.MatchSpectatorIntentRecord.player_id)
+}
+inline ::uint64_t MatchSpectatorIntentRecord::_internal_player_id() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.player_id_;
+}
+inline void MatchSpectatorIntentRecord::_internal_set_player_id(::uint64_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.player_id_ = value;
+}
+
+// uint64 request_high = 2;
+inline void MatchSpectatorIntentRecord::clear_request_high() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.request_high_ = ::uint64_t{0u};
+  ClearHasBit(_impl_._has_bits_[0], 0x00000010U);
+}
+inline ::uint64_t MatchSpectatorIntentRecord::request_high() const {
+  // @@protoc_insertion_point(field_get:match.MatchSpectatorIntentRecord.request_high)
+  return _internal_request_high();
+}
+inline void MatchSpectatorIntentRecord::set_request_high(::uint64_t value) {
+  _internal_set_request_high(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000010U);
+  // @@protoc_insertion_point(field_set:match.MatchSpectatorIntentRecord.request_high)
+}
+inline ::uint64_t MatchSpectatorIntentRecord::_internal_request_high() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.request_high_;
+}
+inline void MatchSpectatorIntentRecord::_internal_set_request_high(::uint64_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.request_high_ = value;
+}
+
+// uint64 request_low = 3;
+inline void MatchSpectatorIntentRecord::clear_request_low() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.request_low_ = ::uint64_t{0u};
+  ClearHasBit(_impl_._has_bits_[0], 0x00000020U);
+}
+inline ::uint64_t MatchSpectatorIntentRecord::request_low() const {
+  // @@protoc_insertion_point(field_get:match.MatchSpectatorIntentRecord.request_low)
+  return _internal_request_low();
+}
+inline void MatchSpectatorIntentRecord::set_request_low(::uint64_t value) {
+  _internal_set_request_low(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000020U);
+  // @@protoc_insertion_point(field_set:match.MatchSpectatorIntentRecord.request_low)
+}
+inline ::uint64_t MatchSpectatorIntentRecord::_internal_request_low() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.request_low_;
+}
+inline void MatchSpectatorIntentRecord::_internal_set_request_low(::uint64_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.request_low_ = value;
+}
+
+// bytes original = 4;
+inline void MatchSpectatorIntentRecord::clear_original() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.original_.ClearToEmpty();
+  ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
+}
+inline const ::std::string& MatchSpectatorIntentRecord::original() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:match.MatchSpectatorIntentRecord.original)
+  return _internal_original();
+}
+template <typename Arg_, typename... Args_>
+PROTOBUF_ALWAYS_INLINE void MatchSpectatorIntentRecord::set_original(Arg_&& arg, Args_... args) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  _impl_.original_.SetBytes(static_cast<Arg_&&>(arg), args..., GetArena());
+  // @@protoc_insertion_point(field_set:match.MatchSpectatorIntentRecord.original)
+}
+inline ::std::string* PROTOBUF_NONNULL MatchSpectatorIntentRecord::mutable_original()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  ::std::string* _s = _internal_mutable_original();
+  // @@protoc_insertion_point(field_mutable:match.MatchSpectatorIntentRecord.original)
+  return _s;
+}
+inline const ::std::string& MatchSpectatorIntentRecord::_internal_original() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.original_.Get();
+}
+inline void MatchSpectatorIntentRecord::_internal_set_original(const ::std::string& value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.original_.Set(value, GetArena());
+}
+inline ::std::string* PROTOBUF_NONNULL MatchSpectatorIntentRecord::_internal_mutable_original() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  return _impl_.original_.Mutable( GetArena());
+}
+inline ::std::string* PROTOBUF_NULLABLE MatchSpectatorIntentRecord::release_original() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:match.MatchSpectatorIntentRecord.original)
+  if (!CheckHasBit(_impl_._has_bits_[0], 0x00000001U)) {
+    return nullptr;
+  }
+  ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
+  auto* released = _impl_.original_.Release();
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString()) {
+    _impl_.original_.Set("", GetArena());
+  }
+  return released;
+}
+inline void MatchSpectatorIntentRecord::set_allocated_original(::std::string* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (value != nullptr) {
+    SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  } else {
+    ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
+  }
+  _impl_.original_.SetAllocated(value, GetArena());
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.original_.IsDefault()) {
+    _impl_.original_.Set("", GetArena());
+  }
+  // @@protoc_insertion_point(field_set_allocated:match.MatchSpectatorIntentRecord.original)
+}
+
+// bytes request_payload = 5;
+inline void MatchSpectatorIntentRecord::clear_request_payload() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.request_payload_.ClearToEmpty();
+  ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
+}
+inline const ::std::string& MatchSpectatorIntentRecord::request_payload() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:match.MatchSpectatorIntentRecord.request_payload)
+  return _internal_request_payload();
+}
+template <typename Arg_, typename... Args_>
+PROTOBUF_ALWAYS_INLINE void MatchSpectatorIntentRecord::set_request_payload(Arg_&& arg, Args_... args) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  SetHasBit(_impl_._has_bits_[0], 0x00000002U);
+  _impl_.request_payload_.SetBytes(static_cast<Arg_&&>(arg), args..., GetArena());
+  // @@protoc_insertion_point(field_set:match.MatchSpectatorIntentRecord.request_payload)
+}
+inline ::std::string* PROTOBUF_NONNULL MatchSpectatorIntentRecord::mutable_request_payload()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  SetHasBit(_impl_._has_bits_[0], 0x00000002U);
+  ::std::string* _s = _internal_mutable_request_payload();
+  // @@protoc_insertion_point(field_mutable:match.MatchSpectatorIntentRecord.request_payload)
+  return _s;
+}
+inline const ::std::string& MatchSpectatorIntentRecord::_internal_request_payload() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.request_payload_.Get();
+}
+inline void MatchSpectatorIntentRecord::_internal_set_request_payload(const ::std::string& value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.request_payload_.Set(value, GetArena());
+}
+inline ::std::string* PROTOBUF_NONNULL MatchSpectatorIntentRecord::_internal_mutable_request_payload() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  return _impl_.request_payload_.Mutable( GetArena());
+}
+inline ::std::string* PROTOBUF_NULLABLE MatchSpectatorIntentRecord::release_request_payload() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:match.MatchSpectatorIntentRecord.request_payload)
+  if (!CheckHasBit(_impl_._has_bits_[0], 0x00000002U)) {
+    return nullptr;
+  }
+  ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
+  auto* released = _impl_.request_payload_.Release();
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString()) {
+    _impl_.request_payload_.Set("", GetArena());
+  }
+  return released;
+}
+inline void MatchSpectatorIntentRecord::set_allocated_request_payload(::std::string* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (value != nullptr) {
+    SetHasBit(_impl_._has_bits_[0], 0x00000002U);
+  } else {
+    ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
+  }
+  _impl_.request_payload_.SetAllocated(value, GetArena());
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.request_payload_.IsDefault()) {
+    _impl_.request_payload_.Set("", GetArena());
+  }
+  // @@protoc_insertion_point(field_set_allocated:match.MatchSpectatorIntentRecord.request_payload)
+}
+
+// string owner_account = 6;
+inline void MatchSpectatorIntentRecord::clear_owner_account() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.owner_account_.ClearToEmpty();
+  ClearHasBit(_impl_._has_bits_[0], 0x00000004U);
+}
+inline const ::std::string& MatchSpectatorIntentRecord::owner_account() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:match.MatchSpectatorIntentRecord.owner_account)
+  return _internal_owner_account();
+}
+template <typename Arg_, typename... Args_>
+PROTOBUF_ALWAYS_INLINE void MatchSpectatorIntentRecord::set_owner_account(Arg_&& arg, Args_... args) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  SetHasBit(_impl_._has_bits_[0], 0x00000004U);
+  _impl_.owner_account_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
+  // @@protoc_insertion_point(field_set:match.MatchSpectatorIntentRecord.owner_account)
+}
+inline ::std::string* PROTOBUF_NONNULL MatchSpectatorIntentRecord::mutable_owner_account()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  SetHasBit(_impl_._has_bits_[0], 0x00000004U);
+  ::std::string* _s = _internal_mutable_owner_account();
+  // @@protoc_insertion_point(field_mutable:match.MatchSpectatorIntentRecord.owner_account)
+  return _s;
+}
+inline const ::std::string& MatchSpectatorIntentRecord::_internal_owner_account() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.owner_account_.Get();
+}
+inline void MatchSpectatorIntentRecord::_internal_set_owner_account(const ::std::string& value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.owner_account_.Set(value, GetArena());
+}
+inline ::std::string* PROTOBUF_NONNULL MatchSpectatorIntentRecord::_internal_mutable_owner_account() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  return _impl_.owner_account_.Mutable( GetArena());
+}
+inline ::std::string* PROTOBUF_NULLABLE MatchSpectatorIntentRecord::release_owner_account() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:match.MatchSpectatorIntentRecord.owner_account)
+  if (!CheckHasBit(_impl_._has_bits_[0], 0x00000004U)) {
+    return nullptr;
+  }
+  ClearHasBit(_impl_._has_bits_[0], 0x00000004U);
+  auto* released = _impl_.owner_account_.Release();
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString()) {
+    _impl_.owner_account_.Set("", GetArena());
+  }
+  return released;
+}
+inline void MatchSpectatorIntentRecord::set_allocated_owner_account(::std::string* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (value != nullptr) {
+    SetHasBit(_impl_._has_bits_[0], 0x00000004U);
+  } else {
+    ClearHasBit(_impl_._has_bits_[0], 0x00000004U);
+  }
+  _impl_.owner_account_.SetAllocated(value, GetArena());
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.owner_account_.IsDefault()) {
+    _impl_.owner_account_.Set("", GetArena());
+  }
+  // @@protoc_insertion_point(field_set_allocated:match.MatchSpectatorIntentRecord.owner_account)
+}
+
+// uint64 owner_revision = 7;
+inline void MatchSpectatorIntentRecord::clear_owner_revision() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.owner_revision_ = ::uint64_t{0u};
+  ClearHasBit(_impl_._has_bits_[0], 0x00000040U);
+}
+inline ::uint64_t MatchSpectatorIntentRecord::owner_revision() const {
+  // @@protoc_insertion_point(field_get:match.MatchSpectatorIntentRecord.owner_revision)
+  return _internal_owner_revision();
+}
+inline void MatchSpectatorIntentRecord::set_owner_revision(::uint64_t value) {
+  _internal_set_owner_revision(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000040U);
+  // @@protoc_insertion_point(field_set:match.MatchSpectatorIntentRecord.owner_revision)
+}
+inline ::uint64_t MatchSpectatorIntentRecord::_internal_owner_revision() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.owner_revision_;
+}
+inline void MatchSpectatorIntentRecord::_internal_set_owner_revision(::uint64_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.owner_revision_ = value;
+}
+
+// uint32 state = 8;
+inline void MatchSpectatorIntentRecord::clear_state() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.state_ = 0u;
+  ClearHasBit(_impl_._has_bits_[0], 0x00000080U);
+}
+inline ::uint32_t MatchSpectatorIntentRecord::state() const {
+  // @@protoc_insertion_point(field_get:match.MatchSpectatorIntentRecord.state)
+  return _internal_state();
+}
+inline void MatchSpectatorIntentRecord::set_state(::uint32_t value) {
+  _internal_set_state(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000080U);
+  // @@protoc_insertion_point(field_set:match.MatchSpectatorIntentRecord.state)
+}
+inline ::uint32_t MatchSpectatorIntentRecord::_internal_state() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.state_;
+}
+inline void MatchSpectatorIntentRecord::_internal_set_state(::uint32_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.state_ = value;
+}
+
+// -------------------------------------------------------------------
+
+// MatchSpectatorHeadRecord
+
+// uint64 player_id = 1;
+inline void MatchSpectatorHeadRecord::clear_player_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.player_id_ = ::uint64_t{0u};
+  ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
+}
+inline ::uint64_t MatchSpectatorHeadRecord::player_id() const {
+  // @@protoc_insertion_point(field_get:match.MatchSpectatorHeadRecord.player_id)
+  return _internal_player_id();
+}
+inline void MatchSpectatorHeadRecord::set_player_id(::uint64_t value) {
+  _internal_set_player_id(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000002U);
+  // @@protoc_insertion_point(field_set:match.MatchSpectatorHeadRecord.player_id)
+}
+inline ::uint64_t MatchSpectatorHeadRecord::_internal_player_id() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.player_id_;
+}
+inline void MatchSpectatorHeadRecord::_internal_set_player_id(::uint64_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.player_id_ = value;
+}
+
+// string operation_id = 2;
+inline void MatchSpectatorHeadRecord::clear_operation_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.operation_id_.ClearToEmpty();
+  ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
+}
+inline const ::std::string& MatchSpectatorHeadRecord::operation_id() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:match.MatchSpectatorHeadRecord.operation_id)
+  return _internal_operation_id();
+}
+template <typename Arg_, typename... Args_>
+PROTOBUF_ALWAYS_INLINE void MatchSpectatorHeadRecord::set_operation_id(Arg_&& arg, Args_... args) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  _impl_.operation_id_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
+  // @@protoc_insertion_point(field_set:match.MatchSpectatorHeadRecord.operation_id)
+}
+inline ::std::string* PROTOBUF_NONNULL MatchSpectatorHeadRecord::mutable_operation_id()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  ::std::string* _s = _internal_mutable_operation_id();
+  // @@protoc_insertion_point(field_mutable:match.MatchSpectatorHeadRecord.operation_id)
+  return _s;
+}
+inline const ::std::string& MatchSpectatorHeadRecord::_internal_operation_id() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.operation_id_.Get();
+}
+inline void MatchSpectatorHeadRecord::_internal_set_operation_id(const ::std::string& value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.operation_id_.Set(value, GetArena());
+}
+inline ::std::string* PROTOBUF_NONNULL MatchSpectatorHeadRecord::_internal_mutable_operation_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  return _impl_.operation_id_.Mutable( GetArena());
+}
+inline ::std::string* PROTOBUF_NULLABLE MatchSpectatorHeadRecord::release_operation_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:match.MatchSpectatorHeadRecord.operation_id)
+  if (!CheckHasBit(_impl_._has_bits_[0], 0x00000001U)) {
+    return nullptr;
+  }
+  ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
+  auto* released = _impl_.operation_id_.Release();
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString()) {
+    _impl_.operation_id_.Set("", GetArena());
+  }
+  return released;
+}
+inline void MatchSpectatorHeadRecord::set_allocated_operation_id(::std::string* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (value != nullptr) {
+    SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  } else {
+    ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
+  }
+  _impl_.operation_id_.SetAllocated(value, GetArena());
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.operation_id_.IsDefault()) {
+    _impl_.operation_id_.Set("", GetArena());
+  }
+  // @@protoc_insertion_point(field_set_allocated:match.MatchSpectatorHeadRecord.operation_id)
+}
+
 // -------------------------------------------------------------------
 
 // MatchNetworkProfileRecord
@@ -4300,7 +7680,7 @@ inline void MatchNetworkProfileRecord::_internal_set_expires_ms(::uint64_t value
 inline void MatchAuthorityTicketRecord::clear_player_id() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.player_id_ = ::uint64_t{0u};
-  ClearHasBit(_impl_._has_bits_[0], 0x00000008U);
+  ClearHasBit(_impl_._has_bits_[0], 0x00000010U);
 }
 inline ::uint64_t MatchAuthorityTicketRecord::player_id() const {
   // @@protoc_insertion_point(field_get:match.MatchAuthorityTicketRecord.player_id)
@@ -4308,7 +7688,7 @@ inline ::uint64_t MatchAuthorityTicketRecord::player_id() const {
 }
 inline void MatchAuthorityTicketRecord::set_player_id(::uint64_t value) {
   _internal_set_player_id(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00000008U);
+  SetHasBit(_impl_._has_bits_[0], 0x00000010U);
   // @@protoc_insertion_point(field_set:match.MatchAuthorityTicketRecord.player_id)
 }
 inline ::uint64_t MatchAuthorityTicketRecord::_internal_player_id() const {
@@ -4452,7 +7832,7 @@ inline void MatchAuthorityTicketRecord::set_allocated_request_id(::std::string* 
 inline void MatchAuthorityTicketRecord::clear_mode() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.mode_ = 0u;
-  ClearHasBit(_impl_._has_bits_[0], 0x00000010U);
+  ClearHasBit(_impl_._has_bits_[0], 0x00000020U);
 }
 inline ::uint32_t MatchAuthorityTicketRecord::mode() const {
   // @@protoc_insertion_point(field_get:match.MatchAuthorityTicketRecord.mode)
@@ -4460,7 +7840,7 @@ inline ::uint32_t MatchAuthorityTicketRecord::mode() const {
 }
 inline void MatchAuthorityTicketRecord::set_mode(::uint32_t value) {
   _internal_set_mode(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00000010U);
+  SetHasBit(_impl_._has_bits_[0], 0x00000020U);
   // @@protoc_insertion_point(field_set:match.MatchAuthorityTicketRecord.mode)
 }
 inline ::uint32_t MatchAuthorityTicketRecord::_internal_mode() const {
@@ -4476,7 +7856,7 @@ inline void MatchAuthorityTicketRecord::_internal_set_mode(::uint32_t value) {
 inline void MatchAuthorityTicketRecord::clear_config_id() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.config_id_ = 0u;
-  ClearHasBit(_impl_._has_bits_[0], 0x00000020U);
+  ClearHasBit(_impl_._has_bits_[0], 0x00000040U);
 }
 inline ::uint32_t MatchAuthorityTicketRecord::config_id() const {
   // @@protoc_insertion_point(field_get:match.MatchAuthorityTicketRecord.config_id)
@@ -4484,7 +7864,7 @@ inline ::uint32_t MatchAuthorityTicketRecord::config_id() const {
 }
 inline void MatchAuthorityTicketRecord::set_config_id(::uint32_t value) {
   _internal_set_config_id(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00000020U);
+  SetHasBit(_impl_._has_bits_[0], 0x00000040U);
   // @@protoc_insertion_point(field_set:match.MatchAuthorityTicketRecord.config_id)
 }
 inline ::uint32_t MatchAuthorityTicketRecord::_internal_config_id() const {
@@ -4500,7 +7880,7 @@ inline void MatchAuthorityTicketRecord::_internal_set_config_id(::uint32_t value
 inline void MatchAuthorityTicketRecord::clear_team_size() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.team_size_ = 0u;
-  ClearHasBit(_impl_._has_bits_[0], 0x00000040U);
+  ClearHasBit(_impl_._has_bits_[0], 0x00000080U);
 }
 inline ::uint32_t MatchAuthorityTicketRecord::team_size() const {
   // @@protoc_insertion_point(field_get:match.MatchAuthorityTicketRecord.team_size)
@@ -4508,7 +7888,7 @@ inline ::uint32_t MatchAuthorityTicketRecord::team_size() const {
 }
 inline void MatchAuthorityTicketRecord::set_team_size(::uint32_t value) {
   _internal_set_team_size(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00000040U);
+  SetHasBit(_impl_._has_bits_[0], 0x00000080U);
   // @@protoc_insertion_point(field_set:match.MatchAuthorityTicketRecord.team_size)
 }
 inline ::uint32_t MatchAuthorityTicketRecord::_internal_team_size() const {
@@ -4524,7 +7904,7 @@ inline void MatchAuthorityTicketRecord::_internal_set_team_size(::uint32_t value
 inline void MatchAuthorityTicketRecord::clear_state() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.state_ = 0u;
-  ClearHasBit(_impl_._has_bits_[0], 0x00000080U);
+  ClearHasBit(_impl_._has_bits_[0], 0x00000100U);
 }
 inline ::uint32_t MatchAuthorityTicketRecord::state() const {
   // @@protoc_insertion_point(field_get:match.MatchAuthorityTicketRecord.state)
@@ -4532,7 +7912,7 @@ inline ::uint32_t MatchAuthorityTicketRecord::state() const {
 }
 inline void MatchAuthorityTicketRecord::set_state(::uint32_t value) {
   _internal_set_state(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00000080U);
+  SetHasBit(_impl_._has_bits_[0], 0x00000100U);
   // @@protoc_insertion_point(field_set:match.MatchAuthorityTicketRecord.state)
 }
 inline ::uint32_t MatchAuthorityTicketRecord::_internal_state() const {
@@ -4548,7 +7928,7 @@ inline void MatchAuthorityTicketRecord::_internal_set_state(::uint32_t value) {
 inline void MatchAuthorityTicketRecord::clear_enqueued_ms() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.enqueued_ms_ = ::uint64_t{0u};
-  ClearHasBit(_impl_._has_bits_[0], 0x00000100U);
+  ClearHasBit(_impl_._has_bits_[0], 0x00000200U);
 }
 inline ::uint64_t MatchAuthorityTicketRecord::enqueued_ms() const {
   // @@protoc_insertion_point(field_get:match.MatchAuthorityTicketRecord.enqueued_ms)
@@ -4556,7 +7936,7 @@ inline ::uint64_t MatchAuthorityTicketRecord::enqueued_ms() const {
 }
 inline void MatchAuthorityTicketRecord::set_enqueued_ms(::uint64_t value) {
   _internal_set_enqueued_ms(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00000100U);
+  SetHasBit(_impl_._has_bits_[0], 0x00000200U);
   // @@protoc_insertion_point(field_set:match.MatchAuthorityTicketRecord.enqueued_ms)
 }
 inline ::uint64_t MatchAuthorityTicketRecord::_internal_enqueued_ms() const {
@@ -4572,7 +7952,7 @@ inline void MatchAuthorityTicketRecord::_internal_set_enqueued_ms(::uint64_t val
 inline void MatchAuthorityTicketRecord::clear_not_before_ms() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.not_before_ms_ = ::uint64_t{0u};
-  ClearHasBit(_impl_._has_bits_[0], 0x00000200U);
+  ClearHasBit(_impl_._has_bits_[0], 0x00000400U);
 }
 inline ::uint64_t MatchAuthorityTicketRecord::not_before_ms() const {
   // @@protoc_insertion_point(field_get:match.MatchAuthorityTicketRecord.not_before_ms)
@@ -4580,7 +7960,7 @@ inline ::uint64_t MatchAuthorityTicketRecord::not_before_ms() const {
 }
 inline void MatchAuthorityTicketRecord::set_not_before_ms(::uint64_t value) {
   _internal_set_not_before_ms(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00000200U);
+  SetHasBit(_impl_._has_bits_[0], 0x00000400U);
   // @@protoc_insertion_point(field_set:match.MatchAuthorityTicketRecord.not_before_ms)
 }
 inline ::uint64_t MatchAuthorityTicketRecord::_internal_not_before_ms() const {
@@ -4596,7 +7976,7 @@ inline void MatchAuthorityTicketRecord::_internal_set_not_before_ms(::uint64_t v
 inline void MatchAuthorityTicketRecord::clear_zone_id() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.zone_id_ = 0u;
-  ClearHasBit(_impl_._has_bits_[0], 0x00002000U);
+  ClearHasBit(_impl_._has_bits_[0], 0x00004000U);
 }
 inline ::uint32_t MatchAuthorityTicketRecord::zone_id() const {
   // @@protoc_insertion_point(field_get:match.MatchAuthorityTicketRecord.zone_id)
@@ -4604,7 +7984,7 @@ inline ::uint32_t MatchAuthorityTicketRecord::zone_id() const {
 }
 inline void MatchAuthorityTicketRecord::set_zone_id(::uint32_t value) {
   _internal_set_zone_id(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00002000U);
+  SetHasBit(_impl_._has_bits_[0], 0x00004000U);
   // @@protoc_insertion_point(field_set:match.MatchAuthorityTicketRecord.zone_id)
 }
 inline ::uint32_t MatchAuthorityTicketRecord::_internal_zone_id() const {
@@ -4620,7 +8000,7 @@ inline void MatchAuthorityTicketRecord::_internal_set_zone_id(::uint32_t value) 
 inline void MatchAuthorityTicketRecord::clear_rating_centi() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.rating_centi_ = ::int64_t{0};
-  ClearHasBit(_impl_._has_bits_[0], 0x00000400U);
+  ClearHasBit(_impl_._has_bits_[0], 0x00000800U);
 }
 inline ::int64_t MatchAuthorityTicketRecord::rating_centi() const {
   // @@protoc_insertion_point(field_get:match.MatchAuthorityTicketRecord.rating_centi)
@@ -4628,7 +8008,7 @@ inline ::int64_t MatchAuthorityTicketRecord::rating_centi() const {
 }
 inline void MatchAuthorityTicketRecord::set_rating_centi(::int64_t value) {
   _internal_set_rating_centi(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00000400U);
+  SetHasBit(_impl_._has_bits_[0], 0x00000800U);
   // @@protoc_insertion_point(field_set:match.MatchAuthorityTicketRecord.rating_centi)
 }
 inline ::int64_t MatchAuthorityTicketRecord::_internal_rating_centi() const {
@@ -4644,7 +8024,7 @@ inline void MatchAuthorityTicketRecord::_internal_set_rating_centi(::int64_t val
 inline void MatchAuthorityTicketRecord::clear_formation_id() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.formation_id_ = ::uint64_t{0u};
-  ClearHasBit(_impl_._has_bits_[0], 0x00000800U);
+  ClearHasBit(_impl_._has_bits_[0], 0x00001000U);
 }
 inline ::uint64_t MatchAuthorityTicketRecord::formation_id() const {
   // @@protoc_insertion_point(field_get:match.MatchAuthorityTicketRecord.formation_id)
@@ -4652,7 +8032,7 @@ inline ::uint64_t MatchAuthorityTicketRecord::formation_id() const {
 }
 inline void MatchAuthorityTicketRecord::set_formation_id(::uint64_t value) {
   _internal_set_formation_id(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00000800U);
+  SetHasBit(_impl_._has_bits_[0], 0x00001000U);
   // @@protoc_insertion_point(field_set:match.MatchAuthorityTicketRecord.formation_id)
 }
 inline ::uint64_t MatchAuthorityTicketRecord::_internal_formation_id() const {
@@ -4668,7 +8048,7 @@ inline void MatchAuthorityTicketRecord::_internal_set_formation_id(::uint64_t va
 inline void MatchAuthorityTicketRecord::clear_team_id() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.team_id_ = ::uint64_t{0u};
-  ClearHasBit(_impl_._has_bits_[0], 0x00001000U);
+  ClearHasBit(_impl_._has_bits_[0], 0x00002000U);
 }
 inline ::uint64_t MatchAuthorityTicketRecord::team_id() const {
   // @@protoc_insertion_point(field_get:match.MatchAuthorityTicketRecord.team_id)
@@ -4676,7 +8056,7 @@ inline ::uint64_t MatchAuthorityTicketRecord::team_id() const {
 }
 inline void MatchAuthorityTicketRecord::set_team_id(::uint64_t value) {
   _internal_set_team_id(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00001000U);
+  SetHasBit(_impl_._has_bits_[0], 0x00002000U);
   // @@protoc_insertion_point(field_set:match.MatchAuthorityTicketRecord.team_id)
 }
 inline ::uint64_t MatchAuthorityTicketRecord::_internal_team_id() const {
@@ -4756,7 +8136,7 @@ inline void MatchAuthorityTicketRecord::set_allocated_network_profile(::std::str
 inline void MatchAuthorityTicketRecord::clear_expires_ms() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.expires_ms_ = ::uint64_t{0u};
-  ClearHasBit(_impl_._has_bits_[0], 0x00008000U);
+  ClearHasBit(_impl_._has_bits_[0], 0x00010000U);
 }
 inline ::uint64_t MatchAuthorityTicketRecord::expires_ms() const {
   // @@protoc_insertion_point(field_get:match.MatchAuthorityTicketRecord.expires_ms)
@@ -4764,7 +8144,7 @@ inline ::uint64_t MatchAuthorityTicketRecord::expires_ms() const {
 }
 inline void MatchAuthorityTicketRecord::set_expires_ms(::uint64_t value) {
   _internal_set_expires_ms(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00008000U);
+  SetHasBit(_impl_._has_bits_[0], 0x00010000U);
   // @@protoc_insertion_point(field_set:match.MatchAuthorityTicketRecord.expires_ms)
 }
 inline ::uint64_t MatchAuthorityTicketRecord::_internal_expires_ms() const {
@@ -4780,7 +8160,7 @@ inline void MatchAuthorityTicketRecord::_internal_set_expires_ms(::uint64_t valu
 inline void MatchAuthorityTicketRecord::clear_selected_region() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.selected_region_ = 0u;
-  ClearHasBit(_impl_._has_bits_[0], 0x00004000U);
+  ClearHasBit(_impl_._has_bits_[0], 0x00008000U);
 }
 inline ::uint32_t MatchAuthorityTicketRecord::selected_region() const {
   // @@protoc_insertion_point(field_get:match.MatchAuthorityTicketRecord.selected_region)
@@ -4788,7 +8168,7 @@ inline ::uint32_t MatchAuthorityTicketRecord::selected_region() const {
 }
 inline void MatchAuthorityTicketRecord::set_selected_region(::uint32_t value) {
   _internal_set_selected_region(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00004000U);
+  SetHasBit(_impl_._has_bits_[0], 0x00008000U);
   // @@protoc_insertion_point(field_set:match.MatchAuthorityTicketRecord.selected_region)
 }
 inline ::uint32_t MatchAuthorityTicketRecord::_internal_selected_region() const {
@@ -4800,6 +8180,450 @@ inline void MatchAuthorityTicketRecord::_internal_set_selected_region(::uint32_t
   _impl_.selected_region_ = value;
 }
 
+// uint32 preferred_region = 17;
+inline void MatchAuthorityTicketRecord::clear_preferred_region() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.preferred_region_ = 0u;
+  ClearHasBit(_impl_._has_bits_[0], 0x00040000U);
+}
+inline ::uint32_t MatchAuthorityTicketRecord::preferred_region() const {
+  // @@protoc_insertion_point(field_get:match.MatchAuthorityTicketRecord.preferred_region)
+  return _internal_preferred_region();
+}
+inline void MatchAuthorityTicketRecord::set_preferred_region(::uint32_t value) {
+  _internal_set_preferred_region(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00040000U);
+  // @@protoc_insertion_point(field_set:match.MatchAuthorityTicketRecord.preferred_region)
+}
+inline ::uint32_t MatchAuthorityTicketRecord::_internal_preferred_region() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.preferred_region_;
+}
+inline void MatchAuthorityTicketRecord::_internal_set_preferred_region(::uint32_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.preferred_region_ = value;
+}
+
+// string owner_account = 18;
+inline void MatchAuthorityTicketRecord::clear_owner_account() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.owner_account_.ClearToEmpty();
+  ClearHasBit(_impl_._has_bits_[0], 0x00000008U);
+}
+inline const ::std::string& MatchAuthorityTicketRecord::owner_account() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:match.MatchAuthorityTicketRecord.owner_account)
+  return _internal_owner_account();
+}
+template <typename Arg_, typename... Args_>
+PROTOBUF_ALWAYS_INLINE void MatchAuthorityTicketRecord::set_owner_account(Arg_&& arg, Args_... args) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  SetHasBit(_impl_._has_bits_[0], 0x00000008U);
+  _impl_.owner_account_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
+  // @@protoc_insertion_point(field_set:match.MatchAuthorityTicketRecord.owner_account)
+}
+inline ::std::string* PROTOBUF_NONNULL MatchAuthorityTicketRecord::mutable_owner_account()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  SetHasBit(_impl_._has_bits_[0], 0x00000008U);
+  ::std::string* _s = _internal_mutable_owner_account();
+  // @@protoc_insertion_point(field_mutable:match.MatchAuthorityTicketRecord.owner_account)
+  return _s;
+}
+inline const ::std::string& MatchAuthorityTicketRecord::_internal_owner_account() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.owner_account_.Get();
+}
+inline void MatchAuthorityTicketRecord::_internal_set_owner_account(const ::std::string& value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.owner_account_.Set(value, GetArena());
+}
+inline ::std::string* PROTOBUF_NONNULL MatchAuthorityTicketRecord::_internal_mutable_owner_account() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  return _impl_.owner_account_.Mutable( GetArena());
+}
+inline ::std::string* PROTOBUF_NULLABLE MatchAuthorityTicketRecord::release_owner_account() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:match.MatchAuthorityTicketRecord.owner_account)
+  if (!CheckHasBit(_impl_._has_bits_[0], 0x00000008U)) {
+    return nullptr;
+  }
+  ClearHasBit(_impl_._has_bits_[0], 0x00000008U);
+  auto* released = _impl_.owner_account_.Release();
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString()) {
+    _impl_.owner_account_.Set("", GetArena());
+  }
+  return released;
+}
+inline void MatchAuthorityTicketRecord::set_allocated_owner_account(::std::string* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (value != nullptr) {
+    SetHasBit(_impl_._has_bits_[0], 0x00000008U);
+  } else {
+    ClearHasBit(_impl_._has_bits_[0], 0x00000008U);
+  }
+  _impl_.owner_account_.SetAllocated(value, GetArena());
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.owner_account_.IsDefault()) {
+    _impl_.owner_account_.Set("", GetArena());
+  }
+  // @@protoc_insertion_point(field_set_allocated:match.MatchAuthorityTicketRecord.owner_account)
+}
+
+// uint64 owner_revision = 19;
+inline void MatchAuthorityTicketRecord::clear_owner_revision() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.owner_revision_ = ::uint64_t{0u};
+  ClearHasBit(_impl_._has_bits_[0], 0x00020000U);
+}
+inline ::uint64_t MatchAuthorityTicketRecord::owner_revision() const {
+  // @@protoc_insertion_point(field_get:match.MatchAuthorityTicketRecord.owner_revision)
+  return _internal_owner_revision();
+}
+inline void MatchAuthorityTicketRecord::set_owner_revision(::uint64_t value) {
+  _internal_set_owner_revision(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00020000U);
+  // @@protoc_insertion_point(field_set:match.MatchAuthorityTicketRecord.owner_revision)
+}
+inline ::uint64_t MatchAuthorityTicketRecord::_internal_owner_revision() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.owner_revision_;
+}
+inline void MatchAuthorityTicketRecord::_internal_set_owner_revision(::uint64_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.owner_revision_ = value;
+}
+
+// -------------------------------------------------------------------
+
+// MatchTicketRegionRecord
+
+// uint64 player_id = 1;
+inline void MatchTicketRegionRecord::clear_player_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.player_id_ = ::uint64_t{0u};
+  ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
+}
+inline ::uint64_t MatchTicketRegionRecord::player_id() const {
+  // @@protoc_insertion_point(field_get:match.MatchTicketRegionRecord.player_id)
+  return _internal_player_id();
+}
+inline void MatchTicketRegionRecord::set_player_id(::uint64_t value) {
+  _internal_set_player_id(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000002U);
+  // @@protoc_insertion_point(field_set:match.MatchTicketRegionRecord.player_id)
+}
+inline ::uint64_t MatchTicketRegionRecord::_internal_player_id() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.player_id_;
+}
+inline void MatchTicketRegionRecord::_internal_set_player_id(::uint64_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.player_id_ = value;
+}
+
+// uint32 physical_region = 2;
+inline void MatchTicketRegionRecord::clear_physical_region() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.physical_region_ = 0u;
+  ClearHasBit(_impl_._has_bits_[0], 0x00000004U);
+}
+inline ::uint32_t MatchTicketRegionRecord::physical_region() const {
+  // @@protoc_insertion_point(field_get:match.MatchTicketRegionRecord.physical_region)
+  return _internal_physical_region();
+}
+inline void MatchTicketRegionRecord::set_physical_region(::uint32_t value) {
+  _internal_set_physical_region(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000004U);
+  // @@protoc_insertion_point(field_set:match.MatchTicketRegionRecord.physical_region)
+}
+inline ::uint32_t MatchTicketRegionRecord::_internal_physical_region() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.physical_region_;
+}
+inline void MatchTicketRegionRecord::_internal_set_physical_region(::uint32_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.physical_region_ = value;
+}
+
+// string ticket = 3;
+inline void MatchTicketRegionRecord::clear_ticket() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.ticket_.ClearToEmpty();
+  ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
+}
+inline const ::std::string& MatchTicketRegionRecord::ticket() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:match.MatchTicketRegionRecord.ticket)
+  return _internal_ticket();
+}
+template <typename Arg_, typename... Args_>
+PROTOBUF_ALWAYS_INLINE void MatchTicketRegionRecord::set_ticket(Arg_&& arg, Args_... args) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  _impl_.ticket_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
+  // @@protoc_insertion_point(field_set:match.MatchTicketRegionRecord.ticket)
+}
+inline ::std::string* PROTOBUF_NONNULL MatchTicketRegionRecord::mutable_ticket()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  ::std::string* _s = _internal_mutable_ticket();
+  // @@protoc_insertion_point(field_mutable:match.MatchTicketRegionRecord.ticket)
+  return _s;
+}
+inline const ::std::string& MatchTicketRegionRecord::_internal_ticket() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.ticket_.Get();
+}
+inline void MatchTicketRegionRecord::_internal_set_ticket(const ::std::string& value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.ticket_.Set(value, GetArena());
+}
+inline ::std::string* PROTOBUF_NONNULL MatchTicketRegionRecord::_internal_mutable_ticket() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  return _impl_.ticket_.Mutable( GetArena());
+}
+inline ::std::string* PROTOBUF_NULLABLE MatchTicketRegionRecord::release_ticket() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:match.MatchTicketRegionRecord.ticket)
+  if (!CheckHasBit(_impl_._has_bits_[0], 0x00000001U)) {
+    return nullptr;
+  }
+  ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
+  auto* released = _impl_.ticket_.Release();
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString()) {
+    _impl_.ticket_.Set("", GetArena());
+  }
+  return released;
+}
+inline void MatchTicketRegionRecord::set_allocated_ticket(::std::string* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (value != nullptr) {
+    SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  } else {
+    ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
+  }
+  _impl_.ticket_.SetAllocated(value, GetArena());
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.ticket_.IsDefault()) {
+    _impl_.ticket_.Set("", GetArena());
+  }
+  // @@protoc_insertion_point(field_set_allocated:match.MatchTicketRegionRecord.ticket)
+}
+
+// uint32 mode = 4;
+inline void MatchTicketRegionRecord::clear_mode() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.mode_ = 0u;
+  ClearHasBit(_impl_._has_bits_[0], 0x00000008U);
+}
+inline ::uint32_t MatchTicketRegionRecord::mode() const {
+  // @@protoc_insertion_point(field_get:match.MatchTicketRegionRecord.mode)
+  return _internal_mode();
+}
+inline void MatchTicketRegionRecord::set_mode(::uint32_t value) {
+  _internal_set_mode(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000008U);
+  // @@protoc_insertion_point(field_set:match.MatchTicketRegionRecord.mode)
+}
+inline ::uint32_t MatchTicketRegionRecord::_internal_mode() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.mode_;
+}
+inline void MatchTicketRegionRecord::_internal_set_mode(::uint32_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.mode_ = value;
+}
+
+// uint32 config_id = 5;
+inline void MatchTicketRegionRecord::clear_config_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.config_id_ = 0u;
+  ClearHasBit(_impl_._has_bits_[0], 0x00000010U);
+}
+inline ::uint32_t MatchTicketRegionRecord::config_id() const {
+  // @@protoc_insertion_point(field_get:match.MatchTicketRegionRecord.config_id)
+  return _internal_config_id();
+}
+inline void MatchTicketRegionRecord::set_config_id(::uint32_t value) {
+  _internal_set_config_id(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000010U);
+  // @@protoc_insertion_point(field_set:match.MatchTicketRegionRecord.config_id)
+}
+inline ::uint32_t MatchTicketRegionRecord::_internal_config_id() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.config_id_;
+}
+inline void MatchTicketRegionRecord::_internal_set_config_id(::uint32_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.config_id_ = value;
+}
+
+// uint32 team_size = 6;
+inline void MatchTicketRegionRecord::clear_team_size() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.team_size_ = 0u;
+  ClearHasBit(_impl_._has_bits_[0], 0x00000020U);
+}
+inline ::uint32_t MatchTicketRegionRecord::team_size() const {
+  // @@protoc_insertion_point(field_get:match.MatchTicketRegionRecord.team_size)
+  return _internal_team_size();
+}
+inline void MatchTicketRegionRecord::set_team_size(::uint32_t value) {
+  _internal_set_team_size(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000020U);
+  // @@protoc_insertion_point(field_set:match.MatchTicketRegionRecord.team_size)
+}
+inline ::uint32_t MatchTicketRegionRecord::_internal_team_size() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.team_size_;
+}
+inline void MatchTicketRegionRecord::_internal_set_team_size(::uint32_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.team_size_ = value;
+}
+
+// uint32 preferred_region = 7;
+inline void MatchTicketRegionRecord::clear_preferred_region() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.preferred_region_ = 0u;
+  ClearHasBit(_impl_._has_bits_[0], 0x00000080U);
+}
+inline ::uint32_t MatchTicketRegionRecord::preferred_region() const {
+  // @@protoc_insertion_point(field_get:match.MatchTicketRegionRecord.preferred_region)
+  return _internal_preferred_region();
+}
+inline void MatchTicketRegionRecord::set_preferred_region(::uint32_t value) {
+  _internal_set_preferred_region(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000080U);
+  // @@protoc_insertion_point(field_set:match.MatchTicketRegionRecord.preferred_region)
+}
+inline ::uint32_t MatchTicketRegionRecord::_internal_preferred_region() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.preferred_region_;
+}
+inline void MatchTicketRegionRecord::_internal_set_preferred_region(::uint32_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.preferred_region_ = value;
+}
+
+// uint64 enqueued_ms = 8;
+inline void MatchTicketRegionRecord::clear_enqueued_ms() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.enqueued_ms_ = ::uint64_t{0u};
+  ClearHasBit(_impl_._has_bits_[0], 0x00000040U);
+}
+inline ::uint64_t MatchTicketRegionRecord::enqueued_ms() const {
+  // @@protoc_insertion_point(field_get:match.MatchTicketRegionRecord.enqueued_ms)
+  return _internal_enqueued_ms();
+}
+inline void MatchTicketRegionRecord::set_enqueued_ms(::uint64_t value) {
+  _internal_set_enqueued_ms(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000040U);
+  // @@protoc_insertion_point(field_set:match.MatchTicketRegionRecord.enqueued_ms)
+}
+inline ::uint64_t MatchTicketRegionRecord::_internal_enqueued_ms() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.enqueued_ms_;
+}
+inline void MatchTicketRegionRecord::_internal_set_enqueued_ms(::uint64_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.enqueued_ms_ = value;
+}
+
+// int64 rating_centi = 9;
+inline void MatchTicketRegionRecord::clear_rating_centi() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.rating_centi_ = ::int64_t{0};
+  ClearHasBit(_impl_._has_bits_[0], 0x00000200U);
+}
+inline ::int64_t MatchTicketRegionRecord::rating_centi() const {
+  // @@protoc_insertion_point(field_get:match.MatchTicketRegionRecord.rating_centi)
+  return _internal_rating_centi();
+}
+inline void MatchTicketRegionRecord::set_rating_centi(::int64_t value) {
+  _internal_set_rating_centi(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000200U);
+  // @@protoc_insertion_point(field_set:match.MatchTicketRegionRecord.rating_centi)
+}
+inline ::int64_t MatchTicketRegionRecord::_internal_rating_centi() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.rating_centi_;
+}
+inline void MatchTicketRegionRecord::_internal_set_rating_centi(::int64_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.rating_centi_ = value;
+}
+
+// uint32 rtt_ms = 10;
+inline void MatchTicketRegionRecord::clear_rtt_ms() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.rtt_ms_ = 0u;
+  ClearHasBit(_impl_._has_bits_[0], 0x00000100U);
+}
+inline ::uint32_t MatchTicketRegionRecord::rtt_ms() const {
+  // @@protoc_insertion_point(field_get:match.MatchTicketRegionRecord.rtt_ms)
+  return _internal_rtt_ms();
+}
+inline void MatchTicketRegionRecord::set_rtt_ms(::uint32_t value) {
+  _internal_set_rtt_ms(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000100U);
+  // @@protoc_insertion_point(field_set:match.MatchTicketRegionRecord.rtt_ms)
+}
+inline ::uint32_t MatchTicketRegionRecord::_internal_rtt_ms() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.rtt_ms_;
+}
+inline void MatchTicketRegionRecord::_internal_set_rtt_ms(::uint32_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.rtt_ms_ = value;
+}
+
+// uint64 expires_ms = 11;
+inline void MatchTicketRegionRecord::clear_expires_ms() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.expires_ms_ = ::uint64_t{0u};
+  ClearHasBit(_impl_._has_bits_[0], 0x00000400U);
+}
+inline ::uint64_t MatchTicketRegionRecord::expires_ms() const {
+  // @@protoc_insertion_point(field_get:match.MatchTicketRegionRecord.expires_ms)
+  return _internal_expires_ms();
+}
+inline void MatchTicketRegionRecord::set_expires_ms(::uint64_t value) {
+  _internal_set_expires_ms(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000400U);
+  // @@protoc_insertion_point(field_set:match.MatchTicketRegionRecord.expires_ms)
+}
+inline ::uint64_t MatchTicketRegionRecord::_internal_expires_ms() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.expires_ms_;
+}
+inline void MatchTicketRegionRecord::_internal_set_expires_ms(::uint64_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.expires_ms_ = value;
+}
+
+// uint32 home_zone = 12;
+inline void MatchTicketRegionRecord::clear_home_zone() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.home_zone_ = 0u;
+  ClearHasBit(_impl_._has_bits_[0], 0x00000800U);
+}
+inline ::uint32_t MatchTicketRegionRecord::home_zone() const {
+  // @@protoc_insertion_point(field_get:match.MatchTicketRegionRecord.home_zone)
+  return _internal_home_zone();
+}
+inline void MatchTicketRegionRecord::set_home_zone(::uint32_t value) {
+  _internal_set_home_zone(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000800U);
+  // @@protoc_insertion_point(field_set:match.MatchTicketRegionRecord.home_zone)
+}
+inline ::uint32_t MatchTicketRegionRecord::_internal_home_zone() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.home_zone_;
+}
+inline void MatchTicketRegionRecord::_internal_set_home_zone(::uint32_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.home_zone_ = value;
+}
+
 // -------------------------------------------------------------------
 
 // MatchJoinIntentRecord
@@ -4808,7 +8632,7 @@ inline void MatchAuthorityTicketRecord::_internal_set_selected_region(::uint32_t
 inline void MatchJoinIntentRecord::clear_player_id() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.player_id_ = ::uint64_t{0u};
-  ClearHasBit(_impl_._has_bits_[0], 0x00000004U);
+  ClearHasBit(_impl_._has_bits_[0], 0x00000020U);
 }
 inline ::uint64_t MatchJoinIntentRecord::player_id() const {
   // @@protoc_insertion_point(field_get:match.MatchJoinIntentRecord.player_id)
@@ -4816,7 +8640,7 @@ inline ::uint64_t MatchJoinIntentRecord::player_id() const {
 }
 inline void MatchJoinIntentRecord::set_player_id(::uint64_t value) {
   _internal_set_player_id(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00000004U);
+  SetHasBit(_impl_._has_bits_[0], 0x00000020U);
   // @@protoc_insertion_point(field_set:match.MatchJoinIntentRecord.player_id)
 }
 inline ::uint64_t MatchJoinIntentRecord::_internal_player_id() const {
@@ -4960,7 +8784,7 @@ inline void MatchJoinIntentRecord::set_allocated_ticket_record(::std::string* PR
 inline void MatchJoinIntentRecord::clear_cancelled() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.cancelled_ = false;
-  ClearHasBit(_impl_._has_bits_[0], 0x00000020U);
+  ClearHasBit(_impl_._has_bits_[0], 0x00000200U);
 }
 inline bool MatchJoinIntentRecord::cancelled() const {
   // @@protoc_insertion_point(field_get:match.MatchJoinIntentRecord.cancelled)
@@ -4968,7 +8792,7 @@ inline bool MatchJoinIntentRecord::cancelled() const {
 }
 inline void MatchJoinIntentRecord::set_cancelled(bool value) {
   _internal_set_cancelled(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00000020U);
+  SetHasBit(_impl_._has_bits_[0], 0x00000200U);
   // @@protoc_insertion_point(field_set:match.MatchJoinIntentRecord.cancelled)
 }
 inline bool MatchJoinIntentRecord::_internal_cancelled() const {
@@ -4984,7 +8808,7 @@ inline void MatchJoinIntentRecord::_internal_set_cancelled(bool value) {
 inline void MatchJoinIntentRecord::clear_request_high() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.request_high_ = ::uint64_t{0u};
-  ClearHasBit(_impl_._has_bits_[0], 0x00000008U);
+  ClearHasBit(_impl_._has_bits_[0], 0x00000040U);
 }
 inline ::uint64_t MatchJoinIntentRecord::request_high() const {
   // @@protoc_insertion_point(field_get:match.MatchJoinIntentRecord.request_high)
@@ -4992,7 +8816,7 @@ inline ::uint64_t MatchJoinIntentRecord::request_high() const {
 }
 inline void MatchJoinIntentRecord::set_request_high(::uint64_t value) {
   _internal_set_request_high(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00000008U);
+  SetHasBit(_impl_._has_bits_[0], 0x00000040U);
   // @@protoc_insertion_point(field_set:match.MatchJoinIntentRecord.request_high)
 }
 inline ::uint64_t MatchJoinIntentRecord::_internal_request_high() const {
@@ -5008,7 +8832,7 @@ inline void MatchJoinIntentRecord::_internal_set_request_high(::uint64_t value) 
 inline void MatchJoinIntentRecord::clear_request_low() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.request_low_ = ::uint64_t{0u};
-  ClearHasBit(_impl_._has_bits_[0], 0x00000010U);
+  ClearHasBit(_impl_._has_bits_[0], 0x00000080U);
 }
 inline ::uint64_t MatchJoinIntentRecord::request_low() const {
   // @@protoc_insertion_point(field_get:match.MatchJoinIntentRecord.request_low)
@@ -5016,7 +8840,7 @@ inline ::uint64_t MatchJoinIntentRecord::request_low() const {
 }
 inline void MatchJoinIntentRecord::set_request_low(::uint64_t value) {
   _internal_set_request_low(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00000010U);
+  SetHasBit(_impl_._has_bits_[0], 0x00000080U);
   // @@protoc_insertion_point(field_set:match.MatchJoinIntentRecord.request_low)
 }
 inline ::uint64_t MatchJoinIntentRecord::_internal_request_low() const {
@@ -5028,6 +8852,270 @@ inline void MatchJoinIntentRecord::_internal_set_request_low(::uint64_t value) {
   _impl_.request_low_ = value;
 }
 
+// string owner_account = 7;
+inline void MatchJoinIntentRecord::clear_owner_account() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.owner_account_.ClearToEmpty();
+  ClearHasBit(_impl_._has_bits_[0], 0x00000004U);
+}
+inline const ::std::string& MatchJoinIntentRecord::owner_account() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:match.MatchJoinIntentRecord.owner_account)
+  return _internal_owner_account();
+}
+template <typename Arg_, typename... Args_>
+PROTOBUF_ALWAYS_INLINE void MatchJoinIntentRecord::set_owner_account(Arg_&& arg, Args_... args) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  SetHasBit(_impl_._has_bits_[0], 0x00000004U);
+  _impl_.owner_account_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
+  // @@protoc_insertion_point(field_set:match.MatchJoinIntentRecord.owner_account)
+}
+inline ::std::string* PROTOBUF_NONNULL MatchJoinIntentRecord::mutable_owner_account()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  SetHasBit(_impl_._has_bits_[0], 0x00000004U);
+  ::std::string* _s = _internal_mutable_owner_account();
+  // @@protoc_insertion_point(field_mutable:match.MatchJoinIntentRecord.owner_account)
+  return _s;
+}
+inline const ::std::string& MatchJoinIntentRecord::_internal_owner_account() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.owner_account_.Get();
+}
+inline void MatchJoinIntentRecord::_internal_set_owner_account(const ::std::string& value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.owner_account_.Set(value, GetArena());
+}
+inline ::std::string* PROTOBUF_NONNULL MatchJoinIntentRecord::_internal_mutable_owner_account() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  return _impl_.owner_account_.Mutable( GetArena());
+}
+inline ::std::string* PROTOBUF_NULLABLE MatchJoinIntentRecord::release_owner_account() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:match.MatchJoinIntentRecord.owner_account)
+  if (!CheckHasBit(_impl_._has_bits_[0], 0x00000004U)) {
+    return nullptr;
+  }
+  ClearHasBit(_impl_._has_bits_[0], 0x00000004U);
+  auto* released = _impl_.owner_account_.Release();
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString()) {
+    _impl_.owner_account_.Set("", GetArena());
+  }
+  return released;
+}
+inline void MatchJoinIntentRecord::set_allocated_owner_account(::std::string* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (value != nullptr) {
+    SetHasBit(_impl_._has_bits_[0], 0x00000004U);
+  } else {
+    ClearHasBit(_impl_._has_bits_[0], 0x00000004U);
+  }
+  _impl_.owner_account_.SetAllocated(value, GetArena());
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.owner_account_.IsDefault()) {
+    _impl_.owner_account_.Set("", GetArena());
+  }
+  // @@protoc_insertion_point(field_set_allocated:match.MatchJoinIntentRecord.owner_account)
+}
+
+// uint64 owner_revision = 8;
+inline void MatchJoinIntentRecord::clear_owner_revision() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.owner_revision_ = ::uint64_t{0u};
+  ClearHasBit(_impl_._has_bits_[0], 0x00000100U);
+}
+inline ::uint64_t MatchJoinIntentRecord::owner_revision() const {
+  // @@protoc_insertion_point(field_get:match.MatchJoinIntentRecord.owner_revision)
+  return _internal_owner_revision();
+}
+inline void MatchJoinIntentRecord::set_owner_revision(::uint64_t value) {
+  _internal_set_owner_revision(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000100U);
+  // @@protoc_insertion_point(field_set:match.MatchJoinIntentRecord.owner_revision)
+}
+inline ::uint64_t MatchJoinIntentRecord::_internal_owner_revision() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.owner_revision_;
+}
+inline void MatchJoinIntentRecord::_internal_set_owner_revision(::uint64_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.owner_revision_ = value;
+}
+
+// bytes spectator_exit = 9;
+inline void MatchJoinIntentRecord::clear_spectator_exit() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.spectator_exit_.ClearToEmpty();
+  ClearHasBit(_impl_._has_bits_[0], 0x00000008U);
+}
+inline const ::std::string& MatchJoinIntentRecord::spectator_exit() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:match.MatchJoinIntentRecord.spectator_exit)
+  return _internal_spectator_exit();
+}
+template <typename Arg_, typename... Args_>
+PROTOBUF_ALWAYS_INLINE void MatchJoinIntentRecord::set_spectator_exit(Arg_&& arg, Args_... args) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  SetHasBit(_impl_._has_bits_[0], 0x00000008U);
+  _impl_.spectator_exit_.SetBytes(static_cast<Arg_&&>(arg), args..., GetArena());
+  // @@protoc_insertion_point(field_set:match.MatchJoinIntentRecord.spectator_exit)
+}
+inline ::std::string* PROTOBUF_NONNULL MatchJoinIntentRecord::mutable_spectator_exit()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  SetHasBit(_impl_._has_bits_[0], 0x00000008U);
+  ::std::string* _s = _internal_mutable_spectator_exit();
+  // @@protoc_insertion_point(field_mutable:match.MatchJoinIntentRecord.spectator_exit)
+  return _s;
+}
+inline const ::std::string& MatchJoinIntentRecord::_internal_spectator_exit() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.spectator_exit_.Get();
+}
+inline void MatchJoinIntentRecord::_internal_set_spectator_exit(const ::std::string& value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.spectator_exit_.Set(value, GetArena());
+}
+inline ::std::string* PROTOBUF_NONNULL MatchJoinIntentRecord::_internal_mutable_spectator_exit() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  return _impl_.spectator_exit_.Mutable( GetArena());
+}
+inline ::std::string* PROTOBUF_NULLABLE MatchJoinIntentRecord::release_spectator_exit() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:match.MatchJoinIntentRecord.spectator_exit)
+  if (!CheckHasBit(_impl_._has_bits_[0], 0x00000008U)) {
+    return nullptr;
+  }
+  ClearHasBit(_impl_._has_bits_[0], 0x00000008U);
+  auto* released = _impl_.spectator_exit_.Release();
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString()) {
+    _impl_.spectator_exit_.Set("", GetArena());
+  }
+  return released;
+}
+inline void MatchJoinIntentRecord::set_allocated_spectator_exit(::std::string* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (value != nullptr) {
+    SetHasBit(_impl_._has_bits_[0], 0x00000008U);
+  } else {
+    ClearHasBit(_impl_._has_bits_[0], 0x00000008U);
+  }
+  _impl_.spectator_exit_.SetAllocated(value, GetArena());
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.spectator_exit_.IsDefault()) {
+    _impl_.spectator_exit_.Set("", GetArena());
+  }
+  // @@protoc_insertion_point(field_set_allocated:match.MatchJoinIntentRecord.spectator_exit)
+}
+
+// bool exit_prepared = 10;
+inline void MatchJoinIntentRecord::clear_exit_prepared() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.exit_prepared_ = false;
+  ClearHasBit(_impl_._has_bits_[0], 0x00000400U);
+}
+inline bool MatchJoinIntentRecord::exit_prepared() const {
+  // @@protoc_insertion_point(field_get:match.MatchJoinIntentRecord.exit_prepared)
+  return _internal_exit_prepared();
+}
+inline void MatchJoinIntentRecord::set_exit_prepared(bool value) {
+  _internal_set_exit_prepared(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000400U);
+  // @@protoc_insertion_point(field_set:match.MatchJoinIntentRecord.exit_prepared)
+}
+inline bool MatchJoinIntentRecord::_internal_exit_prepared() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.exit_prepared_;
+}
+inline void MatchJoinIntentRecord::_internal_set_exit_prepared(bool value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.exit_prepared_ = value;
+}
+
+// bytes request_payload = 11;
+inline void MatchJoinIntentRecord::clear_request_payload() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.request_payload_.ClearToEmpty();
+  ClearHasBit(_impl_._has_bits_[0], 0x00000010U);
+}
+inline const ::std::string& MatchJoinIntentRecord::request_payload() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:match.MatchJoinIntentRecord.request_payload)
+  return _internal_request_payload();
+}
+template <typename Arg_, typename... Args_>
+PROTOBUF_ALWAYS_INLINE void MatchJoinIntentRecord::set_request_payload(Arg_&& arg, Args_... args) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  SetHasBit(_impl_._has_bits_[0], 0x00000010U);
+  _impl_.request_payload_.SetBytes(static_cast<Arg_&&>(arg), args..., GetArena());
+  // @@protoc_insertion_point(field_set:match.MatchJoinIntentRecord.request_payload)
+}
+inline ::std::string* PROTOBUF_NONNULL MatchJoinIntentRecord::mutable_request_payload()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  SetHasBit(_impl_._has_bits_[0], 0x00000010U);
+  ::std::string* _s = _internal_mutable_request_payload();
+  // @@protoc_insertion_point(field_mutable:match.MatchJoinIntentRecord.request_payload)
+  return _s;
+}
+inline const ::std::string& MatchJoinIntentRecord::_internal_request_payload() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.request_payload_.Get();
+}
+inline void MatchJoinIntentRecord::_internal_set_request_payload(const ::std::string& value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.request_payload_.Set(value, GetArena());
+}
+inline ::std::string* PROTOBUF_NONNULL MatchJoinIntentRecord::_internal_mutable_request_payload() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  return _impl_.request_payload_.Mutable( GetArena());
+}
+inline ::std::string* PROTOBUF_NULLABLE MatchJoinIntentRecord::release_request_payload() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:match.MatchJoinIntentRecord.request_payload)
+  if (!CheckHasBit(_impl_._has_bits_[0], 0x00000010U)) {
+    return nullptr;
+  }
+  ClearHasBit(_impl_._has_bits_[0], 0x00000010U);
+  auto* released = _impl_.request_payload_.Release();
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString()) {
+    _impl_.request_payload_.Set("", GetArena());
+  }
+  return released;
+}
+inline void MatchJoinIntentRecord::set_allocated_request_payload(::std::string* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (value != nullptr) {
+    SetHasBit(_impl_._has_bits_[0], 0x00000010U);
+  } else {
+    ClearHasBit(_impl_._has_bits_[0], 0x00000010U);
+  }
+  _impl_.request_payload_.SetAllocated(value, GetArena());
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.request_payload_.IsDefault()) {
+    _impl_.request_payload_.Set("", GetArena());
+  }
+  // @@protoc_insertion_point(field_set_allocated:match.MatchJoinIntentRecord.request_payload)
+}
+
+// uint32 state = 12;
+inline void MatchJoinIntentRecord::clear_state() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.state_ = 0u;
+  ClearHasBit(_impl_._has_bits_[0], 0x00000800U);
+}
+inline ::uint32_t MatchJoinIntentRecord::state() const {
+  // @@protoc_insertion_point(field_get:match.MatchJoinIntentRecord.state)
+  return _internal_state();
+}
+inline void MatchJoinIntentRecord::set_state(::uint32_t value) {
+  _internal_set_state(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000800U);
+  // @@protoc_insertion_point(field_set:match.MatchJoinIntentRecord.state)
+}
+inline ::uint32_t MatchJoinIntentRecord::_internal_state() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.state_;
+}
+inline void MatchJoinIntentRecord::_internal_set_state(::uint32_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.state_ = value;
+}
+
 // -------------------------------------------------------------------
 
 // MatchDirectIntentRecord
@@ -5036,7 +9124,7 @@ inline void MatchJoinIntentRecord::_internal_set_request_low(::uint64_t value) {
 inline void MatchDirectIntentRecord::clear_kind() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.kind_ = 0u;
-  ClearHasBit(_impl_._has_bits_[0], 0x00000020U);
+  ClearHasBit(_impl_._has_bits_[0], 0x00000100U);
 }
 inline ::uint32_t MatchDirectIntentRecord::kind() const {
   // @@protoc_insertion_point(field_get:match.MatchDirectIntentRecord.kind)
@@ -5044,7 +9132,7 @@ inline ::uint32_t MatchDirectIntentRecord::kind() const {
 }
 inline void MatchDirectIntentRecord::set_kind(::uint32_t value) {
   _internal_set_kind(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00000020U);
+  SetHasBit(_impl_._has_bits_[0], 0x00000100U);
   // @@protoc_insertion_point(field_set:match.MatchDirectIntentRecord.kind)
 }
 inline ::uint32_t MatchDirectIntentRecord::_internal_kind() const {
@@ -5060,7 +9148,7 @@ inline void MatchDirectIntentRecord::_internal_set_kind(::uint32_t value) {
 inline void MatchDirectIntentRecord::clear_owner_id() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.owner_id_ = ::uint64_t{0u};
-  ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
+  ClearHasBit(_impl_._has_bits_[0], 0x00000010U);
 }
 inline ::uint64_t MatchDirectIntentRecord::owner_id() const {
   // @@protoc_insertion_point(field_get:match.MatchDirectIntentRecord.owner_id)
@@ -5068,7 +9156,7 @@ inline ::uint64_t MatchDirectIntentRecord::owner_id() const {
 }
 inline void MatchDirectIntentRecord::set_owner_id(::uint64_t value) {
   _internal_set_owner_id(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00000002U);
+  SetHasBit(_impl_._has_bits_[0], 0x00000010U);
   // @@protoc_insertion_point(field_set:match.MatchDirectIntentRecord.owner_id)
 }
 inline ::uint64_t MatchDirectIntentRecord::_internal_owner_id() const {
@@ -5084,7 +9172,7 @@ inline void MatchDirectIntentRecord::_internal_set_owner_id(::uint64_t value) {
 inline void MatchDirectIntentRecord::clear_request_high() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.request_high_ = ::uint64_t{0u};
-  ClearHasBit(_impl_._has_bits_[0], 0x00000004U);
+  ClearHasBit(_impl_._has_bits_[0], 0x00000020U);
 }
 inline ::uint64_t MatchDirectIntentRecord::request_high() const {
   // @@protoc_insertion_point(field_get:match.MatchDirectIntentRecord.request_high)
@@ -5092,7 +9180,7 @@ inline ::uint64_t MatchDirectIntentRecord::request_high() const {
 }
 inline void MatchDirectIntentRecord::set_request_high(::uint64_t value) {
   _internal_set_request_high(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00000004U);
+  SetHasBit(_impl_._has_bits_[0], 0x00000020U);
   // @@protoc_insertion_point(field_set:match.MatchDirectIntentRecord.request_high)
 }
 inline ::uint64_t MatchDirectIntentRecord::_internal_request_high() const {
@@ -5108,7 +9196,7 @@ inline void MatchDirectIntentRecord::_internal_set_request_high(::uint64_t value
 inline void MatchDirectIntentRecord::clear_request_low() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.request_low_ = ::uint64_t{0u};
-  ClearHasBit(_impl_._has_bits_[0], 0x00000008U);
+  ClearHasBit(_impl_._has_bits_[0], 0x00000040U);
 }
 inline ::uint64_t MatchDirectIntentRecord::request_low() const {
   // @@protoc_insertion_point(field_get:match.MatchDirectIntentRecord.request_low)
@@ -5116,7 +9204,7 @@ inline ::uint64_t MatchDirectIntentRecord::request_low() const {
 }
 inline void MatchDirectIntentRecord::set_request_low(::uint64_t value) {
   _internal_set_request_low(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00000008U);
+  SetHasBit(_impl_._has_bits_[0], 0x00000040U);
   // @@protoc_insertion_point(field_set:match.MatchDirectIntentRecord.request_low)
 }
 inline ::uint64_t MatchDirectIntentRecord::_internal_request_low() const {
@@ -5132,7 +9220,7 @@ inline void MatchDirectIntentRecord::_internal_set_request_low(::uint64_t value)
 inline void MatchDirectIntentRecord::clear_payload() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.payload_.ClearToEmpty();
-  ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
+  ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
 }
 inline const ::std::string& MatchDirectIntentRecord::payload() const
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
@@ -5142,13 +9230,13 @@ inline const ::std::string& MatchDirectIntentRecord::payload() const
 template <typename Arg_, typename... Args_>
 PROTOBUF_ALWAYS_INLINE void MatchDirectIntentRecord::set_payload(Arg_&& arg, Args_... args) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  SetHasBit(_impl_._has_bits_[0], 0x00000002U);
   _impl_.payload_.SetBytes(static_cast<Arg_&&>(arg), args..., GetArena());
   // @@protoc_insertion_point(field_set:match.MatchDirectIntentRecord.payload)
 }
 inline ::std::string* PROTOBUF_NONNULL MatchDirectIntentRecord::mutable_payload()
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  SetHasBit(_impl_._has_bits_[0], 0x00000002U);
   ::std::string* _s = _internal_mutable_payload();
   // @@protoc_insertion_point(field_mutable:match.MatchDirectIntentRecord.payload)
   return _s;
@@ -5168,10 +9256,10 @@ inline ::std::string* PROTOBUF_NONNULL MatchDirectIntentRecord::_internal_mutabl
 inline ::std::string* PROTOBUF_NULLABLE MatchDirectIntentRecord::release_payload() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   // @@protoc_insertion_point(field_release:match.MatchDirectIntentRecord.payload)
-  if (!CheckHasBit(_impl_._has_bits_[0], 0x00000001U)) {
+  if (!CheckHasBit(_impl_._has_bits_[0], 0x00000002U)) {
     return nullptr;
   }
-  ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
+  ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
   auto* released = _impl_.payload_.Release();
   if (::google::protobuf::internal::DebugHardenForceCopyDefaultString()) {
     _impl_.payload_.Set("", GetArena());
@@ -5181,9 +9269,9 @@ inline ::std::string* PROTOBUF_NULLABLE MatchDirectIntentRecord::release_payload
 inline void MatchDirectIntentRecord::set_allocated_payload(::std::string* PROTOBUF_NULLABLE value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   if (value != nullptr) {
-    SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+    SetHasBit(_impl_._has_bits_[0], 0x00000002U);
   } else {
-    ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
+    ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
   }
   _impl_.payload_.SetAllocated(value, GetArena());
   if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.payload_.IsDefault()) {
@@ -5196,7 +9284,7 @@ inline void MatchDirectIntentRecord::set_allocated_payload(::std::string* PROTOB
 inline void MatchDirectIntentRecord::clear_battle_id() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.battle_id_ = ::uint64_t{0u};
-  ClearHasBit(_impl_._has_bits_[0], 0x00000010U);
+  ClearHasBit(_impl_._has_bits_[0], 0x00000080U);
 }
 inline ::uint64_t MatchDirectIntentRecord::battle_id() const {
   // @@protoc_insertion_point(field_get:match.MatchDirectIntentRecord.battle_id)
@@ -5204,7 +9292,7 @@ inline ::uint64_t MatchDirectIntentRecord::battle_id() const {
 }
 inline void MatchDirectIntentRecord::set_battle_id(::uint64_t value) {
   _internal_set_battle_id(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00000010U);
+  SetHasBit(_impl_._has_bits_[0], 0x00000080U);
   // @@protoc_insertion_point(field_set:match.MatchDirectIntentRecord.battle_id)
 }
 inline ::uint64_t MatchDirectIntentRecord::_internal_battle_id() const {
@@ -5214,6 +9302,882 @@ inline ::uint64_t MatchDirectIntentRecord::_internal_battle_id() const {
 inline void MatchDirectIntentRecord::_internal_set_battle_id(::uint64_t value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.battle_id_ = value;
+}
+
+// bool cancelled = 7;
+inline void MatchDirectIntentRecord::clear_cancelled() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.cancelled_ = false;
+  ClearHasBit(_impl_._has_bits_[0], 0x00000200U);
+}
+inline bool MatchDirectIntentRecord::cancelled() const {
+  // @@protoc_insertion_point(field_get:match.MatchDirectIntentRecord.cancelled)
+  return _internal_cancelled();
+}
+inline void MatchDirectIntentRecord::set_cancelled(bool value) {
+  _internal_set_cancelled(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000200U);
+  // @@protoc_insertion_point(field_set:match.MatchDirectIntentRecord.cancelled)
+}
+inline bool MatchDirectIntentRecord::_internal_cancelled() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.cancelled_;
+}
+inline void MatchDirectIntentRecord::_internal_set_cancelled(bool value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.cancelled_ = value;
+}
+
+// string owner_account = 8;
+inline void MatchDirectIntentRecord::clear_owner_account() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.owner_account_.ClearToEmpty();
+  ClearHasBit(_impl_._has_bits_[0], 0x00000004U);
+}
+inline const ::std::string& MatchDirectIntentRecord::owner_account() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:match.MatchDirectIntentRecord.owner_account)
+  return _internal_owner_account();
+}
+template <typename Arg_, typename... Args_>
+PROTOBUF_ALWAYS_INLINE void MatchDirectIntentRecord::set_owner_account(Arg_&& arg, Args_... args) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  SetHasBit(_impl_._has_bits_[0], 0x00000004U);
+  _impl_.owner_account_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
+  // @@protoc_insertion_point(field_set:match.MatchDirectIntentRecord.owner_account)
+}
+inline ::std::string* PROTOBUF_NONNULL MatchDirectIntentRecord::mutable_owner_account()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  SetHasBit(_impl_._has_bits_[0], 0x00000004U);
+  ::std::string* _s = _internal_mutable_owner_account();
+  // @@protoc_insertion_point(field_mutable:match.MatchDirectIntentRecord.owner_account)
+  return _s;
+}
+inline const ::std::string& MatchDirectIntentRecord::_internal_owner_account() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.owner_account_.Get();
+}
+inline void MatchDirectIntentRecord::_internal_set_owner_account(const ::std::string& value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.owner_account_.Set(value, GetArena());
+}
+inline ::std::string* PROTOBUF_NONNULL MatchDirectIntentRecord::_internal_mutable_owner_account() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  return _impl_.owner_account_.Mutable( GetArena());
+}
+inline ::std::string* PROTOBUF_NULLABLE MatchDirectIntentRecord::release_owner_account() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:match.MatchDirectIntentRecord.owner_account)
+  if (!CheckHasBit(_impl_._has_bits_[0], 0x00000004U)) {
+    return nullptr;
+  }
+  ClearHasBit(_impl_._has_bits_[0], 0x00000004U);
+  auto* released = _impl_.owner_account_.Release();
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString()) {
+    _impl_.owner_account_.Set("", GetArena());
+  }
+  return released;
+}
+inline void MatchDirectIntentRecord::set_allocated_owner_account(::std::string* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (value != nullptr) {
+    SetHasBit(_impl_._has_bits_[0], 0x00000004U);
+  } else {
+    ClearHasBit(_impl_._has_bits_[0], 0x00000004U);
+  }
+  _impl_.owner_account_.SetAllocated(value, GetArena());
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.owner_account_.IsDefault()) {
+    _impl_.owner_account_.Set("", GetArena());
+  }
+  // @@protoc_insertion_point(field_set_allocated:match.MatchDirectIntentRecord.owner_account)
+}
+
+// uint64 owner_revision = 9;
+inline void MatchDirectIntentRecord::clear_owner_revision() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.owner_revision_ = ::uint64_t{0u};
+  ClearHasBit(_impl_._has_bits_[0], 0x00000800U);
+}
+inline ::uint64_t MatchDirectIntentRecord::owner_revision() const {
+  // @@protoc_insertion_point(field_get:match.MatchDirectIntentRecord.owner_revision)
+  return _internal_owner_revision();
+}
+inline void MatchDirectIntentRecord::set_owner_revision(::uint64_t value) {
+  _internal_set_owner_revision(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000800U);
+  // @@protoc_insertion_point(field_set:match.MatchDirectIntentRecord.owner_revision)
+}
+inline ::uint64_t MatchDirectIntentRecord::_internal_owner_revision() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.owner_revision_;
+}
+inline void MatchDirectIntentRecord::_internal_set_owner_revision(::uint64_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.owner_revision_ = value;
+}
+
+// repeated .match.MatchSpectatorRecord spectator_exits = 10;
+inline int MatchDirectIntentRecord::_internal_spectator_exits_size() const {
+  return _internal_spectator_exits().size();
+}
+inline int MatchDirectIntentRecord::spectator_exits_size() const {
+  return _internal_spectator_exits_size();
+}
+inline void MatchDirectIntentRecord::clear_spectator_exits() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.spectator_exits_.Clear();
+  ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
+}
+inline const ::match::MatchSpectatorRecord& MatchDirectIntentRecord::spectator_exits(int index) const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:match.MatchDirectIntentRecord.spectator_exits)
+  return _internal_spectator_exits().Get(index);
+}
+inline ::match::MatchSpectatorRecord* PROTOBUF_NONNULL MatchDirectIntentRecord::mutable_spectator_exits(int index)
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_mutable:match.MatchDirectIntentRecord.spectator_exits)
+  return _internal_mutable_spectator_exits()->Mutable(index);
+}
+inline ::match::MatchSpectatorRecord* PROTOBUF_NONNULL MatchDirectIntentRecord::add_spectator_exits()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  ::match::MatchSpectatorRecord* _add =
+      _internal_mutable_spectator_exits()->InternalAddWithArena(
+          ::google::protobuf::MessageLite::internal_visibility(), GetArena());
+  SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  // @@protoc_insertion_point(field_add:match.MatchDirectIntentRecord.spectator_exits)
+  return _add;
+}
+inline const ::google::protobuf::RepeatedPtrField<::match::MatchSpectatorRecord>& MatchDirectIntentRecord::spectator_exits() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_list:match.MatchDirectIntentRecord.spectator_exits)
+  return _internal_spectator_exits();
+}
+inline ::google::protobuf::RepeatedPtrField<::match::MatchSpectatorRecord>* PROTOBUF_NONNULL
+MatchDirectIntentRecord::mutable_spectator_exits() ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  // @@protoc_insertion_point(field_mutable_list:match.MatchDirectIntentRecord.spectator_exits)
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  return _internal_mutable_spectator_exits();
+}
+inline const ::google::protobuf::RepeatedPtrField<::match::MatchSpectatorRecord>&
+MatchDirectIntentRecord::_internal_spectator_exits() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.spectator_exits_;
+}
+inline ::google::protobuf::RepeatedPtrField<::match::MatchSpectatorRecord>* PROTOBUF_NONNULL
+MatchDirectIntentRecord::_internal_mutable_spectator_exits() {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return &_impl_.spectator_exits_;
+}
+
+// bool exit_prepared = 11;
+inline void MatchDirectIntentRecord::clear_exit_prepared() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.exit_prepared_ = false;
+  ClearHasBit(_impl_._has_bits_[0], 0x00000400U);
+}
+inline bool MatchDirectIntentRecord::exit_prepared() const {
+  // @@protoc_insertion_point(field_get:match.MatchDirectIntentRecord.exit_prepared)
+  return _internal_exit_prepared();
+}
+inline void MatchDirectIntentRecord::set_exit_prepared(bool value) {
+  _internal_set_exit_prepared(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000400U);
+  // @@protoc_insertion_point(field_set:match.MatchDirectIntentRecord.exit_prepared)
+}
+inline bool MatchDirectIntentRecord::_internal_exit_prepared() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.exit_prepared_;
+}
+inline void MatchDirectIntentRecord::_internal_set_exit_prepared(bool value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.exit_prepared_ = value;
+}
+
+// bytes start_original = 12;
+inline void MatchDirectIntentRecord::clear_start_original() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.start_original_.ClearToEmpty();
+  ClearHasBit(_impl_._has_bits_[0], 0x00000008U);
+}
+inline const ::std::string& MatchDirectIntentRecord::start_original() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:match.MatchDirectIntentRecord.start_original)
+  return _internal_start_original();
+}
+template <typename Arg_, typename... Args_>
+PROTOBUF_ALWAYS_INLINE void MatchDirectIntentRecord::set_start_original(Arg_&& arg, Args_... args) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  SetHasBit(_impl_._has_bits_[0], 0x00000008U);
+  _impl_.start_original_.SetBytes(static_cast<Arg_&&>(arg), args..., GetArena());
+  // @@protoc_insertion_point(field_set:match.MatchDirectIntentRecord.start_original)
+}
+inline ::std::string* PROTOBUF_NONNULL MatchDirectIntentRecord::mutable_start_original()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  SetHasBit(_impl_._has_bits_[0], 0x00000008U);
+  ::std::string* _s = _internal_mutable_start_original();
+  // @@protoc_insertion_point(field_mutable:match.MatchDirectIntentRecord.start_original)
+  return _s;
+}
+inline const ::std::string& MatchDirectIntentRecord::_internal_start_original() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.start_original_.Get();
+}
+inline void MatchDirectIntentRecord::_internal_set_start_original(const ::std::string& value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.start_original_.Set(value, GetArena());
+}
+inline ::std::string* PROTOBUF_NONNULL MatchDirectIntentRecord::_internal_mutable_start_original() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  return _impl_.start_original_.Mutable( GetArena());
+}
+inline ::std::string* PROTOBUF_NULLABLE MatchDirectIntentRecord::release_start_original() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:match.MatchDirectIntentRecord.start_original)
+  if (!CheckHasBit(_impl_._has_bits_[0], 0x00000008U)) {
+    return nullptr;
+  }
+  ClearHasBit(_impl_._has_bits_[0], 0x00000008U);
+  auto* released = _impl_.start_original_.Release();
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString()) {
+    _impl_.start_original_.Set("", GetArena());
+  }
+  return released;
+}
+inline void MatchDirectIntentRecord::set_allocated_start_original(::std::string* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (value != nullptr) {
+    SetHasBit(_impl_._has_bits_[0], 0x00000008U);
+  } else {
+    ClearHasBit(_impl_._has_bits_[0], 0x00000008U);
+  }
+  _impl_.start_original_.SetAllocated(value, GetArena());
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.start_original_.IsDefault()) {
+    _impl_.start_original_.Set("", GetArena());
+  }
+  // @@protoc_insertion_point(field_set_allocated:match.MatchDirectIntentRecord.start_original)
+}
+
+// -------------------------------------------------------------------
+
+// MatchDirectStartOriginal
+
+// .match.MatchFormationRecord formation = 1;
+inline bool MatchDirectStartOriginal::has_formation() const {
+  bool value = CheckHasBit(_impl_._has_bits_[0], 0x00000002U);
+  PROTOBUF_ASSUME(!value || _impl_.formation_ != nullptr);
+  return value;
+}
+inline void MatchDirectStartOriginal::clear_formation() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (_impl_.formation_ != nullptr) _impl_.formation_->Clear();
+  ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
+}
+inline const ::match::MatchFormationRecord& MatchDirectStartOriginal::_internal_formation() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  const ::match::MatchFormationRecord* p = _impl_.formation_;
+  return p != nullptr ? *p : *::google::protobuf::internal::MessageGlobalsBase::ToDefaultInstance<::match::MatchFormationRecord>(&::match::MatchFormationRecord_globals_);
+}
+inline const ::match::MatchFormationRecord& MatchDirectStartOriginal::formation() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:match.MatchDirectStartOriginal.formation)
+  return _internal_formation();
+}
+inline void MatchDirectStartOriginal::unsafe_arena_set_allocated_formation(
+    ::match::MatchFormationRecord* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (GetArena() == nullptr) {
+    delete reinterpret_cast<::google::protobuf::MessageLite*>(_impl_.formation_);
+  }
+  _impl_.formation_ = reinterpret_cast<::match::MatchFormationRecord*>(value);
+  if (value != nullptr) {
+    SetHasBit(_impl_._has_bits_[0], 0x00000002U);
+  } else {
+    ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
+  }
+  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:match.MatchDirectStartOriginal.formation)
+}
+inline ::match::MatchFormationRecord* PROTOBUF_NULLABLE MatchDirectStartOriginal::release_formation() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+
+  ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
+  ::match::MatchFormationRecord* released = _impl_.formation_;
+  _impl_.formation_ = nullptr;
+  if (::google::protobuf::internal::DebugHardenForceCopyInRelease()) {
+    auto* old = reinterpret_cast<::google::protobuf::MessageLite*>(released);
+    released = ::google::protobuf::internal::DuplicateIfNonNull(released);
+    if (GetArena() == nullptr) {
+      delete old;
+    }
+  } else {
+    if (GetArena() != nullptr) {
+      released = ::google::protobuf::internal::DuplicateIfNonNull(released);
+    }
+  }
+  return released;
+}
+inline ::match::MatchFormationRecord* PROTOBUF_NULLABLE MatchDirectStartOriginal::unsafe_arena_release_formation() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:match.MatchDirectStartOriginal.formation)
+
+  ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
+  ::match::MatchFormationRecord* temp = _impl_.formation_;
+  _impl_.formation_ = nullptr;
+  return temp;
+}
+inline ::match::MatchFormationRecord* PROTOBUF_NONNULL MatchDirectStartOriginal::_internal_mutable_formation() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (_impl_.formation_ == nullptr) {
+    auto* p = ::google::protobuf::Message::DefaultConstruct<::match::MatchFormationRecord>(GetArena());
+    _impl_.formation_ = reinterpret_cast<::match::MatchFormationRecord*>(p);
+  }
+  return _impl_.formation_;
+}
+inline ::match::MatchFormationRecord* PROTOBUF_NONNULL MatchDirectStartOriginal::mutable_formation()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  SetHasBit(_impl_._has_bits_[0], 0x00000002U);
+  ::match::MatchFormationRecord* _msg = _internal_mutable_formation();
+  // @@protoc_insertion_point(field_mutable:match.MatchDirectStartOriginal.formation)
+  return _msg;
+}
+inline void MatchDirectStartOriginal::set_allocated_formation(::match::MatchFormationRecord* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::Arena* message_arena = GetArena();
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (message_arena == nullptr) {
+    delete reinterpret_cast<::google::protobuf::MessageLite*>(_impl_.formation_);
+  }
+
+  if (value != nullptr) {
+    ::google::protobuf::Arena* submessage_arena = value->GetArena();
+    if (message_arena != submessage_arena) {
+      value = ::google::protobuf::internal::GetOwnedMessage(message_arena, value, submessage_arena);
+    }
+    SetHasBit(_impl_._has_bits_[0], 0x00000002U);
+  } else {
+    ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
+  }
+
+  _impl_.formation_ = reinterpret_cast<::match::MatchFormationRecord*>(value);
+  // @@protoc_insertion_point(field_set_allocated:match.MatchDirectStartOriginal.formation)
+}
+
+// repeated .match.MatchAuthorityTicketRecord tickets = 2;
+inline int MatchDirectStartOriginal::_internal_tickets_size() const {
+  return _internal_tickets().size();
+}
+inline int MatchDirectStartOriginal::tickets_size() const {
+  return _internal_tickets_size();
+}
+inline void MatchDirectStartOriginal::clear_tickets() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.tickets_.Clear();
+  ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
+}
+inline const ::match::MatchAuthorityTicketRecord& MatchDirectStartOriginal::tickets(int index) const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:match.MatchDirectStartOriginal.tickets)
+  return _internal_tickets().Get(index);
+}
+inline ::match::MatchAuthorityTicketRecord* PROTOBUF_NONNULL MatchDirectStartOriginal::mutable_tickets(int index)
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_mutable:match.MatchDirectStartOriginal.tickets)
+  return _internal_mutable_tickets()->Mutable(index);
+}
+inline ::match::MatchAuthorityTicketRecord* PROTOBUF_NONNULL MatchDirectStartOriginal::add_tickets()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  ::match::MatchAuthorityTicketRecord* _add =
+      _internal_mutable_tickets()->InternalAddWithArena(
+          ::google::protobuf::MessageLite::internal_visibility(), GetArena());
+  SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  // @@protoc_insertion_point(field_add:match.MatchDirectStartOriginal.tickets)
+  return _add;
+}
+inline const ::google::protobuf::RepeatedPtrField<::match::MatchAuthorityTicketRecord>& MatchDirectStartOriginal::tickets() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_list:match.MatchDirectStartOriginal.tickets)
+  return _internal_tickets();
+}
+inline ::google::protobuf::RepeatedPtrField<::match::MatchAuthorityTicketRecord>* PROTOBUF_NONNULL
+MatchDirectStartOriginal::mutable_tickets() ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  // @@protoc_insertion_point(field_mutable_list:match.MatchDirectStartOriginal.tickets)
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  return _internal_mutable_tickets();
+}
+inline const ::google::protobuf::RepeatedPtrField<::match::MatchAuthorityTicketRecord>&
+MatchDirectStartOriginal::_internal_tickets() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.tickets_;
+}
+inline ::google::protobuf::RepeatedPtrField<::match::MatchAuthorityTicketRecord>* PROTOBUF_NONNULL
+MatchDirectStartOriginal::_internal_mutable_tickets() {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return &_impl_.tickets_;
+}
+
+// -------------------------------------------------------------------
+
+// MatchChallengeInvitationRecord
+
+// uint64 challenge_id = 1;
+inline void MatchChallengeInvitationRecord::clear_challenge_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.challenge_id_ = ::uint64_t{0u};
+  ClearHasBit(_impl_._has_bits_[0], 0x00000004U);
+}
+inline ::uint64_t MatchChallengeInvitationRecord::challenge_id() const {
+  // @@protoc_insertion_point(field_get:match.MatchChallengeInvitationRecord.challenge_id)
+  return _internal_challenge_id();
+}
+inline void MatchChallengeInvitationRecord::set_challenge_id(::uint64_t value) {
+  _internal_set_challenge_id(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000004U);
+  // @@protoc_insertion_point(field_set:match.MatchChallengeInvitationRecord.challenge_id)
+}
+inline ::uint64_t MatchChallengeInvitationRecord::_internal_challenge_id() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.challenge_id_;
+}
+inline void MatchChallengeInvitationRecord::_internal_set_challenge_id(::uint64_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.challenge_id_ = value;
+}
+
+// uint64 challenger_player_id = 2;
+inline void MatchChallengeInvitationRecord::clear_challenger_player_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.challenger_player_id_ = ::uint64_t{0u};
+  ClearHasBit(_impl_._has_bits_[0], 0x00000008U);
+}
+inline ::uint64_t MatchChallengeInvitationRecord::challenger_player_id() const {
+  // @@protoc_insertion_point(field_get:match.MatchChallengeInvitationRecord.challenger_player_id)
+  return _internal_challenger_player_id();
+}
+inline void MatchChallengeInvitationRecord::set_challenger_player_id(::uint64_t value) {
+  _internal_set_challenger_player_id(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000008U);
+  // @@protoc_insertion_point(field_set:match.MatchChallengeInvitationRecord.challenger_player_id)
+}
+inline ::uint64_t MatchChallengeInvitationRecord::_internal_challenger_player_id() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.challenger_player_id_;
+}
+inline void MatchChallengeInvitationRecord::_internal_set_challenger_player_id(::uint64_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.challenger_player_id_ = value;
+}
+
+// uint64 target_player_id = 3;
+inline void MatchChallengeInvitationRecord::clear_target_player_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.target_player_id_ = ::uint64_t{0u};
+  ClearHasBit(_impl_._has_bits_[0], 0x00000010U);
+}
+inline ::uint64_t MatchChallengeInvitationRecord::target_player_id() const {
+  // @@protoc_insertion_point(field_get:match.MatchChallengeInvitationRecord.target_player_id)
+  return _internal_target_player_id();
+}
+inline void MatchChallengeInvitationRecord::set_target_player_id(::uint64_t value) {
+  _internal_set_target_player_id(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000010U);
+  // @@protoc_insertion_point(field_set:match.MatchChallengeInvitationRecord.target_player_id)
+}
+inline ::uint64_t MatchChallengeInvitationRecord::_internal_target_player_id() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.target_player_id_;
+}
+inline void MatchChallengeInvitationRecord::_internal_set_target_player_id(::uint64_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.target_player_id_ = value;
+}
+
+// uint32 config_id = 4;
+inline void MatchChallengeInvitationRecord::clear_config_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.config_id_ = 0u;
+  ClearHasBit(_impl_._has_bits_[0], 0x00000040U);
+}
+inline ::uint32_t MatchChallengeInvitationRecord::config_id() const {
+  // @@protoc_insertion_point(field_get:match.MatchChallengeInvitationRecord.config_id)
+  return _internal_config_id();
+}
+inline void MatchChallengeInvitationRecord::set_config_id(::uint32_t value) {
+  _internal_set_config_id(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000040U);
+  // @@protoc_insertion_point(field_set:match.MatchChallengeInvitationRecord.config_id)
+}
+inline ::uint32_t MatchChallengeInvitationRecord::_internal_config_id() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.config_id_;
+}
+inline void MatchChallengeInvitationRecord::_internal_set_config_id(::uint32_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.config_id_ = value;
+}
+
+// string challenger_account = 5;
+inline void MatchChallengeInvitationRecord::clear_challenger_account() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.challenger_account_.ClearToEmpty();
+  ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
+}
+inline const ::std::string& MatchChallengeInvitationRecord::challenger_account() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:match.MatchChallengeInvitationRecord.challenger_account)
+  return _internal_challenger_account();
+}
+template <typename Arg_, typename... Args_>
+PROTOBUF_ALWAYS_INLINE void MatchChallengeInvitationRecord::set_challenger_account(Arg_&& arg, Args_... args) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  _impl_.challenger_account_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
+  // @@protoc_insertion_point(field_set:match.MatchChallengeInvitationRecord.challenger_account)
+}
+inline ::std::string* PROTOBUF_NONNULL MatchChallengeInvitationRecord::mutable_challenger_account()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  ::std::string* _s = _internal_mutable_challenger_account();
+  // @@protoc_insertion_point(field_mutable:match.MatchChallengeInvitationRecord.challenger_account)
+  return _s;
+}
+inline const ::std::string& MatchChallengeInvitationRecord::_internal_challenger_account() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.challenger_account_.Get();
+}
+inline void MatchChallengeInvitationRecord::_internal_set_challenger_account(const ::std::string& value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.challenger_account_.Set(value, GetArena());
+}
+inline ::std::string* PROTOBUF_NONNULL MatchChallengeInvitationRecord::_internal_mutable_challenger_account() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  return _impl_.challenger_account_.Mutable( GetArena());
+}
+inline ::std::string* PROTOBUF_NULLABLE MatchChallengeInvitationRecord::release_challenger_account() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:match.MatchChallengeInvitationRecord.challenger_account)
+  if (!CheckHasBit(_impl_._has_bits_[0], 0x00000001U)) {
+    return nullptr;
+  }
+  ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
+  auto* released = _impl_.challenger_account_.Release();
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString()) {
+    _impl_.challenger_account_.Set("", GetArena());
+  }
+  return released;
+}
+inline void MatchChallengeInvitationRecord::set_allocated_challenger_account(::std::string* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (value != nullptr) {
+    SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  } else {
+    ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
+  }
+  _impl_.challenger_account_.SetAllocated(value, GetArena());
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.challenger_account_.IsDefault()) {
+    _impl_.challenger_account_.Set("", GetArena());
+  }
+  // @@protoc_insertion_point(field_set_allocated:match.MatchChallengeInvitationRecord.challenger_account)
+}
+
+// uint64 challenger_revision = 6;
+inline void MatchChallengeInvitationRecord::clear_challenger_revision() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.challenger_revision_ = ::uint64_t{0u};
+  ClearHasBit(_impl_._has_bits_[0], 0x00000020U);
+}
+inline ::uint64_t MatchChallengeInvitationRecord::challenger_revision() const {
+  // @@protoc_insertion_point(field_get:match.MatchChallengeInvitationRecord.challenger_revision)
+  return _internal_challenger_revision();
+}
+inline void MatchChallengeInvitationRecord::set_challenger_revision(::uint64_t value) {
+  _internal_set_challenger_revision(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000020U);
+  // @@protoc_insertion_point(field_set:match.MatchChallengeInvitationRecord.challenger_revision)
+}
+inline ::uint64_t MatchChallengeInvitationRecord::_internal_challenger_revision() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.challenger_revision_;
+}
+inline void MatchChallengeInvitationRecord::_internal_set_challenger_revision(::uint64_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.challenger_revision_ = value;
+}
+
+// string target_account = 7;
+inline void MatchChallengeInvitationRecord::clear_target_account() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.target_account_.ClearToEmpty();
+  ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
+}
+inline const ::std::string& MatchChallengeInvitationRecord::target_account() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:match.MatchChallengeInvitationRecord.target_account)
+  return _internal_target_account();
+}
+template <typename Arg_, typename... Args_>
+PROTOBUF_ALWAYS_INLINE void MatchChallengeInvitationRecord::set_target_account(Arg_&& arg, Args_... args) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  SetHasBit(_impl_._has_bits_[0], 0x00000002U);
+  _impl_.target_account_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
+  // @@protoc_insertion_point(field_set:match.MatchChallengeInvitationRecord.target_account)
+}
+inline ::std::string* PROTOBUF_NONNULL MatchChallengeInvitationRecord::mutable_target_account()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  SetHasBit(_impl_._has_bits_[0], 0x00000002U);
+  ::std::string* _s = _internal_mutable_target_account();
+  // @@protoc_insertion_point(field_mutable:match.MatchChallengeInvitationRecord.target_account)
+  return _s;
+}
+inline const ::std::string& MatchChallengeInvitationRecord::_internal_target_account() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.target_account_.Get();
+}
+inline void MatchChallengeInvitationRecord::_internal_set_target_account(const ::std::string& value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.target_account_.Set(value, GetArena());
+}
+inline ::std::string* PROTOBUF_NONNULL MatchChallengeInvitationRecord::_internal_mutable_target_account() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  return _impl_.target_account_.Mutable( GetArena());
+}
+inline ::std::string* PROTOBUF_NULLABLE MatchChallengeInvitationRecord::release_target_account() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:match.MatchChallengeInvitationRecord.target_account)
+  if (!CheckHasBit(_impl_._has_bits_[0], 0x00000002U)) {
+    return nullptr;
+  }
+  ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
+  auto* released = _impl_.target_account_.Release();
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString()) {
+    _impl_.target_account_.Set("", GetArena());
+  }
+  return released;
+}
+inline void MatchChallengeInvitationRecord::set_allocated_target_account(::std::string* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (value != nullptr) {
+    SetHasBit(_impl_._has_bits_[0], 0x00000002U);
+  } else {
+    ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
+  }
+  _impl_.target_account_.SetAllocated(value, GetArena());
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.target_account_.IsDefault()) {
+    _impl_.target_account_.Set("", GetArena());
+  }
+  // @@protoc_insertion_point(field_set_allocated:match.MatchChallengeInvitationRecord.target_account)
+}
+
+// uint64 target_revision = 8;
+inline void MatchChallengeInvitationRecord::clear_target_revision() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.target_revision_ = ::uint64_t{0u};
+  ClearHasBit(_impl_._has_bits_[0], 0x00000100U);
+}
+inline ::uint64_t MatchChallengeInvitationRecord::target_revision() const {
+  // @@protoc_insertion_point(field_get:match.MatchChallengeInvitationRecord.target_revision)
+  return _internal_target_revision();
+}
+inline void MatchChallengeInvitationRecord::set_target_revision(::uint64_t value) {
+  _internal_set_target_revision(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000100U);
+  // @@protoc_insertion_point(field_set:match.MatchChallengeInvitationRecord.target_revision)
+}
+inline ::uint64_t MatchChallengeInvitationRecord::_internal_target_revision() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.target_revision_;
+}
+inline void MatchChallengeInvitationRecord::_internal_set_target_revision(::uint64_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.target_revision_ = value;
+}
+
+// uint64 created_ms = 9;
+inline void MatchChallengeInvitationRecord::clear_created_ms() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.created_ms_ = ::uint64_t{0u};
+  ClearHasBit(_impl_._has_bits_[0], 0x00000200U);
+}
+inline ::uint64_t MatchChallengeInvitationRecord::created_ms() const {
+  // @@protoc_insertion_point(field_get:match.MatchChallengeInvitationRecord.created_ms)
+  return _internal_created_ms();
+}
+inline void MatchChallengeInvitationRecord::set_created_ms(::uint64_t value) {
+  _internal_set_created_ms(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000200U);
+  // @@protoc_insertion_point(field_set:match.MatchChallengeInvitationRecord.created_ms)
+}
+inline ::uint64_t MatchChallengeInvitationRecord::_internal_created_ms() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.created_ms_;
+}
+inline void MatchChallengeInvitationRecord::_internal_set_created_ms(::uint64_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.created_ms_ = value;
+}
+
+// uint64 expires_ms = 10;
+inline void MatchChallengeInvitationRecord::clear_expires_ms() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.expires_ms_ = ::uint64_t{0u};
+  ClearHasBit(_impl_._has_bits_[0], 0x00000400U);
+}
+inline ::uint64_t MatchChallengeInvitationRecord::expires_ms() const {
+  // @@protoc_insertion_point(field_get:match.MatchChallengeInvitationRecord.expires_ms)
+  return _internal_expires_ms();
+}
+inline void MatchChallengeInvitationRecord::set_expires_ms(::uint64_t value) {
+  _internal_set_expires_ms(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000400U);
+  // @@protoc_insertion_point(field_set:match.MatchChallengeInvitationRecord.expires_ms)
+}
+inline ::uint64_t MatchChallengeInvitationRecord::_internal_expires_ms() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.expires_ms_;
+}
+inline void MatchChallengeInvitationRecord::_internal_set_expires_ms(::uint64_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.expires_ms_ = value;
+}
+
+// uint32 state = 11;
+inline void MatchChallengeInvitationRecord::clear_state() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.state_ = 0u;
+  ClearHasBit(_impl_._has_bits_[0], 0x00000080U);
+}
+inline ::uint32_t MatchChallengeInvitationRecord::state() const {
+  // @@protoc_insertion_point(field_get:match.MatchChallengeInvitationRecord.state)
+  return _internal_state();
+}
+inline void MatchChallengeInvitationRecord::set_state(::uint32_t value) {
+  _internal_set_state(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000080U);
+  // @@protoc_insertion_point(field_set:match.MatchChallengeInvitationRecord.state)
+}
+inline ::uint32_t MatchChallengeInvitationRecord::_internal_state() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.state_;
+}
+inline void MatchChallengeInvitationRecord::_internal_set_state(::uint32_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.state_ = value;
+}
+
+// uint64 battle_id = 12;
+inline void MatchChallengeInvitationRecord::clear_battle_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.battle_id_ = ::uint64_t{0u};
+  ClearHasBit(_impl_._has_bits_[0], 0x00000800U);
+}
+inline ::uint64_t MatchChallengeInvitationRecord::battle_id() const {
+  // @@protoc_insertion_point(field_get:match.MatchChallengeInvitationRecord.battle_id)
+  return _internal_battle_id();
+}
+inline void MatchChallengeInvitationRecord::set_battle_id(::uint64_t value) {
+  _internal_set_battle_id(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000800U);
+  // @@protoc_insertion_point(field_set:match.MatchChallengeInvitationRecord.battle_id)
+}
+inline ::uint64_t MatchChallengeInvitationRecord::_internal_battle_id() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.battle_id_;
+}
+inline void MatchChallengeInvitationRecord::_internal_set_battle_id(::uint64_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.battle_id_ = value;
+}
+
+// -------------------------------------------------------------------
+
+// MatchGlobalPolicyRecord
+
+// uint32 policy_id = 1;
+inline void MatchGlobalPolicyRecord::clear_policy_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.policy_id_ = 0u;
+  ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
+}
+inline ::uint32_t MatchGlobalPolicyRecord::policy_id() const {
+  // @@protoc_insertion_point(field_get:match.MatchGlobalPolicyRecord.policy_id)
+  return _internal_policy_id();
+}
+inline void MatchGlobalPolicyRecord::set_policy_id(::uint32_t value) {
+  _internal_set_policy_id(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000002U);
+  // @@protoc_insertion_point(field_set:match.MatchGlobalPolicyRecord.policy_id)
+}
+inline ::uint32_t MatchGlobalPolicyRecord::_internal_policy_id() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.policy_id_;
+}
+inline void MatchGlobalPolicyRecord::_internal_set_policy_id(::uint32_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.policy_id_ = value;
+}
+
+// bytes contract_digest = 2;
+inline void MatchGlobalPolicyRecord::clear_contract_digest() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.contract_digest_.ClearToEmpty();
+  ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
+}
+inline const ::std::string& MatchGlobalPolicyRecord::contract_digest() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:match.MatchGlobalPolicyRecord.contract_digest)
+  return _internal_contract_digest();
+}
+template <typename Arg_, typename... Args_>
+PROTOBUF_ALWAYS_INLINE void MatchGlobalPolicyRecord::set_contract_digest(Arg_&& arg, Args_... args) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  _impl_.contract_digest_.SetBytes(static_cast<Arg_&&>(arg), args..., GetArena());
+  // @@protoc_insertion_point(field_set:match.MatchGlobalPolicyRecord.contract_digest)
+}
+inline ::std::string* PROTOBUF_NONNULL MatchGlobalPolicyRecord::mutable_contract_digest()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  ::std::string* _s = _internal_mutable_contract_digest();
+  // @@protoc_insertion_point(field_mutable:match.MatchGlobalPolicyRecord.contract_digest)
+  return _s;
+}
+inline const ::std::string& MatchGlobalPolicyRecord::_internal_contract_digest() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.contract_digest_.Get();
+}
+inline void MatchGlobalPolicyRecord::_internal_set_contract_digest(const ::std::string& value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.contract_digest_.Set(value, GetArena());
+}
+inline ::std::string* PROTOBUF_NONNULL MatchGlobalPolicyRecord::_internal_mutable_contract_digest() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  return _impl_.contract_digest_.Mutable( GetArena());
+}
+inline ::std::string* PROTOBUF_NULLABLE MatchGlobalPolicyRecord::release_contract_digest() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:match.MatchGlobalPolicyRecord.contract_digest)
+  if (!CheckHasBit(_impl_._has_bits_[0], 0x00000001U)) {
+    return nullptr;
+  }
+  ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
+  auto* released = _impl_.contract_digest_.Release();
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString()) {
+    _impl_.contract_digest_.Set("", GetArena());
+  }
+  return released;
+}
+inline void MatchGlobalPolicyRecord::set_allocated_contract_digest(::std::string* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (value != nullptr) {
+    SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  } else {
+    ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
+  }
+  _impl_.contract_digest_.SetAllocated(value, GetArena());
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.contract_digest_.IsDefault()) {
+    _impl_.contract_digest_.Set("", GetArena());
+  }
+  // @@protoc_insertion_point(field_set_allocated:match.MatchGlobalPolicyRecord.contract_digest)
 }
 
 // -------------------------------------------------------------------

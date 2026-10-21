@@ -58,6 +58,7 @@
     <ClCompile Include="src\muduo\net\TcpServer.cc" />
     <ClCompile Include="src\muduo\net\Timer.cc" />
     <ClCompile Include="src\muduo\net\TimerQueue.cc" />
+    <ClCompile Include="src\muduo\net\WindowsWakeup.cc" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\contrib\hiredis\Hiredis.h" />
@@ -114,6 +115,7 @@
     <ClInclude Include="src\muduo\net\Timer.h" />
     <ClInclude Include="src\muduo\net\TimerId.h" />
     <ClInclude Include="src\muduo\net\TimerQueue.h" />
+    <ClInclude Include="src\muduo\net\WindowsWakeup.h" />
     <ClInclude Include="src\muduo\net\ZlibStream.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">

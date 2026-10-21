@@ -37,6 +37,10 @@
 #include <winsock2.h>
 #include <ws2tcpip.h>
 #pragma comment(lib, "ws2_32.lib")
+#else
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <unistd.h>
 #endif
 
 #include <charconv>
@@ -276,6 +280,7 @@ std::string DescribeCommands(const std::vector<RespCommand>& cmds)
 // 同 hiredis_command_lifecycle_test.cpp;各自在本 TU 的匿名命名空间里,不构成 ODR 冲突。
 uint16_t FindFreeLoopbackPort()
 {
+#ifdef _WIN32
     const SOCKET s = ::socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
     EXPECT_NE(s, INVALID_SOCKET);
     sockaddr_in addr{};
@@ -288,6 +293,36 @@ uint16_t FindFreeLoopbackPort()
     const uint16_t port = ntohs(addr.sin_port);
     ::closesocket(s);
     return port;
+#else
+    const int s = ::socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+    EXPECT_NE(s, -1);
+    if (s == -1)
+    {
+        return 0;
+    }
+    sockaddr_in addr{};
+    addr.sin_family = AF_INET;
+    addr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
+    addr.sin_port = 0;
+    const int bindResult = ::bind(s, reinterpret_cast<sockaddr*>(&addr), sizeof(addr));
+    EXPECT_EQ(bindResult, 0);
+    if (bindResult != 0)
+    {
+        ::close(s);
+        return 0;
+    }
+    socklen_t len = sizeof(addr);
+    const int nameResult = ::getsockname(s, reinterpret_cast<sockaddr*>(&addr), &len);
+    EXPECT_EQ(nameResult, 0);
+    if (nameResult != 0)
+    {
+        ::close(s);
+        return 0;
+    }
+    const uint16_t port = ntohs(addr.sin_port);
+    ::close(s);
+    return port;
+#endif
 }
 
 // 假 Redis 对 AUTH 的应答方式。
@@ -798,6 +833,126 @@ TEST_F(RedisManagerAuth, AuthIsFirstCommandAndCallbackFollows)
     const std::string log = CapturedLog();
     EXPECT_TRUE(Contains(log, "Redis AUTH ok to")) << MaskPassword(log);
     EXPECT_FALSE(Contains(log, kTestPassword)) << "password leaked into the log";
+}
+
+TEST_F(RedisManagerAuth, ReconnectCallbackCanDestroyManagerDuringConnectAndAuthReply)
+{
+    for (const std::string password : {std::string{}, std::string{kTestPassword}})
+    {
+        std::weak_ptr<int> callbackCapture;
+        int calls = 0;
+        RunInLoopAndWait([&] {
+            manager_ = std::make_unique<RedisManager>();
+            auto sentinel = std::make_shared<int>(0);
+            callbackCapture = sentinel;
+            manager_->SetReconnectCallback([&, sentinel] {
+                ++calls;
+                manager_.reset();
+                EXPECT_FALSE(callbackCapture.expired()) << "清空管理器成员不得销毁正在执行的回调";
+            });
+            RedisConnectOptions options;
+            options.password = password;
+            options.reconnectIntervalSec = kLongReconnectIntervalSec;
+            manager_->Connect(&Loop(), muduo::net::InetAddress("127.0.0.1", port_), std::move(options));
+        });
+        ASSERT_TRUE(WaitUntil([&] {
+            return calls == 1 && !manager_ && callbackCapture.expired() &&
+                static_cast<std::size_t>(serverDowns_) == connections_.size();
+        }, kSettleTimeout)) << "管理器销毁后旧连接和回调必须完成清理";
+        RunInLoopAndWait([] {});
+        EXPECT_EQ(calls, 1);
+    }
+}
+
+TEST_F(RedisManagerAuth, ReconnectCallbackCanStartNewAuthenticatedConnection)
+{
+    int promotions = 0;
+    int replies = 0;
+    RunInLoopAndWait([&] {
+        manager_ = std::make_unique<RedisManager>();
+        manager_->SetReconnectCallback([&] {
+            ++promotions;
+            if (promotions == 1)
+            {
+                RedisConnectOptions options;
+                options.password = kTestPassword;
+                options.reconnectIntervalSec = kLongReconnectIntervalSec;
+                manager_->Connect(&Loop(), muduo::net::InetAddress("127.0.0.1", port_), std::move(options));
+                return;
+            }
+            ASSERT_EQ(promotions, 2);
+            ASSERT_EQ(manager_->GetZoneRedis()->command([&](hiredis::Hiredis*, redisReply* reply) {
+                if (reply) ++replies;
+            }, "PING"), REDIS_OK);
+        });
+        RedisConnectOptions options;
+        options.password = kTestPassword;
+        options.reconnectIntervalSec = kLongReconnectIntervalSec;
+        manager_->Connect(&Loop(), muduo::net::InetAddress("127.0.0.1", port_), std::move(options));
+    });
+    ASSERT_TRUE(WaitUntil([&] { return replies == 1; }, kSettleTimeout));
+    RunInLoopAndWait([&] {
+        EXPECT_EQ(promotions, 2);
+        ASSERT_EQ(connections_.size(), 2u);
+        EXPECT_EQ(DescribeCommands(connections_[0].commands), "AUTH <pw>");
+        EXPECT_EQ(DescribeCommands(connections_[1].commands), "AUTH <pw> | PING");
+        manager_->Shutdown();
+    });
+}
+
+TEST_F(RedisManagerAuth, PendingNullReplyCanDestroyManagerDuringShutdownOrNewConnect)
+{
+    for (const bool reconnect : {false, true})
+    {
+        int expectedReplies = 0;
+        RunInLoopAndWait([&] { expectedReplies = pingReplies_ + 1; });
+        StartManager("", kLongReconnectIntervalSec);
+        ASSERT_TRUE(WaitUntil([&] { return pingReplies_ == expectedReplies; }, kSettleTimeout));
+        int nullReplies = 0;
+        RunInLoopAndWait([&] {
+            connections_.back().stalled = true;
+            ASSERT_EQ(manager_->GetZoneRedis()->command([&](hiredis::Hiredis*, redisReply* reply) {
+                EXPECT_EQ(reply, nullptr);
+                if (!reply) ++nullReplies;
+                manager_.reset();
+            }, "PING"), REDIS_OK);
+            if (reconnect)
+            {
+                RedisConnectOptions options;
+                options.reconnectIntervalSec = kLongReconnectIntervalSec;
+                manager_->Connect(&Loop(), muduo::net::InetAddress("127.0.0.1", port_), std::move(options));
+            }
+            else
+            {
+                manager_->Shutdown();
+            }
+            EXPECT_EQ(manager_, nullptr);
+            EXPECT_EQ(nullReplies, 1);
+        });
+        ASSERT_TRUE(WaitUntil([&] {
+            return static_cast<std::size_t>(serverDowns_) == connections_.size();
+        }, kSettleTimeout));
+    }
+}
+
+TEST_F(RedisManagerLiveness, DroppedConnectionNullReplyCanDestroyManager)
+{
+    StartManager("", kLongReconnectIntervalSec, 0.02, 0.04);
+    ASSERT_TRUE(WaitUntil([&] { return pingReplies_ >= 1; }, kSettleTimeout));
+    int nullReplies = 0;
+    RunInLoopAndWait([&] {
+        connections_.back().stalled = true;
+        ASSERT_EQ(manager_->GetZoneRedis()->command([&](hiredis::Hiredis*, redisReply* reply) {
+            EXPECT_EQ(reply, nullptr);
+            if (!reply) ++nullReplies;
+            manager_.reset();
+        }, "PING"), REDIS_OK);
+    });
+    ASSERT_TRUE(WaitUntil([&] {
+        return nullReplies == 1 && !manager_ && static_cast<std::size_t>(serverDowns_) == connections_.size();
+    }, kSettleTimeout));
+    RunInLoopAndWait([] {});
+    EXPECT_EQ(nullReplies, 1);
 }
 
 // ---------------------------------------------------------------------------

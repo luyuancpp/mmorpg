@@ -289,7 +289,7 @@ func (r *FriendRepo) deleteTerminalRequestsBefore(ctx context.Context, cutoffMs 
 // 显式悲观事务里先点锁,取锁顺序与守卫同为 PRIMARY → 行 key,冲突只剩单向等待,同组实验 0 次。
 // MySQL 下锁集与顺序不变(点锁与 DELETE 锁同一条聚簇记录),只多 BEGIN / 点锁 / COMMIT 几次往返。
 func (r *FriendRepo) deleteOneRowPointLocked(ctx context.Context, lockSQL string, lockArgs []any, deleteSQL string, deleteArgs ...any) (int64, error) {
-	tx, err := r.beginWriteTx(ctx)
+	tx, err := r.beginSystemWriteTx(ctx)
 	if err != nil {
 		return 0, err
 	}

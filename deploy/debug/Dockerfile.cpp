@@ -1,4 +1,3 @@
-# syntax=docker/dockerfile:1
 # 两个镜像引用由调用方核对精确 ID 并固定；依赖变化必须换 CPP_CACHE_KEY。
 # source_meta 为本轮源码清单的命名构建上下文，不能放运行配置或密钥。
 ARG CPP_DEPS_IMAGE
@@ -11,8 +10,7 @@ WORKDIR /src
 ARG BUILD_JOBS=1
 ARG CPP_CACHE_KEY
 
-RUN apt-get update && apt-get install -y --no-install-recommends python3 \
-    && rm -rf /var/lib/apt/lists/*
+RUN python3 --version
 RUN python3 -c 'import os,re,sys; key=os.environ.get("CPP_CACHE_KEY", ""); jobs=os.environ.get("BUILD_JOBS", ""); sys.exit(0 if re.fullmatch("[0-9a-f]{64}", key) and re.fullmatch("[0-9]+", jobs) and int(jobs)>0 else "CPP_CACHE_KEY 必须为精确 deps SHA 的 64 位小写十六进制部分，BUILD_JOBS 必须为正整数")'
 
 # SDK 镜像可能带有验证时的旧业务源；COPY 不会删除旧文件，先清空明确的应用输入。
@@ -21,6 +19,7 @@ RUN rm -rf cpp generated proto data/scene_nav_bin \
        third_party/boost/boost third_party/entt third_party/fmt third_party/spdlog \
        third_party/xxhash third_party/sol2 third_party/lua third_party/cppcodec \
        third_party/exprtk third_party/hexagons_grids third_party/ue5navmesh third_party/recastnavigation \
+       third_party/librdkafka/src-cpp \
     && rm -f bin/gate bin/scene bin/battle bin/symbols/gate.debug bin/symbols/scene.debug bin/symbols/battle.debug
 
 # 与正规 builder 使用同一套完整应用及头文件输入，依赖 SDK 留在匹配的 deps 层。
@@ -39,6 +38,7 @@ COPY third_party/exprtk/ third_party/exprtk/
 COPY third_party/hexagons_grids/ third_party/hexagons_grids/
 COPY third_party/ue5navmesh/ third_party/ue5navmesh/
 COPY third_party/recastnavigation/ third_party/recastnavigation/
+COPY third_party/librdkafka/src-cpp/ third_party/librdkafka/src-cpp/
 COPY third_party/third_party.vcxproj third_party/third_party.vcxproj
 COPY third_party/releases.lock.json third_party/releases.lock.json
 COPY tools/archived/vcxproj2cmake.py tools/archived/vcxproj2cmake.py
@@ -69,9 +69,11 @@ RUN --mount=type=cache,id=cpp-${CPP_CACHE_KEY}-Debug-third-party,target=/src/thi
     --mount=type=cache,id=cpp-${CPP_CACHE_KEY}-Debug-scene,target=/src/cpp/nodes/scene/.build,sharing=locked \
     --mount=type=cache,id=cpp-${CPP_CACHE_KEY}-Debug-battle,target=/src/cpp/nodes/battle/.build,sharing=locked \
     python3 tools/scripts/docker_debug_manifest.py --manifest /src/DEBUG_SOURCE.input.json \
+       --cache-state /src/third_party/.build/debug-source-hashes.json \
     && MMORPG_STAMP_BUILD=0 bash tools/scripts/build_linux.sh --skip-deps --debug --split-debug --jobs "$BUILD_JOBS" \
     && python3 tools/scripts/docker_debug_manifest.py --manifest /src/DEBUG_SOURCE.input.json \
-       --complete --output /src/DEBUG_SOURCE.json
+       --complete --output /src/DEBUG_SOURCE.json \
+       --cache-state /src/third_party/.build/debug-source-hashes.json
 
 FROM ${CPP_DEBUG_BASE_IMAGE} AS debug
 

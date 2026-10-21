@@ -35,7 +35,7 @@
 // 退出原因。A1′(断线释放标记)按它判定能不能写(exit_release_mark.h 的 DecideExitReleaseMark,
 // §12.6.3 第二步)。默认值 kUnspecified = 来源不明 = 不写标记:漏标只会少写。
 //
-// 底层类型 uint8_t 数的是原因种类数(现 6 种),与会话号 / 玩家 id 的位宽无关(AGENTS §11.2)。
+// 底层类型 uint8_t 数的是原因种类数，与会话号 / 玩家 id 的位宽无关(AGENTS §11.2)。
 // kCount 固定为最后一项,同时是名表长度。
 enum class ExitCause : uint8_t
 {
@@ -45,6 +45,7 @@ enum class ExitCause : uint8_t
 	kSceneDrain,          // 单场景排空(频道缩容,BeginSceneDrain)
 	kIdentityConflict,    // 节点身份失效后的整节点疏散(BeginEmergencyRelocateAll)
 	kReleasedByTransfer,  // scene_manager 通知释放(ReleasePlayer:玩家要去别的节点)
+	kRoleTradeFrozen,     // 账号角色交易封存；不发handoff/断线释放凭证，不按超时复活
 
 	kCount
 };
@@ -101,6 +102,7 @@ namespace player_exit
 		"scene_drain",
 		"identity_conflict",
 		"released_by_transfer",
+		"role_trade_frozen",
 	};
 	static_assert(std::size(kExitCauseNames) == kExitCauseCount, "kExitCauseNames 必须与 ExitCause 一一对应");
 
@@ -154,6 +156,7 @@ namespace player_exit
 		switch (incoming)
 		{
 		case ExitCause::kIdentityConflict:
+		case ExitCause::kRoleTradeFrozen:
 		case ExitCause::kUnspecified:
 			return true;
 		case ExitCause::kReleasedByTransfer:

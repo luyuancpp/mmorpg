@@ -478,6 +478,19 @@ func readBundleGlobal(ctx context.Context, opts bundleOptions, bundle *debugutil
 	defer tx.Rollback()
 
 	id, limit := opts.playerID, opts.limit
+	if !opts.skipAccount {
+		if rows, err := debugutil.ReadRowsWhere(ctx, tx, func() proto.Message { return &databasepb.AccountRole{} }, "`player_id` = ?", id); err != nil {
+			out.Errors["account_role"] = err.Error()
+		} else if len(rows) == 1 {
+			raw, err := proto.Marshal(rows[0])
+			if err != nil {
+				out.Errors["account_role"] = err.Error()
+			} else {
+				value := debugutil.RenderProto(raw, func() proto.Message { return &databasepb.AccountRole{} }, nil)
+				out.AccountRole = &value
+			}
+		}
+	}
 	if rows, err := debugutil.ReadRowsWhere(ctx, tx, func() proto.Message { return &databasepb.PlayerName{} },
 		"`player_id` = ?", id); err != nil {
 		out.Errors["player_name"] = err.Error()

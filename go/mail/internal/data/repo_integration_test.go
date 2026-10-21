@@ -15,15 +15,21 @@ import (
 	"time"
 
 	assetpb "proto/common/asset"
+	basepb "proto/common/base"
+	dspb "proto/data_service"
 	mailpb "proto/mail"
 	"schemamigrate"
 	"shared/assetop"
 	"shared/authoritysql"
+	"shared/roleidentity"
 )
 
 func mailFixture(t *testing.T) (context.Context, *sql.DB, *Repo) {
 	t.Helper()
 	if os.Getenv("MAIL_RANK_TEST_TIDB") != "127.0.0.1:4000" {
+		if os.Getenv("MAIL_RANK_REQUIRE_TESTS") == "1" {
+			t.Fatal("MAIL_RANK_TEST_TIDB必须显式配置本任务独占TiDB")
+		}
 		t.Skip("仅显式本机4000随机库真实TiDB")
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
@@ -72,6 +78,104 @@ func mailFixture(t *testing.T) (context.Context, *sql.DB, *Repo) {
 }
 func personal(request, player uint64) *mailpb.SendMailRequest {
 	return &mailpb.SendMailRequest{SenderKind: 3, RequestId: request, RecipientPlayerId: player, Title: "奖励", Body: "离线也可领取", Attachments: &mailpb.MailAttachments{Currencies: []*mailpb.MailCurrency{{Amount: 10}}, Items: []*mailpb.MailItem{{ConfigId: 42, Count: 2}}}}
+}
+
+func mailRoleOwner(t *testing.T, ctx context.Context, db *sql.DB, r *Repo, account string, revision, listing uint64) context.Context {
+	t.Helper()
+	if _, err := db.ExecContext(ctx, "CREATE TABLE IF NOT EXISTS account_role (player_id BIGINT UNSIGNED PRIMARY KEY,account VARBINARY(191) NOT NULL,owner_revision BIGINT UNSIGNED NOT NULL,trade_listing_id BIGINT UNSIGNED NOT NULL)"); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := db.ExecContext(ctx, "INSERT INTO account_role VALUES (7,?,?,?) ON DUPLICATE KEY UPDATE account=?,owner_revision=?,trade_listing_id=?", []byte(account), revision, listing, []byte(account), revision, listing); err != nil {
+		t.Fatal(err)
+	}
+	var schema string
+	if err := db.QueryRowContext(ctx, "SELECT DATABASE()").Scan(&schema); err != nil {
+		t.Fatal(err)
+	}
+	if err := r.ConfigureRoleAuthority(ctx, schema); err != nil {
+		t.Fatal(err)
+	}
+	actor, err := roleidentity.Capture(ctx, &dspb.AccountRoleOwnership{Account: account, OwnerRevision: revision, Role: &basepb.AccountSimplePlayer{PlayerId: 7}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	return actor
+}
+
+func TestTiDBMailOldSessionCannotReadOrMutateTransferredOrAbaRole(t *testing.T) {
+	ctx, db, r := mailFixture(t)
+	input := personal(701, 7)
+	input.SenderKind = SenderKind("admin")
+	sent, err := r.Send(ctx, "admin", mailpb.MailKind_MAIL_KIND_PERSONAL, input)
+	if err != nil {
+		t.Fatal(err)
+	}
+	original := mailRoleOwner(t, ctx, db, r, "原卖家", 1, 0)
+	if _, err = r.List(original, 7, &mailpb.ListMailsRequest{}); err != nil {
+		t.Fatal(err)
+	}
+	mailRoleOwner(t, ctx, db, r, "新买家", 2, 0)
+	if _, err = r.List(original, 7, &mailpb.ListMailsRequest{}); !errors.Is(err, ErrDenied) {
+		t.Fatalf("旧列表未拒绝: %v", err)
+	}
+	if _, err = r.Read(original, 7, sent.MailId); !errors.Is(err, ErrDenied) {
+		t.Fatalf("旧已读未拒绝: %v", err)
+	}
+	if _, err = r.Claim(original, 7, sent.MailId); !errors.Is(err, ErrDenied) {
+		t.Fatalf("旧领取未拒绝: %v", err)
+	}
+	if _, _, err = r.Delete(original, 7, []uint64{sent.MailId}, false); !errors.Is(err, ErrDenied) {
+		t.Fatalf("旧删除未拒绝: %v", err)
+	}
+	var changed, ops int
+	if err = db.QueryRowContext(ctx, "SELECT COUNT(*) FROM mail_state WHERE read_ms<>0 OR deleted_ms<>0").Scan(&changed); err != nil {
+		t.Fatal(err)
+	}
+	if err = db.QueryRowContext(ctx, "SELECT COUNT(*) FROM mail_asset_op").Scan(&ops); err != nil {
+		t.Fatal(err)
+	}
+	if changed != 0 || ops != 0 {
+		t.Fatalf("失效会话留下副作用: state=%d ops=%d", changed, ops)
+	}
+	current := mailRoleOwner(t, ctx, db, r, "原卖家", 3, 0)
+	if _, err = r.Claim(original, 7, sent.MailId); !errors.Is(err, ErrDenied) {
+		t.Fatalf("ABA旧修订未拒绝: %v", err)
+	}
+	frozen := mailRoleOwner(t, ctx, db, r, "原卖家", 3, 99)
+	if _, err = r.Claim(frozen, 7, sent.MailId); !errors.Is(err, ErrDenied) {
+		t.Fatalf("冻结领取未拒绝: %v", err)
+	}
+	mailRoleOwner(t, ctx, db, r, "原卖家", 3, 0)
+	if _, err = r.List(current, 7, &mailpb.ListMailsRequest{}); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestTiDBMailChecksOriginalSessionBeforePendingClaimReplay(t *testing.T) {
+	ctx, db, r := mailFixture(t)
+	input := personal(702, 7)
+	input.SenderKind = SenderKind("admin")
+	sent, err := r.Send(ctx, "admin", mailpb.MailKind_MAIL_KIND_PERSONAL, input)
+	if err != nil {
+		t.Fatal(err)
+	}
+	original := mailRoleOwner(t, ctx, db, r, "原卖家", 1, 0)
+	claim, err := r.Claim(original, 7, sent.MailId)
+	if err != nil || claim.GetAssetOpId() == 0 {
+		t.Fatalf("原领取失败: %v %v", claim, err)
+	}
+	current := mailRoleOwner(t, ctx, db, r, "新买家", 2, 0)
+	if _, err = r.Claim(original, 7, sent.MailId); !errors.Is(err, ErrDenied) {
+		t.Fatalf("原会话借在途短路: %v", err)
+	}
+	replayed, err := r.Claim(current, 7, sent.MailId)
+	if err != nil || replayed.AssetOpId != claim.AssetOpId {
+		t.Fatalf("重复领取改变原操作: %v %v", replayed, err)
+	}
+	var ops int
+	if err = db.QueryRowContext(ctx, "SELECT COUNT(*) FROM mail_asset_op").Scan(&ops); err != nil || ops != 1 {
+		t.Fatalf("操作数=%d: %v", ops, err)
+	}
 }
 func TestTiDBUnknownClaimStateNeverDeletesEvenAfterExpiry(t *testing.T) {
 	ctx, db, repo := mailFixture(t)

@@ -7,6 +7,7 @@
 #include "table/proto/tip/common_error_tip.pb.h"
 #include "node/system/node/node.h"
 #include "player/system/player_lifecycle.h"
+#include "player/system/role_admission_system.h"
 #include "player/system/player_scene.h"
 #include "world/scene_lifecycle.h"
 #include "player/player_gm_guard.h" // 客户端 GM 指令统一闸门(guild-phase2 §S4 4.34)
@@ -129,21 +130,10 @@ void SceneHandler::PlayerEnterGameNode(::google::protobuf::RpcController* contro
 	// 登录代次(gate 用本会话、本角色见过的最高代次盖章):入场会话栅栏据此拒绝跨会话的陈旧入场。
 	// 0 = 上游未带(旧版 gate / login),按判定表的版本 0 规则处理(scene-enter-session-fence.md §5.2 / §6)。
 	ctx.loginGeneration = request->login_generation();
+	ctx.ownerRevision = request->owner_revision();
 
-	if (PlayerLifecycleSystem::HandleEnterGameNode(request->player_id(), std::move(ctx)) !=
-		PlayerLifecycleSystem::EnterGameNodeOutcome::kLoadRequired)
-	{
-		return;
-	}
-
-	// Player not online — kick off Redis-only async load.
-	// Player data is expected to already be in Redis, preloaded by Login via
-	// Kafka -> DB Service -> Redis. On Redis NIL, AsyncLoad retries with
-	// millisecond-grade exponential backoff (500ms/1s/2s/4s/8s/16s) up to
-	// kMaxLoadRetries; the first retry is fast so a healthy preload barely
-	// impacts player-perceived login latency.
-	// HandleEnterGameNode 已登记待入场上下文并发出 A2′(同一条 zone Redis 连接 FIFO,EVAL 排在这次 GET 前面)。
-	tlsRedisSystem.GetPlayerDataRedis()->AsyncLoad(request->player_id());
+	// 在任何本地会话/实体/载入副作用前提交目录SQL登记。未知结果只重放原世代。
+	RoleAdmissionSystem::RequestEnter(request->player_id(), std::move(ctx));
 	///<<< END WRITING YOUR CODE
 
 }

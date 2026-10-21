@@ -50,13 +50,13 @@ message player_inbox_stream {
   uint64 updated_ms = 9;
 }
 
-// 收件箱条目。终态行保留 30 天后物理删除;PENDING 行永不自动删除(IB-1)。
+// 收件箱条目。终态仍保留原唯一收据，旧生产请求不能在角色换主后重新生效。
 // 表行类型加 row，避免 Go 驼峰名与 RPC 消息 PlayerInboxItem 冲突；数据库表名保持不变。
 message player_inbox_item_row {
   option(OptionTableName) = "player_inbox_item";
   option(OptionPrimaryKey) = "shard,player_id,domain,seq";
   option(OptionUniqueKey) = "shard,player_id,producer_kind,request_id";  // 全表唯一的 UNIQUE = 幂等键(IB-2)
-  option(OptionIndex) = "shard,state,updated_ms";                         // 清理 / 对账 / 运维列表
+  option(OptionIndex) = "shard,state,updated_ms;shard,player_id,state";    // 清理/对账；角色首锁内挂起域查询
   option(OptionTiDBNonclusteredPK) = true;
   option(OptionTiDBShardRowIDBits) = 4;
   option(OptionTiDBPreSplitRegions) = 4;
@@ -84,6 +84,8 @@ message player_inbox_item_row {
   uint64 updated_ms = 21;
   string operator_name = 22;          // ≤ 64B,入箱时校验
   string note = 23;                   // ≤ 256B,入箱时校验
+  string owner_account = 24;          // 首次入箱在同account_role首锁内捕获，重投不得补新主
+  uint64 owner_revision = 25;         // 与owner_account组成原归属，不以当前目录修补历史
 }
 
 // 运维审计,与入箱 / 作废同库同事务(设计 §6.1)。每条目每种动作一行;重复调用 INSERT IGNORE。

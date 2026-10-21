@@ -2,19 +2,11 @@
 
 // 组队场景跟随与队友 AOI(设计文档 docs/design/team-system.md §F)。
 //
-// 职责:scene 只是组队数据的消费方。队伍成员关系的唯一真值是 SharedRedis(team 服务,
-// match 进程内,只经 Lua 原子写),scene 自己读 Redis 刷新玩家实体上的 TeamId 组件;
-// Kafka 的 PlayerTeamRefreshEvent 只是"去刷新一下"的信号,不带权威数据。
-//
-// Redis key / value 契约(必须与 Go 侧 §C.1 投影完全一致,改一边必须同步改另一边):
-//   team:player:<player_id>  hash  tid   = 十进制 team_id,无队伍为 "0"(离队后不删 key,只置 0)
-//                                   epoch = 十进制 membership_epoch,仅在该玩家 tid 变化时 +1;
-//                                           key 缺失后重建时用 Redis TIME 毫秒起种(必然大于旧值)
-//   team:<team_id>           string TeamInfo pb(proto/common/component/team_comp.proto),
-//                                   members 是集合语义,不依赖顺序
-//   team:rec:<team_id>       hash  权威记录(scene 只做 EXISTS,判断投影缺失时"未知/无队")
-//   player:<player_id>:location string storage::PlayerLocation pb(scene_manager 写)
-//   battle:lock:<player_id>  string battle_id(scene PrepareBattle 写,咨询性战斗锁)
+// 职责:scene消费全球Team SQL权威快照，不把Redis成员索引或Kafka事件当授权。
+// 每次查询携SQL已确认的原RoleAdmissionIdentity和scene HMAC；回复签名绑定原请求，
+// 回调再次校验原入场世代，并按(membership_epoch,version)拒绝倒序。
+// 无队保留epoch墓碑；Redis只用于咨询性的位置和战斗锁，不修复或覆盖SQL成员关系。
+// Kafka PlayerTeamRefreshEvent只通知重新查询，不携带权威数据。
 //
 // 语义(v1.1,2026-10-09 起;v1 是"入队不拉人、只换图不归位"):
 //   - 只在同 zone、同 scene 节点内跟随(DV-6);跨节点、跨 zone 只记日志指标。
@@ -181,15 +173,12 @@ private:
 	// 刷新并跟随(不扇出)。
 	static void RefreshAndFollow(entt::entity player);
 
-	// HMGET team:player:<id> tid epoch -> 三态判定 -> ApplyMembership -> 按 mode 继续。
+	// 查询签名的原入场世代SQL快照，核回执/代次/排序后ApplyMembership并按mode继续。
 	static void RefreshMembership(entt::entity player, FollowMode mode);
 
 	// 把读到的成员关系写进 TeamId 组件(按 epoch 去乱序),tid 变化时修正队友 AOI。
 	// 事件驱动路径,不在 per-tick 上(AGENTS §7 #5)。
 	static void ApplyMembership(entt::entity player, uint64_t teamId, uint64_t epoch, bool keyMissing);
-
-	// GET team:<tid> 读投影;缺失时 EXISTS team:rec:<tid> 区分"未知 / 无队"。
-	static void LoadTeamInfo(entt::entity player, uint64_t teamId, FollowMode mode);
 
 	// 非队长跟随队长:战斗 / 会话 / battle:lock / zone / 节点守卫全部通过之后,
 	// 队长在别的场景 -> 请求 SceneManager 切过去;已在同一场景 -> RegroupToLeader。

@@ -5,6 +5,7 @@ import (
 	"errors"
 	tradepb "proto/trade"
 	"shared/generated/pb/table"
+	"shared/roleidentity"
 	"strconv"
 	"strings"
 	"trade/internal/commerce"
@@ -106,6 +107,14 @@ func (l *JubaozhaiLogic) commerceCall(fn func(context.Context, uint64, *commerce
 	if l.deps.Commerce == nil {
 		return &tradepb.CommerceOrderResponse{ErrorMessage: tipOf(constants.ErrFeatureDisabled)}, nil
 	}
+	owned, identityErr := l.actorIdentity()
+	if identityErr != nil {
+		return orderAnswer(nil, identityErr), nil
+	}
+	l.ctx, identityErr = roleidentity.Capture(l.ctx, owned)
+	if identityErr != nil {
+		return orderAnswer(nil, identityErr), nil
+	}
 	r, err := fn(l.ctx, me, l.deps.Commerce)
 	if err != nil && commerceCode(err) == constants.ErrServiceUnavailable {
 		l.Errorf("交易业务调用失败: %v", err)
@@ -204,6 +213,14 @@ func (l *JubaozhaiLogic) mallOrder(id string, cancelOrder bool) (*tradepb.Commer
 	if l.deps.Mall == nil {
 		return &tradepb.CommerceOrderResponse{ErrorMessage: tipOf(constants.ErrFeatureDisabled)}, nil
 	}
+	owned, err := l.actorIdentity()
+	if err != nil {
+		return orderAnswer(nil, err), nil
+	}
+	l.ctx, err = roleidentity.Capture(l.ctx, owned)
+	if err != nil {
+		return orderAnswer(nil, err), nil
+	}
 	out, err := l.deps.Mall.Order(l.ctx, me, id, cancelOrder)
 	if err != nil {
 		return orderAnswer(nil, err), nil
@@ -219,6 +236,14 @@ func (l *JubaozhaiLogic) CreateOfficialOrder(in *tradepb.CreateOfficialOrderRequ
 	}
 	if l.deps.Mall == nil {
 		return &tradepb.CommerceOrderResponse{ErrorMessage: tipOf(constants.ErrFeatureDisabled)}, nil
+	}
+	owned, err := l.actorIdentity()
+	if err != nil {
+		return orderAnswer(nil, err), nil
+	}
+	l.ctx, err = roleidentity.Capture(l.ctx, owned)
+	if err != nil {
+		return orderAnswer(nil, err), nil
 	}
 	out, err := l.deps.Mall.Create(l.ctx, me, in)
 	if err != nil {
@@ -252,6 +277,14 @@ func (l *JubaozhaiLogic) ListCommerceOrders(in *tradepb.ListCommerceOrdersReques
 	if l.deps.Commerce == nil {
 		return &tradepb.ListCommerceOrdersResponse{ErrorMessage: tipOf(constants.ErrFeatureDisabled)}, nil
 	}
+	owned, identityErr := l.actorIdentity()
+	if identityErr != nil {
+		return &tradepb.ListCommerceOrdersResponse{ErrorMessage: tipOf(commerceCode(identityErr))}, nil
+	}
+	l.ctx, identityErr = roleidentity.Capture(l.ctx, owned)
+	if identityErr != nil {
+		return &tradepb.ListCommerceOrdersResponse{ErrorMessage: tipOf(commerceCode(identityErr))}, nil
+	}
 	limit := min(max(int(in.GetLimit()), 1), 100)
 	if l.deps.Mall != nil && (in.GetCursor() == "" || strings.HasPrefix(in.GetCursor(), "mall:")) {
 		cursor := strings.TrimPrefix(in.GetCursor(), "mall:")
@@ -271,8 +304,11 @@ func (l *JubaozhaiLogic) ListCommerceOrders(in *tradepb.ListCommerceOrdersReques
 	rows, err := l.deps.Commerce.Repo.List(l.ctx, me, after, limit)
 	out := &tradepb.ListCommerceOrdersResponse{ErrorMessage: tipOf(commerceCode(err)), ServerNowMs: nowMillis(l.deps.Now)}
 	for _, r := range rows {
-		out.Orders = append(out.Orders, orderView(r))
 		out.NextCursor = strconv.FormatUint(r.CommerceId, 10)
+		workflow, decodeErr := data.Workflow(r)
+		if decodeErr == nil && commerce.OwnsRecord(l.ctx, r, workflow) {
+			out.Orders = append(out.Orders, orderView(r))
+		}
 	}
 	return out, nil
 }

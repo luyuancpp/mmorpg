@@ -168,9 +168,9 @@ func routeSQLLabel(q string) string {
 	switch q {
 	case routeProbeSessionSQL:
 		return "SESSION"
-	case routeProbeVersionSQL:
+	case currentTiDBVersionSQL:
 		return "VERSION"
-	case routeProbeTiDBTxnModeSQL:
+	case currentTiDBSessionSQL:
 		return "TXN_MODE"
 	case routeProbeShardCheckSQL:
 		return "P4"
@@ -540,18 +540,19 @@ func TestRouteDBDSNRejects(t *testing.T) {
 
 const routeCheckViolated = "Check constraint 'chk_route_shard' is violated."
 
-// routeProbeHappy 是一次通过的探针脚本(MySQL)。
+// routeProbeHappy 是一次通过的TiDB探针应答脚本，仅验证SQL状态机，不充当引擎或锁的真实验收。
 func routeProbeHappy() routeScript {
 	return routeScript{}.
 		on("SESSION", rsRows([]driver.Value{"READ-COMMITTED", int64(1)})).
-		on("VERSION", rsRows([]driver.Value{"8.0.36"})).
+		on("VERSION", rsRows([]driver.Value{"8.0.11-TiDB-v8.5.0", "TiDB Server"})).
+		on("TXN_MODE", rsRows([]driver.Value{"pessimistic", "READ-COMMITTED", "leader", "strict", "", int64(0), int64(0)})).
 		on("META", rsRows([]driver.Value{testRouteGen, int64(1)})).
 		on("GUARD", rsOne()).
 		on("P4", rsMySQLErr(mysqlErrCheckConstraintViolated, routeCheckViolated)).
 		on("P5", rsAffected(1), rsAffected(1))
 }
 
-func TestRouteStoreProbe_MySQLHappyPath(t *testing.T) {
+func TestRouteStoreProbe_TiDBHappyPath(t *testing.T) {
 	st, f := newFakeRouteSQLStore(t, routeProbeHappy())
 	meta, err := st.probe(context.Background())
 	if err != nil {
@@ -560,7 +561,7 @@ func TestRouteStoreProbe_MySQLHappyPath(t *testing.T) {
 	if meta.Generation != testRouteGen || meta.Writable != 1 {
 		t.Fatalf("meta = %+v", meta)
 	}
-	assertRouteLabels(t, f, "SESSION", "VERSION", "META", "BEGIN", "GUARD", "P4", "P5", "P5", "ROLLBACK")
+	assertRouteLabels(t, f, "SESSION", "VERSION", "TXN_MODE", "META", "BEGIN", "GUARD", "P4", "P5", "P5", "ROLLBACK")
 	p5 := f.callsOf("P5")
 	assertRouteArgs(t, p5[0], uint64(0), uint64(64))
 	assertRouteArgs(t, p5[1], uint64(63), uint64(63))
@@ -568,8 +569,6 @@ func TestRouteStoreProbe_MySQLHappyPath(t *testing.T) {
 
 func TestRouteStoreProbe_TiDBNeedsPessimistic(t *testing.T) {
 	script := routeProbeHappy()
-	script["VERSION"] = []fakeRouteSQLReply{rsRows([]driver.Value{"8.0.11-TiDB-v7.5.0"})}
-	script.on("TXN_MODE", rsRows([]driver.Value{"pessimistic"}))
 	st, f := newFakeRouteSQLStore(t, script)
 	if _, err := st.probe(context.Background()); err != nil {
 		t.Fatalf("pessimistic TiDB must pass: %v", err)
@@ -578,10 +577,10 @@ func TestRouteStoreProbe_TiDBNeedsPessimistic(t *testing.T) {
 
 	st, _ = newFakeRouteSQLStore(t, routeScript{}.
 		on("SESSION", rsRows([]driver.Value{"READ-COMMITTED", int64(1)})).
-		on("VERSION", rsRows([]driver.Value{"8.0.11-TiDB-v7.5.0"})).
-		on("TXN_MODE", rsRows([]driver.Value{"optimistic"})))
-	if _, err := st.probe(context.Background()); !errors.Is(err, errRouteSessionMisconfigured) {
-		t.Fatalf("optimistic TiDB error = %v, want errRouteSessionMisconfigured", err)
+		on("VERSION", rsRows([]driver.Value{"8.0.11-TiDB-v8.5.0", "TiDB Server"})).
+		on("TXN_MODE", rsRows([]driver.Value{"optimistic", "READ-COMMITTED", "leader", "strict", "", int64(0), int64(0)})))
+	if _, err := st.probe(context.Background()); !errors.Is(err, errCurrentTiDB) {
+		t.Fatalf("optimistic TiDB error = %v, want errCurrentTiDB", err)
 	}
 }
 
@@ -592,7 +591,8 @@ func TestRouteStoreProbe_Refusals(t *testing.T) {
 	untilGuard := func() routeScript {
 		return routeScript{}.
 			on("SESSION", rsRows([]driver.Value{"READ-COMMITTED", int64(1)})).
-			on("VERSION", rsRows([]driver.Value{"8.0.36"})).
+			on("VERSION", rsRows([]driver.Value{"8.0.11-TiDB-v8.5.0", "TiDB Server"})).
+			on("TXN_MODE", rsRows([]driver.Value{"pessimistic", "READ-COMMITTED", "leader", "strict", "", int64(0), int64(0)})).
 			on("META", rsRows([]driver.Value{testRouteGen, int64(1)})).
 			on("GUARD", rsOne())
 	}
@@ -605,7 +605,9 @@ func TestRouteStoreProbe_Refusals(t *testing.T) {
 		{"隔离级别不是RC", session("REPEATABLE-READ", 1), errRouteSessionMisconfigured, ""},
 		{"锁等待不是1s", session("READ-COMMITTED", 50), errRouteSessionMisconfigured, ""},
 		{"route_meta缺行", routeScript{}.on("SESSION", rsRows([]driver.Value{"READ-COMMITTED", int64(1)})).
-			on("VERSION", rsRows([]driver.Value{"8.0.36"})).on("META", rsNone()), errRouteMetaMissing, ""},
+			on("VERSION", rsRows([]driver.Value{"8.0.11-TiDB-v8.5.0", "TiDB Server"})).
+			on("TXN_MODE", rsRows([]driver.Value{"pessimistic", "READ-COMMITTED", "leader", "strict", "", int64(0), int64(0)})).on("META", rsNone()), errRouteMetaMissing, ""},
+		{"历史MySQL拒绝", routeScript{}.on("SESSION", rsRows([]driver.Value{"READ-COMMITTED", int64(1)})).on("VERSION", rsRows([]driver.Value{"8.0.36", "MySQL Community Server"})), errCurrentTiDB, ""},
 		{"P4被接受_CHECK不生效", untilGuard().on("P4", rsAffected(1)), errRouteCheckNotEnforced, ""},
 		{"P4被别的约束拒绝", untilGuard().on("P4", rsMySQLErr(mysqlErrCheckConstraintViolated, "Check constraint 'chk_route_home' is violated.")),
 			errRouteCheckNotEnforced, ""},
@@ -638,7 +640,7 @@ func TestRouteStoreProbe_DeadlockRetriesWholeProbeTx(t *testing.T) {
 	if _, err := st.probe(context.Background()); err != nil {
 		t.Fatalf("probe after one deadlock: %v", err)
 	}
-	assertRouteLabels(t, f, "SESSION", "VERSION", "META", "BEGIN", "GUARD", "P4", "ROLLBACK", "SLEEP",
+	assertRouteLabels(t, f, "SESSION", "VERSION", "TXN_MODE", "META", "BEGIN", "GUARD", "P4", "ROLLBACK", "SLEEP",
 		"BEGIN", "GUARD", "P4", "P5", "P5", "ROLLBACK")
 }
 

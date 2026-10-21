@@ -25,6 +25,8 @@ message RoutePlayerEvent {
   // (≤ gate 会话值),旧版 scene 为 0(docs/design/scene-enter-chain-residuals.md §5.2 ④)。
   // gate 只用它抬高会话上记的代次,不据此丢弃路由(docs/design/scene-enter-session-fence.md §4)。
   uint64 login_generation = 7;
+  // 原始入场请求的账号所有权修订，gate必须逐字透传；不取max、不反查当前账号。
+  uint64 owner_revision = 8;
 }
 
 // login 在 ReplaceLogin 的会话记录提交成功之后,踢掉被替换的旧会话(docs/design/scene-enter-chain-residuals.md §2)。

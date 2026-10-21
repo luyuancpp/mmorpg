@@ -319,3 +319,19 @@ cpp/**                          号段客户端与注册表、三处铸号点改
 proto/**、bin/etc/*.yaml        配置与表结构
 docs/**                         运维手册重写、设计文档标注、缺口清单更新、本文
 ```
+
+## 2026-10-21 全球SQL Team与合区验收迁移
+
+全球合区/撤销的P7以同一TiDB事务域中的`team_membership`原件为准。区域Redis的队伍索引缺失、过期或历史快照均不能证明无队；成员已在SQL离队后，Redis旧索引也不能复活成员。所有同时读取玩家原件与路由原件的db_first入口必须使用同一个SQL入口，包含审计、回填与搬库；合区/撤销拒绝`route-source=redis`。旧Redis算法只保留明确的历史行为/拒绝回归，不再作为全球合区成功路径。
+
+玩家行、路由与Team连接池统一固定TiDB悲观事务、READ-COMMITTED、leader、strict、空snapshot、零staleness与关闭低精度TSO；按大小写无关删除旧参数再绑定规范值，所有新连接都遵守策略。交付句柄前必须确认真实TiDB并读回全部策略；旧MySQL、历史快照及不符策略都拒绝，审计保持INFRA/exit2语义，不能把未执行报成无阻塞。该策略替代上线前旧MySQL成功夹具，不提供全局权威向历史域降级的入口。
+
+`tools/merge_zone`的`merge_integration`成功用例共用受控本机TiDB与独占`merge_zone_it_route`，五张路由表直接从`go/data_service/internal/store/schema.go`提取权威DDL，保留聚簇主键、CHECK与64行片。SQL Team最小读取夹具放`merge_zone_it_db`。原源/目标区、copy/pin、落点搬库、审计、撤销及失败续跑继续执行；夹具显式创建SQL路由原件并发布同rev镜像，绝不在调用前从Redis反向补SQL。
+
+两个“清单固定后出现迟到商品/公会”的原端到端案例改为持有清单内原行，观察TiDB等待图确认真实合区二进制已在主键FOR UPDATE排队，再插入清单外对象并放锁；不使用TiDB不支持的触发器，不靠sleep猜时序。中止后核SQL全部64片仍属于原run；直接重跑和只删Redis镜像均拒绝；恢复使用原`take-over-fence`，两区SQL围栏没有解封空窗。执行计划使用TiDB原生brief计划，要求完整主键Point_Get且无扫描算子；锁图缺PROCESS权限直接失败，不降为概率并发或跳过。
+
+集中验收的工作目录为`D:/luyuan/xuanming-server-mmo-cpp/tools/merge_zone`。前置为已受控配置的本机TiDB（CHECK已启用）与Redis >=7.2（AOF已启用、DB9/10/11原本为空），不由夹具启动服务或修改GLOBAL配置。凭据仅经`MERGE_ZONE_IT_TIDB_DSN`传入无库名/无参数的数字loopback TCP基址；缺省为无口令的本机4000端口。旧`MERGE_ZONE_IT_MYSQL_DSN`只保留参数别名，也必须通过真TiDB探针；旧`MERGE_ZONE_IT_ROUTE_DB_DSN`仅允许同入口、同凭据的独占`merge_zone_it_route`，不触碰任意外置库。TestMain会创建并清理源码列明的固定一次性库，不能指向承载真实数据的实例。
+
+集中执行顺序：先普通`go test -count=1 ./...`，再设置`MERGE_ZONE_IT_REQUIRE=1`后执行`go test -tags merge_integration -count=1 -v ./...`，保存完整stdout/stderr与退出码。通过标准为原有与新增用例均实际运行通过、无SKIP；新增覆盖P7原SQL与Redis历史相反时的判定、旧Redis/分裂SQL域拒绝、参与者非63号片与全64片围栏互斥、三个连接池覆盖污染DSN并读回当前策略。失败保留首错、失败用例名与完整输出，不删除断言或跳过用例。
+
+本次只完成源码、gofmt与静态差异检查；尚未生成、编译、运行单测、连接真实TiDB/Redis或启动任何基础设施。此段不构成运行验收证据。

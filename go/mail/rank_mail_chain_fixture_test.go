@@ -12,6 +12,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/alicebob/miniredis/v2"
+	"github.com/redis/go-redis/v9"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials/insecure"
@@ -23,6 +25,7 @@ import (
 	"schemamigrate"
 	"shared/authoritysql"
 	"shared/domainhost"
+	"shared/loginsession"
 	"shared/serviceauth"
 )
 
@@ -62,11 +65,27 @@ func TestRankMailChainFixture(t *testing.T) {
 	var ids atomic.Uint64
 	next := func(context.Context) (uint64, error) { return ids.Add(1), nil }
 	repo := data.New(db, next, next, func(uint32) bool { return true }, database)
+	// 全局角色目录与原登录态是客户端列表的真实依赖；只在此随机夹具库种原件。
+	if _, err := db.ExecContext(ctx, "CREATE TABLE account_role (player_id BIGINT UNSIGNED PRIMARY KEY,account VARBINARY(191) NOT NULL,owner_revision BIGINT UNSIGNED NOT NULL,trade_listing_id BIGINT UNSIGNED NOT NULL)"); err != nil {
+		t.Fatal(err)
+	}
+	for _, player := range []uint64{7, 8} {
+		if _, err := db.ExecContext(ctx, "INSERT INTO account_role VALUES (?, ?,3,0)", player, []byte("整链原账号")); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if err := repo.ConfigureRoleAuthority(ctx, database); err != nil {
+		t.Fatal(err)
+	}
+	loginCache := miniredis.RunT(t)
+	loginCache.Set(loginsession.KeyFromMember("mail-rank-chain-original:19"), "整链原账号")
+	loginReader := redis.NewClient(&redis.Options{Addr: loginCache.Addr()})
+	t.Cleanup(func() { _ = loginReader.Close() })
 	auth, err := serviceauth.New(map[string]string{"rank": secret})
 	if err != nil {
 		t.Fatal("整链邮件调用方配置无效")
 	}
-	handler := server.New(repo, auth)
+	handler := server.New(repo, auth).WithLoginSessions(loginReader)
 	var responseLost atomic.Bool
 	loseFirstCommittedReply := func(ctx context.Context, request any, info *grpc.UnaryServerInfo, next grpc.UnaryHandler) (any, error) {
 		response, err := next(ctx, request)

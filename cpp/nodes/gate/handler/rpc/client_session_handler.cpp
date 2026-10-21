@@ -209,6 +209,7 @@ static SessionDetails BuildSessionDetails(const SessionId sessionId, const Guid 
 		// 原先只有路由 lane 在 Admit 里写(同一个值),直连模式发出的 Login / CreatePlayer / EnterGame 带 0,
 		// 落进 login 的旧版兼容路径、仍按 session_id 认登录态,gate 重启撞号即可继承别人的登录态(审计 §2.3)。
 		sessionDetails.set_session_incarnation(session->incarnation);
+		sessionDetails.set_owner_revision(session->ownerRevision);
 	}
 	return sessionDetails;
 }
@@ -564,7 +565,7 @@ void GateClientSessionHandler::HandleConnectionDisconnection(const muduo::net::T
 		loginpb::LoginNodeDisconnectRequest request;
 		request.set_session_id(sessionId);
 		// 未绑定玩家时 player_id 保持 0(见上面的注释:Login 会在 playerID==0 门禁早退)。
-		SessionDetails sessionDetails = BuildSessionDetails(sessionId, hasBoundPlayer ? playerId : 0);
+		SessionDetails sessionDetails = BuildSessionDetails(sessionId, hasBoundPlayer ? playerId : 0, &sessionIt->second);
 		// 必须带会话代次:login 会话栅栏按 (gate_instance_id, session_incarnation) 记闭合标记,
 		// 代次为 0 时 Close 整段跳过,经 lane 发出的 Login / EnterGame 建起的栅栏就永远关不上
 		// (client-request-ordering.md §6.2)。shouldNotifyLogin 蕴含 sessionFound,且此处在

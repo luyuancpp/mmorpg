@@ -106,7 +106,7 @@ func (l *LoginLogic) Login(in *login_proto.LoginRequest) (*login_proto.LoginResp
 	// login_session:* write happen when the client then runs Login with
 	// auth_type="access_token" on the gate (loginPathGateBind, below).
 	if path == loginPathHTTP {
-		userAccount, err := GetOrInitUserAccount(l.ctx, l.svcCtx.RedisClient, account)
+		userAccount, err := readAccountDirectory(l.ctx, l.svcCtx, account, true)
 		if err != nil {
 			resp.ErrorMessage = &login_proto_common.TipInfoMessage{Id: accountDirectoryFailureTip(err)}
 			return resp, nil
@@ -210,7 +210,7 @@ func (l *LoginLogic) Login(in *login_proto.LoginRequest) (*login_proto.LoginResp
 	}
 
 	// 5. Load account data
-	userAccount, err := GetOrInitUserAccount(l.ctx, l.svcCtx.RedisClient, account)
+	userAccount, err := readAccountDirectory(l.ctx, l.svcCtx, account, true)
 	if err != nil {
 		resp.ErrorMessage = &login_proto_common.TipInfoMessage{Id: accountDirectoryFailureTip(err)}
 		return resp, nil
@@ -241,16 +241,16 @@ func (l *LoginLogic) Login(in *login_proto.LoginRequest) (*login_proto.LoginResp
 	return resp, nil
 }
 
-// roleListWithCurrentHomeZone 把账号 blob 里的角色列表转成响应,并用 data_service
+// roleListWithCurrentHomeZone 把 SQL 目录角色列表转成响应,并用 data_service
 // 的 player:zone 映射覆盖每个角色的 zone_id。
 //
-// 账号 blob 里的 zone_id 只是建角时盖的章(createplayerlogic.go),合服只改映射
-// 不改 blob,所以直接返回它会把玩家引向已下线的源 zone。这里刻意**不把刷新后的
-// zone 回写 blob**:映射是唯一真源,回写等于制造第二份真相,再次合服 / 回滚时两
+// 目录角色里的 zone_id 只是建角时盖的章(createplayerlogic.go),合服只改映射
+// 不改目录副本,所以直接返回它会把玩家引向已下线的源 zone。这里刻意**不把刷新后的
+// zone 回写目录**:映射是唯一真源,回写等于制造第二份真相,再次合服 / 回滚时两
 // 份必然打架。映射查不到 / RPC 失败 / 开关关闭 → 原样返回建角 zone,登录不受影响。
 //
-// 缺名的角色(self-heal 恢复出的空记录、早于名字功能的旧角色)随后由
-// fillMissingRoleNames 回源名字注册表补上,同样只补在返回的那一份上、不回写 blob。
+// 缺名的旧角色随后由 fillMissingRoleNames 回源名字注册表补上,
+// 同样只补在返回的那一份上、不回写目录。
 //
 // 两次查询**串行**且共用 HomeZone.RoleListLookupTimeout 这一个配置值(各自独立计时,
 // 不是共享一份预算):全部有名的账号仍只有 zone 那一跳;有缺名角色的账号最坏等 2× 该值。
@@ -289,14 +289,14 @@ type roleNameLookup interface {
 
 // fillMissingRoleNames 给角色列表里 Name 为空的角色回源补名,原地改 roles 的元素。
 //
-// 账号 blob 里的名字副本可能缺失(EnterGame self-heal 恢复出的空记录、早于名字功能的
+// 目录角色里的名字副本可能缺失(早于名字功能的
 // 旧角色),直接下发就是一行空白。全部有名时不发 RPC —— 这是绝大多数登录;有缺名的才
 // 一次 Lookup 查完,预算 timeout(<=0 用 playernamereg.DefaultLookupTimeout)。
 //
 // 名字是展示数据,读侧 fail-open:Lookup 报错 / 超时 / 注册表未配置 → 只记 Info,列表原样
 // 返回,登录不受影响。命中的角色先 proto.Clone 再写 Name:buildRoleList 在 resolver 为 nil
 // 或开关关闭时透传的是账号对象本身的指针,原地写会把回源结果带进之后任何一次
-// Marshal(userAccount);与 zone 刷新同一条纪律 —— 注册表是唯一真源,不回写 blob。
+// Marshal(userAccount);与 zone 刷新同一条纪律 —— 注册表是唯一真源,不回写目录。
 //
 // names 为 nil 接口时直接返回;*playernamereg.Client 的 nil 指针装进接口后**不等于**
 // nil 接口,那种情况由 Client.Lookup 的 nil 接收者分支返回 ErrUnavailable,走错误分支。
@@ -340,39 +340,7 @@ func fillMissingRoleNames(ctx context.Context, names roleNameLookup,
 	}
 }
 
-// 账号角色目录是当前 Redis 权威记录，不是可重新加载的缓存。
-// GET/PERSIST/初始化在同一个脚本中完成：迁移旧 TTL，且不会以空账号覆盖并发建角。
-var getOrInitUserAccountScript = redis.NewScript(`
-local value = redis.call("GET", KEYS[1])
-if value then
-    redis.call("PERSIST", KEYS[1])
-    return value
-end
-redis.call("SET", KEYS[1], ARGV[1])
-return ARGV[1]
-`)
-
-func GetOrInitUserAccount(ctx context.Context, rdb *redis.Client, account string) (*login_proto_data_base.UserAccounts, error) {
-	userAccount := &login_proto_data_base.UserAccounts{}
-	empty, err := proto.Marshal(userAccount)
-	if err != nil {
-		return nil, err
-	}
-	value, err := getOrInitUserAccountScript.Run(ctx, rdb, []string{constants.GetAccountDataKey(account)}, empty).Text()
-	if err != nil {
-		logx.Errorf("Failed to read or preserve account character directory: account=%s err=%v", account, err)
-		return nil, err
-	}
-
-	if err := proto.Unmarshal([]byte(value), userAccount); err != nil {
-		logx.Errorf("Unmarshal user account failed for account=%s: %v", account, err)
-		return nil, fmt.Errorf("%w: %v", errAccountDirectoryCorrupt, err)
-	}
-
-	return userAccount, nil
-}
-
-// errAccountDirectoryCorrupt 标记账号目录记录存在但解析不了(数据损坏),与 Redis 读写故障区分开。
+// errAccountDirectoryCorrupt 标记账号目录记录存在但解析不了(数据损坏)，与 SQL/RPC 依赖故障区分开。
 var errAccountDirectoryCorrupt = errors.New("account character directory is corrupt")
 
 // accountDirectoryFailureTip 把账号目录读取失败映射成 in-band 故障码(Tip.xlsx 的 fault 列,serverbase 据此告警)。
@@ -382,7 +350,7 @@ func accountDirectoryFailureTip(err error) uint32 {
 	if errors.Is(err, errAccountDirectoryCorrupt) {
 		return uint32(table.LoginError_kLoginDataParseFailed)
 	}
-	return uint32(table.LoginError_kLoginRedisError)
+	return uint32(table.LoginError_kLoginDataSerializeFailed)
 }
 
 // authFailureTip 把认证失败映射成回给客户端的码:渠道或本服务渠道配置侧的故障(auth.ErrProviderUnavailable:

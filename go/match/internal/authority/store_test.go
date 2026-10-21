@@ -15,6 +15,7 @@ import (
 	"google.golang.org/protobuf/proto"
 	"match/internal/config"
 	pb "proto/match"
+	teampb "proto/team"
 	"schemamigrate"
 )
 
@@ -48,9 +49,10 @@ func testStore(t *testing.T) *Store {
 	})
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
-	_, e = schemamigrate.Up(ctx, db, schemamigrate.Options{Database: name, Tables: []proto.Message{&pb.MatchNetworkProfileRecord{}, &pb.MatchAuthorityTicketRecord{}, &pb.MatchJoinIntentRecord{}, &pb.MatchDirectIntentRecord{}, &pb.MatchFormationRecord{}, &pb.MatchRatingRecord{}, &pb.MatchRatingAppliedRecord{}, &pb.MatchRankSourceRecord{}, &pb.MatchRankOutboxRecord{}, &pb.MatchBattleCompletionRecord{}, &pb.MatchBattleSettlementSourceRecord{}}})
+	_, e = schemamigrate.Up(ctx, db, schemamigrate.Options{Database: name, Tables: []proto.Message{&pb.MatchSpectatorRecord{}, &pb.MatchSpectatorIntentRecord{}, &pb.MatchSpectatorHeadRecord{}, &pb.MatchNetworkProfileRecord{}, &pb.MatchAuthorityTicketRecord{}, &pb.MatchTicketRegionRecord{}, &pb.MatchChallengeInvitationRecord{}, &pb.MatchGlobalPolicyRecord{}, &pb.MatchJoinIntentRecord{}, &pb.MatchDirectIntentRecord{}, &pb.MatchFormationRecord{}, &pb.MatchRatingRecord{}, &pb.MatchRatingAppliedRecord{}, &pb.MatchRankSourceRecord{}, &pb.MatchRankOutboxRecord{}, &pb.MatchBattleCompletionRecord{}, &pb.MatchBattleSettlementSourceRecord{}, &teampb.TeamAuthorityRecord{}, &teampb.TeamMembershipRecord{}, &teampb.TeamInviteIndexRecord{}, &teampb.TeamActionReceiptRecord{}, &teampb.TeamLaunchRecord{}, &teampb.TeamLaunchRegionRecord{}, &teampb.TeamApplicationIndexRecord{}, &teampb.TeamLaunchRoleRecord{}}})
 	require.NoError(t, e)
-	return &Store{DB: db, Secret: []byte("fixture-only-probe-key-00000000000"), Config: config.GlobalMatchConf{HardLatencyMs: 180, CrossRegionWaitSeconds: 30}}
+	// 本夹具只验证独立匹配SQL状态机；真实P/账号/修订围栏由原生角色夹具验证。
+	return &Store{DB: db, Secret: []byte("fixture-only-probe-key-00000000000"), Config: config.GlobalMatchConf{HardLatencyMs: 180, CrossRegionWaitSeconds: 30}, roleGuard: func(context.Context, *sql.Tx, []*pb.MatchAuthorityTicketRecord) error { return nil }}
 }
 
 func testJoin(t *testing.T, s *Store, pid uint64) *pb.MatchAuthorityTicketRecord {

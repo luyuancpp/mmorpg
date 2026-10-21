@@ -26,6 +26,36 @@ Regions:
         - 127.0.0.1:7001
 `
 
+func TestAccountDirectoryRoleTradeSQLProofRequiresExplicitConfig(t *testing.T) {
+	absent := loadYaml(t, minimalYaml)
+	if absent.AccountDirectory.RoleTradeSQLProof.Enabled || len(absent.AccountDirectory.RoleTradeSQLProof.AllowedStorageIDs) != 0 || absent.AccountDirectory.MaxRoles() != 5 {
+		t.Fatal("缺配置不能隐式启用跨库冻结证明，目录上限仍为全局默认")
+	}
+	explicit := loadYaml(t, minimalYaml+"\nAccountDirectory:\n  MaxPlayersPerAccount: 7\n  RoleTradeSQLProof:\n    Enabled: true\n    AllowedStorageIDs: [1, 1000000]\n")
+	proof := explicit.AccountDirectory.RoleTradeSQLProof
+	if !proof.Enabled || len(proof.AllowedStorageIDs) != 2 || proof.AllowedStorageIDs[0] != 1 || proof.AllowedStorageIDs[1] != 1000000 || explicit.AccountDirectory.MaxRoles() != 7 {
+		t.Fatal("显式SQL证明白名单/角色上限未被配置解析器识别")
+	}
+}
+
+func TestAccountDirectoryPendingSchemasAreExplicitAndMatchIsParsed(t *testing.T) {
+	absent := loadYaml(t, minimalYaml).AccountDirectory
+	if absent.RoleTradeTradeSchema != "" || absent.RoleTradeGuildSchema != "" || absent.RoleTradeMailSchema != "" || absent.RoleTradeMatchSchema != "" || absent.RoleTradeInboxSchema != "" {
+		t.Fatal("跨域挂起schema缺失不能从DSN或其它服务配置补齐")
+	}
+	explicit := loadYaml(t, minimalYaml+"\nAccountDirectory:\n  RoleTradeTradeSchema: peer_trade\n  RoleTradeGuildSchema: peer_guild\n  RoleTradeMailSchema: peer_mail\n  RoleTradeMatchSchema: peer_match\n  RoleTradeInboxSchema: peer_inbox\n").AccountDirectory
+	if explicit.RoleTradeTradeSchema != "peer_trade" || explicit.RoleTradeGuildSchema != "peer_guild" || explicit.RoleTradeMailSchema != "peer_mail" || explicit.RoleTradeMatchSchema != "peer_match" || explicit.RoleTradeInboxSchema != "peer_inbox" {
+		t.Fatal("显式trade/guild/mail/match权威schema必须完整保留")
+	}
+	var shipped Config
+	if err := conf.Load("../../etc/data_service.yaml", &shipped); err != nil {
+		t.Fatal(err)
+	}
+	if shipped.AccountDirectory.RoleTradeMatchSchema != "mmorpg_match" || shipped.AccountDirectory.RoleTradeInboxSchema != "mmorpg_player_inbox" {
+		t.Fatal("仓库配置必须显式登记匹配挂起权威schema")
+	}
+}
+
 func loadYaml(t *testing.T, body string) Config {
 	t.Helper()
 	path := filepath.Join(t.TempDir(), "data_service.yaml")

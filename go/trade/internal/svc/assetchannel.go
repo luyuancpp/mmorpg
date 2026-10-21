@@ -111,6 +111,7 @@ type AssetChannel struct {
 	Pipeline *reconcile.Pipeline
 	Commerce *commerce.Engine
 	Mall     *commerce.Mall
+	Rmb      *commerce.RmbConsignments
 	// Wake 落地唤醒订阅(shared/assetopwake,设计 §5.3):订 SharedRedis 上的 assetop:wake,
 	// 把玩家落地交给 Pipeline.WakePlayer。AssetOp.Wake 显式关闭时为 nil(nil 接收者的 Start / Stop 安全)。
 	Wake *assetopwake.Subscriber
@@ -417,20 +418,35 @@ func (a *AssetChannel) Start(ctx context.Context, etcd *clientv3.Client) {
 				defer a.wg.Done()
 				ticker := time.NewTicker(time.Second)
 				defer ticker.Stop()
+				phase := 0
 				for {
 					select {
 					case <-loopCtx.Done():
 						return
 					case <-ticker.C:
 						budget, cancel := context.WithTimeout(loopCtx, 10*time.Second)
-						if err := a.Commerce.Tick(budget); err != nil && loopCtx.Err() == nil {
-							logx.Errorf("交易合同恢复失败: %v", err)
-						}
-						if a.Mall != nil {
-							if err := a.Mall.Tick(budget); err != nil && loopCtx.Err() == nil {
-								logx.Errorf("商城交付恢复失败: %v", err)
+						// 各通道保留子预算并轮换起点，离线角色/商城故障不能吃光其它通道整个10秒窗口。
+						for n := 0; n < 3; n++ {
+							child, release := context.WithTimeout(budget, 3*time.Second)
+							var err error
+							switch (phase + n) % 3 {
+							case 0:
+								err = a.Commerce.Tick(child)
+							case 1:
+								if a.Mall != nil {
+									err = a.Mall.Tick(child)
+								}
+							case 2:
+								if a.Rmb != nil {
+									err = a.Rmb.Tick(child)
+								}
+							}
+							release()
+							if err != nil && loopCtx.Err() == nil {
+								logx.Errorf("交易恢复通道失败 phase=%d: %v", (phase+n)%3, err)
 							}
 						}
+						phase = (phase + 1) % 3
 						cancel()
 					}
 				}

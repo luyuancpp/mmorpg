@@ -89,6 +89,10 @@ namespace teampb {
     void SetTeamCallDeadline(std::chrono::milliseconds deadline);
 }
 
+namespace teampb {
+    void SetTeamAuthorityCallDeadline(std::chrono::milliseconds deadline);
+}
+
 namespace trade {
     void SetJubaozhaiCallDeadline(std::chrono::milliseconds deadline);
 }
@@ -163,6 +167,9 @@ void SetGrpcCallDeadline(uint32_t nodeType, std::chrono::milliseconds deadline){
     }
     if (static_cast<uint32_t>(common::base::eNodeType::TeamNodeService) == nodeType) {
         teampb::SetTeamCallDeadline(deadline);
+    }
+    if (static_cast<uint32_t>(common::base::eNodeType::TeamNodeService) == nodeType) {
+        teampb::SetTeamAuthorityCallDeadline(deadline);
     }
     if (static_cast<uint32_t>(common::base::eNodeType::TradeNodeService) == nodeType) {
         trade::SetJubaozhaiCallDeadline(deadline);

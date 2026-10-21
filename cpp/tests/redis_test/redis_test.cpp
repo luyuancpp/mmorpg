@@ -46,12 +46,12 @@ TEST(RedisTest, AsyncMessageLoad)
     EventLoop loop;
 
     InetAddress serverAddr("127.0.0.1", 6379);
-    hiredis::Hiredis hiredis(&loop, serverAddr);
+    auto client = hiredis::Hiredis::Create(&loop, serverAddr);
 
-    hiredis.connect();
+    client->connect();
     Guid player = 1;
     using LoginRequestAsyncClient = MessageAsyncClient<Guid, LoginRequest>;
-    LoginRequestAsyncClient c(hiredis);
+    LoginRequestAsyncClient c(client);
     c.SetLoadCallback(OnAsyncLoadMessage);
     loop.runAfter(1, [&c, player]() ->void
         {

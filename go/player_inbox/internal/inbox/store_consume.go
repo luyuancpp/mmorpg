@@ -3,23 +3,17 @@ package inbox
 import (
 	"context"
 	"database/sql"
-	"errors"
 	"fmt"
 
 	"player_inbox/internal/constants"
 	"player_inbox/internal/metrics"
 
 	base "proto/common/base"
+	dspb "proto/data_service"
 	inboxpb "proto/player_inbox"
-
-	"shared/assetop"
 
 	"github.com/zeromicro/go-zero/core/logx"
 )
-
-// errFenceBoundMissing:锁内的 fence 比快照小(需要 R 却没读)。fence 只升不降,只可能是缺陷或库被动过;
-// fail-closed 按故障返回,不在没有上界的情况下推进围栏。
-var errFenceBoundMissing = errors.New("inbox: stream fence_epoch went backwards between snapshot and lock")
 
 const (
 	fetchPathFast   = "fast"
@@ -97,17 +91,8 @@ func (s *Store) reportFenceReject(ctx context.Context, rpc string, v inboxpb.Pla
 	}
 }
 
-// Fetch 按 seq 升序拉 PENDING 条目并推进围栏(设计 §7.8 Fetch)。业务拒绝走响应里的 fence / tip,
-// 基础设施故障走 error(调用方回 kPlayerInboxStoreUnavailable)。
-//
-//  0. 快路径(不加锁):普通读流行。不存在 → NO_STREAM(绝大多数玩家,结束);open_count == 0 且没有
-//     CursorAhead → 按快照算围栏结局、直接返回空,**不写任何东西**。不写围栏是安全的:围栏保护的是「投递」
-//     与「确认」,两者都走加锁路径;僵尸 scene 即使拿到条目,存盘也会被 Redis 的 Lua CAS 拒绝。
-//  1. 否则开事务,流行 FOR UPDATE,DecideFence;STALE / EPOCH_REQUIRED / EPOCH_AHEAD 不写直接返回。
-//  2. CursorAhead:consumer_decided_through ≥ next_seq → 告警并 next_seq = max(next_seq, 水位+1),照常投递。
-//  3. 普通读 PENDING 行:主键范围扫描、seq 升序、LIMIT max+1。
-//  4. 对返回的每一行按主键条件写 delivery_count+1、last_delivered_epoch、last_delivered_ms(条件 state=PENDING)。
-//  5. FIRST / ADVANCE 写回 fence_epoch;6. 提交。
+// Fetch在同P内核完整已登记入场，再读stream并按seq投递。空流也不能绕过原件授权。
+// SQL stream高水位只升；Redis仅参与诊断。CursorAhead仍只抬next_seq，不重放旧业务效果。
 func (s *Store) Fetch(ctx context.Context, req *inboxpb.FetchPlayerInboxRequest) (*inboxpb.FetchPlayerInboxResponse, error) {
 	resp := &inboxpb.FetchPlayerInboxResponse{
 		PlayerId: req.GetPlayerId(), Domain: req.GetDomain(), CorrelationId: req.GetCorrelationId(),
@@ -129,36 +114,10 @@ func (s *Store) Fetch(ctx context.Context, req *inboxpb.FetchPlayerInboxRequest)
 
 	playerID := req.GetPlayerId()
 	shard := RowShard(playerID)
-	snap, err := readStream(ctx, s.db, shard, playerID, domain)
-	if err != nil {
-		return nil, err
+	if req.GetAdmission().GetPlayerId() != playerID || req.GetAdmission().GetOwnerEpoch() != reqEpoch {
+		return nil, ErrOriginalRole
 	}
-	if snap == nil {
-		resp.Fence = inboxpb.PlayerInboxFenceVerdict_PLAYER_INBOX_FENCE_NO_STREAM
-		metrics.ObserveFetch(dl, FenceLabel(resp.Fence), fetchPathFast)
-		return resp, nil
-	}
-
-	var r uint64
-	rRead := false
-	if NeedsEpochBound(reqEpoch, snap.GetFenceEpoch()) {
-		if r, err = s.readEpochBound(ctx, playerID); err != nil {
-			return nil, err
-		}
-		rRead = true
-	}
-
 	decidedThrough := req.GetConsumerDecidedThrough()
-	if !fetchNeedsLock(snap, decidedThrough) {
-		v := DecideFence(reqEpoch, snap.GetFenceEpoch(), r)
-		resp.Fence = v
-		if !FenceAllows(v) {
-			resp.ErrorMessage = tipOf(fenceRejectTip(v))
-			s.reportFenceReject(ctx, "Fetch", v, playerID, domain, reqEpoch, snap.GetFenceEpoch(), req.GetSceneNodeId())
-		}
-		metrics.ObserveFetch(dl, FenceLabel(v), fetchPathFast)
-		return resp, nil
-	}
 
 	// ── 加锁路径 ──
 	maxItems := clampFetchItems(req.GetMaxItems(), constants.FetchDefaultItems, constants.FetchMaxItems)
@@ -172,22 +131,26 @@ func (s *Store) Fetch(ctx context.Context, req *inboxpb.FetchPlayerInboxRequest)
 		scanBound   uint64
 		scanWhole   bool
 	)
-	err = assetop.WithTxRetryConfig(ctx, s.db, s.txCfg, func(tx *sql.Tx) error {
+	err := s.withPlayerTx(ctx, playerID, func(tx *sql.Tx, original *dspb.AccountRoleOwnership) error {
 		verdict, lockedFence, items, hasMore, cursorAhead, raisedTo, scanBound, scanWhole =
 			inboxpb.PlayerInboxFenceVerdict_PLAYER_INBOX_FENCE_UNSPECIFIED, 0, nil, false, false, 0, 0, false
+		if err := s.roles.VerifyAdmission(ctx, tx, original, req.GetAdmission()); err != nil {
+			return err
+		}
+		if err := requirePendingOriginalsTx(ctx, tx, original); err != nil {
+			return err
+		}
 		st, err := lockStream(ctx, tx, shard, playerID, domain)
 		if err != nil {
 			return err
 		}
 		if st == nil {
-			// 流行永不删除:快照看得见、锁内看不见只可能是库被动过。
-			return errStreamVanished
+			verdict = inboxpb.PlayerInboxFenceVerdict_PLAYER_INBOX_FENCE_NO_STREAM
+			return nil
 		}
 		lockedFence = st.GetFenceEpoch()
-		if NeedsEpochBound(reqEpoch, lockedFence) && !rRead {
-			return errFenceBoundMissing
-		}
-		verdict = DecideFence(reqEpoch, lockedFence, r)
+		// 完整SQL入场原件已经授权该E；Redis只供诊断，不允许历史Redis快照重写授权上界。
+		verdict = DecideFence(reqEpoch, lockedFence, reqEpoch)
 		if !FenceAllows(verdict) {
 			return nil // 不写任何东西
 		}
@@ -205,6 +168,9 @@ func (s *Store) Fetch(ctx context.Context, req *inboxpb.FetchPlayerInboxRequest)
 		scanBound, scanWhole = fetchScanBound(pending, maxItems+1)
 		pending, hasMore = splitPage(pending, maxItems)
 		for _, row := range pending {
+			if err = requireItemOriginal(row, original); err != nil {
+				return err
+			}
 			upd, err := tx.ExecContext(ctx, "UPDATE "+itemTable+
 				" SET `delivery_count` = `delivery_count` + 1, `last_delivered_epoch` = ?, `last_delivered_ms` = ?, `updated_ms` = ?"+
 				" WHERE "+itemPK+" AND `state` = ?",
@@ -236,6 +202,10 @@ func (s *Store) Fetch(ctx context.Context, req *inboxpb.FetchPlayerInboxRequest)
 	}
 
 	resp.Fence = verdict
+	if verdict == inboxpb.PlayerInboxFenceVerdict_PLAYER_INBOX_FENCE_NO_STREAM {
+		metrics.ObserveFetch(dl, FenceLabel(verdict), fetchPathFast)
+		return resp, nil
+	}
 	if !FenceAllows(verdict) {
 		resp.ErrorMessage = tipOf(fenceRejectTip(verdict))
 		s.reportFenceReject(ctx, "Fetch", verdict, playerID, domain, reqEpoch, lockedFence, req.GetSceneNodeId())
@@ -303,8 +273,8 @@ func (s *Store) countScannedRows(ctx context.Context, shard uint32, playerID uin
 	return n, nil
 }
 
-// Ack 登记消费方**已落盘**的结局(设计 §7.7、§7.8 Ack 表)。锁流行、DecideFence(同样的 R 规则),
-// 然后按 seq 升序逐条判定(decideAck),终结时用主键条件写;最后写回 open_count、需要时写回 fence_epoch。
+// Ack在同P内核完整原入场与条目owner后，登记消费方已落盘结局。
+// 按seq逐项判定并条件终结，open_count与SQL fence_epoch同事务提交。
 func (s *Store) Ack(ctx context.Context, req *inboxpb.AckPlayerInboxRequest) (*inboxpb.AckPlayerInboxResponse, error) {
 	resp := &inboxpb.AckPlayerInboxResponse{
 		PlayerId: req.GetPlayerId(), Domain: req.GetDomain(), CorrelationId: req.GetCorrelationId(),
@@ -327,29 +297,8 @@ func (s *Store) Ack(ctx context.Context, req *inboxpb.AckPlayerInboxRequest) (*i
 	}
 
 	shard := RowShard(playerID)
-	snap, err := readStream(ctx, s.db, shard, playerID, domain)
-	if err != nil {
-		return nil, err
-	}
-	if snap == nil {
-		// 没有流就不可能有投递过的条目:逐条回 UNKNOWN_SEQ(协议异常,消费方 halt 并告警)。
-		resp.Fence = inboxpb.PlayerInboxFenceVerdict_PLAYER_INBOX_FENCE_NO_STREAM
-		for _, d := range req.GetDecisions() {
-			resp.Results = append(resp.Results, &inboxpb.PlayerInboxAckItem{
-				Seq: d.GetSeq(), Result: inboxpb.PlayerInboxAckResult_PLAYER_INBOX_ACK_UNKNOWN_SEQ,
-			})
-		}
-		s.reportAckResults(ctx, playerID, domain, req, resp.Results)
-		return resp, nil
-	}
-
-	var r uint64
-	rRead := false
-	if NeedsEpochBound(reqEpoch, snap.GetFenceEpoch()) {
-		if r, err = s.readEpochBound(ctx, playerID); err != nil {
-			return nil, err
-		}
-		rRead = true
+	if req.GetAdmission().GetPlayerId() != playerID || req.GetAdmission().GetOwnerEpoch() != reqEpoch {
+		return nil, ErrOriginalRole
 	}
 
 	seqs := make([]uint64, 0, len(req.GetDecisions()))
@@ -361,20 +310,27 @@ func (s *Store) Ack(ctx context.Context, req *inboxpb.AckPlayerInboxRequest) (*i
 		lockedFence uint64
 		results     []*inboxpb.PlayerInboxAckItem
 	)
-	err = assetop.WithTxRetryConfig(ctx, s.db, s.txCfg, func(tx *sql.Tx) error {
+	err := s.withPlayerTx(ctx, playerID, func(tx *sql.Tx, original *dspb.AccountRoleOwnership) error {
 		verdict, lockedFence, results = inboxpb.PlayerInboxFenceVerdict_PLAYER_INBOX_FENCE_UNSPECIFIED, 0, nil
+		if err := s.roles.VerifyAdmission(ctx, tx, original, req.GetAdmission()); err != nil {
+			return err
+		}
+		if err := requirePendingOriginalsTx(ctx, tx, original); err != nil {
+			return err
+		}
 		st, err := lockStream(ctx, tx, shard, playerID, domain)
 		if err != nil {
 			return err
 		}
 		if st == nil {
-			return errStreamVanished
+			verdict = inboxpb.PlayerInboxFenceVerdict_PLAYER_INBOX_FENCE_NO_STREAM
+			for _, report := range req.GetDecisions() {
+				results = append(results, &inboxpb.PlayerInboxAckItem{Seq: report.GetSeq(), Result: inboxpb.PlayerInboxAckResult_PLAYER_INBOX_ACK_UNKNOWN_SEQ})
+			}
+			return nil
 		}
 		lockedFence = st.GetFenceEpoch()
-		if NeedsEpochBound(reqEpoch, lockedFence) && !rRead {
-			return errFenceBoundMissing
-		}
-		verdict = DecideFence(reqEpoch, lockedFence, r)
+		verdict = DecideFence(reqEpoch, lockedFence, reqEpoch)
 		if !FenceAllows(verdict) {
 			return nil
 		}
@@ -385,6 +341,9 @@ func (s *Store) Ack(ctx context.Context, req *inboxpb.AckPlayerInboxRequest) (*i
 		nowMs := s.nowMs()
 		var finalized uint32
 		for _, report := range req.GetDecisions() {
+			if err = requireItemOriginal(rows[report.GetSeq()], original); err != nil {
+				return err
+			}
 			d := decideAck(rows[report.GetSeq()], report)
 			if d.finalize {
 				upd, err := tx.ExecContext(ctx, "UPDATE "+itemTable+
@@ -424,6 +383,11 @@ func (s *Store) Ack(ctx context.Context, req *inboxpb.AckPlayerInboxRequest) (*i
 	}
 
 	resp.Fence = verdict
+	if verdict == inboxpb.PlayerInboxFenceVerdict_PLAYER_INBOX_FENCE_NO_STREAM {
+		resp.Results = results
+		s.reportAckResults(ctx, playerID, domain, req, results)
+		return resp, nil
+	}
 	if !FenceAllows(verdict) {
 		resp.ErrorMessage = tipOf(fenceRejectTip(verdict))
 		s.reportFenceReject(ctx, "Ack", verdict, playerID, domain, reqEpoch, lockedFence, req.GetSceneNodeId())

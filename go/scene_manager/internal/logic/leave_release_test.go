@@ -690,7 +690,7 @@ func TestLeaveGameQuickReloginGoesThroughHandoffGate(t *testing.T) {
 	require.NotNil(t, identLocation(t, sc, playerID))
 
 	// 2. 快速重登(新会话 22、更大代次)被派到节点 20:换手门要求当前代标记 → 18,不铸造、不改 location。
-	relogin := &scene_manager.EnterSceneRequest{
+	relogin := &scene_manager.EnterSceneRequest{OwnerRevision: 1,
 		PlayerId: playerID, SceneId: s2, ZoneId: testZoneId, SessionId: 22, LoginGeneration: identGenB,
 		GateZoneId: testZoneId, GateId: "2", GateInstanceId: "gate-b-uuid",
 	}

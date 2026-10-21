@@ -97,7 +97,7 @@ func releaseDispatchCrossNodeFixture(t *testing.T, sc *svc.ServiceContext, mr *m
 }
 
 func releaseDispatchRequest(playerID, targetScene uint64, withGate bool) *scene_manager.EnterSceneRequest {
-	req := &scene_manager.EnterSceneRequest{PlayerId: playerID, SceneId: targetScene, ZoneId: testZoneId, GateZoneId: testZoneId}
+	req := &scene_manager.EnterSceneRequest{OwnerRevision: 1, PlayerId: playerID, SceneId: targetScene, ZoneId: testZoneId, GateZoneId: testZoneId}
 	if withGate {
 		req.GateId = "1"
 		req.GateInstanceId = "gate-uuid-test"

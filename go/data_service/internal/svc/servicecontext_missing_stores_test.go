@@ -12,6 +12,8 @@ import (
 	"data_service/internal/routereconcile"
 	"data_service/internal/routing"
 	"data_service/internal/store"
+	"shared/accountdirectory"
+	"shared/serviceauth"
 
 	"github.com/alicebob/miniredis/v2"
 	"github.com/zeromicro/go-zero/core/stores/redis"
@@ -20,7 +22,7 @@ import (
 // MissingStores 是 Store.Required 拒启判定的唯一依据:四个 store 各自独立上报,顺序固定(日志与告警可比对)。
 // 这里只需要"是不是 nil",所以直接用零值结构,不连库。
 func TestMissingStoresReportsEachNilStore(t *testing.T) {
-	all := []string{"snapshot", "transaction_log", "id_segment", "player_name"}
+	all := []string{"account_directory", "snapshot", "transaction_log", "id_segment", "player_name"}
 	if got := (&ServiceContext{}).MissingStores(); !reflect.DeepEqual(got, all) {
 		t.Fatalf("a context with no stores must report all four in order, got %v", got)
 	}
@@ -28,6 +30,7 @@ func TestMissingStoresReportsEachNilStore(t *testing.T) {
 
 // 下面几个桩只为让 MissingStores 看到"非 nil":嵌入接口本身(零值)即满足接口,方法从不会被调用 ——
 // MissingStores 只判空,调到任何方法都是测试写错了,nil 接口会当场 panic 暴露出来。
+type stubAccountDirectory struct{ accountdirectory.Directory }
 type stubSnapshotStore struct{ SnapshotStore }
 type stubTxLogStore struct{ TransactionLogStore }
 type stubIdSegmentStore struct{ IdSegmentStore }
@@ -62,6 +65,7 @@ func TestMissingStoresReportsPlayerRouteOnlyUnderDBFirst(t *testing.T) {
 		return &ServiceContext{
 			Config:           c,
 			SnapshotStore:    stubSnapshotStore{},
+			AccountDirectory: stubAccountDirectory{}, AccountDirectoryAuth: &serviceauth.Verifier{},
 			TxLogStore:       stubTxLogStore{},
 			IdSegmentStore:   stubIdSegmentStore{},
 			PlayerNameStore:  stubPlayerNameStore{},
@@ -88,7 +92,7 @@ func TestMissingStoresReportsPlayerRouteOnlyUnderDBFirst(t *testing.T) {
 		{"empty mode without route store", fourReady(withMode(""), nil), nil},
 		// 全缺时 player_route、route_reconciler 依次排在四个老 store 之后,告警比对的顺序不变。
 		{"db_first with nothing assembled", &ServiceContext{Config: withMode(config.RouteStoreModeDBFirst)},
-			[]string{"snapshot", "transaction_log", "id_segment", "player_name", "player_route", "route_reconciler"}},
+			[]string{"account_directory", "snapshot", "transaction_log", "id_segment", "player_name", "player_route", "route_reconciler"}},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
@@ -205,6 +209,7 @@ func TestMissingStoresReportsRouteReconcilerOnlyWhenEnabled(t *testing.T) {
 		return &ServiceContext{
 			Config:           c,
 			SnapshotStore:    stubSnapshotStore{},
+			AccountDirectory: stubAccountDirectory{}, AccountDirectoryAuth: &serviceauth.Verifier{},
 			TxLogStore:       stubTxLogStore{},
 			IdSegmentStore:   stubIdSegmentStore{},
 			PlayerNameStore:  stubPlayerNameStore{},

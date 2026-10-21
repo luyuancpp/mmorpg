@@ -8,14 +8,23 @@ package server
 
 import (
 	"context"
+	"errors"
+	"os"
+	"strings"
 	"time"
 
 	"player_inbox/internal/constants"
 
 	base "proto/common/base"
 	inboxpb "proto/player_inbox"
+	"shared/accountdirectory"
+	"shared/serviceauth"
 
 	"github.com/zeromicro/go-zero/core/logx"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/metadata"
+	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/proto"
 )
 
 // ConsumerStore 是 scene 侧协议需要的存储能力(*inbox.Store 实现它)。
@@ -27,13 +36,36 @@ type ConsumerStore interface {
 // PlayerInboxServer 实现 inboxpb.PlayerInboxServer。
 type PlayerInboxServer struct {
 	inboxpb.UnimplementedPlayerInboxServer
-	store  ConsumerStore
-	budget time.Duration
+	store    ConsumerStore
+	budget   time.Duration
+	verifier *serviceauth.Verifier
 }
 
 // NewPlayerInboxServer。budget 是整请求 I/O 预算(config.RequestBudget,= Timeout − 回包余量)。
-func NewPlayerInboxServer(store ConsumerStore, budget time.Duration) *PlayerInboxServer {
-	return &PlayerInboxServer{store: store, budget: budget}
+func NewPlayerInboxServer(store ConsumerStore, budget time.Duration, verifier *serviceauth.Verifier) *PlayerInboxServer {
+	return &PlayerInboxServer{store: store, budget: budget, verifier: verifier}
+}
+
+func NewConsumerVerifier() (*serviceauth.Verifier, error) {
+	verifier, err := serviceauth.New(map[string]string{"scene": strings.TrimSpace(os.Getenv(accountdirectory.SceneSecretEnv))})
+	if err != nil {
+		return nil, errors.New("inbox: 场景原入场签名密钥缺失或不足32字节")
+	}
+	return verifier, nil
+}
+
+func (s *PlayerInboxServer) authorize(ctx context.Context, method string, request proto.Message) error {
+	if md, ok := metadata.FromIncomingContext(ctx); ok && len(md.Get("x-session-detail-bin")) != 0 {
+		return status.Error(codes.PermissionDenied, "收件箱消费仅允许场景内部调用")
+	}
+	if s.verifier == nil {
+		return status.Error(codes.Unavailable, "收件箱消费签名未装配")
+	}
+	caller, err := s.verifier.Verify(ctx, method, request)
+	if err != nil || caller != "scene" {
+		return status.Error(codes.PermissionDenied, "收件箱场景证明无效")
+	}
+	return nil
 }
 
 func storeUnavailable() *base.TipInfoMessage {
@@ -51,6 +83,9 @@ func withBudget(ctx context.Context, budget time.Duration) (context.Context, con
 
 // FetchItems 按 seq 升序拉 PENDING 条目并推进围栏(设计 §7.8)。
 func (s *PlayerInboxServer) FetchItems(ctx context.Context, in *inboxpb.FetchPlayerInboxRequest) (*inboxpb.FetchPlayerInboxResponse, error) {
+	if err := s.authorize(ctx, "/player_inbox.PlayerInbox/FetchItems", in); err != nil {
+		return nil, err
+	}
 	ctx, cancel := withBudget(ctx, s.budget)
 	defer cancel()
 	resp, err := s.store.Fetch(ctx, in)
@@ -67,6 +102,9 @@ func (s *PlayerInboxServer) FetchItems(ctx context.Context, in *inboxpb.FetchPla
 
 // AckItems 登记消费方已落盘的结局(设计 §7.7)。
 func (s *PlayerInboxServer) AckItems(ctx context.Context, in *inboxpb.AckPlayerInboxRequest) (*inboxpb.AckPlayerInboxResponse, error) {
+	if err := s.authorize(ctx, "/player_inbox.PlayerInbox/AckItems", in); err != nil {
+		return nil, err
+	}
 	ctx, cancel := withBudget(ctx, s.budget)
 	defer cancel()
 	resp, err := s.store.Ack(ctx, in)

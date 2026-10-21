@@ -158,11 +158,15 @@ func TestBuildEnterSceneRequest_CarriesLoginGeneration(t *testing.T) {
 		gateID:         "300",
 		gateInstanceID: "b0a1-uuid",
 		requestID:      "req-1",
+		ownerRevision:  17,
 	}
 	route := enterSceneRoute{zoneID: routeOtherZone, sceneID: 88}
 	const gen = uint64(1_760_000_000_123)
 
 	req := buildEnterSceneRequest(state, route, routeOwnZone, gen)
+	if req.GetOwnerRevision() != state.ownerRevision {
+		t.Fatalf("owner_revision = %d, want original %d", req.GetOwnerRevision(), state.ownerRevision)
+	}
 
 	if req.GetLoginGeneration() != gen {
 		t.Fatalf("login_generation = %d, want %d", req.GetLoginGeneration(), gen)

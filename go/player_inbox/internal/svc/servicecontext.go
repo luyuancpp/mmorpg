@@ -17,12 +17,13 @@ import (
 
 	dspb "proto/data_service"
 
+	"shared/authoritysql"
 	"shared/kafkacmd"
 	"shared/leader"
 	"shared/safego"
 	"shared/scenenode"
 
-	_ "github.com/go-sql-driver/mysql"
+	"github.com/go-sql-driver/mysql"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/redis/go-redis/v9"
 	"github.com/segmentio/kafka-go"
@@ -104,8 +105,9 @@ type backgroundTask struct {
 // externalDeps 是 NewServiceContext 建外部连接的入口(AGENTS §11.2 显式依赖)。生产为 productionDeps();
 // 单测注入假实现,只验证装配顺序、失败时的回收与接线,不连真实的 etcd / MySQL / 核心 Redis / data_service。
 type externalDeps struct {
-	openEtcd  func(hosts []string) (*clientv3.Client, error)
-	openMySQL func(config.MySQLConf) (*sql.DB, error)
+	openEtcd         func(hosts []string) (*clientv3.Client, error)
+	openMySQL        func(config.MySQLConf) (*sql.DB, error)
+	newRoleAuthority func(context.Context, *sql.DB, string) (inbox.RoleAuthority, error)
 	// openCoreRedis 建核心 Redis 客户端并探活;返回错误时自己负责关掉已建的客户端。
 	openCoreRedis   func(config.RedisConf) (*redis.Client, error)
 	openDataService func(zrpc.RpcClientConf) (*grpc.ClientConn, error)
@@ -119,7 +121,10 @@ func productionDeps() externalDeps {
 		openEtcd: func(hosts []string) (*clientv3.Client, error) {
 			return clientv3.New(clientv3.Config{Endpoints: hosts, DialTimeout: etcdDialTimeout})
 		},
-		openMySQL:     OpenMySQL,
+		openMySQL: OpenMySQL,
+		newRoleAuthority: func(ctx context.Context, db *sql.DB, schema string) (inbox.RoleAuthority, error) {
+			return inbox.NewSQLRoleAuthority(ctx, db, schema)
+		},
 		openCoreRedis: openCoreRedis,
 		openDataService: func(c zrpc.RpcClientConf) (*grpc.ClientConn, error) {
 			// 不用 MustNewClient:它在配置错误时直接退出进程,跳过本函数「返回错误、关闭已建资源」的契约。
@@ -155,8 +160,7 @@ func coreRedisOptions(c config.RedisConf) *redis.Options {
 	}
 }
 
-// openCoreRedis 建核心 Redis 客户端并 Ping。探不通就不起服:R 读不到时所有需要上界的 Fetch / Ack 都回
-// StoreUnavailable,提醒也发不出。错误里的地址只含 host:port,不含密码。
+// openCoreRedis建提醒/选主/STALE诊断客户端并探活；它不裁决消费身份。错误不含密码。
 func openCoreRedis(c config.RedisConf) (*redis.Client, error) {
 	client := redis.NewClient(coreRedisOptions(c))
 	pingCtx, cancel := context.WithTimeout(context.Background(), coreRedisPingTimeout)
@@ -208,6 +212,12 @@ func newServiceContext(c config.Config, deps externalDeps) (*ServiceContext, err
 	if err != nil {
 		return nil, fmt.Errorf("player_inbox: %w", err)
 	}
+	roleCtx, roleCancel := context.WithTimeout(context.Background(), mysqlPingTimeout)
+	roles, err := deps.newRoleAuthority(roleCtx, sc.DB, c.AccountRoleSchema)
+	roleCancel()
+	if err != nil {
+		return nil, fmt.Errorf("player_inbox: SQL角色原件不可用: %w", err)
+	}
 
 	sc.CoreRedis, err = deps.openCoreRedis(c.CoreRedis)
 	if err != nil {
@@ -252,6 +262,7 @@ func newServiceContext(c config.Config, deps externalDeps) (*ServiceContext, err
 		Epochs:   &RedisEpochs{Client: sc.CoreRedis},
 		Notifier: sc.notifier,
 		Now:      time.Now,
+		Roles:    roles,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("player_inbox: build store: %w", err)
@@ -379,9 +390,10 @@ func (sc *ServiceContext) closeResources() {
 //
 // 返回值含密码,只能交给 sql.Open,绝不打日志。
 func BuildDSN(c config.MySQLConf) string {
-	return fmt.Sprintf("%s:%s@tcp(%s)/%s?parseTime=true&charset=utf8mb4&sql_mode=%%27STRICT_TRANS_TABLES%%27"+
-		"&transaction_isolation=%%27READ-COMMITTED%%27&innodb_lock_wait_timeout=1",
-		c.User, c.Password, c.Host, c.DBName)
+	parsed := mysql.NewConfig()
+	parsed.User, parsed.Passwd, parsed.Net, parsed.Addr, parsed.DBName, parsed.ParseTime = c.User, c.Password, "tcp", c.Host, c.DBName, true
+	parsed.Params = map[string]string{"charset": "utf8mb4", "sql_mode": "'STRICT_TRANS_TABLES'", "transaction_isolation": "'READ-COMMITTED'", "innodb_lock_wait_timeout": "1"}
+	return parsed.FormatDSN()
 }
 
 // MySQLTarget 是连接目标的可读描述(不含密码),供横幅与错误信息使用。
@@ -389,21 +401,14 @@ func MySQLTarget(c config.MySQLConf) string {
 	return fmt.Sprintf("%s/%s (user=%s)", c.Host, c.DBName, c.User)
 }
 
-// OpenMySQL 建池、设上限、ping。返回错误时池已关闭;错误信息点名库名(D-14 第 5 条)。
+// OpenMySQL保留原连接入口名；全球池只接受TiDB并逐物理连接固定当前强读，失败自行关闭。
 func OpenMySQL(c config.MySQLConf) (*sql.DB, error) {
-	db, err := sql.Open("mysql", BuildDSN(c))
-	if err != nil {
-		return nil, fmt.Errorf("open MySQL %s: %w", MySQLTarget(c), err)
-	}
-	db.SetMaxOpenConns(c.MaxOpenConn)
-	db.SetMaxIdleConns(c.MaxIdleConn)
-
 	ctx, cancel := context.WithTimeout(context.Background(), mysqlPingTimeout)
 	defer cancel()
-	if err := db.PingContext(ctx); err != nil {
-		_ = db.Close()
-		return nil, fmt.Errorf("ping MySQL %s failed (create database %s and grant access first, see deploy/mysql-init): %w",
-			MySQLTarget(c), c.DBName, err)
+	db, err := authoritysql.Open(ctx, BuildDSN(c), c.DBName, true, c.MaxOpenConn)
+	if err != nil {
+		return nil, err
 	}
+	db.SetMaxIdleConns(c.MaxIdleConn)
 	return db, nil
 }

@@ -1,6 +1,14 @@
 # Guild Service Configuration
 Name: guild.rpc
 Mode: dev
+AccountRoleSchema: testdb
+# 必须指向login实际使用的同一全局实例/DB；不能按gateNodeId猜zone或回退本地缓存。
+GlobalLoginSessions: false
+LoginRedis:
+  Host: ""
+  Password: ""
+  DB: 0
+  PoolSize: 8
 ListenOn: 127.0.0.1:50300
 # zrpc 服务端整体超时(毫秒):≤ 路由服 ForwardTimeoutMs(5000)− 1000 = 4000
 # (docs/design/guild-phase2/00-contract.md §2)。另须 ≥ DataServiceRpc.Timeout + 1500(归属区查询)
@@ -60,9 +68,8 @@ MergeMarkerRedis:
 # 按 proto/guild/guild_db.proto 建。DSN 库名必须是 mmorpg_guild(config.Validate 断言)。
 # 账号用 appuser(与 go/trade/etc/trade.yaml 同账号,只对独占库有 ALL 权限)。
 MySQL:
-  # 本地旧MySQL兼容；全局部署须开启，预发/生产禁止关闭。
-  RequireTiDB: false
-  MaxOpenConn: 20
+  # 角色归属与帮会资产共用同一TiDB强权威池，缺省拒绝本地旧MySQL。
+  RequireTiDB: true
   DataSource: "appuser:apppass123@tcp(127.0.0.1:3306)/mmorpg_guild?charset=utf8mb4&parseTime=true&loc=Local"
   # 连接池上限(每个副本)。不写 = 20 / 5;MaxIdleConn ≤ MaxOpenConn。K8s ConfigMap 从这两个键镜像,
   # MySQL 连接总账(k8s_deploy.ps1 Get-MysqlConnectionLedger)按 MaxOpenConn × 副本数记账。

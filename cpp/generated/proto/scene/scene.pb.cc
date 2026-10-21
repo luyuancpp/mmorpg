@@ -53,6 +53,8 @@ PROTOBUF_CONSTINIT ::google::protobuf::internal::ReflectionData
         {&::_pbi::kDescriptorMethods, &::descriptor_table_proto_2fscene_2fscene_2eproto, /* tracker*/ nullptr,},
         // ::CancelBattlePrepareRequest
         {&::_pbi::kDescriptorMethods, &::descriptor_table_proto_2fscene_2fscene_2eproto, /* tracker*/ nullptr,},
+        // ::SealAccountRoleTradeRequest
+        {&::_pbi::kDescriptorMethods, &::descriptor_table_proto_2fscene_2fscene_2eproto, /* tracker*/ nullptr,},
 };
 }  // namespace
 #endif
@@ -529,11 +531,11 @@ constexpr PlayerEnterGameNodeRequest::ParseTableT_ PlayerEnterGameNodeRequest::I
     {
       PROTOBUF_FIELD_OFFSET(PlayerEnterGameNodeRequest, _impl_._has_bits_),
       0, // no _extensions_
-      8, 56,  // max_field_number, fast_idx_mask
+      9, 120,  // max_field_number, fast_idx_mask
       offsetof(ParseTableT_, field_lookup_table),
-      4294967044,  // skipmap
+      4294966788,  // skipmap
       offsetof(ParseTableT_, field_entries),
-      7,  // num_field_entries
+      8,  // num_field_entries
       0,  // num_aux_entries
       offsetof(ParseTableT_, field_names),  // no aux_entries
       class_data,
@@ -543,10 +545,7 @@ constexpr PlayerEnterGameNodeRequest::ParseTableT_ PlayerEnterGameNodeRequest::I
       ::_pbi::TcParser::GetTable<::PlayerEnterGameNodeRequest>(),  // to_prefetch
       #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
     }, {{
-      // uint64 login_generation = 8;
-      {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(PlayerEnterGameNodeRequest, _impl_.login_generation_), 5>(),
-       {64, 5, 0,
-        PROTOBUF_FIELD_OFFSET(PlayerEnterGameNodeRequest, _impl_.login_generation_)}},
+      {::_pbi::TcParser::MiniParse, {}},
       // uint64 player_id = 1;
       {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(PlayerEnterGameNodeRequest, _impl_.player_id_), 0>(),
        {8, 0, 0,
@@ -565,13 +564,27 @@ constexpr PlayerEnterGameNodeRequest::ParseTableT_ PlayerEnterGameNodeRequest::I
        {40, 3, 0,
         PROTOBUF_FIELD_OFFSET(PlayerEnterGameNodeRequest, _impl_.scene_id_)}},
       // uint32 home_zone_id = 6;
-      {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(PlayerEnterGameNodeRequest, _impl_.home_zone_id_), 6>(),
-       {48, 6, 0,
+      {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(PlayerEnterGameNodeRequest, _impl_.home_zone_id_), 7>(),
+       {48, 7, 0,
         PROTOBUF_FIELD_OFFSET(PlayerEnterGameNodeRequest, _impl_.home_zone_id_)}},
       // uint64 owner_epoch = 7;
       {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(PlayerEnterGameNodeRequest, _impl_.owner_epoch_), 4>(),
        {56, 4, 0,
         PROTOBUF_FIELD_OFFSET(PlayerEnterGameNodeRequest, _impl_.owner_epoch_)}},
+      // uint64 login_generation = 8;
+      {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(PlayerEnterGameNodeRequest, _impl_.login_generation_), 5>(),
+       {64, 5, 0,
+        PROTOBUF_FIELD_OFFSET(PlayerEnterGameNodeRequest, _impl_.login_generation_)}},
+      // uint64 owner_revision = 9;
+      {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(PlayerEnterGameNodeRequest, _impl_.owner_revision_), 6>(),
+       {72, 6, 0,
+        PROTOBUF_FIELD_OFFSET(PlayerEnterGameNodeRequest, _impl_.owner_revision_)}},
+      {::_pbi::TcParser::MiniParse, {}},
+      {::_pbi::TcParser::MiniParse, {}},
+      {::_pbi::TcParser::MiniParse, {}},
+      {::_pbi::TcParser::MiniParse, {}},
+      {::_pbi::TcParser::MiniParse, {}},
+      {::_pbi::TcParser::MiniParse, {}},
     }}, {{
       65535, 65535
     }}, {{
@@ -584,11 +597,13 @@ constexpr PlayerEnterGameNodeRequest::ParseTableT_ PlayerEnterGameNodeRequest::I
       // uint64 scene_id = 5;
       {PROTOBUF_FIELD_OFFSET(PlayerEnterGameNodeRequest, _impl_.scene_id_), _Internal::kHasBitsOffset + 3, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
       // uint32 home_zone_id = 6;
-      {PROTOBUF_FIELD_OFFSET(PlayerEnterGameNodeRequest, _impl_.home_zone_id_), _Internal::kHasBitsOffset + 6, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
+      {PROTOBUF_FIELD_OFFSET(PlayerEnterGameNodeRequest, _impl_.home_zone_id_), _Internal::kHasBitsOffset + 7, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
       // uint64 owner_epoch = 7;
       {PROTOBUF_FIELD_OFFSET(PlayerEnterGameNodeRequest, _impl_.owner_epoch_), _Internal::kHasBitsOffset + 4, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
       // uint64 login_generation = 8;
       {PROTOBUF_FIELD_OFFSET(PlayerEnterGameNodeRequest, _impl_.login_generation_), _Internal::kHasBitsOffset + 5, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
+      // uint64 owner_revision = 9;
+      {PROTOBUF_FIELD_OFFSET(PlayerEnterGameNodeRequest, _impl_.owner_revision_), _Internal::kHasBitsOffset + 6, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
     }},
     // no aux_entries
     {{
@@ -607,6 +622,7 @@ inline constexpr PlayerEnterGameNodeRequest::Impl_::Impl_(
         scene_id_{::uint64_t{0u}},
         owner_epoch_{::uint64_t{0u}},
         login_generation_{::uint64_t{0u}},
+        owner_revision_{::uint64_t{0u}},
         home_zone_id_{0u} {}
 
 template <typename>
@@ -1163,6 +1179,165 @@ const ::_pbi::ClassData* CancelBattlePrepareRequest_get_class_data() {
   return CancelBattlePrepareRequest_globals_.GetClassData();
 #else
   return CancelBattlePrepareRequest_class_data_.base();
+#endif  // PROTOBUF_MESSAGE_GLOBALS
+}
+}  // namespace
+#endif  // PROTOBUF_CUSTOM_VTABLE
+class SealAccountRoleTradeRequest::_Internal {
+ public:
+  using HasBits = decltype(::std::declval<SealAccountRoleTradeRequest>()._impl_._has_bits_);
+  static constexpr ::int32_t kHasBitsOffset =
+      8 * PROTOBUF_FIELD_OFFSET(SealAccountRoleTradeRequest, _impl_._has_bits_);
+};
+
+constexpr SealAccountRoleTradeRequest::ParseTableT_ SealAccountRoleTradeRequest::InternalGenerateParseTable_(const ::_pbi::ClassData* class_data) {
+  return ParseTableT_{
+    {
+      PROTOBUF_FIELD_OFFSET(SealAccountRoleTradeRequest, _impl_._has_bits_),
+      0, // no _extensions_
+      2, 8,  // max_field_number, fast_idx_mask
+      offsetof(ParseTableT_, field_lookup_table),
+      4294967292,  // skipmap
+      offsetof(ParseTableT_, field_entries),
+      2,  // num_field_entries
+      2,  // num_aux_entries
+      offsetof(ParseTableT_, aux_entries),
+      class_data,
+      nullptr,  // post_loop_handler
+      ::_pbi::TcParser::GenericFallback,  // fallback
+      #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
+      ::_pbi::TcParser::GetTable<::SealAccountRoleTradeRequest>(),  // to_prefetch
+      #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
+    }, {{
+      // .common.base.ServiceCallAuth auth = 2;
+      {::_pbi::TcParser::FastMtS1,
+       {18, 1, 1,
+        PROTOBUF_FIELD_OFFSET(SealAccountRoleTradeRequest, _impl_.auth_)}},
+      // .common.base.RoleTradeSeal seal = 1;
+      {::_pbi::TcParser::FastMtS1,
+       {10, 0, 0,
+        PROTOBUF_FIELD_OFFSET(SealAccountRoleTradeRequest, _impl_.seal_)}},
+    }}, {{
+      65535, 65535
+    }}, {{
+      // .common.base.RoleTradeSeal seal = 1;
+      {PROTOBUF_FIELD_OFFSET(SealAccountRoleTradeRequest, _impl_.seal_), _Internal::kHasBitsOffset + 0, 0, (0 | ::_fl::kFcOptional | ::_fl::kMessage | ::_fl::kTvTable)},
+      // .common.base.ServiceCallAuth auth = 2;
+      {PROTOBUF_FIELD_OFFSET(SealAccountRoleTradeRequest, _impl_.auth_), _Internal::kHasBitsOffset + 1, 1, (0 | ::_fl::kFcOptional | ::_fl::kMessage | ::_fl::kTvTable)},
+    }},
+    {{
+        #ifndef PROTOBUF_MESSAGE_GLOBALS
+        {::_pbi::TcParser::GetTable<::common::base::RoleTradeSeal>()},
+        #else
+        {::_pbi::FieldAuxMessageGlobals(), &::common::base::RoleTradeSeal_globals_},
+        #endif
+        #ifndef PROTOBUF_MESSAGE_GLOBALS
+        {::_pbi::TcParser::GetTable<::common::base::ServiceCallAuth>()},
+        #else
+        {::_pbi::FieldAuxMessageGlobals(), &::common::base::ServiceCallAuth_globals_},
+        #endif
+    }},
+    {{
+    }},
+  };
+}
+
+
+inline constexpr SealAccountRoleTradeRequest::Impl_::Impl_(
+    [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
+    ::_pbi::ConstantInitialized) noexcept
+      : _cached_size_{0},
+        seal_{nullptr},
+        auth_{nullptr} {}
+
+template <typename>
+constexpr SealAccountRoleTradeRequest::SealAccountRoleTradeRequest(::_pbi::ConstantInitialized,
+                       const ::_pbi::ClassData* PROTOBUF_NONNULL class_data)
+    : ::google::protobuf::Message(
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+          class_data
+#endif  // PROTOBUF_CUSTOM_VTABLE
+          ),
+      _impl_(internal_visibility(), ::_pbi::ConstantInitialized()) {
+}
+inline void* PROTOBUF_NONNULL SealAccountRoleTradeRequest::PlacementNew_(
+    const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena) {
+  return ::new (mem) SealAccountRoleTradeRequest(arena);
+}
+constexpr auto SealAccountRoleTradeRequest::InternalNewImpl_() {
+  return ::google::protobuf::internal::MessageCreator::ZeroInit(sizeof(SealAccountRoleTradeRequest), alignof(SealAccountRoleTradeRequest));
+}
+constexpr auto SealAccountRoleTradeRequest::InternalGenerateClassData_(
+    const MessageLite& prototype,
+    const ::google::protobuf::internal::TcParseTableBase* tc_table) {
+  return ::google::protobuf::internal::ClassDataFull{
+      ::google::protobuf::internal::ClassData{
+          &prototype,
+#ifndef PROTOBUF_MESSAGE_GLOBALS
+          &_table_.header,
+#else
+          tc_table,
+#endif
+          nullptr,  // IsInitialized
+          &SealAccountRoleTradeRequest::MergeImpl,
+          ::google::protobuf::Message::GetNewImpl<SealAccountRoleTradeRequest>(),
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+          &SealAccountRoleTradeRequest::SharedDtor,
+          ::google::protobuf::Message::GetClearImpl<SealAccountRoleTradeRequest>(), &SealAccountRoleTradeRequest::ByteSizeLong,
+              &SealAccountRoleTradeRequest::_InternalSerialize,
+#endif  // PROTOBUF_CUSTOM_VTABLE
+          PROTOBUF_FIELD_OFFSET(SealAccountRoleTradeRequest, _impl_._cached_size_),
+          false,
+      },
+#ifdef PROTOBUF_MESSAGE_GLOBALS
+      &file_reflection_data[12],
+#else   // !PROTOBUF_MESSAGE_GLOBALS
+      &::_pbi::kDescriptorMethods,
+      &descriptor_table_proto_2fscene_2fscene_2eproto,
+      nullptr,  // tracker
+#endif  // PROTOBUF_MESSAGE_GLOBALS
+  };
+}
+struct SealAccountRoleTradeRequestGlobalsTypeInternal : ::_pbi::MessageGlobalsBase {
+  constexpr SealAccountRoleTradeRequestGlobalsTypeInternal()
+      :
+#ifndef PROTOBUF_MESSAGE_GLOBALS
+        _default(::_pbi::ConstantInitialized{},
+                 SealAccountRoleTradeRequest_class_data_.base())
+#else   // !PROTOBUF_MESSAGE_GLOBALS
+        MessageGlobalsBase(SealAccountRoleTradeRequest::InternalGenerateClassData_(
+            _default, &SealAccountRoleTradeRequest_globals_._table.header)),
+        _default(::_pbi::ConstantInitialized{}, GetClassData()),
+        _table(::_pbi::PrivateAccess::GenerateParseTable<SealAccountRoleTradeRequest>(
+            GetClassData()))
+#endif  // PROTOBUF_MESSAGE_GLOBALS
+  {
+  }
+  ~SealAccountRoleTradeRequestGlobalsTypeInternal() {}
+  union {
+    alignas(::_pbi::kMaxMessageAlignment) SealAccountRoleTradeRequest _default;
+  };
+#ifdef PROTOBUF_MESSAGE_GLOBALS
+  decltype(::_pbi::PrivateAccess::GenerateParseTable<SealAccountRoleTradeRequest>(
+      ::std::declval<const ::_pbi::ClassData*>())) _table;
+#endif
+};
+#ifdef PROTOBUF_MESSAGE_GLOBALS
+static_assert(PROTOBUF_FIELD_OFFSET(SealAccountRoleTradeRequestGlobalsTypeInternal, _default) ==
+              ::_pbi::MessageGlobalsBase::OffsetToDefault());
+#endif  // PROTOBUF_MESSAGE_GLOBALS
+
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 PROTOBUF_MESSAGE_GLOBALS_CONST SealAccountRoleTradeRequestGlobalsTypeInternal SealAccountRoleTradeRequest_globals_
+        PROTOBUF_MESSAGE_GLOBALS_SECTION(.data.rel.ro);
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+namespace {
+const ::_pbi::ClassData* SealAccountRoleTradeRequest_get_class_data() {
+#ifdef PROTOBUF_MESSAGE_GLOBALS
+  return SealAccountRoleTradeRequest_globals_.GetClassData();
+#else
+  return SealAccountRoleTradeRequest_class_data_.base();
 #endif  // PROTOBUF_MESSAGE_GLOBALS
 }
 }  // namespace
@@ -1965,7 +2140,7 @@ const ::uint32_t
         protodesc_cold) = {
         0x081, // bitmap
         PROTOBUF_FIELD_OFFSET(::PlayerEnterGameNodeRequest, _impl_._has_bits_),
-        10, // hasbit index offset
+        11, // hasbit index offset
         PROTOBUF_FIELD_OFFSET(::PlayerEnterGameNodeRequest, _impl_.player_id_),
         PROTOBUF_FIELD_OFFSET(::PlayerEnterGameNodeRequest, _impl_.session_id_),
         PROTOBUF_FIELD_OFFSET(::PlayerEnterGameNodeRequest, _impl_.enter_gs_type_),
@@ -1973,13 +2148,15 @@ const ::uint32_t
         PROTOBUF_FIELD_OFFSET(::PlayerEnterGameNodeRequest, _impl_.home_zone_id_),
         PROTOBUF_FIELD_OFFSET(::PlayerEnterGameNodeRequest, _impl_.owner_epoch_),
         PROTOBUF_FIELD_OFFSET(::PlayerEnterGameNodeRequest, _impl_.login_generation_),
+        PROTOBUF_FIELD_OFFSET(::PlayerEnterGameNodeRequest, _impl_.owner_revision_),
         0,
         1,
         2,
         3,
-        6,
+        7,
         4,
         5,
+        6,
         0x081, // bitmap
         PROTOBUF_FIELD_OFFSET(::ProcessClientPlayerMessageRequest, _impl_._has_bits_),
         6, // hasbit index offset
@@ -2067,22 +2244,30 @@ const ::uint32_t
         PROTOBUF_FIELD_OFFSET(::CancelBattlePrepareRequest, _impl_.battle_id_),
         0,
         1,
+        0x081, // bitmap
+        PROTOBUF_FIELD_OFFSET(::SealAccountRoleTradeRequest, _impl_._has_bits_),
+        5, // hasbit index offset
+        PROTOBUF_FIELD_OFFSET(::SealAccountRoleTradeRequest, _impl_.seal_),
+        PROTOBUF_FIELD_OFFSET(::SealAccountRoleTradeRequest, _impl_.auth_),
+        0,
+        1,
 };
 
 static const ::_pbi::MigrationSchema
     schemas[] ABSL_ATTRIBUTE_SECTION_VARIABLE(protodesc_cold) = {
         {0, sizeof(::PlayerEnterGameNodeRequest)},
-        {17, sizeof(::ProcessClientPlayerMessageRequest)},
-        {26, sizeof(::ProcessClientPlayerMessageResponse)},
-        {33, sizeof(::SessionDisconnectRequest)},
-        {38, sizeof(::GameNodeConnectRequest)},
-        {45, sizeof(::RegisterPlayerSessionRequest)},
-        {52, sizeof(::CreateSceneRequest)},
-        {65, sizeof(::CreateSceneResponse)},
-        {70, sizeof(::DestroySceneRequest)},
-        {75, sizeof(::PrepareBattleRequest)},
-        {88, sizeof(::PrepareBattleResponse)},
-        {97, sizeof(::CancelBattlePrepareRequest)},
+        {19, sizeof(::ProcessClientPlayerMessageRequest)},
+        {28, sizeof(::ProcessClientPlayerMessageResponse)},
+        {35, sizeof(::SessionDisconnectRequest)},
+        {40, sizeof(::GameNodeConnectRequest)},
+        {47, sizeof(::RegisterPlayerSessionRequest)},
+        {54, sizeof(::CreateSceneRequest)},
+        {67, sizeof(::CreateSceneResponse)},
+        {72, sizeof(::DestroySceneRequest)},
+        {77, sizeof(::PrepareBattleRequest)},
+        {90, sizeof(::PrepareBattleResponse)},
+        {99, sizeof(::CancelBattlePrepareRequest)},
+        {106, sizeof(::SealAccountRoleTradeRequest)},
 };
 static const ::_pbi::MessageGlobalsBase* PROTOBUF_NONNULL const
     file_message_globals[] = {
@@ -2098,6 +2283,7 @@ static const ::_pbi::MessageGlobalsBase* PROTOBUF_NONNULL const
         &::PrepareBattleRequest_globals_,
         &::PrepareBattleResponse_globals_,
         &::CancelBattlePrepareRequest_globals_,
+        &::SealAccountRoleTradeRequest_globals_,
 };
 const char descriptor_table_protodef_proto_2fscene_2fscene_2eproto[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
     protodesc_cold) = {
@@ -2107,57 +2293,64 @@ const char descriptor_table_protodef_proto_2fscene_2fscene_2eproto[] ABSL_ATTRIB
     "roto/common/base/message.proto\032\033proto/co"
     "mmon/base/tip.proto\032\034proto/scene/scene_i"
     "nfo.proto\032\036proto/battle/battle_data.prot"
-    "o\"\267\001\n\032PlayerEnterGameNodeRequest\022\021\n\tplay"
-    "er_id\030\001 \001(\004\022\022\n\nsession_id\030\002 \001(\r\022\025\n\renter"
-    "_gs_type\030\004 \001(\r\022\020\n\010scene_id\030\005 \001(\004\022\024\n\014home"
-    "_zone_id\030\006 \001(\r\022\023\n\013owner_epoch\030\007 \001(\004\022\030\n\020l"
-    "ogin_generation\030\010 \001(\004J\004\010\003\020\004\"t\n!ProcessCl"
-    "ientPlayerMessageRequest\022(\n\017message_cont"
-    "ent\030\001 \001(\0132\017.MessageContent\022\022\n\nsession_id"
-    "\030\002 \001(\r\022\021\n\tplayer_id\030\003 \001(\004\"b\n\"ProcessClie"
-    "ntPlayerMessageResponse\022(\n\017message_conte"
-    "nt\030\001 \001(\0132\017.MessageContent\022\022\n\nsession_id\030"
-    "\002 \001(\r\"-\n\030SessionDisconnectRequest\022\021\n\tpla"
-    "yer_id\030\001 \001(\004\"S\n\026GameNodeConnectRequest\022#"
-    "\n\nrpc_client\030\001 \001(\0132\017.NetworkAddress\022\024\n\014g"
-    "ate_node_id\030\002 \001(\r\"E\n\034RegisterPlayerSessi"
-    "onRequest\022\022\n\nsession_id\030\001 \001(\r\022\021\n\tplayer_"
-    "id\030\002 \001(\004\"\203\001\n\022CreateSceneRequest\022\021\n\tconfi"
-    "g_id\030\001 \001(\r\022\020\n\010scene_id\030\002 \001(\004\022\030\n\020mirror_c"
-    "onfig_id\030\003 \001(\r\022\031\n\021dungeon_config_id\030\004 \001("
-    "\r\022\023\n\013creator_ids\030\005 \003(\004\"9\n\023CreateSceneRes"
-    "ponse\022\"\n\nscene_info\030\001 \001(\0132\016.SceneInfoCom"
-    "p\"\'\n\023DestroySceneRequest\022\020\n\010scene_id\030\001 \001"
-    "(\004\"\206\001\n\024PrepareBattleRequest\022\021\n\tplayer_id"
-    "\030\001 \001(\004\022\021\n\tbattle_id\030\002 \001(\004\022\026\n\016battle_node"
-    "_id\030\003 \001(\r\022\023\n\013deadline_ms\030\004 \001(\004\022\033\n\023prepar"
-    "e_deadline_ms\030\005 \001(\004\"\203\001\n\025PrepareBattleRes"
-    "ponse\022&\n\rerror_message\030\001 \001(\0132\017.TipInfoMe"
-    "ssage\022\'\n\010snapshot\030\002 \001(\0132\025.BattlePlayerSn"
-    "apshot\022\031\n\021table_fingerprint\030\003 \001(\t\"B\n\032Can"
-    "celBattlePrepareRequest\022\021\n\tplayer_id\030\001 \001"
-    "(\004\022\021\n\tbattle_id\030\002 \001(\0042\214\004\n\005Scene\022:\n\023Playe"
-    "rEnterGameNode\022\033.PlayerEnterGameNodeRequ"
-    "est\032\006.Empty\022e\n\032ProcessClientPlayerMessag"
-    "e\022\".ProcessClientPlayerMessageRequest\032#."
-    "ProcessClientPlayerMessageResponse\022<\n\023Up"
-    "dateSessionDetail\022\035.RegisterPlayerSessio"
-    "nRequest\032\006.Empty\0228\n\013CreateScene\022\023.Create"
-    "SceneRequest\032\024.CreateSceneResponse\022,\n\014De"
-    "stroyScene\022\024.DestroySceneRequest\032\006.Empty"
-    "\022>\n\rPrepareBattle\022\025.PrepareBattleRequest"
-    "\032\026.PrepareBattleResponse\022:\n\023CancelBattle"
-    "Prepare\022\033.CancelBattlePrepareRequest\032\006.E"
-    "mpty\022>\n\rNodeHandshake\022\025.NodeHandshakeReq"
-    "uest\032\026.NodeHandshakeResponseB\016Z\005scene\200\001\001"
-    "\230\324a\003b\006proto3"
+    "o\032&proto/common/base/role_admission.prot"
+    "o\032)proto/common/base/service_call_auth.p"
+    "roto\"\317\001\n\032PlayerEnterGameNodeRequest\022\021\n\tp"
+    "layer_id\030\001 \001(\004\022\022\n\nsession_id\030\002 \001(\r\022\025\n\ren"
+    "ter_gs_type\030\004 \001(\r\022\020\n\010scene_id\030\005 \001(\004\022\024\n\014h"
+    "ome_zone_id\030\006 \001(\r\022\023\n\013owner_epoch\030\007 \001(\004\022\030"
+    "\n\020login_generation\030\010 \001(\004\022\026\n\016owner_revisi"
+    "on\030\t \001(\004J\004\010\003\020\004\"t\n!ProcessClientPlayerMes"
+    "sageRequest\022(\n\017message_content\030\001 \001(\0132\017.M"
+    "essageContent\022\022\n\nsession_id\030\002 \001(\r\022\021\n\tpla"
+    "yer_id\030\003 \001(\004\"b\n\"ProcessClientPlayerMessa"
+    "geResponse\022(\n\017message_content\030\001 \001(\0132\017.Me"
+    "ssageContent\022\022\n\nsession_id\030\002 \001(\r\"-\n\030Sess"
+    "ionDisconnectRequest\022\021\n\tplayer_id\030\001 \001(\004\""
+    "S\n\026GameNodeConnectRequest\022#\n\nrpc_client\030"
+    "\001 \001(\0132\017.NetworkAddress\022\024\n\014gate_node_id\030\002"
+    " \001(\r\"E\n\034RegisterPlayerSessionRequest\022\022\n\n"
+    "session_id\030\001 \001(\r\022\021\n\tplayer_id\030\002 \001(\004\"\203\001\n\022"
+    "CreateSceneRequest\022\021\n\tconfig_id\030\001 \001(\r\022\020\n"
+    "\010scene_id\030\002 \001(\004\022\030\n\020mirror_config_id\030\003 \001("
+    "\r\022\031\n\021dungeon_config_id\030\004 \001(\r\022\023\n\013creator_"
+    "ids\030\005 \003(\004\"9\n\023CreateSceneResponse\022\"\n\nscen"
+    "e_info\030\001 \001(\0132\016.SceneInfoComp\"\'\n\023DestroyS"
+    "ceneRequest\022\020\n\010scene_id\030\001 \001(\004\"\206\001\n\024Prepar"
+    "eBattleRequest\022\021\n\tplayer_id\030\001 \001(\004\022\021\n\tbat"
+    "tle_id\030\002 \001(\004\022\026\n\016battle_node_id\030\003 \001(\r\022\023\n\013"
+    "deadline_ms\030\004 \001(\004\022\033\n\023prepare_deadline_ms"
+    "\030\005 \001(\004\"\203\001\n\025PrepareBattleResponse\022&\n\rerro"
+    "r_message\030\001 \001(\0132\017.TipInfoMessage\022\'\n\010snap"
+    "shot\030\002 \001(\0132\025.BattlePlayerSnapshot\022\031\n\021tab"
+    "le_fingerprint\030\003 \001(\t\"B\n\032CancelBattlePrep"
+    "areRequest\022\021\n\tplayer_id\030\001 \001(\004\022\021\n\tbattle_"
+    "id\030\002 \001(\004\"s\n\033SealAccountRoleTradeRequest\022"
+    "(\n\004seal\030\001 \001(\0132\032.common.base.RoleTradeSea"
+    "l\022*\n\004auth\030\002 \001(\0132\034.common.base.ServiceCal"
+    "lAuth2\214\004\n\005Scene\022:\n\023PlayerEnterGameNode\022\033"
+    ".PlayerEnterGameNodeRequest\032\006.Empty\022e\n\032P"
+    "rocessClientPlayerMessage\022\".ProcessClien"
+    "tPlayerMessageRequest\032#.ProcessClientPla"
+    "yerMessageResponse\022<\n\023UpdateSessionDetai"
+    "l\022\035.RegisterPlayerSessionRequest\032\006.Empty"
+    "\0228\n\013CreateScene\022\023.CreateSceneRequest\032\024.C"
+    "reateSceneResponse\022,\n\014DestroyScene\022\024.Des"
+    "troySceneRequest\032\006.Empty\022>\n\rPrepareBattl"
+    "e\022\025.PrepareBattleRequest\032\026.PrepareBattle"
+    "Response\022:\n\023CancelBattlePrepare\022\033.Cancel"
+    "BattlePrepareRequest\032\006.Empty\022>\n\rNodeHand"
+    "shake\022\025.NodeHandshakeRequest\032\026.NodeHands"
+    "hakeResponseB\016Z\005scene\200\001\001\230\324a\003b\006proto3"
 };
 static const ::_pbi::DescriptorTable* PROTOBUF_NONNULL const
-    descriptor_table_proto_2fscene_2fscene_2eproto_deps[7] = {
+    descriptor_table_proto_2fscene_2fscene_2eproto_deps[9] = {
         &::descriptor_table_proto_2fbattle_2fbattle_5fdata_2eproto,
         &::descriptor_table_proto_2fcommon_2fbase_2fcommon_2eproto,
         &::descriptor_table_proto_2fcommon_2fbase_2fempty_2eproto,
         &::descriptor_table_proto_2fcommon_2fbase_2fmessage_2eproto,
+        &::descriptor_table_proto_2fcommon_2fbase_2frole_5fadmission_2eproto,
+        &::descriptor_table_proto_2fcommon_2fbase_2fservice_5fcall_5fauth_2eproto,
         &::descriptor_table_proto_2fcommon_2fbase_2ftip_2eproto,
         &::descriptor_table_proto_2fdb_2fproto_5foption_2eproto,
         &::descriptor_table_proto_2fscene_2fscene_5finfo_2eproto,
@@ -2166,13 +2359,13 @@ static ::absl::once_flag descriptor_table_proto_2fscene_2fscene_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fscene_2fscene_2eproto = {
     false,
     false,
-    1972,
+    2196,
     descriptor_table_protodef_proto_2fscene_2fscene_2eproto,
     "proto/scene/scene.proto",
     &descriptor_table_proto_2fscene_2fscene_2eproto_once,
     descriptor_table_proto_2fscene_2fscene_2eproto_deps,
-    7,
-    12,
+    9,
+    13,
     schemas,
     file_message_globals,
     TableStruct_proto_2fscene_2fscene_2eproto::offsets,
@@ -2263,7 +2456,7 @@ PROTOBUF_NOINLINE void PlayerEnterGameNodeRequest::Clear() {
   (void) cached_has_bits;
 
   cached_has_bits = _impl_._has_bits_[0];
-  if (BatchCheckHasBit(cached_has_bits, 0x0000007fU)) {
+  if (BatchCheckHasBit(cached_has_bits, 0x000000ffU)) {
     ::memset(&_impl_.player_id_, 0, static_cast<::size_t>(
         reinterpret_cast<char*>(&_impl_.home_zone_id_) -
         reinterpret_cast<char*>(&_impl_.player_id_)) + sizeof(_impl_.home_zone_id_));
@@ -2328,7 +2521,7 @@ PROTOBUF_NOINLINE void PlayerEnterGameNodeRequest::Clear() {
   }
 
   // uint32 home_zone_id = 6;
-  if (CheckHasBit(cached_has_bits, 0x00000040U)) {
+  if (CheckHasBit(cached_has_bits, 0x00000080U)) {
     if (this_._internal_home_zone_id() != 0) {
       target = stream->EnsureSpace(target);
       target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
@@ -2351,6 +2544,15 @@ PROTOBUF_NOINLINE void PlayerEnterGameNodeRequest::Clear() {
       target = stream->EnsureSpace(target);
       target = ::_pbi::WireFormatLite::WriteUInt64ToArray(
           8, this_._internal_login_generation(), target);
+    }
+  }
+
+  // uint64 owner_revision = 9;
+  if (CheckHasBit(cached_has_bits, 0x00000040U)) {
+    if (this_._internal_owner_revision() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteUInt64ToArray(
+          9, this_._internal_owner_revision(), target);
     }
   }
 
@@ -2379,7 +2581,7 @@ PROTOBUF_NOINLINE void PlayerEnterGameNodeRequest::Clear() {
 
   ::_pbi::Prefetch5LinesFrom7Lines(&this_);
   cached_has_bits = this_._impl_._has_bits_[0];
-  if (BatchCheckHasBit(cached_has_bits, 0x0000007fU)) {
+  if (BatchCheckHasBit(cached_has_bits, 0x000000ffU)) {
     // uint64 player_id = 1;
     if (CheckHasBit(cached_has_bits, 0x00000001U)) {
       if (this_._internal_player_id() != 0) {
@@ -2422,8 +2624,15 @@ PROTOBUF_NOINLINE void PlayerEnterGameNodeRequest::Clear() {
             this_._internal_login_generation());
       }
     }
-    // uint32 home_zone_id = 6;
+    // uint64 owner_revision = 9;
     if (CheckHasBit(cached_has_bits, 0x00000040U)) {
+      if (this_._internal_owner_revision() != 0) {
+        total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(
+            this_._internal_owner_revision());
+      }
+    }
+    // uint32 home_zone_id = 6;
+    if (CheckHasBit(cached_has_bits, 0x00000080U)) {
       if (this_._internal_home_zone_id() != 0) {
         total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
             this_._internal_home_zone_id());
@@ -2447,7 +2656,7 @@ void PlayerEnterGameNodeRequest::MergeImpl(::google::protobuf::MessageLite& to_m
   (void)cached_has_bits;
 
   cached_has_bits = from._impl_._has_bits_[0];
-  if (BatchCheckHasBit(cached_has_bits, 0x0000007fU)) {
+  if (BatchCheckHasBit(cached_has_bits, 0x000000ffU)) {
     if (CheckHasBit(cached_has_bits, 0x00000001U)) {
       if (from._internal_player_id() != 0) {
         _this->_impl_.player_id_ = from._impl_.player_id_;
@@ -2479,6 +2688,11 @@ void PlayerEnterGameNodeRequest::MergeImpl(::google::protobuf::MessageLite& to_m
       }
     }
     if (CheckHasBit(cached_has_bits, 0x00000040U)) {
+      if (from._internal_owner_revision() != 0) {
+        _this->_impl_.owner_revision_ = from._impl_.owner_revision_;
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000080U)) {
       if (from._internal_home_zone_id() != 0) {
         _this->_impl_.home_zone_id_ = from._impl_.home_zone_id_;
       }
@@ -5266,6 +5480,270 @@ void CancelBattlePrepareRequest::InternalSwap(CancelBattlePrepareRequest* PROTOB
 }
 
 ::google::protobuf::Metadata CancelBattlePrepareRequest::GetMetadata() const {
+  return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
+}
+// ===================================================================
+
+void SealAccountRoleTradeRequest::clear_seal() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (_impl_.seal_ != nullptr) _impl_.seal_->Clear();
+  ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
+}
+void SealAccountRoleTradeRequest::clear_auth() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (_impl_.auth_ != nullptr) _impl_.auth_->Clear();
+  ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
+}
+SealAccountRoleTradeRequest::SealAccountRoleTradeRequest(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, SealAccountRoleTradeRequest_get_class_data()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  SharedCtor(arena);
+  // @@protoc_insertion_point(arena_constructor:SealAccountRoleTradeRequest)
+}
+PROTOBUF_NDEBUG_INLINE SealAccountRoleTradeRequest::Impl_::Impl_(
+    [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
+    [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
+    [[maybe_unused]] const ::SealAccountRoleTradeRequest& from_msg)
+      : _has_bits_{from._has_bits_},
+        _cached_size_{0} {}
+
+SealAccountRoleTradeRequest::SealAccountRoleTradeRequest(
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena,
+    const SealAccountRoleTradeRequest& from)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, SealAccountRoleTradeRequest_get_class_data()) {
+
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  SealAccountRoleTradeRequest* const _this = this;
+  (void)_this;
+  _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+  new (&_impl_) Impl_(internal_visibility(), arena, from._impl_, from);
+  ::uint32_t cached_has_bits = _impl_._has_bits_[0];
+  _impl_.seal_ = (CheckHasBit(cached_has_bits, 0x00000001U))
+                ? ::google::protobuf::Message::CopyConstruct(arena, *from._impl_.seal_)
+                : nullptr;
+  _impl_.auth_ = (CheckHasBit(cached_has_bits, 0x00000002U))
+                ? ::google::protobuf::Message::CopyConstruct(arena, *from._impl_.auth_)
+                : nullptr;
+
+  // @@protoc_insertion_point(copy_constructor:SealAccountRoleTradeRequest)
+}
+PROTOBUF_NDEBUG_INLINE SealAccountRoleTradeRequest::Impl_::Impl_(
+    [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
+    [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+      : _cached_size_{0} {}
+
+inline void SealAccountRoleTradeRequest::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
+  new (&_impl_) Impl_(internal_visibility(), arena);
+  ::memset(reinterpret_cast<char*>(&_impl_) +
+               offsetof(Impl_, seal_),
+           0,
+           offsetof(Impl_, auth_) -
+               offsetof(Impl_, seal_) +
+               sizeof(Impl_::auth_));
+}
+SealAccountRoleTradeRequest::~SealAccountRoleTradeRequest() {
+  // @@protoc_insertion_point(destructor:SealAccountRoleTradeRequest)
+  SharedDtor(*this);
+}
+inline void SealAccountRoleTradeRequest::SharedDtor(MessageLite& self) {
+  SealAccountRoleTradeRequest& this_ = static_cast<SealAccountRoleTradeRequest&>(self);
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    this_.CheckHasBitConsistency();
+  }
+  this_._internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
+  ABSL_DCHECK(this_.GetArena() == nullptr);
+  delete this_._impl_.seal_;
+  delete this_._impl_.auth_;
+  this_._impl_.~Impl_();
+}
+
+#ifndef PROTOBUF_MESSAGE_GLOBALS
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const
+    ::google::protobuf::internal::ClassDataFull SealAccountRoleTradeRequest_class_data_ =
+        SealAccountRoleTradeRequest::InternalGenerateClassData_(SealAccountRoleTradeRequest_globals_._default);
+
+PROTOBUF_ATTRIBUTE_WEAK const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
+SealAccountRoleTradeRequest::GetClassData() const {
+  ::google::protobuf::internal::PrefetchToLocalCache(&SealAccountRoleTradeRequest_class_data_);
+  ::google::protobuf::internal::PrefetchToLocalCache(SealAccountRoleTradeRequest_class_data_.tc_table);
+  return SealAccountRoleTradeRequest_class_data_.base();
+}
+#else
+PROTOBUF_ATTRIBUTE_WEAK const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
+SealAccountRoleTradeRequest::GetClassData() const {
+  ::google::protobuf::internal::PrefetchToLocalCache(&SealAccountRoleTradeRequest_globals_);
+  ::google::protobuf::internal::PrefetchToLocalCache(
+      ::google::protobuf::internal::MessageGlobalsBase::ToParseTableBase(&SealAccountRoleTradeRequest_globals_));
+  return SealAccountRoleTradeRequest_globals_.GetClassData();
+}
+#endif  // !PROTOBUF_MESSAGE_GLOBALS
+#ifndef PROTOBUF_MESSAGE_GLOBALS
+PROTOBUF_CONSTINIT
+PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const SealAccountRoleTradeRequest::ParseTableT_
+    SealAccountRoleTradeRequest::_table_ =
+        SealAccountRoleTradeRequest::InternalGenerateParseTable_(SealAccountRoleTradeRequest_class_data_.base());
+#endif  // !PROTOBUF_MESSAGE_GLOBALS
+PROTOBUF_NOINLINE void SealAccountRoleTradeRequest::Clear() {
+// @@protoc_insertion_point(message_clear_start:SealAccountRoleTradeRequest)
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  cached_has_bits = _impl_._has_bits_[0];
+  if (BatchCheckHasBit(cached_has_bits, 0x00000003U)) {
+    if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+      ABSL_DCHECK(_impl_.seal_ != nullptr);
+      _impl_.seal_->Clear();
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      ABSL_DCHECK(_impl_.auth_ != nullptr);
+      _impl_.auth_->Clear();
+    }
+  }
+  _impl_._has_bits_.Clear();
+  _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::uint8_t* PROTOBUF_NONNULL SealAccountRoleTradeRequest::_InternalSerialize(
+    const ::google::protobuf::MessageLite& base, ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) {
+  const SealAccountRoleTradeRequest& this_ = static_cast<const SealAccountRoleTradeRequest&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::uint8_t* PROTOBUF_NONNULL SealAccountRoleTradeRequest::_InternalSerialize(
+    ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
+  const SealAccountRoleTradeRequest& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    this_.CheckHasBitConsistency();
+  }
+  // @@protoc_insertion_point(serialize_to_array_start:SealAccountRoleTradeRequest)
+  ::uint32_t cached_has_bits = 0;
+  (void)cached_has_bits;
+
+  cached_has_bits = this_._impl_._has_bits_[0];
+  // .common.base.RoleTradeSeal seal = 1;
+  if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+    target = ::google::protobuf::internal::WireFormatLite::InternalWriteMessage(
+        1, *this_._impl_.seal_, this_._impl_.seal_->GetCachedSize(), target,
+        stream);
+  }
+
+  // .common.base.ServiceCallAuth auth = 2;
+  if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+    target = ::google::protobuf::internal::WireFormatLite::InternalWriteMessage(
+        2, *this_._impl_.auth_, this_._impl_.auth_->GetCachedSize(), target,
+        stream);
+  }
+
+  if (ABSL_PREDICT_FALSE(this_._internal_metadata_.have_unknown_fields())) {
+    target =
+        ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
+            this_._internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
+  }
+  // @@protoc_insertion_point(serialize_to_array_end:SealAccountRoleTradeRequest)
+  return target;
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::size_t SealAccountRoleTradeRequest::ByteSizeLong(const MessageLite& base) {
+  const SealAccountRoleTradeRequest& this_ = static_cast<const SealAccountRoleTradeRequest&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::size_t SealAccountRoleTradeRequest::ByteSizeLong() const {
+  const SealAccountRoleTradeRequest& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  // @@protoc_insertion_point(message_byte_size_start:SealAccountRoleTradeRequest)
+  ::size_t total_size = 0;
+
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void)cached_has_bits;
+
+  ::_pbi::Prefetch5LinesFrom7Lines(&this_);
+  cached_has_bits = this_._impl_._has_bits_[0];
+  if (BatchCheckHasBit(cached_has_bits, 0x00000003U)) {
+    // .common.base.RoleTradeSeal seal = 1;
+    if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+      total_size += 1 +
+                    ::google::protobuf::internal::WireFormatLite::MessageSize(*this_._impl_.seal_);
+    }
+    // .common.base.ServiceCallAuth auth = 2;
+    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      total_size += 1 +
+                    ::google::protobuf::internal::WireFormatLite::MessageSize(*this_._impl_.auth_);
+    }
+  }
+  return this_.MaybeComputeUnknownFieldsSize(total_size,
+                                             &this_._impl_._cached_size_);
+}
+
+void SealAccountRoleTradeRequest::MergeImpl(::google::protobuf::MessageLite& to_msg,
+                      const ::google::protobuf::MessageLite& from_msg) {
+   auto* const _this = static_cast<SealAccountRoleTradeRequest*>(&to_msg);
+  auto& from = static_cast<const SealAccountRoleTradeRequest&>(from_msg);
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    from.CheckHasBitConsistency();
+  }
+  ::google::protobuf::Arena* arena = _this->GetArena();
+  // @@protoc_insertion_point(class_specific_merge_from_start:SealAccountRoleTradeRequest)
+  ABSL_DCHECK_NE(&from, _this);
+  ::uint32_t cached_has_bits = 0;
+  (void)cached_has_bits;
+
+  cached_has_bits = from._impl_._has_bits_[0];
+  if (BatchCheckHasBit(cached_has_bits, 0x00000003U)) {
+    if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+      ABSL_DCHECK(from._impl_.seal_ != nullptr);
+      if (_this->_impl_.seal_ == nullptr) {
+        _this->_impl_.seal_ = ::google::protobuf::Message::CopyConstruct(arena, *from._impl_.seal_);
+      } else {
+        _this->_impl_.seal_->MergeFrom(*from._impl_.seal_);
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      ABSL_DCHECK(from._impl_.auth_ != nullptr);
+      if (_this->_impl_.auth_ == nullptr) {
+        _this->_impl_.auth_ = ::google::protobuf::Message::CopyConstruct(arena, *from._impl_.auth_);
+      } else {
+        _this->_impl_.auth_->MergeFrom(*from._impl_.auth_);
+      }
+    }
+  }
+  _this->_impl_._has_bits_[0] |= cached_has_bits;
+  _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+}
+
+void SealAccountRoleTradeRequest::CopyFrom(const SealAccountRoleTradeRequest& from) {
+  // @@protoc_insertion_point(class_specific_copy_from_start:SealAccountRoleTradeRequest)
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+
+void SealAccountRoleTradeRequest::InternalSwap(SealAccountRoleTradeRequest* PROTOBUF_RESTRICT PROTOBUF_NONNULL other) {
+  using ::std::swap;
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
+  swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
+  ::google::protobuf::internal::memswap<
+      PROTOBUF_FIELD_OFFSET(SealAccountRoleTradeRequest, _impl_.auth_)
+      + sizeof(SealAccountRoleTradeRequest::_impl_.auth_)
+      - PROTOBUF_FIELD_OFFSET(SealAccountRoleTradeRequest, _impl_.seal_)>(
+          reinterpret_cast<char*>(&_impl_.seal_),
+          reinterpret_cast<char*>(&other->_impl_.seal_));
+}
+
+::google::protobuf::Metadata SealAccountRoleTradeRequest::GetMetadata() const {
   return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
 }
 // ===================================================================

@@ -243,4 +243,5 @@ message BattleActivityContext {
   uint32 period_key = 4;            // 确认开战时的游戏日键 YYYYMMDD(gameday.DayKey,UTC+8 05:00 换日),用于个人每日次数
   uint64 initiator_player_id = 5;   // 发起人;match 校验它等于 StartActivityBattleRequest.member_player_ids[0]
   uint32 guild_period_key = 6;      // 确认开战时的帮会期键(activity.GuildPeriodKey;历练即游戏日),用于每日计资金胜场上限
+  uint64 launch_request_id = 7;     // 同道历练开战前持久原件；match/battle原样复制回结果，不包含账号
 }

@@ -2,41 +2,21 @@
 
 package main
 
-// 对着**真实** MySQL(127.0.0.1:3306)与 Redis(127.0.0.1:6379)跑的集成测试。
+// 受控本机TiDB与真实Redis集成测试。成功合区统一db_first、SQL Team与全部64片路由围栏。
 //
-//	go test -tags merge_integration ./...
+// 运行入口：go test -tags merge_integration -count=1 -v ./...
+// MERGE_ZONE_IT_TIDB_DSN：本机数字loopback TCP实例基址，无库名/参数；默认root@tcp(127.0.0.1:4000)/。
+// MERGE_ZONE_IT_MYSQL_DSN：旧参数别名，仍必须通过真实TiDB与CHECK探针，不能回退MySQL引擎。
+// MERGE_ZONE_IT_REDIS_ADDR：Redis地址，DB9/10/11必须原本为空；要求Redis>=7.2且AOF已启用。
+// MERGE_ZONE_IT_ROUTE_DB_DSN：旧参数仅接受同TiDB入口的merge_zone_it_route独占库，库由本套按DS权威DDL创建。
+// MERGE_ZONE_IT_REQUIRE=1：依赖缺失逐例FAIL；默认逐例SKIP。验收必须设1，不能把SKIP报通过。
+// 凭据只从环境变量传入，不写日志。夹具不修改GLOBAL变量，不启动/停止基础设施。
 //
-// 依赖地址取环境变量(D1 规格 §6.5 / §13.3 第 7 条),缺省保持原来的硬编码值,既有命令不变:
-//
-//	MERGE_ZONE_IT_MYSQL_DSN     MySQL 实例基址 "user:pass@tcp(host:port)/"(不带库名与参数;一次性库由 TestMain 建)
-//	MERGE_ZONE_IT_REDIS_ADDR    Redis 地址(用它的 DB 9/10/11,必须是空的)
-//	MERGE_ZONE_IT_ROUTE_DB_DSN  路由表真库用例的完整 DSN:指向一个已由 `data_service -f <yaml> -migrate` 建好路由表的一次性库;
-//	                            未设时这些用例 SKIP(见 route_store_integration_test.go)
-//	MERGE_ZONE_IT_REQUIRE=1     依赖不可达 / 未设时 FAIL 而不是 SKIP(真库验证用,杜绝把 SKIP 报成通过)
-//
-// TestMain 只探测依赖并记下原因;每个用例的第一句 requireIT(t) 据此 SKIP(MERGE_ZONE_IT_REQUIRE=1 时 FAIL),
-// `go test -v` 里逐条可见。it_guard_test.go 用 AST 钉住「每个集成用例的第一句都是 requireIT(t)」。
-//
-// 凭据来自 deploy/docker-compose.yml(root / Mmorpg#2026db)。Kafka 不需要:
-// 积压检查是可注入的(kafkaLagSource),这里注入假的。
-//
-// 隔离策略:
-//   - MySQL:只用一次性库 zone_901_db / zone_902_db / player_store_1000901_db(非 zone 落点库,搬库用例用)/
-//     merge_zone_it_db,TestMain 建、结束时 DROP。真实的 mmorpg / zone_1_db / zone_2_db 一个字节不碰。
-//     merge_zone_it_db 只是 -mysql-dsn 的默认库(负责连上实例),里面不建表 ——
-//     帮会 / 聚宝斋 / 好友三套表各住下面的独占库。
-//   - MySQL(帮会):一次性库 merge_zone_it_guild,经 -guild-schema 指过去。帮会表自
-//     二期 B1 起住在独占库 mmorpg_guild(D-14 §8),真实库一个字节不碰。
-//   - MySQL(聚宝斋):一次性库 merge_zone_it_trade,经 -trade-schema 指过去。真实的
-//     mmorpg_trade 一个字节不碰 —— 这正是 -trade-schema 这个 flag 存在的唯一理由。
-//   - MySQL(好友):一次性库 merge_zone_it_friend,经 -friend-schema 指过去,理由同上
-//     (friend 2026-09-18 迁到独占库 mmorpg_friend,port-decisions D-14)。
-//   - Redis:用 DB 9/10/11(mapping/guild/shared),**且只在它们本来
-//     就是空的时候跑**。非空就 skip 而不是 flush —— 谁也不知道那里面是谁的数据。
-//     生产默认的 15/2/0 由 merge_unit_test.go 的常量测试守住,这里不碰。
-//     (原先还有一个 DB 12 给 friend:online 用;那把键与 -friend-redis-* 参数已随
-//     friend 移植 F3 一起退役。)
-
+// TestMain只在探针全部通过后创建、结束时删除固定一次性库：zone_901_db、zone_902_db、
+// player_store_1000901_db、merge_zone_it_db/_guild/_trade/_friend/_route。所有业务真实库均不触碰。
+// 路由五表直接读取go/data_service/internal/store/schema.go权威DDL，保持聚簇主键、CHECK与64行片一致。
+// Redis只清TestMain已确认原本为空的DB9/10/11；Kafka积压通过显式attestation或fakeLagSource注入。
+// 每个集成测试第一句requireIT(t)，普通构建中的AST守卫检查此约束；未运行任何用例不得声称通过。
 import (
 	"context"
 	"database/sql"
@@ -55,14 +35,14 @@ import (
 	"github.com/redis/go-redis/v9"
 )
 
-// 依赖地址的环境变量与缺省值(缺省 = 原来的硬编码值,既有命令不变)。
+// 真实TiDB与Redis测试地址；旧MySQL环境变量仅保留参数名兼容。
 const (
 	itMySQLEnv   = "MERGE_ZONE_IT_MYSQL_DSN"
 	itRedisEnv   = "MERGE_ZONE_IT_REDIS_ADDR"
 	itRouteDBEnv = "MERGE_ZONE_IT_ROUTE_DB_DSN"
 	itRequireEnv = "MERGE_ZONE_IT_REQUIRE"
 
-	itDefaultMySQLBase = "root:Mmorpg#2026db@tcp(127.0.0.1:3306)/"
+	itDefaultMySQLBase = "root@tcp(127.0.0.1:4000)/"
 	itDefaultRedisAddr = "127.0.0.1:6379"
 )
 
@@ -78,9 +58,8 @@ const (
 	itSrcZone = uint32(901)
 	itDstZone = uint32(902)
 
-	// 三个业务库都已搬进独占库,-mysql-dsn 的默认库只剩「连上实例」这一个作用,
-	// 里面不再建任何表(这也顺带让 assertGuildTablesReady(itDefaultDB) 那条反面用例成立)。
-	itDefaultDB = "merge_zone_it_db"     // -mysql-dsn 的默认库:不放表
+	// SQL Team放默认测试库；帮会/聚宝斋/好友继续独占schema，默认库缺guild表的反面用例仍成立。
+	itDefaultDB = "merge_zone_it_db"     // -mysql-dsn默认库：SQL Team成员原件
 	itGuildDB   = "merge_zone_it_guild"  // -guild-schema 指过去:guild / guild_member
 	itTradeDB   = "merge_zone_it_trade"  // -trade-schema 指过去:trade_listing
 	itFriendDB  = "merge_zone_it_friend" // -friend-schema 指过去:friend / friend_request
@@ -105,7 +84,7 @@ func itPlayerSchemas() []string {
 var itBinary string
 
 func itDSN() string {
-	return itMySQLBase + itDefaultDB + "?charset=utf8mb4&parseTime=true&loc=Local&multiStatements=true"
+	return itSchemaDSN(itDefaultDB)
 }
 
 // TestMain 只探测依赖、记下原因(规格 §13.3 第 7 条)。以前不可达时直接 os.Exit(0):SKIP 与 PASS 的退出码相同,
@@ -149,20 +128,24 @@ func TestMain(m *testing.M) {
 	os.Exit(code)
 }
 
-// itProbeDependencies 按环境变量取地址并只做探测(不建任何东西):MySQL 能连上、Redis DB 9/10/11 能连上且是空的。
+// itProbeDependencies在建库/删库前校验本机TiDB、CHECK与Redis空库/AOF契约，不修改基础设施配置。
 // 返回可用的 root 连接,或不可达的原因(原因里不带口令)。
 func itProbeDependencies() (*sql.DB, string) {
-	if v := os.Getenv(itMySQLEnv); v != "" {
+	if v := firstNonEmpty(os.Getenv(itTiDBEnv), firstNonEmpty(os.Getenv(itMySQLEnv), itDefaultMySQLBase)); v != "" {
 		base, err := itNormalizeMySQLBase(v)
 		if err != nil {
-			return nil, fmt.Sprintf("%s: %v", itMySQLEnv, err)
+			return nil, fmt.Sprintf("%s: %v", itTiDBEnv, err)
 		}
 		itMySQLBase = base
+	}
+	if err := itValidateRouteOverride(); err != nil {
+		return nil, err.Error()
 	}
 	if v := os.Getenv(itRedisEnv); v != "" {
 		itRedisAddr = v
 	}
-	ctx := context.Background()
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
 	root, err := sql.Open("mysql", itMySQLBase+"?multiStatements=true")
 	if err != nil {
 		return nil, fmt.Sprintf("mysql open: %v", err)
@@ -170,6 +153,10 @@ func itProbeDependencies() (*sql.DB, string) {
 	if err := root.PingContext(ctx); err != nil {
 		_ = root.Close()
 		return nil, fmt.Sprintf("mysql unreachable: %v", err)
+	}
+	if err := itProbeTiDB(ctx, root); err != nil {
+		_ = root.Close()
+		return nil, fmt.Sprintf("TiDB dependency: %v", err)
 	}
 	for _, dbi := range []int{itMappingRD, itGuildRD, itSharedRD} {
 		c := redis.NewClient(&redis.Options{Addr: itRedisAddr, DB: dbi})
@@ -184,20 +171,19 @@ func itProbeDependencies() (*sql.DB, string) {
 			return nil, fmt.Sprintf("redis %s db %d is not empty (%d keys); refusing to touch someone else's data", itRedisAddr, dbi, n)
 		}
 	}
+	c := redis.NewClient(&redis.Options{Addr: itRedisAddr, DB: itMappingRD})
+	defer c.Close()
+	if err := c.Do(ctx, "WAITAOF", 1, 0, 100).Err(); err != nil {
+		_ = root.Close()
+		return nil, "db_first集成依赖需要Redis >= 7.2且AOF已启用（夹具不修改配置）"
+	}
 	return root, ""
 }
 
 // itNormalizeMySQLBase 校验 MERGE_ZONE_IT_MYSQL_DSN 是「实例基址」(不带库名、不带参数:一次性库与参数由用例拼,
 // 沿用原来「基址 + 库名」的拼法),返回规范形式 "user:pass@tcp(host:port)/"。错误信息不回显 DSN(含口令)。
 func itNormalizeMySQLBase(v string) (string, error) {
-	cfg, err := mysql.ParseDSN(v)
-	if err != nil {
-		return "", fmt.Errorf("not a MySQL DSN: %w", err)
-	}
-	if cfg.DBName != "" || len(cfg.Params) > 0 {
-		return "", errors.New(`want an instance base like "user:pass@tcp(host:port)/", without a database name or parameters`)
-	}
-	return cfg.FormatDSN(), nil
+	return itControlledTiDBBase(v)
 }
 
 // itRequired 报告是否设了 MERGE_ZONE_IT_REQUIRE=1(依赖缺失时 FAIL 而不是 SKIP)。
@@ -223,7 +209,7 @@ func requireIT(t *testing.T) {
 }
 
 func itDropAll(db *sql.DB) {
-	for _, s := range append(itPlayerSchemas(), itDefaultDB, itGuildDB, itTradeDB, itFriendDB) {
+	for _, s := range append(itPlayerSchemas(), itDefaultDB, itGuildDB, itTradeDB, itFriendDB, itRouteDB) {
 		_, _ = db.Exec("DROP DATABASE IF EXISTS " + s)
 	}
 	ctx := context.Background()
@@ -234,7 +220,7 @@ func itDropAll(db *sql.DB) {
 	}
 }
 
-// itCreateAll 建四份一次性库。player 表的形状镜像 proto2mysql 的产物:
+// itCreateAll 建固定一次性库。player 表的形状镜像 proto2mysql 的产物:
 // player_id 主键 + 若干 MEDIUMBLOB 组件列。列的具体内容对合服无关紧要,
 // 关键是「有 player_id 列」与「两库列结构一致」。
 func itCreateAll(db *sql.DB) error {
@@ -246,6 +232,8 @@ func itCreateAll(db *sql.DB) error {
 		"CREATE DATABASE " + itStoreDB,
 		"CREATE DATABASE " + itTradeDB,
 		"CREATE DATABASE " + itFriendDB,
+		"CREATE DATABASE " + itRouteDB,
+		`CREATE TABLE ` + itDefaultDB + `.team_membership(player_id BIGINT UNSIGNED NOT NULL PRIMARY KEY,team_id BIGINT UNSIGNED NOT NULL,epoch BIGINT UNSIGNED NOT NULL)`,
 		// 只建合服步骤读写的列。完整形状由 go/schemamigrate 按 proto/guild/guild_db.proto
 		// 生成,这里不复刻第二份表结构。name_norm 是 go/guild 侧算好写进来的规范化名
 		// (NFKC → TrimSpace → 小写),唯一键 uk_guild 建在它上面;这里用生成列顶替那段
@@ -297,7 +285,7 @@ func itCreateAll(db *sql.DB) error {
 			return fmt.Errorf("%s: %w", q, err)
 		}
 	}
-	return nil
+	return itCreateRouteTables(db)
 }
 
 // ── 夹具 ─────────────────────────────────────────────────────
@@ -327,6 +315,9 @@ func itReset(t *testing.T) {
 	t.Helper()
 	ctx := context.Background()
 	db := itOpen(t)
+	if _, err := db.Exec("DELETE FROM team_membership"); err != nil {
+		t.Fatal(err)
+	}
 	for _, schema := range itPlayerSchemas() {
 		for _, tbl := range []string{"player_database", "player_database_1", "player_centre_database", "user"} {
 			if _, err := db.Exec("DELETE FROM " + schema + "." + tbl); err != nil {
@@ -352,6 +343,7 @@ func itReset(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
+	itResetRouteTables(t)
 }
 
 // itSeedPlayers 在源 zone 库里造 n 个玩家(三张表都有行)并写 mapping。
@@ -374,13 +366,8 @@ func itSeedPlayers(t *testing.T, ids []uint64, withMapping bool) {
 		}
 	}
 	if withMapping {
-		ctx := context.Background()
-		m := itRedis(t, itMappingRD)
 		for _, id := range ids {
-			if err := m.Set(ctx, playerZoneKeyPrefix+strconv.FormatUint(id, 10),
-				strconv.FormatUint(uint64(itSrcZone), 10), 0).Err(); err != nil {
-				t.Fatal(err)
-			}
+			itSetRouteHome(t, id, itSrcZone)
 		}
 	}
 }
@@ -1202,41 +1189,11 @@ func itInlineUintArgs(t *testing.T, stmt string, args ...uint64) string {
 	return stmt
 }
 
-// itExplain 跑 EXPLAIN FORMAT=TRADITIONAL,返回第一行列名 → 值(NULL 记空串)。单表语句,第一行即其计划。
-func itExplain(t *testing.T, db *sql.DB, stmt string) map[string]string {
-	t.Helper()
-	rows, err := db.Query("EXPLAIN FORMAT=TRADITIONAL " + stmt)
-	if err != nil {
-		t.Fatalf("EXPLAIN %q: %v", stmt, err)
-	}
-	defer rows.Close()
-	cols, err := rows.Columns()
-	if err != nil {
-		t.Fatal(err)
-	}
-	if !rows.Next() {
-		t.Fatalf("EXPLAIN returned no row: %q", stmt)
-	}
-	vals := make([]sql.NullString, len(cols))
-	ptrs := make([]any, len(cols))
-	for i := range vals {
-		ptrs[i] = &vals[i]
-	}
-	if err := rows.Scan(ptrs...); err != nil {
-		t.Fatal(err)
-	}
-	plan := make(map[string]string, len(cols))
-	for i, c := range cols {
-		plan[c] = vals[i].String
-	}
-	return plan
-}
-
 // TestIT_ZonePointUpdatesArePrimaryKeyPointLookups 钉住 rewriteZoneByPrimaryKey 的执行计划:对生产代码
-// **同一个** zonePointUpdateSQL 的产物做 EXPLAIN,断言 key=PRIMARY 且用满主键(BIGINT UNSIGNED 单列 key_len=8)。
+// **同一个** zonePointUpdateSQL的产物做TiDB原生EXPLAIN，必须是完整主键Point_Get且不能有扫描算子。
 // 改回 `zone = ? AND pk IN (...)` 或整区 `WHERE zone = ?`,优化器就可能挑 zone 二级索引(先锁二级项再回表),
 // 与在线写者「主键 → 二级」反序成环 —— 这类问题只取决于执行计划,EXPLAIN 每次都答得出来。
-// 先各插一行:点更新命中已存在的行时计划才稳定。UPDATE 按主键点更新时 MySQL 显示 range(rows=1)或 const。
+// 先各插一行，要求估计点取一行；不能套用MySQL的key_len断言而漏掉真实TiDB执行计划。
 func TestIT_ZonePointUpdatesArePrimaryKeyPointLookups(t *testing.T) {
 	requireIT(t)
 	itReset(t)
@@ -1265,34 +1222,28 @@ func TestIT_ZonePointUpdatesArePrimaryKeyPointLookups(t *testing.T) {
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
-			plan := itExplain(t, db, itInlineUintArgs(t, c.stmt, c.args...))
-			if plan["key"] != "PRIMARY" || plan["key_len"] != "8" {
-				t.Fatalf("%s: plan key=%q key_len=%q type=%q, want PRIMARY/8 — the zone rewrite must lock the primary key "+
-					"first, never walk the zone secondary index. SQL: %s", c.name, plan["key"], plan["key_len"], plan["type"], c.stmt)
-			}
-			if plan["type"] != "range" && plan["type"] != "const" {
-				t.Fatalf("%s: access type=%q, want range(rows=1)/const. SQL: %s", c.name, plan["type"], c.stmt)
-			}
+			stmt := itInlineUintArgs(t, c.stmt, c.args...)
+			itAssertTiDBPrimaryPoint(t, itExplainRows(t, db, stmt), stmt)
 		})
 	}
 }
 
-// itLockWaitersQuery 数 schema.table 上正在排队等行锁的事务数(MySQL 8 performance_schema)。
+// itLockWaitersQuery 通过TiDB等待图观察正在等待目标表FOR UPDATE原行锁的事务。
 // 帮会表不在 DSN 的默认库里,所以库名显式传,不用 DATABASE()。
 const itLockWaitersQuery = `
-	SELECT COUNT(DISTINCT w.REQUESTING_ENGINE_TRANSACTION_ID)
-	FROM performance_schema.data_lock_waits w
-	JOIN performance_schema.data_locks l ON l.ENGINE_LOCK_ID = w.REQUESTING_ENGINE_LOCK_ID
-	WHERE l.OBJECT_SCHEMA = ? AND l.OBJECT_NAME = ?`
+	SELECT COUNT(*) FROM information_schema.data_lock_waits
+	WHERE JSON_UNQUOTE(JSON_EXTRACT(key_info,'$.db_name')) = ?
+	AND JSON_UNQUOTE(JSON_EXTRACT(key_info,'$.table_name')) = ?
+	AND LOWER(COALESCE(sql_digest_text,'')) LIKE '%for update%'`
 
 // itAwaitLockWaiters 轮询直到 schema.table 上至少有 want 个事务在等行锁,或 budget 用尽(返回错误)。
-// 靠观察而不是 sleep 估时间:两次轮询之间的短停顿只为不空转打爆 MySQL。
+// 靠观察而不是 sleep 估时间:两次轮询之间的短停顿只为不空转打爆 TiDB。
 func itAwaitLockWaiters(ctx context.Context, db *sql.DB, schema, table string, want int, budget time.Duration) error {
 	deadline := time.Now().Add(budget)
 	for {
 		var waiters int
 		if err := db.QueryRowContext(ctx, itLockWaitersQuery, schema, table).Scan(&waiters); err != nil {
-			return fmt.Errorf("read performance_schema.data_lock_waits (the test account needs SELECT on it; MySQL 8+): %w", err)
+			return fmt.Errorf("read TiDB information_schema.data_lock_waits (requires PROCESS; unobservable contention fails): %w", err)
 		}
 		if waiters >= want {
 			return nil
@@ -1611,11 +1562,17 @@ func TestIT_AcquireGuildRankLock_BlocksWhileTheGuildServiceHoldsIt(t *testing.T)
 
 func itPreflightDeps(t *testing.T, lag kafkaLagSource) preflightDeps {
 	t.Helper()
+	reader, err := openTeamAuthority(context.Background(), itDSN(), itDefaultDB)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = reader.db.Close() })
 	return preflightDeps{
-		sceneRdb:   itRedis(t, itSceneRD),
-		mappingRdb: itRedis(t, itMappingRD),
-		sharedRdb:  itRedis(t, itSharedRD),
-		lag:        lag,
+		sceneRdb:      itRedis(t, itSceneRD),
+		mappingRdb:    itRedis(t, itMappingRD),
+		sharedRdb:     itRedis(t, itSharedRD),
+		teamAuthority: reader,
+		lag:           lag,
 	}
 }
 
@@ -1664,9 +1621,9 @@ func TestIT_Preflight_BlocksOnEachHazard(t *testing.T) {
 			itRedis(t, itSharedRD).Set(context.Background(), "player:session:9711", "gate-3", time.Minute)
 		}, "P6"},
 		{"player still in a live team", fakeLagSource{}, func(t *testing.T) {
-			shared := itRedis(t, itSharedRD)
-			shared.HSet(context.Background(), teamPlayerIndexKey(9711), "tid", "880001", "epoch", "1")
-			shared.HSet(context.Background(), teamRecordKey("880001"), "ver", "1", "pb", "")
+			if _, err := itOpen(t).Exec("INSERT INTO team_membership VALUES(9711,880001,1)"); err != nil {
+				t.Fatal(err)
+			}
 		}, "P7"},
 	}
 	for _, c := range cases {
@@ -1698,16 +1655,19 @@ func TestIT_Preflight_IgnoresOtherTopicsPartitionedRetryLists(t *testing.T) {
 	}
 }
 
-// P7 只拦"指向活队伍"的索引:离队后保留的 tid=0 索引、队伍已过期的孤儿索引都不是在队,不该挡合服。
+// P7只信SQL成员原件；旧Redis残留既不能拦无队玩家，也不能清掉SQL有效成员。
 func TestIT_Preflight_IgnoresStaleTeamIndexes(t *testing.T) {
 	requireIT(t)
 	itReset(t)
 	ctx := context.Background()
 	shared := itRedis(t, itSharedRD)
 	// 9721:离队后 tid 置 "0"、key 保留(§C.1)。
-	shared.HSet(ctx, teamPlayerIndexKey(9721), "tid", "0", "epoch", "5")
+	shared.HSet(ctx, "team:player:9721", "tid", "0", "epoch", "5")
 	// 9722:索引仍指向 880002,但 team:rec:880002 已不存在(队伍 24h 过期后的孤儿索引)。
-	shared.HSet(ctx, teamPlayerIndexKey(9722), "tid", "880002", "epoch", "7")
+	shared.HSet(ctx, "team:player:9722", "tid", "880002", "epoch", "7")
+	if _, err := itOpen(t).Exec("INSERT INTO team_membership VALUES(9721,0,5),(9722,0,8)"); err != nil {
+		t.Fatal(err)
+	}
 	// 9723:从没组过队,没有索引。
 	if err := runPreflight(ctx, itPreflightDeps(t, fakeLagSource{}), itPreflightParams([]uint64{9721, 9722, 9723})); err != nil {
 		t.Fatalf("stale team indexes must not block the merge: %v", err)
@@ -1779,10 +1739,18 @@ func TestIT_GuardPlayerSet_RefusesEmptyMappingAndIncompleteBackfill(t *testing.T
 // itRun 跑真二进制,返回合并输出与退出码。
 func itRun(t *testing.T, args ...string) (string, int) {
 	t.Helper()
+	cmd := itCommand(t, args...)
+	out, err := cmd.CombinedOutput()
+	return itCommandResult(t, out, err)
+}
+
+func itCommand(t *testing.T, args ...string) *exec.Cmd {
+	t.Helper()
 	base := []string{
-		// 这套用例的 mapping Redis 不归任何 db_first 的 data_service 管,显式走 redis 路径(-route-source 没有缺省值)。
-		"-route-source", routeSourceRedis,
+		"-route-source", routeSourceDB,
+		"-route-db-dsn", itRouteDSN(),
 		"-mysql-dsn", itDSN(),
+		"-team-schema", itDefaultDB,
 		"-redis-addr", itRedisAddr,
 		"-redis-db", strconv.Itoa(itGuildRD),
 		"-mapping-redis-db", strconv.Itoa(itMappingRD),
@@ -1794,13 +1762,16 @@ func itRun(t *testing.T, args ...string) (string, int) {
 		"-guild-schema", itGuildDB,
 		"-friend-schema", itFriendDB,
 	}
-	cmd := exec.Command(itBinary, append(base, args...)...)
-	out, err := cmd.CombinedOutput()
+	return exec.Command(itBinary, append(base, args...)...)
+}
+
+func itCommandResult(t *testing.T, out []byte, err error) (string, int) {
+	t.Helper()
 	code := 0
 	if ee, ok := err.(*exec.ExitError); ok {
 		code = ee.ExitCode()
 	} else if err != nil {
-		t.Fatalf("run %v: %v", args, err)
+		t.Fatalf("启动合区测试二进制失败（参数可能含凭据，不回显）: %v", err)
 	}
 	return string(out), code
 }
@@ -1821,7 +1792,7 @@ func TestIT_EndToEnd_MergeVerifyUnmerge(t *testing.T) {
 		9950, []byte("native")); err != nil {
 		t.Fatal(err)
 	}
-	mapRdb.Set(ctx, playerZoneKeyPrefix+"9950", "902", 0)
+	itSetRouteHome(t, 9950, itDstZone)
 
 	if _, err := db.Exec("INSERT INTO " + itGuildDB + ".guild (guild_id, name, zone_id) VALUES (11,'src-a',901),(21,'dst-a',902)"); err != nil {
 		t.Fatal(err)
@@ -2129,9 +2100,9 @@ func TestIT_Unmerge_RefusesMissingTradeSchemaBeforeAnyWrite(t *testing.T) {
 	mapRdb := itRedis(t, itMappingRD)
 	// 合服之后的状态:玩家已指向目标区,清单里记着一条搬过的聚宝斋商品。
 	dstVal := strconv.FormatUint(uint64(itDstZone), 10)
-	mapRdb.Set(ctx, playerZoneKeyPrefix+"9961", dstVal, 0)
+	itSetRouteHome(t, 9961, itDstZone)
 	manifest := filepath.Join(t.TempDir(), "merge.json")
-	m := newMergeManifest("run-trade-preflight", itSrcZone, itDstZone, "it", time.Now())
+	m := itDBMergeManifest("run-trade-preflight", itSrcZone, itDstZone, "it", time.Now())
 	m.PlayerIDs = []uint64{9961}
 	m.TradeListingIDs = []uint64{7201}
 	if err := saveManifest(manifest, m); err != nil {
@@ -2164,9 +2135,9 @@ func TestIT_Unmerge_RefusesMissingGuildSchemaBeforeAnyWrite(t *testing.T) {
 	mapRdb := itRedis(t, itMappingRD)
 	// 合服之后的状态:玩家已指向目标区,清单里记着一个搬过的公会。
 	dstVal := strconv.FormatUint(uint64(itDstZone), 10)
-	mapRdb.Set(ctx, playerZoneKeyPrefix+"9962", dstVal, 0)
+	itSetRouteHome(t, 9962, itDstZone)
 	manifest := filepath.Join(t.TempDir(), "merge.json")
-	m := newMergeManifest("run-guild-preflight", itSrcZone, itDstZone, "it", time.Now())
+	m := itDBMergeManifest("run-guild-preflight", itSrcZone, itDstZone, "it", time.Now())
 	m.PlayerIDs = []uint64{9962}
 	m.GuildIDs = []uint64{11}
 	if err := saveManifest(manifest, m); err != nil {
@@ -2194,12 +2165,12 @@ func TestIT_Unmerge_RefusesMissingGuildSchemaBeforeAnyWrite(t *testing.T) {
 
 // 步骤 3b 复查中止经真二进制走一遍「中止 → 重跑」:runMerge 用 log.Fatal 中止,defer 的
 // fence.release 不执行,围栏按设计留在本次 run_id 上。断言:非 0 退出、步骤不标完成、文案给出
-// GET/DEL 指引且 run_id 对得上;不 DEL 直接重跑被围栏拒;照文案 DEL 后原命令重跑成功。
+// 原run与全部64片保持；直接重跑及仅删Redis镜像均拒绝，按原run接管后续跑成功。
 //
-// 「清单落盘之后才进源区的商品」用触发器确定性制造:步骤 1 往目标库插玩家行时,触发器顺手往
-// 源区插一条商品 —— 它必然发生在清单落盘之后、步骤 3b 之前,不靠时序赛跑。
+// 持有清单内商品原行，真binary在3b主键锁上排队后，独立事务向
+// 源区插入清单外商品，再释放行锁：原清单已固定，时序由TiDB等待图确认。
 // (「dry-run 写好清单后再插商品」造不出中止:-apply 的清单阶段会把它重新并进清单。)
-func TestIT_TradeMarketZone_ResidualAbortKeepsFenceThenResumesAfterDEL(t *testing.T) {
+func TestIT_TradeMarketZone_ResidualAbortKeepsFenceThenResumesAfterTakeover(t *testing.T) {
 	requireIT(t)
 	itReset(t)
 	ctx := context.Background()
@@ -2209,26 +2180,18 @@ func TestIT_TradeMarketZone_ResidualAbortKeepsFenceThenResumesAfterDEL(t *testin
 	itSeedPlayers(t, []uint64{9971}, true)
 	itSeedListing(t, db, 7001, 9971, itSrcZone, itSrcZone)
 
-	trigger := zoneDBName(itDstZone) + ".it_trade_late_listing"
-	if _, err := db.Exec(fmt.Sprintf("CREATE TRIGGER %s AFTER INSERT ON %s.player_centre_database FOR EACH ROW "+
-		"INSERT IGNORE INTO %s.trade_listing (listing_id, seller_player_id, market_zone, seller_zone_at_listing) "+
-		"VALUES (7003, NEW.player_id, %d, %d)", trigger, zoneDBName(itDstZone), itTradeDB, itSrcZone, itSrcZone)); err != nil {
-		t.Fatalf("create trigger (needs TRIGGER privilege; with binlog on also SUPER or log_bin_trust_function_creators): %v", err)
-	}
-	t.Cleanup(func() { _, _ = db.Exec("DROP TRIGGER IF EXISTS " + trigger) })
-
 	manifest := filepath.Join(t.TempDir(), "merge.json")
-	// copy 模式:触发器挂在步骤 1 往目标库插玩家行上(pin 模式不拷行,触发器不会响)。
+	// 保留原copy模式的行迁移与步骤完成断言。
 	args := []string{"-source-zone", "901", "-target-zone", "902", "-manifest-path", manifest,
 		"-apply", "-expected-src-players", "1", "-player-rows-mode", "copy"}
 	srcFence, dstFence := mergeFenceKey(itSrcZone), mergeFenceKey(itDstZone)
 
-	// 1) 首跑:步骤 1 的触发器落下 7003;3b 只搬清单里的 7001,复查剩 1 条 → 中止。
-	out, code := itRun(t, args...)
+	// 1) 首跑：3b等待7001原行时插入7003；只改原清单7001，复查残留而中止。
+	out, code := itRunWithLateRow(t, itTradeDB, tradeListingTable, tradeListingPKColumn, 7001, func() { itSeedListing(t, db, 7003, 9971, itSrcZone, itSrcZone) }, args...)
 	if code == 0 {
 		t.Fatalf("the merge passed although a listing reached the source zone after the manifest was written:\n%s", out)
 	}
-	if !strings.Contains(out, "is NOT marked done") || !strings.Contains(out, "DEL "+srcFence+" "+dstFence) {
+	if !strings.Contains(out, "is NOT marked done") || !strings.Contains(out, "take-over-fence") {
 		t.Errorf("the 3b abort must say how to clear the fence before re-running:\n%s", out)
 	}
 	if mz, _ := itListingZones(t, db, 7001); mz != itDstZone {
@@ -2242,7 +2205,7 @@ func TestIT_TradeMarketZone_ResidualAbortKeepsFenceThenResumesAfterDEL(t *testin
 		t.Fatalf("manifest after the abort: %v", err)
 	}
 	if !man.stepDone(stepPlayerRows) {
-		t.Errorf("step %s should be done before 3b (the trigger fires there)", stepPlayerRows)
+		t.Errorf("step %s should be done before 3b (the late row is injected after the manifest is fixed)", stepPlayerRows)
 	}
 	if man.stepDone(stepTradeMySQL) || man.stepDone(stepPlayerMapping) {
 		t.Errorf("steps after the 3b abort must not be marked done: %+v", man.Steps)
@@ -2264,30 +2227,25 @@ func TestIT_TradeMarketZone_ResidualAbortKeepsFenceThenResumesAfterDEL(t *testin
 		if uerr := json.Unmarshal([]byte(raw), &v); uerr != nil {
 			t.Fatalf("%s value: %v", key, uerr)
 		}
-		if v.RunID == "" || !strings.Contains(out, "still owned by run_id="+v.RunID) {
+		if v.RunID == "" || !strings.Contains(out, "run_id="+v.RunID) {
 			t.Errorf("abort message does not name the run_id held by %s (%q):\n%s", key, v.RunID, out)
 		}
 	}
 
 	// 3) 不 DEL 直接重跑:被残留围栏拒绝(文案预告的那句),且在任何写之前。
 	out, code = itRun(t, args...)
-	if code == 0 || !strings.Contains(out, "another merge is already fencing zone") {
+	if code == 0 || !strings.Contains(out, "merge fence is held by another run") {
 		t.Fatalf("a re-run without clearing the fence should be refused by the fence (exit=%d):\n%s", code, out)
 	}
 	if mz, _ := itListingZones(t, db, 7003); mz != itSrcZone {
 		t.Errorf("the refused re-run rewrote listing 7003: market_zone=%d", mz)
 	}
 
-	// 4) 照文案:停种子入口(删触发器)→ DEL 两把围栏 → 原命令重跑。
-	if _, err := db.Exec("DROP TRIGGER " + trigger); err != nil {
-		t.Fatal(err)
-	}
-	if err := mapRdb.Del(ctx, srcFence, dstFence).Err(); err != nil {
-		t.Fatal(err)
-	}
-	out, code = itRun(t, args...)
+	// 4) 先证只删Redis不能解封SQL，再按原run接管，库围栏不出现空窗。
+	originalRun := itAssertRedisDeleteDoesNotReleaseSQLFence(t, args...)
+	out, code = itRun(t, append(append([]string{}, args...), "-take-over-fence", originalRun)...)
 	if code != 0 {
-		t.Fatalf("re-run after DEL exit=%d\n%s", code, out)
+		t.Fatalf("re-run after original SQL fence takeover exit=%d\n%s", code, out)
 	}
 	if !strings.Contains(out, "RESUME") {
 		t.Errorf("the re-run did not consume the manifest:\n%s", out)
@@ -2317,9 +2275,9 @@ func TestIT_TradeMarketZone_ResidualAbortKeepsFenceThenResumesAfterDEL(t *testin
 
 // 步骤 3 复查中止经真二进制走一遍「中止 → 重跑」(审计 #17 FIX 2):公会改为按清单逐条改之后,清单落盘后
 // 才进源区的公会(内部 / GM 建帮路径不读合服围栏)不会被捎带,改写后复查源区计数 > 0 必须中止、不标记步骤完成、
-// 围栏留在本次 run_id 上并给出 GET/DEL 指引;照做之后重跑,清单阶段把新公会并进清单再搬。
-// 「清单落盘之后才进源区」与 3b 的用例同法用触发器确定性制造:步骤 1 往目标库插玩家行时顺手在源区建一个公会。
-func TestIT_GuildZone_ResidualAbortKeepsFenceThenResumesAfterDEL(t *testing.T) {
+// 围栏留在本次run_id上，按原run受控接管；续跑把新公会并入清单再迁移。
+// 持有公会11原行，真binary在步骤3主键锁上排队后插入公会13；不用TiDB不支持的触发器。
+func TestIT_GuildZone_ResidualAbortKeepsFenceThenResumesAfterTakeover(t *testing.T) {
 	requireIT(t)
 	itReset(t)
 	ctx := context.Background()
@@ -2332,26 +2290,22 @@ func TestIT_GuildZone_ResidualAbortKeepsFenceThenResumesAfterDEL(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	trigger := zoneDBName(itDstZone) + ".it_guild_late_create"
-	if _, err := db.Exec(fmt.Sprintf("CREATE TRIGGER %s AFTER INSERT ON %s.player_centre_database FOR EACH ROW "+
-		"INSERT IGNORE INTO %s (guild_id, name, zone_id) VALUES (13, 'late-guild', %d)",
-		trigger, zoneDBName(itDstZone), guild, itSrcZone)); err != nil {
-		t.Fatalf("create trigger (needs TRIGGER privilege; with binlog on also SUPER or log_bin_trust_function_creators): %v", err)
-	}
-	t.Cleanup(func() { _, _ = db.Exec("DROP TRIGGER IF EXISTS " + trigger) })
-
 	manifest := filepath.Join(t.TempDir(), "merge.json")
-	// copy 模式:触发器挂在步骤 1 往目标库插玩家行上(pin 模式不拷行,触发器不会响)。
+	// 保留原copy模式的行迁移与步骤完成断言。
 	args := []string{"-source-zone", "901", "-target-zone", "902", "-manifest-path", manifest,
 		"-apply", "-expected-src-players", "1", "-player-rows-mode", "copy"}
 	srcFence, dstFence := mergeFenceKey(itSrcZone), mergeFenceKey(itDstZone)
 
-	// 1) 首跑:步骤 1 的触发器建出公会 13;步骤 3 只改清单里的 11,复查剩 1 个 → 中止。
-	out, code := itRun(t, args...)
+	// 1) 首跑：步骤3等待11原行时插入13，只改原清单11，复查残留而中止。
+	out, code := itRunWithLateRow(t, itGuildDB, guildTable, guildPKColumn, 11, func() {
+		if _, err := db.Exec("INSERT INTO " + guild + "(guild_id,name,zone_id) VALUES(13,'late-guild',901)"); err != nil {
+			t.Fatal(err)
+		}
+	}, args...)
 	if code == 0 {
 		t.Fatalf("the merge passed although a guild reached the source zone after the manifest was written:\n%s", out)
 	}
-	if !strings.Contains(out, "步骤 "+stepGuildMySQL+" 未标记完成") || !strings.Contains(out, "DEL "+srcFence+" "+dstFence) {
+	if !strings.Contains(out, "步骤 "+stepGuildMySQL+" 未标记完成") || !strings.Contains(out, "take-over-fence") {
 		t.Errorf("the guild abort must say the step is not done and how to clear the fence:\n%s", out)
 	}
 	var zone11, zone13 uint32
@@ -2396,20 +2350,15 @@ func TestIT_GuildZone_ResidualAbortKeepsFenceThenResumesAfterDEL(t *testing.T) {
 
 	// 3) 不 DEL 直接重跑:被残留围栏拒绝,且在任何写之前。
 	out, code = itRun(t, args...)
-	if code == 0 || !strings.Contains(out, "another merge is already fencing zone") {
+	if code == 0 || !strings.Contains(out, "merge fence is held by another run") {
 		t.Fatalf("a re-run without clearing the fence should be refused by the fence (exit=%d):\n%s", code, out)
 	}
 
-	// 4) 照文案:停建帮入口(删触发器)→ DEL 两把围栏 → 原命令重跑。
-	if _, err := db.Exec("DROP TRIGGER " + trigger); err != nil {
-		t.Fatal(err)
-	}
-	if err := mapRdb.Del(ctx, srcFence, dstFence).Err(); err != nil {
-		t.Fatal(err)
-	}
-	out, code = itRun(t, args...)
+	// 4) 先证只删Redis不能解封SQL，再按原run接管，库围栏不出现空窗。
+	originalRun := itAssertRedisDeleteDoesNotReleaseSQLFence(t, args...)
+	out, code = itRun(t, append(append([]string{}, args...), "-take-over-fence", originalRun)...)
 	if code != 0 {
-		t.Fatalf("re-run after DEL exit=%d\n%s", code, out)
+		t.Fatalf("re-run after original SQL fence takeover exit=%d\n%s", code, out)
 	}
 	if n := itCount(t, db, guild+" WHERE zone_id = 901"); n != 0 {
 		t.Errorf("%d guilds left in the source zone after the resumed run", n)
@@ -2435,7 +2384,7 @@ func TestIT_Audit_ExitsTwoWhenAHandleIsMissing(t *testing.T) {
 	requireIT(t)
 	itReset(t)
 	// 指向一个没人监听的 Redis:审计跑不成,必须 exit 2(不是 0,也不是 1)。
-	cmd := exec.Command(itBinary, "-mode", "audit", "-source-zone", "901", "-target-zone", "902", "-route-source", routeSourceRedis,
+	cmd := exec.Command(itBinary, "-mode", "audit", "-source-zone", "901", "-target-zone", "902", "-route-source", routeSourceDB, "-route-db-dsn", itRouteDSN(),
 		"-mysql-dsn", itDSN(), "-redis-addr", "127.0.0.1:6399", "-table-list-json", itTableListFile(t),
 		"-guild-schema", itGuildDB, "-trade-schema", itTradeDB, "-friend-schema", itFriendDB)
 	out, err := cmd.CombinedOutput()
@@ -2477,10 +2426,12 @@ func TestIT_Audit_OnlineGateActuallyBlocks(t *testing.T) {
 func itAssertNoFence(t *testing.T, why string) {
 	t.Helper()
 	m := itRedis(t, itMappingRD)
+	rb := itFixtureBackend(t)
 	for _, z := range []uint32{itSrcZone, itDstZone} {
 		if n, _ := m.Exists(context.Background(), mergeFenceKey(z)).Result(); n != 0 {
 			t.Errorf("%s left the merge fence for zone %d behind", why, z)
 		}
+		itAssertSQLFence(t, rb.db.db, z, false, "")
 	}
 }
 
@@ -2489,6 +2440,7 @@ func itAssertNoFence(t *testing.T, why string) {
 func itAssertFenceKept(t *testing.T, out, why string) string {
 	t.Helper()
 	m := itRedis(t, itMappingRD)
+	rb := itFixtureBackend(t)
 	runID := ""
 	for _, z := range []uint32{itSrcZone, itDstZone} {
 		raw, err := m.Get(context.Background(), mergeFenceKey(z)).Result()
@@ -2503,6 +2455,7 @@ func itAssertFenceKept(t *testing.T, out, why string) string {
 			t.Errorf("%s: the two fences belong to different runs (%s / %s)", why, runID, v.RunID)
 		}
 		runID = v.RunID
+		itAssertSQLFence(t, rb.db.db, z, true, runID)
 	}
 	if runID == "" || !strings.Contains(out, "run_id="+runID) {
 		t.Errorf("%s: the abort message does not name the run_id %q that holds the fence:\n%s", why, runID, out)
@@ -2715,7 +2668,7 @@ func TestIT_Gap_ResumeRefusesAChangedPlayerTableSet(t *testing.T) {
 	itReset(t)
 	itSeedPlayers(t, []uint64{9781}, true)
 	manifest := filepath.Join(t.TempDir(), "merge.json")
-	m := newMergeManifest("run-a5", itSrcZone, itDstZone, "it", time.Now())
+	m := itDBMergeManifest("run-a5", itSrcZone, itDstZone, "it", time.Now())
 	m.PlayerIDs = []uint64{9781}
 	m.Tables = []string{"player_database"}
 	m.markStep(stepPlayerRows, "copied by an earlier run")
@@ -2742,19 +2695,17 @@ func TestIT_Gap_ResumeRefusesAChangedPlayerTableSet(t *testing.T) {
 func TestIT_Gap_VerifyMerged_ChecksEveryManifestPlayer(t *testing.T) {
 	requireIT(t)
 	itReset(t)
-	ctx := context.Background()
 	db := itOpen(t)
-	mapRdb := itRedis(t, itMappingRD)
 	for _, id := range []uint64{9781, 9790} {
 		if _, err := db.Exec("INSERT INTO "+zoneDBName(itDstZone)+".player_database (player_id) VALUES (?)", id); err != nil {
 			t.Fatal(err)
 		}
 	}
-	mapRdb.Set(ctx, playerZoneKey(9781), "902", 0)
-	mapRdb.Set(ctx, playerZoneKey(9782), "903", 0)
-	mapRdb.Set(ctx, playerZoneKey(9790), "902", 0)
+	itSetRouteHome(t, 9781, itDstZone)
+	itSetRouteHome(t, 9782, 903)
+	itSetRouteHome(t, 9790, itDstZone)
 	manifest := filepath.Join(t.TempDir(), "merge.json")
-	m := newMergeManifest("run-a6", itSrcZone, itDstZone, "it", time.Now())
+	m := itDBMergeManifest("run-a6", itSrcZone, itDstZone, "it", time.Now())
 	m.PlayerIDs = []uint64{9781, 9782}
 	m.Tables = []string{"player_centre_database", "player_database", "player_database_1"}
 	m.markStep(stepPlayerRows, "x")
@@ -2780,7 +2731,7 @@ func TestIT_Gap_VerifyMerged_ChecksEveryManifestPlayer(t *testing.T) {
 		t.Errorf("a manifest whose player count differs from -expected-src-players must block (exit=%d):\n%s", code, out)
 	}
 	// 9782 真的过来之后全绿。
-	mapRdb.Set(ctx, playerZoneKey(9782), "902", 0)
+	itSetRouteHome(t, 9782, itDstZone)
 	if _, err := db.Exec("INSERT INTO " + zoneDBName(itDstZone) + ".player_database (player_id) VALUES (9782)"); err != nil {
 		t.Fatal(err)
 	}
@@ -2813,10 +2764,10 @@ func TestIT_Gap_Unmerge_RefusesALiveTargetZoneBeforeAnyWrite(t *testing.T) {
 			itReset(t)
 			mapRdb := itRedis(t, itMappingRD)
 			shared := itRedis(t, itSharedRD)
-			mapRdb.Set(ctx, playerZoneKey(9791), "902", 0)
+			itSetRouteHome(t, 9791, itDstZone)
 			shared.Set(ctx, mergeNoticeKeyPrefix+"9791", "1", 0)
 			manifest := filepath.Join(t.TempDir(), "merge.json")
-			m := newMergeManifest("run-a7", itSrcZone, itDstZone, "it", time.Now())
+			m := itDBMergeManifest("run-a7", itSrcZone, itDstZone, "it", time.Now())
 			m.PlayerIDs = []uint64{9791}
 			if err := saveManifest(manifest, m); err != nil {
 				t.Fatal(err)
@@ -2853,7 +2804,7 @@ func TestIT_Gap_ResumeRefusalKeepsTheFence(t *testing.T) {
 	ids := []uint64{9721, 9722}
 	itSeedPlayers(t, ids, true)
 	manifest := filepath.Join(t.TempDir(), "merge.json")
-	m := newMergeManifest("run-resume-fence", itSrcZone, itDstZone, "it", time.Now())
+	m := itDBMergeManifest("run-resume-fence", itSrcZone, itDstZone, "it", time.Now())
 	m.PlayerIDs = ids
 	m.PlayerRowsMode = playerRowsModeCopy
 	m.markStep(stepGuildMySQL, "moved by the previous run")
@@ -2876,9 +2827,7 @@ func TestIT_Gap_ResumeRefusalKeepsTheFence(t *testing.T) {
 	}
 
 	// (b) 清单已标记步骤 7 完成(上一次已跑完全程):同样的拒绝照常释放围栏。
-	if err := mapRdb.Del(ctx, mergeFenceKey(itSrcZone), mergeFenceKey(itDstZone)).Err(); err != nil {
-		t.Fatal(err)
-	}
+	itReleaseSQLFences(t, itSrcZone, itDstZone)
 	m.markStep(stepPostMerge, "finished by the previous run")
 	if err := saveManifest(manifest, m); err != nil {
 		t.Fatal(err)
@@ -2933,7 +2882,7 @@ func TestIT_Gap_MergedIntoIsCheckedBeforeAnyWrite(t *testing.T) {
 	}
 
 	// (a) 源区早先已合进 903。
-	mapRdb.Set(ctx, mergedIntoKey(itSrcZone), `{"dst":903,"run_id":"older"}`, 0)
+	itSeedSQLMerged(t, itSrcZone, 903, "older")
 	out, code := itRun(t, args...)
 	if code == 0 || !strings.Contains(out, "already merged into zone 903") {
 		t.Fatalf("a source zone already merged elsewhere must be refused (exit=%d):\n%s", code, out)
@@ -2941,8 +2890,8 @@ func TestIT_Gap_MergedIntoIsCheckedBeforeAnyWrite(t *testing.T) {
 	assertNothingWritten("source merged elsewhere")
 
 	// (b) 目标区自己已被合走。
-	mapRdb.Del(ctx, mergedIntoKey(itSrcZone))
-	mapRdb.Set(ctx, mergedIntoKey(itDstZone), `{"dst":903,"run_id":"older"}`, 0)
+	itClearSQLMerged(t, itSrcZone)
+	itSeedSQLMerged(t, itDstZone, 903, "older")
 	out, code = itRun(t, args...)
 	if code == 0 || !strings.Contains(out, "retired zone") {
 		t.Fatalf("a target zone that was itself merged away must be refused (exit=%d):\n%s", code, out)
@@ -2959,10 +2908,10 @@ func TestIT_Gap_Unmerge_HalfUndoneRefusalKeepsTheFence(t *testing.T) {
 	ctx := context.Background()
 	mapRdb := itRedis(t, itMappingRD)
 	shared := itRedis(t, itSharedRD)
-	mapRdb.Set(ctx, playerZoneKey(9741), "901", 0) // 上一次撤销已改回
-	mapRdb.Set(ctx, playerZoneKey(9742), "902", 0) // 还没轮到
+	itSetRouteHome(t, 9741, itSrcZone) // 上一次撤销已改回
+	itSetRouteHome(t, 9742, itDstZone) // 还没轮到
 	manifest := filepath.Join(t.TempDir(), "merge.json")
-	m := newMergeManifest("run-half-undo", itSrcZone, itDstZone, "it", time.Now())
+	m := itDBMergeManifest("run-half-undo", itSrcZone, itDstZone, "it", time.Now())
 	m.PlayerIDs = []uint64{9741, 9742}
 	if err := saveManifest(manifest, m); err != nil {
 		t.Fatal(err)
@@ -3099,7 +3048,7 @@ func TestIT_ClearHotState_RemovesZoneFromSceneManagerRegistry(t *testing.T) {
 
 // ── -route-source=db 的写入点(D1 第 2 批;规格 §6.3、§13.3 第 1–5 条)──────────────────────
 //
-// 要求 MERGE_ZONE_IT_ROUTE_DB_DSN 指向已 `data_service -migrate` 建好路由表的一次性库(见 route_store_integration_test.go),
+// 共用TestMain独占TiDB路由库及DS权威DDL(见tidb_fixture_integration_test.go),
 // mapping Redis(DB 9)支持 WAITAOF 1 0;缺任一项 SKIP(MERGE_ZONE_IT_REQUIRE=1 时 FAIL)。
 
 // itRouteDBPlayers 是端到端用例的玩家,落在行片 0、1、63(9_000_000_640 % 64 = 0)。
@@ -3144,10 +3093,10 @@ func itSeedRouteWatermark(t *testing.T, st *mergeRouteStore, rdb *redis.Client) 
 	}
 }
 
-// itRunRouteDB 跑真二进制,走 -route-source=db(itRun 的 -route-source redis 被后面的同名参数覆盖)。
+// itRunRouteDB保留既有调用名；所有成功二进制用例已统一db_first。
 func itRunRouteDB(t *testing.T, args ...string) (string, int) {
 	t.Helper()
-	return itRun(t, append([]string{"-route-source", routeSourceDB, "-route-db-dsn", os.Getenv(itRouteDBEnv)}, args...)...)
+	return itRun(t, args...)
 }
 
 // itRouteCacheKeys 读一名玩家缓存里的三把键(不存在为空串)。

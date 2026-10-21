@@ -26,6 +26,7 @@ import (
 	dspb "proto/data_service"
 	plpb "proto/player_locator"
 	smpb "proto/scene_manager"
+	"shared/accountdirectory"
 	"shared/clientendpoint"
 	"shared/generated/table"
 	"shared/idsegment"
@@ -34,11 +35,12 @@ import (
 )
 
 type ServiceContext struct {
-	RedisClient *redis.Client
+	AccountDirectory accountdirectory.Directory
+	RedisClient      *redis.Client
 	// SnowFlake 是 PlayerId 发号器。包了一层 fence 闸(见 player_id_gen.go):
 	// 失去 worker id 所有权后必须一个号都发不出去,不能靠"停服"兜底。
 	SnowFlake *PlayerIDGen
-	// DataServiceClient 是 data_service 的 gRPC 客户端:PlayerId 号段、HomeZone
+	// DataServiceClient 是 data_service 的 gRPC 客户端:SQL账号目录、PlayerId号段、HomeZone
 	// 映射查询、角色名登记(PlayerNames)共用。IdSegment.Enabled=false 且 DataServiceRpc 没配目标时为 nil。
 	DataServiceClient dspb.DataServiceClient
 	// PlayerIDSegment 是 PlayerId 号段客户端(shared/idsegment,biz_tag="player");
@@ -223,6 +225,7 @@ func NewServiceContext() *ServiceContext {
 	sc.initPlayerIDMinter()
 	sc.initHomeZoneResolver() // 依赖 initPlayerIDMinter 可能已拨好的 DataServiceClient
 	sc.initPlayerNames()      // 依赖 initHomeZoneResolver 兜底拨好的 DataServiceClient
+	sc.AccountDirectory = accountdirectory.NewClient(sc.DataServiceClient, os.Getenv(accountdirectory.SecretEnv))
 	initialized = true
 	return sc
 }

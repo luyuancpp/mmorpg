@@ -75,6 +75,7 @@ ECS 改造交接见 [总索引](handoff/ecs-refactor/README.md);当前修正与�
 - [k8s_gate_exposure_guidance.md](design/k8s_gate_exposure_guidance.md) — K8s Gate Exposure Guidance / K8s gate 暴露方式指南 · [EN](design/k8s_gate_exposure_guidance_en.md) · [中文](design/k8s_gate_exposure_guidance_zh.md)
 - [login-gate-assignment-migration.md](design/login-gate-assignment-migration.md) — Login Gate Assignment Migration Plan · [中文](design/login-gate-assignment-migration_zh.md)
 - [login-node-stateless-no-affinity.md](design/login-node-stateless-no-affinity.md) — Login Node: Stateless, No Session Affinity
+- [account-role-authority.md](design/account-role-authority.md) — 账号角色目录的全局 SQL 权威、登录接线及上线前数据边界
 - [login-queue-2026-05.md](design/login-queue-2026-05.md) — Login Queue (AssignGate Real Queue) — 2026-05
 - [login-simplification-2026-04.md](design/login-simplification-2026-04.md) — Login Service Simplification (2026-04)
 - [login_gate_assignment_migration.md](design/login_gate_assignment_migration.md) — 登录网关分配改造计划：当前架构 → 大厂标准架构
@@ -138,6 +139,7 @@ ECS 改造交接见 [总索引](handoff/ecs-refactor/README.md);当前修正与�
 - [guild_friend_service_notes.md](design/guild_friend_service_notes.md) — Guild & Friend Service Implementation Notes (2025-03-25) · [EN](design/guild_friend_service_notes_en.md) · [中文](design/guild_friend_service_notes_zh.md)
 - [guild_ranking_architecture.md](design/guild_ranking_architecture.md) — Guild Ranking Architecture (2025-03-25) · [EN](design/guild_ranking_architecture_en.md) · [中文](design/guild_ranking_architecture_zh.md)
 - [jubaozhai-market.md](design/jubaozhai-market.md) — 聚宝斋(玩家间人民币寄售交易)设计 — 2026-09-14
+- [mall-administration.md](design/mall-administration.md) — 商城后台受限经济命令、幂等日志与库存预占保护
 - [leaderboard-system.md](design/leaderboard-system.md) — 排行榜(leaderboard / rank)v1 设计
 - [mail-system.md](design/mail-system.md) — mail(邮件)M1:全局服务 + 系统邮件 / 定向邮件 + 领取短路
 - [mystery-merchant.md](design/mystery-merchant.md) — 神秘商人(定时随机落线的折扣 NPC)
@@ -151,6 +153,7 @@ ECS 改造交接见 [总索引](handoff/ecs-refactor/README.md);当前修正与�
 #### 玩家数据与存储
 
 - [async-load-disconnect-reconnect-race.md](design/async-load-disconnect-reconnect-race.md) — 异步加载竞态：Redis 加载期间的断线与重连
+- [disconnect-reconnect-audit-20261020.md](design/disconnect-reconnect-audit-20261020.md) — 断线重连恢复审计：当前状态重同步、业务补投、客户端接线与遗漏（含 Java 版有限核对，静态审计）
 - [data_service_role_and_scope.md](design/data_service_role_and_scope.md) — data_service 定位与边界
 - [db-consumer-group-per-zone.md](design/db-consumer-group-per-zone.md) — go/db 存盘消费组按 zone 拆分与不停服交接
 - [db-retry-owner-routing.md](design/db-retry-owner-routing.md) — go/db 重试只交给分区属主（④）与 Kafka 源入队的落盘确认（WAITAOF）
@@ -172,7 +175,7 @@ ECS 改造交接见 [总索引](handoff/ecs-refactor/README.md);当前修正与�
 - [player-storage-placement.md](design/player-storage-placement.md) — 玩家存储落点(Placement):归属与存储拆分、单玩家搬库、Phase 2 全局库
 - [player_live_data_export_runbook.md](design/player_live_data_export_runbook.md) — 玩家线上数据下线导出操作记录
 - [proto-compare-dirty-save.md](design/proto-compare-dirty-save.md) — Proto-Compare-Driven Dirty Save — Design (todo.md #204 + #226)
-- [redis-async-client-retry-fix.md](design/redis-async-client-retry-fix.md) — Redis Async Client Retry Fix
+- [redis-async-client-retry-fix.md](design/redis-async-client-retry-fix.md) — Redis 重连、认证、同批 socket 事件与 Hiredis 生命周期
 - [reliable-player-inbox-20261014.md](design/reliable-player-inbox-20261014.md) — 重要玩家消息：持久收件箱、拉取恢复与迁移围栏（2026-10-14）
 - [tidb-phase1-and-launch-readiness.md](design/tidb-phase1-and-launch-readiness.md) — TiDB Phase 1 设计与实施清单（含开服准备）
 
@@ -222,7 +225,7 @@ ECS 改造交接见 [总索引](handoff/ecs-refactor/README.md);当前修正与�
 - [kafka-producer-txn-concurrency-bug.md](design/kafka-producer-txn-concurrency-bug.md) — Kafka Producer Transactional Concurrency Bug
 - [kafka-topic-retention-strategy.md](design/kafka-topic-retention-strategy.md) — Kafka Topic Retention Strategy
 - [muduo-rpc-channel.md](design/muduo-rpc-channel.md) — 节点间 muduo RPC:每次调用的回调、延后回包与完整的完成语义(RpcChannel 改造)
-- [muduo-timer-cancellation-hazards.md](design/muduo-timer-cancellation-hazards.md) — muduo 定时器取消语义与野引用
+- [muduo-timer-cancellation-hazards.md](design/muduo-timer-cancellation-hazards.md) — muduo 同批取消、清理重入、单调时钟与两端回归
 - [no-single-node-horizontal-scaling-20261001.md](design/no-single-node-horizontal-scaling-20261001.md) — 消除单节点:所有服务都能水平扩展(2026-10-01)
 - [player-handler-deferred-reply.md](design/player-handler-deferred-reply.md) — 玩家级 handler 延后完成(PlayerCallContext)
 - [shared-redis-split-by-purpose.md](design/shared-redis-split-by-purpose.md) — 共享 Redis 按用途拆实例(G4a 设计稿)
@@ -329,6 +332,7 @@ ECS 改造交接见 [总索引](handoff/ecs-refactor/README.md);当前修正与�
 
 - [client-rpc-callback-handoff-20261019.md](handoff/client-rpc-callback-handoff-20261019.md) — 交接:客户端请求自带回调(按请求号认领回包),Unity / robot / gate 进度、未提交文件、待拍板的 Java Empty 回包与 scene 早退(2026-10-19)
 - [client-rpc-callback-robot-handoff-20261019.md](handoff/client-rpc-callback-robot-handoff-20261019.md) — 交接:robot 按请求号认领回包——已迁 friend / guild / team / trade,静态复核结论、逐处待迁清单与迁移陷阱(2026-10-19)
+- [global-economy-review-20261021.md](handoff/global-economy-review-20261021.md) — 全球交易与角色归属双版审核交接；区分源码、当前运行证据与未完成验收
 - [configurable-templates-handoff-20261019.md](handoff/configurable-templates-handoff-20261019.md) — 交接：战斗策略 / 活动 / 玩法模板可配置化（含玩家自定义模板）——设计 v0.2 已定稿、代码未开工，待授权与拍板后按批落码（2026-10-19）
 - [data-overwrite-audit-r2-20261019/README.md](handoff/data-overwrite-audit-r2-20261019/README.md) — 交接：第二轮数据与覆盖回档审计——第一、二波已完成（3 medium + 22 low），第三、四波与定稿待续，含工作流脚本副本（2026-10-19）
 - [friend-handoff-20260920.md](handoff/friend-handoff-20260920.md) — friend 服务移植 —— 交接文档(2026-09-20)
@@ -373,6 +377,7 @@ ECS 改造交接见 [总索引](handoff/ecs-refactor/README.md);当前修正与�
 - [2026-09-14-network-failures-and-process-pauses.md](notes/2026-09-14-network-failures-and-process-pauses.md) — 游戏服务器网络故障、网络分区与进程暂停：一手来源调研
 - [2026-09-14-network-failures-and-process-pauses-verification.md](notes/2026-09-14-network-failures-and-process-pauses-verification.md) — 网络故障与进程暂停调研：独立证据复核
 - [code-rigor-complete-qa-2026-09-23.md](notes/code-rigor-complete-qa-2026-09-23.md) — 如何提升写代码的严谨性——完整问答记录
+- [cpp-text-template-libraries-20261021.md](notes/cpp-text-template-libraries-20261021.md) — C++ 文本模板库选型建议（2026-10-21）
 - [currency-crash-window-verification.md](notes/currency-crash-window-verification.md) — CurrencyComp 崩溃窗口验证方案
 - [event-priority.md](notes/event-priority.md) — Events · [EN](notes/event-priority_en.md) · [中文](notes/event-priority_zh.md)
 - [gameplay-introduction-and-resources-research-2026-09-01.md](notes/gameplay-introduction-and-resources-research-2026-09-01.md) — Gameplay 是什么：入门文章与开源项目

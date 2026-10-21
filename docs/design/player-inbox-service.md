@@ -34,6 +34,20 @@
 
 ---
 
+## 2026-10-21 全球原件与角色封存围栏（源码更新，未运行）
+
+本节覆盖下文旧Redis owner_epoch上界、只锁stream及终态30天物删的口径。所有非战斗逻辑的全球强一致要求同时适用于收件箱；归属判定与消息提交必须进入同一TiDB事务域，不能以data_service RPC预检替代原角色P锁。
+
+`AccountRoleSchema`显式指定同一TiDB入口内的角色目录。业务池逐物理连接使用`shared/authoritysql`固定悲观RC、leader、strict，并清空snapshot、staleness与low-resolution TSO；启动核TiDB和目录/入场原表列，缺配置或原件拒启。业务变更顺序为原`account_role` P、消费原`account_role_admission`、stream、item主键、审计。原角色已挂牌冻结时拒绝新增与消费；data_service同P检查全部未终局Inbox条目，所以封存与新入箱不存在读预检后的空窗。
+
+首次新入箱在P内固定`owner_account/owner_revision`；同一producer/request重放必须先核永久原行，不能拿当前目录替旧空原件补权，换主后旧请求即使刷新签发时刻也不能成为新处置。未终局行的原owner缺失、过期目录身份、冻结或未知状态一律保留护栏。Fetch、Ack、普通与强制作废、提醒CAS均进入同P前缀；后台不回填原owner。提醒仍只是提示，`next_seq` CAS防止旧提醒清除后来的新工作。
+
+Fetch追加完整`RoleAdmissionIdentity`与`ServiceCallAuth`（字段8/9），Ack为7/8。只接受scene签名、禁止客户端会话metadata；缺场景签名secret拒启。每次消费包括空流/空箱都在同P内核目录原修订、原scene instance、generation尚未closed及完整已登记proto，不能仅比较E整数。请求E必须与原件一致；通过SQL完整原件授权后，只与持久stream高水位比较，Redis仅供STALE诊断，历史Redis快照不再裁决授权。响应载荷仍不公开私有owner字段。
+
+item原唯一行改为永久收据，正常终态仍精确为APPLIED/REJECTED/VOIDED/SETTLED_UNKNOWN。`SweepTerminal`保留调度接缝并返回0，不再物删；因此旧request不能在换主、旧实例重投或原保留期之后再次入箱。代价是容量随已接纳GM处置数增长；原永久审计本就保留完整载荷，本批没有新增第二份业务真相。未来归档必须保留同一唯一键、原摘要和原owner墓碑，不能恢复有限TTL去重。
+
+分片事实源移入`shared/inboxshard`，旧`inbox.RowShard`兼容转发，data_service挂起查询调用相同公式。旧SQL状态机集成夹具迁到本机真实TiDB并保留显式验收开关，目录P与完整入场原件均用真实SQL行；新增源码覆盖封存持P竞争、换主旧request拒绝、永久收据、完整原件不匹配和已closed世代拒绝。正式生成待统一验收，源码未编译或运行，既有2026-10-18证据不能覆盖这些改动。
+
 ## 0. 结论速览
 
 1. **第一个真实需求是 GM 处置**：封锁某货币的获取、解除封锁、挂补缴欠款。

@@ -30,13 +30,16 @@ import org.springframework.jdbc.core.JdbcTemplate;
         "spring.sql.init.schema-locations=classpath:db/schema.sql",
         "commerce.require-tidb=false",
         "commerce.run-mode=test",
+        "commerce.allowed-payment-channels=test-channel",
         "commerce.gateway-secret=http-flow-gateway-test-only-key-0001",
-        "commerce.payment-secret=http-flow-payment-test-only-key-0002"
+        "commerce.payment-secret=http-flow-payment-test-only-key-0002",
+        "commerce.delivery-secret=http-flow-delivery-test-only-key-0003"
 })
 class CommerceHttpFlowTest {
     private static final String BUYER = "18446744073709551615";
     private static final String GATEWAY_KEY = "http-flow-gateway-test-only-key-0001";
     private static final String PAYMENT_KEY = "http-flow-payment-test-only-key-0002";
+    private static final String DELIVERY_KEY = "http-flow-delivery-test-only-key-0003";
 
     @LocalServerPort int port;
     @Value("${server.servlet.context-path:}") String contextPath;
@@ -49,7 +52,14 @@ class CommerceHttpFlowTest {
     void signedOrdersReserveOnceAuthorizeOwnershipAndStopAtPendingDelivery() throws Exception {
         jdbc.update("INSERT INTO pms_sku_stock(id,product_id,sku_code,price_minor,currency,stock,lock_stock,published) VALUES (701,71,'http-sku',1250,'CNY',4,0,1)");
         jdbc.update("INSERT INTO commerce_sku_grant(sku_id,item_config_id,count_per_unit,title) VALUES(701,10,1,'玄铁')");
-        byte[] creation = json.writeValueAsBytes(Map.of("requestId", "http-buyer-request-001", "skuId", 701, "quantity", 2));
+        byte[] creation = json.writeValueAsBytes(Map.of("requestId", "http-buyer-request-001", "skuId", 701, "quantity", 2,
+            "buyerAccount", "测试账号", "buyerOwnerRevision", "1"));
+        for (String invalid : java.util.List.of(
+                "{\"requestId\":\"missing-owner-001\",\"skuId\":701,\"quantity\":1}",
+                "{\"requestId\":\"numeric-owner-001\",\"skuId\":701,\"quantity\":1,\"buyerAccount\":\"测试账号\",\"buyerOwnerRevision\":1}",
+                "{\"requestId\":\"duplicate-owner-001\",\"skuId\":701,\"quantity\":1,\"buyerAccount\":\"测试账号\",\"buyerOwnerRevision\":\"1\",\"buyerOwnerRevision\":\"2\"}")) {
+            assertEquals(400, call("POST", "/api/orders", "gateway", BUYER, invalid.getBytes(StandardCharsets.UTF_8)).statusCode());
+        }
         HttpRequest original = signed("POST", "/api/orders", "gateway", BUYER, creation);
         HttpResponse<String> created = send(original);
         assertEquals(200, created.statusCode(), created.body());
@@ -59,6 +69,54 @@ class CommerceHttpFlowTest {
         assertEquals(2500, order.get("amountMinor").asLong());
         assertEquals("AWAITING_PAYMENT", order.get("state").asText());
         assertTrue(order.get("paymentDeadlineMs").asLong() > System.currentTimeMillis());
+        byte[] ownedQuery = json.writeValueAsBytes(Map.of("orderId", orderId, "buyerAccount", "测试账号", "buyerOwnerRevision", "1"));
+        assertEquals(order, json.readTree(call("POST", "/api/orders/query", "gateway", BUYER, ownedQuery).body()));
+        var ownedPage = json.readTree(call("POST", "/api/orders/list", "gateway", BUYER,
+            json.writeValueAsBytes(Map.of("afterOrderId", "", "limit", 20, "buyerAccount", "测试账号", "buyerOwnerRevision", "1"))).body());
+        assertEquals(1, ownedPage.size()); assertEquals(order, ownedPage.get(0));
+        assertEquals(404, call("GET", "/api/orders/" + orderId, "gateway", BUYER, new byte[0]).statusCode());
+        assertEquals(404, call("POST", "/api/orders/query", "gateway", BUYER,
+            json.writeValueAsBytes(Map.of("orderId", orderId, "buyerAccount", "过户新账号", "buyerOwnerRevision", "2"))).statusCode());
+        assertEquals(404, call("POST", "/api/orders/query", "gateway", BUYER,
+            json.writeValueAsBytes(Map.of("orderId", orderId, "buyerAccount", "测试账号", "buyerOwnerRevision", "3"))).statusCode());
+        assertEquals(404, call("POST", "/api/orders/cancel", "gateway", BUYER,
+            json.writeValueAsBytes(Map.of("orderId", orderId, "buyerAccount", "测试账号", "buyerOwnerRevision", "3"))).statusCode());
+        assertTrue(json.readTree(call("POST", "/api/orders/list", "gateway", BUYER,
+            json.writeValueAsBytes(Map.of("afterOrderId", "", "limit", 20, "buyerAccount", "测试账号", "buyerOwnerRevision", "3"))).body()).isEmpty());
+        assertEquals(400, call("POST", "/api/orders/query", "gateway", BUYER,
+            json.writeValueAsBytes(Map.of("orderId", orderId, "buyerAccount", "测试账号", "buyerOwnerRevision", 1))).statusCode());
+
+        // payment 查询同一冻结订单，不要求伪造买家身份；gateway/delivery 不能借查询入口跨角色读取。
+        byte[] query = json.writeValueAsBytes(Map.of("orderId", orderId));
+        HttpRequest paymentView = signed("POST", "/internal/payments/order-view", "payment", "payment-adapter", query);
+        HttpResponse<String> queried = send(paymentView);
+        assertEquals(200, queried.statusCode(), queried.body());
+        assertEquals(order, json.readTree(queried.body()));
+        assertEquals(409, send(paymentView).statusCode(), "只读查询仍消耗原认证 nonce");
+        assertEquals(401, call("POST", "/internal/payments/order-view", "gateway", BUYER, query).statusCode());
+        assertEquals(401, call("POST", "/internal/payments/order-view", "delivery", "trade", query).statusCode());
+        assertEquals(401, call("POST", "/internal/payments/order-view", "payment", "unknown-adapter", query).statusCode());
+        assertEquals(400, call("POST", "/internal/payments/order-view", "payment", "payment-adapter",
+            json.writeValueAsBytes(Map.of("orderId", "NOT-AN-ORDER"))).statusCode());
+        assertEquals(404, call("POST", "/internal/payments/order-view", "payment", "payment-adapter",
+            json.writeValueAsBytes(Map.of("orderId", "00000000-0000-0000-0000-000000000001"))).statusCode());
+        byte[] skuQuery = json.writeValueAsBytes(Map.of("afterSkuId", 0, "limit", 20));
+        HttpResponse<String> skus = call("POST", "/internal/payments/skus", "payment", "payment-adapter", skuQuery);
+        assertEquals(200, skus.statusCode(), skus.body());
+        JsonNode skuPage = json.readTree(skus.body()).path("skus");
+        assertEquals(1, skuPage.size());
+        assertEquals(701, skuPage.get(0).path("skuId").asLong());
+        assertEquals(1250, skuPage.get(0).path("priceMinor").asLong());
+        assertEquals(2, skuPage.get(0).path("available").asLong());
+        assertEquals(401, call("POST", "/internal/payments/skus", "gateway", BUYER, skuQuery).statusCode());
+        assertEquals(401, call("POST", "/internal/payments/skus", "delivery", "trade", skuQuery).statusCode());
+        assertEquals(400, call("POST", "/internal/payments/skus", "payment", "payment-adapter",
+            json.writeValueAsBytes(Map.of("afterSkuId", 0, "limit", 101))).statusCode());
+        assertEquals(404, call("POST", "/internal/payments/skus/unknown", "payment", "payment-adapter", skuQuery).statusCode());
+        assertEquals(1, count("oms_order"));
+        assertEquals(0, count("commerce_payment_receipt"));
+        assertEquals(0, count("commerce_delivery_intent"));
+        assertEquals(0, count("commerce_refund_intent"));
 
         // 原签名不能重放；以新 nonce 重试同业务请求号只返回原订单。
         assertEquals(409, send(original).statusCode());
@@ -68,7 +126,8 @@ class CommerceHttpFlowTest {
         assertEquals(1, count("oms_order"));
         assertEquals(2, stockValue("lock_stock"));
         assertEquals(4, stockValue("stock"));
-        byte[] changed = json.writeValueAsBytes(Map.of("requestId", "http-buyer-request-001", "skuId", 701, "quantity", 1));
+        byte[] changed = json.writeValueAsBytes(Map.of("requestId", "http-buyer-request-001", "skuId", 701, "quantity", 1,
+            "buyerAccount", "测试账号", "buyerOwnerRevision", "1"));
         assertEquals(409, call("POST", "/api/orders", "gateway", BUYER, changed).statusCode());
         assertEquals(404, call("GET", "/api/orders/" + orderId, "gateway", "2", new byte[0]).statusCode());
         assertEquals(401, send(HttpRequest.newBuilder(uri("/api/orders/" + orderId)).GET().build()).statusCode());
@@ -78,22 +137,29 @@ class CommerceHttpFlowTest {
         HttpResponse<String> paid = call("POST", "/internal/payments", "payment", "payment-adapter", payment);
         assertEquals(200, paid.statusCode(), paid.body());
         assertEquals("DELIVERY_PENDING", json.readTree(paid.body()).get("state").asText());
+        assertEquals(json.readTree(paid.body()), json.readTree(
+            call("POST", "/internal/payments/order-view", "payment", "payment-adapter", query).body()));
         assertEquals(200, call("POST", "/internal/payments", "payment", "payment-adapter", payment).statusCode());
         assertEquals(1, count("commerce_payment_receipt"));
         assertEquals(1, count("commerce_delivery_intent"));
         assertEquals(2, stockValue("stock"));
         assertEquals(0, stockValue("lock_stock"));
-        assertEquals(409, call("POST", "/api/orders/" + orderId + "/cancel", "gateway", BUYER, new byte[0]).statusCode());
+        assertEquals(404, call("POST", "/api/orders/" + orderId + "/cancel", "gateway", BUYER, new byte[0]).statusCode());
+        assertEquals(409, call("POST", "/api/orders/cancel", "gateway", BUYER, ownedQuery).statusCode());
 
-        byte[] second = json.writeValueAsBytes(Map.of("requestId", "http-buyer-request-002", "skuId", 701, "quantity", 1));
+        byte[] second = json.writeValueAsBytes(Map.of("requestId", "http-buyer-request-002", "skuId", 701, "quantity", 1,
+            "buyerAccount", "测试账号", "buyerOwnerRevision", "1"));
         HttpResponse<String> secondCreated = call("POST", "/api/orders", "gateway", BUYER, second);
         assertEquals(200, secondCreated.statusCode(), secondCreated.body());
         String secondId = json.readTree(secondCreated.body()).get("orderId").asText();
         assertEquals(1, stockValue("lock_stock"));
-        HttpResponse<String> cancelled = call("POST", "/api/orders/" + secondId + "/cancel", "gateway", BUYER, new byte[0]);
+        byte[] secondIdentity = json.writeValueAsBytes(Map.of("orderId", secondId, "buyerAccount", "测试账号", "buyerOwnerRevision", "1"));
+        HttpResponse<String> cancelled = call("POST", "/api/orders/cancel", "gateway", BUYER, secondIdentity);
         assertEquals(200, cancelled.statusCode(), cancelled.body());
         assertEquals("CANCELLED", json.readTree(cancelled.body()).get("state").asText());
-        assertEquals(200, call("POST", "/api/orders/" + secondId + "/cancel", "gateway", BUYER, new byte[0]).statusCode());
+        assertEquals(json.readTree(cancelled.body()), json.readTree(call("POST", "/internal/payments/order-view",
+            "payment", "payment-adapter", json.writeValueAsBytes(Map.of("orderId", secondId))).body()));
+        assertEquals(200, call("POST", "/api/orders/cancel", "gateway", BUYER, secondIdentity).statusCode());
         assertEquals(2, stockValue("stock"));
         assertEquals(0, stockValue("lock_stock"));
         assertEquals(1, count("commerce_delivery_intent"));
@@ -106,7 +172,7 @@ class CommerceHttpFlowTest {
     private HttpRequest signed(String method, String path, String role, String subject, byte[] body) {
         String timestamp = Long.toString(System.currentTimeMillis());
         String nonce = UUID.randomUUID().toString();
-        String key = role.equals("payment") ? PAYMENT_KEY : GATEWAY_KEY;
+        String key = role.equals("payment") ? PAYMENT_KEY : role.equals("delivery") ? DELIVERY_KEY : GATEWAY_KEY;
         return HttpRequest.newBuilder(uri(path)).timeout(Duration.ofSeconds(8))
                 .header("Content-Type", "application/json")
                 .header("X-Commerce-Subject", subject)

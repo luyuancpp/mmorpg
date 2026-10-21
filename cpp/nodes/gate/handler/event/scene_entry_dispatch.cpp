@@ -131,6 +131,7 @@ SceneForwardResult ForwardPlayerToScene(const SessionId sessionId, const uint32_
     // 0 也照发——它是 scene 侧"兼容窗口/未知"的信号,gate 擅自填进程 zone 会把 fail-closed 变成静默落错库。
     req.set_home_zone_id(session.homeZoneId);
     req.set_owner_epoch(session.ownerEpoch);
+    req.set_owner_revision(session.ownerRevision);
     // 登录代次盖章(scene-enter-session-fence.md §4):会话上记的是本会话、本角色见过的最高值,scene 自发的
     // 换图路由(0)也由它盖章。0 同样照发 —— 上游未带代次,由 scene 栅栏按版本 0 规则处理,gate 不补值。
     req.set_login_generation(session.loginGeneration);

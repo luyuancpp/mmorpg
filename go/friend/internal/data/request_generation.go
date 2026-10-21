@@ -46,10 +46,15 @@ func (r *FriendRepo) runRequestWrite(ctx context.Context, from, to uint64,
 // findRequest 只用索引定位完整主键，不提前取锁。普通索引允许历史0共存；非零重复
 // 是号源或数据损坏，不能任选一行继续。请求体里的 from_player_id 不参与定位或授权。
 func (r *FriendRepo) findRequest(ctx context.Context, requestID, accepterID uint64) (RequestChange, error) {
+	reader, closeRead, err := r.roleReader(ctx, accepterID)
+	if err != nil {
+		return RequestChange{}, err
+	}
+	defer closeRead()
 	if requestID == 0 || accepterID == 0 {
 		return RequestChange{}, ErrRequestNotFound
 	}
-	rows, err := r.db.QueryContext(ctx,
+	rows, err := reader.QueryContext(ctx,
 		"SELECT from_player_id, to_player_id FROM friend_request WHERE request_id=? LIMIT 2", requestID)
 	if err != nil {
 		return RequestChange{}, err

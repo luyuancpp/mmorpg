@@ -68,7 +68,8 @@ func isHomeZoneUnmapped(err error) bool {
 	}
 }
 
-// RedisEpochs 用核心 Redis 实现 inbox.EpochReader:GET player:{id}:owner_epoch,按 shared/ownerepoch 解析。
+// RedisEpochs仅用于STALE诊断；正常消费依赖完整SQL原入场，Redis镜像不再提供授权上界。
+// GET player:{id}:owner_epoch按shared/ownerepoch解析。
 // 键不存在按 0 返回(ownerepoch.ParseEpoch 的约定);非十进制整数是错误(数据面事故,不折成 0)。
 type RedisEpochs struct {
 	Client *redis.Client

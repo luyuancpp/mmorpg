@@ -103,12 +103,13 @@ func (l *GuildLogic) StartTrialBackground(c TrialBackgroundConf) (stop func(), e
 	}
 	ctx, cancel := context.WithCancel(context.Background())
 	owed := &owedRewardLoop{d: d}
+	launches := &trialLaunchRecovery{d: d}
 	var wg sync.WaitGroup
 	wg.Add(2)
 	safego.Go(trialOwedLoopPoint, func() {
 		// Done 放在 defer 里:safego 兜住 panic 时它照样执行,stop 不会永远等下去。
 		defer wg.Done()
-		runTrialLoop(ctx, trialOwedLoopPoint, c.OwedInterval, func(ctx context.Context) { owed.round(ctx) })
+		runTrialLoop(ctx, trialOwedLoopPoint, c.OwedInterval, func(ctx context.Context) { launches.round(ctx); owed.round(ctx) })
 	})
 	safego.Go(trialSweeperPoint, func() {
 		defer wg.Done()

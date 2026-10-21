@@ -8,6 +8,7 @@
 #include "muduo/net/InetAddress.h"
 
 #include <hiredis/hiredis.h>
+#include <memory>
 
 struct redisAsyncContext;
 
@@ -31,7 +32,11 @@ class Hiredis : public std::enable_shared_from_this<Hiredis>,
   typedef std::function<void(Hiredis*, int)> DisconnectCallback;
   typedef std::function<void(Hiredis*, redisReply*)> CommandCallback;
 
-  Hiredis(muduo::net::EventLoop* loop, const muduo::net::InetAddress& serverAddr);
+  // 只能由工厂创建。所有操作和最后一个强引用的释放必须在 loop 线程，且 loop 必须仍然存活。
+  // I/O 分发期间释放最后一个引用时，整个对象、context 和 fd 统一延至 pending 阶段销毁。
+  // 空 loop 只用于从不 connect 的不可用占位对象。
+  static std::shared_ptr<Hiredis> Create(muduo::net::EventLoop* loop,
+                                       const muduo::net::InetAddress& serverAddr);
   ~Hiredis();
 
   const muduo::net::InetAddress& serverAddress() const { return serverAddr_; }
@@ -43,13 +48,14 @@ class Hiredis : public std::enable_shared_from_this<Hiredis>,
   void setDisconnectCallback(const DisconnectCallback& cb) { disconnectCb_ = cb; }
 
   void connect();
-  void disconnect();  // FIXME: implement this with redisAsyncDisconnect
+  void disconnect();
 
   int command(const CommandCallback& cb, muduo::StringArg cmd, ...);
 
   int ping();
 
  private:
+  Hiredis(muduo::net::EventLoop* loop, const muduo::net::InetAddress& serverAddr);
   void handleRead(muduo::Timestamp receiveTime);
   void handleWrite();
 
@@ -60,7 +66,6 @@ class Hiredis : public std::enable_shared_from_this<Hiredis>,
 
   void connectCallback(int status);
   void disconnectCallback(int status);
-  void commandCallback(redisReply* reply, CommandCallback* privdata);
 
   static Hiredis* getHiredis(const redisAsyncContext* ac);
 
@@ -74,8 +79,6 @@ class Hiredis : public std::enable_shared_from_this<Hiredis>,
   static void addWrite(void* privdata);
   static void delWrite(void* privdata);
   static void cleanup(void* privdata);
-
-  void pingCallback(Hiredis* me, redisReply* reply);
 
  private:
   muduo::net::EventLoop* loop_;

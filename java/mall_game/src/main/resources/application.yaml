@@ -19,3 +19,13 @@ commerce:
   payment-secret: ${COMMERCE_PAYMENT_SECRET}
   delivery-secret: ${COMMERCE_DELIVERY_SECRET:}
   payment-subject: ${COMMERCE_PAYMENT_SUBJECT:payment-adapter}
+  admin-secret: ${COMMERCE_ADMIN_SECRET:}
+  admin-subject: ${COMMERCE_ADMIN_SUBJECT:mall-admin}
+  mock-payment-enabled: ${COMMERCE_MOCK_PAYMENT_ENABLED:false}
+  allowed-payment-channels: ${COMMERCE_ALLOWED_PAYMENT_CHANNELS:}
+  consignment:
+    notice-ms: ${COMMERCE_CONSIGNMENT_NOTICE_MS:172800000}
+    sale-ms: ${COMMERCE_CONSIGNMENT_SALE_MS:604800000}
+    cooling-ms: ${COMMERCE_CONSIGNMENT_COOLING_MS:259200000}
+    fee-bps: ${COMMERCE_CONSIGNMENT_FEE_BPS:500}
+    currencies: ${COMMERCE_CONSIGNMENT_CURRENCIES:0}

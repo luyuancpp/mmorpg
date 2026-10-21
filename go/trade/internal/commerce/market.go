@@ -28,7 +28,21 @@ func (e *Engine) matchMarket(ctx context.Context, id uint64) error {
 	if err != nil {
 		return err
 	}
+	observedID, err := marketCounterparty(ctx, e.Repo.DB, taker)
+	if errors.Is(err, sql.ErrNoRows) {
+		return nil
+	}
+	if err != nil {
+		return err
+	}
+	observed, err := e.Repo.Get(ctx, observedID)
+	if err != nil {
+		return err
+	}
 	return e.Repo.Tx(ctx, func(tx *sql.Tx) error {
+		if err := e.lockRoles(ctx, tx, 0, taker.SellerPlayerId, observed.SellerPlayerId); err != nil {
+			return err
+		}
 		key := sha256.Sum256([]byte(fmt.Sprintf("market:%d:%d:%d", taker.MarketId, taker.ItemConfigId, taker.CurrencyType)))
 		guardID := binary.BigEndian.Uint64(key[:8]) | 1<<63
 		if _, err := tx.ExecContext(ctx, "INSERT IGNORE INTO trade_commerce_guard(guard_id) VALUES(?)", guardID); err != nil {
@@ -38,21 +52,16 @@ func (e *Engine) matchMarket(ctx context.Context, id uint64) error {
 		if err := tx.QueryRowContext(ctx, "SELECT guard_id FROM trade_commerce_guard WHERE guard_id=? FOR UPDATE", guardID).Scan(&guard); err != nil {
 			return err
 		}
-		priceFilter, order := "unit_price>=?", "unit_price DESC,created_ms,commerce_id"
-		opposite := uint32(1)
-		if taker.Side == 1 {
-			priceFilter = "unit_price<=?"
-			order = "unit_price ASC,created_ms,commerce_id"
-			opposite = 2
-		}
-		var otherID uint64
-		err := tx.QueryRowContext(ctx, "SELECT commerce_id FROM trade_commerce WHERE kind=4 AND side=? AND market_id=? AND item_config_id=? AND currency_type=? AND status=3 AND filled_quantity<quantity AND seller_player_id<>? AND "+priceFilter+" ORDER BY "+order+" LIMIT 1", opposite, taker.MarketId, taker.ItemConfigId, taker.CurrencyType, taker.SellerPlayerId, taker.UnitPrice).Scan(&otherID)
+		otherID, err := marketCounterparty(ctx, tx, taker)
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil
 		}
 		if err != nil {
 			return err
 		}
+		if otherID != observedID {
+			return ErrConflict
+		} // 价格时间最优项变化时重新规划，不拿未锁角色的新候选成交。
 		first, second := id, otherID
 		if first > second {
 			first, second = second, first
@@ -73,6 +82,14 @@ func (e *Engine) matchMarket(ctx context.Context, id uint64) error {
 		if err != nil {
 			return err
 		}
+		for _, pair := range []struct {
+			r *tradepb.TradeCommerceRecord
+			w *tradepb.TradeCommerceWorkflow
+		}{{a, aw}, {b, bw}} {
+			if err := e.checkContractIdentities(ctx, tx, pair.r, pair.w); err != nil {
+				return err
+			}
+		}
 		if aw.Stage != "market_open" || bw.Stage != "market_open" || aw.CancelRequested || bw.CancelRequested || a.FilledQuantity >= a.Quantity || b.FilledQuantity >= b.Quantity {
 			return nil
 		}
@@ -92,6 +109,15 @@ func (e *Engine) matchMarket(ctx context.Context, id uint64) error {
 		now := e.now()
 		m := &tradepb.TradeCommerceRecord{CommerceId: matchID, RequestKey: hex.EncodeToString(key[:]) + ":" + fmt.Sprint(matchID), Kind: 4, Status: Delivering, SellerPlayerId: sell.SellerPlayerId, BuyerPlayerId: buy.SellerPlayerId, MarketId: buy.MarketId, ItemConfigId: buy.ItemConfigId, UnitPrice: price, Quantity: qty, CurrencyType: buy.CurrencyType, CreatedMs: now, UpdatedMs: now, Version: 1, ParentId: buy.CommerceId, CounterpartyId: sell.CommerceId}
 		mw := &tradepb.TradeCommerceWorkflow{Stage: "deliver"}
+		buyWorkflow, sellWorkflow := aw, bw
+		if buy.CommerceId == b.CommerceId {
+			buyWorkflow, sellWorkflow = bw, aw
+		}
+		if buyWorkflow.SellerIdentity == nil || sellWorkflow.SellerIdentity == nil {
+			return corrupt(errors.New("撮合父合同缺少原角色身份"))
+		}
+		mw.SellerIdentity = proto.Clone(sellWorkflow.SellerIdentity).(*tradepb.TradeRoleIdentity)
+		mw.BuyerIdentity = proto.Clone(buyWorkflow.SellerIdentity).(*tradepb.TradeRoleIdentity)
 		addLeg(mw, "buyer_receive", buy.SellerPlayerId, 4, &assetpb.AssetBundle{Items: []*assetpb.ItemGrant{{ConfigId: buy.ItemConfigId, Count: qty}}})
 		addLeg(mw, "seller_receive", sell.SellerPlayerId, 4, &assetpb.AssetBundle{Currencies: []*assetpb.CurrencyAmount{{CurrencyType: buy.CurrencyType, Amount: uint64(qty) * price}}})
 		if buy.UnitPrice > price {
@@ -117,6 +143,23 @@ func (e *Engine) matchMarket(ctx context.Context, id uint64) error {
 		}
 		return e.Repo.Save(ctx, tx, b, bw, now)
 	})
+}
+
+type marketQuery interface {
+	QueryRowContext(context.Context, string, ...any) *sql.Row
+}
+
+func marketCounterparty(ctx context.Context, q marketQuery, taker *tradepb.TradeCommerceRecord) (uint64, error) {
+	filter, order := "unit_price>=?", "unit_price DESC,created_ms,commerce_id"
+	opposite := uint32(1)
+	if taker.Side == 1 {
+		filter = "unit_price<=?"
+		order = "unit_price ASC,created_ms,commerce_id"
+		opposite = 2
+	}
+	var id uint64
+	err := q.QueryRowContext(ctx, "SELECT commerce_id FROM trade_commerce WHERE kind=4 AND side=? AND market_id=? AND item_config_id=? AND currency_type=? AND status=3 AND filled_quantity<quantity AND seller_player_id<>? AND "+filter+" ORDER BY "+order+" LIMIT 1", opposite, taker.MarketId, taker.ItemConfigId, taker.CurrencyType, taker.SellerPlayerId, taker.UnitPrice).Scan(&id)
+	return id, err
 }
 
 func (e *Engine) marketBarrier(ctx context.Context, tx *sql.Tx, r *tradepb.TradeCommerceRecord, w *tradepb.TradeCommerceWorkflow) error {

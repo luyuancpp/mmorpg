@@ -2,66 +2,26 @@ package inbox
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"time"
 
 	"player_inbox/internal/constants"
 	"player_inbox/internal/metrics"
 
+	dspb "proto/data_service"
 	inboxpb "proto/player_inbox"
 
 	"github.com/zeromicro/go-zero/core/logx"
 )
 
-// 后台循环用到的存储操作(设计 §6.3、§9.1、§9.3、§9.4)。全部在事务之外逐条 autocommit,
-// 不持流行锁:清理只删终态行(Ack 不改终态行,两者不会反向抢锁);提醒清零 / 推迟都是 next_seq CAS。
+// 后台只读扫描仍不持锁；提醒CAS经原P及挂起原件核验。item永久保存原唯一收据。
 
-// SweepTerminal 删除保留期外的终态行,本轮最多 budget 行(设计 §9.1:每轮最多 500 行)。
-// 按分片走 (shard, state, updated_ms) 索引普通读出候选,再按主键逐行带条件删除;
-// **永不删除** PENDING 行、流行与审计行。返回本轮删除的行数。
+// SweepTerminal 保留原调度接口，终态item作为永久幂等收据不再物删。
 func (s *Store) SweepTerminal(ctx context.Context, cutoffMs uint64, budget int) (int, error) {
-	deleted := 0
-	for shard := uint32(0); shard < ShardCount && deleted < budget; shard++ {
-		if err := ctx.Err(); err != nil {
-			return deleted, err
-		}
-		rows, err := s.db.QueryContext(ctx, "SELECT `player_id`, `domain`, `seq` FROM "+itemTable+
-			" WHERE `shard` = ? AND `state` IN "+terminalStatesSQL+" AND `updated_ms` < ? LIMIT ?",
-			shard, cutoffMs, budget-deleted)
-		if err != nil {
-			return deleted, fmt.Errorf("inbox: sweep scan shard=%d: %w", shard, err)
-		}
-		type key struct {
-			playerID uint64
-			domain   uint32
-			seq      uint64
-		}
-		var keys []key
-		for rows.Next() {
-			var k key
-			if err := rows.Scan(&k.playerID, &k.domain, &k.seq); err != nil {
-				rows.Close()
-				return deleted, err
-			}
-			keys = append(keys, k)
-		}
-		if err := rows.Close(); err != nil {
-			return deleted, err
-		}
-		for _, k := range keys {
-			res, err := s.db.ExecContext(ctx, "DELETE FROM "+itemTable+" WHERE "+itemPK+
-				" AND `state` IN "+terminalStatesSQL+" AND `updated_ms` < ?",
-				shard, k.playerID, k.domain, k.seq, cutoffMs)
-			if err != nil {
-				return deleted, fmt.Errorf("inbox: sweep delete player=%d seq=%d: %w", k.playerID, k.seq, err)
-			}
-			if n, err := res.RowsAffected(); err == nil && n == 1 {
-				deleted++
-			}
-		}
-	}
-	metrics.AddSweepDeleted(deleted)
-	return deleted, nil
+	// 原唯一行是永久请求收据。删除后旧GM request_id可换主重入，时间窗不能替代原owner。
+	// 原接口保留供调度兼容；容量代价随已接纳处置数增长，审计原本也永久保存完整载荷。
+	return 0, ctx.Err()
 }
 
 // NotifyDue 是一条待补发的提醒:读出当时的 next_seq 作 CAS 令牌,流行的 updated_ms 作退避起算点。
@@ -142,16 +102,22 @@ func (s *Store) ResendNotify(ctx context.Context, d NotifyDue) NotifyResult {
 // **不碰 updated_ms**:它是退避的起算点(notifyRetryDueMs),提醒的簿记不算流的业务写入(ClearNotifyDue 同样不碰)。
 // 返回是否真的改了。
 func (s *Store) DeferNotifyDue(ctx context.Context, playerID uint64, domain inboxpb.PlayerInboxDomain, expectNextSeq, dueMs uint64) (bool, error) {
-	res, err := s.db.ExecContext(ctx, "UPDATE "+streamTable+" SET `notify_due_ms` = ? WHERE "+streamPK+
-		" AND `next_seq` = ? AND `notify_due_ms` <> 0", dueMs, RowShard(playerID), playerID, uint32(domain), expectNextSeq)
-	if err != nil {
-		return false, fmt.Errorf("inbox: defer notify_due player=%d domain=%d: %w", playerID, domain, err)
-	}
-	n, err := res.RowsAffected()
-	if err != nil {
-		return false, err
-	}
-	return n == 1, nil
+	changed := false
+	err := s.withPlayerTx(ctx, playerID, func(tx *sql.Tx, original *dspb.AccountRoleOwnership) error {
+		changed = false
+		if err := requirePendingOriginalsTx(ctx, tx, original); err != nil {
+			return err
+		}
+		res, err := tx.ExecContext(ctx, "UPDATE "+streamTable+" SET `notify_due_ms` = ? WHERE "+streamPK+
+			" AND `next_seq` = ? AND `notify_due_ms` <> 0", dueMs, RowShard(playerID), playerID, uint32(domain), expectNextSeq)
+		if err != nil {
+			return err
+		}
+		n, err := res.RowsAffected()
+		changed = n == 1
+		return err
+	})
+	return changed && err == nil, err
 }
 
 // GaugeCutoffs 是一次扫描型 gauge 用到的时间截止(Unix 毫秒,由后台循环按 now 算出,见 gaugeCutoffs)。

@@ -227,6 +227,7 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED SessionDetails final : public ::goo
     kTicketPlayerIdFieldNumber = 5,
     kSessionIncarnationFieldNumber = 7,
     kGateCallSeqFieldNumber = 8,
+    kOwnerRevisionFieldNumber = 9,
     kTicketTargetZoneIdFieldNumber = 6,
   };
   // string gate_instance_id = 4;
@@ -304,6 +305,16 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED SessionDetails final : public ::goo
   void _internal_set_gate_call_seq(::uint64_t value);
 
   public:
+  // uint64 owner_revision = 9;
+  void clear_owner_revision() ;
+  [[nodiscard]] ::uint64_t owner_revision() const;
+  void set_owner_revision(::uint64_t value);
+
+  private:
+  ::uint64_t _internal_owner_revision() const;
+  void _internal_set_owner_revision(::uint64_t value);
+
+  public:
   // uint32 ticket_target_zone_id = 6;
   void clear_ticket_target_zone_id() ;
   [[nodiscard]] ::uint32_t ticket_target_zone_id() const;
@@ -318,7 +329,7 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED SessionDetails final : public ::goo
  private:
   class _Internal;
   using ParseTableT_ =
-      ::google::protobuf::internal::TcParseTable<3, 8,
+      ::google::protobuf::internal::TcParseTable<4, 9,
                           0, 47,
                           2>;
   static constexpr ParseTableT_ InternalGenerateParseTable_(
@@ -354,6 +365,7 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED SessionDetails final : public ::goo
     ::uint64_t ticket_player_id_;
     ::uint64_t session_incarnation_;
     ::uint64_t gate_call_seq_;
+    ::uint64_t owner_revision_;
     ::uint32_t ticket_target_zone_id_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
@@ -541,7 +553,7 @@ inline void SessionDetails::_internal_set_ticket_player_id(::uint64_t value) {
 inline void SessionDetails::clear_ticket_target_zone_id() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.ticket_target_zone_id_ = 0u;
-  ClearHasBit(_impl_._has_bits_[0], 0x00000080U);
+  ClearHasBit(_impl_._has_bits_[0], 0x00000100U);
 }
 inline ::uint32_t SessionDetails::ticket_target_zone_id() const {
   // @@protoc_insertion_point(field_get:SessionDetails.ticket_target_zone_id)
@@ -549,7 +561,7 @@ inline ::uint32_t SessionDetails::ticket_target_zone_id() const {
 }
 inline void SessionDetails::set_ticket_target_zone_id(::uint32_t value) {
   _internal_set_ticket_target_zone_id(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00000080U);
+  SetHasBit(_impl_._has_bits_[0], 0x00000100U);
   // @@protoc_insertion_point(field_set:SessionDetails.ticket_target_zone_id)
 }
 inline ::uint32_t SessionDetails::_internal_ticket_target_zone_id() const {
@@ -607,6 +619,30 @@ inline ::uint64_t SessionDetails::_internal_gate_call_seq() const {
 inline void SessionDetails::_internal_set_gate_call_seq(::uint64_t value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.gate_call_seq_ = value;
+}
+
+// uint64 owner_revision = 9;
+inline void SessionDetails::clear_owner_revision() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.owner_revision_ = ::uint64_t{0u};
+  ClearHasBit(_impl_._has_bits_[0], 0x00000080U);
+}
+inline ::uint64_t SessionDetails::owner_revision() const {
+  // @@protoc_insertion_point(field_get:SessionDetails.owner_revision)
+  return _internal_owner_revision();
+}
+inline void SessionDetails::set_owner_revision(::uint64_t value) {
+  _internal_set_owner_revision(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000080U);
+  // @@protoc_insertion_point(field_set:SessionDetails.owner_revision)
+}
+inline ::uint64_t SessionDetails::_internal_owner_revision() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.owner_revision_;
+}
+inline void SessionDetails::_internal_set_owner_revision(::uint64_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.owner_revision_ = value;
 }
 
 #ifdef __GNUC__

@@ -38,7 +38,7 @@ func TestEnterScene_RouteEventCarriesRequestLoginGenerationAcrossSamePlacementTa
 	seedSceneOnNode(mr, testZoneId, sceneID, "10", "0")
 
 	// 设备 A 首登:走首次落点(铸 epoch 1)那一处 routePlayerToGate。
-	respA, err := NewEnterSceneLogic(context.Background(), sc).EnterScene(&scene_manager.EnterSceneRequest{
+	respA, err := NewEnterSceneLogic(context.Background(), sc).EnterScene(&scene_manager.EnterSceneRequest{OwnerRevision: 1,
 		PlayerId: playerID, SceneId: sceneID, ZoneId: testZoneId, SessionId: 11,
 		GateZoneId: testZoneId, GateId: "1", GateInstanceId: "gate-a-uuid", LoginGeneration: genA,
 	})
@@ -46,7 +46,7 @@ func TestEnterScene_RouteEventCarriesRequestLoginGenerationAcrossSamePlacementTa
 	require.Equal(t, uint32(0), respA.ErrorCode)
 
 	// 设备 B 从另一个 gate 顶号、落到同一场景同一节点:走"同一落点重连"那一处 routePlayerToGate。
-	respB, err := NewEnterSceneLogic(context.Background(), sc).EnterScene(&scene_manager.EnterSceneRequest{
+	respB, err := NewEnterSceneLogic(context.Background(), sc).EnterScene(&scene_manager.EnterSceneRequest{OwnerRevision: 1,
 		PlayerId: playerID, SceneId: sceneID, ZoneId: testZoneId, SessionId: 22,
 		GateZoneId: testZoneId, GateId: "2", GateInstanceId: "gate-b-uuid", LoginGeneration: genB,
 	})
@@ -55,7 +55,7 @@ func TestEnterScene_RouteEventCarriesRequestLoginGenerationAcrossSamePlacementTa
 
 	// scene 自发的重路由(交接重发、同图换图等)不带代次:scene_manager 不得替它补值,
 	// 盖章由 gate 按会话值做(§4「scene 自发的 EnterScene」)。
-	respC, err := NewEnterSceneLogic(context.Background(), sc).EnterScene(&scene_manager.EnterSceneRequest{
+	respC, err := NewEnterSceneLogic(context.Background(), sc).EnterScene(&scene_manager.EnterSceneRequest{OwnerRevision: 1,
 		PlayerId: playerID, SceneId: sceneID, ZoneId: testZoneId, SessionId: 22,
 		GateZoneId: testZoneId, GateId: "2", GateInstanceId: "gate-b-uuid",
 	})
@@ -80,7 +80,7 @@ func TestEnterScene_RouteEventCarriesRequestLoginGenerationAcrossSamePlacementTa
 }
 
 func TestEnterSceneFingerprint_IgnoresLoginGeneration(t *testing.T) {
-	base := &scene_manager.EnterSceneRequest{
+	base := &scene_manager.EnterSceneRequest{OwnerRevision: 1,
 		PlayerId: 6402, SceneId: 7402, ZoneId: testZoneId, SessionId: 33, RequestId: "fp-login-gen",
 	}
 	want, err := enterSceneRequestFingerprint(base)
@@ -115,7 +115,7 @@ func TestEnterScene_SameRequestIDDifferentLoginGenerationReplaysCachedSuccess(t 
 	mr.ZAdd(nodeLoadKey(testZoneId), 0, "10")
 	mr.Set(fmt.Sprintf(SceneNodeKeyFmt, targetID), "10")
 	mr.Set(fmt.Sprintf(InstancePlayerCountKey, targetID), "0")
-	first := &scene_manager.EnterSceneRequest{
+	first := &scene_manager.EnterSceneRequest{OwnerRevision: 1,
 		PlayerId: 6403, SceneId: targetID, ZoneId: testZoneId, SessionId: 44,
 		GateZoneId: testZoneId, GateId: "1", GateInstanceId: "gate-uuid-test",
 		RequestId: "login-gen-replay", LoginGeneration: 100,
@@ -146,7 +146,7 @@ func TestEnterScene_SameRequestIDDifferentLoginGenerationReplaysCachedSuccess(t 
 
 func TestEnterScene_SameRequestIDDifferentLoginGenerationIsInProgressNotConflict(t *testing.T) {
 	sc, mr := newTestSvcCtxWithWorldScenes(t)
-	base := &scene_manager.EnterSceneRequest{
+	base := &scene_manager.EnterSceneRequest{OwnerRevision: 1,
 		PlayerId: 6404, SceneId: 7404, ZoneId: testZoneId, SessionId: 55,
 		RequestId: "login-gen-in-progress", LoginGeneration: 300,
 	}

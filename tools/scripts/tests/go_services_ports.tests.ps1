@@ -20,6 +20,7 @@ foreach ($definition in $ast.FindAll({ param($node) $node -is [System.Management
 }
 # go_services.ps1 顶层 dot-source 的 MailAdmin 本机令牌库(只加载函数):AST 只抽本文件的函数,不执行顶层语句,mail 用例要它。
 . (Join-Path $PSScriptRoot '../lib/mail_admin_dev_token.ps1')
+. (Join-Path $PSScriptRoot '../lib/account_directory_dev_secret.ps1')
 
 $testRoot = Join-Path ([System.IO.Path]::GetTempPath()) ('mmorpg-go-ports-tests-' + [guid]::NewGuid().ToString('N'))
 $RepoRoot = $testRoot

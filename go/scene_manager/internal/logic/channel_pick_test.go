@@ -64,7 +64,7 @@ func seedClosingChannel(t *testing.T, mr *miniredis.Miniredis, confID, sceneID u
 
 // channelPickRequest 组一条同 zone 的 EnterScene 请求;pick 即 client_channel_pick。
 func channelPickRequest(playerID, sceneID, confID uint64, pick bool) *scene_manager.EnterSceneRequest {
-	return &scene_manager.EnterSceneRequest{
+	return &scene_manager.EnterSceneRequest{OwnerRevision: 1,
 		PlayerId: playerID, SceneId: sceneID, SceneConfId: confID, ZoneId: testZoneId,
 		GateZoneId: testZoneId, GateId: "1", GateInstanceId: "gate-uuid-test",
 		ClientChannelPick: pick,
@@ -609,7 +609,7 @@ func TestChannelErrorCodes(t *testing.T) {
 // client_channel_pick 是业务语义,必须进去重指纹(同一 request_id 带与不带是两条不同的请求);
 // 不带它的请求指纹不变(proto3 不序列化 false)—— 后者由既有的指纹用例覆盖。
 func TestEnterSceneFingerprint_ClientChannelPickIsPartOfRequest(t *testing.T) {
-	base := &scene_manager.EnterSceneRequest{
+	base := &scene_manager.EnterSceneRequest{OwnerRevision: 1,
 		PlayerId: 8114, SceneId: 8921, ZoneId: testZoneId, RequestId: "fp-pick",
 	}
 	plain, err := enterSceneRequestFingerprint(base)

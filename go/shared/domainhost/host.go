@@ -76,6 +76,15 @@ const SessionMetadata = "x-session-detail-bin"
 
 type sessionKey struct{}
 
+// Session返回入口捕获的原会话副本；写服务须把原修订带到同一SQL事务复核，不能只保留player_id。
+func Session(ctx context.Context) *base.SessionDetails {
+	s, _ := ctx.Value(sessionKey{}).(*base.SessionDetails)
+	if s == nil {
+		return nil
+	}
+	return proto.Clone(s).(*base.SessionDetails)
+}
+
 func Player(ctx context.Context) (uint64, bool) {
 	s, _ := ctx.Value(sessionKey{}).(*base.SessionDetails)
 	return s.GetPlayerId(), s != nil && s.GetPlayerId() != 0

@@ -33,6 +33,8 @@
 #include "google/protobuf/unknown_field_set.h"
 #include "google/protobuf/descriptor.pb.h"
 #include "proto/common/base/tip.pb.h"
+#include "proto/common/base/role_admission.pb.h"
+#include "proto/common/base/service_call_auth.pb.h"
 // @@protoc_insertion_point(includes)
 
 // Must be included last.
@@ -2345,279 +2347,6 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED GmCurrencyDebtPayload final : publi
 };
 // -------------------------------------------------------------------
 
-class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED FetchPlayerInboxRequest final : public ::google::protobuf::Message
-/* @@protoc_insertion_point(class_definition:player_inbox.FetchPlayerInboxRequest) */ {
- public:
-  inline FetchPlayerInboxRequest() : FetchPlayerInboxRequest(nullptr) {}
-  ~FetchPlayerInboxRequest() PROTOBUF_FINAL;
-
-#if defined(PROTOBUF_CUSTOM_VTABLE)
-  void operator delete(FetchPlayerInboxRequest* PROTOBUF_NONNULL msg, ::std::destroying_delete_t) {
-    SharedDtor(*msg);
-    ::google::protobuf::internal::SizedDelete(msg, sizeof(FetchPlayerInboxRequest));
-  }
-#endif
-
-  template <typename = void>
-  explicit constexpr FetchPlayerInboxRequest(::google::protobuf::internal::ConstantInitialized,
-                           const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
-                               class_data);
-
-  inline FetchPlayerInboxRequest(const FetchPlayerInboxRequest& from) : FetchPlayerInboxRequest(nullptr, from) {}
-  inline FetchPlayerInboxRequest(FetchPlayerInboxRequest&& from) noexcept : FetchPlayerInboxRequest(nullptr, ::std::move(from)) {}
-  inline FetchPlayerInboxRequest& operator=(const FetchPlayerInboxRequest& from) {
-    CopyFrom(from);
-    return *this;
-  }
-  inline FetchPlayerInboxRequest& operator=(FetchPlayerInboxRequest&& from) noexcept {
-    if (this == &from) return *this;
-    if (::google::protobuf::internal::CanMoveWithInternalSwap(GetArena(), from.GetArena())) {
-      InternalSwap(&from);
-    } else {
-      CopyFrom(from);
-    }
-    return *this;
-  }
-
-  [[nodiscard]] inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const
-      ABSL_ATTRIBUTE_LIFETIME_BOUND {
-    return _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance);
-  }
-  [[nodiscard]] inline ::google::protobuf::UnknownFieldSet* PROTOBUF_NONNULL
-  mutable_unknown_fields() ABSL_ATTRIBUTE_LIFETIME_BOUND {
-    return _internal_metadata_.mutable_unknown_fields<::google::protobuf::UnknownFieldSet>();
-  }
-
-  [[nodiscard]] static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL descriptor() {
-    return GetDescriptor();
-  }
-  [[nodiscard]] static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL
-  GetDescriptor() {
-    return default_instance().GetMetadata().descriptor;
-  }
-  [[nodiscard]] static const ::google::protobuf::Reflection* PROTOBUF_NONNULL GetReflection() {
-    return default_instance().GetMetadata().reflection;
-  }
-  [[nodiscard]] static const FetchPlayerInboxRequest& default_instance() {
-    return *::google::protobuf::internal::MessageGlobalsBase::ToDefaultInstance<FetchPlayerInboxRequest>(&FetchPlayerInboxRequest_globals_);
-  }
-  static constexpr int kIndexInFileMessages = 4;
-  friend void swap(FetchPlayerInboxRequest& a, FetchPlayerInboxRequest& b) { a.Swap(&b); }
-  inline void Swap(FetchPlayerInboxRequest* PROTOBUF_NONNULL other) {
-    if (other == this) return;
-    if (::google::protobuf::internal::CanUseInternalSwap(GetArena(), other->GetArena())) {
-      InternalSwap(other);
-    } else {
-      ::google::protobuf::internal::GenericSwap(this, other);
-    }
-  }
-  void UnsafeArenaSwap(FetchPlayerInboxRequest* PROTOBUF_NONNULL other) {
-    if (other == this) return;
-    ABSL_DCHECK(GetArena() == other->GetArena());
-    InternalSwap(other);
-  }
-
-  // implements Message ----------------------------------------------
-
-  [[nodiscard]] FetchPlayerInboxRequest* PROTOBUF_NONNULL
-  New(::google::protobuf::Arena* PROTOBUF_NULLABLE arena = nullptr) const {
-    return ::google::protobuf::Message::DefaultConstruct<FetchPlayerInboxRequest>(arena);
-  }
-  using ::google::protobuf::Message::CopyFrom;
-  void CopyFrom(const FetchPlayerInboxRequest& from);
-  using ::google::protobuf::Message::MergeFrom;
-  void MergeFrom(const FetchPlayerInboxRequest& from) { FetchPlayerInboxRequest::MergeImpl(*this, from); }
-
-  private:
-  static void MergeImpl(::google::protobuf::MessageLite& to_msg,
-                        const ::google::protobuf::MessageLite& from_msg);
-
-  public:
-  [[nodiscard]] bool IsInitialized() const {
-    return true;
-  }
-  ABSL_ATTRIBUTE_REINITIALIZES void Clear() PROTOBUF_FINAL;
-  #if defined(PROTOBUF_CUSTOM_VTABLE)
-  private:
-  [[nodiscard]] static ::size_t ByteSizeLong(const ::google::protobuf::MessageLite& msg);
-  [[nodiscard]] static ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
-      const ::google::protobuf::MessageLite& msg, ::uint8_t* PROTOBUF_NONNULL target,
-      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream);
-
-  public:
-  [[nodiscard]] ::size_t ByteSizeLong() const { return ByteSizeLong(*this); }
-  [[nodiscard]] ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
-      ::uint8_t* PROTOBUF_NONNULL target,
-      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
-    return _InternalSerialize(*this, target, stream);
-  }
-  #else   // PROTOBUF_CUSTOM_VTABLE
-  [[nodiscard]] ::size_t ByteSizeLong() const final;
-  [[nodiscard]] ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
-      ::uint8_t* PROTOBUF_NONNULL target,
-      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const final;
-  #endif  // PROTOBUF_CUSTOM_VTABLE
-  [[nodiscard]] int GetCachedSize() const {
-    return _impl_._cached_size_.Get();
-  }
-
-  private:
-  void SharedCtor(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
-  static void SharedDtor(MessageLite& self);
-  void InternalSwap(FetchPlayerInboxRequest* PROTOBUF_NONNULL other);
- private:
-  template <typename T>
-  friend ::absl::string_view(::google::protobuf::internal::GetAnyMessageName)();
-  static ::absl::string_view FullMessageName() { return "player_inbox.FetchPlayerInboxRequest"; }
-
-  explicit FetchPlayerInboxRequest(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
-  FetchPlayerInboxRequest(::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const FetchPlayerInboxRequest& from);
-  FetchPlayerInboxRequest(
-      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, FetchPlayerInboxRequest&& from) noexcept
-      : FetchPlayerInboxRequest(arena) {
-    *this = ::std::move(from);
-  }
-  const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL GetClassData() const PROTOBUF_FINAL;
-  static void* PROTOBUF_NONNULL PlacementNew_(
-      const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
-      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
-  static constexpr auto InternalNewImpl_();
-
- public:
-  static constexpr auto InternalGenerateClassData_(
-      const MessageLite& prototype,
-      const ::google::protobuf::internal::TcParseTableBase* PROTOBUF_NULLABLE tc_table = nullptr);
-
-  [[nodiscard]] ::google::protobuf::Metadata GetMetadata() const;
-  // nested types ----------------------------------------------------
-
-  // accessors -------------------------------------------------------
-  enum : int {
-    kPlayerIdFieldNumber = 1,
-    kOwnerEpochFieldNumber = 3,
-    kDomainFieldNumber = 2,
-    kMaxItemsFieldNumber = 5,
-    kCorrelationIdFieldNumber = 4,
-    kConsumerDecidedThroughFieldNumber = 6,
-    kSceneNodeIdFieldNumber = 7,
-  };
-  // uint64 player_id = 1;
-  void clear_player_id() ;
-  [[nodiscard]] ::uint64_t player_id() const;
-  void set_player_id(::uint64_t value);
-
-  private:
-  ::uint64_t _internal_player_id() const;
-  void _internal_set_player_id(::uint64_t value);
-
-  public:
-  // uint64 owner_epoch = 3;
-  void clear_owner_epoch() ;
-  [[nodiscard]] ::uint64_t owner_epoch() const;
-  void set_owner_epoch(::uint64_t value);
-
-  private:
-  ::uint64_t _internal_owner_epoch() const;
-  void _internal_set_owner_epoch(::uint64_t value);
-
-  public:
-  // .player_inbox.PlayerInboxDomain domain = 2;
-  void clear_domain() ;
-  [[nodiscard]] ::player_inbox::PlayerInboxDomain domain() const;
-  void set_domain(::player_inbox::PlayerInboxDomain value);
-
-  private:
-  ::player_inbox::PlayerInboxDomain _internal_domain() const;
-  void _internal_set_domain(::player_inbox::PlayerInboxDomain value);
-
-  public:
-  // uint32 max_items = 5;
-  void clear_max_items() ;
-  [[nodiscard]] ::uint32_t max_items() const;
-  void set_max_items(::uint32_t value);
-
-  private:
-  ::uint32_t _internal_max_items() const;
-  void _internal_set_max_items(::uint32_t value);
-
-  public:
-  // uint64 correlation_id = 4;
-  void clear_correlation_id() ;
-  [[nodiscard]] ::uint64_t correlation_id() const;
-  void set_correlation_id(::uint64_t value);
-
-  private:
-  ::uint64_t _internal_correlation_id() const;
-  void _internal_set_correlation_id(::uint64_t value);
-
-  public:
-  // uint64 consumer_decided_through = 6;
-  void clear_consumer_decided_through() ;
-  [[nodiscard]] ::uint64_t consumer_decided_through() const;
-  void set_consumer_decided_through(::uint64_t value);
-
-  private:
-  ::uint64_t _internal_consumer_decided_through() const;
-  void _internal_set_consumer_decided_through(::uint64_t value);
-
-  public:
-  // uint32 scene_node_id = 7;
-  void clear_scene_node_id() ;
-  [[nodiscard]] ::uint32_t scene_node_id() const;
-  void set_scene_node_id(::uint32_t value);
-
-  private:
-  ::uint32_t _internal_scene_node_id() const;
-  void _internal_set_scene_node_id(::uint32_t value);
-
-  public:
-  // @@protoc_insertion_point(class_scope:player_inbox.FetchPlayerInboxRequest)
- private:
-  class _Internal;
-  using ParseTableT_ =
-      ::google::protobuf::internal::TcParseTable<3, 7,
-                          0, 0,
-                          2>;
-  static constexpr ParseTableT_ InternalGenerateParseTable_(
-      const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL class_data);
-  friend class ::google::protobuf::internal::TcParser;
-  #ifndef PROTOBUF_MESSAGE_GLOBALS
-  static const ParseTableT_ _table_;
-  #endif
-
-  friend class ::google::protobuf::MessageLite;
-  friend class ::google::protobuf::Arena;
-  friend ::google::protobuf::internal::PrivateAccess;
-  template <typename T>
-  friend class ::google::protobuf::Arena::InternalHelper;
-  using InternalArenaConstructable_ = void;
-  using DestructorSkippable_ = void;
-  struct Impl_ {
-    inline explicit constexpr Impl_(::google::protobuf::internal::InternalVisibility visibility,
-                                    ::google::protobuf::internal::ConstantInitialized) noexcept;
-    inline explicit Impl_(
-        ::google::protobuf::internal::InternalVisibility visibility,
-        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
-    inline explicit Impl_(
-        ::google::protobuf::internal::InternalVisibility visibility,
-        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
-        const FetchPlayerInboxRequest& from_msg);
-    ::google::protobuf::internal::HasBits<1> _has_bits_;
-    ::google::protobuf::internal::CachedSize _cached_size_;
-    ::uint64_t player_id_;
-    ::uint64_t owner_epoch_;
-    int domain_;
-    ::uint32_t max_items_;
-    ::uint64_t correlation_id_;
-    ::uint64_t consumer_decided_through_;
-    ::uint32_t scene_node_id_;
-    PROTOBUF_TSAN_DECLARE_MEMBER
-  };
-  union { Impl_ _impl_; };
-  friend struct ::TableStruct_proto_2fplayer_5finbox_2fplayer_5finbox_2eproto;
-};
-// -------------------------------------------------------------------
-
 class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED FetchPlayerInboxResponse final : public ::google::protobuf::Message
 /* @@protoc_insertion_point(class_definition:player_inbox.FetchPlayerInboxResponse) */ {
  public:
@@ -2901,6 +2630,315 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED FetchPlayerInboxResponse final : pu
     int domain_;
     int fence_;
     bool has_more_;
+    PROTOBUF_TSAN_DECLARE_MEMBER
+  };
+  union { Impl_ _impl_; };
+  friend struct ::TableStruct_proto_2fplayer_5finbox_2fplayer_5finbox_2eproto;
+};
+// -------------------------------------------------------------------
+
+class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED FetchPlayerInboxRequest final : public ::google::protobuf::Message
+/* @@protoc_insertion_point(class_definition:player_inbox.FetchPlayerInboxRequest) */ {
+ public:
+  inline FetchPlayerInboxRequest() : FetchPlayerInboxRequest(nullptr) {}
+  ~FetchPlayerInboxRequest() PROTOBUF_FINAL;
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+  void operator delete(FetchPlayerInboxRequest* PROTOBUF_NONNULL msg, ::std::destroying_delete_t) {
+    SharedDtor(*msg);
+    ::google::protobuf::internal::SizedDelete(msg, sizeof(FetchPlayerInboxRequest));
+  }
+#endif
+
+  template <typename = void>
+  explicit constexpr FetchPlayerInboxRequest(::google::protobuf::internal::ConstantInitialized,
+                           const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
+                               class_data);
+
+  inline FetchPlayerInboxRequest(const FetchPlayerInboxRequest& from) : FetchPlayerInboxRequest(nullptr, from) {}
+  inline FetchPlayerInboxRequest(FetchPlayerInboxRequest&& from) noexcept : FetchPlayerInboxRequest(nullptr, ::std::move(from)) {}
+  inline FetchPlayerInboxRequest& operator=(const FetchPlayerInboxRequest& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline FetchPlayerInboxRequest& operator=(FetchPlayerInboxRequest&& from) noexcept {
+    if (this == &from) return *this;
+    if (::google::protobuf::internal::CanMoveWithInternalSwap(GetArena(), from.GetArena())) {
+      InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  [[nodiscard]] inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance);
+  }
+  [[nodiscard]] inline ::google::protobuf::UnknownFieldSet* PROTOBUF_NONNULL
+  mutable_unknown_fields() ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.mutable_unknown_fields<::google::protobuf::UnknownFieldSet>();
+  }
+
+  [[nodiscard]] static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL descriptor() {
+    return GetDescriptor();
+  }
+  [[nodiscard]] static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL
+  GetDescriptor() {
+    return default_instance().GetMetadata().descriptor;
+  }
+  [[nodiscard]] static const ::google::protobuf::Reflection* PROTOBUF_NONNULL GetReflection() {
+    return default_instance().GetMetadata().reflection;
+  }
+  [[nodiscard]] static const FetchPlayerInboxRequest& default_instance() {
+    return *::google::protobuf::internal::MessageGlobalsBase::ToDefaultInstance<FetchPlayerInboxRequest>(&FetchPlayerInboxRequest_globals_);
+  }
+  static constexpr int kIndexInFileMessages = 4;
+  friend void swap(FetchPlayerInboxRequest& a, FetchPlayerInboxRequest& b) { a.Swap(&b); }
+  inline void Swap(FetchPlayerInboxRequest* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    if (::google::protobuf::internal::CanUseInternalSwap(GetArena(), other->GetArena())) {
+      InternalSwap(other);
+    } else {
+      ::google::protobuf::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(FetchPlayerInboxRequest* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    ABSL_DCHECK(GetArena() == other->GetArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  [[nodiscard]] FetchPlayerInboxRequest* PROTOBUF_NONNULL
+  New(::google::protobuf::Arena* PROTOBUF_NULLABLE arena = nullptr) const {
+    return ::google::protobuf::Message::DefaultConstruct<FetchPlayerInboxRequest>(arena);
+  }
+  using ::google::protobuf::Message::CopyFrom;
+  void CopyFrom(const FetchPlayerInboxRequest& from);
+  using ::google::protobuf::Message::MergeFrom;
+  void MergeFrom(const FetchPlayerInboxRequest& from) { FetchPlayerInboxRequest::MergeImpl(*this, from); }
+
+  private:
+  static void MergeImpl(::google::protobuf::MessageLite& to_msg,
+                        const ::google::protobuf::MessageLite& from_msg);
+
+  public:
+  [[nodiscard]] bool IsInitialized() const {
+    return true;
+  }
+  ABSL_ATTRIBUTE_REINITIALIZES void Clear() PROTOBUF_FINAL;
+  #if defined(PROTOBUF_CUSTOM_VTABLE)
+  private:
+  [[nodiscard]] static ::size_t ByteSizeLong(const ::google::protobuf::MessageLite& msg);
+  [[nodiscard]] static ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      const ::google::protobuf::MessageLite& msg, ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream);
+
+  public:
+  [[nodiscard]] ::size_t ByteSizeLong() const { return ByteSizeLong(*this); }
+  [[nodiscard]] ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
+    return _InternalSerialize(*this, target, stream);
+  }
+  #else   // PROTOBUF_CUSTOM_VTABLE
+  [[nodiscard]] ::size_t ByteSizeLong() const final;
+  [[nodiscard]] ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const final;
+  #endif  // PROTOBUF_CUSTOM_VTABLE
+  [[nodiscard]] int GetCachedSize() const {
+    return _impl_._cached_size_.Get();
+  }
+
+  private:
+  void SharedCtor(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static void SharedDtor(MessageLite& self);
+  void InternalSwap(FetchPlayerInboxRequest* PROTOBUF_NONNULL other);
+ private:
+  template <typename T>
+  friend ::absl::string_view(::google::protobuf::internal::GetAnyMessageName)();
+  static ::absl::string_view FullMessageName() { return "player_inbox.FetchPlayerInboxRequest"; }
+
+  explicit FetchPlayerInboxRequest(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  FetchPlayerInboxRequest(::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const FetchPlayerInboxRequest& from);
+  FetchPlayerInboxRequest(
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, FetchPlayerInboxRequest&& from) noexcept
+      : FetchPlayerInboxRequest(arena) {
+    *this = ::std::move(from);
+  }
+  const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL GetClassData() const PROTOBUF_FINAL;
+  static void* PROTOBUF_NONNULL PlacementNew_(
+      const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static constexpr auto InternalNewImpl_();
+
+ public:
+  static constexpr auto InternalGenerateClassData_(
+      const MessageLite& prototype,
+      const ::google::protobuf::internal::TcParseTableBase* PROTOBUF_NULLABLE tc_table = nullptr);
+
+  [[nodiscard]] ::google::protobuf::Metadata GetMetadata() const;
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+  enum : int {
+    kAdmissionFieldNumber = 8,
+    kAuthFieldNumber = 9,
+    kPlayerIdFieldNumber = 1,
+    kOwnerEpochFieldNumber = 3,
+    kDomainFieldNumber = 2,
+    kMaxItemsFieldNumber = 5,
+    kCorrelationIdFieldNumber = 4,
+    kConsumerDecidedThroughFieldNumber = 6,
+    kSceneNodeIdFieldNumber = 7,
+  };
+  // .common.base.RoleAdmissionIdentity admission = 8;
+  [[nodiscard]] bool has_admission()
+      const;
+  void clear_admission() ;
+  [[nodiscard]] const ::common::base::RoleAdmissionIdentity& admission() const;
+  [[nodiscard]] ::common::base::RoleAdmissionIdentity* PROTOBUF_NULLABLE release_admission();
+  ::common::base::RoleAdmissionIdentity* PROTOBUF_NONNULL mutable_admission();
+  void set_allocated_admission(::common::base::RoleAdmissionIdentity* PROTOBUF_NULLABLE value);
+  void unsafe_arena_set_allocated_admission(::common::base::RoleAdmissionIdentity* PROTOBUF_NULLABLE value);
+  ::common::base::RoleAdmissionIdentity* PROTOBUF_NULLABLE unsafe_arena_release_admission();
+
+  private:
+  const ::common::base::RoleAdmissionIdentity& _internal_admission() const;
+  ::common::base::RoleAdmissionIdentity* PROTOBUF_NONNULL _internal_mutable_admission();
+
+  public:
+  // .common.base.ServiceCallAuth auth = 9;
+  [[nodiscard]] bool has_auth()
+      const;
+  void clear_auth() ;
+  [[nodiscard]] const ::common::base::ServiceCallAuth& auth() const;
+  [[nodiscard]] ::common::base::ServiceCallAuth* PROTOBUF_NULLABLE release_auth();
+  ::common::base::ServiceCallAuth* PROTOBUF_NONNULL mutable_auth();
+  void set_allocated_auth(::common::base::ServiceCallAuth* PROTOBUF_NULLABLE value);
+  void unsafe_arena_set_allocated_auth(::common::base::ServiceCallAuth* PROTOBUF_NULLABLE value);
+  ::common::base::ServiceCallAuth* PROTOBUF_NULLABLE unsafe_arena_release_auth();
+
+  private:
+  const ::common::base::ServiceCallAuth& _internal_auth() const;
+  ::common::base::ServiceCallAuth* PROTOBUF_NONNULL _internal_mutable_auth();
+
+  public:
+  // uint64 player_id = 1;
+  void clear_player_id() ;
+  [[nodiscard]] ::uint64_t player_id() const;
+  void set_player_id(::uint64_t value);
+
+  private:
+  ::uint64_t _internal_player_id() const;
+  void _internal_set_player_id(::uint64_t value);
+
+  public:
+  // uint64 owner_epoch = 3;
+  void clear_owner_epoch() ;
+  [[nodiscard]] ::uint64_t owner_epoch() const;
+  void set_owner_epoch(::uint64_t value);
+
+  private:
+  ::uint64_t _internal_owner_epoch() const;
+  void _internal_set_owner_epoch(::uint64_t value);
+
+  public:
+  // .player_inbox.PlayerInboxDomain domain = 2;
+  void clear_domain() ;
+  [[nodiscard]] ::player_inbox::PlayerInboxDomain domain() const;
+  void set_domain(::player_inbox::PlayerInboxDomain value);
+
+  private:
+  ::player_inbox::PlayerInboxDomain _internal_domain() const;
+  void _internal_set_domain(::player_inbox::PlayerInboxDomain value);
+
+  public:
+  // uint32 max_items = 5;
+  void clear_max_items() ;
+  [[nodiscard]] ::uint32_t max_items() const;
+  void set_max_items(::uint32_t value);
+
+  private:
+  ::uint32_t _internal_max_items() const;
+  void _internal_set_max_items(::uint32_t value);
+
+  public:
+  // uint64 correlation_id = 4;
+  void clear_correlation_id() ;
+  [[nodiscard]] ::uint64_t correlation_id() const;
+  void set_correlation_id(::uint64_t value);
+
+  private:
+  ::uint64_t _internal_correlation_id() const;
+  void _internal_set_correlation_id(::uint64_t value);
+
+  public:
+  // uint64 consumer_decided_through = 6;
+  void clear_consumer_decided_through() ;
+  [[nodiscard]] ::uint64_t consumer_decided_through() const;
+  void set_consumer_decided_through(::uint64_t value);
+
+  private:
+  ::uint64_t _internal_consumer_decided_through() const;
+  void _internal_set_consumer_decided_through(::uint64_t value);
+
+  public:
+  // uint32 scene_node_id = 7;
+  void clear_scene_node_id() ;
+  [[nodiscard]] ::uint32_t scene_node_id() const;
+  void set_scene_node_id(::uint32_t value);
+
+  private:
+  ::uint32_t _internal_scene_node_id() const;
+  void _internal_set_scene_node_id(::uint32_t value);
+
+  public:
+  // @@protoc_insertion_point(class_scope:player_inbox.FetchPlayerInboxRequest)
+ private:
+  class _Internal;
+  using ParseTableT_ =
+      ::google::protobuf::internal::TcParseTable<4, 9,
+                          2, 0,
+                          2>;
+  static constexpr ParseTableT_ InternalGenerateParseTable_(
+      const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL class_data);
+  friend class ::google::protobuf::internal::TcParser;
+  #ifndef PROTOBUF_MESSAGE_GLOBALS
+  static const ParseTableT_ _table_;
+  #endif
+
+  friend class ::google::protobuf::MessageLite;
+  friend class ::google::protobuf::Arena;
+  friend ::google::protobuf::internal::PrivateAccess;
+  template <typename T>
+  friend class ::google::protobuf::Arena::InternalHelper;
+  using InternalArenaConstructable_ = void;
+  using DestructorSkippable_ = void;
+  struct Impl_ {
+    inline explicit constexpr Impl_(::google::protobuf::internal::InternalVisibility visibility,
+                                    ::google::protobuf::internal::ConstantInitialized) noexcept;
+    inline explicit Impl_(
+        ::google::protobuf::internal::InternalVisibility visibility,
+        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+    inline explicit Impl_(
+        ::google::protobuf::internal::InternalVisibility visibility,
+        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
+        const FetchPlayerInboxRequest& from_msg);
+    ::google::protobuf::internal::HasBits<1> _has_bits_;
+    ::google::protobuf::internal::CachedSize _cached_size_;
+    ::common::base::RoleAdmissionIdentity* PROTOBUF_NULLABLE admission_;
+    ::common::base::ServiceCallAuth* PROTOBUF_NULLABLE auth_;
+    ::uint64_t player_id_;
+    ::uint64_t owner_epoch_;
+    int domain_;
+    ::uint32_t max_items_;
+    ::uint64_t correlation_id_;
+    ::uint64_t consumer_decided_through_;
+    ::uint32_t scene_node_id_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
   union { Impl_ _impl_; };
@@ -3335,6 +3373,8 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED AckPlayerInboxRequest final : publi
   // accessors -------------------------------------------------------
   enum : int {
     kDecisionsFieldNumber = 5,
+    kAdmissionFieldNumber = 7,
+    kAuthFieldNumber = 8,
     kPlayerIdFieldNumber = 1,
     kOwnerEpochFieldNumber = 3,
     kCorrelationIdFieldNumber = 4,
@@ -3360,6 +3400,38 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED AckPlayerInboxRequest final : publi
   private:
   const ::google::protobuf::RepeatedPtrField<::player_inbox::PlayerInboxDecisionReport>& _internal_decisions() const;
   ::google::protobuf::RepeatedPtrField<::player_inbox::PlayerInboxDecisionReport>* PROTOBUF_NONNULL _internal_mutable_decisions();
+
+  public:
+  // .common.base.RoleAdmissionIdentity admission = 7;
+  [[nodiscard]] bool has_admission()
+      const;
+  void clear_admission() ;
+  [[nodiscard]] const ::common::base::RoleAdmissionIdentity& admission() const;
+  [[nodiscard]] ::common::base::RoleAdmissionIdentity* PROTOBUF_NULLABLE release_admission();
+  ::common::base::RoleAdmissionIdentity* PROTOBUF_NONNULL mutable_admission();
+  void set_allocated_admission(::common::base::RoleAdmissionIdentity* PROTOBUF_NULLABLE value);
+  void unsafe_arena_set_allocated_admission(::common::base::RoleAdmissionIdentity* PROTOBUF_NULLABLE value);
+  ::common::base::RoleAdmissionIdentity* PROTOBUF_NULLABLE unsafe_arena_release_admission();
+
+  private:
+  const ::common::base::RoleAdmissionIdentity& _internal_admission() const;
+  ::common::base::RoleAdmissionIdentity* PROTOBUF_NONNULL _internal_mutable_admission();
+
+  public:
+  // .common.base.ServiceCallAuth auth = 8;
+  [[nodiscard]] bool has_auth()
+      const;
+  void clear_auth() ;
+  [[nodiscard]] const ::common::base::ServiceCallAuth& auth() const;
+  [[nodiscard]] ::common::base::ServiceCallAuth* PROTOBUF_NULLABLE release_auth();
+  ::common::base::ServiceCallAuth* PROTOBUF_NONNULL mutable_auth();
+  void set_allocated_auth(::common::base::ServiceCallAuth* PROTOBUF_NULLABLE value);
+  void unsafe_arena_set_allocated_auth(::common::base::ServiceCallAuth* PROTOBUF_NULLABLE value);
+  ::common::base::ServiceCallAuth* PROTOBUF_NULLABLE unsafe_arena_release_auth();
+
+  private:
+  const ::common::base::ServiceCallAuth& _internal_auth() const;
+  ::common::base::ServiceCallAuth* PROTOBUF_NONNULL _internal_mutable_auth();
 
   public:
   // uint64 player_id = 1;
@@ -3416,8 +3488,8 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED AckPlayerInboxRequest final : publi
  private:
   class _Internal;
   using ParseTableT_ =
-      ::google::protobuf::internal::TcParseTable<3, 6,
-                          1, 0,
+      ::google::protobuf::internal::TcParseTable<3, 8,
+                          3, 0,
                           2>;
   static constexpr ParseTableT_ InternalGenerateParseTable_(
       const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL class_data);
@@ -3446,6 +3518,8 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED AckPlayerInboxRequest final : publi
     ::google::protobuf::internal::HasBits<1> _has_bits_;
     ::google::protobuf::internal::CachedSize _cached_size_;
     ::google::protobuf::RepeatedPtrField< ::player_inbox::PlayerInboxDecisionReport > decisions_;
+    ::common::base::RoleAdmissionIdentity* PROTOBUF_NULLABLE admission_;
+    ::common::base::ServiceCallAuth* PROTOBUF_NULLABLE auth_;
     ::uint64_t player_id_;
     ::uint64_t owner_epoch_;
     ::uint64_t correlation_id_;
@@ -3907,7 +3981,7 @@ inline void GmCurrencyDebtPayload::_internal_set_expires_at(::uint64_t value) {
 inline void FetchPlayerInboxRequest::clear_player_id() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.player_id_ = ::uint64_t{0u};
-  ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
+  ClearHasBit(_impl_._has_bits_[0], 0x00000004U);
 }
 inline ::uint64_t FetchPlayerInboxRequest::player_id() const {
   // @@protoc_insertion_point(field_get:player_inbox.FetchPlayerInboxRequest.player_id)
@@ -3915,7 +3989,7 @@ inline ::uint64_t FetchPlayerInboxRequest::player_id() const {
 }
 inline void FetchPlayerInboxRequest::set_player_id(::uint64_t value) {
   _internal_set_player_id(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  SetHasBit(_impl_._has_bits_[0], 0x00000004U);
   // @@protoc_insertion_point(field_set:player_inbox.FetchPlayerInboxRequest.player_id)
 }
 inline ::uint64_t FetchPlayerInboxRequest::_internal_player_id() const {
@@ -3931,7 +4005,7 @@ inline void FetchPlayerInboxRequest::_internal_set_player_id(::uint64_t value) {
 inline void FetchPlayerInboxRequest::clear_domain() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.domain_ = 0;
-  ClearHasBit(_impl_._has_bits_[0], 0x00000004U);
+  ClearHasBit(_impl_._has_bits_[0], 0x00000010U);
 }
 inline ::player_inbox::PlayerInboxDomain FetchPlayerInboxRequest::domain() const {
   // @@protoc_insertion_point(field_get:player_inbox.FetchPlayerInboxRequest.domain)
@@ -3939,7 +4013,7 @@ inline ::player_inbox::PlayerInboxDomain FetchPlayerInboxRequest::domain() const
 }
 inline void FetchPlayerInboxRequest::set_domain(::player_inbox::PlayerInboxDomain value) {
   _internal_set_domain(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00000004U);
+  SetHasBit(_impl_._has_bits_[0], 0x00000010U);
   // @@protoc_insertion_point(field_set:player_inbox.FetchPlayerInboxRequest.domain)
 }
 inline ::player_inbox::PlayerInboxDomain FetchPlayerInboxRequest::_internal_domain() const {
@@ -3955,7 +4029,7 @@ inline void FetchPlayerInboxRequest::_internal_set_domain(::player_inbox::Player
 inline void FetchPlayerInboxRequest::clear_owner_epoch() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.owner_epoch_ = ::uint64_t{0u};
-  ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
+  ClearHasBit(_impl_._has_bits_[0], 0x00000008U);
 }
 inline ::uint64_t FetchPlayerInboxRequest::owner_epoch() const {
   // @@protoc_insertion_point(field_get:player_inbox.FetchPlayerInboxRequest.owner_epoch)
@@ -3963,7 +4037,7 @@ inline ::uint64_t FetchPlayerInboxRequest::owner_epoch() const {
 }
 inline void FetchPlayerInboxRequest::set_owner_epoch(::uint64_t value) {
   _internal_set_owner_epoch(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00000002U);
+  SetHasBit(_impl_._has_bits_[0], 0x00000008U);
   // @@protoc_insertion_point(field_set:player_inbox.FetchPlayerInboxRequest.owner_epoch)
 }
 inline ::uint64_t FetchPlayerInboxRequest::_internal_owner_epoch() const {
@@ -3979,7 +4053,7 @@ inline void FetchPlayerInboxRequest::_internal_set_owner_epoch(::uint64_t value)
 inline void FetchPlayerInboxRequest::clear_correlation_id() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.correlation_id_ = ::uint64_t{0u};
-  ClearHasBit(_impl_._has_bits_[0], 0x00000010U);
+  ClearHasBit(_impl_._has_bits_[0], 0x00000040U);
 }
 inline ::uint64_t FetchPlayerInboxRequest::correlation_id() const {
   // @@protoc_insertion_point(field_get:player_inbox.FetchPlayerInboxRequest.correlation_id)
@@ -3987,7 +4061,7 @@ inline ::uint64_t FetchPlayerInboxRequest::correlation_id() const {
 }
 inline void FetchPlayerInboxRequest::set_correlation_id(::uint64_t value) {
   _internal_set_correlation_id(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00000010U);
+  SetHasBit(_impl_._has_bits_[0], 0x00000040U);
   // @@protoc_insertion_point(field_set:player_inbox.FetchPlayerInboxRequest.correlation_id)
 }
 inline ::uint64_t FetchPlayerInboxRequest::_internal_correlation_id() const {
@@ -4003,7 +4077,7 @@ inline void FetchPlayerInboxRequest::_internal_set_correlation_id(::uint64_t val
 inline void FetchPlayerInboxRequest::clear_max_items() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.max_items_ = 0u;
-  ClearHasBit(_impl_._has_bits_[0], 0x00000008U);
+  ClearHasBit(_impl_._has_bits_[0], 0x00000020U);
 }
 inline ::uint32_t FetchPlayerInboxRequest::max_items() const {
   // @@protoc_insertion_point(field_get:player_inbox.FetchPlayerInboxRequest.max_items)
@@ -4011,7 +4085,7 @@ inline ::uint32_t FetchPlayerInboxRequest::max_items() const {
 }
 inline void FetchPlayerInboxRequest::set_max_items(::uint32_t value) {
   _internal_set_max_items(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00000008U);
+  SetHasBit(_impl_._has_bits_[0], 0x00000020U);
   // @@protoc_insertion_point(field_set:player_inbox.FetchPlayerInboxRequest.max_items)
 }
 inline ::uint32_t FetchPlayerInboxRequest::_internal_max_items() const {
@@ -4027,7 +4101,7 @@ inline void FetchPlayerInboxRequest::_internal_set_max_items(::uint32_t value) {
 inline void FetchPlayerInboxRequest::clear_consumer_decided_through() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.consumer_decided_through_ = ::uint64_t{0u};
-  ClearHasBit(_impl_._has_bits_[0], 0x00000020U);
+  ClearHasBit(_impl_._has_bits_[0], 0x00000080U);
 }
 inline ::uint64_t FetchPlayerInboxRequest::consumer_decided_through() const {
   // @@protoc_insertion_point(field_get:player_inbox.FetchPlayerInboxRequest.consumer_decided_through)
@@ -4035,7 +4109,7 @@ inline ::uint64_t FetchPlayerInboxRequest::consumer_decided_through() const {
 }
 inline void FetchPlayerInboxRequest::set_consumer_decided_through(::uint64_t value) {
   _internal_set_consumer_decided_through(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00000020U);
+  SetHasBit(_impl_._has_bits_[0], 0x00000080U);
   // @@protoc_insertion_point(field_set:player_inbox.FetchPlayerInboxRequest.consumer_decided_through)
 }
 inline ::uint64_t FetchPlayerInboxRequest::_internal_consumer_decided_through() const {
@@ -4051,7 +4125,7 @@ inline void FetchPlayerInboxRequest::_internal_set_consumer_decided_through(::ui
 inline void FetchPlayerInboxRequest::clear_scene_node_id() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.scene_node_id_ = 0u;
-  ClearHasBit(_impl_._has_bits_[0], 0x00000040U);
+  ClearHasBit(_impl_._has_bits_[0], 0x00000100U);
 }
 inline ::uint32_t FetchPlayerInboxRequest::scene_node_id() const {
   // @@protoc_insertion_point(field_get:player_inbox.FetchPlayerInboxRequest.scene_node_id)
@@ -4059,7 +4133,7 @@ inline ::uint32_t FetchPlayerInboxRequest::scene_node_id() const {
 }
 inline void FetchPlayerInboxRequest::set_scene_node_id(::uint32_t value) {
   _internal_set_scene_node_id(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00000040U);
+  SetHasBit(_impl_._has_bits_[0], 0x00000100U);
   // @@protoc_insertion_point(field_set:player_inbox.FetchPlayerInboxRequest.scene_node_id)
 }
 inline ::uint32_t FetchPlayerInboxRequest::_internal_scene_node_id() const {
@@ -4069,6 +4143,192 @@ inline ::uint32_t FetchPlayerInboxRequest::_internal_scene_node_id() const {
 inline void FetchPlayerInboxRequest::_internal_set_scene_node_id(::uint32_t value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.scene_node_id_ = value;
+}
+
+// .common.base.RoleAdmissionIdentity admission = 8;
+inline bool FetchPlayerInboxRequest::has_admission() const {
+  bool value = CheckHasBit(_impl_._has_bits_[0], 0x00000001U);
+  PROTOBUF_ASSUME(!value || _impl_.admission_ != nullptr);
+  return value;
+}
+inline const ::common::base::RoleAdmissionIdentity& FetchPlayerInboxRequest::_internal_admission() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  const ::common::base::RoleAdmissionIdentity* p = _impl_.admission_;
+  return p != nullptr ? *p : *::google::protobuf::internal::MessageGlobalsBase::ToDefaultInstance<::common::base::RoleAdmissionIdentity>(&::common::base::RoleAdmissionIdentity_globals_);
+}
+inline const ::common::base::RoleAdmissionIdentity& FetchPlayerInboxRequest::admission() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:player_inbox.FetchPlayerInboxRequest.admission)
+  return _internal_admission();
+}
+inline void FetchPlayerInboxRequest::unsafe_arena_set_allocated_admission(
+    ::common::base::RoleAdmissionIdentity* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (GetArena() == nullptr) {
+    delete reinterpret_cast<::google::protobuf::MessageLite*>(_impl_.admission_);
+  }
+  _impl_.admission_ = reinterpret_cast<::common::base::RoleAdmissionIdentity*>(value);
+  if (value != nullptr) {
+    SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  } else {
+    ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
+  }
+  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:player_inbox.FetchPlayerInboxRequest.admission)
+}
+inline ::common::base::RoleAdmissionIdentity* PROTOBUF_NULLABLE FetchPlayerInboxRequest::release_admission() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+
+  ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
+  ::common::base::RoleAdmissionIdentity* released = _impl_.admission_;
+  _impl_.admission_ = nullptr;
+  if (::google::protobuf::internal::DebugHardenForceCopyInRelease()) {
+    auto* old = reinterpret_cast<::google::protobuf::MessageLite*>(released);
+    released = ::google::protobuf::internal::DuplicateIfNonNull(released);
+    if (GetArena() == nullptr) {
+      delete old;
+    }
+  } else {
+    if (GetArena() != nullptr) {
+      released = ::google::protobuf::internal::DuplicateIfNonNull(released);
+    }
+  }
+  return released;
+}
+inline ::common::base::RoleAdmissionIdentity* PROTOBUF_NULLABLE FetchPlayerInboxRequest::unsafe_arena_release_admission() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:player_inbox.FetchPlayerInboxRequest.admission)
+
+  ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
+  ::common::base::RoleAdmissionIdentity* temp = _impl_.admission_;
+  _impl_.admission_ = nullptr;
+  return temp;
+}
+inline ::common::base::RoleAdmissionIdentity* PROTOBUF_NONNULL FetchPlayerInboxRequest::_internal_mutable_admission() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (_impl_.admission_ == nullptr) {
+    auto* p = ::google::protobuf::Message::DefaultConstruct<::common::base::RoleAdmissionIdentity>(GetArena());
+    _impl_.admission_ = reinterpret_cast<::common::base::RoleAdmissionIdentity*>(p);
+  }
+  return _impl_.admission_;
+}
+inline ::common::base::RoleAdmissionIdentity* PROTOBUF_NONNULL FetchPlayerInboxRequest::mutable_admission()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  ::common::base::RoleAdmissionIdentity* _msg = _internal_mutable_admission();
+  // @@protoc_insertion_point(field_mutable:player_inbox.FetchPlayerInboxRequest.admission)
+  return _msg;
+}
+inline void FetchPlayerInboxRequest::set_allocated_admission(::common::base::RoleAdmissionIdentity* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::Arena* message_arena = GetArena();
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (message_arena == nullptr) {
+    delete reinterpret_cast<::google::protobuf::MessageLite*>(_impl_.admission_);
+  }
+
+  if (value != nullptr) {
+    ::google::protobuf::Arena* submessage_arena = reinterpret_cast<::google::protobuf::Message*>(value)->GetArena();
+    if (message_arena != submessage_arena) {
+      value = ::google::protobuf::internal::GetOwnedMessage(message_arena, value, submessage_arena);
+    }
+    SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  } else {
+    ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
+  }
+
+  _impl_.admission_ = reinterpret_cast<::common::base::RoleAdmissionIdentity*>(value);
+  // @@protoc_insertion_point(field_set_allocated:player_inbox.FetchPlayerInboxRequest.admission)
+}
+
+// .common.base.ServiceCallAuth auth = 9;
+inline bool FetchPlayerInboxRequest::has_auth() const {
+  bool value = CheckHasBit(_impl_._has_bits_[0], 0x00000002U);
+  PROTOBUF_ASSUME(!value || _impl_.auth_ != nullptr);
+  return value;
+}
+inline const ::common::base::ServiceCallAuth& FetchPlayerInboxRequest::_internal_auth() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  const ::common::base::ServiceCallAuth* p = _impl_.auth_;
+  return p != nullptr ? *p : *::google::protobuf::internal::MessageGlobalsBase::ToDefaultInstance<::common::base::ServiceCallAuth>(&::common::base::ServiceCallAuth_globals_);
+}
+inline const ::common::base::ServiceCallAuth& FetchPlayerInboxRequest::auth() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:player_inbox.FetchPlayerInboxRequest.auth)
+  return _internal_auth();
+}
+inline void FetchPlayerInboxRequest::unsafe_arena_set_allocated_auth(
+    ::common::base::ServiceCallAuth* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (GetArena() == nullptr) {
+    delete reinterpret_cast<::google::protobuf::MessageLite*>(_impl_.auth_);
+  }
+  _impl_.auth_ = reinterpret_cast<::common::base::ServiceCallAuth*>(value);
+  if (value != nullptr) {
+    SetHasBit(_impl_._has_bits_[0], 0x00000002U);
+  } else {
+    ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
+  }
+  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:player_inbox.FetchPlayerInboxRequest.auth)
+}
+inline ::common::base::ServiceCallAuth* PROTOBUF_NULLABLE FetchPlayerInboxRequest::release_auth() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+
+  ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
+  ::common::base::ServiceCallAuth* released = _impl_.auth_;
+  _impl_.auth_ = nullptr;
+  if (::google::protobuf::internal::DebugHardenForceCopyInRelease()) {
+    auto* old = reinterpret_cast<::google::protobuf::MessageLite*>(released);
+    released = ::google::protobuf::internal::DuplicateIfNonNull(released);
+    if (GetArena() == nullptr) {
+      delete old;
+    }
+  } else {
+    if (GetArena() != nullptr) {
+      released = ::google::protobuf::internal::DuplicateIfNonNull(released);
+    }
+  }
+  return released;
+}
+inline ::common::base::ServiceCallAuth* PROTOBUF_NULLABLE FetchPlayerInboxRequest::unsafe_arena_release_auth() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:player_inbox.FetchPlayerInboxRequest.auth)
+
+  ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
+  ::common::base::ServiceCallAuth* temp = _impl_.auth_;
+  _impl_.auth_ = nullptr;
+  return temp;
+}
+inline ::common::base::ServiceCallAuth* PROTOBUF_NONNULL FetchPlayerInboxRequest::_internal_mutable_auth() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (_impl_.auth_ == nullptr) {
+    auto* p = ::google::protobuf::Message::DefaultConstruct<::common::base::ServiceCallAuth>(GetArena());
+    _impl_.auth_ = reinterpret_cast<::common::base::ServiceCallAuth*>(p);
+  }
+  return _impl_.auth_;
+}
+inline ::common::base::ServiceCallAuth* PROTOBUF_NONNULL FetchPlayerInboxRequest::mutable_auth()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  SetHasBit(_impl_._has_bits_[0], 0x00000002U);
+  ::common::base::ServiceCallAuth* _msg = _internal_mutable_auth();
+  // @@protoc_insertion_point(field_mutable:player_inbox.FetchPlayerInboxRequest.auth)
+  return _msg;
+}
+inline void FetchPlayerInboxRequest::set_allocated_auth(::common::base::ServiceCallAuth* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::Arena* message_arena = GetArena();
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (message_arena == nullptr) {
+    delete reinterpret_cast<::google::protobuf::MessageLite*>(_impl_.auth_);
+  }
+
+  if (value != nullptr) {
+    ::google::protobuf::Arena* submessage_arena = reinterpret_cast<::google::protobuf::Message*>(value)->GetArena();
+    if (message_arena != submessage_arena) {
+      value = ::google::protobuf::internal::GetOwnedMessage(message_arena, value, submessage_arena);
+    }
+    SetHasBit(_impl_._has_bits_[0], 0x00000002U);
+  } else {
+    ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
+  }
+
+  _impl_.auth_ = reinterpret_cast<::common::base::ServiceCallAuth*>(value);
+  // @@protoc_insertion_point(field_set_allocated:player_inbox.FetchPlayerInboxRequest.auth)
 }
 
 // -------------------------------------------------------------------
@@ -4687,7 +4947,7 @@ inline void PlayerInboxDecisionReport::_internal_set_request_id(::uint64_t value
 inline void AckPlayerInboxRequest::clear_player_id() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.player_id_ = ::uint64_t{0u};
-  ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
+  ClearHasBit(_impl_._has_bits_[0], 0x00000008U);
 }
 inline ::uint64_t AckPlayerInboxRequest::player_id() const {
   // @@protoc_insertion_point(field_get:player_inbox.AckPlayerInboxRequest.player_id)
@@ -4695,7 +4955,7 @@ inline ::uint64_t AckPlayerInboxRequest::player_id() const {
 }
 inline void AckPlayerInboxRequest::set_player_id(::uint64_t value) {
   _internal_set_player_id(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00000002U);
+  SetHasBit(_impl_._has_bits_[0], 0x00000008U);
   // @@protoc_insertion_point(field_set:player_inbox.AckPlayerInboxRequest.player_id)
 }
 inline ::uint64_t AckPlayerInboxRequest::_internal_player_id() const {
@@ -4711,7 +4971,7 @@ inline void AckPlayerInboxRequest::_internal_set_player_id(::uint64_t value) {
 inline void AckPlayerInboxRequest::clear_domain() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.domain_ = 0;
-  ClearHasBit(_impl_._has_bits_[0], 0x00000010U);
+  ClearHasBit(_impl_._has_bits_[0], 0x00000040U);
 }
 inline ::player_inbox::PlayerInboxDomain AckPlayerInboxRequest::domain() const {
   // @@protoc_insertion_point(field_get:player_inbox.AckPlayerInboxRequest.domain)
@@ -4719,7 +4979,7 @@ inline ::player_inbox::PlayerInboxDomain AckPlayerInboxRequest::domain() const {
 }
 inline void AckPlayerInboxRequest::set_domain(::player_inbox::PlayerInboxDomain value) {
   _internal_set_domain(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00000010U);
+  SetHasBit(_impl_._has_bits_[0], 0x00000040U);
   // @@protoc_insertion_point(field_set:player_inbox.AckPlayerInboxRequest.domain)
 }
 inline ::player_inbox::PlayerInboxDomain AckPlayerInboxRequest::_internal_domain() const {
@@ -4735,7 +4995,7 @@ inline void AckPlayerInboxRequest::_internal_set_domain(::player_inbox::PlayerIn
 inline void AckPlayerInboxRequest::clear_owner_epoch() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.owner_epoch_ = ::uint64_t{0u};
-  ClearHasBit(_impl_._has_bits_[0], 0x00000004U);
+  ClearHasBit(_impl_._has_bits_[0], 0x00000010U);
 }
 inline ::uint64_t AckPlayerInboxRequest::owner_epoch() const {
   // @@protoc_insertion_point(field_get:player_inbox.AckPlayerInboxRequest.owner_epoch)
@@ -4743,7 +5003,7 @@ inline ::uint64_t AckPlayerInboxRequest::owner_epoch() const {
 }
 inline void AckPlayerInboxRequest::set_owner_epoch(::uint64_t value) {
   _internal_set_owner_epoch(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00000004U);
+  SetHasBit(_impl_._has_bits_[0], 0x00000010U);
   // @@protoc_insertion_point(field_set:player_inbox.AckPlayerInboxRequest.owner_epoch)
 }
 inline ::uint64_t AckPlayerInboxRequest::_internal_owner_epoch() const {
@@ -4759,7 +5019,7 @@ inline void AckPlayerInboxRequest::_internal_set_owner_epoch(::uint64_t value) {
 inline void AckPlayerInboxRequest::clear_correlation_id() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.correlation_id_ = ::uint64_t{0u};
-  ClearHasBit(_impl_._has_bits_[0], 0x00000008U);
+  ClearHasBit(_impl_._has_bits_[0], 0x00000020U);
 }
 inline ::uint64_t AckPlayerInboxRequest::correlation_id() const {
   // @@protoc_insertion_point(field_get:player_inbox.AckPlayerInboxRequest.correlation_id)
@@ -4767,7 +5027,7 @@ inline ::uint64_t AckPlayerInboxRequest::correlation_id() const {
 }
 inline void AckPlayerInboxRequest::set_correlation_id(::uint64_t value) {
   _internal_set_correlation_id(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00000008U);
+  SetHasBit(_impl_._has_bits_[0], 0x00000020U);
   // @@protoc_insertion_point(field_set:player_inbox.AckPlayerInboxRequest.correlation_id)
 }
 inline ::uint64_t AckPlayerInboxRequest::_internal_correlation_id() const {
@@ -4838,7 +5098,7 @@ AckPlayerInboxRequest::_internal_mutable_decisions() {
 inline void AckPlayerInboxRequest::clear_scene_node_id() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.scene_node_id_ = 0u;
-  ClearHasBit(_impl_._has_bits_[0], 0x00000020U);
+  ClearHasBit(_impl_._has_bits_[0], 0x00000080U);
 }
 inline ::uint32_t AckPlayerInboxRequest::scene_node_id() const {
   // @@protoc_insertion_point(field_get:player_inbox.AckPlayerInboxRequest.scene_node_id)
@@ -4846,7 +5106,7 @@ inline ::uint32_t AckPlayerInboxRequest::scene_node_id() const {
 }
 inline void AckPlayerInboxRequest::set_scene_node_id(::uint32_t value) {
   _internal_set_scene_node_id(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00000020U);
+  SetHasBit(_impl_._has_bits_[0], 0x00000080U);
   // @@protoc_insertion_point(field_set:player_inbox.AckPlayerInboxRequest.scene_node_id)
 }
 inline ::uint32_t AckPlayerInboxRequest::_internal_scene_node_id() const {
@@ -4856,6 +5116,192 @@ inline ::uint32_t AckPlayerInboxRequest::_internal_scene_node_id() const {
 inline void AckPlayerInboxRequest::_internal_set_scene_node_id(::uint32_t value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.scene_node_id_ = value;
+}
+
+// .common.base.RoleAdmissionIdentity admission = 7;
+inline bool AckPlayerInboxRequest::has_admission() const {
+  bool value = CheckHasBit(_impl_._has_bits_[0], 0x00000002U);
+  PROTOBUF_ASSUME(!value || _impl_.admission_ != nullptr);
+  return value;
+}
+inline const ::common::base::RoleAdmissionIdentity& AckPlayerInboxRequest::_internal_admission() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  const ::common::base::RoleAdmissionIdentity* p = _impl_.admission_;
+  return p != nullptr ? *p : *::google::protobuf::internal::MessageGlobalsBase::ToDefaultInstance<::common::base::RoleAdmissionIdentity>(&::common::base::RoleAdmissionIdentity_globals_);
+}
+inline const ::common::base::RoleAdmissionIdentity& AckPlayerInboxRequest::admission() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:player_inbox.AckPlayerInboxRequest.admission)
+  return _internal_admission();
+}
+inline void AckPlayerInboxRequest::unsafe_arena_set_allocated_admission(
+    ::common::base::RoleAdmissionIdentity* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (GetArena() == nullptr) {
+    delete reinterpret_cast<::google::protobuf::MessageLite*>(_impl_.admission_);
+  }
+  _impl_.admission_ = reinterpret_cast<::common::base::RoleAdmissionIdentity*>(value);
+  if (value != nullptr) {
+    SetHasBit(_impl_._has_bits_[0], 0x00000002U);
+  } else {
+    ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
+  }
+  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:player_inbox.AckPlayerInboxRequest.admission)
+}
+inline ::common::base::RoleAdmissionIdentity* PROTOBUF_NULLABLE AckPlayerInboxRequest::release_admission() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+
+  ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
+  ::common::base::RoleAdmissionIdentity* released = _impl_.admission_;
+  _impl_.admission_ = nullptr;
+  if (::google::protobuf::internal::DebugHardenForceCopyInRelease()) {
+    auto* old = reinterpret_cast<::google::protobuf::MessageLite*>(released);
+    released = ::google::protobuf::internal::DuplicateIfNonNull(released);
+    if (GetArena() == nullptr) {
+      delete old;
+    }
+  } else {
+    if (GetArena() != nullptr) {
+      released = ::google::protobuf::internal::DuplicateIfNonNull(released);
+    }
+  }
+  return released;
+}
+inline ::common::base::RoleAdmissionIdentity* PROTOBUF_NULLABLE AckPlayerInboxRequest::unsafe_arena_release_admission() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:player_inbox.AckPlayerInboxRequest.admission)
+
+  ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
+  ::common::base::RoleAdmissionIdentity* temp = _impl_.admission_;
+  _impl_.admission_ = nullptr;
+  return temp;
+}
+inline ::common::base::RoleAdmissionIdentity* PROTOBUF_NONNULL AckPlayerInboxRequest::_internal_mutable_admission() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (_impl_.admission_ == nullptr) {
+    auto* p = ::google::protobuf::Message::DefaultConstruct<::common::base::RoleAdmissionIdentity>(GetArena());
+    _impl_.admission_ = reinterpret_cast<::common::base::RoleAdmissionIdentity*>(p);
+  }
+  return _impl_.admission_;
+}
+inline ::common::base::RoleAdmissionIdentity* PROTOBUF_NONNULL AckPlayerInboxRequest::mutable_admission()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  SetHasBit(_impl_._has_bits_[0], 0x00000002U);
+  ::common::base::RoleAdmissionIdentity* _msg = _internal_mutable_admission();
+  // @@protoc_insertion_point(field_mutable:player_inbox.AckPlayerInboxRequest.admission)
+  return _msg;
+}
+inline void AckPlayerInboxRequest::set_allocated_admission(::common::base::RoleAdmissionIdentity* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::Arena* message_arena = GetArena();
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (message_arena == nullptr) {
+    delete reinterpret_cast<::google::protobuf::MessageLite*>(_impl_.admission_);
+  }
+
+  if (value != nullptr) {
+    ::google::protobuf::Arena* submessage_arena = reinterpret_cast<::google::protobuf::Message*>(value)->GetArena();
+    if (message_arena != submessage_arena) {
+      value = ::google::protobuf::internal::GetOwnedMessage(message_arena, value, submessage_arena);
+    }
+    SetHasBit(_impl_._has_bits_[0], 0x00000002U);
+  } else {
+    ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
+  }
+
+  _impl_.admission_ = reinterpret_cast<::common::base::RoleAdmissionIdentity*>(value);
+  // @@protoc_insertion_point(field_set_allocated:player_inbox.AckPlayerInboxRequest.admission)
+}
+
+// .common.base.ServiceCallAuth auth = 8;
+inline bool AckPlayerInboxRequest::has_auth() const {
+  bool value = CheckHasBit(_impl_._has_bits_[0], 0x00000004U);
+  PROTOBUF_ASSUME(!value || _impl_.auth_ != nullptr);
+  return value;
+}
+inline const ::common::base::ServiceCallAuth& AckPlayerInboxRequest::_internal_auth() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  const ::common::base::ServiceCallAuth* p = _impl_.auth_;
+  return p != nullptr ? *p : *::google::protobuf::internal::MessageGlobalsBase::ToDefaultInstance<::common::base::ServiceCallAuth>(&::common::base::ServiceCallAuth_globals_);
+}
+inline const ::common::base::ServiceCallAuth& AckPlayerInboxRequest::auth() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:player_inbox.AckPlayerInboxRequest.auth)
+  return _internal_auth();
+}
+inline void AckPlayerInboxRequest::unsafe_arena_set_allocated_auth(
+    ::common::base::ServiceCallAuth* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (GetArena() == nullptr) {
+    delete reinterpret_cast<::google::protobuf::MessageLite*>(_impl_.auth_);
+  }
+  _impl_.auth_ = reinterpret_cast<::common::base::ServiceCallAuth*>(value);
+  if (value != nullptr) {
+    SetHasBit(_impl_._has_bits_[0], 0x00000004U);
+  } else {
+    ClearHasBit(_impl_._has_bits_[0], 0x00000004U);
+  }
+  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:player_inbox.AckPlayerInboxRequest.auth)
+}
+inline ::common::base::ServiceCallAuth* PROTOBUF_NULLABLE AckPlayerInboxRequest::release_auth() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+
+  ClearHasBit(_impl_._has_bits_[0], 0x00000004U);
+  ::common::base::ServiceCallAuth* released = _impl_.auth_;
+  _impl_.auth_ = nullptr;
+  if (::google::protobuf::internal::DebugHardenForceCopyInRelease()) {
+    auto* old = reinterpret_cast<::google::protobuf::MessageLite*>(released);
+    released = ::google::protobuf::internal::DuplicateIfNonNull(released);
+    if (GetArena() == nullptr) {
+      delete old;
+    }
+  } else {
+    if (GetArena() != nullptr) {
+      released = ::google::protobuf::internal::DuplicateIfNonNull(released);
+    }
+  }
+  return released;
+}
+inline ::common::base::ServiceCallAuth* PROTOBUF_NULLABLE AckPlayerInboxRequest::unsafe_arena_release_auth() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:player_inbox.AckPlayerInboxRequest.auth)
+
+  ClearHasBit(_impl_._has_bits_[0], 0x00000004U);
+  ::common::base::ServiceCallAuth* temp = _impl_.auth_;
+  _impl_.auth_ = nullptr;
+  return temp;
+}
+inline ::common::base::ServiceCallAuth* PROTOBUF_NONNULL AckPlayerInboxRequest::_internal_mutable_auth() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (_impl_.auth_ == nullptr) {
+    auto* p = ::google::protobuf::Message::DefaultConstruct<::common::base::ServiceCallAuth>(GetArena());
+    _impl_.auth_ = reinterpret_cast<::common::base::ServiceCallAuth*>(p);
+  }
+  return _impl_.auth_;
+}
+inline ::common::base::ServiceCallAuth* PROTOBUF_NONNULL AckPlayerInboxRequest::mutable_auth()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  SetHasBit(_impl_._has_bits_[0], 0x00000004U);
+  ::common::base::ServiceCallAuth* _msg = _internal_mutable_auth();
+  // @@protoc_insertion_point(field_mutable:player_inbox.AckPlayerInboxRequest.auth)
+  return _msg;
+}
+inline void AckPlayerInboxRequest::set_allocated_auth(::common::base::ServiceCallAuth* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::Arena* message_arena = GetArena();
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (message_arena == nullptr) {
+    delete reinterpret_cast<::google::protobuf::MessageLite*>(_impl_.auth_);
+  }
+
+  if (value != nullptr) {
+    ::google::protobuf::Arena* submessage_arena = reinterpret_cast<::google::protobuf::Message*>(value)->GetArena();
+    if (message_arena != submessage_arena) {
+      value = ::google::protobuf::internal::GetOwnedMessage(message_arena, value, submessage_arena);
+    }
+    SetHasBit(_impl_._has_bits_[0], 0x00000004U);
+  } else {
+    ClearHasBit(_impl_._has_bits_[0], 0x00000004U);
+  }
+
+  _impl_.auth_ = reinterpret_cast<::common::base::ServiceCallAuth*>(value);
+  // @@protoc_insertion_point(field_set_allocated:player_inbox.AckPlayerInboxRequest.auth)
 }
 
 // -------------------------------------------------------------------

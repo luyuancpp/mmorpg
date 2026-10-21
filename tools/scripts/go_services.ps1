@@ -114,6 +114,7 @@ $GoBinDir   = Join-Path $RepoRoot "bin\go_services"
 # guild 用 MMORPG_ASSET_OP_SECRET_GUILD 签名、scene 用同名变量验签,值必须一致,否则每一次资产 RPC
 # 都回 27008(AssetAuthFailed)。密钥值不写进仓库,见该文件的说明;用法见 Start-ServiceInstance。
 . (Join-Path $ScriptDir "lib\assetop_dev_secret.ps1")
+. (Join-Path $ScriptDir "lib\account_directory_dev_secret.ps1")
 # 邮件 MailAdmin admin 生产者签名密钥(docs/design/mail-system.md §2.3)的本机开发值来源:只注入给 mail,用法见 Start-ServiceInstance。
 # 令牌值不写进仓库,见该文件的说明(run/secrets/mail-admin-producer-dev.env;robot / mailadmin CLI 在自己的 shell 里按同一文件取值)。
 . (Join-Path $ScriptDir "lib\mail_admin_dev_token.ps1")
@@ -718,6 +719,7 @@ function Start-ServiceInstance {
     # 仅限本机 dev:预发 / 生产的密钥由部署侧注入(k8s_deploy.ps1 Resolve-InjectedSecret -MinLength 32)。
     $injectAssetOpSecret = ($Name -eq 'guild')
     $prevAssetOpSecrets = $null
+    $previousAccountDirectorySecrets = $null
     # MailAdmin admin 生产者签名密钥(docs/design/mail-system.md §2.3):**只对 mail 注入、只给这一把**;值取自 run/secrets/mail-admin-producer-dev.env
     # (lib 首次随机生成,与本机 robot mail-smoke / cmd/mailadmin 读同一份),只在没设时兜底、不回显值、finally 里还原。
     # 仅限本机 dev:预发 / 生产由 k8s_deploy.ps1 经 Secret domain-service-secrets 的 mail-producer-admin 注入,部署链从不调用这里。
@@ -726,6 +728,11 @@ function Start-ServiceInstance {
     $injectMailAdminToken = ($Name -eq 'mail')
     $prevMailAdminToken = $null
     try {
+        $accountDirectoryService = $Name.Replace('_','-')
+        if ($accountDirectoryService -in @('data-service','login','trade','match')) {
+            $previousAccountDirectorySecrets = Backup-AccountDirectoryDevSecrets -Service $accountDirectoryService
+            Initialize-AccountDirectoryDevSecrets -RepoRoot $RepoRoot -Service $accountDirectoryService
+        }
         if ($injectAssetOpSecret) {
             # Backup 必须在 try 之内:Initialize 抛错时环境变量可能已被改了一半,放在外面就进不了 finally。
             $prevAssetOpSecrets = Backup-AssetOpDevSecrets
@@ -772,6 +779,7 @@ function Start-ServiceInstance {
     } finally {
         # 没注入过就没什么可还原的($prevAssetOpSecrets 仍是 $null);还原同时把摘掉的 trade 那把放回去。
         if ($injectAssetOpSecret) { Restore-AssetOpDevSecrets $prevAssetOpSecrets }
+        Restore-AccountDirectoryDevSecrets $previousAccountDirectorySecrets
         if ($injectMailAdminToken) { Restore-MailAdminDevToken $prevMailAdminToken }
     }
 

@@ -1,7 +1,6 @@
 package clientplayerloginlogic
 
 import (
-	"bytes"
 	"context"
 	"errors"
 	"regexp"
@@ -11,7 +10,6 @@ import (
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/redis/go-redis/v9"
 	gzprom "github.com/zeromicro/go-zero/core/prometheus"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -19,7 +17,6 @@ import (
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/emptypb"
 
-	"login/internal/constants"
 	"login/internal/logic/pkg/homezone"
 	"login/internal/logic/pkg/playernamereg"
 	pbbase "proto/common/base"
@@ -98,17 +95,16 @@ func (n *nameHarness) seedPlayers(t *testing.T, players ...*pbbase.AccountSimple
 	if err != nil {
 		t.Fatalf("marshal seeded account: %v", err)
 	}
-	if err := n.rdb.Set(n.ctx, constants.GetAccountDataKey(hzAccount), blob, 0).Err(); err != nil {
-		t.Fatalf("seed account blob: %v", err)
-	}
+	d := fixtureDirectory(t, n.rdb)
+	d.seed(hzAccount, players...)
 	return blob
 }
 
 func (n *nameHarness) accountBlob(t *testing.T) []byte {
 	t.Helper()
-	raw, err := n.rdb.Get(n.ctx, constants.GetAccountDataKey(hzAccount)).Bytes()
+	raw, err := proto.Marshal(&pbdb.UserAccounts{SimplePlayers: fixtureRoles(t, n.rdb, hzAccount)})
 	if err != nil {
-		t.Fatalf("read account blob: %v", err)
+		t.Fatal(err)
 	}
 	return raw
 }
@@ -698,178 +694,73 @@ func TestCreatePlayerName_RegisterFailureReleasesOnce(t *testing.T) {
 	}
 }
 
-// 用例 12:建角锁在持锁期间丢了(这里在 Reserve 回调里直接删掉锁来模拟过期后易主)→
-// 围栏脚本拒写:账号 blob 一个字节都不变;回读确认 blob 里没有新角色之后名字释放,
-// 回 kLoginInProgress。(「-1 但其实写进去了」见 TestCreatePlayerName_LockLostButEarlierAttemptLanded。)
-func TestCreatePlayerName_LostLockFencesAccountWrite(t *testing.T) {
+// 全局 SQL 上限在提交点拒绝新角色；名字登记可确定释放，已有目录不变。
+func TestCreatePlayerName_SQLGlobalCapRejectsAndReleasesName(t *testing.T) {
 	n := newNameHarness(t)
-	before := n.seedPlayers(t, &pbbase.AccountSimplePlayer{PlayerId: 7000, Gender: 2, Name: "旧角色"})
-	n.fake.reserve = func(int, *dspb.ReservePlayerNameRequest) (*dspb.ReservePlayerNameResponse, error) {
-		if err := n.rdb.Del(n.ctx, nameCreateKey).Err(); err != nil {
-			t.Errorf("drop create lock: %v", err)
-		}
-		return &dspb.ReservePlayerNameResponse{Result: playername.ReserveOK}, nil
-	}
-
+	d := fixtureDirectory(t, n.rdb)
+	d.max = 1
+	d.seed(hzAccount, &pbbase.AccountSimplePlayer{PlayerId: hzPlayerID + 1})
 	resp := n.create(t, "云中君")
-
-	requireTip(t, resp, table.LoginError_kLoginInProgress)
-	if len(n.fake.releaseReqs) != 1 || len(n.scheduled) != 0 {
-		t.Fatalf("release calls = %d, delayed = %d, want 1/0", len(n.fake.releaseReqs), len(n.scheduled))
+	requireTip(t, resp, table.LoginError_kLoginAccountPlayerFull)
+	if len(n.fake.releaseReqs) != 1 {
+		t.Fatal("全局上限确定拒绝后应释放本次名字")
 	}
-	if after := n.accountBlob(t); !bytes.Equal(before, after) {
-		t.Fatal("account blob changed although the create lock was lost")
-	}
-	if err := n.rdb.Get(n.ctx, constants.PlayerToAccountKey(hzPlayerID)).Err(); !errors.Is(err, redis.Nil) {
-		t.Fatalf("reverse mapping written despite the failure (err=%v)", err)
+	if len(storedPlayers(t, n.ctx, n.rdb)) != 1 {
+		t.Fatal("超额建角不得写目录")
 	}
 }
 
-// 建角不能把账号目录重新变成缓存，即使旧配置仍包含 CacheExpire。
-func TestCreatePlayerName_AccountBlobOutlivesLegacyCacheExpire(t *testing.T) {
+func TestCreatePlayerName_SQLCommitReplyLostKeepsOriginalRoleAndName(t *testing.T) {
 	n := newNameHarness(t)
-	key := constants.GetAccountDataKey(hzAccount)
-	if err := n.rdb.Expire(n.ctx, key, time.Hour).Err(); err != nil {
-		t.Fatal(err)
-	}
-	if resp := n.create(t, "云中君"); resp.ErrorMessage != nil {
-		t.Fatalf("unexpected tip %v", resp.ErrorMessage)
-	}
-	if ttl := n.mr.TTL(key); ttl != 0 {
-		t.Fatalf("账号目录仍有过期时间: %s", ttl)
-	}
-	n.mr.FastForward(48 * time.Hour)
-	if players := storedPlayers(t, n.ctx, n.rdb); len(players) != 1 || players[0].GetPlayerId() != hzPlayerID {
-		t.Fatalf("超过旧 TTL 后建角记录丢失: %v", players)
-	}
-}
-
-// swapWriteScript 把围栏写脚本换成替身(报错,或回 -1),用来走「写未确认」的回读分支。
-func swapWriteScript(t *testing.T, src string) {
-	t.Helper()
-	saved := writeAccountBlobScript
-	writeAccountBlobScript = redis.NewScript(src)
-	t.Cleanup(func() { writeAccountBlobScript = saved })
-}
-
-// 写 blob 报错但其实写进去了(回包丢了):回读看到新角色 → 当成功,名字保留。
-func TestCreatePlayerName_WriteErrorButReadBackFindsPlayer(t *testing.T) {
-	n := newNameHarness(t)
-	swapWriteScript(t, `
-redis.call("SET", KEYS[1], ARGV[2])
-return redis.error_reply("simulated reply loss")
-`)
-
+	d := fixtureDirectory(t, n.rdb)
+	d.afterCreateErr = errors.New("SQL提交后RPC回包丢失")
 	resp := n.create(t, "云中君")
-
 	if resp.ErrorMessage != nil {
-		t.Fatalf("the write did land, create must succeed; got tip %v", resp.ErrorMessage)
+		t.Fatalf("应通过原player_id强读恢复: %v", resp.ErrorMessage)
 	}
-	if len(resp.Players) != 1 || resp.Players[0].GetPlayer().GetPlayerId() != hzPlayerID {
-		t.Fatalf("response players = %v, want the new player %d", resp.Players, hzPlayerID)
-	}
-	if len(n.fake.releaseReqs) != 0 {
-		t.Fatalf("release calls = %d, want 0", len(n.fake.releaseReqs))
-	}
-	if got, err := n.rdb.Get(n.ctx, constants.PlayerToAccountKey(hzPlayerID)).Result(); err != nil || got != hzAccount {
-		t.Fatalf("reverse mapping = %q/%v, want %q", got, err, hzAccount)
+	if len(storedPlayers(t, n.ctx, n.rdb)) != 1 || len(n.fake.releaseReqs) != 0 {
+		t.Fatal("原角色和名字必须保留")
 	}
 }
 
-// 写 blob 报错且回读确认没写进去:释放名字(确定已登记,一次即可),回 kLoginRedisSetFailed。
-func TestCreatePlayerName_WriteErrorAndReadBackMissesPlayer(t *testing.T) {
+func TestCreatePlayerName_SQLUnknownAndMissingReadKeepsReservation(t *testing.T) {
 	n := newNameHarness(t)
-	swapWriteScript(t, `return redis.error_reply("simulated write failure")`)
-
+	d := fixtureDirectory(t, n.rdb)
+	d.createErr = errors.New("SQL结果未知")
+	before := orphanCount(t)
 	resp := n.create(t, "云中君")
-
-	requireTip(t, resp, table.LoginError_kLoginRedisSetFailed)
-	if len(n.fake.releaseReqs) != 1 || len(n.scheduled) != 0 {
-		t.Fatalf("release calls = %d, delayed = %d, want 1/0", len(n.fake.releaseReqs), len(n.scheduled))
+	requireTip(t, resp, table.LoginError_kLoginDataSerializeFailed)
+	if len(n.fake.releaseReqs) != 0 || orphanCount(t)-before != 1 {
+		t.Fatal("在途提交未知不能凭缺行释放名字")
 	}
-	if players := storedPlayers(t, n.ctx, n.rdb); len(players) != 0 {
-		t.Fatalf("account blob persisted %d player(s) despite the failure", len(players))
+	if len(storedPlayers(t, n.ctx, n.rdb)) != 0 {
+		t.Fatal("未知请求不能伪造角色")
 	}
 }
 
-// 写 blob 报错、回读也失败:分不清角色落没落盘 → **保留登记**(宁可孤儿不可重名),
-// 记孤儿(日志 + 计数),回 kLoginRedisSetFailed。
-func TestCreatePlayerName_WriteAndReadBackBothFailKeepsReservation(t *testing.T) {
+func TestCreatePlayerName_SQLWriteAndReadFailKeepsReservation(t *testing.T) {
 	n := newNameHarness(t)
-	n.fake.reserve = func(int, *dspb.ReservePlayerNameRequest) (*dspb.ReservePlayerNameResponse, error) {
-		// 名字登记成功之后 Redis 整个不可用:后面的围栏写与回读都会失败。
-		n.mr.SetError("simulated redis outage")
-		return &dspb.ReservePlayerNameResponse{Result: playername.ReserveOK}, nil
-	}
-	t.Cleanup(func() { n.mr.SetError("") })
-	orphansBefore := orphanCount(t)
-
+	d := fixtureDirectory(t, n.rdb)
+	d.createErr = errors.New("SQL写故障")
+	d.lookupErr = errors.New("SQL查故障")
+	before := orphanCount(t)
 	resp := n.create(t, "云中君")
-
-	requireTip(t, resp, table.LoginError_kLoginRedisSetFailed)
-	if len(n.fake.releaseReqs) != 0 || len(n.scheduled) != 0 {
-		t.Fatalf("release calls = %d, delayed = %d, want 0/0 (reservation must be kept)",
-			len(n.fake.releaseReqs), len(n.scheduled))
-	}
-	if got := orphanCount(t) - orphansBefore; got != 1 {
-		t.Fatalf("orphan_total delta = %v, want 1", got)
+	requireTip(t, resp, table.LoginError_kLoginDataSerializeFailed)
+	if len(n.fake.releaseReqs) != 0 || orphanCount(t)-before != 1 {
+		t.Fatal("双未知必须保留登记并报告")
 	}
 }
 
-// 回归:脚本回 -1,但 blob 里其实已经有新角色。生产上的成因是 go-redis 把读超时的 EVALSHA
-// 原样重发(默认 MaxRetries=3):第一次执行时锁还在、已经写成功,只是回包没等到;重发时锁
-// 已过期才得到 -1,login 只看得到最后这个 -1。这里用「先写再回 -1」的替身复现这个局面。
-// 必须当成功:角色已经落盘,这时释放名字就是放别人来占同名 —— 两个在役角色重名,无法事后修复。
-func TestCreatePlayerName_LockLostButEarlierAttemptLanded(t *testing.T) {
+func TestCreatePlayerName_RedisDirectoryExpiryDoesNotLoseSQLRole(t *testing.T) {
 	n := newNameHarness(t)
-	swapWriteScript(t, `
-redis.call("SET", KEYS[1], ARGV[2])
-return -1
-`)
-
 	resp := n.create(t, "云中君")
-
 	if resp.ErrorMessage != nil {
-		t.Fatalf("the write did land, create must succeed; got tip %v", resp.ErrorMessage)
+		t.Fatal(resp.ErrorMessage)
 	}
-	if len(resp.Players) != 1 || resp.Players[0].GetPlayer().GetPlayerId() != hzPlayerID {
-		t.Fatalf("response players = %v, want the new player %d", resp.Players, hzPlayerID)
-	}
-	if len(n.fake.releaseReqs) != 0 || len(n.scheduled) != 0 {
-		t.Fatalf("release calls = %d, delayed = %d, want 0/0 (the character exists, its name must stay)",
-			len(n.fake.releaseReqs), len(n.scheduled))
-	}
-	if players := storedPlayers(t, n.ctx, n.rdb); len(players) != 1 || players[0].GetName() != "云中君" {
-		t.Fatalf("persisted players = %v, want one player named 云中君", players)
-	}
-	if got, err := n.rdb.Get(n.ctx, constants.PlayerToAccountKey(hzPlayerID)).Result(); err != nil || got != hzAccount {
-		t.Fatalf("reverse mapping = %q/%v, want %q", got, err, hzAccount)
-	}
-}
-
-// 脚本回 -1 且回读出来的字节解析不了:分不清角色落没落盘 → 与「脚本报错」那条路径同样
-// **保留登记**并记孤儿;tip 仍是 -1 这条路径的 kLoginInProgress。
-func TestCreatePlayerName_LockLostAndReadBackUnparsableKeepsReservation(t *testing.T) {
-	n := newNameHarness(t)
-	// 'g' = 0x67 → wire type 7(protobuf 里不存在),Unmarshal 必报错。
-	swapWriteScript(t, `
-redis.call("SET", KEYS[1], "garbage")
-return -1
-`)
-	orphansBefore := orphanCount(t)
-
-	resp := n.create(t, "云中君")
-
-	requireTip(t, resp, table.LoginError_kLoginInProgress)
-	if len(n.fake.releaseReqs) != 0 || len(n.scheduled) != 0 {
-		t.Fatalf("release calls = %d, delayed = %d, want 0/0 (reservation must be kept)",
-			len(n.fake.releaseReqs), len(n.scheduled))
-	}
-	if got := orphanCount(t) - orphansBefore; got != 1 {
-		t.Fatalf("orphan_total delta = %v, want 1", got)
-	}
-	if err := n.rdb.Get(n.ctx, constants.PlayerToAccountKey(hzPlayerID)).Err(); !errors.Is(err, redis.Nil) {
-		t.Fatalf("reverse mapping written despite the failure (err=%v)", err)
+	n.mr.FlushAll()
+	roles, err := n.l.svcCtx.AccountDirectory.Read(context.Background(), hzAccount, false)
+	if err != nil || len(roles.Players) != 1 || roles.Players[0].Name != "云中君" {
+		t.Fatalf("Redis清空后目录丢失: %v %v", roles, err)
 	}
 }
 
@@ -967,7 +858,7 @@ func (c *ctxProbeClient) ReleasePlayerName(ctx context.Context, in *dspb.Release
 }
 
 // 回归:建角锁的释放同样必须丢掉请求 ctx 的取消信号。请求 ctx 在**持锁之后**才取消(这里在 Reserve 回调里
-// 取消,模拟 zrpc 服务端 Timeout / 客户端断开落在建角中途):此后建角在 6c'' 的截止检查处放弃
+// 取消,模拟 zrpc 服务端 Timeout / 客户端断开落在建角中途):此后建角在 6c” 的截止检查处放弃
 // (2026-10-15 起;此前是围栏写因 ctx 已取消发不出去、回读确认没写之后才失败),名字释放,建角以 tip 失败 ——
 // 返回时锁必须已经删掉。修复前释放用的是请求 ctx,释放命令同样发不出去,锁要等 AccountLockTTL
 // 自然过期(miniredis 不随墙钟过期,所以键会一直在),期间同账号重试建角一律 kLoginInProgress。

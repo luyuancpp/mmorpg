@@ -419,14 +419,11 @@ func runStorageAuditEntry(p storageAuditEntryParams) {
 		log.Printf("Storage audit could not complete. The result is NOT a clean bill of health.")
 		os.Exit(2)
 	}
-	db, err := sql.Open("mysql", p.mysqlDSN)
+	db, err := openCurrentTiDB(ctx, p.mysqlDSN)
 	if err != nil {
 		infra("mysql open: %v", err)
 	}
 	defer db.Close()
-	if err := db.PingContext(ctx); err != nil {
-		infra("mysql ping: %v", err)
-	}
 	rdb := redis.NewClient(&redis.Options{Addr: p.mappingAddr, Password: p.mappingPwd, DB: p.mappingDB})
 	defer rdb.Close()
 	if err := rdb.Ping(ctx).Err(); err != nil {

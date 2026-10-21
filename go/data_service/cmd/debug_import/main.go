@@ -94,7 +94,7 @@ func main() {
 		}
 		err = runBundleImport(ctx, raw, bundleImportOptions{
 			dbConfigPath: *dbConfigPath, configPath: *configPath, localZone: uint32(*zoneID),
-			source: *source, localAccount: strings.TrimSpace(*localAccount), replace: *replace,
+			source: *source, localAccount: *localAccount, replace: *replace,
 			dryRun: *dryRun, allowHosts: *allowHosts,
 		})
 		if err != nil {

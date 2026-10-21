@@ -6,6 +6,8 @@ option cc_generic_services = false;
 
 import "google/protobuf/descriptor.proto";
 import "proto/common/base/tip.proto";
+import "proto/common/base/role_admission.proto";
+import "proto/common/base/service_call_auth.proto";
 
 // 玩家持久收件箱:scene 侧消费协议与类型注册表(docs/design/player-inbox-service.md §3.2、§5.1)。
 //
@@ -185,6 +187,8 @@ message FetchPlayerInboxRequest {
   uint32 max_items = 5;                 // 0 → 16,上限 16
   uint64 consumer_decided_through = 6;  // 账本水位;用于 CursorAhead 检测(设计 §7.8)
   uint32 scene_node_id = 7;             // 只用于日志
+  common.base.RoleAdmissionIdentity admission = 8; // SQL已登记的原入场世代，必须与玩家/E完全一致
+  common.base.ServiceCallAuth auth = 9; // scene内部签名，绑定整份请求
 }
 
 message PlayerInboxItem {
@@ -224,6 +228,8 @@ message AckPlayerInboxRequest {
   // 只用于日志(同 FetchPlayerInboxRequest.scene_node_id):服务端把它与 gRPC 对端地址一起打进围栏 / Ack 异常的
   // ERROR 日志,值班按它定位发送方(评审 L10)。不参与任何判定;0 = 旧版 scene 没填。
   uint32 scene_node_id = 6;
+  common.base.RoleAdmissionIdentity admission = 7;
+  common.base.ServiceCallAuth auth = 8;
 }
 
 message PlayerInboxAckItem {

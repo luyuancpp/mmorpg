@@ -8,6 +8,46 @@ message MatchNetworkProfile {
   string plan_id = 1;
   string session_binding = 2;
   repeated NetworkProbeReceipt receipts = 3;
+  string owner_account = 4; // 服务端捕获的原会话账号；不得由当前目录反查补权。
+  uint64 owner_revision = 5;
+}
+
+// 全局观战占用与匹配票在同P事务内互斥；时间到期不意味着远端已取消。
+message MatchSpectatorRecord {
+  option (OptionTableName) = "match_spectator";
+  option (OptionPrimaryKey) = "player_id";
+  option (OptionIndex) = "updated_ms,player_id;state,player_id";
+  uint64 player_id = 1;
+  string operation_id = 2;
+  uint64 battle_id = 3;
+  string target_endpoint = 4;
+  string target_instance_id = 5;
+  uint32 state = 6; // 1待Add、2已准入、3待Cancel、4结果未知、5已证实关闭。
+  bytes request_payload = 7; // 原WatchBattleRequest，随机选场结果不能重选。
+  string owner_account = 8;
+  uint64 owner_revision = 9;
+  bytes add_request = 10; // 原AddObserverRequest，截止/路由/op不可重写。
+  uint64 updated_ms = 11;
+  uint64 request_high = 12;
+  uint64 request_low = 13;
+}
+message MatchSpectatorIntentRecord {
+  option (OptionTableName) = "match_spectator_intent";
+  option (OptionPrimaryKey) = "player_id,request_high,request_low";
+  uint64 player_id = 1;
+  uint64 request_high = 2;
+  uint64 request_low = 3;
+  bytes original = 4; // 永久原MatchSpectatorRecord，终态更新同当前占用事务提交。
+  bytes request_payload = 5; // 选场前即持久原请求，旧handler不能成为新意图。
+  string owner_account = 6;
+  uint64 owner_revision = 7;
+  uint32 state = 8; // 1尚未发出Add、2已绑定current原件、5已关闭；未知一律拒绝。
+}
+message MatchSpectatorHeadRecord {
+  option (OptionTableName) = "match_spectator_head";
+  option (OptionPrimaryKey) = "player_id";
+  uint64 player_id = 1;
+  string operation_id = 2; // 最新已接纳请求UUID；切换head也必须先持P。
 }
 
 // 仅服务端存储契约；全部副本必须连接同一 TiDB 事务域。
@@ -22,7 +62,7 @@ message MatchNetworkProfileRecord {
 message MatchAuthorityTicketRecord {
   option (OptionTableName) = "match_authority_ticket";
   option (OptionPrimaryKey) = "player_id";
-  option (OptionIndex) = "state,mode,config_id,team_size,enqueued_ms;formation_id";
+  option (OptionIndex) = "state,mode,config_id,team_size,enqueued_ms;formation_id;state,enqueued_ms,player_id;state,mode,team_id,enqueued_ms,player_id";
   uint64 player_id = 1;
   string ticket = 2;
   string request_id = 3;
@@ -39,30 +79,104 @@ message MatchAuthorityTicketRecord {
   bytes network_profile = 14;
   uint64 expires_ms = 15;
   uint32 selected_region = 16;
+  uint32 preferred_region = 17; // 签名测量最低RTT机房；同RTT按机房编号，不随节点暂时下线改本区。
+  string owner_account = 18;
+  uint64 owner_revision = 19;
+}
+
+// 仅作可重建候选索引，票与完整签名profile仍是提交点真相。
+// 同原票锁更新/清理；查询必须JOIN当前ticket代次，最终Claim复核原profile和原角色身份。
+message MatchTicketRegionRecord {
+  option (OptionTableName) = "match_ticket_region";
+  option (OptionPrimaryKey) = "player_id,physical_region";
+  option (OptionIndex) = "physical_region,mode,config_id,team_size,preferred_region,enqueued_ms,player_id;physical_region,mode,config_id,team_size,enqueued_ms,player_id;expires_ms,player_id,physical_region;physical_region,mode,config_id,team_size,home_zone,preferred_region,enqueued_ms,player_id;physical_region,mode,config_id,team_size,home_zone,enqueued_ms,player_id";
+  option (OptionTiDBNonclusteredPK) = true;
+  option (OptionTiDBShardRowIDBits) = 4;
+  option (OptionTiDBPreSplitRegions) = 4;
+  uint64 player_id = 1;
+  uint32 physical_region = 2;
+  string ticket = 3;
+  uint32 mode = 4;
+  uint32 config_id = 5;
+  uint32 team_size = 6;
+  uint32 preferred_region = 7;
+  uint64 enqueued_ms = 8;
+  int64 rating_centi = 9;
+  uint32 rtt_ms = 10;
+  uint64 expires_ms = 11;
+  uint32 home_zone = 12; // 来自原票的SQL home；整队禁止跨home时在LIMIT前过滤。
 }
 
 // 不能随当前票据覆盖或过期：否则旧 Join 在新一轮结束后重放会复活。
 message MatchJoinIntentRecord {
   option (OptionTableName) = "match_join_intent";
   option (OptionPrimaryKey) = "player_id,request_high,request_low";
+  option (OptionIndex) = "state,player_id,request_high,request_low";
   uint64 player_id = 1;
   string request_id = 2;
   bytes ticket_record = 3; // 首次已接纳的 MatchAuthorityTicketRecord；先撤销的未知请求为空。
   bool cancelled = 4;
   uint64 request_high = 5; // UUID 的前64位原值；整数复合主键符合 D-14，不截断哈希。
   uint64 request_low = 6;
+  string owner_account = 7;
+  uint64 owner_revision = 8;
+  bytes spectator_exit = 9; // 首次Join在同P内捕获的原观战；空表示当时没有观战。
+  bool exit_prepared = 10; // 原件已固定；禁止重放现场捕获当前观战。
+  bytes request_payload = 11; // 原JoinQueueRequest规范字节，重试不可改探测/参数。
+  uint32 state = 12; // 1等待原观战退出、2已提交原票、3已取消；仅1进入恢复游标。
 }
 
 // 整队/活动/挑战接受与全组占用、成局行在同一 SQL 事务提交。
 message MatchDirectIntentRecord {
   option (OptionTableName) = "match_direct_intent";
   option (OptionPrimaryKey) = "kind,owner_id,request_high,request_low";
+  option (OptionIndex) = "exit_prepared,cancelled,battle_id,kind,owner_id,request_high,request_low";
   uint32 kind = 1; // 1整队、2活动、3挑战。
   uint64 owner_id = 2; // 整队的发起玩家、活动的帮会、挑战的应战玩家。
   uint64 request_high = 3;
   uint64 request_low = 4;
   bytes payload = 5; // 无随机节点/票号的规范业务载荷，重试逐字节核对。
   uint64 battle_id = 6;
+  bool cancelled = 7; // 仅活动kind=2：与成局共用原意图主键锁的持久不再开战墓碑。
+  string owner_account = 8; // kind1/3的原客户端actor；kind2由Guild永久launch原件授权。
+  uint64 owner_revision = 9;
+  repeated MatchSpectatorRecord spectator_exits = 10;
+  bool exit_prepared = 11;
+  bytes start_original = 12; // MatchDirectStartOriginal；待提交时不能用当前资料替换。
+}
+message MatchDirectStartOriginal {
+  MatchFormationRecord formation = 1;
+  repeated MatchAuthorityTicketRecord tickets = 2;
+}
+
+// 邀请正文是SQL原件，Redis仅推送/缓存；新邀请在全员P锁下捕获对端，重放不换主。
+message MatchChallengeInvitationRecord {
+  option (OptionTableName) = "match_challenge_invitation";
+  option (OptionPrimaryKey) = "challenge_id";
+  option (OptionIndex) = "target_player_id,state,expires_ms,challenge_id;challenger_player_id,state,expires_ms,challenge_id";
+  option (OptionTiDBNonclusteredPK) = true;
+  option (OptionTiDBShardRowIDBits) = 4;
+  option (OptionTiDBPreSplitRegions) = 4;
+  uint64 challenge_id = 1;
+  uint64 challenger_player_id = 2;
+  uint64 target_player_id = 3;
+  uint32 config_id = 4;
+  string challenger_account = 5;
+  uint64 challenger_revision = 6;
+  string target_account = 7;
+  uint64 target_revision = 8;
+  uint64 created_ms = 9;
+  uint64 expires_ms = 10;
+  uint32 state = 11; // 1待应答、2已成局、3已拒绝、4已接受待退出、5已安全关闭；原件不删除。
+  uint64 battle_id = 12;
+}
+
+// 同事务域全部副本使用相同撮合策略；新进程不能覆盖已准入策略。
+message MatchGlobalPolicyRecord {
+  option (OptionTableName) = "match_global_policy";
+  option (OptionPrimaryKey) = "policy_id";
+  uint32 policy_id = 1;
+  bytes contract_digest = 2;
 }
 
 message MatchFormationMember {

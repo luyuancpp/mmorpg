@@ -6,6 +6,14 @@
 
 #include "rpc/service_metadata/battle_node_service_metadata.h"
 
+#pragma region BattleNodeQueryObserver
+// gRPC :path(线上契约,与 Go 侧一致)。
+inline constexpr std::string_view kBattleNodeQueryObserverGrpcPath = "/BattleNode/QueryObserver";
+// done 必填且恰好调用一次,从不在 Send 栈内同步调用;为空 LOG_FATAL。响应只在回调期间有效。
+void SendBattleNodeQueryObserver(entt::registry& registry, entt::entity nodeEntity, const ::QueryObserverRequest& request, GrpcDone<::QueryObserverResponse> done, const GrpcCallOptions& options = {});
+// 类型擦除版只供元数据 sender 使用;动态类型不匹配时异步回 INTERNAL,不发出请求。
+void SendBattleNodeQueryObserverErased(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, GrpcMessageDone done, const GrpcCallOptions& options);
+#pragma endregion
 #pragma region BattleNodeQueryBattleCreation
 // gRPC :path(线上契约,与 Go 侧一致)。
 inline constexpr std::string_view kBattleNodeQueryBattleCreationGrpcPath = "/BattleNode/QueryBattleCreation";
@@ -42,7 +50,7 @@ void SendBattleNodeAddObserverErased(entt::registry& registry, entt::entity node
 // gRPC :path(线上契约,与 Go 侧一致)。
 inline constexpr std::string_view kBattleNodeRemoveObserverGrpcPath = "/BattleNode/RemoveObserver";
 // done 必填且恰好调用一次,从不在 Send 栈内同步调用;为空 LOG_FATAL。响应只在回调期间有效。
-void SendBattleNodeRemoveObserver(entt::registry& registry, entt::entity nodeEntity, const ::RemoveObserverRequest& request, GrpcDone<::Empty> done, const GrpcCallOptions& options = {});
+void SendBattleNodeRemoveObserver(entt::registry& registry, entt::entity nodeEntity, const ::RemoveObserverRequest& request, GrpcDone<::RemoveObserverResponse> done, const GrpcCallOptions& options = {});
 // 类型擦除版只供元数据 sender 使用;动态类型不匹配时异步回 INTERNAL,不发出请求。
 void SendBattleNodeRemoveObserverErased(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, GrpcMessageDone done, const GrpcCallOptions& options);
 #pragma endregion

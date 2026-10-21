@@ -29,6 +29,9 @@ import (
 )
 
 func runMerge(o options) {
+	if err := requireTeamRouteDomain(o.mysqlDSN, o.routeDBDSN, o.routeSource); err != nil {
+		log.Fatal(err)
+	}
 	ctx, cancel := context.WithTimeout(context.Background(), o.timeout)
 	defer cancel()
 
@@ -59,6 +62,11 @@ func runMerge(o options) {
 	// ── 句柄 ────────────────────────────────────────────────
 	db := mustOpenMySQL(ctx, o.mysqlDSN)
 	defer db.Close()
+	teamAuthority, err := openTeamAuthority(ctx, o.mysqlDSN, firstNonEmpty(o.teamSchema, defaultTeamSchema))
+	if err != nil {
+		log.Fatalf("组队权威门禁: %v", err)
+	}
+	defer teamAuthority.db.Close()
 
 	mapRdb := mustDial(ctx, "mapping", o.mappingAddr, o.mappingPwd, o.mappingDB)
 	defer mapRdb.Close()
@@ -299,10 +307,11 @@ func runMerge(o options) {
 
 	// ── P2~P7: 需要玩家清单的门禁(源区口径)────────────────
 	if err := runPreflight(ctx, preflightDeps{
-		sceneRdb:   sceneRdb,
-		mappingRdb: mapRdb,
-		sharedRdb:  sharedRdb,
-		lag:        lagSrc,
+		teamAuthority: teamAuthority,
+		sceneRdb:      sceneRdb,
+		mappingRdb:    mapRdb,
+		sharedRdb:     sharedRdb,
+		lag:           lagSrc,
 	}, preflightParams{
 		zone:            src,
 		scope:           "source",
@@ -1314,7 +1323,7 @@ func runPlayerMappingStep(ctx context.Context, rb *routeBackend, mapRdb *redis.C
 
 // ── 句柄与小工具 ──────────────────────────────────────────────
 
-// mustOpenMySQL 打开合服 / 撤销共用的 MySQL 句柄,会话隔离级别固定为 READ COMMITTED。
+// mustOpenMySQL保留旧调用名；全球合服/撤销只交付经过当前强读探针的TiDB句柄。
 //
 // 为什么显式设 RC(2026-09-21 死锁审计 #17):
 //   - 此前直接用运维给的 DSN,未设隔离级别 = 实例默认 RR。RR 下 UPDATE 对扫描到的二级项加 next-key,
@@ -1327,16 +1336,9 @@ func runPlayerMappingStep(ctx context.Context, rb *routeBackend, mapRdb *redis.C
 // 这不是新约束;真遇上时第一条写就会响亮失败,不会静默写一半。
 // DSN 本身含密码,任何日志都不打印它(ParseDSN 的错误也不回显 DSN 原文)。
 func mustOpenMySQL(ctx context.Context, dsn string) *sql.DB {
-	rcDSN, err := readCommittedDSN(dsn)
+	db, err := openCurrentTiDB(ctx, dsn)
 	if err != nil {
-		log.Fatalf("mysql dsn: %v", err)
-	}
-	db, err := sql.Open("mysql", rcDSN)
-	if err != nil {
-		log.Fatalf("mysql open: %v", err)
-	}
-	if err := db.PingContext(ctx); err != nil {
-		log.Fatalf("mysql ping: %v", err)
+		log.Fatalf("全局SQL当前强读连接: %v", err)
 	}
 	return db
 }
@@ -1352,27 +1354,15 @@ const (
 	mysqlReadCommitted = "'READ-COMMITTED'"
 )
 
-// readCommittedDSN 把 dsn 的会话隔离级别改成 READ COMMITTED,其余参数原样保留。
+// readCommittedDSN保留旧调用名；同时固定RC和全局TiDB当前强读策略，保留连接目标与非权威策略参数。
 // 用 ParseDSN / FormatDSN 改结构而不是手拼字符串:参数的 URL 编码、密码里的特殊字符都交给驱动处理。
-// 运维在 DSN 里显式写了别的隔离级别也会被覆盖(并打一行日志):本工具的锁序推演只对 RC 成立。
+// 历史快照、旧副本、低精度TSO和旧隔离级别一律覆盖；不回显原参数值，防止配置进入日志。
 func readCommittedDSN(dsn string) (string, error) {
 	cfg, err := mysql.ParseDSN(dsn)
 	if err != nil {
 		return "", fmt.Errorf("parse -mysql-dsn: %w", err)
 	}
-	if cfg.Params == nil {
-		cfg.Params = map[string]string{}
-	}
-	if v, ok := cfg.Params[mysqlIsolationParam]; ok && v != mysqlReadCommitted {
-		log.Printf("Changed %s=%s in -mysql-dsn to %s: merge lock ordering is valid only under READ COMMITTED",
-			mysqlIsolationParam, v, mysqlReadCommitted)
-	}
-	if v, ok := cfg.Params[mysqlLegacyIsolationParam]; ok {
-		log.Printf("Removed legacy parameter %s=%s from -mysql-dsn; using %s=%s instead", mysqlLegacyIsolationParam, v,
-			mysqlIsolationParam, mysqlReadCommitted)
-		delete(cfg.Params, mysqlLegacyIsolationParam)
-	}
-	cfg.Params[mysqlIsolationParam] = mysqlReadCommitted
+	pinCurrentTiDB(cfg)
 	return cfg.FormatDSN(), nil
 }
 

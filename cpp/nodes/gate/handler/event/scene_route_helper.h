@@ -116,7 +116,8 @@ bool ApplyRoute(SessionInfo& session, const uint64_t targetSceneId, const SceneN
         enterType = session.pendingEnterGsType;
     else if (session.sceneId != 0 &&
              (session.sceneId != targetSceneId || nodeChange == SceneNodeChange::kChanged ||
-              (session.forwardedOwnerEpoch != 0 && session.ownerEpoch > session.forwardedOwnerEpoch)))
+              (session.forwardedOwnerEpoch != 0 && session.ownerEpoch > session.forwardedOwnerEpoch) ||
+              session.ownerRevision != session.forwardedOwnerRevision))
         enterType = 0;
     if (enterType.has_value() && !forward(*enterType)) return false;
     session.sceneId = targetSceneId;
@@ -124,6 +125,7 @@ bool ApplyRoute(SessionInfo& session, const uint64_t targetSceneId, const SceneN
     {
         session.pendingEnterGsType = 0;
         session.forwardedOwnerEpoch = session.ownerEpoch;
+        session.forwardedOwnerRevision = session.ownerRevision;
         // LeaveGame 之后的第一次真正进场:从此按常规处理路由(IsRouteFromBeforeLeaveGame 不再拦)。
         session.sceneRouteResetPending = false;
     }
@@ -150,6 +152,8 @@ inline void ResetSceneRoute(SessionInfo& session)
     session.lastSceneRoute = SceneRouteTarget{};
     session.homeZoneId = 0;
     session.ownerEpoch = 0;
+    session.ownerRevision = 0;
+    session.forwardedOwnerRevision = 0;
     session.forwardedOwnerEpoch = 0;
     const bool samePendingReset = session.sceneRouteResetPending &&
                                   (session.playerId == kInvalidGuid || session.playerId == session.playerIdAtReset);
@@ -314,7 +318,8 @@ inline bool ApplyLoginBinding(SessionInfo& session, const Guid playerId, const u
 //     AttemptPendingSceneEntry 的玩家围栏撤销,它的代次与当前角色无关。
 // 不据代次丢弃路由:scene 自发的换图路由带 0,由会话上的值盖章。
 inline void ApplyRouteIdentity(SessionInfo& session, const Guid routePlayerId, const uint32_t homeZoneId,
-                               const uint64_t ownerEpoch, const uint64_t loginGeneration)
+                               const uint64_t ownerEpoch, const uint64_t loginGeneration,
+                               const uint64_t ownerRevision = 0)
 {
     if (routePlayerId != 0 && session.playerId == kInvalidGuid)
     {
@@ -322,6 +327,7 @@ inline void ApplyRouteIdentity(SessionInfo& session, const Guid routePlayerId, c
     }
     session.homeZoneId = homeZoneId;
     session.ownerEpoch = ownerEpoch;
+    session.ownerRevision = ownerRevision;
     if (routePlayerId == 0 || routePlayerId == session.playerId)
     {
         session.loginGeneration =

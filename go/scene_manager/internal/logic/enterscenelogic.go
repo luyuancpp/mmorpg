@@ -20,6 +20,8 @@ import (
 	"shared/ownerepoch"
 
 	"github.com/zeromicro/go-zero/core/logx"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/proto"
 )
 
@@ -114,6 +116,7 @@ func enterSceneRequestFingerprint(in *scene_manager.EnterSceneRequest) (string, 
 	// 只对副本清零,不改入参(外层 defer 还要从 in 回显 correlation_id,路由事件要原样带
 	// login_generation)。两者都为 0 时直接序列化 —— proto3 不序列化零值,不带它们的请求
 	// 指纹与加字段之前逐字节相同,滚动升级期间新旧实例写下的去重条目互认。
+	// owner_revision 是授权身份，必须保留：过户后复用同 request_id 不能重放卖家旧应答。
 	target := in
 	if in.CorrelationId != 0 || in.LoginGeneration != 0 {
 		clone := proto.Clone(in).(*scene_manager.EnterSceneRequest)
@@ -131,6 +134,11 @@ func enterSceneRequestFingerprint(in *scene_manager.EnterSceneRequest) (string, 
 
 // EnterScene routes a player into a scene, managed by SceneManager.
 func (l *EnterSceneLogic) EnterScene(in *scene_manager.EnterSceneRequest) (response *scene_manager.EnterSceneResponse, returnErr error) {
+	// 授权修订必须来自 login/原 scene 链，不能从新目录反查后替迟到请求补权。
+	// 在任何去重缓存、Redis 预占或落点变更前拒绝，旧请求不能借缓存绕过此闸。
+	if in == nil || in.OwnerRevision == 0 {
+		return nil, status.Error(codes.InvalidArgument, "原账号角色归属修订缺失")
+	}
 	// 回显 player_id:scene 节点的异步应答回调靠它把结果对回发起玩家(传送 / 疏散要据此
 	// 收尾)。放在 defer 里覆盖所有返回路径,包括去重缓存的重放。
 	//
@@ -1475,6 +1483,7 @@ func (l *EnterSceneLogic) routePlayerToGate(in *scene_manager.EnterSceneRequest,
 		HomeZoneId:      homeZoneID,
 		OwnerEpoch:      ownerEpoch,
 		LoginGeneration: in.LoginGeneration,
+		OwnerRevision:   in.OwnerRevision,
 	}
 	payload, err := proto.Marshal(event)
 	if err != nil {

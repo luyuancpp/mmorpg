@@ -18,6 +18,9 @@
     <Text Include="ReadMe.txt" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="muduo_base_contract_test.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="timer_queue_uinttest.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>

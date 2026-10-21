@@ -23,7 +23,7 @@ func GetNetworkProbePlan(ctx context.Context, s *svc.ServiceContext) (*pb.GetNet
 		return &pb.GetNetworkProbePlanResponse{Required: false}, nil
 	}
 	d, ok := ctxkeys.GetSessionDetails(ctx)
-	binding := authority.SessionBinding(d)
+	binding := authority.SessionBinding(ctx, d)
 	if !ok || binding == "" {
 		return nil, errors.New("地域探测需要当前已登录会话")
 	}
@@ -44,7 +44,7 @@ func GetNetworkProbePlan(ctx context.Context, s *svc.ServiceContext) (*pb.GetNet
 		if node.PhysicalRegion == 0 || node.ClientHost == "" || node.ClientPort == 0 || node.ClientPort > 65535 || node.NodeUuid == "" || seen[node.PhysicalRegion] {
 			continue
 		}
-		if len(resp.Targets) >= 16 {
+		if len(resp.Targets) >= authority.MaxProbeRegions {
 			break
 		}
 		g := &pb.NetworkProbeGrant{PlanId: plan, PlayerId: d.PlayerId, SessionBinding: binding, PhysicalRegion: node.PhysicalRegion, TargetNodeId: node.NodeId, TargetInstanceId: node.NodeUuid, ExpiresAtMs: expires}
@@ -71,8 +71,8 @@ func CommitNetworkProbe(ctx context.Context, s *svc.ServiceContext, in *pb.Commi
 		return &pb.CommitNetworkProbeResponse{}, nil
 	}
 	d, ok := ctxkeys.GetSessionDetails(ctx)
-	binding := authority.SessionBinding(d)
-	if !ok || binding == "" || in.PlanId == "" || len(in.Receipts) == 0 || len(in.Receipts) > 16 {
+	binding := authority.SessionBinding(ctx, d)
+	if !ok || binding == "" || in.PlanId == "" || len(in.Receipts) == 0 || len(in.Receipts) > authority.MaxProbeRegions {
 		return nil, errors.New("地域回执参数无效")
 	}
 	if stale, e := playerSessionStaleFor(ctx, s, d.PlayerId); e != nil || stale {

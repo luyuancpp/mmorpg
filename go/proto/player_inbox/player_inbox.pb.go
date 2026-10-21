@@ -855,14 +855,16 @@ func (x *GmCurrencyDebtPayload) GetExpiresAt() uint64 {
 }
 
 type FetchPlayerInboxRequest struct {
-	state                  protoimpl.MessageState `protogen:"open.v1"`
-	PlayerId               uint64                 `protobuf:"varint,1,opt,name=player_id,json=playerId,proto3" json:"player_id,omitempty"`
-	Domain                 PlayerInboxDomain      `protobuf:"varint,2,opt,name=domain,proto3,enum=player_inbox.PlayerInboxDomain" json:"domain,omitempty"`
-	OwnerEpoch             uint64                 `protobuf:"varint,3,opt,name=owner_epoch,json=ownerEpoch,proto3" json:"owner_epoch,omitempty"`                                       // 必须非 0(EPOCH_REQUIRED)
-	CorrelationId          uint64                 `protobuf:"varint,4,opt,name=correlation_id,json=correlationId,proto3" json:"correlation_id,omitempty"`                              // 本节点单调递增,回包原样回显
-	MaxItems               uint32                 `protobuf:"varint,5,opt,name=max_items,json=maxItems,proto3" json:"max_items,omitempty"`                                             // 0 → 16,上限 16
-	ConsumerDecidedThrough uint64                 `protobuf:"varint,6,opt,name=consumer_decided_through,json=consumerDecidedThrough,proto3" json:"consumer_decided_through,omitempty"` // 账本水位;用于 CursorAhead 检测(设计 §7.8)
-	SceneNodeId            uint32                 `protobuf:"varint,7,opt,name=scene_node_id,json=sceneNodeId,proto3" json:"scene_node_id,omitempty"`                                  // 只用于日志
+	state                  protoimpl.MessageState      `protogen:"open.v1"`
+	PlayerId               uint64                      `protobuf:"varint,1,opt,name=player_id,json=playerId,proto3" json:"player_id,omitempty"`
+	Domain                 PlayerInboxDomain           `protobuf:"varint,2,opt,name=domain,proto3,enum=player_inbox.PlayerInboxDomain" json:"domain,omitempty"`
+	OwnerEpoch             uint64                      `protobuf:"varint,3,opt,name=owner_epoch,json=ownerEpoch,proto3" json:"owner_epoch,omitempty"`                                       // 必须非 0(EPOCH_REQUIRED)
+	CorrelationId          uint64                      `protobuf:"varint,4,opt,name=correlation_id,json=correlationId,proto3" json:"correlation_id,omitempty"`                              // 本节点单调递增,回包原样回显
+	MaxItems               uint32                      `protobuf:"varint,5,opt,name=max_items,json=maxItems,proto3" json:"max_items,omitempty"`                                             // 0 → 16,上限 16
+	ConsumerDecidedThrough uint64                      `protobuf:"varint,6,opt,name=consumer_decided_through,json=consumerDecidedThrough,proto3" json:"consumer_decided_through,omitempty"` // 账本水位;用于 CursorAhead 检测(设计 §7.8)
+	SceneNodeId            uint32                      `protobuf:"varint,7,opt,name=scene_node_id,json=sceneNodeId,proto3" json:"scene_node_id,omitempty"`                                  // 只用于日志
+	Admission              *base.RoleAdmissionIdentity `protobuf:"bytes,8,opt,name=admission,proto3" json:"admission,omitempty"`                                                            // SQL已登记的原入场世代，必须与玩家/E完全一致
+	Auth                   *base.ServiceCallAuth       `protobuf:"bytes,9,opt,name=auth,proto3" json:"auth,omitempty"`                                                                      // scene内部签名，绑定整份请求
 	unknownFields          protoimpl.UnknownFields
 	sizeCache              protoimpl.SizeCache
 }
@@ -944,6 +946,20 @@ func (x *FetchPlayerInboxRequest) GetSceneNodeId() uint32 {
 		return x.SceneNodeId
 	}
 	return 0
+}
+
+func (x *FetchPlayerInboxRequest) GetAdmission() *base.RoleAdmissionIdentity {
+	if x != nil {
+		return x.Admission
+	}
+	return nil
+}
+
+func (x *FetchPlayerInboxRequest) GetAuth() *base.ServiceCallAuth {
+	if x != nil {
+		return x.Auth
+	}
+	return nil
 }
 
 type PlayerInboxItem struct {
@@ -1215,7 +1231,9 @@ type AckPlayerInboxRequest struct {
 	Decisions     []*PlayerInboxDecisionReport `protobuf:"bytes,5,rep,name=decisions,proto3" json:"decisions,omitempty"` // ≤ 32 条,按 seq 升序
 	// 只用于日志(同 FetchPlayerInboxRequest.scene_node_id):服务端把它与 gRPC 对端地址一起打进围栏 / Ack 异常的
 	// ERROR 日志,值班按它定位发送方(评审 L10)。不参与任何判定;0 = 旧版 scene 没填。
-	SceneNodeId   uint32 `protobuf:"varint,6,opt,name=scene_node_id,json=sceneNodeId,proto3" json:"scene_node_id,omitempty"`
+	SceneNodeId   uint32                      `protobuf:"varint,6,opt,name=scene_node_id,json=sceneNodeId,proto3" json:"scene_node_id,omitempty"`
+	Admission     *base.RoleAdmissionIdentity `protobuf:"bytes,7,opt,name=admission,proto3" json:"admission,omitempty"`
+	Auth          *base.ServiceCallAuth       `protobuf:"bytes,8,opt,name=auth,proto3" json:"auth,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1290,6 +1308,20 @@ func (x *AckPlayerInboxRequest) GetSceneNodeId() uint32 {
 		return x.SceneNodeId
 	}
 	return 0
+}
+
+func (x *AckPlayerInboxRequest) GetAdmission() *base.RoleAdmissionIdentity {
+	if x != nil {
+		return x.Admission
+	}
+	return nil
+}
+
+func (x *AckPlayerInboxRequest) GetAuth() *base.ServiceCallAuth {
+	if x != nil {
+		return x.Auth
+	}
+	return nil
 }
 
 type PlayerInboxAckItem struct {
@@ -1467,7 +1499,7 @@ var File_proto_player_inbox_player_inbox_proto protoreflect.FileDescriptor
 
 const file_proto_player_inbox_player_inbox_proto_rawDesc = "" +
 	"\n" +
-	"%proto/player_inbox/player_inbox.proto\x12\fplayer_inbox\x1a google/protobuf/descriptor.proto\x1a\x1bproto/common/base/tip.proto\"m\n" +
+	"%proto/player_inbox/player_inbox.proto\x12\fplayer_inbox\x1a google/protobuf/descriptor.proto\x1a\x1bproto/common/base/tip.proto\x1a&proto/common/base/role_admission.proto\x1a)proto/common/base/service_call_auth.proto\"m\n" +
 	"\x15PlayerInboxDomainSpec\x12\x1f\n" +
 	"\vmax_pending\x18\x01 \x01(\rR\n" +
 	"maxPending\x123\n" +
@@ -1487,7 +1519,7 @@ const file_proto_player_inbox_player_inbox_proto_rawDesc = "" +
 	"\vgm_operator\x18\x04 \x01(\tR\n" +
 	"gmOperator\x12\x1d\n" +
 	"\n" +
-	"expires_at\x18\x05 \x01(\x04R\texpiresAt\"\xb2\x02\n" +
+	"expires_at\x18\x05 \x01(\x04R\texpiresAt\"\xa6\x03\n" +
 	"\x17FetchPlayerInboxRequest\x12\x1b\n" +
 	"\tplayer_id\x18\x01 \x01(\x04R\bplayerId\x127\n" +
 	"\x06domain\x18\x02 \x01(\x0e2\x1f.player_inbox.PlayerInboxDomainR\x06domain\x12\x1f\n" +
@@ -1496,7 +1528,9 @@ const file_proto_player_inbox_player_inbox_proto_rawDesc = "" +
 	"\x0ecorrelation_id\x18\x04 \x01(\x04R\rcorrelationId\x12\x1b\n" +
 	"\tmax_items\x18\x05 \x01(\rR\bmaxItems\x128\n" +
 	"\x18consumer_decided_through\x18\x06 \x01(\x04R\x16consumerDecidedThrough\x12\"\n" +
-	"\rscene_node_id\x18\a \x01(\rR\vsceneNodeId\"\xeb\x02\n" +
+	"\rscene_node_id\x18\a \x01(\rR\vsceneNodeId\x12@\n" +
+	"\tadmission\x18\b \x01(\v2\".common.base.RoleAdmissionIdentityR\tadmission\x120\n" +
+	"\x04auth\x18\t \x01(\v2\x1c.common.base.ServiceCallAuthR\x04auth\"\xeb\x02\n" +
 	"\x0fPlayerInboxItem\x12\x10\n" +
 	"\x03seq\x18\x01 \x01(\x04R\x03seq\x12?\n" +
 	"\bmsg_type\x18\x02 \x01(\x0e2$.player_inbox.PlayerInboxMessageTypeR\amsgType\x12\x18\n" +
@@ -1522,7 +1556,7 @@ const file_proto_player_inbox_player_inbox_proto_rawDesc = "" +
 	"\aoutcome\x18\x02 \x01(\x0e2 .player_inbox.PlayerInboxOutcomeR\aoutcome\x12\x16\n" +
 	"\x06reason\x18\x03 \x01(\rR\x06reason\x12\x1d\n" +
 	"\n" +
-	"request_id\x18\x04 \x01(\x04R\trequestId\"\xa0\x02\n" +
+	"request_id\x18\x04 \x01(\x04R\trequestId\"\x94\x03\n" +
 	"\x15AckPlayerInboxRequest\x12\x1b\n" +
 	"\tplayer_id\x18\x01 \x01(\x04R\bplayerId\x127\n" +
 	"\x06domain\x18\x02 \x01(\x0e2\x1f.player_inbox.PlayerInboxDomainR\x06domain\x12\x1f\n" +
@@ -1530,7 +1564,9 @@ const file_proto_player_inbox_player_inbox_proto_rawDesc = "" +
 	"ownerEpoch\x12%\n" +
 	"\x0ecorrelation_id\x18\x04 \x01(\x04R\rcorrelationId\x12E\n" +
 	"\tdecisions\x18\x05 \x03(\v2'.player_inbox.PlayerInboxDecisionReportR\tdecisions\x12\"\n" +
-	"\rscene_node_id\x18\x06 \x01(\rR\vsceneNodeId\"\x9c\x01\n" +
+	"\rscene_node_id\x18\x06 \x01(\rR\vsceneNodeId\x12@\n" +
+	"\tadmission\x18\a \x01(\v2\".common.base.RoleAdmissionIdentityR\tadmission\x120\n" +
+	"\x04auth\x18\b \x01(\v2\x1c.common.base.ServiceCallAuthR\x04auth\"\x9c\x01\n" +
 	"\x12PlayerInboxAckItem\x12\x10\n" +
 	"\x03seq\x18\x01 \x01(\x04R\x03seq\x12:\n" +
 	"\x06result\x18\x02 \x01(\x0e2\".player_inbox.PlayerInboxAckResultR\x06result\x128\n" +
@@ -1642,42 +1678,48 @@ var file_proto_player_inbox_player_inbox_proto_goTypes = []any{
 	(*AckPlayerInboxRequest)(nil),         // 19: player_inbox.AckPlayerInboxRequest
 	(*PlayerInboxAckItem)(nil),            // 20: player_inbox.PlayerInboxAckItem
 	(*AckPlayerInboxResponse)(nil),        // 21: player_inbox.AckPlayerInboxResponse
-	(*base.TipInfoMessage)(nil),           // 22: TipInfoMessage
-	(*descriptorpb.EnumValueOptions)(nil), // 23: google.protobuf.EnumValueOptions
+	(*base.RoleAdmissionIdentity)(nil),    // 22: common.base.RoleAdmissionIdentity
+	(*base.ServiceCallAuth)(nil),          // 23: common.base.ServiceCallAuth
+	(*base.TipInfoMessage)(nil),           // 24: TipInfoMessage
+	(*descriptorpb.EnumValueOptions)(nil), // 25: google.protobuf.EnumValueOptions
 }
 var file_proto_player_inbox_player_inbox_proto_depIdxs = []int32{
 	2,  // 0: player_inbox.PlayerInboxTypeSpec.domain:type_name -> player_inbox.PlayerInboxDomain
 	0,  // 1: player_inbox.PlayerInboxTypeSpec.klass:type_name -> player_inbox.PlayerInboxClass
 	2,  // 2: player_inbox.FetchPlayerInboxRequest.domain:type_name -> player_inbox.PlayerInboxDomain
-	3,  // 3: player_inbox.PlayerInboxItem.msg_type:type_name -> player_inbox.PlayerInboxMessageType
-	5,  // 4: player_inbox.PlayerInboxItem.directive:type_name -> player_inbox.PlayerInboxDirective
-	6,  // 5: player_inbox.PlayerInboxItem.void_reason:type_name -> player_inbox.PlayerInboxVoidReason
-	22, // 6: player_inbox.FetchPlayerInboxResponse.error_message:type_name -> TipInfoMessage
-	2,  // 7: player_inbox.FetchPlayerInboxResponse.domain:type_name -> player_inbox.PlayerInboxDomain
-	9,  // 8: player_inbox.FetchPlayerInboxResponse.fence:type_name -> player_inbox.PlayerInboxFenceVerdict
-	16, // 9: player_inbox.FetchPlayerInboxResponse.items:type_name -> player_inbox.PlayerInboxItem
-	8,  // 10: player_inbox.PlayerInboxDecisionReport.outcome:type_name -> player_inbox.PlayerInboxOutcome
-	2,  // 11: player_inbox.AckPlayerInboxRequest.domain:type_name -> player_inbox.PlayerInboxDomain
-	18, // 12: player_inbox.AckPlayerInboxRequest.decisions:type_name -> player_inbox.PlayerInboxDecisionReport
-	10, // 13: player_inbox.PlayerInboxAckItem.result:type_name -> player_inbox.PlayerInboxAckResult
-	4,  // 14: player_inbox.PlayerInboxAckItem.state:type_name -> player_inbox.PlayerInboxItemState
-	22, // 15: player_inbox.AckPlayerInboxResponse.error_message:type_name -> TipInfoMessage
-	2,  // 16: player_inbox.AckPlayerInboxResponse.domain:type_name -> player_inbox.PlayerInboxDomain
-	9,  // 17: player_inbox.AckPlayerInboxResponse.fence:type_name -> player_inbox.PlayerInboxFenceVerdict
-	20, // 18: player_inbox.AckPlayerInboxResponse.results:type_name -> player_inbox.PlayerInboxAckItem
-	23, // 19: player_inbox.OptionPlayerInboxDomain:extendee -> google.protobuf.EnumValueOptions
-	23, // 20: player_inbox.OptionPlayerInboxType:extendee -> google.protobuf.EnumValueOptions
-	11, // 21: player_inbox.OptionPlayerInboxDomain:type_name -> player_inbox.PlayerInboxDomainSpec
-	12, // 22: player_inbox.OptionPlayerInboxType:type_name -> player_inbox.PlayerInboxTypeSpec
-	15, // 23: player_inbox.PlayerInbox.FetchItems:input_type -> player_inbox.FetchPlayerInboxRequest
-	19, // 24: player_inbox.PlayerInbox.AckItems:input_type -> player_inbox.AckPlayerInboxRequest
-	17, // 25: player_inbox.PlayerInbox.FetchItems:output_type -> player_inbox.FetchPlayerInboxResponse
-	21, // 26: player_inbox.PlayerInbox.AckItems:output_type -> player_inbox.AckPlayerInboxResponse
-	25, // [25:27] is the sub-list for method output_type
-	23, // [23:25] is the sub-list for method input_type
-	21, // [21:23] is the sub-list for extension type_name
-	19, // [19:21] is the sub-list for extension extendee
-	0,  // [0:19] is the sub-list for field type_name
+	22, // 3: player_inbox.FetchPlayerInboxRequest.admission:type_name -> common.base.RoleAdmissionIdentity
+	23, // 4: player_inbox.FetchPlayerInboxRequest.auth:type_name -> common.base.ServiceCallAuth
+	3,  // 5: player_inbox.PlayerInboxItem.msg_type:type_name -> player_inbox.PlayerInboxMessageType
+	5,  // 6: player_inbox.PlayerInboxItem.directive:type_name -> player_inbox.PlayerInboxDirective
+	6,  // 7: player_inbox.PlayerInboxItem.void_reason:type_name -> player_inbox.PlayerInboxVoidReason
+	24, // 8: player_inbox.FetchPlayerInboxResponse.error_message:type_name -> TipInfoMessage
+	2,  // 9: player_inbox.FetchPlayerInboxResponse.domain:type_name -> player_inbox.PlayerInboxDomain
+	9,  // 10: player_inbox.FetchPlayerInboxResponse.fence:type_name -> player_inbox.PlayerInboxFenceVerdict
+	16, // 11: player_inbox.FetchPlayerInboxResponse.items:type_name -> player_inbox.PlayerInboxItem
+	8,  // 12: player_inbox.PlayerInboxDecisionReport.outcome:type_name -> player_inbox.PlayerInboxOutcome
+	2,  // 13: player_inbox.AckPlayerInboxRequest.domain:type_name -> player_inbox.PlayerInboxDomain
+	18, // 14: player_inbox.AckPlayerInboxRequest.decisions:type_name -> player_inbox.PlayerInboxDecisionReport
+	22, // 15: player_inbox.AckPlayerInboxRequest.admission:type_name -> common.base.RoleAdmissionIdentity
+	23, // 16: player_inbox.AckPlayerInboxRequest.auth:type_name -> common.base.ServiceCallAuth
+	10, // 17: player_inbox.PlayerInboxAckItem.result:type_name -> player_inbox.PlayerInboxAckResult
+	4,  // 18: player_inbox.PlayerInboxAckItem.state:type_name -> player_inbox.PlayerInboxItemState
+	24, // 19: player_inbox.AckPlayerInboxResponse.error_message:type_name -> TipInfoMessage
+	2,  // 20: player_inbox.AckPlayerInboxResponse.domain:type_name -> player_inbox.PlayerInboxDomain
+	9,  // 21: player_inbox.AckPlayerInboxResponse.fence:type_name -> player_inbox.PlayerInboxFenceVerdict
+	20, // 22: player_inbox.AckPlayerInboxResponse.results:type_name -> player_inbox.PlayerInboxAckItem
+	25, // 23: player_inbox.OptionPlayerInboxDomain:extendee -> google.protobuf.EnumValueOptions
+	25, // 24: player_inbox.OptionPlayerInboxType:extendee -> google.protobuf.EnumValueOptions
+	11, // 25: player_inbox.OptionPlayerInboxDomain:type_name -> player_inbox.PlayerInboxDomainSpec
+	12, // 26: player_inbox.OptionPlayerInboxType:type_name -> player_inbox.PlayerInboxTypeSpec
+	15, // 27: player_inbox.PlayerInbox.FetchItems:input_type -> player_inbox.FetchPlayerInboxRequest
+	19, // 28: player_inbox.PlayerInbox.AckItems:input_type -> player_inbox.AckPlayerInboxRequest
+	17, // 29: player_inbox.PlayerInbox.FetchItems:output_type -> player_inbox.FetchPlayerInboxResponse
+	21, // 30: player_inbox.PlayerInbox.AckItems:output_type -> player_inbox.AckPlayerInboxResponse
+	29, // [29:31] is the sub-list for method output_type
+	27, // [27:29] is the sub-list for method input_type
+	25, // [25:27] is the sub-list for extension type_name
+	23, // [23:25] is the sub-list for extension extendee
+	0,  // [0:23] is the sub-list for field type_name
 }
 
 func init() { file_proto_player_inbox_player_inbox_proto_init() }

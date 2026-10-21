@@ -37,7 +37,7 @@ struct RedisConnectOptions
 class RedisManager
 {
 public:
-	using HiredisPtr = std::unique_ptr<hiredis::Hiredis>;
+	using HiredisPtr = std::shared_ptr<hiredis::Hiredis>;
 	using ReconnectCallback = std::function<void()>;
 
 	RedisManager() = default;
@@ -59,6 +59,7 @@ public:
 	}
 
 	// 建立 zone Redis 连接并在断线后自动重连。必须在 loop 线程上调用;可重复调用(先拆掉已有连接)。
+	// Hiredis 工厂负责把 I/O 分发期间的最终释放排到 pending 阶段，回调内可重复 Connect 或 Shutdown。
 	// options 刻意不给默认值:调用方必须显式说明这条连接要不要认证。
 	//
 	// 认证契约(2026-10 起,docs/handoff/global-singletons-p0-findings-20261014.md P0-A,fail-closed):
@@ -93,23 +94,23 @@ public:
 	// - 检测时延:最后一次正常往返之后,最迟约 livenessTimeoutSec + livenessProbeIntervalSec(默认 20 秒)判定断线。
 	// - 摘下与释放不在定时器回调里做,而是 queueInLoop 到本轮的 pending functor 阶段:定时器回调与 socket 事件
 	//   同属一轮事件分发,在那里销毁一条本轮也有 I/O 的连接,Linux 是释放后使用、Windows Debug 撞 removeChannel 断言
-	//   (见下方「已知残余风险」)。排队期间这条连接若已自行断开、或已被 Connect / 移交替换,就什么也不做。
+	//   (见下方生命周期说明)。排队期间这条连接若已自行断开、或已被 Connect / 移交替换,就什么也不做。
 	void Connect(muduo::net::EventLoop *loop, const muduo::net::InetAddress &addr, RedisConnectOptions options);
 
 	// 显式取消重连与存活探测定时器,作废已排队的摘下任务,并释放 Hiredis Channel。必须在 EventLoop 析构前调用;
-	// 幂等,Node 正常停机与入口函数兜底可以重复执行。
+	// I/O 分发内调用后还须排空 pending，让延迟的最终析构完成。幂等,Node 正常停机与入口函数兜底可以重复执行。
 	void Shutdown();
 
 	// 每次有连接完成握手、移交给 GetZoneRedis() 之后(首次建连与每次重连)在同一调用栈里同步调用。
 	// 配了口令时此刻 AUTH 已经成功,回调里发的命令排在 AUTH 之后。
-	// 回调运行在被移交连接自己的 hiredis 回调栈内(空口令时是连接回调,有口令时是 AUTH 的命令回调,都已置
-	// REDIS_IN_CALLBACK):回调里不得同步调用 Connect() / Shutdown(),也不得释放或替换 GetZoneRedis() ——
-	// 那会在 Hiredis 自己的回调栈里销毁它:redisAsyncFree 被推迟,随后的 cleanup 拿已析构的对象回调(释放后使用)。
+	// 回调运行在被移交连接自己的 hiredis 回调栈内。Channel tie 保住整次分发，回调局部副本保住执行中的函数；
+	// 因此回调内同步 Connect / Shutdown 或释放连接时，旧连接在分发结束后的 pending 阶段才真正销毁。
 	void SetReconnectCallback(const ReconnectCallback &cb) { reconnectCb_ = cb; }
 
 private:
 	void ScheduleReconnect();
 	void CancelReconnectTimer();
+	void QueueReconnect(std::uint64_t generation);
 	void DoReconnect();
 	void StartHandshake();
 	void OnHandshakeConnected(hiredis::Hiredis *me, int status);
@@ -125,7 +126,7 @@ private:
 	void DropUnresponsive(std::uint64_t generation);
 	void ResetLivenessProbe();
 
-	// 存活探测定时器与排进 queueInLoop 的摘下任务用它判断本对象是否还活着、是否还处在同一个 Connect 周期。
+	// 重连、存活探测定时器及排进 queueInLoop 的任务用它判断本对象是否还活着、是否还处在同一个 Connect 周期。
 	// 本类不由 shared_ptr 持有(tlsRedis 是 thread_local 值),拿不到 weak_ptr<自己>,用这枚令牌代替(AGENTS.md §11.7):
 	// 闭包只捕获它的 weak_ptr 和 this,先 lock,失败即返回,成功才碰 this(单线程 loop,lock 与使用之间不会被析构)。
 	// Connect 换新令牌、Shutdown(析构经 Shutdown)清空令牌,此前排队的闭包一律失效。
@@ -133,26 +134,18 @@ private:
 	{
 	};
 
-	// 生命周期(AGENTS.md §11.7):两个 Hiredis 都由本对象独占持有,它们上面的连接 / 断线 / 命令回调(含存活探测的 PING)
-	// 都捕获裸 this,属于「与被绑对象同寿命」的例外。释放前先清连接与断线回调;释放时挂起的 AUTH / PING 回调以空应答
-	// 进来,OnAuthReply / OnLivenessPingReply 开头就返回,不碰任何成员。连接只在本类的成员函数里释放(含摘下任务),
-	// 从不移交给生命周期不受本类控制的闭包,所以这些回调触发时本对象一定还活着。
-	// 重连定时器(runEvery)同样捕获裸 this,但它归 EventLoop 的 TimerQueue 所有,不属于同寿命例外:只靠 Shutdown()
-	// (析构也会调它)取消,所以 Shutdown 必须在 EventLoop 析构前执行 —— tlsRedis 是 thread_local,析构可能晚于
-	// EventLoop,不能指望析构兜底。存活探测定时器与摘下任务另有 lifetimeToken_ 守护,Shutdown 照样取消定时器。
+	// 生命周期(AGENTS.md §11.7):管理器持有两个共享 Hiredis；Channel 只在一次事件分发内临时保住连接。
+	// 连接 / 断线 / AUTH / PING 回调均先锁 lifetimeToken_；Shutdown / Connect 作废令牌后，旧连接即使延迟
+	// 销毁也不能再访问管理器。释放前清连接与断线回调；在途业务命令仍由 hiredis 以空应答收尾。
+	// 重连与存活探测的定时器、排队任务都先锁 lifetimeToken_ 再访问 this；Shutdown 仍须在 EventLoop 析构前执行，
+	// 以取消定时器并释放 Hiredis Channel。tlsRedis 是 thread_local，不能指望其析构晚于 loop 时再兜底。
 	// 不变量:重连定时器只在 zoneRedis_ 不可用时运行,所以移交时被替换掉的只会是占位对象或已断开的旧连接
 	// (二者 context 都已为空,析构不触发任何回调)。存活探测摘下连接时先换上占位对象再 ScheduleReconnect,不破坏它。
 	//
-	// 已知残余风险(Linux 构建):DoReconnect 在定时器回调里同步销毁握手连接。Linux 的定时器走 timerfd,与 Hiredis 的
-	// socket Channel 同属一批 activeChannels_;截止定时器排在前面时,握手连接的 Channel 随后仍会在同一批里被 handleEvent,
-	// 而 Hiredis 的读写回调绑的是裸 this、没有 Channel::tie,结果是释放后使用(Debug 下先撞 EventLoop::removeChannel 的
-	// 断言)。触发需要握手连接的 I/O 事件(建连完成、AUTH 应答、服务端断开)恰与截止落在同一批。改动前「建连中被重连定时器
-	// 拆掉」就是同一类窗口,本次多了「AUTH 应答 / 被拒后断开恰在截止时刻」两种。Windows 先处理完 I/O 再跑定时器,
-	// 没有释放后使用,只剩 Debug 下同一断言的误报。根治在 Hiredis 适配层(shared_ptr 持有 + Channel::tie,连改动前的
-	// 建连窗口一并消除);不要在这里用裸 this 的 queueInLoop 推迟释放,那违反 §11.7。
-	// 存活探测摘下的是对业务可见、本轮可能正有 I/O 的连接,窗口远比握手连接宽,所以它不在定时器回调里释放,而是经
-	// lifetimeToken_ 守护的 queueInLoop 推到本轮 pending functor 阶段(此时 Channel 事件已全部分发完、eventHandling_ 为假),
-	// 不受上述窗口影响。
+	// Linux 的 timerfd 与 Hiredis socket 可能同批就绪；定时器内直接重建会销毁尚待分发的 Channel。
+	// 重连与存活摘下均经 lifetimeToken_ 守护的 queueInLoop 在 pending 阶段执行，此时本轮 I/O 已全部分发完。
+	// 重连任务还复核 reconnectGeneration_：同批 AUTH 成功、建连后重新安排 AUTH 截止或显式取消都会使旧任务失效。
+	// Hiredis 自己的事件回调由 tie 保活；最后一个共享引用若在 I/O 分发中释放，工厂删除器把整个对象延迟销毁。
 	HiredisPtr zoneRedis_;      // 对业务可见:已完成握手的连接、已断开的旧连接或占位对象
 	HiredisPtr handshakeRedis_; // 正在建连或等 AUTH 应答的连接;没有握手在进行时为空
 	// 不拥有 EventLoop。用 reference_wrapper 而非裸 EventLoop*,满足 no-raw-pointer-member 检查
@@ -162,6 +155,8 @@ private:
 	RedisConnectOptions options_;
 	muduo::net::TimerId reconnectTimerId_;
 	bool reconnectTimerActive_ = false;
+	// 只在 loop 线程访问；每次安排与取消都换代，使已投递的旧重建任务失效。
+	std::uint64_t reconnectGeneration_ = 0;
 	// AUTH 已在当前握手连接上发出、还没有任何非空应答。SendAuth 成功时置位;收到非空应答、DoReconnect 报超时、
 	// ResetConnections 时清零。DoReconnect 看到它仍为真,就说明截止前没有应答,要按 AUTH 超时打 ERROR。
 	bool authAwaitingReply_ = false;

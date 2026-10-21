@@ -1,5 +1,11 @@
 Name: matchservice.rpc
 Mode: dev
+GlobalLoginSessions: false
+LoginRedis:
+  Host: ""
+  DB: 0
+  PasswordEnv: MMORPG_LOGIN_REDIS_PASSWORD
+  PoolSize: 8
 # 本地兼容模式显式关闭；生产必须启用，所有副本连接同一TiDB库。
 # 密钥只从环境读取，MATCH_PROBE_SECRET须与各机房battle一致且至少32字节。
 GlobalMatch:
@@ -8,6 +14,7 @@ GlobalMatch:
   Host: 127.0.0.1:4000
   User: root
   Database: mmorpg_match
+  AccountRoleSchema: testdb
   PasswordEnv: MATCH_MYSQL_PASSWORD
   ProbeSecretEnv: MATCH_PROBE_SECRET
   CrossRegionWaitSeconds: 30

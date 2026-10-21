@@ -76,6 +76,7 @@ var guildSchemaNamePattern = regexp.MustCompile(`^[A-Za-z0-9_]{1,64}$`)
 // runConfig is what each checker needs. We pass it by value because
 // every field is a handle / int — no ownership concerns.
 type runConfig struct {
+	accountDB *sql.DB // P0-b全局目录；仅复用显式-route-db-dsn，不读zone账号表。
 	db        *sql.DB
 	mappingDB *redis.Client
 	// friendDB 是好友独占库 mmorpg_friend 的第二个连接(port-decisions D-14,2026-09-18)。
@@ -191,6 +192,7 @@ func main() {
 
 	// 归属的读法。给了 -route-db-dsn 却连不上就 Fatal:不能静默退回 Redis 口径,那会把不权威的结论当成库的结论。
 	var routes routeSource = redisRouteSource{r: goRedisMapping{rdb: rdb}}
+	var accountDB *sql.DB
 	if *routeDSN != "" {
 		// ParseDSN 的错误里可能带 DSN 片段(含口令),所以不打印原错误。
 		parsed, err := mysqldriver.ParseDSN(*routeDSN)
@@ -209,6 +211,7 @@ func main() {
 			log.Fatalf("route db ping: %v", err)
 		}
 		routes = dbRouteSource{t: sqlRouteTable{db: routeDB}, dbName: parsed.DBName}
+		accountDB = routeDB
 	}
 	log.Println(routes.Describe())
 
@@ -250,7 +253,7 @@ func main() {
 	}
 	log.Printf("Live zones: %v", sortedKeys(knownZones))
 
-	cfg := runConfig{db: db, mappingDB: rdb, friendDB: friendDB, routes: routes, mailDB: mailDB, knownZones: knownZones, guildSchema: *guildSchema}
+	cfg := runConfig{accountDB: accountDB, db: db, mappingDB: rdb, friendDB: friendDB, routes: routes, mailDB: mailDB, knownZones: knownZones, guildSchema: *guildSchema}
 
 	// ── run checks ───────────────────────────────────────────────
 	//
@@ -259,7 +262,7 @@ func main() {
 	// `mail` table — the missing-table error path silently returned
 	// "info: not present" and operators read the run as clean. Removed.
 	// The five checks below all exercise schema that actually exists
-	// (`guild`, `guild_rank:zone:*` Redis keys, `user_accounts`, `friend`,
+	// (`guild`, `guild_rank:zone:*` Redis keys, 全局 `account_role`, `friend`,
 	// and since 2026-10-16 go/mail's `mail_system_state` / `mail_system`).
 	checks := []func(context.Context, runConfig) CheckResult{
 		checkGuildZoneFK,
@@ -417,53 +420,38 @@ func checkGuildRankZoneOrphans(ctx context.Context, cfg runConfig) CheckResult {
 	return r
 }
 
-// checkPlayerHomeZoneVsAccount — every player_id in mapping Redis should
-// also exist in user_accounts.simple_players. Pre-existing inconsistency
-// (player created but never linked to an account, or account deleted
-// without RemovePlayersFromAccounts running) shows up here.
-//
-// Caveat: this check is bounded to player_ids we can find in mapping;
-// if mapping itself dropped an entry, we won't catch it. That's a
-// mapping-layer issue and out of scope for this tool.
+// 同一全局SQL语句核有home_zone的路由玩家是否有有效账号目录；不读取Redis账号或按账号数猜人数。
+// 没有路由行的目录不在此检查范围；缺少显式全局句柄时报告未检查。
 func checkPlayerHomeZoneVsAccount(ctx context.Context, cfg runConfig) CheckResult {
 	r := CheckResult{Name: "player→account linkage"}
-	// We don't read the simple_players blob (it's a protobuf MEDIUMBLOB);
-	// instead we rely on the count-based heuristic: |mapping players|
-	// should be ≤ |account.simple_players unique IDs|. If mapping is
-	// significantly larger, there are accounts that don't list their
-	// own player_ids — a known scenario after admin tooling crashes.
-	//
-	// 玩家数按 cfg.routes 数:db 口径是 player_route 里 home_zone 非 NULL 的行,redis 口径是 player:zone:* 键数。
-	// 读失败判 fail(进程退出 1):2026-10-20 之前报 warn,其余检查都干净时打印 "all checks pass." 并退出 0,
-	// 把「没数成」伪装成通过,与 CheckResult 的 fail 纪律、route_source.go「读失败一律报错」不符。
-	mappingCount, err := cfg.routes.CountPlayers(ctx)
-	if err != nil {
+	if _, err := cfg.routes.CountPlayers(ctx); err != nil {
 		r.Severity = "fail"
 		r.SampleNotes = fmt.Sprintf("CHECK FAILED (player count unknown): %v", err)
 		return r
 	}
-	r.TotalCount = mappingCount
-
-	var accountRowCount int64
-	if err := cfg.db.QueryRowContext(ctx, "SELECT COUNT(*) FROM user_accounts").Scan(&accountRowCount); err != nil {
-		r.Severity = "info"
-		r.SampleNotes = "user_accounts not present (login service not deployed?)"
+	if cfg.accountDB == nil {
+		r.Severity = "warn"
+		r.SampleNotes = "NOT CHECKED: -route-db-dsn must point at the global player_route/account_role database"
 		return r
 	}
-
-	// We don't have a clean per-row count; a sane heuristic is "if mapping
-	// has 5x more players than there are accounts, flag it." That covers
-	// catastrophic divergence but not subtle missing entries.
-	if mappingCount > accountRowCount*5 {
-		r.Severity = "warn"
-		r.BadCount = mappingCount - accountRowCount*5
-		r.SampleNotes = fmt.Sprintf("mapping has %d players, only %d account rows — investigate", mappingCount, accountRowCount)
+	var bad sql.NullInt64
+	if err := cfg.accountDB.QueryRowContext(ctx, accountLinkageSQL).Scan(&r.TotalCount, &bad); err != nil {
+		r.Severity = "fail"
+		r.SampleNotes = fmt.Sprintf("CHECK FAILED: global SQL account_role linkage unreadable: %v", err)
+		return r
+	}
+	r.BadCount = bad.Int64
+	if r.BadCount > 0 {
+		r.Severity = "block"
+		r.SampleNotes = "路由玩家缺少有效SQL账号目录（缺行或已删除墓碑）；不能按Redis反向键恢复"
 	} else {
 		r.Severity = "info"
-		r.SampleNotes = fmt.Sprintf("mapping=%d, accounts=%d (within 5x heuristic)", mappingCount, accountRowCount)
+		r.SampleNotes = "全局SQL路由玩家均有有效账号目录；不覆盖无路由目录或跨语句快照"
 	}
 	return r
 }
+
+const accountLinkageSQL = "SELECT COUNT(*),SUM(CASE WHEN a.player_id IS NULL OR LENGTH(a.account)=0 THEN 1 ELSE 0 END) FROM player_route r LEFT JOIN account_role a ON a.player_id=r.player_id WHERE r.home_zone IS NOT NULL"
 
 // checkFriendOrphans — friend.friend_player_id should be in mapping.
 // Orphan friends are visible to players as "friend not found" errors.

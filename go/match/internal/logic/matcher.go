@@ -132,6 +132,8 @@ func warnStarvedAnchor(queueKey string, anchor uint64, waitSeconds int64, tol fl
 func StartMatcherLoop(ctx context.Context, svcCtx *svc.ServiceContext) {
 	if svcCtx.Authority != nil {
 		svcCtx.GlobalGatherSlots = make(chan struct{}, 16)
+		readyCursor := &globalReadyCursor{}
+		safego.Loop(ctx, "match.global.ready.scan", 500*time.Millisecond, func(ctx context.Context) { readyCursor.round(ctx, svcCtx) })
 		safego.Loop(ctx, "match.global", 500*time.Millisecond, func(ctx context.Context) { runGlobalRound(ctx, svcCtx) })
 		return
 	}

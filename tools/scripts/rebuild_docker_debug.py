@@ -50,18 +50,65 @@ def compose_config() -> dict:
     return json.loads(execute(COMPOSE + ["config", "--format", "json"]))
 
 
+def current_sources(language: str, service: str) -> dict[str, str]:
+    if language == "cpp":
+        from build_docker_cpp_debug import inputs, validate_sdk
+        validate_sdk()
+        return {name: digest(path) for name, path in inputs().items()}
+    if language == "go":
+        from build_docker_go_debug import BuildFailure, CATALOGUE, snapshot
+        if service not in CATALOGUE:
+            raise RuntimeError("Go 服务与清单不匹配")
+        try:
+            return snapshot(CATALOGUE[service][0])
+        except BuildFailure as error:
+            raise RuntimeError("Go 输入检查未通过：" + str(error)) from error
+    if language == "java" and service == "gateway":
+        from build_docker_java_debug import source_files
+        return source_files()
+    raise RuntimeError("调试清单语言与服务不匹配")
+
+
+def runtime_sources(language: str, files: dict[str, str]) -> dict[str, str]:
+    # 普通 go build 不编译 _test.go；其它任务修改单测不能使运行服务的源码检查误报。
+    return {name: value for name, value in files.items()
+            if not (language == "go" and name.endswith("_test.go"))}
+
+
+def check_config_inputs(services: list[str]) -> None:
+    from build_docker_go_debug import CATALOGUE
+    from prepare_docker_debug import GO_CONFIGS
+    recorded = json.loads((STATE / "source-manifest.json").read_text("utf-8-sig"))
+    names = set()
+    for service in services:
+        if service in CPP:
+            names.update(("bin/etc/base_deploy_config.yaml", "bin/etc/game_config.yaml"))
+        elif service in GO:
+            module = CATALOGUE[service][0]
+            names.add(f"go/{module}/etc/{GO_CONFIGS[module]}")
+        elif service == "gateway":
+            names.add("java/gateway_node/src/main/resources/application.yaml")
+    for name in names:
+        if recorded.get(name) != digest(REPO / name):
+            raise RuntimeError("运行配置源已变化：" + name
+                + "；请先用原端口参数运行 prepare_docker_debug.py，再重编更新对应服务")
+
+
 def check(services: list[str], output: Path | None = None) -> bool:
     success = True
     receipts = []
+    # 三个 C++ 节点使用同一批源码；一次检查内共享本次扫描，避免反复遍历 SDK。
+    source_scans = {}
     for service in services:
         record = {"service": service, "success": False, "differences": []}
         try:
+            check_config_inputs([service])
             ids = execute(COMPOSE + ["ps", "--all", "-q", service]).splitlines()
             if len(ids) != 1:
                 raise RuntimeError("服务容器不存在或数量不为一")
             container = ids[0].strip()
             identity = json.loads(execute(DOCKER + ["inspect", "--format",
-                '{{json .}}', container]))
+                '{"Image":{{json .Image}},"State":{"Running":{{json .State.Running}}}}', container]))
             if not identity["State"]["Running"]:
                 raise RuntimeError("服务容器未运行")
             record["imageId"] = identity["Image"]
@@ -69,23 +116,32 @@ def check(services: list[str], output: Path | None = None) -> bool:
             manifest = json.loads(raw)
             if manifest.get("schema") != 1 or not isinstance(manifest.get("files"), dict) or not manifest["files"]:
                 raise RuntimeError("镜像源码清单缺失或不完整，请先重新构建该服务")
-            for name, expected in manifest["files"].items():
+            expected_files = runtime_sources(manifest.get("language"), manifest["files"])
+            scan_key = (manifest.get("language"), "nodes" if manifest.get("language") == "cpp" else service)
+            if scan_key not in source_scans:
+                source_scans[scan_key] = runtime_sources(manifest.get("language"),
+                    current_sources(manifest.get("language"), service))
+            current = source_scans[scan_key]
+            for name, expected in expected_files.items():
                 relative = PurePosixPath(name)
                 if relative.is_absolute() or ".." in relative.parts or "\\" in name:
                     raise RuntimeError("镜像源码清单路径非法")
                 path = REPO.joinpath(*relative.parts)
                 if not path.resolve().is_relative_to(REPO):
                     raise RuntimeError("本地源码路径越界")
-                if not path.is_file() or digest(path) != expected:
+                if current.get(name) != expected:
                     record["differences"].append(name)
+            for name in sorted(set(current) - set(expected_files)):
+                record["differences"].append(name + "（新增）")
             artifacts = manifest.get("artifacts", {})
-            if not artifacts or any(not p.startswith("/app/") and p != "/usr/local/bin/dlv" for p in artifacts):
+            if not artifacts or any((not p.startswith(("/app/", "/generated/tables/")) and p != "/usr/local/bin/dlv")
+                or ".." in PurePosixPath(p).parts for p in artifacts):
                 raise RuntimeError("镜像产物摘要缺失或路径非法")
             hashes = execute(DOCKER + ["exec", container, "sha256sum", "--", *artifacts]).splitlines()
             actual = {line[66:]: line[:64] for line in hashes if len(line) > 66}
             if actual != artifacts:
                 raise RuntimeError("容器二进制或调试符号已偏离构建清单")
-            record["sourceCount"] = len(manifest["files"])
+            record["sourceCount"] = len(expected_files)
             record["success"] = not record["differences"]
             print(f"{service}：" + (f"源码与产物一致（{record['sourceCount']} 文件）" if record["success"]
                 else f"{len(record['differences'])} 份源码已变化，须重新构建"))
@@ -118,9 +174,14 @@ def update_images(images: dict) -> None:
         replacements[key] = image["image"]
     for key, image in replacements.items():
         pattern = re.compile(r"^" + re.escape(key) + r"=.*$", re.MULTILINE)
-        if len(pattern.findall(text)) != 1:
-            raise RuntimeError("配置镜像键缺失或重复，未更新配置：" + key)
-        text = pattern.sub(key + "=" + image, text)
+        count = len(pattern.findall(text))
+        if count > 1:
+            raise RuntimeError("配置镜像键重复，未更新配置：" + key)
+        if count:
+            text = pattern.sub(key + "=" + image, text)
+        else:
+            # 初始配置可沿用 Compose 镜像默认值；首次重编后才写显式的新镜像引用。
+            text = text.rstrip("\r\n") + "\n" + key + "=" + image + "\n"
     if path.read_bytes() != original:
         raise RuntimeError("开发配置被其他任务更新，未覆盖配置")
     temporary = path.with_name(".env.debug-update.tmp")
@@ -143,8 +204,11 @@ def main() -> int:
         parser.error("服务名不属于选择的语言，或包含重复项")
     if args.language == "cpp" and set(services) != set(CPP):
         parser.error("C++ 共享库统一重编后须一起更新 gate,scene,battle")
+    if args.language == "go" and args.jobs != 1:
+        parser.error("Go 调试构建固定串行 --jobs 1")
     if args.language == "check":
         return 0 if check(services) else 1
+    check_config_inputs(services)
     stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S.%fZ")
     root = REPO / "build/verification" / ("docker-rebuild-" + args.language + "-" + stamp)
     root.mkdir(parents=True, exist_ok=False)

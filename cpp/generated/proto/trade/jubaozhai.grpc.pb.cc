@@ -47,6 +47,17 @@ static const char* ClientPlayerJubaozhai_method_names[] = {
   "/trade.ClientPlayerJubaozhai/CancelAuctionLot",
   "/trade.ClientPlayerJubaozhai/BrowseCommerceOffers",
   "/trade.ClientPlayerJubaozhai/ListTradeMarkets",
+  "/trade.ClientPlayerJubaozhai/CreateRmbConsignment",
+  "/trade.ClientPlayerJubaozhai/GetRmbConsignment",
+  "/trade.ClientPlayerJubaozhai/ListRmbConsignments",
+  "/trade.ClientPlayerJubaozhai/BuyRmbConsignment",
+  "/trade.ClientPlayerJubaozhai/CancelRmbConsignment",
+  "/trade.ClientPlayerJubaozhai/GetRmbOrder",
+  "/trade.ClientPlayerJubaozhai/ListRmbOrders",
+  "/trade.ClientPlayerJubaozhai/CancelRmbOrder",
+  "/trade.ClientPlayerJubaozhai/ListSellerIncomes",
+  "/trade.ClientPlayerJubaozhai/CreateWithdrawal",
+  "/trade.ClientPlayerJubaozhai/GetWithdrawal",
 };
 
 std::unique_ptr< ClientPlayerJubaozhai::Stub> ClientPlayerJubaozhai::NewStub(const std::shared_ptr< ::grpc::ChannelInterface>& channel, const ::grpc::StubOptions& options) {
@@ -80,6 +91,17 @@ ClientPlayerJubaozhai::Stub::Stub(const std::shared_ptr< ::grpc::ChannelInterfac
   , rpcmethod_CancelAuctionLot_(ClientPlayerJubaozhai_method_names[21], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
   , rpcmethod_BrowseCommerceOffers_(ClientPlayerJubaozhai_method_names[22], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
   , rpcmethod_ListTradeMarkets_(ClientPlayerJubaozhai_method_names[23], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
+  , rpcmethod_CreateRmbConsignment_(ClientPlayerJubaozhai_method_names[24], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
+  , rpcmethod_GetRmbConsignment_(ClientPlayerJubaozhai_method_names[25], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
+  , rpcmethod_ListRmbConsignments_(ClientPlayerJubaozhai_method_names[26], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
+  , rpcmethod_BuyRmbConsignment_(ClientPlayerJubaozhai_method_names[27], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
+  , rpcmethod_CancelRmbConsignment_(ClientPlayerJubaozhai_method_names[28], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
+  , rpcmethod_GetRmbOrder_(ClientPlayerJubaozhai_method_names[29], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
+  , rpcmethod_ListRmbOrders_(ClientPlayerJubaozhai_method_names[30], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
+  , rpcmethod_CancelRmbOrder_(ClientPlayerJubaozhai_method_names[31], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
+  , rpcmethod_ListSellerIncomes_(ClientPlayerJubaozhai_method_names[32], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
+  , rpcmethod_CreateWithdrawal_(ClientPlayerJubaozhai_method_names[33], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
+  , rpcmethod_GetWithdrawal_(ClientPlayerJubaozhai_method_names[34], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
   {}
 
 ::grpc::Status ClientPlayerJubaozhai::Stub::BrowseListings(::grpc::ClientContext* context, const ::trade::BrowseListingsRequest& request, ::trade::BrowseListingsResponse* response) {
@@ -634,6 +656,259 @@ void ClientPlayerJubaozhai::Stub::async::ListTradeMarkets(::grpc::ClientContext*
   return result;
 }
 
+::grpc::Status ClientPlayerJubaozhai::Stub::CreateRmbConsignment(::grpc::ClientContext* context, const ::trade::CreateRmbConsignmentRequest& request, ::trade::RmbConsignmentResponse* response) {
+  return ::grpc::internal::BlockingUnaryCall< ::trade::CreateRmbConsignmentRequest, ::trade::RmbConsignmentResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), rpcmethod_CreateRmbConsignment_, context, request, response);
+}
+
+void ClientPlayerJubaozhai::Stub::async::CreateRmbConsignment(::grpc::ClientContext* context, const ::trade::CreateRmbConsignmentRequest* request, ::trade::RmbConsignmentResponse* response, std::function<void(::grpc::Status)> f) {
+  ::grpc::internal::CallbackUnaryCall< ::trade::CreateRmbConsignmentRequest, ::trade::RmbConsignmentResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_CreateRmbConsignment_, context, request, response, std::move(f));
+}
+
+void ClientPlayerJubaozhai::Stub::async::CreateRmbConsignment(::grpc::ClientContext* context, const ::trade::CreateRmbConsignmentRequest* request, ::trade::RmbConsignmentResponse* response, ::grpc::ClientUnaryReactor* reactor) {
+  ::grpc::internal::ClientCallbackUnaryFactory::Create< ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_CreateRmbConsignment_, context, request, response, reactor);
+}
+
+::grpc::ClientAsyncResponseReader< ::trade::RmbConsignmentResponse>* ClientPlayerJubaozhai::Stub::PrepareAsyncCreateRmbConsignmentRaw(::grpc::ClientContext* context, const ::trade::CreateRmbConsignmentRequest& request, ::grpc::CompletionQueue* cq) {
+  return ::grpc::internal::ClientAsyncResponseReaderHelper::Create< ::trade::RmbConsignmentResponse, ::trade::CreateRmbConsignmentRequest, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), cq, rpcmethod_CreateRmbConsignment_, context, request);
+}
+
+::grpc::ClientAsyncResponseReader< ::trade::RmbConsignmentResponse>* ClientPlayerJubaozhai::Stub::AsyncCreateRmbConsignmentRaw(::grpc::ClientContext* context, const ::trade::CreateRmbConsignmentRequest& request, ::grpc::CompletionQueue* cq) {
+  auto* result =
+    this->PrepareAsyncCreateRmbConsignmentRaw(context, request, cq);
+  result->StartCall();
+  return result;
+}
+
+::grpc::Status ClientPlayerJubaozhai::Stub::GetRmbConsignment(::grpc::ClientContext* context, const ::trade::GetRmbConsignmentRequest& request, ::trade::RmbConsignmentResponse* response) {
+  return ::grpc::internal::BlockingUnaryCall< ::trade::GetRmbConsignmentRequest, ::trade::RmbConsignmentResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), rpcmethod_GetRmbConsignment_, context, request, response);
+}
+
+void ClientPlayerJubaozhai::Stub::async::GetRmbConsignment(::grpc::ClientContext* context, const ::trade::GetRmbConsignmentRequest* request, ::trade::RmbConsignmentResponse* response, std::function<void(::grpc::Status)> f) {
+  ::grpc::internal::CallbackUnaryCall< ::trade::GetRmbConsignmentRequest, ::trade::RmbConsignmentResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_GetRmbConsignment_, context, request, response, std::move(f));
+}
+
+void ClientPlayerJubaozhai::Stub::async::GetRmbConsignment(::grpc::ClientContext* context, const ::trade::GetRmbConsignmentRequest* request, ::trade::RmbConsignmentResponse* response, ::grpc::ClientUnaryReactor* reactor) {
+  ::grpc::internal::ClientCallbackUnaryFactory::Create< ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_GetRmbConsignment_, context, request, response, reactor);
+}
+
+::grpc::ClientAsyncResponseReader< ::trade::RmbConsignmentResponse>* ClientPlayerJubaozhai::Stub::PrepareAsyncGetRmbConsignmentRaw(::grpc::ClientContext* context, const ::trade::GetRmbConsignmentRequest& request, ::grpc::CompletionQueue* cq) {
+  return ::grpc::internal::ClientAsyncResponseReaderHelper::Create< ::trade::RmbConsignmentResponse, ::trade::GetRmbConsignmentRequest, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), cq, rpcmethod_GetRmbConsignment_, context, request);
+}
+
+::grpc::ClientAsyncResponseReader< ::trade::RmbConsignmentResponse>* ClientPlayerJubaozhai::Stub::AsyncGetRmbConsignmentRaw(::grpc::ClientContext* context, const ::trade::GetRmbConsignmentRequest& request, ::grpc::CompletionQueue* cq) {
+  auto* result =
+    this->PrepareAsyncGetRmbConsignmentRaw(context, request, cq);
+  result->StartCall();
+  return result;
+}
+
+::grpc::Status ClientPlayerJubaozhai::Stub::ListRmbConsignments(::grpc::ClientContext* context, const ::trade::ListRmbConsignmentsRequest& request, ::trade::ListRmbConsignmentsResponse* response) {
+  return ::grpc::internal::BlockingUnaryCall< ::trade::ListRmbConsignmentsRequest, ::trade::ListRmbConsignmentsResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), rpcmethod_ListRmbConsignments_, context, request, response);
+}
+
+void ClientPlayerJubaozhai::Stub::async::ListRmbConsignments(::grpc::ClientContext* context, const ::trade::ListRmbConsignmentsRequest* request, ::trade::ListRmbConsignmentsResponse* response, std::function<void(::grpc::Status)> f) {
+  ::grpc::internal::CallbackUnaryCall< ::trade::ListRmbConsignmentsRequest, ::trade::ListRmbConsignmentsResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_ListRmbConsignments_, context, request, response, std::move(f));
+}
+
+void ClientPlayerJubaozhai::Stub::async::ListRmbConsignments(::grpc::ClientContext* context, const ::trade::ListRmbConsignmentsRequest* request, ::trade::ListRmbConsignmentsResponse* response, ::grpc::ClientUnaryReactor* reactor) {
+  ::grpc::internal::ClientCallbackUnaryFactory::Create< ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_ListRmbConsignments_, context, request, response, reactor);
+}
+
+::grpc::ClientAsyncResponseReader< ::trade::ListRmbConsignmentsResponse>* ClientPlayerJubaozhai::Stub::PrepareAsyncListRmbConsignmentsRaw(::grpc::ClientContext* context, const ::trade::ListRmbConsignmentsRequest& request, ::grpc::CompletionQueue* cq) {
+  return ::grpc::internal::ClientAsyncResponseReaderHelper::Create< ::trade::ListRmbConsignmentsResponse, ::trade::ListRmbConsignmentsRequest, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), cq, rpcmethod_ListRmbConsignments_, context, request);
+}
+
+::grpc::ClientAsyncResponseReader< ::trade::ListRmbConsignmentsResponse>* ClientPlayerJubaozhai::Stub::AsyncListRmbConsignmentsRaw(::grpc::ClientContext* context, const ::trade::ListRmbConsignmentsRequest& request, ::grpc::CompletionQueue* cq) {
+  auto* result =
+    this->PrepareAsyncListRmbConsignmentsRaw(context, request, cq);
+  result->StartCall();
+  return result;
+}
+
+::grpc::Status ClientPlayerJubaozhai::Stub::BuyRmbConsignment(::grpc::ClientContext* context, const ::trade::BuyRmbConsignmentRequest& request, ::trade::CommerceOrderResponse* response) {
+  return ::grpc::internal::BlockingUnaryCall< ::trade::BuyRmbConsignmentRequest, ::trade::CommerceOrderResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), rpcmethod_BuyRmbConsignment_, context, request, response);
+}
+
+void ClientPlayerJubaozhai::Stub::async::BuyRmbConsignment(::grpc::ClientContext* context, const ::trade::BuyRmbConsignmentRequest* request, ::trade::CommerceOrderResponse* response, std::function<void(::grpc::Status)> f) {
+  ::grpc::internal::CallbackUnaryCall< ::trade::BuyRmbConsignmentRequest, ::trade::CommerceOrderResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_BuyRmbConsignment_, context, request, response, std::move(f));
+}
+
+void ClientPlayerJubaozhai::Stub::async::BuyRmbConsignment(::grpc::ClientContext* context, const ::trade::BuyRmbConsignmentRequest* request, ::trade::CommerceOrderResponse* response, ::grpc::ClientUnaryReactor* reactor) {
+  ::grpc::internal::ClientCallbackUnaryFactory::Create< ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_BuyRmbConsignment_, context, request, response, reactor);
+}
+
+::grpc::ClientAsyncResponseReader< ::trade::CommerceOrderResponse>* ClientPlayerJubaozhai::Stub::PrepareAsyncBuyRmbConsignmentRaw(::grpc::ClientContext* context, const ::trade::BuyRmbConsignmentRequest& request, ::grpc::CompletionQueue* cq) {
+  return ::grpc::internal::ClientAsyncResponseReaderHelper::Create< ::trade::CommerceOrderResponse, ::trade::BuyRmbConsignmentRequest, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), cq, rpcmethod_BuyRmbConsignment_, context, request);
+}
+
+::grpc::ClientAsyncResponseReader< ::trade::CommerceOrderResponse>* ClientPlayerJubaozhai::Stub::AsyncBuyRmbConsignmentRaw(::grpc::ClientContext* context, const ::trade::BuyRmbConsignmentRequest& request, ::grpc::CompletionQueue* cq) {
+  auto* result =
+    this->PrepareAsyncBuyRmbConsignmentRaw(context, request, cq);
+  result->StartCall();
+  return result;
+}
+
+::grpc::Status ClientPlayerJubaozhai::Stub::CancelRmbConsignment(::grpc::ClientContext* context, const ::trade::CancelRmbConsignmentRequest& request, ::trade::RmbConsignmentResponse* response) {
+  return ::grpc::internal::BlockingUnaryCall< ::trade::CancelRmbConsignmentRequest, ::trade::RmbConsignmentResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), rpcmethod_CancelRmbConsignment_, context, request, response);
+}
+
+void ClientPlayerJubaozhai::Stub::async::CancelRmbConsignment(::grpc::ClientContext* context, const ::trade::CancelRmbConsignmentRequest* request, ::trade::RmbConsignmentResponse* response, std::function<void(::grpc::Status)> f) {
+  ::grpc::internal::CallbackUnaryCall< ::trade::CancelRmbConsignmentRequest, ::trade::RmbConsignmentResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_CancelRmbConsignment_, context, request, response, std::move(f));
+}
+
+void ClientPlayerJubaozhai::Stub::async::CancelRmbConsignment(::grpc::ClientContext* context, const ::trade::CancelRmbConsignmentRequest* request, ::trade::RmbConsignmentResponse* response, ::grpc::ClientUnaryReactor* reactor) {
+  ::grpc::internal::ClientCallbackUnaryFactory::Create< ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_CancelRmbConsignment_, context, request, response, reactor);
+}
+
+::grpc::ClientAsyncResponseReader< ::trade::RmbConsignmentResponse>* ClientPlayerJubaozhai::Stub::PrepareAsyncCancelRmbConsignmentRaw(::grpc::ClientContext* context, const ::trade::CancelRmbConsignmentRequest& request, ::grpc::CompletionQueue* cq) {
+  return ::grpc::internal::ClientAsyncResponseReaderHelper::Create< ::trade::RmbConsignmentResponse, ::trade::CancelRmbConsignmentRequest, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), cq, rpcmethod_CancelRmbConsignment_, context, request);
+}
+
+::grpc::ClientAsyncResponseReader< ::trade::RmbConsignmentResponse>* ClientPlayerJubaozhai::Stub::AsyncCancelRmbConsignmentRaw(::grpc::ClientContext* context, const ::trade::CancelRmbConsignmentRequest& request, ::grpc::CompletionQueue* cq) {
+  auto* result =
+    this->PrepareAsyncCancelRmbConsignmentRaw(context, request, cq);
+  result->StartCall();
+  return result;
+}
+
+::grpc::Status ClientPlayerJubaozhai::Stub::GetRmbOrder(::grpc::ClientContext* context, const ::trade::GetCommerceOrderRequest& request, ::trade::CommerceOrderResponse* response) {
+  return ::grpc::internal::BlockingUnaryCall< ::trade::GetCommerceOrderRequest, ::trade::CommerceOrderResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), rpcmethod_GetRmbOrder_, context, request, response);
+}
+
+void ClientPlayerJubaozhai::Stub::async::GetRmbOrder(::grpc::ClientContext* context, const ::trade::GetCommerceOrderRequest* request, ::trade::CommerceOrderResponse* response, std::function<void(::grpc::Status)> f) {
+  ::grpc::internal::CallbackUnaryCall< ::trade::GetCommerceOrderRequest, ::trade::CommerceOrderResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_GetRmbOrder_, context, request, response, std::move(f));
+}
+
+void ClientPlayerJubaozhai::Stub::async::GetRmbOrder(::grpc::ClientContext* context, const ::trade::GetCommerceOrderRequest* request, ::trade::CommerceOrderResponse* response, ::grpc::ClientUnaryReactor* reactor) {
+  ::grpc::internal::ClientCallbackUnaryFactory::Create< ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_GetRmbOrder_, context, request, response, reactor);
+}
+
+::grpc::ClientAsyncResponseReader< ::trade::CommerceOrderResponse>* ClientPlayerJubaozhai::Stub::PrepareAsyncGetRmbOrderRaw(::grpc::ClientContext* context, const ::trade::GetCommerceOrderRequest& request, ::grpc::CompletionQueue* cq) {
+  return ::grpc::internal::ClientAsyncResponseReaderHelper::Create< ::trade::CommerceOrderResponse, ::trade::GetCommerceOrderRequest, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), cq, rpcmethod_GetRmbOrder_, context, request);
+}
+
+::grpc::ClientAsyncResponseReader< ::trade::CommerceOrderResponse>* ClientPlayerJubaozhai::Stub::AsyncGetRmbOrderRaw(::grpc::ClientContext* context, const ::trade::GetCommerceOrderRequest& request, ::grpc::CompletionQueue* cq) {
+  auto* result =
+    this->PrepareAsyncGetRmbOrderRaw(context, request, cq);
+  result->StartCall();
+  return result;
+}
+
+::grpc::Status ClientPlayerJubaozhai::Stub::ListRmbOrders(::grpc::ClientContext* context, const ::trade::ListCommerceOrdersRequest& request, ::trade::ListCommerceOrdersResponse* response) {
+  return ::grpc::internal::BlockingUnaryCall< ::trade::ListCommerceOrdersRequest, ::trade::ListCommerceOrdersResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), rpcmethod_ListRmbOrders_, context, request, response);
+}
+
+void ClientPlayerJubaozhai::Stub::async::ListRmbOrders(::grpc::ClientContext* context, const ::trade::ListCommerceOrdersRequest* request, ::trade::ListCommerceOrdersResponse* response, std::function<void(::grpc::Status)> f) {
+  ::grpc::internal::CallbackUnaryCall< ::trade::ListCommerceOrdersRequest, ::trade::ListCommerceOrdersResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_ListRmbOrders_, context, request, response, std::move(f));
+}
+
+void ClientPlayerJubaozhai::Stub::async::ListRmbOrders(::grpc::ClientContext* context, const ::trade::ListCommerceOrdersRequest* request, ::trade::ListCommerceOrdersResponse* response, ::grpc::ClientUnaryReactor* reactor) {
+  ::grpc::internal::ClientCallbackUnaryFactory::Create< ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_ListRmbOrders_, context, request, response, reactor);
+}
+
+::grpc::ClientAsyncResponseReader< ::trade::ListCommerceOrdersResponse>* ClientPlayerJubaozhai::Stub::PrepareAsyncListRmbOrdersRaw(::grpc::ClientContext* context, const ::trade::ListCommerceOrdersRequest& request, ::grpc::CompletionQueue* cq) {
+  return ::grpc::internal::ClientAsyncResponseReaderHelper::Create< ::trade::ListCommerceOrdersResponse, ::trade::ListCommerceOrdersRequest, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), cq, rpcmethod_ListRmbOrders_, context, request);
+}
+
+::grpc::ClientAsyncResponseReader< ::trade::ListCommerceOrdersResponse>* ClientPlayerJubaozhai::Stub::AsyncListRmbOrdersRaw(::grpc::ClientContext* context, const ::trade::ListCommerceOrdersRequest& request, ::grpc::CompletionQueue* cq) {
+  auto* result =
+    this->PrepareAsyncListRmbOrdersRaw(context, request, cq);
+  result->StartCall();
+  return result;
+}
+
+::grpc::Status ClientPlayerJubaozhai::Stub::CancelRmbOrder(::grpc::ClientContext* context, const ::trade::CancelCommerceOrderRequest& request, ::trade::CommerceOrderResponse* response) {
+  return ::grpc::internal::BlockingUnaryCall< ::trade::CancelCommerceOrderRequest, ::trade::CommerceOrderResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), rpcmethod_CancelRmbOrder_, context, request, response);
+}
+
+void ClientPlayerJubaozhai::Stub::async::CancelRmbOrder(::grpc::ClientContext* context, const ::trade::CancelCommerceOrderRequest* request, ::trade::CommerceOrderResponse* response, std::function<void(::grpc::Status)> f) {
+  ::grpc::internal::CallbackUnaryCall< ::trade::CancelCommerceOrderRequest, ::trade::CommerceOrderResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_CancelRmbOrder_, context, request, response, std::move(f));
+}
+
+void ClientPlayerJubaozhai::Stub::async::CancelRmbOrder(::grpc::ClientContext* context, const ::trade::CancelCommerceOrderRequest* request, ::trade::CommerceOrderResponse* response, ::grpc::ClientUnaryReactor* reactor) {
+  ::grpc::internal::ClientCallbackUnaryFactory::Create< ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_CancelRmbOrder_, context, request, response, reactor);
+}
+
+::grpc::ClientAsyncResponseReader< ::trade::CommerceOrderResponse>* ClientPlayerJubaozhai::Stub::PrepareAsyncCancelRmbOrderRaw(::grpc::ClientContext* context, const ::trade::CancelCommerceOrderRequest& request, ::grpc::CompletionQueue* cq) {
+  return ::grpc::internal::ClientAsyncResponseReaderHelper::Create< ::trade::CommerceOrderResponse, ::trade::CancelCommerceOrderRequest, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), cq, rpcmethod_CancelRmbOrder_, context, request);
+}
+
+::grpc::ClientAsyncResponseReader< ::trade::CommerceOrderResponse>* ClientPlayerJubaozhai::Stub::AsyncCancelRmbOrderRaw(::grpc::ClientContext* context, const ::trade::CancelCommerceOrderRequest& request, ::grpc::CompletionQueue* cq) {
+  auto* result =
+    this->PrepareAsyncCancelRmbOrderRaw(context, request, cq);
+  result->StartCall();
+  return result;
+}
+
+::grpc::Status ClientPlayerJubaozhai::Stub::ListSellerIncomes(::grpc::ClientContext* context, const ::trade::ListSellerIncomesRequest& request, ::trade::ListSellerIncomesResponse* response) {
+  return ::grpc::internal::BlockingUnaryCall< ::trade::ListSellerIncomesRequest, ::trade::ListSellerIncomesResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), rpcmethod_ListSellerIncomes_, context, request, response);
+}
+
+void ClientPlayerJubaozhai::Stub::async::ListSellerIncomes(::grpc::ClientContext* context, const ::trade::ListSellerIncomesRequest* request, ::trade::ListSellerIncomesResponse* response, std::function<void(::grpc::Status)> f) {
+  ::grpc::internal::CallbackUnaryCall< ::trade::ListSellerIncomesRequest, ::trade::ListSellerIncomesResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_ListSellerIncomes_, context, request, response, std::move(f));
+}
+
+void ClientPlayerJubaozhai::Stub::async::ListSellerIncomes(::grpc::ClientContext* context, const ::trade::ListSellerIncomesRequest* request, ::trade::ListSellerIncomesResponse* response, ::grpc::ClientUnaryReactor* reactor) {
+  ::grpc::internal::ClientCallbackUnaryFactory::Create< ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_ListSellerIncomes_, context, request, response, reactor);
+}
+
+::grpc::ClientAsyncResponseReader< ::trade::ListSellerIncomesResponse>* ClientPlayerJubaozhai::Stub::PrepareAsyncListSellerIncomesRaw(::grpc::ClientContext* context, const ::trade::ListSellerIncomesRequest& request, ::grpc::CompletionQueue* cq) {
+  return ::grpc::internal::ClientAsyncResponseReaderHelper::Create< ::trade::ListSellerIncomesResponse, ::trade::ListSellerIncomesRequest, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), cq, rpcmethod_ListSellerIncomes_, context, request);
+}
+
+::grpc::ClientAsyncResponseReader< ::trade::ListSellerIncomesResponse>* ClientPlayerJubaozhai::Stub::AsyncListSellerIncomesRaw(::grpc::ClientContext* context, const ::trade::ListSellerIncomesRequest& request, ::grpc::CompletionQueue* cq) {
+  auto* result =
+    this->PrepareAsyncListSellerIncomesRaw(context, request, cq);
+  result->StartCall();
+  return result;
+}
+
+::grpc::Status ClientPlayerJubaozhai::Stub::CreateWithdrawal(::grpc::ClientContext* context, const ::trade::CreateWithdrawalRequest& request, ::trade::WithdrawalResponse* response) {
+  return ::grpc::internal::BlockingUnaryCall< ::trade::CreateWithdrawalRequest, ::trade::WithdrawalResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), rpcmethod_CreateWithdrawal_, context, request, response);
+}
+
+void ClientPlayerJubaozhai::Stub::async::CreateWithdrawal(::grpc::ClientContext* context, const ::trade::CreateWithdrawalRequest* request, ::trade::WithdrawalResponse* response, std::function<void(::grpc::Status)> f) {
+  ::grpc::internal::CallbackUnaryCall< ::trade::CreateWithdrawalRequest, ::trade::WithdrawalResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_CreateWithdrawal_, context, request, response, std::move(f));
+}
+
+void ClientPlayerJubaozhai::Stub::async::CreateWithdrawal(::grpc::ClientContext* context, const ::trade::CreateWithdrawalRequest* request, ::trade::WithdrawalResponse* response, ::grpc::ClientUnaryReactor* reactor) {
+  ::grpc::internal::ClientCallbackUnaryFactory::Create< ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_CreateWithdrawal_, context, request, response, reactor);
+}
+
+::grpc::ClientAsyncResponseReader< ::trade::WithdrawalResponse>* ClientPlayerJubaozhai::Stub::PrepareAsyncCreateWithdrawalRaw(::grpc::ClientContext* context, const ::trade::CreateWithdrawalRequest& request, ::grpc::CompletionQueue* cq) {
+  return ::grpc::internal::ClientAsyncResponseReaderHelper::Create< ::trade::WithdrawalResponse, ::trade::CreateWithdrawalRequest, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), cq, rpcmethod_CreateWithdrawal_, context, request);
+}
+
+::grpc::ClientAsyncResponseReader< ::trade::WithdrawalResponse>* ClientPlayerJubaozhai::Stub::AsyncCreateWithdrawalRaw(::grpc::ClientContext* context, const ::trade::CreateWithdrawalRequest& request, ::grpc::CompletionQueue* cq) {
+  auto* result =
+    this->PrepareAsyncCreateWithdrawalRaw(context, request, cq);
+  result->StartCall();
+  return result;
+}
+
+::grpc::Status ClientPlayerJubaozhai::Stub::GetWithdrawal(::grpc::ClientContext* context, const ::trade::GetWithdrawalRequest& request, ::trade::WithdrawalResponse* response) {
+  return ::grpc::internal::BlockingUnaryCall< ::trade::GetWithdrawalRequest, ::trade::WithdrawalResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), rpcmethod_GetWithdrawal_, context, request, response);
+}
+
+void ClientPlayerJubaozhai::Stub::async::GetWithdrawal(::grpc::ClientContext* context, const ::trade::GetWithdrawalRequest* request, ::trade::WithdrawalResponse* response, std::function<void(::grpc::Status)> f) {
+  ::grpc::internal::CallbackUnaryCall< ::trade::GetWithdrawalRequest, ::trade::WithdrawalResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_GetWithdrawal_, context, request, response, std::move(f));
+}
+
+void ClientPlayerJubaozhai::Stub::async::GetWithdrawal(::grpc::ClientContext* context, const ::trade::GetWithdrawalRequest* request, ::trade::WithdrawalResponse* response, ::grpc::ClientUnaryReactor* reactor) {
+  ::grpc::internal::ClientCallbackUnaryFactory::Create< ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_GetWithdrawal_, context, request, response, reactor);
+}
+
+::grpc::ClientAsyncResponseReader< ::trade::WithdrawalResponse>* ClientPlayerJubaozhai::Stub::PrepareAsyncGetWithdrawalRaw(::grpc::ClientContext* context, const ::trade::GetWithdrawalRequest& request, ::grpc::CompletionQueue* cq) {
+  return ::grpc::internal::ClientAsyncResponseReaderHelper::Create< ::trade::WithdrawalResponse, ::trade::GetWithdrawalRequest, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), cq, rpcmethod_GetWithdrawal_, context, request);
+}
+
+::grpc::ClientAsyncResponseReader< ::trade::WithdrawalResponse>* ClientPlayerJubaozhai::Stub::AsyncGetWithdrawalRaw(::grpc::ClientContext* context, const ::trade::GetWithdrawalRequest& request, ::grpc::CompletionQueue* cq) {
+  auto* result =
+    this->PrepareAsyncGetWithdrawalRaw(context, request, cq);
+  result->StartCall();
+  return result;
+}
+
 ClientPlayerJubaozhai::Service::Service() {
   AddMethod(new ::grpc::internal::RpcServiceMethod(
       ClientPlayerJubaozhai_method_names[0],
@@ -875,6 +1150,116 @@ ClientPlayerJubaozhai::Service::Service() {
              ::trade::ListTradeMarketsResponse* resp) {
                return service->ListTradeMarkets(ctx, req, resp);
              }, this)));
+  AddMethod(new ::grpc::internal::RpcServiceMethod(
+      ClientPlayerJubaozhai_method_names[24],
+      ::grpc::internal::RpcMethod::NORMAL_RPC,
+      new ::grpc::internal::RpcMethodHandler< ClientPlayerJubaozhai::Service, ::trade::CreateRmbConsignmentRequest, ::trade::RmbConsignmentResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(
+          [](ClientPlayerJubaozhai::Service* service,
+             ::grpc::ServerContext* ctx,
+             const ::trade::CreateRmbConsignmentRequest* req,
+             ::trade::RmbConsignmentResponse* resp) {
+               return service->CreateRmbConsignment(ctx, req, resp);
+             }, this)));
+  AddMethod(new ::grpc::internal::RpcServiceMethod(
+      ClientPlayerJubaozhai_method_names[25],
+      ::grpc::internal::RpcMethod::NORMAL_RPC,
+      new ::grpc::internal::RpcMethodHandler< ClientPlayerJubaozhai::Service, ::trade::GetRmbConsignmentRequest, ::trade::RmbConsignmentResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(
+          [](ClientPlayerJubaozhai::Service* service,
+             ::grpc::ServerContext* ctx,
+             const ::trade::GetRmbConsignmentRequest* req,
+             ::trade::RmbConsignmentResponse* resp) {
+               return service->GetRmbConsignment(ctx, req, resp);
+             }, this)));
+  AddMethod(new ::grpc::internal::RpcServiceMethod(
+      ClientPlayerJubaozhai_method_names[26],
+      ::grpc::internal::RpcMethod::NORMAL_RPC,
+      new ::grpc::internal::RpcMethodHandler< ClientPlayerJubaozhai::Service, ::trade::ListRmbConsignmentsRequest, ::trade::ListRmbConsignmentsResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(
+          [](ClientPlayerJubaozhai::Service* service,
+             ::grpc::ServerContext* ctx,
+             const ::trade::ListRmbConsignmentsRequest* req,
+             ::trade::ListRmbConsignmentsResponse* resp) {
+               return service->ListRmbConsignments(ctx, req, resp);
+             }, this)));
+  AddMethod(new ::grpc::internal::RpcServiceMethod(
+      ClientPlayerJubaozhai_method_names[27],
+      ::grpc::internal::RpcMethod::NORMAL_RPC,
+      new ::grpc::internal::RpcMethodHandler< ClientPlayerJubaozhai::Service, ::trade::BuyRmbConsignmentRequest, ::trade::CommerceOrderResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(
+          [](ClientPlayerJubaozhai::Service* service,
+             ::grpc::ServerContext* ctx,
+             const ::trade::BuyRmbConsignmentRequest* req,
+             ::trade::CommerceOrderResponse* resp) {
+               return service->BuyRmbConsignment(ctx, req, resp);
+             }, this)));
+  AddMethod(new ::grpc::internal::RpcServiceMethod(
+      ClientPlayerJubaozhai_method_names[28],
+      ::grpc::internal::RpcMethod::NORMAL_RPC,
+      new ::grpc::internal::RpcMethodHandler< ClientPlayerJubaozhai::Service, ::trade::CancelRmbConsignmentRequest, ::trade::RmbConsignmentResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(
+          [](ClientPlayerJubaozhai::Service* service,
+             ::grpc::ServerContext* ctx,
+             const ::trade::CancelRmbConsignmentRequest* req,
+             ::trade::RmbConsignmentResponse* resp) {
+               return service->CancelRmbConsignment(ctx, req, resp);
+             }, this)));
+  AddMethod(new ::grpc::internal::RpcServiceMethod(
+      ClientPlayerJubaozhai_method_names[29],
+      ::grpc::internal::RpcMethod::NORMAL_RPC,
+      new ::grpc::internal::RpcMethodHandler< ClientPlayerJubaozhai::Service, ::trade::GetCommerceOrderRequest, ::trade::CommerceOrderResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(
+          [](ClientPlayerJubaozhai::Service* service,
+             ::grpc::ServerContext* ctx,
+             const ::trade::GetCommerceOrderRequest* req,
+             ::trade::CommerceOrderResponse* resp) {
+               return service->GetRmbOrder(ctx, req, resp);
+             }, this)));
+  AddMethod(new ::grpc::internal::RpcServiceMethod(
+      ClientPlayerJubaozhai_method_names[30],
+      ::grpc::internal::RpcMethod::NORMAL_RPC,
+      new ::grpc::internal::RpcMethodHandler< ClientPlayerJubaozhai::Service, ::trade::ListCommerceOrdersRequest, ::trade::ListCommerceOrdersResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(
+          [](ClientPlayerJubaozhai::Service* service,
+             ::grpc::ServerContext* ctx,
+             const ::trade::ListCommerceOrdersRequest* req,
+             ::trade::ListCommerceOrdersResponse* resp) {
+               return service->ListRmbOrders(ctx, req, resp);
+             }, this)));
+  AddMethod(new ::grpc::internal::RpcServiceMethod(
+      ClientPlayerJubaozhai_method_names[31],
+      ::grpc::internal::RpcMethod::NORMAL_RPC,
+      new ::grpc::internal::RpcMethodHandler< ClientPlayerJubaozhai::Service, ::trade::CancelCommerceOrderRequest, ::trade::CommerceOrderResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(
+          [](ClientPlayerJubaozhai::Service* service,
+             ::grpc::ServerContext* ctx,
+             const ::trade::CancelCommerceOrderRequest* req,
+             ::trade::CommerceOrderResponse* resp) {
+               return service->CancelRmbOrder(ctx, req, resp);
+             }, this)));
+  AddMethod(new ::grpc::internal::RpcServiceMethod(
+      ClientPlayerJubaozhai_method_names[32],
+      ::grpc::internal::RpcMethod::NORMAL_RPC,
+      new ::grpc::internal::RpcMethodHandler< ClientPlayerJubaozhai::Service, ::trade::ListSellerIncomesRequest, ::trade::ListSellerIncomesResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(
+          [](ClientPlayerJubaozhai::Service* service,
+             ::grpc::ServerContext* ctx,
+             const ::trade::ListSellerIncomesRequest* req,
+             ::trade::ListSellerIncomesResponse* resp) {
+               return service->ListSellerIncomes(ctx, req, resp);
+             }, this)));
+  AddMethod(new ::grpc::internal::RpcServiceMethod(
+      ClientPlayerJubaozhai_method_names[33],
+      ::grpc::internal::RpcMethod::NORMAL_RPC,
+      new ::grpc::internal::RpcMethodHandler< ClientPlayerJubaozhai::Service, ::trade::CreateWithdrawalRequest, ::trade::WithdrawalResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(
+          [](ClientPlayerJubaozhai::Service* service,
+             ::grpc::ServerContext* ctx,
+             const ::trade::CreateWithdrawalRequest* req,
+             ::trade::WithdrawalResponse* resp) {
+               return service->CreateWithdrawal(ctx, req, resp);
+             }, this)));
+  AddMethod(new ::grpc::internal::RpcServiceMethod(
+      ClientPlayerJubaozhai_method_names[34],
+      ::grpc::internal::RpcMethod::NORMAL_RPC,
+      new ::grpc::internal::RpcMethodHandler< ClientPlayerJubaozhai::Service, ::trade::GetWithdrawalRequest, ::trade::WithdrawalResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(
+          [](ClientPlayerJubaozhai::Service* service,
+             ::grpc::ServerContext* ctx,
+             const ::trade::GetWithdrawalRequest* req,
+             ::trade::WithdrawalResponse* resp) {
+               return service->GetWithdrawal(ctx, req, resp);
+             }, this)));
 }
 
 ClientPlayerJubaozhai::Service::~Service() {
@@ -1042,6 +1427,83 @@ ClientPlayerJubaozhai::Service::~Service() {
 }
 
 ::grpc::Status ClientPlayerJubaozhai::Service::ListTradeMarkets(::grpc::ServerContext* context, const ::trade::ListTradeMarketsRequest* request, ::trade::ListTradeMarketsResponse* response) {
+  (void) context;
+  (void) request;
+  (void) response;
+  return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+}
+
+::grpc::Status ClientPlayerJubaozhai::Service::CreateRmbConsignment(::grpc::ServerContext* context, const ::trade::CreateRmbConsignmentRequest* request, ::trade::RmbConsignmentResponse* response) {
+  (void) context;
+  (void) request;
+  (void) response;
+  return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+}
+
+::grpc::Status ClientPlayerJubaozhai::Service::GetRmbConsignment(::grpc::ServerContext* context, const ::trade::GetRmbConsignmentRequest* request, ::trade::RmbConsignmentResponse* response) {
+  (void) context;
+  (void) request;
+  (void) response;
+  return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+}
+
+::grpc::Status ClientPlayerJubaozhai::Service::ListRmbConsignments(::grpc::ServerContext* context, const ::trade::ListRmbConsignmentsRequest* request, ::trade::ListRmbConsignmentsResponse* response) {
+  (void) context;
+  (void) request;
+  (void) response;
+  return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+}
+
+::grpc::Status ClientPlayerJubaozhai::Service::BuyRmbConsignment(::grpc::ServerContext* context, const ::trade::BuyRmbConsignmentRequest* request, ::trade::CommerceOrderResponse* response) {
+  (void) context;
+  (void) request;
+  (void) response;
+  return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+}
+
+::grpc::Status ClientPlayerJubaozhai::Service::CancelRmbConsignment(::grpc::ServerContext* context, const ::trade::CancelRmbConsignmentRequest* request, ::trade::RmbConsignmentResponse* response) {
+  (void) context;
+  (void) request;
+  (void) response;
+  return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+}
+
+::grpc::Status ClientPlayerJubaozhai::Service::GetRmbOrder(::grpc::ServerContext* context, const ::trade::GetCommerceOrderRequest* request, ::trade::CommerceOrderResponse* response) {
+  (void) context;
+  (void) request;
+  (void) response;
+  return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+}
+
+::grpc::Status ClientPlayerJubaozhai::Service::ListRmbOrders(::grpc::ServerContext* context, const ::trade::ListCommerceOrdersRequest* request, ::trade::ListCommerceOrdersResponse* response) {
+  (void) context;
+  (void) request;
+  (void) response;
+  return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+}
+
+::grpc::Status ClientPlayerJubaozhai::Service::CancelRmbOrder(::grpc::ServerContext* context, const ::trade::CancelCommerceOrderRequest* request, ::trade::CommerceOrderResponse* response) {
+  (void) context;
+  (void) request;
+  (void) response;
+  return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+}
+
+::grpc::Status ClientPlayerJubaozhai::Service::ListSellerIncomes(::grpc::ServerContext* context, const ::trade::ListSellerIncomesRequest* request, ::trade::ListSellerIncomesResponse* response) {
+  (void) context;
+  (void) request;
+  (void) response;
+  return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+}
+
+::grpc::Status ClientPlayerJubaozhai::Service::CreateWithdrawal(::grpc::ServerContext* context, const ::trade::CreateWithdrawalRequest* request, ::trade::WithdrawalResponse* response) {
+  (void) context;
+  (void) request;
+  (void) response;
+  return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+}
+
+::grpc::Status ClientPlayerJubaozhai::Service::GetWithdrawal(::grpc::ServerContext* context, const ::trade::GetWithdrawalRequest* request, ::trade::WithdrawalResponse* response) {
   (void) context;
   (void) request;
   (void) response;

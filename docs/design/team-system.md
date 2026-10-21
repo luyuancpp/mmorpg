@@ -2517,3 +2517,33 @@ V.7 第 4 条的第一轮修复(游标)上真机后,真实客户端连跑 8 遍�
 - Go:PROGRESS 2026-10-10 记录 `go/match` 在 `21d5b25120` 之上 build / vet / test 通过(工作树 `E:\work\xuanming-server-mmo-wt-pvematch`,本机不存在该路径，该提交在本仓也不可达，未留日志),所以 xuanming-port-feasibility §12.3"全部未编译、未测试"对当时的 Go 部分已过期。**该证据早于 10-12 本次改动,当前工作区的 `go/match` 未编译**。
 - 没有运行证据:C++ `player_team.cpp`(10-10 主干 scene 因装备生成前置缺失报 110 errors)、robot team-smoke 两种形态、带 `-race` 的并发 fuzz、K8s 上 TeamNodeService 可达性。
 - 未核验的旁支风险:K8s MatchRedis 为 `volatile-lru`(`deploy/k8s/manifests/infra/redis-match-cluster.yaml`),内存紧张时可能淘汰带 TTL 的 matched 票。
+
+## 全球SQL权威与整队补位（2026-10-21，源码实现中，未生成/编译/测试）
+
+用户明确要求所有非战斗逻辑全球同服、多副本水平扩展、强一致，Redis历史快照不得恢复队长、名单、邀请或开战授权。本节替代上文SharedRedis作为组队唯一真源及全球模式不支持补位的旧结论；旧Redis适配仅用于显式旧兼容模式，不导入全球SQL。
+
+全球模式复用现有`Store.Mutate/ReadFree/ReadMembers/CommitMatchLock/EndMatch`接缝与`Apply`纯规则，实际持久化进入同一TiDB事务域。`team_authority`永存私有原件、version与解散墓碑；`team_membership`永存离队后的`team_id=0`和递增epoch。邀请、申请索引在名册事务内同步，原账号/owner_revision只放服务端`TeamAuthorityData`，不进入TeamView或公开昵称。读路径采用显式REPEATABLE READ一致快照；索引指向缺记录或缺成员是完整性故障，不依据缓存缺失删成员、重建队伍或重置epoch。
+
+建队、申请、审批、邀请、应答、离队、踢人、转让、解散的客户端请求新增稳定UUID `request_id`。首次业务结果与`team_action_receipt`同事务提交，键为原actor+UUID两段整数，绑定原owner、操作种类与确定性请求原字节；重投不能刷新邀请TTL、重新发team_id或把旧成功变成新操作。原响应持久核心不保存在线/战斗显示态，回包时重新装饰。StartTeamMatch沿用已有UUID，由原launch承担永久意图与终态，不以gate调用序号替代玩家意图。
+
+会写队伍zone原件、名册或launch的完整事务先预读全参与者`player_route(home_zone,rev)`，按`(home_zone,pid%64)`去重并排序，以中性ODKU确保既有`zone_merge_fence`片，再同序加锁、拒绝仍有效或畸形围栏，随后按`(route_shard,player_id)`锁原route并核home/rev/frozen，最后才按uint64升序锁全部原角色P。缺route、目录换主、角色冻结、路由冻结或不可写均拒绝；不得持P后追加fence或参与者。所有新增申请/邀请使用新意图的原actor与锁内新对端，消费旧consent必须核双方原件，不能从当前目录替旧owner补权。
+
+`team_launch`既是直接开战原件，也是补位队伍的完整queue unit。它保存原actor、UUID、原Team版本、队长/显式join_seq名单、token、原owner、显式roster_order及稳定个人票、原Start请求、zones和SQL入队时间。提交允许当前Team版本大于等于原版本，但必须逐项核队长、完整名册、join_seq、原owner及token；仅申请/邀请变化不使有效队伍永久饿死。形成中或结果UNKNOWN的token为持久锁（`match_lock_expire_at_ms=0`），不能按旧TTL释放成员。
+
+完整队伍与全员SQL queued票同事务可见。队伍票固定入队时签名profile，网络探测允许刷新独立profile，不能单独改其中一名队员的queued票；任一原测量过期即整单安全撤队，重新探测后由新的Start UUID入队。`team_launch_region`只作可重建索引，每unit至多16机房；完整成员均达硬延迟才入对应机房，只有全员首选同一机房才有共同本区。个人`match_ticket_region`不放队伍成员，防止单排候选被整队成员拆走或在大量队伍票中扫描证明单排不足。
+
+全球PVE_TEAM由一个装箱流程统一处理单排size1和完整队伍size2..5。单排、队伍分别用索引keyset公平锚点，每轮合并至多32个实际尝试项；region/lane/size资格在SQL LIMIT前过滤，每size桶至多5个unit，用最多5人的精确装箱，复杂度与内存由32锚点、16机房、5个size桶和容量5约束，不逐锚点扫描全队列。轮次预算3秒，本区阶段至多1秒，余下时间只对本区完整尝试过的锚点扩区；单个未知/无解项也推进调度游标，后续完整轮次重访。跨区必须逐人等满原等待；该围栏与失败是否重排是两件独立规则。首轮候选投影以固定高水位有界修复完成后才开放跨区，新入队不会无限延长尾界。
+
+`Team.AllowCrossZone=false`约束最终组成的完整队伍，全员必须同一角色home；不能把两支各自同home、相互home不同的小队组合成跨home队伍。两种region投影均保存原home，并提供带home等值前缀的本区/跨机房索引，资格在LIMIT之前过滤；允许跨home时继续使用无home索引。完整混合unit只有显式允许跨home时投影home=0，缺原home始终报错。home与物理机房是两种维度：同home仍须逐人满足硬延迟及跨机房等待。初次launch、直接满队成局和补位提交均用永久launch.zones及已锁SQL player_route.home_zone复核，不能从当前home替旧原件补权。已有跨home名册可以保留，false下不能据此新开跨home对局。该规则在同SQL策略指纹准入后固定，变更须停全部副本受控调整，禁止滚动混用不同策略。
+
+成局事务遵守完整route/fence前缀、全P、观战占用、全Team、原launch、全票、formation的锁序，原名单/owner/profile/等待在提交点再次核验，全员一次占用，任一条件失败全部回滚。名册或队长变化在同事务撤销queued原unit；已成局不拆队。成员主动撤队竞争同一Team/launch/全票事务，旧请求或旧票不能取消新unit。
+
+保留参战前自动退出观战：首次Start在完整原P下捕获原watch列表、将这些原op置取消中，与已授权Team/launch原件同事务提交；重试与后台只发送这些固定原op/实例/截止的Remove。只有原Remove关闭正证明落永久history，才进入整队队列或直接成局，不使用Redis标记和TTL猜测关闭。有退出待办时，不足队伍也先持prepared名册锁；`team_launch_role`让新Watch不能穿过退出确认到queued提交的间隙。后来新watch不会被旧Start重新捕获或清退，旧Start取消后原退出清理仍可沿原op收尾。
+
+同一互斥契约覆盖单排与活动/挑战直接开战：单排原Join与Direct原件首次提交时预占非空state0票，保存原owner、profile、UUID和观战退出对象。非空0不是空占位，所有入场预检与NativeFence都继续视为占用；明确原退出关闭后才原票完成，过期也必须先封原退出才能取消预占。Direct另固定整份formation/原ticket组，接受挑战先进入已接受待退出4，完成占票与formation时才进入2，安全终止为5；拒战3不能翻为接受。单排和Direct后台各自使用固定高水位、keyset页8、两个在途许可及3秒预算，旧UNKNOWN继续游标，持续新输入不延长本轮尾界。
+
+prepared、queued、forming、已建房和idle维护各自独立预算与keyset游标。prepared只沿持久原件恢复；UNKNOWN保留；真实formation 4或5才解名册锁。完整补位unit在原formation明确5后，同事务核全员原票、owner、profile有效性，整单恢复queued、交集候选与SQL当前时刻加1秒的not_before；保留原UUID、原票、profile和最早enqueue，不能逐人拆队。原测量已过期则整单关闭，直接满队开战失败仍关闭，混合局单排沿普通规则重排。已建房还须等全部原ready票被真实结算/原房间证明的终态CAS释放，才能将launch及玩家反查索引一起4→5，队伍解散后仍能沿原launch收尾。24小时idle到期经同P、Team和成员墓碑事务解散；持久形成锁不按idle时间清除。
+
+场景读取经内部`TeamAuthority.ReadMembership`，使用完整已登记SQL `RoleAdmissionIdentity`与scene HMAC，禁止客户端metadata；同P核owner_revision、原generation/instance未closed和完整身份（含E），响应签名绑定原请求摘要。它不拼造缺gate UUID/incarnation的客户端会话，也不接受Redis成员缓存作授权。
+
+本批新增回归源码覆盖原UUID ACK未知后重放、离队重启墓碑、旧邀请换主拒绝、并发接受唯一成员、3+2整队占用与跨区逐人等待、UNKNOWN持久锁、成员整单撤队与迟到旧请求、merge围栏/route冻结、场景原admission与签名响应、精确装箱/硬延迟/过期，以及其它home早候选超过LIMIT时仍可找到合法晚单排/整队、最终跨home提交拒绝和排队后route变化拒绝。尚未运行；正式proto生成、Go/Java/C++编译、真实TiDB并发验收及双区联机证据由后续集中验收产生。

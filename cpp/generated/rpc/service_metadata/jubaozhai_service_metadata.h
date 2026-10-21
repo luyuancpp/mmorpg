@@ -98,3 +98,47 @@ constexpr uint32_t ClientPlayerJubaozhaiBrowseCommerceOffersIndex = 22;
 constexpr uint32_t ClientPlayerJubaozhaiListTradeMarketsMessageId = 305;
 constexpr uint32_t ClientPlayerJubaozhaiListTradeMarketsIndex = 23;
 #define ClientPlayerJubaozhaiListTradeMarketsMethod  ::ClientPlayerJubaozhai_Stub::descriptor()->method(23)
+
+constexpr uint32_t ClientPlayerJubaozhaiCreateRmbConsignmentMessageId = 333;
+constexpr uint32_t ClientPlayerJubaozhaiCreateRmbConsignmentIndex = 24;
+#define ClientPlayerJubaozhaiCreateRmbConsignmentMethod  ::ClientPlayerJubaozhai_Stub::descriptor()->method(24)
+
+constexpr uint32_t ClientPlayerJubaozhaiGetRmbConsignmentMessageId = 334;
+constexpr uint32_t ClientPlayerJubaozhaiGetRmbConsignmentIndex = 25;
+#define ClientPlayerJubaozhaiGetRmbConsignmentMethod  ::ClientPlayerJubaozhai_Stub::descriptor()->method(25)
+
+constexpr uint32_t ClientPlayerJubaozhaiListRmbConsignmentsMessageId = 335;
+constexpr uint32_t ClientPlayerJubaozhaiListRmbConsignmentsIndex = 26;
+#define ClientPlayerJubaozhaiListRmbConsignmentsMethod  ::ClientPlayerJubaozhai_Stub::descriptor()->method(26)
+
+constexpr uint32_t ClientPlayerJubaozhaiBuyRmbConsignmentMessageId = 336;
+constexpr uint32_t ClientPlayerJubaozhaiBuyRmbConsignmentIndex = 27;
+#define ClientPlayerJubaozhaiBuyRmbConsignmentMethod  ::ClientPlayerJubaozhai_Stub::descriptor()->method(27)
+
+constexpr uint32_t ClientPlayerJubaozhaiCancelRmbConsignmentMessageId = 337;
+constexpr uint32_t ClientPlayerJubaozhaiCancelRmbConsignmentIndex = 28;
+#define ClientPlayerJubaozhaiCancelRmbConsignmentMethod  ::ClientPlayerJubaozhai_Stub::descriptor()->method(28)
+
+constexpr uint32_t ClientPlayerJubaozhaiGetRmbOrderMessageId = 338;
+constexpr uint32_t ClientPlayerJubaozhaiGetRmbOrderIndex = 29;
+#define ClientPlayerJubaozhaiGetRmbOrderMethod  ::ClientPlayerJubaozhai_Stub::descriptor()->method(29)
+
+constexpr uint32_t ClientPlayerJubaozhaiListRmbOrdersMessageId = 339;
+constexpr uint32_t ClientPlayerJubaozhaiListRmbOrdersIndex = 30;
+#define ClientPlayerJubaozhaiListRmbOrdersMethod  ::ClientPlayerJubaozhai_Stub::descriptor()->method(30)
+
+constexpr uint32_t ClientPlayerJubaozhaiCancelRmbOrderMessageId = 340;
+constexpr uint32_t ClientPlayerJubaozhaiCancelRmbOrderIndex = 31;
+#define ClientPlayerJubaozhaiCancelRmbOrderMethod  ::ClientPlayerJubaozhai_Stub::descriptor()->method(31)
+
+constexpr uint32_t ClientPlayerJubaozhaiListSellerIncomesMessageId = 341;
+constexpr uint32_t ClientPlayerJubaozhaiListSellerIncomesIndex = 32;
+#define ClientPlayerJubaozhaiListSellerIncomesMethod  ::ClientPlayerJubaozhai_Stub::descriptor()->method(32)
+
+constexpr uint32_t ClientPlayerJubaozhaiCreateWithdrawalMessageId = 342;
+constexpr uint32_t ClientPlayerJubaozhaiCreateWithdrawalIndex = 33;
+#define ClientPlayerJubaozhaiCreateWithdrawalMethod  ::ClientPlayerJubaozhai_Stub::descriptor()->method(33)
+
+constexpr uint32_t ClientPlayerJubaozhaiGetWithdrawalMessageId = 343;
+constexpr uint32_t ClientPlayerJubaozhaiGetWithdrawalIndex = 34;
+#define ClientPlayerJubaozhaiGetWithdrawalMethod  ::ClientPlayerJubaozhai_Stub::descriptor()->method(34)

@@ -1283,3 +1283,11 @@ Java `java-mail-notify-sql-redis.log`邮件9/9真实TiDB加Redis测试通过、0
 ### 2026-10-17 排行榜奖励邮件真实调用链补充
 
 两版已从实际评分SQL/outbox，经真实排行榜RPC、停代封榜及奖励工作器调用MailAdmin，再由玩家邮箱入口核对唯一邮件。注入邮件已提交但首次成功回复丢失后，Go重启排行榜测试进程、Java重建仓储与工作器，均按原reward_id及完整载荷确认原mail_id，不新增邮件；Go整链1/1、Java整链1/1及默认榜回归4/4均零失败/跳过。完整范围、清理和证据统一见 [leaderboard-system.md](leaderboard-system.md) 的“2026-10-17 来源至奖励邮件的整链验收”；本批止于邮件持久可见，不证明附件实际到账，也不改变上述上线门禁。
+
+### 2026-10-21 角色交易后的原会话围栏（源码候选，运行待验）
+
+玩家邮箱入口必须携带原账号、原 `owner_revision`，不能在处理旧请求时读取新目录修订替它补权。Go 从 gate 的原进程 UUID、连接 incarnation 只读全局 login 登录态取账号，并保留 `SessionDetails.owner_revision`；缺账号、修订、进程或连接原件均在仓储调用前拒绝。必须显式配置与 login 相同的全局 Redis 实例和 DB；本地 YAML 的空地址与 `GlobalLoginSessions=false` 是拒启占位值，部署配置必须覆盖。邮件 SQL 池须为同一 TiDB 集群，启动只读检查显式目录库的必要列。
+
+列表、已读、删除、清理和领取的业务事务先锁全局目录角色行 P，核原账号、修订和未冻结状态，再执行邮箱守卫、状态、seq 与 op 的原事务；列表使用事务快照。补建邮箱守卫也位于 P 后，不能在预检查之外先写库。仓储校验入口玩家与已捕获原会话玩家一致；旧会话即使命中领取幂等记录仍须先拒绝。后台可信发件与资产收据处理不伪造玩家原会话。
+
+Java `DomainClientDispatch.withSession` 将完整不可变 `SessionContext` 送入现有串行调度，`MailStore.forActor` 通过现有 `AuthorityJdbc.forActor` 在实际事务首锁 P；默认旧 long 回调适配仍供其它未迁入口使用。两版均补过户、账号 ABA、冻结及旧领取重放零副作用回归源码。本节不沿用 10 月 16 日或 17 日证据证明新围栏，当前尚未完成本轮编译、真库或双区验收。

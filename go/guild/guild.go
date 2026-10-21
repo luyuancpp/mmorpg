@@ -128,6 +128,21 @@ func main() {
 
 	// Initialize data repo with singleflight + cache-aside
 	repo := data.NewGuildRepo(svcCtx.RedisClient, svcCtx.DB, config.AppConfig.Cache.DefaultTTL)
+	if err := repo.ConfigureRoleAuthority(config.AppConfig.AccountRoleSchema); err != nil {
+		logx.Must(err)
+	}
+	loginPool := config.AppConfig.LoginRedis.PoolSize
+	if loginPool == 0 {
+		loginPool = 8
+	}
+	loginRedis := redis.NewClient(&redis.Options{Addr: config.AppConfig.LoginRedis.Host, Password: config.AppConfig.LoginRedis.Password, DB: config.AppConfig.LoginRedis.DB, PoolSize: loginPool, MaxActiveConns: loginPool, MaxIdleConns: loginPool, PoolTimeout: time.Second, MaxRetries: -1})
+	defer loginRedis.Close()
+	loginProbe, loginCancel := context.WithTimeout(context.Background(), 3*time.Second)
+	loginErr := loginRedis.Ping(loginProbe).Err()
+	loginCancel()
+	if loginErr != nil {
+		logx.Must(errors.New("显式全局LoginRedis不可用"))
+	}
 
 	// 数据库版本下限(纵深防御,2026-09-21 死锁修复第四轮;判定与理由见 data/server_version.go):
 	// 帮会写事务"不成环"的推演只对 TiDB(悲观 + RC)与 MySQL 8.0.29+ 成立 —— 审批通过重插删除标记成员行的 S → X 升级
@@ -361,17 +376,25 @@ func main() {
 	if trialResultActive && matchConfigured {
 		trialMatch = svcCtx.MatchInternal
 	}
+	var trialCancellation logic.TrialCancellation
+	if matchConfigured {
+		trialCancellation, err = logic.NewTrialCancellation(svcCtx.MatchInternal, os.Getenv("MMORPG_MATCH_INTERNAL_SECRET_GUILD"))
+		if err != nil {
+			logx.Must(errors.New("历练原请求取消签名依赖未就绪"))
+		}
+	}
 	activities := logic.ActivityDeps{
-		Repo:        activityRepo,
-		Loop:        economy.Loop,
-		OpIDs:       assetOpIDs,
-		Now:         time.Now,
-		SyncBudget:  economySyncBudget,
-		Lease:       economy.Lease,
-		Lobby:       trialLobby,
-		Match:       trialMatch,
-		Results:     trialResults,
-		BattleLocks: svcCtx.PlayerLocatorRedisClient,
+		Repo:         activityRepo,
+		Loop:         economy.Loop,
+		OpIDs:        assetOpIDs,
+		Now:          time.Now,
+		SyncBudget:   economySyncBudget,
+		Lease:        economy.Lease,
+		Lobby:        trialLobby,
+		Match:        trialMatch,
+		Cancellation: trialCancellation,
+		Results:      trialResults,
+		BattleLocks:  svcCtx.PlayerLocatorRedisClient,
 		// 没配 MatchRpc 时 Timeout 是 0,logic 取自己的默认值(1500ms),但那时也不会调 match。
 		MatchBudget: time.Duration(config.AppConfig.MatchRpc.Timeout) * time.Millisecond,
 	}
@@ -478,7 +501,7 @@ func main() {
 	if config.AppConfig.MergeMarkerRedis.RequireRouteReady {
 		logic.PrimeRouteReadyMetrics()
 	}
-	s.AddUnaryInterceptors(buildUnaryInterceptors(ks, config.AppConfig.RequestBudget())...)
+	s.AddUnaryInterceptors(buildUnaryInterceptors(ks, config.AppConfig.RequestBudget(), session.OriginalIdentityInterceptor(loginRedis, repo.CheckOriginalRole))...)
 	defer s.Stop()
 
 	// 资产通道后台 goroutine(guild.scene_node_watch / guild.asset_op_reconcile / guild.asset_op_cleanup,
@@ -674,8 +697,8 @@ func logTrialClosedReason(c config.Config, matchConfigured bool) {
 // main() 没法在单测里跑起来,而"哪次重构顺手把 killswitch 那行删了"是最容易发生、
 // 又最难被发现的回归:开关删掉之后一切照常工作,只有真出事那天才发现止血阀是假的。
 // 见 guild_test.go。
-func buildUnaryInterceptors(ks *killswitch.Switch, budget time.Duration) []grpc.UnaryServerInterceptor {
-	return []grpc.UnaryServerInterceptor{
+func buildUnaryInterceptors(ks *killswitch.Switch, budget time.Duration, identity ...grpc.UnaryServerInterceptor) []grpc.UnaryServerInterceptor {
+	chain := []grpc.UnaryServerInterceptor{
 		// ① 流量统计放最外层:被热关停短路掉的请求也必须被统计到。
 		//    否则"关停生效后这个方法的 QPS 归零"会被误读成客户端不再调用了。
 		grpcstats.New(grpcstats.Options{}).UnaryServerInterceptor(),
@@ -709,6 +732,7 @@ func buildUnaryInterceptors(ks *killswitch.Switch, budget time.Duration) []grpc.
 		//    放最内层:前四层都是本地判断,不该占业务预算。
 		requestBudgetInterceptor(budget),
 	}
+	return append(chain, identity...)
 }
 
 // requestBudgetInterceptor 给 handler 的 ctx 套上整请求业务预算(与 go/trade 的 RequestBudget 同义)。

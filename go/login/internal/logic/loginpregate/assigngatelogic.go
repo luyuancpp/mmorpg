@@ -5,15 +5,12 @@ import (
 	"time"
 
 	"login/internal/config"
-	"login/internal/constants"
 	"login/internal/logic/pkg/loginqueue"
 	"login/internal/logic/pkg/sessionmanager"
 	"login/internal/svc"
-	loginproto_database "proto/common/database"
 	loginpb "proto/login"
 
 	"github.com/zeromicro/go-zero/core/logx"
-	"google.golang.org/protobuf/proto"
 )
 
 // gateTokenTTL covers the worst-case latency from "dispatcher signs the token"
@@ -232,22 +229,15 @@ func (l *AssignGateLogic) signFastPath(zoneID uint32) (*loginpb.AssignGateRespon
 // fresh login and route them through the queue, which is the conservative
 // choice (no false bypass).
 func (l *AssignGateLogic) lookupSessionByAccount(account string) *sessionmanager.PlayerSession {
-	// account_data:{account} → UserAccounts proto with SimplePlayers list.
-	// We pick the first player_id; full multi-character logic can be added
-	// later if it turns out players actually maintain >1 active session.
-	accountKey := constants.GetAccountDataKey(account)
-	data, err := l.svcCtx.RedisClient.Get(l.ctx, accountKey).Bytes()
-	if err != nil || len(data) == 0 {
+	if l.svcCtx.AccountDirectory == nil {
 		return nil
 	}
-	var ua loginproto_database.UserAccounts
-	if err := proto.Unmarshal(data, &ua); err != nil {
+	roles, err := l.svcCtx.AccountDirectory.Read(l.ctx, account, false)
+	if err != nil || len(roles.GetPlayers()) == 0 {
 		return nil
 	}
-	if ua.SimplePlayers == nil || len(ua.SimplePlayers.Players) == 0 {
-		return nil
-	}
-	playerID := ua.SimplePlayers.Players[0].PlayerId
+	ua := roles
+	playerID := ua.Players[0].PlayerId
 	if playerID == 0 {
 		return nil
 	}

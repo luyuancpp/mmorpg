@@ -2,21 +2,13 @@
 
 package main
 
-// route_store.go / route_publish.go 的真库 + 真 Redis 用例(D1 第 2 批底座,规格 §6.2、§13.3)。
-//
-//	MERGE_ZONE_IT_ROUTE_DB_DSN='<user>:<pass>@tcp(<host>:<port>)/<一次性库>' \
-//	  go test -tags merge_integration -count=1 -v -run "TestIT_Route" ./...
-//
-// 路由表的 DDL 不在本模块复制:MERGE_ZONE_IT_ROUTE_DB_DSN 必须指向一个已由 `data_service -f <yaml> -migrate` 建好五张路由表的
-// **一次性库**(用例会写 zone 981 / 982 的围栏行、合走标记与 9_000_000_448 起的几名玩家的行,开始与结束时都删掉)。
-// 未设时这些用例 SKIP(MERGE_ZONE_IT_REQUIRE=1 时 FAIL)。发布用例要求 mapping Redis 支持 `WAITAOF 1 0`
-// (Redis >= 7.2 且 appendonly yes),不满足同样 SKIP / FAIL。其余依赖(MySQL、Redis DB 9 为空)沿用 integration_test.go 的 TestMain。
-
+// 路由写入、发布与围栏的真实TiDB/Redis回归，共用TestMain的受控本机TiDB独占route库。
+// DDL从DS权威源加载，不依赖用户预建外置路由库；依赖缺失遵循MERGE_ZONE_IT_REQUIRE门禁。
+// 发布使用真实WAITAOF 1 0，不改Redis配置。
 import (
 	"context"
 	"errors"
 	"fmt"
-	"os"
 	"reflect"
 	"sync"
 	"testing"
@@ -38,13 +30,10 @@ var itRoutePlayers = []uint64{9_000_000_448, 9_000_000_449, 9_000_000_511}
 // itRouteNoRow 是一个不在库里的玩家(RemapHomeBatch 判 missing)。
 const itRouteNoRow = uint64(9_000_000_450)
 
-// itRouteStore 打开路由库(跑真探针 P1–P5);DSN 未设 → SKIP / REQUIRE 时 FAIL;设了却打不开 → FAIL(真失败)。
+// itRouteStore打开本套独占TiDB路由库，跑当前强读及P1–P5真实探针；无法打开直接失败。
 func itRouteStore(t *testing.T) *mergeRouteStore {
 	t.Helper()
-	raw := os.Getenv(itRouteDBEnv)
-	if raw == "" {
-		itMissing(t, itRouteDBEnv+" is not set (point it at a throwaway database migrated by `data_service -f <yaml> -migrate`)")
-	}
+	raw := itRouteDSN()
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 	st, meta, err := openMergeRouteStore(ctx, raw, newMergeRouteWriter("merge-zone-it", itRouteRunA))
@@ -313,7 +302,7 @@ func TestIT_Route_PairingAgainstTheWatermarkKey(t *testing.T) {
 	if _, err := openRouteBackend(ctx, routeSourceRedis, "", writer, pub); !errors.Is(err, errRoutePairing) {
 		t.Fatalf("redis mode with a watermark: %v, want errRoutePairing", err)
 	}
-	paired, err := openRouteBackend(ctx, routeSourceDB, os.Getenv(itRouteDBEnv), writer, pub)
+	paired, err := openRouteBackend(ctx, routeSourceDB, itRouteDSN(), writer, pub)
 	if err != nil || paired == nil {
 		t.Fatalf("db mode with a matching generation = (%v, %v)", paired, err)
 	}
@@ -321,7 +310,7 @@ func TestIT_Route_PairingAgainstTheWatermarkKey(t *testing.T) {
 	if err := rdb.Set(ctx, routeWatermarkKey, `{"v":1,"generation":"ff","watermark_ms":42}`, 0).Err(); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := openRouteBackend(ctx, routeSourceDB, os.Getenv(itRouteDBEnv), writer, pub); !errors.Is(err, errRoutePairing) {
+	if _, err := openRouteBackend(ctx, routeSourceDB, itRouteDSN(), writer, pub); !errors.Is(err, errRoutePairing) {
 		t.Fatalf("db mode with another generation: %v, want errRoutePairing", err)
 	}
 }

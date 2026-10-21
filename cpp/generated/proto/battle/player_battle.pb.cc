@@ -1124,11 +1124,11 @@ constexpr BattleTicketPayload::ParseTableT_ BattleTicketPayload::InternalGenerat
     {
       PROTOBUF_FIELD_OFFSET(BattleTicketPayload, _impl_._has_bits_),
       0, // no _extensions_
-      6, 56,  // max_field_number, fast_idx_mask
+      7, 56,  // max_field_number, fast_idx_mask
       offsetof(ParseTableT_, field_lookup_table),
-      4294967232,  // skipmap
+      4294967168,  // skipmap
       offsetof(ParseTableT_, field_entries),
-      6,  // num_field_entries
+      7,  // num_field_entries
       0,  // num_aux_entries
       offsetof(ParseTableT_, field_names),  // no aux_entries
       class_data,
@@ -1140,51 +1140,57 @@ constexpr BattleTicketPayload::ParseTableT_ BattleTicketPayload::InternalGenerat
     }, {{
       {::_pbi::TcParser::MiniParse, {}},
       // uint64 battle_id = 1;
-      {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(BattleTicketPayload, _impl_.battle_id_), 1>(),
-       {8, 1, 0,
+      {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(BattleTicketPayload, _impl_.battle_id_), 2>(),
+       {8, 2, 0,
         PROTOBUF_FIELD_OFFSET(BattleTicketPayload, _impl_.battle_id_)}},
       // uint64 player_id = 2;
-      {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(BattleTicketPayload, _impl_.player_id_), 2>(),
-       {16, 2, 0,
+      {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(BattleTicketPayload, _impl_.player_id_), 3>(),
+       {16, 3, 0,
         PROTOBUF_FIELD_OFFSET(BattleTicketPayload, _impl_.player_id_)}},
       // uint32 battle_node_id = 3;
-      {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(BattleTicketPayload, _impl_.battle_node_id_), 3>(),
-       {24, 3, 0,
+      {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(BattleTicketPayload, _impl_.battle_node_id_), 4>(),
+       {24, 4, 0,
         PROTOBUF_FIELD_OFFSET(BattleTicketPayload, _impl_.battle_node_id_)}},
       // string battle_instance_id = 4;
       {::_pbi::TcParser::FastUS1,
        {34, 0, 0,
         PROTOBUF_FIELD_OFFSET(BattleTicketPayload, _impl_.battle_instance_id_)}},
       // uint64 expire_at_ms = 5;
-      {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(BattleTicketPayload, _impl_.expire_at_ms_), 5>(),
-       {40, 5, 0,
+      {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(BattleTicketPayload, _impl_.expire_at_ms_), 6>(),
+       {40, 6, 0,
         PROTOBUF_FIELD_OFFSET(BattleTicketPayload, _impl_.expire_at_ms_)}},
       // .eBattleTicketRole role = 6;
-      {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(BattleTicketPayload, _impl_.role_), 4>(),
-       {48, 4, 0,
+      {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(BattleTicketPayload, _impl_.role_), 5>(),
+       {48, 5, 0,
         PROTOBUF_FIELD_OFFSET(BattleTicketPayload, _impl_.role_)}},
-      {::_pbi::TcParser::MiniParse, {}},
+      // string spectator_operation_id = 7;
+      {::_pbi::TcParser::FastUS1,
+       {58, 1, 0,
+        PROTOBUF_FIELD_OFFSET(BattleTicketPayload, _impl_.spectator_operation_id_)}},
     }}, {{
       65535, 65535
     }}, {{
       // uint64 battle_id = 1;
-      {PROTOBUF_FIELD_OFFSET(BattleTicketPayload, _impl_.battle_id_), _Internal::kHasBitsOffset + 1, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
+      {PROTOBUF_FIELD_OFFSET(BattleTicketPayload, _impl_.battle_id_), _Internal::kHasBitsOffset + 2, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
       // uint64 player_id = 2;
-      {PROTOBUF_FIELD_OFFSET(BattleTicketPayload, _impl_.player_id_), _Internal::kHasBitsOffset + 2, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
+      {PROTOBUF_FIELD_OFFSET(BattleTicketPayload, _impl_.player_id_), _Internal::kHasBitsOffset + 3, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
       // uint32 battle_node_id = 3;
-      {PROTOBUF_FIELD_OFFSET(BattleTicketPayload, _impl_.battle_node_id_), _Internal::kHasBitsOffset + 3, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
+      {PROTOBUF_FIELD_OFFSET(BattleTicketPayload, _impl_.battle_node_id_), _Internal::kHasBitsOffset + 4, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
       // string battle_instance_id = 4;
       {PROTOBUF_FIELD_OFFSET(BattleTicketPayload, _impl_.battle_instance_id_), _Internal::kHasBitsOffset + 0, 0, (0 | ::_fl::kFcOptional | ::_fl::kUtf8String | ::_fl::kRepAString)},
       // uint64 expire_at_ms = 5;
-      {PROTOBUF_FIELD_OFFSET(BattleTicketPayload, _impl_.expire_at_ms_), _Internal::kHasBitsOffset + 5, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
+      {PROTOBUF_FIELD_OFFSET(BattleTicketPayload, _impl_.expire_at_ms_), _Internal::kHasBitsOffset + 6, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
       // .eBattleTicketRole role = 6;
-      {PROTOBUF_FIELD_OFFSET(BattleTicketPayload, _impl_.role_), _Internal::kHasBitsOffset + 4, 0, (0 | ::_fl::kFcOptional | ::_fl::kOpenEnum)},
+      {PROTOBUF_FIELD_OFFSET(BattleTicketPayload, _impl_.role_), _Internal::kHasBitsOffset + 5, 0, (0 | ::_fl::kFcOptional | ::_fl::kOpenEnum)},
+      // string spectator_operation_id = 7;
+      {PROTOBUF_FIELD_OFFSET(BattleTicketPayload, _impl_.spectator_operation_id_), _Internal::kHasBitsOffset + 1, 0, (0 | ::_fl::kFcOptional | ::_fl::kUtf8String | ::_fl::kRepAString)},
     }},
     // no aux_entries
     {{
-      "\23\0\0\0\22\0\0\0"
+      "\23\0\0\0\22\0\0\26"
       "BattleTicketPayload"
       "battle_instance_id"
+      "spectator_operation_id"
     }},
   };
 }
@@ -1195,6 +1201,9 @@ inline constexpr BattleTicketPayload::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
       : _cached_size_{0},
         battle_instance_id_(
+            &::google::protobuf::internal::fixed_address_empty_string,
+            ::_pbi::ConstantInitialized()),
+        spectator_operation_id_(
             &::google::protobuf::internal::fixed_address_empty_string,
             ::_pbi::ConstantInitialized()),
         battle_id_{::uint64_t{0u}},
@@ -3368,19 +3377,21 @@ const ::uint32_t
         0,
         0x081, // bitmap
         PROTOBUF_FIELD_OFFSET(::BattleTicketPayload, _impl_._has_bits_),
-        9, // hasbit index offset
+        10, // hasbit index offset
         PROTOBUF_FIELD_OFFSET(::BattleTicketPayload, _impl_.battle_id_),
         PROTOBUF_FIELD_OFFSET(::BattleTicketPayload, _impl_.player_id_),
         PROTOBUF_FIELD_OFFSET(::BattleTicketPayload, _impl_.battle_node_id_),
         PROTOBUF_FIELD_OFFSET(::BattleTicketPayload, _impl_.battle_instance_id_),
         PROTOBUF_FIELD_OFFSET(::BattleTicketPayload, _impl_.expire_at_ms_),
         PROTOBUF_FIELD_OFFSET(::BattleTicketPayload, _impl_.role_),
-        1,
+        PROTOBUF_FIELD_OFFSET(::BattleTicketPayload, _impl_.spectator_operation_id_),
         2,
         3,
-        0,
-        5,
         4,
+        0,
+        6,
+        5,
+        1,
         0x081, // bitmap
         PROTOBUF_FIELD_OFFSET(::BattleTokenVerifyRequest, _impl_._has_bits_),
         5, // hasbit index offset
@@ -3445,11 +3456,11 @@ static const ::_pbi::MigrationSchema
         {94, sizeof(::SetAutoBattleRequest)},
         {101, sizeof(::SetAutoBattleResponse)},
         {106, sizeof(::BattleTicketPayload)},
-        {121, sizeof(::BattleTokenVerifyRequest)},
-        {128, sizeof(::BattleTokenVerifyResponse)},
-        {137, sizeof(::BattleAssignedS2C)},
-        {154, sizeof(::RequestBattleTicketRequest)},
-        {159, sizeof(::RequestBattleTicketResponse)},
+        {123, sizeof(::BattleTokenVerifyRequest)},
+        {130, sizeof(::BattleTokenVerifyResponse)},
+        {139, sizeof(::BattleAssignedS2C)},
+        {156, sizeof(::RequestBattleTicketRequest)},
+        {161, sizeof(::RequestBattleTicketResponse)},
 };
 static const ::_pbi::MessageGlobalsBase* PROTOBUF_NONNULL const
     file_message_globals[] = {
@@ -3509,49 +3520,50 @@ const char descriptor_table_protodef_proto_2fbattle_2fplayer_5fbattle_2eproto[] 
     "or_message\030\001 \001(\0132\017.TipInfoMessage\":\n\024Set"
     "AutoBattleRequest\022\021\n\tbattle_id\030\001 \001(\004\022\017\n\007"
     "enabled\030\002 \001(\010\"\?\n\025SetAutoBattleResponse\022&"
-    "\n\rerror_message\030\001 \001(\0132\017.TipInfoMessage\"\247"
+    "\n\rerror_message\030\001 \001(\0132\017.TipInfoMessage\"\307"
     "\001\n\023BattleTicketPayload\022\021\n\tbattle_id\030\001 \001("
     "\004\022\021\n\tplayer_id\030\002 \001(\004\022\026\n\016battle_node_id\030\003"
     " \001(\r\022\032\n\022battle_instance_id\030\004 \001(\t\022\024\n\014expi"
     "re_at_ms\030\005 \001(\004\022 \n\004role\030\006 \001(\0162\022.eBattleTi"
-    "cketRole\">\n\030BattleTokenVerifyRequest\022\017\n\007"
-    "payload\030\001 \001(\014\022\021\n\tsignature\030\002 \001(\014\"N\n\031Batt"
-    "leTokenVerifyResponse\022\017\n\007success\030\001 \001(\010\022\r"
-    "\n\005error\030\002 \001(\t\022\021\n\tbattle_id\030\003 \001(\004\"\252\001\n\021Bat"
-    "tleAssignedS2C\022\021\n\tbattle_id\030\001 \001(\004\022\014\n\004hos"
-    "t\030\002 \001(\t\022\014\n\004port\030\003 \001(\r\022\025\n\rtoken_payload\030\004"
-    " \001(\014\022\027\n\017token_signature\030\005 \001(\014\022\024\n\014expire_"
-    "at_ms\030\006 \001(\004\022 \n\004role\030\007 \001(\0162\022.eBattleTicke"
-    "tRole\"/\n\032RequestBattleTicketRequest\022\021\n\tb"
-    "attle_id\030\001 \001(\004\"m\n\033RequestBattleTicketRes"
-    "ponse\022&\n\rerror_message\030\001 \001(\0132\017.TipInfoMe"
-    "ssage\022&\n\nassignment\030\002 \001(\0132\022.BattleAssign"
-    "edS2C*\210\001\n\022eSpectateEndReason\022\025\n\021SPECTATE"
-    "_END_NONE\020\000\022 \n\034SPECTATE_END_BATTLE_FINIS"
-    "HED\020\001\022\037\n\033SPECTATE_END_BATTLE_ABORTED\020\002\022\030"
-    "\n\024SPECTATE_END_REMOVED\020\003*u\n\021eBattleTicke"
-    "tRole\022\033\n\027BATTLE_TICKET_ROLE_NONE\020\000\022\"\n\036BA"
-    "TTLE_TICKET_ROLE_PARTICIPANT\020\001\022\037\n\033BATTLE"
-    "_TICKET_ROLE_OBSERVER\020\0022\345\005\n\022BattleClient"
-    "Player\022M\n\022SubmitBattleAction\022\032.SubmitBat"
-    "tleActionRequest\032\033.SubmitBattleActionRes"
-    "ponse\0229\n\016GetBattleState\022\026.GetBattleState"
-    "Request\032\017.BattleStateS2C\0223\n\021NotifyBattle"
-    "Start\022\017.BattleStartS2C\032\006.Empty\"\005\210\231\310\001\002\0221\n"
-    "\020NotifyTurnResult\022\016.TurnResultS2C\032\006.Empt"
-    "y\"\005\210\231\310\001\002\022/\n\017NotifyBattleEnd\022\r.BattleEndS"
-    "2C\032\006.Empty\"\005\210\231\310\001\002\022;\n\025NotifyBattleReconne"
-    "ct\022\023.BattleReconnectS2C\032\006.Empty\"\005\210\231\310\001\002\022D"
-    "\n\017StopWatchBattle\022\027.StopWatchBattleReque"
-    "st\032\030.StopWatchBattleResponse\022>\n\rSetAutoB"
-    "attle\022\025.SetAutoBattleRequest\032\026.SetAutoBa"
-    "ttleResponse\0227\n\023NotifySpectateState\022\021.Sp"
-    "ectateStateS2C\032\006.Empty\"\005\210\231\310\001\002\0229\n\030NotifyS"
-    "pectateTurnResult\022\016.TurnResultS2C\032\006.Empt"
-    "y\"\005\210\231\310\001\002\0223\n\021NotifySpectateEnd\022\017.Spectate"
-    "EndS2C\032\006.Empty\"\005\210\231\310\001\002\0229\n\024NotifyBattleAss"
-    "igned\022\022.BattleAssignedS2C\032\006.Empty\"\005\210\231\310\001\002"
-    "\032\005\210\250\303\001\001B\014Z\006battle\230\324a\036b\006proto3"
+    "cketRole\022\036\n\026spectator_operation_id\030\007 \001(\t"
+    "\">\n\030BattleTokenVerifyRequest\022\017\n\007payload\030"
+    "\001 \001(\014\022\021\n\tsignature\030\002 \001(\014\"N\n\031BattleTokenV"
+    "erifyResponse\022\017\n\007success\030\001 \001(\010\022\r\n\005error\030"
+    "\002 \001(\t\022\021\n\tbattle_id\030\003 \001(\004\"\252\001\n\021BattleAssig"
+    "nedS2C\022\021\n\tbattle_id\030\001 \001(\004\022\014\n\004host\030\002 \001(\t\022"
+    "\014\n\004port\030\003 \001(\r\022\025\n\rtoken_payload\030\004 \001(\014\022\027\n\017"
+    "token_signature\030\005 \001(\014\022\024\n\014expire_at_ms\030\006 "
+    "\001(\004\022 \n\004role\030\007 \001(\0162\022.eBattleTicketRole\"/\n"
+    "\032RequestBattleTicketRequest\022\021\n\tbattle_id"
+    "\030\001 \001(\004\"m\n\033RequestBattleTicketResponse\022&\n"
+    "\rerror_message\030\001 \001(\0132\017.TipInfoMessage\022&\n"
+    "\nassignment\030\002 \001(\0132\022.BattleAssignedS2C*\210\001"
+    "\n\022eSpectateEndReason\022\025\n\021SPECTATE_END_NON"
+    "E\020\000\022 \n\034SPECTATE_END_BATTLE_FINISHED\020\001\022\037\n"
+    "\033SPECTATE_END_BATTLE_ABORTED\020\002\022\030\n\024SPECTA"
+    "TE_END_REMOVED\020\003*u\n\021eBattleTicketRole\022\033\n"
+    "\027BATTLE_TICKET_ROLE_NONE\020\000\022\"\n\036BATTLE_TIC"
+    "KET_ROLE_PARTICIPANT\020\001\022\037\n\033BATTLE_TICKET_"
+    "ROLE_OBSERVER\020\0022\345\005\n\022BattleClientPlayer\022M"
+    "\n\022SubmitBattleAction\022\032.SubmitBattleActio"
+    "nRequest\032\033.SubmitBattleActionResponse\0229\n"
+    "\016GetBattleState\022\026.GetBattleStateRequest\032"
+    "\017.BattleStateS2C\0223\n\021NotifyBattleStart\022\017."
+    "BattleStartS2C\032\006.Empty\"\005\210\231\310\001\002\0221\n\020NotifyT"
+    "urnResult\022\016.TurnResultS2C\032\006.Empty\"\005\210\231\310\001\002"
+    "\022/\n\017NotifyBattleEnd\022\r.BattleEndS2C\032\006.Emp"
+    "ty\"\005\210\231\310\001\002\022;\n\025NotifyBattleReconnect\022\023.Bat"
+    "tleReconnectS2C\032\006.Empty\"\005\210\231\310\001\002\022D\n\017StopWa"
+    "tchBattle\022\027.StopWatchBattleRequest\032\030.Sto"
+    "pWatchBattleResponse\022>\n\rSetAutoBattle\022\025."
+    "SetAutoBattleRequest\032\026.SetAutoBattleResp"
+    "onse\0227\n\023NotifySpectateState\022\021.SpectateSt"
+    "ateS2C\032\006.Empty\"\005\210\231\310\001\002\0229\n\030NotifySpectateT"
+    "urnResult\022\016.TurnResultS2C\032\006.Empty\"\005\210\231\310\001\002"
+    "\0223\n\021NotifySpectateEnd\022\017.SpectateEndS2C\032\006"
+    ".Empty\"\005\210\231\310\001\002\0229\n\024NotifyBattleAssigned\022\022."
+    "BattleAssignedS2C\032\006.Empty\"\005\210\231\310\001\002\032\005\210\250\303\001\001B"
+    "\014Z\006battle\230\324a\036b\006proto3"
 };
 static const ::_pbi::DescriptorTable* PROTOBUF_NONNULL const
     descriptor_table_proto_2fbattle_2fplayer_5fbattle_2eproto_deps[4] = {
@@ -3564,7 +3576,7 @@ static ::absl::once_flag descriptor_table_proto_2fbattle_2fplayer_5fbattle_2epro
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fbattle_2fplayer_5fbattle_2eproto = {
     false,
     false,
-    3029,
+    3061,
     descriptor_table_protodef_proto_2fbattle_2fplayer_5fbattle_2eproto,
     "proto/battle/player_battle.proto",
     &descriptor_table_proto_2fbattle_2fplayer_5fbattle_2eproto_once,
@@ -7117,7 +7129,8 @@ PROTOBUF_NDEBUG_INLINE BattleTicketPayload::Impl_::Impl_(
     [[maybe_unused]] const ::BattleTicketPayload& from_msg)
       : _has_bits_{from._has_bits_},
         _cached_size_{0},
-        battle_instance_id_(arena, from.battle_instance_id_) {}
+        battle_instance_id_(arena, from.battle_instance_id_),
+        spectator_operation_id_(arena, from.spectator_operation_id_) {}
 
 BattleTicketPayload::BattleTicketPayload(
     ::google::protobuf::Arena* PROTOBUF_NULLABLE arena,
@@ -7147,7 +7160,8 @@ PROTOBUF_NDEBUG_INLINE BattleTicketPayload::Impl_::Impl_(
     [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
     [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
       : _cached_size_{0},
-        battle_instance_id_(arena) {}
+        battle_instance_id_(arena),
+        spectator_operation_id_(arena) {}
 
 inline void BattleTicketPayload::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
   new (&_impl_) Impl_(internal_visibility(), arena);
@@ -7170,6 +7184,7 @@ inline void BattleTicketPayload::SharedDtor(MessageLite& self) {
   this_._internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
   ABSL_DCHECK(this_.GetArena() == nullptr);
   this_._impl_.battle_instance_id_.Destroy();
+  this_._impl_.spectator_operation_id_.Destroy();
   this_._impl_.~Impl_();
 }
 
@@ -7207,10 +7222,15 @@ PROTOBUF_NOINLINE void BattleTicketPayload::Clear() {
   (void) cached_has_bits;
 
   cached_has_bits = _impl_._has_bits_[0];
-  if (CheckHasBit(cached_has_bits, 0x00000001U)) {
-    _impl_.battle_instance_id_.ClearNonDefaultToEmpty();
+  if (BatchCheckHasBit(cached_has_bits, 0x00000003U)) {
+    if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+      _impl_.battle_instance_id_.ClearNonDefaultToEmpty();
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      _impl_.spectator_operation_id_.ClearNonDefaultToEmpty();
+    }
   }
-  if (BatchCheckHasBit(cached_has_bits, 0x0000003eU)) {
+  if (BatchCheckHasBit(cached_has_bits, 0x0000007cU)) {
     ::memset(&_impl_.battle_id_, 0, static_cast<::size_t>(
         reinterpret_cast<char*>(&_impl_.expire_at_ms_) -
         reinterpret_cast<char*>(&_impl_.battle_id_)) + sizeof(_impl_.expire_at_ms_));
@@ -7239,7 +7259,7 @@ PROTOBUF_NOINLINE void BattleTicketPayload::Clear() {
 
   cached_has_bits = this_._impl_._has_bits_[0];
   // uint64 battle_id = 1;
-  if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+  if (CheckHasBit(cached_has_bits, 0x00000004U)) {
     if (this_._internal_battle_id() != 0) {
       target = stream->EnsureSpace(target);
       target = ::_pbi::WireFormatLite::WriteUInt64ToArray(
@@ -7248,7 +7268,7 @@ PROTOBUF_NOINLINE void BattleTicketPayload::Clear() {
   }
 
   // uint64 player_id = 2;
-  if (CheckHasBit(cached_has_bits, 0x00000004U)) {
+  if (CheckHasBit(cached_has_bits, 0x00000008U)) {
     if (this_._internal_player_id() != 0) {
       target = stream->EnsureSpace(target);
       target = ::_pbi::WireFormatLite::WriteUInt64ToArray(
@@ -7257,7 +7277,7 @@ PROTOBUF_NOINLINE void BattleTicketPayload::Clear() {
   }
 
   // uint32 battle_node_id = 3;
-  if (CheckHasBit(cached_has_bits, 0x00000008U)) {
+  if (CheckHasBit(cached_has_bits, 0x00000010U)) {
     if (this_._internal_battle_node_id() != 0) {
       target = stream->EnsureSpace(target);
       target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
@@ -7276,7 +7296,7 @@ PROTOBUF_NOINLINE void BattleTicketPayload::Clear() {
   }
 
   // uint64 expire_at_ms = 5;
-  if (CheckHasBit(cached_has_bits, 0x00000020U)) {
+  if (CheckHasBit(cached_has_bits, 0x00000040U)) {
     if (this_._internal_expire_at_ms() != 0) {
       target = stream->EnsureSpace(target);
       target = ::_pbi::WireFormatLite::WriteUInt64ToArray(
@@ -7285,11 +7305,21 @@ PROTOBUF_NOINLINE void BattleTicketPayload::Clear() {
   }
 
   // .eBattleTicketRole role = 6;
-  if (CheckHasBit(cached_has_bits, 0x00000010U)) {
+  if (CheckHasBit(cached_has_bits, 0x00000020U)) {
     if (this_._internal_role() != 0) {
       target = stream->EnsureSpace(target);
       target = ::_pbi::WireFormatLite::WriteEnumToArray(
           6, this_._internal_role(), target);
+    }
+  }
+
+  // string spectator_operation_id = 7;
+  if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+    if (!this_._internal_spectator_operation_id().empty()) {
+      const ::std::string& _s = this_._internal_spectator_operation_id();
+      ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
+          _s.data(), static_cast<int>(_s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "BattleTicketPayload.spectator_operation_id");
+      target = stream->WriteStringMaybeAliased(7, _s, target);
     }
   }
 
@@ -7318,7 +7348,7 @@ PROTOBUF_NOINLINE void BattleTicketPayload::Clear() {
 
   ::_pbi::Prefetch5LinesFrom7Lines(&this_);
   cached_has_bits = this_._impl_._has_bits_[0];
-  if (BatchCheckHasBit(cached_has_bits, 0x0000003fU)) {
+  if (BatchCheckHasBit(cached_has_bits, 0x0000007fU)) {
     // string battle_instance_id = 4;
     if (CheckHasBit(cached_has_bits, 0x00000001U)) {
       if (!this_._internal_battle_instance_id().empty()) {
@@ -7326,36 +7356,43 @@ PROTOBUF_NOINLINE void BattleTicketPayload::Clear() {
                                         this_._internal_battle_instance_id());
       }
     }
-    // uint64 battle_id = 1;
+    // string spectator_operation_id = 7;
     if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      if (!this_._internal_spectator_operation_id().empty()) {
+        total_size += 1 + ::google::protobuf::internal::WireFormatLite::StringSize(
+                                        this_._internal_spectator_operation_id());
+      }
+    }
+    // uint64 battle_id = 1;
+    if (CheckHasBit(cached_has_bits, 0x00000004U)) {
       if (this_._internal_battle_id() != 0) {
         total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(
             this_._internal_battle_id());
       }
     }
     // uint64 player_id = 2;
-    if (CheckHasBit(cached_has_bits, 0x00000004U)) {
+    if (CheckHasBit(cached_has_bits, 0x00000008U)) {
       if (this_._internal_player_id() != 0) {
         total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(
             this_._internal_player_id());
       }
     }
     // uint32 battle_node_id = 3;
-    if (CheckHasBit(cached_has_bits, 0x00000008U)) {
+    if (CheckHasBit(cached_has_bits, 0x00000010U)) {
       if (this_._internal_battle_node_id() != 0) {
         total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
             this_._internal_battle_node_id());
       }
     }
     // .eBattleTicketRole role = 6;
-    if (CheckHasBit(cached_has_bits, 0x00000010U)) {
+    if (CheckHasBit(cached_has_bits, 0x00000020U)) {
       if (this_._internal_role() != 0) {
         total_size += 1 +
                       ::_pbi::WireFormatLite::EnumSize(this_._internal_role());
       }
     }
     // uint64 expire_at_ms = 5;
-    if (CheckHasBit(cached_has_bits, 0x00000020U)) {
+    if (CheckHasBit(cached_has_bits, 0x00000040U)) {
       if (this_._internal_expire_at_ms() != 0) {
         total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(
             this_._internal_expire_at_ms());
@@ -7379,7 +7416,7 @@ void BattleTicketPayload::MergeImpl(::google::protobuf::MessageLite& to_msg,
   (void)cached_has_bits;
 
   cached_has_bits = from._impl_._has_bits_[0];
-  if (BatchCheckHasBit(cached_has_bits, 0x0000003fU)) {
+  if (BatchCheckHasBit(cached_has_bits, 0x0000007fU)) {
     if (CheckHasBit(cached_has_bits, 0x00000001U)) {
       if (!from._internal_battle_instance_id().empty()) {
         _this->_internal_set_battle_instance_id(from._internal_battle_instance_id());
@@ -7390,26 +7427,35 @@ void BattleTicketPayload::MergeImpl(::google::protobuf::MessageLite& to_msg,
       }
     }
     if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      if (!from._internal_spectator_operation_id().empty()) {
+        _this->_internal_set_spectator_operation_id(from._internal_spectator_operation_id());
+      } else {
+        if (_this->_impl_.spectator_operation_id_.IsDefault()) {
+          _this->_internal_set_spectator_operation_id("");
+        }
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000004U)) {
       if (from._internal_battle_id() != 0) {
         _this->_impl_.battle_id_ = from._impl_.battle_id_;
       }
     }
-    if (CheckHasBit(cached_has_bits, 0x00000004U)) {
+    if (CheckHasBit(cached_has_bits, 0x00000008U)) {
       if (from._internal_player_id() != 0) {
         _this->_impl_.player_id_ = from._impl_.player_id_;
       }
     }
-    if (CheckHasBit(cached_has_bits, 0x00000008U)) {
+    if (CheckHasBit(cached_has_bits, 0x00000010U)) {
       if (from._internal_battle_node_id() != 0) {
         _this->_impl_.battle_node_id_ = from._impl_.battle_node_id_;
       }
     }
-    if (CheckHasBit(cached_has_bits, 0x00000010U)) {
+    if (CheckHasBit(cached_has_bits, 0x00000020U)) {
       if (from._internal_role() != 0) {
         _this->_impl_.role_ = from._impl_.role_;
       }
     }
-    if (CheckHasBit(cached_has_bits, 0x00000020U)) {
+    if (CheckHasBit(cached_has_bits, 0x00000040U)) {
       if (from._internal_expire_at_ms() != 0) {
         _this->_impl_.expire_at_ms_ = from._impl_.expire_at_ms_;
       }
@@ -7435,6 +7481,7 @@ void BattleTicketPayload::InternalSwap(BattleTicketPayload* PROTOBUF_RESTRICT PR
   _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
   ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.battle_instance_id_, &other->_impl_.battle_instance_id_, arena);
+  ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.spectator_operation_id_, &other->_impl_.spectator_operation_id_, arena);
   ::google::protobuf::internal::memswap<
       PROTOBUF_FIELD_OFFSET(BattleTicketPayload, _impl_.expire_at_ms_)
       + sizeof(BattleTicketPayload::_impl_.expire_at_ms_)

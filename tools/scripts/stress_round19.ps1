@@ -120,7 +120,8 @@ function Invoke-Baseline {
 #
 # 本脚本只连本机 mysql 容器。TiDB 环境的清库按 docs/design/tidb-phase1-and-launch-readiness.md §3.5 做:
 # TiDB 上 TRUNCATE 会换表 ID、丢掉预切与 table attributes,清完要重跑 `route_tool -f <yaml> tidb-prepare -zones=… -dry-run=false`。
-$RouteDataTables        = @('player_route', 'zone_merge_fence', 'zone_merged_into')
+# 既有全量本地 reset 同时清全局角色目录；Redis清空不再删除SQL归属。仅原显式wipe门禁允许执行。
+$RouteDataTables        = @('account_role_import_receipt', 'account_role_trade_holder', 'account_role_admission', 'account_role_transfer_receipt', 'account_role_trade', 'account_role', 'account_directory', 'player_route', 'zone_merge_fence', 'zone_merged_into')
 $RouteMetaResetSql      = 'UPDATE route_meta SET writable=1 WHERE id=1;'
 $RouteReconcileResetSql = 'UPDATE route_reconcile SET leader=NULL, lease_until_ms=NULL, watermark_ms=0, cache_verified_ms=0 WHERE id=1;'
 

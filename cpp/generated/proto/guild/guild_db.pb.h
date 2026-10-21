@@ -146,6 +146,38 @@ extern const ::google::protobuf::internal::ClassDataFull GuildTrialBattleRecord_
 #else
 extern const GuildTrialBattleRecordGlobalsTypeInternal GuildTrialBattleRecord_globals_;
 #endif  // PROTOBUF_MESSAGE_GLOBALS
+class GuildTrialLaunchOriginal;
+struct GuildTrialLaunchOriginalGlobalsTypeInternal;
+#ifndef PROTOBUF_MESSAGE_GLOBALS
+extern GuildTrialLaunchOriginalGlobalsTypeInternal GuildTrialLaunchOriginal_globals_;
+extern const ::google::protobuf::internal::ClassDataFull GuildTrialLaunchOriginal_class_data_;
+#else
+extern const GuildTrialLaunchOriginalGlobalsTypeInternal GuildTrialLaunchOriginal_globals_;
+#endif  // PROTOBUF_MESSAGE_GLOBALS
+class GuildTrialLaunchRecord;
+struct GuildTrialLaunchRecordGlobalsTypeInternal;
+#ifndef PROTOBUF_MESSAGE_GLOBALS
+extern GuildTrialLaunchRecordGlobalsTypeInternal GuildTrialLaunchRecord_globals_;
+extern const ::google::protobuf::internal::ClassDataFull GuildTrialLaunchRecord_class_data_;
+#else
+extern const GuildTrialLaunchRecordGlobalsTypeInternal GuildTrialLaunchRecord_globals_;
+#endif  // PROTOBUF_MESSAGE_GLOBALS
+class GuildTrialLaunchRoleRecord;
+struct GuildTrialLaunchRoleRecordGlobalsTypeInternal;
+#ifndef PROTOBUF_MESSAGE_GLOBALS
+extern GuildTrialLaunchRoleRecordGlobalsTypeInternal GuildTrialLaunchRoleRecord_globals_;
+extern const ::google::protobuf::internal::ClassDataFull GuildTrialLaunchRoleRecord_class_data_;
+#else
+extern const GuildTrialLaunchRoleRecordGlobalsTypeInternal GuildTrialLaunchRoleRecord_globals_;
+#endif  // PROTOBUF_MESSAGE_GLOBALS
+class GuildTrialLobbyConsent;
+struct GuildTrialLobbyConsentGlobalsTypeInternal;
+#ifndef PROTOBUF_MESSAGE_GLOBALS
+extern GuildTrialLobbyConsentGlobalsTypeInternal GuildTrialLobbyConsent_globals_;
+extern const ::google::protobuf::internal::ClassDataFull GuildTrialLobbyConsent_class_data_;
+#else
+extern const GuildTrialLobbyConsentGlobalsTypeInternal GuildTrialLobbyConsent_globals_;
+#endif  // PROTOBUF_MESSAGE_GLOBALS
 class GuildTrialRewardOwedRecord;
 struct GuildTrialRewardOwedRecordGlobalsTypeInternal;
 #ifndef PROTOBUF_MESSAGE_GLOBALS
@@ -153,6 +185,14 @@ extern GuildTrialRewardOwedRecordGlobalsTypeInternal GuildTrialRewardOwedRecord_
 extern const ::google::protobuf::internal::ClassDataFull GuildTrialRewardOwedRecord_class_data_;
 #else
 extern const GuildTrialRewardOwedRecordGlobalsTypeInternal GuildTrialRewardOwedRecord_globals_;
+#endif  // PROTOBUF_MESSAGE_GLOBALS
+class GuildTrialRoleIdentity;
+struct GuildTrialRoleIdentityGlobalsTypeInternal;
+#ifndef PROTOBUF_MESSAGE_GLOBALS
+extern GuildTrialRoleIdentityGlobalsTypeInternal GuildTrialRoleIdentity_globals_;
+extern const ::google::protobuf::internal::ClassDataFull GuildTrialRoleIdentity_class_data_;
+#else
+extern const GuildTrialRoleIdentityGlobalsTypeInternal GuildTrialRoleIdentity_globals_;
 #endif  // PROTOBUF_MESSAGE_GLOBALS
 }  // namespace guildpb
 namespace google {
@@ -399,6 +439,236 @@ using ::google::protobuf::internal::generated_enum::AbslUnparseFlag;
 
 // -------------------------------------------------------------------
 
+class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED GuildTrialRoleIdentity final : public ::google::protobuf::Message
+/* @@protoc_insertion_point(class_definition:guildpb.GuildTrialRoleIdentity) */ {
+ public:
+  inline GuildTrialRoleIdentity() : GuildTrialRoleIdentity(nullptr) {}
+  ~GuildTrialRoleIdentity() PROTOBUF_FINAL;
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+  void operator delete(GuildTrialRoleIdentity* PROTOBUF_NONNULL msg, ::std::destroying_delete_t) {
+    SharedDtor(*msg);
+    ::google::protobuf::internal::SizedDelete(msg, sizeof(GuildTrialRoleIdentity));
+  }
+#endif
+
+  template <typename = void>
+  explicit constexpr GuildTrialRoleIdentity(::google::protobuf::internal::ConstantInitialized,
+                           const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
+                               class_data);
+
+  inline GuildTrialRoleIdentity(const GuildTrialRoleIdentity& from) : GuildTrialRoleIdentity(nullptr, from) {}
+  inline GuildTrialRoleIdentity(GuildTrialRoleIdentity&& from) noexcept : GuildTrialRoleIdentity(nullptr, ::std::move(from)) {}
+  inline GuildTrialRoleIdentity& operator=(const GuildTrialRoleIdentity& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline GuildTrialRoleIdentity& operator=(GuildTrialRoleIdentity&& from) noexcept {
+    if (this == &from) return *this;
+    if (::google::protobuf::internal::CanMoveWithInternalSwap(GetArena(), from.GetArena())) {
+      InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  [[nodiscard]] inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance);
+  }
+  [[nodiscard]] inline ::google::protobuf::UnknownFieldSet* PROTOBUF_NONNULL
+  mutable_unknown_fields() ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.mutable_unknown_fields<::google::protobuf::UnknownFieldSet>();
+  }
+
+  [[nodiscard]] static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL descriptor() {
+    return GetDescriptor();
+  }
+  [[nodiscard]] static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL
+  GetDescriptor() {
+    return default_instance().GetMetadata().descriptor;
+  }
+  [[nodiscard]] static const ::google::protobuf::Reflection* PROTOBUF_NONNULL GetReflection() {
+    return default_instance().GetMetadata().reflection;
+  }
+  [[nodiscard]] static const GuildTrialRoleIdentity& default_instance() {
+    return *::google::protobuf::internal::MessageGlobalsBase::ToDefaultInstance<GuildTrialRoleIdentity>(&GuildTrialRoleIdentity_globals_);
+  }
+  static constexpr int kIndexInFileMessages = 9;
+  friend void swap(GuildTrialRoleIdentity& a, GuildTrialRoleIdentity& b) { a.Swap(&b); }
+  inline void Swap(GuildTrialRoleIdentity* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    if (::google::protobuf::internal::CanUseInternalSwap(GetArena(), other->GetArena())) {
+      InternalSwap(other);
+    } else {
+      ::google::protobuf::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(GuildTrialRoleIdentity* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    ABSL_DCHECK(GetArena() == other->GetArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  [[nodiscard]] GuildTrialRoleIdentity* PROTOBUF_NONNULL
+  New(::google::protobuf::Arena* PROTOBUF_NULLABLE arena = nullptr) const {
+    return ::google::protobuf::Message::DefaultConstruct<GuildTrialRoleIdentity>(arena);
+  }
+  using ::google::protobuf::Message::CopyFrom;
+  void CopyFrom(const GuildTrialRoleIdentity& from);
+  using ::google::protobuf::Message::MergeFrom;
+  void MergeFrom(const GuildTrialRoleIdentity& from) { GuildTrialRoleIdentity::MergeImpl(*this, from); }
+
+  private:
+  static void MergeImpl(::google::protobuf::MessageLite& to_msg,
+                        const ::google::protobuf::MessageLite& from_msg);
+
+  public:
+  [[nodiscard]] bool IsInitialized() const {
+    return true;
+  }
+  ABSL_ATTRIBUTE_REINITIALIZES void Clear() PROTOBUF_FINAL;
+  #if defined(PROTOBUF_CUSTOM_VTABLE)
+  private:
+  [[nodiscard]] static ::size_t ByteSizeLong(const ::google::protobuf::MessageLite& msg);
+  [[nodiscard]] static ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      const ::google::protobuf::MessageLite& msg, ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream);
+
+  public:
+  [[nodiscard]] ::size_t ByteSizeLong() const { return ByteSizeLong(*this); }
+  [[nodiscard]] ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
+    return _InternalSerialize(*this, target, stream);
+  }
+  #else   // PROTOBUF_CUSTOM_VTABLE
+  [[nodiscard]] ::size_t ByteSizeLong() const final;
+  [[nodiscard]] ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const final;
+  #endif  // PROTOBUF_CUSTOM_VTABLE
+  [[nodiscard]] int GetCachedSize() const {
+    return _impl_._cached_size_.Get();
+  }
+
+  private:
+  void SharedCtor(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static void SharedDtor(MessageLite& self);
+  void InternalSwap(GuildTrialRoleIdentity* PROTOBUF_NONNULL other);
+ private:
+  template <typename T>
+  friend ::absl::string_view(::google::protobuf::internal::GetAnyMessageName)();
+  static ::absl::string_view FullMessageName() { return "guildpb.GuildTrialRoleIdentity"; }
+
+  explicit GuildTrialRoleIdentity(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  GuildTrialRoleIdentity(::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const GuildTrialRoleIdentity& from);
+  GuildTrialRoleIdentity(
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, GuildTrialRoleIdentity&& from) noexcept
+      : GuildTrialRoleIdentity(arena) {
+    *this = ::std::move(from);
+  }
+  const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL GetClassData() const PROTOBUF_FINAL;
+  static void* PROTOBUF_NONNULL PlacementNew_(
+      const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static constexpr auto InternalNewImpl_();
+
+ public:
+  static constexpr auto InternalGenerateClassData_(
+      const MessageLite& prototype,
+      const ::google::protobuf::internal::TcParseTableBase* PROTOBUF_NULLABLE tc_table = nullptr);
+
+  [[nodiscard]] ::google::protobuf::Metadata GetMetadata() const;
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+  enum : int {
+    kAccountFieldNumber = 2,
+    kPlayerIdFieldNumber = 1,
+    kOwnerRevisionFieldNumber = 3,
+  };
+  // string account = 2;
+  void clear_account() ;
+  [[nodiscard]] const ::std::string& account() const;
+  template <typename Arg_ = const ::std::string&, typename... Args_>
+  void set_account(Arg_&& arg, Args_... args);
+  ::std::string* PROTOBUF_NONNULL mutable_account();
+  [[nodiscard]] ::std::string* PROTOBUF_NULLABLE release_account();
+  void set_allocated_account(::std::string* PROTOBUF_NULLABLE value);
+
+  private:
+  const ::std::string& _internal_account() const;
+  PROTOBUF_ALWAYS_INLINE void _internal_set_account(const ::std::string& value);
+  ::std::string* PROTOBUF_NONNULL _internal_mutable_account();
+
+  public:
+  // uint64 player_id = 1;
+  void clear_player_id() ;
+  [[nodiscard]] ::uint64_t player_id() const;
+  void set_player_id(::uint64_t value);
+
+  private:
+  ::uint64_t _internal_player_id() const;
+  void _internal_set_player_id(::uint64_t value);
+
+  public:
+  // uint64 owner_revision = 3;
+  void clear_owner_revision() ;
+  [[nodiscard]] ::uint64_t owner_revision() const;
+  void set_owner_revision(::uint64_t value);
+
+  private:
+  ::uint64_t _internal_owner_revision() const;
+  void _internal_set_owner_revision(::uint64_t value);
+
+  public:
+  // @@protoc_insertion_point(class_scope:guildpb.GuildTrialRoleIdentity)
+ private:
+  class _Internal;
+  using ParseTableT_ =
+      ::google::protobuf::internal::TcParseTable<2, 3,
+                          0, 46,
+                          2>;
+  static constexpr ParseTableT_ InternalGenerateParseTable_(
+      const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL class_data);
+  friend class ::google::protobuf::internal::TcParser;
+  #ifndef PROTOBUF_MESSAGE_GLOBALS
+  static const ParseTableT_ _table_;
+  #endif
+
+  friend class ::google::protobuf::MessageLite;
+  friend class ::google::protobuf::Arena;
+  friend ::google::protobuf::internal::PrivateAccess;
+  template <typename T>
+  friend class ::google::protobuf::Arena::InternalHelper;
+  using InternalArenaConstructable_ = void;
+  using DestructorSkippable_ = void;
+  struct Impl_ {
+    inline explicit constexpr Impl_(::google::protobuf::internal::InternalVisibility visibility,
+                                    ::google::protobuf::internal::ConstantInitialized) noexcept;
+    inline explicit Impl_(
+        ::google::protobuf::internal::InternalVisibility visibility,
+        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+    inline explicit Impl_(
+        ::google::protobuf::internal::InternalVisibility visibility,
+        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
+        const GuildTrialRoleIdentity& from_msg);
+    ::google::protobuf::internal::HasBits<1> _has_bits_;
+    ::google::protobuf::internal::CachedSize _cached_size_;
+    ::google::protobuf::internal::ArenaStringPtr account_;
+    ::uint64_t player_id_;
+    ::uint64_t owner_revision_;
+    PROTOBUF_TSAN_DECLARE_MEMBER
+  };
+  union { Impl_ _impl_; };
+  friend struct ::TableStruct_proto_2fguild_2fguild_5fdb_2eproto;
+};
+// -------------------------------------------------------------------
+
 class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED GuildTrialRewardOwedRecord final : public ::google::protobuf::Message
 /* @@protoc_insertion_point(class_definition:guildpb.GuildTrialRewardOwedRecord) */ {
  public:
@@ -455,7 +725,7 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED GuildTrialRewardOwedRecord final : 
   [[nodiscard]] static const GuildTrialRewardOwedRecord& default_instance() {
     return *::google::protobuf::internal::MessageGlobalsBase::ToDefaultInstance<GuildTrialRewardOwedRecord>(&GuildTrialRewardOwedRecord_globals_);
   }
-  static constexpr int kIndexInFileMessages = 9;
+  static constexpr int kIndexInFileMessages = 14;
   friend void swap(GuildTrialRewardOwedRecord& a, GuildTrialRewardOwedRecord& b) { a.Swap(&b); }
   inline void Swap(GuildTrialRewardOwedRecord* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -689,6 +959,560 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED GuildTrialRewardOwedRecord final : 
 };
 // -------------------------------------------------------------------
 
+class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED GuildTrialLaunchRoleRecord final : public ::google::protobuf::Message
+/* @@protoc_insertion_point(class_definition:guildpb.GuildTrialLaunchRoleRecord) */ {
+ public:
+  inline GuildTrialLaunchRoleRecord() : GuildTrialLaunchRoleRecord(nullptr) {}
+  ~GuildTrialLaunchRoleRecord() PROTOBUF_FINAL;
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+  void operator delete(GuildTrialLaunchRoleRecord* PROTOBUF_NONNULL msg, ::std::destroying_delete_t) {
+    SharedDtor(*msg);
+    ::google::protobuf::internal::SizedDelete(msg, sizeof(GuildTrialLaunchRoleRecord));
+  }
+#endif
+
+  template <typename = void>
+  explicit constexpr GuildTrialLaunchRoleRecord(::google::protobuf::internal::ConstantInitialized,
+                           const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
+                               class_data);
+
+  inline GuildTrialLaunchRoleRecord(const GuildTrialLaunchRoleRecord& from) : GuildTrialLaunchRoleRecord(nullptr, from) {}
+  inline GuildTrialLaunchRoleRecord(GuildTrialLaunchRoleRecord&& from) noexcept : GuildTrialLaunchRoleRecord(nullptr, ::std::move(from)) {}
+  inline GuildTrialLaunchRoleRecord& operator=(const GuildTrialLaunchRoleRecord& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline GuildTrialLaunchRoleRecord& operator=(GuildTrialLaunchRoleRecord&& from) noexcept {
+    if (this == &from) return *this;
+    if (::google::protobuf::internal::CanMoveWithInternalSwap(GetArena(), from.GetArena())) {
+      InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  [[nodiscard]] inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance);
+  }
+  [[nodiscard]] inline ::google::protobuf::UnknownFieldSet* PROTOBUF_NONNULL
+  mutable_unknown_fields() ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.mutable_unknown_fields<::google::protobuf::UnknownFieldSet>();
+  }
+
+  [[nodiscard]] static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL descriptor() {
+    return GetDescriptor();
+  }
+  [[nodiscard]] static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL
+  GetDescriptor() {
+    return default_instance().GetMetadata().descriptor;
+  }
+  [[nodiscard]] static const ::google::protobuf::Reflection* PROTOBUF_NONNULL GetReflection() {
+    return default_instance().GetMetadata().reflection;
+  }
+  [[nodiscard]] static const GuildTrialLaunchRoleRecord& default_instance() {
+    return *::google::protobuf::internal::MessageGlobalsBase::ToDefaultInstance<GuildTrialLaunchRoleRecord>(&GuildTrialLaunchRoleRecord_globals_);
+  }
+  static constexpr int kIndexInFileMessages = 13;
+  friend void swap(GuildTrialLaunchRoleRecord& a, GuildTrialLaunchRoleRecord& b) { a.Swap(&b); }
+  inline void Swap(GuildTrialLaunchRoleRecord* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    if (::google::protobuf::internal::CanUseInternalSwap(GetArena(), other->GetArena())) {
+      InternalSwap(other);
+    } else {
+      ::google::protobuf::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(GuildTrialLaunchRoleRecord* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    ABSL_DCHECK(GetArena() == other->GetArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  [[nodiscard]] GuildTrialLaunchRoleRecord* PROTOBUF_NONNULL
+  New(::google::protobuf::Arena* PROTOBUF_NULLABLE arena = nullptr) const {
+    return ::google::protobuf::Message::DefaultConstruct<GuildTrialLaunchRoleRecord>(arena);
+  }
+  using ::google::protobuf::Message::CopyFrom;
+  void CopyFrom(const GuildTrialLaunchRoleRecord& from);
+  using ::google::protobuf::Message::MergeFrom;
+  void MergeFrom(const GuildTrialLaunchRoleRecord& from) { GuildTrialLaunchRoleRecord::MergeImpl(*this, from); }
+
+  private:
+  static void MergeImpl(::google::protobuf::MessageLite& to_msg,
+                        const ::google::protobuf::MessageLite& from_msg);
+
+  public:
+  [[nodiscard]] bool IsInitialized() const {
+    return true;
+  }
+  ABSL_ATTRIBUTE_REINITIALIZES void Clear() PROTOBUF_FINAL;
+  #if defined(PROTOBUF_CUSTOM_VTABLE)
+  private:
+  [[nodiscard]] static ::size_t ByteSizeLong(const ::google::protobuf::MessageLite& msg);
+  [[nodiscard]] static ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      const ::google::protobuf::MessageLite& msg, ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream);
+
+  public:
+  [[nodiscard]] ::size_t ByteSizeLong() const { return ByteSizeLong(*this); }
+  [[nodiscard]] ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
+    return _InternalSerialize(*this, target, stream);
+  }
+  #else   // PROTOBUF_CUSTOM_VTABLE
+  [[nodiscard]] ::size_t ByteSizeLong() const final;
+  [[nodiscard]] ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const final;
+  #endif  // PROTOBUF_CUSTOM_VTABLE
+  [[nodiscard]] int GetCachedSize() const {
+    return _impl_._cached_size_.Get();
+  }
+
+  private:
+  void SharedCtor(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static void SharedDtor(MessageLite& self);
+  void InternalSwap(GuildTrialLaunchRoleRecord* PROTOBUF_NONNULL other);
+ private:
+  template <typename T>
+  friend ::absl::string_view(::google::protobuf::internal::GetAnyMessageName)();
+  static ::absl::string_view FullMessageName() { return "guildpb.GuildTrialLaunchRoleRecord"; }
+
+  explicit GuildTrialLaunchRoleRecord(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  GuildTrialLaunchRoleRecord(::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const GuildTrialLaunchRoleRecord& from);
+  GuildTrialLaunchRoleRecord(
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, GuildTrialLaunchRoleRecord&& from) noexcept
+      : GuildTrialLaunchRoleRecord(arena) {
+    *this = ::std::move(from);
+  }
+  const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL GetClassData() const PROTOBUF_FINAL;
+  static void* PROTOBUF_NONNULL PlacementNew_(
+      const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static constexpr auto InternalNewImpl_();
+
+ public:
+  static constexpr auto InternalGenerateClassData_(
+      const MessageLite& prototype,
+      const ::google::protobuf::internal::TcParseTableBase* PROTOBUF_NULLABLE tc_table = nullptr);
+
+  [[nodiscard]] ::google::protobuf::Metadata GetMetadata() const;
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+  enum : int {
+    kAccountFieldNumber = 3,
+    kPlayerIdFieldNumber = 1,
+    kRequestIdFieldNumber = 2,
+    kOwnerRevisionFieldNumber = 4,
+    kStateFieldNumber = 5,
+  };
+  // string account = 3;
+  void clear_account() ;
+  [[nodiscard]] const ::std::string& account() const;
+  template <typename Arg_ = const ::std::string&, typename... Args_>
+  void set_account(Arg_&& arg, Args_... args);
+  ::std::string* PROTOBUF_NONNULL mutable_account();
+  [[nodiscard]] ::std::string* PROTOBUF_NULLABLE release_account();
+  void set_allocated_account(::std::string* PROTOBUF_NULLABLE value);
+
+  private:
+  const ::std::string& _internal_account() const;
+  PROTOBUF_ALWAYS_INLINE void _internal_set_account(const ::std::string& value);
+  ::std::string* PROTOBUF_NONNULL _internal_mutable_account();
+
+  public:
+  // uint64 player_id = 1;
+  void clear_player_id() ;
+  [[nodiscard]] ::uint64_t player_id() const;
+  void set_player_id(::uint64_t value);
+
+  private:
+  ::uint64_t _internal_player_id() const;
+  void _internal_set_player_id(::uint64_t value);
+
+  public:
+  // uint64 request_id = 2;
+  void clear_request_id() ;
+  [[nodiscard]] ::uint64_t request_id() const;
+  void set_request_id(::uint64_t value);
+
+  private:
+  ::uint64_t _internal_request_id() const;
+  void _internal_set_request_id(::uint64_t value);
+
+  public:
+  // uint64 owner_revision = 4;
+  void clear_owner_revision() ;
+  [[nodiscard]] ::uint64_t owner_revision() const;
+  void set_owner_revision(::uint64_t value);
+
+  private:
+  ::uint64_t _internal_owner_revision() const;
+  void _internal_set_owner_revision(::uint64_t value);
+
+  public:
+  // uint32 state = 5;
+  void clear_state() ;
+  [[nodiscard]] ::uint32_t state() const;
+  void set_state(::uint32_t value);
+
+  private:
+  ::uint32_t _internal_state() const;
+  void _internal_set_state(::uint32_t value);
+
+  public:
+  // @@protoc_insertion_point(class_scope:guildpb.GuildTrialLaunchRoleRecord)
+ private:
+  class _Internal;
+  using ParseTableT_ =
+      ::google::protobuf::internal::TcParseTable<3, 5,
+                          0, 50,
+                          2>;
+  static constexpr ParseTableT_ InternalGenerateParseTable_(
+      const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL class_data);
+  friend class ::google::protobuf::internal::TcParser;
+  #ifndef PROTOBUF_MESSAGE_GLOBALS
+  static const ParseTableT_ _table_;
+  #endif
+
+  friend class ::google::protobuf::MessageLite;
+  friend class ::google::protobuf::Arena;
+  friend ::google::protobuf::internal::PrivateAccess;
+  template <typename T>
+  friend class ::google::protobuf::Arena::InternalHelper;
+  using InternalArenaConstructable_ = void;
+  using DestructorSkippable_ = void;
+  struct Impl_ {
+    inline explicit constexpr Impl_(::google::protobuf::internal::InternalVisibility visibility,
+                                    ::google::protobuf::internal::ConstantInitialized) noexcept;
+    inline explicit Impl_(
+        ::google::protobuf::internal::InternalVisibility visibility,
+        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+    inline explicit Impl_(
+        ::google::protobuf::internal::InternalVisibility visibility,
+        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
+        const GuildTrialLaunchRoleRecord& from_msg);
+    ::google::protobuf::internal::HasBits<1> _has_bits_;
+    ::google::protobuf::internal::CachedSize _cached_size_;
+    ::google::protobuf::internal::ArenaStringPtr account_;
+    ::uint64_t player_id_;
+    ::uint64_t request_id_;
+    ::uint64_t owner_revision_;
+    ::uint32_t state_;
+    PROTOBUF_TSAN_DECLARE_MEMBER
+  };
+  union { Impl_ _impl_; };
+  friend struct ::TableStruct_proto_2fguild_2fguild_5fdb_2eproto;
+};
+// -------------------------------------------------------------------
+
+class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED GuildTrialLaunchRecord final : public ::google::protobuf::Message
+/* @@protoc_insertion_point(class_definition:guildpb.GuildTrialLaunchRecord) */ {
+ public:
+  inline GuildTrialLaunchRecord() : GuildTrialLaunchRecord(nullptr) {}
+  ~GuildTrialLaunchRecord() PROTOBUF_FINAL;
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+  void operator delete(GuildTrialLaunchRecord* PROTOBUF_NONNULL msg, ::std::destroying_delete_t) {
+    SharedDtor(*msg);
+    ::google::protobuf::internal::SizedDelete(msg, sizeof(GuildTrialLaunchRecord));
+  }
+#endif
+
+  template <typename = void>
+  explicit constexpr GuildTrialLaunchRecord(::google::protobuf::internal::ConstantInitialized,
+                           const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
+                               class_data);
+
+  inline GuildTrialLaunchRecord(const GuildTrialLaunchRecord& from) : GuildTrialLaunchRecord(nullptr, from) {}
+  inline GuildTrialLaunchRecord(GuildTrialLaunchRecord&& from) noexcept : GuildTrialLaunchRecord(nullptr, ::std::move(from)) {}
+  inline GuildTrialLaunchRecord& operator=(const GuildTrialLaunchRecord& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline GuildTrialLaunchRecord& operator=(GuildTrialLaunchRecord&& from) noexcept {
+    if (this == &from) return *this;
+    if (::google::protobuf::internal::CanMoveWithInternalSwap(GetArena(), from.GetArena())) {
+      InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  [[nodiscard]] inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance);
+  }
+  [[nodiscard]] inline ::google::protobuf::UnknownFieldSet* PROTOBUF_NONNULL
+  mutable_unknown_fields() ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.mutable_unknown_fields<::google::protobuf::UnknownFieldSet>();
+  }
+
+  [[nodiscard]] static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL descriptor() {
+    return GetDescriptor();
+  }
+  [[nodiscard]] static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL
+  GetDescriptor() {
+    return default_instance().GetMetadata().descriptor;
+  }
+  [[nodiscard]] static const ::google::protobuf::Reflection* PROTOBUF_NONNULL GetReflection() {
+    return default_instance().GetMetadata().reflection;
+  }
+  [[nodiscard]] static const GuildTrialLaunchRecord& default_instance() {
+    return *::google::protobuf::internal::MessageGlobalsBase::ToDefaultInstance<GuildTrialLaunchRecord>(&GuildTrialLaunchRecord_globals_);
+  }
+  static constexpr int kIndexInFileMessages = 12;
+  friend void swap(GuildTrialLaunchRecord& a, GuildTrialLaunchRecord& b) { a.Swap(&b); }
+  inline void Swap(GuildTrialLaunchRecord* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    if (::google::protobuf::internal::CanUseInternalSwap(GetArena(), other->GetArena())) {
+      InternalSwap(other);
+    } else {
+      ::google::protobuf::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(GuildTrialLaunchRecord* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    ABSL_DCHECK(GetArena() == other->GetArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  [[nodiscard]] GuildTrialLaunchRecord* PROTOBUF_NONNULL
+  New(::google::protobuf::Arena* PROTOBUF_NULLABLE arena = nullptr) const {
+    return ::google::protobuf::Message::DefaultConstruct<GuildTrialLaunchRecord>(arena);
+  }
+  using ::google::protobuf::Message::CopyFrom;
+  void CopyFrom(const GuildTrialLaunchRecord& from);
+  using ::google::protobuf::Message::MergeFrom;
+  void MergeFrom(const GuildTrialLaunchRecord& from) { GuildTrialLaunchRecord::MergeImpl(*this, from); }
+
+  private:
+  static void MergeImpl(::google::protobuf::MessageLite& to_msg,
+                        const ::google::protobuf::MessageLite& from_msg);
+
+  public:
+  [[nodiscard]] bool IsInitialized() const {
+    return true;
+  }
+  ABSL_ATTRIBUTE_REINITIALIZES void Clear() PROTOBUF_FINAL;
+  #if defined(PROTOBUF_CUSTOM_VTABLE)
+  private:
+  [[nodiscard]] static ::size_t ByteSizeLong(const ::google::protobuf::MessageLite& msg);
+  [[nodiscard]] static ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      const ::google::protobuf::MessageLite& msg, ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream);
+
+  public:
+  [[nodiscard]] ::size_t ByteSizeLong() const { return ByteSizeLong(*this); }
+  [[nodiscard]] ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
+    return _InternalSerialize(*this, target, stream);
+  }
+  #else   // PROTOBUF_CUSTOM_VTABLE
+  [[nodiscard]] ::size_t ByteSizeLong() const final;
+  [[nodiscard]] ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const final;
+  #endif  // PROTOBUF_CUSTOM_VTABLE
+  [[nodiscard]] int GetCachedSize() const {
+    return _impl_._cached_size_.Get();
+  }
+
+  private:
+  void SharedCtor(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static void SharedDtor(MessageLite& self);
+  void InternalSwap(GuildTrialLaunchRecord* PROTOBUF_NONNULL other);
+ private:
+  template <typename T>
+  friend ::absl::string_view(::google::protobuf::internal::GetAnyMessageName)();
+  static ::absl::string_view FullMessageName() { return "guildpb.GuildTrialLaunchRecord"; }
+
+  explicit GuildTrialLaunchRecord(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  GuildTrialLaunchRecord(::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const GuildTrialLaunchRecord& from);
+  GuildTrialLaunchRecord(
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, GuildTrialLaunchRecord&& from) noexcept
+      : GuildTrialLaunchRecord(arena) {
+    *this = ::std::move(from);
+  }
+  const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL GetClassData() const PROTOBUF_FINAL;
+  static void* PROTOBUF_NONNULL PlacementNew_(
+      const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static constexpr auto InternalNewImpl_();
+
+ public:
+  static constexpr auto InternalGenerateClassData_(
+      const MessageLite& prototype,
+      const ::google::protobuf::internal::TcParseTableBase* PROTOBUF_NULLABLE tc_table = nullptr);
+
+  [[nodiscard]] ::google::protobuf::Metadata GetMetadata() const;
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+  enum : int {
+    kOriginalProtoFieldNumber = 4,
+    kRequestDigestFieldNumber = 5,
+    kCancelReceiptFieldNumber = 8,
+    kRequestIdFieldNumber = 1,
+    kBattleIdFieldNumber = 2,
+    kCreatedMsFieldNumber = 6,
+    kUpdatedMsFieldNumber = 7,
+    kStateFieldNumber = 3,
+  };
+  // bytes original_proto = 4;
+  void clear_original_proto() ;
+  [[nodiscard]] const ::std::string& original_proto() const;
+  template <typename Arg_ = const ::std::string&, typename... Args_>
+  void set_original_proto(Arg_&& arg, Args_... args);
+  ::std::string* PROTOBUF_NONNULL mutable_original_proto();
+  [[nodiscard]] ::std::string* PROTOBUF_NULLABLE release_original_proto();
+  void set_allocated_original_proto(::std::string* PROTOBUF_NULLABLE value);
+
+  private:
+  const ::std::string& _internal_original_proto() const;
+  PROTOBUF_ALWAYS_INLINE void _internal_set_original_proto(const ::std::string& value);
+  ::std::string* PROTOBUF_NONNULL _internal_mutable_original_proto();
+
+  public:
+  // bytes request_digest = 5;
+  void clear_request_digest() ;
+  [[nodiscard]] const ::std::string& request_digest() const;
+  template <typename Arg_ = const ::std::string&, typename... Args_>
+  void set_request_digest(Arg_&& arg, Args_... args);
+  ::std::string* PROTOBUF_NONNULL mutable_request_digest();
+  [[nodiscard]] ::std::string* PROTOBUF_NULLABLE release_request_digest();
+  void set_allocated_request_digest(::std::string* PROTOBUF_NULLABLE value);
+
+  private:
+  const ::std::string& _internal_request_digest() const;
+  PROTOBUF_ALWAYS_INLINE void _internal_set_request_digest(const ::std::string& value);
+  ::std::string* PROTOBUF_NONNULL _internal_mutable_request_digest();
+
+  public:
+  // bytes cancel_receipt = 8;
+  void clear_cancel_receipt() ;
+  [[nodiscard]] const ::std::string& cancel_receipt() const;
+  template <typename Arg_ = const ::std::string&, typename... Args_>
+  void set_cancel_receipt(Arg_&& arg, Args_... args);
+  ::std::string* PROTOBUF_NONNULL mutable_cancel_receipt();
+  [[nodiscard]] ::std::string* PROTOBUF_NULLABLE release_cancel_receipt();
+  void set_allocated_cancel_receipt(::std::string* PROTOBUF_NULLABLE value);
+
+  private:
+  const ::std::string& _internal_cancel_receipt() const;
+  PROTOBUF_ALWAYS_INLINE void _internal_set_cancel_receipt(const ::std::string& value);
+  ::std::string* PROTOBUF_NONNULL _internal_mutable_cancel_receipt();
+
+  public:
+  // uint64 request_id = 1;
+  void clear_request_id() ;
+  [[nodiscard]] ::uint64_t request_id() const;
+  void set_request_id(::uint64_t value);
+
+  private:
+  ::uint64_t _internal_request_id() const;
+  void _internal_set_request_id(::uint64_t value);
+
+  public:
+  // uint64 battle_id = 2;
+  void clear_battle_id() ;
+  [[nodiscard]] ::uint64_t battle_id() const;
+  void set_battle_id(::uint64_t value);
+
+  private:
+  ::uint64_t _internal_battle_id() const;
+  void _internal_set_battle_id(::uint64_t value);
+
+  public:
+  // uint64 created_ms = 6;
+  void clear_created_ms() ;
+  [[nodiscard]] ::uint64_t created_ms() const;
+  void set_created_ms(::uint64_t value);
+
+  private:
+  ::uint64_t _internal_created_ms() const;
+  void _internal_set_created_ms(::uint64_t value);
+
+  public:
+  // uint64 updated_ms = 7;
+  void clear_updated_ms() ;
+  [[nodiscard]] ::uint64_t updated_ms() const;
+  void set_updated_ms(::uint64_t value);
+
+  private:
+  ::uint64_t _internal_updated_ms() const;
+  void _internal_set_updated_ms(::uint64_t value);
+
+  public:
+  // uint32 state = 3;
+  void clear_state() ;
+  [[nodiscard]] ::uint32_t state() const;
+  void set_state(::uint32_t value);
+
+  private:
+  ::uint32_t _internal_state() const;
+  void _internal_set_state(::uint32_t value);
+
+  public:
+  // @@protoc_insertion_point(class_scope:guildpb.GuildTrialLaunchRecord)
+ private:
+  class _Internal;
+  using ParseTableT_ =
+      ::google::protobuf::internal::TcParseTable<3, 8,
+                          0, 0,
+                          2>;
+  static constexpr ParseTableT_ InternalGenerateParseTable_(
+      const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL class_data);
+  friend class ::google::protobuf::internal::TcParser;
+  #ifndef PROTOBUF_MESSAGE_GLOBALS
+  static const ParseTableT_ _table_;
+  #endif
+
+  friend class ::google::protobuf::MessageLite;
+  friend class ::google::protobuf::Arena;
+  friend ::google::protobuf::internal::PrivateAccess;
+  template <typename T>
+  friend class ::google::protobuf::Arena::InternalHelper;
+  using InternalArenaConstructable_ = void;
+  using DestructorSkippable_ = void;
+  struct Impl_ {
+    inline explicit constexpr Impl_(::google::protobuf::internal::InternalVisibility visibility,
+                                    ::google::protobuf::internal::ConstantInitialized) noexcept;
+    inline explicit Impl_(
+        ::google::protobuf::internal::InternalVisibility visibility,
+        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+    inline explicit Impl_(
+        ::google::protobuf::internal::InternalVisibility visibility,
+        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
+        const GuildTrialLaunchRecord& from_msg);
+    ::google::protobuf::internal::HasBits<1> _has_bits_;
+    ::google::protobuf::internal::CachedSize _cached_size_;
+    ::google::protobuf::internal::ArenaStringPtr original_proto_;
+    ::google::protobuf::internal::ArenaStringPtr request_digest_;
+    ::google::protobuf::internal::ArenaStringPtr cancel_receipt_;
+    ::uint64_t request_id_;
+    ::uint64_t battle_id_;
+    ::uint64_t created_ms_;
+    ::uint64_t updated_ms_;
+    ::uint32_t state_;
+    PROTOBUF_TSAN_DECLARE_MEMBER
+  };
+  union { Impl_ _impl_; };
+  friend struct ::TableStruct_proto_2fguild_2fguild_5fdb_2eproto;
+};
+// -------------------------------------------------------------------
+
 class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED GuildTrialBattleRecord final : public ::google::protobuf::Message
 /* @@protoc_insertion_point(class_definition:guildpb.GuildTrialBattleRecord) */ {
  public:
@@ -848,6 +1672,7 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED GuildTrialBattleRecord final : publ
     kRewardedCountFieldNumber = 9,
     kCreatedMsFieldNumber = 10,
     kSettledMsFieldNumber = 11,
+    kLaunchRequestIdFieldNumber = 12,
   };
   // uint64 battle_id = 1;
   void clear_battle_id() ;
@@ -959,11 +1784,21 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED GuildTrialBattleRecord final : publ
   void _internal_set_settled_ms(::uint64_t value);
 
   public:
+  // uint64 launch_request_id = 12;
+  void clear_launch_request_id() ;
+  [[nodiscard]] ::uint64_t launch_request_id() const;
+  void set_launch_request_id(::uint64_t value);
+
+  private:
+  ::uint64_t _internal_launch_request_id() const;
+  void _internal_set_launch_request_id(::uint64_t value);
+
+  public:
   // @@protoc_insertion_point(class_scope:guildpb.GuildTrialBattleRecord)
  private:
   class _Internal;
   using ParseTableT_ =
-      ::google::protobuf::internal::TcParseTable<4, 11,
+      ::google::protobuf::internal::TcParseTable<4, 12,
                           0, 0,
                           2>;
   static constexpr ParseTableT_ InternalGenerateParseTable_(
@@ -1003,6 +1838,7 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED GuildTrialBattleRecord final : publ
     ::uint32_t rewarded_count_;
     ::uint64_t created_ms_;
     ::uint64_t settled_ms_;
+    ::uint64_t launch_request_id_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
   union { Impl_ _impl_; };
@@ -2398,7 +3234,7 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED GuildClientRequestRecord final : pu
   [[nodiscard]] static const GuildClientRequestRecord& default_instance() {
     return *::google::protobuf::internal::MessageGlobalsBase::ToDefaultInstance<GuildClientRequestRecord>(&GuildClientRequestRecord_globals_);
   }
-  static constexpr int kIndexInFileMessages = 10;
+  static constexpr int kIndexInFileMessages = 15;
   friend void swap(GuildClientRequestRecord& a, GuildClientRequestRecord& b) { a.Swap(&b); }
   inline void Swap(GuildClientRequestRecord* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -3634,6 +4470,533 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED GuildActivityProgressRecord final :
     ::uint32_t progress_count_;
     ::uint32_t funds_granted_;
     ::uint64_t updated_ms_;
+    PROTOBUF_TSAN_DECLARE_MEMBER
+  };
+  union { Impl_ _impl_; };
+  friend struct ::TableStruct_proto_2fguild_2fguild_5fdb_2eproto;
+};
+// -------------------------------------------------------------------
+
+class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED GuildTrialLobbyConsent final : public ::google::protobuf::Message
+/* @@protoc_insertion_point(class_definition:guildpb.GuildTrialLobbyConsent) */ {
+ public:
+  inline GuildTrialLobbyConsent() : GuildTrialLobbyConsent(nullptr) {}
+  ~GuildTrialLobbyConsent() PROTOBUF_FINAL;
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+  void operator delete(GuildTrialLobbyConsent* PROTOBUF_NONNULL msg, ::std::destroying_delete_t) {
+    SharedDtor(*msg);
+    ::google::protobuf::internal::SizedDelete(msg, sizeof(GuildTrialLobbyConsent));
+  }
+#endif
+
+  template <typename = void>
+  explicit constexpr GuildTrialLobbyConsent(::google::protobuf::internal::ConstantInitialized,
+                           const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
+                               class_data);
+
+  inline GuildTrialLobbyConsent(const GuildTrialLobbyConsent& from) : GuildTrialLobbyConsent(nullptr, from) {}
+  inline GuildTrialLobbyConsent(GuildTrialLobbyConsent&& from) noexcept : GuildTrialLobbyConsent(nullptr, ::std::move(from)) {}
+  inline GuildTrialLobbyConsent& operator=(const GuildTrialLobbyConsent& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline GuildTrialLobbyConsent& operator=(GuildTrialLobbyConsent&& from) noexcept {
+    if (this == &from) return *this;
+    if (::google::protobuf::internal::CanMoveWithInternalSwap(GetArena(), from.GetArena())) {
+      InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  [[nodiscard]] inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance);
+  }
+  [[nodiscard]] inline ::google::protobuf::UnknownFieldSet* PROTOBUF_NONNULL
+  mutable_unknown_fields() ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.mutable_unknown_fields<::google::protobuf::UnknownFieldSet>();
+  }
+
+  [[nodiscard]] static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL descriptor() {
+    return GetDescriptor();
+  }
+  [[nodiscard]] static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL
+  GetDescriptor() {
+    return default_instance().GetMetadata().descriptor;
+  }
+  [[nodiscard]] static const ::google::protobuf::Reflection* PROTOBUF_NONNULL GetReflection() {
+    return default_instance().GetMetadata().reflection;
+  }
+  [[nodiscard]] static const GuildTrialLobbyConsent& default_instance() {
+    return *::google::protobuf::internal::MessageGlobalsBase::ToDefaultInstance<GuildTrialLobbyConsent>(&GuildTrialLobbyConsent_globals_);
+  }
+  static constexpr int kIndexInFileMessages = 10;
+  friend void swap(GuildTrialLobbyConsent& a, GuildTrialLobbyConsent& b) { a.Swap(&b); }
+  inline void Swap(GuildTrialLobbyConsent* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    if (::google::protobuf::internal::CanUseInternalSwap(GetArena(), other->GetArena())) {
+      InternalSwap(other);
+    } else {
+      ::google::protobuf::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(GuildTrialLobbyConsent* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    ABSL_DCHECK(GetArena() == other->GetArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  [[nodiscard]] GuildTrialLobbyConsent* PROTOBUF_NONNULL
+  New(::google::protobuf::Arena* PROTOBUF_NULLABLE arena = nullptr) const {
+    return ::google::protobuf::Message::DefaultConstruct<GuildTrialLobbyConsent>(arena);
+  }
+  using ::google::protobuf::Message::CopyFrom;
+  void CopyFrom(const GuildTrialLobbyConsent& from);
+  using ::google::protobuf::Message::MergeFrom;
+  void MergeFrom(const GuildTrialLobbyConsent& from) { GuildTrialLobbyConsent::MergeImpl(*this, from); }
+
+  private:
+  static void MergeImpl(::google::protobuf::MessageLite& to_msg,
+                        const ::google::protobuf::MessageLite& from_msg);
+
+  public:
+  [[nodiscard]] bool IsInitialized() const {
+    return true;
+  }
+  ABSL_ATTRIBUTE_REINITIALIZES void Clear() PROTOBUF_FINAL;
+  #if defined(PROTOBUF_CUSTOM_VTABLE)
+  private:
+  [[nodiscard]] static ::size_t ByteSizeLong(const ::google::protobuf::MessageLite& msg);
+  [[nodiscard]] static ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      const ::google::protobuf::MessageLite& msg, ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream);
+
+  public:
+  [[nodiscard]] ::size_t ByteSizeLong() const { return ByteSizeLong(*this); }
+  [[nodiscard]] ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
+    return _InternalSerialize(*this, target, stream);
+  }
+  #else   // PROTOBUF_CUSTOM_VTABLE
+  [[nodiscard]] ::size_t ByteSizeLong() const final;
+  [[nodiscard]] ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const final;
+  #endif  // PROTOBUF_CUSTOM_VTABLE
+  [[nodiscard]] int GetCachedSize() const {
+    return _impl_._cached_size_.Get();
+  }
+
+  private:
+  void SharedCtor(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static void SharedDtor(MessageLite& self);
+  void InternalSwap(GuildTrialLobbyConsent* PROTOBUF_NONNULL other);
+ private:
+  template <typename T>
+  friend ::absl::string_view(::google::protobuf::internal::GetAnyMessageName)();
+  static ::absl::string_view FullMessageName() { return "guildpb.GuildTrialLobbyConsent"; }
+
+  explicit GuildTrialLobbyConsent(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  GuildTrialLobbyConsent(::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const GuildTrialLobbyConsent& from);
+  GuildTrialLobbyConsent(
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, GuildTrialLobbyConsent&& from) noexcept
+      : GuildTrialLobbyConsent(arena) {
+    *this = ::std::move(from);
+  }
+  const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL GetClassData() const PROTOBUF_FINAL;
+  static void* PROTOBUF_NONNULL PlacementNew_(
+      const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static constexpr auto InternalNewImpl_();
+
+ public:
+  static constexpr auto InternalGenerateClassData_(
+      const MessageLite& prototype,
+      const ::google::protobuf::internal::TcParseTableBase* PROTOBUF_NULLABLE tc_table = nullptr);
+
+  [[nodiscard]] ::google::protobuf::Metadata GetMetadata() const;
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+  enum : int {
+    kIdentityFieldNumber = 2,
+    kLobbyIdFieldNumber = 1,
+  };
+  // .guildpb.GuildTrialRoleIdentity identity = 2;
+  [[nodiscard]] bool has_identity()
+      const;
+  void clear_identity() ;
+  [[nodiscard]] const ::guildpb::GuildTrialRoleIdentity& identity() const;
+  [[nodiscard]] ::guildpb::GuildTrialRoleIdentity* PROTOBUF_NULLABLE release_identity();
+  ::guildpb::GuildTrialRoleIdentity* PROTOBUF_NONNULL mutable_identity();
+  void set_allocated_identity(::guildpb::GuildTrialRoleIdentity* PROTOBUF_NULLABLE value);
+  void unsafe_arena_set_allocated_identity(::guildpb::GuildTrialRoleIdentity* PROTOBUF_NULLABLE value);
+  ::guildpb::GuildTrialRoleIdentity* PROTOBUF_NULLABLE unsafe_arena_release_identity();
+
+  private:
+  const ::guildpb::GuildTrialRoleIdentity& _internal_identity() const;
+  ::guildpb::GuildTrialRoleIdentity* PROTOBUF_NONNULL _internal_mutable_identity();
+
+  public:
+  // uint64 lobby_id = 1;
+  void clear_lobby_id() ;
+  [[nodiscard]] ::uint64_t lobby_id() const;
+  void set_lobby_id(::uint64_t value);
+
+  private:
+  ::uint64_t _internal_lobby_id() const;
+  void _internal_set_lobby_id(::uint64_t value);
+
+  public:
+  // @@protoc_insertion_point(class_scope:guildpb.GuildTrialLobbyConsent)
+ private:
+  class _Internal;
+  using ParseTableT_ =
+      ::google::protobuf::internal::TcParseTable<1, 2,
+                          1, 0,
+                          2>;
+  static constexpr ParseTableT_ InternalGenerateParseTable_(
+      const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL class_data);
+  friend class ::google::protobuf::internal::TcParser;
+  #ifndef PROTOBUF_MESSAGE_GLOBALS
+  static const ParseTableT_ _table_;
+  #endif
+
+  friend class ::google::protobuf::MessageLite;
+  friend class ::google::protobuf::Arena;
+  friend ::google::protobuf::internal::PrivateAccess;
+  template <typename T>
+  friend class ::google::protobuf::Arena::InternalHelper;
+  using InternalArenaConstructable_ = void;
+  using DestructorSkippable_ = void;
+  struct Impl_ {
+    inline explicit constexpr Impl_(::google::protobuf::internal::InternalVisibility visibility,
+                                    ::google::protobuf::internal::ConstantInitialized) noexcept;
+    inline explicit Impl_(
+        ::google::protobuf::internal::InternalVisibility visibility,
+        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+    inline explicit Impl_(
+        ::google::protobuf::internal::InternalVisibility visibility,
+        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
+        const GuildTrialLobbyConsent& from_msg);
+    ::google::protobuf::internal::HasBits<1> _has_bits_;
+    ::google::protobuf::internal::CachedSize _cached_size_;
+    ::guildpb::GuildTrialRoleIdentity* PROTOBUF_NULLABLE identity_;
+    ::uint64_t lobby_id_;
+    PROTOBUF_TSAN_DECLARE_MEMBER
+  };
+  union { Impl_ _impl_; };
+  friend struct ::TableStruct_proto_2fguild_2fguild_5fdb_2eproto;
+};
+// -------------------------------------------------------------------
+
+class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED GuildTrialLaunchOriginal final : public ::google::protobuf::Message
+/* @@protoc_insertion_point(class_definition:guildpb.GuildTrialLaunchOriginal) */ {
+ public:
+  inline GuildTrialLaunchOriginal() : GuildTrialLaunchOriginal(nullptr) {}
+  ~GuildTrialLaunchOriginal() PROTOBUF_FINAL;
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+  void operator delete(GuildTrialLaunchOriginal* PROTOBUF_NONNULL msg, ::std::destroying_delete_t) {
+    SharedDtor(*msg);
+    ::google::protobuf::internal::SizedDelete(msg, sizeof(GuildTrialLaunchOriginal));
+  }
+#endif
+
+  template <typename = void>
+  explicit constexpr GuildTrialLaunchOriginal(::google::protobuf::internal::ConstantInitialized,
+                           const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
+                               class_data);
+
+  inline GuildTrialLaunchOriginal(const GuildTrialLaunchOriginal& from) : GuildTrialLaunchOriginal(nullptr, from) {}
+  inline GuildTrialLaunchOriginal(GuildTrialLaunchOriginal&& from) noexcept : GuildTrialLaunchOriginal(nullptr, ::std::move(from)) {}
+  inline GuildTrialLaunchOriginal& operator=(const GuildTrialLaunchOriginal& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline GuildTrialLaunchOriginal& operator=(GuildTrialLaunchOriginal&& from) noexcept {
+    if (this == &from) return *this;
+    if (::google::protobuf::internal::CanMoveWithInternalSwap(GetArena(), from.GetArena())) {
+      InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  [[nodiscard]] inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance);
+  }
+  [[nodiscard]] inline ::google::protobuf::UnknownFieldSet* PROTOBUF_NONNULL
+  mutable_unknown_fields() ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.mutable_unknown_fields<::google::protobuf::UnknownFieldSet>();
+  }
+
+  [[nodiscard]] static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL descriptor() {
+    return GetDescriptor();
+  }
+  [[nodiscard]] static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL
+  GetDescriptor() {
+    return default_instance().GetMetadata().descriptor;
+  }
+  [[nodiscard]] static const ::google::protobuf::Reflection* PROTOBUF_NONNULL GetReflection() {
+    return default_instance().GetMetadata().reflection;
+  }
+  [[nodiscard]] static const GuildTrialLaunchOriginal& default_instance() {
+    return *::google::protobuf::internal::MessageGlobalsBase::ToDefaultInstance<GuildTrialLaunchOriginal>(&GuildTrialLaunchOriginal_globals_);
+  }
+  static constexpr int kIndexInFileMessages = 11;
+  friend void swap(GuildTrialLaunchOriginal& a, GuildTrialLaunchOriginal& b) { a.Swap(&b); }
+  inline void Swap(GuildTrialLaunchOriginal* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    if (::google::protobuf::internal::CanUseInternalSwap(GetArena(), other->GetArena())) {
+      InternalSwap(other);
+    } else {
+      ::google::protobuf::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(GuildTrialLaunchOriginal* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    ABSL_DCHECK(GetArena() == other->GetArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  [[nodiscard]] GuildTrialLaunchOriginal* PROTOBUF_NONNULL
+  New(::google::protobuf::Arena* PROTOBUF_NULLABLE arena = nullptr) const {
+    return ::google::protobuf::Message::DefaultConstruct<GuildTrialLaunchOriginal>(arena);
+  }
+  using ::google::protobuf::Message::CopyFrom;
+  void CopyFrom(const GuildTrialLaunchOriginal& from);
+  using ::google::protobuf::Message::MergeFrom;
+  void MergeFrom(const GuildTrialLaunchOriginal& from) { GuildTrialLaunchOriginal::MergeImpl(*this, from); }
+
+  private:
+  static void MergeImpl(::google::protobuf::MessageLite& to_msg,
+                        const ::google::protobuf::MessageLite& from_msg);
+
+  public:
+  [[nodiscard]] bool IsInitialized() const {
+    return true;
+  }
+  ABSL_ATTRIBUTE_REINITIALIZES void Clear() PROTOBUF_FINAL;
+  #if defined(PROTOBUF_CUSTOM_VTABLE)
+  private:
+  [[nodiscard]] static ::size_t ByteSizeLong(const ::google::protobuf::MessageLite& msg);
+  [[nodiscard]] static ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      const ::google::protobuf::MessageLite& msg, ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream);
+
+  public:
+  [[nodiscard]] ::size_t ByteSizeLong() const { return ByteSizeLong(*this); }
+  [[nodiscard]] ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
+    return _InternalSerialize(*this, target, stream);
+  }
+  #else   // PROTOBUF_CUSTOM_VTABLE
+  [[nodiscard]] ::size_t ByteSizeLong() const final;
+  [[nodiscard]] ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const final;
+  #endif  // PROTOBUF_CUSTOM_VTABLE
+  [[nodiscard]] int GetCachedSize() const {
+    return _impl_._cached_size_.Get();
+  }
+
+  private:
+  void SharedCtor(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static void SharedDtor(MessageLite& self);
+  void InternalSwap(GuildTrialLaunchOriginal* PROTOBUF_NONNULL other);
+ private:
+  template <typename T>
+  friend ::absl::string_view(::google::protobuf::internal::GetAnyMessageName)();
+  static ::absl::string_view FullMessageName() { return "guildpb.GuildTrialLaunchOriginal"; }
+
+  explicit GuildTrialLaunchOriginal(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  GuildTrialLaunchOriginal(::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const GuildTrialLaunchOriginal& from);
+  GuildTrialLaunchOriginal(
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, GuildTrialLaunchOriginal&& from) noexcept
+      : GuildTrialLaunchOriginal(arena) {
+    *this = ::std::move(from);
+  }
+  const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL GetClassData() const PROTOBUF_FINAL;
+  static void* PROTOBUF_NONNULL PlacementNew_(
+      const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static constexpr auto InternalNewImpl_();
+
+ public:
+  static constexpr auto InternalGenerateClassData_(
+      const MessageLite& prototype,
+      const ::google::protobuf::internal::TcParseTableBase* PROTOBUF_NULLABLE tc_table = nullptr);
+
+  [[nodiscard]] ::google::protobuf::Metadata GetMetadata() const;
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+  enum : int {
+    kRosterFieldNumber = 8,
+    kRequestIdFieldNumber = 1,
+    kGuildIdFieldNumber = 2,
+    kActivityIdFieldNumber = 3,
+    kPeriodKeyFieldNumber = 4,
+    kInitiatorPlayerIdFieldNumber = 6,
+    kGuildPeriodKeyFieldNumber = 5,
+    kDungeonIdFieldNumber = 7,
+    kCreatedMsFieldNumber = 9,
+  };
+  // repeated .guildpb.GuildTrialRoleIdentity roster = 8;
+  [[nodiscard]] int roster_size()
+      const;
+  private:
+  int _internal_roster_size() const;
+
+  public:
+  void clear_roster() ;
+  [[nodiscard]] const ::guildpb::GuildTrialRoleIdentity& roster(int index) const;
+  [[nodiscard]] ::guildpb::GuildTrialRoleIdentity* PROTOBUF_NONNULL mutable_roster(int index);
+  ::guildpb::GuildTrialRoleIdentity* PROTOBUF_NONNULL add_roster();
+  [[nodiscard]] const ::google::protobuf::RepeatedPtrField<::guildpb::GuildTrialRoleIdentity>&
+  roster() const;
+  [[nodiscard]] ::google::protobuf::RepeatedPtrField<::guildpb::GuildTrialRoleIdentity>* PROTOBUF_NONNULL
+  mutable_roster();
+
+  private:
+  const ::google::protobuf::RepeatedPtrField<::guildpb::GuildTrialRoleIdentity>& _internal_roster() const;
+  ::google::protobuf::RepeatedPtrField<::guildpb::GuildTrialRoleIdentity>* PROTOBUF_NONNULL _internal_mutable_roster();
+
+  public:
+  // uint64 request_id = 1;
+  void clear_request_id() ;
+  [[nodiscard]] ::uint64_t request_id() const;
+  void set_request_id(::uint64_t value);
+
+  private:
+  ::uint64_t _internal_request_id() const;
+  void _internal_set_request_id(::uint64_t value);
+
+  public:
+  // uint64 guild_id = 2;
+  void clear_guild_id() ;
+  [[nodiscard]] ::uint64_t guild_id() const;
+  void set_guild_id(::uint64_t value);
+
+  private:
+  ::uint64_t _internal_guild_id() const;
+  void _internal_set_guild_id(::uint64_t value);
+
+  public:
+  // uint32 activity_id = 3;
+  void clear_activity_id() ;
+  [[nodiscard]] ::uint32_t activity_id() const;
+  void set_activity_id(::uint32_t value);
+
+  private:
+  ::uint32_t _internal_activity_id() const;
+  void _internal_set_activity_id(::uint32_t value);
+
+  public:
+  // uint32 period_key = 4;
+  void clear_period_key() ;
+  [[nodiscard]] ::uint32_t period_key() const;
+  void set_period_key(::uint32_t value);
+
+  private:
+  ::uint32_t _internal_period_key() const;
+  void _internal_set_period_key(::uint32_t value);
+
+  public:
+  // uint64 initiator_player_id = 6;
+  void clear_initiator_player_id() ;
+  [[nodiscard]] ::uint64_t initiator_player_id() const;
+  void set_initiator_player_id(::uint64_t value);
+
+  private:
+  ::uint64_t _internal_initiator_player_id() const;
+  void _internal_set_initiator_player_id(::uint64_t value);
+
+  public:
+  // uint32 guild_period_key = 5;
+  void clear_guild_period_key() ;
+  [[nodiscard]] ::uint32_t guild_period_key() const;
+  void set_guild_period_key(::uint32_t value);
+
+  private:
+  ::uint32_t _internal_guild_period_key() const;
+  void _internal_set_guild_period_key(::uint32_t value);
+
+  public:
+  // uint32 dungeon_id = 7;
+  void clear_dungeon_id() ;
+  [[nodiscard]] ::uint32_t dungeon_id() const;
+  void set_dungeon_id(::uint32_t value);
+
+  private:
+  ::uint32_t _internal_dungeon_id() const;
+  void _internal_set_dungeon_id(::uint32_t value);
+
+  public:
+  // uint64 created_ms = 9;
+  void clear_created_ms() ;
+  [[nodiscard]] ::uint64_t created_ms() const;
+  void set_created_ms(::uint64_t value);
+
+  private:
+  ::uint64_t _internal_created_ms() const;
+  void _internal_set_created_ms(::uint64_t value);
+
+  public:
+  // @@protoc_insertion_point(class_scope:guildpb.GuildTrialLaunchOriginal)
+ private:
+  class _Internal;
+  using ParseTableT_ =
+      ::google::protobuf::internal::TcParseTable<4, 9,
+                          1, 0,
+                          2>;
+  static constexpr ParseTableT_ InternalGenerateParseTable_(
+      const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL class_data);
+  friend class ::google::protobuf::internal::TcParser;
+  #ifndef PROTOBUF_MESSAGE_GLOBALS
+  static const ParseTableT_ _table_;
+  #endif
+
+  friend class ::google::protobuf::MessageLite;
+  friend class ::google::protobuf::Arena;
+  friend ::google::protobuf::internal::PrivateAccess;
+  template <typename T>
+  friend class ::google::protobuf::Arena::InternalHelper;
+  using InternalArenaConstructable_ = void;
+  using DestructorSkippable_ = void;
+  struct Impl_ {
+    inline explicit constexpr Impl_(::google::protobuf::internal::InternalVisibility visibility,
+                                    ::google::protobuf::internal::ConstantInitialized) noexcept;
+    inline explicit Impl_(
+        ::google::protobuf::internal::InternalVisibility visibility,
+        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+    inline explicit Impl_(
+        ::google::protobuf::internal::InternalVisibility visibility,
+        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
+        const GuildTrialLaunchOriginal& from_msg);
+    ::google::protobuf::internal::HasBits<1> _has_bits_;
+    ::google::protobuf::internal::CachedSize _cached_size_;
+    ::google::protobuf::RepeatedPtrField< ::guildpb::GuildTrialRoleIdentity > roster_;
+    ::uint64_t request_id_;
+    ::uint64_t guild_id_;
+    ::uint32_t activity_id_;
+    ::uint32_t period_key_;
+    ::uint64_t initiator_player_id_;
+    ::uint32_t guild_period_key_;
+    ::uint32_t dungeon_id_;
+    ::uint64_t created_ms_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
   union { Impl_ _impl_; };
@@ -5894,6 +7257,1003 @@ inline ::uint64_t GuildTrialBattleRecord::_internal_settled_ms() const {
 inline void GuildTrialBattleRecord::_internal_set_settled_ms(::uint64_t value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.settled_ms_ = value;
+}
+
+// uint64 launch_request_id = 12;
+inline void GuildTrialBattleRecord::clear_launch_request_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.launch_request_id_ = ::uint64_t{0u};
+  ClearHasBit(_impl_._has_bits_[0], 0x00000800U);
+}
+inline ::uint64_t GuildTrialBattleRecord::launch_request_id() const {
+  // @@protoc_insertion_point(field_get:guildpb.GuildTrialBattleRecord.launch_request_id)
+  return _internal_launch_request_id();
+}
+inline void GuildTrialBattleRecord::set_launch_request_id(::uint64_t value) {
+  _internal_set_launch_request_id(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000800U);
+  // @@protoc_insertion_point(field_set:guildpb.GuildTrialBattleRecord.launch_request_id)
+}
+inline ::uint64_t GuildTrialBattleRecord::_internal_launch_request_id() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.launch_request_id_;
+}
+inline void GuildTrialBattleRecord::_internal_set_launch_request_id(::uint64_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.launch_request_id_ = value;
+}
+
+// -------------------------------------------------------------------
+
+// GuildTrialRoleIdentity
+
+// uint64 player_id = 1;
+inline void GuildTrialRoleIdentity::clear_player_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.player_id_ = ::uint64_t{0u};
+  ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
+}
+inline ::uint64_t GuildTrialRoleIdentity::player_id() const {
+  // @@protoc_insertion_point(field_get:guildpb.GuildTrialRoleIdentity.player_id)
+  return _internal_player_id();
+}
+inline void GuildTrialRoleIdentity::set_player_id(::uint64_t value) {
+  _internal_set_player_id(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000002U);
+  // @@protoc_insertion_point(field_set:guildpb.GuildTrialRoleIdentity.player_id)
+}
+inline ::uint64_t GuildTrialRoleIdentity::_internal_player_id() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.player_id_;
+}
+inline void GuildTrialRoleIdentity::_internal_set_player_id(::uint64_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.player_id_ = value;
+}
+
+// string account = 2;
+inline void GuildTrialRoleIdentity::clear_account() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.account_.ClearToEmpty();
+  ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
+}
+inline const ::std::string& GuildTrialRoleIdentity::account() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:guildpb.GuildTrialRoleIdentity.account)
+  return _internal_account();
+}
+template <typename Arg_, typename... Args_>
+PROTOBUF_ALWAYS_INLINE void GuildTrialRoleIdentity::set_account(Arg_&& arg, Args_... args) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  _impl_.account_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
+  // @@protoc_insertion_point(field_set:guildpb.GuildTrialRoleIdentity.account)
+}
+inline ::std::string* PROTOBUF_NONNULL GuildTrialRoleIdentity::mutable_account()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  ::std::string* _s = _internal_mutable_account();
+  // @@protoc_insertion_point(field_mutable:guildpb.GuildTrialRoleIdentity.account)
+  return _s;
+}
+inline const ::std::string& GuildTrialRoleIdentity::_internal_account() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.account_.Get();
+}
+inline void GuildTrialRoleIdentity::_internal_set_account(const ::std::string& value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.account_.Set(value, GetArena());
+}
+inline ::std::string* PROTOBUF_NONNULL GuildTrialRoleIdentity::_internal_mutable_account() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  return _impl_.account_.Mutable( GetArena());
+}
+inline ::std::string* PROTOBUF_NULLABLE GuildTrialRoleIdentity::release_account() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:guildpb.GuildTrialRoleIdentity.account)
+  if (!CheckHasBit(_impl_._has_bits_[0], 0x00000001U)) {
+    return nullptr;
+  }
+  ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
+  auto* released = _impl_.account_.Release();
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString()) {
+    _impl_.account_.Set("", GetArena());
+  }
+  return released;
+}
+inline void GuildTrialRoleIdentity::set_allocated_account(::std::string* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (value != nullptr) {
+    SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  } else {
+    ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
+  }
+  _impl_.account_.SetAllocated(value, GetArena());
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.account_.IsDefault()) {
+    _impl_.account_.Set("", GetArena());
+  }
+  // @@protoc_insertion_point(field_set_allocated:guildpb.GuildTrialRoleIdentity.account)
+}
+
+// uint64 owner_revision = 3;
+inline void GuildTrialRoleIdentity::clear_owner_revision() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.owner_revision_ = ::uint64_t{0u};
+  ClearHasBit(_impl_._has_bits_[0], 0x00000004U);
+}
+inline ::uint64_t GuildTrialRoleIdentity::owner_revision() const {
+  // @@protoc_insertion_point(field_get:guildpb.GuildTrialRoleIdentity.owner_revision)
+  return _internal_owner_revision();
+}
+inline void GuildTrialRoleIdentity::set_owner_revision(::uint64_t value) {
+  _internal_set_owner_revision(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000004U);
+  // @@protoc_insertion_point(field_set:guildpb.GuildTrialRoleIdentity.owner_revision)
+}
+inline ::uint64_t GuildTrialRoleIdentity::_internal_owner_revision() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.owner_revision_;
+}
+inline void GuildTrialRoleIdentity::_internal_set_owner_revision(::uint64_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.owner_revision_ = value;
+}
+
+// -------------------------------------------------------------------
+
+// GuildTrialLobbyConsent
+
+// uint64 lobby_id = 1;
+inline void GuildTrialLobbyConsent::clear_lobby_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.lobby_id_ = ::uint64_t{0u};
+  ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
+}
+inline ::uint64_t GuildTrialLobbyConsent::lobby_id() const {
+  // @@protoc_insertion_point(field_get:guildpb.GuildTrialLobbyConsent.lobby_id)
+  return _internal_lobby_id();
+}
+inline void GuildTrialLobbyConsent::set_lobby_id(::uint64_t value) {
+  _internal_set_lobby_id(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000002U);
+  // @@protoc_insertion_point(field_set:guildpb.GuildTrialLobbyConsent.lobby_id)
+}
+inline ::uint64_t GuildTrialLobbyConsent::_internal_lobby_id() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.lobby_id_;
+}
+inline void GuildTrialLobbyConsent::_internal_set_lobby_id(::uint64_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.lobby_id_ = value;
+}
+
+// .guildpb.GuildTrialRoleIdentity identity = 2;
+inline bool GuildTrialLobbyConsent::has_identity() const {
+  bool value = CheckHasBit(_impl_._has_bits_[0], 0x00000001U);
+  PROTOBUF_ASSUME(!value || _impl_.identity_ != nullptr);
+  return value;
+}
+inline void GuildTrialLobbyConsent::clear_identity() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (_impl_.identity_ != nullptr) _impl_.identity_->Clear();
+  ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
+}
+inline const ::guildpb::GuildTrialRoleIdentity& GuildTrialLobbyConsent::_internal_identity() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  const ::guildpb::GuildTrialRoleIdentity* p = _impl_.identity_;
+  return p != nullptr ? *p : *::google::protobuf::internal::MessageGlobalsBase::ToDefaultInstance<::guildpb::GuildTrialRoleIdentity>(&::guildpb::GuildTrialRoleIdentity_globals_);
+}
+inline const ::guildpb::GuildTrialRoleIdentity& GuildTrialLobbyConsent::identity() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:guildpb.GuildTrialLobbyConsent.identity)
+  return _internal_identity();
+}
+inline void GuildTrialLobbyConsent::unsafe_arena_set_allocated_identity(
+    ::guildpb::GuildTrialRoleIdentity* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (GetArena() == nullptr) {
+    delete reinterpret_cast<::google::protobuf::MessageLite*>(_impl_.identity_);
+  }
+  _impl_.identity_ = reinterpret_cast<::guildpb::GuildTrialRoleIdentity*>(value);
+  if (value != nullptr) {
+    SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  } else {
+    ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
+  }
+  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:guildpb.GuildTrialLobbyConsent.identity)
+}
+inline ::guildpb::GuildTrialRoleIdentity* PROTOBUF_NULLABLE GuildTrialLobbyConsent::release_identity() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+
+  ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
+  ::guildpb::GuildTrialRoleIdentity* released = _impl_.identity_;
+  _impl_.identity_ = nullptr;
+  if (::google::protobuf::internal::DebugHardenForceCopyInRelease()) {
+    auto* old = reinterpret_cast<::google::protobuf::MessageLite*>(released);
+    released = ::google::protobuf::internal::DuplicateIfNonNull(released);
+    if (GetArena() == nullptr) {
+      delete old;
+    }
+  } else {
+    if (GetArena() != nullptr) {
+      released = ::google::protobuf::internal::DuplicateIfNonNull(released);
+    }
+  }
+  return released;
+}
+inline ::guildpb::GuildTrialRoleIdentity* PROTOBUF_NULLABLE GuildTrialLobbyConsent::unsafe_arena_release_identity() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:guildpb.GuildTrialLobbyConsent.identity)
+
+  ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
+  ::guildpb::GuildTrialRoleIdentity* temp = _impl_.identity_;
+  _impl_.identity_ = nullptr;
+  return temp;
+}
+inline ::guildpb::GuildTrialRoleIdentity* PROTOBUF_NONNULL GuildTrialLobbyConsent::_internal_mutable_identity() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (_impl_.identity_ == nullptr) {
+    auto* p = ::google::protobuf::Message::DefaultConstruct<::guildpb::GuildTrialRoleIdentity>(GetArena());
+    _impl_.identity_ = reinterpret_cast<::guildpb::GuildTrialRoleIdentity*>(p);
+  }
+  return _impl_.identity_;
+}
+inline ::guildpb::GuildTrialRoleIdentity* PROTOBUF_NONNULL GuildTrialLobbyConsent::mutable_identity()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  ::guildpb::GuildTrialRoleIdentity* _msg = _internal_mutable_identity();
+  // @@protoc_insertion_point(field_mutable:guildpb.GuildTrialLobbyConsent.identity)
+  return _msg;
+}
+inline void GuildTrialLobbyConsent::set_allocated_identity(::guildpb::GuildTrialRoleIdentity* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::Arena* message_arena = GetArena();
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (message_arena == nullptr) {
+    delete reinterpret_cast<::google::protobuf::MessageLite*>(_impl_.identity_);
+  }
+
+  if (value != nullptr) {
+    ::google::protobuf::Arena* submessage_arena = value->GetArena();
+    if (message_arena != submessage_arena) {
+      value = ::google::protobuf::internal::GetOwnedMessage(message_arena, value, submessage_arena);
+    }
+    SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  } else {
+    ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
+  }
+
+  _impl_.identity_ = reinterpret_cast<::guildpb::GuildTrialRoleIdentity*>(value);
+  // @@protoc_insertion_point(field_set_allocated:guildpb.GuildTrialLobbyConsent.identity)
+}
+
+// -------------------------------------------------------------------
+
+// GuildTrialLaunchOriginal
+
+// uint64 request_id = 1;
+inline void GuildTrialLaunchOriginal::clear_request_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.request_id_ = ::uint64_t{0u};
+  ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
+}
+inline ::uint64_t GuildTrialLaunchOriginal::request_id() const {
+  // @@protoc_insertion_point(field_get:guildpb.GuildTrialLaunchOriginal.request_id)
+  return _internal_request_id();
+}
+inline void GuildTrialLaunchOriginal::set_request_id(::uint64_t value) {
+  _internal_set_request_id(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000002U);
+  // @@protoc_insertion_point(field_set:guildpb.GuildTrialLaunchOriginal.request_id)
+}
+inline ::uint64_t GuildTrialLaunchOriginal::_internal_request_id() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.request_id_;
+}
+inline void GuildTrialLaunchOriginal::_internal_set_request_id(::uint64_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.request_id_ = value;
+}
+
+// uint64 guild_id = 2;
+inline void GuildTrialLaunchOriginal::clear_guild_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.guild_id_ = ::uint64_t{0u};
+  ClearHasBit(_impl_._has_bits_[0], 0x00000004U);
+}
+inline ::uint64_t GuildTrialLaunchOriginal::guild_id() const {
+  // @@protoc_insertion_point(field_get:guildpb.GuildTrialLaunchOriginal.guild_id)
+  return _internal_guild_id();
+}
+inline void GuildTrialLaunchOriginal::set_guild_id(::uint64_t value) {
+  _internal_set_guild_id(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000004U);
+  // @@protoc_insertion_point(field_set:guildpb.GuildTrialLaunchOriginal.guild_id)
+}
+inline ::uint64_t GuildTrialLaunchOriginal::_internal_guild_id() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.guild_id_;
+}
+inline void GuildTrialLaunchOriginal::_internal_set_guild_id(::uint64_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.guild_id_ = value;
+}
+
+// uint32 activity_id = 3;
+inline void GuildTrialLaunchOriginal::clear_activity_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.activity_id_ = 0u;
+  ClearHasBit(_impl_._has_bits_[0], 0x00000008U);
+}
+inline ::uint32_t GuildTrialLaunchOriginal::activity_id() const {
+  // @@protoc_insertion_point(field_get:guildpb.GuildTrialLaunchOriginal.activity_id)
+  return _internal_activity_id();
+}
+inline void GuildTrialLaunchOriginal::set_activity_id(::uint32_t value) {
+  _internal_set_activity_id(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000008U);
+  // @@protoc_insertion_point(field_set:guildpb.GuildTrialLaunchOriginal.activity_id)
+}
+inline ::uint32_t GuildTrialLaunchOriginal::_internal_activity_id() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.activity_id_;
+}
+inline void GuildTrialLaunchOriginal::_internal_set_activity_id(::uint32_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.activity_id_ = value;
+}
+
+// uint32 period_key = 4;
+inline void GuildTrialLaunchOriginal::clear_period_key() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.period_key_ = 0u;
+  ClearHasBit(_impl_._has_bits_[0], 0x00000010U);
+}
+inline ::uint32_t GuildTrialLaunchOriginal::period_key() const {
+  // @@protoc_insertion_point(field_get:guildpb.GuildTrialLaunchOriginal.period_key)
+  return _internal_period_key();
+}
+inline void GuildTrialLaunchOriginal::set_period_key(::uint32_t value) {
+  _internal_set_period_key(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000010U);
+  // @@protoc_insertion_point(field_set:guildpb.GuildTrialLaunchOriginal.period_key)
+}
+inline ::uint32_t GuildTrialLaunchOriginal::_internal_period_key() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.period_key_;
+}
+inline void GuildTrialLaunchOriginal::_internal_set_period_key(::uint32_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.period_key_ = value;
+}
+
+// uint32 guild_period_key = 5;
+inline void GuildTrialLaunchOriginal::clear_guild_period_key() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.guild_period_key_ = 0u;
+  ClearHasBit(_impl_._has_bits_[0], 0x00000040U);
+}
+inline ::uint32_t GuildTrialLaunchOriginal::guild_period_key() const {
+  // @@protoc_insertion_point(field_get:guildpb.GuildTrialLaunchOriginal.guild_period_key)
+  return _internal_guild_period_key();
+}
+inline void GuildTrialLaunchOriginal::set_guild_period_key(::uint32_t value) {
+  _internal_set_guild_period_key(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000040U);
+  // @@protoc_insertion_point(field_set:guildpb.GuildTrialLaunchOriginal.guild_period_key)
+}
+inline ::uint32_t GuildTrialLaunchOriginal::_internal_guild_period_key() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.guild_period_key_;
+}
+inline void GuildTrialLaunchOriginal::_internal_set_guild_period_key(::uint32_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.guild_period_key_ = value;
+}
+
+// uint64 initiator_player_id = 6;
+inline void GuildTrialLaunchOriginal::clear_initiator_player_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.initiator_player_id_ = ::uint64_t{0u};
+  ClearHasBit(_impl_._has_bits_[0], 0x00000020U);
+}
+inline ::uint64_t GuildTrialLaunchOriginal::initiator_player_id() const {
+  // @@protoc_insertion_point(field_get:guildpb.GuildTrialLaunchOriginal.initiator_player_id)
+  return _internal_initiator_player_id();
+}
+inline void GuildTrialLaunchOriginal::set_initiator_player_id(::uint64_t value) {
+  _internal_set_initiator_player_id(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000020U);
+  // @@protoc_insertion_point(field_set:guildpb.GuildTrialLaunchOriginal.initiator_player_id)
+}
+inline ::uint64_t GuildTrialLaunchOriginal::_internal_initiator_player_id() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.initiator_player_id_;
+}
+inline void GuildTrialLaunchOriginal::_internal_set_initiator_player_id(::uint64_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.initiator_player_id_ = value;
+}
+
+// uint32 dungeon_id = 7;
+inline void GuildTrialLaunchOriginal::clear_dungeon_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.dungeon_id_ = 0u;
+  ClearHasBit(_impl_._has_bits_[0], 0x00000080U);
+}
+inline ::uint32_t GuildTrialLaunchOriginal::dungeon_id() const {
+  // @@protoc_insertion_point(field_get:guildpb.GuildTrialLaunchOriginal.dungeon_id)
+  return _internal_dungeon_id();
+}
+inline void GuildTrialLaunchOriginal::set_dungeon_id(::uint32_t value) {
+  _internal_set_dungeon_id(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000080U);
+  // @@protoc_insertion_point(field_set:guildpb.GuildTrialLaunchOriginal.dungeon_id)
+}
+inline ::uint32_t GuildTrialLaunchOriginal::_internal_dungeon_id() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.dungeon_id_;
+}
+inline void GuildTrialLaunchOriginal::_internal_set_dungeon_id(::uint32_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.dungeon_id_ = value;
+}
+
+// repeated .guildpb.GuildTrialRoleIdentity roster = 8;
+inline int GuildTrialLaunchOriginal::_internal_roster_size() const {
+  return _internal_roster().size();
+}
+inline int GuildTrialLaunchOriginal::roster_size() const {
+  return _internal_roster_size();
+}
+inline void GuildTrialLaunchOriginal::clear_roster() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.roster_.Clear();
+  ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
+}
+inline const ::guildpb::GuildTrialRoleIdentity& GuildTrialLaunchOriginal::roster(int index) const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:guildpb.GuildTrialLaunchOriginal.roster)
+  return _internal_roster().Get(index);
+}
+inline ::guildpb::GuildTrialRoleIdentity* PROTOBUF_NONNULL GuildTrialLaunchOriginal::mutable_roster(int index)
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_mutable:guildpb.GuildTrialLaunchOriginal.roster)
+  return _internal_mutable_roster()->Mutable(index);
+}
+inline ::guildpb::GuildTrialRoleIdentity* PROTOBUF_NONNULL GuildTrialLaunchOriginal::add_roster()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  ::guildpb::GuildTrialRoleIdentity* _add =
+      _internal_mutable_roster()->InternalAddWithArena(
+          ::google::protobuf::MessageLite::internal_visibility(), GetArena());
+  SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  // @@protoc_insertion_point(field_add:guildpb.GuildTrialLaunchOriginal.roster)
+  return _add;
+}
+inline const ::google::protobuf::RepeatedPtrField<::guildpb::GuildTrialRoleIdentity>& GuildTrialLaunchOriginal::roster() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_list:guildpb.GuildTrialLaunchOriginal.roster)
+  return _internal_roster();
+}
+inline ::google::protobuf::RepeatedPtrField<::guildpb::GuildTrialRoleIdentity>* PROTOBUF_NONNULL
+GuildTrialLaunchOriginal::mutable_roster() ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  // @@protoc_insertion_point(field_mutable_list:guildpb.GuildTrialLaunchOriginal.roster)
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  return _internal_mutable_roster();
+}
+inline const ::google::protobuf::RepeatedPtrField<::guildpb::GuildTrialRoleIdentity>&
+GuildTrialLaunchOriginal::_internal_roster() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.roster_;
+}
+inline ::google::protobuf::RepeatedPtrField<::guildpb::GuildTrialRoleIdentity>* PROTOBUF_NONNULL
+GuildTrialLaunchOriginal::_internal_mutable_roster() {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return &_impl_.roster_;
+}
+
+// uint64 created_ms = 9;
+inline void GuildTrialLaunchOriginal::clear_created_ms() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.created_ms_ = ::uint64_t{0u};
+  ClearHasBit(_impl_._has_bits_[0], 0x00000100U);
+}
+inline ::uint64_t GuildTrialLaunchOriginal::created_ms() const {
+  // @@protoc_insertion_point(field_get:guildpb.GuildTrialLaunchOriginal.created_ms)
+  return _internal_created_ms();
+}
+inline void GuildTrialLaunchOriginal::set_created_ms(::uint64_t value) {
+  _internal_set_created_ms(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000100U);
+  // @@protoc_insertion_point(field_set:guildpb.GuildTrialLaunchOriginal.created_ms)
+}
+inline ::uint64_t GuildTrialLaunchOriginal::_internal_created_ms() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.created_ms_;
+}
+inline void GuildTrialLaunchOriginal::_internal_set_created_ms(::uint64_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.created_ms_ = value;
+}
+
+// -------------------------------------------------------------------
+
+// GuildTrialLaunchRecord
+
+// uint64 request_id = 1;
+inline void GuildTrialLaunchRecord::clear_request_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.request_id_ = ::uint64_t{0u};
+  ClearHasBit(_impl_._has_bits_[0], 0x00000008U);
+}
+inline ::uint64_t GuildTrialLaunchRecord::request_id() const {
+  // @@protoc_insertion_point(field_get:guildpb.GuildTrialLaunchRecord.request_id)
+  return _internal_request_id();
+}
+inline void GuildTrialLaunchRecord::set_request_id(::uint64_t value) {
+  _internal_set_request_id(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000008U);
+  // @@protoc_insertion_point(field_set:guildpb.GuildTrialLaunchRecord.request_id)
+}
+inline ::uint64_t GuildTrialLaunchRecord::_internal_request_id() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.request_id_;
+}
+inline void GuildTrialLaunchRecord::_internal_set_request_id(::uint64_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.request_id_ = value;
+}
+
+// uint64 battle_id = 2;
+inline void GuildTrialLaunchRecord::clear_battle_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.battle_id_ = ::uint64_t{0u};
+  ClearHasBit(_impl_._has_bits_[0], 0x00000010U);
+}
+inline ::uint64_t GuildTrialLaunchRecord::battle_id() const {
+  // @@protoc_insertion_point(field_get:guildpb.GuildTrialLaunchRecord.battle_id)
+  return _internal_battle_id();
+}
+inline void GuildTrialLaunchRecord::set_battle_id(::uint64_t value) {
+  _internal_set_battle_id(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000010U);
+  // @@protoc_insertion_point(field_set:guildpb.GuildTrialLaunchRecord.battle_id)
+}
+inline ::uint64_t GuildTrialLaunchRecord::_internal_battle_id() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.battle_id_;
+}
+inline void GuildTrialLaunchRecord::_internal_set_battle_id(::uint64_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.battle_id_ = value;
+}
+
+// uint32 state = 3;
+inline void GuildTrialLaunchRecord::clear_state() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.state_ = 0u;
+  ClearHasBit(_impl_._has_bits_[0], 0x00000080U);
+}
+inline ::uint32_t GuildTrialLaunchRecord::state() const {
+  // @@protoc_insertion_point(field_get:guildpb.GuildTrialLaunchRecord.state)
+  return _internal_state();
+}
+inline void GuildTrialLaunchRecord::set_state(::uint32_t value) {
+  _internal_set_state(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000080U);
+  // @@protoc_insertion_point(field_set:guildpb.GuildTrialLaunchRecord.state)
+}
+inline ::uint32_t GuildTrialLaunchRecord::_internal_state() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.state_;
+}
+inline void GuildTrialLaunchRecord::_internal_set_state(::uint32_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.state_ = value;
+}
+
+// bytes original_proto = 4;
+inline void GuildTrialLaunchRecord::clear_original_proto() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.original_proto_.ClearToEmpty();
+  ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
+}
+inline const ::std::string& GuildTrialLaunchRecord::original_proto() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:guildpb.GuildTrialLaunchRecord.original_proto)
+  return _internal_original_proto();
+}
+template <typename Arg_, typename... Args_>
+PROTOBUF_ALWAYS_INLINE void GuildTrialLaunchRecord::set_original_proto(Arg_&& arg, Args_... args) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  _impl_.original_proto_.SetBytes(static_cast<Arg_&&>(arg), args..., GetArena());
+  // @@protoc_insertion_point(field_set:guildpb.GuildTrialLaunchRecord.original_proto)
+}
+inline ::std::string* PROTOBUF_NONNULL GuildTrialLaunchRecord::mutable_original_proto()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  ::std::string* _s = _internal_mutable_original_proto();
+  // @@protoc_insertion_point(field_mutable:guildpb.GuildTrialLaunchRecord.original_proto)
+  return _s;
+}
+inline const ::std::string& GuildTrialLaunchRecord::_internal_original_proto() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.original_proto_.Get();
+}
+inline void GuildTrialLaunchRecord::_internal_set_original_proto(const ::std::string& value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.original_proto_.Set(value, GetArena());
+}
+inline ::std::string* PROTOBUF_NONNULL GuildTrialLaunchRecord::_internal_mutable_original_proto() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  return _impl_.original_proto_.Mutable( GetArena());
+}
+inline ::std::string* PROTOBUF_NULLABLE GuildTrialLaunchRecord::release_original_proto() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:guildpb.GuildTrialLaunchRecord.original_proto)
+  if (!CheckHasBit(_impl_._has_bits_[0], 0x00000001U)) {
+    return nullptr;
+  }
+  ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
+  auto* released = _impl_.original_proto_.Release();
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString()) {
+    _impl_.original_proto_.Set("", GetArena());
+  }
+  return released;
+}
+inline void GuildTrialLaunchRecord::set_allocated_original_proto(::std::string* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (value != nullptr) {
+    SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  } else {
+    ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
+  }
+  _impl_.original_proto_.SetAllocated(value, GetArena());
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.original_proto_.IsDefault()) {
+    _impl_.original_proto_.Set("", GetArena());
+  }
+  // @@protoc_insertion_point(field_set_allocated:guildpb.GuildTrialLaunchRecord.original_proto)
+}
+
+// bytes request_digest = 5;
+inline void GuildTrialLaunchRecord::clear_request_digest() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.request_digest_.ClearToEmpty();
+  ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
+}
+inline const ::std::string& GuildTrialLaunchRecord::request_digest() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:guildpb.GuildTrialLaunchRecord.request_digest)
+  return _internal_request_digest();
+}
+template <typename Arg_, typename... Args_>
+PROTOBUF_ALWAYS_INLINE void GuildTrialLaunchRecord::set_request_digest(Arg_&& arg, Args_... args) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  SetHasBit(_impl_._has_bits_[0], 0x00000002U);
+  _impl_.request_digest_.SetBytes(static_cast<Arg_&&>(arg), args..., GetArena());
+  // @@protoc_insertion_point(field_set:guildpb.GuildTrialLaunchRecord.request_digest)
+}
+inline ::std::string* PROTOBUF_NONNULL GuildTrialLaunchRecord::mutable_request_digest()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  SetHasBit(_impl_._has_bits_[0], 0x00000002U);
+  ::std::string* _s = _internal_mutable_request_digest();
+  // @@protoc_insertion_point(field_mutable:guildpb.GuildTrialLaunchRecord.request_digest)
+  return _s;
+}
+inline const ::std::string& GuildTrialLaunchRecord::_internal_request_digest() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.request_digest_.Get();
+}
+inline void GuildTrialLaunchRecord::_internal_set_request_digest(const ::std::string& value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.request_digest_.Set(value, GetArena());
+}
+inline ::std::string* PROTOBUF_NONNULL GuildTrialLaunchRecord::_internal_mutable_request_digest() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  return _impl_.request_digest_.Mutable( GetArena());
+}
+inline ::std::string* PROTOBUF_NULLABLE GuildTrialLaunchRecord::release_request_digest() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:guildpb.GuildTrialLaunchRecord.request_digest)
+  if (!CheckHasBit(_impl_._has_bits_[0], 0x00000002U)) {
+    return nullptr;
+  }
+  ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
+  auto* released = _impl_.request_digest_.Release();
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString()) {
+    _impl_.request_digest_.Set("", GetArena());
+  }
+  return released;
+}
+inline void GuildTrialLaunchRecord::set_allocated_request_digest(::std::string* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (value != nullptr) {
+    SetHasBit(_impl_._has_bits_[0], 0x00000002U);
+  } else {
+    ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
+  }
+  _impl_.request_digest_.SetAllocated(value, GetArena());
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.request_digest_.IsDefault()) {
+    _impl_.request_digest_.Set("", GetArena());
+  }
+  // @@protoc_insertion_point(field_set_allocated:guildpb.GuildTrialLaunchRecord.request_digest)
+}
+
+// uint64 created_ms = 6;
+inline void GuildTrialLaunchRecord::clear_created_ms() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.created_ms_ = ::uint64_t{0u};
+  ClearHasBit(_impl_._has_bits_[0], 0x00000020U);
+}
+inline ::uint64_t GuildTrialLaunchRecord::created_ms() const {
+  // @@protoc_insertion_point(field_get:guildpb.GuildTrialLaunchRecord.created_ms)
+  return _internal_created_ms();
+}
+inline void GuildTrialLaunchRecord::set_created_ms(::uint64_t value) {
+  _internal_set_created_ms(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000020U);
+  // @@protoc_insertion_point(field_set:guildpb.GuildTrialLaunchRecord.created_ms)
+}
+inline ::uint64_t GuildTrialLaunchRecord::_internal_created_ms() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.created_ms_;
+}
+inline void GuildTrialLaunchRecord::_internal_set_created_ms(::uint64_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.created_ms_ = value;
+}
+
+// uint64 updated_ms = 7;
+inline void GuildTrialLaunchRecord::clear_updated_ms() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.updated_ms_ = ::uint64_t{0u};
+  ClearHasBit(_impl_._has_bits_[0], 0x00000040U);
+}
+inline ::uint64_t GuildTrialLaunchRecord::updated_ms() const {
+  // @@protoc_insertion_point(field_get:guildpb.GuildTrialLaunchRecord.updated_ms)
+  return _internal_updated_ms();
+}
+inline void GuildTrialLaunchRecord::set_updated_ms(::uint64_t value) {
+  _internal_set_updated_ms(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000040U);
+  // @@protoc_insertion_point(field_set:guildpb.GuildTrialLaunchRecord.updated_ms)
+}
+inline ::uint64_t GuildTrialLaunchRecord::_internal_updated_ms() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.updated_ms_;
+}
+inline void GuildTrialLaunchRecord::_internal_set_updated_ms(::uint64_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.updated_ms_ = value;
+}
+
+// bytes cancel_receipt = 8;
+inline void GuildTrialLaunchRecord::clear_cancel_receipt() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.cancel_receipt_.ClearToEmpty();
+  ClearHasBit(_impl_._has_bits_[0], 0x00000004U);
+}
+inline const ::std::string& GuildTrialLaunchRecord::cancel_receipt() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:guildpb.GuildTrialLaunchRecord.cancel_receipt)
+  return _internal_cancel_receipt();
+}
+template <typename Arg_, typename... Args_>
+PROTOBUF_ALWAYS_INLINE void GuildTrialLaunchRecord::set_cancel_receipt(Arg_&& arg, Args_... args) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  SetHasBit(_impl_._has_bits_[0], 0x00000004U);
+  _impl_.cancel_receipt_.SetBytes(static_cast<Arg_&&>(arg), args..., GetArena());
+  // @@protoc_insertion_point(field_set:guildpb.GuildTrialLaunchRecord.cancel_receipt)
+}
+inline ::std::string* PROTOBUF_NONNULL GuildTrialLaunchRecord::mutable_cancel_receipt()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  SetHasBit(_impl_._has_bits_[0], 0x00000004U);
+  ::std::string* _s = _internal_mutable_cancel_receipt();
+  // @@protoc_insertion_point(field_mutable:guildpb.GuildTrialLaunchRecord.cancel_receipt)
+  return _s;
+}
+inline const ::std::string& GuildTrialLaunchRecord::_internal_cancel_receipt() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.cancel_receipt_.Get();
+}
+inline void GuildTrialLaunchRecord::_internal_set_cancel_receipt(const ::std::string& value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.cancel_receipt_.Set(value, GetArena());
+}
+inline ::std::string* PROTOBUF_NONNULL GuildTrialLaunchRecord::_internal_mutable_cancel_receipt() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  return _impl_.cancel_receipt_.Mutable( GetArena());
+}
+inline ::std::string* PROTOBUF_NULLABLE GuildTrialLaunchRecord::release_cancel_receipt() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:guildpb.GuildTrialLaunchRecord.cancel_receipt)
+  if (!CheckHasBit(_impl_._has_bits_[0], 0x00000004U)) {
+    return nullptr;
+  }
+  ClearHasBit(_impl_._has_bits_[0], 0x00000004U);
+  auto* released = _impl_.cancel_receipt_.Release();
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString()) {
+    _impl_.cancel_receipt_.Set("", GetArena());
+  }
+  return released;
+}
+inline void GuildTrialLaunchRecord::set_allocated_cancel_receipt(::std::string* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (value != nullptr) {
+    SetHasBit(_impl_._has_bits_[0], 0x00000004U);
+  } else {
+    ClearHasBit(_impl_._has_bits_[0], 0x00000004U);
+  }
+  _impl_.cancel_receipt_.SetAllocated(value, GetArena());
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.cancel_receipt_.IsDefault()) {
+    _impl_.cancel_receipt_.Set("", GetArena());
+  }
+  // @@protoc_insertion_point(field_set_allocated:guildpb.GuildTrialLaunchRecord.cancel_receipt)
+}
+
+// -------------------------------------------------------------------
+
+// GuildTrialLaunchRoleRecord
+
+// uint64 player_id = 1;
+inline void GuildTrialLaunchRoleRecord::clear_player_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.player_id_ = ::uint64_t{0u};
+  ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
+}
+inline ::uint64_t GuildTrialLaunchRoleRecord::player_id() const {
+  // @@protoc_insertion_point(field_get:guildpb.GuildTrialLaunchRoleRecord.player_id)
+  return _internal_player_id();
+}
+inline void GuildTrialLaunchRoleRecord::set_player_id(::uint64_t value) {
+  _internal_set_player_id(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000002U);
+  // @@protoc_insertion_point(field_set:guildpb.GuildTrialLaunchRoleRecord.player_id)
+}
+inline ::uint64_t GuildTrialLaunchRoleRecord::_internal_player_id() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.player_id_;
+}
+inline void GuildTrialLaunchRoleRecord::_internal_set_player_id(::uint64_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.player_id_ = value;
+}
+
+// uint64 request_id = 2;
+inline void GuildTrialLaunchRoleRecord::clear_request_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.request_id_ = ::uint64_t{0u};
+  ClearHasBit(_impl_._has_bits_[0], 0x00000004U);
+}
+inline ::uint64_t GuildTrialLaunchRoleRecord::request_id() const {
+  // @@protoc_insertion_point(field_get:guildpb.GuildTrialLaunchRoleRecord.request_id)
+  return _internal_request_id();
+}
+inline void GuildTrialLaunchRoleRecord::set_request_id(::uint64_t value) {
+  _internal_set_request_id(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000004U);
+  // @@protoc_insertion_point(field_set:guildpb.GuildTrialLaunchRoleRecord.request_id)
+}
+inline ::uint64_t GuildTrialLaunchRoleRecord::_internal_request_id() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.request_id_;
+}
+inline void GuildTrialLaunchRoleRecord::_internal_set_request_id(::uint64_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.request_id_ = value;
+}
+
+// string account = 3;
+inline void GuildTrialLaunchRoleRecord::clear_account() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.account_.ClearToEmpty();
+  ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
+}
+inline const ::std::string& GuildTrialLaunchRoleRecord::account() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:guildpb.GuildTrialLaunchRoleRecord.account)
+  return _internal_account();
+}
+template <typename Arg_, typename... Args_>
+PROTOBUF_ALWAYS_INLINE void GuildTrialLaunchRoleRecord::set_account(Arg_&& arg, Args_... args) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  _impl_.account_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
+  // @@protoc_insertion_point(field_set:guildpb.GuildTrialLaunchRoleRecord.account)
+}
+inline ::std::string* PROTOBUF_NONNULL GuildTrialLaunchRoleRecord::mutable_account()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  ::std::string* _s = _internal_mutable_account();
+  // @@protoc_insertion_point(field_mutable:guildpb.GuildTrialLaunchRoleRecord.account)
+  return _s;
+}
+inline const ::std::string& GuildTrialLaunchRoleRecord::_internal_account() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.account_.Get();
+}
+inline void GuildTrialLaunchRoleRecord::_internal_set_account(const ::std::string& value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.account_.Set(value, GetArena());
+}
+inline ::std::string* PROTOBUF_NONNULL GuildTrialLaunchRoleRecord::_internal_mutable_account() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  return _impl_.account_.Mutable( GetArena());
+}
+inline ::std::string* PROTOBUF_NULLABLE GuildTrialLaunchRoleRecord::release_account() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:guildpb.GuildTrialLaunchRoleRecord.account)
+  if (!CheckHasBit(_impl_._has_bits_[0], 0x00000001U)) {
+    return nullptr;
+  }
+  ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
+  auto* released = _impl_.account_.Release();
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString()) {
+    _impl_.account_.Set("", GetArena());
+  }
+  return released;
+}
+inline void GuildTrialLaunchRoleRecord::set_allocated_account(::std::string* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (value != nullptr) {
+    SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  } else {
+    ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
+  }
+  _impl_.account_.SetAllocated(value, GetArena());
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.account_.IsDefault()) {
+    _impl_.account_.Set("", GetArena());
+  }
+  // @@protoc_insertion_point(field_set_allocated:guildpb.GuildTrialLaunchRoleRecord.account)
+}
+
+// uint64 owner_revision = 4;
+inline void GuildTrialLaunchRoleRecord::clear_owner_revision() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.owner_revision_ = ::uint64_t{0u};
+  ClearHasBit(_impl_._has_bits_[0], 0x00000008U);
+}
+inline ::uint64_t GuildTrialLaunchRoleRecord::owner_revision() const {
+  // @@protoc_insertion_point(field_get:guildpb.GuildTrialLaunchRoleRecord.owner_revision)
+  return _internal_owner_revision();
+}
+inline void GuildTrialLaunchRoleRecord::set_owner_revision(::uint64_t value) {
+  _internal_set_owner_revision(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000008U);
+  // @@protoc_insertion_point(field_set:guildpb.GuildTrialLaunchRoleRecord.owner_revision)
+}
+inline ::uint64_t GuildTrialLaunchRoleRecord::_internal_owner_revision() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.owner_revision_;
+}
+inline void GuildTrialLaunchRoleRecord::_internal_set_owner_revision(::uint64_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.owner_revision_ = value;
+}
+
+// uint32 state = 5;
+inline void GuildTrialLaunchRoleRecord::clear_state() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.state_ = 0u;
+  ClearHasBit(_impl_._has_bits_[0], 0x00000010U);
+}
+inline ::uint32_t GuildTrialLaunchRoleRecord::state() const {
+  // @@protoc_insertion_point(field_get:guildpb.GuildTrialLaunchRoleRecord.state)
+  return _internal_state();
+}
+inline void GuildTrialLaunchRoleRecord::set_state(::uint32_t value) {
+  _internal_set_state(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000010U);
+  // @@protoc_insertion_point(field_set:guildpb.GuildTrialLaunchRoleRecord.state)
+}
+inline ::uint32_t GuildTrialLaunchRoleRecord::_internal_state() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.state_;
+}
+inline void GuildTrialLaunchRoleRecord::_internal_set_state(::uint32_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.state_ = value;
 }
 
 // -------------------------------------------------------------------

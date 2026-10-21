@@ -2079,7 +2079,7 @@ const char descriptor_table_protodef_proto_2ftrade_2fjubaozhai_2eproto[] ABSL_AT
     "ED\020\003\022\027\n\023LISTING_PHASE_ENDED\020\004*[\n\013MarketS"
     "cope\022\034\n\030MARKET_SCOPE_UNSPECIFIED\020\000\022\025\n\021MA"
     "RKET_SCOPE_ZONE\020\001\022\027\n\023MARKET_SCOPE_GLOBAL"
-    "\020\0022\315\017\n\025ClientPlayerJubaozhai\022M\n\016BrowseLi"
+    "\020\0022\360\026\n\025ClientPlayerJubaozhai\022M\n\016BrowseLi"
     "stings\022\034.trade.BrowseListingsRequest\032\035.t"
     "rade.BrowseListingsResponse\022S\n\020GetListin"
     "gDetail\022\036.trade.GetListingDetailRequest\032"
@@ -2128,8 +2128,31 @@ const char descriptor_table_protodef_proto_2ftrade_2fjubaozhai_2eproto[] ABSL_AT
     "trade.BrowseCommerceOffersRequest\032#.trad"
     "e.BrowseCommerceOffersResponse\022S\n\020ListTr"
     "adeMarkets\022\036.trade.ListTradeMarketsReque"
-    "st\032\037.trade.ListTradeMarketsResponse\032\005\210\250\303"
-    "\001\001B\016Z\005trade\200\001\000\230\324a\021b\006proto3"
+    "st\032\037.trade.ListTradeMarketsResponse\022Y\n\024C"
+    "reateRmbConsignment\022\".trade.CreateRmbCon"
+    "signmentRequest\032\035.trade.RmbConsignmentRe"
+    "sponse\022S\n\021GetRmbConsignment\022\037.trade.GetR"
+    "mbConsignmentRequest\032\035.trade.RmbConsignm"
+    "entResponse\022\\\n\023ListRmbConsignments\022!.tra"
+    "de.ListRmbConsignmentsRequest\032\".trade.Li"
+    "stRmbConsignmentsResponse\022R\n\021BuyRmbConsi"
+    "gnment\022\037.trade.BuyRmbConsignmentRequest\032"
+    "\034.trade.CommerceOrderResponse\022Y\n\024CancelR"
+    "mbConsignment\022\".trade.CancelRmbConsignme"
+    "ntRequest\032\035.trade.RmbConsignmentResponse"
+    "\022K\n\013GetRmbOrder\022\036.trade.GetCommerceOrder"
+    "Request\032\034.trade.CommerceOrderResponse\022T\n"
+    "\rListRmbOrders\022 .trade.ListCommerceOrder"
+    "sRequest\032!.trade.ListCommerceOrdersRespo"
+    "nse\022Q\n\016CancelRmbOrder\022!.trade.CancelComm"
+    "erceOrderRequest\032\034.trade.CommerceOrderRe"
+    "sponse\022V\n\021ListSellerIncomes\022\037.trade.List"
+    "SellerIncomesRequest\032 .trade.ListSellerI"
+    "ncomesResponse\022M\n\020CreateWithdrawal\022\036.tra"
+    "de.CreateWithdrawalRequest\032\031.trade.Withd"
+    "rawalResponse\022G\n\rGetWithdrawal\022\033.trade.G"
+    "etWithdrawalRequest\032\031.trade.WithdrawalRe"
+    "sponse\032\005\210\250\303\001\001B\016Z\005trade\200\001\000\230\324a\021b\006proto3"
 };
 static const ::_pbi::DescriptorTable* PROTOBUF_NONNULL const
     descriptor_table_proto_2ftrade_2fjubaozhai_2eproto_deps[3] = {
@@ -2141,7 +2164,7 @@ static ::absl::once_flag descriptor_table_proto_2ftrade_2fjubaozhai_2eproto_once
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2ftrade_2fjubaozhai_2eproto = {
     false,
     false,
-    4626,
+    5557,
     descriptor_table_protodef_proto_2ftrade_2fjubaozhai_2eproto,
     "proto/trade/jubaozhai.proto",
     &descriptor_table_proto_2ftrade_2fjubaozhai_2eproto_once,

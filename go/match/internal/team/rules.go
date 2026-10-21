@@ -1,6 +1,7 @@
 package team
 
 import (
+	"match/internal/config"
 	"sort"
 
 	teampb "proto/team"
@@ -20,18 +21,18 @@ import (
 const (
 	// Capacity 队伍容量,必须等于 logic.kMaxBattleTeamSize(引擎每队上限)。team 不 import logic,
 	// logic 也不能 import team(proto/team 生成物),两边测试各自钉住字面量 5(team_battle_test.go)。
-	Capacity = 5
+	Capacity = config.TeamCapacity
 
 	// ApplicationTTLMs / MaxApplications 申请有效期与每队上限(满了淘汰最早一条,不报错)。
-	ApplicationTTLMs uint64 = 120_000
-	MaxApplications         = 10
+	ApplicationTTLMs uint64 = config.TeamApplicationTTLMs
+	MaxApplications         = config.TeamMaxApplications
 
 	// InviteTTLMs / MaxInvitesPerTeam 邀请有效期与每队上限(满了淘汰最早一条)。
-	InviteTTLMs       uint64 = 60_000
-	MaxInvitesPerTeam        = 10
+	InviteTTLMs       uint64 = config.TeamInviteTTLMs
+	MaxInvitesPerTeam        = config.TeamMaxInvitesPerTeam
 
 	// MaxPendingInvitesPerInvitee 每个被邀请人的待处理邀请上限,由 S_COMMIT 原子判定({-3,i})。
-	MaxPendingInvitesPerInvitee = 10
+	MaxPendingInvitesPerInvitee = config.TeamMaxPendingInvitesPerInvitee
 )
 
 // SessionState 规则层看到的会话状态(player:session:<id>,由 store 的 SessionLoader 提供)。
@@ -190,7 +191,7 @@ type Decision struct {
 
 // MatchLockActive 开战锁是否有效(nowMs 为 SharedRedis TIME,§C.4)。
 func MatchLockActive(rec *teampb.TeamRecord, nowMs uint64) bool {
-	return rec != nil && rec.GetMatchLockToken() != "" && nowMs < rec.GetMatchLockExpireAtMs()
+	return rec != nil && rec.GetMatchLockToken() != "" && (rec.GetMatchLockExpireAtMs() == 0 || nowMs < rec.GetMatchLockExpireAtMs())
 }
 
 // FindMember 在记录里找成员;没有返回 nil。

@@ -18,6 +18,7 @@ import (
 	"schemamigrate"
 	"shared/assetop"
 	"shared/authoritysql"
+	"strconv"
 	"sync"
 	"sync/atomic"
 	"testing"
@@ -78,7 +79,7 @@ func openEngineDB(t *testing.T, dsn string, requireTiDB bool) *Engine {
 	ops, err := data.NewAssetOpRepo(db, 3*time.Second)
 	require.NoError(t, err)
 	require.NoError(t, ops.EnsureSeqGuardRow(context.Background(), uint64(time.Now().UnixMilli())))
-	return &Engine{Repo: &data.CommerceRepo{DB: db, Ops: ops}, IDs: &testIDs{}, OpIDs: &testIDs{}, Policy: Policy{Items: []uint32{10}, ItemTitles: map[uint32]string{10: "玄铁"}, Currencies: []uint32{1}}, Now: time.Now}
+	return &Engine{Repo: &data.CommerceRepo{DB: db, Ops: ops}, IDs: &testIDs{}, OpIDs: &testIDs{}, Policy: Policy{Items: []uint32{10}, ItemTitles: map[uint32]string{10: "玄铁"}, Currencies: []uint32{1}}, Now: time.Now, Roles: fixtureRoles{}}
 }
 func tick(t *testing.T, e *Engine) {
 	t.Helper()
@@ -320,6 +321,87 @@ func TestTiDBBidOutbidRefundAndLateBid(t *testing.T) {
 	require.ErrorIs(t, err, ErrEnded)
 }
 
+func TestTiDBBidReplayKeepsOriginalContractAndDebitAfterPriceAdvanceAndExpiry(t *testing.T) {
+	e := tiDBEngine(t)
+	ctx := context.Background()
+	lot, err := e.CreateLot(ctx, 11, &tradepb.CreateAuctionLotRequest{ClientRequestId: "bid-replay-lot-001", Assets: &tradepb.TradeAssetSelection{Items: map[uint32]uint32{10: 1}}, CurrencyType: 1, OpeningPrice: 50, MinimumIncrement: 5, DurationMs: 60000})
+	require.NoError(t, err)
+	require.NoError(t, e.advance(ctx, lot))
+	settleLegs(t, e, 2)
+	lot, _ = state(t, e, lot.CommerceId)
+	require.NoError(t, e.advance(ctx, lot))
+	input := &tradepb.PlaceAuctionBidRequest{LotId: fmt.Sprint(lot.CommerceId), ClientRequestId: "bid-replay-request-001", Amount: 50}
+	var wg sync.WaitGroup
+	type bidResult struct {
+		bid *tradepb.TradeCommerceRecord
+		err error
+	}
+	bids := make(chan bidResult, 8)
+	for range 8 {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			bid, err := e.PlaceBid(ctx, 21, lot.CommerceId, input)
+			bids <- bidResult{bid: bid, err: err}
+		}()
+	}
+	wg.Wait()
+	close(bids)
+	var original *tradepb.TradeCommerceRecord
+	results := 0
+	for result := range bids {
+		results++
+		require.NoError(t, result.err)
+		bid := result.bid
+		require.NotNil(t, bid)
+		if original == nil {
+			original = bid
+		}
+		require.Equal(t, original.CommerceId, bid.CommerceId, "并发重复请求只能创建一份出价合同")
+	}
+	require.Equal(t, 8, results)
+	require.NoError(t, e.advance(ctx, original))
+	var opID, epoch, seq, deadline uint64
+	require.NoError(t, e.Repo.DB.QueryRow("SELECT op_id,stream_epoch,seq,deadline_ms FROM trade_asset_op WHERE ref_id=? AND stream=3", original.CommerceId).Scan(&opID, &epoch, &seq, &deadline))
+	settleLegs(t, e, 2)
+	original, _ = state(t, e, original.CommerceId)
+	require.NoError(t, e.advance(ctx, original))
+	require.NoError(t, e.acceptBid(ctx, original.CommerceId))
+	_, workflow := state(t, e, original.CommerceId)
+	require.Equal(t, "bid_held", workflow.Stage)
+	// 成为最高价后，原金额已不满足下一次加价；原请求仍必须返回原合同。
+	replayed, err := e.PlaceBid(ctx, 21, lot.CommerceId, input)
+	require.NoError(t, err)
+	require.Equal(t, original.CommerceId, replayed.CommerceId)
+	_, err = e.Repo.DB.Exec("UPDATE trade_commerce SET expires_ms=1 WHERE commerce_id=?", lot.CommerceId)
+	require.NoError(t, err)
+	replayed, err = e.PlaceBid(ctx, 21, lot.CommerceId, input)
+	require.NoError(t, err, "拍品截止不改变已受理请求的身份")
+	require.Equal(t, original.CommerceId, replayed.CommerceId)
+	changed := proto.Clone(input).(*tradepb.PlaceAuctionBidRequest)
+	changed.Amount++
+	_, err = e.PlaceBid(ctx, 21, lot.CommerceId, changed)
+	require.ErrorIs(t, err, ErrReplay, "同请求号换金额不能被截止检查掩盖")
+	changed = proto.Clone(input).(*tradepb.PlaceAuctionBidRequest)
+	changed.LotId = "another-lot"
+	_, err = e.PlaceBid(ctx, 21, lot.CommerceId, changed)
+	require.ErrorIs(t, err, ErrReplay, "拍品身份同样属于幂等摘要")
+	changed = proto.Clone(input).(*tradepb.PlaceAuctionBidRequest)
+	changed.ClientRequestId = "bid-replay-new-late-001"
+	_, err = e.PlaceBid(ctx, 21, lot.CommerceId, changed)
+	require.ErrorIs(t, err, ErrEnded, "只有已有请求可重放，不能接受截止后的新出价")
+	var contracts, debits int
+	var finalOpID, finalEpoch, finalSeq uint64
+	require.NoError(t, e.Repo.DB.QueryRow("SELECT COUNT(*) FROM trade_commerce WHERE kind=?", BidKind).Scan(&contracts))
+	require.NoError(t, e.Repo.DB.QueryRow("SELECT COUNT(*),MAX(op_id),MAX(stream_epoch),MAX(seq) FROM trade_asset_op WHERE player_id=21 AND stream=3").Scan(&debits, &finalOpID, &finalEpoch, &finalSeq))
+	require.Equal(t, 1, contracts)
+	require.Equal(t, 1, debits)
+	require.Equal(t, opID, finalOpID, "重放不得另发扣款seq")
+	require.Equal(t, epoch, finalEpoch)
+	require.Equal(t, seq, finalSeq)
+	require.Equal(t, lot.ExpiresMs, deadline, "扣款待办必须继承拍品截止，不能无限期保留可执行扣款")
+}
+
 func TestTransferPreservesInstanceUnknownBytes(t *testing.T) {
 	raw := []byte{0x08, 0x01, 0xf8, 0x7f, 0x03}
 	s := &assetpb.AssetSnapshot{Items: []*assetpb.AssetItemInstance{{ItemUuid: 77, ConfigId: 10, StackSize: 1, InstanceProto: raw}}}
@@ -346,13 +428,13 @@ func TestTiDBContractCannotFinalizeFromRedisDurableOnly(t *testing.T) {
 func TestTiDBMallBridgeWaitsForCommittedLegAndRecoversLostReceipt(t *testing.T) {
 	e := tiDBEngine(t)
 	ctx := context.Background()
-	in := mallIntent{OrderID: "00112233-4455-6677-8899-aabbccddeeff", BuyerID: "22", SKU: 1, Quantity: 1, Config: 10, Count: 2, Title: "玄铁"}
+	in := mallIntent{OrderID: "00112233-4455-6677-8899-aabbccddeeff", BuyerID: "22", BuyerAccount: "account-22", BuyerOwnerRevision: "1", SKU: 1, Quantity: 1, Config: 10, Count: 2, Title: "玄铁"}
 	var acknowledgements atomic.Int32
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		require.Equal(t, "trade", r.Header.Get("X-Commerce-Subject"))
 		require.Len(t, r.Header.Get("X-Commerce-Signature"), 64)
 		if r.URL.Path == "/internal/deliveries/poll" {
-			require.NoError(t, json.NewEncoder(w).Encode([]mallIntent{in}))
+			require.NoError(t, json.NewEncoder(w).Encode(mallPollPage{Entries: []mallPollEntry{mallTestEntry(in, "")}}))
 			return
 		}
 		if r.URL.Path == "/internal/deliveries/receipt" {
@@ -384,4 +466,248 @@ func TestTiDBMallBridgeWaitsForCommittedLegAndRecoversLostReceipt(t *testing.T) 
 	require.EqualValues(t, 2, acknowledgements.Load())
 	require.NoError(t, e.Repo.DB.QueryRow("SELECT COUNT(*) FROM trade_asset_op WHERE stream=4").Scan(&ops))
 	require.Equal(t, 1, ops, "恢复不得换seq重发资产")
+}
+
+func mallTestEntry(in mallIntent, cursor string) mallPollEntry {
+	return mallPollEntry{Intent: &in, Cursor: &cursor}
+}
+func mallTestCursor(after, upper string) string {
+	return "v1:1:" + after + ":1:" + upper
+}
+
+// 固定有限队列的HTTP替身；真实SQL翻页由mall_game的DeliveryStoreTest覆盖。
+// 允许从任一已尝试项续扫，且故意持续返回旧意图，以验证worker重启仍沿用原订单。
+type mallPageProbe struct {
+	mu              sync.Mutex
+	requests        []string
+	receiptOrderIDs []string
+	receipts        atomic.Int32
+}
+
+func newMallPageServer(t *testing.T, intents []mallIntent) (*httptest.Server, *mallPageProbe) {
+	t.Helper()
+	pages := make(map[string]mallPollPage)
+	upper := intents[len(intents)-1].OrderID
+	for after := range intents {
+		key := ""
+		if after > 0 {
+			key = mallTestCursor(intents[after-1].OrderID, upper)
+		}
+		page := mallPollPage{Entries: []mallPollEntry{}}
+		for i := after; i < min(after+20, len(intents)); i++ {
+			cursor := mallTestCursor(intents[i].OrderID, upper)
+			if i == len(intents)-1 {
+				cursor = ""
+			}
+			page.Entries = append(page.Entries, mallTestEntry(intents[i], cursor))
+		}
+		pages[key] = page
+	}
+	probe := &mallPageProbe{}
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case "/internal/deliveries/poll":
+			var input struct {
+				Limit  int    `json:"limit"`
+				Cursor string `json:"cursor"`
+			}
+			if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
+				t.Errorf("读取poll请求: %v", err)
+				w.WriteHeader(400)
+				return
+			}
+			probe.mu.Lock()
+			probe.requests = append(probe.requests, input.Cursor)
+			probe.mu.Unlock()
+			page, exists := pages[input.Cursor]
+			if !exists || input.Limit != 20 {
+				t.Errorf("未知poll游标或批量: %q / %d", input.Cursor, input.Limit)
+				w.WriteHeader(400)
+				return
+			}
+			if err := json.NewEncoder(w).Encode(page); err != nil {
+				t.Errorf("写poll响应: %v", err)
+			}
+		case "/internal/deliveries/receipt":
+			var receipt struct {
+				OrderID string `json:"orderId"`
+				State   string `json:"state"`
+			}
+			if err := json.NewDecoder(r.Body).Decode(&receipt); err != nil || receipt.State != "DELIVERED" {
+				t.Errorf("读取交付回执: state=%q, err=%v", receipt.State, err)
+				w.WriteHeader(400)
+				return
+			}
+			probe.mu.Lock()
+			probe.receiptOrderIDs = append(probe.receiptOrderIDs, receipt.OrderID)
+			probe.receipts.Add(1)
+			probe.mu.Unlock()
+		default:
+			w.WriteHeader(404)
+		}
+	}))
+	return server, probe
+}
+
+func mallTestIntents(count int) []mallIntent {
+	intents := make([]mallIntent, 0, count)
+	for i := range count {
+		intents = append(intents, mallIntent{OrderID: fmt.Sprintf("%08x-0000-0000-0000-000000000000", i+1), BuyerID: fmt.Sprint(100 + i), BuyerAccount: fmt.Sprint("account-", 100+i), BuyerOwnerRevision: "1", SKU: 1, Quantity: 1, Config: 10, Count: 1, Title: "玄铁"})
+	}
+	return intents
+}
+
+func TestTiDBMallPagingReachesOfflineTailAndRestartKeepsOriginalContractAndSeq(t *testing.T) {
+	e := tiDBEngine(t)
+	ctx := context.Background()
+	intents := mallTestIntents(25)
+	server, probe := newMallPageServer(t, intents)
+	defer server.Close()
+	m, err := NewMall(server.URL, "gateway-only-test-secret-00000000001", "delivery-only-test-secret-0000000002", e)
+	require.NoError(t, err)
+	require.NoError(t, m.Tick(ctx))
+	require.Equal(t, mallTestCursor(intents[19].OrderID, intents[24].OrderID), m.pollCursor)
+	first, err := m.accept(ctx, intents[0])
+	require.NoError(t, err)
+	require.NoError(t, m.Tick(ctx), "前20个买家尚未到账，第21至25单仍必须建合同")
+	require.Empty(t, m.pollCursor)
+	var contracts int
+	require.NoError(t, e.Repo.DB.QueryRow("SELECT COUNT(*) FROM trade_commerce WHERE kind=1").Scan(&contracts))
+	require.Equal(t, 25, contracts)
+	require.Zero(t, probe.receipts.Load(), "翻页不是持久到账证据")
+	type creditIdentity struct{ OpID, Epoch, Seq uint64 }
+	creditIdentities := func() []creditIdentity {
+		rows, err := e.Repo.DB.Query("SELECT op_id,stream_epoch,seq FROM trade_asset_op WHERE stream=4 ORDER BY op_id")
+		require.NoError(t, err)
+		defer rows.Close()
+		var identities []creditIdentity
+		for rows.Next() {
+			var identity creditIdentity
+			require.NoError(t, rows.Scan(&identity.OpID, &identity.Epoch, &identity.Seq))
+			identities = append(identities, identity)
+		}
+		require.NoError(t, rows.Err())
+		return identities
+	}
+	tick(t, e)
+	originalOps := creditIdentities()
+	require.Len(t, originalOps, 25)
+	// 新worker从首页重读；cursor包装不进入旧Intent的摘要，不另建合同。
+	restarted, err := NewMall(server.URL, m.GatewaySecret, m.DeliverySecret, e)
+	require.NoError(t, err)
+	require.NoError(t, restarted.Tick(ctx))
+	require.NoError(t, restarted.Tick(ctx))
+	replayed, err := restarted.accept(ctx, intents[0])
+	require.NoError(t, err)
+	require.Equal(t, first.CommerceId, replayed.CommerceId)
+	require.Equal(t, first.RequestDigest, replayed.RequestDigest)
+	tick(t, e)
+	require.Equal(t, originalOps, creditIdentities(), "worker重启重放不得替换原SQL op_id/epoch/seq")
+	// 仅后五名玩家取得SQL终局；首页二十名仍离线待办时，后页已能独立回报到账。
+	for _, intent := range intents[20:] {
+		player, err := strconv.ParseUint(intent.BuyerID, 10, 64)
+		require.NoError(t, err)
+		contract, err := e.Repo.ByRequest(ctx, RequestKey("official", player, intent.OrderID))
+		require.NoError(t, err)
+		result, err := e.Repo.DB.Exec("UPDATE trade_asset_op SET status=2,durable=1 WHERE ref_id=? AND stream=4 AND status=1", contract.CommerceId)
+		require.NoError(t, err)
+		updated, err := result.RowsAffected()
+		require.NoError(t, err)
+		require.EqualValues(t, 1, updated)
+	}
+	tick(t, e)
+	require.NoError(t, restarted.Tick(ctx))
+	require.Zero(t, probe.receipts.Load(), "首页二十项仍未到账")
+	require.NoError(t, restarted.Tick(ctx))
+	require.EqualValues(t, 5, probe.receipts.Load(), "首页未终局不挡后五项已提交交付回执")
+	probe.mu.Lock()
+	tailReceipts := append([]string(nil), probe.receiptOrderIDs...)
+	probe.mu.Unlock()
+	var expectedTail []string
+	for _, intent := range intents[20:] {
+		expectedTail = append(expectedTail, intent.OrderID)
+	}
+	require.Equal(t, expectedTail, tailReceipts, "这五条回执必须恰为后五单，不能由首页订单充数")
+	var pending int
+	require.NoError(t, e.Repo.DB.QueryRow("SELECT COUNT(*) FROM trade_asset_op WHERE stream=4 AND status=1").Scan(&pending))
+	require.Equal(t, 20, pending)
+	settleLegs(t, e, 2)
+	tick(t, e)
+	require.NoError(t, restarted.Tick(ctx))
+	require.EqualValues(t, 25, probe.receipts.Load())
+	tick(t, e)
+	require.Equal(t, originalOps, creditIdentities(), "原订单跨页/重启/丢回执后保留全部25条原SQL op_id/epoch/seq")
+}
+
+type cancelFirstMallID struct {
+	next   IDs
+	cancel context.CancelFunc
+	calls  atomic.Int32
+}
+
+func (i *cancelFirstMallID) Next(ctx context.Context) (uint64, error) {
+	n, err := i.next.Next(ctx)
+	if i.calls.Add(1) == 1 {
+		i.cancel()
+	}
+	return n, err
+}
+
+func TestTiDBMallPagingCancellationNeverSkipsUnattemptedEntries(t *testing.T) {
+	e := tiDBEngine(t)
+	intents := mallTestIntents(3)
+	server, _ := newMallPageServer(t, intents)
+	defer server.Close()
+	m, err := NewMall(server.URL, "gateway-only-test-secret-00000000001", "delivery-only-test-secret-0000000002", e)
+	require.NoError(t, err)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	originalIDs := e.IDs
+	ids := &cancelFirstMallID{next: originalIDs, cancel: cancel}
+	e.IDs = ids
+	require.ErrorIs(t, m.Tick(ctx), context.Canceled)
+	require.EqualValues(t, 1, ids.calls.Load())
+	require.Equal(t, mallTestCursor(intents[0].OrderID, intents[2].OrderID), m.pollCursor, "只前移已尝试的首项，不能跳过第二、三项")
+	e.IDs = originalIDs
+	require.NoError(t, m.Tick(context.Background()))
+	require.Empty(t, m.pollCursor)
+	require.NoError(t, m.Tick(context.Background()), "下轮绕回补首项提交未知的原订单")
+	var contracts int
+	require.NoError(t, e.Repo.DB.QueryRow("SELECT COUNT(*) FROM trade_commerce WHERE kind=1").Scan(&contracts))
+	require.Equal(t, 3, contracts)
+}
+
+func TestMallPagingRejectsInvalidResponseWithoutMovingCursor(t *testing.T) {
+	intents := mallTestIntents(3)
+	requested := mallTestCursor(intents[0].OrderID, intents[2].OrderID)
+	for _, response := range []struct {
+		body   string
+		status int
+	}{
+		{`{}`, 200}, {`{"entries":null}`, 200}, {`{"entries":[{"intent":{},"cursor":""}]}`, 200},
+		{`{"entries":[{"intent":{"orderId":"00000002-0000-0000-0000-000000000000"},"cursor":"v2:1:00000002-0000-0000-0000-000000000000:1:00000003-0000-0000-0000-000000000000"}]}`, 200},
+		{`{"entries":[]}`, 503},
+	} {
+		t.Run(fmt.Sprintf("%d-%s", response.status, response.body), func(t *testing.T) {
+			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				w.WriteHeader(response.status)
+				_, _ = w.Write([]byte(response.body))
+			}))
+			defer server.Close()
+			m, err := NewMall(server.URL, "gateway-only-test-secret-00000000001", "delivery-only-test-secret-0000000002", nil)
+			require.NoError(t, err)
+			m.pollCursor = requested
+			require.Error(t, m.Tick(context.Background()))
+			require.Equal(t, requested, m.pollCursor)
+		})
+	}
+	t.Run("空尾页绕回", func(t *testing.T) {
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { _, _ = w.Write([]byte(`{"entries":[]}`)) }))
+		defer server.Close()
+		m, err := NewMall(server.URL, "gateway-only-test-secret-00000000001", "delivery-only-test-secret-0000000002", nil)
+		require.NoError(t, err)
+		m.pollCursor = requested
+		require.NoError(t, m.Tick(context.Background()))
+		require.Empty(t, m.pollCursor)
+	})
 }

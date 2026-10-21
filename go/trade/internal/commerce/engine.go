@@ -6,6 +6,7 @@ import (
 	"context"
 	"crypto/sha256"
 	"database/sql"
+	"encoding/binary"
 	"encoding/hex"
 	"errors"
 	"fmt"
@@ -16,6 +17,7 @@ import (
 	tradepb "proto/trade"
 	"shared/assetop"
 	"shared/generated/pb/table"
+	"shared/roleidentity"
 	"sort"
 	"strconv"
 	"strings"
@@ -76,7 +78,7 @@ func (p Policy) Selection(v *tradepb.TradeAssetSelection) error {
 	if v.CurrencyAmount == 0 && v.CurrencyType != 0 || v.CurrencyAmount > math.MaxInt64 {
 		return ErrInvalid
 	}
-	if v.CurrencyAmount > 0 && !contains(p.Currencies, v.CurrencyType) {
+	if v.CurrencyAmount > 0 && (v.CurrencyType == 2 || !contains(p.Currencies, v.CurrencyType)) {
 		return ErrNotTradable
 	}
 	var total uint64
@@ -121,6 +123,8 @@ type Engine struct {
 	Applier assetop.Applier
 	Ledger  assetop.LedgerReader
 	Now     func() time.Time
+	Roles   RoleLocker
+	Rmb     *RmbConsignments
 
 	// ackAfterOpID 是收据 ACK 的翻页游标(见 ackReceipts),只归驱动 Tick 的那一个 goroutine。
 	ackAfterOpID uint64
@@ -184,28 +188,46 @@ func RequestKey(scope string, player uint64, id string) string {
 	h := sha256.Sum256([]byte(scope + ":" + strconv.FormatUint(player, 10) + ":" + id))
 	return hex.EncodeToString(h[:])
 }
-func digest(v proto.Message) []byte {
+func digest(ctx context.Context, v proto.Message) []byte {
 	raw, _ := proto.MarshalOptions{Deterministic: true}.Marshal(v)
+	if original, ok := roleidentity.Original(ctx); ok {
+		identity, _ := proto.MarshalOptions{Deterministic: true}.Marshal(&tradepb.TradeRoleIdentity{Account: original.Account, OwnerRevision: original.OwnerRevision})
+		// 长度前缀隔开原客户端正文与原身份，防止拼接歧义；不含传输时钟/nonce。
+		bound := binary.AppendUvarint([]byte("trade-request-v2\n"), uint64(len(raw)))
+		bound = append(bound, raw...)
+		raw = append(bound, identity...)
+	}
 	h := sha256.Sum256(raw)
 	return h[:]
 }
-func (e *Engine) Create(ctx context.Context, player uint64, id string, input proto.Message, r *tradepb.TradeCommerceRecord, w *tradepb.TradeCommerceWorkflow) (*tradepb.TradeCommerceRecord, error) {
+
+// priorRequest 只接受同一玩家、同一请求号与完整原载荷的重放；已有合同不再依赖当前拍品等易变状态。
+func (e *Engine) priorRequest(ctx context.Context, player uint64, id string, input proto.Message) (*tradepb.TradeCommerceRecord, error) {
 	if e == nil || e.Repo == nil || e.Repo.Ops == nil {
 		return nil, errors.New("交易资产通道未配置")
 	}
 	if player == 0 || len(id) < 8 || len(id) > 80 {
 		return nil, ErrInvalid
 	}
-	r.RequestKey = RequestKey("player", player, id)
-	r.RequestDigest = digest(input)
-	if old, err := e.Repo.ByRequest(ctx, r.RequestKey); err == nil {
-		if !bytes.Equal(old.RequestDigest, r.RequestDigest) {
+	if old, err := e.Repo.ByRequest(ctx, RequestKey("player", player, id)); err == nil {
+		if !bytes.Equal(old.RequestDigest, digest(ctx, input)) {
 			return nil, ErrReplay
+		}
+		if err := e.verifyReplayActor(ctx, old); err != nil {
+			return nil, err
 		}
 		return old, nil
 	} else if !errors.Is(err, sql.ErrNoRows) {
 		return nil, err
 	}
+	return nil, nil
+}
+func (e *Engine) Create(ctx context.Context, player uint64, id string, input proto.Message, r *tradepb.TradeCommerceRecord, w *tradepb.TradeCommerceWorkflow) (*tradepb.TradeCommerceRecord, error) {
+	if old, err := e.priorRequest(ctx, player, id, input); err != nil || old != nil {
+		return old, err
+	}
+	r.RequestKey = RequestKey("player", player, id)
+	r.RequestDigest = digest(ctx, input)
 	n, err := e.IDs.Next(ctx)
 	if err != nil {
 		return nil, err
@@ -218,11 +240,48 @@ func (e *Engine) Create(ctx context.Context, player uint64, id string, input pro
 	if err != nil {
 		return nil, err
 	}
-	err = e.Repo.Tx(ctx, func(tx *sql.Tx) error { return e.Repo.Insert(ctx, tx, r) })
+	err = e.Repo.Tx(ctx, func(tx *sql.Tx) error {
+		if err := e.lockRoles(ctx, tx, 0, r.SellerPlayerId, r.BuyerPlayerId); err != nil {
+			return err
+		}
+		if r.Kind == 6 {
+			if w.Rmb == nil {
+				return ErrInvalid
+			}
+			owned, err := e.Roles.Ownership(ctx, tx, r.SellerPlayerId)
+			if err != nil {
+				return err
+			}
+			if owned.Account != w.Rmb.SellerAccount || owned.OwnerRevision != w.Rmb.SellerOwnerRevision || owned.TradeListingId != 0 {
+				return ErrConflict
+			}
+		}
+		for _, party := range []struct {
+			player uint64
+			target **tradepb.TradeRoleIdentity
+		}{{r.SellerPlayerId, &w.SellerIdentity}, {r.BuyerPlayerId, &w.BuyerIdentity}} {
+			if party.player == 0 {
+				continue
+			}
+			owned, err := e.Roles.Ownership(ctx, tx, party.player)
+			if err != nil {
+				return err
+			}
+			*party.target = &tradepb.TradeRoleIdentity{Account: owned.Account, OwnerRevision: owned.OwnerRevision}
+		}
+		r.WorkflowProto, err = proto.MarshalOptions{Deterministic: true}.Marshal(w)
+		if err != nil {
+			return err
+		}
+		return e.Repo.Insert(ctx, tx, r)
+	})
 	if err != nil {
 		if old, readErr := e.Repo.ByRequest(ctx, r.RequestKey); readErr == nil {
 			if !bytes.Equal(old.RequestDigest, r.RequestDigest) {
 				return nil, ErrReplay
+			}
+			if err := e.verifyReplayActor(ctx, old); err != nil {
+				return nil, err
 			}
 			return old, nil
 		}
@@ -246,7 +305,7 @@ func (e *Engine) CreatePlayerTrade(ctx context.Context, me uint64, in *tradepb.C
 	return e.Create(ctx, me, in.ClientRequestId, in, &tradepb.TradeCommerceRecord{Kind: 2, Status: Escrowing, SellerPlayerId: me, BuyerPlayerId: in.BuyerPlayerId, ExpiresMs: e.now() + 15*60*1000}, &tradepb.TradeCommerceWorkflow{SellerAssets: in.SellerAssets, BuyerAssets: in.BuyerAssets, Stage: "offer_escrow"})
 }
 func validPrice(p uint64, c uint32, policy Policy) bool {
-	return p > 0 && p <= math.MaxInt64 && contains(policy.Currencies, c)
+	return p > 0 && p <= math.MaxInt64 && c != 2 && contains(policy.Currencies, c)
 }
 func (e *Engine) CreateConsignment(ctx context.Context, me uint64, in *tradepb.CreateConsignmentRequest) (*tradepb.TradeCommerceRecord, error) {
 	if err := e.Policy.Selection(in.GetAssets()); err != nil {
@@ -281,7 +340,14 @@ func (e *Engine) PlaceMarket(ctx context.Context, me uint64, in *tradepb.PlaceMa
 }
 func (e *Engine) Mutate(ctx context.Context, me, id uint64, action string, requestID ...string) (*tradepb.TradeCommerceRecord, error) {
 	var result *tradepb.TradeCommerceRecord
-	err := e.Repo.Tx(ctx, func(tx *sql.Tx) error {
+	before, err := e.Repo.Get(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	err = e.Repo.Tx(ctx, func(tx *sql.Tx) error {
+		if err := e.lockRoles(ctx, tx, 0, me, before.SellerPlayerId, before.BuyerPlayerId); err != nil {
+			return err
+		}
 		r, err := e.Repo.Lock(ctx, tx, id)
 		if errors.Is(err, sql.ErrNoRows) {
 			return ErrMissing
@@ -291,6 +357,12 @@ func (e *Engine) Mutate(ctx context.Context, me, id uint64, action string, reque
 		}
 		w, err := data.Workflow(r)
 		if err != nil {
+			return err
+		}
+		if r.SellerPlayerId != before.SellerPlayerId || r.BuyerPlayerId != before.BuyerPlayerId {
+			return ErrConflict
+		}
+		if err := e.checkContractIdentities(ctx, tx, r, w); err != nil {
 			return err
 		}
 		var now uint64
@@ -354,6 +426,11 @@ func (e *Engine) Mutate(ctx context.Context, me, id uint64, action string, reque
 				return ErrConflict
 			}
 			r.BuyerPlayerId = me
+			owned, err := e.Roles.Ownership(ctx, tx, me)
+			if err != nil {
+				return err
+			}
+			w.BuyerIdentity = &tradepb.TradeRoleIdentity{Account: owned.Account, OwnerRevision: owned.OwnerRevision}
 			w.BuyerAssets = &tradepb.TradeAssetSelection{CurrencyType: r.CurrencyType, CurrencyAmount: r.UnitPrice}
 			w.QuantityReserved++
 			addLeg(w, "buyer_debit_"+strconv.FormatUint(w.QuantityReserved, 10)+"_"+key, me, 3, Bundle(w.BuyerAssets))
@@ -403,6 +480,15 @@ func (e *Engine) Get(ctx context.Context, me, id uint64) (*tradepb.TradeCommerce
 	if r.SellerPlayerId != me && r.BuyerPlayerId != me && r.Kind != 3 && r.Kind != 5 {
 		return nil, ErrMissing
 	}
+	if _, client := roleidentity.Original(ctx); client && r.Kind != 3 && r.Kind != 5 {
+		w, err := data.Workflow(r)
+		if err != nil {
+			return nil, err
+		}
+		if !OwnsRecord(ctx, r, w) {
+			return nil, ErrMissing
+		}
+	}
 	return r, nil
 }
 
@@ -448,6 +534,9 @@ func finalCredits(w *tradepb.TradeCommerceWorkflow) (bool, bool) {
 
 // plan只决定下一批幂等腿；副作用仅为同一SQL事务写outbox，RPC在提交后由既有Loop发送。
 func (e *Engine) plan(r *tradepb.TradeCommerceRecord, w *tradepb.TradeCommerceWorkflow, now uint64) error {
+	if r.Kind == 6 {
+		return e.planRmb(r, w, now)
+	}
 	if w.Stage == "official_deliver" {
 		addLeg(w, "official_credit", r.BuyerPlayerId, 4, w.OfficialBundle)
 		l := leg(w, "official_credit")
@@ -670,6 +759,9 @@ func (e *Engine) advance(ctx context.Context, old *tradepb.TradeCommerceRecord) 
 		}
 	}
 	return e.Repo.Tx(ctx, func(tx *sql.Tx) error {
+		if err := e.lockRoles(ctx, tx, 0, old.SellerPlayerId, old.BuyerPlayerId, w.HighestBidder); err != nil {
+			return err
+		}
 		r, err := e.Repo.Lock(ctx, tx, old.CommerceId)
 		if err != nil {
 			return err
@@ -677,6 +769,12 @@ func (e *Engine) advance(ctx context.Context, old *tradepb.TradeCommerceRecord) 
 		w, err := data.Workflow(r)
 		if err != nil {
 			return corrupt(err)
+		}
+		if r.SellerPlayerId != old.SellerPlayerId || r.BuyerPlayerId != old.BuyerPlayerId {
+			return ErrConflict
+		}
+		if err := e.checkContractIdentities(ctx, tx, r, w); err != nil {
+			return err
 		}
 		for _, l := range w.Legs {
 			if l.OpId == 0 || l.Outcome != 0 {
@@ -781,7 +879,7 @@ func (e *Engine) advance(ctx context.Context, old *tradepb.TradeCommerceRecord) 
 				return err
 			}
 		}
-		if w.Stage == "done" {
+		if w.Stage == "done" || w.Stage == "rmb_delivered" || w.Stage == "rmb_returned" {
 			if err := e.Repo.Ops.MarkCommerceOpsConsumedTx(ctx, tx, r.CommerceId); err != nil {
 				return err
 			}

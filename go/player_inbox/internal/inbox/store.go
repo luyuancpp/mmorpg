@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	dspb "proto/data_service"
 	inboxpb "proto/player_inbox"
 
 	"shared/assetop"
@@ -23,9 +24,9 @@ import (
 //   - 所有事务都是 READ COMMITTED,经 assetop.WithTxRetryConfig 执行,并**显式注入**可重试判定
 //     (1213 / 1205 / 9007,IsRetryableTxError)—— IsRetryable 为 nil 时一次都不重试(assetop/seq.go)。
 //     RC 的理由同 assetop/seq.go:TiDB 悲观事务没有间隙锁;锁内的普通读必须看得见前一个持锁者已提交的行。
-//   - 锁顺序固定:流行(主键 FOR UPDATE)→ 条目行(只按主键,seq 升序)→ 审计行插入。
+//   - 锁顺序固定:原角色P→消费原admission→流行→条目主键→审计行插入。
 //     条目行一律先普通读、再按主键条件写,**不做**二级索引上的加锁读(二级索引加锁读与主键 CAS 加锁顺序相反会成环)。
-//   - 每个事务只碰一个 (player, domain),同一条流内天然串行,不同流之间不存在环。
+//   - 角色封存与所有域内变更共用同P；原账号/owner_revision持久在条目，旧空原件不修复。
 //   - Redis 读只在事务外进行,不在持有行锁时等待 Redis。
 //
 // Store 构造后只读,可被多个 RPC 与后台循环并发使用。
@@ -38,15 +39,16 @@ type Store struct {
 	notifier Notifier
 	now      func() time.Time
 	txCfg    assetop.TxRetryConfig
+	roles    RoleAuthority
 }
 
-// PlayerDirectory 是入箱前的玩家存在校验(设计 §6.2 第 2 步,查归属区映射)。
+// PlayerDirectory 是入箱前的玩家存在预检；最终归属/冻结判定只由同事务SQL原P负责。
 // (false, nil) = 映射里没有这名玩家;err 非 nil = 查询失败(故障,fail-closed 不入箱)。
 type PlayerDirectory interface {
 	PlayerExists(ctx context.Context, playerID uint64) (bool, error)
 }
 
-// EpochReader 读核心 Redis 里 player:{id}:owner_epoch 的当前值 R(围栏上界,IB-8)。键不存在返回 0。
+// EpochReader仅为STALE日志分类读取Redis镜像，不能推翻SQL原入场授权。键不存在返回0。
 type EpochReader interface {
 	OwnerEpoch(ctx context.Context, playerID uint64) (uint64, error)
 }
@@ -61,14 +63,15 @@ type StoreDeps struct {
 	Players  PlayerDirectory
 	Epochs   EpochReader
 	Notifier Notifier
+	Roles    RoleAuthority
 	// Now 是时间源,生产为 time.Now;集成测试注入固定时钟验证「同一毫秒并发入箱 seq 连续」。
 	Now func() time.Time
 }
 
 // NewStore 校验依赖并构造 Store。缺任何一项必需依赖都返回错误(启动致命)。
 func NewStore(d StoreDeps) (*Store, error) {
-	if d.DB == nil || d.Registry == nil || d.Players == nil || d.Epochs == nil {
-		return nil, errors.New("inbox: NewStore requires DB, Registry, Players and Epochs")
+	if d.DB == nil || d.Registry == nil || d.Players == nil || d.Epochs == nil || d.Roles == nil {
+		return nil, errors.New("inbox: NewStore requires DB, Registry, Players, Epochs and SQL RoleAuthority")
 	}
 	if err := d.Registry.CheckAllowlist(d.Allowed); err != nil {
 		return nil, err
@@ -90,6 +93,7 @@ func NewStore(d StoreDeps) (*Store, error) {
 		notifier: d.Notifier,
 		now:      now,
 		txCfg:    TxRetryConfig(),
+		roles:    d.Roles,
 	}, nil
 }
 
@@ -145,7 +149,7 @@ const (
 	streamColumns = "`shard`,`player_id`,`domain`,`next_seq`,`fence_epoch`,`open_count`,`notify_due_ms`,`created_ms`,`updated_ms`"
 	itemColumns   = "`shard`,`player_id`,`domain`,`seq`,`msg_type`,`producer_kind`,`request_id`,`content_sha256`,`payload`," +
 		"`state`,`directive`,`void_reason`,`delivery_count`,`last_delivered_epoch`,`last_delivered_ms`,`outcome_reason`," +
-		"`finalized_by`,`decided_epoch`,`issued_at_ms`,`created_ms`,`updated_ms`,`operator_name`,`note`"
+		"`finalized_by`,`decided_epoch`,`issued_at_ms`,`created_ms`,`updated_ms`,`operator_name`,`note`,`owner_account`,`owner_revision`"
 
 	streamPK = "`shard` = ? AND `player_id` = ? AND `domain` = ?"
 	itemPK   = "`shard` = ? AND `player_id` = ? AND `domain` = ? AND `seq` = ?"
@@ -187,7 +191,7 @@ func scanItem(sc rowScanner) (*inboxpb.PlayerInboxItemRow, error) {
 	if err := sc.Scan(&r.Shard, &r.PlayerId, &r.Domain, &r.Seq, &r.MsgType, &r.ProducerKind, &r.RequestId,
 		&r.ContentSha256, &r.Payload, &r.State, &r.Directive, &r.VoidReason, &r.DeliveryCount,
 		&r.LastDeliveredEpoch, &r.LastDeliveredMs, &r.OutcomeReason, &r.FinalizedBy, &r.DecidedEpoch,
-		&r.IssuedAtMs, &r.CreatedMs, &r.UpdatedMs, &r.OperatorName, &r.Note); err != nil {
+		&r.IssuedAtMs, &r.CreatedMs, &r.UpdatedMs, &r.OperatorName, &r.Note, &r.OwnerAccount, &r.OwnerRevision); err != nil {
 		return nil, err
 	}
 	if err := checkRowShard(r.GetShard(), r.GetPlayerId()); err != nil {
@@ -448,37 +452,42 @@ func PeerAddr(ctx context.Context) string {
 	return "unknown"
 }
 
-// ensureStream 补建流行(设计 §6.2 第 6 步):INSERT IGNORE、next_seq=1,在**主事务之外**的独立短事务里执行,
-// 遇 1213 / 1205 / 9007 有界重试。
-//
-// 为什么放在主事务外:照 assetop.EnsureSeqRow。两个并发请求在事务里对同一个不存在的行做
-// 「加锁读、发现没有、插入」时,共享锁升级会互等成死锁;单独的插入短事务提交之后,主事务的 FOR UPDATE
-// 总能锁到一行已提交的记录上。
+// ensureStream保留独立接缝，仍先持P。入箱主事务直接调用ensureStreamTx，
+// 以中性INSERT IGNORE先于stream锁，不采用缺行FOR UPDATE后再插入的反向锁序。
 func (s *Store) ensureStream(ctx context.Context, shard uint32, playerID uint64, domain inboxpb.PlayerInboxDomain, nowMs uint64) error {
-	return assetop.WithTxRetryConfig(ctx, s.db, s.txCfg, func(tx *sql.Tx) error {
-		_, err := tx.ExecContext(ctx, "INSERT IGNORE INTO "+streamTable+" ("+streamColumns+") VALUES (?,?,?,1,0,0,0,?,?)",
-			shard, playerID, uint32(domain), nowMs, nowMs)
-		if err != nil {
-			return fmt.Errorf("inbox: ensure stream player=%d domain=%d: %w", playerID, domain, err)
+	return s.withPlayerTx(ctx, playerID, func(tx *sql.Tx, original *dspb.AccountRoleOwnership) error {
+		if err := requirePendingOriginalsTx(ctx, tx, original); err != nil {
+			return err
 		}
-		return nil
+		return ensureStreamTx(ctx, tx, shard, playerID, domain, nowMs)
 	})
+}
+
+func ensureStreamTx(ctx context.Context, tx *sql.Tx, shard uint32, playerID uint64, domain inboxpb.PlayerInboxDomain, nowMs uint64) error {
+	_, err := tx.ExecContext(ctx, "INSERT IGNORE INTO "+streamTable+" ("+streamColumns+") VALUES (?,?,?,1,0,0,0,?,?)", shard, playerID, uint32(domain), nowMs, nowMs)
+	return err
 }
 
 // ClearNotifyDue 在提醒成功后把 notify_due_ms 置 0,**以 next_seq 做 CAS 令牌**(设计 §6.3):
 // 这期间只要又有新的入箱,next_seq 就变了,CAS 失败,notify_due_ms 留给补发循环 —— 最多多发一次提醒,不会丢。
 // 不用毫秒值当令牌:同一毫秒两次入箱会让旧令牌碰巧相等(ABA)。返回是否真的清掉了。
 func (s *Store) ClearNotifyDue(ctx context.Context, playerID uint64, domain inboxpb.PlayerInboxDomain, expectNextSeq uint64) (bool, error) {
-	res, err := s.db.ExecContext(ctx, "UPDATE "+streamTable+" SET `notify_due_ms` = 0 WHERE "+streamPK+
-		" AND `next_seq` = ? AND `notify_due_ms` <> 0", RowShard(playerID), playerID, uint32(domain), expectNextSeq)
-	if err != nil {
-		return false, fmt.Errorf("inbox: clear notify_due player=%d domain=%d: %w", playerID, domain, err)
-	}
-	n, err := res.RowsAffected()
-	if err != nil {
-		return false, err
-	}
-	return n == 1, nil
+	changed := false
+	err := s.withPlayerTx(ctx, playerID, func(tx *sql.Tx, original *dspb.AccountRoleOwnership) error {
+		changed = false
+		if err := requirePendingOriginalsTx(ctx, tx, original); err != nil {
+			return err
+		}
+		res, err := tx.ExecContext(ctx, "UPDATE "+streamTable+" SET `notify_due_ms` = 0 WHERE "+streamPK+
+			" AND `next_seq` = ? AND `notify_due_ms` <> 0", RowShard(playerID), playerID, uint32(domain), expectNextSeq)
+		if err != nil {
+			return err
+		}
+		n, err := res.RowsAffected()
+		changed = n == 1
+		return err
+	})
+	return changed && err == nil, err
 }
 
 // notifyAndClear 发一次在线提醒;提醒已落定(送达 / 离线 / 等待落点)时按 next_seq 做 CAS 清 notify_due_ms。

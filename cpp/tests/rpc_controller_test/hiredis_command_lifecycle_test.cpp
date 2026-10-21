@@ -17,6 +17,10 @@
 #include <winsock2.h>
 #include <ws2tcpip.h>
 #pragma comment(lib, "ws2_32.lib")
+#else
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <unistd.h>
 #endif
 
 #include <chrono>
@@ -30,6 +34,8 @@
 #include "muduo/net/EventLoop.h"
 #include "muduo/net/EventLoopThread.h"
 #include "muduo/net/InetAddress.h"
+#include "muduo/net/Buffer.h"
+#include "muduo/net/TcpConnection.h"
 #include "muduo/net/TcpServer.h"
 #include "muduo/contrib/hiredis/Hiredis.h"   // 它包含 <hiredis/hiredis.h>,提供 REDIS_OK / REDIS_ERR
 
@@ -41,6 +47,7 @@ namespace
 // 同 rpc_client_lifecycle_test.cpp;两份都在各自 TU 的匿名命名空间里,不构成 ODR 冲突。
 uint16_t FindFreeLoopbackPort()
 {
+#ifdef _WIN32
     const SOCKET s = ::socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
     EXPECT_NE(s, INVALID_SOCKET);
     sockaddr_in addr{};
@@ -53,6 +60,36 @@ uint16_t FindFreeLoopbackPort()
     const uint16_t port = ntohs(addr.sin_port);
     ::closesocket(s);
     return port;
+#else
+    const int s = ::socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+    EXPECT_NE(s, -1);
+    if (s == -1)
+    {
+        return 0;
+    }
+    sockaddr_in addr{};
+    addr.sin_family = AF_INET;
+    addr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
+    addr.sin_port = 0;
+    const int bindResult = ::bind(s, reinterpret_cast<sockaddr*>(&addr), sizeof(addr));
+    EXPECT_EQ(bindResult, 0);
+    if (bindResult != 0)
+    {
+        ::close(s);
+        return 0;
+    }
+    socklen_t len = sizeof(addr);
+    const int nameResult = ::getsockname(s, reinterpret_cast<sockaddr*>(&addr), &len);
+    EXPECT_EQ(nameResult, 0);
+    if (nameResult != 0)
+    {
+        ::close(s);
+        return 0;
+    }
+    const uint16_t port = ntohs(addr.sin_port);
+    ::close(s);
+    return port;
+#endif
 }
 
 // 真实的 hiredis::Hiredis 连到一个只 accept、从不回 RESP 的假 Redis 上:已入队的命令会一直挂着,
@@ -72,9 +109,15 @@ protected:
             // 所以已入队的命令会一直挂着,直到 ~Hiredis 用空应答回调它。
             server_ = std::make_unique<muduo::net::TcpServer>(
                 &Loop(), muduo::net::InetAddress(port, /*loopbackOnly=*/true), "fake_redis");
+            // TcpServer 只在 accept 时复制 messageCallback；间接调用允许单个用例控制已连接 socket。
+            server_->setMessageCallback([this](const muduo::net::TcpConnectionPtr& connection,
+                                                muduo::net::Buffer* input, muduo::Timestamp received) {
+                if (serverMessageCallback_) serverMessageCallback_(connection, input, received);
+                else input->retrieveAll();
+            });
             server_->start();   // 在 loop 线程上 runInLoop 即时 listen,下面的 connect 不会撞拒连
 
-            redis_ = std::make_unique<hiredis::Hiredis>(&Loop(), muduo::net::InetAddress("127.0.0.1", port));
+            redis_ = hiredis::Hiredis::Create(&Loop(), muduo::net::InetAddress("127.0.0.1", port));
             // 各回调只捕获夹具 this 与值:redis_ 在 TearDown / DestroyRedis 里先于夹具销毁,
             // 属于 AGENTS.md §11.7 允许的同寿命例外。
             redis_->setConnectCallback([this](hiredis::Hiredis*, int status) {
@@ -93,6 +136,7 @@ protected:
     void TearDown() override
     {
         RunInLoopAndWait([this] {
+            serverMessageCallback_ = {};
             redis_.reset();
             server_.reset();
         });
@@ -123,7 +167,7 @@ protected:
         };
     }
 
-    // unique_ptr::reset 先把 redis_ 置空再析构,所以析构期间的回调只能用参数里的 Hiredis*。
+    // reset 先清业务 owner；同步析构期间的回调只能用参数里的 Hiredis*。
     void DestroyRedis()
     {
         RunInLoopAndWait([this] { redis_.reset(); });
@@ -134,7 +178,8 @@ protected:
     // 引用而非裸指针成员(裸指针成员门禁覆盖测试工程);SetUp 里绑定。
     std::optional<std::reference_wrapper<muduo::net::EventLoop>> loop_;
     std::unique_ptr<muduo::net::TcpServer> server_;
-    std::unique_ptr<hiredis::Hiredis> redis_;
+    std::shared_ptr<hiredis::Hiredis> redis_;
+    muduo::net::MessageCallback serverMessageCallback_;
     std::promise<int> connectStatus_;
     bool connectSignalled_ = false;
 
@@ -281,4 +326,146 @@ TEST_F(HiredisCommandLifecycle, AcceptedCommandCallbackRunsExactlyOnceWithNullRe
     EXPECT_EQ(acceptedNullReplies_, 1) << "连接释放时挂起命令必须恰好以空应答回调一次";
     EXPECT_EQ(acceptedNonNullReplies_, 0);
     EXPECT_TRUE(sentinelWeak_.expired()) << "回调跑完后 commandCallback 必须 delete 那份拷贝";
+}
+
+// 用户回调可以同步撤掉最后一个业务 owner；一次 Channel 分发必须保住整个 wrapper/context，
+// 而不仅是 Channel。回调返回后再排空两轮，确认保活最终释放，没有把对象钉在事件循环里。
+TEST_F(HiredisCommandLifecycle, ConnectCallbackCanReleaseLastOwner)
+{
+    const auto address = redis_->serverAddress();
+    DestroyRedis();
+    std::promise<void> callbackDone;
+    auto completed = callbackDone.get_future();
+    int calls = 0;
+    bool connectedAfterReset = false;
+    std::weak_ptr<int> captured;
+    RunInLoopAndWait([&] {
+        auto sentinel = std::make_shared<int>(0);
+        captured = sentinel;
+        redis_ = hiredis::Hiredis::Create(&Loop(), address);
+        redis_->setConnectCallback([&, sentinel](hiredis::Hiredis* me, int status) {
+            ++calls;
+            EXPECT_EQ(status, REDIS_OK);
+            redis_.reset();
+            // 回调参数在当前分发栈内仍有效；旧裸 this 版本在这里稳定触发 ASan UAF。
+            connectedAfterReset = me->connected();
+            EXPECT_FALSE(captured.expired()) << "正在执行的回调捕获必须仍然存活";
+            callbackDone.set_value();
+        });
+        redis_->connect();
+    });
+    ASSERT_EQ(completed.wait_for(5s), std::future_status::ready) << "建连回调未按期完成";
+    RunInLoopAndWait([] {});
+    RunInLoopAndWait([] {});
+    EXPECT_EQ(calls, 1);
+    EXPECT_TRUE(connectedAfterReset) << "释放业务 owner 不得提前破坏正在分发的连接";
+    EXPECT_TRUE(captured.expired()) << "当前批次结束后必须释放回调捕获";
+}
+
+TEST_F(HiredisCommandLifecycle, ReplyCallbackCanReleaseLastOwnerAndCompletesPendingCommandOnce)
+{
+    std::promise<void> released;
+    auto completed = released.get_future();
+    int replyCalls = 0;
+    int pendingNullReplies = 0;
+    int pendingReplies = 0;
+    bool connectedAfterReset = false;
+    bool responded = false;
+    std::weak_ptr<int> captured;
+    RunInLoopAndWait([&] {
+        serverMessageCallback_ = [&](const muduo::net::TcpConnectionPtr& connection,
+                                      muduo::net::Buffer* input, muduo::Timestamp) {
+            input->retrieveAll();
+            if (!responded)
+            {
+                responded = true;
+                connection->send("+PONG\r\n");
+            }
+        };
+        auto sentinel = std::make_shared<int>(0);
+        captured = sentinel;
+        ASSERT_EQ(redis_->command([&, sentinel](hiredis::Hiredis* me, redisReply* reply) {
+            ++replyCalls;
+            EXPECT_NE(reply, nullptr);
+            redis_.reset();
+            connectedAfterReset = me->connected();
+            EXPECT_FALSE(captured.expired());
+        }, "PING"), REDIS_OK);
+        ASSERT_EQ(redis_->command([&, sentinel](hiredis::Hiredis*, redisReply* reply) {
+            if (reply) ++pendingReplies;
+            else ++pendingNullReplies;
+            released.set_value();
+        }, "PING"), REDIS_OK);
+    });
+    ASSERT_EQ(completed.wait_for(5s), std::future_status::ready) << "挂起命令未在销毁时完成";
+    RunInLoopAndWait([] {});
+    RunInLoopAndWait([] {});
+    EXPECT_EQ(replyCalls, 1);
+    EXPECT_TRUE(connectedAfterReset);
+    EXPECT_EQ(pendingNullReplies, 1) << "未收到应答的另一条命令必须恰好以空应答完成一次";
+    EXPECT_EQ(pendingReplies, 0);
+    EXPECT_TRUE(captured.expired()) << "两个命令回调的捕获都必须释放";
+}
+
+TEST_F(HiredisCommandLifecycle, DisconnectCallbackCanReleaseLastOwner)
+{
+    std::promise<void> callbackDone;
+    auto completed = callbackDone.get_future();
+    int disconnectCalls = 0;
+    int nullReplies = 0;
+    bool disconnectedAfterReset = false;
+    std::weak_ptr<int> captured;
+    RunInLoopAndWait([&] {
+        serverMessageCallback_ = [](const muduo::net::TcpConnectionPtr& connection,
+                                      muduo::net::Buffer* input, muduo::Timestamp) {
+            input->retrieveAll();
+            connection->forceClose();
+        };
+        auto sentinel = std::make_shared<int>(0);
+        captured = sentinel;
+        redis_->setDisconnectCallback([&, sentinel](hiredis::Hiredis* me, int) {
+            ++disconnectCalls;
+            redis_.reset();
+            disconnectedAfterReset = !me->connected();
+            EXPECT_FALSE(captured.expired()) << "断线回调不能销毁自己正在使用的捕获";
+            callbackDone.set_value();
+        });
+        ASSERT_EQ(redis_->command([&, sentinel](hiredis::Hiredis*, redisReply* reply) {
+            EXPECT_EQ(reply, nullptr);
+            if (!reply) ++nullReplies;
+        }, "PING"), REDIS_OK);
+    });
+    ASSERT_EQ(completed.wait_for(5s), std::future_status::ready) << "真实 EOF 未触发断线回调";
+    RunInLoopAndWait([] {});
+    RunInLoopAndWait([] {});
+    EXPECT_EQ(disconnectCalls, 1);
+    EXPECT_EQ(nullReplies, 1);
+    EXPECT_TRUE(disconnectedAfterReset);
+    EXPECT_TRUE(captured.expired()) << "EOF 分发和销毁结束后必须释放全部回调捕获";
+}
+
+TEST_F(HiredisCommandLifecycle, SynchronousDisconnectCallbackCanReleaseLastOwner)
+{
+    int disconnectCalls = 0;
+    bool parameterStillValid = false;
+    std::weak_ptr<int> captured;
+    RunInLoopAndWait([&] {
+        ASSERT_FALSE(Loop().eventHandling());
+        auto sentinel = std::make_shared<int>(0);
+        captured = sentinel;
+        redis_->setDisconnectCallback([&, sentinel](hiredis::Hiredis* me, int status) {
+            EXPECT_EQ(status, REDIS_OK);
+            ++disconnectCalls;
+            redis_.reset();
+            parameterStillValid = !me->connected();
+            EXPECT_FALSE(captured.expired());
+        });
+        // 无挂起命令时 C API 当场执行断线回调，不能依赖 Channel::tie 保活。
+        redis_->disconnect();
+        EXPECT_EQ(redis_, nullptr);
+    });
+    RunInLoopAndWait([] {});
+    EXPECT_EQ(disconnectCalls, 1);
+    EXPECT_TRUE(parameterStillValid);
+    EXPECT_TRUE(captured.expired());
 }

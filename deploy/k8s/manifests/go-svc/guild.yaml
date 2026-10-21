@@ -55,6 +55,9 @@ spec:
             - name: MMORPG_ASSET_OP_SECRET_GUILD
               valueFrom:
                 secretKeyRef: {name: domain-service-secrets, key: asset-guild, optional: false}
+            - name: MMORPG_MATCH_INTERNAL_SECRET_GUILD
+              valueFrom:
+                secretKeyRef: {name: domain-service-secrets, key: match-internal-guild, optional: false}
           ports:
             - {name: grpc, containerPort: 50300}
             - {name: metrics, containerPort: 9220}

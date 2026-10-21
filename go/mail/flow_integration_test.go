@@ -12,6 +12,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/alicebob/miniredis/v2"
+	"github.com/redis/go-redis/v9"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials/insecure"
@@ -25,6 +27,7 @@ import (
 	"schemamigrate"
 	"shared/authoritysql"
 	"shared/domainhost"
+	"shared/loginsession"
 	"shared/serviceauth"
 )
 
@@ -44,6 +47,9 @@ func (n *committedReminder) Personal(ctx context.Context, player, mail uint64) {
 
 func TestTiDBRealRPCAuthSendOfflineReadClaimAndDeleteProtection(t *testing.T) {
 	if os.Getenv("MAIL_RANK_TEST_TIDB") != "127.0.0.1:4000" {
+		if os.Getenv("MAIL_RANK_REQUIRE_TESTS") == "1" {
+			t.Fatal("MAIL_RANK_TEST_TIDB必须显式配置本任务独占TiDB")
+		}
 		t.Skip("仅本机4000随机库真实SQL与loopback gRPC")
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
@@ -82,13 +88,26 @@ func TestTiDBRealRPCAuthSendOfflineReadClaimAndDeleteProtection(t *testing.T) {
 	var ids atomic.Uint64
 	next := func(context.Context) (uint64, error) { return ids.Add(1), nil }
 	repo := data.New(db, next, next, func(uint32) bool { return true }, database)
+	if _, err = db.ExecContext(ctx, "CREATE TABLE account_role (player_id BIGINT UNSIGNED PRIMARY KEY,account VARBINARY(191) NOT NULL,owner_revision BIGINT UNSIGNED NOT NULL,trade_listing_id BIGINT UNSIGNED NOT NULL)"); err != nil {
+		t.Fatal(err)
+	}
+	if _, err = db.ExecContext(ctx, "INSERT INTO account_role VALUES (7,?,3,0)", []byte("邮件原账号")); err != nil {
+		t.Fatal(err)
+	}
+	if err = repo.ConfigureRoleAuthority(ctx, database); err != nil {
+		t.Fatal(err)
+	}
+	loginCache := miniredis.RunT(t)
+	loginCache.Set(loginsession.KeyFromMember("mail-rpc-original:19"), "邮件原账号")
+	loginReader := redis.NewClient(&redis.Options{Addr: loginCache.Addr()})
+	t.Cleanup(func() { _ = loginReader.Close() })
 	const secret = "mail-rpc-integration-only-never-a-real-secret"
 	verifier, err := serviceauth.New(map[string]string{"rank": secret})
 	if err != nil {
 		t.Fatal(err)
 	}
 	reminder := &committedReminder{db: db, t: t}
-	handler := server.New(repo, verifier, reminder)
+	handler := server.New(repo, verifier, reminder).WithLoginSessions(loginReader)
 	listener, err := net.Listen("tcp", "127.0.0.1:0")
 	if err != nil {
 		t.Fatal(err)
@@ -125,7 +144,7 @@ func TestTiDBRealRPCAuthSendOfflineReadClaimAndDeleteProtection(t *testing.T) {
 	if _, err = sender.SendPersonalMail(ctx, tampered); status.Code(err) != codes.Unauthenticated {
 		t.Fatalf("签名不能换收件人: %v", err)
 	}
-	session, _ := proto.Marshal(&base.SessionDetails{PlayerId: 7})
+	session, _ := proto.Marshal(&base.SessionDetails{PlayerId: 7, SessionId: 7, GateInstanceId: "mail-rpc-original", SessionIncarnation: 19, OwnerRevision: 3})
 	playerCtx := metadata.NewOutgoingContext(ctx, metadata.Pairs(domainhost.SessionMetadata, base64.StdEncoding.EncodeToString(session)))
 	if _, err = sender.SendPersonalMail(playerCtx, request); status.Code(err) != codes.PermissionDenied {
 		t.Fatalf("客户端metadata不能进入Admin: %v", err)

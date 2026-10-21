@@ -139,6 +139,7 @@ message BattleTicketPayload {
   string battle_instance_id = 4;    // 签发节点实例 UUID(node_uuid),防节点重启后 node_id 复用
   uint64 expire_at_ms = 5;          // Unix 毫秒;与房间 deadline_ms 同值
   eBattleTicketRole role = 6;
+  string spectator_operation_id = 7; // 观众原准入UUID，验签后仍须与房内当前operation相同。
 }
 
 // 直连握手首包(客户端 → battle 节点)。

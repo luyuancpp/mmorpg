@@ -79,6 +79,9 @@ const insertBlockRowSQL = "INSERT INTO friend_block (player_id, blocked_player_i
 // **不推送**:被拉黑的人不该收到"你被拉黑了"的通知(照 A 仓的原则),
 // 拉黑者自己也不需要推送(他的 RPC 回包就是结果)。
 func (r *FriendRepo) Block(ctx context.Context, playerID, targetPlayerID uint64, maxBlocks uint32) (BlockEffect, error) {
+	if err := r.requireRoleActor(ctx, playerID); err != nil {
+		return BlockEffect{}, err
+	}
 	// 拉黑自己没有任何语义,而且会让 ⑤ 的双向删边退化成删同一行两次。
 	// 与 AddFriend 一样,logic 层已经先挡过一遍(§3.4),这里是防御性的第二道。
 	if playerID == 0 || targetPlayerID == 0 || playerID == targetPlayerID {
@@ -102,10 +105,16 @@ func (r *FriendRepo) Block(ctx context.Context, playerID, targetPlayerID uint64,
 	// 合并回 main 跑 regen 时,Block 要和三个新 tip 码一起进 MessageLimiter。
 	if maxBlocks > 0 {
 		var blocked, alreadyBlocked uint32
-		if err := r.db.QueryRowContext(ctx,
+		reader, closeRead, err := r.roleReader(ctx, playerID)
+		if err != nil {
+			return BlockEffect{}, err
+		}
+		err = reader.QueryRowContext(ctx,
 			`SELECT COUNT(*), COUNT(CASE WHEN blocked_player_id = ? THEN 1 END)
 			 FROM friend_block WHERE player_id = ?`,
-			targetPlayerID, playerID).Scan(&blocked, &alreadyBlocked); err != nil {
+			targetPlayerID, playerID).Scan(&blocked, &alreadyBlocked)
+		closeRead()
+		if err != nil {
 			return BlockEffect{}, fmt.Errorf("probe block count %d: %w", playerID, err)
 		}
 		// alreadyBlocked > 0 时**不能**按名额拒:重复拉黑同一个人是幂等成功、不占新名额
@@ -262,10 +271,13 @@ func (r *FriendRepo) Block(ctx context.Context, playerID, targetPlayerID uint64,
 // 已知的良性竞态:Unblock 与 AddFriend 并发时,AddFriend 的拉黑探针可能在解除之前那一瞬
 // 读到"仍被拉黑"而拒绝本次申请。玩家重试即可,不产生任何不一致状态,所以不为它加锁。
 func (r *FriendRepo) Unblock(ctx context.Context, playerID, targetPlayerID uint64) error {
+	if err := r.requireRoleActor(ctx, playerID); err != nil {
+		return err
+	}
 	if playerID == 0 || targetPlayerID == 0 || playerID == targetPlayerID {
 		return errInvalidPlayerPair(playerID, targetPlayerID)
 	}
-	tx, err := r.beginWriteTx(ctx)
+	tx, err := r.beginWriteTx(ctx, playerID, targetPlayerID)
 	if err != nil {
 		return fmt.Errorf("unblock %d->%d: begin: %w", playerID, targetPlayerID, err)
 	}
@@ -305,7 +317,12 @@ const unblockSQL = "DELETE FROM friend_block WHERE player_id=? AND blocked_playe
 // 不加 ORDER BY:查询是 PK 的 player_id 前缀区间扫描,返回顺序本身稳定(按 blocked_player_id),
 // 再排一次只是给每次读加一次 filesort。
 func (r *FriendRepo) ListBlocks(ctx context.Context, playerID uint64) ([]BlockEntry, error) {
-	rows, err := r.db.QueryContext(ctx,
+	reader, closeRead, err := r.roleReader(ctx, playerID)
+	if err != nil {
+		return nil, err
+	}
+	defer closeRead()
+	rows, err := reader.QueryContext(ctx,
 		"SELECT blocked_player_id, since_ms FROM friend_block WHERE player_id=? LIMIT ?",
 		playerID, r.listReadHardLimit)
 	if err != nil {

@@ -43,6 +43,8 @@ param(
 	[string]$TradeTiDBHost = "",
 	# 全局匹配事务域与真实机房编号。生产不允许静默退回旧Redis匹配。
 	[string]$MatchTiDBHost = "",
+	# 全部跨域事务必须到同一SQL入口；别名参数只为兼容已有调用。
+	[string]$GlobalAuthorityTiDBHost = "",
 	[uint32]$PhysicalRegion = 0,
 	# 玩家收件箱 scene 消费端开关的**核对值**(docs/design/player-inbox-service.md §7、§11.7;交接 player-inbox-handoff-20261015 §6 H1)。
 	# 开关的权威值只有一份:git 跟踪的 bin/etc/game_config.yaml 的 player_inbox.consumer_enabled(与 PlayerInbox.EnqueueTypes 镜像
@@ -2409,7 +2411,7 @@ function Get-RedisMaxClientsFromManifest {
 	[ordered] 键 = 服务配置里的键路径,值 = [int]。
 #>
 function Get-RedisPoolMirror {
-	param([Parameter(Mandatory = $true)][ValidateSet('login', 'db', 'data-service', 'player-locator', 'trade', 'guild', 'player-inbox')][string]$Target)
+	param([Parameter(Mandatory = $true)][ValidateSet('login', 'db', 'data-service', 'player-locator', 'trade', 'guild', 'friend', 'match', 'player-inbox')][string]$Target)
 
 	switch ($Target) {
 		'login' { $source = 'go/login/etc/login.yaml'; $keyPaths = @('Node.RedisClient.PoolSize') }
@@ -2418,7 +2420,9 @@ function Get-RedisPoolMirror {
 		'player-locator' { $source = 'go/player_locator/etc/player_locator.yaml'; $keyPaths = @('RedisClient.PoolSize') }
 		'trade' { $source = 'go/trade/etc/trade.yaml'; $keyPaths = @('SharedRedis.PoolSize') }
 		'player-inbox' { $source = 'go/player_inbox/etc/player_inbox.yaml'; $keyPaths = @('CoreRedis.PoolSize') }
-		'guild' { $source = 'go/guild/etc/guild.yaml'; $keyPaths = @('RedisClient.PoolSize', 'PlayerLocatorRedis.PoolSize', 'MergeMarkerRedis.PoolSize') }
+		'guild' { $source = 'go/guild/etc/guild.yaml'; $keyPaths = @('RedisClient.PoolSize', 'PlayerLocatorRedis.PoolSize', 'MergeMarkerRedis.PoolSize', 'LoginRedis.PoolSize') }
+		'friend' { $source = 'go/friend/etc/friend.yaml'; $keyPaths = @('LoginRedis.PoolSize') }
+		'match' { $source = 'go/match/etc/match_service.yaml'; $keyPaths = @('LoginRedis.PoolSize') }
 	}
 
 	$values = [ordered]@{}
@@ -2507,22 +2511,22 @@ function Get-RedisConnectionLedgerInputs {
 		[ordered]@{ Name = 'gateway'; Scope = 'zone'; Manifest = 'deploy/k8s/manifests/java-svc/gateway.yaml'; DefaultPools = 0; GoMaxProcs = 0; PubSub = 0; Fixed = 2 }
 		# —— 全局池(infra namespace 一份)——
 		# match:go/match/internal/svc/servicecontext.go NewRedisHandles 的 sharedRds(go-zero,缺省池);MatchRedis 是 redis-match-cluster,不计。
-		[ordered]@{ Name = 'match'; Scope = 'global'; Manifest = "$goSvc/match.yaml"; DefaultPools = 1; GoMaxProcs = $g; PubSub = 0; Fixed = 0 }
+		[ordered]@{ Name = 'match'; Scope = 'global'; Manifest = "$goSvc/match.yaml"; PoolMirror = 'match'; DefaultPools = 1; GoMaxProcs = $g; PubSub = 0; Fixed = 0 }
 		# chat:go/chat/internal/svc/servicecontext.go NewRedisHandles 的 sharedRds(go-zero,缺省池);ChatRedis 在 K8s 复用 redis-match-cluster,不计。
 		[ordered]@{ Name = 'chat'; Scope = 'global'; Manifest = "$goSvc/chat.yaml"; DefaultPools = 1; GoMaxProcs = $g; PubSub = 0; Fixed = 0 }
 		# friend:go/friend/internal/svc/servicecontext.go NewRedisHandles(go-zero,缺省池);K8s 不配 FriendRedis,私有 key 回落共享库、两者是同一个句柄。
-		[ordered]@{ Name = 'friend'; Scope = 'global'; Manifest = "$goSvc/friend.yaml"; DefaultPools = 1; GoMaxProcs = $g; PubSub = 0; Fixed = 0 }
+		[ordered]@{ Name = 'friend'; Scope = 'global'; Manifest = "$goSvc/friend.yaml"; PoolMirror = 'friend'; DefaultPools = 1; GoMaxProcs = $g; PubSub = 0; Fixed = 0 }
 		# trade:go/trade/internal/svc/assetchannel.go newAssetChannel 的 redis.NewClient(SharedRedis.PoolSize),加 shared/assetopwake 订阅
 		# assetop:wake 的 Pub/Sub 连接(AssetOp.Wake 缺省开)。开关从服务yaml镜像，缺省关闭；按打开计，开关翻转时不必回来改账。
 		[ordered]@{ Name = 'trade'; Scope = 'global'; Manifest = "$goSvc/trade.yaml"; PoolMirror = 'trade'; DefaultPools = 0; GoMaxProcs = 0; PubSub = 1; Fixed = 0 }
-		# guild 三个显式池；摘要 bump 专用池固定4（svc/servicecontext.go playerSyncRedisPoolSize），另有唤醒订阅。
+		# guild 四个显式池（含只读全局 LoginRedis）；摘要 bump 专用池固定4，另有唤醒订阅。
 		[ordered]@{ Name = 'guild'; Scope = 'global'; Manifest = "$goSvc/guild.yaml"; PoolMirror = 'guild'; DefaultPools = 0; GoMaxProcs = 0; PubSub = 1; Fixed = 4 }
 		# player-inbox:go/player_inbox/internal/svc/servicecontext.go openCoreRedis 的 redis.NewClient(核心 Redis,CoreRedis.PoolSize,
 		# 启动时 Ping);围栏上界读 owner_epoch、在线提醒读 location(scenenode.GoRedisReader)、后台循环选主锁
 		# (leader.NewGoRedisStore)共用这一个客户端,没有 Pub/Sub。
 		[ordered]@{ Name = 'player-inbox'; Scope = 'global'; Manifest = "$goSvc/player-inbox.yaml"; PoolMirror = 'player-inbox'; DefaultPools = 0; GoMaxProcs = 0; PubSub = 0; Fixed = 0 }
-		# mail显式限制单池8条连接，不使用GOMAXPROCS派生默认；rank只访问SQL与RPC。
-		[ordered]@{ Name = 'mail'; Scope = 'global'; Manifest = "$goSvc/mail.yaml"; DefaultPools = 0; GoMaxProcs = 0; PubSub = 0; Fixed = 8 }
+		# mail共享资产定位与全局登录态各有一个上限8的独立池；rank只访问SQL与RPC。
+		[ordered]@{ Name = 'mail'; Scope = 'global'; Manifest = "$goSvc/mail.yaml"; DefaultPools = 0; GoMaxProcs = 0; PubSub = 0; Fixed = 16 }
 	)
 	foreach ($client in $clients) {
 		$client['Replicas'] = Get-ManifestDeploymentReplicas -RelativePath $client.Manifest -LedgerName $ledgerName
@@ -5493,6 +5497,15 @@ function New-CppOpenFileLimitModeEnvLines {
 	)
 }
 
+function Get-SceneAccountDirectoryEnvLines {
+	param([string]$Indent)
+	foreach ($caller in @('scene','trade')) {
+		"${Indent}- name: MMORPG_ACCOUNT_DIRECTORY_SECRET_$($caller.ToUpperInvariant())"
+		"${Indent}  valueFrom:"
+		"${Indent}    secretKeyRef: {name: domain-service-secrets, key: account-directory-$caller, optional: false}"
+	}
+}
+
 function New-NodeDeploymentYaml {
 	param(
 		[Parameter(Mandatory = $true)][string]$NodeName,
@@ -5539,6 +5552,7 @@ function New-NodeDeploymentYaml {
 		$extraEnvLines += "`t`t`t- name: SCENE_NODE_TYPE"
 		$extraEnvLines += "`t`t`t  value: `"$SceneNodeType`""
 		$extraEnvLines += @(Get-SceneAssetSecretEnvLines -Indent "`t`t`t")
+		$extraEnvLines += @(Get-SceneAccountDirectoryEnvLines -Indent "`t`t`t")
 	}
 	# 资产通道验签密钥(-AssetOps on,只给 scene):guild / trade 两把都要,值经 Secret 注入(secretKeyRef 不写 optional,
 	# Secret 由 Apply-Zone 先于 scene 建好)。off 时不写,模板与引入开关之前逐字相同。
@@ -6146,6 +6160,7 @@ function New-SceneFleetYaml {
 	}
 
 	$sceneAssetEnvLines = @(Get-SceneAssetSecretEnvLines -Indent '                ')
+	$sceneAssetEnvLines += @(Get-SceneAccountDirectoryEnvLines -Indent '                ')
 	if ($script:AssetOpsOn) { $sceneAssetEnvLines += @(New-SceneAssetOpEnvLines -ItemIndent (' ' * 16) -Step '    ') }
 	# B0-4 豁免开关(-NodeOpenFileLimitMode)借用资产密钥 env 的插入点接在其后,模板 here-string 不动;留空不写,Fleet 逐字不变。
 	$sceneAssetEnvLines += @(New-CppOpenFileLimitModeEnvLines -ItemIndent (' ' * 16))
@@ -7449,6 +7464,22 @@ function Get-TradeSqlSettings {
 	catch { throw '-TradeTiDBHost 必须是有效的 host:port，不接受凭据、DSN 或其他配置内容。' }
 }
 
+function Get-GlobalAuthoritySqlSettings {
+	param([string]$Profile, [string]$CanonicalHost, [string]$FriendHost, [string]$TradeHost, [string]$MatchHost, [string]$DevelopmentHost)
+	$provided = @($CanonicalHost, $MatchHost, $TradeHost, $FriendHost | Where-Object { -not [string]::IsNullOrWhiteSpace($_) })
+	if ($provided.Count -eq 0) {
+		if ($Profile -ne 'dev') { throw '全球权威数据必须指定 -GlobalAuthorityTiDBHost(host:port)，禁止目录与资产分别落在区域MySQL。' }
+		return @{ Host = $DevelopmentHost; RequireTiDB = 'false' }
+	}
+	$canonical = $provided[0]
+	$settings = Get-FriendSqlSettings -Profile 'dev' -TiDBHost $canonical -DevelopmentHost ''
+	foreach ($candidate in $provided) {
+		$null = Get-FriendSqlSettings -Profile 'dev' -TiDBHost $candidate -DevelopmentHost ''
+		if ($candidate -ine $canonical) { throw '目录、好友、交易和匹配必须配置同一个全球TiDB SQL入口；禁止跨独立数据库集群模拟原子事务。' }
+	}
+	return $settings
+}
+
 function Get-FriendSqlSettings {
 	param([string]$Profile, [string]$TiDBHost, [string]$DevelopmentHost)
 	if ([string]::IsNullOrEmpty($TiDBHost)) {
@@ -8097,10 +8128,13 @@ function New-GuildServiceConfigYaml {
 	$lease = Get-AuthoritativeScalar -RelativePath $source -KeyPath 'Node.LeaseTTL'
 	$dial = Get-AuthoritativeScalar -RelativePath $source -KeyPath 'Registry.Etcd.DialTimeout'
 	$null = Get-RedisPoolMirror -Target 'guild'
+	$loginSessionDb = Get-AuthoritativeScalar -RelativePath 'go/login/etc/login.yaml' -KeyPath 'Node.RedisClient.DB'
 	$blocks = [Collections.Generic.List[string]]::new()
 	$blocks.Add(@"
 Name: guild.rpc
 Mode: $mode
+AccountRoleSchema: ${GlobalDbName}
+GlobalLoginSessions: true
 ListenOn: 0.0.0.0:50300
 Timeout: $timeout
 ApplicationQuotaPerMinute: $quota
@@ -8128,11 +8162,14 @@ Prometheus:
   Port: 9220
   Path: /metrics
 "@)
-	foreach ($key in @('RedisClient', 'PlayerLocatorRedis', 'MergeMarkerRedis')) {
+	foreach ($key in @('RedisClient', 'PlayerLocatorRedis', 'MergeMarkerRedis', 'LoginRedis')) {
 		$block = Get-AuthoritativeYamlBlock -RelativePath $source -Key $key
 		$block = $block -replace '(?m)^  Host:.*$', "  Host: redis.${InfraNamespace}:6379"
 		$passwordKey = if ($key -eq 'MergeMarkerRedis') { 'Pass' } else { 'Password' }
 		$block = $block -replace "(?m)^  ${passwordKey}:.*$", "  ${passwordKey}: `"$($script:RedisPassword)`""
+		if ($key -eq 'LoginRedis') {
+			$block = $block -replace '(?m)^  DB:.*$', "  DB: $loginSessionDb"
+		}
 		if ($key -eq 'MergeMarkerRedis') {
 			# D1 第 3 批 guild 读方门禁(spec_D1_batch1b2_2_3.md §5.4):取本脚本参数 -GuildRequireRouteReady(缺省 false),不镜像服务 yaml;
 			# 服务 yaml 里有这一行就改写,没有就补一行。打开前提与回退顺序见参数 -RouteStoreMode 处的注释。
@@ -8171,6 +8208,13 @@ function New-GoSvcConfigMapYaml {
 		[Parameter(Mandatory = $true)][int]$CurrentZoneId,
 		[Parameter(Mandatory = $true)][int]$CurrentClusterId
 	)
+	$authoritySql = Get-GlobalAuthoritySqlSettings -Profile $ReleaseProfile -CanonicalHost $GlobalAuthorityTiDBHost `
+		-FriendHost $FriendTiDBHost -TradeHost $TradeTiDBHost -MatchHost $MatchTiDBHost -DevelopmentHost "mysql.${InfraNamespace}:3306"
+	if ($authoritySql.RequireTiDB -eq 'true') {
+		$FriendTiDBHost = $authoritySql.Host
+		$TradeTiDBHost = $authoritySql.Host
+		$MatchTiDBHost = $authoritySql.Host
+	}
 
 	$info = $GoSvcCatalogue[$SvcName]
 	$configMapName = $info.ConfigMap
@@ -8361,6 +8405,7 @@ function New-GoSvcConfigMapYaml {
 			$matchGlobalBlock = $matchGlobalBlock -replace '(?m)^  User:.*$', "  User: $script:MysqlUser"
 		}
 		$matchGlobalBlock = $matchGlobalBlock -replace '(?m)^  RankEndpoint:.*$', "  RankEndpoint: rank.${InfraNamespace}:51100"
+		$matchGlobalBlock = $matchGlobalBlock -replace '(?m)^  AccountRoleSchema:.*$', "  AccountRoleSchema: ${GlobalDbName}"
 		$matchRatingBlock = (@('RatingEnabled','ResultTopic','ResultTopicPartitions','ResultConsumerGroup','RatingToleranceBase',
 			'RatingToleranceStepSeconds','RatingToleranceStepDelta','RatingToleranceMax','RatingToleranceMaxWaitSeconds',
 			'RatingDrawRoundCap','TableFingerprintMode') | ForEach-Object {
@@ -8818,6 +8863,10 @@ function New-GoSvcConfigMapYaml {
 			$source = $source -replace '(?m)^  Endpoints: \[127.0.0.1:9000\]\r?$', "  Etcd:`n    Hosts: [etcd.${InfraNamespace}:2379]`n    Key: dataservice.rpc"
 			$source = $source -replace '(?m)^TableDir:.*$', 'TableDir: /generated/tables'
 			$source = $source -replace '(?m)^SharedRedisAddr:.*$', "SharedRedisAddr: redis.${InfraNamespace}:6379"
+			$source = $source -replace '(?m)^AccountRoleSchema:.*$', "AccountRoleSchema: ${GlobalDbName}"
+			$source = $source -replace '(?m)^GlobalLoginSessions:.*$', 'GlobalLoginSessions: true'
+			$loginSessionDb = Get-AuthoritativeScalar -RelativePath 'go/login/etc/login.yaml' -KeyPath 'Node.RedisClient.DB'
+			$source = $source -replace '(?ms)^LoginRedis:\r?\n(?:[ \t]+[^\r\n]*\r?\n)*', "LoginRedis:`n  Host: redis.${InfraNamespace}:6379`n  DB: $loginSessionDb`n  PasswordEnv: MMORPG_MAIL_REDIS_PASSWORD`n"
 			$source = $source -replace '(?m)^SharedRedisPasswordEnv:.*\r?\n', ''
 			$source + "`nSharedRedisPasswordEnv: MMORPG_MAIL_REDIS_PASSWORD`n"
 		}
@@ -8865,14 +8914,14 @@ ${dbConsumerGroupYaml}
     RetentionMs: ${dbTaskRetentionMs}
     RetentionBytes: ${dbTaskRetentionBytes}
   Database:
-    Hosts: "mysql.${InfraNamespace}:3306"
+    Hosts: "$($authoritySql.Host)"
     User: "${mysqlUser}"
     Passwd: "${mysqlPassword}"
     MaxOpenConn: ${dbMaxOpenConn}
     MaxIdleConn: ${dbMaxIdleConn}
     Net: ""
     # 实际后端验证与服务 yaml 同源;true 时使用 TiDB 当前严格读,连到 MySQL 会拒启。
-    RequireTiDB: ${dbRequireTiDB}
+    RequireTiDB: $(if ($authoritySql.RequireTiDB -eq 'true') { 'true' } else { $dbRequireTiDB })
     # 启动期 DDL(见生成器注释):dev = go/db/etc/db.yaml 的值;staging/prod = false。
     AutoCreateDatabase: ${dbAutoCreateDatabase}
     AutoMigrateSchema: ${dbAutoMigrateSchema}
@@ -8977,7 +9026,7 @@ LeaseTTL: ${dsLeaseTTL}
 # 以前这份 ConfigMap 没有本段,Go 默认值是 127.0.0.1:3306/testdb —— K8s 上必然连不上:
 # 三个 store 置 nil、AllocateIdSegment 不可用,login 开了 IdSegment 后建角会全部失败。
 SnapshotMySQL:
-  Host: "mysql.${InfraNamespace}:3306"
+  Host: "$($authoritySql.Host)"
   User: "${mysqlUser}"
   Password: "${mysqlPassword}"
   DBName: "${GlobalDbName}"
@@ -8998,6 +9047,7 @@ Schema:
 # 所有档位都写 true;本地 yaml 不写(缺省 false,沿用降级运行)。
 Store:
   Required: true
+$(Get-AuthoritativeYamlBlock -RelativePath 'go/data_service/etc/data_service.yaml' -Key 'AccountDirectory')
 # 映射提交点(player-route-mapping-durability-proposal.md §4、§11.2):Mode 不镜像服务 yaml,取 k8s_deploy.ps1 的 -RouteStoreMode(缺省 redis)——
 # 切 db_first 是 P2 的显式运维动作:先进冻结窗口(P1–P3 不跑 merge_zone 任何写模式;P4 起只许第 2 批新版 merge_zone 显式
 # -route-source=db,旧二进制禁用)、P1 导入 + audit 为 0、建角压测、告警抓取就位
@@ -9320,6 +9370,12 @@ RequireClientEndpoint: ${requireClientEndpointValue}
 @"
 Name: matchservice.rpc
 Mode: ${matchMode}
+GlobalLoginSessions: true
+LoginRedis:
+  Host: redis.${InfraNamespace}:6379
+  DB: $(Get-AuthoritativeScalar -RelativePath 'go/login/etc/login.yaml' -KeyPath 'Node.RedisClient.DB')
+  PasswordEnv: MMORPG_LOGIN_REDIS_PASSWORD
+  PoolSize: $(Get-AuthoritativeScalar -RelativePath 'go/match/etc/match_service.yaml' -KeyPath 'LoginRedis.PoolSize')
 ${matchGlobalBlock}
 ${matchRatingBlock}
 ListenOn: 0.0.0.0:50500
@@ -9591,6 +9647,13 @@ Timeout: ${friendTimeout}
 # dev 档 = go/friend/etc/friend.yaml 的值;staging/prod 固定 pro(见生成器注释)。显式写出,不赌 go-zero 缺省值。
 Mode: ${friendMode}
 RequireTiDB: $($friendSql.RequireTiDB)
+AccountRoleSchema: ${GlobalDbName}
+GlobalLoginSessions: true
+LoginRedis:
+  Host: redis.${InfraNamespace}:6379
+  Password: "${redisPassword}"
+  DB: $(Get-AuthoritativeScalar -RelativePath 'go/login/etc/login.yaml' -KeyPath 'Node.RedisClient.DB')
+  PoolSize: $(Get-AuthoritativeScalar -RelativePath 'go/friend/etc/friend.yaml' -KeyPath 'LoginRedis.PoolSize')
 # Etcd 段 **Key 显式留空**(port-decisions D-13,与 chat / trade 同理):friend 按 C++ 约定注册
 # FriendNodeService.rpc/zone/<z>/...(go/shared/noderegistry),路由服按这个前缀发现它;没有任何 Go 调用方
 # 经 go-zero 发现键找 friend,填了 Key 只会多一条无人消费的注册(friend 的 config.Validate 直接拒非空 Key)。
@@ -12064,6 +12127,11 @@ if ($script:ReleaseStamp.Ok -and $script:ReleaseStamp.Dirty) {
 
 # 写操作才需要门禁;*-down / *-status 是止血和排查路径,不能被预检或密钥缺失挡住。
 if ($Command -in @("zone-up", "all-up", "infra-up")) {
+	if (-not $SkipGoSvc -and -not [string]::IsNullOrWhiteSpace($GoSvcRegistry)) {
+		$globalSql = Get-GlobalAuthoritySqlSettings -Profile $ReleaseProfile -CanonicalHost $GlobalAuthorityTiDBHost `
+			-FriendHost $FriendTiDBHost -TradeHost $TradeTiDBHost -MatchHost $MatchTiDBHost -DevelopmentHost "mysql.${InfraNamespace}:3306"
+		if ($globalSql.RequireTiDB -eq 'true') { $FriendTiDBHost = $globalSql.Host; $TradeTiDBHost = $globalSql.Host; $MatchTiDBHost = $globalSql.Host }
+	}
 	# 好友全局池部署前检查权威事务域配置，早于任何基础设施写入。
 	if (($Command -eq 'infra-up' -or ($Command -eq 'all-up' -and -not $SkipInfra)) -and
 		-not $SkipGoSvc -and -not [string]::IsNullOrWhiteSpace($GoSvcRegistry)) {

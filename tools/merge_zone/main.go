@@ -169,6 +169,7 @@ type options struct {
 	tradeSchema   string
 	guildSchema   string
 	friendSchema  string
+	teamSchema    string
 
 	allowEmptySource   bool
 	expectedSrcPlayers int64
@@ -311,6 +312,7 @@ func main() {
 		"guild database reached through -mysql-dsn (go/guild forces the DSN database to be mmorpg_guild; override only for isolated tests)")
 	flag.StringVar(&o.friendSchema, "friend-schema", defaultFriendSchema,
 		"friend database reached through -mysql-dsn (go/friend forces MySQL.DBName=mmorpg_friend; override only for isolated tests)")
+	flag.StringVar(&o.teamSchema, "team-schema", defaultTeamSchema, "全球Team权威schema，与-mysql-dsn的TiDB入口共域；不得用Redis证明无队")
 	flag.BoolVar(&o.skipMapping, "skip-player-mapping", false, "Skip the player:zone remapping")
 	flag.BoolVar(&o.skipRows, "skip-player-rows", false,
 		"-player-rows-mode copy only: skip copying player rows from zone_<src>_db to zone_<dst>_db. ONLY valid once player main data is "+
@@ -408,6 +410,12 @@ func main() {
 	}
 	if err := checkTakeOverFenceFlag(o); err != nil {
 		fail("%v", err)
+	}
+	// 同时读取玩家原件与路由原件的入口必须共域，审计/回填/搬库也不能把两个TiDB集群拼成一份事实。
+	if o.routeSource == routeSourceDB && (o.backfill || o.mode == "audit" || o.mode == "storage-audit" || o.mode == "relocate" || o.mode == "relocate-abort") {
+		if err := requireTeamRouteDomain(o.mysqlDSN, o.routeDBDSN, o.routeSource); err != nil {
+			fail("%v", err)
+		}
 	}
 	if routeSourceRequired(o) && o.routeSource == routeSourceRedis {
 		fmt.Fprintln(os.Stderr, "WARN: -route-source=redis: the mapping Redis is written directly (legacy path); valid only while "+
@@ -532,6 +540,9 @@ func main() {
 	}
 	if err := validateFriendSchemaName(o.friendSchema); err != nil {
 		fail("%v", err)
+	}
+	if !schemaNamePattern.MatchString(o.teamSchema) {
+		fail("team-schema不是有效SQL标识符")
 	}
 
 	switch o.mode {

@@ -53,29 +53,40 @@ class Condition : noncopyable
   pthread_cond_t pcond_;
 };
 #else
-class Condition : public std::condition_variable
+class Condition : noncopyable
 {
 public:
+    explicit Condition(MutexLock& mutex)
+        : mutex_(mutex)
+    {
+    }
+
+    void wait()
+    {
+        condition_.wait(mutex_);
+    }
 
     // returns true if time out, false otherwise.
-    bool waitForSeconds(MutexLockGuard & lock, double seconds)
+    bool waitForSeconds(double seconds)
     {
-        wait_for(lock, std::chrono::seconds((int32_t)seconds));
-        return true;
+        return condition_.wait_for(mutex_, std::chrono::duration<double>(seconds))
+            == std::cv_status::timeout;
     }
 
     void notify()
     {
-        notify_all();
+        condition_.notify_one();
     }
 
     void notifyAll()
     {
-        notify_all();
+        condition_.notify_all();
     }
 
 private:
- 
+    // 外层 MutexLockGuard 始终持有同一把锁;wait 只临时释放并重新获取它。
+    MutexLock& mutex_;
+    std::condition_variable_any condition_;
 };
 #endif//__muduo_asynchronization__
 

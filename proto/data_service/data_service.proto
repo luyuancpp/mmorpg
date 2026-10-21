@@ -8,6 +8,9 @@ import "google/protobuf/empty.proto";
 import "proto/common/component/asset_op_ledger_comp.proto";
 // 玩家收件箱对账读已落盘账本(docs/design/player-inbox-service.md §5.1、§9.3);生成链口径同上一行。
 import "proto/common/component/player_inbox_ledger_comp.proto";
+import "proto/common/base/user_accounts.proto";
+import "proto/common/base/service_call_auth.proto";
+import "proto/common/base/role_admission.proto";
 
 option go_package = "data_service/data_service";
 
@@ -15,6 +18,24 @@ option go_package = "data_service/data_service";
 // Scene Server calls this service with player_id only;
 // DataService internally routes to the player's home-realm Redis.
 service DataService {
+  // 全球账号角色目录；只接受已签名的 login 调用，不使用 Redis 归属降级。
+  rpc ReadAccountDirectory(ReadAccountDirectoryRequest) returns (AccountDirectoryResponse) {}
+  rpc CreateAccountRole(CreateAccountRoleRequest) returns (AccountDirectoryResponse) {}
+  rpc LookupAccountRole(LookupAccountRoleRequest) returns (AccountRoleOwnership) {}
+  rpc RepairAccountRole(RepairAccountRoleRequest) returns (AccountDirectoryResponse) {}
+  rpc RemoveAccountRoles(RemoveAccountRolesRequest) returns (google.protobuf.Empty) {}
+  // 角色寄售控制仅允许独立 trade 证明；Begin 只阻新入场，不等于在线实体已冻结。
+  rpc BeginAccountRoleTrade(BeginAccountRoleTradeRequest) returns (AccountRoleTradeReceipt) {}
+  // 请求不接受 caller proof。只有装配的服务端 SQL 验证器能确认 FROZEN；未装配时拒绝。
+  rpc ConfirmAccountRoleTradeFreeze(ConfirmAccountRoleTradeFreezeRequest) returns (AccountRoleTradeReceipt) {}
+  rpc CancelAccountRoleTrade(CancelAccountRoleTradeRequest) returns (AccountRoleTradeReceipt) {}
+  rpc TransferAccountRole(TransferAccountRoleRequest) returns (AccountRoleTransferReceipt) {}
+  // scene 专用强鉴权；SQL 未登记前禁止实体复用、异步加载完成和激活。
+  rpc RegisterRoleAdmission(RegisterRoleAdmissionRequest) returns (RegisterRoleAdmissionResponse) {}
+  // 只在本实例 <= through 的全部实体与迟到回调都已结束后关闭；无 TTL 自动关闭。
+  rpc CloseRoleAdmissions(CloseRoleAdmissionsRequest) returns (CloseRoleAdmissionsResponse) {}
+  // 原 listing 的本地墓碑与排空 ACK；不是 caller 自报的冻结完成证明。
+  rpc AckRoleTradeDrain(AckRoleTradeDrainRequest) returns (google.protobuf.Empty) {}
   // ── Player lifecycle data ─────────────────────────────────────
   rpc LoadPlayerData(LoadPlayerDataRequest) returns (LoadPlayerDataResponse) {}
   rpc SavePlayerData(SavePlayerDataRequest) returns (SavePlayerDataResponse) {}
@@ -71,6 +92,145 @@ service DataService {
   // 调用方是 go/player_inbox 的对账(定时作业与运维 ReconcilePlayer),不是 scene。
   // 设计见 docs/design/player-inbox-service.md §5.1、§9.3。
   rpc GetPlayerInboxLedger(GetPlayerInboxLedgerRequest) returns (GetPlayerInboxLedgerResponse) {}
+}
+
+message AccountDirectoryResponse { AccountSimplePlayerList players = 1; }
+message AccountRoleOwnership {
+  string account = 1;
+  AccountSimplePlayer role = 2;
+  uint64 owner_revision = 3;
+  uint64 trade_listing_id = 4;
+}
+message AccountRoleVersion { uint64 player_id = 1; uint64 owner_revision = 2; }
+message ReadAccountDirectoryRequest {
+  string account = 1;
+  bool create_if_missing = 2;
+  common.base.ServiceCallAuth auth = 3;
+}
+message CreateAccountRoleRequest {
+  string account = 1;
+  AccountSimplePlayer role = 2;
+  common.base.ServiceCallAuth auth = 3;
+}
+message LookupAccountRoleRequest {
+  uint64 player_id = 1;
+  common.base.ServiceCallAuth auth = 2;
+}
+message RepairAccountRoleRequest {
+  string account = 1;
+  AccountSimplePlayer role = 2;
+  uint64 expected_owner_revision = 3;
+  common.base.ServiceCallAuth auth = 4;
+}
+message RemoveAccountRolesRequest {
+  string account = 1;
+  repeated AccountRoleVersion roles = 2;
+  common.base.ServiceCallAuth auth = 3;
+}
+
+enum AccountRoleTradeState {
+  ACCOUNT_ROLE_TRADE_STATE_UNSPECIFIED = 0;
+  ACCOUNT_ROLE_TRADE_STATE_FREEZING = 1;
+  ACCOUNT_ROLE_TRADE_STATE_FROZEN = 2;
+  ACCOUNT_ROLE_TRADE_STATE_CANCELLED = 3;
+  ACCOUNT_ROLE_TRADE_STATE_TRANSFERRED = 4;
+  ACCOUNT_ROLE_TRADE_STATE_CANCEL_PENDING = 5;
+}
+enum AccountRoleFreezeEvidenceKind {
+  ACCOUNT_ROLE_FREEZE_EVIDENCE_KIND_UNSPECIFIED = 0;
+  ACCOUNT_ROLE_FREEZE_EVIDENCE_KIND_NO_ADMISSION = 1;
+  ACCOUNT_ROLE_FREEZE_EVIDENCE_KIND_SCENE = 2;
+}
+// 服务端验证器的返回证据，不是 Confirm 请求入参。owner_epoch/save_seq 不能替代 owner_revision。
+message AccountRoleFreezeEvidence {
+  uint64 player_id = 1;
+  uint64 listing_id = 2;
+  uint64 owner_revision = 3;
+  uint64 owner_epoch = 4;
+  uint64 save_seq = 5;
+  bytes persisted_digest = 6;
+  AccountRoleFreezeEvidenceKind kind = 7;
+}
+message AccountRoleTradeHolder {
+  common.base.RoleTradeSeal seal = 1;
+  bool drained = 2;
+}
+message AccountRoleTradeReceipt {
+  uint64 listing_id = 1;
+  uint64 player_id = 2;
+  string seller_account = 3;
+  uint64 seller_owner_revision = 4;
+  AccountRoleTradeState state = 5;
+  AccountRoleFreezeEvidence freeze_evidence = 6;
+  repeated AccountRoleTradeHolder holders = 7; // 原固定集合，重试不得换上界。
+}
+message AccountRoleTransferReceipt {
+  uint64 tx_id = 1;
+  uint64 listing_id = 2;
+  uint64 player_id = 3;
+  string seller_account = 4;
+  string buyer_account = 5;
+  uint64 seller_owner_revision = 6;
+  uint64 buyer_owner_revision = 7;
+  AccountSimplePlayer role = 8;
+  uint64 created_ms = 9;
+}
+message BeginAccountRoleTradeRequest {
+  uint64 listing_id = 1;
+  uint64 player_id = 2;
+  string seller_account = 3;
+  uint64 expected_owner_revision = 4;
+  common.base.ServiceCallAuth auth = 5;
+}
+message ConfirmAccountRoleTradeFreezeRequest {
+  uint64 listing_id = 1;
+  uint64 player_id = 2;
+  string seller_account = 3;
+  uint64 expected_owner_revision = 4;
+  common.base.ServiceCallAuth auth = 5;
+}
+message CancelAccountRoleTradeRequest {
+  uint64 listing_id = 1;
+  uint64 player_id = 2;
+  string seller_account = 3;
+  uint64 expected_owner_revision = 4;
+  common.base.ServiceCallAuth auth = 5;
+}
+message TransferAccountRoleRequest {
+  uint64 tx_id = 1;
+  uint64 listing_id = 2;
+  uint64 player_id = 3;
+  string seller_account = 4;
+  string buyer_account = 5;
+  uint64 expected_owner_revision = 6;
+  common.base.ServiceCallAuth auth = 7;
+}
+
+message RegisterRoleAdmissionRequest {
+  common.base.RoleAdmissionIdentity identity = 1;
+  common.base.ServiceCallAuth auth = 2;
+}
+message RegisterRoleAdmissionResponse {
+  common.base.RoleAdmissionIdentity identity = 1;
+  uint64 closed_through = 2;
+}
+// required 两字段为本节点最终完整存盘版本下限；0/0 只代表没有新的激活实体存盘，
+// 绝不清除已保存在登记行里的历史下限。异步 SQL 尚未追上也应先持久记录此下限。
+message CloseRoleAdmissionsRequest {
+  uint64 player_id = 1;
+  string scene_instance_id = 2;
+  uint64 owner_revision = 3;
+  uint64 through_generation = 4;
+  uint64 required_owner_epoch = 5;
+  uint64 required_save_seq = 6;
+  common.base.ServiceCallAuth auth = 7;
+}
+message CloseRoleAdmissionsResponse { uint64 closed_through = 1; }
+message AckRoleTradeDrainRequest {
+  common.base.RoleTradeSeal seal = 1;
+  uint64 required_owner_epoch = 2;
+  uint64 required_save_seq = 3;
+  common.base.ServiceCallAuth auth = 4;
 }
 
 // ── Load / Save ────────────────────────────────────────────────

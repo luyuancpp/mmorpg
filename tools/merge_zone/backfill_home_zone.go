@@ -72,19 +72,9 @@ func runBackfillEntry(p backfillEntryParams) {
 	log.Printf("=== Backfill player:zone for zone %d from %s.player_database (dry-run=%v, mapping=%s db=%d, route-source=%s) ===",
 		p.zone, zoneDBName(p.zone), p.dryRun, p.mappingAddr, p.mappingDB, p.route.source)
 
-	var db *sql.DB
-	if p.route.source == routeSourceDB {
-		// W9:读 zone 库同样走 RC 会话(与合服 / 撤销同一口径,mustOpenMySQL → readCommittedDSN)。
-		db = mustOpenMySQL(ctx, p.mysqlDSN)
-	} else {
-		var err error
-		db, err = sql.Open("mysql", p.mysqlDSN)
-		if err != nil {
-			log.Fatalf("mysql open: %v", err)
-		}
-		if err := db.PingContext(ctx); err != nil {
-			log.Fatalf("mysql ping: %v", err)
-		}
+	db, err := openCurrentTiDB(ctx, p.mysqlDSN)
+	if err != nil {
+		log.Fatalf("回填原件的全局TiDB强读连接: %v", err)
 	}
 	defer db.Close()
 	if err := assertSchemaExists(ctx, db, zoneDBName(p.zone)); err != nil {

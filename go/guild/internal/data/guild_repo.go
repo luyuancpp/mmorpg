@@ -122,10 +122,11 @@ type MemberData struct {
 // Read path:  Redis → (miss) → singleflight → MySQL → write-back Redis
 // Write path: Redis + MySQL (sync)
 type GuildRepo struct {
-	rdb         *redis.Client
-	db          *sql.DB
-	defaultTTL  time.Duration
-	cacheLoadMu sync.Mutex
+	rdb           *redis.Client
+	db            *sql.DB
+	defaultTTL    time.Duration
+	cacheLoadMu   sync.Mutex
+	roleAuthority string
 }
 
 func NewGuildRepo(rdb *redis.Client, db *sql.DB, defaultTTL time.Duration) *GuildRepo {
@@ -350,7 +351,7 @@ func (r *GuildRepo) CreateGuild(ctx context.Context, guild *GuildData) error {
 		return err
 	}
 
-	if err := r.inTx(ctx, opCreate, func(ctx context.Context, tx *sql.Tx) error {
+	if err := r.inTx(withRoleTargets(ctx, leader.PlayerID), opCreate, func(ctx context.Context, tx *sql.Tx) error {
 		// 全局插入守卫(见函数头):事务第一把锁,状态行表内 0 最小,排在建帮者的状态行之前。
 		if err := lockGlobalInsertGuard(ctx, tx); err != nil {
 			return err

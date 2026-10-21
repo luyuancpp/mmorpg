@@ -115,6 +115,8 @@ message EnterSceneRequest {
   // - 不进 request_id 的去重指纹(算指纹前清零,与 correlation_id 同理):login 的重试复用同一个
   //   request_id,但每条登录链铸出的代次都不同,进指纹会把合法重试判成幂等冲突。
   uint64 login_generation = 12;
+  // 账号目录放行的所有权修订；完整参与幂等指纹，不能用新买家的修订替旧路由补权。0拒绝。
+  uint64 owner_revision = 13;
 }
 
 message EnterSceneResponse {

@@ -199,7 +199,7 @@ func TestTiDBRatingRankMailChainRecoversAfterCommittedReplyLoss(t *testing.T) {
 	require.Equal(t, created+30*86400000, expire)
 	list := func() {
 		t.Helper()
-		session, err := proto.Marshal(&base.SessionDetails{PlayerId: recipient})
+		session, err := proto.Marshal(&base.SessionDetails{PlayerId: recipient, SessionId: 7, GateInstanceId: "mail-rank-chain-original", SessionIncarnation: 19, OwnerRevision: 3})
 		require.NoError(t, err)
 		playerCtx := metadata.NewOutgoingContext(ctx, metadata.Pairs(domainhost.SessionMetadata, base64.StdEncoding.EncodeToString(session)))
 		response, err := mailClient.ListMails(playerCtx, &mailpb.ListMailsRequest{})

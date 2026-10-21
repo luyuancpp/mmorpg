@@ -90,8 +90,8 @@ func TestRouteBootstrapDDLContract(t *testing.T) {
 			t.Fatalf("%s 有 %d 个 ascii 列,只有 %d 个显式 COLLATE ascii_bin(MySQL 默认 ascii_general_ci、TiDB 只有 ascii_bin)", name, n, m)
 		}
 	}
-	if got := len(bootstrapTables); got != 7 {
-		t.Fatalf("bootstrapTables 有 %d 项,want 7(id_segment、player_name + 五张路由表)", got)
+	if got := len(bootstrapTables); got != 14 {
+		t.Fatalf("bootstrapTables 有 %d 项,want 14(id_segment、player_name、七张账号目录/交易/入场/导入表 + 五张路由表)", got)
 	}
 
 	// player_route 的聚簇主键 (route_shard, player_id) 与 64 片(G1a;模数 2026-10-13 由 16 改为 64,数值由

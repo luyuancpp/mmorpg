@@ -138,7 +138,7 @@ docker --context desktop-linux compose --env-file build/docker-debug-current/.en
 
 准备程序从当前十份源配置派生容器配置，随机密钥仅写入被 Git 忽略的 `build/docker-debug-current/`，再次执行保留原密钥。不要打印、上传或提交展开后的 Compose、`.env` 和带口令的派生配置。
 
-C++ 调试镜像通过 `deploy/debug/Dockerfile` 继承同一次构建的运行镜像与 builder 镜像，增加容器内 GDB，并把对应的分离符号放到 `/app/bin/`。三个节点通过 `SYS_PTRACE` 支持附加，不开放 SSH 或调试 TCP 端口。本节启停命令使用本轮已构建的 `local/*:debug-20261020` 镜像，不会采用上文的注册表 `v1` 镜像。各服务镜像成功构建后，在仓库根执行：
+首轮 C++ 调试镜像通过 `deploy/debug/Dockerfile` 继承同一次构建的运行镜像与 builder 镜像，增加容器内 GDB，并把对应的分离符号放到 `/app/bin/`；日常重编改用下节的 `Dockerfile.cpp` 与统一入口。三个节点通过 `SYS_PTRACE` 支持附加，不开放 SSH 或调试 TCP 端口。本节启停命令使用 `.env` 记录的本地调试镜像，重编入口会更新相应引用。各服务镜像成功构建后，在仓库根执行：
 
 ```powershell
 $dc = @('--context', 'desktop-linux', 'compose',
@@ -163,10 +163,52 @@ Gate 入口为 `127.0.0.1:28000`、Battle 为 `127.0.0.1:28010`，通过 `CLIENT
 
 调试多个新账号时，分别使用 `dev_test_001`、`dev_test_002` 或 `robot_000001` 等不同账号名，密码仍取同一份本机登录信息文件，无需为每个账号修改容器配置。登录后按各自账号的角色列表选角或建角；多客户端测试时使用不同账号名。
 
-本机 `.vscode/launch.json` 提供「Docker：附加 Gate / Scene / Battle」：VS Code 的 C/C++ 扩展通过 `docker --context desktop-linux exec` 调用容器内 GDB，`sourceFileMap` 把编译路径 `/src` 映射为当前工作区。用 VS Code 打开本仓库根目录，在自己的 C++ 源码设置断点，从「运行和调试」下拉选择「Docker：附加 Scene」，按 `F5` 后选择 `scene`（PID 为 `1`）。Gate、Battle 选择各自的入口与同名进程。源码必须与镜像构建输入一致；当前 `RelWithDebInfo` 有优化，部分局部变量可能不可见。长时间断点仍会触发正常的分布式超时与租约处理。
+本机 `.vscode/launch.json` 提供「Docker：附加 Gate / Scene / Battle」：VS Code 的 C/C++ 扩展通过 `docker --context desktop-linux exec` 调用容器内 GDB，`sourceFileMap` 把编译路径 `/src` 映射为当前工作区。用 VS Code 打开本仓库根目录，在自己的 C++ 源码设置断点，从「运行和调试」下拉选择「Docker：附加 Scene」，按 `F5` 后选择 `scene`（PID 为 `1`）。Gate、Battle 选择各自的入口与同名进程。源码必须与镜像构建输入一致；首轮 `RelWithDebInfo` 有优化，日常断点调试使用下节的 `Debug/-O0` 重编入口。长时间断点仍会触发正常的分布式超时与租约处理。
 
-**本轮验证状态（已完成）**：Gate、Scene、Battle 的 Linux `RelWithDebInfo` 构建、运行镜像与调试镜像均成功；镜像内 1,456 个 C++ 源文件与本地逐一 SHA256 匹配。七个 Go 服务及 DB 迁移工具共八个 Linux 镜像、Java 网关镜像均已构建。最终调试配置下 15 个常驻服务运行，11 个带健康检查的服务均为 healthy，3 个初始化任务正常退出；网关健康接口为 UP，HTTP 登录返回业务码 0。
+**首轮验证状态（2026-10-20 已完成）**：Gate、Scene、Battle 的 Linux `RelWithDebInfo` 构建、运行镜像与调试镜像均成功；镜像内 1,456 个 C++ 源文件与本地逐一 SHA256 匹配。七个 Go 服务及 DB 迁移工具共八个 Linux 镜像、Java 网关镜像均已构建。最终调试配置下 15 个常驻服务运行，11 个带健康检查的服务均为 healthy，3 个初始化任务正常退出；网关健康接口为 UP，HTTP 登录返回业务码 0。
 
 三个节点通过与 VS Code 相同的 Docker/GDB MI 管道完成附加和解除附加；Scene 实际命中本仓 `cpp/libs/engine/core/node/system/node/node.cpp:159`，随后恢复运行，三个节点的 `TracerPid` 均为 0。切换到最终调试镜像后，双玩家功能冒烟再次退出 0，登录、进场、战斗与观战通过，战斗直连和观战直连各收到 9 个回合结果。本轮验证了 GDB 管道与真实源码断点，没有操作 VS Code 界面按 F5。
 
 负责人已授权补齐 `data_service` 的分页围栏接口；对账包 73 项测试、`go vet`、真实 Redis 的 6 项围栏测试通过且无跳过。Java 网关 Maven 测试 205 项通过、5 项数据库条件测试跳过、无失败。首轮构建失败及本机 gRPC 精确快照适配原件均保留；负责人收紧范围后未再运行或排查第三方测试。证据位于 `build/verification/docker-debug-20261020-052903/`，最终结果见 `cpp-runtime/package-result.json`、`cpp-debug-up-result.json` 和 `smoke/` 中的源码匹配、GDB、功能冒烟记录。
+
+
+## 修改后重新构建与多语言断点（本机开发）
+
+编辑、保存代码后，先在 VS Code 断开该服务的调试连接，再从仓库根运行对应命令。构建成功后入口会把本轮独占镜像引用写入忽略目录 `.env` 的非敏感镜像键，只重建指定服务，最后检查运行产物与当前源码是否一致；失败保留原始构建证据，不自动换旧镜像宣称成功。不会清空数据卷、账号或更换开发密码。
+
+修改服务 `etc` 配置或网关 `application.yaml` 时，先按本轮原端口参数重新运行 `prepare_docker_debug.py`，再重编对应服务；准备程序保留现有随机密钥与镜像引用。检查会拒绝尚未按当前源配置重新派生的状态；prepare 本身不会重启节点，尤其 C++ YAML 已在启动时读入内存，不能跳过后续重编与容器重建。Go 镜像同时冻结当前服务的 `data*` 资源与 `generated/tables`，表文件在容器内按小写名称落盘并逐一核对摘要。
+
+```powershell
+# C++ 共享库与三个节点一起编译、更新；首次无优化构建较慢。
+python tools/scripts/rebuild_docker_debug.py cpp
+
+# 只更新 Go 登录服；共享 Go 模块修改后应列出全部受影响服务。
+python tools/scripts/rebuild_docker_debug.py go --services login
+python tools/scripts/rebuild_docker_debug.py go --services login,db,data-service,scene-manager,player-locator,client-rpc-router,match
+
+# Java 网关：离线 Maven 测试、重新打包并更新容器。
+python tools/scripts/rebuild_docker_debug.py java
+
+# 附加前也可手动核对源码及二进制、符号。
+python tools/scripts/rebuild_docker_debug.py check --services scene
+```
+
+VS Code 的“终端 → 运行任务”中已有同名“Docker：重编并更新 C++ 节点 / Go Login / 全部 Go 服务 / Java 网关”。构建完成后回到“运行和调试”，选下表配置，按 F5。C++ 仍选择对应节点进程 PID 1；Go、Java 直接连接各自的调试端口。所有端口只发布到宿主 `127.0.0.1`。
+
+| 服务 | VS Code 配置 | 本机调试连接 |
+|---|---|---|
+| Gate / Scene / Battle | Docker：附加 Gate / Scene / Battle | docker exec → 容器内 GDB |
+| login | Docker：附加 Go login | 2345 |
+| db | Docker：附加 Go db | 2346 |
+| data-service | Docker：附加 Go data-service | 2347 |
+| scene-manager | Docker：附加 Go scene-manager | 2348 |
+| player-locator | Docker：附加 Go player-locator | 2349 |
+| client-rpc-router | Docker：附加 Go client-rpc-router | 2350 |
+| match | Docker：附加 Go match | 2351 |
+| gateway | Docker：附加 Java Gateway | 5005 |
+
+C++ 新入口用实际 `Debug` 构建，并核 core 与三个节点的最终编译参数；原 `debug-20261020` 镜像的应用源码虽然与本地一致，参数仍包含后置 `-O2`，会出现跳行和局部变量不可见。新的节点、分离符号、SDK 共享库与源码清单来自同批构建。对象缓存按精确 SDK 与 Debug 隔离；SDK 源码或锁定输入变化时须先更新 SDK，不能混用旧依赖。
+
+Go 使用 `-gcflags=all=-N -l`，保留 DWARF 与宿主源码路径，通过 `substitutePath` 对应当前工作区；Delve 在容器中运行，VS Code 不需要另外安装宿主 Delve。Java 保留行号与调试信息，使用现有 JDK 23；工作区推荐 C/C++、Go、Java 语言支持及 Debugger for Java 扩展。各调试配置都有源码检查前置任务，代码保存后尚未重新构建时先执行重编任务，再附加。
+
+可复现的触发点：Scene 的 `SceneMovementClientPlayerHandler::MoveStart`（角色重新开始移动）、Go 登录服的 `DevelopmentPasswordProvider.ValidatePassword`（点击登录）、Java `ServerListController.getServerList`（刷新区服列表）。断点暂停节点或请求线程期间，正常的客户端超时与服务租约仍会计时。

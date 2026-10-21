@@ -2,10 +2,12 @@ package main
 
 import (
 	"context"
+	"crypto/sha256"
 	"database/sql"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"math"
 	"os"
 	"sort"
 	"strings"
@@ -13,7 +15,10 @@ import (
 	"data_service/cmd/debugutil"
 	"data_service/internal/config"
 	"data_service/internal/routing"
+	"data_service/internal/store"
+	"data_service/internal/svc"
 
+	basepb "proto/common/base"
 	databasepb "proto/common/database"
 
 	"shared/assetop"
@@ -41,7 +46,7 @@ import (
 // 本地残留的旧 DBTask(代次 ≤ 本地旧值)会被行内围栏拒掉,不会覆盖导入的行。
 //
 // 写入分三段:① Redis 原子复核「不在线、owner 未变」后删父快照与缓存、屏障只写 pending、owner 前进到 E;
-// ② 一个事务写两张 SQL 行;③ 复核 pending 未变后补齐两表 ACK 与账号反向索引;最后登记映射。
+// ② 先以稳定维护请求在全局目录拒 OPEN/换修订，再一个事务写两张 SQL 行；③ 补齐两表 ACK；最后登记映射。
 // ① 之后任何一步中断,屏障都是 pending≠ACK,login 冷加载与父快照快路径都 fail-closed,旧代次的残留存盘被
 // owner 挡住;带 -replace 重跑即可收敛。不会出现半套数据被当成有效存档加载,也不会让本地旧父快照借快路径复活。
 
@@ -300,7 +305,6 @@ func persistSchemaGenOf(msg proto.Message) uint64 {
 	return msg.ProtoReflect().Get(fd).Uint()
 }
 
-
 // ── 执行 ───────────────────────────────────────────────────────────────
 
 func runBundleImport(ctx context.Context, raw []byte, opts bundleImportOptions) error {
@@ -393,23 +397,56 @@ func runBundleImport(ctx context.Context, raw []byte, opts bundleImportOptions) 
 	if err := local.admit(opts.replace, localZone); err != nil {
 		return err
 	}
+	directory, err := store.NewAccountDirectoryStore(svc.MySQLConfigOf(dsCfg), true, dsCfg.AccountDirectory.MaxRoles())
+	if err != nil {
+		return fmt.Errorf("目标全局账号目录未就绪: %w", err)
+	}
+	defer directory.Close()
+	if err := directory.ConfigureAssetContracts(dsCfg.AccountDirectory.RoleTradeTradeSchema, dsCfg.AccountDirectory.RoleTradeGuildSchema, dsCfg.AccountDirectory.RoleTradeMailSchema, dsCfg.AccountDirectory.RoleTradeMatchSchema, dsCfg.AccountDirectory.RoleTradeInboxSchema); err != nil {
+		return err
+	}
+	account := opts.localAccount
+	if account == "" {
+		owned, err := directory.Lookup(ctx, plan.playerID)
+		if err != nil || owned == nil || owned.Account == "" {
+			if err == nil {
+				err = errors.New("目标目录归属为空")
+			}
+			return fmt.Errorf("未指定local-account且目标SQL目录无有效归属，拒绝覆盖；新角色须显式指定目标账号: %w", err)
+		}
+		account = owned.Account
+	}
+	importedRole, err := importedAccountRole(b, plan)
+	if err != nil {
+		return err
+	}
+	requestID, err := localImportRequestID(b, plan.source, localZone, opts.localAccount)
+	if err != nil {
+		return err
+	}
 
-	epoch := max(plan.baseEpoch, local.ownerEpoch) + 1
+	priorEpoch := max(plan.baseEpoch, local.ownerEpoch, local.sqlEpoch)
+	if priorEpoch == math.MaxUint64 {
+		return errors.New("本地存盘代次耗尽，拒绝导入")
+	}
+	epoch := priorEpoch + 1
 	version := savebarrier.Version(epoch, plan.seq)
 	fmt.Fprintf(os.Stderr, "\n本地重铸版本: owner_epoch=%d save_seq=%d (%s)\n", epoch, plan.seq, version)
 
 	// 三段写入,任一段之后中断都让 login fail-closed(屏障 pending 已是新版本、ACK 未齐 → 冷加载与父快照快路径都拒),
 	// 且旧代次的残留存盘被新 owner_epoch 挡住;带 -replace 重跑即可收敛。
 	if err := stageLocalRedis(ctx, rdb, plan.playerID, localZone, local.ownerRaw, epoch, version); err != nil {
-		return fmt.Errorf("第 1 步(Redis 预置屏障)失败,未写任何数据,可直接重跑: %w", err)
+		return fmt.Errorf("第 1 步(Redis 预置屏障)未确认，未开始SQL写入；保留现场按原bundle重试: %w", err)
 	}
-	if err := writeLocalRows(ctx, db, plan, epoch); err != nil {
-		return fmt.Errorf("第 2 步(写 %s)失败;Redis 屏障已前进、ACK 未齐,login 会拒绝该玩家,加 -replace 重跑: %w", targetDB, err)
+	// 先撤销旧 owner_revision：旧路由此后不能 Register；已 Register 则 OPEN 闸在写玩家SQL前拒绝。
+	// 同一bundle+目标条款只回原维护修订；失败恢复不会无限 bump，之后另过户/导入则拒绝旧包。
+	if err := applyAuthorizedLocalImport(func() error {
+		_, err := directory.ImportRole(ctx, account, importedRole, opts.replace, requestID)
+		return err
+	}, func() error { return writeLocalRows(ctx, db, plan, epoch) }, func() error { return commitLocalRedis(ctx, rdb, plan.playerID, version, account) }); err != nil {
+		return err
 	}
 	fmt.Fprintf(os.Stderr, "  [OK] %s: %d 张表已写入\n", targetDB, len(plan.rows))
-	if err := commitLocalRedis(ctx, rdb, plan.playerID, version, opts.localAccount); err != nil {
-		return fmt.Errorf("第 3 步(Redis 补齐屏障 ACK)失败;SQL 已写入,login 会拒绝该玩家,加 -replace 重跑: %w", err)
-	}
 	fmt.Fprintf(os.Stderr, "  [OK] 核心 Redis: 屏障 / owner_epoch 已对齐,本地父快照与子表缓存已清\n")
 
 	if !local.mapped {
@@ -420,13 +457,39 @@ func runBundleImport(ctx context.Context, raw []byte, opts bundleImportOptions) 
 	}
 
 	fmt.Fprintf(os.Stderr, "\n[OK] 玩家 %d 已导入本地 zone %d(来源 %s)。\n", plan.playerID, localZone, plan.source)
-	if opts.localAccount != "" {
-		fmt.Fprintf(os.Stderr, "下一步:用账号 %s 先 Login 一次(建出账号目录),再 EnterGame player_id=%d;EnterGame 会按反向索引把角色补进账号目录。\n",
-			opts.localAccount, plan.playerID)
-	} else {
-		fmt.Fprintf(os.Stderr, "未给 -local-account:本地没有账号拥有这个角色,EnterGame 会被拒。需要登录时加 -local-account=<本地 dev_/robot_ 账号> -replace 重跑。\n")
+	fmt.Fprintf(os.Stderr, "全局 SQL 已登记目标账号 %s 的维护修订，可 Login 后 EnterGame player_id=%d。\n", account, plan.playerID)
+	return nil
+}
+
+// stage 已持久安装 pending 后进入此接缝。授权失败零玩家 SQL；SQL失败零ACK。
+// 原请求重放可能返回已提交的目录维护修订，调用者只能按原bundle继续恢复。
+func applyAuthorizedLocalImport(authorize, writeRows, commit func() error) error {
+	if err := authorize(); err != nil {
+		return fmt.Errorf("全局SQL目录维护授权失败；未写玩家SQL，pending保留且不ACK: %w", err)
+	}
+	if err := writeRows(); err != nil {
+		return fmt.Errorf("玩家SQL写入失败；目录维护修订已提交，pending保留且不ACK，以原bundle加-replace恢复: %w", err)
+	}
+	if err := commit(); err != nil {
+		return fmt.Errorf("补齐屏障ACK失败；目录与玩家SQL已提交，保留原bundle恢复: %w", err)
 	}
 	return nil
+}
+
+// 空账号选择器也是原条款：重试不能按后来买家的账号生成另一request_id绕过旧收据。
+// replace 是恢复控制开关，不进业务身份；SQL中保留首次许可，重试只返回原目录修订。
+func localImportRequestID(b *debugutil.Bundle, source string, zone uint32, accountSelector string) ([]byte, error) {
+	raw, err := json.Marshal(struct {
+		Bundle          *debugutil.Bundle `json:"bundle"`
+		Source          string            `json:"source"`
+		Zone            uint32            `json:"zone"`
+		AccountSelector string            `json:"account_selector"`
+	}{b, source, zone, accountSelector})
+	if err != nil {
+		return nil, err
+	}
+	sum := sha256.Sum256(raw)
+	return sum[:], nil
 }
 
 func printBundlePlan(b *debugutil.Bundle, plan *importPlan, localZone uint32, opts bundleImportOptions) {
@@ -448,7 +511,7 @@ func printBundlePlan(b *debugutil.Bundle, plan *importPlan, localZone uint32, op
 	}
 	fmt.Fprintf(os.Stderr, "  线上最大代次 %d,最大存盘序号 %d;本地版本 = max(线上, 本地) + 1\n", plan.baseEpoch, plan.seq)
 	if opts.localAccount != "" {
-		fmt.Fprintf(os.Stderr, "  本地账号:    %s(写 player_to_account 反向索引)\n", opts.localAccount)
+		fmt.Fprintf(os.Stderr, "  本地账号:    %s(写目标全局 SQL 目录)\n", opts.localAccount)
 	}
 	for _, note := range plan.notes {
 		fmt.Fprintf(os.Stderr, "  注意: %s\n", note)
@@ -474,6 +537,14 @@ func checkNotExportSource(ctx context.Context, src debugutil.BundleSources, db *
 		targets = append(targets, struct{ what, id string }{"data_service MappingRedis", debugutil.RedisServerIdentity(ctx, client)})
 		_ = client.Close()
 	}
+	global, err := debugutil.OpenMySQL(ctx, debugutil.GlobalMySQL(dsCfg), 1)
+	if err != nil {
+		return fmt.Errorf("核对目标全局SQL实例失败: %w", err)
+	}
+	targets = append(targets, struct{ what, id string }{"全局账号目录SQL", debugutil.MySQLServerIdentity(ctx, global)})
+	if err = global.Close(); err != nil {
+		return err
+	}
 	for _, target := range targets {
 		if target.id != "" && exported[target.id] {
 			return fmt.Errorf("%s 与导出来源是同一个实例(身份 %s):导入只写隔离环境,检查是不是把线上 port-forward 当成了本地", target.what, target.id)
@@ -489,6 +560,7 @@ type localPlayerState struct {
 	onlineKeys []string
 	ownerRaw   string
 	ownerEpoch uint64
+	sqlEpoch   uint64
 	mapped     bool
 	mappedZone uint32
 	// placementRaw / placementPresent:go/db 选库用的映射实例上的 player:placement:<id>。
@@ -500,12 +572,19 @@ func inspectLocalPlayer(ctx context.Context, db *sql.DB, rdb, mappingClient *red
 	state := &localPlayerState{}
 	for _, row := range plan.rows {
 		newMsg := func() proto.Message { return row.msg.ProtoReflect().Type().New().Interface() }
-		_, found, err := debugutil.ReadPlayerRow(ctx, db, newMsg, plan.playerID)
+		stored, found, err := debugutil.ReadPlayerRow(ctx, db, newMsg, plan.playerID)
 		if err != nil {
 			return nil, fmt.Errorf("读本地 %s 失败(本地表结构与当前检出不一致时先跑本地迁移): %w", row.table, err)
 		}
 		if found {
 			state.sqlTables = append(state.sqlTables, row.table)
+			if version := debugutil.RowFenceVersion(stored); version != "" {
+				epoch, _, err := savebarrier.Parse(version)
+				if err != nil {
+					return nil, err
+				}
+				state.sqlEpoch = max(state.sqlEpoch, epoch)
+			}
 		}
 	}
 
@@ -605,14 +684,14 @@ func writeLocalRows(ctx context.Context, db *sql.DB, plan *importPlan, epoch uin
 		if err := debugutil.SetRowFence(msg, epoch, plan.seq); err != nil {
 			return err
 		}
-		if err := debugutil.ReplacePlayerRow(ctx, tx, msg); err != nil {
+		if err := debugutil.ReplaceFencedPlayerRow(ctx, tx, msg); err != nil {
 			return fmt.Errorf("表 %s: %w", row.table, err)
 		}
 	}
 	return tx.Commit()
 }
 
-// stageLocalRedisScript 是三段写入的第 1 段,先原子复核预检结论:同号玩家此刻不在线、owner_epoch 与预检一致。
+// stageLocalRedisScript 是三段写入的第 1 段,先原子复核预检结论:同号玩家不在线、不在登录链中、owner_epoch 与预检一致。
 // 然后删掉本地父快照 / 子表缓存 / 资产证据 / 交接标记 / 旧屏障,屏障只写 pending(不写 ACK)、owner 前进到新代次,
 // 并把玩家移出待落库索引。此后 login 见 pending≠ACK 必拒(含父快照快路径),旧代次的存盘被 owner 挡住。
 //
@@ -620,8 +699,8 @@ func writeLocalRows(ctx context.Context, db *sql.DB, plan *importPlan, epoch uin
 var stageLocalRedisScript = redis.NewScript(stageLocalRedisLua)
 
 const stageLocalRedisLua = `
-if redis.call('EXISTS', KEYS[8]) == 1 or redis.call('EXISTS', KEYS[9]) == 1 then
-    return redis.error_reply('IMPORT_ONLINE local player became online since preflight')
+if redis.call('EXISTS', KEYS[8]) == 1 or redis.call('EXISTS', KEYS[9]) == 1 or redis.call('EXISTS', KEYS[11]) == 1 then
+    return redis.error_reply('IMPORT_ONLINE local player became online or entered a login chain since preflight')
 end
 local owner = redis.call('GET', KEYS[7])
 if (owner or '') ~= ARGV[1] then
@@ -646,6 +725,7 @@ func stageLocalRedis(ctx context.Context, rdb redis.Scripter, playerID uint64, l
 		scenenode.LocationKey(playerID),
 		debugutil.LocatorSessionKey(playerID),
 		debugutil.SavePendingIndexKey(localZone, playerID),
+		fmt.Sprintf("player_locker:%d", playerID),
 	}
 	return stageLocalRedisScript.Run(ctx, rdb, keys, expectedOwner, fmt.Sprint(epoch), version, fmt.Sprint(playerID)).Err()
 }
@@ -658,9 +738,6 @@ if redis.call('HGET', KEYS[1], 'pending') ~= ARGV[1] then
     return redis.error_reply('IMPORT_BARRIER_CHANGED pending changed since stage')
 end
 redis.call('HSET', KEYS[1], 'player_database', ARGV[1], 'player_database_1', ARGV[1])
-if ARGV[2] ~= '' then
-    redis.call('SET', KEYS[2], ARGV[2])
-end
 return 1
 `
 
@@ -674,10 +751,36 @@ func checkDataServiceTargets(c config.Config, allowHosts string) error {
 	if err := debugutil.CheckLocalWriteTarget("data_service MappingRedis", c.MappingRedis.Host, allowHosts); err != nil {
 		return err
 	}
-	if c.RouteStore.Normalize().DBFirst() {
-		if err := debugutil.CheckLocalWriteTarget("data_service 全局库(RouteStore db_first)", c.SnapshotMySQL.Host, allowHosts); err != nil {
+	{
+		if err := debugutil.CheckLocalWriteTarget("data_service 全局库(账号目录及路由)", c.SnapshotMySQL.Host, allowHosts); err != nil {
 			return err
 		}
 	}
 	return nil
+}
+
+// 新导出包保留角色目录 PB 未知字段；旧包只能从玩家身份构造目录，不读取 Redis 反向缓存。
+func importedAccountRole(b *debugutil.Bundle, plan *importPlan) (*basepb.AccountSimplePlayer, error) {
+	if b.Global != nil && b.Global.AccountRole != nil {
+		raw, ok, err := b.Global.AccountRole.RawBytes()
+		if err != nil || !ok {
+			return nil, fmt.Errorf("SQL角色目录原件缺失或非法")
+		}
+		row := &databasepb.AccountRole{}
+		if err = proto.Unmarshal(raw, row); err != nil || row.PlayerId != plan.playerID {
+			return nil, fmt.Errorf("SQL角色目录身份不符")
+		}
+		role := &basepb.AccountSimplePlayer{}
+		if err = proto.Unmarshal(row.RoleProto, role); err != nil || role.PlayerId != plan.playerID {
+			return nil, fmt.Errorf("角色目录PB原件不符")
+		}
+		return role, nil
+	}
+	for _, row := range plan.rows {
+		if player, ok := row.msg.(*databasepb.PlayerDatabase); ok {
+			return &basepb.AccountSimplePlayer{PlayerId: plan.playerID, ClassId: player.GetUint32PbComponent().GetClass(),
+				Gender: player.GetProfileComponent().GetGender(), Name: player.GetProfileComponent().GetName(), AppearanceId: player.GetProfileComponent().GetAppearanceId()}, nil
+		}
+	}
+	return nil, fmt.Errorf("导入包缺少玩家身份，不能建立SQL目录")
 }

@@ -361,6 +361,9 @@ func (r *TrialLobbyRepo) Create(ctx context.Context, in TrialLobbyCreate) (Trial
 		}
 		switch code {
 		case luaCreateOK:
+			if err := r.rememberConsent(ctx, &lobby, lobby.InitiatorID, in.NowMs); err != nil {
+				return TrialLobbyCreateResult{}, err
+			}
 			return TrialLobbyCreateResult{Status: TrialLobbyCreated, Lobby: &lobby}, nil
 		case luaCreateCooldown:
 			return TrialLobbyCreateResult{Status: TrialLobbyCooldown, CooldownRemaining: time.Duration(arg) * time.Millisecond}, nil
@@ -438,6 +441,17 @@ type TrialLobbyRespondResult struct {
 // 幂等:重复同意不改变任何东西;拿到 TrialLobbyRespondLaunch 的只会有一次调用。
 // error 只表示输入不合法或 Redis 故障。
 func (r *TrialLobbyRepo) Respond(ctx context.Context, lobbyID, playerID uint64, accept bool, nowMs uint64, launchWindow time.Duration) (TrialLobbyRespondResult, error) {
+	if accept {
+		lobby, err := r.Load(ctx, lobbyID)
+		if err != nil {
+			return TrialLobbyRespondResult{}, err
+		}
+		if lobby != nil {
+			if err := r.rememberConsent(ctx, lobby, playerID, nowMs); err != nil {
+				return TrialLobbyRespondResult{}, err
+			}
+		}
+	}
 	if lobbyID == 0 || playerID == 0 || nowMs == 0 || launchWindow <= 0 {
 		return TrialLobbyRespondResult{}, fmt.Errorf("guild trial lobby: respond needs non-zero lobby (%d), player (%d), now (%d) and a positive launch window (%v)",
 			lobbyID, playerID, nowMs, launchWindow)

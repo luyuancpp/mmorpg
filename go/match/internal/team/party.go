@@ -225,7 +225,7 @@ func (s *Service) markFillSupported(view *teampb.TeamView) {
 	if view == nil || view.GetTeamId() == 0 {
 		return
 	}
-	view.MatchFillSupported = s.starter != nil && !s.svcCtx.Config.Team.FillQueueDisabled && s.svcCtx.Authority == nil
+	view.MatchFillSupported = s.starter != nil && !s.svcCtx.Config.Team.FillQueueDisabled
 }
 
 // pushMembersSnapshot 由一次 S_READ_MEMBERS 给 recipients 里仍在本队的人推当前视图(epoch 同源,§C.4)。

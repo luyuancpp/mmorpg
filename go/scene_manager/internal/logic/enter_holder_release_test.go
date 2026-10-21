@@ -107,7 +107,7 @@ func enterHolderReleaseSeed(t *testing.T, sc *svc.ServiceContext, mr *miniredis.
 
 // enterHolderReleaseLogin 是从新 gate 重登的 EnterScene:会话 22、代次 identGenB(比 location 记的新),不带关联号(login 发起)。
 func enterHolderReleaseLogin(playerID, targetScene uint64) *scene_manager.EnterSceneRequest {
-	return &scene_manager.EnterSceneRequest{
+	return &scene_manager.EnterSceneRequest{OwnerRevision: 1,
 		PlayerId: playerID, SceneId: targetScene, ZoneId: testZoneId, SessionId: 22, LoginGeneration: identGenB,
 		GateZoneId: testZoneId, GateId: "2", GateInstanceId: "gate-b-uuid",
 	}

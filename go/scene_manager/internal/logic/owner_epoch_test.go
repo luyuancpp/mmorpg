@@ -123,7 +123,7 @@ func TestEnterScene_FirstLandingMintsEpochOneAndCarriesItInRouteEvent(t *testing
 	)
 	seedSceneOnNode(mr, testZoneId, targetID, "10", "0")
 
-	resp, err := NewEnterSceneLogic(context.Background(), sc).EnterScene(&scene_manager.EnterSceneRequest{
+	resp, err := NewEnterSceneLogic(context.Background(), sc).EnterScene(&scene_manager.EnterSceneRequest{OwnerRevision: 1,
 		PlayerId: playerID, SceneId: targetID, ZoneId: testZoneId,
 		GateZoneId: testZoneId, GateId: "1", GateInstanceId: "gate-uuid-test",
 	})
@@ -157,7 +157,7 @@ func TestEnterScene_SamePlacementReconnectDoesNotMintEpoch(t *testing.T) {
 	require.Equal(t, "1", ownerEpochRaw(t, sc, playerID))
 	beforeRaw, _ := sc.Redis.Get(getPlayerLocationKey(playerID))
 
-	resp, err := NewEnterSceneLogic(context.Background(), sc).EnterScene(&scene_manager.EnterSceneRequest{
+	resp, err := NewEnterSceneLogic(context.Background(), sc).EnterScene(&scene_manager.EnterSceneRequest{OwnerRevision: 1,
 		PlayerId: playerID, SceneId: sceneID, ZoneId: testZoneId,
 		GateZoneId: testZoneId, GateId: "1", GateInstanceId: "gate-uuid-test",
 	})
@@ -391,7 +391,7 @@ func TestEnterScene_CrossNodeWithStaleMarkerIsRejectedAsHandoffPending(t *testin
 	// 标记来自更早一代(epoch 0):不能证明当前持有者已落盘。
 	writeHandoffMarker(t, sc, playerID, 0)
 
-	resp, err := NewEnterSceneLogic(context.Background(), sc).EnterScene(&scene_manager.EnterSceneRequest{
+	resp, err := NewEnterSceneLogic(context.Background(), sc).EnterScene(&scene_manager.EnterSceneRequest{OwnerRevision: 1,
 		PlayerId: playerID, SceneId: targetID, ZoneId: testZoneId,
 		GateZoneId: testZoneId, GateId: "1", GateInstanceId: "gate-uuid-test",
 	})
@@ -427,7 +427,7 @@ func TestEnterScene_CrossNodeWithCurrentMarkerIsAllowedAndMintsNextEpoch(t *test
 	writeHandoffMarker(t, sc, playerID, 1)
 	withReachableSceneNode(t, sc, "10", "20")
 
-	resp, err := NewEnterSceneLogic(context.Background(), sc).EnterScene(&scene_manager.EnterSceneRequest{
+	resp, err := NewEnterSceneLogic(context.Background(), sc).EnterScene(&scene_manager.EnterSceneRequest{OwnerRevision: 1,
 		PlayerId: playerID, SceneId: targetID, ZoneId: testZoneId,
 		GateZoneId: testZoneId, GateId: "1", GateInstanceId: "gate-uuid-test",
 	})
@@ -471,7 +471,7 @@ func TestEnterScene_CrossZoneWithCurrentMarkerReleasesToAwaitingPlacement(t *tes
 		assert.Equal(t, playerID, pid)
 		return &scene_manager.RedirectToGateInfo{TargetGateIp: "10.2.0.8", TargetGatePort: 7001}, nil
 	}
-	resp, err := logic.EnterScene(&scene_manager.EnterSceneRequest{
+	resp, err := logic.EnterScene(&scene_manager.EnterSceneRequest{OwnerRevision: 1,
 		PlayerId: playerID, SceneId: 0, SceneConfId: 0, ZoneId: 2,
 		GateZoneId: 1, GateId: "1", GateInstanceId: "gate-uuid-test",
 	})
@@ -515,7 +515,7 @@ func TestEnterScene_CrossZoneRedirectKafkaFailureBumpsEpochAndLeavesReceipt(t *t
 	logic.assignGateForZone = func(context.Context, *svc.ServiceContext, uint32, uint64) (*scene_manager.RedirectToGateInfo, error) {
 		return &scene_manager.RedirectToGateInfo{TargetGateIp: "10.2.0.8", TargetGatePort: 7001}, nil
 	}
-	resp, err := logic.EnterScene(&scene_manager.EnterSceneRequest{
+	resp, err := logic.EnterScene(&scene_manager.EnterSceneRequest{OwnerRevision: 1,
 		PlayerId: playerID, ZoneId: 2,
 		GateZoneId: 1, GateId: "1", GateInstanceId: "gate-uuid-test",
 	})
@@ -555,7 +555,7 @@ func TestEnterScene_AwaitingPlacementSecondLegIsAllowedWithoutMarker(t *testing.
 	require.NoError(t, err)
 	require.Equal(t, uint64(1), placed.epoch)
 
-	resp, err := NewEnterSceneLogic(context.Background(), sc).EnterScene(&scene_manager.EnterSceneRequest{
+	resp, err := NewEnterSceneLogic(context.Background(), sc).EnterScene(&scene_manager.EnterSceneRequest{OwnerRevision: 1,
 		PlayerId: playerID, SceneId: targetID, ZoneId: 2,
 		GateZoneId: 2, GateId: "1", GateInstanceId: "gate-uuid-test",
 	})
@@ -596,7 +596,7 @@ func TestEnterScene_AwaitingPlacementCrossZoneAgainIsAllowedWithoutMarker(t *tes
 		assert.Equal(t, uint32(3), zone)
 		return &scene_manager.RedirectToGateInfo{TargetGateIp: "10.3.0.8", TargetGatePort: 7001}, nil
 	}
-	resp, err := logic.EnterScene(&scene_manager.EnterSceneRequest{
+	resp, err := logic.EnterScene(&scene_manager.EnterSceneRequest{OwnerRevision: 1,
 		PlayerId: playerID, ZoneId: 3,
 		GateZoneId: 1, GateId: "1", GateInstanceId: "gate-uuid-test",
 	})
@@ -632,7 +632,7 @@ func TestEnterScene_RouteFailureAfterHandoffBumpsEpochAndLeavesReceipt(t *testin
 	writeHandoffMarker(t, sc, playerID, 1)
 	withReachableSceneNode(t, sc, "10", "20")
 
-	resp, err := NewEnterSceneLogic(context.Background(), sc).EnterScene(&scene_manager.EnterSceneRequest{
+	resp, err := NewEnterSceneLogic(context.Background(), sc).EnterScene(&scene_manager.EnterSceneRequest{OwnerRevision: 1,
 		PlayerId: playerID, SceneId: targetID, ZoneId: testZoneId,
 		GateZoneId: testZoneId, GateId: "1", GateInstanceId: "gate-uuid-test",
 	})
@@ -708,7 +708,7 @@ func TestEnterScene_RouteFailureKeepsPlacementWhenMarkerAlreadyConsumed(t *testi
 	withReachableSceneNode(t, sc, "10", "20")
 	markerGoneBefore := enterSceneRollbackCount(t, rollbackOutcomeMarkerGone)
 
-	resp, err := NewEnterSceneLogic(context.Background(), sc).EnterScene(&scene_manager.EnterSceneRequest{
+	resp, err := NewEnterSceneLogic(context.Background(), sc).EnterScene(&scene_manager.EnterSceneRequest{OwnerRevision: 1,
 		PlayerId: playerID, SceneId: targetID, ZoneId: testZoneId,
 		GateZoneId: testZoneId, GateId: "1", GateInstanceId: "gate-uuid-test",
 	})
@@ -755,7 +755,7 @@ func TestEnterScene_CrossZoneRedirectFailureAfterMarkerWithdrawnKeepsAwaitingPla
 	logic.assignGateForZone = func(context.Context, *svc.ServiceContext, uint32, uint64) (*scene_manager.RedirectToGateInfo, error) {
 		return &scene_manager.RedirectToGateInfo{TargetGateIp: "10.2.0.8", TargetGatePort: 7001}, nil
 	}
-	resp, err := logic.EnterScene(&scene_manager.EnterSceneRequest{
+	resp, err := logic.EnterScene(&scene_manager.EnterSceneRequest{OwnerRevision: 1,
 		PlayerId: playerID, ZoneId: 2,
 		GateZoneId: 1, GateId: "1", GateInstanceId: "gate-uuid-test",
 	})
@@ -798,7 +798,7 @@ func TestEnterScene_SecondLegRouteFailureBumpsEpochAndStaysAwaiting(t *testing.T
 	require.NoError(t, sc.Redis.Set(getPlayerLocationKey(playerID), string(awaitingRaw)))
 	require.NoError(t, sc.Redis.Set(ownerepoch.OwnerEpochKey(playerID), "2"))
 
-	resp, err := NewEnterSceneLogic(context.Background(), sc).EnterScene(&scene_manager.EnterSceneRequest{
+	resp, err := NewEnterSceneLogic(context.Background(), sc).EnterScene(&scene_manager.EnterSceneRequest{OwnerRevision: 1,
 		PlayerId: playerID, SceneId: targetID, ZoneId: 2,
 		GateZoneId: 2, GateId: "1", GateInstanceId: "gate-uuid-test",
 	})
@@ -834,7 +834,7 @@ func TestEnterScene_NoEpochValueMintedTwiceAcrossRollback(t *testing.T) {
 	)
 	seedSceneOnNode(mr, testZoneId, targetID, "10", "0")
 	request := func() *scene_manager.EnterSceneRequest {
-		return &scene_manager.EnterSceneRequest{
+		return &scene_manager.EnterSceneRequest{OwnerRevision: 1,
 			PlayerId: playerID, SceneId: targetID, ZoneId: testZoneId,
 			GateZoneId: testZoneId, GateId: "1", GateInstanceId: "gate-uuid-test",
 		}
@@ -891,7 +891,7 @@ func TestEnterScene_ForwardedMarkerReopensHandoffGateAfterRollback(t *testing.T)
 	writeHandoffMarker(t, sc, playerID, 1)
 	withReachableSceneNode(t, sc, "10", "20")
 	request := func() *scene_manager.EnterSceneRequest {
-		return &scene_manager.EnterSceneRequest{
+		return &scene_manager.EnterSceneRequest{OwnerRevision: 1,
 			PlayerId: playerID, SceneId: targetID, ZoneId: testZoneId,
 			GateZoneId: testZoneId, GateId: "1", GateInstanceId: "gate-uuid-test",
 		}
@@ -970,7 +970,7 @@ func TestEnterScene_DevBypassWithoutMarkerDoesNotMintEpoch(t *testing.T) {
 	// 没有任何 handoff 标记。
 	withReachableSceneNode(t, sc, "10", "20")
 
-	resp, err := NewEnterSceneLogic(context.Background(), sc).EnterScene(&scene_manager.EnterSceneRequest{
+	resp, err := NewEnterSceneLogic(context.Background(), sc).EnterScene(&scene_manager.EnterSceneRequest{OwnerRevision: 1,
 		PlayerId: playerID, SceneId: targetID, ZoneId: testZoneId,
 		GateZoneId: testZoneId, GateId: "1", GateInstanceId: "gate-uuid-test",
 	})
@@ -1002,7 +1002,7 @@ func TestEnterScene_DevBypassWithCurrentMarkerStillMints(t *testing.T) {
 	writeHandoffMarker(t, sc, playerID, 1)
 	withReachableSceneNode(t, sc, "10", "20")
 
-	resp, err := NewEnterSceneLogic(context.Background(), sc).EnterScene(&scene_manager.EnterSceneRequest{
+	resp, err := NewEnterSceneLogic(context.Background(), sc).EnterScene(&scene_manager.EnterSceneRequest{OwnerRevision: 1,
 		PlayerId: playerID, SceneId: targetID, ZoneId: testZoneId,
 		GateZoneId: testZoneId, GateId: "1", GateInstanceId: "gate-uuid-test",
 	})
@@ -1031,7 +1031,7 @@ func TestEnterScene_SameNodeSceneSwitchDoesNotMintEpoch(t *testing.T) {
 	require.NoError(t, UpdatePlayerLocation(context.Background(), sc, playerID, oldScene, "10", testZoneId))
 	require.Equal(t, "1", ownerEpochRaw(t, sc, playerID))
 
-	resp, err := NewEnterSceneLogic(context.Background(), sc).EnterScene(&scene_manager.EnterSceneRequest{
+	resp, err := NewEnterSceneLogic(context.Background(), sc).EnterScene(&scene_manager.EnterSceneRequest{OwnerRevision: 1,
 		PlayerId: playerID, SceneId: targetID, ZoneId: testZoneId,
 		GateZoneId: testZoneId, GateId: "1", GateInstanceId: "gate-uuid-test",
 	})
@@ -1067,7 +1067,7 @@ func TestEnterScene_SameNodeSceneSwitchMintsWhenEpochIsZero(t *testing.T) {
 	fake := withReachableSceneNode(t, sc, "10")
 	releasesBefore := fake.releaseCalls.Load()
 
-	resp, err := NewEnterSceneLogic(context.Background(), sc).EnterScene(&scene_manager.EnterSceneRequest{
+	resp, err := NewEnterSceneLogic(context.Background(), sc).EnterScene(&scene_manager.EnterSceneRequest{OwnerRevision: 1,
 		PlayerId: playerID, SceneId: targetID, ZoneId: testZoneId,
 		GateZoneId: testZoneId, GateId: "1", GateInstanceId: "gate-uuid-test",
 	})
@@ -1111,7 +1111,7 @@ func TestEnterScene_SameNodeSceneSwitchReseedsLostEpochKeyInsteadOfMinting(t *te
 	fake := withReachableSceneNode(t, sc, "10")
 	releasesBefore := fake.releaseCalls.Load()
 
-	resp, err := NewEnterSceneLogic(context.Background(), sc).EnterScene(&scene_manager.EnterSceneRequest{
+	resp, err := NewEnterSceneLogic(context.Background(), sc).EnterScene(&scene_manager.EnterSceneRequest{OwnerRevision: 1,
 		PlayerId: playerID, SceneId: targetID, ZoneId: testZoneId,
 		GateZoneId: testZoneId, GateId: "1", GateInstanceId: "gate-uuid-test",
 	})
@@ -1148,7 +1148,7 @@ func TestEnterScene_SameNodeReseedBlockedByZeroKeyRejectsWithoutErasingLocationE
 	require.NoError(t, sc.Redis.Set(ownerepoch.OwnerEpochKey(playerID), "0"))
 	withReachableSceneNode(t, sc, "10")
 
-	resp, err := NewEnterSceneLogic(context.Background(), sc).EnterScene(&scene_manager.EnterSceneRequest{
+	resp, err := NewEnterSceneLogic(context.Background(), sc).EnterScene(&scene_manager.EnterSceneRequest{OwnerRevision: 1,
 		PlayerId: playerID, SceneId: targetID, ZoneId: testZoneId,
 		GateZoneId: testZoneId, GateId: "1", GateInstanceId: "gate-uuid-test",
 	})
@@ -1184,7 +1184,7 @@ func TestEnterScene_SameNodeZeroEpochMintRouteFailureKeepsMintedEpoch(t *testing
 	oldRaw, _ := sc.Redis.Get(getPlayerLocationKey(playerID))
 	withReachableSceneNode(t, sc, "10")
 
-	resp, err := NewEnterSceneLogic(context.Background(), sc).EnterScene(&scene_manager.EnterSceneRequest{
+	resp, err := NewEnterSceneLogic(context.Background(), sc).EnterScene(&scene_manager.EnterSceneRequest{OwnerRevision: 1,
 		PlayerId: playerID, SceneId: targetID, ZoneId: testZoneId,
 		GateZoneId: testZoneId, GateId: "1", GateInstanceId: "gate-uuid-test",
 	})
@@ -1291,7 +1291,7 @@ func TestEnterScene_TravelTargetMapIsCarriedByAwaitingPlacement(t *testing.T) {
 	logic.assignGateForZone = func(context.Context, *svc.ServiceContext, uint32, uint64) (*scene_manager.RedirectToGateInfo, error) {
 		return &scene_manager.RedirectToGateInfo{TargetGateIp: "10.2.0.8", TargetGatePort: 7001}, nil
 	}
-	resp, err := logic.EnterScene(&scene_manager.EnterSceneRequest{
+	resp, err := logic.EnterScene(&scene_manager.EnterSceneRequest{OwnerRevision: 1,
 		PlayerId: playerID, ZoneId: 2, SceneConfId: confID,
 		GateZoneId: 1, GateId: "1", GateInstanceId: "gate-uuid-test",
 	})
@@ -1336,7 +1336,7 @@ func TestEnterScene_TravelToUnopenedMapIsRejectedBeforeReleasingOwnership(t *tes
 		t.Error("地图预检不过就不该去签目标 zone 的票据")
 		return nil, errors.New("unexpected redirect")
 	}
-	resp, err := logic.EnterScene(&scene_manager.EnterSceneRequest{
+	resp, err := logic.EnterScene(&scene_manager.EnterSceneRequest{OwnerRevision: 1,
 		PlayerId: playerID, ZoneId: 2, SceneConfId: confID,
 		GateZoneId: 1, GateId: "1", GateInstanceId: "gate-uuid-test",
 	})
@@ -1387,7 +1387,7 @@ func TestEnterScene_TravelWithoutMapRejectedWhenTargetDefaultWorldUnavailable(t 
 				t.Error("地图预检不过就不该去签目标 zone 的票据")
 				return nil, errors.New("unexpected redirect")
 			}
-			resp, err := logic.EnterScene(&scene_manager.EnterSceneRequest{
+			resp, err := logic.EnterScene(&scene_manager.EnterSceneRequest{OwnerRevision: 1,
 				PlayerId: tc.playerID, ZoneId: 2, SceneConfId: 0,
 				GateZoneId: 1, GateId: "1", GateInstanceId: "gate-uuid-test", RequestId: "travel-no-default-world",
 			})
@@ -1433,7 +1433,7 @@ func TestEnterScene_TravelWithoutMapReleasesWhenTargetDefaultWorldIsOpen(t *test
 	logic.assignGateForZone = func(context.Context, *svc.ServiceContext, uint32, uint64) (*scene_manager.RedirectToGateInfo, error) {
 		return &scene_manager.RedirectToGateInfo{TargetGateIp: "10.2.0.8", TargetGatePort: 7001}, nil
 	}
-	resp, err := logic.EnterScene(&scene_manager.EnterSceneRequest{
+	resp, err := logic.EnterScene(&scene_manager.EnterSceneRequest{OwnerRevision: 1,
 		PlayerId: playerID, ZoneId: 2, SceneConfId: 0,
 		GateZoneId: 1, GateId: "1", GateInstanceId: "gate-uuid-test",
 	})
@@ -1478,7 +1478,7 @@ func TestEnterScene_TravelSecondLegFallsBackToDefaultWorldWhenPendingMapIsUnavai
 	require.Equal(t, uint64(1), placed.epoch)
 
 	// 目标 zone 的 login 发来的第二条腿:不带场景、不带地图。
-	resp, err := NewEnterSceneLogic(context.Background(), sc).EnterScene(&scene_manager.EnterSceneRequest{
+	resp, err := NewEnterSceneLogic(context.Background(), sc).EnterScene(&scene_manager.EnterSceneRequest{OwnerRevision: 1,
 		PlayerId: playerID, ZoneId: 2,
 		GateZoneId: 2, GateId: "1", GateInstanceId: "gate-uuid-test",
 	})
@@ -1517,7 +1517,7 @@ func TestEnterScene_ExplicitMapIsNotSubjectToPendingMapFallback(t *testing.T) {
 		placementGuard{observedEpoch: 0, mint: true, pendingSceneConfID: defaultConf})
 	require.NoError(t, err)
 
-	resp, err := NewEnterSceneLogic(context.Background(), sc).EnterScene(&scene_manager.EnterSceneRequest{
+	resp, err := NewEnterSceneLogic(context.Background(), sc).EnterScene(&scene_manager.EnterSceneRequest{OwnerRevision: 1,
 		PlayerId: playerID, ZoneId: 2, SceneConfId: missingConf,
 		GateZoneId: 2, GateId: "1", GateInstanceId: "gate-uuid-test",
 	})
@@ -1538,7 +1538,7 @@ func TestEnterScene_ResponseEchoesPlayerID(t *testing.T) {
 	)
 	seedSceneOnNode(mr, testZoneId, targetID, "10", "0")
 
-	ok, err := NewEnterSceneLogic(context.Background(), sc).EnterScene(&scene_manager.EnterSceneRequest{
+	ok, err := NewEnterSceneLogic(context.Background(), sc).EnterScene(&scene_manager.EnterSceneRequest{OwnerRevision: 1,
 		PlayerId: playerID, SceneId: targetID, ZoneId: testZoneId,
 		GateZoneId: testZoneId, GateId: "1", GateInstanceId: "gate-uuid-test",
 	})
@@ -1546,7 +1546,7 @@ func TestEnterScene_ResponseEchoesPlayerID(t *testing.T) {
 	require.Equal(t, uint32(0), ok.ErrorCode)
 	assert.Equal(t, playerID, ok.PlayerId)
 
-	rejected, err := NewEnterSceneLogic(context.Background(), sc).EnterScene(&scene_manager.EnterSceneRequest{
+	rejected, err := NewEnterSceneLogic(context.Background(), sc).EnterScene(&scene_manager.EnterSceneRequest{OwnerRevision: 1,
 		PlayerId: playerID, SceneId: targetID, ZoneId: testZoneId,
 		GateZoneId: testZoneId, GateId: "not-a-number", GateInstanceId: "gate-uuid-test",
 	})
@@ -1573,7 +1573,7 @@ func TestEnterScene_ResponseEchoesCorrelationID(t *testing.T) {
 	seedSceneOnNode(mr, testZoneId, targetID, "10", "0")
 
 	// 成功落点。
-	ok, err := NewEnterSceneLogic(ctx, sc).EnterScene(&scene_manager.EnterSceneRequest{
+	ok, err := NewEnterSceneLogic(ctx, sc).EnterScene(&scene_manager.EnterSceneRequest{OwnerRevision: 1,
 		PlayerId: playerID, SceneId: targetID, ZoneId: testZoneId,
 		GateZoneId: testZoneId, GateId: "1", GateInstanceId: "gate-uuid-test", CorrelationId: 7001,
 	})
@@ -1583,7 +1583,7 @@ func TestEnterScene_ResponseEchoesCorrelationID(t *testing.T) {
 	assert.Equal(t, playerID, ok.PlayerId)
 
 	// GateId 非法的提前拒绝。
-	rejected, err := NewEnterSceneLogic(ctx, sc).EnterScene(&scene_manager.EnterSceneRequest{
+	rejected, err := NewEnterSceneLogic(ctx, sc).EnterScene(&scene_manager.EnterSceneRequest{OwnerRevision: 1,
 		PlayerId: playerID, SceneId: targetID, ZoneId: testZoneId,
 		GateZoneId: testZoneId, GateId: "not-a-number", GateInstanceId: "gate-uuid-test", CorrelationId: 7002,
 	})
@@ -1593,7 +1593,7 @@ func TestEnterScene_ResponseEchoesCorrelationID(t *testing.T) {
 	assert.Equal(t, playerID, rejected.PlayerId)
 
 	// 去重:同指纹 pending → 执行中。
-	pendingReq := &scene_manager.EnterSceneRequest{
+	pendingReq := &scene_manager.EnterSceneRequest{OwnerRevision: 1,
 		PlayerId: playerID, SceneId: targetID, ZoneId: testZoneId, RequestId: "corr-echo-pending",
 	}
 	fingerprint, err := enterSceneRequestFingerprint(pendingReq)
@@ -1609,7 +1609,7 @@ func TestEnterScene_ResponseEchoesCorrelationID(t *testing.T) {
 	assert.Equal(t, playerID, inProgress.PlayerId)
 
 	// 去重:不同指纹 pending → 冲突。
-	conflictReq := &scene_manager.EnterSceneRequest{
+	conflictReq := &scene_manager.EnterSceneRequest{OwnerRevision: 1,
 		PlayerId: playerID, SceneId: targetID, ZoneId: testZoneId, RequestId: "corr-echo-conflict",
 		CorrelationId: 7004,
 	}
@@ -1630,7 +1630,7 @@ func TestEnterScene_ResponseEchoesCorrelationID(t *testing.T) {
 	redirectLogic.assignGateForZone = func(context.Context, *svc.ServiceContext, uint32, uint64) (*scene_manager.RedirectToGateInfo, error) {
 		return &scene_manager.RedirectToGateInfo{TargetGateIp: "10.2.0.8", TargetGatePort: 7001}, nil
 	}
-	redirected, err := redirectLogic.EnterScene(&scene_manager.EnterSceneRequest{
+	redirected, err := redirectLogic.EnterScene(&scene_manager.EnterSceneRequest{OwnerRevision: 1,
 		PlayerId: redirectPlayer, SceneConfId: remoteConf, ZoneId: 2, GateZoneId: testZoneId,
 		CorrelationId: 7005,
 	})
@@ -1682,7 +1682,7 @@ func TestEnterScene_CrossZoneRedirectIntoOwnZoneLeavesOwnershipUntouched(t *test
 		assert.Equal(t, uint32(2), zone)
 		return &scene_manager.RedirectToGateInfo{TargetGateIp: "10.2.0.8", TargetGatePort: 7001}, nil
 	}
-	resp, err := logic.EnterScene(&scene_manager.EnterSceneRequest{
+	resp, err := logic.EnterScene(&scene_manager.EnterSceneRequest{OwnerRevision: 1,
 		PlayerId: playerID, GateZoneId: 1, GateId: "1", GateInstanceId: "gate-uuid-test",
 	})
 	require.NoError(t, err)
@@ -1742,7 +1742,7 @@ func TestEnterScene_FreshAwaitingPlacementWithoutZoneLandsInGateZone(t *testing.
 		t.Error("等待落点 + ZoneId == 0 不应再触发跨区重定向(R8 已被 GO-5 取代)")
 		return nil, errors.New("unexpected redirect")
 	}
-	resp, err := logic.EnterScene(&scene_manager.EnterSceneRequest{
+	resp, err := logic.EnterScene(&scene_manager.EnterSceneRequest{OwnerRevision: 1,
 		PlayerId: playerID, GateZoneId: testZoneId, GateId: "1", GateInstanceId: "gate-uuid-test",
 	})
 	require.NoError(t, err)
@@ -1788,7 +1788,7 @@ func TestEnterScene_FreshAwaitingPlacementWithoutZoneRejectsUnmappedHomeZone(t *
 		t.Error("等待落点 + ZoneId == 0 不应再触发跨区重定向(R8 已被 GO-5 取代)")
 		return nil, errors.New("unexpected redirect")
 	}
-	resp, err := logic.EnterScene(&scene_manager.EnterSceneRequest{
+	resp, err := logic.EnterScene(&scene_manager.EnterSceneRequest{OwnerRevision: 1,
 		PlayerId: playerID, GateZoneId: testZoneId, GateId: "1", GateInstanceId: "gate-uuid-test",
 	})
 	require.NoError(t, err)
@@ -1846,7 +1846,7 @@ func TestEnterScene_ZeroZoneOverLocationInGateZoneBehavesLikeExplicitGateZone(t 
 			t.Error("location 就在 gate zone:不应触发跨区重定向")
 			return nil, errors.New("unexpected redirect")
 		}
-		resp, err := logic.EnterScene(&scene_manager.EnterSceneRequest{
+		resp, err := logic.EnterScene(&scene_manager.EnterSceneRequest{OwnerRevision: 1,
 			PlayerId: playerID, ZoneId: zoneID,
 			GateZoneId: testZoneId, GateId: "1", GateInstanceId: "gate-uuid-test",
 		})
@@ -1908,7 +1908,7 @@ func TestEnterScene_ExpiredAwaitingPlacementNoLongerRedirects(t *testing.T) {
 		t.Error("过期的等待落点不应再触发跨区重定向")
 		return nil, errors.New("unexpected redirect")
 	}
-	resp, err := logic.EnterScene(&scene_manager.EnterSceneRequest{
+	resp, err := logic.EnterScene(&scene_manager.EnterSceneRequest{OwnerRevision: 1,
 		PlayerId: playerID, SceneConfId: 2001,
 		GateZoneId: testZoneId, GateId: "1", GateInstanceId: "gate-uuid-test",
 	})
@@ -1931,7 +1931,7 @@ func TestEnterScene_HomeZoneUnconfiguredIsRejectedUnlessSingleZoneDeclared(t *te
 		targetID = uint64(7122)
 	)
 	seedSceneOnNode(mr, testZoneId, targetID, "10", "0")
-	req := &scene_manager.EnterSceneRequest{
+	req := &scene_manager.EnterSceneRequest{OwnerRevision: 1,
 		PlayerId: playerID, SceneId: targetID, ZoneId: testZoneId,
 		GateZoneId: testZoneId, GateId: "1", GateInstanceId: "gate-uuid-test",
 	}
@@ -1963,7 +1963,7 @@ func TestEnterScene_HomeZoneMappedIsCarriedInRouteEvent(t *testing.T) {
 	)
 	seedSceneOnNode(mr, testZoneId, targetID, "10", "0")
 
-	resp, err := NewEnterSceneLogic(context.Background(), sc).EnterScene(&scene_manager.EnterSceneRequest{
+	resp, err := NewEnterSceneLogic(context.Background(), sc).EnterScene(&scene_manager.EnterSceneRequest{OwnerRevision: 1,
 		PlayerId: playerID, SceneId: targetID, ZoneId: testZoneId,
 		GateZoneId: testZoneId, GateId: "1", GateInstanceId: "gate-uuid-test",
 	})
@@ -1993,7 +1993,7 @@ func TestEnterScene_HomeZoneUnmappedFallsBackToGateZone(t *testing.T) {
 			sc.HomeZone = &fakeHomeZoneClient{err: tc.err}
 			seedSceneOnNode(mr, testZoneId, tc.targetID, "10", "0")
 
-			resp, err := NewEnterSceneLogic(context.Background(), sc).EnterScene(&scene_manager.EnterSceneRequest{
+			resp, err := NewEnterSceneLogic(context.Background(), sc).EnterScene(&scene_manager.EnterSceneRequest{OwnerRevision: 1,
 				PlayerId: tc.playerID, SceneId: tc.targetID, ZoneId: testZoneId,
 				GateZoneId: testZoneId, GateId: "1", GateInstanceId: "gate-uuid-test",
 			})
@@ -2021,7 +2021,7 @@ func TestEnterScene_HomeZoneUnmappedSameZoneSceneSwitchStillFallsBackToGateZone(
 	seedSceneOnNode(mr, testZoneId, targetID, "10", "4")
 	require.NoError(t, UpdatePlayerLocation(context.Background(), sc, playerID, oldScene, "10", testZoneId))
 
-	resp, err := NewEnterSceneLogic(context.Background(), sc).EnterScene(&scene_manager.EnterSceneRequest{
+	resp, err := NewEnterSceneLogic(context.Background(), sc).EnterScene(&scene_manager.EnterSceneRequest{OwnerRevision: 1,
 		PlayerId: playerID, SceneId: targetID, ZoneId: testZoneId,
 		GateZoneId: testZoneId, GateId: "1", GateInstanceId: "gate-uuid-test",
 	})
@@ -2069,7 +2069,7 @@ func TestEnterScene_TravelFirstLegRejectsUnmappedHomeZoneWithoutSideEffects(t *t
 				t.Error("归属前置检查不过就不该去签目标 zone 的票据")
 				return nil, errors.New("unexpected redirect")
 			}
-			resp, err := logic.EnterScene(&scene_manager.EnterSceneRequest{
+			resp, err := logic.EnterScene(&scene_manager.EnterSceneRequest{OwnerRevision: 1,
 				PlayerId: tc.playerID, ZoneId: 2,
 				GateZoneId: 1, GateId: "1", GateInstanceId: "gate-uuid-test", RequestId: "travel-unmapped",
 			})
@@ -2114,7 +2114,7 @@ func TestEnterScene_TravelFirstLegWithMappedHomeZoneStillReleases(t *testing.T) 
 	logic.assignGateForZone = func(context.Context, *svc.ServiceContext, uint32, uint64) (*scene_manager.RedirectToGateInfo, error) {
 		return &scene_manager.RedirectToGateInfo{TargetGateIp: "10.2.0.8", TargetGatePort: 7001}, nil
 	}
-	resp, err := logic.EnterScene(&scene_manager.EnterSceneRequest{
+	resp, err := logic.EnterScene(&scene_manager.EnterSceneRequest{OwnerRevision: 1,
 		PlayerId: playerID, ZoneId: 2,
 		GateZoneId: 1, GateId: "1", GateInstanceId: "gate-uuid-test",
 	})
@@ -2143,7 +2143,7 @@ func TestEnterScene_RedirectOnlyFirstLandingDoesNotQueryHomeZone(t *testing.T) {
 	logic.assignGateForZone = func(context.Context, *svc.ServiceContext, uint32, uint64) (*scene_manager.RedirectToGateInfo, error) {
 		return &scene_manager.RedirectToGateInfo{TargetGateIp: "10.2.0.8", TargetGatePort: 7001}, nil
 	}
-	resp, err := logic.EnterScene(&scene_manager.EnterSceneRequest{
+	resp, err := logic.EnterScene(&scene_manager.EnterSceneRequest{OwnerRevision: 1,
 		PlayerId: playerID, ZoneId: 2,
 		GateZoneId: 1, GateId: "1", GateInstanceId: "gate-uuid-test",
 	})
@@ -2181,7 +2181,7 @@ func TestEnterScene_TravelSecondLegRejectsUnmappedHomeZone(t *testing.T) {
 			require.Equal(t, uint64(1), placed.epoch)
 			awaitingRaw, _ := sc.Redis.Get(getPlayerLocationKey(tc.playerID))
 
-			resp, err := NewEnterSceneLogic(context.Background(), sc).EnterScene(&scene_manager.EnterSceneRequest{
+			resp, err := NewEnterSceneLogic(context.Background(), sc).EnterScene(&scene_manager.EnterSceneRequest{OwnerRevision: 1,
 				PlayerId: tc.playerID, SceneId: tc.targetID, ZoneId: 2,
 				GateZoneId: 2, GateId: "1", GateInstanceId: "gate-uuid-test",
 			})
@@ -2218,7 +2218,7 @@ func TestEnterScene_ExpiredAwaitingPlacementStillRejectsUnmappedHomeZone(t *test
 	seedSceneOnNode(mr, testZoneId, targetID, "10", "4")
 	mr.Set(nodePlayerCountKey(testZoneId, "10"), "4")
 
-	resp, err := NewEnterSceneLogic(context.Background(), sc).EnterScene(&scene_manager.EnterSceneRequest{
+	resp, err := NewEnterSceneLogic(context.Background(), sc).EnterScene(&scene_manager.EnterSceneRequest{OwnerRevision: 1,
 		PlayerId: playerID, SceneId: targetID, ZoneId: testZoneId,
 		GateZoneId: testZoneId, GateId: "1", GateInstanceId: "gate-uuid-test",
 	})
@@ -2279,7 +2279,7 @@ func TestEnterScene_SceneDestroyedWhileEnteringIsCountedAsSceneGone(t *testing.T
 	}}
 	before := enterSceneRejectedCount(t, testZoneId, "scene_gone")
 
-	resp, err := NewEnterSceneLogic(context.Background(), sc).EnterScene(&scene_manager.EnterSceneRequest{
+	resp, err := NewEnterSceneLogic(context.Background(), sc).EnterScene(&scene_manager.EnterSceneRequest{OwnerRevision: 1,
 		PlayerId: playerID, SceneId: targetID, ZoneId: testZoneId,
 		GateZoneId: testZoneId, GateId: "1", GateInstanceId: "gate-uuid-test",
 	})
@@ -2309,7 +2309,7 @@ func TestEnterScene_HomeZoneUnavailableIsRejectedWithoutSideEffects(t *testing.T
 	seedSceneOnNode(mr, testZoneId, targetID, "10", "4")
 	mr.Set(nodePlayerCountKey(testZoneId, "10"), "4")
 
-	resp, err := NewEnterSceneLogic(context.Background(), sc).EnterScene(&scene_manager.EnterSceneRequest{
+	resp, err := NewEnterSceneLogic(context.Background(), sc).EnterScene(&scene_manager.EnterSceneRequest{OwnerRevision: 1,
 		PlayerId: playerID, SceneId: targetID, ZoneId: testZoneId,
 		GateZoneId: testZoneId, GateId: "1", GateInstanceId: "gate-uuid-test", RequestId: "home-zone-down",
 	})
@@ -2344,7 +2344,7 @@ func TestEnterScene_HomeZoneUnavailableReleasesAutoReservedChannel(t *testing.T)
 	seedSceneOnNode(mr, testZoneId, targetID, "10", "4")
 	mr.Set(nodePlayerCountKey(testZoneId, "10"), "4")
 
-	resp, err := NewEnterSceneLogic(context.Background(), sc).EnterScene(&scene_manager.EnterSceneRequest{
+	resp, err := NewEnterSceneLogic(context.Background(), sc).EnterScene(&scene_manager.EnterSceneRequest{OwnerRevision: 1,
 		PlayerId: playerID, SceneConfId: confID, ZoneId: testZoneId,
 		GateZoneId: testZoneId, GateId: "1", GateInstanceId: "gate-uuid-test",
 	})
@@ -2368,7 +2368,7 @@ func TestEnterScene_HomeZoneNotQueriedWithoutGateRoute(t *testing.T) {
 	seedSceneOnNode(mr, testZoneId, targetID, "10", "0")
 
 	// 没有 GateId 就不会发 RoutePlayerEvent,归属查询没有消费者,不该为它多一次 RPC。
-	resp, err := NewEnterSceneLogic(context.Background(), sc).EnterScene(&scene_manager.EnterSceneRequest{
+	resp, err := NewEnterSceneLogic(context.Background(), sc).EnterScene(&scene_manager.EnterSceneRequest{OwnerRevision: 1,
 		PlayerId: playerID, SceneId: targetID, ZoneId: testZoneId,
 	})
 	require.NoError(t, err)
@@ -2460,7 +2460,7 @@ func TestEnterScene_DeadOwnerAfterBarrierIsTakenOverWithoutMarker(t *testing.T) 
 	seedPlayerOnDeadNode(t, sc, mr, playerID, oldScene, targetID)
 	require.False(t, sc.Config.AllowUnsafeCrossNodeHandoff, "本用例必须跑在生产口径下")
 
-	resp, err := NewEnterSceneLogic(context.Background(), sc).EnterScene(&scene_manager.EnterSceneRequest{
+	resp, err := NewEnterSceneLogic(context.Background(), sc).EnterScene(&scene_manager.EnterSceneRequest{OwnerRevision: 1,
 		PlayerId: playerID, SceneId: targetID, ZoneId: testZoneId,
 		GateZoneId: testZoneId, GateId: "1", GateInstanceId: "gate-uuid-test",
 	})
@@ -2498,7 +2498,7 @@ func TestEnterScene_DeadOwnerTakeoverDoesNotRecreateCountOfDestroyedScene(t *tes
 	mr.Del(fmt.Sprintf(SceneNodeKeyFmt, oldScene))
 	mr.Del(fmt.Sprintf(InstancePlayerCountKey, oldScene))
 
-	resp, err := NewEnterSceneLogic(context.Background(), sc).EnterScene(&scene_manager.EnterSceneRequest{
+	resp, err := NewEnterSceneLogic(context.Background(), sc).EnterScene(&scene_manager.EnterSceneRequest{OwnerRevision: 1,
 		PlayerId: playerID, SceneId: targetID, ZoneId: testZoneId,
 		GateZoneId: testZoneId, GateId: "1", GateInstanceId: "gate-uuid-test",
 	})
@@ -2549,7 +2549,7 @@ func TestEnterScene_DeadOwnerWithinBarrierIsStillRejected(t *testing.T) {
 	markNodeDeath(sc, testZoneId, "10")
 	before, _ := sc.Redis.Get(getPlayerLocationKey(playerID))
 
-	req := &scene_manager.EnterSceneRequest{
+	req := &scene_manager.EnterSceneRequest{OwnerRevision: 1,
 		PlayerId: playerID, SceneId: targetID, ZoneId: testZoneId,
 		GateZoneId: testZoneId, GateId: "1", GateInstanceId: "gate-uuid-test",
 	}
@@ -2586,7 +2586,7 @@ func TestEnterScene_OwnerMissingFromLoadSetButStillRegisteredIsNotTakenOver(t *t
 	seedPlayerOnDeadNode(t, sc, mr, playerID, oldScene, targetID)
 	registerKnownNodeForTest(t, "SceneNodeService.rpc/still-registered-10", testZoneId, "10")
 
-	resp, err := NewEnterSceneLogic(context.Background(), sc).EnterScene(&scene_manager.EnterSceneRequest{
+	resp, err := NewEnterSceneLogic(context.Background(), sc).EnterScene(&scene_manager.EnterSceneRequest{OwnerRevision: 1,
 		PlayerId: playerID, SceneId: targetID, ZoneId: testZoneId,
 		GateZoneId: testZoneId, GateId: "1", GateInstanceId: "gate-uuid-test",
 	})
@@ -2947,7 +2947,7 @@ func TestEnterScene_CrossZoneRedirectKafkaAndRollbackFailureLeavesAwaitingPlacem
 	logic.assignGateForZone = func(context.Context, *svc.ServiceContext, uint32, uint64) (*scene_manager.RedirectToGateInfo, error) {
 		return &scene_manager.RedirectToGateInfo{TargetGateIp: "10.2.0.8", TargetGatePort: 7001}, nil
 	}
-	resp, err := logic.EnterScene(&scene_manager.EnterSceneRequest{
+	resp, err := logic.EnterScene(&scene_manager.EnterSceneRequest{OwnerRevision: 1,
 		PlayerId: playerID, ZoneId: 2,
 		GateZoneId: 1, GateId: "1", GateInstanceId: "gate-uuid-test",
 	})
@@ -2993,7 +2993,7 @@ func TestEnterScene_LoginAtSourceZoneOverUnrolledAwaitingPlacement(t *testing.T)
 		return sc, captured
 	}
 	request := func() *scene_manager.EnterSceneRequest {
-		return &scene_manager.EnterSceneRequest{
+		return &scene_manager.EnterSceneRequest{OwnerRevision: 1,
 			PlayerId: playerID, SceneId: sceneID, ZoneId: 1,
 			GateZoneId: 1, GateId: "1", GateInstanceId: "gate-uuid-test",
 		}

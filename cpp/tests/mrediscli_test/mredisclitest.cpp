@@ -146,8 +146,8 @@ TEST(HiredisLifecycleTest, DestructorRemovesActiveChannelBeforeEventLoopDestruct
 		// 不运行 loop,故意让 Hiredis 在 Channel 仍注册时析构。
 		// 回归点是 redisAsyncFree -> ev.cleanup 必须先注销 Channel,
 		// 不能触发旧析构顺序的 active-channel 断言。
-		hiredis::Hiredis client(&loop, serverAddr);
-		client.connect();
+		auto client = hiredis::Hiredis::Create(&loop, serverAddr);
+		client->connect();
 	}
 	SUCCEED();
 }
@@ -159,33 +159,37 @@ TEST(HiredisAsyncTest, SaveAndLoadProtobuf)
     EventLoop loop;
 
     InetAddress serverAddr("127.0.0.1", 6379);
-    hiredis::Hiredis hiredis(&loop, serverAddr);
+    auto client = hiredis::Hiredis::Create(&loop, serverAddr);
 
-    hiredis.setConnectCallback(savePbConnectCallback);
-    hiredis.setDisconnectCallback(disconnectCallback);
-    hiredis.connect();
+    client->setConnectCallback(savePbConnectCallback);
+    client->setDisconnectCallback(disconnectCallback);
+    client->connect();
 
     std::string key = "luhailong0000000";
 
     // 1) 延迟 2s 后将 LoginRequest 序列化后 SET 到 Redis
     LoginRequest save_message;
-    loop.runAfter(2,[&hiredis, &key, &save_message]() ->void
-    {        
+    loop.runAfter(2,[weakClient = std::weak_ptr<hiredis::Hiredis>(client), &key, &save_message]() ->void
+    {
+        const auto client = weakClient.lock();
+        if (!client) return;
         save_message.set_account("luhailon g111");
         save_message.set_password("12 3");
         MessageCachedArray message_cached_array(save_message.ByteSizeLong());
         save_message.SerializeWithCachedSizesToArray(message_cached_array.data());
-        hiredis.command(std::bind(savePbCallback, _1, _2, save_message), "SET %b %b", key.c_str(), key.length(),
+        client->command(std::bind(savePbCallback, _1, _2, save_message), "SET %b %b", key.c_str(), key.length(),
             message_cached_array.data(),
             message_cached_array.size());
     });
     // 2) 延迟 3s 后从 Redis GET 并反序列化
     LoginRequest load_message;
-    loop.runAfter(3, [&hiredis, &key, &load_message]() ->void
+    loop.runAfter(3, [weakClient = std::weak_ptr<hiredis::Hiredis>(client), &key, &load_message]() ->void
     {
+        const auto client = weakClient.lock();
+        if (!client) return;
         LoginRequest load_message;
         std::string format = std::string("GET ") + key; 
-        hiredis.command(std::bind(loadPbCallback, _1, _2, load_message), format.c_str());
+        client->command(std::bind(loadPbCallback, _1, _2, load_message), format.c_str());
     });
    
     loop.loop();
@@ -202,28 +206,34 @@ TEST(HiredisAsyncTest, BasicCommands)
     EventLoop loop;
 
     InetAddress serverAddr("127.0.0.1", 6379);
-    hiredis::Hiredis hiredis(&loop, serverAddr);
+    auto client = hiredis::Hiredis::Create(&loop, serverAddr);
 
-    hiredis.setConnectCallback(connectCallback);
-    hiredis.setDisconnectCallback(disconnectCallback);
-    hiredis.connect();
+    client->setConnectCallback(connectCallback);
+    client->setDisconnectCallback(disconnectCallback);
+    client->connect();
 
-    //hiredis.ping();
-    loop.runEvery(1.0, std::bind(&hiredis::Hiredis::ping, &hiredis));
+    const std::weak_ptr<hiredis::Hiredis> weakClient = client;
+    loop.runEvery(1.0, [weakClient]
+    {
+        if (const auto client = weakClient.lock()) client->ping();
+    });
 
-    hiredis.command(timeCallback, "time");
+    client->command(timeCallback, "time");
 
     string hi = "hi";
-    hiredis.command(std::bind(echoCallback, _1, _2, &hi), "echo %s", hi.c_str());
-    loop.runEvery(2.0, std::bind(echo, &hiredis, &hi));
+    client->command(std::bind(echoCallback, _1, _2, &hi), "echo %s", hi.c_str());
+    loop.runEvery(2.0, [weakClient, &hi]
+    {
+        if (const auto client = weakClient.lock()) echo(client.get(), &hi);
+    });
 
-    hiredis.command(dbsizeCallback, "dbsize");
+    client->command(dbsizeCallback, "dbsize");
 
     uint16_t index = 8;
-    hiredis.command(std::bind(selectCallback, _1, _2, &index), "select %d", index);
+    client->command(std::bind(selectCallback, _1, _2, &index), "select %d", index);
 
     string password = "password";
-    hiredis.command(std::bind(authCallback, _1, _2, &password), "auth %s", password.c_str());
+    client->command(std::bind(authCallback, _1, _2, &password), "auth %s", password.c_str());
 
     loop.loop();
 }

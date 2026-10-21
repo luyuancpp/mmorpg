@@ -23,8 +23,8 @@ type Config struct {
 	PlayerLocatorRpc   zrpc.RpcClientConf `json:"PlayerLocatorRpc"` // player_locator gRPC client
 	SceneManagerRpc    zrpc.RpcClientConf `json:"SceneManagerRpc"`  // scene_manager gRPC client
 	// DataServiceRpc 是 data_service 的 gRPC 客户端(etcd 发现,Key=dataservice.rpc)。
-	// login 目前只用它领 PlayerId 号段(AllocateIdSegment);IdSegment.Enabled=false 时
-	// 根本不拨号,所以标 optional —— 但 Enabled=true 而这块缺失会在启动时明确拒绝。
+	// 全局账号目录、PlayerId号段、home_zone与名字登记共用。保留 optional 便于旧配置
+	// 报明确的域不可用；未配置时账号目录 fail-closed，不使用 Redis 权威替身。
 	DataServiceRpc zrpc.RpcClientConf `json:"DataServiceRpc,optional"`
 	// IdSegment 控制 PlayerId 的号段发号(docs/design/node-id-overhaul-plan-20260908.md §6)。
 	// 字段语义见 shared/idsegment.Conf。**没写这块 = 号段关闭 = 纯 snowflake 老路径**,
@@ -569,8 +569,8 @@ type LockerConf struct {
 // AccountConf holds account-related settings.
 type AccountConf struct {
 	MaxDevicesPerAccount int64         `json:"MaxDevicesPerAccount"`
-	MaxPlayersPerAccount int           `json:"MaxPlayersPerAccount,default=5"`
-	CacheExpire          time.Duration `json:"CacheExpire,optional"` // 已弃用，仅兼容旧配置；账号目录不设 TTL。
+	MaxPlayersPerAccount int           `json:"MaxPlayersPerAccount,default=5"` // 已弃用的zone副本；真正上限由data_service.AccountDirectory决定。
+	CacheExpire          time.Duration `json:"CacheExpire,optional"`           // 已弃用，仅兼容旧配置；账号目录不设 TTL。
 }
 
 // RegistryConf holds service registry/discovery settings.

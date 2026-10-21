@@ -672,8 +672,8 @@ func TestCreatePlayer_SeedErrorDoesNotFailCreate(t *testing.T) {
 	if players := storedPlayers(t, h.ctx, h.rdb); len(players) != 1 || players[0].GetPlayerId() != hzPlayerID {
 		t.Fatalf("persisted players = %v, want exactly player %d", players, hzPlayerID)
 	}
-	if got, err := h.rdb.Get(h.ctx, constants.PlayerToAccountKey(hzPlayerID)).Result(); err != nil || got != hzAccount {
-		t.Fatalf("reverse mapping = %q/%v, want %q", got, err, hzAccount)
+	if owned, err := h.l.svcCtx.AccountDirectory.Lookup(h.ctx, hzPlayerID); err != nil || owned.Account != hzAccount {
+		t.Fatalf("SQL ownership = %v/%v, want %q", owned, err, hzAccount)
 	}
 	if got := seedCount(t, "error") - before; got != 1 {
 		t.Fatalf("seed_total{error} delta = %v, want 1", got)

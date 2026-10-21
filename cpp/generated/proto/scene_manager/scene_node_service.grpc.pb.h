@@ -90,6 +90,14 @@ class SceneNodeGrpc final {
     std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::Empty>> PrepareAsyncCancelBattlePrepare(::grpc::ClientContext* context, const ::CancelBattlePrepareRequest& request, ::grpc::CompletionQueue* cq) {
       return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::Empty>>(PrepareAsyncCancelBattlePrepareRaw(context, request, cq));
     }
+    // 返回仅表示原世代封存已采纳；排空和严格双表持久证明另经DataService.AckRoleTradeDrain提交。
+    virtual ::grpc::Status SealAccountRoleTrade(::grpc::ClientContext* context, const ::SealAccountRoleTradeRequest& request, ::Empty* response) = 0;
+    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::Empty>> AsyncSealAccountRoleTrade(::grpc::ClientContext* context, const ::SealAccountRoleTradeRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::Empty>>(AsyncSealAccountRoleTradeRaw(context, request, cq));
+    }
+    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::Empty>> PrepareAsyncSealAccountRoleTrade(::grpc::ClientContext* context, const ::SealAccountRoleTradeRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::Empty>>(PrepareAsyncSealAccountRoleTradeRaw(context, request, cq));
+    }
     // ---- 通用资产通道(docs/design/guild-phase2/04-asset-channel.md §S4)----
     // 结局写在 response.outcome;gRPC status 恒为 OK。同 seq 重复调用只读答复。
     virtual ::grpc::Status AssetDebit(::grpc::ClientContext* context, const ::AssetOpRequest& request, ::AssetOpResponse* response) = 0;
@@ -151,6 +159,9 @@ class SceneNodeGrpc final {
       // gather 失败的逐人回滚:battle_id 匹配才解冻,迟到/重复取消幂等忽略。
       virtual void CancelBattlePrepare(::grpc::ClientContext* context, const ::CancelBattlePrepareRequest* request, ::Empty* response, std::function<void(::grpc::Status)>) = 0;
       virtual void CancelBattlePrepare(::grpc::ClientContext* context, const ::CancelBattlePrepareRequest* request, ::Empty* response, ::grpc::ClientUnaryReactor* reactor) = 0;
+      // 返回仅表示原世代封存已采纳；排空和严格双表持久证明另经DataService.AckRoleTradeDrain提交。
+      virtual void SealAccountRoleTrade(::grpc::ClientContext* context, const ::SealAccountRoleTradeRequest* request, ::Empty* response, std::function<void(::grpc::Status)>) = 0;
+      virtual void SealAccountRoleTrade(::grpc::ClientContext* context, const ::SealAccountRoleTradeRequest* request, ::Empty* response, ::grpc::ClientUnaryReactor* reactor) = 0;
       // ---- 通用资产通道(docs/design/guild-phase2/04-asset-channel.md §S4)----
       // 结局写在 response.outcome;gRPC status 恒为 OK。同 seq 重复调用只读答复。
       virtual void AssetDebit(::grpc::ClientContext* context, const ::AssetOpRequest* request, ::AssetOpResponse* response, std::function<void(::grpc::Status)>) = 0;
@@ -178,6 +189,8 @@ class SceneNodeGrpc final {
     virtual ::grpc::ClientAsyncResponseReaderInterface< ::PrepareBattleResponse>* PrepareAsyncPrepareBattleRaw(::grpc::ClientContext* context, const ::PrepareBattleRequest& request, ::grpc::CompletionQueue* cq) = 0;
     virtual ::grpc::ClientAsyncResponseReaderInterface< ::Empty>* AsyncCancelBattlePrepareRaw(::grpc::ClientContext* context, const ::CancelBattlePrepareRequest& request, ::grpc::CompletionQueue* cq) = 0;
     virtual ::grpc::ClientAsyncResponseReaderInterface< ::Empty>* PrepareAsyncCancelBattlePrepareRaw(::grpc::ClientContext* context, const ::CancelBattlePrepareRequest& request, ::grpc::CompletionQueue* cq) = 0;
+    virtual ::grpc::ClientAsyncResponseReaderInterface< ::Empty>* AsyncSealAccountRoleTradeRaw(::grpc::ClientContext* context, const ::SealAccountRoleTradeRequest& request, ::grpc::CompletionQueue* cq) = 0;
+    virtual ::grpc::ClientAsyncResponseReaderInterface< ::Empty>* PrepareAsyncSealAccountRoleTradeRaw(::grpc::ClientContext* context, const ::SealAccountRoleTradeRequest& request, ::grpc::CompletionQueue* cq) = 0;
     virtual ::grpc::ClientAsyncResponseReaderInterface< ::AssetOpResponse>* AsyncAssetDebitRaw(::grpc::ClientContext* context, const ::AssetOpRequest& request, ::grpc::CompletionQueue* cq) = 0;
     virtual ::grpc::ClientAsyncResponseReaderInterface< ::AssetOpResponse>* PrepareAsyncAssetDebitRaw(::grpc::ClientContext* context, const ::AssetOpRequest& request, ::grpc::CompletionQueue* cq) = 0;
     virtual ::grpc::ClientAsyncResponseReaderInterface< ::AssetOpResponse>* AsyncAssetAbortDebitRaw(::grpc::ClientContext* context, const ::AssetOpRequest& request, ::grpc::CompletionQueue* cq) = 0;
@@ -225,6 +238,13 @@ class SceneNodeGrpc final {
     std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::Empty>> PrepareAsyncCancelBattlePrepare(::grpc::ClientContext* context, const ::CancelBattlePrepareRequest& request, ::grpc::CompletionQueue* cq) {
       return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::Empty>>(PrepareAsyncCancelBattlePrepareRaw(context, request, cq));
     }
+    ::grpc::Status SealAccountRoleTrade(::grpc::ClientContext* context, const ::SealAccountRoleTradeRequest& request, ::Empty* response) override;
+    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::Empty>> AsyncSealAccountRoleTrade(::grpc::ClientContext* context, const ::SealAccountRoleTradeRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::Empty>>(AsyncSealAccountRoleTradeRaw(context, request, cq));
+    }
+    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::Empty>> PrepareAsyncSealAccountRoleTrade(::grpc::ClientContext* context, const ::SealAccountRoleTradeRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::Empty>>(PrepareAsyncSealAccountRoleTradeRaw(context, request, cq));
+    }
     ::grpc::Status AssetDebit(::grpc::ClientContext* context, const ::AssetOpRequest& request, ::AssetOpResponse* response) override;
     std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::AssetOpResponse>> AsyncAssetDebit(::grpc::ClientContext* context, const ::AssetOpRequest& request, ::grpc::CompletionQueue* cq) {
       return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::AssetOpResponse>>(AsyncAssetDebitRaw(context, request, cq));
@@ -266,6 +286,8 @@ class SceneNodeGrpc final {
       void PrepareBattle(::grpc::ClientContext* context, const ::PrepareBattleRequest* request, ::PrepareBattleResponse* response, ::grpc::ClientUnaryReactor* reactor) override;
       void CancelBattlePrepare(::grpc::ClientContext* context, const ::CancelBattlePrepareRequest* request, ::Empty* response, std::function<void(::grpc::Status)>) override;
       void CancelBattlePrepare(::grpc::ClientContext* context, const ::CancelBattlePrepareRequest* request, ::Empty* response, ::grpc::ClientUnaryReactor* reactor) override;
+      void SealAccountRoleTrade(::grpc::ClientContext* context, const ::SealAccountRoleTradeRequest* request, ::Empty* response, std::function<void(::grpc::Status)>) override;
+      void SealAccountRoleTrade(::grpc::ClientContext* context, const ::SealAccountRoleTradeRequest* request, ::Empty* response, ::grpc::ClientUnaryReactor* reactor) override;
       void AssetDebit(::grpc::ClientContext* context, const ::AssetOpRequest* request, ::AssetOpResponse* response, std::function<void(::grpc::Status)>) override;
       void AssetDebit(::grpc::ClientContext* context, const ::AssetOpRequest* request, ::AssetOpResponse* response, ::grpc::ClientUnaryReactor* reactor) override;
       void AssetAbortDebit(::grpc::ClientContext* context, const ::AssetOpRequest* request, ::AssetOpResponse* response, std::function<void(::grpc::Status)>) override;
@@ -295,6 +317,8 @@ class SceneNodeGrpc final {
     ::grpc::ClientAsyncResponseReader< ::PrepareBattleResponse>* PrepareAsyncPrepareBattleRaw(::grpc::ClientContext* context, const ::PrepareBattleRequest& request, ::grpc::CompletionQueue* cq) override;
     ::grpc::ClientAsyncResponseReader< ::Empty>* AsyncCancelBattlePrepareRaw(::grpc::ClientContext* context, const ::CancelBattlePrepareRequest& request, ::grpc::CompletionQueue* cq) override;
     ::grpc::ClientAsyncResponseReader< ::Empty>* PrepareAsyncCancelBattlePrepareRaw(::grpc::ClientContext* context, const ::CancelBattlePrepareRequest& request, ::grpc::CompletionQueue* cq) override;
+    ::grpc::ClientAsyncResponseReader< ::Empty>* AsyncSealAccountRoleTradeRaw(::grpc::ClientContext* context, const ::SealAccountRoleTradeRequest& request, ::grpc::CompletionQueue* cq) override;
+    ::grpc::ClientAsyncResponseReader< ::Empty>* PrepareAsyncSealAccountRoleTradeRaw(::grpc::ClientContext* context, const ::SealAccountRoleTradeRequest& request, ::grpc::CompletionQueue* cq) override;
     ::grpc::ClientAsyncResponseReader< ::AssetOpResponse>* AsyncAssetDebitRaw(::grpc::ClientContext* context, const ::AssetOpRequest& request, ::grpc::CompletionQueue* cq) override;
     ::grpc::ClientAsyncResponseReader< ::AssetOpResponse>* PrepareAsyncAssetDebitRaw(::grpc::ClientContext* context, const ::AssetOpRequest& request, ::grpc::CompletionQueue* cq) override;
     ::grpc::ClientAsyncResponseReader< ::AssetOpResponse>* AsyncAssetAbortDebitRaw(::grpc::ClientContext* context, const ::AssetOpRequest& request, ::grpc::CompletionQueue* cq) override;
@@ -308,6 +332,7 @@ class SceneNodeGrpc final {
     const ::grpc::internal::RpcMethod rpcmethod_ReleasePlayer_;
     const ::grpc::internal::RpcMethod rpcmethod_PrepareBattle_;
     const ::grpc::internal::RpcMethod rpcmethod_CancelBattlePrepare_;
+    const ::grpc::internal::RpcMethod rpcmethod_SealAccountRoleTrade_;
     const ::grpc::internal::RpcMethod rpcmethod_AssetDebit_;
     const ::grpc::internal::RpcMethod rpcmethod_AssetAbortDebit_;
     const ::grpc::internal::RpcMethod rpcmethod_AssetCredit_;
@@ -340,6 +365,8 @@ class SceneNodeGrpc final {
     virtual ::grpc::Status PrepareBattle(::grpc::ServerContext* context, const ::PrepareBattleRequest* request, ::PrepareBattleResponse* response);
     // gather 失败的逐人回滚:battle_id 匹配才解冻,迟到/重复取消幂等忽略。
     virtual ::grpc::Status CancelBattlePrepare(::grpc::ServerContext* context, const ::CancelBattlePrepareRequest* request, ::Empty* response);
+    // 返回仅表示原世代封存已采纳；排空和严格双表持久证明另经DataService.AckRoleTradeDrain提交。
+    virtual ::grpc::Status SealAccountRoleTrade(::grpc::ServerContext* context, const ::SealAccountRoleTradeRequest* request, ::Empty* response);
     // ---- 通用资产通道(docs/design/guild-phase2/04-asset-channel.md §S4)----
     // 结局写在 response.outcome;gRPC status 恒为 OK。同 seq 重复调用只读答复。
     virtual ::grpc::Status AssetDebit(::grpc::ServerContext* context, const ::AssetOpRequest* request, ::AssetOpResponse* response);
@@ -450,12 +477,32 @@ class SceneNodeGrpc final {
     }
   };
   template <class BaseClass>
+  class WithAsyncMethod_SealAccountRoleTrade : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithAsyncMethod_SealAccountRoleTrade() {
+      ::grpc::Service::MarkMethodAsync(5);
+    }
+    ~WithAsyncMethod_SealAccountRoleTrade() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status SealAccountRoleTrade(::grpc::ServerContext* /*context*/, const ::SealAccountRoleTradeRequest* /*request*/, ::Empty* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    void RequestSealAccountRoleTrade(::grpc::ServerContext* context, ::SealAccountRoleTradeRequest* request, ::grpc::ServerAsyncResponseWriter< ::Empty>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
+      ::grpc::Service::RequestAsyncUnary(5, context, request, response, new_call_cq, notification_cq, tag);
+    }
+  };
+  template <class BaseClass>
   class WithAsyncMethod_AssetDebit : public BaseClass {
    private:
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithAsyncMethod_AssetDebit() {
-      ::grpc::Service::MarkMethodAsync(5);
+      ::grpc::Service::MarkMethodAsync(6);
     }
     ~WithAsyncMethod_AssetDebit() override {
       BaseClassMustBeDerivedFromService(this);
@@ -466,7 +513,7 @@ class SceneNodeGrpc final {
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
     void RequestAssetDebit(::grpc::ServerContext* context, ::AssetOpRequest* request, ::grpc::ServerAsyncResponseWriter< ::AssetOpResponse>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
-      ::grpc::Service::RequestAsyncUnary(5, context, request, response, new_call_cq, notification_cq, tag);
+      ::grpc::Service::RequestAsyncUnary(6, context, request, response, new_call_cq, notification_cq, tag);
     }
   };
   template <class BaseClass>
@@ -475,7 +522,7 @@ class SceneNodeGrpc final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithAsyncMethod_AssetAbortDebit() {
-      ::grpc::Service::MarkMethodAsync(6);
+      ::grpc::Service::MarkMethodAsync(7);
     }
     ~WithAsyncMethod_AssetAbortDebit() override {
       BaseClassMustBeDerivedFromService(this);
@@ -486,7 +533,7 @@ class SceneNodeGrpc final {
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
     void RequestAssetAbortDebit(::grpc::ServerContext* context, ::AssetOpRequest* request, ::grpc::ServerAsyncResponseWriter< ::AssetOpResponse>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
-      ::grpc::Service::RequestAsyncUnary(6, context, request, response, new_call_cq, notification_cq, tag);
+      ::grpc::Service::RequestAsyncUnary(7, context, request, response, new_call_cq, notification_cq, tag);
     }
   };
   template <class BaseClass>
@@ -495,7 +542,7 @@ class SceneNodeGrpc final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithAsyncMethod_AssetCredit() {
-      ::grpc::Service::MarkMethodAsync(7);
+      ::grpc::Service::MarkMethodAsync(8);
     }
     ~WithAsyncMethod_AssetCredit() override {
       BaseClassMustBeDerivedFromService(this);
@@ -506,7 +553,7 @@ class SceneNodeGrpc final {
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
     void RequestAssetCredit(::grpc::ServerContext* context, ::AssetOpRequest* request, ::grpc::ServerAsyncResponseWriter< ::AssetOpResponse>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
-      ::grpc::Service::RequestAsyncUnary(7, context, request, response, new_call_cq, notification_cq, tag);
+      ::grpc::Service::RequestAsyncUnary(8, context, request, response, new_call_cq, notification_cq, tag);
     }
   };
   template <class BaseClass>
@@ -515,7 +562,7 @@ class SceneNodeGrpc final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithAsyncMethod_AssetAckReceipt() {
-      ::grpc::Service::MarkMethodAsync(8);
+      ::grpc::Service::MarkMethodAsync(9);
     }
     ~WithAsyncMethod_AssetAckReceipt() override {
       BaseClassMustBeDerivedFromService(this);
@@ -526,10 +573,10 @@ class SceneNodeGrpc final {
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
     void RequestAssetAckReceipt(::grpc::ServerContext* context, ::AssetOpRequest* request, ::grpc::ServerAsyncResponseWriter< ::AssetOpResponse>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
-      ::grpc::Service::RequestAsyncUnary(8, context, request, response, new_call_cq, notification_cq, tag);
+      ::grpc::Service::RequestAsyncUnary(9, context, request, response, new_call_cq, notification_cq, tag);
     }
   };
-  typedef WithAsyncMethod_CreateScene<WithAsyncMethod_DestroyScene<WithAsyncMethod_ReleasePlayer<WithAsyncMethod_PrepareBattle<WithAsyncMethod_CancelBattlePrepare<WithAsyncMethod_AssetDebit<WithAsyncMethod_AssetAbortDebit<WithAsyncMethod_AssetCredit<WithAsyncMethod_AssetAckReceipt<Service > > > > > > > > > AsyncService;
+  typedef WithAsyncMethod_CreateScene<WithAsyncMethod_DestroyScene<WithAsyncMethod_ReleasePlayer<WithAsyncMethod_PrepareBattle<WithAsyncMethod_CancelBattlePrepare<WithAsyncMethod_SealAccountRoleTrade<WithAsyncMethod_AssetDebit<WithAsyncMethod_AssetAbortDebit<WithAsyncMethod_AssetCredit<WithAsyncMethod_AssetAckReceipt<Service > > > > > > > > > > AsyncService;
   template <class BaseClass>
   class WithCallbackMethod_CreateScene : public BaseClass {
    private:
@@ -666,18 +713,45 @@ class SceneNodeGrpc final {
       ::grpc::CallbackServerContext* /*context*/, const ::CancelBattlePrepareRequest* /*request*/, ::Empty* /*response*/)  { return nullptr; }
   };
   template <class BaseClass>
+  class WithCallbackMethod_SealAccountRoleTrade : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithCallbackMethod_SealAccountRoleTrade() {
+      ::grpc::Service::MarkMethodCallback(5,
+          new ::grpc::internal::CallbackUnaryHandler< ::SealAccountRoleTradeRequest, ::Empty>(
+            [this](
+                   ::grpc::CallbackServerContext* context, const ::SealAccountRoleTradeRequest* request, ::Empty* response) { return this->SealAccountRoleTrade(context, request, response); }));}
+    void SetMessageAllocatorFor_SealAccountRoleTrade(
+        ::grpc::MessageAllocator< ::SealAccountRoleTradeRequest, ::Empty>* allocator) {
+      ::grpc::internal::MethodHandler* const handler = ::grpc::Service::GetHandler(5);
+      static_cast<::grpc::internal::CallbackUnaryHandler< ::SealAccountRoleTradeRequest, ::Empty>*>(handler)
+              ->SetMessageAllocator(allocator);
+    }
+    ~WithCallbackMethod_SealAccountRoleTrade() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status SealAccountRoleTrade(::grpc::ServerContext* /*context*/, const ::SealAccountRoleTradeRequest* /*request*/, ::Empty* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    virtual ::grpc::ServerUnaryReactor* SealAccountRoleTrade(
+      ::grpc::CallbackServerContext* /*context*/, const ::SealAccountRoleTradeRequest* /*request*/, ::Empty* /*response*/)  { return nullptr; }
+  };
+  template <class BaseClass>
   class WithCallbackMethod_AssetDebit : public BaseClass {
    private:
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithCallbackMethod_AssetDebit() {
-      ::grpc::Service::MarkMethodCallback(5,
+      ::grpc::Service::MarkMethodCallback(6,
           new ::grpc::internal::CallbackUnaryHandler< ::AssetOpRequest, ::AssetOpResponse>(
             [this](
                    ::grpc::CallbackServerContext* context, const ::AssetOpRequest* request, ::AssetOpResponse* response) { return this->AssetDebit(context, request, response); }));}
     void SetMessageAllocatorFor_AssetDebit(
         ::grpc::MessageAllocator< ::AssetOpRequest, ::AssetOpResponse>* allocator) {
-      ::grpc::internal::MethodHandler* const handler = ::grpc::Service::GetHandler(5);
+      ::grpc::internal::MethodHandler* const handler = ::grpc::Service::GetHandler(6);
       static_cast<::grpc::internal::CallbackUnaryHandler< ::AssetOpRequest, ::AssetOpResponse>*>(handler)
               ->SetMessageAllocator(allocator);
     }
@@ -698,13 +772,13 @@ class SceneNodeGrpc final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithCallbackMethod_AssetAbortDebit() {
-      ::grpc::Service::MarkMethodCallback(6,
+      ::grpc::Service::MarkMethodCallback(7,
           new ::grpc::internal::CallbackUnaryHandler< ::AssetOpRequest, ::AssetOpResponse>(
             [this](
                    ::grpc::CallbackServerContext* context, const ::AssetOpRequest* request, ::AssetOpResponse* response) { return this->AssetAbortDebit(context, request, response); }));}
     void SetMessageAllocatorFor_AssetAbortDebit(
         ::grpc::MessageAllocator< ::AssetOpRequest, ::AssetOpResponse>* allocator) {
-      ::grpc::internal::MethodHandler* const handler = ::grpc::Service::GetHandler(6);
+      ::grpc::internal::MethodHandler* const handler = ::grpc::Service::GetHandler(7);
       static_cast<::grpc::internal::CallbackUnaryHandler< ::AssetOpRequest, ::AssetOpResponse>*>(handler)
               ->SetMessageAllocator(allocator);
     }
@@ -725,13 +799,13 @@ class SceneNodeGrpc final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithCallbackMethod_AssetCredit() {
-      ::grpc::Service::MarkMethodCallback(7,
+      ::grpc::Service::MarkMethodCallback(8,
           new ::grpc::internal::CallbackUnaryHandler< ::AssetOpRequest, ::AssetOpResponse>(
             [this](
                    ::grpc::CallbackServerContext* context, const ::AssetOpRequest* request, ::AssetOpResponse* response) { return this->AssetCredit(context, request, response); }));}
     void SetMessageAllocatorFor_AssetCredit(
         ::grpc::MessageAllocator< ::AssetOpRequest, ::AssetOpResponse>* allocator) {
-      ::grpc::internal::MethodHandler* const handler = ::grpc::Service::GetHandler(7);
+      ::grpc::internal::MethodHandler* const handler = ::grpc::Service::GetHandler(8);
       static_cast<::grpc::internal::CallbackUnaryHandler< ::AssetOpRequest, ::AssetOpResponse>*>(handler)
               ->SetMessageAllocator(allocator);
     }
@@ -752,13 +826,13 @@ class SceneNodeGrpc final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithCallbackMethod_AssetAckReceipt() {
-      ::grpc::Service::MarkMethodCallback(8,
+      ::grpc::Service::MarkMethodCallback(9,
           new ::grpc::internal::CallbackUnaryHandler< ::AssetOpRequest, ::AssetOpResponse>(
             [this](
                    ::grpc::CallbackServerContext* context, const ::AssetOpRequest* request, ::AssetOpResponse* response) { return this->AssetAckReceipt(context, request, response); }));}
     void SetMessageAllocatorFor_AssetAckReceipt(
         ::grpc::MessageAllocator< ::AssetOpRequest, ::AssetOpResponse>* allocator) {
-      ::grpc::internal::MethodHandler* const handler = ::grpc::Service::GetHandler(8);
+      ::grpc::internal::MethodHandler* const handler = ::grpc::Service::GetHandler(9);
       static_cast<::grpc::internal::CallbackUnaryHandler< ::AssetOpRequest, ::AssetOpResponse>*>(handler)
               ->SetMessageAllocator(allocator);
     }
@@ -773,7 +847,7 @@ class SceneNodeGrpc final {
     virtual ::grpc::ServerUnaryReactor* AssetAckReceipt(
       ::grpc::CallbackServerContext* /*context*/, const ::AssetOpRequest* /*request*/, ::AssetOpResponse* /*response*/)  { return nullptr; }
   };
-  typedef WithCallbackMethod_CreateScene<WithCallbackMethod_DestroyScene<WithCallbackMethod_ReleasePlayer<WithCallbackMethod_PrepareBattle<WithCallbackMethod_CancelBattlePrepare<WithCallbackMethod_AssetDebit<WithCallbackMethod_AssetAbortDebit<WithCallbackMethod_AssetCredit<WithCallbackMethod_AssetAckReceipt<Service > > > > > > > > > CallbackService;
+  typedef WithCallbackMethod_CreateScene<WithCallbackMethod_DestroyScene<WithCallbackMethod_ReleasePlayer<WithCallbackMethod_PrepareBattle<WithCallbackMethod_CancelBattlePrepare<WithCallbackMethod_SealAccountRoleTrade<WithCallbackMethod_AssetDebit<WithCallbackMethod_AssetAbortDebit<WithCallbackMethod_AssetCredit<WithCallbackMethod_AssetAckReceipt<Service > > > > > > > > > > CallbackService;
   typedef CallbackService ExperimentalCallbackService;
   template <class BaseClass>
   class WithGenericMethod_CreateScene : public BaseClass {
@@ -861,12 +935,29 @@ class SceneNodeGrpc final {
     }
   };
   template <class BaseClass>
+  class WithGenericMethod_SealAccountRoleTrade : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithGenericMethod_SealAccountRoleTrade() {
+      ::grpc::Service::MarkMethodGeneric(5);
+    }
+    ~WithGenericMethod_SealAccountRoleTrade() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status SealAccountRoleTrade(::grpc::ServerContext* /*context*/, const ::SealAccountRoleTradeRequest* /*request*/, ::Empty* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+  };
+  template <class BaseClass>
   class WithGenericMethod_AssetDebit : public BaseClass {
    private:
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithGenericMethod_AssetDebit() {
-      ::grpc::Service::MarkMethodGeneric(5);
+      ::grpc::Service::MarkMethodGeneric(6);
     }
     ~WithGenericMethod_AssetDebit() override {
       BaseClassMustBeDerivedFromService(this);
@@ -883,7 +974,7 @@ class SceneNodeGrpc final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithGenericMethod_AssetAbortDebit() {
-      ::grpc::Service::MarkMethodGeneric(6);
+      ::grpc::Service::MarkMethodGeneric(7);
     }
     ~WithGenericMethod_AssetAbortDebit() override {
       BaseClassMustBeDerivedFromService(this);
@@ -900,7 +991,7 @@ class SceneNodeGrpc final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithGenericMethod_AssetCredit() {
-      ::grpc::Service::MarkMethodGeneric(7);
+      ::grpc::Service::MarkMethodGeneric(8);
     }
     ~WithGenericMethod_AssetCredit() override {
       BaseClassMustBeDerivedFromService(this);
@@ -917,7 +1008,7 @@ class SceneNodeGrpc final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithGenericMethod_AssetAckReceipt() {
-      ::grpc::Service::MarkMethodGeneric(8);
+      ::grpc::Service::MarkMethodGeneric(9);
     }
     ~WithGenericMethod_AssetAckReceipt() override {
       BaseClassMustBeDerivedFromService(this);
@@ -1029,12 +1120,32 @@ class SceneNodeGrpc final {
     }
   };
   template <class BaseClass>
+  class WithRawMethod_SealAccountRoleTrade : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithRawMethod_SealAccountRoleTrade() {
+      ::grpc::Service::MarkMethodRaw(5);
+    }
+    ~WithRawMethod_SealAccountRoleTrade() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status SealAccountRoleTrade(::grpc::ServerContext* /*context*/, const ::SealAccountRoleTradeRequest* /*request*/, ::Empty* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    void RequestSealAccountRoleTrade(::grpc::ServerContext* context, ::grpc::ByteBuffer* request, ::grpc::ServerAsyncResponseWriter< ::grpc::ByteBuffer>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
+      ::grpc::Service::RequestAsyncUnary(5, context, request, response, new_call_cq, notification_cq, tag);
+    }
+  };
+  template <class BaseClass>
   class WithRawMethod_AssetDebit : public BaseClass {
    private:
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithRawMethod_AssetDebit() {
-      ::grpc::Service::MarkMethodRaw(5);
+      ::grpc::Service::MarkMethodRaw(6);
     }
     ~WithRawMethod_AssetDebit() override {
       BaseClassMustBeDerivedFromService(this);
@@ -1045,7 +1156,7 @@ class SceneNodeGrpc final {
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
     void RequestAssetDebit(::grpc::ServerContext* context, ::grpc::ByteBuffer* request, ::grpc::ServerAsyncResponseWriter< ::grpc::ByteBuffer>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
-      ::grpc::Service::RequestAsyncUnary(5, context, request, response, new_call_cq, notification_cq, tag);
+      ::grpc::Service::RequestAsyncUnary(6, context, request, response, new_call_cq, notification_cq, tag);
     }
   };
   template <class BaseClass>
@@ -1054,7 +1165,7 @@ class SceneNodeGrpc final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithRawMethod_AssetAbortDebit() {
-      ::grpc::Service::MarkMethodRaw(6);
+      ::grpc::Service::MarkMethodRaw(7);
     }
     ~WithRawMethod_AssetAbortDebit() override {
       BaseClassMustBeDerivedFromService(this);
@@ -1065,7 +1176,7 @@ class SceneNodeGrpc final {
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
     void RequestAssetAbortDebit(::grpc::ServerContext* context, ::grpc::ByteBuffer* request, ::grpc::ServerAsyncResponseWriter< ::grpc::ByteBuffer>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
-      ::grpc::Service::RequestAsyncUnary(6, context, request, response, new_call_cq, notification_cq, tag);
+      ::grpc::Service::RequestAsyncUnary(7, context, request, response, new_call_cq, notification_cq, tag);
     }
   };
   template <class BaseClass>
@@ -1074,7 +1185,7 @@ class SceneNodeGrpc final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithRawMethod_AssetCredit() {
-      ::grpc::Service::MarkMethodRaw(7);
+      ::grpc::Service::MarkMethodRaw(8);
     }
     ~WithRawMethod_AssetCredit() override {
       BaseClassMustBeDerivedFromService(this);
@@ -1085,7 +1196,7 @@ class SceneNodeGrpc final {
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
     void RequestAssetCredit(::grpc::ServerContext* context, ::grpc::ByteBuffer* request, ::grpc::ServerAsyncResponseWriter< ::grpc::ByteBuffer>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
-      ::grpc::Service::RequestAsyncUnary(7, context, request, response, new_call_cq, notification_cq, tag);
+      ::grpc::Service::RequestAsyncUnary(8, context, request, response, new_call_cq, notification_cq, tag);
     }
   };
   template <class BaseClass>
@@ -1094,7 +1205,7 @@ class SceneNodeGrpc final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithRawMethod_AssetAckReceipt() {
-      ::grpc::Service::MarkMethodRaw(8);
+      ::grpc::Service::MarkMethodRaw(9);
     }
     ~WithRawMethod_AssetAckReceipt() override {
       BaseClassMustBeDerivedFromService(this);
@@ -1105,7 +1216,7 @@ class SceneNodeGrpc final {
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
     void RequestAssetAckReceipt(::grpc::ServerContext* context, ::grpc::ByteBuffer* request, ::grpc::ServerAsyncResponseWriter< ::grpc::ByteBuffer>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
-      ::grpc::Service::RequestAsyncUnary(8, context, request, response, new_call_cq, notification_cq, tag);
+      ::grpc::Service::RequestAsyncUnary(9, context, request, response, new_call_cq, notification_cq, tag);
     }
   };
   template <class BaseClass>
@@ -1219,12 +1330,34 @@ class SceneNodeGrpc final {
       ::grpc::CallbackServerContext* /*context*/, const ::grpc::ByteBuffer* /*request*/, ::grpc::ByteBuffer* /*response*/)  { return nullptr; }
   };
   template <class BaseClass>
+  class WithRawCallbackMethod_SealAccountRoleTrade : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithRawCallbackMethod_SealAccountRoleTrade() {
+      ::grpc::Service::MarkMethodRawCallback(5,
+          new ::grpc::internal::CallbackUnaryHandler< ::grpc::ByteBuffer, ::grpc::ByteBuffer>(
+            [this](
+                   ::grpc::CallbackServerContext* context, const ::grpc::ByteBuffer* request, ::grpc::ByteBuffer* response) { return this->SealAccountRoleTrade(context, request, response); }));
+    }
+    ~WithRawCallbackMethod_SealAccountRoleTrade() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status SealAccountRoleTrade(::grpc::ServerContext* /*context*/, const ::SealAccountRoleTradeRequest* /*request*/, ::Empty* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    virtual ::grpc::ServerUnaryReactor* SealAccountRoleTrade(
+      ::grpc::CallbackServerContext* /*context*/, const ::grpc::ByteBuffer* /*request*/, ::grpc::ByteBuffer* /*response*/)  { return nullptr; }
+  };
+  template <class BaseClass>
   class WithRawCallbackMethod_AssetDebit : public BaseClass {
    private:
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithRawCallbackMethod_AssetDebit() {
-      ::grpc::Service::MarkMethodRawCallback(5,
+      ::grpc::Service::MarkMethodRawCallback(6,
           new ::grpc::internal::CallbackUnaryHandler< ::grpc::ByteBuffer, ::grpc::ByteBuffer>(
             [this](
                    ::grpc::CallbackServerContext* context, const ::grpc::ByteBuffer* request, ::grpc::ByteBuffer* response) { return this->AssetDebit(context, request, response); }));
@@ -1246,7 +1379,7 @@ class SceneNodeGrpc final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithRawCallbackMethod_AssetAbortDebit() {
-      ::grpc::Service::MarkMethodRawCallback(6,
+      ::grpc::Service::MarkMethodRawCallback(7,
           new ::grpc::internal::CallbackUnaryHandler< ::grpc::ByteBuffer, ::grpc::ByteBuffer>(
             [this](
                    ::grpc::CallbackServerContext* context, const ::grpc::ByteBuffer* request, ::grpc::ByteBuffer* response) { return this->AssetAbortDebit(context, request, response); }));
@@ -1268,7 +1401,7 @@ class SceneNodeGrpc final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithRawCallbackMethod_AssetCredit() {
-      ::grpc::Service::MarkMethodRawCallback(7,
+      ::grpc::Service::MarkMethodRawCallback(8,
           new ::grpc::internal::CallbackUnaryHandler< ::grpc::ByteBuffer, ::grpc::ByteBuffer>(
             [this](
                    ::grpc::CallbackServerContext* context, const ::grpc::ByteBuffer* request, ::grpc::ByteBuffer* response) { return this->AssetCredit(context, request, response); }));
@@ -1290,7 +1423,7 @@ class SceneNodeGrpc final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithRawCallbackMethod_AssetAckReceipt() {
-      ::grpc::Service::MarkMethodRawCallback(8,
+      ::grpc::Service::MarkMethodRawCallback(9,
           new ::grpc::internal::CallbackUnaryHandler< ::grpc::ByteBuffer, ::grpc::ByteBuffer>(
             [this](
                    ::grpc::CallbackServerContext* context, const ::grpc::ByteBuffer* request, ::grpc::ByteBuffer* response) { return this->AssetAckReceipt(context, request, response); }));
@@ -1442,12 +1575,39 @@ class SceneNodeGrpc final {
     virtual ::grpc::Status StreamedCancelBattlePrepare(::grpc::ServerContext* context, ::grpc::ServerUnaryStreamer< ::CancelBattlePrepareRequest,::Empty>* server_unary_streamer) = 0;
   };
   template <class BaseClass>
+  class WithStreamedUnaryMethod_SealAccountRoleTrade : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithStreamedUnaryMethod_SealAccountRoleTrade() {
+      ::grpc::Service::MarkMethodStreamed(5,
+        new ::grpc::internal::StreamedUnaryHandler<
+          ::SealAccountRoleTradeRequest, ::Empty>(
+            [this](::grpc::ServerContext* context,
+                   ::grpc::ServerUnaryStreamer<
+                     ::SealAccountRoleTradeRequest, ::Empty>* streamer) {
+                       return this->StreamedSealAccountRoleTrade(context,
+                         streamer);
+                  }));
+    }
+    ~WithStreamedUnaryMethod_SealAccountRoleTrade() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable regular version of this method
+    ::grpc::Status SealAccountRoleTrade(::grpc::ServerContext* /*context*/, const ::SealAccountRoleTradeRequest* /*request*/, ::Empty* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    // replace default version of method with streamed unary
+    virtual ::grpc::Status StreamedSealAccountRoleTrade(::grpc::ServerContext* context, ::grpc::ServerUnaryStreamer< ::SealAccountRoleTradeRequest,::Empty>* server_unary_streamer) = 0;
+  };
+  template <class BaseClass>
   class WithStreamedUnaryMethod_AssetDebit : public BaseClass {
    private:
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithStreamedUnaryMethod_AssetDebit() {
-      ::grpc::Service::MarkMethodStreamed(5,
+      ::grpc::Service::MarkMethodStreamed(6,
         new ::grpc::internal::StreamedUnaryHandler<
           ::AssetOpRequest, ::AssetOpResponse>(
             [this](::grpc::ServerContext* context,
@@ -1474,7 +1634,7 @@ class SceneNodeGrpc final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithStreamedUnaryMethod_AssetAbortDebit() {
-      ::grpc::Service::MarkMethodStreamed(6,
+      ::grpc::Service::MarkMethodStreamed(7,
         new ::grpc::internal::StreamedUnaryHandler<
           ::AssetOpRequest, ::AssetOpResponse>(
             [this](::grpc::ServerContext* context,
@@ -1501,7 +1661,7 @@ class SceneNodeGrpc final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithStreamedUnaryMethod_AssetCredit() {
-      ::grpc::Service::MarkMethodStreamed(7,
+      ::grpc::Service::MarkMethodStreamed(8,
         new ::grpc::internal::StreamedUnaryHandler<
           ::AssetOpRequest, ::AssetOpResponse>(
             [this](::grpc::ServerContext* context,
@@ -1528,7 +1688,7 @@ class SceneNodeGrpc final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithStreamedUnaryMethod_AssetAckReceipt() {
-      ::grpc::Service::MarkMethodStreamed(8,
+      ::grpc::Service::MarkMethodStreamed(9,
         new ::grpc::internal::StreamedUnaryHandler<
           ::AssetOpRequest, ::AssetOpResponse>(
             [this](::grpc::ServerContext* context,
@@ -1549,9 +1709,9 @@ class SceneNodeGrpc final {
     // replace default version of method with streamed unary
     virtual ::grpc::Status StreamedAssetAckReceipt(::grpc::ServerContext* context, ::grpc::ServerUnaryStreamer< ::AssetOpRequest,::AssetOpResponse>* server_unary_streamer) = 0;
   };
-  typedef WithStreamedUnaryMethod_CreateScene<WithStreamedUnaryMethod_DestroyScene<WithStreamedUnaryMethod_ReleasePlayer<WithStreamedUnaryMethod_PrepareBattle<WithStreamedUnaryMethod_CancelBattlePrepare<WithStreamedUnaryMethod_AssetDebit<WithStreamedUnaryMethod_AssetAbortDebit<WithStreamedUnaryMethod_AssetCredit<WithStreamedUnaryMethod_AssetAckReceipt<Service > > > > > > > > > StreamedUnaryService;
+  typedef WithStreamedUnaryMethod_CreateScene<WithStreamedUnaryMethod_DestroyScene<WithStreamedUnaryMethod_ReleasePlayer<WithStreamedUnaryMethod_PrepareBattle<WithStreamedUnaryMethod_CancelBattlePrepare<WithStreamedUnaryMethod_SealAccountRoleTrade<WithStreamedUnaryMethod_AssetDebit<WithStreamedUnaryMethod_AssetAbortDebit<WithStreamedUnaryMethod_AssetCredit<WithStreamedUnaryMethod_AssetAckReceipt<Service > > > > > > > > > > StreamedUnaryService;
   typedef Service SplitStreamedService;
-  typedef WithStreamedUnaryMethod_CreateScene<WithStreamedUnaryMethod_DestroyScene<WithStreamedUnaryMethod_ReleasePlayer<WithStreamedUnaryMethod_PrepareBattle<WithStreamedUnaryMethod_CancelBattlePrepare<WithStreamedUnaryMethod_AssetDebit<WithStreamedUnaryMethod_AssetAbortDebit<WithStreamedUnaryMethod_AssetCredit<WithStreamedUnaryMethod_AssetAckReceipt<Service > > > > > > > > > StreamedService;
+  typedef WithStreamedUnaryMethod_CreateScene<WithStreamedUnaryMethod_DestroyScene<WithStreamedUnaryMethod_ReleasePlayer<WithStreamedUnaryMethod_PrepareBattle<WithStreamedUnaryMethod_CancelBattlePrepare<WithStreamedUnaryMethod_SealAccountRoleTrade<WithStreamedUnaryMethod_AssetDebit<WithStreamedUnaryMethod_AssetAbortDebit<WithStreamedUnaryMethod_AssetCredit<WithStreamedUnaryMethod_AssetAckReceipt<Service > > > > > > > > > > StreamedService;
 };
 
 }  // namespace scene_node

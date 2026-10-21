@@ -410,6 +410,16 @@ pwsh -File dev_tools.ps1 -Command proto-gen-run -ConfigPath ../proto_generator/p
 
 ## Notes
 
+### 本机 Docker 修改后重编与断点
+
+在仓库根执行 `python tools/scripts/rebuild_docker_debug.py cpp`、`python tools/scripts/rebuild_docker_debug.py go --services login` 或 `python tools/scripts/rebuild_docker_debug.py java`，分别更新 C++ 三节点、Go 登录服或 Java 网关。入口先构建独占镜像，核对当前源码与产物，再只重建对应服务；现有数据卷、账号和随机开发密码保留。`--build-only` 只构建，不更新配置或容器。
+
+`build_docker_cpp_debug.py` 使用本机已验证 SDK 和 `Debug/-O0`，SDK 来源及依赖守卫位于忽略目录 `build/docker-debug-current/cpp-toolchain.json`；依赖源码变化时停止，不复用不匹配 SDK。`build_docker_go_debug.py` 使用当前 Go 1.27.2、`all=-N -l` 与固定 Delve v1.27.2，逐服务串行构建。`build_docker_java_debug.py` 使用已有 JDK 23/Maven 离线单线程执行测试、打包并核验行号表。三个底层构建器只输出本地镜像及 `--output/result.json`，不自行更新运行栈。
+
+`docker_cpp_sdk_guard.py` 收集 SDK 依赖及 gRPC 的实际文件集合；`docker_debug_manifest.py` 在容器构建中核验冻结源码、维护按 SHA 变化失效的对象缓存，并登记最终编译参数、节点与调试符号摘要。
+
+VS Code 的“终端 → 运行任务”提供对应的“Docker：重编并更新”任务。“运行和调试”提供 C++ 三节点、Go 七服务及 Java Gateway 的附加配置，每项附加前执行源码检查。也可执行 `python tools/scripts/rebuild_docker_debug.py check --services scene` 单独检查。Go 普通服务不编译的 `*_test.go` 不参与运行源码一致性判定。完整操作与端口见 `docs/design/docker_k8s_build_deploy.md`。
+
 - 维护中的 PowerShell 入口使用 PowerShell 7（`pwsh`）；不要假设 Windows PowerShell 5.1 兼容。
 - Use `-Verbose` flag for detailed output
 - Scripts are designed to be cross-platform compatible where possible

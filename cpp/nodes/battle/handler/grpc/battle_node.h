@@ -34,6 +34,7 @@ public:
     // 方法表(按 :path 精确路由)。处理函数捕获 this:本对象必须活过注册它的 Node。
     void RegisterMethods(muduo_grpc::MethodTable& table) override;
 
+    static constexpr std::string_view kQueryObserverPath = "/BattleNode/QueryObserver";
     static constexpr std::string_view kQueryBattleCreationPath = "/BattleNode/QueryBattleCreation";
     static constexpr std::string_view kCreateBattlePath = "/BattleNode/CreateBattle";
     static constexpr std::string_view kDestroyBattlePath = "/BattleNode/DestroyBattle";
@@ -42,23 +43,26 @@ public:
     static constexpr std::string_view kIssueBattleTicketPath = "/BattleNode/IssueBattleTicket";
 
 private:
+    using QueryObserverCall = GrpcUnaryCall<::QueryObserverRequest, ::QueryObserverResponse>;
     using QueryBattleCreationCall = GrpcUnaryCall<::QueryBattleCreationRequest, ::QueryBattleCreationResponse>;
     using CreateBattleCall = GrpcUnaryCall<::CreateBattleRequest, ::CreateBattleResponse>;
     using DestroyBattleCall = GrpcUnaryCall<::DestroyBattleRequest, ::Empty>;
     using AddObserverCall = GrpcUnaryCall<::AddObserverRequest, ::AddObserverResponse>;
-    using RemoveObserverCall = GrpcUnaryCall<::RemoveObserverRequest, ::Empty>;
+    using RemoveObserverCall = GrpcUnaryCall<::RemoveObserverRequest, ::RemoveObserverResponse>;
     using IssueBattleTicketCall = GrpcUnaryCall<::IssueBattleTicketRequest, ::IssueBattleTicketResponse>;
+    void QueryObserver(const std::shared_ptr<QueryObserverCall>& call);
     void QueryBattleCreation(const std::shared_ptr<QueryBattleCreationCall>& call);
     void CreateBattle(const std::shared_ptr<CreateBattleCall>& call);
     void DestroyBattle(const std::shared_ptr<DestroyBattleCall>& call);
     void AddObserver(const std::shared_ptr<AddObserverCall>& call);
     void RemoveObserver(const std::shared_ptr<RemoveObserverCall>& call);
     void IssueBattleTicket(const std::shared_ptr<IssueBattleTicketCall>& call);
+    static void HandleQueryObserver(const ::QueryObserverRequest* request, ::QueryObserverResponse* response);
     static void HandleQueryBattleCreation(const ::QueryBattleCreationRequest* request, ::QueryBattleCreationResponse* response);
     static void HandleCreateBattle(const ::CreateBattleRequest* request, ::CreateBattleResponse* response);
     static void HandleDestroyBattle(const ::DestroyBattleRequest* request);
     static void HandleAddObserver(const ::AddObserverRequest* request, ::AddObserverResponse* response);
-    static void HandleRemoveObserver(const ::RemoveObserverRequest* request);
+    static void HandleRemoveObserver(const ::RemoveObserverRequest* request, ::RemoveObserverResponse* response);
     static void HandleIssueBattleTicket(const ::IssueBattleTicketRequest* request, ::IssueBattleTicketResponse* response);
     muduo::net::EventLoop& loop_;
     ///<<< BEGIN WRITING YOUR CODE: grpc.header.private

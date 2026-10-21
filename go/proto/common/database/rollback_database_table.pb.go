@@ -1333,6 +1333,690 @@ func (x *RouteReconcile) GetCacheVerifiedMs() uint64 {
 	return 0
 }
 
+// 全局账号角色目录；不含认证凭据。短字符串主键由 data_service 的 bootstrap
+// DDL 建为 VARBINARY(191)，本 proto 同时是列与主键形状守卫的事实源。
+type AccountDirectory struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Account       string                 `protobuf:"bytes,1,opt,name=account,proto3" json:"account,omitempty"`
+	CreatedMs     uint64                 `protobuf:"varint,2,opt,name=created_ms,json=createdMs,proto3" json:"created_ms,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *AccountDirectory) Reset() {
+	*x = AccountDirectory{}
+	mi := &file_proto_common_database_rollback_database_table_proto_msgTypes[12]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *AccountDirectory) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*AccountDirectory) ProtoMessage() {}
+
+func (x *AccountDirectory) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_common_database_rollback_database_table_proto_msgTypes[12]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use AccountDirectory.ProtoReflect.Descriptor instead.
+func (*AccountDirectory) Descriptor() ([]byte, []int) {
+	return file_proto_common_database_rollback_database_table_proto_rawDescGZIP(), []int{12}
+}
+
+func (x *AccountDirectory) GetAccount() string {
+	if x != nil {
+		return x.Account
+	}
+	return ""
+}
+
+func (x *AccountDirectory) GetCreatedMs() uint64 {
+	if x != nil {
+		return x.CreatedMs
+	}
+	return 0
+}
+
+type AccountRole struct {
+	state          protoimpl.MessageState `protogen:"open.v1"`
+	PlayerId       uint64                 `protobuf:"varint,1,opt,name=player_id,json=playerId,proto3" json:"player_id,omitempty"`
+	Account        string                 `protobuf:"bytes,2,opt,name=account,proto3" json:"account,omitempty"`
+	RoleProto      []byte                 `protobuf:"bytes,3,opt,name=role_proto,json=roleProto,proto3" json:"role_proto,omitempty"`              // AccountSimplePlayer 原件，保留未知字段。
+	OwnerRevision  uint64                 `protobuf:"varint,4,opt,name=owner_revision,json=ownerRevision,proto3" json:"owner_revision,omitempty"` // 账号归属修订号，绝不等同 scene owner_epoch。
+	UpdatedMs      uint64                 `protobuf:"varint,5,opt,name=updated_ms,json=updatedMs,proto3" json:"updated_ms,omitempty"`
+	TradeListingId uint64                 `protobuf:"varint,6,opt,name=trade_listing_id,json=tradeListingId,proto3" json:"trade_listing_id,omitempty"` // 0 表示无交易锁；非零时入场、身份补齐和删除均拒绝。
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
+}
+
+func (x *AccountRole) Reset() {
+	*x = AccountRole{}
+	mi := &file_proto_common_database_rollback_database_table_proto_msgTypes[13]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *AccountRole) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*AccountRole) ProtoMessage() {}
+
+func (x *AccountRole) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_common_database_rollback_database_table_proto_msgTypes[13]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use AccountRole.ProtoReflect.Descriptor instead.
+func (*AccountRole) Descriptor() ([]byte, []int) {
+	return file_proto_common_database_rollback_database_table_proto_rawDescGZIP(), []int{13}
+}
+
+func (x *AccountRole) GetPlayerId() uint64 {
+	if x != nil {
+		return x.PlayerId
+	}
+	return 0
+}
+
+func (x *AccountRole) GetAccount() string {
+	if x != nil {
+		return x.Account
+	}
+	return ""
+}
+
+func (x *AccountRole) GetRoleProto() []byte {
+	if x != nil {
+		return x.RoleProto
+	}
+	return nil
+}
+
+func (x *AccountRole) GetOwnerRevision() uint64 {
+	if x != nil {
+		return x.OwnerRevision
+	}
+	return 0
+}
+
+func (x *AccountRole) GetUpdatedMs() uint64 {
+	if x != nil {
+		return x.UpdatedMs
+	}
+	return 0
+}
+
+func (x *AccountRole) GetTradeListingId() uint64 {
+	if x != nil {
+		return x.TradeListingId
+	}
+	return 0
+}
+
+// listing 级永久冻结收据；取消后保留，旧冻结请求重放不能再次冻结。
+type AccountRoleTrade struct {
+	state               protoimpl.MessageState `protogen:"open.v1"`
+	ListingId           uint64                 `protobuf:"varint,1,opt,name=listing_id,json=listingId,proto3" json:"listing_id,omitempty"`
+	PlayerId            uint64                 `protobuf:"varint,2,opt,name=player_id,json=playerId,proto3" json:"player_id,omitempty"`
+	SellerAccount       string                 `protobuf:"bytes,3,opt,name=seller_account,json=sellerAccount,proto3" json:"seller_account,omitempty"`
+	SellerOwnerRevision uint64                 `protobuf:"varint,4,opt,name=seller_owner_revision,json=sellerOwnerRevision,proto3" json:"seller_owner_revision,omitempty"`
+	RequestDigest       []byte                 `protobuf:"bytes,5,opt,name=request_digest,json=requestDigest,proto3" json:"request_digest,omitempty"`
+	State               uint32                 `protobuf:"varint,6,opt,name=state,proto3" json:"state,omitempty"`                                        // data_service.AccountRoleTradeState。
+	FreezeEvidence      []byte                 `protobuf:"bytes,7,opt,name=freeze_evidence,json=freezeEvidence,proto3" json:"freeze_evidence,omitempty"` // 仅服务端 SQL 验证器产生的 AccountRoleFreezeEvidence 原件。
+	CreatedMs           uint64                 `protobuf:"varint,8,opt,name=created_ms,json=createdMs,proto3" json:"created_ms,omitempty"`
+	UpdatedMs           uint64                 `protobuf:"varint,9,opt,name=updated_ms,json=updatedMs,proto3" json:"updated_ms,omitempty"`
+	RequiredOwnerEpoch  uint64                 `protobuf:"varint,10,opt,name=required_owner_epoch,json=requiredOwnerEpoch,proto3" json:"required_owner_epoch,omitempty"` // 包括已普通退出但 SQL 尚未追上的历史下限。
+	RequiredSaveSeq     uint64                 `protobuf:"varint,11,opt,name=required_save_seq,json=requiredSaveSeq,proto3" json:"required_save_seq,omitempty"`
+	unknownFields       protoimpl.UnknownFields
+	sizeCache           protoimpl.SizeCache
+}
+
+func (x *AccountRoleTrade) Reset() {
+	*x = AccountRoleTrade{}
+	mi := &file_proto_common_database_rollback_database_table_proto_msgTypes[14]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *AccountRoleTrade) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*AccountRoleTrade) ProtoMessage() {}
+
+func (x *AccountRoleTrade) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_common_database_rollback_database_table_proto_msgTypes[14]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use AccountRoleTrade.ProtoReflect.Descriptor instead.
+func (*AccountRoleTrade) Descriptor() ([]byte, []int) {
+	return file_proto_common_database_rollback_database_table_proto_rawDescGZIP(), []int{14}
+}
+
+func (x *AccountRoleTrade) GetListingId() uint64 {
+	if x != nil {
+		return x.ListingId
+	}
+	return 0
+}
+
+func (x *AccountRoleTrade) GetPlayerId() uint64 {
+	if x != nil {
+		return x.PlayerId
+	}
+	return 0
+}
+
+func (x *AccountRoleTrade) GetSellerAccount() string {
+	if x != nil {
+		return x.SellerAccount
+	}
+	return ""
+}
+
+func (x *AccountRoleTrade) GetSellerOwnerRevision() uint64 {
+	if x != nil {
+		return x.SellerOwnerRevision
+	}
+	return 0
+}
+
+func (x *AccountRoleTrade) GetRequestDigest() []byte {
+	if x != nil {
+		return x.RequestDigest
+	}
+	return nil
+}
+
+func (x *AccountRoleTrade) GetState() uint32 {
+	if x != nil {
+		return x.State
+	}
+	return 0
+}
+
+func (x *AccountRoleTrade) GetFreezeEvidence() []byte {
+	if x != nil {
+		return x.FreezeEvidence
+	}
+	return nil
+}
+
+func (x *AccountRoleTrade) GetCreatedMs() uint64 {
+	if x != nil {
+		return x.CreatedMs
+	}
+	return 0
+}
+
+func (x *AccountRoleTrade) GetUpdatedMs() uint64 {
+	if x != nil {
+		return x.UpdatedMs
+	}
+	return 0
+}
+
+func (x *AccountRoleTrade) GetRequiredOwnerEpoch() uint64 {
+	if x != nil {
+		return x.RequiredOwnerEpoch
+	}
+	return 0
+}
+
+func (x *AccountRoleTrade) GetRequiredSaveSeq() uint64 {
+	if x != nil {
+		return x.RequiredSaveSeq
+	}
+	return 0
+}
+
+// tx_id 级永久过户收据，保存原角色原件与原返回修订，不随后续过户改变。
+type AccountRoleTransferReceipt struct {
+	state               protoimpl.MessageState `protogen:"open.v1"`
+	TxId                uint64                 `protobuf:"varint,1,opt,name=tx_id,json=txId,proto3" json:"tx_id,omitempty"`
+	RequestDigest       []byte                 `protobuf:"bytes,2,opt,name=request_digest,json=requestDigest,proto3" json:"request_digest,omitempty"`
+	ListingId           uint64                 `protobuf:"varint,3,opt,name=listing_id,json=listingId,proto3" json:"listing_id,omitempty"`
+	PlayerId            uint64                 `protobuf:"varint,4,opt,name=player_id,json=playerId,proto3" json:"player_id,omitempty"`
+	SellerAccount       string                 `protobuf:"bytes,5,opt,name=seller_account,json=sellerAccount,proto3" json:"seller_account,omitempty"`
+	BuyerAccount        string                 `protobuf:"bytes,6,opt,name=buyer_account,json=buyerAccount,proto3" json:"buyer_account,omitempty"`
+	SellerOwnerRevision uint64                 `protobuf:"varint,7,opt,name=seller_owner_revision,json=sellerOwnerRevision,proto3" json:"seller_owner_revision,omitempty"`
+	BuyerOwnerRevision  uint64                 `protobuf:"varint,8,opt,name=buyer_owner_revision,json=buyerOwnerRevision,proto3" json:"buyer_owner_revision,omitempty"`
+	CreatedMs           uint64                 `protobuf:"varint,9,opt,name=created_ms,json=createdMs,proto3" json:"created_ms,omitempty"`
+	RoleProto           []byte                 `protobuf:"bytes,10,opt,name=role_proto,json=roleProto,proto3" json:"role_proto,omitempty"`
+	unknownFields       protoimpl.UnknownFields
+	sizeCache           protoimpl.SizeCache
+}
+
+func (x *AccountRoleTransferReceipt) Reset() {
+	*x = AccountRoleTransferReceipt{}
+	mi := &file_proto_common_database_rollback_database_table_proto_msgTypes[15]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *AccountRoleTransferReceipt) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*AccountRoleTransferReceipt) ProtoMessage() {}
+
+func (x *AccountRoleTransferReceipt) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_common_database_rollback_database_table_proto_msgTypes[15]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use AccountRoleTransferReceipt.ProtoReflect.Descriptor instead.
+func (*AccountRoleTransferReceipt) Descriptor() ([]byte, []int) {
+	return file_proto_common_database_rollback_database_table_proto_rawDescGZIP(), []int{15}
+}
+
+func (x *AccountRoleTransferReceipt) GetTxId() uint64 {
+	if x != nil {
+		return x.TxId
+	}
+	return 0
+}
+
+func (x *AccountRoleTransferReceipt) GetRequestDigest() []byte {
+	if x != nil {
+		return x.RequestDigest
+	}
+	return nil
+}
+
+func (x *AccountRoleTransferReceipt) GetListingId() uint64 {
+	if x != nil {
+		return x.ListingId
+	}
+	return 0
+}
+
+func (x *AccountRoleTransferReceipt) GetPlayerId() uint64 {
+	if x != nil {
+		return x.PlayerId
+	}
+	return 0
+}
+
+func (x *AccountRoleTransferReceipt) GetSellerAccount() string {
+	if x != nil {
+		return x.SellerAccount
+	}
+	return ""
+}
+
+func (x *AccountRoleTransferReceipt) GetBuyerAccount() string {
+	if x != nil {
+		return x.BuyerAccount
+	}
+	return ""
+}
+
+func (x *AccountRoleTransferReceipt) GetSellerOwnerRevision() uint64 {
+	if x != nil {
+		return x.SellerOwnerRevision
+	}
+	return 0
+}
+
+func (x *AccountRoleTransferReceipt) GetBuyerOwnerRevision() uint64 {
+	if x != nil {
+		return x.BuyerOwnerRevision
+	}
+	return 0
+}
+
+func (x *AccountRoleTransferReceipt) GetCreatedMs() uint64 {
+	if x != nil {
+		return x.CreatedMs
+	}
+	return 0
+}
+
+func (x *AccountRoleTransferReceipt) GetRoleProto() []byte {
+	if x != nil {
+		return x.RoleProto
+	}
+	return nil
+}
+
+// 每角色/scene 进程一行，登录不 append；终态水位不得按 TTL 丢弃。
+type AccountRoleAdmission struct {
+	state              protoimpl.MessageState `protogen:"open.v1"`
+	PlayerId           uint64                 `protobuf:"varint,1,opt,name=player_id,json=playerId,proto3" json:"player_id,omitempty"`
+	SceneInstanceId    string                 `protobuf:"bytes,2,opt,name=scene_instance_id,json=sceneInstanceId,proto3" json:"scene_instance_id,omitempty"`
+	HighestGeneration  uint64                 `protobuf:"varint,3,opt,name=highest_generation,json=highestGeneration,proto3" json:"highest_generation,omitempty"`
+	ClosedThrough      uint64                 `protobuf:"varint,4,opt,name=closed_through,json=closedThrough,proto3" json:"closed_through,omitempty"`
+	IdentityProto      []byte                 `protobuf:"bytes,5,opt,name=identity_proto,json=identityProto,proto3" json:"identity_proto,omitempty"` // RoleAdmissionIdentity 原件。
+	RequestDigest      []byte                 `protobuf:"bytes,6,opt,name=request_digest,json=requestDigest,proto3" json:"request_digest,omitempty"`
+	RequiredOwnerEpoch uint64                 `protobuf:"varint,7,opt,name=required_owner_epoch,json=requiredOwnerEpoch,proto3" json:"required_owner_epoch,omitempty"`
+	RequiredSaveSeq    uint64                 `protobuf:"varint,8,opt,name=required_save_seq,json=requiredSaveSeq,proto3" json:"required_save_seq,omitempty"`
+	CloseDigest        []byte                 `protobuf:"bytes,9,opt,name=close_digest,json=closeDigest,proto3" json:"close_digest,omitempty"` // 仅最新关闭水位可同原请求重放，较旧请求明确拒绝。
+	UpdatedMs          uint64                 `protobuf:"varint,10,opt,name=updated_ms,json=updatedMs,proto3" json:"updated_ms,omitempty"`
+	unknownFields      protoimpl.UnknownFields
+	sizeCache          protoimpl.SizeCache
+}
+
+func (x *AccountRoleAdmission) Reset() {
+	*x = AccountRoleAdmission{}
+	mi := &file_proto_common_database_rollback_database_table_proto_msgTypes[16]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *AccountRoleAdmission) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*AccountRoleAdmission) ProtoMessage() {}
+
+func (x *AccountRoleAdmission) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_common_database_rollback_database_table_proto_msgTypes[16]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use AccountRoleAdmission.ProtoReflect.Descriptor instead.
+func (*AccountRoleAdmission) Descriptor() ([]byte, []int) {
+	return file_proto_common_database_rollback_database_table_proto_rawDescGZIP(), []int{16}
+}
+
+func (x *AccountRoleAdmission) GetPlayerId() uint64 {
+	if x != nil {
+		return x.PlayerId
+	}
+	return 0
+}
+
+func (x *AccountRoleAdmission) GetSceneInstanceId() string {
+	if x != nil {
+		return x.SceneInstanceId
+	}
+	return ""
+}
+
+func (x *AccountRoleAdmission) GetHighestGeneration() uint64 {
+	if x != nil {
+		return x.HighestGeneration
+	}
+	return 0
+}
+
+func (x *AccountRoleAdmission) GetClosedThrough() uint64 {
+	if x != nil {
+		return x.ClosedThrough
+	}
+	return 0
+}
+
+func (x *AccountRoleAdmission) GetIdentityProto() []byte {
+	if x != nil {
+		return x.IdentityProto
+	}
+	return nil
+}
+
+func (x *AccountRoleAdmission) GetRequestDigest() []byte {
+	if x != nil {
+		return x.RequestDigest
+	}
+	return nil
+}
+
+func (x *AccountRoleAdmission) GetRequiredOwnerEpoch() uint64 {
+	if x != nil {
+		return x.RequiredOwnerEpoch
+	}
+	return 0
+}
+
+func (x *AccountRoleAdmission) GetRequiredSaveSeq() uint64 {
+	if x != nil {
+		return x.RequiredSaveSeq
+	}
+	return 0
+}
+
+func (x *AccountRoleAdmission) GetCloseDigest() []byte {
+	if x != nil {
+		return x.CloseDigest
+	}
+	return nil
+}
+
+func (x *AccountRoleAdmission) GetUpdatedMs() uint64 {
+	if x != nil {
+		return x.UpdatedMs
+	}
+	return 0
+}
+
+// 原 listing 的 holder 固定集合；成功 ACK 原件永久判重。
+type AccountRoleTradeHolder struct {
+	state           protoimpl.MessageState `protogen:"open.v1"`
+	ListingId       uint64                 `protobuf:"varint,1,opt,name=listing_id,json=listingId,proto3" json:"listing_id,omitempty"`
+	SceneInstanceId string                 `protobuf:"bytes,2,opt,name=scene_instance_id,json=sceneInstanceId,proto3" json:"scene_instance_id,omitempty"`
+	SealProto       []byte                 `protobuf:"bytes,3,opt,name=seal_proto,json=sealProto,proto3" json:"seal_proto,omitempty"`
+	Drained         uint32                 `protobuf:"varint,4,opt,name=drained,proto3" json:"drained,omitempty"`
+	AckDigest       []byte                 `protobuf:"bytes,5,opt,name=ack_digest,json=ackDigest,proto3" json:"ack_digest,omitempty"`
+	UpdatedMs       uint64                 `protobuf:"varint,6,opt,name=updated_ms,json=updatedMs,proto3" json:"updated_ms,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
+}
+
+func (x *AccountRoleTradeHolder) Reset() {
+	*x = AccountRoleTradeHolder{}
+	mi := &file_proto_common_database_rollback_database_table_proto_msgTypes[17]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *AccountRoleTradeHolder) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*AccountRoleTradeHolder) ProtoMessage() {}
+
+func (x *AccountRoleTradeHolder) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_common_database_rollback_database_table_proto_msgTypes[17]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use AccountRoleTradeHolder.ProtoReflect.Descriptor instead.
+func (*AccountRoleTradeHolder) Descriptor() ([]byte, []int) {
+	return file_proto_common_database_rollback_database_table_proto_rawDescGZIP(), []int{17}
+}
+
+func (x *AccountRoleTradeHolder) GetListingId() uint64 {
+	if x != nil {
+		return x.ListingId
+	}
+	return 0
+}
+
+func (x *AccountRoleTradeHolder) GetSceneInstanceId() string {
+	if x != nil {
+		return x.SceneInstanceId
+	}
+	return ""
+}
+
+func (x *AccountRoleTradeHolder) GetSealProto() []byte {
+	if x != nil {
+		return x.SealProto
+	}
+	return nil
+}
+
+func (x *AccountRoleTradeHolder) GetDrained() uint32 {
+	if x != nil {
+		return x.Drained
+	}
+	return 0
+}
+
+func (x *AccountRoleTradeHolder) GetAckDigest() []byte {
+	if x != nil {
+		return x.AckDigest
+	}
+	return nil
+}
+
+func (x *AccountRoleTradeHolder) GetUpdatedMs() uint64 {
+	if x != nil {
+		return x.UpdatedMs
+	}
+	return 0
+}
+
+// 本地受控导入的永久请求收据；先换目录修订阻旧路由，再写两玩家 SQL。
+// 同请求只回原修订，后续归属已变化时拒绝恢复旧导入，不循环 bump 修订。
+type AccountRoleImportReceipt struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	RequestId     []byte                 `protobuf:"bytes,1,opt,name=request_id,json=requestId,proto3" json:"request_id,omitempty"`
+	RequestDigest []byte                 `protobuf:"bytes,2,opt,name=request_digest,json=requestDigest,proto3" json:"request_digest,omitempty"`
+	PlayerId      uint64                 `protobuf:"varint,3,opt,name=player_id,json=playerId,proto3" json:"player_id,omitempty"`
+	Account       string                 `protobuf:"bytes,4,opt,name=account,proto3" json:"account,omitempty"`
+	OwnerRevision uint64                 `protobuf:"varint,5,opt,name=owner_revision,json=ownerRevision,proto3" json:"owner_revision,omitempty"`
+	RoleProto     []byte                 `protobuf:"bytes,6,opt,name=role_proto,json=roleProto,proto3" json:"role_proto,omitempty"`
+	AllowRestore  uint32                 `protobuf:"varint,7,opt,name=allow_restore,json=allowRestore,proto3" json:"allow_restore,omitempty"`
+	CreatedMs     uint64                 `protobuf:"varint,8,opt,name=created_ms,json=createdMs,proto3" json:"created_ms,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *AccountRoleImportReceipt) Reset() {
+	*x = AccountRoleImportReceipt{}
+	mi := &file_proto_common_database_rollback_database_table_proto_msgTypes[18]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *AccountRoleImportReceipt) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*AccountRoleImportReceipt) ProtoMessage() {}
+
+func (x *AccountRoleImportReceipt) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_common_database_rollback_database_table_proto_msgTypes[18]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use AccountRoleImportReceipt.ProtoReflect.Descriptor instead.
+func (*AccountRoleImportReceipt) Descriptor() ([]byte, []int) {
+	return file_proto_common_database_rollback_database_table_proto_rawDescGZIP(), []int{18}
+}
+
+func (x *AccountRoleImportReceipt) GetRequestId() []byte {
+	if x != nil {
+		return x.RequestId
+	}
+	return nil
+}
+
+func (x *AccountRoleImportReceipt) GetRequestDigest() []byte {
+	if x != nil {
+		return x.RequestDigest
+	}
+	return nil
+}
+
+func (x *AccountRoleImportReceipt) GetPlayerId() uint64 {
+	if x != nil {
+		return x.PlayerId
+	}
+	return 0
+}
+
+func (x *AccountRoleImportReceipt) GetAccount() string {
+	if x != nil {
+		return x.Account
+	}
+	return ""
+}
+
+func (x *AccountRoleImportReceipt) GetOwnerRevision() uint64 {
+	if x != nil {
+		return x.OwnerRevision
+	}
+	return 0
+}
+
+func (x *AccountRoleImportReceipt) GetRoleProto() []byte {
+	if x != nil {
+		return x.RoleProto
+	}
+	return nil
+}
+
+func (x *AccountRoleImportReceipt) GetAllowRestore() uint32 {
+	if x != nil {
+		return x.AllowRestore
+	}
+	return 0
+}
+
+func (x *AccountRoleImportReceipt) GetCreatedMs() uint64 {
+	if x != nil {
+		return x.CreatedMs
+	}
+	return 0
+}
+
 var File_proto_common_database_rollback_database_table_proto protoreflect.FileDescriptor
 
 const file_proto_common_database_rollback_database_table_proto_rawDesc = "" +
@@ -1481,7 +2165,89 @@ const file_proto_common_database_rollback_database_table_proto_rawDesc = "" +
 	"\x06leader\x18\x02 \x01(\tR\x06leader\x12$\n" +
 	"\x0elease_until_ms\x18\x03 \x01(\x04R\fleaseUntilMs\x12!\n" +
 	"\fwatermark_ms\x18\x04 \x01(\x04R\vwatermarkMs\x12*\n" +
-	"\x11cache_verified_ms\x18\x05 \x01(\x04R\x0fcacheVerifiedMs:\x1b\x8a\x92\xf4\x01\x0froute_reconcile\x92\x92\xf4\x01\x02idB\x17Z\x15proto/common/databaseb\x06proto3"
+	"\x11cache_verified_ms\x18\x05 \x01(\x04R\x0fcacheVerifiedMs:\x1b\x8a\x92\xf4\x01\x0froute_reconcile\x92\x92\xf4\x01\x02id\"p\n" +
+	"\x11account_directory\x12\x18\n" +
+	"\aaccount\x18\x01 \x01(\tR\aaccount\x12\x1d\n" +
+	"\n" +
+	"created_ms\x18\x02 \x01(\x04R\tcreatedMs:\"\x8a\x92\xf4\x01\x11account_directory\x92\x92\xf4\x01\aaccount\"\x84\x02\n" +
+	"\faccount_role\x12\x1b\n" +
+	"\tplayer_id\x18\x01 \x01(\x04R\bplayerId\x12\x18\n" +
+	"\aaccount\x18\x02 \x01(\tR\aaccount\x12\x1d\n" +
+	"\n" +
+	"role_proto\x18\x03 \x01(\fR\troleProto\x12%\n" +
+	"\x0eowner_revision\x18\x04 \x01(\x04R\rownerRevision\x12\x1d\n" +
+	"\n" +
+	"updated_ms\x18\x05 \x01(\x04R\tupdatedMs\x12(\n" +
+	"\x10trade_listing_id\x18\x06 \x01(\x04R\x0etradeListingId:.\x8a\x92\xf4\x01\faccount_role\x92\x92\xf4\x01\tplayer_id\xa8\x93\xf4\x01\x01\xb0\x93\xf4\x01\x04\xb8\x93\xf4\x01\x04\"\xe4\x03\n" +
+	"\x12account_role_trade\x12\x1d\n" +
+	"\n" +
+	"listing_id\x18\x01 \x01(\x04R\tlistingId\x12\x1b\n" +
+	"\tplayer_id\x18\x02 \x01(\x04R\bplayerId\x12%\n" +
+	"\x0eseller_account\x18\x03 \x01(\tR\rsellerAccount\x122\n" +
+	"\x15seller_owner_revision\x18\x04 \x01(\x04R\x13sellerOwnerRevision\x12%\n" +
+	"\x0erequest_digest\x18\x05 \x01(\fR\rrequestDigest\x12\x14\n" +
+	"\x05state\x18\x06 \x01(\rR\x05state\x12'\n" +
+	"\x0ffreeze_evidence\x18\a \x01(\fR\x0efreezeEvidence\x12\x1d\n" +
+	"\n" +
+	"created_ms\x18\b \x01(\x04R\tcreatedMs\x12\x1d\n" +
+	"\n" +
+	"updated_ms\x18\t \x01(\x04R\tupdatedMs\x120\n" +
+	"\x14required_owner_epoch\x18\n" +
+	" \x01(\x04R\x12requiredOwnerEpoch\x12*\n" +
+	"\x11required_save_seq\x18\v \x01(\x04R\x0frequiredSaveSeq:5\x8a\x92\xf4\x01\x12account_role_trade\x92\x92\xf4\x01\n" +
+	"listing_id\xa8\x93\xf4\x01\x01\xb0\x93\xf4\x01\x04\xb8\x93\xf4\x01\x04\"\xc4\x03\n" +
+	"\x1daccount_role_transfer_receipt\x12\x13\n" +
+	"\x05tx_id\x18\x01 \x01(\x04R\x04txId\x12%\n" +
+	"\x0erequest_digest\x18\x02 \x01(\fR\rrequestDigest\x12\x1d\n" +
+	"\n" +
+	"listing_id\x18\x03 \x01(\x04R\tlistingId\x12\x1b\n" +
+	"\tplayer_id\x18\x04 \x01(\x04R\bplayerId\x12%\n" +
+	"\x0eseller_account\x18\x05 \x01(\tR\rsellerAccount\x12#\n" +
+	"\rbuyer_account\x18\x06 \x01(\tR\fbuyerAccount\x122\n" +
+	"\x15seller_owner_revision\x18\a \x01(\x04R\x13sellerOwnerRevision\x120\n" +
+	"\x14buyer_owner_revision\x18\b \x01(\x04R\x12buyerOwnerRevision\x12\x1d\n" +
+	"\n" +
+	"created_ms\x18\t \x01(\x04R\tcreatedMs\x12\x1d\n" +
+	"\n" +
+	"role_proto\x18\n" +
+	" \x01(\fR\troleProto:;\x8a\x92\xf4\x01\x1daccount_role_transfer_receipt\x92\x92\xf4\x01\x05tx_id\xa8\x93\xf4\x01\x01\xb0\x93\xf4\x01\x04\xb8\x93\xf4\x01\x04\"\xe2\x03\n" +
+	"\x16account_role_admission\x12\x1b\n" +
+	"\tplayer_id\x18\x01 \x01(\x04R\bplayerId\x12*\n" +
+	"\x11scene_instance_id\x18\x02 \x01(\tR\x0fsceneInstanceId\x12-\n" +
+	"\x12highest_generation\x18\x03 \x01(\x04R\x11highestGeneration\x12%\n" +
+	"\x0eclosed_through\x18\x04 \x01(\x04R\rclosedThrough\x12%\n" +
+	"\x0eidentity_proto\x18\x05 \x01(\fR\ridentityProto\x12%\n" +
+	"\x0erequest_digest\x18\x06 \x01(\fR\rrequestDigest\x120\n" +
+	"\x14required_owner_epoch\x18\a \x01(\x04R\x12requiredOwnerEpoch\x12*\n" +
+	"\x11required_save_seq\x18\b \x01(\x04R\x0frequiredSaveSeq\x12!\n" +
+	"\fclose_digest\x18\t \x01(\fR\vcloseDigest\x12\x1d\n" +
+	"\n" +
+	"updated_ms\x18\n" +
+	" \x01(\x04R\tupdatedMs:;\x8a\x92\xf4\x01\x16account_role_admission\x92\x92\xf4\x01\x1bplayer_id,scene_instance_id\"\x9e\x02\n" +
+	"\x19account_role_trade_holder\x12\x1d\n" +
+	"\n" +
+	"listing_id\x18\x01 \x01(\x04R\tlistingId\x12*\n" +
+	"\x11scene_instance_id\x18\x02 \x01(\tR\x0fsceneInstanceId\x12\x1d\n" +
+	"\n" +
+	"seal_proto\x18\x03 \x01(\fR\tsealProto\x12\x18\n" +
+	"\adrained\x18\x04 \x01(\rR\adrained\x12\x1d\n" +
+	"\n" +
+	"ack_digest\x18\x05 \x01(\fR\tackDigest\x12\x1d\n" +
+	"\n" +
+	"updated_ms\x18\x06 \x01(\x04R\tupdatedMs:?\x8a\x92\xf4\x01\x19account_role_trade_holder\x92\x92\xf4\x01\x1clisting_id,scene_instance_id\"\xd5\x02\n" +
+	"\x1baccount_role_import_receipt\x12\x1d\n" +
+	"\n" +
+	"request_id\x18\x01 \x01(\fR\trequestId\x12%\n" +
+	"\x0erequest_digest\x18\x02 \x01(\fR\rrequestDigest\x12\x1b\n" +
+	"\tplayer_id\x18\x03 \x01(\x04R\bplayerId\x12\x18\n" +
+	"\aaccount\x18\x04 \x01(\tR\aaccount\x12%\n" +
+	"\x0eowner_revision\x18\x05 \x01(\x04R\rownerRevision\x12\x1d\n" +
+	"\n" +
+	"role_proto\x18\x06 \x01(\fR\troleProto\x12#\n" +
+	"\rallow_restore\x18\a \x01(\rR\fallowRestore\x12\x1d\n" +
+	"\n" +
+	"created_ms\x18\b \x01(\x04R\tcreatedMs:/\x8a\x92\xf4\x01\x1baccount_role_import_receipt\x92\x92\xf4\x01\n" +
+	"request_idB\x17Z\x15proto/common/databaseb\x06proto3"
 
 var (
 	file_proto_common_database_rollback_database_table_proto_rawDescOnce sync.Once
@@ -1495,20 +2261,27 @@ func file_proto_common_database_rollback_database_table_proto_rawDescGZIP() []by
 	return file_proto_common_database_rollback_database_table_proto_rawDescData
 }
 
-var file_proto_common_database_rollback_database_table_proto_msgTypes = make([]protoimpl.MessageInfo, 12)
+var file_proto_common_database_rollback_database_table_proto_msgTypes = make([]protoimpl.MessageInfo, 19)
 var file_proto_common_database_rollback_database_table_proto_goTypes = []any{
-	(*TransactionLog)(nil),   // 0: transaction_log
-	(*PlayerSnapshot)(nil),   // 1: player_snapshot
-	(*RollbackAuditLog)(nil), // 2: rollback_audit_log
-	(*PlayerDebt)(nil),       // 3: player_debt
-	(*RollbackAudit)(nil),    // 4: rollback_audit
-	(*IdSegment)(nil),        // 5: id_segment
-	(*PlayerName)(nil),       // 6: player_name
-	(*PlayerRoute)(nil),      // 7: player_route
-	(*ZoneMergeFence)(nil),   // 8: zone_merge_fence
-	(*ZoneMergedInto)(nil),   // 9: zone_merged_into
-	(*RouteMeta)(nil),        // 10: route_meta
-	(*RouteReconcile)(nil),   // 11: route_reconcile
+	(*TransactionLog)(nil),             // 0: transaction_log
+	(*PlayerSnapshot)(nil),             // 1: player_snapshot
+	(*RollbackAuditLog)(nil),           // 2: rollback_audit_log
+	(*PlayerDebt)(nil),                 // 3: player_debt
+	(*RollbackAudit)(nil),              // 4: rollback_audit
+	(*IdSegment)(nil),                  // 5: id_segment
+	(*PlayerName)(nil),                 // 6: player_name
+	(*PlayerRoute)(nil),                // 7: player_route
+	(*ZoneMergeFence)(nil),             // 8: zone_merge_fence
+	(*ZoneMergedInto)(nil),             // 9: zone_merged_into
+	(*RouteMeta)(nil),                  // 10: route_meta
+	(*RouteReconcile)(nil),             // 11: route_reconcile
+	(*AccountDirectory)(nil),           // 12: account_directory
+	(*AccountRole)(nil),                // 13: account_role
+	(*AccountRoleTrade)(nil),           // 14: account_role_trade
+	(*AccountRoleTransferReceipt)(nil), // 15: account_role_transfer_receipt
+	(*AccountRoleAdmission)(nil),       // 16: account_role_admission
+	(*AccountRoleTradeHolder)(nil),     // 17: account_role_trade_holder
+	(*AccountRoleImportReceipt)(nil),   // 18: account_role_import_receipt
 }
 var file_proto_common_database_rollback_database_table_proto_depIdxs = []int32{
 	0, // [0:0] is the sub-list for method output_type
@@ -1529,7 +2302,7 @@ func file_proto_common_database_rollback_database_table_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_proto_common_database_rollback_database_table_proto_rawDesc), len(file_proto_common_database_rollback_database_table_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   12,
+			NumMessages:   19,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

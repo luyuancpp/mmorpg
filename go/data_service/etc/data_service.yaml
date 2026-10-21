@@ -18,6 +18,18 @@ Etcd:
 ZoneId: 1
 LeaseTTL: 60
 
+AccountDirectory:
+  MaxPlayersPerAccount: 5
+  RoleTradeRequireGuildExit: true
+  RoleTradeGuildSchema: mmorpg_guild
+  RoleTradeTradeSchema: mmorpg_trade
+  RoleTradeMailSchema: mmorpg_mail
+  RoleTradeMatchSchema: mmorpg_match
+  RoleTradeInboxSchema: mmorpg_player_inbox
+  RoleTradeSQLProof:
+    Enabled: false
+    AllowedStorageIDs: []
+
 # Prometheus /metrics(internal/metrics/metrics.go)。留空 = 不开端口。
 # 回档帮会闸的告警(docs/design/guild-phase2/07-rollback-fail-closed.md §7.9.2)依赖它:
 # data_service_rollback_guild_check_total{scope,result} 等。9260 不与其它服务撞号

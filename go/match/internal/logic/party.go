@@ -609,6 +609,10 @@ func (s *TeamBattleStarter) EnqueueParty(ctx context.Context, battleConfigId, ta
 func (s *TeamBattleStarter) CancelParty(ctx context.Context, teamId uint64, candidates, keepIfRoster []uint64,
 	reason uint32, culprit uint64,
 ) ([]uint64, error) {
+	if s.svcCtx.Authority != nil {
+		// 名册变化已在SQL同tx撤全unit；后台通知不能用当前成员补旧意图授权。
+		return nil, nil
+	}
 	if teamId == 0 {
 		return nil, errors.New("CancelParty: team_id is 0")
 	}
@@ -651,6 +655,9 @@ func samePlayerSet(a, b []uint64) bool {
 // 返回 (constants.PartyQueue*, 目标人数, 副本, 入队时刻毫秒, err);后三项只在 Queued 时有值。
 // ready 票(已开战,短暂停留)按 None:战斗内状态不由队伍视图表达,不能让一场已打完的战斗把开战按钮锁住。
 func (s *TeamBattleStarter) PartyQueueState(ctx context.Context, playerId, teamId uint64) (uint32, uint32, uint32, uint64, error) {
+	if s.svcCtx.Authority != nil {
+		return s.svcCtx.Authority.TeamQueueState(ctx, playerId, teamId)
+	}
 	ticket, err := loadTicketCtx(ctx, s.svcCtx, playerId)
 	if err != nil {
 		return constants.PartyQueueNone, 0, 0, 0, err

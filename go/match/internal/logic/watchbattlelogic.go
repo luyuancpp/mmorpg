@@ -57,6 +57,9 @@ func (l *WatchBattleLogic) WatchBattle(in *matchpb.WatchBattleRequest) (*matchpb
 			ErrorMessage: tipErr(constants.ErrInternal, "缺少玩家身份"),
 		}, nil
 	}
+	if l.svcCtx.Authority != nil {
+		return globalWatchBattle(l, in, playerId)
+	}
 
 	internalErr := func(stage string, err error) (*matchpb.WatchBattleResponse, error) {
 		l.Errorf("[spectate] WatchBattle %s failed player=%d: %v", stage, playerId, err)

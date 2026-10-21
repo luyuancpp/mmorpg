@@ -12,6 +12,7 @@ package commerce
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 	"os"
 	"strings"
@@ -188,7 +189,7 @@ func TestRealDBTickQuarantinesCorruptContracts(t *testing.T) {
 	ctx := context.Background()
 	now := e.now()
 	garbage := []byte{0xff, 0xff, 0xff} // 不完整的 varint,proto 必解不开
-	refund, err := proto.MarshalOptions{Deterministic: true}.Marshal(&tradepb.TradeCommerceWorkflow{Stage: "bid_refund"})
+	refund, err := proto.MarshalOptions{Deterministic: true}.Marshal(&tradepb.TradeCommerceWorkflow{Stage: "bid_refund", SellerIdentity: &tradepb.TradeRoleIdentity{Account: "account-32", OwnerRevision: 1}})
 	require.NoError(t, err)
 	undecodable := &tradepb.TradeCommerceRecord{CommerceId: 900001, RequestKey: "corrupt-undecodable", RequestDigest: []byte{1},
 		Kind: 3, Status: Escrowing, SellerPlayerId: 31, ExpiresMs: now + 3_600_000, CreatedMs: now - 2000, UpdatedMs: now - 2000,
@@ -361,7 +362,7 @@ func TestRealDBReadyBidWithMissingLotIsRefundedOnce(t *testing.T) {
 	ctx := context.Background()
 	now := e.now()
 	sel := &tradepb.TradeAssetSelection{CurrencyType: 1, CurrencyAmount: 60}
-	raw, err := proto.MarshalOptions{Deterministic: true}.Marshal(&tradepb.TradeCommerceWorkflow{Stage: "bid_ready", SellerAssets: sel,
+	raw, err := proto.MarshalOptions{Deterministic: true}.Marshal(&tradepb.TradeCommerceWorkflow{Stage: "bid_ready", SellerAssets: sel, SellerIdentity: &tradepb.TradeRoleIdentity{Account: "account-71", OwnerRevision: 1},
 		Legs: []*tradepb.TradeCommerceLeg{{Role: "bid_debit", PlayerId: 71, Stream: 3, Bundle: Bundle(sel), OpId: 424242, Outcome: 2}}})
 	require.NoError(t, err)
 	bid := &tradepb.TradeCommerceRecord{CommerceId: 900101, RequestKey: "orphan-ready-bid", RequestDigest: []byte{3}, Kind: BidKind,
@@ -493,6 +494,72 @@ func TestRealDBReceiptAckPagesPastStuckHead(t *testing.T) {
 	after := applier.attempts()
 	require.Greater(t, len(after), before)
 	require.Equal(t, uint64(1), after[before], "到表尾后从头轮转")
+}
+
+// 同一页前两条分别模拟 RPC 失败和 SQL 账本失败，其余均正常离线。
+// 依赖错误必须由 Tick 上报，同时不能阻止同页余项或下一页；待办保留到再次轮转。
+type dependencyFailureAckApplier struct {
+	recordingApplier
+	rpcError error
+}
+
+func (a *dependencyFailureAckApplier) Do(ctx context.Context, rpc assetop.RPC, req *assetpb.AssetOpRequest) (assetop.Result, error) {
+	result, err := a.recordingApplier.Do(ctx, rpc, req)
+	switch req.GetCorrelationId() {
+	case 1:
+		return assetop.Result{}, a.rpcError
+	case 2:
+		return assetop.Result{Outcome: assetpb.AssetOpOutcome_ASSET_OP_OUTCOME_APPLIED}, nil
+	default:
+		return result, err
+	}
+}
+
+type dependencyFailureAckLedger struct {
+	emptyLedger
+	sqlError error
+}
+
+func (r dependencyFailureAckLedger) ReadSQLCommittedLedger(context.Context, uint64) (*componentpb.PlayerAssetOpLedgerComp, error) {
+	return nil, r.sqlError
+}
+
+func TestRealDBReceiptAckReportsDependencyErrorsWithoutBlockingPages(t *testing.T) {
+	e := realDBEngine(t)
+	ctx := context.Background()
+	rpcFailure := errors.New("测试收据RPC不可用")
+	sqlFailure := errors.New("测试SQL账本不可用")
+	applier := &dependencyFailureAckApplier{rpcError: rpcFailure}
+	e.Applier = applier
+	e.Ledger = dependencyFailureAckLedger{sqlError: sqlFailure}
+	payload, err := proto.Marshal(&assetpb.AssetBundle{Items: []*assetpb.ItemGrant{{ConfigId: 10, Count: 1}}})
+	require.NoError(t, err)
+	now := e.now()
+	for i := 1; i <= tickAckLimit+1; i++ {
+		rec := &tradepb.TradeAssetOpRecord{OpId: uint64(i), PlayerId: 63, Stream: uint32(assetpb.AssetOpStream_ASSET_OP_STREAM_TRADE_DEBIT),
+			StreamEpoch: 1, Seq: uint64(i), Kind: tradepb.TradeAssetOpKind_TRADE_ASSET_OP_KIND_ESCROW_DEBIT,
+			Status: tradepb.TradeAssetOpStatus_TRADE_ASSET_OP_STATUS_APPLIED, Durable: true, ReceiptAckPending: true,
+			RefKind: tradepb.TradeAssetOpRefKind_TRADE_ASSET_OP_REF_KIND_ORDER, RefId: 1, Payload: payload,
+			NextAttemptMs: now, CreatedMs: now, UpdatedMs: now}
+		require.NoError(t, e.Repo.Tx(ctx, func(tx *sql.Tx) error { return e.Repo.Ops.InsertOp(ctx, tx, rec) }))
+	}
+
+	err = e.Tick(ctx)
+	require.ErrorIs(t, err, rpcFailure, "RPC故障不能伪装成正常离线或成功Tick")
+	require.ErrorIs(t, err, sqlFailure, "页末汇总仍须保留SQL账本故障原因")
+	require.Len(t, applier.attempts(), tickAckLimit, "前两条失败不能阻止本页余项")
+	require.EqualValues(t, tickAckLimit, e.ackAfterOpID)
+	var pending int
+	require.NoError(t, e.Repo.DB.QueryRow("SELECT COUNT(*) FROM trade_asset_op WHERE receipt_ack_pending=1").Scan(&pending))
+	require.Equal(t, tickAckLimit+1, pending, "依赖错误与正常离线都不能清除未获SQL确认的收据待办")
+
+	require.NoError(t, e.Tick(ctx), "正常离线done=false不属于故障，下一页仍应成功")
+	require.Len(t, applier.distinct(), tickAckLimit+1)
+	require.Zero(t, e.ackAfterOpID, "读到尾页后回到表头")
+	err = e.Tick(ctx)
+	require.ErrorIs(t, err, rpcFailure, "原失败项仍须再次尝试")
+	require.ErrorIs(t, err, sqlFailure)
+	require.EqualValues(t, 1, applier.attempts()[tickAckLimit+1], "页尾后须重新尝试未清理的失败项")
 }
 
 // 一行收据 ACK 的 payload 解不开时,修复前 AckDue 整页报错、游标停在它前面,全服收据 ACK 停摆。

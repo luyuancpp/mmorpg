@@ -199,6 +199,94 @@ void SendClientPlayerJubaozhaiListTradeMarkets(entt::registry& registry, entt::e
 // 类型擦除版只供元数据 sender 使用;动态类型不匹配时异步回 INTERNAL,不发出请求。
 void SendClientPlayerJubaozhaiListTradeMarketsErased(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, GrpcMessageDone done, const GrpcCallOptions& options);
 #pragma endregion
+#pragma region ClientPlayerJubaozhaiCreateRmbConsignment
+// gRPC :path(线上契约,与 Go 侧一致)。
+inline constexpr std::string_view kClientPlayerJubaozhaiCreateRmbConsignmentGrpcPath = "/trade.ClientPlayerJubaozhai/CreateRmbConsignment";
+// done 必填且恰好调用一次,从不在 Send 栈内同步调用;为空 LOG_FATAL。响应只在回调期间有效。
+void SendClientPlayerJubaozhaiCreateRmbConsignment(entt::registry& registry, entt::entity nodeEntity, const ::trade::CreateRmbConsignmentRequest& request, GrpcDone<::trade::RmbConsignmentResponse> done, const GrpcCallOptions& options = {});
+// 类型擦除版只供元数据 sender 使用;动态类型不匹配时异步回 INTERNAL,不发出请求。
+void SendClientPlayerJubaozhaiCreateRmbConsignmentErased(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, GrpcMessageDone done, const GrpcCallOptions& options);
+#pragma endregion
+#pragma region ClientPlayerJubaozhaiGetRmbConsignment
+// gRPC :path(线上契约,与 Go 侧一致)。
+inline constexpr std::string_view kClientPlayerJubaozhaiGetRmbConsignmentGrpcPath = "/trade.ClientPlayerJubaozhai/GetRmbConsignment";
+// done 必填且恰好调用一次,从不在 Send 栈内同步调用;为空 LOG_FATAL。响应只在回调期间有效。
+void SendClientPlayerJubaozhaiGetRmbConsignment(entt::registry& registry, entt::entity nodeEntity, const ::trade::GetRmbConsignmentRequest& request, GrpcDone<::trade::RmbConsignmentResponse> done, const GrpcCallOptions& options = {});
+// 类型擦除版只供元数据 sender 使用;动态类型不匹配时异步回 INTERNAL,不发出请求。
+void SendClientPlayerJubaozhaiGetRmbConsignmentErased(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, GrpcMessageDone done, const GrpcCallOptions& options);
+#pragma endregion
+#pragma region ClientPlayerJubaozhaiListRmbConsignments
+// gRPC :path(线上契约,与 Go 侧一致)。
+inline constexpr std::string_view kClientPlayerJubaozhaiListRmbConsignmentsGrpcPath = "/trade.ClientPlayerJubaozhai/ListRmbConsignments";
+// done 必填且恰好调用一次,从不在 Send 栈内同步调用;为空 LOG_FATAL。响应只在回调期间有效。
+void SendClientPlayerJubaozhaiListRmbConsignments(entt::registry& registry, entt::entity nodeEntity, const ::trade::ListRmbConsignmentsRequest& request, GrpcDone<::trade::ListRmbConsignmentsResponse> done, const GrpcCallOptions& options = {});
+// 类型擦除版只供元数据 sender 使用;动态类型不匹配时异步回 INTERNAL,不发出请求。
+void SendClientPlayerJubaozhaiListRmbConsignmentsErased(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, GrpcMessageDone done, const GrpcCallOptions& options);
+#pragma endregion
+#pragma region ClientPlayerJubaozhaiBuyRmbConsignment
+// gRPC :path(线上契约,与 Go 侧一致)。
+inline constexpr std::string_view kClientPlayerJubaozhaiBuyRmbConsignmentGrpcPath = "/trade.ClientPlayerJubaozhai/BuyRmbConsignment";
+// done 必填且恰好调用一次,从不在 Send 栈内同步调用;为空 LOG_FATAL。响应只在回调期间有效。
+void SendClientPlayerJubaozhaiBuyRmbConsignment(entt::registry& registry, entt::entity nodeEntity, const ::trade::BuyRmbConsignmentRequest& request, GrpcDone<::trade::CommerceOrderResponse> done, const GrpcCallOptions& options = {});
+// 类型擦除版只供元数据 sender 使用;动态类型不匹配时异步回 INTERNAL,不发出请求。
+void SendClientPlayerJubaozhaiBuyRmbConsignmentErased(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, GrpcMessageDone done, const GrpcCallOptions& options);
+#pragma endregion
+#pragma region ClientPlayerJubaozhaiCancelRmbConsignment
+// gRPC :path(线上契约,与 Go 侧一致)。
+inline constexpr std::string_view kClientPlayerJubaozhaiCancelRmbConsignmentGrpcPath = "/trade.ClientPlayerJubaozhai/CancelRmbConsignment";
+// done 必填且恰好调用一次,从不在 Send 栈内同步调用;为空 LOG_FATAL。响应只在回调期间有效。
+void SendClientPlayerJubaozhaiCancelRmbConsignment(entt::registry& registry, entt::entity nodeEntity, const ::trade::CancelRmbConsignmentRequest& request, GrpcDone<::trade::RmbConsignmentResponse> done, const GrpcCallOptions& options = {});
+// 类型擦除版只供元数据 sender 使用;动态类型不匹配时异步回 INTERNAL,不发出请求。
+void SendClientPlayerJubaozhaiCancelRmbConsignmentErased(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, GrpcMessageDone done, const GrpcCallOptions& options);
+#pragma endregion
+#pragma region ClientPlayerJubaozhaiGetRmbOrder
+// gRPC :path(线上契约,与 Go 侧一致)。
+inline constexpr std::string_view kClientPlayerJubaozhaiGetRmbOrderGrpcPath = "/trade.ClientPlayerJubaozhai/GetRmbOrder";
+// done 必填且恰好调用一次,从不在 Send 栈内同步调用;为空 LOG_FATAL。响应只在回调期间有效。
+void SendClientPlayerJubaozhaiGetRmbOrder(entt::registry& registry, entt::entity nodeEntity, const ::trade::GetCommerceOrderRequest& request, GrpcDone<::trade::CommerceOrderResponse> done, const GrpcCallOptions& options = {});
+// 类型擦除版只供元数据 sender 使用;动态类型不匹配时异步回 INTERNAL,不发出请求。
+void SendClientPlayerJubaozhaiGetRmbOrderErased(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, GrpcMessageDone done, const GrpcCallOptions& options);
+#pragma endregion
+#pragma region ClientPlayerJubaozhaiListRmbOrders
+// gRPC :path(线上契约,与 Go 侧一致)。
+inline constexpr std::string_view kClientPlayerJubaozhaiListRmbOrdersGrpcPath = "/trade.ClientPlayerJubaozhai/ListRmbOrders";
+// done 必填且恰好调用一次,从不在 Send 栈内同步调用;为空 LOG_FATAL。响应只在回调期间有效。
+void SendClientPlayerJubaozhaiListRmbOrders(entt::registry& registry, entt::entity nodeEntity, const ::trade::ListCommerceOrdersRequest& request, GrpcDone<::trade::ListCommerceOrdersResponse> done, const GrpcCallOptions& options = {});
+// 类型擦除版只供元数据 sender 使用;动态类型不匹配时异步回 INTERNAL,不发出请求。
+void SendClientPlayerJubaozhaiListRmbOrdersErased(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, GrpcMessageDone done, const GrpcCallOptions& options);
+#pragma endregion
+#pragma region ClientPlayerJubaozhaiCancelRmbOrder
+// gRPC :path(线上契约,与 Go 侧一致)。
+inline constexpr std::string_view kClientPlayerJubaozhaiCancelRmbOrderGrpcPath = "/trade.ClientPlayerJubaozhai/CancelRmbOrder";
+// done 必填且恰好调用一次,从不在 Send 栈内同步调用;为空 LOG_FATAL。响应只在回调期间有效。
+void SendClientPlayerJubaozhaiCancelRmbOrder(entt::registry& registry, entt::entity nodeEntity, const ::trade::CancelCommerceOrderRequest& request, GrpcDone<::trade::CommerceOrderResponse> done, const GrpcCallOptions& options = {});
+// 类型擦除版只供元数据 sender 使用;动态类型不匹配时异步回 INTERNAL,不发出请求。
+void SendClientPlayerJubaozhaiCancelRmbOrderErased(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, GrpcMessageDone done, const GrpcCallOptions& options);
+#pragma endregion
+#pragma region ClientPlayerJubaozhaiListSellerIncomes
+// gRPC :path(线上契约,与 Go 侧一致)。
+inline constexpr std::string_view kClientPlayerJubaozhaiListSellerIncomesGrpcPath = "/trade.ClientPlayerJubaozhai/ListSellerIncomes";
+// done 必填且恰好调用一次,从不在 Send 栈内同步调用;为空 LOG_FATAL。响应只在回调期间有效。
+void SendClientPlayerJubaozhaiListSellerIncomes(entt::registry& registry, entt::entity nodeEntity, const ::trade::ListSellerIncomesRequest& request, GrpcDone<::trade::ListSellerIncomesResponse> done, const GrpcCallOptions& options = {});
+// 类型擦除版只供元数据 sender 使用;动态类型不匹配时异步回 INTERNAL,不发出请求。
+void SendClientPlayerJubaozhaiListSellerIncomesErased(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, GrpcMessageDone done, const GrpcCallOptions& options);
+#pragma endregion
+#pragma region ClientPlayerJubaozhaiCreateWithdrawal
+// gRPC :path(线上契约,与 Go 侧一致)。
+inline constexpr std::string_view kClientPlayerJubaozhaiCreateWithdrawalGrpcPath = "/trade.ClientPlayerJubaozhai/CreateWithdrawal";
+// done 必填且恰好调用一次,从不在 Send 栈内同步调用;为空 LOG_FATAL。响应只在回调期间有效。
+void SendClientPlayerJubaozhaiCreateWithdrawal(entt::registry& registry, entt::entity nodeEntity, const ::trade::CreateWithdrawalRequest& request, GrpcDone<::trade::WithdrawalResponse> done, const GrpcCallOptions& options = {});
+// 类型擦除版只供元数据 sender 使用;动态类型不匹配时异步回 INTERNAL,不发出请求。
+void SendClientPlayerJubaozhaiCreateWithdrawalErased(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, GrpcMessageDone done, const GrpcCallOptions& options);
+#pragma endregion
+#pragma region ClientPlayerJubaozhaiGetWithdrawal
+// gRPC :path(线上契约,与 Go 侧一致)。
+inline constexpr std::string_view kClientPlayerJubaozhaiGetWithdrawalGrpcPath = "/trade.ClientPlayerJubaozhai/GetWithdrawal";
+// done 必填且恰好调用一次,从不在 Send 栈内同步调用;为空 LOG_FATAL。响应只在回调期间有效。
+void SendClientPlayerJubaozhaiGetWithdrawal(entt::registry& registry, entt::entity nodeEntity, const ::trade::GetWithdrawalRequest& request, GrpcDone<::trade::WithdrawalResponse> done, const GrpcCallOptions& options = {});
+// 类型擦除版只供元数据 sender 使用;动态类型不匹配时异步回 INTERNAL,不发出请求。
+void SendClientPlayerJubaozhaiGetWithdrawalErased(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, GrpcMessageDone done, const GrpcCallOptions& options);
+#pragma endregion
 // 本文件所有 unary 调用此后使用的 deadline;启动时按目标节点类型设置。
 void SetJubaozhaiCallDeadline(std::chrono::milliseconds deadline);
 

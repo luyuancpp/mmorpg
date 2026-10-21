@@ -40,6 +40,17 @@ type contextKey struct{}
 // ClientMethods 是允许客户端来源调用的方法全集:ClientPlayerJubaozhai 的 4 个 P1 方法。
 // TradeAdmin 的任何方法都刻意不在其中(session_test.go 遍历两个 ServiceDesc 守住)。
 var ClientMethods = map[string]struct{}{
+	tradepb.ClientPlayerJubaozhai_CreateRmbConsignment_FullMethodName: {},
+	tradepb.ClientPlayerJubaozhai_GetRmbConsignment_FullMethodName:    {},
+	tradepb.ClientPlayerJubaozhai_ListRmbConsignments_FullMethodName:  {},
+	tradepb.ClientPlayerJubaozhai_BuyRmbConsignment_FullMethodName:    {},
+	tradepb.ClientPlayerJubaozhai_CancelRmbConsignment_FullMethodName: {},
+	tradepb.ClientPlayerJubaozhai_GetRmbOrder_FullMethodName:          {},
+	tradepb.ClientPlayerJubaozhai_ListRmbOrders_FullMethodName:        {},
+	tradepb.ClientPlayerJubaozhai_CancelRmbOrder_FullMethodName:       {},
+	tradepb.ClientPlayerJubaozhai_ListSellerIncomes_FullMethodName:    {},
+	tradepb.ClientPlayerJubaozhai_CreateWithdrawal_FullMethodName:     {},
+	tradepb.ClientPlayerJubaozhai_GetWithdrawal_FullMethodName:        {},
 	tradepb.ClientPlayerJubaozhai_ListTradeMarkets_FullMethodName:     {},
 	tradepb.ClientPlayerJubaozhai_BrowseCommerceOffers_FullMethodName: {},
 	tradepb.ClientPlayerJubaozhai_BrowseListings_FullMethodName:       {},
@@ -80,6 +91,15 @@ func ClientPlayerID(ctx context.Context) (playerID uint64, ok bool) {
 		return 0, false
 	}
 	return detail.GetPlayerId(), true
+}
+
+// Details 返回已由gate元数据校验的原连接身份，不给调用方修改共享对象。
+func Details(ctx context.Context) *base.SessionDetails {
+	detail, _ := ctx.Value(contextKey{}).(*base.SessionDetails)
+	if detail == nil {
+		return nil
+	}
+	return proto.Clone(detail).(*base.SessionDetails)
 }
 
 // UnaryServerInterceptor 校验会话元数据并按 clientMethods 做方法级准入。

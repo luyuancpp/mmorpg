@@ -357,8 +357,10 @@ type EnterSceneRequest struct {
 	// - 不进 request_id 的去重指纹(算指纹前清零,与 correlation_id 同理):login 的重试复用同一个
 	//   request_id,但每条登录链铸出的代次都不同,进指纹会把合法重试判成幂等冲突。
 	LoginGeneration uint64 `protobuf:"varint,12,opt,name=login_generation,json=loginGeneration,proto3" json:"login_generation,omitempty"`
-	unknownFields   protoimpl.UnknownFields
-	sizeCache       protoimpl.SizeCache
+	// 账号目录放行的所有权修订；完整参与幂等指纹，不能用新买家的修订替旧路由补权。0拒绝。
+	OwnerRevision uint64 `protobuf:"varint,13,opt,name=owner_revision,json=ownerRevision,proto3" json:"owner_revision,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *EnterSceneRequest) Reset() {
@@ -471,6 +473,13 @@ func (x *EnterSceneRequest) GetClientChannelPick() bool {
 func (x *EnterSceneRequest) GetLoginGeneration() uint64 {
 	if x != nil {
 		return x.LoginGeneration
+	}
+	return 0
+}
+
+func (x *EnterSceneRequest) GetOwnerRevision() uint64 {
+	if x != nil {
+		return x.OwnerRevision
 	}
 	return 0
 }
@@ -764,7 +773,7 @@ const file_proto_scene_manager_scene_manager_service_proto_rawDesc = "" +
 	"creatorIds\"I\n" +
 	"\x13DestroySceneRequest\x12\x19\n" +
 	"\bscene_id\x18\x01 \x01(\x04R\asceneId\x12\x17\n" +
-	"\azone_id\x18\x02 \x01(\rR\x06zoneId\"\xad\x03\n" +
+	"\azone_id\x18\x02 \x01(\rR\x06zoneId\"\xd4\x03\n" +
 	"\x11EnterSceneRequest\x12\x1b\n" +
 	"\tplayer_id\x18\x01 \x01(\x04R\bplayerId\x12\x19\n" +
 	"\bscene_id\x18\x02 \x01(\x04R\asceneId\x12\x1d\n" +
@@ -781,7 +790,8 @@ const file_proto_scene_manager_scene_manager_service_proto_rawDesc = "" +
 	"\x0ecorrelation_id\x18\n" +
 	" \x01(\x04R\rcorrelationId\x12.\n" +
 	"\x13client_channel_pick\x18\v \x01(\bR\x11clientChannelPick\x12)\n" +
-	"\x10login_generation\x18\f \x01(\x04R\x0floginGeneration\"\x98\x02\n" +
+	"\x10login_generation\x18\f \x01(\x04R\x0floginGeneration\x12%\n" +
+	"\x0eowner_revision\x18\r \x01(\x04R\rownerRevision\"\x98\x02\n" +
 	"\x12EnterSceneResponse\x12\x1d\n" +
 	"\n" +
 	"error_code\x18\x01 \x01(\rR\terrorCode\x12#\n" +

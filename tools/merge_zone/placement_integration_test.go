@@ -2,7 +2,7 @@
 
 package main
 
-// docs/design/player-storage-placement.md 第二段(落点)的集成测试:对着真实 MySQL / Redis 与真二进制,
+// docs/design/player-storage-placement.md 第二段(落点)的集成测试:对着真实 TiDB / Redis 与真二进制,
 // 跳过条件、一次性库与 Redis DB 9/10/11 的隔离全部沿用 integration_test.go 的 TestMain。
 //
 //	go test -tags merge_integration -run "TestIT_Placement_|TestIT_Relocate_|TestIT_StorageAudit" -v ./...
@@ -44,9 +44,7 @@ func itPlacement(t *testing.T, id uint64) string {
 
 func itSetPlacement(t *testing.T, id uint64, value string) {
 	t.Helper()
-	if err := itRedis(t, itMappingRD).Set(context.Background(), placementKey(id), value, 0).Err(); err != nil {
-		t.Fatal(err)
-	}
+	itSetRoutePlacement(t, id, value)
 }
 
 func itHome(t *testing.T, id uint64) string {
@@ -57,9 +55,7 @@ func itHome(t *testing.T, id uint64) string {
 
 func itSetHome(t *testing.T, id uint64, zone uint32) {
 	t.Helper()
-	if err := itRedis(t, itMappingRD).Set(context.Background(), playerZoneKey(id), fmt.Sprint(zone), 0).Err(); err != nil {
-		t.Fatal(err)
-	}
+	itSetRouteHome(t, id, zone)
 }
 
 // itTransform 读 schema.player_database 里一名玩家的 transform 列;没有行返回 found=false。
@@ -236,10 +232,15 @@ func TestIT_Placement_PinMergeVerifyUnmerge(t *testing.T) {
 	if out, code := verify(); code != 0 || !strings.Contains(out, "0 block(s)") {
 		t.Fatalf("pin verification must pass (rows are found through the placement records) exit=%d\n%s", code, out)
 	}
-	// 漏钉一个:有效落点回落 home = 902,目标库没有他的行 —— 验证必须拦住。
+	// 旧缓存漏钉不能改变SQL真相；回档镜像必须仍按原SQL落点验收。
 	mapRdb.Del(ctx, placementKey(9002))
+	if out, code := verify(); code != 0 {
+		t.Fatalf("a missing placement mirror must not override the SQL original (exit=%d)\n%s", code, out)
+	}
+	// 真SQL原件漏钉则有效落点回落902，没有原行，必须拒绝。
+	itClearRoutePlacement(t, 9002)
 	if out, code := verify(); code != 1 || !strings.Contains(out, "9002") {
-		t.Fatalf("a player whose pin is missing must block (exit=%d)\n%s", code, out)
+		t.Fatalf("missing SQL pin exit=%d\n%s", code, out)
 	}
 	itSetPlacement(t, 9002, "901:1")
 
@@ -403,7 +404,7 @@ func TestIT_Placement_MergeAndUnmergeRefuseFrozenPlayers(t *testing.T) {
 	itSetHome(t, 9201, itDstZone)
 	itSetHome(t, 9202, itDstZone)
 	manifest := filepath.Join(t.TempDir(), "done.json")
-	m := newMergeManifest("run-frozen-unmerge", itSrcZone, itDstZone, "it", time.Now())
+	m := itDBMergeManifest("run-frozen-unmerge", itSrcZone, itDstZone, "it", time.Now())
 	m.PlayerIDs = []uint64{9201, 9202}
 	if err := saveManifest(manifest, m); err != nil {
 		t.Fatal(err)
@@ -428,7 +429,7 @@ func TestIT_Placement_UnmergeRequiresSourceCapabilityForOffSourceRecords(t *test
 	itSetHome(t, 9232, itDstZone)
 	itSetPlacement(t, 9232, "902:1") // 合服后 -mode pin-placement -zone 902 钉的
 	manifest := filepath.Join(t.TempDir(), "done.json")
-	m := newMergeManifest("run-offsrc-unmerge", itSrcZone, itDstZone, "it", time.Now())
+	m := itDBMergeManifest("run-offsrc-unmerge", itSrcZone, itDstZone, "it", time.Now())
 	m.PlayerIDs = []uint64{9231, 9232}
 	if err := saveManifest(manifest, m); err != nil {
 		t.Fatal(err)
@@ -468,7 +469,7 @@ func TestIT_Placement_ResumeMustKeepTheManifestMode(t *testing.T) {
 	itSeedPlayers(t, []uint64{9211}, true)
 	itMarkCapable(t, itSrcZone, itDstZone)
 	manifest := filepath.Join(t.TempDir(), "merge.json")
-	m := newMergeManifest("run-legacy", itSrcZone, itDstZone, "it", time.Now()) // 没有 player_rows_mode = copy
+	m := itDBMergeManifest("run-legacy", itSrcZone, itDstZone, "it", time.Now()) // 没有 player_rows_mode = copy
 	m.PlayerIDs = []uint64{9211}
 	if err := saveManifest(manifest, m); err != nil {
 		t.Fatal(err)
@@ -487,8 +488,6 @@ func TestIT_Placement_ResumeMustKeepTheManifestMode(t *testing.T) {
 func TestIT_Placement_PinPlacementMode(t *testing.T) {
 	requireIT(t)
 	itReset(t)
-	ctx := context.Background()
-	mapRdb := itRedis(t, itMappingRD)
 	itSetHome(t, 9301, itSrcZone)
 	itSetHome(t, 9302, itSrcZone)
 	itSetPlacement(t, 9302, "1000000:3")
@@ -508,20 +507,18 @@ func TestIT_Placement_PinPlacementMode(t *testing.T) {
 	if itPlacement(t, 9301) != "901:1" || itPlacement(t, 9302) != "1000000:3" || itPlacement(t, 9303) != "" {
 		t.Fatalf("placements = %q %q %q", itPlacement(t, 9301), itPlacement(t, 9302), itPlacement(t, 9303))
 	}
-	if out, code = itRun(t, "-mode", "pin-placement", "-zone", "901", "-apply"); code != 0 || !strings.Contains(out, "already_pinned=1") {
+	if out, code = itRun(t, "-mode", "pin-placement", "-zone", "901", "-apply"); code != 0 || !strings.Contains(out, "pinned=0") || !strings.Contains(out, "1 already current") {
 		t.Fatalf("the re-run must be idempotent (exit=%d)\n%s", code, out)
 	}
 
 	// 正在合服 / 已被合走:拒绝,一个都不钉。
 	itSetHome(t, 9304, itSrcZone)
-	mapRdb.Set(ctx, mergeFenceKey(itSrcZone), `{"run_id":"m"}`, 0)
+	itSeedSQLFence(t, itSrcZone, "it-pin-fence")
 	if out, code := itRun(t, "-mode", "pin-placement", "-zone", "901", "-apply"); code == 0 || !strings.Contains(out, "being merged") {
 		t.Fatalf("a fenced zone must be refused (exit=%d)\n%s", code, out)
 	}
-	mapRdb.Del(ctx, mergeFenceKey(itSrcZone))
-	if err := markMergedInto(ctx, mapRdb, itSrcZone, itDstZone, "run-gone", false); err != nil {
-		t.Fatal(err)
-	}
+	itReleaseSQLFences(t, itSrcZone)
+	itSeedSQLMerged(t, itSrcZone, itDstZone, "run-gone")
 	if out, code := itRun(t, "-mode", "pin-placement", "-zone", "901", "-apply"); code == 0 || !strings.Contains(out, "merged away") {
 		t.Fatalf("a merged-away zone must be refused (exit=%d)\n%s", code, out)
 	}
@@ -623,13 +620,12 @@ func TestIT_Relocate_IntoAPlayerStoreAndBack(t *testing.T) {
 func TestIT_Relocate_SkipsPlayersThatDoNotQualify(t *testing.T) {
 	requireIT(t)
 	itReset(t)
-	ctx := context.Background()
 	db := itOpen(t)
 	itSeedPlayers(t, []uint64{9501, 9502, 9503, 9504}, true)
 	itSetPlacement(t, 9501, "902:1")
 	itSetHome(t, 9502, itDstZone)
 	itSetPlacement(t, 9502, "901:1")
-	itRedis(t, itMappingRD).Set(ctx, mergeFenceKey(itDstZone), `{"run_id":"merge-in-progress"}`, 0)
+	itSeedSQLFence(t, itDstZone, "merge-in-progress")
 	itSetPlacement(t, 9503, frozenValue(901, 1, "reloc-other"))
 	itMarkCapable(t, itSrcZone, itDstZone)
 	manifest := filepath.Join(t.TempDir(), "reloc.json")
@@ -682,7 +678,7 @@ func itRelocateEngine(t *testing.T, m *relocateManifest, lockWait time.Duration,
 		rows = wrap(sqlRows)
 	}
 	e := newRelocateEngine(m, func(*relocateManifest) error { return nil },
-		redisRelocatePlacements{rdb: itRedis(t, itMappingRD)}, redisOrderingLocks{rdb: itRedis(t, itSharedRD)}, rows,
+		itFixturePlacements(t), redisOrderingLocks{rdb: itRedis(t, itSharedRD)}, rows,
 		map[uint32]bool{itSrcZone: true, itDstZone: true}, 100, lockWait)
 	e.lockPoll = 50 * time.Millisecond
 	return e
@@ -702,7 +698,7 @@ func TestIT_Relocate_LockWaitTimeoutUnfreezes(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	m := newRelocateManifest("reloc-it-lock", itSrcZone, itDstZone, 1, itPlayerTables, []uint64{9601}, "it", time.Now())
+	m := itDBRelocateManifest("reloc-it-lock", itSrcZone, itDstZone, 1, itPlayerTables, []uint64{9601}, "it", time.Now())
 	if err := itRelocateEngine(t, m, 300*time.Millisecond, nil).run(ctx); err != nil {
 		t.Fatal(err)
 	}
@@ -717,7 +713,7 @@ func TestIT_Relocate_LockWaitTimeoutUnfreezes(t *testing.T) {
 	}
 
 	shared.Del(ctx, lock)
-	m2 := newRelocateManifest("reloc-it-lock2", itSrcZone, itDstZone, 1, itPlayerTables, []uint64{9601}, "it", time.Now())
+	m2 := itDBRelocateManifest("reloc-it-lock2", itSrcZone, itDstZone, 1, itPlayerTables, []uint64{9601}, "it", time.Now())
 	if err := itRelocateEngine(t, m2, 300*time.Millisecond, nil).run(ctx); err != nil {
 		t.Fatal(err)
 	}
@@ -747,7 +743,7 @@ func TestIT_Relocate_CompareMismatchUnfreezes(t *testing.T) {
 	ctx := context.Background()
 	itSeedPlayers(t, []uint64{9651}, true)
 	db := itOpen(t)
-	m := newRelocateManifest("reloc-it-r4", itSrcZone, itDstZone, 1, itPlayerTables, []uint64{9651}, "it", time.Now())
+	m := itDBRelocateManifest("reloc-it-r4", itSrcZone, itDstZone, 1, itPlayerTables, []uint64{9651}, "it", time.Now())
 	e := itRelocateEngine(t, m, time.Second, func(r *sqlRelocateRows) relocateRows { return itTamperingRows{sqlRelocateRows: r, db: db} })
 	if err := e.run(ctx); err != nil {
 		t.Fatal(err)
@@ -772,7 +768,7 @@ func TestIT_Relocate_ResumeAfterACrashAndAbort(t *testing.T) {
 
 	// 崩溃现场:9701 清单记了冻结;9702 冻结写进了 Redis,清单还是 pending。
 	crash := filepath.Join(dir, "crash.json")
-	m := newRelocateManifest("reloc-it-crash", itSrcZone, itDstZone, 1, itPlayerTables, []uint64{9701, 9702}, "it", time.Now())
+	m := itDBRelocateManifest("reloc-it-crash", itSrcZone, itDstZone, 1, itPlayerTables, []uint64{9701, 9702}, "it", time.Now())
 	m.Players[0].State, m.Players[0].Version, m.Players[0].HomeZone = relocFrozen, 1, itSrcZone
 	if err := saveRelocateManifest(crash, m); err != nil {
 		t.Fatal(err)
@@ -794,7 +790,7 @@ func TestIT_Relocate_ResumeAfterACrashAndAbort(t *testing.T) {
 
 	// 放弃另一次:9711 冻结中,9712 还没冻结。
 	abort := filepath.Join(dir, "abort.json")
-	a := newRelocateManifest("reloc-it-abort", itSrcZone, itDstZone, 1, itPlayerTables, []uint64{9711, 9712}, "it", time.Now())
+	a := itDBRelocateManifest("reloc-it-abort", itSrcZone, itDstZone, 1, itPlayerTables, []uint64{9711, 9712}, "it", time.Now())
 	a.Players[0].State, a.Players[0].Version, a.Players[0].HomeZone = relocFrozen, 1, itSrcZone
 	if err := saveRelocateManifest(abort, a); err != nil {
 		t.Fatal(err)
@@ -845,7 +841,7 @@ func TestIT_Relocate_RefusesWithoutCapabilityOrExplicitZones(t *testing.T) {
 }
 
 // TestIT_Relocate_R3StatementsArePrimaryKeyPointOps 钉住 R3 两条写语句的执行计划(死锁审计口径):删 T 的旧行与
-// INSERT … SELECT 的读侧都是完整主键等值(key=PRIMARY、key_len=8),不经过任何二级索引。
+// INSERT … SELECT的读侧都是完整主键Point_Get，不经过任何二级索引或扫描。
 func TestIT_Relocate_R3StatementsArePrimaryKeyPointOps(t *testing.T) {
 	requireIT(t)
 	itReset(t)
@@ -857,30 +853,20 @@ func TestIT_Relocate_R3StatementsArePrimaryKeyPointOps(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	plan := itExplain(t, db, itInlineUintArgs(t, relocateDeleteSQL(dst), 9851))
-	if plan["key"] != "PRIMARY" || plan["key_len"] != "8" {
-		t.Fatalf("R3 delete plan key=%q key_len=%q, want PRIMARY/8", plan["key"], plan["key_len"])
-	}
+	stmt := itInlineUintArgs(t, relocateDeleteSQL(dst), 9851)
+	itAssertTiDBPrimaryPoint(t, itExplainRows(t, db, stmt), stmt)
 	cols, err := alignedPlayerColumns(ctx, db, zoneDBName(itSrcZone), zoneDBName(itDstZone), "player_database")
 	if err != nil {
 		t.Fatal(err)
 	}
-	rows := itExplainRows(t, db, itInlineUintArgs(t, relocateCopySQL(dst, src, cols), 9851))
-	var read map[string]string
-	for _, r := range rows {
-		if r["select_type"] != "INSERT" {
-			read = r
-		}
-	}
-	if read == nil || read["key"] != "PRIMARY" || read["key_len"] != "8" {
-		t.Fatalf("R3 copy read-side plan = %v, want key=PRIMARY key_len=8 (all rows: %v)", read, rows)
-	}
+	stmt = itInlineUintArgs(t, relocateCopySQL(dst, src, cols), 9851)
+	itAssertTiDBPrimaryPoint(t, itExplainRows(t, db, stmt), stmt)
 }
 
-// itExplainRows 跑 EXPLAIN FORMAT=TRADITIONAL,返回全部行(INSERT … SELECT 有写入侧与读取侧两行)。
+// itExplainRows读取TiDB原生brief计划的全部行，保留实际算子与访问对象。
 func itExplainRows(t *testing.T, db *sql.DB, stmt string) []map[string]string {
 	t.Helper()
-	rows, err := db.Query("EXPLAIN FORMAT=TRADITIONAL " + stmt)
+	rows, err := db.Query("EXPLAIN FORMAT='brief' " + stmt)
 	if err != nil {
 		t.Fatalf("EXPLAIN %q: %v", stmt, err)
 	}
@@ -931,7 +917,9 @@ func TestIT_StorageAudit_CountsLiveColdAndUnmappedRows(t *testing.T) {
 	itSetPlacement(t, 9904, "901:2")
 	itSetHome(t, 9904, itDstZone)
 	itSetPlacement(t, 9905, frozenValue(901, 1, "reloc-x"))
-	itSetPlacement(t, 9906, "junk")
+	if err := itRedis(t, itMappingRD).Set(ctx, placementKey(9906), "junk", 0).Err(); err != nil {
+		t.Fatal(err)
+	}
 
 	rep, err := auditStorage(ctx, db, itRedis(t, itMappingRD), itSrcZone)
 	if err != nil {

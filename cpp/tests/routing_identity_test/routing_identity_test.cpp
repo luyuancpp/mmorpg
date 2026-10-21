@@ -1686,6 +1686,49 @@ TEST(SceneRouteEntry, ZeroEpochRouteNeverForwardsByEpoch)
     EXPECT_EQ(0u, fresh.forwardedOwnerEpoch);
 }
 
+TEST(SceneRouteEntry, OwnerRevisionKeepsOriginalRouteIdentity)
+{
+    SessionInfo session = SessionInGameAtEpoch();
+    session.ownerRevision = 19;
+    session.forwardedOwnerRevision = 19;
+
+    // 迟到的卖家路由必须保留原修订号,交给scene/SQL拒绝,不能借用较新的买家身份。
+    gate_scene_route::ApplyRouteIdentity(session, 42, 1, kEpochBeforeRelogin, kReloginGeneration, 18);
+    EXPECT_EQ(18u, session.ownerRevision);
+    uint64_t sentRevision = 0;
+    ASSERT_TRUE(gate_scene_route::ApplyRoute(session, 1001, SceneNodeChange::kUnchanged,
+        [&](uint32_t type) { EXPECT_EQ(0u, type); sentRevision = session.ownerRevision; return true; }));
+    EXPECT_EQ(18u, sentRevision);
+    EXPECT_EQ(18u, session.forwardedOwnerRevision);
+}
+
+TEST(SceneRouteEntry, OwnerRevisionForwardFailureKeepsRetryAndThenDeduplicates)
+{
+    SessionInfo session = SessionInGameAtEpoch();
+    session.ownerRevision = 20;
+    session.forwardedOwnerRevision = 19;
+    int sends = 0;
+    EXPECT_FALSE(gate_scene_route::ApplyRoute(session, 1001, SceneNodeChange::kUnchanged,
+        [&](uint32_t) { ++sends; return false; }));
+    EXPECT_EQ(19u, session.forwardedOwnerRevision);
+
+    auto send = [&](uint32_t type) { EXPECT_EQ(0u, type); ++sends; return true; };
+    ASSERT_TRUE(gate_scene_route::ApplyRoute(session, 1001, SceneNodeChange::kUnchanged, send));
+    EXPECT_EQ(20u, session.forwardedOwnerRevision);
+    ASSERT_TRUE(gate_scene_route::ApplyRoute(session, 1001, SceneNodeChange::kUnchanged, send));
+    EXPECT_EQ(2, sends);
+}
+
+TEST(SceneRouteEntry, LeaveGameClearsBothOwnerRevisionCopies)
+{
+    SessionInfo session = SessionInGameAtEpoch();
+    session.ownerRevision = 20;
+    session.forwardedOwnerRevision = 19;
+    gate_scene_route::ResetSceneRoute(session);
+    EXPECT_EQ(0u, session.ownerRevision);
+    EXPECT_EQ(0u, session.forwardedOwnerRevision);
+}
+
 // 审计用例「gate 在 Bind 先到、按旧路由补发之后又收到同节点新 epoch 路由」:不经 LeaveGame 重置的残留路径(例如 LeaveGame
 // 之外的同连接重登)。补发带旧 epoch;随后新 epoch 的路由同场景同节点,第 4 条判更大 → 以 0 再转发,持有节点抬到新一代。
 TEST(SceneRouteEntry, BindReplayThenSameNodeNewerEpochIsForwarded)
