@@ -3066,7 +3066,7 @@ void PlayerLifecycleSystem::FreezeRoleForTrade(Guid playerId)
 		// 拒存不能转为“实体已销毁”的排空证明；保留冻结原件，重放同一封存继续恢复。
 		return;
 	}
-	HandleExitGameNode(player, player_exit::ExitCause::kRoleTradeFrozen);
+	HandleExitGameNode(player, ExitCause::kRoleTradeFrozen);
 }
 
 void PlayerLifecycleSystem::StopMotionForExit(entt::entity player)
