@@ -176,6 +176,9 @@ func (s *sqlTeamStore) createLaunch(ctx context.Context, snap *Snapshot, caller 
 		// 本轮可能只在事务内标记了新看到的观战；重放已有意图必须回滚它，不能清退新watch。
 		return &PinnedResult{}, previous, nil
 	}
+	if err = s.authority.RequireNewTeamLaunchTx(ctx, tx, locked); err != nil {
+		return nil, nil, err
+	}
 	var active uint64
 	err = tx.QueryRowContext(ctx, "SELECT actor_id FROM team_launch WHERE team_id=? AND state IN(1,2,3) ORDER BY state,enqueued_ms,actor_id,request_high,request_low LIMIT 1 FOR UPDATE", snap.TeamId).Scan(&active)
 	if err == nil {

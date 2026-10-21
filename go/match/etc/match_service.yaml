@@ -15,6 +15,7 @@ GlobalMatch:
   User: root
   Database: mmorpg_match
   AccountRoleSchema: testdb
+  GuildTrialSchema: mmorpg_guild
   PasswordEnv: MATCH_MYSQL_PASSWORD
   ProbeSecretEnv: MATCH_PROBE_SECRET
   CrossRegionWaitSeconds: 30

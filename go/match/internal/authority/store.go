@@ -24,11 +24,13 @@ import (
 
 type Store struct {
 	roleSchema string
+	entryGuildSchema string
 	DB         *sql.DB
 	Secret     []byte
 	Config     config.GlobalMatchConf
 	TeamConfig config.TeamConf // 启动时由同一SQL策略指纹准入，运行中不热改。
 	roleGuard  func(context.Context, *sql.Tx, []*pb.MatchAuthorityTicketRecord) error
+	entryGuard func(context.Context, *sql.Tx, []*pb.MatchAuthorityTicketRecord, *matchEntryOriginal) error
 }
 
 const ticketColumns = "player_id,ticket,request_id,mode,config_id,team_size,state,enqueued_ms,not_before_ms,zone_id,rating_centi,formation_id,team_id,network_profile,expires_ms,selected_region,preferred_region,owner_account,owner_revision"
@@ -308,6 +310,9 @@ func (s *Store) Join(ctx context.Context, t *pb.MatchAuthorityTicketRecord, plan
 	if e != nil && !errors.Is(e, sql.ErrNoRows) {
 		return nil, false, e
 	}
+	if e = s.requireMatchEntryTx(ctx, tx, []*pb.MatchAuthorityTicketRecord{t}, nil); e != nil {
+		return nil, false, e
+	}
 	if e = s.RequireNoSpectators(ctx, tx, []uint64{t.PlayerId}); e != nil {
 		return nil, false, e
 	}
@@ -522,14 +527,17 @@ func (s *Store) Claim(ctx context.Context, f *pb.MatchFormationRecord, group []*
 		return e
 	}
 	defer tx.Rollback()
-	if e = s.claimTx(ctx, tx, f, group); e != nil {
+	if e = s.claimTx(ctx, tx, f, group, nil); e != nil {
 		return e
 	}
 	return tx.Commit()
 }
 
-func (s *Store) claimTx(ctx context.Context, tx *sql.Tx, f *pb.MatchFormationRecord, group []*pb.MatchAuthorityTicketRecord) error {
+func (s *Store) claimTx(ctx context.Context, tx *sql.Tx, f *pb.MatchFormationRecord, group []*pb.MatchAuthorityTicketRecord, source *matchEntryOriginal) error {
 	if e := s.lockOriginalPlayers(ctx, tx, group); e != nil {
+		return e
+	}
+	if e := s.requireMatchEntryTx(ctx, tx, group, source); e != nil {
 		return e
 	}
 	players := make([]uint64, 0, len(group))
@@ -619,14 +627,17 @@ func (s *Store) ReserveGroup(ctx context.Context, f *pb.MatchFormationRecord, gr
 		return e
 	}
 	defer tx.Rollback()
-	if e = s.reserveGroupTx(ctx, tx, f, group); e != nil {
+	if e = s.reserveGroupTx(ctx, tx, f, group, nil); e != nil {
 		return e
 	}
 	return tx.Commit()
 }
 
-func (s *Store) reserveGroupTx(ctx context.Context, tx *sql.Tx, f *pb.MatchFormationRecord, group []*pb.MatchAuthorityTicketRecord) error {
+func (s *Store) reserveGroupTx(ctx context.Context, tx *sql.Tx, f *pb.MatchFormationRecord, group []*pb.MatchAuthorityTicketRecord, source *matchEntryOriginal) error {
 	if e := s.lockOriginalPlayers(ctx, tx, group); e != nil {
+		return e
+	}
+	if e := s.requireMatchEntryTx(ctx, tx, group, source); e != nil {
 		return e
 	}
 	players := make([]uint64, 0, len(group))
@@ -685,7 +696,7 @@ func (s *Store) reserveGroupTx(ctx context.Context, tx *sql.Tx, f *pb.MatchForma
 			return e
 		}
 	}
-	if e = s.claimTx(ctx, tx, f, group); e != nil {
+	if e = s.claimTx(ctx, tx, f, group, source); e != nil {
 		return e
 	}
 	return nil

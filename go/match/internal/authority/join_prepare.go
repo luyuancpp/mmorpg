@@ -68,6 +68,9 @@ func (s *Store) PrepareJoin(ctx context.Context, offered *pb.MatchAuthorityTicke
 	if !errors.Is(err, sql.ErrNoRows) {
 		return nil, nil, false, err
 	}
+	if err = s.requireMatchEntryTx(ctx, tx, []*pb.MatchAuthorityTicketRecord{actor}, nil); err != nil {
+		return nil, nil, false, err
+	}
 	if _, err = tx.ExecContext(ctx, "INSERT IGNORE INTO match_authority_ticket("+ticketColumns+") VALUES(?,'','',0,0,0,0,0,0,0,0,0,0,?,0,0,0,'',0)", offered.PlayerId, []byte{}); err != nil {
 		return nil, nil, false, err
 	}

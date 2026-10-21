@@ -309,19 +309,14 @@ func (s *Store) BeginSpectator(ctx context.Context, player uint64, request *pb.W
 	if current != nil && current.State != 5 {
 		return nil, ErrSpectatorBusy
 	}
-	var pendingTeam uint64
-	err = tx.QueryRowContext(ctx, "SELECT actor_id FROM team_launch_role WHERE player_id=? AND state IN(1,2,3) ORDER BY state,actor_id,request_high,request_low LIMIT 1 FOR UPDATE", player).Scan(&pendingTeam)
-	if err == nil {
-		return nil, ErrSpectatorBusy
-	}
-	if !errors.Is(err, sql.ErrNoRows) {
+	if err = s.requireMatchEntryTx(ctx, tx, []*pb.MatchAuthorityTicketRecord{actor}, nil); err != nil {
 		return nil, err
 	}
 	ticket, err := scanTicket(tx.QueryRowContext(ctx, "SELECT "+ticketColumns+" FROM match_authority_ticket WHERE player_id=? FOR UPDATE", player))
 	if err != nil && !errors.Is(err, sql.ErrNoRows) {
 		return nil, err
 	}
-	if err == nil && ticket.State != 4 && (ticket.State != 0 || ticket.Ticket != "" || ticket.RequestId != "" || ticket.FormationId != 0) {
+	if err == nil && TicketOccupied(ticket) {
 		return nil, ErrSpectatorBusy
 	}
 	var state uint32

@@ -34,6 +34,10 @@ func (s *Store) ClaimTeamUnits(ctx context.Context, formation *pb.MatchFormation
 	if err = s.LockTeamOriginals(ctx, tx, originals); err != nil {
 		return err
 	}
+	entry := &matchEntryOriginal{teams: units, battleID: formation.BattleId}
+	if err = s.requireMatchEntryTx(ctx, tx, group, entry); err != nil {
+		return err
+	}
 	players := make([]uint64, 0, len(group))
 	for _, ticket := range group {
 		players = append(players, ticket.PlayerId)
@@ -157,7 +161,7 @@ func (s *Store) ClaimTeamUnits(ctx context.Context, formation *pb.MatchFormation
 	// F5只恢复原票；整队region仍为空，必须由原launch事务整单恢复后才可再次撮合。
 	// 单排同时沿原规则重排，不因本局包含party而被静默退出。
 	formation.RequeueOnFailure = true
-	if err = s.claimTx(ctx, tx, formation, group); err != nil {
+	if err = s.claimTx(ctx, tx, formation, group, entry); err != nil {
 		return err
 	}
 	return tx.Commit()

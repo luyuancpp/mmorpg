@@ -7,6 +7,7 @@ import (
 	"errors"
 	"sort"
 	"strings"
+	"shared/matchentry"
 
 	"google.golang.org/protobuf/proto"
 	pb "proto/match"
@@ -16,13 +17,7 @@ const directColumns = "kind,owner_id,request_high,request_low,payload,battle_id,
 
 // 只有完整空占位0或终态4可接新意图；任何未知值及非空pending0都仍占用。
 func TicketOccupied(ticket *pb.MatchAuthorityTicketRecord) bool {
-	if ticket == nil || ticket.State == 4 {
-		return false
-	}
-	if ticket.State != 0 {
-		return true
-	}
-	return ticket.Ticket != "" || ticket.RequestId != "" || ticket.FormationId != 0
+	return matchentry.TicketOccupied(ticket)
 }
 func scanDirect(row scanner) (*pb.MatchDirectIntentRecord, error) {
 	out := &pb.MatchDirectIntentRecord{}
@@ -142,6 +137,9 @@ func (s *Store) PrepareDirectAdmission(ctx context.Context, key *pb.MatchDirectI
 func (s *Store) prepareDirectAdmissionTx(ctx context.Context, tx *sql.Tx, key *pb.MatchDirectIntentRecord, payload []byte, formation *pb.MatchFormationRecord, group []*pb.MatchAuthorityTicketRecord, actor *pb.MatchAuthorityTicketRecord, current *pb.MatchDirectIntentRecord) (*pb.MatchDirectIntentRecord, error) {
 	if formation == nil || formation.BattleId == 0 || formation.OperationId == "" || formation.RequeueOnFailure {
 		return nil, ErrDirectConflict
+	}
+	if err := s.requireMatchEntryTx(ctx, tx, group, &matchEntryOriginal{direct: key, payload: payload, formation: formation, battleID: formation.BattleId}); err != nil {
+		return nil, err
 	}
 	stamp, err := now(ctx, tx)
 	if err != nil {
@@ -298,7 +296,7 @@ func (s *Store) CompletePreparedDirect(ctx context.Context, observed *pb.MatchDi
 		}
 	}
 	f := proto.Clone(original.Formation).(*pb.MatchFormationRecord)
-	if err = s.claimTx(ctx, tx, f, original.Tickets); err != nil {
+	if err = s.claimTx(ctx, tx, f, original.Tickets, &matchEntryOriginal{direct: current, payload: current.Payload, formation: f, battleID: f.BattleId}); err != nil {
 		return nil, err
 	}
 	if _, err = tx.ExecContext(ctx, "UPDATE match_direct_intent SET battle_id=? WHERE kind=? AND owner_id=? AND request_high=? AND request_low=? AND battle_id=0 AND cancelled=0", f.BattleId, current.Kind, current.OwnerId, current.RequestHigh, current.RequestLow); err != nil {

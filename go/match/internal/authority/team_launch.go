@@ -257,7 +257,7 @@ func (s *Store) ReserveTeamLaunch(ctx context.Context, observed *teampb.TeamLaun
 	if battle != 0 {
 		return nil, ErrDirectConflict
 	}
-	if err = s.reserveGroupTx(ctx, tx, formation, group); err != nil {
+	if err = s.reserveGroupTx(ctx, tx, formation, group, &matchEntryOriginal{teams: []*teampb.TeamLaunchRecord{current}, battleID: formation.BattleId}); err != nil {
 		return nil, err
 	}
 	if _, err = tx.ExecContext(ctx, "UPDATE match_direct_intent SET battle_id=? WHERE kind=1 AND owner_id=? AND request_high=? AND request_low=?", formation.BattleId, current.ActorId, current.RequestHigh, current.RequestLow); err != nil {

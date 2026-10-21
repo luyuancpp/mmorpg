@@ -14535,3 +14535,15 @@ PROGRESS 一直没有条目)。上面 2026-09-21 条里"第 7–9 步未跑""修
 - 客户端新增Team写原件重建恢复和旧观战响应隔离的回归源码。C++补观战原op格式与票据身份一致校验。Java匹配恢复与完整合区/撤销作业、Go合区TiDB夹具迁移继续实施。
 - 已实际执行部署权威与本机证明注入3项轻量回归，3通过0失败；7份相关PowerShell解析通过。本轮服务编译、真库及真实双区故障验收尚未完成。
 - 资源只读复核可用内存约1.04GiB，有新外部MSBuild/UnrealEditor/Java进程，不擅自结束。继续实现和准备正式验证。
+## 2026-10-21 全球逻辑服收尾：主正式生成稳定，继续真实验证
+
+- 用户已腾出验证窗口；本轮主生成实际native退出0，新增账本/工程/handler逐项审核并补守护段后，稳定生成proof通过，SHA D820ECBA2F476B15A90E2B784033582FDECA9DFF852E134EEEAF7B491A4B2AFE（完整路径见docs/handoff/global-economy-review-20261021.md §9）。
+- 收件箱补原owner24/25、完整SQL准入与签名消费、永久唯一收据；DS新增显式Inbox schema和同P挂起守卫。Java完整准入复用player_final_save，客户端/Go/Java收尾仍按源码与运行证据分开。
+- DS本轮首次构建被陌生cmd身份读取失败门禁停止，stderr另有compile 0xc0000142，保留原始证据并继续诊断；未宣称编译通过。全业务编译、真库与真实双区尚未完成。
+
+## 2026-10-21 Codex：Muduo 主仓生成已就绪，恢复构建遇到业务枚举引用错误
+
+- 另一任务两次正式协议生成已通过；第二次原生退出0、proof passed=true、无首错及证据错误，原件 `build/verification/current-completion-20261021/formal-generation-global-20261021T140914762Z/formal-run-20261021T141033951Z-7c8a7fdf/`。角色准入生成头/源及项目登记齐备，不再是缺头阻塞。本轮29个Muduo代码/项目路径SHA仍一致。
+- 恢复串行增量构建后，proto、muduo、thread_context、infra、session、rpc、grpc_client成功。期间来源守卫检出player_inbox_table.proto字节变化，先停止并保存原件；从正式生成暂存件精确恢复旧文、核对原SHA后，确认只有3条中文注释变化，无类型/字段/编号/option/服务差异。`resume-20261021T141707282Z/comment-change-review.json`保留逐行复核，未篡改原停止结果。
+- 在新快照中按原成功凭据与实际库SHA复用上述7项，core、battle继续增量构建成功。scene在项目原有静态门禁失败：player_lifecycle.cpp:3069使用player_exit::ExitCause::kRoleTradeFrozen，但ExitCause实际定义在全局作用域。源码全仓仅此一处错误限定；最小修正为去掉player_exit::。该业务文件属于另一任务，尚未代改。
+- 按AGENTS.md §10.2保留失败原件并向负责人询问“由本任务修正这一行后继续”或“等原任务自行修正”；截至本条等待决定，四组恢复回归尚未执行，主仓未提交推送。当前证据 `build/verification/muduo-windows-interface-20261020/resume-20261021T143101260Z/`，含成功/失败构建退出码、来源快照及日志。独立库888bf58及18条通过结果不变，未重复构建。

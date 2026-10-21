@@ -88,3 +88,15 @@ Cancel 方法为 `/match.MatchInternal/CancelActivityBattle`，回复签名方�
 Go Match 静态快照为 `build/verification/current-completion-20261021/go-match-complete-08210d6891fa4781a6af1d6509eef51a/source-manifest.json`，SHA `4C5618B0C2E511C1B7E76E3D33DD658363536A41B8848261748776188537140F`，80 路径及 6 份主协议依赖；仅 gofmt 与差异检查，不含生成、编译、测试或真库证据。随后如修改该批源，必须刷新最终 pin。
 
 本节写入时，Java Join/活动/挑战观战退出和 QueueUnit、Java 完整合区/撤销作业，以及 Go 合区真库夹具迁移仍在实施。正式协议生成、各语言当前源构建、真库全链路和真实双区故障验收均未完成。资源只读复核可用内存约 1.04 GiB，并有新的外部 MSBuild、UnrealEditor 和 Java 进程；不沿用旧 PID 授权关闭新进程。
+
+## 9. 验证窗口恢复后的实际进展（2026-10-21）
+
+用户确认已释放资源后，只读复核可用内存约10.52 GiB，未沿用旧PID授权终止新进程。生成监控的原失败证据均保留；只读专项20次、32次本任务子进程自然退出及原句柄终止专项通过后，正式主生成执行退出0。
+
+主生成的首个完整结果因新增账本/工程/handler差异而保持未验收。root逐项审核：原消息1..316不动，生成器追加317..343；工程只新增role_admission及TeamAuthority绑定/客户端；QueryObserver与SealAccountRoleTrade均在守护段接正式逻辑。复跑稳定生成通过：`build/verification/current-completion-20261021/formal-generation-global-20261021T140914762Z/formal-run-20261021T141033951Z-7c8a7fdf/proof.json`，SHA `D820ECBA2F476B15A90E2B784033582FDECA9DFF852E134EEEAF7B491A4B2AFE`。该证据仅代表当时128个主协议树文件的生成与保护范围稳定；随后收件箱注释修订仍需进入最终源绑定。
+
+收件箱两版补齐原角色首锁、条目原账号/修订和永久唯一收据。主协议新增item owner_account24/owner_revision25，Fetch admission8/auth9，Ack admission7/auth8。C++仅发送SQL已确认的原入场身份并签名，回包再次核原身份；Go消费同P核完整SQL已登记原件，Redis不再冒充准入权威。DS的显式RoleTradeInboxSchema和挂起守卫覆盖转卖、移除、导入；精确终态2/3/4/5才允许换主。Java沿既有player_final_save登记完整准入，不建平行归属表；首次同P加载、原件范围取消及历史恢复挂起保护已有回归源码。
+
+当前DS首次正式构建尚未通过：运行中监控读取陌生cmd身份被拒，保守停止；原stderr另有Go compile退出0xc0000142，两者因果尚未证实。原件在`build/verification/current-completion-20261021/go-data-build-20261021T141733809Z/`，不能计作编译通过，也不以关闭断言、跳过门禁或盲目重试处理。正在检查只读身份查询的最小权限接缝。
+
+截至本条，各服务本轮编译、业务测试、真库及真实双区仍未全部完成。Java本批功能源、客户端回归源码、Go Match/Inbox和合区源码清单均不等于运行验收。

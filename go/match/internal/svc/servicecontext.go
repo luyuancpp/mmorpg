@@ -264,6 +264,10 @@ func NewServiceContext(c config.Config) *ServiceContext {
 			sc.Stop()
 			panic("全球匹配角色目录不可用")
 		}
+		if err := store.ConfigureMatchEntryAuthority(ctx, c.GlobalMatch.GuildTrialSchema); err != nil {
+			sc.Stop()
+			panic(fmt.Errorf("全球匹配跨域提交围栏不可用: %w", err))
+		}
 		loginSessions, err := NewLoginSessionClient(c)
 		if err != nil {
 			sc.Stop()

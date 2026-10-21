@@ -200,6 +200,7 @@ type GlobalMatchConf struct {
 	PasswordEnv            string `json:",default=MATCH_MYSQL_PASSWORD"`
 	Database               string `json:",default=mmorpg_match"`
 	AccountRoleSchema      string `json:",optional"`
+	GuildTrialSchema       string `json:",optional"`
 	ProbeSecretEnv         string `json:",default=MATCH_PROBE_SECRET"`
 	CrossRegionWaitSeconds uint32 `json:",default=30"`
 	HardLatencyMs          uint32 `json:",default=180"`
