@@ -14612,3 +14612,22 @@ PROGRESS 一直没有条目)。上面 2026-09-21 条里"第 7–9 步未跑""修
 - 验证边界：第三方 Protobuf 的 C4244、缺 absl PDB 的 LNK4099 警告仍存在；native 裸指针检查器未安装，构建脚本明确 SKIP，不能视为静态检查通过。EnTT 已同步主干 pin 4，其余 15 个本机第三方 checkout 与远程新 gitlink 不同；本结果基于这些实际依赖及既有安装目录，不等于全新 checkout 锁定依赖的完整验收。没有执行真实数据库/跨区联机冒烟或独立 Java 玩法服务器验收。
 - 本轮证据统一在 `build/verification/work-cleanup-20261020/`：`final-verification-oct21.json` 保存退出码、实跑数和源码 SHA；`cpp-tests-oct21/` 保存四套原始输出；Java JSON/XML 与完整日志可核。Git 纯祖先吸收 `6c7f507cc6` 的前后 tree 均 `6b48d84ef236fdaf2a957c88ae16ed8787f53b3c`，18 条非 main 本地分支及当前 origin 引用均已纳入 main，未重新带回旧实现。
 - 归档清理证据：`archive-removal-readiness-oct21.json` 列出 10 个精确路径和已合 HEAD；122 个 dirty 原件再次 SHA 复核 0 变化；忽略目录的 822 个非编译二进制文件原字节保全，1107 个剩余文件均为可重建编译二进制/对象缓存，详细 manifest 保留。原目录只由根任务在普通快进 push 完成后统一清理。本任务不自行删除外部目录或分支。
+
+### 2026-10-21 Muduo Windows 接口收口：本仓回归与两仓交付
+
+- 已恢复原版 Condition 的构造锁、无参数等待、小数秒和超时返回值契约，以及 Thread 的启动同步、身份、命名、join 返回值和未 join 析构语义；修正 Atomic 标准库分支的新旧值返回与原子交换。Windows UDP 唤醒集中到内部 WindowsWakeup，现役源码与 third_party 头文件镜像同步，必要的计时、取消、连接失败及生命周期修复保留。
+- 本仓 29 个代码/工程文件及共享设计章节已由并发整合提交 `7d92082376` 纳入主干，并经 `0afafaec86` 合并推送；本轮不重复暂存这些文件或旧进度条目。负责人另行批准的 player_lifecycle.cpp 一行枚举限定修正独立提交为 `3d6f077825`，未夹带其他业务变更。
+- 独立库 `D:/luyuan/muduo-windows` 的 Windows Debug x64 CMake 构建及 18 条契约测试通过，提交 `888bf58c105c1333738aa4bc7a3f98e175d032ac` 已推送至 origin/master 并核对远端 SHA；本次没有重复修改或重跑该库。
+- 正式协议生成完成后，以合并后的源码和批准的一行修正恢复原生构建。proto、table、muduo、thread_context、infra、session、rpc、grpc_client、core、modules、battle、scene、muduo_grpc 共 13 个库，以及下面四个测试工程，均为 Windows Debug x64 增量构建、原生退出 0。全部 MSBuild 串行 `/m:1 /nr:false`，单编译进程、保持断言与静态门禁开启，禁用构建后事件；12 个适用工程的 NoRaw 原生检查实际输出 PASSED。
+
+| 回归程序 | 登记数 | 实际通过 | 条件跳过 | 既有禁用 | 失败/错误 |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| currency_test | 282 | 276 | 6 | 0 | 0 |
+| timer_queue_unit_test | 37 | 37 | 0 | 0 | 0 |
+| rpc_controller_test | 100 | 98 | 0 | 2 | 0 |
+| muduo_grpc_test | 196 | 191 | 5 | 0 | 0 |
+| 合计 | 615 | 602 | 11 | 2 | 0 |
+
+- 四个测试进程退出码均为 0，无超时；逐项核对 XML 的执行状态和产物 SHA。新增 6 条 MuduoBaseContractTest 全部实际运行并完成，没有跳过。6 条 Redis 用例因未设置 `MMORPG_TEST_REDIS_ADDR` 跳过，4 条 Go 路由互通用例缺 `MUDUO_GRPC_INTEROP_ROUTER`、1 条服务端互通用例缺 `MUDUO_GRPC_SERVER_INTEROP_PORT`；两个既有 DISABLED 微基准未运行，不据此声明性能结论。
+- 证据根为 `build/verification/muduo-windows-interface-20261020/`，本次有效目录 `resume-20261021T150654388Z/`；17 份构建收据、4 份测试退出码、XML、日志及 `final-verified-receipts-v2.json` 可复核。构建前后 1735 项源码快照无漂移，本轮 29 项代码/工程哈希始终一致。首版凭据汇总的字典投影产生空统计值，原件保留，v2 改用对象汇总并与 XML 的 615/602/11/2 校验闭合；未重跑构建或测试。
+- 原始红灯、早先完整 game.sln 的 Hiredis 旧库链接失败、缺少 role_admission.pb.h、源码变化停止及 scene 枚举错误均保留原日志，未改写为通过。本次验证范围是上述库及四组回归，未重新验收完整 game.sln、Linux、独立库可选 protobuf 或旧 VS 构建入口，也未运行真实 Redis/Go 联机互通。结果基于本机实际依赖与既有生成 C++ 源码；并发公会协议仅追加数据库索引 option 的改动由原任务负责，本轮不生成、迁移或验证该索引，其他 Go/文档及第三方工作区修改均保留。
