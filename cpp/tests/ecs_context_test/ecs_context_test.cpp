@@ -1,7 +1,9 @@
 #include <gtest/gtest.h>
 
+#include <array>
 #include <iterator>
 #include <type_traits>
+#include <utility>
 
 #include "thread_context/ecs_context.h"
 #include "type_alias/player_session_type_alias.h"
@@ -15,6 +17,48 @@ static_assert(!std::is_convertible_v<SceneEntity, entt::entity>);
 struct DescribeProbeTag {};
 struct DescribeOtherProbe { int value; };
 struct DescribeSceneProbe { int value; };
+
+struct DescribeTypeName
+{
+    std::string_view value;
+    std::string_view name() const { return value; }
+};
+
+struct DescribeInfoOnlyStorage
+{
+    bool contains(entt::entity) const { return true; }
+    DescribeTypeName info() const { return {"struct InfoOnlyProbe"}; }
+};
+
+struct DescribeLegacyStorage
+{
+    bool contains(entt::entity) const { return true; }
+    DescribeTypeName type() const { return {"class LegacyTypeProbe"}; }
+
+private:
+    // EnTT 3 的同名私有成员不能被当成可调用的公开 API。
+    int info{};
+};
+
+template <typename Storage>
+struct DescribeStorageRegistry
+{
+    using entity_type = entt::entity;
+    bool valid(entity_type) const { return true; }
+    auto storage() const { return std::array{std::pair{entt::id_type{1}, Storage{}}}; }
+};
+
+TEST(DescribeEntityTest, CompilesAndDescribesInfoOnlyStorage)
+{
+    EXPECT_EQ("entity=7 valid=1 components=[InfoOnlyProbe]",
+              DescribeEntity(DescribeStorageRegistry<DescribeInfoOnlyStorage>{}, entt::entity{7}));
+}
+
+TEST(DescribeEntityTest, CompilesAndDescribesLegacyStorageWithPrivateInfo)
+{
+    EXPECT_EQ("entity=7 valid=1 components=[LegacyTypeProbe]",
+              DescribeEntity(DescribeStorageRegistry<DescribeLegacyStorage>{}, entt::entity{7}));
+}
 
 TEST(DescribeEntityTest, ListsExactlyTheAttachedComponents)
 {

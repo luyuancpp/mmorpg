@@ -14439,3 +14439,12 @@ PROGRESS 一直没有条目)。上面 2026-09-21 条里"第 7–9 步未跑""修
 - 最新 origin 将路由发布移到独立 publishRedis，旧故障注入测试仍把 hook 挂到 mappingRedis，导致原断言红。只修该 helper 到实际发布客户端，保留全部重试/失败/键值断言；原失败两个子用例通过，完整 `data_service/internal/routereconcile` 与 `internal/routing` 随后均通过（routing 7.164s）。
 - C++ 本轮用 `/m:1 /p:MultiProcessorCompilation=false /p:CL_MPCount=1 /p:BuildInParallel=false` 验证，结果另行追加，不用旧 exe 冒充新源码已测。当前 native 裸指针检查器未安装，构建明确输出 SKIP，不能报成静态检查通过。
 - 最新远程升级了 third_party 的 gitlink，当前本机已有子模块 checkout 与这些引用不同；保留本地依赖/补丁，不把该状态误提交为 gitlink 回退。本机已有依赖上的构建结果不等同于全新 checkout 锁定依赖的完整验收。
+
+### 2026-10-21 服务器整合续记：依赖 API、主机重启与旧引用祖先关系
+
+- 本轮首次 native 编译实际遇到 EnTT 版本不一致：主干已采用 EnTT 4 的 `storage.info()`，本机仍为 3.13.2。确认子模块 clean 且目标 commit 已存在后，仅将 EnTT 同步到主干 pin `85c6bba014`。其余 15 个旧 checkout 保留。Boost 的 5 个新增库目录与 gRPC 的 2 个安装目录均为未跟踪资产，并非已跟踪源码补丁；两份 tracked diff 均为 0 字节，精确状态见 `build/verification/work-cleanup-20261020/third-party-checkout-oct21.json`。
+- 同仓另一任务曾把诊断 header 暂改为 EnTT 3 的 `storage.type()`。本轮按整合要求使用依赖 Storage 的泛型 lambda：公开 `info().name()` 优先、否则 `type().name()`，未选分支不实例化；在既有 ecs_context_test 新增两种 storage 形状的完整输出测试，其中旧形状故意有同名私有 info 成员。只读独立复核已通过，运行结果另行追加，未以复核代替编译。
+- 主机在 UTC 2026-10-21 07:22:42.500 重启，旧必要目标构建日志停在 07:20:26.926，未获得完成退出码，不能认定通过。07:38:51 实查没有 MSBuild/cl 后，从已有 obj 恢复同一组 scene/battle/bag_test/skill_test/turn_battle_engine_test，仍 `/m:1`、`CL_MPCount=1`、禁用 `/MP`，不 Rebuild、不清理对象文件。中断收据为 `native-reboot-receipt-oct21.json`，恢复日志为 `msbuild-targets-entt4-afterboot-oct21.log`（均在上述 verification 目录）。保留其他聊天的新 Unity 进程。
+- 负责人本次明确要求“合并完所有分支”，整合决策改为：对已经逐项证明由正式 main 覆盖的 4 条历史改写旧引用，以及正式技能 317 方案替代的 276 草稿引用，补一条保持当前文件树的纯祖先吸收合并。旧进度“作废不要合并”针对旧实现不能覆盖正式实现；本次依最新指令只补 Git 历史关系，不引回旧协议、旧生成物或旧装备稿，不宣称增加功能。
+- 吸收对象：`backup/main-before-reconcile-20261013`、`feat/equip-attributes`、`feat/equip-enhance-inlay`、`feat/pve-team-size-match`、`feat/class-skills-localmain`。前四条与正式主干无共同祖先，需 `-s ours --allow-unrelated-histories`。只读清点五条相对 main 合计 7581 个提交，旧对象实际磁盘占用 1.26 GiB；四条旧史的 184039 个对象全部本地存在（missing=0）。代价是把重复旧历史重新纳入公共可达关系，保留其审计来源。
+- 执行前后 tree hash 必须相同；所有本地和当前 origin 引用必须通过 main 祖先检查，证据保存 `old-history-absorption-oct21.json`。该合并只改图关系，不因此重复已完成的 runtime 验证；最终 push 使用普通快进，禁止 force。此前“本轮不吸收旧历史”的记录保留为先前策略，由本条按最新要求更新。
