@@ -212,14 +212,8 @@
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets"></ImportGroup>
   <ItemGroup Label="ProtoGeneratorSources">
-    <ClCompile Include="mail\mail_admin_grpc_client.cpp" />
-    <ClCompile Include="mail\mail_grpc_client.cpp" />
     <ClCompile Include="rank\rank_admin_grpc_client.cpp" />
-    <ClCompile Include="rank\rank_grpc_client.cpp" />
-    <ClInclude Include="mail\mail_admin_grpc_client.h" />
-    <ClInclude Include="mail\mail_grpc_client.h" />
     <ClInclude Include="rank\rank_admin_grpc_client.h" />
-    <ClInclude Include="rank\rank_grpc_client.h" />
   </ItemGroup>
   <ItemGroup Label="ProtoGeneratorSources">
     <ClCompile Include="player_locator\player_locator_grpc_client.cpp" />
