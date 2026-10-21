@@ -14448,3 +14448,14 @@ PROGRESS 一直没有条目)。上面 2026-09-21 条里"第 7–9 步未跑""修
 - 负责人本次明确要求“合并完所有分支”，整合决策改为：对已经逐项证明由正式 main 覆盖的 4 条历史改写旧引用，以及正式技能 317 方案替代的 276 草稿引用，补一条保持当前文件树的纯祖先吸收合并。旧进度“作废不要合并”针对旧实现不能覆盖正式实现；本次依最新指令只补 Git 历史关系，不引回旧协议、旧生成物或旧装备稿，不宣称增加功能。
 - 吸收对象：`backup/main-before-reconcile-20261013`、`feat/equip-attributes`、`feat/equip-enhance-inlay`、`feat/pve-team-size-match`、`feat/class-skills-localmain`。前四条与正式主干无共同祖先，需 `-s ours --allow-unrelated-histories`。只读清点五条相对 main 合计 7581 个提交，旧对象实际磁盘占用 1.26 GiB；四条旧史的 184039 个对象全部本地存在（missing=0）。代价是把重复旧历史重新纳入公共可达关系，保留其审计来源。
 - 执行前后 tree hash 必须相同；所有本地和当前 origin 引用必须通过 main 祖先检查，证据保存 `old-history-absorption-oct21.json`。该合并只改图关系，不因此重复已完成的 runtime 验证；最终 push 使用普通快进，禁止 force。此前“本轮不吸收旧历史”的记录保留为先前策略，由本条按最新要求更新。
+
+### 2026-10-21 服务器全部分支整合：最终必要验证
+
+- `game.sln` 是手工维护的 solution；生成器 `cpp_build_projects.go` 仅维护 proto/grpc_client 的 CMakeLists/vcxproj/filters，没有 solution 生成写入。实际复验发现 scene 节点已链接 `battle.lib` 却漏了 battle 库构建依赖，首次链接报 LNK2038（battle 对象 EnTT 3.13.2、scene 对象 4.0.0）。仅给 scene ProjectDependencies 补既有 battle GUID 一行，保持主干 EnTT 4 pin；同一命名目标随后先增量构建 battle 库，再成功链接 scene，未回退依赖或绕过检测。
+- 必要 native 目标 scene/battle 节点与 bag_test/skill_test/turn_battle_engine_test 实际构建退出 0；独立 ecs_context_test 构建也退出 0。最后有效日志为 `msbuild-targets-dependency-fixed-oct21.log`、`msbuild-ecs-context-oct21.log`，全部采用 `/m:1`、禁用 `/MP`、`CL_MPCount=1`，没有重跑无关测试工程。
+- 实际运行四组 C++：ecs_context 8/8、turn_battle_engine 269/269、skill 68/68、bag 664 通过/3 跳过（667 总数），合计 **1009 通过、3 跳过、0 失败**，四进程退出码均 0。bag 三条 PendingSettlementContract 用例明确因未设置 `MMORPG_TEST_REDIS_ADDR` 而跳过，未冒称真实 Redis 已测。新增用例实跑数逐条核过：ClassSkillRules 5、ClassSkillEngine 17、真实表 catalog 契约 1、PlayerSkillBook 13、两版 storage API 形状 2。
+- 本轮 Go：data_service 的完整 routereconcile/routing 两包通过（路由故障注入修复前失败、修复后原断言与完整包复验均绿）；scene_manager 的所有权 CAS、WorldChannelRace 与 TestIntegration_ 定向组通过。此前同一整合阶段保留的 trade/robot/match 验证见原日志，没有为纯祖先关系合并重复 runtime 测试。
+- Java 在 native 结束后串行验证：config_node 正式 Maven compile 退出 0；mall_game 的 HmacSignatureGoldenTest **2 通过、0 失败/错误/跳过**，实际 Surefire XML 已核。使用既有 JDK 26.0.2/Maven、限制单核与 JVM 堆，没有安装工具。原来在 java 根目录以不存在 reactor 模块运行的旧失败日志保留，不计通过。
+- 验证边界：第三方 Protobuf 的 C4244、缺 absl PDB 的 LNK4099 警告仍存在；native 裸指针检查器未安装，构建脚本明确 SKIP，不能视为静态检查通过。EnTT 已同步主干 pin 4，其余 15 个本机第三方 checkout 与远程新 gitlink 不同；本结果基于这些实际依赖及既有安装目录，不等于全新 checkout 锁定依赖的完整验收。没有执行真实数据库/跨区联机冒烟或独立 Java 玩法服务器验收。
+- 本轮证据统一在 `build/verification/work-cleanup-20261020/`：`final-verification-oct21.json` 保存退出码、实跑数和源码 SHA；`cpp-tests-oct21/` 保存四套原始输出；Java JSON/XML 与完整日志可核。Git 纯祖先吸收 `6c7f507cc6` 的前后 tree 均 `6b48d84ef236fdaf2a957c88ae16ed8787f53b3c`，18 条非 main 本地分支及当前 origin 引用均已纳入 main，未重新带回旧实现。
+- 归档清理证据：`archive-removal-readiness-oct21.json` 列出 10 个精确路径和已合 HEAD；122 个 dirty 原件再次 SHA 复核 0 变化；忽略目录的 822 个非编译二进制文件原字节保全，1107 个剩余文件均为可重建编译二进制/对象缓存，详细 manifest 保留。原目录只由根任务在普通快进 push 完成后统一清理。本任务不自行删除外部目录或分支。
