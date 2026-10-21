@@ -119,8 +119,8 @@ TEST_F(PlayerSkillBookTest, RegisterPlayerSeedsOnlyCurrentClassInitialSkills) {
     EXPECT_EQ(OwnedIds(player).size(), 2u);
 }
 
-// 加载整理:坏记录(未知 / 重复 / 0 级职业技能)剔掉、超上限的夹住;别的职业的技能与已退役的占位技能
-// 留在存档里但所有读路径都看不见(不静默丢掉玩家花过钱的等级)
+// 加载整理:坏记录(重复 / 0 级职业技能)剔掉、超上限的夹住;未知技能、别的职业技能与已退役的占位技能
+// 留在存档里,未知与非当前职业条目所有读路径都看不见(不静默丢掉玩家花过钱的等级)
 TEST_F(PlayerSkillBookTest, InitializeOnLoadCleansBadRecordsAndHidesRetiredEntries) {
     const auto player = NewPlayer(1, 30, 0);
     Own(player, kLegacySkill, 5);
@@ -133,11 +133,13 @@ TEST_F(PlayerSkillBookTest, InitializeOnLoadCleansBadRecordsAndHidesRetiredEntri
     PlayerSkillSystem::InitializeOnLoad(player);
 
     EXPECT_EQ(OwnedIds(player),
-              (std::vector<uint32_t>{kLegacySkill, kXuanFuLuoYao, kHengGeLieYue, kPoZhenJingFeng, kTieGuZhuHun}));
+              (std::vector<uint32_t>{kLegacySkill, kXuanFuLuoYao, kHengGeLieYue, 999999, kPoZhenJingFeng, kTieGuZhuHun}));
     EXPECT_EQ(StoredRank(player, kLegacySkill), 0u);        // 旧通用技能不分等级
     EXPECT_EQ(StoredRank(player, kXuanFuLuoYao), 3u);       // 保留,不生效
     EXPECT_EQ(StoredRank(player, kHengGeLieYue), 10u);      // 夹到 10
     EXPECT_EQ(StoredRank(player, kPoZhenJingFeng), 1u);     // 坏记录剔掉后按初始技能补回 1 重
+    EXPECT_EQ(StoredRank(player, 999999), 1u);              // 未知技能及等级保留但不生效
+    EXPECT_FALSE(PlayerSkillSystem::HasSkill(player, 999999));
     EXPECT_FALSE(PlayerSkillSystem::HasSkill(player, kLegacySkill));
     EXPECT_FALSE(PlayerSkillSystem::HasSkill(player, kXuanFuLuoYao));
     EXPECT_TRUE(PlayerSkillSystem::HasSkill(player, kHengGeLieYue));

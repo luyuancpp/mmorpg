@@ -79,3 +79,31 @@ func TestCppBuildRegistrationRejectsBrokenManifestBeforeWriting(t *testing.T) {
 		t.Fatal("清单校验失败却写入半套登记")
 	}
 }
+
+func TestCppBuildRegistrationRemovesDuplicatesOnlyFromGeneratedGroup(t *testing.T) {
+	text := "<Project>\r\n  <ItemGroup>\r\n" +
+		"    <ClCompile Include=\"mail\\mail.pb.cc\"><ObjectFileName>custom.obj</ObjectFileName></ClCompile>\r\n" +
+		"  </ItemGroup>\r\n  <ItemGroup Label=\"ProtoGeneratorSources\">\r\n" +
+		"    <ClCompile Include=\"mail\\mail.pb.cc\" />\r\n" +
+		"    <ClCompile Include=\"rank\\rank.pb.cc\" />\r\n" +
+		"    <ClCompile Include=\"rank\\rank.pb.cc\" />\r\n" +
+		"  </ItemGroup>\r\n</Project>\r\n"
+	got, err := appendCppProjectEntries("proto.vcxproj", text,
+		[]string{"mail/mail.pb.cc", "rank/rank.pb.cc"}, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, path := range []string{"mail\\mail.pb.cc", "rank\\rank.pb.cc"} {
+		if strings.Count(got, `Include="`+path+`"`) != 1 {
+			t.Fatalf("同一源文件必须只编译一次: %s\n%s", path, got)
+		}
+	}
+	if !strings.Contains(got, "<ObjectFileName>custom.obj</ObjectFileName>") {
+		t.Fatal("不能覆盖既有手工编译配置")
+	}
+	again, err := appendCppProjectEntries("proto.vcxproj", got,
+		[]string{"mail/mail.pb.cc", "rank/rank.pb.cc"}, nil)
+	if err != nil || again != got {
+		t.Fatalf("去重后的重复运行应幂等: %v", err)
+	}
+}

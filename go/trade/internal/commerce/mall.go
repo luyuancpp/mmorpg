@@ -69,6 +69,7 @@ func NewMall(base, gateway, delivery string, e *Engine) (*Mall, error) {
 	}
 	return &Mall{Base: strings.TrimRight(base, "/"), GatewaySecret: gateway, DeliverySecret: delivery, HTTP: &http.Client{Timeout: 2500 * time.Millisecond, CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }}, Engine: e}, nil
 }
+
 // commerceSignature 是商城 X-Commerce-Signature 的 v1 算法：正文 SHA-256 小写 hex，与其余七项按 \n 拼成规范串，
 // HMAC-SHA256 后取小写 hex。必须与 java/mall_game HmacAuthentication.sign、robot commerceSign 逐字一致；
 // 三边用同一组输入核对同一个期望值（mall_signature_test.go），改任一边都要同批改三边，否则线上表现是全部 401。

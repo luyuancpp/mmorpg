@@ -18,3 +18,7 @@ constexpr uint32_t SceneSkillClientPlayerNotifySkillInterruptedIndex = 2;
 constexpr uint32_t SceneSkillClientPlayerListSkillsMessageId = 77;
 constexpr uint32_t SceneSkillClientPlayerListSkillsIndex = 3;
 #define SceneSkillClientPlayerListSkillsMethod  ::SceneSkillClientPlayer_Stub::descriptor()->method(3)
+
+constexpr uint32_t SceneSkillClientPlayerUpgradeSkillMessageId = 317;
+constexpr uint32_t SceneSkillClientPlayerUpgradeSkillIndex = 4;
+#define SceneSkillClientPlayerUpgradeSkillMethod  ::SceneSkillClientPlayer_Stub::descriptor()->method(4)

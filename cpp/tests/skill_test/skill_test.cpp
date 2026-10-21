@@ -1064,7 +1064,11 @@ TEST(PlayerSkillSystemTest, SanitizeSkillListKeepsUnknownSkillsInactiveAndRemove
     ASSERT_FALSE(SkillTableManager::Instance().Exists(1001)) << "fixture: 1001 must be missing from SkillTable";
 
     skillList.add_skill_list()->set_skill_table_id(1);
-    skillList.add_skill_list()->set_skill_table_id(1001);
+    auto* unknownSkill = skillList.add_skill_list();
+    unknownSkill->set_skill_table_id(1001);
+    unknownSkill->set_rank(37); // 旧表未知的职业技能等级也不能归零
+    unknownSkill->mutable_unknown_fields()->AddVarint(412346, 9);
+    const std::string unknownBefore = unknownSkill->SerializeAsString();
     skillList.add_skill_list()->set_skill_table_id(0);
     skillList.add_skill_list()->set_skill_table_id(1);
     skillList.add_skill_list()->set_skill_table_id(1001);
@@ -1077,6 +1081,7 @@ TEST(PlayerSkillSystemTest, SanitizeSkillListKeepsUnknownSkillsInactiveAndRemove
     ASSERT_EQ(skillList.skill_list_size(), 2) << "only 0 and duplicates are removed";
     EXPECT_EQ(skillList.skill_list(0).skill_table_id(), 1);
     EXPECT_EQ(skillList.skill_list(1).skill_table_id(), 1001) << "unknown skill is kept, not deleted";
+    EXPECT_EQ(unknownBefore, skillList.skill_list(1).SerializeAsString());
     EXPECT_TRUE(PlayerSkillSystem::HasSkill(player, 1));
     EXPECT_FALSE(PlayerSkillSystem::HasSkill(player, 1001)) << "kept but inactive";
     EXPECT_TRUE(PlayerSkillSystem::IsActiveSkill(1));

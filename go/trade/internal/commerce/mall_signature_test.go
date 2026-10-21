@@ -15,6 +15,7 @@ import (
 //   - 本文件（go/trade 的 commerceSignature，trade 以 gateway / delivery 角色调商城）；
 //   - robot/commerce_mock_payer_test.go（robot 的 commerceSign，dev 冒烟以 payment 角色记已付）；
 //   - java/mall_game/src/test/java/com/game/mall/HmacSignatureGoldenTest.java（商城验签 HmacAuthentication.sign）。
+//
 // 期望值由与三边都无关的第四份实现（Python hmac / hashlib）离线算出。任何一边改了拼串规则，
 // 这里的字面量就会把它抓出来 —— 否则线上表现是「全部 401」，而且没有一条日志能直接指出是哪一边改了。
 // 改签名算法必须三边同批改、三处期望值同批换，不能只把某一边的字面量「修」成新输出。

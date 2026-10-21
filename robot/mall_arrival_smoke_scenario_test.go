@@ -56,7 +56,9 @@ func TestMallArrivalCheckCreatedRejectsEachWrongField(t *testing.T) {
 	}{
 		{"订单号不是 UUID", func(o *tradepb.CommerceOrderView) { o.OrderId = "12345" }},
 		{"不是官方单", func(o *tradepb.CommerceOrderView) { o.Kind = tradepb.CommerceOrderKind_COMMERCE_ORDER_KIND_CONSIGNMENT }},
-		{"不是待付款", func(o *tradepb.CommerceOrderView) { o.State = tradepb.CommerceOrderState_COMMERCE_ORDER_STATE_DELIVERING }},
+		{"不是待付款", func(o *tradepb.CommerceOrderView) {
+			o.State = tradepb.CommerceOrderState_COMMERCE_ORDER_STATE_DELIVERING
+		}},
 		{"买家不是自己", func(o *tradepb.CommerceOrderView) { o.BuyerPlayerId = 23 }},
 		{"金额不是单价×份数", func(o *tradepb.CommerceOrderView) { o.Amount = 600 }},
 		{"币种不一致", func(o *tradepb.CommerceOrderView) { o.Currency = "USD" }},

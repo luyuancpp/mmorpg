@@ -24,6 +24,7 @@ const (
 	SceneSkillClientPlayer_NotifySkillUsed_FullMethodName        = "/SceneSkillClientPlayer/NotifySkillUsed"
 	SceneSkillClientPlayer_NotifySkillInterrupted_FullMethodName = "/SceneSkillClientPlayer/NotifySkillInterrupted"
 	SceneSkillClientPlayer_ListSkills_FullMethodName             = "/SceneSkillClientPlayer/ListSkills"
+	SceneSkillClientPlayer_UpgradeSkill_FullMethodName           = "/SceneSkillClientPlayer/UpgradeSkill"
 )
 
 // SceneSkillClientPlayerClient is the client API for SceneSkillClientPlayer service.
@@ -34,6 +35,7 @@ type SceneSkillClientPlayerClient interface {
 	NotifySkillUsed(ctx context.Context, in *SkillUsedS2C, opts ...grpc.CallOption) (*base.Empty, error)
 	NotifySkillInterrupted(ctx context.Context, in *SkillInterruptedS2C, opts ...grpc.CallOption) (*base.Empty, error)
 	ListSkills(ctx context.Context, in *ListSkillsRequest, opts ...grpc.CallOption) (*ListSkillsResponse, error)
+	UpgradeSkill(ctx context.Context, in *UpgradeSkillRequest, opts ...grpc.CallOption) (*UpgradeSkillResponse, error)
 }
 
 type sceneSkillClientPlayerClient struct {
@@ -84,6 +86,16 @@ func (c *sceneSkillClientPlayerClient) ListSkills(ctx context.Context, in *ListS
 	return out, nil
 }
 
+func (c *sceneSkillClientPlayerClient) UpgradeSkill(ctx context.Context, in *UpgradeSkillRequest, opts ...grpc.CallOption) (*UpgradeSkillResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(UpgradeSkillResponse)
+	err := c.cc.Invoke(ctx, SceneSkillClientPlayer_UpgradeSkill_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // SceneSkillClientPlayerServer is the server API for SceneSkillClientPlayer service.
 // All implementations must embed UnimplementedSceneSkillClientPlayerServer
 // for forward compatibility.
@@ -92,6 +104,7 @@ type SceneSkillClientPlayerServer interface {
 	NotifySkillUsed(context.Context, *SkillUsedS2C) (*base.Empty, error)
 	NotifySkillInterrupted(context.Context, *SkillInterruptedS2C) (*base.Empty, error)
 	ListSkills(context.Context, *ListSkillsRequest) (*ListSkillsResponse, error)
+	UpgradeSkill(context.Context, *UpgradeSkillRequest) (*UpgradeSkillResponse, error)
 	mustEmbedUnimplementedSceneSkillClientPlayerServer()
 }
 
@@ -113,6 +126,9 @@ func (UnimplementedSceneSkillClientPlayerServer) NotifySkillInterrupted(context.
 }
 func (UnimplementedSceneSkillClientPlayerServer) ListSkills(context.Context, *ListSkillsRequest) (*ListSkillsResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method ListSkills not implemented")
+}
+func (UnimplementedSceneSkillClientPlayerServer) UpgradeSkill(context.Context, *UpgradeSkillRequest) (*UpgradeSkillResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method UpgradeSkill not implemented")
 }
 func (UnimplementedSceneSkillClientPlayerServer) mustEmbedUnimplementedSceneSkillClientPlayerServer() {
 }
@@ -208,6 +224,24 @@ func _SceneSkillClientPlayer_ListSkills_Handler(srv interface{}, ctx context.Con
 	return interceptor(ctx, in, info, handler)
 }
 
+func _SceneSkillClientPlayer_UpgradeSkill_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpgradeSkillRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(SceneSkillClientPlayerServer).UpgradeSkill(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: SceneSkillClientPlayer_UpgradeSkill_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(SceneSkillClientPlayerServer).UpgradeSkill(ctx, req.(*UpgradeSkillRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // SceneSkillClientPlayer_ServiceDesc is the grpc.ServiceDesc for SceneSkillClientPlayer service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -230,6 +264,10 @@ var SceneSkillClientPlayer_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ListSkills",
 			Handler:    _SceneSkillClientPlayer_ListSkills_Handler,
+		},
+		{
+			MethodName: "UpgradeSkill",
+			Handler:    _SceneSkillClientPlayer_UpgradeSkill_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

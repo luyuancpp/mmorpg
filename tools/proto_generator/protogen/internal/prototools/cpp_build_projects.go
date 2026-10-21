@@ -127,6 +127,30 @@ func appendCppProjectEntries(name, text string, sources, headers []string) (stri
 	if strings.Count(text, "</Project>") != 1 {
 		return "", fmt.Errorf("Project 结束标签必须恰好一个")
 	}
+	// 历史 post-hook 会在普通 ItemGroup 追加 mail/rank，旧生成区因此可能留下同路径的第二份。
+	// MSBuild /m:1 也挡不住项目内 /MP 同时写同一个 obj。只清理本生成器拥有的简单条目，
+	// 普通区及带手工编译选项的条目保持原样；优先保留普通区，避免丢掉调用方配置。
+	managed := regexp.MustCompile(`(?ms)[ \t]*<ItemGroup Label="ProtoGeneratorSources">.*?</ItemGroup>[ \t]*\r?\n?`)
+	itemStart := regexp.MustCompile(`<(ClCompile|ClInclude)\s+Include="([^"]+)"`)
+	seen := map[string]bool{}
+	itemKey := func(tag, path string) string {
+		return tag + ":" + strings.ToLower(strings.ReplaceAll(path, "\\", "/"))
+	}
+	for _, match := range itemStart.FindAllStringSubmatch(managed.ReplaceAllString(text, ""), -1) {
+		seen[itemKey(match[1], match[2])] = true
+	}
+	simpleItem := regexp.MustCompile(`(?m)^[ \t]*<(ClCompile|ClInclude)\s+Include="([^"]+)"(?:[ \t]*/>|>[ \t]*\r?\n[ \t]*<Filter>[^<]*</Filter>[ \t]*\r?\n[ \t]*</(?:ClCompile|ClInclude)>)[ \t]*\r?\n`)
+	text = managed.ReplaceAllStringFunc(text, func(block string) string {
+		return simpleItem.ReplaceAllStringFunc(block, func(item string) string {
+			match := simpleItem.FindStringSubmatch(item)
+			key := itemKey(match[1], match[2])
+			if seen[key] {
+				return ""
+			}
+			seen[key] = true
+			return item
+		})
+	})
 	var additions []string
 	for _, group := range []struct {
 		tag, filter string

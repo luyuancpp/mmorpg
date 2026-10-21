@@ -326,12 +326,18 @@ func (*ListSkillsRequest) Descriptor() ([]byte, []int) {
 }
 
 // List skills response
+// 3..6 是四职业技能书(2026-10-19,docs/design/class-skills.md §4):服务端按当前职业现算的完整目录 + 角色等级 + 余额。
+// skill_list 仍是"已拥有"的原样列表(robot / 旧客户端只读它);catalog 只列当前职业的职业技能,未学的也在里面(rank = 0)。
 type ListSkillsResponse struct {
-	state         protoimpl.MessageState         `protogen:"open.v1"`
-	ErrorMessage  *base.TipInfoMessage           `protobuf:"bytes,1,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"`
-	SkillList     *component.PlayerSkillListComp `protobuf:"bytes,2,opt,name=skill_list,json=skillList,proto3" json:"skill_list,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state           protoimpl.MessageState         `protogen:"open.v1"`
+	ErrorMessage    *base.TipInfoMessage           `protobuf:"bytes,1,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"`
+	SkillList       *component.PlayerSkillListComp `protobuf:"bytes,2,opt,name=skill_list,json=skillList,proto3" json:"skill_list,omitempty"`
+	Catalog         []*SkillCatalogEntry           `protobuf:"bytes,3,rep,name=catalog,proto3" json:"catalog,omitempty"` // 按 skill_table_id 升序
+	PlayerLevel     uint32                         `protobuf:"varint,4,opt,name=player_level,json=playerLevel,proto3" json:"player_level,omitempty"`
+	ClassId         uint32                         `protobuf:"varint,5,opt,name=class_id,json=classId,proto3" json:"class_id,omitempty"`
+	CurrencyBalance uint64                         `protobuf:"varint,6,opt,name=currency_balance,json=currencyBalance,proto3" json:"currency_balance,omitempty"` // 修习货币余额(CurrencySystem kCurrencyGold,客户端称"银两")
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
 }
 
 func (x *ListSkillsResponse) Reset() {
@@ -378,6 +384,345 @@ func (x *ListSkillsResponse) GetSkillList() *component.PlayerSkillListComp {
 	return nil
 }
 
+func (x *ListSkillsResponse) GetCatalog() []*SkillCatalogEntry {
+	if x != nil {
+		return x.Catalog
+	}
+	return nil
+}
+
+func (x *ListSkillsResponse) GetPlayerLevel() uint32 {
+	if x != nil {
+		return x.PlayerLevel
+	}
+	return 0
+}
+
+func (x *ListSkillsResponse) GetClassId() uint32 {
+	if x != nil {
+		return x.ClassId
+	}
+	return 0
+}
+
+func (x *ListSkillsResponse) GetCurrencyBalance() uint64 {
+	if x != nil {
+		return x.CurrencyBalance
+	}
+	return 0
+}
+
+// 技能书的一行:配置表的展示投影 + 本角色的等级与可修习性。数值真源是 Skill 表与服务端规则,
+// 客户端只展示,不得据此推算、也不回传这些派生值。
+type SkillCatalogEntry struct {
+	state             protoimpl.MessageState `protogen:"open.v1"`
+	SkillTableId      uint32                 `protobuf:"varint,1,opt,name=skill_table_id,json=skillTableId,proto3" json:"skill_table_id,omitempty"`
+	Name              string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	Description       string                 `protobuf:"bytes,3,opt,name=description,proto3" json:"description,omitempty"`
+	IconKey           string                 `protobuf:"bytes,4,opt,name=icon_key,json=iconKey,proto3" json:"icon_key,omitempty"` // Unity Resources 相对键,不带扩展名、不带 Assets/Resources/ 前缀(如 "UI/Skills/1101")
+	ClassId           uint32                 `protobuf:"varint,5,opt,name=class_id,json=classId,proto3" json:"class_id,omitempty"`
+	Category          string                 `protobuf:"bytes,6,opt,name=category,proto3" json:"category,omitempty"` // 表里的分类文案(主动 / 被动 …),只用于展示
+	Passive           bool                   `protobuf:"varint,7,opt,name=passive,proto3" json:"passive,omitempty"`
+	TargetTeam        uint32                 `protobuf:"varint,8,opt,name=target_team,json=targetTeam,proto3" json:"target_team,omitempty"` // 1 = 敌方,2 = 友方,3 = 自身(class_skill_rules.h TargetTeam)
+	MaxTargets        uint32                 `protobuf:"varint,9,opt,name=max_targets,json=maxTargets,proto3" json:"max_targets,omitempty"`
+	UnlockLevel       uint32                 `protobuf:"varint,10,opt,name=unlock_level,json=unlockLevel,proto3" json:"unlock_level,omitempty"`
+	MaxRank           uint32                 `protobuf:"varint,11,opt,name=max_rank,json=maxRank,proto3" json:"max_rank,omitempty"`
+	Rank              uint32                 `protobuf:"varint,12,opt,name=rank,proto3" json:"rank,omitempty"`                                   // 已学等级;0 = 未学
+	RankLimit         uint32                 `protobuf:"varint,13,opt,name=rank_limit,json=rankLimit,proto3" json:"rank_limit,omitempty"`        // 按当前角色等级能修到的最高重;未到解锁等级为 0
+	ManaPercent       float64                `protobuf:"fixed64,14,opt,name=mana_percent,json=manaPercent,proto3" json:"mana_percent,omitempty"` // 耗蓝比例(0.03 = 最大法力的 3%,战斗内向上取整、至少 1)
+	CooldownRounds    uint32                 `protobuf:"varint,15,opt,name=cooldown_rounds,json=cooldownRounds,proto3" json:"cooldown_rounds,omitempty"`
+	NextRankCost      uint64                 `protobuf:"varint,16,opt,name=next_rank_cost,json=nextRankCost,proto3" json:"next_rank_cost,omitempty"`                  // 再修一重的价格;已满重为 0
+	UpgradeBlockTipId uint32                 `protobuf:"varint,17,opt,name=upgrade_block_tip_id,json=upgradeBlockTipId,proto3" json:"upgrade_block_tip_id,omitempty"` // 0 = 现在可以修习一重;否则为不能修习的原因(tip 码,skill_error 段)
+	DurationRounds    uint32                 `protobuf:"varint,18,opt,name=duration_rounds,json=durationRounds,proto3" json:"duration_rounds,omitempty"`              // 附带增益 / 减益的持续回合;没有为 0
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
+}
+
+func (x *SkillCatalogEntry) Reset() {
+	*x = SkillCatalogEntry{}
+	mi := &file_proto_scene_player_skill_proto_msgTypes[6]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SkillCatalogEntry) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SkillCatalogEntry) ProtoMessage() {}
+
+func (x *SkillCatalogEntry) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_scene_player_skill_proto_msgTypes[6]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SkillCatalogEntry.ProtoReflect.Descriptor instead.
+func (*SkillCatalogEntry) Descriptor() ([]byte, []int) {
+	return file_proto_scene_player_skill_proto_rawDescGZIP(), []int{6}
+}
+
+func (x *SkillCatalogEntry) GetSkillTableId() uint32 {
+	if x != nil {
+		return x.SkillTableId
+	}
+	return 0
+}
+
+func (x *SkillCatalogEntry) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *SkillCatalogEntry) GetDescription() string {
+	if x != nil {
+		return x.Description
+	}
+	return ""
+}
+
+func (x *SkillCatalogEntry) GetIconKey() string {
+	if x != nil {
+		return x.IconKey
+	}
+	return ""
+}
+
+func (x *SkillCatalogEntry) GetClassId() uint32 {
+	if x != nil {
+		return x.ClassId
+	}
+	return 0
+}
+
+func (x *SkillCatalogEntry) GetCategory() string {
+	if x != nil {
+		return x.Category
+	}
+	return ""
+}
+
+func (x *SkillCatalogEntry) GetPassive() bool {
+	if x != nil {
+		return x.Passive
+	}
+	return false
+}
+
+func (x *SkillCatalogEntry) GetTargetTeam() uint32 {
+	if x != nil {
+		return x.TargetTeam
+	}
+	return 0
+}
+
+func (x *SkillCatalogEntry) GetMaxTargets() uint32 {
+	if x != nil {
+		return x.MaxTargets
+	}
+	return 0
+}
+
+func (x *SkillCatalogEntry) GetUnlockLevel() uint32 {
+	if x != nil {
+		return x.UnlockLevel
+	}
+	return 0
+}
+
+func (x *SkillCatalogEntry) GetMaxRank() uint32 {
+	if x != nil {
+		return x.MaxRank
+	}
+	return 0
+}
+
+func (x *SkillCatalogEntry) GetRank() uint32 {
+	if x != nil {
+		return x.Rank
+	}
+	return 0
+}
+
+func (x *SkillCatalogEntry) GetRankLimit() uint32 {
+	if x != nil {
+		return x.RankLimit
+	}
+	return 0
+}
+
+func (x *SkillCatalogEntry) GetManaPercent() float64 {
+	if x != nil {
+		return x.ManaPercent
+	}
+	return 0
+}
+
+func (x *SkillCatalogEntry) GetCooldownRounds() uint32 {
+	if x != nil {
+		return x.CooldownRounds
+	}
+	return 0
+}
+
+func (x *SkillCatalogEntry) GetNextRankCost() uint64 {
+	if x != nil {
+		return x.NextRankCost
+	}
+	return 0
+}
+
+func (x *SkillCatalogEntry) GetUpgradeBlockTipId() uint32 {
+	if x != nil {
+		return x.UpgradeBlockTipId
+	}
+	return 0
+}
+
+func (x *SkillCatalogEntry) GetDurationRounds() uint32 {
+	if x != nil {
+		return x.DurationRounds
+	}
+	return 0
+}
+
+// 修习(学习 = 从 0 升到 1)。修习者由服务端会话确定,请求里没有角色身份。
+type UpgradeSkillRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	SkillTableId  uint32                 `protobuf:"varint,1,opt,name=skill_table_id,json=skillTableId,proto3" json:"skill_table_id,omitempty"`
+	ExpectedRank  uint32                 `protobuf:"varint,2,opt,name=expected_rank,json=expectedRank,proto3" json:"expected_rank,omitempty"` // 客户端看到的当前等级;与服务端不一致整笔拒绝(旧请求重放不会再扣一次)
+	Count         uint32                 `protobuf:"varint,3,opt,name=count,proto3" json:"count,omitempty"`                                   // 只收 1 或 10;10 次在满重 / 等级上限 / 余额不足处提前停
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *UpgradeSkillRequest) Reset() {
+	*x = UpgradeSkillRequest{}
+	mi := &file_proto_scene_player_skill_proto_msgTypes[7]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *UpgradeSkillRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*UpgradeSkillRequest) ProtoMessage() {}
+
+func (x *UpgradeSkillRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_scene_player_skill_proto_msgTypes[7]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use UpgradeSkillRequest.ProtoReflect.Descriptor instead.
+func (*UpgradeSkillRequest) Descriptor() ([]byte, []int) {
+	return file_proto_scene_player_skill_proto_rawDescGZIP(), []int{7}
+}
+
+func (x *UpgradeSkillRequest) GetSkillTableId() uint32 {
+	if x != nil {
+		return x.SkillTableId
+	}
+	return 0
+}
+
+func (x *UpgradeSkillRequest) GetExpectedRank() uint32 {
+	if x != nil {
+		return x.ExpectedRank
+	}
+	return 0
+}
+
+func (x *UpgradeSkillRequest) GetCount() uint32 {
+	if x != nil {
+		return x.Count
+	}
+	return 0
+}
+
+type UpgradeSkillResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	ErrorMessage  *base.TipInfoMessage   `protobuf:"bytes,1,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"`     // 整笔拒绝(一重都没修成)时才填;部分成功不填
+	State         *ListSkillsResponse    `protobuf:"bytes,2,opt,name=state,proto3" json:"state,omitempty"`                                       // 处理完之后的完整技能书(拒绝时也带,客户端据此整体替换)
+	UpgradedCount uint32                 `protobuf:"varint,3,opt,name=upgraded_count,json=upgradedCount,proto3" json:"upgraded_count,omitempty"` // 实际修成的重数
+	StopTipId     uint32                 `protobuf:"varint,4,opt,name=stop_tip_id,json=stopTipId,proto3" json:"stop_tip_id,omitempty"`           // 少于 count 时的停止原因(tip 码);按请求次数全部修成为 0
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *UpgradeSkillResponse) Reset() {
+	*x = UpgradeSkillResponse{}
+	mi := &file_proto_scene_player_skill_proto_msgTypes[8]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *UpgradeSkillResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*UpgradeSkillResponse) ProtoMessage() {}
+
+func (x *UpgradeSkillResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_scene_player_skill_proto_msgTypes[8]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use UpgradeSkillResponse.ProtoReflect.Descriptor instead.
+func (*UpgradeSkillResponse) Descriptor() ([]byte, []int) {
+	return file_proto_scene_player_skill_proto_rawDescGZIP(), []int{8}
+}
+
+func (x *UpgradeSkillResponse) GetErrorMessage() *base.TipInfoMessage {
+	if x != nil {
+		return x.ErrorMessage
+	}
+	return nil
+}
+
+func (x *UpgradeSkillResponse) GetState() *ListSkillsResponse {
+	if x != nil {
+		return x.State
+	}
+	return nil
+}
+
+func (x *UpgradeSkillResponse) GetUpgradedCount() uint32 {
+	if x != nil {
+		return x.UpgradedCount
+	}
+	return 0
+}
+
+func (x *UpgradeSkillResponse) GetStopTipId() uint32 {
+	if x != nil {
+		return x.StopTipId
+	}
+	return 0
+}
+
 var File_proto_scene_player_skill_proto protoreflect.FileDescriptor
 
 const file_proto_scene_player_skill_proto_rawDesc = "" +
@@ -404,17 +749,54 @@ const file_proto_scene_player_skill_proto_rawDesc = "" +
 	"\bposition\x18\x04 \x01(\v2\b.Vector3R\bposition\x12\x1d\n" +
 	"\n" +
 	"time_stamp\x18\x05 \x01(\x04R\ttimeStamp\"\x13\n" +
-	"\x11ListSkillsRequest\"\x7f\n" +
+	"\x11ListSkillsRequest\"\x96\x02\n" +
 	"\x12ListSkillsResponse\x124\n" +
 	"\rerror_message\x18\x01 \x01(\v2\x0f.TipInfoMessageR\ferrorMessage\x123\n" +
 	"\n" +
-	"skill_list\x18\x02 \x01(\v2\x14.PlayerSkillListCompR\tskillList2\x88\x02\n" +
+	"skill_list\x18\x02 \x01(\v2\x14.PlayerSkillListCompR\tskillList\x12,\n" +
+	"\acatalog\x18\x03 \x03(\v2\x12.SkillCatalogEntryR\acatalog\x12!\n" +
+	"\fplayer_level\x18\x04 \x01(\rR\vplayerLevel\x12\x19\n" +
+	"\bclass_id\x18\x05 \x01(\rR\aclassId\x12)\n" +
+	"\x10currency_balance\x18\x06 \x01(\x04R\x0fcurrencyBalance\"\xda\x04\n" +
+	"\x11SkillCatalogEntry\x12$\n" +
+	"\x0eskill_table_id\x18\x01 \x01(\rR\fskillTableId\x12\x12\n" +
+	"\x04name\x18\x02 \x01(\tR\x04name\x12 \n" +
+	"\vdescription\x18\x03 \x01(\tR\vdescription\x12\x19\n" +
+	"\bicon_key\x18\x04 \x01(\tR\aiconKey\x12\x19\n" +
+	"\bclass_id\x18\x05 \x01(\rR\aclassId\x12\x1a\n" +
+	"\bcategory\x18\x06 \x01(\tR\bcategory\x12\x18\n" +
+	"\apassive\x18\a \x01(\bR\apassive\x12\x1f\n" +
+	"\vtarget_team\x18\b \x01(\rR\n" +
+	"targetTeam\x12\x1f\n" +
+	"\vmax_targets\x18\t \x01(\rR\n" +
+	"maxTargets\x12!\n" +
+	"\funlock_level\x18\n" +
+	" \x01(\rR\vunlockLevel\x12\x19\n" +
+	"\bmax_rank\x18\v \x01(\rR\amaxRank\x12\x12\n" +
+	"\x04rank\x18\f \x01(\rR\x04rank\x12\x1d\n" +
+	"\n" +
+	"rank_limit\x18\r \x01(\rR\trankLimit\x12!\n" +
+	"\fmana_percent\x18\x0e \x01(\x01R\vmanaPercent\x12'\n" +
+	"\x0fcooldown_rounds\x18\x0f \x01(\rR\x0ecooldownRounds\x12$\n" +
+	"\x0enext_rank_cost\x18\x10 \x01(\x04R\fnextRankCost\x12/\n" +
+	"\x14upgrade_block_tip_id\x18\x11 \x01(\rR\x11upgradeBlockTipId\x12'\n" +
+	"\x0fduration_rounds\x18\x12 \x01(\rR\x0edurationRounds\"v\n" +
+	"\x13UpgradeSkillRequest\x12$\n" +
+	"\x0eskill_table_id\x18\x01 \x01(\rR\fskillTableId\x12#\n" +
+	"\rexpected_rank\x18\x02 \x01(\rR\fexpectedRank\x12\x14\n" +
+	"\x05count\x18\x03 \x01(\rR\x05count\"\xbe\x01\n" +
+	"\x14UpgradeSkillResponse\x124\n" +
+	"\rerror_message\x18\x01 \x01(\v2\x0f.TipInfoMessageR\ferrorMessage\x12)\n" +
+	"\x05state\x18\x02 \x01(\v2\x13.ListSkillsResponseR\x05state\x12%\n" +
+	"\x0eupgraded_count\x18\x03 \x01(\rR\rupgradedCount\x12\x1e\n" +
+	"\vstop_tip_id\x18\x04 \x01(\rR\tstopTipId2\xc5\x02\n" +
 	"\x16SceneSkillClientPlayer\x12;\n" +
 	"\fReleaseSkill\x12\x14.ReleaseSkillRequest\x1a\x15.ReleaseSkillResponse\x12/\n" +
 	"\x0fNotifySkillUsed\x12\r.SkillUsedS2C\x1a\x06.Empty\"\x05\x88\x99\xc8\x01\x02\x12=\n" +
 	"\x16NotifySkillInterrupted\x12\x14.SkillInterruptedS2C\x1a\x06.Empty\"\x05\x88\x99\xc8\x01\x02\x125\n" +
 	"\n" +
-	"ListSkills\x12\x12.ListSkillsRequest\x1a\x13.ListSkillsResponse\x1a\n" +
+	"ListSkills\x12\x12.ListSkillsRequest\x1a\x13.ListSkillsResponse\x12;\n" +
+	"\fUpgradeSkill\x12\x14.UpgradeSkillRequest\x1a\x15.UpgradeSkillResponse\x1a\n" +
 	"\x80\xa8\xc3\x01\x01\x88\xa8\xc3\x01\x01B\x14\x98\xd4a\x03Z\vproto/scene\x80\x01\x01b\x06proto3"
 
 var (
@@ -429,7 +811,7 @@ func file_proto_scene_player_skill_proto_rawDescGZIP() []byte {
 	return file_proto_scene_player_skill_proto_rawDescData
 }
 
-var file_proto_scene_player_skill_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
+var file_proto_scene_player_skill_proto_msgTypes = make([]protoimpl.MessageInfo, 9)
 var file_proto_scene_player_skill_proto_goTypes = []any{
 	(*ReleaseSkillRequest)(nil),           // 0: ReleaseSkillRequest
 	(*ReleaseSkillResponse)(nil),          // 1: ReleaseSkillResponse
@@ -437,32 +819,40 @@ var file_proto_scene_player_skill_proto_goTypes = []any{
 	(*SkillUsedS2C)(nil),                  // 3: SkillUsedS2C
 	(*ListSkillsRequest)(nil),             // 4: ListSkillsRequest
 	(*ListSkillsResponse)(nil),            // 5: ListSkillsResponse
-	(*component.Vector3)(nil),             // 6: Vector3
-	(*component.Rotation)(nil),            // 7: Rotation
-	(*base.TipInfoMessage)(nil),           // 8: TipInfoMessage
-	(*component.PlayerSkillListComp)(nil), // 9: PlayerSkillListComp
-	(*base.Empty)(nil),                    // 10: Empty
+	(*SkillCatalogEntry)(nil),             // 6: SkillCatalogEntry
+	(*UpgradeSkillRequest)(nil),           // 7: UpgradeSkillRequest
+	(*UpgradeSkillResponse)(nil),          // 8: UpgradeSkillResponse
+	(*component.Vector3)(nil),             // 9: Vector3
+	(*component.Rotation)(nil),            // 10: Rotation
+	(*base.TipInfoMessage)(nil),           // 11: TipInfoMessage
+	(*component.PlayerSkillListComp)(nil), // 12: PlayerSkillListComp
+	(*base.Empty)(nil),                    // 13: Empty
 }
 var file_proto_scene_player_skill_proto_depIdxs = []int32{
-	6,  // 0: ReleaseSkillRequest.position:type_name -> Vector3
-	7,  // 1: ReleaseSkillRequest.rotation:type_name -> Rotation
-	8,  // 2: ReleaseSkillResponse.error_message:type_name -> TipInfoMessage
-	6,  // 3: SkillUsedS2C.position:type_name -> Vector3
-	8,  // 4: ListSkillsResponse.error_message:type_name -> TipInfoMessage
-	9,  // 5: ListSkillsResponse.skill_list:type_name -> PlayerSkillListComp
-	0,  // 6: SceneSkillClientPlayer.ReleaseSkill:input_type -> ReleaseSkillRequest
-	3,  // 7: SceneSkillClientPlayer.NotifySkillUsed:input_type -> SkillUsedS2C
-	2,  // 8: SceneSkillClientPlayer.NotifySkillInterrupted:input_type -> SkillInterruptedS2C
-	4,  // 9: SceneSkillClientPlayer.ListSkills:input_type -> ListSkillsRequest
-	1,  // 10: SceneSkillClientPlayer.ReleaseSkill:output_type -> ReleaseSkillResponse
-	10, // 11: SceneSkillClientPlayer.NotifySkillUsed:output_type -> Empty
-	10, // 12: SceneSkillClientPlayer.NotifySkillInterrupted:output_type -> Empty
-	5,  // 13: SceneSkillClientPlayer.ListSkills:output_type -> ListSkillsResponse
-	10, // [10:14] is the sub-list for method output_type
-	6,  // [6:10] is the sub-list for method input_type
-	6,  // [6:6] is the sub-list for extension type_name
-	6,  // [6:6] is the sub-list for extension extendee
-	0,  // [0:6] is the sub-list for field type_name
+	9,  // 0: ReleaseSkillRequest.position:type_name -> Vector3
+	10, // 1: ReleaseSkillRequest.rotation:type_name -> Rotation
+	11, // 2: ReleaseSkillResponse.error_message:type_name -> TipInfoMessage
+	9,  // 3: SkillUsedS2C.position:type_name -> Vector3
+	11, // 4: ListSkillsResponse.error_message:type_name -> TipInfoMessage
+	12, // 5: ListSkillsResponse.skill_list:type_name -> PlayerSkillListComp
+	6,  // 6: ListSkillsResponse.catalog:type_name -> SkillCatalogEntry
+	11, // 7: UpgradeSkillResponse.error_message:type_name -> TipInfoMessage
+	5,  // 8: UpgradeSkillResponse.state:type_name -> ListSkillsResponse
+	0,  // 9: SceneSkillClientPlayer.ReleaseSkill:input_type -> ReleaseSkillRequest
+	3,  // 10: SceneSkillClientPlayer.NotifySkillUsed:input_type -> SkillUsedS2C
+	2,  // 11: SceneSkillClientPlayer.NotifySkillInterrupted:input_type -> SkillInterruptedS2C
+	4,  // 12: SceneSkillClientPlayer.ListSkills:input_type -> ListSkillsRequest
+	7,  // 13: SceneSkillClientPlayer.UpgradeSkill:input_type -> UpgradeSkillRequest
+	1,  // 14: SceneSkillClientPlayer.ReleaseSkill:output_type -> ReleaseSkillResponse
+	13, // 15: SceneSkillClientPlayer.NotifySkillUsed:output_type -> Empty
+	13, // 16: SceneSkillClientPlayer.NotifySkillInterrupted:output_type -> Empty
+	5,  // 17: SceneSkillClientPlayer.ListSkills:output_type -> ListSkillsResponse
+	8,  // 18: SceneSkillClientPlayer.UpgradeSkill:output_type -> UpgradeSkillResponse
+	14, // [14:19] is the sub-list for method output_type
+	9,  // [9:14] is the sub-list for method input_type
+	9,  // [9:9] is the sub-list for extension type_name
+	9,  // [9:9] is the sub-list for extension extendee
+	0,  // [0:9] is the sub-list for field type_name
 }
 
 func init() { file_proto_scene_player_skill_proto_init() }
@@ -476,7 +866,7 @@ func file_proto_scene_player_skill_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_proto_scene_player_skill_proto_rawDesc), len(file_proto_scene_player_skill_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   6,
+			NumMessages:   9,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

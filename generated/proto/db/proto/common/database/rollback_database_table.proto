@@ -245,7 +245,8 @@ message player_name
 // 所以:改了这里必须同步改 bootstrap DDL,反之亦然,否则启动期迁移直接拒绝。
 //
 // 字段号:player_route 沿用 DDL 列注释里预留的 pb:1..10(route_shard 是 10,player_id 仍是 1);
-// 另外四张的 DDL 没有 pb 注释,字段号按列序新定。与 §4.3 同规矩:上线后不复用,删字段写 reserved。
+// 另外四张的字段号按 DDL 列序新定,并同步写进 DDL 的列注释 pb:N(route_store_test 钉住两边一致)。
+// 与 §4.3 同规矩:上线后不复用,删字段写 reserved。
 // 库里可为 NULL 的列在这里用零值表达(0 / 空串 = NULL),与 store.RouteRow 的约定一致;
 // 本 message 不是读写载体,读写只在 store 的 SQL 里,所以不用 optional。
 // 主键是聚簇的(TiDB CLUSTERED,见 schema.go 注释),不声明 OptionTiDBNonclusteredPK;

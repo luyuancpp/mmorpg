@@ -22,9 +22,13 @@ const (
 )
 
 type PlayerSkillComp struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Id            uint64                 `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
-	SkillTableId  uint32                 `protobuf:"varint,2,opt,name=skill_table_id,json=skillTableId,proto3" json:"skill_table_id,omitempty"`
+	state        protoimpl.MessageState `protogen:"open.v1"`
+	Id           uint64                 `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
+	SkillTableId uint32                 `protobuf:"varint,2,opt,name=skill_table_id,json=skillTableId,proto3" json:"skill_table_id,omitempty"`
+	// 技能等级(2026-10-19 四职业技能,docs/design/class-skills.md §3)。
+	// 职业技能(Skill.class_id != 0):已学为 1..Skill.max_rank;0 不是"未学",是坏记录,加载时剔除 ——
+	// 未学的职业技能根本不出现在本列表里。旧通用技能(Skill.class_id == 0)不分等级,本字段恒为 0、读写都忽略。
+	Rank          uint32 `protobuf:"varint,3,opt,name=rank,proto3" json:"rank,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -69,6 +73,13 @@ func (x *PlayerSkillComp) GetId() uint64 {
 func (x *PlayerSkillComp) GetSkillTableId() uint32 {
 	if x != nil {
 		return x.SkillTableId
+	}
+	return 0
+}
+
+func (x *PlayerSkillComp) GetRank() uint32 {
+	if x != nil {
+		return x.Rank
 	}
 	return 0
 }
@@ -121,10 +132,11 @@ var File_proto_common_component_player_skill_comp_proto protoreflect.FileDescrip
 
 const file_proto_common_component_player_skill_comp_proto_rawDesc = "" +
 	"\n" +
-	".proto/common/component/player_skill_comp.proto\"G\n" +
+	".proto/common/component/player_skill_comp.proto\"[\n" +
 	"\x0fPlayerSkillComp\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\x04R\x02id\x12$\n" +
-	"\x0eskill_table_id\x18\x02 \x01(\rR\fskillTableId\"F\n" +
+	"\x0eskill_table_id\x18\x02 \x01(\rR\fskillTableId\x12\x12\n" +
+	"\x04rank\x18\x03 \x01(\rR\x04rank\"F\n" +
 	"\x13PlayerSkillListComp\x12/\n" +
 	"\n" +
 	"skill_list\x18\x01 \x03(\v2\x10.PlayerSkillCompR\tskillListB\x18Z\x16proto/common/componentb\x06proto3"
