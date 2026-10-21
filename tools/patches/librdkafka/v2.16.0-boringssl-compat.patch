@@ -1,0 +1,40 @@
+--- a/src/rdrand.c
++++ b/src/rdrand.c
+@@ -78,7 +78,12 @@
+ static rd_bool_t rd_rand_bytes_by_ossl(unsigned char *buf, int num) {
+         int res     = -1;
+         int retries = 0;
++#if defined(OPENSSL_IS_BORINGSSL)
++        /* BoringSSL 的密码学随机入口为 RAND_bytes，保留原有成功检查与重试上限。 */
++        while ((res = RAND_bytes(buf, num)) != 1) {
++#else
+         while ((res = RAND_priv_bytes(buf, num)) != 1) {
++#endif
+                 if (++retries == 5)
+                         break;
+ 
+--- a/src/rdkafka_ssl.c
++++ b/src/rdkafka_ssl.c
+@@ -45,6 +45,7 @@
+ #pragma comment(lib, "libssl.lib")
+ #endif
+ 
++#include <openssl/hmac.h>
+ #include <openssl/x509.h>
+ #include <openssl/x509_vfy.h>
+ 
+@@ -1676,7 +1677,14 @@
+                 PKCS12_free(p12);
+                 BIO_free(bio);
+ 
++#if defined(OPENSSL_IS_BORINGSSL)
++                /* set1 保留 ca 所有权；任一步失败仍走原释放路径，并销毁尚未发布的 ctx。 */
++                r = SSL_CTX_use_certificate(ctx, cert) == 1 &&
++                    SSL_CTX_use_PrivateKey(ctx, pkey) == 1 &&
++                    SSL_CTX_set1_chain(ctx, ca) == 1;
++#else
+                 r = SSL_CTX_use_cert_and_key(ctx, cert, pkey, ca, 1);
++#endif
+                 RD_IF_FREE(cert, X509_free);
+                 RD_IF_FREE(pkey, EVP_PKEY_free);
+                 if (ca != NULL)

@@ -474,10 +474,10 @@ void SceneHandler::DestroyScene(::google::protobuf::RpcController* controller, c
 		return;
 	}
 
-	if (const std::size_t relocating = SceneLifecycle::DestroyScene(targetEntity); relocating > 0)
+	if (const std::size_t remainingBindings = SceneLifecycle::DestroyScene(targetEntity); remainingBindings > 0)
 	{
-		LOG_WARN << "DestroyScene: scene_id=" << sceneId << " still has residents; relocating "
-				 << relocating << " player(s) to the main world, entity kept until drained";
+		LOG_WARN << "DestroyScene: scene_id=" << sceneId << " still has "
+				 << remainingBindings << " scene binding(s), entity kept until drained";
 		return;
 	}
 

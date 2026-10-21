@@ -14,8 +14,8 @@
 #   --release          CMAKE_BUILD_TYPE=Release (default)
 #   --debug            CMAKE_BUILD_TYPE=Debug
 #   --relwithdebinfo   CMAKE_BUILD_TYPE=RelWithDebInfo (optimised + debug info)
-#   --skip-deps        Do not touch submodules and do not run
-#                      setup_dependencies.sh. REQUIRED inside Docker: the
+#   --skip-deps        Do not touch submodules, restore patches, refresh Boost
+#                      headers or run setup_dependencies.sh. REQUIRED inside Docker: the
 #                      builder stage has no .git (so `git submodule` fails)
 #                      and third-party deps were already built in the deps
 #                      stage.
@@ -236,6 +236,16 @@ buildproject() {
 if [ "$SKIP_DEPS" -eq 0 ]; then
     echo "[1] submodules + third-party dependencies"
     run git submodule update --init --recursive
+    # 既有入口初始化全部顶层依赖，因此复用唯一清单校验全部提交并恢复登记补丁。
+    # 所有命令都经 run；dry-run 不读取 Git 状态、不应用补丁，也不复制聚合头。
+    run python3 "$SCRIPT_DIR/third_party/verify_release_lock.py" --apply-patches
+    if [ "$DRY_RUN" -eq 1 ]; then
+        BOOST_ARCHIVE="build/verification/boost-copy-linux-dry-run"
+    else
+        # 工具拒绝已存在目录；时间纳秒与进程号只用于产生本轮归档名，不预创建目录。
+        BOOST_ARCHIVE="build/verification/boost-copy-linux-$(date -u +%Y%m%dT%H%M%S%N)-$$"
+    fi
+    run python3 "$SCRIPT_DIR/third_party/refresh_boost_headers.py" --archive "$BOOST_ARCHIVE"
     run env BUILD_JOBS="$JOBS" bash "$ARCHIVED_DIR/setup_dependencies.sh"
     echo ""
 else

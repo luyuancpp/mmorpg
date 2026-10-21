@@ -30,6 +30,8 @@ vsout/
 
 # OS / editor
 .git
+# 子模块的 .git 是指向宿主主仓的文件，容器中无效；所有层都只接收源码。
+**/.git
 .vs/
 .vscode/
 .idea/

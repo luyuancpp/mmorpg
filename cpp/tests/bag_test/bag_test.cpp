@@ -2577,7 +2577,7 @@ TEST(BagTest, LayerConsistencyPredicateActuallyDetectsBreakage)
     bag.SetLayout(std::move(injected));
 
     bag.InsertItemForRestore(257001, kNonStack1, 1, 0);
-    ASSERT_EQ(layout, &bag.Layout());
+    ASSERT_EQ(kDefaultCapacity, bag.Layout().Capacity());
     ASSERT_TRUE(bag.IsLayerConsistent());
     ASSERT_EQ(1u, bag.GridSlotCount());
 

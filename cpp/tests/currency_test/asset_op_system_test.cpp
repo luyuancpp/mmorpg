@@ -637,15 +637,23 @@ TEST_F(AssetOpSystemTest, DebitWithItemWithoutBagsRejectedAndRecorded)
 	EXPECT_EQ(ASSET_OP_OUTCOME_REJECTED, response.outcome());
 	EXPECT_EQ(static_cast<uint32_t>(kAssetInvalidBundle), response.reason().id());
 	EXPECT_EQ(1, g_persistCalls);
-	EXPECT_EQ(ASSET_OP_OUTCOME_REJECTED, CallDebit(1, 30).outcome()) << "同 seq 的合法重投也不能扣款";
+	::AssetOpResponse replay;
+	PlayerAssetOpSystem::Debit(request, replay);
+	EXPECT_EQ(ASSET_OP_OUTCOME_REJECTED, replay.outcome()) << "原包重投应返回已记录的拒绝";
+	EXPECT_EQ(static_cast<uint32_t>(kAssetInvalidBundle), replay.reason().id());
+	const auto changedBundle = CallDebit(1, 30);
+	EXPECT_EQ(ASSET_OP_OUTCOME_UNKNOWN, changedBundle.outcome()) << "同 seq 改包不能借用原收据";
+	EXPECT_EQ(static_cast<uint32_t>(kAssetInvalidBundle), changedBundle.reason().id());
 	EXPECT_EQ(100u, Gold());
 	EXPECT_FALSE(tlsEcs.actorRegistry.any_of<PlayerBagsComp>(player_));
 }
 
 // Credit 确实需要写物品,缺持久背包时仍须整体重试,不能为了修复 Debit 而放开这道门禁。
-// 不依赖 Item 表:缺背包应在校验配表、分配物品号或修改资产之前返回。
+// 请求须先通过配表校验；用真实配表保证本用例的物品载荷合法。
+// 背包未加载时仍应在分配物品号或修改资产之前整体返回 RETRY。
 TEST_F(AssetOpSystemTest, CreditMissingBagsRetriesBeforeAnyMixedBundleMutation)
 {
+	ASSERT_TRUE(ItemTableAvailable()) << "真实物品配置是合法载荷的前置，不能以坏包替代背包未加载场景";
 	ASSERT_EQ(kSuccess, CurrencySystem::AddCurrency(player_, kCurrencyGold, 100));
 	ASSERT_FALSE(tlsEcs.actorRegistry.any_of<PlayerBagsComp>(player_));
 	const auto ledgerBefore = tlsEcs.actorRegistry.get<PlayerAssetOpLedgerComp>(player_).SerializeAsString();

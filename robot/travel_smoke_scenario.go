@@ -291,7 +291,7 @@ func RunTravelSmoke(cfg *config.Config) {
 	if err != nil {
 		// 这是全程第一条 GM 指令,环境没放行 GM 时就死在这里。2026-10-15 起 gate 的 GM 闸拒绝回带请求 id 的信封
 		// (message_id = GmAddCurrency,tip = kFeatureUnavailable 1006;client-request-ordering.md O6),
-		// travelSmokeReplyRejection 会把它单独报成「gate GM 闸拒绝」;以前只推一条 23 号 tip,表现是等回包超时。
+		// travelSmokeReplyRejection 会按 travelSmokeEnvelopeHint 把它报成 gate GM 闸拒绝;以前只推一条 23 号 tip,表现是等回包超时。
 		fail("home-gold-seed", "%v (an envelope tip 1006 from the gate GM guard means the home-zone gate GATE_RUN_MODE is not dev)", err)
 	}
 	if gold != goldHome {
@@ -695,14 +695,30 @@ type travelSmokeTipReply interface {
 	GetErrorMessage() *base.TipInfoMessage
 }
 
-// travelSmokeReplyRejection 判一次请求-响应调用是否被拒:envelopeTip 是 gate 信封拒绝码(非 0 时 reply 未填充),
-// reply 是已解码的回包体。被拒返回 error,受理返回 nil。
-func travelSmokeReplyRejection(envelopeTip uint32, reply travelSmokeTipReply) error {
-	if envelopeTip == uint32(tiptable.CommonError_kFeatureUnavailable) {
-		return fmt.Errorf("被 gate 的 GM 闸拒绝 tip=%d(请求没到 scene:gate 的 GATE_RUN_MODE 不是 dev)", envelopeTip)
+// travelSmokeEnvelopeHint 给 gate 信封拒绝码配一句原因(拼在 "tip=<数字>" 后面);不认识的码返回空串,只打印数字。
+// 本场景三处信封分支(金币读写、传送等待、负向传送)共用,同一个码的原因只写在这里。
+// 不提"gate 不认识这个消息号":未知消息号 gate 不回信封,只会表现为超时。
+// kServiceUnavailable 有两个来源:gate 自己选不到 scene 节点([TCP Node] WARN),以及 R1 之后 scene 在派发前
+// 早退、由 gate 补回带请求号的 1003(会话不在 / 玩家仍在加载 / 请求解析失败)。
+func travelSmokeEnvelopeHint(tip uint32) string {
+	switch tip {
+	case uint32(tiptable.CommonError_kRateLimitExceeded):
+		return " (kRateLimitExceeded: gate rate limit, the request never reached the scene; see travelSmokeRequestSpacing)"
+	case uint32(tiptable.CommonError_kServiceUnavailable):
+		return " (kServiceUnavailable: the gate session is not bound to a scene node yet (Scene not ready) or the scene RpcClient " +
+			"is not attached, see the gate's [TCP Node] WARN; or the scene dropped the request before dispatch " +
+			"(session not in the scene / player still loading / request failed to parse))"
+	case uint32(tiptable.CommonError_kFeatureUnavailable):
+		return " (kFeatureUnavailable: rejected by the gate GM guard, the request never reached the scene; the gate's GATE_RUN_MODE is not dev)"
 	}
+	return ""
+}
+
+// travelSmokeReplyRejection 判一次请求-响应调用是否被拒:envelopeTip 是 gate 信封拒绝码(非 0 时 reply 未填充),
+// reply 是已解码的回包体。被拒返回 error,受理返回 nil。信封拒绝的原因(含 GM 闸)见 travelSmokeEnvelopeHint。
+func travelSmokeReplyRejection(envelopeTip uint32, reply travelSmokeTipReply) error {
 	if envelopeTip != 0 {
-		return fmt.Errorf("被 gate 信封拒绝 tip=%d(请求没到 scene:多半是被限流了,检查 travelSmokeRequestSpacing)", envelopeTip)
+		return fmt.Errorf("被 gate 信封拒绝 tip=%d%s", envelopeTip, travelSmokeEnvelopeHint(envelopeTip))
 	}
 	if tip := reply.GetErrorMessage().GetId(); tip != 0 {
 		return fmt.Errorf("scene 业务拒绝 tip=%d(常见:跨 zone 冻结闸 / 货币封禁;GmAddCurrency 还可能是 scene 的 GM 闸 —— SCENE_RUN_MODE 不是 dev)", tip)
@@ -899,7 +915,7 @@ func travelSmokeJudgeTravelReply(reply travelSmokeReplyOutcome) (seen bool, err 
 		}
 		return true, nil
 	case errors.As(reply.err, &tipErr):
-		return true, fmt.Errorf("gate 信封拒绝 tip=%d(请求没到 scene:gate 没换上认识该消息号的新二进制,或被限流)", tipErr.Tip)
+		return true, fmt.Errorf("gate 信封拒绝 tip=%d%s", tipErr.Tip, travelSmokeEnvelopeHint(tipErr.Tip))
 	case errors.Is(reply.err, pkg.ErrRPCDisconnected), errors.Is(reply.err, pkg.ErrRPCTimeout):
 		return false, nil
 	default:

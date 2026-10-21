@@ -3,7 +3,7 @@
 # setup_dependencies.sh — Build third-party C++ dependencies for Linux
 #
 # Builds: gRPC (+ protobuf, abseil, re2, c-ares, utf8_range),
-#         muduo-linux, librdkafka, yaml-cpp, hiredis, zlib, nghttp2
+#         muduo-linux, curl, librdkafka, yaml-cpp, hiredis, zlib, nghttp2
 #
 # Run from repo root:  ./tools/archived/setup_dependencies.sh
 #
@@ -96,7 +96,7 @@ echo "cmake: $(cmake --version | head -1)"
 GRPC_DIR="$REPO_ROOT/third_party/grpc"
 GRPC_BUILD="$GRPC_DIR/.build_linux"
 GRPC_STAMP_FILE="/usr/local/share/mmorpg-deps/grpc-linux.stamp"
-EXPECTED_GRPC_GIT_SHA="c876f4da50f7da2f331888b88b2a7243514139fe"
+EXPECTED_GRPC_GIT_SHA="3252a89f10d8e92997862167ca7d095ecda85973"
 EXPECTED_PROTOBUF_GIT_SHA="35cd01f9fe9afbeea38cc7b979a3b6bfcde82c03"
 GRPC_REPO_STAMP="grpc-linux-v1:grpc=$EXPECTED_GRPC_GIT_SHA:protobuf=$EXPECTED_PROTOBUF_GIT_SHA"
 GRPC_ARTIFACTS=(
@@ -186,17 +186,40 @@ fi
 # ── 3. hiredis (must be before muduo so muduo finds it) ─────────────────────
 
 HIREDIS_DIR="$REPO_ROOT/third_party/redis/deps/hiredis"
-if [ ! -f "$LIB_DIR/libhiredis.a" ]; then
-    echo "=== Building hiredis ==="
-    cd "$HIREDIS_DIR"
+HIREDIS_BUILD="$REPO_ROOT/build/third_party/hiredis-linux"
+HIREDIS_STAMP_FILE="/usr/local/share/mmorpg-deps/hiredis-linux.stamp"
+HIREDIS_SOURCE_ID="$(source_identity hiredis "$HIREDIS_DIR")"
+HIREDIS_EXPECTED_STAMP="hiredis-linux-v1:source=$HIREDIS_SOURCE_ID"
+HIREDIS_INSTALLED_STAMP="$(read_stamp "$HIREDIS_STAMP_FILE")"
+HIREDIS_ARTIFACTS=(
+    "$LIB_DIR/libhiredis.a"
+    /usr/local/lib/libhiredis.a
+    /usr/local/include/hiredis/hiredis.h
+)
+if have_all_files "${HIREDIS_ARTIFACTS[@]}" \
+    && [ "$HIREDIS_INSTALLED_STAMP" = "$HIREDIS_EXPECTED_STAMP" ]; then
+    echo "hiredis 源码 stamp 一致，跳过构建"
+else
+    echo "=== hiredis 源码变化或安装不完整，重新构建 ==="
+    rm -f "$HIREDIS_STAMP_FILE"
+    # hiredis 的 Makefile 在当前目录产物；复制到独立目录，避免生成物污染源码哈希。
+    rm -rf "$HIREDIS_BUILD"
+    mkdir -p "$HIREDIS_BUILD"
+    cp -a "$HIREDIS_DIR/." "$HIREDIS_BUILD/"
+    cd "$HIREDIS_BUILD"
+    # 来源可能留有旧对象，升级后不能仅靠文件时间戳判断它们有效。
+    make clean
     make -j"$CPU"
     cp -f libhiredis.a "$LIB_DIR/"
     make install PREFIX=/usr/local
     ldconfig
     cd "$REPO_ROOT"
-    echo "hiredis install ok"
-else
-    echo "hiredis already built, skipping"
+    if ! have_all_files "${HIREDIS_ARTIFACTS[@]}"; then
+        echo "ERROR: hiredis 安装后缺少所需产物。" >&2
+        exit 1
+    fi
+    write_stamp "$HIREDIS_STAMP_FILE" "$HIREDIS_EXPECTED_STAMP"
+    echo "hiredis 安装完成 ($HIREDIS_EXPECTED_STAMP)"
 fi
 
 # ── 4. muduo-linux ──────────────────────────────────────────────────────────
@@ -205,6 +228,7 @@ MUDUO_DIR="$REPO_ROOT/third_party/muduo-linux"
 MUDUO_BUILD="$MUDUO_DIR/.build_linux"
 MUDUO_COMPAT="$MUDUO_BUILD/muduo_compat.cmake"
 MUDUO_STAMP_FILE="$MUDUO_BUILD/.mmorpg-source.stamp"
+BOOST_DIR="$REPO_ROOT/third_party/boost"
 MUDUO_ARTIFACTS=(
     "$LIB_DIR/libmuduo_base.a"
     "$LIB_DIR/libmuduo_net.a"
@@ -221,6 +245,15 @@ if [ ! -d "$OVERLAY_DIR" ]; then
     echo "ERROR: required muduo Linux overlay is missing: $OVERLAY_DIR" >&2
     exit 1
 fi
+if ! have_all_files "$BOOST_DIR/boost/version.hpp" "$BOOST_DIR/boost/any.hpp" \
+    || ! grep -Eq '^#define BOOST_VERSION 109200([[:space:]]|$)' "$BOOST_DIR/boost/version.hpp"; then
+    echo "ERROR: muduo requires the copied Boost 1.92.0 headers at $BOOST_DIR/boost." >&2
+    echo "Run refresh_boost_headers.py before building dependencies; system Boost is not a fallback." >&2
+    exit 1
+fi
+# TcpConnection/EventLoop 的公开布局含 boost::any，依赖库和业务必须使用同一套头。
+# 聚合头是普通副本，不能只用 Boost 根仓 HEAD 代表它的实际内容。
+BOOST_SOURCE_ID="boost-headers-tree-v1:$(hash_source_tree "$BOOST_DIR/boost")"
 
 # 每次都先应用 overlay。Git checkout 使用不可变 gitlink SHA；Docker/tar 源码
 # 使用应用 overlay 后的内容哈希，重复运行仍稳定；overlay 自身另算完整目录哈希。
@@ -246,7 +279,7 @@ fi
 
 MUDUO_SOURCE_ID="$(source_identity muduo-linux "$MUDUO_DIR")"
 MUDUO_OVERLAY_HASH="$(hash_source_tree "$OVERLAY_DIR")"
-MUDUO_EXPECTED_STAMP="muduo-linux-v1:source=$MUDUO_SOURCE_ID:overlay=$MUDUO_OVERLAY_HASH"
+MUDUO_EXPECTED_STAMP="muduo-linux-v3:source=$MUDUO_SOURCE_ID:overlay=$MUDUO_OVERLAY_HASH:boost=$BOOST_SOURCE_ID"
 MUDUO_INSTALLED_STAMP="$(read_stamp "$MUDUO_STAMP_FILE")"
 
 if have_all_files "${MUDUO_ARTIFACTS[@]}" \
@@ -293,6 +326,9 @@ add_definitions(-DGOOGLE_CHECK_EQ=ABSL_CHECK_EQ)
 add_definitions(-DGOOGLE_LOG=ABSL_LOG)
 add_definitions(-DGOOGLE_DCHECK=ABSL_DCHECK)
 
+# Boost 是外部头文件，保留 muduo 自身的警告即错误策略。
+include_directories(SYSTEM "${BOOST_ROOT}")
+
 add_library(muduo_hiredis STATIC
     "${CMAKE_CURRENT_SOURCE_DIR}/contrib/hiredis/Hiredis.cc")
 target_include_directories(muduo_hiredis
@@ -303,7 +339,17 @@ MUDUO_COMPAT_EOF
         -DCMAKE_BUILD_TYPE=Release \
         -DCMAKE_CXX_STANDARD=23 \
         -DMUDUO_BUILD_EXAMPLES=OFF \
+        -DBoost_NO_BOOST_CMAKE=ON \
+        -DBoost_NO_SYSTEM_PATHS=ON \
+        -DBOOST_ROOT="$BOOST_DIR" \
+        -DBOOST_INCLUDEDIR="$BOOST_DIR" \
+        -DBoost_INCLUDE_DIR="$BOOST_DIR" \
         -DCMAKE_PROJECT_INCLUDE="$MUDUO_COMPAT"
+    BOOST_CONFIGURED_INCLUDE="$(sed -n 's/^Boost_INCLUDE_DIR:PATH=//p' "$MUDUO_BUILD/CMakeCache.txt")"
+    if [ "$BOOST_CONFIGURED_INCLUDE" != "$BOOST_DIR" ]; then
+        echo "ERROR: muduo resolved unexpected Boost headers: $BOOST_CONFIGURED_INCLUDE" >&2
+        exit 1
+    fi
     # Build only the four libraries the game links.  This deliberately skips
     # muduo_protorpc / muduo_protorpc_wire: nothing here uses them and they
     # carry more removed-protobuf-API surface than the codec does.
@@ -319,77 +365,256 @@ MUDUO_COMPAT_EOF
     echo "muduo install ok ($MUDUO_EXPECTED_STAMP)"
 fi
 
-# ── 5. librdkafka ──────────────────────────────────────────────────────────
+# ── 5. zlib（先于 curl 与 librdkafka 安装固定版本）───────────────────────
+
+ZLIB_DIR="$REPO_ROOT/third_party/zlib"
+ZLIB_BUILD="$ZLIB_DIR/.build_linux"
+ZLIB_STAMP_FILE="/usr/local/share/mmorpg-deps/zlib-linux.stamp"
+ZLIB_SOURCE_ID="$(source_identity zlib "$ZLIB_DIR")"
+ZLIB_EXPECTED_STAMP="zlib-linux-v2:source=$ZLIB_SOURCE_ID:shared=1:static=1:ctest=1"
+ZLIB_INSTALLED_STAMP="$(read_stamp "$ZLIB_STAMP_FILE")"
+ZLIB_ARTIFACTS=(
+    "$LIB_DIR/libz.a"
+    /usr/local/lib/libz.a
+    /usr/local/lib/libz.so
+    /usr/local/include/zlib.h
+    /usr/local/include/zconf.h
+)
+if have_all_files "${ZLIB_ARTIFACTS[@]}" \
+    && [ "$ZLIB_INSTALLED_STAMP" = "$ZLIB_EXPECTED_STAMP" ] \
+    && cmp -s /usr/local/lib/libz.a "$LIB_DIR/libz.a"; then
+    echo "zlib 源码 stamp 与归档一致，跳过构建"
+else
+    echo "=== zlib 源码变化或安装不完整，重新构建 ==="
+    rm -f "$ZLIB_STAMP_FILE"
+    rm -rf "$ZLIB_BUILD"
+    # CMake 不依赖 configure 的 shebang 换行；明确构建两种库并启用全部上游测试。
+    # v1.3.2 的静态 suffix=s 仅由 WIN32 设置，Linux 原生名称仍为 libz.a。
+    # 保留该名称，兼容已安装 gRPC export 中的绝对归档路径，不改第三方源码。
+    cmake -S "$ZLIB_DIR" -B "$ZLIB_BUILD" \
+        -DCMAKE_BUILD_TYPE=Release \
+        -DCMAKE_INSTALL_PREFIX=/usr/local \
+        -DCMAKE_INSTALL_LIBDIR=lib \
+        -DCMAKE_POSITION_INDEPENDENT_CODE=ON \
+        -DZLIB_BUILD_SHARED=ON \
+        -DZLIB_BUILD_STATIC=ON \
+        -DZLIB_BUILD_TESTING=ON
+    cmake --build "$ZLIB_BUILD" -j "$CPU"
+    ctest --test-dir "$ZLIB_BUILD" --output-on-failure --no-tests=error
+    if ! have_all_files "$ZLIB_BUILD/libz.a" "$ZLIB_BUILD/libz.so"; then
+        echo "ERROR: zlib 本轮构建未产出所需静态库和共享库。" >&2
+        exit 1
+    fi
+    cmake --install "$ZLIB_BUILD"
+    cp -f "$ZLIB_BUILD/libz.a" "$LIB_DIR/libz.a"
+    if ! have_all_files "${ZLIB_ARTIFACTS[@]}" \
+        || ! cmp -s "$ZLIB_BUILD/libz.a" /usr/local/lib/libz.a \
+        || ! cmp -s "$ZLIB_BUILD/libz.a" "$LIB_DIR/libz.a"; then
+        echo "ERROR: zlib 安装缺少产物，或安装归档与本轮构建不一致。" >&2
+        exit 1
+    fi
+    ldconfig
+    write_stamp "$ZLIB_STAMP_FILE" "$ZLIB_EXPECTED_STAMP"
+    echo "zlib 上游测试与安装完成 ($ZLIB_EXPECTED_STAMP)"
+fi
+
+# ── 6. curl（Agones HTTP 与 librdkafka 共用固定源码版本）──────────────────
+
+CURL_DIR="$REPO_ROOT/third_party/curl"
+CURL_BUILD="$CURL_DIR/.build_linux"
+CURL_STAMP_FILE="/usr/local/share/mmorpg-deps/curl-linux.stamp"
+if [ ! -f "$CURL_DIR/CMakeLists.txt" ]; then
+    echo "ERROR: curl 源码不存在: $CURL_DIR" >&2
+    echo "请执行: git submodule update --init third_party/curl" >&2
+    exit 1
+fi
+
+# 三个静态消费者统一使用已固定的 gRPC BoringSSL；不能把这套头与系统 OpenSSL 库混配。
+BORINGSSL_INCLUDE_DIR=/usr/local/include
+BORINGSSL_SSL_LIBRARY=/usr/local/lib/libssl.a
+BORINGSSL_CRYPTO_LIBRARY=/usr/local/lib/libcrypto.a
+if ! have_all_files "$BORINGSSL_INCLUDE_DIR/openssl/base.h" \
+    "$BORINGSSL_INCLUDE_DIR/openssl/ssl.h" \
+    "$BORINGSSL_SSL_LIBRARY" "$BORINGSSL_CRYPTO_LIBRARY" \
+    || ! grep -Eq '^#define OPENSSL_IS_BORINGSSL([[:space:]]|$)' "$BORINGSSL_INCLUDE_DIR/openssl/base.h"; then
+    echo "ERROR: 缺少当前 gRPC SDK 的完整 BoringSSL 头与静态库。" >&2
+    exit 1
+fi
+BORINGSSL_HEADERS_HASH="$(hash_source_tree "$BORINGSSL_INCLUDE_DIR/openssl")"
+BORINGSSL_ARCHIVES_HASH="$(sha256sum "$BORINGSSL_SSL_LIBRARY" "$BORINGSSL_CRYPTO_LIBRARY" | sha256sum | awk '{print $1}')"
+BORINGSSL_SOURCE_ID="grpc-boringssl-v1:grpc=$EXPECTED_GRPC_GIT_SHA:boringssl=2b44a3701a4788e1ef866ddc7f143060a3d196c9:headers=$BORINGSSL_HEADERS_HASH:archives=$BORINGSSL_ARCHIVES_HASH"
+
+CURL_SOURCE_ID="$(source_identity curl "$CURL_DIR")"
+CURL_EXPECTED_STAMP="curl-linux-v3:source=$CURL_SOURCE_ID:zlib=$ZLIB_SOURCE_ID:tls=$BORINGSSL_SOURCE_ID:shared=1:versioned=1:no-undefined=1"
+CURL_INSTALLED_STAMP="$(read_stamp "$CURL_STAMP_FILE")"
+CURL_ARTIFACTS=(
+    /usr/local/lib/libcurl.so
+    /usr/local/include/curl/curl.h
+    /usr/local/include/curl/curlver.h
+    /usr/local/lib/cmake/CURL/CURLConfig.cmake
+)
+if have_all_files "${CURL_ARTIFACTS[@]}" \
+    && [ "$CURL_INSTALLED_STAMP" = "$CURL_EXPECTED_STAMP" ]; then
+    echo "curl 源码 stamp 一致，跳过构建"
+else
+    echo "=== curl 源码变化或安装不完整，重新构建 ==="
+    rm -f "$CURL_STAMP_FILE"
+    rm -rf "$CURL_BUILD"
+    cmake -S "$CURL_DIR" -B "$CURL_BUILD" \
+        -DCMAKE_BUILD_TYPE=Release \
+        -DCMAKE_INSTALL_PREFIX=/usr/local \
+        -DCMAKE_INSTALL_LIBDIR=lib \
+        -DBUILD_SHARED_LIBS=ON \
+        -DBUILD_STATIC_LIBS=OFF \
+        -DBUILD_CURL_EXE=OFF \
+        -DBUILD_TESTING=OFF \
+        -DCURL_ZLIB=ON \
+        -DZLIB_INCLUDE_DIR=/usr/local/include \
+        -DZLIB_LIBRARY=/usr/local/lib/libz.so \
+        -DCURL_USE_OPENSSL=ON \
+        -DOPENSSL_USE_STATIC_LIBS=ON \
+        -DOPENSSL_ROOT_DIR=/usr/local \
+        -DOPENSSL_INCLUDE_DIR="$BORINGSSL_INCLUDE_DIR" \
+        -DOPENSSL_SSL_LIBRARY="$BORINGSSL_SSL_LIBRARY" \
+        -DOPENSSL_CRYPTO_LIBRARY="$BORINGSSL_CRYPTO_LIBRARY" \
+        -DCURL_HIDDEN_SYMBOLS=ON \
+        -DCURL_LIBCURL_VERSIONED_SYMBOLS=ON \
+        -DCMAKE_SHARED_LINKER_FLAGS=-Wl,--no-undefined
+    # 官方版本脚本只导出 curl_*，也把嵌入的静态 BoringSSL 完整限制在共享库内部。
+    if ! grep -Eq '^HAVE_BORINGSSL:INTERNAL=(1|TRUE)$' "$CURL_BUILD/CMakeCache.txt" \
+        || ! grep -Eq '^HAVE_VERSIONED_SYMBOLS:INTERNAL=(1|TRUE)$' "$CURL_BUILD/CMakeCache.txt"; then
+        echo "ERROR: curl 未确认 BoringSSL 后端或 curl_* 限定导出。" >&2
+        exit 1
+    fi
+    cmake --build "$CURL_BUILD" -j "$CPU"
+    cmake --install "$CURL_BUILD"
+    ldconfig
+    if ! have_all_files "${CURL_ARTIFACTS[@]}"; then
+        echo "ERROR: curl 安装后缺少所需产物。" >&2
+        exit 1
+    fi
+    write_stamp "$CURL_STAMP_FILE" "$CURL_EXPECTED_STAMP"
+    echo "curl 安装完成 ($CURL_EXPECTED_STAMP)"
+fi
+
+# ── 7. librdkafka ──────────────────────────────────────────────────────────
 
 RDKAFKA_DIR="$REPO_ROOT/third_party/librdkafka"
 RDKAFKA_BUILD="$RDKAFKA_DIR/.build_linux"
-if [ ! -f "$LIB_DIR/librdkafka++.a" ]; then
-    echo "=== Building librdkafka ==="
-    mkdir -p "$RDKAFKA_BUILD"
+RDKAFKA_STAMP_FILE="/usr/local/share/mmorpg-deps/librdkafka-linux.stamp"
+RDKAFKA_PATCH="$REPO_ROOT/tools/patches/librdkafka/v2.16.0-cgrp-rejoin-varargs.patch"
+# Docker 的源码副本没有 .git；补丁必须能在普通目录中幂等恢复，不能依赖宿主已应用。
+# Windows 上下文可带 CRLF；仅规范本补丁涉及的 C 文件，不依赖 Git 全局换行设置。
+sed -i 's/\r$//' "$RDKAFKA_DIR/src/rdkafka_cgrp.c"
+if git -C "$RDKAFKA_DIR" apply --reverse --check "$RDKAFKA_PATCH" >/dev/null 2>&1; then
+    echo "librdkafka 重入组变参补丁已应用"
+elif git -C "$RDKAFKA_DIR" apply --check "$RDKAFKA_PATCH"; then
+    git -C "$RDKAFKA_DIR" apply "$RDKAFKA_PATCH"
+else
+    echo "ERROR: librdkafka 重入组变参补丁既不能应用，也未完整应用。" >&2
+    exit 1
+fi
+RDKAFKA_BORINGSSL_PATCH="$REPO_ROOT/tools/patches/librdkafka/v2.16.0-boringssl-compat.patch"
+# 只规范本补丁涉及的两个文件，使无 .git 的 Docker 副本也能按相同字节幂等恢复。
+sed -i 's/\r$//' "$RDKAFKA_DIR/src/rdrand.c" "$RDKAFKA_DIR/src/rdkafka_ssl.c"
+if git -C "$RDKAFKA_DIR" apply --reverse --check "$RDKAFKA_BORINGSSL_PATCH" >/dev/null 2>&1; then
+    echo "librdkafka BoringSSL 兼容补丁已应用"
+elif git -C "$RDKAFKA_DIR" apply --check "$RDKAFKA_BORINGSSL_PATCH"; then
+    git -C "$RDKAFKA_DIR" apply "$RDKAFKA_BORINGSSL_PATCH"
+else
+    echo "ERROR: librdkafka BoringSSL 兼容补丁既不能应用，也未完整应用。" >&2
+    exit 1
+fi
+RDKAFKA_BORINGSSL_PATCH_ID="$(sha256sum "$RDKAFKA_BORINGSSL_PATCH" | awk '{print $1}')"
+RDKAFKA_PATCH_ID="$(sha256sum "$RDKAFKA_PATCH" | awk '{print $1}')"
+RDKAFKA_SOURCE_ID="$(source_identity librdkafka "$RDKAFKA_DIR")"
+# Git 提交号不包含本地补丁；摘要必须进入 stamp，避免复用修复前的静态库。
+RDKAFKA_EXPECTED_STAMP="librdkafka-linux-v5:source=$RDKAFKA_SOURCE_ID:patch=$RDKAFKA_PATCH_ID:boringssl_patch=$RDKAFKA_BORINGSSL_PATCH_ID:implicit-declarations=error:zlib=$ZLIB_SOURCE_ID:curl=$CURL_EXPECTED_STAMP"
+RDKAFKA_INSTALLED_STAMP="$(read_stamp "$RDKAFKA_STAMP_FILE")"
+RDKAFKA_ARTIFACTS=(
+    "$LIB_DIR/librdkafka.a"
+    "$LIB_DIR/librdkafka++.a"
+    /usr/local/lib/librdkafka.a
+    /usr/local/lib/librdkafka++.a
+    /usr/local/include/librdkafka/rdkafka.h
+    /usr/local/include/librdkafka/rdkafkacpp.h
+)
+if have_all_files "${RDKAFKA_ARTIFACTS[@]}" \
+    && [ "$RDKAFKA_INSTALLED_STAMP" = "$RDKAFKA_EXPECTED_STAMP" ]; then
+    echo "librdkafka 源码 stamp 一致，跳过构建"
+else
+    echo "=== librdkafka 源码变化或安装不完整，重新构建 ==="
+    rm -f "$RDKAFKA_STAMP_FILE"
+    rm -rf "$RDKAFKA_BUILD"
     cmake -S "$RDKAFKA_DIR" -B "$RDKAFKA_BUILD" \
         -DCMAKE_BUILD_TYPE=Release \
+        -DCMAKE_C_FLAGS=-Werror=implicit-function-declaration \
+        -DCMAKE_INSTALL_PREFIX=/usr/local \
+        -DCMAKE_INSTALL_LIBDIR=lib \
         -DRDKAFKA_BUILD_EXAMPLES=OFF \
         -DRDKAFKA_BUILD_TESTS=OFF \
-        -DRDKAFKA_BUILD_STATIC=ON
+        -DRDKAFKA_BUILD_STATIC=ON \
+        -DWITH_ZLIB=ON \
+        -DZLIB_INCLUDE_DIR=/usr/local/include \
+        -DZLIB_LIBRARY=/usr/local/lib/libz.so \
+        -DWITH_CURL=ON \
+        -DCURL_DIR=/usr/local/lib/cmake/CURL \
+        -DWITH_SSL=ON \
+        -DOPENSSL_USE_STATIC_LIBS=ON \
+        -DOPENSSL_ROOT_DIR=/usr/local \
+        -DOPENSSL_INCLUDE_DIR="$BORINGSSL_INCLUDE_DIR" \
+        -DOPENSSL_SSL_LIBRARY="$BORINGSSL_SSL_LIBRARY" \
+        -DOPENSSL_CRYPTO_LIBRARY="$BORINGSSL_CRYPTO_LIBRARY"
     cmake --build "$RDKAFKA_BUILD" -j "$CPU"
     find "$RDKAFKA_BUILD" -name "librdkafka*.a" -exec cp {} "$LIB_DIR/" \;
     cmake --install "$RDKAFKA_BUILD" --prefix /usr/local
-    echo "librdkafka install ok"
-else
-    echo "librdkafka already built, skipping"
+    if ! have_all_files "${RDKAFKA_ARTIFACTS[@]}"; then
+        echo "ERROR: librdkafka 安装后缺少所需产物。" >&2
+        exit 1
+    fi
+    write_stamp "$RDKAFKA_STAMP_FILE" "$RDKAFKA_EXPECTED_STAMP"
+    echo "librdkafka 安装完成 ($RDKAFKA_EXPECTED_STAMP)"
 fi
 
-# ── 6. yaml-cpp ─────────────────────────────────────────────────────────────
+# ── 8. yaml-cpp ─────────────────────────────────────────────────────────────
 
 YAMLCPP_DIR="$REPO_ROOT/third_party/yaml-cpp"
 YAMLCPP_BUILD="$YAMLCPP_DIR/.build_linux"
-if [ ! -f "$LIB_DIR/libyaml-cpp.a" ]; then
-    echo "=== Building yaml-cpp ==="
-    mkdir -p "$YAMLCPP_BUILD"
+YAMLCPP_STAMP_FILE="/usr/local/share/mmorpg-deps/yaml-cpp-linux.stamp"
+YAMLCPP_SOURCE_ID="$(source_identity yaml-cpp "$YAMLCPP_DIR")"
+YAMLCPP_EXPECTED_STAMP="yaml-cpp-linux-v1:source=$YAMLCPP_SOURCE_ID"
+YAMLCPP_INSTALLED_STAMP="$(read_stamp "$YAMLCPP_STAMP_FILE")"
+YAMLCPP_ARTIFACTS=(
+    "$LIB_DIR/libyaml-cpp.a"
+    /usr/local/lib/libyaml-cpp.a
+    /usr/local/include/yaml-cpp/yaml.h
+)
+if have_all_files "${YAMLCPP_ARTIFACTS[@]}" \
+    && [ "$YAMLCPP_INSTALLED_STAMP" = "$YAMLCPP_EXPECTED_STAMP" ]; then
+    echo "yaml-cpp 源码 stamp 一致，跳过构建"
+else
+    echo "=== yaml-cpp 源码变化或安装不完整，重新构建 ==="
+    rm -f "$YAMLCPP_STAMP_FILE"
+    rm -rf "$YAMLCPP_BUILD"
     cmake -S "$YAMLCPP_DIR" -B "$YAMLCPP_BUILD" \
         -DCMAKE_BUILD_TYPE=Release \
+        -DCMAKE_INSTALL_PREFIX=/usr/local \
+        -DCMAKE_INSTALL_LIBDIR=lib \
         -DYAML_CPP_BUILD_TESTS=OFF \
         -DYAML_CPP_BUILD_TOOLS=OFF \
         -DYAML_BUILD_SHARED_LIBS=OFF
     cmake --build "$YAMLCPP_BUILD" -j "$CPU"
     find "$YAMLCPP_BUILD" -name "libyaml-cpp.a" -exec cp {} "$LIB_DIR/" \;
     cmake --install "$YAMLCPP_BUILD" --prefix /usr/local
-    echo "yaml-cpp install ok"
-else
-    echo "yaml-cpp already built, skipping"
+    if ! have_all_files "${YAMLCPP_ARTIFACTS[@]}"; then
+        echo "ERROR: yaml-cpp 安装后缺少所需产物。" >&2
+        exit 1
+    fi
+    write_stamp "$YAMLCPP_STAMP_FILE" "$YAMLCPP_EXPECTED_STAMP"
+    echo "yaml-cpp 安装完成 ($YAMLCPP_EXPECTED_STAMP)"
 fi
 
-# ── 7. zlib ─────────────────────────────────────────────────────────────────
-
-ZLIB_DIR="$REPO_ROOT/third_party/zlib"
-ZLIB_BUILD="$ZLIB_DIR/.build_linux"
-if [ ! -f "$LIB_DIR/libz.a" ]; then
-    echo "=== Building zlib ==="
-    # Deliberately CMake and not ./configure.  On a Windows host git checks
-    # this submodule out with CRLF endings, which turns the shebang into
-    # "#!/bin/sh\r"; the kernel then looks for an interpreter literally named
-    # "/bin/sh\r" and the container fails with the thoroughly misleading
-    #     ./configure: cannot execute: required file not found   (exit 127)
-    # Every other dependency in this script already builds through CMake,
-    # which does not care about line endings.  zlib was the last holdout.
-    #
-    # ZLIB_BUILD_SHARED=OFF keeps this equivalent to the old `--static`: only
-    # libz.a gets installed, so -lz cannot quietly resolve to a .so in
-    # /usr/local/lib instead of the static archive.
-    cmake -S "$ZLIB_DIR" -B "$ZLIB_BUILD" \
-        -DCMAKE_BUILD_TYPE=Release \
-        -DCMAKE_INSTALL_PREFIX=/usr/local \
-        -DZLIB_BUILD_SHARED=OFF \
-        -DZLIB_BUILD_TESTING=OFF
-    cmake --build "$ZLIB_BUILD" -j "$CPU"
-    cmake --install "$ZLIB_BUILD"
-    cp -f "$ZLIB_BUILD/libz.a" "$LIB_DIR/"
-    echo "zlib install ok"
-else
-    echo "zlib already built, skipping"
-fi
-
-# ── 8. nghttp2 (HTTP/2 codec core for cpp/libs/engine/muduo_grpc) ──────────
+# ── 9. nghttp2 (HTTP/2 codec core for cpp/libs/engine/muduo_grpc) ──────────
 #
 # 只编静态核心库(ENABLE_LIB_ONLY):不编 nghttp / nghttpx / h2load / 示例 / 测试 / 文档,
 # 也用不到 nghttp2 自己的嵌套子模块(mruby / neverbleed / munit / urlparse)。
@@ -488,4 +713,4 @@ echo "=== All dependencies ready ==="
 echo "  Installed to: /usr/local  +  $LIB_DIR"
 echo ""
 echo "System prerequisites (install with apt-get if missing):"
-echo "  build-essential cmake git libssl-dev libboost-dev pkg-config"
+echo "  build-essential cmake git libssl-dev libboost-dev libpsl-dev pkg-config"

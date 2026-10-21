@@ -1,0 +1,205 @@
+{
+  "schema": 1,
+  "resolved_on": "2026-10-20",
+  "说明": "顶层子模块以正式 release 对应提交固定；无 release 保留原提交。嵌套子模块服从父版本的 gitlink，不独立追新。",
+  "dependencies": [
+    {
+      "path": "third_party/entt",
+      "url": "https://github.com/skypjack/entt.git",
+      "policy": "latest-release",
+      "commit": "85c6bba014049b5de8fad49d25424df2f1f6a8c1",
+      "tag": "v4.0.0",
+      "release": "https://github.com/skypjack/entt/releases/tag/v4.0.0"
+    },
+    {
+      "path": "third_party/sol2",
+      "url": "https://github.com/ThePhD/sol2.git",
+      "policy": "latest-release",
+      "commit": "eba86625b707e3c8c99bbfc4624e51f42dc9e561",
+      "tag": "v3.3.0",
+      "release": "https://github.com/ThePhD/sol2/releases/tag/v3.3.0",
+      "patches": [
+        {
+          "path": "tools/patches/sol2/v3.3.0-optional-reference-emplace.patch",
+          "sha256": "c0efa64d140d387d3ec8543bbb7f073c17202392ecfdbde38bf1cab6095785aa"
+        }
+      ]
+    },
+    {
+      "path": "third_party/redis",
+      "url": "https://github.com/redis/redis.git",
+      "policy": "latest-release",
+      "commit": "498ecd0d6d007db11ddb3aea9428552598a78622",
+      "tag": "8.10.2",
+      "release": "https://github.com/redis/redis/releases/tag/8.10.2",
+      "patches": [
+        {
+          "path": "tools/patches/redis/8.10.2-hiredis-windows-dns-test.patch",
+          "sha256": "2c3b92445440c4aad09d04c61ba946e45f6912902ade3f2d65ca2b4aadbf69e6"
+        }
+      ]
+    },
+    {
+      "path": "third_party/muduo-linux",
+      "url": "https://github.com/chenshuo/muduo.git",
+      "policy": "latest-release",
+      "commit": "b55b0ac6a10d4ded1301c3172e779ec46ada2ab3",
+      "tag": "v2.0.2",
+      "release": "https://github.com/chenshuo/muduo/releases/tag/v2.0.2"
+    },
+    {
+      "path": "third_party/recastnavigation",
+      "url": "https://github.com/recastnavigation/recastnavigation.git",
+      "policy": "latest-release",
+      "commit": "6dc1667f580357e8a2154c28b7867bea7e8ad3a7",
+      "tag": "v1.6.0",
+      "release": "https://github.com/recastnavigation/recastnavigation/releases/tag/v1.6.0"
+    },
+    {
+      "path": "third_party/spdlog",
+      "url": "https://github.com/gabime/spdlog.git",
+      "policy": "latest-release",
+      "commit": "79524ddd08a4ec981b7fea76afd08ee05f83755d",
+      "tag": "v1.17.0",
+      "release": "https://github.com/gabime/spdlog/releases/tag/v1.17.0"
+    },
+    {
+      "path": "third_party/ue5navmesh",
+      "url": "https://github.com/lhl-cpp/ue5navmesh.git",
+      "policy": "current-commit",
+      "commit": "aacf2f82af2e24c56474855fce057018928735bb",
+      "patches": [
+        {
+          "path": "tools/patches/ue5navmesh/current-local-windows.patch",
+          "sha256": "c381250147408c79a4fa67987442d68b384a82dec9babff7d77f18d19466de31"
+        }
+      ]
+    },
+    {
+      "path": "third_party/zlib",
+      "url": "https://github.com/madler/zlib.git",
+      "policy": "latest-release",
+      "commit": "da607da739fa6047df13e66a2af6b8bec7c2a498",
+      "tag": "v1.3.2",
+      "release": "https://github.com/madler/zlib/releases/tag/v1.3.2"
+    },
+    {
+      "path": "third_party/hexagons_grids",
+      "url": "https://github.com/luyuan-cpp/game_hexagons_grids.git",
+      "policy": "current-commit",
+      "commit": "683e59e88465500640a5b08acf2cffa74d6d51b4"
+    },
+    {
+      "path": "third_party/exprtk",
+      "url": "https://github.com/ArashPartow/exprtk.git",
+      "policy": "current-commit",
+      "commit": "f46bffcd6966d38a09023fb37ba9335214c9b959"
+    },
+    {
+      "path": "third_party/yaml-cpp",
+      "url": "https://github.com/jbeder/yaml-cpp.git",
+      "policy": "latest-release",
+      "commit": "56e3bb550c91fd7005566f19c079cb7a503223cf",
+      "tag": "yaml-cpp-0.9.0",
+      "release": "https://github.com/jbeder/yaml-cpp/releases/tag/yaml-cpp-0.9.0"
+    },
+    {
+      "path": "third_party/boost",
+      "url": "https://github.com/boostorg/boost.git",
+      "policy": "latest-release",
+      "commit": "afdfa32505af73e3d208144b3f623f0096cb62b6",
+      "tag": "boost-1.92.0",
+      "release": "https://github.com/boostorg/boost/releases/tag/boost-1.92.0"
+    },
+    {
+      "path": "third_party/grpc",
+      "url": "https://github.com/grpc/grpc.git",
+      "policy": "latest-release",
+      "commit": "3252a89f10d8e92997862167ca7d095ecda85973",
+      "tag": "v1.84.0",
+      "release": "https://github.com/grpc/grpc/releases/tag/v1.84.0",
+      "nested_patches": [
+        {
+          "repository": "third_party/grpc/third_party/boringssl-with-bazel",
+          "commit": "2b44a3701a4788e1ef866ddc7f143060a3d196c9",
+          "path": "tools/patches/grpc/v1.83.0-boringssl-windows-x509-name.patch",
+          "sha256": "3d1004635c3e26886fbe99b752248ebd2988319afc5e594dcc8ec667df7e9752"
+        }
+      ]
+    },
+    {
+      "path": "third_party/curl",
+      "url": "https://github.com/curl/curl.git",
+      "policy": "latest-release",
+      "commit": "3163ec065643ba20709f190111f42c3e1fe95273",
+      "tag": "curl-8_23_0",
+      "release": "https://github.com/curl/curl/releases/tag/curl-8_23_0"
+    },
+    {
+      "path": "third_party/cppcodec",
+      "url": "https://github.com/tplgy/cppcodec.git",
+      "policy": "latest-release",
+      "commit": "302dc28f8fd5c8bf2ea8d7212aed3be884d5d166",
+      "tag": "v0.2",
+      "release": "https://github.com/tplgy/cppcodec/releases/tag/v0.2"
+    },
+    {
+      "path": "third_party/xxhash",
+      "url": "https://github.com/Cyan4973/xxHash.git",
+      "policy": "latest-release",
+      "commit": "c87183a77d67f7d37e3d2d1b7eaac5e7c695e4f0",
+      "tag": "v0.8.4",
+      "release": "https://github.com/Cyan4973/xxHash/releases/tag/v0.8.4"
+    },
+    {
+      "path": "third_party/librdkafka",
+      "url": "https://github.com/confluentinc/librdkafka.git",
+      "policy": "latest-release",
+      "commit": "c6c9973cf1b25394c58e0cade13a36f386856f77",
+      "tag": "v2.16.0",
+      "release": "https://github.com/confluentinc/librdkafka/releases/tag/v2.16.0",
+      "patches": [
+        {
+          "path": "tools/patches/librdkafka/v2.16.0-local-windows.patch",
+          "sha256": "f00c96056c9597a138954b784e0f753ae93a3f8c8d28c83fce11e14c6bbeff3a"
+        },
+        {
+          "path": "tools/patches/librdkafka/v2.16.0-cgrp-rejoin-varargs.patch",
+          "sha256": "92d60268a4fe11466853cba8dc0e82a935078a9cd220d7db79bbb4a57d4edb14"
+        },
+        {
+          "path": "tools/patches/librdkafka/v2.16.0-test-selector-ownership.patch",
+          "sha256": "ab283c7fe07e6dacf323f3c24786c62c981d0dca54e794854c84cb549f3e043f"
+        },
+        {
+          "path": "tools/patches/librdkafka/v2.16.0-boringssl-compat.patch",
+          "sha256": "fe43b217bcc55041f5a8ffb33715048b4d2e443b14968823e0e56e6d924474f6"
+        }
+      ]
+    },
+    {
+      "path": "third_party/fmt",
+      "url": "https://github.com/fmtlib/fmt.git",
+      "policy": "latest-release",
+      "commit": "1be298e1bd68957e4cd352e1f676f00e07dcfb57",
+      "tag": "12.2.0",
+      "release": "https://github.com/fmtlib/fmt/releases/tag/12.2.0"
+    },
+    {
+      "path": "third_party/openssl",
+      "url": "https://github.com/openssl/openssl.git",
+      "policy": "latest-release",
+      "commit": "af1775b60dfa141a4ad762585052cabeb9f37e9e",
+      "tag": "openssl-4.0.3",
+      "release": "https://github.com/openssl/openssl/releases/tag/openssl-4.0.3"
+    },
+    {
+      "path": "third_party/nghttp2",
+      "url": "https://github.com/nghttp2/nghttp2.git",
+      "policy": "latest-release",
+      "commit": "85e300c79fb6dbcfa9c1013215c8710c1c2cd3d2",
+      "tag": "v1.70.0",
+      "release": "https://github.com/nghttp2/nghttp2/releases/tag/v1.70.0"
+    }
+  ]
+}

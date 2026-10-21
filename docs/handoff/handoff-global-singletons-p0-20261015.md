@@ -168,3 +168,9 @@ git worktree remove --force $wt
 - `docs/design/grpc-muduo-transport.md` §10.2 第 322 行、§13.1、§13.4、§13.8、§13.9 仍写「默认 grpc、可回退、5ms CQ 轮询留在 EtcdService」,与 f0dadf5b0 之后的代码矛盾;该文件由 gRPC 迁移那条线在改(工作区有在途改动),本线没碰,§14.1 与代码一致。本线自己的 `global-singletons-p0-findings-20261014.md` P0-D「去向」那句已加注更正。
 - 审查顺带看到、与本批无关的既有问题:`k8s_image.ps1` 不声明也不透传 `-InfraNamespace`(release-all 的重启闸固定查 mmorpg-infra);`Apply-Infra` 对旧的 `deployment/etcd`、`deployment/kafka` 同样无确认删除(2026-09-08 之前的集群必然也有旧 redis Deployment,会先被重启闸拦下);`docs/design/tidb-*` 的 L-06 也写着 redis-ha 由 `-RedisReplicas 3` 接入。
 - §3 第 7 条的两张卡片(`ProbeAndRetryOne` 把空应答 / ERROR 当已销账;Hiredis 适配层)仍未见有人接;前者在 Agones 开口令场景下会被放大(§6.1 P0-A 一行)。
+
+## 7. 2026-10-20 Codex 首轮验证状态补记
+
+四批审查与 P0-E 第 3 批已经落地，旧文中的「全部未编译、未测试」不再代表最新事实。Codex 本轮已执行 C++ 串行构建、七个 Go 服务及指定测试、四套部署契约，结果见[任务单 §7.5](global-singletons-p0-codex-tasksheet-20261014.md#75-2026-10-20-codex-验证回执首轮结束未收口)及 PROGRESS 同日「全局单点 P0 首轮验证」条目。
+
+当前**未收口**：C++/Go 有首错，k8s_deploy 契约 12 条失败，且运行期间共享输入发生变化，不能将混合树结果归为当前 HEAD 的验收结论。etcd 静态 9/9、Redis maxclients 7/7、服务端客户端入口契约 111/111 在各自无漂移窗口通过。P0-D 零重注册证据仍缺，P0-C 阶段 2 继续保留门禁。没有部署、重启共享基础设施、改业务代码、自动修复或重试；下一步需稳定输入窗口及首错后的续验决策。

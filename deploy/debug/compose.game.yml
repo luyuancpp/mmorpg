@@ -1,0 +1,425 @@
+# 独立本机开发栈：先运行 tools/scripts/prepare_docker_debug.py，再用其 .env 启动。
+# 所有镜像必须由当前源码预先构建；这里禁止自动拉取或借用其他项目的容器、卷。
+name: ${COMPOSE_PROJECT_NAME:-xuanming-debug-current}
+
+x-app: &app
+  pull_policy: never
+  restart: "no"
+  stop_grace_period: 30s
+
+x-go-env: &go-env
+  KAFKA_COMMAND_TOPIC_GENERATION: ${KAFKA_COMMAND_TOPIC_GENERATION:?请先准备配置}
+  KAFKA_COMMAND_TOPIC_PARTITIONS: ${KAFKA_COMMAND_TOPIC_PARTITIONS:?请先准备配置}
+
+x-infra-deps: &infra-deps
+  redis:
+    condition: service_healthy
+  etcd:
+    condition: service_healthy
+  kafka-init:
+    condition: service_completed_successfully
+
+x-cpp: &cpp
+  <<: *app
+  image: ${NODE_DEBUG_IMAGE:-local/xuanming-node:debug-20261020}
+  working_dir: /app/bin
+  ulimits:
+    nofile:
+      soft: 65536
+      hard: 65536
+
+services:
+  mysql:
+    <<: *app
+    image: ${MYSQL_IMAGE:-mysql:latest}
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?请先准备配置}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:?请先准备配置}
+      MYSQL_USER: appuser
+      MYSQL_DATABASE: mmorpg
+      MYSQL_INITDB_SKIP_TZINFO: "1"
+    volumes:
+      - mysql-data:/var/lib/mysql
+      - ${DEBUG_RUN_DIR:?请先准备配置}/mysql-init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      # TCP 检查避开 initdb 期间仅 socket 可达的临时 MySQL。
+      test: [CMD-SHELL, 'MYSQL_PWD="$$MYSQL_ROOT_PASSWORD" mysql --protocol=TCP -h127.0.0.1 -uroot -Nse "SELECT 1" >/dev/null']
+      interval: 5s
+      timeout: 5s
+      retries: 60
+      start_period: 20s
+
+  redis:
+    <<: *app
+    image: ${REDIS_IMAGE:-redis:7.2}
+    command: [redis-server, --appendonly, "yes", --appendfsync, everysec, --maxmemory, 1gb, --maxmemory-policy, noeviction, --maxclients, "40000", --enable-debug-command, "no"]
+    volumes:
+      - redis-data:/data
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
+    healthcheck:
+      test: [CMD, redis-cli, ping]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+
+  etcd:
+    <<: *app
+    image: ${ETCD_IMAGE:-bitnamilegacy/etcd:latest}
+    environment:
+      ALLOW_NONE_AUTHENTICATION: "yes"
+      ETCD_NAME: debug
+      ETCD_INITIAL_CLUSTER: debug=http://etcd:2380
+      ETCD_INITIAL_ADVERTISE_PEER_URLS: http://etcd:2380
+      ETCD_ADVERTISE_CLIENT_URLS: http://etcd:2379
+      ETCD_LISTEN_CLIENT_URLS: http://0.0.0.0:2379
+      ETCD_LISTEN_PEER_URLS: http://0.0.0.0:2380
+      ETCD_AUTO_COMPACTION_MODE: revision
+      ETCD_AUTO_COMPACTION_RETENTION: "1000000"
+      ETCD_QUOTA_BACKEND_BYTES: "3221225472"
+    volumes:
+      - etcd-data:/bitnami/etcd/data
+    healthcheck:
+      test: [CMD, /opt/bitnami/etcd/bin/etcdctl, --endpoints=http://127.0.0.1:2379, endpoint, health]
+      interval: 5s
+      timeout: 4s
+      retries: 30
+
+  kafka:
+    <<: *app
+    image: ${KAFKA_IMAGE:-apache/kafka:latest}
+    user: root:root
+    environment:
+      KAFKA_NODE_ID: "1"
+      KAFKA_PROCESS_ROLES: controller,broker
+      KAFKA_CLUSTER_ID: ${KAFKA_CLUSTER_ID:?请先准备配置}
+      CLUSTER_ID: ${KAFKA_CLUSTER_ID:?请先准备配置}
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_LISTENERS: INTERNAL://:29092,CONTROLLER://:9093
+      KAFKA_ADVERTISED_LISTENERS: INTERNAL://kafka:29092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,INTERNAL:PLAINTEXT
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
+      KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: "1"
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: "1"
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: "1"
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: "0"
+      KAFKA_HEAP_OPTS: -Xms128m -Xmx512m
+      KAFKA_LOG_DIRS: /var/lib/kafka/data
+      KAFKA_LOG_RETENTION_MS: "3600000"
+      KAFKA_NUM_PARTITIONS: "1"
+    volumes:
+      - kafka-data:/var/lib/kafka/data
+    healthcheck:
+      test: [CMD-SHELL, 'KAFKA_HEAP_OPTS="-Xms16m -Xmx64m" /opt/kafka/bin/kafka-broker-api-versions.sh --bootstrap-server kafka:29092 >/dev/null 2>&1']
+      interval: 10s
+      timeout: 10s
+      retries: 30
+      start_period: 30s
+
+  kafka-init:
+    <<: *app
+    image: ${KAFKA_IMAGE:-apache/kafka:latest}
+    entrypoint: [/bin/sh, /init-topics.sh]
+    environment:
+      KAFKA_HEAP_OPTS: -Xms16m -Xmx64m
+    volumes:
+      - ${DEBUG_RUN_DIR:?请先准备配置}/init-topics.sh:/init-topics.sh:ro
+    depends_on:
+      kafka:
+        condition: service_healthy
+
+  db-migrate:
+    <<: *app
+    image: ${DB_MIGRATE_IMAGE:-local/mmorpg-db-migrate:debug-20261020}
+    command: [-f, /app/etc/service.yaml, -command, up]
+    environment:
+      DB_ALLOWED_DATABASES: zone_1_db
+    volumes:
+      - ${DEBUG_RUN_DIR:?请先准备配置}/config/db.yaml:/app/etc/service.yaml:ro
+    depends_on:
+      mysql:
+        condition: service_healthy
+
+  data-migrate:
+    <<: *app
+    image: ${DATA_SERVICE_IMAGE:-local/mmorpg-data-service:debug-20261020}
+    command: [-f, /app/etc/service.yaml, -migrate]
+    volumes:
+      - ${DEBUG_RUN_DIR:?请先准备配置}/config/data_service.yaml:/app/etc/service.yaml:ro
+    depends_on:
+      mysql:
+        condition: service_healthy
+
+  db:
+    <<: *app
+    image: ${DB_IMAGE:-local/mmorpg-db:debug-20261020}
+    command: [-f, /app/etc/service.yaml]
+    environment:
+      <<: *go-env
+      DB_ALLOWED_DATABASES: zone_1_db
+      POD_IP: ${DB_IP:?请先准备配置}
+    volumes:
+      - ${DEBUG_RUN_DIR:?请先准备配置}/config/db.yaml:/app/etc/service.yaml:ro
+    networks:
+      default:
+        ipv4_address: ${DB_IP:?请先准备配置}
+    depends_on:
+      <<: *infra-deps
+      db-migrate:
+        condition: service_completed_successfully
+    healthcheck:
+      test: [CMD-SHELL, 'nc -z -w 2 127.0.0.1 6000']
+      interval: 5s
+      timeout: 3s
+      retries: 30
+
+  data-service:
+    <<: *app
+    image: ${DATA_SERVICE_IMAGE:-local/mmorpg-data-service:debug-20261020}
+    command: [-f, /app/etc/service.yaml]
+    environment:
+      <<: *go-env
+      POD_IP: ${DATA_SERVICE_IP:?请先准备配置}
+    volumes:
+      - ${DEBUG_RUN_DIR:?请先准备配置}/config/data_service.yaml:/app/etc/service.yaml:ro
+    networks:
+      default:
+        ipv4_address: ${DATA_SERVICE_IP:?请先准备配置}
+    depends_on:
+      <<: *infra-deps
+      data-migrate:
+        condition: service_completed_successfully
+    healthcheck:
+      test: [CMD-SHELL, 'nc -z -w 2 127.0.0.1 9000']
+      interval: 5s
+      timeout: 3s
+      retries: 30
+
+  scene-manager:
+    <<: *app
+    image: ${SCENE_MANAGER_IMAGE:-local/mmorpg-scene-manager:debug-20261020}
+    command: [-f, /app/etc/service.yaml]
+    environment:
+      <<: *go-env
+      POD_IP: ${SCENE_MANAGER_IP:?请先准备配置}
+    volumes:
+      - ${DEBUG_RUN_DIR:?请先准备配置}/config/scene_manager.yaml:/app/etc/service.yaml:ro
+    networks:
+      default:
+        ipv4_address: ${SCENE_MANAGER_IP:?请先准备配置}
+    depends_on:
+      <<: *infra-deps
+      data-service:
+        condition: service_healthy
+    healthcheck:
+      test: [CMD-SHELL, 'nc -z -w 2 "$$POD_IP" 60300']
+      interval: 5s
+      timeout: 3s
+      retries: 30
+
+  player-locator:
+    <<: *app
+    image: ${PLAYER_LOCATOR_IMAGE:-local/mmorpg-player-locator:debug-20261020}
+    command: [-f, /app/etc/service.yaml]
+    environment:
+      <<: *go-env
+      POD_IP: ${PLAYER_LOCATOR_IP:?请先准备配置}
+    volumes:
+      - ${DEBUG_RUN_DIR:?请先准备配置}/config/player_locator.yaml:/app/etc/service.yaml:ro
+    networks:
+      default:
+        ipv4_address: ${PLAYER_LOCATOR_IP:?请先准备配置}
+    depends_on:
+      <<: *infra-deps
+      scene-manager:
+        condition: service_healthy
+    healthcheck:
+      test: [CMD-SHELL, 'nc -z -w 2 "$$POD_IP" 53200']
+      interval: 5s
+      timeout: 3s
+      retries: 30
+
+  login:
+    <<: *app
+    image: ${LOGIN_IMAGE:-local/mmorpg-login:debug-20261020}
+    command: [-loginService, /app/etc/service.yaml]
+    environment:
+      <<: *go-env
+      POD_IP: ${LOGIN_IP:?请先准备配置}
+      GATE_TOKEN_SECRET: ${GATE_TOKEN_SECRET:?请先准备配置}
+      QUEUE_TOKEN_SECRET: ${QUEUE_TOKEN_SECRET:?请先准备配置}
+      INTERNAL_AUTH_SECRET: ${INTERNAL_AUTH_SECRET:?请先准备配置}
+      LOGIN_DEV_PASSWORD_SHARED_SECRET: ${LOGIN_DEV_PASSWORD_SHARED_SECRET:?请先准备配置}
+    volumes:
+      - ${DEBUG_RUN_DIR:?请先准备配置}/config/login.yaml:/app/etc/service.yaml:ro
+    networks:
+      default:
+        ipv4_address: ${LOGIN_IP:?请先准备配置}
+    depends_on:
+      <<: *infra-deps
+      db:
+        condition: service_healthy
+      data-service:
+        condition: service_healthy
+      player-locator:
+        condition: service_healthy
+      scene-manager:
+        condition: service_healthy
+    healthcheck:
+      test: [CMD-SHELL, 'nc -z -w 2 127.0.0.1 53000']
+      interval: 5s
+      timeout: 3s
+      retries: 30
+
+  client-rpc-router:
+    <<: *app
+    image: ${CLIENT_RPC_ROUTER_IMAGE:-local/mmorpg-client-rpc-router:debug-20261020}
+    command: [-f, /app/etc/service.yaml]
+    environment:
+      <<: *go-env
+      POD_IP: ${CLIENT_RPC_ROUTER_IP:?请先准备配置}
+    volumes:
+      - ${DEBUG_RUN_DIR:?请先准备配置}/config/client_rpc_router.yaml:/app/etc/service.yaml:ro
+    networks:
+      default:
+        ipv4_address: ${CLIENT_RPC_ROUTER_IP:?请先准备配置}
+    depends_on: *infra-deps
+    healthcheck:
+      test: [CMD-SHELL, 'nc -z -w 2 127.0.0.1 50600']
+      interval: 5s
+      timeout: 3s
+      retries: 30
+
+  match:
+    <<: *app
+    image: ${MATCH_IMAGE:-local/mmorpg-match:debug-20261020}
+    command: [-f, /app/etc/service.yaml]
+    environment:
+      <<: *go-env
+      POD_IP: ${MATCH_IP:?请先准备配置}
+    volumes:
+      - ${DEBUG_RUN_DIR:?请先准备配置}/config/match.yaml:/app/etc/service.yaml:ro
+    networks:
+      default:
+        ipv4_address: ${MATCH_IP:?请先准备配置}
+    depends_on:
+      <<: *infra-deps
+      data-service:
+        condition: service_healthy
+    healthcheck:
+      test: [CMD-SHELL, 'nc -z -w 2 127.0.0.1 50500']
+      interval: 5s
+      timeout: 3s
+      retries: 30
+
+  gateway:
+    <<: *app
+    image: ${GATEWAY_IMAGE:-local/mmorpg-gateway:debug-20261020}
+    command: [--spring.config.additional-location=file:/app/config/application.yaml]
+    volumes:
+      - ${DEBUG_RUN_DIR:?请先准备配置}/config/gateway.yaml:/app/config/application.yaml:ro
+    ports:
+      # 对齐本机客户端默认地址；保留本轮已有的管理／冒烟入口。
+      - 127.0.0.1:8081:8081
+      - 127.0.0.1:${GATEWAY_PORT:-18081}:8081
+    depends_on:
+      mysql:
+        condition: service_healthy
+      login:
+        condition: service_healthy
+
+  gate:
+    <<: *cpp
+    entrypoint: [/app/bin/gate]
+    environment:
+      NODE_IP: ${GATE_IP:?请先准备配置}
+      RPC_PORT: "10000"
+      ZONE_ID: "1"
+      GATE_RUN_MODE: dev
+      GATE_CLIENT_RPC_ROUTER: "1"
+      CLIENT_ENDPOINT_SOURCE: static
+      CLIENT_ENDPOINT_HOST: 127.0.0.1
+      CLIENT_ENDPOINT_PORT: ${GATE_PORT:-28000}
+      CLIENT_ENDPOINT_REQUIRED: "1"
+    volumes:
+      - ${DEBUG_RUN_DIR:?请先准备配置}/config/base_deploy_config.yaml:/app/bin/etc/base_deploy_config.yaml:ro
+      - ${DEBUG_RUN_DIR:?请先准备配置}/config/game_config.yaml:/app/bin/etc/game_config.yaml:ro
+      - gate-logs:/app/bin/logs
+    networks:
+      default:
+        ipv4_address: ${GATE_IP:?请先准备配置}
+    ports:
+      - 127.0.0.1:${GATE_PORT:-28000}:10000
+    depends_on:
+      <<: *infra-deps
+      client-rpc-router:
+        condition: service_healthy
+      scene:
+        condition: service_started
+
+  scene:
+    <<: *cpp
+    entrypoint: [/app/bin/scene]
+    environment:
+      NODE_IP: ${SCENE_IP:?请先准备配置}
+      RPC_PORT: "20001"
+      ZONE_ID: "1"
+      SCENE_NODE_TYPE: "0"
+      SCENE_RUN_MODE: dev
+    volumes:
+      - ${DEBUG_RUN_DIR:?请先准备配置}/config/base_deploy_config.yaml:/app/bin/etc/base_deploy_config.yaml:ro
+      - ${DEBUG_RUN_DIR:?请先准备配置}/config/game_config.yaml:/app/bin/etc/game_config.yaml:ro
+      - scene-logs:/app/bin/logs
+    networks:
+      default:
+        ipv4_address: ${SCENE_IP:?请先准备配置}
+    depends_on:
+      <<: *infra-deps
+      data-service:
+        condition: service_healthy
+      scene-manager:
+        condition: service_healthy
+
+  battle:
+    <<: *cpp
+    entrypoint: [/app/bin/battle]
+    environment:
+      NODE_IP: ${BATTLE_IP:?请先准备配置}
+      RPC_PORT: "20000"
+      ZONE_ID: "1"
+      BATTLE_RUN_MODE: dev
+      CLIENT_ENDPOINT_SOURCE: static
+      CLIENT_ENDPOINT_HOST: 127.0.0.1
+      CLIENT_ENDPOINT_PORT: ${BATTLE_PORT:-28010}
+      CLIENT_ENDPOINT_REQUIRED: "1"
+    volumes:
+      - ${DEBUG_RUN_DIR:?请先准备配置}/config/base_deploy_config.yaml:/app/bin/etc/base_deploy_config.yaml:ro
+      - ${DEBUG_RUN_DIR:?请先准备配置}/config/game_config.yaml:/app/bin/etc/game_config.yaml:ro
+      - battle-logs:/app/bin/logs
+    networks:
+      default:
+        ipv4_address: ${BATTLE_IP:?请先准备配置}
+    ports:
+      - 127.0.0.1:${BATTLE_PORT:-28010}:20000
+    depends_on:
+      <<: *infra-deps
+      match:
+        condition: service_healthy
+
+networks:
+  default:
+    ipam:
+      config:
+        - subnet: ${DEBUG_SUBNET:?请先准备配置}
+
+volumes:
+  mysql-data:
+  redis-data:
+  etcd-data:
+  kafka-data:
+  gate-logs:
+  scene-logs:
+  battle-logs:

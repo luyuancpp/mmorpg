@@ -95,6 +95,8 @@ entt uses a **sparse-set** storage model. Each component type has its own packed
 
 没有消费者不发事件；dispatcher 只做可有可无的一对多通知，必需步骤直接调用；监听者不得销毁或替换实体，不得改 `SceneEntityComp`、`playerList` 或会话；`trigger` 之后不写恢复分支。必要的 AOI 离场清理由离场入口直接调用，离场只清 7 格内的观察者。场景成员只以 actor 上的 `SceneEntityComp` 为准，排空时扫描玩家，不另维护反向集合。
 
+`SceneEntityComp` 保存非拥有的带版本场景句柄，不保活场景，也不会随场景销毁自动清空。业务上的同场景判定必须确认 `sceneRegistry.valid()`，不能只比较两个非空句柄；技能在施法预检和延迟回调入口都重验施法者场景，失效时拒绝或终止该次施法。`SceneLifecycle::DestroyScene` 发起排空后按全部 `SceneEntityComp` 的剩余绑定数决定能否销毁；改派票据数不是居民数，断线或身份不完整的绑定同样阻止销毁。
+
 ### 可直接用于陈旧句柄
 
 | 操作 | 句柄与借用约束 |

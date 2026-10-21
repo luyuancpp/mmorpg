@@ -187,18 +187,12 @@ set(SOURCE_FILES
     friend/friend_table.grpc.pb.cc
     friend/friend_table.pb.cc
     guild/guild_db.grpc.pb.cc
-    mail/mail.grpc.pb.cc
-    mail/mail.pb.cc
-    mail/mail_admin.grpc.pb.cc
-    mail/mail_admin.pb.cc
     mail/mail_table.grpc.pb.cc
     mail/mail_table.pb.cc
     match/match_authority.grpc.pb.cc
     match/match_authority.pb.cc
     match/match_network.grpc.pb.cc
     match/match_network.pb.cc
-    rank/rank.grpc.pb.cc
-    rank/rank.pb.cc
     rank/rank_admin.grpc.pb.cc
     rank/rank_admin.pb.cc
     rank/rank_table.grpc.pb.cc

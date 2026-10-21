@@ -188,7 +188,7 @@ Kafka:
 | 三 | 写脚本的版本守卫放过 `"007"` 这类前导零串,真 Redis 的 INCR 会拒绝它,此时字段已 SET,留下半截写(miniredis 接受,单测测不出) | 守卫改成规范十进制;读路径 `parseVersionValue` 同一口径 fail-closed | `internal/logic/data_logic.go` |
 | 三 | merge_zone 拷 blob 前查数据锁、且必须早于 SCAN,没有任何测试 | 真 Redis 集成测试 `TestIT_CopyPlayerStringKeys_RefusesWhileDataLockHeld`(tag `merge_integration`);字段索引键名在 data_service 与 merge_zone 两边各钉一次字面量 | `tools/merge_zone/blob_lock_integration_test.go`、`internal/logic/player_fields_test.go` |
 
-### 字段索引与保留名(2026-10-19;未编译、未测试,待验证)
+### 字段索引与保留名(2026-10-20:c35 业务源码加授权生成绑定,字段 Lua 验证通过)
 - **结构**:`player:{id}:__fields`(HASH,与 `__version` / `__lock` / 字段键同 `{id}` slot),成员 `<字段名>` = 空串,保留成员 `__version` = 戳(索引在哪个版本上完整)。
 - **三种状态与可信判据**:版本、索引都不存在 = 无数据;TYPE 为 hash 且 `GET(__version)` 存在且 `HGET(__fields,'__version')` 与之逐字节相等 = 可信;其余(存量老玩家、戳失效、有索引无版本)= 未索引。
 - **三段 Lua 的职责**:
@@ -199,9 +199,24 @@ Kafka:
 - **保留名**:`__` 前缀、`save_barrier`、`asset_sql_commit`(键名取自 `shared/savebarrier`、`shared/assetop` 的规范键函数)。Load(指定字段)/ Save / SetField 回 InvalidRequest,GetField 回错误(server 折成 1,既有口径)。今后新增 `player:{%d}:` 花括号键必须同时登记(见 `shared-redis-split-by-purpose.md` 2026-10-19 增补)。
 - **删除边界**:`KeysDeleted` = 实际删掉的字段 string 键数 + 版本键(索引不计);别的模块的 HASH 与保留名不删;只由带外半截写造成的「有字段、无版本」残留在全量读里不可见、删除时也不删;`__` 前缀的老字段不读、不删。
 - **带外写者**:任何绕过 `saveFieldsScript` 直接改 `__version` 的工具,必须在同一个 MULTI 里 `DEL player:{id}:__fields`,或改走 `SavePlayerData`。否则旧戳可能恰好等于被重置的版本:索引被当成可信,带外写的字段从全量读与删除里消失,下一次存盘还会把这个不完整的索引固化(`saveFieldsScript` 的「不维护就删索引」只兜得住戳与版本不等的情形)。`cmd/debug_import` 的 player 模式(唯一的这类工具,写 `"1"`)已改成 `writeLegacyPlayerFields`:一个 MULTI 里先删索引、再写字段、最后重置版本(2026-10-19 第三批)。
-- **版本格式**:`__version` 必须是规范十进制(无前导零、≤15 位)。真 Redis 的 INCR 拒绝 `"007"` 这类前导零串,miniredis 却接受,所以写脚本的守卫按规范十进制检查;读路径(`parseVersionValue`)同一口径,非规范值按损坏 fail-closed。
-- **版本精度上限(2026-10-19,由 ≤18 位收紧为 ≤15 位)**:版本经 `tonumber` 与 INCR 进入 Lua 都是 double,只在 2^53 以内精确。旧守卫放行到 18 位时,2^53+1 与过期一格的 `expected_version=2^53` 会被舍入成同一个数,CAS 误放行并写入,返回的新版本也不准。≤15 位时当前版本 < 10^15、INCR 后 ≤ 10^15,都在 2^53 以内;`expected_version` 超过 2^53 时虽也被舍入,但舍入后仍 ≥ 2^53,不会与当前版本相等。超出上限的版本只可能是带外写坏的,写侧按损坏拒写(fail-closed),单玩家存盘次数到不了 10^15。上限只在写侧:读路径不经 Lua 数字,版本以字符串回到 Go、`ParseUint` 对整个 uint64 都精确,所以 `parseVersionValue` 不设位数上限;读到超限版本的调用方去 CAS 只会撞上写侧拒绝,不会被误放行。守卫正好落在 15 位最大值时,存盘照常、新版本是 10^15,此后再写按超限拒绝。回归用例:`TestSave_VersionPrecisionCap`(miniredis,旧守卫下红)、`TestRealRedisSaveRefusalsHaveNoSideEffects` 的 `version_9007199254740993` / `version_1000000000000000` 与 `TestRealRedisStampMatchesVersionBytes` 的上界段(真 Redis,待运行)。
+- **版本格式**:`__version` 必须是规范十进制(无前导零);写侧另限当前版本 ≤15 位。真 Redis 的 INCR 拒绝 `"007"` 这类前导零串,miniredis 却接受,所以写脚本的守卫按规范十进制检查;读路径(`parseVersionValue`)同样拒绝非规范值,但不设位数上限(见下一条)。
+- **版本精度上限(2026-10-19,由 ≤18 位收紧为 ≤15 位)**:版本经 `tonumber` 与 INCR 进入 Lua 都是 double,只在 2^53 以内精确。旧守卫放行到 18 位时,2^53+1 与过期一格的 `expected_version=2^53` 会被舍入成同一个数,CAS 误放行并写入,返回的新版本也不准。≤15 位时当前版本 < 10^15、INCR 后 ≤ 10^15,都在 2^53 以内;`expected_version` 超过 2^53 时虽也被舍入,但舍入后仍 ≥ 2^53,不会与当前版本相等。超出上限的版本只可能是带外写坏的,写侧按损坏拒写(fail-closed),单玩家存盘次数到不了 10^15。上限只在写侧:读路径不经 Lua 数字,版本以字符串回到 Go、`ParseUint` 对整个 uint64 都精确,所以 `parseVersionValue` 不设位数上限;读到超限版本的调用方去 CAS 只会撞上写侧拒绝,不会被误放行。守卫正好落在 15 位最大值时,存盘照常、新版本是 10^15,此后再写按超限拒绝。回归用例:`TestSave_VersionPrecisionCap`(miniredis,2026-10-20 Codex 运行 PASS;旧守卫下红为既有记录,本次未重放)、`TestRealRedisSaveRefusalsHaveNoSideEffects` 的 `version_9007199254740993` / `version_1000000000000000` 与 `TestRealRedisStampMatchesVersionBytes` 的上界段(2026-10-20 真 Redis 7.2.16 / 8.10.2 实测 PASS,两轮命令均退出 0)。本次通过范围为 `c35e1133d` 的业务源码加经授权补生成的 Go 绑定,详见下一节。
 - **滚动升级**:旧副本只 INCR、不维护戳,索引自动失效、读方退回 SCAN,不会漏读;旧副本的 `DeletePlayerData` 仍会连带删掉别家 HASH(旧缺陷),升级完成后消失。
+
+### 字段 Lua 验证结果(2026-10-20)
+
+- **通过范围**:负责人明确选择的 `c35e1133d3e41bfaa2aee9f42110ffeb2a1bc954` 业务源码与测试,在隔离副本中按同提交协议源补生成 `go/proto/common/database/rollback_database_table.pb.go` 后验证通过。799 个导出输入仅该生成文件相对提交有变化,业务源码、测试和原始 proto 未变;生成后到全部测试结束,799 个输入哈希零变化。
+- **构建与单测**:`gofmt -l internal/logic internal/routing` 无输出;`go build ./...`、`go vet ./internal/logic/ ./internal/routing/`、`go vet -tags=integration ./internal/logic/` 均退出 0;`go test -count=1 ./internal/logic/ -v` 退出 0,105 个顶层测试全部 PASS、零 SKIP,含版本精度回归。
+
+| 真 Redis 版本(单实例 / 三主) | 顶层用例 | 拒绝子测试 | SKIP | 命令退出码 |
+|---|---|---|---|---|
+| 7.2.16 / 7.2.16 | 7/7 PASS | 8/8 PASS | 0 | 0 |
+| 8.10.2 / 8.10.2 | 7/7 PASS | 8/8 PASS | 0 | 0 |
+
+- **覆盖与 Cluster 更正**:`TestRealRedis*` 覆盖 TYPE 的 `.ok`、缺失值占位(RESP2 / RESP3)、删除计数、规范版本守卫、版本戳字节与三主 Cluster 未声明键/SCAN 回退。两版 Cluster 探针都确认:无 shebang 的兼容模式 EVAL 允许同节点跨 slot 的未声明键,跨节点才报 `non local key`;`loadAllFieldsScript` 与 `routing.getHomeZoneAndMergeFenceScript` 的 2026-10-19 注释更正保留。
+- **生成与证据**:仅在副本使用现有 protoc 35.1 / protoc-gen-go 1.36.10,沿用提交生成器的暂存与 `go_package=proto/{目录}` 规则补生成一个 Go 文件,未手改生成物,未写原工作区或客户端。日志、两轮版本、输入哈希、生成参数及容器清理见本机 `build/verification/data-service-field-lua-c35-generated-20261020-1792484087475/summary.json`,详细步骤见交接 §10。四个一次性容器均已移除。
+- **结论边界**:这是上述授权派生副本的字段 Lua 线验证,不表示 `c35e1133d` 原样提交可编译,也不表示最新工作区或 D1 路由线已验证。此前共享输入变化、D1 接口未齐及原样提交缺绑定的失败记录保留在交接 §7–9;本轮未运行其他包单测、MySQL 集成、race、全服务启动、压测或全仓协议同步。
+
 
 ### 写门禁契约(2026-10-19;未编译、未测试,待验证)
 - **顺序**:`Router.AcquirePlayerWriteLock` = 预检(`GetPlayerHomeZoneAndMergeFence`,home 与围栏同一段 Lua / 同一条 SQL)→ 按 home 取数据客户端 → 两把锁 → **数据锁 SETNX 成功之后**复核。复核看到围栏、home 变了或读失败,先释放两把锁再拒绝。Save / SetField / Delete 唯一的拿锁入口;读路径(Load / GetField / 账本读)不拦,继续用 `ClientForPlayer`。
@@ -213,8 +228,6 @@ Kafka:
 
 ### 仍未处理
 - `cmd/debug_import` 的 player 模式仍然不持玩家锁、先写数据后登记映射、把版本重置为 `"1"`(调试工具,只写本地目标;字段索引问题已由 `writeLegacyPlayerFields` 解决)。与正在运行的 data_service 写入并发时可能互相覆盖,不要对线上进程正在写的玩家导入。
-- 真 Redis 7.2 上的 Lua 行为(TYPE 的 `.ok`、`false` 占位、局部函数)只在 miniredis 上测过 —— **已补集成测试,待运行**(2026-10-19):`internal/logic/data_logic_integration_test.go`(tag `integration`,`TestRealRedis*`,只读 `DATA_SERVICE_IT_REDIS_HOST`,一次性容器;`redis:7.2`(K8s 清单)与 `redis:8.10.2`(本地 compose 的 `redis:latest`、Java 版)各跑一轮,步骤见 `docs/handoff/handoff-data-service-field-lua-real-redis-20261019.md`),钉住 TYPE 的 `.ok`、`false` 占位(RESP2 / RESP3 客户端都看)、删除脚本局部函数的计数、`"007"` 守卫先于 SET、戳与 `GET(__version)` 逐字节相等;Codex 跑绿之前仍按未覆盖对待。Cluster 上「同 slot 的未声明键」同文件 `TestRealRedisClusterUndeclaredKeys` 已补(另读 `DATA_SERVICE_IT_REDIS_CLUSTER_ADDRS`,单容器三主),同样待运行。
-  - 更正(依据 Redis 7.2 `script.c`,待该用例实测):`loadAllFieldsScript` 注释与 `routing.getHomeZoneAndMergeFenceScript` 注释说未声明键「跨 slot 会报错而不是静默」,只对了一半。本仓脚本都是无 shebang 的 EVAL(兼容模式,带 `SCRIPT_ALLOW_CROSS_SLOT`):跨 slot 但仍在本节点的未声明键**静默放行**,只有落在别的节点才报 `non local key`。两处脚本拼出的键与 KEYS 同 `{id}` / 同库,正确性不受影响。两段代码注释已于 2026-10-19 按此改正(只改注释,未编译);若 Cluster 用例的两枚跨 slot 探针实测失败,说明 Redis 改了兼容模式规则,本条与两段注释一起改口径。
 
 ### 启用 Regions(去掉 DevRedis)之前必须先处理
 - zone → 集群表只在启动时建一次、不热更新:改 zone 归属必须停写、搬完 `player:{id}:*`、所有副本同时换配置后再起,不能滚动改(见 `RegionConfig` 注释)。

@@ -360,3 +360,42 @@ dumpbin /dependents build\cpp\tests\kafka_command_test.exe | Select-String rdkaf
 - P0-B:把本机 `bin/etc/base_deploy_config.yaml` 的 `Kafka.GroupID` 改成 `game-consumer-group` 后起 battle,本次启动日志应出现 `KafkaProducer: brokers stored for lazy init:`;把 `Kafka.Brokers` 清空后起 battle,stderr 日志应**区分大小写**命中 `FATAL Kafka config: Kafka.Brokers is empty`,进程非 0 退出。每项跑完用备份恢复,`git diff --quiet -- bin/etc/base_deploy_config.yaml` 退出码为 0。
 
 回报写回:`docs/PROGRESS.md` 追加「全局单点 P0-A / P0-B 的 Codex 验证结果」,并在本节末尾补一行「验证结论」。
+
+### 7.5 2026-10-20 Codex 验证回执（首轮结束，未收口）
+
+本轮在主工作区按 §7.1 串行执行 C++ 构建，并补跑交接 §6.3 的四套部署契约及 PROGRESS 10-16 P0-E 第 3 批的 Go 构建/测试。**运行期间其他会话持续改动共享输入，且有真实失败；不能将本轮结果视为当前 HEAD 整体验收通过。** 失败项保留原件，不重试、不修复；独立项继续完成。没有协议生成、节点部署、共享 Redis/etcd 重启或数据清理。
+
+| 范围 | 实际结果 | 证据边界 |
+|---|---|---|
+| C++ `config` / `thread_context` / `infra` | 三条 MSBuild 命令各退出 0；均 `/m:1 /nr:false /p:CL_MPCount=1` | 不是全量 Rebuild 或节点验收 |
+| C++ `core` | 退出 1；检查器处理 `network/player_message_utils.cpp` 时文件已不存在，随后 MSB3073（检查器 exit 2） | 构建前后观测到 24 个既有 C++ 输入变化（含文件删除及工程改动），属于并行改名窗口的失败现场；不据此断言当前稳定树仍复现 |
+| C++ 后续 | `game.sln`、三个指定 gtest 过滤器及 Redis AUTH repeat=20 均未启动 | 当前新构建下的 AUTH / Kafka 专测、节点黑盒仍未取得 |
+| `etcd_maintenance_contract` | 原生 exit 0，9/9 | 本套运行前后输入无漂移；只证明静态契约 |
+| `redis_maxclients_contract` | 原生 exit 0，7/7 | 当前已含 T6/T7 高可用用例，不再是旧交接的 5 条；本套无漂移 |
+| `k8s_deploy_contract` | 原生 exit 1，272/284，12 失败 | 脚本、库、测试本身及部分配置在运行中变化，不收口、不稳定归因。首错为 MySQL ConfigMap 清单缺 guild；其余涉及 guild/rank、资产通道、gRPC 准入和 D1 告警 |
+| `k8s_client_entry_contract` | 原生 exit 0，111/111 | 本套 158 个记录输入前后无漂移；是服务端部署入口契约，不涉及独立客户端仓 |
+| Go 7 服务构建 | login、player_locator、trade、guild、player_inbox 退出 0；db、data_service 退出 1 | 全轮输入 1224→1227，31 项变化，HEAD 也变化；不能对当前整树收口 |
+| Go 指定测试 | login、player_locator、trade、player_inbox 测试组退出 0；guild 测试组退出 1；db/data_service 测试因本模块构建首错未启动 | JSON 测试事件（含子测试）437 PASS / 1 FAIL / 1 SKIP，不称 439 个独立用例全验 |
+
+Go 首错：
+
+- db：`internal/kafka/route_ready_gate.go:308` 未定义 `routeReadyGateStateReadError`。
+- data_service：`internal/routereconcile/cache.go:227` 的 `Control` 没有 `WatermarkWrongType`。
+- guild：`TestGuildAuthorityDefaultsAndPoolBounds`，`config_test.go:193` 的 `MySQL.MaxOpenConn=0` 应拒启、实际返回 nil；这条不是 Redis PoolSize 校验。
+- login 唯一 SKIP 为需显式开启真实 SQL 隔离夹具的配额用例，本轮未运行外部栈。
+- `gofmt -l` 退出 0，但列出 5 个其他线的 login 文件；没有本批 config/svc 文件，不自动格式化。
+
+P0-A/B、Redis 池/总账/重启闸、etcd CronJob 渲染等专题输出均观察到 PASS，逐名摘录在 `p0-relevant-cases.json`；**凡出自发生输入漂移的 k8s 套件，均不提升为稳定验收结论。**
+
+历史证据订正：PROGRESS 10-19 已补记 Codex 10-17 的 RedisManagerAuth 10 条和 Liveness 5 条通过，但引用的 `run/merge-validation-20261017` 当前不存在，不能声称本轮复核了该原 XML。Java P0-E 第 3 批已有 10-18 验证回执：RedisPropertiesTest 10/10，五模块 3610 项含 639 条既有跳过、0 失败/错误；当前本线三个 Java 源码与该次输入 SHA 一致，可引用这份专项历史证据，不称本轮重验整个 Java 树。对应 Java 版本 0.1.0-SNAPSHOT，本轮不改 Java 或 PARITY。
+
+P0-D 仍未取得「删除/重启一个 etcd 成员后无 fence 且零重注册」实跑证据，**P0-C 阶段 2 仍不得提前**。两版 Redis exporter 告警仍待定，Java compose 的 maxclients/nofile 取值仍待负责人决定；本轮没有替负责人确认旧交接 §2 的部署取值。
+
+原始证据（仓库根相对路径）：
+
+- 总索引：`build/verification/global-singletons-p0-20261020-summary.json`。
+- C++：`build/verification/global-singletons-p0-20261020-cpp-20261020T072029Z/result.json`，首错上下文 `first-error-context.txt`。
+- 部署：`build/verification/global-singletons-p0-20261020-deploy-20261020T072114Z/results.json`，失败原文 `k8s-deploy-failure-excerpts.txt`。
+- Go：`build/verification/global-singletons-p0-20261020-go-20261020T072028Z/verification-summary-refined.json`（原始汇总、native 日志与 SHA 均保留）。
+
+按 AGENTS.md §10.2 保留失败并等待决策。后续先取得其他会话停手后的稳定输入窗口，再决定重跑及仍存在的失败由哪条线修复；不能把混合工作区失败直接修成新的跨线改动。

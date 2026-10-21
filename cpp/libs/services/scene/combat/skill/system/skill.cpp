@@ -71,11 +71,18 @@ SkillContextPtrComp FindCasterSkillContext(entt::entity caster, uint64_t skillId
 
 namespace {
 
+bool HasLiveScene(entt::entity actor) {
+	const auto* scene = tlsEcs.actorRegistry.try_get<SceneEntityComp>(actor);
+	return scene != nullptr && tlsEcs.sceneRegistry.valid(scene->sceneEntity);
+}
+
 bool IsInSameScene(entt::entity caster, entt::entity target) {
 	const auto* casterScene = tlsEcs.actorRegistry.try_get<SceneEntityComp>(caster);
 	const auto* targetScene = tlsEcs.actorRegistry.try_get<SceneEntityComp>(target);
+	// 双方可能共同保留同一个已销毁句柄，相等并不代表场景仍然存在。
 	return casterScene != nullptr && targetScene != nullptr &&
-		casterScene->sceneEntity != entt::null && casterScene->sceneEntity == targetScene->sceneEntity;
+		casterScene->sceneEntity == targetScene->sceneEntity &&
+		tlsEcs.sceneRegistry.valid(casterScene->sceneEntity);
 }
 
 // 校验已解析的本地目标。客户端不透明actor号先经ActorNetIds反查,技能上下文仍保存本地完整句柄。
@@ -144,6 +151,7 @@ bool CanContinueSkillCast(entt::entity caster, uint64_t skillId) {
 	const auto context = FindCasterSkillContext(caster, skillId);
 	if (context == nullptr) return false;
 	if (CheckRequiredSkillComps(caster, context->skilltableid()) != kSuccess ||
+		!HasLiveScene(caster) ||
 		IsCasterFrozenForMigration(caster, skillId, "SkillSystem::CanContinueSkillCast") ||
 		tlsEcs.actorRegistry.any_of<InBattleComp>(caster)) {
 		AbortSkillCast(caster, skillId);
@@ -323,6 +331,10 @@ uint32_t SkillSystem::CheckSkillPrerequisites(const entt::entity casterEntity, c
 
 	// 只验证持久和派生组件,不能要求尚未使用过的冷却/上下文先存在。
 	RETURN_ON_ERROR(CheckRequiredSkillComps(casterEntity, request->skill_table_id()));
+	// 无目标和范围技能也不能在已销毁场景中施放，且须在打断旧相位等副作用之前拒绝。
+	if (!HasLiveScene(casterEntity)) {
+		return kSkillCannotBeCastInCurrentState;
+	}
 	if (IsCasterFrozenForMigration(casterEntity, 0, "SkillSystem::CheckSkillPrerequisites")) {
 		return kSkillCannotBeCastInCurrentState;
 	}

@@ -1476,7 +1476,7 @@ void Node::LoadAllConfigData()
 void Node::SetupTimeZone()
 {
 #ifdef __linux__
-	const muduo::TimeZone hkTz = muduo::TimeZone::loadZoneFile("zoneinfo/Asia/Hong_Kong");
+	const muduo::TimeZone hkTz("zoneinfo/Asia/Hong_Kong");
 #else
 	const muduo::TimeZone hkTz(8 * 3600, "zoneinfo/Asia/Hong_Kong");
 #endif // __linux__

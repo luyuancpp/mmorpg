@@ -1139,7 +1139,7 @@ TEST_F(BagInstanceDataTest, CanStackRefusesAnySideCarryingUnknownFields)
 // 行为级:入包并堆、整理(早退判据与合并)、reserve 侧的空余估算都不碰这种堆,未知字段原样留在实例上。
 TEST_F(BagInstanceDataTest, StacksCarryingUnknownFieldsAreNeverMergedInto)
 {
-	const auto expectUnknownKept = [](const Bag &bag)
+	const auto expectUnknownKept = [](Bag &bag)
 	{
 		const ItemComp *kept = bag.GetItemCompByGuid(kGuidE);
 		ASSERT_NE(nullptr, kept);

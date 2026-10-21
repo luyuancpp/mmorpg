@@ -34,6 +34,9 @@ type Router struct {
 	routeMode  string
 	routeStore RouteStore
 	publish    publishConfig
+	// publishRedis 是 db_first 下 W1 发布 + WAITAOF 专用的 go-redis 客户端(publish_redis.go):与 mappingRedis 同一个实例,
+	// 但独立连接池、不经 go-zero 熔断器。只在 db_first 时由 NewRouter 构造(单测可用 withPublishRedis 注入);redis 模式恒为 nil。
+	publishRedis *goredis.Client
 
 	// 第 3 批读方门禁(route_read.go,规格 spec_D1_batch1b2_2_3.md §5.2):readRequiresReady 取 RouteStore.ReadRequiresReady,
 	// 打开时 R2 / R3 / R6 先用就绪读脚本判副本可不可信,不可信回源 routeReader;R7 在 db_first 下一律读 routeReader。
@@ -82,6 +85,17 @@ func NewRouter(c config.Config, opts ...RouterOption) *Router {
 	r.routeReadEval = r.mappingRedis.EvalCtx
 	for _, opt := range opts {
 		opt(r)
+	}
+	// db_first 的发布客户端(A2-1):在选项之后建,注入了就不自建。构造不拨号;MappingRedis 不合用(Type 不是 node)就 panic,
+	// 与上面 MustNewRedis / Validate 同口径 —— 一份「发布必然失败」的配置不能装作健康跑下去。redis 模式不建,行为与改动前逐字相同。
+	if routeCfg.DBFirst() && r.publishRedis == nil {
+		pub, err := newPublishRedis(c.MappingRedis, routeCfg)
+		if err != nil {
+			panic(fmt.Sprintf("data_service router: RouteStore.Mode=db_first publish client: %v", err))
+		}
+		r.publishRedis = pub
+		logx.Infof("[Router] db_first publish client → %s pool_size=%d read_timeout=%s (separate pool, no circuit breaker)",
+			c.MappingRedis.Host, pub.Options().PoolSize, pub.Options().ReadTimeout)
 	}
 
 	// Dev mode: single Redis for all zones
@@ -824,6 +838,10 @@ func (r *Router) DeletePlayerZoneIfLocked(ctx context.Context, playerID uint64, 
 func (r *Router) Close() {
 	if r.devClient != nil {
 		r.devClient.Close()
+	}
+	if r.publishRedis != nil {
+		// db_first 的发布客户端(含单测注入的):归 Router 所有。mappingRedis 是 go-zero 按地址共享的客户端,不归这里关。
+		_ = r.publishRedis.Close()
 	}
 	closed := make(map[*goredis.ClusterClient]bool)
 	for _, client := range r.zoneToClient {

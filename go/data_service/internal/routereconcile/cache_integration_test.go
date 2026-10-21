@@ -23,6 +23,7 @@ package routereconcile
 import (
 	"context"
 	"os"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -319,6 +320,86 @@ func TestRealRedisFenceMirrorSetIfNewer(t *testing.T) {
 	}
 	if ok, err := c.CompareAndDeleteFenceMirror(ctx, key, holderJSON("run2", 4)); err != nil || !ok {
 		t.Fatalf("CAD with the full current value: ok=%t err=%v", ok, err)
+	}
+}
+
+// TestRealRedisScanFenceMirrorsAcrossPages(核实意见 A1-4 / LR-1):键空间远大于一页时,pages=1 的一次调用只翻一页、
+// 返回非 0 的下一游标;按返回的游标逐次续翻(每次 1 页,模拟 leader 跨拍)能把一轮扫完,围栏镜像一把不漏;
+// 不在前缀下的键不返回。miniredis 的 SCAN 一次回全部键、不认 COUNT,这一条只能在真 Redis 上测。
+func TestRealRedisScanFenceMirrorsAcrossPages(t *testing.T) {
+	requireCacheIT(t)
+	c, raw := newRealCache(t, 0, 0)
+	ctx, cancel := context.WithTimeout(context.Background(), 4*cacheITTimeout)
+	defer cancel()
+
+	const fillers = 5000
+	const fillerPrefix = "ds-it-fence-scan-filler:"
+	if keys, _, err := raw.Scan(ctx, 0, fillerPrefix+"*", 100).Result(); err != nil || len(keys) > 0 {
+		t.Skipf("Redis already holds %s* keys (got %v, err %v): use a throwaway instance", fillerPrefix, keys, err)
+	}
+	t.Cleanup(func() {
+		cleanCtx, cleanCancel := context.WithTimeout(context.Background(), 4*cacheITTimeout)
+		defer cleanCancel()
+		for start := 0; start < fillers; start += 500 {
+			keys := make([]string, 0, 500)
+			for i := start; i < min(start+500, fillers); i++ {
+				keys = append(keys, fillerPrefix+strconv.Itoa(i))
+			}
+			if err := raw.Del(cleanCtx, keys...).Err(); err != nil {
+				t.Errorf("cleanup of %s* failed (delete them by hand): %v", fillerPrefix, err)
+				return
+			}
+		}
+	})
+	pipe := raw.Pipeline()
+	for i := 0; i < fillers; i++ {
+		pipe.Set(ctx, fillerPrefix+strconv.Itoa(i), "x", 0)
+	}
+	if _, err := pipe.Exec(ctx); err != nil {
+		t.Fatalf("seed fillers: %v", err)
+	}
+	want := map[string]bool{}
+	for i, z := range cacheITZones {
+		k := placement.MergeFenceKey(z)
+		if err := raw.Set(ctx, k, holderJSON("run", uint64(i+1)), 0).Err(); err != nil {
+			t.Fatalf("set mirror: %v", err)
+		}
+		want[k] = true
+	}
+
+	_, next, err := c.ScanFenceMirrors(ctx, 0, 1)
+	if err != nil {
+		t.Fatalf("first page: %v", err)
+	}
+	if next == 0 {
+		t.Fatalf("one SCAN page (COUNT %d) finished a round over %d keys: the page bound is not exercised", fenceScanCount, fillers)
+	}
+
+	got := map[string]bool{}
+	var cursor uint64
+	for calls := 0; ; calls++ {
+		if calls > 10_000 {
+			t.Fatal("the round never finished")
+		}
+		batch, next, err := c.ScanFenceMirrors(ctx, cursor, 1)
+		if err != nil {
+			t.Fatalf("ScanFenceMirrors(%d): %v", cursor, err)
+		}
+		for _, m := range batch {
+			if !strings.HasPrefix(m.Key, fenceMirrorKeyPrefix) {
+				t.Fatalf("SCAN returned a key outside the prefix: %+v", m)
+			}
+			got[m.Key] = true
+		}
+		if next == 0 {
+			break
+		}
+		cursor = next
+	}
+	for k := range want {
+		if !got[k] {
+			t.Fatalf("the round across pages missed %s (got %v)", k, got)
+		}
 	}
 }
 

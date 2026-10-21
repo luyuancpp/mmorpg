@@ -312,8 +312,25 @@ func TestReadControlDistinguishesWrongType(t *testing.T) {
 	}
 	mustSet(t, mr, placement.RouteReadyKey, "m")
 	ctl, err = c.ReadControl(ctx)
-	if err != nil || ctl.Ready == nil || *ctl.Ready != "m" || ctl.ReadyWrongType {
+	if err != nil || ctl.Ready == nil || *ctl.Ready != "m" || ctl.ReadyWrongType || ctl.WatermarkWrongType {
 		t.Fatalf("string marker: %+v err=%v", ctl, err)
+	}
+
+	// 水位键同理(核实意见 A1-8):不是 string 时 Watermark 为 nil 而 WatermarkWrongType 为 true,DeleteWatermarkWrongType 删掉它。
+	mr.Del(placement.RouteWatermarkKey)
+	if _, err := mr.SAdd(placement.RouteWatermarkKey, "x"); err != nil {
+		t.Fatalf("sadd: %v", err)
+	}
+	ctl, err = c.ReadControl(ctx)
+	if err != nil || ctl.Watermark != nil || !ctl.WatermarkWrongType || ctl.ReadyWrongType {
+		t.Fatalf("wrong-type watermark: %+v err=%v", ctl, err)
+	}
+	if err := c.DeleteWatermarkWrongType(ctx); err != nil || mr.Exists(placement.RouteWatermarkKey) {
+		t.Fatalf("DeleteWatermarkWrongType: err=%v present=%t", err, mr.Exists(placement.RouteWatermarkKey))
+	}
+	ctl, err = c.ReadControl(ctx)
+	if err != nil || ctl.Watermark != nil || ctl.WatermarkWrongType {
+		t.Fatalf("absent watermark: %+v err=%v", ctl, err)
 	}
 }
 
@@ -384,10 +401,7 @@ func TestFenceMirrorListSetAndCompareAndDelete(t *testing.T) {
 	if _, err := mr.Lpush(placement.MergeFenceKey(8), "x"); err != nil {
 		t.Fatalf("lpush: %v", err)
 	}
-	mirrors, err := c.ListFenceMirrors(ctx)
-	if err != nil {
-		t.Fatalf("list: %v", err)
-	}
+	mirrors := scanAllFenceMirrors(t, c)
 	byKey := map[string]FenceMirror{}
 	for _, m := range mirrors {
 		byKey[m.Key] = m
@@ -395,6 +409,14 @@ func TestFenceMirrorListSetAndCompareAndDelete(t *testing.T) {
 	if len(byKey) != 4 || byKey[key5].Zone != 5 || byKey[key5].Value != holderJSON("run2", 4) ||
 		byKey[placement.MergeFenceKey(0)+"x"].Zone != 0 || !byKey[placement.MergeFenceKey(8)].WrongType {
 		t.Fatalf("mirrors %+v", mirrors)
+	}
+	// 按键读(GetFenceMirrors):与 SCAN 同一取值口径;不在的键跳过;前缀之外的键在发命令之前就拒绝。
+	got, err := c.GetFenceMirrors(ctx, []string{key5, placement.MergeFenceKey(8), placement.MergeFenceKey(9)})
+	if err != nil || len(got) != 2 || got[0].Key != key5 || got[0].Value != holderJSON("run2", 4) || !got[1].WrongType {
+		t.Fatalf("GetFenceMirrors = %+v, %v", got, err)
+	}
+	if _, err := c.GetFenceMirrors(ctx, []string{placement.RouteReadyKey}); err == nil {
+		t.Fatal("GetFenceMirrors must refuse a key outside merge:in_progress:*")
 	}
 
 	if ok, err := c.CompareAndDeleteFenceMirror(ctx, key5, holderJSON("run1", 3)); err != nil || ok || !mr.Exists(key5) {
@@ -405,6 +427,77 @@ func TestFenceMirrorListSetAndCompareAndDelete(t *testing.T) {
 	}
 	if _, err := c.CompareAndDeleteFenceMirror(ctx, placement.RouteReadyKey, "x"); err == nil {
 		t.Fatal("CompareAndDeleteFenceMirror must refuse a key outside merge:in_progress:*")
+	}
+}
+
+// scanAllFenceMirrors 用 ScanFenceMirrors 从游标 0 翻到一轮结束(每次 1 页),返回全部镜像(按键去重)。
+func scanAllFenceMirrors(t *testing.T, c *RedisCache) []FenceMirror {
+	t.Helper()
+	seen := map[string]bool{}
+	var out []FenceMirror
+	var cursor uint64
+	for calls := 0; ; calls++ {
+		if calls > 10_000 {
+			t.Fatal("ScanFenceMirrors never finished the round")
+		}
+		batch, next, err := c.ScanFenceMirrors(context.Background(), cursor, 1)
+		if err != nil {
+			t.Fatalf("ScanFenceMirrors(%d): %v", cursor, err)
+		}
+		for _, m := range batch {
+			if !seen[m.Key] {
+				seen[m.Key] = true
+				out = append(out, m)
+			}
+		}
+		if next == 0 {
+			return out
+		}
+		cursor = next
+	}
+}
+
+// TestScanFenceMirrorsArgsAndRound(核实意见 A1-4 / LR-1):每页是 SCAN cursor MATCH merge:in_progress:* COUNT fenceScanCount;
+// 一轮扫完(下一游标 0)就不再多翻;pages < 1 在发命令之前就拒绝。
+// miniredis v2.37.0 的 SCAN 不认 COUNT、一次回全部键(已亲阅 cmd_generic.go cmdScan),多页续翻只能在真 Redis 上测
+// (TestRealRedisScanFenceMirrorsAcrossPages)。
+func TestScanFenceMirrorsArgsAndRound(t *testing.T) {
+	c, mr, _ := newMiniCache(t)
+	ctx := context.Background()
+	var mu sync.Mutex
+	var scans [][]string
+	mr.Server().SetPreHook(func(_ *server.Peer, cmd string, args ...string) bool {
+		if cmd == "SCAN" {
+			mu.Lock()
+			scans = append(scans, append([]string(nil), args...))
+			mu.Unlock()
+		}
+		return false
+	})
+	for i := 0; i < 50; i++ {
+		mustSet(t, mr, placement.HomeZoneKey(uint64(i+1)), "3")
+	}
+	mustSet(t, mr, placement.MergeFenceKey(5), holderJSON("run", 5))
+
+	mirrors, next, err := c.ScanFenceMirrors(ctx, 0, 20)
+	if err != nil || next != 0 || len(mirrors) != 1 || mirrors[0].Key != placement.MergeFenceKey(5) || mirrors[0].Zone != 5 {
+		t.Fatalf("ScanFenceMirrors = (%+v, %d, %v), want the one mirror and a finished round", mirrors, next, err)
+	}
+	mu.Lock()
+	got := append([][]string(nil), scans...)
+	mu.Unlock()
+	want := []string{"0", "MATCH", fenceMirrorKeyPrefix + "*", "COUNT", "1000"} // go-redis 发小写的 match / count
+	if len(got) != 1 || !strings.EqualFold(strings.Join(got[0], " "), strings.Join(want, " ")) {
+		t.Fatalf("SCAN commands %v, want exactly one %v (the round finished on the first page)", got, want)
+	}
+
+	if _, _, err := c.ScanFenceMirrors(ctx, 0, 0); err == nil {
+		t.Fatal("pages=0 must be refused")
+	}
+	mu.Lock()
+	defer mu.Unlock()
+	if len(scans) != 1 {
+		t.Fatalf("pages=0 still sent SCAN: %v", scans)
 	}
 }
 

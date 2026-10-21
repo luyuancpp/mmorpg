@@ -1,0 +1,46 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="Current" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" DefaultTargets="Build">
+  <PropertyGroup />
+  <ItemDefinitionGroup />
+  <ItemGroup>
+    <ProjectReference Include="D:\luyuan\xuanming-server-mmo-cpp\cpp\nodes\scene\scene.vcxproj.metaproj">
+      <AdditionalProperties>Configuration=Debug; Platform=x64</AdditionalProperties>
+      <Platform>x64</Platform>
+      <Configuration>Debug</Configuration>
+      <ToolsVersion>Current</ToolsVersion>
+      <SkipNonexistentProjects>Build</SkipNonexistentProjects>
+    </ProjectReference>
+    <ProjectReference Include="D:\luyuan\xuanming-server-mmo-cpp\cpp\libs\engine\muduo_grpc\muduo_grpc.vcxproj">
+      <AdditionalProperties>Configuration=Debug; Platform=x64</AdditionalProperties>
+      <Platform>x64</Platform>
+      <Configuration>Debug</Configuration>
+      <ToolsVersion>
+      </ToolsVersion>
+      <SkipNonexistentProjects>False</SkipNonexistentProjects>
+    </ProjectReference>
+  </ItemGroup>
+  <Target Name="Clean">
+    <MSBuild BuildInParallel="True" Projects="@(ProjectReference-&gt;Reverse())" Targets="Clean" Properties="BuildingSolutionFile=true; CurrentSolutionConfigurationContents=$(CurrentSolutionConfigurationContents); SolutionDir=$(SolutionDir); SolutionExt=$(SolutionExt); SolutionFileName=$(SolutionFileName); SolutionName=$(SolutionName); SolutionPath=$(SolutionPath)" />
+    <MSBuild ToolsVersion="$(ProjectToolsVersion)" BuildInParallel="True" Projects="D:\luyuan\xuanming-server-mmo-cpp\cpp\tests\timer_destroy_test\timer_destroy_test.vcxproj" Targets="Clean" Properties="Configuration=Debug; Platform=x64;BuildingSolutionFile=true; CurrentSolutionConfigurationContents=$(CurrentSolutionConfigurationContents); SolutionDir=$(SolutionDir); SolutionExt=$(SolutionExt); SolutionFileName=$(SolutionFileName); SolutionName=$(SolutionName); SolutionPath=$(SolutionPath)" />
+  </Target>
+  <Target Name="Build" Outputs="@(timer_destroy_testBuildOutput)">
+    <MSBuild BuildInParallel="True" Projects="@(ProjectReference)" Properties="BuildingSolutionFile=true; CurrentSolutionConfigurationContents=$(CurrentSolutionConfigurationContents); SolutionDir=$(SolutionDir); SolutionExt=$(SolutionExt); SolutionFileName=$(SolutionFileName); SolutionName=$(SolutionName); SolutionPath=$(SolutionPath)" />
+    <MSBuild ToolsVersion="$(ProjectToolsVersion)" BuildInParallel="True" Projects="D:\luyuan\xuanming-server-mmo-cpp\cpp\tests\timer_destroy_test\timer_destroy_test.vcxproj" Properties="Configuration=Debug; Platform=x64;BuildingSolutionFile=true; CurrentSolutionConfigurationContents=$(CurrentSolutionConfigurationContents); SolutionDir=$(SolutionDir); SolutionExt=$(SolutionExt); SolutionFileName=$(SolutionFileName); SolutionName=$(SolutionName); SolutionPath=$(SolutionPath)">
+      <Output TaskParameter="TargetOutputs" ItemName="timer_destroy_testBuildOutput" />
+    </MSBuild>
+  </Target>
+  <Target Name="Rebuild" Outputs="@(timer_destroy_testBuildOutput)">
+    <MSBuild BuildInParallel="True" Projects="@(ProjectReference)" Targets="Rebuild" Properties="BuildingSolutionFile=true; CurrentSolutionConfigurationContents=$(CurrentSolutionConfigurationContents); SolutionDir=$(SolutionDir); SolutionExt=$(SolutionExt); SolutionFileName=$(SolutionFileName); SolutionName=$(SolutionName); SolutionPath=$(SolutionPath)" />
+    <MSBuild ToolsVersion="$(ProjectToolsVersion)" BuildInParallel="True" Projects="D:\luyuan\xuanming-server-mmo-cpp\cpp\tests\timer_destroy_test\timer_destroy_test.vcxproj" Targets="Rebuild" Properties="Configuration=Debug; Platform=x64;BuildingSolutionFile=true; CurrentSolutionConfigurationContents=$(CurrentSolutionConfigurationContents); SolutionDir=$(SolutionDir); SolutionExt=$(SolutionExt); SolutionFileName=$(SolutionFileName); SolutionName=$(SolutionName); SolutionPath=$(SolutionPath)">
+      <Output TaskParameter="TargetOutputs" ItemName="timer_destroy_testBuildOutput" />
+    </MSBuild>
+  </Target>
+  <Target Name="Publish">
+    <MSBuild BuildInParallel="True" Projects="@(ProjectReference)" Targets="Publish" Properties="BuildingSolutionFile=true; CurrentSolutionConfigurationContents=$(CurrentSolutionConfigurationContents); SolutionDir=$(SolutionDir); SolutionExt=$(SolutionExt); SolutionFileName=$(SolutionFileName); SolutionName=$(SolutionName); SolutionPath=$(SolutionPath)" />
+    <MSBuild ToolsVersion="$(ProjectToolsVersion)" BuildInParallel="True" Projects="D:\luyuan\xuanming-server-mmo-cpp\cpp\tests\timer_destroy_test\timer_destroy_test.vcxproj" Targets="Publish" Properties="Configuration=Debug; Platform=x64;BuildingSolutionFile=true; CurrentSolutionConfigurationContents=$(CurrentSolutionConfigurationContents); SolutionDir=$(SolutionDir); SolutionExt=$(SolutionExt); SolutionFileName=$(SolutionFileName); SolutionName=$(SolutionName); SolutionPath=$(SolutionPath)" />
+  </Target>
+  <Target Name="ValidateSolutionConfiguration">
+    <MSBuild BuildInParallel="True" Projects="@(ProjectReference)" Targets="ValidateSolutionConfiguration" Properties="BuildingSolutionFile=true; CurrentSolutionConfigurationContents=$(CurrentSolutionConfigurationContents); SolutionDir=$(SolutionDir); SolutionExt=$(SolutionExt); SolutionFileName=$(SolutionFileName); SolutionName=$(SolutionName); SolutionPath=$(SolutionPath)" />
+    <MSBuild ToolsVersion="$(ProjectToolsVersion)" BuildInParallel="True" Projects="D:\luyuan\xuanming-server-mmo-cpp\cpp\tests\timer_destroy_test\timer_destroy_test.vcxproj" Targets="ValidateSolutionConfiguration" Properties="Configuration=Debug; Platform=x64;BuildingSolutionFile=true; CurrentSolutionConfigurationContents=$(CurrentSolutionConfigurationContents); SolutionDir=$(SolutionDir); SolutionExt=$(SolutionExt); SolutionFileName=$(SolutionFileName); SolutionName=$(SolutionName); SolutionPath=$(SolutionPath)" />
+  </Target>
+</Project>

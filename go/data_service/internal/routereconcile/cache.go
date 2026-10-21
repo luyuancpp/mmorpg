@@ -566,7 +566,8 @@ func (c *RedisCache) MirrorMergedInto(ctx context.Context, rows []store.MergedIn
 }
 
 // ScanFenceMirrors 从 cursor 起 SCAN merge:in_progress:* 至多 pages 页(每页 COUNT fenceScanCount;cursor 0 = 新一轮的起点),
-// 这几页里的键去重后按 GetFenceMirrors 取值。返回下一游标:0 = 这一轮扫完。
+// 这几页里的键去重后按 GetFenceMirrors 取值。返回下一游标:0 = 这一轮扫完。出错时返回的游标是入参 cursor 原值
+// (这次翻过的页一个都没交出去,下一拍从同一处重翻,不跳过键)。
 //
 // 不一次扫到底(核实意见 A1-4 / LR-1):SCAN MATCH 仍要遍历整个 DB 0(每名玩家三把映射键),亿级键空间一拍扫不完,
 // 还会持续占用与登录读 / W1 发布共用的单线程 Redis。leader 把一轮分摊到多拍,游标存在它自己手里;SCAN 的保证
@@ -575,12 +576,13 @@ func (c *RedisCache) ScanFenceMirrors(ctx context.Context, cursor uint64, pages 
 	if pages < 1 {
 		return nil, cursor, fmt.Errorf("scan merge fence mirrors: pages %d < 1", pages)
 	}
+	start := cursor
 	seen := map[string]bool{}
 	var keys []string
 	for i := 0; i < pages; i++ {
 		batch, next, err := c.rdb.Scan(ctx, cursor, fenceMirrorKeyPrefix+"*", fenceScanCount).Result()
 		if err != nil {
-			return nil, cursor, fmt.Errorf("SCAN %d %s*: %w", cursor, fenceMirrorKeyPrefix, err)
+			return nil, start, fmt.Errorf("SCAN %d %s*: %w", cursor, fenceMirrorKeyPrefix, err)
 		}
 		for _, k := range batch {
 			if !seen[k] {
@@ -595,7 +597,7 @@ func (c *RedisCache) ScanFenceMirrors(ctx context.Context, cursor uint64, pages 
 	}
 	mirrors, err := c.GetFenceMirrors(ctx, keys)
 	if err != nil {
-		return nil, cursor, err
+		return nil, start, err
 	}
 	return mirrors, cursor, nil
 }

@@ -50,7 +50,8 @@ void Hiredis::connect()
 {
   assert(!context_);
 
-  context_ = ::redisAsyncConnect(serverAddr_.toIp().c_str(), serverAddr_.port());
+  // Linux 锁定的正式版 muduo v2.0.2 使用 toPort();Windows 移植版仍沿用自己的端口访问接口。
+  context_ = ::redisAsyncConnect(serverAddr_.toIp().c_str(), serverAddr_.toPort());
 
   context_->ev.addRead = addRead;
   context_->ev.delRead = delRead;
@@ -256,7 +257,8 @@ int Hiredis::command(const CommandCallback& cb, muduo::StringArg cmd, ...)
     // 回调挂起命令、后注销 Channel,那段时间 connected() 仍为真,回调里再发的命令会撞 FREEING。
     // 唯一例外是多频道 (P)SUBSCRIBE 中途 OOM(已写进订阅字典的频道仍持有 p),但本封装不支持订阅
     // (commandCallback 每次回调后都 delete)。升级 hiredis 时必须重核这条前提。
-    // cpp/libs/engine/muduo_windows/src/contrib/hiredis/Hiredis.cc(Windows 编)与 tools/archived/muduo_linux_overlay/contrib/hiredis/Hiredis.cc(Linux 镜像编)必须逐字节一致。
+    // Windows 的 cpp/libs/engine/muduo_windows/src/contrib/hiredis/Hiredis.cc 与本 Linux 覆盖件的失败清理语义必须一致;
+    // InetAddress 的端口访问器按各自锁定的 muduo 版本使用,不要求平台接口逐字节相同。
     delete p;
   }
   return ret;

@@ -528,7 +528,7 @@ func TestRouteNotReadySummary_AtMostOneLinePerInterval(t *testing.T) {
 // 进程级就绪闸
 // ---------------------------------------------------------------------------
 
-// 闸的状态跟着每一次刷新走:初始关着;Trusted 放行;不可信或读脚本出错关闸(fail-closed,出错不计 verdict);
+// 闸的状态跟着每一次刷新走:初始关着;Trusted 放行;不可信或读脚本出错关闸(fail-closed,出错计 verdict=script_error);
 // 每次刷新都唤醒等待者;仪表与 verdict 计数同步更新。nil 闸恒放行。
 func TestRouteReadyGate_StateFollowsEachRefresh(t *testing.T) {
 	reader := newFakeRouteReadyReader(t, nil)
@@ -574,11 +574,14 @@ func TestRouteReadyGate_StateFollowsEachRefresh(t *testing.T) {
 	reader.set(routeReadyTestMarker(t, routeReadyTestIdentity.RunID, routeReadyTestIdentity.MasterReplID),
 		routeReadyTestIdentity, errors.New("dial tcp: connection refused"))
 	before = verdicts()
+	scriptErrBefore := metricCount(t, "db_route_ready_verdict_total", map[string]string{"verdict": routeReadyGateStateScriptError})
 	wake = g.recheck()
 	refreshGate(g)
 	assert.False(t, g.opened(), "a failed read keeps the gate closed")
 	assert.True(t, woken(wake))
-	assert.Equal(t, before, verdicts(), "a failed read is not a verdict")
+	assert.Equal(t, before, verdicts(), "a failed read is none of placement's verdicts")
+	assert.Equal(t, scriptErrBefore+1, metricCount(t, "db_route_ready_verdict_total", map[string]string{"verdict": routeReadyGateStateScriptError}),
+		"a failed read is counted as script_error, so it is told apart from an absent marker")
 
 	reader.setTrusted(t)
 	refreshGate(g)
