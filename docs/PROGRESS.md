@@ -14756,3 +14756,9 @@ Java r14全30实际执行完：7568项7200通过59失败7错误302外部跳过�
 - Java r15 当前H2实际598 PASS、125已知外部SKIP；全模块在Gate开始阶段被2秒资源复核门禁中止，已落XML为8137 PASS/18 FAIL/32 ERROR/848 SKIP，Data/Gateway/Robot未执行。原proof 2251E133BDFF3EC28A6DF65D16A06370FA622BD098582C1208C72684B2EC7A0E、67原家族全部退出。16项后续源码修复分别处理Match组件装配、正式公开角色名/评分SQL夹具、Battle FIN、Team排队状态穷尽映射、Mall Repository代理、Java被动技能漏移植；仍待新鲜C盘候选编译与回归，对应Java下一版本仍未验收。
 - Go Inbox RuntimeBuild实际通过（57CB73882BFC55834D9769D6DEED1448FB3DE463BAC63E8BC5166B94BF8394DD），AMD64 PE SHA86A0CEAF05DBC97E1A0168EDE164A020B8A39F41831C4ABC4A7B017C334943C5，未启动。新Match GoList实际F5CFEA9AD3F50B5566A1D0EC1A19107AFF52B40ABA98A338F8B274921B406DAA通过；Build被严格计划比较在原生启动前拒绝，唯一差异为同一runner SHA的大小写，保留原件并仅对Build候选该字段规范化，未重试。所有本段原句柄已退出。
 - 部署Chat3/Ports22/Global5实际native0，汇总因Global预期仍为旧3而拒绝；迁移47与完整部署285尚未执行。Unity当前91306完整输入两观察相同，额外四个旧Performance JSON/meta缺失经正规包固定清理实现确认，只批准有限历史来源，不放宽运行期间零输入变更、153meta或真实Csc。详见docs/handoff/global-economy-review-20261021.md第25节，仍无真库201、双区交易或故障验收通过结论。
+## 2026-10-22 单人 PVE 匹配故障排查
+
+- 本地运行的 match/client_rpc_router 为 10 月 19 日旧二进制，消息 275/265 与当前地域探测协议台账不一致，匹配前请求无法正确进入 Match。已保留旧日志/二进制、从当前源码构建并重启这两个本地服务，未清理账号或游戏数据。
+- 修正 Match authority/store.go 两个未使用导入，并将本地 Match 构建/运行入口改为整个包，纳入 original_role_interceptor.go。只读验收通过 Match 直连与 Router 转发的 GetNetworkProbePlan；会话入口现有测试通过。
+- 当前手动客户端已实测 PVE_SOLO config=1，battle=82496116915372032，9 回合胜利结算。客户端另修探测期间提前查询撤销匹配、同步错误提示被覆盖及排行榜焦点已销毁对象空引用；队列相关纯逻辑回归 38/38 通过。客户端源码防护尚未重新打包。
+- 验证产物：服务端 build/verification/pve-match-20261022/，客户端 .codex-artifacts/pve-match-20261022/。本次未改共享协议或服务端业务规则；Java 版无对应业务改动。
