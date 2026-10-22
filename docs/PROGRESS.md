@@ -14459,3 +14459,35 @@ PROGRESS 一直没有条目)。上面 2026-09-21 条里"第 7–9 步未跑""修
 - 验证边界：第三方 Protobuf 的 C4244、缺 absl PDB 的 LNK4099 警告仍存在；native 裸指针检查器未安装，构建脚本明确 SKIP，不能视为静态检查通过。EnTT 已同步主干 pin 4，其余 15 个本机第三方 checkout 与远程新 gitlink 不同；本结果基于这些实际依赖及既有安装目录，不等于全新 checkout 锁定依赖的完整验收。没有执行真实数据库/跨区联机冒烟或独立 Java 玩法服务器验收。
 - 本轮证据统一在 `build/verification/work-cleanup-20261020/`：`final-verification-oct21.json` 保存退出码、实跑数和源码 SHA；`cpp-tests-oct21/` 保存四套原始输出；Java JSON/XML 与完整日志可核。Git 纯祖先吸收 `6c7f507cc6` 的前后 tree 均 `6b48d84ef236fdaf2a957c88ae16ed8787f53b3c`，18 条非 main 本地分支及当前 origin 引用均已纳入 main，未重新带回旧实现。
 - 归档清理证据：`archive-removal-readiness-oct21.json` 列出 10 个精确路径和已合 HEAD；122 个 dirty 原件再次 SHA 复核 0 变化；忽略目录的 822 个非编译二进制文件原字节保全，1107 个剩余文件均为可重建编译二进制/对象缓存，详细 manifest 保留。原目录只由根任务在普通快进 push 完成后统一清理。本任务不自行删除外部目录或分支。
+
+### 2026-10-21 Windows 本机起服：恢复 Kafka 契约与进程复用的 Step3
+
+- 本轮修复仅针对 Windows 本地多语言服务器启动器。当前 `start_game.ps1` 缺失既有 Step3：Kafka 两个环境变量没有注入，PID 修复和真实本仓进程枚举也未执行。C++ 与主题预建使用 g2/256，而 Go 默认 g1；`player_locator.stdout.log` 已实际输出 `partitions=256 generation=1`。此前保存的期望 g2 PID 记录不能反证运行进程已经使用 g2，不能通过补写记录伪装修复。
+- 按既有 `ca155747ec` 实现恢复最小启动上下文：先注入权威 Kafka generation/partitions，再备份并修复失效 PID、枚举真实本仓可执行文件，之后才执行既有复用门禁和服务启动。增加仅打印两个非敏感数字的 Go 子进程环境契约诊断；没有改协议、主题代数、分区、offset 或数据。
+- 新增顶层 AST 接线回归，锁定两项契约注入与 PID/真实进程核对都发生在首次服务启动之前，补足原有仅加载函数测试无法发现整段启动上下文缺失的盲点。最终源码定向回归实际 **27/27 通过**，退出 0，`git diff --check` 通过。
+- 旧五个 Go 命令生产者经实际路径、PID、启动时间确认属于本轮后，通过正式工具有序停启：login、scene_manager、player_locator、match、guild；每个旧进程均正常退出，未给旧 g1 进程补写 g2 记录。新三 C++ 节点及 db/data_service/router/chat 保留运行。恢复后启动日志明确记录子进程环境 g2/256，五个全新 PID/路径/启动时间与记录一致；player_locator 另有真实运行日志 `partitions=256 generation=2`。其余服务的契约日志按首次发命令懒加载，未为了造日志自动登录、建角或发送业务命令。
+- chat 首次绑定 50700 报 Windows 访问权限错误；只读确认当时已无占用、该端口不在排除范围，宿主短暂绑定探针成功并立即关闭，随后仅以正式单服务入口恢复成功。未改防火墙、WinNAT、系统保留端口或服务端口配置。
+- 最终正式启动器实际退出 **0**；独立 HTTP 检查为网关 **UP**、一区 **OPEN**（二区仍为 MAINTENANCE），8081 属于本仓网关 JVM PID 26576。gate/scene/battle 为新构建 PID 48520/54372/18712，实际二进制哈希、进程路径/启动时间、监听端口、etcd 活租约及同 UUID 启动日志均核对通过；scene 已出现 `Scene dependency ready: all required nodes discovered.`。仅 mail/rank 因缺本机领域配置而可选跳过，chat/guild/trade/friend/player_inbox 均 Ready。未清空或重置任何游戏数据。
+- 本轮源码变更仅为启动器与其定向回归；未改客户端可见契约，不涉及独立 Java 玩法服务器的功能对齐。本仓既有 Java 网关 jar 仅按正常本机流程启动。六个新客户端窗口由主任务另行观察，Windows 权限提示由用户手动处理，不把起服就绪冒称实际登录或完整联机玩法验收。
+- 最终证据：`run/logs/game-launcher/20261021-045209-089/launcher.log`、`server-readiness-final.json`、`node-readiness.json`、`go-command-contract-readiness.json`、`command-contract-regression-final.log`。原 g1 日志和启动记录保存在 `run/logs/game-launcher/20261021-042604-982/kafka-g2-recovery/`；新三节点构建证据为 `build/verification/play-nodes-afterboot-20261021-042000709/build-result.json`。最终审计按 UTC ticks 比较进程启动时间，保留了 JSON 日期自动解析导致旧字符串比较误判的原审计，未掩盖失败记录。本任务未提交或推送。
+
+## 2026-10-22 Codex：本机进场3023按P1严重事故登记，受限测试数据重置完成、业务恢复待验
+
+- 用户明确要求按严重事故详细记录，并确认项目尚未上线、允许清空本机测试数据。本轮登记为项目内部 P1（负责人可按制度调整），不冒称生产线上事故。报告为 docs/ops/incident-local-enter-game-3023-2026-10-22.md，包含 EDT/UTC 时间线、事实/推断边界、影响、技术与交付根因、长时间维护/审批告知教训、防复发责任角色及验收标准；docs/README.md 增加事故索引。未提交、未推送。
+- 两个实际角色认证与 session 成功、EnterGame accepted 后，login 预加载明确因“历史父快照缺少提交屏障”推 3023。2401/2501 owner 分别5/1，父缓存有业务数据但无屏障，SQL 双表均0/0；旧 DB 是10月19日产物，SQL两表缺 persist_schema_gen。主界面、UP/OPEN、角色列表及 UI15/15 未覆盖真实预加载/进场，先前完成口径过强。没有把可选 chat 端口故障、Kafka挂载漂移或恢复中的 MySQL profile 缺口写成该3023直接原因。
+- 保留恢复路线先完成父/SQL全业务等同性、兼容背包/任务、递归未知字段及额外SQL列核对；正式两条ADD迁移、新DB安装、写者排空、7历史dead原字节隔离、两个等同父缓存CAS保全、v1 legacy+homefallback+localmysql不可变计划均有回执。恢复库/CLI隔离测试135 PASS、0 FAIL、3真库入口未启用SKIP。实际apply被自动审批拒绝且CLI未启动，未绕过；用户随后选择重置，旧plan只保留事故证据，不再执行，不宣称历史角色恢复通过。
+- 清理前持久私有备份274原件、713883921字节，9库SQL/4份通过结构检查的RDB/目标Kafka11条原记录已保全，manifest SHA256=5B4DDF370034F79605B5407CE5056891E35E2B92C0C0782CADB7980CD9B14712。敏感材料在仓库外受控目录，报告不复制密码、token或玩家blob。ACL脚本首次SID格式1332失败时未清数据，修正后完成备份，原失败不掩盖。
+- 经明确授权和精确清单，2026-10-22 02:36:42—02:37:42 EDT（06:36:42—06:37:42 UTC）清理9业务schema内62表共3250行；core Redis DB0/2为1655/9→0，Cluster三主DB0为9/4/6→0；仅gate-cmd_g2分区1逻辑截断0/11→11/11。保留schema/迁移台账/配置/testdb.id_segment高水/400个etcd键/镜像/卷，274事故原件完整。终态为cleared_not_started，不能把清理成功写成起服或用户进场成功。证据 run/logs/login-preload-backup-20261022-014557/persistent-backup-receipt.json 与 approved-reset-receipt.json。
+- 显式 LocalMySQL profile 限本地派生配置：go_services/dev_tools/start_game及新测试共4文件，原RequireTiDB:true与dual不变。定向25/25和Kafka契约27/27通过；ports当前与未改基线同18/19，唯一旧MailAdmin变量断言失败保留，未禁断言或改无关源码。证据 build/verification/local-mysql-profile-20261022-023232867/final-receipt.json；这不是实际MySQL起服验收。
+- 当前仍待核心恢复、独立验收号两次有限delta=0正常进入/退出与NotifyEnterScene、同号网关凭据登录，以及用户六客户端实际进入的证据。不会做GM、崩溃或压测；正常会话/存档仍可有正常写入，不能称绝对只读，也不把分段协议测试说成六个Unity窗口已全链通过。重置已使旧测试角色/会话失效，需重新登录/建角。独立Java玩法服务器无同一Redis父屏障，本条不冒其全链验收；本机Java网关只按实际收据另记。
+
+## 2026-10-22 Codex：P1本机进场事故有限验收完成，原六窗口保留与未覆盖项明确
+
+- 延续上条待验记录，保留原时间口径不回改历史。本次本机核心进场故障按有限真实证据关闭，内部P1严重事故登记及预防整改保留。报告 docs/ops/incident-local-enter-game-3023-2026-10-22.md 已补最终时间线、受限清理、核心恢复、长维护与交付/审批组织教训、责任角色和验收标准；README只增加该事故一行，不覆盖既有索引。
+- 用户明确授权的本地测试重置已于02:37:42 EDT完成；保留结构、迁移、配置、ID高水、etcd400键和事故材料，62业务表3250行及指定Redis/Kafka范围详见approved-reset-receipt。旧角色2401/2501已清，不执行旧restore apply；本轮验收仅新增角色4001，不能把旧角色保留恢复说成通过，也不能说验收后数据库仍全空。
+- 02:46:38 EDT（06:46:38 UTC）核心就绪恢复：8个Go、3个C++及网关PID59884，healthUP、一区OPEN、二区MAINTENANCE，Kafka g2/256。新DB SHA015F777B...643E56F2匹配；真实派生配置只把本地RequireTiDB改false，源仍true、源/运行dual均true。LocalMySQL25/25与契约27/27通过，ports当前与旧基线同18/19的旧MailAdmin断言失败仍保留，未改断言或生产默认。
+- 独立专用号有限协议验收两腿实际PASS/exit0/无超时：首次02:47:24—02:47:29，02:47:28.030实收NotifyEnterScene；正常断线重入02:48:40—02:48:43，02:48:41.527再次实收通知。均角色4001、scene_id82485134683832320/config1、余额0、delta0；不发GM、不做崩溃/AI/压测。两腿未验证HTTP凭据；另以同号独立HTTP凭据登录02:48:55—02:48:56实证HTTP200/code0、令牌非空、返回[4001]，不把分段采证冒充一笔完整Unity UI操作。
+- 最终冻结persistence-final-copy.json时刻06:51:43.518Z：双SQL owner2/seq1835675364387840/gen1与Redis pending/双ACK同版，无outbox、64pending桶总0、活动工作队列空；重试实例各1项是存活元数据，不是积压任务。SHA430AE607D0E5D536FA23E484EEE3AFC351906D9142D118D685B1FEB6F3F0B343。证明本轮正常提交与正常断线重入，不证明清父缓存后的冷加载或服务重启持久化。
+- acceptance-summary.json（06:52:06Z）确认六个既有play-20261021-ready/client/mmorpg.exe进程均Responding且有窗口句柄，ManualUnitySceneEntriesValidated=0；未重开六个，也未自动操作用户认证UI。用户须在原窗口重新登录建角，不能使用已清旧角色；本次未重打包，其他任务在该包之后的skills/UI改动不属本次运行来源。最终运行收敛final-runtime-report.json（06:52:38Z）明确未起chat/trade/friend/player_inbox/mail/rank，其领域玩法未验；独立D盘Java、远端与白名单外其他隔离库未清理。
+- 原274件713883921字节备份与manifest SHA5B4DDF37...9B14712全不变；新增final-runtime-audit73件约85.9MB，独立manifest SHA08EA5BFC8E1CE6AA912AAB2DA06ABFC3FB8E3F1AEE84BBD15B69E4754C0D7ACD。另13份验收EXE/743输入首尾指纹/执行器及脱敏收据33111368字节私有保全，清单SHA455FB40892F2D0C3A731B56C58969FCDE1B14BF040A409178280F41BA5199756；原始凭据/token/玩家包不进Git。
+- 证据：build/verification/local-reset-enter-smoke-20261022-root/{first-result,reentry-result,http-login-result,acceptance-summary,persistence-final-copy}.json；run/logs/login-preload-backup-20261022-014557/{final-runtime-report,final-core-processes,local-mysql-runtime-proof,root-acceptance-archive-receipt}.json。当前故障关闭不等于六用户Unity逐个进场、冷缓存/重启恢复、可选域、生产TiDB/灾备或全部长期防复发事项验收；这些边界与待办在事故报告独立保留。未提交、未推送。

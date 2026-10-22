@@ -362,7 +362,8 @@ function Wait-LocalNode([string]$Name) {
 }
 function Start-LocalGoServices([string[]]$Names) {
     $env:RPC_PORT = $null
-        Invoke-Dev ('go-' + ($Names -join '-')) @('-Command','go-svc-start-exe','-GoServices',($Names -join ','),'-TierReadySeconds','30')
+        # 此入口固定使用本机 Docker MySQL；只有 db 派生运行副本，生产源的 TiDB 要求不变。
+        Invoke-Dev ('go-' + ($Names -join '-')) @('-Command','go-svc-start-exe','-GoServices',($Names -join ','),'-TierReadySeconds','30','-LocalMySQL')
         $goRecords = Get-Content -LiteralPath (Join-Path $serverRoot 'run/pids/go_services.pid.json') -Raw | ConvertFrom-Json -AsHashtable
         foreach ($service in $Names) {
             $entry = $goRecords[$service]
@@ -596,6 +597,14 @@ try {
             }
         }
         # mail/rank 的 DSN 可能指向独立 TiDB；不探测本机默认 MySQL，真实连接与结构由现役服务 fail-closed 校验。
+        Write-Step '3/6 启动存档服务'
+        # 所有 Go 命令生产者须继承与 C++、主题预建相同的契约；运行中的进程不能事后改环境。
+        $env:KAFKA_COMMAND_TOPIC_PARTITIONS = [string]$kafkaContract.Partitions
+        $env:KAFKA_COMMAND_TOPIC_GENERATION = [string]$kafkaContract.Generation
+        Write-Host "  Go child Kafka contract (env): generation=$($env:KAFKA_COMMAND_TOPIC_GENERATION), partitions=$($env:KAFKA_COMMAND_TOPIC_PARTITIONS)"
+        $goRecords = Repair-PidRecords 'go_services.pid.json'
+        $cppRecords = Repair-PidRecords 'cpp_nodes.pid.json' -Cpp
+        $running = @(Get-CimInstance Win32_Process | Where-Object { $_.ExecutablePath -and $_.ExecutablePath.StartsWith($serverRoot + '\',[StringComparison]::OrdinalIgnoreCase) })
         foreach ($item in $running) {
             Assert-RunningCommandContract $item
             $name = [IO.Path]::GetFileNameWithoutExtension($item.Name)

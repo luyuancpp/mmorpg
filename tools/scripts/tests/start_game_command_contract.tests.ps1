@@ -34,6 +34,28 @@ function Get-ThrownMessage([scriptblock]$Action) {
 function Write-TestRecords($Records) { $Records | ConvertTo-Json -Depth 4 | Set-Content -LiteralPath $recordPath -Encoding utf8 }
 try {
     New-Item -ItemType Directory -Path (Split-Path -Parent $recordPath) -Force | Out-Null
+    Test-Case '正式启动在首次拉起服务前注入契约并核对真实进程' {
+        # 只验证启动接线：仅函数测试无法发现整段启动上下文意外丢失。
+        $assignments = @($ast.FindAll({ param($node) $node -is [System.Management.Automation.Language.AssignmentStatementAst] }, $true))
+        $goStart = @($ast.FindAll({ param($node) $node -is [System.Management.Automation.Language.CommandAst] -and $node.GetCommandName() -eq 'Start-LocalGoServices' -and $node.Extent.Text -match "'db','data_service'" }, $true))
+        Assert-Equal 1 $goStart.Count '首次存档服务启动接线必须存在'
+        foreach ($binding in @(
+            @{ Left = '$env:KAFKA_COMMAND_TOPIC_PARTITIONS'; Right = '$kafkaContract.Partitions' },
+            @{ Left = '$env:KAFKA_COMMAND_TOPIC_GENERATION'; Right = '$kafkaContract.Generation' }
+        )) {
+            $injection = @($assignments | Where-Object { $_.Left.Extent.Text -ceq $binding.Left -and $_.Right.Extent.Text.Contains($binding.Right) })
+            Assert-Equal 1 $injection.Count "$($binding.Left) 必须从当前权威契约注入一次"
+            Assert-Equal $true ($injection[0].Extent.EndOffset -lt $goStart[0].Extent.StartOffset) '契约必须先于任何服务启动生效'
+        }
+        foreach ($recordName in @('go_services.pid.json','cpp_nodes.pid.json')) {
+            $repair = @($ast.FindAll({ param($node) $node -is [System.Management.Automation.Language.CommandAst] -and $node.GetCommandName() -eq 'Repair-PidRecords' }, $true) | Where-Object { $_.Extent.Text.Contains($recordName) })
+            Assert-Equal 1 $repair.Count "$recordName 必须先校验真实路径并备份失效 PID"
+            Assert-Equal $true ($repair[0].Extent.EndOffset -lt $goStart[0].Extent.StartOffset) 'PID 校验必须先于服务复用'
+        }
+        $runningScan = @($assignments | Where-Object { $_.Left.Extent.Text -ceq '$running' -and $_.Right.Extent.Text.Contains('Get-CimInstance Win32_Process') -and $_.Right.Extent.Text.Contains('ExecutablePath.StartsWith($serverRoot') })
+        Assert-Equal 1 $runningScan.Count '复用门禁必须枚举真实本仓进程，不能依赖未赋值变量'
+        Assert-Equal $true ($runningScan[0].Extent.EndOffset -lt $goStart[0].Extent.StartOffset) '真实进程扫描必须先于服务复用'
+    }
     # player_inbox:在线提醒(PlayerInboxNotifyEvent)发往 scene-cmd,与 friend / guild 的推送同为命令主题生产者。
     # mail:新邮件提醒(NotifyMailEvent)经 gate-cmd_g<N> 推送,同为命令主题生产者(docs/design/mail-system.md §12.3)。
     foreach ($serviceName in @('friend','guild','player_inbox','mail')) {

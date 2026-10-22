@@ -26,6 +26,10 @@
     stop 时 Ctrl+C 之后等待实例自行退出的秒数。>0 时覆盖所有服务;
     默认 0 = 按服务取值(目录键 StopTimeoutSeconds,db 为 35,未写的服务为 25)。
 
+.PARAMETER LocalMySQL
+    本机 MySQL 兼容档。仅为 db 派生运行配置并关闭 RequireTiDB；只接受回环 SQL 地址。
+    不改源配置、dual 围栏或其他服务，默认关闭。
+
 .EXAMPLE
     # Start every implemented Go service
     pwsh -File tools/scripts/go_services.ps1 -Command start
@@ -71,6 +75,8 @@ param(
     # gate: probe TCP LISTEN on each instance port; warn-and-continue on timeout.
     [int]$TierReadySeconds = 10,
 
+    [switch]$LocalMySQL,
+
     # Local multi-zone launch. When > 0:
     #   * Instance keys are prefixed with 'z<Zone>_' so a second zone can coexist
     #     in the same PID file (e.g. z1_login_1, z2_login_1).
@@ -95,6 +101,9 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
+if ($LocalMySQL -and $Command -notin @('start', 'start-exe')) {
+    throw '-LocalMySQL 只用于本地 start/start-exe，不用于构建或部署。'
+}
 
 $ScriptDir  = Split-Path -Parent $MyInvocation.MyCommand.Path
 $RepoRoot   = Resolve-Path (Join-Path $ScriptDir "..\..")
@@ -375,6 +384,61 @@ function Resolve-BindablePort {
     throw "[port] $Label : $Port 起 2000 个端口内没有可用候选。"
 }
 
+# 只接受仓库配置的明确层级/单值；不解释 YAML 别名或表达式，也不回显包含凭据的原文。
+# 按字符位置只替换布尔值，保证 dual、围栏与其他配置字节原样保留。
+function ConvertTo-LocalMySQLDbConfig([string]$Content) {
+    $lines = [regex]::Matches($Content, '(?m)^[^\r\n]*(?:\r?\n|$)')
+    $serverHeaders = @(for ($i = 0; $i -lt $lines.Count; $i++) {
+        if ($lines[$i].Value.TrimEnd("`r", "`n") -match '^ServerConfig:[ \t]*(?:#.*)?$') { $i }
+    })
+    if ($serverHeaders.Count -ne 1) { throw 'LocalMySQL 要求唯一的 ServerConfig 配置段。' }
+    $serverStart = $serverHeaders[0]
+    $serverEnd = $lines.Count
+    for ($i = $serverStart + 1; $i -lt $lines.Count; $i++) {
+        if ($lines[$i].Value -match '^[^\s#]') { $serverEnd = $i; break }
+    }
+    $databaseHeaders = @(for ($i = $serverStart + 1; $i -lt $serverEnd; $i++) {
+        if ($lines[$i].Value.TrimEnd("`r", "`n") -match '^  Database:[ \t]*(?:#.*)?$') { $i }
+    })
+    if ($databaseHeaders.Count -ne 1) { throw 'LocalMySQL 要求唯一的 ServerConfig.Database 配置段。' }
+    $databaseStart = $databaseHeaders[0]
+    $databaseEnd = $serverEnd
+    for ($i = $databaseStart + 1; $i -lt $serverEnd; $i++) {
+        if ($lines[$i].Value -match '^ {0,3}[^\s#]') { $databaseEnd = $i; break }
+    }
+    $hosts = @()
+    $requirements = @()
+    for ($i = $databaseStart + 1; $i -lt $databaseEnd; $i++) {
+        $line = $lines[$i].Value.TrimEnd("`r", "`n")
+        if ($line -match '^    Hosts:') { $hosts += $i }
+        if ($line -match '^    RequireTiDB:') { $requirements += $i }
+    }
+    if ($hosts.Count -ne 1 -or $requirements.Count -ne 1) {
+        throw 'LocalMySQL 要求 Database.Hosts 与 RequireTiDB 各有一个显式标量。'
+    }
+    $hostMatch = [regex]::Match($lines[$hosts[0]].Value.TrimEnd("`r", "`n"),
+        '^    Hosts:[ \t]*(?:"(?<endpoint>[^"\r\n]+)"|''(?<endpoint>[^''\r\n]+)''|(?<endpoint>[^#\s"'']+))[ \t]*(?:#.*)?$')
+    $endpointMatch = [regex]::Match($hostMatch.Groups['endpoint'].Value,
+        '^(?<host>localhost|127\.[0-9]+\.[0-9]+\.[0-9]+|\[::1\]):(?<port>[0-9]+)$',
+        [System.Text.RegularExpressions.RegexOptions]::IgnoreCase)
+    $port = 0
+    $localAddress = $null
+    $hostName = $endpointMatch.Groups['host'].Value.Trim('[', ']')
+    $loopback = $hostName -ieq 'localhost' -or
+        ([Net.IPAddress]::TryParse($hostName, [ref]$localAddress) -and [Net.IPAddress]::IsLoopback($localAddress))
+    if (-not $hostMatch.Success -or -not $endpointMatch.Success -or -not $loopback -or
+        -not [int]::TryParse($endpointMatch.Groups['port'].Value, [ref]$port) -or $port -lt 1 -or $port -gt 65535) {
+        throw 'LocalMySQL 只允许显式的回环 SQL 单端点，不会降低远端数据库的 TiDB 要求。'
+    }
+    $requirementLine = $lines[$requirements[0]]
+    $requirementMatch = [regex]::Match($requirementLine.Value.TrimEnd("`r", "`n"),
+        '^    RequireTiDB:[ \t]*(?<value>true|false)[ \t]*(?:#.*)?$')
+    if (-not $requirementMatch.Success) { throw 'LocalMySQL 的 RequireTiDB 必须是明确的 true/false。' }
+    $value = $requirementMatch.Groups['value']
+    $offset = $requirementLine.Index + $value.Index
+    return $Content.Remove($offset, $value.Length).Insert($offset, 'false')
+}
+
 function Resolve-InstanceConfig {
     param(
         [string]$Name,
@@ -385,12 +449,13 @@ function Resolve-InstanceConfig {
     )
     $svcDir    = Join-Path $GoRoot $Info.Dir
     $baseYaml  = Join-Path $svcDir $Info.ConfigFile
+    $useLocalMySQL = $LocalMySQL -and $Name -eq 'db'
     $zoneShift = if ($Zone -gt 0) { ($Zone - 1) * $ZonePortShift } else { 0 }
     $port      = Get-InstancePort -Info $Info -Index $Index
     $port      = Resolve-BindablePort $port (Get-InstanceKey -Name $Name -Index $Index -Total $Total) $ReservedPorts
 
     # Legacy fast path: single-zone, single-instance -> original yaml as-is.
-    if ($Total -le 1 -and $Zone -le 0 -and $port -eq [int]$Info.Port) {
+    if (-not $useLocalMySQL -and $Total -le 1 -and $Zone -le 0 -and $port -eq [int]$Info.Port) {
         return [pscustomobject]@{
             Path     = $Info.ConfigFile  # relative path; resolved by working dir
             FullPath = $baseYaml
@@ -402,6 +467,8 @@ function Resolve-InstanceConfig {
     if (-not (Test-Path $baseYaml)) {
         throw "Base config not found for '$Name' instance #$Index : $baseYaml"
     }
+    $content = Get-Content -LiteralPath $baseYaml -Raw
+    if ($useLocalMySQL) { $content = ConvertTo-LocalMySQLDbConfig $content }
     if (-not (Test-Path $DerivedEtcDir)) {
         New-Item -ItemType Directory -Path $DerivedEtcDir -Force | Out-Null
     }
@@ -412,14 +479,13 @@ function Resolve-InstanceConfig {
 
     # Rewrite top-level ListenOn line. Keep the original host (e.g. 0.0.0.0 vs 127.0.0.1).
     # Use an instance Regex so the count-limited overload is available.
-    $content = Get-Content $baseYaml -Raw
-    $regex   = [regex]::new('(?m)^(ListenOn:\s*)([^:\s]+):(\d+)\s*$')
+    $regex   = [regex]::new('(?m)^(ListenOn:[ \t]*)([^:\s]+):(\d+)([ \t]*\r?)$')
     if (-not $regex.IsMatch($content)) {
         Write-Warning "Did not find a top-level 'ListenOn:' line in $baseYaml; instance #$Index may collide on port $($Info.Port)."
     }
     $content = $regex.Replace(
         $content,
-        { param($m) "$($m.Groups[1].Value)$($m.Groups[2].Value):$port" },
+        { param($m) "$($m.Groups[1].Value)$($m.Groups[2].Value):$port$($m.Groups[4].Value)" },
         1
     )
 

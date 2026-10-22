@@ -193,6 +193,8 @@
     [switch]$NoTier,
     # Per-tier readiness budget (seconds). Soft TCP LISTEN probe per instance.
     [int]$TierReadySeconds = 10,
+    # 仅本地 Go 启动：db 派生回环 MySQL 配置，不改生产源配置或 dual 围栏。
+    [switch]$LocalMySQL,
     # cpp-node-* / dev-* commands
     [string[]]$CppNodes = @(),
     [int]$GateCount = 1,
@@ -451,6 +453,9 @@
 )
 
 $ErrorActionPreference = "Stop"
+if ($LocalMySQL -and $Command -notin @('go-svc-start', 'go-svc-start-exe', 'dev-start', 'dev-start-exe', 'dev-start-zones')) {
+    throw '-LocalMySQL 只用于本地 Go 启动命令，不用于 K8s 或发布。'
+}
 
 $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $RepoRoot = Resolve-Path (Join-Path $ScriptDir "..\..")
@@ -1690,8 +1695,8 @@ Useful proto-gen flags:
     -UseGoRun      Force running go run ./cmd
 
 Go micro-service commands (local dev):
-    -Command go-svc-start [-GoServices login,db,...] [-GoCounts @{login=2;scene_manager=2}] [-GoPortStride N]
-    -Command go-svc-start-exe [-GoServices login,db,...] [-GoCounts @{login=2}] [-GoPortStride N]
+    -Command go-svc-start [-GoServices login,db,...] [-GoCounts @{login=2;scene_manager=2}] [-GoPortStride N] [-LocalMySQL]
+    -Command go-svc-start-exe [-GoServices login,db,...] [-GoCounts @{login=2}] [-GoPortStride N] [-LocalMySQL]
     -Command go-svc-stop  [-GoServices login,...]
     -Command go-svc-status
     -Command go-svc-list
@@ -1871,8 +1876,8 @@ switch ($Command) {
     "k8s-release-zone" { Invoke-K8sImage -ImageCommand "release-zone" }
     "k8s-release-all" { Invoke-K8sImage -ImageCommand "release-all" }
     "k8s-route-tool" { Invoke-K8sRouteTool }
-    "go-svc-start"  { & (Join-Path $ScriptDir "go_services.ps1") -Command start  -Services $GoServices -Counts $GoCounts -PortStride $GoPortStride -NoTier:$NoTier -TierReadySeconds $TierReadySeconds -Zone $Zone -ZonePortShift $ZonePortShift }
-    "go-svc-start-exe"  { & (Join-Path $ScriptDir "go_services.ps1") -Command start-exe  -Services $GoServices -Counts $GoCounts -PortStride $GoPortStride -NoTier:$NoTier -TierReadySeconds $TierReadySeconds -Zone $Zone -ZonePortShift $ZonePortShift }
+    "go-svc-start"  { & (Join-Path $ScriptDir "go_services.ps1") -Command start  -Services $GoServices -Counts $GoCounts -PortStride $GoPortStride -NoTier:$NoTier -TierReadySeconds $TierReadySeconds -Zone $Zone -ZonePortShift $ZonePortShift -LocalMySQL:$LocalMySQL }
+    "go-svc-start-exe"  { & (Join-Path $ScriptDir "go_services.ps1") -Command start-exe  -Services $GoServices -Counts $GoCounts -PortStride $GoPortStride -NoTier:$NoTier -TierReadySeconds $TierReadySeconds -Zone $Zone -ZonePortShift $ZonePortShift -LocalMySQL:$LocalMySQL }
     "go-svc-stop"   { & (Join-Path $ScriptDir "go_services.ps1") -Command stop   -Services $GoServices }
     "go-svc-status" { & (Join-Path $ScriptDir "go_services.ps1") -Command status }
     "go-svc-list"   { & (Join-Path $ScriptDir "go_services.ps1") -Command list   }
@@ -1887,13 +1892,13 @@ switch ($Command) {
     "cpp-node-list"   { & (Join-Path $ScriptDir "cpp_nodes.ps1") -Command list   }
     "dev-start" {
         Write-Host "=== Starting Go services ===" -ForegroundColor Cyan
-        & (Join-Path $ScriptDir "go_services.ps1") -Command start -Services $GoServices -Counts $GoCounts -PortStride $GoPortStride -NoTier:$NoTier -TierReadySeconds $TierReadySeconds
+        & (Join-Path $ScriptDir "go_services.ps1") -Command start -Services $GoServices -Counts $GoCounts -PortStride $GoPortStride -NoTier:$NoTier -TierReadySeconds $TierReadySeconds -LocalMySQL:$LocalMySQL
         Write-Host "`n=== Starting C++ nodes ==="  -ForegroundColor Cyan
         & (Join-Path $ScriptDir "cpp_nodes.ps1") -Command start -Nodes $CppNodes -GateCount $GateCount -SceneCount $SceneCount -BattleCount $BattleCount -NodeIp $NodeIp
     }
     "dev-start-exe" {
         Write-Host "=== Starting Go services (exe) ===" -ForegroundColor Cyan
-        & (Join-Path $ScriptDir "go_services.ps1") -Command start-exe -Services $GoServices -Counts $GoCounts -PortStride $GoPortStride -NoTier:$NoTier -TierReadySeconds $TierReadySeconds
+        & (Join-Path $ScriptDir "go_services.ps1") -Command start-exe -Services $GoServices -Counts $GoCounts -PortStride $GoPortStride -NoTier:$NoTier -TierReadySeconds $TierReadySeconds -LocalMySQL:$LocalMySQL
         Write-Host "`n=== Starting C++ nodes ==="  -ForegroundColor Cyan
         & (Join-Path $ScriptDir "cpp_nodes.ps1") -Command start -Nodes $CppNodes -GateCount $GateCount -SceneCount $SceneCount -BattleCount $BattleCount -NodeIp $NodeIp
     }
@@ -1907,7 +1912,7 @@ switch ($Command) {
         Write-Host "=== Multi-zone launch: zones [$($zoneList -join ',')] ===" -ForegroundColor Cyan
         foreach ($z in $zoneList) {
             Write-Host "`n>>> Zone ${z}: starting Go services (exe) ..." -ForegroundColor Cyan
-            & (Join-Path $ScriptDir "go_services.ps1") -Command start-exe -Services $GoServices -Counts $GoCounts -PortStride $GoPortStride -NoTier:$NoTier -TierReadySeconds $TierReadySeconds -Zone $z -ZonePortShift $ZonePortShift
+            & (Join-Path $ScriptDir "go_services.ps1") -Command start-exe -Services $GoServices -Counts $GoCounts -PortStride $GoPortStride -NoTier:$NoTier -TierReadySeconds $TierReadySeconds -Zone $z -ZonePortShift $ZonePortShift -LocalMySQL:$LocalMySQL
             Write-Host "`n>>> Zone ${z}: starting C++ nodes ..." -ForegroundColor Cyan
             # battle 是全局池(非 zone-scoped;gate 不连 battle,match 按 etcd 发现它,客户端按分配下发的地址直连,turn-based §22 D66),
             # 只在第一个 zone 起 $BattleCount 份,其余 zone 传 0 避免重复起。
