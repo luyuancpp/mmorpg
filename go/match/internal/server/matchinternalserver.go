@@ -31,3 +31,7 @@ func (s *MatchInternalServer) StartActivityBattle(ctx context.Context, in *match
 	l := logic.NewStartActivityBattleLogic(ctx, s.svcCtx)
 	return l.StartActivityBattle(in)
 }
+
+func (s *MatchInternalServer) CancelActivityBattle(ctx context.Context, in *matchpb.CancelActivityBattleRequest) (*matchpb.CancelActivityBattleResponse, error) {
+	return logic.NewCancelActivityBattleLogic(ctx, s.svcCtx).CancelActivityBattle(in)
+}

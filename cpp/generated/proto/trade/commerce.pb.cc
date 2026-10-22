@@ -107,6 +107,36 @@ PROTOBUF_CONSTINIT ::google::protobuf::internal::ReflectionData
         {&::_pbi::kDescriptorMethods, &::descriptor_table_proto_2ftrade_2fcommerce_2eproto, /* tracker*/ nullptr,},
         // ::trade::AuctionLotResponse
         {&::_pbi::kDescriptorMethods, &::descriptor_table_proto_2ftrade_2fcommerce_2eproto, /* tracker*/ nullptr,},
+        // ::trade::CreateRmbConsignmentRequest
+        {&::_pbi::kDescriptorMethods, &::descriptor_table_proto_2ftrade_2fcommerce_2eproto, /* tracker*/ nullptr,},
+        // ::trade::GetRmbConsignmentRequest
+        {&::_pbi::kDescriptorMethods, &::descriptor_table_proto_2ftrade_2fcommerce_2eproto, /* tracker*/ nullptr,},
+        // ::trade::ListRmbConsignmentsRequest
+        {&::_pbi::kDescriptorMethods, &::descriptor_table_proto_2ftrade_2fcommerce_2eproto, /* tracker*/ nullptr,},
+        // ::trade::BuyRmbConsignmentRequest
+        {&::_pbi::kDescriptorMethods, &::descriptor_table_proto_2ftrade_2fcommerce_2eproto, /* tracker*/ nullptr,},
+        // ::trade::CancelRmbConsignmentRequest
+        {&::_pbi::kDescriptorMethods, &::descriptor_table_proto_2ftrade_2fcommerce_2eproto, /* tracker*/ nullptr,},
+        // ::trade::RmbConsignmentView
+        {&::_pbi::kDescriptorMethods, &::descriptor_table_proto_2ftrade_2fcommerce_2eproto, /* tracker*/ nullptr,},
+        // ::trade::RmbConsignmentResponse
+        {&::_pbi::kDescriptorMethods, &::descriptor_table_proto_2ftrade_2fcommerce_2eproto, /* tracker*/ nullptr,},
+        // ::trade::ListRmbConsignmentsResponse
+        {&::_pbi::kDescriptorMethods, &::descriptor_table_proto_2ftrade_2fcommerce_2eproto, /* tracker*/ nullptr,},
+        // ::trade::ListSellerIncomesRequest
+        {&::_pbi::kDescriptorMethods, &::descriptor_table_proto_2ftrade_2fcommerce_2eproto, /* tracker*/ nullptr,},
+        // ::trade::RmbSellerIncome
+        {&::_pbi::kDescriptorMethods, &::descriptor_table_proto_2ftrade_2fcommerce_2eproto, /* tracker*/ nullptr,},
+        // ::trade::ListSellerIncomesResponse
+        {&::_pbi::kDescriptorMethods, &::descriptor_table_proto_2ftrade_2fcommerce_2eproto, /* tracker*/ nullptr,},
+        // ::trade::CreateWithdrawalRequest
+        {&::_pbi::kDescriptorMethods, &::descriptor_table_proto_2ftrade_2fcommerce_2eproto, /* tracker*/ nullptr,},
+        // ::trade::GetWithdrawalRequest
+        {&::_pbi::kDescriptorMethods, &::descriptor_table_proto_2ftrade_2fcommerce_2eproto, /* tracker*/ nullptr,},
+        // ::trade::RmbWithdrawalView
+        {&::_pbi::kDescriptorMethods, &::descriptor_table_proto_2ftrade_2fcommerce_2eproto, /* tracker*/ nullptr,},
+        // ::trade::WithdrawalResponse
+        {&::_pbi::kDescriptorMethods, &::descriptor_table_proto_2ftrade_2fcommerce_2eproto, /* tracker*/ nullptr,},
 };
 }  // namespace
 #endif
@@ -584,6 +614,626 @@ const ::_pbi::ClassData* TradeAssetSelection_ItemsEntry_DoNotUse_get_class_data(
   return TradeAssetSelection_ItemsEntry_DoNotUse_globals_.GetClassData();
 #else
   return TradeAssetSelection_ItemsEntry_DoNotUse_class_data_.base();
+#endif  // PROTOBUF_MESSAGE_GLOBALS
+}
+}  // namespace
+#endif  // PROTOBUF_CUSTOM_VTABLE
+class RmbWithdrawalView::_Internal {
+ public:
+  using HasBits = decltype(::std::declval<RmbWithdrawalView>()._impl_._has_bits_);
+  static constexpr ::int32_t kHasBitsOffset =
+      8 * PROTOBUF_FIELD_OFFSET(RmbWithdrawalView, _impl_._has_bits_);
+};
+
+constexpr RmbWithdrawalView::ParseTableT_ RmbWithdrawalView::InternalGenerateParseTable_(const ::_pbi::ClassData* class_data) {
+  return ParseTableT_{
+    {
+      PROTOBUF_FIELD_OFFSET(RmbWithdrawalView, _impl_._has_bits_),
+      0, // no _extensions_
+      5, 56,  // max_field_number, fast_idx_mask
+      offsetof(ParseTableT_, field_lookup_table),
+      4294967264,  // skipmap
+      offsetof(ParseTableT_, field_entries),
+      5,  // num_field_entries
+      0,  // num_aux_entries
+      offsetof(ParseTableT_, field_names),  // no aux_entries
+      class_data,
+      nullptr,  // post_loop_handler
+      ::_pbi::TcParser::GenericFallback,  // fallback
+      #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
+      ::_pbi::TcParser::GetTable<::trade::RmbWithdrawalView>(),  // to_prefetch
+      #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
+    }, {{
+      {::_pbi::TcParser::MiniParse, {}},
+      // string withdrawal_id = 1;
+      {::_pbi::TcParser::FastUS1,
+       {10, 0, 0,
+        PROTOBUF_FIELD_OFFSET(RmbWithdrawalView, _impl_.withdrawal_id_)}},
+      // uint64 amount_fen = 2;
+      {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(RmbWithdrawalView, _impl_.amount_fen_), 4>(),
+       {16, 4, 0,
+        PROTOBUF_FIELD_OFFSET(RmbWithdrawalView, _impl_.amount_fen_)}},
+      // string state = 3;
+      {::_pbi::TcParser::FastUS1,
+       {26, 1, 0,
+        PROTOBUF_FIELD_OFFSET(RmbWithdrawalView, _impl_.state_)}},
+      // string channel = 4;
+      {::_pbi::TcParser::FastUS1,
+       {34, 2, 0,
+        PROTOBUF_FIELD_OFFSET(RmbWithdrawalView, _impl_.channel_)}},
+      // string transaction_id = 5;
+      {::_pbi::TcParser::FastUS1,
+       {42, 3, 0,
+        PROTOBUF_FIELD_OFFSET(RmbWithdrawalView, _impl_.transaction_id_)}},
+      {::_pbi::TcParser::MiniParse, {}},
+      {::_pbi::TcParser::MiniParse, {}},
+    }}, {{
+      65535, 65535
+    }}, {{
+      // string withdrawal_id = 1;
+      {PROTOBUF_FIELD_OFFSET(RmbWithdrawalView, _impl_.withdrawal_id_), _Internal::kHasBitsOffset + 0, 0, (0 | ::_fl::kFcOptional | ::_fl::kUtf8String | ::_fl::kRepAString)},
+      // uint64 amount_fen = 2;
+      {PROTOBUF_FIELD_OFFSET(RmbWithdrawalView, _impl_.amount_fen_), _Internal::kHasBitsOffset + 4, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
+      // string state = 3;
+      {PROTOBUF_FIELD_OFFSET(RmbWithdrawalView, _impl_.state_), _Internal::kHasBitsOffset + 1, 0, (0 | ::_fl::kFcOptional | ::_fl::kUtf8String | ::_fl::kRepAString)},
+      // string channel = 4;
+      {PROTOBUF_FIELD_OFFSET(RmbWithdrawalView, _impl_.channel_), _Internal::kHasBitsOffset + 2, 0, (0 | ::_fl::kFcOptional | ::_fl::kUtf8String | ::_fl::kRepAString)},
+      // string transaction_id = 5;
+      {PROTOBUF_FIELD_OFFSET(RmbWithdrawalView, _impl_.transaction_id_), _Internal::kHasBitsOffset + 3, 0, (0 | ::_fl::kFcOptional | ::_fl::kUtf8String | ::_fl::kRepAString)},
+    }},
+    // no aux_entries
+    {{
+      "\27\15\0\5\7\16\0\0"
+      "trade.RmbWithdrawalView"
+      "withdrawal_id"
+      "state"
+      "channel"
+      "transaction_id"
+    }},
+  };
+}
+
+
+inline constexpr RmbWithdrawalView::Impl_::Impl_(
+    [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
+    ::_pbi::ConstantInitialized) noexcept
+      : _cached_size_{0},
+        withdrawal_id_(
+            &::google::protobuf::internal::fixed_address_empty_string,
+            ::_pbi::ConstantInitialized()),
+        state_(
+            &::google::protobuf::internal::fixed_address_empty_string,
+            ::_pbi::ConstantInitialized()),
+        channel_(
+            &::google::protobuf::internal::fixed_address_empty_string,
+            ::_pbi::ConstantInitialized()),
+        transaction_id_(
+            &::google::protobuf::internal::fixed_address_empty_string,
+            ::_pbi::ConstantInitialized()),
+        amount_fen_{::uint64_t{0u}} {}
+
+template <typename>
+constexpr RmbWithdrawalView::RmbWithdrawalView(::_pbi::ConstantInitialized,
+                       const ::_pbi::ClassData* PROTOBUF_NONNULL class_data)
+    : ::google::protobuf::Message(
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+          class_data
+#endif  // PROTOBUF_CUSTOM_VTABLE
+          ),
+      _impl_(internal_visibility(), ::_pbi::ConstantInitialized()) {
+}
+inline void* PROTOBUF_NONNULL RmbWithdrawalView::PlacementNew_(
+    const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena) {
+  return ::new (mem) RmbWithdrawalView(arena);
+}
+constexpr auto RmbWithdrawalView::InternalNewImpl_() {
+  return ::google::protobuf::internal::MessageCreator::CopyInit(sizeof(RmbWithdrawalView), alignof(RmbWithdrawalView));
+}
+constexpr auto RmbWithdrawalView::InternalGenerateClassData_(
+    const MessageLite& prototype,
+    const ::google::protobuf::internal::TcParseTableBase* tc_table) {
+  return ::google::protobuf::internal::ClassDataFull{
+      ::google::protobuf::internal::ClassData{
+          &prototype,
+#ifndef PROTOBUF_MESSAGE_GLOBALS
+          &_table_.header,
+#else
+          tc_table,
+#endif
+          nullptr,  // IsInitialized
+          &RmbWithdrawalView::MergeImpl,
+          ::google::protobuf::Message::GetNewImpl<RmbWithdrawalView>(),
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+          &RmbWithdrawalView::SharedDtor,
+          ::google::protobuf::Message::GetClearImpl<RmbWithdrawalView>(), &RmbWithdrawalView::ByteSizeLong,
+              &RmbWithdrawalView::_InternalSerialize,
+#endif  // PROTOBUF_CUSTOM_VTABLE
+          PROTOBUF_FIELD_OFFSET(RmbWithdrawalView, _impl_._cached_size_),
+          false,
+      },
+#ifdef PROTOBUF_MESSAGE_GLOBALS
+      &file_reflection_data[52],
+#else   // !PROTOBUF_MESSAGE_GLOBALS
+      &::_pbi::kDescriptorMethods,
+      &descriptor_table_proto_2ftrade_2fcommerce_2eproto,
+      nullptr,  // tracker
+#endif  // PROTOBUF_MESSAGE_GLOBALS
+  };
+}
+struct RmbWithdrawalViewGlobalsTypeInternal : ::_pbi::MessageGlobalsBase {
+  constexpr RmbWithdrawalViewGlobalsTypeInternal()
+      :
+#ifndef PROTOBUF_MESSAGE_GLOBALS
+        _default(::_pbi::ConstantInitialized{},
+                 RmbWithdrawalView_class_data_.base())
+#else   // !PROTOBUF_MESSAGE_GLOBALS
+        MessageGlobalsBase(RmbWithdrawalView::InternalGenerateClassData_(
+            _default, &RmbWithdrawalView_globals_._table.header)),
+        _default(::_pbi::ConstantInitialized{}, GetClassData()),
+        _table(::_pbi::PrivateAccess::GenerateParseTable<RmbWithdrawalView>(
+            GetClassData()))
+#endif  // PROTOBUF_MESSAGE_GLOBALS
+  {
+  }
+  ~RmbWithdrawalViewGlobalsTypeInternal() {}
+  union {
+    alignas(::_pbi::kMaxMessageAlignment) RmbWithdrawalView _default;
+  };
+#ifdef PROTOBUF_MESSAGE_GLOBALS
+  decltype(::_pbi::PrivateAccess::GenerateParseTable<RmbWithdrawalView>(
+      ::std::declval<const ::_pbi::ClassData*>())) _table;
+#endif
+};
+#ifdef PROTOBUF_MESSAGE_GLOBALS
+static_assert(PROTOBUF_FIELD_OFFSET(RmbWithdrawalViewGlobalsTypeInternal, _default) ==
+              ::_pbi::MessageGlobalsBase::OffsetToDefault());
+#endif  // PROTOBUF_MESSAGE_GLOBALS
+
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 PROTOBUF_MESSAGE_GLOBALS_CONST RmbWithdrawalViewGlobalsTypeInternal RmbWithdrawalView_globals_
+        PROTOBUF_MESSAGE_GLOBALS_SECTION(.data.rel.ro);
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+namespace {
+const ::_pbi::ClassData* RmbWithdrawalView_get_class_data() {
+#ifdef PROTOBUF_MESSAGE_GLOBALS
+  return RmbWithdrawalView_globals_.GetClassData();
+#else
+  return RmbWithdrawalView_class_data_.base();
+#endif  // PROTOBUF_MESSAGE_GLOBALS
+}
+}  // namespace
+#endif  // PROTOBUF_CUSTOM_VTABLE
+class RmbSellerIncome::_Internal {
+ public:
+  using HasBits = decltype(::std::declval<RmbSellerIncome>()._impl_._has_bits_);
+  static constexpr ::int32_t kHasBitsOffset =
+      8 * PROTOBUF_FIELD_OFFSET(RmbSellerIncome, _impl_._has_bits_);
+};
+
+constexpr RmbSellerIncome::ParseTableT_ RmbSellerIncome::InternalGenerateParseTable_(const ::_pbi::ClassData* class_data) {
+  return ParseTableT_{
+    {
+      PROTOBUF_FIELD_OFFSET(RmbSellerIncome, _impl_._has_bits_),
+      0, // no _extensions_
+      7, 56,  // max_field_number, fast_idx_mask
+      offsetof(ParseTableT_, field_lookup_table),
+      4294967168,  // skipmap
+      offsetof(ParseTableT_, field_entries),
+      7,  // num_field_entries
+      0,  // num_aux_entries
+      offsetof(ParseTableT_, field_names),  // no aux_entries
+      class_data,
+      nullptr,  // post_loop_handler
+      ::_pbi::TcParser::GenericFallback,  // fallback
+      #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
+      ::_pbi::TcParser::GetTable<::trade::RmbSellerIncome>(),  // to_prefetch
+      #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
+    }, {{
+      {::_pbi::TcParser::MiniParse, {}},
+      // string order_id = 1;
+      {::_pbi::TcParser::FastUS1,
+       {10, 0, 0,
+        PROTOBUF_FIELD_OFFSET(RmbSellerIncome, _impl_.order_id_)}},
+      // uint64 gross_fen = 2;
+      {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(RmbSellerIncome, _impl_.gross_fen_), 1>(),
+       {16, 1, 0,
+        PROTOBUF_FIELD_OFFSET(RmbSellerIncome, _impl_.gross_fen_)}},
+      // uint64 fee_fen = 3;
+      {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(RmbSellerIncome, _impl_.fee_fen_), 2>(),
+       {24, 2, 0,
+        PROTOBUF_FIELD_OFFSET(RmbSellerIncome, _impl_.fee_fen_)}},
+      // uint64 net_fen = 4;
+      {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(RmbSellerIncome, _impl_.net_fen_), 3>(),
+       {32, 3, 0,
+        PROTOBUF_FIELD_OFFSET(RmbSellerIncome, _impl_.net_fen_)}},
+      // uint64 reserved_fen = 5;
+      {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(RmbSellerIncome, _impl_.reserved_fen_), 4>(),
+       {40, 4, 0,
+        PROTOBUF_FIELD_OFFSET(RmbSellerIncome, _impl_.reserved_fen_)}},
+      // uint64 paid_fen = 6;
+      {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(RmbSellerIncome, _impl_.paid_fen_), 5>(),
+       {48, 5, 0,
+        PROTOBUF_FIELD_OFFSET(RmbSellerIncome, _impl_.paid_fen_)}},
+      // uint64 available_ms = 7;
+      {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(RmbSellerIncome, _impl_.available_ms_), 6>(),
+       {56, 6, 0,
+        PROTOBUF_FIELD_OFFSET(RmbSellerIncome, _impl_.available_ms_)}},
+    }}, {{
+      65535, 65535
+    }}, {{
+      // string order_id = 1;
+      {PROTOBUF_FIELD_OFFSET(RmbSellerIncome, _impl_.order_id_), _Internal::kHasBitsOffset + 0, 0, (0 | ::_fl::kFcOptional | ::_fl::kUtf8String | ::_fl::kRepAString)},
+      // uint64 gross_fen = 2;
+      {PROTOBUF_FIELD_OFFSET(RmbSellerIncome, _impl_.gross_fen_), _Internal::kHasBitsOffset + 1, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
+      // uint64 fee_fen = 3;
+      {PROTOBUF_FIELD_OFFSET(RmbSellerIncome, _impl_.fee_fen_), _Internal::kHasBitsOffset + 2, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
+      // uint64 net_fen = 4;
+      {PROTOBUF_FIELD_OFFSET(RmbSellerIncome, _impl_.net_fen_), _Internal::kHasBitsOffset + 3, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
+      // uint64 reserved_fen = 5;
+      {PROTOBUF_FIELD_OFFSET(RmbSellerIncome, _impl_.reserved_fen_), _Internal::kHasBitsOffset + 4, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
+      // uint64 paid_fen = 6;
+      {PROTOBUF_FIELD_OFFSET(RmbSellerIncome, _impl_.paid_fen_), _Internal::kHasBitsOffset + 5, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
+      // uint64 available_ms = 7;
+      {PROTOBUF_FIELD_OFFSET(RmbSellerIncome, _impl_.available_ms_), _Internal::kHasBitsOffset + 6, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
+    }},
+    // no aux_entries
+    {{
+      "\25\10\0\0\0\0\0\0"
+      "trade.RmbSellerIncome"
+      "order_id"
+    }},
+  };
+}
+
+
+inline constexpr RmbSellerIncome::Impl_::Impl_(
+    [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
+    ::_pbi::ConstantInitialized) noexcept
+      : _cached_size_{0},
+        order_id_(
+            &::google::protobuf::internal::fixed_address_empty_string,
+            ::_pbi::ConstantInitialized()),
+        gross_fen_{::uint64_t{0u}},
+        fee_fen_{::uint64_t{0u}},
+        net_fen_{::uint64_t{0u}},
+        reserved_fen_{::uint64_t{0u}},
+        paid_fen_{::uint64_t{0u}},
+        available_ms_{::uint64_t{0u}} {}
+
+template <typename>
+constexpr RmbSellerIncome::RmbSellerIncome(::_pbi::ConstantInitialized,
+                       const ::_pbi::ClassData* PROTOBUF_NONNULL class_data)
+    : ::google::protobuf::Message(
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+          class_data
+#endif  // PROTOBUF_CUSTOM_VTABLE
+          ),
+      _impl_(internal_visibility(), ::_pbi::ConstantInitialized()) {
+}
+inline void* PROTOBUF_NONNULL RmbSellerIncome::PlacementNew_(
+    const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena) {
+  return ::new (mem) RmbSellerIncome(arena);
+}
+constexpr auto RmbSellerIncome::InternalNewImpl_() {
+  return ::google::protobuf::internal::MessageCreator::CopyInit(sizeof(RmbSellerIncome), alignof(RmbSellerIncome));
+}
+constexpr auto RmbSellerIncome::InternalGenerateClassData_(
+    const MessageLite& prototype,
+    const ::google::protobuf::internal::TcParseTableBase* tc_table) {
+  return ::google::protobuf::internal::ClassDataFull{
+      ::google::protobuf::internal::ClassData{
+          &prototype,
+#ifndef PROTOBUF_MESSAGE_GLOBALS
+          &_table_.header,
+#else
+          tc_table,
+#endif
+          nullptr,  // IsInitialized
+          &RmbSellerIncome::MergeImpl,
+          ::google::protobuf::Message::GetNewImpl<RmbSellerIncome>(),
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+          &RmbSellerIncome::SharedDtor,
+          ::google::protobuf::Message::GetClearImpl<RmbSellerIncome>(), &RmbSellerIncome::ByteSizeLong,
+              &RmbSellerIncome::_InternalSerialize,
+#endif  // PROTOBUF_CUSTOM_VTABLE
+          PROTOBUF_FIELD_OFFSET(RmbSellerIncome, _impl_._cached_size_),
+          false,
+      },
+#ifdef PROTOBUF_MESSAGE_GLOBALS
+      &file_reflection_data[48],
+#else   // !PROTOBUF_MESSAGE_GLOBALS
+      &::_pbi::kDescriptorMethods,
+      &descriptor_table_proto_2ftrade_2fcommerce_2eproto,
+      nullptr,  // tracker
+#endif  // PROTOBUF_MESSAGE_GLOBALS
+  };
+}
+struct RmbSellerIncomeGlobalsTypeInternal : ::_pbi::MessageGlobalsBase {
+  constexpr RmbSellerIncomeGlobalsTypeInternal()
+      :
+#ifndef PROTOBUF_MESSAGE_GLOBALS
+        _default(::_pbi::ConstantInitialized{},
+                 RmbSellerIncome_class_data_.base())
+#else   // !PROTOBUF_MESSAGE_GLOBALS
+        MessageGlobalsBase(RmbSellerIncome::InternalGenerateClassData_(
+            _default, &RmbSellerIncome_globals_._table.header)),
+        _default(::_pbi::ConstantInitialized{}, GetClassData()),
+        _table(::_pbi::PrivateAccess::GenerateParseTable<RmbSellerIncome>(
+            GetClassData()))
+#endif  // PROTOBUF_MESSAGE_GLOBALS
+  {
+  }
+  ~RmbSellerIncomeGlobalsTypeInternal() {}
+  union {
+    alignas(::_pbi::kMaxMessageAlignment) RmbSellerIncome _default;
+  };
+#ifdef PROTOBUF_MESSAGE_GLOBALS
+  decltype(::_pbi::PrivateAccess::GenerateParseTable<RmbSellerIncome>(
+      ::std::declval<const ::_pbi::ClassData*>())) _table;
+#endif
+};
+#ifdef PROTOBUF_MESSAGE_GLOBALS
+static_assert(PROTOBUF_FIELD_OFFSET(RmbSellerIncomeGlobalsTypeInternal, _default) ==
+              ::_pbi::MessageGlobalsBase::OffsetToDefault());
+#endif  // PROTOBUF_MESSAGE_GLOBALS
+
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 PROTOBUF_MESSAGE_GLOBALS_CONST RmbSellerIncomeGlobalsTypeInternal RmbSellerIncome_globals_
+        PROTOBUF_MESSAGE_GLOBALS_SECTION(.data.rel.ro);
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+namespace {
+const ::_pbi::ClassData* RmbSellerIncome_get_class_data() {
+#ifdef PROTOBUF_MESSAGE_GLOBALS
+  return RmbSellerIncome_globals_.GetClassData();
+#else
+  return RmbSellerIncome_class_data_.base();
+#endif  // PROTOBUF_MESSAGE_GLOBALS
+}
+}  // namespace
+#endif  // PROTOBUF_CUSTOM_VTABLE
+class RmbConsignmentView::_Internal {
+ public:
+  using HasBits = decltype(::std::declval<RmbConsignmentView>()._impl_._has_bits_);
+  static constexpr ::int32_t kHasBitsOffset =
+      8 * PROTOBUF_FIELD_OFFSET(RmbConsignmentView, _impl_._has_bits_);
+};
+
+constexpr RmbConsignmentView::ParseTableT_ RmbConsignmentView::InternalGenerateParseTable_(const ::_pbi::ClassData* class_data) {
+  return ParseTableT_{
+    {
+      PROTOBUF_FIELD_OFFSET(RmbConsignmentView, _impl_._has_bits_),
+      0, // no _extensions_
+      13, 120,  // max_field_number, fast_idx_mask
+      offsetof(ParseTableT_, field_lookup_table),
+      4294959104,  // skipmap
+      offsetof(ParseTableT_, field_entries),
+      13,  // num_field_entries
+      0,  // num_aux_entries
+      offsetof(ParseTableT_, field_names),  // no aux_entries
+      class_data,
+      nullptr,  // post_loop_handler
+      ::_pbi::TcParser::GenericFallback,  // fallback
+      #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
+      ::_pbi::TcParser::GetTable<::trade::RmbConsignmentView>(),  // to_prefetch
+      #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
+    }, {{
+      {::_pbi::TcParser::MiniParse, {}},
+      // uint64 listing_id = 1;
+      {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(RmbConsignmentView, _impl_.listing_id_), 5>(),
+       {8, 5, 0,
+        PROTOBUF_FIELD_OFFSET(RmbConsignmentView, _impl_.listing_id_)}},
+      // uint64 seller_player_id = 2;
+      {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(RmbConsignmentView, _impl_.seller_player_id_), 6>(),
+       {16, 6, 0,
+        PROTOBUF_FIELD_OFFSET(RmbConsignmentView, _impl_.seller_player_id_)}},
+      // uint32 market_zone = 3;
+      {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(RmbConsignmentView, _impl_.market_zone_), 7>(),
+       {24, 7, 0,
+        PROTOBUF_FIELD_OFFSET(RmbConsignmentView, _impl_.market_zone_)}},
+      // string asset_kind = 4;
+      {::_pbi::TcParser::FastUS1,
+       {34, 0, 0,
+        PROTOBUF_FIELD_OFFSET(RmbConsignmentView, _impl_.asset_kind_)}},
+      // string title = 5;
+      {::_pbi::TcParser::FastUS1,
+       {42, 1, 0,
+        PROTOBUF_FIELD_OFFSET(RmbConsignmentView, _impl_.title_)}},
+      // uint64 price_fen = 6;
+      {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(RmbConsignmentView, _impl_.price_fen_), 9>(),
+       {48, 9, 0,
+        PROTOBUF_FIELD_OFFSET(RmbConsignmentView, _impl_.price_fen_)}},
+      // uint32 fee_bps = 7;
+      {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(RmbConsignmentView, _impl_.fee_bps_), 8>(),
+       {56, 8, 0,
+        PROTOBUF_FIELD_OFFSET(RmbConsignmentView, _impl_.fee_bps_)}},
+      // uint64 cooling_ms = 8;
+      {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(RmbConsignmentView, _impl_.cooling_ms_), 10>(),
+       {64, 10, 0,
+        PROTOBUF_FIELD_OFFSET(RmbConsignmentView, _impl_.cooling_ms_)}},
+      // uint64 notice_end_ms = 9;
+      {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(RmbConsignmentView, _impl_.notice_end_ms_), 11>(),
+       {72, 11, 0,
+        PROTOBUF_FIELD_OFFSET(RmbConsignmentView, _impl_.notice_end_ms_)}},
+      // uint64 sale_end_ms = 10;
+      {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(RmbConsignmentView, _impl_.sale_end_ms_), 12>(),
+       {80, 12, 0,
+        PROTOBUF_FIELD_OFFSET(RmbConsignmentView, _impl_.sale_end_ms_)}},
+      // string state = 11;
+      {::_pbi::TcParser::FastUS1,
+       {90, 2, 0,
+        PROTOBUF_FIELD_OFFSET(RmbConsignmentView, _impl_.state_)}},
+      // string phase = 12;
+      {::_pbi::TcParser::FastUS1,
+       {98, 3, 0,
+        PROTOBUF_FIELD_OFFSET(RmbConsignmentView, _impl_.phase_)}},
+      // string order_id = 13;
+      {::_pbi::TcParser::FastUS1,
+       {106, 4, 0,
+        PROTOBUF_FIELD_OFFSET(RmbConsignmentView, _impl_.order_id_)}},
+      {::_pbi::TcParser::MiniParse, {}},
+      {::_pbi::TcParser::MiniParse, {}},
+    }}, {{
+      65535, 65535
+    }}, {{
+      // uint64 listing_id = 1;
+      {PROTOBUF_FIELD_OFFSET(RmbConsignmentView, _impl_.listing_id_), _Internal::kHasBitsOffset + 5, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
+      // uint64 seller_player_id = 2;
+      {PROTOBUF_FIELD_OFFSET(RmbConsignmentView, _impl_.seller_player_id_), _Internal::kHasBitsOffset + 6, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
+      // uint32 market_zone = 3;
+      {PROTOBUF_FIELD_OFFSET(RmbConsignmentView, _impl_.market_zone_), _Internal::kHasBitsOffset + 7, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
+      // string asset_kind = 4;
+      {PROTOBUF_FIELD_OFFSET(RmbConsignmentView, _impl_.asset_kind_), _Internal::kHasBitsOffset + 0, 0, (0 | ::_fl::kFcOptional | ::_fl::kUtf8String | ::_fl::kRepAString)},
+      // string title = 5;
+      {PROTOBUF_FIELD_OFFSET(RmbConsignmentView, _impl_.title_), _Internal::kHasBitsOffset + 1, 0, (0 | ::_fl::kFcOptional | ::_fl::kUtf8String | ::_fl::kRepAString)},
+      // uint64 price_fen = 6;
+      {PROTOBUF_FIELD_OFFSET(RmbConsignmentView, _impl_.price_fen_), _Internal::kHasBitsOffset + 9, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
+      // uint32 fee_bps = 7;
+      {PROTOBUF_FIELD_OFFSET(RmbConsignmentView, _impl_.fee_bps_), _Internal::kHasBitsOffset + 8, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
+      // uint64 cooling_ms = 8;
+      {PROTOBUF_FIELD_OFFSET(RmbConsignmentView, _impl_.cooling_ms_), _Internal::kHasBitsOffset + 10, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
+      // uint64 notice_end_ms = 9;
+      {PROTOBUF_FIELD_OFFSET(RmbConsignmentView, _impl_.notice_end_ms_), _Internal::kHasBitsOffset + 11, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
+      // uint64 sale_end_ms = 10;
+      {PROTOBUF_FIELD_OFFSET(RmbConsignmentView, _impl_.sale_end_ms_), _Internal::kHasBitsOffset + 12, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
+      // string state = 11;
+      {PROTOBUF_FIELD_OFFSET(RmbConsignmentView, _impl_.state_), _Internal::kHasBitsOffset + 2, 0, (0 | ::_fl::kFcOptional | ::_fl::kUtf8String | ::_fl::kRepAString)},
+      // string phase = 12;
+      {PROTOBUF_FIELD_OFFSET(RmbConsignmentView, _impl_.phase_), _Internal::kHasBitsOffset + 3, 0, (0 | ::_fl::kFcOptional | ::_fl::kUtf8String | ::_fl::kRepAString)},
+      // string order_id = 13;
+      {PROTOBUF_FIELD_OFFSET(RmbConsignmentView, _impl_.order_id_), _Internal::kHasBitsOffset + 4, 0, (0 | ::_fl::kFcOptional | ::_fl::kUtf8String | ::_fl::kRepAString)},
+    }},
+    // no aux_entries
+    {{
+      "\30\0\0\0\12\5\0\0\0\0\0\5\5\10\0\0"
+      "trade.RmbConsignmentView"
+      "asset_kind"
+      "title"
+      "state"
+      "phase"
+      "order_id"
+    }},
+  };
+}
+
+
+inline constexpr RmbConsignmentView::Impl_::Impl_(
+    [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
+    ::_pbi::ConstantInitialized) noexcept
+      : _cached_size_{0},
+        asset_kind_(
+            &::google::protobuf::internal::fixed_address_empty_string,
+            ::_pbi::ConstantInitialized()),
+        title_(
+            &::google::protobuf::internal::fixed_address_empty_string,
+            ::_pbi::ConstantInitialized()),
+        state_(
+            &::google::protobuf::internal::fixed_address_empty_string,
+            ::_pbi::ConstantInitialized()),
+        phase_(
+            &::google::protobuf::internal::fixed_address_empty_string,
+            ::_pbi::ConstantInitialized()),
+        order_id_(
+            &::google::protobuf::internal::fixed_address_empty_string,
+            ::_pbi::ConstantInitialized()),
+        listing_id_{::uint64_t{0u}},
+        seller_player_id_{::uint64_t{0u}},
+        market_zone_{0u},
+        fee_bps_{0u},
+        price_fen_{::uint64_t{0u}},
+        cooling_ms_{::uint64_t{0u}},
+        notice_end_ms_{::uint64_t{0u}},
+        sale_end_ms_{::uint64_t{0u}} {}
+
+template <typename>
+constexpr RmbConsignmentView::RmbConsignmentView(::_pbi::ConstantInitialized,
+                       const ::_pbi::ClassData* PROTOBUF_NONNULL class_data)
+    : ::google::protobuf::Message(
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+          class_data
+#endif  // PROTOBUF_CUSTOM_VTABLE
+          ),
+      _impl_(internal_visibility(), ::_pbi::ConstantInitialized()) {
+}
+inline void* PROTOBUF_NONNULL RmbConsignmentView::PlacementNew_(
+    const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena) {
+  return ::new (mem) RmbConsignmentView(arena);
+}
+constexpr auto RmbConsignmentView::InternalNewImpl_() {
+  return ::google::protobuf::internal::MessageCreator::CopyInit(sizeof(RmbConsignmentView), alignof(RmbConsignmentView));
+}
+constexpr auto RmbConsignmentView::InternalGenerateClassData_(
+    const MessageLite& prototype,
+    const ::google::protobuf::internal::TcParseTableBase* tc_table) {
+  return ::google::protobuf::internal::ClassDataFull{
+      ::google::protobuf::internal::ClassData{
+          &prototype,
+#ifndef PROTOBUF_MESSAGE_GLOBALS
+          &_table_.header,
+#else
+          tc_table,
+#endif
+          nullptr,  // IsInitialized
+          &RmbConsignmentView::MergeImpl,
+          ::google::protobuf::Message::GetNewImpl<RmbConsignmentView>(),
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+          &RmbConsignmentView::SharedDtor,
+          ::google::protobuf::Message::GetClearImpl<RmbConsignmentView>(), &RmbConsignmentView::ByteSizeLong,
+              &RmbConsignmentView::_InternalSerialize,
+#endif  // PROTOBUF_CUSTOM_VTABLE
+          PROTOBUF_FIELD_OFFSET(RmbConsignmentView, _impl_._cached_size_),
+          false,
+      },
+#ifdef PROTOBUF_MESSAGE_GLOBALS
+      &file_reflection_data[44],
+#else   // !PROTOBUF_MESSAGE_GLOBALS
+      &::_pbi::kDescriptorMethods,
+      &descriptor_table_proto_2ftrade_2fcommerce_2eproto,
+      nullptr,  // tracker
+#endif  // PROTOBUF_MESSAGE_GLOBALS
+  };
+}
+struct RmbConsignmentViewGlobalsTypeInternal : ::_pbi::MessageGlobalsBase {
+  constexpr RmbConsignmentViewGlobalsTypeInternal()
+      :
+#ifndef PROTOBUF_MESSAGE_GLOBALS
+        _default(::_pbi::ConstantInitialized{},
+                 RmbConsignmentView_class_data_.base())
+#else   // !PROTOBUF_MESSAGE_GLOBALS
+        MessageGlobalsBase(RmbConsignmentView::InternalGenerateClassData_(
+            _default, &RmbConsignmentView_globals_._table.header)),
+        _default(::_pbi::ConstantInitialized{}, GetClassData()),
+        _table(::_pbi::PrivateAccess::GenerateParseTable<RmbConsignmentView>(
+            GetClassData()))
+#endif  // PROTOBUF_MESSAGE_GLOBALS
+  {
+  }
+  ~RmbConsignmentViewGlobalsTypeInternal() {}
+  union {
+    alignas(::_pbi::kMaxMessageAlignment) RmbConsignmentView _default;
+  };
+#ifdef PROTOBUF_MESSAGE_GLOBALS
+  decltype(::_pbi::PrivateAccess::GenerateParseTable<RmbConsignmentView>(
+      ::std::declval<const ::_pbi::ClassData*>())) _table;
+#endif
+};
+#ifdef PROTOBUF_MESSAGE_GLOBALS
+static_assert(PROTOBUF_FIELD_OFFSET(RmbConsignmentViewGlobalsTypeInternal, _default) ==
+              ::_pbi::MessageGlobalsBase::OffsetToDefault());
+#endif  // PROTOBUF_MESSAGE_GLOBALS
+
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 PROTOBUF_MESSAGE_GLOBALS_CONST RmbConsignmentViewGlobalsTypeInternal RmbConsignmentView_globals_
+        PROTOBUF_MESSAGE_GLOBALS_SECTION(.data.rel.ro);
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+namespace {
+const ::_pbi::ClassData* RmbConsignmentView_get_class_data() {
+#ifdef PROTOBUF_MESSAGE_GLOBALS
+  return RmbConsignmentView_globals_.GetClassData();
+#else
+  return RmbConsignmentView_class_data_.base();
 #endif  // PROTOBUF_MESSAGE_GLOBALS
 }
 }  // namespace
@@ -1611,6 +2261,312 @@ const ::_pbi::ClassData* ListTradeMarketsRequest_get_class_data() {
 }
 }  // namespace
 #endif  // PROTOBUF_CUSTOM_VTABLE
+class ListSellerIncomesRequest::_Internal {
+ public:
+  using HasBits = decltype(::std::declval<ListSellerIncomesRequest>()._impl_._has_bits_);
+  static constexpr ::int32_t kHasBitsOffset =
+      8 * PROTOBUF_FIELD_OFFSET(ListSellerIncomesRequest, _impl_._has_bits_);
+};
+
+constexpr ListSellerIncomesRequest::ParseTableT_ ListSellerIncomesRequest::InternalGenerateParseTable_(const ::_pbi::ClassData* class_data) {
+  return ParseTableT_{
+    {
+      PROTOBUF_FIELD_OFFSET(ListSellerIncomesRequest, _impl_._has_bits_),
+      0, // no _extensions_
+      2, 8,  // max_field_number, fast_idx_mask
+      offsetof(ParseTableT_, field_lookup_table),
+      4294967292,  // skipmap
+      offsetof(ParseTableT_, field_entries),
+      2,  // num_field_entries
+      0,  // num_aux_entries
+      offsetof(ParseTableT_, field_names),  // no aux_entries
+      class_data,
+      nullptr,  // post_loop_handler
+      ::_pbi::TcParser::GenericFallback,  // fallback
+      #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
+      ::_pbi::TcParser::GetTable<::trade::ListSellerIncomesRequest>(),  // to_prefetch
+      #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
+    }, {{
+      // uint32 limit = 2;
+      {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(ListSellerIncomesRequest, _impl_.limit_), 1>(),
+       {16, 1, 0,
+        PROTOBUF_FIELD_OFFSET(ListSellerIncomesRequest, _impl_.limit_)}},
+      // string cursor = 1;
+      {::_pbi::TcParser::FastUS1,
+       {10, 0, 0,
+        PROTOBUF_FIELD_OFFSET(ListSellerIncomesRequest, _impl_.cursor_)}},
+    }}, {{
+      65535, 65535
+    }}, {{
+      // string cursor = 1;
+      {PROTOBUF_FIELD_OFFSET(ListSellerIncomesRequest, _impl_.cursor_), _Internal::kHasBitsOffset + 0, 0, (0 | ::_fl::kFcOptional | ::_fl::kUtf8String | ::_fl::kRepAString)},
+      // uint32 limit = 2;
+      {PROTOBUF_FIELD_OFFSET(ListSellerIncomesRequest, _impl_.limit_), _Internal::kHasBitsOffset + 1, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
+    }},
+    // no aux_entries
+    {{
+      "\36\6\0\0\0\0\0\0"
+      "trade.ListSellerIncomesRequest"
+      "cursor"
+    }},
+  };
+}
+
+
+inline constexpr ListSellerIncomesRequest::Impl_::Impl_(
+    [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
+    ::_pbi::ConstantInitialized) noexcept
+      : _cached_size_{0},
+        cursor_(
+            &::google::protobuf::internal::fixed_address_empty_string,
+            ::_pbi::ConstantInitialized()),
+        limit_{0u} {}
+
+template <typename>
+constexpr ListSellerIncomesRequest::ListSellerIncomesRequest(::_pbi::ConstantInitialized,
+                       const ::_pbi::ClassData* PROTOBUF_NONNULL class_data)
+    : ::google::protobuf::Message(
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+          class_data
+#endif  // PROTOBUF_CUSTOM_VTABLE
+          ),
+      _impl_(internal_visibility(), ::_pbi::ConstantInitialized()) {
+}
+inline void* PROTOBUF_NONNULL ListSellerIncomesRequest::PlacementNew_(
+    const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena) {
+  return ::new (mem) ListSellerIncomesRequest(arena);
+}
+constexpr auto ListSellerIncomesRequest::InternalNewImpl_() {
+  return ::google::protobuf::internal::MessageCreator::CopyInit(sizeof(ListSellerIncomesRequest), alignof(ListSellerIncomesRequest));
+}
+constexpr auto ListSellerIncomesRequest::InternalGenerateClassData_(
+    const MessageLite& prototype,
+    const ::google::protobuf::internal::TcParseTableBase* tc_table) {
+  return ::google::protobuf::internal::ClassDataFull{
+      ::google::protobuf::internal::ClassData{
+          &prototype,
+#ifndef PROTOBUF_MESSAGE_GLOBALS
+          &_table_.header,
+#else
+          tc_table,
+#endif
+          nullptr,  // IsInitialized
+          &ListSellerIncomesRequest::MergeImpl,
+          ::google::protobuf::Message::GetNewImpl<ListSellerIncomesRequest>(),
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+          &ListSellerIncomesRequest::SharedDtor,
+          ::google::protobuf::Message::GetClearImpl<ListSellerIncomesRequest>(), &ListSellerIncomesRequest::ByteSizeLong,
+              &ListSellerIncomesRequest::_InternalSerialize,
+#endif  // PROTOBUF_CUSTOM_VTABLE
+          PROTOBUF_FIELD_OFFSET(ListSellerIncomesRequest, _impl_._cached_size_),
+          false,
+      },
+#ifdef PROTOBUF_MESSAGE_GLOBALS
+      &file_reflection_data[47],
+#else   // !PROTOBUF_MESSAGE_GLOBALS
+      &::_pbi::kDescriptorMethods,
+      &descriptor_table_proto_2ftrade_2fcommerce_2eproto,
+      nullptr,  // tracker
+#endif  // PROTOBUF_MESSAGE_GLOBALS
+  };
+}
+struct ListSellerIncomesRequestGlobalsTypeInternal : ::_pbi::MessageGlobalsBase {
+  constexpr ListSellerIncomesRequestGlobalsTypeInternal()
+      :
+#ifndef PROTOBUF_MESSAGE_GLOBALS
+        _default(::_pbi::ConstantInitialized{},
+                 ListSellerIncomesRequest_class_data_.base())
+#else   // !PROTOBUF_MESSAGE_GLOBALS
+        MessageGlobalsBase(ListSellerIncomesRequest::InternalGenerateClassData_(
+            _default, &ListSellerIncomesRequest_globals_._table.header)),
+        _default(::_pbi::ConstantInitialized{}, GetClassData()),
+        _table(::_pbi::PrivateAccess::GenerateParseTable<ListSellerIncomesRequest>(
+            GetClassData()))
+#endif  // PROTOBUF_MESSAGE_GLOBALS
+  {
+  }
+  ~ListSellerIncomesRequestGlobalsTypeInternal() {}
+  union {
+    alignas(::_pbi::kMaxMessageAlignment) ListSellerIncomesRequest _default;
+  };
+#ifdef PROTOBUF_MESSAGE_GLOBALS
+  decltype(::_pbi::PrivateAccess::GenerateParseTable<ListSellerIncomesRequest>(
+      ::std::declval<const ::_pbi::ClassData*>())) _table;
+#endif
+};
+#ifdef PROTOBUF_MESSAGE_GLOBALS
+static_assert(PROTOBUF_FIELD_OFFSET(ListSellerIncomesRequestGlobalsTypeInternal, _default) ==
+              ::_pbi::MessageGlobalsBase::OffsetToDefault());
+#endif  // PROTOBUF_MESSAGE_GLOBALS
+
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 PROTOBUF_MESSAGE_GLOBALS_CONST ListSellerIncomesRequestGlobalsTypeInternal ListSellerIncomesRequest_globals_
+        PROTOBUF_MESSAGE_GLOBALS_SECTION(.data.rel.ro);
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+namespace {
+const ::_pbi::ClassData* ListSellerIncomesRequest_get_class_data() {
+#ifdef PROTOBUF_MESSAGE_GLOBALS
+  return ListSellerIncomesRequest_globals_.GetClassData();
+#else
+  return ListSellerIncomesRequest_class_data_.base();
+#endif  // PROTOBUF_MESSAGE_GLOBALS
+}
+}  // namespace
+#endif  // PROTOBUF_CUSTOM_VTABLE
+class ListRmbConsignmentsRequest::_Internal {
+ public:
+  using HasBits = decltype(::std::declval<ListRmbConsignmentsRequest>()._impl_._has_bits_);
+  static constexpr ::int32_t kHasBitsOffset =
+      8 * PROTOBUF_FIELD_OFFSET(ListRmbConsignmentsRequest, _impl_._has_bits_);
+};
+
+constexpr ListRmbConsignmentsRequest::ParseTableT_ ListRmbConsignmentsRequest::InternalGenerateParseTable_(const ::_pbi::ClassData* class_data) {
+  return ParseTableT_{
+    {
+      PROTOBUF_FIELD_OFFSET(ListRmbConsignmentsRequest, _impl_._has_bits_),
+      0, // no _extensions_
+      2, 8,  // max_field_number, fast_idx_mask
+      offsetof(ParseTableT_, field_lookup_table),
+      4294967292,  // skipmap
+      offsetof(ParseTableT_, field_entries),
+      2,  // num_field_entries
+      0,  // num_aux_entries
+      offsetof(ParseTableT_, field_names),  // no aux_entries
+      class_data,
+      nullptr,  // post_loop_handler
+      ::_pbi::TcParser::GenericFallback,  // fallback
+      #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
+      ::_pbi::TcParser::GetTable<::trade::ListRmbConsignmentsRequest>(),  // to_prefetch
+      #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
+    }, {{
+      // uint32 limit = 2;
+      {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(ListRmbConsignmentsRequest, _impl_.limit_), 1>(),
+       {16, 1, 0,
+        PROTOBUF_FIELD_OFFSET(ListRmbConsignmentsRequest, _impl_.limit_)}},
+      // string cursor = 1;
+      {::_pbi::TcParser::FastUS1,
+       {10, 0, 0,
+        PROTOBUF_FIELD_OFFSET(ListRmbConsignmentsRequest, _impl_.cursor_)}},
+    }}, {{
+      65535, 65535
+    }}, {{
+      // string cursor = 1;
+      {PROTOBUF_FIELD_OFFSET(ListRmbConsignmentsRequest, _impl_.cursor_), _Internal::kHasBitsOffset + 0, 0, (0 | ::_fl::kFcOptional | ::_fl::kUtf8String | ::_fl::kRepAString)},
+      // uint32 limit = 2;
+      {PROTOBUF_FIELD_OFFSET(ListRmbConsignmentsRequest, _impl_.limit_), _Internal::kHasBitsOffset + 1, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
+    }},
+    // no aux_entries
+    {{
+      "\40\6\0\0\0\0\0\0"
+      "trade.ListRmbConsignmentsRequest"
+      "cursor"
+    }},
+  };
+}
+
+
+inline constexpr ListRmbConsignmentsRequest::Impl_::Impl_(
+    [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
+    ::_pbi::ConstantInitialized) noexcept
+      : _cached_size_{0},
+        cursor_(
+            &::google::protobuf::internal::fixed_address_empty_string,
+            ::_pbi::ConstantInitialized()),
+        limit_{0u} {}
+
+template <typename>
+constexpr ListRmbConsignmentsRequest::ListRmbConsignmentsRequest(::_pbi::ConstantInitialized,
+                       const ::_pbi::ClassData* PROTOBUF_NONNULL class_data)
+    : ::google::protobuf::Message(
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+          class_data
+#endif  // PROTOBUF_CUSTOM_VTABLE
+          ),
+      _impl_(internal_visibility(), ::_pbi::ConstantInitialized()) {
+}
+inline void* PROTOBUF_NONNULL ListRmbConsignmentsRequest::PlacementNew_(
+    const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena) {
+  return ::new (mem) ListRmbConsignmentsRequest(arena);
+}
+constexpr auto ListRmbConsignmentsRequest::InternalNewImpl_() {
+  return ::google::protobuf::internal::MessageCreator::CopyInit(sizeof(ListRmbConsignmentsRequest), alignof(ListRmbConsignmentsRequest));
+}
+constexpr auto ListRmbConsignmentsRequest::InternalGenerateClassData_(
+    const MessageLite& prototype,
+    const ::google::protobuf::internal::TcParseTableBase* tc_table) {
+  return ::google::protobuf::internal::ClassDataFull{
+      ::google::protobuf::internal::ClassData{
+          &prototype,
+#ifndef PROTOBUF_MESSAGE_GLOBALS
+          &_table_.header,
+#else
+          tc_table,
+#endif
+          nullptr,  // IsInitialized
+          &ListRmbConsignmentsRequest::MergeImpl,
+          ::google::protobuf::Message::GetNewImpl<ListRmbConsignmentsRequest>(),
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+          &ListRmbConsignmentsRequest::SharedDtor,
+          ::google::protobuf::Message::GetClearImpl<ListRmbConsignmentsRequest>(), &ListRmbConsignmentsRequest::ByteSizeLong,
+              &ListRmbConsignmentsRequest::_InternalSerialize,
+#endif  // PROTOBUF_CUSTOM_VTABLE
+          PROTOBUF_FIELD_OFFSET(ListRmbConsignmentsRequest, _impl_._cached_size_),
+          false,
+      },
+#ifdef PROTOBUF_MESSAGE_GLOBALS
+      &file_reflection_data[41],
+#else   // !PROTOBUF_MESSAGE_GLOBALS
+      &::_pbi::kDescriptorMethods,
+      &descriptor_table_proto_2ftrade_2fcommerce_2eproto,
+      nullptr,  // tracker
+#endif  // PROTOBUF_MESSAGE_GLOBALS
+  };
+}
+struct ListRmbConsignmentsRequestGlobalsTypeInternal : ::_pbi::MessageGlobalsBase {
+  constexpr ListRmbConsignmentsRequestGlobalsTypeInternal()
+      :
+#ifndef PROTOBUF_MESSAGE_GLOBALS
+        _default(::_pbi::ConstantInitialized{},
+                 ListRmbConsignmentsRequest_class_data_.base())
+#else   // !PROTOBUF_MESSAGE_GLOBALS
+        MessageGlobalsBase(ListRmbConsignmentsRequest::InternalGenerateClassData_(
+            _default, &ListRmbConsignmentsRequest_globals_._table.header)),
+        _default(::_pbi::ConstantInitialized{}, GetClassData()),
+        _table(::_pbi::PrivateAccess::GenerateParseTable<ListRmbConsignmentsRequest>(
+            GetClassData()))
+#endif  // PROTOBUF_MESSAGE_GLOBALS
+  {
+  }
+  ~ListRmbConsignmentsRequestGlobalsTypeInternal() {}
+  union {
+    alignas(::_pbi::kMaxMessageAlignment) ListRmbConsignmentsRequest _default;
+  };
+#ifdef PROTOBUF_MESSAGE_GLOBALS
+  decltype(::_pbi::PrivateAccess::GenerateParseTable<ListRmbConsignmentsRequest>(
+      ::std::declval<const ::_pbi::ClassData*>())) _table;
+#endif
+};
+#ifdef PROTOBUF_MESSAGE_GLOBALS
+static_assert(PROTOBUF_FIELD_OFFSET(ListRmbConsignmentsRequestGlobalsTypeInternal, _default) ==
+              ::_pbi::MessageGlobalsBase::OffsetToDefault());
+#endif  // PROTOBUF_MESSAGE_GLOBALS
+
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 PROTOBUF_MESSAGE_GLOBALS_CONST ListRmbConsignmentsRequestGlobalsTypeInternal ListRmbConsignmentsRequest_globals_
+        PROTOBUF_MESSAGE_GLOBALS_SECTION(.data.rel.ro);
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+namespace {
+const ::_pbi::ClassData* ListRmbConsignmentsRequest_get_class_data() {
+#ifdef PROTOBUF_MESSAGE_GLOBALS
+  return ListRmbConsignmentsRequest_globals_.GetClassData();
+#else
+  return ListRmbConsignmentsRequest_class_data_.base();
+#endif  // PROTOBUF_MESSAGE_GLOBALS
+}
+}  // namespace
+#endif  // PROTOBUF_CUSTOM_VTABLE
 class ListOfficialSkusRequest::_Internal {
  public:
   using HasBits = decltype(::std::declval<ListOfficialSkusRequest>()._impl_._has_bits_);
@@ -2065,6 +3021,293 @@ const ::_pbi::ClassData* ListCommerceOrdersRequest_get_class_data() {
 }
 }  // namespace
 #endif  // PROTOBUF_CUSTOM_VTABLE
+class GetWithdrawalRequest::_Internal {
+ public:
+  using HasBits = decltype(::std::declval<GetWithdrawalRequest>()._impl_._has_bits_);
+  static constexpr ::int32_t kHasBitsOffset =
+      8 * PROTOBUF_FIELD_OFFSET(GetWithdrawalRequest, _impl_._has_bits_);
+};
+
+constexpr GetWithdrawalRequest::ParseTableT_ GetWithdrawalRequest::InternalGenerateParseTable_(const ::_pbi::ClassData* class_data) {
+  return ParseTableT_{
+    {
+      PROTOBUF_FIELD_OFFSET(GetWithdrawalRequest, _impl_._has_bits_),
+      0, // no _extensions_
+      1, 0,  // max_field_number, fast_idx_mask
+      offsetof(ParseTableT_, field_lookup_table),
+      4294967294,  // skipmap
+      offsetof(ParseTableT_, field_entries),
+      1,  // num_field_entries
+      0,  // num_aux_entries
+      offsetof(ParseTableT_, field_names),  // no aux_entries
+      class_data,
+      nullptr,  // post_loop_handler
+      ::_pbi::TcParser::GenericFallback,  // fallback
+      #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
+      ::_pbi::TcParser::GetTable<::trade::GetWithdrawalRequest>(),  // to_prefetch
+      #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
+    }, {{
+      // string withdrawal_id = 1;
+      {::_pbi::TcParser::FastUS1,
+       {10, 0, 0,
+        PROTOBUF_FIELD_OFFSET(GetWithdrawalRequest, _impl_.withdrawal_id_)}},
+    }}, {{
+      65535, 65535
+    }}, {{
+      // string withdrawal_id = 1;
+      {PROTOBUF_FIELD_OFFSET(GetWithdrawalRequest, _impl_.withdrawal_id_), _Internal::kHasBitsOffset + 0, 0, (0 | ::_fl::kFcOptional | ::_fl::kUtf8String | ::_fl::kRepAString)},
+    }},
+    // no aux_entries
+    {{
+      "\32\15\0\0\0\0\0\0"
+      "trade.GetWithdrawalRequest"
+      "withdrawal_id"
+    }},
+  };
+}
+
+
+inline constexpr GetWithdrawalRequest::Impl_::Impl_(
+    [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
+    ::_pbi::ConstantInitialized) noexcept
+      : _cached_size_{0},
+        withdrawal_id_(
+            &::google::protobuf::internal::fixed_address_empty_string,
+            ::_pbi::ConstantInitialized()) {}
+
+template <typename>
+constexpr GetWithdrawalRequest::GetWithdrawalRequest(::_pbi::ConstantInitialized,
+                       const ::_pbi::ClassData* PROTOBUF_NONNULL class_data)
+    : ::google::protobuf::Message(
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+          class_data
+#endif  // PROTOBUF_CUSTOM_VTABLE
+          ),
+      _impl_(internal_visibility(), ::_pbi::ConstantInitialized()) {
+}
+inline void* PROTOBUF_NONNULL GetWithdrawalRequest::PlacementNew_(
+    const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena) {
+  return ::new (mem) GetWithdrawalRequest(arena);
+}
+constexpr auto GetWithdrawalRequest::InternalNewImpl_() {
+  return ::google::protobuf::internal::MessageCreator::CopyInit(sizeof(GetWithdrawalRequest), alignof(GetWithdrawalRequest));
+}
+constexpr auto GetWithdrawalRequest::InternalGenerateClassData_(
+    const MessageLite& prototype,
+    const ::google::protobuf::internal::TcParseTableBase* tc_table) {
+  return ::google::protobuf::internal::ClassDataFull{
+      ::google::protobuf::internal::ClassData{
+          &prototype,
+#ifndef PROTOBUF_MESSAGE_GLOBALS
+          &_table_.header,
+#else
+          tc_table,
+#endif
+          nullptr,  // IsInitialized
+          &GetWithdrawalRequest::MergeImpl,
+          ::google::protobuf::Message::GetNewImpl<GetWithdrawalRequest>(),
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+          &GetWithdrawalRequest::SharedDtor,
+          ::google::protobuf::Message::GetClearImpl<GetWithdrawalRequest>(), &GetWithdrawalRequest::ByteSizeLong,
+              &GetWithdrawalRequest::_InternalSerialize,
+#endif  // PROTOBUF_CUSTOM_VTABLE
+          PROTOBUF_FIELD_OFFSET(GetWithdrawalRequest, _impl_._cached_size_),
+          false,
+      },
+#ifdef PROTOBUF_MESSAGE_GLOBALS
+      &file_reflection_data[51],
+#else   // !PROTOBUF_MESSAGE_GLOBALS
+      &::_pbi::kDescriptorMethods,
+      &descriptor_table_proto_2ftrade_2fcommerce_2eproto,
+      nullptr,  // tracker
+#endif  // PROTOBUF_MESSAGE_GLOBALS
+  };
+}
+struct GetWithdrawalRequestGlobalsTypeInternal : ::_pbi::MessageGlobalsBase {
+  constexpr GetWithdrawalRequestGlobalsTypeInternal()
+      :
+#ifndef PROTOBUF_MESSAGE_GLOBALS
+        _default(::_pbi::ConstantInitialized{},
+                 GetWithdrawalRequest_class_data_.base())
+#else   // !PROTOBUF_MESSAGE_GLOBALS
+        MessageGlobalsBase(GetWithdrawalRequest::InternalGenerateClassData_(
+            _default, &GetWithdrawalRequest_globals_._table.header)),
+        _default(::_pbi::ConstantInitialized{}, GetClassData()),
+        _table(::_pbi::PrivateAccess::GenerateParseTable<GetWithdrawalRequest>(
+            GetClassData()))
+#endif  // PROTOBUF_MESSAGE_GLOBALS
+  {
+  }
+  ~GetWithdrawalRequestGlobalsTypeInternal() {}
+  union {
+    alignas(::_pbi::kMaxMessageAlignment) GetWithdrawalRequest _default;
+  };
+#ifdef PROTOBUF_MESSAGE_GLOBALS
+  decltype(::_pbi::PrivateAccess::GenerateParseTable<GetWithdrawalRequest>(
+      ::std::declval<const ::_pbi::ClassData*>())) _table;
+#endif
+};
+#ifdef PROTOBUF_MESSAGE_GLOBALS
+static_assert(PROTOBUF_FIELD_OFFSET(GetWithdrawalRequestGlobalsTypeInternal, _default) ==
+              ::_pbi::MessageGlobalsBase::OffsetToDefault());
+#endif  // PROTOBUF_MESSAGE_GLOBALS
+
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 PROTOBUF_MESSAGE_GLOBALS_CONST GetWithdrawalRequestGlobalsTypeInternal GetWithdrawalRequest_globals_
+        PROTOBUF_MESSAGE_GLOBALS_SECTION(.data.rel.ro);
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+namespace {
+const ::_pbi::ClassData* GetWithdrawalRequest_get_class_data() {
+#ifdef PROTOBUF_MESSAGE_GLOBALS
+  return GetWithdrawalRequest_globals_.GetClassData();
+#else
+  return GetWithdrawalRequest_class_data_.base();
+#endif  // PROTOBUF_MESSAGE_GLOBALS
+}
+}  // namespace
+#endif  // PROTOBUF_CUSTOM_VTABLE
+class GetRmbConsignmentRequest::_Internal {
+ public:
+  using HasBits = decltype(::std::declval<GetRmbConsignmentRequest>()._impl_._has_bits_);
+  static constexpr ::int32_t kHasBitsOffset =
+      8 * PROTOBUF_FIELD_OFFSET(GetRmbConsignmentRequest, _impl_._has_bits_);
+};
+
+constexpr GetRmbConsignmentRequest::ParseTableT_ GetRmbConsignmentRequest::InternalGenerateParseTable_(const ::_pbi::ClassData* class_data) {
+  return ParseTableT_{
+    {
+      PROTOBUF_FIELD_OFFSET(GetRmbConsignmentRequest, _impl_._has_bits_),
+      0, // no _extensions_
+      1, 0,  // max_field_number, fast_idx_mask
+      offsetof(ParseTableT_, field_lookup_table),
+      4294967294,  // skipmap
+      offsetof(ParseTableT_, field_entries),
+      1,  // num_field_entries
+      0,  // num_aux_entries
+      offsetof(ParseTableT_, field_names),  // no aux_entries
+      class_data,
+      nullptr,  // post_loop_handler
+      ::_pbi::TcParser::GenericFallback,  // fallback
+      #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
+      ::_pbi::TcParser::GetTable<::trade::GetRmbConsignmentRequest>(),  // to_prefetch
+      #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
+    }, {{
+      // uint64 listing_id = 1;
+      {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(GetRmbConsignmentRequest, _impl_.listing_id_), 0>(),
+       {8, 0, 0,
+        PROTOBUF_FIELD_OFFSET(GetRmbConsignmentRequest, _impl_.listing_id_)}},
+    }}, {{
+      65535, 65535
+    }}, {{
+      // uint64 listing_id = 1;
+      {PROTOBUF_FIELD_OFFSET(GetRmbConsignmentRequest, _impl_.listing_id_), _Internal::kHasBitsOffset + 0, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
+    }},
+    // no aux_entries
+    {{
+    }},
+  };
+}
+
+
+inline constexpr GetRmbConsignmentRequest::Impl_::Impl_(
+    [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
+    ::_pbi::ConstantInitialized) noexcept
+      : _cached_size_{0},
+        listing_id_{::uint64_t{0u}} {}
+
+template <typename>
+constexpr GetRmbConsignmentRequest::GetRmbConsignmentRequest(::_pbi::ConstantInitialized,
+                       const ::_pbi::ClassData* PROTOBUF_NONNULL class_data)
+    : ::google::protobuf::Message(
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+          class_data
+#endif  // PROTOBUF_CUSTOM_VTABLE
+          ),
+      _impl_(internal_visibility(), ::_pbi::ConstantInitialized()) {
+}
+inline void* PROTOBUF_NONNULL GetRmbConsignmentRequest::PlacementNew_(
+    const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena) {
+  return ::new (mem) GetRmbConsignmentRequest(arena);
+}
+constexpr auto GetRmbConsignmentRequest::InternalNewImpl_() {
+  return ::google::protobuf::internal::MessageCreator::ZeroInit(sizeof(GetRmbConsignmentRequest), alignof(GetRmbConsignmentRequest));
+}
+constexpr auto GetRmbConsignmentRequest::InternalGenerateClassData_(
+    const MessageLite& prototype,
+    const ::google::protobuf::internal::TcParseTableBase* tc_table) {
+  return ::google::protobuf::internal::ClassDataFull{
+      ::google::protobuf::internal::ClassData{
+          &prototype,
+#ifndef PROTOBUF_MESSAGE_GLOBALS
+          &_table_.header,
+#else
+          tc_table,
+#endif
+          nullptr,  // IsInitialized
+          &GetRmbConsignmentRequest::MergeImpl,
+          ::google::protobuf::Message::GetNewImpl<GetRmbConsignmentRequest>(),
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+          &GetRmbConsignmentRequest::SharedDtor,
+          ::google::protobuf::Message::GetClearImpl<GetRmbConsignmentRequest>(), &GetRmbConsignmentRequest::ByteSizeLong,
+              &GetRmbConsignmentRequest::_InternalSerialize,
+#endif  // PROTOBUF_CUSTOM_VTABLE
+          PROTOBUF_FIELD_OFFSET(GetRmbConsignmentRequest, _impl_._cached_size_),
+          false,
+      },
+#ifdef PROTOBUF_MESSAGE_GLOBALS
+      &file_reflection_data[40],
+#else   // !PROTOBUF_MESSAGE_GLOBALS
+      &::_pbi::kDescriptorMethods,
+      &descriptor_table_proto_2ftrade_2fcommerce_2eproto,
+      nullptr,  // tracker
+#endif  // PROTOBUF_MESSAGE_GLOBALS
+  };
+}
+struct GetRmbConsignmentRequestGlobalsTypeInternal : ::_pbi::MessageGlobalsBase {
+  constexpr GetRmbConsignmentRequestGlobalsTypeInternal()
+      :
+#ifndef PROTOBUF_MESSAGE_GLOBALS
+        _default(::_pbi::ConstantInitialized{},
+                 GetRmbConsignmentRequest_class_data_.base())
+#else   // !PROTOBUF_MESSAGE_GLOBALS
+        MessageGlobalsBase(GetRmbConsignmentRequest::InternalGenerateClassData_(
+            _default, &GetRmbConsignmentRequest_globals_._table.header)),
+        _default(::_pbi::ConstantInitialized{}, GetClassData()),
+        _table(::_pbi::PrivateAccess::GenerateParseTable<GetRmbConsignmentRequest>(
+            GetClassData()))
+#endif  // PROTOBUF_MESSAGE_GLOBALS
+  {
+  }
+  ~GetRmbConsignmentRequestGlobalsTypeInternal() {}
+  union {
+    alignas(::_pbi::kMaxMessageAlignment) GetRmbConsignmentRequest _default;
+  };
+#ifdef PROTOBUF_MESSAGE_GLOBALS
+  decltype(::_pbi::PrivateAccess::GenerateParseTable<GetRmbConsignmentRequest>(
+      ::std::declval<const ::_pbi::ClassData*>())) _table;
+#endif
+};
+#ifdef PROTOBUF_MESSAGE_GLOBALS
+static_assert(PROTOBUF_FIELD_OFFSET(GetRmbConsignmentRequestGlobalsTypeInternal, _default) ==
+              ::_pbi::MessageGlobalsBase::OffsetToDefault());
+#endif  // PROTOBUF_MESSAGE_GLOBALS
+
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 PROTOBUF_MESSAGE_GLOBALS_CONST GetRmbConsignmentRequestGlobalsTypeInternal GetRmbConsignmentRequest_globals_
+        PROTOBUF_MESSAGE_GLOBALS_SECTION(.data.rel.ro);
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+namespace {
+const ::_pbi::ClassData* GetRmbConsignmentRequest_get_class_data() {
+#ifdef PROTOBUF_MESSAGE_GLOBALS
+  return GetRmbConsignmentRequest_globals_.GetClassData();
+#else
+  return GetRmbConsignmentRequest_class_data_.base();
+#endif  // PROTOBUF_MESSAGE_GLOBALS
+}
+}  // namespace
+#endif  // PROTOBUF_CUSTOM_VTABLE
 class GetMarketDepthRequest::_Internal {
  public:
   using HasBits = decltype(::std::declval<GetMarketDepthRequest>()._impl_._has_bits_);
@@ -2509,6 +3752,159 @@ const ::_pbi::ClassData* GetAuctionLotRequest_get_class_data() {
   return GetAuctionLotRequest_globals_.GetClassData();
 #else
   return GetAuctionLotRequest_class_data_.base();
+#endif  // PROTOBUF_MESSAGE_GLOBALS
+}
+}  // namespace
+#endif  // PROTOBUF_CUSTOM_VTABLE
+class CreateWithdrawalRequest::_Internal {
+ public:
+  using HasBits = decltype(::std::declval<CreateWithdrawalRequest>()._impl_._has_bits_);
+  static constexpr ::int32_t kHasBitsOffset =
+      8 * PROTOBUF_FIELD_OFFSET(CreateWithdrawalRequest, _impl_._has_bits_);
+};
+
+constexpr CreateWithdrawalRequest::ParseTableT_ CreateWithdrawalRequest::InternalGenerateParseTable_(const ::_pbi::ClassData* class_data) {
+  return ParseTableT_{
+    {
+      PROTOBUF_FIELD_OFFSET(CreateWithdrawalRequest, _impl_._has_bits_),
+      0, // no _extensions_
+      2, 8,  // max_field_number, fast_idx_mask
+      offsetof(ParseTableT_, field_lookup_table),
+      4294967292,  // skipmap
+      offsetof(ParseTableT_, field_entries),
+      2,  // num_field_entries
+      0,  // num_aux_entries
+      offsetof(ParseTableT_, field_names),  // no aux_entries
+      class_data,
+      nullptr,  // post_loop_handler
+      ::_pbi::TcParser::GenericFallback,  // fallback
+      #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
+      ::_pbi::TcParser::GetTable<::trade::CreateWithdrawalRequest>(),  // to_prefetch
+      #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
+    }, {{
+      // uint64 amount_fen = 2;
+      {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(CreateWithdrawalRequest, _impl_.amount_fen_), 1>(),
+       {16, 1, 0,
+        PROTOBUF_FIELD_OFFSET(CreateWithdrawalRequest, _impl_.amount_fen_)}},
+      // string client_request_id = 1;
+      {::_pbi::TcParser::FastUS1,
+       {10, 0, 0,
+        PROTOBUF_FIELD_OFFSET(CreateWithdrawalRequest, _impl_.client_request_id_)}},
+    }}, {{
+      65535, 65535
+    }}, {{
+      // string client_request_id = 1;
+      {PROTOBUF_FIELD_OFFSET(CreateWithdrawalRequest, _impl_.client_request_id_), _Internal::kHasBitsOffset + 0, 0, (0 | ::_fl::kFcOptional | ::_fl::kUtf8String | ::_fl::kRepAString)},
+      // uint64 amount_fen = 2;
+      {PROTOBUF_FIELD_OFFSET(CreateWithdrawalRequest, _impl_.amount_fen_), _Internal::kHasBitsOffset + 1, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
+    }},
+    // no aux_entries
+    {{
+      "\35\21\0\0\0\0\0\0"
+      "trade.CreateWithdrawalRequest"
+      "client_request_id"
+    }},
+  };
+}
+
+
+inline constexpr CreateWithdrawalRequest::Impl_::Impl_(
+    [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
+    ::_pbi::ConstantInitialized) noexcept
+      : _cached_size_{0},
+        client_request_id_(
+            &::google::protobuf::internal::fixed_address_empty_string,
+            ::_pbi::ConstantInitialized()),
+        amount_fen_{::uint64_t{0u}} {}
+
+template <typename>
+constexpr CreateWithdrawalRequest::CreateWithdrawalRequest(::_pbi::ConstantInitialized,
+                       const ::_pbi::ClassData* PROTOBUF_NONNULL class_data)
+    : ::google::protobuf::Message(
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+          class_data
+#endif  // PROTOBUF_CUSTOM_VTABLE
+          ),
+      _impl_(internal_visibility(), ::_pbi::ConstantInitialized()) {
+}
+inline void* PROTOBUF_NONNULL CreateWithdrawalRequest::PlacementNew_(
+    const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena) {
+  return ::new (mem) CreateWithdrawalRequest(arena);
+}
+constexpr auto CreateWithdrawalRequest::InternalNewImpl_() {
+  return ::google::protobuf::internal::MessageCreator::CopyInit(sizeof(CreateWithdrawalRequest), alignof(CreateWithdrawalRequest));
+}
+constexpr auto CreateWithdrawalRequest::InternalGenerateClassData_(
+    const MessageLite& prototype,
+    const ::google::protobuf::internal::TcParseTableBase* tc_table) {
+  return ::google::protobuf::internal::ClassDataFull{
+      ::google::protobuf::internal::ClassData{
+          &prototype,
+#ifndef PROTOBUF_MESSAGE_GLOBALS
+          &_table_.header,
+#else
+          tc_table,
+#endif
+          nullptr,  // IsInitialized
+          &CreateWithdrawalRequest::MergeImpl,
+          ::google::protobuf::Message::GetNewImpl<CreateWithdrawalRequest>(),
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+          &CreateWithdrawalRequest::SharedDtor,
+          ::google::protobuf::Message::GetClearImpl<CreateWithdrawalRequest>(), &CreateWithdrawalRequest::ByteSizeLong,
+              &CreateWithdrawalRequest::_InternalSerialize,
+#endif  // PROTOBUF_CUSTOM_VTABLE
+          PROTOBUF_FIELD_OFFSET(CreateWithdrawalRequest, _impl_._cached_size_),
+          false,
+      },
+#ifdef PROTOBUF_MESSAGE_GLOBALS
+      &file_reflection_data[50],
+#else   // !PROTOBUF_MESSAGE_GLOBALS
+      &::_pbi::kDescriptorMethods,
+      &descriptor_table_proto_2ftrade_2fcommerce_2eproto,
+      nullptr,  // tracker
+#endif  // PROTOBUF_MESSAGE_GLOBALS
+  };
+}
+struct CreateWithdrawalRequestGlobalsTypeInternal : ::_pbi::MessageGlobalsBase {
+  constexpr CreateWithdrawalRequestGlobalsTypeInternal()
+      :
+#ifndef PROTOBUF_MESSAGE_GLOBALS
+        _default(::_pbi::ConstantInitialized{},
+                 CreateWithdrawalRequest_class_data_.base())
+#else   // !PROTOBUF_MESSAGE_GLOBALS
+        MessageGlobalsBase(CreateWithdrawalRequest::InternalGenerateClassData_(
+            _default, &CreateWithdrawalRequest_globals_._table.header)),
+        _default(::_pbi::ConstantInitialized{}, GetClassData()),
+        _table(::_pbi::PrivateAccess::GenerateParseTable<CreateWithdrawalRequest>(
+            GetClassData()))
+#endif  // PROTOBUF_MESSAGE_GLOBALS
+  {
+  }
+  ~CreateWithdrawalRequestGlobalsTypeInternal() {}
+  union {
+    alignas(::_pbi::kMaxMessageAlignment) CreateWithdrawalRequest _default;
+  };
+#ifdef PROTOBUF_MESSAGE_GLOBALS
+  decltype(::_pbi::PrivateAccess::GenerateParseTable<CreateWithdrawalRequest>(
+      ::std::declval<const ::_pbi::ClassData*>())) _table;
+#endif
+};
+#ifdef PROTOBUF_MESSAGE_GLOBALS
+static_assert(PROTOBUF_FIELD_OFFSET(CreateWithdrawalRequestGlobalsTypeInternal, _default) ==
+              ::_pbi::MessageGlobalsBase::OffsetToDefault());
+#endif  // PROTOBUF_MESSAGE_GLOBALS
+
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 PROTOBUF_MESSAGE_GLOBALS_CONST CreateWithdrawalRequestGlobalsTypeInternal CreateWithdrawalRequest_globals_
+        PROTOBUF_MESSAGE_GLOBALS_SECTION(.data.rel.ro);
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+namespace {
+const ::_pbi::ClassData* CreateWithdrawalRequest_get_class_data() {
+#ifdef PROTOBUF_MESSAGE_GLOBALS
+  return CreateWithdrawalRequest_globals_.GetClassData();
+#else
+  return CreateWithdrawalRequest_class_data_.base();
 #endif  // PROTOBUF_MESSAGE_GLOBALS
 }
 }  // namespace
@@ -3049,6 +4445,147 @@ const ::_pbi::ClassData* CommerceOrderView_get_class_data() {
   return CommerceOrderView_globals_.GetClassData();
 #else
   return CommerceOrderView_class_data_.base();
+#endif  // PROTOBUF_MESSAGE_GLOBALS
+}
+}  // namespace
+#endif  // PROTOBUF_CUSTOM_VTABLE
+class CancelRmbConsignmentRequest::_Internal {
+ public:
+  using HasBits = decltype(::std::declval<CancelRmbConsignmentRequest>()._impl_._has_bits_);
+  static constexpr ::int32_t kHasBitsOffset =
+      8 * PROTOBUF_FIELD_OFFSET(CancelRmbConsignmentRequest, _impl_._has_bits_);
+};
+
+constexpr CancelRmbConsignmentRequest::ParseTableT_ CancelRmbConsignmentRequest::InternalGenerateParseTable_(const ::_pbi::ClassData* class_data) {
+  return ParseTableT_{
+    {
+      PROTOBUF_FIELD_OFFSET(CancelRmbConsignmentRequest, _impl_._has_bits_),
+      0, // no _extensions_
+      1, 0,  // max_field_number, fast_idx_mask
+      offsetof(ParseTableT_, field_lookup_table),
+      4294967294,  // skipmap
+      offsetof(ParseTableT_, field_entries),
+      1,  // num_field_entries
+      0,  // num_aux_entries
+      offsetof(ParseTableT_, field_names),  // no aux_entries
+      class_data,
+      nullptr,  // post_loop_handler
+      ::_pbi::TcParser::GenericFallback,  // fallback
+      #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
+      ::_pbi::TcParser::GetTable<::trade::CancelRmbConsignmentRequest>(),  // to_prefetch
+      #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
+    }, {{
+      // uint64 listing_id = 1;
+      {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(CancelRmbConsignmentRequest, _impl_.listing_id_), 0>(),
+       {8, 0, 0,
+        PROTOBUF_FIELD_OFFSET(CancelRmbConsignmentRequest, _impl_.listing_id_)}},
+    }}, {{
+      65535, 65535
+    }}, {{
+      // uint64 listing_id = 1;
+      {PROTOBUF_FIELD_OFFSET(CancelRmbConsignmentRequest, _impl_.listing_id_), _Internal::kHasBitsOffset + 0, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
+    }},
+    // no aux_entries
+    {{
+    }},
+  };
+}
+
+
+inline constexpr CancelRmbConsignmentRequest::Impl_::Impl_(
+    [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
+    ::_pbi::ConstantInitialized) noexcept
+      : _cached_size_{0},
+        listing_id_{::uint64_t{0u}} {}
+
+template <typename>
+constexpr CancelRmbConsignmentRequest::CancelRmbConsignmentRequest(::_pbi::ConstantInitialized,
+                       const ::_pbi::ClassData* PROTOBUF_NONNULL class_data)
+    : ::google::protobuf::Message(
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+          class_data
+#endif  // PROTOBUF_CUSTOM_VTABLE
+          ),
+      _impl_(internal_visibility(), ::_pbi::ConstantInitialized()) {
+}
+inline void* PROTOBUF_NONNULL CancelRmbConsignmentRequest::PlacementNew_(
+    const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena) {
+  return ::new (mem) CancelRmbConsignmentRequest(arena);
+}
+constexpr auto CancelRmbConsignmentRequest::InternalNewImpl_() {
+  return ::google::protobuf::internal::MessageCreator::ZeroInit(sizeof(CancelRmbConsignmentRequest), alignof(CancelRmbConsignmentRequest));
+}
+constexpr auto CancelRmbConsignmentRequest::InternalGenerateClassData_(
+    const MessageLite& prototype,
+    const ::google::protobuf::internal::TcParseTableBase* tc_table) {
+  return ::google::protobuf::internal::ClassDataFull{
+      ::google::protobuf::internal::ClassData{
+          &prototype,
+#ifndef PROTOBUF_MESSAGE_GLOBALS
+          &_table_.header,
+#else
+          tc_table,
+#endif
+          nullptr,  // IsInitialized
+          &CancelRmbConsignmentRequest::MergeImpl,
+          ::google::protobuf::Message::GetNewImpl<CancelRmbConsignmentRequest>(),
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+          &CancelRmbConsignmentRequest::SharedDtor,
+          ::google::protobuf::Message::GetClearImpl<CancelRmbConsignmentRequest>(), &CancelRmbConsignmentRequest::ByteSizeLong,
+              &CancelRmbConsignmentRequest::_InternalSerialize,
+#endif  // PROTOBUF_CUSTOM_VTABLE
+          PROTOBUF_FIELD_OFFSET(CancelRmbConsignmentRequest, _impl_._cached_size_),
+          false,
+      },
+#ifdef PROTOBUF_MESSAGE_GLOBALS
+      &file_reflection_data[43],
+#else   // !PROTOBUF_MESSAGE_GLOBALS
+      &::_pbi::kDescriptorMethods,
+      &descriptor_table_proto_2ftrade_2fcommerce_2eproto,
+      nullptr,  // tracker
+#endif  // PROTOBUF_MESSAGE_GLOBALS
+  };
+}
+struct CancelRmbConsignmentRequestGlobalsTypeInternal : ::_pbi::MessageGlobalsBase {
+  constexpr CancelRmbConsignmentRequestGlobalsTypeInternal()
+      :
+#ifndef PROTOBUF_MESSAGE_GLOBALS
+        _default(::_pbi::ConstantInitialized{},
+                 CancelRmbConsignmentRequest_class_data_.base())
+#else   // !PROTOBUF_MESSAGE_GLOBALS
+        MessageGlobalsBase(CancelRmbConsignmentRequest::InternalGenerateClassData_(
+            _default, &CancelRmbConsignmentRequest_globals_._table.header)),
+        _default(::_pbi::ConstantInitialized{}, GetClassData()),
+        _table(::_pbi::PrivateAccess::GenerateParseTable<CancelRmbConsignmentRequest>(
+            GetClassData()))
+#endif  // PROTOBUF_MESSAGE_GLOBALS
+  {
+  }
+  ~CancelRmbConsignmentRequestGlobalsTypeInternal() {}
+  union {
+    alignas(::_pbi::kMaxMessageAlignment) CancelRmbConsignmentRequest _default;
+  };
+#ifdef PROTOBUF_MESSAGE_GLOBALS
+  decltype(::_pbi::PrivateAccess::GenerateParseTable<CancelRmbConsignmentRequest>(
+      ::std::declval<const ::_pbi::ClassData*>())) _table;
+#endif
+};
+#ifdef PROTOBUF_MESSAGE_GLOBALS
+static_assert(PROTOBUF_FIELD_OFFSET(CancelRmbConsignmentRequestGlobalsTypeInternal, _default) ==
+              ::_pbi::MessageGlobalsBase::OffsetToDefault());
+#endif  // PROTOBUF_MESSAGE_GLOBALS
+
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 PROTOBUF_MESSAGE_GLOBALS_CONST CancelRmbConsignmentRequestGlobalsTypeInternal CancelRmbConsignmentRequest_globals_
+        PROTOBUF_MESSAGE_GLOBALS_SECTION(.data.rel.ro);
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+namespace {
+const ::_pbi::ClassData* CancelRmbConsignmentRequest_get_class_data() {
+#ifdef PROTOBUF_MESSAGE_GLOBALS
+  return CancelRmbConsignmentRequest_globals_.GetClassData();
+#else
+  return CancelRmbConsignmentRequest_class_data_.base();
 #endif  // PROTOBUF_MESSAGE_GLOBALS
 }
 }  // namespace
@@ -3637,6 +5174,159 @@ const ::_pbi::ClassData* CancelAuctionLotRequest_get_class_data() {
 }
 }  // namespace
 #endif  // PROTOBUF_CUSTOM_VTABLE
+class BuyRmbConsignmentRequest::_Internal {
+ public:
+  using HasBits = decltype(::std::declval<BuyRmbConsignmentRequest>()._impl_._has_bits_);
+  static constexpr ::int32_t kHasBitsOffset =
+      8 * PROTOBUF_FIELD_OFFSET(BuyRmbConsignmentRequest, _impl_._has_bits_);
+};
+
+constexpr BuyRmbConsignmentRequest::ParseTableT_ BuyRmbConsignmentRequest::InternalGenerateParseTable_(const ::_pbi::ClassData* class_data) {
+  return ParseTableT_{
+    {
+      PROTOBUF_FIELD_OFFSET(BuyRmbConsignmentRequest, _impl_._has_bits_),
+      0, // no _extensions_
+      2, 8,  // max_field_number, fast_idx_mask
+      offsetof(ParseTableT_, field_lookup_table),
+      4294967292,  // skipmap
+      offsetof(ParseTableT_, field_entries),
+      2,  // num_field_entries
+      0,  // num_aux_entries
+      offsetof(ParseTableT_, field_names),  // no aux_entries
+      class_data,
+      nullptr,  // post_loop_handler
+      ::_pbi::TcParser::GenericFallback,  // fallback
+      #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
+      ::_pbi::TcParser::GetTable<::trade::BuyRmbConsignmentRequest>(),  // to_prefetch
+      #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
+    }, {{
+      // string client_request_id = 2;
+      {::_pbi::TcParser::FastUS1,
+       {18, 0, 0,
+        PROTOBUF_FIELD_OFFSET(BuyRmbConsignmentRequest, _impl_.client_request_id_)}},
+      // uint64 listing_id = 1;
+      {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(BuyRmbConsignmentRequest, _impl_.listing_id_), 1>(),
+       {8, 1, 0,
+        PROTOBUF_FIELD_OFFSET(BuyRmbConsignmentRequest, _impl_.listing_id_)}},
+    }}, {{
+      65535, 65535
+    }}, {{
+      // uint64 listing_id = 1;
+      {PROTOBUF_FIELD_OFFSET(BuyRmbConsignmentRequest, _impl_.listing_id_), _Internal::kHasBitsOffset + 1, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
+      // string client_request_id = 2;
+      {PROTOBUF_FIELD_OFFSET(BuyRmbConsignmentRequest, _impl_.client_request_id_), _Internal::kHasBitsOffset + 0, 0, (0 | ::_fl::kFcOptional | ::_fl::kUtf8String | ::_fl::kRepAString)},
+    }},
+    // no aux_entries
+    {{
+      "\36\0\21\0\0\0\0\0"
+      "trade.BuyRmbConsignmentRequest"
+      "client_request_id"
+    }},
+  };
+}
+
+
+inline constexpr BuyRmbConsignmentRequest::Impl_::Impl_(
+    [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
+    ::_pbi::ConstantInitialized) noexcept
+      : _cached_size_{0},
+        client_request_id_(
+            &::google::protobuf::internal::fixed_address_empty_string,
+            ::_pbi::ConstantInitialized()),
+        listing_id_{::uint64_t{0u}} {}
+
+template <typename>
+constexpr BuyRmbConsignmentRequest::BuyRmbConsignmentRequest(::_pbi::ConstantInitialized,
+                       const ::_pbi::ClassData* PROTOBUF_NONNULL class_data)
+    : ::google::protobuf::Message(
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+          class_data
+#endif  // PROTOBUF_CUSTOM_VTABLE
+          ),
+      _impl_(internal_visibility(), ::_pbi::ConstantInitialized()) {
+}
+inline void* PROTOBUF_NONNULL BuyRmbConsignmentRequest::PlacementNew_(
+    const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena) {
+  return ::new (mem) BuyRmbConsignmentRequest(arena);
+}
+constexpr auto BuyRmbConsignmentRequest::InternalNewImpl_() {
+  return ::google::protobuf::internal::MessageCreator::CopyInit(sizeof(BuyRmbConsignmentRequest), alignof(BuyRmbConsignmentRequest));
+}
+constexpr auto BuyRmbConsignmentRequest::InternalGenerateClassData_(
+    const MessageLite& prototype,
+    const ::google::protobuf::internal::TcParseTableBase* tc_table) {
+  return ::google::protobuf::internal::ClassDataFull{
+      ::google::protobuf::internal::ClassData{
+          &prototype,
+#ifndef PROTOBUF_MESSAGE_GLOBALS
+          &_table_.header,
+#else
+          tc_table,
+#endif
+          nullptr,  // IsInitialized
+          &BuyRmbConsignmentRequest::MergeImpl,
+          ::google::protobuf::Message::GetNewImpl<BuyRmbConsignmentRequest>(),
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+          &BuyRmbConsignmentRequest::SharedDtor,
+          ::google::protobuf::Message::GetClearImpl<BuyRmbConsignmentRequest>(), &BuyRmbConsignmentRequest::ByteSizeLong,
+              &BuyRmbConsignmentRequest::_InternalSerialize,
+#endif  // PROTOBUF_CUSTOM_VTABLE
+          PROTOBUF_FIELD_OFFSET(BuyRmbConsignmentRequest, _impl_._cached_size_),
+          false,
+      },
+#ifdef PROTOBUF_MESSAGE_GLOBALS
+      &file_reflection_data[42],
+#else   // !PROTOBUF_MESSAGE_GLOBALS
+      &::_pbi::kDescriptorMethods,
+      &descriptor_table_proto_2ftrade_2fcommerce_2eproto,
+      nullptr,  // tracker
+#endif  // PROTOBUF_MESSAGE_GLOBALS
+  };
+}
+struct BuyRmbConsignmentRequestGlobalsTypeInternal : ::_pbi::MessageGlobalsBase {
+  constexpr BuyRmbConsignmentRequestGlobalsTypeInternal()
+      :
+#ifndef PROTOBUF_MESSAGE_GLOBALS
+        _default(::_pbi::ConstantInitialized{},
+                 BuyRmbConsignmentRequest_class_data_.base())
+#else   // !PROTOBUF_MESSAGE_GLOBALS
+        MessageGlobalsBase(BuyRmbConsignmentRequest::InternalGenerateClassData_(
+            _default, &BuyRmbConsignmentRequest_globals_._table.header)),
+        _default(::_pbi::ConstantInitialized{}, GetClassData()),
+        _table(::_pbi::PrivateAccess::GenerateParseTable<BuyRmbConsignmentRequest>(
+            GetClassData()))
+#endif  // PROTOBUF_MESSAGE_GLOBALS
+  {
+  }
+  ~BuyRmbConsignmentRequestGlobalsTypeInternal() {}
+  union {
+    alignas(::_pbi::kMaxMessageAlignment) BuyRmbConsignmentRequest _default;
+  };
+#ifdef PROTOBUF_MESSAGE_GLOBALS
+  decltype(::_pbi::PrivateAccess::GenerateParseTable<BuyRmbConsignmentRequest>(
+      ::std::declval<const ::_pbi::ClassData*>())) _table;
+#endif
+};
+#ifdef PROTOBUF_MESSAGE_GLOBALS
+static_assert(PROTOBUF_FIELD_OFFSET(BuyRmbConsignmentRequestGlobalsTypeInternal, _default) ==
+              ::_pbi::MessageGlobalsBase::OffsetToDefault());
+#endif  // PROTOBUF_MESSAGE_GLOBALS
+
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 PROTOBUF_MESSAGE_GLOBALS_CONST BuyRmbConsignmentRequestGlobalsTypeInternal BuyRmbConsignmentRequest_globals_
+        PROTOBUF_MESSAGE_GLOBALS_SECTION(.data.rel.ro);
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+namespace {
+const ::_pbi::ClassData* BuyRmbConsignmentRequest_get_class_data() {
+#ifdef PROTOBUF_MESSAGE_GLOBALS
+  return BuyRmbConsignmentRequest_globals_.GetClassData();
+#else
+  return BuyRmbConsignmentRequest_class_data_.base();
+#endif  // PROTOBUF_MESSAGE_GLOBALS
+}
+}  // namespace
+#endif  // PROTOBUF_CUSTOM_VTABLE
 class BuyConsignmentRequest::_Internal {
  public:
   using HasBits = decltype(::std::declval<BuyConsignmentRequest>()._impl_._has_bits_);
@@ -4181,6 +5871,165 @@ const ::_pbi::ClassData* AuctionLotView_get_class_data() {
 }
 }  // namespace
 #endif  // PROTOBUF_CUSTOM_VTABLE
+class WithdrawalResponse::_Internal {
+ public:
+  using HasBits = decltype(::std::declval<WithdrawalResponse>()._impl_._has_bits_);
+  static constexpr ::int32_t kHasBitsOffset =
+      8 * PROTOBUF_FIELD_OFFSET(WithdrawalResponse, _impl_._has_bits_);
+};
+
+constexpr WithdrawalResponse::ParseTableT_ WithdrawalResponse::InternalGenerateParseTable_(const ::_pbi::ClassData* class_data) {
+  return ParseTableT_{
+    {
+      PROTOBUF_FIELD_OFFSET(WithdrawalResponse, _impl_._has_bits_),
+      0, // no _extensions_
+      2, 8,  // max_field_number, fast_idx_mask
+      offsetof(ParseTableT_, field_lookup_table),
+      4294967292,  // skipmap
+      offsetof(ParseTableT_, field_entries),
+      2,  // num_field_entries
+      2,  // num_aux_entries
+      offsetof(ParseTableT_, aux_entries),
+      class_data,
+      nullptr,  // post_loop_handler
+      ::_pbi::TcParser::GenericFallback,  // fallback
+      #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
+      ::_pbi::TcParser::GetTable<::trade::WithdrawalResponse>(),  // to_prefetch
+      #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
+    }, {{
+      // .trade.RmbWithdrawalView withdrawal = 2;
+      {::_pbi::TcParser::FastMtS1,
+       {18, 1, 1,
+        PROTOBUF_FIELD_OFFSET(WithdrawalResponse, _impl_.withdrawal_)}},
+      // .TipInfoMessage error_message = 1;
+      {::_pbi::TcParser::FastMtS1,
+       {10, 0, 0,
+        PROTOBUF_FIELD_OFFSET(WithdrawalResponse, _impl_.error_message_)}},
+    }}, {{
+      65535, 65535
+    }}, {{
+      // .TipInfoMessage error_message = 1;
+      {PROTOBUF_FIELD_OFFSET(WithdrawalResponse, _impl_.error_message_), _Internal::kHasBitsOffset + 0, 0, (0 | ::_fl::kFcOptional | ::_fl::kMessage | ::_fl::kTvTable)},
+      // .trade.RmbWithdrawalView withdrawal = 2;
+      {PROTOBUF_FIELD_OFFSET(WithdrawalResponse, _impl_.withdrawal_), _Internal::kHasBitsOffset + 1, 1, (0 | ::_fl::kFcOptional | ::_fl::kMessage | ::_fl::kTvTable)},
+    }},
+    {{
+        #ifndef PROTOBUF_MESSAGE_GLOBALS
+        {::_pbi::TcParser::GetTable<::TipInfoMessage>()},
+        #else
+        {::_pbi::FieldAuxMessageGlobals(), &::TipInfoMessage_globals_},
+        #endif
+        #ifndef PROTOBUF_MESSAGE_GLOBALS
+        {::_pbi::TcParser::GetTable<::trade::RmbWithdrawalView>()},
+        #else
+        {::_pbi::FieldAuxMessageGlobals(), &::trade::RmbWithdrawalView_globals_},
+        #endif
+    }},
+    {{
+    }},
+  };
+}
+
+
+inline constexpr WithdrawalResponse::Impl_::Impl_(
+    [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
+    ::_pbi::ConstantInitialized) noexcept
+      : _cached_size_{0},
+        error_message_{nullptr},
+        withdrawal_{nullptr} {}
+
+template <typename>
+constexpr WithdrawalResponse::WithdrawalResponse(::_pbi::ConstantInitialized,
+                       const ::_pbi::ClassData* PROTOBUF_NONNULL class_data)
+    : ::google::protobuf::Message(
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+          class_data
+#endif  // PROTOBUF_CUSTOM_VTABLE
+          ),
+      _impl_(internal_visibility(), ::_pbi::ConstantInitialized()) {
+}
+inline void* PROTOBUF_NONNULL WithdrawalResponse::PlacementNew_(
+    const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena) {
+  return ::new (mem) WithdrawalResponse(arena);
+}
+constexpr auto WithdrawalResponse::InternalNewImpl_() {
+  return ::google::protobuf::internal::MessageCreator::ZeroInit(sizeof(WithdrawalResponse), alignof(WithdrawalResponse));
+}
+constexpr auto WithdrawalResponse::InternalGenerateClassData_(
+    const MessageLite& prototype,
+    const ::google::protobuf::internal::TcParseTableBase* tc_table) {
+  return ::google::protobuf::internal::ClassDataFull{
+      ::google::protobuf::internal::ClassData{
+          &prototype,
+#ifndef PROTOBUF_MESSAGE_GLOBALS
+          &_table_.header,
+#else
+          tc_table,
+#endif
+          nullptr,  // IsInitialized
+          &WithdrawalResponse::MergeImpl,
+          ::google::protobuf::Message::GetNewImpl<WithdrawalResponse>(),
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+          &WithdrawalResponse::SharedDtor,
+          ::google::protobuf::Message::GetClearImpl<WithdrawalResponse>(), &WithdrawalResponse::ByteSizeLong,
+              &WithdrawalResponse::_InternalSerialize,
+#endif  // PROTOBUF_CUSTOM_VTABLE
+          PROTOBUF_FIELD_OFFSET(WithdrawalResponse, _impl_._cached_size_),
+          false,
+      },
+#ifdef PROTOBUF_MESSAGE_GLOBALS
+      &file_reflection_data[53],
+#else   // !PROTOBUF_MESSAGE_GLOBALS
+      &::_pbi::kDescriptorMethods,
+      &descriptor_table_proto_2ftrade_2fcommerce_2eproto,
+      nullptr,  // tracker
+#endif  // PROTOBUF_MESSAGE_GLOBALS
+  };
+}
+struct WithdrawalResponseGlobalsTypeInternal : ::_pbi::MessageGlobalsBase {
+  constexpr WithdrawalResponseGlobalsTypeInternal()
+      :
+#ifndef PROTOBUF_MESSAGE_GLOBALS
+        _default(::_pbi::ConstantInitialized{},
+                 WithdrawalResponse_class_data_.base())
+#else   // !PROTOBUF_MESSAGE_GLOBALS
+        MessageGlobalsBase(WithdrawalResponse::InternalGenerateClassData_(
+            _default, &WithdrawalResponse_globals_._table.header)),
+        _default(::_pbi::ConstantInitialized{}, GetClassData()),
+        _table(::_pbi::PrivateAccess::GenerateParseTable<WithdrawalResponse>(
+            GetClassData()))
+#endif  // PROTOBUF_MESSAGE_GLOBALS
+  {
+  }
+  ~WithdrawalResponseGlobalsTypeInternal() {}
+  union {
+    alignas(::_pbi::kMaxMessageAlignment) WithdrawalResponse _default;
+  };
+#ifdef PROTOBUF_MESSAGE_GLOBALS
+  decltype(::_pbi::PrivateAccess::GenerateParseTable<WithdrawalResponse>(
+      ::std::declval<const ::_pbi::ClassData*>())) _table;
+#endif
+};
+#ifdef PROTOBUF_MESSAGE_GLOBALS
+static_assert(PROTOBUF_FIELD_OFFSET(WithdrawalResponseGlobalsTypeInternal, _default) ==
+              ::_pbi::MessageGlobalsBase::OffsetToDefault());
+#endif  // PROTOBUF_MESSAGE_GLOBALS
+
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 PROTOBUF_MESSAGE_GLOBALS_CONST WithdrawalResponseGlobalsTypeInternal WithdrawalResponse_globals_
+        PROTOBUF_MESSAGE_GLOBALS_SECTION(.data.rel.ro);
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+namespace {
+const ::_pbi::ClassData* WithdrawalResponse_get_class_data() {
+#ifdef PROTOBUF_MESSAGE_GLOBALS
+  return WithdrawalResponse_globals_.GetClassData();
+#else
+  return WithdrawalResponse_class_data_.base();
+#endif  // PROTOBUF_MESSAGE_GLOBALS
+}
+}  // namespace
+#endif  // PROTOBUF_CUSTOM_VTABLE
 class TradeAssetSelection::_Internal {
  public:
   using HasBits = decltype(::std::declval<TradeAssetSelection>()._impl_._has_bits_);
@@ -4354,6 +6203,173 @@ const ::_pbi::ClassData* TradeAssetSelection_get_class_data() {
   return TradeAssetSelection_globals_.GetClassData();
 #else
   return TradeAssetSelection_class_data_.base();
+#endif  // PROTOBUF_MESSAGE_GLOBALS
+}
+}  // namespace
+#endif  // PROTOBUF_CUSTOM_VTABLE
+class RmbConsignmentResponse::_Internal {
+ public:
+  using HasBits = decltype(::std::declval<RmbConsignmentResponse>()._impl_._has_bits_);
+  static constexpr ::int32_t kHasBitsOffset =
+      8 * PROTOBUF_FIELD_OFFSET(RmbConsignmentResponse, _impl_._has_bits_);
+};
+
+constexpr RmbConsignmentResponse::ParseTableT_ RmbConsignmentResponse::InternalGenerateParseTable_(const ::_pbi::ClassData* class_data) {
+  return ParseTableT_{
+    {
+      PROTOBUF_FIELD_OFFSET(RmbConsignmentResponse, _impl_._has_bits_),
+      0, // no _extensions_
+      3, 24,  // max_field_number, fast_idx_mask
+      offsetof(ParseTableT_, field_lookup_table),
+      4294967288,  // skipmap
+      offsetof(ParseTableT_, field_entries),
+      3,  // num_field_entries
+      2,  // num_aux_entries
+      offsetof(ParseTableT_, aux_entries),
+      class_data,
+      nullptr,  // post_loop_handler
+      ::_pbi::TcParser::GenericFallback,  // fallback
+      #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
+      ::_pbi::TcParser::GetTable<::trade::RmbConsignmentResponse>(),  // to_prefetch
+      #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
+    }, {{
+      {::_pbi::TcParser::MiniParse, {}},
+      // .TipInfoMessage error_message = 1;
+      {::_pbi::TcParser::FastMtS1,
+       {10, 0, 0,
+        PROTOBUF_FIELD_OFFSET(RmbConsignmentResponse, _impl_.error_message_)}},
+      // .trade.RmbConsignmentView listing = 2;
+      {::_pbi::TcParser::FastMtS1,
+       {18, 1, 1,
+        PROTOBUF_FIELD_OFFSET(RmbConsignmentResponse, _impl_.listing_)}},
+      // uint64 server_now_ms = 3;
+      {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(RmbConsignmentResponse, _impl_.server_now_ms_), 2>(),
+       {24, 2, 0,
+        PROTOBUF_FIELD_OFFSET(RmbConsignmentResponse, _impl_.server_now_ms_)}},
+    }}, {{
+      65535, 65535
+    }}, {{
+      // .TipInfoMessage error_message = 1;
+      {PROTOBUF_FIELD_OFFSET(RmbConsignmentResponse, _impl_.error_message_), _Internal::kHasBitsOffset + 0, 0, (0 | ::_fl::kFcOptional | ::_fl::kMessage | ::_fl::kTvTable)},
+      // .trade.RmbConsignmentView listing = 2;
+      {PROTOBUF_FIELD_OFFSET(RmbConsignmentResponse, _impl_.listing_), _Internal::kHasBitsOffset + 1, 1, (0 | ::_fl::kFcOptional | ::_fl::kMessage | ::_fl::kTvTable)},
+      // uint64 server_now_ms = 3;
+      {PROTOBUF_FIELD_OFFSET(RmbConsignmentResponse, _impl_.server_now_ms_), _Internal::kHasBitsOffset + 2, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
+    }},
+    {{
+        #ifndef PROTOBUF_MESSAGE_GLOBALS
+        {::_pbi::TcParser::GetTable<::TipInfoMessage>()},
+        #else
+        {::_pbi::FieldAuxMessageGlobals(), &::TipInfoMessage_globals_},
+        #endif
+        #ifndef PROTOBUF_MESSAGE_GLOBALS
+        {::_pbi::TcParser::GetTable<::trade::RmbConsignmentView>()},
+        #else
+        {::_pbi::FieldAuxMessageGlobals(), &::trade::RmbConsignmentView_globals_},
+        #endif
+    }},
+    {{
+    }},
+  };
+}
+
+
+inline constexpr RmbConsignmentResponse::Impl_::Impl_(
+    [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
+    ::_pbi::ConstantInitialized) noexcept
+      : _cached_size_{0},
+        error_message_{nullptr},
+        listing_{nullptr},
+        server_now_ms_{::uint64_t{0u}} {}
+
+template <typename>
+constexpr RmbConsignmentResponse::RmbConsignmentResponse(::_pbi::ConstantInitialized,
+                       const ::_pbi::ClassData* PROTOBUF_NONNULL class_data)
+    : ::google::protobuf::Message(
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+          class_data
+#endif  // PROTOBUF_CUSTOM_VTABLE
+          ),
+      _impl_(internal_visibility(), ::_pbi::ConstantInitialized()) {
+}
+inline void* PROTOBUF_NONNULL RmbConsignmentResponse::PlacementNew_(
+    const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena) {
+  return ::new (mem) RmbConsignmentResponse(arena);
+}
+constexpr auto RmbConsignmentResponse::InternalNewImpl_() {
+  return ::google::protobuf::internal::MessageCreator::ZeroInit(sizeof(RmbConsignmentResponse), alignof(RmbConsignmentResponse));
+}
+constexpr auto RmbConsignmentResponse::InternalGenerateClassData_(
+    const MessageLite& prototype,
+    const ::google::protobuf::internal::TcParseTableBase* tc_table) {
+  return ::google::protobuf::internal::ClassDataFull{
+      ::google::protobuf::internal::ClassData{
+          &prototype,
+#ifndef PROTOBUF_MESSAGE_GLOBALS
+          &_table_.header,
+#else
+          tc_table,
+#endif
+          nullptr,  // IsInitialized
+          &RmbConsignmentResponse::MergeImpl,
+          ::google::protobuf::Message::GetNewImpl<RmbConsignmentResponse>(),
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+          &RmbConsignmentResponse::SharedDtor,
+          ::google::protobuf::Message::GetClearImpl<RmbConsignmentResponse>(), &RmbConsignmentResponse::ByteSizeLong,
+              &RmbConsignmentResponse::_InternalSerialize,
+#endif  // PROTOBUF_CUSTOM_VTABLE
+          PROTOBUF_FIELD_OFFSET(RmbConsignmentResponse, _impl_._cached_size_),
+          false,
+      },
+#ifdef PROTOBUF_MESSAGE_GLOBALS
+      &file_reflection_data[45],
+#else   // !PROTOBUF_MESSAGE_GLOBALS
+      &::_pbi::kDescriptorMethods,
+      &descriptor_table_proto_2ftrade_2fcommerce_2eproto,
+      nullptr,  // tracker
+#endif  // PROTOBUF_MESSAGE_GLOBALS
+  };
+}
+struct RmbConsignmentResponseGlobalsTypeInternal : ::_pbi::MessageGlobalsBase {
+  constexpr RmbConsignmentResponseGlobalsTypeInternal()
+      :
+#ifndef PROTOBUF_MESSAGE_GLOBALS
+        _default(::_pbi::ConstantInitialized{},
+                 RmbConsignmentResponse_class_data_.base())
+#else   // !PROTOBUF_MESSAGE_GLOBALS
+        MessageGlobalsBase(RmbConsignmentResponse::InternalGenerateClassData_(
+            _default, &RmbConsignmentResponse_globals_._table.header)),
+        _default(::_pbi::ConstantInitialized{}, GetClassData()),
+        _table(::_pbi::PrivateAccess::GenerateParseTable<RmbConsignmentResponse>(
+            GetClassData()))
+#endif  // PROTOBUF_MESSAGE_GLOBALS
+  {
+  }
+  ~RmbConsignmentResponseGlobalsTypeInternal() {}
+  union {
+    alignas(::_pbi::kMaxMessageAlignment) RmbConsignmentResponse _default;
+  };
+#ifdef PROTOBUF_MESSAGE_GLOBALS
+  decltype(::_pbi::PrivateAccess::GenerateParseTable<RmbConsignmentResponse>(
+      ::std::declval<const ::_pbi::ClassData*>())) _table;
+#endif
+};
+#ifdef PROTOBUF_MESSAGE_GLOBALS
+static_assert(PROTOBUF_FIELD_OFFSET(RmbConsignmentResponseGlobalsTypeInternal, _default) ==
+              ::_pbi::MessageGlobalsBase::OffsetToDefault());
+#endif  // PROTOBUF_MESSAGE_GLOBALS
+
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 PROTOBUF_MESSAGE_GLOBALS_CONST RmbConsignmentResponseGlobalsTypeInternal RmbConsignmentResponse_globals_
+        PROTOBUF_MESSAGE_GLOBALS_SECTION(.data.rel.ro);
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+namespace {
+const ::_pbi::ClassData* RmbConsignmentResponse_get_class_data() {
+#ifdef PROTOBUF_MESSAGE_GLOBALS
+  return RmbConsignmentResponse_globals_.GetClassData();
+#else
+  return RmbConsignmentResponse_class_data_.base();
 #endif  // PROTOBUF_MESSAGE_GLOBALS
 }
 }  // namespace
@@ -4676,6 +6692,370 @@ const ::_pbi::ClassData* ListTradeMarketsResponse_get_class_data() {
   return ListTradeMarketsResponse_globals_.GetClassData();
 #else
   return ListTradeMarketsResponse_class_data_.base();
+#endif  // PROTOBUF_MESSAGE_GLOBALS
+}
+}  // namespace
+#endif  // PROTOBUF_CUSTOM_VTABLE
+class ListSellerIncomesResponse::_Internal {
+ public:
+  using HasBits = decltype(::std::declval<ListSellerIncomesResponse>()._impl_._has_bits_);
+  static constexpr ::int32_t kHasBitsOffset =
+      8 * PROTOBUF_FIELD_OFFSET(ListSellerIncomesResponse, _impl_._has_bits_);
+};
+
+constexpr ListSellerIncomesResponse::ParseTableT_ ListSellerIncomesResponse::InternalGenerateParseTable_(const ::_pbi::ClassData* class_data) {
+  return ParseTableT_{
+    {
+      PROTOBUF_FIELD_OFFSET(ListSellerIncomesResponse, _impl_._has_bits_),
+      0, // no _extensions_
+      4, 24,  // max_field_number, fast_idx_mask
+      offsetof(ParseTableT_, field_lookup_table),
+      4294967280,  // skipmap
+      offsetof(ParseTableT_, field_entries),
+      4,  // num_field_entries
+      2,  // num_aux_entries
+      offsetof(ParseTableT_, aux_entries),
+      class_data,
+      nullptr,  // post_loop_handler
+      ::_pbi::TcParser::GenericFallback,  // fallback
+      #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
+      ::_pbi::TcParser::GetTable<::trade::ListSellerIncomesResponse>(),  // to_prefetch
+      #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
+    }, {{
+      // uint64 server_now_ms = 4;
+      {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(ListSellerIncomesResponse, _impl_.server_now_ms_), 3>(),
+       {32, 3, 0,
+        PROTOBUF_FIELD_OFFSET(ListSellerIncomesResponse, _impl_.server_now_ms_)}},
+      // .TipInfoMessage error_message = 1;
+      {::_pbi::TcParser::FastMtS1,
+       {10, 2, 0,
+        PROTOBUF_FIELD_OFFSET(ListSellerIncomesResponse, _impl_.error_message_)}},
+      // repeated .trade.RmbSellerIncome incomes = 2;
+      {::_pbi::TcParser::FastMtR1,
+       {18, 0, 1,
+        PROTOBUF_FIELD_OFFSET(ListSellerIncomesResponse, _impl_.incomes_)}},
+      // string next_cursor = 3;
+      {::_pbi::TcParser::FastUS1,
+       {26, 1, 0,
+        PROTOBUF_FIELD_OFFSET(ListSellerIncomesResponse, _impl_.next_cursor_)}},
+    }}, {{
+      65535, 65535
+    }}, {{
+      // .TipInfoMessage error_message = 1;
+      {PROTOBUF_FIELD_OFFSET(ListSellerIncomesResponse, _impl_.error_message_), _Internal::kHasBitsOffset + 2, 0, (0 | ::_fl::kFcOptional | ::_fl::kMessage | ::_fl::kTvTable)},
+      // repeated .trade.RmbSellerIncome incomes = 2;
+      {PROTOBUF_FIELD_OFFSET(ListSellerIncomesResponse, _impl_.incomes_), _Internal::kHasBitsOffset + 0, 1, (0 | ::_fl::kFcRepeated | ::_fl::kMessage | ::_fl::kTvTable)},
+      // string next_cursor = 3;
+      {PROTOBUF_FIELD_OFFSET(ListSellerIncomesResponse, _impl_.next_cursor_), _Internal::kHasBitsOffset + 1, 0, (0 | ::_fl::kFcOptional | ::_fl::kUtf8String | ::_fl::kRepAString)},
+      // uint64 server_now_ms = 4;
+      {PROTOBUF_FIELD_OFFSET(ListSellerIncomesResponse, _impl_.server_now_ms_), _Internal::kHasBitsOffset + 3, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
+    }},
+    {{
+        #ifndef PROTOBUF_MESSAGE_GLOBALS
+        {::_pbi::TcParser::GetTable<::TipInfoMessage>()},
+        #else
+        {::_pbi::FieldAuxMessageGlobals(), &::TipInfoMessage_globals_},
+        #endif
+        #ifndef PROTOBUF_MESSAGE_GLOBALS
+        {::_pbi::TcParser::GetTable<::trade::RmbSellerIncome>()},
+        #else
+        {::_pbi::FieldAuxMessageGlobals(), &::trade::RmbSellerIncome_globals_},
+        #endif
+    }},
+    {{
+      "\37\0\0\13\0\0\0\0"
+      "trade.ListSellerIncomesResponse"
+      "next_cursor"
+    }},
+  };
+}
+
+
+inline constexpr ListSellerIncomesResponse::Impl_::Impl_(
+    [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
+    ::_pbi::ConstantInitialized) noexcept
+      : _cached_size_{0},
+        incomes_ { visibility, ::_pbi::InternalMetadataOffset::Build<
+            ::trade::ListSellerIncomesResponse,
+            PROTOBUF_FIELD_OFFSET(::trade::ListSellerIncomesResponse, _impl_.incomes_)>()
+         }
+        ,
+        next_cursor_(
+            &::google::protobuf::internal::fixed_address_empty_string,
+            ::_pbi::ConstantInitialized()),
+        error_message_{nullptr},
+        server_now_ms_{::uint64_t{0u}} {}
+
+template <typename>
+constexpr ListSellerIncomesResponse::ListSellerIncomesResponse(::_pbi::ConstantInitialized,
+                       const ::_pbi::ClassData* PROTOBUF_NONNULL class_data)
+    : ::google::protobuf::Message(
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+          class_data
+#endif  // PROTOBUF_CUSTOM_VTABLE
+          ),
+      _impl_(internal_visibility(), ::_pbi::ConstantInitialized()) {
+}
+inline void* PROTOBUF_NONNULL ListSellerIncomesResponse::PlacementNew_(
+    const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena) {
+  return ::new (mem) ListSellerIncomesResponse(arena);
+}
+constexpr auto ListSellerIncomesResponse::InternalNewImpl_() {
+  return ::google::protobuf::internal::MessageCreator::CopyInit(sizeof(ListSellerIncomesResponse), alignof(ListSellerIncomesResponse));
+}
+constexpr auto ListSellerIncomesResponse::InternalGenerateClassData_(
+    const MessageLite& prototype,
+    const ::google::protobuf::internal::TcParseTableBase* tc_table) {
+  return ::google::protobuf::internal::ClassDataFull{
+      ::google::protobuf::internal::ClassData{
+          &prototype,
+#ifndef PROTOBUF_MESSAGE_GLOBALS
+          &_table_.header,
+#else
+          tc_table,
+#endif
+          nullptr,  // IsInitialized
+          &ListSellerIncomesResponse::MergeImpl,
+          ::google::protobuf::Message::GetNewImpl<ListSellerIncomesResponse>(),
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+          &ListSellerIncomesResponse::SharedDtor,
+          ::google::protobuf::Message::GetClearImpl<ListSellerIncomesResponse>(), &ListSellerIncomesResponse::ByteSizeLong,
+              &ListSellerIncomesResponse::_InternalSerialize,
+#endif  // PROTOBUF_CUSTOM_VTABLE
+          PROTOBUF_FIELD_OFFSET(ListSellerIncomesResponse, _impl_._cached_size_),
+          false,
+      },
+#ifdef PROTOBUF_MESSAGE_GLOBALS
+      &file_reflection_data[49],
+#else   // !PROTOBUF_MESSAGE_GLOBALS
+      &::_pbi::kDescriptorMethods,
+      &descriptor_table_proto_2ftrade_2fcommerce_2eproto,
+      nullptr,  // tracker
+#endif  // PROTOBUF_MESSAGE_GLOBALS
+  };
+}
+struct ListSellerIncomesResponseGlobalsTypeInternal : ::_pbi::MessageGlobalsBase {
+  constexpr ListSellerIncomesResponseGlobalsTypeInternal()
+      :
+#ifndef PROTOBUF_MESSAGE_GLOBALS
+        _default(::_pbi::ConstantInitialized{},
+                 ListSellerIncomesResponse_class_data_.base())
+#else   // !PROTOBUF_MESSAGE_GLOBALS
+        MessageGlobalsBase(ListSellerIncomesResponse::InternalGenerateClassData_(
+            _default, &ListSellerIncomesResponse_globals_._table.header)),
+        _default(::_pbi::ConstantInitialized{}, GetClassData()),
+        _table(::_pbi::PrivateAccess::GenerateParseTable<ListSellerIncomesResponse>(
+            GetClassData()))
+#endif  // PROTOBUF_MESSAGE_GLOBALS
+  {
+  }
+  ~ListSellerIncomesResponseGlobalsTypeInternal() {}
+  union {
+    alignas(::_pbi::kMaxMessageAlignment) ListSellerIncomesResponse _default;
+  };
+#ifdef PROTOBUF_MESSAGE_GLOBALS
+  decltype(::_pbi::PrivateAccess::GenerateParseTable<ListSellerIncomesResponse>(
+      ::std::declval<const ::_pbi::ClassData*>())) _table;
+#endif
+};
+#ifdef PROTOBUF_MESSAGE_GLOBALS
+static_assert(PROTOBUF_FIELD_OFFSET(ListSellerIncomesResponseGlobalsTypeInternal, _default) ==
+              ::_pbi::MessageGlobalsBase::OffsetToDefault());
+#endif  // PROTOBUF_MESSAGE_GLOBALS
+
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 PROTOBUF_MESSAGE_GLOBALS_CONST ListSellerIncomesResponseGlobalsTypeInternal ListSellerIncomesResponse_globals_
+        PROTOBUF_MESSAGE_GLOBALS_SECTION(.data.rel.ro);
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+namespace {
+const ::_pbi::ClassData* ListSellerIncomesResponse_get_class_data() {
+#ifdef PROTOBUF_MESSAGE_GLOBALS
+  return ListSellerIncomesResponse_globals_.GetClassData();
+#else
+  return ListSellerIncomesResponse_class_data_.base();
+#endif  // PROTOBUF_MESSAGE_GLOBALS
+}
+}  // namespace
+#endif  // PROTOBUF_CUSTOM_VTABLE
+class ListRmbConsignmentsResponse::_Internal {
+ public:
+  using HasBits = decltype(::std::declval<ListRmbConsignmentsResponse>()._impl_._has_bits_);
+  static constexpr ::int32_t kHasBitsOffset =
+      8 * PROTOBUF_FIELD_OFFSET(ListRmbConsignmentsResponse, _impl_._has_bits_);
+};
+
+constexpr ListRmbConsignmentsResponse::ParseTableT_ ListRmbConsignmentsResponse::InternalGenerateParseTable_(const ::_pbi::ClassData* class_data) {
+  return ParseTableT_{
+    {
+      PROTOBUF_FIELD_OFFSET(ListRmbConsignmentsResponse, _impl_._has_bits_),
+      0, // no _extensions_
+      4, 24,  // max_field_number, fast_idx_mask
+      offsetof(ParseTableT_, field_lookup_table),
+      4294967280,  // skipmap
+      offsetof(ParseTableT_, field_entries),
+      4,  // num_field_entries
+      2,  // num_aux_entries
+      offsetof(ParseTableT_, aux_entries),
+      class_data,
+      nullptr,  // post_loop_handler
+      ::_pbi::TcParser::GenericFallback,  // fallback
+      #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
+      ::_pbi::TcParser::GetTable<::trade::ListRmbConsignmentsResponse>(),  // to_prefetch
+      #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
+    }, {{
+      // uint64 server_now_ms = 4;
+      {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(ListRmbConsignmentsResponse, _impl_.server_now_ms_), 3>(),
+       {32, 3, 0,
+        PROTOBUF_FIELD_OFFSET(ListRmbConsignmentsResponse, _impl_.server_now_ms_)}},
+      // .TipInfoMessage error_message = 1;
+      {::_pbi::TcParser::FastMtS1,
+       {10, 2, 0,
+        PROTOBUF_FIELD_OFFSET(ListRmbConsignmentsResponse, _impl_.error_message_)}},
+      // repeated .trade.RmbConsignmentView listings = 2;
+      {::_pbi::TcParser::FastMtR1,
+       {18, 0, 1,
+        PROTOBUF_FIELD_OFFSET(ListRmbConsignmentsResponse, _impl_.listings_)}},
+      // string next_cursor = 3;
+      {::_pbi::TcParser::FastUS1,
+       {26, 1, 0,
+        PROTOBUF_FIELD_OFFSET(ListRmbConsignmentsResponse, _impl_.next_cursor_)}},
+    }}, {{
+      65535, 65535
+    }}, {{
+      // .TipInfoMessage error_message = 1;
+      {PROTOBUF_FIELD_OFFSET(ListRmbConsignmentsResponse, _impl_.error_message_), _Internal::kHasBitsOffset + 2, 0, (0 | ::_fl::kFcOptional | ::_fl::kMessage | ::_fl::kTvTable)},
+      // repeated .trade.RmbConsignmentView listings = 2;
+      {PROTOBUF_FIELD_OFFSET(ListRmbConsignmentsResponse, _impl_.listings_), _Internal::kHasBitsOffset + 0, 1, (0 | ::_fl::kFcRepeated | ::_fl::kMessage | ::_fl::kTvTable)},
+      // string next_cursor = 3;
+      {PROTOBUF_FIELD_OFFSET(ListRmbConsignmentsResponse, _impl_.next_cursor_), _Internal::kHasBitsOffset + 1, 0, (0 | ::_fl::kFcOptional | ::_fl::kUtf8String | ::_fl::kRepAString)},
+      // uint64 server_now_ms = 4;
+      {PROTOBUF_FIELD_OFFSET(ListRmbConsignmentsResponse, _impl_.server_now_ms_), _Internal::kHasBitsOffset + 3, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
+    }},
+    {{
+        #ifndef PROTOBUF_MESSAGE_GLOBALS
+        {::_pbi::TcParser::GetTable<::TipInfoMessage>()},
+        #else
+        {::_pbi::FieldAuxMessageGlobals(), &::TipInfoMessage_globals_},
+        #endif
+        #ifndef PROTOBUF_MESSAGE_GLOBALS
+        {::_pbi::TcParser::GetTable<::trade::RmbConsignmentView>()},
+        #else
+        {::_pbi::FieldAuxMessageGlobals(), &::trade::RmbConsignmentView_globals_},
+        #endif
+    }},
+    {{
+      "\41\0\0\13\0\0\0\0"
+      "trade.ListRmbConsignmentsResponse"
+      "next_cursor"
+    }},
+  };
+}
+
+
+inline constexpr ListRmbConsignmentsResponse::Impl_::Impl_(
+    [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
+    ::_pbi::ConstantInitialized) noexcept
+      : _cached_size_{0},
+        listings_ { visibility, ::_pbi::InternalMetadataOffset::Build<
+            ::trade::ListRmbConsignmentsResponse,
+            PROTOBUF_FIELD_OFFSET(::trade::ListRmbConsignmentsResponse, _impl_.listings_)>()
+         }
+        ,
+        next_cursor_(
+            &::google::protobuf::internal::fixed_address_empty_string,
+            ::_pbi::ConstantInitialized()),
+        error_message_{nullptr},
+        server_now_ms_{::uint64_t{0u}} {}
+
+template <typename>
+constexpr ListRmbConsignmentsResponse::ListRmbConsignmentsResponse(::_pbi::ConstantInitialized,
+                       const ::_pbi::ClassData* PROTOBUF_NONNULL class_data)
+    : ::google::protobuf::Message(
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+          class_data
+#endif  // PROTOBUF_CUSTOM_VTABLE
+          ),
+      _impl_(internal_visibility(), ::_pbi::ConstantInitialized()) {
+}
+inline void* PROTOBUF_NONNULL ListRmbConsignmentsResponse::PlacementNew_(
+    const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena) {
+  return ::new (mem) ListRmbConsignmentsResponse(arena);
+}
+constexpr auto ListRmbConsignmentsResponse::InternalNewImpl_() {
+  return ::google::protobuf::internal::MessageCreator::CopyInit(sizeof(ListRmbConsignmentsResponse), alignof(ListRmbConsignmentsResponse));
+}
+constexpr auto ListRmbConsignmentsResponse::InternalGenerateClassData_(
+    const MessageLite& prototype,
+    const ::google::protobuf::internal::TcParseTableBase* tc_table) {
+  return ::google::protobuf::internal::ClassDataFull{
+      ::google::protobuf::internal::ClassData{
+          &prototype,
+#ifndef PROTOBUF_MESSAGE_GLOBALS
+          &_table_.header,
+#else
+          tc_table,
+#endif
+          nullptr,  // IsInitialized
+          &ListRmbConsignmentsResponse::MergeImpl,
+          ::google::protobuf::Message::GetNewImpl<ListRmbConsignmentsResponse>(),
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+          &ListRmbConsignmentsResponse::SharedDtor,
+          ::google::protobuf::Message::GetClearImpl<ListRmbConsignmentsResponse>(), &ListRmbConsignmentsResponse::ByteSizeLong,
+              &ListRmbConsignmentsResponse::_InternalSerialize,
+#endif  // PROTOBUF_CUSTOM_VTABLE
+          PROTOBUF_FIELD_OFFSET(ListRmbConsignmentsResponse, _impl_._cached_size_),
+          false,
+      },
+#ifdef PROTOBUF_MESSAGE_GLOBALS
+      &file_reflection_data[46],
+#else   // !PROTOBUF_MESSAGE_GLOBALS
+      &::_pbi::kDescriptorMethods,
+      &descriptor_table_proto_2ftrade_2fcommerce_2eproto,
+      nullptr,  // tracker
+#endif  // PROTOBUF_MESSAGE_GLOBALS
+  };
+}
+struct ListRmbConsignmentsResponseGlobalsTypeInternal : ::_pbi::MessageGlobalsBase {
+  constexpr ListRmbConsignmentsResponseGlobalsTypeInternal()
+      :
+#ifndef PROTOBUF_MESSAGE_GLOBALS
+        _default(::_pbi::ConstantInitialized{},
+                 ListRmbConsignmentsResponse_class_data_.base())
+#else   // !PROTOBUF_MESSAGE_GLOBALS
+        MessageGlobalsBase(ListRmbConsignmentsResponse::InternalGenerateClassData_(
+            _default, &ListRmbConsignmentsResponse_globals_._table.header)),
+        _default(::_pbi::ConstantInitialized{}, GetClassData()),
+        _table(::_pbi::PrivateAccess::GenerateParseTable<ListRmbConsignmentsResponse>(
+            GetClassData()))
+#endif  // PROTOBUF_MESSAGE_GLOBALS
+  {
+  }
+  ~ListRmbConsignmentsResponseGlobalsTypeInternal() {}
+  union {
+    alignas(::_pbi::kMaxMessageAlignment) ListRmbConsignmentsResponse _default;
+  };
+#ifdef PROTOBUF_MESSAGE_GLOBALS
+  decltype(::_pbi::PrivateAccess::GenerateParseTable<ListRmbConsignmentsResponse>(
+      ::std::declval<const ::_pbi::ClassData*>())) _table;
+#endif
+};
+#ifdef PROTOBUF_MESSAGE_GLOBALS
+static_assert(PROTOBUF_FIELD_OFFSET(ListRmbConsignmentsResponseGlobalsTypeInternal, _default) ==
+              ::_pbi::MessageGlobalsBase::OffsetToDefault());
+#endif  // PROTOBUF_MESSAGE_GLOBALS
+
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 PROTOBUF_MESSAGE_GLOBALS_CONST ListRmbConsignmentsResponseGlobalsTypeInternal ListRmbConsignmentsResponse_globals_
+        PROTOBUF_MESSAGE_GLOBALS_SECTION(.data.rel.ro);
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+namespace {
+const ::_pbi::ClassData* ListRmbConsignmentsResponse_get_class_data() {
+#ifdef PROTOBUF_MESSAGE_GLOBALS
+  return ListRmbConsignmentsResponse_globals_.GetClassData();
+#else
+  return ListRmbConsignmentsResponse_class_data_.base();
 #endif  // PROTOBUF_MESSAGE_GLOBALS
 }
 }  // namespace
@@ -5558,6 +7938,192 @@ const ::_pbi::ClassData* AuctionLotResponse_get_class_data() {
   return AuctionLotResponse_globals_.GetClassData();
 #else
   return AuctionLotResponse_class_data_.base();
+#endif  // PROTOBUF_MESSAGE_GLOBALS
+}
+}  // namespace
+#endif  // PROTOBUF_CUSTOM_VTABLE
+class CreateRmbConsignmentRequest::_Internal {
+ public:
+  using HasBits = decltype(::std::declval<CreateRmbConsignmentRequest>()._impl_._has_bits_);
+  static constexpr ::int32_t kHasBitsOffset =
+      8 * PROTOBUF_FIELD_OFFSET(CreateRmbConsignmentRequest, _impl_._has_bits_);
+};
+
+constexpr CreateRmbConsignmentRequest::ParseTableT_ CreateRmbConsignmentRequest::InternalGenerateParseTable_(const ::_pbi::ClassData* class_data) {
+  return ParseTableT_{
+    {
+      PROTOBUF_FIELD_OFFSET(CreateRmbConsignmentRequest, _impl_._has_bits_),
+      0, // no _extensions_
+      5, 56,  // max_field_number, fast_idx_mask
+      offsetof(ParseTableT_, field_lookup_table),
+      4294967264,  // skipmap
+      offsetof(ParseTableT_, field_entries),
+      5,  // num_field_entries
+      1,  // num_aux_entries
+      offsetof(ParseTableT_, aux_entries),
+      class_data,
+      nullptr,  // post_loop_handler
+      ::_pbi::TcParser::GenericFallback,  // fallback
+      #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
+      ::_pbi::TcParser::GetTable<::trade::CreateRmbConsignmentRequest>(),  // to_prefetch
+      #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
+    }, {{
+      {::_pbi::TcParser::MiniParse, {}},
+      // string client_request_id = 1;
+      {::_pbi::TcParser::FastUS1,
+       {10, 0, 0,
+        PROTOBUF_FIELD_OFFSET(CreateRmbConsignmentRequest, _impl_.client_request_id_)}},
+      // .trade.TradeAssetSelection assets = 2;
+      {::_pbi::TcParser::FastMtS1,
+       {18, 2, 0,
+        PROTOBUF_FIELD_OFFSET(CreateRmbConsignmentRequest, _impl_.assets_)}},
+      // uint64 character_player_id = 3;
+      {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(CreateRmbConsignmentRequest, _impl_.character_player_id_), 3>(),
+       {24, 3, 0,
+        PROTOBUF_FIELD_OFFSET(CreateRmbConsignmentRequest, _impl_.character_player_id_)}},
+      // uint64 price_fen = 4;
+      {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(CreateRmbConsignmentRequest, _impl_.price_fen_), 4>(),
+       {32, 4, 0,
+        PROTOBUF_FIELD_OFFSET(CreateRmbConsignmentRequest, _impl_.price_fen_)}},
+      // string title = 5;
+      {::_pbi::TcParser::FastUS1,
+       {42, 1, 0,
+        PROTOBUF_FIELD_OFFSET(CreateRmbConsignmentRequest, _impl_.title_)}},
+      {::_pbi::TcParser::MiniParse, {}},
+      {::_pbi::TcParser::MiniParse, {}},
+    }}, {{
+      65535, 65535
+    }}, {{
+      // string client_request_id = 1;
+      {PROTOBUF_FIELD_OFFSET(CreateRmbConsignmentRequest, _impl_.client_request_id_), _Internal::kHasBitsOffset + 0, 0, (0 | ::_fl::kFcOptional | ::_fl::kUtf8String | ::_fl::kRepAString)},
+      // .trade.TradeAssetSelection assets = 2;
+      {PROTOBUF_FIELD_OFFSET(CreateRmbConsignmentRequest, _impl_.assets_), _Internal::kHasBitsOffset + 2, 0, (0 | ::_fl::kFcOptional | ::_fl::kMessage | ::_fl::kTvTable)},
+      // uint64 character_player_id = 3;
+      {PROTOBUF_FIELD_OFFSET(CreateRmbConsignmentRequest, _impl_.character_player_id_), _Internal::kHasBitsOffset + 3, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
+      // uint64 price_fen = 4;
+      {PROTOBUF_FIELD_OFFSET(CreateRmbConsignmentRequest, _impl_.price_fen_), _Internal::kHasBitsOffset + 4, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
+      // string title = 5;
+      {PROTOBUF_FIELD_OFFSET(CreateRmbConsignmentRequest, _impl_.title_), _Internal::kHasBitsOffset + 1, 0, (0 | ::_fl::kFcOptional | ::_fl::kUtf8String | ::_fl::kRepAString)},
+    }},
+    {{
+        #ifndef PROTOBUF_MESSAGE_GLOBALS
+        {::_pbi::TcParser::GetTable<::trade::TradeAssetSelection>()},
+        #else
+        {::_pbi::FieldAuxMessageGlobals(), &::trade::TradeAssetSelection_globals_},
+        #endif
+    }},
+    {{
+      "\41\21\0\0\0\5\0\0"
+      "trade.CreateRmbConsignmentRequest"
+      "client_request_id"
+      "title"
+    }},
+  };
+}
+
+
+inline constexpr CreateRmbConsignmentRequest::Impl_::Impl_(
+    [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
+    ::_pbi::ConstantInitialized) noexcept
+      : _cached_size_{0},
+        client_request_id_(
+            &::google::protobuf::internal::fixed_address_empty_string,
+            ::_pbi::ConstantInitialized()),
+        title_(
+            &::google::protobuf::internal::fixed_address_empty_string,
+            ::_pbi::ConstantInitialized()),
+        assets_{nullptr},
+        character_player_id_{::uint64_t{0u}},
+        price_fen_{::uint64_t{0u}} {}
+
+template <typename>
+constexpr CreateRmbConsignmentRequest::CreateRmbConsignmentRequest(::_pbi::ConstantInitialized,
+                       const ::_pbi::ClassData* PROTOBUF_NONNULL class_data)
+    : ::google::protobuf::Message(
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+          class_data
+#endif  // PROTOBUF_CUSTOM_VTABLE
+          ),
+      _impl_(internal_visibility(), ::_pbi::ConstantInitialized()) {
+}
+inline void* PROTOBUF_NONNULL CreateRmbConsignmentRequest::PlacementNew_(
+    const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena) {
+  return ::new (mem) CreateRmbConsignmentRequest(arena);
+}
+constexpr auto CreateRmbConsignmentRequest::InternalNewImpl_() {
+  return ::google::protobuf::internal::MessageCreator::CopyInit(sizeof(CreateRmbConsignmentRequest), alignof(CreateRmbConsignmentRequest));
+}
+constexpr auto CreateRmbConsignmentRequest::InternalGenerateClassData_(
+    const MessageLite& prototype,
+    const ::google::protobuf::internal::TcParseTableBase* tc_table) {
+  return ::google::protobuf::internal::ClassDataFull{
+      ::google::protobuf::internal::ClassData{
+          &prototype,
+#ifndef PROTOBUF_MESSAGE_GLOBALS
+          &_table_.header,
+#else
+          tc_table,
+#endif
+          nullptr,  // IsInitialized
+          &CreateRmbConsignmentRequest::MergeImpl,
+          ::google::protobuf::Message::GetNewImpl<CreateRmbConsignmentRequest>(),
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+          &CreateRmbConsignmentRequest::SharedDtor,
+          ::google::protobuf::Message::GetClearImpl<CreateRmbConsignmentRequest>(), &CreateRmbConsignmentRequest::ByteSizeLong,
+              &CreateRmbConsignmentRequest::_InternalSerialize,
+#endif  // PROTOBUF_CUSTOM_VTABLE
+          PROTOBUF_FIELD_OFFSET(CreateRmbConsignmentRequest, _impl_._cached_size_),
+          false,
+      },
+#ifdef PROTOBUF_MESSAGE_GLOBALS
+      &file_reflection_data[39],
+#else   // !PROTOBUF_MESSAGE_GLOBALS
+      &::_pbi::kDescriptorMethods,
+      &descriptor_table_proto_2ftrade_2fcommerce_2eproto,
+      nullptr,  // tracker
+#endif  // PROTOBUF_MESSAGE_GLOBALS
+  };
+}
+struct CreateRmbConsignmentRequestGlobalsTypeInternal : ::_pbi::MessageGlobalsBase {
+  constexpr CreateRmbConsignmentRequestGlobalsTypeInternal()
+      :
+#ifndef PROTOBUF_MESSAGE_GLOBALS
+        _default(::_pbi::ConstantInitialized{},
+                 CreateRmbConsignmentRequest_class_data_.base())
+#else   // !PROTOBUF_MESSAGE_GLOBALS
+        MessageGlobalsBase(CreateRmbConsignmentRequest::InternalGenerateClassData_(
+            _default, &CreateRmbConsignmentRequest_globals_._table.header)),
+        _default(::_pbi::ConstantInitialized{}, GetClassData()),
+        _table(::_pbi::PrivateAccess::GenerateParseTable<CreateRmbConsignmentRequest>(
+            GetClassData()))
+#endif  // PROTOBUF_MESSAGE_GLOBALS
+  {
+  }
+  ~CreateRmbConsignmentRequestGlobalsTypeInternal() {}
+  union {
+    alignas(::_pbi::kMaxMessageAlignment) CreateRmbConsignmentRequest _default;
+  };
+#ifdef PROTOBUF_MESSAGE_GLOBALS
+  decltype(::_pbi::PrivateAccess::GenerateParseTable<CreateRmbConsignmentRequest>(
+      ::std::declval<const ::_pbi::ClassData*>())) _table;
+#endif
+};
+#ifdef PROTOBUF_MESSAGE_GLOBALS
+static_assert(PROTOBUF_FIELD_OFFSET(CreateRmbConsignmentRequestGlobalsTypeInternal, _default) ==
+              ::_pbi::MessageGlobalsBase::OffsetToDefault());
+#endif  // PROTOBUF_MESSAGE_GLOBALS
+
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 PROTOBUF_MESSAGE_GLOBALS_CONST CreateRmbConsignmentRequestGlobalsTypeInternal CreateRmbConsignmentRequest_globals_
+        PROTOBUF_MESSAGE_GLOBALS_SECTION(.data.rel.ro);
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+namespace {
+const ::_pbi::ClassData* CreateRmbConsignmentRequest_get_class_data() {
+#ifdef PROTOBUF_MESSAGE_GLOBALS
+  return CreateRmbConsignmentRequest_globals_.GetClassData();
+#else
+  return CreateRmbConsignmentRequest_class_data_.base();
 #endif  // PROTOBUF_MESSAGE_GLOBALS
 }
 }  // namespace
@@ -7160,6 +9726,159 @@ const ::uint32_t
         0,
         1,
         2,
+        0x081, // bitmap
+        PROTOBUF_FIELD_OFFSET(::trade::CreateRmbConsignmentRequest, _impl_._has_bits_),
+        8, // hasbit index offset
+        PROTOBUF_FIELD_OFFSET(::trade::CreateRmbConsignmentRequest, _impl_.client_request_id_),
+        PROTOBUF_FIELD_OFFSET(::trade::CreateRmbConsignmentRequest, _impl_.assets_),
+        PROTOBUF_FIELD_OFFSET(::trade::CreateRmbConsignmentRequest, _impl_.character_player_id_),
+        PROTOBUF_FIELD_OFFSET(::trade::CreateRmbConsignmentRequest, _impl_.price_fen_),
+        PROTOBUF_FIELD_OFFSET(::trade::CreateRmbConsignmentRequest, _impl_.title_),
+        0,
+        2,
+        3,
+        4,
+        1,
+        0x081, // bitmap
+        PROTOBUF_FIELD_OFFSET(::trade::GetRmbConsignmentRequest, _impl_._has_bits_),
+        4, // hasbit index offset
+        PROTOBUF_FIELD_OFFSET(::trade::GetRmbConsignmentRequest, _impl_.listing_id_),
+        0,
+        0x081, // bitmap
+        PROTOBUF_FIELD_OFFSET(::trade::ListRmbConsignmentsRequest, _impl_._has_bits_),
+        5, // hasbit index offset
+        PROTOBUF_FIELD_OFFSET(::trade::ListRmbConsignmentsRequest, _impl_.cursor_),
+        PROTOBUF_FIELD_OFFSET(::trade::ListRmbConsignmentsRequest, _impl_.limit_),
+        0,
+        1,
+        0x081, // bitmap
+        PROTOBUF_FIELD_OFFSET(::trade::BuyRmbConsignmentRequest, _impl_._has_bits_),
+        5, // hasbit index offset
+        PROTOBUF_FIELD_OFFSET(::trade::BuyRmbConsignmentRequest, _impl_.listing_id_),
+        PROTOBUF_FIELD_OFFSET(::trade::BuyRmbConsignmentRequest, _impl_.client_request_id_),
+        1,
+        0,
+        0x081, // bitmap
+        PROTOBUF_FIELD_OFFSET(::trade::CancelRmbConsignmentRequest, _impl_._has_bits_),
+        4, // hasbit index offset
+        PROTOBUF_FIELD_OFFSET(::trade::CancelRmbConsignmentRequest, _impl_.listing_id_),
+        0,
+        0x081, // bitmap
+        PROTOBUF_FIELD_OFFSET(::trade::RmbConsignmentView, _impl_._has_bits_),
+        16, // hasbit index offset
+        PROTOBUF_FIELD_OFFSET(::trade::RmbConsignmentView, _impl_.listing_id_),
+        PROTOBUF_FIELD_OFFSET(::trade::RmbConsignmentView, _impl_.seller_player_id_),
+        PROTOBUF_FIELD_OFFSET(::trade::RmbConsignmentView, _impl_.market_zone_),
+        PROTOBUF_FIELD_OFFSET(::trade::RmbConsignmentView, _impl_.asset_kind_),
+        PROTOBUF_FIELD_OFFSET(::trade::RmbConsignmentView, _impl_.title_),
+        PROTOBUF_FIELD_OFFSET(::trade::RmbConsignmentView, _impl_.price_fen_),
+        PROTOBUF_FIELD_OFFSET(::trade::RmbConsignmentView, _impl_.fee_bps_),
+        PROTOBUF_FIELD_OFFSET(::trade::RmbConsignmentView, _impl_.cooling_ms_),
+        PROTOBUF_FIELD_OFFSET(::trade::RmbConsignmentView, _impl_.notice_end_ms_),
+        PROTOBUF_FIELD_OFFSET(::trade::RmbConsignmentView, _impl_.sale_end_ms_),
+        PROTOBUF_FIELD_OFFSET(::trade::RmbConsignmentView, _impl_.state_),
+        PROTOBUF_FIELD_OFFSET(::trade::RmbConsignmentView, _impl_.phase_),
+        PROTOBUF_FIELD_OFFSET(::trade::RmbConsignmentView, _impl_.order_id_),
+        5,
+        6,
+        7,
+        0,
+        1,
+        9,
+        8,
+        10,
+        11,
+        12,
+        2,
+        3,
+        4,
+        0x081, // bitmap
+        PROTOBUF_FIELD_OFFSET(::trade::RmbConsignmentResponse, _impl_._has_bits_),
+        6, // hasbit index offset
+        PROTOBUF_FIELD_OFFSET(::trade::RmbConsignmentResponse, _impl_.error_message_),
+        PROTOBUF_FIELD_OFFSET(::trade::RmbConsignmentResponse, _impl_.listing_),
+        PROTOBUF_FIELD_OFFSET(::trade::RmbConsignmentResponse, _impl_.server_now_ms_),
+        0,
+        1,
+        2,
+        0x081, // bitmap
+        PROTOBUF_FIELD_OFFSET(::trade::ListRmbConsignmentsResponse, _impl_._has_bits_),
+        7, // hasbit index offset
+        PROTOBUF_FIELD_OFFSET(::trade::ListRmbConsignmentsResponse, _impl_.error_message_),
+        PROTOBUF_FIELD_OFFSET(::trade::ListRmbConsignmentsResponse, _impl_.listings_),
+        PROTOBUF_FIELD_OFFSET(::trade::ListRmbConsignmentsResponse, _impl_.next_cursor_),
+        PROTOBUF_FIELD_OFFSET(::trade::ListRmbConsignmentsResponse, _impl_.server_now_ms_),
+        2,
+        0,
+        1,
+        3,
+        0x081, // bitmap
+        PROTOBUF_FIELD_OFFSET(::trade::ListSellerIncomesRequest, _impl_._has_bits_),
+        5, // hasbit index offset
+        PROTOBUF_FIELD_OFFSET(::trade::ListSellerIncomesRequest, _impl_.cursor_),
+        PROTOBUF_FIELD_OFFSET(::trade::ListSellerIncomesRequest, _impl_.limit_),
+        0,
+        1,
+        0x081, // bitmap
+        PROTOBUF_FIELD_OFFSET(::trade::RmbSellerIncome, _impl_._has_bits_),
+        10, // hasbit index offset
+        PROTOBUF_FIELD_OFFSET(::trade::RmbSellerIncome, _impl_.order_id_),
+        PROTOBUF_FIELD_OFFSET(::trade::RmbSellerIncome, _impl_.gross_fen_),
+        PROTOBUF_FIELD_OFFSET(::trade::RmbSellerIncome, _impl_.fee_fen_),
+        PROTOBUF_FIELD_OFFSET(::trade::RmbSellerIncome, _impl_.net_fen_),
+        PROTOBUF_FIELD_OFFSET(::trade::RmbSellerIncome, _impl_.reserved_fen_),
+        PROTOBUF_FIELD_OFFSET(::trade::RmbSellerIncome, _impl_.paid_fen_),
+        PROTOBUF_FIELD_OFFSET(::trade::RmbSellerIncome, _impl_.available_ms_),
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        0x081, // bitmap
+        PROTOBUF_FIELD_OFFSET(::trade::ListSellerIncomesResponse, _impl_._has_bits_),
+        7, // hasbit index offset
+        PROTOBUF_FIELD_OFFSET(::trade::ListSellerIncomesResponse, _impl_.error_message_),
+        PROTOBUF_FIELD_OFFSET(::trade::ListSellerIncomesResponse, _impl_.incomes_),
+        PROTOBUF_FIELD_OFFSET(::trade::ListSellerIncomesResponse, _impl_.next_cursor_),
+        PROTOBUF_FIELD_OFFSET(::trade::ListSellerIncomesResponse, _impl_.server_now_ms_),
+        2,
+        0,
+        1,
+        3,
+        0x081, // bitmap
+        PROTOBUF_FIELD_OFFSET(::trade::CreateWithdrawalRequest, _impl_._has_bits_),
+        5, // hasbit index offset
+        PROTOBUF_FIELD_OFFSET(::trade::CreateWithdrawalRequest, _impl_.client_request_id_),
+        PROTOBUF_FIELD_OFFSET(::trade::CreateWithdrawalRequest, _impl_.amount_fen_),
+        0,
+        1,
+        0x081, // bitmap
+        PROTOBUF_FIELD_OFFSET(::trade::GetWithdrawalRequest, _impl_._has_bits_),
+        4, // hasbit index offset
+        PROTOBUF_FIELD_OFFSET(::trade::GetWithdrawalRequest, _impl_.withdrawal_id_),
+        0,
+        0x081, // bitmap
+        PROTOBUF_FIELD_OFFSET(::trade::RmbWithdrawalView, _impl_._has_bits_),
+        8, // hasbit index offset
+        PROTOBUF_FIELD_OFFSET(::trade::RmbWithdrawalView, _impl_.withdrawal_id_),
+        PROTOBUF_FIELD_OFFSET(::trade::RmbWithdrawalView, _impl_.amount_fen_),
+        PROTOBUF_FIELD_OFFSET(::trade::RmbWithdrawalView, _impl_.state_),
+        PROTOBUF_FIELD_OFFSET(::trade::RmbWithdrawalView, _impl_.channel_),
+        PROTOBUF_FIELD_OFFSET(::trade::RmbWithdrawalView, _impl_.transaction_id_),
+        0,
+        4,
+        1,
+        2,
+        3,
+        0x081, // bitmap
+        PROTOBUF_FIELD_OFFSET(::trade::WithdrawalResponse, _impl_._has_bits_),
+        5, // hasbit index offset
+        PROTOBUF_FIELD_OFFSET(::trade::WithdrawalResponse, _impl_.error_message_),
+        PROTOBUF_FIELD_OFFSET(::trade::WithdrawalResponse, _impl_.withdrawal_),
+        0,
+        1,
 };
 
 static const ::_pbi::MigrationSchema
@@ -7203,6 +9922,21 @@ static const ::_pbi::MigrationSchema
         {364, sizeof(::trade::CancelAuctionLotRequest)},
         {369, sizeof(::trade::AuctionLotView)},
         {394, sizeof(::trade::AuctionLotResponse)},
+        {403, sizeof(::trade::CreateRmbConsignmentRequest)},
+        {416, sizeof(::trade::GetRmbConsignmentRequest)},
+        {421, sizeof(::trade::ListRmbConsignmentsRequest)},
+        {428, sizeof(::trade::BuyRmbConsignmentRequest)},
+        {435, sizeof(::trade::CancelRmbConsignmentRequest)},
+        {440, sizeof(::trade::RmbConsignmentView)},
+        {469, sizeof(::trade::RmbConsignmentResponse)},
+        {478, sizeof(::trade::ListRmbConsignmentsResponse)},
+        {489, sizeof(::trade::ListSellerIncomesRequest)},
+        {496, sizeof(::trade::RmbSellerIncome)},
+        {513, sizeof(::trade::ListSellerIncomesResponse)},
+        {524, sizeof(::trade::CreateWithdrawalRequest)},
+        {531, sizeof(::trade::GetWithdrawalRequest)},
+        {536, sizeof(::trade::RmbWithdrawalView)},
+        {549, sizeof(::trade::WithdrawalResponse)},
 };
 static const ::_pbi::MessageGlobalsBase* PROTOBUF_NONNULL const
     file_message_globals[] = {
@@ -7245,6 +9979,21 @@ static const ::_pbi::MessageGlobalsBase* PROTOBUF_NONNULL const
         &::trade::CancelAuctionLotRequest_globals_,
         &::trade::AuctionLotView_globals_,
         &::trade::AuctionLotResponse_globals_,
+        &::trade::CreateRmbConsignmentRequest_globals_,
+        &::trade::GetRmbConsignmentRequest_globals_,
+        &::trade::ListRmbConsignmentsRequest_globals_,
+        &::trade::BuyRmbConsignmentRequest_globals_,
+        &::trade::CancelRmbConsignmentRequest_globals_,
+        &::trade::RmbConsignmentView_globals_,
+        &::trade::RmbConsignmentResponse_globals_,
+        &::trade::ListRmbConsignmentsResponse_globals_,
+        &::trade::ListSellerIncomesRequest_globals_,
+        &::trade::RmbSellerIncome_globals_,
+        &::trade::ListSellerIncomesResponse_globals_,
+        &::trade::CreateWithdrawalRequest_globals_,
+        &::trade::GetWithdrawalRequest_globals_,
+        &::trade::RmbWithdrawalView_globals_,
+        &::trade::WithdrawalResponse_globals_,
 };
 const char descriptor_table_protodef_proto_2ftrade_2fcommerce_2eproto[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
     protodesc_cold) = {
@@ -7370,28 +10119,71 @@ const char descriptor_table_protodef_proto_2ftrade_2fcommerce_2eproto[] ABSL_ATT
     "\n\010order_id\030\013 \001(\t\"w\n\022AuctionLotResponse\022&"
     "\n\rerror_message\030\001 \001(\0132\017.TipInfoMessage\022\""
     "\n\003lot\030\002 \001(\0132\025.trade.AuctionLotView\022\025\n\rse"
-    "rver_now_ms\030\003 \001(\004*\360\001\n\021CommerceOrderKind\022"
-    "#\n\037COMMERCE_ORDER_KIND_UNSPECIFIED\020\000\022 \n\034"
-    "COMMERCE_ORDER_KIND_OFFICIAL\020\001\022$\n COMMER"
-    "CE_ORDER_KIND_PLAYER_TRADE\020\002\022#\n\037COMMERCE"
-    "_ORDER_KIND_CONSIGNMENT\020\003\022$\n COMMERCE_OR"
-    "DER_KIND_MARKET_MATCH\020\004\022#\n\037COMMERCE_ORDE"
-    "R_KIND_AUCTION_LOT\020\005*\335\003\n\022CommerceOrderSt"
-    "ate\022$\n COMMERCE_ORDER_STATE_UNSPECIFIED\020"
-    "\000\022-\n)COMMERCE_ORDER_STATE_WAITING_CONFIR"
-    "MATION\020\001\022)\n%COMMERCE_ORDER_STATE_AWAITIN"
-    "G_PAYMENT\020\002\022\"\n\036COMMERCE_ORDER_STATE_ESCR"
-    "OWING\020\003\022#\n\037COMMERCE_ORDER_STATE_DELIVERI"
-    "NG\020\004\022\"\n\036COMMERCE_ORDER_STATE_DELIVERED\020\005"
-    "\022\'\n#COMMERCE_ORDER_STATE_CANCEL_PENDING\020"
-    "\006\022\"\n\036COMMERCE_ORDER_STATE_CANCELLED\020\007\022\'\n"
-    "#COMMERCE_ORDER_STATE_REFUND_PENDING\020\010\022!"
-    "\n\035COMMERCE_ORDER_STATE_REFUNDED\020\t\022\037\n\033COM"
-    "MERCE_ORDER_STATE_MANUAL\020\n\022 \n\034COMMERCE_O"
-    "RDER_STATE_SETTLED\020\013*k\n\017MarketOrderSide\022"
-    "!\n\035MARKET_ORDER_SIDE_UNSPECIFIED\020\000\022\031\n\025MA"
-    "RKET_ORDER_SIDE_BUY\020\001\022\032\n\026MARKET_ORDER_SI"
-    "DE_SELL\020\002B\007Z\005tradeb\006proto3"
+    "rver_now_ms\030\003 \001(\004\"\243\001\n\033CreateRmbConsignme"
+    "ntRequest\022\031\n\021client_request_id\030\001 \001(\t\022*\n\006"
+    "assets\030\002 \001(\0132\032.trade.TradeAssetSelection"
+    "\022\033\n\023character_player_id\030\003 \001(\004\022\021\n\tprice_f"
+    "en\030\004 \001(\004\022\r\n\005title\030\005 \001(\t\".\n\030GetRmbConsign"
+    "mentRequest\022\022\n\nlisting_id\030\001 \001(\004\";\n\032ListR"
+    "mbConsignmentsRequest\022\016\n\006cursor\030\001 \001(\t\022\r\n"
+    "\005limit\030\002 \001(\r\"I\n\030BuyRmbConsignmentRequest"
+    "\022\022\n\nlisting_id\030\001 \001(\004\022\031\n\021client_request_i"
+    "d\030\002 \001(\t\"1\n\033CancelRmbConsignmentRequest\022\022"
+    "\n\nlisting_id\030\001 \001(\004\"\216\002\n\022RmbConsignmentVie"
+    "w\022\022\n\nlisting_id\030\001 \001(\004\022\030\n\020seller_player_i"
+    "d\030\002 \001(\004\022\023\n\013market_zone\030\003 \001(\r\022\022\n\nasset_ki"
+    "nd\030\004 \001(\t\022\r\n\005title\030\005 \001(\t\022\021\n\tprice_fen\030\006 \001"
+    "(\004\022\017\n\007fee_bps\030\007 \001(\r\022\022\n\ncooling_ms\030\010 \001(\004\022"
+    "\025\n\rnotice_end_ms\030\t \001(\004\022\023\n\013sale_end_ms\030\n "
+    "\001(\004\022\r\n\005state\030\013 \001(\t\022\r\n\005phase\030\014 \001(\t\022\020\n\010ord"
+    "er_id\030\r \001(\t\"\203\001\n\026RmbConsignmentResponse\022&"
+    "\n\rerror_message\030\001 \001(\0132\017.TipInfoMessage\022*"
+    "\n\007listing\030\002 \001(\0132\031.trade.RmbConsignmentVi"
+    "ew\022\025\n\rserver_now_ms\030\003 \001(\004\"\236\001\n\033ListRmbCon"
+    "signmentsResponse\022&\n\rerror_message\030\001 \001(\013"
+    "2\017.TipInfoMessage\022+\n\010listings\030\002 \003(\0132\031.tr"
+    "ade.RmbConsignmentView\022\023\n\013next_cursor\030\003 "
+    "\001(\t\022\025\n\rserver_now_ms\030\004 \001(\004\"9\n\030ListSeller"
+    "IncomesRequest\022\016\n\006cursor\030\001 \001(\t\022\r\n\005limit\030"
+    "\002 \001(\r\"\226\001\n\017RmbSellerIncome\022\020\n\010order_id\030\001 "
+    "\001(\t\022\021\n\tgross_fen\030\002 \001(\004\022\017\n\007fee_fen\030\003 \001(\004\022"
+    "\017\n\007net_fen\030\004 \001(\004\022\024\n\014reserved_fen\030\005 \001(\004\022\020"
+    "\n\010paid_fen\030\006 \001(\004\022\024\n\014available_ms\030\007 \001(\004\"\230"
+    "\001\n\031ListSellerIncomesResponse\022&\n\rerror_me"
+    "ssage\030\001 \001(\0132\017.TipInfoMessage\022\'\n\007incomes\030"
+    "\002 \003(\0132\026.trade.RmbSellerIncome\022\023\n\013next_cu"
+    "rsor\030\003 \001(\t\022\025\n\rserver_now_ms\030\004 \001(\004\"H\n\027Cre"
+    "ateWithdrawalRequest\022\031\n\021client_request_i"
+    "d\030\001 \001(\t\022\022\n\namount_fen\030\002 \001(\004\"-\n\024GetWithdr"
+    "awalRequest\022\025\n\rwithdrawal_id\030\001 \001(\t\"v\n\021Rm"
+    "bWithdrawalView\022\025\n\rwithdrawal_id\030\001 \001(\t\022\022"
+    "\n\namount_fen\030\002 \001(\004\022\r\n\005state\030\003 \001(\t\022\017\n\007cha"
+    "nnel\030\004 \001(\t\022\026\n\016transaction_id\030\005 \001(\t\"j\n\022Wi"
+    "thdrawalResponse\022&\n\rerror_message\030\001 \001(\0132"
+    "\017.TipInfoMessage\022,\n\nwithdrawal\030\002 \001(\0132\030.t"
+    "rade.RmbWithdrawalView*\231\002\n\021CommerceOrder"
+    "Kind\022#\n\037COMMERCE_ORDER_KIND_UNSPECIFIED\020"
+    "\000\022 \n\034COMMERCE_ORDER_KIND_OFFICIAL\020\001\022$\n C"
+    "OMMERCE_ORDER_KIND_PLAYER_TRADE\020\002\022#\n\037COM"
+    "MERCE_ORDER_KIND_CONSIGNMENT\020\003\022$\n COMMER"
+    "CE_ORDER_KIND_MARKET_MATCH\020\004\022#\n\037COMMERCE"
+    "_ORDER_KIND_AUCTION_LOT\020\005\022\'\n#COMMERCE_OR"
+    "DER_KIND_RMB_CONSIGNMENT\020\006*\335\003\n\022CommerceO"
+    "rderState\022$\n COMMERCE_ORDER_STATE_UNSPEC"
+    "IFIED\020\000\022-\n)COMMERCE_ORDER_STATE_WAITING_"
+    "CONFIRMATION\020\001\022)\n%COMMERCE_ORDER_STATE_A"
+    "WAITING_PAYMENT\020\002\022\"\n\036COMMERCE_ORDER_STAT"
+    "E_ESCROWING\020\003\022#\n\037COMMERCE_ORDER_STATE_DE"
+    "LIVERING\020\004\022\"\n\036COMMERCE_ORDER_STATE_DELIV"
+    "ERED\020\005\022\'\n#COMMERCE_ORDER_STATE_CANCEL_PE"
+    "NDING\020\006\022\"\n\036COMMERCE_ORDER_STATE_CANCELLE"
+    "D\020\007\022\'\n#COMMERCE_ORDER_STATE_REFUND_PENDI"
+    "NG\020\010\022!\n\035COMMERCE_ORDER_STATE_REFUNDED\020\t\022"
+    "\037\n\033COMMERCE_ORDER_STATE_MANUAL\020\n\022 \n\034COMM"
+    "ERCE_ORDER_STATE_SETTLED\020\013*k\n\017MarketOrde"
+    "rSide\022!\n\035MARKET_ORDER_SIDE_UNSPECIFIED\020\000"
+    "\022\031\n\025MARKET_ORDER_SIDE_BUY\020\001\022\032\n\026MARKET_OR"
+    "DER_SIDE_SELL\020\002B\007Z\005tradeb\006proto3"
 };
 static const ::_pbi::DescriptorTable* PROTOBUF_NONNULL const
     descriptor_table_proto_2ftrade_2fcommerce_2eproto_deps[1] = {
@@ -7401,13 +10193,13 @@ static ::absl::once_flag descriptor_table_proto_2ftrade_2fcommerce_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2ftrade_2fcommerce_2eproto = {
     false,
     false,
-    5746,
+    7472,
     descriptor_table_protodef_proto_2ftrade_2fcommerce_2eproto,
     "proto/trade/commerce.proto",
     &descriptor_table_proto_2ftrade_2fcommerce_2eproto_once,
     descriptor_table_proto_2ftrade_2fcommerce_2eproto_deps,
     1,
-    39,
+    54,
     schemas,
     file_message_globals,
     TableStruct_proto_2ftrade_2fcommerce_2eproto::offsets,
@@ -7421,7 +10213,7 @@ CommerceOrderKind_descriptor() {
   return file_level_enum_descriptors_proto_2ftrade_2fcommerce_2eproto[0];
 }
 PROTOBUF_CONSTINIT const uint32_t CommerceOrderKind_internal_data_[] = {
-    393216u, 0u, };
+    458752u, 0u, };
 [[nodiscard]] const ::google::protobuf::EnumDescriptor* PROTOBUF_NONNULL
 CommerceOrderState_descriptor() {
   ::google::protobuf::internal::AssignDescriptors(&descriptor_table_proto_2ftrade_2fcommerce_2eproto);
@@ -18681,6 +21473,4377 @@ void AuctionLotResponse::InternalSwap(AuctionLotResponse* PROTOBUF_RESTRICT PROT
 }
 
 ::google::protobuf::Metadata AuctionLotResponse::GetMetadata() const {
+  return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
+}
+// ===================================================================
+
+CreateRmbConsignmentRequest::CreateRmbConsignmentRequest(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, CreateRmbConsignmentRequest_get_class_data()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  SharedCtor(arena);
+  // @@protoc_insertion_point(arena_constructor:trade.CreateRmbConsignmentRequest)
+}
+PROTOBUF_NDEBUG_INLINE CreateRmbConsignmentRequest::Impl_::Impl_(
+    [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
+    [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
+    [[maybe_unused]] const ::trade::CreateRmbConsignmentRequest& from_msg)
+      : _has_bits_{from._has_bits_},
+        _cached_size_{0},
+        client_request_id_(arena, from.client_request_id_),
+        title_(arena, from.title_) {}
+
+CreateRmbConsignmentRequest::CreateRmbConsignmentRequest(
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena,
+    const CreateRmbConsignmentRequest& from)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, CreateRmbConsignmentRequest_get_class_data()) {
+
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  CreateRmbConsignmentRequest* const _this = this;
+  (void)_this;
+  _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+  new (&_impl_) Impl_(internal_visibility(), arena, from._impl_, from);
+  ::uint32_t cached_has_bits = _impl_._has_bits_[0];
+  _impl_.assets_ = (CheckHasBit(cached_has_bits, 0x00000004U))
+                ? ::google::protobuf::Message::CopyConstruct(arena, *from._impl_.assets_)
+                : nullptr;
+  ::memcpy(reinterpret_cast<char*>(&_impl_) +
+               offsetof(Impl_, character_player_id_),
+           reinterpret_cast<const char*>(&from._impl_) +
+               offsetof(Impl_, character_player_id_),
+           offsetof(Impl_, price_fen_) -
+               offsetof(Impl_, character_player_id_) +
+               sizeof(Impl_::price_fen_));
+
+  // @@protoc_insertion_point(copy_constructor:trade.CreateRmbConsignmentRequest)
+}
+PROTOBUF_NDEBUG_INLINE CreateRmbConsignmentRequest::Impl_::Impl_(
+    [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
+    [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+      : _cached_size_{0},
+        client_request_id_(arena),
+        title_(arena) {}
+
+inline void CreateRmbConsignmentRequest::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
+  new (&_impl_) Impl_(internal_visibility(), arena);
+  ::memset(reinterpret_cast<char*>(&_impl_) +
+               offsetof(Impl_, assets_),
+           0,
+           offsetof(Impl_, price_fen_) -
+               offsetof(Impl_, assets_) +
+               sizeof(Impl_::price_fen_));
+}
+CreateRmbConsignmentRequest::~CreateRmbConsignmentRequest() {
+  // @@protoc_insertion_point(destructor:trade.CreateRmbConsignmentRequest)
+  SharedDtor(*this);
+}
+inline void CreateRmbConsignmentRequest::SharedDtor(MessageLite& self) {
+  CreateRmbConsignmentRequest& this_ = static_cast<CreateRmbConsignmentRequest&>(self);
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    this_.CheckHasBitConsistency();
+  }
+  this_._internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
+  ABSL_DCHECK(this_.GetArena() == nullptr);
+  this_._impl_.client_request_id_.Destroy();
+  this_._impl_.title_.Destroy();
+  delete this_._impl_.assets_;
+  this_._impl_.~Impl_();
+}
+
+#ifndef PROTOBUF_MESSAGE_GLOBALS
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const
+    ::google::protobuf::internal::ClassDataFull CreateRmbConsignmentRequest_class_data_ =
+        CreateRmbConsignmentRequest::InternalGenerateClassData_(CreateRmbConsignmentRequest_globals_._default);
+
+PROTOBUF_ATTRIBUTE_WEAK const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
+CreateRmbConsignmentRequest::GetClassData() const {
+  ::google::protobuf::internal::PrefetchToLocalCache(&CreateRmbConsignmentRequest_class_data_);
+  ::google::protobuf::internal::PrefetchToLocalCache(CreateRmbConsignmentRequest_class_data_.tc_table);
+  return CreateRmbConsignmentRequest_class_data_.base();
+}
+#else
+PROTOBUF_ATTRIBUTE_WEAK const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
+CreateRmbConsignmentRequest::GetClassData() const {
+  ::google::protobuf::internal::PrefetchToLocalCache(&CreateRmbConsignmentRequest_globals_);
+  ::google::protobuf::internal::PrefetchToLocalCache(
+      ::google::protobuf::internal::MessageGlobalsBase::ToParseTableBase(&CreateRmbConsignmentRequest_globals_));
+  return CreateRmbConsignmentRequest_globals_.GetClassData();
+}
+#endif  // !PROTOBUF_MESSAGE_GLOBALS
+#ifndef PROTOBUF_MESSAGE_GLOBALS
+PROTOBUF_CONSTINIT
+PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const CreateRmbConsignmentRequest::ParseTableT_
+    CreateRmbConsignmentRequest::_table_ =
+        CreateRmbConsignmentRequest::InternalGenerateParseTable_(CreateRmbConsignmentRequest_class_data_.base());
+#endif  // !PROTOBUF_MESSAGE_GLOBALS
+PROTOBUF_NOINLINE void CreateRmbConsignmentRequest::Clear() {
+// @@protoc_insertion_point(message_clear_start:trade.CreateRmbConsignmentRequest)
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  cached_has_bits = _impl_._has_bits_[0];
+  if (BatchCheckHasBit(cached_has_bits, 0x00000007U)) {
+    if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+      _impl_.client_request_id_.ClearNonDefaultToEmpty();
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      _impl_.title_.ClearNonDefaultToEmpty();
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000004U)) {
+      ABSL_DCHECK(_impl_.assets_ != nullptr);
+      _impl_.assets_->Clear();
+    }
+  }
+  if (BatchCheckHasBit(cached_has_bits, 0x00000018U)) {
+    ::memset(&_impl_.character_player_id_, 0, static_cast<::size_t>(
+        reinterpret_cast<char*>(&_impl_.price_fen_) -
+        reinterpret_cast<char*>(&_impl_.character_player_id_)) + sizeof(_impl_.price_fen_));
+  }
+  _impl_._has_bits_.Clear();
+  _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::uint8_t* PROTOBUF_NONNULL CreateRmbConsignmentRequest::_InternalSerialize(
+    const ::google::protobuf::MessageLite& base, ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) {
+  const CreateRmbConsignmentRequest& this_ = static_cast<const CreateRmbConsignmentRequest&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::uint8_t* PROTOBUF_NONNULL CreateRmbConsignmentRequest::_InternalSerialize(
+    ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
+  const CreateRmbConsignmentRequest& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    this_.CheckHasBitConsistency();
+  }
+  // @@protoc_insertion_point(serialize_to_array_start:trade.CreateRmbConsignmentRequest)
+  ::uint32_t cached_has_bits = 0;
+  (void)cached_has_bits;
+
+  cached_has_bits = this_._impl_._has_bits_[0];
+  // string client_request_id = 1;
+  if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+    if (!this_._internal_client_request_id().empty()) {
+      const ::std::string& _s = this_._internal_client_request_id();
+      ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
+          _s.data(), static_cast<int>(_s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "trade.CreateRmbConsignmentRequest.client_request_id");
+      target = stream->WriteStringMaybeAliased(1, _s, target);
+    }
+  }
+
+  // .trade.TradeAssetSelection assets = 2;
+  if (CheckHasBit(cached_has_bits, 0x00000004U)) {
+    target = ::google::protobuf::internal::WireFormatLite::InternalWriteMessage(
+        2, *this_._impl_.assets_, this_._impl_.assets_->GetCachedSize(), target,
+        stream);
+  }
+
+  // uint64 character_player_id = 3;
+  if (CheckHasBit(cached_has_bits, 0x00000008U)) {
+    if (this_._internal_character_player_id() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteUInt64ToArray(
+          3, this_._internal_character_player_id(), target);
+    }
+  }
+
+  // uint64 price_fen = 4;
+  if (CheckHasBit(cached_has_bits, 0x00000010U)) {
+    if (this_._internal_price_fen() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteUInt64ToArray(
+          4, this_._internal_price_fen(), target);
+    }
+  }
+
+  // string title = 5;
+  if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+    if (!this_._internal_title().empty()) {
+      const ::std::string& _s = this_._internal_title();
+      ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
+          _s.data(), static_cast<int>(_s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "trade.CreateRmbConsignmentRequest.title");
+      target = stream->WriteStringMaybeAliased(5, _s, target);
+    }
+  }
+
+  if (ABSL_PREDICT_FALSE(this_._internal_metadata_.have_unknown_fields())) {
+    target =
+        ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
+            this_._internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
+  }
+  // @@protoc_insertion_point(serialize_to_array_end:trade.CreateRmbConsignmentRequest)
+  return target;
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::size_t CreateRmbConsignmentRequest::ByteSizeLong(const MessageLite& base) {
+  const CreateRmbConsignmentRequest& this_ = static_cast<const CreateRmbConsignmentRequest&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::size_t CreateRmbConsignmentRequest::ByteSizeLong() const {
+  const CreateRmbConsignmentRequest& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  // @@protoc_insertion_point(message_byte_size_start:trade.CreateRmbConsignmentRequest)
+  ::size_t total_size = 0;
+
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void)cached_has_bits;
+
+  ::_pbi::Prefetch5LinesFrom7Lines(&this_);
+  cached_has_bits = this_._impl_._has_bits_[0];
+  if (BatchCheckHasBit(cached_has_bits, 0x0000001fU)) {
+    // string client_request_id = 1;
+    if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+      if (!this_._internal_client_request_id().empty()) {
+        total_size += 1 + ::google::protobuf::internal::WireFormatLite::StringSize(
+                                        this_._internal_client_request_id());
+      }
+    }
+    // string title = 5;
+    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      if (!this_._internal_title().empty()) {
+        total_size += 1 + ::google::protobuf::internal::WireFormatLite::StringSize(
+                                        this_._internal_title());
+      }
+    }
+    // .trade.TradeAssetSelection assets = 2;
+    if (CheckHasBit(cached_has_bits, 0x00000004U)) {
+      total_size += 1 +
+                    ::google::protobuf::internal::WireFormatLite::MessageSize(*this_._impl_.assets_);
+    }
+    // uint64 character_player_id = 3;
+    if (CheckHasBit(cached_has_bits, 0x00000008U)) {
+      if (this_._internal_character_player_id() != 0) {
+        total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(
+            this_._internal_character_player_id());
+      }
+    }
+    // uint64 price_fen = 4;
+    if (CheckHasBit(cached_has_bits, 0x00000010U)) {
+      if (this_._internal_price_fen() != 0) {
+        total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(
+            this_._internal_price_fen());
+      }
+    }
+  }
+  return this_.MaybeComputeUnknownFieldsSize(total_size,
+                                             &this_._impl_._cached_size_);
+}
+
+void CreateRmbConsignmentRequest::MergeImpl(::google::protobuf::MessageLite& to_msg,
+                      const ::google::protobuf::MessageLite& from_msg) {
+   auto* const _this = static_cast<CreateRmbConsignmentRequest*>(&to_msg);
+  auto& from = static_cast<const CreateRmbConsignmentRequest&>(from_msg);
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    from.CheckHasBitConsistency();
+  }
+  ::google::protobuf::Arena* arena = _this->GetArena();
+  // @@protoc_insertion_point(class_specific_merge_from_start:trade.CreateRmbConsignmentRequest)
+  ABSL_DCHECK_NE(&from, _this);
+  ::uint32_t cached_has_bits = 0;
+  (void)cached_has_bits;
+
+  cached_has_bits = from._impl_._has_bits_[0];
+  if (BatchCheckHasBit(cached_has_bits, 0x0000001fU)) {
+    if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+      if (!from._internal_client_request_id().empty()) {
+        _this->_internal_set_client_request_id(from._internal_client_request_id());
+      } else {
+        if (_this->_impl_.client_request_id_.IsDefault()) {
+          _this->_internal_set_client_request_id("");
+        }
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      if (!from._internal_title().empty()) {
+        _this->_internal_set_title(from._internal_title());
+      } else {
+        if (_this->_impl_.title_.IsDefault()) {
+          _this->_internal_set_title("");
+        }
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000004U)) {
+      ABSL_DCHECK(from._impl_.assets_ != nullptr);
+      if (_this->_impl_.assets_ == nullptr) {
+        _this->_impl_.assets_ = ::google::protobuf::Message::CopyConstruct(arena, *from._impl_.assets_);
+      } else {
+        _this->_impl_.assets_->MergeFrom(*from._impl_.assets_);
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000008U)) {
+      if (from._internal_character_player_id() != 0) {
+        _this->_impl_.character_player_id_ = from._impl_.character_player_id_;
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000010U)) {
+      if (from._internal_price_fen() != 0) {
+        _this->_impl_.price_fen_ = from._impl_.price_fen_;
+      }
+    }
+  }
+  _this->_impl_._has_bits_[0] |= cached_has_bits;
+  _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+}
+
+void CreateRmbConsignmentRequest::CopyFrom(const CreateRmbConsignmentRequest& from) {
+  // @@protoc_insertion_point(class_specific_copy_from_start:trade.CreateRmbConsignmentRequest)
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+
+void CreateRmbConsignmentRequest::InternalSwap(CreateRmbConsignmentRequest* PROTOBUF_RESTRICT PROTOBUF_NONNULL other) {
+  using ::std::swap;
+  auto* arena = GetArena();
+  ABSL_DCHECK_EQ(arena, other->GetArena());
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
+  swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
+  ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.client_request_id_, &other->_impl_.client_request_id_, arena);
+  ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.title_, &other->_impl_.title_, arena);
+  ::google::protobuf::internal::memswap<
+      PROTOBUF_FIELD_OFFSET(CreateRmbConsignmentRequest, _impl_.price_fen_)
+      + sizeof(CreateRmbConsignmentRequest::_impl_.price_fen_)
+      - PROTOBUF_FIELD_OFFSET(CreateRmbConsignmentRequest, _impl_.assets_)>(
+          reinterpret_cast<char*>(&_impl_.assets_),
+          reinterpret_cast<char*>(&other->_impl_.assets_));
+}
+
+::google::protobuf::Metadata CreateRmbConsignmentRequest::GetMetadata() const {
+  return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
+}
+// ===================================================================
+
+GetRmbConsignmentRequest::GetRmbConsignmentRequest(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, GetRmbConsignmentRequest_get_class_data()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  SharedCtor(arena);
+  // @@protoc_insertion_point(arena_constructor:trade.GetRmbConsignmentRequest)
+}
+GetRmbConsignmentRequest::GetRmbConsignmentRequest(
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const GetRmbConsignmentRequest& from)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, GetRmbConsignmentRequest_get_class_data()),
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena),
+#endif  // PROTOBUF_CUSTOM_VTABLE
+      _impl_(from._impl_) {
+  _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+}
+PROTOBUF_NDEBUG_INLINE GetRmbConsignmentRequest::Impl_::Impl_(
+    [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
+    [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+      : _cached_size_{0} {}
+
+inline void GetRmbConsignmentRequest::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
+  new (&_impl_) Impl_(internal_visibility(), arena);
+  _impl_.listing_id_ = {};
+}
+GetRmbConsignmentRequest::~GetRmbConsignmentRequest() {
+  // @@protoc_insertion_point(destructor:trade.GetRmbConsignmentRequest)
+  SharedDtor(*this);
+}
+inline void GetRmbConsignmentRequest::SharedDtor(MessageLite& self) {
+  GetRmbConsignmentRequest& this_ = static_cast<GetRmbConsignmentRequest&>(self);
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    this_.CheckHasBitConsistency();
+  }
+  this_._internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
+  ABSL_DCHECK(this_.GetArena() == nullptr);
+  this_._impl_.~Impl_();
+}
+
+#ifndef PROTOBUF_MESSAGE_GLOBALS
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const
+    ::google::protobuf::internal::ClassDataFull GetRmbConsignmentRequest_class_data_ =
+        GetRmbConsignmentRequest::InternalGenerateClassData_(GetRmbConsignmentRequest_globals_._default);
+
+PROTOBUF_ATTRIBUTE_WEAK const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
+GetRmbConsignmentRequest::GetClassData() const {
+  ::google::protobuf::internal::PrefetchToLocalCache(&GetRmbConsignmentRequest_class_data_);
+  ::google::protobuf::internal::PrefetchToLocalCache(GetRmbConsignmentRequest_class_data_.tc_table);
+  return GetRmbConsignmentRequest_class_data_.base();
+}
+#else
+PROTOBUF_ATTRIBUTE_WEAK const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
+GetRmbConsignmentRequest::GetClassData() const {
+  ::google::protobuf::internal::PrefetchToLocalCache(&GetRmbConsignmentRequest_globals_);
+  ::google::protobuf::internal::PrefetchToLocalCache(
+      ::google::protobuf::internal::MessageGlobalsBase::ToParseTableBase(&GetRmbConsignmentRequest_globals_));
+  return GetRmbConsignmentRequest_globals_.GetClassData();
+}
+#endif  // !PROTOBUF_MESSAGE_GLOBALS
+#ifndef PROTOBUF_MESSAGE_GLOBALS
+PROTOBUF_CONSTINIT
+PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const GetRmbConsignmentRequest::ParseTableT_
+    GetRmbConsignmentRequest::_table_ =
+        GetRmbConsignmentRequest::InternalGenerateParseTable_(GetRmbConsignmentRequest_class_data_.base());
+#endif  // !PROTOBUF_MESSAGE_GLOBALS
+PROTOBUF_NOINLINE void GetRmbConsignmentRequest::Clear() {
+// @@protoc_insertion_point(message_clear_start:trade.GetRmbConsignmentRequest)
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  _impl_.listing_id_ = ::uint64_t{0u};
+  _impl_._has_bits_.Clear();
+  _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::uint8_t* PROTOBUF_NONNULL GetRmbConsignmentRequest::_InternalSerialize(
+    const ::google::protobuf::MessageLite& base, ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) {
+  const GetRmbConsignmentRequest& this_ = static_cast<const GetRmbConsignmentRequest&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::uint8_t* PROTOBUF_NONNULL GetRmbConsignmentRequest::_InternalSerialize(
+    ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
+  const GetRmbConsignmentRequest& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    this_.CheckHasBitConsistency();
+  }
+  // @@protoc_insertion_point(serialize_to_array_start:trade.GetRmbConsignmentRequest)
+  ::uint32_t cached_has_bits = 0;
+  (void)cached_has_bits;
+
+  cached_has_bits = this_._impl_._has_bits_[0];
+  // uint64 listing_id = 1;
+  if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+    if (this_._internal_listing_id() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteUInt64ToArray(
+          1, this_._internal_listing_id(), target);
+    }
+  }
+
+  if (ABSL_PREDICT_FALSE(this_._internal_metadata_.have_unknown_fields())) {
+    target =
+        ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
+            this_._internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
+  }
+  // @@protoc_insertion_point(serialize_to_array_end:trade.GetRmbConsignmentRequest)
+  return target;
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::size_t GetRmbConsignmentRequest::ByteSizeLong(const MessageLite& base) {
+  const GetRmbConsignmentRequest& this_ = static_cast<const GetRmbConsignmentRequest&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::size_t GetRmbConsignmentRequest::ByteSizeLong() const {
+  const GetRmbConsignmentRequest& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  // @@protoc_insertion_point(message_byte_size_start:trade.GetRmbConsignmentRequest)
+  ::size_t total_size = 0;
+
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void)cached_has_bits;
+
+   {
+    // uint64 listing_id = 1;
+    cached_has_bits = this_._impl_._has_bits_[0];
+    if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+      if (this_._internal_listing_id() != 0) {
+        total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(
+            this_._internal_listing_id());
+      }
+    }
+  }
+  return this_.MaybeComputeUnknownFieldsSize(total_size,
+                                             &this_._impl_._cached_size_);
+}
+
+void GetRmbConsignmentRequest::MergeImpl(::google::protobuf::MessageLite& to_msg,
+                      const ::google::protobuf::MessageLite& from_msg) {
+   auto* const _this = static_cast<GetRmbConsignmentRequest*>(&to_msg);
+  auto& from = static_cast<const GetRmbConsignmentRequest&>(from_msg);
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    from.CheckHasBitConsistency();
+  }
+  // @@protoc_insertion_point(class_specific_merge_from_start:trade.GetRmbConsignmentRequest)
+  ABSL_DCHECK_NE(&from, _this);
+  ::uint32_t cached_has_bits = 0;
+  (void)cached_has_bits;
+
+  cached_has_bits = from._impl_._has_bits_[0];
+  if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+    if (from._internal_listing_id() != 0) {
+      _this->_impl_.listing_id_ = from._impl_.listing_id_;
+    }
+  }
+  _this->_impl_._has_bits_[0] |= cached_has_bits;
+  _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+}
+
+void GetRmbConsignmentRequest::CopyFrom(const GetRmbConsignmentRequest& from) {
+  // @@protoc_insertion_point(class_specific_copy_from_start:trade.GetRmbConsignmentRequest)
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+
+void GetRmbConsignmentRequest::InternalSwap(GetRmbConsignmentRequest* PROTOBUF_RESTRICT PROTOBUF_NONNULL other) {
+  using ::std::swap;
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
+  swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
+  swap(_impl_.listing_id_, other->_impl_.listing_id_);
+}
+
+::google::protobuf::Metadata GetRmbConsignmentRequest::GetMetadata() const {
+  return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
+}
+// ===================================================================
+
+ListRmbConsignmentsRequest::ListRmbConsignmentsRequest(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, ListRmbConsignmentsRequest_get_class_data()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  SharedCtor(arena);
+  // @@protoc_insertion_point(arena_constructor:trade.ListRmbConsignmentsRequest)
+}
+PROTOBUF_NDEBUG_INLINE ListRmbConsignmentsRequest::Impl_::Impl_(
+    [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
+    [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
+    [[maybe_unused]] const ::trade::ListRmbConsignmentsRequest& from_msg)
+      : _has_bits_{from._has_bits_},
+        _cached_size_{0},
+        cursor_(arena, from.cursor_) {}
+
+ListRmbConsignmentsRequest::ListRmbConsignmentsRequest(
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena,
+    const ListRmbConsignmentsRequest& from)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, ListRmbConsignmentsRequest_get_class_data()) {
+
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  ListRmbConsignmentsRequest* const _this = this;
+  (void)_this;
+  _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+  new (&_impl_) Impl_(internal_visibility(), arena, from._impl_, from);
+  _impl_.limit_ = from._impl_.limit_;
+
+  // @@protoc_insertion_point(copy_constructor:trade.ListRmbConsignmentsRequest)
+}
+PROTOBUF_NDEBUG_INLINE ListRmbConsignmentsRequest::Impl_::Impl_(
+    [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
+    [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+      : _cached_size_{0},
+        cursor_(arena) {}
+
+inline void ListRmbConsignmentsRequest::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
+  new (&_impl_) Impl_(internal_visibility(), arena);
+  _impl_.limit_ = {};
+}
+ListRmbConsignmentsRequest::~ListRmbConsignmentsRequest() {
+  // @@protoc_insertion_point(destructor:trade.ListRmbConsignmentsRequest)
+  SharedDtor(*this);
+}
+inline void ListRmbConsignmentsRequest::SharedDtor(MessageLite& self) {
+  ListRmbConsignmentsRequest& this_ = static_cast<ListRmbConsignmentsRequest&>(self);
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    this_.CheckHasBitConsistency();
+  }
+  this_._internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
+  ABSL_DCHECK(this_.GetArena() == nullptr);
+  this_._impl_.cursor_.Destroy();
+  this_._impl_.~Impl_();
+}
+
+#ifndef PROTOBUF_MESSAGE_GLOBALS
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const
+    ::google::protobuf::internal::ClassDataFull ListRmbConsignmentsRequest_class_data_ =
+        ListRmbConsignmentsRequest::InternalGenerateClassData_(ListRmbConsignmentsRequest_globals_._default);
+
+PROTOBUF_ATTRIBUTE_WEAK const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
+ListRmbConsignmentsRequest::GetClassData() const {
+  ::google::protobuf::internal::PrefetchToLocalCache(&ListRmbConsignmentsRequest_class_data_);
+  ::google::protobuf::internal::PrefetchToLocalCache(ListRmbConsignmentsRequest_class_data_.tc_table);
+  return ListRmbConsignmentsRequest_class_data_.base();
+}
+#else
+PROTOBUF_ATTRIBUTE_WEAK const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
+ListRmbConsignmentsRequest::GetClassData() const {
+  ::google::protobuf::internal::PrefetchToLocalCache(&ListRmbConsignmentsRequest_globals_);
+  ::google::protobuf::internal::PrefetchToLocalCache(
+      ::google::protobuf::internal::MessageGlobalsBase::ToParseTableBase(&ListRmbConsignmentsRequest_globals_));
+  return ListRmbConsignmentsRequest_globals_.GetClassData();
+}
+#endif  // !PROTOBUF_MESSAGE_GLOBALS
+#ifndef PROTOBUF_MESSAGE_GLOBALS
+PROTOBUF_CONSTINIT
+PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const ListRmbConsignmentsRequest::ParseTableT_
+    ListRmbConsignmentsRequest::_table_ =
+        ListRmbConsignmentsRequest::InternalGenerateParseTable_(ListRmbConsignmentsRequest_class_data_.base());
+#endif  // !PROTOBUF_MESSAGE_GLOBALS
+PROTOBUF_NOINLINE void ListRmbConsignmentsRequest::Clear() {
+// @@protoc_insertion_point(message_clear_start:trade.ListRmbConsignmentsRequest)
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  cached_has_bits = _impl_._has_bits_[0];
+  if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+    _impl_.cursor_.ClearNonDefaultToEmpty();
+  }
+  _impl_.limit_ = 0u;
+  _impl_._has_bits_.Clear();
+  _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::uint8_t* PROTOBUF_NONNULL ListRmbConsignmentsRequest::_InternalSerialize(
+    const ::google::protobuf::MessageLite& base, ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) {
+  const ListRmbConsignmentsRequest& this_ = static_cast<const ListRmbConsignmentsRequest&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::uint8_t* PROTOBUF_NONNULL ListRmbConsignmentsRequest::_InternalSerialize(
+    ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
+  const ListRmbConsignmentsRequest& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    this_.CheckHasBitConsistency();
+  }
+  // @@protoc_insertion_point(serialize_to_array_start:trade.ListRmbConsignmentsRequest)
+  ::uint32_t cached_has_bits = 0;
+  (void)cached_has_bits;
+
+  cached_has_bits = this_._impl_._has_bits_[0];
+  // string cursor = 1;
+  if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+    if (!this_._internal_cursor().empty()) {
+      const ::std::string& _s = this_._internal_cursor();
+      ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
+          _s.data(), static_cast<int>(_s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "trade.ListRmbConsignmentsRequest.cursor");
+      target = stream->WriteStringMaybeAliased(1, _s, target);
+    }
+  }
+
+  // uint32 limit = 2;
+  if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+    if (this_._internal_limit() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
+          2, this_._internal_limit(), target);
+    }
+  }
+
+  if (ABSL_PREDICT_FALSE(this_._internal_metadata_.have_unknown_fields())) {
+    target =
+        ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
+            this_._internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
+  }
+  // @@protoc_insertion_point(serialize_to_array_end:trade.ListRmbConsignmentsRequest)
+  return target;
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::size_t ListRmbConsignmentsRequest::ByteSizeLong(const MessageLite& base) {
+  const ListRmbConsignmentsRequest& this_ = static_cast<const ListRmbConsignmentsRequest&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::size_t ListRmbConsignmentsRequest::ByteSizeLong() const {
+  const ListRmbConsignmentsRequest& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  // @@protoc_insertion_point(message_byte_size_start:trade.ListRmbConsignmentsRequest)
+  ::size_t total_size = 0;
+
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void)cached_has_bits;
+
+  ::_pbi::Prefetch5LinesFrom7Lines(&this_);
+  cached_has_bits = this_._impl_._has_bits_[0];
+  if (BatchCheckHasBit(cached_has_bits, 0x00000003U)) {
+    // string cursor = 1;
+    if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+      if (!this_._internal_cursor().empty()) {
+        total_size += 1 + ::google::protobuf::internal::WireFormatLite::StringSize(
+                                        this_._internal_cursor());
+      }
+    }
+    // uint32 limit = 2;
+    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      if (this_._internal_limit() != 0) {
+        total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
+            this_._internal_limit());
+      }
+    }
+  }
+  return this_.MaybeComputeUnknownFieldsSize(total_size,
+                                             &this_._impl_._cached_size_);
+}
+
+void ListRmbConsignmentsRequest::MergeImpl(::google::protobuf::MessageLite& to_msg,
+                      const ::google::protobuf::MessageLite& from_msg) {
+   auto* const _this = static_cast<ListRmbConsignmentsRequest*>(&to_msg);
+  auto& from = static_cast<const ListRmbConsignmentsRequest&>(from_msg);
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    from.CheckHasBitConsistency();
+  }
+  // @@protoc_insertion_point(class_specific_merge_from_start:trade.ListRmbConsignmentsRequest)
+  ABSL_DCHECK_NE(&from, _this);
+  ::uint32_t cached_has_bits = 0;
+  (void)cached_has_bits;
+
+  cached_has_bits = from._impl_._has_bits_[0];
+  if (BatchCheckHasBit(cached_has_bits, 0x00000003U)) {
+    if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+      if (!from._internal_cursor().empty()) {
+        _this->_internal_set_cursor(from._internal_cursor());
+      } else {
+        if (_this->_impl_.cursor_.IsDefault()) {
+          _this->_internal_set_cursor("");
+        }
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      if (from._internal_limit() != 0) {
+        _this->_impl_.limit_ = from._impl_.limit_;
+      }
+    }
+  }
+  _this->_impl_._has_bits_[0] |= cached_has_bits;
+  _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+}
+
+void ListRmbConsignmentsRequest::CopyFrom(const ListRmbConsignmentsRequest& from) {
+  // @@protoc_insertion_point(class_specific_copy_from_start:trade.ListRmbConsignmentsRequest)
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+
+void ListRmbConsignmentsRequest::InternalSwap(ListRmbConsignmentsRequest* PROTOBUF_RESTRICT PROTOBUF_NONNULL other) {
+  using ::std::swap;
+  auto* arena = GetArena();
+  ABSL_DCHECK_EQ(arena, other->GetArena());
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
+  swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
+  ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.cursor_, &other->_impl_.cursor_, arena);
+  swap(_impl_.limit_, other->_impl_.limit_);
+}
+
+::google::protobuf::Metadata ListRmbConsignmentsRequest::GetMetadata() const {
+  return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
+}
+// ===================================================================
+
+BuyRmbConsignmentRequest::BuyRmbConsignmentRequest(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, BuyRmbConsignmentRequest_get_class_data()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  SharedCtor(arena);
+  // @@protoc_insertion_point(arena_constructor:trade.BuyRmbConsignmentRequest)
+}
+PROTOBUF_NDEBUG_INLINE BuyRmbConsignmentRequest::Impl_::Impl_(
+    [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
+    [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
+    [[maybe_unused]] const ::trade::BuyRmbConsignmentRequest& from_msg)
+      : _has_bits_{from._has_bits_},
+        _cached_size_{0},
+        client_request_id_(arena, from.client_request_id_) {}
+
+BuyRmbConsignmentRequest::BuyRmbConsignmentRequest(
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena,
+    const BuyRmbConsignmentRequest& from)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, BuyRmbConsignmentRequest_get_class_data()) {
+
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  BuyRmbConsignmentRequest* const _this = this;
+  (void)_this;
+  _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+  new (&_impl_) Impl_(internal_visibility(), arena, from._impl_, from);
+  _impl_.listing_id_ = from._impl_.listing_id_;
+
+  // @@protoc_insertion_point(copy_constructor:trade.BuyRmbConsignmentRequest)
+}
+PROTOBUF_NDEBUG_INLINE BuyRmbConsignmentRequest::Impl_::Impl_(
+    [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
+    [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+      : _cached_size_{0},
+        client_request_id_(arena) {}
+
+inline void BuyRmbConsignmentRequest::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
+  new (&_impl_) Impl_(internal_visibility(), arena);
+  _impl_.listing_id_ = {};
+}
+BuyRmbConsignmentRequest::~BuyRmbConsignmentRequest() {
+  // @@protoc_insertion_point(destructor:trade.BuyRmbConsignmentRequest)
+  SharedDtor(*this);
+}
+inline void BuyRmbConsignmentRequest::SharedDtor(MessageLite& self) {
+  BuyRmbConsignmentRequest& this_ = static_cast<BuyRmbConsignmentRequest&>(self);
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    this_.CheckHasBitConsistency();
+  }
+  this_._internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
+  ABSL_DCHECK(this_.GetArena() == nullptr);
+  this_._impl_.client_request_id_.Destroy();
+  this_._impl_.~Impl_();
+}
+
+#ifndef PROTOBUF_MESSAGE_GLOBALS
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const
+    ::google::protobuf::internal::ClassDataFull BuyRmbConsignmentRequest_class_data_ =
+        BuyRmbConsignmentRequest::InternalGenerateClassData_(BuyRmbConsignmentRequest_globals_._default);
+
+PROTOBUF_ATTRIBUTE_WEAK const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
+BuyRmbConsignmentRequest::GetClassData() const {
+  ::google::protobuf::internal::PrefetchToLocalCache(&BuyRmbConsignmentRequest_class_data_);
+  ::google::protobuf::internal::PrefetchToLocalCache(BuyRmbConsignmentRequest_class_data_.tc_table);
+  return BuyRmbConsignmentRequest_class_data_.base();
+}
+#else
+PROTOBUF_ATTRIBUTE_WEAK const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
+BuyRmbConsignmentRequest::GetClassData() const {
+  ::google::protobuf::internal::PrefetchToLocalCache(&BuyRmbConsignmentRequest_globals_);
+  ::google::protobuf::internal::PrefetchToLocalCache(
+      ::google::protobuf::internal::MessageGlobalsBase::ToParseTableBase(&BuyRmbConsignmentRequest_globals_));
+  return BuyRmbConsignmentRequest_globals_.GetClassData();
+}
+#endif  // !PROTOBUF_MESSAGE_GLOBALS
+#ifndef PROTOBUF_MESSAGE_GLOBALS
+PROTOBUF_CONSTINIT
+PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const BuyRmbConsignmentRequest::ParseTableT_
+    BuyRmbConsignmentRequest::_table_ =
+        BuyRmbConsignmentRequest::InternalGenerateParseTable_(BuyRmbConsignmentRequest_class_data_.base());
+#endif  // !PROTOBUF_MESSAGE_GLOBALS
+PROTOBUF_NOINLINE void BuyRmbConsignmentRequest::Clear() {
+// @@protoc_insertion_point(message_clear_start:trade.BuyRmbConsignmentRequest)
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  cached_has_bits = _impl_._has_bits_[0];
+  if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+    _impl_.client_request_id_.ClearNonDefaultToEmpty();
+  }
+  _impl_.listing_id_ = ::uint64_t{0u};
+  _impl_._has_bits_.Clear();
+  _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::uint8_t* PROTOBUF_NONNULL BuyRmbConsignmentRequest::_InternalSerialize(
+    const ::google::protobuf::MessageLite& base, ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) {
+  const BuyRmbConsignmentRequest& this_ = static_cast<const BuyRmbConsignmentRequest&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::uint8_t* PROTOBUF_NONNULL BuyRmbConsignmentRequest::_InternalSerialize(
+    ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
+  const BuyRmbConsignmentRequest& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    this_.CheckHasBitConsistency();
+  }
+  // @@protoc_insertion_point(serialize_to_array_start:trade.BuyRmbConsignmentRequest)
+  ::uint32_t cached_has_bits = 0;
+  (void)cached_has_bits;
+
+  cached_has_bits = this_._impl_._has_bits_[0];
+  // uint64 listing_id = 1;
+  if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+    if (this_._internal_listing_id() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteUInt64ToArray(
+          1, this_._internal_listing_id(), target);
+    }
+  }
+
+  // string client_request_id = 2;
+  if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+    if (!this_._internal_client_request_id().empty()) {
+      const ::std::string& _s = this_._internal_client_request_id();
+      ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
+          _s.data(), static_cast<int>(_s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "trade.BuyRmbConsignmentRequest.client_request_id");
+      target = stream->WriteStringMaybeAliased(2, _s, target);
+    }
+  }
+
+  if (ABSL_PREDICT_FALSE(this_._internal_metadata_.have_unknown_fields())) {
+    target =
+        ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
+            this_._internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
+  }
+  // @@protoc_insertion_point(serialize_to_array_end:trade.BuyRmbConsignmentRequest)
+  return target;
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::size_t BuyRmbConsignmentRequest::ByteSizeLong(const MessageLite& base) {
+  const BuyRmbConsignmentRequest& this_ = static_cast<const BuyRmbConsignmentRequest&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::size_t BuyRmbConsignmentRequest::ByteSizeLong() const {
+  const BuyRmbConsignmentRequest& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  // @@protoc_insertion_point(message_byte_size_start:trade.BuyRmbConsignmentRequest)
+  ::size_t total_size = 0;
+
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void)cached_has_bits;
+
+  ::_pbi::Prefetch5LinesFrom7Lines(&this_);
+  cached_has_bits = this_._impl_._has_bits_[0];
+  if (BatchCheckHasBit(cached_has_bits, 0x00000003U)) {
+    // string client_request_id = 2;
+    if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+      if (!this_._internal_client_request_id().empty()) {
+        total_size += 1 + ::google::protobuf::internal::WireFormatLite::StringSize(
+                                        this_._internal_client_request_id());
+      }
+    }
+    // uint64 listing_id = 1;
+    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      if (this_._internal_listing_id() != 0) {
+        total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(
+            this_._internal_listing_id());
+      }
+    }
+  }
+  return this_.MaybeComputeUnknownFieldsSize(total_size,
+                                             &this_._impl_._cached_size_);
+}
+
+void BuyRmbConsignmentRequest::MergeImpl(::google::protobuf::MessageLite& to_msg,
+                      const ::google::protobuf::MessageLite& from_msg) {
+   auto* const _this = static_cast<BuyRmbConsignmentRequest*>(&to_msg);
+  auto& from = static_cast<const BuyRmbConsignmentRequest&>(from_msg);
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    from.CheckHasBitConsistency();
+  }
+  // @@protoc_insertion_point(class_specific_merge_from_start:trade.BuyRmbConsignmentRequest)
+  ABSL_DCHECK_NE(&from, _this);
+  ::uint32_t cached_has_bits = 0;
+  (void)cached_has_bits;
+
+  cached_has_bits = from._impl_._has_bits_[0];
+  if (BatchCheckHasBit(cached_has_bits, 0x00000003U)) {
+    if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+      if (!from._internal_client_request_id().empty()) {
+        _this->_internal_set_client_request_id(from._internal_client_request_id());
+      } else {
+        if (_this->_impl_.client_request_id_.IsDefault()) {
+          _this->_internal_set_client_request_id("");
+        }
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      if (from._internal_listing_id() != 0) {
+        _this->_impl_.listing_id_ = from._impl_.listing_id_;
+      }
+    }
+  }
+  _this->_impl_._has_bits_[0] |= cached_has_bits;
+  _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+}
+
+void BuyRmbConsignmentRequest::CopyFrom(const BuyRmbConsignmentRequest& from) {
+  // @@protoc_insertion_point(class_specific_copy_from_start:trade.BuyRmbConsignmentRequest)
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+
+void BuyRmbConsignmentRequest::InternalSwap(BuyRmbConsignmentRequest* PROTOBUF_RESTRICT PROTOBUF_NONNULL other) {
+  using ::std::swap;
+  auto* arena = GetArena();
+  ABSL_DCHECK_EQ(arena, other->GetArena());
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
+  swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
+  ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.client_request_id_, &other->_impl_.client_request_id_, arena);
+  swap(_impl_.listing_id_, other->_impl_.listing_id_);
+}
+
+::google::protobuf::Metadata BuyRmbConsignmentRequest::GetMetadata() const {
+  return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
+}
+// ===================================================================
+
+CancelRmbConsignmentRequest::CancelRmbConsignmentRequest(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, CancelRmbConsignmentRequest_get_class_data()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  SharedCtor(arena);
+  // @@protoc_insertion_point(arena_constructor:trade.CancelRmbConsignmentRequest)
+}
+CancelRmbConsignmentRequest::CancelRmbConsignmentRequest(
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const CancelRmbConsignmentRequest& from)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, CancelRmbConsignmentRequest_get_class_data()),
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena),
+#endif  // PROTOBUF_CUSTOM_VTABLE
+      _impl_(from._impl_) {
+  _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+}
+PROTOBUF_NDEBUG_INLINE CancelRmbConsignmentRequest::Impl_::Impl_(
+    [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
+    [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+      : _cached_size_{0} {}
+
+inline void CancelRmbConsignmentRequest::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
+  new (&_impl_) Impl_(internal_visibility(), arena);
+  _impl_.listing_id_ = {};
+}
+CancelRmbConsignmentRequest::~CancelRmbConsignmentRequest() {
+  // @@protoc_insertion_point(destructor:trade.CancelRmbConsignmentRequest)
+  SharedDtor(*this);
+}
+inline void CancelRmbConsignmentRequest::SharedDtor(MessageLite& self) {
+  CancelRmbConsignmentRequest& this_ = static_cast<CancelRmbConsignmentRequest&>(self);
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    this_.CheckHasBitConsistency();
+  }
+  this_._internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
+  ABSL_DCHECK(this_.GetArena() == nullptr);
+  this_._impl_.~Impl_();
+}
+
+#ifndef PROTOBUF_MESSAGE_GLOBALS
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const
+    ::google::protobuf::internal::ClassDataFull CancelRmbConsignmentRequest_class_data_ =
+        CancelRmbConsignmentRequest::InternalGenerateClassData_(CancelRmbConsignmentRequest_globals_._default);
+
+PROTOBUF_ATTRIBUTE_WEAK const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
+CancelRmbConsignmentRequest::GetClassData() const {
+  ::google::protobuf::internal::PrefetchToLocalCache(&CancelRmbConsignmentRequest_class_data_);
+  ::google::protobuf::internal::PrefetchToLocalCache(CancelRmbConsignmentRequest_class_data_.tc_table);
+  return CancelRmbConsignmentRequest_class_data_.base();
+}
+#else
+PROTOBUF_ATTRIBUTE_WEAK const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
+CancelRmbConsignmentRequest::GetClassData() const {
+  ::google::protobuf::internal::PrefetchToLocalCache(&CancelRmbConsignmentRequest_globals_);
+  ::google::protobuf::internal::PrefetchToLocalCache(
+      ::google::protobuf::internal::MessageGlobalsBase::ToParseTableBase(&CancelRmbConsignmentRequest_globals_));
+  return CancelRmbConsignmentRequest_globals_.GetClassData();
+}
+#endif  // !PROTOBUF_MESSAGE_GLOBALS
+#ifndef PROTOBUF_MESSAGE_GLOBALS
+PROTOBUF_CONSTINIT
+PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const CancelRmbConsignmentRequest::ParseTableT_
+    CancelRmbConsignmentRequest::_table_ =
+        CancelRmbConsignmentRequest::InternalGenerateParseTable_(CancelRmbConsignmentRequest_class_data_.base());
+#endif  // !PROTOBUF_MESSAGE_GLOBALS
+PROTOBUF_NOINLINE void CancelRmbConsignmentRequest::Clear() {
+// @@protoc_insertion_point(message_clear_start:trade.CancelRmbConsignmentRequest)
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  _impl_.listing_id_ = ::uint64_t{0u};
+  _impl_._has_bits_.Clear();
+  _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::uint8_t* PROTOBUF_NONNULL CancelRmbConsignmentRequest::_InternalSerialize(
+    const ::google::protobuf::MessageLite& base, ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) {
+  const CancelRmbConsignmentRequest& this_ = static_cast<const CancelRmbConsignmentRequest&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::uint8_t* PROTOBUF_NONNULL CancelRmbConsignmentRequest::_InternalSerialize(
+    ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
+  const CancelRmbConsignmentRequest& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    this_.CheckHasBitConsistency();
+  }
+  // @@protoc_insertion_point(serialize_to_array_start:trade.CancelRmbConsignmentRequest)
+  ::uint32_t cached_has_bits = 0;
+  (void)cached_has_bits;
+
+  cached_has_bits = this_._impl_._has_bits_[0];
+  // uint64 listing_id = 1;
+  if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+    if (this_._internal_listing_id() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteUInt64ToArray(
+          1, this_._internal_listing_id(), target);
+    }
+  }
+
+  if (ABSL_PREDICT_FALSE(this_._internal_metadata_.have_unknown_fields())) {
+    target =
+        ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
+            this_._internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
+  }
+  // @@protoc_insertion_point(serialize_to_array_end:trade.CancelRmbConsignmentRequest)
+  return target;
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::size_t CancelRmbConsignmentRequest::ByteSizeLong(const MessageLite& base) {
+  const CancelRmbConsignmentRequest& this_ = static_cast<const CancelRmbConsignmentRequest&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::size_t CancelRmbConsignmentRequest::ByteSizeLong() const {
+  const CancelRmbConsignmentRequest& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  // @@protoc_insertion_point(message_byte_size_start:trade.CancelRmbConsignmentRequest)
+  ::size_t total_size = 0;
+
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void)cached_has_bits;
+
+   {
+    // uint64 listing_id = 1;
+    cached_has_bits = this_._impl_._has_bits_[0];
+    if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+      if (this_._internal_listing_id() != 0) {
+        total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(
+            this_._internal_listing_id());
+      }
+    }
+  }
+  return this_.MaybeComputeUnknownFieldsSize(total_size,
+                                             &this_._impl_._cached_size_);
+}
+
+void CancelRmbConsignmentRequest::MergeImpl(::google::protobuf::MessageLite& to_msg,
+                      const ::google::protobuf::MessageLite& from_msg) {
+   auto* const _this = static_cast<CancelRmbConsignmentRequest*>(&to_msg);
+  auto& from = static_cast<const CancelRmbConsignmentRequest&>(from_msg);
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    from.CheckHasBitConsistency();
+  }
+  // @@protoc_insertion_point(class_specific_merge_from_start:trade.CancelRmbConsignmentRequest)
+  ABSL_DCHECK_NE(&from, _this);
+  ::uint32_t cached_has_bits = 0;
+  (void)cached_has_bits;
+
+  cached_has_bits = from._impl_._has_bits_[0];
+  if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+    if (from._internal_listing_id() != 0) {
+      _this->_impl_.listing_id_ = from._impl_.listing_id_;
+    }
+  }
+  _this->_impl_._has_bits_[0] |= cached_has_bits;
+  _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+}
+
+void CancelRmbConsignmentRequest::CopyFrom(const CancelRmbConsignmentRequest& from) {
+  // @@protoc_insertion_point(class_specific_copy_from_start:trade.CancelRmbConsignmentRequest)
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+
+void CancelRmbConsignmentRequest::InternalSwap(CancelRmbConsignmentRequest* PROTOBUF_RESTRICT PROTOBUF_NONNULL other) {
+  using ::std::swap;
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
+  swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
+  swap(_impl_.listing_id_, other->_impl_.listing_id_);
+}
+
+::google::protobuf::Metadata CancelRmbConsignmentRequest::GetMetadata() const {
+  return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
+}
+// ===================================================================
+
+RmbConsignmentView::RmbConsignmentView(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, RmbConsignmentView_get_class_data()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  SharedCtor(arena);
+  // @@protoc_insertion_point(arena_constructor:trade.RmbConsignmentView)
+}
+PROTOBUF_NDEBUG_INLINE RmbConsignmentView::Impl_::Impl_(
+    [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
+    [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
+    [[maybe_unused]] const ::trade::RmbConsignmentView& from_msg)
+      : _has_bits_{from._has_bits_},
+        _cached_size_{0},
+        asset_kind_(arena, from.asset_kind_),
+        title_(arena, from.title_),
+        state_(arena, from.state_),
+        phase_(arena, from.phase_),
+        order_id_(arena, from.order_id_) {}
+
+RmbConsignmentView::RmbConsignmentView(
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena,
+    const RmbConsignmentView& from)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, RmbConsignmentView_get_class_data()) {
+
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  RmbConsignmentView* const _this = this;
+  (void)_this;
+  _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+  new (&_impl_) Impl_(internal_visibility(), arena, from._impl_, from);
+  ::memcpy(reinterpret_cast<char*>(&_impl_) +
+               offsetof(Impl_, listing_id_),
+           reinterpret_cast<const char*>(&from._impl_) +
+               offsetof(Impl_, listing_id_),
+           offsetof(Impl_, sale_end_ms_) -
+               offsetof(Impl_, listing_id_) +
+               sizeof(Impl_::sale_end_ms_));
+
+  // @@protoc_insertion_point(copy_constructor:trade.RmbConsignmentView)
+}
+PROTOBUF_NDEBUG_INLINE RmbConsignmentView::Impl_::Impl_(
+    [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
+    [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+      : _cached_size_{0},
+        asset_kind_(arena),
+        title_(arena),
+        state_(arena),
+        phase_(arena),
+        order_id_(arena) {}
+
+inline void RmbConsignmentView::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
+  new (&_impl_) Impl_(internal_visibility(), arena);
+  ::memset(reinterpret_cast<char*>(&_impl_) +
+               offsetof(Impl_, listing_id_),
+           0,
+           offsetof(Impl_, sale_end_ms_) -
+               offsetof(Impl_, listing_id_) +
+               sizeof(Impl_::sale_end_ms_));
+}
+RmbConsignmentView::~RmbConsignmentView() {
+  // @@protoc_insertion_point(destructor:trade.RmbConsignmentView)
+  SharedDtor(*this);
+}
+inline void RmbConsignmentView::SharedDtor(MessageLite& self) {
+  RmbConsignmentView& this_ = static_cast<RmbConsignmentView&>(self);
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    this_.CheckHasBitConsistency();
+  }
+  this_._internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
+  ABSL_DCHECK(this_.GetArena() == nullptr);
+  this_._impl_.asset_kind_.Destroy();
+  this_._impl_.title_.Destroy();
+  this_._impl_.state_.Destroy();
+  this_._impl_.phase_.Destroy();
+  this_._impl_.order_id_.Destroy();
+  this_._impl_.~Impl_();
+}
+
+#ifndef PROTOBUF_MESSAGE_GLOBALS
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const
+    ::google::protobuf::internal::ClassDataFull RmbConsignmentView_class_data_ =
+        RmbConsignmentView::InternalGenerateClassData_(RmbConsignmentView_globals_._default);
+
+PROTOBUF_ATTRIBUTE_WEAK const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
+RmbConsignmentView::GetClassData() const {
+  ::google::protobuf::internal::PrefetchToLocalCache(&RmbConsignmentView_class_data_);
+  ::google::protobuf::internal::PrefetchToLocalCache(RmbConsignmentView_class_data_.tc_table);
+  return RmbConsignmentView_class_data_.base();
+}
+#else
+PROTOBUF_ATTRIBUTE_WEAK const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
+RmbConsignmentView::GetClassData() const {
+  ::google::protobuf::internal::PrefetchToLocalCache(&RmbConsignmentView_globals_);
+  ::google::protobuf::internal::PrefetchToLocalCache(
+      ::google::protobuf::internal::MessageGlobalsBase::ToParseTableBase(&RmbConsignmentView_globals_));
+  return RmbConsignmentView_globals_.GetClassData();
+}
+#endif  // !PROTOBUF_MESSAGE_GLOBALS
+#ifndef PROTOBUF_MESSAGE_GLOBALS
+PROTOBUF_CONSTINIT
+PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const RmbConsignmentView::ParseTableT_
+    RmbConsignmentView::_table_ =
+        RmbConsignmentView::InternalGenerateParseTable_(RmbConsignmentView_class_data_.base());
+#endif  // !PROTOBUF_MESSAGE_GLOBALS
+PROTOBUF_NOINLINE void RmbConsignmentView::Clear() {
+// @@protoc_insertion_point(message_clear_start:trade.RmbConsignmentView)
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  cached_has_bits = _impl_._has_bits_[0];
+  if (BatchCheckHasBit(cached_has_bits, 0x0000001fU)) {
+    if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+      _impl_.asset_kind_.ClearNonDefaultToEmpty();
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      _impl_.title_.ClearNonDefaultToEmpty();
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000004U)) {
+      _impl_.state_.ClearNonDefaultToEmpty();
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000008U)) {
+      _impl_.phase_.ClearNonDefaultToEmpty();
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000010U)) {
+      _impl_.order_id_.ClearNonDefaultToEmpty();
+    }
+  }
+  if (BatchCheckHasBit(cached_has_bits, 0x000000e0U)) {
+    ::memset(&_impl_.listing_id_, 0, static_cast<::size_t>(
+        reinterpret_cast<char*>(&_impl_.market_zone_) -
+        reinterpret_cast<char*>(&_impl_.listing_id_)) + sizeof(_impl_.market_zone_));
+  }
+  if (BatchCheckHasBit(cached_has_bits, 0x00001f00U)) {
+    ::memset(&_impl_.fee_bps_, 0, static_cast<::size_t>(
+        reinterpret_cast<char*>(&_impl_.sale_end_ms_) -
+        reinterpret_cast<char*>(&_impl_.fee_bps_)) + sizeof(_impl_.sale_end_ms_));
+  }
+  _impl_._has_bits_.Clear();
+  _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::uint8_t* PROTOBUF_NONNULL RmbConsignmentView::_InternalSerialize(
+    const ::google::protobuf::MessageLite& base, ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) {
+  const RmbConsignmentView& this_ = static_cast<const RmbConsignmentView&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::uint8_t* PROTOBUF_NONNULL RmbConsignmentView::_InternalSerialize(
+    ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
+  const RmbConsignmentView& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    this_.CheckHasBitConsistency();
+  }
+  // @@protoc_insertion_point(serialize_to_array_start:trade.RmbConsignmentView)
+  ::uint32_t cached_has_bits = 0;
+  (void)cached_has_bits;
+
+  cached_has_bits = this_._impl_._has_bits_[0];
+  // uint64 listing_id = 1;
+  if (CheckHasBit(cached_has_bits, 0x00000020U)) {
+    if (this_._internal_listing_id() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteUInt64ToArray(
+          1, this_._internal_listing_id(), target);
+    }
+  }
+
+  // uint64 seller_player_id = 2;
+  if (CheckHasBit(cached_has_bits, 0x00000040U)) {
+    if (this_._internal_seller_player_id() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteUInt64ToArray(
+          2, this_._internal_seller_player_id(), target);
+    }
+  }
+
+  // uint32 market_zone = 3;
+  if (CheckHasBit(cached_has_bits, 0x00000080U)) {
+    if (this_._internal_market_zone() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
+          3, this_._internal_market_zone(), target);
+    }
+  }
+
+  // string asset_kind = 4;
+  if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+    if (!this_._internal_asset_kind().empty()) {
+      const ::std::string& _s = this_._internal_asset_kind();
+      ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
+          _s.data(), static_cast<int>(_s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "trade.RmbConsignmentView.asset_kind");
+      target = stream->WriteStringMaybeAliased(4, _s, target);
+    }
+  }
+
+  // string title = 5;
+  if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+    if (!this_._internal_title().empty()) {
+      const ::std::string& _s = this_._internal_title();
+      ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
+          _s.data(), static_cast<int>(_s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "trade.RmbConsignmentView.title");
+      target = stream->WriteStringMaybeAliased(5, _s, target);
+    }
+  }
+
+  // uint64 price_fen = 6;
+  if (CheckHasBit(cached_has_bits, 0x00000200U)) {
+    if (this_._internal_price_fen() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteUInt64ToArray(
+          6, this_._internal_price_fen(), target);
+    }
+  }
+
+  // uint32 fee_bps = 7;
+  if (CheckHasBit(cached_has_bits, 0x00000100U)) {
+    if (this_._internal_fee_bps() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
+          7, this_._internal_fee_bps(), target);
+    }
+  }
+
+  // uint64 cooling_ms = 8;
+  if (CheckHasBit(cached_has_bits, 0x00000400U)) {
+    if (this_._internal_cooling_ms() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteUInt64ToArray(
+          8, this_._internal_cooling_ms(), target);
+    }
+  }
+
+  // uint64 notice_end_ms = 9;
+  if (CheckHasBit(cached_has_bits, 0x00000800U)) {
+    if (this_._internal_notice_end_ms() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteUInt64ToArray(
+          9, this_._internal_notice_end_ms(), target);
+    }
+  }
+
+  // uint64 sale_end_ms = 10;
+  if (CheckHasBit(cached_has_bits, 0x00001000U)) {
+    if (this_._internal_sale_end_ms() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteUInt64ToArray(
+          10, this_._internal_sale_end_ms(), target);
+    }
+  }
+
+  // string state = 11;
+  if (CheckHasBit(cached_has_bits, 0x00000004U)) {
+    if (!this_._internal_state().empty()) {
+      const ::std::string& _s = this_._internal_state();
+      ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
+          _s.data(), static_cast<int>(_s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "trade.RmbConsignmentView.state");
+      target = stream->WriteStringMaybeAliased(11, _s, target);
+    }
+  }
+
+  // string phase = 12;
+  if (CheckHasBit(cached_has_bits, 0x00000008U)) {
+    if (!this_._internal_phase().empty()) {
+      const ::std::string& _s = this_._internal_phase();
+      ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
+          _s.data(), static_cast<int>(_s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "trade.RmbConsignmentView.phase");
+      target = stream->WriteStringMaybeAliased(12, _s, target);
+    }
+  }
+
+  // string order_id = 13;
+  if (CheckHasBit(cached_has_bits, 0x00000010U)) {
+    if (!this_._internal_order_id().empty()) {
+      const ::std::string& _s = this_._internal_order_id();
+      ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
+          _s.data(), static_cast<int>(_s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "trade.RmbConsignmentView.order_id");
+      target = stream->WriteStringMaybeAliased(13, _s, target);
+    }
+  }
+
+  if (ABSL_PREDICT_FALSE(this_._internal_metadata_.have_unknown_fields())) {
+    target =
+        ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
+            this_._internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
+  }
+  // @@protoc_insertion_point(serialize_to_array_end:trade.RmbConsignmentView)
+  return target;
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::size_t RmbConsignmentView::ByteSizeLong(const MessageLite& base) {
+  const RmbConsignmentView& this_ = static_cast<const RmbConsignmentView&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::size_t RmbConsignmentView::ByteSizeLong() const {
+  const RmbConsignmentView& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  // @@protoc_insertion_point(message_byte_size_start:trade.RmbConsignmentView)
+  ::size_t total_size = 0;
+
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void)cached_has_bits;
+
+  ::_pbi::Prefetch5LinesFrom7Lines(&this_);
+  cached_has_bits = this_._impl_._has_bits_[0];
+  if (BatchCheckHasBit(cached_has_bits, 0x000000ffU)) {
+    // string asset_kind = 4;
+    if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+      if (!this_._internal_asset_kind().empty()) {
+        total_size += 1 + ::google::protobuf::internal::WireFormatLite::StringSize(
+                                        this_._internal_asset_kind());
+      }
+    }
+    // string title = 5;
+    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      if (!this_._internal_title().empty()) {
+        total_size += 1 + ::google::protobuf::internal::WireFormatLite::StringSize(
+                                        this_._internal_title());
+      }
+    }
+    // string state = 11;
+    if (CheckHasBit(cached_has_bits, 0x00000004U)) {
+      if (!this_._internal_state().empty()) {
+        total_size += 1 + ::google::protobuf::internal::WireFormatLite::StringSize(
+                                        this_._internal_state());
+      }
+    }
+    // string phase = 12;
+    if (CheckHasBit(cached_has_bits, 0x00000008U)) {
+      if (!this_._internal_phase().empty()) {
+        total_size += 1 + ::google::protobuf::internal::WireFormatLite::StringSize(
+                                        this_._internal_phase());
+      }
+    }
+    // string order_id = 13;
+    if (CheckHasBit(cached_has_bits, 0x00000010U)) {
+      if (!this_._internal_order_id().empty()) {
+        total_size += 1 + ::google::protobuf::internal::WireFormatLite::StringSize(
+                                        this_._internal_order_id());
+      }
+    }
+    // uint64 listing_id = 1;
+    if (CheckHasBit(cached_has_bits, 0x00000020U)) {
+      if (this_._internal_listing_id() != 0) {
+        total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(
+            this_._internal_listing_id());
+      }
+    }
+    // uint64 seller_player_id = 2;
+    if (CheckHasBit(cached_has_bits, 0x00000040U)) {
+      if (this_._internal_seller_player_id() != 0) {
+        total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(
+            this_._internal_seller_player_id());
+      }
+    }
+    // uint32 market_zone = 3;
+    if (CheckHasBit(cached_has_bits, 0x00000080U)) {
+      if (this_._internal_market_zone() != 0) {
+        total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
+            this_._internal_market_zone());
+      }
+    }
+  }
+  if (BatchCheckHasBit(cached_has_bits, 0x00001f00U)) {
+    // uint32 fee_bps = 7;
+    if (CheckHasBit(cached_has_bits, 0x00000100U)) {
+      if (this_._internal_fee_bps() != 0) {
+        total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
+            this_._internal_fee_bps());
+      }
+    }
+    // uint64 price_fen = 6;
+    if (CheckHasBit(cached_has_bits, 0x00000200U)) {
+      if (this_._internal_price_fen() != 0) {
+        total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(
+            this_._internal_price_fen());
+      }
+    }
+    // uint64 cooling_ms = 8;
+    if (CheckHasBit(cached_has_bits, 0x00000400U)) {
+      if (this_._internal_cooling_ms() != 0) {
+        total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(
+            this_._internal_cooling_ms());
+      }
+    }
+    // uint64 notice_end_ms = 9;
+    if (CheckHasBit(cached_has_bits, 0x00000800U)) {
+      if (this_._internal_notice_end_ms() != 0) {
+        total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(
+            this_._internal_notice_end_ms());
+      }
+    }
+    // uint64 sale_end_ms = 10;
+    if (CheckHasBit(cached_has_bits, 0x00001000U)) {
+      if (this_._internal_sale_end_ms() != 0) {
+        total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(
+            this_._internal_sale_end_ms());
+      }
+    }
+  }
+  return this_.MaybeComputeUnknownFieldsSize(total_size,
+                                             &this_._impl_._cached_size_);
+}
+
+void RmbConsignmentView::MergeImpl(::google::protobuf::MessageLite& to_msg,
+                      const ::google::protobuf::MessageLite& from_msg) {
+   auto* const _this = static_cast<RmbConsignmentView*>(&to_msg);
+  auto& from = static_cast<const RmbConsignmentView&>(from_msg);
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    from.CheckHasBitConsistency();
+  }
+  // @@protoc_insertion_point(class_specific_merge_from_start:trade.RmbConsignmentView)
+  ABSL_DCHECK_NE(&from, _this);
+  ::uint32_t cached_has_bits = 0;
+  (void)cached_has_bits;
+
+  cached_has_bits = from._impl_._has_bits_[0];
+  if (BatchCheckHasBit(cached_has_bits, 0x000000ffU)) {
+    if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+      if (!from._internal_asset_kind().empty()) {
+        _this->_internal_set_asset_kind(from._internal_asset_kind());
+      } else {
+        if (_this->_impl_.asset_kind_.IsDefault()) {
+          _this->_internal_set_asset_kind("");
+        }
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      if (!from._internal_title().empty()) {
+        _this->_internal_set_title(from._internal_title());
+      } else {
+        if (_this->_impl_.title_.IsDefault()) {
+          _this->_internal_set_title("");
+        }
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000004U)) {
+      if (!from._internal_state().empty()) {
+        _this->_internal_set_state(from._internal_state());
+      } else {
+        if (_this->_impl_.state_.IsDefault()) {
+          _this->_internal_set_state("");
+        }
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000008U)) {
+      if (!from._internal_phase().empty()) {
+        _this->_internal_set_phase(from._internal_phase());
+      } else {
+        if (_this->_impl_.phase_.IsDefault()) {
+          _this->_internal_set_phase("");
+        }
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000010U)) {
+      if (!from._internal_order_id().empty()) {
+        _this->_internal_set_order_id(from._internal_order_id());
+      } else {
+        if (_this->_impl_.order_id_.IsDefault()) {
+          _this->_internal_set_order_id("");
+        }
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000020U)) {
+      if (from._internal_listing_id() != 0) {
+        _this->_impl_.listing_id_ = from._impl_.listing_id_;
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000040U)) {
+      if (from._internal_seller_player_id() != 0) {
+        _this->_impl_.seller_player_id_ = from._impl_.seller_player_id_;
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000080U)) {
+      if (from._internal_market_zone() != 0) {
+        _this->_impl_.market_zone_ = from._impl_.market_zone_;
+      }
+    }
+  }
+  if (BatchCheckHasBit(cached_has_bits, 0x00001f00U)) {
+    if (CheckHasBit(cached_has_bits, 0x00000100U)) {
+      if (from._internal_fee_bps() != 0) {
+        _this->_impl_.fee_bps_ = from._impl_.fee_bps_;
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000200U)) {
+      if (from._internal_price_fen() != 0) {
+        _this->_impl_.price_fen_ = from._impl_.price_fen_;
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000400U)) {
+      if (from._internal_cooling_ms() != 0) {
+        _this->_impl_.cooling_ms_ = from._impl_.cooling_ms_;
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000800U)) {
+      if (from._internal_notice_end_ms() != 0) {
+        _this->_impl_.notice_end_ms_ = from._impl_.notice_end_ms_;
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00001000U)) {
+      if (from._internal_sale_end_ms() != 0) {
+        _this->_impl_.sale_end_ms_ = from._impl_.sale_end_ms_;
+      }
+    }
+  }
+  _this->_impl_._has_bits_[0] |= cached_has_bits;
+  _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+}
+
+void RmbConsignmentView::CopyFrom(const RmbConsignmentView& from) {
+  // @@protoc_insertion_point(class_specific_copy_from_start:trade.RmbConsignmentView)
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+
+void RmbConsignmentView::InternalSwap(RmbConsignmentView* PROTOBUF_RESTRICT PROTOBUF_NONNULL other) {
+  using ::std::swap;
+  auto* arena = GetArena();
+  ABSL_DCHECK_EQ(arena, other->GetArena());
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
+  swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
+  ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.asset_kind_, &other->_impl_.asset_kind_, arena);
+  ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.title_, &other->_impl_.title_, arena);
+  ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.state_, &other->_impl_.state_, arena);
+  ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.phase_, &other->_impl_.phase_, arena);
+  ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.order_id_, &other->_impl_.order_id_, arena);
+  ::google::protobuf::internal::memswap<
+      PROTOBUF_FIELD_OFFSET(RmbConsignmentView, _impl_.sale_end_ms_)
+      + sizeof(RmbConsignmentView::_impl_.sale_end_ms_)
+      - PROTOBUF_FIELD_OFFSET(RmbConsignmentView, _impl_.listing_id_)>(
+          reinterpret_cast<char*>(&_impl_.listing_id_),
+          reinterpret_cast<char*>(&other->_impl_.listing_id_));
+}
+
+::google::protobuf::Metadata RmbConsignmentView::GetMetadata() const {
+  return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
+}
+// ===================================================================
+
+void RmbConsignmentResponse::clear_error_message() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (_impl_.error_message_ != nullptr) _impl_.error_message_->Clear();
+  ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
+}
+RmbConsignmentResponse::RmbConsignmentResponse(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, RmbConsignmentResponse_get_class_data()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  SharedCtor(arena);
+  // @@protoc_insertion_point(arena_constructor:trade.RmbConsignmentResponse)
+}
+PROTOBUF_NDEBUG_INLINE RmbConsignmentResponse::Impl_::Impl_(
+    [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
+    [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
+    [[maybe_unused]] const ::trade::RmbConsignmentResponse& from_msg)
+      : _has_bits_{from._has_bits_},
+        _cached_size_{0} {}
+
+RmbConsignmentResponse::RmbConsignmentResponse(
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena,
+    const RmbConsignmentResponse& from)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, RmbConsignmentResponse_get_class_data()) {
+
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  RmbConsignmentResponse* const _this = this;
+  (void)_this;
+  _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+  new (&_impl_) Impl_(internal_visibility(), arena, from._impl_, from);
+  ::uint32_t cached_has_bits = _impl_._has_bits_[0];
+  _impl_.error_message_ = (CheckHasBit(cached_has_bits, 0x00000001U))
+                ? ::google::protobuf::Message::CopyConstruct(arena, *from._impl_.error_message_)
+                : nullptr;
+  _impl_.listing_ = (CheckHasBit(cached_has_bits, 0x00000002U))
+                ? ::google::protobuf::Message::CopyConstruct(arena, *from._impl_.listing_)
+                : nullptr;
+  _impl_.server_now_ms_ = from._impl_.server_now_ms_;
+
+  // @@protoc_insertion_point(copy_constructor:trade.RmbConsignmentResponse)
+}
+PROTOBUF_NDEBUG_INLINE RmbConsignmentResponse::Impl_::Impl_(
+    [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
+    [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+      : _cached_size_{0} {}
+
+inline void RmbConsignmentResponse::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
+  new (&_impl_) Impl_(internal_visibility(), arena);
+  ::memset(reinterpret_cast<char*>(&_impl_) +
+               offsetof(Impl_, error_message_),
+           0,
+           offsetof(Impl_, server_now_ms_) -
+               offsetof(Impl_, error_message_) +
+               sizeof(Impl_::server_now_ms_));
+}
+RmbConsignmentResponse::~RmbConsignmentResponse() {
+  // @@protoc_insertion_point(destructor:trade.RmbConsignmentResponse)
+  SharedDtor(*this);
+}
+inline void RmbConsignmentResponse::SharedDtor(MessageLite& self) {
+  RmbConsignmentResponse& this_ = static_cast<RmbConsignmentResponse&>(self);
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    this_.CheckHasBitConsistency();
+  }
+  this_._internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
+  ABSL_DCHECK(this_.GetArena() == nullptr);
+  delete this_._impl_.error_message_;
+  delete this_._impl_.listing_;
+  this_._impl_.~Impl_();
+}
+
+#ifndef PROTOBUF_MESSAGE_GLOBALS
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const
+    ::google::protobuf::internal::ClassDataFull RmbConsignmentResponse_class_data_ =
+        RmbConsignmentResponse::InternalGenerateClassData_(RmbConsignmentResponse_globals_._default);
+
+PROTOBUF_ATTRIBUTE_WEAK const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
+RmbConsignmentResponse::GetClassData() const {
+  ::google::protobuf::internal::PrefetchToLocalCache(&RmbConsignmentResponse_class_data_);
+  ::google::protobuf::internal::PrefetchToLocalCache(RmbConsignmentResponse_class_data_.tc_table);
+  return RmbConsignmentResponse_class_data_.base();
+}
+#else
+PROTOBUF_ATTRIBUTE_WEAK const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
+RmbConsignmentResponse::GetClassData() const {
+  ::google::protobuf::internal::PrefetchToLocalCache(&RmbConsignmentResponse_globals_);
+  ::google::protobuf::internal::PrefetchToLocalCache(
+      ::google::protobuf::internal::MessageGlobalsBase::ToParseTableBase(&RmbConsignmentResponse_globals_));
+  return RmbConsignmentResponse_globals_.GetClassData();
+}
+#endif  // !PROTOBUF_MESSAGE_GLOBALS
+#ifndef PROTOBUF_MESSAGE_GLOBALS
+PROTOBUF_CONSTINIT
+PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const RmbConsignmentResponse::ParseTableT_
+    RmbConsignmentResponse::_table_ =
+        RmbConsignmentResponse::InternalGenerateParseTable_(RmbConsignmentResponse_class_data_.base());
+#endif  // !PROTOBUF_MESSAGE_GLOBALS
+PROTOBUF_NOINLINE void RmbConsignmentResponse::Clear() {
+// @@protoc_insertion_point(message_clear_start:trade.RmbConsignmentResponse)
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  cached_has_bits = _impl_._has_bits_[0];
+  if (BatchCheckHasBit(cached_has_bits, 0x00000003U)) {
+    if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+      ABSL_DCHECK(_impl_.error_message_ != nullptr);
+      _impl_.error_message_->Clear();
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      ABSL_DCHECK(_impl_.listing_ != nullptr);
+      _impl_.listing_->Clear();
+    }
+  }
+  _impl_.server_now_ms_ = ::uint64_t{0u};
+  _impl_._has_bits_.Clear();
+  _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::uint8_t* PROTOBUF_NONNULL RmbConsignmentResponse::_InternalSerialize(
+    const ::google::protobuf::MessageLite& base, ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) {
+  const RmbConsignmentResponse& this_ = static_cast<const RmbConsignmentResponse&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::uint8_t* PROTOBUF_NONNULL RmbConsignmentResponse::_InternalSerialize(
+    ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
+  const RmbConsignmentResponse& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    this_.CheckHasBitConsistency();
+  }
+  // @@protoc_insertion_point(serialize_to_array_start:trade.RmbConsignmentResponse)
+  ::uint32_t cached_has_bits = 0;
+  (void)cached_has_bits;
+
+  cached_has_bits = this_._impl_._has_bits_[0];
+  // .TipInfoMessage error_message = 1;
+  if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+    target = ::google::protobuf::internal::WireFormatLite::InternalWriteMessage(
+        1, *this_._impl_.error_message_, this_._impl_.error_message_->GetCachedSize(), target,
+        stream);
+  }
+
+  // .trade.RmbConsignmentView listing = 2;
+  if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+    target = ::google::protobuf::internal::WireFormatLite::InternalWriteMessage(
+        2, *this_._impl_.listing_, this_._impl_.listing_->GetCachedSize(), target,
+        stream);
+  }
+
+  // uint64 server_now_ms = 3;
+  if (CheckHasBit(cached_has_bits, 0x00000004U)) {
+    if (this_._internal_server_now_ms() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteUInt64ToArray(
+          3, this_._internal_server_now_ms(), target);
+    }
+  }
+
+  if (ABSL_PREDICT_FALSE(this_._internal_metadata_.have_unknown_fields())) {
+    target =
+        ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
+            this_._internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
+  }
+  // @@protoc_insertion_point(serialize_to_array_end:trade.RmbConsignmentResponse)
+  return target;
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::size_t RmbConsignmentResponse::ByteSizeLong(const MessageLite& base) {
+  const RmbConsignmentResponse& this_ = static_cast<const RmbConsignmentResponse&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::size_t RmbConsignmentResponse::ByteSizeLong() const {
+  const RmbConsignmentResponse& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  // @@protoc_insertion_point(message_byte_size_start:trade.RmbConsignmentResponse)
+  ::size_t total_size = 0;
+
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void)cached_has_bits;
+
+  ::_pbi::Prefetch5LinesFrom7Lines(&this_);
+  cached_has_bits = this_._impl_._has_bits_[0];
+  if (BatchCheckHasBit(cached_has_bits, 0x00000007U)) {
+    // .TipInfoMessage error_message = 1;
+    if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+      total_size += 1 +
+                    ::google::protobuf::internal::WireFormatLite::MessageSize(*this_._impl_.error_message_);
+    }
+    // .trade.RmbConsignmentView listing = 2;
+    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      total_size += 1 +
+                    ::google::protobuf::internal::WireFormatLite::MessageSize(*this_._impl_.listing_);
+    }
+    // uint64 server_now_ms = 3;
+    if (CheckHasBit(cached_has_bits, 0x00000004U)) {
+      if (this_._internal_server_now_ms() != 0) {
+        total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(
+            this_._internal_server_now_ms());
+      }
+    }
+  }
+  return this_.MaybeComputeUnknownFieldsSize(total_size,
+                                             &this_._impl_._cached_size_);
+}
+
+void RmbConsignmentResponse::MergeImpl(::google::protobuf::MessageLite& to_msg,
+                      const ::google::protobuf::MessageLite& from_msg) {
+   auto* const _this = static_cast<RmbConsignmentResponse*>(&to_msg);
+  auto& from = static_cast<const RmbConsignmentResponse&>(from_msg);
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    from.CheckHasBitConsistency();
+  }
+  ::google::protobuf::Arena* arena = _this->GetArena();
+  // @@protoc_insertion_point(class_specific_merge_from_start:trade.RmbConsignmentResponse)
+  ABSL_DCHECK_NE(&from, _this);
+  ::uint32_t cached_has_bits = 0;
+  (void)cached_has_bits;
+
+  cached_has_bits = from._impl_._has_bits_[0];
+  if (BatchCheckHasBit(cached_has_bits, 0x00000007U)) {
+    if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+      ABSL_DCHECK(from._impl_.error_message_ != nullptr);
+      if (_this->_impl_.error_message_ == nullptr) {
+        _this->_impl_.error_message_ = ::google::protobuf::Message::CopyConstruct(arena, *from._impl_.error_message_);
+      } else {
+        _this->_impl_.error_message_->MergeFrom(*from._impl_.error_message_);
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      ABSL_DCHECK(from._impl_.listing_ != nullptr);
+      if (_this->_impl_.listing_ == nullptr) {
+        _this->_impl_.listing_ = ::google::protobuf::Message::CopyConstruct(arena, *from._impl_.listing_);
+      } else {
+        _this->_impl_.listing_->MergeFrom(*from._impl_.listing_);
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000004U)) {
+      if (from._internal_server_now_ms() != 0) {
+        _this->_impl_.server_now_ms_ = from._impl_.server_now_ms_;
+      }
+    }
+  }
+  _this->_impl_._has_bits_[0] |= cached_has_bits;
+  _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+}
+
+void RmbConsignmentResponse::CopyFrom(const RmbConsignmentResponse& from) {
+  // @@protoc_insertion_point(class_specific_copy_from_start:trade.RmbConsignmentResponse)
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+
+void RmbConsignmentResponse::InternalSwap(RmbConsignmentResponse* PROTOBUF_RESTRICT PROTOBUF_NONNULL other) {
+  using ::std::swap;
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
+  swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
+  ::google::protobuf::internal::memswap<
+      PROTOBUF_FIELD_OFFSET(RmbConsignmentResponse, _impl_.server_now_ms_)
+      + sizeof(RmbConsignmentResponse::_impl_.server_now_ms_)
+      - PROTOBUF_FIELD_OFFSET(RmbConsignmentResponse, _impl_.error_message_)>(
+          reinterpret_cast<char*>(&_impl_.error_message_),
+          reinterpret_cast<char*>(&other->_impl_.error_message_));
+}
+
+::google::protobuf::Metadata RmbConsignmentResponse::GetMetadata() const {
+  return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
+}
+// ===================================================================
+
+void ListRmbConsignmentsResponse::clear_error_message() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (_impl_.error_message_ != nullptr) _impl_.error_message_->Clear();
+  ClearHasBit(_impl_._has_bits_[0], 0x00000004U);
+}
+ListRmbConsignmentsResponse::ListRmbConsignmentsResponse(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, ListRmbConsignmentsResponse_get_class_data()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  SharedCtor(arena);
+  // @@protoc_insertion_point(arena_constructor:trade.ListRmbConsignmentsResponse)
+}
+PROTOBUF_NDEBUG_INLINE ListRmbConsignmentsResponse::Impl_::Impl_(
+    [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
+    [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
+    [[maybe_unused]] const ::trade::ListRmbConsignmentsResponse& from_msg)
+      : _has_bits_{from._has_bits_},
+        _cached_size_{0},
+        listings_ {
+          visibility, ::_pbi::InternalMetadataOffset::Build<
+              ::trade::ListRmbConsignmentsResponse,
+              PROTOBUF_FIELD_OFFSET(::trade::ListRmbConsignmentsResponse, _impl_.listings_)>()
+          , from.listings_
+        }
+        ,
+        next_cursor_(arena, from.next_cursor_) {}
+
+ListRmbConsignmentsResponse::ListRmbConsignmentsResponse(
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena,
+    const ListRmbConsignmentsResponse& from)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, ListRmbConsignmentsResponse_get_class_data()) {
+
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  ListRmbConsignmentsResponse* const _this = this;
+  (void)_this;
+  _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+  new (&_impl_) Impl_(internal_visibility(), arena, from._impl_, from);
+  ::uint32_t cached_has_bits = _impl_._has_bits_[0];
+  _impl_.error_message_ = (CheckHasBit(cached_has_bits, 0x00000004U))
+                ? ::google::protobuf::Message::CopyConstruct(arena, *from._impl_.error_message_)
+                : nullptr;
+  _impl_.server_now_ms_ = from._impl_.server_now_ms_;
+
+  // @@protoc_insertion_point(copy_constructor:trade.ListRmbConsignmentsResponse)
+}
+PROTOBUF_NDEBUG_INLINE ListRmbConsignmentsResponse::Impl_::Impl_(
+    [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
+    [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+      : _cached_size_{0},
+        listings_ { visibility, ::_pbi::InternalMetadataOffset::Build<
+            ::trade::ListRmbConsignmentsResponse,
+            PROTOBUF_FIELD_OFFSET(::trade::ListRmbConsignmentsResponse, _impl_.listings_)>()
+         }
+        ,
+        next_cursor_(arena) {}
+
+inline void ListRmbConsignmentsResponse::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
+  new (&_impl_) Impl_(internal_visibility(), arena);
+  ::memset(reinterpret_cast<char*>(&_impl_) +
+               offsetof(Impl_, error_message_),
+           0,
+           offsetof(Impl_, server_now_ms_) -
+               offsetof(Impl_, error_message_) +
+               sizeof(Impl_::server_now_ms_));
+}
+ListRmbConsignmentsResponse::~ListRmbConsignmentsResponse() {
+  // @@protoc_insertion_point(destructor:trade.ListRmbConsignmentsResponse)
+  SharedDtor(*this);
+}
+inline void ListRmbConsignmentsResponse::SharedDtor(MessageLite& self) {
+  ListRmbConsignmentsResponse& this_ = static_cast<ListRmbConsignmentsResponse&>(self);
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    this_.CheckHasBitConsistency();
+  }
+  this_._internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
+  ABSL_DCHECK(this_.GetArena() == nullptr);
+  this_._impl_.next_cursor_.Destroy();
+  delete this_._impl_.error_message_;
+  this_._impl_.~Impl_();
+}
+
+#ifndef PROTOBUF_MESSAGE_GLOBALS
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const
+    ::google::protobuf::internal::ClassDataFull ListRmbConsignmentsResponse_class_data_ =
+        ListRmbConsignmentsResponse::InternalGenerateClassData_(ListRmbConsignmentsResponse_globals_._default);
+
+PROTOBUF_ATTRIBUTE_WEAK const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
+ListRmbConsignmentsResponse::GetClassData() const {
+  ::google::protobuf::internal::PrefetchToLocalCache(&ListRmbConsignmentsResponse_class_data_);
+  ::google::protobuf::internal::PrefetchToLocalCache(ListRmbConsignmentsResponse_class_data_.tc_table);
+  return ListRmbConsignmentsResponse_class_data_.base();
+}
+#else
+PROTOBUF_ATTRIBUTE_WEAK const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
+ListRmbConsignmentsResponse::GetClassData() const {
+  ::google::protobuf::internal::PrefetchToLocalCache(&ListRmbConsignmentsResponse_globals_);
+  ::google::protobuf::internal::PrefetchToLocalCache(
+      ::google::protobuf::internal::MessageGlobalsBase::ToParseTableBase(&ListRmbConsignmentsResponse_globals_));
+  return ListRmbConsignmentsResponse_globals_.GetClassData();
+}
+#endif  // !PROTOBUF_MESSAGE_GLOBALS
+#ifndef PROTOBUF_MESSAGE_GLOBALS
+PROTOBUF_CONSTINIT
+PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const ListRmbConsignmentsResponse::ParseTableT_
+    ListRmbConsignmentsResponse::_table_ =
+        ListRmbConsignmentsResponse::InternalGenerateParseTable_(ListRmbConsignmentsResponse_class_data_.base());
+#endif  // !PROTOBUF_MESSAGE_GLOBALS
+PROTOBUF_NOINLINE void ListRmbConsignmentsResponse::Clear() {
+// @@protoc_insertion_point(message_clear_start:trade.ListRmbConsignmentsResponse)
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  cached_has_bits = _impl_._has_bits_[0];
+  if (BatchCheckHasBit(cached_has_bits, 0x00000007U)) {
+    if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+      _impl_.listings_.Clear();
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      _impl_.next_cursor_.ClearNonDefaultToEmpty();
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000004U)) {
+      ABSL_DCHECK(_impl_.error_message_ != nullptr);
+      _impl_.error_message_->Clear();
+    }
+  }
+  _impl_.server_now_ms_ = ::uint64_t{0u};
+  _impl_._has_bits_.Clear();
+  _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::uint8_t* PROTOBUF_NONNULL ListRmbConsignmentsResponse::_InternalSerialize(
+    const ::google::protobuf::MessageLite& base, ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) {
+  const ListRmbConsignmentsResponse& this_ = static_cast<const ListRmbConsignmentsResponse&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::uint8_t* PROTOBUF_NONNULL ListRmbConsignmentsResponse::_InternalSerialize(
+    ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
+  const ListRmbConsignmentsResponse& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    this_.CheckHasBitConsistency();
+  }
+  // @@protoc_insertion_point(serialize_to_array_start:trade.ListRmbConsignmentsResponse)
+  ::uint32_t cached_has_bits = 0;
+  (void)cached_has_bits;
+
+  cached_has_bits = this_._impl_._has_bits_[0];
+  // .TipInfoMessage error_message = 1;
+  if (CheckHasBit(cached_has_bits, 0x00000004U)) {
+    target = ::google::protobuf::internal::WireFormatLite::InternalWriteMessage(
+        1, *this_._impl_.error_message_, this_._impl_.error_message_->GetCachedSize(), target,
+        stream);
+  }
+
+  // repeated .trade.RmbConsignmentView listings = 2;
+  if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+    for (unsigned i = 0, n = static_cast<unsigned>(
+                             this_._internal_listings_size());
+         i < n; i++) {
+      const auto& repfield = this_._internal_listings().Get(i);
+      target =
+          ::google::protobuf::internal::WireFormatLite::InternalWriteMessage(
+              2, repfield, repfield.GetCachedSize(),
+              target, stream);
+    }
+  }
+
+  // string next_cursor = 3;
+  if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+    if (!this_._internal_next_cursor().empty()) {
+      const ::std::string& _s = this_._internal_next_cursor();
+      ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
+          _s.data(), static_cast<int>(_s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "trade.ListRmbConsignmentsResponse.next_cursor");
+      target = stream->WriteStringMaybeAliased(3, _s, target);
+    }
+  }
+
+  // uint64 server_now_ms = 4;
+  if (CheckHasBit(cached_has_bits, 0x00000008U)) {
+    if (this_._internal_server_now_ms() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteUInt64ToArray(
+          4, this_._internal_server_now_ms(), target);
+    }
+  }
+
+  if (ABSL_PREDICT_FALSE(this_._internal_metadata_.have_unknown_fields())) {
+    target =
+        ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
+            this_._internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
+  }
+  // @@protoc_insertion_point(serialize_to_array_end:trade.ListRmbConsignmentsResponse)
+  return target;
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::size_t ListRmbConsignmentsResponse::ByteSizeLong(const MessageLite& base) {
+  const ListRmbConsignmentsResponse& this_ = static_cast<const ListRmbConsignmentsResponse&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::size_t ListRmbConsignmentsResponse::ByteSizeLong() const {
+  const ListRmbConsignmentsResponse& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  // @@protoc_insertion_point(message_byte_size_start:trade.ListRmbConsignmentsResponse)
+  ::size_t total_size = 0;
+
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void)cached_has_bits;
+
+  ::_pbi::Prefetch5LinesFrom7Lines(&this_);
+  cached_has_bits = this_._impl_._has_bits_[0];
+  if (BatchCheckHasBit(cached_has_bits, 0x0000000fU)) {
+    // repeated .trade.RmbConsignmentView listings = 2;
+    if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+      total_size += 1UL * this_._internal_listings_size();
+      for (const auto& msg : this_._internal_listings()) {
+        total_size += ::google::protobuf::internal::WireFormatLite::MessageSize(msg);
+      }
+    }
+    // string next_cursor = 3;
+    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      if (!this_._internal_next_cursor().empty()) {
+        total_size += 1 + ::google::protobuf::internal::WireFormatLite::StringSize(
+                                        this_._internal_next_cursor());
+      }
+    }
+    // .TipInfoMessage error_message = 1;
+    if (CheckHasBit(cached_has_bits, 0x00000004U)) {
+      total_size += 1 +
+                    ::google::protobuf::internal::WireFormatLite::MessageSize(*this_._impl_.error_message_);
+    }
+    // uint64 server_now_ms = 4;
+    if (CheckHasBit(cached_has_bits, 0x00000008U)) {
+      if (this_._internal_server_now_ms() != 0) {
+        total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(
+            this_._internal_server_now_ms());
+      }
+    }
+  }
+  return this_.MaybeComputeUnknownFieldsSize(total_size,
+                                             &this_._impl_._cached_size_);
+}
+
+void ListRmbConsignmentsResponse::MergeImpl(::google::protobuf::MessageLite& to_msg,
+                      const ::google::protobuf::MessageLite& from_msg) {
+   auto* const _this = static_cast<ListRmbConsignmentsResponse*>(&to_msg);
+  auto& from = static_cast<const ListRmbConsignmentsResponse&>(from_msg);
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    from.CheckHasBitConsistency();
+  }
+  ::google::protobuf::Arena* arena = _this->GetArena();
+  // @@protoc_insertion_point(class_specific_merge_from_start:trade.ListRmbConsignmentsResponse)
+  ABSL_DCHECK_NE(&from, _this);
+  ::uint32_t cached_has_bits = 0;
+  (void)cached_has_bits;
+
+  cached_has_bits = from._impl_._has_bits_[0];
+  if (BatchCheckHasBit(cached_has_bits, 0x0000000fU)) {
+    if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+      _this->_internal_mutable_listings()->InternalMergeFromWithArena(
+          ::google::protobuf::MessageLite::internal_visibility(), arena,
+          from._internal_listings());
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      if (!from._internal_next_cursor().empty()) {
+        _this->_internal_set_next_cursor(from._internal_next_cursor());
+      } else {
+        if (_this->_impl_.next_cursor_.IsDefault()) {
+          _this->_internal_set_next_cursor("");
+        }
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000004U)) {
+      ABSL_DCHECK(from._impl_.error_message_ != nullptr);
+      if (_this->_impl_.error_message_ == nullptr) {
+        _this->_impl_.error_message_ = ::google::protobuf::Message::CopyConstruct(arena, *from._impl_.error_message_);
+      } else {
+        _this->_impl_.error_message_->MergeFrom(*from._impl_.error_message_);
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000008U)) {
+      if (from._internal_server_now_ms() != 0) {
+        _this->_impl_.server_now_ms_ = from._impl_.server_now_ms_;
+      }
+    }
+  }
+  _this->_impl_._has_bits_[0] |= cached_has_bits;
+  _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+}
+
+void ListRmbConsignmentsResponse::CopyFrom(const ListRmbConsignmentsResponse& from) {
+  // @@protoc_insertion_point(class_specific_copy_from_start:trade.ListRmbConsignmentsResponse)
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+
+void ListRmbConsignmentsResponse::InternalSwap(ListRmbConsignmentsResponse* PROTOBUF_RESTRICT PROTOBUF_NONNULL other) {
+  using ::std::swap;
+  auto* arena = GetArena();
+  ABSL_DCHECK_EQ(arena, other->GetArena());
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
+  swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
+  _impl_.listings_.InternalSwap(&other->_impl_.listings_);
+  ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.next_cursor_, &other->_impl_.next_cursor_, arena);
+  ::google::protobuf::internal::memswap<
+      PROTOBUF_FIELD_OFFSET(ListRmbConsignmentsResponse, _impl_.server_now_ms_)
+      + sizeof(ListRmbConsignmentsResponse::_impl_.server_now_ms_)
+      - PROTOBUF_FIELD_OFFSET(ListRmbConsignmentsResponse, _impl_.error_message_)>(
+          reinterpret_cast<char*>(&_impl_.error_message_),
+          reinterpret_cast<char*>(&other->_impl_.error_message_));
+}
+
+::google::protobuf::Metadata ListRmbConsignmentsResponse::GetMetadata() const {
+  return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
+}
+// ===================================================================
+
+ListSellerIncomesRequest::ListSellerIncomesRequest(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, ListSellerIncomesRequest_get_class_data()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  SharedCtor(arena);
+  // @@protoc_insertion_point(arena_constructor:trade.ListSellerIncomesRequest)
+}
+PROTOBUF_NDEBUG_INLINE ListSellerIncomesRequest::Impl_::Impl_(
+    [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
+    [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
+    [[maybe_unused]] const ::trade::ListSellerIncomesRequest& from_msg)
+      : _has_bits_{from._has_bits_},
+        _cached_size_{0},
+        cursor_(arena, from.cursor_) {}
+
+ListSellerIncomesRequest::ListSellerIncomesRequest(
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena,
+    const ListSellerIncomesRequest& from)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, ListSellerIncomesRequest_get_class_data()) {
+
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  ListSellerIncomesRequest* const _this = this;
+  (void)_this;
+  _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+  new (&_impl_) Impl_(internal_visibility(), arena, from._impl_, from);
+  _impl_.limit_ = from._impl_.limit_;
+
+  // @@protoc_insertion_point(copy_constructor:trade.ListSellerIncomesRequest)
+}
+PROTOBUF_NDEBUG_INLINE ListSellerIncomesRequest::Impl_::Impl_(
+    [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
+    [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+      : _cached_size_{0},
+        cursor_(arena) {}
+
+inline void ListSellerIncomesRequest::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
+  new (&_impl_) Impl_(internal_visibility(), arena);
+  _impl_.limit_ = {};
+}
+ListSellerIncomesRequest::~ListSellerIncomesRequest() {
+  // @@protoc_insertion_point(destructor:trade.ListSellerIncomesRequest)
+  SharedDtor(*this);
+}
+inline void ListSellerIncomesRequest::SharedDtor(MessageLite& self) {
+  ListSellerIncomesRequest& this_ = static_cast<ListSellerIncomesRequest&>(self);
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    this_.CheckHasBitConsistency();
+  }
+  this_._internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
+  ABSL_DCHECK(this_.GetArena() == nullptr);
+  this_._impl_.cursor_.Destroy();
+  this_._impl_.~Impl_();
+}
+
+#ifndef PROTOBUF_MESSAGE_GLOBALS
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const
+    ::google::protobuf::internal::ClassDataFull ListSellerIncomesRequest_class_data_ =
+        ListSellerIncomesRequest::InternalGenerateClassData_(ListSellerIncomesRequest_globals_._default);
+
+PROTOBUF_ATTRIBUTE_WEAK const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
+ListSellerIncomesRequest::GetClassData() const {
+  ::google::protobuf::internal::PrefetchToLocalCache(&ListSellerIncomesRequest_class_data_);
+  ::google::protobuf::internal::PrefetchToLocalCache(ListSellerIncomesRequest_class_data_.tc_table);
+  return ListSellerIncomesRequest_class_data_.base();
+}
+#else
+PROTOBUF_ATTRIBUTE_WEAK const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
+ListSellerIncomesRequest::GetClassData() const {
+  ::google::protobuf::internal::PrefetchToLocalCache(&ListSellerIncomesRequest_globals_);
+  ::google::protobuf::internal::PrefetchToLocalCache(
+      ::google::protobuf::internal::MessageGlobalsBase::ToParseTableBase(&ListSellerIncomesRequest_globals_));
+  return ListSellerIncomesRequest_globals_.GetClassData();
+}
+#endif  // !PROTOBUF_MESSAGE_GLOBALS
+#ifndef PROTOBUF_MESSAGE_GLOBALS
+PROTOBUF_CONSTINIT
+PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const ListSellerIncomesRequest::ParseTableT_
+    ListSellerIncomesRequest::_table_ =
+        ListSellerIncomesRequest::InternalGenerateParseTable_(ListSellerIncomesRequest_class_data_.base());
+#endif  // !PROTOBUF_MESSAGE_GLOBALS
+PROTOBUF_NOINLINE void ListSellerIncomesRequest::Clear() {
+// @@protoc_insertion_point(message_clear_start:trade.ListSellerIncomesRequest)
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  cached_has_bits = _impl_._has_bits_[0];
+  if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+    _impl_.cursor_.ClearNonDefaultToEmpty();
+  }
+  _impl_.limit_ = 0u;
+  _impl_._has_bits_.Clear();
+  _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::uint8_t* PROTOBUF_NONNULL ListSellerIncomesRequest::_InternalSerialize(
+    const ::google::protobuf::MessageLite& base, ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) {
+  const ListSellerIncomesRequest& this_ = static_cast<const ListSellerIncomesRequest&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::uint8_t* PROTOBUF_NONNULL ListSellerIncomesRequest::_InternalSerialize(
+    ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
+  const ListSellerIncomesRequest& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    this_.CheckHasBitConsistency();
+  }
+  // @@protoc_insertion_point(serialize_to_array_start:trade.ListSellerIncomesRequest)
+  ::uint32_t cached_has_bits = 0;
+  (void)cached_has_bits;
+
+  cached_has_bits = this_._impl_._has_bits_[0];
+  // string cursor = 1;
+  if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+    if (!this_._internal_cursor().empty()) {
+      const ::std::string& _s = this_._internal_cursor();
+      ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
+          _s.data(), static_cast<int>(_s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "trade.ListSellerIncomesRequest.cursor");
+      target = stream->WriteStringMaybeAliased(1, _s, target);
+    }
+  }
+
+  // uint32 limit = 2;
+  if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+    if (this_._internal_limit() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
+          2, this_._internal_limit(), target);
+    }
+  }
+
+  if (ABSL_PREDICT_FALSE(this_._internal_metadata_.have_unknown_fields())) {
+    target =
+        ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
+            this_._internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
+  }
+  // @@protoc_insertion_point(serialize_to_array_end:trade.ListSellerIncomesRequest)
+  return target;
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::size_t ListSellerIncomesRequest::ByteSizeLong(const MessageLite& base) {
+  const ListSellerIncomesRequest& this_ = static_cast<const ListSellerIncomesRequest&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::size_t ListSellerIncomesRequest::ByteSizeLong() const {
+  const ListSellerIncomesRequest& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  // @@protoc_insertion_point(message_byte_size_start:trade.ListSellerIncomesRequest)
+  ::size_t total_size = 0;
+
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void)cached_has_bits;
+
+  ::_pbi::Prefetch5LinesFrom7Lines(&this_);
+  cached_has_bits = this_._impl_._has_bits_[0];
+  if (BatchCheckHasBit(cached_has_bits, 0x00000003U)) {
+    // string cursor = 1;
+    if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+      if (!this_._internal_cursor().empty()) {
+        total_size += 1 + ::google::protobuf::internal::WireFormatLite::StringSize(
+                                        this_._internal_cursor());
+      }
+    }
+    // uint32 limit = 2;
+    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      if (this_._internal_limit() != 0) {
+        total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
+            this_._internal_limit());
+      }
+    }
+  }
+  return this_.MaybeComputeUnknownFieldsSize(total_size,
+                                             &this_._impl_._cached_size_);
+}
+
+void ListSellerIncomesRequest::MergeImpl(::google::protobuf::MessageLite& to_msg,
+                      const ::google::protobuf::MessageLite& from_msg) {
+   auto* const _this = static_cast<ListSellerIncomesRequest*>(&to_msg);
+  auto& from = static_cast<const ListSellerIncomesRequest&>(from_msg);
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    from.CheckHasBitConsistency();
+  }
+  // @@protoc_insertion_point(class_specific_merge_from_start:trade.ListSellerIncomesRequest)
+  ABSL_DCHECK_NE(&from, _this);
+  ::uint32_t cached_has_bits = 0;
+  (void)cached_has_bits;
+
+  cached_has_bits = from._impl_._has_bits_[0];
+  if (BatchCheckHasBit(cached_has_bits, 0x00000003U)) {
+    if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+      if (!from._internal_cursor().empty()) {
+        _this->_internal_set_cursor(from._internal_cursor());
+      } else {
+        if (_this->_impl_.cursor_.IsDefault()) {
+          _this->_internal_set_cursor("");
+        }
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      if (from._internal_limit() != 0) {
+        _this->_impl_.limit_ = from._impl_.limit_;
+      }
+    }
+  }
+  _this->_impl_._has_bits_[0] |= cached_has_bits;
+  _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+}
+
+void ListSellerIncomesRequest::CopyFrom(const ListSellerIncomesRequest& from) {
+  // @@protoc_insertion_point(class_specific_copy_from_start:trade.ListSellerIncomesRequest)
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+
+void ListSellerIncomesRequest::InternalSwap(ListSellerIncomesRequest* PROTOBUF_RESTRICT PROTOBUF_NONNULL other) {
+  using ::std::swap;
+  auto* arena = GetArena();
+  ABSL_DCHECK_EQ(arena, other->GetArena());
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
+  swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
+  ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.cursor_, &other->_impl_.cursor_, arena);
+  swap(_impl_.limit_, other->_impl_.limit_);
+}
+
+::google::protobuf::Metadata ListSellerIncomesRequest::GetMetadata() const {
+  return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
+}
+// ===================================================================
+
+RmbSellerIncome::RmbSellerIncome(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, RmbSellerIncome_get_class_data()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  SharedCtor(arena);
+  // @@protoc_insertion_point(arena_constructor:trade.RmbSellerIncome)
+}
+PROTOBUF_NDEBUG_INLINE RmbSellerIncome::Impl_::Impl_(
+    [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
+    [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
+    [[maybe_unused]] const ::trade::RmbSellerIncome& from_msg)
+      : _has_bits_{from._has_bits_},
+        _cached_size_{0},
+        order_id_(arena, from.order_id_) {}
+
+RmbSellerIncome::RmbSellerIncome(
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena,
+    const RmbSellerIncome& from)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, RmbSellerIncome_get_class_data()) {
+
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  RmbSellerIncome* const _this = this;
+  (void)_this;
+  _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+  new (&_impl_) Impl_(internal_visibility(), arena, from._impl_, from);
+  ::memcpy(reinterpret_cast<char*>(&_impl_) +
+               offsetof(Impl_, gross_fen_),
+           reinterpret_cast<const char*>(&from._impl_) +
+               offsetof(Impl_, gross_fen_),
+           offsetof(Impl_, available_ms_) -
+               offsetof(Impl_, gross_fen_) +
+               sizeof(Impl_::available_ms_));
+
+  // @@protoc_insertion_point(copy_constructor:trade.RmbSellerIncome)
+}
+PROTOBUF_NDEBUG_INLINE RmbSellerIncome::Impl_::Impl_(
+    [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
+    [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+      : _cached_size_{0},
+        order_id_(arena) {}
+
+inline void RmbSellerIncome::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
+  new (&_impl_) Impl_(internal_visibility(), arena);
+  ::memset(reinterpret_cast<char*>(&_impl_) +
+               offsetof(Impl_, gross_fen_),
+           0,
+           offsetof(Impl_, available_ms_) -
+               offsetof(Impl_, gross_fen_) +
+               sizeof(Impl_::available_ms_));
+}
+RmbSellerIncome::~RmbSellerIncome() {
+  // @@protoc_insertion_point(destructor:trade.RmbSellerIncome)
+  SharedDtor(*this);
+}
+inline void RmbSellerIncome::SharedDtor(MessageLite& self) {
+  RmbSellerIncome& this_ = static_cast<RmbSellerIncome&>(self);
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    this_.CheckHasBitConsistency();
+  }
+  this_._internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
+  ABSL_DCHECK(this_.GetArena() == nullptr);
+  this_._impl_.order_id_.Destroy();
+  this_._impl_.~Impl_();
+}
+
+#ifndef PROTOBUF_MESSAGE_GLOBALS
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const
+    ::google::protobuf::internal::ClassDataFull RmbSellerIncome_class_data_ =
+        RmbSellerIncome::InternalGenerateClassData_(RmbSellerIncome_globals_._default);
+
+PROTOBUF_ATTRIBUTE_WEAK const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
+RmbSellerIncome::GetClassData() const {
+  ::google::protobuf::internal::PrefetchToLocalCache(&RmbSellerIncome_class_data_);
+  ::google::protobuf::internal::PrefetchToLocalCache(RmbSellerIncome_class_data_.tc_table);
+  return RmbSellerIncome_class_data_.base();
+}
+#else
+PROTOBUF_ATTRIBUTE_WEAK const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
+RmbSellerIncome::GetClassData() const {
+  ::google::protobuf::internal::PrefetchToLocalCache(&RmbSellerIncome_globals_);
+  ::google::protobuf::internal::PrefetchToLocalCache(
+      ::google::protobuf::internal::MessageGlobalsBase::ToParseTableBase(&RmbSellerIncome_globals_));
+  return RmbSellerIncome_globals_.GetClassData();
+}
+#endif  // !PROTOBUF_MESSAGE_GLOBALS
+#ifndef PROTOBUF_MESSAGE_GLOBALS
+PROTOBUF_CONSTINIT
+PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const RmbSellerIncome::ParseTableT_
+    RmbSellerIncome::_table_ =
+        RmbSellerIncome::InternalGenerateParseTable_(RmbSellerIncome_class_data_.base());
+#endif  // !PROTOBUF_MESSAGE_GLOBALS
+PROTOBUF_NOINLINE void RmbSellerIncome::Clear() {
+// @@protoc_insertion_point(message_clear_start:trade.RmbSellerIncome)
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  cached_has_bits = _impl_._has_bits_[0];
+  if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+    _impl_.order_id_.ClearNonDefaultToEmpty();
+  }
+  if (BatchCheckHasBit(cached_has_bits, 0x0000007eU)) {
+    ::memset(&_impl_.gross_fen_, 0, static_cast<::size_t>(
+        reinterpret_cast<char*>(&_impl_.available_ms_) -
+        reinterpret_cast<char*>(&_impl_.gross_fen_)) + sizeof(_impl_.available_ms_));
+  }
+  _impl_._has_bits_.Clear();
+  _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::uint8_t* PROTOBUF_NONNULL RmbSellerIncome::_InternalSerialize(
+    const ::google::protobuf::MessageLite& base, ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) {
+  const RmbSellerIncome& this_ = static_cast<const RmbSellerIncome&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::uint8_t* PROTOBUF_NONNULL RmbSellerIncome::_InternalSerialize(
+    ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
+  const RmbSellerIncome& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    this_.CheckHasBitConsistency();
+  }
+  // @@protoc_insertion_point(serialize_to_array_start:trade.RmbSellerIncome)
+  ::uint32_t cached_has_bits = 0;
+  (void)cached_has_bits;
+
+  cached_has_bits = this_._impl_._has_bits_[0];
+  // string order_id = 1;
+  if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+    if (!this_._internal_order_id().empty()) {
+      const ::std::string& _s = this_._internal_order_id();
+      ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
+          _s.data(), static_cast<int>(_s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "trade.RmbSellerIncome.order_id");
+      target = stream->WriteStringMaybeAliased(1, _s, target);
+    }
+  }
+
+  // uint64 gross_fen = 2;
+  if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+    if (this_._internal_gross_fen() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteUInt64ToArray(
+          2, this_._internal_gross_fen(), target);
+    }
+  }
+
+  // uint64 fee_fen = 3;
+  if (CheckHasBit(cached_has_bits, 0x00000004U)) {
+    if (this_._internal_fee_fen() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteUInt64ToArray(
+          3, this_._internal_fee_fen(), target);
+    }
+  }
+
+  // uint64 net_fen = 4;
+  if (CheckHasBit(cached_has_bits, 0x00000008U)) {
+    if (this_._internal_net_fen() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteUInt64ToArray(
+          4, this_._internal_net_fen(), target);
+    }
+  }
+
+  // uint64 reserved_fen = 5;
+  if (CheckHasBit(cached_has_bits, 0x00000010U)) {
+    if (this_._internal_reserved_fen() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteUInt64ToArray(
+          5, this_._internal_reserved_fen(), target);
+    }
+  }
+
+  // uint64 paid_fen = 6;
+  if (CheckHasBit(cached_has_bits, 0x00000020U)) {
+    if (this_._internal_paid_fen() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteUInt64ToArray(
+          6, this_._internal_paid_fen(), target);
+    }
+  }
+
+  // uint64 available_ms = 7;
+  if (CheckHasBit(cached_has_bits, 0x00000040U)) {
+    if (this_._internal_available_ms() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteUInt64ToArray(
+          7, this_._internal_available_ms(), target);
+    }
+  }
+
+  if (ABSL_PREDICT_FALSE(this_._internal_metadata_.have_unknown_fields())) {
+    target =
+        ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
+            this_._internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
+  }
+  // @@protoc_insertion_point(serialize_to_array_end:trade.RmbSellerIncome)
+  return target;
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::size_t RmbSellerIncome::ByteSizeLong(const MessageLite& base) {
+  const RmbSellerIncome& this_ = static_cast<const RmbSellerIncome&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::size_t RmbSellerIncome::ByteSizeLong() const {
+  const RmbSellerIncome& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  // @@protoc_insertion_point(message_byte_size_start:trade.RmbSellerIncome)
+  ::size_t total_size = 0;
+
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void)cached_has_bits;
+
+  ::_pbi::Prefetch5LinesFrom7Lines(&this_);
+  cached_has_bits = this_._impl_._has_bits_[0];
+  if (BatchCheckHasBit(cached_has_bits, 0x0000007fU)) {
+    // string order_id = 1;
+    if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+      if (!this_._internal_order_id().empty()) {
+        total_size += 1 + ::google::protobuf::internal::WireFormatLite::StringSize(
+                                        this_._internal_order_id());
+      }
+    }
+    // uint64 gross_fen = 2;
+    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      if (this_._internal_gross_fen() != 0) {
+        total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(
+            this_._internal_gross_fen());
+      }
+    }
+    // uint64 fee_fen = 3;
+    if (CheckHasBit(cached_has_bits, 0x00000004U)) {
+      if (this_._internal_fee_fen() != 0) {
+        total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(
+            this_._internal_fee_fen());
+      }
+    }
+    // uint64 net_fen = 4;
+    if (CheckHasBit(cached_has_bits, 0x00000008U)) {
+      if (this_._internal_net_fen() != 0) {
+        total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(
+            this_._internal_net_fen());
+      }
+    }
+    // uint64 reserved_fen = 5;
+    if (CheckHasBit(cached_has_bits, 0x00000010U)) {
+      if (this_._internal_reserved_fen() != 0) {
+        total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(
+            this_._internal_reserved_fen());
+      }
+    }
+    // uint64 paid_fen = 6;
+    if (CheckHasBit(cached_has_bits, 0x00000020U)) {
+      if (this_._internal_paid_fen() != 0) {
+        total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(
+            this_._internal_paid_fen());
+      }
+    }
+    // uint64 available_ms = 7;
+    if (CheckHasBit(cached_has_bits, 0x00000040U)) {
+      if (this_._internal_available_ms() != 0) {
+        total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(
+            this_._internal_available_ms());
+      }
+    }
+  }
+  return this_.MaybeComputeUnknownFieldsSize(total_size,
+                                             &this_._impl_._cached_size_);
+}
+
+void RmbSellerIncome::MergeImpl(::google::protobuf::MessageLite& to_msg,
+                      const ::google::protobuf::MessageLite& from_msg) {
+   auto* const _this = static_cast<RmbSellerIncome*>(&to_msg);
+  auto& from = static_cast<const RmbSellerIncome&>(from_msg);
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    from.CheckHasBitConsistency();
+  }
+  // @@protoc_insertion_point(class_specific_merge_from_start:trade.RmbSellerIncome)
+  ABSL_DCHECK_NE(&from, _this);
+  ::uint32_t cached_has_bits = 0;
+  (void)cached_has_bits;
+
+  cached_has_bits = from._impl_._has_bits_[0];
+  if (BatchCheckHasBit(cached_has_bits, 0x0000007fU)) {
+    if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+      if (!from._internal_order_id().empty()) {
+        _this->_internal_set_order_id(from._internal_order_id());
+      } else {
+        if (_this->_impl_.order_id_.IsDefault()) {
+          _this->_internal_set_order_id("");
+        }
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      if (from._internal_gross_fen() != 0) {
+        _this->_impl_.gross_fen_ = from._impl_.gross_fen_;
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000004U)) {
+      if (from._internal_fee_fen() != 0) {
+        _this->_impl_.fee_fen_ = from._impl_.fee_fen_;
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000008U)) {
+      if (from._internal_net_fen() != 0) {
+        _this->_impl_.net_fen_ = from._impl_.net_fen_;
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000010U)) {
+      if (from._internal_reserved_fen() != 0) {
+        _this->_impl_.reserved_fen_ = from._impl_.reserved_fen_;
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000020U)) {
+      if (from._internal_paid_fen() != 0) {
+        _this->_impl_.paid_fen_ = from._impl_.paid_fen_;
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000040U)) {
+      if (from._internal_available_ms() != 0) {
+        _this->_impl_.available_ms_ = from._impl_.available_ms_;
+      }
+    }
+  }
+  _this->_impl_._has_bits_[0] |= cached_has_bits;
+  _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+}
+
+void RmbSellerIncome::CopyFrom(const RmbSellerIncome& from) {
+  // @@protoc_insertion_point(class_specific_copy_from_start:trade.RmbSellerIncome)
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+
+void RmbSellerIncome::InternalSwap(RmbSellerIncome* PROTOBUF_RESTRICT PROTOBUF_NONNULL other) {
+  using ::std::swap;
+  auto* arena = GetArena();
+  ABSL_DCHECK_EQ(arena, other->GetArena());
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
+  swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
+  ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.order_id_, &other->_impl_.order_id_, arena);
+  ::google::protobuf::internal::memswap<
+      PROTOBUF_FIELD_OFFSET(RmbSellerIncome, _impl_.available_ms_)
+      + sizeof(RmbSellerIncome::_impl_.available_ms_)
+      - PROTOBUF_FIELD_OFFSET(RmbSellerIncome, _impl_.gross_fen_)>(
+          reinterpret_cast<char*>(&_impl_.gross_fen_),
+          reinterpret_cast<char*>(&other->_impl_.gross_fen_));
+}
+
+::google::protobuf::Metadata RmbSellerIncome::GetMetadata() const {
+  return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
+}
+// ===================================================================
+
+void ListSellerIncomesResponse::clear_error_message() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (_impl_.error_message_ != nullptr) _impl_.error_message_->Clear();
+  ClearHasBit(_impl_._has_bits_[0], 0x00000004U);
+}
+ListSellerIncomesResponse::ListSellerIncomesResponse(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, ListSellerIncomesResponse_get_class_data()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  SharedCtor(arena);
+  // @@protoc_insertion_point(arena_constructor:trade.ListSellerIncomesResponse)
+}
+PROTOBUF_NDEBUG_INLINE ListSellerIncomesResponse::Impl_::Impl_(
+    [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
+    [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
+    [[maybe_unused]] const ::trade::ListSellerIncomesResponse& from_msg)
+      : _has_bits_{from._has_bits_},
+        _cached_size_{0},
+        incomes_ {
+          visibility, ::_pbi::InternalMetadataOffset::Build<
+              ::trade::ListSellerIncomesResponse,
+              PROTOBUF_FIELD_OFFSET(::trade::ListSellerIncomesResponse, _impl_.incomes_)>()
+          , from.incomes_
+        }
+        ,
+        next_cursor_(arena, from.next_cursor_) {}
+
+ListSellerIncomesResponse::ListSellerIncomesResponse(
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena,
+    const ListSellerIncomesResponse& from)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, ListSellerIncomesResponse_get_class_data()) {
+
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  ListSellerIncomesResponse* const _this = this;
+  (void)_this;
+  _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+  new (&_impl_) Impl_(internal_visibility(), arena, from._impl_, from);
+  ::uint32_t cached_has_bits = _impl_._has_bits_[0];
+  _impl_.error_message_ = (CheckHasBit(cached_has_bits, 0x00000004U))
+                ? ::google::protobuf::Message::CopyConstruct(arena, *from._impl_.error_message_)
+                : nullptr;
+  _impl_.server_now_ms_ = from._impl_.server_now_ms_;
+
+  // @@protoc_insertion_point(copy_constructor:trade.ListSellerIncomesResponse)
+}
+PROTOBUF_NDEBUG_INLINE ListSellerIncomesResponse::Impl_::Impl_(
+    [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
+    [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+      : _cached_size_{0},
+        incomes_ { visibility, ::_pbi::InternalMetadataOffset::Build<
+            ::trade::ListSellerIncomesResponse,
+            PROTOBUF_FIELD_OFFSET(::trade::ListSellerIncomesResponse, _impl_.incomes_)>()
+         }
+        ,
+        next_cursor_(arena) {}
+
+inline void ListSellerIncomesResponse::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
+  new (&_impl_) Impl_(internal_visibility(), arena);
+  ::memset(reinterpret_cast<char*>(&_impl_) +
+               offsetof(Impl_, error_message_),
+           0,
+           offsetof(Impl_, server_now_ms_) -
+               offsetof(Impl_, error_message_) +
+               sizeof(Impl_::server_now_ms_));
+}
+ListSellerIncomesResponse::~ListSellerIncomesResponse() {
+  // @@protoc_insertion_point(destructor:trade.ListSellerIncomesResponse)
+  SharedDtor(*this);
+}
+inline void ListSellerIncomesResponse::SharedDtor(MessageLite& self) {
+  ListSellerIncomesResponse& this_ = static_cast<ListSellerIncomesResponse&>(self);
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    this_.CheckHasBitConsistency();
+  }
+  this_._internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
+  ABSL_DCHECK(this_.GetArena() == nullptr);
+  this_._impl_.next_cursor_.Destroy();
+  delete this_._impl_.error_message_;
+  this_._impl_.~Impl_();
+}
+
+#ifndef PROTOBUF_MESSAGE_GLOBALS
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const
+    ::google::protobuf::internal::ClassDataFull ListSellerIncomesResponse_class_data_ =
+        ListSellerIncomesResponse::InternalGenerateClassData_(ListSellerIncomesResponse_globals_._default);
+
+PROTOBUF_ATTRIBUTE_WEAK const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
+ListSellerIncomesResponse::GetClassData() const {
+  ::google::protobuf::internal::PrefetchToLocalCache(&ListSellerIncomesResponse_class_data_);
+  ::google::protobuf::internal::PrefetchToLocalCache(ListSellerIncomesResponse_class_data_.tc_table);
+  return ListSellerIncomesResponse_class_data_.base();
+}
+#else
+PROTOBUF_ATTRIBUTE_WEAK const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
+ListSellerIncomesResponse::GetClassData() const {
+  ::google::protobuf::internal::PrefetchToLocalCache(&ListSellerIncomesResponse_globals_);
+  ::google::protobuf::internal::PrefetchToLocalCache(
+      ::google::protobuf::internal::MessageGlobalsBase::ToParseTableBase(&ListSellerIncomesResponse_globals_));
+  return ListSellerIncomesResponse_globals_.GetClassData();
+}
+#endif  // !PROTOBUF_MESSAGE_GLOBALS
+#ifndef PROTOBUF_MESSAGE_GLOBALS
+PROTOBUF_CONSTINIT
+PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const ListSellerIncomesResponse::ParseTableT_
+    ListSellerIncomesResponse::_table_ =
+        ListSellerIncomesResponse::InternalGenerateParseTable_(ListSellerIncomesResponse_class_data_.base());
+#endif  // !PROTOBUF_MESSAGE_GLOBALS
+PROTOBUF_NOINLINE void ListSellerIncomesResponse::Clear() {
+// @@protoc_insertion_point(message_clear_start:trade.ListSellerIncomesResponse)
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  cached_has_bits = _impl_._has_bits_[0];
+  if (BatchCheckHasBit(cached_has_bits, 0x00000007U)) {
+    if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+      _impl_.incomes_.Clear();
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      _impl_.next_cursor_.ClearNonDefaultToEmpty();
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000004U)) {
+      ABSL_DCHECK(_impl_.error_message_ != nullptr);
+      _impl_.error_message_->Clear();
+    }
+  }
+  _impl_.server_now_ms_ = ::uint64_t{0u};
+  _impl_._has_bits_.Clear();
+  _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::uint8_t* PROTOBUF_NONNULL ListSellerIncomesResponse::_InternalSerialize(
+    const ::google::protobuf::MessageLite& base, ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) {
+  const ListSellerIncomesResponse& this_ = static_cast<const ListSellerIncomesResponse&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::uint8_t* PROTOBUF_NONNULL ListSellerIncomesResponse::_InternalSerialize(
+    ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
+  const ListSellerIncomesResponse& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    this_.CheckHasBitConsistency();
+  }
+  // @@protoc_insertion_point(serialize_to_array_start:trade.ListSellerIncomesResponse)
+  ::uint32_t cached_has_bits = 0;
+  (void)cached_has_bits;
+
+  cached_has_bits = this_._impl_._has_bits_[0];
+  // .TipInfoMessage error_message = 1;
+  if (CheckHasBit(cached_has_bits, 0x00000004U)) {
+    target = ::google::protobuf::internal::WireFormatLite::InternalWriteMessage(
+        1, *this_._impl_.error_message_, this_._impl_.error_message_->GetCachedSize(), target,
+        stream);
+  }
+
+  // repeated .trade.RmbSellerIncome incomes = 2;
+  if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+    for (unsigned i = 0, n = static_cast<unsigned>(
+                             this_._internal_incomes_size());
+         i < n; i++) {
+      const auto& repfield = this_._internal_incomes().Get(i);
+      target =
+          ::google::protobuf::internal::WireFormatLite::InternalWriteMessage(
+              2, repfield, repfield.GetCachedSize(),
+              target, stream);
+    }
+  }
+
+  // string next_cursor = 3;
+  if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+    if (!this_._internal_next_cursor().empty()) {
+      const ::std::string& _s = this_._internal_next_cursor();
+      ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
+          _s.data(), static_cast<int>(_s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "trade.ListSellerIncomesResponse.next_cursor");
+      target = stream->WriteStringMaybeAliased(3, _s, target);
+    }
+  }
+
+  // uint64 server_now_ms = 4;
+  if (CheckHasBit(cached_has_bits, 0x00000008U)) {
+    if (this_._internal_server_now_ms() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteUInt64ToArray(
+          4, this_._internal_server_now_ms(), target);
+    }
+  }
+
+  if (ABSL_PREDICT_FALSE(this_._internal_metadata_.have_unknown_fields())) {
+    target =
+        ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
+            this_._internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
+  }
+  // @@protoc_insertion_point(serialize_to_array_end:trade.ListSellerIncomesResponse)
+  return target;
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::size_t ListSellerIncomesResponse::ByteSizeLong(const MessageLite& base) {
+  const ListSellerIncomesResponse& this_ = static_cast<const ListSellerIncomesResponse&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::size_t ListSellerIncomesResponse::ByteSizeLong() const {
+  const ListSellerIncomesResponse& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  // @@protoc_insertion_point(message_byte_size_start:trade.ListSellerIncomesResponse)
+  ::size_t total_size = 0;
+
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void)cached_has_bits;
+
+  ::_pbi::Prefetch5LinesFrom7Lines(&this_);
+  cached_has_bits = this_._impl_._has_bits_[0];
+  if (BatchCheckHasBit(cached_has_bits, 0x0000000fU)) {
+    // repeated .trade.RmbSellerIncome incomes = 2;
+    if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+      total_size += 1UL * this_._internal_incomes_size();
+      for (const auto& msg : this_._internal_incomes()) {
+        total_size += ::google::protobuf::internal::WireFormatLite::MessageSize(msg);
+      }
+    }
+    // string next_cursor = 3;
+    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      if (!this_._internal_next_cursor().empty()) {
+        total_size += 1 + ::google::protobuf::internal::WireFormatLite::StringSize(
+                                        this_._internal_next_cursor());
+      }
+    }
+    // .TipInfoMessage error_message = 1;
+    if (CheckHasBit(cached_has_bits, 0x00000004U)) {
+      total_size += 1 +
+                    ::google::protobuf::internal::WireFormatLite::MessageSize(*this_._impl_.error_message_);
+    }
+    // uint64 server_now_ms = 4;
+    if (CheckHasBit(cached_has_bits, 0x00000008U)) {
+      if (this_._internal_server_now_ms() != 0) {
+        total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(
+            this_._internal_server_now_ms());
+      }
+    }
+  }
+  return this_.MaybeComputeUnknownFieldsSize(total_size,
+                                             &this_._impl_._cached_size_);
+}
+
+void ListSellerIncomesResponse::MergeImpl(::google::protobuf::MessageLite& to_msg,
+                      const ::google::protobuf::MessageLite& from_msg) {
+   auto* const _this = static_cast<ListSellerIncomesResponse*>(&to_msg);
+  auto& from = static_cast<const ListSellerIncomesResponse&>(from_msg);
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    from.CheckHasBitConsistency();
+  }
+  ::google::protobuf::Arena* arena = _this->GetArena();
+  // @@protoc_insertion_point(class_specific_merge_from_start:trade.ListSellerIncomesResponse)
+  ABSL_DCHECK_NE(&from, _this);
+  ::uint32_t cached_has_bits = 0;
+  (void)cached_has_bits;
+
+  cached_has_bits = from._impl_._has_bits_[0];
+  if (BatchCheckHasBit(cached_has_bits, 0x0000000fU)) {
+    if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+      _this->_internal_mutable_incomes()->InternalMergeFromWithArena(
+          ::google::protobuf::MessageLite::internal_visibility(), arena,
+          from._internal_incomes());
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      if (!from._internal_next_cursor().empty()) {
+        _this->_internal_set_next_cursor(from._internal_next_cursor());
+      } else {
+        if (_this->_impl_.next_cursor_.IsDefault()) {
+          _this->_internal_set_next_cursor("");
+        }
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000004U)) {
+      ABSL_DCHECK(from._impl_.error_message_ != nullptr);
+      if (_this->_impl_.error_message_ == nullptr) {
+        _this->_impl_.error_message_ = ::google::protobuf::Message::CopyConstruct(arena, *from._impl_.error_message_);
+      } else {
+        _this->_impl_.error_message_->MergeFrom(*from._impl_.error_message_);
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000008U)) {
+      if (from._internal_server_now_ms() != 0) {
+        _this->_impl_.server_now_ms_ = from._impl_.server_now_ms_;
+      }
+    }
+  }
+  _this->_impl_._has_bits_[0] |= cached_has_bits;
+  _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+}
+
+void ListSellerIncomesResponse::CopyFrom(const ListSellerIncomesResponse& from) {
+  // @@protoc_insertion_point(class_specific_copy_from_start:trade.ListSellerIncomesResponse)
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+
+void ListSellerIncomesResponse::InternalSwap(ListSellerIncomesResponse* PROTOBUF_RESTRICT PROTOBUF_NONNULL other) {
+  using ::std::swap;
+  auto* arena = GetArena();
+  ABSL_DCHECK_EQ(arena, other->GetArena());
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
+  swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
+  _impl_.incomes_.InternalSwap(&other->_impl_.incomes_);
+  ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.next_cursor_, &other->_impl_.next_cursor_, arena);
+  ::google::protobuf::internal::memswap<
+      PROTOBUF_FIELD_OFFSET(ListSellerIncomesResponse, _impl_.server_now_ms_)
+      + sizeof(ListSellerIncomesResponse::_impl_.server_now_ms_)
+      - PROTOBUF_FIELD_OFFSET(ListSellerIncomesResponse, _impl_.error_message_)>(
+          reinterpret_cast<char*>(&_impl_.error_message_),
+          reinterpret_cast<char*>(&other->_impl_.error_message_));
+}
+
+::google::protobuf::Metadata ListSellerIncomesResponse::GetMetadata() const {
+  return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
+}
+// ===================================================================
+
+CreateWithdrawalRequest::CreateWithdrawalRequest(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, CreateWithdrawalRequest_get_class_data()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  SharedCtor(arena);
+  // @@protoc_insertion_point(arena_constructor:trade.CreateWithdrawalRequest)
+}
+PROTOBUF_NDEBUG_INLINE CreateWithdrawalRequest::Impl_::Impl_(
+    [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
+    [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
+    [[maybe_unused]] const ::trade::CreateWithdrawalRequest& from_msg)
+      : _has_bits_{from._has_bits_},
+        _cached_size_{0},
+        client_request_id_(arena, from.client_request_id_) {}
+
+CreateWithdrawalRequest::CreateWithdrawalRequest(
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena,
+    const CreateWithdrawalRequest& from)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, CreateWithdrawalRequest_get_class_data()) {
+
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  CreateWithdrawalRequest* const _this = this;
+  (void)_this;
+  _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+  new (&_impl_) Impl_(internal_visibility(), arena, from._impl_, from);
+  _impl_.amount_fen_ = from._impl_.amount_fen_;
+
+  // @@protoc_insertion_point(copy_constructor:trade.CreateWithdrawalRequest)
+}
+PROTOBUF_NDEBUG_INLINE CreateWithdrawalRequest::Impl_::Impl_(
+    [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
+    [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+      : _cached_size_{0},
+        client_request_id_(arena) {}
+
+inline void CreateWithdrawalRequest::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
+  new (&_impl_) Impl_(internal_visibility(), arena);
+  _impl_.amount_fen_ = {};
+}
+CreateWithdrawalRequest::~CreateWithdrawalRequest() {
+  // @@protoc_insertion_point(destructor:trade.CreateWithdrawalRequest)
+  SharedDtor(*this);
+}
+inline void CreateWithdrawalRequest::SharedDtor(MessageLite& self) {
+  CreateWithdrawalRequest& this_ = static_cast<CreateWithdrawalRequest&>(self);
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    this_.CheckHasBitConsistency();
+  }
+  this_._internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
+  ABSL_DCHECK(this_.GetArena() == nullptr);
+  this_._impl_.client_request_id_.Destroy();
+  this_._impl_.~Impl_();
+}
+
+#ifndef PROTOBUF_MESSAGE_GLOBALS
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const
+    ::google::protobuf::internal::ClassDataFull CreateWithdrawalRequest_class_data_ =
+        CreateWithdrawalRequest::InternalGenerateClassData_(CreateWithdrawalRequest_globals_._default);
+
+PROTOBUF_ATTRIBUTE_WEAK const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
+CreateWithdrawalRequest::GetClassData() const {
+  ::google::protobuf::internal::PrefetchToLocalCache(&CreateWithdrawalRequest_class_data_);
+  ::google::protobuf::internal::PrefetchToLocalCache(CreateWithdrawalRequest_class_data_.tc_table);
+  return CreateWithdrawalRequest_class_data_.base();
+}
+#else
+PROTOBUF_ATTRIBUTE_WEAK const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
+CreateWithdrawalRequest::GetClassData() const {
+  ::google::protobuf::internal::PrefetchToLocalCache(&CreateWithdrawalRequest_globals_);
+  ::google::protobuf::internal::PrefetchToLocalCache(
+      ::google::protobuf::internal::MessageGlobalsBase::ToParseTableBase(&CreateWithdrawalRequest_globals_));
+  return CreateWithdrawalRequest_globals_.GetClassData();
+}
+#endif  // !PROTOBUF_MESSAGE_GLOBALS
+#ifndef PROTOBUF_MESSAGE_GLOBALS
+PROTOBUF_CONSTINIT
+PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const CreateWithdrawalRequest::ParseTableT_
+    CreateWithdrawalRequest::_table_ =
+        CreateWithdrawalRequest::InternalGenerateParseTable_(CreateWithdrawalRequest_class_data_.base());
+#endif  // !PROTOBUF_MESSAGE_GLOBALS
+PROTOBUF_NOINLINE void CreateWithdrawalRequest::Clear() {
+// @@protoc_insertion_point(message_clear_start:trade.CreateWithdrawalRequest)
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  cached_has_bits = _impl_._has_bits_[0];
+  if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+    _impl_.client_request_id_.ClearNonDefaultToEmpty();
+  }
+  _impl_.amount_fen_ = ::uint64_t{0u};
+  _impl_._has_bits_.Clear();
+  _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::uint8_t* PROTOBUF_NONNULL CreateWithdrawalRequest::_InternalSerialize(
+    const ::google::protobuf::MessageLite& base, ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) {
+  const CreateWithdrawalRequest& this_ = static_cast<const CreateWithdrawalRequest&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::uint8_t* PROTOBUF_NONNULL CreateWithdrawalRequest::_InternalSerialize(
+    ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
+  const CreateWithdrawalRequest& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    this_.CheckHasBitConsistency();
+  }
+  // @@protoc_insertion_point(serialize_to_array_start:trade.CreateWithdrawalRequest)
+  ::uint32_t cached_has_bits = 0;
+  (void)cached_has_bits;
+
+  cached_has_bits = this_._impl_._has_bits_[0];
+  // string client_request_id = 1;
+  if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+    if (!this_._internal_client_request_id().empty()) {
+      const ::std::string& _s = this_._internal_client_request_id();
+      ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
+          _s.data(), static_cast<int>(_s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "trade.CreateWithdrawalRequest.client_request_id");
+      target = stream->WriteStringMaybeAliased(1, _s, target);
+    }
+  }
+
+  // uint64 amount_fen = 2;
+  if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+    if (this_._internal_amount_fen() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteUInt64ToArray(
+          2, this_._internal_amount_fen(), target);
+    }
+  }
+
+  if (ABSL_PREDICT_FALSE(this_._internal_metadata_.have_unknown_fields())) {
+    target =
+        ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
+            this_._internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
+  }
+  // @@protoc_insertion_point(serialize_to_array_end:trade.CreateWithdrawalRequest)
+  return target;
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::size_t CreateWithdrawalRequest::ByteSizeLong(const MessageLite& base) {
+  const CreateWithdrawalRequest& this_ = static_cast<const CreateWithdrawalRequest&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::size_t CreateWithdrawalRequest::ByteSizeLong() const {
+  const CreateWithdrawalRequest& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  // @@protoc_insertion_point(message_byte_size_start:trade.CreateWithdrawalRequest)
+  ::size_t total_size = 0;
+
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void)cached_has_bits;
+
+  ::_pbi::Prefetch5LinesFrom7Lines(&this_);
+  cached_has_bits = this_._impl_._has_bits_[0];
+  if (BatchCheckHasBit(cached_has_bits, 0x00000003U)) {
+    // string client_request_id = 1;
+    if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+      if (!this_._internal_client_request_id().empty()) {
+        total_size += 1 + ::google::protobuf::internal::WireFormatLite::StringSize(
+                                        this_._internal_client_request_id());
+      }
+    }
+    // uint64 amount_fen = 2;
+    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      if (this_._internal_amount_fen() != 0) {
+        total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(
+            this_._internal_amount_fen());
+      }
+    }
+  }
+  return this_.MaybeComputeUnknownFieldsSize(total_size,
+                                             &this_._impl_._cached_size_);
+}
+
+void CreateWithdrawalRequest::MergeImpl(::google::protobuf::MessageLite& to_msg,
+                      const ::google::protobuf::MessageLite& from_msg) {
+   auto* const _this = static_cast<CreateWithdrawalRequest*>(&to_msg);
+  auto& from = static_cast<const CreateWithdrawalRequest&>(from_msg);
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    from.CheckHasBitConsistency();
+  }
+  // @@protoc_insertion_point(class_specific_merge_from_start:trade.CreateWithdrawalRequest)
+  ABSL_DCHECK_NE(&from, _this);
+  ::uint32_t cached_has_bits = 0;
+  (void)cached_has_bits;
+
+  cached_has_bits = from._impl_._has_bits_[0];
+  if (BatchCheckHasBit(cached_has_bits, 0x00000003U)) {
+    if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+      if (!from._internal_client_request_id().empty()) {
+        _this->_internal_set_client_request_id(from._internal_client_request_id());
+      } else {
+        if (_this->_impl_.client_request_id_.IsDefault()) {
+          _this->_internal_set_client_request_id("");
+        }
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      if (from._internal_amount_fen() != 0) {
+        _this->_impl_.amount_fen_ = from._impl_.amount_fen_;
+      }
+    }
+  }
+  _this->_impl_._has_bits_[0] |= cached_has_bits;
+  _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+}
+
+void CreateWithdrawalRequest::CopyFrom(const CreateWithdrawalRequest& from) {
+  // @@protoc_insertion_point(class_specific_copy_from_start:trade.CreateWithdrawalRequest)
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+
+void CreateWithdrawalRequest::InternalSwap(CreateWithdrawalRequest* PROTOBUF_RESTRICT PROTOBUF_NONNULL other) {
+  using ::std::swap;
+  auto* arena = GetArena();
+  ABSL_DCHECK_EQ(arena, other->GetArena());
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
+  swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
+  ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.client_request_id_, &other->_impl_.client_request_id_, arena);
+  swap(_impl_.amount_fen_, other->_impl_.amount_fen_);
+}
+
+::google::protobuf::Metadata CreateWithdrawalRequest::GetMetadata() const {
+  return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
+}
+// ===================================================================
+
+GetWithdrawalRequest::GetWithdrawalRequest(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, GetWithdrawalRequest_get_class_data()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  SharedCtor(arena);
+  // @@protoc_insertion_point(arena_constructor:trade.GetWithdrawalRequest)
+}
+PROTOBUF_NDEBUG_INLINE GetWithdrawalRequest::Impl_::Impl_(
+    [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
+    [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
+    [[maybe_unused]] const ::trade::GetWithdrawalRequest& from_msg)
+      : _has_bits_{from._has_bits_},
+        _cached_size_{0},
+        withdrawal_id_(arena, from.withdrawal_id_) {}
+
+GetWithdrawalRequest::GetWithdrawalRequest(
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena,
+    const GetWithdrawalRequest& from)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, GetWithdrawalRequest_get_class_data()) {
+
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  GetWithdrawalRequest* const _this = this;
+  (void)_this;
+  _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+  new (&_impl_) Impl_(internal_visibility(), arena, from._impl_, from);
+
+  // @@protoc_insertion_point(copy_constructor:trade.GetWithdrawalRequest)
+}
+PROTOBUF_NDEBUG_INLINE GetWithdrawalRequest::Impl_::Impl_(
+    [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
+    [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+      : _cached_size_{0},
+        withdrawal_id_(arena) {}
+
+inline void GetWithdrawalRequest::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
+  new (&_impl_) Impl_(internal_visibility(), arena);
+}
+GetWithdrawalRequest::~GetWithdrawalRequest() {
+  // @@protoc_insertion_point(destructor:trade.GetWithdrawalRequest)
+  SharedDtor(*this);
+}
+inline void GetWithdrawalRequest::SharedDtor(MessageLite& self) {
+  GetWithdrawalRequest& this_ = static_cast<GetWithdrawalRequest&>(self);
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    this_.CheckHasBitConsistency();
+  }
+  this_._internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
+  ABSL_DCHECK(this_.GetArena() == nullptr);
+  this_._impl_.withdrawal_id_.Destroy();
+  this_._impl_.~Impl_();
+}
+
+#ifndef PROTOBUF_MESSAGE_GLOBALS
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const
+    ::google::protobuf::internal::ClassDataFull GetWithdrawalRequest_class_data_ =
+        GetWithdrawalRequest::InternalGenerateClassData_(GetWithdrawalRequest_globals_._default);
+
+PROTOBUF_ATTRIBUTE_WEAK const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
+GetWithdrawalRequest::GetClassData() const {
+  ::google::protobuf::internal::PrefetchToLocalCache(&GetWithdrawalRequest_class_data_);
+  ::google::protobuf::internal::PrefetchToLocalCache(GetWithdrawalRequest_class_data_.tc_table);
+  return GetWithdrawalRequest_class_data_.base();
+}
+#else
+PROTOBUF_ATTRIBUTE_WEAK const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
+GetWithdrawalRequest::GetClassData() const {
+  ::google::protobuf::internal::PrefetchToLocalCache(&GetWithdrawalRequest_globals_);
+  ::google::protobuf::internal::PrefetchToLocalCache(
+      ::google::protobuf::internal::MessageGlobalsBase::ToParseTableBase(&GetWithdrawalRequest_globals_));
+  return GetWithdrawalRequest_globals_.GetClassData();
+}
+#endif  // !PROTOBUF_MESSAGE_GLOBALS
+#ifndef PROTOBUF_MESSAGE_GLOBALS
+PROTOBUF_CONSTINIT
+PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const GetWithdrawalRequest::ParseTableT_
+    GetWithdrawalRequest::_table_ =
+        GetWithdrawalRequest::InternalGenerateParseTable_(GetWithdrawalRequest_class_data_.base());
+#endif  // !PROTOBUF_MESSAGE_GLOBALS
+PROTOBUF_NOINLINE void GetWithdrawalRequest::Clear() {
+// @@protoc_insertion_point(message_clear_start:trade.GetWithdrawalRequest)
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  cached_has_bits = _impl_._has_bits_[0];
+  if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+    _impl_.withdrawal_id_.ClearNonDefaultToEmpty();
+  }
+  _impl_._has_bits_.Clear();
+  _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::uint8_t* PROTOBUF_NONNULL GetWithdrawalRequest::_InternalSerialize(
+    const ::google::protobuf::MessageLite& base, ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) {
+  const GetWithdrawalRequest& this_ = static_cast<const GetWithdrawalRequest&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::uint8_t* PROTOBUF_NONNULL GetWithdrawalRequest::_InternalSerialize(
+    ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
+  const GetWithdrawalRequest& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    this_.CheckHasBitConsistency();
+  }
+  // @@protoc_insertion_point(serialize_to_array_start:trade.GetWithdrawalRequest)
+  ::uint32_t cached_has_bits = 0;
+  (void)cached_has_bits;
+
+  cached_has_bits = this_._impl_._has_bits_[0];
+  // string withdrawal_id = 1;
+  if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+    if (!this_._internal_withdrawal_id().empty()) {
+      const ::std::string& _s = this_._internal_withdrawal_id();
+      ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
+          _s.data(), static_cast<int>(_s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "trade.GetWithdrawalRequest.withdrawal_id");
+      target = stream->WriteStringMaybeAliased(1, _s, target);
+    }
+  }
+
+  if (ABSL_PREDICT_FALSE(this_._internal_metadata_.have_unknown_fields())) {
+    target =
+        ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
+            this_._internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
+  }
+  // @@protoc_insertion_point(serialize_to_array_end:trade.GetWithdrawalRequest)
+  return target;
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::size_t GetWithdrawalRequest::ByteSizeLong(const MessageLite& base) {
+  const GetWithdrawalRequest& this_ = static_cast<const GetWithdrawalRequest&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::size_t GetWithdrawalRequest::ByteSizeLong() const {
+  const GetWithdrawalRequest& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  // @@protoc_insertion_point(message_byte_size_start:trade.GetWithdrawalRequest)
+  ::size_t total_size = 0;
+
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void)cached_has_bits;
+
+   {
+    // string withdrawal_id = 1;
+    cached_has_bits = this_._impl_._has_bits_[0];
+    if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+      if (!this_._internal_withdrawal_id().empty()) {
+        total_size += 1 + ::google::protobuf::internal::WireFormatLite::StringSize(
+                                        this_._internal_withdrawal_id());
+      }
+    }
+  }
+  return this_.MaybeComputeUnknownFieldsSize(total_size,
+                                             &this_._impl_._cached_size_);
+}
+
+void GetWithdrawalRequest::MergeImpl(::google::protobuf::MessageLite& to_msg,
+                      const ::google::protobuf::MessageLite& from_msg) {
+   auto* const _this = static_cast<GetWithdrawalRequest*>(&to_msg);
+  auto& from = static_cast<const GetWithdrawalRequest&>(from_msg);
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    from.CheckHasBitConsistency();
+  }
+  // @@protoc_insertion_point(class_specific_merge_from_start:trade.GetWithdrawalRequest)
+  ABSL_DCHECK_NE(&from, _this);
+  ::uint32_t cached_has_bits = 0;
+  (void)cached_has_bits;
+
+  cached_has_bits = from._impl_._has_bits_[0];
+  if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+    if (!from._internal_withdrawal_id().empty()) {
+      _this->_internal_set_withdrawal_id(from._internal_withdrawal_id());
+    } else {
+      if (_this->_impl_.withdrawal_id_.IsDefault()) {
+        _this->_internal_set_withdrawal_id("");
+      }
+    }
+  }
+  _this->_impl_._has_bits_[0] |= cached_has_bits;
+  _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+}
+
+void GetWithdrawalRequest::CopyFrom(const GetWithdrawalRequest& from) {
+  // @@protoc_insertion_point(class_specific_copy_from_start:trade.GetWithdrawalRequest)
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+
+void GetWithdrawalRequest::InternalSwap(GetWithdrawalRequest* PROTOBUF_RESTRICT PROTOBUF_NONNULL other) {
+  using ::std::swap;
+  auto* arena = GetArena();
+  ABSL_DCHECK_EQ(arena, other->GetArena());
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
+  swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
+  ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.withdrawal_id_, &other->_impl_.withdrawal_id_, arena);
+}
+
+::google::protobuf::Metadata GetWithdrawalRequest::GetMetadata() const {
+  return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
+}
+// ===================================================================
+
+RmbWithdrawalView::RmbWithdrawalView(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, RmbWithdrawalView_get_class_data()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  SharedCtor(arena);
+  // @@protoc_insertion_point(arena_constructor:trade.RmbWithdrawalView)
+}
+PROTOBUF_NDEBUG_INLINE RmbWithdrawalView::Impl_::Impl_(
+    [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
+    [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
+    [[maybe_unused]] const ::trade::RmbWithdrawalView& from_msg)
+      : _has_bits_{from._has_bits_},
+        _cached_size_{0},
+        withdrawal_id_(arena, from.withdrawal_id_),
+        state_(arena, from.state_),
+        channel_(arena, from.channel_),
+        transaction_id_(arena, from.transaction_id_) {}
+
+RmbWithdrawalView::RmbWithdrawalView(
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena,
+    const RmbWithdrawalView& from)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, RmbWithdrawalView_get_class_data()) {
+
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  RmbWithdrawalView* const _this = this;
+  (void)_this;
+  _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+  new (&_impl_) Impl_(internal_visibility(), arena, from._impl_, from);
+  _impl_.amount_fen_ = from._impl_.amount_fen_;
+
+  // @@protoc_insertion_point(copy_constructor:trade.RmbWithdrawalView)
+}
+PROTOBUF_NDEBUG_INLINE RmbWithdrawalView::Impl_::Impl_(
+    [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
+    [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+      : _cached_size_{0},
+        withdrawal_id_(arena),
+        state_(arena),
+        channel_(arena),
+        transaction_id_(arena) {}
+
+inline void RmbWithdrawalView::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
+  new (&_impl_) Impl_(internal_visibility(), arena);
+  _impl_.amount_fen_ = {};
+}
+RmbWithdrawalView::~RmbWithdrawalView() {
+  // @@protoc_insertion_point(destructor:trade.RmbWithdrawalView)
+  SharedDtor(*this);
+}
+inline void RmbWithdrawalView::SharedDtor(MessageLite& self) {
+  RmbWithdrawalView& this_ = static_cast<RmbWithdrawalView&>(self);
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    this_.CheckHasBitConsistency();
+  }
+  this_._internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
+  ABSL_DCHECK(this_.GetArena() == nullptr);
+  this_._impl_.withdrawal_id_.Destroy();
+  this_._impl_.state_.Destroy();
+  this_._impl_.channel_.Destroy();
+  this_._impl_.transaction_id_.Destroy();
+  this_._impl_.~Impl_();
+}
+
+#ifndef PROTOBUF_MESSAGE_GLOBALS
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const
+    ::google::protobuf::internal::ClassDataFull RmbWithdrawalView_class_data_ =
+        RmbWithdrawalView::InternalGenerateClassData_(RmbWithdrawalView_globals_._default);
+
+PROTOBUF_ATTRIBUTE_WEAK const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
+RmbWithdrawalView::GetClassData() const {
+  ::google::protobuf::internal::PrefetchToLocalCache(&RmbWithdrawalView_class_data_);
+  ::google::protobuf::internal::PrefetchToLocalCache(RmbWithdrawalView_class_data_.tc_table);
+  return RmbWithdrawalView_class_data_.base();
+}
+#else
+PROTOBUF_ATTRIBUTE_WEAK const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
+RmbWithdrawalView::GetClassData() const {
+  ::google::protobuf::internal::PrefetchToLocalCache(&RmbWithdrawalView_globals_);
+  ::google::protobuf::internal::PrefetchToLocalCache(
+      ::google::protobuf::internal::MessageGlobalsBase::ToParseTableBase(&RmbWithdrawalView_globals_));
+  return RmbWithdrawalView_globals_.GetClassData();
+}
+#endif  // !PROTOBUF_MESSAGE_GLOBALS
+#ifndef PROTOBUF_MESSAGE_GLOBALS
+PROTOBUF_CONSTINIT
+PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const RmbWithdrawalView::ParseTableT_
+    RmbWithdrawalView::_table_ =
+        RmbWithdrawalView::InternalGenerateParseTable_(RmbWithdrawalView_class_data_.base());
+#endif  // !PROTOBUF_MESSAGE_GLOBALS
+PROTOBUF_NOINLINE void RmbWithdrawalView::Clear() {
+// @@protoc_insertion_point(message_clear_start:trade.RmbWithdrawalView)
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  cached_has_bits = _impl_._has_bits_[0];
+  if (BatchCheckHasBit(cached_has_bits, 0x0000000fU)) {
+    if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+      _impl_.withdrawal_id_.ClearNonDefaultToEmpty();
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      _impl_.state_.ClearNonDefaultToEmpty();
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000004U)) {
+      _impl_.channel_.ClearNonDefaultToEmpty();
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000008U)) {
+      _impl_.transaction_id_.ClearNonDefaultToEmpty();
+    }
+  }
+  _impl_.amount_fen_ = ::uint64_t{0u};
+  _impl_._has_bits_.Clear();
+  _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::uint8_t* PROTOBUF_NONNULL RmbWithdrawalView::_InternalSerialize(
+    const ::google::protobuf::MessageLite& base, ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) {
+  const RmbWithdrawalView& this_ = static_cast<const RmbWithdrawalView&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::uint8_t* PROTOBUF_NONNULL RmbWithdrawalView::_InternalSerialize(
+    ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
+  const RmbWithdrawalView& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    this_.CheckHasBitConsistency();
+  }
+  // @@protoc_insertion_point(serialize_to_array_start:trade.RmbWithdrawalView)
+  ::uint32_t cached_has_bits = 0;
+  (void)cached_has_bits;
+
+  cached_has_bits = this_._impl_._has_bits_[0];
+  // string withdrawal_id = 1;
+  if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+    if (!this_._internal_withdrawal_id().empty()) {
+      const ::std::string& _s = this_._internal_withdrawal_id();
+      ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
+          _s.data(), static_cast<int>(_s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "trade.RmbWithdrawalView.withdrawal_id");
+      target = stream->WriteStringMaybeAliased(1, _s, target);
+    }
+  }
+
+  // uint64 amount_fen = 2;
+  if (CheckHasBit(cached_has_bits, 0x00000010U)) {
+    if (this_._internal_amount_fen() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteUInt64ToArray(
+          2, this_._internal_amount_fen(), target);
+    }
+  }
+
+  // string state = 3;
+  if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+    if (!this_._internal_state().empty()) {
+      const ::std::string& _s = this_._internal_state();
+      ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
+          _s.data(), static_cast<int>(_s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "trade.RmbWithdrawalView.state");
+      target = stream->WriteStringMaybeAliased(3, _s, target);
+    }
+  }
+
+  // string channel = 4;
+  if (CheckHasBit(cached_has_bits, 0x00000004U)) {
+    if (!this_._internal_channel().empty()) {
+      const ::std::string& _s = this_._internal_channel();
+      ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
+          _s.data(), static_cast<int>(_s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "trade.RmbWithdrawalView.channel");
+      target = stream->WriteStringMaybeAliased(4, _s, target);
+    }
+  }
+
+  // string transaction_id = 5;
+  if (CheckHasBit(cached_has_bits, 0x00000008U)) {
+    if (!this_._internal_transaction_id().empty()) {
+      const ::std::string& _s = this_._internal_transaction_id();
+      ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
+          _s.data(), static_cast<int>(_s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "trade.RmbWithdrawalView.transaction_id");
+      target = stream->WriteStringMaybeAliased(5, _s, target);
+    }
+  }
+
+  if (ABSL_PREDICT_FALSE(this_._internal_metadata_.have_unknown_fields())) {
+    target =
+        ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
+            this_._internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
+  }
+  // @@protoc_insertion_point(serialize_to_array_end:trade.RmbWithdrawalView)
+  return target;
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::size_t RmbWithdrawalView::ByteSizeLong(const MessageLite& base) {
+  const RmbWithdrawalView& this_ = static_cast<const RmbWithdrawalView&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::size_t RmbWithdrawalView::ByteSizeLong() const {
+  const RmbWithdrawalView& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  // @@protoc_insertion_point(message_byte_size_start:trade.RmbWithdrawalView)
+  ::size_t total_size = 0;
+
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void)cached_has_bits;
+
+  ::_pbi::Prefetch5LinesFrom7Lines(&this_);
+  cached_has_bits = this_._impl_._has_bits_[0];
+  if (BatchCheckHasBit(cached_has_bits, 0x0000001fU)) {
+    // string withdrawal_id = 1;
+    if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+      if (!this_._internal_withdrawal_id().empty()) {
+        total_size += 1 + ::google::protobuf::internal::WireFormatLite::StringSize(
+                                        this_._internal_withdrawal_id());
+      }
+    }
+    // string state = 3;
+    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      if (!this_._internal_state().empty()) {
+        total_size += 1 + ::google::protobuf::internal::WireFormatLite::StringSize(
+                                        this_._internal_state());
+      }
+    }
+    // string channel = 4;
+    if (CheckHasBit(cached_has_bits, 0x00000004U)) {
+      if (!this_._internal_channel().empty()) {
+        total_size += 1 + ::google::protobuf::internal::WireFormatLite::StringSize(
+                                        this_._internal_channel());
+      }
+    }
+    // string transaction_id = 5;
+    if (CheckHasBit(cached_has_bits, 0x00000008U)) {
+      if (!this_._internal_transaction_id().empty()) {
+        total_size += 1 + ::google::protobuf::internal::WireFormatLite::StringSize(
+                                        this_._internal_transaction_id());
+      }
+    }
+    // uint64 amount_fen = 2;
+    if (CheckHasBit(cached_has_bits, 0x00000010U)) {
+      if (this_._internal_amount_fen() != 0) {
+        total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(
+            this_._internal_amount_fen());
+      }
+    }
+  }
+  return this_.MaybeComputeUnknownFieldsSize(total_size,
+                                             &this_._impl_._cached_size_);
+}
+
+void RmbWithdrawalView::MergeImpl(::google::protobuf::MessageLite& to_msg,
+                      const ::google::protobuf::MessageLite& from_msg) {
+   auto* const _this = static_cast<RmbWithdrawalView*>(&to_msg);
+  auto& from = static_cast<const RmbWithdrawalView&>(from_msg);
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    from.CheckHasBitConsistency();
+  }
+  // @@protoc_insertion_point(class_specific_merge_from_start:trade.RmbWithdrawalView)
+  ABSL_DCHECK_NE(&from, _this);
+  ::uint32_t cached_has_bits = 0;
+  (void)cached_has_bits;
+
+  cached_has_bits = from._impl_._has_bits_[0];
+  if (BatchCheckHasBit(cached_has_bits, 0x0000001fU)) {
+    if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+      if (!from._internal_withdrawal_id().empty()) {
+        _this->_internal_set_withdrawal_id(from._internal_withdrawal_id());
+      } else {
+        if (_this->_impl_.withdrawal_id_.IsDefault()) {
+          _this->_internal_set_withdrawal_id("");
+        }
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      if (!from._internal_state().empty()) {
+        _this->_internal_set_state(from._internal_state());
+      } else {
+        if (_this->_impl_.state_.IsDefault()) {
+          _this->_internal_set_state("");
+        }
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000004U)) {
+      if (!from._internal_channel().empty()) {
+        _this->_internal_set_channel(from._internal_channel());
+      } else {
+        if (_this->_impl_.channel_.IsDefault()) {
+          _this->_internal_set_channel("");
+        }
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000008U)) {
+      if (!from._internal_transaction_id().empty()) {
+        _this->_internal_set_transaction_id(from._internal_transaction_id());
+      } else {
+        if (_this->_impl_.transaction_id_.IsDefault()) {
+          _this->_internal_set_transaction_id("");
+        }
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000010U)) {
+      if (from._internal_amount_fen() != 0) {
+        _this->_impl_.amount_fen_ = from._impl_.amount_fen_;
+      }
+    }
+  }
+  _this->_impl_._has_bits_[0] |= cached_has_bits;
+  _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+}
+
+void RmbWithdrawalView::CopyFrom(const RmbWithdrawalView& from) {
+  // @@protoc_insertion_point(class_specific_copy_from_start:trade.RmbWithdrawalView)
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+
+void RmbWithdrawalView::InternalSwap(RmbWithdrawalView* PROTOBUF_RESTRICT PROTOBUF_NONNULL other) {
+  using ::std::swap;
+  auto* arena = GetArena();
+  ABSL_DCHECK_EQ(arena, other->GetArena());
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
+  swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
+  ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.withdrawal_id_, &other->_impl_.withdrawal_id_, arena);
+  ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.state_, &other->_impl_.state_, arena);
+  ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.channel_, &other->_impl_.channel_, arena);
+  ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.transaction_id_, &other->_impl_.transaction_id_, arena);
+  swap(_impl_.amount_fen_, other->_impl_.amount_fen_);
+}
+
+::google::protobuf::Metadata RmbWithdrawalView::GetMetadata() const {
+  return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
+}
+// ===================================================================
+
+void WithdrawalResponse::clear_error_message() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (_impl_.error_message_ != nullptr) _impl_.error_message_->Clear();
+  ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
+}
+WithdrawalResponse::WithdrawalResponse(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, WithdrawalResponse_get_class_data()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  SharedCtor(arena);
+  // @@protoc_insertion_point(arena_constructor:trade.WithdrawalResponse)
+}
+PROTOBUF_NDEBUG_INLINE WithdrawalResponse::Impl_::Impl_(
+    [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
+    [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
+    [[maybe_unused]] const ::trade::WithdrawalResponse& from_msg)
+      : _has_bits_{from._has_bits_},
+        _cached_size_{0} {}
+
+WithdrawalResponse::WithdrawalResponse(
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena,
+    const WithdrawalResponse& from)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, WithdrawalResponse_get_class_data()) {
+
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  WithdrawalResponse* const _this = this;
+  (void)_this;
+  _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+  new (&_impl_) Impl_(internal_visibility(), arena, from._impl_, from);
+  ::uint32_t cached_has_bits = _impl_._has_bits_[0];
+  _impl_.error_message_ = (CheckHasBit(cached_has_bits, 0x00000001U))
+                ? ::google::protobuf::Message::CopyConstruct(arena, *from._impl_.error_message_)
+                : nullptr;
+  _impl_.withdrawal_ = (CheckHasBit(cached_has_bits, 0x00000002U))
+                ? ::google::protobuf::Message::CopyConstruct(arena, *from._impl_.withdrawal_)
+                : nullptr;
+
+  // @@protoc_insertion_point(copy_constructor:trade.WithdrawalResponse)
+}
+PROTOBUF_NDEBUG_INLINE WithdrawalResponse::Impl_::Impl_(
+    [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
+    [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+      : _cached_size_{0} {}
+
+inline void WithdrawalResponse::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
+  new (&_impl_) Impl_(internal_visibility(), arena);
+  ::memset(reinterpret_cast<char*>(&_impl_) +
+               offsetof(Impl_, error_message_),
+           0,
+           offsetof(Impl_, withdrawal_) -
+               offsetof(Impl_, error_message_) +
+               sizeof(Impl_::withdrawal_));
+}
+WithdrawalResponse::~WithdrawalResponse() {
+  // @@protoc_insertion_point(destructor:trade.WithdrawalResponse)
+  SharedDtor(*this);
+}
+inline void WithdrawalResponse::SharedDtor(MessageLite& self) {
+  WithdrawalResponse& this_ = static_cast<WithdrawalResponse&>(self);
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    this_.CheckHasBitConsistency();
+  }
+  this_._internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
+  ABSL_DCHECK(this_.GetArena() == nullptr);
+  delete this_._impl_.error_message_;
+  delete this_._impl_.withdrawal_;
+  this_._impl_.~Impl_();
+}
+
+#ifndef PROTOBUF_MESSAGE_GLOBALS
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const
+    ::google::protobuf::internal::ClassDataFull WithdrawalResponse_class_data_ =
+        WithdrawalResponse::InternalGenerateClassData_(WithdrawalResponse_globals_._default);
+
+PROTOBUF_ATTRIBUTE_WEAK const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
+WithdrawalResponse::GetClassData() const {
+  ::google::protobuf::internal::PrefetchToLocalCache(&WithdrawalResponse_class_data_);
+  ::google::protobuf::internal::PrefetchToLocalCache(WithdrawalResponse_class_data_.tc_table);
+  return WithdrawalResponse_class_data_.base();
+}
+#else
+PROTOBUF_ATTRIBUTE_WEAK const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
+WithdrawalResponse::GetClassData() const {
+  ::google::protobuf::internal::PrefetchToLocalCache(&WithdrawalResponse_globals_);
+  ::google::protobuf::internal::PrefetchToLocalCache(
+      ::google::protobuf::internal::MessageGlobalsBase::ToParseTableBase(&WithdrawalResponse_globals_));
+  return WithdrawalResponse_globals_.GetClassData();
+}
+#endif  // !PROTOBUF_MESSAGE_GLOBALS
+#ifndef PROTOBUF_MESSAGE_GLOBALS
+PROTOBUF_CONSTINIT
+PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const WithdrawalResponse::ParseTableT_
+    WithdrawalResponse::_table_ =
+        WithdrawalResponse::InternalGenerateParseTable_(WithdrawalResponse_class_data_.base());
+#endif  // !PROTOBUF_MESSAGE_GLOBALS
+PROTOBUF_NOINLINE void WithdrawalResponse::Clear() {
+// @@protoc_insertion_point(message_clear_start:trade.WithdrawalResponse)
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  cached_has_bits = _impl_._has_bits_[0];
+  if (BatchCheckHasBit(cached_has_bits, 0x00000003U)) {
+    if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+      ABSL_DCHECK(_impl_.error_message_ != nullptr);
+      _impl_.error_message_->Clear();
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      ABSL_DCHECK(_impl_.withdrawal_ != nullptr);
+      _impl_.withdrawal_->Clear();
+    }
+  }
+  _impl_._has_bits_.Clear();
+  _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::uint8_t* PROTOBUF_NONNULL WithdrawalResponse::_InternalSerialize(
+    const ::google::protobuf::MessageLite& base, ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) {
+  const WithdrawalResponse& this_ = static_cast<const WithdrawalResponse&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::uint8_t* PROTOBUF_NONNULL WithdrawalResponse::_InternalSerialize(
+    ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
+  const WithdrawalResponse& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    this_.CheckHasBitConsistency();
+  }
+  // @@protoc_insertion_point(serialize_to_array_start:trade.WithdrawalResponse)
+  ::uint32_t cached_has_bits = 0;
+  (void)cached_has_bits;
+
+  cached_has_bits = this_._impl_._has_bits_[0];
+  // .TipInfoMessage error_message = 1;
+  if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+    target = ::google::protobuf::internal::WireFormatLite::InternalWriteMessage(
+        1, *this_._impl_.error_message_, this_._impl_.error_message_->GetCachedSize(), target,
+        stream);
+  }
+
+  // .trade.RmbWithdrawalView withdrawal = 2;
+  if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+    target = ::google::protobuf::internal::WireFormatLite::InternalWriteMessage(
+        2, *this_._impl_.withdrawal_, this_._impl_.withdrawal_->GetCachedSize(), target,
+        stream);
+  }
+
+  if (ABSL_PREDICT_FALSE(this_._internal_metadata_.have_unknown_fields())) {
+    target =
+        ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
+            this_._internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
+  }
+  // @@protoc_insertion_point(serialize_to_array_end:trade.WithdrawalResponse)
+  return target;
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::size_t WithdrawalResponse::ByteSizeLong(const MessageLite& base) {
+  const WithdrawalResponse& this_ = static_cast<const WithdrawalResponse&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::size_t WithdrawalResponse::ByteSizeLong() const {
+  const WithdrawalResponse& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  // @@protoc_insertion_point(message_byte_size_start:trade.WithdrawalResponse)
+  ::size_t total_size = 0;
+
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void)cached_has_bits;
+
+  ::_pbi::Prefetch5LinesFrom7Lines(&this_);
+  cached_has_bits = this_._impl_._has_bits_[0];
+  if (BatchCheckHasBit(cached_has_bits, 0x00000003U)) {
+    // .TipInfoMessage error_message = 1;
+    if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+      total_size += 1 +
+                    ::google::protobuf::internal::WireFormatLite::MessageSize(*this_._impl_.error_message_);
+    }
+    // .trade.RmbWithdrawalView withdrawal = 2;
+    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      total_size += 1 +
+                    ::google::protobuf::internal::WireFormatLite::MessageSize(*this_._impl_.withdrawal_);
+    }
+  }
+  return this_.MaybeComputeUnknownFieldsSize(total_size,
+                                             &this_._impl_._cached_size_);
+}
+
+void WithdrawalResponse::MergeImpl(::google::protobuf::MessageLite& to_msg,
+                      const ::google::protobuf::MessageLite& from_msg) {
+   auto* const _this = static_cast<WithdrawalResponse*>(&to_msg);
+  auto& from = static_cast<const WithdrawalResponse&>(from_msg);
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    from.CheckHasBitConsistency();
+  }
+  ::google::protobuf::Arena* arena = _this->GetArena();
+  // @@protoc_insertion_point(class_specific_merge_from_start:trade.WithdrawalResponse)
+  ABSL_DCHECK_NE(&from, _this);
+  ::uint32_t cached_has_bits = 0;
+  (void)cached_has_bits;
+
+  cached_has_bits = from._impl_._has_bits_[0];
+  if (BatchCheckHasBit(cached_has_bits, 0x00000003U)) {
+    if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+      ABSL_DCHECK(from._impl_.error_message_ != nullptr);
+      if (_this->_impl_.error_message_ == nullptr) {
+        _this->_impl_.error_message_ = ::google::protobuf::Message::CopyConstruct(arena, *from._impl_.error_message_);
+      } else {
+        _this->_impl_.error_message_->MergeFrom(*from._impl_.error_message_);
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      ABSL_DCHECK(from._impl_.withdrawal_ != nullptr);
+      if (_this->_impl_.withdrawal_ == nullptr) {
+        _this->_impl_.withdrawal_ = ::google::protobuf::Message::CopyConstruct(arena, *from._impl_.withdrawal_);
+      } else {
+        _this->_impl_.withdrawal_->MergeFrom(*from._impl_.withdrawal_);
+      }
+    }
+  }
+  _this->_impl_._has_bits_[0] |= cached_has_bits;
+  _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+}
+
+void WithdrawalResponse::CopyFrom(const WithdrawalResponse& from) {
+  // @@protoc_insertion_point(class_specific_copy_from_start:trade.WithdrawalResponse)
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+
+void WithdrawalResponse::InternalSwap(WithdrawalResponse* PROTOBUF_RESTRICT PROTOBUF_NONNULL other) {
+  using ::std::swap;
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
+  swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
+  ::google::protobuf::internal::memswap<
+      PROTOBUF_FIELD_OFFSET(WithdrawalResponse, _impl_.withdrawal_)
+      + sizeof(WithdrawalResponse::_impl_.withdrawal_)
+      - PROTOBUF_FIELD_OFFSET(WithdrawalResponse, _impl_.error_message_)>(
+          reinterpret_cast<char*>(&_impl_.error_message_),
+          reinterpret_cast<char*>(&other->_impl_.error_message_));
+}
+
+::google::protobuf::Metadata WithdrawalResponse::GetMetadata() const {
   return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
 }
 // @@protoc_insertion_point(namespace_scope)

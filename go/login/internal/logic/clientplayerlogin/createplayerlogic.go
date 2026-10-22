@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"login/internal/config"
-	"login/internal/constants"
 	"login/internal/logic/pkg/ctxkeys"
 	"login/internal/logic/pkg/locker"
 	"login/internal/logic/pkg/loginsession"
@@ -15,13 +14,13 @@ import (
 	login_proto_common "proto/common/base"
 	login_data_base "proto/common/database"
 	login_proto "proto/login"
+	"shared/accountdirectory"
 	"shared/generated/pb/table"
 	gametable "shared/generated/table"
 	"shared/playername"
 	"strconv"
 	"time"
 
-	"github.com/redis/go-redis/v9"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/proto"
@@ -43,46 +42,12 @@ const (
 	// reserveNameBudget 是名字登记这一步的总预算(含同名重试、生成名换名重试)。
 	// 它计入 login.yaml Locker.AccountLockTTL 的持锁耗时估算,改它要同步改那边的注释与取值。
 	reserveNameBudget = 3 * time.Second
-	// accountBlobReadBackTimeout:围栏写未确认时回读账号 blob 的预算。
-	// 它**封不住一次调用**:login 的 Redis 客户端没开 ContextTimeoutEnabled,socket 读写不认
-	// ctx 截止时间、只认 ReadTimeout / WriteTimeout(go-redis 默认各 3s),所以单次 GET 最长
-	// 仍会等满约 3s。这 1s 真正限制的是 go-redis 的内部重发(默认 MaxRetries=3):截止时间
-	// 一过,重发前的退避等待就会失败,不再有第 2 次尝试。
+	// SQL提交未知后的独立强读预算，不继承已取消的请求。
 	accountBlobReadBackTimeout = time.Second
 	// createLockReleaseTimeout:释放建角锁的预算。释放不跟请求 ctx 走(见 CreatePlayer 第 3 步的 defer),
 	// 所以自带上界。含义同 accountBlobReadBackTimeout:掐掉的是 go-redis 的内部重发,
 	// 单次 EVAL 最长仍会等满约 3s 的 socket 读超时。
 	createLockReleaseTimeout = time.Second
-	// reverseMappingWriteTimeout:第 7b 步写反查映射的预算。这一步排在提交点之后、不跟请求 ctx 走
-	// (理由见 writeReverseMapping),所以自带上界;含义同上,掐掉的是 go-redis 的内部重发。
-	reverseMappingWriteTimeout = time.Second
-)
-
-// writeAccountBlobScript 以建角锁为围栏写账号 blob:只有锁里仍是**本次**建角的令牌才写。
-//
-// 为什么不能再用裸 SET:持锁期间现在串着发号、名字登记、zone 登记三次跨进程调用,
-// 任何一次拖长都可能让锁在写 blob 之前过期。锁一过期,同账号的另一次建角就能拿到锁、
-// 读到同一份旧 blob、各自 append 一个角色再写回 —— 后写的覆盖先写的,先写的那个角色
-// 从账号里消失(名字和 player:zone 映射却都留着),或者两边合起来超过角色数上限。
-// 围栏把这类交错变成「后到者写失败」。
-//
-// KEYS = {accountDataKey, createLock.Key};ARGV = {createLock.Value, dataBytes}。
-// 账号角色目录无冷缓存回源，必须长期保留；SET 同时清除旧账号遗留的 TTL。
-// 返回 1 = 已写;-1 = 锁已不属于本次建角,**这一次执行**没有写。
-// 注意 -1 不等于「blob 里没有新角色」:go-redis 会在内部重发读超时的 EVALSHA,
-// 调用方只看得到最后一次执行的结果,见 writeAccountBlob。
-var writeAccountBlobScript = redis.NewScript(`
-if redis.call("GET", KEYS[2]) ~= ARGV[1] then
-    return -1
-end
-redis.call("SET", KEYS[1], ARGV[2])
-return 1
-`)
-
-// writeAccountBlobScript 的返回值。
-const (
-	accountBlobWritten  = 1
-	accountBlobLockLost = -1
 )
 
 type CreatePlayerLogic struct {
@@ -143,34 +108,10 @@ func (l *CreatePlayerLogic) CreatePlayer(in *login_proto.CreatePlayerRequest) (*
 		}
 	}()
 
-	// 4. Load + decode account data
-	accountDataKey := constants.GetAccountDataKey(account)
-	dataBytes, err := l.svcCtx.RedisClient.Get(l.ctx, accountDataKey).Bytes()
+	// 账号目录只强读全局 SQL；Redis 锁仍用于限制单账号本地在途，不裁决角色上限。
+	userAccount, err := readAccountDirectory(l.ctx, l.svcCtx, account, false)
 	if err != nil {
-		if errors.Is(err, redis.Nil) {
-			logx.Infof("Account not found in redis: %s", account)
-			resp.ErrorMessage = &login_proto_common.TipInfoMessage{Id: uint32(table.LoginError_kLoginAccountNotFound)}
-			return resp, nil
-		}
-		resp.ErrorMessage = &login_proto_common.TipInfoMessage{Id: uint32(table.LoginError_kLoginRedisError)}
-		logx.Errorf("RedisClient get failed, account: %s, err: %v", account, err)
-		return resp, err
-	}
-
-	userAccount := &login_data_base.UserAccounts{}
-	if err := proto.Unmarshal(dataBytes, userAccount); err != nil {
-		logx.Errorf("Failed to unmarshal user account, err: %v", err)
-		resp.ErrorMessage = &login_proto_common.TipInfoMessage{Id: uint32(table.LoginError_kLoginDataParseFailed)}
-		return resp, nil
-	}
-	if userAccount.SimplePlayers == nil {
-		userAccount.SimplePlayers = &login_proto_common.AccountSimplePlayerList{Players: make([]*login_proto_common.AccountSimplePlayer, 0)}
-	}
-
-	// 6. Create character
-	if len(userAccount.SimplePlayers.Players) >= config.AppConfig.Account.MaxPlayersPerAccount {
-		resp.ErrorMessage = &login_proto_common.TipInfoMessage{Id: uint32(table.LoginError_kLoginAccountPlayerFull)}
-		logx.Infof("Account player limit reached: %s", account)
+		resp.ErrorMessage = loginTip(table.LoginError_kLoginDataSerializeFailed)
 		return resp, nil
 	}
 
@@ -257,7 +198,7 @@ func (l *CreatePlayerLogic) CreatePlayer(in *login_proto.CreatePlayerRequest) (*
 	}
 
 	// 6c. 登记名字(全服唯一,真源是 data_service 的 player_name 表),**fail-closed**:
-	// 登记不成功就不建角。顺序固定为 mint → 探测(6b')→ 名字 → player:zone → 账号 blob:
+	// 登记不成功就不建角。顺序固定为 mint → 探测(6b')→ 名字 → player:zone → SQL 账号目录:
 	// 名字排在 player:zone 之前,是因为撞名是玩家侧的常态失败,而 player:zone 映射是
 	// SET NX 且没有 TTL、也没有删除入口 —— 先登记映射再撞名,每次撞名都会留下一条永久的
 	// 幽灵映射,回档孤儿报告与合服重映射都会扫到它。名字登记失败只烧掉一个号段 id,
@@ -309,7 +250,7 @@ func (l *CreatePlayerLogic) CreatePlayer(in *login_proto.CreatePlayerRequest) (*
 
 	// 6d. 登记 player:zone 归属映射,**fail-closed**:登记失败整体拒绝建角,一个字节都不落盘。
 	// 这条映射是数据路由 / 合服重映射 / 公会 / 榜的归属权威,而生产侧**只有这一个写入点**
-	// (其余写入者只有 data_service 的 debug_import 与合服重映射)。先落账号 blob 再登记失败,
+	// (其余写入者只有 data_service 的 debug_import 与合服重映射)。先落 SQL 账号目录再登记失败,
 	// 造出的是「账号里有、映射里没有」的玩家:tools/merge_zone 的重映射按映射扫,扫不到他,
 	// 合服后他的数据就烂在已下线的源 zone —— 这正是修复前线上的状态(映射零写入,
 	// 合服重映射找到 0 个玩家)。建角失败玩家重试一次就好,代价远小于一个静默错路由的角色。
@@ -327,8 +268,8 @@ func (l *CreatePlayerLogic) CreatePlayer(in *login_proto.CreatePlayerRequest) (*
 	}
 
 	// 6d'. 新号父键种子(NewPlayerSeed.Enabled,默认关;docs/design/new-player-first-enter-no-cold-read.md)。
-	// 排在 player:zone 登记之后:名字、归属两步 fail-closed,失败的建角不留种子。排在账号 blob 之前:
-	// EnterGame 只认账号 blob 或反查索引(7 / 7b 才写),所以种子落地之前没有任何人能拿这个 id 进场,
+	// 排在 player:zone 登记之后:名字、归属两步 fail-closed,失败的建角不留种子。排在 SQL 账号目录之前:
+	// EnterGame 只认全局 SQL 角色归属，所以种子落地之前没有任何人能拿这个 id 进场,
 	// 首次 EnterGame 看到的父键只可能是这份种子,或者缺席(缺席 = 走冷读老路,结果相同)。
 	// 尽力而为:种子没写成不影响建角,结论只进日志与计数(seedNewPlayer)。
 	// 例外(设计 §10 P2,负责人 2026-10-15 定为拒绝):种子脚本报 parent_exists / owner_epoch_exists = 6b' 探测之后
@@ -360,20 +301,12 @@ func (l *CreatePlayerLogic) CreatePlayer(in *login_proto.CreatePlayerRequest) (*
 	}
 	userAccount.SimplePlayers.Players = append(userAccount.SimplePlayers.Players, newPlayer)
 
-	// 7. Write back to Redis(以建角锁为围栏,见 writeAccountBlobScript)
-	dataBytes, err = proto.Marshal(userAccount)
-	if err != nil {
-		l.releaseName(account, newPlayerId, name, false)
-		resp.ErrorMessage = &login_proto_common.TipInfoMessage{Id: uint32(table.LoginError_kLoginDataSerializeFailed)}
-		logx.Errorf("Failed to marshal user account, err: %v", err)
-		return resp, nil
-	}
-	// 提交点之前最后一次查 ctx:截止之后不发围栏写,名字按「确定已登记」释放,不必再回读 blob。
-	if abandonAfterDeadline("account blob write") {
+	// 全局 SQL 事务再次复核账号角色上限；提交前取消则不发送写请求。
+	if abandonAfterDeadline("account directory SQL commit") {
 		return resp, nil
 	}
 	stageDone = observeStage(createPlayerStageSeconds, createStageAccountWrite)
-	tip = l.writeAccountBlob(account, accountDataKey, createLock, dataBytes, newPlayerId, name)
+	tip = l.persistAccountRole(account, createLock, newPlayer, userAccount)
 	stageDone()
 	if tip != nil {
 		resp.ErrorMessage = tip
@@ -381,30 +314,13 @@ func (l *CreatePlayerLogic) CreatePlayer(in *login_proto.CreatePlayerRequest) (*
 	}
 
 	// 7b. Write reverse mapping: player_id → account (for rollback orphan cleanup)
-	l.writeReverseMapping(account, newPlayerId)
+	// 归属已经随角色目录在 SQL 提交，不再写 Redis 反向索引。
 
 	// 8. Return player info
 	appendRoleList(resp, userAccount)
 
 	logx.Infof("Player created successfully, account: %s, playerId: %d, name: %q", account, newPlayerId, name)
 	return resp, nil
-}
-
-// writeReverseMapping 是第 7b 步:写 player_id → account 反查映射(EnterGame 自愈与回档孤儿清理用)。
-//
-// 它排在提交点(第 7 步围栏写确认落地)之后,记录的是已经成立的事实,不是新的决定,所以不跟请求
-// ctx 走,与补偿一样用 WithoutCancel 派生、自带上界:请求恰好在围栏写之后截止时,用请求 ctx 写
-// 会被 go-redis 原地拒掉,留下「账号里有、反查里没有」的永久缺口(这条映射没有 TTL,也没有别的写入点),
-// 回档孤儿清理就找不到这个角色。晚到的这次 SET 不会改变任何后续请求的结论:同值幂等;EnterGame
-// 只在账号 blob 里找不到角色时才读它,而此刻 blob 里已经有了。
-// 失败只记日志,不改变建角结果(角色照常可玩,只影响回档清理),与原行为相同。
-func (l *CreatePlayerLogic) writeReverseMapping(account string, playerID uint64) {
-	ctx, cancel := context.WithTimeout(context.WithoutCancel(l.ctx), reverseMappingWriteTimeout)
-	defer cancel()
-	reverseKey := constants.PlayerToAccountKey(playerID)
-	if err := l.svcCtx.RedisClient.Set(ctx, reverseKey, account, 0).Err(); err != nil {
-		logx.Errorf("Failed to set player-to-account reverse mapping, playerId: %d, account: %s, err: %v", playerID, account, err)
-	}
 }
 
 // appendRoleList 是第 8 步:把账号当前的全量角色列表放进响应。
@@ -689,110 +605,48 @@ func recordNameRelease(phase string, err error) {
 
 // recordNameOrphan 记一次「名字可能留在登记表里、却没有对应角色」。日志格式是运维手工释放
 // (带 x-admin-token 调 ReleasePlayerName{player_id,name})的输入,改格式要同步改运维文档。
-// 不做自动清扫:没有权威的「角色存在」信号,自动释放会拿走在役角色的名字(设计 §3.26)。
+// 不做自动清扫:远端提交仍可能在途，目录暂时缺行不能证明可释放；误释放会拿走在役角色的名字。
 func recordNameOrphan(account string, playerID uint64, name string, err error) {
 	createPlayerNameOrphanTotal.Inc()
 	logx.Errorf("[player-name] orphan reservation player_id=%d name=%q account=%s: %v", playerID, name, account, err)
 }
 
-// writeAccountBlob 是第 7 步:以建角锁为围栏把账号 blob 写回 Redis。
-// 返回 nil 表示 blob 里已经有新角色,可以继续 7b;返回 tip 表示建角失败,
-// 名字登记该释放的已经释放(或已按孤儿记录)。
-//
-// 只有脚本回 1 才是「确定已写」。其余结果一律**先回读 blob 再定结论**:
-//   - 脚本回 -1:锁已不属于本次建角(过期后被同账号的另一次建角拿走)。-1 只说明
-//     **最后一次**执行没写:go-redis 默认 MaxRetries=3,读超时的 EVALSHA 会被原样重发。
-//     第一次执行可能已经在服务端写成功(那时锁还在)、只是回包没等到,重发时锁才过期,
-//     login 看到的只有最后这个 -1。走到 -1 本身就说明环境已经劣化到锁过期,重发过的概率
-//     并不低,所以不能把它当成「确定未写」直接释放名字;
-//   - 脚本报错 / 回了不认识的值:结果未知(超时的 EVAL 可能已经在服务端执行)。
-//
-// 回读的三态结论(两条路径共用,只有失败 tip 不同:-1 → kLoginInProgress,其余 →
-// kLoginRedisSetFailed):
-//   - 含新 player_id → 那次写落地了,当成功;
-//   - 不含 / key 不存在 → 确定没写,释放名字(确定已登记,一次即可);
-//   - 回读失败 / 读回来的字节解析不了 → **保留登记**:此刻分不清角色到底落没落盘,
-//     释放了而角色其实已落盘,别人就能再占这个名字,两个在役角色重名 —— 宁可多一个孤儿
-//     (有日志、可手工释放),不可重名(无法事后修复)。
-//
-// 已知残余风险(接受,只存在于「脚本报错」那条路径):回读判「不含」之后,原 EVAL 才在
-// Redis 执行。这要求那条命令在服务端滞留超过 3s 读超时再加一次往返,而 Redis 单线程顺序
-// 执行、回读排在它之后,实际上只可能发生在连接层重排上;后果是角色落盘但名字已释放,
-// 读侧按空名回源、展示为空。-1 那条路径没有这个风险:锁令牌每次 TryLock 新生成、丢了就
-// 不会再回来,任何还滞留在途的重发执行到时同样只会得到 -1、不写。
-func (l *CreatePlayerLogic) writeAccountBlob(account, accountDataKey string, createLock *locker.Lock,
-	dataBytes []byte, playerID uint64, name string) *login_proto_common.TipInfoMessage {
-
-	res, err := writeAccountBlobScript.Run(l.ctx, l.svcCtx.RedisClient,
-		[]string{accountDataKey, createLock.Key}, createLock.Value, dataBytes).Int64()
-	failTip := table.LoginError_kLoginRedisSetFailed
-	if err == nil {
-		switch res {
-		case accountBlobWritten:
-			return nil
-		case accountBlobLockLost:
-			logx.Errorf("CreatePlayer lost the account lock before the account blob write was confirmed "+
-				"(held longer than Locker.AccountLockTTL?) account=%s player_id=%d", account, playerID)
-			err = errors.New("create lock no longer held when the fenced write ran")
-			failTip = table.LoginError_kLoginInProgress
-		default:
-			err = fmt.Errorf("unexpected writeAccountBlobScript result %d", res)
-		}
+// persistAccountRole 把单个原角色提交到全局目录；SQL 账号锁裁决上限与唯一归属。
+// 已失去本次入口锁时不再发新写；SQL 提交结果未知时只强读原 player_id 恢复。
+func (l *CreatePlayerLogic) persistAccountRole(account string, createLock *locker.Lock, role *login_proto_common.AccountSimplePlayer, directory *login_data_base.UserAccounts) *login_proto_common.TipInfoMessage {
+	if role == nil || l.svcCtx.AccountDirectory == nil {
+		return loginTip(table.LoginError_kLoginDataSerializeFailed)
 	}
-
-	logx.Errorf("Account blob write not confirmed, reading back (account=%s player_id=%d): %v", account, playerID, err)
-	state, readErr := l.readBackAccountBlob(accountDataKey, playerID)
-	switch state {
-	case accountBlobHasPlayer:
-		logx.Infof("Account blob read-back found player_id=%d: the write did land (account=%s)", playerID, account)
-		return nil
-	case accountBlobLacksPlayer:
+	playerID, name := role.PlayerId, role.Name
+	if token, err := l.svcCtx.RedisClient.Get(l.ctx, createLock.Key).Result(); err != nil || token != createLock.Value {
 		l.releaseName(account, playerID, name, false)
-		return loginTip(failTip)
-	default:
-		// accountBlobUnknown,以及将来新增而这里还不认识的状态:分不清,保留登记。
-		recordNameOrphan(account, playerID, name,
-			fmt.Errorf("account blob write not confirmed (write: %v; read-back: %w), reservation kept", err, readErr))
-		return loginTip(failTip)
+		return loginTip(table.LoginError_kLoginInProgress)
 	}
-}
-
-// accountBlobReadBack 是回读账号 blob 的三态结论。零值是「未知」:漏填的分支落到最保守的
-// 「保留登记」上。
-type accountBlobReadBack uint8
-
-const (
-	accountBlobUnknown     accountBlobReadBack = iota // 回读失败 / 字节解析不了:分不清
-	accountBlobHasPlayer                              // blob 里有新角色:那次写落地了
-	accountBlobLacksPlayer                            // 读到了且不含新角色,或 key 不存在:确定没写
-)
-
-// readBackAccountBlob 在围栏写未确认时回读账号 blob,判断 playerID 是否已经落盘。
-// playerID 是本次新铸的,blob 里出现它只可能来自本次建角的写入(后来者要先拿到锁才会读
-// blob,读到的已经含它,append 后原样保留)。err 只在结论为「未知」时非 nil,供孤儿日志带上原因。
-//
-// 用 WithoutCancel:走到回读往往正是因为请求 ctx 已经超时 / 被客户端取消。
-// 预算的真实含义见 accountBlobReadBackTimeout。
-func (l *CreatePlayerLogic) readBackAccountBlob(accountDataKey string, playerID uint64) (accountBlobReadBack, error) {
+	roles, err := l.svcCtx.AccountDirectory.Create(l.ctx, account, role)
+	if err == nil {
+		directory.SimplePlayers = roles
+		return nil
+	}
+	if errors.Is(err, accountdirectory.ErrFull) || errors.Is(err, accountdirectory.ErrConflict) || errors.Is(err, accountdirectory.ErrInvalid) {
+		l.releaseName(account, playerID, name, false)
+		if errors.Is(err, accountdirectory.ErrFull) {
+			return loginTip(table.LoginError_kLoginAccountPlayerFull)
+		}
+		return loginTip(table.LoginError_kLoginDataSerializeFailed)
+	}
+	// 超时可能发生在提交后；仅原账号、原 player_id、原载荷一致才恢复成功。
 	ctx, cancel := context.WithTimeout(context.WithoutCancel(l.ctx), accountBlobReadBackTimeout)
 	defer cancel()
-	raw, err := l.svcCtx.RedisClient.Get(ctx, accountDataKey).Bytes()
-	if errors.Is(err, redis.Nil) {
-		return accountBlobLacksPlayer, nil
-	}
-	if err != nil {
-		return accountBlobUnknown, err
-	}
-	stored := &login_data_base.UserAccounts{}
-	if err := proto.Unmarshal(raw, stored); err != nil {
-		return accountBlobUnknown, err
-	}
-	for _, p := range stored.GetSimplePlayers().GetPlayers() {
-		if p.GetPlayerId() == playerID {
-			return accountBlobHasPlayer, nil
+	stored, readErr := l.svcCtx.AccountDirectory.Lookup(ctx, playerID)
+	if readErr == nil && stored.Account == account && proto.Equal(stored.Role, role) {
+		if roles, err := l.svcCtx.AccountDirectory.Read(ctx, account, false); err == nil {
+			directory.SimplePlayers = roles
+			return nil
 		}
 	}
-	return accountBlobLacksPlayer, nil
+	// RPC 仍可能在远端提交；缺行也不能据此释放还在途的名字登记。
+	recordNameOrphan(account, playerID, name, fmt.Errorf("SQL目录提交未知: write=%v read=%v", err, readErr))
+	return loginTip(table.LoginError_kLoginDataSerializeFailed)
 }
 
 // registerHomeZone 把新角色登记进 data_service 的 player:zone 映射(见调用点 6d 的理由)。

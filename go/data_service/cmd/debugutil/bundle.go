@@ -123,6 +123,7 @@ type TableRow struct {
 
 // BundleGlobal 是全局库(data_service SnapshotMySQL)里与该玩家有关的记录,只供查看,导入端不使用。
 type BundleGlobal struct {
+	AccountRole     *Value            `json:"account_role,omitempty"` // 全局 SQL 目录原行；不含密码，可保留角色 PB 未知字段。
 	Database        string            `json:"database"`
 	PlayerName      any               `json:"player_name,omitempty"`
 	Snapshots       []SnapshotItem    `json:"snapshots,omitempty"`
@@ -297,21 +298,23 @@ func SavePendingIndexKey(homeZone uint32, playerID uint64) string {
 // login login_constants.go / sessionmanager/login_generation.go / entergamelogic.go;player_locator keys.go;
 // scene_manager leave_release.go;data_service routing/router.go(lock:player:)。
 func playerToAccountKey(playerID uint64) string { return "player_to_account:" + u64(playerID) }
-func playerLockerKey(playerID uint64) string { return "player_locker:" + u64(playerID) }
-func loginGenerationKey(playerID uint64) string { return "player:" + u64(playerID) + ":login_generation" }
+func playerLockerKey(playerID uint64) string    { return "player_locker:" + u64(playerID) }
+func loginGenerationKey(playerID uint64) string {
+	return "player:" + u64(playerID) + ":login_generation"
+}
 func mergeNoticeKey(playerID uint64) string { return "player_merge_notice:" + u64(playerID) }
 func forceRenameKey(playerID uint64) string { return "player_force_rename:" + u64(playerID) }
 func leaveReleaseWaitKey(playerID uint64) string {
 	return "player:" + u64(playerID) + ":leave_release_wait"
 }
-func LocatorSessionKey(playerID uint64) string { return "player:session:" + u64(playerID) }
+func LocatorSessionKey(playerID uint64) string  { return "player:session:" + u64(playerID) }
 func locatorLocationKey(playerID uint64) string { return "player:location:" + u64(playerID) }
-func mappingLockKey(playerID uint64) string { return "lock:player:" + u64(playerID) }
+func mappingLockKey(playerID uint64) string     { return "lock:player:" + u64(playerID) }
 
-// AccountKey 是 login 的账号角色目录键 account:<account>(值 UserAccounts;Redis 是角色目录的唯一权威)。
+// AccountKey 是旧账号目录缓存键；当前归属只认全局 SQL account_role。
 func AccountKey(account string) string { return "account:" + account }
 
-// PlayerToAccountKey 是角色 → 账号的反向索引;EnterGame 在账号目录里找不到角色时据它自愈。
+// PlayerToAccountKey 是历史反向缓存；不授权入场、自愈或删除。
 func PlayerToAccountKey(playerID uint64) string { return playerToAccountKey(playerID) }
 
 func u64(v uint64) string { return strconv.FormatUint(v, 10) }
@@ -345,7 +348,7 @@ func PlayerRedisKeySpecs(playerID uint64, homeZone uint32) []RedisKeySpec {
 				"outbox_player_database_1": newMsg[dbpb.DBTask](),
 			}},
 		{Key: assetop.SQLCommitKey(playerID), Instance: RedisCore, Kind: RedisKindHash,
-			Purpose: "资产 SQL 提交证据:go/db 确认资产结局已随玩家行提交",
+			Purpose:    "资产 SQL 提交证据:go/db 确认资产结局已随玩家行提交",
 			HashDecode: map[string]func() proto.Message{"data": newMsg[assetpb.PlayerAssetSQLCommit]()}},
 		{Key: ownerepoch.OwnerEpochKey(playerID), Instance: RedisCore, Kind: RedisKindString,
 			Purpose: "归属代次:只经 scene_manager INCR 前进"},
@@ -366,7 +369,7 @@ func PlayerRedisKeySpecs(playerID uint64, homeZone uint32) []RedisKeySpec {
 		{Key: playerLockerKey(playerID), Instance: RedisCore, Kind: RedisKindString,
 			Purpose: "login EnterGame 进场锁"},
 		{Key: playerToAccountKey(playerID), Instance: RedisCore, Kind: RedisKindString,
-			Purpose: "角色 → 账号反向索引(EnterGame 自愈用)"},
+			Purpose: "历史角色反向缓存(不授权入场)"},
 		{Key: mergeNoticeKey(playerID), Instance: RedisCore, Kind: RedisKindString,
 			Purpose: "合服通知标记"},
 		{Key: forceRenameKey(playerID), Instance: RedisCore, Kind: RedisKindString,

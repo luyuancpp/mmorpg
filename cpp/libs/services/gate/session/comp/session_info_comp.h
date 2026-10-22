@@ -60,6 +60,9 @@ struct SessionInfo
 	// 会话销毁即随之消失,不需要额外清理路径。
 	uint32_t homeZoneId{0}; // 玩家归属 zone;0 = 未知(旧版 scene_manager 未填),scene 侧 fail-closed 落进程 zone 并计数
 	uint64_t ownerEpoch{0}; // 本次路由的归属 epoch;0 = 旧版未铸造(兼容窗口),scene 侧存盘跳过 CAS 并计数
+	// 账号目录修订与本次路由绑定，不能用登录代次的max合并规则补成新所有者。
+	uint64_t ownerRevision{0};
+	uint64_t forwardedOwnerRevision{0};
 	// 上一次**实际转发给 scene** 的 PlayerEnterGameNodeRequest.owner_epoch(ownerEpoch 是"最近一次路由决策",转发前就被覆盖)。
 	// scene_route_helper.h ApplyRoute 第 4 条据此判断"同场景同节点、但归属换了代"的路由要不要再转发一次
 	// (docs/design/location-release-binding.md §3.5,审计 load-handover#0)。只由 ApplyRoute 在转发成功后写,ResetSceneRoute 清零。

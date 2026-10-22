@@ -66,11 +66,11 @@ constexpr RoutePlayerEvent::ParseTableT_ RoutePlayerEvent::InternalGenerateParse
     {
       PROTOBUF_FIELD_OFFSET(RoutePlayerEvent, _impl_._has_bits_),
       0, // no _extensions_
-      7, 56,  // max_field_number, fast_idx_mask
+      8, 56,  // max_field_number, fast_idx_mask
       offsetof(ParseTableT_, field_lookup_table),
-      4294967168,  // skipmap
+      4294967040,  // skipmap
       offsetof(ParseTableT_, field_entries),
-      7,  // num_field_entries
+      8,  // num_field_entries
       0,  // num_aux_entries
       offsetof(ParseTableT_, field_names),  // no aux_entries
       class_data,
@@ -80,7 +80,10 @@ constexpr RoutePlayerEvent::ParseTableT_ RoutePlayerEvent::InternalGenerateParse
       ::_pbi::TcParser::GetTable<::contracts::kafka::RoutePlayerEvent>(),  // to_prefetch
       #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
     }, {{
-      {::_pbi::TcParser::MiniParse, {}},
+      // uint64 owner_revision = 8;
+      {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(RoutePlayerEvent, _impl_.owner_revision_), 6>(),
+       {64, 6, 0,
+        PROTOBUF_FIELD_OFFSET(RoutePlayerEvent, _impl_.owner_revision_)}},
       // uint32 session_id = 1;
       {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(RoutePlayerEvent, _impl_.session_id_), 0>(),
        {8, 0, 0,
@@ -98,8 +101,8 @@ constexpr RoutePlayerEvent::ParseTableT_ RoutePlayerEvent::InternalGenerateParse
        {32, 3, 0,
         PROTOBUF_FIELD_OFFSET(RoutePlayerEvent, _impl_.player_id_)}},
       // uint32 home_zone_id = 5;
-      {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(RoutePlayerEvent, _impl_.home_zone_id_), 6>(),
-       {40, 6, 0,
+      {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(RoutePlayerEvent, _impl_.home_zone_id_), 7>(),
+       {40, 7, 0,
         PROTOBUF_FIELD_OFFSET(RoutePlayerEvent, _impl_.home_zone_id_)}},
       // uint64 owner_epoch = 6;
       {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(RoutePlayerEvent, _impl_.owner_epoch_), 4>(),
@@ -121,11 +124,13 @@ constexpr RoutePlayerEvent::ParseTableT_ RoutePlayerEvent::InternalGenerateParse
       // uint64 player_id = 4;
       {PROTOBUF_FIELD_OFFSET(RoutePlayerEvent, _impl_.player_id_), _Internal::kHasBitsOffset + 3, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
       // uint32 home_zone_id = 5;
-      {PROTOBUF_FIELD_OFFSET(RoutePlayerEvent, _impl_.home_zone_id_), _Internal::kHasBitsOffset + 6, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
+      {PROTOBUF_FIELD_OFFSET(RoutePlayerEvent, _impl_.home_zone_id_), _Internal::kHasBitsOffset + 7, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
       // uint64 owner_epoch = 6;
       {PROTOBUF_FIELD_OFFSET(RoutePlayerEvent, _impl_.owner_epoch_), _Internal::kHasBitsOffset + 4, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
       // uint64 login_generation = 7;
       {PROTOBUF_FIELD_OFFSET(RoutePlayerEvent, _impl_.login_generation_), _Internal::kHasBitsOffset + 5, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
+      // uint64 owner_revision = 8;
+      {PROTOBUF_FIELD_OFFSET(RoutePlayerEvent, _impl_.owner_revision_), _Internal::kHasBitsOffset + 6, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
     }},
     // no aux_entries
     {{
@@ -144,6 +149,7 @@ inline constexpr RoutePlayerEvent::Impl_::Impl_(
         player_id_{::uint64_t{0u}},
         owner_epoch_{::uint64_t{0u}},
         login_generation_{::uint64_t{0u}},
+        owner_revision_{::uint64_t{0u}},
         home_zone_id_{0u} {}
 
 template <typename>
@@ -1759,7 +1765,7 @@ const ::uint32_t
         protodesc_cold) = {
         0x081, // bitmap
         PROTOBUF_FIELD_OFFSET(::contracts::kafka::RoutePlayerEvent, _impl_._has_bits_),
-        10, // hasbit index offset
+        11, // hasbit index offset
         PROTOBUF_FIELD_OFFSET(::contracts::kafka::RoutePlayerEvent, _impl_.session_id_),
         PROTOBUF_FIELD_OFFSET(::contracts::kafka::RoutePlayerEvent, _impl_.target_node_id_),
         PROTOBUF_FIELD_OFFSET(::contracts::kafka::RoutePlayerEvent, _impl_.scene_id_),
@@ -1767,13 +1773,15 @@ const ::uint32_t
         PROTOBUF_FIELD_OFFSET(::contracts::kafka::RoutePlayerEvent, _impl_.home_zone_id_),
         PROTOBUF_FIELD_OFFSET(::contracts::kafka::RoutePlayerEvent, _impl_.owner_epoch_),
         PROTOBUF_FIELD_OFFSET(::contracts::kafka::RoutePlayerEvent, _impl_.login_generation_),
+        PROTOBUF_FIELD_OFFSET(::contracts::kafka::RoutePlayerEvent, _impl_.owner_revision_),
         0,
         1,
         2,
         3,
-        6,
+        7,
         4,
         5,
+        6,
         0x081, // bitmap
         PROTOBUF_FIELD_OFFSET(::contracts::kafka::KickPlayerEvent, _impl_._has_bits_),
         6, // hasbit index offset
@@ -1874,15 +1882,15 @@ const ::uint32_t
 static const ::_pbi::MigrationSchema
     schemas[] ABSL_ATTRIBUTE_SECTION_VARIABLE(protodesc_cold) = {
         {0, sizeof(::contracts::kafka::RoutePlayerEvent)},
-        {17, sizeof(::contracts::kafka::KickPlayerEvent)},
-        {26, sizeof(::contracts::kafka::PlayerDisconnectedEvent)},
-        {37, sizeof(::contracts::kafka::PlayerLeaseExpiredEvent)},
-        {52, sizeof(::contracts::kafka::BindSessionEvent)},
-        {65, sizeof(::contracts::kafka::RedirectToGateEvent)},
-        {82, sizeof(::contracts::kafka::PushToPlayerEvent)},
-        {89, sizeof(::contracts::kafka::BroadcastToPlayersEvent)},
-        {100, sizeof(::contracts::kafka::BroadcastToSceneEvent)},
-        {107, sizeof(::contracts::kafka::BroadcastToAllEvent)},
+        {19, sizeof(::contracts::kafka::KickPlayerEvent)},
+        {28, sizeof(::contracts::kafka::PlayerDisconnectedEvent)},
+        {39, sizeof(::contracts::kafka::PlayerLeaseExpiredEvent)},
+        {54, sizeof(::contracts::kafka::BindSessionEvent)},
+        {67, sizeof(::contracts::kafka::RedirectToGateEvent)},
+        {84, sizeof(::contracts::kafka::PushToPlayerEvent)},
+        {91, sizeof(::contracts::kafka::BroadcastToPlayersEvent)},
+        {102, sizeof(::contracts::kafka::BroadcastToSceneEvent)},
+        {109, sizeof(::contracts::kafka::BroadcastToAllEvent)},
 };
 static const ::_pbi::MessageGlobalsBase* PROTOBUF_NONNULL const
     file_message_globals[] = {
@@ -1902,40 +1910,40 @@ const char descriptor_table_protodef_proto_2fcontracts_2fkafka_2fgate_5fevent_2e
     "\n&proto/contracts/kafka/gate_event.proto"
     "\022\017contracts.kafka\032\037proto/common/base/mes"
     "sage.proto\032/proto/common/options/event_i"
-    "ngress_option.proto\"\257\001\n\020RoutePlayerEvent"
+    "ngress_option.proto\"\307\001\n\020RoutePlayerEvent"
     "\022\022\n\nsession_id\030\001 \001(\r\022\026\n\016target_node_id\030\002"
     " \001(\r\022\020\n\010scene_id\030\003 \001(\004\022\021\n\tplayer_id\030\004 \001("
     "\004\022\024\n\014home_zone_id\030\005 \001(\r\022\023\n\013owner_epoch\030\006"
-    " \001(\004\022\030\n\020login_generation\030\007 \001(\004:\005\210\346\325\002\001\"Y\n"
-    "\017KickPlayerEvent\022\022\n\nsession_id\030\001 \001(\r\022\021\n\t"
-    "player_id\030\002 \001(\004\022\030\n\020login_generation\030\003 \001("
-    "\004:\005\210\346\325\002\001\"k\n\027PlayerDisconnectedEvent\022\022\n\ns"
-    "ession_id\030\001 \001(\r\022\021\n\tplayer_id\030\002 \001(\004\022\017\n\007ga"
-    "te_id\030\003 \001(\t\022\030\n\020gate_instance_id\030\004 \001(\t\"\233\001"
-    "\n\027PlayerLeaseExpiredEvent\022\021\n\tplayer_id\030\001"
-    " \001(\004\022\022\n\nsession_id\030\002 \001(\r\022\025\n\rscene_node_i"
-    "d\030\003 \001(\t\022\020\n\010scene_id\030\004 \001(\004\022\017\n\007gate_id\030\005 \001"
-    "(\t\022\030\n\020gate_instance_id\030\006 \001(\t:\005\210\346\325\002\001\"\212\001\n\020"
-    "BindSessionEvent\022\022\n\nsession_id\030\001 \001(\r\022\021\n\t"
-    "player_id\030\002 \001(\004\022\027\n\017session_version\030\003 \001(\r"
-    "\022\025\n\renter_gs_type\030\004 \001(\r\022\030\n\020login_generat"
-    "ion\030\005 \001(\004:\005\210\346\325\002\001\"\275\001\n\023RedirectToGateEvent"
-    "\022\021\n\tplayer_id\030\001 \001(\004\022\022\n\nsession_id\030\002 \001(\r\022"
-    "\026\n\016target_gate_ip\030\003 \001(\t\022\030\n\020target_gate_p"
-    "ort\030\004 \001(\r\022\025\n\rtoken_payload\030\005 \001(\014\022\027\n\017toke"
-    "n_signature\030\006 \001(\014\022\026\n\016token_deadline\030\007 \001("
-    "\003:\005\210\346\325\002\001\"X\n\021PushToPlayerEvent\022\022\n\nsession"
-    "_id\030\001 \001(\r\022(\n\017message_content\030\002 \001(\0132\017.Mes"
-    "sageContent:\005\210\346\325\002\001\"\225\001\n\027BroadcastToPlayer"
-    "sEvent\022\024\n\014session_list\030\001 \003(\r\022(\n\017message_"
-    "content\030\002 \001(\0132\017.MessageContent\022\033\n\023sessio"
-    "n_bitmap_base\030\003 \001(\r\022\026\n\016session_bitmap\030\004 "
-    "\001(\014:\005\210\346\325\002\001\"Z\n\025BroadcastToSceneEvent\022\020\n\010s"
-    "cene_id\030\001 \001(\004\022(\n\017message_content\030\002 \001(\0132\017"
-    ".MessageContent:\005\210\346\325\002\001\"F\n\023BroadcastToAll"
-    "Event\022(\n\017message_content\030\001 \001(\0132\017.Message"
-    "Content:\005\210\346\325\002\001B\021Z\017contracts/kafkab\006proto"
-    "3"
+    " \001(\004\022\030\n\020login_generation\030\007 \001(\004\022\026\n\016owner_"
+    "revision\030\010 \001(\004:\005\210\346\325\002\001\"Y\n\017KickPlayerEvent"
+    "\022\022\n\nsession_id\030\001 \001(\r\022\021\n\tplayer_id\030\002 \001(\004\022"
+    "\030\n\020login_generation\030\003 \001(\004:\005\210\346\325\002\001\"k\n\027Play"
+    "erDisconnectedEvent\022\022\n\nsession_id\030\001 \001(\r\022"
+    "\021\n\tplayer_id\030\002 \001(\004\022\017\n\007gate_id\030\003 \001(\t\022\030\n\020g"
+    "ate_instance_id\030\004 \001(\t\"\233\001\n\027PlayerLeaseExp"
+    "iredEvent\022\021\n\tplayer_id\030\001 \001(\004\022\022\n\nsession_"
+    "id\030\002 \001(\r\022\025\n\rscene_node_id\030\003 \001(\t\022\020\n\010scene"
+    "_id\030\004 \001(\004\022\017\n\007gate_id\030\005 \001(\t\022\030\n\020gate_insta"
+    "nce_id\030\006 \001(\t:\005\210\346\325\002\001\"\212\001\n\020BindSessionEvent"
+    "\022\022\n\nsession_id\030\001 \001(\r\022\021\n\tplayer_id\030\002 \001(\004\022"
+    "\027\n\017session_version\030\003 \001(\r\022\025\n\renter_gs_typ"
+    "e\030\004 \001(\r\022\030\n\020login_generation\030\005 \001(\004:\005\210\346\325\002\001"
+    "\"\275\001\n\023RedirectToGateEvent\022\021\n\tplayer_id\030\001 "
+    "\001(\004\022\022\n\nsession_id\030\002 \001(\r\022\026\n\016target_gate_i"
+    "p\030\003 \001(\t\022\030\n\020target_gate_port\030\004 \001(\r\022\025\n\rtok"
+    "en_payload\030\005 \001(\014\022\027\n\017token_signature\030\006 \001("
+    "\014\022\026\n\016token_deadline\030\007 \001(\003:\005\210\346\325\002\001\"X\n\021Push"
+    "ToPlayerEvent\022\022\n\nsession_id\030\001 \001(\r\022(\n\017mes"
+    "sage_content\030\002 \001(\0132\017.MessageContent:\005\210\346\325"
+    "\002\001\"\225\001\n\027BroadcastToPlayersEvent\022\024\n\014sessio"
+    "n_list\030\001 \003(\r\022(\n\017message_content\030\002 \001(\0132\017."
+    "MessageContent\022\033\n\023session_bitmap_base\030\003 "
+    "\001(\r\022\026\n\016session_bitmap\030\004 \001(\014:\005\210\346\325\002\001\"Z\n\025Br"
+    "oadcastToSceneEvent\022\020\n\010scene_id\030\001 \001(\004\022(\n"
+    "\017message_content\030\002 \001(\0132\017.MessageContent:"
+    "\005\210\346\325\002\001\"F\n\023BroadcastToAllEvent\022(\n\017message"
+    "_content\030\001 \001(\0132\017.MessageContent:\005\210\346\325\002\001B\021"
+    "Z\017contracts/kafkab\006proto3"
 };
 static const ::_pbi::DescriptorTable* PROTOBUF_NONNULL const
     descriptor_table_proto_2fcontracts_2fkafka_2fgate_5fevent_2eproto_deps[2] = {
@@ -1946,7 +1954,7 @@ static ::absl::once_flag descriptor_table_proto_2fcontracts_2fkafka_2fgate_5feve
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fcontracts_2fkafka_2fgate_5fevent_2eproto = {
     false,
     false,
-    1441,
+    1465,
     descriptor_table_protodef_proto_2fcontracts_2fkafka_2fgate_5fevent_2eproto,
     "proto/contracts/kafka/gate_event.proto",
     &descriptor_table_proto_2fcontracts_2fkafka_2fgate_5fevent_2eproto_once,
@@ -2045,7 +2053,7 @@ PROTOBUF_NOINLINE void RoutePlayerEvent::Clear() {
   (void) cached_has_bits;
 
   cached_has_bits = _impl_._has_bits_[0];
-  if (BatchCheckHasBit(cached_has_bits, 0x0000007fU)) {
+  if (BatchCheckHasBit(cached_has_bits, 0x000000ffU)) {
     ::memset(&_impl_.session_id_, 0, static_cast<::size_t>(
         reinterpret_cast<char*>(&_impl_.home_zone_id_) -
         reinterpret_cast<char*>(&_impl_.session_id_)) + sizeof(_impl_.home_zone_id_));
@@ -2110,7 +2118,7 @@ PROTOBUF_NOINLINE void RoutePlayerEvent::Clear() {
   }
 
   // uint32 home_zone_id = 5;
-  if (CheckHasBit(cached_has_bits, 0x00000040U)) {
+  if (CheckHasBit(cached_has_bits, 0x00000080U)) {
     if (this_._internal_home_zone_id() != 0) {
       target = stream->EnsureSpace(target);
       target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
@@ -2133,6 +2141,15 @@ PROTOBUF_NOINLINE void RoutePlayerEvent::Clear() {
       target = stream->EnsureSpace(target);
       target = ::_pbi::WireFormatLite::WriteUInt64ToArray(
           7, this_._internal_login_generation(), target);
+    }
+  }
+
+  // uint64 owner_revision = 8;
+  if (CheckHasBit(cached_has_bits, 0x00000040U)) {
+    if (this_._internal_owner_revision() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteUInt64ToArray(
+          8, this_._internal_owner_revision(), target);
     }
   }
 
@@ -2161,7 +2178,7 @@ PROTOBUF_NOINLINE void RoutePlayerEvent::Clear() {
 
   ::_pbi::Prefetch5LinesFrom7Lines(&this_);
   cached_has_bits = this_._impl_._has_bits_[0];
-  if (BatchCheckHasBit(cached_has_bits, 0x0000007fU)) {
+  if (BatchCheckHasBit(cached_has_bits, 0x000000ffU)) {
     // uint32 session_id = 1;
     if (CheckHasBit(cached_has_bits, 0x00000001U)) {
       if (this_._internal_session_id() != 0) {
@@ -2204,8 +2221,15 @@ PROTOBUF_NOINLINE void RoutePlayerEvent::Clear() {
             this_._internal_login_generation());
       }
     }
-    // uint32 home_zone_id = 5;
+    // uint64 owner_revision = 8;
     if (CheckHasBit(cached_has_bits, 0x00000040U)) {
+      if (this_._internal_owner_revision() != 0) {
+        total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(
+            this_._internal_owner_revision());
+      }
+    }
+    // uint32 home_zone_id = 5;
+    if (CheckHasBit(cached_has_bits, 0x00000080U)) {
       if (this_._internal_home_zone_id() != 0) {
         total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
             this_._internal_home_zone_id());
@@ -2229,7 +2253,7 @@ void RoutePlayerEvent::MergeImpl(::google::protobuf::MessageLite& to_msg,
   (void)cached_has_bits;
 
   cached_has_bits = from._impl_._has_bits_[0];
-  if (BatchCheckHasBit(cached_has_bits, 0x0000007fU)) {
+  if (BatchCheckHasBit(cached_has_bits, 0x000000ffU)) {
     if (CheckHasBit(cached_has_bits, 0x00000001U)) {
       if (from._internal_session_id() != 0) {
         _this->_impl_.session_id_ = from._impl_.session_id_;
@@ -2261,6 +2285,11 @@ void RoutePlayerEvent::MergeImpl(::google::protobuf::MessageLite& to_msg,
       }
     }
     if (CheckHasBit(cached_has_bits, 0x00000040U)) {
+      if (from._internal_owner_revision() != 0) {
+        _this->_impl_.owner_revision_ = from._impl_.owner_revision_;
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000080U)) {
       if (from._internal_home_zone_id() != 0) {
         _this->_impl_.home_zone_id_ = from._impl_.home_zone_id_;
       }

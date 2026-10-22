@@ -15,6 +15,25 @@ static void dummy(const std::shared_ptr<Channel>&)
 {
 }
 
+std::shared_ptr<Hiredis> Hiredis::Create(EventLoop* loop, const InetAddress& serverAddr)
+{
+  if (loop) loop->assertInLoopThread();
+  return std::shared_ptr<Hiredis>(new Hiredis(loop, serverAddr), [loop](Hiredis* client)
+  {
+    if (loop) loop->assertInLoopThread();
+    if (loop && loop->eventHandling())
+    {
+      // 此处裸指针是删除器接管的待销毁对象，不是回调借用的业务 this。
+      // 必须保留整个对象和 socket：只延迟 Channel 注销会让 fd 被新连接复用、撞上旧 Poller 注册。
+      loop->queueInLoop([client] { delete client; });
+    }
+    else
+    {
+      delete client;
+    }
+  });
+}
+
 Hiredis::Hiredis(EventLoop* loop, const InetAddress& serverAddr)
   : loop_(loop),
     serverAddr_(serverAddr),
@@ -48,9 +67,10 @@ const char* Hiredis::errstr() const
 
 void Hiredis::connect()
 {
+  assert(loop_);
+  loop_->assertInLoopThread();
   assert(!context_);
 
-  // Linux 锁定的正式版 muduo v2.0.2 使用 toPort();Windows 移植版仍沿用自己的端口访问接口。
   context_ = ::redisAsyncConnect(serverAddr_.toIp().c_str(), serverAddr_.toPort());
 
   context_->ev.addRead = addRead;
@@ -72,6 +92,11 @@ void Hiredis::disconnect()
 {
   if (connected())
   {
+    loop_->assertInLoopThread();
+    // 无在途命令时 disconnect 可同步触发业务回调；即使调用方在其中 reset，也须等 C 调用完全返回。
+    // 析构中的 null-reply 回调可能再请求断线，此时强引用已归零、context 已在 FREEING，直接忽略。
+    const auto self = weak_from_this().lock();
+    if (!self) return;
     LOG_DEBUG << this;
     ::redisAsyncDisconnect(context_);
   }
@@ -88,12 +113,22 @@ void Hiredis::setChannel()
   LOG_DEBUG << this;
   assert(!channel_);
   channel_.reset(new Channel(loop_, fd()));
-  channel_->setReadCallback(std::bind(&Hiredis::handleRead, this, _1));
-  channel_->setWriteCallback(std::bind(&Hiredis::handleWrite, this));
+  channel_->tie(shared_from_this());
+  const std::weak_ptr<Hiredis> weakSelf = shared_from_this();
+  channel_->setReadCallback([weakSelf](Timestamp time)
+  {
+    if (const auto self = weakSelf.lock()) self->handleRead(time);
+  });
+  channel_->setWriteCallback([weakSelf]
+  {
+    if (const auto self = weakSelf.lock()) self->handleWrite();
+  });
   // Windows 的纯 HUP 不走读回调,仍须让 hiredis 读取 EOF、释放挂起命令并通知断线。
-  // Channel 由本对象拥有,沿用读写回调的同寿命约束;这里不析构 Hiredis,
-  // 注销 Channel 后仍由 removeChannel 排队持有到本轮事件分发结束。
-  channel_->setCloseCallback([this] { handleRead(muduo::Timestamp::now()); });
+  // tie 保住一次完整事件分发；weak 回调让最后一个外部引用被释放后的同批事件失效。
+  channel_->setCloseCallback([weakSelf]
+  {
+    if (const auto self = weakSelf.lock()) self->handleRead(Timestamp::now());
+  });
 }
 
 void Hiredis::removeChannel()
@@ -170,9 +205,11 @@ void Hiredis::connectCallback(int status)
     setChannel();
   }
 
-  if (connectCb_)
+  // 业务回调可能 Shutdown / Connect 并清掉成员回调，局部副本保住正在执行的 target。
+  const ConnectCallback callback = connectCb_;
+  if (callback)
   {
-    connectCb_(this, status);
+    callback(this, status);
   }
 
   // 连接失败时 hiredis 会在 connect callback 返回后自动释放 context。
@@ -194,9 +231,10 @@ void Hiredis::disconnectCallback(int status)
   logConnection(false);
   removeChannel();
 
-  if (disconnectCb_)
+  const DisconnectCallback callback = disconnectCb_;
+  if (callback)
   {
-    disconnectCb_(this, status);
+    callback(this, status);
   }
 
   // hiredis 在 disconnect callback 返回后立即释放 redisAsyncContext;
@@ -242,6 +280,7 @@ void Hiredis::cleanup(void* privdata)
 int Hiredis::command(const CommandCallback& cb, muduo::StringArg cmd, ...)
 {
   if (!connected()) return REDIS_ERR;
+  loop_->assertInLoopThread();
 
   LOG_TRACE;
   CommandCallback* p = new CommandCallback(cb);
@@ -257,8 +296,7 @@ int Hiredis::command(const CommandCallback& cb, muduo::StringArg cmd, ...)
     // 回调挂起命令、后注销 Channel,那段时间 connected() 仍为真,回调里再发的命令会撞 FREEING。
     // 唯一例外是多频道 (P)SUBSCRIBE 中途 OOM(已写进订阅字典的频道仍持有 p),但本封装不支持订阅
     // (commandCallback 每次回调后都 delete)。升级 hiredis 时必须重核这条前提。
-    // Windows 的 cpp/libs/engine/muduo_windows/src/contrib/hiredis/Hiredis.cc 与本 Linux 覆盖件的失败清理语义必须一致;
-    // InetAddress 的端口访问器按各自锁定的 muduo 版本使用,不要求平台接口逐字节相同。
+    // Windows 与 Linux 覆盖件必须保持同样的释放语义；端口访问器按各平台的 muduo 接口适配。
     delete p;
   }
   return ret;
@@ -267,23 +305,16 @@ int Hiredis::command(const CommandCallback& cb, muduo::StringArg cmd, ...)
 /* static */ void Hiredis::commandCallback(redisAsyncContext* ac, void* r, void* privdata)
 {
   redisReply* reply = static_cast<redisReply*>(r);
-  CommandCallback* cb = static_cast<CommandCallback*>(privdata);
-  getHiredis(ac)->commandCallback(reply, cb);
-}
-
-void Hiredis::commandCallback(redisReply* reply, CommandCallback* cb)
-{
-  (*cb)(this, reply);
-  delete cb;
+  std::unique_ptr<CommandCallback> cb(static_cast<CommandCallback*>(privdata));
+  // 正常分发由 Channel tie 保活，析构中的 null-reply 由析构体同步 free 保活。
+  // 回调返回后只清理本地回调副本，不再通过业务指针访问 wrapper。
+  (*cb)(getHiredis(ac), reply);
 }
 
 int Hiredis::ping()
 {
-  return command(std::bind(&Hiredis::pingCallback, this, _1, _2), "PING");
-}
-
-void Hiredis::pingCallback(Hiredis* me, redisReply* reply)
-{
-  assert(this == me);
-  LOG_DEBUG << reply->str;
+  return command([](Hiredis*, redisReply* reply)
+  {
+    if (reply && reply->str) LOG_DEBUG << reply->str;
+  }, "PING");
 }

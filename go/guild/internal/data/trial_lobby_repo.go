@@ -1,10 +1,8 @@
 package data
 
-// 同道历练的邀请房间(设计 docs/design/guild-phase2/06-activities.md §6.23–§6.27)。
-//
-// 历练是邀请确认制(06 §6.49 #2):发起人建一个待确认房间,被邀请人**亲自**同意之后才开战,任何成员都不能把别人强拉进战斗。
-// 房间是纯易失状态 —— 30 秒左右的邀请、5 秒的开战窗口 —— 放 guild 全局 Redis,不进 MySQL:
-// 丢了(Redis 重启 / 被清空)只是邀请作废、重新发起即可,不涉及任何资产(06 §6.27 L7 / L8)。
+// 同道历练邀请入口。生产仅由NewSQLTrialLobbyRepo装配，SQL保存固定邀请、同意、占位和永久终局。
+// 具体事务见trial_lobby_sql.go；截止只允许在同P核无launch后结束PENDING，不解除未知开战。
+// 本文件余下Redis实现仅供既有隔离仓储夹具，不是生产回退，trialAvailable显式拒绝混搭。
 //
 // 状态机(数值与 proto GuildTrialLobbyState 一致,视图直接转):
 //
@@ -13,8 +11,7 @@ package data
 //	    ▼                               ▼
 //	 ENDED(4) ◀─────────────────────────┘
 //
-// 超时不落库,读的时候折算(TrialLobby.EffectiveAt):PENDING 过了 exp、LAUNCHING 过了 ldl 都算 ENDED。
-// 这样"全员同意的那一次调用拿到开战权后进程崩了"也能在 5 秒后自动解套(L3),不需要任何清理任务。
+// 以下Lua键与折算约定只描述旧隔离夹具，SQL实例完全不执行这些脚本。
 //
 // 键(全部在 guild 全局 Redis;TTL 到期自然消失):
 //
@@ -179,8 +176,9 @@ redis.call('HSET', KEYS[1], 'state', ARGV[2], 'bid', ARGV[3], 'etip', ARGV[4], '
 return 1
 `)
 
-// TrialLobby 是一个邀请房间。Load 返回库里的原样;要给玩家看、或判断"房间是否还有效"时用 EffectiveAt 折算。
+// TrialLobby是公开展示模型，不包含账号；SQL实例只返回已经持久化的状态。
 type TrialLobby struct {
+	durable                       bool // SQL原状态不得由展示截止时间折算成终局。
 	LobbyID, GuildID, InitiatorID uint64
 	ActivityID                    uint32
 
@@ -231,6 +229,9 @@ func (lb TrialLobby) Has(playerID uint64) bool {
 //
 // 只改返回的副本,不写回 Redis:建房脚本对"别的房间是否仍有效"用的是同一条规则,折算与否不影响任何判定。
 func (lb TrialLobby) EffectiveAt(nowMs uint64) TrialLobby {
+	if lb.durable {
+		return lb
+	}
 	switch {
 	case lb.State == pb.GuildTrialLobbyState_GUILD_TRIAL_LOBBY_STATE_PENDING && nowMs >= lb.ExpireAtMs:
 		lb.State, lb.EndTipID, lb.EndParams = pb.GuildTrialLobbyState_GUILD_TRIAL_LOBBY_STATE_ENDED, constants.ErrTrialInviteExpired, nil
@@ -242,11 +243,12 @@ func (lb TrialLobby) EffectiveAt(nowMs uint64) TrialLobby {
 
 // TrialLobbyRepo 是邀请房间的存取入口。线程模型:构造后只读,可被多个请求 goroutine 共享。
 type TrialLobbyRepo struct {
-	rdb *redis.Client
+	rdb    *redis.Client
+	guilds *GuildRepo
+	mint   func(context.Context) (uint64, error)
 }
 
-// NewTrialLobbyRepo。rdb 是 guild 全局 Redis(单节点,见文件头);nil 时报错 —— 没有它历练就开不了房,
-// 装配层据此把历练视为未开放,而不是等到第一个玩家点按钮时空指针。
+// NewTrialLobbyRepo仅保留旧Redis隔离夹具。生产必须调用NewSQLTrialLobbyRepo，禁止自动降级。
 func NewTrialLobbyRepo(rdb *redis.Client) (*TrialLobbyRepo, error) {
 	if rdb == nil {
 		return nil, errors.New("guild trial lobby repo: nil redis client")
@@ -329,6 +331,9 @@ func (in TrialLobbyCreate) validate() error {
 // 返回的三种 Status 都不是错误;error 只表示输入结构不合法(调用方编程错误)或 Redis 故障 —— 后者由 logic 按故障上抛,
 // 不折成业务提示(06 §6.27 L7)。
 func (r *TrialLobbyRepo) Create(ctx context.Context, in TrialLobbyCreate) (TrialLobbyCreateResult, error) {
+	if r.SQLAuthorityEnabled() {
+		return r.createSQL(ctx, in)
+	}
 	if err := in.validate(); err != nil {
 		return TrialLobbyCreateResult{}, err
 	}
@@ -361,6 +366,9 @@ func (r *TrialLobbyRepo) Create(ctx context.Context, in TrialLobbyCreate) (Trial
 		}
 		switch code {
 		case luaCreateOK:
+			if err := r.rememberConsent(ctx, &lobby, lobby.InitiatorID, in.NowMs); err != nil {
+				return TrialLobbyCreateResult{}, err
+			}
 			return TrialLobbyCreateResult{Status: TrialLobbyCreated, Lobby: &lobby}, nil
 		case luaCreateCooldown:
 			return TrialLobbyCreateResult{Status: TrialLobbyCooldown, CooldownRemaining: time.Duration(arg) * time.Millisecond}, nil
@@ -438,6 +446,20 @@ type TrialLobbyRespondResult struct {
 // 幂等:重复同意不改变任何东西;拿到 TrialLobbyRespondLaunch 的只会有一次调用。
 // error 只表示输入不合法或 Redis 故障。
 func (r *TrialLobbyRepo) Respond(ctx context.Context, lobbyID, playerID uint64, accept bool, nowMs uint64, launchWindow time.Duration) (TrialLobbyRespondResult, error) {
+	if r.SQLAuthorityEnabled() {
+		return r.respondSQL(ctx, lobbyID, playerID, accept, launchWindow)
+	}
+	if accept {
+		lobby, err := r.Load(ctx, lobbyID)
+		if err != nil {
+			return TrialLobbyRespondResult{}, err
+		}
+		if lobby != nil {
+			if err := r.rememberConsent(ctx, lobby, playerID, nowMs); err != nil {
+				return TrialLobbyRespondResult{}, err
+			}
+		}
+	}
 	if lobbyID == 0 || playerID == 0 || nowMs == 0 || launchWindow <= 0 {
 		return TrialLobbyRespondResult{}, fmt.Errorf("guild trial lobby: respond needs non-zero lobby (%d), player (%d), now (%d) and a positive launch window (%v)",
 			lobbyID, playerID, nowMs, launchWindow)
@@ -482,6 +504,9 @@ func (r *TrialLobbyRepo) Respond(ctx context.Context, lobbyID, playerID uint64, 
 // 开战超过了 5 秒窗口、对局却真的开成了,仍然要把房间写成 LAUNCHED。
 // endParams 的元素不得含 trialLobbyParamSep。error 只表示输入不合法或 Redis 故障。
 func (r *TrialLobbyRepo) Finish(ctx context.Context, lobbyID uint64, from, to pb.GuildTrialLobbyState, battleID uint64, endTipID uint32, endParams []string) (bool, error) {
+	if r.SQLAuthorityEnabled() {
+		return r.finishSQL(ctx, lobbyID, from, to, battleID, endTipID, endParams)
+	}
 	if lobbyID == 0 {
 		return false, errors.New("guild trial lobby: finish needs a non-zero lobby id")
 	}
@@ -507,6 +532,9 @@ func (r *TrialLobbyRepo) Finish(ctx context.Context, lobbyID uint64, from, to pb
 // Load 读房间的**原样**(不折算超时)。房间不存在(从未建过,或键已过期)返回 (nil, nil)。
 // 字段缺失或不是合法数字 → error:那是数据损坏,不能当成"没有房间"悄悄放过。
 func (r *TrialLobbyRepo) Load(ctx context.Context, lobbyID uint64) (*TrialLobby, error) {
+	if r.SQLAuthorityEnabled() {
+		return r.loadSQL(ctx, lobbyID)
+	}
 	if lobbyID == 0 {
 		return nil, nil
 	}
@@ -534,6 +562,9 @@ func (r *TrialLobbyRepo) load(ctx context.Context, lobbyID uint64) (*TrialLobby,
 // 视图用它填 trial_lobby(06 §6.8 第 6 步);调用方还要自己核对 GuildID / ActivityID 属于当前活动。
 // of 键指向的房间里已没有这个人(房间号回卷后被别人复用)时同样返回 (nil, nil)。
 func (r *TrialLobbyRepo) LoadForPlayer(ctx context.Context, playerID, nowMs uint64) (*TrialLobby, error) {
+	if r.SQLAuthorityEnabled() {
+		return r.loadPlayerSQL(ctx, playerID)
+	}
 	if playerID == 0 {
 		return nil, nil
 	}

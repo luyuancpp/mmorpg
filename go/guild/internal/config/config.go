@@ -44,6 +44,11 @@ type SchemaConf struct {
 }
 
 type Config struct {
+	// 全局目录与帮会必须位于同一TiDB集群；成员新增事务跨schema锁同一角色行。
+	AccountRoleSchema    string    `json:",optional"`
+	MatchAuthoritySchema string    `json:",optional"`
+	GlobalLoginSessions  bool      `json:",optional"`
+	LoginRedis           RedisConf `json:",optional"`
 	zrpc.RpcServerConf
 	RedisClient        RedisConf    `json:"RedisClient"`
 	PlayerLocatorRedis RedisConf    `json:"PlayerLocatorRedis"`
@@ -591,6 +596,15 @@ func (c *Config) Validate() error {
 	}
 	if !c.MySQL.RequiresTiDB() && c.Mode != service.DevMode && c.Mode != service.TestMode {
 		return errors.New("生产帮会权威库不得关闭TiDB门禁")
+	}
+	if c.AccountRoleSchema != "" && !c.MySQL.RequiresTiDB() {
+		return errors.New("角色归属提交互锁必须使用TiDB强权威池")
+	}
+	if c.AccountRoleSchema != "" && strings.TrimSpace(c.MatchAuthoritySchema) == "" {
+		return errors.New("MatchAuthoritySchema必须显式指向同TiDB集群的Match/Team权威库")
+	}
+	if c.AccountRoleSchema != "" && (!c.GlobalLoginSessions || strings.TrimSpace(c.LoginRedis.Host) == "" || c.LoginRedis.DB < 0 || c.LoginRedis.PoolSize < 0) {
+		return errors.New("角色归属互锁须显式声明全局LoginRedis，同库登录态缺失拒绝")
 	}
 	if maxOpen, _ := c.MySQL.EffectivePool(); maxOpen < 1 || maxOpen > 128 {
 		return errors.New("MySQL.MaxOpenConn 必须在 [1, 128] 内")

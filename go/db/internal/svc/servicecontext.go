@@ -28,6 +28,9 @@ func validateRedisPoolSize(section string, poolSize int) {
 }
 
 func NewServiceContext() *ServiceContext {
+	if err := config.AppConfig.ValidateGlobalAuthority(); err != nil {
+		panic(fmt.Errorf("全球DB配置拒绝启动: %w", err))
+	}
 	redisCfg := config.AppConfig.ServerConfig.RedisClient
 	validateRedisPoolSize("ServerConfig.RedisClient", redisCfg.PoolSize)
 

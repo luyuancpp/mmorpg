@@ -1,8 +1,10 @@
 package config
 
 import (
+	"fmt"
 	"os"
 	"regexp"
+	"strings"
 	"testing"
 	"time"
 
@@ -15,6 +17,39 @@ import (
 // etcYaml 用相对路径而不是绝对路径:`go test ./...` 的工作目录是**被测包目录**,
 // 所以这条相对路径在任何机器 / 任何 checkout 位置都成立(与 trade 同名测试同一写法)。
 const etcYaml = "../../etc/friend.yaml"
+
+// 本地yaml保留未授权占位；测试只在内存副本显式声明自己的受控全局登录态。
+func loadEtcFixture(c *Config) error {
+	raw, err := os.ReadFile(etcYaml)
+	if err != nil {
+		return err
+	}
+	text := strings.ReplaceAll(string(raw), "\r\n", "\n")
+	if !strings.Contains(text, "GlobalLoginSessions: false") || !strings.Contains(text, "LoginRedis:\n  Host: \"\"") {
+		return fmt.Errorf("本地原登录态占位形状已变化")
+	}
+	text = strings.Replace(text, "GlobalLoginSessions: false", "GlobalLoginSessions: true", 1)
+	text = strings.Replace(text, "LoginRedis:\n  Host: \"\"", "LoginRedis:\n  Host: \"127.0.0.1:6379\"", 1)
+	return conf.LoadFromYamlBytes([]byte(text), c)
+}
+
+func TestOriginalLoginConfigMustBeExplicit(t *testing.T) {
+	var placeholder Config
+	if err := conf.Load(etcYaml, &placeholder); err == nil {
+		t.Fatal("占位全局登录态不应静默获授权")
+	}
+	for _, mutate := range []func(*Config){
+		func(c *Config) { c.AccountRoleSchema = "" }, func(c *Config) { c.AccountRoleSchema = "bad.schema" },
+		func(c *Config) { c.GlobalLoginSessions = false }, func(c *Config) { c.LoginRedis.Host = "" },
+		func(c *Config) { c.LoginRedis.DB = -1 }, func(c *Config) { c.LoginRedis.PoolSize = 0 },
+	} {
+		c := validConfig()
+		mutate(&c)
+		if err := c.Validate(); err == nil {
+			t.Fatal("缺原登录态原件配置仍通过")
+		}
+	}
+}
 
 func TestProductionRequiresTiDB(t *testing.T) {
 	c := validConfig()
@@ -42,7 +77,7 @@ func TestProductionRequiresTiDB(t *testing.T) {
 // 所以这条测试同时证明"etc/friend.yaml 能通过 conf.Load + Validate"。
 func TestEtcYamlContractValues(t *testing.T) {
 	var c Config
-	if err := conf.Load(etcYaml, &c); err != nil {
+	if err := loadEtcFixture(&c); err != nil {
 		t.Fatalf("load %s: %v", etcYaml, err)
 	}
 	// 再显式调一次:万一将来 go-zero 改了自动校验的触发条件,这条断言也不会失效。
@@ -144,7 +179,7 @@ func TestEtcYamlContractValues(t *testing.T) {
 // (默认 735,比 need 少 RecommendMaxLimit-1 = 19)。所以这条会比实际需要早 19 个名额变红;偏保守不会漏判,算式有意不收紧。
 func TestRecommendAnchorWindowCoversExclusionBudget(t *testing.T) {
 	var c Config
-	if err := conf.Load(etcYaml, &c); err != nil {
+	if err := loadEtcFixture(&c); err != nil {
 		t.Fatalf("load %s: %v", etcYaml, err)
 	}
 	f := c.Friend
@@ -232,6 +267,8 @@ func TestEtcYamlZoneRewriteAnchors(t *testing.T) {
 // 刻意不从 yaml 读:yaml 里任何一处被改坏,负向用例就会因为"基准本来就不合法"而集体误报。
 func validConfig() Config {
 	c := Config{
+		AccountRoleSchema: "testdb", GlobalLoginSessions: true,
+		LoginRedis:        LoginRedisConf{Host: "127.0.0.1:6379", DB: 3, PoolSize: 8},
 		RequireTiDB:       true,
 		ZoneId:            1,
 		LeaseTTL:          60,

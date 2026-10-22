@@ -43,6 +43,7 @@
 // 判「可不可以销账」只认它,不另建已持久化水位(与通用资产通道同一条纪律)。
 #include "player/comp/last_persisted_snapshot_comp.h"
 #include "player/system/player_lifecycle.h"  // IsCrossZoneFrozen / SavePlayerToRedis / IsSceneChangeBusy
+#include "player/system/role_admission_system.h"
 #include "player/system/player_mission.h"
 #include "core/system/redis.h"  // tlsRedisSystem:判断该玩家是否还有未落地的存盘
 #include "player/system/player_pet.h"
@@ -1206,6 +1207,12 @@ void PlayerBattleSystem::PrepareBattle(const ::PrepareBattleRequest& request, ::
 		return;
 	}
 
+	// 原战斗结算可以完成，但已接受交易seal后不能在排空间隙再进入新战斗。
+	if (RoleAdmissionSystem::IsSealed(playerId))
+	{
+		response.mutable_error_message()->set_id(kFeatureUnavailable);
+		return;
+	}
 	const auto player = tlsEcs.GetPlayer(playerId);
 	if (!tlsEcs.actorRegistry.valid(player))
 	{

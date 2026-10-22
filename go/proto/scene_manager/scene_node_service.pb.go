@@ -144,13 +144,14 @@ const file_proto_scene_manager_scene_node_service_proto_rawDesc = "" +
 	"\x14expected_owner_epoch\x18\x04 \x01(\x04R\x12expectedOwnerEpoch\x12#\n" +
 	"\rsession_ended\x18\x05 \x01(\bR\fsessionEnded\x12,\n" +
 	"\x12covered_session_id\x18\x06 \x01(\rR\x10coveredSessionId\x128\n" +
-	"\x18covered_login_generation\x18\a \x01(\x04R\x16coveredLoginGeneration2\x8f\x04\n" +
+	"\x18covered_login_generation\x18\a \x01(\x04R\x16coveredLoginGeneration2\xcf\x04\n" +
 	"\rSceneNodeGrpc\x12:\n" +
 	"\vCreateScene\x12\x13.CreateSceneRequest\x1a\x14.CreateSceneResponse\"\x00\x12.\n" +
 	"\fDestroyScene\x12\x14.DestroySceneRequest\x1a\x06.Empty\"\x00\x12;\n" +
 	"\rReleasePlayer\x12 .scene_node.ReleasePlayerRequest\x1a\x06.Empty\"\x00\x12@\n" +
 	"\rPrepareBattle\x12\x15.PrepareBattleRequest\x1a\x16.PrepareBattleResponse\"\x00\x12<\n" +
-	"\x13CancelBattlePrepare\x12\x1b.CancelBattlePrepareRequest\x1a\x06.Empty\"\x00\x121\n" +
+	"\x13CancelBattlePrepare\x12\x1b.CancelBattlePrepareRequest\x1a\x06.Empty\"\x00\x12>\n" +
+	"\x14SealAccountRoleTrade\x12\x1c.SealAccountRoleTradeRequest\x1a\x06.Empty\"\x00\x121\n" +
 	"\n" +
 	"AssetDebit\x12\x0f.AssetOpRequest\x1a\x10.AssetOpResponse\"\x00\x126\n" +
 	"\x0fAssetAbortDebit\x12\x0f.AssetOpRequest\x1a\x10.AssetOpResponse\"\x00\x122\n" +
@@ -171,41 +172,44 @@ func file_proto_scene_manager_scene_node_service_proto_rawDescGZIP() []byte {
 
 var file_proto_scene_manager_scene_node_service_proto_msgTypes = make([]protoimpl.MessageInfo, 1)
 var file_proto_scene_manager_scene_node_service_proto_goTypes = []any{
-	(*ReleasePlayerRequest)(nil),             // 0: scene_node.ReleasePlayerRequest
-	(*scene.CreateSceneRequest)(nil),         // 1: CreateSceneRequest
-	(*scene.DestroySceneRequest)(nil),        // 2: DestroySceneRequest
-	(*scene.PrepareBattleRequest)(nil),       // 3: PrepareBattleRequest
-	(*scene.CancelBattlePrepareRequest)(nil), // 4: CancelBattlePrepareRequest
-	(*asset.AssetOpRequest)(nil),             // 5: AssetOpRequest
-	(*scene.CreateSceneResponse)(nil),        // 6: CreateSceneResponse
-	(*base.Empty)(nil),                       // 7: Empty
-	(*scene.PrepareBattleResponse)(nil),      // 8: PrepareBattleResponse
-	(*asset.AssetOpResponse)(nil),            // 9: AssetOpResponse
+	(*ReleasePlayerRequest)(nil),              // 0: scene_node.ReleasePlayerRequest
+	(*scene.CreateSceneRequest)(nil),          // 1: CreateSceneRequest
+	(*scene.DestroySceneRequest)(nil),         // 2: DestroySceneRequest
+	(*scene.PrepareBattleRequest)(nil),        // 3: PrepareBattleRequest
+	(*scene.CancelBattlePrepareRequest)(nil),  // 4: CancelBattlePrepareRequest
+	(*scene.SealAccountRoleTradeRequest)(nil), // 5: SealAccountRoleTradeRequest
+	(*asset.AssetOpRequest)(nil),              // 6: AssetOpRequest
+	(*scene.CreateSceneResponse)(nil),         // 7: CreateSceneResponse
+	(*base.Empty)(nil),                        // 8: Empty
+	(*scene.PrepareBattleResponse)(nil),       // 9: PrepareBattleResponse
+	(*asset.AssetOpResponse)(nil),             // 10: AssetOpResponse
 }
 var file_proto_scene_manager_scene_node_service_proto_depIdxs = []int32{
-	1, // 0: scene_node.SceneNodeGrpc.CreateScene:input_type -> CreateSceneRequest
-	2, // 1: scene_node.SceneNodeGrpc.DestroyScene:input_type -> DestroySceneRequest
-	0, // 2: scene_node.SceneNodeGrpc.ReleasePlayer:input_type -> scene_node.ReleasePlayerRequest
-	3, // 3: scene_node.SceneNodeGrpc.PrepareBattle:input_type -> PrepareBattleRequest
-	4, // 4: scene_node.SceneNodeGrpc.CancelBattlePrepare:input_type -> CancelBattlePrepareRequest
-	5, // 5: scene_node.SceneNodeGrpc.AssetDebit:input_type -> AssetOpRequest
-	5, // 6: scene_node.SceneNodeGrpc.AssetAbortDebit:input_type -> AssetOpRequest
-	5, // 7: scene_node.SceneNodeGrpc.AssetCredit:input_type -> AssetOpRequest
-	5, // 8: scene_node.SceneNodeGrpc.AssetAckReceipt:input_type -> AssetOpRequest
-	6, // 9: scene_node.SceneNodeGrpc.CreateScene:output_type -> CreateSceneResponse
-	7, // 10: scene_node.SceneNodeGrpc.DestroyScene:output_type -> Empty
-	7, // 11: scene_node.SceneNodeGrpc.ReleasePlayer:output_type -> Empty
-	8, // 12: scene_node.SceneNodeGrpc.PrepareBattle:output_type -> PrepareBattleResponse
-	7, // 13: scene_node.SceneNodeGrpc.CancelBattlePrepare:output_type -> Empty
-	9, // 14: scene_node.SceneNodeGrpc.AssetDebit:output_type -> AssetOpResponse
-	9, // 15: scene_node.SceneNodeGrpc.AssetAbortDebit:output_type -> AssetOpResponse
-	9, // 16: scene_node.SceneNodeGrpc.AssetCredit:output_type -> AssetOpResponse
-	9, // 17: scene_node.SceneNodeGrpc.AssetAckReceipt:output_type -> AssetOpResponse
-	9, // [9:18] is the sub-list for method output_type
-	0, // [0:9] is the sub-list for method input_type
-	0, // [0:0] is the sub-list for extension type_name
-	0, // [0:0] is the sub-list for extension extendee
-	0, // [0:0] is the sub-list for field type_name
+	1,  // 0: scene_node.SceneNodeGrpc.CreateScene:input_type -> CreateSceneRequest
+	2,  // 1: scene_node.SceneNodeGrpc.DestroyScene:input_type -> DestroySceneRequest
+	0,  // 2: scene_node.SceneNodeGrpc.ReleasePlayer:input_type -> scene_node.ReleasePlayerRequest
+	3,  // 3: scene_node.SceneNodeGrpc.PrepareBattle:input_type -> PrepareBattleRequest
+	4,  // 4: scene_node.SceneNodeGrpc.CancelBattlePrepare:input_type -> CancelBattlePrepareRequest
+	5,  // 5: scene_node.SceneNodeGrpc.SealAccountRoleTrade:input_type -> SealAccountRoleTradeRequest
+	6,  // 6: scene_node.SceneNodeGrpc.AssetDebit:input_type -> AssetOpRequest
+	6,  // 7: scene_node.SceneNodeGrpc.AssetAbortDebit:input_type -> AssetOpRequest
+	6,  // 8: scene_node.SceneNodeGrpc.AssetCredit:input_type -> AssetOpRequest
+	6,  // 9: scene_node.SceneNodeGrpc.AssetAckReceipt:input_type -> AssetOpRequest
+	7,  // 10: scene_node.SceneNodeGrpc.CreateScene:output_type -> CreateSceneResponse
+	8,  // 11: scene_node.SceneNodeGrpc.DestroyScene:output_type -> Empty
+	8,  // 12: scene_node.SceneNodeGrpc.ReleasePlayer:output_type -> Empty
+	9,  // 13: scene_node.SceneNodeGrpc.PrepareBattle:output_type -> PrepareBattleResponse
+	8,  // 14: scene_node.SceneNodeGrpc.CancelBattlePrepare:output_type -> Empty
+	8,  // 15: scene_node.SceneNodeGrpc.SealAccountRoleTrade:output_type -> Empty
+	10, // 16: scene_node.SceneNodeGrpc.AssetDebit:output_type -> AssetOpResponse
+	10, // 17: scene_node.SceneNodeGrpc.AssetAbortDebit:output_type -> AssetOpResponse
+	10, // 18: scene_node.SceneNodeGrpc.AssetCredit:output_type -> AssetOpResponse
+	10, // 19: scene_node.SceneNodeGrpc.AssetAckReceipt:output_type -> AssetOpResponse
+	10, // [10:20] is the sub-list for method output_type
+	0,  // [0:10] is the sub-list for method input_type
+	0,  // [0:0] is the sub-list for extension type_name
+	0,  // [0:0] is the sub-list for extension extendee
+	0,  // [0:0] is the sub-list for field type_name
 }
 
 func init() { file_proto_scene_manager_scene_node_service_proto_init() }

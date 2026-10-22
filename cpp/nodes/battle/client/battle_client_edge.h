@@ -83,6 +83,7 @@ private:
         uint64_t battleId = 0;
         uint64_t playerId = 0;
         ::eBattleTicketRole role = ::BATTLE_TICKET_ROLE_NONE;
+        std::string spectatorOperation;
         // gate 会话 id(来自房间路由快照),回填进合成的 SessionDetails 供日志对齐
         uint32_t gateSessionId = 0;
         // 非法包累计(IllegalPacketCounter 管阈值);握手成功时清零

@@ -22,15 +22,16 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	SceneNodeGrpc_CreateScene_FullMethodName         = "/scene_node.SceneNodeGrpc/CreateScene"
-	SceneNodeGrpc_DestroyScene_FullMethodName        = "/scene_node.SceneNodeGrpc/DestroyScene"
-	SceneNodeGrpc_ReleasePlayer_FullMethodName       = "/scene_node.SceneNodeGrpc/ReleasePlayer"
-	SceneNodeGrpc_PrepareBattle_FullMethodName       = "/scene_node.SceneNodeGrpc/PrepareBattle"
-	SceneNodeGrpc_CancelBattlePrepare_FullMethodName = "/scene_node.SceneNodeGrpc/CancelBattlePrepare"
-	SceneNodeGrpc_AssetDebit_FullMethodName          = "/scene_node.SceneNodeGrpc/AssetDebit"
-	SceneNodeGrpc_AssetAbortDebit_FullMethodName     = "/scene_node.SceneNodeGrpc/AssetAbortDebit"
-	SceneNodeGrpc_AssetCredit_FullMethodName         = "/scene_node.SceneNodeGrpc/AssetCredit"
-	SceneNodeGrpc_AssetAckReceipt_FullMethodName     = "/scene_node.SceneNodeGrpc/AssetAckReceipt"
+	SceneNodeGrpc_CreateScene_FullMethodName          = "/scene_node.SceneNodeGrpc/CreateScene"
+	SceneNodeGrpc_DestroyScene_FullMethodName         = "/scene_node.SceneNodeGrpc/DestroyScene"
+	SceneNodeGrpc_ReleasePlayer_FullMethodName        = "/scene_node.SceneNodeGrpc/ReleasePlayer"
+	SceneNodeGrpc_PrepareBattle_FullMethodName        = "/scene_node.SceneNodeGrpc/PrepareBattle"
+	SceneNodeGrpc_CancelBattlePrepare_FullMethodName  = "/scene_node.SceneNodeGrpc/CancelBattlePrepare"
+	SceneNodeGrpc_SealAccountRoleTrade_FullMethodName = "/scene_node.SceneNodeGrpc/SealAccountRoleTrade"
+	SceneNodeGrpc_AssetDebit_FullMethodName           = "/scene_node.SceneNodeGrpc/AssetDebit"
+	SceneNodeGrpc_AssetAbortDebit_FullMethodName      = "/scene_node.SceneNodeGrpc/AssetAbortDebit"
+	SceneNodeGrpc_AssetCredit_FullMethodName          = "/scene_node.SceneNodeGrpc/AssetCredit"
+	SceneNodeGrpc_AssetAckReceipt_FullMethodName      = "/scene_node.SceneNodeGrpc/AssetAckReceipt"
 )
 
 // SceneNodeGrpcClient is the client API for SceneNodeGrpc service.
@@ -48,11 +49,11 @@ type SceneNodeGrpcClient interface {
 	// change). The old node persists the player to Redis, drops the entity, and
 	// frees the session mapping so the new node can load fresh from Redis.
 	// 释放栅栏(docs/design/scene-enter-chain-residuals.md §4):
-	//   - 交接在途的实体不处理;其余按 expected_owner_epoch 与本地缓存比对,相等才退出,缓存为 0 / 期望为 0 按旧行为释放。
-	//   - SceneManager 只在本次 EnterScene 提交之后才发(带 GateId 时路由 broker ACK 之后,无 GateId 时落点成功之后);
-	//     落点或路由失败、回滚的请求一律不发。忽略即终态,响应仍是 Empty。
-	//   - session_ended = true 是另一种用途(docs/design/location-release-binding.md §3.3):LeaveScene 拿不到"持有者已释放"
-	//     证据时,SceneManager 请 location 的持有节点释放——持有则按客户端断线退出,不持有则按 owner_epoch 条件补写凭证标记。
+	// - 交接在途的实体不处理;其余按 expected_owner_epoch 与本地缓存比对,相等才退出,缓存为 0 / 期望为 0 按旧行为释放。
+	// - SceneManager 只在本次 EnterScene 提交之后才发(带 GateId 时路由 broker ACK 之后,无 GateId 时落点成功之后);
+	//   落点或路由失败、回滚的请求一律不发。忽略即终态,响应仍是 Empty。
+	// - session_ended = true 是另一种用途(docs/design/location-release-binding.md §3.3):LeaveScene 拿不到"持有者已释放"
+	//   证据时,SceneManager 请 location 的持有节点释放——持有则按客户端断线退出,不持有则按 owner_epoch 条件补写凭证标记。
 	ReleasePlayer(ctx context.Context, in *ReleasePlayerRequest, opts ...grpc.CallOption) (*base.Empty, error)
 	// ---- 回合制战斗 gather 管线(docs/design/turn-based-battle-server.md §3.1/§5.3)----
 	// 消息定义共用 proto/scene/scene.proto 里的那一份(全局包,与 CreateSceneRequest
@@ -62,6 +63,8 @@ type SceneNodeGrpcClient interface {
 	PrepareBattle(ctx context.Context, in *scene.PrepareBattleRequest, opts ...grpc.CallOption) (*scene.PrepareBattleResponse, error)
 	// gather 失败的逐人回滚:battle_id 匹配才解冻,迟到/重复取消幂等忽略。
 	CancelBattlePrepare(ctx context.Context, in *scene.CancelBattlePrepareRequest, opts ...grpc.CallOption) (*base.Empty, error)
+	// 返回仅表示原世代封存已采纳；排空和严格双表持久证明另经DataService.AckRoleTradeDrain提交。
+	SealAccountRoleTrade(ctx context.Context, in *scene.SealAccountRoleTradeRequest, opts ...grpc.CallOption) (*base.Empty, error)
 	// ---- 通用资产通道(docs/design/guild-phase2/04-asset-channel.md §S4)----
 	// 结局写在 response.outcome;gRPC status 恒为 OK。同 seq 重复调用只读答复。
 	AssetDebit(ctx context.Context, in *asset.AssetOpRequest, opts ...grpc.CallOption) (*asset.AssetOpResponse, error)
@@ -130,6 +133,16 @@ func (c *sceneNodeGrpcClient) CancelBattlePrepare(ctx context.Context, in *scene
 	return out, nil
 }
 
+func (c *sceneNodeGrpcClient) SealAccountRoleTrade(ctx context.Context, in *scene.SealAccountRoleTradeRequest, opts ...grpc.CallOption) (*base.Empty, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(base.Empty)
+	err := c.cc.Invoke(ctx, SceneNodeGrpc_SealAccountRoleTrade_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *sceneNodeGrpcClient) AssetDebit(ctx context.Context, in *asset.AssetOpRequest, opts ...grpc.CallOption) (*asset.AssetOpResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(asset.AssetOpResponse)
@@ -185,11 +198,11 @@ type SceneNodeGrpcServer interface {
 	// change). The old node persists the player to Redis, drops the entity, and
 	// frees the session mapping so the new node can load fresh from Redis.
 	// 释放栅栏(docs/design/scene-enter-chain-residuals.md §4):
-	//   - 交接在途的实体不处理;其余按 expected_owner_epoch 与本地缓存比对,相等才退出,缓存为 0 / 期望为 0 按旧行为释放。
-	//   - SceneManager 只在本次 EnterScene 提交之后才发(带 GateId 时路由 broker ACK 之后,无 GateId 时落点成功之后);
-	//     落点或路由失败、回滚的请求一律不发。忽略即终态,响应仍是 Empty。
-	//   - session_ended = true 是另一种用途(docs/design/location-release-binding.md §3.3):LeaveScene 拿不到"持有者已释放"
-	//     证据时,SceneManager 请 location 的持有节点释放——持有则按客户端断线退出,不持有则按 owner_epoch 条件补写凭证标记。
+	// - 交接在途的实体不处理;其余按 expected_owner_epoch 与本地缓存比对,相等才退出,缓存为 0 / 期望为 0 按旧行为释放。
+	// - SceneManager 只在本次 EnterScene 提交之后才发(带 GateId 时路由 broker ACK 之后,无 GateId 时落点成功之后);
+	//   落点或路由失败、回滚的请求一律不发。忽略即终态,响应仍是 Empty。
+	// - session_ended = true 是另一种用途(docs/design/location-release-binding.md §3.3):LeaveScene 拿不到"持有者已释放"
+	//   证据时,SceneManager 请 location 的持有节点释放——持有则按客户端断线退出,不持有则按 owner_epoch 条件补写凭证标记。
 	ReleasePlayer(context.Context, *ReleasePlayerRequest) (*base.Empty, error)
 	// ---- 回合制战斗 gather 管线(docs/design/turn-based-battle-server.md §3.1/§5.3)----
 	// 消息定义共用 proto/scene/scene.proto 里的那一份(全局包,与 CreateSceneRequest
@@ -199,6 +212,8 @@ type SceneNodeGrpcServer interface {
 	PrepareBattle(context.Context, *scene.PrepareBattleRequest) (*scene.PrepareBattleResponse, error)
 	// gather 失败的逐人回滚:battle_id 匹配才解冻,迟到/重复取消幂等忽略。
 	CancelBattlePrepare(context.Context, *scene.CancelBattlePrepareRequest) (*base.Empty, error)
+	// 返回仅表示原世代封存已采纳；排空和严格双表持久证明另经DataService.AckRoleTradeDrain提交。
+	SealAccountRoleTrade(context.Context, *scene.SealAccountRoleTradeRequest) (*base.Empty, error)
 	// ---- 通用资产通道(docs/design/guild-phase2/04-asset-channel.md §S4)----
 	// 结局写在 response.outcome;gRPC status 恒为 OK。同 seq 重复调用只读答复。
 	AssetDebit(context.Context, *asset.AssetOpRequest) (*asset.AssetOpResponse, error)
@@ -231,6 +246,9 @@ func (UnimplementedSceneNodeGrpcServer) PrepareBattle(context.Context, *scene.Pr
 }
 func (UnimplementedSceneNodeGrpcServer) CancelBattlePrepare(context.Context, *scene.CancelBattlePrepareRequest) (*base.Empty, error) {
 	return nil, status.Error(codes.Unimplemented, "method CancelBattlePrepare not implemented")
+}
+func (UnimplementedSceneNodeGrpcServer) SealAccountRoleTrade(context.Context, *scene.SealAccountRoleTradeRequest) (*base.Empty, error) {
+	return nil, status.Error(codes.Unimplemented, "method SealAccountRoleTrade not implemented")
 }
 func (UnimplementedSceneNodeGrpcServer) AssetDebit(context.Context, *asset.AssetOpRequest) (*asset.AssetOpResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method AssetDebit not implemented")
@@ -355,6 +373,24 @@ func _SceneNodeGrpc_CancelBattlePrepare_Handler(srv interface{}, ctx context.Con
 	return interceptor(ctx, in, info, handler)
 }
 
+func _SceneNodeGrpc_SealAccountRoleTrade_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(scene.SealAccountRoleTradeRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(SceneNodeGrpcServer).SealAccountRoleTrade(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: SceneNodeGrpc_SealAccountRoleTrade_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(SceneNodeGrpcServer).SealAccountRoleTrade(ctx, req.(*scene.SealAccountRoleTradeRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _SceneNodeGrpc_AssetDebit_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(asset.AssetOpRequest)
 	if err := dec(in); err != nil {
@@ -453,6 +489,10 @@ var SceneNodeGrpc_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "CancelBattlePrepare",
 			Handler:    _SceneNodeGrpc_CancelBattlePrepare_Handler,
+		},
+		{
+			MethodName: "SealAccountRoleTrade",
+			Handler:    _SceneNodeGrpc_SealAccountRoleTrade_Handler,
 		},
 		{
 			MethodName: "AssetDebit",

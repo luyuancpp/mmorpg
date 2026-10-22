@@ -18,18 +18,13 @@ replace schemamigrate => ../schemamigrate
 // 刻意**不再**直接依赖:
 //   - github.com/google/uuid:节点 uuid 由 shared/noderegistry 生成,friend 自己不再拼
 //     (原先只有已删除的 internal/node 包用它,全仓 friend 下已无 import)。
-//   - github.com/redis/go-redis/v9:Redis 句柄统一用 go-zero 的 core/stores/redis(契约 §4);
-//     同进程两套客户端 = 两套连接池与超时语义,排障对不上账。
-//     internal/data/friend_repo.go 与其 mysql 单测的句柄改型(规格 §3.8 第 3 条)已随本批完成,
-//     go/friend 下**零**直接 import 它,所以 require 块里不写它是正确的、不是漏写;
-//     go-redis 只应作为 go-zero 的 indirect 出现(go-zero 的 core/stores/redis 把 Pipeliner /
-//     IntCmd / Nil 都别名导出了,业务代码不需要直接依赖)。
-//     ⚠ 验收判据:`go mod tidy` 之后如果它又落进**直接依赖块**,说明还有一处 import 没改完 ——
-//     那是真实缺陷,先去找那处 import,不要直接接受 tidy 结果。
+// 全局登录态只读接缝 shared/loginsession 使用 go-redis/v9，故提升现有锁定版本为直接依赖。
+// 好友缓存仍使用 go-zero；登录态独立池显式限定大小、DB和超时，并关闭自动重试。
 require (
 	github.com/alicebob/miniredis/v2 v2.36.1
 	github.com/go-sql-driver/mysql v1.9.3
 	github.com/prometheus/client_golang v1.23.2
+	github.com/redis/go-redis/v9 v9.17.3
 	github.com/segmentio/kafka-go v0.4.47
 	github.com/stretchr/testify v1.11.1
 	github.com/zeromicro/go-zero v1.10.0
@@ -99,7 +94,7 @@ require (
 	github.com/prometheus/common v0.66.1 // indirect
 	github.com/prometheus/procfs v0.16.1 // indirect
 	github.com/rcrowley/go-metrics v0.0.0-20201227073835-cf1acfcdf475 // indirect
-	github.com/redis/go-redis/v9 v9.17.3 // indirect
+
 	github.com/spaolacci/murmur3 v1.1.0 // indirect
 	github.com/yuin/gopher-lua v1.1.1 // indirect
 	go.etcd.io/etcd/api/v3 v3.5.15 // indirect

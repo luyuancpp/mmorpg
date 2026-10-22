@@ -3,15 +3,11 @@ package clientplayerloginlogic
 import (
 	"context"
 	"fmt"
-	"login/internal/config"
-	"login/internal/constants"
-	"login/internal/logic/pkg/locker"
 	"login/internal/logic/pkg/sessionmanager"
+	base "proto/common/base"
 	comppb "proto/common/component"
 	dbpb "proto/common/database"
-	"time"
 
-	"github.com/redis/go-redis/v9"
 	"google.golang.org/protobuf/proto"
 )
 
@@ -107,91 +103,15 @@ func (l *EnterGameLogic) backfillPlayerIdentity(ctx context.Context, existing *s
 	}
 }
 
-// self-heal 可能只恢复了账号的 player_id/name。存档已预加载后，以已保存的外观
-// 补回账号缺失资料；整字节 CAS 保留并发建角，玩家登录锁保证失锁链不能写入。
+// 旧目录可能缺少外观资料。存档已预加载后，以已保存身份补空；SQL提交点复核
+// 原owner_revision及无交易锁，不能用旧登录链修改已冻结或已过户角色。
 func (l *EnterGameLogic) repairAccountAppearance(ctx context.Context, state enterGameSessionState, player *dbpb.PlayerDatabase) error {
-	// 与建角使用同一把锁：只有 CAS 仍挡不住已经读了旧账号的建角稍后覆盖修复。
-	accountLock, err := locker.NewRedisLocker(l.svcCtx.RedisClient).TryLock(ctx,
-		"account_lock:create:"+state.account, time.Duration(max(config.AppConfig.Locker.AccountLockTTL, 1))*time.Second)
-	if err != nil || !accountLock.IsLocked() {
-		return fmt.Errorf("恢复外观时账号正在变化，请重试入场")
+	if l.svcCtx.AccountDirectory == nil || state.ownerRevision == 0 {
+		return fmt.Errorf("SQL账号归属证明缺失")
 	}
-	defer func() {
-		releaseCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), time.Second)
-		defer cancel()
-		_, _ = accountLock.Release(releaseCtx)
-	}()
-	key := constants.GetAccountDataKey(state.account)
-	previous, err := l.svcCtx.RedisClient.Get(ctx, key).Bytes()
-	if err != nil {
-		return fmt.Errorf("读取外观恢复账号: %w", err)
-	}
-	account := &dbpb.UserAccounts{}
-	if err := proto.Unmarshal(previous, account); err != nil {
-		return err
-	}
-	found := false
-	for _, role := range account.GetSimplePlayers().GetPlayers() {
-		if role.GetPlayerId() != state.playerID {
-			continue
-		}
-		found = true
-		appearance := player.GetProfileComponent().GetAppearanceId()
-		if role.GetAppearanceId() != "" && role.GetAppearanceId() != appearance {
-			return fmt.Errorf("账号外观已变化，拒绝覆盖: player=%d", state.playerID)
-		}
-		role.AppearanceId = appearance
-		if role.GetClassId() == 0 {
-			role.ClassId = player.GetUint32PbComponent().GetClass()
-		}
-		if role.GetGender() == 0 {
-			role.Gender = player.GetProfileComponent().GetGender()
-		}
-	}
-	if !found {
-		return fmt.Errorf("外观恢复账号缺少玩家: player=%d", state.playerID)
-	}
-	updated, err := proto.Marshal(account)
-	if err != nil {
-		return err
-	}
-	result, err := accountRecordCASScript.Run(ctx, l.svcCtx.RedisClient,
-		[]string{key, state.playerLockKey, accountLock.Key}, state.playerLockToken, previous, updated, accountLock.Value).Int()
-	if err != nil {
-		return err
-	}
-	if result != 1 {
-		return fmt.Errorf("外观恢复失锁或账号已变化，请重试入场: player=%d", state.playerID)
-	}
-	return nil
+	_, err := l.svcCtx.AccountDirectory.Repair(ctx, state.account, &base.AccountSimplePlayer{
+		PlayerId: state.playerID, AppearanceId: player.GetProfileComponent().GetAppearanceId(),
+		ClassId: player.GetUint32PbComponent().GetClass(), Gender: player.GetProfileComponent().GetGender(),
+	}, state.ownerRevision)
+	return err
 }
-
-// accountRecordCASScript 在玩家登录锁与账号锁都仍归本链时,按整字节 CAS 改写账号目录 account:{account}。
-// 外观修复(repairAccountAppearance)用它;入场自愈另用多复核一次反向索引的 healAccountRoleScript。
-// KEYS = {账号目录键, 玩家登录锁键, 账号锁键};ARGV = {玩家锁令牌, 旧字节, 新字节, 账号锁令牌}。
-// 返回 1 = 已写;0 = 账号目录自读取以来变了,未写;-1 = 任一把锁已不归本链,未写。
-// 不带 KEEPTTL:账号目录本就不设 TTL(登录时会 PERSIST),写回同样是永久键。
-var accountRecordCASScript = redis.NewScript(`
-if redis.call("GET", KEYS[2]) ~= ARGV[1] then return -1 end
-if redis.call("GET", KEYS[3]) ~= ARGV[4] then return -1 end
-if redis.call("GET", KEYS[1]) ~= ARGV[2] then return 0 end
-redis.call("SET", KEYS[1], ARGV[3])
-return 1
-`)
-
-// backfillPlayerClassScript 沿用原名:脚本本身与返回码语义没有变,只是写入的字节里多了名字;
-// go/shared/scenenode/locator.go 等处的注释按这个名字引用 KEYS[4]。
-
-var backfillPlayerClassScript = redis.NewScript(`
-if redis.call("GET", KEYS[2]) ~= ARGV[1] then
-    return -1
-end
-if redis.call("EXISTS", KEYS[3], KEYS[4]) > 0 then
-    return 2
-end
-if redis.call("GET", KEYS[1]) ~= ARGV[2] then
-    return 0
-end
-redis.call("SET", KEYS[1], ARGV[3], "KEEPTTL")
-return 1
-`)

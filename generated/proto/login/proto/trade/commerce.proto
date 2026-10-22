@@ -21,6 +21,7 @@ enum CommerceOrderKind {
   COMMERCE_ORDER_KIND_CONSIGNMENT = 3;
   COMMERCE_ORDER_KIND_MARKET_MATCH = 4;
   COMMERCE_ORDER_KIND_AUCTION_LOT = 5;
+  COMMERCE_ORDER_KIND_RMB_CONSIGNMENT = 6;
 }
 
 enum CommerceOrderState {
@@ -198,3 +199,69 @@ message AuctionLotResponse {
   AuctionLotView lot = 2;
   uint64 server_now_ms = 3;
 }
+
+// 人民币寄售独立入口；旧CreateConsignment继续使用游戏币，不能改价单位。
+// 账号/修订/托管证明均由服务端核实，客户端没有声明这些身份或付款成功的字段。
+message CreateRmbConsignmentRequest {
+  string client_request_id = 1;
+  TradeAssetSelection assets = 2;
+  uint64 character_player_id = 3; // 非0出售同账号角色，assets必须为空；其余出售一类物品/宠物/货币
+  uint64 price_fen = 4;
+  string title = 5;
+}
+message GetRmbConsignmentRequest { uint64 listing_id = 1; }
+message ListRmbConsignmentsRequest { string cursor = 1; uint32 limit = 2; }
+message BuyRmbConsignmentRequest { uint64 listing_id = 1; string client_request_id = 2; }
+message CancelRmbConsignmentRequest { uint64 listing_id = 1; }
+message RmbConsignmentView {
+  uint64 listing_id = 1;
+  uint64 seller_player_id = 2;
+  uint32 market_zone = 3;
+  string asset_kind = 4;
+  string title = 5;
+  uint64 price_fen = 6;
+  uint32 fee_bps = 7;
+  uint64 cooling_ms = 8;
+  uint64 notice_end_ms = 9;
+  uint64 sale_end_ms = 10;
+  string state = 11;
+  string phase = 12;
+  string order_id = 13;
+}
+message RmbConsignmentResponse {
+  TipInfoMessage error_message = 1;
+  RmbConsignmentView listing = 2;
+  uint64 server_now_ms = 3;
+}
+message ListRmbConsignmentsResponse {
+  TipInfoMessage error_message = 1;
+  repeated RmbConsignmentView listings = 2;
+  string next_cursor = 3;
+  uint64 server_now_ms = 4;
+}
+message ListSellerIncomesRequest { string cursor = 1; uint32 limit = 2; }
+message RmbSellerIncome {
+  string order_id = 1;
+  uint64 gross_fen = 2;
+  uint64 fee_fen = 3;
+  uint64 net_fen = 4;
+  uint64 reserved_fen = 5;
+  uint64 paid_fen = 6;
+  uint64 available_ms = 7;
+}
+message ListSellerIncomesResponse {
+  TipInfoMessage error_message = 1;
+  repeated RmbSellerIncome incomes = 2;
+  string next_cursor = 3;
+  uint64 server_now_ms = 4;
+}
+message CreateWithdrawalRequest { string client_request_id = 1; uint64 amount_fen = 2; }
+message GetWithdrawalRequest { string withdrawal_id = 1; }
+message RmbWithdrawalView {
+  string withdrawal_id = 1;
+  uint64 amount_fen = 2;
+  string state = 3;
+  string channel = 4;
+  string transaction_id = 5;
+}
+message WithdrawalResponse { TipInfoMessage error_message = 1; RmbWithdrawalView withdrawal = 2; }

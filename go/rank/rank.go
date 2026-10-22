@@ -19,6 +19,7 @@ import (
 	mailpb "proto/mail"
 	rankpb "proto/rank"
 	"rank/internal/data"
+	"rank/internal/metrics"
 	"rank/internal/reward"
 	"rank/internal/server"
 	"schemamigrate"
@@ -94,6 +95,7 @@ func run(c config, migrate bool) error {
 	if migrate {
 		return nil
 	}
+	metrics.Register()
 	secrets, err := c.Secrets()
 	if err != nil {
 		return err

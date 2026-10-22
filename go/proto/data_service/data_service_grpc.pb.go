@@ -20,30 +20,42 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	DataService_LoadPlayerData_FullMethodName         = "/data_service.DataService/LoadPlayerData"
-	DataService_SavePlayerData_FullMethodName         = "/data_service.DataService/SavePlayerData"
-	DataService_GetPlayerField_FullMethodName         = "/data_service.DataService/GetPlayerField"
-	DataService_SetPlayerField_FullMethodName         = "/data_service.DataService/SetPlayerField"
-	DataService_RegisterPlayerZone_FullMethodName     = "/data_service.DataService/RegisterPlayerZone"
-	DataService_GetPlayerHomeZone_FullMethodName      = "/data_service.DataService/GetPlayerHomeZone"
-	DataService_BatchGetPlayerHomeZone_FullMethodName = "/data_service.DataService/BatchGetPlayerHomeZone"
-	DataService_RemapHomeZoneForMerge_FullMethodName  = "/data_service.DataService/RemapHomeZoneForMerge"
-	DataService_DeletePlayerData_FullMethodName       = "/data_service.DataService/DeletePlayerData"
-	DataService_CreatePlayerSnapshot_FullMethodName   = "/data_service.DataService/CreatePlayerSnapshot"
-	DataService_ListPlayerSnapshots_FullMethodName    = "/data_service.DataService/ListPlayerSnapshots"
-	DataService_GetPlayerSnapshotDiff_FullMethodName  = "/data_service.DataService/GetPlayerSnapshotDiff"
-	DataService_RollbackPlayer_FullMethodName         = "/data_service.DataService/RollbackPlayer"
-	DataService_RollbackZone_FullMethodName           = "/data_service.DataService/RollbackZone"
-	DataService_RollbackAll_FullMethodName            = "/data_service.DataService/RollbackAll"
-	DataService_BatchRecallItems_FullMethodName       = "/data_service.DataService/BatchRecallItems"
-	DataService_QueryTransactionLog_FullMethodName    = "/data_service.DataService/QueryTransactionLog"
-	DataService_CreateEventSnapshot_FullMethodName    = "/data_service.DataService/CreateEventSnapshot"
-	DataService_AllocateIdSegment_FullMethodName      = "/data_service.DataService/AllocateIdSegment"
-	DataService_ReservePlayerName_FullMethodName      = "/data_service.DataService/ReservePlayerName"
-	DataService_ReleasePlayerName_FullMethodName      = "/data_service.DataService/ReleasePlayerName"
-	DataService_BatchGetPlayerName_FullMethodName     = "/data_service.DataService/BatchGetPlayerName"
-	DataService_GetPlayerAssetOpLedger_FullMethodName = "/data_service.DataService/GetPlayerAssetOpLedger"
-	DataService_GetPlayerInboxLedger_FullMethodName   = "/data_service.DataService/GetPlayerInboxLedger"
+	DataService_ReadAccountDirectory_FullMethodName          = "/data_service.DataService/ReadAccountDirectory"
+	DataService_CreateAccountRole_FullMethodName             = "/data_service.DataService/CreateAccountRole"
+	DataService_LookupAccountRole_FullMethodName             = "/data_service.DataService/LookupAccountRole"
+	DataService_RepairAccountRole_FullMethodName             = "/data_service.DataService/RepairAccountRole"
+	DataService_RemoveAccountRoles_FullMethodName            = "/data_service.DataService/RemoveAccountRoles"
+	DataService_BeginAccountRoleTrade_FullMethodName         = "/data_service.DataService/BeginAccountRoleTrade"
+	DataService_ConfirmAccountRoleTradeFreeze_FullMethodName = "/data_service.DataService/ConfirmAccountRoleTradeFreeze"
+	DataService_CancelAccountRoleTrade_FullMethodName        = "/data_service.DataService/CancelAccountRoleTrade"
+	DataService_TransferAccountRole_FullMethodName           = "/data_service.DataService/TransferAccountRole"
+	DataService_RegisterRoleAdmission_FullMethodName         = "/data_service.DataService/RegisterRoleAdmission"
+	DataService_CloseRoleAdmissions_FullMethodName           = "/data_service.DataService/CloseRoleAdmissions"
+	DataService_AckRoleTradeDrain_FullMethodName             = "/data_service.DataService/AckRoleTradeDrain"
+	DataService_LoadPlayerData_FullMethodName                = "/data_service.DataService/LoadPlayerData"
+	DataService_SavePlayerData_FullMethodName                = "/data_service.DataService/SavePlayerData"
+	DataService_GetPlayerField_FullMethodName                = "/data_service.DataService/GetPlayerField"
+	DataService_SetPlayerField_FullMethodName                = "/data_service.DataService/SetPlayerField"
+	DataService_RegisterPlayerZone_FullMethodName            = "/data_service.DataService/RegisterPlayerZone"
+	DataService_GetPlayerHomeZone_FullMethodName             = "/data_service.DataService/GetPlayerHomeZone"
+	DataService_BatchGetPlayerHomeZone_FullMethodName        = "/data_service.DataService/BatchGetPlayerHomeZone"
+	DataService_RemapHomeZoneForMerge_FullMethodName         = "/data_service.DataService/RemapHomeZoneForMerge"
+	DataService_DeletePlayerData_FullMethodName              = "/data_service.DataService/DeletePlayerData"
+	DataService_CreatePlayerSnapshot_FullMethodName          = "/data_service.DataService/CreatePlayerSnapshot"
+	DataService_ListPlayerSnapshots_FullMethodName           = "/data_service.DataService/ListPlayerSnapshots"
+	DataService_GetPlayerSnapshotDiff_FullMethodName         = "/data_service.DataService/GetPlayerSnapshotDiff"
+	DataService_RollbackPlayer_FullMethodName                = "/data_service.DataService/RollbackPlayer"
+	DataService_RollbackZone_FullMethodName                  = "/data_service.DataService/RollbackZone"
+	DataService_RollbackAll_FullMethodName                   = "/data_service.DataService/RollbackAll"
+	DataService_BatchRecallItems_FullMethodName              = "/data_service.DataService/BatchRecallItems"
+	DataService_QueryTransactionLog_FullMethodName           = "/data_service.DataService/QueryTransactionLog"
+	DataService_CreateEventSnapshot_FullMethodName           = "/data_service.DataService/CreateEventSnapshot"
+	DataService_AllocateIdSegment_FullMethodName             = "/data_service.DataService/AllocateIdSegment"
+	DataService_ReservePlayerName_FullMethodName             = "/data_service.DataService/ReservePlayerName"
+	DataService_ReleasePlayerName_FullMethodName             = "/data_service.DataService/ReleasePlayerName"
+	DataService_BatchGetPlayerName_FullMethodName            = "/data_service.DataService/BatchGetPlayerName"
+	DataService_GetPlayerAssetOpLedger_FullMethodName        = "/data_service.DataService/GetPlayerAssetOpLedger"
+	DataService_GetPlayerInboxLedger_FullMethodName          = "/data_service.DataService/GetPlayerInboxLedger"
 )
 
 // DataServiceClient is the client API for DataService service.
@@ -54,6 +66,24 @@ const (
 // Scene Server calls this service with player_id only;
 // DataService internally routes to the player's home-realm Redis.
 type DataServiceClient interface {
+	// 全球账号角色目录；只接受已签名的 login 调用，不使用 Redis 归属降级。
+	ReadAccountDirectory(ctx context.Context, in *ReadAccountDirectoryRequest, opts ...grpc.CallOption) (*AccountDirectoryResponse, error)
+	CreateAccountRole(ctx context.Context, in *CreateAccountRoleRequest, opts ...grpc.CallOption) (*AccountDirectoryResponse, error)
+	LookupAccountRole(ctx context.Context, in *LookupAccountRoleRequest, opts ...grpc.CallOption) (*AccountRoleOwnership, error)
+	RepairAccountRole(ctx context.Context, in *RepairAccountRoleRequest, opts ...grpc.CallOption) (*AccountDirectoryResponse, error)
+	RemoveAccountRoles(ctx context.Context, in *RemoveAccountRolesRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	// 角色寄售控制仅允许独立 trade 证明；Begin 只阻新入场，不等于在线实体已冻结。
+	BeginAccountRoleTrade(ctx context.Context, in *BeginAccountRoleTradeRequest, opts ...grpc.CallOption) (*AccountRoleTradeReceipt, error)
+	// 请求不接受 caller proof。只有装配的服务端 SQL 验证器能确认 FROZEN；未装配时拒绝。
+	ConfirmAccountRoleTradeFreeze(ctx context.Context, in *ConfirmAccountRoleTradeFreezeRequest, opts ...grpc.CallOption) (*AccountRoleTradeReceipt, error)
+	CancelAccountRoleTrade(ctx context.Context, in *CancelAccountRoleTradeRequest, opts ...grpc.CallOption) (*AccountRoleTradeReceipt, error)
+	TransferAccountRole(ctx context.Context, in *TransferAccountRoleRequest, opts ...grpc.CallOption) (*AccountRoleTransferReceipt, error)
+	// scene 专用强鉴权；SQL 未登记前禁止实体复用、异步加载完成和激活。
+	RegisterRoleAdmission(ctx context.Context, in *RegisterRoleAdmissionRequest, opts ...grpc.CallOption) (*RegisterRoleAdmissionResponse, error)
+	// 只在本实例 <= through 的全部实体与迟到回调都已结束后关闭；无 TTL 自动关闭。
+	CloseRoleAdmissions(ctx context.Context, in *CloseRoleAdmissionsRequest, opts ...grpc.CallOption) (*CloseRoleAdmissionsResponse, error)
+	// 原 listing 的本地墓碑与排空 ACK；不是 caller 自报的冻结完成证明。
+	AckRoleTradeDrain(ctx context.Context, in *AckRoleTradeDrainRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	// ── Player lifecycle data ─────────────────────────────────────
 	LoadPlayerData(ctx context.Context, in *LoadPlayerDataRequest, opts ...grpc.CallOption) (*LoadPlayerDataResponse, error)
 	SavePlayerData(ctx context.Context, in *SavePlayerDataRequest, opts ...grpc.CallOption) (*SavePlayerDataResponse, error)
@@ -109,6 +139,126 @@ type dataServiceClient struct {
 
 func NewDataServiceClient(cc grpc.ClientConnInterface) DataServiceClient {
 	return &dataServiceClient{cc}
+}
+
+func (c *dataServiceClient) ReadAccountDirectory(ctx context.Context, in *ReadAccountDirectoryRequest, opts ...grpc.CallOption) (*AccountDirectoryResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(AccountDirectoryResponse)
+	err := c.cc.Invoke(ctx, DataService_ReadAccountDirectory_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *dataServiceClient) CreateAccountRole(ctx context.Context, in *CreateAccountRoleRequest, opts ...grpc.CallOption) (*AccountDirectoryResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(AccountDirectoryResponse)
+	err := c.cc.Invoke(ctx, DataService_CreateAccountRole_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *dataServiceClient) LookupAccountRole(ctx context.Context, in *LookupAccountRoleRequest, opts ...grpc.CallOption) (*AccountRoleOwnership, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(AccountRoleOwnership)
+	err := c.cc.Invoke(ctx, DataService_LookupAccountRole_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *dataServiceClient) RepairAccountRole(ctx context.Context, in *RepairAccountRoleRequest, opts ...grpc.CallOption) (*AccountDirectoryResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(AccountDirectoryResponse)
+	err := c.cc.Invoke(ctx, DataService_RepairAccountRole_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *dataServiceClient) RemoveAccountRoles(ctx context.Context, in *RemoveAccountRolesRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, DataService_RemoveAccountRoles_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *dataServiceClient) BeginAccountRoleTrade(ctx context.Context, in *BeginAccountRoleTradeRequest, opts ...grpc.CallOption) (*AccountRoleTradeReceipt, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(AccountRoleTradeReceipt)
+	err := c.cc.Invoke(ctx, DataService_BeginAccountRoleTrade_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *dataServiceClient) ConfirmAccountRoleTradeFreeze(ctx context.Context, in *ConfirmAccountRoleTradeFreezeRequest, opts ...grpc.CallOption) (*AccountRoleTradeReceipt, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(AccountRoleTradeReceipt)
+	err := c.cc.Invoke(ctx, DataService_ConfirmAccountRoleTradeFreeze_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *dataServiceClient) CancelAccountRoleTrade(ctx context.Context, in *CancelAccountRoleTradeRequest, opts ...grpc.CallOption) (*AccountRoleTradeReceipt, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(AccountRoleTradeReceipt)
+	err := c.cc.Invoke(ctx, DataService_CancelAccountRoleTrade_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *dataServiceClient) TransferAccountRole(ctx context.Context, in *TransferAccountRoleRequest, opts ...grpc.CallOption) (*AccountRoleTransferReceipt, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(AccountRoleTransferReceipt)
+	err := c.cc.Invoke(ctx, DataService_TransferAccountRole_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *dataServiceClient) RegisterRoleAdmission(ctx context.Context, in *RegisterRoleAdmissionRequest, opts ...grpc.CallOption) (*RegisterRoleAdmissionResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(RegisterRoleAdmissionResponse)
+	err := c.cc.Invoke(ctx, DataService_RegisterRoleAdmission_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *dataServiceClient) CloseRoleAdmissions(ctx context.Context, in *CloseRoleAdmissionsRequest, opts ...grpc.CallOption) (*CloseRoleAdmissionsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(CloseRoleAdmissionsResponse)
+	err := c.cc.Invoke(ctx, DataService_CloseRoleAdmissions_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *dataServiceClient) AckRoleTradeDrain(ctx context.Context, in *AckRoleTradeDrainRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, DataService_AckRoleTradeDrain_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
 }
 
 func (c *dataServiceClient) LoadPlayerData(ctx context.Context, in *LoadPlayerDataRequest, opts ...grpc.CallOption) (*LoadPlayerDataResponse, error) {
@@ -359,6 +509,24 @@ func (c *dataServiceClient) GetPlayerInboxLedger(ctx context.Context, in *GetPla
 // Scene Server calls this service with player_id only;
 // DataService internally routes to the player's home-realm Redis.
 type DataServiceServer interface {
+	// 全球账号角色目录；只接受已签名的 login 调用，不使用 Redis 归属降级。
+	ReadAccountDirectory(context.Context, *ReadAccountDirectoryRequest) (*AccountDirectoryResponse, error)
+	CreateAccountRole(context.Context, *CreateAccountRoleRequest) (*AccountDirectoryResponse, error)
+	LookupAccountRole(context.Context, *LookupAccountRoleRequest) (*AccountRoleOwnership, error)
+	RepairAccountRole(context.Context, *RepairAccountRoleRequest) (*AccountDirectoryResponse, error)
+	RemoveAccountRoles(context.Context, *RemoveAccountRolesRequest) (*emptypb.Empty, error)
+	// 角色寄售控制仅允许独立 trade 证明；Begin 只阻新入场，不等于在线实体已冻结。
+	BeginAccountRoleTrade(context.Context, *BeginAccountRoleTradeRequest) (*AccountRoleTradeReceipt, error)
+	// 请求不接受 caller proof。只有装配的服务端 SQL 验证器能确认 FROZEN；未装配时拒绝。
+	ConfirmAccountRoleTradeFreeze(context.Context, *ConfirmAccountRoleTradeFreezeRequest) (*AccountRoleTradeReceipt, error)
+	CancelAccountRoleTrade(context.Context, *CancelAccountRoleTradeRequest) (*AccountRoleTradeReceipt, error)
+	TransferAccountRole(context.Context, *TransferAccountRoleRequest) (*AccountRoleTransferReceipt, error)
+	// scene 专用强鉴权；SQL 未登记前禁止实体复用、异步加载完成和激活。
+	RegisterRoleAdmission(context.Context, *RegisterRoleAdmissionRequest) (*RegisterRoleAdmissionResponse, error)
+	// 只在本实例 <= through 的全部实体与迟到回调都已结束后关闭；无 TTL 自动关闭。
+	CloseRoleAdmissions(context.Context, *CloseRoleAdmissionsRequest) (*CloseRoleAdmissionsResponse, error)
+	// 原 listing 的本地墓碑与排空 ACK；不是 caller 自报的冻结完成证明。
+	AckRoleTradeDrain(context.Context, *AckRoleTradeDrainRequest) (*emptypb.Empty, error)
 	// ── Player lifecycle data ─────────────────────────────────────
 	LoadPlayerData(context.Context, *LoadPlayerDataRequest) (*LoadPlayerDataResponse, error)
 	SavePlayerData(context.Context, *SavePlayerDataRequest) (*SavePlayerDataResponse, error)
@@ -416,6 +584,42 @@ type DataServiceServer interface {
 // pointer dereference when methods are called.
 type UnimplementedDataServiceServer struct{}
 
+func (UnimplementedDataServiceServer) ReadAccountDirectory(context.Context, *ReadAccountDirectoryRequest) (*AccountDirectoryResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ReadAccountDirectory not implemented")
+}
+func (UnimplementedDataServiceServer) CreateAccountRole(context.Context, *CreateAccountRoleRequest) (*AccountDirectoryResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method CreateAccountRole not implemented")
+}
+func (UnimplementedDataServiceServer) LookupAccountRole(context.Context, *LookupAccountRoleRequest) (*AccountRoleOwnership, error) {
+	return nil, status.Error(codes.Unimplemented, "method LookupAccountRole not implemented")
+}
+func (UnimplementedDataServiceServer) RepairAccountRole(context.Context, *RepairAccountRoleRequest) (*AccountDirectoryResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method RepairAccountRole not implemented")
+}
+func (UnimplementedDataServiceServer) RemoveAccountRoles(context.Context, *RemoveAccountRolesRequest) (*emptypb.Empty, error) {
+	return nil, status.Error(codes.Unimplemented, "method RemoveAccountRoles not implemented")
+}
+func (UnimplementedDataServiceServer) BeginAccountRoleTrade(context.Context, *BeginAccountRoleTradeRequest) (*AccountRoleTradeReceipt, error) {
+	return nil, status.Error(codes.Unimplemented, "method BeginAccountRoleTrade not implemented")
+}
+func (UnimplementedDataServiceServer) ConfirmAccountRoleTradeFreeze(context.Context, *ConfirmAccountRoleTradeFreezeRequest) (*AccountRoleTradeReceipt, error) {
+	return nil, status.Error(codes.Unimplemented, "method ConfirmAccountRoleTradeFreeze not implemented")
+}
+func (UnimplementedDataServiceServer) CancelAccountRoleTrade(context.Context, *CancelAccountRoleTradeRequest) (*AccountRoleTradeReceipt, error) {
+	return nil, status.Error(codes.Unimplemented, "method CancelAccountRoleTrade not implemented")
+}
+func (UnimplementedDataServiceServer) TransferAccountRole(context.Context, *TransferAccountRoleRequest) (*AccountRoleTransferReceipt, error) {
+	return nil, status.Error(codes.Unimplemented, "method TransferAccountRole not implemented")
+}
+func (UnimplementedDataServiceServer) RegisterRoleAdmission(context.Context, *RegisterRoleAdmissionRequest) (*RegisterRoleAdmissionResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method RegisterRoleAdmission not implemented")
+}
+func (UnimplementedDataServiceServer) CloseRoleAdmissions(context.Context, *CloseRoleAdmissionsRequest) (*CloseRoleAdmissionsResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method CloseRoleAdmissions not implemented")
+}
+func (UnimplementedDataServiceServer) AckRoleTradeDrain(context.Context, *AckRoleTradeDrainRequest) (*emptypb.Empty, error) {
+	return nil, status.Error(codes.Unimplemented, "method AckRoleTradeDrain not implemented")
+}
 func (UnimplementedDataServiceServer) LoadPlayerData(context.Context, *LoadPlayerDataRequest) (*LoadPlayerDataResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method LoadPlayerData not implemented")
 }
@@ -507,6 +711,222 @@ func RegisterDataServiceServer(s grpc.ServiceRegistrar, srv DataServiceServer) {
 		t.testEmbeddedByValue()
 	}
 	s.RegisterService(&DataService_ServiceDesc, srv)
+}
+
+func _DataService_ReadAccountDirectory_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ReadAccountDirectoryRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(DataServiceServer).ReadAccountDirectory(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: DataService_ReadAccountDirectory_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(DataServiceServer).ReadAccountDirectory(ctx, req.(*ReadAccountDirectoryRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _DataService_CreateAccountRole_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CreateAccountRoleRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(DataServiceServer).CreateAccountRole(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: DataService_CreateAccountRole_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(DataServiceServer).CreateAccountRole(ctx, req.(*CreateAccountRoleRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _DataService_LookupAccountRole_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(LookupAccountRoleRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(DataServiceServer).LookupAccountRole(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: DataService_LookupAccountRole_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(DataServiceServer).LookupAccountRole(ctx, req.(*LookupAccountRoleRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _DataService_RepairAccountRole_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RepairAccountRoleRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(DataServiceServer).RepairAccountRole(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: DataService_RepairAccountRole_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(DataServiceServer).RepairAccountRole(ctx, req.(*RepairAccountRoleRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _DataService_RemoveAccountRoles_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RemoveAccountRolesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(DataServiceServer).RemoveAccountRoles(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: DataService_RemoveAccountRoles_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(DataServiceServer).RemoveAccountRoles(ctx, req.(*RemoveAccountRolesRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _DataService_BeginAccountRoleTrade_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(BeginAccountRoleTradeRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(DataServiceServer).BeginAccountRoleTrade(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: DataService_BeginAccountRoleTrade_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(DataServiceServer).BeginAccountRoleTrade(ctx, req.(*BeginAccountRoleTradeRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _DataService_ConfirmAccountRoleTradeFreeze_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ConfirmAccountRoleTradeFreezeRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(DataServiceServer).ConfirmAccountRoleTradeFreeze(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: DataService_ConfirmAccountRoleTradeFreeze_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(DataServiceServer).ConfirmAccountRoleTradeFreeze(ctx, req.(*ConfirmAccountRoleTradeFreezeRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _DataService_CancelAccountRoleTrade_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CancelAccountRoleTradeRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(DataServiceServer).CancelAccountRoleTrade(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: DataService_CancelAccountRoleTrade_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(DataServiceServer).CancelAccountRoleTrade(ctx, req.(*CancelAccountRoleTradeRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _DataService_TransferAccountRole_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(TransferAccountRoleRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(DataServiceServer).TransferAccountRole(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: DataService_TransferAccountRole_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(DataServiceServer).TransferAccountRole(ctx, req.(*TransferAccountRoleRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _DataService_RegisterRoleAdmission_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RegisterRoleAdmissionRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(DataServiceServer).RegisterRoleAdmission(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: DataService_RegisterRoleAdmission_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(DataServiceServer).RegisterRoleAdmission(ctx, req.(*RegisterRoleAdmissionRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _DataService_CloseRoleAdmissions_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CloseRoleAdmissionsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(DataServiceServer).CloseRoleAdmissions(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: DataService_CloseRoleAdmissions_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(DataServiceServer).CloseRoleAdmissions(ctx, req.(*CloseRoleAdmissionsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _DataService_AckRoleTradeDrain_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(AckRoleTradeDrainRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(DataServiceServer).AckRoleTradeDrain(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: DataService_AckRoleTradeDrain_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(DataServiceServer).AckRoleTradeDrain(ctx, req.(*AckRoleTradeDrainRequest))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
 func _DataService_LoadPlayerData_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
@@ -948,6 +1368,54 @@ var DataService_ServiceDesc = grpc.ServiceDesc{
 	ServiceName: "data_service.DataService",
 	HandlerType: (*DataServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "ReadAccountDirectory",
+			Handler:    _DataService_ReadAccountDirectory_Handler,
+		},
+		{
+			MethodName: "CreateAccountRole",
+			Handler:    _DataService_CreateAccountRole_Handler,
+		},
+		{
+			MethodName: "LookupAccountRole",
+			Handler:    _DataService_LookupAccountRole_Handler,
+		},
+		{
+			MethodName: "RepairAccountRole",
+			Handler:    _DataService_RepairAccountRole_Handler,
+		},
+		{
+			MethodName: "RemoveAccountRoles",
+			Handler:    _DataService_RemoveAccountRoles_Handler,
+		},
+		{
+			MethodName: "BeginAccountRoleTrade",
+			Handler:    _DataService_BeginAccountRoleTrade_Handler,
+		},
+		{
+			MethodName: "ConfirmAccountRoleTradeFreeze",
+			Handler:    _DataService_ConfirmAccountRoleTradeFreeze_Handler,
+		},
+		{
+			MethodName: "CancelAccountRoleTrade",
+			Handler:    _DataService_CancelAccountRoleTrade_Handler,
+		},
+		{
+			MethodName: "TransferAccountRole",
+			Handler:    _DataService_TransferAccountRole_Handler,
+		},
+		{
+			MethodName: "RegisterRoleAdmission",
+			Handler:    _DataService_RegisterRoleAdmission_Handler,
+		},
+		{
+			MethodName: "CloseRoleAdmissions",
+			Handler:    _DataService_CloseRoleAdmissions_Handler,
+		},
+		{
+			MethodName: "AckRoleTradeDrain",
+			Handler:    _DataService_AckRoleTradeDrain_Handler,
+		},
 		{
 			MethodName: "LoadPlayerData",
 			Handler:    _DataService_LoadPlayerData_Handler,

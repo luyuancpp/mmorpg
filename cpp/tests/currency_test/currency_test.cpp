@@ -1767,9 +1767,9 @@ Guid IsolatedRedisPlayerIdForTest()
 }
 
 // 在 loop 上跑到连接回调或 3 秒超时。
-std::unique_ptr<hiredis::Hiredis> ConnectForTest(muduo::net::EventLoop& loop, const std::string& host, uint16_t port)
+std::shared_ptr<hiredis::Hiredis> ConnectForTest(muduo::net::EventLoop& loop, const std::string& host, uint16_t port)
 {
-    auto connection = std::make_unique<hiredis::Hiredis>(&loop, muduo::net::InetAddress(host, port));
+    auto connection = hiredis::Hiredis::Create(&loop, muduo::net::InetAddress(host, port));
     connection->setConnectCallback([&loop](hiredis::Hiredis*, int) { loop.quit(); });
     connection->connect();
     const auto timeout = loop.runAfter(3.0, [&loop] { loop.quit(); });
@@ -1779,15 +1779,12 @@ std::unique_ptr<hiredis::Hiredis> ConnectForTest(muduo::net::EventLoop& loop, co
     return connection;
 }
 
-// 有意泄漏:析构 Hiredis 要走 redisAsyncFree 与 Channel 注销,测试里 loop 与连接的收尾顺序不受控,没必要冒这个险。
-// (third_party/muduo 原版 Hiredis 有"连接态析构断言 / 断开后二次 redisAsyncFree"的问题;本工程实际链接的
-// cpp/libs/engine/muduo_windows 版已修,这里泄漏只是为了不依赖收尾顺序。)
-// 做成 RAII:用例中途 ASSERT 失败提前返回时也照样泄漏,而不是在析构里断言、带崩整个测试进程。
-// 声明在 connection 之后、客户端之前:客户端先析构,再放手,最后 connection 以空指针析构。
-struct LeakConnectionOnExit
+// 声明在业务客户端之后，使失败/超时提前返回时也先释放连接、以空应答收尾，再析构业务客户端。
+// Hiredis 的自身保活不能保护 CommandCallback 捕获的另一个对象，不能用故意泄漏代替这个顺序。
+struct CloseConnectionBeforeClient
 {
-    std::unique_ptr<hiredis::Hiredis>& connection;
-    ~LeakConnectionOnExit() { (void)connection.release(); }
+    std::shared_ptr<hiredis::Hiredis>& connection;
+    ~CloseConnectionBeforeClient() { connection.reset(); }
 };
 
 // 同步连接,只用来布置与核对键。
@@ -2384,10 +2381,10 @@ TEST(CurrencyTest, RedisConnectedSaveDoesNotBypassFailedPending)
 
     muduo::net::EventLoop loop;
     Client::HiredisPtr connection = ConnectForTest(loop, host, port);
-    const LeakConnectionOnExit leak{connection};
     ASSERT_TRUE(connection->connected()) << "连不上 " << host << ":" << port;
     {
         Client client(connection);
+        const CloseConnectionBeforeClient close{connection};
         constexpr Guid kPlayerId = 950299001;
         const auto s1 = Peer::TrackSave(client, kPlayerId, MarkedCurrency(1));
         auto error = ErrorReply();
@@ -2420,11 +2417,11 @@ TEST(CurrencyTest, RedisGuardedSaveSemanticsAgainstRealRedis)
 
     muduo::net::EventLoop loop;
     Client::HiredisPtr connection = ConnectForTest(loop, host, port);
-    const LeakConnectionOnExit leak{connection};
     ASSERT_TRUE(connection->connected()) << "连不上 " << host << ":" << port;
     {
         Client client(connection);
         std::string outcome;
+        const CloseConnectionBeforeClient close{connection};
         client.SetSaveCallback([&](Guid, CurrencyComp&) {
             outcome = "saved";
             loop.quit();
@@ -2495,11 +2492,11 @@ TEST(CurrencyTest, RedisSaveLeavesNoGlobalDirtySetAgainstRealRedis)
 
     muduo::net::EventLoop loop;
     Client::HiredisPtr connection = ConnectForTest(loop, host, port);
-    const LeakConnectionOnExit leak{connection};
     ASSERT_TRUE(connection->connected()) << "连不上 " << host << ":" << port;
     {
         Client client(connection);
         std::string outcome;
+        const CloseConnectionBeforeClient close{connection};
         client.SetSaveCallback([&](Guid, CurrencyComp&) {
             outcome = "saved";
             loop.quit();

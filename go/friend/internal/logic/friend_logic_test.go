@@ -33,6 +33,8 @@ package logic
 import (
 	"context"
 	"errors"
+	dspb "proto/data_service"
+	"shared/roleidentity"
 	"strconv"
 	"sync"
 	"testing"
@@ -326,7 +328,16 @@ func (f *fixture) logic() *FriendLogic { return NewFriendLogic(f.deps) }
 
 // playerCtx 造一个"经 gate → 路由服转发"的客户端 ctx(D-9:身份只从会话取)。
 func playerCtx(playerID uint64) context.Context {
-	return session.WithDetails(context.Background(), &base.SessionDetails{PlayerId: playerID})
+	ctx := session.WithDetails(context.Background(), &base.SessionDetails{PlayerId: playerID, OwnerRevision: 7})
+	if playerID == 0 {
+		return ctx
+	} // 缺主体用例保留原来的非法会话含义。
+	ctx, err := roleidentity.Capture(ctx, &dspb.AccountRoleOwnership{Account: "original", OwnerRevision: 7,
+		Role: &base.AccountSimplePlayer{PlayerId: playerID}})
+	if err != nil {
+		panic(err)
+	}
+	return ctx
 }
 
 // testPlayerSessionKey —— 跨运行时契约 key(契约 §4),写者是 login / player_locator。
@@ -483,6 +494,19 @@ func TestNoSessionRejectedInBand(t *testing.T) {
 			assert.Equal(t, constants.ErrInvalidParameter, tip, "会话里 player_id=0 等于没有身份")
 
 			assert.Empty(t, f.store.calls, "没有身份就不该碰存储:校验必须在任何 I/O 之前")
+		})
+	}
+}
+
+func TestMeOnlySessionCannotReachAnyClientStore(t *testing.T) {
+	for _, test := range allClientRPCs() {
+		t.Run(test.name, func(t *testing.T) {
+			fixture := newFixture(t, nil)
+			ctx := session.WithDetails(context.Background(), &base.SessionDetails{PlayerId: 22, OwnerRevision: 7})
+			tip, err := test.call(fixture.logic(), ctx)
+			require.NoError(t, err)
+			require.Equal(t, constants.ErrInvalidParameter, tip)
+			require.Empty(t, fixture.store.calls, "没有捕获原账号不能以player_id替代")
 		})
 	}
 }

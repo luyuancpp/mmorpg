@@ -32,7 +32,7 @@ import (
 type enterHolderReleaseVerdict uint8
 
 const (
-	// enterHolderReleaseDisabled:持有者释放协议关着(LeaveSceneHolderReleaseWaitSeconds < 0,或 dev 旁路),与 LeaveScene 同一个开关。
+	// enterHolderReleaseDisabled保留旧枚举/独立策略夹具；有效配置不再关闭释放证明协议。
 	enterHolderReleaseDisabled enterHolderReleaseVerdict = iota
 	// enterHolderReleaseNotLogin:请求来自 scene 进程(correlation_id != 0)。持有者就是发起方,此时请它按会话结束退出
 	// 等于把正在换图的玩家踢下线(第一跳还没冻结,release_fence 的「交接在途」挡不住)。这是 18 的常规来源。

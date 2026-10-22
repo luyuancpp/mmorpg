@@ -70,6 +70,9 @@ func checkUnmergeCapabilityFlag(rowsMode string, spec capabilityZoneSpec) error 
 }
 
 func runUnmerge(o options) {
+	if err := requireTeamRouteDomain(o.mysqlDSN, o.routeDBDSN, o.routeSource); err != nil {
+		log.Fatal(err)
+	}
 	ctx, cancel := context.WithTimeout(context.Background(), o.timeout)
 	defer cancel()
 
@@ -114,6 +117,11 @@ func runUnmerge(o options) {
 
 	db := mustOpenMySQL(ctx, o.mysqlDSN)
 	defer db.Close()
+	teamAuthority, err := openTeamAuthority(ctx, o.mysqlDSN, firstNonEmpty(o.teamSchema, defaultTeamSchema))
+	if err != nil {
+		log.Fatalf("组队权威门禁: %v", err)
+	}
+	defer teamAuthority.db.Close()
 	mapRdb := mustDial(ctx, "mapping", o.mappingAddr, o.mappingPwd, o.mappingDB)
 	defer mapRdb.Close()
 	guildRdb := mustDial(ctx, "guild", o.redisAddr, o.redisPwd, o.redisDB)
@@ -212,10 +220,11 @@ func runUnmerge(o options) {
 	// P 前置门禁(目标区口径,A7):与合服共用 runPreflight,只是「必须已停干净的那个 zone」换成目标区。
 	// 失败时本次一个字节都没写(围栏处置见 refuse)。
 	if err := runPreflight(ctx, preflightDeps{
-		sceneRdb:   sceneRdb,
-		mappingRdb: mapRdb,
-		sharedRdb:  sharedRdb,
-		lag:        lagSrc,
+		teamAuthority: teamAuthority,
+		sceneRdb:      sceneRdb,
+		mappingRdb:    mapRdb,
+		sharedRdb:     sharedRdb,
+		lag:           lagSrc,
 	}, preflightParams{
 		zone:            dst,
 		scope:           "target",

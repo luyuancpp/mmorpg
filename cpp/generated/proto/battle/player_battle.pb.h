@@ -1967,6 +1967,7 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED BattleTicketPayload final : public 
   // accessors -------------------------------------------------------
   enum : int {
     kBattleInstanceIdFieldNumber = 4,
+    kSpectatorOperationIdFieldNumber = 7,
     kBattleIdFieldNumber = 1,
     kPlayerIdFieldNumber = 2,
     kBattleNodeIdFieldNumber = 3,
@@ -1986,6 +1987,21 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED BattleTicketPayload final : public 
   const ::std::string& _internal_battle_instance_id() const;
   PROTOBUF_ALWAYS_INLINE void _internal_set_battle_instance_id(const ::std::string& value);
   ::std::string* PROTOBUF_NONNULL _internal_mutable_battle_instance_id();
+
+  public:
+  // string spectator_operation_id = 7;
+  void clear_spectator_operation_id() ;
+  [[nodiscard]] const ::std::string& spectator_operation_id() const;
+  template <typename Arg_ = const ::std::string&, typename... Args_>
+  void set_spectator_operation_id(Arg_&& arg, Args_... args);
+  ::std::string* PROTOBUF_NONNULL mutable_spectator_operation_id();
+  [[nodiscard]] ::std::string* PROTOBUF_NULLABLE release_spectator_operation_id();
+  void set_allocated_spectator_operation_id(::std::string* PROTOBUF_NULLABLE value);
+
+  private:
+  const ::std::string& _internal_spectator_operation_id() const;
+  PROTOBUF_ALWAYS_INLINE void _internal_set_spectator_operation_id(const ::std::string& value);
+  ::std::string* PROTOBUF_NONNULL _internal_mutable_spectator_operation_id();
 
   public:
   // uint64 battle_id = 1;
@@ -2042,8 +2058,8 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED BattleTicketPayload final : public 
  private:
   class _Internal;
   using ParseTableT_ =
-      ::google::protobuf::internal::TcParseTable<3, 6,
-                          0, 46,
+      ::google::protobuf::internal::TcParseTable<3, 7,
+                          0, 68,
                           2>;
   static constexpr ParseTableT_ InternalGenerateParseTable_(
       const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL class_data);
@@ -2072,6 +2088,7 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED BattleTicketPayload final : public 
     ::google::protobuf::internal::HasBits<1> _has_bits_;
     ::google::protobuf::internal::CachedSize _cached_size_;
     ::google::protobuf::internal::ArenaStringPtr battle_instance_id_;
+    ::google::protobuf::internal::ArenaStringPtr spectator_operation_id_;
     ::uint64_t battle_id_;
     ::uint64_t player_id_;
     ::uint32_t battle_node_id_;
@@ -6432,7 +6449,7 @@ inline void SetAutoBattleResponse::set_allocated_error_message(::TipInfoMessage*
 inline void BattleTicketPayload::clear_battle_id() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.battle_id_ = ::uint64_t{0u};
-  ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
+  ClearHasBit(_impl_._has_bits_[0], 0x00000004U);
 }
 inline ::uint64_t BattleTicketPayload::battle_id() const {
   // @@protoc_insertion_point(field_get:BattleTicketPayload.battle_id)
@@ -6440,7 +6457,7 @@ inline ::uint64_t BattleTicketPayload::battle_id() const {
 }
 inline void BattleTicketPayload::set_battle_id(::uint64_t value) {
   _internal_set_battle_id(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00000002U);
+  SetHasBit(_impl_._has_bits_[0], 0x00000004U);
   // @@protoc_insertion_point(field_set:BattleTicketPayload.battle_id)
 }
 inline ::uint64_t BattleTicketPayload::_internal_battle_id() const {
@@ -6456,7 +6473,7 @@ inline void BattleTicketPayload::_internal_set_battle_id(::uint64_t value) {
 inline void BattleTicketPayload::clear_player_id() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.player_id_ = ::uint64_t{0u};
-  ClearHasBit(_impl_._has_bits_[0], 0x00000004U);
+  ClearHasBit(_impl_._has_bits_[0], 0x00000008U);
 }
 inline ::uint64_t BattleTicketPayload::player_id() const {
   // @@protoc_insertion_point(field_get:BattleTicketPayload.player_id)
@@ -6464,7 +6481,7 @@ inline ::uint64_t BattleTicketPayload::player_id() const {
 }
 inline void BattleTicketPayload::set_player_id(::uint64_t value) {
   _internal_set_player_id(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00000004U);
+  SetHasBit(_impl_._has_bits_[0], 0x00000008U);
   // @@protoc_insertion_point(field_set:BattleTicketPayload.player_id)
 }
 inline ::uint64_t BattleTicketPayload::_internal_player_id() const {
@@ -6480,7 +6497,7 @@ inline void BattleTicketPayload::_internal_set_player_id(::uint64_t value) {
 inline void BattleTicketPayload::clear_battle_node_id() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.battle_node_id_ = 0u;
-  ClearHasBit(_impl_._has_bits_[0], 0x00000008U);
+  ClearHasBit(_impl_._has_bits_[0], 0x00000010U);
 }
 inline ::uint32_t BattleTicketPayload::battle_node_id() const {
   // @@protoc_insertion_point(field_get:BattleTicketPayload.battle_node_id)
@@ -6488,7 +6505,7 @@ inline ::uint32_t BattleTicketPayload::battle_node_id() const {
 }
 inline void BattleTicketPayload::set_battle_node_id(::uint32_t value) {
   _internal_set_battle_node_id(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00000008U);
+  SetHasBit(_impl_._has_bits_[0], 0x00000010U);
   // @@protoc_insertion_point(field_set:BattleTicketPayload.battle_node_id)
 }
 inline ::uint32_t BattleTicketPayload::_internal_battle_node_id() const {
@@ -6568,7 +6585,7 @@ inline void BattleTicketPayload::set_allocated_battle_instance_id(::std::string*
 inline void BattleTicketPayload::clear_expire_at_ms() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.expire_at_ms_ = ::uint64_t{0u};
-  ClearHasBit(_impl_._has_bits_[0], 0x00000020U);
+  ClearHasBit(_impl_._has_bits_[0], 0x00000040U);
 }
 inline ::uint64_t BattleTicketPayload::expire_at_ms() const {
   // @@protoc_insertion_point(field_get:BattleTicketPayload.expire_at_ms)
@@ -6576,7 +6593,7 @@ inline ::uint64_t BattleTicketPayload::expire_at_ms() const {
 }
 inline void BattleTicketPayload::set_expire_at_ms(::uint64_t value) {
   _internal_set_expire_at_ms(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00000020U);
+  SetHasBit(_impl_._has_bits_[0], 0x00000040U);
   // @@protoc_insertion_point(field_set:BattleTicketPayload.expire_at_ms)
 }
 inline ::uint64_t BattleTicketPayload::_internal_expire_at_ms() const {
@@ -6592,7 +6609,7 @@ inline void BattleTicketPayload::_internal_set_expire_at_ms(::uint64_t value) {
 inline void BattleTicketPayload::clear_role() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.role_ = 0;
-  ClearHasBit(_impl_._has_bits_[0], 0x00000010U);
+  ClearHasBit(_impl_._has_bits_[0], 0x00000020U);
 }
 inline ::eBattleTicketRole BattleTicketPayload::role() const {
   // @@protoc_insertion_point(field_get:BattleTicketPayload.role)
@@ -6600,7 +6617,7 @@ inline ::eBattleTicketRole BattleTicketPayload::role() const {
 }
 inline void BattleTicketPayload::set_role(::eBattleTicketRole value) {
   _internal_set_role(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00000010U);
+  SetHasBit(_impl_._has_bits_[0], 0x00000020U);
   // @@protoc_insertion_point(field_set:BattleTicketPayload.role)
 }
 inline ::eBattleTicketRole BattleTicketPayload::_internal_role() const {
@@ -6610,6 +6627,70 @@ inline ::eBattleTicketRole BattleTicketPayload::_internal_role() const {
 inline void BattleTicketPayload::_internal_set_role(::eBattleTicketRole value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.role_ = value;
+}
+
+// string spectator_operation_id = 7;
+inline void BattleTicketPayload::clear_spectator_operation_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.spectator_operation_id_.ClearToEmpty();
+  ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
+}
+inline const ::std::string& BattleTicketPayload::spectator_operation_id() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:BattleTicketPayload.spectator_operation_id)
+  return _internal_spectator_operation_id();
+}
+template <typename Arg_, typename... Args_>
+PROTOBUF_ALWAYS_INLINE void BattleTicketPayload::set_spectator_operation_id(Arg_&& arg, Args_... args) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  SetHasBit(_impl_._has_bits_[0], 0x00000002U);
+  _impl_.spectator_operation_id_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
+  // @@protoc_insertion_point(field_set:BattleTicketPayload.spectator_operation_id)
+}
+inline ::std::string* PROTOBUF_NONNULL BattleTicketPayload::mutable_spectator_operation_id()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  SetHasBit(_impl_._has_bits_[0], 0x00000002U);
+  ::std::string* _s = _internal_mutable_spectator_operation_id();
+  // @@protoc_insertion_point(field_mutable:BattleTicketPayload.spectator_operation_id)
+  return _s;
+}
+inline const ::std::string& BattleTicketPayload::_internal_spectator_operation_id() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.spectator_operation_id_.Get();
+}
+inline void BattleTicketPayload::_internal_set_spectator_operation_id(const ::std::string& value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.spectator_operation_id_.Set(value, GetArena());
+}
+inline ::std::string* PROTOBUF_NONNULL BattleTicketPayload::_internal_mutable_spectator_operation_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  return _impl_.spectator_operation_id_.Mutable( GetArena());
+}
+inline ::std::string* PROTOBUF_NULLABLE BattleTicketPayload::release_spectator_operation_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:BattleTicketPayload.spectator_operation_id)
+  if (!CheckHasBit(_impl_._has_bits_[0], 0x00000002U)) {
+    return nullptr;
+  }
+  ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
+  auto* released = _impl_.spectator_operation_id_.Release();
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString()) {
+    _impl_.spectator_operation_id_.Set("", GetArena());
+  }
+  return released;
+}
+inline void BattleTicketPayload::set_allocated_spectator_operation_id(::std::string* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (value != nullptr) {
+    SetHasBit(_impl_._has_bits_[0], 0x00000002U);
+  } else {
+    ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
+  }
+  _impl_.spectator_operation_id_.SetAllocated(value, GetArena());
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.spectator_operation_id_.IsDefault()) {
+    _impl_.spectator_operation_id_.Set("", GetArena());
+  }
+  // @@protoc_insertion_point(field_set_allocated:BattleTicketPayload.spectator_operation_id)
 }
 
 // -------------------------------------------------------------------

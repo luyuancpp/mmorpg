@@ -12,6 +12,29 @@ import (
 	"shared/assetopwake"
 )
 
+// 示例保留拒启默认；只有测试显式声明全局会话权威后才检查其它配置项。
+func loadEtcWithAuthorityForTest(t *testing.T, c *Config) error {
+	t.Helper()
+	raw, err := os.ReadFile("../../etc/guild.yaml")
+	if err != nil {
+		return err
+	}
+	sample := strings.ReplaceAll(string(raw), "\r\n", "\n")
+	if !strings.Contains(sample, "GlobalLoginSessions: false") || !strings.Contains(sample, "LoginRedis:\n  Host: \"\"") {
+		t.Fatal("默认拒启样例契约改变，须显式审阅测试注入")
+	}
+	sample = strings.Replace(sample, "GlobalLoginSessions: false", "GlobalLoginSessions: true", 1)
+	sample = strings.Replace(sample, "LoginRedis:\n  Host: \"\"", "LoginRedis:\n  Host: 127.0.0.1:26379", 1)
+	return conf.LoadFromYamlBytes([]byte(sample), c)
+}
+
+func TestEtcTemplateRequiresExplicitGlobalSessions(t *testing.T) {
+	var c Config
+	if err := conf.Load("../../etc/guild.yaml", &c); err == nil || !strings.Contains(err.Error(), "LoginRedis") {
+		t.Fatalf("生产样例缺全局会话声明不得默认为可写: %v", err)
+	}
+}
+
 // TestEtcYamlEnablesPrometheus 钉死 etc/guild.yaml 里的 Prometheus 段确实能被解析、
 // 并且真的会启用 /metrics。
 //
@@ -22,7 +45,7 @@ import (
 // 时字段会静默保持零值,同样只有这里能抓到。
 func TestEtcYamlEnablesPrometheus(t *testing.T) {
 	var c Config
-	if err := conf.Load("../../etc/guild.yaml", &c); err != nil {
+	if err := loadEtcWithAuthorityForTest(t, &c); err != nil {
 		t.Fatalf("加载 etc/guild.yaml 失败: %v", err)
 	}
 
@@ -66,7 +89,7 @@ func TestMergeMarkerRedisAbsentMeansFenceInactive(t *testing.T) {
 // 填成别的库 = 闸门永远看不到 merge:in_progress:{zone},合服窗口内照样能建帮。
 func TestEtcYamlWiresMergeMarkerRedis(t *testing.T) {
 	var c Config
-	if err := conf.Load("../../etc/guild.yaml", &c); err != nil {
+	if err := loadEtcWithAuthorityForTest(t, &c); err != nil {
 		t.Fatalf("加载 etc/guild.yaml 失败: %v", err)
 	}
 	if !c.MergeMarkerRedis.Enabled() {
@@ -187,11 +210,32 @@ func TestGuildAuthorityDefaultsAndPoolBounds(t *testing.T) {
 	if !c.MySQL.RequiresTiDB() || c.MySQL.MaxOpenConn != 20 {
 		t.Fatal("未配置时必须开启TiDB门禁且固定连接池默认20")
 	}
-	for _, size := range []int{0, -1, 129} {
+	c.MySQL.MaxOpenConn = 0
+	if err := c.Validate(); err != nil {
+		t.Fatalf("兼容零值必须使用有限默认连接池: %v", err)
+	}
+	if open, _ := c.MySQL.EffectivePool(); open != DefaultMySQLMaxOpenConn {
+		t.Fatalf("零值不能变成无限连接池, 生效上限=%d", open)
+	}
+	for _, size := range []int{-1, 129} {
 		c.MySQL.MaxOpenConn = size
 		if err := c.Validate(); err == nil || !strings.Contains(err.Error(), "MaxOpenConn") {
 			t.Fatalf("非法连接池上限%d必须拒启,得到%v", size, err)
 		}
+	}
+}
+
+func TestTrialMatchAuthoritySchemaMustBeExplicit(t *testing.T) {
+	c := loadMinimal(t)
+	c.AccountRoleSchema = "global_roles"
+	c.GlobalLoginSessions = true
+	c.LoginRedis.Host = "127.0.0.1:26379"
+	if err := c.Validate(); err == nil || !strings.Contains(err.Error(), "MatchAuthoritySchema") {
+		t.Fatalf("不能从DSN猜Match权威库: %v", err)
+	}
+	c.MatchAuthoritySchema = "mmorpg_match"
+	if err := c.Validate(); err != nil {
+		t.Fatalf("显式同集群schema配置应可继续装配核表: %v", err)
 	}
 }
 
@@ -353,7 +397,7 @@ func TestValidateMySQLPool(t *testing.T) {
 
 func TestEtcYamlPassesValidate(t *testing.T) {
 	var c Config
-	if err := conf.Load("../../etc/guild.yaml", &c); err != nil {
+	if err := loadEtcWithAuthorityForTest(t, &c); err != nil {
 		t.Fatalf("加载 etc/guild.yaml 失败: %v", err)
 	}
 	if c.Timeout != 4000 {
@@ -617,7 +661,7 @@ func TestAssetOpCleanupBounds(t *testing.T) {
 // 本地就再也演练不到捐献 / 兑换。
 func TestEtcYamlAssetOpBlock(t *testing.T) {
 	var c Config
-	if err := conf.Load("../../etc/guild.yaml", &c); err != nil {
+	if err := loadEtcWithAuthorityForTest(t, &c); err != nil {
 		t.Fatalf("加载 etc/guild.yaml 失败: %v", err)
 	}
 	a := c.AssetOp
@@ -977,7 +1021,7 @@ func TestMatchRpcTimeoutBounds(t *testing.T) {
 func TestEtcYamlTrialBlock(t *testing.T) {
 	const path = "../../etc/guild.yaml"
 	var c Config
-	if err := conf.Load(path, &c); err != nil {
+	if err := loadEtcWithAuthorityForTest(t, &c); err != nil {
 		t.Fatalf("加载 etc/guild.yaml 失败: %v", err)
 	}
 	if !c.MatchRpcConfigured() || c.MatchRpc.Etcd.Key != "matchservice.rpc" {
@@ -1036,7 +1080,7 @@ func TestApplicationQuotaConfig(t *testing.T) {
 		}
 	}
 	var checked Config
-	if err := conf.Load("../../etc/guild.yaml", &checked); err != nil {
+	if err := loadEtcWithAuthorityForTest(t, &checked); err != nil {
 		t.Fatal(err)
 	}
 	if checked.ApplicationQuotaPerMinute != 10 {

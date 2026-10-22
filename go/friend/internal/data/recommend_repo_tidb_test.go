@@ -89,14 +89,7 @@ func friendTiDBTestDSN(t *testing.T) string {
 // 每个子用例各调一次:各自一条连接池、各自重建一遍表,互不依赖执行顺序。
 func openFriendTiDBTestDB(t *testing.T, dsn string) (*sql.DB, context.Context) {
 	t.Helper()
-
-	// 会话隔离级别与生产连接池一致(svc.BuildDSN 固定 READ-COMMITTED;TiDB 认这个取值)。
-	parsed, err := drivermysql.ParseDSN(withProductionSessionIsolation(dsn))
-	require.NoError(t, err)
-	parsed.Params["tidb_txn_mode"] = "'pessimistic'"
-	db, err := sql.Open("mysql", parsed.FormatDSN())
-	require.NoError(t, err)
-	t.Cleanup(func() { _ = db.Close() })
+	db := openFriendTiDBTestPool(t, dsn)
 
 	// 灌数最多的用例要写约 5.7 万行;预算给足,但仍然有界。
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
@@ -110,6 +103,32 @@ func openFriendTiDBTestDB(t *testing.T, dsn string) (*sql.DB, context.Context) {
 
 	resetFriendTiDBSchema(t, ctx, db)
 	return db, ctx
+}
+
+// openFriendTiDBTestPool 只建独立物理连接池，不重置表，供双副本共享同一事务域。
+// data 不能反向 import svc；会话参数与 svc.BuildDSN 的生产强读策略一致，
+// authority_db_test.go 另以生产入口核验每条物理连接。
+func openFriendTiDBTestPool(t *testing.T, dsn string) *sql.DB {
+	t.Helper()
+	parsed, err := drivermysql.ParseDSN(dsn)
+	require.NoError(t, err)
+	if parsed.Params == nil {
+		parsed.Params = make(map[string]string)
+	}
+	parsed.Params["transaction_isolation"] = "'READ-COMMITTED'"
+	parsed.Params["sql_mode"] = "'STRICT_TRANS_TABLES'"
+	parsed.Params["tidb_txn_mode"] = "'pessimistic'"
+	parsed.Params["tidb_read_staleness"] = "0"
+	parsed.Params["tidb_low_resolution_tso"] = "OFF"
+	parsed.Params["tidb_replica_read"] = "'leader'"
+	parsed.Params["tidb_read_consistency"] = "'strict'"
+	parsed.Params["tidb_snapshot"] = "''"
+	db, err := sql.Open("mysql", parsed.FormatDSN())
+	require.NoError(t, err)
+	db.SetMaxOpenConns(32)
+	db.SetMaxIdleConns(32)
+	t.Cleanup(func() { _ = db.Close() })
+	return db
 }
 
 // resetFriendTiDBSchema 把四张表重建成生产形态:主键 NONCLUSTERED + SHARD_ROW_ID_BITS / PRE_SPLIT_REGIONS,

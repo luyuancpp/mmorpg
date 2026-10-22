@@ -496,4 +496,12 @@
     <ClInclude Include="player_locator\player_locator.grpc.pb.h" />
     <ClInclude Include="player_locator\player_locator.pb.h" />
   </ItemGroup>
+  <ItemGroup Label="ProtoGeneratorSources">
+    <ClCompile Include="common\base\role_admission.pb.cc" />
+    <ClCompile Include="team\team_authority.grpc.pb.cc" />
+    <ClCompile Include="team\team_authority.pb.cc" />
+    <ClInclude Include="common\base\role_admission.pb.h" />
+    <ClInclude Include="team\team_authority.grpc.pb.h" />
+    <ClInclude Include="team\team_authority.pb.h" />
+  </ItemGroup>
 </Project>

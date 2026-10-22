@@ -35,6 +35,7 @@ import (
 	pbbase "proto/common/base"
 	loginpb "proto/login"
 	plpb "proto/player_locator"
+	"shared/accountdirectory"
 )
 
 const (
@@ -235,7 +236,7 @@ func newKickHarness(t *testing.T, existing *plpb.PlayerSession, chainInstance st
 	}
 	kicker := &kickRecorder{events: events}
 	l := NewEnterGameLogic(context.Background(), &svc.ServiceContext{
-		RedisClient:         rdb,
+		RedisClient: rdb, AccountDirectory: fixtureDirectory(t, rdb),
 		PlayerLocatorClient: locator,
 	})
 	l.kicker = kicker
@@ -245,6 +246,8 @@ func newKickHarness(t *testing.T, existing *plpb.PlayerSession, chainInstance st
 		&pbbase.SessionDetails{SessionId: kickChainSessionID, GateNodeId: 0, GateInstanceId: chainInstance},
 		kickAccount,
 	)
+	fixtureDirectory(t, rdb).seed(kickAccount, &pbbase.AccountSimplePlayer{PlayerId: kickPlayerID})
+	state.ownerRevision = 1
 	return &kickHarness{l: l, rdb: rdb, locator: locator, kicker: kicker, events: events, state: state}
 }
 
@@ -265,6 +268,35 @@ func kickExistingRecord(sessionID uint32, gateInstance string) *plpb.PlayerSessi
 func (h *kickHarness) apply(ctx context.Context) error {
 	_, err := h.l.applyLoadedPlayerSession(ctx, h.state)
 	return err
+}
+
+func TestApplyLoadedPlayerSessionRejectsFrozenOrChangedDirectoryBeforeSessionWrites(t *testing.T) {
+	for _, change := range []string{"frozen", "revision", "account", "SQL-failed", "unready"} {
+		t.Run(change, func(t *testing.T) {
+			h := newKickHarness(t, kickExistingRecord(kickOldSessionID, kickOldInstance), kickChainInstance)
+			directory := fixtureDirectory(t, h.rdb)
+			directory.mu.Lock()
+			switch change {
+			case "frozen":
+				directory.owners[kickPlayerID].TradeListingId = 101
+			case "revision":
+				directory.owners[kickPlayerID].OwnerRevision++
+			case "account":
+				directory.owners[kickPlayerID].Account = "new-owner"
+			case "SQL-failed":
+				directory.lookupErr = accountdirectory.ErrUnavailable
+			case "unready":
+				h.l.svcCtx.AccountDirectory = nil
+			}
+			directory.mu.Unlock()
+			if err := h.apply(context.Background()); err == nil {
+				t.Fatal("目录冻结、归属变化或不可读的旧异步链不能继续入场")
+			}
+			if events := h.events.snapshot(); len(events) != 0 {
+				t.Fatalf("拒绝后不应读写locator、踢线或触及后续进场: %v", events)
+			}
+		})
+	}
 }
 
 // kickCount 读 login_kick_total{result}。指标是进程级全局量,用例一律比较前后差值。

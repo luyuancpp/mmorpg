@@ -14,8 +14,8 @@ using namespace muduo;
 
 ThreadPool::ThreadPool(const string& nameArg)
   : mutex_(),
-    notEmpty_(),
-    notFull_(),
+    notEmpty_(mutex_),
+    notFull_(mutex_),
     name_(nameArg),
     maxQueueSize_(0),
     running_(false)
@@ -80,7 +80,7 @@ void ThreadPool::run(Task task)
     MutexLockGuard lock(mutex_);
     while (isFull() && running_)
     {
-      notFull_.wait(lock);
+      notFull_.wait();
     }
     if (!running_) return;
     assert(!isFull());
@@ -96,7 +96,7 @@ ThreadPool::Task ThreadPool::take()
   // always use a while-loop, due to spurious wakeup
   while (queue_.empty() && running_)
   {
-    notEmpty_.wait(lock);
+    notEmpty_.wait();
   }
   Task task;
   if (!queue_.empty())

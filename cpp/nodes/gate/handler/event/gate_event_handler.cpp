@@ -90,7 +90,7 @@ void GateEventHandler::RoutePlayerEventHandler(const contracts::kafka::RoutePlay
     // epoch 属于"本次路由决策",无条件覆盖,两次改派挨近时旧值不能保留;登录代次只对本角色的路由取 max,
     // 不据此丢弃路由(scene-enter-session-fence.md §4)。
     gate_scene_route::ApplyRouteIdentity(session, event.player_id(), event.home_zone_id(), event.owner_epoch(),
-                                         event.login_generation());
+                                         event.login_generation(), event.owner_revision());
 
     LOG_DEBUG << "RoutePlayer: route decision, session_id=" << sessionId
               << " target_node_id=" << targetNodeId

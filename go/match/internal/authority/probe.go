@@ -2,16 +2,18 @@
 package authority
 
 import (
+	"context"
 	"crypto/hmac"
 	"crypto/sha256"
+	"encoding/binary"
 	"encoding/hex"
 	"errors"
-	"fmt"
 	"strconv"
 
 	"google.golang.org/protobuf/proto"
 	base "proto/common/base"
 	pb "proto/match"
+	"shared/roleidentity"
 )
 
 const GrantDomain = "xuanming.match.probe.grant.v1\x00"
@@ -39,11 +41,20 @@ func Verify(secret []byte, domain string, signed *pb.SignedNetworkProbe, value p
 	return proto.Unmarshal(signed.Payload, value)
 }
 
-func SessionBinding(s *base.SessionDetails) string {
-	if s == nil || s.PlayerId == 0 || s.GateInstanceId == "" || s.SessionIncarnation == 0 {
+func SessionBinding(ctx context.Context, s *base.SessionDetails) string {
+	original, present := roleidentity.Original(ctx)
+	if s == nil || s.PlayerId == 0 || s.GateInstanceId == "" || s.SessionIncarnation == 0 || s.OwnerRevision == 0 || !present || original.Role.GetPlayerId() != s.PlayerId || original.OwnerRevision != s.OwnerRevision {
 		return ""
 	}
-	b := sha256.Sum256([]byte(fmt.Sprintf("%s\n%d\n%d", s.GateInstanceId, s.SessionIncarnation, s.PlayerId)))
+	// 长度前缀避免账号或实例字段里的分隔符改变绑定边界。
+	data := binary.BigEndian.AppendUint64(nil, uint64(len(s.GateInstanceId)))
+	data = append(data, []byte(s.GateInstanceId)...)
+	data = binary.BigEndian.AppendUint64(data, s.SessionIncarnation)
+	data = binary.BigEndian.AppendUint64(data, s.PlayerId)
+	data = binary.BigEndian.AppendUint64(data, uint64(len(original.Account)))
+	data = append(data, []byte(original.Account)...)
+	data = binary.BigEndian.AppendUint64(data, original.OwnerRevision)
+	b := sha256.Sum256(data)
 	return hex.EncodeToString(b[:])
 }
 

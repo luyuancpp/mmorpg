@@ -1,19 +1,17 @@
 package main
 
-// 商城模拟付款器:**仅限本机 dev 冒烟**,以 payment 角色调 java/mall_game 的 POST /internal/payments 记一笔「已付」。
+// 商城模拟付款器仅用于本机dev冒烟，以payment角色调用/internal/mock/pay。
 //
 // 为什么 robot 里会有一个付款方:真钱付款事实只能来自核实过渠道交易的可信适配器(设计上是 go/payment,
 // 见 docs/design/payment-recharge.md;它尚未落码)。dev 冒烟要走通「下单 → 付款 → 发货」就得有人以 payment
 // 角色签名记账,这里是与充值会话约定的冒烟例外(2026-10-19),边界如下,任何一条都不许放宽:
 //   - 只连字面量回环 IP 的商城(newCommerceMockPayer 在任何网络操作之前校验),不跟随跳转、不走代理;
-//   - 渠道名必须以 mock- 开头(RecordPayment 发送前校验)。商城按环境配置渠道白名单、生产拒收 mock 渠道
-//     由充值设计的 V3 批次落地(payment-recharge.md);在那之前,生产不会有这把 dev 密钥就是唯一的闸;
+//   - 只提交orderId和稳定requestId，商城从冻结订单读取金额，先落mock提供方原件再投递回执；
+//   - 不调用旧/internal/payments，不提供渠道、流水、金额或币种，不给mock-dev补允许名单；
 //   - 密钥只从环境变量 COMMERCE_PAYMENT_SECRET 读,不进 yaml、不打日志、不进错误文本。
 //
 // 签名算法 commerceSign 与 java/mall_game HmacAuthentication.sign、go/trade commerceSignature 逐字一致,
-// 三边各有一份同输入同期望值的黄金用例(commerce_mock_payer_test.go)。付款器刻意保持薄:
-// 充值设计 V3 落地后,/internal/payments 请求体会带 revision、应答改成 {code?, revision, fact, orderId, orderState, held}
-// (payment-recharge.md 第 4 版;物品 SKU 在那之前保持现有语义),到时只改这一个文件。
+// 三边各有一份同输入同期望值的签名黄金用例；旧向量仅保留为算法证据，不再用于发送旧付款命令。
 // 本文件不依赖任何冒烟场景,人民币寄售冒烟等后续场景直接复用。
 
 import (
@@ -39,23 +37,19 @@ import (
 const (
 	// commercePaymentSecretEnv 与商城 application.yaml 的 commerce.payment-secret 读同一个环境变量。
 	commercePaymentSecretEnv = "COMMERCE_PAYMENT_SECRET"
-	// commerceMockChannelPrefix 是模拟渠道名的强制前缀。
-	commerceMockChannelPrefix = "mock-"
 	// commerceMinSecretLen 与商城 CommerceProperties 的下限一致(短于它商城本身就拒启)。
 	commerceMinSecretLen = 32
-	// commercePaymentPath 是商城记已付的入口(servlet 内路径;dev 商城不配 context-path,原始 URI 与之相同)。
-	commercePaymentPath = "/internal/payments"
+	// 只调用本地mock事实适配器；运行模式与独立开关由商城再次核验。
+	commercePaymentPath = "/internal/mock/pay"
 	// commerceMaxResponseBytes 限制读回的应答体:订单视图远小于它,超出即判失败而不是无界读。
 	commerceMaxResponseBytes = 64 * 1024
 )
 
 // 与商城 CommerceApi.Payment / HmacAuthentication 的校验正则一致:发送前先挡住,失败原因留在本地而不是一个 400。
 var (
-	commerceSubjectPattern       = regexp.MustCompile(`^[a-z][a-z0-9-]{2,63}$`)
-	commerceChannelPattern       = regexp.MustCompile(`^[a-z][a-z0-9_-]{1,31}$`)
-	commerceTransactionIDPattern = regexp.MustCompile(`^[A-Za-z0-9_-]{1,128}$`)
-	commerceCurrencyPattern      = regexp.MustCompile(`^[A-Z][A-Z0-9_]{2,15}$`)
-	commerceOrderIDPattern       = regexp.MustCompile(`^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$`)
+	commerceSubjectPattern     = regexp.MustCompile(`^[a-z][a-z0-9-]{2,63}$`)
+	commerceMockRequestPattern = regexp.MustCompile(`^[A-Za-z0-9_-]{8,128}$`)
+	commerceOrderIDPattern     = regexp.MustCompile(`^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$`)
 )
 
 // commerceSign 是商城 X-Commerce-Signature 的 v1 算法:正文 SHA-256 小写 hex,与其余七项按 \n 拼成规范串,
@@ -67,14 +61,10 @@ func commerceSign(secret, role, subject, timestamp, nonce, method, path string, 
 	return hex.EncodeToString(mac.Sum(nil))
 }
 
-// commercePayment 是 POST /internal/payments 的请求体(字段名与 CommerceApi.Payment 一致)。
-// 同一笔付款重发必须五项全同:商城按五元组判幂等,换任何一项都是 409。
-type commercePayment struct {
-	OrderID       string `json:"orderId"`
-	Channel       string `json:"channel"`
-	TransactionID string `json:"transactionId"`
-	AmountMinor   uint64 `json:"amountMinor"`
-	Currency      string `json:"currency"`
+// 同一订单与请求号双向绑定，响应未知时仍重放这两个原字段。
+type commerceMockPay struct {
+	OrderID   string `json:"orderId"`
+	RequestID string `json:"requestId"`
 }
 
 // commerceMallOrder 是商城订单视图(CommerceApi.Order)。State 是商城自己的状态字符串:
@@ -118,7 +108,8 @@ func validateCommerceMockMallURL(raw string) error {
 		endpoint.Fragment != "" || endpoint.Opaque != "" || (endpoint.Path != "" && endpoint.Path != "/") {
 		return fmt.Errorf("模拟付款器的商城地址必须是 http://<回环IP>:<端口>,不带凭据、路径或查询")
 	}
-	if endpoint.Port() == "" {
+	port, portErr := strconv.Atoi(endpoint.Port())
+	if portErr != nil || port < 1 || port > 65535 {
 		return fmt.Errorf("模拟付款器的商城地址必须显式带端口")
 	}
 	if ip := net.ParseIP(endpoint.Hostname()); ip == nil || !ip.IsLoopback() {
@@ -165,25 +156,18 @@ func commerceRandomNonce() (string, error) {
 	return hex.EncodeToString(raw), nil
 }
 
-func validateCommercePayment(p commercePayment) error {
+func validateCommercePayment(p commerceMockPay) error {
 	switch {
 	case !commerceOrderIDPattern.MatchString(p.OrderID):
 		return fmt.Errorf("订单号 %q 不是商城的小写 UUID", p.OrderID)
-	case !strings.HasPrefix(p.Channel, commerceMockChannelPrefix) || !commerceChannelPattern.MatchString(p.Channel):
-		return fmt.Errorf("模拟付款器只允许 %s 前缀的渠道名(得到 %q)", commerceMockChannelPrefix, p.Channel)
-	case !commerceTransactionIDPattern.MatchString(p.TransactionID):
-		return fmt.Errorf("渠道流水号 %q 必须匹配 [A-Za-z0-9_-]{1,128}", p.TransactionID)
-	case p.AmountMinor == 0 || p.AmountMinor > 9_000_000_000_000_000_000:
-		return fmt.Errorf("金额 %d 必须在 1..9e18(最小单位)", p.AmountMinor)
-	case !commerceCurrencyPattern.MatchString(p.Currency):
-		return fmt.Errorf("币种 %q 必须匹配 [A-Z][A-Z0-9_]{2,15}", p.Currency)
+	case !commerceMockRequestPattern.MatchString(p.RequestID):
+		return fmt.Errorf("mock请求号必须匹配[A-Za-z0-9_-]{8,128}")
 	}
 	return nil
 }
 
-// RecordPayment 记一笔已付并返回商城的订单视图。不重试:调用方按场景需要决定是否以**同一五元组**重发
-// (幂等),绝不能换流水号重发同一订单(那是第二笔不同的付款,商城回 409)。
-func (p *commerceMockPayer) RecordPayment(ctx context.Context, payment commercePayment) (commerceMallOrder, error) {
+// 不自动重试未知提交；仅以同一原订单和requestId显式重放，传输nonce每次重新生成。
+func (p *commerceMockPayer) RecordPayment(ctx context.Context, payment commerceMockPay) (commerceMallOrder, error) {
 	if err := validateCommercePayment(payment); err != nil {
 		return commerceMallOrder{}, err
 	}
@@ -191,6 +175,27 @@ func (p *commerceMockPayer) RecordPayment(ctx context.Context, payment commerceP
 	if err != nil {
 		return commerceMallOrder{}, err
 	}
+	return p.post(ctx, payment.OrderID, body)
+}
+
+// 冒烟反例：新mock接口必须拒绝调用方指定金额，不能退回旧渠道回执接口。
+func (p *commerceMockPayer) ProbeAmountOverride(ctx context.Context, payment commerceMockPay, amount uint64) error {
+	if err := validateCommercePayment(payment); err != nil {
+		return err
+	}
+	body, err := json.Marshal(struct {
+		OrderID     string `json:"orderId"`
+		RequestID   string `json:"requestId"`
+		AmountMinor uint64 `json:"amountMinor"`
+	}{payment.OrderID, payment.RequestID, amount})
+	if err != nil {
+		return err
+	}
+	_, err = p.post(ctx, payment.OrderID, body)
+	return err
+}
+
+func (p *commerceMockPayer) post(ctx context.Context, orderID string, body []byte) (commerceMallOrder, error) {
 	nonce, err := p.nonce()
 	if err != nil {
 		return commerceMallOrder{}, fmt.Errorf("生成 nonce 失败: %w", err)
@@ -233,8 +238,8 @@ func (p *commerceMockPayer) RecordPayment(ctx context.Context, payment commerceP
 	if err := json.Unmarshal(raw, &order); err != nil {
 		return commerceMallOrder{}, fmt.Errorf("解析商城订单应答失败: %w", err)
 	}
-	if order.OrderID != payment.OrderID {
-		return commerceMallOrder{}, fmt.Errorf("商城应答的订单号 %q 不是本次付款的 %q", order.OrderID, payment.OrderID)
+	if order.OrderID != orderID {
+		return commerceMallOrder{}, fmt.Errorf("商城应答的订单号 %q 不是本次付款的 %q", order.OrderID, orderID)
 	}
 	return order, nil
 }

@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"login/internal/config"
-	"login/internal/constants"
 	"login/internal/logic/pkg/ctxkeys"
 	"login/internal/logic/pkg/dataloader"
 	"login/internal/logic/pkg/homezone"
@@ -16,9 +15,9 @@ import (
 	"login/internal/logic/pkg/sessionmanager"
 	"login/internal/svc"
 	login_proto_common "proto/common/base"
-	login_proto_database "proto/common/database"
 	login_proto "proto/login"
 	smpb "proto/scene_manager"
+	"shared/accountdirectory"
 	"shared/generated/pb/table"
 	"strconv"
 	"time"
@@ -39,6 +38,7 @@ type EnterGameLogic struct {
 }
 
 type enterGameSessionState struct {
+	ownerRevision   uint64
 	playerID        uint64
 	sessionID       uint32
 	gateID          string
@@ -180,86 +180,33 @@ func (l *EnterGameLogic) EnterGame(in *login_proto.EnterGameRequest) (*login_pro
 		}
 	}()
 
-	// 4. Load account data and verify player ownership
-	accountKey := constants.GetAccountDataKey(account)
-	dataBytes, err := l.svcCtx.RedisClient.Get(ctx, accountKey).Bytes()
+	// 入场身份只认 SQL 归属；陈旧 Redis 目录和反向键不能恢复已删除角色。
+	if l.svcCtx.AccountDirectory == nil {
+		resp.ErrorMessage.Id = uint32(table.LoginError_kLoginDataSerializeFailed)
+		return resp, nil
+	}
+	ownership, err := l.svcCtx.AccountDirectory.Lookup(ctx, in.PlayerId)
 	if err != nil {
-		logx.Errorf("RedisClient Get user account failed: %v", err)
-		resp.ErrorMessage.Id = uint32(table.LoginError_kLoginAccountNotFound)
-		return resp, nil
-	}
-
-	userAccount := &login_proto_database.UserAccounts{}
-	if err := proto.Unmarshal(dataBytes, userAccount); err != nil {
-		logx.Errorf("Unmarshal user account failed: %v", err)
-		resp.ErrorMessage.Id = uint32(table.LoginError_kLoginDataParseFailed)
-		return resp, nil
-	}
-
-	found := false
-	for _, p := range userAccount.GetSimplePlayers().GetPlayers() {
-		if p.GetPlayerId() == in.PlayerId {
-			found = true
-			// 职业只能来自已验证归属的账号角色记录，不能由入场请求自由指定。
-			flowState.classID = p.GetClassId()
-			flowState.appearanceID = p.GetAppearanceId()
-			flowState.gender = p.GetGender()
-			// 名字与职业同源。账号记录有名字就直接用(不多一次 RPC);只有缺名的记录
-			// (早于名字功能的旧角色、此前 self-heal 恢复出的空记录)才回源注册表。
-			flowState.playerName = resolveEnterName(ctx, p.GetName(), l.svcCtx.PlayerNames, in.PlayerId)
-			break
-		}
-	}
-	if !found {
-		// Self-heal path: the authoritative ownership record is the reverse
-		// index `player_id -> account` written by CreatePlayer alongside the
-		// forward account_data write. If that reverse index agrees with the
-		// caller's account, then account_data cache is stale (TTL expiry,
-		// partial write, cross-instance replication lag, etc.) and we can
-		// transparently restore the forward record rather than rejecting a
-		// legitimately-owned player with kLoginEnterGameGuid.
-		//
-		// This eliminates the whole class of false-positive EnterGame
-		// failures we see under stress load (~0.1-1% of robots), without
-		// weakening ownership checks: the reverse key is only written in
-		// CreatePlayer under the account_lock, so seeing it here proves
-		// CreatePlayer succeeded for the same account at some point.
-		reverseKey := constants.PlayerToAccountKey(in.PlayerId)
-		ownerAccount, rErr := l.svcCtx.RedisClient.Get(ctx, reverseKey).Result()
-		if rErr != nil || ownerAccount != account {
-			if rErr != nil && !errors.Is(rErr, redis.Nil) {
-				logx.Errorf("EnterGame reverse-index lookup failed: playerId=%d err=%v", in.PlayerId, rErr)
-			} else {
-				logx.Infof("EnterGame rejected: playerId=%d not owned by account=%s (owner=%q)",
-					in.PlayerId, account, ownerAccount)
-			}
+		resp.ErrorMessage.Id = uint32(table.LoginError_kLoginDataSerializeFailed)
+		if errors.Is(err, accountdirectory.ErrMissing) {
 			resp.ErrorMessage.Id = uint32(table.LoginError_kLoginEnterGameGuid)
-			return resp, nil
 		}
-
-		// Reverse index confirms ownership. Patch account_data back into a
-		// consistent state so subsequent flows see the player.
-		logx.Infof("EnterGame self-heal: restoring playerId=%d into account_data for account=%s",
-			in.PlayerId, account)
-		// 恢复出的记录原本只有 id,名字副本会就此永久丢失:角色列表显示空白,
-		// 首次入场也补不进 PlayerProfileComp。所以这里回源注册表一次,把名字一并写回;
-		// 查不到 / 查询失败就照旧只恢复 id(展示数据 fail-open,不阻断入场)。
-		// 名字在拿账号锁之前查好,锁只罩住读-改-写。
-		name := resolveEnterName(ctx, "", l.svcCtx.PlayerNames, in.PlayerId)
-		flowState.playerName = name
-		// 写回在账号锁内重读后整字节 CAS,不再拿上面锁外读到的 userAccount 整块覆盖(会抹掉并发建出的角色),
-		// 见 healAccountRole。写回没成也照常受理(归属以上面读反向索引那一刻为准,与「账号记录命中」分支一样不在提交点复核入场);但存档已有外观的角色,
-		// 异步链的外观修复会因账号缺这条记录而失败,本次入场以 kEnterSceneFailed 收口,下次入场再自愈。
-		if existing := l.healAccountRole(ctx, flowState, name); existing != nil {
-			// 别的链已经补回了这条记录:职业、外观与名字以它为准,与上面「账号记录命中」分支同源。
-			flowState.classID = existing.GetClassId()
-			flowState.appearanceID = existing.GetAppearanceId()
-			flowState.gender = existing.GetGender()
-			if existing.GetName() != "" {
-				flowState.playerName = existing.GetName()
-			}
-		}
+		return resp, nil
 	}
+	if ownership.Account != account {
+		resp.ErrorMessage.Id = uint32(table.LoginError_kLoginEnterGameGuid)
+		return resp, nil
+	}
+	if ownership.TradeListingId != 0 {
+		resp.ErrorMessage.Id = uint32(table.LoginError_kLoginInProgress)
+		return resp, nil
+	}
+	p := ownership.Role
+	flowState.ownerRevision = ownership.OwnerRevision
+	flowState.classID = p.GetClassId()
+	flowState.appearanceID = p.GetAppearanceId()
+	flowState.gender = p.GetGender()
+	flowState.playerName = resolveEnterName(ctx, p.GetName(), l.svcCtx.PlayerNames, in.PlayerId)
 
 	// 5. Kick off the EnterGame chain entirely event-driven. The RPC returns
 	//    immediately; the client gets the actual "in scene" notification when
@@ -746,6 +693,10 @@ func resolveEnterSceneRoute(
 }
 
 func (l *EnterGameLogic) applyLoadedPlayerSession(ctx context.Context, state enterGameSessionState) (sessionmanager.EnterGameDecision, error) {
+	// 预加载可能晚于目录冻结／过户。异步链不能只沿用入口捕获的归属。
+	if err := l.recheckAccountRoleEntry(ctx, state); err != nil {
+		return sessionmanager.FirstLogin, err
+	}
 	// Stage observation: GetSession round-trip to player_locator.
 	getSessionTimer := observeStage(applyGetSessionSeconds)
 	existing, err := sessionmanager.GetSession(ctx, l.svcCtx.PlayerLocatorClient, state.playerID)
@@ -823,6 +774,10 @@ func (l *EnterGameLogic) applyLoadedPlayerSession(ctx context.Context, state ent
 	// suspect under load — it routes through SceneManager → Scene
 	// AssignScene + Kafka. If err25 root cause is "async chain stalls",
 	// this histogram is where the long tail will appear.
+	if err := l.recheckAccountRoleEntry(ctx, state); err != nil {
+		l.compensateFenceBind(ctx, state, false)
+		return decision, err
+	}
 	enterSceneTimer := observeStage(applyEnterSceneSeconds)
 	enterResp, err := l.svcCtx.SceneManagerClient.EnterScene(ctx,
 		buildEnterSceneRequest(state, route, ownZone, loginGeneration),
@@ -1013,6 +968,7 @@ func buildEnterSceneRequest(state enterGameSessionState, route enterSceneRoute, 
 		GateZoneId:      ownZone,
 		ZoneId:          route.zoneID,
 		LoginGeneration: loginGeneration,
+		OwnerRevision:   state.ownerRevision,
 	}
 }
 

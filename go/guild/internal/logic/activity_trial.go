@@ -649,9 +649,8 @@ func trialServiceBusy() trialEnd { return trialEnd{tipID: constants.ErrTrialServ
 //
 // 返回 (tip, err):
 //   - 都为 nil:已开战,房间进了 LAUNCHED(或至少 match 已回 battle_id,见纪律 2);
-//   - tip 非 nil:开战失败,房间已转 ENDED,tip 即结束原因。match 的任何失败都落在这一支(纪律 1);
-//   - err 非 nil:guild 自己的库 / Redis 故障。房间同样已转 ENDED(原因 kGuildTrialServiceBusy),
-//     被邀请的其他人看到的是"服务繁忙"而不是一个 5 秒后才解套的"开战中"。
+//   - tip 非 nil:本次未确认成功，tip为原因；已提交永久launch时保留SQL占位等待原件恢复；
+//   - err 非 nil:guild自己的存储故障，已许可Start的未知请求同样不得按时间结束。
 //
 // 无论哪种结局都推一条 ACTIVITY_CHANGED 给名单里的其他人。
 func (l *GuildLogic) launchTrial(ctx context.Context, d *ActivityDeps, actor uint64, lobby *data.TrialLobby, now time.Time) (*base.TipInfoMessage, error) {
@@ -710,6 +709,22 @@ func (l *GuildLogic) startTrialBattle(ctx context.Context, d *ActivityDeps, lobb
 		GuildPeriodKey:    activity.GuildPeriodKey(row, now),
 		InitiatorPlayerID: lobby.InitiatorID,
 	}
+	if err := prepareOriginalTrialLaunch(ctx, d, lobby, &battle, row.GetDungeonId(), nowMs); err != nil {
+		return data.TrialBattleKey{}, trialEnd{}, err
+	}
+	if battle.LaunchRequestID != 0 {
+		// 与持久恢复保持同一规范顺序；match请求摘要不能因名单传入顺序不同而变化。
+		lobbyCopy := *lobby
+		lobbyCopy.Roster = []uint64{lobby.InitiatorID}
+		others := slices.Clone(lobby.Roster)
+		slices.Sort(others)
+		for _, p := range others {
+			if p != lobby.InitiatorID {
+				lobbyCopy.Roster = append(lobbyCopy.Roster, p)
+			}
+		}
+		lobby = &lobbyCopy
+	}
 	battleID, end := callTrialMatch(ctx, d, lobby, row.GetDungeonId(), battle)
 	if end.failed() {
 		return data.TrialBattleKey{}, end, nil
@@ -723,7 +738,7 @@ func (l *GuildLogic) startTrialBattle(ctx context.Context, d *ActivityDeps, lobb
 //   - MEMBER_OFFLINE / MEMBER_IN_BATTLE / MEMBER_NOT_READY → kGuildTrialTeamInvalid [offline | in_battle | not_ready, 当事人];
 //   - INVALID_ARGUMENT → kGuildTrialTeamInvalid [invalid, 0],并打 ERROR(请求是 guild 拼的,走到这里是 guild 的缺陷)。
 //
-// 超时的那一次 match 可能其实已经开战:房间仍以"服务繁忙"结束,但那一局的结果到达时结算会补登记、照常发奖(06 §6.34 T1)。
+// 超时可能已开战：SQL大厅保留LAUNCHING和原launch，恢复只查询/取消同一Start原件。
 func callTrialMatch(ctx context.Context, d *ActivityDeps, lobby *data.TrialLobby, dungeonID uint32, battle data.TrialBattleKey) (uint64, trialEnd) {
 	budget, ok := matchBudgetFor(ctx, d.MatchBudget)
 	if !ok {
@@ -734,7 +749,7 @@ func callTrialMatch(ctx context.Context, d *ActivityDeps, lobby *data.TrialLobby
 	callCtx, cancel := context.WithTimeout(ctx, budget)
 	defer cancel()
 	resp, err := d.Match.StartActivityBattle(callCtx, &matchpb.StartActivityBattleRequest{
-		RequestId: lobby.LobbyID,
+		RequestId:       lobby.LobbyID,
 		BattleConfigId:  dungeonID,
 		MemberPlayerIds: slices.Clone(lobby.Roster),
 		ActivityContext: &battlepb.BattleActivityContext{
@@ -744,6 +759,7 @@ func callTrialMatch(ctx context.Context, d *ActivityDeps, lobby *data.TrialLobby
 			PeriodKey:         battle.PeriodKey,
 			InitiatorPlayerId: battle.InitiatorPlayerID,
 			GuildPeriodKey:    battle.GuildPeriodKey,
+			LaunchRequestId:   battle.LaunchRequestID,
 		},
 	})
 	if err != nil {
@@ -785,7 +801,7 @@ func (l *GuildLogic) endTrialLobby(ctx context.Context, d *ActivityDeps, lobby *
 		pb.GuildTrialLobbyState_GUILD_TRIAL_LOBBY_STATE_LAUNCHING, pb.GuildTrialLobbyState_GUILD_TRIAL_LOBBY_STATE_ENDED,
 		0, end.tipID, end.params)
 	if err != nil {
-		logx.Errorf("[GuildTrial] mark lobby %d ended (tip %d) failed, it will read as ended after the launch window: %v",
+		logx.Errorf("[GuildTrial] 大厅%d未结束（tip=%d），保留原launch/占位等待终局证明: %v",
 			lobby.LobbyID, end.tipID, err)
 		return
 	}
@@ -797,7 +813,7 @@ func (l *GuildLogic) endTrialLobby(ctx context.Context, d *ActivityDeps, lobby *
 // recordTrialLaunched 在 match 回了 battle_id 之后登记对局行、把房间写成 LAUNCHED。两步都不让本次 RPC 失败(纪律 2):
 //   - 登记失败:计 guild_trial_register_fail_total 并打 ERROR。结算会补登记;代价是结果到达之前巡检器看不见这一局。
 //     帮会恰好在这一刻被解散(ErrGuildGone)不算失败:没有帮会就没有可登记的东西,结果到达时结算回"帮会已解散"。
-//   - 改房间状态失败:房间 5 秒后显示成"服务繁忙",而参战者其实已经收到开战通知 —— 纯展示偏差,接受(06 §6.27 L4)。
+//   - 改房间状态失败:仍保留SQL原状态/占位，沿原launch恢复，不按5秒窗口释放。
 func (l *GuildLogic) recordTrialLaunched(ctx context.Context, d *ActivityDeps, lobby *data.TrialLobby, battle data.TrialBattleKey, nowMs uint64) {
 	postCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), trialAfterLaunchBudget)
 	defer cancel()
@@ -814,7 +830,7 @@ func (l *GuildLogic) recordTrialLaunched(ctx context.Context, d *ActivityDeps, l
 		pb.GuildTrialLobbyState_GUILD_TRIAL_LOBBY_STATE_LAUNCHING, pb.GuildTrialLobbyState_GUILD_TRIAL_LOBBY_STATE_LAUNCHED,
 		battle.BattleID, 0, nil)
 	if err != nil || !moved {
-		logx.Errorf("[GuildTrial] mark lobby %d launched (battle %d) failed, it will read as service busy (moved=%t): %v",
+		logx.Errorf("[GuildTrial] 大厅%d确认开局%d未提交，保留原状态等待恢复（moved=%t）: %v",
 			lobby.LobbyID, battle.BattleID, moved, err)
 	}
 }
@@ -879,6 +895,17 @@ func (l *GuildLogic) SettleTrialResult(ctx context.Context, ev *kafkapb.BattleRe
 	if d == nil || d.trials == nil || d.Results == nil {
 		return 0, errTrialNotWired
 	}
+	if launch, ok := d.trials.(trialLaunchStore); ok && launch.TrialLaunchEnabled() {
+		terminal, ok := d.trials.(interface {
+			ValidateTrialTerminal(context.Context, *kafkapb.BattleResultEvent) error
+		})
+		if !ok {
+			return 0, errors.New("历练完整终局原件核验未装配，保留占用")
+		}
+		if err := terminal.ValidateTrialTerminal(ctx, ev); err != nil {
+			return 0, fmt.Errorf("历练终局无法绑定原launch/完整名册，保留占用等待原件或人工恢复: %w", err)
+		}
+	}
 	now := activityNow(d)
 	nowMs := uint64(now.UnixMilli())
 	battle := data.TrialBattleKey{
@@ -888,6 +915,7 @@ func (l *GuildLogic) SettleTrialResult(ctx context.Context, ev *kafkapb.BattleRe
 		PeriodKey:         actx.GetPeriodKey(),
 		GuildPeriodKey:    actx.GetGuildPeriodKey(),
 		InitiatorPlayerID: actx.GetInitiatorPlayerId(),
+		LaunchRequestID:   actx.GetLaunchRequestId(),
 	}
 	if battle.BattleID == 0 || battle.GuildID == 0 || battle.ActivityID == 0 || battle.PeriodKey == 0 || battle.GuildPeriodKey == 0 ||
 		ev.GetMatchMode() != uint32(matchpb.MatchMode_MATCH_MODE_PVE_TEAM) {

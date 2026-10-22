@@ -107,7 +107,17 @@ func TestGrpcServiceHandler_StreamingMethodFailsClosed(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			setGrpcPreservationTestConfig(t)
 			methods := buildBattleGrpcPreservationMethods()
-			tc.mark(methods[2].MethodDescriptorProto)
+			var target *MethodInfo
+			for _, method := range methods {
+				if method.Method() == "DestroyBattle" {
+					target = method
+					break
+				}
+			}
+			if target == nil {
+				t.Fatal("夹具缺少要检验的DestroyBattle方法")
+			}
+			tc.mark(target.MethodDescriptorProto)
 			dir := t.TempDir()
 			if _, err := GetGrpcServiceHandlerHeadFromFileStr(filepath.Join(dir, "battle_node.h"), methods); err == nil ||
 				!strings.Contains(err.Error(), "BattleNode.DestroyBattle") {
@@ -265,7 +275,7 @@ func TestReadNamedGrpcCodeSections_ReturnsUnnamedSectionsWithLines(t *testing.T)
 	}
 }
 
-// buildGrpcHandlerTestMethods 照 proto/scene_manager/scene_node_service.proto 的 SceneNodeGrpc(package scene_node,9 个 unary)。
+// buildGrpcHandlerTestMethods 照 proto/scene_manager/scene_node_service.proto 的 SceneNodeGrpc(package scene_node,10 个 unary)。
 func buildGrpcHandlerTestMethods() RPCMethods {
 	fd := &descriptorpb.FileDescriptorProto{
 		Name:    proto.String("proto/scene_manager/scene_node_service.proto"),
@@ -288,6 +298,7 @@ func buildGrpcHandlerTestMethods() RPCMethods {
 		newMethod("ReleasePlayer", ".scene_node.ReleasePlayerRequest", ".Empty"),
 		newMethod("PrepareBattle", ".PrepareBattleRequest", ".PrepareBattleResponse"),
 		newMethod("CancelBattlePrepare", ".CancelBattlePrepareRequest", ".Empty"),
+		newMethod("SealAccountRoleTrade", ".SealAccountRoleTradeRequest", ".Empty"),
 		newMethod("AssetDebit", ".AssetOpRequest", ".AssetOpResponse"),
 		newMethod("AssetAbortDebit", ".AssetOpRequest", ".AssetOpResponse"),
 		newMethod("AssetCredit", ".AssetOpRequest", ".AssetOpResponse"),

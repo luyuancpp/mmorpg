@@ -229,7 +229,8 @@ func runFriend(c config.Config) (runErr error) {
 		return fmt.Errorf("friend RPC 构造失败: %w", err)
 	}
 	// go-zero 自带拦截器在 NewServer 里已先加入,位于下面这条链的外层。
-	s.AddUnaryInterceptors(buildUnaryInterceptors(ks)...)
+	s.AddUnaryInterceptors(buildUnaryInterceptors(ks,
+		session.OriginalIdentityInterceptor(svcCtx.LoginSessions, c.RequestBudget(), deps.CheckOriginalRole))...)
 
 	// **先起 gRPC,再注册**(契约 §2)。Start 在监听失败时 panic:recover 成错误交回主线程,
 	// 走同一条收尾后以非 0 退出(进程拉起方 / K8s 仍可见),不带着已创建的资源直接崩。
@@ -358,7 +359,7 @@ func exitRequested(ctx context.Context) bool {
 // 抽成函数是为了让链本身可测(friend_test.go)——
 // main() 无法在单测里跑起来,而"哪次重构顺手把 killswitch / session 那行删了"是最容易发生、
 // 又最难被发现的回归:删掉之后一切照常工作,只有真出事那天才发现止血阀 / 准入是假的。
-func buildUnaryInterceptors(ks *killswitch.Switch) []grpc.UnaryServerInterceptor {
+func buildUnaryInterceptors(ks *killswitch.Switch, original grpc.UnaryServerInterceptor) []grpc.UnaryServerInterceptor {
 	return []grpc.UnaryServerInterceptor{
 		// ① 流量统计最外层:被热关停短路、被会话准入拒绝的请求也要被统计到。
 		//    否则"关停生效后这个方法的 QPS 归零"会被误读成客户端不再调用了。
@@ -371,7 +372,7 @@ func buildUnaryInterceptors(ks *killswitch.Switch) []grpc.UnaryServerInterceptor
 		// ③ 会话与方法准入(D-9):无会话 = 内部调用放行;坏会话 → Unauthenticated;
 		//    带会话调白名单外方法(S2C 的 NotifyFriendEvent)→ PermissionDenied。放在 serverbase 之前:
 		//    被拒绝的调用没进业务链路,不计入业务耗时。
-		session.UnaryServerInterceptor(session.ClientMethods),
+		session.ClientIdentityInterceptor(session.ClientMethods, original),
 
 		// ④ in-band 故障定性:handler 一律 `return resp, nil`,这层读 TipInfoMessage.id 按 Tip.xlsx 的
 		//    fault 列定性(kServiceUnavailable = 故障告警,其余 = 业务拒绝)。紧贴 handler。

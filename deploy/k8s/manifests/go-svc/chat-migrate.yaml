@@ -1,0 +1,39 @@
+# 仅显式-migrate建聊天正式表；迁移账号不交给常驻Chat，不注入登录Redis口令。
+# Secret由运维预置，两类DSN同GlobalAuthorityTiDBHost且dbname=mmorpg_chat；脚本不打印值。
+# 唯一mysql-init只预建库；先授deploy/sql/chat_migration_role.sql，-migrate后授chat_runtime_role.sql。
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: chat-migrate
+  labels: {app: chat-migrate, tier: go-svc}
+spec:
+  backoffLimit: 0
+  podFailurePolicy:
+    rules:
+      - action: FailJob
+        onExitCodes: {containerName: chat-migrate, operator: In, values: [1, 4]}
+      - action: Ignore
+        onPodConditions:
+          - {type: DisruptionTarget}
+  template:
+    metadata:
+      labels: {app: chat-migrate, tier: go-svc}
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: chat-migrate
+          image: PLACEHOLDER_IMAGE
+          imagePullPolicy: PLACEHOLDER_PULL_POLICY
+          args: ["-f", "/app/etc/chat.yaml", "-migrate"]
+          env:
+            - name: CHAT_AUTHORITY_DSN
+              valueFrom:
+                secretKeyRef: {name: chat-authority-secrets, key: migration-dsn, optional: false}
+          resources:
+            requests: {cpu: 100m, memory: 128Mi}
+            limits: {cpu: 1000m, memory: 512Mi}
+          volumeMounts:
+            - {name: svc-config, mountPath: /app/etc, readOnly: true}
+      volumes:
+        - name: svc-config
+          configMap: {name: go-svc-chat-config}

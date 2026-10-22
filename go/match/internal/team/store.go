@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"match/internal/config"
 	"math/rand"
 	"strconv"
 	"time"
@@ -28,7 +29,7 @@ import (
 
 const (
 	// TeamIdleTTLSeconds 队伍空闲 TTL(24h),每次提交或触碰续期。
-	TeamIdleTTLSeconds = 86400
+	TeamIdleTTLSeconds = config.TeamIdleTTLSeconds
 	// TouchThresholdSeconds 记录剩余 TTL 低于它(12h)时 GetMyTeam 执行 S_TOUCH。
 	TouchThresholdSeconds = 43200
 	// CommitRetries 版本冲突({0})的最多提交次数,耗尽回 ErrStateChanged。
@@ -62,6 +63,7 @@ type SessionLoader func(ctx context.Context, playerIds []uint64) Sessions
 // Store 组队存储。
 type Store struct {
 	rds      *redis.Redis
+	sql      *sqlTeamStore
 	sessions SessionLoader
 	cfg      RuleConfig
 }
@@ -181,6 +183,9 @@ type MutateResult struct {
 // 返回 error 仅表示 Redis / 序列化等内部故障(服务层回 ErrInternal);业务结果看 Outcome。
 // StartTeamMatch 的开战锁与 EndMatch 不走这里(§E.1:见 CommitMatchLock / EndMatch)。
 func (s *Store) Mutate(ctx context.Context, bind Binding, op Op) (*MutateResult, error) {
+	if s.sql != nil {
+		return s.sql.mutate(ctx, s, bind, op)
+	}
 	res := &MutateResult{}
 	repairs := 0
 	for {
@@ -287,6 +292,10 @@ func rejected(res *MutateResult, code uint32, param uint64) *MutateResult {
 // 先 HGET 预读 tid,再 S_READ;返回的 tidNow 与预读不符就重读,保证调用者 epoch 与记录 ver 同源。
 // 索引指向的记录不存在时执行 S_HEAL_ORPHAN 并重读(healed=true,调用方要通知该玩家的 scene)。
 func (s *Store) ReadFree(ctx context.Context, playerId uint64) (snap *Snapshot, healed bool, err error) {
+	if s.sql != nil {
+		snap, err = s.sql.read(ctx, playerId, 0, true)
+		return snap, false, err
+	}
 	for i := 0; i < freeReadRetries; i++ {
 		tid, err := s.indexTeamId(ctx, playerId)
 		if err != nil {
@@ -320,6 +329,9 @@ func NeedsTouch(snap *Snapshot) bool {
 // Touch S_TOUCH:ver 仍等于 snap.Version 才续期记录、投影(缺失时按该版记录重写)与仍指向本队的成员索引。
 // 不改 ver。返回 false 表示 ver 已变或记录已不存在(不是错误)。
 func (s *Store) Touch(ctx context.Context, snap *Snapshot) (bool, error) {
+	if s.sql != nil {
+		return s.sql.touch(ctx, snap)
+	}
 	if snap == nil || snap.Record == nil {
 		return false, nil
 	}
@@ -343,6 +355,10 @@ func (s *Store) Touch(ctx context.Context, snap *Snapshot) (bool, error) {
 
 // HealOrphan S_HEAL_ORPHAN:记录不存在且玩家索引仍指向 teamId 时把索引置 0、epoch+1。
 func (s *Store) HealOrphan(ctx context.Context, playerId, teamId uint64) (bool, error) {
+	if s.sql != nil {
+		// SQL原件与索引同事务；缺行是完整性故障，不能按缓存缺失清成员。
+		return false, errors.New("team: SQL权威禁止孤儿缓存修复")
+	}
 	raw, err := s.rds.EvalCtx(ctx, scriptHealOrphan,
 		[]string{playerIndexKey(playerId), recordKey(teamId)},
 		strconv.FormatUint(teamId, 10), teamTTLArg)
@@ -366,6 +382,9 @@ type MembersSnapshot struct {
 // ReadMembers S_READ_MEMBERS:按 knownMembers 读,若记录成员集合与传入不等则用新成员表重读,
 // 最多 3 次,仍不等返回 ErrMembersChanged。记录不存在返回 Record=nil、error=nil。
 func (s *Store) ReadMembers(ctx context.Context, teamId uint64, knownMembers []uint64) (*MembersSnapshot, error) {
+	if s.sql != nil {
+		return s.sql.readMembers(ctx, teamId)
+	}
 	members := knownMembers
 	for i := 0; i < readMembersRetries; i++ {
 		keys := make([]string, 0, 1+len(members))
@@ -415,6 +434,9 @@ type InviteIndexEntry struct {
 
 // ListInvites S_INVITE_LIST:按 Redis 时钟剔除过期项并列出剩余项。
 func (s *Store) ListInvites(ctx context.Context, playerId uint64) (nowMs uint64, entries []InviteIndexEntry, err error) {
+	if s.sql != nil {
+		return s.sql.listInvites(ctx, playerId)
+	}
 	raw, err := s.rds.EvalCtx(ctx, scriptInviteList, []string{inviteIndexKey(playerId)})
 	if err != nil {
 		return 0, nil, err
@@ -437,6 +459,9 @@ func (s *Store) ListInvites(ctx context.Context, playerId uint64) (nowMs uint64,
 
 // PruneInvite S_INVITE_PRUNE:score 仍等于 ListInvites 看到的值才删(不会误删队长刚重邀写入的新项)。
 func (s *Store) PruneInvite(ctx context.Context, playerId, teamId uint64, score string) (bool, error) {
+	if s.sql != nil {
+		return s.sql.pruneInvite(ctx, playerId, teamId, score)
+	}
 	raw, err := s.rds.EvalCtx(ctx, scriptInvitePrune, []string{inviteIndexKey(playerId)},
 		strconv.FormatUint(teamId, 10), score)
 	if err != nil {
@@ -499,6 +524,9 @@ type PinnedResult struct {
 func (s *Store) CommitMatchLock(ctx context.Context, snap *Snapshot, caller uint64, token string,
 	roster []uint64, expireAtMs uint64,
 ) (*PinnedResult, error) {
+	if s.sql != nil {
+		return s.sql.commitMatchLock(ctx, snap, caller, token, roster, expireAtMs)
+	}
 	if snap == nil || snap.Record == nil || snap.Version == 0 {
 		return nil, errors.New("team: 开战锁提交缺少记录快照")
 	}
@@ -600,6 +628,9 @@ func (s *Store) ReleaseMatchLockOnce(ctx context.Context, teamId uint64, token s
 
 // endMatchRound EndMatch 的一轮:读、判定、钉版本提交。stop≠0 表示应当停止(不写)。ctx 由调用方给单轮预算。
 func (s *Store) endMatchRound(ctx context.Context, teamId uint64, token string, ok bool) (EndMatchStop, *PinnedResult, error) {
+	if s.sql != nil {
+		return s.sql.endMatch(ctx, teamId, token)
+	}
 	// 只关心记录:S_READ 的玩家索引位传 0(team:player:0 恒不存在,脚本只读不写)。
 	snap, err := s.read(ctx, 0, teamId)
 	if err != nil {
@@ -699,6 +730,9 @@ func jittered(d time.Duration) time.Duration {
 
 // read S_READ(playerId 的索引 + teamId 的记录)。
 func (s *Store) read(ctx context.Context, playerId, teamId uint64) (*Snapshot, error) {
+	if s.sql != nil {
+		return s.sql.read(ctx, playerId, teamId, false)
+	}
 	raw, err := s.rds.EvalCtx(ctx, scriptRead, []string{playerIndexKey(playerId), recordKey(teamId)})
 	if err != nil {
 		return nil, err

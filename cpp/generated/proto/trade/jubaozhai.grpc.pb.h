@@ -206,6 +206,84 @@ class ClientPlayerJubaozhai final {
     std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::trade::ListTradeMarketsResponse>> PrepareAsyncListTradeMarkets(::grpc::ClientContext* context, const ::trade::ListTradeMarketsRequest& request, ::grpc::CompletionQueue* cq) {
       return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::trade::ListTradeMarketsResponse>>(PrepareAsyncListTradeMarketsRaw(context, request, cq));
     }
+    // 人民币分、原账号订单权及卖家逐单结算；支付/退款/出款原件只来自内部适配器。
+    virtual ::grpc::Status CreateRmbConsignment(::grpc::ClientContext* context, const ::trade::CreateRmbConsignmentRequest& request, ::trade::RmbConsignmentResponse* response) = 0;
+    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::trade::RmbConsignmentResponse>> AsyncCreateRmbConsignment(::grpc::ClientContext* context, const ::trade::CreateRmbConsignmentRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::trade::RmbConsignmentResponse>>(AsyncCreateRmbConsignmentRaw(context, request, cq));
+    }
+    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::trade::RmbConsignmentResponse>> PrepareAsyncCreateRmbConsignment(::grpc::ClientContext* context, const ::trade::CreateRmbConsignmentRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::trade::RmbConsignmentResponse>>(PrepareAsyncCreateRmbConsignmentRaw(context, request, cq));
+    }
+    virtual ::grpc::Status GetRmbConsignment(::grpc::ClientContext* context, const ::trade::GetRmbConsignmentRequest& request, ::trade::RmbConsignmentResponse* response) = 0;
+    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::trade::RmbConsignmentResponse>> AsyncGetRmbConsignment(::grpc::ClientContext* context, const ::trade::GetRmbConsignmentRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::trade::RmbConsignmentResponse>>(AsyncGetRmbConsignmentRaw(context, request, cq));
+    }
+    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::trade::RmbConsignmentResponse>> PrepareAsyncGetRmbConsignment(::grpc::ClientContext* context, const ::trade::GetRmbConsignmentRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::trade::RmbConsignmentResponse>>(PrepareAsyncGetRmbConsignmentRaw(context, request, cq));
+    }
+    virtual ::grpc::Status ListRmbConsignments(::grpc::ClientContext* context, const ::trade::ListRmbConsignmentsRequest& request, ::trade::ListRmbConsignmentsResponse* response) = 0;
+    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::trade::ListRmbConsignmentsResponse>> AsyncListRmbConsignments(::grpc::ClientContext* context, const ::trade::ListRmbConsignmentsRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::trade::ListRmbConsignmentsResponse>>(AsyncListRmbConsignmentsRaw(context, request, cq));
+    }
+    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::trade::ListRmbConsignmentsResponse>> PrepareAsyncListRmbConsignments(::grpc::ClientContext* context, const ::trade::ListRmbConsignmentsRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::trade::ListRmbConsignmentsResponse>>(PrepareAsyncListRmbConsignmentsRaw(context, request, cq));
+    }
+    virtual ::grpc::Status BuyRmbConsignment(::grpc::ClientContext* context, const ::trade::BuyRmbConsignmentRequest& request, ::trade::CommerceOrderResponse* response) = 0;
+    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::trade::CommerceOrderResponse>> AsyncBuyRmbConsignment(::grpc::ClientContext* context, const ::trade::BuyRmbConsignmentRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::trade::CommerceOrderResponse>>(AsyncBuyRmbConsignmentRaw(context, request, cq));
+    }
+    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::trade::CommerceOrderResponse>> PrepareAsyncBuyRmbConsignment(::grpc::ClientContext* context, const ::trade::BuyRmbConsignmentRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::trade::CommerceOrderResponse>>(PrepareAsyncBuyRmbConsignmentRaw(context, request, cq));
+    }
+    virtual ::grpc::Status CancelRmbConsignment(::grpc::ClientContext* context, const ::trade::CancelRmbConsignmentRequest& request, ::trade::RmbConsignmentResponse* response) = 0;
+    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::trade::RmbConsignmentResponse>> AsyncCancelRmbConsignment(::grpc::ClientContext* context, const ::trade::CancelRmbConsignmentRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::trade::RmbConsignmentResponse>>(AsyncCancelRmbConsignmentRaw(context, request, cq));
+    }
+    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::trade::RmbConsignmentResponse>> PrepareAsyncCancelRmbConsignment(::grpc::ClientContext* context, const ::trade::CancelRmbConsignmentRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::trade::RmbConsignmentResponse>>(PrepareAsyncCancelRmbConsignmentRaw(context, request, cq));
+    }
+    virtual ::grpc::Status GetRmbOrder(::grpc::ClientContext* context, const ::trade::GetCommerceOrderRequest& request, ::trade::CommerceOrderResponse* response) = 0;
+    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::trade::CommerceOrderResponse>> AsyncGetRmbOrder(::grpc::ClientContext* context, const ::trade::GetCommerceOrderRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::trade::CommerceOrderResponse>>(AsyncGetRmbOrderRaw(context, request, cq));
+    }
+    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::trade::CommerceOrderResponse>> PrepareAsyncGetRmbOrder(::grpc::ClientContext* context, const ::trade::GetCommerceOrderRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::trade::CommerceOrderResponse>>(PrepareAsyncGetRmbOrderRaw(context, request, cq));
+    }
+    virtual ::grpc::Status ListRmbOrders(::grpc::ClientContext* context, const ::trade::ListCommerceOrdersRequest& request, ::trade::ListCommerceOrdersResponse* response) = 0;
+    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::trade::ListCommerceOrdersResponse>> AsyncListRmbOrders(::grpc::ClientContext* context, const ::trade::ListCommerceOrdersRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::trade::ListCommerceOrdersResponse>>(AsyncListRmbOrdersRaw(context, request, cq));
+    }
+    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::trade::ListCommerceOrdersResponse>> PrepareAsyncListRmbOrders(::grpc::ClientContext* context, const ::trade::ListCommerceOrdersRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::trade::ListCommerceOrdersResponse>>(PrepareAsyncListRmbOrdersRaw(context, request, cq));
+    }
+    virtual ::grpc::Status CancelRmbOrder(::grpc::ClientContext* context, const ::trade::CancelCommerceOrderRequest& request, ::trade::CommerceOrderResponse* response) = 0;
+    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::trade::CommerceOrderResponse>> AsyncCancelRmbOrder(::grpc::ClientContext* context, const ::trade::CancelCommerceOrderRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::trade::CommerceOrderResponse>>(AsyncCancelRmbOrderRaw(context, request, cq));
+    }
+    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::trade::CommerceOrderResponse>> PrepareAsyncCancelRmbOrder(::grpc::ClientContext* context, const ::trade::CancelCommerceOrderRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::trade::CommerceOrderResponse>>(PrepareAsyncCancelRmbOrderRaw(context, request, cq));
+    }
+    virtual ::grpc::Status ListSellerIncomes(::grpc::ClientContext* context, const ::trade::ListSellerIncomesRequest& request, ::trade::ListSellerIncomesResponse* response) = 0;
+    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::trade::ListSellerIncomesResponse>> AsyncListSellerIncomes(::grpc::ClientContext* context, const ::trade::ListSellerIncomesRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::trade::ListSellerIncomesResponse>>(AsyncListSellerIncomesRaw(context, request, cq));
+    }
+    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::trade::ListSellerIncomesResponse>> PrepareAsyncListSellerIncomes(::grpc::ClientContext* context, const ::trade::ListSellerIncomesRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::trade::ListSellerIncomesResponse>>(PrepareAsyncListSellerIncomesRaw(context, request, cq));
+    }
+    virtual ::grpc::Status CreateWithdrawal(::grpc::ClientContext* context, const ::trade::CreateWithdrawalRequest& request, ::trade::WithdrawalResponse* response) = 0;
+    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::trade::WithdrawalResponse>> AsyncCreateWithdrawal(::grpc::ClientContext* context, const ::trade::CreateWithdrawalRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::trade::WithdrawalResponse>>(AsyncCreateWithdrawalRaw(context, request, cq));
+    }
+    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::trade::WithdrawalResponse>> PrepareAsyncCreateWithdrawal(::grpc::ClientContext* context, const ::trade::CreateWithdrawalRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::trade::WithdrawalResponse>>(PrepareAsyncCreateWithdrawalRaw(context, request, cq));
+    }
+    virtual ::grpc::Status GetWithdrawal(::grpc::ClientContext* context, const ::trade::GetWithdrawalRequest& request, ::trade::WithdrawalResponse* response) = 0;
+    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::trade::WithdrawalResponse>> AsyncGetWithdrawal(::grpc::ClientContext* context, const ::trade::GetWithdrawalRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::trade::WithdrawalResponse>>(AsyncGetWithdrawalRaw(context, request, cq));
+    }
+    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::trade::WithdrawalResponse>> PrepareAsyncGetWithdrawal(::grpc::ClientContext* context, const ::trade::GetWithdrawalRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::trade::WithdrawalResponse>>(PrepareAsyncGetWithdrawalRaw(context, request, cq));
+    }
     class async_interface {
      public:
       virtual ~async_interface() {}
@@ -259,6 +337,29 @@ class ClientPlayerJubaozhai final {
       virtual void BrowseCommerceOffers(::grpc::ClientContext* context, const ::trade::BrowseCommerceOffersRequest* request, ::trade::BrowseCommerceOffersResponse* response, ::grpc::ClientUnaryReactor* reactor) = 0;
       virtual void ListTradeMarkets(::grpc::ClientContext* context, const ::trade::ListTradeMarketsRequest* request, ::trade::ListTradeMarketsResponse* response, std::function<void(::grpc::Status)>) = 0;
       virtual void ListTradeMarkets(::grpc::ClientContext* context, const ::trade::ListTradeMarketsRequest* request, ::trade::ListTradeMarketsResponse* response, ::grpc::ClientUnaryReactor* reactor) = 0;
+      // 人民币分、原账号订单权及卖家逐单结算；支付/退款/出款原件只来自内部适配器。
+      virtual void CreateRmbConsignment(::grpc::ClientContext* context, const ::trade::CreateRmbConsignmentRequest* request, ::trade::RmbConsignmentResponse* response, std::function<void(::grpc::Status)>) = 0;
+      virtual void CreateRmbConsignment(::grpc::ClientContext* context, const ::trade::CreateRmbConsignmentRequest* request, ::trade::RmbConsignmentResponse* response, ::grpc::ClientUnaryReactor* reactor) = 0;
+      virtual void GetRmbConsignment(::grpc::ClientContext* context, const ::trade::GetRmbConsignmentRequest* request, ::trade::RmbConsignmentResponse* response, std::function<void(::grpc::Status)>) = 0;
+      virtual void GetRmbConsignment(::grpc::ClientContext* context, const ::trade::GetRmbConsignmentRequest* request, ::trade::RmbConsignmentResponse* response, ::grpc::ClientUnaryReactor* reactor) = 0;
+      virtual void ListRmbConsignments(::grpc::ClientContext* context, const ::trade::ListRmbConsignmentsRequest* request, ::trade::ListRmbConsignmentsResponse* response, std::function<void(::grpc::Status)>) = 0;
+      virtual void ListRmbConsignments(::grpc::ClientContext* context, const ::trade::ListRmbConsignmentsRequest* request, ::trade::ListRmbConsignmentsResponse* response, ::grpc::ClientUnaryReactor* reactor) = 0;
+      virtual void BuyRmbConsignment(::grpc::ClientContext* context, const ::trade::BuyRmbConsignmentRequest* request, ::trade::CommerceOrderResponse* response, std::function<void(::grpc::Status)>) = 0;
+      virtual void BuyRmbConsignment(::grpc::ClientContext* context, const ::trade::BuyRmbConsignmentRequest* request, ::trade::CommerceOrderResponse* response, ::grpc::ClientUnaryReactor* reactor) = 0;
+      virtual void CancelRmbConsignment(::grpc::ClientContext* context, const ::trade::CancelRmbConsignmentRequest* request, ::trade::RmbConsignmentResponse* response, std::function<void(::grpc::Status)>) = 0;
+      virtual void CancelRmbConsignment(::grpc::ClientContext* context, const ::trade::CancelRmbConsignmentRequest* request, ::trade::RmbConsignmentResponse* response, ::grpc::ClientUnaryReactor* reactor) = 0;
+      virtual void GetRmbOrder(::grpc::ClientContext* context, const ::trade::GetCommerceOrderRequest* request, ::trade::CommerceOrderResponse* response, std::function<void(::grpc::Status)>) = 0;
+      virtual void GetRmbOrder(::grpc::ClientContext* context, const ::trade::GetCommerceOrderRequest* request, ::trade::CommerceOrderResponse* response, ::grpc::ClientUnaryReactor* reactor) = 0;
+      virtual void ListRmbOrders(::grpc::ClientContext* context, const ::trade::ListCommerceOrdersRequest* request, ::trade::ListCommerceOrdersResponse* response, std::function<void(::grpc::Status)>) = 0;
+      virtual void ListRmbOrders(::grpc::ClientContext* context, const ::trade::ListCommerceOrdersRequest* request, ::trade::ListCommerceOrdersResponse* response, ::grpc::ClientUnaryReactor* reactor) = 0;
+      virtual void CancelRmbOrder(::grpc::ClientContext* context, const ::trade::CancelCommerceOrderRequest* request, ::trade::CommerceOrderResponse* response, std::function<void(::grpc::Status)>) = 0;
+      virtual void CancelRmbOrder(::grpc::ClientContext* context, const ::trade::CancelCommerceOrderRequest* request, ::trade::CommerceOrderResponse* response, ::grpc::ClientUnaryReactor* reactor) = 0;
+      virtual void ListSellerIncomes(::grpc::ClientContext* context, const ::trade::ListSellerIncomesRequest* request, ::trade::ListSellerIncomesResponse* response, std::function<void(::grpc::Status)>) = 0;
+      virtual void ListSellerIncomes(::grpc::ClientContext* context, const ::trade::ListSellerIncomesRequest* request, ::trade::ListSellerIncomesResponse* response, ::grpc::ClientUnaryReactor* reactor) = 0;
+      virtual void CreateWithdrawal(::grpc::ClientContext* context, const ::trade::CreateWithdrawalRequest* request, ::trade::WithdrawalResponse* response, std::function<void(::grpc::Status)>) = 0;
+      virtual void CreateWithdrawal(::grpc::ClientContext* context, const ::trade::CreateWithdrawalRequest* request, ::trade::WithdrawalResponse* response, ::grpc::ClientUnaryReactor* reactor) = 0;
+      virtual void GetWithdrawal(::grpc::ClientContext* context, const ::trade::GetWithdrawalRequest* request, ::trade::WithdrawalResponse* response, std::function<void(::grpc::Status)>) = 0;
+      virtual void GetWithdrawal(::grpc::ClientContext* context, const ::trade::GetWithdrawalRequest* request, ::trade::WithdrawalResponse* response, ::grpc::ClientUnaryReactor* reactor) = 0;
     };
     typedef class async_interface experimental_async_interface;
     virtual class async_interface* async() { return nullptr; }
@@ -312,6 +413,28 @@ class ClientPlayerJubaozhai final {
     virtual ::grpc::ClientAsyncResponseReaderInterface< ::trade::BrowseCommerceOffersResponse>* PrepareAsyncBrowseCommerceOffersRaw(::grpc::ClientContext* context, const ::trade::BrowseCommerceOffersRequest& request, ::grpc::CompletionQueue* cq) = 0;
     virtual ::grpc::ClientAsyncResponseReaderInterface< ::trade::ListTradeMarketsResponse>* AsyncListTradeMarketsRaw(::grpc::ClientContext* context, const ::trade::ListTradeMarketsRequest& request, ::grpc::CompletionQueue* cq) = 0;
     virtual ::grpc::ClientAsyncResponseReaderInterface< ::trade::ListTradeMarketsResponse>* PrepareAsyncListTradeMarketsRaw(::grpc::ClientContext* context, const ::trade::ListTradeMarketsRequest& request, ::grpc::CompletionQueue* cq) = 0;
+    virtual ::grpc::ClientAsyncResponseReaderInterface< ::trade::RmbConsignmentResponse>* AsyncCreateRmbConsignmentRaw(::grpc::ClientContext* context, const ::trade::CreateRmbConsignmentRequest& request, ::grpc::CompletionQueue* cq) = 0;
+    virtual ::grpc::ClientAsyncResponseReaderInterface< ::trade::RmbConsignmentResponse>* PrepareAsyncCreateRmbConsignmentRaw(::grpc::ClientContext* context, const ::trade::CreateRmbConsignmentRequest& request, ::grpc::CompletionQueue* cq) = 0;
+    virtual ::grpc::ClientAsyncResponseReaderInterface< ::trade::RmbConsignmentResponse>* AsyncGetRmbConsignmentRaw(::grpc::ClientContext* context, const ::trade::GetRmbConsignmentRequest& request, ::grpc::CompletionQueue* cq) = 0;
+    virtual ::grpc::ClientAsyncResponseReaderInterface< ::trade::RmbConsignmentResponse>* PrepareAsyncGetRmbConsignmentRaw(::grpc::ClientContext* context, const ::trade::GetRmbConsignmentRequest& request, ::grpc::CompletionQueue* cq) = 0;
+    virtual ::grpc::ClientAsyncResponseReaderInterface< ::trade::ListRmbConsignmentsResponse>* AsyncListRmbConsignmentsRaw(::grpc::ClientContext* context, const ::trade::ListRmbConsignmentsRequest& request, ::grpc::CompletionQueue* cq) = 0;
+    virtual ::grpc::ClientAsyncResponseReaderInterface< ::trade::ListRmbConsignmentsResponse>* PrepareAsyncListRmbConsignmentsRaw(::grpc::ClientContext* context, const ::trade::ListRmbConsignmentsRequest& request, ::grpc::CompletionQueue* cq) = 0;
+    virtual ::grpc::ClientAsyncResponseReaderInterface< ::trade::CommerceOrderResponse>* AsyncBuyRmbConsignmentRaw(::grpc::ClientContext* context, const ::trade::BuyRmbConsignmentRequest& request, ::grpc::CompletionQueue* cq) = 0;
+    virtual ::grpc::ClientAsyncResponseReaderInterface< ::trade::CommerceOrderResponse>* PrepareAsyncBuyRmbConsignmentRaw(::grpc::ClientContext* context, const ::trade::BuyRmbConsignmentRequest& request, ::grpc::CompletionQueue* cq) = 0;
+    virtual ::grpc::ClientAsyncResponseReaderInterface< ::trade::RmbConsignmentResponse>* AsyncCancelRmbConsignmentRaw(::grpc::ClientContext* context, const ::trade::CancelRmbConsignmentRequest& request, ::grpc::CompletionQueue* cq) = 0;
+    virtual ::grpc::ClientAsyncResponseReaderInterface< ::trade::RmbConsignmentResponse>* PrepareAsyncCancelRmbConsignmentRaw(::grpc::ClientContext* context, const ::trade::CancelRmbConsignmentRequest& request, ::grpc::CompletionQueue* cq) = 0;
+    virtual ::grpc::ClientAsyncResponseReaderInterface< ::trade::CommerceOrderResponse>* AsyncGetRmbOrderRaw(::grpc::ClientContext* context, const ::trade::GetCommerceOrderRequest& request, ::grpc::CompletionQueue* cq) = 0;
+    virtual ::grpc::ClientAsyncResponseReaderInterface< ::trade::CommerceOrderResponse>* PrepareAsyncGetRmbOrderRaw(::grpc::ClientContext* context, const ::trade::GetCommerceOrderRequest& request, ::grpc::CompletionQueue* cq) = 0;
+    virtual ::grpc::ClientAsyncResponseReaderInterface< ::trade::ListCommerceOrdersResponse>* AsyncListRmbOrdersRaw(::grpc::ClientContext* context, const ::trade::ListCommerceOrdersRequest& request, ::grpc::CompletionQueue* cq) = 0;
+    virtual ::grpc::ClientAsyncResponseReaderInterface< ::trade::ListCommerceOrdersResponse>* PrepareAsyncListRmbOrdersRaw(::grpc::ClientContext* context, const ::trade::ListCommerceOrdersRequest& request, ::grpc::CompletionQueue* cq) = 0;
+    virtual ::grpc::ClientAsyncResponseReaderInterface< ::trade::CommerceOrderResponse>* AsyncCancelRmbOrderRaw(::grpc::ClientContext* context, const ::trade::CancelCommerceOrderRequest& request, ::grpc::CompletionQueue* cq) = 0;
+    virtual ::grpc::ClientAsyncResponseReaderInterface< ::trade::CommerceOrderResponse>* PrepareAsyncCancelRmbOrderRaw(::grpc::ClientContext* context, const ::trade::CancelCommerceOrderRequest& request, ::grpc::CompletionQueue* cq) = 0;
+    virtual ::grpc::ClientAsyncResponseReaderInterface< ::trade::ListSellerIncomesResponse>* AsyncListSellerIncomesRaw(::grpc::ClientContext* context, const ::trade::ListSellerIncomesRequest& request, ::grpc::CompletionQueue* cq) = 0;
+    virtual ::grpc::ClientAsyncResponseReaderInterface< ::trade::ListSellerIncomesResponse>* PrepareAsyncListSellerIncomesRaw(::grpc::ClientContext* context, const ::trade::ListSellerIncomesRequest& request, ::grpc::CompletionQueue* cq) = 0;
+    virtual ::grpc::ClientAsyncResponseReaderInterface< ::trade::WithdrawalResponse>* AsyncCreateWithdrawalRaw(::grpc::ClientContext* context, const ::trade::CreateWithdrawalRequest& request, ::grpc::CompletionQueue* cq) = 0;
+    virtual ::grpc::ClientAsyncResponseReaderInterface< ::trade::WithdrawalResponse>* PrepareAsyncCreateWithdrawalRaw(::grpc::ClientContext* context, const ::trade::CreateWithdrawalRequest& request, ::grpc::CompletionQueue* cq) = 0;
+    virtual ::grpc::ClientAsyncResponseReaderInterface< ::trade::WithdrawalResponse>* AsyncGetWithdrawalRaw(::grpc::ClientContext* context, const ::trade::GetWithdrawalRequest& request, ::grpc::CompletionQueue* cq) = 0;
+    virtual ::grpc::ClientAsyncResponseReaderInterface< ::trade::WithdrawalResponse>* PrepareAsyncGetWithdrawalRaw(::grpc::ClientContext* context, const ::trade::GetWithdrawalRequest& request, ::grpc::CompletionQueue* cq) = 0;
   };
   class Stub final : public StubInterface {
    public:
@@ -484,6 +607,83 @@ class ClientPlayerJubaozhai final {
     std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::trade::ListTradeMarketsResponse>> PrepareAsyncListTradeMarkets(::grpc::ClientContext* context, const ::trade::ListTradeMarketsRequest& request, ::grpc::CompletionQueue* cq) {
       return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::trade::ListTradeMarketsResponse>>(PrepareAsyncListTradeMarketsRaw(context, request, cq));
     }
+    ::grpc::Status CreateRmbConsignment(::grpc::ClientContext* context, const ::trade::CreateRmbConsignmentRequest& request, ::trade::RmbConsignmentResponse* response) override;
+    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::trade::RmbConsignmentResponse>> AsyncCreateRmbConsignment(::grpc::ClientContext* context, const ::trade::CreateRmbConsignmentRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::trade::RmbConsignmentResponse>>(AsyncCreateRmbConsignmentRaw(context, request, cq));
+    }
+    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::trade::RmbConsignmentResponse>> PrepareAsyncCreateRmbConsignment(::grpc::ClientContext* context, const ::trade::CreateRmbConsignmentRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::trade::RmbConsignmentResponse>>(PrepareAsyncCreateRmbConsignmentRaw(context, request, cq));
+    }
+    ::grpc::Status GetRmbConsignment(::grpc::ClientContext* context, const ::trade::GetRmbConsignmentRequest& request, ::trade::RmbConsignmentResponse* response) override;
+    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::trade::RmbConsignmentResponse>> AsyncGetRmbConsignment(::grpc::ClientContext* context, const ::trade::GetRmbConsignmentRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::trade::RmbConsignmentResponse>>(AsyncGetRmbConsignmentRaw(context, request, cq));
+    }
+    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::trade::RmbConsignmentResponse>> PrepareAsyncGetRmbConsignment(::grpc::ClientContext* context, const ::trade::GetRmbConsignmentRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::trade::RmbConsignmentResponse>>(PrepareAsyncGetRmbConsignmentRaw(context, request, cq));
+    }
+    ::grpc::Status ListRmbConsignments(::grpc::ClientContext* context, const ::trade::ListRmbConsignmentsRequest& request, ::trade::ListRmbConsignmentsResponse* response) override;
+    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::trade::ListRmbConsignmentsResponse>> AsyncListRmbConsignments(::grpc::ClientContext* context, const ::trade::ListRmbConsignmentsRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::trade::ListRmbConsignmentsResponse>>(AsyncListRmbConsignmentsRaw(context, request, cq));
+    }
+    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::trade::ListRmbConsignmentsResponse>> PrepareAsyncListRmbConsignments(::grpc::ClientContext* context, const ::trade::ListRmbConsignmentsRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::trade::ListRmbConsignmentsResponse>>(PrepareAsyncListRmbConsignmentsRaw(context, request, cq));
+    }
+    ::grpc::Status BuyRmbConsignment(::grpc::ClientContext* context, const ::trade::BuyRmbConsignmentRequest& request, ::trade::CommerceOrderResponse* response) override;
+    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::trade::CommerceOrderResponse>> AsyncBuyRmbConsignment(::grpc::ClientContext* context, const ::trade::BuyRmbConsignmentRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::trade::CommerceOrderResponse>>(AsyncBuyRmbConsignmentRaw(context, request, cq));
+    }
+    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::trade::CommerceOrderResponse>> PrepareAsyncBuyRmbConsignment(::grpc::ClientContext* context, const ::trade::BuyRmbConsignmentRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::trade::CommerceOrderResponse>>(PrepareAsyncBuyRmbConsignmentRaw(context, request, cq));
+    }
+    ::grpc::Status CancelRmbConsignment(::grpc::ClientContext* context, const ::trade::CancelRmbConsignmentRequest& request, ::trade::RmbConsignmentResponse* response) override;
+    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::trade::RmbConsignmentResponse>> AsyncCancelRmbConsignment(::grpc::ClientContext* context, const ::trade::CancelRmbConsignmentRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::trade::RmbConsignmentResponse>>(AsyncCancelRmbConsignmentRaw(context, request, cq));
+    }
+    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::trade::RmbConsignmentResponse>> PrepareAsyncCancelRmbConsignment(::grpc::ClientContext* context, const ::trade::CancelRmbConsignmentRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::trade::RmbConsignmentResponse>>(PrepareAsyncCancelRmbConsignmentRaw(context, request, cq));
+    }
+    ::grpc::Status GetRmbOrder(::grpc::ClientContext* context, const ::trade::GetCommerceOrderRequest& request, ::trade::CommerceOrderResponse* response) override;
+    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::trade::CommerceOrderResponse>> AsyncGetRmbOrder(::grpc::ClientContext* context, const ::trade::GetCommerceOrderRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::trade::CommerceOrderResponse>>(AsyncGetRmbOrderRaw(context, request, cq));
+    }
+    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::trade::CommerceOrderResponse>> PrepareAsyncGetRmbOrder(::grpc::ClientContext* context, const ::trade::GetCommerceOrderRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::trade::CommerceOrderResponse>>(PrepareAsyncGetRmbOrderRaw(context, request, cq));
+    }
+    ::grpc::Status ListRmbOrders(::grpc::ClientContext* context, const ::trade::ListCommerceOrdersRequest& request, ::trade::ListCommerceOrdersResponse* response) override;
+    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::trade::ListCommerceOrdersResponse>> AsyncListRmbOrders(::grpc::ClientContext* context, const ::trade::ListCommerceOrdersRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::trade::ListCommerceOrdersResponse>>(AsyncListRmbOrdersRaw(context, request, cq));
+    }
+    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::trade::ListCommerceOrdersResponse>> PrepareAsyncListRmbOrders(::grpc::ClientContext* context, const ::trade::ListCommerceOrdersRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::trade::ListCommerceOrdersResponse>>(PrepareAsyncListRmbOrdersRaw(context, request, cq));
+    }
+    ::grpc::Status CancelRmbOrder(::grpc::ClientContext* context, const ::trade::CancelCommerceOrderRequest& request, ::trade::CommerceOrderResponse* response) override;
+    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::trade::CommerceOrderResponse>> AsyncCancelRmbOrder(::grpc::ClientContext* context, const ::trade::CancelCommerceOrderRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::trade::CommerceOrderResponse>>(AsyncCancelRmbOrderRaw(context, request, cq));
+    }
+    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::trade::CommerceOrderResponse>> PrepareAsyncCancelRmbOrder(::grpc::ClientContext* context, const ::trade::CancelCommerceOrderRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::trade::CommerceOrderResponse>>(PrepareAsyncCancelRmbOrderRaw(context, request, cq));
+    }
+    ::grpc::Status ListSellerIncomes(::grpc::ClientContext* context, const ::trade::ListSellerIncomesRequest& request, ::trade::ListSellerIncomesResponse* response) override;
+    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::trade::ListSellerIncomesResponse>> AsyncListSellerIncomes(::grpc::ClientContext* context, const ::trade::ListSellerIncomesRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::trade::ListSellerIncomesResponse>>(AsyncListSellerIncomesRaw(context, request, cq));
+    }
+    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::trade::ListSellerIncomesResponse>> PrepareAsyncListSellerIncomes(::grpc::ClientContext* context, const ::trade::ListSellerIncomesRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::trade::ListSellerIncomesResponse>>(PrepareAsyncListSellerIncomesRaw(context, request, cq));
+    }
+    ::grpc::Status CreateWithdrawal(::grpc::ClientContext* context, const ::trade::CreateWithdrawalRequest& request, ::trade::WithdrawalResponse* response) override;
+    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::trade::WithdrawalResponse>> AsyncCreateWithdrawal(::grpc::ClientContext* context, const ::trade::CreateWithdrawalRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::trade::WithdrawalResponse>>(AsyncCreateWithdrawalRaw(context, request, cq));
+    }
+    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::trade::WithdrawalResponse>> PrepareAsyncCreateWithdrawal(::grpc::ClientContext* context, const ::trade::CreateWithdrawalRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::trade::WithdrawalResponse>>(PrepareAsyncCreateWithdrawalRaw(context, request, cq));
+    }
+    ::grpc::Status GetWithdrawal(::grpc::ClientContext* context, const ::trade::GetWithdrawalRequest& request, ::trade::WithdrawalResponse* response) override;
+    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::trade::WithdrawalResponse>> AsyncGetWithdrawal(::grpc::ClientContext* context, const ::trade::GetWithdrawalRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::trade::WithdrawalResponse>>(AsyncGetWithdrawalRaw(context, request, cq));
+    }
+    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::trade::WithdrawalResponse>> PrepareAsyncGetWithdrawal(::grpc::ClientContext* context, const ::trade::GetWithdrawalRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::trade::WithdrawalResponse>>(PrepareAsyncGetWithdrawalRaw(context, request, cq));
+    }
     class async final :
       public StubInterface::async_interface {
      public:
@@ -535,6 +735,28 @@ class ClientPlayerJubaozhai final {
       void BrowseCommerceOffers(::grpc::ClientContext* context, const ::trade::BrowseCommerceOffersRequest* request, ::trade::BrowseCommerceOffersResponse* response, ::grpc::ClientUnaryReactor* reactor) override;
       void ListTradeMarkets(::grpc::ClientContext* context, const ::trade::ListTradeMarketsRequest* request, ::trade::ListTradeMarketsResponse* response, std::function<void(::grpc::Status)>) override;
       void ListTradeMarkets(::grpc::ClientContext* context, const ::trade::ListTradeMarketsRequest* request, ::trade::ListTradeMarketsResponse* response, ::grpc::ClientUnaryReactor* reactor) override;
+      void CreateRmbConsignment(::grpc::ClientContext* context, const ::trade::CreateRmbConsignmentRequest* request, ::trade::RmbConsignmentResponse* response, std::function<void(::grpc::Status)>) override;
+      void CreateRmbConsignment(::grpc::ClientContext* context, const ::trade::CreateRmbConsignmentRequest* request, ::trade::RmbConsignmentResponse* response, ::grpc::ClientUnaryReactor* reactor) override;
+      void GetRmbConsignment(::grpc::ClientContext* context, const ::trade::GetRmbConsignmentRequest* request, ::trade::RmbConsignmentResponse* response, std::function<void(::grpc::Status)>) override;
+      void GetRmbConsignment(::grpc::ClientContext* context, const ::trade::GetRmbConsignmentRequest* request, ::trade::RmbConsignmentResponse* response, ::grpc::ClientUnaryReactor* reactor) override;
+      void ListRmbConsignments(::grpc::ClientContext* context, const ::trade::ListRmbConsignmentsRequest* request, ::trade::ListRmbConsignmentsResponse* response, std::function<void(::grpc::Status)>) override;
+      void ListRmbConsignments(::grpc::ClientContext* context, const ::trade::ListRmbConsignmentsRequest* request, ::trade::ListRmbConsignmentsResponse* response, ::grpc::ClientUnaryReactor* reactor) override;
+      void BuyRmbConsignment(::grpc::ClientContext* context, const ::trade::BuyRmbConsignmentRequest* request, ::trade::CommerceOrderResponse* response, std::function<void(::grpc::Status)>) override;
+      void BuyRmbConsignment(::grpc::ClientContext* context, const ::trade::BuyRmbConsignmentRequest* request, ::trade::CommerceOrderResponse* response, ::grpc::ClientUnaryReactor* reactor) override;
+      void CancelRmbConsignment(::grpc::ClientContext* context, const ::trade::CancelRmbConsignmentRequest* request, ::trade::RmbConsignmentResponse* response, std::function<void(::grpc::Status)>) override;
+      void CancelRmbConsignment(::grpc::ClientContext* context, const ::trade::CancelRmbConsignmentRequest* request, ::trade::RmbConsignmentResponse* response, ::grpc::ClientUnaryReactor* reactor) override;
+      void GetRmbOrder(::grpc::ClientContext* context, const ::trade::GetCommerceOrderRequest* request, ::trade::CommerceOrderResponse* response, std::function<void(::grpc::Status)>) override;
+      void GetRmbOrder(::grpc::ClientContext* context, const ::trade::GetCommerceOrderRequest* request, ::trade::CommerceOrderResponse* response, ::grpc::ClientUnaryReactor* reactor) override;
+      void ListRmbOrders(::grpc::ClientContext* context, const ::trade::ListCommerceOrdersRequest* request, ::trade::ListCommerceOrdersResponse* response, std::function<void(::grpc::Status)>) override;
+      void ListRmbOrders(::grpc::ClientContext* context, const ::trade::ListCommerceOrdersRequest* request, ::trade::ListCommerceOrdersResponse* response, ::grpc::ClientUnaryReactor* reactor) override;
+      void CancelRmbOrder(::grpc::ClientContext* context, const ::trade::CancelCommerceOrderRequest* request, ::trade::CommerceOrderResponse* response, std::function<void(::grpc::Status)>) override;
+      void CancelRmbOrder(::grpc::ClientContext* context, const ::trade::CancelCommerceOrderRequest* request, ::trade::CommerceOrderResponse* response, ::grpc::ClientUnaryReactor* reactor) override;
+      void ListSellerIncomes(::grpc::ClientContext* context, const ::trade::ListSellerIncomesRequest* request, ::trade::ListSellerIncomesResponse* response, std::function<void(::grpc::Status)>) override;
+      void ListSellerIncomes(::grpc::ClientContext* context, const ::trade::ListSellerIncomesRequest* request, ::trade::ListSellerIncomesResponse* response, ::grpc::ClientUnaryReactor* reactor) override;
+      void CreateWithdrawal(::grpc::ClientContext* context, const ::trade::CreateWithdrawalRequest* request, ::trade::WithdrawalResponse* response, std::function<void(::grpc::Status)>) override;
+      void CreateWithdrawal(::grpc::ClientContext* context, const ::trade::CreateWithdrawalRequest* request, ::trade::WithdrawalResponse* response, ::grpc::ClientUnaryReactor* reactor) override;
+      void GetWithdrawal(::grpc::ClientContext* context, const ::trade::GetWithdrawalRequest* request, ::trade::WithdrawalResponse* response, std::function<void(::grpc::Status)>) override;
+      void GetWithdrawal(::grpc::ClientContext* context, const ::trade::GetWithdrawalRequest* request, ::trade::WithdrawalResponse* response, ::grpc::ClientUnaryReactor* reactor) override;
      private:
       friend class Stub;
       explicit async(Stub* stub): stub_(stub) { }
@@ -594,6 +816,28 @@ class ClientPlayerJubaozhai final {
     ::grpc::ClientAsyncResponseReader< ::trade::BrowseCommerceOffersResponse>* PrepareAsyncBrowseCommerceOffersRaw(::grpc::ClientContext* context, const ::trade::BrowseCommerceOffersRequest& request, ::grpc::CompletionQueue* cq) override;
     ::grpc::ClientAsyncResponseReader< ::trade::ListTradeMarketsResponse>* AsyncListTradeMarketsRaw(::grpc::ClientContext* context, const ::trade::ListTradeMarketsRequest& request, ::grpc::CompletionQueue* cq) override;
     ::grpc::ClientAsyncResponseReader< ::trade::ListTradeMarketsResponse>* PrepareAsyncListTradeMarketsRaw(::grpc::ClientContext* context, const ::trade::ListTradeMarketsRequest& request, ::grpc::CompletionQueue* cq) override;
+    ::grpc::ClientAsyncResponseReader< ::trade::RmbConsignmentResponse>* AsyncCreateRmbConsignmentRaw(::grpc::ClientContext* context, const ::trade::CreateRmbConsignmentRequest& request, ::grpc::CompletionQueue* cq) override;
+    ::grpc::ClientAsyncResponseReader< ::trade::RmbConsignmentResponse>* PrepareAsyncCreateRmbConsignmentRaw(::grpc::ClientContext* context, const ::trade::CreateRmbConsignmentRequest& request, ::grpc::CompletionQueue* cq) override;
+    ::grpc::ClientAsyncResponseReader< ::trade::RmbConsignmentResponse>* AsyncGetRmbConsignmentRaw(::grpc::ClientContext* context, const ::trade::GetRmbConsignmentRequest& request, ::grpc::CompletionQueue* cq) override;
+    ::grpc::ClientAsyncResponseReader< ::trade::RmbConsignmentResponse>* PrepareAsyncGetRmbConsignmentRaw(::grpc::ClientContext* context, const ::trade::GetRmbConsignmentRequest& request, ::grpc::CompletionQueue* cq) override;
+    ::grpc::ClientAsyncResponseReader< ::trade::ListRmbConsignmentsResponse>* AsyncListRmbConsignmentsRaw(::grpc::ClientContext* context, const ::trade::ListRmbConsignmentsRequest& request, ::grpc::CompletionQueue* cq) override;
+    ::grpc::ClientAsyncResponseReader< ::trade::ListRmbConsignmentsResponse>* PrepareAsyncListRmbConsignmentsRaw(::grpc::ClientContext* context, const ::trade::ListRmbConsignmentsRequest& request, ::grpc::CompletionQueue* cq) override;
+    ::grpc::ClientAsyncResponseReader< ::trade::CommerceOrderResponse>* AsyncBuyRmbConsignmentRaw(::grpc::ClientContext* context, const ::trade::BuyRmbConsignmentRequest& request, ::grpc::CompletionQueue* cq) override;
+    ::grpc::ClientAsyncResponseReader< ::trade::CommerceOrderResponse>* PrepareAsyncBuyRmbConsignmentRaw(::grpc::ClientContext* context, const ::trade::BuyRmbConsignmentRequest& request, ::grpc::CompletionQueue* cq) override;
+    ::grpc::ClientAsyncResponseReader< ::trade::RmbConsignmentResponse>* AsyncCancelRmbConsignmentRaw(::grpc::ClientContext* context, const ::trade::CancelRmbConsignmentRequest& request, ::grpc::CompletionQueue* cq) override;
+    ::grpc::ClientAsyncResponseReader< ::trade::RmbConsignmentResponse>* PrepareAsyncCancelRmbConsignmentRaw(::grpc::ClientContext* context, const ::trade::CancelRmbConsignmentRequest& request, ::grpc::CompletionQueue* cq) override;
+    ::grpc::ClientAsyncResponseReader< ::trade::CommerceOrderResponse>* AsyncGetRmbOrderRaw(::grpc::ClientContext* context, const ::trade::GetCommerceOrderRequest& request, ::grpc::CompletionQueue* cq) override;
+    ::grpc::ClientAsyncResponseReader< ::trade::CommerceOrderResponse>* PrepareAsyncGetRmbOrderRaw(::grpc::ClientContext* context, const ::trade::GetCommerceOrderRequest& request, ::grpc::CompletionQueue* cq) override;
+    ::grpc::ClientAsyncResponseReader< ::trade::ListCommerceOrdersResponse>* AsyncListRmbOrdersRaw(::grpc::ClientContext* context, const ::trade::ListCommerceOrdersRequest& request, ::grpc::CompletionQueue* cq) override;
+    ::grpc::ClientAsyncResponseReader< ::trade::ListCommerceOrdersResponse>* PrepareAsyncListRmbOrdersRaw(::grpc::ClientContext* context, const ::trade::ListCommerceOrdersRequest& request, ::grpc::CompletionQueue* cq) override;
+    ::grpc::ClientAsyncResponseReader< ::trade::CommerceOrderResponse>* AsyncCancelRmbOrderRaw(::grpc::ClientContext* context, const ::trade::CancelCommerceOrderRequest& request, ::grpc::CompletionQueue* cq) override;
+    ::grpc::ClientAsyncResponseReader< ::trade::CommerceOrderResponse>* PrepareAsyncCancelRmbOrderRaw(::grpc::ClientContext* context, const ::trade::CancelCommerceOrderRequest& request, ::grpc::CompletionQueue* cq) override;
+    ::grpc::ClientAsyncResponseReader< ::trade::ListSellerIncomesResponse>* AsyncListSellerIncomesRaw(::grpc::ClientContext* context, const ::trade::ListSellerIncomesRequest& request, ::grpc::CompletionQueue* cq) override;
+    ::grpc::ClientAsyncResponseReader< ::trade::ListSellerIncomesResponse>* PrepareAsyncListSellerIncomesRaw(::grpc::ClientContext* context, const ::trade::ListSellerIncomesRequest& request, ::grpc::CompletionQueue* cq) override;
+    ::grpc::ClientAsyncResponseReader< ::trade::WithdrawalResponse>* AsyncCreateWithdrawalRaw(::grpc::ClientContext* context, const ::trade::CreateWithdrawalRequest& request, ::grpc::CompletionQueue* cq) override;
+    ::grpc::ClientAsyncResponseReader< ::trade::WithdrawalResponse>* PrepareAsyncCreateWithdrawalRaw(::grpc::ClientContext* context, const ::trade::CreateWithdrawalRequest& request, ::grpc::CompletionQueue* cq) override;
+    ::grpc::ClientAsyncResponseReader< ::trade::WithdrawalResponse>* AsyncGetWithdrawalRaw(::grpc::ClientContext* context, const ::trade::GetWithdrawalRequest& request, ::grpc::CompletionQueue* cq) override;
+    ::grpc::ClientAsyncResponseReader< ::trade::WithdrawalResponse>* PrepareAsyncGetWithdrawalRaw(::grpc::ClientContext* context, const ::trade::GetWithdrawalRequest& request, ::grpc::CompletionQueue* cq) override;
     const ::grpc::internal::RpcMethod rpcmethod_BrowseListings_;
     const ::grpc::internal::RpcMethod rpcmethod_GetListingDetail_;
     const ::grpc::internal::RpcMethod rpcmethod_SetFavorite_;
@@ -618,6 +862,17 @@ class ClientPlayerJubaozhai final {
     const ::grpc::internal::RpcMethod rpcmethod_CancelAuctionLot_;
     const ::grpc::internal::RpcMethod rpcmethod_BrowseCommerceOffers_;
     const ::grpc::internal::RpcMethod rpcmethod_ListTradeMarkets_;
+    const ::grpc::internal::RpcMethod rpcmethod_CreateRmbConsignment_;
+    const ::grpc::internal::RpcMethod rpcmethod_GetRmbConsignment_;
+    const ::grpc::internal::RpcMethod rpcmethod_ListRmbConsignments_;
+    const ::grpc::internal::RpcMethod rpcmethod_BuyRmbConsignment_;
+    const ::grpc::internal::RpcMethod rpcmethod_CancelRmbConsignment_;
+    const ::grpc::internal::RpcMethod rpcmethod_GetRmbOrder_;
+    const ::grpc::internal::RpcMethod rpcmethod_ListRmbOrders_;
+    const ::grpc::internal::RpcMethod rpcmethod_CancelRmbOrder_;
+    const ::grpc::internal::RpcMethod rpcmethod_ListSellerIncomes_;
+    const ::grpc::internal::RpcMethod rpcmethod_CreateWithdrawal_;
+    const ::grpc::internal::RpcMethod rpcmethod_GetWithdrawal_;
   };
   static std::unique_ptr<Stub> NewStub(const std::shared_ptr< ::grpc::ChannelInterface>& channel, const ::grpc::StubOptions& options = ::grpc::StubOptions());
 
@@ -651,6 +906,18 @@ class ClientPlayerJubaozhai final {
     virtual ::grpc::Status CancelAuctionLot(::grpc::ServerContext* context, const ::trade::CancelAuctionLotRequest* request, ::trade::AuctionLotResponse* response);
     virtual ::grpc::Status BrowseCommerceOffers(::grpc::ServerContext* context, const ::trade::BrowseCommerceOffersRequest* request, ::trade::BrowseCommerceOffersResponse* response);
     virtual ::grpc::Status ListTradeMarkets(::grpc::ServerContext* context, const ::trade::ListTradeMarketsRequest* request, ::trade::ListTradeMarketsResponse* response);
+    // 人民币分、原账号订单权及卖家逐单结算；支付/退款/出款原件只来自内部适配器。
+    virtual ::grpc::Status CreateRmbConsignment(::grpc::ServerContext* context, const ::trade::CreateRmbConsignmentRequest* request, ::trade::RmbConsignmentResponse* response);
+    virtual ::grpc::Status GetRmbConsignment(::grpc::ServerContext* context, const ::trade::GetRmbConsignmentRequest* request, ::trade::RmbConsignmentResponse* response);
+    virtual ::grpc::Status ListRmbConsignments(::grpc::ServerContext* context, const ::trade::ListRmbConsignmentsRequest* request, ::trade::ListRmbConsignmentsResponse* response);
+    virtual ::grpc::Status BuyRmbConsignment(::grpc::ServerContext* context, const ::trade::BuyRmbConsignmentRequest* request, ::trade::CommerceOrderResponse* response);
+    virtual ::grpc::Status CancelRmbConsignment(::grpc::ServerContext* context, const ::trade::CancelRmbConsignmentRequest* request, ::trade::RmbConsignmentResponse* response);
+    virtual ::grpc::Status GetRmbOrder(::grpc::ServerContext* context, const ::trade::GetCommerceOrderRequest* request, ::trade::CommerceOrderResponse* response);
+    virtual ::grpc::Status ListRmbOrders(::grpc::ServerContext* context, const ::trade::ListCommerceOrdersRequest* request, ::trade::ListCommerceOrdersResponse* response);
+    virtual ::grpc::Status CancelRmbOrder(::grpc::ServerContext* context, const ::trade::CancelCommerceOrderRequest* request, ::trade::CommerceOrderResponse* response);
+    virtual ::grpc::Status ListSellerIncomes(::grpc::ServerContext* context, const ::trade::ListSellerIncomesRequest* request, ::trade::ListSellerIncomesResponse* response);
+    virtual ::grpc::Status CreateWithdrawal(::grpc::ServerContext* context, const ::trade::CreateWithdrawalRequest* request, ::trade::WithdrawalResponse* response);
+    virtual ::grpc::Status GetWithdrawal(::grpc::ServerContext* context, const ::trade::GetWithdrawalRequest* request, ::trade::WithdrawalResponse* response);
   };
   template <class BaseClass>
   class WithAsyncMethod_BrowseListings : public BaseClass {
@@ -1132,7 +1399,227 @@ class ClientPlayerJubaozhai final {
       ::grpc::Service::RequestAsyncUnary(23, context, request, response, new_call_cq, notification_cq, tag);
     }
   };
-  typedef WithAsyncMethod_BrowseListings<WithAsyncMethod_GetListingDetail<WithAsyncMethod_SetFavorite<WithAsyncMethod_GetMyShelf<WithAsyncMethod_ListOfficialSkus<WithAsyncMethod_CreateOfficialOrder<WithAsyncMethod_GetCommerceOrder<WithAsyncMethod_CancelCommerceOrder<WithAsyncMethod_ListCommerceOrders<WithAsyncMethod_CreatePlayerTrade<WithAsyncMethod_ConfirmPlayerTrade<WithAsyncMethod_CreateConsignment<WithAsyncMethod_BuyConsignment<WithAsyncMethod_CancelConsignment<WithAsyncMethod_PlaceMarketOrder<WithAsyncMethod_CancelMarketOrder<WithAsyncMethod_ListMarketOrders<WithAsyncMethod_GetMarketDepth<WithAsyncMethod_CreateAuctionLot<WithAsyncMethod_PlaceAuctionBid<WithAsyncMethod_GetAuctionLot<WithAsyncMethod_CancelAuctionLot<WithAsyncMethod_BrowseCommerceOffers<WithAsyncMethod_ListTradeMarkets<Service > > > > > > > > > > > > > > > > > > > > > > > > AsyncService;
+  template <class BaseClass>
+  class WithAsyncMethod_CreateRmbConsignment : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithAsyncMethod_CreateRmbConsignment() {
+      ::grpc::Service::MarkMethodAsync(24);
+    }
+    ~WithAsyncMethod_CreateRmbConsignment() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status CreateRmbConsignment(::grpc::ServerContext* /*context*/, const ::trade::CreateRmbConsignmentRequest* /*request*/, ::trade::RmbConsignmentResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    void RequestCreateRmbConsignment(::grpc::ServerContext* context, ::trade::CreateRmbConsignmentRequest* request, ::grpc::ServerAsyncResponseWriter< ::trade::RmbConsignmentResponse>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
+      ::grpc::Service::RequestAsyncUnary(24, context, request, response, new_call_cq, notification_cq, tag);
+    }
+  };
+  template <class BaseClass>
+  class WithAsyncMethod_GetRmbConsignment : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithAsyncMethod_GetRmbConsignment() {
+      ::grpc::Service::MarkMethodAsync(25);
+    }
+    ~WithAsyncMethod_GetRmbConsignment() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status GetRmbConsignment(::grpc::ServerContext* /*context*/, const ::trade::GetRmbConsignmentRequest* /*request*/, ::trade::RmbConsignmentResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    void RequestGetRmbConsignment(::grpc::ServerContext* context, ::trade::GetRmbConsignmentRequest* request, ::grpc::ServerAsyncResponseWriter< ::trade::RmbConsignmentResponse>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
+      ::grpc::Service::RequestAsyncUnary(25, context, request, response, new_call_cq, notification_cq, tag);
+    }
+  };
+  template <class BaseClass>
+  class WithAsyncMethod_ListRmbConsignments : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithAsyncMethod_ListRmbConsignments() {
+      ::grpc::Service::MarkMethodAsync(26);
+    }
+    ~WithAsyncMethod_ListRmbConsignments() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status ListRmbConsignments(::grpc::ServerContext* /*context*/, const ::trade::ListRmbConsignmentsRequest* /*request*/, ::trade::ListRmbConsignmentsResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    void RequestListRmbConsignments(::grpc::ServerContext* context, ::trade::ListRmbConsignmentsRequest* request, ::grpc::ServerAsyncResponseWriter< ::trade::ListRmbConsignmentsResponse>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
+      ::grpc::Service::RequestAsyncUnary(26, context, request, response, new_call_cq, notification_cq, tag);
+    }
+  };
+  template <class BaseClass>
+  class WithAsyncMethod_BuyRmbConsignment : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithAsyncMethod_BuyRmbConsignment() {
+      ::grpc::Service::MarkMethodAsync(27);
+    }
+    ~WithAsyncMethod_BuyRmbConsignment() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status BuyRmbConsignment(::grpc::ServerContext* /*context*/, const ::trade::BuyRmbConsignmentRequest* /*request*/, ::trade::CommerceOrderResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    void RequestBuyRmbConsignment(::grpc::ServerContext* context, ::trade::BuyRmbConsignmentRequest* request, ::grpc::ServerAsyncResponseWriter< ::trade::CommerceOrderResponse>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
+      ::grpc::Service::RequestAsyncUnary(27, context, request, response, new_call_cq, notification_cq, tag);
+    }
+  };
+  template <class BaseClass>
+  class WithAsyncMethod_CancelRmbConsignment : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithAsyncMethod_CancelRmbConsignment() {
+      ::grpc::Service::MarkMethodAsync(28);
+    }
+    ~WithAsyncMethod_CancelRmbConsignment() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status CancelRmbConsignment(::grpc::ServerContext* /*context*/, const ::trade::CancelRmbConsignmentRequest* /*request*/, ::trade::RmbConsignmentResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    void RequestCancelRmbConsignment(::grpc::ServerContext* context, ::trade::CancelRmbConsignmentRequest* request, ::grpc::ServerAsyncResponseWriter< ::trade::RmbConsignmentResponse>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
+      ::grpc::Service::RequestAsyncUnary(28, context, request, response, new_call_cq, notification_cq, tag);
+    }
+  };
+  template <class BaseClass>
+  class WithAsyncMethod_GetRmbOrder : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithAsyncMethod_GetRmbOrder() {
+      ::grpc::Service::MarkMethodAsync(29);
+    }
+    ~WithAsyncMethod_GetRmbOrder() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status GetRmbOrder(::grpc::ServerContext* /*context*/, const ::trade::GetCommerceOrderRequest* /*request*/, ::trade::CommerceOrderResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    void RequestGetRmbOrder(::grpc::ServerContext* context, ::trade::GetCommerceOrderRequest* request, ::grpc::ServerAsyncResponseWriter< ::trade::CommerceOrderResponse>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
+      ::grpc::Service::RequestAsyncUnary(29, context, request, response, new_call_cq, notification_cq, tag);
+    }
+  };
+  template <class BaseClass>
+  class WithAsyncMethod_ListRmbOrders : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithAsyncMethod_ListRmbOrders() {
+      ::grpc::Service::MarkMethodAsync(30);
+    }
+    ~WithAsyncMethod_ListRmbOrders() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status ListRmbOrders(::grpc::ServerContext* /*context*/, const ::trade::ListCommerceOrdersRequest* /*request*/, ::trade::ListCommerceOrdersResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    void RequestListRmbOrders(::grpc::ServerContext* context, ::trade::ListCommerceOrdersRequest* request, ::grpc::ServerAsyncResponseWriter< ::trade::ListCommerceOrdersResponse>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
+      ::grpc::Service::RequestAsyncUnary(30, context, request, response, new_call_cq, notification_cq, tag);
+    }
+  };
+  template <class BaseClass>
+  class WithAsyncMethod_CancelRmbOrder : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithAsyncMethod_CancelRmbOrder() {
+      ::grpc::Service::MarkMethodAsync(31);
+    }
+    ~WithAsyncMethod_CancelRmbOrder() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status CancelRmbOrder(::grpc::ServerContext* /*context*/, const ::trade::CancelCommerceOrderRequest* /*request*/, ::trade::CommerceOrderResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    void RequestCancelRmbOrder(::grpc::ServerContext* context, ::trade::CancelCommerceOrderRequest* request, ::grpc::ServerAsyncResponseWriter< ::trade::CommerceOrderResponse>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
+      ::grpc::Service::RequestAsyncUnary(31, context, request, response, new_call_cq, notification_cq, tag);
+    }
+  };
+  template <class BaseClass>
+  class WithAsyncMethod_ListSellerIncomes : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithAsyncMethod_ListSellerIncomes() {
+      ::grpc::Service::MarkMethodAsync(32);
+    }
+    ~WithAsyncMethod_ListSellerIncomes() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status ListSellerIncomes(::grpc::ServerContext* /*context*/, const ::trade::ListSellerIncomesRequest* /*request*/, ::trade::ListSellerIncomesResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    void RequestListSellerIncomes(::grpc::ServerContext* context, ::trade::ListSellerIncomesRequest* request, ::grpc::ServerAsyncResponseWriter< ::trade::ListSellerIncomesResponse>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
+      ::grpc::Service::RequestAsyncUnary(32, context, request, response, new_call_cq, notification_cq, tag);
+    }
+  };
+  template <class BaseClass>
+  class WithAsyncMethod_CreateWithdrawal : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithAsyncMethod_CreateWithdrawal() {
+      ::grpc::Service::MarkMethodAsync(33);
+    }
+    ~WithAsyncMethod_CreateWithdrawal() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status CreateWithdrawal(::grpc::ServerContext* /*context*/, const ::trade::CreateWithdrawalRequest* /*request*/, ::trade::WithdrawalResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    void RequestCreateWithdrawal(::grpc::ServerContext* context, ::trade::CreateWithdrawalRequest* request, ::grpc::ServerAsyncResponseWriter< ::trade::WithdrawalResponse>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
+      ::grpc::Service::RequestAsyncUnary(33, context, request, response, new_call_cq, notification_cq, tag);
+    }
+  };
+  template <class BaseClass>
+  class WithAsyncMethod_GetWithdrawal : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithAsyncMethod_GetWithdrawal() {
+      ::grpc::Service::MarkMethodAsync(34);
+    }
+    ~WithAsyncMethod_GetWithdrawal() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status GetWithdrawal(::grpc::ServerContext* /*context*/, const ::trade::GetWithdrawalRequest* /*request*/, ::trade::WithdrawalResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    void RequestGetWithdrawal(::grpc::ServerContext* context, ::trade::GetWithdrawalRequest* request, ::grpc::ServerAsyncResponseWriter< ::trade::WithdrawalResponse>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
+      ::grpc::Service::RequestAsyncUnary(34, context, request, response, new_call_cq, notification_cq, tag);
+    }
+  };
+  typedef WithAsyncMethod_BrowseListings<WithAsyncMethod_GetListingDetail<WithAsyncMethod_SetFavorite<WithAsyncMethod_GetMyShelf<WithAsyncMethod_ListOfficialSkus<WithAsyncMethod_CreateOfficialOrder<WithAsyncMethod_GetCommerceOrder<WithAsyncMethod_CancelCommerceOrder<WithAsyncMethod_ListCommerceOrders<WithAsyncMethod_CreatePlayerTrade<WithAsyncMethod_ConfirmPlayerTrade<WithAsyncMethod_CreateConsignment<WithAsyncMethod_BuyConsignment<WithAsyncMethod_CancelConsignment<WithAsyncMethod_PlaceMarketOrder<WithAsyncMethod_CancelMarketOrder<WithAsyncMethod_ListMarketOrders<WithAsyncMethod_GetMarketDepth<WithAsyncMethod_CreateAuctionLot<WithAsyncMethod_PlaceAuctionBid<WithAsyncMethod_GetAuctionLot<WithAsyncMethod_CancelAuctionLot<WithAsyncMethod_BrowseCommerceOffers<WithAsyncMethod_ListTradeMarkets<WithAsyncMethod_CreateRmbConsignment<WithAsyncMethod_GetRmbConsignment<WithAsyncMethod_ListRmbConsignments<WithAsyncMethod_BuyRmbConsignment<WithAsyncMethod_CancelRmbConsignment<WithAsyncMethod_GetRmbOrder<WithAsyncMethod_ListRmbOrders<WithAsyncMethod_CancelRmbOrder<WithAsyncMethod_ListSellerIncomes<WithAsyncMethod_CreateWithdrawal<WithAsyncMethod_GetWithdrawal<Service > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > AsyncService;
   template <class BaseClass>
   class WithCallbackMethod_BrowseListings : public BaseClass {
    private:
@@ -1781,7 +2268,304 @@ class ClientPlayerJubaozhai final {
     virtual ::grpc::ServerUnaryReactor* ListTradeMarkets(
       ::grpc::CallbackServerContext* /*context*/, const ::trade::ListTradeMarketsRequest* /*request*/, ::trade::ListTradeMarketsResponse* /*response*/)  { return nullptr; }
   };
-  typedef WithCallbackMethod_BrowseListings<WithCallbackMethod_GetListingDetail<WithCallbackMethod_SetFavorite<WithCallbackMethod_GetMyShelf<WithCallbackMethod_ListOfficialSkus<WithCallbackMethod_CreateOfficialOrder<WithCallbackMethod_GetCommerceOrder<WithCallbackMethod_CancelCommerceOrder<WithCallbackMethod_ListCommerceOrders<WithCallbackMethod_CreatePlayerTrade<WithCallbackMethod_ConfirmPlayerTrade<WithCallbackMethod_CreateConsignment<WithCallbackMethod_BuyConsignment<WithCallbackMethod_CancelConsignment<WithCallbackMethod_PlaceMarketOrder<WithCallbackMethod_CancelMarketOrder<WithCallbackMethod_ListMarketOrders<WithCallbackMethod_GetMarketDepth<WithCallbackMethod_CreateAuctionLot<WithCallbackMethod_PlaceAuctionBid<WithCallbackMethod_GetAuctionLot<WithCallbackMethod_CancelAuctionLot<WithCallbackMethod_BrowseCommerceOffers<WithCallbackMethod_ListTradeMarkets<Service > > > > > > > > > > > > > > > > > > > > > > > > CallbackService;
+  template <class BaseClass>
+  class WithCallbackMethod_CreateRmbConsignment : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithCallbackMethod_CreateRmbConsignment() {
+      ::grpc::Service::MarkMethodCallback(24,
+          new ::grpc::internal::CallbackUnaryHandler< ::trade::CreateRmbConsignmentRequest, ::trade::RmbConsignmentResponse>(
+            [this](
+                   ::grpc::CallbackServerContext* context, const ::trade::CreateRmbConsignmentRequest* request, ::trade::RmbConsignmentResponse* response) { return this->CreateRmbConsignment(context, request, response); }));}
+    void SetMessageAllocatorFor_CreateRmbConsignment(
+        ::grpc::MessageAllocator< ::trade::CreateRmbConsignmentRequest, ::trade::RmbConsignmentResponse>* allocator) {
+      ::grpc::internal::MethodHandler* const handler = ::grpc::Service::GetHandler(24);
+      static_cast<::grpc::internal::CallbackUnaryHandler< ::trade::CreateRmbConsignmentRequest, ::trade::RmbConsignmentResponse>*>(handler)
+              ->SetMessageAllocator(allocator);
+    }
+    ~WithCallbackMethod_CreateRmbConsignment() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status CreateRmbConsignment(::grpc::ServerContext* /*context*/, const ::trade::CreateRmbConsignmentRequest* /*request*/, ::trade::RmbConsignmentResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    virtual ::grpc::ServerUnaryReactor* CreateRmbConsignment(
+      ::grpc::CallbackServerContext* /*context*/, const ::trade::CreateRmbConsignmentRequest* /*request*/, ::trade::RmbConsignmentResponse* /*response*/)  { return nullptr; }
+  };
+  template <class BaseClass>
+  class WithCallbackMethod_GetRmbConsignment : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithCallbackMethod_GetRmbConsignment() {
+      ::grpc::Service::MarkMethodCallback(25,
+          new ::grpc::internal::CallbackUnaryHandler< ::trade::GetRmbConsignmentRequest, ::trade::RmbConsignmentResponse>(
+            [this](
+                   ::grpc::CallbackServerContext* context, const ::trade::GetRmbConsignmentRequest* request, ::trade::RmbConsignmentResponse* response) { return this->GetRmbConsignment(context, request, response); }));}
+    void SetMessageAllocatorFor_GetRmbConsignment(
+        ::grpc::MessageAllocator< ::trade::GetRmbConsignmentRequest, ::trade::RmbConsignmentResponse>* allocator) {
+      ::grpc::internal::MethodHandler* const handler = ::grpc::Service::GetHandler(25);
+      static_cast<::grpc::internal::CallbackUnaryHandler< ::trade::GetRmbConsignmentRequest, ::trade::RmbConsignmentResponse>*>(handler)
+              ->SetMessageAllocator(allocator);
+    }
+    ~WithCallbackMethod_GetRmbConsignment() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status GetRmbConsignment(::grpc::ServerContext* /*context*/, const ::trade::GetRmbConsignmentRequest* /*request*/, ::trade::RmbConsignmentResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    virtual ::grpc::ServerUnaryReactor* GetRmbConsignment(
+      ::grpc::CallbackServerContext* /*context*/, const ::trade::GetRmbConsignmentRequest* /*request*/, ::trade::RmbConsignmentResponse* /*response*/)  { return nullptr; }
+  };
+  template <class BaseClass>
+  class WithCallbackMethod_ListRmbConsignments : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithCallbackMethod_ListRmbConsignments() {
+      ::grpc::Service::MarkMethodCallback(26,
+          new ::grpc::internal::CallbackUnaryHandler< ::trade::ListRmbConsignmentsRequest, ::trade::ListRmbConsignmentsResponse>(
+            [this](
+                   ::grpc::CallbackServerContext* context, const ::trade::ListRmbConsignmentsRequest* request, ::trade::ListRmbConsignmentsResponse* response) { return this->ListRmbConsignments(context, request, response); }));}
+    void SetMessageAllocatorFor_ListRmbConsignments(
+        ::grpc::MessageAllocator< ::trade::ListRmbConsignmentsRequest, ::trade::ListRmbConsignmentsResponse>* allocator) {
+      ::grpc::internal::MethodHandler* const handler = ::grpc::Service::GetHandler(26);
+      static_cast<::grpc::internal::CallbackUnaryHandler< ::trade::ListRmbConsignmentsRequest, ::trade::ListRmbConsignmentsResponse>*>(handler)
+              ->SetMessageAllocator(allocator);
+    }
+    ~WithCallbackMethod_ListRmbConsignments() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status ListRmbConsignments(::grpc::ServerContext* /*context*/, const ::trade::ListRmbConsignmentsRequest* /*request*/, ::trade::ListRmbConsignmentsResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    virtual ::grpc::ServerUnaryReactor* ListRmbConsignments(
+      ::grpc::CallbackServerContext* /*context*/, const ::trade::ListRmbConsignmentsRequest* /*request*/, ::trade::ListRmbConsignmentsResponse* /*response*/)  { return nullptr; }
+  };
+  template <class BaseClass>
+  class WithCallbackMethod_BuyRmbConsignment : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithCallbackMethod_BuyRmbConsignment() {
+      ::grpc::Service::MarkMethodCallback(27,
+          new ::grpc::internal::CallbackUnaryHandler< ::trade::BuyRmbConsignmentRequest, ::trade::CommerceOrderResponse>(
+            [this](
+                   ::grpc::CallbackServerContext* context, const ::trade::BuyRmbConsignmentRequest* request, ::trade::CommerceOrderResponse* response) { return this->BuyRmbConsignment(context, request, response); }));}
+    void SetMessageAllocatorFor_BuyRmbConsignment(
+        ::grpc::MessageAllocator< ::trade::BuyRmbConsignmentRequest, ::trade::CommerceOrderResponse>* allocator) {
+      ::grpc::internal::MethodHandler* const handler = ::grpc::Service::GetHandler(27);
+      static_cast<::grpc::internal::CallbackUnaryHandler< ::trade::BuyRmbConsignmentRequest, ::trade::CommerceOrderResponse>*>(handler)
+              ->SetMessageAllocator(allocator);
+    }
+    ~WithCallbackMethod_BuyRmbConsignment() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status BuyRmbConsignment(::grpc::ServerContext* /*context*/, const ::trade::BuyRmbConsignmentRequest* /*request*/, ::trade::CommerceOrderResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    virtual ::grpc::ServerUnaryReactor* BuyRmbConsignment(
+      ::grpc::CallbackServerContext* /*context*/, const ::trade::BuyRmbConsignmentRequest* /*request*/, ::trade::CommerceOrderResponse* /*response*/)  { return nullptr; }
+  };
+  template <class BaseClass>
+  class WithCallbackMethod_CancelRmbConsignment : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithCallbackMethod_CancelRmbConsignment() {
+      ::grpc::Service::MarkMethodCallback(28,
+          new ::grpc::internal::CallbackUnaryHandler< ::trade::CancelRmbConsignmentRequest, ::trade::RmbConsignmentResponse>(
+            [this](
+                   ::grpc::CallbackServerContext* context, const ::trade::CancelRmbConsignmentRequest* request, ::trade::RmbConsignmentResponse* response) { return this->CancelRmbConsignment(context, request, response); }));}
+    void SetMessageAllocatorFor_CancelRmbConsignment(
+        ::grpc::MessageAllocator< ::trade::CancelRmbConsignmentRequest, ::trade::RmbConsignmentResponse>* allocator) {
+      ::grpc::internal::MethodHandler* const handler = ::grpc::Service::GetHandler(28);
+      static_cast<::grpc::internal::CallbackUnaryHandler< ::trade::CancelRmbConsignmentRequest, ::trade::RmbConsignmentResponse>*>(handler)
+              ->SetMessageAllocator(allocator);
+    }
+    ~WithCallbackMethod_CancelRmbConsignment() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status CancelRmbConsignment(::grpc::ServerContext* /*context*/, const ::trade::CancelRmbConsignmentRequest* /*request*/, ::trade::RmbConsignmentResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    virtual ::grpc::ServerUnaryReactor* CancelRmbConsignment(
+      ::grpc::CallbackServerContext* /*context*/, const ::trade::CancelRmbConsignmentRequest* /*request*/, ::trade::RmbConsignmentResponse* /*response*/)  { return nullptr; }
+  };
+  template <class BaseClass>
+  class WithCallbackMethod_GetRmbOrder : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithCallbackMethod_GetRmbOrder() {
+      ::grpc::Service::MarkMethodCallback(29,
+          new ::grpc::internal::CallbackUnaryHandler< ::trade::GetCommerceOrderRequest, ::trade::CommerceOrderResponse>(
+            [this](
+                   ::grpc::CallbackServerContext* context, const ::trade::GetCommerceOrderRequest* request, ::trade::CommerceOrderResponse* response) { return this->GetRmbOrder(context, request, response); }));}
+    void SetMessageAllocatorFor_GetRmbOrder(
+        ::grpc::MessageAllocator< ::trade::GetCommerceOrderRequest, ::trade::CommerceOrderResponse>* allocator) {
+      ::grpc::internal::MethodHandler* const handler = ::grpc::Service::GetHandler(29);
+      static_cast<::grpc::internal::CallbackUnaryHandler< ::trade::GetCommerceOrderRequest, ::trade::CommerceOrderResponse>*>(handler)
+              ->SetMessageAllocator(allocator);
+    }
+    ~WithCallbackMethod_GetRmbOrder() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status GetRmbOrder(::grpc::ServerContext* /*context*/, const ::trade::GetCommerceOrderRequest* /*request*/, ::trade::CommerceOrderResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    virtual ::grpc::ServerUnaryReactor* GetRmbOrder(
+      ::grpc::CallbackServerContext* /*context*/, const ::trade::GetCommerceOrderRequest* /*request*/, ::trade::CommerceOrderResponse* /*response*/)  { return nullptr; }
+  };
+  template <class BaseClass>
+  class WithCallbackMethod_ListRmbOrders : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithCallbackMethod_ListRmbOrders() {
+      ::grpc::Service::MarkMethodCallback(30,
+          new ::grpc::internal::CallbackUnaryHandler< ::trade::ListCommerceOrdersRequest, ::trade::ListCommerceOrdersResponse>(
+            [this](
+                   ::grpc::CallbackServerContext* context, const ::trade::ListCommerceOrdersRequest* request, ::trade::ListCommerceOrdersResponse* response) { return this->ListRmbOrders(context, request, response); }));}
+    void SetMessageAllocatorFor_ListRmbOrders(
+        ::grpc::MessageAllocator< ::trade::ListCommerceOrdersRequest, ::trade::ListCommerceOrdersResponse>* allocator) {
+      ::grpc::internal::MethodHandler* const handler = ::grpc::Service::GetHandler(30);
+      static_cast<::grpc::internal::CallbackUnaryHandler< ::trade::ListCommerceOrdersRequest, ::trade::ListCommerceOrdersResponse>*>(handler)
+              ->SetMessageAllocator(allocator);
+    }
+    ~WithCallbackMethod_ListRmbOrders() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status ListRmbOrders(::grpc::ServerContext* /*context*/, const ::trade::ListCommerceOrdersRequest* /*request*/, ::trade::ListCommerceOrdersResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    virtual ::grpc::ServerUnaryReactor* ListRmbOrders(
+      ::grpc::CallbackServerContext* /*context*/, const ::trade::ListCommerceOrdersRequest* /*request*/, ::trade::ListCommerceOrdersResponse* /*response*/)  { return nullptr; }
+  };
+  template <class BaseClass>
+  class WithCallbackMethod_CancelRmbOrder : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithCallbackMethod_CancelRmbOrder() {
+      ::grpc::Service::MarkMethodCallback(31,
+          new ::grpc::internal::CallbackUnaryHandler< ::trade::CancelCommerceOrderRequest, ::trade::CommerceOrderResponse>(
+            [this](
+                   ::grpc::CallbackServerContext* context, const ::trade::CancelCommerceOrderRequest* request, ::trade::CommerceOrderResponse* response) { return this->CancelRmbOrder(context, request, response); }));}
+    void SetMessageAllocatorFor_CancelRmbOrder(
+        ::grpc::MessageAllocator< ::trade::CancelCommerceOrderRequest, ::trade::CommerceOrderResponse>* allocator) {
+      ::grpc::internal::MethodHandler* const handler = ::grpc::Service::GetHandler(31);
+      static_cast<::grpc::internal::CallbackUnaryHandler< ::trade::CancelCommerceOrderRequest, ::trade::CommerceOrderResponse>*>(handler)
+              ->SetMessageAllocator(allocator);
+    }
+    ~WithCallbackMethod_CancelRmbOrder() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status CancelRmbOrder(::grpc::ServerContext* /*context*/, const ::trade::CancelCommerceOrderRequest* /*request*/, ::trade::CommerceOrderResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    virtual ::grpc::ServerUnaryReactor* CancelRmbOrder(
+      ::grpc::CallbackServerContext* /*context*/, const ::trade::CancelCommerceOrderRequest* /*request*/, ::trade::CommerceOrderResponse* /*response*/)  { return nullptr; }
+  };
+  template <class BaseClass>
+  class WithCallbackMethod_ListSellerIncomes : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithCallbackMethod_ListSellerIncomes() {
+      ::grpc::Service::MarkMethodCallback(32,
+          new ::grpc::internal::CallbackUnaryHandler< ::trade::ListSellerIncomesRequest, ::trade::ListSellerIncomesResponse>(
+            [this](
+                   ::grpc::CallbackServerContext* context, const ::trade::ListSellerIncomesRequest* request, ::trade::ListSellerIncomesResponse* response) { return this->ListSellerIncomes(context, request, response); }));}
+    void SetMessageAllocatorFor_ListSellerIncomes(
+        ::grpc::MessageAllocator< ::trade::ListSellerIncomesRequest, ::trade::ListSellerIncomesResponse>* allocator) {
+      ::grpc::internal::MethodHandler* const handler = ::grpc::Service::GetHandler(32);
+      static_cast<::grpc::internal::CallbackUnaryHandler< ::trade::ListSellerIncomesRequest, ::trade::ListSellerIncomesResponse>*>(handler)
+              ->SetMessageAllocator(allocator);
+    }
+    ~WithCallbackMethod_ListSellerIncomes() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status ListSellerIncomes(::grpc::ServerContext* /*context*/, const ::trade::ListSellerIncomesRequest* /*request*/, ::trade::ListSellerIncomesResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    virtual ::grpc::ServerUnaryReactor* ListSellerIncomes(
+      ::grpc::CallbackServerContext* /*context*/, const ::trade::ListSellerIncomesRequest* /*request*/, ::trade::ListSellerIncomesResponse* /*response*/)  { return nullptr; }
+  };
+  template <class BaseClass>
+  class WithCallbackMethod_CreateWithdrawal : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithCallbackMethod_CreateWithdrawal() {
+      ::grpc::Service::MarkMethodCallback(33,
+          new ::grpc::internal::CallbackUnaryHandler< ::trade::CreateWithdrawalRequest, ::trade::WithdrawalResponse>(
+            [this](
+                   ::grpc::CallbackServerContext* context, const ::trade::CreateWithdrawalRequest* request, ::trade::WithdrawalResponse* response) { return this->CreateWithdrawal(context, request, response); }));}
+    void SetMessageAllocatorFor_CreateWithdrawal(
+        ::grpc::MessageAllocator< ::trade::CreateWithdrawalRequest, ::trade::WithdrawalResponse>* allocator) {
+      ::grpc::internal::MethodHandler* const handler = ::grpc::Service::GetHandler(33);
+      static_cast<::grpc::internal::CallbackUnaryHandler< ::trade::CreateWithdrawalRequest, ::trade::WithdrawalResponse>*>(handler)
+              ->SetMessageAllocator(allocator);
+    }
+    ~WithCallbackMethod_CreateWithdrawal() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status CreateWithdrawal(::grpc::ServerContext* /*context*/, const ::trade::CreateWithdrawalRequest* /*request*/, ::trade::WithdrawalResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    virtual ::grpc::ServerUnaryReactor* CreateWithdrawal(
+      ::grpc::CallbackServerContext* /*context*/, const ::trade::CreateWithdrawalRequest* /*request*/, ::trade::WithdrawalResponse* /*response*/)  { return nullptr; }
+  };
+  template <class BaseClass>
+  class WithCallbackMethod_GetWithdrawal : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithCallbackMethod_GetWithdrawal() {
+      ::grpc::Service::MarkMethodCallback(34,
+          new ::grpc::internal::CallbackUnaryHandler< ::trade::GetWithdrawalRequest, ::trade::WithdrawalResponse>(
+            [this](
+                   ::grpc::CallbackServerContext* context, const ::trade::GetWithdrawalRequest* request, ::trade::WithdrawalResponse* response) { return this->GetWithdrawal(context, request, response); }));}
+    void SetMessageAllocatorFor_GetWithdrawal(
+        ::grpc::MessageAllocator< ::trade::GetWithdrawalRequest, ::trade::WithdrawalResponse>* allocator) {
+      ::grpc::internal::MethodHandler* const handler = ::grpc::Service::GetHandler(34);
+      static_cast<::grpc::internal::CallbackUnaryHandler< ::trade::GetWithdrawalRequest, ::trade::WithdrawalResponse>*>(handler)
+              ->SetMessageAllocator(allocator);
+    }
+    ~WithCallbackMethod_GetWithdrawal() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status GetWithdrawal(::grpc::ServerContext* /*context*/, const ::trade::GetWithdrawalRequest* /*request*/, ::trade::WithdrawalResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    virtual ::grpc::ServerUnaryReactor* GetWithdrawal(
+      ::grpc::CallbackServerContext* /*context*/, const ::trade::GetWithdrawalRequest* /*request*/, ::trade::WithdrawalResponse* /*response*/)  { return nullptr; }
+  };
+  typedef WithCallbackMethod_BrowseListings<WithCallbackMethod_GetListingDetail<WithCallbackMethod_SetFavorite<WithCallbackMethod_GetMyShelf<WithCallbackMethod_ListOfficialSkus<WithCallbackMethod_CreateOfficialOrder<WithCallbackMethod_GetCommerceOrder<WithCallbackMethod_CancelCommerceOrder<WithCallbackMethod_ListCommerceOrders<WithCallbackMethod_CreatePlayerTrade<WithCallbackMethod_ConfirmPlayerTrade<WithCallbackMethod_CreateConsignment<WithCallbackMethod_BuyConsignment<WithCallbackMethod_CancelConsignment<WithCallbackMethod_PlaceMarketOrder<WithCallbackMethod_CancelMarketOrder<WithCallbackMethod_ListMarketOrders<WithCallbackMethod_GetMarketDepth<WithCallbackMethod_CreateAuctionLot<WithCallbackMethod_PlaceAuctionBid<WithCallbackMethod_GetAuctionLot<WithCallbackMethod_CancelAuctionLot<WithCallbackMethod_BrowseCommerceOffers<WithCallbackMethod_ListTradeMarkets<WithCallbackMethod_CreateRmbConsignment<WithCallbackMethod_GetRmbConsignment<WithCallbackMethod_ListRmbConsignments<WithCallbackMethod_BuyRmbConsignment<WithCallbackMethod_CancelRmbConsignment<WithCallbackMethod_GetRmbOrder<WithCallbackMethod_ListRmbOrders<WithCallbackMethod_CancelRmbOrder<WithCallbackMethod_ListSellerIncomes<WithCallbackMethod_CreateWithdrawal<WithCallbackMethod_GetWithdrawal<Service > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > CallbackService;
   typedef CallbackService ExperimentalCallbackService;
   template <class BaseClass>
   class WithGenericMethod_BrowseListings : public BaseClass {
@@ -2187,6 +2971,193 @@ class ClientPlayerJubaozhai final {
     }
     // disable synchronous version of this method
     ::grpc::Status ListTradeMarkets(::grpc::ServerContext* /*context*/, const ::trade::ListTradeMarketsRequest* /*request*/, ::trade::ListTradeMarketsResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+  };
+  template <class BaseClass>
+  class WithGenericMethod_CreateRmbConsignment : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithGenericMethod_CreateRmbConsignment() {
+      ::grpc::Service::MarkMethodGeneric(24);
+    }
+    ~WithGenericMethod_CreateRmbConsignment() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status CreateRmbConsignment(::grpc::ServerContext* /*context*/, const ::trade::CreateRmbConsignmentRequest* /*request*/, ::trade::RmbConsignmentResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+  };
+  template <class BaseClass>
+  class WithGenericMethod_GetRmbConsignment : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithGenericMethod_GetRmbConsignment() {
+      ::grpc::Service::MarkMethodGeneric(25);
+    }
+    ~WithGenericMethod_GetRmbConsignment() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status GetRmbConsignment(::grpc::ServerContext* /*context*/, const ::trade::GetRmbConsignmentRequest* /*request*/, ::trade::RmbConsignmentResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+  };
+  template <class BaseClass>
+  class WithGenericMethod_ListRmbConsignments : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithGenericMethod_ListRmbConsignments() {
+      ::grpc::Service::MarkMethodGeneric(26);
+    }
+    ~WithGenericMethod_ListRmbConsignments() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status ListRmbConsignments(::grpc::ServerContext* /*context*/, const ::trade::ListRmbConsignmentsRequest* /*request*/, ::trade::ListRmbConsignmentsResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+  };
+  template <class BaseClass>
+  class WithGenericMethod_BuyRmbConsignment : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithGenericMethod_BuyRmbConsignment() {
+      ::grpc::Service::MarkMethodGeneric(27);
+    }
+    ~WithGenericMethod_BuyRmbConsignment() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status BuyRmbConsignment(::grpc::ServerContext* /*context*/, const ::trade::BuyRmbConsignmentRequest* /*request*/, ::trade::CommerceOrderResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+  };
+  template <class BaseClass>
+  class WithGenericMethod_CancelRmbConsignment : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithGenericMethod_CancelRmbConsignment() {
+      ::grpc::Service::MarkMethodGeneric(28);
+    }
+    ~WithGenericMethod_CancelRmbConsignment() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status CancelRmbConsignment(::grpc::ServerContext* /*context*/, const ::trade::CancelRmbConsignmentRequest* /*request*/, ::trade::RmbConsignmentResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+  };
+  template <class BaseClass>
+  class WithGenericMethod_GetRmbOrder : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithGenericMethod_GetRmbOrder() {
+      ::grpc::Service::MarkMethodGeneric(29);
+    }
+    ~WithGenericMethod_GetRmbOrder() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status GetRmbOrder(::grpc::ServerContext* /*context*/, const ::trade::GetCommerceOrderRequest* /*request*/, ::trade::CommerceOrderResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+  };
+  template <class BaseClass>
+  class WithGenericMethod_ListRmbOrders : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithGenericMethod_ListRmbOrders() {
+      ::grpc::Service::MarkMethodGeneric(30);
+    }
+    ~WithGenericMethod_ListRmbOrders() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status ListRmbOrders(::grpc::ServerContext* /*context*/, const ::trade::ListCommerceOrdersRequest* /*request*/, ::trade::ListCommerceOrdersResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+  };
+  template <class BaseClass>
+  class WithGenericMethod_CancelRmbOrder : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithGenericMethod_CancelRmbOrder() {
+      ::grpc::Service::MarkMethodGeneric(31);
+    }
+    ~WithGenericMethod_CancelRmbOrder() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status CancelRmbOrder(::grpc::ServerContext* /*context*/, const ::trade::CancelCommerceOrderRequest* /*request*/, ::trade::CommerceOrderResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+  };
+  template <class BaseClass>
+  class WithGenericMethod_ListSellerIncomes : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithGenericMethod_ListSellerIncomes() {
+      ::grpc::Service::MarkMethodGeneric(32);
+    }
+    ~WithGenericMethod_ListSellerIncomes() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status ListSellerIncomes(::grpc::ServerContext* /*context*/, const ::trade::ListSellerIncomesRequest* /*request*/, ::trade::ListSellerIncomesResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+  };
+  template <class BaseClass>
+  class WithGenericMethod_CreateWithdrawal : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithGenericMethod_CreateWithdrawal() {
+      ::grpc::Service::MarkMethodGeneric(33);
+    }
+    ~WithGenericMethod_CreateWithdrawal() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status CreateWithdrawal(::grpc::ServerContext* /*context*/, const ::trade::CreateWithdrawalRequest* /*request*/, ::trade::WithdrawalResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+  };
+  template <class BaseClass>
+  class WithGenericMethod_GetWithdrawal : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithGenericMethod_GetWithdrawal() {
+      ::grpc::Service::MarkMethodGeneric(34);
+    }
+    ~WithGenericMethod_GetWithdrawal() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status GetWithdrawal(::grpc::ServerContext* /*context*/, const ::trade::GetWithdrawalRequest* /*request*/, ::trade::WithdrawalResponse* /*response*/) override {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
@@ -2669,6 +3640,226 @@ class ClientPlayerJubaozhai final {
     }
     void RequestListTradeMarkets(::grpc::ServerContext* context, ::grpc::ByteBuffer* request, ::grpc::ServerAsyncResponseWriter< ::grpc::ByteBuffer>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
       ::grpc::Service::RequestAsyncUnary(23, context, request, response, new_call_cq, notification_cq, tag);
+    }
+  };
+  template <class BaseClass>
+  class WithRawMethod_CreateRmbConsignment : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithRawMethod_CreateRmbConsignment() {
+      ::grpc::Service::MarkMethodRaw(24);
+    }
+    ~WithRawMethod_CreateRmbConsignment() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status CreateRmbConsignment(::grpc::ServerContext* /*context*/, const ::trade::CreateRmbConsignmentRequest* /*request*/, ::trade::RmbConsignmentResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    void RequestCreateRmbConsignment(::grpc::ServerContext* context, ::grpc::ByteBuffer* request, ::grpc::ServerAsyncResponseWriter< ::grpc::ByteBuffer>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
+      ::grpc::Service::RequestAsyncUnary(24, context, request, response, new_call_cq, notification_cq, tag);
+    }
+  };
+  template <class BaseClass>
+  class WithRawMethod_GetRmbConsignment : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithRawMethod_GetRmbConsignment() {
+      ::grpc::Service::MarkMethodRaw(25);
+    }
+    ~WithRawMethod_GetRmbConsignment() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status GetRmbConsignment(::grpc::ServerContext* /*context*/, const ::trade::GetRmbConsignmentRequest* /*request*/, ::trade::RmbConsignmentResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    void RequestGetRmbConsignment(::grpc::ServerContext* context, ::grpc::ByteBuffer* request, ::grpc::ServerAsyncResponseWriter< ::grpc::ByteBuffer>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
+      ::grpc::Service::RequestAsyncUnary(25, context, request, response, new_call_cq, notification_cq, tag);
+    }
+  };
+  template <class BaseClass>
+  class WithRawMethod_ListRmbConsignments : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithRawMethod_ListRmbConsignments() {
+      ::grpc::Service::MarkMethodRaw(26);
+    }
+    ~WithRawMethod_ListRmbConsignments() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status ListRmbConsignments(::grpc::ServerContext* /*context*/, const ::trade::ListRmbConsignmentsRequest* /*request*/, ::trade::ListRmbConsignmentsResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    void RequestListRmbConsignments(::grpc::ServerContext* context, ::grpc::ByteBuffer* request, ::grpc::ServerAsyncResponseWriter< ::grpc::ByteBuffer>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
+      ::grpc::Service::RequestAsyncUnary(26, context, request, response, new_call_cq, notification_cq, tag);
+    }
+  };
+  template <class BaseClass>
+  class WithRawMethod_BuyRmbConsignment : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithRawMethod_BuyRmbConsignment() {
+      ::grpc::Service::MarkMethodRaw(27);
+    }
+    ~WithRawMethod_BuyRmbConsignment() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status BuyRmbConsignment(::grpc::ServerContext* /*context*/, const ::trade::BuyRmbConsignmentRequest* /*request*/, ::trade::CommerceOrderResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    void RequestBuyRmbConsignment(::grpc::ServerContext* context, ::grpc::ByteBuffer* request, ::grpc::ServerAsyncResponseWriter< ::grpc::ByteBuffer>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
+      ::grpc::Service::RequestAsyncUnary(27, context, request, response, new_call_cq, notification_cq, tag);
+    }
+  };
+  template <class BaseClass>
+  class WithRawMethod_CancelRmbConsignment : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithRawMethod_CancelRmbConsignment() {
+      ::grpc::Service::MarkMethodRaw(28);
+    }
+    ~WithRawMethod_CancelRmbConsignment() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status CancelRmbConsignment(::grpc::ServerContext* /*context*/, const ::trade::CancelRmbConsignmentRequest* /*request*/, ::trade::RmbConsignmentResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    void RequestCancelRmbConsignment(::grpc::ServerContext* context, ::grpc::ByteBuffer* request, ::grpc::ServerAsyncResponseWriter< ::grpc::ByteBuffer>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
+      ::grpc::Service::RequestAsyncUnary(28, context, request, response, new_call_cq, notification_cq, tag);
+    }
+  };
+  template <class BaseClass>
+  class WithRawMethod_GetRmbOrder : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithRawMethod_GetRmbOrder() {
+      ::grpc::Service::MarkMethodRaw(29);
+    }
+    ~WithRawMethod_GetRmbOrder() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status GetRmbOrder(::grpc::ServerContext* /*context*/, const ::trade::GetCommerceOrderRequest* /*request*/, ::trade::CommerceOrderResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    void RequestGetRmbOrder(::grpc::ServerContext* context, ::grpc::ByteBuffer* request, ::grpc::ServerAsyncResponseWriter< ::grpc::ByteBuffer>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
+      ::grpc::Service::RequestAsyncUnary(29, context, request, response, new_call_cq, notification_cq, tag);
+    }
+  };
+  template <class BaseClass>
+  class WithRawMethod_ListRmbOrders : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithRawMethod_ListRmbOrders() {
+      ::grpc::Service::MarkMethodRaw(30);
+    }
+    ~WithRawMethod_ListRmbOrders() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status ListRmbOrders(::grpc::ServerContext* /*context*/, const ::trade::ListCommerceOrdersRequest* /*request*/, ::trade::ListCommerceOrdersResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    void RequestListRmbOrders(::grpc::ServerContext* context, ::grpc::ByteBuffer* request, ::grpc::ServerAsyncResponseWriter< ::grpc::ByteBuffer>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
+      ::grpc::Service::RequestAsyncUnary(30, context, request, response, new_call_cq, notification_cq, tag);
+    }
+  };
+  template <class BaseClass>
+  class WithRawMethod_CancelRmbOrder : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithRawMethod_CancelRmbOrder() {
+      ::grpc::Service::MarkMethodRaw(31);
+    }
+    ~WithRawMethod_CancelRmbOrder() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status CancelRmbOrder(::grpc::ServerContext* /*context*/, const ::trade::CancelCommerceOrderRequest* /*request*/, ::trade::CommerceOrderResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    void RequestCancelRmbOrder(::grpc::ServerContext* context, ::grpc::ByteBuffer* request, ::grpc::ServerAsyncResponseWriter< ::grpc::ByteBuffer>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
+      ::grpc::Service::RequestAsyncUnary(31, context, request, response, new_call_cq, notification_cq, tag);
+    }
+  };
+  template <class BaseClass>
+  class WithRawMethod_ListSellerIncomes : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithRawMethod_ListSellerIncomes() {
+      ::grpc::Service::MarkMethodRaw(32);
+    }
+    ~WithRawMethod_ListSellerIncomes() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status ListSellerIncomes(::grpc::ServerContext* /*context*/, const ::trade::ListSellerIncomesRequest* /*request*/, ::trade::ListSellerIncomesResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    void RequestListSellerIncomes(::grpc::ServerContext* context, ::grpc::ByteBuffer* request, ::grpc::ServerAsyncResponseWriter< ::grpc::ByteBuffer>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
+      ::grpc::Service::RequestAsyncUnary(32, context, request, response, new_call_cq, notification_cq, tag);
+    }
+  };
+  template <class BaseClass>
+  class WithRawMethod_CreateWithdrawal : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithRawMethod_CreateWithdrawal() {
+      ::grpc::Service::MarkMethodRaw(33);
+    }
+    ~WithRawMethod_CreateWithdrawal() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status CreateWithdrawal(::grpc::ServerContext* /*context*/, const ::trade::CreateWithdrawalRequest* /*request*/, ::trade::WithdrawalResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    void RequestCreateWithdrawal(::grpc::ServerContext* context, ::grpc::ByteBuffer* request, ::grpc::ServerAsyncResponseWriter< ::grpc::ByteBuffer>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
+      ::grpc::Service::RequestAsyncUnary(33, context, request, response, new_call_cq, notification_cq, tag);
+    }
+  };
+  template <class BaseClass>
+  class WithRawMethod_GetWithdrawal : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithRawMethod_GetWithdrawal() {
+      ::grpc::Service::MarkMethodRaw(34);
+    }
+    ~WithRawMethod_GetWithdrawal() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status GetWithdrawal(::grpc::ServerContext* /*context*/, const ::trade::GetWithdrawalRequest* /*request*/, ::trade::WithdrawalResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    void RequestGetWithdrawal(::grpc::ServerContext* context, ::grpc::ByteBuffer* request, ::grpc::ServerAsyncResponseWriter< ::grpc::ByteBuffer>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
+      ::grpc::Service::RequestAsyncUnary(34, context, request, response, new_call_cq, notification_cq, tag);
     }
   };
   template <class BaseClass>
@@ -3197,6 +4388,248 @@ class ClientPlayerJubaozhai final {
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
     virtual ::grpc::ServerUnaryReactor* ListTradeMarkets(
+      ::grpc::CallbackServerContext* /*context*/, const ::grpc::ByteBuffer* /*request*/, ::grpc::ByteBuffer* /*response*/)  { return nullptr; }
+  };
+  template <class BaseClass>
+  class WithRawCallbackMethod_CreateRmbConsignment : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithRawCallbackMethod_CreateRmbConsignment() {
+      ::grpc::Service::MarkMethodRawCallback(24,
+          new ::grpc::internal::CallbackUnaryHandler< ::grpc::ByteBuffer, ::grpc::ByteBuffer>(
+            [this](
+                   ::grpc::CallbackServerContext* context, const ::grpc::ByteBuffer* request, ::grpc::ByteBuffer* response) { return this->CreateRmbConsignment(context, request, response); }));
+    }
+    ~WithRawCallbackMethod_CreateRmbConsignment() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status CreateRmbConsignment(::grpc::ServerContext* /*context*/, const ::trade::CreateRmbConsignmentRequest* /*request*/, ::trade::RmbConsignmentResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    virtual ::grpc::ServerUnaryReactor* CreateRmbConsignment(
+      ::grpc::CallbackServerContext* /*context*/, const ::grpc::ByteBuffer* /*request*/, ::grpc::ByteBuffer* /*response*/)  { return nullptr; }
+  };
+  template <class BaseClass>
+  class WithRawCallbackMethod_GetRmbConsignment : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithRawCallbackMethod_GetRmbConsignment() {
+      ::grpc::Service::MarkMethodRawCallback(25,
+          new ::grpc::internal::CallbackUnaryHandler< ::grpc::ByteBuffer, ::grpc::ByteBuffer>(
+            [this](
+                   ::grpc::CallbackServerContext* context, const ::grpc::ByteBuffer* request, ::grpc::ByteBuffer* response) { return this->GetRmbConsignment(context, request, response); }));
+    }
+    ~WithRawCallbackMethod_GetRmbConsignment() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status GetRmbConsignment(::grpc::ServerContext* /*context*/, const ::trade::GetRmbConsignmentRequest* /*request*/, ::trade::RmbConsignmentResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    virtual ::grpc::ServerUnaryReactor* GetRmbConsignment(
+      ::grpc::CallbackServerContext* /*context*/, const ::grpc::ByteBuffer* /*request*/, ::grpc::ByteBuffer* /*response*/)  { return nullptr; }
+  };
+  template <class BaseClass>
+  class WithRawCallbackMethod_ListRmbConsignments : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithRawCallbackMethod_ListRmbConsignments() {
+      ::grpc::Service::MarkMethodRawCallback(26,
+          new ::grpc::internal::CallbackUnaryHandler< ::grpc::ByteBuffer, ::grpc::ByteBuffer>(
+            [this](
+                   ::grpc::CallbackServerContext* context, const ::grpc::ByteBuffer* request, ::grpc::ByteBuffer* response) { return this->ListRmbConsignments(context, request, response); }));
+    }
+    ~WithRawCallbackMethod_ListRmbConsignments() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status ListRmbConsignments(::grpc::ServerContext* /*context*/, const ::trade::ListRmbConsignmentsRequest* /*request*/, ::trade::ListRmbConsignmentsResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    virtual ::grpc::ServerUnaryReactor* ListRmbConsignments(
+      ::grpc::CallbackServerContext* /*context*/, const ::grpc::ByteBuffer* /*request*/, ::grpc::ByteBuffer* /*response*/)  { return nullptr; }
+  };
+  template <class BaseClass>
+  class WithRawCallbackMethod_BuyRmbConsignment : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithRawCallbackMethod_BuyRmbConsignment() {
+      ::grpc::Service::MarkMethodRawCallback(27,
+          new ::grpc::internal::CallbackUnaryHandler< ::grpc::ByteBuffer, ::grpc::ByteBuffer>(
+            [this](
+                   ::grpc::CallbackServerContext* context, const ::grpc::ByteBuffer* request, ::grpc::ByteBuffer* response) { return this->BuyRmbConsignment(context, request, response); }));
+    }
+    ~WithRawCallbackMethod_BuyRmbConsignment() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status BuyRmbConsignment(::grpc::ServerContext* /*context*/, const ::trade::BuyRmbConsignmentRequest* /*request*/, ::trade::CommerceOrderResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    virtual ::grpc::ServerUnaryReactor* BuyRmbConsignment(
+      ::grpc::CallbackServerContext* /*context*/, const ::grpc::ByteBuffer* /*request*/, ::grpc::ByteBuffer* /*response*/)  { return nullptr; }
+  };
+  template <class BaseClass>
+  class WithRawCallbackMethod_CancelRmbConsignment : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithRawCallbackMethod_CancelRmbConsignment() {
+      ::grpc::Service::MarkMethodRawCallback(28,
+          new ::grpc::internal::CallbackUnaryHandler< ::grpc::ByteBuffer, ::grpc::ByteBuffer>(
+            [this](
+                   ::grpc::CallbackServerContext* context, const ::grpc::ByteBuffer* request, ::grpc::ByteBuffer* response) { return this->CancelRmbConsignment(context, request, response); }));
+    }
+    ~WithRawCallbackMethod_CancelRmbConsignment() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status CancelRmbConsignment(::grpc::ServerContext* /*context*/, const ::trade::CancelRmbConsignmentRequest* /*request*/, ::trade::RmbConsignmentResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    virtual ::grpc::ServerUnaryReactor* CancelRmbConsignment(
+      ::grpc::CallbackServerContext* /*context*/, const ::grpc::ByteBuffer* /*request*/, ::grpc::ByteBuffer* /*response*/)  { return nullptr; }
+  };
+  template <class BaseClass>
+  class WithRawCallbackMethod_GetRmbOrder : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithRawCallbackMethod_GetRmbOrder() {
+      ::grpc::Service::MarkMethodRawCallback(29,
+          new ::grpc::internal::CallbackUnaryHandler< ::grpc::ByteBuffer, ::grpc::ByteBuffer>(
+            [this](
+                   ::grpc::CallbackServerContext* context, const ::grpc::ByteBuffer* request, ::grpc::ByteBuffer* response) { return this->GetRmbOrder(context, request, response); }));
+    }
+    ~WithRawCallbackMethod_GetRmbOrder() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status GetRmbOrder(::grpc::ServerContext* /*context*/, const ::trade::GetCommerceOrderRequest* /*request*/, ::trade::CommerceOrderResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    virtual ::grpc::ServerUnaryReactor* GetRmbOrder(
+      ::grpc::CallbackServerContext* /*context*/, const ::grpc::ByteBuffer* /*request*/, ::grpc::ByteBuffer* /*response*/)  { return nullptr; }
+  };
+  template <class BaseClass>
+  class WithRawCallbackMethod_ListRmbOrders : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithRawCallbackMethod_ListRmbOrders() {
+      ::grpc::Service::MarkMethodRawCallback(30,
+          new ::grpc::internal::CallbackUnaryHandler< ::grpc::ByteBuffer, ::grpc::ByteBuffer>(
+            [this](
+                   ::grpc::CallbackServerContext* context, const ::grpc::ByteBuffer* request, ::grpc::ByteBuffer* response) { return this->ListRmbOrders(context, request, response); }));
+    }
+    ~WithRawCallbackMethod_ListRmbOrders() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status ListRmbOrders(::grpc::ServerContext* /*context*/, const ::trade::ListCommerceOrdersRequest* /*request*/, ::trade::ListCommerceOrdersResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    virtual ::grpc::ServerUnaryReactor* ListRmbOrders(
+      ::grpc::CallbackServerContext* /*context*/, const ::grpc::ByteBuffer* /*request*/, ::grpc::ByteBuffer* /*response*/)  { return nullptr; }
+  };
+  template <class BaseClass>
+  class WithRawCallbackMethod_CancelRmbOrder : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithRawCallbackMethod_CancelRmbOrder() {
+      ::grpc::Service::MarkMethodRawCallback(31,
+          new ::grpc::internal::CallbackUnaryHandler< ::grpc::ByteBuffer, ::grpc::ByteBuffer>(
+            [this](
+                   ::grpc::CallbackServerContext* context, const ::grpc::ByteBuffer* request, ::grpc::ByteBuffer* response) { return this->CancelRmbOrder(context, request, response); }));
+    }
+    ~WithRawCallbackMethod_CancelRmbOrder() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status CancelRmbOrder(::grpc::ServerContext* /*context*/, const ::trade::CancelCommerceOrderRequest* /*request*/, ::trade::CommerceOrderResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    virtual ::grpc::ServerUnaryReactor* CancelRmbOrder(
+      ::grpc::CallbackServerContext* /*context*/, const ::grpc::ByteBuffer* /*request*/, ::grpc::ByteBuffer* /*response*/)  { return nullptr; }
+  };
+  template <class BaseClass>
+  class WithRawCallbackMethod_ListSellerIncomes : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithRawCallbackMethod_ListSellerIncomes() {
+      ::grpc::Service::MarkMethodRawCallback(32,
+          new ::grpc::internal::CallbackUnaryHandler< ::grpc::ByteBuffer, ::grpc::ByteBuffer>(
+            [this](
+                   ::grpc::CallbackServerContext* context, const ::grpc::ByteBuffer* request, ::grpc::ByteBuffer* response) { return this->ListSellerIncomes(context, request, response); }));
+    }
+    ~WithRawCallbackMethod_ListSellerIncomes() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status ListSellerIncomes(::grpc::ServerContext* /*context*/, const ::trade::ListSellerIncomesRequest* /*request*/, ::trade::ListSellerIncomesResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    virtual ::grpc::ServerUnaryReactor* ListSellerIncomes(
+      ::grpc::CallbackServerContext* /*context*/, const ::grpc::ByteBuffer* /*request*/, ::grpc::ByteBuffer* /*response*/)  { return nullptr; }
+  };
+  template <class BaseClass>
+  class WithRawCallbackMethod_CreateWithdrawal : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithRawCallbackMethod_CreateWithdrawal() {
+      ::grpc::Service::MarkMethodRawCallback(33,
+          new ::grpc::internal::CallbackUnaryHandler< ::grpc::ByteBuffer, ::grpc::ByteBuffer>(
+            [this](
+                   ::grpc::CallbackServerContext* context, const ::grpc::ByteBuffer* request, ::grpc::ByteBuffer* response) { return this->CreateWithdrawal(context, request, response); }));
+    }
+    ~WithRawCallbackMethod_CreateWithdrawal() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status CreateWithdrawal(::grpc::ServerContext* /*context*/, const ::trade::CreateWithdrawalRequest* /*request*/, ::trade::WithdrawalResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    virtual ::grpc::ServerUnaryReactor* CreateWithdrawal(
+      ::grpc::CallbackServerContext* /*context*/, const ::grpc::ByteBuffer* /*request*/, ::grpc::ByteBuffer* /*response*/)  { return nullptr; }
+  };
+  template <class BaseClass>
+  class WithRawCallbackMethod_GetWithdrawal : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithRawCallbackMethod_GetWithdrawal() {
+      ::grpc::Service::MarkMethodRawCallback(34,
+          new ::grpc::internal::CallbackUnaryHandler< ::grpc::ByteBuffer, ::grpc::ByteBuffer>(
+            [this](
+                   ::grpc::CallbackServerContext* context, const ::grpc::ByteBuffer* request, ::grpc::ByteBuffer* response) { return this->GetWithdrawal(context, request, response); }));
+    }
+    ~WithRawCallbackMethod_GetWithdrawal() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status GetWithdrawal(::grpc::ServerContext* /*context*/, const ::trade::GetWithdrawalRequest* /*request*/, ::trade::WithdrawalResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    virtual ::grpc::ServerUnaryReactor* GetWithdrawal(
       ::grpc::CallbackServerContext* /*context*/, const ::grpc::ByteBuffer* /*request*/, ::grpc::ByteBuffer* /*response*/)  { return nullptr; }
   };
   template <class BaseClass>
@@ -3847,9 +5280,306 @@ class ClientPlayerJubaozhai final {
     // replace default version of method with streamed unary
     virtual ::grpc::Status StreamedListTradeMarkets(::grpc::ServerContext* context, ::grpc::ServerUnaryStreamer< ::trade::ListTradeMarketsRequest,::trade::ListTradeMarketsResponse>* server_unary_streamer) = 0;
   };
-  typedef WithStreamedUnaryMethod_BrowseListings<WithStreamedUnaryMethod_GetListingDetail<WithStreamedUnaryMethod_SetFavorite<WithStreamedUnaryMethod_GetMyShelf<WithStreamedUnaryMethod_ListOfficialSkus<WithStreamedUnaryMethod_CreateOfficialOrder<WithStreamedUnaryMethod_GetCommerceOrder<WithStreamedUnaryMethod_CancelCommerceOrder<WithStreamedUnaryMethod_ListCommerceOrders<WithStreamedUnaryMethod_CreatePlayerTrade<WithStreamedUnaryMethod_ConfirmPlayerTrade<WithStreamedUnaryMethod_CreateConsignment<WithStreamedUnaryMethod_BuyConsignment<WithStreamedUnaryMethod_CancelConsignment<WithStreamedUnaryMethod_PlaceMarketOrder<WithStreamedUnaryMethod_CancelMarketOrder<WithStreamedUnaryMethod_ListMarketOrders<WithStreamedUnaryMethod_GetMarketDepth<WithStreamedUnaryMethod_CreateAuctionLot<WithStreamedUnaryMethod_PlaceAuctionBid<WithStreamedUnaryMethod_GetAuctionLot<WithStreamedUnaryMethod_CancelAuctionLot<WithStreamedUnaryMethod_BrowseCommerceOffers<WithStreamedUnaryMethod_ListTradeMarkets<Service > > > > > > > > > > > > > > > > > > > > > > > > StreamedUnaryService;
+  template <class BaseClass>
+  class WithStreamedUnaryMethod_CreateRmbConsignment : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithStreamedUnaryMethod_CreateRmbConsignment() {
+      ::grpc::Service::MarkMethodStreamed(24,
+        new ::grpc::internal::StreamedUnaryHandler<
+          ::trade::CreateRmbConsignmentRequest, ::trade::RmbConsignmentResponse>(
+            [this](::grpc::ServerContext* context,
+                   ::grpc::ServerUnaryStreamer<
+                     ::trade::CreateRmbConsignmentRequest, ::trade::RmbConsignmentResponse>* streamer) {
+                       return this->StreamedCreateRmbConsignment(context,
+                         streamer);
+                  }));
+    }
+    ~WithStreamedUnaryMethod_CreateRmbConsignment() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable regular version of this method
+    ::grpc::Status CreateRmbConsignment(::grpc::ServerContext* /*context*/, const ::trade::CreateRmbConsignmentRequest* /*request*/, ::trade::RmbConsignmentResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    // replace default version of method with streamed unary
+    virtual ::grpc::Status StreamedCreateRmbConsignment(::grpc::ServerContext* context, ::grpc::ServerUnaryStreamer< ::trade::CreateRmbConsignmentRequest,::trade::RmbConsignmentResponse>* server_unary_streamer) = 0;
+  };
+  template <class BaseClass>
+  class WithStreamedUnaryMethod_GetRmbConsignment : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithStreamedUnaryMethod_GetRmbConsignment() {
+      ::grpc::Service::MarkMethodStreamed(25,
+        new ::grpc::internal::StreamedUnaryHandler<
+          ::trade::GetRmbConsignmentRequest, ::trade::RmbConsignmentResponse>(
+            [this](::grpc::ServerContext* context,
+                   ::grpc::ServerUnaryStreamer<
+                     ::trade::GetRmbConsignmentRequest, ::trade::RmbConsignmentResponse>* streamer) {
+                       return this->StreamedGetRmbConsignment(context,
+                         streamer);
+                  }));
+    }
+    ~WithStreamedUnaryMethod_GetRmbConsignment() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable regular version of this method
+    ::grpc::Status GetRmbConsignment(::grpc::ServerContext* /*context*/, const ::trade::GetRmbConsignmentRequest* /*request*/, ::trade::RmbConsignmentResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    // replace default version of method with streamed unary
+    virtual ::grpc::Status StreamedGetRmbConsignment(::grpc::ServerContext* context, ::grpc::ServerUnaryStreamer< ::trade::GetRmbConsignmentRequest,::trade::RmbConsignmentResponse>* server_unary_streamer) = 0;
+  };
+  template <class BaseClass>
+  class WithStreamedUnaryMethod_ListRmbConsignments : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithStreamedUnaryMethod_ListRmbConsignments() {
+      ::grpc::Service::MarkMethodStreamed(26,
+        new ::grpc::internal::StreamedUnaryHandler<
+          ::trade::ListRmbConsignmentsRequest, ::trade::ListRmbConsignmentsResponse>(
+            [this](::grpc::ServerContext* context,
+                   ::grpc::ServerUnaryStreamer<
+                     ::trade::ListRmbConsignmentsRequest, ::trade::ListRmbConsignmentsResponse>* streamer) {
+                       return this->StreamedListRmbConsignments(context,
+                         streamer);
+                  }));
+    }
+    ~WithStreamedUnaryMethod_ListRmbConsignments() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable regular version of this method
+    ::grpc::Status ListRmbConsignments(::grpc::ServerContext* /*context*/, const ::trade::ListRmbConsignmentsRequest* /*request*/, ::trade::ListRmbConsignmentsResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    // replace default version of method with streamed unary
+    virtual ::grpc::Status StreamedListRmbConsignments(::grpc::ServerContext* context, ::grpc::ServerUnaryStreamer< ::trade::ListRmbConsignmentsRequest,::trade::ListRmbConsignmentsResponse>* server_unary_streamer) = 0;
+  };
+  template <class BaseClass>
+  class WithStreamedUnaryMethod_BuyRmbConsignment : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithStreamedUnaryMethod_BuyRmbConsignment() {
+      ::grpc::Service::MarkMethodStreamed(27,
+        new ::grpc::internal::StreamedUnaryHandler<
+          ::trade::BuyRmbConsignmentRequest, ::trade::CommerceOrderResponse>(
+            [this](::grpc::ServerContext* context,
+                   ::grpc::ServerUnaryStreamer<
+                     ::trade::BuyRmbConsignmentRequest, ::trade::CommerceOrderResponse>* streamer) {
+                       return this->StreamedBuyRmbConsignment(context,
+                         streamer);
+                  }));
+    }
+    ~WithStreamedUnaryMethod_BuyRmbConsignment() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable regular version of this method
+    ::grpc::Status BuyRmbConsignment(::grpc::ServerContext* /*context*/, const ::trade::BuyRmbConsignmentRequest* /*request*/, ::trade::CommerceOrderResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    // replace default version of method with streamed unary
+    virtual ::grpc::Status StreamedBuyRmbConsignment(::grpc::ServerContext* context, ::grpc::ServerUnaryStreamer< ::trade::BuyRmbConsignmentRequest,::trade::CommerceOrderResponse>* server_unary_streamer) = 0;
+  };
+  template <class BaseClass>
+  class WithStreamedUnaryMethod_CancelRmbConsignment : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithStreamedUnaryMethod_CancelRmbConsignment() {
+      ::grpc::Service::MarkMethodStreamed(28,
+        new ::grpc::internal::StreamedUnaryHandler<
+          ::trade::CancelRmbConsignmentRequest, ::trade::RmbConsignmentResponse>(
+            [this](::grpc::ServerContext* context,
+                   ::grpc::ServerUnaryStreamer<
+                     ::trade::CancelRmbConsignmentRequest, ::trade::RmbConsignmentResponse>* streamer) {
+                       return this->StreamedCancelRmbConsignment(context,
+                         streamer);
+                  }));
+    }
+    ~WithStreamedUnaryMethod_CancelRmbConsignment() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable regular version of this method
+    ::grpc::Status CancelRmbConsignment(::grpc::ServerContext* /*context*/, const ::trade::CancelRmbConsignmentRequest* /*request*/, ::trade::RmbConsignmentResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    // replace default version of method with streamed unary
+    virtual ::grpc::Status StreamedCancelRmbConsignment(::grpc::ServerContext* context, ::grpc::ServerUnaryStreamer< ::trade::CancelRmbConsignmentRequest,::trade::RmbConsignmentResponse>* server_unary_streamer) = 0;
+  };
+  template <class BaseClass>
+  class WithStreamedUnaryMethod_GetRmbOrder : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithStreamedUnaryMethod_GetRmbOrder() {
+      ::grpc::Service::MarkMethodStreamed(29,
+        new ::grpc::internal::StreamedUnaryHandler<
+          ::trade::GetCommerceOrderRequest, ::trade::CommerceOrderResponse>(
+            [this](::grpc::ServerContext* context,
+                   ::grpc::ServerUnaryStreamer<
+                     ::trade::GetCommerceOrderRequest, ::trade::CommerceOrderResponse>* streamer) {
+                       return this->StreamedGetRmbOrder(context,
+                         streamer);
+                  }));
+    }
+    ~WithStreamedUnaryMethod_GetRmbOrder() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable regular version of this method
+    ::grpc::Status GetRmbOrder(::grpc::ServerContext* /*context*/, const ::trade::GetCommerceOrderRequest* /*request*/, ::trade::CommerceOrderResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    // replace default version of method with streamed unary
+    virtual ::grpc::Status StreamedGetRmbOrder(::grpc::ServerContext* context, ::grpc::ServerUnaryStreamer< ::trade::GetCommerceOrderRequest,::trade::CommerceOrderResponse>* server_unary_streamer) = 0;
+  };
+  template <class BaseClass>
+  class WithStreamedUnaryMethod_ListRmbOrders : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithStreamedUnaryMethod_ListRmbOrders() {
+      ::grpc::Service::MarkMethodStreamed(30,
+        new ::grpc::internal::StreamedUnaryHandler<
+          ::trade::ListCommerceOrdersRequest, ::trade::ListCommerceOrdersResponse>(
+            [this](::grpc::ServerContext* context,
+                   ::grpc::ServerUnaryStreamer<
+                     ::trade::ListCommerceOrdersRequest, ::trade::ListCommerceOrdersResponse>* streamer) {
+                       return this->StreamedListRmbOrders(context,
+                         streamer);
+                  }));
+    }
+    ~WithStreamedUnaryMethod_ListRmbOrders() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable regular version of this method
+    ::grpc::Status ListRmbOrders(::grpc::ServerContext* /*context*/, const ::trade::ListCommerceOrdersRequest* /*request*/, ::trade::ListCommerceOrdersResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    // replace default version of method with streamed unary
+    virtual ::grpc::Status StreamedListRmbOrders(::grpc::ServerContext* context, ::grpc::ServerUnaryStreamer< ::trade::ListCommerceOrdersRequest,::trade::ListCommerceOrdersResponse>* server_unary_streamer) = 0;
+  };
+  template <class BaseClass>
+  class WithStreamedUnaryMethod_CancelRmbOrder : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithStreamedUnaryMethod_CancelRmbOrder() {
+      ::grpc::Service::MarkMethodStreamed(31,
+        new ::grpc::internal::StreamedUnaryHandler<
+          ::trade::CancelCommerceOrderRequest, ::trade::CommerceOrderResponse>(
+            [this](::grpc::ServerContext* context,
+                   ::grpc::ServerUnaryStreamer<
+                     ::trade::CancelCommerceOrderRequest, ::trade::CommerceOrderResponse>* streamer) {
+                       return this->StreamedCancelRmbOrder(context,
+                         streamer);
+                  }));
+    }
+    ~WithStreamedUnaryMethod_CancelRmbOrder() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable regular version of this method
+    ::grpc::Status CancelRmbOrder(::grpc::ServerContext* /*context*/, const ::trade::CancelCommerceOrderRequest* /*request*/, ::trade::CommerceOrderResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    // replace default version of method with streamed unary
+    virtual ::grpc::Status StreamedCancelRmbOrder(::grpc::ServerContext* context, ::grpc::ServerUnaryStreamer< ::trade::CancelCommerceOrderRequest,::trade::CommerceOrderResponse>* server_unary_streamer) = 0;
+  };
+  template <class BaseClass>
+  class WithStreamedUnaryMethod_ListSellerIncomes : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithStreamedUnaryMethod_ListSellerIncomes() {
+      ::grpc::Service::MarkMethodStreamed(32,
+        new ::grpc::internal::StreamedUnaryHandler<
+          ::trade::ListSellerIncomesRequest, ::trade::ListSellerIncomesResponse>(
+            [this](::grpc::ServerContext* context,
+                   ::grpc::ServerUnaryStreamer<
+                     ::trade::ListSellerIncomesRequest, ::trade::ListSellerIncomesResponse>* streamer) {
+                       return this->StreamedListSellerIncomes(context,
+                         streamer);
+                  }));
+    }
+    ~WithStreamedUnaryMethod_ListSellerIncomes() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable regular version of this method
+    ::grpc::Status ListSellerIncomes(::grpc::ServerContext* /*context*/, const ::trade::ListSellerIncomesRequest* /*request*/, ::trade::ListSellerIncomesResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    // replace default version of method with streamed unary
+    virtual ::grpc::Status StreamedListSellerIncomes(::grpc::ServerContext* context, ::grpc::ServerUnaryStreamer< ::trade::ListSellerIncomesRequest,::trade::ListSellerIncomesResponse>* server_unary_streamer) = 0;
+  };
+  template <class BaseClass>
+  class WithStreamedUnaryMethod_CreateWithdrawal : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithStreamedUnaryMethod_CreateWithdrawal() {
+      ::grpc::Service::MarkMethodStreamed(33,
+        new ::grpc::internal::StreamedUnaryHandler<
+          ::trade::CreateWithdrawalRequest, ::trade::WithdrawalResponse>(
+            [this](::grpc::ServerContext* context,
+                   ::grpc::ServerUnaryStreamer<
+                     ::trade::CreateWithdrawalRequest, ::trade::WithdrawalResponse>* streamer) {
+                       return this->StreamedCreateWithdrawal(context,
+                         streamer);
+                  }));
+    }
+    ~WithStreamedUnaryMethod_CreateWithdrawal() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable regular version of this method
+    ::grpc::Status CreateWithdrawal(::grpc::ServerContext* /*context*/, const ::trade::CreateWithdrawalRequest* /*request*/, ::trade::WithdrawalResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    // replace default version of method with streamed unary
+    virtual ::grpc::Status StreamedCreateWithdrawal(::grpc::ServerContext* context, ::grpc::ServerUnaryStreamer< ::trade::CreateWithdrawalRequest,::trade::WithdrawalResponse>* server_unary_streamer) = 0;
+  };
+  template <class BaseClass>
+  class WithStreamedUnaryMethod_GetWithdrawal : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithStreamedUnaryMethod_GetWithdrawal() {
+      ::grpc::Service::MarkMethodStreamed(34,
+        new ::grpc::internal::StreamedUnaryHandler<
+          ::trade::GetWithdrawalRequest, ::trade::WithdrawalResponse>(
+            [this](::grpc::ServerContext* context,
+                   ::grpc::ServerUnaryStreamer<
+                     ::trade::GetWithdrawalRequest, ::trade::WithdrawalResponse>* streamer) {
+                       return this->StreamedGetWithdrawal(context,
+                         streamer);
+                  }));
+    }
+    ~WithStreamedUnaryMethod_GetWithdrawal() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable regular version of this method
+    ::grpc::Status GetWithdrawal(::grpc::ServerContext* /*context*/, const ::trade::GetWithdrawalRequest* /*request*/, ::trade::WithdrawalResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    // replace default version of method with streamed unary
+    virtual ::grpc::Status StreamedGetWithdrawal(::grpc::ServerContext* context, ::grpc::ServerUnaryStreamer< ::trade::GetWithdrawalRequest,::trade::WithdrawalResponse>* server_unary_streamer) = 0;
+  };
+  typedef WithStreamedUnaryMethod_BrowseListings<WithStreamedUnaryMethod_GetListingDetail<WithStreamedUnaryMethod_SetFavorite<WithStreamedUnaryMethod_GetMyShelf<WithStreamedUnaryMethod_ListOfficialSkus<WithStreamedUnaryMethod_CreateOfficialOrder<WithStreamedUnaryMethod_GetCommerceOrder<WithStreamedUnaryMethod_CancelCommerceOrder<WithStreamedUnaryMethod_ListCommerceOrders<WithStreamedUnaryMethod_CreatePlayerTrade<WithStreamedUnaryMethod_ConfirmPlayerTrade<WithStreamedUnaryMethod_CreateConsignment<WithStreamedUnaryMethod_BuyConsignment<WithStreamedUnaryMethod_CancelConsignment<WithStreamedUnaryMethod_PlaceMarketOrder<WithStreamedUnaryMethod_CancelMarketOrder<WithStreamedUnaryMethod_ListMarketOrders<WithStreamedUnaryMethod_GetMarketDepth<WithStreamedUnaryMethod_CreateAuctionLot<WithStreamedUnaryMethod_PlaceAuctionBid<WithStreamedUnaryMethod_GetAuctionLot<WithStreamedUnaryMethod_CancelAuctionLot<WithStreamedUnaryMethod_BrowseCommerceOffers<WithStreamedUnaryMethod_ListTradeMarkets<WithStreamedUnaryMethod_CreateRmbConsignment<WithStreamedUnaryMethod_GetRmbConsignment<WithStreamedUnaryMethod_ListRmbConsignments<WithStreamedUnaryMethod_BuyRmbConsignment<WithStreamedUnaryMethod_CancelRmbConsignment<WithStreamedUnaryMethod_GetRmbOrder<WithStreamedUnaryMethod_ListRmbOrders<WithStreamedUnaryMethod_CancelRmbOrder<WithStreamedUnaryMethod_ListSellerIncomes<WithStreamedUnaryMethod_CreateWithdrawal<WithStreamedUnaryMethod_GetWithdrawal<Service > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > StreamedUnaryService;
   typedef Service SplitStreamedService;
-  typedef WithStreamedUnaryMethod_BrowseListings<WithStreamedUnaryMethod_GetListingDetail<WithStreamedUnaryMethod_SetFavorite<WithStreamedUnaryMethod_GetMyShelf<WithStreamedUnaryMethod_ListOfficialSkus<WithStreamedUnaryMethod_CreateOfficialOrder<WithStreamedUnaryMethod_GetCommerceOrder<WithStreamedUnaryMethod_CancelCommerceOrder<WithStreamedUnaryMethod_ListCommerceOrders<WithStreamedUnaryMethod_CreatePlayerTrade<WithStreamedUnaryMethod_ConfirmPlayerTrade<WithStreamedUnaryMethod_CreateConsignment<WithStreamedUnaryMethod_BuyConsignment<WithStreamedUnaryMethod_CancelConsignment<WithStreamedUnaryMethod_PlaceMarketOrder<WithStreamedUnaryMethod_CancelMarketOrder<WithStreamedUnaryMethod_ListMarketOrders<WithStreamedUnaryMethod_GetMarketDepth<WithStreamedUnaryMethod_CreateAuctionLot<WithStreamedUnaryMethod_PlaceAuctionBid<WithStreamedUnaryMethod_GetAuctionLot<WithStreamedUnaryMethod_CancelAuctionLot<WithStreamedUnaryMethod_BrowseCommerceOffers<WithStreamedUnaryMethod_ListTradeMarkets<Service > > > > > > > > > > > > > > > > > > > > > > > > StreamedService;
+  typedef WithStreamedUnaryMethod_BrowseListings<WithStreamedUnaryMethod_GetListingDetail<WithStreamedUnaryMethod_SetFavorite<WithStreamedUnaryMethod_GetMyShelf<WithStreamedUnaryMethod_ListOfficialSkus<WithStreamedUnaryMethod_CreateOfficialOrder<WithStreamedUnaryMethod_GetCommerceOrder<WithStreamedUnaryMethod_CancelCommerceOrder<WithStreamedUnaryMethod_ListCommerceOrders<WithStreamedUnaryMethod_CreatePlayerTrade<WithStreamedUnaryMethod_ConfirmPlayerTrade<WithStreamedUnaryMethod_CreateConsignment<WithStreamedUnaryMethod_BuyConsignment<WithStreamedUnaryMethod_CancelConsignment<WithStreamedUnaryMethod_PlaceMarketOrder<WithStreamedUnaryMethod_CancelMarketOrder<WithStreamedUnaryMethod_ListMarketOrders<WithStreamedUnaryMethod_GetMarketDepth<WithStreamedUnaryMethod_CreateAuctionLot<WithStreamedUnaryMethod_PlaceAuctionBid<WithStreamedUnaryMethod_GetAuctionLot<WithStreamedUnaryMethod_CancelAuctionLot<WithStreamedUnaryMethod_BrowseCommerceOffers<WithStreamedUnaryMethod_ListTradeMarkets<WithStreamedUnaryMethod_CreateRmbConsignment<WithStreamedUnaryMethod_GetRmbConsignment<WithStreamedUnaryMethod_ListRmbConsignments<WithStreamedUnaryMethod_BuyRmbConsignment<WithStreamedUnaryMethod_CancelRmbConsignment<WithStreamedUnaryMethod_GetRmbOrder<WithStreamedUnaryMethod_ListRmbOrders<WithStreamedUnaryMethod_CancelRmbOrder<WithStreamedUnaryMethod_ListSellerIncomes<WithStreamedUnaryMethod_CreateWithdrawal<WithStreamedUnaryMethod_GetWithdrawal<Service > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > StreamedService;
 };
 
 }  // namespace trade

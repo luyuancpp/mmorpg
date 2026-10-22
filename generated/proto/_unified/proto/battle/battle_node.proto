@@ -11,6 +11,20 @@ import "proto/battle/player_battle.proto";
 // battle 节点是纯 gRPC 服务,C++ 侧消费 battle_node.grpc.pb.h 的 BattleNode::Service。
 option (OptionFileDefaultNode) = NODE_BATTLE;
 
+// 非战斗服务在角色首锁内首次捕获的退出原件；只可取消此op，不得重读当前观战补齐。
+message ObserverExitOriginal {
+  uint64 player_id = 1;
+  string owner_account = 2;
+  uint64 owner_revision = 3;
+  string operation_id = 4;
+  string head_request_id = 5;
+  AddObserverRequest add = 6;
+  string rpc_host = 7;
+  uint32 rpc_port = 8;
+  uint32 node_id = 9;
+  string instance_id = 10;
+}
+
 // battle 节点内部 gRPC 契约(match 服务调用)。
 // battle_id 由 match 服务用 shared/snowflake(17-bit worker 布局)生产,是该 ID 的唯一生产者
 // (SnowFlake 节点隔离不变量,宪法 §7)。
@@ -73,6 +87,9 @@ message AddObserverRequest {
   uint64 observer_player_id = 2;
   BattleRouting routing = 3;
   string observer_name = 4;   // 日志/后续观众列表展示用
+  string spectator_operation_id = 5; // 原SQL观战意图UUID；重试复用，不能只按player_id覆盖。
+  uint64 admit_before_ms = 6; // 原准入截止，至多未来30秒；取消墓碑至少保留到此时。
+  string target_instance_id = 7; // 固定战斗实例；进程重启不能继承旧准入。
 }
 
 // 房间不存在(kEntityIsNull)/观众已满/观众是参战者/签不出观战票据(kServiceUnavailable)。
@@ -86,6 +103,30 @@ message RemoveObserverRequest {
   uint64 battle_id = 1;
   uint64 observer_player_id = 2;
   string reason = 3;   // 日志用(玩家去排队被互斥清退等)
+  string spectator_operation_id = 4;
+  uint64 admit_before_ms = 5; // 必须与原Add相同，先取消后到达的Add也不能生效。
+  string target_instance_id = 6;
+}
+message RemoveObserverResponse {
+  bool cancelled = 1; // 对应原operation的迟到Add已被永久拒绝，且该operation不在房内。
+  string spectator_operation_id = 2;
+  string target_instance_id = 3;
+}
+enum ObserverAdmissionState {
+  OBSERVER_ADMISSION_UNKNOWN = 0;
+  OBSERVER_ADMISSION_ACTIVE = 1;
+  OBSERVER_ADMISSION_ABSENT = 2; // 当前没有原op，不能独自作为迟到Add已被封闭的证明。
+}
+message QueryObserverRequest {
+  uint64 battle_id = 1;
+  uint64 observer_player_id = 2;
+  string spectator_operation_id = 3;
+  string target_instance_id = 4;
+}
+message QueryObserverResponse {
+  ObserverAdmissionState state = 1;
+  string spectator_operation_id = 2;
+  string target_instance_id = 3;
 }
 
 // ---- 票据补签(match → battle;client-rpc-router.md / turn-based-battle-server.md §18 D25) ----
@@ -95,6 +136,8 @@ message RemoveObserverRequest {
 message IssueBattleTicketRequest {
   uint64 battle_id = 1;
   uint64 player_id = 2;
+  string spectator_operation_id = 3; // 观众必填原operation，参战者必须为空。
+  string target_instance_id = 4;
 }
 
 message IssueBattleTicketResponse {
@@ -103,10 +146,11 @@ message IssueBattleTicketResponse {
 }
 
 service BattleNode {
+  rpc QueryObserver(QueryObserverRequest) returns (QueryObserverResponse);
   rpc QueryBattleCreation(QueryBattleCreationRequest) returns (QueryBattleCreationResponse);
   rpc CreateBattle (CreateBattleRequest) returns (CreateBattleResponse);
   rpc DestroyBattle (DestroyBattleRequest) returns (Empty);
   rpc AddObserver (AddObserverRequest) returns (AddObserverResponse);
-  rpc RemoveObserver (RemoveObserverRequest) returns (Empty);
+  rpc RemoveObserver (RemoveObserverRequest) returns (RemoveObserverResponse);
   rpc IssueBattleTicket (IssueBattleTicketRequest) returns (IssueBattleTicketResponse);
 }

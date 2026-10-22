@@ -11,19 +11,23 @@ import (
 	"mail/internal/data"
 	"mail/internal/metrics"
 	base "proto/common/base"
+	dspb "proto/data_service"
 	mailpb "proto/mail"
 	"shared/assetop"
 	"shared/domainhost"
 	table "shared/generated/pb/table"
+	"shared/loginsession"
+	"shared/roleidentity"
 	"shared/serviceauth"
 )
 
 type Server struct {
 	mailpb.UnimplementedClientPlayerMailServer
 	mailpb.UnimplementedMailAdminServer
-	repo     *data.Repo
-	auth     *serviceauth.Verifier
-	reminder Notifier
+	repo          *data.Repo
+	auth          *serviceauth.Verifier
+	reminder      Notifier
+	loginSessions loginsession.Reader
 }
 type Notifier interface {
 	Personal(context.Context, uint64, uint64)
@@ -35,6 +39,28 @@ func New(repo *data.Repo, auth *serviceauth.Verifier, reminders ...Notifier) *Se
 		s.reminder = reminders[0]
 	}
 	return s
+}
+
+// WithLoginSessions只绑定部署已声明的全局登录态只读连接；不授权写登录目录。
+func (s *Server) WithLoginSessions(reader loginsession.Reader) *Server {
+	s.loginSessions = reader
+	return s
+}
+
+func (s *Server) actor(ctx context.Context) (context.Context, uint64, bool) {
+	session := domainhost.Session(ctx)
+	if session.GetPlayerId() == 0 || session.GetOwnerRevision() == 0 {
+		return ctx, 0, false
+	}
+	account, err := loginsession.Account(ctx, s.loginSessions, session)
+	if err != nil {
+		return ctx, 0, false
+	}
+	bound, err := roleidentity.Capture(ctx, &dspb.AccountRoleOwnership{
+		Account: account, OwnerRevision: session.OwnerRevision,
+		Role: &base.AccountSimplePlayer{PlayerId: session.PlayerId},
+	})
+	return bound, session.PlayerId, err == nil
 }
 func ClientMethods() map[string]bool {
 	return map[string]bool{mailpb.ClientPlayerMail_ListMails_FullMethodName: true, mailpb.ClientPlayerMail_ReadMail_FullMethodName: true, mailpb.ClientPlayerMail_ClaimMailAttachments_FullMethodName: true, mailpb.ClientPlayerMail_DeleteMails_FullMethodName: true, mailpb.ClientPlayerMail_ClearReadMails_FullMethodName: true}
@@ -75,7 +101,7 @@ func (s *Server) caller(ctx context.Context, method string, in proto.Message) (s
 	return caller, nil
 }
 func (s *Server) ListMails(ctx context.Context, in *mailpb.ListMailsRequest) (*mailpb.ListMailsResponse, error) {
-	player, ok := domainhost.Player(ctx)
+	ctx, player, ok := s.actor(ctx)
 	if !ok {
 		return &mailpb.ListMailsResponse{ErrorMessage: rejection(data.ErrInvalid)}, nil
 	}
@@ -86,7 +112,7 @@ func (s *Server) ListMails(ctx context.Context, in *mailpb.ListMailsRequest) (*m
 	return result, nil
 }
 func (s *Server) ReadMail(ctx context.Context, in *mailpb.ReadMailRequest) (*mailpb.ReadMailResponse, error) {
-	player, ok := domainhost.Player(ctx)
+	ctx, player, ok := s.actor(ctx)
 	if !ok {
 		return &mailpb.ReadMailResponse{ErrorMessage: rejection(data.ErrInvalid)}, nil
 	}
@@ -94,7 +120,7 @@ func (s *Server) ReadMail(ctx context.Context, in *mailpb.ReadMailRequest) (*mai
 	return &mailpb.ReadMailResponse{ErrorMessage: rejection(err), Mail: view}, nil
 }
 func (s *Server) ClaimMailAttachments(ctx context.Context, in *mailpb.ClaimMailAttachmentsRequest) (*mailpb.ClaimMailAttachmentsResponse, error) {
-	player, ok := domainhost.Player(ctx)
+	ctx, player, ok := s.actor(ctx)
 	if !ok || len(in.GetMailIds()) == 0 || len(in.GetMailIds()) > 100 {
 		return &mailpb.ClaimMailAttachmentsResponse{ErrorMessage: rejection(data.ErrInvalid)}, nil
 	}
@@ -117,7 +143,7 @@ func (s *Server) ClaimMailAttachments(ctx context.Context, in *mailpb.ClaimMailA
 	return result, nil
 }
 func (s *Server) DeleteMails(ctx context.Context, in *mailpb.DeleteMailsRequest) (*mailpb.DeleteMailsResponse, error) {
-	player, ok := domainhost.Player(ctx)
+	ctx, player, ok := s.actor(ctx)
 	if !ok {
 		return &mailpb.DeleteMailsResponse{ErrorMessage: rejection(data.ErrInvalid)}, nil
 	}
@@ -125,7 +151,7 @@ func (s *Server) DeleteMails(ctx context.Context, in *mailpb.DeleteMailsRequest)
 	return &mailpb.DeleteMailsResponse{ErrorMessage: rejection(err), DeletedMailIds: deleted, ProtectedMailIds: protected}, nil
 }
 func (s *Server) ClearReadMails(ctx context.Context, _ *mailpb.ClearReadMailsRequest) (*mailpb.ClearReadMailsResponse, error) {
-	player, ok := domainhost.Player(ctx)
+	ctx, player, ok := s.actor(ctx)
 	if !ok {
 		return &mailpb.ClearReadMailsResponse{ErrorMessage: rejection(data.ErrInvalid)}, nil
 	}

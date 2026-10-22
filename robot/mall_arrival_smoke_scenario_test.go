@@ -2,7 +2,6 @@ package main
 
 import (
 	"regexp"
-	"strings"
 	"testing"
 
 	tradepb "proto/trade"
@@ -20,17 +19,17 @@ func TestMallArrivalRequestIDFitsTradeAndMallLimits(t *testing.T) {
 	}
 }
 
-func TestMallArrivalTransactionIDIsStablePerOrderAndMatchesMallPattern(t *testing.T) {
+func TestMallArrivalPaymentRequestIDIsStablePerOrderAndMatchesMallPattern(t *testing.T) {
 	order := "00112233-4455-6677-8899-aabbccddeeff"
-	got := mallArrivalTransactionID(order)
-	if got != mallArrivalTransactionID(order) {
-		t.Fatal("同一订单必须得到同一个流水号(重发靠五元组相同判幂等)")
+	got := mallArrivalPaymentRequestID(order)
+	if got != mallArrivalPaymentRequestID(order) {
+		t.Fatal("同一订单在重放和驱动重启后必须保留同一mock请求号")
 	}
-	if got != "mockdev-00112233445566778899aabbccddeeff" || !commerceTransactionIDPattern.MatchString(got) {
-		t.Fatalf("流水号 %q 不符合商城 [A-Za-z0-9_-]{1,128}", got)
+	if got != "mallarrival-pay-00112233445566778899aabbccddeeff" || !commerceMockRequestPattern.MatchString(got) {
+		t.Fatalf("请求号 %q 不符合商城 [A-Za-z0-9_-]{8,128}", got)
 	}
-	if got == mallArrivalTransactionID("ffffffff-4455-6677-8899-aabbccddeeff") {
-		t.Fatal("不同订单必须得到不同流水号(商城 (channel, transaction_id) 全局唯一)")
+	if got == mallArrivalPaymentRequestID("ffffffff-4455-6677-8899-aabbccddeeff") {
+		t.Fatal("不同订单必须使用不同mock请求号")
 	}
 }
 
@@ -151,7 +150,7 @@ func TestMallArrivalSmokeShippedYamlLoads(t *testing.T) {
 		t.Fatalf("mode=%q run_mode=%q robot_count=%d", cfg.Mode, sc.RunMode, cfg.RobotCount)
 	}
 	// 与 etc/mall_arrival_smoke_seed.sql 种的那条商品一致:990001 → config 10 × 2。
-	if sc.SkuID != 990001 || sc.ItemConfigID != 10 || sc.CountPerUnit != 2 || !strings.HasPrefix(sc.Channel, commerceMockChannelPrefix) {
+	if sc.SkuID != 990001 || sc.ItemConfigID != 10 || sc.CountPerUnit != 2 || sc.Channel != "mock" {
 		t.Fatalf("随仓配置与种子脚本不一致: %+v", sc)
 	}
 	if err := validateCommerceMockMallURL(sc.MallURL); err != nil {
@@ -162,7 +161,7 @@ func TestMallArrivalSmokeShippedYamlLoads(t *testing.T) {
 func TestMallArrivalSmokeConfigRejectsUnsafeValues(t *testing.T) {
 	valid := func() config.MallArrivalSmokeConfig {
 		return config.MallArrivalSmokeConfig{RunMode: "dev", MallURL: "http://127.0.0.1:18120", PaymentSubject: "payment-adapter",
-			Channel: "mock-dev", SkuID: 990001, Quantity: 1, ItemConfigID: 10, CountPerUnit: 2, DeliverTimeoutSeconds: 90, PollIntervalMs: 1500}
+			Channel: "mock", SkuID: 990001, Quantity: 1, ItemConfigID: 10, CountPerUnit: 2, DeliverTimeoutSeconds: 90, PollIntervalMs: 1500}
 	}
 	base := valid()
 	if err := base.Validate(); err != nil {
@@ -178,7 +177,10 @@ func TestMallArrivalSmokeConfigRejectsUnsafeValues(t *testing.T) {
 		{"主机名商城", func(c *config.MallArrivalSmokeConfig) { c.MallURL = "http://localhost:18120" }},
 		{"商城带路径", func(c *config.MallArrivalSmokeConfig) { c.MallURL = "http://127.0.0.1:18120/mall" }},
 		{"商城缺端口", func(c *config.MallArrivalSmokeConfig) { c.MallURL = "http://127.0.0.1" }},
+		{"商城零端口", func(c *config.MallArrivalSmokeConfig) { c.MallURL = "http://127.0.0.1:0" }},
+		{"商城端口越界", func(c *config.MallArrivalSmokeConfig) { c.MallURL = "http://127.0.0.1:65536" }},
 		{"真实渠道名", func(c *config.MallArrivalSmokeConfig) { c.Channel = "wechat" }},
+		{"旧mock-dev伪回执渠道", func(c *config.MallArrivalSmokeConfig) { c.Channel = "mock-dev" }},
 		{"subject 非法", func(c *config.MallArrivalSmokeConfig) { c.PaymentSubject = "X" }},
 		{"没写 sku", func(c *config.MallArrivalSmokeConfig) { c.SkuID = 0 }},
 		{"份数 0", func(c *config.MallArrivalSmokeConfig) { c.Quantity = 0 }},

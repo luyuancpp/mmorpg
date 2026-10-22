@@ -33,6 +33,7 @@ import (
 	"login/internal/constants"
 	"login/internal/logic/pkg/sessionfence"
 	login_proto_common "proto/common/base"
+	sharedsession "shared/loginsession"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
@@ -85,7 +86,7 @@ func (r Ref) Legacy() bool {
 
 // Key 返回本连接 login_session 的 Redis 键;读登录态只认这一个键。
 func (r Ref) Key() string {
-	return keyPrefix + r.id
+	return sharedsession.KeyFromMember(r.id)
 }
 
 // DeviceMember 返回本连接在账号设备集里的成员值(= 键后缀)。

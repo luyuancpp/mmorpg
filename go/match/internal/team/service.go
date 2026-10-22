@@ -136,13 +136,16 @@ func NewService(svcCtx *svc.ServiceContext, homeZones HomeZoneLookup, starter Ba
 	if svcCtx.BattleIDGen != nil { // 避免把 nil 指针包成非 nil 接口
 		s.ids = svcCtx.BattleIDGen
 	}
+	if svcCtx.Authority != nil {
+		s.store = NewSQLStore(svcCtx.Authority, presence.loadSessions, cfg)
+	}
 	return s
 }
 
 // ---- RPC ----
 
 // CreateTeam 建队:已在队回 4003 + 当前视图(§D.6 重放语义)。
-func (s *Service) CreateTeam(ctx context.Context, caller uint64, _ *teampb.CreateTeamRequest) *teampb.TeamResponse {
+func (s *Service) createTeam(ctx context.Context, caller uint64, _ *teampb.CreateTeamRequest) *teampb.TeamResponse {
 	self, failed := s.readSelf(ctx, methodCreateTeam, caller)
 	if failed != nil {
 		return failed
@@ -216,7 +219,7 @@ func (s *Service) getMyTeam(ctx context.Context, caller uint64, in *teampb.GetMy
 }
 
 // ApplyJoinTeam 申请加入目标玩家所在的队伍。
-func (s *Service) ApplyJoinTeam(ctx context.Context, caller uint64, in *teampb.ApplyJoinTeamRequest) *teampb.TeamResponse {
+func (s *Service) applyJoinTeam(ctx context.Context, caller uint64, in *teampb.ApplyJoinTeamRequest) *teampb.TeamResponse {
 	target := in.GetTargetPlayerId()
 	if target == 0 || target == caller {
 		return s.respond(ctx, caller, ErrPlayerId, 0)
@@ -246,7 +249,7 @@ func (s *Service) ApplyJoinTeam(ctx context.Context, caller uint64, in *teampb.A
 }
 
 // HandleApplication 队长同意 / 拒绝申请。
-func (s *Service) HandleApplication(ctx context.Context, caller uint64, in *teampb.HandleApplicationRequest) *teampb.TeamResponse {
+func (s *Service) handleApplication(ctx context.Context, caller uint64, in *teampb.HandleApplicationRequest) *teampb.TeamResponse {
 	resp, _ := s.runMutate(ctx, caller, BindCaller(caller, in.GetExpectedTeamId()),
 		HandleApplicationOp(caller, in.GetApplicantId(), in.GetApprove()),
 		mutateSpec{method: methodHandleApplication})
@@ -254,7 +257,7 @@ func (s *Service) HandleApplication(ctx context.Context, caller uint64, in *team
 }
 
 // InviteToTeam 队长邀请在线且无队的玩家。
-func (s *Service) InviteToTeam(ctx context.Context, caller uint64, in *teampb.InviteToTeamRequest) *teampb.TeamResponse {
+func (s *Service) inviteToTeam(ctx context.Context, caller uint64, in *teampb.InviteToTeamRequest) *teampb.TeamResponse {
 	target := in.GetTargetPlayerId()
 	if target == 0 || target == caller {
 		return s.respond(ctx, caller, ErrPlayerId, 0)
@@ -284,7 +287,7 @@ func (s *Service) InviteToTeam(ctx context.Context, caller uint64, in *teampb.In
 }
 
 // RespondInvite 被邀请人接受 / 拒绝;team_id 本身即绑定的队伍。
-func (s *Service) RespondInvite(ctx context.Context, caller uint64, in *teampb.RespondInviteRequest) *teampb.TeamResponse {
+func (s *Service) respondInvite(ctx context.Context, caller uint64, in *teampb.RespondInviteRequest) *teampb.TeamResponse {
 	teamId := in.GetTeamId()
 	if teamId == 0 {
 		return s.respond(ctx, caller, ErrNoTeam, 0)
@@ -353,28 +356,28 @@ func (s *Service) ListMyInvites(ctx context.Context, caller uint64, _ *teampb.Li
 }
 
 // LeaveTeam 离队;expected 队伍里已经没有我 → 成功、不写,带当前视图(§D.6)。
-func (s *Service) LeaveTeam(ctx context.Context, caller uint64, in *teampb.LeaveTeamRequest) *teampb.TeamResponse {
+func (s *Service) leaveTeam(ctx context.Context, caller uint64, in *teampb.LeaveTeamRequest) *teampb.TeamResponse {
 	resp, _ := s.runMutate(ctx, caller, BindCaller(caller, in.GetExpectedTeamId()), LeaveOp(caller),
 		mutateSpec{method: methodLeaveTeam, unboundIsSuccess: true})
 	return resp
 }
 
 // KickMember 队长踢人。
-func (s *Service) KickMember(ctx context.Context, caller uint64, in *teampb.KickMemberRequest) *teampb.TeamResponse {
+func (s *Service) kickMember(ctx context.Context, caller uint64, in *teampb.KickMemberRequest) *teampb.TeamResponse {
 	resp, _ := s.runMutate(ctx, caller, BindCaller(caller, in.GetExpectedTeamId()), KickOp(caller, in.GetTargetPlayerId()),
 		mutateSpec{method: methodKickMember})
 	return resp
 }
 
 // TransferLeader 队长转让。
-func (s *Service) TransferLeader(ctx context.Context, caller uint64, in *teampb.TransferLeaderRequest) *teampb.TeamResponse {
+func (s *Service) transferLeader(ctx context.Context, caller uint64, in *teampb.TransferLeaderRequest) *teampb.TeamResponse {
 	resp, _ := s.runMutate(ctx, caller, BindCaller(caller, in.GetExpectedTeamId()),
 		TransferLeaderOp(caller, in.GetTargetPlayerId()), mutateSpec{method: methodTransferLeader})
 	return resp
 }
 
 // DisbandTeam 队长解散;当前队伍 ≠ expected → 4013 + 当前视图。
-func (s *Service) DisbandTeam(ctx context.Context, caller uint64, in *teampb.DisbandTeamRequest) *teampb.TeamResponse {
+func (s *Service) disbandTeam(ctx context.Context, caller uint64, in *teampb.DisbandTeamRequest) *teampb.TeamResponse {
 	resp, _ := s.runMutate(ctx, caller, BindCaller(caller, in.GetExpectedTeamId()), DisbandOp(caller),
 		mutateSpec{method: methodDisbandTeam})
 	return resp
@@ -396,6 +399,9 @@ func (s *Service) DisbandTeam(ctx context.Context, caller uint64, in *teampb.Dis
 // 补位分支(target_team_size 大于当前人数,docs/design/team-backfill-matching.md §4.1):第 1–5 步相同,
 // 之后不加开战锁,改走 startBackfill —— 整队进人数档队列,回包是 QUEUED 视图;凑满后由 matcher 开局。
 func (s *Service) StartTeamMatch(ctx context.Context, caller uint64, in *teampb.StartTeamMatchRequest) *teampb.TeamResponse {
+	if s.store.sql != nil {
+		return s.startSQLTeamMatch(ctx, caller, in)
+	}
 	log := logx.WithContext(ctx)
 	if s.svcCtx.Authority != nil {
 		key, e := authority.DirectUUIDKey(1, caller, in.RequestId)

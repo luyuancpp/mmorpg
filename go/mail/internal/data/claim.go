@@ -15,11 +15,11 @@ import (
 )
 
 func (r *Repo) Claim(ctx context.Context, player, id uint64) (*mailpb.MailActionResult, error) {
+	if err := validateActor(ctx, player); err != nil {
+		return nil, err
+	}
 	if id == 0 {
 		return nil, ErrInvalid
-	}
-	if err := r.ensureBox(ctx, player); err != nil {
-		return nil, err
 	}
 	opID, err := r.opIDs(ctx)
 	if err != nil {

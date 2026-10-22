@@ -24,6 +24,7 @@ namespace match {
 
 static const char* MatchInternal_method_names[] = {
   "/match.MatchInternal/StartActivityBattle",
+  "/match.MatchInternal/CancelActivityBattle",
 };
 
 std::unique_ptr< MatchInternal::Stub> MatchInternal::NewStub(const std::shared_ptr< ::grpc::ChannelInterface>& channel, const ::grpc::StubOptions& options) {
@@ -34,6 +35,7 @@ std::unique_ptr< MatchInternal::Stub> MatchInternal::NewStub(const std::shared_p
 
 MatchInternal::Stub::Stub(const std::shared_ptr< ::grpc::ChannelInterface>& channel, const ::grpc::StubOptions& options)
   : channel_(channel), rpcmethod_StartActivityBattle_(MatchInternal_method_names[0], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
+  , rpcmethod_CancelActivityBattle_(MatchInternal_method_names[1], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
   {}
 
 ::grpc::Status MatchInternal::Stub::StartActivityBattle(::grpc::ClientContext* context, const ::match::StartActivityBattleRequest& request, ::match::StartActivityBattleResponse* response) {
@@ -59,6 +61,29 @@ void MatchInternal::Stub::async::StartActivityBattle(::grpc::ClientContext* cont
   return result;
 }
 
+::grpc::Status MatchInternal::Stub::CancelActivityBattle(::grpc::ClientContext* context, const ::match::CancelActivityBattleRequest& request, ::match::CancelActivityBattleResponse* response) {
+  return ::grpc::internal::BlockingUnaryCall< ::match::CancelActivityBattleRequest, ::match::CancelActivityBattleResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), rpcmethod_CancelActivityBattle_, context, request, response);
+}
+
+void MatchInternal::Stub::async::CancelActivityBattle(::grpc::ClientContext* context, const ::match::CancelActivityBattleRequest* request, ::match::CancelActivityBattleResponse* response, std::function<void(::grpc::Status)> f) {
+  ::grpc::internal::CallbackUnaryCall< ::match::CancelActivityBattleRequest, ::match::CancelActivityBattleResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_CancelActivityBattle_, context, request, response, std::move(f));
+}
+
+void MatchInternal::Stub::async::CancelActivityBattle(::grpc::ClientContext* context, const ::match::CancelActivityBattleRequest* request, ::match::CancelActivityBattleResponse* response, ::grpc::ClientUnaryReactor* reactor) {
+  ::grpc::internal::ClientCallbackUnaryFactory::Create< ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_CancelActivityBattle_, context, request, response, reactor);
+}
+
+::grpc::ClientAsyncResponseReader< ::match::CancelActivityBattleResponse>* MatchInternal::Stub::PrepareAsyncCancelActivityBattleRaw(::grpc::ClientContext* context, const ::match::CancelActivityBattleRequest& request, ::grpc::CompletionQueue* cq) {
+  return ::grpc::internal::ClientAsyncResponseReaderHelper::Create< ::match::CancelActivityBattleResponse, ::match::CancelActivityBattleRequest, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), cq, rpcmethod_CancelActivityBattle_, context, request);
+}
+
+::grpc::ClientAsyncResponseReader< ::match::CancelActivityBattleResponse>* MatchInternal::Stub::AsyncCancelActivityBattleRaw(::grpc::ClientContext* context, const ::match::CancelActivityBattleRequest& request, ::grpc::CompletionQueue* cq) {
+  auto* result =
+    this->PrepareAsyncCancelActivityBattleRaw(context, request, cq);
+  result->StartCall();
+  return result;
+}
+
 MatchInternal::Service::Service() {
   AddMethod(new ::grpc::internal::RpcServiceMethod(
       MatchInternal_method_names[0],
@@ -70,12 +95,29 @@ MatchInternal::Service::Service() {
              ::match::StartActivityBattleResponse* resp) {
                return service->StartActivityBattle(ctx, req, resp);
              }, this)));
+  AddMethod(new ::grpc::internal::RpcServiceMethod(
+      MatchInternal_method_names[1],
+      ::grpc::internal::RpcMethod::NORMAL_RPC,
+      new ::grpc::internal::RpcMethodHandler< MatchInternal::Service, ::match::CancelActivityBattleRequest, ::match::CancelActivityBattleResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(
+          [](MatchInternal::Service* service,
+             ::grpc::ServerContext* ctx,
+             const ::match::CancelActivityBattleRequest* req,
+             ::match::CancelActivityBattleResponse* resp) {
+               return service->CancelActivityBattle(ctx, req, resp);
+             }, this)));
 }
 
 MatchInternal::Service::~Service() {
 }
 
 ::grpc::Status MatchInternal::Service::StartActivityBattle(::grpc::ServerContext* context, const ::match::StartActivityBattleRequest* request, ::match::StartActivityBattleResponse* response) {
+  (void) context;
+  (void) request;
+  (void) response;
+  return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+}
+
+::grpc::Status MatchInternal::Service::CancelActivityBattle(::grpc::ServerContext* context, const ::match::CancelActivityBattleRequest* request, ::match::CancelActivityBattleResponse* response) {
   (void) context;
   (void) request;
   (void) response;

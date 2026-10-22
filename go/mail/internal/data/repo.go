@@ -40,6 +40,7 @@ type Repo struct {
 	guildDatabase  string
 	now            func() time.Time
 	seq            assetop.SeqTables
+	roleAuthority  string
 }
 
 func New(db *sql.DB, mailIDs, opIDs NextID, exists func(uint32) bool, guildDatabase string) *Repo {
@@ -61,7 +62,10 @@ func (r *Repo) tx(ctx context.Context, fn func(*sql.Tx) error) error {
 		if err != nil {
 			return err
 		}
-		err = fn(tx)
+		err = r.lockActor(ctx, tx)
+		if err == nil {
+			err = fn(tx)
+		}
 		if err == nil {
 			return tx.Commit()
 		}

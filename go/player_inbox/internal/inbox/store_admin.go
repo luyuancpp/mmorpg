@@ -8,9 +8,8 @@ import (
 	"player_inbox/internal/constants"
 	"player_inbox/internal/metrics"
 
+	dspb "proto/data_service"
 	inboxpb "proto/player_inbox"
-
-	"shared/assetop"
 
 	"github.com/zeromicro/go-zero/core/logx"
 )
@@ -64,8 +63,11 @@ func (s *Store) Void(ctx context.Context, p VoidParams, ledgers LedgerReader) (*
 		action voidAction
 		state  inboxpb.PlayerInboxItemState
 	)
-	err := assetop.WithTxRetryConfig(ctx, s.db, s.txCfg, func(tx *sql.Tx) error {
+	err := s.withPlayerTx(ctx, p.PlayerID, func(tx *sql.Tx, original *dspb.AccountRoleOwnership) error {
 		action, state = 0, inboxpb.PlayerInboxItemState_PLAYER_INBOX_ITEM_UNSPECIFIED
+		if err := requirePendingOriginalsTx(ctx, tx, original); err != nil {
+			return err
+		}
 		st, err := lockStream(ctx, tx, shard, p.PlayerID, p.Domain)
 		if err != nil {
 			return err
@@ -76,6 +78,9 @@ func (s *Store) Void(ctx context.Context, p VoidParams, ledgers LedgerReader) (*
 		}
 		row, err := readItem(ctx, tx, shard, p.PlayerID, p.Domain, p.Seq)
 		if err != nil {
+			return err
+		}
+		if err = requireItemOriginal(row, original); err != nil {
 			return err
 		}
 		action = decideVoid(row)
@@ -197,8 +202,11 @@ func (s *Store) forceVoid(ctx context.Context, p VoidParams, ledgers LedgerReade
 		state     inboxpb.PlayerInboxItemState
 		requestID uint64
 	)
-	err = assetop.WithTxRetryConfig(ctx, s.db, s.txCfg, func(tx *sql.Tx) error {
+	err = s.withPlayerTx(ctx, p.PlayerID, func(tx *sql.Tx, original *dspb.AccountRoleOwnership) error {
 		action, proof, state, requestID = voidNotFound, forceVoidProof{}, inboxpb.PlayerInboxItemState_PLAYER_INBOX_ITEM_UNSPECIFIED, 0
+		if err := requirePendingOriginalsTx(ctx, tx, original); err != nil {
+			return err
+		}
 		st, err := lockStream(ctx, tx, shard, p.PlayerID, p.Domain)
 		if err != nil {
 			return err
@@ -208,6 +216,9 @@ func (s *Store) forceVoid(ctx context.Context, p VoidParams, ledgers LedgerReade
 		}
 		row, err := readItem(ctx, tx, shard, p.PlayerID, p.Domain, p.Seq)
 		if err != nil {
+			return err
+		}
+		if err = requireItemOriginal(row, original); err != nil {
 			return err
 		}
 		action, proof = decideForceVoidLocked(row, ledger, found)

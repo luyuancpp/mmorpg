@@ -591,6 +591,7 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED player_inbox_item_row final : publi
     kPayloadFieldNumber = 9,
     kOperatorNameFieldNumber = 22,
     kNoteFieldNumber = 23,
+    kOwnerAccountFieldNumber = 24,
     kPlayerIdFieldNumber = 2,
     kShardFieldNumber = 1,
     kDomainFieldNumber = 3,
@@ -610,6 +611,7 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED player_inbox_item_row final : publi
     kIssuedAtMsFieldNumber = 19,
     kCreatedMsFieldNumber = 20,
     kUpdatedMsFieldNumber = 21,
+    kOwnerRevisionFieldNumber = 25,
   };
   // bytes content_sha256 = 8;
   void clear_content_sha256() ;
@@ -669,6 +671,21 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED player_inbox_item_row final : publi
   const ::std::string& _internal_note() const;
   PROTOBUF_ALWAYS_INLINE void _internal_set_note(const ::std::string& value);
   ::std::string* PROTOBUF_NONNULL _internal_mutable_note();
+
+  public:
+  // string owner_account = 24;
+  void clear_owner_account() ;
+  [[nodiscard]] const ::std::string& owner_account() const;
+  template <typename Arg_ = const ::std::string&, typename... Args_>
+  void set_owner_account(Arg_&& arg, Args_... args);
+  ::std::string* PROTOBUF_NONNULL mutable_owner_account();
+  [[nodiscard]] ::std::string* PROTOBUF_NULLABLE release_owner_account();
+  void set_allocated_owner_account(::std::string* PROTOBUF_NULLABLE value);
+
+  private:
+  const ::std::string& _internal_owner_account() const;
+  PROTOBUF_ALWAYS_INLINE void _internal_set_owner_account(const ::std::string& value);
+  ::std::string* PROTOBUF_NONNULL _internal_mutable_owner_account();
 
   public:
   // uint64 player_id = 2;
@@ -861,12 +878,22 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED player_inbox_item_row final : publi
   void _internal_set_updated_ms(::uint64_t value);
 
   public:
+  // uint64 owner_revision = 25;
+  void clear_owner_revision() ;
+  [[nodiscard]] ::uint64_t owner_revision() const;
+  void set_owner_revision(::uint64_t value);
+
+  private:
+  ::uint64_t _internal_owner_revision() const;
+  void _internal_set_owner_revision(::uint64_t value);
+
+  public:
   // @@protoc_insertion_point(class_scope:player_inbox.player_inbox_item_row)
  private:
   class _Internal;
   using ParseTableT_ =
-      ::google::protobuf::internal::TcParseTable<5, 23,
-                          0, 76,
+      ::google::protobuf::internal::TcParseTable<5, 25,
+                          0, 97,
                           2>;
   static constexpr ParseTableT_ InternalGenerateParseTable_(
       const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL class_data);
@@ -898,6 +925,7 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED player_inbox_item_row final : publi
     ::google::protobuf::internal::ArenaStringPtr payload_;
     ::google::protobuf::internal::ArenaStringPtr operator_name_;
     ::google::protobuf::internal::ArenaStringPtr note_;
+    ::google::protobuf::internal::ArenaStringPtr owner_account_;
     ::uint64_t player_id_;
     ::uint32_t shard_;
     ::uint32_t domain_;
@@ -917,6 +945,7 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED player_inbox_item_row final : publi
     ::uint64_t issued_at_ms_;
     ::uint64_t created_ms_;
     ::uint64_t updated_ms_;
+    ::uint64_t owner_revision_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
   union { Impl_ _impl_; };
@@ -1557,7 +1586,7 @@ inline void player_inbox_stream::_internal_set_updated_ms(::uint64_t value) {
 inline void player_inbox_item_row::clear_shard() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.shard_ = 0u;
-  ClearHasBit(_impl_._has_bits_[0], 0x00000020U);
+  ClearHasBit(_impl_._has_bits_[0], 0x00000040U);
 }
 inline ::uint32_t player_inbox_item_row::shard() const {
   // @@protoc_insertion_point(field_get:player_inbox.player_inbox_item_row.shard)
@@ -1565,7 +1594,7 @@ inline ::uint32_t player_inbox_item_row::shard() const {
 }
 inline void player_inbox_item_row::set_shard(::uint32_t value) {
   _internal_set_shard(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00000020U);
+  SetHasBit(_impl_._has_bits_[0], 0x00000040U);
   // @@protoc_insertion_point(field_set:player_inbox.player_inbox_item_row.shard)
 }
 inline ::uint32_t player_inbox_item_row::_internal_shard() const {
@@ -1581,7 +1610,7 @@ inline void player_inbox_item_row::_internal_set_shard(::uint32_t value) {
 inline void player_inbox_item_row::clear_player_id() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.player_id_ = ::uint64_t{0u};
-  ClearHasBit(_impl_._has_bits_[0], 0x00000010U);
+  ClearHasBit(_impl_._has_bits_[0], 0x00000020U);
 }
 inline ::uint64_t player_inbox_item_row::player_id() const {
   // @@protoc_insertion_point(field_get:player_inbox.player_inbox_item_row.player_id)
@@ -1589,7 +1618,7 @@ inline ::uint64_t player_inbox_item_row::player_id() const {
 }
 inline void player_inbox_item_row::set_player_id(::uint64_t value) {
   _internal_set_player_id(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00000010U);
+  SetHasBit(_impl_._has_bits_[0], 0x00000020U);
   // @@protoc_insertion_point(field_set:player_inbox.player_inbox_item_row.player_id)
 }
 inline ::uint64_t player_inbox_item_row::_internal_player_id() const {
@@ -1605,7 +1634,7 @@ inline void player_inbox_item_row::_internal_set_player_id(::uint64_t value) {
 inline void player_inbox_item_row::clear_domain() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.domain_ = 0u;
-  ClearHasBit(_impl_._has_bits_[0], 0x00000040U);
+  ClearHasBit(_impl_._has_bits_[0], 0x00000080U);
 }
 inline ::uint32_t player_inbox_item_row::domain() const {
   // @@protoc_insertion_point(field_get:player_inbox.player_inbox_item_row.domain)
@@ -1613,7 +1642,7 @@ inline ::uint32_t player_inbox_item_row::domain() const {
 }
 inline void player_inbox_item_row::set_domain(::uint32_t value) {
   _internal_set_domain(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00000040U);
+  SetHasBit(_impl_._has_bits_[0], 0x00000080U);
   // @@protoc_insertion_point(field_set:player_inbox.player_inbox_item_row.domain)
 }
 inline ::uint32_t player_inbox_item_row::_internal_domain() const {
@@ -1629,7 +1658,7 @@ inline void player_inbox_item_row::_internal_set_domain(::uint32_t value) {
 inline void player_inbox_item_row::clear_seq() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.seq_ = ::uint64_t{0u};
-  ClearHasBit(_impl_._has_bits_[0], 0x00000080U);
+  ClearHasBit(_impl_._has_bits_[0], 0x00000100U);
 }
 inline ::uint64_t player_inbox_item_row::seq() const {
   // @@protoc_insertion_point(field_get:player_inbox.player_inbox_item_row.seq)
@@ -1637,7 +1666,7 @@ inline ::uint64_t player_inbox_item_row::seq() const {
 }
 inline void player_inbox_item_row::set_seq(::uint64_t value) {
   _internal_set_seq(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00000080U);
+  SetHasBit(_impl_._has_bits_[0], 0x00000100U);
   // @@protoc_insertion_point(field_set:player_inbox.player_inbox_item_row.seq)
 }
 inline ::uint64_t player_inbox_item_row::_internal_seq() const {
@@ -1653,7 +1682,7 @@ inline void player_inbox_item_row::_internal_set_seq(::uint64_t value) {
 inline void player_inbox_item_row::clear_msg_type() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.msg_type_ = 0u;
-  ClearHasBit(_impl_._has_bits_[0], 0x00000100U);
+  ClearHasBit(_impl_._has_bits_[0], 0x00000200U);
 }
 inline ::uint32_t player_inbox_item_row::msg_type() const {
   // @@protoc_insertion_point(field_get:player_inbox.player_inbox_item_row.msg_type)
@@ -1661,7 +1690,7 @@ inline ::uint32_t player_inbox_item_row::msg_type() const {
 }
 inline void player_inbox_item_row::set_msg_type(::uint32_t value) {
   _internal_set_msg_type(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00000100U);
+  SetHasBit(_impl_._has_bits_[0], 0x00000200U);
   // @@protoc_insertion_point(field_set:player_inbox.player_inbox_item_row.msg_type)
 }
 inline ::uint32_t player_inbox_item_row::_internal_msg_type() const {
@@ -1677,7 +1706,7 @@ inline void player_inbox_item_row::_internal_set_msg_type(::uint32_t value) {
 inline void player_inbox_item_row::clear_producer_kind() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.producer_kind_ = 0u;
-  ClearHasBit(_impl_._has_bits_[0], 0x00000200U);
+  ClearHasBit(_impl_._has_bits_[0], 0x00000400U);
 }
 inline ::uint32_t player_inbox_item_row::producer_kind() const {
   // @@protoc_insertion_point(field_get:player_inbox.player_inbox_item_row.producer_kind)
@@ -1685,7 +1714,7 @@ inline ::uint32_t player_inbox_item_row::producer_kind() const {
 }
 inline void player_inbox_item_row::set_producer_kind(::uint32_t value) {
   _internal_set_producer_kind(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00000200U);
+  SetHasBit(_impl_._has_bits_[0], 0x00000400U);
   // @@protoc_insertion_point(field_set:player_inbox.player_inbox_item_row.producer_kind)
 }
 inline ::uint32_t player_inbox_item_row::_internal_producer_kind() const {
@@ -1701,7 +1730,7 @@ inline void player_inbox_item_row::_internal_set_producer_kind(::uint32_t value)
 inline void player_inbox_item_row::clear_request_id() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.request_id_ = ::uint64_t{0u};
-  ClearHasBit(_impl_._has_bits_[0], 0x00000400U);
+  ClearHasBit(_impl_._has_bits_[0], 0x00000800U);
 }
 inline ::uint64_t player_inbox_item_row::request_id() const {
   // @@protoc_insertion_point(field_get:player_inbox.player_inbox_item_row.request_id)
@@ -1709,7 +1738,7 @@ inline ::uint64_t player_inbox_item_row::request_id() const {
 }
 inline void player_inbox_item_row::set_request_id(::uint64_t value) {
   _internal_set_request_id(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00000400U);
+  SetHasBit(_impl_._has_bits_[0], 0x00000800U);
   // @@protoc_insertion_point(field_set:player_inbox.player_inbox_item_row.request_id)
 }
 inline ::uint64_t player_inbox_item_row::_internal_request_id() const {
@@ -1853,7 +1882,7 @@ inline void player_inbox_item_row::set_allocated_payload(::std::string* PROTOBUF
 inline void player_inbox_item_row::clear_state() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.state_ = 0u;
-  ClearHasBit(_impl_._has_bits_[0], 0x00000800U);
+  ClearHasBit(_impl_._has_bits_[0], 0x00001000U);
 }
 inline ::uint32_t player_inbox_item_row::state() const {
   // @@protoc_insertion_point(field_get:player_inbox.player_inbox_item_row.state)
@@ -1861,7 +1890,7 @@ inline ::uint32_t player_inbox_item_row::state() const {
 }
 inline void player_inbox_item_row::set_state(::uint32_t value) {
   _internal_set_state(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00000800U);
+  SetHasBit(_impl_._has_bits_[0], 0x00001000U);
   // @@protoc_insertion_point(field_set:player_inbox.player_inbox_item_row.state)
 }
 inline ::uint32_t player_inbox_item_row::_internal_state() const {
@@ -1877,7 +1906,7 @@ inline void player_inbox_item_row::_internal_set_state(::uint32_t value) {
 inline void player_inbox_item_row::clear_directive() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.directive_ = 0u;
-  ClearHasBit(_impl_._has_bits_[0], 0x00001000U);
+  ClearHasBit(_impl_._has_bits_[0], 0x00002000U);
 }
 inline ::uint32_t player_inbox_item_row::directive() const {
   // @@protoc_insertion_point(field_get:player_inbox.player_inbox_item_row.directive)
@@ -1885,7 +1914,7 @@ inline ::uint32_t player_inbox_item_row::directive() const {
 }
 inline void player_inbox_item_row::set_directive(::uint32_t value) {
   _internal_set_directive(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00001000U);
+  SetHasBit(_impl_._has_bits_[0], 0x00002000U);
   // @@protoc_insertion_point(field_set:player_inbox.player_inbox_item_row.directive)
 }
 inline ::uint32_t player_inbox_item_row::_internal_directive() const {
@@ -1901,7 +1930,7 @@ inline void player_inbox_item_row::_internal_set_directive(::uint32_t value) {
 inline void player_inbox_item_row::clear_void_reason() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.void_reason_ = 0u;
-  ClearHasBit(_impl_._has_bits_[0], 0x00002000U);
+  ClearHasBit(_impl_._has_bits_[0], 0x00004000U);
 }
 inline ::uint32_t player_inbox_item_row::void_reason() const {
   // @@protoc_insertion_point(field_get:player_inbox.player_inbox_item_row.void_reason)
@@ -1909,7 +1938,7 @@ inline ::uint32_t player_inbox_item_row::void_reason() const {
 }
 inline void player_inbox_item_row::set_void_reason(::uint32_t value) {
   _internal_set_void_reason(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00002000U);
+  SetHasBit(_impl_._has_bits_[0], 0x00004000U);
   // @@protoc_insertion_point(field_set:player_inbox.player_inbox_item_row.void_reason)
 }
 inline ::uint32_t player_inbox_item_row::_internal_void_reason() const {
@@ -1925,7 +1954,7 @@ inline void player_inbox_item_row::_internal_set_void_reason(::uint32_t value) {
 inline void player_inbox_item_row::clear_delivery_count() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.delivery_count_ = 0u;
-  ClearHasBit(_impl_._has_bits_[0], 0x00004000U);
+  ClearHasBit(_impl_._has_bits_[0], 0x00008000U);
 }
 inline ::uint32_t player_inbox_item_row::delivery_count() const {
   // @@protoc_insertion_point(field_get:player_inbox.player_inbox_item_row.delivery_count)
@@ -1933,7 +1962,7 @@ inline ::uint32_t player_inbox_item_row::delivery_count() const {
 }
 inline void player_inbox_item_row::set_delivery_count(::uint32_t value) {
   _internal_set_delivery_count(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00004000U);
+  SetHasBit(_impl_._has_bits_[0], 0x00008000U);
   // @@protoc_insertion_point(field_set:player_inbox.player_inbox_item_row.delivery_count)
 }
 inline ::uint32_t player_inbox_item_row::_internal_delivery_count() const {
@@ -1949,7 +1978,7 @@ inline void player_inbox_item_row::_internal_set_delivery_count(::uint32_t value
 inline void player_inbox_item_row::clear_last_delivered_epoch() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.last_delivered_epoch_ = ::uint64_t{0u};
-  ClearHasBit(_impl_._has_bits_[0], 0x00008000U);
+  ClearHasBit(_impl_._has_bits_[0], 0x00010000U);
 }
 inline ::uint64_t player_inbox_item_row::last_delivered_epoch() const {
   // @@protoc_insertion_point(field_get:player_inbox.player_inbox_item_row.last_delivered_epoch)
@@ -1957,7 +1986,7 @@ inline ::uint64_t player_inbox_item_row::last_delivered_epoch() const {
 }
 inline void player_inbox_item_row::set_last_delivered_epoch(::uint64_t value) {
   _internal_set_last_delivered_epoch(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00008000U);
+  SetHasBit(_impl_._has_bits_[0], 0x00010000U);
   // @@protoc_insertion_point(field_set:player_inbox.player_inbox_item_row.last_delivered_epoch)
 }
 inline ::uint64_t player_inbox_item_row::_internal_last_delivered_epoch() const {
@@ -1973,7 +2002,7 @@ inline void player_inbox_item_row::_internal_set_last_delivered_epoch(::uint64_t
 inline void player_inbox_item_row::clear_last_delivered_ms() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.last_delivered_ms_ = ::uint64_t{0u};
-  ClearHasBit(_impl_._has_bits_[0], 0x00010000U);
+  ClearHasBit(_impl_._has_bits_[0], 0x00020000U);
 }
 inline ::uint64_t player_inbox_item_row::last_delivered_ms() const {
   // @@protoc_insertion_point(field_get:player_inbox.player_inbox_item_row.last_delivered_ms)
@@ -1981,7 +2010,7 @@ inline ::uint64_t player_inbox_item_row::last_delivered_ms() const {
 }
 inline void player_inbox_item_row::set_last_delivered_ms(::uint64_t value) {
   _internal_set_last_delivered_ms(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00010000U);
+  SetHasBit(_impl_._has_bits_[0], 0x00020000U);
   // @@protoc_insertion_point(field_set:player_inbox.player_inbox_item_row.last_delivered_ms)
 }
 inline ::uint64_t player_inbox_item_row::_internal_last_delivered_ms() const {
@@ -1997,7 +2026,7 @@ inline void player_inbox_item_row::_internal_set_last_delivered_ms(::uint64_t va
 inline void player_inbox_item_row::clear_outcome_reason() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.outcome_reason_ = 0u;
-  ClearHasBit(_impl_._has_bits_[0], 0x00020000U);
+  ClearHasBit(_impl_._has_bits_[0], 0x00040000U);
 }
 inline ::uint32_t player_inbox_item_row::outcome_reason() const {
   // @@protoc_insertion_point(field_get:player_inbox.player_inbox_item_row.outcome_reason)
@@ -2005,7 +2034,7 @@ inline ::uint32_t player_inbox_item_row::outcome_reason() const {
 }
 inline void player_inbox_item_row::set_outcome_reason(::uint32_t value) {
   _internal_set_outcome_reason(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00020000U);
+  SetHasBit(_impl_._has_bits_[0], 0x00040000U);
   // @@protoc_insertion_point(field_set:player_inbox.player_inbox_item_row.outcome_reason)
 }
 inline ::uint32_t player_inbox_item_row::_internal_outcome_reason() const {
@@ -2021,7 +2050,7 @@ inline void player_inbox_item_row::_internal_set_outcome_reason(::uint32_t value
 inline void player_inbox_item_row::clear_finalized_by() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.finalized_by_ = 0u;
-  ClearHasBit(_impl_._has_bits_[0], 0x00040000U);
+  ClearHasBit(_impl_._has_bits_[0], 0x00080000U);
 }
 inline ::uint32_t player_inbox_item_row::finalized_by() const {
   // @@protoc_insertion_point(field_get:player_inbox.player_inbox_item_row.finalized_by)
@@ -2029,7 +2058,7 @@ inline ::uint32_t player_inbox_item_row::finalized_by() const {
 }
 inline void player_inbox_item_row::set_finalized_by(::uint32_t value) {
   _internal_set_finalized_by(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00040000U);
+  SetHasBit(_impl_._has_bits_[0], 0x00080000U);
   // @@protoc_insertion_point(field_set:player_inbox.player_inbox_item_row.finalized_by)
 }
 inline ::uint32_t player_inbox_item_row::_internal_finalized_by() const {
@@ -2045,7 +2074,7 @@ inline void player_inbox_item_row::_internal_set_finalized_by(::uint32_t value) 
 inline void player_inbox_item_row::clear_decided_epoch() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.decided_epoch_ = ::uint64_t{0u};
-  ClearHasBit(_impl_._has_bits_[0], 0x00080000U);
+  ClearHasBit(_impl_._has_bits_[0], 0x00100000U);
 }
 inline ::uint64_t player_inbox_item_row::decided_epoch() const {
   // @@protoc_insertion_point(field_get:player_inbox.player_inbox_item_row.decided_epoch)
@@ -2053,7 +2082,7 @@ inline ::uint64_t player_inbox_item_row::decided_epoch() const {
 }
 inline void player_inbox_item_row::set_decided_epoch(::uint64_t value) {
   _internal_set_decided_epoch(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00080000U);
+  SetHasBit(_impl_._has_bits_[0], 0x00100000U);
   // @@protoc_insertion_point(field_set:player_inbox.player_inbox_item_row.decided_epoch)
 }
 inline ::uint64_t player_inbox_item_row::_internal_decided_epoch() const {
@@ -2069,7 +2098,7 @@ inline void player_inbox_item_row::_internal_set_decided_epoch(::uint64_t value)
 inline void player_inbox_item_row::clear_issued_at_ms() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.issued_at_ms_ = ::uint64_t{0u};
-  ClearHasBit(_impl_._has_bits_[0], 0x00100000U);
+  ClearHasBit(_impl_._has_bits_[0], 0x00200000U);
 }
 inline ::uint64_t player_inbox_item_row::issued_at_ms() const {
   // @@protoc_insertion_point(field_get:player_inbox.player_inbox_item_row.issued_at_ms)
@@ -2077,7 +2106,7 @@ inline ::uint64_t player_inbox_item_row::issued_at_ms() const {
 }
 inline void player_inbox_item_row::set_issued_at_ms(::uint64_t value) {
   _internal_set_issued_at_ms(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00100000U);
+  SetHasBit(_impl_._has_bits_[0], 0x00200000U);
   // @@protoc_insertion_point(field_set:player_inbox.player_inbox_item_row.issued_at_ms)
 }
 inline ::uint64_t player_inbox_item_row::_internal_issued_at_ms() const {
@@ -2093,7 +2122,7 @@ inline void player_inbox_item_row::_internal_set_issued_at_ms(::uint64_t value) 
 inline void player_inbox_item_row::clear_created_ms() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.created_ms_ = ::uint64_t{0u};
-  ClearHasBit(_impl_._has_bits_[0], 0x00200000U);
+  ClearHasBit(_impl_._has_bits_[0], 0x00400000U);
 }
 inline ::uint64_t player_inbox_item_row::created_ms() const {
   // @@protoc_insertion_point(field_get:player_inbox.player_inbox_item_row.created_ms)
@@ -2101,7 +2130,7 @@ inline ::uint64_t player_inbox_item_row::created_ms() const {
 }
 inline void player_inbox_item_row::set_created_ms(::uint64_t value) {
   _internal_set_created_ms(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00200000U);
+  SetHasBit(_impl_._has_bits_[0], 0x00400000U);
   // @@protoc_insertion_point(field_set:player_inbox.player_inbox_item_row.created_ms)
 }
 inline ::uint64_t player_inbox_item_row::_internal_created_ms() const {
@@ -2117,7 +2146,7 @@ inline void player_inbox_item_row::_internal_set_created_ms(::uint64_t value) {
 inline void player_inbox_item_row::clear_updated_ms() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.updated_ms_ = ::uint64_t{0u};
-  ClearHasBit(_impl_._has_bits_[0], 0x00400000U);
+  ClearHasBit(_impl_._has_bits_[0], 0x00800000U);
 }
 inline ::uint64_t player_inbox_item_row::updated_ms() const {
   // @@protoc_insertion_point(field_get:player_inbox.player_inbox_item_row.updated_ms)
@@ -2125,7 +2154,7 @@ inline ::uint64_t player_inbox_item_row::updated_ms() const {
 }
 inline void player_inbox_item_row::set_updated_ms(::uint64_t value) {
   _internal_set_updated_ms(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00400000U);
+  SetHasBit(_impl_._has_bits_[0], 0x00800000U);
   // @@protoc_insertion_point(field_set:player_inbox.player_inbox_item_row.updated_ms)
 }
 inline ::uint64_t player_inbox_item_row::_internal_updated_ms() const {
@@ -2263,6 +2292,94 @@ inline void player_inbox_item_row::set_allocated_note(::std::string* PROTOBUF_NU
     _impl_.note_.Set("", GetArena());
   }
   // @@protoc_insertion_point(field_set_allocated:player_inbox.player_inbox_item_row.note)
+}
+
+// string owner_account = 24;
+inline void player_inbox_item_row::clear_owner_account() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.owner_account_.ClearToEmpty();
+  ClearHasBit(_impl_._has_bits_[0], 0x00000010U);
+}
+inline const ::std::string& player_inbox_item_row::owner_account() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:player_inbox.player_inbox_item_row.owner_account)
+  return _internal_owner_account();
+}
+template <typename Arg_, typename... Args_>
+PROTOBUF_ALWAYS_INLINE void player_inbox_item_row::set_owner_account(Arg_&& arg, Args_... args) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  SetHasBit(_impl_._has_bits_[0], 0x00000010U);
+  _impl_.owner_account_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
+  // @@protoc_insertion_point(field_set:player_inbox.player_inbox_item_row.owner_account)
+}
+inline ::std::string* PROTOBUF_NONNULL player_inbox_item_row::mutable_owner_account()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  SetHasBit(_impl_._has_bits_[0], 0x00000010U);
+  ::std::string* _s = _internal_mutable_owner_account();
+  // @@protoc_insertion_point(field_mutable:player_inbox.player_inbox_item_row.owner_account)
+  return _s;
+}
+inline const ::std::string& player_inbox_item_row::_internal_owner_account() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.owner_account_.Get();
+}
+inline void player_inbox_item_row::_internal_set_owner_account(const ::std::string& value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.owner_account_.Set(value, GetArena());
+}
+inline ::std::string* PROTOBUF_NONNULL player_inbox_item_row::_internal_mutable_owner_account() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  return _impl_.owner_account_.Mutable( GetArena());
+}
+inline ::std::string* PROTOBUF_NULLABLE player_inbox_item_row::release_owner_account() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:player_inbox.player_inbox_item_row.owner_account)
+  if (!CheckHasBit(_impl_._has_bits_[0], 0x00000010U)) {
+    return nullptr;
+  }
+  ClearHasBit(_impl_._has_bits_[0], 0x00000010U);
+  auto* released = _impl_.owner_account_.Release();
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString()) {
+    _impl_.owner_account_.Set("", GetArena());
+  }
+  return released;
+}
+inline void player_inbox_item_row::set_allocated_owner_account(::std::string* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (value != nullptr) {
+    SetHasBit(_impl_._has_bits_[0], 0x00000010U);
+  } else {
+    ClearHasBit(_impl_._has_bits_[0], 0x00000010U);
+  }
+  _impl_.owner_account_.SetAllocated(value, GetArena());
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.owner_account_.IsDefault()) {
+    _impl_.owner_account_.Set("", GetArena());
+  }
+  // @@protoc_insertion_point(field_set_allocated:player_inbox.player_inbox_item_row.owner_account)
+}
+
+// uint64 owner_revision = 25;
+inline void player_inbox_item_row::clear_owner_revision() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.owner_revision_ = ::uint64_t{0u};
+  ClearHasBit(_impl_._has_bits_[0], 0x01000000U);
+}
+inline ::uint64_t player_inbox_item_row::owner_revision() const {
+  // @@protoc_insertion_point(field_get:player_inbox.player_inbox_item_row.owner_revision)
+  return _internal_owner_revision();
+}
+inline void player_inbox_item_row::set_owner_revision(::uint64_t value) {
+  _internal_set_owner_revision(value);
+  SetHasBit(_impl_._has_bits_[0], 0x01000000U);
+  // @@protoc_insertion_point(field_set:player_inbox.player_inbox_item_row.owner_revision)
+}
+inline ::uint64_t player_inbox_item_row::_internal_owner_revision() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.owner_revision_;
+}
+inline void player_inbox_item_row::_internal_set_owner_revision(::uint64_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.owner_revision_ = value;
 }
 
 // -------------------------------------------------------------------

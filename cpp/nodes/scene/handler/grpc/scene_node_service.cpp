@@ -3,6 +3,7 @@
 #include "infra/agones/agones_gameserver_lifecycle.h"
 #include "proto/scene/scene_info.pb.h"
 #include "player/system/player_lifecycle.h"
+#include "player/system/role_admission_system.h"
 #include "player/system/player_scene.h"
 #include "world/scene_lifecycle.h"
 #include "thread_context/ecs_context.h"
@@ -110,6 +111,12 @@ void SceneNodeGrpcImpl::HandleCancelBattlePrepare(const ::CancelBattlePrepareReq
 ///<<< BEGIN WRITING YOUR CODE
     // gather 失败补偿解冻:battle_id 匹配才摘 InBattleComp + DEL battle:lock,幂等
     PlayerBattleSystem::CancelBattlePrepare(*request);
+///<<< END WRITING YOUR CODE
+}
+
+void SceneNodeGrpcImpl::HandleSealAccountRoleTrade(const ::SealAccountRoleTradeRequest* request)
+{
+///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
 }
 
@@ -238,6 +245,18 @@ void SceneNodeGrpcImpl::CancelBattlePrepare(const std::shared_ptr<CancelBattlePr
     call->Proceed();
 }
 
+void SceneNodeGrpcImpl::SealAccountRoleTrade(const std::shared_ptr<SealAccountRoleTradeCall>& call)
+{
+    [[maybe_unused]] const ::SealAccountRoleTradeRequest* request = &call->request();
+    ///<<< BEGIN WRITING YOUR CODE: grpc.SealAccountRoleTrade.guard
+    if (!RoleAdmissionSystem::AcceptSeal(*request)) {
+        call->Reject(muduo_grpc::Status(muduo_grpc::StatusCode::kPermissionDenied, "角色封存原件或内部证明无效"));
+        return;
+    }
+    ///<<< END WRITING YOUR CODE
+    call->Proceed();
+}
+
 void SceneNodeGrpcImpl::AssetDebit(const std::shared_ptr<AssetDebitCall>& call)
 {
     [[maybe_unused]] const ::AssetOpRequest* request = &call->request();
@@ -318,6 +337,16 @@ void SceneNodeGrpcImpl::RegisterMethods(muduo_grpc::MethodTable& table)
             if (call->ParseRequest(requestBytes))
             {
                 CancelBattlePrepare(call);
+            }
+        });
+    table.AddUnary(std::string(kSealAccountRoleTradePath),
+        [this](muduo_grpc::ServerCall serverCall, std::string_view requestBytes)
+        {
+            const auto call = SealAccountRoleTradeCall::Create(std::move(serverCall),
+                [](const ::SealAccountRoleTradeRequest* request, ::Empty* /*response*/) { HandleSealAccountRoleTrade(request); });
+            if (call->ParseRequest(requestBytes))
+            {
+                SealAccountRoleTrade(call);
             }
         });
     table.AddUnary(std::string(kAssetDebitPath),

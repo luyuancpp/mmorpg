@@ -19,6 +19,7 @@ import (
 	friendkafka "friend/internal/kafka"
 	"friend/internal/sqldialect"
 
+	redv9 "github.com/redis/go-redis/v9"
 	"shared/idsegment"
 	"shared/kafkacmd"
 	"shared/kafkautil"
@@ -54,7 +55,9 @@ const (
 )
 
 type ServiceContext struct {
-	Config config.Config
+	// LoginSessions 只读显式全局 login 登录态，与好友缓存/在线投影句柄分离。
+	LoginSessions *redv9.Client
+	Config        config.Config
 
 	// Etcd 供 shared/noderegistry 注册与 shared/killswitch 监听共用 —— 同一个集群不开第二条连接。
 	//
@@ -156,8 +159,17 @@ func NewServiceContext(c config.Config) *ServiceContext {
 		_ = etcdCli.Close()
 		panic(fmt.Errorf("friend 申请号源装配失败: %w", err))
 	}
+	loginSessions, err := NewLoginSessionClient(c)
+	if err != nil {
+		requestIDs.Close()
+		_ = directoryConn.Close()
+		_ = db.Close()
+		_ = etcdCli.Close()
+		panic("好友显式全局 LoginRedis 不可用")
+	}
 
 	return &ServiceContext{
+		LoginSessions:      loginSessions,
 		Config:             c,
 		Etcd:               etcdCli,
 		DB:                 db,
@@ -172,6 +184,23 @@ func NewServiceContext(c config.Config) *ServiceContext {
 		KafkaWriter:        newKafkaWriter(c),
 		GateCommandBuilder: friendkafka.NewGateCommandBuilder(),
 	}
+}
+
+func NewLoginSessionClient(c config.Config) (*redv9.Client, error) {
+	if !c.GlobalLoginSessions || c.LoginRedis.Host == "" || c.LoginRedis.DB < 0 || c.LoginRedis.PoolSize <= 0 {
+		return nil, errors.New("好友全局 LoginRedis 未显式配置")
+	}
+	client := redv9.NewClient(&redv9.Options{Addr: c.LoginRedis.Host, Password: c.LoginRedis.Password,
+		DB: c.LoginRedis.DB, PoolSize: c.LoginRedis.PoolSize, MaxActiveConns: c.LoginRedis.PoolSize,
+		MaxIdleConns: c.LoginRedis.PoolSize, PoolTimeout: time.Second, DialTimeout: 2 * time.Second,
+		ReadTimeout: 2 * time.Second, WriteTimeout: 2 * time.Second, MaxRetries: -1, ContextTimeoutEnabled: true})
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+	if err := client.Ping(ctx).Err(); err != nil {
+		_ = client.Close()
+		return nil, errors.New("好友全局登录态实例不可用")
+	}
+	return client, nil
 }
 
 // 沿用全局 dataservice.rpc 注册键与本服务 etcd 集群；非阻塞连接保证好友功能
@@ -356,6 +385,9 @@ func newKafkaWriter(c config.Config) *kafkago.Writer {
 // 并让 watch 撞上已关闭的 client。
 func (sc *ServiceContext) Stop() {
 	sc.stopOnce.Do(func() {
+		if sc.LoginSessions != nil {
+			_ = sc.LoginSessions.Close()
+		}
 		if sc.RequestIDs != nil {
 			sc.RequestIDs.Close()
 		}

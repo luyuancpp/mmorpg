@@ -12,7 +12,9 @@ import (
 	"errors"
 	"fmt"
 	"net"
+	"regexp"
 	"strconv"
+	"strings"
 	"time"
 
 	"friend/internal/data"
@@ -58,6 +60,9 @@ const (
 // 报 "conflict key Redis"(core/conf/config.go addOrMergeFields)。共享库一律用 c.Redis.RedisConf
 // —— 与 chat / match / trade 同一写法。
 type Config struct {
+	AccountRoleSchema   string         `json:",optional"`
+	GlobalLoginSessions bool           `json:",optional"`
+	LoginRedis          LoginRedisConf `json:",optional"`
 	zrpc.RpcServerConf
 
 	// ZoneId:只影响 etcd 注册路径 <Prefix>/zone/<z>/...(路由服按 NodeInfo 发现本服务)。
@@ -116,6 +121,14 @@ type Config struct {
 	// 唯一露出来的破口是内层 Sweep(它标了 optional,不被下钻,Mode 留空串),再由 Validate 拒掉。
 	// 结论:etc/friend.yaml 与 ConfigMap 必须写全本段,别指望 go-zero 报缺段。
 	Friend FriendConf `json:"Friend"`
+}
+
+// 只读原登录态，必须显式指定全局同 login 的实例/DB，不能由 SharedRedis 猜测。
+type LoginRedisConf struct {
+	Host     string `json:",optional"`
+	Password string `json:",optional"`
+	DB       int    `json:",optional"`
+	PoolSize int    `json:",optional"`
 }
 
 // MySQLConf 是 mmorpg_friend 的连接参数。
@@ -267,6 +280,12 @@ func IsRelaxedMode(mode string) bool {
 //
 // 每一条拒绝的都是"进程能起来、但行为静默出错"的配置 —— 逐条理由写在各分支旁边。
 func (c *Config) Validate() error {
+	if !regexp.MustCompile(`^[a-z][a-z0-9_]{0,63}$`).MatchString(c.AccountRoleSchema) {
+		return errors.New("好友 AccountRoleSchema 必须显式指定同 TiDB 的全局角色目录")
+	}
+	if !c.GlobalLoginSessions || strings.TrimSpace(c.LoginRedis.Host) == "" || c.LoginRedis.DB < 0 || c.LoginRedis.PoolSize <= 0 {
+		return errors.New("好友必须显式配置全局同 login 的 LoginRedis 实例/DB/正池上限")
+	}
 	if !IsRelaxedMode(c.Mode) && !c.RequireTiDB {
 		return errors.New("生产好友服务必须设置 RequireTiDB=true，并让全部副本连接同一权威 TiDB 事务域")
 	}

@@ -3,6 +3,7 @@ package match;
 
 import "proto/db/proto_option.proto";
 import "proto/battle/battle_data.proto";
+import "proto/common/base/service_call_auth.proto";
 
 option go_package = "db/proto/match";
 option cc_generic_services = false;
@@ -48,8 +49,23 @@ message StartActivityBattleResponse {
   // 异步启动 gather;guild 据此登记 guild_trial_battle。gather 之后失败时全员删票、不回队列,
   // 该 battle_id 不会产生结果事件,由 guild 巡检器兜底判 EXPIRED。
   uint64 battle_id = 3;
+  uint32 formation_state = 4; // 全球SQL成局状态1..5；不独自作为可安全撤销的证明。
+}
+
+// 取消必须绑定整份原Start；未知结果只能按原request重放，不能换名单或活动上下文。
+message CancelActivityBattleRequest {
+  StartActivityBattleRequest original = 1;
+  common.base.ServiceCallAuth auth = 2;
+}
+message CancelActivityBattleResponse {
+  uint64 battle_id = 1;
+  bool request_cancelled = 2; // true且battle_id=0：持久墓碑已提交，迟到Start不能再开战。
+  uint32 formation_state = 3;
+  common.base.ServiceCallAuth auth = 4;
+  string request_digest = 5; // 清空原Cancel.auth后请求摘要；签名回复必须与本请求原件匹配。
 }
 
 service MatchInternal {
   rpc StartActivityBattle(StartActivityBattleRequest) returns (StartActivityBattleResponse);
+  rpc CancelActivityBattle(CancelActivityBattleRequest) returns (CancelActivityBattleResponse);
 }

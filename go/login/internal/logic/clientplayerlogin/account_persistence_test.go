@@ -1,7 +1,6 @@
 package clientplayerloginlogic
 
 import (
-	"bytes"
 	"context"
 	"fmt"
 	"sync/atomic"
@@ -33,40 +32,23 @@ func mustUnmarshalAccount(t *testing.T, raw []byte) *dbpb.UserAccounts {
 	return account
 }
 
-func TestAccountInitializationIsPersistentAndDoesNotOverwriteExistingBytes(t *testing.T) {
-	mr := miniredis.RunT(t)
-	rdb := redis.NewClient(&redis.Options{Addr: mr.Addr()})
-	t.Cleanup(func() { _ = rdb.Close() })
+func TestAccountInitializationIsIndependentOfRedisAndPreservesRoleBytes(t *testing.T) {
+	d := newTestDirectory()
 	ctx := context.Background()
-	key := constants.GetAccountDataKey("persistent-init")
-	account, err := GetOrInitUserAccount(ctx, rdb, "persistent-init")
-	if err != nil || len(account.GetSimplePlayers().GetPlayers()) != 0 {
-		t.Fatalf("初始化失败: account=%v err=%v", account, err)
+	roles, err := d.Read(ctx, "persistent-init", true)
+	if err != nil || len(roles.Players) != 0 {
+		t.Fatal(roles, err)
 	}
-	mr.FastForward(48 * time.Hour)
-	if !mr.Exists(key) || mr.TTL(key) != 0 {
-		t.Fatal("新账号目录不能自动过期")
-	}
-	// 模拟另一条写路径已经建角，同时保留未来协议字段。
-	account.SimplePlayers = &pbbase.AccountSimplePlayerList{Players: []*pbbase.AccountSimplePlayer{
-		{PlayerId: 42, AppearanceId: "04_mountain_guardian_boy"},
-	}}
-	raw, err := proto.Marshal(account)
-	if err != nil {
-		t.Fatal(err)
-	}
-	raw = protowire.AppendBytes(protowire.AppendTag(raw, 91, protowire.BytesType), []byte("future-field"))
-	if err := rdb.Set(ctx, key, raw, time.Hour).Err(); err != nil {
+	role := &pbbase.AccountSimplePlayer{PlayerId: 42, AppearanceId: "04_mountain_guardian_boy"}
+	role.ProtoReflect().SetUnknown(protowire.AppendBytes(protowire.AppendTag(nil, 91, protowire.BytesType), []byte("future-field")))
+	if _, err = d.Create(ctx, "persistent-init", role); err != nil {
 		t.Fatal(err)
 	}
 	for range 2 {
-		if _, err := GetOrInitUserAccount(ctx, rdb, "persistent-init"); err != nil {
-			t.Fatal(err)
+		got, err := d.Read(ctx, "persistent-init", true)
+		if err != nil || len(got.Players) != 1 || !proto.Equal(got.Players[0], role) {
+			t.Fatal(got, err)
 		}
-	}
-	stored, err := rdb.Get(ctx, key).Bytes()
-	if err != nil || !bytes.Equal(raw, stored) || mr.TTL(key) != 0 {
-		t.Fatalf("旧目录保留不得改字节或重设 TTL: err=%v ttl=%v", err, mr.TTL(key))
 	}
 }
 
@@ -110,7 +92,7 @@ func TestLoginPersistsLegacyAccountAndKeepsAppearanceAcrossOldExpiry(t *testing.
 			// 独立名称避免改动生产认证器或其他测试的默认认证状态。
 			authType := fmt.Sprintf("account-persistence-%d", accountPersistenceAuthSequence.Add(1))
 			auth.Register(authType, accountPersistenceAuth{account: accountName})
-			logic := NewLoginLogic(ctx, &svc.ServiceContext{RedisClient: rdb,
+			logic := NewLoginLogic(ctx, &svc.ServiceContext{RedisClient: rdb, AccountDirectory: fixtureDirectory(t, rdb),
 				TokenManager: token.NewManager(rdb, token.Config{AccessTokenTTL: time.Hour, RefreshTokenTTL: 30 * 24 * time.Hour})})
 			var firstAccessToken string
 			for attempt := 0; attempt < 2; attempt++ {
@@ -118,9 +100,7 @@ func TestLoginPersistsLegacyAccountAndKeepsAppearanceAcrossOldExpiry(t *testing.
 				if err != nil || resp.GetErrorMessage().GetId() != 0 || len(resp.GetPlayers()) != 1 || !proto.Equal(resp.GetPlayers()[0].GetPlayer(), wanted) {
 					t.Fatalf("第 %d 次登录人物身份变化: response=%v err=%v", attempt+1, resp, err)
 				}
-				if ttl := mr.TTL(key); ttl != 0 {
-					t.Fatalf("登录未移除旧账号 TTL: %v", ttl)
-				}
+
 				if attempt == 0 {
 					firstAccessToken = resp.AccessToken
 					mr.FastForward(48 * time.Hour)
@@ -129,10 +109,11 @@ func TestLoginPersistsLegacyAccountAndKeepsAppearanceAcrossOldExpiry(t *testing.
 					}
 				}
 			}
-			stored, err := rdb.Get(ctx, key).Bytes()
-			if err != nil || !bytes.Equal(stored, raw) {
-				t.Fatalf("重登不应改写账号存档: %v", err)
+			roles := fixtureRoles(t, rdb, accountName)
+			if len(roles.Players) != 1 || !proto.Equal(roles.Players[0], wanted) {
+				t.Fatal("Redis旧TTL到期不得影响SQL目录")
 			}
+
 		})
 	}
 }

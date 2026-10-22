@@ -52,6 +52,9 @@ func scanView(row scanner) (*mailpb.MailView, error) {
 }
 
 func (r *Repo) List(ctx context.Context, player uint64, in *mailpb.ListMailsRequest) (*mailpb.ListMailsResponse, error) {
+	if err := validateActor(ctx, player); err != nil {
+		return nil, err
+	}
 	if player == 0 || in == nil {
 		return nil, ErrInvalid
 	}
@@ -70,6 +73,9 @@ func (r *Repo) List(ctx context.Context, player uint64, in *mailpb.ListMailsRequ
 		return nil, err
 	}
 	defer tx.Rollback()
+	if err = r.lockActor(ctx, tx); err != nil {
+		return nil, err
+	}
 	base := " FROM mail_message m LEFT JOIN mail_state s ON s.player_id=? AND s.mail_id=m.mail_id WHERE " + r.visiblePredicate() + " AND COALESCE(s.deleted_ms,0)=0 AND (m.expire_ms>? OR s.claim_state NOT IN (0,1,3))"
 	result := &mailpb.ListMailsResponse{ServerNowMs: now}
 	if err = tx.QueryRowContext(ctx, "SELECT COALESCE(SUM(COALESCE(s.read_ms,0)=0),0),COALESCE(SUM(m.expire_ms>? AND COALESCE(s.claim_state,IF(LENGTH(m.attachments)>0,1,0))=1),0)"+base, now, player, player, player, player, now).Scan(&result.UnreadCount, &result.ClaimableCount); err != nil {
@@ -111,15 +117,14 @@ func (r *Repo) List(ctx context.Context, player uint64, in *mailpb.ListMailsRequ
 }
 
 func (r *Repo) lockBox(ctx context.Context, tx *sql.Tx, player uint64) error {
-	var guard uint64
-	return tx.QueryRowContext(ctx, "SELECT player_id FROM mail_box WHERE player_id=? FOR UPDATE", player).Scan(&guard)
-}
-func (r *Repo) ensureBox(ctx context.Context, player uint64) error {
 	if player == 0 {
 		return ErrInvalid
 	}
-	_, err := r.db.ExecContext(ctx, "INSERT IGNORE INTO mail_box (player_id,created_ms) VALUES (?,?)", player, uint64(r.now().UnixMilli()))
-	return err
+	if _, err := tx.ExecContext(ctx, "INSERT IGNORE INTO mail_box (player_id,created_ms) VALUES (?,?)", player, uint64(r.now().UnixMilli())); err != nil {
+		return err
+	}
+	var guard uint64
+	return tx.QueryRowContext(ctx, "SELECT player_id FROM mail_box WHERE player_id=? FOR UPDATE", player).Scan(&guard)
 }
 
 // 调用方先锁mail_box；所有物化/领取/清理共用此顺序，避免不存在状态行的并发升级。
@@ -148,11 +153,11 @@ func (r *Repo) materialize(ctx context.Context, tx *sql.Tx, player, id, now uint
 	return m, s, nil
 }
 func (r *Repo) Read(ctx context.Context, player, id uint64) (*mailpb.MailView, error) {
+	if err := validateActor(ctx, player); err != nil {
+		return nil, err
+	}
 	if id == 0 {
 		return nil, ErrInvalid
-	}
-	if err := r.ensureBox(ctx, player); err != nil {
-		return nil, err
 	}
 	now := uint64(r.now().UnixMilli())
 	var result *mailpb.MailView
@@ -177,11 +182,11 @@ func (r *Repo) Read(ctx context.Context, player, id uint64) (*mailpb.MailView, e
 }
 
 func (r *Repo) Delete(ctx context.Context, player uint64, ids []uint64, clear bool) ([]uint64, []uint64, error) {
+	if err := validateActor(ctx, player); err != nil {
+		return nil, nil, err
+	}
 	if (!clear && (len(ids) == 0 || len(ids) > 100)) || player == 0 {
 		return nil, nil, ErrInvalid
-	}
-	if err := r.ensureBox(ctx, player); err != nil {
-		return nil, nil, err
 	}
 	now := uint64(r.now().UnixMilli())
 	var deleted, protected []uint64

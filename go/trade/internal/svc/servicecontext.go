@@ -26,6 +26,7 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"github.com/redis/go-redis/v9"
 	"github.com/zeromicro/go-zero/core/logx"
 	"github.com/zeromicro/go-zero/zrpc"
 	clientv3 "go.etcd.io/etcd/client/v3"
@@ -69,9 +70,12 @@ type ServiceContext struct {
 	// **整个字段可能为 nil**:AssetOp.Enabled=false(默认)时通道根本不装配。调用托管 / 交付前
 	// 应判 Assets.Enabled(),好给玩家一个明确的"功能未开放";漏判也不会 panic —— AssetChannel
 	// 的方法都带空接收者守卫,reconcile 同理,业务侧拿到的是 reconcile.ErrSignerMissing。
-	Assets   *AssetChannel
-	Commerce *commerce.Engine
-	Mall     *commerce.Mall
+	Assets        *AssetChannel
+	Commerce      *commerce.Engine
+	Mall          *commerce.Mall
+	Rmb           *commerce.RmbConsignments
+	RmbIdentity   *RmbIdentity
+	rmbLoginRedis *redis.Client
 
 	stopOnce sync.Once
 }
@@ -152,6 +156,11 @@ func NewServiceContext(c config.Config) *ServiceContext {
 		commerceEngine = &commerce.Engine{Repo: &data.CommerceRepo{DB: db, Ops: assets.Ops}, IDs: seg, OpIDs: assets.OpIDs,
 			Policy:  commerce.Policy{Items: c.Commerce.ItemConfigs, ItemTitles: titles, Pets: c.Commerce.PetConfigs, Currencies: c.Commerce.CurrencyTypes, AllowInstances: c.Commerce.AllowInstances},
 			Applier: assets.Caller, Ledger: persistedLedger(dsClient), Now: time.Now}
+		roles, roleErr := commerce.NewRoleAuthority(c.AccountRoleSchema)
+		if roleErr != nil || !c.MySQL.RequiresTiDB() {
+			panic("交易角色提交互锁必须显式配置同TiDB全局目录")
+		}
+		commerceEngine.Roles = roles
 		assets.Commerce = commerceEngine
 		if c.Mall.URL != "" {
 			mall, err = commerce.NewMall(c.Mall.URL, os.Getenv(c.Mall.GatewaySecretEnv), os.Getenv(c.Mall.DeliverySecretEnv), commerceEngine)
@@ -161,7 +170,7 @@ func NewServiceContext(c config.Config) *ServiceContext {
 			assets.Mall = mall
 		}
 	}
-	return &ServiceContext{
+	sc := &ServiceContext{
 		Config:            c,
 		Etcd:              etcdCli,
 		DB:                db,
@@ -171,6 +180,10 @@ func NewServiceContext(c config.Config) *ServiceContext {
 		Commerce:          commerceEngine,
 		Mall:              mall,
 	}
+	if err := sc.initRmb(); err != nil {
+		panic(err)
+	}
+	return sc
 }
 
 // StartAssetChannel 先补 seq 表的哨兵守卫行,再起 scene 节点镜像与资产重投循环。ctx 取消即后两者退出。
@@ -329,6 +342,9 @@ func (sc *ServiceContext) Stop() {
 	sc.stopOnce.Do(func() {
 		// 资产通道先停:循环里在途的投递要在关 DB / etcd 之前收手。
 		sc.Assets.Close()
+		if sc.rmbLoginRedis != nil {
+			_ = sc.rmbLoginRedis.Close()
+		}
 		if sc.ListingIDSegment != nil {
 			sc.ListingIDSegment.Close()
 		}

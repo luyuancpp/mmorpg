@@ -15,6 +15,7 @@
 #include "modules/bag/comp/player_bags_comp.h"
 #include "player/comp/player_frozen_comp.h"
 #include "player/system/bag_marshal.h"
+#include "player/system/role_admission_system.h"
 #include "proto/common/database/bag_quest_mail_data.pb.h"
 #include "thread_context/ecs_context.h"
 #include "network/node_utils.h"
@@ -38,6 +39,9 @@ NodeInfo &TestLocalNodeInfo()
 
 namespace
 {
+constexpr uint64_t kFixtureAdmissionGeneration = 1;
+constexpr uint64_t kFixtureOwnerRevision = 7;
+void SetFixtureAdmission(PlayerEnterContext& context);
 class LocalNodeInfoResetListener : public ::testing::EmptyTestEventListener
 {
     void OnTestStart(const ::testing::TestInfo &) override
@@ -45,7 +49,18 @@ class LocalNodeInfoResetListener : public ::testing::EmptyTestEventListener
         TestLocalNodeInfo().Clear();
         tlsIdGeneratorManager.SetNodeId(94);
         actor_net_id::Install(tlsEcs.actorRegistry);
+        RoleAdmissionSystem::Dependencies dependencies;
+        for (const Guid player : {Guid{950200001}, Guid{950200002}})
+        {
+            auto& identity = dependencies.confirmedAdmissions.emplace_back();
+            identity.set_player_id(player);
+            identity.set_generation(kFixtureAdmissionGeneration);
+            identity.set_owner_revision(kFixtureOwnerRevision);
+        }
+        admission_ = std::make_unique<RoleAdmissionSystem::ScopedDependencies>(std::move(dependencies));
     }
+    void OnTestEnd(const ::testing::TestInfo &) override { admission_.reset(); }
+    std::unique_ptr<RoleAdmissionSystem::ScopedDependencies> admission_;
 };
 }
 
@@ -809,6 +824,7 @@ constexpr ExitCause kAllExitCauses[] = {
     ExitCause::kSceneDrain,
     ExitCause::kIdentityConflict,
     ExitCause::kReleasedByTransfer,
+    ExitCause::kRoleTradeFrozen,
 };
 static_assert(std::size(kAllExitCauses) == player_exit::kExitCauseCount, "新增退出原因时补进这张表,并补 Merge 用例");
 } // namespace
@@ -844,7 +860,7 @@ TEST(ExitPersistCause, NamesCoverEveryValue)
     EXPECT_STREQ(player_exit::ExitCauseName(ExitCause::kCount), "?") << "越界不能读出数组外";
 }
 
-TEST(ExitPersistCause, MergeSuppressesOnlyForIdentityConflictOrUnspecified)
+TEST(ExitPersistCause, MergeSuppressesOnlyForIdentityConflictUnspecifiedOrRoleTradeFrozen)
 {
     for (const auto first : kAllExitCauses)
     {
@@ -854,7 +870,8 @@ TEST(ExitPersistCause, MergeSuppressesOnlyForIdentityConflictOrUnspecified)
             intent.cause = first;
             player_exit::MergeExitCause(intent, incoming, /*devBypassSuppressesTransfer=*/false);
             const bool expectSuppressed =
-                incoming == ExitCause::kIdentityConflict || incoming == ExitCause::kUnspecified;
+                incoming == ExitCause::kIdentityConflict || incoming == ExitCause::kUnspecified ||
+                incoming == ExitCause::kRoleTradeFrozen;
             EXPECT_EQ(intent.releaseMarkSuppressed, expectSuppressed)
                 << "first=" << player_exit::ExitCauseName(first) << " incoming=" << player_exit::ExitCauseName(incoming);
             EXPECT_EQ(intent.cause, first) << "合并不改第一次的原因";
@@ -873,6 +890,38 @@ TEST(ExitPersistCause, ReleasedByTransferSuppressesOnlyUnderDevBypass)
     devBypass.cause = ExitCause::kClientDisconnect;
     player_exit::MergeExitCause(devBypass, ExitCause::kReleasedByTransfer, /*devBypassSuppressesTransfer=*/true);
     EXPECT_TRUE(devBypass.releaseMarkSuppressed);
+}
+
+TEST(ExitPersistCause, RoleTradeFrozenSuppressesReleaseAndPreservesFirstCause)
+{
+    for (const bool devBypass : {false, true})
+    {
+        for (const auto first : kAllExitCauses)
+        {
+            PlayerExitIntentComp intent;
+            intent.cause = first;
+            player_exit::MergeExitCause(intent, ExitCause::kRoleTradeFrozen, devBypass);
+            ASSERT_TRUE(intent.releaseMarkSuppressed);
+            EXPECT_EQ(intent.suppressedBy, ExitCause::kRoleTradeFrozen);
+            EXPECT_EQ(intent.cause, first) << "交易冻结不能改写第一次退出的原因";
+            EXPECT_FALSE(intent.clientDisconnected) << "交易冻结不是客户端断线";
+
+            player_exit::MergeExitCause(intent, ExitCause::kIdentityConflict, devBypass);
+            player_exit::MergeExitCause(intent, ExitCause::kClientDisconnect, devBypass);
+            EXPECT_TRUE(intent.releaseMarkSuppressed) << "后续退出不能恢复冻结角色的释放标记";
+            EXPECT_EQ(intent.suppressedBy, ExitCause::kRoleTradeFrozen) << "保留第一次压制来源";
+            EXPECT_EQ(intent.cause, first);
+            EXPECT_TRUE(intent.clientDisconnected) << "后续真实断线仍须记录";
+        }
+    }
+
+    PlayerExitIntentComp alreadySuppressed;
+    alreadySuppressed.cause = ExitCause::kClientDisconnect;
+    player_exit::MergeExitCause(alreadySuppressed, ExitCause::kIdentityConflict, false);
+    player_exit::MergeExitCause(alreadySuppressed, ExitCause::kRoleTradeFrozen, false);
+    EXPECT_TRUE(alreadySuppressed.releaseMarkSuppressed);
+    EXPECT_EQ(alreadySuppressed.suppressedBy, ExitCause::kIdentityConflict);
+    EXPECT_EQ(alreadySuppressed.cause, ExitCause::kClientDisconnect);
 }
 
 TEST(ExitPersistCause, SuppressionIsSticky)
@@ -1786,6 +1835,7 @@ void RegisterPendingEnter(uint64_t ownerEpoch)
     pending.clear();
     PlayerEnterContext ctx;
     ctx.ownerEpoch = ownerEpoch;
+    SetFixtureAdmission(ctx);
     pending[kReleasePlayerId] = ctx;
 }
 } // namespace
@@ -5450,6 +5500,14 @@ void ResetFenceHost()
     DrainRelocateConfirms(); // 同时擦掉 kExitPlayerId 的待入场条目
 }
 
+// 本文件直接测旧生命周期接口；授权由每例 scope 的明确 SQL 确认原件提供。
+// 只补独立的 admission 世代与归属修订，不改变原 login_generation=0 等回归含义。
+void SetFixtureAdmission(PlayerEnterContext& context)
+{
+    context.roleAdmissionGeneration = kFixtureAdmissionGeneration;
+    context.ownerRevision = kFixtureOwnerRevision;
+}
+
 // 一次真实可入场请求。旧夹具用不存在的 scene_id=0 验会话绑定,掩盖了拒入发生在副作用之后的问题。
 PlayerEnterContext FenceEnter(SessionId session, uint64_t generation, uint32_t enterGsType = LOGIN_REPLACE,
                               uint64_t sceneId = kFenceScene)
@@ -5465,6 +5523,7 @@ PlayerEnterContext FenceEnter(SessionId session, uint64_t generation, uint32_t e
     ctx.enterInfo.set_scene_id(sceneId);
     ctx.ownerEpoch = kFenceOwnerEpoch;
     ctx.loginGeneration = generation;
+    SetFixtureAdmission(ctx);
     return ctx;
 }
 
@@ -5624,6 +5683,7 @@ TEST_F(SceneEntryPermissionTest, EnterGameNodeAdmitsTeammateIntoLeaderMirror)
     context.enterInfo.set_scene_id(kRelocateSourceScene + 1);
     context.enterInfo.set_session_id(kSessionAtExit);
     context.enterInfo.set_enter_gs_type(LOGIN_RECONNECT);
+    SetFixtureAdmission(context);
     tlsEcs.actorRegistry.emplace<PlayerMirrorCreateInFlightComp>(player).token = 101;
 
     EXPECT_EQ(PlayerLifecycleSystem::EnterGameNodeOutcome::kEnteredExisting,
@@ -5668,6 +5728,7 @@ TEST_F(SceneEntryPermissionTest, LifecycleRejectsBeforeSessionOwnershipAndExitSi
     context.enterInfo.set_session_id(kNewerSession);
     context.enterInfo.set_enter_gs_type(LOGIN_RECONNECT);
     context.loginGeneration = 10;
+    SetFixtureAdmission(context);
     context.homeZoneId = 4;
     context.ownerEpoch = 6;
     const auto sessionsBefore = SessionMap();

@@ -4,22 +4,28 @@ import (
 	"context"
 	"database/sql"
 	rankpb "proto/rank"
+	"rank/internal/metrics"
 )
 
-func (r *Repo) DueRewards(ctx context.Context, now uint64, limit int) ([]uint64, error) {
+func (r *Repo) DueRewards(ctx context.Context, now uint64, limit int) (ids []uint64, err error) {
+	var oldest uint64
+	hasDue := false
+	defer func() { metrics.ObserveScan(now, oldest, hasDue, err) }()
 	if limit <= 0 || limit > 1000 {
 		return nil, ErrInvalid
 	}
-	rows, err := r.db.QueryContext(ctx, "SELECT reward_id FROM rank_mail_reward WHERE status=1 AND next_attempt_ms<=? AND lease_until_ms<? ORDER BY next_attempt_ms,reward_id LIMIT ?", now, now, limit)
+	rows, err := r.db.QueryContext(ctx, "SELECT reward_id,next_attempt_ms FROM rank_mail_reward WHERE status=1 AND next_attempt_ms<=? AND lease_until_ms<? ORDER BY next_attempt_ms,reward_id LIMIT ?", now, now, limit)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var ids []uint64
 	for rows.Next() {
-		var id uint64
-		if err = rows.Scan(&id); err != nil {
+		var id, due uint64
+		if err = rows.Scan(&id, &due); err != nil {
 			return nil, err
+		}
+		if !hasDue {
+			oldest, hasDue = due, true
 		}
 		ids = append(ids, id)
 	}

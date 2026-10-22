@@ -156,7 +156,7 @@ IdSegment:
 #      开着 NewPlayerSeed 时新号不再走预加载读,违反本条的症状只剩存盘这一半(死信 / 无限重试),更隐蔽(见下方 NewPlayerSeed)。
 #   启动日志 "[placement] pin_on_create=..." 是核对依据。
 Placement:
-  PinOnCreate: false
+  PinOnCreate: true
   NewPlayerStorageId: 0
 
 # 新号首次入场免冷读(docs/design/new-player-first-enter-no-cold-read.md);默认关,打开前置见设计 §7。

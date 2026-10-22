@@ -1,6 +1,120 @@
 # muduo 定时器取消语义与野引用
 
-## 一句话
+## Windows 适配的现役接口边界（2026-10-20）
+
+- Windows 移植来源为负责人维护的 `luyuan-cpp/muduo-windows`，本次同步起点 master 为
+  `66de677f95f65d5f09076d485d6a3b2b150e779c`，接口收口与必要正确性修复同步到独立库；本仓编译源码在
+  `cpp/libs/engine/muduo_windows/src`，使用方现有头文件镜像在 `third_party/muduo`。
+  修改公开类时必须同步镜像并重编译库与使用方，不能混用旧布局的库和新头。
+- `Condition` 保留原版 `Condition(MutexLock&)`、`wait()`、`waitForSeconds(double)`、
+  `notify()` / `notifyAll()`。Windows 内部用 `condition_variable_any` 临时释放并重新获取构造时的锁；
+  外层守卫继续拥有同一把锁。小数秒不截断，只有超时返回 true，单个通知与广播分别使用 notify_one / notify_all。
+- `Thread` 保留原版启动同步、tid、默认名、异常处理和 started 语义；Windows 内部用 std::thread，
+  join 成功返回 0，未 join 的析构 detach。工作线程独立拥有回调和名称，启动同步后不再访问 Thread 对象；
+  回调捕获对象的寿命仍由调用者保证。需要等待完成的调用者必须显式 join。
+- `Atomic` 标准库实现保留 getAndAdd 的旧值、addAndGet / incrementAndGet / decrementAndGet 的新值语义；
+  getAndSet 必须是单次 exchange。否则恢复原版 Thread 默认命名时会出现 Thread0 与创建数 1 不一致，
+  Timer 的序号也偏离原契约。新增固定值回归直接守住这些返回值，不调整 Thread 命名预期掩盖基础差异。
+- Windows UDP 唤醒的创建、发送、排空集中在内部 `muduo/net/WindowsWakeup.{h,cc}`；
+  EventLoop 只保留平台调用，不增加公开接口或成员。保留自连回环、非阻塞、不可继承、通知合并和排空到 EWOULDBLOCK 的语义。
+- 单调时钟、动态 poll 超时、同批取消守卫、连接失败回调、Connector 生命周期及 HUP 处理是独立的正确性修复，
+  本次接口收口不撤销。Linux 继续使用固定上游及既有 overlay，不套用 Windows 实现。
+
+下文“只能在 muduo 里拦、组件层无能为力”描述的是裸 this 回调的旧方案，不能推广到当前全部调用者。
+现役 TimerTaskComp 的闭包先锁独立 weak State，再核对 generation，已能在外层阻止失效的业务回调；
+裸 muduo 定时器的同批取消契约和回归测试仍存在，因此底层守卫继续保留。
+
+## 2026-10-20 修复范围与取消契约
+
+这里有两项独立修复：**取消是否生效**，以及**定时器用哪只钟计时**。Hiredis 的 socket 生命周期是第三个接缝，详见
+[Redis 生命周期说明](redis-async-client-retry-fix.md)。修改钟源不会修复释放后使用；修复定时器取消也不会自动保护 socket 回调。
+
+以下“原版”“只能在 muduo 里拦”和旧平台对照描述历史缺陷；现役组件的独立 weak State 能在宿主销毁后安全拒绝回调，
+底层仍必须履行裸定时器的取消契约。Windows 实现和 Linux overlay 都保留回调执行前的取消检查。
+
+### 同批取消的完整顺序
+
+1. `getExpired(now)` 把 A、B 整批移出 `timers_` 和 `activeTimers_`，放进局部 `expired`。
+2. A 先执行，销毁 B 的宿主；宿主析构调用 `cancel(B)`。
+3. `cancelInLoop` 在活动队列找不到 B，但本轮仍在处理到期批次，因此把 `(Timer*, sequence)` 记进 `cancelingTimers_`。
+4. 遍历到 B 时先查取消记录，已取消就跳过 `run()`。
+5. `reset(expired, now)` 统一销毁一次性或已取消的 Timer；未取消的重复 Timer 才重新入队。
+
+这完全可以发生在一个线程上。若闭包捕获裸 `this`，不检查第 4 步就会调用已释放对象；崩溃不是必然表现，
+也可能访问被其他对象重新占用的内存。跳过回调不等于提前释放 Timer，释放仍由第 5 步完成，因此不会泄漏。
+身份用指针和递增序号共同判断，旧 `TimerId` 即使碰上地址复用，也不能取消新 Timer。
+
+### 清理闭包时也必须接受取消
+
+仅保护 `run()` 循环还不完整。`reset()` 中 `delete Timer` 会析构其 `std::function`，闭包捕获的最后一个
+`shared_ptr<Owner>` 也可能在这里释放，Owner 的析构再调用 `cancel(B)`。如果这时就已把
+`callingExpiredTimers_` 置 false，且 B 仍在本批待清理列表里，活动队列找不到 B，取消会丢失，重复 B 随后重新入队。
+
+因此“本批仍在处理”的范围必须覆盖回调和统一清理两个阶段：
+
+```cpp
+callingExpiredTimers_ = true;
+cancelingTimers_.clear();
+for (const Entry& entry : expired) {
+    if (cancelingTimers_.contains(ActiveTimer{entry.second, entry.second->sequence()})) {
+        continue;
+    }
+    entry.second->run();
+}
+reset(expired, now);                // 闭包析构也可以重入 cancel()
+callingExpiredTimers_ = false;
+```
+
+此处不增加对象布局、定时等待或新调度队列。已开始的回调不会被中断；在本轮清理时取消重复 Timer，只能阻止后续轮次。
+
+同样的重入还存在于主动取消和整个队列析构：
+
+- 旧 `cancelInLoop` 先从 `timers_` 摘除、接着 delete、最后才从 `activeTimers_` 摘除。
+  delete 闭包时若再取消自己，会再次找到同一个待释放指针；若取消另一个 Timer，会看到两集合大小不一致。
+  现役实现先保存指针、从两个索引都摘除，再 delete，任何析构重入看到的都是一致状态。
+- 旧 `~TimerQueue` 遍历成员集合时直接 delete。闭包析构中的 `cancel()` 可以修改正在遍历的集合，甚至自删两次。
+  现役实现每次先从两个索引摘下一项，再销毁；其他 Timer 被重入取消时也会从剩余队列移除，不再被析构循环重复释放。
+  EventLoop 析构期间重新创建 Timer 不在支持契约内。
+
+跨线程 `cancel()` 经 `runInLoop` 投递，调用返回不是取消完成屏障，不能据此立即销毁另一个线程回调捕获的裸对象。
+跨线程拥有者仍须通过 weak 生命周期或 loop 内串行销毁保证安全。
+
+### 墙钟与单调时钟的区别
+
+墙钟是日期时间，会被 NTP 或人工校时调整；单调时钟用于比较进程内经过的时长。以“10 秒后超时”为例：
+
+| 事件 | 实际经过 | 墙钟 |
+|---|---:|---|
+| 挂定时器 | 0 秒 | 12:00:00 |
+| 记录墙钟到期点 | — | 12:00:10 |
+| 系统时间回拨 5 分钟 | 3 秒 | 11:55:03 |
+| 实际已等够 10 秒 | 10 秒 | 11:55:10 |
+
+若还用 `wallNow >= 12:00:10` 判断，到实际第 10 秒仍认为未到期，回调会被拖延约 5 分钟。墙钟前跳则可能提前到期。
+Linux 即使由 `CLOCK_MONOTONIC` timerfd 唤醒，上层继续用墙钟判定、计算下次等待，仍会产生这个问题。
+
+当前整条链统一为单调域：`runAfter/runEvery` 生成截止点，`getExpired` 判断到期，`Timer::restart` 生成重复截止，
+Windows `nextTimeoutMs` 与 Linux timerfd 的相对上弦都使用同一钟源。`runAt(墙钟时刻)` 在调用时只换算一次：
+`monoWhen = monoNow + (wallWhen - wallNow)`，以后等待这一段时长。墙钟用于日志与对外日期，不能拿单调读数格式化日历。
+过期墙钟换算后的单调值允许小于等于零，队列非空不能用 `Timestamp::valid()` 代替。
+
+系统校时不会改变已经安排的相对超时；loop 忙、操作系统调度与计时精度仍可使回调晚执行。
+这不承诺实时调度，也不承诺休眠时间的跨平台计入方式。需要随日历调整的整点任务必须自行在触发时复核墙钟。
+
+### 平台生效与验证入口
+
+- Windows 编译实现：`cpp/libs/engine/muduo_windows/src/muduo/net/`；公开头镜像为 `third_party/muduo/muduo/net/`。
+- Linux 必须经 `tools/archived/setup_dependencies.sh` 应用 `tools/archived/muduo_linux_overlay`；
+  `TimerQueue.{h,cc}` 与 `EventLoop.cc` 一起覆盖。脚本把 overlay 哈希纳入依赖 stamp，变化后重建归档。
+  单独编译未覆盖的 `third_party/muduo-linux` 或链接旧 SDK 归档，不能证明修复生效。
+- Windows 回归源为 `cpp/tests/timer_queue_unit_test/timer_queue_unit_test.cpp`；Linux 的独立 Debug/ASan/UBSan 入口为
+  `cpp/tests/redis_lifecycle_test/CMakeLists.txt` 中的 `timer_queue_lifecycle_test`，直接编译相同测试和当前 overlay。
+- 同批取消、宿主销毁、重复/重入取消、清理闭包导致取消分别使用外置计数器观察，不靠解引用已释放对象判定。
+  时钟换算、过去时刻、负单调值、`runAt/runAfter` 同域排序由 `TimerClockTest.*` 覆盖；不修改系统时间。
+
+本次实际执行结果和未验证边界在文末登记；下方原有“未编译”标签是历史批次状态。
+
+## 历史缺陷的一句话
 
 `EventLoop::cancel()` **拦不住一个已经进入本轮到期批次的定时器**。如果取消的原因是"宿主对象要销毁了"，那么轮到它时回调会打进已释放内存。
 
@@ -226,3 +340,38 @@ steady_clock 复核、未到就重挂"只兜得住前跳，兜不住回拨（`gr
 - `TimerTaskComp` 作为 ECS 组件成员时，还有一个独立的坑（entt 删除组件走
   swap-and-pop 会移动元素，`TimerTaskComp` 的移动赋值会把源也 `Cancel()`，
   导致误杀另一个实体的定时器）。属于 entt 存储策略问题，不在本文范围。
+
+## 2026-10-21 验收记录
+
+本轮先在保留旧实现的独立构建树运行回归，再修复并验证 Windows 实现与 Linux overlay。
+
+| 修复前回归 | 实际观测 |
+|---|---|
+| `ExpiredCallbackCleanupCanCancelRepeatingTimer` | 重复 B 被错误重新入队，外置计数断言失败，退出 1 |
+| `CancellationCallbackCleanupCanCancelAnotherActiveTimer` | 重入 `cancelInLoop` 命中双索引大小不一致断言，退出 134 |
+| `EventLoopDestructionCanCancelOwnAndAnotherTimer` | ASan 报 `attempting double-free`，退出 1 |
+
+修复后的完整定时器专项：Windows MSVC Debug **31/31**；Linux GCC 13.4 Debug、ASan/UBSan **30/30**，均零失败、零禁用、零跳过。
+Windows 多一条 `nextTimeoutMs` 专项，因为 Linux 使用 timerfd。Linux 上述三个清理重入用例另连续运行 20 轮全部通过，
+无 ASan/UBSan/泄漏报告。回归中发现固定 20ms 退出可能掩盖误重入队，最终版本改为本批 reset 后的 pending 阶段安排退出，
+确保旧重复 Timer 的下一次开火排在退出之前；不依赖测试线程恰好及时获得调度。
+
+原件在 `build/verification/timer-hiredis-complete-20261020/`：
+`red-*.log`、`red-artifact-hashes.json`、`windows-timer.xml`、`linux-timer.xml`、`linux-timer-repeat.log` 与 `result.json`。
+目录日期是本轮开始日期，运行与收尾跨入 10 月 21 日。Windows 使用独立 CMake/MSBuild 工程与独立库目录，串行 `/m:1`；
+Linux 使用仓库正式的 `cpp/tests/redis_lifecycle_test/CMakeLists.txt`，从锁定 SDK 源码加当前 overlay 重编，不链接旧 muduo 归档。
+
+Linux 可复用命令（各路径指向本地已锁定源码，不下载依赖）：
+
+```sh
+cmake -S <仓库>/cpp/tests/redis_lifecycle_test -B <独立构建目录> \
+  -DMMORPG_SOURCE_ROOT=<仓库> -DMMORPG_SDK_ROOT=<SDK> \
+  -DMMORPG_GTEST_ROOT=<锁定的googletest目录> -DMMORPG_ENABLE_SANITIZERS=ON
+cmake --build <独立构建目录> -j1
+ASAN_OPTIONS=detect_leaks=1:halt_on_error=1 UBSAN_OPTIONS=halt_on_error=1 \
+  <独立构建目录>/timer_queue_lifecycle_test
+```
+
+时钟验证包括纯函数、真实 EventLoop 和平台等待链；**没有实际修改系统日期时间**。
+没有宣称实时精度、休眠语义或生产负载下性能结论，也没有部署替换运行节点。
+上方旧的组件移动风险记载只作历史：当前组件移动转移独立 State，现有专项已覆盖 swap-and-pop 幸存者与移动后宿主销毁。

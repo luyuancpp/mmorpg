@@ -43,11 +43,20 @@ class MatchInternal final {
     std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::match::StartActivityBattleResponse>> PrepareAsyncStartActivityBattle(::grpc::ClientContext* context, const ::match::StartActivityBattleRequest& request, ::grpc::CompletionQueue* cq) {
       return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::match::StartActivityBattleResponse>>(PrepareAsyncStartActivityBattleRaw(context, request, cq));
     }
+    virtual ::grpc::Status CancelActivityBattle(::grpc::ClientContext* context, const ::match::CancelActivityBattleRequest& request, ::match::CancelActivityBattleResponse* response) = 0;
+    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::match::CancelActivityBattleResponse>> AsyncCancelActivityBattle(::grpc::ClientContext* context, const ::match::CancelActivityBattleRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::match::CancelActivityBattleResponse>>(AsyncCancelActivityBattleRaw(context, request, cq));
+    }
+    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::match::CancelActivityBattleResponse>> PrepareAsyncCancelActivityBattle(::grpc::ClientContext* context, const ::match::CancelActivityBattleRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::match::CancelActivityBattleResponse>>(PrepareAsyncCancelActivityBattleRaw(context, request, cq));
+    }
     class async_interface {
      public:
       virtual ~async_interface() {}
       virtual void StartActivityBattle(::grpc::ClientContext* context, const ::match::StartActivityBattleRequest* request, ::match::StartActivityBattleResponse* response, std::function<void(::grpc::Status)>) = 0;
       virtual void StartActivityBattle(::grpc::ClientContext* context, const ::match::StartActivityBattleRequest* request, ::match::StartActivityBattleResponse* response, ::grpc::ClientUnaryReactor* reactor) = 0;
+      virtual void CancelActivityBattle(::grpc::ClientContext* context, const ::match::CancelActivityBattleRequest* request, ::match::CancelActivityBattleResponse* response, std::function<void(::grpc::Status)>) = 0;
+      virtual void CancelActivityBattle(::grpc::ClientContext* context, const ::match::CancelActivityBattleRequest* request, ::match::CancelActivityBattleResponse* response, ::grpc::ClientUnaryReactor* reactor) = 0;
     };
     typedef class async_interface experimental_async_interface;
     virtual class async_interface* async() { return nullptr; }
@@ -55,6 +64,8 @@ class MatchInternal final {
    private:
     virtual ::grpc::ClientAsyncResponseReaderInterface< ::match::StartActivityBattleResponse>* AsyncStartActivityBattleRaw(::grpc::ClientContext* context, const ::match::StartActivityBattleRequest& request, ::grpc::CompletionQueue* cq) = 0;
     virtual ::grpc::ClientAsyncResponseReaderInterface< ::match::StartActivityBattleResponse>* PrepareAsyncStartActivityBattleRaw(::grpc::ClientContext* context, const ::match::StartActivityBattleRequest& request, ::grpc::CompletionQueue* cq) = 0;
+    virtual ::grpc::ClientAsyncResponseReaderInterface< ::match::CancelActivityBattleResponse>* AsyncCancelActivityBattleRaw(::grpc::ClientContext* context, const ::match::CancelActivityBattleRequest& request, ::grpc::CompletionQueue* cq) = 0;
+    virtual ::grpc::ClientAsyncResponseReaderInterface< ::match::CancelActivityBattleResponse>* PrepareAsyncCancelActivityBattleRaw(::grpc::ClientContext* context, const ::match::CancelActivityBattleRequest& request, ::grpc::CompletionQueue* cq) = 0;
   };
   class Stub final : public StubInterface {
    public:
@@ -66,11 +77,20 @@ class MatchInternal final {
     std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::match::StartActivityBattleResponse>> PrepareAsyncStartActivityBattle(::grpc::ClientContext* context, const ::match::StartActivityBattleRequest& request, ::grpc::CompletionQueue* cq) {
       return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::match::StartActivityBattleResponse>>(PrepareAsyncStartActivityBattleRaw(context, request, cq));
     }
+    ::grpc::Status CancelActivityBattle(::grpc::ClientContext* context, const ::match::CancelActivityBattleRequest& request, ::match::CancelActivityBattleResponse* response) override;
+    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::match::CancelActivityBattleResponse>> AsyncCancelActivityBattle(::grpc::ClientContext* context, const ::match::CancelActivityBattleRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::match::CancelActivityBattleResponse>>(AsyncCancelActivityBattleRaw(context, request, cq));
+    }
+    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::match::CancelActivityBattleResponse>> PrepareAsyncCancelActivityBattle(::grpc::ClientContext* context, const ::match::CancelActivityBattleRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::match::CancelActivityBattleResponse>>(PrepareAsyncCancelActivityBattleRaw(context, request, cq));
+    }
     class async final :
       public StubInterface::async_interface {
      public:
       void StartActivityBattle(::grpc::ClientContext* context, const ::match::StartActivityBattleRequest* request, ::match::StartActivityBattleResponse* response, std::function<void(::grpc::Status)>) override;
       void StartActivityBattle(::grpc::ClientContext* context, const ::match::StartActivityBattleRequest* request, ::match::StartActivityBattleResponse* response, ::grpc::ClientUnaryReactor* reactor) override;
+      void CancelActivityBattle(::grpc::ClientContext* context, const ::match::CancelActivityBattleRequest* request, ::match::CancelActivityBattleResponse* response, std::function<void(::grpc::Status)>) override;
+      void CancelActivityBattle(::grpc::ClientContext* context, const ::match::CancelActivityBattleRequest* request, ::match::CancelActivityBattleResponse* response, ::grpc::ClientUnaryReactor* reactor) override;
      private:
       friend class Stub;
       explicit async(Stub* stub): stub_(stub) { }
@@ -84,7 +104,10 @@ class MatchInternal final {
     class async async_stub_{this};
     ::grpc::ClientAsyncResponseReader< ::match::StartActivityBattleResponse>* AsyncStartActivityBattleRaw(::grpc::ClientContext* context, const ::match::StartActivityBattleRequest& request, ::grpc::CompletionQueue* cq) override;
     ::grpc::ClientAsyncResponseReader< ::match::StartActivityBattleResponse>* PrepareAsyncStartActivityBattleRaw(::grpc::ClientContext* context, const ::match::StartActivityBattleRequest& request, ::grpc::CompletionQueue* cq) override;
+    ::grpc::ClientAsyncResponseReader< ::match::CancelActivityBattleResponse>* AsyncCancelActivityBattleRaw(::grpc::ClientContext* context, const ::match::CancelActivityBattleRequest& request, ::grpc::CompletionQueue* cq) override;
+    ::grpc::ClientAsyncResponseReader< ::match::CancelActivityBattleResponse>* PrepareAsyncCancelActivityBattleRaw(::grpc::ClientContext* context, const ::match::CancelActivityBattleRequest& request, ::grpc::CompletionQueue* cq) override;
     const ::grpc::internal::RpcMethod rpcmethod_StartActivityBattle_;
+    const ::grpc::internal::RpcMethod rpcmethod_CancelActivityBattle_;
   };
   static std::unique_ptr<Stub> NewStub(const std::shared_ptr< ::grpc::ChannelInterface>& channel, const ::grpc::StubOptions& options = ::grpc::StubOptions());
 
@@ -93,6 +116,7 @@ class MatchInternal final {
     Service();
     virtual ~Service();
     virtual ::grpc::Status StartActivityBattle(::grpc::ServerContext* context, const ::match::StartActivityBattleRequest* request, ::match::StartActivityBattleResponse* response);
+    virtual ::grpc::Status CancelActivityBattle(::grpc::ServerContext* context, const ::match::CancelActivityBattleRequest* request, ::match::CancelActivityBattleResponse* response);
   };
   template <class BaseClass>
   class WithAsyncMethod_StartActivityBattle : public BaseClass {
@@ -114,7 +138,27 @@ class MatchInternal final {
       ::grpc::Service::RequestAsyncUnary(0, context, request, response, new_call_cq, notification_cq, tag);
     }
   };
-  typedef WithAsyncMethod_StartActivityBattle<Service > AsyncService;
+  template <class BaseClass>
+  class WithAsyncMethod_CancelActivityBattle : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithAsyncMethod_CancelActivityBattle() {
+      ::grpc::Service::MarkMethodAsync(1);
+    }
+    ~WithAsyncMethod_CancelActivityBattle() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status CancelActivityBattle(::grpc::ServerContext* /*context*/, const ::match::CancelActivityBattleRequest* /*request*/, ::match::CancelActivityBattleResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    void RequestCancelActivityBattle(::grpc::ServerContext* context, ::match::CancelActivityBattleRequest* request, ::grpc::ServerAsyncResponseWriter< ::match::CancelActivityBattleResponse>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
+      ::grpc::Service::RequestAsyncUnary(1, context, request, response, new_call_cq, notification_cq, tag);
+    }
+  };
+  typedef WithAsyncMethod_StartActivityBattle<WithAsyncMethod_CancelActivityBattle<Service > > AsyncService;
   template <class BaseClass>
   class WithCallbackMethod_StartActivityBattle : public BaseClass {
    private:
@@ -142,7 +186,34 @@ class MatchInternal final {
     virtual ::grpc::ServerUnaryReactor* StartActivityBattle(
       ::grpc::CallbackServerContext* /*context*/, const ::match::StartActivityBattleRequest* /*request*/, ::match::StartActivityBattleResponse* /*response*/)  { return nullptr; }
   };
-  typedef WithCallbackMethod_StartActivityBattle<Service > CallbackService;
+  template <class BaseClass>
+  class WithCallbackMethod_CancelActivityBattle : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithCallbackMethod_CancelActivityBattle() {
+      ::grpc::Service::MarkMethodCallback(1,
+          new ::grpc::internal::CallbackUnaryHandler< ::match::CancelActivityBattleRequest, ::match::CancelActivityBattleResponse>(
+            [this](
+                   ::grpc::CallbackServerContext* context, const ::match::CancelActivityBattleRequest* request, ::match::CancelActivityBattleResponse* response) { return this->CancelActivityBattle(context, request, response); }));}
+    void SetMessageAllocatorFor_CancelActivityBattle(
+        ::grpc::MessageAllocator< ::match::CancelActivityBattleRequest, ::match::CancelActivityBattleResponse>* allocator) {
+      ::grpc::internal::MethodHandler* const handler = ::grpc::Service::GetHandler(1);
+      static_cast<::grpc::internal::CallbackUnaryHandler< ::match::CancelActivityBattleRequest, ::match::CancelActivityBattleResponse>*>(handler)
+              ->SetMessageAllocator(allocator);
+    }
+    ~WithCallbackMethod_CancelActivityBattle() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status CancelActivityBattle(::grpc::ServerContext* /*context*/, const ::match::CancelActivityBattleRequest* /*request*/, ::match::CancelActivityBattleResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    virtual ::grpc::ServerUnaryReactor* CancelActivityBattle(
+      ::grpc::CallbackServerContext* /*context*/, const ::match::CancelActivityBattleRequest* /*request*/, ::match::CancelActivityBattleResponse* /*response*/)  { return nullptr; }
+  };
+  typedef WithCallbackMethod_StartActivityBattle<WithCallbackMethod_CancelActivityBattle<Service > > CallbackService;
   typedef CallbackService ExperimentalCallbackService;
   template <class BaseClass>
   class WithGenericMethod_StartActivityBattle : public BaseClass {
@@ -157,6 +228,23 @@ class MatchInternal final {
     }
     // disable synchronous version of this method
     ::grpc::Status StartActivityBattle(::grpc::ServerContext* /*context*/, const ::match::StartActivityBattleRequest* /*request*/, ::match::StartActivityBattleResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+  };
+  template <class BaseClass>
+  class WithGenericMethod_CancelActivityBattle : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithGenericMethod_CancelActivityBattle() {
+      ::grpc::Service::MarkMethodGeneric(1);
+    }
+    ~WithGenericMethod_CancelActivityBattle() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status CancelActivityBattle(::grpc::ServerContext* /*context*/, const ::match::CancelActivityBattleRequest* /*request*/, ::match::CancelActivityBattleResponse* /*response*/) override {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
@@ -182,6 +270,26 @@ class MatchInternal final {
     }
   };
   template <class BaseClass>
+  class WithRawMethod_CancelActivityBattle : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithRawMethod_CancelActivityBattle() {
+      ::grpc::Service::MarkMethodRaw(1);
+    }
+    ~WithRawMethod_CancelActivityBattle() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status CancelActivityBattle(::grpc::ServerContext* /*context*/, const ::match::CancelActivityBattleRequest* /*request*/, ::match::CancelActivityBattleResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    void RequestCancelActivityBattle(::grpc::ServerContext* context, ::grpc::ByteBuffer* request, ::grpc::ServerAsyncResponseWriter< ::grpc::ByteBuffer>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
+      ::grpc::Service::RequestAsyncUnary(1, context, request, response, new_call_cq, notification_cq, tag);
+    }
+  };
+  template <class BaseClass>
   class WithRawCallbackMethod_StartActivityBattle : public BaseClass {
    private:
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
@@ -201,6 +309,28 @@ class MatchInternal final {
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
     virtual ::grpc::ServerUnaryReactor* StartActivityBattle(
+      ::grpc::CallbackServerContext* /*context*/, const ::grpc::ByteBuffer* /*request*/, ::grpc::ByteBuffer* /*response*/)  { return nullptr; }
+  };
+  template <class BaseClass>
+  class WithRawCallbackMethod_CancelActivityBattle : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithRawCallbackMethod_CancelActivityBattle() {
+      ::grpc::Service::MarkMethodRawCallback(1,
+          new ::grpc::internal::CallbackUnaryHandler< ::grpc::ByteBuffer, ::grpc::ByteBuffer>(
+            [this](
+                   ::grpc::CallbackServerContext* context, const ::grpc::ByteBuffer* request, ::grpc::ByteBuffer* response) { return this->CancelActivityBattle(context, request, response); }));
+    }
+    ~WithRawCallbackMethod_CancelActivityBattle() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status CancelActivityBattle(::grpc::ServerContext* /*context*/, const ::match::CancelActivityBattleRequest* /*request*/, ::match::CancelActivityBattleResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    virtual ::grpc::ServerUnaryReactor* CancelActivityBattle(
       ::grpc::CallbackServerContext* /*context*/, const ::grpc::ByteBuffer* /*request*/, ::grpc::ByteBuffer* /*response*/)  { return nullptr; }
   };
   template <class BaseClass>
@@ -230,9 +360,36 @@ class MatchInternal final {
     // replace default version of method with streamed unary
     virtual ::grpc::Status StreamedStartActivityBattle(::grpc::ServerContext* context, ::grpc::ServerUnaryStreamer< ::match::StartActivityBattleRequest,::match::StartActivityBattleResponse>* server_unary_streamer) = 0;
   };
-  typedef WithStreamedUnaryMethod_StartActivityBattle<Service > StreamedUnaryService;
+  template <class BaseClass>
+  class WithStreamedUnaryMethod_CancelActivityBattle : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithStreamedUnaryMethod_CancelActivityBattle() {
+      ::grpc::Service::MarkMethodStreamed(1,
+        new ::grpc::internal::StreamedUnaryHandler<
+          ::match::CancelActivityBattleRequest, ::match::CancelActivityBattleResponse>(
+            [this](::grpc::ServerContext* context,
+                   ::grpc::ServerUnaryStreamer<
+                     ::match::CancelActivityBattleRequest, ::match::CancelActivityBattleResponse>* streamer) {
+                       return this->StreamedCancelActivityBattle(context,
+                         streamer);
+                  }));
+    }
+    ~WithStreamedUnaryMethod_CancelActivityBattle() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable regular version of this method
+    ::grpc::Status CancelActivityBattle(::grpc::ServerContext* /*context*/, const ::match::CancelActivityBattleRequest* /*request*/, ::match::CancelActivityBattleResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    // replace default version of method with streamed unary
+    virtual ::grpc::Status StreamedCancelActivityBattle(::grpc::ServerContext* context, ::grpc::ServerUnaryStreamer< ::match::CancelActivityBattleRequest,::match::CancelActivityBattleResponse>* server_unary_streamer) = 0;
+  };
+  typedef WithStreamedUnaryMethod_StartActivityBattle<WithStreamedUnaryMethod_CancelActivityBattle<Service > > StreamedUnaryService;
   typedef Service SplitStreamedService;
-  typedef WithStreamedUnaryMethod_StartActivityBattle<Service > StreamedService;
+  typedef WithStreamedUnaryMethod_StartActivityBattle<WithStreamedUnaryMethod_CancelActivityBattle<Service > > StreamedService;
 };
 
 }  // namespace match

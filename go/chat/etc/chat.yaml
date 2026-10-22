@@ -3,6 +3,18 @@
 Name: chat.rpc
 ListenOn: 127.0.0.1:50700
 
+# 同一TiDB事务域内的聊天原件库与角色目录；这里只写环境变量名。
+DSNEnv: CHAT_AUTHORITY_DSN
+RequireTiDB: true
+MaxOpenConns: 16
+AccountRoleSchema: mmorpg_global
+GlobalLoginSessions: true
+LoginRedis:
+  Host: 127.0.0.1:6379
+  PasswordEnv: LOGIN_REDIS_PASSWORD
+  DB: 0
+  PoolSize: 4
+
 # zrpc 服务端整体超时(毫秒)。必须 ≤ 路由服 ForwardTimeoutMs(5000)− 1000:
 # chat 要先于路由服超时把 in-band 结果回去,否则"写入已生效 + 客户端看到失败"会诱发重发。
 # config.Validate 拒绝 0 与 >4000。
@@ -27,8 +39,8 @@ Middlewares:
     IgnoreContentMethods:
       - /chatpb.ClientPlayerChat/SendChat
 
-# ---- 双存储(契约 §4)----
-# Redis:既有共享库。chat v1 不读任何契约 key,它只是 ChatRedis 未配置时的回落目标。
+# ---- 既有可丢缓存配置(当前SQL合同见设计§19)----
+# Redis仅保留框架/缓存配置；发送决定、限速与历史读取均在TiDB，不读旧LIST。
 #   这是 zrpc.RpcServerConf 自带的 Redis(RedisKeyConf)段:Key 仅在 Auth=true 时使用,
 #   但字段不是 optional,Redis 段存在时必须显式写(空串即可),否则加载报 "Redis.Key" is not set。
 #   不写 DB(契约 §4)。
@@ -37,15 +49,8 @@ Redis:
   Type: node
   Key: ""
 
-# ChatRedis:chat 私有 key(chat:{world}:log / chat:{p:a:b}:log / chat:{req:pid}:rid / chat:{rl:pid})。
-# 全部单 key 操作,Redis Cluster 安全。本地集群样例 = docker compose --profile redis-cluster
-# (6 节点 3 主 3 从,与 match 的 MatchRedis 同一套);Host 逗号分隔种子地址,Type 必须是 cluster。
-# 整段删掉即回落到上面的共享库,启动时打 WARN 并在横幅打印 shared-fallback 落点 ——
-# 只允许本地单库形态。2026-10-12 起本地 compose 的共享库也改为 noeviction(K8s 的共享库一直是),但聊天历史
-#   带 TTL(缺省 7 天、每次写入续期;每频道只留最近 200 条,私聊键数随会话对数增长),回落后仍与契约 key
-#   争内存:共享库设了 maxmemory 时(本地 compose 是 8gb)写满会连带拒写契约 key;若共享库被配成 volatile-*
-#   淘汰型,全部带 TTL 的 chat:* 键(历史、限流、幂等)会被优先淘汰。
-# ⚠ staging/prod 必须指向独立实例且 maxmemory-policy=noeviction(历史 LIST 是这类数据的唯一副本)。
+# ChatRedis保留旧部署配置；正式Send/Pull不向它读写或回落。
+# Host为既有六节点缓存种子，缓存丢失或旧快照不改变SQL已接受消息。
 ChatRedis:
   Host: 127.0.0.1:7000,127.0.0.1:7001,127.0.0.1:7002,127.0.0.1:7003,127.0.0.1:7004,127.0.0.1:7005
   Type: cluster
@@ -68,14 +73,15 @@ MetricsListenAddr: ":9210"
 MaxContentBytes: 512
 # 每玩家每秒最多发几条(gate 每会话每消息号 3 次/秒是第一道)。
 RateLimitPerSecond: 5
-# 每个频道 LIST 保留最近条数。
+# 每个SQL频道窗口最多可见的最近条数。
 HistoryMaxEntries: 200
-# 频道 LIST TTL(秒),每次写入续期;7 天。历史是尽力而为窗口,不是权威账本。
+# 频道闲置窗口TTL(秒)，保持每次接受续期语义；显示过期不删除永久原UUID收据。
 HistoryTTLSeconds: 604800
 # PullChatHistory.limit=0 时的默认条数与上限。
+# HistoryMaxLimit最多200；HistoryMaxEntries可独立增大容量，一次读取仍最多200。
 HistoryDefaultLimit: 20
 HistoryMaxLimit: 50
-# SendChat 幂等键 TTL(秒)。
+# 旧配置兼容字段；SQL成功幂等收据永久保留，此值不再控制删除。
 RequestIdTTLSeconds: 60
 
 # RPC 级热关停(shared/killswitch)规则在 etcd 里的前缀。

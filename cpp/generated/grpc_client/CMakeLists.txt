@@ -70,6 +70,7 @@ set(SOURCE_FILES
     team/team_grpc_client.cpp
     rank/rank_admin_grpc_client.cpp
     player_locator/player_locator_grpc_client.cpp
+    team/team_authority_grpc_client.cpp
 )
 
 add_library(grpc_client STATIC ${SOURCE_FILES})

@@ -306,6 +306,7 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED RoutePlayerEvent final : public ::g
     kPlayerIdFieldNumber = 4,
     kOwnerEpochFieldNumber = 6,
     kLoginGenerationFieldNumber = 7,
+    kOwnerRevisionFieldNumber = 8,
     kHomeZoneIdFieldNumber = 5,
   };
   // uint32 session_id = 1;
@@ -368,6 +369,16 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED RoutePlayerEvent final : public ::g
   void _internal_set_login_generation(::uint64_t value);
 
   public:
+  // uint64 owner_revision = 8;
+  void clear_owner_revision() ;
+  [[nodiscard]] ::uint64_t owner_revision() const;
+  void set_owner_revision(::uint64_t value);
+
+  private:
+  ::uint64_t _internal_owner_revision() const;
+  void _internal_set_owner_revision(::uint64_t value);
+
+  public:
   // uint32 home_zone_id = 5;
   void clear_home_zone_id() ;
   [[nodiscard]] ::uint32_t home_zone_id() const;
@@ -382,7 +393,7 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED RoutePlayerEvent final : public ::g
  private:
   class _Internal;
   using ParseTableT_ =
-      ::google::protobuf::internal::TcParseTable<3, 7,
+      ::google::protobuf::internal::TcParseTable<3, 8,
                           0, 0,
                           2>;
   static constexpr ParseTableT_ InternalGenerateParseTable_(
@@ -417,6 +428,7 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED RoutePlayerEvent final : public ::g
     ::uint64_t player_id_;
     ::uint64_t owner_epoch_;
     ::uint64_t login_generation_;
+    ::uint64_t owner_revision_;
     ::uint32_t home_zone_id_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
@@ -2729,7 +2741,7 @@ inline void RoutePlayerEvent::_internal_set_player_id(::uint64_t value) {
 inline void RoutePlayerEvent::clear_home_zone_id() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.home_zone_id_ = 0u;
-  ClearHasBit(_impl_._has_bits_[0], 0x00000040U);
+  ClearHasBit(_impl_._has_bits_[0], 0x00000080U);
 }
 inline ::uint32_t RoutePlayerEvent::home_zone_id() const {
   // @@protoc_insertion_point(field_get:contracts.kafka.RoutePlayerEvent.home_zone_id)
@@ -2737,7 +2749,7 @@ inline ::uint32_t RoutePlayerEvent::home_zone_id() const {
 }
 inline void RoutePlayerEvent::set_home_zone_id(::uint32_t value) {
   _internal_set_home_zone_id(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00000040U);
+  SetHasBit(_impl_._has_bits_[0], 0x00000080U);
   // @@protoc_insertion_point(field_set:contracts.kafka.RoutePlayerEvent.home_zone_id)
 }
 inline ::uint32_t RoutePlayerEvent::_internal_home_zone_id() const {
@@ -2795,6 +2807,30 @@ inline ::uint64_t RoutePlayerEvent::_internal_login_generation() const {
 inline void RoutePlayerEvent::_internal_set_login_generation(::uint64_t value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.login_generation_ = value;
+}
+
+// uint64 owner_revision = 8;
+inline void RoutePlayerEvent::clear_owner_revision() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.owner_revision_ = ::uint64_t{0u};
+  ClearHasBit(_impl_._has_bits_[0], 0x00000040U);
+}
+inline ::uint64_t RoutePlayerEvent::owner_revision() const {
+  // @@protoc_insertion_point(field_get:contracts.kafka.RoutePlayerEvent.owner_revision)
+  return _internal_owner_revision();
+}
+inline void RoutePlayerEvent::set_owner_revision(::uint64_t value) {
+  _internal_set_owner_revision(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000040U);
+  // @@protoc_insertion_point(field_set:contracts.kafka.RoutePlayerEvent.owner_revision)
+}
+inline ::uint64_t RoutePlayerEvent::_internal_owner_revision() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.owner_revision_;
+}
+inline void RoutePlayerEvent::_internal_set_owner_revision(::uint64_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.owner_revision_ = value;
 }
 
 // -------------------------------------------------------------------

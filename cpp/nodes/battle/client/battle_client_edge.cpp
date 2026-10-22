@@ -371,7 +371,7 @@ void BattleClientEdge::OnTokenVerify(const muduo::net::TcpConnectionPtr &conn,
 
     const battle_security::TicketFields fields{
         payload.battle_id(), payload.player_id(), payload.battle_node_id(),
-        payload.battle_instance_id(), payload.expire_at_ms(), static_cast<int>(payload.role())};
+        payload.battle_instance_id(), payload.expire_at_ms(), static_cast<int>(payload.role()), payload.spectator_operation_id()};
     const auto ticketVerdict = battle_security::ClassifyTicketFields(
         fields, gNode->GetNodeId(), gNode->GetNodeInfo().node_uuid(), TimeSystem::NowMillisecondsUTC());
     if (ticketVerdict != battle_security::TicketVerdict::kOk)
@@ -384,7 +384,7 @@ void BattleClientEdge::OnTokenVerify(const muduo::net::TcpConnectionPtr &conn,
     // 房间仍存在且该玩家确在名单上(按角色);重连时替换旧连接。
     uint32_t gateSessionId = 0;
     if (!BattleRoomManager::Instance().AttachDirectConnection(payload.battle_id(), payload.player_id(),
-                                                              payload.role(), conn, &gateSessionId))
+                                                              payload.role(), conn, &gateSessionId, payload.spectator_operation_id()))
     {
         rejectAndClose("ticket_not_in_roster", "battle not found or player not in this battle");
         return;
@@ -394,6 +394,7 @@ void BattleClientEdge::OnTokenVerify(const muduo::net::TcpConnectionPtr &conn,
     session->battleId = payload.battle_id();
     session->playerId = payload.player_id();
     session->role = payload.role();
+    session->spectatorOperation = payload.spectator_operation_id();
     session->gateSessionId = gateSessionId;
     IllegalPacketCounter::Reset(session->illegalPacketCount);
     session->handshakeTimer.Cancel();
@@ -481,6 +482,9 @@ void BattleClientEdge::DispatchVerifiedRequest(DirectSession &session,
                                                const muduo::net::TcpConnectionPtr &conn,
                                                const ::ClientRequest &request)
 {
+    // forceClose延后执行；已被替换/取消的旧连接在本轮仍可能有入站包，不能操作新槽位。
+    if (!BattleRoomManager::Instance().OwnsDirectConnection(session.battleId, session.playerId,
+            session.role, conn, session.spectatorOperation)) { conn->forceClose(); return; }
     // 直连是战斗唯一的上行入口(turn-based §22 D66):权威身份来自已验证的票据,不信请求体;
     // session_id 只是登记时的大厅会话号,仅供日志对齐。Handle* 仍收 SessionDetails(D28 零改动)。
     ::SessionDetails sessionDetails;

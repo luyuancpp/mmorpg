@@ -247,8 +247,8 @@ func TestStageThenCommitLocalRedis(t *testing.T) {
 			t.Fatalf("barrier %s = %q", field, got)
 		}
 	}
-	if got, _ := mr.Get(debugutil.PlayerToAccountKey(id)); got != "dev_tester" {
-		t.Fatalf("player_to_account = %q", got)
+	if mr.Exists(debugutil.PlayerToAccountKey(id)) {
+		t.Fatal("屏障提交不能伪造账号归属，目录必须另行提交SQL")
 	}
 	if mr.Exists(scenenode.LocationKey(id)) {
 		t.Fatal("import must not create a location")
@@ -276,6 +276,17 @@ func TestStageLocalRedisRechecksPreflight(t *testing.T) {
 	}
 
 	mr.Del(scenenode.LocationKey(id))
+	mr.Set("player_locker:12", "inflight-login")
+	if err := stageLocalRedis(context.Background(), client, id, 1, "4", 5, version); err == nil {
+		t.Fatal("已受理的登录链尚未写locator，导入仍必须拒绝")
+	}
+	if mr.Exists(savebarrier.Key(id)) {
+		t.Fatal("登录链冲突不能推进屏障")
+	}
+	if owner, err := mr.Get(ownerepoch.OwnerEpochKey(id)); err != nil || owner != "4" {
+		t.Fatalf("拒绝导入不应前进owner: owner=%q err=%v", owner, err)
+	}
+	mr.Del("player_locker:12")
 	if err := stageLocalRedis(context.Background(), client, id, 1, "4", 5, version); err != nil {
 		t.Fatalf("matching preflight refused: %v", err)
 	}

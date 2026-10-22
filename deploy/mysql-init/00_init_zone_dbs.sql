@@ -90,4 +90,8 @@ GRANT ALL PRIVILEGES ON `mmorpg_mail`.* TO 'appuser'@'%';
 CREATE DATABASE IF NOT EXISTS mmorpg_rank DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 GRANT ALL PRIVILEGES ON `mmorpg_rank`.* TO 'appuser'@'%';
 
+-- 聊天只在此预建全局唯一库，不给旧appuser追加ALL权限。
+-- 专用迁移/常驻账号由运维预置；表由chat -migrate建，最小权限角色见deploy/sql/chat_*_role.sql。
+CREATE DATABASE IF NOT EXISTS mmorpg_chat DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
 FLUSH PRIVILEGES;

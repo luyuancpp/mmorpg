@@ -48,6 +48,14 @@ BattleNodeImpl::BattleNodeImpl(muduo::net::EventLoop& loop)
 {
 }
 
+void BattleNodeImpl::HandleQueryObserver(const ::QueryObserverRequest* request,
+    ::QueryObserverResponse* response)
+{
+///<<< BEGIN WRITING YOUR CODE
+    BattleRoomManager::Instance().HandleQueryObserver(*request, *response);
+///<<< END WRITING YOUR CODE
+}
+
 void BattleNodeImpl::HandleQueryBattleCreation(const ::QueryBattleCreationRequest* request,
     ::QueryBattleCreationResponse* response)
 {
@@ -82,11 +90,12 @@ void BattleNodeImpl::HandleAddObserver(const ::AddObserverRequest* request,
     ///<<< END WRITING YOUR CODE
 }
 
-void BattleNodeImpl::HandleRemoveObserver(const ::RemoveObserverRequest* request)
+void BattleNodeImpl::HandleRemoveObserver(const ::RemoveObserverRequest* request,
+    ::RemoveObserverResponse* response)
 {
     ///<<< BEGIN WRITING YOUR CODE
     // 幂等清退(match 互斥路径),委托手写房间管理器
-    BattleRoomManager::Instance().HandleRemoveObserver(*request);
+    BattleRoomManager::Instance().HandleRemoveObserver(*request, *response);
     ///<<< END WRITING YOUR CODE
 }
 
@@ -97,6 +106,14 @@ void BattleNodeImpl::HandleIssueBattleTicket(const ::IssueBattleTicketRequest* r
     // 丢票补签(设计文档 §18 D25):名单核对 + 自签在手写房间管理器,错误经 response tip 返回,status 恒 OK
     BattleRoomManager::Instance().HandleIssueBattleTicket(*request, *response);
     ///<<< END WRITING YOUR CODE
+}
+
+void BattleNodeImpl::QueryObserver(const std::shared_ptr<QueryObserverCall>& call)
+{
+    [[maybe_unused]] const ::QueryObserverRequest* request = &call->request();
+    ///<<< BEGIN WRITING YOUR CODE: grpc.QueryObserver.guard
+    ///<<< END WRITING YOUR CODE
+    call->Proceed();
 }
 
 void BattleNodeImpl::QueryBattleCreation(const std::shared_ptr<QueryBattleCreationCall>& call)
@@ -199,6 +216,15 @@ void BattleNodeImpl::IssueBattleTicket(const std::shared_ptr<IssueBattleTicketCa
 
 void BattleNodeImpl::RegisterMethods(muduo_grpc::MethodTable& table)
 {
+    table.AddUnary(std::string(kQueryObserverPath),
+        [this](muduo_grpc::ServerCall serverCall, std::string_view requestBytes)
+        {
+            const auto call = QueryObserverCall::Create(std::move(serverCall), &HandleQueryObserver);
+            if (call->ParseRequest(requestBytes))
+            {
+                QueryObserver(call);
+            }
+        });
     table.AddUnary(std::string(kQueryBattleCreationPath),
         [this](muduo_grpc::ServerCall serverCall, std::string_view requestBytes)
         {
@@ -239,8 +265,7 @@ void BattleNodeImpl::RegisterMethods(muduo_grpc::MethodTable& table)
     table.AddUnary(std::string(kRemoveObserverPath),
         [this](muduo_grpc::ServerCall serverCall, std::string_view requestBytes)
         {
-            const auto call = RemoveObserverCall::Create(std::move(serverCall),
-                [](const ::RemoveObserverRequest* request, ::Empty* /*response*/) { HandleRemoveObserver(request); });
+            const auto call = RemoveObserverCall::Create(std::move(serverCall), &HandleRemoveObserver);
             if (call->ParseRequest(requestBytes))
             {
                 RemoveObserver(call);

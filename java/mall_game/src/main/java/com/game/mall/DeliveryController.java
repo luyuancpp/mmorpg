@@ -18,9 +18,9 @@ public final class DeliveryController {
     }
 
     @PostMapping("/internal/deliveries/poll")
-    public List<DeliveryApi.Intent> poll(HttpServletRequest request, @RequestBody DeliveryApi.Poll input) {
+    public DeliveryApi.PollPage poll(HttpServletRequest request, @RequestBody DeliveryApi.Poll input) {
         check(request);
-        return store.poll(input.limit());
+        return store.poll(input);
     }
     @PostMapping("/internal/deliveries/receipt")
     public void receipt(HttpServletRequest request, @RequestBody DeliveryApi.Receipt input) {

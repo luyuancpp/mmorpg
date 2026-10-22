@@ -82,14 +82,17 @@ type Config struct {
 	KillSwitchPrefix string `json:",optional"`
 
 	// MySQL:独占库 mmorpg_player_inbox(D-14)。连接池即设计 §10 的「独立连接池」:
-	// 审计与入箱同库同事务,共用这一个池;会话级 RC + 锁等待 1s 由 svc.BuildDSN 固定。
+	// 审计与入箱同库同事务；逐物理连接由shared/authoritysql固定TiDB当前强读，拒绝历史快照与MySQL。
 	MySQL MySQLConf `json:"MySQL"`
+
+	// 同一TiDB入口中的角色目录schema；入箱、消费、运维、后台均在业务事务首锁原角色P。
+	AccountRoleSchema string `json:",optional"`
 
 	// Schema:建表策略,见 SchemaConf.AutoMigrate。整段可缺失。
 	Schema SchemaConf `json:",optional"`
 
 	// CoreRedis:**核心** Redis(与 C++ scene / scene_manager 同一实例,DB 0),只读三类东西:
-	//   - player:{id}:owner_epoch:围栏上界 R(IB-8);
+	//   - player:{id}:owner_epoch:仅STALE分类诊断，不是消费授权上界；
 	//   - player:{id}:location:在线提醒定位玩家所在 scene 节点;
 	//   - 维护选主锁 player_inbox:maintenance:leader(清理 / 补发提醒 / gauge / 对账只在领导者上跑)。
 	// 指错实例的表现是 R 永远是 0(所有 Fetch 判 EPOCH_AHEAD)、提醒永远发不出,所以 Validate 拒绝空 Host。
@@ -125,7 +128,7 @@ type PlayerInboxConf struct {
 	// v1 只放封锁 / 解封两种,v1DisabledEnqueueTypes 里的类型(挂欠款)列进来即拒启。
 	EnqueueTypes []string `json:",optional"`
 
-	// TerminalRetentionDays:终态行保留天数,超过后由清理循环物理删除。必须大于签发窗 7 天(设计 §9.1)。
+	// TerminalRetentionDays保留旧配置兼容；全球item现为永久原请求收据，Sweep不再物删。
 	TerminalRetentionDays int `json:",default=30"`
 	// SweepIntervalSeconds:两轮清理之间的间隔;每轮最多删 500 行(设计 §9.1)。
 	SweepIntervalSeconds int `json:",default=600"`
@@ -296,6 +299,9 @@ func (c *Config) Validate() error {
 
 	if c.MySQL.Host == "" || c.MySQL.User == "" || c.MySQL.DBName == "" {
 		return errors.New("MySQL.Host / MySQL.User / MySQL.DBName 都不能为空")
+	}
+	if !regexp.MustCompile(`^[A-Za-z_][A-Za-z0-9_]{0,63}$`).MatchString(c.AccountRoleSchema) {
+		return errors.New("AccountRoleSchema必须显式配置同TiDB角色目录schema")
 	}
 	if c.MySQL.DBName != data.DatabaseName {
 		return fmt.Errorf("MySQL.DBName 必须是 %q(得到 %q):收件箱独占该库,表不许建进别的库(D-14)",

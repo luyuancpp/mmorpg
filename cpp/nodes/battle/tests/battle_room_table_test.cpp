@@ -24,6 +24,7 @@
 #include <initializer_list>
 #include <map>
 #include <memory>
+#include <utility>
 #include <vector>
 
 #include "battle_room_table.h"
@@ -37,17 +38,17 @@ using battle_room_table::RoomTable;
 // 测试用房间:析构时计数,用来验证"重复插入时新对象随形参销毁"的所有权契约。
 struct FakeRoom
 {
-	explicit FakeRoom(int marker, int *destroyed = nullptr) : marker(marker), destroyed(destroyed) {}
+	explicit FakeRoom(int marker, std::shared_ptr<int> destroyed = {}) : marker(marker), destroyed(std::move(destroyed)) {}
 	~FakeRoom()
 	{
-		if (destroyed != nullptr)
+		if (destroyed)
 		{
 			++*destroyed;
 		}
 	}
 
 	int marker = 0;
-	int *destroyed = nullptr;
+	std::shared_ptr<int> destroyed;
 };
 
 // 记录每个 roomId 收到的回调次数(onCreated / onRemoved 分开记)。
@@ -104,10 +105,10 @@ TEST(BattleRoomTable, DuplicateEmplaceIsRejectedWithoutHookAndKeepsOriginalRoom)
 	RoomTable<FakeRoom> table;
 	HookRecorder recorder;
 	table.SetHooks(recorder.MakeHooks());
-	int duplicateDestroyed = 0;
+	const auto duplicateDestroyed = std::make_shared<int>(0);
 
 	FakeRoom *original = table.Emplace(7, std::make_unique<FakeRoom>(70));
-	FakeRoom *duplicate = table.Emplace(7, std::make_unique<FakeRoom>(71, &duplicateDestroyed));
+	FakeRoom *duplicate = table.Emplace(7, std::make_unique<FakeRoom>(71, duplicateDestroyed));
 
 	EXPECT_EQ(duplicate, nullptr);
 	// 表里那间原样保留,单元计数不重复加
@@ -116,7 +117,7 @@ TEST(BattleRoomTable, DuplicateEmplaceIsRejectedWithoutHookAndKeepsOriginalRoom)
 	EXPECT_EQ(table.Size(), 1u);
 	EXPECT_EQ(recorder.created[7], 1);
 	// 所有权契约:按值传入的新房间随形参销毁,不泄漏也不留在调用方手里
-	EXPECT_EQ(duplicateDestroyed, 1);
+	EXPECT_EQ(*duplicateDestroyed, 1);
 }
 
 TEST(BattleRoomTable, NullRoomIsRejectedWithoutHook)
@@ -135,12 +136,12 @@ TEST(BattleRoomTable, EraseFiresOnRemovedExactlyOnceAndDestroysRoom)
 	RoomTable<FakeRoom> table;
 	HookRecorder recorder;
 	table.SetHooks(recorder.MakeHooks());
-	int destroyed = 0;
-	table.Emplace(7, std::make_unique<FakeRoom>(70, &destroyed));
+	const auto destroyed = std::make_shared<int>(0);
+	table.Emplace(7, std::make_unique<FakeRoom>(70, destroyed));
 
 	EXPECT_TRUE(table.Erase(7));
 	EXPECT_EQ(table.Find(7), nullptr);
-	EXPECT_EQ(destroyed, 1);
+	EXPECT_EQ(*destroyed, 1);
 	EXPECT_EQ(recorder.removed[7], 1);
 
 	// 第二次移除同一个键:no-op,不再触发(计数不会被减成负数)

@@ -129,6 +129,10 @@ func runPlayerInbox(c config.Config) (runErr error) {
 	if exitRequested(ctx) {
 		return nil
 	}
+	consumerVerifier, err := server.NewConsumerVerifier()
+	if err != nil {
+		return err
+	}
 
 	listenHost, port, err := c.ListenHostPort()
 	if err != nil {
@@ -170,6 +174,12 @@ func runPlayerInbox(c config.Config) (runErr error) {
 	if err := ensureSchema(context.Background(), svcCtx.DB, c, schemamigrate.Up, schemamigrate.Plan, checkRowShardLayout); err != nil {
 		return err
 	}
+	indexCtx, indexCancel := context.WithTimeout(context.Background(), 5*time.Second)
+	indexErr := inbox.CheckAuthorityIndexes(indexCtx, svcCtx.DB)
+	indexCancel()
+	if indexErr != nil {
+		return indexErr
+	}
 	if exitRequested(ctx) {
 		return nil
 	}
@@ -190,7 +200,7 @@ func runPlayerInbox(c config.Config) (runErr error) {
 	sanction := logic.GmSanctionDeps{Store: svcCtx.Store, Audit: inbox.InsertAudit, Now: time.Now}
 	serverReady := make(chan struct{})
 	s, err := zrpc.NewServer(c.RpcServerConf, func(grpcServer *grpc.Server) {
-		inboxpb.RegisterPlayerInboxServer(grpcServer, server.NewPlayerInboxServer(svcCtx.Store, budget))
+		inboxpb.RegisterPlayerInboxServer(grpcServer, server.NewPlayerInboxServer(svcCtx.Store, budget, consumerVerifier))
 		inboxpb.RegisterPlayerInboxAdminServer(grpcServer, server.NewAdminServer(svcCtx.Store, sanction, svcCtx.Ledgers, budget))
 		if config.IsRelaxedMode(c.Mode) {
 			reflection.Register(grpcServer)

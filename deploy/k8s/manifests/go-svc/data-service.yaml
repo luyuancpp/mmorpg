@@ -69,6 +69,18 @@ spec:
           image: PLACEHOLDER_IMAGE
           imagePullPolicy: PLACEHOLDER_PULL_POLICY
           env:
+            - name: MMORPG_ACCOUNT_DIRECTORY_SECRET_SCENE_MANAGER
+              valueFrom:
+                secretKeyRef: {name: domain-service-secrets, key: account-directory-scene-manager, optional: false}
+            - name: MMORPG_ACCOUNT_DIRECTORY_SECRET_LOGIN
+              valueFrom:
+                secretKeyRef: {name: domain-service-secrets, key: account-directory-login, optional: false}
+            - name: MMORPG_ACCOUNT_DIRECTORY_SECRET_TRADE
+              valueFrom:
+                secretKeyRef: {name: domain-service-secrets, key: account-directory-trade, optional: false}
+            - name: MMORPG_ACCOUNT_DIRECTORY_SECRET_SCENE
+              valueFrom:
+                secretKeyRef: {name: domain-service-secrets, key: account-directory-scene, optional: false}
             - name: GOLANG_PROTOBUF_REGISTRATION_CONFLICT
               value: warn
             # C++ 约定注册(DataServiceNodeService.rpc)写进 NodeInfo 的对外 IP(data_service.go advertisedHost):

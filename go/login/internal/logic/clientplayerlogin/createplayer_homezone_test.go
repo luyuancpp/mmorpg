@@ -151,7 +151,7 @@ func newCreatePlayerHarnessWithNames(t *testing.T, resolver *homezone.Resolver, 
 	}
 
 	l := NewCreatePlayerLogic(ctx, &svc.ServiceContext{
-		RedisClient:    rdb,
+		RedisClient: rdb, AccountDirectory: fixtureDirectory(t, rdb),
 		PlayerIDMinter: &idsegment.Minter{Name: "player_id", Segment: &fakeSegment{id: hzPlayerID}},
 		HomeZone:       resolver,
 		PlayerNames:    playernamereg.New(names),
@@ -162,15 +162,7 @@ func newCreatePlayerHarnessWithNames(t *testing.T, resolver *homezone.Resolver, 
 // storedPlayers 读回账号 blob 里真正落盘的角色列表。
 func storedPlayers(t *testing.T, ctx context.Context, rdb *redis.Client) []*pbbase.AccountSimplePlayer {
 	t.Helper()
-	raw, err := rdb.Get(ctx, constants.GetAccountDataKey(hzAccount)).Bytes()
-	if err != nil {
-		t.Fatalf("read account blob: %v", err)
-	}
-	acct := &pbdb.UserAccounts{}
-	if err := proto.Unmarshal(raw, acct); err != nil {
-		t.Fatalf("unmarshal account blob: %v", err)
-	}
-	return acct.GetSimplePlayers().GetPlayers()
+	return fixtureRoles(t, rdb, hzAccount).Players
 }
 
 // 成功路径:登记发出去了(参数 = 新 player_id + 本 zone),而且是在落盘之前发的;
@@ -204,8 +196,8 @@ func TestCreatePlayer_RegistersHomeZoneThenPersists(t *testing.T) {
 	if players[0].GetZoneId() != hzZoneID {
 		t.Fatalf("persisted zone_id = %d, want %d", players[0].GetZoneId(), hzZoneID)
 	}
-	if got, err := rdb.Get(ctx, constants.PlayerToAccountKey(hzPlayerID)).Result(); err != nil || got != hzAccount {
-		t.Fatalf("reverse mapping = %q/%v, want %q", got, err, hzAccount)
+	if owned, err := l.svcCtx.AccountDirectory.Lookup(ctx, hzPlayerID); err != nil || owned.Account != hzAccount {
+		t.Fatalf("SQL ownership = %v/%v, want %q", owned, err, hzAccount)
 	}
 
 	if got := strings.Join(fake.events, ","); got != "reserve,register" {

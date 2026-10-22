@@ -55,6 +55,34 @@ func (l *CancelQueueLogic) CancelQueue(in *matchpb.CancelQueueRequest) (*base.Em
 		if in.RequestId == "" && in.QueueTicket == "" {
 			return nil, status.Error(codes.InvalidArgument, "撤销需要原请求编号或票据")
 		}
+		if in.RequestId != "" {
+			launch, e := l.svcCtx.Authority.TeamLaunch(l.ctx, playerId, in.RequestId)
+			if e != nil {
+				return nil, e
+			}
+			if launch != nil {
+				members, e := l.svcCtx.Authority.CancelTeamLaunchForActor(l.ctx, playerId, launch)
+				if e == nil && len(members) > 0 {
+					if port := l.svcCtx.PartyTeam(); port != nil {
+						port.PartyEnded(launch.TeamId, members, constants.PartyEndCanceled, playerId)
+					}
+				}
+				return &base.Empty{}, e
+			}
+		}
+		ticket, e := l.svcCtx.Authority.Ticket(l.ctx, playerId)
+		if e != nil {
+			return nil, e
+		}
+		if ticket != nil && ticket.TeamId != 0 && (in.QueueTicket == "" || in.QueueTicket == ticket.Ticket) && (in.RequestId == "" || in.RequestId == ticket.RequestId) {
+			members, e := l.svcCtx.Authority.CancelTeamQueueForActor(l.ctx, playerId, ticket)
+			if e == nil && len(members) > 0 {
+				if port := l.svcCtx.PartyTeam(); port != nil {
+					port.PartyEnded(ticket.TeamId, members, constants.PartyEndCanceled, playerId)
+				}
+			}
+			return &base.Empty{}, e
+		}
 		return &base.Empty{}, l.svcCtx.Authority.CancelIntent(l.ctx, playerId, in.QueueTicket, in.RequestId)
 	}
 	ticket, err := loadTicket(l.svcCtx, playerId)

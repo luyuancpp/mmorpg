@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>商城目录管理</title>
+  <link rel="stylesheet" href="mall-admin.css">
+  <script src="mall-admin.js" defer></script>
+</head>
+<body>
+  <header><div><p class="eyebrow">运营工作台</p><h1>商城目录管理</h1><p>维护新订单的商品条款，核对库存与原订单。</p></div><span class="badge">受限命令</span></header>
+  <main>
+    <section class="access"><label>运维令牌<input id="admin-key" type="password" autocomplete="off" spellcheck="false" placeholder="仅在当前页面使用"></label><button id="forget-key" type="button" class="secondary">清除令牌</button><p>商品改价保留旧订单金额。库存只能按差额调整，不能占用未付款订单的预留数量。</p></section>
+    <div class="columns">
+      <section><h2>查询目录</h2><form id="list-form"><label>从 SKU ID 之后开始<input name="afterSkuId" value="0" inputmode="numeric" required></label><label>条数<input name="limit" type="number" min="1" max="100" value="20" required></label><button>查询</button></form>
+        <h2>核对订单</h2><form id="order-form"><label>订单号<input name="orderId" maxlength="36" placeholder="订单 UUID" required></label><button class="secondary">查询原订单</button></form>
+      </section>
+      <section><h2>商品条款</h2><form id="terms-form">
+        <label>操作<select name="mode"><option value="create">新增 SKU</option><option value="update">修改 SKU 条款</option></select></label>
+        <div class="pair"><label>SKU ID<input name="skuId" inputmode="numeric" required></label><label>当前管理修订<input name="expectedRevision" value="0" inputmode="numeric" required></label></div>
+        <div class="pair"><label>商品 ID<input name="productId" inputmode="numeric" required></label><label>SKU 编码<input name="skuCode" maxlength="64" required></label></div>
+        <label>名称<input name="title" maxlength="128" required></label>
+        <div class="pair"><label>价格（最小货币单位）<input name="priceMinor" inputmode="numeric" required></label><label>币种<input name="currency" value="CNY" maxlength="16" required></label></div>
+        <div class="pair"><label>物品配置 ID<input name="itemConfigId" type="number" min="1" max="2147483647" required></label><label>每份物品数<input name="countPerUnit" type="number" min="1" max="4096" value="1" required></label></div>
+        <div class="pair"><label>新增时的初始库存<input name="stock" type="number" min="0" max="2147483647" value="0" required></label><label>发布状态<select name="published"><option value="false">未发布</option><option value="true">发布</option></select></label></div>
+        <label>请求号<input name="requestId" maxlength="128" required></label><div class="actions"><button>提交条款</button><button type="button" class="secondary new-request">生成新请求号</button></div>
+      </form></section>
+      <section><h2>调整库存</h2><form id="stock-form"><label>SKU ID<input name="skuId" inputmode="numeric" required></label><label>当前管理修订<input name="expectedRevision" inputmode="numeric" required></label><label>数量差额<input name="delta" type="number" min="-2147483648" max="2147483647" required placeholder="例如 +10 或 -2"></label><label>请求号<input name="requestId" maxlength="128" required></label><div class="actions"><button>提交差额</button><button type="button" class="secondary new-request">生成新请求号</button></div></form><p class="hint">收到超时或响应不明时，保留原请求号与参数重查、重放。修改参数前生成新请求号。</p></section>
+    </div>
+    <section class="result"><div class="result-title"><h2>操作结果</h2><span id="status" role="status" aria-live="polite">尚未请求</span></div><pre id="result" tabindex="0">查询后显示服务端原始 JSON；大整数保留原字节。</pre></section>
+  </main>
+</body>
+</html>

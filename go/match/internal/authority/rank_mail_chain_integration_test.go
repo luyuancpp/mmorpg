@@ -39,7 +39,7 @@ func TestTiDBRatingRankMailChainRecoversAfterCommittedReplyLoss(t *testing.T) {
 	if address == "" {
 		t.Skip("显式设置本机 TiDB 和预编译 mail/rank 夹具后运行整链验收")
 	}
-	require.Equal(t, "127.0.0.1:4000", address, "整链只允许本机隔离 TiDB")
+	requireNativeTiDBAddress(t, address)
 	mailExecutable := chainExecutable(t, "RANK_MAIL_CHAIN_MAIL_EXE")
 	rankExecutable := chainExecutable(t, "RANK_MAIL_CHAIN_RANK_EXE")
 	ctx, cancel := context.WithTimeout(context.Background(), 75*time.Second)
@@ -56,9 +56,12 @@ func TestTiDBRatingRankMailChainRecoversAfterCommittedReplyLoss(t *testing.T) {
 	}
 	require.True(t, filepath.IsAbs(evidence), "证据目录必须是绝对路径")
 	require.NoError(t, os.MkdirAll(evidence, 0700))
-	admin, err := sql.Open("mysql", "root@tcp(127.0.0.1:4000)/?timeout=1s&readTimeout=5s&writeTimeout=5s")
+	admin, err := sql.Open("mysql", "root@tcp("+address+")/?timeout=1s&readTimeout=5s&writeTimeout=5s")
 	require.NoError(t, err)
 	t.Cleanup(func() { require.NoError(t, admin.Close()) })
+	var engine string
+	require.NoError(t, admin.QueryRowContext(ctx, "SELECT VERSION()").Scan(&engine))
+	require.Contains(t, strings.ToLower(engine), "tidb")
 	openIsolated := func(database string) *sql.DB {
 		t.Helper()
 		_, err := admin.ExecContext(ctx, "CREATE DATABASE "+database)
@@ -70,7 +73,7 @@ func TestTiDBRatingRankMailChainRecoversAfterCommittedReplyLoss(t *testing.T) {
 			_, err := admin.ExecContext(clean, "DROP DATABASE "+database)
 			require.NoError(t, err, "清理本次隔离库")
 		})
-		db, err := authoritysql.Open(ctx, "root@tcp(127.0.0.1:4000)/"+database, database, true, 2)
+		db, err := authoritysql.Open(ctx, "root@tcp("+address+")/"+database, database, true, 2)
 		require.NoError(t, err)
 		t.Cleanup(func() { require.NoError(t, db.Close()) })
 		return db
@@ -199,7 +202,7 @@ func TestTiDBRatingRankMailChainRecoversAfterCommittedReplyLoss(t *testing.T) {
 	require.Equal(t, created+30*86400000, expire)
 	list := func() {
 		t.Helper()
-		session, err := proto.Marshal(&base.SessionDetails{PlayerId: recipient})
+		session, err := proto.Marshal(&base.SessionDetails{PlayerId: recipient, SessionId: 7, GateInstanceId: "mail-rank-chain-original", SessionIncarnation: 19, OwnerRevision: 3})
 		require.NoError(t, err)
 		playerCtx := metadata.NewOutgoingContext(ctx, metadata.Pairs(domainhost.SessionMetadata, base64.StdEncoding.EncodeToString(session)))
 		response, err := mailClient.ListMails(playerCtx, &mailpb.ListMailsRequest{})

@@ -741,28 +741,34 @@ func TestPlayerHomeZoneCountFailureFailsCheck(t *testing.T) {
 	}
 }
 
-// TestPlayerHomeZoneHeuristicUnchanged:读成功时 5 倍启发式与改动前相同(超出报 warn 不报 block,未超报 info)。
-func TestPlayerHomeZoneHeuristicUnchanged(t *testing.T) {
+func TestPlayerHomeZoneUsesGlobalSQLRoleLinkage(t *testing.T) {
 	for _, tc := range []struct {
-		name     string
-		players  int64
-		severity string
-		bad      int64
-	}{
-		{name: "above_5x", players: 12, severity: "warn", bad: 2},
-		{name: "within_5x", players: 10, severity: "info", bad: 0},
-	} {
+		name       string
+		total, bad int64
+		severity   string
+	}{{"missing-or-tombstone", 12, 2, "block"}, {"linked", 10, 0, "info"}} {
 		t.Run(tc.name, func(t *testing.T) {
 			db, _ := openFakeSQL(t, func(query string, _ []any) ([]string, [][]driver.Value, error) {
-				if query == "SELECT COUNT(*) FROM user_accounts" {
-					return []string{"n"}, [][]driver.Value{{int64(2)}}, nil
+				if query != accountLinkageSQL {
+					return nil, nil, fmt.Errorf("unexpected query %q", query)
 				}
-				return nil, nil, fmt.Errorf("unexpected query %q", query)
+				return []string{"total", "bad"}, [][]driver.Value{{tc.total, tc.bad}}, nil
 			})
-			r := checkPlayerHomeZoneVsAccount(context.Background(), runConfig{db: db, routes: &fakeRoutes{count: tc.players}})
-			if r.Severity != tc.severity || r.BadCount != tc.bad || r.TotalCount != tc.players {
-				t.Fatalf("result = %+v, want %s bad=%d total=%d", r, tc.severity, tc.bad, tc.players)
+			r := checkPlayerHomeZoneVsAccount(context.Background(), runConfig{accountDB: db, routes: &fakeRoutes{count: tc.total}})
+			if r.Severity != tc.severity || r.BadCount != tc.bad || r.TotalCount != tc.total {
+				t.Fatalf("result=%+v", r)
 			}
 		})
+	}
+}
+func TestPlayerHomeZoneMissingGlobalHandleAndSQLFailureAreVisible(t *testing.T) {
+	r := checkPlayerHomeZoneVsAccount(context.Background(), runConfig{routes: &fakeRoutes{}})
+	if r.Severity != "warn" || !strings.Contains(r.SampleNotes, "NOT CHECKED") {
+		t.Fatalf("missing global handle=%+v", r)
+	}
+	db, _ := openFakeSQL(t, func(string, []any) ([]string, [][]driver.Value, error) { return nil, nil, errors.New("SQL down") })
+	r = checkPlayerHomeZoneVsAccount(context.Background(), runConfig{accountDB: db, routes: &fakeRoutes{}})
+	if r.Severity != "fail" || !strings.Contains(r.SampleNotes, "SQL down") {
+		t.Fatalf("dependency failure=%+v", r)
 	}
 }

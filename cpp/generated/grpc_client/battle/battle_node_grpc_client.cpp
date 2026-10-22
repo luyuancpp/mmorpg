@@ -25,6 +25,93 @@ GrpcCallOutcome MakeLocalFailureOutcome(uint32_t code, std::string message) {
 }
 }
 
+#pragma region BattleNodeQueryObserver
+namespace {
+void QueueLocalBattleNodeQueryObserverFailure(GrpcDone<::QueryObserverResponse> done, uint32_t code, std::string message) {
+    QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(code, std::move(message))] {
+        done(outcome, nullptr);
+    });
+}
+}
+
+// 请求必须在这里同步序列化:gate 的共享原型在下次调用会被覆盖。
+// 若将来改成异步序列化,必须先恢复请求的独立副本。
+void StartBattleNodeQueryObserverCall(entt::registry& registry, entt::entity nodeEntity, const ::QueryObserverRequest& request,
+                                             GrpcSentMetadata metadata, std::chrono::milliseconds deadline,
+                                             GrpcDone<::QueryObserverResponse> done) {
+    if (!done) {
+        LOG_FATAL << "gRPC BattleNode.QueryObserver requires a done callback";
+    }
+    muduo_grpc::UnaryCallRequest unaryRequest;
+    unaryRequest.method = std::string(kBattleNodeQueryObserverGrpcPath);
+    if (!request.SerializeToString(&unaryRequest.message)) {
+        QueueLocalBattleNodeQueryObserverFailure(std::move(done), kGrpcStatusInternal, "failed to serialize the request");
+        return;
+    }
+    const auto channel = FindGrpcChannel(registry, nodeEntity);
+    if (!channel) {
+        QueueLocalBattleNodeQueryObserverFailure(std::move(done), kGrpcStatusUnavailable, "node transport missing or closing");
+        return;
+    }
+    unaryRequest.metadata.reserve(metadata.size());
+    for (const auto& [key, value] : metadata) {
+        // Go 侧依赖这层应用编码;-bin 的线上编码另由传输层负责。
+        unaryRequest.metadata.emplace_back(key, Base64Encode(value));
+    }
+    unaryRequest.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
+    channel->StartUnaryCall(std::move(unaryRequest), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
+        GrpcCallOutcome outcome;
+        outcome.code = result.status.code_value();
+        outcome.message = result.status.message();
+        outcome.initialMetadata = std::move(result.initialMetadata);
+        outcome.trailingMetadata = std::move(result.trailingMetadata);
+        if (!outcome.ok()) {
+            done(outcome, nullptr);
+            return;
+        }
+        ::QueryObserverResponse reply;
+        if (!reply.ParseFromString(result.response)) {
+            outcome.code = kGrpcStatusInternal;
+            outcome.message = "failed to parse the BattleNode.QueryObserver response";
+            done(outcome, nullptr);
+            return;
+        }
+        done(outcome, &reply);
+    });
+}
+
+void SendBattleNodeQueryObserver(entt::registry& registry, entt::entity nodeEntity, const ::QueryObserverRequest& request,
+                                            GrpcDone<::QueryObserverResponse> done, const GrpcCallOptions& options) {
+    StartBattleNodeQueryObserverCall(registry, nodeEntity, request, options.metadata, options.deadline, std::move(done));
+}
+
+void SendBattleNodeQueryObserverErased(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message,
+                                                  GrpcMessageDone done, const GrpcCallOptions& options) {
+    if (!done) {
+        LOG_FATAL << "gRPC BattleNode.QueryObserver requires a done callback";
+    }
+    if (message.GetDescriptor() != ::QueryObserverRequest::descriptor()) {
+        const auto requestTypeName = message.GetDescriptor()->full_name();
+        LOG_ERROR << "gRPC BattleNode.QueryObserver: request type " << std::string(requestTypeName.data(), requestTypeName.size())
+                  << " does not match; not sent";
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
+            done(outcome, nullptr);
+        });
+        return;
+    }
+    // descriptor 相同仍可能是 DynamicMessage;进入 typed 路径前必须核对真实 C++ 类型。
+    const auto* typedRequest = dynamic_cast<const ::QueryObserverRequest*>(&message);
+    if (typedRequest == nullptr) {
+        LOG_ERROR << "gRPC BattleNode.QueryObserver: request C++ type does not match; not sent";
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
+            done(outcome, nullptr);
+        });
+        return;
+    }
+    StartBattleNodeQueryObserverCall(registry, nodeEntity, *typedRequest, options.metadata, options.deadline,
+        [done = std::move(done)](const GrpcCallOutcome& outcome, const ::QueryObserverResponse* reply) { done(outcome, reply); });
+}
+#pragma endregion
 #pragma region BattleNodeQueryBattleCreation
 namespace {
 void QueueLocalBattleNodeQueryBattleCreationFailure(GrpcDone<::QueryBattleCreationResponse> done, uint32_t code, std::string message) {
@@ -375,7 +462,7 @@ void SendBattleNodeAddObserverErased(entt::registry& registry, entt::entity node
 #pragma endregion
 #pragma region BattleNodeRemoveObserver
 namespace {
-void QueueLocalBattleNodeRemoveObserverFailure(GrpcDone<::Empty> done, uint32_t code, std::string message) {
+void QueueLocalBattleNodeRemoveObserverFailure(GrpcDone<::RemoveObserverResponse> done, uint32_t code, std::string message) {
     QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(code, std::move(message))] {
         done(outcome, nullptr);
     });
@@ -386,7 +473,7 @@ void QueueLocalBattleNodeRemoveObserverFailure(GrpcDone<::Empty> done, uint32_t 
 // 若将来改成异步序列化,必须先恢复请求的独立副本。
 void StartBattleNodeRemoveObserverCall(entt::registry& registry, entt::entity nodeEntity, const ::RemoveObserverRequest& request,
                                              GrpcSentMetadata metadata, std::chrono::milliseconds deadline,
-                                             GrpcDone<::Empty> done) {
+                                             GrpcDone<::RemoveObserverResponse> done) {
     if (!done) {
         LOG_FATAL << "gRPC BattleNode.RemoveObserver requires a done callback";
     }
@@ -417,7 +504,7 @@ void StartBattleNodeRemoveObserverCall(entt::registry& registry, entt::entity no
             done(outcome, nullptr);
             return;
         }
-        ::Empty reply;
+        ::RemoveObserverResponse reply;
         if (!reply.ParseFromString(result.response)) {
             outcome.code = kGrpcStatusInternal;
             outcome.message = "failed to parse the BattleNode.RemoveObserver response";
@@ -429,7 +516,7 @@ void StartBattleNodeRemoveObserverCall(entt::registry& registry, entt::entity no
 }
 
 void SendBattleNodeRemoveObserver(entt::registry& registry, entt::entity nodeEntity, const ::RemoveObserverRequest& request,
-                                            GrpcDone<::Empty> done, const GrpcCallOptions& options) {
+                                            GrpcDone<::RemoveObserverResponse> done, const GrpcCallOptions& options) {
     StartBattleNodeRemoveObserverCall(registry, nodeEntity, request, options.metadata, options.deadline, std::move(done));
 }
 
@@ -457,7 +544,7 @@ void SendBattleNodeRemoveObserverErased(entt::registry& registry, entt::entity n
         return;
     }
     StartBattleNodeRemoveObserverCall(registry, nodeEntity, *typedRequest, options.metadata, options.deadline,
-        [done = std::move(done)](const GrpcCallOutcome& outcome, const ::Empty* reply) { done(outcome, reply); });
+        [done = std::move(done)](const GrpcCallOutcome& outcome, const ::RemoveObserverResponse* reply) { done(outcome, reply); });
 }
 #pragma endregion
 #pragma region BattleNodeIssueBattleTicket

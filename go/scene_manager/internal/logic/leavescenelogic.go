@@ -2,6 +2,7 @@ package logic
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strconv"
 	"time"
@@ -13,7 +14,6 @@ import (
 	"shared/ownerepoch"
 
 	"github.com/zeromicro/go-zero/core/logx"
-	"google.golang.org/protobuf/proto"
 )
 
 // luaDeletePlayerLocationIfUnchanged:location 仍是调用方读到的那份原文时,删掉它并在同一次
@@ -43,6 +43,11 @@ import (
 //   - 钳 0 与 DecrInstancePlayerCount 一致;键全部由 Go 构造、经 KEYS 声明,与 scene_atomic.go
 //     同一约定(脚本从不用数据拼键)。
 const luaDeletePlayerLocationIfUnchanged = `
+local count_end = tonumber(ARGV[6]) or #KEYS
+if ARGV[4] ~= nil then
+    if (redis.call('GET',KEYS[count_end+1]) or '') ~= ARGV[4] then return -1 end
+    if ARGV[5] ~= '' and redis.call('GET',KEYS[count_end+2]) ~= ARGV[5] then return -1 end
+end
 local cur = redis.call('GET', KEYS[1])
 if cur == false then
     return 0
@@ -71,7 +76,8 @@ elseif ARGV[2] ~= 'any' then
     return redis.error_reply('LEAVE_SCENE unknown delete mode')
 end
 redis.call('DEL', KEYS[1], KEYS[4])
-for i = 5, #KEYS do
+if ARGV[4] ~= nil then redis.call('DEL',KEYS[count_end+1]) end
+for i = 5, count_end do
     local v = redis.call('DECR', KEYS[i])
     if v < 0 then
         redis.call('SET', KEYS[i], '0')
@@ -101,6 +107,21 @@ func deletePlayerLocationIfUnchanged(svcCtx *svc.ServiceContext, playerID uint64
 // 同一口径,也同样不原子:scene:{id}:node 在读与 EVAL 之间被改派时,节点人数最多偏差一次。
 func deletePlayerLocationGuarded(svcCtx *svc.ServiceContext, playerID uint64, expectedRaw string,
 	zoneID uint32, sceneID uint64, mode string, epoch uint64) (string, error) {
+	_, raw, tag, err := getPlayerLocationSnapshot(svcCtx, playerID)
+	if err != nil {
+		return "", err
+	}
+	if raw == "" {
+		return leaveOutcomeAlreadyGone, nil
+	}
+	if raw != expectedRaw {
+		return leaveOutcomeSuperseded, nil
+	}
+	return deletePlayerLocationGuardedWithTag(svcCtx, playerID, expectedRaw, zoneID, sceneID, mode, epoch, tag, 0)
+}
+
+func deletePlayerLocationGuardedWithTag(svcCtx *svc.ServiceContext, playerID uint64, expectedRaw string,
+	zoneID uint32, sceneID uint64, mode string, epoch uint64, expectedTag string, revision uint64) (string, error) {
 	keys := []string{
 		getPlayerLocationKey(playerID),
 		ownerepoch.OwnerEpochKey(playerID),
@@ -111,9 +132,11 @@ func deletePlayerLocationGuarded(svcCtx *svc.ServiceContext, playerID uint64, ex
 	if node := lookupSceneNode(svcCtx, sceneID); node != "" {
 		keys = append(keys, nodePlayerCountKey(zoneID, node))
 	}
+	countEnd := len(keys)
+	keys = append(keys, locationRevisionKey(playerID), locationRevisionFloorKey(playerID))
 
 	result, err := svcCtx.Redis.Eval(luaDeletePlayerLocationIfUnchanged, keys, expectedRaw, mode,
-		strconv.FormatUint(epoch, 10))
+		strconv.FormatUint(epoch, 10), expectedTag, optionalRevisionText(revision), countEnd)
 	if err != nil {
 		return "", fmt.Errorf("比对删除 location 失败: player=%d scene=%d mode=%s: %w", playerID, sceneID, mode, err)
 	}
@@ -172,7 +195,10 @@ func NewLeaveSceneLogic(ctx context.Context, svcCtx *svc.ServiceContext) *LeaveS
 // (player_locator 保留清理任务重试),身份判 deleted 时顺带请持有节点按会话结束释放。会话结束不等于持有者已停笔:
 // 以前在这里直接删,下一次进场就按首次落点铸造新 epoch、绕过换手门,新节点读旧快照,持有节点之后的存盘被拒、实体被销毁(回档)。
 func (l *LeaveSceneLogic) LeaveScene(in *scene_manager.LeaveSceneRequest) (*base.Empty, error) {
-	raw, err := l.svcCtx.Redis.Get(getPlayerLocationKey(in.PlayerId))
+	currentLoc, raw, tag, err := getPlayerLocationSnapshot(l.svcCtx, in.PlayerId)
+	if errors.Is(err, errLocationProjectionCorrupt) {
+		return &base.Empty{}, nil
+	}
 	if err != nil {
 		l.Logger.Errorf("Player %d leave scene %d: read location failed, returning error so the caller keeps its claim and retries: %v",
 			in.PlayerId, in.SceneId, err)
@@ -183,12 +209,23 @@ func (l *LeaveSceneLogic) LeaveScene(in *scene_manager.LeaveSceneRequest) (*base
 		return &base.Empty{}, nil
 	}
 
-	currentLoc := &scene_manager.PlayerLocation{}
-	if err := proto.Unmarshal([]byte(raw), currentLoc); err != nil {
-		// 写坏的记录不是瞬时故障:回错误会让 claim 变成永远重试的毒任务,而且没法核对 SceneId,
-		// 所以不删、回成功(与旧行为一致;EnterScene 对写坏的记录同样 fail-closed)。
-		l.Logger.Errorf("Player %d leave scene %d: location record is corrupt, leaving it untouched: %v",
-			in.PlayerId, in.SceneId, err)
+	currentRole, err := lookupCurrentRole(l.ctx, l.svcCtx, in.PlayerId)
+	if err != nil {
+		return nil, err
+	}
+	if err := observeCurrentRevision(l.svcCtx, in.PlayerId, currentRole.OwnerRevision); err != nil {
+		return nil, err
+	}
+	tagRevision, err := taggedLocationRevision(tag, raw)
+	if err != nil {
+		return nil, err
+	}
+	if tagRevision != 0 && tagRevision != currentRole.OwnerRevision {
+		_, _, _, err := locationForRevision(l.svcCtx, in.PlayerId, currentRole.OwnerRevision)
+		return &base.Empty{}, err
+	}
+	// 无原会话的旧清理不能删除已绑定新归属的投影；现代locator总带原session/generation。
+	if tagRevision != 0 && (in.SessionId == 0 || in.LoginGeneration == 0) {
 		return &base.Empty{}, nil
 	}
 
@@ -239,7 +276,7 @@ func (l *LeaveSceneLogic) LeaveScene(in *scene_manager.LeaveSceneRequest) (*base
 		mode = leaveDeleteModeReleased
 	}
 
-	outcome, err := deletePlayerLocationGuarded(l.svcCtx, in.PlayerId, raw, currentLoc.ZoneId, in.SceneId, mode, release.epoch)
+	outcome, err := deletePlayerLocationGuardedWithTag(l.svcCtx, in.PlayerId, raw, currentLoc.ZoneId, in.SceneId, mode, release.epoch, tag, currentRole.OwnerRevision)
 	if err != nil {
 		l.Logger.Errorf("Player %d leave scene %d: conditional delete failed, returning error for retry: %v",
 			in.PlayerId, in.SceneId, err)
@@ -256,19 +293,13 @@ func (l *LeaveSceneLogic) LeaveScene(in *scene_manager.LeaveSceneRequest) (*base
 		// already_gone:别的调用(或 go-redis 重发的首发)已经删过并在同一段脚本里减过人数;
 		// superseded:GET 之后有 EnterScene 写入了新落点(它已减过旧场景人数),或同落点重连写了新身份
 		// (玩家仍在这个场景里,人数本就不该减)。两种都不动人数。
-		// 这一次没有删,所以既不计释放判定(released / forced …),也不打 forced 的 ERROR:它们只记真正删掉的那一次
-		// (第二轮审计 r2-sm#1:以前在删除之前就记,并发改写时 SceneManagerLeaveReleaseForced 会误报)。
+		// 只有确实删除才计释放判定；UNKNOWN和并发更新均不得被记成已释放。
 		l.Logger.Infof("Player %d leave scene %d: location not deleted by this call (outcome=%s holder_release=%s), player counts untouched",
 			in.PlayerId, in.SceneId, outcome, release.verdict)
 		return &base.Empty{}, nil
 	}
 
 	metrics.ObserveLeaveHolderRelease(release.verdict.String())
-	if release.verdict == leaveReleaseForced {
-		// 有记录的 fail-open(§3.6):等满上限仍拿不到证据,已经删了。持有节点若仍在写,它之后的存盘会被 owner CAS 拒绝。
-		l.Logger.Errorf("[LeaveRelease] holder release not proven within %s; deleted location anyway (rollback risk accepted): player=%d scene=%d node=%s owner_epoch=%d waited=%s",
-			release.budget, in.PlayerId, in.SceneId, currentLoc.NodeId, release.epoch, release.waited.Truncate(time.Second))
-	}
 	l.Logger.Infof("Player %d left scene %d on node %s (holder_release=%s owner_epoch=%d)",
 		in.PlayerId, in.SceneId, currentLoc.NodeId, release.verdict, release.epoch)
 	return &base.Empty{}, nil
@@ -279,7 +310,7 @@ type holderReleaseJudgement struct {
 	verdict leaveReleaseVerdict
 	epoch   uint64        // 当前代 E(leaveReleaseEpoch)
 	zoneID  uint32        // 持有节点所在 zone(派发释放用);拿不到为 0
-	waited  time.Duration // 只在 waits() / forced 时有意义
+	waited  time.Duration // 仅等待诊断，不参与授权删除
 	budget  time.Duration
 }
 
@@ -297,7 +328,7 @@ func pendingVerdictFor(identityVerdict leaveVerdict) leaveReleaseVerdict {
 // (同日 EnterScene 一侧也改为要求注册表正面证据,改后它放行的 Dead 必放行,LeaveScene 不需要整 zone 口径),
 // 负载键丢失 / 被淘汰时 ZCARD 读作 0、ZSCORE 为空、也没有 death_at,会把活着的持有节点判死,于是每次登出 / 断线清理都按 any
 // 模式立刻删 location,回到 §2.1 的回档路径(第二轮审计 r2-sm#3)。真正下线的 zone 在 etcd 里同样已注销,走 OwnerDead 照样能删;
-// 拿不准的情形落到 §3.6 的等待上限,只伤活性。
+// 拿不准的情形保持UNKNOWN，等待预算不授权删除。
 func (l *LeaveSceneLogic) judgeHolderRelease(in *scene_manager.LeaveSceneRequest, loc *scene_manager.PlayerLocation,
 	identityVerdict leaveVerdict) (holderReleaseJudgement, error) {
 	budget, enabled := l.svcCtx.Config.EffectiveLeaveSceneHolderReleaseWait()
@@ -328,8 +359,7 @@ func (l *LeaveSceneLogic) judgeHolderRelease(in *scene_manager.LeaveSceneRequest
 	j.verdict = decideHolderRelease(facts)
 	if j.verdict.waits() {
 		j.waited = noteLeaveReleaseWait(l.svcCtx, in.PlayerId, leaveReleaseWaitScope(j.epoch, loc), budget)
-		facts.waitExceeded = j.waited >= budget
-		j.verdict = decideHolderRelease(facts)
+		// 等待预算仅供诊断/催促；过去多久都不是持有者已落盘释放的证据。
 	}
 	return j, nil
 }

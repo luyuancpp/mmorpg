@@ -23,6 +23,9 @@
 // valid() 判断"还有没有下一个"。声明在同目录 TimerQueue.h 覆盖件,调用方换算在同目录
 // EventLoop.cc 覆盖件 —— 三个文件必须一起生效,单独覆盖任何一个都会让时钟域错配。
 //
+// (3) 闭包析构可重入 cancel:主动取消与队列销毁先摘除两个索引再释放 Timer,
+// 整批到期 Timer 清理完成后才退出取消窗口,避免自删、索引不一致和重复 Timer 重新入队。
+//
 // It lives here rather than in the submodule because third_party/muduo-linux
 // is chenshuo/muduo -- only its *pointer* is committed, so an edit to its
 // working tree would not survive a fresh clone. Keeping the delta in this
@@ -149,9 +152,13 @@ TimerQueue::~TimerQueue()
   timerfdChannel_.remove();
   ::close(timerfd_);
   // do not remove channel, since we're in EventLoop::dtor();
-  for (const Entry& timer : timers_)
+  // LOCAL DELTA (3):闭包析构可能取消自己或另一只待销毁 Timer,不保留可被重入失效的迭代器。
+  while (!timers_.empty())
   {
-    delete timer.second;
+    Timer* timer = timers_.begin()->second;
+    timers_.erase(timers_.begin());
+    activeTimers_.erase(ActiveTimer(timer, timer->sequence()));
+    delete timer;
   }
 }
 
@@ -190,10 +197,12 @@ void TimerQueue::cancelInLoop(TimerId timerId)
   ActiveTimerSet::iterator it = activeTimers_.find(timer);
   if (it != activeTimers_.end())
   {
-    size_t n = timers_.erase(Entry(it->first->expiration(), it->first));
+    // LOCAL DELTA (3):两个索引先保持一致,再析构可重入 cancel 的闭包捕获对象。
+    Timer* cancelledTimer = it->first;
+    size_t n = timers_.erase(Entry(cancelledTimer->expiration(), cancelledTimer));
     assert(n == 1); (void)n;
-    delete it->first; // FIXME: no delete please
     activeTimers_.erase(it);
+    delete cancelledTimer;
   }
   else if (callingExpiredTimers_)
   {
@@ -242,9 +251,9 @@ void TimerQueue::handleRead()
     }
     it.second->run();
   }
-  callingExpiredTimers_ = false;
-
+  // LOCAL DELTA (3):reset 释放闭包时也可能重入 cancel 本批尚未重新入队的重复 Timer。
   reset(expired, now);
+  callingExpiredTimers_ = false;
 }
 
 std::vector<TimerQueue::Entry> TimerQueue::getExpired(Timestamp now)

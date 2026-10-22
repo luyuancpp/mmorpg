@@ -18,7 +18,7 @@ package main
 //                                            ready 列表 kafka:retry:queue:{topic}:p*(经 SCAN 发现,见 dbTaskQueueKeys)
 //   P5 本次涉及的玩家没有任何在持的锁      —— lock:player:* / player:{id}:__lock
 //   P6 本次涉及的玩家没有在线会话          —— player:session:*
-//   P7 本次涉及的玩家不在任何活队伍里      —— team:player:* 的 tid 非 0 且 team:rec:<tid> 仍在
+//   P7 本次涉及的玩家不在任何活队伍里      —— 全球SQL team_membership.team_id必须为0或无原件
 //
 // 合服与撤销共用这一套(2026-09-28,player-storage-placement.md §12 A7):撤销要把玩家改回源区、删目标库
 // 的行,目标区还有节点在跑、目标 topic 还有没落库的存盘、玩家还在线,都等于把合服之后产生的写直接丢掉。
@@ -808,7 +808,8 @@ type preflightDeps struct {
 	// sharedRdb: 共享 DB 0(player:session:* / kafka:retry|dead:queue:*)。
 	sharedRdb *redis.Client
 	// lag: Kafka 积压来源,见上。
-	lag kafkaLagSource
+	lag           kafkaLagSource
+	teamAuthority teamAuthorityReader
 }
 
 // preflightParams 是本次运行的参数面。
@@ -909,86 +910,19 @@ func runPreflight(ctx context.Context, d preflightDeps, p preflightParams) error
 	}
 	log.Printf("preflight P6 OK: no player:session:* for the %d players in scope", len(p.playerIDs))
 
-	// P7 组队。队伍只存在 SharedRedis(DB 0,与 player:session 同库),记录里写着每个成员的 zone_id
-	// 与队伍 zone_id(docs/design/team-system.md §C.1、§D.3),合服不迁移这些数据:玩家改归目标区后,
-	// 跨区校验与场景跟随的 zone 守卫会按旧 zone 误判。所以要求合服前解散队伍,或等队伍 24h 空闲过期(J-18)。
-	inTeam, err := countPlayersInLiveTeams(ctx, d.sharedRdb, p.playerIDs)
+	// P7全局SQL成员原件。合区已持全部64片围栏，Team提交前缀持对应片，不能在预检后插入新成员。
+	if d.teamAuthority == nil {
+		return errors.New("preflight P7: 缺少全球Team SQL权威读者")
+	}
+	inTeam, err := d.teamAuthority.PlayersInTeams(ctx, p.playerIDs)
 	if err != nil {
 		return fmt.Errorf("preflight P7: %w", err)
 	}
 	if inTeam > 0 {
-		return fmt.Errorf("preflight P7: %d of the players in scope are still members of a live team (team:player:* -> team:rec:*) — "+
-			"team records carry each member's zone_id and are not migrated. Disband those teams (or wait for the 24h idle expiry) first", inTeam)
+		return fmt.Errorf("preflight P7: %d名玩家仍有SQL队伍成员关系，必须先安全离队或解散；Redis缺失不能解除此门禁", inTeam)
 	}
 	log.Printf("preflight P7 OK: none of the %d players in scope is in a live team", len(p.playerIDs))
 	return nil
-}
-
-// teamPlayerIndexKey / teamRecordKey 镜像组队模块(go/match/internal/team/keys.go)写在 SharedRedis 的两类 key
-// (docs/design/team-system.md §C.1):team:player:<player_id> 是 hash{tid, epoch},离队后 tid 置 "0" 但 key 保留;
-// team:rec:<team_id> 是队伍权威记录。merge_zone 是独立 module,不引主工程包;改一处必须同步另一处。
-func teamPlayerIndexKey(playerID uint64) string {
-	return "team:player:" + strconv.FormatUint(playerID, 10)
-}
-
-func teamRecordKey(teamID string) string { return "team:rec:" + teamID }
-
-// teamIndexNoTeam 是 team:player:* 里 tid 字段"无队伍"的取值。
-const teamIndexNoTeam = "0"
-
-// countPlayersInLiveTeams 数给定玩家里有多少人的组队索引指向仍存在的队伍记录。
-//
-// 判定口径与组队模块一致:索引 key 不存在或 tid 为 "0" 即无队;tid 非 0 但 team:rec 已不存在是孤儿索引
-// (队伍已过期,组队模块下次读到会自愈为无队,§C.6),不阻塞合服。索引类型不对等读错误一律返回错误(fail-closed)。
-// 按 pipeline 分批,理由同 countExistingKeys。
-func countPlayersInLiveTeams(ctx context.Context, rdb *redis.Client, ids []uint64) (int, error) {
-	if rdb == nil {
-		return 0, errors.New("nil redis handle")
-	}
-	found := 0
-	for _, batch := range chunkUint64(ids, 500) {
-		pipe := rdb.Pipeline()
-		tidCmds := make([]*redis.StringCmd, 0, len(batch))
-		for _, id := range batch {
-			tidCmds = append(tidCmds, pipe.HGet(ctx, teamPlayerIndexKey(id), "tid"))
-		}
-		// Exec 在任一命令返回 redis.Nil(key 或字段不存在)时也会报 Nil;逐条判错,不能整批当失败。
-		if _, err := pipe.Exec(ctx); err != nil && !errors.Is(err, redis.Nil) {
-			return found, fmt.Errorf("hget team:player:* tid: %w", err)
-		}
-		tids := make([]string, 0, len(batch))
-		for _, cmd := range tidCmds {
-			tid, err := cmd.Result()
-			if errors.Is(err, redis.Nil) {
-				continue
-			}
-			if err != nil {
-				return found, fmt.Errorf("hget team:player:* tid: %w", err)
-			}
-			if tid == "" || tid == teamIndexNoTeam {
-				continue
-			}
-			tids = append(tids, tid)
-		}
-		if len(tids) == 0 {
-			continue
-		}
-
-		pipe = rdb.Pipeline()
-		existsCmds := make([]*redis.IntCmd, 0, len(tids))
-		for _, tid := range tids {
-			existsCmds = append(existsCmds, pipe.Exists(ctx, teamRecordKey(tid)))
-		}
-		if _, err := pipe.Exec(ctx); err != nil {
-			return found, fmt.Errorf("exists team:rec:*: %w", err)
-		}
-		for _, cmd := range existsCmds {
-			if cmd.Val() > 0 {
-				found++
-			}
-		}
-	}
-	return found, nil
 }
 
 // countExistingKeys 数 prefix+id 里有多少存在。按 pipeline 分批,不用 SCAN:

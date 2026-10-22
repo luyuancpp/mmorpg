@@ -9,6 +9,9 @@
 #include "muduo/base/Logging.h"
 
 #include <type_traits>
+#if defined(_WIN32)
+#include <system_error>
+#endif
 
 #include <errno.h>
 #include <stdio.h>
@@ -55,7 +58,6 @@ class ThreadNameInitializer
 
 ThreadNameInitializer init;
 
-#ifdef __muduo_asynchronization__
 struct ThreadData
 {
   typedef muduo::Thread::ThreadFunc ThreadFunc;
@@ -82,7 +84,9 @@ struct ThreadData
     latch_ = NULL;
 
     muduo::CurrentThread::t_threadName = name_.empty() ? "muduoThread" : name_.c_str();
+#ifdef __linux__
     ::prctl(PR_SET_NAME, muduo::CurrentThread::t_threadName);
+#endif
     try
     {
       func_();
@@ -112,6 +116,7 @@ struct ThreadData
   }
 };
 
+#if !defined(_WIN32)
 void* startThread(void* obj)
 {
   ThreadData* data = static_cast<ThreadData*>(obj);
@@ -119,7 +124,7 @@ void* startThread(void* obj)
   delete data;
   return NULL;
 }
-#endif //__muduo_asynchronization__
+#endif
 }  // namespace detail
 
 void CurrentThread::cacheTid()
@@ -145,11 +150,12 @@ void CurrentThread::sleepUsec(int64_t usec)
 }
 
 AtomicInt32 Thread::numCreated_;
-#ifdef __muduo_asynchronization__
 Thread::Thread(ThreadFunc func, const string& n)
   : started_(false),
     joined_(false),
+#if !defined(_WIN32)
     pthreadId_(0),
+#endif
     tid_(0),
     func_(std::move(func)),
     name_(n),
@@ -162,7 +168,11 @@ Thread::~Thread()
 {
   if (started_ && !joined_)
   {
+#if defined(_WIN32)
+    thread_.detach();
+#else
     pthread_detach(pthreadId_);
+#endif
   }
 }
 
@@ -181,6 +191,21 @@ void Thread::start()
 {
   assert(!started_);
   started_ = true;
+#if defined(_WIN32)
+  // 线程独立持有执行数据，启动同步完成后不再访问 Thread 对象。
+  auto data = std::make_unique<detail::ThreadData>(func_, name_, &tid_, &latch_);
+  try
+  {
+    thread_ = std::thread([data = std::move(data)] { data->runInThread(); });
+  }
+  catch (const std::system_error& ex)
+  {
+    started_ = false;
+    LOG_FATAL << "创建线程失败：" << ex.what();
+  }
+  latch_.wait();
+  assert(tid_ > 0);
+#else
   // FIXME: move(func_)
   detail::ThreadData* data = new detail::ThreadData(func_, name_, &tid_, &latch_);
   if (pthread_create(&pthreadId_, NULL, &detail::startThread, data))
@@ -194,14 +219,28 @@ void Thread::start()
     latch_.wait();
     assert(tid_ > 0);
   }
+#endif
 }
 
 int Thread::join()
 {
   assert(started_);
   assert(!joined_);
+#if defined(_WIN32)
+  try
+  {
+    thread_.join();
+    joined_ = true;
+    return 0;
+  }
+  catch (const std::system_error& ex)
+  {
+    return ex.code().value();
+  }
+#else
   joined_ = true;
   return pthread_join(pthreadId_, NULL);
+#endif
 }
-#endif//__muduo_asynchronization__
+
 }  // namespace muduo

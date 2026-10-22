@@ -1516,3 +1516,15 @@ tidb-phase1-and-launch-readiness.md §5.1 单行热点一行与 §7 L-12 已加�
 5. S3 规模全量预热数小时(先单标记,压测后再定是否按片)。
 6. 第 1b-2 / 1b-3 / 2 / 3 批叠在未验证的 1a / G1a / P5 / 1b-1 之上,验证必须按顺序。
 7. Java:副本机制不适用;合服围栏、撤销合服、归属变更审计随 7.3 **待做**(PARITY D1 行已改)。
+
+## 14. 2026-10-21 全球正式默认与首次启动
+
+项目尚未上线，全球逻辑服务不再把P阶段旧redis/关闭proof当正式默认。DS正式配置固定RequireTiDB、db_first、64围栏片、reconcile/Arm/ReadRequiresReady、RoleTradeSQLProof与Store.Required；普通池和路由池共用authoritysql物理强读会话，清除snapshot/staleness/replica/low-TSO暗回档入口。DB正式配置RequireTiDB、Placement.Required及RequireRouteReady；Login正式PinOnCreate且必须具备DS目标和独立目录签名能力。服务显式LegacyNonGlobal仅允许dev/test隔离历史工具夹具，Mode=dev本身不降级。正式K8s各档位均要求同一显式TiDB入口，不部署Redis权威/关闭ready；旧开关关闭组合仅保留工具与拒绝回归。
+
+角色SQL存盘证明的storage_id白名单仅从既有独立玩家库白名单反解：本机DB_ALLOWED_DATABASES（或启动器显式MMORPG_DB_ALLOWED_DATABASES），K8s现MMORPG_DB_ALLOWED_DATABASES同时渲染DB AllowedDatabases与DS AllowedStorageIDs。库名只接受正规zone_1..999999_db或player_store_1000000..uint32max_db，最多1024、拒重复及双来源分叉；不得从Regions、当前ZoneId、请求或缓存猜白名单。实际证据仍按同事务SQL player_route原落点读取正规两张玩家表，白名单不能改落点。
+
+全新空环境的可执行顺序：先预建独立清单内的数据库并用现役DS -migrate迁移global；用go/db既有cmd/migrate -command up对每个白名单storage执行正式玩家表迁移；然后起DS。DS仅在SQL无任何route、account_role无历史、每个已配置正规落点的主双表与player_centre_database确实为空、旧user_accounts.simple_players无非空角色原blob，且Mapping Redis无历史zone/placement/maprev/merged_into时认作新空环境。centre与旧账号表归属来自GoDB同一TablesFromJSON正式迁移清单；只查白名单落点库，不猜查独立LOGIN_PASSWORD_AUTH_DSN。仅有密码账户且角色目录NULL/空不算玩家历史，非空未知角色blob不能证明为空。每个落点一条查询包含四个LIMIT1 EXISTS，不COUNT；共享3秒启动探针预算，缺正规表/列、权限、未知或超时均拒绝。对账leader沿既有全量预热/水位/实例身份协议自然挂ready，不手写marker；随后DB现有消费/重试ready闸放行，最后启动Login和客户端入口。
+
+存量环境先停止旧映射写者，保留原Redis/SQL原件，运行既有route-tool import-from-redis -allow-db-first -dry-run=false及audit；缺placement者还须沿正规merge_zone pin-placement流程补齐，不能在正常入场时偷偷创建默认home。然后起DS自然reconcile，严格audit -require-maprev为0并核真实ready后再开放DB/Login。SQL路由为空但Redis为空也不能证明全新：目录或任一白名单存盘有记录必须拒启并要求正规恢复。SQL已有route时不做每副本全表startup audit，继续原逐行maprev/水位防回档协议。恢复/回档不得使用第13节旧“切回Redis”的服务回退；只许保持全球强一致合同的正规工具恢复。
+
+本批不新增表或proto，不伪造导入/ready凭证；新增配置、空库/存量负例、真实TiDB玩家历史和caller权限回归均仍待根代理实际执行。原DS/DB/Login/SM运行证据仅代表此前字节，不代表本批当前源。

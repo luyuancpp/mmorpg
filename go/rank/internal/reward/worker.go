@@ -12,6 +12,7 @@ import (
 	"google.golang.org/protobuf/proto"
 	mailpb "proto/mail"
 	"rank/internal/data"
+	"rank/internal/metrics"
 	"shared/serviceauth"
 )
 
@@ -63,7 +64,14 @@ func (w *Worker) Tick(ctx context.Context) error {
 	}
 	return nil
 }
-func (w *Worker) process(ctx context.Context, id uint64) error {
+func (w *Worker) process(ctx context.Context, id uint64) (err error) {
+	outcome := metrics.RewardBusy
+	defer func() {
+		if err != nil {
+			outcome = metrics.RewardError
+		}
+		metrics.ObserveDispatch(outcome)
+	}()
 	ctx, cancel := context.WithTimeout(ctx, 2500*time.Millisecond)
 	defer cancel()
 	var tokenBytes [8]byte
@@ -79,8 +87,10 @@ func (w *Worker) process(ctx context.Context, id uint64) error {
 	if err != nil || !ok {
 		return err
 	}
+	outcome = metrics.RewardUnknown
 	atts := &mailpb.MailAttachments{}
 	if err = proto.Unmarshal(p.Attachments, atts); err != nil {
+		outcome = metrics.RewardInvalid
 		return w.Repo.SettleReward(ctx, p, 0, now+3600000, now)
 	}
 	// 到期时间从封榜时固定，所有重投载荷完全相同；不能每次now+TTL制造幂等冲突。
@@ -94,6 +104,14 @@ func (w *Worker) process(ctx context.Context, id uint64) error {
 	mailID := uint64(0)
 	if callErr == nil && response.GetErrorMessage().GetId() == 0 {
 		mailID = response.GetMailId()
+	}
+	switch {
+	case callErr != nil || response == nil || (response.GetErrorMessage().GetId() == 0 && mailID == 0):
+		outcome = metrics.RewardUnknown
+	case mailID != 0:
+		outcome = metrics.RewardDelivered
+	default:
+		outcome = metrics.RewardRejected
 	}
 	attempts := p.Attempts
 	if attempts > 6 {

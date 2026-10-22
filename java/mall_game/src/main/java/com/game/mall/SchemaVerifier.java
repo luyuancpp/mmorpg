@@ -6,15 +6,28 @@ import javax.sql.DataSource;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 final class SchemaVerifier {
-    private static final Map<String, String> COLUMNS = Map.of(
-        "commerce_schema_version", "version,storage_contract",
-        "commerce_buyer_guard", "buyer_id",
-        "pms_sku_stock", "id,product_id,sku_code,price_minor,currency,stock,lock_stock,published",
-        "oms_order", "id,order_sn,buyer_id,request_id,sku_id,quantity,pay_amount,currency,status,create_time_ms,payment_deadline_ms,payment_time_ms",
-        "oms_order_item", "order_sn,product_id,product_sku_id,product_sku_code,product_quantity,product_price_minor",
-        "commerce_payment_receipt", "channel,transaction_id,order_sn,amount_minor,currency",
-        "commerce_delivery_intent", "order_sn,buyer_id,sku_id,quantity,status,created_ms",
-        "commerce_request_nonce", "caller_role,nonce,expires_ms");
+    private static final Map<String, String> COLUMNS = Map.ofEntries(
+        Map.entry("commerce_schema_version", "version,storage_contract"),
+        Map.entry("commerce_buyer_guard", "buyer_id"),
+        Map.entry("pms_sku_stock", "id,product_id,sku_code,price_minor,currency,stock,lock_stock,published,catalog_revision"),
+        Map.entry("commerce_admin_command", "actor,request_id,command_type,request_digest,result_json,created_ms"),
+        Map.entry("oms_order", "id,order_sn,buyer_id,request_id,sku_id,quantity,pay_amount,currency,status,create_time_ms,payment_deadline_ms,payment_time_ms"),
+        Map.entry("oms_order_item", "order_sn,product_id,product_sku_id,product_sku_code,product_quantity,product_price_minor"),
+        Map.entry("commerce_official_owner", "order_sn,buyer_account,buyer_owner_revision"),
+        Map.entry("commerce_payment_receipt", "channel,transaction_id,order_sn,amount_minor,currency"),
+        Map.entry("commerce_delivery_intent", "order_sn,buyer_id,sku_id,quantity,status,created_ms"),
+        Map.entry("commerce_refund_intent", "order_sn,status"),
+        Map.entry("commerce_mock_transaction", "kind,order_sn,request_id,transaction_id,payment_transaction_id,amount_minor,currency,created_ms,applied"),
+        Map.entry("commerce_consignment", "listing_id,seller_player_id,seller_account,market_zone,asset_kind,asset_currency_type,escrow_reference,escrow_proof,request_digest,title,price_fen,fee_bps,cooling_ms,notice_end_ms,sale_end_ms,state,current_order_sn,created_ms"),
+        Map.entry("commerce_consignment_order", "order_sn,listing_id,buyer_account,buyer_owner_revision,request_id,seller_account,escrow_reference,escrow_proof,fee_bps,cooling_ms"),
+        Map.entry("commerce_consignment_return", "listing_id,return_proof"),
+        Map.entry("commerce_seller_guard", "account"),
+        Map.entry("commerce_seller_income", "order_sn,account,gross_fen,fee_fen,net_fen,reserved_fen,paid_fen,available_ms"),
+        Map.entry("commerce_withdrawal", "withdrawal_id,account,request_id,amount_fen,state,channel,transaction_id,created_ms"),
+        Map.entry("commerce_withdrawal_allocation", "withdrawal_id,order_sn,amount_fen"),
+        Map.entry("commerce_withdrawal_receipt", "withdrawal_id,channel,transaction_id,amount_fen,successful"),
+        Map.entry("commerce_mock_payout", "withdrawal_id,request_id,transaction_id,amount_fen,successful,created_ms,applied"),
+        Map.entry("commerce_request_nonce", "caller_role,nonce,expires_ms"));
     private SchemaVerifier() {}
     static void verify(JdbcTemplate jdbc, DataSource source) throws SQLException {
         List<Map<String, Object>> version = jdbc.queryForList("SELECT version,storage_contract FROM commerce_schema_version");
@@ -29,10 +42,13 @@ final class SchemaVerifier {
                     ResultSetMetaData metadata = rows.getMetaData();
                     for (int i = 1; i <= metadata.getColumnCount(); i++) {
                         String column = metadata.getColumnName(i).toLowerCase(Locale.ROOT);
-                        if (Set.of("request_id", "channel", "transaction_id", "nonce").contains(column) && metadata.getColumnType(i) != Types.VARBINARY) {
+                        if (Set.of("actor", "account", "buyer_account", "buyer_owner_revision", "seller_account", "request_id", "channel", "transaction_id", "payment_transaction_id", "nonce").contains(column) && metadata.getColumnType(i) != Types.VARBINARY) {
                             throw new IllegalStateException("商城不透明标识列必须使用 VARBINARY: " + table.getKey() + "." + column);
                         }
-                        if (Set.of("price_minor", "pay_amount", "amount_minor", "product_price_minor").contains(column) && metadata.getColumnType(i) != Types.BIGINT) {
+                        if (column.equals("buyer_owner_revision") && metadata.getPrecision(i) != 20) {
+                            throw new IllegalStateException("订单归属修订必须为规范uint64的VARBINARY(20)");
+                        }
+                        if (Set.of("price_minor", "pay_amount", "amount_minor", "product_price_minor", "price_fen", "gross_fen", "fee_fen", "net_fen", "reserved_fen", "paid_fen", "amount_fen").contains(column) && metadata.getColumnType(i) != Types.BIGINT) {
                             throw new IllegalStateException("商城金额列必须为最小单位 BIGINT: " + table.getKey() + "." + column);
                         }
                     }
@@ -43,10 +59,45 @@ final class SchemaVerifier {
             unique(connection, "pms_sku_stock", List.of("id"));
             unique(connection, "oms_order", List.of("order_sn")); unique(connection, "oms_order", List.of("buyer_id", "request_id"));
             unique(connection, "oms_order_item", List.of("order_sn"));
+            unique(connection, "commerce_official_owner", List.of("order_sn"));
             unique(connection, "commerce_payment_receipt", List.of("channel", "transaction_id")); unique(connection, "commerce_payment_receipt", List.of("order_sn"));
             unique(connection, "commerce_delivery_intent", List.of("order_sn"));
             if(indexes(connection,"commerce_delivery_intent",false).values().stream().noneMatch(cols->cols.size()>=3&&cols.subList(0,3).equals(List.of("status","created_ms","order_sn"))))throw new IllegalStateException("商城交付待办缺可恢复扫描索引");
             unique(connection, "commerce_request_nonce", List.of("caller_role", "nonce"));
+            unique(connection, "commerce_admin_command", List.of("actor", "request_id"));
+            unique(connection, "commerce_mock_transaction", List.of("kind", "order_sn"));
+            unique(connection, "commerce_mock_transaction", List.of("kind", "request_id"));
+            unique(connection, "commerce_mock_transaction", List.of("transaction_id"));
+            unique(connection, "commerce_consignment", List.of("listing_id"));
+            unique(connection, "commerce_consignment", List.of("escrow_reference"));
+            unique(connection, "commerce_consignment_order", List.of("order_sn"));
+            unique(connection, "commerce_consignment_order", List.of("buyer_account", "request_id"));
+            unique(connection, "commerce_consignment_return", List.of("listing_id"));
+            unique(connection, "commerce_seller_guard", List.of("account"));
+            unique(connection, "commerce_seller_income", List.of("order_sn"));
+            unique(connection, "commerce_withdrawal", List.of("withdrawal_id"));
+            unique(connection, "commerce_withdrawal", List.of("account", "request_id"));
+            unique(connection, "commerce_withdrawal_allocation", List.of("withdrawal_id", "order_sn"));
+            unique(connection, "commerce_withdrawal_receipt", List.of("withdrawal_id"));
+            unique(connection, "commerce_withdrawal_receipt", List.of("channel", "transaction_id"));
+            unique(connection, "commerce_mock_payout", List.of("withdrawal_id"));
+            unique(connection, "commerce_mock_payout", List.of("request_id"));
+            unique(connection, "commerce_mock_payout", List.of("transaction_id"));
+            for (var required : Map.of("commerce_mock_payout", List.of("applied", "withdrawal_id"),
+                    "commerce_consignment", List.of("state", "listing_id"),
+                    "commerce_seller_income", List.of("account", "order_sn")).entrySet()) {
+                if (indexes(connection, required.getKey(), false).values().stream().noneMatch(columns ->
+                        columns.size() >= required.getValue().size()
+                        && columns.subList(0, required.getValue().size()).equals(required.getValue()))) {
+                    throw new IllegalStateException("寄售恢复缺必要扫描索引: " + required.getKey());
+                }
+            }
+            if (indexes(connection, "commerce_mock_transaction", false).values().stream().noneMatch(cols -> cols.size() >= 3 && cols.subList(0, 3).equals(List.of("kind", "applied", "order_sn")))) {
+                throw new IllegalStateException("mock交易缺可恢复扫描索引");
+            }
+            if (indexes(connection, "commerce_refund_intent", false).values().stream().noneMatch(cols -> cols.size() >= 2 && cols.subList(0, 2).equals(List.of("status", "order_sn")))) {
+                throw new IllegalStateException("商城退款待办缺可恢复扫描索引");
+            }
             if (indexes(connection, "oms_order", false).values().stream().noneMatch(cols -> cols.size() >= 2 && cols.subList(0, 2).equals(List.of("buyer_id", "status")))) {
                 throw new IllegalStateException("商城未支付订单计数缺买家状态索引");
             }

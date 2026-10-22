@@ -131,6 +131,12 @@ cdn:
 admin:
   api-key: "change-me-in-production"
 
+# 可选商城目录后台；不配置地址即关闭代理。签名密钥只留在服务端。
+mall-admin:
+  base-url: ${GATEWAY_MALL_ADMIN_URL:}
+  secret: ${COMMERCE_ADMIN_SECRET:}
+  subject: ${COMMERCE_ADMIN_SUBJECT:mall-admin}
+
 # Actuator
 management:
   endpoints:

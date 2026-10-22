@@ -13,6 +13,9 @@ import (
 
 	"player_inbox/generated/pb/game"
 	"player_inbox/internal/config"
+	"player_inbox/internal/inbox"
+	base "proto/common/base"
+	dspb "proto/data_service"
 
 	"shared/leader"
 
@@ -58,6 +61,7 @@ func redisClosed(c *redis.Client) bool {
 
 func testConfig() config.Config {
 	var c config.Config
+	c.AccountRoleSchema = "fixture_directory"
 	c.Etcd.Hosts = []string{"127.0.0.1:2379"}
 	c.MySQL = configMySQL()
 	c.CoreRedis = config.RedisConf{Host: "127.0.0.1:6379"}
@@ -148,6 +152,13 @@ func (r *recordingDeps) deps() externalDeps {
 			r.db = openFakeDB(r.t)
 			return r.db, nil
 		},
+		// 只验证装配/回收；不冒充任何真实SQL原角色围栏证据。
+		newRoleAuthority: func(context.Context, *sql.DB, string) (inbox.RoleAuthority, error) {
+			if r.failAt == "role" {
+				return nil, errInjected
+			}
+			return assemblyRoles{}, nil
+		},
 		openCoreRedis: func(config.RedisConf) (*redis.Client, error) {
 			r.calls["redis"]++
 			if r.failAt == "redis" {
@@ -173,6 +184,15 @@ func (r *recordingDeps) deps() externalDeps {
 	}
 }
 
+type assemblyRoles struct{}
+
+func (assemblyRoles) LockCurrent(context.Context, *sql.Tx, uint64) (*dspb.AccountRoleOwnership, error) {
+	return nil, errors.New("装配替身禁止业务调用")
+}
+func (assemblyRoles) VerifyAdmission(context.Context, *sql.Tx, *dspb.AccountRoleOwnership, *base.RoleAdmissionIdentity) error {
+	return errors.New("装配替身禁止业务调用")
+}
+
 // TestNewServiceContextRejectsBadAllowlistBeforeDialing:白名单写错时一条外部连接都不建(先自检、后拨号)。
 func TestNewServiceContextRejectsBadAllowlistBeforeDialing(t *testing.T) {
 	logtest.Discard(t)
@@ -185,6 +205,18 @@ func TestNewServiceContextRejectsBadAllowlistBeforeDialing(t *testing.T) {
 	}
 	if len(rec.calls) != 0 {
 		t.Fatalf("自检失败前不应拨任何依赖,实际调用: %v", rec.calls)
+	}
+}
+
+func TestNewServiceContextRejectsMissingOriginalRoleContract(t *testing.T) {
+	logtest.Discard(t)
+	rec := newRecordingDeps(t)
+	rec.failAt = "role"
+	if sc, err := newServiceContext(testConfig(), rec.deps()); sc != nil || !errors.Is(err, errInjected) {
+		t.Fatalf("原目录契约缺失须拒启: %v %v", sc, err)
+	}
+	if !dbClosed(rec.db) || rec.etcd.Ctx().Err() == nil || rec.calls["redis"] != 0 {
+		t.Fatal("拒启须释放已开资源且不继续装配")
 	}
 }
 

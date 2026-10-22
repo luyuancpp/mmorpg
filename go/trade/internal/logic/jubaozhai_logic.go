@@ -45,9 +45,11 @@ type Deps struct {
 	HomeZones  HomeZoneLookup
 	ListingIDs idsegment.Source
 	// Now 是时间源,生产为 time.Now;单测注入固定时钟验证公示 / 寄售边界与 server_now_ms。
-	Now      func() time.Time
-	Commerce *commerce.Engine
-	Mall     *commerce.Mall
+	Now         func() time.Time
+	Commerce    *commerce.Engine
+	Mall        *commerce.Mall
+	Rmb         *commerce.RmbConsignments
+	RmbIdentity RmbIdentityResolver
 }
 
 // NewDeps 用 ServiceContext 组装生产依赖。
@@ -57,13 +59,15 @@ func NewDeps(svcCtx *svc.ServiceContext) Deps {
 		ids = svcCtx.ListingIDSegment
 	}
 	return Deps{
-		Config:     svcCtx.Config,
-		Store:      data.NewListingRepo(svcCtx.DB, constants.StoreOpTimeout),
-		HomeZones:  NewDataServiceHomeZone(svcCtx.DataServiceClient, constants.HomeZoneLookupTimeout),
-		ListingIDs: ids,
-		Now:        time.Now,
-		Commerce:   svcCtx.Commerce,
-		Mall:       svcCtx.Mall,
+		Config:      svcCtx.Config,
+		Store:       data.NewListingRepo(svcCtx.DB, constants.StoreOpTimeout),
+		HomeZones:   NewDataServiceHomeZone(svcCtx.DataServiceClient, constants.HomeZoneLookupTimeout),
+		ListingIDs:  ids,
+		Now:         time.Now,
+		Commerce:    svcCtx.Commerce,
+		Mall:        svcCtx.Mall,
+		Rmb:         svcCtx.Rmb,
+		RmbIdentity: svcCtx.RmbIdentity,
 	}
 }
 

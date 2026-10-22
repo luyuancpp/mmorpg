@@ -6,7 +6,6 @@ import (
 	"database/sql"
 	"errors"
 	"math"
-	"sort"
 	"time"
 
 	"github.com/google/uuid"
@@ -38,12 +37,25 @@ func globalJoin(l *JoinQueueLogic, in *pb.JoinQueueRequest, required, zone uint3
 		}
 	}
 	d, _ := ctxkeys.GetSessionDetails(l.ctx)
-	binding := authority.SessionBinding(d)
+	binding := authority.SessionBinding(l.ctx, d)
 	if binding == "" || in.RequestId == "" || len(in.RequestId) > 64 || in.NetworkPlanId == "" {
 		return &pb.JoinQueueResponse{ErrorCode: constants.ErrInternal, ErrorMessage: tipErr(constants.ErrInternal, "请完成地域延迟探测后重试")}, nil
 	}
 
 	t := &pb.MatchAuthorityTicketRecord{PlayerId: d.PlayerId, Ticket: uuid.NewString(), RequestId: in.RequestId, Mode: uint32(in.Mode), ConfigId: in.BattleConfigId, TeamSize: required, ZoneId: zone, RatingCenti: int64(math.Round(loadRatingOrDefault(l.svcCtx, d.PlayerId) * 100))}
+	prepared, exit, pending, e := l.svcCtx.Authority.PrepareJoin(l.ctx, t, in, binding)
+	if e != nil {
+		return &pb.JoinQueueResponse{ErrorCode: constants.ErrInternal, ErrorMessage: tipErr(constants.ErrInternal, "匹配原意图暂不可用")}, nil
+	}
+	if prepared.RequestId != in.RequestId {
+		return &pb.JoinQueueResponse{QueueTicket: prepared.Ticket, ErrorCode: constants.ErrAlreadyQueued, ErrorMessage: tipErr(constants.ErrAlreadyQueued, "已在匹配队列中")}, nil
+	}
+	if pending && exit != nil {
+		if e = closeCapturedSpectatorExit(l.ctx, l.svcCtx, exit); e != nil {
+			return &pb.JoinQueueResponse{ErrorCode: constants.ErrInternal, ErrorMessage: tipErr(constants.ErrInternal, "原观战退出尚待确认，请复用原请求重试")}, nil
+		}
+	}
+	t = prepared
 	old, created, e := l.svcCtx.Authority.Join(l.ctx, t, in.NetworkPlanId, binding)
 	if e != nil {
 		return &pb.JoinQueueResponse{ErrorCode: constants.ErrInternal, ErrorMessage: tipErr(constants.ErrInternal, "匹配权威暂不可用或探测已过期")}, nil
@@ -56,9 +68,10 @@ func globalJoin(l *JoinQueueLogic, in *pb.JoinQueueRequest, required, zone uint3
 }
 
 type globalChoice struct {
-	group  []*pb.MatchAuthorityTicketRecord
-	node   discovery.NodeEntry
-	region uint32
+	group        []*pb.MatchAuthorityTicketRecord
+	node         discovery.NodeEntry
+	region       uint32
+	scannedUntil *pb.MatchAuthorityTicketRecord
 }
 
 func reserveGlobalDirect(ctx context.Context, s *svc.ServiceContext, key *pb.MatchDirectIntentRecord, payload []byte, mode pb.MatchMode, config uint32, members []uint64, tickets map[uint64]string, opts gatherOptions) (*pb.MatchFormationRecord, error) {
@@ -70,16 +83,38 @@ func reserveGlobalDirect(ctx context.Context, s *svc.ServiceContext, key *pb.Mat
 		}
 		return old, nil
 	}
+	prepared, err := s.Authority.DirectAdmission(ctx, key)
+	if err != nil {
+		return nil, err
+	}
+	var f *pb.MatchFormationRecord
+	var group []*pb.MatchAuthorityTicketRecord
+	if prepared == nil || !prepared.ExitPrepared {
+		f, group, err = buildGlobalDirect(ctx, s, mode, config, members, tickets, opts)
+		if err != nil {
+			return nil, err
+		}
+	}
+	prepared, err = s.Authority.PrepareDirectAdmission(ctx, key, payload, f, group)
+	if err != nil {
+		return nil, err
+	}
+	return resumeGlobalDirectAdmission(ctx, s, prepared)
+}
+
+func buildGlobalDirect(ctx context.Context, s *svc.ServiceContext, mode pb.MatchMode, config uint32, members []uint64, tickets map[uint64]string, opts gatherOptions) (*pb.MatchFormationRecord, []*pb.MatchAuthorityTicketRecord, error) {
 	n, e := s.Authority.Now(ctx)
 	if e != nil {
-		return nil, e
+		return nil, nil, e
 	}
 	lat := map[uint64]map[uint32]uint32{}
+	profiles := map[uint64]*pb.MatchNetworkProfile{}
 	for _, pid := range members {
 		p, expires, e := s.Authority.Profile(ctx, pid)
 		if e != nil || expires <= n {
-			return nil, errors.New("成员地域探测失效")
+			return nil, nil, errors.New("成员地域探测失效")
 		}
+		profiles[pid] = p
 		lat[pid] = authority.Latencies(p, n, s.Config.GlobalMatch.HardLatencyMs)
 	}
 	var target discovery.NodeEntry
@@ -107,20 +142,20 @@ func reserveGlobalDirect(ctx context.Context, s *svc.ServiceContext, key *pb.Mat
 		}
 	}
 	if target.PhysicalRegion == 0 {
-		return nil, errors.New("没有满足全员硬延迟的共同机房")
+		return nil, nil, errors.New("没有满足全员硬延迟的共同机房")
 	}
 	id := opts.presetBattleID
 	if id == 0 {
 		id, e = s.BattleIDGen.Generate()
 		if e != nil {
-			return nil, e
+			return nil, nil, e
 		}
 	}
 	f := &pb.MatchFormationRecord{BattleId: id, OperationId: uuid.NewString(), PhysicalRegion: target.PhysicalRegion, TargetNodeId: target.NodeId, TargetInstanceId: target.NodeUuid, TargetEndpoint: target.Endpoint, Mode: uint32(mode), ConfigId: config}
 	if opts.activityContext != nil {
 		f.ActivityContext, e = proto.Marshal(opts.activityContext)
 		if e != nil {
-			return nil, e
+			return nil, nil, e
 		}
 	}
 	var group []*pb.MatchAuthorityTicketRecord
@@ -129,9 +164,9 @@ func reserveGlobalDirect(ctx context.Context, s *svc.ServiceContext, key *pb.Mat
 		if ticket == "" {
 			ticket = uuid.NewString()
 		}
-		group = append(group, &pb.MatchAuthorityTicketRecord{PlayerId: pid, Ticket: ticket, RequestId: f.OperationId, Mode: uint32(mode), ConfigId: config, TeamSize: uint32(len(members)), TeamId: opts.directTeamID, RatingCenti: int64(math.Round(loadRatingOrDefault(s, pid) * 100))})
+		group = append(group, &pb.MatchAuthorityTicketRecord{PlayerId: pid, Ticket: ticket, RequestId: f.OperationId, Mode: uint32(mode), ConfigId: config, TeamSize: uint32(len(members)), TeamId: opts.directTeamID, OwnerAccount: profiles[pid].OwnerAccount, OwnerRevision: profiles[pid].OwnerRevision, RatingCenti: int64(math.Round(loadRatingOrDefault(s, pid) * 100))})
 	}
-	return s.Authority.ReserveDirect(ctx, key, payload, f, group)
+	return f, group, nil
 }
 
 // 后台入口只能恢复已经在业务成功回包之前提交的成局，绝不现场再发一个 operation。
@@ -181,104 +216,27 @@ func releaseGlobalFinished(ctx context.Context, s *svc.ServiceContext, t *pb.Mat
 	}
 	call, cancel := context.WithTimeout(ctx, 3*time.Second)
 	defer cancel()
-	q, e := battlepb.NewBattleNodeClient(conn).QueryBattleCreation(call, &battlepb.QueryBattleCreationRequest{BattleId: f.BattleId, PlacementOperationId: f.OperationId, TargetInstanceId: f.TargetInstanceId})
+	client := battlepb.NewBattleNodeClient(conn)
+	query := &battlepb.QueryBattleCreationRequest{BattleId: f.BattleId, PlacementOperationId: f.OperationId, TargetInstanceId: f.TargetInstanceId}
+	q, e := client.QueryBattleCreation(call, query)
 	if e != nil {
 		return false, nil
 	}
-	if q.State != battlepb.BattleCreationState_BATTLE_CREATION_ABSENT && q.State != battlepb.BattleCreationState_BATTLE_CREATION_ABORTED {
+	// ABSENT不是拒绝迟到Create的墓碑；先固定原operation的取消，再只认可ABORTED。
+	if q.State == battlepb.BattleCreationState_BATTLE_CREATION_ABSENT {
+		_, e = client.DestroyBattle(call, &battlepb.DestroyBattleRequest{BattleId: f.BattleId, PlacementOperationId: f.OperationId, TargetInstanceId: f.TargetInstanceId, Reason: "ready_recovery_original_cancel"})
+		if e != nil {
+			return false, nil
+		}
+		q, e = client.QueryBattleCreation(call, query)
+		if e != nil {
+			return false, nil
+		}
+	}
+	if q.State != battlepb.BattleCreationState_BATTLE_CREATION_ABORTED {
 		return false, nil
 	}
 	return true, s.Authority.ReleaseReady(ctx, t.PlayerId, t.Ticket, t.FormationId)
-}
-
-// pickGlobalGroup 先完整尝试各锚点的本区组合，再尝试等待到阈值的跨区组合。
-// 同票始终保留最初enqueue时间；所有成员都必须在同一实际region满足硬延迟。
-func pickGlobalGroup(s *svc.ServiceContext, all []*pb.MatchAuthorityTicketRecord, nodes []discovery.NodeEntry, now uint64) *globalChoice {
-	byRegion := map[uint32][]discovery.NodeEntry{}
-	for _, node := range nodes {
-		if node.PhysicalRegion != 0 && node.NodeUuid != "" {
-			byRegion[node.PhysicalRegion] = append(byRegion[node.PhysicalRegion], node)
-		}
-	}
-	regions := make([]uint32, 0, len(byRegion))
-	for r := range byRegion {
-		regions = append(regions, r)
-	}
-	sort.Slice(regions, func(i, j int) bool { return regions[i] < regions[j] })
-	lat := map[uint64]map[uint32]uint32{}
-	preferred := map[uint64]uint32{}
-	for _, t := range all {
-		p, e := authority.DecodeProfile(t.NetworkProfile)
-		if e != nil {
-			continue
-		}
-		values := authority.Latencies(p, now, s.Config.GlobalMatch.HardLatencyMs)
-		lat[t.PlayerId] = values
-		best := uint32(math.MaxUint32)
-		for _, r := range regions {
-			if v, ok := values[r]; ok && v < best {
-				best = v
-				preferred[t.PlayerId] = r
-			}
-		}
-	}
-	for pass := 0; pass < 2; pass++ {
-		attempts := 0
-		for _, anchor := range all {
-			if attempts >= maxAnchorAttempts {
-				break
-			}
-			if anchor.NotBeforeMs > now || preferred[anchor.PlayerId] == 0 {
-				continue
-			}
-			attempts++
-			wait := (now - min(now, anchor.EnqueuedMs)) / 1000
-			tol := anchorToleranceFor(s, isRatedMode(pb.MatchMode(anchor.Mode)), int64(wait)) * 100
-			for _, region := range regions {
-				if pass == 0 && preferred[anchor.PlayerId] != region {
-					continue
-				}
-				if _, ok := lat[anchor.PlayerId][region]; !ok {
-					continue
-				}
-				if pass == 1 && wait < uint64(s.Config.GlobalMatch.CrossRegionWaitSeconds) {
-					continue
-				}
-				group := []*pb.MatchAuthorityTicketRecord{anchor}
-				for _, candidate := range all {
-					if len(group) >= int(anchor.TeamSize) {
-						break
-					}
-					if candidate.PlayerId == anchor.PlayerId || authority.Lane(candidate) != authority.Lane(anchor) || candidate.NotBeforeMs > now {
-						continue
-					}
-					if _, ok := lat[candidate.PlayerId][region]; !ok {
-						continue
-					}
-					if pass == 0 && preferred[candidate.PlayerId] != region {
-						continue
-					}
-					if pass == 1 && (now-min(now, candidate.EnqueuedMs))/1000 < uint64(s.Config.GlobalMatch.CrossRegionWaitSeconds) {
-						continue
-					}
-					if isRatedMode(pb.MatchMode(anchor.Mode)) && math.Abs(float64(candidate.RatingCenti-anchor.RatingCenti)) > tol {
-						continue
-					}
-					group = append(group, candidate)
-					if len(group) >= int(anchor.TeamSize) {
-						break
-					}
-				}
-				if len(group) != int(anchor.TeamSize) {
-					continue
-				}
-				ns := byRegion[region]
-				sort.Slice(ns, func(i, j int) bool { return ns[i].NodeId < ns[j].NodeId })
-				return &globalChoice{group: group, node: ns[0], region: region}
-			}
-		}
-	}
-	return nil
 }
 
 func runGlobalRound(ctx context.Context, s *svc.ServiceContext) {
@@ -290,28 +248,53 @@ func runGlobalRound(ctx context.Context, s *svc.ServiceContext) {
 	for _, f := range pending {
 		launchGlobalFormation(s, f)
 	}
+	// 候选投影故障不能挡住已经提交的formation恢复。
+	if !s.GlobalRegionRepairActive {
+		throughMs, throughPlayer, err := s.Authority.CandidateRegionRepairHighWater(ctx)
+		if err != nil {
+			logx.Error("全球匹配候选投影尾界读取失败")
+			return
+		}
+		s.GlobalRegionRepairThroughMs, s.GlobalRegionRepairThroughPlayer = throughMs, throughPlayer
+		s.GlobalRegionRepairActive = true
+	}
+	repairMs, repairPlayer, repairErr := s.Authority.RepairCandidateRegionsThrough(ctx, s.GlobalRegionRepairMs, s.GlobalRegionRepairPlayer, s.GlobalRegionRepairThroughMs, s.GlobalRegionRepairThroughPlayer)
+	if repairErr != nil {
+		logx.Error("全球匹配候选投影维护失败")
+		return
+	}
+	s.GlobalRegionRepairMs, s.GlobalRegionRepairPlayer = repairMs, repairPlayer
+	if repairMs == 0 && repairPlayer == 0 {
+		s.GlobalRegionProjectionReady.Store(true)
+		s.GlobalRegionRepairActive = false
+	}
+	if s.GlobalGatherSlots != nil && len(s.GlobalGatherSlots) == cap(s.GlobalGatherSlots) {
+		return
+	}
 	all, e := s.Authority.CandidatesAfter(ctx, s.GlobalScanMs, s.GlobalScanPlayer)
 	if e != nil {
 		logx.Error("全球匹配候选读取失败")
 		return
 	}
-	if len(all) > 0 {
-		last := all[len(all)-1]
-		s.GlobalScanMs = last.EnqueuedMs
-		s.GlobalScanPlayer = last.PlayerId
-	} else {
+	if len(all) == 0 {
 		s.GlobalScanMs = 0
 		s.GlobalScanPlayer = 0
-		return
-	}
-	if s.GlobalGatherSlots != nil && len(s.GlobalGatherSlots) == cap(s.GlobalGatherSlots) {
 		return
 	}
 	n, e := s.Authority.Now(ctx)
 	if e != nil {
 		return
 	}
-	choice := pickGlobalGroup(s, all, s.BattleNodes.Snapshot(), n)
+	choice, e := pickIndexedGlobalGroup(ctx, s, all, s.BattleNodes.Snapshot(), n, s.GlobalRegionProjectionReady.Load(), s.Authority.CandidatePeers)
+	if e != nil {
+		logx.Error("全球匹配机房候选读取失败")
+		return
+	}
+	last := all[len(all)-1]
+	if choice != nil && choice.scannedUntil != nil {
+		last = choice.scannedUntil
+	}
+	s.GlobalScanMs, s.GlobalScanPlayer = last.EnqueuedMs, last.PlayerId
 	if choice == nil {
 		return
 	}
@@ -448,6 +431,10 @@ func globalDestroy(s *svc.ServiceContext, f *pb.MatchFormationRecord) bool {
 
 // 全球模式补签只读持久创建意图，Redis投影丢失不构成“战斗已结束”的证据。
 func globalRequestBattleTicket(ctx context.Context, s *svc.ServiceContext, pid, id uint64) (*battlepb.RequestBattleTicketResponse, error) {
+	observerOperation, authErr := s.Authority.AuthorizeBattleTicket(ctx, pid, id)
+	if authErr != nil {
+		return nil, authErr
+	}
 	f, e := s.Authority.Formation(ctx, id)
 	if errors.Is(e, sql.ErrNoRows) {
 		return &battlepb.RequestBattleTicketResponse{ErrorMessage: tipErr(uint32(table.CommonError_kInvalidParameter), "该战斗不存在或已结束")}, nil
@@ -479,7 +466,7 @@ func globalRequestBattleTicket(ctx context.Context, s *svc.ServiceContext, pid, 
 		}
 		return &battlepb.RequestBattleTicketResponse{ErrorMessage: tipErr(uint32(table.CommonError_kInvalidParameter), "该战斗不存在或已结束")}, nil
 	}
-	r, e := client.IssueBattleTicket(qctx, &battlepb.IssueBattleTicketRequest{BattleId: id, PlayerId: pid})
+	r, e := client.IssueBattleTicket(qctx, &battlepb.IssueBattleTicketRequest{BattleId: id, PlayerId: pid, SpectatorOperationId: observerOperation, TargetInstanceId: f.TargetInstanceId})
 	if e != nil {
 		return nil, e
 	}

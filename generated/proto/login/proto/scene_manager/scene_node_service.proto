@@ -33,6 +33,8 @@ service SceneNodeGrpc {
   rpc PrepareBattle(PrepareBattleRequest) returns (PrepareBattleResponse) {}
   // gather 失败的逐人回滚:battle_id 匹配才解冻,迟到/重复取消幂等忽略。
   rpc CancelBattlePrepare(CancelBattlePrepareRequest) returns (Empty) {}
+  // 返回仅表示原世代封存已采纳；排空和严格双表持久证明另经DataService.AckRoleTradeDrain提交。
+  rpc SealAccountRoleTrade(SealAccountRoleTradeRequest) returns (Empty) {}
 
   // ---- 通用资产通道(docs/design/guild-phase2/04-asset-channel.md §S4)----
   // 结局写在 response.outcome;gRPC status 恒为 OK。同 seq 重复调用只读答复。

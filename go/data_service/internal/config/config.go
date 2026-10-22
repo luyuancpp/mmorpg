@@ -13,6 +13,8 @@ import (
 
 type Config struct {
 	zrpc.RpcServerConf
+	// 仅隔离的历史MySQL/Redis工具夹具可显式开启；dev也默认全球SQL，不因Mode=dev自动降级。
+	LegacyNonGlobal  bool `json:",optional"`
 	MappingRedis     redis.RedisConf
 	Regions          []RegionConfig
 	DevRedis         DevRedisConfig `json:",optional"`
@@ -20,6 +22,8 @@ type Config struct {
 
 	// Snapshot MySQL (for rollback persistence)
 	SnapshotMySQL SnapshotMySQLConfig `json:",optional"`
+	// 账号目录全局规则；各 zone 的 login 不能抬高这里的角色上限。
+	AccountDirectory AccountDirectoryConfig `json:",optional"`
 
 	// Login admin gRPC client (for orphan account cleanup during rollback)
 	LoginAdminRpc zrpc.RpcClientConf `json:",optional"`
@@ -123,6 +127,36 @@ type Config struct {
 	// 写后复查的预算跟着它走(GuildRecheckBudget):复查与检查走同一套分块翻页、范围约等于全部写过的玩家,
 	// 所以这里每调大 1 秒,MethodTimeouts 要调大 2 秒。
 	GuildCheckBudgetSeconds int64 `json:",default=120"`
+}
+
+type AccountDirectoryConfig struct {
+	MaxPlayersPerAccount      int    `json:",optional"`
+	RoleTradeRequireGuildExit *bool  `json:",optional"`
+	RoleTradeGuildSchema      string `json:",optional"`
+	RoleTradeTradeSchema      string `json:",optional"`
+	RoleTradeMailSchema       string `json:",optional"`
+	RoleTradeMatchSchema      string `json:",optional"`
+	RoleTradeInboxSchema      string `json:",optional"`
+	// 必须显式配置；使用同 TiDB 权威池跨 schema 强读，不新配另一份资产源。
+	RoleTradeSQLProof RoleTradeSQLProofConfig `json:",optional"`
+}
+
+func (c AccountDirectoryConfig) MustLeaveGuild() bool {
+	return c.RoleTradeRequireGuildExit == nil || *c.RoleTradeRequireGuildExit
+}
+
+type RoleTradeSQLProofConfig struct {
+	Enabled           bool     `json:",optional"`
+	AllowedStorageIDs []uint32 `json:",optional"`
+	// 与go/db已有独立库白名单共源；空值使用DB_ALLOWED_DATABASES。没有配置绝不按Regions/当前Zone推导。
+	AllowedDatabasesEnv string `json:",optional"`
+}
+
+func (c AccountDirectoryConfig) MaxRoles() int {
+	if c.MaxPlayersPerAccount == 0 {
+		return 5
+	}
+	return c.MaxPlayersPerAccount
 }
 
 // GuildRecheckBudget:写后复查调用本身的预算(不含复查前的等待)= max(MinGuildRecheckBudgetSeconds, 检查预算)。
@@ -925,6 +959,7 @@ type RedisClusterConfig struct {
 }
 
 type SnapshotMySQLConfig struct {
+	RequireTiDB bool   `json:",optional"`
 	Host        string `json:",default=127.0.0.1:3306"`
 	User        string `json:",default=appuser"`
 	Password    string `json:",default=apppass123"`

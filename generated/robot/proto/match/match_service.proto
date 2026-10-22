@@ -180,11 +180,13 @@ message ChallengeResultS2C {
 message WatchBattleRequest {
   uint64 player_id = 1;      // 权威身份以 session metadata 为准
   uint64 battle_id = 2;      // 0 = 随机观战
+  string request_id = 3; // 全球模式原观战意图UUID，重试复用；已关闭原件不能复活或清退后来的观战。
 }
 
 message WatchBattleResponse {
   uint64 battle_id = 1;      // 实际观战的战斗(随机模式回填)
   TipInfoMessage error_message = 2;  // 无可观战战斗/本人在战斗或队列中/战斗已结束
+  string spectator_operation_id = 3;
 }
 
 message ListWatchableBattlesRequest {

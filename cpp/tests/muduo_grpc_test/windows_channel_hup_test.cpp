@@ -248,7 +248,7 @@ TEST_F(HiredisPeerFin, PureFinDisconnectsAndCompletesPendingCommandBeforeTimeout
     SocketLease peer;
     uint16_t port = 0;
     ASSERT_TRUE(ListenLoopback(listener, port));
-    auto redis = std::make_shared<hiredis::Hiredis>(&loop, muduo::net::InetAddress("127.0.0.1", port));
+    auto redis = hiredis::Hiredis::Create(&loop, muduo::net::InetAddress("127.0.0.1", port));
     // 夹具对象和回调同寿命；回调执行结束并排空后才销毁，见 AGENTS.md §11.7。
     redis->setConnectCallback([&](hiredis::Hiredis *client, int status) {
         ++observed.connects;

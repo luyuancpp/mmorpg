@@ -19,10 +19,12 @@ import (
 	"shared/kafkacmd"
 	"shared/kafkautil"
 	"shared/playersync"
+	"shared/serviceauth"
 	"shared/snowflake"
 	"shared/snowflakealloc"
 
 	"github.com/google/uuid"
+	redv9 "github.com/redis/go-redis/v9"
 	"github.com/segmentio/kafka-go"
 	"github.com/zeromicro/go-zero/core/logx"
 	"github.com/zeromicro/go-zero/core/stores/redis"
@@ -38,12 +40,23 @@ const (
 )
 
 type ServiceContext struct {
-	Config    config.Config
-	Authority *authority.Store
+	Config        config.Config
+	Authority     *authority.Store
+	LoginSessions *redv9.Client
+	// 仅main显式装配，缺失时CancelActivityBattle拒绝；不复用网络探测或其它服务秘密。
+	ActivityCancelAuth   *serviceauth.Verifier
+	ActivityCancelSecret string
 	// 候选扫描游标是可重建调度状态，只由matcher循环访问；不参与SQL写决策。
 	GlobalScanMs      uint64
 	GlobalScanPlayer  uint64
 	GlobalGatherSlots chan struct{}
+	// 投影维护独立走有界游标；首次完整修复前不以缺投影宣称本区人数不足。
+	GlobalRegionRepairMs            uint64
+	GlobalRegionRepairPlayer        uint64
+	GlobalRegionRepairThroughMs     uint64
+	GlobalRegionRepairThroughPlayer uint64
+	GlobalRegionRepairActive        bool
+	GlobalRegionProjectionReady     atomic.Bool
 
 	// 双存储(设计文档 cross-zone-matchmaking.md D2):
 	//   - MatchRedis:match 私有 key(match:* / challenge:* / spectate:*),
@@ -239,6 +252,29 @@ func NewServiceContext(c config.Config) *ServiceContext {
 			panic(fmt.Errorf("全球匹配权威初始化失败: %w", err))
 		}
 		sc.Authority = store
+		if !c.GlobalMatch.RequireTiDB {
+			sc.Stop()
+			panic("全球匹配角色归属必须与权威目录共用TiDB")
+		}
+		if err := store.ConfigureRoleAuthority(ctx, c.GlobalMatch.AccountRoleSchema); err != nil {
+			sc.Stop()
+			panic("全球匹配角色目录不可用")
+		}
+		if err := store.ConfigureMatchEntryAuthority(ctx, c.GlobalMatch.GuildTrialSchema); err != nil {
+			sc.Stop()
+			panic(fmt.Errorf("全球匹配跨域提交围栏不可用: %w", err))
+		}
+		// 先只读核准全部跨域真源；错误schema不能先固化为不可覆盖的全局策略原件。
+		if err := store.EnsureGlobalPolicy(ctx, c); err != nil {
+			sc.Stop()
+			panic(err)
+		}
+		loginSessions, err := NewLoginSessionClient(c)
+		if err != nil {
+			sc.Stop()
+			panic(err)
+		}
+		sc.LoginSessions = loginSessions
 		secret := os.Getenv(c.GlobalMatch.RankSecretEnv)
 		if len(secret) < 32 || c.GlobalMatch.RankEndpoint == "" {
 			sc.Stop()
@@ -311,6 +347,9 @@ func (sc *ServiceContext) Stop() {
 		}
 		if sc.Authority != nil {
 			_ = sc.Authority.DB.Close()
+		}
+		if sc.LoginSessions != nil {
+			_ = sc.LoginSessions.Close()
 		}
 		if sc.Kafka != nil {
 			if err := sc.Kafka.Close(); err != nil {

@@ -865,6 +865,7 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED EnterSceneRequest final : public ::
     kGateZoneIdFieldNumber = 9,
     kClientChannelPickFieldNumber = 11,
     kLoginGenerationFieldNumber = 12,
+    kOwnerRevisionFieldNumber = 13,
   };
   // string request_id = 4;
   void clear_request_id() ;
@@ -1001,11 +1002,21 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED EnterSceneRequest final : public ::
   void _internal_set_login_generation(::uint64_t value);
 
   public:
+  // uint64 owner_revision = 13;
+  void clear_owner_revision() ;
+  [[nodiscard]] ::uint64_t owner_revision() const;
+  void set_owner_revision(::uint64_t value);
+
+  private:
+  ::uint64_t _internal_owner_revision() const;
+  void _internal_set_owner_revision(::uint64_t value);
+
+  public:
   // @@protoc_insertion_point(class_scope:scene_manager.EnterSceneRequest)
  private:
   class _Internal;
   using ParseTableT_ =
-      ::google::protobuf::internal::TcParseTable<4, 12,
+      ::google::protobuf::internal::TcParseTable<4, 13,
                           0, 81,
                           2>;
   static constexpr ParseTableT_ InternalGenerateParseTable_(
@@ -1046,6 +1057,7 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED EnterSceneRequest final : public ::
     ::uint32_t gate_zone_id_;
     bool client_channel_pick_;
     ::uint64_t login_generation_;
+    ::uint64_t owner_revision_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
   union { Impl_ _impl_; };
@@ -3040,6 +3052,30 @@ inline ::uint64_t EnterSceneRequest::_internal_login_generation() const {
 inline void EnterSceneRequest::_internal_set_login_generation(::uint64_t value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.login_generation_ = value;
+}
+
+// uint64 owner_revision = 13;
+inline void EnterSceneRequest::clear_owner_revision() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.owner_revision_ = ::uint64_t{0u};
+  ClearHasBit(_impl_._has_bits_[0], 0x00001000U);
+}
+inline ::uint64_t EnterSceneRequest::owner_revision() const {
+  // @@protoc_insertion_point(field_get:scene_manager.EnterSceneRequest.owner_revision)
+  return _internal_owner_revision();
+}
+inline void EnterSceneRequest::set_owner_revision(::uint64_t value) {
+  _internal_set_owner_revision(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00001000U);
+  // @@protoc_insertion_point(field_set:scene_manager.EnterSceneRequest.owner_revision)
+}
+inline ::uint64_t EnterSceneRequest::_internal_owner_revision() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.owner_revision_;
+}
+inline void EnterSceneRequest::_internal_set_owner_revision(::uint64_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.owner_revision_ = value;
 }
 
 // -------------------------------------------------------------------

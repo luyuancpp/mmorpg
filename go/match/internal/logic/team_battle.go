@@ -88,6 +88,9 @@ func (s *TeamBattleStarter) MatchLockTTLSeconds(memberCount int) int {
 // 前置条件:调用方已确认该成员没有 battle:lock(ready 分支依赖它,与 JoinQueue 同序)。
 // 票据读与自愈沿用既有无 ctx 的 Redis 调用(与 JoinQueue 共用、不改其行为),入口先检查 ctx。
 func (s *TeamBattleStarter) TicketBlocked(ctx context.Context, playerId uint64) (bool, error) {
+	if s.svcCtx.Authority != nil {
+		return s.svcCtx.Authority.TeamMemberHasTicket(ctx, playerId)
+	}
 	if err := ctx.Err(); err != nil {
 		return true, err
 	}

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/zeromicro/go-zero/core/service"
 	"github.com/zeromicro/go-zero/zrpc"
 )
 
@@ -13,6 +14,8 @@ type Config struct {
 	zrpc.RpcServerConf
 	ZoneId       uint32       `json:"ZoneId"`
 	ServerConfig ServerConfig `json:"ServerConfig"`
+	// LegacyNonGlobal 只供显式dev/test历史夹具；Mode本身不会关闭全球SQL启动门禁。
+	LegacyNonGlobal bool `json:"LegacyNonGlobal,optional"`
 
 	// MetricsListenAddr is the bind address for the Prometheus /metrics
 	// HTTP endpoint. Leave empty to disable (production default; opt-in
@@ -28,10 +31,11 @@ type Config struct {
 
 // PlacementConfig 控制 go/db 如何按 player:placement:{id} / player:zone:{id} 选库。
 //
-// **整块缺省必须等价于 AllowStoreFamilies=true、Required=false**。go-zero 对整段 optional 且
+// 整块缺省仍保留旧字段零值，但全球服务的ValidateGlobalAuthority会拒绝缺失的必需开关。
+// 只有显式LegacyNonGlobal且Mode=dev/test才接受旧Required=false语义。go-zero对整段optional且
 // 未出现的嵌套结构不回填内层 default 标签,所以这里不写 default:
 //   - AllowStoreFamilies 用 *bool,nil(没写)按 true 读,经 StoreFamiliesAllowed 取值;
-//   - Required 的零值 false 本身就是安全方向(缺席即旧语义,P-5);
+//   - Required的零值false不冒充已启用全球门禁，不能Normalize静默覆盖显式关闭;
 //   - 连接池大小由 Normalize 回填。
 type PlacementConfig struct {
 	// AllowStoreFamilies 为 nil 或 true 时,名字属于 zone_{1..999999}_db / player_store_{>=1000000}_db
@@ -47,8 +51,8 @@ type PlacementConfig struct {
 	// 的副本被判可信(就绪标记里记下的 run_id / master_replid 就是本次读所在的主实例)时才按读到的值选库;否则写延后
 	// (不耗重试预算)、读耗预算,并由进程级就绪闸暂停取 Kafka 消息与认领重试(D1 第 3 批,
 	// docs/handoff/launch-readiness-20261013/spec_D1_batch1b2_2_3.md §5.3、§13.2)。启动时试跑一次读脚本,执行出错即拒启。
-	// 缺省 false:行为与引入之前相同。打开顺序(§8 P5):data_service 对账 leader 已挂上就绪标记之后逐 zone 打开;
-	// 回退先关本开关(先读方、后写方)。
+	// 全球服务必须显式true；缺省false仅供LegacyNonGlobal的历史夹具。正式初始化/迁移与DS对账arm先完成，
+	// 再启动DB；既有Start读方探针未判trusted时保持消费与重试闸关闭，不伪造ready。
 	RequireRouteReady bool `json:"RequireRouteReady,optional"`
 
 	// RouteReadyGateIntervalMs 是就绪闸刷新(一次不带映射键的读脚本)的间隔,也是闸关着时复查的间隔(毫秒)。
@@ -145,7 +149,8 @@ type DatabaseConfig struct {
 	MaxOpenConn int    `json:"MaxOpenConn"`
 	MaxIdleConn int    `json:"MaxIdleConn"`
 	Net         string `json:"Net"`
-	// RequireTiDB 强制每条玩家库物理连接使用 TiDB leader、当前严格读；false 仅兼容本地 MySQL。
+	// RequireTiDB强制每条玩家库物理连接使用TiDB leader、当前严格读；全球服务必须true，
+	// false只兼容显式LegacyNonGlobal且Mode=dev/test的本地MySQL夹具。
 	RequireTiDB bool `json:"RequireTiDB,optional"`
 
 	// AllowedDatabases 是**外部注入**的库名白名单。
@@ -708,6 +713,27 @@ func (c *Config) Validate() error {
 		(v < MinPlacementRouteReadyGateIntervalMs || v > MaxPlacementRouteReadyGateIntervalMs) {
 		return fmt.Errorf("Placement.RouteReadyGateIntervalMs must be in [%d, %d] (0 or unset = %d), got %d",
 			MinPlacementRouteReadyGateIntervalMs, MaxPlacementRouteReadyGateIntervalMs, DefaultPlacementRouteReadyGateIntervalMs, v)
+	}
+	return c.ValidateGlobalAuthority()
+}
+
+// ValidateGlobalAuthority是普通服务启动的配置门禁，不执行DDL、不写ready、不接管旧Redis目录。
+// 零值或遗漏键必须拒绝，不能因为Mode=dev/test便静默退回非全球权威。
+func (c *Config) ValidateGlobalAuthority() error {
+	if c.LegacyNonGlobal {
+		if c.Mode != service.DevMode && c.Mode != service.TestMode {
+			return errors.New("LegacyNonGlobal仅允许显式Mode=dev/test的历史非全球夹具")
+		}
+		return nil
+	}
+	if !c.ServerConfig.Database.RequireTiDB {
+		return errors.New("全球DB必须配置ServerConfig.Database.RequireTiDB=true")
+	}
+	if !c.Placement.Required {
+		return errors.New("全球DB必须配置Placement.Required=true，缺失落点不得回落home或本区库")
+	}
+	if !c.Placement.RequireRouteReady {
+		return errors.New("全球DB必须配置Placement.RequireRouteReady=true，消费须等待DS正式对账ready")
 	}
 	return nil
 }

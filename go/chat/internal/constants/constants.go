@@ -11,6 +11,9 @@ import (
 	"shared/serverbase"
 )
 
+// MaxHistoryPullLimit约束一次权威历史读取的行数；存储容量阈值仍可独立配置。
+const MaxHistoryPullLimit = 200
+
 const (
 	// ErrInvalidParameter:取不到会话(缺 / 坏 x-session-detail-bin)、请求体缺 message、
 	// PRIVATE 缺对端或对端是自己、频道枚举值未知、request_id 超长。
@@ -22,14 +25,14 @@ const (
 	// gate 对整包 >1024B 已先拒一道,这里是 chat 侧按"内容字节"的第二道闸。
 	ErrMessageTooLong = uint32(table.CommonError_kMessageSizeExceeded)
 
-	// ErrRateLimited:chat:{rl:<pid>} 每秒计数超过 RateLimitPerSecond(gate 每会话
+	// ErrRateLimited:同原P内SQL固定秒计数超过RateLimitPerSecond(gate 每会话
 	// 每消息号 3 次/秒是第一道)。
 	ErrRateLimited = uint32(table.CommonError_kRateLimitExceeded)
 
 	// ErrChannelUnavailable:TEAM / SYSTEM / UNSPECIFIED 频道 v1 不开放。
 	ErrChannelUnavailable = uint32(table.CommonError_kFeatureUnavailable)
 
-	// ErrStorage:ChatRedis 读写失败 / 返回形态异常 / 序列化失败。
+	// ErrStorage:权威SQL/原登录态失败、原件损坏或提交结果未知。
 	// 这是 Tip.xlsx 里 fault 列标 1 的码,serverbase 会把它记成 rpc_inband_fault 并告警 ——
 	// **只用于真故障**,任何业务拒绝都不许复用它,否则告警会被正常流量淹没。
 	ErrStorage = uint32(table.CommonError_kServiceUnavailable)

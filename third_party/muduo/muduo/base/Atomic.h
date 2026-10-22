@@ -127,7 +127,7 @@ public:
 
     T addAndGet(T x)
     {
-        return getAndAdd(x);
+        return getAndAdd(x) + x;
     }
 
     T incrementAndGet()
@@ -137,7 +137,7 @@ public:
 
     T decrementAndGet()
     {
-        return value_.fetch_sub(1);
+        return addAndGet(-1);
     }
 
     void add(T x)
@@ -157,9 +157,7 @@ public:
 
     T getAndSet(T newValue)
     {
-        T r = value_;
-        value_ = newValue;
-        return r;
+        return value_.exchange(newValue);
     }
 
 private:

@@ -105,7 +105,7 @@ var economyFlowDropTables = []string{
 	"guild_trial_reward_owed", "guild_trial_battle", // B6b 同道历练两表 W、T
 	"guild_activity_progress", // B6a 活动进度 P
 	"guild_daily_counter", "guild_asset_op", "guild_player_op_seq",
-	"guild_application", "guild_member", "guild_player_state", "guild", "schema_migrations",
+	"guild_application", "guild_member", "guild_player_state", "guild_trial_launch_role", "guild_trial_launch", "guild_trial_lobby_slot", "guild_trial_lobby", "guild", "schema_migrations",
 }
 
 // economyFlowDBNamePattern:只许碰一次性测试库。appuser 对别的库也有 ALL 权限,黑名单挡不住 DSN 指错。

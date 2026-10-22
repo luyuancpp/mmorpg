@@ -524,6 +524,11 @@ func newTradeFullstackRig(t *testing.T) *tradeFullstackRig {
 		t.Fatal(err)
 	}
 	rig.engine = &Engine{Repo: &data.CommerceRepo{DB: db, Ops: ops}, IDs: ids.IDs["trade_listing"], OpIDs: ids.IDs["trade_asset_op"], Policy: Policy{Items: []uint32{original.ConfigId}, Currencies: []uint32{0}, AllowInstances: true}, Applier: caller, Ledger: rig.ledger, Now: time.Now}
+	roles, err := NewRoleAuthority(tradeFullstackEnv(t, "GLOBAL_SCHEMA"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	rig.engine.Roles = roles
 	cfg := assetop.DefaultLoopConfig()
 	cfg.RequireSQLCommit, cfg.Workers, cfg.Batch = true, 1, 4
 	cfg.Streams = []assetpb.AssetOpStream{assetpb.AssetOpStream_ASSET_OP_STREAM_TRADE_DEBIT, assetpb.AssetOpStream_ASSET_OP_STREAM_TRADE_CREDIT}

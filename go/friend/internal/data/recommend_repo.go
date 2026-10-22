@@ -353,9 +353,15 @@ const RecommendAnchorWindow uint32 = 1024
 // 为了凑满而越过窗口继续扫、或加一次回绕扫,都会把扫描上界重新撑开 —— 那正是 2026-09-28 修掉的缺陷。
 // 返回的候选永远满足全部排除条件、不重复;偏少只影响数量。
 func (r *FriendRepo) RecommendRandom(ctx context.Context, playerID uint64, exclude []uint64, limit uint32) ([]RecommendCandidate, error) {
+	reader, closeRead, err := r.roleReader(ctx, playerID)
+	if err != nil {
+		return nil, err
+	}
 	var minID, maxID sql.Null[uint64]
-	if err := r.db.QueryRowContext(ctx,
-		`SELECT MIN(player_id), MAX(player_id) FROM friend`).Scan(&minID, &maxID); err != nil {
+	err = reader.QueryRowContext(ctx,
+		`SELECT MIN(player_id), MAX(player_id) FROM friend`).Scan(&minID, &maxID)
+	closeRead() // 随后的 anchor 会另开短事务，不能持自己的 P 等待第二条连接。
+	if err != nil {
 		return nil, fmt.Errorf("recommend id range for player %d: %w", playerID, err)
 	}
 	// 空表时 MIN/MAX 返回 NULL(不是 0),此时没有任何兜底候选。
@@ -524,7 +530,12 @@ func (s recommendStatements) anchor(playerID uint64, exclude []uint64, pivot uin
 // 返回 nil 切片(而不是空切片)表示没有候选:调用方只做 len / range,两者等价,
 // 不必为此多分配一次。
 func (r *FriendRepo) scanRecommendCandidates(ctx context.Context, kind string, playerID uint64, query string, args []any) ([]RecommendCandidate, error) {
-	rows, err := r.db.QueryContext(ctx, query, args...)
+	reader, closeRead, err := r.roleReader(ctx, playerID)
+	if err != nil {
+		return nil, err
+	}
+	defer closeRead()
+	rows, err := reader.QueryContext(ctx, query, args...)
 	if err != nil {
 		return nil, fmt.Errorf("recommend %s for player %d: %w", kind, playerID, err)
 	}

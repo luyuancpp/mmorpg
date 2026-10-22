@@ -18,6 +18,37 @@ public class HmacAuthentication extends OncePerRequestFilter {
     static final String ROLE = HmacAuthentication.class.getName() + ".role";
     static final long WINDOW_MS = 120_000;
     private static final int MAX_BODY_BYTES = 16_384;
+    private static final Map<String,String> INTERNAL_ROLES = Map.ofEntries(
+        Map.entry("/internal/payments", "payment"),
+        Map.entry("/internal/payments/order-view", "payment"),
+        Map.entry("/internal/payments/skus", "payment"),
+        Map.entry("/internal/mock/pay", "payment"),
+        Map.entry("/internal/mock/reconcile", "payment"),
+        Map.entry("/internal/mock/withdraw", "payment"),
+        Map.entry("/internal/mock/withdrawals/reconcile", "payment"),
+        Map.entry("/internal/refunds/poll", "payment"),
+        Map.entry("/internal/refunds/receipt", "payment"),
+        Map.entry("/internal/deliveries/poll", "delivery"),
+        Map.entry("/internal/deliveries/receipt", "delivery"),
+        Map.entry("/internal/consignments/register", "delivery"),
+        Map.entry("/internal/consignments/list", "delivery"),
+        Map.entry("/internal/consignments/get", "delivery"),
+        Map.entry("/internal/consignments/cancel", "delivery"),
+        Map.entry("/internal/consignments/buy", "delivery"),
+        Map.entry("/internal/consignments/orders/get", "delivery"),
+        Map.entry("/internal/consignments/orders/list", "delivery"),
+        Map.entry("/internal/consignments/orders/cancel", "delivery"),
+        Map.entry("/internal/consignments/deliveries/poll", "delivery"),
+        Map.entry("/internal/consignments/returns/poll", "delivery"),
+        Map.entry("/internal/consignments/returns/receipt", "delivery"),
+        Map.entry("/internal/consignments/incomes", "delivery"),
+        Map.entry("/internal/consignments/withdrawals/create", "delivery"),
+        Map.entry("/internal/consignments/withdrawals/get", "delivery"),
+        Map.entry("/internal/admin/skus/list", "admin"),
+        Map.entry("/internal/admin/skus/create", "admin"),
+        Map.entry("/internal/admin/skus/update", "admin"),
+        Map.entry("/internal/admin/skus/stock", "admin"),
+        Map.entry("/internal/admin/order-view", "admin"));
     private final CommerceProperties props;
     private final NonceStore nonces;
     public HmacAuthentication(CommerceProperties props, NonceStore nonces) { this.props = props; this.nonces = nonces; }
@@ -33,11 +64,18 @@ public class HmacAuthentication extends OncePerRequestFilter {
             }
             // 容器已剥离 context 和 DispatcherServlet 前缀；签名仍绑定上面的完整原始 URI。
             String route = request.getPathInfo() == null ? request.getServletPath() : request.getPathInfo();
-            String role = Set.of("/internal/payments","/internal/refunds/poll","/internal/refunds/receipt").contains(route) ? "payment" : Set.of("/internal/deliveries/poll","/internal/deliveries/receipt").contains(route) ? "delivery" : "gateway";
+            String role = route == null ? "gateway" : INTERNAL_ROLES.getOrDefault(route, "gateway");
             if (route != null && route.startsWith("/internal/") && role.equals("gateway")) { throw new CommerceException(404, "接口不存在"); }
             String subject = single(request, "X-Commerce-Subject");
             if (role.equals("gateway")) { requirePlayer(subject); }
-            else if (!(role.equals("delivery")?"trade".equals(subject):props.getPaymentSubject().equals(subject))) { throw new CommerceException(401, "调用方认证失败"); }
+            else {
+                String expected = switch(role) {
+                    case "delivery" -> "trade";
+                    case "admin" -> props.getAdminSubject();
+                    default -> props.getPaymentSubject();
+                };
+                if(!expected.equals(subject)){throw new CommerceException(401,"调用方认证失败");}
+            }
             String timestamp = single(request, "X-Commerce-Timestamp");
             String nonce = single(request, "X-Commerce-Nonce");
             String signature = single(request, "X-Commerce-Signature");
@@ -45,7 +83,12 @@ public class HmacAuthentication extends OncePerRequestFilter {
                 throw new CommerceException(401, "调用方认证失败");
             }
             long sent = Long.parseLong(timestamp);
-            String secret = role.equals("payment") ? props.getPaymentSecret() : role.equals("delivery")?props.getDeliverySecret():props.getGatewaySecret();
+            String secret = switch(role) {
+                case "payment" -> props.getPaymentSecret();
+                case "delivery" -> props.getDeliverySecret();
+                case "admin" -> props.getAdminSecret();
+                default -> props.getGatewaySecret();
+            };
             if(secret==null||secret.getBytes(StandardCharsets.UTF_8).length<32)throw new CommerceException(401,"调用方认证失败");
             byte[] expected = HexFormat.of().parseHex(sign(secret, role, subject, timestamp, nonce, request.getMethod(), path, body));
             if (!MessageDigest.isEqual(expected, HexFormat.of().parseHex(signature))) { throw new CommerceException(401, "调用方认证失败"); }

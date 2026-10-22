@@ -9,6 +9,7 @@ import json
 import os
 from pathlib import Path
 import re
+import shutil
 import struct
 import subprocess
 import sys
@@ -88,11 +89,15 @@ def capture(command: list[str], *, cwd: Path = ROOT, env: dict[str, str] | None 
 
 
 def snapshot(module: str) -> dict[str, str]:
+    # 服务可执行文件不编译 *_test.go；测试改动不应触发运行镜像来源失配。
+    # 其余相关 module 文件仍保守纳入，覆盖生成协议、依赖声明和嵌入资源。
     directories = [f"go/{module}", "go/shared", "go/proto", "go/schemamigrate"]
     names = capture(["git", "ls-files", "-z", "--cached", "--others", "--exclude-standard",
                      "--", *directories]).split("\0")
     result: dict[str, str] = {}
     for name in sorted(set(names) - {""}):
+        if name.endswith("_test.go"):
+            continue
         path = ROOT / name
         if not path.exists():
             continue
@@ -100,9 +105,68 @@ def snapshot(module: str) -> dict[str, str]:
             raise BuildFailure("source_outside_repository")
         if path.is_file():
             result[name.replace("\\", "/")] = sha256(path)
+    # 策划表可能由生成器写在 Git 忽略目录，不能仅靠 git ls-files 收集运行输入。
+    for path in runtime_resource_plan(module).values():
+        result[path.relative_to(ROOT).as_posix()] = sha256(path)
     if not any(name.endswith(".go") for name in result):
         raise BuildFailure("source_manifest_empty")
     return result
+
+
+def runtime_resource_plan(module: str) -> dict[str, Path]:
+    """沿用服务 Dockerfile 的顶层 data* 合并布局，策划表路径统一小写。"""
+    roots = [(path, "/app/data", False) for path in sorted((ROOT / "go" / module).iterdir())
+             if path.is_dir() and path.name.startswith("data")]
+    tables = ROOT / "generated/tables"
+    if not tables.is_dir():
+        raise BuildFailure("runtime_tables_missing")
+    roots.append((tables, "/generated/tables", True))
+    result: dict[str, Path] = {}
+    destinations = set()
+    for root, destination_root, lowercase in roots:
+        if root.is_symlink() or not root.resolve().is_relative_to(ROOT):
+            raise BuildFailure("runtime_resource_outside_repository")
+        for path in sorted(root.rglob("*")):
+            if path.is_symlink() or not path.resolve().is_relative_to(ROOT):
+                raise BuildFailure("runtime_resource_outside_repository")
+            if not path.is_file():
+                continue
+            relative = path.relative_to(root).as_posix()
+            destination = destination_root + "/" + (relative.lower() if lowercase else relative)
+            # Windows 冻结目录不区分大小写；任何目标冲突均失败，不猜覆盖顺序。
+            key = destination.casefold()
+            if key in destinations:
+                raise BuildFailure("runtime_resource_destination_collision")
+            destinations.add(key)
+            result[destination] = path
+    return result
+
+
+def freeze_runtime_resources(module: str, directory: Path, expected: dict[str, str]) -> tuple[dict[str, str], dict[str, str]]:
+    (directory / "app/data").mkdir(parents=True)
+    (directory / "generated/tables").mkdir(parents=True)
+    plan = runtime_resource_plan(module)
+    expected_sources = set()
+    for name in expected:
+        parts = name.split("/")
+        if name.startswith("generated/tables/") or (len(parts) > 3 and parts[:2] == ["go", module]
+                                                     and parts[2].startswith("data")):
+            expected_sources.add(name)
+    if {path.relative_to(ROOT).as_posix() for path in plan.values()} != expected_sources:
+        raise BuildFailure("runtime_resources_changed_before_freeze")
+    artifacts: dict[str, str] = {}
+    sources: dict[str, str] = {}
+    for destination, source in plan.items():
+        source_name = source.relative_to(ROOT).as_posix()
+        target = directory / destination.lstrip("/")
+        target.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copyfile(source, target)
+        actual = sha256(target)
+        if actual != expected[source_name]:
+            raise BuildFailure("runtime_resource_changed_during_freeze")
+        artifacts[destination] = actual
+        sources[destination] = source_name
+    return artifacts, sources
 
 
 def check_elf(path: Path) -> None:
@@ -134,7 +198,7 @@ def check_elf(path: Path) -> None:
 def build_environment(*, network: bool) -> dict[str, str]:
     result = os.environ.copy()
     result.update({"GOOS": "linux", "GOARCH": "amd64", "CGO_ENABLED": "0",
-                   "GOTOOLCHAIN": "local", "GOMAXPROCS": "1", "GOWORK": "off",
+                   "GOTOOLCHAIN": "local", "GOMAXPROCS": "1", "GOMEMLIMIT": "512MiB", "GOWORK": "off",
                    "GOENV": "off", "GOFLAGS": "", "GOPROXY": "https://proxy.golang.org" if network else "off",
                    "GOSUMDB": "sum.golang.org", "GONOPROXY": "", "GONOSUMDB": "", "GOVCS": "*:off"})
     return result
@@ -268,13 +332,18 @@ def main() -> int:
             if not re.search(r'-gcflags="?all=-N -l"?(?:\r?\n|$)', details) or "-trimpath=true" in details:
                 raise BuildFailure("service_debug_flags_mismatch")
             binary_hash = sha256(binary)
+            stage = f"{service}_runtime_resources"
+            runtime_directory = directory / "runtime_assets"
+            runtime_artifacts, runtime_sources = freeze_runtime_resources(module, runtime_directory, before)
             manifest = {"schema": 1, "language": "go", "sourceRoot": str(ROOT), "files": before,
-                        "artifacts": {"/app/service": binary_hash, "/usr/local/bin/dlv": delve_hash},
+                        "artifacts": {"/app/service": binary_hash, "/usr/local/bin/dlv": delve_hash, **runtime_artifacts},
+                        "runtimeResources": runtime_sources,
                         "build": {"goVersion": GO_VERSION, "gcflags": "all=-N -l", "trimpath": False,
                                   "stripSymbols": False, "goos": "linux", "goarch": "amd64", "cgoEnabled": False,
                                   "delveVersion": DELVE_VERSION, "goVersionCheckDisabled": False,
                                   "service": service, "module": module, "entry": entry, "commit": build_commit,
                                   "version": build_version, "buildTime": build_time, "sourceDigest": source_digest,
+                                  "runtimeAssetsFrozen": True, "tablesLowercase": True,
                                   "dockerfileSHA256": dockerfile_hash}}
             manifest_path = metadata_directory / "source-manifest.json"
             write_json(manifest_path, manifest)
@@ -300,7 +369,10 @@ def main() -> int:
             progress("image_build_started", service)
             run_logged(["docker", "--context", "desktop-linux", "build", "--pull=false", "--network", "none",
                         "--progress=plain", "-f", str(dockerfile), "--build-arg", f"GO_RUNTIME_IMAGE={pinned_base}",
+                        "--build-arg", f"BUILD_VERSION={build_version}", "--build-arg", f"BUILD_COMMIT={build_commit}",
+                        "--build-arg", f"BUILD_TIME={build_time}",
                         "--build-context", f"binary={binary_directory}", "--build-context", f"delve={delve_directory}",
+                        "--build-context", f"runtime_assets={runtime_directory}",
                         "--build-context", f"source_meta={metadata_directory}", "-t", image, str(metadata_directory)],
                        cwd=ROOT, env=os.environ.copy(), log=directory / "image.log", timeout=300)
             image_id = capture(["docker", "--context", "desktop-linux", "image", "inspect", image,
@@ -308,11 +380,21 @@ def main() -> int:
             if capture(["docker", "--context", "desktop-linux", "image", "inspect", pinned_base,
                         "--format", "{{.Id}}"] ).strip() != inspection[0]:
                 raise BuildFailure("base_image_pin_changed")
-            if not re.fullmatch(r"sha256:[0-9a-f]{64}", image_id) or sha256(binary) != binary_hash:
+            if (not re.fullmatch(r"sha256:[0-9a-f]{64}", image_id) or sha256(binary) != binary_hash
+                    or any(sha256(runtime_directory / path.lstrip("/")) != expected_hash
+                           for path, expected_hash in runtime_artifacts.items())):
                 raise BuildFailure("packaged_artifact_changed")
+            labels = json.loads(capture(["docker", "--context", "desktop-linux", "image", "inspect", image,
+                                         "--format", "{{json .Config.Labels}}"] ))
+            expected_labels = {"org.opencontainers.image.version": build_version,
+                               "org.opencontainers.image.revision": build_commit,
+                               "org.opencontainers.image.created": build_time}
+            if any(labels.get(name) != value for name, value in expected_labels.items()):
+                raise BuildFailure("image_build_labels_mismatch")
             result["images"][service] = {"image": image, "imageId": image_id}
             write_json(directory / "image-receipt.json", {"image": image, "imageId": image_id,
-                       "baseImage": bases[service], "baseImageId": inspection[0], "manifestSHA256": sha256(manifest_path)})
+                       "baseImage": bases[service], "baseImageId": inspection[0], "manifestSHA256": sha256(manifest_path),
+                       "runtimeResourceFiles": len(runtime_artifacts), "labels": expected_labels})
             write_json(output / "result.json", result)
             progress("image_build_completed", service)
 

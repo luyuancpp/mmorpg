@@ -1,0 +1,44 @@
+# 全球Match/Team正式表只由该Job迁移；常驻Open只核Plan，不执行DDL。
+# 与常驻进程共用ConfigMap和正式proto清单；迁移用户名/口令仅来自独立Secret键。
+# Secret由运维预置，常驻Deployment不引用这两个键；不授予运行账号CREATE/ALTER。
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: match-migrate
+  labels: {app: match-migrate, tier: go-svc}
+spec:
+  backoffLimit: 4
+  podFailurePolicy:
+    rules:
+      - action: FailJob
+        onExitCodes: {containerName: match-migrate, operator: In, values: [1, 4]}
+      - action: Ignore
+        onPodConditions:
+          - {type: DisruptionTarget}
+  template:
+    metadata:
+      labels: {app: match-migrate, tier: go-svc}
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: match-migrate
+          image: PLACEHOLDER_IMAGE
+          imagePullPolicy: PLACEHOLDER_PULL_POLICY
+          args: ["-f", "/app/etc/match_service.yaml", "-migrate"]
+          env:
+            - name: GOLANG_PROTOBUF_REGISTRATION_CONFLICT
+              value: warn
+            - name: MATCH_MIGRATION_USER
+              valueFrom:
+                secretKeyRef: {name: domain-service-secrets, key: match-migration-user, optional: false}
+            - name: MATCH_MIGRATION_PASSWORD
+              valueFrom:
+                secretKeyRef: {name: domain-service-secrets, key: match-migration-password, optional: false}
+          resources:
+            requests: {cpu: 100m, memory: 128Mi}
+            limits: {cpu: 1000m, memory: 512Mi}
+          volumeMounts:
+            - {name: svc-config, mountPath: /app/etc, readOnly: true}
+      volumes:
+        - name: svc-config
+          configMap: {name: go-svc-match-config}

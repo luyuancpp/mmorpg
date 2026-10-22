@@ -68,6 +68,8 @@ namespace
     // 单房间观众上限(设计文档 §10.5)。纯内存房间,每观众每回合一条直连推送,
     // 上限约束单房间出站扇出,防观战成为放大器。
     constexpr size_t kMaxObserversPerRoom = 20;
+    constexpr size_t kMaxSpectatorOperations = 100000;
+    using battle_security::ValidSpectatorOperation;
 
     // ---- Kafka 出站(设计文档 D6;不变量:target_instance_id 必填 + key=业务实体 ID) ----
 
@@ -925,12 +927,67 @@ void BattleRoomManager::HandleGetBattleState(const ::SessionDetails &sessionDeta
     }
 }
 
+void BattleRoomManager::PruneSpectatorOperations(uint64_t now)
+{
+    // 每次准入/取消最多处理128个过期项，不能每次遍历全部活动观战。
+    for (size_t count = 0; count < 128 && !spectatorDeadlines_.empty(); ++count) {
+        const auto deadline = spectatorDeadlines_.begin();
+        if (deadline->first > now) break;
+        const auto operation = spectatorOperations_.find(deadline->second);
+        if (operation != spectatorOperations_.end() && operation->second.cancelled)
+            spectatorOperations_.erase(operation);
+        spectatorDeadlines_.erase(deadline);
+    }
+}
+void BattleRoomManager::HandleQueryObserver(const ::QueryObserverRequest &request, ::QueryObserverResponse &response)
+{
+    if (!gNode || request.target_instance_id() != gNode->GetNodeInfo().node_uuid()
+        || request.battle_id() == 0 || request.observer_player_id() == 0
+        || !ValidSpectatorOperation(request.spectator_operation_id())) return;
+    response.set_spectator_operation_id(request.spectator_operation_id());
+    response.set_target_instance_id(request.target_instance_id());
+    response.set_state(OBSERVER_ADMISSION_ABSENT);
+    if (const auto* room = FindRoom(request.battle_id()); room != nullptr) {
+        const auto original = room->observerOperations.find(request.observer_player_id());
+        if (original != room->observerOperations.end() && original->second == request.spectator_operation_id()
+            && room->routingByObserver.count(request.observer_player_id()) != 0) response.set_state(OBSERVER_ADMISSION_ACTIVE);
+    }
+}
+
 void BattleRoomManager::HandleAddObserver(const ::AddObserverRequest &request,
                                           ::AddObserverResponse &response)
 {
     const auto battleId = request.battle_id();
     const auto observerId = request.observer_player_id();
 
+    const uint64_t now = TimeSystem::NowMillisecondsUTC();
+    if (!gNode || request.target_instance_id() != gNode->GetNodeInfo().node_uuid()
+        || !ValidSpectatorOperation(request.spectator_operation_id()) || request.admit_before_ms() <= now
+        || request.admit_before_ms() - now > 30000 || observerId == 0 || battleId == 0) {
+        response.mutable_error_message()->set_id(kInvalidParameter);
+        return;
+    }
+    // 操作表仅本loop拥有；过了原准入截止的Add会在上面拒绝，才可回收该操作墓碑。
+    PruneSpectatorOperations(now);
+    const auto key = std::make_tuple(battleId, observerId, request.spectator_operation_id());
+    const auto canonical = request.SerializeAsString();
+    auto operation = spectatorOperations_.find(key);
+    if (operation != spectatorOperations_.end()) {
+        if (operation->second.cancelled || operation->second.admitBeforeMs != request.admit_before_ms()
+            || operation->second.canonicalRequest != canonical) {
+            response.mutable_error_message()->set_id(kInvalidParameter);
+            return;
+        }
+    } else {
+        if (spectatorOperations_.size() >= kMaxSpectatorOperations) {
+            response.mutable_error_message()->set_id(kRateLimitExceeded);
+            return;
+        }
+        operation = spectatorOperations_.emplace(key, SpectatorOperation{request.admit_before_ms(), canonical, true}).first;
+        spectatorDeadlines_.emplace(request.admit_before_ms(), key);
+    }
+    // 所有失败都封闭原意图；只在完成准入/精确重放的成功分支恢复为active。
+    operation->second.cancelled = true;
     auto *room = FindRoom(battleId);
     if (room == nullptr)
     {
@@ -969,6 +1026,11 @@ void BattleRoomManager::HandleAddObserver(const ::AddObserverRequest &request,
     if (const auto it = room->routingByObserver.find(observerId);
         it != room->routingByObserver.end())
     {
+        const auto active = room->observerOperations.find(observerId);
+        if (active == room->observerOperations.end() || active->second != request.spectator_operation_id()) {
+            response.mutable_error_message()->set_id(kInvalidParameter);
+            return;
+        }
         const bool sameSession =
             it->second.session_id() == request.routing().session_id() &&
             it->second.gate_node_id() == request.routing().gate_node_id() &&
@@ -978,7 +1040,7 @@ void BattleRoomManager::HandleAddObserver(const ::AddObserverRequest &request,
         // 看不到任何战斗帧;而 match 收到任何错误都会 DEL 观战标记(watchbattlelogic),
         // 房间侧必须同步摘除并关其直连,否则 match 认为他已不在观战、房间里却还挂着他。
         ::BattleAssignedS2C assigned;
-        if (!BuildAssignment(*room, observerId, ::BATTLE_TICKET_ROLE_OBSERVER, assigned))
+        if (!BuildAssignment(*room, observerId, ::BATTLE_TICKET_ROLE_OBSERVER, assigned, request.spectator_operation_id()))
         {
             LOG_ERROR << "metric=battle_ticket_issue_failed battle_id=" << battleId
                       << " player_id=" << observerId << " role=observer"
@@ -986,6 +1048,7 @@ void BattleRoomManager::HandleAddObserver(const ::AddObserverRequest &request,
                       << ",spectator ticket signing failed;observer removed and request rejected(kServiceUnavailable)";
             room->routingByObserver.erase(it);
             room->observerNames.erase(observerId);
+            room->observerOperations.erase(observerId);
             CloseDirectConnectionOf(*room, observerId, "observer_ticket_issue_failed");
             response.mutable_error_message()->set_id(kServiceUnavailable);
             return;
@@ -999,6 +1062,7 @@ void BattleRoomManager::HandleAddObserver(const ::AddObserverRequest &request,
                      << " observer=" << observerId;
             PushAssignment(*room, observerId, it->second, assigned);
             PushSpectateState(*room, observerId);
+            operation->second.cancelled = false;
             return;
         }
         LOG_INFO << "AddObserver idempotent hit but session changed;route refreshed: battle_id=" << battleId
@@ -1013,6 +1077,7 @@ void BattleRoomManager::HandleAddObserver(const ::AddObserverRequest &request,
         // 观战首帧随握手下发(§22 D69),这里不推 —— 直连刚关,推了也只会被战斗帧出口丢弃。
         CloseDirectConnectionOf(*room, observerId, "observer_session_changed");
         PushAssignment(*room, observerId, it->second, assigned);
+        operation->second.cancelled = false;
         return;
     }
 
@@ -1027,7 +1092,7 @@ void BattleRoomManager::HandleAddObserver(const ::AddObserverRequest &request,
     // fail-closed 预签(turn-based §22 D70):登记之前签票,签不出不登记 ——
     // 观众连不上直连就看不到任何战斗帧,登记进来只会占一个观众名额
     ::BattleAssignedS2C assigned;
-    if (!BuildAssignment(*room, observerId, ::BATTLE_TICKET_ROLE_OBSERVER, assigned))
+    if (!BuildAssignment(*room, observerId, ::BATTLE_TICKET_ROLE_OBSERVER, assigned, request.spectator_operation_id()))
     {
         LOG_ERROR << "metric=battle_ticket_issue_failed battle_id=" << battleId
                   << " player_id=" << observerId << " role=observer path=new"
@@ -1038,6 +1103,8 @@ void BattleRoomManager::HandleAddObserver(const ::AddObserverRequest &request,
 
     room->routingByObserver.emplace(observerId, request.routing());
     room->observerNames.emplace(observerId, request.observer_name());
+    room->observerOperations.emplace(observerId, request.spectator_operation_id());
+    operation->second.cancelled = false;
 
     // 只下发落点分配(大厅公告)。观战首帧随直连握手下发(§22 D69 snapshot on connect):
     // 此刻观众一定还没有直连,在这里推首帧只会被战斗帧出口丢弃
@@ -1048,11 +1115,32 @@ void BattleRoomManager::HandleAddObserver(const ::AddObserverRequest &request,
              << " observers=" << room->routingByObserver.size();
 }
 
-void BattleRoomManager::HandleRemoveObserver(const ::RemoveObserverRequest &request)
+void BattleRoomManager::HandleRemoveObserver(const ::RemoveObserverRequest &request, ::RemoveObserverResponse &response)
 {
     const auto battleId = request.battle_id();
     const auto observerId = request.observer_player_id();
 
+    const uint64_t now = TimeSystem::NowMillisecondsUTC();
+    if (!gNode || request.target_instance_id() != gNode->GetNodeInfo().node_uuid()
+        || !ValidSpectatorOperation(request.spectator_operation_id()) || request.admit_before_ms() == 0
+        || (request.admit_before_ms() > now && request.admit_before_ms() - now > 30000)
+        || battleId == 0 || observerId == 0) return;
+    PruneSpectatorOperations(now);
+    const auto key = std::make_tuple(battleId, observerId, request.spectator_operation_id());
+    auto operation = spectatorOperations_.find(key);
+    if (operation != spectatorOperations_.end() && operation->second.admitBeforeMs != request.admit_before_ms()) return;
+    if (request.admit_before_ms() > now) {
+        if (operation == spectatorOperations_.end()) {
+            if (spectatorOperations_.size() >= kMaxSpectatorOperations) return;
+            operation = spectatorOperations_.emplace(key, SpectatorOperation{request.admit_before_ms(), {}, true}).first;
+            spectatorDeadlines_.emplace(request.admit_before_ms(), key);
+        }
+        operation->second.cancelled = true;
+    }
+    else if (operation != spectatorOperations_.end()) spectatorOperations_.erase(operation);
+    response.set_cancelled(true);
+    response.set_spectator_operation_id(request.spectator_operation_id());
+    response.set_target_instance_id(request.target_instance_id());
     auto *room = FindRoom(battleId);
     if (room == nullptr)
     {
@@ -1060,8 +1148,13 @@ void BattleRoomManager::HandleRemoveObserver(const ::RemoveObserverRequest &requ
         return;
     }
     const auto it = room->routingByObserver.find(observerId);
+    const auto active = room->observerOperations.find(observerId);
+    if (active == room->observerOperations.end() || active->second != request.spectator_operation_id()) return;
     if (it == room->routingByObserver.end())
     {
+        // 原op已精确匹配：同时清掉失败准入遗留的私有槽，旧op不能清新op。
+        room->observerNames.erase(observerId);
+        room->observerOperations.erase(active);
         return;
     }
 
@@ -1075,6 +1168,7 @@ void BattleRoomManager::HandleRemoveObserver(const ::RemoveObserverRequest &requ
 
     room->routingByObserver.erase(it);
     room->observerNames.erase(observerId);
+    room->observerOperations.erase(observerId);
     // 观众已不在名单,直连没有存在意义;SpectateEnd 已排队,shutdown 让它先 flush
     CloseDirectConnectionOf(*room, observerId, "observer_removed");
 
@@ -1110,6 +1204,14 @@ void BattleRoomManager::HandleStopWatchBattle(const ::SessionDetails &sessionDet
     }
 
     // 主动退出不推 SpectateEnd:是客户端自己发起的动作,回包即确认
+    if (const auto active = room->observerOperations.find(playerId); active != room->observerOperations.end()) {
+        const auto operation = spectatorOperations_.find(std::make_tuple(room->battleId, playerId, active->second));
+        if (operation != spectatorOperations_.end()) {
+            if (operation->second.admitBeforeMs <= TimeSystem::NowMillisecondsUTC()) spectatorOperations_.erase(operation);
+            else operation->second.cancelled = true;
+        }
+        room->observerOperations.erase(active);
+    }
     room->routingByObserver.erase(it);
     room->observerNames.erase(playerId);
     // 退出请求可能就是从这条直连来的,应答由直连面在本函数返回后写出;关闭已推迟到本轮
@@ -1759,6 +1861,13 @@ void BattleRoomManager::NotifySpectateEndAndClose(BattleRoom &room,
     // 观众先看到结束原因。没有直连的观众收不到它(战斗帧不回落,§22 D68)
     for (const auto &[observerId, routing] : room.routingByObserver)
     {
+        if (const auto active = room.observerOperations.find(observerId); active != room.observerOperations.end()) {
+            const auto operation = spectatorOperations_.find(std::make_tuple(room.battleId, observerId, active->second));
+            if (operation != spectatorOperations_.end()) {
+                if (operation->second.admitBeforeMs <= TimeSystem::NowMillisecondsUTC()) spectatorOperations_.erase(operation);
+                else operation->second.cancelled = true;
+            }
+        }
         PushBattleFrame(room, observerId, BattleClientPlayerNotifySpectateEndMessageId, end);
         CloseDirectConnectionOf(room, observerId, "spectate_end");
     }
@@ -1769,6 +1878,7 @@ void BattleRoomManager::NotifySpectateEndAndClose(BattleRoom &room,
 
     room.routingByObserver.clear();
     room.observerNames.clear();
+    room.observerOperations.clear();
 }
 
 void BattleRoomManager::AbortAllRooms(const std::string &reason)
@@ -1883,7 +1993,8 @@ void BattleRoomManager::PushLobbyAnnouncement(const BattleRoom &room, const uint
 }
 
 bool BattleRoomManager::BuildAssignment(const BattleRoom &room, const uint64_t playerId,
-                                        const ::eBattleTicketRole role, ::BattleAssignedS2C &out) const
+                                        const ::eBattleTicketRole role, ::BattleAssignedS2C &out,
+                                        std::string_view spectatorOperation) const
 {
     const auto &deploy = gNodeConfigManager.GetBaseDeployConfig();
     const auto &secret = deploy.battle_token_secret();
@@ -1924,6 +2035,15 @@ bool BattleRoomManager::BuildAssignment(const BattleRoom &room, const uint64_t p
     payload.set_battle_instance_id(self.node_uuid());
     payload.set_expire_at_ms(room.deadlineMs);
     payload.set_role(role);
+    if (role == ::BATTLE_TICKET_ROLE_OBSERVER) {
+        if (spectatorOperation.empty()) {
+            const auto original = room.observerOperations.find(playerId);
+            if (original == room.observerOperations.end()) return false;
+            spectatorOperation = original->second;
+        }
+        if (!ValidSpectatorOperation(spectatorOperation)) return false;
+        payload.set_spectator_operation_id(std::string(spectatorOperation));
+    } else if (!spectatorOperation.empty()) return false;
     const std::string payloadBytes = payload.SerializeAsString();
 
     std::string signature;
@@ -1959,10 +2079,23 @@ void BattleRoomManager::PushAssignment(const BattleRoom &room, const uint64_t pl
                           assigned);
 }
 
+bool BattleRoomManager::OwnsDirectConnection(uint64_t battleId, uint64_t playerId, ::eBattleTicketRole role,
+    const muduo::net::TcpConnectionPtr &conn, std::string_view spectatorOperation)
+{
+    const auto* room = FindRoom(battleId);
+    if (room == nullptr || !conn) return false;
+    const auto direct = room->directConnByPlayer.find(playerId);
+    if (direct == room->directConnByPlayer.end() || direct->second.lock() != conn) return false;
+    if (role == BATTLE_TICKET_ROLE_PARTICIPANT) return spectatorOperation.empty() && room->routingByPlayer.count(playerId) != 0;
+    const auto original = room->observerOperations.find(playerId);
+    return role == BATTLE_TICKET_ROLE_OBSERVER && original != room->observerOperations.end()
+        && original->second == spectatorOperation && room->routingByObserver.count(playerId) != 0;
+}
+
 bool BattleRoomManager::AttachDirectConnection(const uint64_t battleId, const uint64_t playerId,
                                                const ::eBattleTicketRole role,
                                                const muduo::net::TcpConnectionPtr &conn,
-                                               uint32_t *gateSessionId)
+                                               uint32_t *gateSessionId, std::string_view spectatorOperation)
 {
     auto *room = FindRoom(battleId);
     if (room == nullptr || !conn)
@@ -1974,6 +2107,7 @@ bool BattleRoomManager::AttachDirectConnection(const uint64_t battleId, const ui
     const ::BattleRouting *routing = nullptr;
     if (role == ::BATTLE_TICKET_ROLE_PARTICIPANT)
     {
+        if (!spectatorOperation.empty()) return false;
         if (const auto it = room->routingByPlayer.find(playerId); it != room->routingByPlayer.end())
         {
             routing = &it->second;
@@ -1981,6 +2115,8 @@ bool BattleRoomManager::AttachDirectConnection(const uint64_t battleId, const ui
     }
     else if (role == ::BATTLE_TICKET_ROLE_OBSERVER)
     {
+        const auto original = room->observerOperations.find(playerId);
+        if (original == room->observerOperations.end() || spectatorOperation.empty() || original->second != spectatorOperation) return false;
         if (const auto it = room->routingByObserver.find(playerId); it != room->routingByObserver.end())
         {
             routing = &it->second;
@@ -2642,7 +2778,7 @@ void BattleRoomManager::HandleIssueBattleTicket(const ::IssueBattleTicketRequest
     // match 已从大厅会话 metadata 取得权威 player_id(客户端请求体里没有 player_id),
     // battle 只核对名单;这里的 0 只可能是 match 侧漏填,按参数错误拒绝而非 kPlayerNotFoundInSession
     const auto playerId = request.player_id();
-    if (playerId == 0)
+    if (playerId == 0 || !gNode || request.target_instance_id() != gNode->GetNodeInfo().node_uuid())
     {
         LOG_WARN << "IssueBattleTicket request lacks player_id: battle_id=" << request.battle_id();
         response.mutable_error_message()->set_id(kInvalidParameter);
@@ -2662,10 +2798,15 @@ void BattleRoomManager::HandleIssueBattleTicket(const ::IssueBattleTicketRequest
     ::eBattleTicketRole role = ::BATTLE_TICKET_ROLE_NONE;
     if (room->routingByPlayer.find(playerId) != room->routingByPlayer.end())
     {
+        if (!request.spectator_operation_id().empty()) { response.mutable_error_message()->set_id(kInvalidParameter); return; }
         role = ::BATTLE_TICKET_ROLE_PARTICIPANT;
     }
     else if (room->routingByObserver.find(playerId) != room->routingByObserver.end())
     {
+        const auto original = room->observerOperations.find(playerId);
+        if (original == room->observerOperations.end() || original->second != request.spectator_operation_id()) {
+            response.mutable_error_message()->set_id(kInvalidParameter); return;
+        }
         role = ::BATTLE_TICKET_ROLE_OBSERVER;
     }
     else

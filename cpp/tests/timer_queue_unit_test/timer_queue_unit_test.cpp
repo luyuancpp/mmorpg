@@ -22,6 +22,12 @@
 using namespace muduo;
 using namespace muduo::net;
 
+namespace {
+// 正间隔小于 1us,首次到期的微秒增量为 0,保证与过去时刻的一次性定时器同批到期。
+// 保留重复属性而不依赖 sleep 或机器调度速度制造测试窗口。
+constexpr double kImmediateRepeatIntervalSeconds = 0.0000001;
+} // namespace
+
 // 保留现有直接组件及技能包装的地址稳定性;下方另测无此标记的包装也能安全搬移。
 static_assert(entt::component_traits<TimerTaskComp>::in_place_delete);
 static_assert(entt::component_traits<CastingTimerComp>::in_place_delete);
@@ -443,10 +449,8 @@ TEST(TimerQueueTest, CancelledTimerInSameBatchMustNotRun)
 
 	std::atomic<int> victimFires{0};
 
-	// Raw muduo timers on purpose. Going through TimerTaskComp would prove
-	// nothing: its Cancel() also clears `callback`, so the firing would look
-	// suppressed even if TimerQueue ran it. Only a bare timer shows whether
-	// TimerQueue itself skipped the callback.
+	// 使用裸 muduo 定时器:TimerTaskComp 的 weak State 与 generation 也会拦截失效回调,
+	// 经过组件无法判断本次是否由 TimerQueue 自身跳过。
 	const TimerId victimId = loop.runAt(addTime(Timestamp::now(), -1.0), [&victimFires]() {
 		++victimFires;
 	});
@@ -464,16 +468,11 @@ TEST(TimerQueueTest, CancelledTimerInSameBatchMustNotRun)
 	// re-inserted -- it does not skip the pending run(). So this only holds if
 	// TimerQueue::handleRead() checks cancelingTimers_ before calling run().
 	//
-	// Why it matters: cancelling usually means the callback's owner is being
-	// destroyed. Without that check the callback runs against freed memory.
-	// This cannot be fixed above muduo -- a component-level guard would have to
-	// dereference the freed object just to read its own guard flag.
-	//
 	// See docs/design/muduo-timer-cancellation-hazards.md.
 	// 守卫两端都有:Windows 在 cpp/libs/engine/muduo_windows/src/muduo/net/TimerQueue.cc,
 	// Linux 在 tools/archived/muduo_linux_overlay/muduo/net/TimerQueue.cc 的 LOCAL DELTA (1)
-	// (2026-08-02 起由 setup_dependencies.sh 覆盖到 third_party/muduo-linux)。本工程只有 vcxproj,
-	// 所以这条用例目前只在 Windows 上跑。
+	// (由 setup_dependencies.sh 覆盖到 third_party/muduo-linux)。Windows 使用本目录 vcxproj,
+	// Linux 使用 cpp/tests/redis_lifecycle_test/CMakeLists.txt 的 timer_queue_lifecycle_test。
 	EXPECT_EQ(victimFires.load(), 0);
 }
 
@@ -529,14 +528,157 @@ TEST(TimerQueueTest, TimerOfObjectDestroyedInSameBatchMustNotRun)
 	loop.runAfter(0.05, [&loop]() { loop.quit(); });
 	loop.loop();
 
-	// Destroyed first, expired second, same batch -- the original crash.
-	// Cancelling in the destructor does not prevent it; only TimerQueue
-	// skipping the callback does. Nothing above muduo can fix this: a
-	// component-level "am I stale" flag would have to be read out of the
-	// freed object to be consulted at all.
-	//
+	// 同批先销毁宿主,再轮到它的裸定时器。独立 weak 状态可以在业务层保护寿命,
+	// 本用例专门验证直接调用 cancel 的底层契约,不借助该外层保护。
 	// See docs/design/muduo-timer-cancellation-hazards.md.
 	EXPECT_EQ(firedAfterDeath.load(), 0);
+}
+
+TEST(TimerQueueTest, CancelledRepeatingTimerInSameBatchMustNotRunOrRestart)
+{
+	EventLoop loop;
+	int fires = 0;
+	TimerId repeatingId;
+	repeatingId = loop.runEvery(kImmediateRepeatIntervalSeconds, [&] {
+		++fires;
+		// 若回归失败,只观测一次额外触发,避免重复定时器忙转。
+		loop.cancel(repeatingId);
+	});
+	loop.runAt(addTime(Timestamp::now(), -1.0), [&] {
+		loop.cancel(repeatingId);
+		loop.cancel(repeatingId);
+	});
+	loop.runAfter(0.02, [&loop] { loop.quit(); });
+	loop.loop();
+
+	EXPECT_EQ(0, fires);
+}
+
+TEST(TimerQueueTest, RepeatingTimerCanCancelItselfTwice)
+{
+	EventLoop loop;
+	int fires = 0;
+	TimerId repeatingId;
+	repeatingId = loop.runEvery(kImmediateRepeatIntervalSeconds, [&] {
+		++fires;
+		loop.cancel(repeatingId);
+		loop.cancel(repeatingId);
+	});
+	loop.runAfter(0.02, [&loop] { loop.quit(); });
+	loop.loop();
+	// 回收后再次取消同一旧句柄也必须是无操作,不能读取已释放的 Timer。
+	loop.cancel(repeatingId);
+
+	EXPECT_EQ(1, fires);
+}
+
+TEST(TimerQueueTest, CancellationCallbackCleanupCanCancelAnotherActiveTimer)
+{
+	EventLoop loop;
+	int victimFires = 0;
+	int cleanupCount = 0;
+	const TimerId victimId = loop.runAfter(0.01, [&victimFires] { ++victimFires; });
+	TimerId cancelledId;
+
+	// 只在被取消 Timer 的闭包中保留一个控制块,闭包销毁时执行清理并取消另一只活动 Timer。
+	// 清理动作不读取已删除对象,其可观察行为与捕获对象析构中的 cancel 相同。
+	auto cleanup = std::shared_ptr<void>(nullptr, [&](void*) {
+		++cleanupCount;
+		loop.cancel(cancelledId);
+		loop.cancel(victimId);
+	});
+	cancelledId = loop.runAfter(1.0, [cleanup = std::move(cleanup)] {
+		(void)cleanup;
+	});
+
+	// cancel 必须先从到期队列与活动集合同时摘除,再销毁闭包,使重入取消看到一致状态。
+	loop.cancel(cancelledId);
+	loop.runAfter(0.02, [&loop] { loop.quit(); });
+	loop.loop();
+
+	EXPECT_EQ(1, cleanupCount);
+	EXPECT_EQ(0, victimFires);
+}
+
+TEST(TimerQueueTest, EventLoopDestructionCanCancelOwnAndAnotherTimer)
+{
+	int cleanupCount = 0;
+	int victimCleanupCount = 0;
+	TimerId cancelledId;
+	{
+		EventLoop loop;
+		auto victimCleanup = std::shared_ptr<void>(nullptr, [&](void*) {
+			++victimCleanupCount;
+		});
+		const TimerId victimId = loop.runAfter(120.0, [cleanup = std::move(victimCleanup)] {
+			(void)cleanup;
+		});
+		auto cleanup = std::shared_ptr<void>(nullptr, [&loop, &cancelledId, victimId, &cleanupCount](void*) {
+			++cleanupCount;
+			// 直接通过仍在析构栈上的 loop 取消,不依赖已清空的线程局部 EventLoop 句柄。
+			loop.cancel(cancelledId);
+			loop.cancel(victimId);
+		});
+		cancelledId = loop.runAfter(60.0, [cleanup = std::move(cleanup)] {
+			(void)cleanup;
+		});
+		// 不运行 loop:只由 TimerQueue 析构释放尚未到期回调。先清理较早 Timer 时会重入 cancel。
+	}
+
+	EXPECT_EQ(1, cleanupCount);
+	EXPECT_EQ(1, victimCleanupCount);
+}
+
+TEST(TimerQueueTest, ExpiredCallbackCleanupCanCancelRepeatingTimer)
+{
+	EventLoop loop;
+	int fires = 0;
+	int firesAfterDestruction = 0;
+	int ownerDestructions = 0;
+	TimerId repeatingId;
+
+	repeatingId = loop.runEvery(kImmediateRepeatIntervalSeconds, [&]() {
+		++fires;
+		if (fires == 1) {
+			// 先让本批 reset 完成,再安排下一批退出。旧实现重新入队的 B 到期点不晚于退出定时器,
+			// 必须先被取出并执行,不会因测试线程在进入 loop 前被抢占而漏掉第二次触发。
+			loop.queueInLoop([&loop] {
+				loop.runAfter(0.0, [&loop] { loop.quit(); });
+			});
+		}
+		if (ownerDestructions != 0) {
+			++firesAfterDestruction;
+			// 旧实现会错误地重新入队;第二次触发自行退出,避免失败用例忙转。
+			loop.cancel(repeatingId);
+		}
+	});
+
+	struct Owner
+	{
+		Owner(EventLoop& eventLoop, TimerId timerId, int& destructionCount)
+			: loop(eventLoop), timer(timerId), destructions(destructionCount) {}
+		~Owner()
+		{
+			++destructions;
+			loop.cancel(timer);
+		}
+		EventLoop& loop;
+		TimerId timer;
+		int& destructions;
+	};
+
+	auto owner = std::make_shared<Owner>(loop, repeatingId, ownerDestructions);
+	loop.runAt(addTime(Timestamp::now(), -1.0), [owner = std::move(owner)] {
+		// 唯一所有权由这只 Timer 的闭包持有,回调返回时仍存活,reset 删除闭包时才析构。
+		(void)owner;
+	});
+	loop.loop();
+
+	// 两只回调都已执行,清理较早的一次性回调时取消后面的重复定时器,必须阻止其重新入队。
+	// 回调只读外置计数器,不解引用已销毁宿主,使回归检测本身保持良定义。
+	EXPECT_EQ(1, ownerDestructions);
+	EXPECT_EQ(1, fires);
+	EXPECT_EQ(0, firesAfterDestruction);
 }
 
 TEST(TimerQueueTest, RepeatingTimerKeepsFiringAcrossGenerationCheck)
@@ -545,11 +687,8 @@ TEST(TimerQueueTest, RepeatingTimerKeepsFiringAcrossGenerationCheck)
 
 	std::atomic<int> ticks{0};
 
-	// Quit on the tick count, not on a wall-clock window. The Windows muduo
-	// has no timerfd and polls on the event loop's own cadence (~107ms here),
-	// so a fixed 100ms window only ever gets one poll and this looked like a
-	// broken repeating timer. The runAfter below is a safety net, not the
-	// expected exit path.
+	// 数够触发次数再退出,避免固定时间窗口在事件循环繁忙时把晚执行误判成漏触发。
+	// 下方 5s 定时器只限制失败等待,正常情况下不通过它退出。
 	TimerTaskComp timer;
 	timer.RunEvery(0.01, [&ticks, &loop]() {
 		if (++ticks >= 3) {
@@ -571,8 +710,7 @@ TEST(TimerQueueTest, SelfRearmFromOwnCallbackIsHonoured)
 
 	std::atomic<int> fires{0};
 
-	// Same reason as above: quit once the second firing lands, not after a
-	// fixed window that may be shorter than one poll cycle.
+	// 同样按触发次数退出,使调度延迟不改变预期次数。
 	TimerTaskComp timer;
 	std::function<void()> tick = [&]() {
 		if (++fires == 1) {
@@ -588,21 +726,8 @@ TEST(TimerQueueTest, SelfRearmFromOwnCallbackIsHonoured)
 	loop.runAfter(5.0, [&loop]() { loop.quit(); });
 	loop.loop();
 
-	// Two things are locked in here.
-	//
-	// 1. The generation is bumped before the callback runs, so the new arming
-	//    is the one the next firing matches against. Bumping it afterwards
-	//    would silently swallow the re-arm.
-	//
-	// 2. Re-scheduling from inside one's own callback must not destroy the
-	//    callable that is currently executing. This is the test that lets
-	//    OnTimer() invoke cb() directly instead of taking a defensive copy:
-	//    `tick` lives in the closure held by muduo's Timer, and that Timer
-	//    survives until TimerQueue::reset(), which runs after the callback
-	//    returns. Back when the callback was a member of TimerTaskComp,
-	//    RunAfter() -> ScheduleTimer() -> Cancel() destroyed it mid-call and
-	//    the copy was mandatory. If anyone moves the callback back into the
-	//    component without restoring that copy, this test is what catches it.
+	// 重挂时 Cancel 推进代际,新武装的回调匹配新代际;旧回调返回不能覆盖新状态。
+	// 正在执行的 callable 由 muduo Timer 持有,等回调返回后的 reset 才释放,因此重挂不会中途析构它。
 	EXPECT_EQ(fires.load(), 2);
 }
 

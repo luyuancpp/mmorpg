@@ -121,6 +121,17 @@ type Config struct {
 	// 服务端准入白名单，默认空；实例config只信scene扣出快照，不信玩家声明。
 	Commerce CommerceConf `json:"Commerce,optional"`
 	Mall     MallConf     `json:"Mall,optional"`
+	// 与data_service相同TiDB集群的显式全局目录schema；资产合同提交先锁角色。
+	AccountRoleSchema string  `json:",optional"`
+	Rmb               RmbConf `json:",optional"`
+}
+
+type RmbConf struct {
+	Enabled bool `json:",optional"`
+	// 必须由所有参与zone的login共用，不从SharedRedis/ZoneId推测或回落。
+	GlobalLoginSessions bool      `json:",optional"`
+	LoginRedis          RedisConf `json:",optional"`
+	CurrencyTypes       []uint32  `json:",optional"`
 }
 type MallConf struct {
 	URL               string `json:",optional"`
@@ -567,12 +578,23 @@ func (c *Config) Validate() error {
 	}
 	// 落地恢复参数只在通道开着时有消费者(停放 / 放弃 / 对账 / 唤醒都挂在重投循环上),关着时一概不查。
 	if c.AssetOp.Enabled {
+		if !regexp.MustCompile(`^[a-z][a-z0-9_]{0,63}$`).MatchString(c.AccountRoleSchema) || !c.Rmb.GlobalLoginSessions || c.Rmb.LoginRedis.Host == "" {
+			return errors.New("交易写面必须显式配置全局角色schema与全局login会话Redis，不允许从SharedRedis推测")
+		}
+		if c.Rmb.LoginRedis.DB < 0 || c.Rmb.LoginRedis.PoolSize < 0 {
+			return errors.New("登录态Redis库号/连接池非法")
+		}
 		if c.Market.Scope != ScopeGlobal || !c.MySQL.RequiresTiDB() {
 			return errors.New("交易写面必须使用全球市场与强一致TiDB，禁止按区域独立撮合")
 		}
 		for _, id := range c.Commerce.ItemConfigs {
 			if id == 0 || strings.TrimSpace(c.Commerce.ItemTitles[strconv.FormatUint(uint64(id), 10)]) == "" {
 				return errors.New("可交易道具必须配置服务端名称与合法配置号")
+			}
+		}
+		for _, currency := range c.Commerce.CurrencyTypes {
+			if currency > 1 {
+				return errors.New("交易货币只允许金币0与显式启用钻石1，绑定币禁售")
 			}
 		}
 		// 交易合同与商城到账的终结只认玩家 SQL 提交证据(data.AssetOpRepo.Finalize 对 ORDER 行强制):开关关闭时
@@ -584,6 +606,16 @@ func (c *Config) Validate() error {
 		}
 		if err := c.AssetOp.validateRecovery(); err != nil {
 			return err
+		}
+	}
+	if c.Rmb.Enabled {
+		if !c.AssetOp.Enabled || !c.AssetOp.RequireSQLCommit || c.Mall.URL == "" {
+			return errors.New("人民币寄售必须开启商城与SQL资产通道")
+		}
+		for _, currency := range c.Rmb.CurrencyTypes {
+			if currency > 1 {
+				return errors.New("人民币寄售不能交易绑定币")
+			}
 		}
 	}
 	// 清理只依赖 MySQL,与通道开关独立(同 guild):关着通道时历史终态行照样要清。

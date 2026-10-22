@@ -125,7 +125,7 @@ var guildTestDropTables = []string{
 	"guild_trial_reward_owed", "guild_trial_battle", // B6b 同道历练两表(W、T)
 	"guild_activity_progress",                                      // B6a 活动进度(P)
 	"guild_daily_counter", "guild_asset_op", "guild_player_op_seq", // B5a 资产三表
-	"guild_application", "guild_member", "guild_player_state", "guild", "schema_migrations",
+	"guild_application", "guild_member", "guild_player_state", "guild_trial_launch_role", "guild_trial_launch", "guild_trial_lobby_slot", "guild_trial_lobby", "guild", "schema_migrations",
 }
 
 // guildTestDBNamePattern:测试只许碰这两类一次性库。appuser 对 testdb / zone_N_db / mmorpg_trade 也有 ALL 权限,
@@ -172,10 +172,10 @@ func TestGuildTestDBNamePattern(t *testing.T) {
 // TestGuildNameNorm 钉住帮名唯一键的规范化公式(NFKC → TrimSpace → 小写)。
 func TestGuildNameNorm(t *testing.T) {
 	cases := map[string]string{
-		"青云门":       "青云门",
-		"  ABC ":    "abc",
-		"ＡＢＣ":       "abc",
-		"Ab　": "ab",
+		"青云门":    "青云门",
+		"  ABC ": "abc",
+		"ＡＢＣ":    "abc",
+		"Ab　":    "ab",
 	}
 	for in, want := range cases {
 		got, ok := GuildNameNorm(in)

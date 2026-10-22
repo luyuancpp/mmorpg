@@ -130,7 +130,7 @@ end
 // 就严格等价于「没被放行」;被回滚时 epoch 变成 N+2,另由 location 里的回滚回执证明(见
 // luaRollbackPlayerPlacement)。若只在预检里读标记,一个卡了很久的 EnterScene 可以在源端解冻
 // 之后才铸造,同一名玩家在两个 zone 同时活着。
-const luaMintEpochAndSetLocation = `
+const luaMintEpochAndSetLocation = luaPlacementRevisionCheck + `
 local cur = redis.call("GET", KEYS[1])
 if cur == false then
     cur = "0"
@@ -149,6 +149,7 @@ if ARGV[3] ~= "" and redis.call("GET", KEYS[3]) ~= ARGV[3] then
 end
 local minted = redis.call("INCR", KEYS[1])
 redis.call("SET", KEYS[2], ARGV[2])
+` + luaWritePlacementRevision + `
 return minted
 `
 
@@ -162,7 +163,7 @@ return minted
 //
 // 返回 1 = 已写(或已是要写的值);0 = epoch 被并发推进,或 location 已不是观察时那一份,什么都没改。
 // 不能像铸造版那样返回 epoch 本身:期望值为 0(旧版从未铸造)时成功与冲突就分不开了。
-const luaSetLocationIfEpoch = `
+const luaSetLocationIfEpoch = luaPlacementRevisionCheck + `
 local cur = redis.call("GET", KEYS[1])
 if cur == false then
     cur = "0"
@@ -170,11 +171,12 @@ end
 if cur ~= ARGV[1] then
     return 0
 end
-if redis.call("GET", KEYS[2]) == ARGV[2] then
+if redis.call("GET", KEYS[2]) == ARGV[2] and (requested_revision == nil or requested_revision == '' or redis.call('GET',KEYS[4]) == ARGV[7]) then
     return 1
 end
 ` + luaLocationExpectCheck + `
 redis.call("SET", KEYS[2], ARGV[2])
+` + luaWritePlacementRevision + `
 return 1
 `
 
@@ -246,6 +248,11 @@ return 1
 //
 // tonumber 比较:epoch 远小于 2^53,双精度下精确;cur 被写坏(非数字)时得 nil,比较为假,回 0。
 const luaRollbackPlayerPlacement = `
+if ARGV[8] ~= nil and ARGV[8] ~= '' then
+    if redis.call('GET',KEYS[5]) ~= ARGV[8] then return 0 end
+    local tag = redis.call('GET',KEYS[4]) or ''
+    if tag ~= ARGV[9] and tag ~= ARGV[10] then return 0 end
+end
 local loc = redis.call("GET", KEYS[1])
 local cur = redis.call("GET", KEYS[2])
 if cur == false then
@@ -263,6 +270,10 @@ if loc == ARGV[1] and cur == ARGV[3] then
         redis.call("DEL", KEYS[1])
     else
         redis.call("SET", KEYS[1], ARGV[2])
+    end
+    if KEYS[4] ~= nil then
+        if ARGV[10] ~= nil and ARGV[10] ~= '' then redis.call('SET',KEYS[4],ARGV[10])
+        else redis.call('DEL',KEYS[4]) end
     end
     if ARGV[6] ~= "" then
         redis.call("SET", KEYS[3], ARGV[6], "EX", ARGV[7])
@@ -518,9 +529,9 @@ func rollbackPlacementAfterPushFailure(svcCtx *svc.ServiceContext, log logx.Logg
 func rollbackPlayerPlacement(svcCtx *svc.ServiceContext, log logx.Logger, playerID uint64,
 	placed placedLocation, plan routeRollbackPlan) (restored bool, echo uint64) {
 	result, err := svcCtx.Redis.Eval(luaRollbackPlayerPlacement,
-		[]string{getPlayerLocationKey(playerID), ownerepoch.OwnerEpochKey(playerID), ownerepoch.HandoffKey(playerID)},
+		[]string{getPlayerLocationKey(playerID), ownerepoch.OwnerEpochKey(playerID), ownerepoch.HandoffKey(playerID), locationRevisionKey(playerID), locationRevisionFloorKey(playerID)},
 		placed.raw, plan.restoredRaw, strconv.FormatUint(placed.epoch, 10), plan.mode.String(),
-		plan.requiredMarker, plan.forwardMarker, strconv.FormatInt(int64(ownerepoch.HandoffTTL.Seconds()), 10))
+		plan.requiredMarker, plan.forwardMarker, strconv.FormatInt(int64(ownerepoch.HandoffTTL.Seconds()), 10), optionalRevisionText(placed.revision), placed.tag, restoreRevisionTag(placed, plan.restoredRaw))
 	if err != nil {
 		metrics.ObserveEnterSceneRollback(rollbackOutcomeRedisError)
 		log.Errorf("[RouteRollback] outcome=%s Redis error rolling back player location/epoch; execution uncertain, arrival may remain: player=%d mode=%s epoch=%d epoch_after=%d required_marker=%q err=%v",

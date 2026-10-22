@@ -222,16 +222,12 @@ func runAuditEntry(p auditEntryParams) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Minute)
 	defer cancel()
 
-	db, err := sql.Open("mysql", p.mysqlDSN)
+	db, err := openCurrentTiDB(ctx, p.mysqlDSN)
 	if err != nil {
 		log.Printf("ERROR: mysql open: %v — MySQL-backed checks will report INFRA", err)
 		db = nil
 	} else {
 		defer db.Close()
-		if err := db.PingContext(ctx); err != nil {
-			log.Printf("ERROR: mysql ping: %v — MySQL-backed checks will report INFRA", err)
-			db = nil
-		}
 	}
 
 	// 每个 DB 一个句柄。ping 失败**不再**降级成静默跳过:句柄留 nil,对应

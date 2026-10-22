@@ -16,6 +16,7 @@ CREATE TABLE IF NOT EXISTS pms_sku_stock (
   stock INT NOT NULL,
   lock_stock INT NOT NULL DEFAULT 0,
   published INT NOT NULL DEFAULT 0,
+  catalog_revision BIGINT NOT NULL DEFAULT 0,
   CHECK (price_minor > 0), CHECK (stock >= 0), CHECK (lock_stock >= 0 AND lock_stock <= stock)
 );
 CREATE TABLE IF NOT EXISTS oms_order (
@@ -41,6 +42,13 @@ CREATE TABLE IF NOT EXISTS oms_order_item (
   product_sku_code VARCHAR(64) NOT NULL,
   product_quantity INT NOT NULL,
   product_price_minor BIGINT NOT NULL
+);
+-- 原账号与目录修订在下单同事务冻结，角色后续过户不能继承旧付款的交付资格。
+CREATE TABLE IF NOT EXISTS commerce_official_owner (
+  order_sn VARCHAR(36) PRIMARY KEY,
+  buyer_account VARBINARY(191) NOT NULL,
+  buyer_owner_revision VARBINARY(20) NOT NULL,
+  INDEX idx_official_owner(buyer_account,buyer_owner_revision,order_sn)
 );
 CREATE TABLE IF NOT EXISTS commerce_payment_receipt (
   channel VARBINARY(32) NOT NULL,
@@ -71,7 +79,130 @@ CREATE TABLE IF NOT EXISTS commerce_request_nonce (
 CREATE TABLE IF NOT EXISTS commerce_sku_grant (sku_id BIGINT PRIMARY KEY,item_config_id INT NOT NULL,count_per_unit INT NOT NULL,title VARCHAR(128) NOT NULL,CHECK (item_config_id>0),CHECK (count_per_unit>0 AND count_per_unit<=4096));
 CREATE TABLE IF NOT EXISTS commerce_order_grant (order_sn VARCHAR(36) PRIMARY KEY,item_config_id INT NOT NULL,count_per_unit INT NOT NULL,title VARCHAR(128) NOT NULL);
 CREATE TABLE IF NOT EXISTS commerce_delivery_receipt (order_sn VARCHAR(36) PRIMARY KEY,trade_order_id VARCHAR(20) NOT NULL,state VARCHAR(24) NOT NULL,proof VARCHAR(64) NOT NULL);
-CREATE TABLE IF NOT EXISTS commerce_refund_intent (order_sn VARCHAR(36) PRIMARY KEY,status VARCHAR(24) NOT NULL,channel VARCHAR(32) NULL,transaction_id VARCHAR(128) NULL);
+CREATE TABLE IF NOT EXISTS commerce_refund_intent (order_sn VARCHAR(36) PRIMARY KEY,status VARCHAR(24) NOT NULL,channel VARCHAR(32) NULL,transaction_id VARCHAR(128) NULL,INDEX idx_commerce_refund_pending(status,order_sn));
 
 CREATE TABLE IF NOT EXISTS commerce_refund_receipt (order_sn VARCHAR(36) PRIMARY KEY,channel VARCHAR(32) NOT NULL,transaction_id VARCHAR(128) NOT NULL,amount_minor BIGINT NOT NULL,currency VARCHAR(16) NOT NULL,UNIQUE(channel,transaction_id));
+-- 管理幂等日志与SKU修改同事务，pending标记不应出现在已提交的成功命令中。
+CREATE TABLE IF NOT EXISTS commerce_admin_command (
+  actor VARBINARY(64) NOT NULL,
+  request_id VARBINARY(128) NOT NULL,
+  command_type VARCHAR(16) NOT NULL,
+  request_digest VARCHAR(64) NOT NULL,
+  result_json MEDIUMTEXT NOT NULL,
+  created_ms BIGINT NOT NULL,
+  PRIMARY KEY(actor,request_id)
+);
+-- 本地mock提供方的不可变交易原件；applied仅为可恢复投递标记，不代表真实外部资金。
+CREATE TABLE IF NOT EXISTS commerce_mock_transaction (
+  kind VARCHAR(8) NOT NULL,
+  order_sn VARCHAR(36) NOT NULL,
+  request_id VARBINARY(128) NOT NULL,
+  transaction_id VARBINARY(128) NOT NULL,
+  payment_transaction_id VARBINARY(128) NOT NULL,
+  amount_minor BIGINT NOT NULL,
+  currency VARCHAR(16) NOT NULL,
+  created_ms BIGINT NOT NULL,
+  applied INT NOT NULL DEFAULT 0,
+  PRIMARY KEY(kind,order_sn), UNIQUE(kind,request_id), UNIQUE(transaction_id),
+  INDEX idx_commerce_mock_pending(kind,applied,order_sn),
+  CHECK (kind IN ('PAYMENT','REFUND')), CHECK (amount_minor>0), CHECK (created_ms>=0), CHECK (applied IN (0,1))
+);
+-- V4后执行；寄售关联同一OMS订单，不建立第二套订单或玩家游戏货币余额。
+CREATE TABLE IF NOT EXISTS commerce_consignment (
+  listing_id VARCHAR(20) PRIMARY KEY,
+  seller_player_id VARCHAR(20) NOT NULL,
+  seller_account VARBINARY(191) NOT NULL,
+  market_zone BIGINT NOT NULL,
+  asset_kind VARCHAR(16) NOT NULL,
+  asset_currency_type INT NULL,
+  escrow_reference VARCHAR(20) NOT NULL,
+  escrow_proof VARCHAR(64) NOT NULL,
+  request_digest VARCHAR(64) NOT NULL,
+  title VARCHAR(128) NOT NULL,
+  price_fen BIGINT NOT NULL,
+  fee_bps INT NOT NULL,
+  cooling_ms BIGINT NOT NULL,
+  notice_end_ms BIGINT NOT NULL,
+  sale_end_ms BIGINT NOT NULL,
+  state VARCHAR(24) NOT NULL,
+  current_order_sn VARCHAR(36) NULL,
+  created_ms BIGINT NOT NULL,
+  UNIQUE(escrow_reference),
+  INDEX idx_consignment_state(state,listing_id),
+  CHECK(price_fen>0), CHECK(fee_bps>=0 AND fee_bps<=10000), CHECK(cooling_ms>=0)
+);
+CREATE TABLE IF NOT EXISTS commerce_consignment_order (
+  order_sn VARCHAR(36) PRIMARY KEY,
+  listing_id VARCHAR(20) NOT NULL,
+  buyer_account VARBINARY(191) NOT NULL,
+  buyer_owner_revision VARBINARY(20) NOT NULL,
+  request_id VARBINARY(128) NOT NULL,
+  seller_account VARBINARY(191) NOT NULL,
+  escrow_reference VARCHAR(20) NOT NULL,
+  escrow_proof VARCHAR(64) NOT NULL,
+  fee_bps INT NOT NULL,
+  cooling_ms BIGINT NOT NULL,
+  INDEX idx_consignment_order_listing(listing_id),
+  UNIQUE(buyer_account,request_id)
+);
+CREATE TABLE IF NOT EXISTS commerce_seller_guard(account VARBINARY(191) PRIMARY KEY);
+CREATE TABLE IF NOT EXISTS commerce_seller_income (
+  order_sn VARCHAR(36) PRIMARY KEY,
+  account VARBINARY(191) NOT NULL,
+  gross_fen BIGINT NOT NULL,
+  fee_fen BIGINT NOT NULL,
+  net_fen BIGINT NOT NULL,
+  reserved_fen BIGINT NOT NULL DEFAULT 0,
+  paid_fen BIGINT NOT NULL DEFAULT 0,
+  available_ms BIGINT NOT NULL,
+  INDEX idx_seller_income(account,order_sn),
+  CHECK(gross_fen>0), CHECK(fee_fen>=0 AND net_fen>=0), CHECK(fee_fen+net_fen=gross_fen),
+  CHECK(reserved_fen>=0 AND paid_fen>=0 AND reserved_fen+paid_fen<=net_fen)
+);
+CREATE TABLE IF NOT EXISTS commerce_withdrawal (
+  withdrawal_id VARCHAR(36) PRIMARY KEY,
+  account VARBINARY(191) NOT NULL,
+  request_id VARBINARY(128) NOT NULL,
+  amount_fen BIGINT NOT NULL,
+  state VARCHAR(24) NOT NULL,
+  channel VARBINARY(32) NULL,
+  transaction_id VARBINARY(128) NULL,
+  created_ms BIGINT NOT NULL,
+  UNIQUE(account,request_id),
+  INDEX idx_withdrawal_pending(state,withdrawal_id),
+  CHECK(amount_fen>0)
+);
+CREATE TABLE IF NOT EXISTS commerce_withdrawal_allocation (
+  withdrawal_id VARCHAR(36) NOT NULL,
+  order_sn VARCHAR(36) NOT NULL,
+  amount_fen BIGINT NOT NULL,
+  PRIMARY KEY(withdrawal_id,order_sn),
+  CHECK(amount_fen>0)
+);
+CREATE TABLE IF NOT EXISTS commerce_withdrawal_receipt (
+  withdrawal_id VARCHAR(36) PRIMARY KEY,
+  channel VARBINARY(32) NOT NULL,
+  transaction_id VARBINARY(128) NOT NULL,
+  amount_fen BIGINT NOT NULL,
+  successful INT NOT NULL,
+  UNIQUE(channel,transaction_id)
+);
+CREATE TABLE IF NOT EXISTS commerce_consignment_return (
+  listing_id VARCHAR(20) PRIMARY KEY,
+  return_proof VARCHAR(64) NOT NULL
+);
+-- 本地mock出款原件与结算回执分事务，支持两个提交窗口的同单恢复。
+CREATE TABLE IF NOT EXISTS commerce_mock_payout (
+  withdrawal_id VARCHAR(36) PRIMARY KEY,
+  request_id VARBINARY(128) NOT NULL,
+  transaction_id VARBINARY(128) NOT NULL,
+  amount_fen BIGINT NOT NULL,
+  successful INT NOT NULL,
+  created_ms BIGINT NOT NULL,
+  applied INT NOT NULL DEFAULT 0,
+  UNIQUE(request_id), UNIQUE(transaction_id),
+  INDEX idx_mock_payout_pending(applied,withdrawal_id),
+  CHECK(amount_fen>0), CHECK(successful IN (0,1)), CHECK(applied IN (0,1))
+);
+
 INSERT INTO commerce_schema_version(version,storage_contract) VALUES (1,'mall-game-official-sku-v1-minor-units');

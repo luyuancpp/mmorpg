@@ -13,6 +13,13 @@ MaxOpenConns: 16
 AutoMigrate: false
 TableDir: ../../generated/tables
 SharedRedisAddr: 127.0.0.1:6379
+# 与data_service同TiDB集群的全局目录；不是玩家分片。启动必须声明真实全局登录态命名空间。
+AccountRoleSchema: testdb
+GlobalLoginSessions: false
+LoginRedis:
+  Host: ""
+  DB: 0
+  PasswordEnv: MMORPG_LOGIN_REDIS_PASSWORD
 KafkaBrokers: [127.0.0.1:9092]
 AssetSecretEnv: MMORPG_ASSET_OP_SECRET_MAIL
 DataServiceRpc:

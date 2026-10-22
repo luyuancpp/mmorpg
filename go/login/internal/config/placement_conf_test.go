@@ -29,9 +29,8 @@ func TestPlacementStorageIDForNewPlayer(t *testing.T) {
 	}
 }
 
-// 块整个不写 = 关:go-zero 不给缺失的 optional 块填内层 default,零值必须就是「不钉」。
-// 反过来如果有人给 PinOnCreate 加 default=true,仓外没写这块的老配置会静默开始钉落点,
-// 而那时 go/db 可能还是旧版(按进程 zone 选库)—— §13 明令禁止的顺序。
+// 保留缺失块的旧解码零值；全球启动门禁随后拒绝，不靠default=true猜测显式false的含义。
+// 旧不钉形状只在显式LegacyNonGlobal且Mode=dev/test中允许启动。
 func TestPlacementBlockMissingMeansOff(t *testing.T) {
 	var c Config
 	if err := conf.LoadFromYamlBytes([]byte("Name: login.rpc\nListenOn: 127.0.0.1:1\n"), &c); err != nil {
@@ -98,18 +97,17 @@ func TestPlacementKeysProbeRejectsTypos(t *testing.T) {
 	}
 }
 
-// etc/login.yaml 里的 Placement 示例块必须是关着的(§13:go/db / data_service 新版就绪前不许钉)。
-// 这里的零值断言**只负责「当前是关着的」**:块缺失或拼错时零值同样成立,
+// 全球etc/login.yaml必须显式开启建角钉落点；字段拼写仍由必填探针保护。
 // 键名拼写由 TestLoginYamlSpellsOutPlacementKeys 的必填探针保证。
-func TestEtcYamlPlacementBlockIsOff(t *testing.T) {
+func TestEtcYamlPlacementBlockIsGlobal(t *testing.T) {
 	var c Config
 	if err := conf.Load("../../etc/login.yaml", &c); err != nil {
 		t.Fatalf("load etc/login.yaml: %v", err)
 	}
-	if c.Placement.PinOnCreate {
-		t.Fatal("Placement.PinOnCreate must be false in etc/login.yaml until go/db placement routing is rolled out (§13)")
+	if !c.Placement.PinOnCreate || c.LegacyNonGlobal {
+		t.Fatal("全球etc/login.yaml必须显式PinOnCreate=true且LegacyNonGlobal=false")
 	}
-	if c.Placement.StorageIDForNewPlayer(c.Node.ZoneId) != 0 {
-		t.Fatal("etc/login.yaml must not pin a storage id by default")
+	if c.Placement.NewPlayerStorageId != 0 || c.Placement.StorageIDForNewPlayer(c.Node.ZoneId) != c.Node.ZoneId {
+		t.Fatal("默认新号必须沿正规Node.ZoneId钉落点，不能凭空指定全局落点")
 	}
 }

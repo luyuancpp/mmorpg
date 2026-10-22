@@ -9,9 +9,8 @@ import (
 	"player_inbox/internal/constants"
 	"player_inbox/internal/metrics"
 
+	dspb "proto/data_service"
 	inboxpb "proto/player_inbox"
-
-	"shared/assetop"
 
 	"github.com/zeromicro/go-zero/core/logx"
 )
@@ -42,8 +41,8 @@ type EnqueueResult struct {
 	State   inboxpb.PlayerInboxItemState
 }
 
-// errUniqueRace 表示主事务插入撞上 1062:有并发的同键入箱已提交。回滚后重读唯一键按判重规则返回。
-var errUniqueRace = errors.New("inbox: concurrent enqueue with the same idempotency key")
+// 同P已经串行全部producer/domain；锁内仍撞1062表示未知旧写者或主键完整性问题，不能无P重读后伪装成功。
+var errDuplicateUnderP = errors.New("inbox: duplicate key while original role P is held")
 
 // errStreamVanished 表示 ensureStream 刚确认过的流行在主事务里读不到(流行永不删除,只可能是缺陷或库被动过)。
 var errStreamVanished = errors.New("inbox: stream row vanished after ensureStream")
@@ -51,19 +50,10 @@ var errStreamVanished = errors.New("inbox: stream row vanished after ensureStrea
 // Enqueue 是入箱核心(设计 §6.2)。inTx 在主事务里、提交之前执行(GM 生产方用它同事务写审计,设计 §6.1);
 // 它返回错误会让整次入箱回滚。inTx 可能因事务重试被调用多次,必须可重跑。
 //
-// 处理顺序(判重先于一切依赖当前时间的校验;**权威判重在流行锁之内**):
-//  1. 注册表校验:类型已登记、持久类、在白名单里、载荷大小 / 解码 / 类型校验函数;文本字段。
-//  2. 玩家存在校验:查归属区映射。不存在 → PlayerNotFound;查询失败 → error(fail-closed,不入箱)。
-//  3. 算 shard 与内容摘要。
-//  4. 判重快路径(事务外普通读唯一键):同摘要 → DUPLICATE;不同 → CONFLICT。只为省一次加锁,结论以 7.2 为准。
-//  5. 时间窗:issued_at_ms ∉ [now−7d, now+5min] → IssuedOutOfWindow。
-//  6. 补建流行(事务外 INSERT IGNORE)。
-//  7. 主事务(RC,WithTxRetryConfig 注入 1213/1205/9007):
-//     7.1 流行 FOR UPDATE;7.2 锁内复读唯一键(排在满箱判定之前:重试与原请求赛跑时重试方一定拿到 DUPLICATE,
-//     不会是 FULL);7.3 open_count ≥ max_pending → FULL;7.4 seq = max(next_seq, now_ms<<12),插入 PENDING 行;
-//     7.5 next_seq = seq+1、open_count+1、notify_due_ms = now;7.6 inTx 写审计;7.7 提交。
-//     7.4 撞 1062 → 回滚后重读唯一键,按 7.2 的规则返回。
-//  8. 提交之后发在线提醒:尽力而为,最多 200ms,结果不影响返回值。
+// 纯参数/玩家存在预检之后，完整事务首锁原角色P并拒绝冻结，再按永久唯一行核原owner和摘要。
+// 判重先于时间窗与容量；只有新请求才捕获当前原owner。中性INSERT IGNORE补流后锁stream，
+// 分配seq、插入PENDING、推进计数和写审计同事务提交。1062不走无P成功分支。
+// 提交之后的在线提醒尽力而为，不改变持久业务结果。
 func (s *Store) Enqueue(ctx context.Context, p EnqueueParams, inTx func(*sql.Tx, uint64) error) (EnqueueResult, error) {
 	res, err := s.enqueue(ctx, p, inTx)
 	metrics.ObserveEnqueue(TypeLabel(p.Type), enqueueResultLabel(res, err))
@@ -110,30 +100,32 @@ func (s *Store) enqueue(ctx context.Context, p EnqueueParams, inTx func(*sql.Tx,
 		payload = []byte{}
 	}
 
-	// ── 4. 判重快路径 ──
-	existing, err := readItemByRequest(ctx, s.db, shard, p.PlayerID, p.Producer, p.RequestID)
-	if err != nil {
-		return EnqueueResult{}, err
-	}
-	if existing != nil {
-		return resultForExisting(existing, digest), nil
-	}
-
-	// ── 5. 时间窗 ──
-	nowMs := s.nowMs()
-	if !issuedWithinWindow(p.IssuedAtMs, nowMs) {
-		return EnqueueResult{Code: constants.ErrIssuedOutOfWindow}, nil
-	}
-
-	// ── 6. 补建流行 ──
-	if err := s.ensureStream(ctx, shard, p.PlayerID, domain, nowMs); err != nil {
-		return EnqueueResult{}, err
-	}
-
-	// ── 7. 主事务 ──
+	// P首锁内判重、核原owner，再校验时间并中性补流；封存后不能留下新PENDING。
 	var res EnqueueResult
-	err = assetop.WithTxRetryConfig(ctx, s.db, s.txCfg, func(tx *sql.Tx) error {
+	err = s.withPlayerTx(ctx, p.PlayerID, func(tx *sql.Tx, original *dspb.AccountRoleOwnership) error {
 		res = EnqueueResult{} // 可重跑:上一轮的结果作废
+		existing, err := readItemByRequest(ctx, tx, shard, p.PlayerID, p.Producer, p.RequestID)
+		if err != nil {
+			return err
+		}
+		if err = requireItemOriginal(existing, original); err != nil {
+			return err
+		}
+		if existing != nil {
+			res = resultForExisting(existing, digest)
+			return nil
+		}
+		nowMs := s.nowMs()
+		if !issuedWithinWindow(p.IssuedAtMs, nowMs) {
+			res.Code = constants.ErrIssuedOutOfWindow
+			return nil
+		}
+		if err = requirePendingOriginalsTx(ctx, tx, original); err != nil {
+			return err
+		}
+		if err = ensureStreamTx(ctx, tx, shard, p.PlayerID, domain, nowMs); err != nil {
+			return err
+		}
 		st, err := lockStream(ctx, tx, shard, p.PlayerID, domain)
 		if err != nil {
 			return err
@@ -143,8 +135,11 @@ func (s *Store) enqueue(ctx context.Context, p EnqueueParams, inTx func(*sql.Tx,
 		}
 		// 7.2 锁内权威判重(RC 下普通读看得见前一个持锁者已提交的行),7.3 再判满箱:
 		// 满箱同步拒绝,不挤掉旧条目也不静默丢弃(设计 §3.4)。两步的先后见 decideEnqueueLocked。
-		existing, err := readItemByRequest(ctx, tx, shard, p.PlayerID, p.Producer, p.RequestID)
+		existing, err = readItemByRequest(ctx, tx, shard, p.PlayerID, p.Producer, p.RequestID)
 		if err != nil {
+			return err
+		}
+		if err = requireItemOriginal(existing, original); err != nil {
 			return err
 		}
 		if decided, proceed := decideEnqueueLocked(existing, digest, st.GetOpenCount(), domainSpec.GetMaxPending()); !proceed {
@@ -157,7 +152,7 @@ func (s *Store) enqueue(ctx context.Context, p EnqueueParams, inTx func(*sql.Tx,
 		if err != nil {
 			return err
 		}
-		_, err = tx.ExecContext(ctx, "INSERT INTO "+itemTable+" ("+itemColumns+") VALUES ("+placeholders(23)+")",
+		_, err = tx.ExecContext(ctx, "INSERT INTO "+itemTable+" ("+itemColumns+") VALUES ("+placeholders(25)+")",
 			shard, p.PlayerID, uint32(domain), seq, uint32(p.Type), uint32(p.Producer), p.RequestID,
 			digest, payload,
 			uint32(inboxpb.PlayerInboxItemState_PLAYER_INBOX_ITEM_PENDING),
@@ -165,10 +160,10 @@ func (s *Store) enqueue(ctx context.Context, p EnqueueParams, inTx func(*sql.Tx,
 			uint32(inboxpb.PlayerInboxVoidReason_PLAYER_INBOX_VOID_UNSPECIFIED),
 			uint32(0), uint64(0), uint64(0), uint32(0),
 			uint32(inboxpb.PlayerInboxFinalizer_PLAYER_INBOX_FINALIZER_UNSPECIFIED), uint64(0),
-			p.IssuedAtMs, txNowMs, txNowMs, p.Operator, p.Note)
+			p.IssuedAtMs, txNowMs, txNowMs, p.Operator, p.Note, original.GetAccount(), original.GetOwnerRevision())
 		if err != nil {
 			if isDuplicateKeyError(err) {
-				return errUniqueRace
+				return errDuplicateUnderP
 			}
 			return fmt.Errorf("inbox: insert item player=%d seq=%d: %w", p.PlayerID, seq, err)
 		}
@@ -191,19 +186,6 @@ func (s *Store) enqueue(ctx context.Context, p EnqueueParams, inTx func(*sql.Tx,
 		res = EnqueueResult{Seq: seq, Created: true, State: inboxpb.PlayerInboxItemState_PLAYER_INBOX_ITEM_PENDING}
 		return nil
 	})
-	if errors.Is(err, errUniqueRace) {
-		// 并发同键已提交:按 7.2 的规则重读返回。读不到说明 1062 撞的不是唯一键而是主键
-		// (seq 在流行锁下分配,只可能是库被恢复成不一致的状态),按故障返回。
-		existing, rerr := readItemByRequest(ctx, s.db, shard, p.PlayerID, p.Producer, p.RequestID)
-		if rerr != nil {
-			return EnqueueResult{}, rerr
-		}
-		if existing == nil {
-			return EnqueueResult{}, fmt.Errorf("inbox: duplicate key on insert but no row for request_id=%d player=%d "+
-				"(primary-key collision; inbox DB inconsistent?)", p.RequestID, p.PlayerID)
-		}
-		return resultForExisting(existing, digest), nil
-	}
 	if err != nil {
 		return EnqueueResult{}, err
 	}

@@ -26,22 +26,17 @@ type Config struct {
 	// 打开等于允许新节点读到源节点尚未落盘的状态(回档)。
 	AllowUnsafeCrossNodeHandoff bool `json:",default=false"`
 
-	// LeaveSceneHolderReleaseWaitSeconds:LeaveScene 删 location 之前等「持有者已释放」证据的上限(秒)
+	// LeaveSceneHolderReleaseWaitSeconds保留等待诊断预算(秒)，不是授权释放的截止时间。
 	// (docs/design/location-release-binding.md §3.2 / §3.6)。拿不到证据(当前代 handoff 标记 / 持有节点已死 /
-	// 没有持有者)时保留 location、回可重试错误并请持有节点释放;等满上限仍拿不到才按旧行为删除并计 forced。
-	// 0(含代码里直接构造的零值配置)取默认 600s;<0 关闭整项检查,退回「会话结束即删 location」的旧行为 ——
-	// 运维回滚开关:关 scene 的 A1′(SCENE_EXIT_RELEASE_MARK=0)之前必须先把它设为 -1,否则每次登出都要等满上限。
-	// 零值不当「关闭」:这是防回档的门,漏配时应当开着。读取走 EffectiveLeaveSceneHolderReleaseWait()。
-	// AllowUnsafeCrossNodeHandoff=true(dev 旁路)时同样不检查:换手门本身已被旁路。
-	// 它也是 EnterScene「登录撞上未释放的持有者时请持有节点释放」的开关(同一份释放协议,§12):<0 时两者一起关。
+	// 没有持有者)时保留location、回可重试错误并请持有节点释放；预算到点仍UNKNOWN继续保留。
+	// 非正值(含旧负数配置)取默认600s；不得以关闭A1′或预算耗尽替代释放证明。
+	// 负数/旧开发旁路配置仍可解析，但不得降低本删除入口的释放证明门槛。
+	// EnterScene登录撞上未释放持有者时仍沿同一协议请求原持有者释放。
 	LeaveSceneHolderReleaseWaitSeconds int64 `json:",default=600"`
 
 	// DataServiceRpc 是 data_service 的 gRPC 客户端(etcd 发现,Key=dataservice.rpc)。
-	// scene_manager 只用它查玩家归属 zone(GetPlayerHomeZone),结果随 RoutePlayerEvent
-	// 下发给 scene 节点决定存盘落库目的地(cross-zone-scene-travel.md CZ-3)。
-	// 标 optional 只为让进程能起来:没配时 EnterScene 默认**拒绝**(fail-closed),因为
-	// 多 zone 下「按 gate zone 当归属」会让访客的存盘落错库而且没有任何报错。
-	// 单 zone 联调确实不想起 data_service 时,显式打开 AllowGateZoneAsHomeZone。
+	// 同一个客户端查home zone与只读LookupAccountRole；后者必须携独立scene_manager密钥。
+	// 配置缺失启动拒绝；AllowGateZoneAsHomeZone只保留已明确未映射的单区测试语义，不能绕角色修订核验。
 	DataServiceRpc zrpc.RpcClientConf `json:",optional"`
 
 	// AllowGateZoneAsHomeZone:没配 DataServiceRpc 时,是否把 gate zone 当玩家归属 zone。
@@ -519,14 +514,10 @@ func (c *Config) EffectiveLeaderLockTTLSeconds() int64 {
 const defaultLeaveSceneHolderReleaseWaitSeconds int64 = 600
 
 // EffectiveLeaveSceneHolderReleaseWait 返回 LeaveScene 等「持有者已释放」证据的上限(docs/design/location-release-binding.md §3.6)。
-// enabled=false 表示整项检查关闭(配置 <0,或 dev 旁路 AllowUnsafeCrossNodeHandoff 打开),LeaveScene 按旧行为直接删。
-// 配置为 0 取默认 600s:这是防回档的门,零值配置不得把它关掉。
+// enabled恒true：配置只能调诊断预算，不能关闭防回档证明门。非正值沿默认600s兼容。
 func (c *Config) EffectiveLeaveSceneHolderReleaseWait() (wait time.Duration, enabled bool) {
-	if c.LeaveSceneHolderReleaseWaitSeconds < 0 || c.AllowUnsafeCrossNodeHandoff {
-		return 0, false
-	}
 	seconds := c.LeaveSceneHolderReleaseWaitSeconds
-	if seconds == 0 {
+	if seconds <= 0 {
 		seconds = defaultLeaveSceneHolderReleaseWaitSeconds
 	}
 	return time.Duration(seconds) * time.Second, true

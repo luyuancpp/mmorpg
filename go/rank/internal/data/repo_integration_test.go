@@ -6,7 +6,9 @@ import (
 	"database/sql"
 	"encoding/hex"
 	"errors"
+	"net"
 	"os"
+	"strconv"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -20,8 +22,15 @@ import (
 
 func rankFixture(t *testing.T) (context.Context, *sql.DB, NextID) {
 	t.Helper()
-	if os.Getenv("MAIL_RANK_TEST_TIDB") != "127.0.0.1:4000" {
-		t.Skip("仅显式本机4000随机库真实TiDB")
+	address := os.Getenv("MAIL_RANK_TEST_TIDB")
+	if address == "" {
+		if os.Getenv("MAIL_RANK_REQUIRE_TESTS") == "1" {
+			t.Fatal("MAIL_RANK_TEST_TIDB必须显式配置本任务独占TiDB")
+		}
+		t.Skip("需显式本任务数值loopback TiDB端点，随机自有库")
+	}
+	if err := rankDataFixtureEndpoint(address); err != nil {
+		t.Fatal(err)
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
 	t.Cleanup(cancel)
@@ -30,7 +39,7 @@ func rankFixture(t *testing.T) (context.Context, *sql.DB, NextID) {
 		t.Fatal(err)
 	}
 	database := "rank_it_" + hex.EncodeToString(random[:])
-	admin, err := sql.Open("mysql", "root@tcp(127.0.0.1:4000)/?timeout=1s&readTimeout=5s&writeTimeout=5s")
+	admin, err := authoritysql.Open(ctx, "root@tcp("+address+")/mysql", "mysql", true, 2)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -46,7 +55,7 @@ func rankFixture(t *testing.T) (context.Context, *sql.DB, NextID) {
 			t.Errorf("清随机库: %v", e)
 		}
 	})
-	db, err := authoritysql.Open(ctx, "root@tcp(127.0.0.1:4000)/"+database, database, true, 8)
+	db, err := authoritysql.Open(ctx, "root@tcp("+address+")/"+database, database, true, 8)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -57,6 +66,31 @@ func rankFixture(t *testing.T) (context.Context, *sql.DB, NextID) {
 	}
 	var next atomic.Uint64
 	return ctx, db, func(context.Context) (uint64, error) { return next.Add(1), nil }
+}
+
+func rankDataFixtureEndpoint(address string) error {
+	host, port, err := net.SplitHostPort(address)
+	if err != nil {
+		return errors.New("排行榜夹具必须显式数值loopback端口")
+	}
+	ip := net.ParseIP(host)
+	number, err := strconv.Atoi(port)
+	if ip == nil || !ip.IsLoopback() || err != nil || number < 1 || number > 65535 {
+		return errors.New("排行榜夹具仅接受数值loopback与合法非零端口")
+	}
+	return nil
+}
+func TestRankDataFixtureEndpointRejectsForeignOrInvalidPort(t *testing.T) {
+	for _, address := range []string{"127.0.0.1:24000", "[::1]:24000"} {
+		if err := rankDataFixtureEndpoint(address); err != nil {
+			t.Fatal(err)
+		}
+	}
+	for _, address := range []string{"localhost:24000", "10.0.0.1:24000", "127.0.0.1:0", "127.0.0.1:65536", "127.0.0.1:mysql", "127.0.0.1"} {
+		if rankDataFixtureEndpoint(address) == nil {
+			t.Fatal("非法夹具端点未拒绝")
+		}
+	}
 }
 func testOpen(t *testing.T, ctx context.Context, r *Repo) *rankpb.OpenRankGenerationResponse {
 	t.Helper()

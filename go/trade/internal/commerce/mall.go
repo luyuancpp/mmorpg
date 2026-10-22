@@ -18,6 +18,8 @@ import (
 	assetpb "proto/common/asset"
 	tradepb "proto/trade"
 	"regexp"
+	"shared/accountdirectory"
+	"shared/roleidentity"
 	"strconv"
 	"strings"
 	"time"
@@ -29,27 +31,100 @@ type Mall struct {
 	GatewaySecret, DeliverySecret string
 	HTTP                          *http.Client
 	Engine                        *Engine
+	// 仅由驱动 Tick 的单个 worker 持有；重启可从头扫描，订单唯一键继续守住原合同与 seq。
+	pollCursor string
 }
 type mallIntent struct {
-	OrderID  string `json:"orderId"`
-	BuyerID  string `json:"buyerId"`
-	SKU      uint64 `json:"skuId"`
-	Quantity uint32 `json:"quantity"`
-	Config   uint32 `json:"itemConfigId"`
-	Count    uint32 `json:"itemCount"`
-	Title    string `json:"title"`
-	Amount   uint64 `json:"amountMinor"`
-	Currency string `json:"currency"`
+	OrderID            string `json:"orderId"`
+	BuyerID            string `json:"buyerId"`
+	BuyerAccount       string `json:"buyerAccount"`
+	BuyerOwnerRevision string `json:"buyerOwnerRevision"`
+	SKU                uint64 `json:"skuId"`
+	Quantity           uint32 `json:"quantity"`
+	Config             uint32 `json:"itemConfigId"`
+	Count              uint32 `json:"itemCount"`
+	Title              string `json:"title"`
+	Amount             uint64 `json:"amountMinor"`
+	Currency           string `json:"currency"`
 }
+type mallPollEntry struct {
+	Intent *mallIntent `json:"intent"`
+	Cursor *string     `json:"cursor"`
+}
+type mallPollPage struct {
+	Entries []mallPollEntry `json:"entries"`
+}
+type mallScanCursor struct {
+	afterMs, upperMs int64
+	afterID, upperID string
+}
+
+func parseMallCursor(raw string) (mallScanCursor, error) {
+	var out mallScanCursor
+	fields := strings.Split(raw, ":")
+	if len(raw) > 256 || len(fields) != 5 || fields[0] != "v1" || !mallOrderID.MatchString(fields[2]) || !mallOrderID.MatchString(fields[4]) {
+		return out, errors.New("商城交付游标非法")
+	}
+	after, err := strconv.ParseInt(fields[1], 10, 64)
+	if err != nil || after < 0 || strconv.FormatInt(after, 10) != fields[1] {
+		return out, errors.New("商城交付游标时间非法")
+	}
+	upper, err := strconv.ParseInt(fields[3], 10, 64)
+	if err != nil || upper < 0 || strconv.FormatInt(upper, 10) != fields[3] || after > upper || after == upper && fields[2] > fields[4] {
+		return out, errors.New("商城交付游标上界非法")
+	}
+	return mallScanCursor{afterMs: after, afterID: fields[2], upperMs: upper, upperID: fields[4]}, nil
+}
+
+// 先核整页包装，再处理任何业务或前移游标。未知/畸形响应不能变成第一页或跳过未尝试项。
+func validateMallPage(page mallPollPage, requested string) error {
+	if page.Entries == nil || len(page.Entries) > 20 {
+		return errors.New("商城交付页非法")
+	}
+	var previous *mallScanCursor
+	if requested != "" {
+		cursor, err := parseMallCursor(requested)
+		if err != nil {
+			return err
+		}
+		previous = &cursor
+	}
+	for i, entry := range page.Entries {
+		if entry.Intent == nil || entry.Cursor == nil || !mallOrderID.MatchString(entry.Intent.OrderID) {
+			return errors.New("商城交付页缺少原意图或游标")
+		}
+		if *entry.Cursor == "" {
+			if i != len(page.Entries)-1 {
+				return errors.New("商城交付页提前结束")
+			}
+			continue
+		}
+		cursor, err := parseMallCursor(*entry.Cursor)
+		if err != nil {
+			return err
+		}
+		if cursor.afterID != entry.Intent.OrderID {
+			return errors.New("商城交付游标与订单不符")
+		}
+		if previous != nil && (cursor.upperMs != previous.upperMs || cursor.upperID != previous.upperID || cursor.afterMs < previous.afterMs || cursor.afterMs == previous.afterMs && cursor.afterID <= previous.afterID) {
+			return errors.New("商城交付页游标倒退或扫描上界改变")
+		}
+		previous = &cursor
+	}
+	return nil
+}
+
 type MallOrder struct {
-	OrderID  string `json:"orderId"`
-	BuyerID  string `json:"buyerId"`
-	SKU      uint64 `json:"skuId"`
-	Quantity uint32 `json:"quantity"`
-	Amount   uint64 `json:"amountMinor"`
-	Currency string `json:"currency"`
-	State    string `json:"state"`
-	Deadline uint64 `json:"paymentDeadlineMs"`
+	OrderID            string `json:"orderId"`
+	BuyerID            string `json:"buyerId"`
+	BuyerAccount       string `json:"buyerAccount"`
+	BuyerOwnerRevision string `json:"buyerOwnerRevision"`
+	SKU                uint64 `json:"skuId"`
+	Quantity           uint32 `json:"quantity"`
+	Amount             uint64 `json:"amountMinor"`
+	Currency           string `json:"currency"`
+	State              string `json:"state"`
+	Deadline           uint64 `json:"paymentDeadlineMs"`
 }
 
 var mallOrderID = regexp.MustCompile(`^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$`)
@@ -163,7 +238,11 @@ func (m *Mall) Create(ctx context.Context, player uint64, in *tradepb.CreateOffi
 		return nil, ErrInvalid
 	}
 	var out MallOrder
-	err := m.call(ctx, "gateway", strconv.FormatUint(player, 10), "POST", "/api/orders", map[string]any{"requestId": in.GetClientRequestId(), "skuId": in.GetSkuId(), "quantity": in.GetQuantity()}, &out)
+	owned, ok := roleidentity.Original(ctx)
+	if !ok || owned.Role.GetPlayerId() != player {
+		return nil, ErrInvalid
+	}
+	err := m.call(ctx, "gateway", strconv.FormatUint(player, 10), "POST", "/api/orders", map[string]any{"requestId": in.GetClientRequestId(), "skuId": in.GetSkuId(), "quantity": in.GetQuantity(), "buyerAccount": owned.Account, "buyerOwnerRevision": strconv.FormatUint(owned.OwnerRevision, 10)}, &out)
 	if err == nil && out.BuyerID != strconv.FormatUint(player, 10) {
 		return nil, errors.New("商城订单主体不匹配")
 	}
@@ -174,7 +253,11 @@ func (m *Mall) Create(ctx context.Context, player uint64, in *tradepb.CreateOffi
 }
 func (m *Mall) List(ctx context.Context, player uint64, after string, limit uint32) ([]*tradepb.CommerceOrderView, error) {
 	var orders []MallOrder
-	err := m.call(ctx, "gateway", strconv.FormatUint(player, 10), "POST", "/api/orders/list", map[string]any{"afterOrderId": after, "limit": min(max(limit, 1), 100)}, &orders)
+	owned, ok := roleidentity.Original(ctx)
+	if !ok || owned.Role.GetPlayerId() != player {
+		return nil, ErrInvalid
+	}
+	err := m.call(ctx, "gateway", strconv.FormatUint(player, 10), "POST", "/api/orders/list", map[string]any{"afterOrderId": after, "limit": min(max(limit, 1), 100), "buyerAccount": owned.Account, "buyerOwnerRevision": strconv.FormatUint(owned.OwnerRevision, 10)}, &orders)
 	if err != nil {
 		return nil, err
 	}
@@ -196,12 +279,15 @@ func (m *Mall) Order(ctx context.Context, player uint64, id string, cancel bool)
 		return nil, ErrInvalid
 	}
 	var out MallOrder
-	method, path := "GET", "/api/orders/"+id
-	if cancel {
-		method = "POST"
-		path += "/cancel"
+	owned, ok := roleidentity.Original(ctx)
+	if !ok || owned.Role.GetPlayerId() != player {
+		return nil, ErrInvalid
 	}
-	err := m.call(ctx, "gateway", strconv.FormatUint(player, 10), method, path, nil, &out)
+	method, path := "POST", "/api/orders/query"
+	if cancel {
+		path = "/api/orders/cancel"
+	}
+	err := m.call(ctx, "gateway", strconv.FormatUint(player, 10), method, path, map[string]any{"orderId": id, "buyerAccount": owned.Account, "buyerOwnerRevision": strconv.FormatUint(owned.OwnerRevision, 10)}, &out)
 	if err == nil && out.BuyerID != strconv.FormatUint(player, 10) {
 		return nil, errors.New("商城订单主体不匹配")
 	}
@@ -221,7 +307,8 @@ func mallAnswer(o MallOrder) (*tradepb.CommerceOrderResponse, error) {
 }
 func (m *Mall) accept(ctx context.Context, in mallIntent) (*tradepb.TradeCommerceRecord, error) {
 	player, err := strconv.ParseUint(in.BuyerID, 10, 64)
-	if err != nil || player == 0 || !mallOrderID.MatchString(in.OrderID) || in.Config == 0 || in.Count == 0 || in.Count > 4096 || in.Quantity == 0 {
+	revision, revisionErr := canonicalID(in.BuyerOwnerRevision)
+	if err != nil || player == 0 || revisionErr != nil || !accountdirectory.ValidAccount(in.BuyerAccount) || !mallOrderID.MatchString(in.OrderID) || in.Config == 0 || in.Count == 0 || in.Count > 4096 || in.Quantity == 0 {
 		return nil, ErrInvalid
 	}
 	key := RequestKey("official", player, in.OrderID)
@@ -242,12 +329,31 @@ func (m *Mall) accept(ctx context.Context, in mallIntent) (*tradepb.TradeCommerc
 	}
 	now := m.Engine.now()
 	w := &tradepb.TradeCommerceWorkflow{Stage: "official_deliver", ExternalOrderSn: in.OrderID, SkuId: in.SKU, SkuQuantity: in.Quantity, ExternalAmount: in.Amount, ExternalCurrency: in.Currency, OfficialBundle: &assetpb.AssetBundle{Items: []*assetpb.ItemGrant{{ConfigId: in.Config, Count: in.Count}}}}
+	w.BuyerIdentity = &tradepb.TradeRoleIdentity{Account: in.BuyerAccount, OwnerRevision: revision}
 	payload, err := proto.MarshalOptions{Deterministic: true}.Marshal(w)
 	if err != nil {
 		return nil, err
 	}
 	r := &tradepb.TradeCommerceRecord{CommerceId: id, RequestKey: key, RequestDigest: hash[:], Kind: 1, Status: Delivering, BuyerPlayerId: player, CreatedMs: now, UpdatedMs: now, Version: 1, WorkflowProto: payload}
-	err = m.Engine.Repo.Tx(ctx, func(tx *sql.Tx) error { return m.Engine.Repo.Insert(ctx, tx, r) })
+	err = m.Engine.Repo.Tx(ctx, func(tx *sql.Tx) error {
+		if m.Engine.Roles == nil {
+			return errors.New("官方交付角色提交互锁未配置")
+		}
+		owned, err := m.Engine.Roles.Ownership(ctx, tx, player)
+		if err != nil {
+			return err
+		}
+		if owned.Account != in.BuyerAccount || owned.OwnerRevision != revision || owned.TradeListingId != 0 {
+			// 尚无任何资产op：先持久原意图的退款结局，再回报商城，另一副本不能改发给当前新主。
+			w.Stage = "official_refund"
+			r.Status = 8
+			r.WorkflowProto, err = proto.MarshalOptions{Deterministic: true}.Marshal(w)
+			if err != nil {
+				return err
+			}
+		}
+		return m.Engine.Repo.Insert(ctx, tx, r)
+	})
 	if err != nil {
 		old, read := m.Engine.Repo.ByRequest(ctx, key)
 		if read == nil && bytes.Equal(hash[:], old.RequestDigest) {
@@ -262,19 +368,28 @@ func (m *Mall) accept(ctx context.Context, in mallIntent) (*tradepb.TradeCommerc
 // 单条意图失败不挡同批其余意图(2026-10-20,与 Engine.Tick 的单行隔离同一条修复):各条错误汇总后一并返回,
 // 本轮预算用完才提前结束。
 func (m *Mall) Tick(ctx context.Context) error {
-	var intents []mallIntent
-	if err := m.call(ctx, "delivery", "trade", "POST", "/internal/deliveries/poll", map[string]int{"limit": 20}, &intents); err != nil {
+	var page mallPollPage
+	if err := m.call(ctx, "delivery", "trade", "POST", "/internal/deliveries/poll", map[string]any{"limit": 20, "cursor": m.pollCursor}, &page); err != nil {
 		return err
 	}
+	if err := validateMallPage(page, m.pollCursor); err != nil {
+		return err
+	}
+	if len(page.Entries) == 0 {
+		m.pollCursor = ""
+		return nil
+	}
 	var errs []error
-	for _, in := range intents {
+	for _, entry := range page.Entries {
 		if err := ctx.Err(); err != nil {
 			errs = append(errs, err)
 			break
 		}
-		if err := m.deliverIntent(ctx, in); err != nil {
-			errs = append(errs, fmt.Errorf("商城交付意图 %q: %w", in.OrderID, err))
+		if err := m.deliverIntent(ctx, *entry.Intent); err != nil {
+			errs = append(errs, fmt.Errorf("商城交付意图 %q: %w", entry.Intent.OrderID, err))
 		}
+		// 这项无论成功或依赖失败都已尝试；待办仍在商城，下轮绕回按原订单重试，不用新 seq。
+		m.pollCursor = *entry.Cursor
 	}
 	return errors.Join(errs...)
 }

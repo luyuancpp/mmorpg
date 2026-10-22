@@ -106,7 +106,20 @@ TEST(BattleTicketFields, AcceptsWellFormedParticipantAndObserver)
 	TicketFields t = ValidTicket();
 	EXPECT_EQ(ClassifyTicketFields(t, kSelfNode, kSelfInstance, kNow), TicketVerdict::kOk);
 	t.role = static_cast<int>(TicketRole::kObserver);
+	t.spectatorOperation = "00000000-0000-0000-0000-000000000001";
 	EXPECT_EQ(ClassifyTicketFields(t, kSelfNode, kSelfInstance, kNow), TicketVerdict::kOk);
+}
+
+TEST(BattleTicketFields, RejectsMissingMalformedOrMisplacedSpectatorOperation)
+{
+	TicketFields t = ValidTicket();
+	t.spectatorOperation = "00000000-0000-0000-0000-000000000001";
+	EXPECT_EQ(ClassifyTicketFields(t, kSelfNode, kSelfInstance, kNow), TicketVerdict::kSpectatorOperationInvalid);
+	t.role = static_cast<int>(TicketRole::kObserver);
+	for (const auto operation : {"", "00000000-0000-0000-0000-000000000000", "00000000-0000-0000-0000-00000000000G", "00000000-0000-0000-0000-00000000000A", "00000000000000000000000000000001"}) {
+		t.spectatorOperation = operation;
+		EXPECT_EQ(ClassifyTicketFields(t, kSelfNode, kSelfInstance, kNow), TicketVerdict::kSpectatorOperationInvalid);
+	}
 }
 
 TEST(BattleTicketFields, RejectsEmptyIdentity)

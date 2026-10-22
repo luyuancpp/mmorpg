@@ -501,6 +501,8 @@ B 胜、PVE / 未结束 / 空队伍忽略不写标记不计局数、`applied` TT
 
 排队先选择全体成员共同合格的本区候选；只有全体成员从最初入队时刻达到 `CrossRegionWaitSeconds` 后才允许跨区候选，每个成员仍受 `HardLatencyMs` 硬上限约束。默认分别为 30 秒、180 毫秒，配置值是策略而非容量证明。预组队不拆开；候选采用有界分页游标。重试保留原票号、入队时间和等待窗口。指定整队、活动和点名切磋已有完整名单，直接选择全员可达的共同机房；这些入口不会假造一个排队成功的 Redis 票据。
 
+2026-10-20 提交点补修：候选扫描之后可能等待玩家行锁，两版必须在持锁成局事务中以数据库时间重新检查整张票据的 `expires_ms`，不能只检查所选机房的回执。一份 profile 的到期时间取全部回执的最早到期值，所选机房回执仍有效不代表整张票仍有效。Go `claimTx` 补齐此项，Java 原有等价校验；两版新增确定性真 TiDB 回归，在扫描原票后把其中一票置为已到期，断言全组均未占用且未创建 formation。本次未执行构建或真库回归，不能把用例存在当作通过证据；当前宿主资源与串行门禁不满足。
+
 ### 13.2 原请求与提交点
 
 - 排队与一人档：客户端发包前将完整 Join 请求原子写入本机单槽，再使用完整规范 UUID 的两段 uint64 作为 SQL 意图主键。重复请求回原票，不能因为旧票已结束而生成新票。未知 Join 的 `NOT_QUEUED` 不能证明没有迟到写入；Cancel 携带原 UUID，在与 Join 相同玩家行锁事务内写永久撤销墓碑。客户端必须查询到 `request_cancelled=true` 且不在队列后才放弃原请求。
@@ -592,3 +594,21 @@ Go 全球启动在 matcher 和 RPC 准入之前同步核对结果 topic，独立
   - 节点因此不会自然排空。值班排除 zone Redis 故障后删除该 Pod，由 `AbortAllRooms` 清房：已落定成员照常应用，没落定的按作废处理，与 r2-battle#2 是同一个残余。值班查询登记在 `deploy/k8s/asset-channel-alerts.yaml` 文件头。
 - **残余**：battle 节点单边连不上 Redis 超过 24 小时，标记会过期；按命令粒度的 ACL 误配置（放行 SET、拒绝 SADD）；Redis 主从异步复制丢掉已确认的写，与销账丢失同属既有一类。
 - **Java 版**：确认模式落库尚未实现（见上一段「待做」），实现时要同时满足这两条。
+
+### 2026-10-21：活动开战原请求取消（源码候选）
+
+帮会历练先在全员原账号／归属修订的角色首锁与帮会锁下持久launch原件，之后才能调用全球Match。全球`StartActivityBattle`要求非零`request_id`与服务端`activity_context.launch_request_id`相等；规范完整Start正文继续作为kind=2、owner=原guild、request_low=原request的永久`match_direct_intent.payload`，不得在超时后换请求、名单或周期。
+
+`CancelActivityBattle`覆盖完整原Start，独立`MMORPG_MATCH_INTERNAL_SECRET_GUILD`配置在main显式注入。请求以caller=guild、方法`/match.MatchInternal/CancelActivityBattle`签名；回复以caller=match、同方法加`/reply`签名，且`request_digest`绑定清空外层auth后的原Cancel摘要。缺密钥、权威SQL或有效证明拒绝；客户端会话入口也拒绝。Start的未签名formation_state仅供信息，不能授权帮会清角色锁。
+
+Cancel与ReserveDirect在同一direct主键事务锁上二选一提交：Cancel先赢在零battle行写永久cancelled墓碑，迟到Start无论预检是否完成都不得越过；Reserve先赢后Cancel只返回原固定battle_id和真实formation状态，不调用运行时、不把取消请求冒充战斗已经中止。相同请求重放只认原完整正文，不同正文拒绝。Commit未知不签成功回执，重放同一原件消歧。帮会只有验证后的零battle取消墓碑，或formation=5的安全中止收据，才同本地原件事务持久回执并终结ACTIVE参与索引；formation=1..4继续保留或等待真实结果。既有EXPIRED允许迟到结果，因此不能当安全中止。新回归源码区分纯鉴权、真实TiDB墓碑／并发与完整运行链；本批尚未运行编译和这些回归。
+
+### 2026-10-21：常驻账号与显式迁移分离（源码候选，待运行）
+
+旧`authority.Open`每次启动都调用`schemamigrate.Up`；即使所有业务表已迁移，迁移器仍执行`CREATE TABLE IF NOT EXISTS schema_migrations`，因此无DDL权限的合法常驻账号会在接流前失败。正常启动现在仅用同一正式proto清单调用`Plan`：待执行语句、人工项、dirty或读取失败一律拒启，候选索引检查仍保留；不会用启动实例补表、改列或修台账。
+
+建库仍是现有部署前置。之后单独执行`match -f <同库全球配置> -migrate`，只连接配置中的`mmorpg_match`及原TiDB强读池，不构造ServiceContext，不访问etcd、Redis、Kafka，不申请号源、不监听RPC。该CLI必须从`MATCH_MIGRATION_USER`与`MATCH_MIGRATION_PASSWORD`取得非空独立凭据，不回落到常驻账号；`-allow-modify`仅与`-migrate`同时有效，沿迁移器人工审阅语义，不自动授权历史类型漂移。退出码沿用0成功、1失败、3锁忙、4人工项。
+
+K8s沿既有迁移门禁接`match-migrate`：ConfigMap先于Job，全球模式所有档位都等Job成功才部署常驻实例；失败、未知或超时保留Job证据并阻断，重跑不删除在途Job。Job只引用`domain-service-secrets`中的`match-migration-user/password`，不注入探测、榜单或登录密钥，常驻Deployment不引用迁移凭据。显式旧dev兼容关闭SQL时不运行此Job。本机启动器不后台迁移；先以同一配置显式运行上述CLI，再清掉仅用于该子命令的迁移环境变量，最后运行`start-exe`。
+
+接口回归覆盖缺表／人工项／dirty拒启与CLI隔离及退出码；新增真实TiDB有限DML账号用例核对Plan、索引可读，CREATE/ALTER真实权限拒绝，管理员删除表后常驻检查拒启且不补建。该真库用例及当前Match重新构建、单测、vet与Runtime EXE均待Codex实际执行，原598项普通回归仅保留原输入范围，不能作为本次新增启动接缝证据。

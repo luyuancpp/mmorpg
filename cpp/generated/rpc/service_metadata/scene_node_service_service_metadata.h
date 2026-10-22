@@ -23,18 +23,22 @@ constexpr uint32_t SceneNodeGrpcCancelBattlePrepareMessageId = 145;
 constexpr uint32_t SceneNodeGrpcCancelBattlePrepareIndex = 4;
 #define SceneNodeGrpcCancelBattlePrepareMethod  ::SceneNodeGrpc_Stub::descriptor()->method(4)
 
+constexpr uint32_t SceneNodeGrpcSealAccountRoleTradeMessageId = 331;
+constexpr uint32_t SceneNodeGrpcSealAccountRoleTradeIndex = 5;
+#define SceneNodeGrpcSealAccountRoleTradeMethod  ::SceneNodeGrpc_Stub::descriptor()->method(5)
+
 constexpr uint32_t SceneNodeGrpcAssetDebitMessageId = 224;
-constexpr uint32_t SceneNodeGrpcAssetDebitIndex = 5;
-#define SceneNodeGrpcAssetDebitMethod  ::SceneNodeGrpc_Stub::descriptor()->method(5)
+constexpr uint32_t SceneNodeGrpcAssetDebitIndex = 6;
+#define SceneNodeGrpcAssetDebitMethod  ::SceneNodeGrpc_Stub::descriptor()->method(6)
 
 constexpr uint32_t SceneNodeGrpcAssetAbortDebitMessageId = 227;
-constexpr uint32_t SceneNodeGrpcAssetAbortDebitIndex = 6;
-#define SceneNodeGrpcAssetAbortDebitMethod  ::SceneNodeGrpc_Stub::descriptor()->method(6)
+constexpr uint32_t SceneNodeGrpcAssetAbortDebitIndex = 7;
+#define SceneNodeGrpcAssetAbortDebitMethod  ::SceneNodeGrpc_Stub::descriptor()->method(7)
 
 constexpr uint32_t SceneNodeGrpcAssetCreditMessageId = 225;
-constexpr uint32_t SceneNodeGrpcAssetCreditIndex = 7;
-#define SceneNodeGrpcAssetCreditMethod  ::SceneNodeGrpc_Stub::descriptor()->method(7)
+constexpr uint32_t SceneNodeGrpcAssetCreditIndex = 8;
+#define SceneNodeGrpcAssetCreditMethod  ::SceneNodeGrpc_Stub::descriptor()->method(8)
 
 constexpr uint32_t SceneNodeGrpcAssetAckReceiptMessageId = 270;
-constexpr uint32_t SceneNodeGrpcAssetAckReceiptIndex = 8;
-#define SceneNodeGrpcAssetAckReceiptMethod  ::SceneNodeGrpc_Stub::descriptor()->method(8)
+constexpr uint32_t SceneNodeGrpcAssetAckReceiptIndex = 9;
+#define SceneNodeGrpcAssetAckReceiptMethod  ::SceneNodeGrpc_Stub::descriptor()->method(9)

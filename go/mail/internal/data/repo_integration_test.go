@@ -8,23 +8,35 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"net"
 	"os"
+	"strconv"
 	"sync"
 	"sync/atomic"
 	"testing"
 	"time"
 
 	assetpb "proto/common/asset"
+	basepb "proto/common/base"
+	dspb "proto/data_service"
 	mailpb "proto/mail"
 	"schemamigrate"
 	"shared/assetop"
 	"shared/authoritysql"
+	"shared/roleidentity"
 )
 
 func mailFixture(t *testing.T) (context.Context, *sql.DB, *Repo) {
 	t.Helper()
-	if os.Getenv("MAIL_RANK_TEST_TIDB") != "127.0.0.1:4000" {
-		t.Skip("仅显式本机4000随机库真实TiDB")
+	address := os.Getenv("MAIL_RANK_TEST_TIDB")
+	if address == "" {
+		if os.Getenv("MAIL_RANK_REQUIRE_TESTS") == "1" {
+			t.Fatal("MAIL_RANK_TEST_TIDB必须显式配置本任务独占TiDB")
+		}
+		t.Skip("需显式本任务数值loopback TiDB端点，随机自有库")
+	}
+	if err := mailDataFixtureEndpoint(address); err != nil {
+		t.Fatal(err)
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
 	t.Cleanup(cancel)
@@ -34,27 +46,30 @@ func mailFixture(t *testing.T) (context.Context, *sql.DB, *Repo) {
 	}
 	database := "mail_it_" + hex.EncodeToString(random[:])
 	guildDB := "mail_guild_it_" + hex.EncodeToString(random[:])
-	admin, err := sql.Open("mysql", "root@tcp(127.0.0.1:4000)/?timeout=1s&readTimeout=5s&writeTimeout=5s")
+	// 只读系统库完成真实TiDB/逐物理连接强读探针后，才创建本例随机库。
+	admin, err := authoritysql.Open(ctx, "root@tcp("+address+")/mysql", "mysql", true, 2)
 	if err != nil {
 		t.Fatal(err)
 	}
-	for _, name := range []string{database, guildDB} {
-		if _, err = admin.ExecContext(ctx, "CREATE DATABASE "+name); err != nil {
-			t.Fatal(err)
-		}
-	}
+	created := []string{}
 	t.Cleanup(func() {
 		defer admin.Close()
 		// 两个隔离库的DDL排队可能跨过单次5秒；清理有独立预算，不能让第二个库继承将耗尽的请求窗口。
 		clean, stop := context.WithTimeout(context.Background(), 30*time.Second)
 		defer stop()
-		for _, name := range []string{database, guildDB} {
+		for _, name := range created {
 			if _, e := admin.ExecContext(clean, "DROP DATABASE "+name); e != nil {
 				t.Errorf("清随机库%s: %v", name, e)
 			}
 		}
 	})
-	db, err := authoritysql.Open(ctx, "root@tcp(127.0.0.1:4000)/"+database, database, true, 12)
+	for _, name := range []string{database, guildDB} {
+		if _, err = admin.ExecContext(ctx, "CREATE DATABASE "+name); err != nil {
+			t.Fatal(err)
+		}
+		created = append(created, name) // 只有实际创建成功才拥有清理权，碰撞不删除已有库。
+	}
+	db, err := authoritysql.Open(ctx, "root@tcp("+address+")/"+database, database, true, 12)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -70,8 +85,131 @@ func mailFixture(t *testing.T) (context.Context, *sql.DB, *Repo) {
 	r := New(db, func(context.Context) (uint64, error) { return next.Add(1), nil }, func(context.Context) (uint64, error) { return next.Add(1), nil }, func(id uint32) bool { return id == 42 }, guildDB)
 	return ctx, db, r
 }
+
+func mailDataFixtureEndpoint(address string) error {
+	host, port, err := net.SplitHostPort(address)
+	if err != nil {
+		return errors.New("邮件夹具必须显式数值loopback端口")
+	}
+	ip := net.ParseIP(host)
+	number, err := strconv.Atoi(port)
+	if ip == nil || !ip.IsLoopback() || err != nil || number < 1 || number > 65535 {
+		return errors.New("邮件夹具仅接受数值loopback与合法非零端口")
+	}
+	return nil
+}
+func TestMailDataFixtureEndpointRejectsForeignOrInvalidPort(t *testing.T) {
+	for _, address := range []string{"127.0.0.1:24000", "[::1]:24000"} {
+		if err := mailDataFixtureEndpoint(address); err != nil {
+			t.Fatal(err)
+		}
+	}
+	for _, address := range []string{"localhost:24000", "10.0.0.1:24000", "127.0.0.1:0", "127.0.0.1:65536", "127.0.0.1:mysql", "127.0.0.1"} {
+		if mailDataFixtureEndpoint(address) == nil {
+			t.Fatal("非法夹具端点未拒绝")
+		}
+	}
+}
 func personal(request, player uint64) *mailpb.SendMailRequest {
 	return &mailpb.SendMailRequest{SenderKind: 3, RequestId: request, RecipientPlayerId: player, Title: "奖励", Body: "离线也可领取", Attachments: &mailpb.MailAttachments{Currencies: []*mailpb.MailCurrency{{Amount: 10}}, Items: []*mailpb.MailItem{{ConfigId: 42, Count: 2}}}}
+}
+
+func mailRoleOwner(t *testing.T, ctx context.Context, db *sql.DB, r *Repo, account string, revision, listing uint64) context.Context {
+	t.Helper()
+	if _, err := db.ExecContext(ctx, "CREATE TABLE IF NOT EXISTS account_role (player_id BIGINT UNSIGNED PRIMARY KEY,account VARBINARY(191) NOT NULL,owner_revision BIGINT UNSIGNED NOT NULL,trade_listing_id BIGINT UNSIGNED NOT NULL)"); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := db.ExecContext(ctx, "INSERT INTO account_role VALUES (7,?,?,?) ON DUPLICATE KEY UPDATE account=?,owner_revision=?,trade_listing_id=?", []byte(account), revision, listing, []byte(account), revision, listing); err != nil {
+		t.Fatal(err)
+	}
+	var schema string
+	if err := db.QueryRowContext(ctx, "SELECT DATABASE()").Scan(&schema); err != nil {
+		t.Fatal(err)
+	}
+	if err := r.ConfigureRoleAuthority(ctx, schema); err != nil {
+		t.Fatal(err)
+	}
+	actor, err := roleidentity.Capture(ctx, &dspb.AccountRoleOwnership{Account: account, OwnerRevision: revision, Role: &basepb.AccountSimplePlayer{PlayerId: 7}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	return actor
+}
+
+func TestTiDBMailOldSessionCannotReadOrMutateTransferredOrAbaRole(t *testing.T) {
+	ctx, db, r := mailFixture(t)
+	input := personal(701, 7)
+	input.SenderKind = SenderKind("admin")
+	sent, err := r.Send(ctx, "admin", mailpb.MailKind_MAIL_KIND_PERSONAL, input)
+	if err != nil {
+		t.Fatal(err)
+	}
+	original := mailRoleOwner(t, ctx, db, r, "原卖家", 1, 0)
+	if _, err = r.List(original, 7, &mailpb.ListMailsRequest{}); err != nil {
+		t.Fatal(err)
+	}
+	mailRoleOwner(t, ctx, db, r, "新买家", 2, 0)
+	if _, err = r.List(original, 7, &mailpb.ListMailsRequest{}); !errors.Is(err, ErrDenied) {
+		t.Fatalf("旧列表未拒绝: %v", err)
+	}
+	if _, err = r.Read(original, 7, sent.MailId); !errors.Is(err, ErrDenied) {
+		t.Fatalf("旧已读未拒绝: %v", err)
+	}
+	if _, err = r.Claim(original, 7, sent.MailId); !errors.Is(err, ErrDenied) {
+		t.Fatalf("旧领取未拒绝: %v", err)
+	}
+	if _, _, err = r.Delete(original, 7, []uint64{sent.MailId}, false); !errors.Is(err, ErrDenied) {
+		t.Fatalf("旧删除未拒绝: %v", err)
+	}
+	var changed, ops int
+	if err = db.QueryRowContext(ctx, "SELECT COUNT(*) FROM mail_state WHERE read_ms<>0 OR deleted_ms<>0").Scan(&changed); err != nil {
+		t.Fatal(err)
+	}
+	if err = db.QueryRowContext(ctx, "SELECT COUNT(*) FROM mail_asset_op").Scan(&ops); err != nil {
+		t.Fatal(err)
+	}
+	if changed != 0 || ops != 0 {
+		t.Fatalf("失效会话留下副作用: state=%d ops=%d", changed, ops)
+	}
+	current := mailRoleOwner(t, ctx, db, r, "原卖家", 3, 0)
+	if _, err = r.Claim(original, 7, sent.MailId); !errors.Is(err, ErrDenied) {
+		t.Fatalf("ABA旧修订未拒绝: %v", err)
+	}
+	frozen := mailRoleOwner(t, ctx, db, r, "原卖家", 3, 99)
+	if _, err = r.Claim(frozen, 7, sent.MailId); !errors.Is(err, ErrDenied) {
+		t.Fatalf("冻结领取未拒绝: %v", err)
+	}
+	mailRoleOwner(t, ctx, db, r, "原卖家", 3, 0)
+	if _, err = r.List(current, 7, &mailpb.ListMailsRequest{}); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestTiDBMailChecksOriginalSessionBeforePendingClaimReplay(t *testing.T) {
+	ctx, db, r := mailFixture(t)
+	input := personal(702, 7)
+	input.SenderKind = SenderKind("admin")
+	sent, err := r.Send(ctx, "admin", mailpb.MailKind_MAIL_KIND_PERSONAL, input)
+	if err != nil {
+		t.Fatal(err)
+	}
+	original := mailRoleOwner(t, ctx, db, r, "原卖家", 1, 0)
+	claim, err := r.Claim(original, 7, sent.MailId)
+	if err != nil || claim.GetAssetOpId() == 0 {
+		t.Fatalf("原领取失败: %v %v", claim, err)
+	}
+	current := mailRoleOwner(t, ctx, db, r, "新买家", 2, 0)
+	if _, err = r.Claim(original, 7, sent.MailId); !errors.Is(err, ErrDenied) {
+		t.Fatalf("原会话借在途短路: %v", err)
+	}
+	replayed, err := r.Claim(current, 7, sent.MailId)
+	if err != nil || replayed.AssetOpId != claim.AssetOpId {
+		t.Fatalf("重复领取改变原操作: %v %v", replayed, err)
+	}
+	var ops int
+	if err = db.QueryRowContext(ctx, "SELECT COUNT(*) FROM mail_asset_op").Scan(&ops); err != nil || ops != 1 {
+		t.Fatalf("操作数=%d: %v", ops, err)
+	}
 }
 func TestTiDBUnknownClaimStateNeverDeletesEvenAfterExpiry(t *testing.T) {
 	ctx, db, repo := mailFixture(t)

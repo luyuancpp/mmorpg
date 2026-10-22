@@ -26,6 +26,36 @@ Regions:
         - 127.0.0.1:7001
 `
 
+func TestAccountDirectoryRoleTradeSQLProofRequiresExplicitConfig(t *testing.T) {
+	absent := loadYaml(t, minimalYaml)
+	if absent.AccountDirectory.RoleTradeSQLProof.Enabled || len(absent.AccountDirectory.RoleTradeSQLProof.AllowedStorageIDs) != 0 || absent.AccountDirectory.MaxRoles() != 5 {
+		t.Fatal("缺配置不能隐式启用跨库冻结证明，目录上限仍为全局默认")
+	}
+	explicit := loadYaml(t, minimalYaml+"\nAccountDirectory:\n  MaxPlayersPerAccount: 7\n  RoleTradeSQLProof:\n    Enabled: true\n    AllowedStorageIDs: [1, 1000000]\n")
+	proof := explicit.AccountDirectory.RoleTradeSQLProof
+	if !proof.Enabled || len(proof.AllowedStorageIDs) != 2 || proof.AllowedStorageIDs[0] != 1 || proof.AllowedStorageIDs[1] != 1000000 || explicit.AccountDirectory.MaxRoles() != 7 {
+		t.Fatal("显式SQL证明白名单/角色上限未被配置解析器识别")
+	}
+}
+
+func TestAccountDirectoryPendingSchemasAreExplicitAndMatchIsParsed(t *testing.T) {
+	absent := loadYaml(t, minimalYaml).AccountDirectory
+	if absent.RoleTradeTradeSchema != "" || absent.RoleTradeGuildSchema != "" || absent.RoleTradeMailSchema != "" || absent.RoleTradeMatchSchema != "" || absent.RoleTradeInboxSchema != "" {
+		t.Fatal("跨域挂起schema缺失不能从DSN或其它服务配置补齐")
+	}
+	explicit := loadYaml(t, minimalYaml+"\nAccountDirectory:\n  RoleTradeTradeSchema: peer_trade\n  RoleTradeGuildSchema: peer_guild\n  RoleTradeMailSchema: peer_mail\n  RoleTradeMatchSchema: peer_match\n  RoleTradeInboxSchema: peer_inbox\n").AccountDirectory
+	if explicit.RoleTradeTradeSchema != "peer_trade" || explicit.RoleTradeGuildSchema != "peer_guild" || explicit.RoleTradeMailSchema != "peer_mail" || explicit.RoleTradeMatchSchema != "peer_match" || explicit.RoleTradeInboxSchema != "peer_inbox" {
+		t.Fatal("显式trade/guild/mail/match权威schema必须完整保留")
+	}
+	var shipped Config
+	if err := conf.Load("../../etc/data_service.yaml", &shipped); err != nil {
+		t.Fatal(err)
+	}
+	if shipped.AccountDirectory.RoleTradeMatchSchema != "mmorpg_match" || shipped.AccountDirectory.RoleTradeInboxSchema != "mmorpg_player_inbox" {
+		t.Fatal("仓库配置必须显式登记匹配挂起权威schema")
+	}
+}
+
 func loadYaml(t *testing.T, body string) Config {
 	t.Helper()
 	path := filepath.Join(t.TempDir(), "data_service.yaml")
@@ -711,26 +741,25 @@ RouteStore:
 	}
 }
 
-// TestShippedYamlRouteStoreIsRedisAndValid:仓库里那份 yaml **显式**写 Mode: redis(本地默认必须与今天逐字相同),
-// FenceShards 写的是 MySQL 档的 16(2026-10-13,容量模型 §4.1 的连带修正;代码默认仍是 8),其余键写的就是代码默认值,
-// 且合法。切 db_first 是 P2 的显式运维动作,不能出现在随仓库发的配置里。
-func TestShippedYamlRouteStoreIsRedisAndValid(t *testing.T) {
+// 随仓库配置采用全球 TiDB 提交点和 64 围栏分片；其余池与发布参数沿用组件默认值。
+func TestShippedYamlRouteStoreIsDBFirstAndValid(t *testing.T) {
 	var c Config
 	if err := conf.Load("../../etc/data_service.yaml", &c); err != nil {
 		t.Fatalf("load etc/data_service.yaml: %v", err)
 	}
-	if c.RouteStore.Mode != RouteStoreModeRedis {
-		t.Fatalf("etc/data_service.yaml RouteStore.Mode = %q, want an explicit %q", c.RouteStore.Mode, RouteStoreModeRedis)
+	if c.RouteStore.Mode != RouteStoreModeDBFirst {
+		t.Fatalf("etc/data_service.yaml RouteStore.Mode = %q, want an explicit %q", c.RouteStore.Mode, RouteStoreModeDBFirst)
 	}
 	if c.RouteStore.WaitAOFNumLocal == nil || c.RouteStore.WaitAOFNumReplicas == nil {
 		t.Fatal("etc/data_service.yaml must spell out both WaitAOF keys (their safe default is not the zero value)")
 	}
-	if c.RouteStore.FenceShards != 16 {
-		t.Fatalf("etc/data_service.yaml RouteStore.FenceShards = %d, want 16 (the MySQL tier; the TiDB tier uses 64, the code default stays 8)",
+	if c.RouteStore.FenceShards != 64 {
+		t.Fatalf("etc/data_service.yaml RouteStore.FenceShards = %d, want 64 (the global TiDB tier)",
 			c.RouteStore.FenceShards)
 	}
-	// 其余键与代码默认值相同:把 FenceShards 换回默认值之后整段应当就是默认形态。
+	// 已单独断言全球覆盖值；下面只比较未覆盖的组件默认参数。
 	rest := c.RouteStore
+	rest.Mode = RouteStoreModeRedis
 	rest.FenceShards = 8
 	assertRouteStoreDefaults(t, rest)
 	if err := c.RouteStore.Validate(); err != nil {
@@ -738,9 +767,9 @@ func TestShippedYamlRouteStoreIsRedisAndValid(t *testing.T) {
 	}
 }
 
-// TestRouteStoreReadRequiresReady(第 3 批读方门禁,规格 §5.2):缺省 false(整段缺失、段在键不在都一样,
+// TestRouteStoreReadRequiresReady(第 3 批读方门禁,规格 §5.2):组件原始缺省 false(整段缺失、段在键不在都一样,
 // Normalize 不改它);true 只许 db_first —— redis 模式下没有可回源的真源,回退顺序写反时必须拒启而不是静默跑;
-// 仓库里那份 yaml 显式写 false。
+// 随仓库的全球应用配置显式开启 ready 门禁。
 func TestRouteStoreReadRequiresReady(t *testing.T) {
 	for _, y := range []string{minimalYaml, minimalYaml + `
 RouteStore: {}
@@ -781,8 +810,8 @@ RouteStore:
 	if err := conf.Load("../../etc/data_service.yaml", &shipped); err != nil {
 		t.Fatalf("load etc/data_service.yaml: %v", err)
 	}
-	if shipped.RouteStore.ReadRequiresReady {
-		t.Fatal("etc/data_service.yaml must keep RouteStore.ReadRequiresReady false (turning it on is a P5 step, spec §8)")
+	if !shipped.RouteStore.ReadRequiresReady {
+		t.Fatal("etc/data_service.yaml must enable RouteStore.ReadRequiresReady for global db_first reads")
 	}
 }
 
@@ -1137,24 +1166,26 @@ func TestRouteReconcileRejects(t *testing.T) {
 	}
 }
 
-// TestShippedYamlReconcileIsInert:仓库里那份 yaml 是 redis 模式(不构造 leader)、ArmReadyMarker 显式 false,
-// Reconcile 段写的就是代码默认值且合法 —— 打开 Arm 是 P3 之后的显式运维动作,不能随仓库配置发出去。
-func TestShippedYamlReconcileIsInert(t *testing.T) {
+// 全球配置运行对账并开启 ready 装配；实际发布仍须通过 leader 的历史导入与回档检查。
+func TestShippedYamlReconcileEnablesGlobalReady(t *testing.T) {
 	var c Config
 	if err := conf.Load("../../etc/data_service.yaml", &c); err != nil {
 		t.Fatalf("load etc/data_service.yaml: %v", err)
 	}
 	rc := c.RouteStore.Reconcile
-	if rc.ArmReadyMarker {
-		t.Fatal("etc/data_service.yaml must keep RouteStore.Reconcile.ArmReadyMarker false")
+	if !rc.ArmReadyMarker {
+		t.Fatal("etc/data_service.yaml must enable RouteStore.Reconcile.ArmReadyMarker for global readiness")
 	}
 	if rc.Enabled == nil || rc.RollbackToleranceMs == nil {
 		t.Fatal("etc/data_service.yaml must spell out Reconcile.Enabled and Reconcile.RollbackToleranceMs (their safe default is not the zero value)")
 	}
-	if c.RouteStore.Normalize().ReconcileEnabled() {
-		t.Fatal("the shipped yaml is redis mode: it must not construct the reconcile leader")
+	if !c.RouteStore.Normalize().ReconcileEnabled() {
+		t.Fatal("the shipped global db_first yaml must construct the reconcile leader")
 	}
-	assertReconcileDefaults(t, rc.Normalize())
+	// Arm 已单独断言，其他对账参数继续保持组件默认值。
+	rest := rc.Normalize()
+	rest.ArmReadyMarker = false
+	assertReconcileDefaults(t, rest)
 	if err := c.RouteStore.Normalize().Validate(); err != nil {
 		t.Fatalf("shipped RouteStore block (with Reconcile) must validate: %v", err)
 	}

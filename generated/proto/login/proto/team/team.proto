@@ -46,7 +46,8 @@ service ClientPlayerTeam {
 
 // ---------------- 请求 ----------------
 
-message CreateTeamRequest {}
+// 写请求的 UUID 代表原业务意图；传输重试必须复用，新操作另发，回执绑定原角色归属。
+message CreateTeamRequest { string request_id = 1; }
 
 message GetMyTeamRequest {
   bool notify_online = 1;  // 进游戏后第一次拉取填 true:服务端把当前视图推给其他在线队员(在线态刷新)
@@ -64,42 +65,50 @@ message GetMyTeamRequest {
 
 message ApplyJoinTeamRequest {
   uint64 target_player_id = 1;  // 申请加入"该玩家所在的队伍"
+  string request_id = 2;
 }
 
 message HandleApplicationRequest {
   uint64 applicant_id = 1;
   bool approve = 2;
   uint64 expected_team_id = 3;
+  string request_id = 4;
 }
 
 message InviteToTeamRequest {
   uint64 target_player_id = 1;
   uint64 expected_team_id = 2;
+  string request_id = 3;
 }
 
 message RespondInviteRequest {
   uint64 team_id = 1;  // team_id 本身已绑定队伍
   bool accept = 2;
+  string request_id = 3;
 }
 
 message ListMyInvitesRequest {}
 
 message LeaveTeamRequest {
   uint64 expected_team_id = 1;
+  string request_id = 2;
 }
 
 message KickMemberRequest {
   uint64 target_player_id = 1;
   uint64 expected_team_id = 2;
+  string request_id = 3;
 }
 
 message TransferLeaderRequest {
   uint64 target_player_id = 1;
   uint64 expected_team_id = 2;
+  string request_id = 3;
 }
 
 message DisbandTeamRequest {
   uint64 expected_team_id = 1;
+  string request_id = 2;
 }
 
 message StartTeamMatchRequest {
@@ -260,7 +269,7 @@ message TeamRecord {
   repeated TeamInviteRecord invites = 7;
   uint32 next_join_seq = 8;
   string match_lock_token = 9;                     // 非空 = 开战锁持有者(uuid)
-  uint64 match_lock_expire_at_ms = 10;             // 过期视为无锁
+  uint64 match_lock_expire_at_ms = 10;             // SQL权威中token非空且本值0为持久launch锁，仅确证终态可释放；旧Redis锁仍按正数截止。
   repeated uint64 match_lock_roster = 11;          // 集合语义:加锁时的开战名单;锁有效期间必等于 members 的 player_id 集合
 }
 

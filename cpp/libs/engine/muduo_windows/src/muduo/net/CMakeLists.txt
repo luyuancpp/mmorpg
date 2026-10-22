@@ -26,6 +26,9 @@ set(net_SRCS
   Timer.cc
   TimerQueue.cc
   )
+if(WIN32)
+  list(APPEND net_SRCS WindowsWakeup.cc)
+endif()
 include_directories(${PROJECT_SOURCE_DIR}/contrib/windows/include)
 add_library(muduo_net ${net_SRCS})
 target_link_libraries(muduo_net muduo_base)

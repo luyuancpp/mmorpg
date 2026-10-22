@@ -474,9 +474,25 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED WatchBattleRequest final : public :
 
   // accessors -------------------------------------------------------
   enum : int {
+    kRequestIdFieldNumber = 3,
     kPlayerIdFieldNumber = 1,
     kBattleIdFieldNumber = 2,
   };
+  // string request_id = 3;
+  void clear_request_id() ;
+  [[nodiscard]] const ::std::string& request_id() const;
+  template <typename Arg_ = const ::std::string&, typename... Args_>
+  void set_request_id(Arg_&& arg, Args_... args);
+  ::std::string* PROTOBUF_NONNULL mutable_request_id();
+  [[nodiscard]] ::std::string* PROTOBUF_NULLABLE release_request_id();
+  void set_allocated_request_id(::std::string* PROTOBUF_NULLABLE value);
+
+  private:
+  const ::std::string& _internal_request_id() const;
+  PROTOBUF_ALWAYS_INLINE void _internal_set_request_id(const ::std::string& value);
+  ::std::string* PROTOBUF_NONNULL _internal_mutable_request_id();
+
+  public:
   // uint64 player_id = 1;
   void clear_player_id() ;
   [[nodiscard]] ::uint64_t player_id() const;
@@ -501,8 +517,8 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED WatchBattleRequest final : public :
  private:
   class _Internal;
   using ParseTableT_ =
-      ::google::protobuf::internal::TcParseTable<1, 2,
-                          0, 0,
+      ::google::protobuf::internal::TcParseTable<2, 3,
+                          0, 43,
                           2>;
   static constexpr ParseTableT_ InternalGenerateParseTable_(
       const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL class_data);
@@ -530,6 +546,7 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED WatchBattleRequest final : public :
         const WatchBattleRequest& from_msg);
     ::google::protobuf::internal::HasBits<1> _has_bits_;
     ::google::protobuf::internal::CachedSize _cached_size_;
+    ::google::protobuf::internal::ArenaStringPtr request_id_;
     ::uint64_t player_id_;
     ::uint64_t battle_id_;
     PROTOBUF_TSAN_DECLARE_MEMBER
@@ -3380,9 +3397,25 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED WatchBattleResponse final : public 
 
   // accessors -------------------------------------------------------
   enum : int {
+    kSpectatorOperationIdFieldNumber = 3,
     kErrorMessageFieldNumber = 2,
     kBattleIdFieldNumber = 1,
   };
+  // string spectator_operation_id = 3;
+  void clear_spectator_operation_id() ;
+  [[nodiscard]] const ::std::string& spectator_operation_id() const;
+  template <typename Arg_ = const ::std::string&, typename... Args_>
+  void set_spectator_operation_id(Arg_&& arg, Args_... args);
+  ::std::string* PROTOBUF_NONNULL mutable_spectator_operation_id();
+  [[nodiscard]] ::std::string* PROTOBUF_NULLABLE release_spectator_operation_id();
+  void set_allocated_spectator_operation_id(::std::string* PROTOBUF_NULLABLE value);
+
+  private:
+  const ::std::string& _internal_spectator_operation_id() const;
+  PROTOBUF_ALWAYS_INLINE void _internal_set_spectator_operation_id(const ::std::string& value);
+  ::std::string* PROTOBUF_NONNULL _internal_mutable_spectator_operation_id();
+
+  public:
   // .TipInfoMessage error_message = 2;
   [[nodiscard]] bool has_error_message()
       const;
@@ -3413,8 +3446,8 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED WatchBattleResponse final : public 
  private:
   class _Internal;
   using ParseTableT_ =
-      ::google::protobuf::internal::TcParseTable<1, 2,
-                          1, 0,
+      ::google::protobuf::internal::TcParseTable<2, 3,
+                          1, 56,
                           2>;
   static constexpr ParseTableT_ InternalGenerateParseTable_(
       const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL class_data);
@@ -3442,6 +3475,7 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED WatchBattleResponse final : public 
         const WatchBattleResponse& from_msg);
     ::google::protobuf::internal::HasBits<1> _has_bits_;
     ::google::protobuf::internal::CachedSize _cached_size_;
+    ::google::protobuf::internal::ArenaStringPtr spectator_operation_id_;
     ::TipInfoMessage* PROTOBUF_NULLABLE error_message_;
     ::uint64_t battle_id_;
     PROTOBUF_TSAN_DECLARE_MEMBER
@@ -6446,7 +6480,7 @@ inline void ChallengeResultS2C::_internal_set_responder_id(::uint64_t value) {
 inline void WatchBattleRequest::clear_player_id() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.player_id_ = ::uint64_t{0u};
-  ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
+  ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
 }
 inline ::uint64_t WatchBattleRequest::player_id() const {
   // @@protoc_insertion_point(field_get:match.WatchBattleRequest.player_id)
@@ -6454,7 +6488,7 @@ inline ::uint64_t WatchBattleRequest::player_id() const {
 }
 inline void WatchBattleRequest::set_player_id(::uint64_t value) {
   _internal_set_player_id(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  SetHasBit(_impl_._has_bits_[0], 0x00000002U);
   // @@protoc_insertion_point(field_set:match.WatchBattleRequest.player_id)
 }
 inline ::uint64_t WatchBattleRequest::_internal_player_id() const {
@@ -6470,7 +6504,7 @@ inline void WatchBattleRequest::_internal_set_player_id(::uint64_t value) {
 inline void WatchBattleRequest::clear_battle_id() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.battle_id_ = ::uint64_t{0u};
-  ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
+  ClearHasBit(_impl_._has_bits_[0], 0x00000004U);
 }
 inline ::uint64_t WatchBattleRequest::battle_id() const {
   // @@protoc_insertion_point(field_get:match.WatchBattleRequest.battle_id)
@@ -6478,7 +6512,7 @@ inline ::uint64_t WatchBattleRequest::battle_id() const {
 }
 inline void WatchBattleRequest::set_battle_id(::uint64_t value) {
   _internal_set_battle_id(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00000002U);
+  SetHasBit(_impl_._has_bits_[0], 0x00000004U);
   // @@protoc_insertion_point(field_set:match.WatchBattleRequest.battle_id)
 }
 inline ::uint64_t WatchBattleRequest::_internal_battle_id() const {
@@ -6490,6 +6524,70 @@ inline void WatchBattleRequest::_internal_set_battle_id(::uint64_t value) {
   _impl_.battle_id_ = value;
 }
 
+// string request_id = 3;
+inline void WatchBattleRequest::clear_request_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.request_id_.ClearToEmpty();
+  ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
+}
+inline const ::std::string& WatchBattleRequest::request_id() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:match.WatchBattleRequest.request_id)
+  return _internal_request_id();
+}
+template <typename Arg_, typename... Args_>
+PROTOBUF_ALWAYS_INLINE void WatchBattleRequest::set_request_id(Arg_&& arg, Args_... args) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  _impl_.request_id_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
+  // @@protoc_insertion_point(field_set:match.WatchBattleRequest.request_id)
+}
+inline ::std::string* PROTOBUF_NONNULL WatchBattleRequest::mutable_request_id()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  ::std::string* _s = _internal_mutable_request_id();
+  // @@protoc_insertion_point(field_mutable:match.WatchBattleRequest.request_id)
+  return _s;
+}
+inline const ::std::string& WatchBattleRequest::_internal_request_id() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.request_id_.Get();
+}
+inline void WatchBattleRequest::_internal_set_request_id(const ::std::string& value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.request_id_.Set(value, GetArena());
+}
+inline ::std::string* PROTOBUF_NONNULL WatchBattleRequest::_internal_mutable_request_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  return _impl_.request_id_.Mutable( GetArena());
+}
+inline ::std::string* PROTOBUF_NULLABLE WatchBattleRequest::release_request_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:match.WatchBattleRequest.request_id)
+  if (!CheckHasBit(_impl_._has_bits_[0], 0x00000001U)) {
+    return nullptr;
+  }
+  ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
+  auto* released = _impl_.request_id_.Release();
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString()) {
+    _impl_.request_id_.Set("", GetArena());
+  }
+  return released;
+}
+inline void WatchBattleRequest::set_allocated_request_id(::std::string* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (value != nullptr) {
+    SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  } else {
+    ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
+  }
+  _impl_.request_id_.SetAllocated(value, GetArena());
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.request_id_.IsDefault()) {
+    _impl_.request_id_.Set("", GetArena());
+  }
+  // @@protoc_insertion_point(field_set_allocated:match.WatchBattleRequest.request_id)
+}
+
 // -------------------------------------------------------------------
 
 // WatchBattleResponse
@@ -6498,7 +6596,7 @@ inline void WatchBattleRequest::_internal_set_battle_id(::uint64_t value) {
 inline void WatchBattleResponse::clear_battle_id() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.battle_id_ = ::uint64_t{0u};
-  ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
+  ClearHasBit(_impl_._has_bits_[0], 0x00000004U);
 }
 inline ::uint64_t WatchBattleResponse::battle_id() const {
   // @@protoc_insertion_point(field_get:match.WatchBattleResponse.battle_id)
@@ -6506,7 +6604,7 @@ inline ::uint64_t WatchBattleResponse::battle_id() const {
 }
 inline void WatchBattleResponse::set_battle_id(::uint64_t value) {
   _internal_set_battle_id(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00000002U);
+  SetHasBit(_impl_._has_bits_[0], 0x00000004U);
   // @@protoc_insertion_point(field_set:match.WatchBattleResponse.battle_id)
 }
 inline ::uint64_t WatchBattleResponse::_internal_battle_id() const {
@@ -6520,7 +6618,7 @@ inline void WatchBattleResponse::_internal_set_battle_id(::uint64_t value) {
 
 // .TipInfoMessage error_message = 2;
 inline bool WatchBattleResponse::has_error_message() const {
-  bool value = CheckHasBit(_impl_._has_bits_[0], 0x00000001U);
+  bool value = CheckHasBit(_impl_._has_bits_[0], 0x00000002U);
   PROTOBUF_ASSUME(!value || _impl_.error_message_ != nullptr);
   return value;
 }
@@ -6541,16 +6639,16 @@ inline void WatchBattleResponse::unsafe_arena_set_allocated_error_message(
   }
   _impl_.error_message_ = reinterpret_cast<::TipInfoMessage*>(value);
   if (value != nullptr) {
-    SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+    SetHasBit(_impl_._has_bits_[0], 0x00000002U);
   } else {
-    ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
+    ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
   }
   // @@protoc_insertion_point(field_unsafe_arena_set_allocated:match.WatchBattleResponse.error_message)
 }
 inline ::TipInfoMessage* PROTOBUF_NULLABLE WatchBattleResponse::release_error_message() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
 
-  ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
+  ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
   ::TipInfoMessage* released = _impl_.error_message_;
   _impl_.error_message_ = nullptr;
   if (::google::protobuf::internal::DebugHardenForceCopyInRelease()) {
@@ -6570,7 +6668,7 @@ inline ::TipInfoMessage* PROTOBUF_NULLABLE WatchBattleResponse::unsafe_arena_rel
   ::google::protobuf::internal::TSanWrite(&_impl_);
   // @@protoc_insertion_point(field_release:match.WatchBattleResponse.error_message)
 
-  ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
+  ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
   ::TipInfoMessage* temp = _impl_.error_message_;
   _impl_.error_message_ = nullptr;
   return temp;
@@ -6585,7 +6683,7 @@ inline ::TipInfoMessage* PROTOBUF_NONNULL WatchBattleResponse::_internal_mutable
 }
 inline ::TipInfoMessage* PROTOBUF_NONNULL WatchBattleResponse::mutable_error_message()
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  SetHasBit(_impl_._has_bits_[0], 0x00000002U);
   ::TipInfoMessage* _msg = _internal_mutable_error_message();
   // @@protoc_insertion_point(field_mutable:match.WatchBattleResponse.error_message)
   return _msg;
@@ -6602,13 +6700,77 @@ inline void WatchBattleResponse::set_allocated_error_message(::TipInfoMessage* P
     if (message_arena != submessage_arena) {
       value = ::google::protobuf::internal::GetOwnedMessage(message_arena, value, submessage_arena);
     }
-    SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+    SetHasBit(_impl_._has_bits_[0], 0x00000002U);
   } else {
-    ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
+    ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
   }
 
   _impl_.error_message_ = reinterpret_cast<::TipInfoMessage*>(value);
   // @@protoc_insertion_point(field_set_allocated:match.WatchBattleResponse.error_message)
+}
+
+// string spectator_operation_id = 3;
+inline void WatchBattleResponse::clear_spectator_operation_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.spectator_operation_id_.ClearToEmpty();
+  ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
+}
+inline const ::std::string& WatchBattleResponse::spectator_operation_id() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:match.WatchBattleResponse.spectator_operation_id)
+  return _internal_spectator_operation_id();
+}
+template <typename Arg_, typename... Args_>
+PROTOBUF_ALWAYS_INLINE void WatchBattleResponse::set_spectator_operation_id(Arg_&& arg, Args_... args) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  _impl_.spectator_operation_id_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
+  // @@protoc_insertion_point(field_set:match.WatchBattleResponse.spectator_operation_id)
+}
+inline ::std::string* PROTOBUF_NONNULL WatchBattleResponse::mutable_spectator_operation_id()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  ::std::string* _s = _internal_mutable_spectator_operation_id();
+  // @@protoc_insertion_point(field_mutable:match.WatchBattleResponse.spectator_operation_id)
+  return _s;
+}
+inline const ::std::string& WatchBattleResponse::_internal_spectator_operation_id() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.spectator_operation_id_.Get();
+}
+inline void WatchBattleResponse::_internal_set_spectator_operation_id(const ::std::string& value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.spectator_operation_id_.Set(value, GetArena());
+}
+inline ::std::string* PROTOBUF_NONNULL WatchBattleResponse::_internal_mutable_spectator_operation_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  return _impl_.spectator_operation_id_.Mutable( GetArena());
+}
+inline ::std::string* PROTOBUF_NULLABLE WatchBattleResponse::release_spectator_operation_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:match.WatchBattleResponse.spectator_operation_id)
+  if (!CheckHasBit(_impl_._has_bits_[0], 0x00000001U)) {
+    return nullptr;
+  }
+  ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
+  auto* released = _impl_.spectator_operation_id_.Release();
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString()) {
+    _impl_.spectator_operation_id_.Set("", GetArena());
+  }
+  return released;
+}
+inline void WatchBattleResponse::set_allocated_spectator_operation_id(::std::string* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (value != nullptr) {
+    SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  } else {
+    ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
+  }
+  _impl_.spectator_operation_id_.SetAllocated(value, GetArena());
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.spectator_operation_id_.IsDefault()) {
+    _impl_.spectator_operation_id_.Set("", GetArena());
+  }
+  // @@protoc_insertion_point(field_set_allocated:match.WatchBattleResponse.spectator_operation_id)
 }
 
 // -------------------------------------------------------------------

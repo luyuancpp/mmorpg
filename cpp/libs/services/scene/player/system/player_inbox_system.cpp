@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <chrono>
 #include <cstddef>
+#include <cstdlib>
 #include <limits>
 #include <memory>
 #include <string>
@@ -17,6 +18,9 @@
 #include "battle/system/player_battle.h"
 #include "engine/core/type_define/player_guid_comp.h"
 #include "core/network/grpc_client_call.h"          // kGrpcStatusUnimplemented
+#include "core/security/service_call_auth.h"
+#include "player/system/role_admission_system.h"
+#include "time/system/time.h"
 #include "grpc_client/player_inbox/player_inbox_grpc_client.h"
 #include "muduo_grpc/channel.h"                 // 选点读 muduo_grpc::Channel::GetState / ConnectivityState
 #include "network/node_utils.h"                 // GetNodeInfo:Fetch 带上本节点 node_id(只用于对端日志)
@@ -84,17 +88,26 @@ namespace
 
 	bool DefaultSendFetch(const player_inbox::FetchPlayerInboxRequest &request)
 	{
+		const auto admission = RoleAdmissionSystem::ConfirmedIdentity(request.player_id());
+		const char* secret = std::getenv("MMORPG_ACCOUNT_DIRECTORY_SECRET_SCENE");
+		if (!admission || admission->owner_epoch() != request.owner_epoch() || secret == nullptr) return false;
+		auto signedRequest = request;
+		*signedRequest.mutable_admission() = *admission;
+		if (!service_call_auth::Sign("/player_inbox.PlayerInbox/FetchItems", signedRequest,
+			*signedRequest.mutable_auth(), "scene", secret, TimeSystem::NowMillisecondsUTC())) return false;
 		const entt::entity node = PickReadyPlayerInboxNode();
 		if (node == entt::null)
 		{
 			return false;
 		}
 		player_inbox::SendPlayerInboxFetchItems(
-			tlsNodeContextManager.GetRegistry(common::base::PlayerInboxNodeService), node, request,
+			tlsNodeContextManager.GetRegistry(common::base::PlayerInboxNodeService), node, signedRequest,
 			[playerId = request.player_id(), domain = static_cast<uint32_t>(request.domain()),
-			 correlationId = request.correlation_id()](const GrpcCallOutcome &outcome,
+			 correlationId = request.correlation_id(), original = *admission](const GrpcCallOutcome &outcome,
 													 const player_inbox::FetchPlayerInboxResponse *reply)
 			{
+				const auto current = RoleAdmissionSystem::ConfirmedIdentity(playerId);
+				if (!current || current->SerializeAsString() != original.SerializeAsString()) return;
 				if (outcome.ok() && reply != nullptr)
 				{
 					PlayerInboxSystem::OnFetchReply(playerId, domain, correlationId, *reply);
@@ -108,17 +121,26 @@ namespace
 
 	bool DefaultSendAck(const player_inbox::AckPlayerInboxRequest &request)
 	{
+		const auto admission = RoleAdmissionSystem::ConfirmedIdentity(request.player_id());
+		const char* secret = std::getenv("MMORPG_ACCOUNT_DIRECTORY_SECRET_SCENE");
+		if (!admission || admission->owner_epoch() != request.owner_epoch() || secret == nullptr) return false;
+		auto signedRequest = request;
+		*signedRequest.mutable_admission() = *admission;
+		if (!service_call_auth::Sign("/player_inbox.PlayerInbox/AckItems", signedRequest,
+			*signedRequest.mutable_auth(), "scene", secret, TimeSystem::NowMillisecondsUTC())) return false;
 		const entt::entity node = PickReadyPlayerInboxNode();
 		if (node == entt::null)
 		{
 			return false;
 		}
 		player_inbox::SendPlayerInboxAckItems(
-			tlsNodeContextManager.GetRegistry(common::base::PlayerInboxNodeService), node, request,
+			tlsNodeContextManager.GetRegistry(common::base::PlayerInboxNodeService), node, signedRequest,
 			[playerId = request.player_id(), domain = static_cast<uint32_t>(request.domain()),
-			 correlationId = request.correlation_id()](const GrpcCallOutcome &outcome,
+			 correlationId = request.correlation_id(), original = *admission](const GrpcCallOutcome &outcome,
 														 const player_inbox::AckPlayerInboxResponse *reply)
 			{
+				const auto current = RoleAdmissionSystem::ConfirmedIdentity(playerId);
+				if (!current || current->SerializeAsString() != original.SerializeAsString()) return;
 				if (outcome.ok() && reply != nullptr)
 				{
 					PlayerInboxSystem::OnAckReply(playerId, domain, correlationId, *reply);

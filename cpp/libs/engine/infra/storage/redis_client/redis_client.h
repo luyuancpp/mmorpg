@@ -386,7 +386,7 @@ public:
 	using SaveSchemaWarnedCallback = std::function<void(MessageKey, const std::string& redisKey)>;
 	using SaveSchemaRejectedCallback = std::function<void(MessageKey, const std::string& redisKey, const std::string& guardExpected)>;
 
-	using HiredisPtr = std::unique_ptr<hiredis::Hiredis>;
+	using HiredisPtr = std::shared_ptr<hiredis::Hiredis>;
 
 	// 回调绑定约定:本类所有 hiredis 回调都以裸 this 经 std::bind 绑定,而不是
 	// AGENTS §11.7 要求的 weak_ptr。这是 §11.7 允许的"与被绑对象同寿命"例外:
@@ -600,6 +600,12 @@ public:
 	size_t in_flight_load_count() const { return loading_queue_.size(); }
 	// Number of loads waiting in the NIL/disconnect retry queue.
 	size_t pending_load_count() const { return pending_retry_queue_.size(); }
+	// 按key核实真实GET及重试均已排空；交易封存不能用待入场上下文消失替代它。
+	bool HasPendingLoad(const MessageKey& key) const
+	{
+		const std::string redisKey = full_name() + ":" + std::to_string(key);
+		return loading_queue_.contains(redisKey) || pending_retry_queue_.contains(redisKey);
+	}
 	// Number of saves waiting in the failure/disconnect retry queue.
 	size_t pending_save_count() const { return pending_save_queue_.size(); }
 	// Number of SETs whose reply has not yet been received.

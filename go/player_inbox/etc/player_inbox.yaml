@@ -43,6 +43,9 @@ LeaseTTL: 60
 # 必须是顶层单行:-Zone 的端口位移正则只认这个形状。指标清单见 internal/metrics/metrics.go(前缀 player_inbox_)。
 MetricsListenAddr: ":9270"
 
+# 与data_service目录共用同一个TiDB物理入口；无Redis归属回填。
+AccountRoleSchema: testdb
+
 # RPC 级热关停(shared/killswitch)规则在 etcd 里的前缀。留空 = 默认 /mmorpg/killswitch/。
 KillSwitchPrefix: ""
 
@@ -51,7 +54,7 @@ KillSwitchPrefix: ""
 # proto/player_inbox/player_inbox_table.proto 建。DBName 必须等于代码常量 mmorpg_player_inbox(config.Validate 断言)。
 # 连接池即设计 §10 的独立连接池:会话级 RC + innodb_lock_wait_timeout=1 由 svc.BuildDSN 固定。
 MySQL:
-  Host: 127.0.0.1:3306
+  Host: 127.0.0.1:4000
   User: appuser
   Password: apppass123
   DBName: mmorpg_player_inbox

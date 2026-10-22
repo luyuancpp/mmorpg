@@ -44,6 +44,13 @@ type config struct {
 	SharedRedisPasswordEnv string             `json:"SharedRedisPasswordEnv,optional"`
 	AssetSecretEnv         string             `json:"AssetSecretEnv"`
 	KafkaBrokers           []string           `json:"KafkaBrokers"`
+	AccountRoleSchema      string             `json:"AccountRoleSchema"`
+	GlobalLoginSessions    bool               `json:"GlobalLoginSessions"`
+	LoginRedis             struct {
+		Host        string `json:"Host"`
+		DB          int    `json:"DB,default=0"`
+		PasswordEnv string `json:"PasswordEnv,optional"`
+	} `json:"LoginRedis"`
 }
 
 var errManualSchema = errors.New("领域结构需人工处理")
@@ -113,6 +120,9 @@ func run(c config, migrate bool) error {
 	if migrate {
 		return nil
 	}
+	if !c.RequireTiDB || !c.GlobalLoginSessions || c.LoginRedis.Host == "" || c.LoginRedis.DB < 0 {
+		return errors.New("邮件必须显式装配同TiDB角色权威与全局登录态Redis")
+	}
 	// 同一物理连接跨库只读；不同集群或未授SELECT权限会启动失败，不降级成缓存资格。
 	rows, err := db.QueryContext(ctx, "SELECT player_id,guild_id FROM mmorpg_guild.guild_member LIMIT 0")
 	if err != nil {
@@ -143,6 +153,12 @@ func run(c config, migrate bool) error {
 	}
 	defer ids.Close()
 	repo := data.New(db, ids.IDs["mail"].Next, ids.IDs["mail_asset_op"].Next, func(id uint32) bool { _, ok := tables.ItemTableManagerInstance.FindById(id); return ok }, "mmorpg_guild")
+	roleCheck, cancelRoleCheck := context.WithTimeout(ctx, 3*time.Second)
+	err = repo.ConfigureRoleAuthority(roleCheck, c.AccountRoleSchema)
+	cancelRoleCheck()
+	if err != nil {
+		return errors.New("邮件同集群角色目录不可用")
+	}
 	if err := repo.ConfigureLimits(c.Mail); err != nil {
 		return err
 	}
@@ -160,7 +176,18 @@ func run(c config, migrate bool) error {
 	}
 	writer := &kafkago.Writer{Addr: kafkago.TCP(c.KafkaBrokers...), Balancer: &kafkacmd.CommandPartitionBalancer{Fallback: &kafkago.Hash{}}, RequiredAcks: kafkago.RequireOne, Async: false, BatchTimeout: 5 * time.Millisecond, WriteTimeout: 400 * time.Millisecond, MaxAttempts: 1}
 	defer writer.Close()
-	handler := server.New(repo, auth, &notify.Notifier{Redis: sharedRedis, Publisher: writer})
+	loginRedis := redis.NewClient(&redis.Options{Addr: c.LoginRedis.Host, DB: c.LoginRedis.DB,
+		Password: os.Getenv(c.LoginRedis.PasswordEnv), PoolSize: 8, MaxActiveConns: 8, MaxRetries: -1,
+		DialerRetries: 1, DialTimeout: time.Second, ReadTimeout: 300 * time.Millisecond,
+		WriteTimeout: 300 * time.Millisecond, PoolTimeout: 300 * time.Millisecond, ContextTimeoutEnabled: true})
+	defer loginRedis.Close()
+	loginCheck, cancelLoginCheck := context.WithTimeout(ctx, time.Second)
+	err = loginRedis.Ping(loginCheck).Err()
+	cancelLoginCheck()
+	if err != nil {
+		return errors.New("邮件全局登录态Redis不可用")
+	}
+	handler := server.New(repo, auth, &notify.Notifier{Redis: sharedRedis, Publisher: writer}).WithLoginSessions(loginRedis)
 	etcd, err := clientv3.New(clientv3.Config{Endpoints: c.Etcd.Hosts, DialTimeout: 3 * time.Second})
 	if err != nil {
 		return err

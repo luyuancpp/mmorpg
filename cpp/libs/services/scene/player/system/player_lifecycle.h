@@ -82,6 +82,8 @@ struct PlayerEnterContext
 	// 入场会话栅栏的输入,也是待入场上下文这一处"当前身份"的代次(scene-enter-session-fence.md §5.1 / §5.5)。
 	// 不进存盘(G5)。
 	uint64_t loginGeneration{0};
+	uint64_t ownerRevision{0};
+	uint64_t roleAdmissionGeneration{0};
 	InheritClearState inheritClear;
 };
 
@@ -995,6 +997,10 @@ class PlayerLifecycleSystem
 {
 public:
 	static PendingEnterMap& GetPendingEnterMap();
+	// 交易只在实际载入/A2回调均已结束后清掉封存上下文，不触发新载入。
+	static bool DrainSealedPendingEntry(Guid playerId);
+	static void RejectRoleAdmission(Guid playerId, SessionId sessionId);
+	static void FreezeRoleForTrade(Guid playerId);
 
 	static void HandlePlayerAsyncLoaded(Guid player_id, const PlayerAllData& message);
 	static void HandlePlayerAsyncLoadFailed(Guid player_id,

@@ -2366,6 +2366,7 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED BattleActivityContext final : publi
     kInitiatorPlayerIdFieldNumber = 5,
     kPeriodKeyFieldNumber = 4,
     kGuildPeriodKeyFieldNumber = 6,
+    kLaunchRequestIdFieldNumber = 7,
   };
   // uint64 guild_id = 2;
   void clear_guild_id() ;
@@ -2427,11 +2428,21 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED BattleActivityContext final : publi
   void _internal_set_guild_period_key(::uint32_t value);
 
   public:
+  // uint64 launch_request_id = 7;
+  void clear_launch_request_id() ;
+  [[nodiscard]] ::uint64_t launch_request_id() const;
+  void set_launch_request_id(::uint64_t value);
+
+  private:
+  ::uint64_t _internal_launch_request_id() const;
+  void _internal_set_launch_request_id(::uint64_t value);
+
+  public:
   // @@protoc_insertion_point(class_scope:BattleActivityContext)
  private:
   class _Internal;
   using ParseTableT_ =
-      ::google::protobuf::internal::TcParseTable<3, 6,
+      ::google::protobuf::internal::TcParseTable<3, 7,
                           0, 0,
                           2>;
   static constexpr ParseTableT_ InternalGenerateParseTable_(
@@ -2466,6 +2477,7 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED BattleActivityContext final : publi
     ::uint64_t initiator_player_id_;
     ::uint32_t period_key_;
     ::uint32_t guild_period_key_;
+    ::uint64_t launch_request_id_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
   union { Impl_ _impl_; };
@@ -8667,6 +8679,30 @@ inline ::uint32_t BattleActivityContext::_internal_guild_period_key() const {
 inline void BattleActivityContext::_internal_set_guild_period_key(::uint32_t value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.guild_period_key_ = value;
+}
+
+// uint64 launch_request_id = 7;
+inline void BattleActivityContext::clear_launch_request_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.launch_request_id_ = ::uint64_t{0u};
+  ClearHasBit(_impl_._has_bits_[0], 0x00000040U);
+}
+inline ::uint64_t BattleActivityContext::launch_request_id() const {
+  // @@protoc_insertion_point(field_get:BattleActivityContext.launch_request_id)
+  return _internal_launch_request_id();
+}
+inline void BattleActivityContext::set_launch_request_id(::uint64_t value) {
+  _internal_set_launch_request_id(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000040U);
+  // @@protoc_insertion_point(field_set:BattleActivityContext.launch_request_id)
+}
+inline ::uint64_t BattleActivityContext::_internal_launch_request_id() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.launch_request_id_;
+}
+inline void BattleActivityContext::_internal_set_launch_request_id(::uint64_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.launch_request_id_ = value;
 }
 
 #ifdef __GNUC__

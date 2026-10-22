@@ -42,8 +42,10 @@ type RoutePlayerEvent struct {
 	// (≤ gate 会话值),旧版 scene 为 0(docs/design/scene-enter-chain-residuals.md §5.2 ④)。
 	// gate 只用它抬高会话上记的代次,不据此丢弃路由(docs/design/scene-enter-session-fence.md §4)。
 	LoginGeneration uint64 `protobuf:"varint,7,opt,name=login_generation,json=loginGeneration,proto3" json:"login_generation,omitempty"`
-	unknownFields   protoimpl.UnknownFields
-	sizeCache       protoimpl.SizeCache
+	// 原始入场请求的账号所有权修订，gate必须逐字透传；不取max、不反查当前账号。
+	OwnerRevision uint64 `protobuf:"varint,8,opt,name=owner_revision,json=ownerRevision,proto3" json:"owner_revision,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *RoutePlayerEvent) Reset() {
@@ -121,6 +123,13 @@ func (x *RoutePlayerEvent) GetOwnerEpoch() uint64 {
 func (x *RoutePlayerEvent) GetLoginGeneration() uint64 {
 	if x != nil {
 		return x.LoginGeneration
+	}
+	return 0
+}
+
+func (x *RoutePlayerEvent) GetOwnerRevision() uint64 {
+	if x != nil {
+		return x.OwnerRevision
 	}
 	return 0
 }
@@ -749,7 +758,7 @@ var File_proto_contracts_kafka_gate_event_proto protoreflect.FileDescriptor
 
 const file_proto_contracts_kafka_gate_event_proto_rawDesc = "" +
 	"\n" +
-	"&proto/contracts/kafka/gate_event.proto\x12\x0fcontracts.kafka\x1a\x1fproto/common/base/message.proto\x1a/proto/common/options/event_ingress_option.proto\"\x84\x02\n" +
+	"&proto/contracts/kafka/gate_event.proto\x12\x0fcontracts.kafka\x1a\x1fproto/common/base/message.proto\x1a/proto/common/options/event_ingress_option.proto\"\xab\x02\n" +
 	"\x10RoutePlayerEvent\x12\x1d\n" +
 	"\n" +
 	"session_id\x18\x01 \x01(\rR\tsessionId\x12$\n" +
@@ -760,7 +769,8 @@ const file_proto_contracts_kafka_gate_event_proto_rawDesc = "" +
 	"homeZoneId\x12\x1f\n" +
 	"\vowner_epoch\x18\x06 \x01(\x04R\n" +
 	"ownerEpoch\x12)\n" +
-	"\x10login_generation\x18\a \x01(\x04R\x0floginGeneration:\x05\x88\xe6\xd5\x02\x01\"\x7f\n" +
+	"\x10login_generation\x18\a \x01(\x04R\x0floginGeneration\x12%\n" +
+	"\x0eowner_revision\x18\b \x01(\x04R\rownerRevision:\x05\x88\xe6\xd5\x02\x01\"\x7f\n" +
 	"\x0fKickPlayerEvent\x12\x1d\n" +
 	"\n" +
 	"session_id\x18\x01 \x01(\rR\tsessionId\x12\x1b\n" +

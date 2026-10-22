@@ -186,6 +186,9 @@ func (r *GuildRepo) runTxBody(ctx context.Context, fn func(ctx context.Context, 
 		return err
 	}
 	defer tx.Rollback()
+	if err := r.lockRolePrefix(ctx, tx); err != nil {
+		return err
+	}
 
 	if err := fn(ctx, tx); err != nil {
 		var commitThen errCommitThen
@@ -2220,6 +2223,9 @@ func (r *GuildRepo) ReviewApplication(ctx context.Context, guildID, actorID, app
 		return nil
 	}
 
+	if approve {
+		ctx = withRoleTargets(ctx, applicantID)
+	}
 	if err := r.inTx(ctx, opReview, review); err != nil {
 		return ReviewResult{}, err
 	}
@@ -2339,6 +2345,11 @@ func (r *GuildRepo) DisbandGuild(ctx context.Context, guildID, actorID, now uint
 		// 只删本帮 STARTED 行:帮会行一删,就再没有路径能写它们(T 的写者都先锁 guild 行),留着会一直卡在巡检器的扫描队头。
 		if err := deleteGuildTrialBattles(ctx, tx, guildID); err != nil {
 			return err
+		}
+		if r.roleAuthority != "" {
+			if err := releaseGuildTrialLaunches(ctx, tx, guildID, now); err != nil {
+				return err
+			}
 		}
 		// 0 行 = 这一瞬间帮会已经被别的事务解散了(我们持有的行锁本该挡住,
 		// 但库层面真发生时要给出**业务**答复而不是内部错误):回 ErrGuildGone,

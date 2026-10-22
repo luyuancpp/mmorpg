@@ -28,6 +28,7 @@ import (
 	dbpb "proto/common/database"
 	loginpb "proto/login"
 	plpb "proto/player_locator"
+	"shared/generated/pb/table"
 )
 
 const (
@@ -64,11 +65,14 @@ func newIdentityBackfillHarness(t *testing.T, player *dbpb.PlayerDatabase) (*Ent
 	if err := rdb.Set(ctx, identityBlobKey(), blob, time.Hour).Err(); err != nil {
 		t.Fatalf("seed player blob: %v", err)
 	}
-	return NewEnterGameLogic(ctx, &svc.ServiceContext{RedisClient: rdb}), rdb, mr, blob
+	d := fixtureDirectory(t, rdb)
+	d.seed("identity-account", &pbbase.AccountSimplePlayer{PlayerId: identityPlayerID})
+	return NewEnterGameLogic(ctx, &svc.ServiceContext{RedisClient: rdb, AccountDirectory: d}), rdb, mr, blob
 }
 
 func identityState(classID uint32, name string) enterGameSessionState {
 	return enterGameSessionState{
+		account: "identity-account", ownerRevision: 1,
 		playerID:        identityPlayerID,
 		classID:         classID,
 		playerName:      name,
@@ -511,7 +515,7 @@ func newEnterWiringHarness(t *testing.T, players []*pbbase.AccountSimplePlayer, 
 		pool:     pool,
 	}
 	h.l = NewEnterGameLogic(ctx, &svc.ServiceContext{
-		RedisClient:         rdb,
+		RedisClient: rdb, AccountDirectory: fixtureDirectory(t, rdb),
 		PlayerNames:         playernamereg.New(h.registry),
 		PlayerLocatorClient: h.locator,
 		PreloadPool:         pool,
@@ -577,6 +581,16 @@ func TestEnterGame_PlayerNameReachesIdentityBackfill(t *testing.T) {
 			if err != nil {
 				t.Fatalf("EnterGame: %v", err)
 			}
+			if tc.selfHeal {
+				if resp.GetErrorMessage().GetId() != uint32(table.LoginError_kLoginEnterGameGuid) {
+					t.Fatalf("旧反向缓存不得恢复SQL缺失角色: %v", resp)
+				}
+				h.waitChain(t)
+				if h.locator.setSessionCalls.Load() != 0 {
+					t.Fatal("SQL缺角色不得绑定会话")
+				}
+				return
+			}
 			if resp.GetErrorMessage() != nil {
 				t.Fatalf("EnterGame rejected with tip %d, want the async chain started", resp.GetErrorMessage().GetId())
 			}
@@ -599,27 +613,6 @@ func TestEnterGame_PlayerNameReachesIdentityBackfill(t *testing.T) {
 				t.Fatalf("BatchGetPlayerName calls = %d, want %d", h.registry.calls, tc.wantLookups)
 			}
 
-			if !tc.selfHeal {
-				return
-			}
-			raw, err := h.rdb.Get(ctx, constants.GetAccountDataKey(enterWiringAccount)).Bytes()
-			if err != nil {
-				t.Fatalf("read account blob: %v", err)
-			}
-			acct := &dbpb.UserAccounts{}
-			if err := proto.Unmarshal(raw, acct); err != nil {
-				t.Fatalf("unmarshal account blob: %v", err)
-			}
-			restored := acct.GetSimplePlayers().GetPlayers()
-			if len(restored) != 1 || restored[0].GetPlayerId() != identityPlayerID {
-				t.Fatalf("restored players = %v, want exactly player %d", restored, identityPlayerID)
-			}
-			if got := restored[0].GetName(); got != tc.wantName {
-				t.Fatalf("restored account name = %q, want %q (self-heal must not drop the name copy)", got, tc.wantName)
-			}
-			if ttl, err := h.rdb.TTL(ctx, constants.GetAccountDataKey(enterWiringAccount)).Result(); err != nil || ttl != -1 {
-				t.Fatalf("self-heal 后账号目录不应过期: ttl=%v err=%v", ttl, err)
-			}
 		})
 	}
 }

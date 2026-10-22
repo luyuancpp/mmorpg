@@ -256,9 +256,10 @@ type FriendRequestEntry struct {
 // FriendRepo 是 mmorpg_friend 的权威存储访问层。好友边、申请和黑名单列表直接读 SQL；
 // Redis 只服务限流及非权威派生数据，不能用旧列表缓存作权限或申请处理依据。
 type FriendRepo struct {
-	rdb        *redis.Redis
-	db         *sql.DB
-	defaultTTL time.Duration
+	roleAuthority string
+	rdb           *redis.Redis
+	db            *sql.DB
+	defaultTTL    time.Duration
 	// listReadHardLimit 是列表类读的 SQL LIMIT(Friend.ListReadHardLimit)。
 	// 放在 repo 上而不是每次调用传:缓存里存的是**已经截断过**的列表,
 	// 逐调用传值会让"缓存里那份按谁的上限截的"取决于谁先回填,排查时无从下手。
@@ -377,6 +378,9 @@ func (r *FriendRepo) GetPendingRequests(ctx context.Context, playerID uint64) ([
 // 只会让两条上限张冠李戴。
 func (r *FriendRepo) CreateRequest(ctx context.Context, fromPlayerID, toPlayerID uint64,
 	lim AddFriendLimits) (RequestChange, error) {
+	if err := r.requireRoleActor(ctx, fromPlayerID); err != nil {
+		return RequestChange{}, err
+	}
 	change := RequestChange{FromPlayerID: fromPlayerID, ToPlayerID: toPlayerID}
 	if toPlayerID == 0 || fromPlayerID == 0 || fromPlayerID == toPlayerID {
 		return RequestChange{}, errInvalidPlayerPair(fromPlayerID, toPlayerID)
@@ -732,6 +736,9 @@ func (r *FriendRepo) RejectRequest(ctx context.Context, requestID, accepterID ui
 // RemoveFriend / Block 删掉。后者的变化由那次删除的发起方按它自己的效果 bump 过,这里不重复。
 // 只在 err == nil 时有意义。
 func (r *FriendRepo) RemoveFriend(ctx context.Context, playerID, targetPlayerID uint64) (bool, error) {
+	if err := r.requireRoleActor(ctx, playerID); err != nil {
+		return false, err
+	}
 	if playerID == targetPlayerID {
 		return false, nil
 	}
@@ -855,7 +862,7 @@ func (r *FriendRepo) runGuardedWriteOnce(ctx context.Context, playerA, playerB u
 		return err
 	}
 
-	tx, err := r.beginWriteTx(ctx)
+	tx, err := r.beginWriteTx(ctx, playerA, playerB)
 	if err != nil {
 		return err
 	}
@@ -874,7 +881,20 @@ func (r *FriendRepo) runGuardedWriteOnce(ctx context.Context, playerA, playerB u
 }
 
 // beginWriteTx 开一个 friend 写事务。隔离级别固定 READ COMMITTED,理由见 friendWriteTxIsolation。
-func (r *FriendRepo) beginWriteTx(ctx context.Context) (*sql.Tx, error) {
+func (r *FriendRepo) beginWriteTx(ctx context.Context, players ...uint64) (*sql.Tx, error) {
+	tx, err := r.beginSystemWriteTx(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if err := r.lockRolePrefix(ctx, tx, players...); err != nil {
+		_ = tx.Rollback()
+		return nil, err
+	}
+	return tx, nil
+}
+
+// sweep 没有客户端主体，只维护既有终态与容量卫生，显式保留系统事务入口。
+func (r *FriendRepo) beginSystemWriteTx(ctx context.Context) (*sql.Tx, error) {
 	return r.db.BeginTx(ctx, &sql.TxOptions{Isolation: friendWriteTxIsolation})
 }
 
@@ -984,8 +1004,13 @@ func friendEdgeExistsForUpdate(ctx context.Context, tx *sql.Tx, a, b uint64) (bo
 
 // friendEdgeExists 是事务外的普通读版本(RemoveFriend 的 F2-15 前置判定用,见那里的理由)。
 func (r *FriendRepo) friendEdgeExists(ctx context.Context, a, b uint64) (bool, error) {
+	reader, closeRead, err := r.roleReader(ctx, a)
+	if err != nil {
+		return false, err
+	}
+	defer closeRead()
 	var probe int
-	err := r.db.QueryRowContext(ctx,
+	err = reader.QueryRowContext(ctx,
 		`SELECT 1 FROM friend
 		 WHERE (player_id=? AND friend_player_id=?) OR (player_id=? AND friend_player_id=?)
 		 LIMIT 1`, a, b, b, a).Scan(&probe)
@@ -1137,6 +1162,9 @@ func (r *FriendRepo) invalidateCachesAfterCommit(ctx context.Context, keys ...st
 // "COUNT + INSERT"这一对语句有上限地重跑(ensureDeadlockMaxAttempts):COUNT 必须一起重跑,
 // 否则重试写下去的是上一遍的陈旧边数。只认 1213,其它错误一律原样上抛;每遍之前先看 ctx。
 func (r *FriendRepo) ensureFriendCapacityRows(ctx context.Context, playerIDs ...uint64) error {
+	if r.roleAuthority != "" {
+		return r.ensureBoundCapacity(ctx, playerIDs...)
+	}
 	for _, playerID := range ascendingUniqueIDs(playerIDs) {
 		var err error
 		for attempt := 1; attempt <= ensureDeadlockMaxAttempts; attempt++ {
@@ -1311,7 +1339,12 @@ func loadVersionedFriendCache[T any](
 // friend_request 走 idx_to_player),返回顺序本身就是稳定的,再加排序只是给每次读增加一次 filesort。
 
 func (r *FriendRepo) loadFriendListFromMySQL(ctx context.Context, playerID uint64) ([]FriendEntry, error) {
-	rows, err := r.db.QueryContext(ctx,
+	reader, closeRead, err := r.roleReader(ctx, playerID)
+	if err != nil {
+		return nil, err
+	}
+	defer closeRead()
+	rows, err := reader.QueryContext(ctx,
 		"SELECT friend_player_id, since_ms FROM friend WHERE player_id = ? LIMIT ?",
 		playerID, r.listReadHardLimit)
 	if err != nil {
@@ -1371,7 +1404,12 @@ func (r *FriendRepo) loadPendingRequestsFromMySQL(ctx context.Context, playerID 
 }
 
 func (r *FriendRepo) queryPendingRequests(ctx context.Context, playerID uint64) ([]FriendRequestEntry, error) {
-	rows, err := r.db.QueryContext(ctx,
+	reader, closeRead, err := r.roleReader(ctx, playerID)
+	if err != nil {
+		return nil, err
+	}
+	defer closeRead()
+	rows, err := reader.QueryContext(ctx,
 		`SELECT from_player_id, to_player_id, request_time_ms, status, request_id
 		 FROM friend_request WHERE to_player_id = ? AND status = ? LIMIT ?`,
 		playerID, requestStatusPending, r.listReadHardLimit)

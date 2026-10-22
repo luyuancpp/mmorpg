@@ -2,7 +2,10 @@
 
 package inbox
 
-// 真库集成测试:go test -tags integration ./internal/inbox/... -count=1 -v
+// 真TiDB集成测试:go test -tags integration ./internal/inbox/... -count=1 -v
+// 环境变量MYSQL字样仅保留历史名称兼容，连接必须是数值loopback端点且通过TiDB强读探针。
+// 本任务实证端点为127.0.0.1:24000，运行前仍须核对Docker任务标签与端口归属。
+// 独立目录P与完整admission均为此一次性测试库内的真实SQL夹具，不是生产授权替身。
 //
 // PLAYER_INBOX_TEST_MYSQL_DSN 为空则整组 Skip。⚠ 只能指向**一次性**测试库:每个用例都会 DROP 并重建
 // player_inbox_stream / player_inbox_item / player_inbox_audit / schema_migrations。DSN 必须带库名,
@@ -11,16 +14,16 @@ package inbox
 //
 // 账号:deploy/mysql-init/00_init_zone_dbs.sql 只给 appuser 授了 mmorpg_player_inbox 等业务库,**没有** player_inbox_it,
 // 也没有全局 CREATE 权限 —— 所以测试库要用 root 先建好(`CREATE DATABASE IF NOT EXISTS player_inbox_it`),DSN 也用 root:
-//   root:<root 密码>@tcp(127.0.0.1:3306)/player_inbox_it?parseTime=true&charset=utf8mb4
+//   root:<root 密码>@tcp(127.0.0.1:24000)/player_inbox_it?parseTime=true&charset=utf8mb4
 // (或由 root 另行 `GRANT ALL ON player_inbox_it.* TO 'appuser'@'%'` 之后改用 appuser;密码不要写进任何被跟踪的文件。)
-// 表结构先经 schemamigrate.Up 按 proto 建出,与生产同一条路径。MySQL 需 binlog_format=ROW(RC 事务的前提)。
+// 表结构先经schemamigrate.Up按proto建出，强读池逐连接清历史快照并固定悲观RC/leader/strict。
 //
 // # 验收开关 PLAYER_INBOX_REQUIRE_MYSQL_TESTS(与 go/trade 的 TRADE_REQUIRE_MYSQL_TESTS 同一口径)
 //
 // 它不是第二个门控,只决定「跳过算不算失败」:设了之后 DSN 为空 → 判红,不再整组静默 Skip。验收一律这样跑
 // (PowerShell,工作目录 go/player_inbox;密码见 deploy/docker-compose.yml,不要写进任何被跟踪的文件):
 //
-//   $env:PLAYER_INBOX_TEST_MYSQL_DSN='root:<root 密码>@tcp(127.0.0.1:3306)/player_inbox_it?parseTime=true&charset=utf8mb4'
+//   $env:PLAYER_INBOX_TEST_MYSQL_DSN='root:<root 密码>@tcp(127.0.0.1:24000)/player_inbox_it?parseTime=true&charset=utf8mb4'
 //   $env:PLAYER_INBOX_REQUIRE_MYSQL_TESTS='1'
 //   go test -tags integration ./internal/inbox/... -count=1 -v
 //   go test -tags integration ./internal/inbox/... -run 'Concurrent|Race' -count=20
@@ -32,6 +35,8 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
+	"net"
 	"os"
 	"sort"
 	"strconv"
@@ -45,12 +50,14 @@ import (
 	"player_inbox/internal/data"
 	"player_inbox/internal/metrics"
 
+	base "proto/common/base"
 	componentpb "proto/common/component"
 	inboxpb "proto/player_inbox"
 
 	"schemamigrate"
+	"shared/authoritysql"
 
-	_ "github.com/go-sql-driver/mysql"
+	"github.com/go-sql-driver/mysql"
 	"google.golang.org/protobuf/proto"
 )
 
@@ -62,10 +69,29 @@ func (c *itClock) Now() time.Time    { return time.UnixMilli(c.ms.Load()) }
 func (c *itClock) set(ms uint64)     { c.ms.Store(int64(ms)) }
 func (c *itClock) advance(ms uint64) { c.ms.Add(int64(ms)) }
 
-type itPlayers struct{ missing map[uint64]bool }
+type itPlayers struct {
+	missing map[uint64]bool
+	db      *sql.DB
+}
 
-func (p itPlayers) PlayerExists(_ context.Context, id uint64) (bool, error) {
-	return !p.missing[id], nil
+func (p itPlayers) PlayerExists(ctx context.Context, id uint64) (bool, error) {
+	if p.missing[id] {
+		return false, nil
+	}
+	var existing uint64
+	err := p.db.QueryRowContext(ctx, "SELECT player_id FROM account_role WHERE player_id=?", id).Scan(&existing)
+	if err == nil {
+		err = ensureInboxFixtureRoute(ctx, p.db, id)
+		return err == nil, err
+	}
+	if !errors.Is(err, sql.ErrNoRows) {
+		return false, err
+	}
+	_, err = p.db.ExecContext(ctx, "INSERT INTO account_role(player_id,account,owner_revision,trade_listing_id) VALUES(?,?,1,0) ON DUPLICATE KEY UPDATE player_id=player_id", id, "inbox-fixture-"+strconv.FormatUint(id, 10))
+	if err == nil {
+		err = ensureInboxFixtureRoute(ctx, p.db, id)
+	}
+	return err == nil, err
 }
 
 type itEpochs struct {
@@ -126,7 +152,20 @@ func openIntegration(t *testing.T) *itEnv {
 		}
 		t.Skip("PLAYER_INBOX_TEST_MYSQL_DSN 未设置,跳过收件箱存储集成测试(只能指向一次性库)")
 	}
-	db, err := sql.Open("mysql", dsn)
+	parsed, err := mysql.ParseDSN(dsn)
+	if err != nil {
+		t.Fatal("测试DSN无效")
+	}
+	if !inboxTestDBNamePattern.MatchString(parsed.DBName) {
+		t.Fatal("测试DSN目标不是一次性Inbox白名单库")
+	}
+	host, portText, addrErr := net.SplitHostPort(parsed.Addr)
+	port, portErr := strconv.ParseUint(portText, 10, 16)
+	address := net.ParseIP(host)
+	if parsed.Net != "tcp" || addrErr != nil || portErr != nil || port == 0 || address == nil || !address.IsLoopback() {
+		t.Fatal("全球Inbox原生SQL夹具只允许数值loopback的合法TiDB端口")
+	}
+	db, err := authoritysql.Open(context.Background(), dsn, parsed.DBName, true, 64)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -147,6 +186,8 @@ func openIntegration(t *testing.T) *itEnv {
 			dbName)
 	}
 	for _, stmt := range []string{
+		"DROP TABLE IF EXISTS account_role_admission",
+		"DROP TABLE IF EXISTS account_role",
 		"DROP TABLE IF EXISTS player_inbox_audit",
 		"DROP TABLE IF EXISTS player_inbox_item",
 		"DROP TABLE IF EXISTS player_inbox_stream",
@@ -162,6 +203,21 @@ func openIntegration(t *testing.T) *itEnv {
 	}
 	if len(report.Manual) != 0 {
 		t.Fatalf("新建库不应出现需人工项: %v", report.Manual)
+	}
+	for _, statement := range []string{
+		"CREATE TABLE account_role(player_id BIGINT UNSIGNED PRIMARY KEY,account VARBINARY(191) NOT NULL,owner_revision BIGINT UNSIGNED NOT NULL,trade_listing_id BIGINT UNSIGNED NOT NULL DEFAULT 0)",
+		"CREATE TABLE account_role_admission(player_id BIGINT UNSIGNED NOT NULL,scene_instance_id VARBINARY(36) NOT NULL,highest_generation BIGINT UNSIGNED NOT NULL,closed_through BIGINT UNSIGNED NOT NULL,identity_proto MEDIUMBLOB NOT NULL,PRIMARY KEY(player_id,scene_instance_id))",
+	} {
+		if _, err := db.ExecContext(ctx, statement); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if err = createInboxFixtureRouteTables(ctx, db, dbName); err != nil {
+		t.Fatal(err)
+	}
+	roles, err := NewSQLRoleAuthority(ctx, db, dbName)
+	if err != nil {
+		t.Fatal(err)
 	}
 
 	reg, err := NewRegistry()
@@ -180,10 +236,11 @@ func openIntegration(t *testing.T) *itEnv {
 		DB:       db,
 		Registry: reg,
 		Allowed:  allTypesAllowed(),
-		Players:  itPlayers{missing: env.missing},
+		Players:  itPlayers{missing: env.missing, db: db},
 		Epochs:   env.epochs,
 		Notifier: env.notifier,
 		Now:      env.clock.Now,
+		Roles:    roles,
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -254,6 +311,7 @@ func (e *itEnv) fetch(t *testing.T, playerID, epoch, decidedThrough uint64, maxI
 	resp, err := e.store.Fetch(itCtx(t), &inboxpb.FetchPlayerInboxRequest{
 		PlayerId: playerID, Domain: gmDomain, OwnerEpoch: epoch, CorrelationId: 99,
 		MaxItems: maxItems, ConsumerDecidedThrough: decidedThrough,
+		Admission: e.admission(t, playerID, epoch),
 	})
 	if err != nil {
 		t.Fatalf("Fetch: %v", err)
@@ -268,11 +326,37 @@ func (e *itEnv) ack(t *testing.T, playerID, epoch uint64, reports ...*inboxpb.Pl
 	t.Helper()
 	resp, err := e.store.Ack(itCtx(t), &inboxpb.AckPlayerInboxRequest{
 		PlayerId: playerID, Domain: gmDomain, OwnerEpoch: epoch, CorrelationId: 7, Decisions: reports,
+		Admission: e.admission(t, playerID, epoch),
 	})
 	if err != nil {
 		t.Fatalf("Ack: %v", err)
 	}
 	return resp
+}
+
+// 用真实SQL注册完整入场原件；不把目录替身/E整数当作消费授权。
+func (e *itEnv) admission(t *testing.T, player, epoch uint64) *base.RoleAdmissionIdentity {
+	t.Helper()
+	if epoch == 0 {
+		return nil
+	}
+	if _, err := (itPlayers{missing: map[uint64]bool{}, db: e.db}).PlayerExists(itCtx(t), player); err != nil {
+		t.Fatal(err)
+	}
+	var revision uint64
+	if err := e.db.QueryRow("SELECT owner_revision FROM account_role WHERE player_id=?", player).Scan(&revision); err != nil {
+		t.Fatal(err)
+	}
+	identity := &base.RoleAdmissionIdentity{PlayerId: player, SceneInstanceId: fmt.Sprintf("10000000-0000-4000-8000-%012x", epoch), Generation: 1, OwnerRevision: revision, OwnerEpoch: epoch, SceneNodeId: "7", SceneId: 99, ZoneId: 1, SessionId: 1, LoginGeneration: 1}
+	raw, err := proto.Marshal(identity)
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, err = e.db.Exec("INSERT INTO account_role_admission VALUES(?,?,1,0,?) ON DUPLICATE KEY UPDATE identity_proto=identity_proto", player, []byte(identity.SceneInstanceId), raw)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return identity
 }
 
 func dec(seq uint64, outcome inboxpb.PlayerInboxOutcome, reason uint32, requestID uint64) *inboxpb.PlayerInboxDecisionReport {
@@ -528,22 +612,23 @@ func TestIntegrationFetchFenceRejections(t *testing.T) {
 		t.Fatalf("epoch 0 应 EPOCH_REQUIRED: %+v", resp)
 	}
 	e.epochs.set(pid, 6)
-	if resp := e.fetch(t, pid, 7, 0, 0); resp.GetFence() != inboxpb.PlayerInboxFenceVerdict_PLAYER_INBOX_FENCE_EPOCH_AHEAD ||
-		resp.GetErrorMessage().GetId() != constants.ErrEpochAhead {
-		t.Fatalf("超过 R 应 EPOCH_AHEAD: %+v", resp)
+	forged := e.admission(t, pid, 7)
+	forged.Generation++
+	if _, err := e.store.Fetch(itCtx(t), &inboxpb.FetchPlayerInboxRequest{PlayerId: pid, Domain: gmDomain, OwnerEpoch: 7, Admission: forged}); err == nil {
+		t.Fatal("未登记原generation不得消费，不凭E大于Redis当前值授予权限")
 	}
 	if st := e.stream(t, pid); st.GetFenceEpoch() != 5 {
 		t.Fatalf("拒绝结局不得改围栏: %+v", st)
 	}
-	// R 读失败:不改任何状态,按故障返回。
+	// Redis故障不能推翻完整SQL原入场；真实SQL围栏仍单调推进。
 	e.epochs.mu.Lock()
 	e.epochs.err = errors.New("redis down")
 	e.epochs.mu.Unlock()
-	if _, err := e.store.Fetch(itCtx(t), &inboxpb.FetchPlayerInboxRequest{PlayerId: pid, Domain: gmDomain, OwnerEpoch: 6}); err == nil {
-		t.Fatal("R 读失败应返回错误")
+	if _, err := e.store.Fetch(itCtx(t), &inboxpb.FetchPlayerInboxRequest{PlayerId: pid, Domain: gmDomain, OwnerEpoch: 6, Admission: e.admission(t, pid, 6)}); err != nil {
+		t.Fatalf("SQL原入场不依赖Redis授权: %v", err)
 	}
-	if st := e.stream(t, pid); st.GetFenceEpoch() != 5 {
-		t.Fatalf("R 读失败不得改围栏: %+v", st)
+	if st := e.stream(t, pid); st.GetFenceEpoch() != 6 {
+		t.Fatalf("SQL原入场应推进围栏: %+v", st)
 	}
 }
 
@@ -653,7 +738,7 @@ func TestIntegrationAckStaleAfterAdvance(t *testing.T) {
 
 // TestIntegrationAckEpochBoundReadFailureChangesNothing:Ack 需要上界 R(req > fence)而 R 读失败时按故障返回,
 // 行与流都不改(设计 §7.8「R 读失败不改任何状态」,§11.4 验收)。
-func TestIntegrationAckEpochBoundReadFailureChangesNothing(t *testing.T) {
+func TestIntegrationAckRejectsUnregisteredAdmissionDespiteRedisFailure(t *testing.T) {
 	e := openIntegration(t)
 	const pid = uint64(4003)
 	a := e.mustEnqueue(t, pid, 1).Seq
@@ -666,9 +751,10 @@ func TestIntegrationAckEpochBoundReadFailureChangesNothing(t *testing.T) {
 	e.epochs.mu.Unlock()
 	_, err := e.store.Ack(itCtx(t), &inboxpb.AckPlayerInboxRequest{
 		PlayerId: pid, Domain: gmDomain, OwnerEpoch: 6, Decisions: []*inboxpb.PlayerInboxDecisionReport{dec(a, outApplied, 0, 1)},
+		Admission: &base.RoleAdmissionIdentity{PlayerId: pid, OwnerEpoch: 6},
 	})
 	if err == nil {
-		t.Fatal("R 读失败应返回错误(由服务层折成 kPlayerInboxStoreUnavailable)")
+		t.Fatal("不完整SQL原入场应拒绝(由服务层折成故障)")
 	}
 	if after := e.stream(t, pid); !proto.Equal(before, after) {
 		t.Fatalf("R 读失败不得改流行:before=%+v after=%+v", before, after)
@@ -880,11 +966,11 @@ func TestIntegrationAuditRecordsWhatWasDone(t *testing.T) {
 	if ack := e.ack(t, pid, 1, dec(a, outSkipped, uint32(quarantined), ridA)); ack.GetResults()[0].GetState() != stateVoided {
 		t.Fatalf("a SKIPPED 应终结为 VOIDED: %+v", ack.GetResults())
 	}
-	if n, err := e.store.SweepTerminal(ctx, testNowMs+1, 500); err != nil || n != 2 {
-		t.Fatalf("清理终态行 = %d (%v), want 2", n, err)
+	if n, err := e.store.SweepTerminal(ctx, testNowMs+1, 500); err != nil || n != 0 {
+		t.Fatalf("永久唯一收据不得清理 = %d (%v), want 0", n, err)
 	}
-	if e.item(t, pid, a) != nil || e.item(t, pid, b) != nil {
-		t.Fatal("a、b 的终态行应已被清理")
+	if e.item(t, pid, a) == nil || e.item(t, pid, b) == nil {
+		t.Fatal("a、b 的终态唯一收据必须保留")
 	}
 	check("清理后 a 的作废审计", auditRecord(t, e.db, pid, a, voidAudit), a, ridA, issuedA, payloadA, quarantined)
 	check("清理后 b 的入箱审计", auditRecord(t, e.db, pid, b, sanction), b, ridB, issuedB, payloadB, noReason)
@@ -1028,7 +1114,7 @@ func TestIntegrationForceVoid(t *testing.T) {
 
 // ── 后台循环的存储操作 ───────────────────────────────────────────────────
 
-func TestIntegrationSweepSkipsPending(t *testing.T) {
+func TestIntegrationSweepPreservesPermanentRequestRows(t *testing.T) {
 	e := openIntegration(t)
 	const pid = uint64(6001)
 	// T0:入箱 a、b;只投递 a 并确认 APPLIED(a.updated_ms = T0)。
@@ -1050,11 +1136,11 @@ func TestIntegrationSweepSkipsPending(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if deleted != 1 {
-		t.Fatalf("deleted = %d, want 1(只有旧终态行 a)", deleted)
+	if deleted != 0 {
+		t.Fatalf("deleted = %d, want 0(永久唯一收据)", deleted)
 	}
-	if e.item(t, pid, a) != nil {
-		t.Fatal("旧终态行 a 应被删")
+	if e.item(t, pid, a) == nil {
+		t.Fatal("旧终态行 a 仍须阻止历史request换主重入")
 	}
 	if e.item(t, pid, b) == nil || e.item(t, pid, c) == nil {
 		t.Fatal("保留期内的终态行 b 与 PENDING 行 c 不得删除")

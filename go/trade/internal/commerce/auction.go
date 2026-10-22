@@ -16,6 +16,10 @@ func (e *Engine) PlaceBid(ctx context.Context, me, lotID uint64, in *tradepb.Pla
 	if err != nil {
 		return nil, err
 	}
+	// 先取拍品观察，再查原请求：若并发 worker 已据该出价推进最高价，合同必已提交，不能按下一次加价门槛拒绝重放。
+	if old, err := e.priorRequest(ctx, me, in.GetClientRequestId(), in); err != nil || old != nil {
+		return old, err
+	}
 	w, err := data.Workflow(lot)
 	if err != nil {
 		return nil, err
@@ -29,7 +33,7 @@ func (e *Engine) PlaceBid(ctx context.Context, me, lotID uint64, in *tradepb.Pla
 	if in.Amount < lot.UnitPrice || in.Amount > math.MaxInt64 || w.HighestBid > 0 && (w.MinimumIncrement > math.MaxInt64-w.HighestBid || in.Amount < w.HighestBid+w.MinimumIncrement) {
 		return nil, ErrBid
 	}
-	return e.Create(ctx, me, in.ClientRequestId, in, &tradepb.TradeCommerceRecord{Kind: BidKind, Status: Escrowing, SellerPlayerId: me, ParentId: lotID, UnitPrice: in.Amount, CurrencyType: lot.CurrencyType}, &tradepb.TradeCommerceWorkflow{SellerAssets: &tradepb.TradeAssetSelection{CurrencyType: lot.CurrencyType, CurrencyAmount: in.Amount}, Stage: "bid_freeze"})
+	return e.Create(ctx, me, in.ClientRequestId, in, &tradepb.TradeCommerceRecord{Kind: BidKind, Status: Escrowing, SellerPlayerId: me, ParentId: lotID, UnitPrice: in.Amount, CurrencyType: lot.CurrencyType, ExpiresMs: lot.ExpiresMs}, &tradepb.TradeCommerceWorkflow{SellerAssets: &tradepb.TradeAssetSelection{CurrencyType: lot.CurrencyType, CurrencyAmount: in.Amount}, Stage: "bid_freeze"})
 }
 
 // 每个lot的guard先于任何合同锁。冻结完成只获得参选资格，提交最高价时再次检查结束时间/增幅。
@@ -39,7 +43,18 @@ func (e *Engine) acceptBid(ctx context.Context, bidID uint64) error {
 	if err != nil {
 		return err
 	}
+	parent, parentErr := e.Repo.Get(ctx, candidate.ParentId)
+	if parentErr != nil && !errors.Is(parentErr, sql.ErrNoRows) {
+		return parentErr
+	}
+	parentSeller, parentBuyer := uint64(0), uint64(0)
+	if parentErr == nil {
+		parentSeller, parentBuyer = parent.SellerPlayerId, parent.BuyerPlayerId
+	}
 	return e.Repo.Tx(ctx, func(tx *sql.Tx) error {
+		if err := e.lockRoles(ctx, tx, 0, candidate.SellerPlayerId, parentSeller, parentBuyer); err != nil {
+			return err
+		}
 		if _, err := tx.ExecContext(ctx, "INSERT IGNORE INTO trade_commerce_guard(guard_id) VALUES(?)", candidate.ParentId); err != nil {
 			return err
 		}
@@ -56,6 +71,9 @@ func (e *Engine) acceptBid(ctx context.Context, bidID uint64) error {
 		}
 		var lw *tradepb.TradeCommerceWorkflow
 		if err == nil {
+			if lot.SellerPlayerId != parentSeller || lot.BuyerPlayerId != parentBuyer {
+				return ErrConflict
+			}
 			if lw, err = data.Workflow(lot); err != nil {
 				lw = nil
 			}
@@ -70,6 +88,14 @@ func (e *Engine) acceptBid(ctx context.Context, bidID uint64) error {
 		}
 		if bw.Stage != "bid_ready" {
 			return nil
+		}
+		if err := e.checkContractIdentities(ctx, tx, bid, bw); err != nil {
+			return err
+		}
+		if lw != nil {
+			if err := e.checkContractIdentities(ctx, tx, lot, lw); err != nil {
+				return err
+			}
 		}
 		if lw == nil {
 			logx.Errorf("[Commerce] Bid refunded because its lot is missing or undecodable bid_id=%d lot_id=%d", bid.CommerceId, candidate.ParentId)
@@ -112,6 +138,10 @@ func (e *Engine) acceptBid(ctx context.Context, bidID uint64) error {
 		lw.WinningBidId = bid.CommerceId
 		lw.BuyerAssets = bw.SellerAssets
 		lot.BuyerPlayerId = bid.SellerPlayerId
+		if bw.SellerIdentity == nil {
+			return corrupt(errors.New("原竞价合同缺少买家归属"))
+		}
+		lw.BuyerIdentity = bw.SellerIdentity
 		bw.Stage = "bid_held"
 		if err := e.Repo.Save(ctx, tx, lot, lw, saveMs); err != nil {
 			return err

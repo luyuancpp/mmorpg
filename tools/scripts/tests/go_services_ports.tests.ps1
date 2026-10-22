@@ -20,6 +20,8 @@ foreach ($definition in $ast.FindAll({ param($node) $node -is [System.Management
 }
 # go_services.ps1 顶层 dot-source 的 MailAdmin 本机令牌库(只加载函数):AST 只抽本文件的函数,不执行顶层语句,mail 用例要它。
 . (Join-Path $PSScriptRoot '../lib/mail_admin_dev_token.ps1')
+. (Join-Path $PSScriptRoot '../lib/account_directory_dev_secret.ps1')
+. (Join-Path $PSScriptRoot '../lib/release_common.ps1')
 
 $testRoot = Join-Path ([System.IO.Path]::GetTempPath()) ('mmorpg-go-ports-tests-' + [guid]::NewGuid().ToString('N'))
 $RepoRoot = $testRoot
@@ -64,7 +66,7 @@ function Get-Process {
 function Start-Process {
     [CmdletBinding()] param($FilePath, $ArgumentList, $WorkingDirectory, $RedirectStandardOutput, $RedirectStandardError, [switch]$PassThru, $WindowStyle)
     # MailToken:启动那一刻父进程环境里的 MailAdmin 令牌 = 子进程会继承到的值(只给 mail 注入的用例看它)。
-    $script:Starts += [pscustomobject]@{ FilePath = $FilePath; Arguments = $ArgumentList; MailToken = [Environment]::GetEnvironmentVariable('MMORPG_MAIL_ADMIN_TOKEN') }
+    $script:Starts += [pscustomobject]@{ FilePath = $FilePath; Arguments = $ArgumentList; MailToken = [Environment]::GetEnvironmentVariable('MAIL_PRODUCER_SECRET_ADMIN'); ChatDsnPresent = -not [string]::IsNullOrEmpty([Environment]::GetEnvironmentVariable('CHAT_AUTHORITY_DSN', 'Process')); MatchMigrationUserPresent = -not [string]::IsNullOrEmpty([Environment]::GetEnvironmentVariable('MATCH_MIGRATION_USER', 'Process')); MatchMigrationPasswordPresent = -not [string]::IsNullOrEmpty([Environment]::GetEnvironmentVariable('MATCH_MIGRATION_PASSWORD', 'Process')) }
     return [pscustomobject]@{ Id = 1000 + $script:Starts.Count }
 }
 function Stop-Process { throw '测试禁止终止进程' }
@@ -91,12 +93,20 @@ function New-TestProcess([int]$ProcessId, [string]$Name, [string]$ConfigPath, [i
     }
 }
 
+$chatOuterDsn = [Environment]::GetEnvironmentVariable('CHAT_AUTHORITY_DSN', 'Process')
 try {
+    # 仅桩启动器的输入，不连接数据库；真实启动必须提供外部运行账号DSN。
+    [Environment]::SetEnvironmentVariable('CHAT_AUTHORITY_DSN','fixture@tcp(127.0.0.1:24000)/mmorpg_chat','Process')
     foreach ($name in $ServiceCatalogue.Keys) {
         $configDir = Join-Path $GoRoot "$name/etc"
         New-Item -ItemType Directory -Path $configDir -Force | Out-Null
         Set-Content -LiteralPath (Join-Path $configDir "$name.yaml") -Value "ListenOn: 0.0.0.0:$($ServiceCatalogue[$name].Port)`nZoneId: 1"
     }
+    foreach ($configName in @('login','data_service')) { New-Item -ItemType Directory -Path (Join-Path $GoRoot "$configName/etc") -Force | Out-Null }
+    Set-Content -LiteralPath (Join-Path $GoRoot 'login/etc/login.yaml') -Value "Node:`n  RedisClient:`n    Host: 127.0.0.1:26379`n    DB: 0"
+    Set-Content -LiteralPath (Join-Path $GoRoot 'data_service/etc/data_service.yaml') -Value "SnapshotMySQL:`n  DBName: testdb"
+    Add-Content -LiteralPath (Join-Path $GoRoot 'chat/etc/chat.yaml') -Value "`nDSNEnv: CHAT_AUTHORITY_DSN`nRequireTiDB: true`nGlobalLoginSessions: true`nMaxOpenConns: 16`nAccountRoleSchema: mmorpg_global`nLoginRedis:`n  Host: 127.0.0.1:6379`n  PasswordEnv: LOGIN_REDIS_PASSWORD`n  DB: 0`n  PoolSize: 4"
+
     New-Item -ItemType Directory -Path $GoBinDir, $DerivedEtcDir -Force | Out-Null
     foreach ($name in $ServiceCatalogue.Keys) { Set-Content -LiteralPath (Join-Path $GoBinDir "$name.exe") -Value '进程桩占位文件' }
 
@@ -116,6 +126,47 @@ try {
         Assert-Equal 50850 $tracked.trade.Port 'trade 避开 chat 尚未开始监听的已计划端口'
         Assert-Match (Get-Content -LiteralPath (Join-Path $DerivedEtcDir 'trade.yaml') -Raw) 'ListenOn: 0.0.0.0:50850' '派生配置与记录一致'
         Assert-Equal 2 $script:Starts.Count '恰好启动两次进程桩'
+        Assert-True $script:Starts[0].ChatDsnPresent 'chat取得自己的SQL账号'
+        Assert-Equal $false $script:Starts[1].ChatDsnPresent 'trade不得继承chat SQL账号'
+    }
+    Test-Case '常驻子进程不继承Match迁移凭据且父环境原样恢复' {
+        Reset-TestState
+        $savedUser = [Environment]::GetEnvironmentVariable('MATCH_MIGRATION_USER', 'Process')
+        $savedPassword = [Environment]::GetEnvironmentVariable('MATCH_MIGRATION_PASSWORD', 'Process')
+        try {
+            [Environment]::SetEnvironmentVariable('MATCH_MIGRATION_USER', 'fixture-only-migrator', 'Process')
+            [Environment]::SetEnvironmentVariable('MATCH_MIGRATION_PASSWORD', 'fixture-only-password', 'Process')
+            $Services = @('chat', 'trade')
+            Invoke-Start -UseExe
+            Assert-Equal 2 $script:Starts.Count '两个常驻启动都需经过环境隔离'
+            foreach ($start in $script:Starts) {
+                Assert-Equal $false $start.MatchMigrationUserPresent '子进程不继承DDL账号'
+                Assert-Equal $false $start.MatchMigrationPasswordPresent '子进程不继承DDL口令'
+            }
+            Assert-Equal 'fixture-only-migrator' ([Environment]::GetEnvironmentVariable('MATCH_MIGRATION_USER', 'Process')) '父账号原样恢复'
+            Assert-Equal 'fixture-only-password' ([Environment]::GetEnvironmentVariable('MATCH_MIGRATION_PASSWORD', 'Process')) '父口令原样恢复'
+        } finally {
+            [Environment]::SetEnvironmentVariable('MATCH_MIGRATION_USER', $savedUser, 'Process')
+            [Environment]::SetEnvironmentVariable('MATCH_MIGRATION_PASSWORD', $savedPassword, 'Process')
+        }
+    }
+    Test-Case 'Chat派生目录和原登录Redis取现有权威配置，不按zone分裂' {
+        Reset-TestState
+        $cfg = Resolve-InstanceConfig -Name chat -Info $ServiceCatalogue.chat -Index 1 -Total 1
+        Assert-Equal 'testdb' (Get-YamlScalar -Path $cfg.FullPath -KeyPath 'AccountRoleSchema').Value '本地角色目录取data_service全局库'
+        Assert-Equal '127.0.0.1:26379' (Get-YamlScalar -Path $cfg.FullPath -KeyPath 'LoginRedis.Host').Value '地址与login一致'
+        Assert-Equal '0' (Get-YamlScalar -Path $cfg.FullPath -KeyPath 'LoginRedis.DB').Value 'DB与login一致'
+        Assert-Equal 'true' (Get-YamlScalar -Path $cfg.FullPath -KeyPath 'RequireTiDB').Value '本机也不能降级旧Redis权威'
+    }
+    Test-Case 'Chat缺DSN时在任何子进程前拒绝且不回显凭据' {
+        Reset-TestState
+        $saved = [Environment]::GetEnvironmentVariable('CHAT_AUTHORITY_DSN', 'Process')
+        try {
+            [Environment]::SetEnvironmentVariable('CHAT_AUTHORITY_DSN', $null, 'Process')
+            $message = Get-ThrownMessage { Start-ServiceInstance -Name chat -Info $ServiceCatalogue.chat -Index 1 -Total 1 -Pids ([pscustomobject]@{}) -UseExe }
+            Assert-Match $message 'CHAT_AUTHORITY_DSN' '拒绝时只点名字段'
+            Assert-Equal 0 $script:Starts.Count '不启动任何进程'
+        } finally { [Environment]::SetEnvironmentVariable('CHAT_AUTHORITY_DSN', $saved, 'Process') }
     }
     Test-Case '分批启动避开前一批实际监听端口' {
         Reset-TestState
@@ -240,7 +291,7 @@ try {
     }
     Test-Case '只给 mail 注入 MailAdmin 令牌:起 mail 时子进程拿得到(≥32 字节),起 chat 时拿不到;启动后父进程还原为没设' {
         Reset-TestState
-        $envName = 'MMORPG_MAIL_ADMIN_TOKEN'
+        $envName = 'MAIL_PRODUCER_SECRET_ADMIN'
         $outerToken = [Environment]::GetEnvironmentVariable($envName)
         Remove-Item "Env:$envName" -ErrorAction SilentlyContinue
         $ServiceCatalogue['mail'] = @{ Dir = 'mail'; Entry = 'mail.go'; Port = 50900; Desc = '邮件'; ConfigFlag = '-f'; ConfigFile = 'etc/mail.yaml'; AllowMultiInstance = $true; Tier = 1 }
@@ -258,7 +309,7 @@ try {
             Assert-True ($null -ne $mailStart[0].MailToken -and $mailStart[0].MailToken.Trim().Length -ge 32) '起 mail 那一刻环境里有 ≥32 字节的令牌(go/mail 不足 32 字节即静默停用 MailAdmin)'
             Assert-Equal $null $chatStart[0].MailToken '起 chat 时环境里没有令牌(最小权限:只给 mail)'
             Assert-Equal $null ([Environment]::GetEnvironmentVariable($envName)) '启动后父进程还原为没设(后面起的服务不继承)'
-            Assert-True (Test-Path -LiteralPath (Join-Path $testRoot 'run/secrets/mail-admin-dev.env')) '令牌落在 RepoRoot 的 run/secrets 下(run/* 已被 .gitignore 覆盖)'
+            Assert-True (Test-Path -LiteralPath (Join-Path $testRoot 'run/secrets/mail-admin-producer-dev.env')) '令牌落在 RepoRoot 的 run/secrets 下(run/* 已被 .gitignore 覆盖)'
         }
         finally {
             $ServiceCatalogue.Remove('mail')
@@ -273,6 +324,7 @@ try {
     }
 }
 finally {
+    [Environment]::SetEnvironmentVariable('CHAT_AUTHORITY_DSN',$chatOuterDsn,'Process')
     $resolvedRoot = [System.IO.Path]::GetFullPath($testRoot)
     $tempParent = [System.IO.Path]::GetFullPath([System.IO.Path]::GetTempPath()).TrimEnd('\', '/') + [System.IO.Path]::DirectorySeparatorChar
     if (-not $resolvedRoot.StartsWith($tempParent, [StringComparison]::OrdinalIgnoreCase) -or (Split-Path -Leaf $resolvedRoot) -notlike 'mmorpg-go-ports-tests-*') {

@@ -91,7 +91,7 @@ func newSemanticsEnv(t *testing.T, provider semanticsProvider, tokenRedisFails b
 	auth.Register(authType, provider)
 	return &semanticsEnv{
 		mr:       mr,
-		svcCtx:   &svc.ServiceContext{RedisClient: rdb, TokenManager: tokens},
+		svcCtx:   &svc.ServiceContext{RedisClient: rdb, AccountDirectory: fixtureDirectory(t, rdb), TokenManager: tokens},
 		authType: authType,
 	}
 }
@@ -125,18 +125,18 @@ func TestLoginInvalidThirdPartyCredentialStillReturnsAccountNotFound(t *testing.
 	requireLoginFailureTip(t, env.login(t), table.LoginError_kLoginAccountNotFound)
 }
 
-func TestLoginAccountDirectoryRedisFailureIsInBandFault(t *testing.T) {
+func TestLoginAccountDirectorySQLFailureIsInBandFault(t *testing.T) {
 	const account = "wx_redis_failure"
 	env := newSemanticsEnv(t, semanticsProvider{account: account}, false)
 	// 键类型不对:脚本里的 GET 报 WRONGTYPE,等价于账号目录读不出来的 Redis 故障,而锁键不受影响。
-	env.mr.HSet(constants.GetAccountDataKey(account), "field", "value")
-	requireLoginFailureTip(t, env.login(t), table.LoginError_kLoginRedisError)
+	env.svcCtx.AccountDirectory.(*testDirectory).readErr = errors.New("SQL目录不可用")
+	requireLoginFailureTip(t, env.login(t), table.LoginError_kLoginDataSerializeFailed)
 }
 
 func TestLoginCorruptAccountDirectoryIsInBandFault(t *testing.T) {
 	const account = "wx_corrupt_directory"
 	env := newSemanticsEnv(t, semanticsProvider{account: account}, false)
-	require.NoError(t, env.mr.Set(constants.GetAccountDataKey(account), "\xff\xff\xff"))
+	env.svcCtx.AccountDirectory.(*testDirectory).readErr = errAccountDirectoryCorrupt
 	requireLoginFailureTip(t, env.login(t), table.LoginError_kLoginDataParseFailed)
 }
 
@@ -155,7 +155,8 @@ func TestLoginHTTPSuccessStillIssuesTokens(t *testing.T) {
 	require.Nil(t, resp.ErrorMessage)
 	require.NotEmpty(t, resp.AccessToken)
 	require.NotEmpty(t, resp.RefreshToken)
-	require.True(t, env.mr.Exists(constants.GetAccountDataKey(account)), "成功登录应初始化账号目录")
+	_, err := env.svcCtx.AccountDirectory.Read(context.Background(), account, false)
+	require.NoError(t, err, "成功登录应初始化SQL目录")
 }
 
 func TestAuthFailureTip(t *testing.T) {

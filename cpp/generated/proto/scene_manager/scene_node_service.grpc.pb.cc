@@ -28,6 +28,7 @@ static const char* SceneNodeGrpc_method_names[] = {
   "/scene_node.SceneNodeGrpc/ReleasePlayer",
   "/scene_node.SceneNodeGrpc/PrepareBattle",
   "/scene_node.SceneNodeGrpc/CancelBattlePrepare",
+  "/scene_node.SceneNodeGrpc/SealAccountRoleTrade",
   "/scene_node.SceneNodeGrpc/AssetDebit",
   "/scene_node.SceneNodeGrpc/AssetAbortDebit",
   "/scene_node.SceneNodeGrpc/AssetCredit",
@@ -46,10 +47,11 @@ SceneNodeGrpc::Stub::Stub(const std::shared_ptr< ::grpc::ChannelInterface>& chan
   , rpcmethod_ReleasePlayer_(SceneNodeGrpc_method_names[2], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
   , rpcmethod_PrepareBattle_(SceneNodeGrpc_method_names[3], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
   , rpcmethod_CancelBattlePrepare_(SceneNodeGrpc_method_names[4], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
-  , rpcmethod_AssetDebit_(SceneNodeGrpc_method_names[5], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
-  , rpcmethod_AssetAbortDebit_(SceneNodeGrpc_method_names[6], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
-  , rpcmethod_AssetCredit_(SceneNodeGrpc_method_names[7], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
-  , rpcmethod_AssetAckReceipt_(SceneNodeGrpc_method_names[8], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
+  , rpcmethod_SealAccountRoleTrade_(SceneNodeGrpc_method_names[5], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
+  , rpcmethod_AssetDebit_(SceneNodeGrpc_method_names[6], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
+  , rpcmethod_AssetAbortDebit_(SceneNodeGrpc_method_names[7], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
+  , rpcmethod_AssetCredit_(SceneNodeGrpc_method_names[8], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
+  , rpcmethod_AssetAckReceipt_(SceneNodeGrpc_method_names[9], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
   {}
 
 ::grpc::Status SceneNodeGrpc::Stub::CreateScene(::grpc::ClientContext* context, const ::CreateSceneRequest& request, ::CreateSceneResponse* response) {
@@ -163,6 +165,29 @@ void SceneNodeGrpc::Stub::async::CancelBattlePrepare(::grpc::ClientContext* cont
 ::grpc::ClientAsyncResponseReader< ::Empty>* SceneNodeGrpc::Stub::AsyncCancelBattlePrepareRaw(::grpc::ClientContext* context, const ::CancelBattlePrepareRequest& request, ::grpc::CompletionQueue* cq) {
   auto* result =
     this->PrepareAsyncCancelBattlePrepareRaw(context, request, cq);
+  result->StartCall();
+  return result;
+}
+
+::grpc::Status SceneNodeGrpc::Stub::SealAccountRoleTrade(::grpc::ClientContext* context, const ::SealAccountRoleTradeRequest& request, ::Empty* response) {
+  return ::grpc::internal::BlockingUnaryCall< ::SealAccountRoleTradeRequest, ::Empty, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), rpcmethod_SealAccountRoleTrade_, context, request, response);
+}
+
+void SceneNodeGrpc::Stub::async::SealAccountRoleTrade(::grpc::ClientContext* context, const ::SealAccountRoleTradeRequest* request, ::Empty* response, std::function<void(::grpc::Status)> f) {
+  ::grpc::internal::CallbackUnaryCall< ::SealAccountRoleTradeRequest, ::Empty, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_SealAccountRoleTrade_, context, request, response, std::move(f));
+}
+
+void SceneNodeGrpc::Stub::async::SealAccountRoleTrade(::grpc::ClientContext* context, const ::SealAccountRoleTradeRequest* request, ::Empty* response, ::grpc::ClientUnaryReactor* reactor) {
+  ::grpc::internal::ClientCallbackUnaryFactory::Create< ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_SealAccountRoleTrade_, context, request, response, reactor);
+}
+
+::grpc::ClientAsyncResponseReader< ::Empty>* SceneNodeGrpc::Stub::PrepareAsyncSealAccountRoleTradeRaw(::grpc::ClientContext* context, const ::SealAccountRoleTradeRequest& request, ::grpc::CompletionQueue* cq) {
+  return ::grpc::internal::ClientAsyncResponseReaderHelper::Create< ::Empty, ::SealAccountRoleTradeRequest, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), cq, rpcmethod_SealAccountRoleTrade_, context, request);
+}
+
+::grpc::ClientAsyncResponseReader< ::Empty>* SceneNodeGrpc::Stub::AsyncSealAccountRoleTradeRaw(::grpc::ClientContext* context, const ::SealAccountRoleTradeRequest& request, ::grpc::CompletionQueue* cq) {
+  auto* result =
+    this->PrepareAsyncSealAccountRoleTradeRaw(context, request, cq);
   result->StartCall();
   return result;
 }
@@ -313,12 +338,12 @@ SceneNodeGrpc::Service::Service() {
   AddMethod(new ::grpc::internal::RpcServiceMethod(
       SceneNodeGrpc_method_names[5],
       ::grpc::internal::RpcMethod::NORMAL_RPC,
-      new ::grpc::internal::RpcMethodHandler< SceneNodeGrpc::Service, ::AssetOpRequest, ::AssetOpResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(
+      new ::grpc::internal::RpcMethodHandler< SceneNodeGrpc::Service, ::SealAccountRoleTradeRequest, ::Empty, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(
           [](SceneNodeGrpc::Service* service,
              ::grpc::ServerContext* ctx,
-             const ::AssetOpRequest* req,
-             ::AssetOpResponse* resp) {
-               return service->AssetDebit(ctx, req, resp);
+             const ::SealAccountRoleTradeRequest* req,
+             ::Empty* resp) {
+               return service->SealAccountRoleTrade(ctx, req, resp);
              }, this)));
   AddMethod(new ::grpc::internal::RpcServiceMethod(
       SceneNodeGrpc_method_names[6],
@@ -328,7 +353,7 @@ SceneNodeGrpc::Service::Service() {
              ::grpc::ServerContext* ctx,
              const ::AssetOpRequest* req,
              ::AssetOpResponse* resp) {
-               return service->AssetAbortDebit(ctx, req, resp);
+               return service->AssetDebit(ctx, req, resp);
              }, this)));
   AddMethod(new ::grpc::internal::RpcServiceMethod(
       SceneNodeGrpc_method_names[7],
@@ -338,10 +363,20 @@ SceneNodeGrpc::Service::Service() {
              ::grpc::ServerContext* ctx,
              const ::AssetOpRequest* req,
              ::AssetOpResponse* resp) {
-               return service->AssetCredit(ctx, req, resp);
+               return service->AssetAbortDebit(ctx, req, resp);
              }, this)));
   AddMethod(new ::grpc::internal::RpcServiceMethod(
       SceneNodeGrpc_method_names[8],
+      ::grpc::internal::RpcMethod::NORMAL_RPC,
+      new ::grpc::internal::RpcMethodHandler< SceneNodeGrpc::Service, ::AssetOpRequest, ::AssetOpResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(
+          [](SceneNodeGrpc::Service* service,
+             ::grpc::ServerContext* ctx,
+             const ::AssetOpRequest* req,
+             ::AssetOpResponse* resp) {
+               return service->AssetCredit(ctx, req, resp);
+             }, this)));
+  AddMethod(new ::grpc::internal::RpcServiceMethod(
+      SceneNodeGrpc_method_names[9],
       ::grpc::internal::RpcMethod::NORMAL_RPC,
       new ::grpc::internal::RpcMethodHandler< SceneNodeGrpc::Service, ::AssetOpRequest, ::AssetOpResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(
           [](SceneNodeGrpc::Service* service,
@@ -384,6 +419,13 @@ SceneNodeGrpc::Service::~Service() {
 }
 
 ::grpc::Status SceneNodeGrpc::Service::CancelBattlePrepare(::grpc::ServerContext* context, const ::CancelBattlePrepareRequest* request, ::Empty* response) {
+  (void) context;
+  (void) request;
+  (void) response;
+  return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+}
+
+::grpc::Status SceneNodeGrpc::Service::SealAccountRoleTrade(::grpc::ServerContext* context, const ::SealAccountRoleTradeRequest* request, ::Empty* response) {
   (void) context;
   (void) request;
   (void) response;

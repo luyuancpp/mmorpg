@@ -37,6 +37,7 @@
 #include "services/scene/player/system/player_data_loader.h"
 #include "services/scene/player/comp/player_persist_carry_comp.h"
 #include "services/scene/player/system/player_lifecycle.h"
+#include "services/scene/player/system/role_admission_system.h"
 #include "services/scene/player/system/player_persist_marshal.h"
 #include "services/scene/actor/action_state/constants/actor_state.h"
 #include "services/scene/actor/attribute/comp/actor_attribute_comp.h"
@@ -75,6 +76,8 @@ struct ScopedInitializationScene
     {
         PlayerEnterContext context;
         context.enterInfo.set_scene_id(710001);
+        context.roleAdmissionGeneration = 11;
+        context.ownerRevision = 7;
         return context;
     }
 };
@@ -168,6 +171,12 @@ protected:
     {
         tlsIdGeneratorManager.SetNodeId(95);
         actor_net_id::Install(tlsEcs.actorRegistry);
+        RoleAdmissionSystem::Dependencies dependencies;
+        auto& identity = dependencies.confirmedAdmissions.emplace_back();
+        identity.set_player_id(kPlayerId);
+        identity.set_generation(11);
+        identity.set_owner_revision(7);
+        admission = std::make_unique<RoleAdmissionSystem::ScopedDependencies>(std::move(dependencies));
         MissionTableManager::Instance().Load();
         ConditionTableManager::Instance().Load();
         ClassTableManager::Instance().Load();
@@ -180,8 +189,11 @@ protected:
     {
         for (const auto player : players)
             if (tlsEcs.actorRegistry.valid(player)) tlsEcs.actorRegistry.destroy(player);
+        admission.reset();
     }
 
+
+    std::unique_ptr<RoleAdmissionSystem::ScopedDependencies> admission;
 
     entt::entity NewPlayer()
     {
@@ -840,13 +852,14 @@ TEST_F(PlayerFeaturePersistenceTest, InitFromAllDataRejectsUnallocatedActorNodeW
 // entt 3.13 的实体存储把存活实体放在 [0, free_list()) 区间,free_list() 即存活实体数。
 TEST_F(PlayerFeaturePersistenceTest, InitFromAllDataRejectsDuplicateWithoutLeavingOrphanEntity)
 {
+    const ScopedInitializationScene target;
     const auto existing = NewPlayer();
     tlsEcs.playerList.insert_or_assign(kPlayerId, existing);
     PlayerAllData data;
     data.mutable_player_database_data()->set_player_id(kPlayerId);
     const auto aliveBefore = tlsEcs.actorRegistry.storage<entt::entity>().free_list();
 
-    const auto created = PlayerLifecycleSystem::InitPlayerFromAllData(data, PlayerEnterContext{});
+    const auto created = PlayerLifecycleSystem::InitPlayerFromAllData(data, target.Context());
 
     EXPECT_TRUE(created == entt::null) << "重复登记必须拒绝";
     EXPECT_EQ(aliveBefore, tlsEcs.actorRegistry.storage<entt::entity>().free_list()) << "拒绝时不得留下孤儿实体";

@@ -166,12 +166,8 @@ const routeRowColumnsSQL = "home_zone, storage_id, placement_version, frozen_run
 
 // 本文件的全部 SQL。抽成常量是为了让假驱动用例 / 真库用例执行**同一段文本**。
 const (
-	// 探针:SQL 文本照抄 go/data_service/internal/store/route_store.go 的 routeProbeSessionSQL / routeProbeTiDBTxnModeSQL /
-	// routeProbeShardCheckSQL / routeProbeShardModulusSQL / routeReadWritableSQL / routeLockProbeGuardSQL,
-	// 与 schema.go serverIsTiDB 的 SELECT VERSION()。
-	routeProbeSessionSQL     = "SELECT @@SESSION.transaction_isolation, @@SESSION.innodb_lock_wait_timeout"
-	routeProbeVersionSQL     = "SELECT VERSION()"
-	routeProbeTiDBTxnModeSQL = "SELECT @@tidb_txn_mode"
+	// CHECK、行片及围栏探针与DS同源契约；引擎与当前强读由current_tidb.go统一校验，全球工具不接受历史MySQL域。
+	routeProbeSessionSQL = "SELECT @@SESSION.transaction_isolation, @@SESSION.innodb_lock_wait_timeout"
 	// P4:一行只违反 chk_route_shard 的插入(player_id=0 的片应为 0,这里绑 1),包在必然回滚的事务里。
 	routeProbeShardCheckSQL = "INSERT INTO player_route (route_shard, player_id, rev, updated_by, created_at_ms, updated_at_ms)" +
 		" VALUES (1, 0, 1, 'route-probe', 0, 0)"
@@ -456,6 +452,7 @@ func (r *routeBatchResult[V]) sortTarget() {
 //   - transaction_isolation='READ-COMMITTED':锁推演只在 RC 下成立(ODKU 撞键只加记录锁、FOR UPDATE 读不存在的行不留间隙锁);
 //   - innodb_lock_wait_timeout=1:锁等待封顶,等满即 1205、不重试;
 //   - sql_mode='STRICT_TRANS_TABLES':超长的 holder_json 等不会被静默截断。
+//   - 与业务/Team池共用pinCurrentTiDB，清除历史快照/旧副本/低精度TSO，逐连接固定当前强读。
 //
 // 运维写在 DSN 里的同名参数一律被覆盖;旧名 tx_isolation 删掉(两个名字同时出现时生效的是哪个不确定)。
 // 必须带库名(全局库:dev 是 testdb,K8s 是 mmorpg_global);带 clientFoundRows=true 拒绝(ODKU 撞键 = 受影响 0 行的
@@ -474,8 +471,7 @@ func routeDBDSN(raw string) (string, error) {
 	if cfg.Params == nil {
 		cfg.Params = map[string]string{}
 	}
-	delete(cfg.Params, mysqlLegacyIsolationParam)
-	cfg.Params[mysqlIsolationParam] = mysqlReadCommitted
+	pinCurrentTiDB(cfg)
 	cfg.Params[routeLockWaitParam] = strconv.Itoa(routeLockWaitTimeoutSec)
 	cfg.Params[routeSQLModeParam] = routeSQLModeStrict
 	return cfg.FormatDSN(), nil
@@ -543,7 +539,7 @@ func (s *mergeRouteStore) Close() error {
 
 // probe 是开写前探针(判据与 SQL 照抄 data_service store.newRouteStoreFromDB):
 //  1. 会话隔离级别必须是 READ-COMMITTED、innodb_lock_wait_timeout 必须是 1(DSN 的会话变量没生效时锁推演不成立);
-//  2. 对端是 TiDB 时 tidb_txn_mode 必须是 pessimistic(RC + FOR UPDATE 的前提);
+//  2. 对端必须是真TiDB，事务/副本/一致性/快照/staleness/低精度TSO读回全部符合当前强读策略;
 //  3. route_meta(id=1) 必须在;
 //  4. chk_route_shard 必须生效(P4:必然回滚的事务里插一行只违反它的行,必须收到点名它的 3819);
 //  5. 模数必须是 64(P5:同一事务再插两行按 64 合法的行,(0, 64) 与 (63, 63) 都被接受 ⇔ 模数 = 64)。
@@ -577,22 +573,7 @@ func probeRouteSession(ctx context.Context, db *sql.DB) error {
 			"(the DSN session variables pinned by routeDBDSN did not take effect)",
 			errRouteSessionMisconfigured, isolation, lockWait, routeLockWaitTimeoutSec)
 	}
-	var version string
-	if err := db.QueryRowContext(ctx, routeProbeVersionSQL).Scan(&version); err != nil {
-		return fmt.Errorf("read server version: %w", err)
-	}
-	if !strings.Contains(strings.ToUpper(version), "TIDB") {
-		return nil
-	}
-	var mode string
-	if err := db.QueryRowContext(ctx, routeProbeTiDBTxnModeSQL).Scan(&mode); err != nil {
-		return fmt.Errorf("read tidb_txn_mode on %s: %w", version, err)
-	}
-	if !strings.EqualFold(mode, "pessimistic") {
-		return fmt.Errorf("%w: TiDB %s tidb_txn_mode=%q, want pessimistic (the FOR UPDATE based decisions need pessimistic locking)",
-			errRouteSessionMisconfigured, version, mode)
-	}
-	return nil
+	return requireCurrentTiDB(ctx, db)
 }
 
 // readRouteMeta 读 route_meta(id=1)(探针第 3 步;一致读)。

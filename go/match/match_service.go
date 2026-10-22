@@ -14,6 +14,7 @@ import (
 	"syscall"
 	"time"
 
+	"match/internal/authority"
 	"match/internal/config"
 	"match/internal/metrics"
 	"match/internal/noderegistry"
@@ -21,6 +22,7 @@ import (
 	"match/internal/server"
 	"match/internal/svc"
 	"match/internal/team"
+	"schemamigrate"
 
 	matchkafka "match/internal/kafka"
 	matchlogic "match/internal/logic"
@@ -34,6 +36,7 @@ import (
 	"shared/grpcstats"
 	sharedregistry "shared/noderegistry"
 	"shared/safego"
+	"shared/serviceauth"
 
 	"github.com/zeromicro/go-zero/core/conf"
 	"github.com/zeromicro/go-zero/core/logx"
@@ -53,6 +56,13 @@ import (
 var configFile = flag.String("f", "etc/match_service.yaml", "the config file")
 
 var showVersion = flag.Bool("version", false, "打印版本信息并退出")
+
+// 显式迁移先于服务装配，只由独立DDL账号运行；常驻形态始终只读核对schema。
+var migrateOnly = flag.Bool("migrate", false, "仅迁移匹配与组队SQL表后退出（0成功/1失败/3锁忙/4人工处理）")
+var allowModify = flag.Bool("allow-modify", false, "仅与-migrate同时使用：人工审阅后授权MODIFY COLUMN")
+
+const migrationUserEnv = "MATCH_MIGRATION_USER"
+const migrationPasswordEnv = "MATCH_MIGRATION_PASSWORD"
 
 const (
 	// listenProbeTimeout:等本进程 gRPC 端口可连的上限(照 chat)。先探端口再注册,
@@ -74,10 +84,26 @@ func main() {
 	if *showVersion {
 		return
 	}
+	if err := validateMigrationFlags(*migrateOnly, *allowModify); err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(schemamigrate.ExitFailed)
+	}
 
 	var c config.Config
 	conf.MustLoad(*configFile, &c)
+	if *migrateOnly {
+		os.Exit(runMigration(c, *allowModify, authority.Migrate))
+	}
 	svcCtx := svc.NewServiceContext(c)
+	// 独立内部取消证明；未配置时保持nil并在RPC入口拒绝，绝不降级为无签名取消。
+	if secret := strings.TrimSpace(os.Getenv("MMORPG_MATCH_INTERNAL_SECRET_GUILD")); secret != "" {
+		verifier, err := serviceauth.New(map[string]string{"guild": secret})
+		if err != nil {
+			logx.Must(fmt.Errorf("活动取消独立签名配置非法"))
+		}
+		svcCtx.ActivityCancelAuth = verifier
+		svcCtx.ActivityCancelSecret = secret
+	}
 
 	ctx, cancel := context.WithCancel(context.Background())
 	resultConfig := matchkafka.ResultConsumerConfig{
@@ -203,6 +229,16 @@ func main() {
 		team.NewDataServiceHomeZone(svcCtx.DataServiceClient, team.DefaultHomeZoneLookupTimeout),
 		matchlogic.NewTeamBattleStarter(svcCtx))
 	svcCtx.SetPartyTeam(teamService)
+	teamAuthority, teamAuthorityErr := team.NewAuthorityServer(svcCtx)
+	if teamAuthorityErr != nil {
+		logx.Errorf("SQL队伍场景读取契约未就绪，拒绝启动: %v", teamAuthorityErr)
+		cancel()
+		svcCtx.Stop()
+		os.Exit(1)
+	}
+	teamService.StartSQLMaintenance(ctx)
+	matchlogic.StartGlobalTeamMatcher(ctx, svcCtx)
+	matchlogic.StartGlobalSpectatorRecovery(ctx, svcCtx)
 	// 完整结果归档与队伍反向端口均就绪后才开放成局。
 	matchlogic.StartMatcherLoop(ctx, svcCtx)
 
@@ -212,6 +248,9 @@ func main() {
 		// 客户端来源由 sessionInterceptor 拒绝(PermissionDenied)。
 		matchpb.RegisterMatchInternalServer(grpcServer, server.NewMatchInternalServer(svcCtx))
 		teampb.RegisterClientPlayerTeamServer(grpcServer, team.NewServer(teamService))
+		if teamAuthority != nil {
+			teampb.RegisterTeamAuthorityServer(grpcServer, teamAuthority)
+		}
 
 		if c.Mode == service.DevMode || c.Mode == service.TestMode {
 			reflection.Register(grpcServer)
@@ -223,6 +262,7 @@ func main() {
 	// zrpc 顶层 Timeout 保持 5000:改小会截断 WatchBattle 同步链;team 在每个方法入口自设 3500ms 预算(§A.3 第 7 条)。
 	s.AddUnaryInterceptors(
 		sessionInterceptor,
+		originalRoleInterceptor(svcCtx),
 		grpcstats.New(grpcstats.Options{}).UnaryServerInterceptor(),
 	)
 
@@ -308,6 +348,42 @@ func main() {
 	cancel()
 	svcCtx.Stop()
 	s.Stop()
+}
+
+func validateMigrationFlags(migrateOnly, allowModify bool) error {
+	if allowModify && !migrateOnly {
+		return fmt.Errorf("-allow-modify只能与-migrate同时使用，常驻进程不执行DDL")
+	}
+	return nil
+}
+
+// runMigration 不构造ServiceContext，因此不申请号源、不连接etcd/Redis/Kafka、不监听RPC。
+func runMigration(c config.Config, allowModify bool, migrate func(context.Context, config.GlobalMatchConf, bool) (schemamigrate.Report, error)) int {
+	if !c.GlobalMatch.Enabled || (c.Mode != service.DevMode && c.Mode != service.TestMode && !c.GlobalMatch.RequireTiDB) {
+		fmt.Fprintln(os.Stderr, "匹配迁移必须显式启用全球SQL权威，生产必须使用TiDB")
+		return schemamigrate.ExitFailed
+	}
+	// 迁移凭据不进入常驻配置；缺少任一项都不能拿runtime账号补做DDL。
+	user := os.Getenv(migrationUserEnv)
+	if strings.TrimSpace(user) == "" || os.Getenv(migrationPasswordEnv) == "" {
+		fmt.Fprintln(os.Stderr, "显式匹配迁移需要独立MATCH_MIGRATION_USER和MATCH_MIGRATION_PASSWORD环境变量")
+		return schemamigrate.ExitFailed
+	}
+	c.GlobalMatch.User, c.GlobalMatch.PasswordEnv = user, migrationPasswordEnv
+	report, err := migrate(context.Background(), c.GlobalMatch, allowModify)
+	for _, statement := range report.Statements {
+		fmt.Printf("迁移语句: %s\n", statement)
+	}
+	for _, warning := range report.Warnings {
+		fmt.Printf("迁移告警: %s\n", warning)
+	}
+	for _, manual := range report.Manual {
+		fmt.Printf("需人工处理: %s\n", manual)
+	}
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "匹配schema迁移失败: %v\n", err)
+	}
+	return schemamigrate.ExitCode(report, err)
 }
 
 // nodeRegistrations 本进程在 etcd 的两份节点注册。Close 幂等、可并发调用

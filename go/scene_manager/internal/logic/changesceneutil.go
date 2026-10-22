@@ -44,20 +44,8 @@ func GetPlayerLocation(ctx context.Context, svcCtx *svc.ServiceContext, playerId
 }
 
 func getPlayerLocationWithRaw(svcCtx *svc.ServiceContext, playerId uint64) (*smpb.PlayerLocation, string, error) {
-	key := getPlayerLocationKey(playerId)
-	val, err := svcCtx.Redis.Get(key)
-	if err != nil {
-		return nil, "", err
-	}
-	if val == "" {
-		return nil, "", nil
-	}
-
-	loc := &smpb.PlayerLocation{}
-	if err := proto.Unmarshal([]byte(val), loc); err != nil {
-		return nil, "", err
-	}
-	return loc, val, nil
+	loc, raw, _, err := getPlayerLocationSnapshot(svcCtx, playerId)
+	return loc, raw, err
 }
 
 // UpdatePlayerLocation 把玩家落到 (zone, scene, node),同时铸造一个新的归属 epoch。
@@ -81,6 +69,9 @@ func UpdatePlayerLocation(ctx context.Context, svcCtx *svc.ServiceContext, playe
 // placedLocation 是一次成功落点留下的精确值,供路由失败时做 exact-value 回滚(回滚 Lua 以「location 仍是
 // raw、epoch 仍是 epoch」为前提,见 owner_epoch.go luaRollbackPlayerPlacement)。
 type placedLocation struct {
+	revision    uint64
+	tag         string
+	previousTag string
 	// epoch 是写进 location、并随 RoutePlayerEvent 下发的 owner_epoch:
 	// 铸造时 = 观察值 + 1,不铸造时 = 观察值本身。
 	epoch uint64
@@ -93,6 +84,8 @@ type placedLocation struct {
 
 // placementGuard 是一次落点的并发前提,全部来自本次 EnterScene 开头的同一次观察。
 type placementGuard struct {
+	ownerRevision uint64
+	observedTag   string
 	// observedEpoch:落点 Lua 的 CAS 期望值(键不存在按 0)。
 	observedEpoch uint64
 	// mint:持有者换了才铸造新 epoch(见 placePlayerLocation)。
@@ -210,9 +203,9 @@ func placePlayerLocation(svcCtx *svc.ServiceContext, playerId uint64, sceneId ui
 	raw := string(data)
 
 	result, err := svcCtx.Redis.Eval(script,
-		[]string{ownerepoch.OwnerEpochKey(playerId), getPlayerLocationKey(playerId), ownerepoch.HandoffKey(playerId)},
+		[]string{ownerepoch.OwnerEpochKey(playerId), getPlayerLocationKey(playerId), ownerepoch.HandoffKey(playerId), locationRevisionKey(playerId), locationRevisionFloorKey(playerId)},
 		strconv.FormatUint(observedEpoch, 10), raw, guard.requiredMarker,
-		guard.expectLoc.mode.luaArg(), guard.expectLoc.raw)
+		guard.expectLoc.mode.luaArg(), guard.expectLoc.raw, optionalRevisionText(guard.ownerRevision), locationRevisionTag(guard.ownerRevision, raw), guard.observedTag)
 	if err != nil {
 		return placedLocation{}, err
 	}
@@ -243,7 +236,7 @@ func placePlayerLocation(svcCtx *svc.ServiceContext, playerId uint64, sceneId ui
 		logx.Infof("[MintReplay] player=%d epoch=%d zone=%d: owner_epoch mint EVAL was replayed by the redis client; recognised as this request's own write",
 			playerId, placedEpoch, zoneId)
 	}
-	return placedLocation{epoch: placedEpoch, minted: mint, raw: raw}, nil
+	return placedLocation{epoch: placedEpoch, minted: mint, raw: raw, revision: guard.ownerRevision, tag: locationRevisionTag(guard.ownerRevision, raw), previousTag: guard.observedTag}, nil
 }
 
 // decodeMintReply 把 luaMintEpochAndSetLocation 的返回值拆成 (epoch 或状态码, 是否重放识别命中)。
@@ -268,7 +261,7 @@ func decodeMintReply(signed int64) (int64, bool) {
 // 调用方只在「应写入的身份 ≠ location 记的身份」时调用。写入之后若推路由失败,**不回滚身份**(§5.2 ② v0.2):
 // kafka-go 报错但 broker 其实已投递时,回滚会把身份退回旧会话,重开迟到 LeaveScene 误删(b1)与陈旧换图放行(d2)。
 func setLocationIdentityIfUnchanged(svcCtx *svc.ServiceContext, playerId uint64, observed *smpb.PlayerLocation,
-	observedRaw string, identity placementIdentity, observedEpoch uint64) error {
+	observedRaw string, identity placementIdentity, observedEpoch, ownerRevision uint64, observedTag string) error {
 	if observed == nil || observedRaw == "" {
 		return fmt.Errorf("同落点身份写缺少观察到的 location: observed_nil=%v raw_len=%d", observed == nil, len(observedRaw))
 	}
@@ -280,9 +273,13 @@ func setLocationIdentityIfUnchanged(svcCtx *svc.ServiceContext, playerId uint64,
 		return err
 	}
 	expect := expectObservedLocation(observedRaw)
+	newTag := ""
+	if observedTag != "" {
+		newTag = locationRevisionTag(ownerRevision, string(data))
+	}
 	result, err := svcCtx.Redis.Eval(luaSetLocationIfEpoch,
-		[]string{ownerepoch.OwnerEpochKey(playerId), getPlayerLocationKey(playerId), ownerepoch.HandoffKey(playerId)},
-		strconv.FormatUint(observedEpoch, 10), string(data), "", expect.mode.luaArg(), expect.raw)
+		[]string{ownerepoch.OwnerEpochKey(playerId), getPlayerLocationKey(playerId), ownerepoch.HandoffKey(playerId), locationRevisionKey(playerId), locationRevisionFloorKey(playerId)},
+		strconv.FormatUint(observedEpoch, 10), string(data), "", expect.mode.luaArg(), expect.raw, optionalRevisionText(ownerRevision), newTag, observedTag)
 	if err != nil {
 		return err
 	}

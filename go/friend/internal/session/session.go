@@ -64,7 +64,10 @@ var ClientMethods = map[string]struct{}{
 
 // WithDetails 把已校验的会话放进 ctx(拦截器与单测共用)。
 func WithDetails(ctx context.Context, detail *base.SessionDetails) context.Context {
-	return context.WithValue(ctx, contextKey{}, detail)
+	if detail == nil {
+		return context.WithValue(ctx, contextKey{}, (*base.SessionDetails)(nil))
+	}
+	return context.WithValue(ctx, contextKey{}, proto.Clone(detail).(*base.SessionDetails))
 }
 
 // ClientPlayerID 返回客户端来源请求的权威 player_id(D-9:"我"只从会话取,目标 id 才看请求体)。

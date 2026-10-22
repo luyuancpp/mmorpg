@@ -548,7 +548,7 @@ func (r *EconomyRepo) ReserveDonation(ctx context.Context, in DonationReserve) (
 	const stream = assetpb.AssetOpStream_ASSET_OP_STREAM_GUILD_DEBIT
 
 	var out Reserved
-	err := r.guilds.inTx(ctx, opDonate, func(ctx context.Context, tx *sql.Tx) error {
+	err := r.guilds.inTx(withRoleTargets(ctx, in.PlayerID), opDonate, func(ctx context.Context, tx *sql.Tx) error {
 		zoneID, level, err := readGuildZoneLevel(ctx, tx, in.GuildID)
 		if err != nil {
 			return err
@@ -688,7 +688,7 @@ func (r *EconomyRepo) ReserveShopOrder(ctx context.Context, in ShopReserve) (Sho
 	const stream = assetpb.AssetOpStream_ASSET_OP_STREAM_GUILD_CREDIT
 
 	var out ShopReserved
-	err := r.guilds.inTx(ctx, opShop, func(ctx context.Context, tx *sql.Tx) error {
+	err := r.guilds.inTx(withRoleTargets(ctx, in.PlayerID), opShop, func(ctx context.Context, tx *sql.Tx) error {
 		zoneID, level, err := readGuildZoneLevel(ctx, tx, in.GuildID)
 		if err != nil {
 			return err

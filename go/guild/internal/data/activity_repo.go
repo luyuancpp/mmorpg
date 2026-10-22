@@ -376,7 +376,7 @@ func (r *ActivityRepo) participate(ctx context.Context, in ActivityTxInput, typ 
 	const stream = assetpb.AssetOpStream_ASSET_OP_STREAM_GUILD_CREDIT
 
 	var out ActivityTxResult
-	err := r.guilds.inTx(ctx, opActivity, func(ctx context.Context, tx *sql.Tx) error {
+	err := r.guilds.inTx(withRoleTargets(ctx, in.PlayerID), opActivity, func(ctx context.Context, tx *sql.Tx) error {
 		// G:锁序位置 1。之后对 guild 行的资金写是再写已持有行,不再新增锁。
 		var (
 			level, zoneID uint32
@@ -884,7 +884,7 @@ const (
 // 按 guild_id / state 找行的只有普通读。state / settle_result 一律绑生成常量(90 part2 §3 末行)。
 const (
 	trialBattleColumns = "battle_id, guild_id, activity_id, period_key, guild_period_key, initiator_player_id," +
-		" state, settle_result, rewarded_count, created_ms, settled_ms"
+		" state, settle_result, rewarded_count, created_ms, settled_ms,launch_request_id"
 
 	// sqlSelectTrialBattleGate:持有 G 之后的普通读,判"有没有登记行 / 属于哪个帮 / 结算了没有"。
 	sqlSelectTrialBattleGate = "SELECT guild_id, state FROM " + guildTrialBattleTable + " WHERE battle_id = ?"
@@ -897,7 +897,7 @@ const (
 
 	// sqlInsertTrialBattle:普通 INSERT,不是 upsert。同帮的插入者都在 G 上串行、且先用普通读确认过缺行;
 	// 撞键(1062)只可能来自带着别的 guild_id 的事件抢先插了同一 battle_id,那要报出来,不能被 ON DUPLICATE 吞掉。
-	sqlInsertTrialBattle = "INSERT INTO " + guildTrialBattleTable + " (" + trialBattleColumns + ") VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+	sqlInsertTrialBattle = "INSERT INTO " + guildTrialBattleTable + " (" + trialBattleColumns + ") VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
 
 	// sqlSetTrialBattleState:状态迁移(→ SETTLED / → EXPIRED)。state 在 idx_0 / idx_1 里,取锁顺序是"聚簇记录 → 两条二级项";
 	// 没有任何语句经这两条二级索引加锁(按它们找行的都是普通读)。每次迁移 state 必变,RowsAffected 恒为 1。
@@ -953,6 +953,7 @@ type TrialBattleKey struct {
 	ActivityID, PeriodKey, GuildPeriodKey uint32
 
 	InitiatorPlayerID uint64
+	LaunchRequestID   uint64
 }
 
 // complete:登记一行所需的字段是否齐全。巡检器手里只有登记行的 (battle_id, guild_id) 时为假。
@@ -1050,7 +1051,7 @@ func writeTrialBattleState(ctx context.Context, tx *sql.Tx, battle TrialBattleKe
 	if !gate.exists {
 		if _, err := tx.ExecContext(ctx, sqlInsertTrialBattle,
 			battle.BattleID, battle.GuildID, battle.ActivityID, battle.PeriodKey, battle.GuildPeriodKey, battle.InitiatorPlayerID,
-			int32(to), int32(result), rewardedCount, createdMs, settledMs); err != nil {
+			int32(to), int32(result), rewardedCount, createdMs, settledMs, battle.LaunchRequestID); err != nil {
 			return fmt.Errorf("insert %s %d (guild %d): %w", guildTrialBattleTable, battle.BattleID, battle.GuildID, err)
 		}
 		return nil
@@ -1083,13 +1084,17 @@ func writeTrialBattleState(ctx context.Context, tx *sql.Tx, battle TrialBattleKe
 // ErrWriteConflict;登记行属于别的帮或其余情况为内部错误。
 // 调用方(launchTrial)对任何错误都只打 ERROR 并计数、不向玩家报失败:战斗已经开始,结算会补登记(06 §6.27 L4)。
 func (r *ActivityRepo) RegisterTrialBattle(ctx context.Context, battle TrialBattleKey, nowMs uint64) error {
+	original, identityErr := r.trialLaunchOriginal(ctx, &battle)
+	if identityErr != nil {
+		return identityErr
+	}
 	if err := battle.validateComplete(); err != nil {
 		return err
 	}
 	if err := validateTrialNow(nowMs); err != nil {
 		return err
 	}
-	err := r.guilds.inTx(ctx, opTrialRegister, func(ctx context.Context, tx *sql.Tx) error {
+	err := r.guilds.inTx(withRoleTargets(ctx, launchPlayers(original)...), opTrialRegister, func(ctx context.Context, tx *sql.Tx) error {
 		if _, _, err := lockTrialGuild(ctx, tx, battle.GuildID); err != nil {
 			return err
 		}
@@ -1099,6 +1104,9 @@ func (r *ActivityRepo) RegisterTrialBattle(ctx context.Context, battle TrialBatt
 		}
 		if gate.exists {
 			return nil
+		}
+		if err := r.lockTrialLaunch(ctx, tx, battle, original, false, nowMs); err != nil {
+			return err
 		}
 		return writeTrialBattleState(ctx, tx, battle, gate, pb.GuildTrialBattleState_GUILD_TRIAL_BATTLE_STATE_STARTED,
 			pb.GuildTrialSettleResult_GUILD_TRIAL_SETTLE_RESULT_UNSPECIFIED, 0, nowMs, nowMs)
@@ -1312,10 +1320,14 @@ func (r *ActivityRepo) SettleTrialBattleTx(ctx context.Context, in TrialSettleIn
 	if err != nil {
 		return TrialSettleResult{}, err
 	}
+	original, err := r.trialLaunchOriginal(ctx, &in.Battle)
+	if err != nil {
+		return TrialSettleResult{}, err
+	}
 
 	var out TrialSettleResult
-	err = r.guilds.inTx(ctx, opTrialSettle, func(ctx context.Context, tx *sql.Tx) error {
-		res, err := r.settleTrialBattle(ctx, tx, in, plan)
+	err = r.guilds.inTx(withRoleTargets(withRoleTargets(ctx, plan.candidates...), launchPlayers(original)...), opTrialSettle, func(ctx context.Context, tx *sql.Tx) error {
+		res, err := r.settleTrialBattle(ctx, tx, in, plan, original)
 		if err != nil {
 			return err
 		}
@@ -1349,11 +1361,33 @@ type trialMember struct {
 
 // settleTrialBattle 是结算的事务体。语句顺序即取锁顺序,由 activity_repo_static_test.go 的 TestActivityLockOrderInSource
 // 按源码顺序钉住:调换下面任何两步之前,先回文件头把"为什么不成环"重推一遍。
-func (r *ActivityRepo) settleTrialBattle(ctx context.Context, tx *sql.Tx, in TrialSettleInput, plan trialSettlePlan) (TrialSettleResult, error) {
+func (r *ActivityRepo) settleTrialBattle(ctx context.Context, tx *sql.Tx, in TrialSettleInput, plan trialSettlePlan, original *pb.GuildTrialLaunchOriginal) (TrialSettleResult, error) {
 	battle := in.Battle
+	if original != nil {
+		roster := map[uint64]bool{}
+		for _, p := range original.Roster {
+			roster[p.PlayerId] = true
+		}
+		for _, p := range plan.candidates {
+			if !roster[p] {
+				return TrialSettleResult{}, ErrWriteConflict
+			}
+		}
+	}
 
 	// G:锁序位置 1,也是 T 行的守卫。之后对 guild 行的资金写是再写已持有行。
 	zoneID, funds, err := lockTrialGuild(ctx, tx, battle.GuildID)
+	if errors.Is(err, ErrGuildGone) && original != nil {
+		// 真实终局结果仍须结清永久原合同；帮会消失只阻止发奖，不能把角色永远钉在ACTIVE。
+		// 不补造G/T，不用缺票或F4代替终局；原battle全上下文、全员身份由同P原launch核验。
+		if in.FinishedAtMs == 0 {
+			return TrialSettleResult{}, ErrWriteConflict
+		}
+		if err := r.lockTrialLaunch(ctx, tx, battle, original, true, in.NowMs); err != nil {
+			return TrialSettleResult{}, err
+		}
+		return TrialSettleResult{Status: TrialSettleGuildGone}, nil
+	}
 	if err != nil {
 		return TrialSettleResult{}, err
 	}
@@ -1363,6 +1397,9 @@ func (r *ActivityRepo) settleTrialBattle(ctx context.Context, tx *sql.Tx, in Tri
 	// T 的普通读:重复事件与归属不符在这里就结束,不必先把奖发一遍再回滚。
 	gate, err := readTrialGate(ctx, tx, battle)
 	if err != nil {
+		return TrialSettleResult{}, err
+	}
+	if err := r.lockTrialLaunch(ctx, tx, battle, original, false, in.NowMs); err != nil {
 		return TrialSettleResult{}, err
 	}
 
@@ -1441,6 +1478,9 @@ func (r *ActivityRepo) settleTrialBattle(ctx context.Context, tx *sql.Tx, in Tri
 		if err := insertOwedRewards(ctx, tx, battle, res.Owed, in.Reward.Payload, in.NowMs); err != nil {
 			return TrialSettleResult{}, err
 		}
+	}
+	if err := r.lockTrialLaunch(ctx, tx, battle, original, true, in.NowMs); err != nil {
+		return TrialSettleResult{}, err
 	}
 	return res, nil
 }
@@ -1652,12 +1692,27 @@ func (r *ActivityRepo) MarkTrialBattlePoison(ctx context.Context, battle TrialBa
 	if err := validateTrialNow(nowMs); err != nil {
 		return 0, err
 	}
+	original, identityErr := r.trialLaunchOriginal(ctx, &battle)
+	if identityErr != nil {
+		return 0, identityErr
+	}
 	createdMs := finishedAtMs
 	if createdMs == 0 {
 		createdMs = nowMs
 	}
-	err := r.guilds.inTx(ctx, opTrialMark, func(ctx context.Context, tx *sql.Tx) error {
+	guildGone := false
+	err := r.guilds.inTx(withRoleTargets(ctx, launchPlayers(original)...), opTrialMark, func(ctx context.Context, tx *sql.Tx) error {
 		if _, _, err := lockTrialGuild(ctx, tx, battle.GuildID); err != nil {
+			if errors.Is(err, ErrGuildGone) && original != nil {
+				if finishedAtMs == 0 {
+					return ErrWriteConflict
+				}
+				if err := r.lockTrialLaunch(ctx, tx, battle, original, true, nowMs); err != nil {
+					return err
+				}
+				guildGone = true
+				return nil
+			}
 			return err
 		}
 		gate, err := readTrialGate(ctx, tx, battle)
@@ -1667,10 +1722,15 @@ func (r *ActivityRepo) MarkTrialBattlePoison(ctx context.Context, battle TrialBa
 		if !gate.exists && !battle.complete() {
 			return errTrialRowMissing
 		}
-		return writeTrialBattleState(ctx, tx, battle, gate, pb.GuildTrialBattleState_GUILD_TRIAL_BATTLE_STATE_SETTLED,
-			pb.GuildTrialSettleResult_GUILD_TRIAL_SETTLE_RESULT_POISON, 0, createdMs, nowMs)
+		if err := writeTrialBattleState(ctx, tx, battle, gate, pb.GuildTrialBattleState_GUILD_TRIAL_BATTLE_STATE_SETTLED,
+			pb.GuildTrialSettleResult_GUILD_TRIAL_SETTLE_RESULT_POISON, 0, createdMs, nowMs); err != nil {
+			return err
+		}
+		return r.lockTrialLaunch(ctx, tx, battle, original, true, nowMs)
 	})
 	switch {
+	case err == nil && guildGone:
+		return TrialMarkGuildGone, nil
 	case err == nil:
 		return TrialMarkDone, nil
 	case errors.Is(err, errTrialAlreadySettled):
@@ -1787,7 +1847,7 @@ func (r *ActivityRepo) ConvertOwedReward(ctx context.Context, owed OwedReward, o
 	}
 	const stream = assetpb.AssetOpStream_ASSET_OP_STREAM_GUILD_CREDIT
 
-	err := r.guilds.inTx(ctx, opTrialOwed, func(ctx context.Context, tx *sql.Tx) error {
+	err := r.guilds.inTx(withRoleTargets(ctx, owed.PlayerID), opTrialOwed, func(ctx context.Context, tx *sql.Tx) error {
 		alloc, err := assetop.AllocateSeq(ctx, tx, r.seq, owed.PlayerID, stream, assetop.DefaultLimits, nowMs)
 		if errors.Is(err, assetop.ErrTooManyPending) {
 			return errOwedWindowFull
@@ -1929,7 +1989,7 @@ func (r *ActivityRepo) TrialBattle(ctx context.Context, battleID uint64) (TrialB
 	)
 	err := r.db.QueryRowContext(ctx, sqlSelectTrialBattle, battleID).Scan(
 		&row.BattleID, &row.GuildID, &row.ActivityID, &row.PeriodKey, &row.GuildPeriodKey, &row.InitiatorPlayerID,
-		&state, &result, &row.RewardedCount, &row.CreatedMs, &row.SettledMs)
+		&state, &result, &row.RewardedCount, &row.CreatedMs, &row.SettledMs, &row.LaunchRequestID)
 	if errors.Is(err, sql.ErrNoRows) {
 		return TrialBattleRow{}, false, nil
 	}

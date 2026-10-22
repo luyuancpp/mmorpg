@@ -201,3 +201,15 @@ Mall:
   URL: ""
   GatewaySecretEnv: COMMERCE_GATEWAY_SECRET
   DeliverySecretEnv: COMMERCE_DELIVERY_SECRET
+
+# 全局角色目录与交易表必须位于同一TiDB集群；不是玩家分片库。
+AccountRoleSchema: testdb
+Rmb:
+  Enabled: false
+  GlobalLoginSessions: false
+  LoginRedis:
+    Host: ""
+    DB: 0
+    PoolSize: 8
+  # 默认仅金币0；钻石1需显式开启；绑定币2永远禁售。
+  CurrencyTypes: [0]

@@ -39,6 +39,96 @@ class DataService final {
   class StubInterface {
    public:
     virtual ~StubInterface() {}
+    // 全球账号角色目录；只接受已签名的 login 调用，不使用 Redis 归属降级。
+    virtual ::grpc::Status ReadAccountDirectory(::grpc::ClientContext* context, const ::data_service::ReadAccountDirectoryRequest& request, ::data_service::AccountDirectoryResponse* response) = 0;
+    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::data_service::AccountDirectoryResponse>> AsyncReadAccountDirectory(::grpc::ClientContext* context, const ::data_service::ReadAccountDirectoryRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::data_service::AccountDirectoryResponse>>(AsyncReadAccountDirectoryRaw(context, request, cq));
+    }
+    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::data_service::AccountDirectoryResponse>> PrepareAsyncReadAccountDirectory(::grpc::ClientContext* context, const ::data_service::ReadAccountDirectoryRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::data_service::AccountDirectoryResponse>>(PrepareAsyncReadAccountDirectoryRaw(context, request, cq));
+    }
+    virtual ::grpc::Status CreateAccountRole(::grpc::ClientContext* context, const ::data_service::CreateAccountRoleRequest& request, ::data_service::AccountDirectoryResponse* response) = 0;
+    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::data_service::AccountDirectoryResponse>> AsyncCreateAccountRole(::grpc::ClientContext* context, const ::data_service::CreateAccountRoleRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::data_service::AccountDirectoryResponse>>(AsyncCreateAccountRoleRaw(context, request, cq));
+    }
+    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::data_service::AccountDirectoryResponse>> PrepareAsyncCreateAccountRole(::grpc::ClientContext* context, const ::data_service::CreateAccountRoleRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::data_service::AccountDirectoryResponse>>(PrepareAsyncCreateAccountRoleRaw(context, request, cq));
+    }
+    virtual ::grpc::Status LookupAccountRole(::grpc::ClientContext* context, const ::data_service::LookupAccountRoleRequest& request, ::data_service::AccountRoleOwnership* response) = 0;
+    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::data_service::AccountRoleOwnership>> AsyncLookupAccountRole(::grpc::ClientContext* context, const ::data_service::LookupAccountRoleRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::data_service::AccountRoleOwnership>>(AsyncLookupAccountRoleRaw(context, request, cq));
+    }
+    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::data_service::AccountRoleOwnership>> PrepareAsyncLookupAccountRole(::grpc::ClientContext* context, const ::data_service::LookupAccountRoleRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::data_service::AccountRoleOwnership>>(PrepareAsyncLookupAccountRoleRaw(context, request, cq));
+    }
+    virtual ::grpc::Status RepairAccountRole(::grpc::ClientContext* context, const ::data_service::RepairAccountRoleRequest& request, ::data_service::AccountDirectoryResponse* response) = 0;
+    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::data_service::AccountDirectoryResponse>> AsyncRepairAccountRole(::grpc::ClientContext* context, const ::data_service::RepairAccountRoleRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::data_service::AccountDirectoryResponse>>(AsyncRepairAccountRoleRaw(context, request, cq));
+    }
+    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::data_service::AccountDirectoryResponse>> PrepareAsyncRepairAccountRole(::grpc::ClientContext* context, const ::data_service::RepairAccountRoleRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::data_service::AccountDirectoryResponse>>(PrepareAsyncRepairAccountRoleRaw(context, request, cq));
+    }
+    virtual ::grpc::Status RemoveAccountRoles(::grpc::ClientContext* context, const ::data_service::RemoveAccountRolesRequest& request, ::google::protobuf::Empty* response) = 0;
+    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::google::protobuf::Empty>> AsyncRemoveAccountRoles(::grpc::ClientContext* context, const ::data_service::RemoveAccountRolesRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::google::protobuf::Empty>>(AsyncRemoveAccountRolesRaw(context, request, cq));
+    }
+    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::google::protobuf::Empty>> PrepareAsyncRemoveAccountRoles(::grpc::ClientContext* context, const ::data_service::RemoveAccountRolesRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::google::protobuf::Empty>>(PrepareAsyncRemoveAccountRolesRaw(context, request, cq));
+    }
+    // 角色寄售控制仅允许独立 trade 证明；Begin 只阻新入场，不等于在线实体已冻结。
+    virtual ::grpc::Status BeginAccountRoleTrade(::grpc::ClientContext* context, const ::data_service::BeginAccountRoleTradeRequest& request, ::data_service::AccountRoleTradeReceipt* response) = 0;
+    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::data_service::AccountRoleTradeReceipt>> AsyncBeginAccountRoleTrade(::grpc::ClientContext* context, const ::data_service::BeginAccountRoleTradeRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::data_service::AccountRoleTradeReceipt>>(AsyncBeginAccountRoleTradeRaw(context, request, cq));
+    }
+    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::data_service::AccountRoleTradeReceipt>> PrepareAsyncBeginAccountRoleTrade(::grpc::ClientContext* context, const ::data_service::BeginAccountRoleTradeRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::data_service::AccountRoleTradeReceipt>>(PrepareAsyncBeginAccountRoleTradeRaw(context, request, cq));
+    }
+    // 请求不接受 caller proof。只有装配的服务端 SQL 验证器能确认 FROZEN；未装配时拒绝。
+    virtual ::grpc::Status ConfirmAccountRoleTradeFreeze(::grpc::ClientContext* context, const ::data_service::ConfirmAccountRoleTradeFreezeRequest& request, ::data_service::AccountRoleTradeReceipt* response) = 0;
+    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::data_service::AccountRoleTradeReceipt>> AsyncConfirmAccountRoleTradeFreeze(::grpc::ClientContext* context, const ::data_service::ConfirmAccountRoleTradeFreezeRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::data_service::AccountRoleTradeReceipt>>(AsyncConfirmAccountRoleTradeFreezeRaw(context, request, cq));
+    }
+    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::data_service::AccountRoleTradeReceipt>> PrepareAsyncConfirmAccountRoleTradeFreeze(::grpc::ClientContext* context, const ::data_service::ConfirmAccountRoleTradeFreezeRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::data_service::AccountRoleTradeReceipt>>(PrepareAsyncConfirmAccountRoleTradeFreezeRaw(context, request, cq));
+    }
+    virtual ::grpc::Status CancelAccountRoleTrade(::grpc::ClientContext* context, const ::data_service::CancelAccountRoleTradeRequest& request, ::data_service::AccountRoleTradeReceipt* response) = 0;
+    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::data_service::AccountRoleTradeReceipt>> AsyncCancelAccountRoleTrade(::grpc::ClientContext* context, const ::data_service::CancelAccountRoleTradeRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::data_service::AccountRoleTradeReceipt>>(AsyncCancelAccountRoleTradeRaw(context, request, cq));
+    }
+    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::data_service::AccountRoleTradeReceipt>> PrepareAsyncCancelAccountRoleTrade(::grpc::ClientContext* context, const ::data_service::CancelAccountRoleTradeRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::data_service::AccountRoleTradeReceipt>>(PrepareAsyncCancelAccountRoleTradeRaw(context, request, cq));
+    }
+    virtual ::grpc::Status TransferAccountRole(::grpc::ClientContext* context, const ::data_service::TransferAccountRoleRequest& request, ::data_service::AccountRoleTransferReceipt* response) = 0;
+    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::data_service::AccountRoleTransferReceipt>> AsyncTransferAccountRole(::grpc::ClientContext* context, const ::data_service::TransferAccountRoleRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::data_service::AccountRoleTransferReceipt>>(AsyncTransferAccountRoleRaw(context, request, cq));
+    }
+    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::data_service::AccountRoleTransferReceipt>> PrepareAsyncTransferAccountRole(::grpc::ClientContext* context, const ::data_service::TransferAccountRoleRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::data_service::AccountRoleTransferReceipt>>(PrepareAsyncTransferAccountRoleRaw(context, request, cq));
+    }
+    // scene 专用强鉴权；SQL 未登记前禁止实体复用、异步加载完成和激活。
+    virtual ::grpc::Status RegisterRoleAdmission(::grpc::ClientContext* context, const ::data_service::RegisterRoleAdmissionRequest& request, ::data_service::RegisterRoleAdmissionResponse* response) = 0;
+    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::data_service::RegisterRoleAdmissionResponse>> AsyncRegisterRoleAdmission(::grpc::ClientContext* context, const ::data_service::RegisterRoleAdmissionRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::data_service::RegisterRoleAdmissionResponse>>(AsyncRegisterRoleAdmissionRaw(context, request, cq));
+    }
+    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::data_service::RegisterRoleAdmissionResponse>> PrepareAsyncRegisterRoleAdmission(::grpc::ClientContext* context, const ::data_service::RegisterRoleAdmissionRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::data_service::RegisterRoleAdmissionResponse>>(PrepareAsyncRegisterRoleAdmissionRaw(context, request, cq));
+    }
+    // 只在本实例 <= through 的全部实体与迟到回调都已结束后关闭；无 TTL 自动关闭。
+    virtual ::grpc::Status CloseRoleAdmissions(::grpc::ClientContext* context, const ::data_service::CloseRoleAdmissionsRequest& request, ::data_service::CloseRoleAdmissionsResponse* response) = 0;
+    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::data_service::CloseRoleAdmissionsResponse>> AsyncCloseRoleAdmissions(::grpc::ClientContext* context, const ::data_service::CloseRoleAdmissionsRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::data_service::CloseRoleAdmissionsResponse>>(AsyncCloseRoleAdmissionsRaw(context, request, cq));
+    }
+    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::data_service::CloseRoleAdmissionsResponse>> PrepareAsyncCloseRoleAdmissions(::grpc::ClientContext* context, const ::data_service::CloseRoleAdmissionsRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::data_service::CloseRoleAdmissionsResponse>>(PrepareAsyncCloseRoleAdmissionsRaw(context, request, cq));
+    }
+    // 原 listing 的本地墓碑与排空 ACK；不是 caller 自报的冻结完成证明。
+    virtual ::grpc::Status AckRoleTradeDrain(::grpc::ClientContext* context, const ::data_service::AckRoleTradeDrainRequest& request, ::google::protobuf::Empty* response) = 0;
+    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::google::protobuf::Empty>> AsyncAckRoleTradeDrain(::grpc::ClientContext* context, const ::data_service::AckRoleTradeDrainRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::google::protobuf::Empty>>(AsyncAckRoleTradeDrainRaw(context, request, cq));
+    }
+    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::google::protobuf::Empty>> PrepareAsyncAckRoleTradeDrain(::grpc::ClientContext* context, const ::data_service::AckRoleTradeDrainRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::google::protobuf::Empty>>(PrepareAsyncAckRoleTradeDrainRaw(context, request, cq));
+    }
     // ── Player lifecycle data ─────────────────────────────────────
     virtual ::grpc::Status LoadPlayerData(::grpc::ClientContext* context, const ::data_service::LoadPlayerDataRequest& request, ::data_service::LoadPlayerDataResponse* response) = 0;
     std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::data_service::LoadPlayerDataResponse>> AsyncLoadPlayerData(::grpc::ClientContext* context, const ::data_service::LoadPlayerDataRequest& request, ::grpc::CompletionQueue* cq) {
@@ -233,6 +323,36 @@ class DataService final {
     class async_interface {
      public:
       virtual ~async_interface() {}
+      // 全球账号角色目录；只接受已签名的 login 调用，不使用 Redis 归属降级。
+      virtual void ReadAccountDirectory(::grpc::ClientContext* context, const ::data_service::ReadAccountDirectoryRequest* request, ::data_service::AccountDirectoryResponse* response, std::function<void(::grpc::Status)>) = 0;
+      virtual void ReadAccountDirectory(::grpc::ClientContext* context, const ::data_service::ReadAccountDirectoryRequest* request, ::data_service::AccountDirectoryResponse* response, ::grpc::ClientUnaryReactor* reactor) = 0;
+      virtual void CreateAccountRole(::grpc::ClientContext* context, const ::data_service::CreateAccountRoleRequest* request, ::data_service::AccountDirectoryResponse* response, std::function<void(::grpc::Status)>) = 0;
+      virtual void CreateAccountRole(::grpc::ClientContext* context, const ::data_service::CreateAccountRoleRequest* request, ::data_service::AccountDirectoryResponse* response, ::grpc::ClientUnaryReactor* reactor) = 0;
+      virtual void LookupAccountRole(::grpc::ClientContext* context, const ::data_service::LookupAccountRoleRequest* request, ::data_service::AccountRoleOwnership* response, std::function<void(::grpc::Status)>) = 0;
+      virtual void LookupAccountRole(::grpc::ClientContext* context, const ::data_service::LookupAccountRoleRequest* request, ::data_service::AccountRoleOwnership* response, ::grpc::ClientUnaryReactor* reactor) = 0;
+      virtual void RepairAccountRole(::grpc::ClientContext* context, const ::data_service::RepairAccountRoleRequest* request, ::data_service::AccountDirectoryResponse* response, std::function<void(::grpc::Status)>) = 0;
+      virtual void RepairAccountRole(::grpc::ClientContext* context, const ::data_service::RepairAccountRoleRequest* request, ::data_service::AccountDirectoryResponse* response, ::grpc::ClientUnaryReactor* reactor) = 0;
+      virtual void RemoveAccountRoles(::grpc::ClientContext* context, const ::data_service::RemoveAccountRolesRequest* request, ::google::protobuf::Empty* response, std::function<void(::grpc::Status)>) = 0;
+      virtual void RemoveAccountRoles(::grpc::ClientContext* context, const ::data_service::RemoveAccountRolesRequest* request, ::google::protobuf::Empty* response, ::grpc::ClientUnaryReactor* reactor) = 0;
+      // 角色寄售控制仅允许独立 trade 证明；Begin 只阻新入场，不等于在线实体已冻结。
+      virtual void BeginAccountRoleTrade(::grpc::ClientContext* context, const ::data_service::BeginAccountRoleTradeRequest* request, ::data_service::AccountRoleTradeReceipt* response, std::function<void(::grpc::Status)>) = 0;
+      virtual void BeginAccountRoleTrade(::grpc::ClientContext* context, const ::data_service::BeginAccountRoleTradeRequest* request, ::data_service::AccountRoleTradeReceipt* response, ::grpc::ClientUnaryReactor* reactor) = 0;
+      // 请求不接受 caller proof。只有装配的服务端 SQL 验证器能确认 FROZEN；未装配时拒绝。
+      virtual void ConfirmAccountRoleTradeFreeze(::grpc::ClientContext* context, const ::data_service::ConfirmAccountRoleTradeFreezeRequest* request, ::data_service::AccountRoleTradeReceipt* response, std::function<void(::grpc::Status)>) = 0;
+      virtual void ConfirmAccountRoleTradeFreeze(::grpc::ClientContext* context, const ::data_service::ConfirmAccountRoleTradeFreezeRequest* request, ::data_service::AccountRoleTradeReceipt* response, ::grpc::ClientUnaryReactor* reactor) = 0;
+      virtual void CancelAccountRoleTrade(::grpc::ClientContext* context, const ::data_service::CancelAccountRoleTradeRequest* request, ::data_service::AccountRoleTradeReceipt* response, std::function<void(::grpc::Status)>) = 0;
+      virtual void CancelAccountRoleTrade(::grpc::ClientContext* context, const ::data_service::CancelAccountRoleTradeRequest* request, ::data_service::AccountRoleTradeReceipt* response, ::grpc::ClientUnaryReactor* reactor) = 0;
+      virtual void TransferAccountRole(::grpc::ClientContext* context, const ::data_service::TransferAccountRoleRequest* request, ::data_service::AccountRoleTransferReceipt* response, std::function<void(::grpc::Status)>) = 0;
+      virtual void TransferAccountRole(::grpc::ClientContext* context, const ::data_service::TransferAccountRoleRequest* request, ::data_service::AccountRoleTransferReceipt* response, ::grpc::ClientUnaryReactor* reactor) = 0;
+      // scene 专用强鉴权；SQL 未登记前禁止实体复用、异步加载完成和激活。
+      virtual void RegisterRoleAdmission(::grpc::ClientContext* context, const ::data_service::RegisterRoleAdmissionRequest* request, ::data_service::RegisterRoleAdmissionResponse* response, std::function<void(::grpc::Status)>) = 0;
+      virtual void RegisterRoleAdmission(::grpc::ClientContext* context, const ::data_service::RegisterRoleAdmissionRequest* request, ::data_service::RegisterRoleAdmissionResponse* response, ::grpc::ClientUnaryReactor* reactor) = 0;
+      // 只在本实例 <= through 的全部实体与迟到回调都已结束后关闭；无 TTL 自动关闭。
+      virtual void CloseRoleAdmissions(::grpc::ClientContext* context, const ::data_service::CloseRoleAdmissionsRequest* request, ::data_service::CloseRoleAdmissionsResponse* response, std::function<void(::grpc::Status)>) = 0;
+      virtual void CloseRoleAdmissions(::grpc::ClientContext* context, const ::data_service::CloseRoleAdmissionsRequest* request, ::data_service::CloseRoleAdmissionsResponse* response, ::grpc::ClientUnaryReactor* reactor) = 0;
+      // 原 listing 的本地墓碑与排空 ACK；不是 caller 自报的冻结完成证明。
+      virtual void AckRoleTradeDrain(::grpc::ClientContext* context, const ::data_service::AckRoleTradeDrainRequest* request, ::google::protobuf::Empty* response, std::function<void(::grpc::Status)>) = 0;
+      virtual void AckRoleTradeDrain(::grpc::ClientContext* context, const ::data_service::AckRoleTradeDrainRequest* request, ::google::protobuf::Empty* response, ::grpc::ClientUnaryReactor* reactor) = 0;
       // ── Player lifecycle data ─────────────────────────────────────
       virtual void LoadPlayerData(::grpc::ClientContext* context, const ::data_service::LoadPlayerDataRequest* request, ::data_service::LoadPlayerDataResponse* response, std::function<void(::grpc::Status)>) = 0;
       virtual void LoadPlayerData(::grpc::ClientContext* context, const ::data_service::LoadPlayerDataRequest* request, ::data_service::LoadPlayerDataResponse* response, ::grpc::ClientUnaryReactor* reactor) = 0;
@@ -309,6 +429,30 @@ class DataService final {
     virtual class async_interface* async() { return nullptr; }
     class async_interface* experimental_async() { return async(); }
    private:
+    virtual ::grpc::ClientAsyncResponseReaderInterface< ::data_service::AccountDirectoryResponse>* AsyncReadAccountDirectoryRaw(::grpc::ClientContext* context, const ::data_service::ReadAccountDirectoryRequest& request, ::grpc::CompletionQueue* cq) = 0;
+    virtual ::grpc::ClientAsyncResponseReaderInterface< ::data_service::AccountDirectoryResponse>* PrepareAsyncReadAccountDirectoryRaw(::grpc::ClientContext* context, const ::data_service::ReadAccountDirectoryRequest& request, ::grpc::CompletionQueue* cq) = 0;
+    virtual ::grpc::ClientAsyncResponseReaderInterface< ::data_service::AccountDirectoryResponse>* AsyncCreateAccountRoleRaw(::grpc::ClientContext* context, const ::data_service::CreateAccountRoleRequest& request, ::grpc::CompletionQueue* cq) = 0;
+    virtual ::grpc::ClientAsyncResponseReaderInterface< ::data_service::AccountDirectoryResponse>* PrepareAsyncCreateAccountRoleRaw(::grpc::ClientContext* context, const ::data_service::CreateAccountRoleRequest& request, ::grpc::CompletionQueue* cq) = 0;
+    virtual ::grpc::ClientAsyncResponseReaderInterface< ::data_service::AccountRoleOwnership>* AsyncLookupAccountRoleRaw(::grpc::ClientContext* context, const ::data_service::LookupAccountRoleRequest& request, ::grpc::CompletionQueue* cq) = 0;
+    virtual ::grpc::ClientAsyncResponseReaderInterface< ::data_service::AccountRoleOwnership>* PrepareAsyncLookupAccountRoleRaw(::grpc::ClientContext* context, const ::data_service::LookupAccountRoleRequest& request, ::grpc::CompletionQueue* cq) = 0;
+    virtual ::grpc::ClientAsyncResponseReaderInterface< ::data_service::AccountDirectoryResponse>* AsyncRepairAccountRoleRaw(::grpc::ClientContext* context, const ::data_service::RepairAccountRoleRequest& request, ::grpc::CompletionQueue* cq) = 0;
+    virtual ::grpc::ClientAsyncResponseReaderInterface< ::data_service::AccountDirectoryResponse>* PrepareAsyncRepairAccountRoleRaw(::grpc::ClientContext* context, const ::data_service::RepairAccountRoleRequest& request, ::grpc::CompletionQueue* cq) = 0;
+    virtual ::grpc::ClientAsyncResponseReaderInterface< ::google::protobuf::Empty>* AsyncRemoveAccountRolesRaw(::grpc::ClientContext* context, const ::data_service::RemoveAccountRolesRequest& request, ::grpc::CompletionQueue* cq) = 0;
+    virtual ::grpc::ClientAsyncResponseReaderInterface< ::google::protobuf::Empty>* PrepareAsyncRemoveAccountRolesRaw(::grpc::ClientContext* context, const ::data_service::RemoveAccountRolesRequest& request, ::grpc::CompletionQueue* cq) = 0;
+    virtual ::grpc::ClientAsyncResponseReaderInterface< ::data_service::AccountRoleTradeReceipt>* AsyncBeginAccountRoleTradeRaw(::grpc::ClientContext* context, const ::data_service::BeginAccountRoleTradeRequest& request, ::grpc::CompletionQueue* cq) = 0;
+    virtual ::grpc::ClientAsyncResponseReaderInterface< ::data_service::AccountRoleTradeReceipt>* PrepareAsyncBeginAccountRoleTradeRaw(::grpc::ClientContext* context, const ::data_service::BeginAccountRoleTradeRequest& request, ::grpc::CompletionQueue* cq) = 0;
+    virtual ::grpc::ClientAsyncResponseReaderInterface< ::data_service::AccountRoleTradeReceipt>* AsyncConfirmAccountRoleTradeFreezeRaw(::grpc::ClientContext* context, const ::data_service::ConfirmAccountRoleTradeFreezeRequest& request, ::grpc::CompletionQueue* cq) = 0;
+    virtual ::grpc::ClientAsyncResponseReaderInterface< ::data_service::AccountRoleTradeReceipt>* PrepareAsyncConfirmAccountRoleTradeFreezeRaw(::grpc::ClientContext* context, const ::data_service::ConfirmAccountRoleTradeFreezeRequest& request, ::grpc::CompletionQueue* cq) = 0;
+    virtual ::grpc::ClientAsyncResponseReaderInterface< ::data_service::AccountRoleTradeReceipt>* AsyncCancelAccountRoleTradeRaw(::grpc::ClientContext* context, const ::data_service::CancelAccountRoleTradeRequest& request, ::grpc::CompletionQueue* cq) = 0;
+    virtual ::grpc::ClientAsyncResponseReaderInterface< ::data_service::AccountRoleTradeReceipt>* PrepareAsyncCancelAccountRoleTradeRaw(::grpc::ClientContext* context, const ::data_service::CancelAccountRoleTradeRequest& request, ::grpc::CompletionQueue* cq) = 0;
+    virtual ::grpc::ClientAsyncResponseReaderInterface< ::data_service::AccountRoleTransferReceipt>* AsyncTransferAccountRoleRaw(::grpc::ClientContext* context, const ::data_service::TransferAccountRoleRequest& request, ::grpc::CompletionQueue* cq) = 0;
+    virtual ::grpc::ClientAsyncResponseReaderInterface< ::data_service::AccountRoleTransferReceipt>* PrepareAsyncTransferAccountRoleRaw(::grpc::ClientContext* context, const ::data_service::TransferAccountRoleRequest& request, ::grpc::CompletionQueue* cq) = 0;
+    virtual ::grpc::ClientAsyncResponseReaderInterface< ::data_service::RegisterRoleAdmissionResponse>* AsyncRegisterRoleAdmissionRaw(::grpc::ClientContext* context, const ::data_service::RegisterRoleAdmissionRequest& request, ::grpc::CompletionQueue* cq) = 0;
+    virtual ::grpc::ClientAsyncResponseReaderInterface< ::data_service::RegisterRoleAdmissionResponse>* PrepareAsyncRegisterRoleAdmissionRaw(::grpc::ClientContext* context, const ::data_service::RegisterRoleAdmissionRequest& request, ::grpc::CompletionQueue* cq) = 0;
+    virtual ::grpc::ClientAsyncResponseReaderInterface< ::data_service::CloseRoleAdmissionsResponse>* AsyncCloseRoleAdmissionsRaw(::grpc::ClientContext* context, const ::data_service::CloseRoleAdmissionsRequest& request, ::grpc::CompletionQueue* cq) = 0;
+    virtual ::grpc::ClientAsyncResponseReaderInterface< ::data_service::CloseRoleAdmissionsResponse>* PrepareAsyncCloseRoleAdmissionsRaw(::grpc::ClientContext* context, const ::data_service::CloseRoleAdmissionsRequest& request, ::grpc::CompletionQueue* cq) = 0;
+    virtual ::grpc::ClientAsyncResponseReaderInterface< ::google::protobuf::Empty>* AsyncAckRoleTradeDrainRaw(::grpc::ClientContext* context, const ::data_service::AckRoleTradeDrainRequest& request, ::grpc::CompletionQueue* cq) = 0;
+    virtual ::grpc::ClientAsyncResponseReaderInterface< ::google::protobuf::Empty>* PrepareAsyncAckRoleTradeDrainRaw(::grpc::ClientContext* context, const ::data_service::AckRoleTradeDrainRequest& request, ::grpc::CompletionQueue* cq) = 0;
     virtual ::grpc::ClientAsyncResponseReaderInterface< ::data_service::LoadPlayerDataResponse>* AsyncLoadPlayerDataRaw(::grpc::ClientContext* context, const ::data_service::LoadPlayerDataRequest& request, ::grpc::CompletionQueue* cq) = 0;
     virtual ::grpc::ClientAsyncResponseReaderInterface< ::data_service::LoadPlayerDataResponse>* PrepareAsyncLoadPlayerDataRaw(::grpc::ClientContext* context, const ::data_service::LoadPlayerDataRequest& request, ::grpc::CompletionQueue* cq) = 0;
     virtual ::grpc::ClientAsyncResponseReaderInterface< ::data_service::SavePlayerDataResponse>* AsyncSavePlayerDataRaw(::grpc::ClientContext* context, const ::data_service::SavePlayerDataRequest& request, ::grpc::CompletionQueue* cq) = 0;
@@ -361,6 +505,90 @@ class DataService final {
   class Stub final : public StubInterface {
    public:
     Stub(const std::shared_ptr< ::grpc::ChannelInterface>& channel, const ::grpc::StubOptions& options = ::grpc::StubOptions());
+    ::grpc::Status ReadAccountDirectory(::grpc::ClientContext* context, const ::data_service::ReadAccountDirectoryRequest& request, ::data_service::AccountDirectoryResponse* response) override;
+    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::data_service::AccountDirectoryResponse>> AsyncReadAccountDirectory(::grpc::ClientContext* context, const ::data_service::ReadAccountDirectoryRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::data_service::AccountDirectoryResponse>>(AsyncReadAccountDirectoryRaw(context, request, cq));
+    }
+    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::data_service::AccountDirectoryResponse>> PrepareAsyncReadAccountDirectory(::grpc::ClientContext* context, const ::data_service::ReadAccountDirectoryRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::data_service::AccountDirectoryResponse>>(PrepareAsyncReadAccountDirectoryRaw(context, request, cq));
+    }
+    ::grpc::Status CreateAccountRole(::grpc::ClientContext* context, const ::data_service::CreateAccountRoleRequest& request, ::data_service::AccountDirectoryResponse* response) override;
+    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::data_service::AccountDirectoryResponse>> AsyncCreateAccountRole(::grpc::ClientContext* context, const ::data_service::CreateAccountRoleRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::data_service::AccountDirectoryResponse>>(AsyncCreateAccountRoleRaw(context, request, cq));
+    }
+    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::data_service::AccountDirectoryResponse>> PrepareAsyncCreateAccountRole(::grpc::ClientContext* context, const ::data_service::CreateAccountRoleRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::data_service::AccountDirectoryResponse>>(PrepareAsyncCreateAccountRoleRaw(context, request, cq));
+    }
+    ::grpc::Status LookupAccountRole(::grpc::ClientContext* context, const ::data_service::LookupAccountRoleRequest& request, ::data_service::AccountRoleOwnership* response) override;
+    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::data_service::AccountRoleOwnership>> AsyncLookupAccountRole(::grpc::ClientContext* context, const ::data_service::LookupAccountRoleRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::data_service::AccountRoleOwnership>>(AsyncLookupAccountRoleRaw(context, request, cq));
+    }
+    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::data_service::AccountRoleOwnership>> PrepareAsyncLookupAccountRole(::grpc::ClientContext* context, const ::data_service::LookupAccountRoleRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::data_service::AccountRoleOwnership>>(PrepareAsyncLookupAccountRoleRaw(context, request, cq));
+    }
+    ::grpc::Status RepairAccountRole(::grpc::ClientContext* context, const ::data_service::RepairAccountRoleRequest& request, ::data_service::AccountDirectoryResponse* response) override;
+    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::data_service::AccountDirectoryResponse>> AsyncRepairAccountRole(::grpc::ClientContext* context, const ::data_service::RepairAccountRoleRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::data_service::AccountDirectoryResponse>>(AsyncRepairAccountRoleRaw(context, request, cq));
+    }
+    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::data_service::AccountDirectoryResponse>> PrepareAsyncRepairAccountRole(::grpc::ClientContext* context, const ::data_service::RepairAccountRoleRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::data_service::AccountDirectoryResponse>>(PrepareAsyncRepairAccountRoleRaw(context, request, cq));
+    }
+    ::grpc::Status RemoveAccountRoles(::grpc::ClientContext* context, const ::data_service::RemoveAccountRolesRequest& request, ::google::protobuf::Empty* response) override;
+    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::google::protobuf::Empty>> AsyncRemoveAccountRoles(::grpc::ClientContext* context, const ::data_service::RemoveAccountRolesRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::google::protobuf::Empty>>(AsyncRemoveAccountRolesRaw(context, request, cq));
+    }
+    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::google::protobuf::Empty>> PrepareAsyncRemoveAccountRoles(::grpc::ClientContext* context, const ::data_service::RemoveAccountRolesRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::google::protobuf::Empty>>(PrepareAsyncRemoveAccountRolesRaw(context, request, cq));
+    }
+    ::grpc::Status BeginAccountRoleTrade(::grpc::ClientContext* context, const ::data_service::BeginAccountRoleTradeRequest& request, ::data_service::AccountRoleTradeReceipt* response) override;
+    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::data_service::AccountRoleTradeReceipt>> AsyncBeginAccountRoleTrade(::grpc::ClientContext* context, const ::data_service::BeginAccountRoleTradeRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::data_service::AccountRoleTradeReceipt>>(AsyncBeginAccountRoleTradeRaw(context, request, cq));
+    }
+    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::data_service::AccountRoleTradeReceipt>> PrepareAsyncBeginAccountRoleTrade(::grpc::ClientContext* context, const ::data_service::BeginAccountRoleTradeRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::data_service::AccountRoleTradeReceipt>>(PrepareAsyncBeginAccountRoleTradeRaw(context, request, cq));
+    }
+    ::grpc::Status ConfirmAccountRoleTradeFreeze(::grpc::ClientContext* context, const ::data_service::ConfirmAccountRoleTradeFreezeRequest& request, ::data_service::AccountRoleTradeReceipt* response) override;
+    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::data_service::AccountRoleTradeReceipt>> AsyncConfirmAccountRoleTradeFreeze(::grpc::ClientContext* context, const ::data_service::ConfirmAccountRoleTradeFreezeRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::data_service::AccountRoleTradeReceipt>>(AsyncConfirmAccountRoleTradeFreezeRaw(context, request, cq));
+    }
+    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::data_service::AccountRoleTradeReceipt>> PrepareAsyncConfirmAccountRoleTradeFreeze(::grpc::ClientContext* context, const ::data_service::ConfirmAccountRoleTradeFreezeRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::data_service::AccountRoleTradeReceipt>>(PrepareAsyncConfirmAccountRoleTradeFreezeRaw(context, request, cq));
+    }
+    ::grpc::Status CancelAccountRoleTrade(::grpc::ClientContext* context, const ::data_service::CancelAccountRoleTradeRequest& request, ::data_service::AccountRoleTradeReceipt* response) override;
+    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::data_service::AccountRoleTradeReceipt>> AsyncCancelAccountRoleTrade(::grpc::ClientContext* context, const ::data_service::CancelAccountRoleTradeRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::data_service::AccountRoleTradeReceipt>>(AsyncCancelAccountRoleTradeRaw(context, request, cq));
+    }
+    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::data_service::AccountRoleTradeReceipt>> PrepareAsyncCancelAccountRoleTrade(::grpc::ClientContext* context, const ::data_service::CancelAccountRoleTradeRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::data_service::AccountRoleTradeReceipt>>(PrepareAsyncCancelAccountRoleTradeRaw(context, request, cq));
+    }
+    ::grpc::Status TransferAccountRole(::grpc::ClientContext* context, const ::data_service::TransferAccountRoleRequest& request, ::data_service::AccountRoleTransferReceipt* response) override;
+    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::data_service::AccountRoleTransferReceipt>> AsyncTransferAccountRole(::grpc::ClientContext* context, const ::data_service::TransferAccountRoleRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::data_service::AccountRoleTransferReceipt>>(AsyncTransferAccountRoleRaw(context, request, cq));
+    }
+    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::data_service::AccountRoleTransferReceipt>> PrepareAsyncTransferAccountRole(::grpc::ClientContext* context, const ::data_service::TransferAccountRoleRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::data_service::AccountRoleTransferReceipt>>(PrepareAsyncTransferAccountRoleRaw(context, request, cq));
+    }
+    ::grpc::Status RegisterRoleAdmission(::grpc::ClientContext* context, const ::data_service::RegisterRoleAdmissionRequest& request, ::data_service::RegisterRoleAdmissionResponse* response) override;
+    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::data_service::RegisterRoleAdmissionResponse>> AsyncRegisterRoleAdmission(::grpc::ClientContext* context, const ::data_service::RegisterRoleAdmissionRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::data_service::RegisterRoleAdmissionResponse>>(AsyncRegisterRoleAdmissionRaw(context, request, cq));
+    }
+    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::data_service::RegisterRoleAdmissionResponse>> PrepareAsyncRegisterRoleAdmission(::grpc::ClientContext* context, const ::data_service::RegisterRoleAdmissionRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::data_service::RegisterRoleAdmissionResponse>>(PrepareAsyncRegisterRoleAdmissionRaw(context, request, cq));
+    }
+    ::grpc::Status CloseRoleAdmissions(::grpc::ClientContext* context, const ::data_service::CloseRoleAdmissionsRequest& request, ::data_service::CloseRoleAdmissionsResponse* response) override;
+    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::data_service::CloseRoleAdmissionsResponse>> AsyncCloseRoleAdmissions(::grpc::ClientContext* context, const ::data_service::CloseRoleAdmissionsRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::data_service::CloseRoleAdmissionsResponse>>(AsyncCloseRoleAdmissionsRaw(context, request, cq));
+    }
+    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::data_service::CloseRoleAdmissionsResponse>> PrepareAsyncCloseRoleAdmissions(::grpc::ClientContext* context, const ::data_service::CloseRoleAdmissionsRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::data_service::CloseRoleAdmissionsResponse>>(PrepareAsyncCloseRoleAdmissionsRaw(context, request, cq));
+    }
+    ::grpc::Status AckRoleTradeDrain(::grpc::ClientContext* context, const ::data_service::AckRoleTradeDrainRequest& request, ::google::protobuf::Empty* response) override;
+    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::google::protobuf::Empty>> AsyncAckRoleTradeDrain(::grpc::ClientContext* context, const ::data_service::AckRoleTradeDrainRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::google::protobuf::Empty>>(AsyncAckRoleTradeDrainRaw(context, request, cq));
+    }
+    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::google::protobuf::Empty>> PrepareAsyncAckRoleTradeDrain(::grpc::ClientContext* context, const ::data_service::AckRoleTradeDrainRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::google::protobuf::Empty>>(PrepareAsyncAckRoleTradeDrainRaw(context, request, cq));
+    }
     ::grpc::Status LoadPlayerData(::grpc::ClientContext* context, const ::data_service::LoadPlayerDataRequest& request, ::data_service::LoadPlayerDataResponse* response) override;
     std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::data_service::LoadPlayerDataResponse>> AsyncLoadPlayerData(::grpc::ClientContext* context, const ::data_service::LoadPlayerDataRequest& request, ::grpc::CompletionQueue* cq) {
       return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::data_service::LoadPlayerDataResponse>>(AsyncLoadPlayerDataRaw(context, request, cq));
@@ -532,6 +760,30 @@ class DataService final {
     class async final :
       public StubInterface::async_interface {
      public:
+      void ReadAccountDirectory(::grpc::ClientContext* context, const ::data_service::ReadAccountDirectoryRequest* request, ::data_service::AccountDirectoryResponse* response, std::function<void(::grpc::Status)>) override;
+      void ReadAccountDirectory(::grpc::ClientContext* context, const ::data_service::ReadAccountDirectoryRequest* request, ::data_service::AccountDirectoryResponse* response, ::grpc::ClientUnaryReactor* reactor) override;
+      void CreateAccountRole(::grpc::ClientContext* context, const ::data_service::CreateAccountRoleRequest* request, ::data_service::AccountDirectoryResponse* response, std::function<void(::grpc::Status)>) override;
+      void CreateAccountRole(::grpc::ClientContext* context, const ::data_service::CreateAccountRoleRequest* request, ::data_service::AccountDirectoryResponse* response, ::grpc::ClientUnaryReactor* reactor) override;
+      void LookupAccountRole(::grpc::ClientContext* context, const ::data_service::LookupAccountRoleRequest* request, ::data_service::AccountRoleOwnership* response, std::function<void(::grpc::Status)>) override;
+      void LookupAccountRole(::grpc::ClientContext* context, const ::data_service::LookupAccountRoleRequest* request, ::data_service::AccountRoleOwnership* response, ::grpc::ClientUnaryReactor* reactor) override;
+      void RepairAccountRole(::grpc::ClientContext* context, const ::data_service::RepairAccountRoleRequest* request, ::data_service::AccountDirectoryResponse* response, std::function<void(::grpc::Status)>) override;
+      void RepairAccountRole(::grpc::ClientContext* context, const ::data_service::RepairAccountRoleRequest* request, ::data_service::AccountDirectoryResponse* response, ::grpc::ClientUnaryReactor* reactor) override;
+      void RemoveAccountRoles(::grpc::ClientContext* context, const ::data_service::RemoveAccountRolesRequest* request, ::google::protobuf::Empty* response, std::function<void(::grpc::Status)>) override;
+      void RemoveAccountRoles(::grpc::ClientContext* context, const ::data_service::RemoveAccountRolesRequest* request, ::google::protobuf::Empty* response, ::grpc::ClientUnaryReactor* reactor) override;
+      void BeginAccountRoleTrade(::grpc::ClientContext* context, const ::data_service::BeginAccountRoleTradeRequest* request, ::data_service::AccountRoleTradeReceipt* response, std::function<void(::grpc::Status)>) override;
+      void BeginAccountRoleTrade(::grpc::ClientContext* context, const ::data_service::BeginAccountRoleTradeRequest* request, ::data_service::AccountRoleTradeReceipt* response, ::grpc::ClientUnaryReactor* reactor) override;
+      void ConfirmAccountRoleTradeFreeze(::grpc::ClientContext* context, const ::data_service::ConfirmAccountRoleTradeFreezeRequest* request, ::data_service::AccountRoleTradeReceipt* response, std::function<void(::grpc::Status)>) override;
+      void ConfirmAccountRoleTradeFreeze(::grpc::ClientContext* context, const ::data_service::ConfirmAccountRoleTradeFreezeRequest* request, ::data_service::AccountRoleTradeReceipt* response, ::grpc::ClientUnaryReactor* reactor) override;
+      void CancelAccountRoleTrade(::grpc::ClientContext* context, const ::data_service::CancelAccountRoleTradeRequest* request, ::data_service::AccountRoleTradeReceipt* response, std::function<void(::grpc::Status)>) override;
+      void CancelAccountRoleTrade(::grpc::ClientContext* context, const ::data_service::CancelAccountRoleTradeRequest* request, ::data_service::AccountRoleTradeReceipt* response, ::grpc::ClientUnaryReactor* reactor) override;
+      void TransferAccountRole(::grpc::ClientContext* context, const ::data_service::TransferAccountRoleRequest* request, ::data_service::AccountRoleTransferReceipt* response, std::function<void(::grpc::Status)>) override;
+      void TransferAccountRole(::grpc::ClientContext* context, const ::data_service::TransferAccountRoleRequest* request, ::data_service::AccountRoleTransferReceipt* response, ::grpc::ClientUnaryReactor* reactor) override;
+      void RegisterRoleAdmission(::grpc::ClientContext* context, const ::data_service::RegisterRoleAdmissionRequest* request, ::data_service::RegisterRoleAdmissionResponse* response, std::function<void(::grpc::Status)>) override;
+      void RegisterRoleAdmission(::grpc::ClientContext* context, const ::data_service::RegisterRoleAdmissionRequest* request, ::data_service::RegisterRoleAdmissionResponse* response, ::grpc::ClientUnaryReactor* reactor) override;
+      void CloseRoleAdmissions(::grpc::ClientContext* context, const ::data_service::CloseRoleAdmissionsRequest* request, ::data_service::CloseRoleAdmissionsResponse* response, std::function<void(::grpc::Status)>) override;
+      void CloseRoleAdmissions(::grpc::ClientContext* context, const ::data_service::CloseRoleAdmissionsRequest* request, ::data_service::CloseRoleAdmissionsResponse* response, ::grpc::ClientUnaryReactor* reactor) override;
+      void AckRoleTradeDrain(::grpc::ClientContext* context, const ::data_service::AckRoleTradeDrainRequest* request, ::google::protobuf::Empty* response, std::function<void(::grpc::Status)>) override;
+      void AckRoleTradeDrain(::grpc::ClientContext* context, const ::data_service::AckRoleTradeDrainRequest* request, ::google::protobuf::Empty* response, ::grpc::ClientUnaryReactor* reactor) override;
       void LoadPlayerData(::grpc::ClientContext* context, const ::data_service::LoadPlayerDataRequest* request, ::data_service::LoadPlayerDataResponse* response, std::function<void(::grpc::Status)>) override;
       void LoadPlayerData(::grpc::ClientContext* context, const ::data_service::LoadPlayerDataRequest* request, ::data_service::LoadPlayerDataResponse* response, ::grpc::ClientUnaryReactor* reactor) override;
       void SavePlayerData(::grpc::ClientContext* context, const ::data_service::SavePlayerDataRequest* request, ::data_service::SavePlayerDataResponse* response, std::function<void(::grpc::Status)>) override;
@@ -591,6 +843,30 @@ class DataService final {
    private:
     std::shared_ptr< ::grpc::ChannelInterface> channel_;
     class async async_stub_{this};
+    ::grpc::ClientAsyncResponseReader< ::data_service::AccountDirectoryResponse>* AsyncReadAccountDirectoryRaw(::grpc::ClientContext* context, const ::data_service::ReadAccountDirectoryRequest& request, ::grpc::CompletionQueue* cq) override;
+    ::grpc::ClientAsyncResponseReader< ::data_service::AccountDirectoryResponse>* PrepareAsyncReadAccountDirectoryRaw(::grpc::ClientContext* context, const ::data_service::ReadAccountDirectoryRequest& request, ::grpc::CompletionQueue* cq) override;
+    ::grpc::ClientAsyncResponseReader< ::data_service::AccountDirectoryResponse>* AsyncCreateAccountRoleRaw(::grpc::ClientContext* context, const ::data_service::CreateAccountRoleRequest& request, ::grpc::CompletionQueue* cq) override;
+    ::grpc::ClientAsyncResponseReader< ::data_service::AccountDirectoryResponse>* PrepareAsyncCreateAccountRoleRaw(::grpc::ClientContext* context, const ::data_service::CreateAccountRoleRequest& request, ::grpc::CompletionQueue* cq) override;
+    ::grpc::ClientAsyncResponseReader< ::data_service::AccountRoleOwnership>* AsyncLookupAccountRoleRaw(::grpc::ClientContext* context, const ::data_service::LookupAccountRoleRequest& request, ::grpc::CompletionQueue* cq) override;
+    ::grpc::ClientAsyncResponseReader< ::data_service::AccountRoleOwnership>* PrepareAsyncLookupAccountRoleRaw(::grpc::ClientContext* context, const ::data_service::LookupAccountRoleRequest& request, ::grpc::CompletionQueue* cq) override;
+    ::grpc::ClientAsyncResponseReader< ::data_service::AccountDirectoryResponse>* AsyncRepairAccountRoleRaw(::grpc::ClientContext* context, const ::data_service::RepairAccountRoleRequest& request, ::grpc::CompletionQueue* cq) override;
+    ::grpc::ClientAsyncResponseReader< ::data_service::AccountDirectoryResponse>* PrepareAsyncRepairAccountRoleRaw(::grpc::ClientContext* context, const ::data_service::RepairAccountRoleRequest& request, ::grpc::CompletionQueue* cq) override;
+    ::grpc::ClientAsyncResponseReader< ::google::protobuf::Empty>* AsyncRemoveAccountRolesRaw(::grpc::ClientContext* context, const ::data_service::RemoveAccountRolesRequest& request, ::grpc::CompletionQueue* cq) override;
+    ::grpc::ClientAsyncResponseReader< ::google::protobuf::Empty>* PrepareAsyncRemoveAccountRolesRaw(::grpc::ClientContext* context, const ::data_service::RemoveAccountRolesRequest& request, ::grpc::CompletionQueue* cq) override;
+    ::grpc::ClientAsyncResponseReader< ::data_service::AccountRoleTradeReceipt>* AsyncBeginAccountRoleTradeRaw(::grpc::ClientContext* context, const ::data_service::BeginAccountRoleTradeRequest& request, ::grpc::CompletionQueue* cq) override;
+    ::grpc::ClientAsyncResponseReader< ::data_service::AccountRoleTradeReceipt>* PrepareAsyncBeginAccountRoleTradeRaw(::grpc::ClientContext* context, const ::data_service::BeginAccountRoleTradeRequest& request, ::grpc::CompletionQueue* cq) override;
+    ::grpc::ClientAsyncResponseReader< ::data_service::AccountRoleTradeReceipt>* AsyncConfirmAccountRoleTradeFreezeRaw(::grpc::ClientContext* context, const ::data_service::ConfirmAccountRoleTradeFreezeRequest& request, ::grpc::CompletionQueue* cq) override;
+    ::grpc::ClientAsyncResponseReader< ::data_service::AccountRoleTradeReceipt>* PrepareAsyncConfirmAccountRoleTradeFreezeRaw(::grpc::ClientContext* context, const ::data_service::ConfirmAccountRoleTradeFreezeRequest& request, ::grpc::CompletionQueue* cq) override;
+    ::grpc::ClientAsyncResponseReader< ::data_service::AccountRoleTradeReceipt>* AsyncCancelAccountRoleTradeRaw(::grpc::ClientContext* context, const ::data_service::CancelAccountRoleTradeRequest& request, ::grpc::CompletionQueue* cq) override;
+    ::grpc::ClientAsyncResponseReader< ::data_service::AccountRoleTradeReceipt>* PrepareAsyncCancelAccountRoleTradeRaw(::grpc::ClientContext* context, const ::data_service::CancelAccountRoleTradeRequest& request, ::grpc::CompletionQueue* cq) override;
+    ::grpc::ClientAsyncResponseReader< ::data_service::AccountRoleTransferReceipt>* AsyncTransferAccountRoleRaw(::grpc::ClientContext* context, const ::data_service::TransferAccountRoleRequest& request, ::grpc::CompletionQueue* cq) override;
+    ::grpc::ClientAsyncResponseReader< ::data_service::AccountRoleTransferReceipt>* PrepareAsyncTransferAccountRoleRaw(::grpc::ClientContext* context, const ::data_service::TransferAccountRoleRequest& request, ::grpc::CompletionQueue* cq) override;
+    ::grpc::ClientAsyncResponseReader< ::data_service::RegisterRoleAdmissionResponse>* AsyncRegisterRoleAdmissionRaw(::grpc::ClientContext* context, const ::data_service::RegisterRoleAdmissionRequest& request, ::grpc::CompletionQueue* cq) override;
+    ::grpc::ClientAsyncResponseReader< ::data_service::RegisterRoleAdmissionResponse>* PrepareAsyncRegisterRoleAdmissionRaw(::grpc::ClientContext* context, const ::data_service::RegisterRoleAdmissionRequest& request, ::grpc::CompletionQueue* cq) override;
+    ::grpc::ClientAsyncResponseReader< ::data_service::CloseRoleAdmissionsResponse>* AsyncCloseRoleAdmissionsRaw(::grpc::ClientContext* context, const ::data_service::CloseRoleAdmissionsRequest& request, ::grpc::CompletionQueue* cq) override;
+    ::grpc::ClientAsyncResponseReader< ::data_service::CloseRoleAdmissionsResponse>* PrepareAsyncCloseRoleAdmissionsRaw(::grpc::ClientContext* context, const ::data_service::CloseRoleAdmissionsRequest& request, ::grpc::CompletionQueue* cq) override;
+    ::grpc::ClientAsyncResponseReader< ::google::protobuf::Empty>* AsyncAckRoleTradeDrainRaw(::grpc::ClientContext* context, const ::data_service::AckRoleTradeDrainRequest& request, ::grpc::CompletionQueue* cq) override;
+    ::grpc::ClientAsyncResponseReader< ::google::protobuf::Empty>* PrepareAsyncAckRoleTradeDrainRaw(::grpc::ClientContext* context, const ::data_service::AckRoleTradeDrainRequest& request, ::grpc::CompletionQueue* cq) override;
     ::grpc::ClientAsyncResponseReader< ::data_service::LoadPlayerDataResponse>* AsyncLoadPlayerDataRaw(::grpc::ClientContext* context, const ::data_service::LoadPlayerDataRequest& request, ::grpc::CompletionQueue* cq) override;
     ::grpc::ClientAsyncResponseReader< ::data_service::LoadPlayerDataResponse>* PrepareAsyncLoadPlayerDataRaw(::grpc::ClientContext* context, const ::data_service::LoadPlayerDataRequest& request, ::grpc::CompletionQueue* cq) override;
     ::grpc::ClientAsyncResponseReader< ::data_service::SavePlayerDataResponse>* AsyncSavePlayerDataRaw(::grpc::ClientContext* context, const ::data_service::SavePlayerDataRequest& request, ::grpc::CompletionQueue* cq) override;
@@ -639,6 +915,18 @@ class DataService final {
     ::grpc::ClientAsyncResponseReader< ::data_service::GetPlayerAssetOpLedgerResponse>* PrepareAsyncGetPlayerAssetOpLedgerRaw(::grpc::ClientContext* context, const ::data_service::GetPlayerAssetOpLedgerRequest& request, ::grpc::CompletionQueue* cq) override;
     ::grpc::ClientAsyncResponseReader< ::data_service::GetPlayerInboxLedgerResponse>* AsyncGetPlayerInboxLedgerRaw(::grpc::ClientContext* context, const ::data_service::GetPlayerInboxLedgerRequest& request, ::grpc::CompletionQueue* cq) override;
     ::grpc::ClientAsyncResponseReader< ::data_service::GetPlayerInboxLedgerResponse>* PrepareAsyncGetPlayerInboxLedgerRaw(::grpc::ClientContext* context, const ::data_service::GetPlayerInboxLedgerRequest& request, ::grpc::CompletionQueue* cq) override;
+    const ::grpc::internal::RpcMethod rpcmethod_ReadAccountDirectory_;
+    const ::grpc::internal::RpcMethod rpcmethod_CreateAccountRole_;
+    const ::grpc::internal::RpcMethod rpcmethod_LookupAccountRole_;
+    const ::grpc::internal::RpcMethod rpcmethod_RepairAccountRole_;
+    const ::grpc::internal::RpcMethod rpcmethod_RemoveAccountRoles_;
+    const ::grpc::internal::RpcMethod rpcmethod_BeginAccountRoleTrade_;
+    const ::grpc::internal::RpcMethod rpcmethod_ConfirmAccountRoleTradeFreeze_;
+    const ::grpc::internal::RpcMethod rpcmethod_CancelAccountRoleTrade_;
+    const ::grpc::internal::RpcMethod rpcmethod_TransferAccountRole_;
+    const ::grpc::internal::RpcMethod rpcmethod_RegisterRoleAdmission_;
+    const ::grpc::internal::RpcMethod rpcmethod_CloseRoleAdmissions_;
+    const ::grpc::internal::RpcMethod rpcmethod_AckRoleTradeDrain_;
     const ::grpc::internal::RpcMethod rpcmethod_LoadPlayerData_;
     const ::grpc::internal::RpcMethod rpcmethod_SavePlayerData_;
     const ::grpc::internal::RpcMethod rpcmethod_GetPlayerField_;
@@ -670,6 +958,24 @@ class DataService final {
    public:
     Service();
     virtual ~Service();
+    // 全球账号角色目录；只接受已签名的 login 调用，不使用 Redis 归属降级。
+    virtual ::grpc::Status ReadAccountDirectory(::grpc::ServerContext* context, const ::data_service::ReadAccountDirectoryRequest* request, ::data_service::AccountDirectoryResponse* response);
+    virtual ::grpc::Status CreateAccountRole(::grpc::ServerContext* context, const ::data_service::CreateAccountRoleRequest* request, ::data_service::AccountDirectoryResponse* response);
+    virtual ::grpc::Status LookupAccountRole(::grpc::ServerContext* context, const ::data_service::LookupAccountRoleRequest* request, ::data_service::AccountRoleOwnership* response);
+    virtual ::grpc::Status RepairAccountRole(::grpc::ServerContext* context, const ::data_service::RepairAccountRoleRequest* request, ::data_service::AccountDirectoryResponse* response);
+    virtual ::grpc::Status RemoveAccountRoles(::grpc::ServerContext* context, const ::data_service::RemoveAccountRolesRequest* request, ::google::protobuf::Empty* response);
+    // 角色寄售控制仅允许独立 trade 证明；Begin 只阻新入场，不等于在线实体已冻结。
+    virtual ::grpc::Status BeginAccountRoleTrade(::grpc::ServerContext* context, const ::data_service::BeginAccountRoleTradeRequest* request, ::data_service::AccountRoleTradeReceipt* response);
+    // 请求不接受 caller proof。只有装配的服务端 SQL 验证器能确认 FROZEN；未装配时拒绝。
+    virtual ::grpc::Status ConfirmAccountRoleTradeFreeze(::grpc::ServerContext* context, const ::data_service::ConfirmAccountRoleTradeFreezeRequest* request, ::data_service::AccountRoleTradeReceipt* response);
+    virtual ::grpc::Status CancelAccountRoleTrade(::grpc::ServerContext* context, const ::data_service::CancelAccountRoleTradeRequest* request, ::data_service::AccountRoleTradeReceipt* response);
+    virtual ::grpc::Status TransferAccountRole(::grpc::ServerContext* context, const ::data_service::TransferAccountRoleRequest* request, ::data_service::AccountRoleTransferReceipt* response);
+    // scene 专用强鉴权；SQL 未登记前禁止实体复用、异步加载完成和激活。
+    virtual ::grpc::Status RegisterRoleAdmission(::grpc::ServerContext* context, const ::data_service::RegisterRoleAdmissionRequest* request, ::data_service::RegisterRoleAdmissionResponse* response);
+    // 只在本实例 <= through 的全部实体与迟到回调都已结束后关闭；无 TTL 自动关闭。
+    virtual ::grpc::Status CloseRoleAdmissions(::grpc::ServerContext* context, const ::data_service::CloseRoleAdmissionsRequest* request, ::data_service::CloseRoleAdmissionsResponse* response);
+    // 原 listing 的本地墓碑与排空 ACK；不是 caller 自报的冻结完成证明。
+    virtual ::grpc::Status AckRoleTradeDrain(::grpc::ServerContext* context, const ::data_service::AckRoleTradeDrainRequest* request, ::google::protobuf::Empty* response);
     // ── Player lifecycle data ─────────────────────────────────────
     virtual ::grpc::Status LoadPlayerData(::grpc::ServerContext* context, const ::data_service::LoadPlayerDataRequest* request, ::data_service::LoadPlayerDataResponse* response);
     virtual ::grpc::Status SavePlayerData(::grpc::ServerContext* context, const ::data_service::SavePlayerDataRequest* request, ::data_service::SavePlayerDataResponse* response);
@@ -719,12 +1025,252 @@ class DataService final {
     virtual ::grpc::Status GetPlayerInboxLedger(::grpc::ServerContext* context, const ::data_service::GetPlayerInboxLedgerRequest* request, ::data_service::GetPlayerInboxLedgerResponse* response);
   };
   template <class BaseClass>
+  class WithAsyncMethod_ReadAccountDirectory : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithAsyncMethod_ReadAccountDirectory() {
+      ::grpc::Service::MarkMethodAsync(0);
+    }
+    ~WithAsyncMethod_ReadAccountDirectory() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status ReadAccountDirectory(::grpc::ServerContext* /*context*/, const ::data_service::ReadAccountDirectoryRequest* /*request*/, ::data_service::AccountDirectoryResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    void RequestReadAccountDirectory(::grpc::ServerContext* context, ::data_service::ReadAccountDirectoryRequest* request, ::grpc::ServerAsyncResponseWriter< ::data_service::AccountDirectoryResponse>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
+      ::grpc::Service::RequestAsyncUnary(0, context, request, response, new_call_cq, notification_cq, tag);
+    }
+  };
+  template <class BaseClass>
+  class WithAsyncMethod_CreateAccountRole : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithAsyncMethod_CreateAccountRole() {
+      ::grpc::Service::MarkMethodAsync(1);
+    }
+    ~WithAsyncMethod_CreateAccountRole() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status CreateAccountRole(::grpc::ServerContext* /*context*/, const ::data_service::CreateAccountRoleRequest* /*request*/, ::data_service::AccountDirectoryResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    void RequestCreateAccountRole(::grpc::ServerContext* context, ::data_service::CreateAccountRoleRequest* request, ::grpc::ServerAsyncResponseWriter< ::data_service::AccountDirectoryResponse>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
+      ::grpc::Service::RequestAsyncUnary(1, context, request, response, new_call_cq, notification_cq, tag);
+    }
+  };
+  template <class BaseClass>
+  class WithAsyncMethod_LookupAccountRole : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithAsyncMethod_LookupAccountRole() {
+      ::grpc::Service::MarkMethodAsync(2);
+    }
+    ~WithAsyncMethod_LookupAccountRole() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status LookupAccountRole(::grpc::ServerContext* /*context*/, const ::data_service::LookupAccountRoleRequest* /*request*/, ::data_service::AccountRoleOwnership* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    void RequestLookupAccountRole(::grpc::ServerContext* context, ::data_service::LookupAccountRoleRequest* request, ::grpc::ServerAsyncResponseWriter< ::data_service::AccountRoleOwnership>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
+      ::grpc::Service::RequestAsyncUnary(2, context, request, response, new_call_cq, notification_cq, tag);
+    }
+  };
+  template <class BaseClass>
+  class WithAsyncMethod_RepairAccountRole : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithAsyncMethod_RepairAccountRole() {
+      ::grpc::Service::MarkMethodAsync(3);
+    }
+    ~WithAsyncMethod_RepairAccountRole() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status RepairAccountRole(::grpc::ServerContext* /*context*/, const ::data_service::RepairAccountRoleRequest* /*request*/, ::data_service::AccountDirectoryResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    void RequestRepairAccountRole(::grpc::ServerContext* context, ::data_service::RepairAccountRoleRequest* request, ::grpc::ServerAsyncResponseWriter< ::data_service::AccountDirectoryResponse>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
+      ::grpc::Service::RequestAsyncUnary(3, context, request, response, new_call_cq, notification_cq, tag);
+    }
+  };
+  template <class BaseClass>
+  class WithAsyncMethod_RemoveAccountRoles : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithAsyncMethod_RemoveAccountRoles() {
+      ::grpc::Service::MarkMethodAsync(4);
+    }
+    ~WithAsyncMethod_RemoveAccountRoles() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status RemoveAccountRoles(::grpc::ServerContext* /*context*/, const ::data_service::RemoveAccountRolesRequest* /*request*/, ::google::protobuf::Empty* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    void RequestRemoveAccountRoles(::grpc::ServerContext* context, ::data_service::RemoveAccountRolesRequest* request, ::grpc::ServerAsyncResponseWriter< ::google::protobuf::Empty>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
+      ::grpc::Service::RequestAsyncUnary(4, context, request, response, new_call_cq, notification_cq, tag);
+    }
+  };
+  template <class BaseClass>
+  class WithAsyncMethod_BeginAccountRoleTrade : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithAsyncMethod_BeginAccountRoleTrade() {
+      ::grpc::Service::MarkMethodAsync(5);
+    }
+    ~WithAsyncMethod_BeginAccountRoleTrade() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status BeginAccountRoleTrade(::grpc::ServerContext* /*context*/, const ::data_service::BeginAccountRoleTradeRequest* /*request*/, ::data_service::AccountRoleTradeReceipt* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    void RequestBeginAccountRoleTrade(::grpc::ServerContext* context, ::data_service::BeginAccountRoleTradeRequest* request, ::grpc::ServerAsyncResponseWriter< ::data_service::AccountRoleTradeReceipt>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
+      ::grpc::Service::RequestAsyncUnary(5, context, request, response, new_call_cq, notification_cq, tag);
+    }
+  };
+  template <class BaseClass>
+  class WithAsyncMethod_ConfirmAccountRoleTradeFreeze : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithAsyncMethod_ConfirmAccountRoleTradeFreeze() {
+      ::grpc::Service::MarkMethodAsync(6);
+    }
+    ~WithAsyncMethod_ConfirmAccountRoleTradeFreeze() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status ConfirmAccountRoleTradeFreeze(::grpc::ServerContext* /*context*/, const ::data_service::ConfirmAccountRoleTradeFreezeRequest* /*request*/, ::data_service::AccountRoleTradeReceipt* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    void RequestConfirmAccountRoleTradeFreeze(::grpc::ServerContext* context, ::data_service::ConfirmAccountRoleTradeFreezeRequest* request, ::grpc::ServerAsyncResponseWriter< ::data_service::AccountRoleTradeReceipt>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
+      ::grpc::Service::RequestAsyncUnary(6, context, request, response, new_call_cq, notification_cq, tag);
+    }
+  };
+  template <class BaseClass>
+  class WithAsyncMethod_CancelAccountRoleTrade : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithAsyncMethod_CancelAccountRoleTrade() {
+      ::grpc::Service::MarkMethodAsync(7);
+    }
+    ~WithAsyncMethod_CancelAccountRoleTrade() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status CancelAccountRoleTrade(::grpc::ServerContext* /*context*/, const ::data_service::CancelAccountRoleTradeRequest* /*request*/, ::data_service::AccountRoleTradeReceipt* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    void RequestCancelAccountRoleTrade(::grpc::ServerContext* context, ::data_service::CancelAccountRoleTradeRequest* request, ::grpc::ServerAsyncResponseWriter< ::data_service::AccountRoleTradeReceipt>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
+      ::grpc::Service::RequestAsyncUnary(7, context, request, response, new_call_cq, notification_cq, tag);
+    }
+  };
+  template <class BaseClass>
+  class WithAsyncMethod_TransferAccountRole : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithAsyncMethod_TransferAccountRole() {
+      ::grpc::Service::MarkMethodAsync(8);
+    }
+    ~WithAsyncMethod_TransferAccountRole() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status TransferAccountRole(::grpc::ServerContext* /*context*/, const ::data_service::TransferAccountRoleRequest* /*request*/, ::data_service::AccountRoleTransferReceipt* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    void RequestTransferAccountRole(::grpc::ServerContext* context, ::data_service::TransferAccountRoleRequest* request, ::grpc::ServerAsyncResponseWriter< ::data_service::AccountRoleTransferReceipt>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
+      ::grpc::Service::RequestAsyncUnary(8, context, request, response, new_call_cq, notification_cq, tag);
+    }
+  };
+  template <class BaseClass>
+  class WithAsyncMethod_RegisterRoleAdmission : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithAsyncMethod_RegisterRoleAdmission() {
+      ::grpc::Service::MarkMethodAsync(9);
+    }
+    ~WithAsyncMethod_RegisterRoleAdmission() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status RegisterRoleAdmission(::grpc::ServerContext* /*context*/, const ::data_service::RegisterRoleAdmissionRequest* /*request*/, ::data_service::RegisterRoleAdmissionResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    void RequestRegisterRoleAdmission(::grpc::ServerContext* context, ::data_service::RegisterRoleAdmissionRequest* request, ::grpc::ServerAsyncResponseWriter< ::data_service::RegisterRoleAdmissionResponse>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
+      ::grpc::Service::RequestAsyncUnary(9, context, request, response, new_call_cq, notification_cq, tag);
+    }
+  };
+  template <class BaseClass>
+  class WithAsyncMethod_CloseRoleAdmissions : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithAsyncMethod_CloseRoleAdmissions() {
+      ::grpc::Service::MarkMethodAsync(10);
+    }
+    ~WithAsyncMethod_CloseRoleAdmissions() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status CloseRoleAdmissions(::grpc::ServerContext* /*context*/, const ::data_service::CloseRoleAdmissionsRequest* /*request*/, ::data_service::CloseRoleAdmissionsResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    void RequestCloseRoleAdmissions(::grpc::ServerContext* context, ::data_service::CloseRoleAdmissionsRequest* request, ::grpc::ServerAsyncResponseWriter< ::data_service::CloseRoleAdmissionsResponse>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
+      ::grpc::Service::RequestAsyncUnary(10, context, request, response, new_call_cq, notification_cq, tag);
+    }
+  };
+  template <class BaseClass>
+  class WithAsyncMethod_AckRoleTradeDrain : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithAsyncMethod_AckRoleTradeDrain() {
+      ::grpc::Service::MarkMethodAsync(11);
+    }
+    ~WithAsyncMethod_AckRoleTradeDrain() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status AckRoleTradeDrain(::grpc::ServerContext* /*context*/, const ::data_service::AckRoleTradeDrainRequest* /*request*/, ::google::protobuf::Empty* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    void RequestAckRoleTradeDrain(::grpc::ServerContext* context, ::data_service::AckRoleTradeDrainRequest* request, ::grpc::ServerAsyncResponseWriter< ::google::protobuf::Empty>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
+      ::grpc::Service::RequestAsyncUnary(11, context, request, response, new_call_cq, notification_cq, tag);
+    }
+  };
+  template <class BaseClass>
   class WithAsyncMethod_LoadPlayerData : public BaseClass {
    private:
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithAsyncMethod_LoadPlayerData() {
-      ::grpc::Service::MarkMethodAsync(0);
+      ::grpc::Service::MarkMethodAsync(12);
     }
     ~WithAsyncMethod_LoadPlayerData() override {
       BaseClassMustBeDerivedFromService(this);
@@ -735,7 +1281,7 @@ class DataService final {
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
     void RequestLoadPlayerData(::grpc::ServerContext* context, ::data_service::LoadPlayerDataRequest* request, ::grpc::ServerAsyncResponseWriter< ::data_service::LoadPlayerDataResponse>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
-      ::grpc::Service::RequestAsyncUnary(0, context, request, response, new_call_cq, notification_cq, tag);
+      ::grpc::Service::RequestAsyncUnary(12, context, request, response, new_call_cq, notification_cq, tag);
     }
   };
   template <class BaseClass>
@@ -744,7 +1290,7 @@ class DataService final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithAsyncMethod_SavePlayerData() {
-      ::grpc::Service::MarkMethodAsync(1);
+      ::grpc::Service::MarkMethodAsync(13);
     }
     ~WithAsyncMethod_SavePlayerData() override {
       BaseClassMustBeDerivedFromService(this);
@@ -755,7 +1301,7 @@ class DataService final {
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
     void RequestSavePlayerData(::grpc::ServerContext* context, ::data_service::SavePlayerDataRequest* request, ::grpc::ServerAsyncResponseWriter< ::data_service::SavePlayerDataResponse>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
-      ::grpc::Service::RequestAsyncUnary(1, context, request, response, new_call_cq, notification_cq, tag);
+      ::grpc::Service::RequestAsyncUnary(13, context, request, response, new_call_cq, notification_cq, tag);
     }
   };
   template <class BaseClass>
@@ -764,7 +1310,7 @@ class DataService final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithAsyncMethod_GetPlayerField() {
-      ::grpc::Service::MarkMethodAsync(2);
+      ::grpc::Service::MarkMethodAsync(14);
     }
     ~WithAsyncMethod_GetPlayerField() override {
       BaseClassMustBeDerivedFromService(this);
@@ -775,7 +1321,7 @@ class DataService final {
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
     void RequestGetPlayerField(::grpc::ServerContext* context, ::data_service::GetPlayerFieldRequest* request, ::grpc::ServerAsyncResponseWriter< ::data_service::GetPlayerFieldResponse>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
-      ::grpc::Service::RequestAsyncUnary(2, context, request, response, new_call_cq, notification_cq, tag);
+      ::grpc::Service::RequestAsyncUnary(14, context, request, response, new_call_cq, notification_cq, tag);
     }
   };
   template <class BaseClass>
@@ -784,7 +1330,7 @@ class DataService final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithAsyncMethod_SetPlayerField() {
-      ::grpc::Service::MarkMethodAsync(3);
+      ::grpc::Service::MarkMethodAsync(15);
     }
     ~WithAsyncMethod_SetPlayerField() override {
       BaseClassMustBeDerivedFromService(this);
@@ -795,7 +1341,7 @@ class DataService final {
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
     void RequestSetPlayerField(::grpc::ServerContext* context, ::data_service::SetPlayerFieldRequest* request, ::grpc::ServerAsyncResponseWriter< ::data_service::SetPlayerFieldResponse>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
-      ::grpc::Service::RequestAsyncUnary(3, context, request, response, new_call_cq, notification_cq, tag);
+      ::grpc::Service::RequestAsyncUnary(15, context, request, response, new_call_cq, notification_cq, tag);
     }
   };
   template <class BaseClass>
@@ -804,7 +1350,7 @@ class DataService final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithAsyncMethod_RegisterPlayerZone() {
-      ::grpc::Service::MarkMethodAsync(4);
+      ::grpc::Service::MarkMethodAsync(16);
     }
     ~WithAsyncMethod_RegisterPlayerZone() override {
       BaseClassMustBeDerivedFromService(this);
@@ -815,7 +1361,7 @@ class DataService final {
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
     void RequestRegisterPlayerZone(::grpc::ServerContext* context, ::data_service::RegisterPlayerZoneRequest* request, ::grpc::ServerAsyncResponseWriter< ::google::protobuf::Empty>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
-      ::grpc::Service::RequestAsyncUnary(4, context, request, response, new_call_cq, notification_cq, tag);
+      ::grpc::Service::RequestAsyncUnary(16, context, request, response, new_call_cq, notification_cq, tag);
     }
   };
   template <class BaseClass>
@@ -824,7 +1370,7 @@ class DataService final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithAsyncMethod_GetPlayerHomeZone() {
-      ::grpc::Service::MarkMethodAsync(5);
+      ::grpc::Service::MarkMethodAsync(17);
     }
     ~WithAsyncMethod_GetPlayerHomeZone() override {
       BaseClassMustBeDerivedFromService(this);
@@ -835,7 +1381,7 @@ class DataService final {
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
     void RequestGetPlayerHomeZone(::grpc::ServerContext* context, ::data_service::GetPlayerHomeZoneRequest* request, ::grpc::ServerAsyncResponseWriter< ::data_service::GetPlayerHomeZoneResponse>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
-      ::grpc::Service::RequestAsyncUnary(5, context, request, response, new_call_cq, notification_cq, tag);
+      ::grpc::Service::RequestAsyncUnary(17, context, request, response, new_call_cq, notification_cq, tag);
     }
   };
   template <class BaseClass>
@@ -844,7 +1390,7 @@ class DataService final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithAsyncMethod_BatchGetPlayerHomeZone() {
-      ::grpc::Service::MarkMethodAsync(6);
+      ::grpc::Service::MarkMethodAsync(18);
     }
     ~WithAsyncMethod_BatchGetPlayerHomeZone() override {
       BaseClassMustBeDerivedFromService(this);
@@ -855,7 +1401,7 @@ class DataService final {
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
     void RequestBatchGetPlayerHomeZone(::grpc::ServerContext* context, ::data_service::BatchGetPlayerHomeZoneRequest* request, ::grpc::ServerAsyncResponseWriter< ::data_service::BatchGetPlayerHomeZoneResponse>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
-      ::grpc::Service::RequestAsyncUnary(6, context, request, response, new_call_cq, notification_cq, tag);
+      ::grpc::Service::RequestAsyncUnary(18, context, request, response, new_call_cq, notification_cq, tag);
     }
   };
   template <class BaseClass>
@@ -864,7 +1410,7 @@ class DataService final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithAsyncMethod_RemapHomeZoneForMerge() {
-      ::grpc::Service::MarkMethodAsync(7);
+      ::grpc::Service::MarkMethodAsync(19);
     }
     ~WithAsyncMethod_RemapHomeZoneForMerge() override {
       BaseClassMustBeDerivedFromService(this);
@@ -875,7 +1421,7 @@ class DataService final {
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
     void RequestRemapHomeZoneForMerge(::grpc::ServerContext* context, ::data_service::RemapHomeZoneForMergeRequest* request, ::grpc::ServerAsyncResponseWriter< ::data_service::RemapHomeZoneForMergeResponse>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
-      ::grpc::Service::RequestAsyncUnary(7, context, request, response, new_call_cq, notification_cq, tag);
+      ::grpc::Service::RequestAsyncUnary(19, context, request, response, new_call_cq, notification_cq, tag);
     }
   };
   template <class BaseClass>
@@ -884,7 +1430,7 @@ class DataService final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithAsyncMethod_DeletePlayerData() {
-      ::grpc::Service::MarkMethodAsync(8);
+      ::grpc::Service::MarkMethodAsync(20);
     }
     ~WithAsyncMethod_DeletePlayerData() override {
       BaseClassMustBeDerivedFromService(this);
@@ -895,7 +1441,7 @@ class DataService final {
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
     void RequestDeletePlayerData(::grpc::ServerContext* context, ::data_service::DeletePlayerDataRequest* request, ::grpc::ServerAsyncResponseWriter< ::data_service::DeletePlayerDataResponse>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
-      ::grpc::Service::RequestAsyncUnary(8, context, request, response, new_call_cq, notification_cq, tag);
+      ::grpc::Service::RequestAsyncUnary(20, context, request, response, new_call_cq, notification_cq, tag);
     }
   };
   template <class BaseClass>
@@ -904,7 +1450,7 @@ class DataService final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithAsyncMethod_CreatePlayerSnapshot() {
-      ::grpc::Service::MarkMethodAsync(9);
+      ::grpc::Service::MarkMethodAsync(21);
     }
     ~WithAsyncMethod_CreatePlayerSnapshot() override {
       BaseClassMustBeDerivedFromService(this);
@@ -915,7 +1461,7 @@ class DataService final {
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
     void RequestCreatePlayerSnapshot(::grpc::ServerContext* context, ::data_service::CreatePlayerSnapshotRequest* request, ::grpc::ServerAsyncResponseWriter< ::data_service::CreatePlayerSnapshotResponse>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
-      ::grpc::Service::RequestAsyncUnary(9, context, request, response, new_call_cq, notification_cq, tag);
+      ::grpc::Service::RequestAsyncUnary(21, context, request, response, new_call_cq, notification_cq, tag);
     }
   };
   template <class BaseClass>
@@ -924,7 +1470,7 @@ class DataService final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithAsyncMethod_ListPlayerSnapshots() {
-      ::grpc::Service::MarkMethodAsync(10);
+      ::grpc::Service::MarkMethodAsync(22);
     }
     ~WithAsyncMethod_ListPlayerSnapshots() override {
       BaseClassMustBeDerivedFromService(this);
@@ -935,7 +1481,7 @@ class DataService final {
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
     void RequestListPlayerSnapshots(::grpc::ServerContext* context, ::data_service::ListPlayerSnapshotsRequest* request, ::grpc::ServerAsyncResponseWriter< ::data_service::ListPlayerSnapshotsResponse>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
-      ::grpc::Service::RequestAsyncUnary(10, context, request, response, new_call_cq, notification_cq, tag);
+      ::grpc::Service::RequestAsyncUnary(22, context, request, response, new_call_cq, notification_cq, tag);
     }
   };
   template <class BaseClass>
@@ -944,7 +1490,7 @@ class DataService final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithAsyncMethod_GetPlayerSnapshotDiff() {
-      ::grpc::Service::MarkMethodAsync(11);
+      ::grpc::Service::MarkMethodAsync(23);
     }
     ~WithAsyncMethod_GetPlayerSnapshotDiff() override {
       BaseClassMustBeDerivedFromService(this);
@@ -955,7 +1501,7 @@ class DataService final {
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
     void RequestGetPlayerSnapshotDiff(::grpc::ServerContext* context, ::data_service::GetPlayerSnapshotDiffRequest* request, ::grpc::ServerAsyncResponseWriter< ::data_service::GetPlayerSnapshotDiffResponse>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
-      ::grpc::Service::RequestAsyncUnary(11, context, request, response, new_call_cq, notification_cq, tag);
+      ::grpc::Service::RequestAsyncUnary(23, context, request, response, new_call_cq, notification_cq, tag);
     }
   };
   template <class BaseClass>
@@ -964,7 +1510,7 @@ class DataService final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithAsyncMethod_RollbackPlayer() {
-      ::grpc::Service::MarkMethodAsync(12);
+      ::grpc::Service::MarkMethodAsync(24);
     }
     ~WithAsyncMethod_RollbackPlayer() override {
       BaseClassMustBeDerivedFromService(this);
@@ -975,7 +1521,7 @@ class DataService final {
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
     void RequestRollbackPlayer(::grpc::ServerContext* context, ::data_service::RollbackPlayerRequest* request, ::grpc::ServerAsyncResponseWriter< ::data_service::RollbackPlayerResponse>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
-      ::grpc::Service::RequestAsyncUnary(12, context, request, response, new_call_cq, notification_cq, tag);
+      ::grpc::Service::RequestAsyncUnary(24, context, request, response, new_call_cq, notification_cq, tag);
     }
   };
   template <class BaseClass>
@@ -984,7 +1530,7 @@ class DataService final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithAsyncMethod_RollbackZone() {
-      ::grpc::Service::MarkMethodAsync(13);
+      ::grpc::Service::MarkMethodAsync(25);
     }
     ~WithAsyncMethod_RollbackZone() override {
       BaseClassMustBeDerivedFromService(this);
@@ -995,7 +1541,7 @@ class DataService final {
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
     void RequestRollbackZone(::grpc::ServerContext* context, ::data_service::RollbackZoneRequest* request, ::grpc::ServerAsyncResponseWriter< ::data_service::RollbackZoneResponse>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
-      ::grpc::Service::RequestAsyncUnary(13, context, request, response, new_call_cq, notification_cq, tag);
+      ::grpc::Service::RequestAsyncUnary(25, context, request, response, new_call_cq, notification_cq, tag);
     }
   };
   template <class BaseClass>
@@ -1004,7 +1550,7 @@ class DataService final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithAsyncMethod_RollbackAll() {
-      ::grpc::Service::MarkMethodAsync(14);
+      ::grpc::Service::MarkMethodAsync(26);
     }
     ~WithAsyncMethod_RollbackAll() override {
       BaseClassMustBeDerivedFromService(this);
@@ -1015,7 +1561,7 @@ class DataService final {
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
     void RequestRollbackAll(::grpc::ServerContext* context, ::data_service::RollbackAllRequest* request, ::grpc::ServerAsyncResponseWriter< ::data_service::RollbackAllResponse>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
-      ::grpc::Service::RequestAsyncUnary(14, context, request, response, new_call_cq, notification_cq, tag);
+      ::grpc::Service::RequestAsyncUnary(26, context, request, response, new_call_cq, notification_cq, tag);
     }
   };
   template <class BaseClass>
@@ -1024,7 +1570,7 @@ class DataService final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithAsyncMethod_BatchRecallItems() {
-      ::grpc::Service::MarkMethodAsync(15);
+      ::grpc::Service::MarkMethodAsync(27);
     }
     ~WithAsyncMethod_BatchRecallItems() override {
       BaseClassMustBeDerivedFromService(this);
@@ -1035,7 +1581,7 @@ class DataService final {
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
     void RequestBatchRecallItems(::grpc::ServerContext* context, ::data_service::BatchRecallItemsRequest* request, ::grpc::ServerAsyncResponseWriter< ::data_service::BatchRecallItemsResponse>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
-      ::grpc::Service::RequestAsyncUnary(15, context, request, response, new_call_cq, notification_cq, tag);
+      ::grpc::Service::RequestAsyncUnary(27, context, request, response, new_call_cq, notification_cq, tag);
     }
   };
   template <class BaseClass>
@@ -1044,7 +1590,7 @@ class DataService final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithAsyncMethod_QueryTransactionLog() {
-      ::grpc::Service::MarkMethodAsync(16);
+      ::grpc::Service::MarkMethodAsync(28);
     }
     ~WithAsyncMethod_QueryTransactionLog() override {
       BaseClassMustBeDerivedFromService(this);
@@ -1055,7 +1601,7 @@ class DataService final {
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
     void RequestQueryTransactionLog(::grpc::ServerContext* context, ::data_service::QueryTransactionLogRequest* request, ::grpc::ServerAsyncResponseWriter< ::data_service::QueryTransactionLogResponse>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
-      ::grpc::Service::RequestAsyncUnary(16, context, request, response, new_call_cq, notification_cq, tag);
+      ::grpc::Service::RequestAsyncUnary(28, context, request, response, new_call_cq, notification_cq, tag);
     }
   };
   template <class BaseClass>
@@ -1064,7 +1610,7 @@ class DataService final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithAsyncMethod_CreateEventSnapshot() {
-      ::grpc::Service::MarkMethodAsync(17);
+      ::grpc::Service::MarkMethodAsync(29);
     }
     ~WithAsyncMethod_CreateEventSnapshot() override {
       BaseClassMustBeDerivedFromService(this);
@@ -1075,7 +1621,7 @@ class DataService final {
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
     void RequestCreateEventSnapshot(::grpc::ServerContext* context, ::data_service::CreateEventSnapshotRequest* request, ::grpc::ServerAsyncResponseWriter< ::data_service::CreateEventSnapshotResponse>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
-      ::grpc::Service::RequestAsyncUnary(17, context, request, response, new_call_cq, notification_cq, tag);
+      ::grpc::Service::RequestAsyncUnary(29, context, request, response, new_call_cq, notification_cq, tag);
     }
   };
   template <class BaseClass>
@@ -1084,7 +1630,7 @@ class DataService final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithAsyncMethod_AllocateIdSegment() {
-      ::grpc::Service::MarkMethodAsync(18);
+      ::grpc::Service::MarkMethodAsync(30);
     }
     ~WithAsyncMethod_AllocateIdSegment() override {
       BaseClassMustBeDerivedFromService(this);
@@ -1095,7 +1641,7 @@ class DataService final {
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
     void RequestAllocateIdSegment(::grpc::ServerContext* context, ::data_service::AllocateIdSegmentRequest* request, ::grpc::ServerAsyncResponseWriter< ::data_service::AllocateIdSegmentResponse>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
-      ::grpc::Service::RequestAsyncUnary(18, context, request, response, new_call_cq, notification_cq, tag);
+      ::grpc::Service::RequestAsyncUnary(30, context, request, response, new_call_cq, notification_cq, tag);
     }
   };
   template <class BaseClass>
@@ -1104,7 +1650,7 @@ class DataService final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithAsyncMethod_ReservePlayerName() {
-      ::grpc::Service::MarkMethodAsync(19);
+      ::grpc::Service::MarkMethodAsync(31);
     }
     ~WithAsyncMethod_ReservePlayerName() override {
       BaseClassMustBeDerivedFromService(this);
@@ -1115,7 +1661,7 @@ class DataService final {
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
     void RequestReservePlayerName(::grpc::ServerContext* context, ::data_service::ReservePlayerNameRequest* request, ::grpc::ServerAsyncResponseWriter< ::data_service::ReservePlayerNameResponse>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
-      ::grpc::Service::RequestAsyncUnary(19, context, request, response, new_call_cq, notification_cq, tag);
+      ::grpc::Service::RequestAsyncUnary(31, context, request, response, new_call_cq, notification_cq, tag);
     }
   };
   template <class BaseClass>
@@ -1124,7 +1670,7 @@ class DataService final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithAsyncMethod_ReleasePlayerName() {
-      ::grpc::Service::MarkMethodAsync(20);
+      ::grpc::Service::MarkMethodAsync(32);
     }
     ~WithAsyncMethod_ReleasePlayerName() override {
       BaseClassMustBeDerivedFromService(this);
@@ -1135,7 +1681,7 @@ class DataService final {
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
     void RequestReleasePlayerName(::grpc::ServerContext* context, ::data_service::ReleasePlayerNameRequest* request, ::grpc::ServerAsyncResponseWriter< ::google::protobuf::Empty>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
-      ::grpc::Service::RequestAsyncUnary(20, context, request, response, new_call_cq, notification_cq, tag);
+      ::grpc::Service::RequestAsyncUnary(32, context, request, response, new_call_cq, notification_cq, tag);
     }
   };
   template <class BaseClass>
@@ -1144,7 +1690,7 @@ class DataService final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithAsyncMethod_BatchGetPlayerName() {
-      ::grpc::Service::MarkMethodAsync(21);
+      ::grpc::Service::MarkMethodAsync(33);
     }
     ~WithAsyncMethod_BatchGetPlayerName() override {
       BaseClassMustBeDerivedFromService(this);
@@ -1155,7 +1701,7 @@ class DataService final {
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
     void RequestBatchGetPlayerName(::grpc::ServerContext* context, ::data_service::BatchGetPlayerNameRequest* request, ::grpc::ServerAsyncResponseWriter< ::data_service::BatchGetPlayerNameResponse>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
-      ::grpc::Service::RequestAsyncUnary(21, context, request, response, new_call_cq, notification_cq, tag);
+      ::grpc::Service::RequestAsyncUnary(33, context, request, response, new_call_cq, notification_cq, tag);
     }
   };
   template <class BaseClass>
@@ -1164,7 +1710,7 @@ class DataService final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithAsyncMethod_GetPlayerAssetOpLedger() {
-      ::grpc::Service::MarkMethodAsync(22);
+      ::grpc::Service::MarkMethodAsync(34);
     }
     ~WithAsyncMethod_GetPlayerAssetOpLedger() override {
       BaseClassMustBeDerivedFromService(this);
@@ -1175,7 +1721,7 @@ class DataService final {
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
     void RequestGetPlayerAssetOpLedger(::grpc::ServerContext* context, ::data_service::GetPlayerAssetOpLedgerRequest* request, ::grpc::ServerAsyncResponseWriter< ::data_service::GetPlayerAssetOpLedgerResponse>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
-      ::grpc::Service::RequestAsyncUnary(22, context, request, response, new_call_cq, notification_cq, tag);
+      ::grpc::Service::RequestAsyncUnary(34, context, request, response, new_call_cq, notification_cq, tag);
     }
   };
   template <class BaseClass>
@@ -1184,7 +1730,7 @@ class DataService final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithAsyncMethod_GetPlayerInboxLedger() {
-      ::grpc::Service::MarkMethodAsync(23);
+      ::grpc::Service::MarkMethodAsync(35);
     }
     ~WithAsyncMethod_GetPlayerInboxLedger() override {
       BaseClassMustBeDerivedFromService(this);
@@ -1195,23 +1741,347 @@ class DataService final {
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
     void RequestGetPlayerInboxLedger(::grpc::ServerContext* context, ::data_service::GetPlayerInboxLedgerRequest* request, ::grpc::ServerAsyncResponseWriter< ::data_service::GetPlayerInboxLedgerResponse>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
-      ::grpc::Service::RequestAsyncUnary(23, context, request, response, new_call_cq, notification_cq, tag);
+      ::grpc::Service::RequestAsyncUnary(35, context, request, response, new_call_cq, notification_cq, tag);
     }
   };
-  typedef WithAsyncMethod_LoadPlayerData<WithAsyncMethod_SavePlayerData<WithAsyncMethod_GetPlayerField<WithAsyncMethod_SetPlayerField<WithAsyncMethod_RegisterPlayerZone<WithAsyncMethod_GetPlayerHomeZone<WithAsyncMethod_BatchGetPlayerHomeZone<WithAsyncMethod_RemapHomeZoneForMerge<WithAsyncMethod_DeletePlayerData<WithAsyncMethod_CreatePlayerSnapshot<WithAsyncMethod_ListPlayerSnapshots<WithAsyncMethod_GetPlayerSnapshotDiff<WithAsyncMethod_RollbackPlayer<WithAsyncMethod_RollbackZone<WithAsyncMethod_RollbackAll<WithAsyncMethod_BatchRecallItems<WithAsyncMethod_QueryTransactionLog<WithAsyncMethod_CreateEventSnapshot<WithAsyncMethod_AllocateIdSegment<WithAsyncMethod_ReservePlayerName<WithAsyncMethod_ReleasePlayerName<WithAsyncMethod_BatchGetPlayerName<WithAsyncMethod_GetPlayerAssetOpLedger<WithAsyncMethod_GetPlayerInboxLedger<Service > > > > > > > > > > > > > > > > > > > > > > > > AsyncService;
+  typedef WithAsyncMethod_ReadAccountDirectory<WithAsyncMethod_CreateAccountRole<WithAsyncMethod_LookupAccountRole<WithAsyncMethod_RepairAccountRole<WithAsyncMethod_RemoveAccountRoles<WithAsyncMethod_BeginAccountRoleTrade<WithAsyncMethod_ConfirmAccountRoleTradeFreeze<WithAsyncMethod_CancelAccountRoleTrade<WithAsyncMethod_TransferAccountRole<WithAsyncMethod_RegisterRoleAdmission<WithAsyncMethod_CloseRoleAdmissions<WithAsyncMethod_AckRoleTradeDrain<WithAsyncMethod_LoadPlayerData<WithAsyncMethod_SavePlayerData<WithAsyncMethod_GetPlayerField<WithAsyncMethod_SetPlayerField<WithAsyncMethod_RegisterPlayerZone<WithAsyncMethod_GetPlayerHomeZone<WithAsyncMethod_BatchGetPlayerHomeZone<WithAsyncMethod_RemapHomeZoneForMerge<WithAsyncMethod_DeletePlayerData<WithAsyncMethod_CreatePlayerSnapshot<WithAsyncMethod_ListPlayerSnapshots<WithAsyncMethod_GetPlayerSnapshotDiff<WithAsyncMethod_RollbackPlayer<WithAsyncMethod_RollbackZone<WithAsyncMethod_RollbackAll<WithAsyncMethod_BatchRecallItems<WithAsyncMethod_QueryTransactionLog<WithAsyncMethod_CreateEventSnapshot<WithAsyncMethod_AllocateIdSegment<WithAsyncMethod_ReservePlayerName<WithAsyncMethod_ReleasePlayerName<WithAsyncMethod_BatchGetPlayerName<WithAsyncMethod_GetPlayerAssetOpLedger<WithAsyncMethod_GetPlayerInboxLedger<Service > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > AsyncService;
+  template <class BaseClass>
+  class WithCallbackMethod_ReadAccountDirectory : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithCallbackMethod_ReadAccountDirectory() {
+      ::grpc::Service::MarkMethodCallback(0,
+          new ::grpc::internal::CallbackUnaryHandler< ::data_service::ReadAccountDirectoryRequest, ::data_service::AccountDirectoryResponse>(
+            [this](
+                   ::grpc::CallbackServerContext* context, const ::data_service::ReadAccountDirectoryRequest* request, ::data_service::AccountDirectoryResponse* response) { return this->ReadAccountDirectory(context, request, response); }));}
+    void SetMessageAllocatorFor_ReadAccountDirectory(
+        ::grpc::MessageAllocator< ::data_service::ReadAccountDirectoryRequest, ::data_service::AccountDirectoryResponse>* allocator) {
+      ::grpc::internal::MethodHandler* const handler = ::grpc::Service::GetHandler(0);
+      static_cast<::grpc::internal::CallbackUnaryHandler< ::data_service::ReadAccountDirectoryRequest, ::data_service::AccountDirectoryResponse>*>(handler)
+              ->SetMessageAllocator(allocator);
+    }
+    ~WithCallbackMethod_ReadAccountDirectory() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status ReadAccountDirectory(::grpc::ServerContext* /*context*/, const ::data_service::ReadAccountDirectoryRequest* /*request*/, ::data_service::AccountDirectoryResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    virtual ::grpc::ServerUnaryReactor* ReadAccountDirectory(
+      ::grpc::CallbackServerContext* /*context*/, const ::data_service::ReadAccountDirectoryRequest* /*request*/, ::data_service::AccountDirectoryResponse* /*response*/)  { return nullptr; }
+  };
+  template <class BaseClass>
+  class WithCallbackMethod_CreateAccountRole : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithCallbackMethod_CreateAccountRole() {
+      ::grpc::Service::MarkMethodCallback(1,
+          new ::grpc::internal::CallbackUnaryHandler< ::data_service::CreateAccountRoleRequest, ::data_service::AccountDirectoryResponse>(
+            [this](
+                   ::grpc::CallbackServerContext* context, const ::data_service::CreateAccountRoleRequest* request, ::data_service::AccountDirectoryResponse* response) { return this->CreateAccountRole(context, request, response); }));}
+    void SetMessageAllocatorFor_CreateAccountRole(
+        ::grpc::MessageAllocator< ::data_service::CreateAccountRoleRequest, ::data_service::AccountDirectoryResponse>* allocator) {
+      ::grpc::internal::MethodHandler* const handler = ::grpc::Service::GetHandler(1);
+      static_cast<::grpc::internal::CallbackUnaryHandler< ::data_service::CreateAccountRoleRequest, ::data_service::AccountDirectoryResponse>*>(handler)
+              ->SetMessageAllocator(allocator);
+    }
+    ~WithCallbackMethod_CreateAccountRole() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status CreateAccountRole(::grpc::ServerContext* /*context*/, const ::data_service::CreateAccountRoleRequest* /*request*/, ::data_service::AccountDirectoryResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    virtual ::grpc::ServerUnaryReactor* CreateAccountRole(
+      ::grpc::CallbackServerContext* /*context*/, const ::data_service::CreateAccountRoleRequest* /*request*/, ::data_service::AccountDirectoryResponse* /*response*/)  { return nullptr; }
+  };
+  template <class BaseClass>
+  class WithCallbackMethod_LookupAccountRole : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithCallbackMethod_LookupAccountRole() {
+      ::grpc::Service::MarkMethodCallback(2,
+          new ::grpc::internal::CallbackUnaryHandler< ::data_service::LookupAccountRoleRequest, ::data_service::AccountRoleOwnership>(
+            [this](
+                   ::grpc::CallbackServerContext* context, const ::data_service::LookupAccountRoleRequest* request, ::data_service::AccountRoleOwnership* response) { return this->LookupAccountRole(context, request, response); }));}
+    void SetMessageAllocatorFor_LookupAccountRole(
+        ::grpc::MessageAllocator< ::data_service::LookupAccountRoleRequest, ::data_service::AccountRoleOwnership>* allocator) {
+      ::grpc::internal::MethodHandler* const handler = ::grpc::Service::GetHandler(2);
+      static_cast<::grpc::internal::CallbackUnaryHandler< ::data_service::LookupAccountRoleRequest, ::data_service::AccountRoleOwnership>*>(handler)
+              ->SetMessageAllocator(allocator);
+    }
+    ~WithCallbackMethod_LookupAccountRole() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status LookupAccountRole(::grpc::ServerContext* /*context*/, const ::data_service::LookupAccountRoleRequest* /*request*/, ::data_service::AccountRoleOwnership* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    virtual ::grpc::ServerUnaryReactor* LookupAccountRole(
+      ::grpc::CallbackServerContext* /*context*/, const ::data_service::LookupAccountRoleRequest* /*request*/, ::data_service::AccountRoleOwnership* /*response*/)  { return nullptr; }
+  };
+  template <class BaseClass>
+  class WithCallbackMethod_RepairAccountRole : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithCallbackMethod_RepairAccountRole() {
+      ::grpc::Service::MarkMethodCallback(3,
+          new ::grpc::internal::CallbackUnaryHandler< ::data_service::RepairAccountRoleRequest, ::data_service::AccountDirectoryResponse>(
+            [this](
+                   ::grpc::CallbackServerContext* context, const ::data_service::RepairAccountRoleRequest* request, ::data_service::AccountDirectoryResponse* response) { return this->RepairAccountRole(context, request, response); }));}
+    void SetMessageAllocatorFor_RepairAccountRole(
+        ::grpc::MessageAllocator< ::data_service::RepairAccountRoleRequest, ::data_service::AccountDirectoryResponse>* allocator) {
+      ::grpc::internal::MethodHandler* const handler = ::grpc::Service::GetHandler(3);
+      static_cast<::grpc::internal::CallbackUnaryHandler< ::data_service::RepairAccountRoleRequest, ::data_service::AccountDirectoryResponse>*>(handler)
+              ->SetMessageAllocator(allocator);
+    }
+    ~WithCallbackMethod_RepairAccountRole() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status RepairAccountRole(::grpc::ServerContext* /*context*/, const ::data_service::RepairAccountRoleRequest* /*request*/, ::data_service::AccountDirectoryResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    virtual ::grpc::ServerUnaryReactor* RepairAccountRole(
+      ::grpc::CallbackServerContext* /*context*/, const ::data_service::RepairAccountRoleRequest* /*request*/, ::data_service::AccountDirectoryResponse* /*response*/)  { return nullptr; }
+  };
+  template <class BaseClass>
+  class WithCallbackMethod_RemoveAccountRoles : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithCallbackMethod_RemoveAccountRoles() {
+      ::grpc::Service::MarkMethodCallback(4,
+          new ::grpc::internal::CallbackUnaryHandler< ::data_service::RemoveAccountRolesRequest, ::google::protobuf::Empty>(
+            [this](
+                   ::grpc::CallbackServerContext* context, const ::data_service::RemoveAccountRolesRequest* request, ::google::protobuf::Empty* response) { return this->RemoveAccountRoles(context, request, response); }));}
+    void SetMessageAllocatorFor_RemoveAccountRoles(
+        ::grpc::MessageAllocator< ::data_service::RemoveAccountRolesRequest, ::google::protobuf::Empty>* allocator) {
+      ::grpc::internal::MethodHandler* const handler = ::grpc::Service::GetHandler(4);
+      static_cast<::grpc::internal::CallbackUnaryHandler< ::data_service::RemoveAccountRolesRequest, ::google::protobuf::Empty>*>(handler)
+              ->SetMessageAllocator(allocator);
+    }
+    ~WithCallbackMethod_RemoveAccountRoles() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status RemoveAccountRoles(::grpc::ServerContext* /*context*/, const ::data_service::RemoveAccountRolesRequest* /*request*/, ::google::protobuf::Empty* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    virtual ::grpc::ServerUnaryReactor* RemoveAccountRoles(
+      ::grpc::CallbackServerContext* /*context*/, const ::data_service::RemoveAccountRolesRequest* /*request*/, ::google::protobuf::Empty* /*response*/)  { return nullptr; }
+  };
+  template <class BaseClass>
+  class WithCallbackMethod_BeginAccountRoleTrade : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithCallbackMethod_BeginAccountRoleTrade() {
+      ::grpc::Service::MarkMethodCallback(5,
+          new ::grpc::internal::CallbackUnaryHandler< ::data_service::BeginAccountRoleTradeRequest, ::data_service::AccountRoleTradeReceipt>(
+            [this](
+                   ::grpc::CallbackServerContext* context, const ::data_service::BeginAccountRoleTradeRequest* request, ::data_service::AccountRoleTradeReceipt* response) { return this->BeginAccountRoleTrade(context, request, response); }));}
+    void SetMessageAllocatorFor_BeginAccountRoleTrade(
+        ::grpc::MessageAllocator< ::data_service::BeginAccountRoleTradeRequest, ::data_service::AccountRoleTradeReceipt>* allocator) {
+      ::grpc::internal::MethodHandler* const handler = ::grpc::Service::GetHandler(5);
+      static_cast<::grpc::internal::CallbackUnaryHandler< ::data_service::BeginAccountRoleTradeRequest, ::data_service::AccountRoleTradeReceipt>*>(handler)
+              ->SetMessageAllocator(allocator);
+    }
+    ~WithCallbackMethod_BeginAccountRoleTrade() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status BeginAccountRoleTrade(::grpc::ServerContext* /*context*/, const ::data_service::BeginAccountRoleTradeRequest* /*request*/, ::data_service::AccountRoleTradeReceipt* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    virtual ::grpc::ServerUnaryReactor* BeginAccountRoleTrade(
+      ::grpc::CallbackServerContext* /*context*/, const ::data_service::BeginAccountRoleTradeRequest* /*request*/, ::data_service::AccountRoleTradeReceipt* /*response*/)  { return nullptr; }
+  };
+  template <class BaseClass>
+  class WithCallbackMethod_ConfirmAccountRoleTradeFreeze : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithCallbackMethod_ConfirmAccountRoleTradeFreeze() {
+      ::grpc::Service::MarkMethodCallback(6,
+          new ::grpc::internal::CallbackUnaryHandler< ::data_service::ConfirmAccountRoleTradeFreezeRequest, ::data_service::AccountRoleTradeReceipt>(
+            [this](
+                   ::grpc::CallbackServerContext* context, const ::data_service::ConfirmAccountRoleTradeFreezeRequest* request, ::data_service::AccountRoleTradeReceipt* response) { return this->ConfirmAccountRoleTradeFreeze(context, request, response); }));}
+    void SetMessageAllocatorFor_ConfirmAccountRoleTradeFreeze(
+        ::grpc::MessageAllocator< ::data_service::ConfirmAccountRoleTradeFreezeRequest, ::data_service::AccountRoleTradeReceipt>* allocator) {
+      ::grpc::internal::MethodHandler* const handler = ::grpc::Service::GetHandler(6);
+      static_cast<::grpc::internal::CallbackUnaryHandler< ::data_service::ConfirmAccountRoleTradeFreezeRequest, ::data_service::AccountRoleTradeReceipt>*>(handler)
+              ->SetMessageAllocator(allocator);
+    }
+    ~WithCallbackMethod_ConfirmAccountRoleTradeFreeze() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status ConfirmAccountRoleTradeFreeze(::grpc::ServerContext* /*context*/, const ::data_service::ConfirmAccountRoleTradeFreezeRequest* /*request*/, ::data_service::AccountRoleTradeReceipt* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    virtual ::grpc::ServerUnaryReactor* ConfirmAccountRoleTradeFreeze(
+      ::grpc::CallbackServerContext* /*context*/, const ::data_service::ConfirmAccountRoleTradeFreezeRequest* /*request*/, ::data_service::AccountRoleTradeReceipt* /*response*/)  { return nullptr; }
+  };
+  template <class BaseClass>
+  class WithCallbackMethod_CancelAccountRoleTrade : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithCallbackMethod_CancelAccountRoleTrade() {
+      ::grpc::Service::MarkMethodCallback(7,
+          new ::grpc::internal::CallbackUnaryHandler< ::data_service::CancelAccountRoleTradeRequest, ::data_service::AccountRoleTradeReceipt>(
+            [this](
+                   ::grpc::CallbackServerContext* context, const ::data_service::CancelAccountRoleTradeRequest* request, ::data_service::AccountRoleTradeReceipt* response) { return this->CancelAccountRoleTrade(context, request, response); }));}
+    void SetMessageAllocatorFor_CancelAccountRoleTrade(
+        ::grpc::MessageAllocator< ::data_service::CancelAccountRoleTradeRequest, ::data_service::AccountRoleTradeReceipt>* allocator) {
+      ::grpc::internal::MethodHandler* const handler = ::grpc::Service::GetHandler(7);
+      static_cast<::grpc::internal::CallbackUnaryHandler< ::data_service::CancelAccountRoleTradeRequest, ::data_service::AccountRoleTradeReceipt>*>(handler)
+              ->SetMessageAllocator(allocator);
+    }
+    ~WithCallbackMethod_CancelAccountRoleTrade() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status CancelAccountRoleTrade(::grpc::ServerContext* /*context*/, const ::data_service::CancelAccountRoleTradeRequest* /*request*/, ::data_service::AccountRoleTradeReceipt* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    virtual ::grpc::ServerUnaryReactor* CancelAccountRoleTrade(
+      ::grpc::CallbackServerContext* /*context*/, const ::data_service::CancelAccountRoleTradeRequest* /*request*/, ::data_service::AccountRoleTradeReceipt* /*response*/)  { return nullptr; }
+  };
+  template <class BaseClass>
+  class WithCallbackMethod_TransferAccountRole : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithCallbackMethod_TransferAccountRole() {
+      ::grpc::Service::MarkMethodCallback(8,
+          new ::grpc::internal::CallbackUnaryHandler< ::data_service::TransferAccountRoleRequest, ::data_service::AccountRoleTransferReceipt>(
+            [this](
+                   ::grpc::CallbackServerContext* context, const ::data_service::TransferAccountRoleRequest* request, ::data_service::AccountRoleTransferReceipt* response) { return this->TransferAccountRole(context, request, response); }));}
+    void SetMessageAllocatorFor_TransferAccountRole(
+        ::grpc::MessageAllocator< ::data_service::TransferAccountRoleRequest, ::data_service::AccountRoleTransferReceipt>* allocator) {
+      ::grpc::internal::MethodHandler* const handler = ::grpc::Service::GetHandler(8);
+      static_cast<::grpc::internal::CallbackUnaryHandler< ::data_service::TransferAccountRoleRequest, ::data_service::AccountRoleTransferReceipt>*>(handler)
+              ->SetMessageAllocator(allocator);
+    }
+    ~WithCallbackMethod_TransferAccountRole() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status TransferAccountRole(::grpc::ServerContext* /*context*/, const ::data_service::TransferAccountRoleRequest* /*request*/, ::data_service::AccountRoleTransferReceipt* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    virtual ::grpc::ServerUnaryReactor* TransferAccountRole(
+      ::grpc::CallbackServerContext* /*context*/, const ::data_service::TransferAccountRoleRequest* /*request*/, ::data_service::AccountRoleTransferReceipt* /*response*/)  { return nullptr; }
+  };
+  template <class BaseClass>
+  class WithCallbackMethod_RegisterRoleAdmission : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithCallbackMethod_RegisterRoleAdmission() {
+      ::grpc::Service::MarkMethodCallback(9,
+          new ::grpc::internal::CallbackUnaryHandler< ::data_service::RegisterRoleAdmissionRequest, ::data_service::RegisterRoleAdmissionResponse>(
+            [this](
+                   ::grpc::CallbackServerContext* context, const ::data_service::RegisterRoleAdmissionRequest* request, ::data_service::RegisterRoleAdmissionResponse* response) { return this->RegisterRoleAdmission(context, request, response); }));}
+    void SetMessageAllocatorFor_RegisterRoleAdmission(
+        ::grpc::MessageAllocator< ::data_service::RegisterRoleAdmissionRequest, ::data_service::RegisterRoleAdmissionResponse>* allocator) {
+      ::grpc::internal::MethodHandler* const handler = ::grpc::Service::GetHandler(9);
+      static_cast<::grpc::internal::CallbackUnaryHandler< ::data_service::RegisterRoleAdmissionRequest, ::data_service::RegisterRoleAdmissionResponse>*>(handler)
+              ->SetMessageAllocator(allocator);
+    }
+    ~WithCallbackMethod_RegisterRoleAdmission() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status RegisterRoleAdmission(::grpc::ServerContext* /*context*/, const ::data_service::RegisterRoleAdmissionRequest* /*request*/, ::data_service::RegisterRoleAdmissionResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    virtual ::grpc::ServerUnaryReactor* RegisterRoleAdmission(
+      ::grpc::CallbackServerContext* /*context*/, const ::data_service::RegisterRoleAdmissionRequest* /*request*/, ::data_service::RegisterRoleAdmissionResponse* /*response*/)  { return nullptr; }
+  };
+  template <class BaseClass>
+  class WithCallbackMethod_CloseRoleAdmissions : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithCallbackMethod_CloseRoleAdmissions() {
+      ::grpc::Service::MarkMethodCallback(10,
+          new ::grpc::internal::CallbackUnaryHandler< ::data_service::CloseRoleAdmissionsRequest, ::data_service::CloseRoleAdmissionsResponse>(
+            [this](
+                   ::grpc::CallbackServerContext* context, const ::data_service::CloseRoleAdmissionsRequest* request, ::data_service::CloseRoleAdmissionsResponse* response) { return this->CloseRoleAdmissions(context, request, response); }));}
+    void SetMessageAllocatorFor_CloseRoleAdmissions(
+        ::grpc::MessageAllocator< ::data_service::CloseRoleAdmissionsRequest, ::data_service::CloseRoleAdmissionsResponse>* allocator) {
+      ::grpc::internal::MethodHandler* const handler = ::grpc::Service::GetHandler(10);
+      static_cast<::grpc::internal::CallbackUnaryHandler< ::data_service::CloseRoleAdmissionsRequest, ::data_service::CloseRoleAdmissionsResponse>*>(handler)
+              ->SetMessageAllocator(allocator);
+    }
+    ~WithCallbackMethod_CloseRoleAdmissions() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status CloseRoleAdmissions(::grpc::ServerContext* /*context*/, const ::data_service::CloseRoleAdmissionsRequest* /*request*/, ::data_service::CloseRoleAdmissionsResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    virtual ::grpc::ServerUnaryReactor* CloseRoleAdmissions(
+      ::grpc::CallbackServerContext* /*context*/, const ::data_service::CloseRoleAdmissionsRequest* /*request*/, ::data_service::CloseRoleAdmissionsResponse* /*response*/)  { return nullptr; }
+  };
+  template <class BaseClass>
+  class WithCallbackMethod_AckRoleTradeDrain : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithCallbackMethod_AckRoleTradeDrain() {
+      ::grpc::Service::MarkMethodCallback(11,
+          new ::grpc::internal::CallbackUnaryHandler< ::data_service::AckRoleTradeDrainRequest, ::google::protobuf::Empty>(
+            [this](
+                   ::grpc::CallbackServerContext* context, const ::data_service::AckRoleTradeDrainRequest* request, ::google::protobuf::Empty* response) { return this->AckRoleTradeDrain(context, request, response); }));}
+    void SetMessageAllocatorFor_AckRoleTradeDrain(
+        ::grpc::MessageAllocator< ::data_service::AckRoleTradeDrainRequest, ::google::protobuf::Empty>* allocator) {
+      ::grpc::internal::MethodHandler* const handler = ::grpc::Service::GetHandler(11);
+      static_cast<::grpc::internal::CallbackUnaryHandler< ::data_service::AckRoleTradeDrainRequest, ::google::protobuf::Empty>*>(handler)
+              ->SetMessageAllocator(allocator);
+    }
+    ~WithCallbackMethod_AckRoleTradeDrain() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status AckRoleTradeDrain(::grpc::ServerContext* /*context*/, const ::data_service::AckRoleTradeDrainRequest* /*request*/, ::google::protobuf::Empty* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    virtual ::grpc::ServerUnaryReactor* AckRoleTradeDrain(
+      ::grpc::CallbackServerContext* /*context*/, const ::data_service::AckRoleTradeDrainRequest* /*request*/, ::google::protobuf::Empty* /*response*/)  { return nullptr; }
+  };
   template <class BaseClass>
   class WithCallbackMethod_LoadPlayerData : public BaseClass {
    private:
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithCallbackMethod_LoadPlayerData() {
-      ::grpc::Service::MarkMethodCallback(0,
+      ::grpc::Service::MarkMethodCallback(12,
           new ::grpc::internal::CallbackUnaryHandler< ::data_service::LoadPlayerDataRequest, ::data_service::LoadPlayerDataResponse>(
             [this](
                    ::grpc::CallbackServerContext* context, const ::data_service::LoadPlayerDataRequest* request, ::data_service::LoadPlayerDataResponse* response) { return this->LoadPlayerData(context, request, response); }));}
     void SetMessageAllocatorFor_LoadPlayerData(
         ::grpc::MessageAllocator< ::data_service::LoadPlayerDataRequest, ::data_service::LoadPlayerDataResponse>* allocator) {
-      ::grpc::internal::MethodHandler* const handler = ::grpc::Service::GetHandler(0);
+      ::grpc::internal::MethodHandler* const handler = ::grpc::Service::GetHandler(12);
       static_cast<::grpc::internal::CallbackUnaryHandler< ::data_service::LoadPlayerDataRequest, ::data_service::LoadPlayerDataResponse>*>(handler)
               ->SetMessageAllocator(allocator);
     }
@@ -1232,13 +2102,13 @@ class DataService final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithCallbackMethod_SavePlayerData() {
-      ::grpc::Service::MarkMethodCallback(1,
+      ::grpc::Service::MarkMethodCallback(13,
           new ::grpc::internal::CallbackUnaryHandler< ::data_service::SavePlayerDataRequest, ::data_service::SavePlayerDataResponse>(
             [this](
                    ::grpc::CallbackServerContext* context, const ::data_service::SavePlayerDataRequest* request, ::data_service::SavePlayerDataResponse* response) { return this->SavePlayerData(context, request, response); }));}
     void SetMessageAllocatorFor_SavePlayerData(
         ::grpc::MessageAllocator< ::data_service::SavePlayerDataRequest, ::data_service::SavePlayerDataResponse>* allocator) {
-      ::grpc::internal::MethodHandler* const handler = ::grpc::Service::GetHandler(1);
+      ::grpc::internal::MethodHandler* const handler = ::grpc::Service::GetHandler(13);
       static_cast<::grpc::internal::CallbackUnaryHandler< ::data_service::SavePlayerDataRequest, ::data_service::SavePlayerDataResponse>*>(handler)
               ->SetMessageAllocator(allocator);
     }
@@ -1259,13 +2129,13 @@ class DataService final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithCallbackMethod_GetPlayerField() {
-      ::grpc::Service::MarkMethodCallback(2,
+      ::grpc::Service::MarkMethodCallback(14,
           new ::grpc::internal::CallbackUnaryHandler< ::data_service::GetPlayerFieldRequest, ::data_service::GetPlayerFieldResponse>(
             [this](
                    ::grpc::CallbackServerContext* context, const ::data_service::GetPlayerFieldRequest* request, ::data_service::GetPlayerFieldResponse* response) { return this->GetPlayerField(context, request, response); }));}
     void SetMessageAllocatorFor_GetPlayerField(
         ::grpc::MessageAllocator< ::data_service::GetPlayerFieldRequest, ::data_service::GetPlayerFieldResponse>* allocator) {
-      ::grpc::internal::MethodHandler* const handler = ::grpc::Service::GetHandler(2);
+      ::grpc::internal::MethodHandler* const handler = ::grpc::Service::GetHandler(14);
       static_cast<::grpc::internal::CallbackUnaryHandler< ::data_service::GetPlayerFieldRequest, ::data_service::GetPlayerFieldResponse>*>(handler)
               ->SetMessageAllocator(allocator);
     }
@@ -1286,13 +2156,13 @@ class DataService final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithCallbackMethod_SetPlayerField() {
-      ::grpc::Service::MarkMethodCallback(3,
+      ::grpc::Service::MarkMethodCallback(15,
           new ::grpc::internal::CallbackUnaryHandler< ::data_service::SetPlayerFieldRequest, ::data_service::SetPlayerFieldResponse>(
             [this](
                    ::grpc::CallbackServerContext* context, const ::data_service::SetPlayerFieldRequest* request, ::data_service::SetPlayerFieldResponse* response) { return this->SetPlayerField(context, request, response); }));}
     void SetMessageAllocatorFor_SetPlayerField(
         ::grpc::MessageAllocator< ::data_service::SetPlayerFieldRequest, ::data_service::SetPlayerFieldResponse>* allocator) {
-      ::grpc::internal::MethodHandler* const handler = ::grpc::Service::GetHandler(3);
+      ::grpc::internal::MethodHandler* const handler = ::grpc::Service::GetHandler(15);
       static_cast<::grpc::internal::CallbackUnaryHandler< ::data_service::SetPlayerFieldRequest, ::data_service::SetPlayerFieldResponse>*>(handler)
               ->SetMessageAllocator(allocator);
     }
@@ -1313,13 +2183,13 @@ class DataService final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithCallbackMethod_RegisterPlayerZone() {
-      ::grpc::Service::MarkMethodCallback(4,
+      ::grpc::Service::MarkMethodCallback(16,
           new ::grpc::internal::CallbackUnaryHandler< ::data_service::RegisterPlayerZoneRequest, ::google::protobuf::Empty>(
             [this](
                    ::grpc::CallbackServerContext* context, const ::data_service::RegisterPlayerZoneRequest* request, ::google::protobuf::Empty* response) { return this->RegisterPlayerZone(context, request, response); }));}
     void SetMessageAllocatorFor_RegisterPlayerZone(
         ::grpc::MessageAllocator< ::data_service::RegisterPlayerZoneRequest, ::google::protobuf::Empty>* allocator) {
-      ::grpc::internal::MethodHandler* const handler = ::grpc::Service::GetHandler(4);
+      ::grpc::internal::MethodHandler* const handler = ::grpc::Service::GetHandler(16);
       static_cast<::grpc::internal::CallbackUnaryHandler< ::data_service::RegisterPlayerZoneRequest, ::google::protobuf::Empty>*>(handler)
               ->SetMessageAllocator(allocator);
     }
@@ -1340,13 +2210,13 @@ class DataService final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithCallbackMethod_GetPlayerHomeZone() {
-      ::grpc::Service::MarkMethodCallback(5,
+      ::grpc::Service::MarkMethodCallback(17,
           new ::grpc::internal::CallbackUnaryHandler< ::data_service::GetPlayerHomeZoneRequest, ::data_service::GetPlayerHomeZoneResponse>(
             [this](
                    ::grpc::CallbackServerContext* context, const ::data_service::GetPlayerHomeZoneRequest* request, ::data_service::GetPlayerHomeZoneResponse* response) { return this->GetPlayerHomeZone(context, request, response); }));}
     void SetMessageAllocatorFor_GetPlayerHomeZone(
         ::grpc::MessageAllocator< ::data_service::GetPlayerHomeZoneRequest, ::data_service::GetPlayerHomeZoneResponse>* allocator) {
-      ::grpc::internal::MethodHandler* const handler = ::grpc::Service::GetHandler(5);
+      ::grpc::internal::MethodHandler* const handler = ::grpc::Service::GetHandler(17);
       static_cast<::grpc::internal::CallbackUnaryHandler< ::data_service::GetPlayerHomeZoneRequest, ::data_service::GetPlayerHomeZoneResponse>*>(handler)
               ->SetMessageAllocator(allocator);
     }
@@ -1367,13 +2237,13 @@ class DataService final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithCallbackMethod_BatchGetPlayerHomeZone() {
-      ::grpc::Service::MarkMethodCallback(6,
+      ::grpc::Service::MarkMethodCallback(18,
           new ::grpc::internal::CallbackUnaryHandler< ::data_service::BatchGetPlayerHomeZoneRequest, ::data_service::BatchGetPlayerHomeZoneResponse>(
             [this](
                    ::grpc::CallbackServerContext* context, const ::data_service::BatchGetPlayerHomeZoneRequest* request, ::data_service::BatchGetPlayerHomeZoneResponse* response) { return this->BatchGetPlayerHomeZone(context, request, response); }));}
     void SetMessageAllocatorFor_BatchGetPlayerHomeZone(
         ::grpc::MessageAllocator< ::data_service::BatchGetPlayerHomeZoneRequest, ::data_service::BatchGetPlayerHomeZoneResponse>* allocator) {
-      ::grpc::internal::MethodHandler* const handler = ::grpc::Service::GetHandler(6);
+      ::grpc::internal::MethodHandler* const handler = ::grpc::Service::GetHandler(18);
       static_cast<::grpc::internal::CallbackUnaryHandler< ::data_service::BatchGetPlayerHomeZoneRequest, ::data_service::BatchGetPlayerHomeZoneResponse>*>(handler)
               ->SetMessageAllocator(allocator);
     }
@@ -1394,13 +2264,13 @@ class DataService final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithCallbackMethod_RemapHomeZoneForMerge() {
-      ::grpc::Service::MarkMethodCallback(7,
+      ::grpc::Service::MarkMethodCallback(19,
           new ::grpc::internal::CallbackUnaryHandler< ::data_service::RemapHomeZoneForMergeRequest, ::data_service::RemapHomeZoneForMergeResponse>(
             [this](
                    ::grpc::CallbackServerContext* context, const ::data_service::RemapHomeZoneForMergeRequest* request, ::data_service::RemapHomeZoneForMergeResponse* response) { return this->RemapHomeZoneForMerge(context, request, response); }));}
     void SetMessageAllocatorFor_RemapHomeZoneForMerge(
         ::grpc::MessageAllocator< ::data_service::RemapHomeZoneForMergeRequest, ::data_service::RemapHomeZoneForMergeResponse>* allocator) {
-      ::grpc::internal::MethodHandler* const handler = ::grpc::Service::GetHandler(7);
+      ::grpc::internal::MethodHandler* const handler = ::grpc::Service::GetHandler(19);
       static_cast<::grpc::internal::CallbackUnaryHandler< ::data_service::RemapHomeZoneForMergeRequest, ::data_service::RemapHomeZoneForMergeResponse>*>(handler)
               ->SetMessageAllocator(allocator);
     }
@@ -1421,13 +2291,13 @@ class DataService final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithCallbackMethod_DeletePlayerData() {
-      ::grpc::Service::MarkMethodCallback(8,
+      ::grpc::Service::MarkMethodCallback(20,
           new ::grpc::internal::CallbackUnaryHandler< ::data_service::DeletePlayerDataRequest, ::data_service::DeletePlayerDataResponse>(
             [this](
                    ::grpc::CallbackServerContext* context, const ::data_service::DeletePlayerDataRequest* request, ::data_service::DeletePlayerDataResponse* response) { return this->DeletePlayerData(context, request, response); }));}
     void SetMessageAllocatorFor_DeletePlayerData(
         ::grpc::MessageAllocator< ::data_service::DeletePlayerDataRequest, ::data_service::DeletePlayerDataResponse>* allocator) {
-      ::grpc::internal::MethodHandler* const handler = ::grpc::Service::GetHandler(8);
+      ::grpc::internal::MethodHandler* const handler = ::grpc::Service::GetHandler(20);
       static_cast<::grpc::internal::CallbackUnaryHandler< ::data_service::DeletePlayerDataRequest, ::data_service::DeletePlayerDataResponse>*>(handler)
               ->SetMessageAllocator(allocator);
     }
@@ -1448,13 +2318,13 @@ class DataService final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithCallbackMethod_CreatePlayerSnapshot() {
-      ::grpc::Service::MarkMethodCallback(9,
+      ::grpc::Service::MarkMethodCallback(21,
           new ::grpc::internal::CallbackUnaryHandler< ::data_service::CreatePlayerSnapshotRequest, ::data_service::CreatePlayerSnapshotResponse>(
             [this](
                    ::grpc::CallbackServerContext* context, const ::data_service::CreatePlayerSnapshotRequest* request, ::data_service::CreatePlayerSnapshotResponse* response) { return this->CreatePlayerSnapshot(context, request, response); }));}
     void SetMessageAllocatorFor_CreatePlayerSnapshot(
         ::grpc::MessageAllocator< ::data_service::CreatePlayerSnapshotRequest, ::data_service::CreatePlayerSnapshotResponse>* allocator) {
-      ::grpc::internal::MethodHandler* const handler = ::grpc::Service::GetHandler(9);
+      ::grpc::internal::MethodHandler* const handler = ::grpc::Service::GetHandler(21);
       static_cast<::grpc::internal::CallbackUnaryHandler< ::data_service::CreatePlayerSnapshotRequest, ::data_service::CreatePlayerSnapshotResponse>*>(handler)
               ->SetMessageAllocator(allocator);
     }
@@ -1475,13 +2345,13 @@ class DataService final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithCallbackMethod_ListPlayerSnapshots() {
-      ::grpc::Service::MarkMethodCallback(10,
+      ::grpc::Service::MarkMethodCallback(22,
           new ::grpc::internal::CallbackUnaryHandler< ::data_service::ListPlayerSnapshotsRequest, ::data_service::ListPlayerSnapshotsResponse>(
             [this](
                    ::grpc::CallbackServerContext* context, const ::data_service::ListPlayerSnapshotsRequest* request, ::data_service::ListPlayerSnapshotsResponse* response) { return this->ListPlayerSnapshots(context, request, response); }));}
     void SetMessageAllocatorFor_ListPlayerSnapshots(
         ::grpc::MessageAllocator< ::data_service::ListPlayerSnapshotsRequest, ::data_service::ListPlayerSnapshotsResponse>* allocator) {
-      ::grpc::internal::MethodHandler* const handler = ::grpc::Service::GetHandler(10);
+      ::grpc::internal::MethodHandler* const handler = ::grpc::Service::GetHandler(22);
       static_cast<::grpc::internal::CallbackUnaryHandler< ::data_service::ListPlayerSnapshotsRequest, ::data_service::ListPlayerSnapshotsResponse>*>(handler)
               ->SetMessageAllocator(allocator);
     }
@@ -1502,13 +2372,13 @@ class DataService final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithCallbackMethod_GetPlayerSnapshotDiff() {
-      ::grpc::Service::MarkMethodCallback(11,
+      ::grpc::Service::MarkMethodCallback(23,
           new ::grpc::internal::CallbackUnaryHandler< ::data_service::GetPlayerSnapshotDiffRequest, ::data_service::GetPlayerSnapshotDiffResponse>(
             [this](
                    ::grpc::CallbackServerContext* context, const ::data_service::GetPlayerSnapshotDiffRequest* request, ::data_service::GetPlayerSnapshotDiffResponse* response) { return this->GetPlayerSnapshotDiff(context, request, response); }));}
     void SetMessageAllocatorFor_GetPlayerSnapshotDiff(
         ::grpc::MessageAllocator< ::data_service::GetPlayerSnapshotDiffRequest, ::data_service::GetPlayerSnapshotDiffResponse>* allocator) {
-      ::grpc::internal::MethodHandler* const handler = ::grpc::Service::GetHandler(11);
+      ::grpc::internal::MethodHandler* const handler = ::grpc::Service::GetHandler(23);
       static_cast<::grpc::internal::CallbackUnaryHandler< ::data_service::GetPlayerSnapshotDiffRequest, ::data_service::GetPlayerSnapshotDiffResponse>*>(handler)
               ->SetMessageAllocator(allocator);
     }
@@ -1529,13 +2399,13 @@ class DataService final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithCallbackMethod_RollbackPlayer() {
-      ::grpc::Service::MarkMethodCallback(12,
+      ::grpc::Service::MarkMethodCallback(24,
           new ::grpc::internal::CallbackUnaryHandler< ::data_service::RollbackPlayerRequest, ::data_service::RollbackPlayerResponse>(
             [this](
                    ::grpc::CallbackServerContext* context, const ::data_service::RollbackPlayerRequest* request, ::data_service::RollbackPlayerResponse* response) { return this->RollbackPlayer(context, request, response); }));}
     void SetMessageAllocatorFor_RollbackPlayer(
         ::grpc::MessageAllocator< ::data_service::RollbackPlayerRequest, ::data_service::RollbackPlayerResponse>* allocator) {
-      ::grpc::internal::MethodHandler* const handler = ::grpc::Service::GetHandler(12);
+      ::grpc::internal::MethodHandler* const handler = ::grpc::Service::GetHandler(24);
       static_cast<::grpc::internal::CallbackUnaryHandler< ::data_service::RollbackPlayerRequest, ::data_service::RollbackPlayerResponse>*>(handler)
               ->SetMessageAllocator(allocator);
     }
@@ -1556,13 +2426,13 @@ class DataService final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithCallbackMethod_RollbackZone() {
-      ::grpc::Service::MarkMethodCallback(13,
+      ::grpc::Service::MarkMethodCallback(25,
           new ::grpc::internal::CallbackUnaryHandler< ::data_service::RollbackZoneRequest, ::data_service::RollbackZoneResponse>(
             [this](
                    ::grpc::CallbackServerContext* context, const ::data_service::RollbackZoneRequest* request, ::data_service::RollbackZoneResponse* response) { return this->RollbackZone(context, request, response); }));}
     void SetMessageAllocatorFor_RollbackZone(
         ::grpc::MessageAllocator< ::data_service::RollbackZoneRequest, ::data_service::RollbackZoneResponse>* allocator) {
-      ::grpc::internal::MethodHandler* const handler = ::grpc::Service::GetHandler(13);
+      ::grpc::internal::MethodHandler* const handler = ::grpc::Service::GetHandler(25);
       static_cast<::grpc::internal::CallbackUnaryHandler< ::data_service::RollbackZoneRequest, ::data_service::RollbackZoneResponse>*>(handler)
               ->SetMessageAllocator(allocator);
     }
@@ -1583,13 +2453,13 @@ class DataService final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithCallbackMethod_RollbackAll() {
-      ::grpc::Service::MarkMethodCallback(14,
+      ::grpc::Service::MarkMethodCallback(26,
           new ::grpc::internal::CallbackUnaryHandler< ::data_service::RollbackAllRequest, ::data_service::RollbackAllResponse>(
             [this](
                    ::grpc::CallbackServerContext* context, const ::data_service::RollbackAllRequest* request, ::data_service::RollbackAllResponse* response) { return this->RollbackAll(context, request, response); }));}
     void SetMessageAllocatorFor_RollbackAll(
         ::grpc::MessageAllocator< ::data_service::RollbackAllRequest, ::data_service::RollbackAllResponse>* allocator) {
-      ::grpc::internal::MethodHandler* const handler = ::grpc::Service::GetHandler(14);
+      ::grpc::internal::MethodHandler* const handler = ::grpc::Service::GetHandler(26);
       static_cast<::grpc::internal::CallbackUnaryHandler< ::data_service::RollbackAllRequest, ::data_service::RollbackAllResponse>*>(handler)
               ->SetMessageAllocator(allocator);
     }
@@ -1610,13 +2480,13 @@ class DataService final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithCallbackMethod_BatchRecallItems() {
-      ::grpc::Service::MarkMethodCallback(15,
+      ::grpc::Service::MarkMethodCallback(27,
           new ::grpc::internal::CallbackUnaryHandler< ::data_service::BatchRecallItemsRequest, ::data_service::BatchRecallItemsResponse>(
             [this](
                    ::grpc::CallbackServerContext* context, const ::data_service::BatchRecallItemsRequest* request, ::data_service::BatchRecallItemsResponse* response) { return this->BatchRecallItems(context, request, response); }));}
     void SetMessageAllocatorFor_BatchRecallItems(
         ::grpc::MessageAllocator< ::data_service::BatchRecallItemsRequest, ::data_service::BatchRecallItemsResponse>* allocator) {
-      ::grpc::internal::MethodHandler* const handler = ::grpc::Service::GetHandler(15);
+      ::grpc::internal::MethodHandler* const handler = ::grpc::Service::GetHandler(27);
       static_cast<::grpc::internal::CallbackUnaryHandler< ::data_service::BatchRecallItemsRequest, ::data_service::BatchRecallItemsResponse>*>(handler)
               ->SetMessageAllocator(allocator);
     }
@@ -1637,13 +2507,13 @@ class DataService final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithCallbackMethod_QueryTransactionLog() {
-      ::grpc::Service::MarkMethodCallback(16,
+      ::grpc::Service::MarkMethodCallback(28,
           new ::grpc::internal::CallbackUnaryHandler< ::data_service::QueryTransactionLogRequest, ::data_service::QueryTransactionLogResponse>(
             [this](
                    ::grpc::CallbackServerContext* context, const ::data_service::QueryTransactionLogRequest* request, ::data_service::QueryTransactionLogResponse* response) { return this->QueryTransactionLog(context, request, response); }));}
     void SetMessageAllocatorFor_QueryTransactionLog(
         ::grpc::MessageAllocator< ::data_service::QueryTransactionLogRequest, ::data_service::QueryTransactionLogResponse>* allocator) {
-      ::grpc::internal::MethodHandler* const handler = ::grpc::Service::GetHandler(16);
+      ::grpc::internal::MethodHandler* const handler = ::grpc::Service::GetHandler(28);
       static_cast<::grpc::internal::CallbackUnaryHandler< ::data_service::QueryTransactionLogRequest, ::data_service::QueryTransactionLogResponse>*>(handler)
               ->SetMessageAllocator(allocator);
     }
@@ -1664,13 +2534,13 @@ class DataService final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithCallbackMethod_CreateEventSnapshot() {
-      ::grpc::Service::MarkMethodCallback(17,
+      ::grpc::Service::MarkMethodCallback(29,
           new ::grpc::internal::CallbackUnaryHandler< ::data_service::CreateEventSnapshotRequest, ::data_service::CreateEventSnapshotResponse>(
             [this](
                    ::grpc::CallbackServerContext* context, const ::data_service::CreateEventSnapshotRequest* request, ::data_service::CreateEventSnapshotResponse* response) { return this->CreateEventSnapshot(context, request, response); }));}
     void SetMessageAllocatorFor_CreateEventSnapshot(
         ::grpc::MessageAllocator< ::data_service::CreateEventSnapshotRequest, ::data_service::CreateEventSnapshotResponse>* allocator) {
-      ::grpc::internal::MethodHandler* const handler = ::grpc::Service::GetHandler(17);
+      ::grpc::internal::MethodHandler* const handler = ::grpc::Service::GetHandler(29);
       static_cast<::grpc::internal::CallbackUnaryHandler< ::data_service::CreateEventSnapshotRequest, ::data_service::CreateEventSnapshotResponse>*>(handler)
               ->SetMessageAllocator(allocator);
     }
@@ -1691,13 +2561,13 @@ class DataService final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithCallbackMethod_AllocateIdSegment() {
-      ::grpc::Service::MarkMethodCallback(18,
+      ::grpc::Service::MarkMethodCallback(30,
           new ::grpc::internal::CallbackUnaryHandler< ::data_service::AllocateIdSegmentRequest, ::data_service::AllocateIdSegmentResponse>(
             [this](
                    ::grpc::CallbackServerContext* context, const ::data_service::AllocateIdSegmentRequest* request, ::data_service::AllocateIdSegmentResponse* response) { return this->AllocateIdSegment(context, request, response); }));}
     void SetMessageAllocatorFor_AllocateIdSegment(
         ::grpc::MessageAllocator< ::data_service::AllocateIdSegmentRequest, ::data_service::AllocateIdSegmentResponse>* allocator) {
-      ::grpc::internal::MethodHandler* const handler = ::grpc::Service::GetHandler(18);
+      ::grpc::internal::MethodHandler* const handler = ::grpc::Service::GetHandler(30);
       static_cast<::grpc::internal::CallbackUnaryHandler< ::data_service::AllocateIdSegmentRequest, ::data_service::AllocateIdSegmentResponse>*>(handler)
               ->SetMessageAllocator(allocator);
     }
@@ -1718,13 +2588,13 @@ class DataService final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithCallbackMethod_ReservePlayerName() {
-      ::grpc::Service::MarkMethodCallback(19,
+      ::grpc::Service::MarkMethodCallback(31,
           new ::grpc::internal::CallbackUnaryHandler< ::data_service::ReservePlayerNameRequest, ::data_service::ReservePlayerNameResponse>(
             [this](
                    ::grpc::CallbackServerContext* context, const ::data_service::ReservePlayerNameRequest* request, ::data_service::ReservePlayerNameResponse* response) { return this->ReservePlayerName(context, request, response); }));}
     void SetMessageAllocatorFor_ReservePlayerName(
         ::grpc::MessageAllocator< ::data_service::ReservePlayerNameRequest, ::data_service::ReservePlayerNameResponse>* allocator) {
-      ::grpc::internal::MethodHandler* const handler = ::grpc::Service::GetHandler(19);
+      ::grpc::internal::MethodHandler* const handler = ::grpc::Service::GetHandler(31);
       static_cast<::grpc::internal::CallbackUnaryHandler< ::data_service::ReservePlayerNameRequest, ::data_service::ReservePlayerNameResponse>*>(handler)
               ->SetMessageAllocator(allocator);
     }
@@ -1745,13 +2615,13 @@ class DataService final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithCallbackMethod_ReleasePlayerName() {
-      ::grpc::Service::MarkMethodCallback(20,
+      ::grpc::Service::MarkMethodCallback(32,
           new ::grpc::internal::CallbackUnaryHandler< ::data_service::ReleasePlayerNameRequest, ::google::protobuf::Empty>(
             [this](
                    ::grpc::CallbackServerContext* context, const ::data_service::ReleasePlayerNameRequest* request, ::google::protobuf::Empty* response) { return this->ReleasePlayerName(context, request, response); }));}
     void SetMessageAllocatorFor_ReleasePlayerName(
         ::grpc::MessageAllocator< ::data_service::ReleasePlayerNameRequest, ::google::protobuf::Empty>* allocator) {
-      ::grpc::internal::MethodHandler* const handler = ::grpc::Service::GetHandler(20);
+      ::grpc::internal::MethodHandler* const handler = ::grpc::Service::GetHandler(32);
       static_cast<::grpc::internal::CallbackUnaryHandler< ::data_service::ReleasePlayerNameRequest, ::google::protobuf::Empty>*>(handler)
               ->SetMessageAllocator(allocator);
     }
@@ -1772,13 +2642,13 @@ class DataService final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithCallbackMethod_BatchGetPlayerName() {
-      ::grpc::Service::MarkMethodCallback(21,
+      ::grpc::Service::MarkMethodCallback(33,
           new ::grpc::internal::CallbackUnaryHandler< ::data_service::BatchGetPlayerNameRequest, ::data_service::BatchGetPlayerNameResponse>(
             [this](
                    ::grpc::CallbackServerContext* context, const ::data_service::BatchGetPlayerNameRequest* request, ::data_service::BatchGetPlayerNameResponse* response) { return this->BatchGetPlayerName(context, request, response); }));}
     void SetMessageAllocatorFor_BatchGetPlayerName(
         ::grpc::MessageAllocator< ::data_service::BatchGetPlayerNameRequest, ::data_service::BatchGetPlayerNameResponse>* allocator) {
-      ::grpc::internal::MethodHandler* const handler = ::grpc::Service::GetHandler(21);
+      ::grpc::internal::MethodHandler* const handler = ::grpc::Service::GetHandler(33);
       static_cast<::grpc::internal::CallbackUnaryHandler< ::data_service::BatchGetPlayerNameRequest, ::data_service::BatchGetPlayerNameResponse>*>(handler)
               ->SetMessageAllocator(allocator);
     }
@@ -1799,13 +2669,13 @@ class DataService final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithCallbackMethod_GetPlayerAssetOpLedger() {
-      ::grpc::Service::MarkMethodCallback(22,
+      ::grpc::Service::MarkMethodCallback(34,
           new ::grpc::internal::CallbackUnaryHandler< ::data_service::GetPlayerAssetOpLedgerRequest, ::data_service::GetPlayerAssetOpLedgerResponse>(
             [this](
                    ::grpc::CallbackServerContext* context, const ::data_service::GetPlayerAssetOpLedgerRequest* request, ::data_service::GetPlayerAssetOpLedgerResponse* response) { return this->GetPlayerAssetOpLedger(context, request, response); }));}
     void SetMessageAllocatorFor_GetPlayerAssetOpLedger(
         ::grpc::MessageAllocator< ::data_service::GetPlayerAssetOpLedgerRequest, ::data_service::GetPlayerAssetOpLedgerResponse>* allocator) {
-      ::grpc::internal::MethodHandler* const handler = ::grpc::Service::GetHandler(22);
+      ::grpc::internal::MethodHandler* const handler = ::grpc::Service::GetHandler(34);
       static_cast<::grpc::internal::CallbackUnaryHandler< ::data_service::GetPlayerAssetOpLedgerRequest, ::data_service::GetPlayerAssetOpLedgerResponse>*>(handler)
               ->SetMessageAllocator(allocator);
     }
@@ -1826,13 +2696,13 @@ class DataService final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithCallbackMethod_GetPlayerInboxLedger() {
-      ::grpc::Service::MarkMethodCallback(23,
+      ::grpc::Service::MarkMethodCallback(35,
           new ::grpc::internal::CallbackUnaryHandler< ::data_service::GetPlayerInboxLedgerRequest, ::data_service::GetPlayerInboxLedgerResponse>(
             [this](
                    ::grpc::CallbackServerContext* context, const ::data_service::GetPlayerInboxLedgerRequest* request, ::data_service::GetPlayerInboxLedgerResponse* response) { return this->GetPlayerInboxLedger(context, request, response); }));}
     void SetMessageAllocatorFor_GetPlayerInboxLedger(
         ::grpc::MessageAllocator< ::data_service::GetPlayerInboxLedgerRequest, ::data_service::GetPlayerInboxLedgerResponse>* allocator) {
-      ::grpc::internal::MethodHandler* const handler = ::grpc::Service::GetHandler(23);
+      ::grpc::internal::MethodHandler* const handler = ::grpc::Service::GetHandler(35);
       static_cast<::grpc::internal::CallbackUnaryHandler< ::data_service::GetPlayerInboxLedgerRequest, ::data_service::GetPlayerInboxLedgerResponse>*>(handler)
               ->SetMessageAllocator(allocator);
     }
@@ -1847,15 +2717,219 @@ class DataService final {
     virtual ::grpc::ServerUnaryReactor* GetPlayerInboxLedger(
       ::grpc::CallbackServerContext* /*context*/, const ::data_service::GetPlayerInboxLedgerRequest* /*request*/, ::data_service::GetPlayerInboxLedgerResponse* /*response*/)  { return nullptr; }
   };
-  typedef WithCallbackMethod_LoadPlayerData<WithCallbackMethod_SavePlayerData<WithCallbackMethod_GetPlayerField<WithCallbackMethod_SetPlayerField<WithCallbackMethod_RegisterPlayerZone<WithCallbackMethod_GetPlayerHomeZone<WithCallbackMethod_BatchGetPlayerHomeZone<WithCallbackMethod_RemapHomeZoneForMerge<WithCallbackMethod_DeletePlayerData<WithCallbackMethod_CreatePlayerSnapshot<WithCallbackMethod_ListPlayerSnapshots<WithCallbackMethod_GetPlayerSnapshotDiff<WithCallbackMethod_RollbackPlayer<WithCallbackMethod_RollbackZone<WithCallbackMethod_RollbackAll<WithCallbackMethod_BatchRecallItems<WithCallbackMethod_QueryTransactionLog<WithCallbackMethod_CreateEventSnapshot<WithCallbackMethod_AllocateIdSegment<WithCallbackMethod_ReservePlayerName<WithCallbackMethod_ReleasePlayerName<WithCallbackMethod_BatchGetPlayerName<WithCallbackMethod_GetPlayerAssetOpLedger<WithCallbackMethod_GetPlayerInboxLedger<Service > > > > > > > > > > > > > > > > > > > > > > > > CallbackService;
+  typedef WithCallbackMethod_ReadAccountDirectory<WithCallbackMethod_CreateAccountRole<WithCallbackMethod_LookupAccountRole<WithCallbackMethod_RepairAccountRole<WithCallbackMethod_RemoveAccountRoles<WithCallbackMethod_BeginAccountRoleTrade<WithCallbackMethod_ConfirmAccountRoleTradeFreeze<WithCallbackMethod_CancelAccountRoleTrade<WithCallbackMethod_TransferAccountRole<WithCallbackMethod_RegisterRoleAdmission<WithCallbackMethod_CloseRoleAdmissions<WithCallbackMethod_AckRoleTradeDrain<WithCallbackMethod_LoadPlayerData<WithCallbackMethod_SavePlayerData<WithCallbackMethod_GetPlayerField<WithCallbackMethod_SetPlayerField<WithCallbackMethod_RegisterPlayerZone<WithCallbackMethod_GetPlayerHomeZone<WithCallbackMethod_BatchGetPlayerHomeZone<WithCallbackMethod_RemapHomeZoneForMerge<WithCallbackMethod_DeletePlayerData<WithCallbackMethod_CreatePlayerSnapshot<WithCallbackMethod_ListPlayerSnapshots<WithCallbackMethod_GetPlayerSnapshotDiff<WithCallbackMethod_RollbackPlayer<WithCallbackMethod_RollbackZone<WithCallbackMethod_RollbackAll<WithCallbackMethod_BatchRecallItems<WithCallbackMethod_QueryTransactionLog<WithCallbackMethod_CreateEventSnapshot<WithCallbackMethod_AllocateIdSegment<WithCallbackMethod_ReservePlayerName<WithCallbackMethod_ReleasePlayerName<WithCallbackMethod_BatchGetPlayerName<WithCallbackMethod_GetPlayerAssetOpLedger<WithCallbackMethod_GetPlayerInboxLedger<Service > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > CallbackService;
   typedef CallbackService ExperimentalCallbackService;
+  template <class BaseClass>
+  class WithGenericMethod_ReadAccountDirectory : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithGenericMethod_ReadAccountDirectory() {
+      ::grpc::Service::MarkMethodGeneric(0);
+    }
+    ~WithGenericMethod_ReadAccountDirectory() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status ReadAccountDirectory(::grpc::ServerContext* /*context*/, const ::data_service::ReadAccountDirectoryRequest* /*request*/, ::data_service::AccountDirectoryResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+  };
+  template <class BaseClass>
+  class WithGenericMethod_CreateAccountRole : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithGenericMethod_CreateAccountRole() {
+      ::grpc::Service::MarkMethodGeneric(1);
+    }
+    ~WithGenericMethod_CreateAccountRole() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status CreateAccountRole(::grpc::ServerContext* /*context*/, const ::data_service::CreateAccountRoleRequest* /*request*/, ::data_service::AccountDirectoryResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+  };
+  template <class BaseClass>
+  class WithGenericMethod_LookupAccountRole : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithGenericMethod_LookupAccountRole() {
+      ::grpc::Service::MarkMethodGeneric(2);
+    }
+    ~WithGenericMethod_LookupAccountRole() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status LookupAccountRole(::grpc::ServerContext* /*context*/, const ::data_service::LookupAccountRoleRequest* /*request*/, ::data_service::AccountRoleOwnership* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+  };
+  template <class BaseClass>
+  class WithGenericMethod_RepairAccountRole : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithGenericMethod_RepairAccountRole() {
+      ::grpc::Service::MarkMethodGeneric(3);
+    }
+    ~WithGenericMethod_RepairAccountRole() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status RepairAccountRole(::grpc::ServerContext* /*context*/, const ::data_service::RepairAccountRoleRequest* /*request*/, ::data_service::AccountDirectoryResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+  };
+  template <class BaseClass>
+  class WithGenericMethod_RemoveAccountRoles : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithGenericMethod_RemoveAccountRoles() {
+      ::grpc::Service::MarkMethodGeneric(4);
+    }
+    ~WithGenericMethod_RemoveAccountRoles() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status RemoveAccountRoles(::grpc::ServerContext* /*context*/, const ::data_service::RemoveAccountRolesRequest* /*request*/, ::google::protobuf::Empty* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+  };
+  template <class BaseClass>
+  class WithGenericMethod_BeginAccountRoleTrade : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithGenericMethod_BeginAccountRoleTrade() {
+      ::grpc::Service::MarkMethodGeneric(5);
+    }
+    ~WithGenericMethod_BeginAccountRoleTrade() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status BeginAccountRoleTrade(::grpc::ServerContext* /*context*/, const ::data_service::BeginAccountRoleTradeRequest* /*request*/, ::data_service::AccountRoleTradeReceipt* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+  };
+  template <class BaseClass>
+  class WithGenericMethod_ConfirmAccountRoleTradeFreeze : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithGenericMethod_ConfirmAccountRoleTradeFreeze() {
+      ::grpc::Service::MarkMethodGeneric(6);
+    }
+    ~WithGenericMethod_ConfirmAccountRoleTradeFreeze() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status ConfirmAccountRoleTradeFreeze(::grpc::ServerContext* /*context*/, const ::data_service::ConfirmAccountRoleTradeFreezeRequest* /*request*/, ::data_service::AccountRoleTradeReceipt* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+  };
+  template <class BaseClass>
+  class WithGenericMethod_CancelAccountRoleTrade : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithGenericMethod_CancelAccountRoleTrade() {
+      ::grpc::Service::MarkMethodGeneric(7);
+    }
+    ~WithGenericMethod_CancelAccountRoleTrade() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status CancelAccountRoleTrade(::grpc::ServerContext* /*context*/, const ::data_service::CancelAccountRoleTradeRequest* /*request*/, ::data_service::AccountRoleTradeReceipt* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+  };
+  template <class BaseClass>
+  class WithGenericMethod_TransferAccountRole : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithGenericMethod_TransferAccountRole() {
+      ::grpc::Service::MarkMethodGeneric(8);
+    }
+    ~WithGenericMethod_TransferAccountRole() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status TransferAccountRole(::grpc::ServerContext* /*context*/, const ::data_service::TransferAccountRoleRequest* /*request*/, ::data_service::AccountRoleTransferReceipt* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+  };
+  template <class BaseClass>
+  class WithGenericMethod_RegisterRoleAdmission : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithGenericMethod_RegisterRoleAdmission() {
+      ::grpc::Service::MarkMethodGeneric(9);
+    }
+    ~WithGenericMethod_RegisterRoleAdmission() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status RegisterRoleAdmission(::grpc::ServerContext* /*context*/, const ::data_service::RegisterRoleAdmissionRequest* /*request*/, ::data_service::RegisterRoleAdmissionResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+  };
+  template <class BaseClass>
+  class WithGenericMethod_CloseRoleAdmissions : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithGenericMethod_CloseRoleAdmissions() {
+      ::grpc::Service::MarkMethodGeneric(10);
+    }
+    ~WithGenericMethod_CloseRoleAdmissions() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status CloseRoleAdmissions(::grpc::ServerContext* /*context*/, const ::data_service::CloseRoleAdmissionsRequest* /*request*/, ::data_service::CloseRoleAdmissionsResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+  };
+  template <class BaseClass>
+  class WithGenericMethod_AckRoleTradeDrain : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithGenericMethod_AckRoleTradeDrain() {
+      ::grpc::Service::MarkMethodGeneric(11);
+    }
+    ~WithGenericMethod_AckRoleTradeDrain() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status AckRoleTradeDrain(::grpc::ServerContext* /*context*/, const ::data_service::AckRoleTradeDrainRequest* /*request*/, ::google::protobuf::Empty* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+  };
   template <class BaseClass>
   class WithGenericMethod_LoadPlayerData : public BaseClass {
    private:
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithGenericMethod_LoadPlayerData() {
-      ::grpc::Service::MarkMethodGeneric(0);
+      ::grpc::Service::MarkMethodGeneric(12);
     }
     ~WithGenericMethod_LoadPlayerData() override {
       BaseClassMustBeDerivedFromService(this);
@@ -1872,7 +2946,7 @@ class DataService final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithGenericMethod_SavePlayerData() {
-      ::grpc::Service::MarkMethodGeneric(1);
+      ::grpc::Service::MarkMethodGeneric(13);
     }
     ~WithGenericMethod_SavePlayerData() override {
       BaseClassMustBeDerivedFromService(this);
@@ -1889,7 +2963,7 @@ class DataService final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithGenericMethod_GetPlayerField() {
-      ::grpc::Service::MarkMethodGeneric(2);
+      ::grpc::Service::MarkMethodGeneric(14);
     }
     ~WithGenericMethod_GetPlayerField() override {
       BaseClassMustBeDerivedFromService(this);
@@ -1906,7 +2980,7 @@ class DataService final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithGenericMethod_SetPlayerField() {
-      ::grpc::Service::MarkMethodGeneric(3);
+      ::grpc::Service::MarkMethodGeneric(15);
     }
     ~WithGenericMethod_SetPlayerField() override {
       BaseClassMustBeDerivedFromService(this);
@@ -1923,7 +2997,7 @@ class DataService final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithGenericMethod_RegisterPlayerZone() {
-      ::grpc::Service::MarkMethodGeneric(4);
+      ::grpc::Service::MarkMethodGeneric(16);
     }
     ~WithGenericMethod_RegisterPlayerZone() override {
       BaseClassMustBeDerivedFromService(this);
@@ -1940,7 +3014,7 @@ class DataService final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithGenericMethod_GetPlayerHomeZone() {
-      ::grpc::Service::MarkMethodGeneric(5);
+      ::grpc::Service::MarkMethodGeneric(17);
     }
     ~WithGenericMethod_GetPlayerHomeZone() override {
       BaseClassMustBeDerivedFromService(this);
@@ -1957,7 +3031,7 @@ class DataService final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithGenericMethod_BatchGetPlayerHomeZone() {
-      ::grpc::Service::MarkMethodGeneric(6);
+      ::grpc::Service::MarkMethodGeneric(18);
     }
     ~WithGenericMethod_BatchGetPlayerHomeZone() override {
       BaseClassMustBeDerivedFromService(this);
@@ -1974,7 +3048,7 @@ class DataService final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithGenericMethod_RemapHomeZoneForMerge() {
-      ::grpc::Service::MarkMethodGeneric(7);
+      ::grpc::Service::MarkMethodGeneric(19);
     }
     ~WithGenericMethod_RemapHomeZoneForMerge() override {
       BaseClassMustBeDerivedFromService(this);
@@ -1991,7 +3065,7 @@ class DataService final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithGenericMethod_DeletePlayerData() {
-      ::grpc::Service::MarkMethodGeneric(8);
+      ::grpc::Service::MarkMethodGeneric(20);
     }
     ~WithGenericMethod_DeletePlayerData() override {
       BaseClassMustBeDerivedFromService(this);
@@ -2008,7 +3082,7 @@ class DataService final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithGenericMethod_CreatePlayerSnapshot() {
-      ::grpc::Service::MarkMethodGeneric(9);
+      ::grpc::Service::MarkMethodGeneric(21);
     }
     ~WithGenericMethod_CreatePlayerSnapshot() override {
       BaseClassMustBeDerivedFromService(this);
@@ -2025,7 +3099,7 @@ class DataService final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithGenericMethod_ListPlayerSnapshots() {
-      ::grpc::Service::MarkMethodGeneric(10);
+      ::grpc::Service::MarkMethodGeneric(22);
     }
     ~WithGenericMethod_ListPlayerSnapshots() override {
       BaseClassMustBeDerivedFromService(this);
@@ -2042,7 +3116,7 @@ class DataService final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithGenericMethod_GetPlayerSnapshotDiff() {
-      ::grpc::Service::MarkMethodGeneric(11);
+      ::grpc::Service::MarkMethodGeneric(23);
     }
     ~WithGenericMethod_GetPlayerSnapshotDiff() override {
       BaseClassMustBeDerivedFromService(this);
@@ -2059,7 +3133,7 @@ class DataService final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithGenericMethod_RollbackPlayer() {
-      ::grpc::Service::MarkMethodGeneric(12);
+      ::grpc::Service::MarkMethodGeneric(24);
     }
     ~WithGenericMethod_RollbackPlayer() override {
       BaseClassMustBeDerivedFromService(this);
@@ -2076,7 +3150,7 @@ class DataService final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithGenericMethod_RollbackZone() {
-      ::grpc::Service::MarkMethodGeneric(13);
+      ::grpc::Service::MarkMethodGeneric(25);
     }
     ~WithGenericMethod_RollbackZone() override {
       BaseClassMustBeDerivedFromService(this);
@@ -2093,7 +3167,7 @@ class DataService final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithGenericMethod_RollbackAll() {
-      ::grpc::Service::MarkMethodGeneric(14);
+      ::grpc::Service::MarkMethodGeneric(26);
     }
     ~WithGenericMethod_RollbackAll() override {
       BaseClassMustBeDerivedFromService(this);
@@ -2110,7 +3184,7 @@ class DataService final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithGenericMethod_BatchRecallItems() {
-      ::grpc::Service::MarkMethodGeneric(15);
+      ::grpc::Service::MarkMethodGeneric(27);
     }
     ~WithGenericMethod_BatchRecallItems() override {
       BaseClassMustBeDerivedFromService(this);
@@ -2127,7 +3201,7 @@ class DataService final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithGenericMethod_QueryTransactionLog() {
-      ::grpc::Service::MarkMethodGeneric(16);
+      ::grpc::Service::MarkMethodGeneric(28);
     }
     ~WithGenericMethod_QueryTransactionLog() override {
       BaseClassMustBeDerivedFromService(this);
@@ -2144,7 +3218,7 @@ class DataService final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithGenericMethod_CreateEventSnapshot() {
-      ::grpc::Service::MarkMethodGeneric(17);
+      ::grpc::Service::MarkMethodGeneric(29);
     }
     ~WithGenericMethod_CreateEventSnapshot() override {
       BaseClassMustBeDerivedFromService(this);
@@ -2161,7 +3235,7 @@ class DataService final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithGenericMethod_AllocateIdSegment() {
-      ::grpc::Service::MarkMethodGeneric(18);
+      ::grpc::Service::MarkMethodGeneric(30);
     }
     ~WithGenericMethod_AllocateIdSegment() override {
       BaseClassMustBeDerivedFromService(this);
@@ -2178,7 +3252,7 @@ class DataService final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithGenericMethod_ReservePlayerName() {
-      ::grpc::Service::MarkMethodGeneric(19);
+      ::grpc::Service::MarkMethodGeneric(31);
     }
     ~WithGenericMethod_ReservePlayerName() override {
       BaseClassMustBeDerivedFromService(this);
@@ -2195,7 +3269,7 @@ class DataService final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithGenericMethod_ReleasePlayerName() {
-      ::grpc::Service::MarkMethodGeneric(20);
+      ::grpc::Service::MarkMethodGeneric(32);
     }
     ~WithGenericMethod_ReleasePlayerName() override {
       BaseClassMustBeDerivedFromService(this);
@@ -2212,7 +3286,7 @@ class DataService final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithGenericMethod_BatchGetPlayerName() {
-      ::grpc::Service::MarkMethodGeneric(21);
+      ::grpc::Service::MarkMethodGeneric(33);
     }
     ~WithGenericMethod_BatchGetPlayerName() override {
       BaseClassMustBeDerivedFromService(this);
@@ -2229,7 +3303,7 @@ class DataService final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithGenericMethod_GetPlayerAssetOpLedger() {
-      ::grpc::Service::MarkMethodGeneric(22);
+      ::grpc::Service::MarkMethodGeneric(34);
     }
     ~WithGenericMethod_GetPlayerAssetOpLedger() override {
       BaseClassMustBeDerivedFromService(this);
@@ -2246,7 +3320,7 @@ class DataService final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithGenericMethod_GetPlayerInboxLedger() {
-      ::grpc::Service::MarkMethodGeneric(23);
+      ::grpc::Service::MarkMethodGeneric(35);
     }
     ~WithGenericMethod_GetPlayerInboxLedger() override {
       BaseClassMustBeDerivedFromService(this);
@@ -2258,12 +3332,252 @@ class DataService final {
     }
   };
   template <class BaseClass>
+  class WithRawMethod_ReadAccountDirectory : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithRawMethod_ReadAccountDirectory() {
+      ::grpc::Service::MarkMethodRaw(0);
+    }
+    ~WithRawMethod_ReadAccountDirectory() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status ReadAccountDirectory(::grpc::ServerContext* /*context*/, const ::data_service::ReadAccountDirectoryRequest* /*request*/, ::data_service::AccountDirectoryResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    void RequestReadAccountDirectory(::grpc::ServerContext* context, ::grpc::ByteBuffer* request, ::grpc::ServerAsyncResponseWriter< ::grpc::ByteBuffer>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
+      ::grpc::Service::RequestAsyncUnary(0, context, request, response, new_call_cq, notification_cq, tag);
+    }
+  };
+  template <class BaseClass>
+  class WithRawMethod_CreateAccountRole : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithRawMethod_CreateAccountRole() {
+      ::grpc::Service::MarkMethodRaw(1);
+    }
+    ~WithRawMethod_CreateAccountRole() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status CreateAccountRole(::grpc::ServerContext* /*context*/, const ::data_service::CreateAccountRoleRequest* /*request*/, ::data_service::AccountDirectoryResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    void RequestCreateAccountRole(::grpc::ServerContext* context, ::grpc::ByteBuffer* request, ::grpc::ServerAsyncResponseWriter< ::grpc::ByteBuffer>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
+      ::grpc::Service::RequestAsyncUnary(1, context, request, response, new_call_cq, notification_cq, tag);
+    }
+  };
+  template <class BaseClass>
+  class WithRawMethod_LookupAccountRole : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithRawMethod_LookupAccountRole() {
+      ::grpc::Service::MarkMethodRaw(2);
+    }
+    ~WithRawMethod_LookupAccountRole() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status LookupAccountRole(::grpc::ServerContext* /*context*/, const ::data_service::LookupAccountRoleRequest* /*request*/, ::data_service::AccountRoleOwnership* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    void RequestLookupAccountRole(::grpc::ServerContext* context, ::grpc::ByteBuffer* request, ::grpc::ServerAsyncResponseWriter< ::grpc::ByteBuffer>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
+      ::grpc::Service::RequestAsyncUnary(2, context, request, response, new_call_cq, notification_cq, tag);
+    }
+  };
+  template <class BaseClass>
+  class WithRawMethod_RepairAccountRole : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithRawMethod_RepairAccountRole() {
+      ::grpc::Service::MarkMethodRaw(3);
+    }
+    ~WithRawMethod_RepairAccountRole() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status RepairAccountRole(::grpc::ServerContext* /*context*/, const ::data_service::RepairAccountRoleRequest* /*request*/, ::data_service::AccountDirectoryResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    void RequestRepairAccountRole(::grpc::ServerContext* context, ::grpc::ByteBuffer* request, ::grpc::ServerAsyncResponseWriter< ::grpc::ByteBuffer>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
+      ::grpc::Service::RequestAsyncUnary(3, context, request, response, new_call_cq, notification_cq, tag);
+    }
+  };
+  template <class BaseClass>
+  class WithRawMethod_RemoveAccountRoles : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithRawMethod_RemoveAccountRoles() {
+      ::grpc::Service::MarkMethodRaw(4);
+    }
+    ~WithRawMethod_RemoveAccountRoles() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status RemoveAccountRoles(::grpc::ServerContext* /*context*/, const ::data_service::RemoveAccountRolesRequest* /*request*/, ::google::protobuf::Empty* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    void RequestRemoveAccountRoles(::grpc::ServerContext* context, ::grpc::ByteBuffer* request, ::grpc::ServerAsyncResponseWriter< ::grpc::ByteBuffer>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
+      ::grpc::Service::RequestAsyncUnary(4, context, request, response, new_call_cq, notification_cq, tag);
+    }
+  };
+  template <class BaseClass>
+  class WithRawMethod_BeginAccountRoleTrade : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithRawMethod_BeginAccountRoleTrade() {
+      ::grpc::Service::MarkMethodRaw(5);
+    }
+    ~WithRawMethod_BeginAccountRoleTrade() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status BeginAccountRoleTrade(::grpc::ServerContext* /*context*/, const ::data_service::BeginAccountRoleTradeRequest* /*request*/, ::data_service::AccountRoleTradeReceipt* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    void RequestBeginAccountRoleTrade(::grpc::ServerContext* context, ::grpc::ByteBuffer* request, ::grpc::ServerAsyncResponseWriter< ::grpc::ByteBuffer>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
+      ::grpc::Service::RequestAsyncUnary(5, context, request, response, new_call_cq, notification_cq, tag);
+    }
+  };
+  template <class BaseClass>
+  class WithRawMethod_ConfirmAccountRoleTradeFreeze : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithRawMethod_ConfirmAccountRoleTradeFreeze() {
+      ::grpc::Service::MarkMethodRaw(6);
+    }
+    ~WithRawMethod_ConfirmAccountRoleTradeFreeze() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status ConfirmAccountRoleTradeFreeze(::grpc::ServerContext* /*context*/, const ::data_service::ConfirmAccountRoleTradeFreezeRequest* /*request*/, ::data_service::AccountRoleTradeReceipt* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    void RequestConfirmAccountRoleTradeFreeze(::grpc::ServerContext* context, ::grpc::ByteBuffer* request, ::grpc::ServerAsyncResponseWriter< ::grpc::ByteBuffer>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
+      ::grpc::Service::RequestAsyncUnary(6, context, request, response, new_call_cq, notification_cq, tag);
+    }
+  };
+  template <class BaseClass>
+  class WithRawMethod_CancelAccountRoleTrade : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithRawMethod_CancelAccountRoleTrade() {
+      ::grpc::Service::MarkMethodRaw(7);
+    }
+    ~WithRawMethod_CancelAccountRoleTrade() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status CancelAccountRoleTrade(::grpc::ServerContext* /*context*/, const ::data_service::CancelAccountRoleTradeRequest* /*request*/, ::data_service::AccountRoleTradeReceipt* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    void RequestCancelAccountRoleTrade(::grpc::ServerContext* context, ::grpc::ByteBuffer* request, ::grpc::ServerAsyncResponseWriter< ::grpc::ByteBuffer>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
+      ::grpc::Service::RequestAsyncUnary(7, context, request, response, new_call_cq, notification_cq, tag);
+    }
+  };
+  template <class BaseClass>
+  class WithRawMethod_TransferAccountRole : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithRawMethod_TransferAccountRole() {
+      ::grpc::Service::MarkMethodRaw(8);
+    }
+    ~WithRawMethod_TransferAccountRole() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status TransferAccountRole(::grpc::ServerContext* /*context*/, const ::data_service::TransferAccountRoleRequest* /*request*/, ::data_service::AccountRoleTransferReceipt* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    void RequestTransferAccountRole(::grpc::ServerContext* context, ::grpc::ByteBuffer* request, ::grpc::ServerAsyncResponseWriter< ::grpc::ByteBuffer>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
+      ::grpc::Service::RequestAsyncUnary(8, context, request, response, new_call_cq, notification_cq, tag);
+    }
+  };
+  template <class BaseClass>
+  class WithRawMethod_RegisterRoleAdmission : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithRawMethod_RegisterRoleAdmission() {
+      ::grpc::Service::MarkMethodRaw(9);
+    }
+    ~WithRawMethod_RegisterRoleAdmission() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status RegisterRoleAdmission(::grpc::ServerContext* /*context*/, const ::data_service::RegisterRoleAdmissionRequest* /*request*/, ::data_service::RegisterRoleAdmissionResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    void RequestRegisterRoleAdmission(::grpc::ServerContext* context, ::grpc::ByteBuffer* request, ::grpc::ServerAsyncResponseWriter< ::grpc::ByteBuffer>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
+      ::grpc::Service::RequestAsyncUnary(9, context, request, response, new_call_cq, notification_cq, tag);
+    }
+  };
+  template <class BaseClass>
+  class WithRawMethod_CloseRoleAdmissions : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithRawMethod_CloseRoleAdmissions() {
+      ::grpc::Service::MarkMethodRaw(10);
+    }
+    ~WithRawMethod_CloseRoleAdmissions() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status CloseRoleAdmissions(::grpc::ServerContext* /*context*/, const ::data_service::CloseRoleAdmissionsRequest* /*request*/, ::data_service::CloseRoleAdmissionsResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    void RequestCloseRoleAdmissions(::grpc::ServerContext* context, ::grpc::ByteBuffer* request, ::grpc::ServerAsyncResponseWriter< ::grpc::ByteBuffer>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
+      ::grpc::Service::RequestAsyncUnary(10, context, request, response, new_call_cq, notification_cq, tag);
+    }
+  };
+  template <class BaseClass>
+  class WithRawMethod_AckRoleTradeDrain : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithRawMethod_AckRoleTradeDrain() {
+      ::grpc::Service::MarkMethodRaw(11);
+    }
+    ~WithRawMethod_AckRoleTradeDrain() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status AckRoleTradeDrain(::grpc::ServerContext* /*context*/, const ::data_service::AckRoleTradeDrainRequest* /*request*/, ::google::protobuf::Empty* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    void RequestAckRoleTradeDrain(::grpc::ServerContext* context, ::grpc::ByteBuffer* request, ::grpc::ServerAsyncResponseWriter< ::grpc::ByteBuffer>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
+      ::grpc::Service::RequestAsyncUnary(11, context, request, response, new_call_cq, notification_cq, tag);
+    }
+  };
+  template <class BaseClass>
   class WithRawMethod_LoadPlayerData : public BaseClass {
    private:
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithRawMethod_LoadPlayerData() {
-      ::grpc::Service::MarkMethodRaw(0);
+      ::grpc::Service::MarkMethodRaw(12);
     }
     ~WithRawMethod_LoadPlayerData() override {
       BaseClassMustBeDerivedFromService(this);
@@ -2274,7 +3588,7 @@ class DataService final {
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
     void RequestLoadPlayerData(::grpc::ServerContext* context, ::grpc::ByteBuffer* request, ::grpc::ServerAsyncResponseWriter< ::grpc::ByteBuffer>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
-      ::grpc::Service::RequestAsyncUnary(0, context, request, response, new_call_cq, notification_cq, tag);
+      ::grpc::Service::RequestAsyncUnary(12, context, request, response, new_call_cq, notification_cq, tag);
     }
   };
   template <class BaseClass>
@@ -2283,7 +3597,7 @@ class DataService final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithRawMethod_SavePlayerData() {
-      ::grpc::Service::MarkMethodRaw(1);
+      ::grpc::Service::MarkMethodRaw(13);
     }
     ~WithRawMethod_SavePlayerData() override {
       BaseClassMustBeDerivedFromService(this);
@@ -2294,7 +3608,7 @@ class DataService final {
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
     void RequestSavePlayerData(::grpc::ServerContext* context, ::grpc::ByteBuffer* request, ::grpc::ServerAsyncResponseWriter< ::grpc::ByteBuffer>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
-      ::grpc::Service::RequestAsyncUnary(1, context, request, response, new_call_cq, notification_cq, tag);
+      ::grpc::Service::RequestAsyncUnary(13, context, request, response, new_call_cq, notification_cq, tag);
     }
   };
   template <class BaseClass>
@@ -2303,7 +3617,7 @@ class DataService final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithRawMethod_GetPlayerField() {
-      ::grpc::Service::MarkMethodRaw(2);
+      ::grpc::Service::MarkMethodRaw(14);
     }
     ~WithRawMethod_GetPlayerField() override {
       BaseClassMustBeDerivedFromService(this);
@@ -2314,7 +3628,7 @@ class DataService final {
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
     void RequestGetPlayerField(::grpc::ServerContext* context, ::grpc::ByteBuffer* request, ::grpc::ServerAsyncResponseWriter< ::grpc::ByteBuffer>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
-      ::grpc::Service::RequestAsyncUnary(2, context, request, response, new_call_cq, notification_cq, tag);
+      ::grpc::Service::RequestAsyncUnary(14, context, request, response, new_call_cq, notification_cq, tag);
     }
   };
   template <class BaseClass>
@@ -2323,7 +3637,7 @@ class DataService final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithRawMethod_SetPlayerField() {
-      ::grpc::Service::MarkMethodRaw(3);
+      ::grpc::Service::MarkMethodRaw(15);
     }
     ~WithRawMethod_SetPlayerField() override {
       BaseClassMustBeDerivedFromService(this);
@@ -2334,7 +3648,7 @@ class DataService final {
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
     void RequestSetPlayerField(::grpc::ServerContext* context, ::grpc::ByteBuffer* request, ::grpc::ServerAsyncResponseWriter< ::grpc::ByteBuffer>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
-      ::grpc::Service::RequestAsyncUnary(3, context, request, response, new_call_cq, notification_cq, tag);
+      ::grpc::Service::RequestAsyncUnary(15, context, request, response, new_call_cq, notification_cq, tag);
     }
   };
   template <class BaseClass>
@@ -2343,7 +3657,7 @@ class DataService final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithRawMethod_RegisterPlayerZone() {
-      ::grpc::Service::MarkMethodRaw(4);
+      ::grpc::Service::MarkMethodRaw(16);
     }
     ~WithRawMethod_RegisterPlayerZone() override {
       BaseClassMustBeDerivedFromService(this);
@@ -2354,7 +3668,7 @@ class DataService final {
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
     void RequestRegisterPlayerZone(::grpc::ServerContext* context, ::grpc::ByteBuffer* request, ::grpc::ServerAsyncResponseWriter< ::grpc::ByteBuffer>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
-      ::grpc::Service::RequestAsyncUnary(4, context, request, response, new_call_cq, notification_cq, tag);
+      ::grpc::Service::RequestAsyncUnary(16, context, request, response, new_call_cq, notification_cq, tag);
     }
   };
   template <class BaseClass>
@@ -2363,7 +3677,7 @@ class DataService final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithRawMethod_GetPlayerHomeZone() {
-      ::grpc::Service::MarkMethodRaw(5);
+      ::grpc::Service::MarkMethodRaw(17);
     }
     ~WithRawMethod_GetPlayerHomeZone() override {
       BaseClassMustBeDerivedFromService(this);
@@ -2374,7 +3688,7 @@ class DataService final {
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
     void RequestGetPlayerHomeZone(::grpc::ServerContext* context, ::grpc::ByteBuffer* request, ::grpc::ServerAsyncResponseWriter< ::grpc::ByteBuffer>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
-      ::grpc::Service::RequestAsyncUnary(5, context, request, response, new_call_cq, notification_cq, tag);
+      ::grpc::Service::RequestAsyncUnary(17, context, request, response, new_call_cq, notification_cq, tag);
     }
   };
   template <class BaseClass>
@@ -2383,7 +3697,7 @@ class DataService final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithRawMethod_BatchGetPlayerHomeZone() {
-      ::grpc::Service::MarkMethodRaw(6);
+      ::grpc::Service::MarkMethodRaw(18);
     }
     ~WithRawMethod_BatchGetPlayerHomeZone() override {
       BaseClassMustBeDerivedFromService(this);
@@ -2394,7 +3708,7 @@ class DataService final {
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
     void RequestBatchGetPlayerHomeZone(::grpc::ServerContext* context, ::grpc::ByteBuffer* request, ::grpc::ServerAsyncResponseWriter< ::grpc::ByteBuffer>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
-      ::grpc::Service::RequestAsyncUnary(6, context, request, response, new_call_cq, notification_cq, tag);
+      ::grpc::Service::RequestAsyncUnary(18, context, request, response, new_call_cq, notification_cq, tag);
     }
   };
   template <class BaseClass>
@@ -2403,7 +3717,7 @@ class DataService final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithRawMethod_RemapHomeZoneForMerge() {
-      ::grpc::Service::MarkMethodRaw(7);
+      ::grpc::Service::MarkMethodRaw(19);
     }
     ~WithRawMethod_RemapHomeZoneForMerge() override {
       BaseClassMustBeDerivedFromService(this);
@@ -2414,7 +3728,7 @@ class DataService final {
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
     void RequestRemapHomeZoneForMerge(::grpc::ServerContext* context, ::grpc::ByteBuffer* request, ::grpc::ServerAsyncResponseWriter< ::grpc::ByteBuffer>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
-      ::grpc::Service::RequestAsyncUnary(7, context, request, response, new_call_cq, notification_cq, tag);
+      ::grpc::Service::RequestAsyncUnary(19, context, request, response, new_call_cq, notification_cq, tag);
     }
   };
   template <class BaseClass>
@@ -2423,7 +3737,7 @@ class DataService final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithRawMethod_DeletePlayerData() {
-      ::grpc::Service::MarkMethodRaw(8);
+      ::grpc::Service::MarkMethodRaw(20);
     }
     ~WithRawMethod_DeletePlayerData() override {
       BaseClassMustBeDerivedFromService(this);
@@ -2434,7 +3748,7 @@ class DataService final {
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
     void RequestDeletePlayerData(::grpc::ServerContext* context, ::grpc::ByteBuffer* request, ::grpc::ServerAsyncResponseWriter< ::grpc::ByteBuffer>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
-      ::grpc::Service::RequestAsyncUnary(8, context, request, response, new_call_cq, notification_cq, tag);
+      ::grpc::Service::RequestAsyncUnary(20, context, request, response, new_call_cq, notification_cq, tag);
     }
   };
   template <class BaseClass>
@@ -2443,7 +3757,7 @@ class DataService final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithRawMethod_CreatePlayerSnapshot() {
-      ::grpc::Service::MarkMethodRaw(9);
+      ::grpc::Service::MarkMethodRaw(21);
     }
     ~WithRawMethod_CreatePlayerSnapshot() override {
       BaseClassMustBeDerivedFromService(this);
@@ -2454,7 +3768,7 @@ class DataService final {
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
     void RequestCreatePlayerSnapshot(::grpc::ServerContext* context, ::grpc::ByteBuffer* request, ::grpc::ServerAsyncResponseWriter< ::grpc::ByteBuffer>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
-      ::grpc::Service::RequestAsyncUnary(9, context, request, response, new_call_cq, notification_cq, tag);
+      ::grpc::Service::RequestAsyncUnary(21, context, request, response, new_call_cq, notification_cq, tag);
     }
   };
   template <class BaseClass>
@@ -2463,7 +3777,7 @@ class DataService final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithRawMethod_ListPlayerSnapshots() {
-      ::grpc::Service::MarkMethodRaw(10);
+      ::grpc::Service::MarkMethodRaw(22);
     }
     ~WithRawMethod_ListPlayerSnapshots() override {
       BaseClassMustBeDerivedFromService(this);
@@ -2474,7 +3788,7 @@ class DataService final {
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
     void RequestListPlayerSnapshots(::grpc::ServerContext* context, ::grpc::ByteBuffer* request, ::grpc::ServerAsyncResponseWriter< ::grpc::ByteBuffer>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
-      ::grpc::Service::RequestAsyncUnary(10, context, request, response, new_call_cq, notification_cq, tag);
+      ::grpc::Service::RequestAsyncUnary(22, context, request, response, new_call_cq, notification_cq, tag);
     }
   };
   template <class BaseClass>
@@ -2483,7 +3797,7 @@ class DataService final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithRawMethod_GetPlayerSnapshotDiff() {
-      ::grpc::Service::MarkMethodRaw(11);
+      ::grpc::Service::MarkMethodRaw(23);
     }
     ~WithRawMethod_GetPlayerSnapshotDiff() override {
       BaseClassMustBeDerivedFromService(this);
@@ -2494,7 +3808,7 @@ class DataService final {
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
     void RequestGetPlayerSnapshotDiff(::grpc::ServerContext* context, ::grpc::ByteBuffer* request, ::grpc::ServerAsyncResponseWriter< ::grpc::ByteBuffer>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
-      ::grpc::Service::RequestAsyncUnary(11, context, request, response, new_call_cq, notification_cq, tag);
+      ::grpc::Service::RequestAsyncUnary(23, context, request, response, new_call_cq, notification_cq, tag);
     }
   };
   template <class BaseClass>
@@ -2503,7 +3817,7 @@ class DataService final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithRawMethod_RollbackPlayer() {
-      ::grpc::Service::MarkMethodRaw(12);
+      ::grpc::Service::MarkMethodRaw(24);
     }
     ~WithRawMethod_RollbackPlayer() override {
       BaseClassMustBeDerivedFromService(this);
@@ -2514,7 +3828,7 @@ class DataService final {
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
     void RequestRollbackPlayer(::grpc::ServerContext* context, ::grpc::ByteBuffer* request, ::grpc::ServerAsyncResponseWriter< ::grpc::ByteBuffer>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
-      ::grpc::Service::RequestAsyncUnary(12, context, request, response, new_call_cq, notification_cq, tag);
+      ::grpc::Service::RequestAsyncUnary(24, context, request, response, new_call_cq, notification_cq, tag);
     }
   };
   template <class BaseClass>
@@ -2523,7 +3837,7 @@ class DataService final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithRawMethod_RollbackZone() {
-      ::grpc::Service::MarkMethodRaw(13);
+      ::grpc::Service::MarkMethodRaw(25);
     }
     ~WithRawMethod_RollbackZone() override {
       BaseClassMustBeDerivedFromService(this);
@@ -2534,7 +3848,7 @@ class DataService final {
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
     void RequestRollbackZone(::grpc::ServerContext* context, ::grpc::ByteBuffer* request, ::grpc::ServerAsyncResponseWriter< ::grpc::ByteBuffer>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
-      ::grpc::Service::RequestAsyncUnary(13, context, request, response, new_call_cq, notification_cq, tag);
+      ::grpc::Service::RequestAsyncUnary(25, context, request, response, new_call_cq, notification_cq, tag);
     }
   };
   template <class BaseClass>
@@ -2543,7 +3857,7 @@ class DataService final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithRawMethod_RollbackAll() {
-      ::grpc::Service::MarkMethodRaw(14);
+      ::grpc::Service::MarkMethodRaw(26);
     }
     ~WithRawMethod_RollbackAll() override {
       BaseClassMustBeDerivedFromService(this);
@@ -2554,7 +3868,7 @@ class DataService final {
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
     void RequestRollbackAll(::grpc::ServerContext* context, ::grpc::ByteBuffer* request, ::grpc::ServerAsyncResponseWriter< ::grpc::ByteBuffer>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
-      ::grpc::Service::RequestAsyncUnary(14, context, request, response, new_call_cq, notification_cq, tag);
+      ::grpc::Service::RequestAsyncUnary(26, context, request, response, new_call_cq, notification_cq, tag);
     }
   };
   template <class BaseClass>
@@ -2563,7 +3877,7 @@ class DataService final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithRawMethod_BatchRecallItems() {
-      ::grpc::Service::MarkMethodRaw(15);
+      ::grpc::Service::MarkMethodRaw(27);
     }
     ~WithRawMethod_BatchRecallItems() override {
       BaseClassMustBeDerivedFromService(this);
@@ -2574,7 +3888,7 @@ class DataService final {
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
     void RequestBatchRecallItems(::grpc::ServerContext* context, ::grpc::ByteBuffer* request, ::grpc::ServerAsyncResponseWriter< ::grpc::ByteBuffer>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
-      ::grpc::Service::RequestAsyncUnary(15, context, request, response, new_call_cq, notification_cq, tag);
+      ::grpc::Service::RequestAsyncUnary(27, context, request, response, new_call_cq, notification_cq, tag);
     }
   };
   template <class BaseClass>
@@ -2583,7 +3897,7 @@ class DataService final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithRawMethod_QueryTransactionLog() {
-      ::grpc::Service::MarkMethodRaw(16);
+      ::grpc::Service::MarkMethodRaw(28);
     }
     ~WithRawMethod_QueryTransactionLog() override {
       BaseClassMustBeDerivedFromService(this);
@@ -2594,7 +3908,7 @@ class DataService final {
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
     void RequestQueryTransactionLog(::grpc::ServerContext* context, ::grpc::ByteBuffer* request, ::grpc::ServerAsyncResponseWriter< ::grpc::ByteBuffer>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
-      ::grpc::Service::RequestAsyncUnary(16, context, request, response, new_call_cq, notification_cq, tag);
+      ::grpc::Service::RequestAsyncUnary(28, context, request, response, new_call_cq, notification_cq, tag);
     }
   };
   template <class BaseClass>
@@ -2603,7 +3917,7 @@ class DataService final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithRawMethod_CreateEventSnapshot() {
-      ::grpc::Service::MarkMethodRaw(17);
+      ::grpc::Service::MarkMethodRaw(29);
     }
     ~WithRawMethod_CreateEventSnapshot() override {
       BaseClassMustBeDerivedFromService(this);
@@ -2614,7 +3928,7 @@ class DataService final {
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
     void RequestCreateEventSnapshot(::grpc::ServerContext* context, ::grpc::ByteBuffer* request, ::grpc::ServerAsyncResponseWriter< ::grpc::ByteBuffer>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
-      ::grpc::Service::RequestAsyncUnary(17, context, request, response, new_call_cq, notification_cq, tag);
+      ::grpc::Service::RequestAsyncUnary(29, context, request, response, new_call_cq, notification_cq, tag);
     }
   };
   template <class BaseClass>
@@ -2623,7 +3937,7 @@ class DataService final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithRawMethod_AllocateIdSegment() {
-      ::grpc::Service::MarkMethodRaw(18);
+      ::grpc::Service::MarkMethodRaw(30);
     }
     ~WithRawMethod_AllocateIdSegment() override {
       BaseClassMustBeDerivedFromService(this);
@@ -2634,7 +3948,7 @@ class DataService final {
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
     void RequestAllocateIdSegment(::grpc::ServerContext* context, ::grpc::ByteBuffer* request, ::grpc::ServerAsyncResponseWriter< ::grpc::ByteBuffer>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
-      ::grpc::Service::RequestAsyncUnary(18, context, request, response, new_call_cq, notification_cq, tag);
+      ::grpc::Service::RequestAsyncUnary(30, context, request, response, new_call_cq, notification_cq, tag);
     }
   };
   template <class BaseClass>
@@ -2643,7 +3957,7 @@ class DataService final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithRawMethod_ReservePlayerName() {
-      ::grpc::Service::MarkMethodRaw(19);
+      ::grpc::Service::MarkMethodRaw(31);
     }
     ~WithRawMethod_ReservePlayerName() override {
       BaseClassMustBeDerivedFromService(this);
@@ -2654,7 +3968,7 @@ class DataService final {
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
     void RequestReservePlayerName(::grpc::ServerContext* context, ::grpc::ByteBuffer* request, ::grpc::ServerAsyncResponseWriter< ::grpc::ByteBuffer>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
-      ::grpc::Service::RequestAsyncUnary(19, context, request, response, new_call_cq, notification_cq, tag);
+      ::grpc::Service::RequestAsyncUnary(31, context, request, response, new_call_cq, notification_cq, tag);
     }
   };
   template <class BaseClass>
@@ -2663,7 +3977,7 @@ class DataService final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithRawMethod_ReleasePlayerName() {
-      ::grpc::Service::MarkMethodRaw(20);
+      ::grpc::Service::MarkMethodRaw(32);
     }
     ~WithRawMethod_ReleasePlayerName() override {
       BaseClassMustBeDerivedFromService(this);
@@ -2674,7 +3988,7 @@ class DataService final {
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
     void RequestReleasePlayerName(::grpc::ServerContext* context, ::grpc::ByteBuffer* request, ::grpc::ServerAsyncResponseWriter< ::grpc::ByteBuffer>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
-      ::grpc::Service::RequestAsyncUnary(20, context, request, response, new_call_cq, notification_cq, tag);
+      ::grpc::Service::RequestAsyncUnary(32, context, request, response, new_call_cq, notification_cq, tag);
     }
   };
   template <class BaseClass>
@@ -2683,7 +3997,7 @@ class DataService final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithRawMethod_BatchGetPlayerName() {
-      ::grpc::Service::MarkMethodRaw(21);
+      ::grpc::Service::MarkMethodRaw(33);
     }
     ~WithRawMethod_BatchGetPlayerName() override {
       BaseClassMustBeDerivedFromService(this);
@@ -2694,7 +4008,7 @@ class DataService final {
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
     void RequestBatchGetPlayerName(::grpc::ServerContext* context, ::grpc::ByteBuffer* request, ::grpc::ServerAsyncResponseWriter< ::grpc::ByteBuffer>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
-      ::grpc::Service::RequestAsyncUnary(21, context, request, response, new_call_cq, notification_cq, tag);
+      ::grpc::Service::RequestAsyncUnary(33, context, request, response, new_call_cq, notification_cq, tag);
     }
   };
   template <class BaseClass>
@@ -2703,7 +4017,7 @@ class DataService final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithRawMethod_GetPlayerAssetOpLedger() {
-      ::grpc::Service::MarkMethodRaw(22);
+      ::grpc::Service::MarkMethodRaw(34);
     }
     ~WithRawMethod_GetPlayerAssetOpLedger() override {
       BaseClassMustBeDerivedFromService(this);
@@ -2714,7 +4028,7 @@ class DataService final {
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
     void RequestGetPlayerAssetOpLedger(::grpc::ServerContext* context, ::grpc::ByteBuffer* request, ::grpc::ServerAsyncResponseWriter< ::grpc::ByteBuffer>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
-      ::grpc::Service::RequestAsyncUnary(22, context, request, response, new_call_cq, notification_cq, tag);
+      ::grpc::Service::RequestAsyncUnary(34, context, request, response, new_call_cq, notification_cq, tag);
     }
   };
   template <class BaseClass>
@@ -2723,7 +4037,7 @@ class DataService final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithRawMethod_GetPlayerInboxLedger() {
-      ::grpc::Service::MarkMethodRaw(23);
+      ::grpc::Service::MarkMethodRaw(35);
     }
     ~WithRawMethod_GetPlayerInboxLedger() override {
       BaseClassMustBeDerivedFromService(this);
@@ -2734,8 +4048,272 @@ class DataService final {
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
     void RequestGetPlayerInboxLedger(::grpc::ServerContext* context, ::grpc::ByteBuffer* request, ::grpc::ServerAsyncResponseWriter< ::grpc::ByteBuffer>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
-      ::grpc::Service::RequestAsyncUnary(23, context, request, response, new_call_cq, notification_cq, tag);
+      ::grpc::Service::RequestAsyncUnary(35, context, request, response, new_call_cq, notification_cq, tag);
     }
+  };
+  template <class BaseClass>
+  class WithRawCallbackMethod_ReadAccountDirectory : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithRawCallbackMethod_ReadAccountDirectory() {
+      ::grpc::Service::MarkMethodRawCallback(0,
+          new ::grpc::internal::CallbackUnaryHandler< ::grpc::ByteBuffer, ::grpc::ByteBuffer>(
+            [this](
+                   ::grpc::CallbackServerContext* context, const ::grpc::ByteBuffer* request, ::grpc::ByteBuffer* response) { return this->ReadAccountDirectory(context, request, response); }));
+    }
+    ~WithRawCallbackMethod_ReadAccountDirectory() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status ReadAccountDirectory(::grpc::ServerContext* /*context*/, const ::data_service::ReadAccountDirectoryRequest* /*request*/, ::data_service::AccountDirectoryResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    virtual ::grpc::ServerUnaryReactor* ReadAccountDirectory(
+      ::grpc::CallbackServerContext* /*context*/, const ::grpc::ByteBuffer* /*request*/, ::grpc::ByteBuffer* /*response*/)  { return nullptr; }
+  };
+  template <class BaseClass>
+  class WithRawCallbackMethod_CreateAccountRole : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithRawCallbackMethod_CreateAccountRole() {
+      ::grpc::Service::MarkMethodRawCallback(1,
+          new ::grpc::internal::CallbackUnaryHandler< ::grpc::ByteBuffer, ::grpc::ByteBuffer>(
+            [this](
+                   ::grpc::CallbackServerContext* context, const ::grpc::ByteBuffer* request, ::grpc::ByteBuffer* response) { return this->CreateAccountRole(context, request, response); }));
+    }
+    ~WithRawCallbackMethod_CreateAccountRole() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status CreateAccountRole(::grpc::ServerContext* /*context*/, const ::data_service::CreateAccountRoleRequest* /*request*/, ::data_service::AccountDirectoryResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    virtual ::grpc::ServerUnaryReactor* CreateAccountRole(
+      ::grpc::CallbackServerContext* /*context*/, const ::grpc::ByteBuffer* /*request*/, ::grpc::ByteBuffer* /*response*/)  { return nullptr; }
+  };
+  template <class BaseClass>
+  class WithRawCallbackMethod_LookupAccountRole : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithRawCallbackMethod_LookupAccountRole() {
+      ::grpc::Service::MarkMethodRawCallback(2,
+          new ::grpc::internal::CallbackUnaryHandler< ::grpc::ByteBuffer, ::grpc::ByteBuffer>(
+            [this](
+                   ::grpc::CallbackServerContext* context, const ::grpc::ByteBuffer* request, ::grpc::ByteBuffer* response) { return this->LookupAccountRole(context, request, response); }));
+    }
+    ~WithRawCallbackMethod_LookupAccountRole() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status LookupAccountRole(::grpc::ServerContext* /*context*/, const ::data_service::LookupAccountRoleRequest* /*request*/, ::data_service::AccountRoleOwnership* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    virtual ::grpc::ServerUnaryReactor* LookupAccountRole(
+      ::grpc::CallbackServerContext* /*context*/, const ::grpc::ByteBuffer* /*request*/, ::grpc::ByteBuffer* /*response*/)  { return nullptr; }
+  };
+  template <class BaseClass>
+  class WithRawCallbackMethod_RepairAccountRole : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithRawCallbackMethod_RepairAccountRole() {
+      ::grpc::Service::MarkMethodRawCallback(3,
+          new ::grpc::internal::CallbackUnaryHandler< ::grpc::ByteBuffer, ::grpc::ByteBuffer>(
+            [this](
+                   ::grpc::CallbackServerContext* context, const ::grpc::ByteBuffer* request, ::grpc::ByteBuffer* response) { return this->RepairAccountRole(context, request, response); }));
+    }
+    ~WithRawCallbackMethod_RepairAccountRole() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status RepairAccountRole(::grpc::ServerContext* /*context*/, const ::data_service::RepairAccountRoleRequest* /*request*/, ::data_service::AccountDirectoryResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    virtual ::grpc::ServerUnaryReactor* RepairAccountRole(
+      ::grpc::CallbackServerContext* /*context*/, const ::grpc::ByteBuffer* /*request*/, ::grpc::ByteBuffer* /*response*/)  { return nullptr; }
+  };
+  template <class BaseClass>
+  class WithRawCallbackMethod_RemoveAccountRoles : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithRawCallbackMethod_RemoveAccountRoles() {
+      ::grpc::Service::MarkMethodRawCallback(4,
+          new ::grpc::internal::CallbackUnaryHandler< ::grpc::ByteBuffer, ::grpc::ByteBuffer>(
+            [this](
+                   ::grpc::CallbackServerContext* context, const ::grpc::ByteBuffer* request, ::grpc::ByteBuffer* response) { return this->RemoveAccountRoles(context, request, response); }));
+    }
+    ~WithRawCallbackMethod_RemoveAccountRoles() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status RemoveAccountRoles(::grpc::ServerContext* /*context*/, const ::data_service::RemoveAccountRolesRequest* /*request*/, ::google::protobuf::Empty* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    virtual ::grpc::ServerUnaryReactor* RemoveAccountRoles(
+      ::grpc::CallbackServerContext* /*context*/, const ::grpc::ByteBuffer* /*request*/, ::grpc::ByteBuffer* /*response*/)  { return nullptr; }
+  };
+  template <class BaseClass>
+  class WithRawCallbackMethod_BeginAccountRoleTrade : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithRawCallbackMethod_BeginAccountRoleTrade() {
+      ::grpc::Service::MarkMethodRawCallback(5,
+          new ::grpc::internal::CallbackUnaryHandler< ::grpc::ByteBuffer, ::grpc::ByteBuffer>(
+            [this](
+                   ::grpc::CallbackServerContext* context, const ::grpc::ByteBuffer* request, ::grpc::ByteBuffer* response) { return this->BeginAccountRoleTrade(context, request, response); }));
+    }
+    ~WithRawCallbackMethod_BeginAccountRoleTrade() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status BeginAccountRoleTrade(::grpc::ServerContext* /*context*/, const ::data_service::BeginAccountRoleTradeRequest* /*request*/, ::data_service::AccountRoleTradeReceipt* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    virtual ::grpc::ServerUnaryReactor* BeginAccountRoleTrade(
+      ::grpc::CallbackServerContext* /*context*/, const ::grpc::ByteBuffer* /*request*/, ::grpc::ByteBuffer* /*response*/)  { return nullptr; }
+  };
+  template <class BaseClass>
+  class WithRawCallbackMethod_ConfirmAccountRoleTradeFreeze : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithRawCallbackMethod_ConfirmAccountRoleTradeFreeze() {
+      ::grpc::Service::MarkMethodRawCallback(6,
+          new ::grpc::internal::CallbackUnaryHandler< ::grpc::ByteBuffer, ::grpc::ByteBuffer>(
+            [this](
+                   ::grpc::CallbackServerContext* context, const ::grpc::ByteBuffer* request, ::grpc::ByteBuffer* response) { return this->ConfirmAccountRoleTradeFreeze(context, request, response); }));
+    }
+    ~WithRawCallbackMethod_ConfirmAccountRoleTradeFreeze() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status ConfirmAccountRoleTradeFreeze(::grpc::ServerContext* /*context*/, const ::data_service::ConfirmAccountRoleTradeFreezeRequest* /*request*/, ::data_service::AccountRoleTradeReceipt* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    virtual ::grpc::ServerUnaryReactor* ConfirmAccountRoleTradeFreeze(
+      ::grpc::CallbackServerContext* /*context*/, const ::grpc::ByteBuffer* /*request*/, ::grpc::ByteBuffer* /*response*/)  { return nullptr; }
+  };
+  template <class BaseClass>
+  class WithRawCallbackMethod_CancelAccountRoleTrade : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithRawCallbackMethod_CancelAccountRoleTrade() {
+      ::grpc::Service::MarkMethodRawCallback(7,
+          new ::grpc::internal::CallbackUnaryHandler< ::grpc::ByteBuffer, ::grpc::ByteBuffer>(
+            [this](
+                   ::grpc::CallbackServerContext* context, const ::grpc::ByteBuffer* request, ::grpc::ByteBuffer* response) { return this->CancelAccountRoleTrade(context, request, response); }));
+    }
+    ~WithRawCallbackMethod_CancelAccountRoleTrade() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status CancelAccountRoleTrade(::grpc::ServerContext* /*context*/, const ::data_service::CancelAccountRoleTradeRequest* /*request*/, ::data_service::AccountRoleTradeReceipt* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    virtual ::grpc::ServerUnaryReactor* CancelAccountRoleTrade(
+      ::grpc::CallbackServerContext* /*context*/, const ::grpc::ByteBuffer* /*request*/, ::grpc::ByteBuffer* /*response*/)  { return nullptr; }
+  };
+  template <class BaseClass>
+  class WithRawCallbackMethod_TransferAccountRole : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithRawCallbackMethod_TransferAccountRole() {
+      ::grpc::Service::MarkMethodRawCallback(8,
+          new ::grpc::internal::CallbackUnaryHandler< ::grpc::ByteBuffer, ::grpc::ByteBuffer>(
+            [this](
+                   ::grpc::CallbackServerContext* context, const ::grpc::ByteBuffer* request, ::grpc::ByteBuffer* response) { return this->TransferAccountRole(context, request, response); }));
+    }
+    ~WithRawCallbackMethod_TransferAccountRole() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status TransferAccountRole(::grpc::ServerContext* /*context*/, const ::data_service::TransferAccountRoleRequest* /*request*/, ::data_service::AccountRoleTransferReceipt* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    virtual ::grpc::ServerUnaryReactor* TransferAccountRole(
+      ::grpc::CallbackServerContext* /*context*/, const ::grpc::ByteBuffer* /*request*/, ::grpc::ByteBuffer* /*response*/)  { return nullptr; }
+  };
+  template <class BaseClass>
+  class WithRawCallbackMethod_RegisterRoleAdmission : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithRawCallbackMethod_RegisterRoleAdmission() {
+      ::grpc::Service::MarkMethodRawCallback(9,
+          new ::grpc::internal::CallbackUnaryHandler< ::grpc::ByteBuffer, ::grpc::ByteBuffer>(
+            [this](
+                   ::grpc::CallbackServerContext* context, const ::grpc::ByteBuffer* request, ::grpc::ByteBuffer* response) { return this->RegisterRoleAdmission(context, request, response); }));
+    }
+    ~WithRawCallbackMethod_RegisterRoleAdmission() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status RegisterRoleAdmission(::grpc::ServerContext* /*context*/, const ::data_service::RegisterRoleAdmissionRequest* /*request*/, ::data_service::RegisterRoleAdmissionResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    virtual ::grpc::ServerUnaryReactor* RegisterRoleAdmission(
+      ::grpc::CallbackServerContext* /*context*/, const ::grpc::ByteBuffer* /*request*/, ::grpc::ByteBuffer* /*response*/)  { return nullptr; }
+  };
+  template <class BaseClass>
+  class WithRawCallbackMethod_CloseRoleAdmissions : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithRawCallbackMethod_CloseRoleAdmissions() {
+      ::grpc::Service::MarkMethodRawCallback(10,
+          new ::grpc::internal::CallbackUnaryHandler< ::grpc::ByteBuffer, ::grpc::ByteBuffer>(
+            [this](
+                   ::grpc::CallbackServerContext* context, const ::grpc::ByteBuffer* request, ::grpc::ByteBuffer* response) { return this->CloseRoleAdmissions(context, request, response); }));
+    }
+    ~WithRawCallbackMethod_CloseRoleAdmissions() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status CloseRoleAdmissions(::grpc::ServerContext* /*context*/, const ::data_service::CloseRoleAdmissionsRequest* /*request*/, ::data_service::CloseRoleAdmissionsResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    virtual ::grpc::ServerUnaryReactor* CloseRoleAdmissions(
+      ::grpc::CallbackServerContext* /*context*/, const ::grpc::ByteBuffer* /*request*/, ::grpc::ByteBuffer* /*response*/)  { return nullptr; }
+  };
+  template <class BaseClass>
+  class WithRawCallbackMethod_AckRoleTradeDrain : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithRawCallbackMethod_AckRoleTradeDrain() {
+      ::grpc::Service::MarkMethodRawCallback(11,
+          new ::grpc::internal::CallbackUnaryHandler< ::grpc::ByteBuffer, ::grpc::ByteBuffer>(
+            [this](
+                   ::grpc::CallbackServerContext* context, const ::grpc::ByteBuffer* request, ::grpc::ByteBuffer* response) { return this->AckRoleTradeDrain(context, request, response); }));
+    }
+    ~WithRawCallbackMethod_AckRoleTradeDrain() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status AckRoleTradeDrain(::grpc::ServerContext* /*context*/, const ::data_service::AckRoleTradeDrainRequest* /*request*/, ::google::protobuf::Empty* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    virtual ::grpc::ServerUnaryReactor* AckRoleTradeDrain(
+      ::grpc::CallbackServerContext* /*context*/, const ::grpc::ByteBuffer* /*request*/, ::grpc::ByteBuffer* /*response*/)  { return nullptr; }
   };
   template <class BaseClass>
   class WithRawCallbackMethod_LoadPlayerData : public BaseClass {
@@ -2743,7 +4321,7 @@ class DataService final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithRawCallbackMethod_LoadPlayerData() {
-      ::grpc::Service::MarkMethodRawCallback(0,
+      ::grpc::Service::MarkMethodRawCallback(12,
           new ::grpc::internal::CallbackUnaryHandler< ::grpc::ByteBuffer, ::grpc::ByteBuffer>(
             [this](
                    ::grpc::CallbackServerContext* context, const ::grpc::ByteBuffer* request, ::grpc::ByteBuffer* response) { return this->LoadPlayerData(context, request, response); }));
@@ -2765,7 +4343,7 @@ class DataService final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithRawCallbackMethod_SavePlayerData() {
-      ::grpc::Service::MarkMethodRawCallback(1,
+      ::grpc::Service::MarkMethodRawCallback(13,
           new ::grpc::internal::CallbackUnaryHandler< ::grpc::ByteBuffer, ::grpc::ByteBuffer>(
             [this](
                    ::grpc::CallbackServerContext* context, const ::grpc::ByteBuffer* request, ::grpc::ByteBuffer* response) { return this->SavePlayerData(context, request, response); }));
@@ -2787,7 +4365,7 @@ class DataService final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithRawCallbackMethod_GetPlayerField() {
-      ::grpc::Service::MarkMethodRawCallback(2,
+      ::grpc::Service::MarkMethodRawCallback(14,
           new ::grpc::internal::CallbackUnaryHandler< ::grpc::ByteBuffer, ::grpc::ByteBuffer>(
             [this](
                    ::grpc::CallbackServerContext* context, const ::grpc::ByteBuffer* request, ::grpc::ByteBuffer* response) { return this->GetPlayerField(context, request, response); }));
@@ -2809,7 +4387,7 @@ class DataService final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithRawCallbackMethod_SetPlayerField() {
-      ::grpc::Service::MarkMethodRawCallback(3,
+      ::grpc::Service::MarkMethodRawCallback(15,
           new ::grpc::internal::CallbackUnaryHandler< ::grpc::ByteBuffer, ::grpc::ByteBuffer>(
             [this](
                    ::grpc::CallbackServerContext* context, const ::grpc::ByteBuffer* request, ::grpc::ByteBuffer* response) { return this->SetPlayerField(context, request, response); }));
@@ -2831,7 +4409,7 @@ class DataService final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithRawCallbackMethod_RegisterPlayerZone() {
-      ::grpc::Service::MarkMethodRawCallback(4,
+      ::grpc::Service::MarkMethodRawCallback(16,
           new ::grpc::internal::CallbackUnaryHandler< ::grpc::ByteBuffer, ::grpc::ByteBuffer>(
             [this](
                    ::grpc::CallbackServerContext* context, const ::grpc::ByteBuffer* request, ::grpc::ByteBuffer* response) { return this->RegisterPlayerZone(context, request, response); }));
@@ -2853,7 +4431,7 @@ class DataService final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithRawCallbackMethod_GetPlayerHomeZone() {
-      ::grpc::Service::MarkMethodRawCallback(5,
+      ::grpc::Service::MarkMethodRawCallback(17,
           new ::grpc::internal::CallbackUnaryHandler< ::grpc::ByteBuffer, ::grpc::ByteBuffer>(
             [this](
                    ::grpc::CallbackServerContext* context, const ::grpc::ByteBuffer* request, ::grpc::ByteBuffer* response) { return this->GetPlayerHomeZone(context, request, response); }));
@@ -2875,7 +4453,7 @@ class DataService final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithRawCallbackMethod_BatchGetPlayerHomeZone() {
-      ::grpc::Service::MarkMethodRawCallback(6,
+      ::grpc::Service::MarkMethodRawCallback(18,
           new ::grpc::internal::CallbackUnaryHandler< ::grpc::ByteBuffer, ::grpc::ByteBuffer>(
             [this](
                    ::grpc::CallbackServerContext* context, const ::grpc::ByteBuffer* request, ::grpc::ByteBuffer* response) { return this->BatchGetPlayerHomeZone(context, request, response); }));
@@ -2897,7 +4475,7 @@ class DataService final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithRawCallbackMethod_RemapHomeZoneForMerge() {
-      ::grpc::Service::MarkMethodRawCallback(7,
+      ::grpc::Service::MarkMethodRawCallback(19,
           new ::grpc::internal::CallbackUnaryHandler< ::grpc::ByteBuffer, ::grpc::ByteBuffer>(
             [this](
                    ::grpc::CallbackServerContext* context, const ::grpc::ByteBuffer* request, ::grpc::ByteBuffer* response) { return this->RemapHomeZoneForMerge(context, request, response); }));
@@ -2919,7 +4497,7 @@ class DataService final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithRawCallbackMethod_DeletePlayerData() {
-      ::grpc::Service::MarkMethodRawCallback(8,
+      ::grpc::Service::MarkMethodRawCallback(20,
           new ::grpc::internal::CallbackUnaryHandler< ::grpc::ByteBuffer, ::grpc::ByteBuffer>(
             [this](
                    ::grpc::CallbackServerContext* context, const ::grpc::ByteBuffer* request, ::grpc::ByteBuffer* response) { return this->DeletePlayerData(context, request, response); }));
@@ -2941,7 +4519,7 @@ class DataService final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithRawCallbackMethod_CreatePlayerSnapshot() {
-      ::grpc::Service::MarkMethodRawCallback(9,
+      ::grpc::Service::MarkMethodRawCallback(21,
           new ::grpc::internal::CallbackUnaryHandler< ::grpc::ByteBuffer, ::grpc::ByteBuffer>(
             [this](
                    ::grpc::CallbackServerContext* context, const ::grpc::ByteBuffer* request, ::grpc::ByteBuffer* response) { return this->CreatePlayerSnapshot(context, request, response); }));
@@ -2963,7 +4541,7 @@ class DataService final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithRawCallbackMethod_ListPlayerSnapshots() {
-      ::grpc::Service::MarkMethodRawCallback(10,
+      ::grpc::Service::MarkMethodRawCallback(22,
           new ::grpc::internal::CallbackUnaryHandler< ::grpc::ByteBuffer, ::grpc::ByteBuffer>(
             [this](
                    ::grpc::CallbackServerContext* context, const ::grpc::ByteBuffer* request, ::grpc::ByteBuffer* response) { return this->ListPlayerSnapshots(context, request, response); }));
@@ -2985,7 +4563,7 @@ class DataService final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithRawCallbackMethod_GetPlayerSnapshotDiff() {
-      ::grpc::Service::MarkMethodRawCallback(11,
+      ::grpc::Service::MarkMethodRawCallback(23,
           new ::grpc::internal::CallbackUnaryHandler< ::grpc::ByteBuffer, ::grpc::ByteBuffer>(
             [this](
                    ::grpc::CallbackServerContext* context, const ::grpc::ByteBuffer* request, ::grpc::ByteBuffer* response) { return this->GetPlayerSnapshotDiff(context, request, response); }));
@@ -3007,7 +4585,7 @@ class DataService final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithRawCallbackMethod_RollbackPlayer() {
-      ::grpc::Service::MarkMethodRawCallback(12,
+      ::grpc::Service::MarkMethodRawCallback(24,
           new ::grpc::internal::CallbackUnaryHandler< ::grpc::ByteBuffer, ::grpc::ByteBuffer>(
             [this](
                    ::grpc::CallbackServerContext* context, const ::grpc::ByteBuffer* request, ::grpc::ByteBuffer* response) { return this->RollbackPlayer(context, request, response); }));
@@ -3029,7 +4607,7 @@ class DataService final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithRawCallbackMethod_RollbackZone() {
-      ::grpc::Service::MarkMethodRawCallback(13,
+      ::grpc::Service::MarkMethodRawCallback(25,
           new ::grpc::internal::CallbackUnaryHandler< ::grpc::ByteBuffer, ::grpc::ByteBuffer>(
             [this](
                    ::grpc::CallbackServerContext* context, const ::grpc::ByteBuffer* request, ::grpc::ByteBuffer* response) { return this->RollbackZone(context, request, response); }));
@@ -3051,7 +4629,7 @@ class DataService final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithRawCallbackMethod_RollbackAll() {
-      ::grpc::Service::MarkMethodRawCallback(14,
+      ::grpc::Service::MarkMethodRawCallback(26,
           new ::grpc::internal::CallbackUnaryHandler< ::grpc::ByteBuffer, ::grpc::ByteBuffer>(
             [this](
                    ::grpc::CallbackServerContext* context, const ::grpc::ByteBuffer* request, ::grpc::ByteBuffer* response) { return this->RollbackAll(context, request, response); }));
@@ -3073,7 +4651,7 @@ class DataService final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithRawCallbackMethod_BatchRecallItems() {
-      ::grpc::Service::MarkMethodRawCallback(15,
+      ::grpc::Service::MarkMethodRawCallback(27,
           new ::grpc::internal::CallbackUnaryHandler< ::grpc::ByteBuffer, ::grpc::ByteBuffer>(
             [this](
                    ::grpc::CallbackServerContext* context, const ::grpc::ByteBuffer* request, ::grpc::ByteBuffer* response) { return this->BatchRecallItems(context, request, response); }));
@@ -3095,7 +4673,7 @@ class DataService final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithRawCallbackMethod_QueryTransactionLog() {
-      ::grpc::Service::MarkMethodRawCallback(16,
+      ::grpc::Service::MarkMethodRawCallback(28,
           new ::grpc::internal::CallbackUnaryHandler< ::grpc::ByteBuffer, ::grpc::ByteBuffer>(
             [this](
                    ::grpc::CallbackServerContext* context, const ::grpc::ByteBuffer* request, ::grpc::ByteBuffer* response) { return this->QueryTransactionLog(context, request, response); }));
@@ -3117,7 +4695,7 @@ class DataService final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithRawCallbackMethod_CreateEventSnapshot() {
-      ::grpc::Service::MarkMethodRawCallback(17,
+      ::grpc::Service::MarkMethodRawCallback(29,
           new ::grpc::internal::CallbackUnaryHandler< ::grpc::ByteBuffer, ::grpc::ByteBuffer>(
             [this](
                    ::grpc::CallbackServerContext* context, const ::grpc::ByteBuffer* request, ::grpc::ByteBuffer* response) { return this->CreateEventSnapshot(context, request, response); }));
@@ -3139,7 +4717,7 @@ class DataService final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithRawCallbackMethod_AllocateIdSegment() {
-      ::grpc::Service::MarkMethodRawCallback(18,
+      ::grpc::Service::MarkMethodRawCallback(30,
           new ::grpc::internal::CallbackUnaryHandler< ::grpc::ByteBuffer, ::grpc::ByteBuffer>(
             [this](
                    ::grpc::CallbackServerContext* context, const ::grpc::ByteBuffer* request, ::grpc::ByteBuffer* response) { return this->AllocateIdSegment(context, request, response); }));
@@ -3161,7 +4739,7 @@ class DataService final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithRawCallbackMethod_ReservePlayerName() {
-      ::grpc::Service::MarkMethodRawCallback(19,
+      ::grpc::Service::MarkMethodRawCallback(31,
           new ::grpc::internal::CallbackUnaryHandler< ::grpc::ByteBuffer, ::grpc::ByteBuffer>(
             [this](
                    ::grpc::CallbackServerContext* context, const ::grpc::ByteBuffer* request, ::grpc::ByteBuffer* response) { return this->ReservePlayerName(context, request, response); }));
@@ -3183,7 +4761,7 @@ class DataService final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithRawCallbackMethod_ReleasePlayerName() {
-      ::grpc::Service::MarkMethodRawCallback(20,
+      ::grpc::Service::MarkMethodRawCallback(32,
           new ::grpc::internal::CallbackUnaryHandler< ::grpc::ByteBuffer, ::grpc::ByteBuffer>(
             [this](
                    ::grpc::CallbackServerContext* context, const ::grpc::ByteBuffer* request, ::grpc::ByteBuffer* response) { return this->ReleasePlayerName(context, request, response); }));
@@ -3205,7 +4783,7 @@ class DataService final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithRawCallbackMethod_BatchGetPlayerName() {
-      ::grpc::Service::MarkMethodRawCallback(21,
+      ::grpc::Service::MarkMethodRawCallback(33,
           new ::grpc::internal::CallbackUnaryHandler< ::grpc::ByteBuffer, ::grpc::ByteBuffer>(
             [this](
                    ::grpc::CallbackServerContext* context, const ::grpc::ByteBuffer* request, ::grpc::ByteBuffer* response) { return this->BatchGetPlayerName(context, request, response); }));
@@ -3227,7 +4805,7 @@ class DataService final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithRawCallbackMethod_GetPlayerAssetOpLedger() {
-      ::grpc::Service::MarkMethodRawCallback(22,
+      ::grpc::Service::MarkMethodRawCallback(34,
           new ::grpc::internal::CallbackUnaryHandler< ::grpc::ByteBuffer, ::grpc::ByteBuffer>(
             [this](
                    ::grpc::CallbackServerContext* context, const ::grpc::ByteBuffer* request, ::grpc::ByteBuffer* response) { return this->GetPlayerAssetOpLedger(context, request, response); }));
@@ -3249,7 +4827,7 @@ class DataService final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithRawCallbackMethod_GetPlayerInboxLedger() {
-      ::grpc::Service::MarkMethodRawCallback(23,
+      ::grpc::Service::MarkMethodRawCallback(35,
           new ::grpc::internal::CallbackUnaryHandler< ::grpc::ByteBuffer, ::grpc::ByteBuffer>(
             [this](
                    ::grpc::CallbackServerContext* context, const ::grpc::ByteBuffer* request, ::grpc::ByteBuffer* response) { return this->GetPlayerInboxLedger(context, request, response); }));
@@ -3266,12 +4844,336 @@ class DataService final {
       ::grpc::CallbackServerContext* /*context*/, const ::grpc::ByteBuffer* /*request*/, ::grpc::ByteBuffer* /*response*/)  { return nullptr; }
   };
   template <class BaseClass>
+  class WithStreamedUnaryMethod_ReadAccountDirectory : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithStreamedUnaryMethod_ReadAccountDirectory() {
+      ::grpc::Service::MarkMethodStreamed(0,
+        new ::grpc::internal::StreamedUnaryHandler<
+          ::data_service::ReadAccountDirectoryRequest, ::data_service::AccountDirectoryResponse>(
+            [this](::grpc::ServerContext* context,
+                   ::grpc::ServerUnaryStreamer<
+                     ::data_service::ReadAccountDirectoryRequest, ::data_service::AccountDirectoryResponse>* streamer) {
+                       return this->StreamedReadAccountDirectory(context,
+                         streamer);
+                  }));
+    }
+    ~WithStreamedUnaryMethod_ReadAccountDirectory() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable regular version of this method
+    ::grpc::Status ReadAccountDirectory(::grpc::ServerContext* /*context*/, const ::data_service::ReadAccountDirectoryRequest* /*request*/, ::data_service::AccountDirectoryResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    // replace default version of method with streamed unary
+    virtual ::grpc::Status StreamedReadAccountDirectory(::grpc::ServerContext* context, ::grpc::ServerUnaryStreamer< ::data_service::ReadAccountDirectoryRequest,::data_service::AccountDirectoryResponse>* server_unary_streamer) = 0;
+  };
+  template <class BaseClass>
+  class WithStreamedUnaryMethod_CreateAccountRole : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithStreamedUnaryMethod_CreateAccountRole() {
+      ::grpc::Service::MarkMethodStreamed(1,
+        new ::grpc::internal::StreamedUnaryHandler<
+          ::data_service::CreateAccountRoleRequest, ::data_service::AccountDirectoryResponse>(
+            [this](::grpc::ServerContext* context,
+                   ::grpc::ServerUnaryStreamer<
+                     ::data_service::CreateAccountRoleRequest, ::data_service::AccountDirectoryResponse>* streamer) {
+                       return this->StreamedCreateAccountRole(context,
+                         streamer);
+                  }));
+    }
+    ~WithStreamedUnaryMethod_CreateAccountRole() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable regular version of this method
+    ::grpc::Status CreateAccountRole(::grpc::ServerContext* /*context*/, const ::data_service::CreateAccountRoleRequest* /*request*/, ::data_service::AccountDirectoryResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    // replace default version of method with streamed unary
+    virtual ::grpc::Status StreamedCreateAccountRole(::grpc::ServerContext* context, ::grpc::ServerUnaryStreamer< ::data_service::CreateAccountRoleRequest,::data_service::AccountDirectoryResponse>* server_unary_streamer) = 0;
+  };
+  template <class BaseClass>
+  class WithStreamedUnaryMethod_LookupAccountRole : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithStreamedUnaryMethod_LookupAccountRole() {
+      ::grpc::Service::MarkMethodStreamed(2,
+        new ::grpc::internal::StreamedUnaryHandler<
+          ::data_service::LookupAccountRoleRequest, ::data_service::AccountRoleOwnership>(
+            [this](::grpc::ServerContext* context,
+                   ::grpc::ServerUnaryStreamer<
+                     ::data_service::LookupAccountRoleRequest, ::data_service::AccountRoleOwnership>* streamer) {
+                       return this->StreamedLookupAccountRole(context,
+                         streamer);
+                  }));
+    }
+    ~WithStreamedUnaryMethod_LookupAccountRole() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable regular version of this method
+    ::grpc::Status LookupAccountRole(::grpc::ServerContext* /*context*/, const ::data_service::LookupAccountRoleRequest* /*request*/, ::data_service::AccountRoleOwnership* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    // replace default version of method with streamed unary
+    virtual ::grpc::Status StreamedLookupAccountRole(::grpc::ServerContext* context, ::grpc::ServerUnaryStreamer< ::data_service::LookupAccountRoleRequest,::data_service::AccountRoleOwnership>* server_unary_streamer) = 0;
+  };
+  template <class BaseClass>
+  class WithStreamedUnaryMethod_RepairAccountRole : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithStreamedUnaryMethod_RepairAccountRole() {
+      ::grpc::Service::MarkMethodStreamed(3,
+        new ::grpc::internal::StreamedUnaryHandler<
+          ::data_service::RepairAccountRoleRequest, ::data_service::AccountDirectoryResponse>(
+            [this](::grpc::ServerContext* context,
+                   ::grpc::ServerUnaryStreamer<
+                     ::data_service::RepairAccountRoleRequest, ::data_service::AccountDirectoryResponse>* streamer) {
+                       return this->StreamedRepairAccountRole(context,
+                         streamer);
+                  }));
+    }
+    ~WithStreamedUnaryMethod_RepairAccountRole() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable regular version of this method
+    ::grpc::Status RepairAccountRole(::grpc::ServerContext* /*context*/, const ::data_service::RepairAccountRoleRequest* /*request*/, ::data_service::AccountDirectoryResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    // replace default version of method with streamed unary
+    virtual ::grpc::Status StreamedRepairAccountRole(::grpc::ServerContext* context, ::grpc::ServerUnaryStreamer< ::data_service::RepairAccountRoleRequest,::data_service::AccountDirectoryResponse>* server_unary_streamer) = 0;
+  };
+  template <class BaseClass>
+  class WithStreamedUnaryMethod_RemoveAccountRoles : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithStreamedUnaryMethod_RemoveAccountRoles() {
+      ::grpc::Service::MarkMethodStreamed(4,
+        new ::grpc::internal::StreamedUnaryHandler<
+          ::data_service::RemoveAccountRolesRequest, ::google::protobuf::Empty>(
+            [this](::grpc::ServerContext* context,
+                   ::grpc::ServerUnaryStreamer<
+                     ::data_service::RemoveAccountRolesRequest, ::google::protobuf::Empty>* streamer) {
+                       return this->StreamedRemoveAccountRoles(context,
+                         streamer);
+                  }));
+    }
+    ~WithStreamedUnaryMethod_RemoveAccountRoles() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable regular version of this method
+    ::grpc::Status RemoveAccountRoles(::grpc::ServerContext* /*context*/, const ::data_service::RemoveAccountRolesRequest* /*request*/, ::google::protobuf::Empty* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    // replace default version of method with streamed unary
+    virtual ::grpc::Status StreamedRemoveAccountRoles(::grpc::ServerContext* context, ::grpc::ServerUnaryStreamer< ::data_service::RemoveAccountRolesRequest,::google::protobuf::Empty>* server_unary_streamer) = 0;
+  };
+  template <class BaseClass>
+  class WithStreamedUnaryMethod_BeginAccountRoleTrade : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithStreamedUnaryMethod_BeginAccountRoleTrade() {
+      ::grpc::Service::MarkMethodStreamed(5,
+        new ::grpc::internal::StreamedUnaryHandler<
+          ::data_service::BeginAccountRoleTradeRequest, ::data_service::AccountRoleTradeReceipt>(
+            [this](::grpc::ServerContext* context,
+                   ::grpc::ServerUnaryStreamer<
+                     ::data_service::BeginAccountRoleTradeRequest, ::data_service::AccountRoleTradeReceipt>* streamer) {
+                       return this->StreamedBeginAccountRoleTrade(context,
+                         streamer);
+                  }));
+    }
+    ~WithStreamedUnaryMethod_BeginAccountRoleTrade() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable regular version of this method
+    ::grpc::Status BeginAccountRoleTrade(::grpc::ServerContext* /*context*/, const ::data_service::BeginAccountRoleTradeRequest* /*request*/, ::data_service::AccountRoleTradeReceipt* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    // replace default version of method with streamed unary
+    virtual ::grpc::Status StreamedBeginAccountRoleTrade(::grpc::ServerContext* context, ::grpc::ServerUnaryStreamer< ::data_service::BeginAccountRoleTradeRequest,::data_service::AccountRoleTradeReceipt>* server_unary_streamer) = 0;
+  };
+  template <class BaseClass>
+  class WithStreamedUnaryMethod_ConfirmAccountRoleTradeFreeze : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithStreamedUnaryMethod_ConfirmAccountRoleTradeFreeze() {
+      ::grpc::Service::MarkMethodStreamed(6,
+        new ::grpc::internal::StreamedUnaryHandler<
+          ::data_service::ConfirmAccountRoleTradeFreezeRequest, ::data_service::AccountRoleTradeReceipt>(
+            [this](::grpc::ServerContext* context,
+                   ::grpc::ServerUnaryStreamer<
+                     ::data_service::ConfirmAccountRoleTradeFreezeRequest, ::data_service::AccountRoleTradeReceipt>* streamer) {
+                       return this->StreamedConfirmAccountRoleTradeFreeze(context,
+                         streamer);
+                  }));
+    }
+    ~WithStreamedUnaryMethod_ConfirmAccountRoleTradeFreeze() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable regular version of this method
+    ::grpc::Status ConfirmAccountRoleTradeFreeze(::grpc::ServerContext* /*context*/, const ::data_service::ConfirmAccountRoleTradeFreezeRequest* /*request*/, ::data_service::AccountRoleTradeReceipt* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    // replace default version of method with streamed unary
+    virtual ::grpc::Status StreamedConfirmAccountRoleTradeFreeze(::grpc::ServerContext* context, ::grpc::ServerUnaryStreamer< ::data_service::ConfirmAccountRoleTradeFreezeRequest,::data_service::AccountRoleTradeReceipt>* server_unary_streamer) = 0;
+  };
+  template <class BaseClass>
+  class WithStreamedUnaryMethod_CancelAccountRoleTrade : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithStreamedUnaryMethod_CancelAccountRoleTrade() {
+      ::grpc::Service::MarkMethodStreamed(7,
+        new ::grpc::internal::StreamedUnaryHandler<
+          ::data_service::CancelAccountRoleTradeRequest, ::data_service::AccountRoleTradeReceipt>(
+            [this](::grpc::ServerContext* context,
+                   ::grpc::ServerUnaryStreamer<
+                     ::data_service::CancelAccountRoleTradeRequest, ::data_service::AccountRoleTradeReceipt>* streamer) {
+                       return this->StreamedCancelAccountRoleTrade(context,
+                         streamer);
+                  }));
+    }
+    ~WithStreamedUnaryMethod_CancelAccountRoleTrade() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable regular version of this method
+    ::grpc::Status CancelAccountRoleTrade(::grpc::ServerContext* /*context*/, const ::data_service::CancelAccountRoleTradeRequest* /*request*/, ::data_service::AccountRoleTradeReceipt* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    // replace default version of method with streamed unary
+    virtual ::grpc::Status StreamedCancelAccountRoleTrade(::grpc::ServerContext* context, ::grpc::ServerUnaryStreamer< ::data_service::CancelAccountRoleTradeRequest,::data_service::AccountRoleTradeReceipt>* server_unary_streamer) = 0;
+  };
+  template <class BaseClass>
+  class WithStreamedUnaryMethod_TransferAccountRole : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithStreamedUnaryMethod_TransferAccountRole() {
+      ::grpc::Service::MarkMethodStreamed(8,
+        new ::grpc::internal::StreamedUnaryHandler<
+          ::data_service::TransferAccountRoleRequest, ::data_service::AccountRoleTransferReceipt>(
+            [this](::grpc::ServerContext* context,
+                   ::grpc::ServerUnaryStreamer<
+                     ::data_service::TransferAccountRoleRequest, ::data_service::AccountRoleTransferReceipt>* streamer) {
+                       return this->StreamedTransferAccountRole(context,
+                         streamer);
+                  }));
+    }
+    ~WithStreamedUnaryMethod_TransferAccountRole() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable regular version of this method
+    ::grpc::Status TransferAccountRole(::grpc::ServerContext* /*context*/, const ::data_service::TransferAccountRoleRequest* /*request*/, ::data_service::AccountRoleTransferReceipt* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    // replace default version of method with streamed unary
+    virtual ::grpc::Status StreamedTransferAccountRole(::grpc::ServerContext* context, ::grpc::ServerUnaryStreamer< ::data_service::TransferAccountRoleRequest,::data_service::AccountRoleTransferReceipt>* server_unary_streamer) = 0;
+  };
+  template <class BaseClass>
+  class WithStreamedUnaryMethod_RegisterRoleAdmission : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithStreamedUnaryMethod_RegisterRoleAdmission() {
+      ::grpc::Service::MarkMethodStreamed(9,
+        new ::grpc::internal::StreamedUnaryHandler<
+          ::data_service::RegisterRoleAdmissionRequest, ::data_service::RegisterRoleAdmissionResponse>(
+            [this](::grpc::ServerContext* context,
+                   ::grpc::ServerUnaryStreamer<
+                     ::data_service::RegisterRoleAdmissionRequest, ::data_service::RegisterRoleAdmissionResponse>* streamer) {
+                       return this->StreamedRegisterRoleAdmission(context,
+                         streamer);
+                  }));
+    }
+    ~WithStreamedUnaryMethod_RegisterRoleAdmission() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable regular version of this method
+    ::grpc::Status RegisterRoleAdmission(::grpc::ServerContext* /*context*/, const ::data_service::RegisterRoleAdmissionRequest* /*request*/, ::data_service::RegisterRoleAdmissionResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    // replace default version of method with streamed unary
+    virtual ::grpc::Status StreamedRegisterRoleAdmission(::grpc::ServerContext* context, ::grpc::ServerUnaryStreamer< ::data_service::RegisterRoleAdmissionRequest,::data_service::RegisterRoleAdmissionResponse>* server_unary_streamer) = 0;
+  };
+  template <class BaseClass>
+  class WithStreamedUnaryMethod_CloseRoleAdmissions : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithStreamedUnaryMethod_CloseRoleAdmissions() {
+      ::grpc::Service::MarkMethodStreamed(10,
+        new ::grpc::internal::StreamedUnaryHandler<
+          ::data_service::CloseRoleAdmissionsRequest, ::data_service::CloseRoleAdmissionsResponse>(
+            [this](::grpc::ServerContext* context,
+                   ::grpc::ServerUnaryStreamer<
+                     ::data_service::CloseRoleAdmissionsRequest, ::data_service::CloseRoleAdmissionsResponse>* streamer) {
+                       return this->StreamedCloseRoleAdmissions(context,
+                         streamer);
+                  }));
+    }
+    ~WithStreamedUnaryMethod_CloseRoleAdmissions() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable regular version of this method
+    ::grpc::Status CloseRoleAdmissions(::grpc::ServerContext* /*context*/, const ::data_service::CloseRoleAdmissionsRequest* /*request*/, ::data_service::CloseRoleAdmissionsResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    // replace default version of method with streamed unary
+    virtual ::grpc::Status StreamedCloseRoleAdmissions(::grpc::ServerContext* context, ::grpc::ServerUnaryStreamer< ::data_service::CloseRoleAdmissionsRequest,::data_service::CloseRoleAdmissionsResponse>* server_unary_streamer) = 0;
+  };
+  template <class BaseClass>
+  class WithStreamedUnaryMethod_AckRoleTradeDrain : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithStreamedUnaryMethod_AckRoleTradeDrain() {
+      ::grpc::Service::MarkMethodStreamed(11,
+        new ::grpc::internal::StreamedUnaryHandler<
+          ::data_service::AckRoleTradeDrainRequest, ::google::protobuf::Empty>(
+            [this](::grpc::ServerContext* context,
+                   ::grpc::ServerUnaryStreamer<
+                     ::data_service::AckRoleTradeDrainRequest, ::google::protobuf::Empty>* streamer) {
+                       return this->StreamedAckRoleTradeDrain(context,
+                         streamer);
+                  }));
+    }
+    ~WithStreamedUnaryMethod_AckRoleTradeDrain() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable regular version of this method
+    ::grpc::Status AckRoleTradeDrain(::grpc::ServerContext* /*context*/, const ::data_service::AckRoleTradeDrainRequest* /*request*/, ::google::protobuf::Empty* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    // replace default version of method with streamed unary
+    virtual ::grpc::Status StreamedAckRoleTradeDrain(::grpc::ServerContext* context, ::grpc::ServerUnaryStreamer< ::data_service::AckRoleTradeDrainRequest,::google::protobuf::Empty>* server_unary_streamer) = 0;
+  };
+  template <class BaseClass>
   class WithStreamedUnaryMethod_LoadPlayerData : public BaseClass {
    private:
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithStreamedUnaryMethod_LoadPlayerData() {
-      ::grpc::Service::MarkMethodStreamed(0,
+      ::grpc::Service::MarkMethodStreamed(12,
         new ::grpc::internal::StreamedUnaryHandler<
           ::data_service::LoadPlayerDataRequest, ::data_service::LoadPlayerDataResponse>(
             [this](::grpc::ServerContext* context,
@@ -3298,7 +5200,7 @@ class DataService final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithStreamedUnaryMethod_SavePlayerData() {
-      ::grpc::Service::MarkMethodStreamed(1,
+      ::grpc::Service::MarkMethodStreamed(13,
         new ::grpc::internal::StreamedUnaryHandler<
           ::data_service::SavePlayerDataRequest, ::data_service::SavePlayerDataResponse>(
             [this](::grpc::ServerContext* context,
@@ -3325,7 +5227,7 @@ class DataService final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithStreamedUnaryMethod_GetPlayerField() {
-      ::grpc::Service::MarkMethodStreamed(2,
+      ::grpc::Service::MarkMethodStreamed(14,
         new ::grpc::internal::StreamedUnaryHandler<
           ::data_service::GetPlayerFieldRequest, ::data_service::GetPlayerFieldResponse>(
             [this](::grpc::ServerContext* context,
@@ -3352,7 +5254,7 @@ class DataService final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithStreamedUnaryMethod_SetPlayerField() {
-      ::grpc::Service::MarkMethodStreamed(3,
+      ::grpc::Service::MarkMethodStreamed(15,
         new ::grpc::internal::StreamedUnaryHandler<
           ::data_service::SetPlayerFieldRequest, ::data_service::SetPlayerFieldResponse>(
             [this](::grpc::ServerContext* context,
@@ -3379,7 +5281,7 @@ class DataService final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithStreamedUnaryMethod_RegisterPlayerZone() {
-      ::grpc::Service::MarkMethodStreamed(4,
+      ::grpc::Service::MarkMethodStreamed(16,
         new ::grpc::internal::StreamedUnaryHandler<
           ::data_service::RegisterPlayerZoneRequest, ::google::protobuf::Empty>(
             [this](::grpc::ServerContext* context,
@@ -3406,7 +5308,7 @@ class DataService final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithStreamedUnaryMethod_GetPlayerHomeZone() {
-      ::grpc::Service::MarkMethodStreamed(5,
+      ::grpc::Service::MarkMethodStreamed(17,
         new ::grpc::internal::StreamedUnaryHandler<
           ::data_service::GetPlayerHomeZoneRequest, ::data_service::GetPlayerHomeZoneResponse>(
             [this](::grpc::ServerContext* context,
@@ -3433,7 +5335,7 @@ class DataService final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithStreamedUnaryMethod_BatchGetPlayerHomeZone() {
-      ::grpc::Service::MarkMethodStreamed(6,
+      ::grpc::Service::MarkMethodStreamed(18,
         new ::grpc::internal::StreamedUnaryHandler<
           ::data_service::BatchGetPlayerHomeZoneRequest, ::data_service::BatchGetPlayerHomeZoneResponse>(
             [this](::grpc::ServerContext* context,
@@ -3460,7 +5362,7 @@ class DataService final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithStreamedUnaryMethod_RemapHomeZoneForMerge() {
-      ::grpc::Service::MarkMethodStreamed(7,
+      ::grpc::Service::MarkMethodStreamed(19,
         new ::grpc::internal::StreamedUnaryHandler<
           ::data_service::RemapHomeZoneForMergeRequest, ::data_service::RemapHomeZoneForMergeResponse>(
             [this](::grpc::ServerContext* context,
@@ -3487,7 +5389,7 @@ class DataService final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithStreamedUnaryMethod_DeletePlayerData() {
-      ::grpc::Service::MarkMethodStreamed(8,
+      ::grpc::Service::MarkMethodStreamed(20,
         new ::grpc::internal::StreamedUnaryHandler<
           ::data_service::DeletePlayerDataRequest, ::data_service::DeletePlayerDataResponse>(
             [this](::grpc::ServerContext* context,
@@ -3514,7 +5416,7 @@ class DataService final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithStreamedUnaryMethod_CreatePlayerSnapshot() {
-      ::grpc::Service::MarkMethodStreamed(9,
+      ::grpc::Service::MarkMethodStreamed(21,
         new ::grpc::internal::StreamedUnaryHandler<
           ::data_service::CreatePlayerSnapshotRequest, ::data_service::CreatePlayerSnapshotResponse>(
             [this](::grpc::ServerContext* context,
@@ -3541,7 +5443,7 @@ class DataService final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithStreamedUnaryMethod_ListPlayerSnapshots() {
-      ::grpc::Service::MarkMethodStreamed(10,
+      ::grpc::Service::MarkMethodStreamed(22,
         new ::grpc::internal::StreamedUnaryHandler<
           ::data_service::ListPlayerSnapshotsRequest, ::data_service::ListPlayerSnapshotsResponse>(
             [this](::grpc::ServerContext* context,
@@ -3568,7 +5470,7 @@ class DataService final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithStreamedUnaryMethod_GetPlayerSnapshotDiff() {
-      ::grpc::Service::MarkMethodStreamed(11,
+      ::grpc::Service::MarkMethodStreamed(23,
         new ::grpc::internal::StreamedUnaryHandler<
           ::data_service::GetPlayerSnapshotDiffRequest, ::data_service::GetPlayerSnapshotDiffResponse>(
             [this](::grpc::ServerContext* context,
@@ -3595,7 +5497,7 @@ class DataService final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithStreamedUnaryMethod_RollbackPlayer() {
-      ::grpc::Service::MarkMethodStreamed(12,
+      ::grpc::Service::MarkMethodStreamed(24,
         new ::grpc::internal::StreamedUnaryHandler<
           ::data_service::RollbackPlayerRequest, ::data_service::RollbackPlayerResponse>(
             [this](::grpc::ServerContext* context,
@@ -3622,7 +5524,7 @@ class DataService final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithStreamedUnaryMethod_RollbackZone() {
-      ::grpc::Service::MarkMethodStreamed(13,
+      ::grpc::Service::MarkMethodStreamed(25,
         new ::grpc::internal::StreamedUnaryHandler<
           ::data_service::RollbackZoneRequest, ::data_service::RollbackZoneResponse>(
             [this](::grpc::ServerContext* context,
@@ -3649,7 +5551,7 @@ class DataService final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithStreamedUnaryMethod_RollbackAll() {
-      ::grpc::Service::MarkMethodStreamed(14,
+      ::grpc::Service::MarkMethodStreamed(26,
         new ::grpc::internal::StreamedUnaryHandler<
           ::data_service::RollbackAllRequest, ::data_service::RollbackAllResponse>(
             [this](::grpc::ServerContext* context,
@@ -3676,7 +5578,7 @@ class DataService final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithStreamedUnaryMethod_BatchRecallItems() {
-      ::grpc::Service::MarkMethodStreamed(15,
+      ::grpc::Service::MarkMethodStreamed(27,
         new ::grpc::internal::StreamedUnaryHandler<
           ::data_service::BatchRecallItemsRequest, ::data_service::BatchRecallItemsResponse>(
             [this](::grpc::ServerContext* context,
@@ -3703,7 +5605,7 @@ class DataService final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithStreamedUnaryMethod_QueryTransactionLog() {
-      ::grpc::Service::MarkMethodStreamed(16,
+      ::grpc::Service::MarkMethodStreamed(28,
         new ::grpc::internal::StreamedUnaryHandler<
           ::data_service::QueryTransactionLogRequest, ::data_service::QueryTransactionLogResponse>(
             [this](::grpc::ServerContext* context,
@@ -3730,7 +5632,7 @@ class DataService final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithStreamedUnaryMethod_CreateEventSnapshot() {
-      ::grpc::Service::MarkMethodStreamed(17,
+      ::grpc::Service::MarkMethodStreamed(29,
         new ::grpc::internal::StreamedUnaryHandler<
           ::data_service::CreateEventSnapshotRequest, ::data_service::CreateEventSnapshotResponse>(
             [this](::grpc::ServerContext* context,
@@ -3757,7 +5659,7 @@ class DataService final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithStreamedUnaryMethod_AllocateIdSegment() {
-      ::grpc::Service::MarkMethodStreamed(18,
+      ::grpc::Service::MarkMethodStreamed(30,
         new ::grpc::internal::StreamedUnaryHandler<
           ::data_service::AllocateIdSegmentRequest, ::data_service::AllocateIdSegmentResponse>(
             [this](::grpc::ServerContext* context,
@@ -3784,7 +5686,7 @@ class DataService final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithStreamedUnaryMethod_ReservePlayerName() {
-      ::grpc::Service::MarkMethodStreamed(19,
+      ::grpc::Service::MarkMethodStreamed(31,
         new ::grpc::internal::StreamedUnaryHandler<
           ::data_service::ReservePlayerNameRequest, ::data_service::ReservePlayerNameResponse>(
             [this](::grpc::ServerContext* context,
@@ -3811,7 +5713,7 @@ class DataService final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithStreamedUnaryMethod_ReleasePlayerName() {
-      ::grpc::Service::MarkMethodStreamed(20,
+      ::grpc::Service::MarkMethodStreamed(32,
         new ::grpc::internal::StreamedUnaryHandler<
           ::data_service::ReleasePlayerNameRequest, ::google::protobuf::Empty>(
             [this](::grpc::ServerContext* context,
@@ -3838,7 +5740,7 @@ class DataService final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithStreamedUnaryMethod_BatchGetPlayerName() {
-      ::grpc::Service::MarkMethodStreamed(21,
+      ::grpc::Service::MarkMethodStreamed(33,
         new ::grpc::internal::StreamedUnaryHandler<
           ::data_service::BatchGetPlayerNameRequest, ::data_service::BatchGetPlayerNameResponse>(
             [this](::grpc::ServerContext* context,
@@ -3865,7 +5767,7 @@ class DataService final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithStreamedUnaryMethod_GetPlayerAssetOpLedger() {
-      ::grpc::Service::MarkMethodStreamed(22,
+      ::grpc::Service::MarkMethodStreamed(34,
         new ::grpc::internal::StreamedUnaryHandler<
           ::data_service::GetPlayerAssetOpLedgerRequest, ::data_service::GetPlayerAssetOpLedgerResponse>(
             [this](::grpc::ServerContext* context,
@@ -3892,7 +5794,7 @@ class DataService final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithStreamedUnaryMethod_GetPlayerInboxLedger() {
-      ::grpc::Service::MarkMethodStreamed(23,
+      ::grpc::Service::MarkMethodStreamed(35,
         new ::grpc::internal::StreamedUnaryHandler<
           ::data_service::GetPlayerInboxLedgerRequest, ::data_service::GetPlayerInboxLedgerResponse>(
             [this](::grpc::ServerContext* context,
@@ -3913,9 +5815,9 @@ class DataService final {
     // replace default version of method with streamed unary
     virtual ::grpc::Status StreamedGetPlayerInboxLedger(::grpc::ServerContext* context, ::grpc::ServerUnaryStreamer< ::data_service::GetPlayerInboxLedgerRequest,::data_service::GetPlayerInboxLedgerResponse>* server_unary_streamer) = 0;
   };
-  typedef WithStreamedUnaryMethod_LoadPlayerData<WithStreamedUnaryMethod_SavePlayerData<WithStreamedUnaryMethod_GetPlayerField<WithStreamedUnaryMethod_SetPlayerField<WithStreamedUnaryMethod_RegisterPlayerZone<WithStreamedUnaryMethod_GetPlayerHomeZone<WithStreamedUnaryMethod_BatchGetPlayerHomeZone<WithStreamedUnaryMethod_RemapHomeZoneForMerge<WithStreamedUnaryMethod_DeletePlayerData<WithStreamedUnaryMethod_CreatePlayerSnapshot<WithStreamedUnaryMethod_ListPlayerSnapshots<WithStreamedUnaryMethod_GetPlayerSnapshotDiff<WithStreamedUnaryMethod_RollbackPlayer<WithStreamedUnaryMethod_RollbackZone<WithStreamedUnaryMethod_RollbackAll<WithStreamedUnaryMethod_BatchRecallItems<WithStreamedUnaryMethod_QueryTransactionLog<WithStreamedUnaryMethod_CreateEventSnapshot<WithStreamedUnaryMethod_AllocateIdSegment<WithStreamedUnaryMethod_ReservePlayerName<WithStreamedUnaryMethod_ReleasePlayerName<WithStreamedUnaryMethod_BatchGetPlayerName<WithStreamedUnaryMethod_GetPlayerAssetOpLedger<WithStreamedUnaryMethod_GetPlayerInboxLedger<Service > > > > > > > > > > > > > > > > > > > > > > > > StreamedUnaryService;
+  typedef WithStreamedUnaryMethod_ReadAccountDirectory<WithStreamedUnaryMethod_CreateAccountRole<WithStreamedUnaryMethod_LookupAccountRole<WithStreamedUnaryMethod_RepairAccountRole<WithStreamedUnaryMethod_RemoveAccountRoles<WithStreamedUnaryMethod_BeginAccountRoleTrade<WithStreamedUnaryMethod_ConfirmAccountRoleTradeFreeze<WithStreamedUnaryMethod_CancelAccountRoleTrade<WithStreamedUnaryMethod_TransferAccountRole<WithStreamedUnaryMethod_RegisterRoleAdmission<WithStreamedUnaryMethod_CloseRoleAdmissions<WithStreamedUnaryMethod_AckRoleTradeDrain<WithStreamedUnaryMethod_LoadPlayerData<WithStreamedUnaryMethod_SavePlayerData<WithStreamedUnaryMethod_GetPlayerField<WithStreamedUnaryMethod_SetPlayerField<WithStreamedUnaryMethod_RegisterPlayerZone<WithStreamedUnaryMethod_GetPlayerHomeZone<WithStreamedUnaryMethod_BatchGetPlayerHomeZone<WithStreamedUnaryMethod_RemapHomeZoneForMerge<WithStreamedUnaryMethod_DeletePlayerData<WithStreamedUnaryMethod_CreatePlayerSnapshot<WithStreamedUnaryMethod_ListPlayerSnapshots<WithStreamedUnaryMethod_GetPlayerSnapshotDiff<WithStreamedUnaryMethod_RollbackPlayer<WithStreamedUnaryMethod_RollbackZone<WithStreamedUnaryMethod_RollbackAll<WithStreamedUnaryMethod_BatchRecallItems<WithStreamedUnaryMethod_QueryTransactionLog<WithStreamedUnaryMethod_CreateEventSnapshot<WithStreamedUnaryMethod_AllocateIdSegment<WithStreamedUnaryMethod_ReservePlayerName<WithStreamedUnaryMethod_ReleasePlayerName<WithStreamedUnaryMethod_BatchGetPlayerName<WithStreamedUnaryMethod_GetPlayerAssetOpLedger<WithStreamedUnaryMethod_GetPlayerInboxLedger<Service > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > StreamedUnaryService;
   typedef Service SplitStreamedService;
-  typedef WithStreamedUnaryMethod_LoadPlayerData<WithStreamedUnaryMethod_SavePlayerData<WithStreamedUnaryMethod_GetPlayerField<WithStreamedUnaryMethod_SetPlayerField<WithStreamedUnaryMethod_RegisterPlayerZone<WithStreamedUnaryMethod_GetPlayerHomeZone<WithStreamedUnaryMethod_BatchGetPlayerHomeZone<WithStreamedUnaryMethod_RemapHomeZoneForMerge<WithStreamedUnaryMethod_DeletePlayerData<WithStreamedUnaryMethod_CreatePlayerSnapshot<WithStreamedUnaryMethod_ListPlayerSnapshots<WithStreamedUnaryMethod_GetPlayerSnapshotDiff<WithStreamedUnaryMethod_RollbackPlayer<WithStreamedUnaryMethod_RollbackZone<WithStreamedUnaryMethod_RollbackAll<WithStreamedUnaryMethod_BatchRecallItems<WithStreamedUnaryMethod_QueryTransactionLog<WithStreamedUnaryMethod_CreateEventSnapshot<WithStreamedUnaryMethod_AllocateIdSegment<WithStreamedUnaryMethod_ReservePlayerName<WithStreamedUnaryMethod_ReleasePlayerName<WithStreamedUnaryMethod_BatchGetPlayerName<WithStreamedUnaryMethod_GetPlayerAssetOpLedger<WithStreamedUnaryMethod_GetPlayerInboxLedger<Service > > > > > > > > > > > > > > > > > > > > > > > > StreamedService;
+  typedef WithStreamedUnaryMethod_ReadAccountDirectory<WithStreamedUnaryMethod_CreateAccountRole<WithStreamedUnaryMethod_LookupAccountRole<WithStreamedUnaryMethod_RepairAccountRole<WithStreamedUnaryMethod_RemoveAccountRoles<WithStreamedUnaryMethod_BeginAccountRoleTrade<WithStreamedUnaryMethod_ConfirmAccountRoleTradeFreeze<WithStreamedUnaryMethod_CancelAccountRoleTrade<WithStreamedUnaryMethod_TransferAccountRole<WithStreamedUnaryMethod_RegisterRoleAdmission<WithStreamedUnaryMethod_CloseRoleAdmissions<WithStreamedUnaryMethod_AckRoleTradeDrain<WithStreamedUnaryMethod_LoadPlayerData<WithStreamedUnaryMethod_SavePlayerData<WithStreamedUnaryMethod_GetPlayerField<WithStreamedUnaryMethod_SetPlayerField<WithStreamedUnaryMethod_RegisterPlayerZone<WithStreamedUnaryMethod_GetPlayerHomeZone<WithStreamedUnaryMethod_BatchGetPlayerHomeZone<WithStreamedUnaryMethod_RemapHomeZoneForMerge<WithStreamedUnaryMethod_DeletePlayerData<WithStreamedUnaryMethod_CreatePlayerSnapshot<WithStreamedUnaryMethod_ListPlayerSnapshots<WithStreamedUnaryMethod_GetPlayerSnapshotDiff<WithStreamedUnaryMethod_RollbackPlayer<WithStreamedUnaryMethod_RollbackZone<WithStreamedUnaryMethod_RollbackAll<WithStreamedUnaryMethod_BatchRecallItems<WithStreamedUnaryMethod_QueryTransactionLog<WithStreamedUnaryMethod_CreateEventSnapshot<WithStreamedUnaryMethod_AllocateIdSegment<WithStreamedUnaryMethod_ReservePlayerName<WithStreamedUnaryMethod_ReleasePlayerName<WithStreamedUnaryMethod_BatchGetPlayerName<WithStreamedUnaryMethod_GetPlayerAssetOpLedger<WithStreamedUnaryMethod_GetPlayerInboxLedger<Service > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > StreamedService;
 };
 
 }  // namespace data_service

@@ -65,6 +65,9 @@ func (l *ChallengeLogic) ChallengePlayer(in *matchpb.ChallengePlayerRequest) (*m
 			ErrorMessage: tipErr(constants.ErrChallengeSelf, "不能挑战自己"),
 		}, nil
 	}
+	if l.svcCtx.Authority != nil {
+		return l.createGlobalChallenge(in, challengerId)
+	}
 
 	// 咨询性检查双方 battle:lock(权威性复查在应战时刻做)。
 	if locked, err := isPlayerBattleLocked(l.svcCtx, challengerId); err != nil || locked {
@@ -166,11 +169,7 @@ func (l *ChallengeLogic) ChallengePlayer(in *matchpb.ChallengePlayerRequest) (*m
 		l.Errorf("[challenge] Failed to set challenge record TTL challenge=%d: %v", challengeId, err)
 	}
 
-	// 发起者名字:一期用账号名占位(PlayerSession 无角色昵称,待接玩家昵称数据源)。
-	challengerName := ""
-	if challengerSession, err := loadPlayerSession(l.svcCtx, challengerId); err == nil && challengerSession != nil {
-		challengerName = challengerSession.Account
-	}
+	challengerName := challengePublicName(l.ctx, l.svcCtx, challengerId)
 
 	// 推挑战弹窗给目标(经 Kafka gate PushToPlayerEvent,设计决策 D6)。
 	invite := &matchpb.ChallengeInviteS2C{
@@ -208,9 +207,7 @@ func (l *ChallengeLogic) RespondChallenge(in *matchpb.RespondChallengeRequest) (
 		}, nil
 	}
 	if l.svcCtx.Authority != nil {
-		if response, found := globalChallengeReplay(l.ctx, l.svcCtx, responderId, in); found {
-			return response, nil
-		}
+		return l.respondGlobalChallenge(in, responderId)
 	}
 
 	fields, err := l.svcCtx.MatchRedis.Hgetall(challengeKey(in.ChallengeId))
@@ -252,9 +249,6 @@ func (l *ChallengeLogic) RespondChallenge(in *matchpb.RespondChallengeRequest) (
 		}, nil
 	}
 
-	if l.svcCtx.Authority != nil {
-		return l.decideGlobalChallenge(in, challengerId, responderId, uint32(configId), expiresAtMs)
-	}
 	// 挑战记录一次性消费:应战/拒战/过期都作废(TTL 是兜底,这里显式删)。
 	deleteChallengeRecord(l.svcCtx, in.ChallengeId, targetId)
 

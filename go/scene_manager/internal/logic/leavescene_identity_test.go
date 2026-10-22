@@ -37,7 +37,7 @@ func TestLeaveScene_StaleLeaveAfterSamePlacementRelogKeepsLocation(t *testing.T)
 		SessionId: 11, LoginGeneration: identGenA,
 	})
 
-	resp, err := NewEnterSceneLogic(context.Background(), sc).EnterScene(&scene_manager.EnterSceneRequest{
+	resp, err := NewEnterSceneLogic(context.Background(), sc).EnterScene(&scene_manager.EnterSceneRequest{OwnerRevision: 1,
 		PlayerId: playerID, SceneId: s1, ZoneId: testZoneId, SessionId: 22, LoginGeneration: identGenB,
 		GateZoneId: testZoneId, GateId: "2", GateInstanceId: "gate-b-uuid",
 	})

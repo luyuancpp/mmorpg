@@ -324,3 +324,108 @@ message route_reconcile
   uint64 watermark_ms      = 4;
   uint64 cache_verified_ms = 5;
 }
+
+// 全局账号角色目录；不含认证凭据。短字符串主键由 data_service 的 bootstrap
+// DDL 建为 VARBINARY(191)，本 proto 同时是列与主键形状守卫的事实源。
+message account_directory {
+  option(OptionTableName) = "account_directory";
+  option(OptionPrimaryKey) = "account";
+  string account = 1;
+  uint64 created_ms = 2;
+}
+
+message account_role {
+  option(OptionTableName) = "account_role";
+  option(OptionPrimaryKey) = "player_id";
+  option(OptionTiDBNonclusteredPK) = true;
+  option(OptionTiDBShardRowIDBits) = 4;
+  option(OptionTiDBPreSplitRegions) = 4;
+  uint64 player_id = 1;
+  string account = 2;
+  bytes role_proto = 3; // AccountSimplePlayer 原件，保留未知字段。
+  uint64 owner_revision = 4; // 账号归属修订号，绝不等同 scene owner_epoch。
+  uint64 updated_ms = 5;
+  uint64 trade_listing_id = 6; // 0 表示无交易锁；非零时入场、身份补齐和删除均拒绝。
+}
+
+// listing 级永久冻结收据；取消后保留，旧冻结请求重放不能再次冻结。
+message account_role_trade {
+  option(OptionTableName) = "account_role_trade";
+  option(OptionPrimaryKey) = "listing_id";
+  option(OptionTiDBNonclusteredPK) = true;
+  option(OptionTiDBShardRowIDBits) = 4;
+  option(OptionTiDBPreSplitRegions) = 4;
+  uint64 listing_id = 1;
+  uint64 player_id = 2;
+  string seller_account = 3;
+  uint64 seller_owner_revision = 4;
+  bytes request_digest = 5;
+  uint32 state = 6; // data_service.AccountRoleTradeState。
+  bytes freeze_evidence = 7; // 仅服务端 SQL 验证器产生的 AccountRoleFreezeEvidence 原件。
+  uint64 created_ms = 8;
+  uint64 updated_ms = 9;
+  uint64 required_owner_epoch = 10; // 包括已普通退出但 SQL 尚未追上的历史下限。
+  uint64 required_save_seq = 11;
+}
+
+// tx_id 级永久过户收据，保存原角色原件与原返回修订，不随后续过户改变。
+message account_role_transfer_receipt {
+  option(OptionTableName) = "account_role_transfer_receipt";
+  option(OptionPrimaryKey) = "tx_id";
+  option(OptionTiDBNonclusteredPK) = true;
+  option(OptionTiDBShardRowIDBits) = 4;
+  option(OptionTiDBPreSplitRegions) = 4;
+  uint64 tx_id = 1;
+  bytes request_digest = 2;
+  uint64 listing_id = 3;
+  uint64 player_id = 4;
+  string seller_account = 5;
+  string buyer_account = 6;
+  uint64 seller_owner_revision = 7;
+  uint64 buyer_owner_revision = 8;
+  uint64 created_ms = 9;
+  bytes role_proto = 10;
+}
+
+// 每角色/scene 进程一行，登录不 append；终态水位不得按 TTL 丢弃。
+message account_role_admission {
+  option(OptionTableName) = "account_role_admission";
+  option(OptionPrimaryKey) = "player_id,scene_instance_id";
+  uint64 player_id = 1;
+  string scene_instance_id = 2;
+  uint64 highest_generation = 3;
+  uint64 closed_through = 4;
+  bytes identity_proto = 5; // RoleAdmissionIdentity 原件。
+  bytes request_digest = 6;
+  uint64 required_owner_epoch = 7;
+  uint64 required_save_seq = 8;
+  bytes close_digest = 9; // 仅最新关闭水位可同原请求重放，较旧请求明确拒绝。
+  uint64 updated_ms = 10;
+}
+
+// 原 listing 的 holder 固定集合；成功 ACK 原件永久判重。
+message account_role_trade_holder {
+  option(OptionTableName) = "account_role_trade_holder";
+  option(OptionPrimaryKey) = "listing_id,scene_instance_id";
+  uint64 listing_id = 1;
+  string scene_instance_id = 2;
+  bytes seal_proto = 3;
+  uint32 drained = 4;
+  bytes ack_digest = 5;
+  uint64 updated_ms = 6;
+}
+
+// 本地受控导入的永久请求收据；先换目录修订阻旧路由，再写两玩家 SQL。
+// 同请求只回原修订，后续归属已变化时拒绝恢复旧导入，不循环 bump 修订。
+message account_role_import_receipt {
+  option(OptionTableName) = "account_role_import_receipt";
+  option(OptionPrimaryKey) = "request_id";
+  bytes request_id = 1;
+  bytes request_digest = 2;
+  uint64 player_id = 3;
+  string account = 4;
+  uint64 owner_revision = 5;
+  bytes role_proto = 6;
+  uint32 allow_restore = 7;
+  uint64 created_ms = 8;
+}

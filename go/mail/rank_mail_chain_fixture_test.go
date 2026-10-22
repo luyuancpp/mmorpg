@@ -12,6 +12,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/alicebob/miniredis/v2"
+	"github.com/redis/go-redis/v9"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials/insecure"
@@ -23,17 +25,22 @@ import (
 	"schemamigrate"
 	"shared/authoritysql"
 	"shared/domainhost"
+	"shared/loginsession"
 	"shared/serviceauth"
 )
 
 // TestRankMailChainFixture 仅供跨模块整链测试的独立子进程装配真实邮件服务。
 // 随机库的创建和删除归父进程；本进程既不伪造邮件来源，也不写资产终态。
 func TestRankMailChainFixture(t *testing.T) {
-	if os.Getenv("RANK_MAIL_CHAIN_FIXTURE") != "mail" || os.Getenv("RANK_MAIL_CHAIN_IT_TIDB") != "127.0.0.1:4000" {
+	if os.Getenv("RANK_MAIL_CHAIN_FIXTURE") != "mail" {
 		t.Skip("仅供本机 TiDB 排行到邮件整链子进程")
 	}
+	address := os.Getenv("RANK_MAIL_CHAIN_IT_TIDB")
+	if err := mailMainFixtureEndpoint(address); err != nil {
+		t.Fatal(err)
+	}
 	database := os.Getenv("RANK_MAIL_CHAIN_DATABASE")
-	if !regexp.MustCompile(`^rank_mail_chain_[a-z0-9_]+$`).MatchString(database) || len(database) > 64 {
+	if !regexp.MustCompile(`^rank_mail_chain_[a-f0-9]{16}_mail$`).MatchString(database) {
 		t.Fatal("整链随机库名无效")
 	}
 	secret := strings.TrimSpace(os.Getenv("RANK_MAIL_CHAIN_SECRET"))
@@ -46,7 +53,7 @@ func TestRankMailChainFixture(t *testing.T) {
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), 90*time.Second)
 	defer cancel()
-	db, err := authoritysql.Open(ctx, "root@tcp(127.0.0.1:4000)/"+database, database, true, 8)
+	db, err := authoritysql.Open(ctx, "root@tcp("+address+")/"+database, database, true, 8)
 	if err != nil {
 		t.Fatalf("打开邮件强读连接: %v", err)
 	}
@@ -62,11 +69,27 @@ func TestRankMailChainFixture(t *testing.T) {
 	var ids atomic.Uint64
 	next := func(context.Context) (uint64, error) { return ids.Add(1), nil }
 	repo := data.New(db, next, next, func(uint32) bool { return true }, database)
+	// 全局角色目录与原登录态是客户端列表的真实依赖；只在此随机夹具库种原件。
+	if _, err := db.ExecContext(ctx, "CREATE TABLE account_role (player_id BIGINT UNSIGNED PRIMARY KEY,account VARBINARY(191) NOT NULL,owner_revision BIGINT UNSIGNED NOT NULL,trade_listing_id BIGINT UNSIGNED NOT NULL)"); err != nil {
+		t.Fatal(err)
+	}
+	for _, player := range []uint64{7, 8} {
+		if _, err := db.ExecContext(ctx, "INSERT INTO account_role VALUES (?, ?,3,0)", player, []byte("整链原账号")); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if err := repo.ConfigureRoleAuthority(ctx, database); err != nil {
+		t.Fatal(err)
+	}
+	loginCache := miniredis.RunT(t)
+	loginCache.Set(loginsession.KeyFromMember("mail-rank-chain-original:19"), "整链原账号")
+	loginReader := redis.NewClient(&redis.Options{Addr: loginCache.Addr()})
+	t.Cleanup(func() { _ = loginReader.Close() })
 	auth, err := serviceauth.New(map[string]string{"rank": secret})
 	if err != nil {
 		t.Fatal("整链邮件调用方配置无效")
 	}
-	handler := server.New(repo, auth)
+	handler := server.New(repo, auth).WithLoginSessions(loginReader)
 	var responseLost atomic.Bool
 	loseFirstCommittedReply := func(ctx context.Context, request any, info *grpc.UnaryServerInfo, next grpc.UnaryHandler) (any, error) {
 		response, err := next(ctx, request)

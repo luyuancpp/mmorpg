@@ -4,7 +4,10 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"net"
 	"os"
+	"strconv"
+	"strings"
 	"sync"
 	"testing"
 	"time"
@@ -22,16 +25,25 @@ func testStore(t *testing.T) *Store {
 	t.Helper()
 	addr := os.Getenv("MATCH_IT_TIDB")
 	if addr == "" {
-		t.Skip("设置MATCH_IT_TIDB=127.0.0.1:4000启用隔离TiDB事务测试")
+		if os.Getenv("MATCH_IT_REQUIRE_TIDB") == "1" {
+			t.Fatal("缺MATCH_IT_TIDB，显式TiDB验收不得跳过")
+		}
+		t.Skip("设置MATCH_IT_TIDB为已核任务所有的数值loopback端口启用隔离TiDB事务测试")
 	}
-	require.Equal(t, "127.0.0.1:4000", addr)
+	requireNativeTiDBAddress(t, addr)
 	c := mysql.NewConfig()
 	c.Net = "tcp"
 	c.Addr = addr
 	c.User = "root"
+	c.Timeout, c.ReadTimeout, c.WriteTimeout = 3*time.Second, 3*time.Second, 3*time.Second
 	c.Params = map[string]string{"tidb_txn_mode": "'pessimistic'", "transaction_isolation": "'READ-COMMITTED'", "tidb_read_staleness": "0", "tidb_low_resolution_tso": "OFF", "tidb_read_consistency": "'strict'", "tidb_replica_read": "'leader'", "tidb_snapshot": "''"}
 	admin, e := sql.Open("mysql", c.FormatDSN())
 	require.NoError(t, e)
+	check, checked := context.WithTimeout(context.Background(), 5*time.Second)
+	defer checked()
+	var version, comment string
+	require.NoError(t, admin.QueryRowContext(check, "SELECT VERSION(),@@version_comment").Scan(&version, &comment))
+	require.Contains(t, strings.ToLower(version+comment), "tidb", "隔离端口必须是真实TiDB，不能回退MySQL")
 	name := "matchit_" + uuid.NewString()[:8]
 	_, e = admin.Exec("CREATE DATABASE `" + name + "`")
 	require.NoError(t, e)
@@ -48,9 +60,24 @@ func testStore(t *testing.T) *Store {
 	})
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
-	_, e = schemamigrate.Up(ctx, db, schemamigrate.Options{Database: name, Tables: []proto.Message{&pb.MatchNetworkProfileRecord{}, &pb.MatchAuthorityTicketRecord{}, &pb.MatchJoinIntentRecord{}, &pb.MatchDirectIntentRecord{}, &pb.MatchFormationRecord{}, &pb.MatchRatingRecord{}, &pb.MatchRatingAppliedRecord{}, &pb.MatchRankSourceRecord{}, &pb.MatchRankOutboxRecord{}, &pb.MatchBattleCompletionRecord{}, &pb.MatchBattleSettlementSourceRecord{}}})
+	_, e = schemamigrate.Up(ctx, db, schemamigrate.Options{Database: name, Tables: Tables()})
 	require.NoError(t, e)
-	return &Store{DB: db, Secret: []byte("fixture-only-probe-key-00000000000"), Config: config.GlobalMatchConf{HardLatencyMs: 180, CrossRegionWaitSeconds: 30}}
+	// 本夹具只验证独立匹配SQL状态机，明确注入P与跨域准入替身；原生夹具覆盖实际原件围栏。
+	return &Store{DB: db, Secret: []byte("fixture-only-probe-key-00000000000"), Config: config.GlobalMatchConf{HardLatencyMs: 180, CrossRegionWaitSeconds: 30}, roleGuard: func(context.Context, *sql.Tx, []*pb.MatchAuthorityTicketRecord) error { return nil }, entryGuard: func(context.Context, *sql.Tx, []*pb.MatchAuthorityTicketRecord, *matchEntryOriginal) error {
+		return nil
+	}}
+}
+
+func requireNativeTiDBAddress(t *testing.T, address string) {
+	t.Helper()
+	host, portText, err := net.SplitHostPort(address)
+	require.NoError(t, err)
+	ip := net.ParseIP(host)
+	require.NotNil(t, ip, "测试端点必须显式为数值loopback，不能跟随DNS")
+	require.True(t, ip.IsLoopback())
+	port, err := strconv.ParseUint(portText, 10, 16)
+	require.NoError(t, err)
+	require.NotZero(t, port)
 }
 
 func testJoin(t *testing.T, s *Store, pid uint64) *pb.MatchAuthorityTicketRecord {

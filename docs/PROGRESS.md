@@ -14406,6 +14406,159 @@ PROGRESS 一直没有条目)。上面 2026-09-21 条里"第 7–9 步未跑""修
 - 当前探针成功判据为GameClient.InGame且PlayerId/CurrentSceneId非0，通过真实视图OnEnterClicked提交；result的flow=empty，不冒成功状态文案。开关仅核存在性为false，state的runId/输出目录匹配。本结果只覆盖探针导入并重进Play后的该次UI路径，不解释原始等待根因；旧认证拒绝/诊断启动超时保留。未封完整当前client源码、工具或Unity程序集来源，不提升为根新SDK正式生成/完整client runtime、Java30/SQL158或双区故障验收。
 - 有限审原件：build/verification/other-line-unity-ui-success-finite-readonly-20261021T024157248Z/review.json，SHA256=789E4526B558FB49E58D8D4789325CCB7376647F89CEAD719EEE8CAEB05CDFCC。本轮根native0/Prepare0，无目标工具、凭据读取、容器或进程控制、ACL/系统/Git写入。02:37观察1131560KiB及未知dotnet仍不满足重型门禁；C433完整准入、新HEAD Java正规sync与构建绑定等续跑停点不变。
 
+### 2026-10-20 root：按用户原始迁移需求交接新聊天，旧定时任务已删除
+
+- 用户补充原始需求：保留并移植原Go分布式好友设计，核主仓MySQLFriendRepo.AcceptRequest；对照D:/luyuan/xuanming-server/services/economy/auction的TiDB锁/交易；区域内优先、等待超时跨区域兜底且每位成员受延迟上限；保留macrozheng/mall的商城/聚宝斋适配需求，附件/交易资产真实到账、SQL收据、归属围栏、db_first历史恢复/旧实例复活/延迟ACK，两版及客户端同步，均按全球同服/强一致要求查漏补实现和实际验收。不把旧测试清单当所有原始需求已移植完成。
+- 已创建本地新聊天“全球同服迁移查漏与双区故障验收”，threadId=01a15c60-cdde-7f31-9dd4-26389fdf824d，完整初始消息已传原始需求、工作区权限、当前收据与门禁。交接原件build/verification/migration-new-chat-handoff-20261021T025224416Z/handoff.json，SHA256=55B56D16C18F09D3BDACE65F6EC5313CB064A80DF2A79C888E791D7FB4B985F8；created-thread.json SHA256=A1F514B4C3F0276D6FDB0225F6998E4D35FCC72DE44E4831B3D7E96EE919389B。
+- 用户明确要求关闭定时任务，automation_update已确认automation-2 deleteStatus=deleted；不重建或另设替代定时任务。两条新只读子线均交付结束，无新候选写入、无ContractSync/Prepare/Maven/故障运行。有限审确认所查SourceReceipt/watchdog/两ACK/旧E CAS/+11+7核心已有实代码，但当前产物manifest的scene/gate/gateway仍null、root_approved=false，真实双区仍未验；Java D125旧SOURCE与563同步包装的旧来源/守卫缺口一起交接，旧5C64空head保留。整体目标未完成，本线程不继续并行改代码或启动目标进程。
+
+## 2026-10-20 Codex：断线重连恢复现状审计（仅文档）
+
+- 按负责人要求只读核对当前 C++/Go、共享客户端及 Java 版相关恢复接缝，新增 `docs/design/disconnect-reconnect-audit-20261020.md`，在 `docs/README.md` 登记；没有修改业务、协议、配置、客户端或 Java 实现，没有提交或推送。
+- 当前机制是新会话重新路由/入场、好友/组队/帮会按域查询、邮件落地首拉、回合战斗补签后取当前快照，以及独立资产/结算/收件箱待办恢复；普通 Gate 推送没有跨会话原包回放。默认 30 秒是 locator 恢复资格租约，不保证 Scene 实体保活；背包、属性、技能书等不少视图仍在打开面板时查询。
+- 静态确认同场景新会话复用实体时幂等早退漏掉入场、自身和 AOI 基线；实时场景持续状态基线/消费链不完整；战斗奖励账本恢复不保证重登后的终局面板。另登记摘要提交后空窗、聊天历史/私聊发现、落点和 CD/Buff 保留规则等边界，并给出分层验收场景，未将通知丢失混同资产丢失。
+- Java 版本 `0.1.0-SNAPSHOT` 有限核对：摘要尚无实现，待结算仍七天 TTL；全球模式已有 SQL 完成原件，但所审自动恢复未见从归档回源补投。Inbox 源码已经装配，不能照抄旧 PARITY 的未实现记载。本轮无功能变更，不改 Java 对账本；审计期间 Java HEAD 从 425f1da 到 da363d8f，本轮相关生产源码与 PARITY 无提交差异。
+- 验证只含源码交叉复核、164 个文档引用的路径/行号边界检查（98 个文件）、无遗留占位与尾随空白、索引 diff 检查。未编译、未运行测试、未做真实断网或压测；遗漏是静态审计结论，未冒称已经修复或实机复现。
+
+### 2026-10-20 Codex：新聊天按原产品需求补好友、竞拍与后台到账接缝，真实双区验收仍待执行
+
+- 已核交接原件 handoff.json 的 SHA256=55B56D16C18F09D3BDACE65F6EC5313CB064A80DF2A79C888E791D7FB4B985F8。旧 automation-2 已由上一聊天工具确认删除，本聊天未重建或替代。当前本地主仓 HEAD=1c9c1e6c19c415728fae625f985d98da945c5fce、Java=da363d8fd44ec77f854077332f7b20120841b601、client=ce984904e3d92e9f9083d993f07e68a632b5de38；未 fetch/核远端 HEAD，不把这些值或旧构建收据冒作工作区全干净。公开未登录 PR/Issue 页面本次均显示 Open 0。
+- 好友对照原 Go b1f6c1eb 的 services/social/friend/internal/data/friend_repo.go:353 与 TiDB 初始化/配置：原设计最终采用同一 TiDB 事务域，不是应用跨独立数据库的 Saga。当前两版升序容量行守卫、申请代次、双向边/计数同事务、直接 SQL 权限列表与生产强会话已保留，未重写既有业务实现。纠正 friend-persistence-architecture 的单 MySQL/cache-aside/未来 RPC 补偿旧口径，新增两版独立连接池契约回归：反向并发接受只建一次、跨副本删除后旧接受不复活、重发换代、拉黑竞争及硬上限。Go 另用独立缓存证明旧列表不参与权限判断。这些是待运行的本机双副本用例，不是真实双区域故障证明。Java 对应 0.1.0-SNAPSHOT。
+- 匹配保持已定本区优先、全员等待满阈值后跨区、逐成员硬延迟。Go claimTx 补整张票据 expires_ms 的持锁提交点复核；此前只核所选回执，扫描后等待行锁可能接纳已到期票。两版新真 TiDB 夹具直接 SQL 观察全组回滚，避开 Ticket/ticket() 自带的到期清理。Java 既有到期拒绝未重写；其新用例不单独证明具体 expires 分支或真实锁等待。未改客户端契约。
+- 拍卖对照原 AuctionRepo.ReserveMatch/SettlementLedger 后沿用全球合同/原 seq 资产腿，不另造钱包或两次 RPC 的原子承诺。两版竞拍在当前最高价/截止校验前查同玩家原请求与完整 protobuf 摘要，修复丢回执后原出价被下一笔加价门槛拒绝；不同载荷仍拒绝。Go 出价继承拍品截止，扣款待办不再 deadline=0。新增并发八次原请求、最高价/截止后重放、摘要冲突、单合同原扣款/seq 及截止回归，未实跑。
+- Java 补齐 Go 已有的合同单行隔离、带版本复核的延期、held 竞价延期、ACK 游标翻页、坏 payload 保留、人工/放弃终局及实例托管原件核验；取消/消费按 op_id 升序点锁，调度 updated_ms 与业务库时钟裁决分工明确。官方商城同页逐意图失败汇总，RPC Delivery.failed 与 SQL Read.Failed 显式记录而保留原 seq。新增 5 个 Runtime/HTTP 用例、4 个 TiDB 用例。Go ACK 另修静默吞 RPC/SQL 错误：保留待办、继续本页、页末 errors.Join 交原 Tick 调用者日志；正常离线不算故障，新增 101 条跨页回归。
+- mall 已实际复用钉版 dcaa93b 的 PMS/OMS 模型及独立服务，官方 SKU 到玩家 SQL 交付桥存在；这不等于完整后台、人民币寄售卖家结算/提现或角色过户已完成。最新充值 v4、摆摊拍板已核，未把历史待决覆盖后续决定，也未擅自开启独立充值 30+ 文件批次。新增确定缺口：两版 DeliveryStore.poll 固定取最早 20 条 PENDING，20 个长期离线买家可饿死第21单；同页隔离不解决跨页公平。修复须两版内部 poll 协议、存储与测试同步，累计预计超过30文件，按 AGENTS.md §10.2 停止扩写并待明确扩围决定，不能只加大 LIMIT。
+- 当前本批源码/测试/原有设计加本条与 Java PARITY 合计23文件（不含忽略目录候选/收据），没有手改生成物、客户端、他人 staged/dirty、ACL/系统或他人进程/容器。仅执行 gofmt 与定向 git diff --check，通过；编译、测试、协议生成、Java sync/Prepare/Maven、真库与双区宿主演练均未启动。回归先加后修，但没有本轮红/绿运行证据。03:09Z 只读 free=1364680KiB，仍有未知 MSBuild/dotnet/Java，不满足既有重型/串行门禁；未停止或豁免别人。
+- Java 当前来源 sync 候选在 build/verification/java-contract-current-preparation-20261021T025854664Z/，只写忽略目录，AST0；一次纯捕获因并行 Commerce 两文件漂移正确停下、没有 input-plan。旧 SOURCE global/maps 206647、旧7AF参数与5C64空head不消费。后续仍按 C433 新SDK正式生成完整准入→正规客户端生成/vendor/当前构建→Java正规sync/check及新唯一Prepare/正常30→当前SQL与本轮新增回归→真实双区旧E CAS拒写、第二表点锁首ACK仍等次ACK、跨区+11/+7恰一次推进。所有历史通过/失败只保留原来源，当前fault整体manifest未批准；本条不关闭真实验收。未commit/push/tag。
+### 2026-10-20 Codex：负责人授权商城交付分页扩围，继续两版实现
+
+- 负责人明确回复“授权扩围，继续补齐两版分页与回归”，已覆盖前条23文件扩至约32文件的既定九个新增路径；本批不再重复请求该授权。方案原件 build/verification/migration-product-gaps-20261021T032319453Z/mall-pagination-proposal.json 已登记批准，历史result仍保持其原观察/未验收范围。
+- 两版统一内部 Poll{limit,cursor} 与 PollPage.entries[{intent,cursor}]，不改客户端契约或原Intent摘要。游标固定首轮上界，按(created_ms,order_sn)推进；预算不越未处理项、每尝试一项才推进、到本轮尾部绕回。SQL唯一订单与原资产seq仍负责幂等，游标只负责公平调度，不用放大LIMIT掩盖第21单饥饿。
+- 当前仅进入实现；03:28Z只读free=570008KiB，仍有未知MSBuild/Go/link/dotnet/Java，未运行重型、真实SQL或宿主演练，不豁免或停止他人。旧定时任务保持已删除。
+
+## 2026-10-20 Codex：本机 Docker 修改后重编与 Go／Java 源码断点完成，C++ Debug 构建进行中
+
+- 按负责人继续完成自己的服务器调试范围，补统一 `rebuild_docker_debug.py` 与 VS Code 四个重编任务、十一个附加入口；附加前核当前源码文件集合与运行二进制／符号 SHA，源码新增同样拦截。一次检查内共享 C++ 源码扫描，避免三个节点重复遍历 SDK。源码门禁真实红／绿通过，临时独占 Java 探针已移除：`build/verification/docker-debug-workflow-20261021/source-guard-contract-20261021T034231188076Z/result.json`。Python 语法与 launch→task 引用检查通过。
+- 七个 Go 服务 Linux Debug 重编与容器更新完成，`all=-N -l`、无 trimpath／剥离符号，容器内固定 Delve v1.27.2。补齐同批冻结 `/app/data` 与 `/generated/tables`，清除基础镜像旧资源、表名统一小写并拒绝目标碰撞；每服务92张表，DB另1份业务 JSON，运行资源逐一核 SHA。新镜像与完整来源见 `build/verification/docker-go-debug-resources-20261021T032548115Z/result.json`；部署及七 Go＋Java 源码／产物检查全部通过，见 `build/verification/docker-debug-workflow-20261021/go-resources-deploy-20261021T033945130767Z/`。未清卷或更换现有凭据。
+- 最新 Go Login 镜像实际通过 DAP 命中自己 `providers.go:67` 的 DevelopmentPasswordProvider.ValidatePassword，清断点、继续与非终止断开均确认；固定错误密码夹具恢复后返回业务401，未读取或记录凭据／局部值。结果 `build/verification/docker-debug-workflow-20261021/go-dap-result-20261021T034158815159Z-2a265e5b.json`，5.159秒。Java 网关新镜像实际 JDWP/JDI 命中 ServerListController.java:21，582ms，恢复、删断点、断开与HTTP200均通过，见同目录 `jdi-20261021T0313122282924Z/result.json`；离线 Maven 205通过、5项既有数据库条件跳过、0失败，完整来源在 `java-build-20261021T0302538783531Z/`。没有操作 VS Code UI 按 F5。
+- 用户已手动安装并实查 Debugger for Java 0.60.0；C/C++ 1.34.4、Go 0.56.1、Java语言支持1.58.0均存在。先前CLI安装因证书链失败，未重试／禁用校验／改系统；保留原失败记录。七Go调试端口2345–2351、Java5005仅绑定127.0.0.1；C++维持docker exec容器内GDB。配置源变化须原端口prepare→重编更新，prepare不会热重载C++内存配置；未把prepare源指纹冒作节点启动时配置原件。
+- 原 C++ 镜像1456份应用源码与本地一致，但实际后置-O2导致跳行与变量不可见，不能归因成已证实源码漂移。新SDK f1bec027 的27096项依赖与33904项gRPC来源校验通过；冻结21668项应用及头文件输入，无优化Debug首次构建仍在运行：`build/verification/docker-rebuild-cpp-20261021T031855.133989Z/`。首次touch等待ext4 journal已越过，实际proto编译参数为-O0/-g/-ggdb；截至本条尚未完成三个节点、未更新C++容器、未重新验证其真实断点，不能宣称C++问题已完成修复。SDK源码集合守卫见 `docker-debug-20261020-052903/smoke/cpp-sdk-source-set-guard-upgrade.json`。未运行第三方测试、未提交／推送／操作远端。
+
+### 2026-10-20 Codex：已按授权补齐两版商城交付稳定分页，运行验收仍待资源窗口
+
+- 本批按负责人明确授权完成原23路径加九个商城分页路径，合计32个源码／测试／既有文档路径；没有新开充值批次，没有修改proto、生成产物或客户端契约，没有提交或推送。旧23文件result保留其历史观察范围，新32文件来源与待验项另存忽略目录收据。
+- 两版内部poll统一为Poll{limit,cursor}／PollPage.entries[{intent,cursor}]，复用现有(status,created_ms,order_sn)索引；首轮固定复合键上界、严格after与包含upper、limit+1判尾，尾项尝试后或空尾页绕回。worker先核整页包装，只在实际尝试一项后前移，HTTP／坏包装不前移，预算未开始项不越过。原Intent字段／摘要、订单唯一键、原合同与资产seq不变；多worker重读、进程重启不靠游标证明资产。内部HTTP响应变化要求同版mall/trade配套部署，当前镜像／运行产物未重建。
+- 新增两版商城SQL／HTTP回归覆盖同毫秒、多页、固定上界、页间插入／终结、尾页与空页绕回、请求错误／坏包装、预算／中断和重启重读。两版交易真TiDB夹具均先保留首页20条资产待办，仅给尾5条注入SQL终局后推进并核指定5单回执、原op_id／epoch／seq；Java再重启与另一worker重复两页，Go再补其余20单收敛。该注入只是交易SQL状态机测试边界，不是真实scene到账。Java多worker用例是顺序独立实例重读，不单独证明首次并发竞争。
+- 实际证据限于gofmt、定向差异／空白检查与两线交叉有限源码审；尚未编译或运行新增用例，无本轮红／绿、真TiDB或真实双区结果。03:45:35Z只读可用内存578424KiB，另有Java／MSBuild／dotnet／Unity等进程，未获豁免，不满足既定执行门禁；未控制其它线进程或基础设施。缺TiDB配置产生的Skip不能当通过。
+- 当前继续项仍为C433完整来源准入与新SDK正式生成、正规客户端生成／vendor和当前各版构建、新HEAD Java正规sync/check及新唯一Prepare／正常30、当前SQL158原范围及本批新增回归，再到真实双区旧E CAS拒写且SQL不回退、第二表真锁首ACK后仍等次ACK、跨区+11/+7恰一次。旧通过只绑定原来源，整体迁移未完成；automation-2保持删除，无替代自动化。
+### 2026-10-20 Codex：Hiredis 握手截止与 socket 同批事件的生命周期修复及回归
+
+- **根因与红态**：Linux timerfd 先于同批 Hiredis socket 分发时，旧重连定时器直接 DoReconnect、析构握手连接，触发 EventLoop::removeChannel 断言；Release 存在释放后使用窗口。先用真实 EventLoop、timerfd、本地假 Redis 和公开 RedisManager 接口建立确定复现，Debug 原代码进程退出 134，失败原件保留，没有关闭断言。
+- **生产修复**：仅修改 redis_manager.cpp/.h。重连定时器只投递任务，在本轮 I/O 全部分发完的 pending 阶段重建；定时器和排队任务都先锁 LifetimeToken；安排/取消时更换 reconnectGeneration，任务执行前复核 active 与代次，覆盖同批 AUTH 成功、建连后取消旧截止并重挂 AUTH 新截止、Shutdown/重复 Connect 的过期任务。独占所有权、业务接口与认证失败默认拒绝语义保持。
+- **回归与入口**：新增 cpp/tests/redis_lifecycle_test/ 的 Linux 专项 CMake/测试；3 条分别锁住同批 AUTH 成功不误拆原连接、管理器先析构后旧任务失效、建连成功重挂 AUTH 后旧代次失效。另将既有 AUTH 和 Hiredis 命令测试的端口夹具补为 POSIX，Windows 分支原文保留；没有修改既有业务断言。假服务端监听非阻塞、accepted fd 持有至析构、线程先 join，所有交互有截止。
+- **实际验证**：固定 Linux SDK fc6fad59c914 的 GCC 13.4.0，Debug、串行重新编译 muduo/适配器/管理器/测试；42 条编译命令均含 -UNDEBUG 与 ASan/UBSan。首条红转绿；最终 22/22 通过（新生命周期3、命令释放4、AUTH/重连10、存活探测5），失败/跳过/禁用均0。新3条重复20轮，stdout实记60/60通过、native exit0；重复XML仅最后一轮3项，不冒60项XML。ASan/UBSan及泄漏检查无报错；外部hiredis1.2.0为SDK预编译库，未对其自身重编sanitizer。
+- **源码与文档**：最终6份受测源码/构建入口首终SHA一致，独立设计与测试复核未发现阻断；设计/边界/重跑命令及证据已写 docs/design/redis-async-client-retry-fix.md。本条仅追加，历史进度不改。原失败日志、最终XML、重复stdout、compile_commands与汇总位于 build/verification/hiredis-handshake-lifetime-20261021/summary.json 同目录。
+- **未验证与边界**：其它MSBuild/cl运行，遵守串行约束未启动Windows构建；未重建或重启运行容器，未改网络、防火墙、端口、TLS、密码、权限。没有提交或推送。Java版无对应muduo层，本次无客户端契约变更/新功能对齐项，未执行Java构建；Hiredis自身回调内仍不得同步Connect/Shutdown/销毁连接，现有生产关机在排队finalizer内满足释放前提。
+
+## 2026-10-21 Codex：定时器取消清理重入与 Hiredis 同批生命周期修复完成专项验证
+
+- 按负责人“完整修复、详细记录”要求，保留既有定时器同批取消/单调时钟及 RedisManager pending 重连补丁，新增修复三个实证漏洞：reset 删除闭包后取消重复 Timer 丢失；cancelInLoop 删除闭包时双索引不一致且可能自删；TimerQueue 析构遍历时被闭包重入取消造成双重释放。两平台先摘双索引再 delete，批次处理标记覆盖 reset。新增五条裸 muduo 回归；三个修复前红态分别为错误重入队、断言退出134、ASan double-free退出1，原件完整保留。
+- Hiredis 改为唯一 Create 工厂、私有构造和共享 owner；Channel tie 与 weak 回调保护完整分发；最终释放在 I/O 分发内延至 pending，保住整个 wrapper/context/socket，避免只延迟 Channel 导致 fd 被复用。连接/断线/管理器重连回调局部保活，命令回调局部 unique_ptr 收尾，主动同步 disconnect 另保住 C 调用栈；Windows 源码/头镜像及 Linux overlay/示例同步，没有手改 muduo-linux gitlink。
+- RedisManager 连接、断线、AUTH、PING 回调增加弱生命周期令牌，保留排队任务代次；Connect/Shutdown/ResetConnections 在业务空应答回调前完成状态更新，释放后不再访问可能已销毁的管理器；存活摘除在用户回调返回后复核原周期。覆盖回调内 reset owner、管理器自身销毁/重新 Connect、空应答收尾时重入销毁。迁移消费者与测试创建点；真 Redis 测试的旧故意泄漏改为业务客户端和捕获仍活着时先释放连接的 RAII 守卫。
+- 实际 Windows MSVC Debug 独立库/专项：Hiredis及管理器27/27、定时器31/31，共58项；Linux锁定SDK源码加当前overlay、GCC13.4 Debug/ASan/UBSan/泄漏检查：Redis31/31、定时器30/30，共61项，均0失败/禁用/跳过。Linux socket同批撤销并立即建新连接，以及三个定时器清理重入用例，另各连续20轮通过。Windows redis_client.cpp与迁移后currency_test.cpp对象编译及原有裸指针成员检查通过；不冒称currency真Redis/资产测试已运行或整个RPC/节点构建通过。
+- 新增可复用Linux回归入口 cpp/tests/redis_lifecycle_test/CMakeLists.txt，直接重编断言开启的muduo及本轮overlay；修复复制保留旧mtime导致未重编、Create链接失败的测试构建问题，最终按内容更新并清理删除的overlay。保留首次链接失败和Windows独立消费方缺include失败原件，修正构建输入后通过，不跳检查。现有TimerQueue时钟链核对完整；未修改系统时钟，跨线程cancel仍是异步请求，业务闭包仍需自管其余对象寿命。
+- 详细故障顺序、钟源算例、清理/重入/fd复用机制、平台落点、命令、证据和限制已更新 docs/design/muduo-timer-cancellation-hazards.md、docs/design/redis-async-client-retry-fix.md及docs/README.md。原件目录 build/verification/timer-hiredis-complete-20261020/（开始日期为20日，收尾跨至21日），含XML、日志、退出码、哈希与result.json。本批限定27个源码/测试/文档路径，保留工作区其他在途改动。未运行压测、改真实数据或凭据、部署替换运行节点；未commit/push/tag。
+
+### 2026-10-21 Codex：按负责人整体授权继续余项，规则与mock范围已确认
+
+- 负责人明确要求剩余功能与验证全部继续，不停在源码完成；资源不足先补实现，满足原门禁后串行编译／真库／双区。按此整体授权推进原32路径以外的必要完整批次：主仓P0-b预计33–38手写路径并含所有测试／工具入口及正规生成输出，随后冻结／过户、商城后台、人民币结算与mock提现；实际必要路径持续登记，不以最初估数遗漏调用点。没有获得commit／push、他人进程／容器控制或系统修改权限。
+- 负责人拍板J-O默认规则全采用且可配：48h公示、7d寄售、5%费率向上取整到分、3d冷静期、角色出售前离帮／好友保留、默认仅金币／钻石关闭。支付、退款、提现先完成本地mock全链路，真实渠道以后接并默认关闭，不再为渠道账号重复停问。
+- 两版payment角色只读order-view／skus源码已接原OMS/PMS及nonce鉴权，Controller二次核角色；新增回归尚未执行。目录仍是现有官方物品，无钻石映射或第二钱包。Java版本0.1.0-SNAPSHOT；旧32路径静态记录保留原范围，不能覆盖这批新来源。
+- 主仓新增account-role-authority设计及两份proto源：全局账号guard／角色归属行、内部5RPC、独立强读池和鉴权正在接全部login／工具读写。Redis永久化不是SQL权威，不能缺SQL回退Redis；不新增密码或钱包。Java已有SQL目录，不机械复制主仓迁移层，后续冻结／过户仍两版同时实现。
+- 发现并在原成熟续跑脚本修补资源识别／周期检查和正规生成proof形状接缝，Java当前来源参数及HEAD绑定也在准备；当前只是源码／AST，不是执行证据。两份新proto已使旧C433 proto_tree pins失效，后续必须封实际新输入，不在旧原件就地改SHA或回填未来passed。旧automation-2仍删除，无替代自动化；未启动本轮生成／构建／真库／双区。
+
+## 2026-10-21 Codex：C++ Debug 编译成功，构建期间并发源码变化触发后置守卫，尚未部署
+
+- `build/verification/docker-rebuild-cpp-20261021T031855.133989Z/` 完整 Linux Debug 构建和本地镜像打包成功：Gate、Scene、Battle与三份分离符号全部生成，容器构建内21668项冻结输入及6项产物校验通过，core与三节点的实际CMake类型/最终-O0及调试参数通过。候选 `local/xuanming-node:debug-20261021t032221.381263z`，精确imageId为560ec46c139143001e20c56156224d501cc41616446e329551d4a9d6f0922098；不把候选打包成功冒作部署成功。
+- 后置宿主 SDK 守卫因其他任务在构建期间改了muduo overlay而退出1：Hiredis.cc与TimerQueue.cc修改，Hiredis.h与mrediscli.cc新增；随后只读核27096既有输入中其余27094项相同，gRPC33904项无增删改。最新专项结果只证明这些新源码受测，没有新SDK imageId，未篡改旧f1bec guard让其放行。未自动重试构建；保留候选、原日志和失败result.json。三C++运行容器仍113a旧镜像，未被本轮替换，尚未跑新C++断点／单步或新整栈功能冒烟。
+- 应用源码也持续并发变化：独立核对时C++有10项不同；Go Login11、DataService10，其余五Go各新增共享accountdirectory/client.go一项；Java Gateway0项不同。先前Go/Java断点通过仅绑定原构建输入，当前主目录Go的F5源码门禁应拦截新变化，不能继续声称最新Go源码已部署。差异原件 `build/verification/docker-debug-workflow-20261021/concurrent-source-drift-20261021T043710277085Z/result.json`。
+- 已向负责人询问选择“使用已构建冻结源码的独立VSCode目录调试”或“等其他任务完成后按最新源码更新SDK重建”；截至本条尚未回复，不替用户选择或部署。独立准备位于同证据根 `frozen-cpp-debug/`：C++复用原封存context；Go/Java共1032个文件逐SHA恢复，16份已变旧文件从Git1c9c找到完全匹配字节，无不可恢复项；仅复制到忽略目录，没有回退主工作区。`cpp-post-build-guard-stop.json` 保存实际编译参数、候选SDK/镜像/6产物SHA、旧运行镜像及4项SDK新旧指纹，`go-java-source-result.json`保存恢复来源。
+- 补正前条数量口径：92指每Go镜像generated/tables下的92个JSON/PB文件，不等同92张独立配置表；DB另1份data JSON。未调试或运行第三方测试，没有SDK重建、数据清空、凭据变更、系统修改、提交或推送。当前仅Java主目录源码与已运行调试镜像一致；C++部署与最新工作区调试仍待负责人版本选择。
+
+
+### 2026-10-21 Codex：冻结源码选项准备完成，版本选择仍待负责人
+
+- 独立入口 `build/verification/docker-debug-workflow-20261021/frozen-cpp-debug/server-frozen-debug.code-workspace` 已准备：两个源码folder、11个明确标注冻结快照的附加配置与对应只读preLaunch检查；源码只读、Java自动构建关闭，没有重编／部署任务，不冒称主目录最新代码工作区。
+- `read-check-20261021T044545422305Z.json` 实际读取结果：七Go与Java均exit0，冻结合集1032文件逐字节、运行镜像、清单与产物摘要匹配；旧Scene因运行仍113a而正确拒绝，候选560ec未部署，CPP冻结源完整读取/实际断点与单步尚未执行。helper语法及11配置/任务结构检查通过；不读.env、不修改当前SDK守卫、不运行第三方测试。负责人版本选项仍pending，无新容器部署或应用启动。
+
+## 2026-10-21 商城目录管理与运维入口实施补记（未编译、未运行）
+
+- 两版payment只读查询、商城admin目录/SKU/库存差额/原订单只读接口已补源码；管理独立密钥、完整请求摘要、原响应journal与业务修改同事务。补历史缺grant修复、预占保留、修订/整数边界、坏响应完整JSON及V2→V3升级回归，尚无运行证据。
+- 主仓gateway_node及Java game-data固定代理与mall-admin页面已落，Java版本0.1.0-SNAPSHOT。沿用各版运维鉴权，body原字节/完整部署前缀签名/新nonce、16KiB请求及256KiB响应、完整响应8秒取消，不自动重试未知提交。浏览器无商城HMAC密钥，令牌不持久保存；64位值不经JS浮点数重编码。主仓JS --check退出0、定向diff及16个新增文件空白无诊断；未执行Java编译/测试或浏览器实际验收。
+- 账号角色P0-b手写候选原45路径历史清单位于build/verification/account-directory-implementation-20261021T045200Z/p0b-paths.json；P4已继续修改同源，旧聚合不再表示当前输入。目录冻结与过户在做，FREEZING不冒FROZEN，真实排空及SQL退出验证未接好前确认默认拒绝。
+- 04:51:56Z观察可用2549840KiB、三个无准入例外的JDT Java进程；Java启动4GiB/未知heavy=0、formal及真库/双区门禁未满足，未启动重型或基础设施、未动他人进程。真实支付渠道继续按负责人“以后接”处理，本轮只推进mock。
+
+
+## 2026-10-21 Codex：负责人选择等待并发任务完成后按最新源码重建
+
+- 负责人已明确选择“等其他任务完成，再按最新源码更新 SDK 并重建”，取代前两条中尚待版本选择的状态；冻结源码工作区及560ec候选仅保留备查，未部署。当前源码仍由“评估 muduo_windows 改动范围”及“全球同服迁移查漏与双区故障验收”持续修改，后者也已修改Java Gateway，因此先前某时刻Java零差异不代表当前最新源码已部署。
+- 已在本聊天创建并确认ACTIVE的续查自动化docker（“源码收尾后重建 Docker 调试服务器”），每15分钟检查。修改方未明确完成当前批次及交接前只读等待；不以idle或短时无文件变化判定完成，不启动SDK/应用构建或重启。就绪后刷新最新SDK与不可变pin，再顺序重建三语言服务器，双侧源码/产物守卫通过后仅部署本机开发栈，验证真实断点/单步、健康与登录进场景；完成后移除本条续查。
+- 本轮等待决策之后未新建构建、未部署或替换容器；现有数据、开发密码及运行环境保留。仍只调试自有服务器，不运行第三方测试，不提交/推送，不控制其他聊天或进程。自动化建立只表示后续续查已登记，不表示最新SDK、C++部署或源码断点对齐已完成。
+
+
+## 2026-10-21 Codex：Muduo Windows 接口收口已推独立库，主仓等待并发契约生成
+
+- 负责人已授权两仓完整同步、超过30文件的必要修改及提交推送。恢复原版 Condition/Thread 接口与语义，六类内部消费者和 third_party 头源镜像同步；修复标准库 Atomic 分支的旧值/新值与原子交换契约，Windows UDP 唤醒迁入内部 WindowsWakeup，不撤销现有计时、取消和连接正确性修复。本轮29个代码/项目文件哈希复核一致，独立只读评审未发现新增实质缺陷。
+- 独立库 `luyuan-cpp/muduo-windows` Windows Debug x64 CMake 编译通过，基础6条、网络12条共18条测试通过；提交 `888bf58c105c1333738aa4bc7a3f98e175d032ac` 已正常推送 master，远端SHA核验匹配，独立工作区干净。旧VS入口仅做XML/源码登记检查，Linux及可选protobuf未运行，不作通过声明。
+- 主仓完整 game.sln 原失败为并发Hiredis修改造成旧库链接。负责人批准恢复后，muduo、thread_context、infra、core串行增量构建均通过；scene又因另一任务新增角色准入所需 `proto/common/base/role_admission.pb.h` 尚未生成而在项目静态门禁失败。原完整构建、首次currency链接及scene失败凭据均保留于 `build/verification/muduo-windows-interface-20261020/`，四组恢复回归尚未运行，不能宣称完整构建或主仓全部测试通过。
+- 负责人选择等待另一任务完成生成后再继续全部回归和主仓提交推送。已登记本聊天每15分钟续查 `muduo`，只在正规生成完成且来源可交接后继续；不擅自生成并发任务契约、不跳过门禁、不使用混合ABI产物。主仓本轮改动未暂存/提交，保留其他任务dirty与共享文档正文；完成后仅精确提交本轮路径及文档片段。
+
+
+## 2026-10-21 Codex：记录 C++ 文本模板库选型建议（仅文档）
+
+- 按负责人要求新增 docs/notes/cpp-text-template-libraries-20261021.md，记录 inja 优先评估、Jinja2Cpp / Mustache / {fmt} 的适用场景、解析后复用示例及官方来源；已补文档索引，保留索引中其他任务的既有编辑。
+- 只读核对现有 proto 生成器使用 Go text/template、导表器使用 Python Jinja2；本次未引入依赖、改写生成器或手改生成产物，不声称已有性能提升。
+- 本次只做文档与引用/空白检查，未编译示例、运行服务测试或性能基准。无客户端契约或服务器功能变更，Java 版无对应实现变更，不新增功能对账项；未提交或推送。
+
+## 2026-10-21 聚宝斋续做：原会话归属与正式验证准备（仍未运行本轮验收）
+
+- 负责人已确认默认业务规则均可配置，真实渠道以后接；本轮继续完成本地mock支付、退款、提现、人民币寄售与角色过户。此前30+必要文件扩围授权继续有效，未提交或推送。
+- 新增SessionDetails.owner_revision=9并由gate原绑定透传；通用交易workflow冻结seller_identity/buyer_identity，避免延迟旧会话及同账号转出转入ABA借新归属提交。普通交易、官方SKU与人民币寄售的原账号/修订核验、同角色SQL首锁及安全退款在两版同步收口；邮件和社会域同类入口仍继续补齐，不能把kick或静态审查当提交排空证明。
+- 主Mall原账号/revision绑定25源清单：build/verification/mall-owner-binding-implementation-20261021T073439841Z/files.json（SHA256 25F39C6721E50B4336E8C8831E75E1F032ACC7F2E7588DA47CA79A11D474F1AD），新增8条回归源码，只有diff/UTF8/构造参数/DDL静态证据，尚未编译或运行。独立Java镜像仍在同步。
+- 生成器当前完整闭包只读核查为125源、14依赖根、19127依赖文件，较旧19058多74项cache元数据变化；旧R3/build不能冒充当前。当前回归runner/plan已准备（274/7实际门禁、两native阶段），新正式build runner也只准备；都尚未执行，旧正式生成计划仍不能直接运行。生成后仍须补原生gRPC Seal守护段并完成生成闭包、三语言编译/静态检查/单测、真TiDB与双区故障验收。
+- 负责人两次表示已腾验证窗口后，实测仍只有约0.1–0.3GiB可用内存，未准入Java后台67200/73460仍在；本轮继续实现及只读准备，未启动正式native、真库或双区，也未终止他人进程。资源门禁满足后由Codex串行实际执行，不停在源码完成。
+
+## 2026-10-21 聚宝斋续做：生成器当前回归与正式构建、业务原身份闭环
+
+本条只追加，不替换前条资源不足和未运行的历史记录。负责人已明确授权结束指定 Java 后台，随后确认全部保存并授权关闭会自动重启这些后台的 VSCode 实例。按原进程路径、创建时间和持有句柄核对后已关闭该实例；未关闭 UnrealEditor 或其他应用，回执在 `build/verification/current-completion-20261021/authorized-vscode-instance-stop-*`。资源窗口恢复后实际完成生成器当前回归与正式构建。
+
+- 回归：274 条实际测试通过、0 test fail、0 test skip。原汇总将 6 个 `[no test files]` 包计入 skip，首错原件保留，独立复核 raw JSON 后出 counter-review proof；未改测试、未跳测试。证据 `build/verification/current-completion-20261021/generator-current-counter-review/proof.json`，SHA E3503C06097FAD702B353DB2C6D63C52BB8FBC7A8FC187DB8C96C425368FFFC5。
+- 正式构建：官方 proto-gen-build 原生退出 0，125 源、19127 依赖文件、14 根首尾不变；两 EXE 同 SHA 9e925d10b78cda692e0edf3b911c87ef2ec73616242ce9fba4282cac9d0497d2。证据 `build/verification/current-completion-20261021/formal-build-current-admitted/formal-build-current-20261021T083049793Z-96adbcc2/proof.json`，SHA 41D6E9A965BD2D1E4B1FDB258FC6162D9D6EBC811ED24942D1489F23340E2A48。
+- 本轮正式协议生成首轮未通过：双 CIM 快照把本轮快速创建的 protoc 子进程误判为未知且资源采样超过2秒，按门禁保守停止；原生未确认成功，103 项部分生成变化与完整日志保留在 `formal-generation-current-admitted/formal-run-20261021T085907554Z-fabe97ca`。采样修正另目录准备，未覆盖失败证据，不把半成品算通过。
+- 实现续批：Go / Java 补普通交易与人民币托管的原账号/修订、官方商城原订单身份、好友/帮会/邮件事务首锁；Guild Trial 持久原 consent/launch/ACTIVE 投影和签名 Cancel 墓碑恢复；C++ 在战斗完成后才进入交易排空，原入场世代与 seal 上界不覆盖买家新世代。仅报告源码候选，不冒充本轮业务运行通过。
+- 部署源同步 friend/guild/mail 的显式全局 LoginRedis、目录库及连接预算，新增同DB/非空地址/池上限配置回归源码。用户要求的 Claude Code 详细审核入口为 `docs/handoff/global-economy-review-20261021.md`，将随最终证据更新。
+
+对应独立 Java 版 0.1.0-SNAPSHOT：交易/商城/好友/Match Cancel 已落源码，Trial 续批中；本轮 Maven、C++ / Go 服务编译、真库、真实双区故障与客户端完整验收尚未完成。整体仍未交付，不引用历史产物声明当前通过。
+
+## 2026-10-21 全球逻辑服与观战原件继续收尾（Codex，未完成整体验收）
+
+- 用户要求先补完非战斗逻辑服全球多副本移植及强一致保护，再完成当前源编译、真库、双区验收；继续沿用已授权扩围，不接真实支付渠道。
+- Go Match/Team静态收口，包含整队单位与失败重排、原观战退出、Solo/Direct/挑战持久待提交原件、原UUID取消和有界后台恢复；详见docs/handoff/global-economy-review-20261021.md第8节及80路径静态快照。未以静态检查替代运行证据。
+- 客户端新增Team写原件重建恢复和旧观战响应隔离的回归源码。C++补观战原op格式与票据身份一致校验。Java匹配恢复与完整合区/撤销作业、Go合区TiDB夹具迁移继续实施。
+- 已实际执行部署权威与本机证明注入3项轻量回归，3通过0失败；7份相关PowerShell解析通过。本轮服务编译、真库及真实双区故障验收尚未完成。
+- 资源只读复核可用内存约1.04GiB，有新外部MSBuild/UnrealEditor/Java进程，不擅自结束。继续实现和准备正式验证。
+## 2026-10-21 全球逻辑服收尾：主正式生成稳定，继续真实验证
+
+- 用户已腾出验证窗口；本轮主生成实际native退出0，新增账本/工程/handler逐项审核并补守护段后，稳定生成proof通过，SHA D820ECBA2F476B15A90E2B784033582FDECA9DFF852E134EEEAF7B491A4B2AFE（完整路径见docs/handoff/global-economy-review-20261021.md §9）。
+- 收件箱补原owner24/25、完整SQL准入与签名消费、永久唯一收据；DS新增显式Inbox schema和同P挂起守卫。Java完整准入复用player_final_save，客户端/Go/Java收尾仍按源码与运行证据分开。
+- DS本轮首次构建被陌生cmd身份读取失败门禁停止，stderr另有compile 0xc0000142，保留原始证据并继续诊断；未宣称编译通过。全业务编译、真库与真实双区尚未完成。
+
+## 2026-10-21 Codex：Muduo 主仓生成已就绪，恢复构建遇到业务枚举引用错误
+
+- 另一任务两次正式协议生成已通过；第二次原生退出0、proof passed=true、无首错及证据错误，原件 `build/verification/current-completion-20261021/formal-generation-global-20261021T140914762Z/formal-run-20261021T141033951Z-7c8a7fdf/`。角色准入生成头/源及项目登记齐备，不再是缺头阻塞。本轮29个Muduo代码/项目路径SHA仍一致。
+- 恢复串行增量构建后，proto、muduo、thread_context、infra、session、rpc、grpc_client成功。期间来源守卫检出player_inbox_table.proto字节变化，先停止并保存原件；从正式生成暂存件精确恢复旧文、核对原SHA后，确认只有3条中文注释变化，无类型/字段/编号/option/服务差异。`resume-20261021T141707282Z/comment-change-review.json`保留逐行复核，未篡改原停止结果。
+- 在新快照中按原成功凭据与实际库SHA复用上述7项，core、battle继续增量构建成功。scene在项目原有静态门禁失败：player_lifecycle.cpp:3069使用player_exit::ExitCause::kRoleTradeFrozen，但ExitCause实际定义在全局作用域。源码全仓仅此一处错误限定；最小修正为去掉player_exit::。该业务文件属于另一任务，尚未代改。
+- 按AGENTS.md §10.2保留失败原件并向负责人询问“由本任务修正这一行后继续”或“等原任务自行修正”；截至本条等待决定，四组恢复回归尚未执行，主仓未提交推送。当前证据 `build/verification/muduo-windows-interface-20261020/resume-20261021T143101260Z/`，含成功/失败构建退出码、来源快照及日志。独立库888bf58及18条通过结果不变，未重复构建。
 ## 2026-10-21 Codex：服务器全部分支与归档工作树整合审计
 
 负责人要求所有分支的有效改动合入主干并推送、合并后清理多余工作目录。本轮在既有 main 上完成 no-unity 全量协议生成，生成器与邮件/排行登记钩子均实际退出 0；生成清单去重提交为 `d1d415cdc4`，最新远程 `6ecf275fa8`、`1c9c1e6c19` 已通过 `b820a9d60e` 合入。生成不写客户端仓。原有技能生成/测试等 82 文件已由同仓另一任务提交为 `e826a3b446`，本轮保留并验证，不覆盖其工作。
@@ -14491,3 +14644,115 @@ PROGRESS 一直没有条目)。上面 2026-09-21 条里"第 7–9 步未跑""修
 - acceptance-summary.json（06:52:06Z）确认六个既有play-20261021-ready/client/mmorpg.exe进程均Responding且有窗口句柄，ManualUnitySceneEntriesValidated=0；未重开六个，也未自动操作用户认证UI。用户须在原窗口重新登录建角，不能使用已清旧角色；本次未重打包，其他任务在该包之后的skills/UI改动不属本次运行来源。最终运行收敛final-runtime-report.json（06:52:38Z）明确未起chat/trade/friend/player_inbox/mail/rank，其领域玩法未验；独立D盘Java、远端与白名单外其他隔离库未清理。
 - 原274件713883921字节备份与manifest SHA5B4DDF37...9B14712全不变；新增final-runtime-audit73件约85.9MB，独立manifest SHA08EA5BFC8E1CE6AA912AAB2DA06ABFC3FB8E3F1AEE84BBD15B69E4754C0D7ACD。另13份验收EXE/743输入首尾指纹/执行器及脱敏收据33111368字节私有保全，清单SHA455FB40892F2D0C3A731B56C58969FCDE1B14BF040A409178280F41BA5199756；原始凭据/token/玩家包不进Git。
 - 证据：build/verification/local-reset-enter-smoke-20261022-root/{first-result,reentry-result,http-login-result,acceptance-summary,persistence-final-copy}.json；run/logs/login-preload-backup-20261022-014557/{final-runtime-report,final-core-processes,local-mysql-runtime-proof,root-acceptance-archive-receipt}.json。当前故障关闭不等于六用户Unity逐个进场、冷缓存/重启恢复、可选域、生产TiDB/灾备或全部长期防复发事项验收；这些边界与待办在事故报告独立保留。未提交、未推送。
+### 2026-10-21：Go Guild 私有历练 SQL 权威与双向准入源码收口
+
+- 沿现有 TrialLobbyRepo 接口完成生产 SQL 大厅、固定全员邀请原owner、正规 Consents wrapper、本人同意与永久 slot；Redis仅巡检租约，生产不再用Lua/TTL作为邀请或开战事实。
+- 首次创建/新同意/首次PREPARED同完整route→unsigned全P→G事务反查真实Match票与Team/Trial占用。MatchAuthoritySchema显式同池只读核列，empty票规则复用shared/matchentry；route前缀复用shared/placement，缺失或维护态拒绝。夹具AST读取DS唯一正式nullable DDL，只在随机自有库显式建原件，实际owned TiDB为127.0.0.1:24000。
+- 已有永久launch的UNKNOWN、EXPIRED、解散均不释放；核签Cancel或完整绑定原件的真实终局才同TX清launch/role/lobby/旧slot。纯无launch的PENDING到期或cancel-before-prepare在同锁写永久4墓碑，不向旧同意补新owner；迟到Prepare拒绝。解散后真实终局只结清原合同，不补G/T或发奖；坏终局不销账，旧终局不清新大厅。
+- 新增10个Trial原生回归入口与配置回归，补旧角色原件真库夹具和两份正式删表清单。覆盖Redis丢失/账号ABA/公开视图/末票幂等/反向占用/取消先于Prepare/解散终局/route维护/相反名册并发。仅执行gofmt与git diff --check，未生成、编译、运行测试、执行DDL或启动控制进程；静态不等于运行通过。主proto与部署键由root统一落，本批JSON清单在build/verification/go-guild-trial-sql-authority-20261021-source-v1/。
+
+### 2026-10-21 Muduo Windows 接口收口：本仓回归与两仓交付
+
+- 已恢复原版 Condition 的构造锁、无参数等待、小数秒和超时返回值契约，以及 Thread 的启动同步、身份、命名、join 返回值和未 join 析构语义；修正 Atomic 标准库分支的新旧值返回与原子交换。Windows UDP 唤醒集中到内部 WindowsWakeup，现役源码与 third_party 头文件镜像同步，必要的计时、取消、连接失败及生命周期修复保留。
+- 本仓 29 个代码/工程文件及共享设计章节已由并发整合提交 `7d92082376` 纳入主干，并经 `0afafaec86` 合并推送；本轮不重复暂存这些文件或旧进度条目。负责人另行批准的 player_lifecycle.cpp 一行枚举限定修正独立提交为 `3d6f077825`，未夹带其他业务变更。
+- 独立库 `D:/luyuan/muduo-windows` 的 Windows Debug x64 CMake 构建及 18 条契约测试通过，提交 `888bf58c105c1333738aa4bc7a3f98e175d032ac` 已推送至 origin/master 并核对远端 SHA；本次没有重复修改或重跑该库。
+- 正式协议生成完成后，以合并后的源码和批准的一行修正恢复原生构建。proto、table、muduo、thread_context、infra、session、rpc、grpc_client、core、modules、battle、scene、muduo_grpc 共 13 个库，以及下面四个测试工程，均为 Windows Debug x64 增量构建、原生退出 0。全部 MSBuild 串行 `/m:1 /nr:false`，单编译进程、保持断言与静态门禁开启，禁用构建后事件；12 个适用工程的 NoRaw 原生检查实际输出 PASSED。
+
+| 回归程序 | 登记数 | 实际通过 | 条件跳过 | 既有禁用 | 失败/错误 |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| currency_test | 282 | 276 | 6 | 0 | 0 |
+| timer_queue_unit_test | 37 | 37 | 0 | 0 | 0 |
+| rpc_controller_test | 100 | 98 | 0 | 2 | 0 |
+| muduo_grpc_test | 196 | 191 | 5 | 0 | 0 |
+| 合计 | 615 | 602 | 11 | 2 | 0 |
+
+- 四个测试进程退出码均为 0，无超时；逐项核对 XML 的执行状态和产物 SHA。新增 6 条 MuduoBaseContractTest 全部实际运行并完成，没有跳过。6 条 Redis 用例因未设置 `MMORPG_TEST_REDIS_ADDR` 跳过，4 条 Go 路由互通用例缺 `MUDUO_GRPC_INTEROP_ROUTER`、1 条服务端互通用例缺 `MUDUO_GRPC_SERVER_INTEROP_PORT`；两个既有 DISABLED 微基准未运行，不据此声明性能结论。
+- 证据根为 `build/verification/muduo-windows-interface-20261020/`，本次有效目录 `resume-20261021T150654388Z/`；17 份构建收据、4 份测试退出码、XML、日志及 `final-verified-receipts-v2.json` 可复核。构建前后 1735 项源码快照无漂移，本轮 29 项代码/工程哈希始终一致。首版凭据汇总的字典投影产生空统计值，原件保留，v2 改用对象汇总并与 XML 的 615/602/11/2 校验闭合；未重跑构建或测试。
+- 原始红灯、早先完整 game.sln 的 Hiredis 旧库链接失败、缺少 role_admission.pb.h、源码变化停止及 scene 枚举错误均保留原日志，未改写为通过。本次验证范围是上述库及四组回归，未重新验收完整 game.sln、Linux、独立库可选 protobuf 或旧 VS 构建入口，也未运行真实 Redis/Go 联机互通。结果基于本机实际依赖与既有生成 C++ 源码；并发公会协议仅追加数据库索引 option 的改动由原任务负责，本轮不生成、迁移或验证该索引，其他 Go/文档及第三方工作区修改均保留。
+
+### 2026-10-21：全球服务收尾验证增量与最终源门禁
+
+- 本任务v3最小权限进程只读专项20次、自有进程专项32次通过。Go data_service及player_inbox正式构建退出0，Inbox实际261测试通过、0失败/跳过；这些证据早于最后共享route及双向准入补齐，最终构建/回归仍须重跑。
+- Go Match/Inbox源码118路径清单与Go Guild私有大厅SQL权威24路径清单已冻结，主协议最后需求已收口。Inbox共享完整路由前缀，Guild/Team/Match双向永久占用与DS换主守卫保持一致；父原件和角色投影必须同时证明终局，TTL、孤儿、未知态不放行。补齐正式Guild Original/Consents/lobby/slot源与部署MatchAuthoritySchema。
+- 最后主生成在native前因同仓生成器工程去重源码已更新而拒绝，旧构建证明不能复用；保留失败原件，准备重新完整回归并官方build。共享Go测试也先报mod声明不完整，补齐已存在依赖，不自动下载工具或依赖，不把未运行测试当通过。
+- 本任务Docker项目与24000/26379/22379/29092端口归属已核实，未操作其他项目资源。为先完成编译暂时停止本任务Kafka及TiDB/PD/TiKV，未清数据卷；运行验收前恢复。最终跨语言构建、真库和真实双区仍未完成；审核细节追加于docs/handoff/global-economy-review-20261021.md第10节。
+
+### 2026-10-21：最终生成完成与当前源回归进展
+
+- 当前生成器实际275项回归通过、0失败/跳过，随后正规proto-gen-build、最终主生成及客户端两个正式生成脚本均退出0；正式生成proof SHA为`7E983F5D0FA7C05B45D7DB38A2539EA3636B9AAC866A035D9CFF7D18E69139CE`。共享Go实际1182项通过，14项真实外部环境跳过仍须另验。
+- 最终生成后的Inbox实际Build、261项单测及Vet均通过，0失败/跳过；本批828项源码和33054项实际依赖受控。该结果不包含真库集成。Go运行门禁将误用的7 GiB恢复为既定2.75 GiB，启动仍须7 GiB；原中断日志保留。
+- Java正式契约同步及check通过；全新私有仓库的全量构建首轮在game-api两处旧数量断言失败，实际2672通过、2失败、11跳过。只修正QUEUE新增值和owner_revision新增字段的测试，并保留旧契约断言；新源已重捕获，须完整重跑，不宣称30模块通过。
+- 本地部署渲染实际发现并补齐真实GoSvcCatalogue的guild入口，修正后渲染退出0，未触碰集群。C++按实际150库/46工程范围重新审查后已进入串行game.sln及真实StrictNoRaw流程，尚无完成结论；Unity实际Import/测试、两版真库及真实双区仍待验收。详细收据和失败原因见`docs/handoff/global-economy-review-20261021.md`第11、12节。
+
+### 2026-10-21：当前构建红灯修复与数据服务四阶段验证
+
+- 当前Go data_service实际Build、Unit、Vet及运行EXE构建四阶段通过；单测1586通过、0失败、89项真实环境跳过，已逐项映射后续原生专项，不把跳过算真库通过。Match实际编译发现并仅删除未使用导入，修复后GoList实际通过，剩余三个验证阶段及运行EXE待执行。
+- C++完整构建因link.exe退出期间身份查询失败而被保守停止，原结果保留，不能算全量通过。v4进程原句柄监控实际20次只读、32次自有进程及7项延迟退出专项通过；不放宽未知进程或资源门禁。真实Manager观察者失败清理补齐operation，新增两项并接入原有42项battle契约；当前1868源先执行反事实红/正式RPC绿，再完整构建与回归。
+- Java r8正规同步/check通过，30模块全量构建在玩家存储停止，实际2990通过、11失败、19错误、136跳过。30项红灯已按XML定位，八个源/测试文件修复与新增时钟回归已准备，须重新绑定当前源并先局部后全量验证；尚无修复后的测试通过结论。Unity、真实TiDB、商城mock全链与真实双区仍待完成。审核细节与原始证据追加于`docs/handoff/global-economy-review-20261021.md`第13节。
+
+### 2026-10-21：Match当前回归及主仓Java运行包进展
+
+- Match仅修复protobuf测试的内部缓存比较，当前937源实际598项单测通过、0失败、86项外部环境跳过；Vet及运行EXE构建也通过，未启动EXE。86项已逐项映射SQL、rank/mail互通与三broker Kafka专项，不把skip当通过。
+- 主仓Java Gateway实际231项通过、5项真实环境跳过，商城管理两类必需测试无跳过。原验证器日志变量覆盖及JAR路径假设错误均保留失败，按生产资源和正式pom的真实JAR路径独立复核后归档当前运行包；未启动或验真库。主仓Mall实际87通过、1失败、6错误，已定位代理声明与旧订单状态断言，修复后待重跑。
+- C++正规门禁发现并修复测试接入所缺头路径、旧测试裸指针与新测试错误码符号，保持NoRaw与全部业务断言；当前1868源仍须真实红/绿和完整构建。独立Java r9的2655项正规sync/check通过，五模块TargetedH2正在执行；全量30模块、Unity、原生SQL、mock全链及真实双区均未完成。详细证据见`docs/handoff/global-economy-review-20261021.md`第14节。
+
+### 2026-10-21：观察者早期回归、Mall打包及聊天权限收口
+
+- C++观察者真实反事实红灯与正规RPC绿灯完成：142实际通过、两项原有DISABLED基准未运行，无性能结论。当前1868源的完整game.sln及独立RPC串行构建已另行启动，尚无完整成功结果。
+- 主仓Mall修复后94项全部通过、零跳过，正式运行包归档。独立Java r9五模块TargetedH2实际598通过、125外部环境跳过；完整30模块已执行3058通过、137跳过后，在game-scene-manager的testCompile失败。只修正Druid连接mock静态类型，仍待重跑完整构建。
+- Guild Build通过后的Unit发现两处配置契约问题，已修复且尚待验证。全局权限审计发现两版Chat缺原账号/owner_revision提交校验，正在补齐SQL权威发送、永久收据及历史查询，不新增proto；部署和回归待验证。Unity首次Import因自身短生命周期编译预热进程未被归属门禁识别而停止，尚未通过导入或EditMode。
+- 真库、mock支付退款提现及分页游戏交付、真实双区和故障恢复仍未完成；所有外部环境skip均单列未验。详细运行证据与失败现场见`docs/handoff/global-economy-review-20261021.md`第15节。
+
+### 2026-10-21：全量构建实错、监管专项及全球默认闭环
+
+- C++全量再次被进程归属误判停止：两天前的受保护服务旧父PID被编译器复用；未控制该服务。本轮已登记230进程全部退出。新鲜内核创建时间修正的16/20/32/7四组专项由root实际通过，新完整Build仍待执行。
+- Java r10-r2正式同步通过、2664输入；全量实际3616通过、29失败、176外部环境跳过，停game-login。只修两个旧夹具的完整PB角色版本期望及两区围栏顺序，保留所有业务断言；当前修复及Chat仍待实际验证。
+- 部署Chat3、端口21、全球SQL3及迁移门禁41项实际通过；完整部署285项有53失败，大量连带由prod夹具漏显式TiDB入口导致，已修夹具但尚未重跑。另确认DS/DB/login全球强SQL默认仍未完整切换，以及SM600秒无证强制释放，正在沿既有权威与ready框架补齐。
+- Unity私有Job监管8项实际通过，正式导入进行中。真库、最终全量构建及真实双区全链路仍未完成。证据与边界见`docs/handoff/global-economy-review-20261021.md`第16节。
+
+### 2026-10-21：全球默认源码收口及定向门禁实错
+
+- DS/DB/login/SM全球SQL默认闭环及SM无证超时释放修复源码收口，root完成DS/SM31和Rank10个Go文件格式化；当前新源仍待Build/Unit/Vet/运行包及真库，不沿用旧DS全模块通过记录。
+- C++全量r5实际暴露Cross退出原因表遗漏角色冻结。保留static_assert及原断言补齐后，定向严格Build又暴露Cross项目缺OpenSSL头依赖，原失败保留，正在修正规工程，尚无全量通过结论。
+- Unity正式Import原生退出0、五程序集实际新编译；151贴图meta规范化及两新增script meta经独立精审后封证。四程序集EditMode随后因可用内存2.27GiB低于2.75GiB运行门禁而中止，无未知重型进程、无测试XML，不能算通过。
+- 两版真库、mock完整资金/游戏交付、独立Redis/Kafka及真实双区验收仍待完成。详细原件、hash及剩余范围追加于`docs/handoff/global-economy-review-20261021.md`第17节。
+
+### 2026-10-21：角色准入生产根因修复及339项真实通过
+
+- 修复RoleAdmissionSystem嵌套LocalNode类型遮蔽同名读取函数的问题，覆盖登记与封存两个入口，生产仅三行改名，原身份/版本/SQL拒绝条件保留。正规新scene库、全部Scene/Cross Strict及Cross339项all真实通过，零失败/跳过，原件SHA8528F8F55E73C83E53427A67206BD7F98088AEFB63994E01F5CCB702B2E8747B；全solution、RPC和29EXE尚待执行。
+- DS/SM补坏原修订标签不得ACK清理，以及centre/旧角色blob不得被误判全新空世界；已格式化，待新源普通与真库验证。Java r11登录74实际70通过4旧围栏期望失败，修复后r12同步通过，新74与30模块待跑。
+- Chat离线只读诊断发现mysql依赖声明需与实际已缓存1.9.3一致，仅更新模块一行及sum两行；新捕获/构建待执行。Unity遇证据写盘超2秒，保门禁后改用独立C盘证据候选，尚未跑成客户端测试。
+- 真实Gate商城25+25单、退款/提现与重登的独立tag驱动已补源码并格式化，未编译/运行；真库、mock全链与双区故障验收未完成。细节见交接第18节。
+
+### 2026-10-21：登录74项真实通过与独立归档复核
+
+- Java r12原生登录29+45项全部通过，零失败/错误/跳过；旧归档器排序误红保留，root另按同一Ordinal比较器严格核验全部名称及原执行链，独立复核proof SHA C9D3E3E839FBA738A3E43ADAD04170B59130D1D77E8AEA061A0FB9AA29783FE4。没有重写原false或宣称完整30模块通过。
+- 商城真实Gate驱动补显式uint32转换后当前SHA 2FA3C9089B75A8BED684656E674965EAA39DDE1A975DF6B5AD1738D6983FA260，专用tag尚未编译运行。完整C++构建正在执行；其他当前源构建、Unity、真库/mock游戏到账和双区故障四类验收仍未完成，详见交接第19节。
+
+### 2026-10-21：当前C++完整工程构建通过
+
+- game.sln与独立RPC正规串行Build实际通过，114个native阶段退出0；game267次Strict解析与38份fresh标记、RPC17次解析与一份fresh标记均完整通过，无缺引擎跳过。结果SHA EBA695463F65294C83911BE8FD483E7E0AE9676A94649DDD871319779B621D07，完整产物manifest 6C36DF8007EC6D5ABB3403F06B1BB53B3CF60B22988ACB65ACF14F527F01E6EC。
+- 仍需执行当前29测试EXE及互操作，不以构建通过代替运行测试。Java全30模块新树、空head与6506依赖的纯准备也已实际通过，完整Maven执行尚待本轮串行native窗口。细节见交接第20节。
+
+### 2026-10-21：C++运行回归通过，Java/Go新原生首错已最小修复
+
+- C++当前26测试程序与三轮定向/乱序实际2928次PASS、2既有DISABLED，零失败/跳过，结果SHA B9204403E1E242DB0A49A1D901FE430D55EA555DC08243F6A7EA02003E737DCB。补充3测试工程正规Build/fresh Strict通过B2F3AAC9874984B789EE7F1D9E950BACFC7C5725E559B09B4414EC68851E310D，真实Go互操作仍未跑。
+- Java全30在Friend真库夹具缺Spring JDBC测试依赖处编译失败；仅补test-scope现有缓存依赖。DS实际GoList通过而Build发现Redis构造API误用，仅New改NewRedis并gofmt。两轮原生首错均保留，不自动重试或算绿；修复后正式重绑/运行待完成。
+- 商城独立tag驱动增加26账号双区分布及真实SceneInfo落区确认，当前SHA E297C1A0DE89E191EA5ECC357F8C5B3F3905D59254D4B080F099E7C23047E903。当前owned全栈启动、真库、退款提现/游戏到账和双区故障验收仍未完成，详见交接第21节。
+
+### 2026-10-21 当前验证补充：DS / Java Friend / Unity
+
+DS API修复后当前Build实际通过；Unit1625通过、3失败、90外部跳过。三个失败是旧随仓配置断言，已同步已批准db_first/64/read-ready/Arm，保留组件原始缺省与拒启约束，待新四阶段。原失败及全族退出检查点均保留，90skip逐例映射后续真库门禁，不能沿用旧89清单。
+
+Java r13正式同步与Prepare通过，全构建在Friend Budget夹具3失败1错误停止；补真实metadata/route_meta，不替换生产守卫或移除时间和回滚断言。r14待执行，全30采用官方-fae而非忽略失败。Unity四程序集同进程两次触发原内存门禁；后一次已进入测试但无XML，不能报通过。准备原四程序集分Editor依次运行，保留全部case/资源门槛/输入审批，不删Library或修改资产。完整证据及SHA追加于docs/handoff/global-economy-review-20261021.md第22节。
+
+### 2026-10-21 当前DS四阶段绿、Java全量红与客户端实际计数
+
+DS当前939源/34483依赖实际Capture和Build/Unit/Vet/Runtime均通过，Unit1628通过0失败90外部跳过；原D盘证据落盘外围超过2秒的失败保留，仅逐字重定位计划/证据到C根，全部资源/原句柄门禁不变。当前DS EXE SHA07DB9E40...，未启动；其余Go队列未跑，90skip仍待真库。
+
+Java r14全30实际执行完：7568项7200通过59失败7错误302外部跳过，16模块成功14失败；全族已退出，未通过整体。已按原诊断修复28路径，下一r15重新跑当前TargetedH2再全30，不再复用旧H2前置。Data普通释放补同库事务且保持原路由锁/回滚断言。客户端四Editor实际Net70通过、Tianyong1101通过21失败0跳过，Battle/Jubao未执行；修Team首次明确限流/未知重试保护、两UI夹具和地图真实Dispose接缝。旧城资源相关实际11项历史失败，处理方向在等待用户；前次询问12为多计1项。Match新增正规显式迁移及部署/本机接线12路径，源码已冻未编译。完整原件、hash及限制见docs/handoff/global-economy-review-20261021.md第23–24节。
+
+### 2026-10-22 UTC：继续当前产物验证，保留失败与未执行边界
+- Java r15 当前H2实际598 PASS、125已知外部SKIP；全模块在Gate开始阶段被2秒资源复核门禁中止，已落XML为8137 PASS/18 FAIL/32 ERROR/848 SKIP，Data/Gateway/Robot未执行。原proof 2251E133BDFF3EC28A6DF65D16A06370FA622BD098582C1208C72684B2EC7A0E、67原家族全部退出。16项后续源码修复分别处理Match组件装配、正式公开角色名/评分SQL夹具、Battle FIN、Team排队状态穷尽映射、Mall Repository代理、Java被动技能漏移植；仍待新鲜C盘候选编译与回归，对应Java下一版本仍未验收。
+- Go Inbox RuntimeBuild实际通过（57CB73882BFC55834D9769D6DEED1448FB3DE463BAC63E8BC5166B94BF8394DD），AMD64 PE SHA86A0CEAF05DBC97E1A0168EDE164A020B8A39F41831C4ABC4A7B017C334943C5，未启动。新Match GoList实际F5CFEA9AD3F50B5566A1D0EC1A19107AFF52B40ABA98A338F8B274921B406DAA通过；Build被严格计划比较在原生启动前拒绝，唯一差异为同一runner SHA的大小写，保留原件并仅对Build候选该字段规范化，未重试。所有本段原句柄已退出。
+- 部署Chat3/Ports22/Global5实际native0，汇总因Global预期仍为旧3而拒绝；迁移47与完整部署285尚未执行。Unity当前91306完整输入两观察相同，额外四个旧Performance JSON/meta缺失经正规包固定清理实现确认，只批准有限历史来源，不放宽运行期间零输入变更、153meta或真实Csc。详见docs/handoff/global-economy-review-20261021.md第25节，仍无真库201、双区交易或故障验收通过结论。

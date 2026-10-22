@@ -118,9 +118,27 @@ struct TicketFields
 	std::string_view instanceId;
 	uint64_t expireAtMs = 0;
 	int role = 0;
+	std::string_view spectatorOperation;
 };
 
-enum class TicketVerdict
+// SQL原观战操作在准入、签票和直连握手使用同一格式；拒绝空值、全零和非规范UUID。
+inline bool ValidSpectatorOperation(std::string_view value)
+{
+	if (value.size() != 36) return false;
+	bool nonzero = false;
+	for (size_t index = 0; index < value.size(); ++index) {
+		if (index == 8 || index == 13 || index == 18 || index == 23) {
+			if (value[index] != '-') return false;
+		} else {
+			const char digit = value[index];
+			if (!((digit >= '0' && digit <= '9') || (digit >= 'a' && digit <= 'f'))) return false;
+			nonzero = nonzero || digit != '0';
+		}
+	}
+	return nonzero;
+}
+
+enum class TicketVerdict : uint8_t
 {
 	kOk,
 	kEmptyIdentity,    // battle_id / player_id 为 0
@@ -128,6 +146,8 @@ enum class TicketVerdict
 	kInstanceMismatch, // node_id 相同但实例 UUID 不同(节点重启后 node_id 被复用)
 	kExpired,          // 已过房间作废期限
 	kRoleInvalid,      // 角色不是参战者 / 观众
+	kSpectatorOperationInvalid, // 观众缺原op，或参战票带观战op
+	kCount,
 };
 
 inline const char *TicketVerdictName(TicketVerdict verdict)
@@ -144,6 +164,8 @@ inline const char *TicketVerdictName(TicketVerdict verdict)
 		return "instance_mismatch";
 	case TicketVerdict::kExpired:
 		return "expired";
+	case TicketVerdict::kSpectatorOperationInvalid:
+		return "spectator_operation_invalid";
 	case TicketVerdict::kRoleInvalid:
 	default:
 		return "role_invalid";
@@ -179,6 +201,11 @@ inline TicketVerdict ClassifyTicketFields(const TicketFields &ticket,
 		ticket.role != static_cast<int>(TicketRole::kObserver))
 	{
 		return TicketVerdict::kRoleInvalid;
+	}
+	if ((ticket.role == static_cast<int>(TicketRole::kObserver) && !ValidSpectatorOperation(ticket.spectatorOperation)) ||
+		(ticket.role == static_cast<int>(TicketRole::kParticipant) && !ticket.spectatorOperation.empty()))
+	{
+		return TicketVerdict::kSpectatorOperationInvalid;
 	}
 	return TicketVerdict::kOk;
 }

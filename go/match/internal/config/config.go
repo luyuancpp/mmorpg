@@ -12,8 +12,10 @@ import (
 type Config struct {
 	zrpc.RpcServerConf
 	// 全球模式权威在同一个 TiDB 事务域；Redis 只保存候选索引和通知。
-	GlobalMatch GlobalMatchConf `json:",optional"`
-	Kafka       struct {
+	GlobalMatch         GlobalMatchConf `json:",optional"`
+	GlobalLoginSessions bool            `json:",optional"`
+	LoginRedis          LoginRedisConf  `json:",optional"`
+	Kafka               struct {
 		Brokers []string
 	}
 
@@ -197,6 +199,8 @@ type GlobalMatchConf struct {
 	User                   string `json:",optional"`
 	PasswordEnv            string `json:",default=MATCH_MYSQL_PASSWORD"`
 	Database               string `json:",default=mmorpg_match"`
+	AccountRoleSchema      string `json:",optional"`
+	GuildTrialSchema       string `json:",optional"`
 	ProbeSecretEnv         string `json:",default=MATCH_PROBE_SECRET"`
 	CrossRegionWaitSeconds uint32 `json:",default=30"`
 	HardLatencyMs          uint32 `json:",default=180"`
@@ -205,13 +209,20 @@ type GlobalMatchConf struct {
 	RankSecretEnv          string `json:",default=RANK_PRODUCER_SECRET_MATCH"`
 }
 
+type LoginRedisConf struct {
+	Host        string `json:",optional"`
+	PasswordEnv string `json:",default=MMORPG_LOGIN_REDIS_PASSWORD"`
+	DB          int    `json:",optional"`
+	PoolSize    int    `json:",optional"`
+}
+
 // TeamConf 组队配置(team-system.md §D.1 / §D.3)。
 type TeamConf struct {
 	// AllowCrossZone:是否允许不同 home zone 的玩家同队。默认 false:申请、审批(同意)、
 	// 邀请、接受邀请四个入口比对对方 home zone 与队伍 zone,不一致回 kTeamCrossZoneDenied;
 	// 审批 / 接受时用申请 / 邀请记录里存的 zone 再核一次,所以中途改成 false 也能拦住。
-	// 从 true 改回 false 只拦新增,已有跨区成员保留。靠 yaml + 滚动重启切换,混跑窗口里
-	// 各实例判定可能不一致(J-13a),用 team_cross_zone_allowed gauge 观察。
+	// 全球模式也约束补位后最终完整队伍，单排/整队unit都在SQL LIMIT前过滤home，提交重核原件与已锁route。
+	// 已有跨home名册保留，但false下不得新开跨home对局；全球副本必须同SQL策略指纹，切换须停全部副本受控调整。
 	// 直接构造 Config 的测试取零值 false,与缺省一致。
 	AllowCrossZone bool `json:",default=false"`
 

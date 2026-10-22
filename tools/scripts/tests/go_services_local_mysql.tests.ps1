@@ -8,6 +8,7 @@
 param([string]$LauncherPath = (Join-Path $PSScriptRoot '../go_services.ps1'))
 $ErrorActionPreference = 'Stop'
 . "$PSScriptRoot/lib/test_harness.ps1"
+. "$PSScriptRoot/../lib/account_directory_dev_secret.ps1"
 $parseErrors = $null
 $launcherAst = [System.Management.Automation.Language.Parser]::ParseFile($LauncherPath, [ref]$null, [ref]$parseErrors)
 if ($parseErrors.Count) { throw ($parseErrors | Out-String) }
@@ -51,6 +52,8 @@ $sourceConfig = Join-Path $GoRoot 'db/etc/db.yaml'
 $realSourceConfig = Join-Path $PSScriptRoot '../../../go/db/etc/db.yaml'
 $realSourceHash = (Get-FileHash -LiteralPath $realSourceConfig -Algorithm SHA256).Hash
 $oldRpcPort = $env:RPC_PORT
+$oldGlobalTiDBHost = $env:MMORPG_GLOBAL_AUTHORITY_TIDB_HOST
+$oldDatabaseAllowlist = $env:DB_ALLOWED_DATABASES
 function Resolve-BindablePort { param([int]$Port, [string]$Label, [hashtable]$ReservedPorts) if ($script:PortOverride) { return $script:PortOverride }; return $Port }
 function Start-Process {
     [CmdletBinding()] param($FilePath, $ArgumentList, $WorkingDirectory, $RedirectStandardOutput, $RedirectStandardError, [switch]$PassThru, $WindowStyle)
@@ -63,6 +66,7 @@ function Wait-ForStartupBanner { param($LogFile, $ServiceName) }
 function Reset-Fixture {
     $script:Starts = @()
     $script:PortOverride = 0
+    $env:MMORPG_GLOBAL_AUTHORITY_TIDB_HOST = $null
     Set-Content -LiteralPath $sourceConfig -Value $fixture -Encoding utf8 -NoNewline
     foreach ($path in @((Join-Path $DerivedEtcDir 'db.yaml'), $PidFile)) {
         if (Test-Path -LiteralPath $path) { Remove-Item -LiteralPath $path -Force }
@@ -70,6 +74,7 @@ function Reset-Fixture {
 }
 function Get-ThrownMessage([scriptblock]$Action) { try { & $Action | Out-Null } catch { return $_.Exception.Message }; return '' }
 try {
+    $env:DB_ALLOWED_DATABASES = 'zone_1_db'
     New-Item -ItemType Directory -Path (Split-Path -Parent $sourceConfig), $GoBinDir, $DerivedEtcDir, (Split-Path -Parent $PidFile) -Force | Out-Null
     Set-Content -LiteralPath (Join-Path $GoBinDir 'db.exe') -Value '仅供进程桩识别'
     Test-Case '显式开关默认关闭，单实例仍使用原配置且不生成副本' {
@@ -119,6 +124,41 @@ try {
         Assert-Match (Get-ThrownMessage { Start-ServiceInstance -Name db -Info $ServiceCatalogue.db -Index 1 -Total 1 -Pids ([pscustomobject]@{}) -UseExe }) '回环 SQL 单端点' '远端在启动前拒绝'
         Assert-Equal 0 $script:Starts.Count '没有任何进程调用'
         Assert-Equal $false (Test-Path -LiteralPath (Join-Path $DerivedEtcDir 'db.yaml')) '没有生成降级副本'
+    }
+    Test-Case '全球 SQL 地址覆盖在未启用本机档时保留 TiDB 要求' {
+        Reset-Fixture
+        $LocalMySQL = $false
+        $env:MMORPG_GLOBAL_AUTHORITY_TIDB_HOST = 'tidb.example.com:4000'
+        $sourceHash = (Get-FileHash -LiteralPath $sourceConfig -Algorithm SHA256).Hash
+        $result = Resolve-InstanceConfig -Name db -Info $ServiceCatalogue.db -Index 1 -Total 1
+        Assert-Equal $true $result.Derived '显式全球地址仍触发正式派生流程'
+        $actual = Get-Content -LiteralPath $result.Path -Raw
+        Assert-Match $actual 'Hosts: "tidb\.example\.com:4000"' '进程使用显式全球地址'
+        Assert-Match $actual 'RequireTiDB: true' '未启用本机档不降低 TiDB 要求'
+        Assert-Equal $sourceHash (Get-FileHash -LiteralPath $sourceConfig -Algorithm SHA256).Hash '源配置不变'
+    }
+    Test-Case '全球 SQL 地址覆盖不能绕过本机档的回环护栏' {
+        Reset-Fixture
+        $LocalMySQL = $true
+        $env:MMORPG_GLOBAL_AUTHORITY_TIDB_HOST = 'tidb.example.com:4000'
+        $sourceHash = (Get-FileHash -LiteralPath $sourceConfig -Algorithm SHA256).Hash
+        Assert-Match (Get-ThrownMessage { Start-ServiceInstance -Name db -Info $ServiceCatalogue.db -Index 1 -Total 1 -Pids ([pscustomobject]@{}) -UseExe }) '回环 SQL 单端点' '按最终覆盖地址拒绝远端降级'
+        Assert-Equal 0 $script:Starts.Count '拒绝发生在进程启动之前'
+        Assert-Equal $false (Test-Path -LiteralPath (Join-Path $DerivedEtcDir 'db.yaml')) '没有生成远端降级副本'
+        Assert-Equal $sourceHash (Get-FileHash -LiteralPath $sourceConfig -Algorithm SHA256).Hash '拒绝不改源配置'
+    }
+    Test-Case '全球 SQL 地址覆盖为回环端点时可组合显式本机档' {
+        Reset-Fixture
+        $LocalMySQL = $true
+        $env:MMORPG_GLOBAL_AUTHORITY_TIDB_HOST = '127.0.0.2:4000'
+        $sourceHash = (Get-FileHash -LiteralPath $sourceConfig -Algorithm SHA256).Hash
+        $result = Resolve-InstanceConfig -Name db -Info $ServiceCatalogue.db -Index 1 -Total 1
+        Assert-Equal (Join-Path $DerivedEtcDir 'db.yaml') $result.Path '组合开关使用同一正式派生路径'
+        $actual = Get-Content -LiteralPath $result.Path -Raw
+        Assert-Match $actual 'Hosts: "127\.0\.0\.2:4000"' '最终回环覆盖地址生效'
+        Assert-Match $actual 'RequireTiDB: false' '明确回环端点可以启用本机档'
+        Assert-Match $actual 'Mode: dual' '组合开关保留围栏模式'
+        Assert-Equal $sourceHash (Get-FileHash -LiteralPath $sourceConfig -Algorithm SHA256).Hash '源配置不变'
     }
     Test-Case '端口避让仍使用同一标准派生路径并保留本机档' {
         Reset-Fixture
@@ -199,6 +239,8 @@ try {
 }
 finally {
     $env:RPC_PORT = $oldRpcPort
+    $env:MMORPG_GLOBAL_AUTHORITY_TIDB_HOST = $oldGlobalTiDBHost
+    $env:DB_ALLOWED_DATABASES = $oldDatabaseAllowlist
     $resolved = [IO.Path]::GetFullPath($testRoot)
     $tempPrefix = [IO.Path]::GetFullPath([IO.Path]::GetTempPath()).TrimEnd('\', '/') + [IO.Path]::DirectorySeparatorChar
     if (-not $resolved.StartsWith($tempPrefix, [StringComparison]::OrdinalIgnoreCase) -or (Split-Path -Leaf $resolved) -notlike 'mmorpg-local-mysql-tests-*') { throw '拒绝清理临时测试范围之外的目录。' }

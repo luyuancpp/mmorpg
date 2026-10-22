@@ -2,6 +2,8 @@
 #include "engine/core/type_define/player_guid_comp.h"
 
 #include <cmath>
+#include <cstdlib>
+#include <algorithm>
 #include <limits>
 #include <string>
 
@@ -18,6 +20,12 @@
 #include "hexagons_grid.h" // Hex:实体是否已被 AoiSystem::Update 放进格子
 
 #include "battle/system/player_battle.h"
+#include "core/security/service_call_auth.h"
+#include "grpc_client/team/team_authority_grpc_client.h"
+#include "player/system/role_admission_system.h"
+#include "time/system/time.h"
+#include "muduo_grpc/channel.h"
+#include "node/system/node/muduo_grpc_channel_slot.h"
 #include "modules/scene/comp/scene_comp.h"
 #include "player/comp/player_frozen_comp.h"
 #include "player/comp/player_ownership_comp.h"
@@ -41,9 +49,21 @@
 namespace
 {
 	// key 契约见 player_team.h 头注释;与 Go 侧 go/match/internal/team/keys.go 同一份口径。
-	constexpr char kTeamIndexKeyFmt[] = "team:player:%llu";
-	constexpr char kTeamProjectionKeyFmt[] = "team:%llu";
-	constexpr char kTeamRecordKeyFmt[] = "team:rec:%llu";
+	constexpr std::string_view kTeamReadMethod = "/teampb.TeamAuthority/ReadMembership";
+	struct TeamSnapshotVersion { uint64_t epoch{0}, version{0}; };
+	entt::entity TeamAuthorityNode(uint64_t playerId)
+	{
+		auto& registry = tlsNodeContextManager.GetRegistry(common::base::TeamNodeService);
+		std::vector<entt::entity> ready;
+		for (const auto entity : registry.view<NodeInfo, MuduoGrpcChannelPtr>()) {
+			const auto& channel = registry.get<MuduoGrpcChannelPtr>(entity);
+			if (channel && channel->GetState(true) == muduo_grpc::ConnectivityState::kReady) ready.push_back(entity);
+		}
+		std::sort(ready.begin(), ready.end(), [&registry](auto left, auto right) {
+			return registry.get<NodeInfo>(left).node_uuid() < registry.get<NodeInfo>(right).node_uuid();
+		});
+		return ready.empty() ? entt::null : ready[playerId % ready.size()];
+	}
 	// player:{id}:location 的键名与解析是共享的:player_ownership::LocationRedisKey /
 	// player_ownership::ParsePlayerLocationElement(player_ownership_comp.h / player_lifecycle.h)。
 	constexpr char kBattleLockKeyFmt[] = "battle:lock:%llu";
@@ -156,52 +176,61 @@ void PlayerTeamSystem::RefreshAndFollow(entt::entity player)
 
 void PlayerTeamSystem::RefreshMembership(entt::entity player, FollowMode mode)
 {
-	if (!tlsEcs.actorRegistry.valid(player))
-	{
-		return;
-	}
-	const uint64_t playerId = GuidOf(player);
-	if (playerId == 0)
-	{
-		return;
-	}
-	if (!RedisReady())
-	{
-		LOG_WARN << "[PlayerTeam] Membership refresh skipped(Redis disconnected), player_id=" << playerId;
-		return;
-	}
-
-	tlsRedis.GetZoneRedis()->command(
-		[player, playerId, mode](hiredis::Hiredis*, redisReply* reply) {
-			if (!IsSamePlayer(player, playerId))
-			{
-				return;
-			}
-			const TeamIndexReply parsed = ParseTeamIndexReply(reply);
-			if (parsed.kind == TeamIndexReplyKind::kUnknown)
-			{
-				LOG_WARN << "[PlayerTeam] metric=team_index_read_unknown player_id=" << playerId
-						 << ",HMGET reply error or invalid shape;current TeamId retained";
-				return;
-			}
-			const bool keyMissing = parsed.kind == TeamIndexReplyKind::kKeyMissing;
-			ApplyMembership(player, parsed.teamId, parsed.epoch, keyMissing);
-
-			if (mode == FollowMode::kRefreshOnly)
-			{
-				return;
-			}
-			// 以组件的最终状态为准继续:epoch 判定为乱序而没有应用时,组件仍是更新的那份
-			const auto* teamId = tlsEcs.actorRegistry.try_get<TeamId>(player);
-			if (teamId == nullptr || teamId->team_id() == 0)
-			{
-				return;
-			}
-			LoadTeamInfo(player, teamId->team_id(), mode);
-		},
-		(std::string("HMGET ") + kTeamIndexKeyFmt + " tid epoch").c_str(), playerId);
+    if (!tlsEcs.actorRegistry.valid(player)) return;
+    const uint64_t playerId = GuidOf(player);
+    const auto admission = RoleAdmissionSystem::ConfirmedIdentity(playerId);
+    const char* secret = std::getenv("MMORPG_ACCOUNT_DIRECTORY_SECRET_SCENE");
+    if (!admission || secret == nullptr) return;
+    const auto node = TeamAuthorityNode(playerId);
+    if (node == entt::null) return;
+    teampb::ReadTeamMembershipRequest request;
+    *request.mutable_admission() = *admission;
+    if (!service_call_auth::Sign(kTeamReadMethod, request, *request.mutable_auth(), "scene", secret,
+                                TimeSystem::NowMillisecondsUTC())) return;
+    const auto digest = service_call_auth::Digest(request);
+    auto& registry = tlsNodeContextManager.GetRegistry(common::base::TeamNodeService);
+    teampb::SendTeamAuthorityReadMembership(registry, node, request,
+        [player, playerId, mode, original = *admission, digest](const GrpcCallOutcome& outcome,
+                                                              const teampb::ReadTeamMembershipResponse* reply) {
+            if (!outcome.ok() || reply == nullptr || !IsSamePlayer(player, playerId)) return;
+            const auto current = RoleAdmissionSystem::ConfirmedIdentity(playerId);
+            const char* responseSecret = std::getenv("MMORPG_ACCOUNT_DIRECTORY_SECRET_SCENE");
+            if (!current || current->SerializeAsString() != original.SerializeAsString() || responseSecret == nullptr
+                || reply->request_digest() != digest
+                || !service_call_auth::Verify(std::string(kTeamReadMethod) + "/reply", *reply, reply->auth(),
+                                              "team", responseSecret, TimeSystem::NowMillisecondsUTC())) return;
+            const auto* applied = tlsEcs.actorRegistry.try_get<TeamSnapshotVersion>(player);
+            if (applied != nullptr && (reply->membership_epoch() < applied->epoch
+                || (reply->membership_epoch() == applied->epoch && reply->version() < applied->version))) return;
+            const auto& record = reply->record();
+            if (reply->team_id() != 0) {
+                if (reply->membership_epoch() == 0 || reply->version() == 0 || record.team_id() != reply->team_id()
+                    || record.leader_id() == 0 || record.members_size() < 1 || record.members_size() > 5) return;
+                bool member = false, leader = false;
+                for (const auto& item : record.members()) {
+                    member = member || item.player_id() == playerId;
+                    leader = leader || item.player_id() == record.leader_id();
+                }
+                if (!member || !leader) return;
+            } else if (record.team_id() != 0) return;
+            const auto* previous = tlsEcs.actorRegistry.try_get<TeamId>(player);
+            if (previous != nullptr && previous->membership_epoch() == reply->membership_epoch()
+                && previous->team_id() != reply->team_id()) return;
+            ApplyMembership(player, reply->team_id(), reply->membership_epoch(), false);
+            tlsEcs.actorRegistry.emplace_or_replace<TeamSnapshotVersion>(player, reply->membership_epoch(), reply->version());
+            if (mode == FollowMode::kRefreshOnly || reply->team_id() == 0) return;
+            if (record.leader_id() != playerId) {
+                CheckFollowLeader(player, record.leader_id());
+                return;
+            }
+            if (mode != FollowMode::kFollowLeaderAndFanout) return;
+            for (const auto& item : record.members()) {
+                if (item.player_id() == playerId) continue;
+                const auto member = tlsEcs.GetPlayer(item.player_id());
+                if (member != entt::null && tlsEcs.actorRegistry.valid(member)) RefreshAndFollow(member);
+            }
+        });
 }
-
 void PlayerTeamSystem::ApplyMembership(entt::entity player, uint64_t teamId, uint64_t epoch, bool keyMissing)
 {
 	const auto* current = tlsEcs.actorRegistry.try_get<TeamId>(player);
@@ -216,15 +245,11 @@ void PlayerTeamSystem::ApplyMembership(entt::entity player, uint64_t teamId, uin
 	const uint64_t oldTeamId = hasComponent ? current->team_id() : 0;
 	const uint64_t newTeamId = keyMissing ? 0 : teamId;
 
-	if (newTeamId != 0)
+	// 无队也保留epoch墓碑，离队回包之后到达的旧入队回复不能复活成员关系。
 	{
 		auto& component = tlsEcs.actorRegistry.emplace_or_replace<TeamId>(player);
 		component.set_team_id(newTeamId);
 		component.set_membership_epoch(epoch);
-	}
-	else
-	{
-		tlsEcs.actorRegistry.remove<TeamId>(player);
 	}
 
 	if (oldTeamId != newTeamId)
@@ -233,126 +258,6 @@ void PlayerTeamSystem::ApplyMembership(entt::entity player, uint64_t teamId, uin
 				 << " new_team_id=" << newTeamId << " epoch=" << epoch << " key_missing=" << keyMissing;
 		RefreshTeammateAoi(player);
 	}
-}
-
-void PlayerTeamSystem::LoadTeamInfo(entt::entity player, uint64_t teamId, FollowMode mode)
-{
-	const uint64_t playerId = GuidOf(player);
-	if (!RedisReady())
-	{
-		LOG_WARN << "[PlayerTeam] Team projection read skipped(Redis disconnected), player_id=" << playerId << " team_id=" << teamId;
-		return;
-	}
-
-	tlsRedis.GetZoneRedis()->command(
-		[player, playerId, teamId, mode](hiredis::Hiredis*, redisReply* reply) {
-			if (!IsSamePlayer(player, playerId))
-			{
-				return;
-			}
-			if (reply == nullptr || reply->type == REDIS_REPLY_ERROR)
-			{
-				LOG_WARN << "[PlayerTeam] metric=team_projection_read_unknown player_id=" << playerId
-						 << " team_id=" << teamId << ",GET projection failed";
-				return;
-			}
-
-			if (reply->type == REDIS_REPLY_NIL)
-			{
-				// 投影缺失:回查权威记录,区分"投影丢了(未知)"与"队伍已不存在(无队)"
-				if (!RedisReady())
-				{
-					return;
-				}
-				tlsRedis.GetZoneRedis()->command(
-					[player, playerId, teamId](hiredis::Hiredis*, redisReply* existsReply) {
-						if (!IsSamePlayer(player, playerId))
-						{
-							return;
-						}
-						if (existsReply == nullptr || existsReply->type != REDIS_REPLY_INTEGER)
-						{
-							return; // 回复错误 = 未知
-						}
-						if (existsReply->integer != 0)
-						{
-							// 记录还在,投影只是丢了:未知,不清组件也不跟随,等 team 下一次提交/触碰重写投影
-							LOG_WARN << "[PlayerTeam] metric=team_projection_missing player_id=" << playerId
-									 << " team_id=" << teamId << ",record still exists;follow skipped this time";
-							return;
-						}
-						// 记录也不在:与 Go 侧口径一致,按无队处理
-						const auto* current = tlsEcs.actorRegistry.try_get<TeamId>(player);
-						if (current != nullptr && current->team_id() == teamId)
-						{
-							ApplyMembership(player, 0, 0, /*keyMissing=*/true);
-						}
-					},
-					(std::string("EXISTS ") + kTeamRecordKeyFmt).c_str(), teamId);
-				return;
-			}
-
-			if (reply->type != REDIS_REPLY_STRING ||
-				reply->len > static_cast<size_t>(std::numeric_limits<int>::max()))
-			{
-				return;
-			}
-			TeamInfo teamInfo;
-			if (!teamInfo.ParseFromArray(reply->str, static_cast<int>(reply->len)))
-			{
-				LOG_ERROR << "[PlayerTeam] Team projection parse failed, player_id=" << playerId << " team_id=" << teamId;
-				return;
-			}
-			if (teamInfo.team_id() != teamId)
-			{
-				return;
-			}
-			bool selfIsMember = false;
-			for (const uint64_t memberId : teamInfo.members())
-			{
-				if (memberId == playerId)
-				{
-					selfIsMember = true;
-					break;
-				}
-			}
-			if (!selfIsMember)
-			{
-				// 投影里没有自己:TeamId 可能刚过时,等下一次刷新信号,不跟随
-				return;
-			}
-
-			const uint64_t leaderId = teamInfo.leader_id();
-			if (leaderId == 0)
-			{
-				return;
-			}
-			if (leaderId != playerId)
-			{
-				CheckFollowLeader(player, leaderId);
-				return;
-			}
-
-			// 队长自己进场:对本节点上的其他成员逐个刷新并跟随,不再扇出(防循环)
-			if (mode != FollowMode::kFollowLeaderAndFanout)
-			{
-				return;
-			}
-			for (const uint64_t memberId : teamInfo.members())
-			{
-				if (memberId == playerId)
-				{
-					continue;
-				}
-				const auto member = tlsEcs.GetPlayer(memberId);
-				if (member == entt::null || !tlsEcs.actorRegistry.valid(member))
-				{
-					continue; // 不在本节点(DV-6):不跨节点拉人
-				}
-				RefreshAndFollow(member);
-			}
-		},
-		(std::string("GET ") + kTeamProjectionKeyFmt).c_str(), teamId);
 }
 
 void PlayerTeamSystem::CheckFollowLeader(entt::entity player, uint64_t leaderId)
