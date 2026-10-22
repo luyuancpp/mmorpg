@@ -177,7 +177,8 @@ $ServiceCatalogue = [ordered]@{
     # MATCH_MIGRATION_USER / MATCH_MIGRATION_PASSWORD仅注入该前台子命令，执行完清掉环境变量；
     # bin/go_services/match.exe -f <GlobalMatch.Enabled=true的同库配置> -migrate
     # 常驻start/start-exe只核只读Plan，不自动DDL；运行账号不需要CREATE/ALTER权限。
-    match           = @{ Dir = "match";           Entry = "match_service.go";         Port = 50500; Desc = "Match (turn-battle matchmaking)";  ConfigFlag = "-f";            ConfigFile = "etc/match_service.yaml";         AllowMultiInstance = $true;  Tier = 3 }
+    # 按包构建/运行,包含同目录 original_role_interceptor.go 等入口依赖。
+    match           = @{ Dir = "match";           Entry = ".";                        Port = 50500; Desc = "Match (turn-battle matchmaking)";  ConfigFlag = "-f";            ConfigFile = "etc/match_service.yaml";         AllowMultiInstance = $true;  Tier = 3 }
     # 客户端 RPC 路由服(docs/design/client-rpc-router.md D29-D34):gate 在 GATE_CLIENT_RPC_ROUTER=1 模式下
     # 唯一的 gRPC 目标,无状态、全局池不分 zone、可多开。Tier 1:gate 一起来就要连到它,与 scene_manager
     # 同批先起;它自身不依赖别的 Go 服务(只按 etcd 发现转发)。

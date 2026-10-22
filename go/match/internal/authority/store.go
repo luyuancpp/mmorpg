@@ -6,11 +6,9 @@ import (
 	"database/sql"
 	"encoding/binary"
 	"errors"
-	"fmt"
 	"os"
 	"sort"
 	"strings"
-	"time"
 
 	"github.com/google/uuid"
 	"google.golang.org/protobuf/proto"
