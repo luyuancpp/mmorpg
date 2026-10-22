@@ -20,11 +20,11 @@ var ErrMatchEntryOccupied = errors.New("角色已有未终结的队伍或历练�
 
 // 仅传递调用者已持有的正规原件，不复制另一套业务状态。例外仍须与本事务读到的SQL原件逐项相等。
 type matchEntryOriginal struct {
-	teams    []*teampb.TeamLaunchRecord
-	activity *pb.StartActivityBattleRequest
-	battleID uint64
-	direct   *pb.MatchDirectIntentRecord
-	payload  []byte
+	teams     []*teampb.TeamLaunchRecord
+	activity  *pb.StartActivityBattleRequest
+	battleID  uint64
+	direct    *pb.MatchDirectIntentRecord
+	payload   []byte
 	formation *pb.MatchFormationRecord
 }
 
@@ -37,7 +37,7 @@ func (s *Store) ConfigureMatchEntryAuthority(ctx context.Context, schema string)
 		"SELECT request_id,battle_id,state,original_proto,request_digest FROM `" + schema + "`.guild_trial_launch LIMIT 0",
 		"SELECT player_id,request_id,account,owner_revision,state FROM `" + schema + "`.guild_trial_launch_role LIMIT 0",
 		"SELECT player_id,lobby_id,cooldown_until_ms FROM `" + schema + "`.guild_trial_lobby_slot LIMIT 0",
-		"SELECT lobby_id,guild_id,activity_id,initiator_player_id,state,original_proto,consent_proto,battle_id FROM `" + schema + "`.guild_trial_lobby LIMIT 0",
+		"SELECT lobby_id,guild_id,activity_id,initiator_player_id,state,view_proto,original_proto,consent_proto,battle_id FROM `" + schema + "`.guild_trial_lobby LIMIT 0",
 	} {
 		rows, err := s.DB.QueryContext(ctx, query)
 		if err != nil {
@@ -71,6 +71,11 @@ func (s *Store) RequireNewTeamLaunchTx(ctx context.Context, tx *sql.Tx, original
 	if err := s.requireMatchEntryTx(ctx, tx, group, nil); err != nil {
 		return err
 	}
+	return s.requireIdleMatchTicketsTx(ctx, tx, group)
+}
+
+func (s *Store) requireIdleMatchTicketsTx(ctx context.Context, tx *sql.Tx, group []*pb.MatchAuthorityTicketRecord) error {
+	group = append([]*pb.MatchAuthorityTicketRecord(nil), group...)
 	sort.Slice(group, func(i, j int) bool { return group[i].PlayerId < group[j].PlayerId })
 	for _, member := range group {
 		ticket, err := scanTicket(tx.QueryRowContext(ctx, "SELECT "+ticketColumns+" FROM match_authority_ticket WHERE player_id=? FOR UPDATE", member.PlayerId))
@@ -155,7 +160,7 @@ func (s *Store) requireEntryOriginalsTx(ctx context.Context, tx *sql.Tx, group [
 				return ErrMatchEntryOccupied
 			}
 		}
-		rows, err := tx.QueryContext(ctx, "SELECT actor_id,request_high,request_low,state FROM team_launch_role WHERE player_id=? AND state<>5 ORDER BY state,actor_id,request_high,request_low LIMIT 2", member.PlayerId)
+		rows, err := tx.QueryContext(ctx, "SELECT r.actor_id,r.request_high,r.request_low,r.state FROM team_launch_role r LEFT JOIN team_launch l ON l.actor_id=r.actor_id AND l.request_high=r.request_high AND l.request_low=r.request_low WHERE r.player_id=? AND (r.state IS NULL OR r.state<>5 OR l.state IS NULL OR l.state<>5) ORDER BY r.state,r.actor_id,r.request_high,r.request_low LIMIT 2", member.PlayerId)
 		if err != nil {
 			return err
 		}
@@ -200,7 +205,7 @@ func (s *Store) requireEntryOriginalsTx(ctx context.Context, tx *sql.Tx, group [
 				return err
 			}
 		}
-		rows, err = tx.QueryContext(ctx, "SELECT request_id,account,owner_revision,state FROM `"+s.entryGuildSchema+"`.guild_trial_launch_role WHERE player_id=? AND state<>2 ORDER BY state,request_id LIMIT 2", member.PlayerId)
+		rows, err = tx.QueryContext(ctx, "SELECT r.request_id,r.account,r.owner_revision,r.state FROM `"+s.entryGuildSchema+"`.guild_trial_launch_role r LEFT JOIN `"+s.entryGuildSchema+"`.guild_trial_launch l ON l.request_id=r.request_id WHERE r.player_id=? AND (r.state IS NULL OR r.state<>2 OR l.state IS NULL OR l.state<>3) ORDER BY r.state,r.request_id LIMIT 2", member.PlayerId)
 		if err != nil {
 			return err
 		}
@@ -248,8 +253,8 @@ func (s *Store) requireTrialLobbyEntryTx(ctx context.Context, tx *sql.Tx, member
 	}
 	var guild, initiator, battle uint64
 	var activity, state uint32
-	var raw, consents []byte
-	err = tx.QueryRowContext(ctx, "SELECT guild_id,activity_id,initiator_player_id,state,original_proto,consent_proto,battle_id FROM `"+s.entryGuildSchema+"`.guild_trial_lobby WHERE lobby_id=?", lobbyID).Scan(&guild, &activity, &initiator, &state, &raw, &consents, &battle)
+	var raw, consents, viewRaw []byte
+	err = tx.QueryRowContext(ctx, "SELECT guild_id,activity_id,initiator_player_id,state,original_proto,consent_proto,battle_id,view_proto FROM `"+s.entryGuildSchema+"`.guild_trial_lobby WHERE lobby_id=?", lobbyID).Scan(&guild, &activity, &initiator, &state, &raw, &consents, &battle, &viewRaw)
 	if errors.Is(err, sql.ErrNoRows) {
 		return ErrMatchEntryOccupied
 	}
@@ -264,8 +269,9 @@ func (s *Store) requireTrialLobbyEntryTx(ctx context.Context, tx *sql.Tx, member
 	}
 	original := &guildpb.GuildTrialLobbyOriginal{}
 	savedConsents := &guildpb.GuildTrialLobbyConsents{}
+	view := &guildpb.GuildTrialLobbyView{}
 	actx := source.activity.ActivityContext
-	if len(raw) == 0 || len(raw) > 64*1024 || len(consents) == 0 || len(consents) > 64*1024 || proto.Unmarshal(raw, original) != nil || proto.Unmarshal(consents, savedConsents) != nil || original.LobbyId != lobbyID || original.GuildId != guild || original.ActivityId != activity || original.InitiatorPlayerId != initiator || actx.GetGuildId() != guild || actx.GetActivityId() != activity || actx.GetInitiatorPlayerId() != initiator || len(original.Roster) < 2 || len(original.Roster) > 5 || len(savedConsents.Consents) != len(players) {
+	if len(raw) == 0 || len(raw) > 64*1024 || len(consents) == 0 || len(consents) > 64*1024 || len(viewRaw) == 0 || len(viewRaw) > 64*1024 || proto.Unmarshal(raw, original) != nil || proto.Unmarshal(consents, savedConsents) != nil || proto.Unmarshal(viewRaw, view) != nil || original.LobbyId != lobbyID || original.GuildId != guild || original.ActivityId != activity || original.InitiatorPlayerId != initiator || actx.GetGuildId() != guild || actx.GetActivityId() != activity || actx.GetInitiatorPlayerId() != initiator || len(original.Roster) != len(players) || len(original.Roster) < 2 || len(original.Roster) > 16 || len(savedConsents.Consents) != len(players) || view.LobbyId != lobbyID || view.InitiatorPlayerId != initiator || view.State != guildpb.GuildTrialLobbyState_GUILD_TRIAL_LOBBY_STATE_LAUNCHING || view.BattleId != 0 {
 		return ErrMatchEntryOccupied
 	}
 	invited := map[uint64]*guildpb.GuildTrialRoleIdentity{}
@@ -288,6 +294,18 @@ func (s *Store) requireTrialLobbyEntryTx(ctx context.Context, tx *sql.Tx, member
 	}
 	if !accepted[member.PlayerId] || !accepted[initiator] {
 		return ErrOriginalPlayer
+	}
+	for _, ids := range [][]uint64{view.MemberPlayerIds, view.AcceptedPlayerIds} {
+		if len(ids) != len(players) {
+			return ErrOriginalPlayer
+		}
+		seen := map[uint64]bool{}
+		for _, player := range ids {
+			if !accepted[player] || seen[player] {
+				return ErrOriginalPlayer
+			}
+			seen[player] = true
+		}
 	}
 	return nil
 }

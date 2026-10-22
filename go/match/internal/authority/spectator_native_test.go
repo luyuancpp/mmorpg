@@ -168,12 +168,12 @@ func TestSpectatorTiDBActiveTicketAndSpectatorExcludeEachOtherAndUnknownNeverMea
 	require.NoError(t, err)
 	profile := &pb.MatchNetworkProfile{PlanId: "spectator-plan", SessionBinding: "bound", Receipts: []*pb.NetworkProbeReceipt{{Grant: &pb.NetworkProbeGrant{PlayerId: 11, PhysicalRegion: 1, ExpiresAtMs: stamp + 120000}, RttMs: 20, SampleCount: 3, MeasuredAtMs: stamp, ExpiresAtMs: stamp + 120000}}}
 	require.NoError(t, f.store.SavePlan(f.actor, 11, profile, stamp+120000))
-	ticket, created, err := f.store.Join(f.actor, &pb.MatchAuthorityTicketRecord{PlayerId: 11, Ticket: uuid.NewString(), RequestId: uuid.NewString(), Mode: 3, ConfigId: 1, TeamSize: 2}, profile.PlanId, profile.SessionBinding)
-	require.NoError(t, err)
-	require.True(t, created)
 	request := f.request()
 	_, err = f.store.SpectatorIntent(f.actor, 11, request)
 	require.NoError(t, err)
+	ticket, created, err := f.store.Join(f.actor, &pb.MatchAuthorityTicketRecord{PlayerId: 11, Ticket: uuid.NewString(), RequestId: uuid.NewString(), Mode: 3, ConfigId: 1, TeamSize: 2}, profile.PlanId, profile.SessionBinding)
+	require.NoError(t, err)
+	require.True(t, created)
 	for _, state := range []uint32{1, 0, 99} {
 		_, err = f.store.DB.ExecContext(f.actor, "UPDATE match_authority_ticket SET state=? WHERE player_id=11", state)
 		require.NoError(t, err)

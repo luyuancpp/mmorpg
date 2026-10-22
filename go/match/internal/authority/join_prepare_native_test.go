@@ -42,7 +42,7 @@ func TestJoinTiDBPreparedExitNeedsPositiveProofAndReplayNeverClosesNewWatch(t *t
 	require.NoError(t, err)
 	newWatchRequest := f.request()
 	_, err = f.store.SpectatorIntent(f.actor, 11, newWatchRequest)
-	require.NoError(t, err)
+	require.ErrorIs(t, err, ErrMatchEntryOccupied)
 	_, err = f.store.BeginSpectator(f.actor, 11, newWatchRequest, f.formation, f.add)
 	require.ErrorIs(t, err, ErrSpectatorBusy)
 	queued, created, err := f.store.Join(f.actor, original, request.NetworkPlanId, "spectator-bound")

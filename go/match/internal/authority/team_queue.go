@@ -23,6 +23,13 @@ func (s *Store) EnqueueTeamLaunchTx(ctx context.Context, tx *sql.Tx, launch *tea
 	if launch.State != 1 || launch.TargetSize <= launch.MemberCount || launch.TargetSize > config.TeamCapacity {
 		return ErrDirectConflict
 	}
+	entryGroup := make([]*pb.MatchAuthorityTicketRecord, 0, len(data.Members))
+	for _, member := range data.Members {
+		entryGroup = append(entryGroup, &pb.MatchAuthorityTicketRecord{PlayerId: member.Original.PlayerId, Ticket: member.Ticket, TeamId: launch.TeamId, OwnerAccount: member.Original.OwnerAccount, OwnerRevision: member.Original.OwnerRevision})
+	}
+	if err = s.requireMatchEntryTx(ctx, tx, entryGroup, &matchEntryOriginal{teams: []*teampb.TeamLaunchRecord{launch}}); err != nil {
+		return err
+	}
 	if err = s.RequireSpectatorExitsClosedTx(ctx, tx, data.SpectatorExits); err != nil {
 		return err
 	}

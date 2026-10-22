@@ -23,7 +23,8 @@ import org.springframework.transaction.support.TransactionTemplate;
 /** 管理请求行→SKU主键的固定锁序；成功响应快照与业务写入同事务提交。 */
 @Repository
 @DependsOn("commerceSchemaReady")
-public final class CatalogAdminStore {
+// 保留Repository异常翻译的类代理，与同域CommerceStore一致。
+public class CatalogAdminStore {
     private final JdbcTemplate jdbc;
     private final TransactionTemplate tx;
     private final ObjectMapper json;

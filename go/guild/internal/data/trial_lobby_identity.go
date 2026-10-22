@@ -55,6 +55,9 @@ func (r *TrialLobbyRepo) rememberConsent(ctx context.Context, lobby *TrialLobby,
 	return nil
 }
 func (r *TrialLobbyRepo) LoadConsents(ctx context.Context, lobby *TrialLobby) ([]*pb.GuildTrialRoleIdentity, error) {
+	if r.SQLAuthorityEnabled() {
+		return r.loadSQLConsents(ctx, lobby)
+	}
 	if lobby == nil || len(lobby.Roster) == 0 || len(lobby.Roster) > maxTrialLobbyRoster {
 		return nil, ErrWriteConflict
 	}

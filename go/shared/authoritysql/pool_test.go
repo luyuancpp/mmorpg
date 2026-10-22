@@ -5,7 +5,10 @@ import (
 	"crypto/rand"
 	"database/sql"
 	"encoding/hex"
+	"errors"
+	"net"
 	"os"
+	"strconv"
 	"testing"
 	"time"
 
@@ -24,8 +27,15 @@ func TestMigrationRejectsWrongDatabaseBeforeConnecting(t *testing.T) {
 	}
 }
 func TestPhysicalTiDBConnectionsPinStrongSession(t *testing.T) {
-	if os.Getenv("MAIL_RANK_TEST_TIDB") != "127.0.0.1:4000" {
-		t.Skip("仅显式MAIL_RANK_TEST_TIDB=127.0.0.1:4000启用隔离真实TiDB")
+	address := os.Getenv("MAIL_RANK_TEST_TIDB")
+	if address == "" {
+		if os.Getenv("MAIL_RANK_REQUIRE_TESTS") == "1" {
+			t.Fatal("MAIL_RANK_TEST_TIDB必须显式配置本任务独占TiDB")
+		}
+		t.Skip("需显式本任务数值loopback TiDB端点，随机自有库")
+	}
+	if err := physicalTiDBFixtureEndpoint(address); err != nil {
+		t.Fatal(err)
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
@@ -35,8 +45,8 @@ func TestPhysicalTiDBConnectionsPinStrongSession(t *testing.T) {
 	}
 	database := "mail_rank_pool_" + hex.EncodeToString(random[:])
 	t.Logf("本用例隔离库=%s", database)
-	// DDL安装/清理的连接与被测业务池分开；业务池仍固定5s socket预算。
-	admin, err := sql.Open("mysql", "root@tcp(127.0.0.1:4000)/?timeout=1s&readTimeout=2m&writeTimeout=2m")
+	// 随机库DDL前先只读系统库，确认真实TiDB及强会话；业务池仍固定5s socket预算。
+	admin, err := OpenForMigration(ctx, "root@tcp("+address+")/mysql", "mysql", true)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -54,7 +64,7 @@ func TestPhysicalTiDBConnectionsPinStrongSession(t *testing.T) {
 	cfg := mysql.NewConfig()
 	cfg.User = "root"
 	cfg.Net = "tcp"
-	cfg.Addr = "127.0.0.1:4000"
+	cfg.Addr = address
 	cfg.DBName = database
 	cfg.Params = map[string]string{"tidb_read_consistency": "'weak'", "tidb_snapshot": "'2000-01-01 00:00:00'", "tidb_read_staleness": "-5", "tidb_replica_read": "'follower'", "transaction_isolation": "'REPEATABLE-READ'"}
 	db, err := Open(ctx, cfg.FormatDSN(), database, true, 4)
@@ -81,6 +91,32 @@ func TestPhysicalTiDBConnectionsPinStrongSession(t *testing.T) {
 		}
 		if mode != "pessimistic" || isolation != "READ-COMMITTED" || stale != 0 || low != 0 || replica != "leader" || consistency != "strict" || snapshot != "" {
 			t.Fatalf("物理连接%d未固定强会话", i)
+		}
+	}
+}
+
+func physicalTiDBFixtureEndpoint(address string) error {
+	host, port, err := net.SplitHostPort(address)
+	if err != nil {
+		return errors.New("物理连接夹具必须显式数值loopback端口")
+	}
+	ip := net.ParseIP(host)
+	number, err := strconv.Atoi(port)
+	if ip == nil || !ip.IsLoopback() || err != nil || number < 1 || number > 65535 {
+		return errors.New("物理连接夹具仅接受数值loopback与合法非零端口")
+	}
+	return nil
+}
+
+func TestPhysicalTiDBFixtureEndpointRejectsForeignOrInvalidPort(t *testing.T) {
+	for _, address := range []string{"127.0.0.1:24000", "[::1]:24000"} {
+		if err := physicalTiDBFixtureEndpoint(address); err != nil {
+			t.Fatal(err)
+		}
+	}
+	for _, address := range []string{"localhost:24000", "10.0.0.1:24000", "127.0.0.1:0", "127.0.0.1:65536", "127.0.0.1:mysql", "127.0.0.1"} {
+		if physicalTiDBFixtureEndpoint(address) == nil {
+			t.Fatal("非法夹具端点未拒绝")
 		}
 	}
 }

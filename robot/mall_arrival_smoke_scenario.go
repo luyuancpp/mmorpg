@@ -3,7 +3,7 @@ package main
 // mall-arrival-smoke 场景:单机器人对「官方商品到账」做端到端冒烟(D-17 首批官方 SKU 的真实 Go↔Java↔C++ 闭环)。
 //
 // 调用链:robot →(客户端协议)gate → client_rpc_router → trade ClientPlayerJubaozhai → java/mall_game 下单;
-// 付款由本进程的 dev 模拟付款器(commerce_mock_payer.go)以 payment 角色直接记到商城;
+// 付款由本进程请求商城本地mock适配器，金额取原订单，提供方原件先独立提交；
 // 之后 trade 每秒 poll 商城的待发货意图 → 资产通道 AssetCredit 到 C++ scene → 等玩家 SQL 提交证据 →
 // 回执商城 DELIVERED。本场景只从玩家能看到的两处取证:订单状态(GetCommerceOrder)与背包(GetBag)。
 //
@@ -15,8 +15,8 @@ package main
 //	A5 CreateOfficialOrder:待付款、官方单、买家是自己、金额 = 单价 × 份数、币种与商品一致;
 //	   同一 client_request_id 再发一次,必须拿回同一张单(下单幂等);
 //	A6 GetCommerceOrder:仍是待付款;
-//	A7 先以错一分钱的金额付款,商城必须 409 且订单仍待付款;再以正确金额付款 → DELIVERY_PENDING;
-//	   同一笔付款原样重发 → 200(幂等),状态仍是待发货或已发货;
+//	A7 带金额覆盖的mock命令必须400且原单仍待付款；随后仅原订单+稳定请求号付款；
+//	   同两字段原样重发200，核原买家/金额/币种/SKU/份数，状态待发货或已发货；
 //	A8 轮询 GetCommerceOrder 直到 DELIVERED(退款中 / 人工 / 已取消都是失败,原因写进 FAIL);
 //	A9 背包里的数量正好 = A3 + count_per_unit × quantity;
 //	A10 再等三拍(trade 每秒 poll 一次):背包数量不变、订单仍是已发货 —— 没有重复发货;
@@ -111,10 +111,9 @@ func mallArrivalRequestID(nowMs int64, randomHex string) string {
 	return "mallarrival-" + strconv.FormatInt(nowMs, 10) + "-" + randomHex
 }
 
-// mallArrivalTransactionID 由订单号派生模拟渠道流水号:同一订单永远是同一个流水号,
-// 所以 A7 的重发是商城意义上的「同一笔付款」(五元组全同 → 幂等 200),不会被当成第二笔付款。
-func mallArrivalTransactionID(orderID string) string {
-	return "mockdev-" + strings.ReplaceAll(orderID, "-", "")
+// 同原订单在未知提交、重登或驱动重启后仍使用同一mock请求号。
+func mallArrivalPaymentRequestID(orderID string) string {
+	return "mallarrival-pay-" + strings.ReplaceAll(orderID, "-", "")
 }
 
 // mallArrivalCheckCreated 核对下单应答:只看玩家能看到、且服务端承诺的字段。
@@ -434,32 +433,26 @@ func RunMallArrivalSmoke(cfg *config.Config) {
 	}
 	pass("A6-get", "order_id=%s 待付款", orderID)
 
-	// ---- A7:付款(先错金额被拒,再正确付款,再原样重发)----
+	// ---- A7:拒绝金额覆盖，再按原订单付款并原样重放 ----
 	ctx, cancel := context.WithTimeout(context.Background(), deliverTimeout)
 	defer cancel()
-	payment := commercePayment{
-		OrderID: orderID, Channel: sc.Channel, TransactionID: mallArrivalTransactionID(orderID),
-		AmountMinor: created.GetAmount(), Currency: created.GetCurrency(),
-	}
-	wrongAmount := payment
-	wrongAmount.AmountMinor++
-	wrongAmount.TransactionID = "mockdev-wrong-" + strings.ReplaceAll(orderID, "-", "")
+	payment := commerceMockPay{OrderID: orderID, RequestID: mallArrivalPaymentRequestID(orderID)}
 	var rejected *commerceHTTPError
-	if _, err := payer.RecordPayment(ctx, wrongAmount); !errors.As(err, &rejected) || rejected.Status != 409 {
-		fail("A7-pay-wrong-amount", "错一分钱的付款应当被商城 409 拒绝,实际 err=%v", err)
+	if err := payer.ProbeAmountOverride(ctx, payment, created.GetAmount()+1); !errors.As(err, &rejected) || rejected.Status != 400 {
+		fail("A7-pay-wrong-amount", "mock付款不得接受金额覆盖，应当400拒绝，实际err=%v", err)
 	}
 	if order, err := bot.order(orderID); err != nil {
 		fail("A7-pay-wrong-amount", "%v", err)
-	} else if order.GetState() != tradepb.CommerceOrderState_COMMERCE_ORDER_STATE_AWAITING_PAYMENT {
+	} else if order.GetState() != tradepb.CommerceOrderState_COMMERCE_ORDER_STATE_AWAITING_PAYMENT || order.GetAmount() != created.GetAmount() || order.GetBuyerPlayerId() != playerID {
 		fail("A7-pay-wrong-amount", "被拒的付款改变了订单状态: %v", order.GetState())
 	}
-	pass("A7-pay-wrong-amount", "商城 409「%s」,订单仍待付款", rejected.Message)
+	pass("A7-pay-wrong-amount", "商城400「%s」，原买家/金额不变且仍待付款", rejected.Message)
 
 	paid, err := payer.RecordPayment(ctx, payment)
 	if err != nil {
 		fail("A7-pay", "%v(付款器的商城地址 / subject / 密钥要与商城 COMMERCE_* 环境变量一致;401 = 签名或密钥不符)", err)
 	}
-	if paid.State != "DELIVERY_PENDING" || paid.BuyerID != strconv.FormatUint(playerID, 10) || paid.AmountMinor != created.GetAmount() {
+	if (paid.State != "DELIVERY_PENDING" && paid.State != "DELIVERED") || paid.BuyerID != strconv.FormatUint(playerID, 10) || paid.AmountMinor != created.GetAmount() || paid.Currency != created.GetCurrency() || paid.SkuID != sc.SkuID || paid.Quantity != sc.Quantity {
 		fail("A7-pay", "商城付款应答 state=%s buyer=%s amount=%d,期望 DELIVERY_PENDING / %d / %d",
 			paid.State, paid.BuyerID, paid.AmountMinor, playerID, created.GetAmount())
 	}
@@ -471,7 +464,10 @@ func RunMallArrivalSmoke(cfg *config.Config) {
 	if replayed.State != "DELIVERY_PENDING" && replayed.State != "DELIVERED" {
 		fail("A7-pay-replay", "重发后商城状态 %s,期望待发货或已发货", replayed.State)
 	}
-	pass("A7-pay", "channel=%s transaction_id=%s 记已付;原样重发幂等(state=%s)", payment.Channel, payment.TransactionID, replayed.State)
+	if replayed.BuyerID != paid.BuyerID || replayed.AmountMinor != paid.AmountMinor || replayed.Currency != paid.Currency || replayed.SkuID != paid.SkuID || replayed.Quantity != paid.Quantity {
+		fail("A7-pay-replay", "重放改变了原订单买家、金额、币种、SKU或份数")
+	}
+	pass("A7-pay", "本地mock request_id=%s；原样重发幂等(state=%s)", payment.RequestID, replayed.State)
 
 	// ---- A8:等已发货 ----
 	waited, err := bot.awaitDelivered(orderID, deliverTimeout, pollInterval, func(state tradepb.CommerceOrderState, elapsed time.Duration) {

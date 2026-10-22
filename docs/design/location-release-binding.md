@@ -751,3 +751,21 @@ miniredis 的服务端时钟(`mr.SetTime`),不再依赖真实墙钟;`routing_ide
 - Java 版(AGENTS §12):**不适用(结构不同)**。Java 的位置记录(`game-discovery/.../location/PlayerLocationDirectory.java`)只由持有归属的
   scene 写、带 TTL,被接管或停服时不动记录,由新持有者覆盖或按 TTL 消失;没有 scene_manager 侧的首次落点铸造,也没有按 zone 负载集判下线、
   过滤陈旧位置的路径(本次只读 grep 了 Java 主代码,未构建)。Java 没有待做项,`PARITY.md` 不登记。
+
+## 15. 2026-10-21 修订：等待超时不授予释放权限
+
+本节覆盖前文§3.6、§10回滚开关与相关`forced`旧语义。当前目标不允许没有持有者释放证明的回档风险：LeaveScene等待超过600秒或任意诊断预算，仍保持原location和人数，返回`holder_release_pending`继续按原会话催促。Redis时间跳变、负数旧配置、开发换手开关、epoch缺失均不能把UNKNOWN变成已释放。配置键仍兼容解析，非正值沿默认诊断预算；`forced`等旧指标名仅保留兼容，不再由生产删除判定产生。
+
+删除仍只走正证路径：当前epoch匹配的原handoff释放标记（删除Lua再次原子复核）、正规节点死亡证明，或location本身明确没有持有者。没有真实持久化/释放证明，不因TTL、无应答或长时间等待删除。标记撤回、旧E、原location被新登录CAS替换时，原请求不能删除新location或扣人数。原生资产与SQL角色准入仍由既有DS/RoleAdmission负责，本修订不创建第二份资产权威。
+
+本次新增/修订确定性回归覆盖预算到点仍UNKNOWN、旧负数/开发配置不能关闭证明、epoch0保持未知、真实标记放行及删除前撤回/新落点竞态。仅源码修订，尚未执行编译或测试。关于原owner_revision投影绑定与当前目录核验的后续接缝，另以本批最终源码和验证清单为准。
+
+## 16. 2026-10-21 原归属修订绑定的调度投影
+
+SceneManager不是角色授权者。EnterScene在读取成功缓存、预占人数和写位置之前，用既有DS LookupAccountRole强读当前原修订及冻结状态，要求请求原owner_revision逐项相等；不得把查询出的新修订补给旧请求。RPC只使用独立scene_manager caller及MMORPG_ACCOUNT_DIRECTORY_SECRET_SCENE_MANAGER，DS仅对Lookup放行，目录写、交易和原生准入仍拒绝此caller。DS全球启动要求四用途密钥互异，防止同值密钥使只读caller伪装写caller。本机启动临时摘掉SM不需要的login/trade/scene密钥，启动后恢复父环境；K8s只引用独立Secret键。复用既有DataServiceRpc连接，不新增SQL/Redis连接池，连接总账数量不变。
+
+原PlayerLocation PB不改。location_revision侧车仅保存20位无符号十进制原R与原location字节SHA256；location_revision_floor保存已观察SQL修订下界，不设TTL、不随位置删除。Lua只按等长字符串比较R，不经double。生产落点、同落点身份刷新、回滚和Leave都在原raw CAS之外核tag/floor，不能让旧R延迟覆盖/回滚/删除新R。已知旧R投影可按原raw+tag精确移除，归属epoch及修订floor保留；无tag的未知原件不从当前目录补R，同落点身份刷新仍保持unknown并沿原holder释放协议。成功缓存使用done:v2:原R:完整请求指纹:PB应答，旧格式不能直接重放。
+
+Lookup是缓存修复的观察点，不与Redis合并成角色授权事务。Lookup之后发生过户时，在途旧投影可能短暂出现；下一次合法入口强读当前R并修复，迟到Kafka携原R/E仍由Scene的继承epoch核验、DS原RoleAdmission同P核验拒绝，不能激活旧资产。Redis丢失/回档后floor也可能丢失，因此每次入口仍从SQL观察，绝不只信floor或缓存。原生SQL准入和存盘仍是唯一授权/持久化证明。
+
+补正前次只读推导：不能仅凭“旧R曾写到无实体节点”断言永久HandoffPending；现有enter_holder_release路径会按原E请求持有节点，节点无实体时也可按原epoch条件补写真实释放标记。此接缝保留，不为软调度创建第二份永久SQL head。新增回归源码覆盖旧done拒绝、目录未知/冻结、2^53相邻及uint64最大R、raw+tag竞态、未知原件不补权、R2前缀后的迟到回滚、同R bump/keep及回滚重放不复活handoff。尚未运行编译/测试。

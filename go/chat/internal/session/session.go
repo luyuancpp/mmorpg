@@ -1,8 +1,8 @@
 // Package session 存取 gate 经 gRPC metadata(x-session-detail-bin)附带的会话详情。
 //
 // 与 go/match/internal/pkg/ctxkeys、go/login 的 ctxkeys 同模式(契约 §3):
-// chat 的**权威发言人 = 会话里的 player_id**,请求体里的 sender_player_id 一律被覆盖,
-// 只有 target_player_id / peer_player_id 信请求体。
+// player_id只选择角色；最终授权必须用原登录账号/wire修订并在SQL原P内复核。
+// 请求体里的sender_player_id一律被覆盖，target/peer只是会话选择参数。
 //
 // 拦截器与读取函数放在同一个包里,是为了让"谁写 ctx key、谁读 ctx key"只有一处定义 ——
 // 两边各写一份字符串 key,改一边另一边就静默取不到会话,所有请求都会变成"无会话"。

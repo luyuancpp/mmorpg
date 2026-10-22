@@ -34,7 +34,7 @@ func crossRoleGuardStore(t *testing.T) (*AccountDirectoryStore, *AccountRoleTrad
 	require.NoError(t, db.QueryRow("SELECT DATABASE()").Scan(&schema))
 	model := proto2mysql.NewDB()
 	require.NoError(t, model.OpenDB(db, schema))
-	for _, row := range []proto.Message{&guildpb.GuildPlayerStateRecord{}, &guildpb.GuildMemberRecord{}, &guildpb.GuildAssetOpRecord{}, &guildpb.GuildTrialRewardOwedRecord{}, &guildpb.GuildTrialLaunchRoleRecord{}, &mailpb.MailAssetOpRecord{}, &tradepb.TradeCommerceRecord{}, &tradepb.TradeAssetOpRecord{}, &matchpb.MatchAuthorityTicketRecord{}, &matchpb.MatchChallengeInvitationRecord{}, &teampb.TeamMembershipRecord{}, &teampb.TeamInviteIndexRecord{}, &teampb.TeamApplicationIndexRecord{}, &teampb.TeamLaunchRecord{}, &teampb.TeamLaunchRoleRecord{}, &matchpb.MatchSpectatorRecord{}, &inboxpb.PlayerInboxItemRow{}} {
+	for _, row := range []proto.Message{&guildpb.GuildPlayerStateRecord{}, &guildpb.GuildMemberRecord{}, &guildpb.GuildAssetOpRecord{}, &guildpb.GuildTrialRewardOwedRecord{}, &guildpb.GuildTrialLaunchRoleRecord{}, &guildpb.GuildTrialLaunchRecord{}, &guildpb.GuildTrialLobbyRecord{}, &guildpb.GuildTrialLobbySlotRecord{}, &mailpb.MailAssetOpRecord{}, &tradepb.TradeCommerceRecord{}, &tradepb.TradeAssetOpRecord{}, &matchpb.MatchAuthorityTicketRecord{}, &matchpb.MatchChallengeInvitationRecord{}, &teampb.TeamMembershipRecord{}, &teampb.TeamInviteIndexRecord{}, &teampb.TeamApplicationIndexRecord{}, &teampb.TeamLaunchRecord{}, &teampb.TeamLaunchRoleRecord{}, &matchpb.MatchSpectatorRecord{}, &inboxpb.PlayerInboxItemRow{}} {
 		model.RegisterTable(row)
 		require.NoError(t, model.CreateOrUpdateTable(row))
 	}
@@ -216,6 +216,18 @@ func TestTiDBRoleGuildMailPendingManualAndOwedBlockOwnershipChanges(t *testing.T
 		{"match-state-zero-with-ticket", "match_authority_ticket", &matchpb.MatchAuthorityTicketRecord{PlayerId: 11, Ticket: "original"}},
 		{"match-state-zero-with-request", "match_authority_ticket", &matchpb.MatchAuthorityTicketRecord{PlayerId: 11, RequestId: "original"}},
 		{"match-state-zero-with-formation", "match_authority_ticket", &matchpb.MatchAuthorityTicketRecord{PlayerId: 11, FormationId: 51}},
+		{"match-state-zero-with-mode", "match_authority_ticket", &matchpb.MatchAuthorityTicketRecord{PlayerId: 11, Mode: 1}},
+		{"match-state-zero-with-config", "match_authority_ticket", &matchpb.MatchAuthorityTicketRecord{PlayerId: 11, ConfigId: 1}},
+		{"match-state-zero-with-team-size", "match_authority_ticket", &matchpb.MatchAuthorityTicketRecord{PlayerId: 11, TeamSize: 1}},
+		{"match-state-zero-with-enqueue", "match_authority_ticket", &matchpb.MatchAuthorityTicketRecord{PlayerId: 11, EnqueuedMs: 1}},
+		{"match-state-zero-with-not-before", "match_authority_ticket", &matchpb.MatchAuthorityTicketRecord{PlayerId: 11, NotBeforeMs: 1}},
+		{"match-state-zero-with-home", "match_authority_ticket", &matchpb.MatchAuthorityTicketRecord{PlayerId: 11, ZoneId: 1}},
+		{"match-state-zero-with-rating", "match_authority_ticket", &matchpb.MatchAuthorityTicketRecord{PlayerId: 11, RatingCenti: -1}},
+		{"match-state-zero-with-team", "match_authority_ticket", &matchpb.MatchAuthorityTicketRecord{PlayerId: 11, TeamId: 1}},
+		{"match-state-zero-with-network", "match_authority_ticket", &matchpb.MatchAuthorityTicketRecord{PlayerId: 11, NetworkProfile: []byte{1}}},
+		{"match-state-zero-with-expiry", "match_authority_ticket", &matchpb.MatchAuthorityTicketRecord{PlayerId: 11, ExpiresMs: 1}},
+		{"match-state-zero-with-selected-region", "match_authority_ticket", &matchpb.MatchAuthorityTicketRecord{PlayerId: 11, SelectedRegion: 1}},
+		{"match-state-zero-with-preferred-region", "match_authority_ticket", &matchpb.MatchAuthorityTicketRecord{PlayerId: 11, PreferredRegion: 1}},
 		{"match-challenge-challenger-pending", "match_challenge_invitation", &matchpb.MatchChallengeInvitationRecord{ChallengeId: 51, ChallengerPlayerId: 11, TargetPlayerId: 12, State: 1, ExpiresMs: ^uint64(0)}},
 		{"match-challenge-target-pending", "match_challenge_invitation", &matchpb.MatchChallengeInvitationRecord{ChallengeId: 51, ChallengerPlayerId: 12, TargetPlayerId: 11, State: 1, ExpiresMs: ^uint64(0)}},
 		{"match-challenge-state-zero", "match_challenge_invitation", &matchpb.MatchChallengeInvitationRecord{ChallengeId: 51, ChallengerPlayerId: 11, TargetPlayerId: 12, State: 0}},
@@ -224,6 +236,8 @@ func TestTiDBRoleGuildMailPendingManualAndOwedBlockOwnershipChanges(t *testing.T
 		{"team-invite", "team_invite_index", &teampb.TeamInviteIndexRecord{InviteeId: 11, TeamId: 51, ExpiresMs: ^uint64(0)}},
 		{"team-application", "team_application_index", &teampb.TeamApplicationIndexRecord{ApplicantId: 11, TeamId: 51, ExpiresMs: ^uint64(0)}},
 		{"team-launch-missing-original", "team_launch_role", &teampb.TeamLaunchRoleRecord{PlayerId: 11, ActorId: 12, RequestHigh: 51, State: 5}},
+		{"guild-terminal-role-missing-original", "guild_trial_launch_role", &guildpb.GuildTrialLaunchRoleRecord{PlayerId: 11, RequestId: 51, State: 2}},
+		{"guild-private-lobby-missing-original", "guild_trial_lobby_slot", &guildpb.GuildTrialLobbySlotRecord{PlayerId: 11, LobbyId: 51}},
 		{"inbox-pending", "player_inbox_item", &inboxpb.PlayerInboxItemRow{Shard: inboxshard.RowShard(11), PlayerId: 11, State: 1}},
 		{"inbox-unspecified", "player_inbox_item", &inboxpb.PlayerInboxItemRow{Shard: inboxshard.RowShard(11), PlayerId: 11, State: 0}},
 		{"inbox-unknown", "player_inbox_item", &inboxpb.PlayerInboxItemRow{Shard: inboxshard.RowShard(11), PlayerId: 11, State: 99}},
@@ -281,6 +295,11 @@ func TestTiDBRoleKnownAssetTerminalsAndMatchTerminalAllowOwnershipChanges(t *tes
 		insertRoleGuardFixture(t, db, "mail_asset_op", &mailpb.MailAssetOpRecord{OpId: 300 + seq, PlayerId: 11, Seq: seq, Status: status})
 	}
 	insertRoleGuardFixture(t, db, "guild_trial_launch_role", &guildpb.GuildTrialLaunchRoleRecord{PlayerId: 11, RequestId: 51, Account: "seller", OwnerRevision: 1, State: 2})
+	insertRoleGuardFixture(t, db, "guild_trial_launch", &guildpb.GuildTrialLaunchRecord{RequestId: 51, State: 3})
+	insertRoleGuardFixture(t, db, "guild_trial_lobby", &guildpb.GuildTrialLobbyRecord{LobbyId: 51, State: 4})
+	insertRoleGuardFixture(t, db, "guild_trial_lobby_slot", &guildpb.GuildTrialLobbySlotRecord{PlayerId: 11, LobbyId: 51})
+	insertRoleGuardFixture(t, db, "team_launch", &teampb.TeamLaunchRecord{ActorId: 11, RequestHigh: 51, State: 5})
+	insertRoleGuardFixture(t, db, "team_launch_role", &teampb.TeamLaunchRoleRecord{PlayerId: 11, ActorId: 11, RequestHigh: 51, State: 5})
 	for _, status := range []uint32{2, 3, 4, 5} {
 		insertRoleGuardFixture(t, db, "player_inbox_item", &inboxpb.PlayerInboxItemRow{Shard: inboxshard.RowShard(11), PlayerId: 11, Seq: uint64(status), RequestId: uint64(status), State: status, OwnerAccount: "seller", OwnerRevision: 1})
 	}
@@ -316,6 +335,63 @@ func TestTiDBRoleExactEmptyMatchPlaceholderDoesNotTrapFreeze(t *testing.T) {
 			insertRoleGuardFixture(t, db, "match_authority_ticket", &matchpb.MatchAuthorityTicketRecord{PlayerId: 11, OwnerAccount: account, OwnerRevision: 1})
 			_, err = s.Begin(ctx, &dspb.BeginAccountRoleTradeRequest{ListingId: 88, PlayerId: 11, SellerAccount: "seller", ExpectedOwnerRevision: 1})
 			require.NoError(t, err)
+		})
+	}
+}
+
+func TestTiDBRoleLaunchTerminalRequiresOriginalAndProjectionTogether(t *testing.T) {
+	for _, test := range []struct {
+		name string
+		rows map[string]proto.Message
+	}{
+		{"team-original-active", map[string]proto.Message{
+			"team_launch":      &teampb.TeamLaunchRecord{ActorId: 11, RequestHigh: 51, State: 1},
+			"team_launch_role": &teampb.TeamLaunchRoleRecord{PlayerId: 11, ActorId: 11, RequestHigh: 51, State: 5},
+		}},
+		{"team-projection-active", map[string]proto.Message{
+			"team_launch":      &teampb.TeamLaunchRecord{ActorId: 11, RequestHigh: 51, State: 5},
+			"team_launch_role": &teampb.TeamLaunchRoleRecord{PlayerId: 11, ActorId: 11, RequestHigh: 51, State: 1},
+		}},
+		{"trial-original-active", map[string]proto.Message{
+			"guild_trial_launch":      &guildpb.GuildTrialLaunchRecord{RequestId: 51, State: 1},
+			"guild_trial_launch_role": &guildpb.GuildTrialLaunchRoleRecord{PlayerId: 11, RequestId: 51, State: 2},
+		}},
+		{"trial-projection-active", map[string]proto.Message{
+			"guild_trial_launch":      &guildpb.GuildTrialLaunchRecord{RequestId: 51, State: 3},
+			"guild_trial_launch_role": &guildpb.GuildTrialLaunchRoleRecord{PlayerId: 11, RequestId: 51, State: 1},
+		}},
+		{"private-lobby-awaiting-consent", map[string]proto.Message{
+			"guild_trial_lobby":      &guildpb.GuildTrialLobbyRecord{LobbyId: 51, State: 1},
+			"guild_trial_lobby_slot": &guildpb.GuildTrialLobbySlotRecord{PlayerId: 11, LobbyId: 51},
+		}},
+		{"private-lobby-launching", map[string]proto.Message{
+			"guild_trial_lobby":      &guildpb.GuildTrialLobbyRecord{LobbyId: 51, State: 2},
+			"guild_trial_lobby_slot": &guildpb.GuildTrialLobbySlotRecord{PlayerId: 11, LobbyId: 51},
+		}},
+		{"private-lobby-unknown", map[string]proto.Message{
+			"guild_trial_lobby":      &guildpb.GuildTrialLobbyRecord{LobbyId: 51, State: 99},
+			"guild_trial_lobby_slot": &guildpb.GuildTrialLobbySlotRecord{PlayerId: 11, LobbyId: 51},
+		}},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			d, s, db := crossRoleGuardStore(t)
+			ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+			defer cancel()
+			role := &base.AccountSimplePlayer{PlayerId: 11}
+			_, err := d.Create(ctx, "seller", role)
+			require.NoError(t, err)
+			for table, row := range test.rows {
+				insertRoleGuardFixture(t, db, table, row)
+			}
+			_, err = s.Begin(ctx, &dspb.BeginAccountRoleTradeRequest{ListingId: 88, PlayerId: 11, SellerAccount: "seller", ExpectedOwnerRevision: 1})
+			require.ErrorIs(t, err, accountdirectory.ErrConflict)
+			require.ErrorIs(t, d.Remove(ctx, "seller", []*dspb.AccountRoleVersion{{PlayerId: 11, OwnerRevision: 1}}), accountdirectory.ErrConflict)
+			_, err = d.ImportRole(ctx, "seller", role, false, roleImportTestID(58))
+			require.ErrorIs(t, err, accountdirectory.ErrConflict)
+			owned, err := d.Lookup(ctx, 11)
+			require.NoError(t, err)
+			require.EqualValues(t, 1, owned.OwnerRevision)
+			require.Zero(t, owned.TradeListingId)
 		})
 	}
 }

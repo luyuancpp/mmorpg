@@ -140,6 +140,12 @@ func main() {
 	if entry == entryMigrate {
 		os.Exit(runMigration(c))
 	}
+	var globalErr error
+	c, globalErr = c.ResolveGlobalAuthority(os.Getenv)
+	if globalErr != nil {
+		fmt.Fprintf(os.Stderr, "data_service全球SQL装配拒绝: %v\n", globalErr)
+		os.Exit(1)
+	}
 
 	// RouteStore 段(映射提交点,docs/design/player-route-mapping-durability-proposal.md §4、§11.2):
 	// 任何一项非法都拒启,与 Mode 无关;拒绝而不纠正,理由同 PlayerNameConfig.Validate(Mode 拼错被悄悄当成

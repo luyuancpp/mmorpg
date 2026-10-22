@@ -102,6 +102,9 @@ type ServiceContext struct {
 }
 
 func NewServiceContext() *ServiceContext {
+	if err := config.AppConfig.ValidateGlobalAuthority(os.Getenv); err != nil {
+		panic(fmt.Errorf("全球Login配置拒绝启动: %w", err))
+	}
 	ctx := context.Background()
 
 	table.LoadTables(config.AppConfig.TableDir, false)

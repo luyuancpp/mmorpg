@@ -61,8 +61,8 @@ KafkaWriteTimeoutSeconds: 5
 # 压测正确性验证 / 双 zone 传送验收 / cross-zone-failure-test-runbook 必须改回 false。
 AllowUnsafeCrossNodeHandoff: true
 
-# LeaveScene 删 location 之前等「持有者已释放」证据的上限(秒,docs/design/location-release-binding.md §3.6)。
-# 拿不到证据时保留 location、回可重试错误并请持有节点释放;等满上限才按旧行为删除(计 forced)。
+# LeaveScene等待诊断预算(秒)。UNKNOWN即使等满仍保留原location，绝不以超时替代释放证明。
+# 负数/旧开发开关不能降低删除门槛，见docs/design/location-release-binding.md §15。
 # 0 = 默认 600;-1 = 关闭整项检查(运维回滚开关:关 scene 的 SCENE_EXIT_RELEASE_MARK 之前先设 -1)。
 # 上面的 AllowUnsafeCrossNodeHandoff=true 时这项检查同样不生效(换手门本身已被旁路)。
 # -1 同时关掉 EnterScene「登录撞上未释放的持有者时请持有节点释放」(同一份释放协议,设计 §12)。

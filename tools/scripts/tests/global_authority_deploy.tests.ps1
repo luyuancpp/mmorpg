@@ -7,7 +7,7 @@ $taskTokens = $null
 $taskErrors = $null
 $taskAst = [Management.Automation.Language.Parser]::ParseFile((Join-Path $PSScriptRoot '../k8s_deploy.ps1'),[ref]$taskTokens,[ref]$taskErrors)
 if ($taskErrors.Count) { throw '部署脚本解析失败' }
-foreach ($taskName in @('Get-GlobalAuthoritySqlSettings','Get-FriendSqlSettings')) {
+foreach ($taskName in @('Get-GlobalAuthoritySqlSettings','Get-FriendSqlSettings','Get-RoleProofStorageIds')) {
     $taskDefinition = $taskAst.Find({ param($node) $node -is [Management.Automation.Language.FunctionDefinitionAst] -and $node.Name -eq $taskName },$true)
     if ($null -eq $taskDefinition) { throw "缺少部署权威函数: $taskName" }
     Set-Item -Path "Function:script:$taskName" -Value $taskDefinition.Body.GetScriptBlock()
@@ -54,6 +54,25 @@ Test-Case '本机证明跨进程复用，match只取得scene验签能力' {
         $allowed = [IO.Path]::GetFullPath([IO.Path]::GetTempPath()).TrimEnd('\','/')+[IO.Path]::DirectorySeparatorChar
         if (-not $resolved.StartsWith($allowed,[StringComparison]::OrdinalIgnoreCase) -or (Split-Path -Leaf $resolved) -notlike 'mmorpg-authority-secret-tests-*') { throw '临时证明目录超出范围' }
         if (Test-Path -LiteralPath $resolved) { Remove-Item -LiteralPath $resolved -Recurse -Force }
+    }
+}
+Test-Case 'scene-manager只继承独立Lookup密钥，不继承目录写与角色准入能力' {
+    $saved = Backup-AccountDirectoryDevSecrets -Service 'scene-manager'
+    try {
+        [Environment]::SetEnvironmentVariable('MMORPG_ACCOUNT_DIRECTORY_SECRET_SCENE_MANAGER',('r'*32),'Process')
+        foreach ($caller in @('LOGIN','TRADE','SCENE')) { [Environment]::SetEnvironmentVariable("MMORPG_ACCOUNT_DIRECTORY_SECRET_$caller",('x'*32),'Process') }
+        Initialize-AccountDirectoryDevSecrets -RepoRoot ([IO.Path]::GetTempPath()) -Service 'scene-manager'
+        Assert-Equal -Expected 'MMORPG_ACCOUNT_DIRECTORY_SECRET_SCENE_MANAGER' -Actual ((Get-AccountDirectoryDevSecretNames -Service 'scene-manager') -join ',') -Because 'SM只取得Lookup独立能力'
+        foreach ($caller in @('LOGIN','TRADE','SCENE')) {
+            Assert-True -Condition ([string]::IsNullOrEmpty([Environment]::GetEnvironmentVariable("MMORPG_ACCOUNT_DIRECTORY_SECRET_$caller",'Process'))) -Because 'SM子进程不得继承其它caller密钥'
+        }
+    } finally { Restore-AccountDirectoryDevSecrets $saved }
+}
+Test-Case 'SQL角色证明从独立正规玩家库清单反解，拒绝畸形/重复/超界' {
+    Assert-Equal -Expected '101,102,1000000' -Actual ((Get-RoleProofStorageIds -DatabaseNames 'zone_102_db,player_store_1000000_db,zone_101_db') -join ',') -Because '反解正规storage并按unsigned排序'
+    foreach ($value in @('', 'zone_0_db', 'zone_01_db', 'mmorpg_global', 'player_store_999999_db', 'player_store_4294967296_db', 'zone_1_db,zone_1_db', (('zone_1_db,'*1024)+'zone_2_db'))) {
+        $denied=$false;try{$null=Get-RoleProofStorageIds -DatabaseNames $value}catch{$denied=$true}
+        Assert-True -Condition $denied -Because '不能从畸形/重复/超过1024的玩家存储清单授权跨schema强读'
     }
 }
 exit (Complete-TestRun -SuiteName '全球SQL与本机证明注入')

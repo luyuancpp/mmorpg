@@ -56,7 +56,7 @@ constexpr std::string_view kMethod = "/data_service.DataService/";
 constexpr const char* kSecretEnv = "MMORPG_ACCOUNT_DIRECTORY_SECRET_SCENE";
 thread_local auto state = std::make_shared<RoleAdmissionState>();
 Clock::time_point Now() { return state->dependencies.now ? state->dependencies.now() : Clock::now(); }
-RoleAdmissionSystem::LocalNode LocalNode() {
+RoleAdmissionSystem::LocalNode ReadLocalNode() {
     if (state->dependencies.localNode) return state->dependencies.localNode();
     return {GetNodeInfo().node_uuid(), std::to_string(GetNodeInfo().node_id()), GetZoneId()};
 }
@@ -290,7 +290,7 @@ void RoleAdmissionSystem::RequestEnter(Guid playerId, PlayerEnterContext context
     const auto entity = tlsEcs.GetPlayer(playerId);
     const auto allowedScene = entity == entt::null ? PlayerSceneSystem::CheckEnterScene(playerId, scene)
         : PlayerSceneSystem::CheckEnterScene(entity, scene);
-    const auto local = LocalNode();
+    const auto local = ReadLocalNode();
     if (playerId == 0 || context.ownerRevision == 0 || context.ownerEpoch == 0 || context.loginGeneration == 0 || session == 0
         || allowedScene != kSuccess || local.instanceId.empty() || state->nextGeneration == UINT64_MAX
         || !enter_fence::Admits(PlayerLifecycleSystem::JudgeEnter(playerId, session, context.loginGeneration))) {
@@ -338,7 +338,7 @@ std::optional<common::base::RoleAdmissionIdentity> RoleAdmissionSystem::Confirme
     return identity;
 }
 bool RoleAdmissionSystem::Seal(const common::base::RoleTradeSeal& seal) {
-    const auto local = LocalNode();
+    const auto local = ReadLocalNode();
     if (seal.player_id() == 0 || seal.listing_id() == 0 || seal.owner_revision() == 0 || seal.through_generation() == 0
         || seal.scene_instance_id() != local.instanceId || seal.scene_node_id() != local.nodeId
         || seal.zone_id() != local.zoneId) return false;

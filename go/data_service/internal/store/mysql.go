@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"shared/authoritysql"
 	"strconv"
 	"time"
 
@@ -14,6 +15,7 @@ import (
 // snapshot / transaction_log / id_segment 三个 store 都落在同一个全局库
 // (config.SnapshotMySQL),这里是它们共用的连接参数。
 type MySQLConfig struct {
+	RequireTiDB bool
 	Host        string
 	User        string
 	Password    string
@@ -63,7 +65,13 @@ func openMySQL(cfg MySQLConfig) (*sql.DB, error) {
 // openMySQLWithDSN 同 openMySQL,只是 DSN 由调用方给(RouteStore 要在 buildDSN 之上加会话变量,见 buildRouteDSN)。
 // 池上限仍取 cfg;dsn 含口令,出错时的错误信息里不带它。
 func openMySQLWithDSN(cfg MySQLConfig, dsn string) (*sql.DB, error) {
-	db, err := sql.Open("mysql", dsn)
+	ctx, cancel := context.WithTimeout(context.Background(), mysqlPingTimeout)
+	defer cancel()
+	maxOpen := cfg.MaxOpenConn
+	if maxOpen <= 0 {
+		maxOpen = 5
+	}
+	db, err := authoritysql.Open(ctx, dsn, cfg.DBName, cfg.RequireTiDB, maxOpen)
 	if err != nil {
 		return nil, fmt.Errorf("open mysql: %w", err)
 	}
@@ -79,8 +87,6 @@ func openMySQLWithDSN(cfg MySQLConfig, dsn string) (*sql.DB, error) {
 		db.SetMaxIdleConns(2)
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), mysqlPingTimeout)
-	defer cancel()
 	if err := db.PingContext(ctx); err != nil {
 		db.Close()
 		return nil, fmt.Errorf("ping mysql: %w", err)

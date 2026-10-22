@@ -1,6 +1,6 @@
 // chat 服务 v1:全服世界频道 + 私聊,客户端经 gate → 路由服到达(契约 zone_contract_v1 §3/§9)。
 //
-// 全局一份、多副本、无状态:所有状态在 ChatRedis;注册按 C++ NodeInfo 约定写进 etcd
+// 全局一份、多副本、无状态:发送原件与历史在同域TiDB；注册按 C++ NodeInfo 约定写进 etcd
 // (shared/noderegistry),路由服按 ChatNodeService.rpc 前缀发现本服务。
 package main
 
@@ -46,6 +46,7 @@ import (
 var configFile = flag.String("f", "etc/chat.yaml", "the config file")
 
 var showVersion = flag.Bool("version", false, "打印版本信息并退出")
+var migrate = flag.Bool("migrate", false, "仅迁移聊天SQL原件表，不启动RPC或缓存")
 
 // nodeType 本服务的节点类型。ChatNodeService=9 早已在 node.proto 里,proto 不改(契约 §9)。
 const nodeType = base.ENodeType_ChatNodeService
@@ -72,6 +73,20 @@ func main() {
 	// validate(v)),不合法即 log.Fatalf("error: config file <path>, <Validate 的错误>") 退出。
 	// 所以这里不再显式调 c.Validate():那一段永远走不到,留着只会让人以为错误前缀是它打的。
 	conf.MustLoad(*configFile, &c)
+	if *migrate {
+		ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
+		defer cancel()
+		db, _, err := svc.OpenAuthority(ctx, c, true)
+		if err != nil {
+			fmt.Fprintln(os.Stderr, "聊天SQL迁移失败：", err)
+			os.Exit(1)
+		}
+		if err = db.Close(); err != nil {
+			fmt.Fprintln(os.Stderr, "聊天SQL迁移关闭失败")
+			os.Exit(1)
+		}
+		return
+	}
 	if err := runChat(c); err != nil {
 		fmt.Fprintf(os.Stderr, "[chat] %v\n", err)
 		os.Exit(1)
@@ -154,7 +169,7 @@ func runChat(c config.Config) (runErr error) {
 	}
 	// go-zero 自带的 trace / recover / stat / prometheus / breaker / shedding / timeout 拦截器
 	// 在 NewServer 里已先加入,位于下面这条链的外层;"grpcstats 最外"指本服务自己的链内。
-	s.AddUnaryInterceptors(buildUnaryInterceptors(ks)...)
+	s.AddUnaryInterceptors(buildUnaryInterceptors(ks, session.OriginalIdentityInterceptor(svcCtx.LoginSessions))...)
 
 	// 先启动gRPC再注册。保存真实Server用于主动排空,Start错误经通道交回主线程,
 	// 让监听失败、注册失败和收到启动期信号都能清理已创建的资源。
@@ -236,7 +251,13 @@ func runChat(c config.Config) (runErr error) {
 // 返回的切片顺序**就是执行顺序**:go-zero 原样交给 grpc.ChainUnaryInterceptor,第一个是最外层。
 // 抽成函数是为了让链本身可测(chat_test.go)——"哪次重构顺手把 killswitch 那行删了"
 // 是最容易发生、又最难被发现的回归:开关平时没有任何可观测行为。
-func buildUnaryInterceptors(ks *killswitch.Switch) []grpc.UnaryServerInterceptor {
+func buildUnaryInterceptors(ks *killswitch.Switch, original ...grpc.UnaryServerInterceptor) []grpc.UnaryServerInterceptor {
+	identity := func(ctx context.Context, req any, info *grpc.UnaryServerInfo, next grpc.UnaryHandler) (any, error) {
+		if len(original) == 1 && original[0] != nil {
+			return original[0](ctx, req, info, next)
+		}
+		return next(ctx, req) // 独立链顺序夹具；生产显式传入，SQL入口本身仍缺原件即拒绝。
+	}
 	return []grpc.UnaryServerInterceptor{
 		// ① 流量统计最外层:被热关停短路的请求也要被统计到,否则"关停后 QPS 归零"
 		//    会被误读成客户端不再调用了。
@@ -247,7 +268,9 @@ func buildUnaryInterceptors(ks *killswitch.Switch) []grpc.UnaryServerInterceptor
 
 		// ③ 会话解码:x-session-detail-bin → ctx。放在 killswitch 之后,被关停的请求不白解码;
 		//    放在 serverbase 之前,handler 一定能拿到会话。坏头 / 缺头放行,由逻辑层回 kInvalidParameter。
-		session.UnaryServerInterceptor(),
+		func(ctx context.Context, req any, info *grpc.UnaryServerInfo, next grpc.UnaryHandler) (any, error) {
+			return session.UnaryServerInterceptor()(ctx, req, info, func(bound context.Context, body any) (any, error) { return identity(bound, body, info, next) })
+		},
 
 		// ④ in-band 故障定性:handler 一律 `return resp, nil`,gRPC status 恒 OK,
 		//    这层把 TipInfoMessage.id 读出来按 Tip.xlsx 的 fault 列定性计数(kServiceUnavailable = 故障告警,

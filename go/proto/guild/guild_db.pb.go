@@ -1442,6 +1442,345 @@ func (x *GuildTrialLobbyConsent) GetIdentity() *GuildTrialRoleIdentity {
 	return nil
 }
 
+// 私有大厅固定邀请原件。名册为无符号升序授权集合，发起人由独立字段指明。
+type GuildTrialLobbyOriginal struct {
+	state             protoimpl.MessageState    `protogen:"open.v1"`
+	LobbyId           uint64                    `protobuf:"varint,1,opt,name=lobby_id,json=lobbyId,proto3" json:"lobby_id,omitempty"`
+	GuildId           uint64                    `protobuf:"varint,2,opt,name=guild_id,json=guildId,proto3" json:"guild_id,omitempty"`
+	ActivityId        uint32                    `protobuf:"varint,3,opt,name=activity_id,json=activityId,proto3" json:"activity_id,omitempty"`
+	InitiatorPlayerId uint64                    `protobuf:"varint,4,opt,name=initiator_player_id,json=initiatorPlayerId,proto3" json:"initiator_player_id,omitempty"`
+	Roster            []*GuildTrialRoleIdentity `protobuf:"bytes,5,rep,name=roster,proto3" json:"roster,omitempty"`
+	CreatedMs         uint64                    `protobuf:"varint,6,opt,name=created_ms,json=createdMs,proto3" json:"created_ms,omitempty"`
+	ExpiresMs         uint64                    `protobuf:"varint,7,opt,name=expires_ms,json=expiresMs,proto3" json:"expires_ms,omitempty"`
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
+}
+
+func (x *GuildTrialLobbyOriginal) Reset() {
+	*x = GuildTrialLobbyOriginal{}
+	mi := &file_proto_guild_guild_db_proto_msgTypes[11]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GuildTrialLobbyOriginal) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GuildTrialLobbyOriginal) ProtoMessage() {}
+
+func (x *GuildTrialLobbyOriginal) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_guild_guild_db_proto_msgTypes[11]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GuildTrialLobbyOriginal.ProtoReflect.Descriptor instead.
+func (*GuildTrialLobbyOriginal) Descriptor() ([]byte, []int) {
+	return file_proto_guild_guild_db_proto_rawDescGZIP(), []int{11}
+}
+
+func (x *GuildTrialLobbyOriginal) GetLobbyId() uint64 {
+	if x != nil {
+		return x.LobbyId
+	}
+	return 0
+}
+
+func (x *GuildTrialLobbyOriginal) GetGuildId() uint64 {
+	if x != nil {
+		return x.GuildId
+	}
+	return 0
+}
+
+func (x *GuildTrialLobbyOriginal) GetActivityId() uint32 {
+	if x != nil {
+		return x.ActivityId
+	}
+	return 0
+}
+
+func (x *GuildTrialLobbyOriginal) GetInitiatorPlayerId() uint64 {
+	if x != nil {
+		return x.InitiatorPlayerId
+	}
+	return 0
+}
+
+func (x *GuildTrialLobbyOriginal) GetRoster() []*GuildTrialRoleIdentity {
+	if x != nil {
+		return x.Roster
+	}
+	return nil
+}
+
+func (x *GuildTrialLobbyOriginal) GetCreatedMs() uint64 {
+	if x != nil {
+		return x.CreatedMs
+	}
+	return 0
+}
+
+func (x *GuildTrialLobbyOriginal) GetExpiresMs() uint64 {
+	if x != nil {
+		return x.ExpiresMs
+	}
+	return 0
+}
+
+// 同意集合复用唯一正式消息；拒绝另造并行身份或手拼PB字节流。
+type GuildTrialLobbyConsents struct {
+	state         protoimpl.MessageState    `protogen:"open.v1"`
+	Consents      []*GuildTrialLobbyConsent `protobuf:"bytes,1,rep,name=consents,proto3" json:"consents,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GuildTrialLobbyConsents) Reset() {
+	*x = GuildTrialLobbyConsents{}
+	mi := &file_proto_guild_guild_db_proto_msgTypes[12]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GuildTrialLobbyConsents) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GuildTrialLobbyConsents) ProtoMessage() {}
+
+func (x *GuildTrialLobbyConsents) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_guild_guild_db_proto_msgTypes[12]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GuildTrialLobbyConsents.ProtoReflect.Descriptor instead.
+func (*GuildTrialLobbyConsents) Descriptor() ([]byte, []int) {
+	return file_proto_guild_guild_db_proto_rawDescGZIP(), []int{12}
+}
+
+func (x *GuildTrialLobbyConsents) GetConsents() []*GuildTrialLobbyConsent {
+	if x != nil {
+		return x.Consents
+	}
+	return nil
+}
+
+// 大厅与原玩家占位同角色P/G锁事务提交，Redis只保留展示/通知缓存。
+type GuildTrialLobbyRecord struct {
+	state             protoimpl.MessageState `protogen:"open.v1"`
+	LobbyId           uint64                 `protobuf:"varint,1,opt,name=lobby_id,json=lobbyId,proto3" json:"lobby_id,omitempty"`
+	GuildId           uint64                 `protobuf:"varint,2,opt,name=guild_id,json=guildId,proto3" json:"guild_id,omitempty"`
+	ActivityId        uint32                 `protobuf:"varint,3,opt,name=activity_id,json=activityId,proto3" json:"activity_id,omitempty"`
+	InitiatorPlayerId uint64                 `protobuf:"varint,4,opt,name=initiator_player_id,json=initiatorPlayerId,proto3" json:"initiator_player_id,omitempty"`
+	State             uint32                 `protobuf:"varint,5,opt,name=state,proto3" json:"state,omitempty"`                                     // 1=PENDING，2=LAUNCHING，3=LAUNCHED，4=ENDED
+	ViewProto         []byte                 `protobuf:"bytes,6,opt,name=view_proto,json=viewProto,proto3" json:"view_proto,omitempty"`             // GuildTrialLobbyView，展示投影不含账号
+	OriginalProto     []byte                 `protobuf:"bytes,7,opt,name=original_proto,json=originalProto,proto3" json:"original_proto,omitempty"` // GuildTrialLobbyOriginal确定性原字节
+	ConsentProto      []byte                 `protobuf:"bytes,8,opt,name=consent_proto,json=consentProto,proto3" json:"consent_proto,omitempty"`    // GuildTrialLobbyConsents，逐人原同意
+	ExpiresMs         uint64                 `protobuf:"varint,9,opt,name=expires_ms,json=expiresMs,proto3" json:"expires_ms,omitempty"`
+	LaunchDeadlineMs  uint64                 `protobuf:"varint,10,opt,name=launch_deadline_ms,json=launchDeadlineMs,proto3" json:"launch_deadline_ms,omitempty"`
+	BattleId          uint64                 `protobuf:"varint,11,opt,name=battle_id,json=battleId,proto3" json:"battle_id,omitempty"`
+	CreatedMs         uint64                 `protobuf:"varint,12,opt,name=created_ms,json=createdMs,proto3" json:"created_ms,omitempty"`
+	UpdatedMs         uint64                 `protobuf:"varint,13,opt,name=updated_ms,json=updatedMs,proto3" json:"updated_ms,omitempty"`
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
+}
+
+func (x *GuildTrialLobbyRecord) Reset() {
+	*x = GuildTrialLobbyRecord{}
+	mi := &file_proto_guild_guild_db_proto_msgTypes[13]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GuildTrialLobbyRecord) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GuildTrialLobbyRecord) ProtoMessage() {}
+
+func (x *GuildTrialLobbyRecord) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_guild_guild_db_proto_msgTypes[13]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GuildTrialLobbyRecord.ProtoReflect.Descriptor instead.
+func (*GuildTrialLobbyRecord) Descriptor() ([]byte, []int) {
+	return file_proto_guild_guild_db_proto_rawDescGZIP(), []int{13}
+}
+
+func (x *GuildTrialLobbyRecord) GetLobbyId() uint64 {
+	if x != nil {
+		return x.LobbyId
+	}
+	return 0
+}
+
+func (x *GuildTrialLobbyRecord) GetGuildId() uint64 {
+	if x != nil {
+		return x.GuildId
+	}
+	return 0
+}
+
+func (x *GuildTrialLobbyRecord) GetActivityId() uint32 {
+	if x != nil {
+		return x.ActivityId
+	}
+	return 0
+}
+
+func (x *GuildTrialLobbyRecord) GetInitiatorPlayerId() uint64 {
+	if x != nil {
+		return x.InitiatorPlayerId
+	}
+	return 0
+}
+
+func (x *GuildTrialLobbyRecord) GetState() uint32 {
+	if x != nil {
+		return x.State
+	}
+	return 0
+}
+
+func (x *GuildTrialLobbyRecord) GetViewProto() []byte {
+	if x != nil {
+		return x.ViewProto
+	}
+	return nil
+}
+
+func (x *GuildTrialLobbyRecord) GetOriginalProto() []byte {
+	if x != nil {
+		return x.OriginalProto
+	}
+	return nil
+}
+
+func (x *GuildTrialLobbyRecord) GetConsentProto() []byte {
+	if x != nil {
+		return x.ConsentProto
+	}
+	return nil
+}
+
+func (x *GuildTrialLobbyRecord) GetExpiresMs() uint64 {
+	if x != nil {
+		return x.ExpiresMs
+	}
+	return 0
+}
+
+func (x *GuildTrialLobbyRecord) GetLaunchDeadlineMs() uint64 {
+	if x != nil {
+		return x.LaunchDeadlineMs
+	}
+	return 0
+}
+
+func (x *GuildTrialLobbyRecord) GetBattleId() uint64 {
+	if x != nil {
+		return x.BattleId
+	}
+	return 0
+}
+
+func (x *GuildTrialLobbyRecord) GetCreatedMs() uint64 {
+	if x != nil {
+		return x.CreatedMs
+	}
+	return 0
+}
+
+func (x *GuildTrialLobbyRecord) GetUpdatedMs() uint64 {
+	if x != nil {
+		return x.UpdatedMs
+	}
+	return 0
+}
+
+type GuildTrialLobbySlotRecord struct {
+	state           protoimpl.MessageState `protogen:"open.v1"`
+	PlayerId        uint64                 `protobuf:"varint,1,opt,name=player_id,json=playerId,proto3" json:"player_id,omitempty"`
+	LobbyId         uint64                 `protobuf:"varint,2,opt,name=lobby_id,json=lobbyId,proto3" json:"lobby_id,omitempty"`                           // 0为已结清占位墓碑；非0须核真实大厅精确终态
+	CooldownUntilMs uint64                 `protobuf:"varint,3,opt,name=cooldown_until_ms,json=cooldownUntilMs,proto3" json:"cooldown_until_ms,omitempty"` // 业务冷却，不充当未知开局已结束的证据
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
+}
+
+func (x *GuildTrialLobbySlotRecord) Reset() {
+	*x = GuildTrialLobbySlotRecord{}
+	mi := &file_proto_guild_guild_db_proto_msgTypes[14]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GuildTrialLobbySlotRecord) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GuildTrialLobbySlotRecord) ProtoMessage() {}
+
+func (x *GuildTrialLobbySlotRecord) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_guild_guild_db_proto_msgTypes[14]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GuildTrialLobbySlotRecord.ProtoReflect.Descriptor instead.
+func (*GuildTrialLobbySlotRecord) Descriptor() ([]byte, []int) {
+	return file_proto_guild_guild_db_proto_rawDescGZIP(), []int{14}
+}
+
+func (x *GuildTrialLobbySlotRecord) GetPlayerId() uint64 {
+	if x != nil {
+		return x.PlayerId
+	}
+	return 0
+}
+
+func (x *GuildTrialLobbySlotRecord) GetLobbyId() uint64 {
+	if x != nil {
+		return x.LobbyId
+	}
+	return 0
+}
+
+func (x *GuildTrialLobbySlotRecord) GetCooldownUntilMs() uint64 {
+	if x != nil {
+		return x.CooldownUntilMs
+	}
+	return 0
+}
+
 type GuildTrialLaunchOriginal struct {
 	state             protoimpl.MessageState    `protogen:"open.v1"`
 	RequestId         uint64                    `protobuf:"varint,1,opt,name=request_id,json=requestId,proto3" json:"request_id,omitempty"`
@@ -1459,7 +1798,7 @@ type GuildTrialLaunchOriginal struct {
 
 func (x *GuildTrialLaunchOriginal) Reset() {
 	*x = GuildTrialLaunchOriginal{}
-	mi := &file_proto_guild_guild_db_proto_msgTypes[11]
+	mi := &file_proto_guild_guild_db_proto_msgTypes[15]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1471,7 +1810,7 @@ func (x *GuildTrialLaunchOriginal) String() string {
 func (*GuildTrialLaunchOriginal) ProtoMessage() {}
 
 func (x *GuildTrialLaunchOriginal) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_guild_guild_db_proto_msgTypes[11]
+	mi := &file_proto_guild_guild_db_proto_msgTypes[15]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1484,7 +1823,7 @@ func (x *GuildTrialLaunchOriginal) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GuildTrialLaunchOriginal.ProtoReflect.Descriptor instead.
 func (*GuildTrialLaunchOriginal) Descriptor() ([]byte, []int) {
-	return file_proto_guild_guild_db_proto_rawDescGZIP(), []int{11}
+	return file_proto_guild_guild_db_proto_rawDescGZIP(), []int{15}
 }
 
 func (x *GuildTrialLaunchOriginal) GetRequestId() uint64 {
@@ -1567,7 +1906,7 @@ type GuildTrialLaunchRecord struct {
 
 func (x *GuildTrialLaunchRecord) Reset() {
 	*x = GuildTrialLaunchRecord{}
-	mi := &file_proto_guild_guild_db_proto_msgTypes[12]
+	mi := &file_proto_guild_guild_db_proto_msgTypes[16]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1579,7 +1918,7 @@ func (x *GuildTrialLaunchRecord) String() string {
 func (*GuildTrialLaunchRecord) ProtoMessage() {}
 
 func (x *GuildTrialLaunchRecord) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_guild_guild_db_proto_msgTypes[12]
+	mi := &file_proto_guild_guild_db_proto_msgTypes[16]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1592,7 +1931,7 @@ func (x *GuildTrialLaunchRecord) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GuildTrialLaunchRecord.ProtoReflect.Descriptor instead.
 func (*GuildTrialLaunchRecord) Descriptor() ([]byte, []int) {
-	return file_proto_guild_guild_db_proto_rawDescGZIP(), []int{12}
+	return file_proto_guild_guild_db_proto_rawDescGZIP(), []int{16}
 }
 
 func (x *GuildTrialLaunchRecord) GetRequestId() uint64 {
@@ -1665,7 +2004,7 @@ type GuildTrialLaunchRoleRecord struct {
 
 func (x *GuildTrialLaunchRoleRecord) Reset() {
 	*x = GuildTrialLaunchRoleRecord{}
-	mi := &file_proto_guild_guild_db_proto_msgTypes[13]
+	mi := &file_proto_guild_guild_db_proto_msgTypes[17]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1677,7 +2016,7 @@ func (x *GuildTrialLaunchRoleRecord) String() string {
 func (*GuildTrialLaunchRoleRecord) ProtoMessage() {}
 
 func (x *GuildTrialLaunchRoleRecord) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_guild_guild_db_proto_msgTypes[13]
+	mi := &file_proto_guild_guild_db_proto_msgTypes[17]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1690,7 +2029,7 @@ func (x *GuildTrialLaunchRoleRecord) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GuildTrialLaunchRoleRecord.ProtoReflect.Descriptor instead.
 func (*GuildTrialLaunchRoleRecord) Descriptor() ([]byte, []int) {
-	return file_proto_guild_guild_db_proto_rawDescGZIP(), []int{13}
+	return file_proto_guild_guild_db_proto_rawDescGZIP(), []int{17}
 }
 
 func (x *GuildTrialLaunchRoleRecord) GetPlayerId() uint64 {
@@ -1752,7 +2091,7 @@ type GuildTrialRewardOwedRecord struct {
 
 func (x *GuildTrialRewardOwedRecord) Reset() {
 	*x = GuildTrialRewardOwedRecord{}
-	mi := &file_proto_guild_guild_db_proto_msgTypes[14]
+	mi := &file_proto_guild_guild_db_proto_msgTypes[18]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1764,7 +2103,7 @@ func (x *GuildTrialRewardOwedRecord) String() string {
 func (*GuildTrialRewardOwedRecord) ProtoMessage() {}
 
 func (x *GuildTrialRewardOwedRecord) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_guild_guild_db_proto_msgTypes[14]
+	mi := &file_proto_guild_guild_db_proto_msgTypes[18]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1777,7 +2116,7 @@ func (x *GuildTrialRewardOwedRecord) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GuildTrialRewardOwedRecord.ProtoReflect.Descriptor instead.
 func (*GuildTrialRewardOwedRecord) Descriptor() ([]byte, []int) {
-	return file_proto_guild_guild_db_proto_rawDescGZIP(), []int{14}
+	return file_proto_guild_guild_db_proto_rawDescGZIP(), []int{18}
 }
 
 func (x *GuildTrialRewardOwedRecord) GetPlayerId() uint64 {
@@ -1875,7 +2214,7 @@ type GuildClientRequestRecord struct {
 
 func (x *GuildClientRequestRecord) Reset() {
 	*x = GuildClientRequestRecord{}
-	mi := &file_proto_guild_guild_db_proto_msgTypes[15]
+	mi := &file_proto_guild_guild_db_proto_msgTypes[19]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1887,7 +2226,7 @@ func (x *GuildClientRequestRecord) String() string {
 func (*GuildClientRequestRecord) ProtoMessage() {}
 
 func (x *GuildClientRequestRecord) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_guild_guild_db_proto_msgTypes[15]
+	mi := &file_proto_guild_guild_db_proto_msgTypes[19]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1900,7 +2239,7 @@ func (x *GuildClientRequestRecord) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GuildClientRequestRecord.ProtoReflect.Descriptor instead.
 func (*GuildClientRequestRecord) Descriptor() ([]byte, []int) {
-	return file_proto_guild_guild_db_proto_rawDescGZIP(), []int{15}
+	return file_proto_guild_guild_db_proto_rawDescGZIP(), []int{19}
 }
 
 func (x *GuildClientRequestRecord) GetPlayerId() uint64 {
@@ -2061,7 +2400,44 @@ const file_proto_guild_guild_db_proto_rawDesc = "" +
 	"\x0eowner_revision\x18\x03 \x01(\x04R\rownerRevision\"p\n" +
 	"\x16GuildTrialLobbyConsent\x12\x19\n" +
 	"\blobby_id\x18\x01 \x01(\x04R\alobbyId\x12;\n" +
-	"\bidentity\x18\x02 \x01(\v2\x1f.guildpb.GuildTrialRoleIdentityR\bidentity\"\xe5\x02\n" +
+	"\bidentity\x18\x02 \x01(\v2\x1f.guildpb.GuildTrialRoleIdentityR\bidentity\"\x97\x02\n" +
+	"\x17GuildTrialLobbyOriginal\x12\x19\n" +
+	"\blobby_id\x18\x01 \x01(\x04R\alobbyId\x12\x19\n" +
+	"\bguild_id\x18\x02 \x01(\x04R\aguildId\x12\x1f\n" +
+	"\vactivity_id\x18\x03 \x01(\rR\n" +
+	"activityId\x12.\n" +
+	"\x13initiator_player_id\x18\x04 \x01(\x04R\x11initiatorPlayerId\x127\n" +
+	"\x06roster\x18\x05 \x03(\v2\x1f.guildpb.GuildTrialRoleIdentityR\x06roster\x12\x1d\n" +
+	"\n" +
+	"created_ms\x18\x06 \x01(\x04R\tcreatedMs\x12\x1d\n" +
+	"\n" +
+	"expires_ms\x18\a \x01(\x04R\texpiresMs\"V\n" +
+	"\x17GuildTrialLobbyConsents\x12;\n" +
+	"\bconsents\x18\x01 \x03(\v2\x1f.guildpb.GuildTrialLobbyConsentR\bconsents\"\xc0\x04\n" +
+	"\x15GuildTrialLobbyRecord\x12\x19\n" +
+	"\blobby_id\x18\x01 \x01(\x04R\alobbyId\x12\x19\n" +
+	"\bguild_id\x18\x02 \x01(\x04R\aguildId\x12\x1f\n" +
+	"\vactivity_id\x18\x03 \x01(\rR\n" +
+	"activityId\x12.\n" +
+	"\x13initiator_player_id\x18\x04 \x01(\x04R\x11initiatorPlayerId\x12\x14\n" +
+	"\x05state\x18\x05 \x01(\rR\x05state\x12\x1d\n" +
+	"\n" +
+	"view_proto\x18\x06 \x01(\fR\tviewProto\x12%\n" +
+	"\x0eoriginal_proto\x18\a \x01(\fR\roriginalProto\x12#\n" +
+	"\rconsent_proto\x18\b \x01(\fR\fconsentProto\x12\x1d\n" +
+	"\n" +
+	"expires_ms\x18\t \x01(\x04R\texpiresMs\x12,\n" +
+	"\x12launch_deadline_ms\x18\n" +
+	" \x01(\x04R\x10launchDeadlineMs\x12\x1b\n" +
+	"\tbattle_id\x18\v \x01(\x04R\bbattleId\x12\x1d\n" +
+	"\n" +
+	"created_ms\x18\f \x01(\x04R\tcreatedMs\x12\x1d\n" +
+	"\n" +
+	"updated_ms\x18\r \x01(\x04R\tupdatedMs:w\x8a\x92\xf4\x01\x11guild_trial_lobby\x92\x92\xf4\x01\blobby_idڒ\xf4\x01@guild_id,state,lobby_id;state,updated_ms,lobby_id;state,lobby_id\xa8\x93\xf4\x01\x01\xb0\x93\xf4\x01\x04\xb8\x93\xf4\x01\x04\"\xd0\x01\n" +
+	"\x19GuildTrialLobbySlotRecord\x12\x1b\n" +
+	"\tplayer_id\x18\x01 \x01(\x04R\bplayerId\x12\x19\n" +
+	"\blobby_id\x18\x02 \x01(\x04R\alobbyId\x12*\n" +
+	"\x11cooldown_until_ms\x18\x03 \x01(\x04R\x0fcooldownUntilMs:O\x8a\x92\xf4\x01\x16guild_trial_lobby_slot\x92\x92\xf4\x01\tplayer_idڒ\xf4\x01\x12lobby_id,player_id\xa8\x93\xf4\x01\x01\xb0\x93\xf4\x01\x04\xb8\x93\xf4\x01\x04\"\xe5\x02\n" +
 	"\x18GuildTrialLaunchOriginal\x12\x1d\n" +
 	"\n" +
 	"request_id\x18\x01 \x01(\x04R\trequestId\x12\x19\n" +
@@ -2161,7 +2537,7 @@ func file_proto_guild_guild_db_proto_rawDescGZIP() []byte {
 }
 
 var file_proto_guild_guild_db_proto_enumTypes = make([]protoimpl.EnumInfo, 5)
-var file_proto_guild_guild_db_proto_msgTypes = make([]protoimpl.MessageInfo, 16)
+var file_proto_guild_guild_db_proto_msgTypes = make([]protoimpl.MessageInfo, 20)
 var file_proto_guild_guild_db_proto_goTypes = []any{
 	(GuildAssetOpStatus)(0),             // 0: guildpb.GuildAssetOpStatus
 	(GuildAssetOpKind)(0),               // 1: guildpb.GuildAssetOpKind
@@ -2179,11 +2555,15 @@ var file_proto_guild_guild_db_proto_goTypes = []any{
 	(*GuildTrialBattleRecord)(nil),      // 13: guildpb.GuildTrialBattleRecord
 	(*GuildTrialRoleIdentity)(nil),      // 14: guildpb.GuildTrialRoleIdentity
 	(*GuildTrialLobbyConsent)(nil),      // 15: guildpb.GuildTrialLobbyConsent
-	(*GuildTrialLaunchOriginal)(nil),    // 16: guildpb.GuildTrialLaunchOriginal
-	(*GuildTrialLaunchRecord)(nil),      // 17: guildpb.GuildTrialLaunchRecord
-	(*GuildTrialLaunchRoleRecord)(nil),  // 18: guildpb.GuildTrialLaunchRoleRecord
-	(*GuildTrialRewardOwedRecord)(nil),  // 19: guildpb.GuildTrialRewardOwedRecord
-	(*GuildClientRequestRecord)(nil),    // 20: guildpb.GuildClientRequestRecord
+	(*GuildTrialLobbyOriginal)(nil),     // 16: guildpb.GuildTrialLobbyOriginal
+	(*GuildTrialLobbyConsents)(nil),     // 17: guildpb.GuildTrialLobbyConsents
+	(*GuildTrialLobbyRecord)(nil),       // 18: guildpb.GuildTrialLobbyRecord
+	(*GuildTrialLobbySlotRecord)(nil),   // 19: guildpb.GuildTrialLobbySlotRecord
+	(*GuildTrialLaunchOriginal)(nil),    // 20: guildpb.GuildTrialLaunchOriginal
+	(*GuildTrialLaunchRecord)(nil),      // 21: guildpb.GuildTrialLaunchRecord
+	(*GuildTrialLaunchRoleRecord)(nil),  // 22: guildpb.GuildTrialLaunchRoleRecord
+	(*GuildTrialRewardOwedRecord)(nil),  // 23: guildpb.GuildTrialRewardOwedRecord
+	(*GuildClientRequestRecord)(nil),    // 24: guildpb.GuildClientRequestRecord
 }
 var file_proto_guild_guild_db_proto_depIdxs = []int32{
 	1,  // 0: guildpb.GuildAssetOpRecord.kind:type_name -> guildpb.GuildAssetOpKind
@@ -2192,12 +2572,14 @@ var file_proto_guild_guild_db_proto_depIdxs = []int32{
 	3,  // 3: guildpb.GuildTrialBattleRecord.state:type_name -> guildpb.GuildTrialBattleState
 	4,  // 4: guildpb.GuildTrialBattleRecord.settle_result:type_name -> guildpb.GuildTrialSettleResult
 	14, // 5: guildpb.GuildTrialLobbyConsent.identity:type_name -> guildpb.GuildTrialRoleIdentity
-	14, // 6: guildpb.GuildTrialLaunchOriginal.roster:type_name -> guildpb.GuildTrialRoleIdentity
-	7,  // [7:7] is the sub-list for method output_type
-	7,  // [7:7] is the sub-list for method input_type
-	7,  // [7:7] is the sub-list for extension type_name
-	7,  // [7:7] is the sub-list for extension extendee
-	0,  // [0:7] is the sub-list for field type_name
+	14, // 6: guildpb.GuildTrialLobbyOriginal.roster:type_name -> guildpb.GuildTrialRoleIdentity
+	15, // 7: guildpb.GuildTrialLobbyConsents.consents:type_name -> guildpb.GuildTrialLobbyConsent
+	14, // 8: guildpb.GuildTrialLaunchOriginal.roster:type_name -> guildpb.GuildTrialRoleIdentity
+	9,  // [9:9] is the sub-list for method output_type
+	9,  // [9:9] is the sub-list for method input_type
+	9,  // [9:9] is the sub-list for extension type_name
+	9,  // [9:9] is the sub-list for extension extendee
+	0,  // [0:9] is the sub-list for field type_name
 }
 
 func init() { file_proto_guild_guild_db_proto_init() }
@@ -2211,7 +2593,7 @@ func file_proto_guild_guild_db_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_proto_guild_guild_db_proto_rawDesc), len(file_proto_guild_guild_db_proto_rawDesc)),
 			NumEnums:      5,
-			NumMessages:   16,
+			NumMessages:   20,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

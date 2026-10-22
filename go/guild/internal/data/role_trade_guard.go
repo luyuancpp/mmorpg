@@ -10,6 +10,7 @@ import (
 
 	"shared/accountdirectory"
 	"shared/authoritysql"
+	"shared/placement"
 	"shared/roleidentity"
 )
 
@@ -24,6 +25,9 @@ func (r *GuildRepo) ConfigureRoleAuthority(schema string) error {
 	probe, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	if err := authoritysql.AssertCurrentSession(probe, r.db, true); err != nil {
+		return err
+	}
+	if err := placement.CheckRoleRouteContract(probe, r.db, schema); err != nil {
 		return err
 	}
 	r.roleAuthority = schema
@@ -64,12 +68,24 @@ func (r *GuildRepo) lockRolePrefix(ctx context.Context, tx *sql.Tx) error {
 		players = append(players, original.Role.PlayerId)
 	}
 	sort.Slice(players, func(i, j int) bool { return players[i] < players[j] })
+	unique := players[:0]
 	var previous uint64
 	for _, player := range players {
 		if player == 0 || player == previous {
 			continue
 		}
 		previous = player
+		unique = append(unique, player)
+	}
+	if r.roleAuthority != "" && len(unique) != 0 {
+		if err := placement.LockRoleRoutes(ctx, tx, r.roleAuthority, unique); err != nil {
+			if errors.Is(err, placement.ErrRoleRouteFenced) {
+				return ErrZoneMerging
+			}
+			return err
+		}
+	}
+	for _, player := range unique {
 		if err := r.lockRoleForMembership(ctx, tx, player); err != nil {
 			return err
 		}

@@ -5,9 +5,9 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"shared/matchentry"
 	"sort"
 	"strings"
-	"shared/matchentry"
 
 	"google.golang.org/protobuf/proto"
 	pb "proto/match"

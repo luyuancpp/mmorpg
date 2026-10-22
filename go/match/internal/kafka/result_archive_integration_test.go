@@ -5,6 +5,7 @@ import (
 	"context"
 	"crypto/sha256"
 	"database/sql"
+	"net"
 	"os"
 	"strconv"
 	"strings"
@@ -33,7 +34,6 @@ func TestCompletionKafkaTiDBArchiveBeforeOffsetRecovery(t *testing.T) {
 	}
 	brokers := strings.Split(os.Getenv("MATCH_IT_RESULT_KAFKA"), ",")
 	require.Equal(t, []string{"127.0.0.1:19492", "127.0.0.1:19493", "127.0.0.1:19494"}, brokers, "只允许专用本地测试集群")
-	require.Equal(t, "127.0.0.1:4000", os.Getenv("MATCH_IT_TIDB"))
 	ctx, cancel := context.WithTimeout(context.Background(), 90*time.Second)
 	defer cancel()
 	store, dbName := completionIntegrationStore(t, ctx)
@@ -105,7 +105,9 @@ func TestCompletionKafkaTiDBArchiveBeforeOffsetRecovery(t *testing.T) {
 	}
 
 	// 实际已关闭的SQL连接池使三次来源归档失败；评分不得运行，原位点不能提交。
-	unavailable, err := sql.Open("mysql", "root@tcp(127.0.0.1:4000)/"+dbName)
+	unavailableConfig := mysql.NewConfig()
+	unavailableConfig.Net, unavailableConfig.Addr, unavailableConfig.User, unavailableConfig.DBName = "tcp", os.Getenv("MATCH_IT_TIDB"), "root", dbName
+	unavailable, err := sql.Open("mysql", unavailableConfig.FormatDSN())
 	require.NoError(t, err)
 	require.NoError(t, unavailable.Close())
 	failedStore := &authority.Store{DB: unavailable}
@@ -209,8 +211,17 @@ func (r *completionIntegrationReader) CommitMessages(ctx context.Context, messag
 
 func completionIntegrationStore(t *testing.T, ctx context.Context) (*authority.Store, string) {
 	t.Helper()
+	address := os.Getenv("MATCH_IT_TIDB")
+	host, portText, err := net.SplitHostPort(address)
+	require.NoError(t, err)
+	ip := net.ParseIP(host)
+	require.NotNil(t, ip)
+	require.True(t, ip.IsLoopback())
+	port, err := strconv.ParseUint(portText, 10, 16)
+	require.NoError(t, err)
+	require.NotZero(t, port)
 	c := mysql.NewConfig()
-	c.Net, c.Addr, c.User = "tcp", "127.0.0.1:4000", "root"
+	c.Net, c.Addr, c.User = "tcp", address, "root"
 	c.Timeout, c.ReadTimeout, c.WriteTimeout = 3*time.Second, 8*time.Second, 8*time.Second
 	c.Params = map[string]string{"tidb_txn_mode": "'pessimistic'", "transaction_isolation": "'READ-COMMITTED'", "tidb_read_staleness": "0", "tidb_low_resolution_tso": "OFF", "tidb_read_consistency": "'strict'", "tidb_replica_read": "'leader'", "tidb_snapshot": "''"}
 	admin, err := sql.Open("mysql", c.FormatDSN())

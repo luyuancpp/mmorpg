@@ -4,7 +4,6 @@ import (
 	"bytes"
 
 	"google.golang.org/protobuf/proto"
-	"match/internal/constants"
 	"match/internal/metrics"
 	pb "proto/match"
 )

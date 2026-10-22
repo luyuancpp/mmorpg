@@ -107,7 +107,7 @@ func (d *ActivityDeps) trialAvailable() bool {
 	if d == nil || d.Lobby == nil || d.Match == nil || d.Results == nil || d.trials == nil {
 		return false
 	}
-	if store, ok := d.trials.(trialLaunchStore); ok && store.TrialLaunchEnabled() && d.Cancellation == nil {
+	if store, ok := d.trials.(trialLaunchStore); ok && store.TrialLaunchEnabled() && (d.Cancellation == nil || !d.Lobby.SQLAuthorityEnabled()) {
 		return false
 	}
 	return true

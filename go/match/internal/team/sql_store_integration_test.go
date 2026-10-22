@@ -5,7 +5,10 @@ import (
 	"database/sql"
 	"encoding/binary"
 	"fmt"
+	"net"
 	"os"
+	"strconv"
+	"strings"
 	"sync"
 	"testing"
 	"time"
@@ -16,6 +19,7 @@ import (
 	battlepb "proto/battle"
 	base "proto/common/base"
 	dspb "proto/data_service"
+	guildpb "proto/guild"
 	matchpb "proto/match"
 	teampb "proto/team"
 	"schemamigrate"
@@ -42,16 +46,27 @@ func newNativeTeamFixture(t *testing.T) *nativeTeamFixture {
 		if os.Getenv("MATCH_IT_REQUIRE_TIDB") == "1" {
 			t.Fatal("缺MATCH_IT_TIDB，Team原生事务验收不得跳过")
 		}
-		t.Skip("设置MATCH_IT_TIDB=127.0.0.1:4000启用隔离TiDB Team事务回归")
+		t.Skip("显式设置已核任务所有的MATCH_IT_TIDB数值loopback地址启用隔离TiDB Team事务回归")
 	}
-	require.Equal(t, "127.0.0.1:4000", address)
+	host, portText, err := net.SplitHostPort(address)
+	require.NoError(t, err)
+	ip := net.ParseIP(host)
+	require.NotNil(t, ip)
+	require.True(t, ip.IsLoopback())
+	port, err := strconv.ParseUint(portText, 10, 16)
+	require.NoError(t, err)
+	require.NotZero(t, port)
 	connection := mysql.NewConfig()
 	connection.Net = "tcp"
 	connection.Addr = address
 	connection.User = "root"
-	connection.Params = map[string]string{"tidb_txn_mode": "'pessimistic'", "transaction_isolation": "'READ-COMMITTED'", "tidb_read_staleness": "0", "tidb_low_resolution_tso": "OFF", "tidb_replica_read": "'leader'", "tidb_snapshot": "''"}
+	connection.Timeout, connection.ReadTimeout, connection.WriteTimeout = 3*time.Second, 5*time.Second, 5*time.Second
+	connection.Params = map[string]string{"tidb_txn_mode": "'pessimistic'", "transaction_isolation": "'READ-COMMITTED'", "tidb_read_staleness": "0", "tidb_low_resolution_tso": "OFF", "tidb_replica_read": "'leader'", "tidb_read_consistency": "'strict'", "tidb_snapshot": "''"}
 	admin, err := sql.Open("mysql", connection.FormatDSN())
 	require.NoError(t, err)
+	var engine string
+	require.NoError(t, admin.QueryRow("SELECT VERSION()").Scan(&engine))
+	require.Contains(t, strings.ToLower(engine), "tidb")
 	schema := "teamit_" + uuid.NewString()[:8]
 	_, err = admin.Exec("CREATE DATABASE `" + schema + "`")
 	require.NoError(t, err)
@@ -68,7 +83,7 @@ func newNativeTeamFixture(t *testing.T) *nativeTeamFixture {
 	})
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
-	_, err = schemamigrate.Up(ctx, db, schemamigrate.Options{Database: schema, Tables: []proto.Message{&matchpb.MatchAuthorityTicketRecord{}, &matchpb.MatchNetworkProfileRecord{}, &matchpb.MatchTicketRegionRecord{}, &matchpb.MatchJoinIntentRecord{}, &matchpb.MatchDirectIntentRecord{}, &matchpb.MatchFormationRecord{}, &matchpb.MatchSpectatorRecord{}, &matchpb.MatchSpectatorIntentRecord{}, &matchpb.MatchSpectatorHeadRecord{}, &teampb.TeamAuthorityRecord{}, &teampb.TeamMembershipRecord{}, &teampb.TeamInviteIndexRecord{}, &teampb.TeamApplicationIndexRecord{}, &teampb.TeamActionReceiptRecord{}, &teampb.TeamLaunchRecord{}, &teampb.TeamLaunchRegionRecord{}, &teampb.TeamLaunchRoleRecord{}}})
+	_, err = schemamigrate.Up(ctx, db, schemamigrate.Options{Database: schema, Tables: []proto.Message{&matchpb.MatchAuthorityTicketRecord{}, &matchpb.MatchNetworkProfileRecord{}, &matchpb.MatchTicketRegionRecord{}, &matchpb.MatchJoinIntentRecord{}, &matchpb.MatchDirectIntentRecord{}, &matchpb.MatchFormationRecord{}, &matchpb.MatchSpectatorRecord{}, &matchpb.MatchSpectatorIntentRecord{}, &matchpb.MatchSpectatorHeadRecord{}, &teampb.TeamAuthorityRecord{}, &teampb.TeamMembershipRecord{}, &teampb.TeamInviteIndexRecord{}, &teampb.TeamApplicationIndexRecord{}, &teampb.TeamActionReceiptRecord{}, &teampb.TeamLaunchRecord{}, &teampb.TeamLaunchRegionRecord{}, &teampb.TeamLaunchRoleRecord{}, &guildpb.GuildTrialLaunchRecord{}, &guildpb.GuildTrialLaunchRoleRecord{}, &guildpb.GuildTrialLobbyRecord{}, &guildpb.GuildTrialLobbySlotRecord{}}})
 	require.NoError(t, err)
 	for _, statement := range []string{
 		"CREATE TABLE account_role(player_id BIGINT UNSIGNED PRIMARY KEY,account VARBINARY(191) NOT NULL,owner_revision BIGINT UNSIGNED NOT NULL,trade_listing_id BIGINT UNSIGNED NOT NULL DEFAULT 0)",
@@ -88,6 +103,7 @@ func newNativeTeamFixture(t *testing.T) *nativeTeamFixture {
 	}
 	owner := &authority.Store{DB: db, Secret: []byte("fixture-only-network-secret-0000000000"), Config: config.GlobalMatchConf{HardLatencyMs: 180, CrossRegionWaitSeconds: 30}, TeamConfig: config.TeamConf{AllowCrossZone: true}}
 	require.NoError(t, owner.ConfigureRoleAuthority(ctx, schema))
+	require.NoError(t, owner.ConfigureMatchEntryAuthority(ctx, schema))
 	require.NoError(t, owner.CheckTeamRouteContract(ctx))
 	loader := func(_ context.Context, players []uint64) Sessions {
 		out := Sessions{}
@@ -275,6 +291,53 @@ func (f *nativeTeamFixture) queued(t *testing.T, leader, teamID uint64) *teampb.
 	require.NotNil(t, pinned.Commit)
 	require.Equal(t, uint32(2), launch.State)
 	return launch
+}
+
+func TestTeamTiDBFirstFullLaunchAndPendingSoloUseTheSamePCommitFence(t *testing.T) {
+	for _, first := range []string{"solo", "team"} {
+		t.Run(first, func(t *testing.T) {
+			f := newNativeTeamFixture(t)
+			f.create(t, 1, 101)
+			f.inviteAndAccept(t, 1, 2, 101)
+			f.profile(t, 1)
+			f.profile(t, 2)
+			actor := f.actor(t, 2)
+			profile, _, err := f.owner.Profile(actor, 2)
+			require.NoError(t, err)
+			join := &matchpb.JoinQueueRequest{RequestId: uuid.NewString(), Mode: matchpb.MatchMode(3), BattleConfigId: 1, NetworkPlanId: profile.PlanId}
+			offered := &matchpb.MatchAuthorityTicketRecord{PlayerId: 2, Ticket: uuid.NewString(), RequestId: join.RequestId, Mode: 3, ConfigId: 1, TeamSize: 2, ZoneId: 1}
+			if first == "solo" {
+				_, _, pending, err := f.owner.PrepareJoin(actor, offered, join, "native-team")
+				require.NoError(t, err)
+				require.True(t, pending)
+			}
+			snap, _, err := f.store.ReadFree(f.actor(t, 1), 1)
+			require.NoError(t, err)
+			start := &teampb.StartTeamMatchRequest{ExpectedTeamId: 101, BattleConfigId: 1, TargetTeamSize: 2, RequestId: uuid.NewString()}
+			_, launch, err := f.store.sql.createLaunch(f.actor(t, 1), snap, 1, start, uuid.NewString(), []uint64{1, 2}, map[uint64]uint32{1: 1, 2: 1}, 100)
+			if first == "solo" {
+				require.ErrorIs(t, err, authority.ErrMatchEntryOccupied)
+				require.Nil(t, launch)
+				var count int
+				require.NoError(t, f.owner.DB.QueryRow("SELECT COUNT(*) FROM team_launch").Scan(&count))
+				require.Zero(t, count, "失败的首次整队提交不能留下原launch")
+				after, _, readErr := f.store.ReadFree(f.actor(t, 1), 1)
+				require.NoError(t, readErr)
+				require.Equal(t, snap.Version, after.Version)
+				require.True(t, proto.Equal(snap.Record, after.Record))
+				return
+			}
+			require.NoError(t, err)
+			require.Equal(t, uint32(1), launch.State)
+			var count int
+			require.NoError(t, f.owner.DB.QueryRow("SELECT COUNT(*) FROM match_authority_ticket").Scan(&count))
+			require.Zero(t, count, "满队首次原launch与后续Match落票间的真实窗口")
+			_, _, _, err = f.owner.PrepareJoin(actor, offered, join, "native-team")
+			require.ErrorIs(t, err, authority.ErrMatchEntryOccupied)
+			_, err = f.owner.SpectatorIntent(actor, 2, &matchpb.WatchBattleRequest{RequestId: uuid.NewString()})
+			require.ErrorIs(t, err, authority.ErrMatchEntryOccupied)
+		})
+	}
 }
 
 func TestTeamTiDBWholeUnitsCrossWaitUnknownAndRecovery(t *testing.T) {
@@ -551,13 +614,13 @@ func TestTeamTiDBPreparedLaunchCapturesOnlyOriginalSpectatorAndResumesWholeQueue
 	require.Equal(t, watch.RequestId, data.SpectatorExits[0].OperationId)
 	require.Equal(t, uint32(3), data.SpectatorExits[0].State)
 	require.ErrorIs(t, f.owner.EnqueuePreparedTeamLaunch(context.Background(), launch), authority.ErrSpectatorBusy)
-	// 模拟原Remove已获正证明；新Watch即使先登记head，也不能穿过prepared到queued的间隙。
+	// 模拟原Remove已获正证明；新Watch的首次head也不能穿过prepared到queued的间隙。
 	ok, err = f.owner.AdvanceSpectator(context.Background(), data.SpectatorExits[0], 5)
 	require.NoError(t, err)
 	require.True(t, ok)
 	later := &matchpb.WatchBattleRequest{RequestId: uuid.NewString()}
 	_, err = f.owner.SpectatorIntent(f.actor(t, 1), 1, later)
-	require.NoError(t, err)
+	require.ErrorIs(t, err, authority.ErrMatchEntryOccupied)
 	_, err = f.owner.BeginSpectator(f.actor(t, 1), 1, later, room, add)
 	require.ErrorIs(t, err, authority.ErrSpectatorBusy)
 	require.NoError(t, f.owner.EnqueuePreparedTeamLaunch(context.Background(), launch))

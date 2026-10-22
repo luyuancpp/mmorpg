@@ -2,26 +2,32 @@ package config
 
 import (
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/IBM/sarama"
+	"github.com/zeromicro/go-zero/core/service"
 	"github.com/zeromicro/go-zero/zrpc"
 
+	"shared/accountdirectory"
 	"shared/idsegment"
+	"shared/serviceauth"
 )
 
 // Config is the top-level configuration.
 type Config struct {
-	zrpc.RpcServerConf                    // Embedded go-zero RPC config (ListenOn, Etcd, etc.)
-	Node               NodeConfig         `json:"Node"`
-	Snowflake          SnowflakeConf      `json:"Snowflake"`
-	Locker             LockerConf         `json:"Locker"`
-	Account            AccountConf        `json:"Account"`
-	Registry           RegistryConf       `json:"Registry"`
-	Timeouts           TimeoutConf        `json:"Timeouts"`
-	Kafka              KafkaConfig        `json:"Kafka"`
-	PlayerLocatorRpc   zrpc.RpcClientConf `json:"PlayerLocatorRpc"` // player_locator gRPC client
-	SceneManagerRpc    zrpc.RpcClientConf `json:"SceneManagerRpc"`  // scene_manager gRPC client
+	zrpc.RpcServerConf // Embedded go-zero RPC config (ListenOn, Etcd, etc.)
+	// LegacyNonGlobal仅供显式dev/test历史夹具；缺省和普通dev配置仍须满足全球SQL契约。
+	LegacyNonGlobal  bool               `json:"LegacyNonGlobal,optional"`
+	Node             NodeConfig         `json:"Node"`
+	Snowflake        SnowflakeConf      `json:"Snowflake"`
+	Locker           LockerConf         `json:"Locker"`
+	Account          AccountConf        `json:"Account"`
+	Registry         RegistryConf       `json:"Registry"`
+	Timeouts         TimeoutConf        `json:"Timeouts"`
+	Kafka            KafkaConfig        `json:"Kafka"`
+	PlayerLocatorRpc zrpc.RpcClientConf `json:"PlayerLocatorRpc"` // player_locator gRPC client
+	SceneManagerRpc  zrpc.RpcClientConf `json:"SceneManagerRpc"`  // scene_manager gRPC client
 	// DataServiceRpc 是 data_service 的 gRPC 客户端(etcd 发现,Key=dataservice.rpc)。
 	// 全局账号目录、PlayerId号段、home_zone与名字登记共用。保留 optional 便于旧配置
 	// 报明确的域不可用；未配置时账号目录 fail-closed，不使用 Redis 权威替身。
@@ -102,8 +108,7 @@ type Config struct {
 	HomeZone HomeZoneConf `json:"HomeZone,optional"`
 
 	// Placement 控制建角时是否顺手钉「存储落点」(docs/design/player-storage-placement.md §8.3)。
-	// 整块可缺省,缺省 = 不钉;在 go/db 未开 Placement.Required 的前提下与落点设计上线前完全一致
-	// (Required 开着时不钉 = 新号不可用,见 PlacementConf)。
+	// 全球服务必须显式PinOnCreate=true；整块缺省保留零值，启动门禁拒绝而不静默补权。
 	Placement PlacementConf `json:"Placement,optional"`
 
 	// NewPlayerSeed 控制建角时是否写「新号父键种子」,让新号首次 EnterGame 不再冷读数据库
@@ -160,26 +165,10 @@ type GateDrainConf struct {
 
 // PlacementConf 是建角钉落点的开关(docs/design/player-storage-placement.md §8.3 / §13)。
 //
-// **整块零值 = 关闭**,理由同 KillSwitchConf:go-zero 对整块缺失的 optional 结构体不填内层
-// default,所以这里不写任何 default。零值是安全方向**仅在 go/db 的 Placement.Required=false
-// 的前提下成立**:PinOnCreate=false 时 RegisterPlayerZone 带 storage_id=0,data_service
-// 只写 player:zone,不写 player:placement,go/db 对无记录玩家按 home_zone 选库
-// (设计 P-5「缺席即旧语义」)。
-//
-// 打开顺序(§13):data_service / go/db 新版全部就绪、能力标记齐全之后才允许 PinOnCreate=true;
-// go/db 的 Placement.Required=true 必须在 PinOnCreate=true **之后**才能开——否则新建角色
-// 没有落点记录,Required 下它们的每一条存盘都会进死信。
-//
-// 关闭 / 回退顺序与之相反(反向约束):任一 go/db 已开 Required=true 时,
-//   - 禁止把 PinOnCreate 改回 false(它**不是**回滚开关);
-//   - 禁止把 NewPlayerStorageId 改成没有 go/db 能打开的库;
-//   - 禁止把 login 回退到不带 storage_id 的旧版。
-//
-// 违反时建角照常成功、login 侧零报错,但新号只有 player:zone 没有 player:placement:
-// 进游戏时预加载秒级失败(§6.2 读任务 Success=false),存盘全部进死信(missing_required)。
-// 要关这些,先把全部 go/db 的 Required 关掉。
-// 开着 NewPlayerSeed 时新号首次入场不走预加载读,「预加载秒级失败」不会出现,只剩存盘这一半
-// (死信 / 无限重试),更隐蔽(docs/design/new-player-first-enter-no-cold-read.md §9 第 2 条)。
+// go-zero对缺失optional块不填内层default，因此保留字段零值，不猜测调用者是否想降级。
+// 全球启动门禁要求显式PinOnCreate=true；旧关闭形状只供LegacyNonGlobal且Mode=dev/test的历史夹具。
+// 正式顺序是迁移/路由初始化→DS强TiDB/db_first及对账arm→可信ready→DB/Login。
+// 旧Redis目录须先正规import/audit，不能通过关闭PinOnCreate接管空SQL；新号storage0只取正规Node.ZoneId。
 type PlacementConf struct {
 	// PinOnCreate=true:建角时在同一次 RegisterPlayerZone 里原子钉 player:placement = "{storage}:1"。
 	PinOnCreate bool `json:"PinOnCreate,optional"`
@@ -201,6 +190,43 @@ func (c PlacementConf) StorageIDForNewPlayer(loginZone uint32) uint32 {
 		return c.NewPlayerStorageId
 	}
 	return loginZone
+}
+
+// ValidateGlobalAuthority在任何外部连接之前校验全球建角与SQL目录调用前提。
+// Login不另造TiDB开关：真实强SQL/已核ready由DS正式门禁负责，Login必须指向该DS而不能静默降级。
+func (c *Config) ValidateGlobalAuthority(getenv func(string) string) error {
+	if c.LegacyNonGlobal {
+		if c.Mode != service.DevMode && c.Mode != service.TestMode {
+			return fmt.Errorf("LegacyNonGlobal仅允许显式Mode=dev/test的历史非全球夹具")
+		}
+		return nil
+	}
+	if !c.Placement.PinOnCreate {
+		return fmt.Errorf("全球Login必须配置Placement.PinOnCreate=true")
+	}
+	if c.Node.ZoneId == 0 {
+		return fmt.Errorf("全球Login必须配置非零Node.ZoneId，NewPlayerStorageId=0才可取正规本区落点")
+	}
+	rpc := c.DataServiceRpc
+	target := strings.TrimSpace(rpc.Target) != ""
+	for _, endpoint := range rpc.Endpoints {
+		target = target || strings.TrimSpace(endpoint) != ""
+	}
+	if strings.TrimSpace(rpc.Etcd.Key) != "" {
+		for _, host := range rpc.Etcd.Hosts {
+			target = target || strings.TrimSpace(host) != ""
+		}
+	}
+	if !target {
+		return fmt.Errorf("全球Login必须配置DataServiceRpc明确目标，不能回落旧Redis账号或归属目录")
+	}
+	if getenv == nil {
+		return fmt.Errorf("全球Login缺少账号目录密钥环境读取器")
+	}
+	if _, err := serviceauth.New(map[string]string{"login": getenv(accountdirectory.SecretEnv)}); err != nil {
+		return fmt.Errorf("全球Login的%s无效: %w", accountdirectory.SecretEnv, err)
+	}
+	return nil
 }
 
 // NewPlayerSeedConf 是「新号首次入场免冷读」的开关(docs/design/new-player-first-enter-no-cold-read.md)。

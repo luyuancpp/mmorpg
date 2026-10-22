@@ -602,3 +602,13 @@ Go 全球启动在 matcher 和 RPC 准入之前同步核对结果 topic，独立
 `CancelActivityBattle`覆盖完整原Start，独立`MMORPG_MATCH_INTERNAL_SECRET_GUILD`配置在main显式注入。请求以caller=guild、方法`/match.MatchInternal/CancelActivityBattle`签名；回复以caller=match、同方法加`/reply`签名，且`request_digest`绑定清空外层auth后的原Cancel摘要。缺密钥、权威SQL或有效证明拒绝；客户端会话入口也拒绝。Start的未签名formation_state仅供信息，不能授权帮会清角色锁。
 
 Cancel与ReserveDirect在同一direct主键事务锁上二选一提交：Cancel先赢在零battle行写永久cancelled墓碑，迟到Start无论预检是否完成都不得越过；Reserve先赢后Cancel只返回原固定battle_id和真实formation状态，不调用运行时、不把取消请求冒充战斗已经中止。相同请求重放只认原完整正文，不同正文拒绝。Commit未知不签成功回执，重放同一原件消歧。帮会只有验证后的零battle取消墓碑，或formation=5的安全中止收据，才同本地原件事务持久回执并终结ACTIVE参与索引；formation=1..4继续保留或等待真实结果。既有EXPIRED允许迟到结果，因此不能当安全中止。新回归源码区分纯鉴权、真实TiDB墓碑／并发与完整运行链；本批尚未运行编译和这些回归。
+
+### 2026-10-21：常驻账号与显式迁移分离（源码候选，待运行）
+
+旧`authority.Open`每次启动都调用`schemamigrate.Up`；即使所有业务表已迁移，迁移器仍执行`CREATE TABLE IF NOT EXISTS schema_migrations`，因此无DDL权限的合法常驻账号会在接流前失败。正常启动现在仅用同一正式proto清单调用`Plan`：待执行语句、人工项、dirty或读取失败一律拒启，候选索引检查仍保留；不会用启动实例补表、改列或修台账。
+
+建库仍是现有部署前置。之后单独执行`match -f <同库全球配置> -migrate`，只连接配置中的`mmorpg_match`及原TiDB强读池，不构造ServiceContext，不访问etcd、Redis、Kafka，不申请号源、不监听RPC。该CLI必须从`MATCH_MIGRATION_USER`与`MATCH_MIGRATION_PASSWORD`取得非空独立凭据，不回落到常驻账号；`-allow-modify`仅与`-migrate`同时有效，沿迁移器人工审阅语义，不自动授权历史类型漂移。退出码沿用0成功、1失败、3锁忙、4人工项。
+
+K8s沿既有迁移门禁接`match-migrate`：ConfigMap先于Job，全球模式所有档位都等Job成功才部署常驻实例；失败、未知或超时保留Job证据并阻断，重跑不删除在途Job。Job只引用`domain-service-secrets`中的`match-migration-user/password`，不注入探测、榜单或登录密钥，常驻Deployment不引用迁移凭据。显式旧dev兼容关闭SQL时不运行此Job。本机启动器不后台迁移；先以同一配置显式运行上述CLI，再清掉仅用于该子命令的迁移环境变量，最后运行`start-exe`。
+
+接口回归覆盖缺表／人工项／dirty拒启与CLI隔离及退出码；新增真实TiDB有限DML账号用例核对Plan、索引可读，CREATE/ALTER真实权限拒绝，管理员删除表后常驻检查拒启且不补建。该真库用例及当前Match重新构建、单测、vet与Runtime EXE均待Codex实际执行，原598项普通回归仅保留原输入范围，不能作为本次新增启动接缝证据。

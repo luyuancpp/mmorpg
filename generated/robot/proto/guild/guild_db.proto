@@ -316,6 +316,53 @@ message GuildTrialLobbyConsent {
   uint64 lobby_id = 1;
   GuildTrialRoleIdentity identity = 2;
 }
+// 私有大厅固定邀请原件。名册为无符号升序授权集合，发起人由独立字段指明。
+message GuildTrialLobbyOriginal {
+  uint64 lobby_id = 1;
+  uint64 guild_id = 2;
+  uint32 activity_id = 3;
+  uint64 initiator_player_id = 4;
+  repeated GuildTrialRoleIdentity roster = 5;
+  uint64 created_ms = 6;
+  uint64 expires_ms = 7;
+}
+// 同意集合复用唯一正式消息；拒绝另造并行身份或手拼PB字节流。
+message GuildTrialLobbyConsents {
+  repeated GuildTrialLobbyConsent consents = 1;
+}
+// 大厅与原玩家占位同角色P/G锁事务提交，Redis只保留展示/通知缓存。
+message GuildTrialLobbyRecord {
+  option(OptionTableName) = "guild_trial_lobby";
+  option(OptionPrimaryKey) = "lobby_id";
+  option(OptionIndex) = "guild_id,state,lobby_id;state,updated_ms,lobby_id;state,lobby_id";
+  option(OptionTiDBNonclusteredPK) = true;
+  option(OptionTiDBShardRowIDBits) = 4;
+  option(OptionTiDBPreSplitRegions) = 4;
+  uint64 lobby_id = 1;
+  uint64 guild_id = 2;
+  uint32 activity_id = 3;
+  uint64 initiator_player_id = 4;
+  uint32 state = 5;                    // 1=PENDING，2=LAUNCHING，3=LAUNCHED，4=ENDED
+  bytes view_proto = 6;               // GuildTrialLobbyView，展示投影不含账号
+  bytes original_proto = 7;           // GuildTrialLobbyOriginal确定性原字节
+  bytes consent_proto = 8;            // GuildTrialLobbyConsents，逐人原同意
+  uint64 expires_ms = 9;
+  uint64 launch_deadline_ms = 10;
+  uint64 battle_id = 11;
+  uint64 created_ms = 12;
+  uint64 updated_ms = 13;
+}
+message GuildTrialLobbySlotRecord {
+  option(OptionTableName) = "guild_trial_lobby_slot";
+  option(OptionPrimaryKey) = "player_id";
+  option(OptionIndex) = "lobby_id,player_id";
+  option(OptionTiDBNonclusteredPK) = true;
+  option(OptionTiDBShardRowIDBits) = 4;
+  option(OptionTiDBPreSplitRegions) = 4;
+  uint64 player_id = 1;
+  uint64 lobby_id = 2;                 // 0为已结清占位墓碑；非0须核真实大厅精确终态
+  uint64 cooldown_until_ms = 3;        // 业务冷却，不充当未知开局已结束的证据
+}
 message GuildTrialLaunchOriginal {
   uint64 request_id = 1;
   uint64 guild_id = 2;

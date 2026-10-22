@@ -9,6 +9,8 @@ import org.hibernate.boot.registry.StandardServiceRegistry;
 import org.hibernate.boot.registry.StandardServiceRegistryBuilder;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.jdbc.datasource.DriverManagerDataSource;
 import org.springframework.jdbc.datasource.init.ScriptUtils;
@@ -19,6 +21,8 @@ import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.Statement;
+import java.net.InetAddress;
+import java.net.URI;
 import java.util.Locale;
 import java.util.UUID;
 
@@ -44,26 +48,30 @@ class GatewaySchemaContractTest {
     @EnabledIfEnvironmentVariable(named = "GATEWAY_SCHEMA_TIDB_URL", matches = ".+")
     void formalSchemaValidatesOnRealTiDbAndRoundTripsUnsignedZoneRange() throws Exception {
         String endpoint = System.getenv("GATEWAY_SCHEMA_TIDB_URL");
-        assertEquals("jdbc:mysql://127.0.0.1:4000/", endpoint,
-                "只允许本机 TiDB 无库名端点，禁止连接已有业务库");
+        requireOwnedTiDbEndpoint(endpoint);
         String user = System.getenv("GATEWAY_SCHEMA_TIDB_USER");
         String password = System.getenv("GATEWAY_SCHEMA_TIDB_PASSWORD");
         assertNotNull(user, "测试账号必须从环境注入");
         assertNotNull(password, "测试口令必须显式从环境注入，可为空但不猜测");
         String database = "gateway_schema_" + UUID.randomUUID().toString().replace("-", "") + "_test";
         boolean created = false;
-        try (Connection server = DriverManager.getConnection(endpoint, user, password)) {
-            try (Statement statement = server.createStatement(); ResultSet rows = statement.executeQuery("SELECT VERSION()")) {
-                assertTrue(rows.next());
-                assertTrue(rows.getString(1).toLowerCase(Locale.ROOT).contains("tidb"), "必须验证真实 TiDB");
-            }
+        try (Connection server = strongTiDbConnection(DriverManager.getConnection(
+                endpoint + "?connectTimeout=3000&socketTimeout=10000", user, password))) {
             try {
                 try (Statement statement = server.createStatement()) {
                     statement.execute("CREATE DATABASE `" + database + "` CHARACTER SET utf8mb4");
                     created = true;
                 }
                 DriverManagerDataSource dataSource = new DriverManagerDataSource(endpoint + database
-                        + "?useSSL=false&connectTimeout=3000&socketTimeout=10000", user, password);
+                        + "?useSSL=false&connectTimeout=3000&socketTimeout=10000", user, password) {
+                    @Override public Connection getConnection() throws java.sql.SQLException {
+                        return strongTiDbConnection(super.getConnection());
+                    }
+                    @Override public Connection getConnection(String username, String credential)
+                            throws java.sql.SQLException {
+                        return strongTiDbConnection(super.getConnection(username, credential));
+                    }
+                };
                 assertFormalSchema(dataSource);
             } finally {
                 if (created) {
@@ -80,6 +88,74 @@ class GatewaySchemaContractTest {
                     }
                 }
             }
+        }
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"jdbc:mysql://127.0.0.1:24000/", "jdbc:mysql://127.0.0.2:1/",
+            "jdbc:mysql://[::1]:65535/"})
+    void ownedEndpointAcceptsOnlyExplicitNumericLoopback(String endpoint) {
+        requireOwnedTiDbEndpoint(endpoint);
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"jdbc:mysql://localhost:24000/", "jdbc:mysql://192.0.2.1:24000/",
+            "jdbc:mysql://127.0.0.1/", "jdbc:mysql://127.0.0.1:0/", "jdbc:mysql://127.0.0.1:65536/",
+            "jdbc:mysql://127.0.0.1:24000/game", "jdbc:mysql://user:password@127.0.0.1:24000/",
+            "jdbc:mysql://127.0.0.1:24000/?tidb_snapshot=old", "jdbc:mysql://127.0.0.1:24000/#fragment",
+            "jdbc:h2:mem:foreign", "jdbc:mysql://[::2]:24000/"})
+    void ownedEndpointRejectsForeignDatabaseOrImplicitConfiguration(String endpoint) {
+        assertThrows(AssertionError.class, () -> requireOwnedTiDbEndpoint(endpoint));
+    }
+
+    private static void requireOwnedTiDbEndpoint(String endpoint) {
+        try {
+            assertNotNull(endpoint, "必须显式配置本任务已核 TiDB 端点");
+            assertTrue(endpoint.startsWith("jdbc:mysql://"));
+            URI uri = URI.create(endpoint.substring("jdbc:".length()));
+            String host = uri.getHost();
+            assertNotNull(host);
+            host = host.replace("[", "").replace("]", "");
+            assertTrue(host.matches("[0-9a-fA-F:.]+"), "不解析 DNS 或接纳主机别名");
+            assertTrue(InetAddress.getByName(host).isLoopbackAddress(), "只允许数字 loopback");
+            assertTrue(uri.getPort() > 0 && uri.getPort() <= 65535, "必须显式合法非零端口");
+            assertEquals("/", uri.getRawPath(), "禁止指向已有业务库");
+            assertNull(uri.getRawUserInfo(), "凭据只从原环境变量读取");
+            assertNull(uri.getRawQuery(), "禁止用 URL 参数替换强读契约");
+            assertNull(uri.getRawFragment());
+        } catch (Exception invalid) {
+            throw new AssertionError("必须使用已核数字 loopback、合法显式端口与无库名 TiDB 根 URL", invalid);
+        }
+    }
+
+    // 仅测试夹具：DDL 前确认真实 TiDB，并让本例 JPA 的每条连接使用同一强读会话。
+    private static Connection strongTiDbConnection(Connection connection) throws java.sql.SQLException {
+        try (Statement statement = connection.createStatement()) {
+            statement.setQueryTimeout(5);
+            try (ResultSet rows = statement.executeQuery("SELECT TIDB_VERSION()")) {
+                assertTrue(rows.next());
+                assertTrue(rows.getString(1).toLowerCase(Locale.ROOT).contains("tidb"), "必须验证真实 TiDB");
+            }
+            connection.setTransactionIsolation(Connection.TRANSACTION_READ_COMMITTED);
+            statement.execute("SET SESSION tidb_txn_mode='pessimistic',tidb_read_staleness=0,"
+                    + "tidb_low_resolution_tso=OFF,tidb_replica_read='leader',"
+                    + "tidb_read_consistency='strict',tidb_snapshot=''");
+            try (ResultSet rows = statement.executeQuery("SELECT @@transaction_isolation,@@tidb_txn_mode,"
+                    + "@@tidb_read_staleness,@@tidb_low_resolution_tso,@@tidb_replica_read,"
+                    + "@@tidb_read_consistency,@@tidb_snapshot")) {
+                assertTrue(rows.next());
+                assertEquals("READ-COMMITTED", rows.getString(1));
+                assertEquals("pessimistic", rows.getString(2));
+                assertEquals(0, rows.getLong(3));
+                assertEquals(0, rows.getLong(4));
+                assertEquals("leader", rows.getString(5));
+                assertEquals("strict", rows.getString(6));
+                assertEquals("", rows.getString(7));
+            }
+            return connection;
+        } catch (java.sql.SQLException | RuntimeException | Error failure) {
+            try { connection.close(); } catch (java.sql.SQLException close) { failure.addSuppressed(close); }
+            throw failure;
         }
     }
 

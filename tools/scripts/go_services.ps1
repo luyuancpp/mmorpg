@@ -115,6 +115,7 @@ $GoBinDir   = Join-Path $RepoRoot "bin\go_services"
 # 都回 27008(AssetAuthFailed)。密钥值不写进仓库,见该文件的说明;用法见 Start-ServiceInstance。
 . (Join-Path $ScriptDir "lib\assetop_dev_secret.ps1")
 . (Join-Path $ScriptDir "lib\account_directory_dev_secret.ps1")
+. (Join-Path $ScriptDir "lib\release_common.ps1")
 # 邮件 MailAdmin admin 生产者签名密钥(docs/design/mail-system.md §2.3)的本机开发值来源:只注入给 mail,用法见 Start-ServiceInstance。
 # 令牌值不写进仓库,见该文件的说明(run/secrets/mail-admin-producer-dev.env;robot / mailadmin CLI 在自己的 shell 里按同一文件取值)。
 . (Join-Path $ScriptDir "lib\mail_admin_dev_token.ps1")
@@ -136,7 +137,7 @@ $GoBinDir   = Join-Path $RepoRoot "bin\go_services"
 #               upgrades / hot updates / canary releases are unaffected).
 #               Tier 0 = infra-adjacent (db, data_service)
 #               Tier 1 = scene_manager (depended by player_locator), client_rpc_router (gate 的唯一 gRPC 目标),
-#                        chat (只依赖 etcd + Redis,经路由服可达),以及 trade / friend / player_inbox / mail / rank 等全局服务
+#                        chat (TiDB权威、登录Redis只读、etcd发现),以及 trade / friend / player_inbox / mail / rank 等全局服务
 #                        (依赖 Tier 0 的 data_service 号段 / 归属区查询时都是 NonBlock 拨号)
 #               Tier 2 = player_locator (depended by login)
 #               Tier 3 = login (top of the dial chain)
@@ -163,6 +164,10 @@ $ServiceCatalogue = [ordered]@{
     scene_manager   = @{ Dir = "scene_manager";   Entry = "scene_manager_service.go"; Port = 60300; Desc = "Scene Manager (Kafka + Redis)";    ConfigFlag = "-f";            ConfigFile = "etc/scene_manager_service.yaml"; AllowMultiInstance = $true;  Tier = 1 }
     # 回合制战斗匹配/切磋编排(docs/design/turn-based-battle-server.md §5.4)。
     # 50500 位于已观测的 Windows 保留区间(50000-50171)与 51573-51872 之间,安全;与 etc yaml ListenOn 保持一致。
+    # 全球Match首次启动/协议增表须先用独立迁移账号显式运行：
+    # MATCH_MIGRATION_USER / MATCH_MIGRATION_PASSWORD仅注入该前台子命令，执行完清掉环境变量；
+    # bin/go_services/match.exe -f <GlobalMatch.Enabled=true的同库配置> -migrate
+    # 常驻start/start-exe只核只读Plan，不自动DDL；运行账号不需要CREATE/ALTER权限。
     match           = @{ Dir = "match";           Entry = "match_service.go";         Port = 50500; Desc = "Match (turn-battle matchmaking)";  ConfigFlag = "-f";            ConfigFile = "etc/match_service.yaml";         AllowMultiInstance = $true;  Tier = 3 }
     # 客户端 RPC 路由服(docs/design/client-rpc-router.md D29-D34):gate 在 GATE_CLIENT_RPC_ROUTER=1 模式下
     # 唯一的 gRPC 目标,无状态、全局池不分 zone、可多开。Tier 1:gate 一起来就要连到它,与 scene_manager
@@ -170,7 +175,7 @@ $ServiceCatalogue = [ordered]@{
     # 端口 50600 与 match 的 50500 同一安全区间(已观测的 Windows 保留区 50000-50171 与 51573-51872 之间),
     # 与 go/client_rpc_router/etc/client_rpc_router.yaml 的 ListenOn 保持一致。
     client_rpc_router = @{ Dir = "client_rpc_router"; Entry = "client_rpc_router_service.go"; Port = 50600; Desc = "Client RPC Router (gate 唯一 gRPC 目标)"; ConfigFlag = "-f"; ConfigFile = "etc/client_rpc_router.yaml"; AllowMultiInstance = $true; Tier = 1 }
-    # 全局聊天 chat v1:全局一份、可多开、无状态(历史 / 幂等 / 限速全在 ChatRedis),多实例只在路由服与
+    # 全局聊天：多副本共用TiDB原件和原会话P锁，Redis仅核原登录连接，多实例只在路由服与
     # NodeInfo 视角等价;本地双 zone 仍按既有规则每 zone 起一份(-Zone 位移端口与 ZoneId),不另开特例。
     # **前提:gate 必须以路由服模式启动(GATE_CLIENT_RPC_ROUTER=1)**。chat 只承诺经 gate → client_rpc_router
     # 到达;直连模式下 gate 白名单(cpp/nodes/gate/main.cpp)里没有 Chat,任何 zone 的玩家都到不了它 ——
@@ -376,6 +381,38 @@ function Resolve-BindablePort {
     throw "[port] $Label : $Port 起 2000 个端口内没有可用候选。"
 }
 
+function Get-LocalChatAuthoritySettings {
+    param([string]$ConfigPath, [switch]$RequireDsn)
+    $values = @{}
+    foreach ($key in @('DSNEnv', 'RequireTiDB', 'GlobalLoginSessions', 'MaxOpenConns', 'AccountRoleSchema', 'LoginRedis.Host', 'LoginRedis.DB', 'LoginRedis.PasswordEnv', 'LoginRedis.PoolSize')) {
+        $value = Get-YamlScalar -Path $ConfigPath -KeyPath $key
+        if (-not $value.Found) { throw "Chat启动缺少显式权威配置字段 $key" }
+        $values[$key] = $value.Value
+    }
+    if ($values.DSNEnv -cne 'CHAT_AUTHORITY_DSN' -or $values.RequireTiDB -cne 'true' -or $values.GlobalLoginSessions -cne 'true' -or $values['LoginRedis.PasswordEnv'] -cne 'LOGIN_REDIS_PASSWORD') {
+        throw 'Chat必须使用TiDB及原登录态；禁止旧Redis历史/幂等权威回退。'
+    }
+    if ($values.MaxOpenConns -notmatch '^\d+$' -or [int]$values.MaxOpenConns -lt 2 -or [int]$values.MaxOpenConns -gt 128 -or $values['LoginRedis.PoolSize'] -notmatch '^\d+$' -or [int]$values['LoginRedis.PoolSize'] -lt 1 -or [int]$values['LoginRedis.PoolSize'] -gt 128) {
+        throw 'Chat SQL和登录Redis池必须显式有界，不能采用随CPU变化的缺省池。'
+    }
+    $schema = Get-YamlScalar -Path (Join-Path $GoRoot 'data_service/etc/data_service.yaml') -KeyPath 'SnapshotMySQL.DBName'
+    $redisHost = Get-YamlScalar -Path (Join-Path $GoRoot 'login/etc/login.yaml') -KeyPath 'Node.RedisClient.Host'
+    $redisDb = Get-YamlScalar -Path (Join-Path $GoRoot 'login/etc/login.yaml') -KeyPath 'Node.RedisClient.DB'
+    if (-not $schema.Found -or $schema.Value -notmatch '^[a-z][a-z0-9_]{0,63}$' -or -not $redisHost.Found -or $redisHost.Value -notmatch '^(?:[A-Za-z0-9][A-Za-z0-9.-]*|\[[0-9A-Fa-f:]+\]):[0-9]{1,5}$' -or -not $redisDb.Found -or $redisDb.Value -notmatch '^\d+$') {
+        throw '本机Chat必须能读取同data_service全局角色库与同login Redis地址/DB，缺失时不猜测。'
+    }
+    if ($RequireDsn) {
+        $dsn = [Environment]::GetEnvironmentVariable($values.DSNEnv, 'Process')
+        if ([string]::IsNullOrWhiteSpace($dsn) -or $dsn.Contains("`r") -or $dsn.Contains("`n")) {
+            throw 'Chat缺少合法CHAT_AUTHORITY_DSN环境值；请先以迁移账号显式-migrate，再提供无DDL权限的运行账号DSN。值不会写入配置或日志。'
+        }
+        if ($values.AccountRoleSchema -cne $schema.Value -or $values['LoginRedis.Host'] -cne $redisHost.Value -or $values['LoginRedis.DB'] -cne $redisDb.Value) {
+            throw '派生Chat配置与当前全局角色库/login Redis原件不一致，拒绝启动。'
+        }
+    }
+    return @{ Schema = $schema.Value; RedisHost = $redisHost.Value; RedisDb = $redisDb.Value }
+}
+
 function Resolve-InstanceConfig {
     param(
         [string]$Name,
@@ -389,9 +426,11 @@ function Resolve-InstanceConfig {
     $zoneShift = if ($Zone -gt 0) { ($Zone - 1) * $ZonePortShift } else { 0 }
     $port      = Get-InstancePort -Info $Info -Index $Index
     $port      = Resolve-BindablePort $port (Get-InstanceKey -Name $Name -Index $Index -Total $Total) $ReservedPorts
+	$globalTiDBOverride = [string][Environment]::GetEnvironmentVariable('MMORPG_GLOBAL_AUTHORITY_TIDB_HOST','Process')
+	$rewriteGlobalTiDB = $Name -in @('data_service','db') -and -not [string]::IsNullOrWhiteSpace($globalTiDBOverride)
 
     # Legacy fast path: single-zone, single-instance -> original yaml as-is.
-    if ($Total -le 1 -and $Zone -le 0 -and $port -eq [int]$Info.Port) {
+    if ($Name -ne 'chat' -and -not $rewriteGlobalTiDB -and $Total -le 1 -and $Zone -le 0 -and $port -eq [int]$Info.Port) {
         return [pscustomobject]@{
             Path     = $Info.ConfigFile  # relative path; resolved by working dir
             FullPath = $baseYaml
@@ -414,6 +453,27 @@ function Resolve-InstanceConfig {
     # Rewrite top-level ListenOn line. Keep the original host (e.g. 0.0.0.0 vs 127.0.0.1).
     # Use an instance Regex so the count-limited overload is available.
     $content = Get-Content $baseYaml -Raw
+	if ($rewriteGlobalTiDB) {
+		if ($globalTiDBOverride -notmatch '\A(?:[A-Za-z0-9][A-Za-z0-9.-]*|\[[0-9A-Fa-f:]+\]):([0-9]{1,5})\z' -or [int]$Matches[1] -lt 1 -or [int]$Matches[1] -gt 65535) { throw 'MMORPG_GLOBAL_AUTHORITY_TIDB_HOST必须是有效host:port，不接受凭据或配置注入。' }
+		$pattern = if ($Name -eq 'data_service') { '(?m)^(SnapshotMySQL:\r?\n)(?:[ \t]+[^\r\n]*\r?\n)*' } else { '(?m)^  Database:\r?\n(?:[ ]{4}[^\r\n]*\r?\n|[ \t]*\r?\n)*' }
+		$blocks = [regex]::Matches($content,$pattern)
+		if ($blocks.Count -ne 1) { throw '正规全球SQL配置块不唯一，拒绝生成本机派生配置。' }
+		$block = $blocks[0].Value
+		$hostPattern = if ($Name -eq 'data_service') { '(?m)^  Host:.*$' } else { '(?m)^    Hosts:.*$' }
+		if ([regex]::Matches($block,$hostPattern).Count -ne 1) { throw '正规全球SQL地址字段不唯一。' }
+		$newLine = if ($Name -eq 'data_service') { '  Host: "'+$globalTiDBOverride+'"' } else { '    Hosts: "'+$globalTiDBOverride+'"' }
+		$updated = [regex]::Replace($block,$hostPattern,$newLine)
+		$content = $content.Substring(0,$blocks[0].Index)+$updated+$content.Substring($blocks[0].Index+$blocks[0].Length)
+	}
+    if ($Name -eq 'chat') {
+        $chatAuthority = Get-LocalChatAuthoritySettings -ConfigPath $baseYaml
+        $schemaPattern = [regex]::new('(?m)^AccountRoleSchema:\s*[^\r\n]+$')
+        $loginPattern = [regex]::new('(?m)^LoginRedis:\r?\n(?:[ \t]+[^\r\n]*(?:\r?\n|$))+')
+        if ($schemaPattern.Matches($content).Count -ne 1 -or $loginPattern.Matches($content).Count -ne 1) { throw 'Chat权威配置块缺失或重复，拒绝派生。' }
+        $content = $schemaPattern.Replace($content, "AccountRoleSchema: $($chatAuthority.Schema)", 1)
+        $loginBlock = "LoginRedis:`n  Host: $($chatAuthority.RedisHost)`n  PasswordEnv: LOGIN_REDIS_PASSWORD`n  DB: $($chatAuthority.RedisDb)`n  PoolSize: $((Get-YamlScalar -Path $baseYaml -KeyPath 'LoginRedis.PoolSize').Value)`n"
+        $content = $loginPattern.Replace($content, $loginBlock, 1)
+    }
     $regex   = [regex]::new('(?m)^(ListenOn:\s*)([^:\s]+):(\d+)\s*$')
     if (-not $regex.IsMatch($content)) {
         Write-Warning "Did not find a top-level 'ListenOn:' line in $baseYaml; instance #$Index may collide on port $($Info.Port)."
@@ -704,6 +764,7 @@ function Start-ServiceInstance {
         }
     }
     $cfg = Resolve-InstanceConfig -Name $Name -Info $Info -Index $Index -Total $Total -ReservedPorts $ReservedPorts
+    if ($Name -eq 'chat') { $null = Get-LocalChatAuthoritySettings -ConfigPath $cfg.FullPath -RequireDsn }
 
     $logOut  = Join-Path $LogDir "$instanceKey.stdout.log"
     $logErr  = Join-Path $LogDir "$instanceKey.stderr.log"
@@ -727,9 +788,23 @@ function Start-ServiceInstance {
     # 无条件调用会让那些用例报「命令未找到」。
     $injectMailAdminToken = ($Name -eq 'mail')
     $prevMailAdminToken = $null
+    $savedChatDsn = [Environment]::GetEnvironmentVariable('CHAT_AUTHORITY_DSN', 'Process')
+	$savedMatchMigrationUser = [Environment]::GetEnvironmentVariable('MATCH_MIGRATION_USER', 'Process')
+	$savedMatchMigrationPassword = [Environment]::GetEnvironmentVariable('MATCH_MIGRATION_PASSWORD', 'Process')
+	$savedDatabaseAllowlist = [Environment]::GetEnvironmentVariable('DB_ALLOWED_DATABASES','Process')
     try {
+		# 显式迁移CLI的凭据不能被任意常驻服务顺带继承。
+		[Environment]::SetEnvironmentVariable('MATCH_MIGRATION_USER', $null, 'Process')
+		[Environment]::SetEnvironmentVariable('MATCH_MIGRATION_PASSWORD', $null, 'Process')
+		if ($Name -in @('data_service','db') -and [string]::IsNullOrWhiteSpace($savedDatabaseAllowlist)) {
+			$declaredDatabases = [Environment]::GetEnvironmentVariable('MMORPG_DB_ALLOWED_DATABASES','Process')
+			if ([string]::IsNullOrWhiteSpace($declaredDatabases)) { throw '全球DS/DB必须显式提供同一DB_ALLOWED_DATABASES（或MMORPG_DB_ALLOWED_DATABASES），不得从当前Zone推导玩家库白名单。' }
+			[Environment]::SetEnvironmentVariable('DB_ALLOWED_DATABASES',$declaredDatabases,'Process')
+		}
+        # 聊天SQL账号仅交给chat；其它本机服务不得顺带继承此能力。
+        if ($Name -ne 'chat') { [Environment]::SetEnvironmentVariable('CHAT_AUTHORITY_DSN', $null, 'Process') }
         $accountDirectoryService = $Name.Replace('_','-')
-        if ($accountDirectoryService -in @('data-service','login','trade','match')) {
+        if ($accountDirectoryService -in @('data-service','login','trade','match','scene-manager')) {
             $previousAccountDirectorySecrets = Backup-AccountDirectoryDevSecrets -Service $accountDirectoryService
             Initialize-AccountDirectoryDevSecrets -RepoRoot $RepoRoot -Service $accountDirectoryService
         }
@@ -777,6 +852,10 @@ function Start-ServiceInstance {
                 -WindowStyle Hidden
         }
     } finally {
+		[Environment]::SetEnvironmentVariable('MATCH_MIGRATION_USER', $savedMatchMigrationUser, 'Process')
+		[Environment]::SetEnvironmentVariable('MATCH_MIGRATION_PASSWORD', $savedMatchMigrationPassword, 'Process')
+		[Environment]::SetEnvironmentVariable('DB_ALLOWED_DATABASES',$savedDatabaseAllowlist,'Process')
+        [Environment]::SetEnvironmentVariable('CHAT_AUTHORITY_DSN', $savedChatDsn, 'Process')
         # 没注入过就没什么可还原的($prevAssetOpSecrets 仍是 $null);还原同时把摘掉的 trade 那把放回去。
         if ($injectAssetOpSecret) { Restore-AssetOpDevSecrets $prevAssetOpSecrets }
         Restore-AccountDirectoryDevSecrets $previousAccountDirectorySecrets

@@ -14613,6 +14613,13 @@ PROGRESS 一直没有条目)。上面 2026-09-21 条里"第 7–9 步未跑""修
 - 本轮证据统一在 `build/verification/work-cleanup-20261020/`：`final-verification-oct21.json` 保存退出码、实跑数和源码 SHA；`cpp-tests-oct21/` 保存四套原始输出；Java JSON/XML 与完整日志可核。Git 纯祖先吸收 `6c7f507cc6` 的前后 tree 均 `6b48d84ef236fdaf2a957c88ae16ed8787f53b3c`，18 条非 main 本地分支及当前 origin 引用均已纳入 main，未重新带回旧实现。
 - 归档清理证据：`archive-removal-readiness-oct21.json` 列出 10 个精确路径和已合 HEAD；122 个 dirty 原件再次 SHA 复核 0 变化；忽略目录的 822 个非编译二进制文件原字节保全，1107 个剩余文件均为可重建编译二进制/对象缓存，详细 manifest 保留。原目录只由根任务在普通快进 push 完成后统一清理。本任务不自行删除外部目录或分支。
 
+### 2026-10-21：Go Guild 私有历练 SQL 权威与双向准入源码收口
+
+- 沿现有 TrialLobbyRepo 接口完成生产 SQL 大厅、固定全员邀请原owner、正规 Consents wrapper、本人同意与永久 slot；Redis仅巡检租约，生产不再用Lua/TTL作为邀请或开战事实。
+- 首次创建/新同意/首次PREPARED同完整route→unsigned全P→G事务反查真实Match票与Team/Trial占用。MatchAuthoritySchema显式同池只读核列，empty票规则复用shared/matchentry；route前缀复用shared/placement，缺失或维护态拒绝。夹具AST读取DS唯一正式nullable DDL，只在随机自有库显式建原件，实际owned TiDB为127.0.0.1:24000。
+- 已有永久launch的UNKNOWN、EXPIRED、解散均不释放；核签Cancel或完整绑定原件的真实终局才同TX清launch/role/lobby/旧slot。纯无launch的PENDING到期或cancel-before-prepare在同锁写永久4墓碑，不向旧同意补新owner；迟到Prepare拒绝。解散后真实终局只结清原合同，不补G/T或发奖；坏终局不销账，旧终局不清新大厅。
+- 新增10个Trial原生回归入口与配置回归，补旧角色原件真库夹具和两份正式删表清单。覆盖Redis丢失/账号ABA/公开视图/末票幂等/反向占用/取消先于Prepare/解散终局/route维护/相反名册并发。仅执行gofmt与git diff --check，未生成、编译、运行测试、执行DDL或启动控制进程；静态不等于运行通过。主proto与部署键由root统一落，本批JSON清单在build/verification/go-guild-trial-sql-authority-20261021-source-v1/。
+
 ### 2026-10-21 Muduo Windows 接口收口：本仓回归与两仓交付
 
 - 已恢复原版 Condition 的构造锁、无参数等待、小数秒和超时返回值契约，以及 Thread 的启动同步、身份、命名、join 返回值和未 join 析构语义；修正 Atomic 标准库分支的新旧值返回与原子交换。Windows UDP 唤醒集中到内部 WindowsWakeup，现役源码与 third_party 头文件镜像同步，必要的计时、取消、连接失败及生命周期修复保留。
@@ -14631,3 +14638,90 @@ PROGRESS 一直没有条目)。上面 2026-09-21 条里"第 7–9 步未跑""修
 - 四个测试进程退出码均为 0，无超时；逐项核对 XML 的执行状态和产物 SHA。新增 6 条 MuduoBaseContractTest 全部实际运行并完成，没有跳过。6 条 Redis 用例因未设置 `MMORPG_TEST_REDIS_ADDR` 跳过，4 条 Go 路由互通用例缺 `MUDUO_GRPC_INTEROP_ROUTER`、1 条服务端互通用例缺 `MUDUO_GRPC_SERVER_INTEROP_PORT`；两个既有 DISABLED 微基准未运行，不据此声明性能结论。
 - 证据根为 `build/verification/muduo-windows-interface-20261020/`，本次有效目录 `resume-20261021T150654388Z/`；17 份构建收据、4 份测试退出码、XML、日志及 `final-verified-receipts-v2.json` 可复核。构建前后 1735 项源码快照无漂移，本轮 29 项代码/工程哈希始终一致。首版凭据汇总的字典投影产生空统计值，原件保留，v2 改用对象汇总并与 XML 的 615/602/11/2 校验闭合；未重跑构建或测试。
 - 原始红灯、早先完整 game.sln 的 Hiredis 旧库链接失败、缺少 role_admission.pb.h、源码变化停止及 scene 枚举错误均保留原日志，未改写为通过。本次验证范围是上述库及四组回归，未重新验收完整 game.sln、Linux、独立库可选 protobuf 或旧 VS 构建入口，也未运行真实 Redis/Go 联机互通。结果基于本机实际依赖与既有生成 C++ 源码；并发公会协议仅追加数据库索引 option 的改动由原任务负责，本轮不生成、迁移或验证该索引，其他 Go/文档及第三方工作区修改均保留。
+
+### 2026-10-21：全球服务收尾验证增量与最终源门禁
+
+- 本任务v3最小权限进程只读专项20次、自有进程专项32次通过。Go data_service及player_inbox正式构建退出0，Inbox实际261测试通过、0失败/跳过；这些证据早于最后共享route及双向准入补齐，最终构建/回归仍须重跑。
+- Go Match/Inbox源码118路径清单与Go Guild私有大厅SQL权威24路径清单已冻结，主协议最后需求已收口。Inbox共享完整路由前缀，Guild/Team/Match双向永久占用与DS换主守卫保持一致；父原件和角色投影必须同时证明终局，TTL、孤儿、未知态不放行。补齐正式Guild Original/Consents/lobby/slot源与部署MatchAuthoritySchema。
+- 最后主生成在native前因同仓生成器工程去重源码已更新而拒绝，旧构建证明不能复用；保留失败原件，准备重新完整回归并官方build。共享Go测试也先报mod声明不完整，补齐已存在依赖，不自动下载工具或依赖，不把未运行测试当通过。
+- 本任务Docker项目与24000/26379/22379/29092端口归属已核实，未操作其他项目资源。为先完成编译暂时停止本任务Kafka及TiDB/PD/TiKV，未清数据卷；运行验收前恢复。最终跨语言构建、真库和真实双区仍未完成；审核细节追加于docs/handoff/global-economy-review-20261021.md第10节。
+
+### 2026-10-21：最终生成完成与当前源回归进展
+
+- 当前生成器实际275项回归通过、0失败/跳过，随后正规proto-gen-build、最终主生成及客户端两个正式生成脚本均退出0；正式生成proof SHA为`7E983F5D0FA7C05B45D7DB38A2539EA3636B9AAC866A035D9CFF7D18E69139CE`。共享Go实际1182项通过，14项真实外部环境跳过仍须另验。
+- 最终生成后的Inbox实际Build、261项单测及Vet均通过，0失败/跳过；本批828项源码和33054项实际依赖受控。该结果不包含真库集成。Go运行门禁将误用的7 GiB恢复为既定2.75 GiB，启动仍须7 GiB；原中断日志保留。
+- Java正式契约同步及check通过；全新私有仓库的全量构建首轮在game-api两处旧数量断言失败，实际2672通过、2失败、11跳过。只修正QUEUE新增值和owner_revision新增字段的测试，并保留旧契约断言；新源已重捕获，须完整重跑，不宣称30模块通过。
+- 本地部署渲染实际发现并补齐真实GoSvcCatalogue的guild入口，修正后渲染退出0，未触碰集群。C++按实际150库/46工程范围重新审查后已进入串行game.sln及真实StrictNoRaw流程，尚无完成结论；Unity实际Import/测试、两版真库及真实双区仍待验收。详细收据和失败原因见`docs/handoff/global-economy-review-20261021.md`第11、12节。
+
+### 2026-10-21：当前构建红灯修复与数据服务四阶段验证
+
+- 当前Go data_service实际Build、Unit、Vet及运行EXE构建四阶段通过；单测1586通过、0失败、89项真实环境跳过，已逐项映射后续原生专项，不把跳过算真库通过。Match实际编译发现并仅删除未使用导入，修复后GoList实际通过，剩余三个验证阶段及运行EXE待执行。
+- C++完整构建因link.exe退出期间身份查询失败而被保守停止，原结果保留，不能算全量通过。v4进程原句柄监控实际20次只读、32次自有进程及7项延迟退出专项通过；不放宽未知进程或资源门禁。真实Manager观察者失败清理补齐operation，新增两项并接入原有42项battle契约；当前1868源先执行反事实红/正式RPC绿，再完整构建与回归。
+- Java r8正规同步/check通过，30模块全量构建在玩家存储停止，实际2990通过、11失败、19错误、136跳过。30项红灯已按XML定位，八个源/测试文件修复与新增时钟回归已准备，须重新绑定当前源并先局部后全量验证；尚无修复后的测试通过结论。Unity、真实TiDB、商城mock全链与真实双区仍待完成。审核细节与原始证据追加于`docs/handoff/global-economy-review-20261021.md`第13节。
+
+### 2026-10-21：Match当前回归及主仓Java运行包进展
+
+- Match仅修复protobuf测试的内部缓存比较，当前937源实际598项单测通过、0失败、86项外部环境跳过；Vet及运行EXE构建也通过，未启动EXE。86项已逐项映射SQL、rank/mail互通与三broker Kafka专项，不把skip当通过。
+- 主仓Java Gateway实际231项通过、5项真实环境跳过，商城管理两类必需测试无跳过。原验证器日志变量覆盖及JAR路径假设错误均保留失败，按生产资源和正式pom的真实JAR路径独立复核后归档当前运行包；未启动或验真库。主仓Mall实际87通过、1失败、6错误，已定位代理声明与旧订单状态断言，修复后待重跑。
+- C++正规门禁发现并修复测试接入所缺头路径、旧测试裸指针与新测试错误码符号，保持NoRaw与全部业务断言；当前1868源仍须真实红/绿和完整构建。独立Java r9的2655项正规sync/check通过，五模块TargetedH2正在执行；全量30模块、Unity、原生SQL、mock全链及真实双区均未完成。详细证据见`docs/handoff/global-economy-review-20261021.md`第14节。
+
+### 2026-10-21：观察者早期回归、Mall打包及聊天权限收口
+
+- C++观察者真实反事实红灯与正规RPC绿灯完成：142实际通过、两项原有DISABLED基准未运行，无性能结论。当前1868源的完整game.sln及独立RPC串行构建已另行启动，尚无完整成功结果。
+- 主仓Mall修复后94项全部通过、零跳过，正式运行包归档。独立Java r9五模块TargetedH2实际598通过、125外部环境跳过；完整30模块已执行3058通过、137跳过后，在game-scene-manager的testCompile失败。只修正Druid连接mock静态类型，仍待重跑完整构建。
+- Guild Build通过后的Unit发现两处配置契约问题，已修复且尚待验证。全局权限审计发现两版Chat缺原账号/owner_revision提交校验，正在补齐SQL权威发送、永久收据及历史查询，不新增proto；部署和回归待验证。Unity首次Import因自身短生命周期编译预热进程未被归属门禁识别而停止，尚未通过导入或EditMode。
+- 真库、mock支付退款提现及分页游戏交付、真实双区和故障恢复仍未完成；所有外部环境skip均单列未验。详细运行证据与失败现场见`docs/handoff/global-economy-review-20261021.md`第15节。
+
+### 2026-10-21：全量构建实错、监管专项及全球默认闭环
+
+- C++全量再次被进程归属误判停止：两天前的受保护服务旧父PID被编译器复用；未控制该服务。本轮已登记230进程全部退出。新鲜内核创建时间修正的16/20/32/7四组专项由root实际通过，新完整Build仍待执行。
+- Java r10-r2正式同步通过、2664输入；全量实际3616通过、29失败、176外部环境跳过，停game-login。只修两个旧夹具的完整PB角色版本期望及两区围栏顺序，保留所有业务断言；当前修复及Chat仍待实际验证。
+- 部署Chat3、端口21、全球SQL3及迁移门禁41项实际通过；完整部署285项有53失败，大量连带由prod夹具漏显式TiDB入口导致，已修夹具但尚未重跑。另确认DS/DB/login全球强SQL默认仍未完整切换，以及SM600秒无证强制释放，正在沿既有权威与ready框架补齐。
+- Unity私有Job监管8项实际通过，正式导入进行中。真库、最终全量构建及真实双区全链路仍未完成。证据与边界见`docs/handoff/global-economy-review-20261021.md`第16节。
+
+### 2026-10-21：全球默认源码收口及定向门禁实错
+
+- DS/DB/login/SM全球SQL默认闭环及SM无证超时释放修复源码收口，root完成DS/SM31和Rank10个Go文件格式化；当前新源仍待Build/Unit/Vet/运行包及真库，不沿用旧DS全模块通过记录。
+- C++全量r5实际暴露Cross退出原因表遗漏角色冻结。保留static_assert及原断言补齐后，定向严格Build又暴露Cross项目缺OpenSSL头依赖，原失败保留，正在修正规工程，尚无全量通过结论。
+- Unity正式Import原生退出0、五程序集实际新编译；151贴图meta规范化及两新增script meta经独立精审后封证。四程序集EditMode随后因可用内存2.27GiB低于2.75GiB运行门禁而中止，无未知重型进程、无测试XML，不能算通过。
+- 两版真库、mock完整资金/游戏交付、独立Redis/Kafka及真实双区验收仍待完成。详细原件、hash及剩余范围追加于`docs/handoff/global-economy-review-20261021.md`第17节。
+
+### 2026-10-21：角色准入生产根因修复及339项真实通过
+
+- 修复RoleAdmissionSystem嵌套LocalNode类型遮蔽同名读取函数的问题，覆盖登记与封存两个入口，生产仅三行改名，原身份/版本/SQL拒绝条件保留。正规新scene库、全部Scene/Cross Strict及Cross339项all真实通过，零失败/跳过，原件SHA8528F8F55E73C83E53427A67206BD7F98088AEFB63994E01F5CCB702B2E8747B；全solution、RPC和29EXE尚待执行。
+- DS/SM补坏原修订标签不得ACK清理，以及centre/旧角色blob不得被误判全新空世界；已格式化，待新源普通与真库验证。Java r11登录74实际70通过4旧围栏期望失败，修复后r12同步通过，新74与30模块待跑。
+- Chat离线只读诊断发现mysql依赖声明需与实际已缓存1.9.3一致，仅更新模块一行及sum两行；新捕获/构建待执行。Unity遇证据写盘超2秒，保门禁后改用独立C盘证据候选，尚未跑成客户端测试。
+- 真实Gate商城25+25单、退款/提现与重登的独立tag驱动已补源码并格式化，未编译/运行；真库、mock全链与双区故障验收未完成。细节见交接第18节。
+
+### 2026-10-21：登录74项真实通过与独立归档复核
+
+- Java r12原生登录29+45项全部通过，零失败/错误/跳过；旧归档器排序误红保留，root另按同一Ordinal比较器严格核验全部名称及原执行链，独立复核proof SHA C9D3E3E839FBA738A3E43ADAD04170B59130D1D77E8AEA061A0FB9AA29783FE4。没有重写原false或宣称完整30模块通过。
+- 商城真实Gate驱动补显式uint32转换后当前SHA 2FA3C9089B75A8BED684656E674965EAA39DDE1A975DF6B5AD1738D6983FA260，专用tag尚未编译运行。完整C++构建正在执行；其他当前源构建、Unity、真库/mock游戏到账和双区故障四类验收仍未完成，详见交接第19节。
+
+### 2026-10-21：当前C++完整工程构建通过
+
+- game.sln与独立RPC正规串行Build实际通过，114个native阶段退出0；game267次Strict解析与38份fresh标记、RPC17次解析与一份fresh标记均完整通过，无缺引擎跳过。结果SHA EBA695463F65294C83911BE8FD483E7E0AE9676A94649DDD871319779B621D07，完整产物manifest 6C36DF8007EC6D5ABB3403F06B1BB53B3CF60B22988ACB65ACF14F527F01E6EC。
+- 仍需执行当前29测试EXE及互操作，不以构建通过代替运行测试。Java全30模块新树、空head与6506依赖的纯准备也已实际通过，完整Maven执行尚待本轮串行native窗口。细节见交接第20节。
+
+### 2026-10-21：C++运行回归通过，Java/Go新原生首错已最小修复
+
+- C++当前26测试程序与三轮定向/乱序实际2928次PASS、2既有DISABLED，零失败/跳过，结果SHA B9204403E1E242DB0A49A1D901FE430D55EA555DC08243F6A7EA02003E737DCB。补充3测试工程正规Build/fresh Strict通过B2F3AAC9874984B789EE7F1D9E950BACFC7C5725E559B09B4414EC68851E310D，真实Go互操作仍未跑。
+- Java全30在Friend真库夹具缺Spring JDBC测试依赖处编译失败；仅补test-scope现有缓存依赖。DS实际GoList通过而Build发现Redis构造API误用，仅New改NewRedis并gofmt。两轮原生首错均保留，不自动重试或算绿；修复后正式重绑/运行待完成。
+- 商城独立tag驱动增加26账号双区分布及真实SceneInfo落区确认，当前SHA E297C1A0DE89E191EA5ECC357F8C5B3F3905D59254D4B080F099E7C23047E903。当前owned全栈启动、真库、退款提现/游戏到账和双区故障验收仍未完成，详见交接第21节。
+
+### 2026-10-21 当前验证补充：DS / Java Friend / Unity
+
+DS API修复后当前Build实际通过；Unit1625通过、3失败、90外部跳过。三个失败是旧随仓配置断言，已同步已批准db_first/64/read-ready/Arm，保留组件原始缺省与拒启约束，待新四阶段。原失败及全族退出检查点均保留，90skip逐例映射后续真库门禁，不能沿用旧89清单。
+
+Java r13正式同步与Prepare通过，全构建在Friend Budget夹具3失败1错误停止；补真实metadata/route_meta，不替换生产守卫或移除时间和回滚断言。r14待执行，全30采用官方-fae而非忽略失败。Unity四程序集同进程两次触发原内存门禁；后一次已进入测试但无XML，不能报通过。准备原四程序集分Editor依次运行，保留全部case/资源门槛/输入审批，不删Library或修改资产。完整证据及SHA追加于docs/handoff/global-economy-review-20261021.md第22节。
+
+### 2026-10-21 当前DS四阶段绿、Java全量红与客户端实际计数
+
+DS当前939源/34483依赖实际Capture和Build/Unit/Vet/Runtime均通过，Unit1628通过0失败90外部跳过；原D盘证据落盘外围超过2秒的失败保留，仅逐字重定位计划/证据到C根，全部资源/原句柄门禁不变。当前DS EXE SHA07DB9E40...，未启动；其余Go队列未跑，90skip仍待真库。
+
+Java r14全30实际执行完：7568项7200通过59失败7错误302外部跳过，16模块成功14失败；全族已退出，未通过整体。已按原诊断修复28路径，下一r15重新跑当前TargetedH2再全30，不再复用旧H2前置。Data普通释放补同库事务且保持原路由锁/回滚断言。客户端四Editor实际Net70通过、Tianyong1101通过21失败0跳过，Battle/Jubao未执行；修Team首次明确限流/未知重试保护、两UI夹具和地图真实Dispose接缝。旧城资源相关实际11项历史失败，处理方向在等待用户；前次询问12为多计1项。Match新增正规显式迁移及部署/本机接线12路径，源码已冻未编译。完整原件、hash及限制见docs/handoff/global-economy-review-20261021.md第23–24节。
+
+### 2026-10-22 UTC：继续当前产物验证，保留失败与未执行边界
+- Java r15 当前H2实际598 PASS、125已知外部SKIP；全模块在Gate开始阶段被2秒资源复核门禁中止，已落XML为8137 PASS/18 FAIL/32 ERROR/848 SKIP，Data/Gateway/Robot未执行。原proof 2251E133BDFF3EC28A6DF65D16A06370FA622BD098582C1208C72684B2EC7A0E、67原家族全部退出。16项后续源码修复分别处理Match组件装配、正式公开角色名/评分SQL夹具、Battle FIN、Team排队状态穷尽映射、Mall Repository代理、Java被动技能漏移植；仍待新鲜C盘候选编译与回归，对应Java下一版本仍未验收。
+- Go Inbox RuntimeBuild实际通过（57CB73882BFC55834D9769D6DEED1448FB3DE463BAC63E8BC5166B94BF8394DD），AMD64 PE SHA86A0CEAF05DBC97E1A0168EDE164A020B8A39F41831C4ABC4A7B017C334943C5，未启动。新Match GoList实际F5CFEA9AD3F50B5566A1D0EC1A19107AFF52B40ABA98A338F8B274921B406DAA通过；Build被严格计划比较在原生启动前拒绝，唯一差异为同一runner SHA的大小写，保留原件并仅对Build候选该字段规范化，未重试。所有本段原句柄已退出。
+- 部署Chat3/Ports22/Global5实际native0，汇总因Global预期仍为旧3而拒绝；迁移47与完整部署285尚未执行。Unity当前91306完整输入两观察相同，额外四个旧Performance JSON/meta缺失经正规包固定清理实现确认，只批准有限历史来源，不放宽运行期间零输入变更、153meta或真实Csc。详见docs/handoff/global-economy-review-20261021.md第25节，仍无真库201、双区交易或故障验收通过结论。

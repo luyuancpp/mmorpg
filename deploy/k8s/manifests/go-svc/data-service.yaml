@@ -69,6 +69,9 @@ spec:
           image: PLACEHOLDER_IMAGE
           imagePullPolicy: PLACEHOLDER_PULL_POLICY
           env:
+            - name: MMORPG_ACCOUNT_DIRECTORY_SECRET_SCENE_MANAGER
+              valueFrom:
+                secretKeyRef: {name: domain-service-secrets, key: account-directory-scene-manager, optional: false}
             - name: MMORPG_ACCOUNT_DIRECTORY_SECRET_LOGIN
               valueFrom:
                 secretKeyRef: {name: domain-service-secrets, key: account-directory-login, optional: false}

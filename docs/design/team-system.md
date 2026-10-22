@@ -1,5 +1,7 @@
 # 组队系统设计(team-in-match)
 
+> **2026-10-21 全球提交补充（源码，待统一运行）**：首次整队launch与Match落票之间仍是持久工作流；该窗口不能被普通单排、挑战、其它活动或观战抢占。所有接纳入口先持有完整原角色P，再核Team原launch及role、Trial原launch及role、私有Trial SQL slot及真实lobby，不以TTL或缺Match票释放占用。Team仅role5与真实parent5同时安全，Trial仅role2与真实parent3同时安全，私有lobby仅真实state4安全；NULL、孤儿和未知状态全部拒绝。己方例外必须带正规原launch并核actor/UUID、完整原名册、owner修订及载荷，活动还核原Start与原SHA；首次Team/Trial提交反向检查实际Match票，pending0也占用。票的15个业务字段与SQL NULL语义唯一收在`shared/matchentry`。Team完整route前缀抽为`shared/placement.LockRoleRoutes`，与Guild/Inbox共享原home的pid%64围栏→原route复核→全P顺序；没有新增平行权威状态。本段覆盖下文历史Redis权威、逐票补偿与TTL释放口径，历史运行证据不覆盖本次源码。
+
 > **状态**:设计稿，还没有实现。本仓库没有据此改过任何代码，也没有编译或测试过。每一批开工前都要用户授权(AGENTS §10.2)，编译和测试由 Codex 执行(AGENTS §10.1)。
 > **2026-09-15 更新**:批 0–4 的手写部分已在隔离 worktree `feature/team-system` 落码(未生成、未编译、未合并回主工作区),实况、偏离与待办见文末「实现记录(2026-09-15,worktree feature/team-system,未编译)」;正文与该节冲突处以该节为准。
 > **2026-09-17 更新**:改动已移到 worktree `E:\work\xuanming-server-mmo-team2`(分支 `feature/team-system-v2`,基于 `4069f33b0`),并按文末「评审记录(2026-09-16,team-system-review)」修了 8 条确认缺陷;仍未生成、未编译。

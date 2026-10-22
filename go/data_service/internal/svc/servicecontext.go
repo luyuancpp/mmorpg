@@ -112,21 +112,22 @@ type RollbackFence interface {
 }
 
 type ServiceContext struct {
-	AccountDirectory       accountdirectory.Directory
-	AccountDirectoryAuth   *serviceauth.Verifier
-	AccountRoleTrades      accountdirectory.RoleTrades
-	AccountRoleTradeAuth   *serviceauth.Verifier
-	RoleAdmissions         accountdirectory.Admissions
-	RoleAdmissionAuth      *serviceauth.Verifier
-	accountDirectoryCloser interface{ Close() error }
-	Config                 config.Config
-	Router                 *routing.Router
-	SnapshotStore          SnapshotStore
-	TxLogStore             TransactionLogStore
-	IdSegmentStore         IdSegmentStore
-	PlayerNameStore        PlayerNameStore // nil = 名字注册表不可用,Reserve/Release/BatchGet 全部 fail-closed
-	RollbackFence          RollbackFence
-	LoginAdminClient       loginpb.LoginAdminClient // nil when not configured
+	AccountDirectory          accountdirectory.Directory
+	AccountDirectoryAuth      *serviceauth.Verifier
+	SceneManagerDirectoryAuth *serviceauth.Verifier
+	AccountRoleTrades         accountdirectory.RoleTrades
+	AccountRoleTradeAuth      *serviceauth.Verifier
+	RoleAdmissions            accountdirectory.Admissions
+	RoleAdmissionAuth         *serviceauth.Verifier
+	accountDirectoryCloser    interface{ Close() error }
+	Config                    config.Config
+	Router                    *routing.Router
+	SnapshotStore             SnapshotStore
+	TxLogStore                TransactionLogStore
+	IdSegmentStore            IdSegmentStore
+	PlayerNameStore           PlayerNameStore // nil = 名字注册表不可用,Reserve/Release/BatchGet 全部 fail-closed
+	RollbackFence             RollbackFence
+	LoginAdminClient          loginpb.LoginAdminClient // nil when not configured
 
 	// PlayerRouteStore 是 db_first 下 RegisterPlayerZone 的库内提交点(已经注入进 Router,这里只为 Close 与
 	// MissingStores 留一份引用)。nil = redis 模式,或 db_first 但没装配起来(此时 RegisterPlayerZone fail-closed)。
@@ -170,6 +171,7 @@ func MySQLConfigOf(c config.Config) store.MySQLConfig {
 		DBName:      c.SnapshotMySQL.DBName,
 		MaxOpenConn: c.SnapshotMySQL.MaxOpenConn,
 		MaxIdleConn: c.SnapshotMySQL.MaxIdleConn,
+		RequireTiDB: c.SnapshotMySQL.RequireTiDB,
 	}
 }
 
@@ -206,6 +208,16 @@ func (s *ServiceContext) MissingStores() []string {
 }
 
 func NewServiceContext(c config.Config) *ServiceContext {
+	resolved, err := c.ResolveGlobalAuthority(os.Getenv)
+	if err != nil {
+		panic(fmt.Sprintf("全球SQL装配拒绝: %v", err))
+	}
+	c = resolved
+	if !c.LegacyNonGlobal {
+		if err := validateGlobalCallerSecrets(os.Getenv); err != nil {
+			panic(err.Error())
+		}
+	}
 	// PlayerName 段的零值**全是危险值**(CacheTTL=0 会让每次缓存回填都失败,
 	// ReleaseWindow=0 会让建角失败后的条件释放什么都删不掉),而 go-zero 不下钻一个
 	// 未出现的 optional 结构、填不了 default 标签。所以默认值在这里一次性补齐:
@@ -291,7 +303,7 @@ func NewServiceContext(c config.Config) *ServiceContext {
 	if schemaReady {
 		if auth, err := serviceauth.New(map[string]string{"login": os.Getenv(accountdirectory.SecretEnv)}); err != nil {
 			logx.Errorf("[account-directory] internal caller key is unavailable; account directory RPCs disabled")
-		} else if ds, err := store.NewAccountDirectoryStore(mysqlCfg, c.AccountDirectory.RoleTradeSQLProof.Enabled || (c.Mode != "dev" && c.Mode != "test"), c.AccountDirectory.MaxRoles()); err != nil {
+		} else if ds, err := store.NewAccountDirectoryStore(mysqlCfg, mysqlCfg.RequireTiDB || c.AccountDirectory.RoleTradeSQLProof.Enabled || (c.Mode != "dev" && c.Mode != "test"), c.AccountDirectory.MaxRoles()); err != nil {
 			logx.Errorf("[account-directory] SQL store init failed: %v", err)
 		} else {
 			directory = ds
@@ -376,6 +388,11 @@ func NewServiceContext(c config.Config) *ServiceContext {
 		}
 		s.AccountRoleTrades = trades
 		s.RoleAdmissions = store.NewAccountRoleAdmissionStore(directory)
+		if auth, err := serviceauth.New(map[string]string{"scene_manager": os.Getenv("MMORPG_ACCOUNT_DIRECTORY_SECRET_SCENE_MANAGER")}); err != nil {
+			logx.Error("[account-directory] scene_manager独立只读密钥不可用；仅其Lookup关闭")
+		} else {
+			s.SceneManagerDirectoryAuth = auth
+		}
 		if auth, err := serviceauth.New(map[string]string{"scene": os.Getenv(accountdirectory.SceneSecretEnv)}); err != nil {
 			logx.Errorf("[role-admission] internal scene key unavailable; admission/drain RPCs disabled")
 		} else {
@@ -500,6 +517,17 @@ func newPlayerRouteStore(c config.Config, mysqlCfg store.MySQLConfig, schemaRead
 	if err != nil {
 		logx.Errorf("[ServiceContext] route store init failed (RegisterPlayerZone will fail closed; %s): %v", store.OpenRouteStoreHint("<yaml>", err), err)
 		return nil
+	}
+	if !c.LegacyNonGlobal {
+		cache, err := redis.NewRedis(c.MappingRedis)
+		if err == nil {
+			err = checkEmptyRouteBootstrap(context.Background(), rs, cache, c.AccountDirectory.RoleTradeSQLProof.AllowedStorageIDs)
+		}
+		if err != nil {
+			_ = rs.Close()
+			logx.Errorf("[route-bootstrap] 全球路由启动拒绝: %v", err)
+			return nil
+		}
 	}
 	logx.Infof("[ServiceContext] route store ready (RouteStore.Mode=db_first): fence_shards=%d publish_attempts=%d waitaof_numlocal=%d waitaof_numreplicas=%d waitaof_timeout_ms=%d",
 		c.RouteStore.FenceShards, c.RouteStore.PublishAttempts, c.RouteStore.NumLocal(), c.RouteStore.NumReplicas(), c.RouteStore.WaitAOFTimeoutMs)

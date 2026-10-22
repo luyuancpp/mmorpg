@@ -66,11 +66,18 @@ func (s *DataServiceServer) LookupAccountRole(ctx context.Context, in *dspb.Look
 	}
 	if err := s.admitDirectory(ctx, "LookupAccountRole", in); err != nil {
 		// 仅此只读方法允许trade独立密钥。Create/Repair/Remove仍只认login，不扩大写权限。
-		if s.svcCtx.AccountRoleTradeAuth == nil || s.svcCtx.AccountRoleTrades == nil {
-			return nil, err
+		accepted := false
+		if auth := s.svcCtx.SceneManagerDirectoryAuth; auth != nil {
+			caller, verifyErr := auth.Verify(ctx, accountdirectory.MethodPrefix+"LookupAccountRole", in)
+			accepted = verifyErr == nil && caller == "scene_manager"
 		}
-		if tradeErr := s.admitRoleTrade(ctx, "LookupAccountRole", in); tradeErr != nil {
-			return nil, tradeErr
+		if !accepted {
+			if s.svcCtx.AccountRoleTradeAuth == nil || s.svcCtx.AccountRoleTrades == nil {
+				return nil, err
+			}
+			if tradeErr := s.admitRoleTrade(ctx, "LookupAccountRole", in); tradeErr != nil {
+				return nil, tradeErr
+			}
 		}
 	}
 	out, err := s.svcCtx.AccountDirectory.Lookup(ctx, in.PlayerId)

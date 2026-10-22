@@ -1048,6 +1048,7 @@ void BattleRoomManager::HandleAddObserver(const ::AddObserverRequest &request,
                       << ",spectator ticket signing failed;observer removed and request rejected(kServiceUnavailable)";
             room->routingByObserver.erase(it);
             room->observerNames.erase(observerId);
+            room->observerOperations.erase(observerId);
             CloseDirectConnectionOf(*room, observerId, "observer_ticket_issue_failed");
             response.mutable_error_message()->set_id(kServiceUnavailable);
             return;
@@ -1151,6 +1152,9 @@ void BattleRoomManager::HandleRemoveObserver(const ::RemoveObserverRequest &requ
     if (active == room->observerOperations.end() || active->second != request.spectator_operation_id()) return;
     if (it == room->routingByObserver.end())
     {
+        // 原op已精确匹配：同时清掉失败准入遗留的私有槽，旧op不能清新op。
+        room->observerNames.erase(observerId);
+        room->observerOperations.erase(active);
         return;
     }
 

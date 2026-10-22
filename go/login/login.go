@@ -74,6 +74,9 @@ func main() {
 	// 需要从环境变量取的密钥一律写成 *Env 字段(PasswordAuth.DSNEnv、Secrets.*.Env、AuthProviders.WeChat.AppSecretEnv),
 	// 照旧文档写成 "${VAR}" 的字面量由下面的 ResolveSecrets 拒绝启动(config/auth_providers.go)。
 	conf.MustLoad(*configFile, &config.AppConfig)
+	if err := config.AppConfig.ValidateGlobalAuthority(os.Getenv); err != nil {
+		panic(fmt.Errorf("全球Login配置拒绝启动: %w", err))
+	}
 
 	// 密钥门禁必须跑在**任何外部连接之前**(Kafka / Redis / etcd 都在下面)。
 	// 生产模式下密钥为空、等于占位串、短于 32 字节、或不同用途复用同一把,

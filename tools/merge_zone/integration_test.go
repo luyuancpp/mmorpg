@@ -5,7 +5,7 @@ package main
 // 受控本机TiDB与真实Redis集成测试。成功合区统一db_first、SQL Team与全部64片路由围栏。
 //
 // 运行入口：go test -tags merge_integration -count=1 -v ./...
-// MERGE_ZONE_IT_TIDB_DSN：本机数字loopback TCP实例基址，无库名/参数；默认root@tcp(127.0.0.1:4000)/。
+// MERGE_ZONE_IT_TIDB_DSN：显式注入已核任务所有的数字loopback TCP实例基址，无库名/参数；不默认连接任何端口。
 // MERGE_ZONE_IT_MYSQL_DSN：旧参数别名，仍必须通过真实TiDB与CHECK探针，不能回退MySQL引擎。
 // MERGE_ZONE_IT_REDIS_ADDR：Redis地址，DB9/10/11必须原本为空；要求Redis>=7.2且AOF已启用。
 // MERGE_ZONE_IT_ROUTE_DB_DSN：旧参数仅接受同TiDB入口的merge_zone_it_route独占库，库由本套按DS权威DDL创建。
@@ -41,15 +41,12 @@ const (
 	itRedisEnv   = "MERGE_ZONE_IT_REDIS_ADDR"
 	itRouteDBEnv = "MERGE_ZONE_IT_ROUTE_DB_DSN"
 	itRequireEnv = "MERGE_ZONE_IT_REQUIRE"
-
-	itDefaultMySQLBase = "root@tcp(127.0.0.1:4000)/"
-	itDefaultRedisAddr = "127.0.0.1:6379"
 )
 
 var (
 	// itMySQLBase / itRedisAddr 由 TestMain 按环境变量改写(itProbeDependencies)。
-	itMySQLBase = itDefaultMySQLBase
-	itRedisAddr = itDefaultRedisAddr
+	itMySQLBase string
+	itRedisAddr string
 	// itUnavailable 是 TestMain 探测到的依赖不可达原因;空串 = 依赖就绪、一次性库已建好(requireIT 据此 SKIP / FAIL)。
 	itUnavailable string
 )
@@ -131,18 +128,22 @@ func TestMain(m *testing.M) {
 // itProbeDependencies在建库/删库前校验本机TiDB、CHECK与Redis空库/AOF契约，不修改基础设施配置。
 // 返回可用的 root 连接,或不可达的原因(原因里不带口令)。
 func itProbeDependencies() (*sql.DB, string) {
-	if v := firstNonEmpty(os.Getenv(itTiDBEnv), firstNonEmpty(os.Getenv(itMySQLEnv), itDefaultMySQLBase)); v != "" {
+	if v := firstNonEmpty(os.Getenv(itTiDBEnv), os.Getenv(itMySQLEnv)); v != "" {
 		base, err := itNormalizeMySQLBase(v)
 		if err != nil {
 			return nil, fmt.Sprintf("%s: %v", itTiDBEnv, err)
 		}
 		itMySQLBase = base
+	} else {
+		return nil, "必须显式注入已核任务所有的TiDB地址，不探测4000等默认端口"
 	}
 	if err := itValidateRouteOverride(); err != nil {
 		return nil, err.Error()
 	}
 	if v := os.Getenv(itRedisEnv); v != "" {
 		itRedisAddr = v
+	} else {
+		return nil, "必须显式注入已核任务所有的Redis地址，不探测6379等默认端口"
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()

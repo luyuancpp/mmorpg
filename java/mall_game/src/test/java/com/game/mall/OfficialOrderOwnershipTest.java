@@ -61,15 +61,26 @@ class OfficialOrderOwnershipTest {
     @Test void 完整uint64修订作为字符串冻结并进入稳定交付原件() {
         try (var f = new CommerceFixture()) {
             f.sku(1, 10, 100);
-            var order = f.store.create("18446744073709551615", create("official-full-uint64", ORIGINAL, MAX_REVISION));
-            f.store.recordTrustedPayment(new CommerceApi.Payment(order.orderId(), "test", "official-max-payment", 100, "CNY"));
+            var input = create("official-full-uint64", ORIGINAL, MAX_REVISION);
+            var order = f.store.create("18446744073709551615", input);
+            assertEquals("AWAITING_PAYMENT", order.state());
+            var paid = f.store.recordTrustedPayment(new CommerceApi.Payment(order.orderId(), "test", "official-max-payment", 100, "CNY"));
+            // 原身份、金额和期限不变；查询及原请求重放应反映已提交支付后的当前状态。
+            assertEquals(new CommerceApi.Order(order.orderId(), order.buyerId(), order.skuId(), order.quantity(),
+                order.amountMinor(), order.currency(), "DELIVERY_PENDING", order.paymentDeadlineMs()), paid);
             var delivery = new DeliveryStore(f.jdbc, f.manager, f.props);
             var intent = delivery.poll(20).getFirst();
             assertEquals(order.orderId(), intent.orderId()); assertEquals(order.buyerId(), intent.buyerId());
             assertEquals(ORIGINAL, intent.buyerAccount()); assertEquals(MAX_REVISION, intent.buyerOwnerRevision());
             f.jdbc.update("UPDATE commerce_sku_grant SET title='后来标题',item_config_id=99 WHERE sku_id=1");
             assertEquals(intent, delivery.poll(20).getFirst());
-            assertEquals(order, f.store.get(order.buyerId(), identity(order.orderId(), ORIGINAL, MAX_REVISION)));
+            assertEquals(paid, f.store.get(order.buyerId(), identity(order.orderId(), ORIGINAL, MAX_REVISION)));
+            assertEquals(paid, f.store.create(order.buyerId(), input));
+            assertEquals(1, f.count("oms_order"));
+            assertEquals(1, f.count("commerce_payment_receipt"));
+            assertEquals(1, f.count("commerce_delivery_intent"));
+            assertEquals(9, f.value("pms_sku_stock", "stock"));
+            assertEquals(0, f.value("pms_sku_stock", "lock_stock"));
         }
     }
 

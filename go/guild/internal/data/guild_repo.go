@@ -122,11 +122,12 @@ type MemberData struct {
 // Read path:  Redis → (miss) → singleflight → MySQL → write-back Redis
 // Write path: Redis + MySQL (sync)
 type GuildRepo struct {
-	rdb           *redis.Client
-	db            *sql.DB
-	defaultTTL    time.Duration
-	cacheLoadMu   sync.Mutex
-	roleAuthority string
+	rdb            *redis.Client
+	db             *sql.DB
+	defaultTTL     time.Duration
+	cacheLoadMu    sync.Mutex
+	roleAuthority  string
+	matchAuthority string
 }
 
 func NewGuildRepo(rdb *redis.Client, db *sql.DB, defaultTTL time.Duration) *GuildRepo {

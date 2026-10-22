@@ -17,7 +17,9 @@ import (
 	"github.com/zeromicro/go-zero/core/stores/redis"
 	gproto "google.golang.org/protobuf/proto"
 
+	basepb "proto/common/base"
 	kafkacontracts "proto/contracts/kafka"
+	dspb "proto/data_service"
 	"proto/scene_manager"
 	game "scene_manager/generated/pb/game"
 	"scene_manager/internal/config"
@@ -43,6 +45,18 @@ func nowUnix() int64 { return time.Now().Unix() }
 
 // testZoneId is the zone ID used across all tests.
 const testZoneId uint32 = 1
+
+// 测试只替换DS I/O；生产未配置目录时始终拒绝，不从请求现场补原修订。
+type roleDirectoryFunc func(context.Context, uint64) (*dspb.AccountRoleOwnership, error)
+
+func (f roleDirectoryFunc) Lookup(ctx context.Context, player uint64) (*dspb.AccountRoleOwnership, error) {
+	return f(ctx, player)
+}
+func testRoleDirectory(revision uint64) svc.RoleDirectory {
+	return roleDirectoryFunc(func(_ context.Context, player uint64) (*dspb.AccountRoleOwnership, error) {
+		return &dspb.AccountRoleOwnership{Account: "fixture-original-owner", OwnerRevision: revision, Role: &basepb.AccountSimplePlayer{PlayerId: player}}, nil
+	})
+}
 
 // testLoadKey returns the Redis load-set key for the test zone.
 func testLoadKey() string {
@@ -70,9 +84,10 @@ func newTestSvcCtx(t *testing.T, nodeID string) (*svc.ServiceContext, *miniredis
 	c.AllowGateZoneAsHomeZone = true
 
 	return &svc.ServiceContext{
-		Config:     c,
-		Redis:      rds,
-		SceneIDGen: snowflake.NewNode(0),
+		Config:        c,
+		Redis:         rds,
+		RoleDirectory: testRoleDirectory(1),
+		SceneIDGen:    snowflake.NewNode(0),
 	}, mr
 }
 
@@ -435,9 +450,10 @@ func newTestSvcCtxWithWorldScenes(t *testing.T) (*svc.ServiceContext, *miniredis
 	c.AllowGateZoneAsHomeZone = true
 
 	return &svc.ServiceContext{
-		Config:     c,
-		Redis:      rds,
-		SceneIDGen: snowflake.NewNode(0),
+		Config:        c,
+		Redis:         rds,
+		RoleDirectory: testRoleDirectory(1),
+		SceneIDGen:    snowflake.NewNode(0),
 	}, mr
 }
 
@@ -1486,8 +1502,8 @@ func TestEnterScene_ReplayEchoesCurrentCorrelationNotCached(t *testing.T) {
 	require.NoError(t, getErr)
 	fingerprint, fpErr := enterSceneRequestFingerprint(base)
 	require.NoError(t, fpErr)
-	donePrefix := enterSceneDedupeDonePrefix + fingerprint + ":"
-	require.True(t, strings.HasPrefix(raw, donePrefix), "done 条目格式应为 done:<fp>:<b64>,实际 %q", raw)
+	donePrefix := enterSceneDedupeDonePrefix + "v2:" + revisionText(base.OwnerRevision) + ":" + fingerprint + ":"
+	require.True(t, strings.HasPrefix(raw, donePrefix), "done必须绑定原归属修订和完整请求指纹: %q", raw)
 	payload, decodeErr := base64.StdEncoding.DecodeString(strings.TrimPrefix(raw, donePrefix))
 	require.NoError(t, decodeErr)
 	cached := &scene_manager.EnterSceneResponse{}

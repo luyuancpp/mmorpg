@@ -1363,9 +1363,31 @@ type trialMember struct {
 // 按源码顺序钉住:调换下面任何两步之前,先回文件头把"为什么不成环"重推一遍。
 func (r *ActivityRepo) settleTrialBattle(ctx context.Context, tx *sql.Tx, in TrialSettleInput, plan trialSettlePlan, original *pb.GuildTrialLaunchOriginal) (TrialSettleResult, error) {
 	battle := in.Battle
+	if original != nil {
+		roster := map[uint64]bool{}
+		for _, p := range original.Roster {
+			roster[p.PlayerId] = true
+		}
+		for _, p := range plan.candidates {
+			if !roster[p] {
+				return TrialSettleResult{}, ErrWriteConflict
+			}
+		}
+	}
 
 	// G:锁序位置 1,也是 T 行的守卫。之后对 guild 行的资金写是再写已持有行。
 	zoneID, funds, err := lockTrialGuild(ctx, tx, battle.GuildID)
+	if errors.Is(err, ErrGuildGone) && original != nil {
+		// 真实终局结果仍须结清永久原合同；帮会消失只阻止发奖，不能把角色永远钉在ACTIVE。
+		// 不补造G/T，不用缺票或F4代替终局；原battle全上下文、全员身份由同P原launch核验。
+		if in.FinishedAtMs == 0 {
+			return TrialSettleResult{}, ErrWriteConflict
+		}
+		if err := r.lockTrialLaunch(ctx, tx, battle, original, true, in.NowMs); err != nil {
+			return TrialSettleResult{}, err
+		}
+		return TrialSettleResult{Status: TrialSettleGuildGone}, nil
+	}
 	if err != nil {
 		return TrialSettleResult{}, err
 	}
@@ -1379,17 +1401,6 @@ func (r *ActivityRepo) settleTrialBattle(ctx context.Context, tx *sql.Tx, in Tri
 	}
 	if err := r.lockTrialLaunch(ctx, tx, battle, original, false, in.NowMs); err != nil {
 		return TrialSettleResult{}, err
-	}
-	if original != nil {
-		roster := map[uint64]bool{}
-		for _, p := range original.Roster {
-			roster[p.PlayerId] = true
-		}
-		for _, p := range plan.candidates {
-			if !roster[p] {
-				return TrialSettleResult{}, ErrWriteConflict
-			}
-		}
 	}
 
 	res := TrialSettleResult{Status: TrialSettleSettled, Result: plan.result}
@@ -1689,8 +1700,19 @@ func (r *ActivityRepo) MarkTrialBattlePoison(ctx context.Context, battle TrialBa
 	if createdMs == 0 {
 		createdMs = nowMs
 	}
+	guildGone := false
 	err := r.guilds.inTx(withRoleTargets(ctx, launchPlayers(original)...), opTrialMark, func(ctx context.Context, tx *sql.Tx) error {
 		if _, _, err := lockTrialGuild(ctx, tx, battle.GuildID); err != nil {
+			if errors.Is(err, ErrGuildGone) && original != nil {
+				if finishedAtMs == 0 {
+					return ErrWriteConflict
+				}
+				if err := r.lockTrialLaunch(ctx, tx, battle, original, true, nowMs); err != nil {
+					return err
+				}
+				guildGone = true
+				return nil
+			}
 			return err
 		}
 		gate, err := readTrialGate(ctx, tx, battle)
@@ -1707,6 +1729,8 @@ func (r *ActivityRepo) MarkTrialBattlePoison(ctx context.Context, battle TrialBa
 		return r.lockTrialLaunch(ctx, tx, battle, original, true, nowMs)
 	})
 	switch {
+	case err == nil && guildGone:
+		return TrialMarkGuildGone, nil
 	case err == nil:
 		return TrialMarkDone, nil
 	case errors.Is(err, errTrialAlreadySettled):

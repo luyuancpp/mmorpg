@@ -1,19 +1,22 @@
 # 本机开发跨进程证明。只注入调用进程需要的键；部署环境必须由Secret提供，不调用本文件。
 function Get-AccountDirectoryDevSecretNames {
-    param([Parameter(Mandatory)][ValidateSet('scene','data-service','login','trade','match')][string]$Service)
+    param([Parameter(Mandatory)][ValidateSet('scene','data-service','login','trade','match','scene-manager')][string]$Service)
     $names = switch ($Service) {
-        'data-service' { 'LOGIN'; 'TRADE'; 'SCENE' }
+        'data-service' { 'LOGIN'; 'TRADE'; 'SCENE'; 'SCENE_MANAGER' }
         'scene' { 'SCENE'; 'TRADE' }
         'login' { 'LOGIN' }
         'trade' { 'TRADE' }
         'match' { 'SCENE' }
+        'scene-manager' { 'SCENE_MANAGER' }
     }
     @($names | ForEach-Object { "MMORPG_ACCOUNT_DIRECTORY_SECRET_$_" })
 }
 function Backup-AccountDirectoryDevSecrets {
     param([Parameter(Mandatory)][string]$Service)
     $saved = @{}
-    foreach ($name in (Get-AccountDirectoryDevSecretNames -Service $Service)) {
+    $names = @(Get-AccountDirectoryDevSecretNames -Service $Service)
+    if ($Service -ceq 'scene-manager') { $names = @('LOGIN','TRADE','SCENE','SCENE_MANAGER' | ForEach-Object { "MMORPG_ACCOUNT_DIRECTORY_SECRET_$_" }) }
+    foreach ($name in $names) {
         $saved[$name] = [Environment]::GetEnvironmentVariable($name, 'Process')
     }
     return $saved
@@ -26,10 +29,14 @@ function Restore-AccountDirectoryDevSecrets {
 function Initialize-AccountDirectoryDevSecrets {
     param([Parameter(Mandatory)][string]$RepoRoot, [Parameter(Mandatory)][string]$Service)
     $needed = @(Get-AccountDirectoryDevSecretNames -Service $Service)
-    $all = @('LOGIN','TRADE','SCENE' | ForEach-Object { "MMORPG_ACCOUNT_DIRECTORY_SECRET_$_" })
+    $all = @('LOGIN','TRADE','SCENE','SCENE_MANAGER' | ForEach-Object { "MMORPG_ACCOUNT_DIRECTORY_SECRET_$_" })
     foreach ($name in $needed) {
         $supplied = [string][Environment]::GetEnvironmentVariable($name,'Process')
         if ($supplied.Contains("`r") -or $supplied.Contains("`n")) { throw '本机账号目录证明不能包含换行。' }
+    }
+    if ($Service -ceq 'scene-manager') {
+        # 父shell可能已带login/trade/scene能力；SM子进程只得到独立Lookup键，finally按Backup还原父环境。
+        foreach ($name in $all) { if ($name -notin $needed) { [Environment]::SetEnvironmentVariable($name,$null,'Process') } }
     }
     if (@($needed | Where-Object { ([string][Environment]::GetEnvironmentVariable($_,'Process')).Trim().Length -lt 32 }).Count -eq 0) { return }
     $path = Join-Path $RepoRoot 'run/secrets/account-directory-dev.env'

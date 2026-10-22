@@ -38,7 +38,7 @@
 
 本节覆盖下文旧Redis owner_epoch上界、只锁stream及终态30天物删的口径。所有非战斗逻辑的全球强一致要求同时适用于收件箱；归属判定与消息提交必须进入同一TiDB事务域，不能以data_service RPC预检替代原角色P锁。
 
-`AccountRoleSchema`显式指定同一TiDB入口内的角色目录。业务池逐物理连接使用`shared/authoritysql`固定悲观RC、leader、strict，并清空snapshot、staleness与low-resolution TSO；启动核TiDB和目录/入场原表列，缺配置或原件拒启。业务变更顺序为原`account_role` P、消费原`account_role_admission`、stream、item主键、审计。原角色已挂牌冻结时拒绝新增与消费；data_service同P检查全部未终局Inbox条目，所以封存与新入箱不存在读预检后的空窗。
+`AccountRoleSchema`显式指定同一TiDB入口内的角色目录与路由域。业务池逐物理连接使用`shared/authoritysql`固定悲观RC、leader、strict，并清空snapshot、staleness与low-resolution TSO；启动核TiDB、目录/入场原表列、正式路由表主键顺序及`route_meta.writable=1`，缺配置或原件拒启。全部业务变更先经`shared/placement.LockRoleRoutes`：普通读可写开关与完整原route，按`(原home,player_id%64)`排序中性ODKU并锁定合区围栏片，再按聚簇键锁route并核原home/rev未变且未冻结；随后才锁原`account_role` P、消费原`account_role_admission`、stream、item主键和审计。缺片沿DS正式中性记录懒建，已有active记录不改，禁止P后再补片；合区持有者锁全部64片，与任何本域提交互斥。原角色已挂牌冻结时拒绝新增与消费；data_service同P检查全部未终局Inbox条目，所以封存与新入箱不存在读预检后的空窗。
 
 首次新入箱在P内固定`owner_account/owner_revision`；同一producer/request重放必须先核永久原行，不能拿当前目录替旧空原件补权，换主后旧请求即使刷新签发时刻也不能成为新处置。未终局行的原owner缺失、过期目录身份、冻结或未知状态一律保留护栏。Fetch、Ack、普通与强制作废、提醒CAS均进入同P前缀；后台不回填原owner。提醒仍只是提示，`next_seq` CAS防止旧提醒清除后来的新工作。
 
@@ -46,7 +46,7 @@ Fetch追加完整`RoleAdmissionIdentity`与`ServiceCallAuth`（字段8/9），Ac
 
 item原唯一行改为永久收据，正常终态仍精确为APPLIED/REJECTED/VOIDED/SETTLED_UNKNOWN。`SweepTerminal`保留调度接缝并返回0，不再物删；因此旧request不能在换主、旧实例重投或原保留期之后再次入箱。代价是容量随已接纳GM处置数增长；原永久审计本就保留完整载荷，本批没有新增第二份业务真相。未来归档必须保留同一唯一键、原摘要和原owner墓碑，不能恢复有限TTL去重。
 
-分片事实源移入`shared/inboxshard`，旧`inbox.RowShard`兼容转发，data_service挂起查询调用相同公式。旧SQL状态机集成夹具迁到本机真实TiDB并保留显式验收开关，目录P与完整入场原件均用真实SQL行；新增源码覆盖封存持P竞争、换主旧request拒绝、永久收据、完整原件不匹配和已closed世代拒绝。正式生成待统一验收，源码未编译或运行，既有2026-10-18证据不能覆盖这些改动。
+分片事实源移入`shared/inboxshard`，旧`inbox.RowShard`兼容转发，data_service挂起查询调用相同公式。旧SQL状态机集成夹具迁到本机真实TiDB并保留显式验收开关，目录P与完整入场原件均用真实SQL行；路由五表从DS唯一DDL常量经Go AST读取，保留正式NULL/CHECK语义，不用proto通用迁移的空字符串代替。新增源码覆盖封存持P竞争、换主旧request拒绝、永久收据、完整原件不匹配、已closed世代拒绝，以及维护围栏先提交时新增/消费/作废/后台CAS无副作用、空箱也核路由与可写开关。集成端点必须显式注入已核任务所有的数值loopback端口，本批实际端点为24000，不默认连接4000。正式生成及运行证据由统一验收记录，既有2026-10-18证据不能覆盖这些改动。
 
 ## 0. 结论速览
 

@@ -116,8 +116,8 @@ func TestDecideHolderRelease_Table(t *testing.T) {
 		facts holderReleaseFacts
 		want  leaveReleaseVerdict
 	}{
-		{"disabled wins over everything", holderReleaseFacts{epoch: 7, markerReleased: true}, leaveReleaseDisabled},
-		{"epoch zero", holderReleaseFacts{enabled: true, identityProven: true}, leaveReleaseLegacyEpochZero},
+		{"旧开关不覆盖真实marker正证", holderReleaseFacts{epoch: 7, markerReleased: true}, leaveReleaseReleased},
+		{"epoch缺失不是释放证明", holderReleaseFacts{enabled: true, identityProven: true}, leaveReleasePendingUnproven},
 		{"no holder", func() holderReleaseFacts { f := base; f.noHolder = true; return f }(), leaveReleaseNoHolder},
 		{"owner dead", func() holderReleaseFacts { f := base; f.ownerDead = true; return f }(), leaveReleaseOwnerDead},
 		{"marker releases", func() holderReleaseFacts { f := base; f.markerReleased = true; return f }(), leaveReleaseReleased},
@@ -126,7 +126,7 @@ func TestDecideHolderRelease_Table(t *testing.T) {
 			f.markerReleased, f.waitExceeded = true, true
 			return f
 		}(), leaveReleaseReleased},
-		{"wait exceeded forces", func() holderReleaseFacts { f := base; f.waitExceeded = true; return f }(), leaveReleaseForced},
+		{"等满仍保留UNKNOWN", func() holderReleaseFacts { f := base; f.waitExceeded = true; return f }(), leaveReleasePending},
 		{"pending with proven identity", base, leaveReleasePending},
 		{"pending without proven identity", func() holderReleaseFacts { f := base; f.identityProven = false; return f }(), leaveReleasePendingUnproven},
 	}
@@ -326,22 +326,23 @@ func TestLeaveScene_MarkerWithdrawnBeforeDeleteKeepsLocation(t *testing.T) {
 	assert.Len(t, calls(), 1, "按未释放处理,照样请持有节点释放")
 }
 
-// 例外:owner_epoch 键与 location 记的 epoch 都为 0 的存量玩家,存盘本来不带 CAS,按旧行为删。
-func TestLeaveScene_LegacyEpochZeroDeletes(t *testing.T) {
+// epoch缺失不能证明持有者已释放；历史零值配置不得绕过释放门。
+func TestLeaveScene_LegacyEpochZeroKeepsUnknown(t *testing.T) {
 	sc, mr := newTestSvcCtx(t, "")
 	calls := installLeaveReleaseRecorder(t)
 	const (
 		playerID = uint64(8305)
 		sceneID  = uint64(9405)
 	)
-	leaveReleaseSeed(t, mr, playerID, sceneID, "10", 0)
+	raw := leaveReleaseSeed(t, mr, playerID, sceneID, "10", 0)
 	before := leaveReleaseCount(t, "legacy_epoch0")
 
 	_, err := NewLeaveSceneLogic(context.Background(), sc).LeaveScene(leaveReleaseRequest(playerID, sceneID))
-	require.NoError(t, err)
-	assert.False(t, mr.Exists(getPlayerLocationKey(playerID)))
-	assert.Empty(t, calls())
-	assert.Equal(t, before+1, leaveReleaseCount(t, "legacy_epoch0"))
+	requireHolderReleasePending(t, err)
+	assert.Equal(t, raw, leaveCasValue(t, mr, getPlayerLocationKey(playerID)))
+	assert.Equal(t, "2", leaveCasValue(t, mr, fmt.Sprintf(InstancePlayerCountKey, sceneID)))
+	assert.Empty(t, calls(), "不能向epoch未知持有者发无版本释放")
+	assert.Equal(t, before, leaveReleaseCount(t, "legacy_epoch0"))
 }
 
 // owner_epoch 键缺失、location 记着 N:按 N 要求释放证据(与 EnterScene 同口径),不当作存量玩家直接删。
@@ -386,8 +387,8 @@ func TestLeaveScene_AwaitingPlacementDeletes(t *testing.T) {
 	assert.Equal(t, before+1, leaveReleaseCount(t, "no_holder"))
 }
 
-// 运维回滚开关:上限配成负数 → 整项检查关闭,按旧行为删。
-func TestLeaveScene_ReleaseWaitDisabledDeletesImmediately(t *testing.T) {
+// 负预算保留配置兼容，但不能把UNKNOWN持有者变成已释放。
+func TestLeaveScene_NegativeBudgetCannotDisableProof(t *testing.T) {
 	sc, mr := newTestSvcCtx(t, "")
 	sc.Config.LeaveSceneHolderReleaseWaitSeconds = -1
 	calls := installLeaveReleaseRecorder(t)
@@ -395,18 +396,19 @@ func TestLeaveScene_ReleaseWaitDisabledDeletesImmediately(t *testing.T) {
 		playerID = uint64(8308)
 		sceneID  = uint64(9408)
 	)
-	leaveReleaseSeed(t, mr, playerID, sceneID, "10", 3)
+	raw := leaveReleaseSeed(t, mr, playerID, sceneID, "10", 3)
 	before := leaveReleaseCount(t, "disabled")
 
 	_, err := NewLeaveSceneLogic(context.Background(), sc).LeaveScene(leaveReleaseRequest(playerID, sceneID))
-	require.NoError(t, err)
-	assert.False(t, mr.Exists(getPlayerLocationKey(playerID)))
-	assert.Empty(t, calls())
-	assert.Equal(t, before+1, leaveReleaseCount(t, "disabled"))
+	requireHolderReleasePending(t, err)
+	assert.Equal(t, raw, leaveCasValue(t, mr, getPlayerLocationKey(playerID)))
+	assert.Equal(t, "2", leaveCasValue(t, mr, fmt.Sprintf(InstancePlayerCountKey, sceneID)))
+	assert.Len(t, calls(), 1)
+	assert.Equal(t, before, leaveReleaseCount(t, "disabled"))
 }
 
-// dev 旁路下换手门本身已被旁路,不检查释放。
-func TestLeaveScene_DevBypassDeletesImmediately(t *testing.T) {
+// 开发换手旁路也不能降低离场清理的释放证明。
+func TestLeaveScene_DevBypassCannotDeleteUnknownHolder(t *testing.T) {
 	sc, mr := newTestSvcCtx(t, "")
 	sc.Config.AllowUnsafeCrossNodeHandoff = true
 	installLeaveReleaseRecorder(t)
@@ -414,11 +416,12 @@ func TestLeaveScene_DevBypassDeletesImmediately(t *testing.T) {
 		playerID = uint64(8309)
 		sceneID  = uint64(9409)
 	)
-	leaveReleaseSeed(t, mr, playerID, sceneID, "10", 3)
+	raw := leaveReleaseSeed(t, mr, playerID, sceneID, "10", 3)
 
 	_, err := NewLeaveSceneLogic(context.Background(), sc).LeaveScene(leaveReleaseRequest(playerID, sceneID))
-	require.NoError(t, err)
-	assert.False(t, mr.Exists(getPlayerLocationKey(playerID)))
+	requireHolderReleasePending(t, err)
+	assert.Equal(t, raw, leaveCasValue(t, mr, getPlayerLocationKey(playerID)))
+	assert.Equal(t, "2", leaveCasValue(t, mr, fmt.Sprintf(InstancePlayerCountKey, sceneID)))
 }
 
 // 零值配置(代码里直接构造)不得把这道门关掉:0 取默认上限。
@@ -434,8 +437,9 @@ func TestEffectiveLeaveSceneHolderReleaseWait(t *testing.T) {
 	assert.Equal(t, 30*time.Second, wait)
 
 	sc.Config.LeaveSceneHolderReleaseWaitSeconds = -1
-	_, enabled = sc.Config.EffectiveLeaveSceneHolderReleaseWait()
-	assert.False(t, enabled)
+	wait, enabled = sc.Config.EffectiveLeaveSceneHolderReleaseWait()
+	assert.True(t, enabled)
+	assert.Equal(t, 600*time.Second, wait)
 }
 
 // R3:离场身份是 legacy(请求不带身份,混版窗口)时 location 可能属于一次更新的登录,只等证据、不请持有节点释放。
@@ -458,8 +462,8 @@ func TestLeaveScene_LegacyIdentityWaitsWithoutRequestingRelease(t *testing.T) {
 	assert.Equal(t, before+1, leaveReleaseCount(t, "pending_unproven"))
 }
 
-// 等满上限仍拿不到证据 → 按旧行为删除并计 forced(有记录的 fail-open,§3.6)。
-func TestLeaveScene_WaitBudgetExceededForcesDelete(t *testing.T) {
+// 等满甚至时钟跳变都不是持有者已释放的证明：原文/人数不动，继续按原会话催促。
+func TestLeaveScene_WaitBudgetExceededKeepsUnknown(t *testing.T) {
 	sc, mr := newTestSvcCtx(t, "")
 	sc.Config.LeaveSceneHolderReleaseWaitSeconds = 60
 	calls := installLeaveReleaseRecorder(t)
@@ -467,7 +471,7 @@ func TestLeaveScene_WaitBudgetExceededForcesDelete(t *testing.T) {
 		playerID = uint64(8311)
 		sceneID  = uint64(9411)
 	)
-	leaveReleaseSeed(t, mr, playerID, sceneID, "10", 3)
+	raw := leaveReleaseSeed(t, mr, playerID, sceneID, "10", 3)
 	loc := &scene_manager.PlayerLocation{SessionId: 11, LoginGeneration: identGenA, NodeId: "10"}
 	mr.SetTime(leaveReleaseRedisNow)
 	firstMs := leaveReleaseRedisNow.Add(-61 * time.Second).UnixMilli()
@@ -476,11 +480,11 @@ func TestLeaveScene_WaitBudgetExceededForcesDelete(t *testing.T) {
 	before := leaveReleaseCount(t, "forced")
 
 	_, err := NewLeaveSceneLogic(context.Background(), sc).LeaveScene(leaveReleaseRequest(playerID, sceneID))
-	require.NoError(t, err)
-	assert.False(t, mr.Exists(getPlayerLocationKey(playerID)))
-	assert.Equal(t, "1", leaveCasValue(t, mr, fmt.Sprintf(InstancePlayerCountKey, sceneID)))
-	assert.Empty(t, calls())
-	assert.Equal(t, before+1, leaveReleaseCount(t, "forced"))
+	requireHolderReleasePending(t, err)
+	assert.Equal(t, raw, leaveCasValue(t, mr, getPlayerLocationKey(playerID)))
+	assert.Equal(t, "2", leaveCasValue(t, mr, fmt.Sprintf(InstancePlayerCountKey, sceneID)))
+	assert.Len(t, calls(), 1)
+	assert.Equal(t, before, leaveReleaseCount(t, "forced"))
 }
 
 // 等待计时属于某一份 location:(epoch, 节点, 登录身份) 变了就重新计时,上一份的等待不得算到新的头上。
@@ -528,12 +532,13 @@ func TestLeaveScene_WaitTimerUsesRedisClockNotReplicaClock(t *testing.T) {
 	assert.Equal(t, forcedBefore, leaveReleaseCount(t, "forced"))
 	assert.Len(t, calls(), 1, "仍在等:照样请持有节点释放")
 
-	// Redis 时钟走过上限之后才 forced。
+	// Redis时钟即使走过旧预算，也不能把UNKNOWN变成释放证明。
 	mr.SetTime(redisNow.Add(31 * time.Second))
 	_, err = NewLeaveSceneLogic(context.Background(), sc).LeaveScene(leaveReleaseRequest(playerID, sceneID))
-	require.NoError(t, err)
-	assert.False(t, mr.Exists(getPlayerLocationKey(playerID)))
-	assert.Equal(t, forcedBefore+1, leaveReleaseCount(t, "forced"))
+	requireHolderReleasePending(t, err)
+	assert.Equal(t, raw, leaveCasValue(t, mr, getPlayerLocationKey(playerID)))
+	assert.Equal(t, "2", leaveCasValue(t, mr, fmt.Sprintf(InstancePlayerCountKey, sceneID)))
+	assert.Equal(t, forcedBefore, leaveReleaseCount(t, "forced"))
 }
 
 // 第二轮审计 r2-sm#3:zone 负载集的键丢了(过期 / 淘汰 / 误删),持有节点其实活着、仍在 etcd 注册表里。旧实现把
@@ -610,12 +615,9 @@ func TestLeaveScene_ReleaseVerdictCountedOnlyWhenDeleted(t *testing.T) {
 		wantLoc func(sceneID uint64) string
 	}{
 		{
-			name: "forced then superseded", playerID: 8319, sceneID: 9419, verdict: "forced",
+			name: "released then superseded", playerID: 8319, sceneID: 9419, verdict: "released",
 			arrange: func(t *testing.T, mr *miniredis.Miniredis, playerID uint64) {
-				mr.SetTime(leaveReleaseRedisNow)
-				loc := &scene_manager.PlayerLocation{SessionId: 11, LoginGeneration: identGenA, NodeId: "10"}
-				require.NoError(t, mr.Set(leaveReleaseWaitKey(playerID), leaveReleaseWaitScope(3, loc)+":"+
-					strconv.FormatInt(leaveReleaseRedisNow.Add(-61*time.Second).UnixMilli(), 10)))
+				require.NoError(t, mr.Set(ownerepoch.HandoffKey(playerID), "3:1700000000000"))
 			},
 			race: func(mr *miniredis.Miniredis, locKey string, sceneID uint64) {
 				_ = mr.Set(locKey, newerRaw(sceneID))

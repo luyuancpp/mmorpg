@@ -15,6 +15,7 @@ import (
 	"shared/accountdirectory"
 	"shared/assetop"
 	"shared/authoritysql"
+	"shared/placement"
 )
 
 var ErrOriginalRole = errors.New("inbox: 原角色身份缺失、已换主或冻结")
@@ -22,7 +23,7 @@ var ErrOriginalRole = errors.New("inbox: 原角色身份缺失、已换主或冻
 var roleSchemaPattern = regexp.MustCompile(`^[A-Za-z_][A-Za-z0-9_]{0,63}$`)
 
 // RoleAuthority 隔离同事务域SQL目录依赖。原件由首次新入箱捕获，历史条目只核验、不补写。
-// LockCurrent 必须是业务事务的首个行锁；成功后直到提交都持有原account_role P。
+// LockCurrent先取得完整meta/64片/route前缀，再取得原account_role P；成功后全部持有到提交。
 type RoleAuthority interface {
 	LockCurrent(context.Context, *sql.Tx, uint64) (*dspb.AccountRoleOwnership, error)
 	VerifyAdmission(context.Context, *sql.Tx, *dspb.AccountRoleOwnership, *base.RoleAdmissionIdentity) error
@@ -77,6 +78,9 @@ func NewSQLRoleAuthority(ctx context.Context, db *sql.DB, schema string) (*SQLRo
 	if err = rows.Close(); err != nil {
 		return nil, err
 	}
+	if err = placement.CheckRoleRouteContract(ctx, db, schema); err != nil {
+		return nil, err
+	}
 	return &SQLRoleAuthority{schema: schema}, nil
 }
 
@@ -103,6 +107,9 @@ func (s *SQLRoleAuthority) VerifyAdmission(ctx context.Context, tx *sql.Tx, orig
 func (s *SQLRoleAuthority) LockCurrent(ctx context.Context, tx *sql.Tx, player uint64) (*dspb.AccountRoleOwnership, error) {
 	if s == nil || tx == nil || player == 0 || !roleSchemaPattern.MatchString(s.schema) {
 		return nil, ErrOriginalRole
+	}
+	if err := placement.LockRoleRoutes(ctx, tx, s.schema, []uint64{player}); err != nil {
+		return nil, err
 	}
 	var account []byte
 	var revision, listing uint64

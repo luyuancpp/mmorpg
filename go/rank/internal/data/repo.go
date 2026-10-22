@@ -11,6 +11,7 @@ import (
 	"github.com/go-sql-driver/mysql"
 	"google.golang.org/protobuf/proto"
 	rankpb "proto/rank"
+	"rank/internal/metrics"
 	"shared/mailgrant"
 	"shared/serviceauth"
 )
@@ -80,7 +81,8 @@ func validBoard(b *rankpb.RankBoardKey) bool {
 	return b != nil && b.BoardType > 0 && b.Scope >= rankpb.RankScope_RANK_SCOPE_GLOBAL && b.Scope <= rankpb.RankScope_RANK_SCOPE_CUSTOM && len(b.Period) > 0 && len(b.Period) <= 64 && b.Generation > 0
 }
 
-func (r *Repo) Open(ctx context.Context, caller string, in *rankpb.OpenRankGenerationRequest) (*rankpb.OpenRankGenerationResponse, error) {
+func (r *Repo) Open(ctx context.Context, caller string, in *rankpb.OpenRankGenerationRequest) (result *rankpb.OpenRankGenerationResponse, err error) {
+	defer func() { observeWrite(metrics.OperationOpen, err, result.GetDuplicated()) }()
 	if in == nil || !validBoard(in.Board) || caller != in.Producer || in.SourceEpoch == 0 || in.RequestId == 0 {
 		return nil, ErrInvalid
 	}
@@ -118,7 +120,8 @@ func boolInt(value bool) uint32 {
 	return 0
 }
 
-func (r *Repo) Submit(ctx context.Context, caller string, in *rankpb.SubmitRankScoresRequest) (*rankpb.SubmitRankScoresResponse, error) {
+func (r *Repo) Submit(ctx context.Context, caller string, in *rankpb.SubmitRankScoresRequest) (result *rankpb.SubmitRankScoresResponse, err error) {
+	defer func() { observeWrite(metrics.OperationSubmit, err, result.GetDuplicated()) }()
 	if in == nil || in.BoardId == 0 || in.Generation == 0 || in.SourceEpoch == 0 || in.SourceCursor == 0 || in.RequestId == 0 || len(in.Entries) == 0 || len(in.Entries) > 128 || in.Mode < rankpb.RankSubmitMode_RANK_SUBMIT_SET_IF_HIGHER || in.Mode > rankpb.RankSubmitMode_RANK_SUBMIT_INCREMENT {
 		return nil, ErrInvalid
 	}
@@ -138,7 +141,7 @@ func (r *Repo) Submit(ctx context.Context, caller string, in *rankpb.SubmitRankS
 	if err != nil {
 		return nil, err
 	}
-	result := &rankpb.SubmitRankScoresResponse{}
+	result = &rankpb.SubmitRankScoresResponse{}
 	err = r.tx(ctx, func(tx *sql.Tx) error {
 		b, err := scanBoard(tx.QueryRowContext(ctx, "SELECT "+boardColumns+" FROM rank_board WHERE board_id=? FOR UPDATE", in.BoardId))
 		if err != nil {
@@ -206,7 +209,8 @@ func (r *Repo) Submit(ctx context.Context, caller string, in *rankpb.SubmitRankS
 }
 
 // Freeze在一笔事务内留下完整快照与全部邮件意图，不依赖后续补扫生成缺失奖励。
-func (r *Repo) Freeze(ctx context.Context, caller string, in *rankpb.FreezeRankGenerationRequest) (*rankpb.FreezeRankGenerationResponse, error) {
+func (r *Repo) Freeze(ctx context.Context, caller string, in *rankpb.FreezeRankGenerationRequest) (result *rankpb.FreezeRankGenerationResponse, err error) {
+	defer func() { observeWrite(metrics.OperationFreeze, err, result.GetDuplicated()) }()
 	if in == nil || in.BoardId == 0 || in.Generation == 0 || in.SourceEpoch == 0 || in.RequestId == 0 || len(in.Rewards) > 100 {
 		return nil, ErrInvalid
 	}
@@ -252,7 +256,7 @@ func (r *Repo) Freeze(ctx context.Context, caller string, in *rankpb.FreezeRankG
 			return nil, err
 		}
 	}
-	result := &rankpb.FreezeRankGenerationResponse{}
+	result = &rankpb.FreezeRankGenerationResponse{}
 	err = r.tx(ctx, func(tx *sql.Tx) error {
 		b, err := scanBoard(tx.QueryRowContext(ctx, "SELECT "+boardColumns+" FROM rank_board WHERE board_id=? FOR UPDATE", in.BoardId))
 		if err != nil {

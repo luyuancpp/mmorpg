@@ -334,7 +334,7 @@ message GuildTrialLobbyConsents {
 message GuildTrialLobbyRecord {
   option(OptionTableName) = "guild_trial_lobby";
   option(OptionPrimaryKey) = "lobby_id";
-  option(OptionIndex) = "guild_id,state,lobby_id;state,updated_ms,lobby_id";
+  option(OptionIndex) = "guild_id,state,lobby_id;state,updated_ms,lobby_id;state,lobby_id";
   option(OptionTiDBNonclusteredPK) = true;
   option(OptionTiDBShardRowIDBits) = 4;
   option(OptionTiDBPreSplitRegions) = 4;

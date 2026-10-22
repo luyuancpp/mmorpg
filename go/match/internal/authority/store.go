@@ -12,25 +12,23 @@ import (
 	"strings"
 	"time"
 
-	"github.com/go-sql-driver/mysql"
 	"github.com/google/uuid"
 	"google.golang.org/protobuf/proto"
 	"match/internal/config"
 	pb "proto/match"
-	teampb "proto/team"
 	"schemamigrate"
 	"shared/roleidentity"
 )
 
 type Store struct {
-	roleSchema string
+	roleSchema       string
 	entryGuildSchema string
-	DB         *sql.DB
-	Secret     []byte
-	Config     config.GlobalMatchConf
-	TeamConfig config.TeamConf // 启动时由同一SQL策略指纹准入，运行中不热改。
-	roleGuard  func(context.Context, *sql.Tx, []*pb.MatchAuthorityTicketRecord) error
-	entryGuard func(context.Context, *sql.Tx, []*pb.MatchAuthorityTicketRecord, *matchEntryOriginal) error
+	DB               *sql.DB
+	Secret           []byte
+	Config           config.GlobalMatchConf
+	TeamConfig       config.TeamConf // 启动时由同一SQL策略指纹准入，运行中不热改。
+	roleGuard        func(context.Context, *sql.Tx, []*pb.MatchAuthorityTicketRecord) error
+	entryGuard       func(context.Context, *sql.Tx, []*pb.MatchAuthorityTicketRecord, *matchEntryOriginal) error
 }
 
 const ticketColumns = "player_id,ticket,request_id,mode,config_id,team_size,state,enqueued_ms,not_before_ms,zone_id,rating_centi,formation_id,team_id,network_profile,expires_ms,selected_region,preferred_region,owner_account,owner_revision"
@@ -43,62 +41,21 @@ func Open(ctx context.Context, c config.GlobalMatchConf) (*Store, error) {
 	if len(secret) < 32 {
 		return nil, errors.New("全球匹配探测密钥至少32字节，必须从环境注入")
 	}
-	if c.Host == "" || c.User == "" || c.Database != "mmorpg_match" || c.CrossRegionWaitSeconds == 0 || c.HardLatencyMs < 20 || c.HardLatencyMs > 1000 || c.ProbeTTLSeconds < 30 || c.ProbeTTLSeconds > 600 {
+	if c.CrossRegionWaitSeconds == 0 || c.HardLatencyMs < 20 || c.HardLatencyMs > 1000 || c.ProbeTTLSeconds < 30 || c.ProbeTTLSeconds > 600 {
 		return nil, errors.New("全球匹配数据库或地域配置无效")
 	}
-	mc := mysql.NewConfig()
-	mc.User = c.User
-	mc.Passwd = os.Getenv(c.PasswordEnv)
-	mc.Net = "tcp"
-	mc.Addr = c.Host
-	mc.DBName = c.Database
-	mc.ParseTime = true
-	mc.Timeout = 3 * time.Second
-	mc.ReadTimeout = 3 * time.Second
-	mc.WriteTimeout = 3 * time.Second
-	mc.Params = map[string]string{"charset": "utf8mb4", "sql_mode": "'STRICT_TRANS_TABLES'", "transaction_isolation": "'READ-COMMITTED'"}
-	if c.RequireTiDB {
-		for k, v := range map[string]string{"tidb_txn_mode": "'pessimistic'", "tidb_read_staleness": "0", "tidb_low_resolution_tso": "OFF", "tidb_replica_read": "'leader'", "tidb_read_consistency": "'strict'", "tidb_snapshot": "''"} {
-			mc.Params[k] = v
-		}
-	}
-	db, err := sql.Open("mysql", mc.FormatDSN())
+	db, err := openAuthorityDatabase(ctx, c)
 	if err != nil {
 		return nil, err
 	}
-	db.SetMaxOpenConns(16)
-	db.SetMaxIdleConns(4)
 	ok := false
 	defer func() {
 		if !ok {
 			db.Close()
 		}
 	}()
-	if err = db.PingContext(ctx); err != nil {
-		return nil, fmt.Errorf("匹配权威数据库不可用")
-	}
-	var database, version, comment string
-	if err = db.QueryRowContext(ctx, "SELECT DATABASE(),VERSION(),@@version_comment").Scan(&database, &version, &comment); err != nil {
+	if err = requireCurrentSchema(ctx, db, c.Database, schemamigrate.Plan); err != nil {
 		return nil, err
-	}
-	if database != c.Database || (c.RequireTiDB && !strings.Contains(strings.ToLower(version+comment), "tidb")) {
-		return nil, errors.New("匹配权威事务域校验失败")
-	}
-	if c.RequireTiDB {
-		var mode, isolation, replica, consistency, snapshot string
-		var stale, low int64
-		err = db.QueryRowContext(ctx, "SELECT @@tidb_txn_mode,@@transaction_isolation,@@tidb_replica_read,@@tidb_read_consistency,@@tidb_snapshot,@@tidb_read_staleness,@@tidb_low_resolution_tso").Scan(&mode, &isolation, &replica, &consistency, &snapshot, &stale, &low)
-		if err != nil || mode != "pessimistic" || isolation != "READ-COMMITTED" || replica != "leader" || consistency != "strict" || snapshot != "" || stale != 0 || low != 0 {
-			return nil, errors.New("匹配权威连接必须使用完整TiDB强读策略")
-		}
-	}
-	// 表结构仅由 proto 描述，禁止维护第二份手写 DDL。
-	report, err := schemamigrate.Up(ctx, db, schemamigrate.Options{Database: c.Database, Tables: []proto.Message{&pb.MatchSpectatorRecord{}, &pb.MatchSpectatorIntentRecord{}, &pb.MatchSpectatorHeadRecord{}, &pb.MatchNetworkProfileRecord{}, &pb.MatchAuthorityTicketRecord{}, &pb.MatchTicketRegionRecord{}, &pb.MatchChallengeInvitationRecord{}, &pb.MatchGlobalPolicyRecord{}, &pb.MatchJoinIntentRecord{}, &pb.MatchDirectIntentRecord{}, &pb.MatchFormationRecord{}, &pb.MatchRatingRecord{}, &pb.MatchRatingAppliedRecord{}, &pb.MatchRankSourceRecord{}, &pb.MatchRankOutboxRecord{}, &pb.MatchBattleCompletionRecord{}, &pb.MatchBattleSettlementSourceRecord{}, &teampb.TeamAuthorityRecord{}, &teampb.TeamMembershipRecord{}, &teampb.TeamInviteIndexRecord{}, &teampb.TeamActionReceiptRecord{}, &teampb.TeamLaunchRecord{}, &teampb.TeamLaunchRegionRecord{}, &teampb.TeamApplicationIndexRecord{}, &teampb.TeamLaunchRoleRecord{}}})
-	if err != nil {
-		return nil, err
-	}
-	if len(report.Manual) != 0 {
-		return nil, errors.New("全球匹配权威表存在需人工处理的迁移，拒绝接流")
 	}
 	store := &Store{DB: db, Secret: secret, Config: c}
 	if err = store.CheckCandidateIndexes(ctx); err != nil {

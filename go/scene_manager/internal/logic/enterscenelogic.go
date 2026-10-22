@@ -85,6 +85,7 @@ return 0
 `
 
 const luaCompleteEnterSceneDedupe = `
+if KEYS[2] ~= nil and redis.call('GET', KEYS[2]) ~= ARGV[4] then return 0 end
 if redis.call("GET", KEYS[1]) == ARGV[1] then
     redis.call("SET", KEYS[1], ARGV[2], "EX", ARGV[3])
     return 1
@@ -138,6 +139,16 @@ func (l *EnterSceneLogic) EnterScene(in *scene_manager.EnterSceneRequest) (respo
 	// 在任何去重缓存、Redis 预占或落点变更前拒绝，旧请求不能借缓存绕过此闸。
 	if in == nil || in.OwnerRevision == 0 {
 		return nil, status.Error(codes.InvalidArgument, "原账号角色归属修订缺失")
+	}
+	currentRole, roleErr := lookupCurrentRole(l.ctx, l.svcCtx, in.PlayerId)
+	if roleErr != nil {
+		return nil, roleErr
+	}
+	if currentRole.OwnerRevision != in.OwnerRevision {
+		return nil, status.Error(codes.FailedPrecondition, "原角色归属修订已失效")
+	}
+	if err := observeCurrentRevision(l.svcCtx, in.PlayerId, in.OwnerRevision); err != nil {
+		return nil, status.Error(codes.Unavailable, "角色修订投影更新失败")
 	}
 	// 回显 player_id:scene 节点的异步应答回调靠它把结果对回发起玩家(传送 / 疏散要据此
 	// 收尾)。放在 defer 里覆盖所有返回路径,包括去重缓存的重放。
@@ -203,9 +214,9 @@ func (l *EnterSceneLogic) EnterScene(in *scene_manager.EnterSceneRequest) (respo
 			_ = l.deleteEnterSceneDedupeIfValue(dedupeKey, dedupeOwner)
 			return
 		}
-		cached := enterSceneDedupeDonePrefix + dedupeFingerprint + ":" + base64.StdEncoding.EncodeToString(payload)
-		if _, err := l.svcCtx.Redis.Eval(luaCompleteEnterSceneDedupe, []string{dedupeKey},
-			dedupeOwner, cached, enterSceneDedupeTTLSeconds); err != nil {
+		cached := enterSceneDedupeDonePrefix + "v2:" + revisionText(in.OwnerRevision) + ":" + dedupeFingerprint + ":" + base64.StdEncoding.EncodeToString(payload)
+		if _, err := l.svcCtx.Redis.Eval(luaCompleteEnterSceneDedupe, []string{dedupeKey, locationRevisionFloorKey(in.PlayerId)},
+			dedupeOwner, cached, enterSceneDedupeTTLSeconds, revisionText(in.OwnerRevision)); err != nil {
 			l.Logger.Errorf("Failed to cache complete EnterScene success response: key=%s err=%v", dedupeKey, err)
 		}
 	}()
@@ -252,18 +263,18 @@ func (l *EnterSceneLogic) EnterScene(in *scene_manager.EnterSceneRequest) (respo
 					"相同 request_id 的 EnterScene 仍在执行，请稍后重试"), nil
 			}
 			if strings.HasPrefix(existing, enterSceneDedupeDonePrefix) {
-				parts := strings.SplitN(strings.TrimPrefix(existing, enterSceneDedupeDonePrefix), ":", 2)
-				if len(parts) == 2 && parts[0] != dedupeFingerprint {
+				parts := strings.SplitN(strings.TrimPrefix(existing, enterSceneDedupeDonePrefix), ":", 4)
+				if len(parts) == 4 && parts[0] == "v2" && (parts[1] != revisionText(in.OwnerRevision) || parts[2] != dedupeFingerprint) {
 					metrics.ObserveEnterSceneStage(in.GateZoneId, metrics.EnterSceneStageDedup, time.Since(dedupStart))
 					return errResp(constants.ErrEnterSceneIdempotencyConflict,
 						"同一 request_id 已用于不同的 EnterScene 请求"), nil
 				}
 				var decodeErr error
 				var payload []byte
-				if len(parts) == 2 {
-					payload, decodeErr = base64.StdEncoding.DecodeString(parts[1])
+				if len(parts) == 4 && parts[0] == "v2" && parts[1] == revisionText(in.OwnerRevision) {
+					payload, decodeErr = base64.StdEncoding.DecodeString(parts[3])
 				} else {
-					decodeErr = fmt.Errorf("legacy done entry has no request fingerprint")
+					decodeErr = fmt.Errorf("旧done缺少原修订绑定，不能直接重放")
 				}
 				cached := &scene_manager.EnterSceneResponse{}
 				if decodeErr == nil {
@@ -300,7 +311,7 @@ func (l *EnterSceneLogic) EnterScene(in *scene_manager.EnterSceneRequest) (respo
 	if targetZoneId == 0 && in.SceneId != 0 {
 		targetZoneId = GetSceneZone(l.svcCtx, in.SceneId)
 	}
-	currentLoc, currentLocRaw, locErr := getPlayerLocationWithRaw(l.svcCtx, in.PlayerId)
+	currentLoc, currentLocRaw, currentLocTag, locErr := locationForRevision(l.svcCtx, in.PlayerId, in.OwnerRevision)
 	if locErr != nil {
 		return errResp(constants.ErrRedis, fmt.Sprintf("读取玩家当前位置失败，已拒绝进入场景: %v", locErr)), nil
 	}
@@ -455,7 +466,7 @@ func (l *EnterSceneLogic) EnterScene(in *scene_manager.EnterSceneRequest) (respo
 		// 会话身份随等待落点一起写;原文期望用观察原文(陈旧 zone 被过滤成 nil 时观察原文仍在,落点 Lua
 		// 要求它没被改过)。
 		guard := placementGuard{observedEpoch: observedEpoch, mint: true, pendingSceneConfID: in.SceneConfId,
-			identity: identityRecord, expectLoc: expectObservedLocation(observedLocRaw)}
+			identity: identityRecord, expectLoc: expectObservedLocation(observedLocRaw), ownerRevision: in.OwnerRevision, observedTag: currentLocTag}
 		if leavingZone && !awaitingPlacement {
 			resp, grant := l.requireHandoffCommitted(in, currentLoc, currentZoneID, targetZoneId, observedEpoch, "跨区重定向")
 			if resp != nil {
@@ -693,7 +704,7 @@ func (l *EnterSceneLogic) EnterScene(in *scene_manager.EnterSceneRequest) (respo
 	// missing,否则 present),不留零值。死节点接管 / 陈旧 zone 把 currentLoc 清空,但观察原文仍在,落点同样
 	// 要求它没被改过。
 	guard := placementGuard{observedEpoch: observedEpoch, mint: !samePhysicalNode || sameNodeZeroMint,
-		identity: identityRecord, expectLoc: expectObservedLocation(observedLocRaw)}
+		identity: identityRecord, expectLoc: expectObservedLocation(observedLocRaw), ownerRevision: in.OwnerRevision, observedTag: currentLocTag}
 	if crossNodeHandoff {
 		guard.mint, guard.requiredMarker = handoffGrant.committed, handoffGrant.marker
 	}
@@ -713,7 +724,7 @@ func (l *EnterSceneLogic) EnterScene(in *scene_manager.EnterSceneRequest) (respo
 			// CAS 失败(epoch 或 location 在观察之后被改写 / 删除)回 19、不发路由。身份没变则一个字节都不写。
 			if identityRecord != identityOfLocation(currentLoc) {
 				if err := setLocationIdentityIfUnchanged(l.svcCtx, in.PlayerId, currentLoc, currentLocRaw,
-					identityRecord, observedEpoch); err != nil {
+					identityRecord, observedEpoch, in.OwnerRevision, currentLocTag); err != nil {
 					if errors.Is(err, errOwnerEpochConflict) {
 						metrics.ObserveEnterSceneRejected(targetZoneId, "epoch_conflict")
 						l.Logger.Errorf("[PlacementIdentity] Same-placement identity write lost CAS (epoch or location advanced concurrently); no route sent: player=%d scene=%d node=%s session=%d login_generation=%d",

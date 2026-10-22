@@ -221,9 +221,10 @@ func newIntegrationSvcCtx(t *testing.T) (*svc.ServiceContext, *miniredis.Minired
 	c.AllowGateZoneAsHomeZone = true
 
 	return &svc.ServiceContext{
-		Config:     c,
-		Redis:      rds,
-		SceneIDGen: snowflake.NewNode(0),
+		Config:        c,
+		Redis:         rds,
+		RoleDirectory: testRoleDirectory(1),
+		SceneIDGen:    snowflake.NewNode(0),
 	}, mr
 }
 

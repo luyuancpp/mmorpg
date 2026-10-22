@@ -71,7 +71,7 @@ func TestDirectTiDBCapturesOriginalExitAndProfileThenRecoversWithoutTouchingNewW
 	require.True(t, ok)
 	later := f.request()
 	_, err = f.store.SpectatorIntent(f.actor, 11, later)
-	require.NoError(t, err)
+	require.ErrorIs(t, err, ErrMatchEntryOccupied)
 	_, err = f.store.BeginSpectator(f.actor, 11, later, f.formation, f.add)
 	require.ErrorIs(t, err, ErrSpectatorBusy)
 	result, err := f.store.CompletePreparedDirect(context.Background(), pending)

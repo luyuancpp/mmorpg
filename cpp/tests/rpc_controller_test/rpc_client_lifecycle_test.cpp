@@ -80,7 +80,7 @@ using namespace std::chrono_literals;
 // 而 Node::RegisterHandlers 引用的下面两个注册入口是**各节点可执行工程的生成代码**才定义的
 // (gate / scene / battle 各一份),任何 lib 里都没有 —— 不给就 LNK2019 ×2。
 // 按 message_id 的全局回包表(InitReply)已随 RpcChannel 改造退场,Node 不再要求它(muduo-rpc-channel.md §9.2)。
-// 本测试永远不会构造 Node,给空实现即可。若日后再报同类未解析符号,按同样方式补。
+// 本文件不构造 Node；观战接口夹具只用不调用 RegisterHandlers 的 basic 构造器，空注册桩仍有效。
 void InitPlayerService() {}
 void InitServiceHandler() {}
 

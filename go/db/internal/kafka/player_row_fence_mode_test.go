@@ -55,6 +55,9 @@ func TestFencingYAMLPolicyRejectsAmbiguousAndUnknownModes(t *testing.T) {
 			err := conf.LoadFromYamlBytes([]byte("Fencing:\n  Mode: "+test.raw+"\n"), &holder)
 			if err == nil {
 				c := db_config.Config{}
+				c.ServerConfig.Database.RequireTiDB = true
+				c.Placement.Required = true
+				c.Placement.RequireRouteReady = true
 				c.ServerConfig.Fencing = holder.Fencing
 				c.Normalize()
 				err = c.Validate()

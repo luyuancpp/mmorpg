@@ -97,5 +97,12 @@ func (r *trialLaunchRecovery) recoverOne(ctx context.Context, store trialLaunchS
 		return errors.New("原match开战请求尚无终局证明，保留原件")
 	}
 	battle.BattleID = receipt.BattleId
-	return r.d.trials.RegisterTrialBattle(ctx, battle, original.CreatedMs)
+	if err := r.d.trials.RegisterTrialBattle(ctx, battle, original.CreatedMs); err != nil {
+		return err
+	}
+	if r.d.Lobby != nil && r.d.Lobby.SQLAuthorityEnabled() {
+		_, err := r.d.Lobby.Finish(ctx, original.RequestId, pb.GuildTrialLobbyState_GUILD_TRIAL_LOBBY_STATE_LAUNCHING, pb.GuildTrialLobbyState_GUILD_TRIAL_LOBBY_STATE_LAUNCHED, receipt.BattleId, 0, nil)
+		return err
+	}
+	return nil
 }

@@ -1,4 +1,6 @@
 Name: db.rpc
+# 全球SQL为默认；仅历史dev/test夹具可显式true，不能靠Mode自行降级。
+LegacyNonGlobal: false
 ListenOn: 0.0.0.0:6000
 Etcd:
   Hosts:
@@ -183,7 +185,7 @@ ServerConfig:
 # 每条读 / 写任务按 player:placement:{id}(落点记录)与 player:zone:{id}(home_zone)选库:
 #   有记录 → 记录指向的库;无记录 → home_zone 的 zone 库;都没有 → 本 zone 库(旧语义)。
 #   写任务的 home_zone ≠ 本 ZoneId → 进死信不落库(合服前的滞留写);记录冻结(搬库中)→ 延后重试。
-# 整段可缺省,缺省 = 下面写出的值。启动日志 "placement:" 一行是核对依据。
+# 全球服务必须显式满足下面三个权威开关，缺键/关闭拒启；不从旧Redis或本区推导权威。
 Placement:
   # 允许按需打开 zone_{1..999999}_db / player_store_{>=1000000}_db 两个家族的库(不在上面的
   # 库名白名单里也行)。按需打开只 Ping + 只读 schema 闸,**从不建库**,白名单防「ZoneId 填错
@@ -192,16 +194,15 @@ Placement:
   # true = 没有落点记录的玩家一律 fail-closed(写进死信、读回失败)。
   # 打开顺序(§13,反了会出事):全部 login 已 Placement.PinOnCreate=true,且各 zone 已
   # `merge_zone -mode pin-placement` 钉完存量之后才能开。
-  Required: false
+  Required: true
   # D1 第 3 批读方门禁(docs/handoff/launch-readiness-20261013/spec_D1_batch1b2_2_3.md §5.3 / §13.2)。
   # true = 只有 mapping Redis 的副本被判可信(mapping:route:ready 存在,且其中记下的 run_id / master_replid 就是本次读所在的
   # 主实例)才按 player:placement / player:zone 选库;不可信时写延后(不耗重试预算)、读耗预算,进程级就绪闸暂停取 Kafka
   # 消息与认领重试。启动时试跑一次读脚本(脚本里调 INFO),执行出错即拒启。false = 行为与引入之前相同。
   # 打开顺序(§8 P5,反了全 zone 停存盘):data_service 对账 leader 已挂上就绪标记、自检稳定为 trusted 之后逐 zone 打开;
-  # 回退先关它(先读方、后写方),但**仅在映射缓存完整时**(标记已挂、leader 自检 trusted)。缓存不完整(标记不在 / 身份不符 /
-  # leader 正在全量预热)时关它,go/db 退回两键 MGET,会把缺键当成「没有落点」写进 home / 本 zone 的库(错库写);
-  # 这时闸关着就是安全状态,要止损只能停 go/db,等预热完、标记挂上(runbook §9.4「rewarm」一节、告警 GoDbRouteGateClosed)。
-  RequireRouteReady: false
+  # 正式顺序：显式迁移/路由初始化→DS db_first强TiDB且reconcile arm→自然发布可信ready→DB/login。
+  # 未trusted时保留既有消费/重试闭闸；不允许通过关闭门禁、自动写ready或空SQL接管旧Redis绕过初始化。
+  RequireRouteReady: true
   # 就绪闸的刷新 / 复查间隔(毫秒),[200, 10000],不写 = 1000。只在 RequireRouteReady=true 时生效。
   RouteReadyGateIntervalMs: 1000
   # 额外落点库(本 zone 库之外)的连接池,**每个库一个池**,按库所属家族分两个旋钮(本 zone 库仍用上面的 Database.MaxOpenConn):

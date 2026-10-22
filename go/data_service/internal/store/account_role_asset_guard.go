@@ -12,6 +12,7 @@ import (
 	"shared/accountdirectory"
 	"shared/authoritysql"
 	"shared/inboxshard"
+	"shared/matchentry"
 
 	"google.golang.org/protobuf/proto"
 )
@@ -48,8 +49,11 @@ func (s *AccountDirectoryStore) ConfigureAssetContracts(schema string, peers ...
 		"SELECT op_id,player_id,status FROM `" + guard.guildSchema + "`.guild_asset_op WHERE 1=0",
 		"SELECT battle_id,player_id FROM `" + guard.guildSchema + "`.guild_trial_reward_owed WHERE 1=0",
 		"SELECT request_id,player_id,state FROM `" + guard.guildSchema + "`.guild_trial_launch_role WHERE 1=0",
+		"SELECT request_id,state FROM `" + guard.guildSchema + "`.guild_trial_launch WHERE 1=0",
+		"SELECT player_id,lobby_id FROM `" + guard.guildSchema + "`.guild_trial_lobby_slot WHERE 1=0",
+		"SELECT lobby_id,state FROM `" + guard.guildSchema + "`.guild_trial_lobby WHERE 1=0",
 		"SELECT op_id,player_id,status FROM `" + guard.mailSchema + "`.mail_asset_op WHERE 1=0",
-		"SELECT player_id,state,ticket,request_id,formation_id FROM `" + guard.matchSchema + "`.match_authority_ticket WHERE 1=0",
+		"SELECT player_id,state,ticket,request_id,formation_id,mode,config_id,team_size,enqueued_ms,not_before_ms,zone_id,rating_centi,team_id,network_profile,expires_ms,selected_region,preferred_region FROM `" + guard.matchSchema + "`.match_authority_ticket WHERE 1=0",
 		"SELECT challenge_id,challenger_player_id,target_player_id,state,expires_ms FROM `" + guard.matchSchema + "`.match_challenge_invitation WHERE 1=0",
 		"SELECT player_id,team_id,epoch FROM `" + guard.matchSchema + "`.team_membership WHERE 1=0",
 		"SELECT invitee_id,team_id,expires_ms FROM `" + guard.matchSchema + "`.team_invite_index WHERE 1=0",
@@ -152,16 +156,17 @@ func (s *roleAssetContractGuard) verify(ctx context.Context, tx *sql.Tx, in *dsp
 		"SELECT op_id FROM `" + s.schema + "`.trade_asset_op WHERE player_id=? AND (status NOT IN (2,3,4,6) OR status IS NULL) LIMIT 1 FOR UPDATE",
 		"SELECT op_id FROM `" + s.guildSchema + "`.guild_asset_op WHERE player_id=? AND (status NOT IN (2,3,4,6) OR status IS NULL) LIMIT 1 FOR UPDATE",
 		"SELECT battle_id FROM `" + s.guildSchema + "`.guild_trial_reward_owed WHERE player_id=? LIMIT 1 FOR UPDATE",
-		"SELECT request_id FROM `" + s.guildSchema + "`.guild_trial_launch_role WHERE player_id=? AND (state<>2 OR state IS NULL) LIMIT 1 FOR UPDATE",
+		"SELECT r.request_id FROM `" + s.guildSchema + "`.guild_trial_launch_role r LEFT JOIN `" + s.guildSchema + "`.guild_trial_launch l ON l.request_id=r.request_id WHERE r.player_id=? AND (r.state IS NULL OR r.state<>2 OR l.request_id IS NULL OR l.state IS NULL OR l.state<>3) LIMIT 1 FOR UPDATE",
+		"SELECT s.player_id FROM `" + s.guildSchema + "`.guild_trial_lobby_slot s LEFT JOIN `" + s.guildSchema + "`.guild_trial_lobby l ON l.lobby_id=s.lobby_id WHERE s.player_id=? AND (s.lobby_id IS NULL OR (s.lobby_id<>0 AND (l.lobby_id IS NULL OR l.state IS NULL OR l.state<>4))) LIMIT 1 FOR UPDATE",
 		"SELECT op_id FROM `" + s.mailSchema + "`.mail_asset_op WHERE player_id=? AND (status NOT IN (2,3,5) OR status IS NULL) LIMIT 1 FOR UPDATE",
 		// Cancel先到会留下state0空票占位；身份字段可已登记，但没有原票/请求/成局就没有在途工作。
 		// 只有精确空占位和state4安全，过期但未被Match终结的票也不能在本域擅自放行。
-		"SELECT player_id FROM `" + s.matchSchema + "`.match_authority_ticket WHERE player_id=? AND (state IS NULL OR (state<>4 AND (state<>0 OR ticket IS NULL OR ticket<>'' OR request_id IS NULL OR request_id<>'' OR formation_id IS NULL OR formation_id<>0))) LIMIT 1 FOR UPDATE",
+		"SELECT player_id FROM `" + s.matchSchema + "`.match_authority_ticket WHERE player_id=? AND " + matchentry.TicketOccupiedSQL + " LIMIT 1 FOR UPDATE",
 		// 成员与同意原件属于原账号，角色过户或维护导入前必须先解除，不能由新主补权。
 		"SELECT player_id FROM `" + s.matchSchema + "`.team_membership WHERE player_id=? AND (team_id IS NULL OR team_id<>0) LIMIT 1 FOR UPDATE",
 		"SELECT team_id FROM `" + s.matchSchema + "`.team_invite_index WHERE invitee_id=? AND (expires_ms IS NULL OR expires_ms>" + dbNowMsSQL + ") LIMIT 1 FOR UPDATE",
 		"SELECT team_id FROM `" + s.matchSchema + "`.team_application_index WHERE applicant_id=? AND (expires_ms IS NULL OR expires_ms>" + dbNowMsSQL + ") LIMIT 1 FOR UPDATE",
-		"SELECT r.player_id FROM `" + s.matchSchema + "`.team_launch_role r LEFT JOIN `" + s.matchSchema + "`.team_launch l ON l.actor_id=r.actor_id AND l.request_high=r.request_high AND l.request_low=r.request_low WHERE r.player_id=? AND (l.actor_id IS NULL OR l.state IS NULL OR l.state<>5) LIMIT 1 FOR UPDATE",
+		"SELECT r.player_id FROM `" + s.matchSchema + "`.team_launch_role r LEFT JOIN `" + s.matchSchema + "`.team_launch l ON l.actor_id=r.actor_id AND l.request_high=r.request_high AND l.request_low=r.request_low WHERE r.player_id=? AND (r.state IS NULL OR r.state<>5 OR l.actor_id IS NULL OR l.state IS NULL OR l.state<>5) LIMIT 1 FOR UPDATE",
 		"SELECT player_id FROM `" + s.matchSchema + "`.match_spectator WHERE player_id=? AND (state IS NULL OR state<>5) LIMIT 1 FOR UPDATE",
 	} {
 		var pending uint64

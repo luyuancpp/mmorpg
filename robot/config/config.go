@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"strconv"
 	"strings"
 	"unicode/utf8"
 
@@ -797,14 +798,14 @@ func (c *MerchantSmokeConfig) validate() error {
 }
 
 // MallArrivalSmokeConfig 是官方商品到账冒烟(下单 → 模拟付款 → 发货进背包 → 订单已发货)的参数。
-// 模拟付款器只许连本机商城、只许 mock- 渠道,所以 run_mode 必须显式写 dev;sku_id 没有缺省值,
+// 模拟付款器只许连本机商城的独立mock适配器，所以run_mode必须显式写dev；sku_id没有缺省值，
 // 必须与 etc/mall_arrival_smoke_seed.sql 种进商城库的那条一致,item_config_id / count_per_unit 是它的发放内容
 // (SKU 应答里不带发放内容,冒烟按这里的期望核对背包增量)。
 type MallArrivalSmokeConfig struct {
 	RunMode               string `yaml:"run_mode"`                // 必须写 "dev"
 	MallURL               string `yaml:"mall_url"`                // 商城地址,只允许 http://<回环IP>:<端口>;缺省 http://127.0.0.1:18120
 	PaymentSubject        string `yaml:"payment_subject"`         // 与商城 COMMERCE_PAYMENT_SUBJECT 一致;缺省 payment-adapter
-	Channel               string `yaml:"channel"`                 // 模拟渠道名,必须 mock- 前缀;缺省 mock-dev
+	Channel               string `yaml:"channel"`                 // 必须mock；只声明适配器，不向请求体发送渠道
 	SkuID                 uint64 `yaml:"sku_id"`                  // 官方商品号,必填
 	Quantity              uint32 `yaml:"quantity"`                // 下单份数 1..16;缺省 1
 	ItemConfigID          uint32 `yaml:"item_config_id"`          // 期望发放的物品;缺省 10(可叠加的回血药)
@@ -826,11 +827,14 @@ func (c *MallArrivalSmokeConfig) Validate() error {
 	if ip := net.ParseIP(endpoint.Hostname()); ip == nil || !ip.IsLoopback() {
 		return fmt.Errorf("mall_url must use a literal loopback IP (dev only)")
 	}
+	if port, err := strconv.Atoi(endpoint.Port()); err != nil || port < 1 || port > 65535 {
+		return fmt.Errorf("mall_url必须显式指定1..65535端口")
+	}
 	if !mallSubjectPattern.MatchString(c.PaymentSubject) {
 		return fmt.Errorf("payment_subject must match [a-z][a-z0-9-]{2,63} (same as the mall's COMMERCE_PAYMENT_SUBJECT)")
 	}
-	if !strings.HasPrefix(c.Channel, "mock-") || !mallChannelPattern.MatchString(c.Channel) {
-		return fmt.Errorf("channel must start with mock- and match [a-z][a-z0-9_-]{1,31} (got %q)", c.Channel)
+	if c.Channel != "mock" {
+		return fmt.Errorf("channel必须是mock，旧mock-dev及任意渠道回执均不能替代本地mock提供方原件")
 	}
 	if c.SkuID == 0 {
 		return fmt.Errorf("sku_id must be set (the one seeded by etc/mall_arrival_smoke_seed.sql)")
@@ -853,7 +857,6 @@ func (c *MallArrivalSmokeConfig) Validate() error {
 // 与 java/mall_game HmacAuthentication / CommerceApi.Payment 的校验正则一致。
 var (
 	mallSubjectPattern = regexp.MustCompile(`^[a-z][a-z0-9-]{2,63}$`)
-	mallChannelPattern = regexp.MustCompile(`^[a-z][a-z0-9_-]{1,31}$`)
 )
 
 type LLMConfig struct {
@@ -889,10 +892,10 @@ func Load(path string) (*Config, error) {
 		ChannelSmoke: ChannelSmokeConfig{ArriveTimeoutSeconds: 20, MaxCooldownWaitSeconds: 60},
 		// merchant-smoke 缺省:切到商人所在线时等到达 20s。
 		MerchantSmoke: MerchantSmokeConfig{ArriveTimeoutSeconds: 20},
-		// mall-arrival-smoke 缺省:本机商城 18120、默认 payment subject、mock-dev 渠道、1 份 × 2 瓶回血药(config 10);
+		// 本机商城18120、固定mock事实适配器、1份×2瓶回血药；渠道允许集合保持空。
 		// run_mode 与 sku_id 刻意没有缺省值,必须在 yaml 里显式写出。
 		MallArrivalSmoke: MallArrivalSmokeConfig{MallURL: "http://127.0.0.1:18120", PaymentSubject: "payment-adapter",
-			Channel: "mock-dev", Quantity: 1, ItemConfigID: 10, CountPerUnit: 2, DeliverTimeoutSeconds: 90, PollIntervalMs: 1500},
+			Channel: "mock", Quantity: 1, ItemConfigID: 10, CountPerUnit: 2, DeliverTimeoutSeconds: 90, PollIntervalMs: 1500},
 		// equip-forge-topup 缺省补给 equip-forge-smoke 用的那个账号。
 		EquipForgeTopup: EquipForgeTopupConfig{Account: "robot_9104"},
 	}

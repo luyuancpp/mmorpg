@@ -5,8 +5,10 @@ import (
 	"errors"
 	"fmt"
 	"net"
+	"regexp"
 	"strconv"
 
+	"chat/internal/constants"
 	"chat/internal/textfilter"
 
 	"github.com/zeromicro/go-zero/core/stores/redis"
@@ -18,7 +20,7 @@ import (
 // 契约 §3 超时预算:业务服务 Timeout ≤ 路由服 ForwardTimeoutMs(默认 5000)− 1000。
 // 为什么要留 1000ms:chat 必须先于路由服超时,把 in-band 结果回给路由服;反过来
 // 路由服先超时会把"chat 的正常慢响应"判成 kServiceUnavailable,而 chat 那边的
-// 副作用(消息已写入)仍然生效,客户端看到失败再重发 = 重复消息(幂等键只挡 60s)。
+// 副作用(消息已写入)仍然生效；客户端保留原request_id可从永久SQL收据恢复同一决定。
 const MaxRpcTimeoutMs int64 = 4000
 
 // Config 是 chat 服务的全部配置。
@@ -26,19 +28,19 @@ const MaxRpcTimeoutMs int64 = 4000
 // 共享 Redis 库**不在这里重新声明**:嵌入的 zrpc.RpcServerConf 已经带了
 // `Redis redis.RedisKeyConf`(yaml 顶层 `Redis:`),再声明一个同名字段会让
 // go-zero conf 在加载期报 "conflict key Redis"(core/conf/config.go addOrMergeFields)。
-// 所以共享库就用 c.Redis.RedisConf —— 与 match 同一写法。它在 v1 只用于 ChatRedis
-// 未配置时的回落;契约 key(player:{id}:location 等)v1 一个都不读。
+// 所以共享缓存句柄沿用c.Redis.RedisConf；正式Send/Pull只走SQL，不回落到缓存授权或历史。
 type Config struct {
 	zrpc.RpcServerConf
 
-	// ChatRedis:chat 私有 key(chat:*)的存储,可配 Type: cluster(所有 key 单 key 操作,
-	// 集群安全,契约 §4/§9)。留空则回落到共享库 Redis,启动时打 WARN 并打印落点。
-	// 历史 LIST 是这类数据的唯一副本:staging/prod 必须独立实例且 maxmemory-policy=noeviction
-	// (共享库:2026-10-12 起本地 compose 也改为 noeviction,K8s 的共享库一直是 noeviction;但历史带 TTL —— 见
-	// HistoryTTLSeconds / HistoryMaxEntries —— 回落共享库时仍与契约 key 争内存,共享库设了 maxmemory
-	// 时写满会连带拒写契约 key;共享库若被配成 volatile-* 淘汰型,带 TTL 的历史会被优先淘汰)。
-	// 注意 K8s 的 ChatRedis 复用 redis-match-cluster(maxmemory 512mb + volatile-lru),带 TTL 的 chat:*
-	// 键在那里同样会被优先淘汰,见 tools/scripts/k8s_deploy.ps1 chat ConfigMap 注释。
+	// 权威原件与角色目录必须是同一TiDB事务域；环境变量名不含凭据值。
+	DSNEnv              string           `json:",optional"`
+	RequireTiDB         bool             `json:",default=true"`
+	MaxOpenConns        int              `json:",default=16"`
+	AccountRoleSchema   string           `json:",optional"`
+	GlobalLoginSessions bool             `json:",default=true"`
+	LoginRedis          LoginRedisConfig `json:",optional"`
+
+	// ChatRedis保留既有可丢缓存配置；正式Send/Pull只用SQL原件，不读写旧LIST或授权键。
 	ChatRedis redis.RedisConf `json:",optional"`
 
 	// ZoneId:只影响 etcd 注册路径 <Prefix>/zone/<z>/...(路由服按 NodeInfo 发现本服务)。
@@ -57,23 +59,23 @@ type Config struct {
 	// 大小写敏感、按配置顺序替换，一个 Unicode 字符变为一个 *，与原 Go 聊天业务一致。
 	SensitiveWords []string `json:",optional"`
 
-	// RateLimitPerSecond:每玩家每秒最多发几条(chat:{rl:<pid>},1 秒固定窗口)。
+	// RateLimitPerSecond:每玩家每秒最多接受几条；在原P内按SQL时间固定秒窗口计数。
 	RateLimitPerSecond int `json:",default=5"`
 
-	// HistoryMaxEntries:每个频道 LIST 保留的最近条数(写入 Lua 里 LTRIM)。
+	// HistoryMaxEntries:每个SQL频道窗口最多可见的最近条数。
 	HistoryMaxEntries int `json:",default=200"`
 
-	// HistoryTTLSeconds:频道 LIST 的 TTL(秒),每次写入续期;默认 7 天。
-	// 历史是尽力而为窗口,不是权威账本(契约 §9)。
+	// HistoryTTLSeconds:频道窗口闲置TTL；保持旧LIST续期/过期间隔的可见历史语义。
+	// 显示过期不删除永久发送原件，旧UUID不能重新进入。
 	HistoryTTLSeconds int `json:",default=604800"`
 
 	// HistoryDefaultLimit:PullChatHistory.limit=0 时取多少条。
 	HistoryDefaultLimit int `json:",default=20"`
 
-	// HistoryMaxLimit:PullChatHistory.limit 的上限,超出钳到它。
+	// HistoryMaxLimit:PullChatHistory.limit 的配置上限，不得超过MaxHistoryPullLimit。
 	HistoryMaxLimit int `json:",default=50"`
 
-	// RequestIdTTLSeconds:SendChat 幂等键 chat:{req:<pid>}:<request_id> 的 TTL(秒)。
+	// RequestIdTTLSeconds只保留旧配置兼容；SQL成功收据永久保存，不再按此值删除。
 	RequestIdTTLSeconds int `json:",default=60"`
 
 	// MetricsListenAddr:Prometheus /metrics 监听地址,留空关闭。
@@ -83,6 +85,13 @@ type Config struct {
 
 	// KillSwitchPrefix:RPC 级热关停规则在 etcd 里的前缀,留空用 /mmorpg/killswitch/。
 	KillSwitchPrefix string `json:",optional"`
+}
+
+type LoginRedisConfig struct {
+	Host        string
+	PasswordEnv string `json:",optional"`
+	DB          int
+	PoolSize    int `json:",default=4"`
 }
 
 // ListenHostPort 把 ListenOn 拆成 host 与端口号。用 net.SplitHostPort 以正确处理 "[::]:50700"。
@@ -106,10 +115,13 @@ func (c *Config) ListenHostPort() (string, uint32, error) {
 //   - Etcd.Key 非空:go-zero 会额外把本服务注册成 chat.rpc key,且被 go_services.ps1 -Zone
 //     按 .z<N> 切分 —— 契约 D-13 规定全局服务 yaml 的 Etcd.Key 显式留空(不能整行省略:go-zero 的
 //     EtcdConf.Key 不是 optional,Etcd 段存在而缺 Key 会在 conf 加载期报错),直到首个 Go 调用方出现;
-//   - Redis.Host 为空:共享库是回落目标,也是将来读契约 key 的唯一句柄;
+//   - Redis.Host为空:既有框架共享缓存句柄配置不完整；业务授权/历史不依赖它;
 //   - 各上限 ≤0:例如 RateLimitPerSecond=0 会拒绝全部发言、HistoryMaxEntries=0 会让
-//     LTRIM 0 -1 保留整条 LIST(无上限增长)。
+//     SQL窗口失去必要上限。
 func (c *Config) Validate() error {
+	if !regexp.MustCompile(`^[A-Za-z_][A-Za-z0-9_]*$`).MatchString(c.DSNEnv) || !c.RequireTiDB || c.MaxOpenConns < 2 || c.MaxOpenConns > 128 || !regexp.MustCompile(`^[a-z][a-z0-9_]{0,63}$`).MatchString(c.AccountRoleSchema) || !c.GlobalLoginSessions || c.LoginRedis.Host == "" || c.LoginRedis.DB < 0 || c.LoginRedis.PoolSize < 1 || c.LoginRedis.PoolSize > 128 {
+		return errors.New("聊天必须显式配置TiDB原件库、同域角色目录与全局原登录态只读句柄")
+	}
 	if c.ZoneId == 0 {
 		return errors.New("ZoneId 必须非 0(K8s 全局服务用命令行 / ConfigMap 注入的 CurrentZoneId)")
 	}
@@ -130,7 +142,7 @@ func (c *Config) Validate() error {
 		return fmt.Errorf("Etcd.Key 必须留空(得到 %q):全局服务不注册 go-zero key,契约 D-13", c.Etcd.Key)
 	}
 	if c.Redis.Host == "" {
-		return errors.New("Redis.Host(共享库)不能为空:ChatRedis 未配置时私有 key 回落到它")
+		return errors.New("Redis.Host不能为空：既有框架缓存句柄配置须完整，SQL授权与历史不向它回落")
 	}
 
 	positives := []struct {
@@ -154,6 +166,9 @@ func (c *Config) Validate() error {
 	if c.HistoryDefaultLimit > c.HistoryMaxLimit {
 		return fmt.Errorf("HistoryDefaultLimit(%d)不能大于 HistoryMaxLimit(%d)",
 			c.HistoryDefaultLimit, c.HistoryMaxLimit)
+	}
+	if c.HistoryMaxLimit > constants.MaxHistoryPullLimit {
+		return fmt.Errorf("HistoryMaxLimit不得超过%d条权威读取预算", constants.MaxHistoryPullLimit)
 	}
 	if _, err := textfilter.New(c.SensitiveWords); err != nil {
 		return err

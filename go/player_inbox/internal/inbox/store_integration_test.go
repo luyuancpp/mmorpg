@@ -3,7 +3,8 @@
 package inbox
 
 // 真TiDB集成测试:go test -tags integration ./internal/inbox/... -count=1 -v
-// 环境变量MYSQL字样仅保留历史名称兼容，连接必须是127.0.0.1:4000且通过TiDB强读探针。
+// 环境变量MYSQL字样仅保留历史名称兼容，连接必须是数值loopback端点且通过TiDB强读探针。
+// 本任务实证端点为127.0.0.1:24000，运行前仍须核对Docker任务标签与端口归属。
 // 独立目录P与完整admission均为此一次性测试库内的真实SQL夹具，不是生产授权替身。
 //
 // PLAYER_INBOX_TEST_MYSQL_DSN 为空则整组 Skip。⚠ 只能指向**一次性**测试库:每个用例都会 DROP 并重建
@@ -13,7 +14,7 @@ package inbox
 //
 // 账号:deploy/mysql-init/00_init_zone_dbs.sql 只给 appuser 授了 mmorpg_player_inbox 等业务库,**没有** player_inbox_it,
 // 也没有全局 CREATE 权限 —— 所以测试库要用 root 先建好(`CREATE DATABASE IF NOT EXISTS player_inbox_it`),DSN 也用 root:
-//   root:<root 密码>@tcp(127.0.0.1:4000)/player_inbox_it?parseTime=true&charset=utf8mb4
+//   root:<root 密码>@tcp(127.0.0.1:24000)/player_inbox_it?parseTime=true&charset=utf8mb4
 // (或由 root 另行 `GRANT ALL ON player_inbox_it.* TO 'appuser'@'%'` 之后改用 appuser;密码不要写进任何被跟踪的文件。)
 // 表结构先经schemamigrate.Up按proto建出，强读池逐连接清历史快照并固定悲观RC/leader/strict。
 //
@@ -22,7 +23,7 @@ package inbox
 // 它不是第二个门控,只决定「跳过算不算失败」:设了之后 DSN 为空 → 判红,不再整组静默 Skip。验收一律这样跑
 // (PowerShell,工作目录 go/player_inbox;密码见 deploy/docker-compose.yml,不要写进任何被跟踪的文件):
 //
-//   $env:PLAYER_INBOX_TEST_MYSQL_DSN='root:<root 密码>@tcp(127.0.0.1:4000)/player_inbox_it?parseTime=true&charset=utf8mb4'
+//   $env:PLAYER_INBOX_TEST_MYSQL_DSN='root:<root 密码>@tcp(127.0.0.1:24000)/player_inbox_it?parseTime=true&charset=utf8mb4'
 //   $env:PLAYER_INBOX_REQUIRE_MYSQL_TESTS='1'
 //   go test -tags integration ./internal/inbox/... -count=1 -v
 //   go test -tags integration ./internal/inbox/... -run 'Concurrent|Race' -count=20
@@ -35,6 +36,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"net"
 	"os"
 	"sort"
 	"strconv"
@@ -79,12 +81,16 @@ func (p itPlayers) PlayerExists(ctx context.Context, id uint64) (bool, error) {
 	var existing uint64
 	err := p.db.QueryRowContext(ctx, "SELECT player_id FROM account_role WHERE player_id=?", id).Scan(&existing)
 	if err == nil {
-		return true, nil
+		err = ensureInboxFixtureRoute(ctx, p.db, id)
+		return err == nil, err
 	}
 	if !errors.Is(err, sql.ErrNoRows) {
 		return false, err
 	}
 	_, err = p.db.ExecContext(ctx, "INSERT INTO account_role(player_id,account,owner_revision,trade_listing_id) VALUES(?,?,1,0) ON DUPLICATE KEY UPDATE player_id=player_id", id, "inbox-fixture-"+strconv.FormatUint(id, 10))
+	if err == nil {
+		err = ensureInboxFixtureRoute(ctx, p.db, id)
+	}
 	return err == nil, err
 }
 
@@ -153,8 +159,11 @@ func openIntegration(t *testing.T) *itEnv {
 	if !inboxTestDBNamePattern.MatchString(parsed.DBName) {
 		t.Fatal("测试DSN目标不是一次性Inbox白名单库")
 	}
-	if parsed.Net != "tcp" || parsed.Addr != "127.0.0.1:4000" {
-		t.Fatal("全球Inbox原生SQL夹具只允许本机TiDB 127.0.0.1:4000")
+	host, portText, addrErr := net.SplitHostPort(parsed.Addr)
+	port, portErr := strconv.ParseUint(portText, 10, 16)
+	address := net.ParseIP(host)
+	if parsed.Net != "tcp" || addrErr != nil || portErr != nil || port == 0 || address == nil || !address.IsLoopback() {
+		t.Fatal("全球Inbox原生SQL夹具只允许数值loopback的合法TiDB端口")
 	}
 	db, err := authoritysql.Open(context.Background(), dsn, parsed.DBName, true, 64)
 	if err != nil {
@@ -202,6 +211,9 @@ func openIntegration(t *testing.T) *itEnv {
 		if _, err := db.ExecContext(ctx, statement); err != nil {
 			t.Fatal(err)
 		}
+	}
+	if err = createInboxFixtureRouteTables(ctx, db, dbName); err != nil {
+		t.Fatal(err)
 	}
 	roles, err := NewSQLRoleAuthority(ctx, db, dbName)
 	if err != nil {

@@ -77,7 +77,7 @@ func (PlayerInboxAuditAction) EnumDescriptor() ([]byte, []int) {
 	return file_proto_player_inbox_player_inbox_table_proto_rawDescGZIP(), []int{0}
 }
 
-// 每 (玩家, 域) 一行。锁序第 1:seq 分配、Fetch、Ack、作废都先对它 FOR UPDATE(IB-6)。
+// 每 (玩家, 域) 一行。跨域先锁原角色P，再按本域stream→item→audit推进(IB-6)。
 type PlayerInboxStream struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Shard         uint32                 `protobuf:"varint,1,opt,name=shard,proto3" json:"shard,omitempty"` // mix64(player_id) % 64,只由 inbox.RowShard 计算
@@ -213,7 +213,7 @@ type PlayerInboxItemRow struct {
 	UpdatedMs          uint64                 `protobuf:"varint,21,opt,name=updated_ms,json=updatedMs,proto3" json:"updated_ms,omitempty"`
 	OperatorName       string                 `protobuf:"bytes,22,opt,name=operator_name,json=operatorName,proto3" json:"operator_name,omitempty"`     // ≤ 64B,入箱时校验
 	Note               string                 `protobuf:"bytes,23,opt,name=note,proto3" json:"note,omitempty"`                                         // ≤ 256B,入箱时校验
-	OwnerAccount       string                 `protobuf:"bytes,24,opt,name=owner_account,json=ownerAccount,proto3" json:"owner_account,omitempty"`     // 首次入箱在同account_role首锁内捕获，重投不得补新主
+	OwnerAccount       string                 `protobuf:"bytes,24,opt,name=owner_account,json=ownerAccount,proto3" json:"owner_account,omitempty"`     // 首次在原角色首锁内捕获（Go account_role / Java player），重投不得补新主
 	OwnerRevision      uint64                 `protobuf:"varint,25,opt,name=owner_revision,json=ownerRevision,proto3" json:"owner_revision,omitempty"` // 与owner_account组成原归属，不以当前目录修补历史
 	unknownFields      protoimpl.UnknownFields
 	sizeCache          protoimpl.SizeCache
@@ -425,7 +425,7 @@ func (x *PlayerInboxItemRow) GetOwnerRevision() uint64 {
 }
 
 // 运维审计,与入箱 / 作废同库同事务(设计 §6.1)。每条目每种动作一行;重复调用 INSERT IGNORE。
-// 审计行永不自动删除,而条目终态行 30 天后物理删除:「做了什么」(10–14)必须在审计行里自足(评审 L9)。
+// 审计与条目的原唯一收据均永久保留；审计的「做了什么」(10–14)仍须自足，便于独立核对(评审 L9)。
 // 10–14 一律由 inbox.InsertAudit 从**同一事务里的条目行**原样复制,调用方传入的同名字段被忽略(条目内容入箱后不再改)。
 type PlayerInboxAudit struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`

@@ -67,7 +67,7 @@ func TestOriginalRoleInterceptorCapturesLoginAccountAndWireRevisionAfterSessionD
 		calls++
 		decoded, ok := ctxkeys.GetSessionDetails(ctx)
 		require.True(t, ok)
-		require.Equal(t, detail, decoded)
+		require.True(t, proto.Equal(detail, decoded), "原会话字段与未知字段必须完整保留")
 		captured, ok := roleidentity.Original(ctx)
 		require.True(t, ok)
 		require.Equal(t, "原账号", captured.Account)

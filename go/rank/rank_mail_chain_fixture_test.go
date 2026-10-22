@@ -9,6 +9,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"strconv"
 	"strings"
 	"sync/atomic"
 	"testing"
@@ -27,16 +28,42 @@ import (
 	"shared/serviceauth"
 )
 
+func rankMainFixtureEndpoint(address string) error {
+	host, port, err := net.SplitHostPort(address)
+	if err != nil {
+		return errors.New("排行榜RPC夹具必须显式数值loopback端口")
+	}
+	ip := net.ParseIP(host)
+	number, err := strconv.Atoi(port)
+	if ip == nil || !ip.IsLoopback() || err != nil || number < 1 || number > 65535 {
+		return errors.New("排行榜RPC夹具仅接受数值loopback与合法非零端口")
+	}
+	return nil
+}
+func TestRankMainFixtureEndpointRejectsForeignOrInvalidPort(t *testing.T) {
+	for _, address := range []string{"127.0.0.1:24000", "[::1]:24000"} {
+		if err := rankMainFixtureEndpoint(address); err != nil {
+			t.Fatal(err)
+		}
+	}
+	for _, address := range []string{"localhost:24000", "10.0.0.1:24000", "127.0.0.1:0", "127.0.0.1:65536", "127.0.0.1:mysql", "127.0.0.1"} {
+		if rankMainFixtureEndpoint(address) == nil {
+			t.Fatal("非法夹具端点未拒绝")
+		}
+	}
+}
+
 // 只作为跨 module 真 RPC 验收的独立进程；普通测试不会启动数据库或监听。
 func TestRankMailChainFixture(t *testing.T) {
 	if os.Getenv("RANK_MAIL_CHAIN_FIXTURE") != "rank" {
 		t.Skip("仅由显式启用的跨域验收进程启动")
 	}
-	if os.Getenv("RANK_MAIL_CHAIN_IT_TIDB") != "127.0.0.1:4000" {
-		t.Fatal("跨域夹具只接受本机隔离 TiDB")
+	address := os.Getenv("RANK_MAIL_CHAIN_IT_TIDB")
+	if err := rankMainFixtureEndpoint(address); err != nil {
+		t.Fatal(err)
 	}
 	database := os.Getenv("RANK_MAIL_CHAIN_DATABASE")
-	if !regexp.MustCompile(`^rank_mail_chain_[a-z0-9_]+$`).MatchString(database) || len(database) > 64 {
+	if !regexp.MustCompile(`^rank_mail_chain_[a-f0-9]{16}_rank$`).MatchString(database) {
 		t.Fatal("跨域夹具数据库必须是本次独有的随机库")
 	}
 	secret := os.Getenv("RANK_MAIL_CHAIN_SECRET")
@@ -54,7 +81,7 @@ func TestRankMailChainFixture(t *testing.T) {
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), 90*time.Second)
 	defer cancel()
-	db, err := authoritysql.Open(ctx, "root@tcp(127.0.0.1:4000)/"+database, database, true, 2)
+	db, err := authoritysql.Open(ctx, "root@tcp("+address+")/"+database, database, true, 2)
 	if err != nil {
 		t.Fatal(err)
 	}

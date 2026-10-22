@@ -2,10 +2,12 @@
 Name: guild.rpc
 Mode: dev
 AccountRoleSchema: testdb
+# 同主TiDB连接池跨库只读核验真实Match/Team表；缺表或配置缺失拒启。
+MatchAuthoritySchema: mmorpg_match
 # 必须指向login实际使用的同一全局实例/DB；不能按gateNodeId猜zone或回退本地缓存。
-GlobalLoginSessions: false
+GlobalLoginSessions: true
 LoginRedis:
-  Host: ""
+  Host: 127.0.0.1:6379
   Password: ""
   DB: 0
   PoolSize: 8

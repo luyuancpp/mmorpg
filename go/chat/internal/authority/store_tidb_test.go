@@ -1,0 +1,366 @@
+package authority
+
+import (
+	"context"
+	"database/sql"
+	"fmt"
+	"strings"
+	"sync"
+	"testing"
+	"time"
+
+	"chat/internal/constants"
+	chatpb "proto/chat"
+	"shared/placement"
+
+	"github.com/stretchr/testify/require"
+	"google.golang.org/protobuf/proto"
+)
+
+func sendRequest(id string, peer uint64) *chatpb.SendChatRequest {
+	channel := chatpb.ChatChannelType_CHAT_CHANNEL_TYPE_WORLD
+	if peer != 0 {
+		channel = chatpb.ChatChannelType_CHAT_CHANNEL_TYPE_PRIVATE
+	}
+	return &chatpb.SendChatRequest{RequestId: id, Message: &chatpb.ChatMessage{Channel: channel, TargetPlayerId: peer, SenderPlayerId: 999, SendTimeMs: 1, Content: "广告 原消息"}}
+}
+func original(t *testing.T, id uint64) context.Context {
+	return actor(t, id, fmt.Sprintf("original-%d", id), 7)
+}
+func pull(t *testing.T, s *Store, ctx context.Context, peer uint64) []*chatpb.ChatMessage {
+	t.Helper()
+	channel := chatpb.ChatChannelType_CHAT_CHANNEL_TYPE_WORLD
+	if peer != 0 {
+		channel = chatpb.ChatChannelType_CHAT_CHANNEL_TYPE_PRIVATE
+	}
+	messages, err := s.Pull(ctx, &chatpb.PullChatHistoryRequest{Channel: channel, PeerPlayerId: peer}, 50)
+	require.NoError(t, err)
+	return messages
+}
+func count(t *testing.T, s *Store) int {
+	t.Helper()
+	var n int
+	require.NoError(t, s.db.QueryRow("SELECT COUNT(*) FROM chat_send_authority").Scan(&n))
+	return n
+}
+
+func TestChatTiDBSQLSendPullPreserveOriginalAndIgnoreRedis(t *testing.T) {
+	s := nativeStore(t)
+	ctx := original(t, 11)
+	in := sendRequest("original", 22)
+	before := proto.Clone(in)
+	r, err := s.Send(ctx, in)
+	require.NoError(t, err)
+	require.Zero(t, r.Tip)
+	require.False(t, r.Duplicate)
+	require.True(t, proto.Equal(before, in))
+	for _, v := range []struct{ self, peer uint64 }{{11, 22}, {22, 11}} {
+		messages := pull(t, s, original(t, v.self), v.peer)
+		require.Len(t, messages, 1)
+		require.EqualValues(t, 11, messages[0].SenderPlayerId)
+		require.Equal(t, "** 原消息", messages[0].Content)
+		require.Greater(t, messages[0].SendTimeMs, int64(1))
+	}
+	// 故意没有任何Redis依赖：重建Store实例仍从同一SQL原件读取完整窗口。
+	restarted, err := New(ctx, s.db, s.roleSchema, s.rules)
+	require.NoError(t, err)
+	r, err = restarted.Send(ctx, in)
+	require.NoError(t, err)
+	require.True(t, r.Duplicate)
+	require.Equal(t, 1, count(t, s))
+	require.Len(t, pull(t, restarted, ctx, 22), 1)
+	changed := proto.Clone(in).(*chatpb.SendChatRequest)
+	changed.Message.Content = "原ID换正文"
+	_, err = s.Send(ctx, changed)
+	require.ErrorIs(t, err, ErrConflict)
+	require.Equal(t, 1, count(t, s))
+}
+
+func TestChatTiDBOldOwnerTransferABAAndFreezeRejectAllEntrances(t *testing.T) {
+	for _, kind := range []string{"transfer", "same-account-ABA", "freeze"} {
+		t.Run(kind, func(t *testing.T) {
+			s := nativeStore(t)
+			old := original(t, 11)
+			_, err := s.Send(old, sendRequest("old", 22))
+			require.NoError(t, err)
+			account, revision, listing := "original-11", uint64(7), uint64(0)
+			switch kind {
+			case "transfer":
+				account, revision = "new-owner", 8
+			case "same-account-ABA":
+				revision = 9
+			case "freeze":
+				listing = 99
+			}
+			_, err = s.db.Exec("UPDATE account_role SET account=?,owner_revision=?,trade_listing_id=? WHERE player_id=11", []byte(account), revision, listing)
+			require.NoError(t, err)
+			for _, id := range []string{"old", "late-new"} {
+				_, err = s.Send(old, sendRequest(id, 22))
+				require.ErrorIs(t, err, ErrOriginal)
+			}
+			_, err = s.Pull(old, &chatpb.PullChatHistoryRequest{Channel: chatpb.ChatChannelType_CHAT_CHANNEL_TYPE_PRIVATE, PeerPlayerId: 22}, 20)
+			require.ErrorIs(t, err, ErrOriginal)
+			require.Equal(t, 1, count(t, s))
+			if kind != "freeze" {
+				current := actor(t, 11, account, revision)
+				require.Len(t, pull(t, s, current, 22), 1, "合法新owner保留role-id历史")
+				_, err = s.Send(current, sendRequest("old", 22))
+				require.ErrorIs(t, err, ErrOriginal)
+				_, err = s.Send(current, sendRequest("new-owner", 22))
+				require.NoError(t, err)
+				require.Len(t, pull(t, s, current, 22), 2)
+			}
+		})
+	}
+}
+
+func TestChatTiDBConcurrentSameOriginalCommitsOnce(t *testing.T) {
+	s := nativeStore(t)
+	ctx := original(t, 11)
+	var wg sync.WaitGroup
+	results := make(chan error, 8)
+	for range 8 {
+		wg.Add(1)
+		go func() { defer wg.Done(); _, err := s.Send(ctx, sendRequest("concurrent", 22)); results <- err }()
+	}
+	wg.Wait()
+	close(results)
+	for err := range results {
+		require.NoError(t, err)
+	}
+	require.Equal(t, 1, count(t, s))
+	require.Len(t, pull(t, s, ctx, 22), 1)
+}
+
+func TestChatTiDBSQLRateRejectDoesNotConsumeUUID(t *testing.T) {
+	s := nativeStore(t)
+	ctx := original(t, 11)
+	// 只控制时间接缝使固定秒边界确定；TiDB角色/route/P/唯一行与事务均为真实实现。
+	now := uint64(100000)
+	s.clock = func(context.Context, *sql.Tx) (uint64, error) { return now, nil }
+	for i := range 5 {
+		r, err := s.Send(ctx, sendRequest(fmt.Sprintf("rate-%d", i), 0))
+		require.NoError(t, err)
+		require.Zero(t, r.Tip)
+	}
+	r, err := s.Send(ctx, sendRequest("sixth", 0))
+	require.NoError(t, err)
+	require.Equal(t, constants.ErrRateLimited, r.Tip)
+	require.Equal(t, 5, count(t, s))
+	now += 1000
+	r, err = s.Send(ctx, sendRequest("sixth", 0))
+	require.NoError(t, err)
+	require.Zero(t, r.Tip)
+	require.Equal(t, 6, count(t, s))
+}
+
+func TestChatTiDBCallerCanReadHistoryAfterPeerDeletion(t *testing.T) {
+	s := nativeStore(t)
+	ctx := original(t, 11)
+	_, err := s.Send(ctx, sendRequest("peer-gone", 22))
+	require.NoError(t, err)
+	_, err = s.db.Exec("DELETE FROM account_role WHERE player_id=22")
+	require.NoError(t, err)
+	_, err = s.db.Exec("DELETE FROM player_route WHERE player_id=22")
+	require.NoError(t, err)
+	require.Len(t, pull(t, s, ctx, 22), 1)
+	_, err = s.Send(ctx, sendRequest("peer-still-selector", 22))
+	require.NoError(t, err)
+	require.Len(t, pull(t, s, ctx, 22), 2)
+}
+
+func TestChatTiDBTransferHoldingPWinsAgainstLateSendAndPull(t *testing.T) {
+	s := nativeStore(t)
+	ctx := original(t, 11)
+	tx, err := s.db.BeginTx(context.Background(), &sql.TxOptions{Isolation: sql.LevelReadCommitted})
+	require.NoError(t, err)
+	defer tx.Rollback()
+	_, _, err = s.lockActor(ctx, tx)
+	require.NoError(t, err)
+	_, err = tx.Exec("UPDATE account_role SET account='new-owner',owner_revision=8 WHERE player_id=11")
+	require.NoError(t, err)
+	started := make(chan struct{}, 2)
+	done := make(chan error, 2)
+	go func() { started <- struct{}{}; _, err := s.Send(ctx, sendRequest("late", 22)); done <- err }()
+	go func() {
+		started <- struct{}{}
+		_, err := s.Pull(ctx, &chatpb.PullChatHistoryRequest{Channel: chatpb.ChatChannelType_CHAT_CHANNEL_TYPE_PRIVATE, PeerPlayerId: 22}, 20)
+		done <- err
+	}()
+	<-started
+	<-started
+	require.NoError(t, tx.Commit())
+	for range 2 {
+		select {
+		case e := <-done:
+			require.ErrorIs(t, e, ErrOriginal)
+		case <-time.After(5 * time.Second):
+			t.Fatal("角色P释放后聊天请求未收敛")
+		}
+	}
+	require.Zero(t, count(t, s))
+}
+
+func TestChatTiDBAcceptedSendHoldsPThroughCommitThenTransferPreservesHistory(t *testing.T) {
+	s := nativeStore(t)
+	ctx, cancel := context.WithTimeout(original(t, 11), 10*time.Second)
+	defer cancel()
+	locked := make(chan struct{})
+	release := make(chan struct{})
+	clock := s.clock
+	s.clock = func(ctx context.Context, tx *sql.Tx) (uint64, error) {
+		close(locked)
+		select {
+		case <-release:
+			return clock(ctx, tx)
+		case <-ctx.Done():
+			return 0, ctx.Err()
+		}
+	}
+	sent := make(chan error, 1)
+	go func() { _, err := s.Send(ctx, sendRequest("accepted-first", 22)); sent <- err }()
+	select {
+	case <-locked:
+	case err := <-sent:
+		t.Fatalf("发送尚未持P即返回：%v", err)
+	case <-ctx.Done():
+		t.Fatal("发送未进入原P提交阶段")
+	}
+	transferred := make(chan error, 1)
+	go func() {
+		_, err := s.db.Exec("UPDATE account_role SET account='new-owner',owner_revision=8 WHERE player_id=11")
+		transferred <- err
+	}()
+	close(release)
+	select {
+	case err := <-sent:
+		require.NoError(t, err)
+	case <-time.After(5 * time.Second):
+		t.Fatal("原发送持P提交未收敛")
+	}
+	select {
+	case err := <-transferred:
+		require.NoError(t, err)
+	case <-time.After(5 * time.Second):
+		t.Fatal("发送提交后换主未收敛")
+	}
+	s.clock = clock
+	require.Len(t, pull(t, s, actor(t, 11, "new-owner", 8), 22), 1, "SQL接受先于换主，历史仍属于该角色")
+	_, err := s.Send(ctx, sendRequest("late-old", 22))
+	require.ErrorIs(t, err, ErrOriginal)
+	require.Equal(t, 1, count(t, s))
+}
+
+func TestChatTiDBSQLWindowExpiryGapAndMaximumRemainBounded(t *testing.T) {
+	s := nativeStore(t)
+	s.rules.RateLimitPerSecond = 100
+	s.rules.HistoryTTLSeconds = 10
+	s.rules.HistoryMaxEntries = 3
+	ctx := original(t, 11)
+	now := uint64(100000)
+	s.clock = func(context.Context, *sql.Tx) (uint64, error) { return now, nil }
+	for i := range 4 {
+		now += 1000
+		_, err := s.Send(ctx, sendRequest(fmt.Sprintf("window-%d", i), 0))
+		require.NoError(t, err)
+	}
+	got := pull(t, s, ctx, 0)
+	require.Len(t, got, 3)
+	require.Greater(t, got[0].SendTimeMs, got[1].SendTimeMs)
+	now += 10000
+	require.Empty(t, pull(t, s, ctx, 0), "闲置TTL到点窗口为空")
+	_, err := s.Send(ctx, sendRequest("after-expiry", 0))
+	require.NoError(t, err)
+	got = pull(t, s, ctx, 0)
+	require.Len(t, got, 1, "过期后新发送不复活旧窗口")
+	// 旧UUID的永久收据不随显示TTL删除，也不会刷新历史窗口。
+	r, err := s.Send(ctx, sendRequest("window-0", 0))
+	require.NoError(t, err)
+	require.True(t, r.Duplicate)
+	require.Len(t, pull(t, s, ctx, 0), 1)
+}
+
+func TestChatTiDBMergeAndFrozenRouteRejectBeforeAnyChatRow(t *testing.T) {
+	for _, kind := range []string{"meta", "zone-fence", "frozen-route"} {
+		t.Run(kind, func(t *testing.T) {
+			s := nativeStore(t)
+			switch kind {
+			case "meta":
+				_, err := s.db.Exec("UPDATE route_meta SET writable=0 WHERE id=1")
+				require.NoError(t, err)
+			case "zone-fence":
+				shard, err := placement.RouteFenceShard(11, placement.MaxRouteFenceShards)
+				require.NoError(t, err)
+				_, err = s.db.Exec("INSERT INTO zone_merge_fence(zone_id,shard,run_id,expires_at_ms) VALUES(1,?,'chat-merge',"+dbNow+"+60000)", shard)
+				require.NoError(t, err)
+			case "frozen-route":
+				_, err := s.db.Exec("UPDATE player_route SET frozen_run_id='chat-frozen' WHERE player_id=11")
+				require.NoError(t, err)
+			}
+			_, err := s.Send(original(t, 11), sendRequest("denied", 22))
+			require.Error(t, err)
+			_, err = s.Pull(original(t, 11), &chatpb.PullChatHistoryRequest{Channel: chatpb.ChatChannelType_CHAT_CHANNEL_TYPE_WORLD}, 20)
+			require.Error(t, err)
+			require.Zero(t, count(t, s))
+		})
+	}
+}
+
+func TestChatTiDBPolicyMismatchAndMissingIndexFailClosed(t *testing.T) {
+	boundary := fixtureRules()
+	boundary.HistoryMaxLimit = 200
+	boundary.HistoryMaxEntries = 1000
+	s := nativeStore(t, boundary)
+	tooLarge := boundary
+	tooLarge.HistoryMaxLimit = 201
+	_, err := New(context.Background(), s.db, s.roleSchema, tooLarge)
+	require.ErrorIs(t, err, ErrInvalid)
+	rules := s.rules
+	rules.RateLimitPerSecond++
+	_, err = New(context.Background(), s.db, s.roleSchema, rules)
+	require.ErrorIs(t, err, ErrPolicy)
+	_, err = s.db.Exec("ALTER TABLE chat_send_authority DROP INDEX idx_chat_stream")
+	require.NoError(t, err)
+	_, err = New(context.Background(), s.db, s.roleSchema, s.rules)
+	require.ErrorContains(t, err, "索引")
+}
+
+func TestChatTiDBUnsignedPlayerAndOriginalBodySurviveRestart(t *testing.T) {
+	s := nativeStore(t)
+	id := ^uint64(0)
+	ctx := original(t, id)
+	in := sendRequest("unsigned", 11)
+	in.Message.Content = strings.Repeat("x", 512)
+	r, err := s.Send(ctx, in)
+	require.NoError(t, err)
+	require.Zero(t, r.Tip)
+	messages := pull(t, s, ctx, 11)
+	require.Len(t, messages, 1)
+	require.Equal(t, id, messages[0].SenderPlayerId)
+	var raw []byte
+	require.NoError(t, s.db.QueryRow("SELECT request_payload FROM chat_send_authority WHERE player_id=? AND request_id=?", id, []byte("unsigned")).Scan(&raw))
+	saved := &chatpb.SendChatRequest{}
+	require.NoError(t, proto.Unmarshal(raw, saved))
+	require.True(t, proto.Equal(in, saved))
+}
+
+func TestChatTiDBMissingOriginalAndCorruptReceiptFailClosed(t *testing.T) {
+	s := nativeStore(t)
+	in := sendRequest("permanent", 22)
+	_, err := s.Send(context.Background(), in)
+	require.ErrorIs(t, err, ErrOriginal)
+	_, err = s.Pull(context.Background(), &chatpb.PullChatHistoryRequest{Channel: chatpb.ChatChannelType_CHAT_CHANNEL_TYPE_PRIVATE, PeerPlayerId: 22}, 20)
+	require.ErrorIs(t, err, ErrOriginal)
+	require.Zero(t, count(t, s))
+	ctx := original(t, 11)
+	_, err = s.Send(ctx, in)
+	require.NoError(t, err)
+	_, err = s.db.Exec("UPDATE chat_send_authority SET message_payload=? WHERE player_id=11 AND request_id=?", []byte{0xff}, []byte(in.RequestId))
+	require.NoError(t, err)
+	_, err = s.Send(ctx, in)
+	require.ErrorContains(t, err, "原件")
+	messages, err := s.Pull(ctx, &chatpb.PullChatHistoryRequest{Channel: chatpb.ChatChannelType_CHAT_CHANNEL_TYPE_PRIVATE, PeerPlayerId: 22}, 20)
+	require.Error(t, err)
+	require.Empty(t, messages)
+	require.Equal(t, 1, count(t, s))
+}

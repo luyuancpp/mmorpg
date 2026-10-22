@@ -27,7 +27,8 @@ import org.springframework.transaction.support.TransactionTemplate;
 /** 只拥有寄售关联与人民币结算；OMS订单由CommerceStore创建、支付和取消。 */
 @Repository
 @DependsOn("commerceSchemaReady")
-public final class RmbConsignmentStore {
+// 保留Repository异常翻译的类代理，与同域CommerceStore一致。
+public class RmbConsignmentStore {
     /** 验证适配器自己的真实持久出款事实；缺实现时不能把调用方声明当渠道证明。 */
     public interface PayoutEvidenceVerifier {
         void verify(JdbcTemplate transaction, RmbConsignmentApi.WithdrawalReceipt receipt);

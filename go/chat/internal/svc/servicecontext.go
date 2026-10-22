@@ -1,42 +1,39 @@
-// Package svc 是 chat 服务的依赖装配:etcd 客户端、ChatRedis / SharedRedis 双句柄,
-// 以及本服务的低基数 Prometheus 计数器。
+// Package svc装配同域SQL、全局原登录态、etcd及既有缓存句柄和低基数指标。
 package svc
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"net/http"
 	"sync"
 	"time"
 
+	"chat/internal/authority"
 	"chat/internal/config"
-	"chat/internal/textfilter"
 
 	chatpb "proto/chat"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+	redv9 "github.com/redis/go-redis/v9"
 	"github.com/zeromicro/go-zero/core/logx"
 	"github.com/zeromicro/go-zero/core/stores/redis"
 	clientv3 "go.etcd.io/etcd/client/v3"
 )
 
 type ServiceContext struct {
-	Config config.Config
-	// ContentFilter 是启动期词表快照；读路径无状态，不在请求中解析配置或查询词库。
-	ContentFilter *textfilter.Filter
+	Config        config.Config
+	Authority     authority.Service
+	AuthorityDB   *sql.DB
+	LoginSessions *redv9.Client
 
-	// 双存储(契约 §4):
-	//   - ChatRedis:chat 私有 key(chat:{world}:log / chat:{p:a:b}:log / chat:{req:pid}:rid /
-	//     chat:{rl:pid}),可指向 Redis Cluster;全部是单 key 操作,不需要跨 key 同 slot。
-	//   - SharedRedis:跨运行时契约 key 的唯一句柄(禁 Cluster)。chat v1 一个契约 key 都不读,
-	//     它只作为 ChatRedis 未配置时的回落目标,以及将来 v1.1 推送读 player:session:{id} 的入口。
-	// ChatRedis 未配置时两者是同一句柄(本地单库形态)。
+	// 保留旧缓存配置接口；正式发送/拉取只依赖Authority，不向这些句柄回落授权或历史。
 	ChatRedis   *redis.Redis
 	SharedRedis *redis.Redis
 
 	// ChatRedisTarget 是 ChatRedis 实际落点的可读描述,启动横幅打印用
-	// (排障第一问永远是"聊天记录到底写到哪个库了")。
+	// 它不代表聊天历史权威库；历史固定在SQL。
 	ChatRedisTarget string
 
 	// Etcd 供 shared/noderegistry 注册与 shared/killswitch 监听共用 —— 连的是同一个集群,不开第二条连接。
@@ -52,22 +49,31 @@ type ServiceContext struct {
 }
 
 func NewServiceContext(c config.Config) *ServiceContext {
-	contentFilter, err := textfilter.New(c.SensitiveWords)
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	db, store, err := OpenAuthority(ctx, c, false)
 	if err != nil {
-		panic("invalid chat sensitive words: " + err.Error())
+		panic("聊天权威SQL初始化失败：" + err.Error())
+	}
+	login, err := openLoginSessions(ctx, c)
+	if err != nil {
+		db.Close()
+		panic(err)
 	}
 	etcdCli, err := clientv3.New(clientv3.Config{
 		Endpoints:   c.Etcd.Hosts,
 		DialTimeout: 5 * time.Second,
 	})
 	if err != nil {
+		login.Close()
+		db.Close()
 		panic("failed to create etcd client: " + err.Error())
 	}
 
 	chatRds, sharedRds, target := NewRedisHandles(c)
 	return &ServiceContext{
+		Authority: store, AuthorityDB: db, LoginSessions: login,
 		Config:          c,
-		ContentFilter:   contentFilter,
 		ChatRedis:       chatRds,
 		SharedRedis:     sharedRds,
 		ChatRedisTarget: target,
@@ -81,14 +87,7 @@ func NewServiceContext(c config.Config) *ServiceContext {
 func NewRedisHandles(c config.Config) (chatRds, sharedRds *redis.Redis, target string) {
 	sharedRds = redis.MustNewRedis(c.Redis.RedisConf)
 	if c.ChatRedis.Host == "" {
-		// go-zero logx 没有 Warn 级别;用 Error 级打出来,保证在默认日志级别下一定可见。
-		// 回落本身不是故障(本地单库形态就是这样),但在 staging/prod 出现就是部署缺陷:
-		// 聊天历史带 TTL(缺省 7 天、每次写入续期,每频道只留最近 200 条),回落后仍与契约 key 争内存;
-		// 共享库设了 maxmemory 时写满会连带拒写契约 key;共享库若被配成 volatile-* 淘汰型,历史会被
-		// 优先淘汰(2026-10-12 起本地 compose 也改为 noeviction,K8s 一直是 noeviction)。
-		logx.Errorf("[chat] WARN ChatRedis not configured; chat:* private keys falling back to shared database host=%s type=%s -- "+
-			"local single-database deployments only; staging/prod require separate ChatRedis with maxmemory-policy=noeviction (contract section 4)",
-			c.Redis.Host, c.Redis.Type)
+		logx.Infof("[chat] 旧缓存句柄沿共享配置建立；聊天授权和历史只用SQL host=%s type=%s", c.Redis.Host, c.Redis.Type)
 		return sharedRds, sharedRds, fmt.Sprintf("shared-fallback host=%s type=%s", c.Redis.Host, c.Redis.Type)
 	}
 	chatRds = redis.MustNewRedis(c.ChatRedis)
@@ -97,11 +96,21 @@ func NewRedisHandles(c config.Config) (chatRds, sharedRds *redis.Redis, target s
 	return chatRds, sharedRds, fmt.Sprintf("ChatRedis host=%s type=%s", c.ChatRedis.Host, c.ChatRedis.Type)
 }
 
-// Stop 关闭 etcd 客户端。幂等。
+// Stop关闭本服务拥有的SQL/原登录态/etcd客户端。幂等，必须先排空RPC。
 // 调用方须保证 noderegistry.Close() 与 killswitch 的 ctx 取消都**先于**它 ——
 // 二者都在用这条连接,先关连接会让注销 Txn 失败、watch 撞上已关闭的 client。
 func (sc *ServiceContext) Stop() {
 	sc.stopOnce.Do(func() {
+		if sc.LoginSessions != nil {
+			if err := sc.LoginSessions.Close(); err != nil {
+				logx.Error("聊天原登录态连接关闭失败")
+			}
+		}
+		if sc.AuthorityDB != nil {
+			if err := sc.AuthorityDB.Close(); err != nil {
+				logx.Error("聊天权威SQL关闭失败")
+			}
+		}
 		if sc.Etcd != nil {
 			if err := sc.Etcd.Close(); err != nil {
 				logx.Errorf("[chat] etcd client close failed: %v", err)
@@ -121,13 +130,13 @@ func (sc *ServiceContext) Stop() {
 const (
 	OutcomeOK                 = "ok"                  // 写入成功 / 拉取成功
 	OutcomeDuplicate          = "duplicate"           // 同 request_id 重发且首发已写入,按成功回但不重复写
-	OutcomeInFlight           = "in_flight"           // 同 request_id 重发时首发尚未写完(或首发崩在半路),回限速码让客户端稍后重试
+	OutcomeInFlight           = "in_flight"           // 保留历史指标值；SQL实现不再产生Redis pending分支
 	OutcomeNoSession          = "no_session"          // 缺会话或会话 player_id=0
 	OutcomeBadRequest         = "bad_request"         // 缺 message / 对端非法 / 频道枚举未知 / request_id 超长
 	OutcomeChannelUnavailable = "channel_unavailable" // TEAM / SYSTEM / UNSPECIFIED
 	OutcomeTooLong            = "too_long"            // 内容超 MaxContentBytes 或 trim 后为空
 	OutcomeRateLimited        = "rate_limited"        // 超每秒条数
-	OutcomeStorageError       = "storage_error"       // ChatRedis 故障(对应 fault 码 kServiceUnavailable)
+	OutcomeStorageError       = "storage_error"       // SQL/原登录态依赖故障或提交未知
 )
 
 var (

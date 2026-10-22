@@ -261,15 +261,14 @@ param(
 	[string]$DbConsumerGroup = "keep",
 
 	# ── D1 玩家归属与落点映射持久化的部署载体(第 1b-3 批:docs/handoff/launch-readiness-20261013/spec_D1_batch1b2_2_3.md §7、§13.4)──
-	# 五个开关缺省都是今天的值(redis / false):不带它们部署,产物里 RouteStore.Mode 仍是 redis,Arm 与三个读方开关仍是 false。写进哪里:
+	# 全球正式默认是 db_first / true；历史 redis / false 仅用于读取旧集群实况和拒绝演练,不能用于正式服务部署。写进哪里:
 	#   -RouteStoreMode / -RouteReconcileArm / -RouteReadRequiresReady → zone 的 go-svc-data-service-config
 	#       (RouteStore.Mode / RouteStore.Reconcile.ArmReadyMarker / RouteStore.ReadRequiresReady);
 	#   -DbPlacementRequireRouteReady → zone 的 go-svc-db-config(Placement.RequireRouteReady);
 	#   -GuildRequireRouteReady → infra namespace 的 go-svc-guild-config(MergeMarkerRedis.RequireRouteReady,只在部署全局 Go 服务时生效)。
 	# 只改 ConfigMap 不会滚动进程(同 db 的 RetryRouting):改值后 rollout restart 对应 Deployment,以启动日志核对。
-	# 切换顺序是规格 §8 的 P2(Mode=db_first)→ P3(全部 zone 同时 Arm=true)→ P5(读方逐个打开);回退反过来(§13.5 第 1 条):
-	# 先关全部读方开关 → Arm=false(确认 leader 计了 data_service_route_reconcile_event_total{event="marker_dropped_disarmed"})→
-	# Mode=redis → route-tool rewarm -wait=0(tools/scripts/k8s_route_tool.ps1)。告警见 deploy/k8s/data-service-route-alerts.yaml。
+	# 首次上线先正规迁移与存量导入/audit,再 reconcile/ready,最后启动读方；全球服务不再按旧 P1–P5 演练流程回退 Redis。
+	# 故障时保持 SQL 提交点并沿冻结/核验/恢复流程处理,见 player-route-mapping-durability-proposal.md §14。
 	# 组合门禁(写路径入口,DryRun 同样判,Assert-RouteSwitchPreflight):Arm 或任一读方开关为 true 而 Mode=redis → 拒绝
 	# (data_service 的 Validate 会拒启,进集群就是 CrashLoop);任一读方开关为 true 而 Arm=false → 拒绝(没有就绪标记,
 	# 读方全部 fail-closed:go/db 停存盘消费、data_service 全部回源、guild 全拒)。
@@ -282,11 +281,11 @@ param(
 	# k8s_zone_rollback.ps1 的 Step 6 尚未透传(R9 重写中):集群已切 db_first 之后经它重建 zone 会被粘滞核对拒绝。
 	# ValidateSet 不分大小写,参数绑定后规范成小写(data_service 的 Mode 区分大小写,`DB_FIRST` 会被它拒启)。
 	[ValidateSet("redis", "db_first")]
-	[string]$RouteStoreMode = "redis",
-	[switch]$RouteReconcileArm,
-	[switch]$RouteReadRequiresReady,
-	[switch]$DbPlacementRequireRouteReady,
-	[switch]$GuildRequireRouteReady,
+	[string]$RouteStoreMode = "db_first",
+	[switch]$RouteReconcileArm = $true,
+	[switch]$RouteReadRequiresReady = $true,
+	[switch]$DbPlacementRequireRouteReady = $true,
+	[switch]$GuildRequireRouteReady = $true,
 	# 确认本次部署就是要改动线上的上述开关(见上一段「粘滞」)。不给时线上取值会被本次参数改掉就在任何写操作之前拒绝;给了只打警告放行。
 	# 它是许可不是指令:线上与本次一致时给了也不改任何东西。不粘滞,只在被指定时透传。
 	[switch]$ConfirmRouteSwitchChange,
@@ -739,6 +738,11 @@ if ($DbConsumerGroup -ne "keep" -and $Command -ne "zone-up") {
 }
 # D1 映射提交点模式写进 ConfigMap 的是 data_service 区分大小写的字面量(见参数 -RouteStoreMode)。
 $RouteStoreMode = ConvertTo-ClientEntryCanonicalName -Value $RouteStoreMode -Allowed @("redis", "db_first")
+if ($Command -in @('zone-up','all-up','infra-up') -and -not $SkipGoSvc -and -not [string]::IsNullOrWhiteSpace($GoSvcRegistry)) {
+	if ($RouteStoreMode -cne 'db_first' -or -not $RouteReconcileArm -or -not $RouteReadRequiresReady -or -not $DbPlacementRequireRouteReady -or -not $GuildRequireRouteReady) {
+		throw '正式全球服务必须db_first及全部Arm/读ready；历史Redis只保留隔离工具/拒绝测试，禁止部署成映射权威。'
+	}
+}
 
 <#
 .SYNOPSIS
@@ -1945,6 +1949,17 @@ function Get-ManifestDeploymentReplicas {
 	login 的 PasswordAuth(池 20)不计入:K8s 的 login ConfigMap 不写该段、默认不启用;一旦启用,每 zone 要再加 2 × 20。
 	新增一个连这台 MySQL 的服务 = 这里加一组键,Get-MysqlConnectionLedger 的公式加一项。
 #>
+function Get-AccountDirectoryPoolMaxOpen {
+	# 该独立池当前上限写在真实构造点；精确读唯一literal，改为表达式/重复时拒绝，不复制第二个8。
+	$path = Join-Path $RepoRoot 'go/data_service/internal/store/account_directory_store.go'
+	$source = [IO.File]::ReadAllText($path)
+	$poolMatches = [regex]::Matches($source,'authoritysql\.Open\(ctx,\s*buildDSN\(cfg\),\s*cfg\.DBName,\s*requireTiDB,\s*([1-9][0-9]*)\)')
+	if ($poolMatches.Count -ne 1) { throw 'DS账号目录实际池上限不是唯一正规literal，连接总账拒绝猜测。' }
+	$value = 0
+	if (-not [int]::TryParse($poolMatches[0].Groups[1].Value,[ref]$value) -or $value -lt 1 -or $value -gt 1024) { throw 'DS账号目录池上限越界。' }
+	return $value
+}
+
 function Get-MysqlConnectionLedgerInputs {
 	$dbYaml = 'go/db/etc/db.yaml'
 	$dsYaml = 'go/data_service/etc/data_service.yaml'
@@ -1962,6 +1977,7 @@ function Get-MysqlConnectionLedgerInputs {
 		DsAuditStorePools     = 3
 		DsAuditMaxOpen        = Get-AuthoritativeScalar -RelativePath $dsYaml -KeyPath 'SnapshotMySQL.MaxOpenConn'
 		DsPlayerNameMaxOpen   = Get-AuthoritativeScalar -RelativePath $dsYaml -KeyPath 'PlayerName.MaxOpenConn'
+		DsDirectoryMaxOpen    = Get-AccountDirectoryPoolMaxOpen
 		# route store 的独立池只在 RouteStore.Mode=db_first 时装配;是否计入由 Get-MysqlConnectionLedger 的 -RouteStoreDbFirst 决定。
 		DsRouteMaxOpen        = Get-AuthoritativeScalar -RelativePath $dsYaml -KeyPath 'RouteStore.MaxOpenConn'
 		GatewayReplicas       = Get-ManifestDeploymentReplicas -RelativePath 'deploy/k8s/manifests/java-svc/gateway.yaml'
@@ -1984,6 +2000,8 @@ function Get-MysqlConnectionLedgerInputs {
 		MailMaxOpen           = Get-AuthoritativeScalar -RelativePath 'go/mail/etc/mail.yaml' -KeyPath 'MaxOpenConns'
 		RankReplicas          = Get-ManifestDeploymentReplicas -RelativePath 'deploy/k8s/manifests/go-svc/rank.yaml'
 		RankMaxOpen           = Get-AuthoritativeScalar -RelativePath 'go/rank/etc/rank.yaml' -KeyPath 'MaxOpenConns'
+		ChatReplicas          = Get-ManifestDeploymentReplicas -RelativePath 'deploy/k8s/manifests/go-svc/chat.yaml'
+		ChatMaxOpen           = Get-AuthoritativeScalar -RelativePath 'go/chat/etc/chat.yaml' -KeyPath 'MaxOpenConns'
 	}
 }
 
@@ -2015,9 +2033,9 @@ function Get-MysqlConnectionLedger {
 		[Parameter(Mandatory = $true)][int]$OpsReserve
 	)
 	$required = @('MaxConnections', 'DbReplicas', 'DbHomeMaxOpen', 'DbZoneStoreMaxOpen', 'DbNonZoneStoreMaxOpen',
-		'DsReplicas', 'DsAuditStorePools', 'DsAuditMaxOpen', 'DsPlayerNameMaxOpen', 'DsRouteMaxOpen',
+		'DsReplicas', 'DsAuditStorePools', 'DsAuditMaxOpen', 'DsPlayerNameMaxOpen', 'DsDirectoryMaxOpen', 'DsRouteMaxOpen',
 		'GatewayReplicas', 'GatewayMaxPool', 'FriendReplicas', 'FriendMaxOpen', 'TradeReplicas', 'TradeMaxOpen',
-		'PlayerInboxReplicas', 'PlayerInboxMaxOpen', 'GuildReplicas', 'GuildMaxOpen', 'MailReplicas', 'MailMaxOpen', 'RankReplicas', 'RankMaxOpen')
+		'PlayerInboxReplicas', 'PlayerInboxMaxOpen', 'GuildReplicas', 'GuildMaxOpen', 'MailReplicas', 'MailMaxOpen', 'RankReplicas', 'RankMaxOpen', 'ChatReplicas', 'ChatMaxOpen')
 	$v = @{}
 	foreach ($key in $required) {
 		$n = 0
@@ -2030,19 +2048,19 @@ function Get-MysqlConnectionLedger {
 		throw "MySQL 连接总账:ZoneCount=$ZoneCount 必须为正,ExtraZoneStores=$ExtraZoneStores / NonZoneStores=$NonZoneStores / RolloutExtraPodsPerDeployment=$RolloutExtraPodsPerDeployment / OpsReserve=$OpsReserve 不能为负"
 	}
 	$dbPerInstance = $v.DbHomeMaxOpen + $ExtraZoneStores * $v.DbZoneStoreMaxOpen + $NonZoneStores * $v.DbNonZoneStoreMaxOpen
-	$dsPerInstance = $v.DsAuditStorePools * $v.DsAuditMaxOpen + $v.DsPlayerNameMaxOpen
+	$dsPerInstance = $v.DsAuditStorePools * $v.DsAuditMaxOpen + $v.DsPlayerNameMaxOpen + $v.DsDirectoryMaxOpen
 	if ($RouteStoreDbFirst) { $dsPerInstance += $v.DsRouteMaxOpen }
 	$gatewayPerInstance = $v.GatewayMaxPool
 	$perZone = $v.DbReplicas * $dbPerInstance + $v.DsReplicas * $dsPerInstance + $v.GatewayReplicas * $gatewayPerInstance
 	# 变量名不用 $global:它是作用域修饰符的名字,读的人会以为在写全局作用域。
 	$globalPools = $v.FriendReplicas * $v.FriendMaxOpen + $v.TradeReplicas * $v.TradeMaxOpen + $v.PlayerInboxReplicas * $v.PlayerInboxMaxOpen +
-		$v.GuildReplicas * $v.GuildMaxOpen + $v.MailReplicas * $v.MailMaxOpen + $v.RankReplicas * $v.RankMaxOpen
+		$v.GuildReplicas * $v.GuildMaxOpen + $v.MailReplicas * $v.MailMaxOpen + $v.RankReplicas * $v.RankMaxOpen + $v.ChatReplicas * $v.ChatMaxOpen
 	$steady = $ZoneCount * $perZone + $globalPools
 	# 一个 zone 的三个 Deployment 与五个全局 Deployment(friend / trade / player-inbox / guild / mail)各多 RolloutExtraPodsPerDeployment 个实例
 	# (maxSurge 1 的新 Pod + 仍在优雅退出的旧 Pod;K8s 默认 25% 在 2 副本时 maxSurge 也是 1)。
 	# all-up 不带 -WaitReady 时各 zone 的滚动会重叠,不在这个余量里。
 	$surge = $RolloutExtraPodsPerDeployment * ($dbPerInstance + $dsPerInstance + $gatewayPerInstance + $v.FriendMaxOpen + $v.TradeMaxOpen + $v.PlayerInboxMaxOpen +
-		$v.GuildMaxOpen + $v.MailMaxOpen + $v.RankMaxOpen)
+		$v.GuildMaxOpen + $v.MailMaxOpen + $v.RankMaxOpen + $v.ChatMaxOpen)
 	$peak = $steady + $surge + $OpsReserve
 	return [ordered]@{
 		DbPerInstance = $dbPerInstance; DsPerInstance = $dsPerInstance; GatewayPerInstance = $gatewayPerInstance
@@ -2411,7 +2429,7 @@ function Get-RedisMaxClientsFromManifest {
 	[ordered] 键 = 服务配置里的键路径,值 = [int]。
 #>
 function Get-RedisPoolMirror {
-	param([Parameter(Mandatory = $true)][ValidateSet('login', 'db', 'data-service', 'player-locator', 'trade', 'guild', 'friend', 'match', 'player-inbox')][string]$Target)
+	param([Parameter(Mandatory = $true)][ValidateSet('login', 'db', 'data-service', 'player-locator', 'trade', 'guild', 'friend', 'match', 'chat', 'player-inbox')][string]$Target)
 
 	switch ($Target) {
 		'login' { $source = 'go/login/etc/login.yaml'; $keyPaths = @('Node.RedisClient.PoolSize') }
@@ -2423,6 +2441,7 @@ function Get-RedisPoolMirror {
 		'guild' { $source = 'go/guild/etc/guild.yaml'; $keyPaths = @('RedisClient.PoolSize', 'PlayerLocatorRedis.PoolSize', 'MergeMarkerRedis.PoolSize', 'LoginRedis.PoolSize') }
 		'friend' { $source = 'go/friend/etc/friend.yaml'; $keyPaths = @('LoginRedis.PoolSize') }
 		'match' { $source = 'go/match/etc/match_service.yaml'; $keyPaths = @('LoginRedis.PoolSize') }
+		'chat' { $source = 'go/chat/etc/chat.yaml'; $keyPaths = @('LoginRedis.PoolSize') }
 	}
 
 	$values = [ordered]@{}
@@ -2512,8 +2531,8 @@ function Get-RedisConnectionLedgerInputs {
 		# —— 全局池(infra namespace 一份)——
 		# match:go/match/internal/svc/servicecontext.go NewRedisHandles 的 sharedRds(go-zero,缺省池);MatchRedis 是 redis-match-cluster,不计。
 		[ordered]@{ Name = 'match'; Scope = 'global'; Manifest = "$goSvc/match.yaml"; PoolMirror = 'match'; DefaultPools = 1; GoMaxProcs = $g; PubSub = 0; Fixed = 0 }
-		# chat:go/chat/internal/svc/servicecontext.go NewRedisHandles 的 sharedRds(go-zero,缺省池);ChatRedis 在 K8s 复用 redis-match-cluster,不计。
-		[ordered]@{ Name = 'chat'; Scope = 'global'; Manifest = "$goSvc/chat.yaml"; DefaultPools = 1; GoMaxProcs = $g; PubSub = 0; Fixed = 0 }
+		# Chat历史/幂等/限速均在SQL；Redis仅全局原登录态只读池，不再连接旧ChatRedis集群。
+		[ordered]@{ Name = 'chat'; Scope = 'global'; Manifest = "$goSvc/chat.yaml"; PoolMirror = 'chat'; DefaultPools = 0; GoMaxProcs = 0; PubSub = 0; Fixed = 0 }
 		# friend:go/friend/internal/svc/servicecontext.go NewRedisHandles(go-zero,缺省池);K8s 不配 FriendRedis,私有 key 回落共享库、两者是同一个句柄。
 		[ordered]@{ Name = 'friend'; Scope = 'global'; Manifest = "$goSvc/friend.yaml"; PoolMirror = 'friend'; DefaultPools = 1; GoMaxProcs = $g; PubSub = 0; Fixed = 0 }
 		# trade:go/trade/internal/svc/assetchannel.go newAssetChannel 的 redis.NewClient(SharedRedis.PoolSize),加 shared/assetopwake 订阅
@@ -3417,11 +3436,11 @@ $GoSvcCatalogue = @{
 	"scene-manager" = @{ ConfigMap = "go-svc-scene-manager-config";   Manifest = "scene-manager.yaml";   Port = 60000; ConfigFlag = "-f";              ConfigFile = "scene_manager_service.yaml";    ImageName = "mmorpg-scene-manager" }
 	# 回合制战斗匹配:全局池、不分 zone(docs/design/cross-zone-matchmaking.md D1/D10),
 	# 与 battle 池同形态。gate 发现它走非 zone-scoped 前缀,所以放 infra namespace 一份即可。
-	match           = @{ ConfigMap = "go-svc-match-config";           Manifest = "match.yaml";           Port = 50500; ConfigFlag = "-f";              ConfigFile = "match_service.yaml";            ImageName = "mmorpg-match"; Global = $true }
+	match           = @{ ConfigMap = "go-svc-match-config";           Manifest = "match.yaml";           Port = 50500; ConfigFlag = "-f";              ConfigFile = "match_service.yaml";            ImageName = "mmorpg-match"; Global = $true; MigrateJob = "match-migrate.yaml" }
 	# 全局聊天 chat v1:世界频道全服唯一、私聊 key 不含 zone,表里天然有跨 zone 的行,所以是全局池(Global),
 	# 与 match 同形态放 infra namespace 一份。客户端只经 gate → client-rpc-router 到达它:-GateRouterMode 默认 "1" 下可达
 	# (K8s 上路由模式整链待事后补验,turn-based §22 D75);以 "0" 回退时「部署得起来但玩家不可达」,见下一条与参数注释。
-	chat            = @{ ConfigMap = "go-svc-chat-config";            Manifest = "chat.yaml";            Port = 50700; ConfigFlag = "-f";              ConfigFile = "chat.yaml";                     ImageName = "mmorpg-chat"; Global = $true }
+	chat            = @{ ConfigMap = "go-svc-chat-config";            Manifest = "chat.yaml";            Port = 50700; ConfigFlag = "-f";              ConfigFile = "chat.yaml";                     ImageName = "mmorpg-chat"; Global = $true; MigrateJob = "chat-migrate.yaml" }
 	# 客户端 RPC 路由服(契约 zone_contract_v1 §1 路由服部署链):GATE_CLIENT_RPC_ROUTER=1 时 gate 唯一的 gRPC 目标。
 	# 全局池(node_util.cpp IsGlobalPoolNodeType 含 ClientRpcRouter),与 match / chat 同放 infra namespace。
 	# 端口 50600 与 go/client_rpc_router/etc/client_rpc_router.yaml、go_services.ps1 一致;metrics 9200。
@@ -3461,6 +3480,7 @@ $GoSvcCatalogue = @{
 	# 端口 50300 / metrics 9220 与 go/guild/etc/guild.yaml、go_services.ps1 一致;ImageName 与 go_svc_image.ps1 的 guild 条目一致。
 	# 独占库 mmorpg_guild(D-14):库由 infra-up 的 mysql-init-sql(deploy/mysql-init/00_init_zone_dbs.sql)预建;
 	# 表由 MigrateJob 登记的 guild-migrate Job 建(Apply-OneGoSvc 在 ConfigMap 之后、Deployment 之前跑它)。
+	guild           = @{ ConfigMap = "go-svc-guild-config";           Manifest = "guild.yaml";           Port = 50300; ConfigFlag = "-f";              ConfigFile = "guild.yaml";                    ImageName = "mmorpg-guild"; Global = $true; MigrateJob = "guild-migrate.yaml" }
 	# 邮件 mail(docs/design/mail-system.md;M1d,2026-10-16):邮件按全局唯一的 player_id / 号段 id 存,是全局池(Global),infra namespace 一份。
 	# 客户端只经 gate → client-rpc-router 可达(路由服按 MailNodeService.rpc/ 前缀发现,mail 的 go-zero Etcd.Key 留空,D-13);
 	# `-GateRouterMode 0` 时部署得起来但玩家够不着(与 chat / friend / trade 同口径)。MailAdmin(发件)由运维直连 Service mail:50900。
@@ -7121,7 +7141,7 @@ function Get-RouteStoreDeploySettings {
 		throw "生成 ConfigMap 失败:$dsYaml 的 RouteStore.WaitAOFTimeoutMs='$timeoutRaw' 必须是 [1, 1500] 内的整数(0 = WAITAOF 无限等待;上界给 2000ms 服务端预算留余量)。fail-closed:data_service 对越界值拒启。"
 	}
 	return [ordered]@{
-		Backend            = 'mysql'
+		Backend            = 'tidb-required'
 		Mode               = $Mode
 		FenceShards        = $fence
 		WaitAOFNumLocal    = 1
@@ -7224,7 +7244,7 @@ function Get-RouteSwitchDrift {
 	return [string[]]$drifts.ToArray()
 }
 
-# 照传线上现状要给的参数串:-RouteStoreMode 照写取值,布尔开关只写为 true 的(不给 = false)。线上取值认不出时返回 $null。纯函数。
+# 原样描述线上实况的参数串:布尔值全部显式写出,不依赖本轮已改为 true 的默认。旧 redis/off 仍会被全球写入口拒绝。
 function Get-RouteSwitchKeepArgs {
 	param([Parameter(Mandatory = $true)][System.Collections.IDictionary]$Live)
 	$parts = @()
@@ -7232,7 +7252,8 @@ function Get-RouteSwitchKeepArgs {
 		$value = [string]$Live[$key]
 		if ($value.EndsWith('?')) { return $null }
 		if ($key -ceq 'RouteStoreMode') { $parts += "-RouteStoreMode $value"; continue }
-		if ($value -ceq 'true') { $parts += "-$key" }
+		if ($value -cne 'true' -and $value -cne 'false') { return $null }
+		$parts += ('-{0}:${1}' -f $key, $value)
 	}
 	return ($parts -join ' ')
 }
@@ -7478,6 +7499,25 @@ function Get-GlobalAuthoritySqlSettings {
 		if ($candidate -ine $canonical) { throw '目录、好友、交易和匹配必须配置同一个全球TiDB SQL入口；禁止跨独立数据库集群模拟原子事务。' }
 	}
 	return $settings
+}
+
+# 与GoDB的独立外部库清单共源；只反解正规storage族，不把当前zone/Regions自证为白名单。
+function Get-RoleProofStorageIds {
+	param([Parameter(Mandatory = $true)][AllowEmptyString()][string]$DatabaseNames)
+	$names = @($DatabaseNames -split ',' | ForEach-Object { $_.Trim() })
+	if ($names.Count -lt 1 -or $names.Count -gt 1024) { throw '玩家数据库白名单必须含1..1024个正规落点库。' }
+	$ids = @{}
+	foreach ($name in $names) {
+		$id = [uint32]0
+		if ($name -cmatch '^zone_([1-9][0-9]{0,5})_db$') {
+			if (-not [uint32]::TryParse($Matches[1],[ref]$id) -or $id -gt 999999) { throw '非法zone玩家库白名单。' }
+		} elseif ($name -cmatch '^player_store_([1-9][0-9]*)_db$') {
+			if (-not [uint32]::TryParse($Matches[1],[ref]$id) -or $id -lt 1000000) { throw '非法非zone玩家库白名单。' }
+		} else { throw '玩家数据库白名单仅接受正规zone/player_store库，不接受其它schema或凭据。' }
+		if ($ids.ContainsKey($id)) { throw '玩家数据库白名单含重复storage。' }
+		$ids[$id]=$true
+	}
+	return @($ids.Keys | Sort-Object { [uint64]$_ } | ForEach-Object { [uint32]$_ })
 }
 
 function Get-FriendSqlSettings {
@@ -8121,6 +8161,7 @@ function New-GuildServiceConfigYaml {
 	$autoMigrate = if ($ReleaseProfile -eq 'dev') { Get-AuthoritativeScalar -RelativePath $source -KeyPath 'Schema.AutoMigrate' } else { 'false' }
 	$requireTiDB = if ($ReleaseProfile -eq 'dev') { Get-AuthoritativeScalar -RelativePath $source -KeyPath 'MySQL.RequireTiDB' } else { 'true' }
 	$trialEnabled = Get-AuthoritativeScalar -RelativePath $source -KeyPath 'Activity.TrialResult.Enabled'
+	$matchAuthoritySchema = Get-AuthoritativeScalar -RelativePath $source -KeyPath 'MatchAuthoritySchema'
 	if ($requireTiDB -eq 'true' -and $trialEnabled -eq 'true') { Assert-GlobalMatchKafkaTopology -Topology (Get-KafkaTopology) }
 	$timeout = Get-AuthoritativeScalar -RelativePath $source -KeyPath 'Timeout'
 	$quota = Get-AuthoritativeScalar -RelativePath $source -KeyPath 'ApplicationQuotaPerMinute'
@@ -8134,6 +8175,7 @@ function New-GuildServiceConfigYaml {
 Name: guild.rpc
 Mode: $mode
 AccountRoleSchema: ${GlobalDbName}
+MatchAuthoritySchema: $matchAuthoritySchema
 GlobalLoginSessions: true
 ListenOn: 0.0.0.0:50300
 Timeout: $timeout
@@ -8210,6 +8252,7 @@ function New-GoSvcConfigMapYaml {
 	)
 	$authoritySql = Get-GlobalAuthoritySqlSettings -Profile $ReleaseProfile -CanonicalHost $GlobalAuthorityTiDBHost `
 		-FriendHost $FriendTiDBHost -TradeHost $TradeTiDBHost -MatchHost $MatchTiDBHost -DevelopmentHost "mysql.${InfraNamespace}:3306"
+	if ($authoritySql.RequireTiDB -cne 'true') { throw '全球服务ConfigMap必须显式配置同一GlobalAuthorityTiDBHost；dev不再默认回落MySQL。' }
 	if ($authoritySql.RequireTiDB -eq 'true') {
 		$FriendTiDBHost = $authoritySql.Host
 		$TradeTiDBHost = $authoritySql.Host
@@ -8286,6 +8329,8 @@ function New-GoSvcConfigMapYaml {
 	}
 	# D1 第 3 批 go/db 读方门禁 Placement.RequireRouteReady:取本脚本参数 -DbPlacementRequireRouteReady(缺省 false),不镜像 go/db/etc/db.yaml。
 	$dbRouteReadyText = if ([bool]$DbPlacementRequireRouteReady) { 'true' } else { 'false' }
+	$dbPlacementRequired = Get-AuthoritativeScalar -RelativePath 'go/db/etc/db.yaml' -KeyPath 'Placement.Required'
+	$loginPlacementBlock = Get-AuthoritativeYamlBlock -RelativePath 'go/login/etc/login.yaml' -Key 'Placement'
 	# db 的消费组键(四种形状之一,见 Resolve-DbConsumerGroupPlan):计划由写路径入口的 Initialize-DbConsumerGroupPlans 先算好,
 	# 这里只取本 zone 那一份并渲染;缺计划即 throw,不回落任何默认组名。只在生成 db 自己的 ConfigMap 时求值。
 	$dbConsumerGroupYaml = ''
@@ -8463,9 +8508,18 @@ function New-GoSvcConfigMapYaml {
 	$chatHistoryMaxEntries   = ''
 	$chatHistoryTTLSeconds   = ''
 	$chatOptionalLines       = ''
+	$chatSqlMaxOpen          = ''
+	$chatSqlDsnEnv           = ''
+	$chatLoginPool           = ''
 	if ($SvcName -eq 'chat') {
 		# Name 也取服务 yaml:go-zero ServiceConf.Name 是必填键,两边写同一个名字,日志 / 链路里才对得上。
 		$chatName               = Get-AuthoritativeScalar -RelativePath $chatYaml -KeyPath 'Name'
+		$chatSqlDsnEnv          = Get-AuthoritativeScalar -RelativePath $chatYaml -KeyPath 'DSNEnv'
+		$chatSqlMaxOpen         = Get-AuthoritativeScalar -RelativePath $chatYaml -KeyPath 'MaxOpenConns'
+		$chatLoginPool          = (Get-RedisPoolMirror -Target 'chat')['LoginRedis.PoolSize']
+		if ($chatSqlDsnEnv -cne 'CHAT_AUTHORITY_DSN' -or $chatSqlMaxOpen -notmatch '^\d+$' -or [int]$chatSqlMaxOpen -lt 2 -or [int]$chatSqlMaxOpen -gt 128 -or (Get-AuthoritativeScalar -RelativePath $chatYaml -KeyPath 'RequireTiDB') -cne 'true' -or (Get-AuthoritativeScalar -RelativePath $chatYaml -KeyPath 'GlobalLoginSessions') -cne 'true') {
+			throw 'Chat必须使用显式TiDB DSN、全局原登录态与有界SQL连接池；禁止Redis权威回退。'
+		}
 		$chatTimeout            = Get-AuthoritativeScalar -RelativePath $chatYaml -KeyPath 'Timeout'
 		$chatLeaseTTL           = Get-AuthoritativeScalar -RelativePath $chatYaml -KeyPath 'LeaseTTL'
 		$chatMaxContentBytes    = Get-AuthoritativeScalar -RelativePath $chatYaml -KeyPath 'MaxContentBytes'
@@ -8744,15 +8798,22 @@ function New-GoSvcConfigMapYaml {
 	# 顺手;现在全局服务(match)会在 infra-up 阶段也走这个函数,staging/prod 的
 	# infra-up 不该因为一个 db 才用的密钥缺席而失败。
 	$dbAllowedDatabasesYaml = ''
-	if ($SvcName -eq 'db') {
+	$dsAccountDirectoryBlock = ''
+	if ($SvcName -in @('db','data-service')) {
 		$dbAllowedDatabases = Resolve-InjectedSecret -EnvName "MMORPG_DB_ALLOWED_DATABASES" `
-			-DevFallback "zone_${CurrentZoneId}_db" -ReleaseProfile $ReleaseProfile `
+			-DevFallback '' -ReleaseProfile $ReleaseProfile `
 			-Purpose "db 库名白名单(逗号分隔,如 zone_1_db,zone_2_db)" -MinLength 3
+		$roleProofStorageIds = @(Get-RoleProofStorageIds -DatabaseNames $dbAllowedDatabases)
 		$dbAllowedList = @($dbAllowedDatabases -split ',' | ForEach-Object { $_.Trim() } | Where-Object { $_ })
 		if ($dbAllowedList.Count -eq 0) {
 			throw "生成 db ConfigMap 失败:库名白名单解析后为空(MMORPG_DB_ALLOWED_DATABASES='$dbAllowedDatabases')。"
 		}
 		$dbAllowedDatabasesYaml = ($dbAllowedList | ForEach-Object { "      - `"$_`"" }) -join "`n"
+		if ($SvcName -eq 'data-service') {
+			$dsAccountDirectoryBlock = Get-AuthoritativeYamlBlock -RelativePath 'go/data_service/etc/data_service.yaml' -Key 'AccountDirectory'
+			if ([regex]::Matches($dsAccountDirectoryBlock,'(?m)^    AllowedStorageIDs:.*$').Count -ne 1) { throw 'DS正规角色SQL证明白名单源不唯一。' }
+			$dsAccountDirectoryBlock = $dsAccountDirectoryBlock -replace '(?m)^    AllowedStorageIDs:.*$', ('    AllowedStorageIDs: ['+($roleProofStorageIds -join ', ')+']')
+		}
 	}
 
 	# 启动期 DDL 开关。go/db 默认全 false 且库不存在时 fail-closed
@@ -8965,6 +9026,7 @@ MetricsListenAddr: ":9160"
 # 只写连接池这几项:AllowStoreFamilies / Required / Redis 仍不写 = 取缺省(true / false / 复用上面的 RedisClient),
 # 语义与以前整段不写相同(go/db config.go PlacementConfig 的缺省规则)。
 Placement:
+  Required: ${dbPlacementRequired}
   ZoneStoreMaxOpenConn: ${dbZoneStoreMaxOpenConn}
   ZoneStoreMaxIdleConn: ${dbZoneStoreMaxIdleConn}
   NonZoneStoreMaxOpenConn: ${dbNonZoneStoreMaxOpenConn}
@@ -9026,6 +9088,7 @@ LeaseTTL: ${dsLeaseTTL}
 # 以前这份 ConfigMap 没有本段,Go 默认值是 127.0.0.1:3306/testdb —— K8s 上必然连不上:
 # 三个 store 置 nil、AllocateIdSegment 不可用,login 开了 IdSegment 后建角会全部失败。
 SnapshotMySQL:
+  RequireTiDB: $($authoritySql.RequireTiDB)
   Host: "$($authoritySql.Host)"
   User: "${mysqlUser}"
   Password: "${mysqlPassword}"
@@ -9044,24 +9107,23 @@ PlayerName:
 Schema:
   AutoMigrate: ${dataServiceAutoMigrate}
 # 多副本的前提(manifests/go-svc/data-service.yaml 头部):MySQL 侧的 store 装配不起来就拒启,不带病进发现池。
-# 所有档位都写 true;本地 yaml 不写(缺省 false,沿用降级运行)。
+# 所有档位及正式本地 yaml 都写 true；缺池一律拒启。
 Store:
   Required: true
-$(Get-AuthoritativeYamlBlock -RelativePath 'go/data_service/etc/data_service.yaml' -Key 'AccountDirectory')
-# 映射提交点(player-route-mapping-durability-proposal.md §4、§11.2):Mode 不镜像服务 yaml,取 k8s_deploy.ps1 的 -RouteStoreMode(缺省 redis)——
-# 切 db_first 是 P2 的显式运维动作:先进冻结窗口(P1–P3 不跑 merge_zone 任何写模式;P4 起只许第 2 批新版 merge_zone 显式
-# -route-source=db,旧二进制禁用)、P1 导入 + audit 为 0、建角压测、告警抓取就位
-# (docs/handoff/launch-readiness-20261013/spec_D1_batch1b2_2_3.md §8)。全部 zone 同一取值;部署前脚本读线上现状做粘滞核对,
+${dsAccountDirectoryBlock}
+# 映射提交点(player-route-mapping-durability-proposal.md §14):正式默认 db_first,全部 zone 同一取值。
+# 存量环境先停旧写者并正规导入/audit,新空环境先迁移目录与全部白名单玩家库；未证明历史完整不能 Arm。
+# 部署前脚本读线上现状做粘滞核对,
 # 不一致要显式 -ConfirmRouteSwitchChange。K8s 上跑 route-tool 用 tools/scripts/k8s_route_tool.ps1(一次性 Job,不 exec 进本 Pod)。
 # 连接池大小两项(G2b)镜像服务 yaml:route store 的独立池只在 db_first 下装配,redis 模式下不开连接;MySQL 连接总账的规划档
 # 已按 db_first 计入它(Get-MysqlConnectionPlan)。
 # 副作用:以前这里只写 Mode、池大小取代码默认;镜像之后,服务 yaml 里一个非法的池值(如 MaxIdleConn > MaxOpenConn)会让
 # K8s 上的 data-service 在 redis 模式下也拒启(data_service.go 不分 Mode 校验 RouteStore)—— 所以生成器取值时先核
 # 「正整数且 idle ≤ open」(Get-MysqlPoolMirror),不合格在 apply 之前失败。下面几项同理先核(Get-RouteStoreDeploySettings)。
-# FenceShards:按全局库档位 —— K8s 的全局库是 infra 的 MySQL,取 MySQL 档(服务 yaml 的值);TiDB 档 64 等 TiDB Phase 1 的部署方式定了再补。
+# FenceShards:从正式服务 yaml 镜像当前 64 分片,全球库必须是显式强读 TiDB。
 # WaitAOF:本地落盘 1(两份 Redis 清单都开着 AOF);副本份数按 mapping Redis 拓扑(-RedisReplicas:单实例 redis.yaml 写 0,高可用 redis-ha.yaml 写 1);超时取服务 yaml。
-# ReadRequiresReady(第 3 批读方门禁)与 Reconcile.ArmReadyMarker(对账 leader 挂就绪标记):缺省 false,全部副本同一取值,
-# 打开顺序见规格 §8(P3 Arm → P5 读方),回退先关读方、再关 Arm。Reconcile 段其余键不写 = 代码缺省(Enabled true、LeaseMs 10000、
+# ReadRequiresReady 与 Reconcile.ArmReadyMarker 正式默认 true,全部副本同一取值。
+# 未完成 reconcile/ready 时读方闭闸。Reconcile 段其余键不写 = 代码缺省(Enabled true、LeaseMs 10000、
 # RedisPoolSize 4 …;leader 的独立 go-redis 池按这个缺省计入 Redis 连接总账)。
 RouteStore:
   Mode: $($dsRouteSettings.Mode)
@@ -9242,6 +9304,7 @@ Secrets:
 # 下发 gate 地址时是否必须用 gate 自报的客户端可达地址(NodeInfo.client_endpoint,D78):
 # true = 缺地址的 gate 不下发;false = 回落 endpoint(PodIP)。取值见 k8s_deploy.ps1 -RequireClientEndpoint(默认跟随 -ClientEntryMode)。
 RequireClientEndpoint: ${requireClientEndpointValue}${loginDevPasswordAuthBlock}${loginQueueBlock}${loginAuthProvidersBlock}
+${loginPlacementBlock}
 Kafka:
   Brokers:
     - "kafka.${InfraNamespace}:9092"
@@ -9346,7 +9409,9 @@ MetricsListenAddr: ":9150"
 # 跨 zone 重定向签发 gate 令牌要用,缺了 gate_redirect.go 直接返回
 # "GateTokenSecret not configured"。以前这份 ConfigMap 压根没有这一项。
 GateTokenSecret: "${gateTokenSecret}"
-# DataService gRPC 客户端:EnterScene 用它查玩家归属 zone(GetPlayerHomeZone),随 RoutePlayerEvent
+# DataService gRPC 客户端:同一连接查home zone与原owner_revision(LookupAccountRole)，不新增SQL/Redis池，连接总账数不变。
+# Lookup仅用scene-manager.yaml独立Secret account-directory-scene-manager，不给SM login/trade写密钥。
+# EnterScene 用home zone随 RoutePlayerEvent
 # 下发给 scene 决定存盘落哪个 zone 的库(cross-zone-scene-travel.md CZ-3)。K8s 是多 zone 形态,
 # 缺这一块 scene_manager 会 fail-closed 拒绝所有进场景(AllowGateZoneAsHomeZone 默认 false);
 # 而把开关打开则会让访客的存盘写进目标 zone 的库 —— 两种都不对,所以这里必须配。
@@ -9452,6 +9517,17 @@ MetricsListenAddr: ":9170"
 @"
 Name: ${chatName}
 ListenOn: 0.0.0.0:50700
+# 迁移/常驻实例分别从专用Secret key读取DSN；ConfigMap不含凭据。
+DSNEnv: ${chatSqlDsnEnv}
+RequireTiDB: true
+MaxOpenConns: ${chatSqlMaxOpen}
+AccountRoleSchema: ${GlobalDbName}
+GlobalLoginSessions: true
+LoginRedis:
+  Host: redis.${InfraNamespace}:6379
+  PasswordEnv: LOGIN_REDIS_PASSWORD
+  DB: $(Get-AuthoritativeScalar -RelativePath 'go/login/etc/login.yaml' -KeyPath 'Node.RedisClient.DB')
+  PoolSize: ${chatLoginPool}
 # zrpc 服务端超时(毫秒),必须 <= 路由服 ForwardTimeoutMs - 1000,否则路由服先超时会把 chat 的正常慢响应判成故障。
 Timeout: ${chatTimeout}
 # go-zero Stat 拦截器默认按 INFO 打每个请求的整包 JSON:SendChat 请求体就是聊天正文(含私聊),
@@ -9471,24 +9547,11 @@ Etcd:
   Hosts:
     - "etcd.${InfraNamespace}:2379"
   Key: ""
-# 双句柄:
-#   Redis     = SharedRedis,既有共享单库(写者含 C++ scene,不能集群化);chat 私有 key 只在 ChatRedis 缺省时才回落到这里。
-#   ChatRedis = chat 私有 key(chat:{world}:log / chat:{p:<小id>:<大id>}:log / chat:{req:...} / chat:{rl:...}),
-#               全是单 key 操作,集群安全。go-zero redis.RedisConf 形状,不写 DB。
+# 仅保留RpcServerConf的兼容字段；正式SQL聊天不创建此句柄，不读旧ChatRedis历史。
 Redis:
   Host: redis.${InfraNamespace}:6379
   Type: node
-  Pass: "${redisPassword}"
   Key: chatservice
-# 注意:ChatRedis 复用 match 的 redis-match-cluster(同一个六节点集群),不是 chat 的独立实例。
-#   该集群 maxmemory 512mb + maxmemory-policy volatile-lru(manifests/infra/redis-match-cluster.yaml):
-#   chat 的历史 LIST / 幂等 / 限速 key 都带 TTL,内存吃紧时会被优先淘汰,还会与 match 的锁 / 票据争同一份内存,
-#   聊天历史可能提前消失、反过来也可能挤掉 match 带 TTL 的 key。
-#   v1 可接受的前提是「历史 = 7 天 / 200 条尽力而为窗口,不是权威账本」;一旦 chat 的某类数据成为唯一权威,
-#   staging/prod 必须换独立实例且 maxmemory-policy=noeviction,并按 chat 的量级重新定 maxmemory。
-ChatRedis:
-  Host: ${matchRedisClusterHosts}
-  Type: cluster
 # 全局池:ZoneId 只影响注册路径,路由服对 ChatNodeService 不做 zone 过滤(ZoneScopedNodeTypes 默认仅 Login),
 # 任何 zone 的玩家都会被路由到这里的实例;业务代码不读它。取命令行 -ZoneId(Apply-GlobalGoSvcManifests),
 # 与 match 同口径;Go 侧 config.Validate 拒 0。
@@ -9897,6 +9960,10 @@ function Apply-GoSvcMigrateJob {
 	)
 
 	$info = $GoSvcCatalogue[$SvcName]
+	# 显式旧dev兼容不使用SQL；全球Match即使dev也只读Plan，必须等专用迁移Job完成。
+	if ($SvcName -eq 'match' -and -not (Get-GlobalMatchDeploymentSettings -Profile $ReleaseProfile -TiDBHost $MatchTiDBHost -Region $PhysicalRegion).Enabled) {
+		return
+	}
 	$jobName = "$SvcName-migrate"
 	$path = Join-Path $GoSvcManifestsDir $info.MigrateJob
 	# fail-closed:主 manifest 在、迁移 Job 却不在,staging/prod 的 Deployment 必然因 plan 不净拒启;
@@ -9918,7 +9985,7 @@ function Apply-GoSvcMigrateJob {
 
 	# D-14 第 4 条:staging/prod 的迁移门禁不受 -WaitReady 控制,恒等 Job Complete、失败或超时中断发布;
 	# 只有 dev 档把"等不等"交给 -WaitReady(dev 服务启动期自己也会迁移)。
-	$gateOnJob = [bool]$WaitReady -or ($ReleaseProfile -ne 'dev')
+	$gateOnJob = [bool]$WaitReady -or ($ReleaseProfile -ne 'dev') -or ($SvcName -eq 'match')
 
 	if ($gateOnJob) {
 		# MySQL 起不来时 -migrate 连库失败以 1 退出,会被 podFailurePolicy 当成不可重试直接判 Job 失败;
@@ -10715,6 +10782,14 @@ function Apply-OneGoSvc {
 				-Value $script:AssetOpSecrets[$SvcName] -AppLabel $SvcName
 		}
 		else {
+			if ($SvcName -eq 'guild') {
+				# Guild 模板的本域资产密钥是三行 inline secretKeyRef；off 只精确移除这一块，保留其 SQL/目录/邮件必需签名。
+				$guildAssetEnv = '(?m)^(?<indent>[ \t]*)- name: MMORPG_ASSET_OP_SECRET_GUILD[ \t]*\r?\n\k<indent>  valueFrom:[ \t]*\r?\n\k<indent>    secretKeyRef: \{name: domain-service-secrets, key: asset-guild, optional: false\}[ \t]*\r?\n'
+				if ([regex]::Matches($manifestContent, $guildAssetEnv).Count -ne 1) {
+					throw 'Guild AssetOps off 要求唯一的本域资产 env 原块；模板改变或重复时拒绝，不能误删其它签名。'
+				}
+				$manifestContent = [regex]::Replace($manifestContent, $guildAssetEnv, '')
+			}
 			$manifestContent = [regex]::Replace($manifestContent, $assetOpPlaceholderLine, '')
 		}
 	}
@@ -12130,6 +12205,7 @@ if ($Command -in @("zone-up", "all-up", "infra-up")) {
 	if (-not $SkipGoSvc -and -not [string]::IsNullOrWhiteSpace($GoSvcRegistry)) {
 		$globalSql = Get-GlobalAuthoritySqlSettings -Profile $ReleaseProfile -CanonicalHost $GlobalAuthorityTiDBHost `
 			-FriendHost $FriendTiDBHost -TradeHost $TradeTiDBHost -MatchHost $MatchTiDBHost -DevelopmentHost "mysql.${InfraNamespace}:3306"
+		if ($globalSql.RequireTiDB -cne 'true') { throw '正式全球服务必须指定同一GlobalAuthorityTiDBHost，所有档位禁止MySQL权威回退。' }
 		if ($globalSql.RequireTiDB -eq 'true') { $FriendTiDBHost = $globalSql.Host; $TradeTiDBHost = $globalSql.Host; $MatchTiDBHost = $globalSql.Host }
 	}
 	# 好友全局池部署前检查权威事务域配置，早于任何基础设施写入。

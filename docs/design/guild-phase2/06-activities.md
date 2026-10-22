@@ -2434,3 +2434,25 @@ TEST(BattleResultActivity, ClassifyRetryOrder)             // (false,99,30)→kD
 本节覆盖正文中“Kafka首次不可用仍先开放历练、后台每30秒恢复”的全球模式行为。`MySQL.RequireTiDB=true` 且历练结果消费启用时，Guild在创建依赖、注册节点和开放RPC之前，同步核验结果topic的严格策略：显式至少三副本、每分区副本分配完整、`min.insync.replicas>=2`、禁止非同步副本选主。核验或配置失败即拒启，已有RF1不自动重分配，也不能由Guild先创建单副本topic后等待match修复。
 
 启动门禁与后续消费者复用 `TrialResultConsumerConfig.TopicSpec()` 和 `shared/kafkautil` 的同一严格策略。副本下限直接写入TopicSpec，不依赖非法 `KAFKA_TOPIC_REPLICATION_FACTOR` 回落到1的兼容逻辑。只有显式dev/test旧MySQL模式保留原后台首次恢复路径；结果消费关闭时不创建结果topic。此项验证了装配策略与失败传播，尚未以真实三broker故障注入验证整个历练结算链。
+
+## 2026-10-21：私有历练大厅的全服 SQL 权威
+
+本节覆盖正文与附录中“Redis易失大厅、TTL自然解套、LAUNCHING过五秒视为结束”的旧规则。生产装配只调用 `NewSQLTrialLobbyRepo`，沿现有 `TrialLobbyRepo` 接口隐藏事务。旧 `NewTrialLobbyRepo` 只保留隔离Redis仓储夹具，不能与生产永久launch混搭；`trialAvailable` 显式拒绝这种组合。项目尚未上线，不把旧Redis快照、当前owner或空SQL表默认为可迁入的授权事实。
+
+`guild_trial_lobby` 永久保存正规PB `GuildTrialLobbyOriginal`、`GuildTrialLobbyConsents` 和公开 `GuildTrialLobbyView`。Original以独立 `initiator_player_id` 授权发起人，`roster` 是无符号升序的原player/account/revision集合；公开视图可适配发起人在首位，显示下标没有授权含义。Consents是正规wrapper，只有本人携原会话、同全P核当前仍等于固定邀请原owner时才能追加。重试不能替换或补抓当前owner，账号ABA也拒绝。账号只存在私有列，不发送到公开TrialLobby视图。
+
+建房使用既有全局guild号源发唯一lobby ID，不再使用Redis INCR。创建、同意、拒绝、到期与准备开战均在完整角色P无符号升序前缀后取G、真实lobby与slot；同一P保护所有涉及该角色的跨域写，逐表复核不以远端预检替代提交。`guild_trial_lobby_slot(player_id)` 指向真实大厅；`lobby_id=0` 是永久已结清墓碑，cooldown只限制业务发起频率。只有实际大厅4=ENDED可重用，孤儿/未知状态和缺表均拒绝；Redis丢失不影响邀请、同意、启动、占位。
+
+Guild显式配置 `MatchAuthoritySchema`，在同主TiDB连接池只读核Match票完整业务列与Team launch/role，缺失拒启；不从DSN猜schema、不在业务进程建跨域表。首次大厅、每次新同意、首次PREPARED提交同全P反查 `shared/matchentry.TicketOccupiedSQL`：state4或完整空state0才安全，TTL不放queued/pending0；Team只有父5且role5可通过，父4、孤儿、未知均挡；其它Trial必须launch3且role2。Match准入反向读取真实私有slot/lobby，只有核完整原launch及state2大厅才能使用己方精确例外。未接受挑战只是通知意向，真正接受会在同P反查占位。已有观战保留原gather语义，由Match首次direct意图同P捕获并驱逐固定旧op，Guild不复制另一份观战事实。
+
+P之前使用 `shared/placement.LockRoleRoutes` 唯一路由前缀：SQL meta→完整成员涉及的 `(home_zone,player_id%64)` 围栏有序中性ODKU及锁→route聚簇键排序复核→全P，再进入G。角色schema同时是显式DS路由原件schema；启动 `CheckRoleRouteContract` 强读缺失/关闭拒绝，维护态、路由变化、frozen都在任何大厅写前拒绝。真库夹具通过AST读取DS `schema.go` 的五个正式nullable DDL常量，仅在随机自有库显式初始化meta与固定测试route，避免PB空string误造frozen，也不维护第二套DDL。
+
+永久launch的 `request_id=lobby_id`。准备先锁真实state2大厅、完整原同意和全slot，再建PREPARED/ACTIVE，同一事务反核Match/Team；只有成功提交原件后才许可发送Start RPC。结果SETTLED/POISON或核签且绑定原Start的安全Cancel回复，使launch3、role2、lobby4和slot0同事务提交。EXPIRED、负答、超时、帮会解散都不提供取消证明，必须保留原件；解散不再直接释放state2 launch。恢复器只沿原Start规范名单/原独立发起人重放，已确认battle后也恢复大厅LAUNCHED。
+
+解散后正常结束不能误把Match F4当结束证明：F4仍是READY，正常结果不必把它改成5。既有受信Kafka/结果记录消费者在任何Poison或销账之前，先核非0完成时间、真实终局outcome、原dungeon、完整activity上下文、team0严格等于永久原roster，逃跑/死亡集合只能为其子集。坏结果不销账、不清占位，等待完整原件或显式人工恢复；此校验不替代部署的Kafka/结果存储认证。G已不存在时，只消费这份绑定原件的真实终局，同完整P关闭launch/role/lobby/slot，不补造G/T、不发任何奖励；旧终局重复只能命中旧墓碑，不能清玩家此后新大厅的slot。
+
+两个尚未许可远端Start的窗口另有明确终局：PENDING到期；全员同意state2后进程崩在Prepare之前。后台每轮按 `(state,lobby_id)` 索引各取四项、共八项keyset，单轮大厅预算两秒、失败也推进。只有同完整P/G/lobby锁内期限已到且永久 `guild_trial_launch` 确实无行，才能写lobby4/slot0永久取消墓碑；迟到Prepare同锁见4拒绝，因此无任何Start许可可越过墓碑。已有任何launch（包括未知状态）绝不走此路，不以缺Match票推断结束。
+
+这种仅撤销未许可动作的方向使用当前完整P/route锁保护，但不要求当前owner仍等于旧邀请owner，否则历史owner变化可令过期待清理永远停住。它只按原lobbyID和固定原件证明无launch并CAS仍指向旧ID的slot，绝不覆盖新slot、不补抓新owner为旧consent授权。新同意、Prepare、LAUNCHED确认仍严格核固定旧owner，真实launch的终局仍须正证明。
+
+回归源码在 `trial_lobby_sql_test.go` 与 `role_identity_tidb_test.go`：Redis丢失、公开视图不泄账号、原owner/ABA、末票幂等、UNKNOWN不按截止释放、Cancel同事务清占位、取消先于Prepare、Match先赢与末票后抢先、Team父4拒绝、相反名册并发P排序。真库夹具只接受显式数值loopback端口，实际强TiDB连接验证并创建随机自有库；本任务已核资源为 `127.0.0.1:24000`，不假定4000。此批仅源码与gofmt/差异静态检查，尚未生成、编译、运行测试或真实双副本联机；旧Redis单测不充当SQL并发证据。

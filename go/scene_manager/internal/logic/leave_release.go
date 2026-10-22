@@ -25,10 +25,9 @@ import (
 type leaveReleaseVerdict uint8
 
 const (
-	// leaveReleaseDisabled:整项检查关闭(LeaveSceneHolderReleaseWaitSeconds < 0,或 dev 旁路),按旧行为删。
+	// 以下旧枚举保留指标兼容；配置旁路、epoch缺失与等待超时均不再授权删除。
 	leaveReleaseDisabled leaveReleaseVerdict = iota
-	// leaveReleaseLegacyEpochZero:owner_epoch 键与 location 记的 epoch 都为 0(存量玩家,从未铸造)。这类玩家的存盘本来
-	// 不带 CAS,epoch 守卫保护不到,删 location 不会把持有节点之后的存盘变成"被拒后销毁",按旧行为删。
+	// leaveReleaseLegacyEpochZero仅保留旧指标位置；缺epoch同样不能证明已释放。
 	leaveReleaseLegacyEpochZero
 	// leaveReleaseNoHolder:location 的 node_id 为空(跨 zone 传送的等待落点),此刻没有任何节点持有该玩家。
 	leaveReleaseNoHolder
@@ -38,9 +37,9 @@ const (
 	// leaveReleaseReleased:handoff 标记的 epoch 等于当前代 E —— 持有者已把 E 代状态落盘并不再写(A1′ / 交接 / 改派 / 凭证)。
 	// 删除 Lua 里原子复核(R2)。
 	leaveReleaseReleased
-	// leaveReleaseForced:等满上限仍拿不到证据,按旧行为删除(有记录的 fail-open,§3.6)。应恒 0。
+	// leaveReleaseForced保留旧指标位置，生产判定不再返回它。
 	leaveReleaseForced
-	// leaveReleasePending:没有证据、未超限、离场身份可证明 location 属于离场会话(deleted):保留 location,请持有节点释放。
+	// leaveReleasePending:没有证据，离场身份可证明location属于离场会话：无论等多久都保留并请原holder释放。
 	leaveReleasePending
 	// leaveReleasePendingUnproven:同上,但离场身份是 legacy(任一侧无身份,混版窗口):location 可能属于一次更新的登录,
 	// 退出它等于踢掉在线玩家,所以只等证据、不发释放(R3)。
@@ -73,8 +72,7 @@ func (v leaveReleaseVerdict) String() string {
 // deletes:按这个结论删 location。released 走释放模式(Lua 复核标记),其余删除类走原文 CAS 模式。
 func (v leaveReleaseVerdict) deletes() bool {
 	switch v {
-	case leaveReleaseDisabled, leaveReleaseLegacyEpochZero, leaveReleaseNoHolder, leaveReleaseOwnerDead,
-		leaveReleaseReleased, leaveReleaseForced:
+	case leaveReleaseNoHolder, leaveReleaseOwnerDead, leaveReleaseReleased:
 		return true
 	default:
 		return false
@@ -83,7 +81,7 @@ func (v leaveReleaseVerdict) deletes() bool {
 
 // waits:没拿到证据、需要先看等待计时的结论。
 func (v leaveReleaseVerdict) waits() bool {
-	return v == leaveReleasePending || v == leaveReleasePendingUnproven
+	return v == leaveReleasePending || v == leaveReleasePendingUnproven || v == leaveReleaseDisabled || v == leaveReleaseLegacyEpochZero || v == leaveReleaseForced
 }
 
 // holderReleaseFacts 是 decideHolderRelease 的输入,全部由调用方采好。默认值取"等"的一侧:漏填只会多等,不会误删。
@@ -93,25 +91,21 @@ type holderReleaseFacts struct {
 	noHolder       bool   // location 的 node_id 为空
 	ownerDead      bool   // 持有节点已死(只认 playerLocationOwnerDead 的正面证据)
 	markerReleased bool   // handoff 标记的 epoch == E
-	waitExceeded   bool   // 等待计时已到上限
+	waitExceeded   bool   // 历史夹具保留；不参与授权删除
 	identityProven bool   // 离场身份判定为 deleted(location 的登录身份 ≤ 离场会话)
 }
 
 // decideHolderRelease 是 docs/design/location-release-binding.md §3.2 判定表,按顺序判,零副作用。
 func decideHolderRelease(f holderReleaseFacts) leaveReleaseVerdict {
 	switch {
-	case !f.enabled:
-		return leaveReleaseDisabled
-	case f.epoch == 0:
-		return leaveReleaseLegacyEpochZero
 	case f.noHolder:
 		return leaveReleaseNoHolder
 	case f.ownerDead:
 		return leaveReleaseOwnerDead
-	case f.markerReleased:
+	case f.markerReleased && f.epoch != 0:
 		return leaveReleaseReleased
-	case f.waitExceeded:
-		return leaveReleaseForced
+	case f.epoch == 0:
+		return leaveReleasePendingUnproven
 	case f.identityProven:
 		return leaveReleasePending
 	default:
@@ -213,7 +207,7 @@ func noteLeaveReleaseWait(svcCtx *svc.ServiceContext, playerID uint64, scope str
 
 // location 删除的两种模式,即删除 Lua 的 ARGV[2]。
 const (
-	// leaveDeleteModeAny:只比 location 原文(旧语义)。用于例外与"已死 / 没有持有者 / forced"。
+	// leaveDeleteModeAny只供已经正证实无持有者/节点死亡的原文CAS删除；超时不授予此模式。
 	leaveDeleteModeAny = "any"
 	// leaveDeleteModeReleased:另外原子复核 owner_epoch 仍为 E(缺键视作未变)且 handoff 标记 epoch == E(R2)。
 	leaveDeleteModeReleased = "released"

@@ -7,6 +7,7 @@ import (
 	"encoding/hex"
 	"net"
 	"os"
+	"strconv"
 	"testing"
 	"time"
 
@@ -15,6 +16,7 @@ import (
 	dspb "proto/data_service"
 	pb "proto/guild"
 	matchpb "proto/match"
+	teampb "proto/team"
 	"shared/authoritysql"
 	"shared/roleidentity"
 
@@ -23,6 +25,7 @@ import (
 	"github.com/luyuancpp/proto2mysql"
 	"github.com/redis/go-redis/v9"
 	"github.com/stretchr/testify/require"
+	"google.golang.org/protobuf/proto"
 )
 
 // 只建删本例随机库，所有表来自正式PB；本例验证guild提交接缝，DS真实Begin并发由目录跨域例覆盖。
@@ -37,9 +40,12 @@ func guildRoleTiDB(t *testing.T) (context.Context, *sql.DB, *GuildRepo, *Activit
 	}
 	cfg, err := mysql.ParseDSN(dsn)
 	require.NoError(t, err)
-	host, _, err := net.SplitHostPort(cfg.Addr)
+	host, port, err := net.SplitHostPort(cfg.Addr)
 	require.NoError(t, err)
 	require.True(t, host == "localhost" || net.ParseIP(host) != nil && net.ParseIP(host).IsLoopback())
+	portNumber, err := strconv.Atoi(port)
+	require.NoError(t, err)
+	require.True(t, portNumber > 0 && portNumber <= 65535, "只接受显式本地数值端口；本任务ownedTiDB为24000")
 	cfg.DBName = ""
 	admin, err := sql.Open("mysql", cfg.FormatDSN())
 	require.NoError(t, err)
@@ -62,15 +68,17 @@ func guildRoleTiDB(t *testing.T) (context.Context, *sql.DB, *GuildRepo, *Activit
 	t.Cleanup(func() { require.NoError(t, db.Close()) })
 	model := proto2mysql.NewDB()
 	require.NoError(t, model.OpenDB(db, schema))
-	for _, row := range append(Tables(), &dbpb.AccountRole{}) {
+	for _, row := range append(Tables(), []proto.Message{&dbpb.AccountRole{}, &matchpb.MatchAuthorityTicketRecord{}, &teampb.TeamLaunchRecord{}, &teampb.TeamLaunchRoleRecord{}}...) {
 		model.RegisterTable(row)
 		require.NoError(t, model.CreateOrUpdateTable(row))
 	}
+	createGuildRouteFixture(t, ctx, db)
 	mr := miniredis.RunT(t)
 	rdb := redis.NewClient(&redis.Options{Addr: mr.Addr()})
 	t.Cleanup(func() { require.NoError(t, rdb.Close()) })
 	repo := NewGuildRepo(rdb, db, time.Minute)
 	require.NoError(t, repo.ConfigureRoleAuthority(schema))
+	require.NoError(t, repo.ConfigureMatchAuthority(schema))
 	activities, err := NewActivityRepo(repo)
 	require.NoError(t, err)
 	return ctx, db, repo, activities
@@ -96,6 +104,7 @@ func TestTiDBGuildCommitRechecksActorAndTrialOriginalsAndRetainsFrozenOwed(t *te
 	battle := actTrialKey(actTrialRow(), 900, 44, 11, testNowMs)
 	battle.LaunchRequestID = 51
 	roster := []*pb.GuildTrialRoleIdentity{{PlayerId: 11, Account: "seller", OwnerRevision: 1}, {PlayerId: 22, Account: "seller", OwnerRevision: 1}}
+	consentedSQLLobby(t, originalCtx, repo, 51, 44, battle.ActivityID, 11, 22)
 	prepared, err := activities.PrepareTrialLaunch(originalCtx, 51, battle, 1, roster, testNowMs)
 	require.NoError(t, err)
 	require.NotNil(t, prepared)
@@ -117,6 +126,7 @@ func TestTiDBGuildCommitRechecksActorAndTrialOriginalsAndRetainsFrozenOwed(t *te
 	require.Zero(t, active)
 	battle.BattleID = 902
 	battle.LaunchRequestID = 52
+	consentedSQLLobby(t, originalCtx, repo, 52, 44, battle.ActivityID, 11, 22)
 	prepared, err = activities.PrepareTrialLaunch(originalCtx, 52, battle, 1, roster, testNowMs+3)
 	require.NoError(t, err)
 	require.NoError(t, activities.FinishCancelledTrialLaunch(ctx, prepared, &matchpb.CancelActivityBattleResponse{RequestCancelled: true, RequestDigest: "fixture-verifier-covered-separately"}, testNowMs+4))

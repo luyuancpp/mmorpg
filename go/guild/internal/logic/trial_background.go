@@ -104,12 +104,31 @@ func (l *GuildLogic) StartTrialBackground(c TrialBackgroundConf) (stop func(), e
 	ctx, cancel := context.WithCancel(context.Background())
 	owed := &owedRewardLoop{d: d}
 	launches := &trialLaunchRecovery{d: d}
+	var lobbyCursor uint64 // 仅本循环访问；失败也推进，防离线大厅占住队头。
+	var unpreparedCursor uint64
 	var wg sync.WaitGroup
 	wg.Add(2)
 	safego.Go(trialOwedLoopPoint, func() {
 		// Done 放在 defer 里:safego 兜住 panic 时它照样执行,stop 不会永远等下去。
 		defer wg.Done()
-		runTrialLoop(ctx, trialOwedLoopPoint, c.OwedInterval, func(ctx context.Context) { launches.round(ctx); owed.round(ctx) })
+		runTrialLoop(ctx, trialOwedLoopPoint, c.OwedInterval, func(ctx context.Context) {
+			if d.Lobby != nil {
+				budget, cancel := context.WithTimeout(ctx, 2*time.Second)
+				next, err := d.Lobby.ExpirePendingSQL(budget, lobbyCursor)
+				lobbyCursor = next
+				if err != nil {
+					logx.Errorf("[GuildTrial] SQL pending lobby recovery failed: %v", err)
+				}
+				next, err = d.Lobby.ExpireUnpreparedSQL(budget, unpreparedCursor)
+				unpreparedCursor = next
+				cancel()
+				if err != nil {
+					logx.Errorf("[GuildTrial] SQL unprepared lobby recovery failed: %v", err)
+				}
+			}
+			launches.round(ctx)
+			owed.round(ctx)
+		})
 	})
 	safego.Go(trialSweeperPoint, func() {
 		defer wg.Done()

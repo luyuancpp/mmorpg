@@ -23,6 +23,7 @@ func (s *Store) EnsureGlobalPolicy(ctx context.Context, c config.Config) error {
 	parts = append(parts, "team-atomic-unit-home/v2", strconv.FormatBool(c.Team.AllowCrossZone), strconv.FormatBool(c.Team.FillQueueDisabled),
 		strconv.Itoa(config.TeamCapacity), strconv.FormatUint(config.TeamApplicationTTLMs, 10), strconv.Itoa(config.TeamMaxApplications),
 		strconv.FormatUint(config.TeamInviteTTLMs, 10), strconv.Itoa(config.TeamMaxInvitesPerTeam), strconv.Itoa(config.TeamMaxPendingInvitesPerInvitee), strconv.Itoa(config.TeamIdleTTLSeconds))
+	parts = append(parts, "entry-authority/v1", c.GlobalMatch.AccountRoleSchema, c.GlobalMatch.GuildTrialSchema)
 	keys := make([]string, 0, len(c.PveTeamSizeByConfigId))
 	for key := range c.PveTeamSizeByConfigId {
 		keys = append(keys, key)

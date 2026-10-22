@@ -17,7 +17,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.datasource.SingleConnectionDataSource;
 import org.springframework.transaction.support.TransactionTemplate;
 
-/** 仅显式 -Dtest=TiDbEnvironmentIT -Dcommerce.it.tidb=jdbc:mysql://127.0.0.1:4000 执行，不伪造数据库。 */
+/** 仅显式 -Dtest=TiDbEnvironmentIT -Dcommerce.it.tidb=jdbc:mysql://127.0.0.1:24000 执行，不伪造数据库。 */
 class TiDbEnvironmentIT {
     @Test void realTidbHasVerifiedSchemaAndEveryPhysicalConnectionUsesStrongSessions() throws Exception {
         assertNotNull(System.getProperty("commerce.it.tidb"), "此集成用例必须显式连接真实 TiDB");

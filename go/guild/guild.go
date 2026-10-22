@@ -131,6 +131,9 @@ func main() {
 	if err := repo.ConfigureRoleAuthority(config.AppConfig.AccountRoleSchema); err != nil {
 		logx.Must(err)
 	}
+	if err := repo.ConfigureMatchAuthority(config.AppConfig.MatchAuthoritySchema); err != nil {
+		logx.Must(err)
+	}
 	loginPool := config.AppConfig.LoginRedis.PoolSize
 	if loginPool == 0 {
 		loginPool = 8
@@ -350,14 +353,14 @@ func main() {
 		logx.Must(fmt.Errorf("guild activity repo: %w", err))
 	}
 	// ── 同道历练(B6b,06-activities.md §6.22–§6.33)──
-	// 邀请房间与结果记录两个仓储**无条件建**(都只是包一层已连好的 Redis 客户端):历练此刻开不开,只由下面的
+	// 邀请SQL权威与结果记录仓储无条件装配：历练此刻开不开,只由下面的
 	// trialMatch 是不是 nil 决定;而结算、巡检器、待入队循环在历练关着时也要跑(关之前留下的在途对局与待入队物品
 	// 仍要处理完),它们需要这两个仓储。
-	//   - 邀请房间在 guild 全局 Redis(RedisClient,单节点;Lua 里按 id 拼别的房间键,只在单节点成立);
+	//   - 邀请/同意/占位使用同TiDB原角色P锁，Redis只保留巡检租约，清空不会丢失原件；
 	//   - 结果记录与战斗锁在 PlayerLocatorRedis:它必须与 battle / scene 的 zone Redis 是同一实例同一 DB
 	//     (K8s 的 SharedRedis)。指错的表现是结算后销不掉账、巡检器永远读不到记录,而且不报错 —— 启动期无从自检,
 	//     由部署核对(§6.46 B6b-srv1 第 0 步)。
-	trialLobby, err := data.NewTrialLobbyRepo(svcCtx.RedisClient)
+	trialLobby, err := data.NewSQLTrialLobbyRepo(svcCtx.RedisClient, repo, guildIDs.Mint)
 	if err != nil {
 		logx.Must(fmt.Errorf("guild trial lobby repo: %w", err))
 	}

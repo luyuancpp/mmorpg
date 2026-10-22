@@ -22,7 +22,7 @@ func (r *ActivityRepo) TrialLaunchEnabled() bool {
 }
 
 func decodeTrialLaunch(row *pb.GuildTrialLaunchRecord) (*pb.GuildTrialLaunchOriginal, error) {
-	if row == nil || len(row.OriginalProto) == 0 || len(row.OriginalProto) > 64*1024 {
+	if row == nil || row.RequestId == 0 || row.State < 1 || row.State > 3 || row.State == 1 && row.BattleId != 0 || row.State == 2 && row.BattleId == 0 || len(row.OriginalProto) == 0 || len(row.OriginalProto) > 64*1024 {
 		return nil, ErrWriteConflict
 	}
 	sum := sha256.Sum256(row.OriginalProto)
@@ -107,6 +107,13 @@ func (r *ActivityRepo) PrepareTrialLaunch(ctx context.Context, requestID uint64,
 		if err := r.verifyTrialOwners(ctx, tx, proposed); err != nil {
 			return err
 		}
+		lobby, err := lockTrialLobbyForLaunch(ctx, tx, proposed)
+		if err != nil {
+			return err
+		}
+		if lobby.State == 4 {
+			return ErrWriteConflict
+		}
 		for _, p := range proposed.Roster {
 			var member uint64
 			if err := tx.QueryRowContext(ctx, "SELECT player_id FROM guild_member WHERE guild_id=? AND player_id=? FOR UPDATE", battle.GuildID, p.PlayerId).Scan(&member); err != nil {
@@ -138,6 +145,12 @@ func (r *ActivityRepo) PrepareTrialLaunch(ctx context.Context, requestID uint64,
 			return nil
 		}
 		if !errors.Is(err, sql.ErrNoRows) {
+			return err
+		}
+		if lobby.State != 2 {
+			return ErrWriteConflict
+		}
+		if err := r.guilds.requireTrialEntryFree(ctx, tx, launchPlayers(proposed), requestID); err != nil {
 			return err
 		}
 		raw, err := proto.MarshalOptions{Deterministic: true}.Marshal(proposed)
@@ -186,6 +199,10 @@ func (r *ActivityRepo) lockTrialLaunch(ctx context.Context, tx *sql.Tx, battle T
 	if original == nil || battle.LaunchRequestID == 0 {
 		return ErrWriteConflict
 	}
+	lobby, err := lockTrialLobbyForLaunch(ctx, tx, original)
+	if err != nil {
+		return err
+	}
 	row, err := scanTrialLaunch(tx.QueryRowContext(ctx, "SELECT "+trialLaunchColumns+" FROM guild_trial_launch WHERE request_id=? FOR UPDATE", battle.LaunchRequestID))
 	if err != nil {
 		return err
@@ -199,7 +216,7 @@ func (r *ActivityRepo) lockTrialLaunch(ctx context.Context, tx *sql.Tx, battle T
 	}
 	if row.State == 3 {
 		if terminal {
-			return nil
+			return closeProvenTrialLobby(ctx, tx, lobby, nowMs)
 		}
 		return ErrWriteConflict
 	}
@@ -230,6 +247,7 @@ func (r *ActivityRepo) lockTrialLaunch(ctx context.Context, tx *sql.Tx, battle T
 				return err
 			}
 		}
+		return closeProvenTrialLobby(ctx, tx, lobby, nowMs)
 	}
 	return nil
 }
@@ -248,46 +266,9 @@ func (r *ActivityRepo) trialLaunchOriginal(ctx context.Context, battle *TrialBat
 	return original, err
 }
 
-// 解散持G后不会再有任何本帮发奖者；永久终局原件，防迟到恢复重新开战。EXPIRED则不调用它，因旧设计仍允许迟到结果。
+// 解散只关闭帮会业务，不提供远端开战终局证明；永久原件继续供恢复器核取消。
 func releaseGuildTrialLaunches(ctx context.Context, tx *sql.Tx, guildID, nowMs uint64) error {
-	// PREPARED含尚未知晓是否发出的RPC，不能凭帮会消失释放；等待原request的持久终局证明。
-	rows, err := tx.QueryContext(ctx, "SELECT "+trialLaunchColumns+" FROM guild_trial_launch WHERE state=2 ORDER BY request_id")
-	if err != nil {
-		return err
-	}
-	var originals []*pb.GuildTrialLaunchOriginal
-	for rows.Next() {
-		row, err := scanTrialLaunch(rows)
-		if err != nil {
-			rows.Close()
-			return err
-		}
-		original, err := decodeTrialLaunch(row)
-		if err != nil {
-			rows.Close()
-			return err
-		}
-		if original.GuildId == guildID {
-			originals = append(originals, original)
-		}
-	}
-	if err := rows.Err(); err != nil {
-		rows.Close()
-		return err
-	}
-	if err := rows.Close(); err != nil {
-		return err
-	}
-	for _, original := range originals {
-		if _, err = tx.ExecContext(ctx, "UPDATE guild_trial_launch SET state=3,updated_ms=? WHERE request_id=?", nowMs, original.RequestId); err != nil {
-			return err
-		}
-		for _, p := range original.Roster {
-			if _, err = tx.ExecContext(ctx, "UPDATE guild_trial_launch_role SET state=2 WHERE player_id=? AND request_id=?", p.PlayerId, original.RequestId); err != nil {
-				return err
-			}
-		}
-	}
+	// 解散不是Match取消证明；保留所有原launch/role/大厅，后台只能沿签名取消或真实终局释放。
 	return nil
 }
 
@@ -334,6 +315,10 @@ func (r *ActivityRepo) FinishCancelledTrialLaunch(ctx context.Context, original 
 		if _, _, err := lockTrialGuild(ctx, tx, original.GuildId); err != nil && !errors.Is(err, ErrGuildGone) {
 			return err
 		}
+		lobby, err := lockTrialLobbyForLaunch(ctx, tx, original)
+		if err != nil {
+			return err
+		}
 		row, err := scanTrialLaunch(tx.QueryRowContext(ctx, "SELECT "+trialLaunchColumns+" FROM guild_trial_launch WHERE request_id=? FOR UPDATE", original.RequestId))
 		if err != nil {
 			return err
@@ -346,7 +331,7 @@ func (r *ActivityRepo) FinishCancelledTrialLaunch(ctx context.Context, original 
 			return ErrWriteConflict
 		}
 		if row.State == 3 {
-			return nil
+			return closeProvenTrialLobby(ctx, tx, lobby, nowMs)
 		}
 		if err := r.verifyTrialOwners(ctx, tx, saved); err != nil {
 			return err
@@ -375,6 +360,6 @@ func (r *ActivityRepo) FinishCancelledTrialLaunch(ctx context.Context, original 
 				return err
 			}
 		}
-		return nil
+		return closeProvenTrialLobby(ctx, tx, lobby, nowMs)
 	})
 }

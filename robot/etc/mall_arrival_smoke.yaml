@@ -7,7 +7,7 @@
 #       → A4 ListOfficialSkus 查到 sku_id
 #       → A5 CreateOfficialOrder 待付款 / 官方单 / 买家是自己 / 金额 = 单价 × 份数;同一请求号重发拿回同一张单
 #       → A6 GetCommerceOrder 仍待付款
-#       → A7 错一分钱的付款被商城 409 拒绝、订单不变;正确付款 → DELIVERY_PENDING;同一笔原样重发幂等
+#       → A7 试图覆盖金额被新mock接口400拒绝，原买家/金额/待付款不变；只发原订单+稳定请求号付款并重放
 #       → A8 轮询到 DELIVERED(退款中 / 人工 / 已取消都判失败)
 #       → A9 背包正好 +count_per_unit × quantity
 #       → A10 再等三拍:数量不变、订单仍已发货(不重复发货)
@@ -17,11 +17,13 @@
 #   1. 本机全栈按 tools/scripts/start_game.ps1 起好(路由服模式 GATE_CLIENT_RPC_ROUTER=1;本冒烟不用 GM 指令),
 #      robot login-test 基线正常。go/db 的 Fencing.Mode 必须是 dual(2026-10-18 起缺省就是;启动日志
 #      "player row fencing: mode=dual" 是核对依据):trade 只认玩家 SQL 提交证据,legacy 下发货腿永远待定,A8 超时。
-#   2. 商城 java/mall_game 起在 127.0.0.1:18120,用一个**独立的新库**(不是游戏库):
+#   2. 商城java/mall_game由root单独准入启动在127.0.0.1:18120；start_game当前不自动装配商城。
+#      使用一个独立的新商城库(不是游戏库)：
 #        - 新库上先执行 java/mall_game/src/main/resources/db/schema.sql(全新安装只跑这一份;它不是幂等的,
 #          已装过的库不要再跑),再执行 robot/etc/mall_arrival_smoke_seed.sql(可重复执行);
 #        - 环境变量:COMMERCE_RUN_MODE=dev、COMMERCE_REQUIRE_TIDB=false(用本机 MySQL 时;接 TiDB 可不设)、
 #          COMMERCE_JDBC_URL / COMMERCE_DB_USER / COMMERCE_DB_PASSWORD、
+#          COMMERCE_MOCK_PAYMENT_ENABLED=true，COMMERCE_ALLOWED_PAYMENT_CHANNELS保持空；
 #          COMMERCE_GATEWAY_SECRET / COMMERCE_PAYMENT_SECRET / COMMERCE_DELIVERY_SECRET(三把互不相同、各 ≥ 32 字节;
 #          **不配 delivery 密钥,trade 的发货 poll 永远 401**)。
 #   3. trade 按下面三处改动重启(只改本机运行用的那份 go/trade/etc/trade.yaml,改完别提交):
@@ -40,11 +42,11 @@
 # 退出码 1 = 任一步失败(MALL_ARRIVAL_SMOKE_FAIL step=… reason=…)。每步通过另有一行 [mall-arrival-smoke] PASS step=…。
 # 正常一轮 20~30 秒(trade 每秒 poll 一次商城;A10 固定多等 3 秒,A11 重登约 5 秒)。
 #
-# 可重复运行:每轮用新的请求号与由订单号派生的模拟流水号;上一轮失败留下的未付单在 A2 取消(商城每人最多 5 张未付单),
+# 可重复运行：每轮新下单请求号，mock付款号只由原订单派生，未知结果不换号；未付单在A2按原单取消，
 #   已付款还在发货的单在 A2 等它发完再测本轮,所以不会把上一轮的到账算进本轮增量。每轮会给 robot_9925 多留 2 瓶物品 10。
 #
-# 本冒烟**不**覆盖:真实支付渠道(付款由 dev 模拟付款器直接记到商城)、退款与取消后迟到付款、跨地域部署、
-#   商城 prod 模式下的渠道白名单(渠道白名单由充值设计 payment-recharge.md 的 V3 批次落地)。
+# 本冒烟不覆盖真实支付渠道、退款与取消后迟到付款、跨地域部署。新mock提供方原件/OMS提交窗口和退款恢复
+# 另由商城MockPaymentStoreTest/MockPaymentHttpTest验证；不能因本驱动通过就称真实渠道上线。
 
 gateway_addr: "http://127.0.0.1:8081" # Gateway HTTP endpoint(/api/assign-gate)
 zone_id: 1 # 目标 zone
@@ -62,7 +64,7 @@ mall_arrival_smoke:
   run_mode: "dev" # 必须显式写 dev:模拟付款器只许连本机商城
   mall_url: "http://127.0.0.1:18120" # 只允许 http://<字面量回环 IP>:<端口>
   payment_subject: "payment-adapter" # 与商城 COMMERCE_PAYMENT_SUBJECT 一致(商城缺省值)
-  channel: "mock-dev" # 必须 mock- 前缀
+  channel: "mock" # 固定本地事实适配器；请求体不带渠道，不配置mock-dev白名单
   sku_id: 990001 # 与 etc/mall_arrival_smoke_seed.sql 一致
   quantity: 1
   item_config_id: 10 # 种子脚本里 sku 990001 的发放物品

@@ -252,10 +252,6 @@ func NewServiceContext(c config.Config) *ServiceContext {
 			panic(fmt.Errorf("全球匹配权威初始化失败: %w", err))
 		}
 		sc.Authority = store
-		if err := store.EnsureGlobalPolicy(ctx, c); err != nil {
-			sc.Stop()
-			panic(err)
-		}
 		if !c.GlobalMatch.RequireTiDB {
 			sc.Stop()
 			panic("全球匹配角色归属必须与权威目录共用TiDB")
@@ -267,6 +263,11 @@ func NewServiceContext(c config.Config) *ServiceContext {
 		if err := store.ConfigureMatchEntryAuthority(ctx, c.GlobalMatch.GuildTrialSchema); err != nil {
 			sc.Stop()
 			panic(fmt.Errorf("全球匹配跨域提交围栏不可用: %w", err))
+		}
+		// 先只读核准全部跨域真源；错误schema不能先固化为不可覆盖的全局策略原件。
+		if err := store.EnsureGlobalPolicy(ctx, c); err != nil {
+			sc.Stop()
+			panic(err)
 		}
 		loginSessions, err := NewLoginSessionClient(c)
 		if err != nil {

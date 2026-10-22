@@ -13,6 +13,7 @@ func TestValidateSensitiveWordsBeforeServiceStartup(t *testing.T) {
 		ZoneId: 1, LeaseTTL: 60, MaxContentBytes: 512, RateLimitPerSecond: 5,
 		HistoryMaxEntries: 200, HistoryTTLSeconds: 604800, HistoryDefaultLimit: 20,
 		HistoryMaxLimit: 50, RequestIdTTLSeconds: 60,
+		DSNEnv: "CHAT_AUTHORITY_DSN", RequireTiDB: true, MaxOpenConns: 16, AccountRoleSchema: "mmorpg_global", GlobalLoginSessions: true, LoginRedis: LoginRedisConfig{Host: "127.0.0.1:6379", DB: 0, PoolSize: 4},
 	}
 	cfg.ListenOn = "127.0.0.1:50700"
 	cfg.Timeout = 3500
@@ -20,6 +21,12 @@ func TestValidateSensitiveWordsBeforeServiceStartup(t *testing.T) {
 	cfg.Redis.Host = "127.0.0.1:6379"
 	cfg.SensitiveWords = []string{"广告", "Spam", ""}
 	require.NoError(t, cfg.Validate())
+	cfg.HistoryMaxLimit = 200
+	cfg.HistoryMaxEntries = 1000
+	require.NoError(t, cfg.Validate(), "可见存储容量独立配置，单次200条合法")
+	cfg.HistoryMaxLimit = 201
+	require.ErrorContains(t, cfg.Validate(), "HistoryMaxLimit")
+	cfg.HistoryMaxLimit = 200
 	cfg.SensitiveWords = make([]string, textfilter.MaxWords+1)
 	require.ErrorContains(t, cfg.Validate(), "SensitiveWords")
 }

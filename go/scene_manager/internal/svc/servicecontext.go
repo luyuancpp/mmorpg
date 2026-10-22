@@ -47,15 +47,18 @@ type ServiceContext struct {
 	// HomeZone 查 data_service 的 player:zone 映射,EnterScene 用它填
 	// RoutePlayerEvent.home_zone_id。yaml 没配 DataServiceRpc 时为 nil,
 	// 调用方按「本地单区联调」处理(归属 = gate zone,WARN 计数)。
-	HomeZone    HomeZoneClient
-	SceneIDGen  *snowflake.Node
-	snowflakeHd *snowflakealloc.Handle // 持有 worker id 的 etcd lease,进程退出时 Close
-	stopOnce    sync.Once
+	HomeZone      HomeZoneClient
+	RoleDirectory RoleDirectory
+	SceneIDGen    *snowflake.Node
+	snowflakeHd   *snowflakealloc.Handle // 持有 worker id 的 etcd lease,进程退出时 Close
+	stopOnce      sync.Once
 	// kafkaDeliveryFailures 统计 writer Completion 给出的终态失败。
 	kafkaDeliveryFailures atomic.Uint64
 }
 
 func NewServiceContext(c config.Config) *ServiceContext {
+	// 只读目录是必需依赖；在分配etcd租约/号段及连接其它后端前检查，缺密钥不带病发现。
+	roleSecret := configuredRoleDirectorySecret(c)
 	etcdCli, err := clientv3.New(clientv3.Config{
 		Endpoints:   c.Etcd.Hosts,
 		DialTimeout: 5 * time.Second,
@@ -142,7 +145,12 @@ func NewServiceContext(c config.Config) *ServiceContext {
 		Async:      false,
 		Completion: sc.handleKafkaCompletion,
 	}
-	sc.HomeZone = newHomeZoneClient(c.DataServiceRpc)
+	rpc := newHomeZoneClient(c.DataServiceRpc)
+	sc.HomeZone = rpc
+	if rpc == nil {
+		panic("scene_manager必须配置DataServiceRpc以强读原角色修订")
+	}
+	sc.RoleDirectory = &roleDirectoryClient{rpc: rpc, secret: roleSecret}
 	return sc
 }
 
@@ -151,7 +159,7 @@ func NewServiceContext(c config.Config) *ServiceContext {
 // 与 login 的 initHomeZoneResolver 同一判据(Etcd.Key / Endpoints / Target 任一非空
 // 即视为已配置)。这里不 panic 也不降级成假客户端:nil 是一个显式状态,EnterScene
 // 看到 nil 会按 gate zone 处理并 WARN 计数,多 zone 部署漏配能在指标上看见。
-func newHomeZoneClient(c zrpc.RpcClientConf) HomeZoneClient {
+func newHomeZoneClient(c zrpc.RpcClientConf) dspb.DataServiceClient {
 	if c.Etcd.Key == "" && len(c.Endpoints) == 0 && c.Target == "" {
 		logx.Error("[home-zone] DataServiceRpc not configured: RoutePlayerEvent.home_zone_id will fall back to " +
 			"the gate zone for every player (only acceptable for single-zone dev)")

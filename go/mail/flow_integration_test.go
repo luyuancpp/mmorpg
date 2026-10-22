@@ -6,8 +6,10 @@ import (
 	"database/sql"
 	"encoding/base64"
 	"encoding/hex"
+	"errors"
 	"net"
 	"os"
+	"strconv"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -31,6 +33,31 @@ import (
 	"shared/serviceauth"
 )
 
+func mailMainFixtureEndpoint(address string) error {
+	host, port, err := net.SplitHostPort(address)
+	if err != nil {
+		return errors.New("邮件RPC夹具必须显式数值loopback端口")
+	}
+	ip := net.ParseIP(host)
+	number, err := strconv.Atoi(port)
+	if ip == nil || !ip.IsLoopback() || err != nil || number < 1 || number > 65535 {
+		return errors.New("邮件RPC夹具仅接受数值loopback与合法非零端口")
+	}
+	return nil
+}
+func TestMailMainFixtureEndpointRejectsForeignOrInvalidPort(t *testing.T) {
+	for _, address := range []string{"127.0.0.1:24000", "[::1]:24000"} {
+		if err := mailMainFixtureEndpoint(address); err != nil {
+			t.Fatal(err)
+		}
+	}
+	for _, address := range []string{"localhost:24000", "10.0.0.1:24000", "127.0.0.1:0", "127.0.0.1:65536", "127.0.0.1:mysql", "127.0.0.1"} {
+		if mailMainFixtureEndpoint(address) == nil {
+			t.Fatal("非法夹具端点未拒绝")
+		}
+	}
+}
+
 type committedReminder struct {
 	db    *sql.DB
 	calls atomic.Int64
@@ -46,11 +73,15 @@ func (n *committedReminder) Personal(ctx context.Context, player, mail uint64) {
 }
 
 func TestTiDBRealRPCAuthSendOfflineReadClaimAndDeleteProtection(t *testing.T) {
-	if os.Getenv("MAIL_RANK_TEST_TIDB") != "127.0.0.1:4000" {
+	address := os.Getenv("MAIL_RANK_TEST_TIDB")
+	if address == "" {
 		if os.Getenv("MAIL_RANK_REQUIRE_TESTS") == "1" {
 			t.Fatal("MAIL_RANK_TEST_TIDB必须显式配置本任务独占TiDB")
 		}
-		t.Skip("仅本机4000随机库真实SQL与loopback gRPC")
+		t.Skip("需显式本任务数值loopback TiDB端点，随机库与真实loopback RPC")
+	}
+	if err := mailMainFixtureEndpoint(address); err != nil {
+		t.Fatal(err)
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
 	defer cancel()
@@ -59,7 +90,7 @@ func TestTiDBRealRPCAuthSendOfflineReadClaimAndDeleteProtection(t *testing.T) {
 		t.Fatal(err)
 	}
 	database := "mail_rpc_it_" + hex.EncodeToString(random[:])
-	adminDB, err := sql.Open("mysql", "root@tcp(127.0.0.1:4000)/?timeout=1s&readTimeout=5s&writeTimeout=5s")
+	adminDB, err := authoritysql.Open(ctx, "root@tcp("+address+")/mysql", "mysql", true, 2)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -74,7 +105,7 @@ func TestTiDBRealRPCAuthSendOfflineReadClaimAndDeleteProtection(t *testing.T) {
 			t.Errorf("清RPC随机库: %v", e)
 		}
 	}()
-	db, err := authoritysql.Open(ctx, "root@tcp(127.0.0.1:4000)/"+database, database, true, 8)
+	db, err := authoritysql.Open(ctx, "root@tcp("+address+")/"+database, database, true, 8)
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -5,10 +5,17 @@ import (
 	"database/sql"
 
 	rankpb "proto/rank"
+	"rank/internal/metrics"
 	"shared/serviceauth"
 )
 
-func (r *Repo) Remove(ctx context.Context, caller string, in *rankpb.RemoveRankEntryRequest, hide bool) error {
+func (r *Repo) Remove(ctx context.Context, caller string, in *rankpb.RemoveRankEntryRequest, hide bool) (err error) {
+	operation := metrics.OperationRemove
+	if hide {
+		operation = metrics.OperationDelete
+	}
+	replay := false
+	defer func() { observeWrite(operation, err, replay) }()
 	if in == nil || in.BoardId == 0 || in.Generation == 0 || in.RequestId == 0 || (hide && in.EntityId != 0) || (!hide && in.EntityId == 0) {
 		return ErrInvalid
 	}
@@ -39,6 +46,7 @@ func (r *Repo) Remove(ctx context.Context, caller string, in *rankpb.RemoveRankE
 			if existing != digest {
 				return ErrConflict
 			}
+			replay = true
 			return nil
 		}
 		if err != sql.ErrNoRows {

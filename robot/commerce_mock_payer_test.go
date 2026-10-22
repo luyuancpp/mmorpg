@@ -20,6 +20,15 @@ const (
 	testCommercePaymentSecret = "robot-mock-payer-test-secret-000000000001"
 )
 
+// 旧三语言黄金向量只锁签名算法；驱动不再发送这套可指定渠道金额的请求体。
+type commercePayment struct {
+	OrderID       string `json:"orderId"`
+	Channel       string `json:"channel"`
+	TransactionID string `json:"transactionId"`
+	AmountMinor   uint64 `json:"amountMinor"`
+	Currency      string `json:"currency"`
+}
+
 func TestCommerceSignMatchesCrossLanguageGoldenForPaymentPost(t *testing.T) {
 	got := commerceSign("commerce-golden-payment-secret-0123456789", "payment", "payment-adapter", "1700000000123",
 		"golden-nonce-0000000001", "POST", "/internal/payments", []byte(goldenCommercePaymentBody))
@@ -61,6 +70,8 @@ func TestNewCommerceMockPayerRejectsUnsafeConfiguration(t *testing.T) {
 		{"带路径", "http://127.0.0.1:18120/mall", "payment-adapter", testCommercePaymentSecret},
 		{"带查询", "http://127.0.0.1:18120?x=1", "payment-adapter", testCommercePaymentSecret},
 		{"缺端口", "http://127.0.0.1", "payment-adapter", testCommercePaymentSecret},
+		{"零端口", "http://127.0.0.1:0", "payment-adapter", testCommercePaymentSecret},
+		{"端口越界", "http://127.0.0.1:65536", "payment-adapter", testCommercePaymentSecret},
 		{"subject 大写", "http://127.0.0.1:18120", "Payment", testCommercePaymentSecret},
 		{"密钥过短", "http://127.0.0.1:18120", "payment-adapter", "short-secret"},
 		{"密钥带空白", "http://127.0.0.1:18120", "payment-adapter", testCommercePaymentSecret + " "},
@@ -108,19 +119,18 @@ func newCapturingMall(t *testing.T, respond func(w http.ResponseWriter, body []b
 	return server, received
 }
 
-func testPayment() commercePayment {
-	return commercePayment{
-		OrderID: "00112233-4455-6677-8899-aabbccddeeff", Channel: "mock-dev",
-		TransactionID: "mockdev-00112233445566778899aabbccddeeff", AmountMinor: 600, Currency: "CNY",
+func testPayment() commerceMockPay {
+	return commerceMockPay{
+		OrderID: "00112233-4455-6677-8899-aabbccddeeff", RequestID: "mock-order-request-0001",
 	}
 }
 
 func TestRecordPaymentSignsTheExactBytesAsPaymentRole(t *testing.T) {
 	server, received := newCapturingMall(t, func(w http.ResponseWriter, body []byte) {
-		var in commercePayment
+		var in commerceMockPay
 		_ = json.Unmarshal(body, &in)
 		_ = json.NewEncoder(w).Encode(commerceMallOrder{OrderID: in.OrderID, BuyerID: "22", SkuID: 990001, Quantity: 1,
-			AmountMinor: in.AmountMinor, Currency: in.Currency, State: "DELIVERY_PENDING"})
+			AmountMinor: 600, Currency: "CNY", State: "DELIVERY_PENDING"})
 	})
 	payer, err := newCommerceMockPayer(server.URL, "payment-adapter", testCommercePaymentSecret)
 	if err != nil {
@@ -135,6 +145,10 @@ func TestRecordPaymentSignsTheExactBytesAsPaymentRole(t *testing.T) {
 		t.Fatalf("应答解析错误: %+v", order)
 	}
 	got := <-received
+	var fields map[string]json.RawMessage
+	if err := json.Unmarshal(got.body, &fields); err != nil || len(fields) != 2 || fields["orderId"] == nil || fields["requestId"] == nil {
+		t.Fatal("mock只可发送原订单和稳定请求号，不能发送金额、币种、渠道或流水")
+	}
 	if got.method != http.MethodPost || got.path != commercePaymentPath {
 		t.Fatalf("请求行错误: %s %s", got.method, got.path)
 	}
@@ -159,7 +173,7 @@ func TestRecordPaymentSignsTheExactBytesAsPaymentRole(t *testing.T) {
 // 每次请求换新 nonce:商城按 (角色, nonce) 去重,同一笔付款的幂等重发也必须是新 nonce。
 func TestRecordPaymentUsesAFreshNoncePerRequest(t *testing.T) {
 	server, received := newCapturingMall(t, func(w http.ResponseWriter, body []byte) {
-		var in commercePayment
+		var in commerceMockPay
 		_ = json.Unmarshal(body, &in)
 		_ = json.NewEncoder(w).Encode(commerceMallOrder{OrderID: in.OrderID, State: "DELIVERY_PENDING"})
 	})
@@ -177,23 +191,22 @@ func TestRecordPaymentUsesAFreshNoncePerRequest(t *testing.T) {
 		t.Fatal("两次请求复用了同一个 nonce")
 	}
 	if string(first.body) != string(second.body) {
-		t.Fatal("同一笔付款的两次请求体必须逐字节相同(商城按五元组判幂等)")
+		t.Fatal("同一笔mock付款必须保留原订单和原请求号字节")
 	}
 }
 
-func TestRecordPaymentRejectsNonMockChannelBeforeAnyRequest(t *testing.T) {
+func TestRecordPaymentRejectsInvalidOriginalBeforeAnyRequest(t *testing.T) {
 	server, received := newCapturingMall(t, func(w http.ResponseWriter, _ []byte) { w.WriteHeader(http.StatusOK) })
 	payer, err := newCommerceMockPayer(server.URL, "payment-adapter", testCommercePaymentSecret)
 	if err != nil {
 		t.Fatal(err)
 	}
-	for _, edit := range []func(*commercePayment){
-		func(p *commercePayment) { p.Channel = "alipay" },
-		func(p *commercePayment) { p.Channel = "mock" },
-		func(p *commercePayment) { p.OrderID = "00112233-4455-6677-8899-AABBCCDDEEFF" },
-		func(p *commercePayment) { p.TransactionID = "has space" },
-		func(p *commercePayment) { p.AmountMinor = 0 },
-		func(p *commercePayment) { p.Currency = "cny" },
+	for _, edit := range []func(*commerceMockPay){
+		func(p *commerceMockPay) { p.OrderID = "00112233-4455-6677-8899-AABBCCDDEEFF" },
+		func(p *commerceMockPay) { p.OrderID = "" },
+		func(p *commerceMockPay) { p.RequestID = "has space" },
+		func(p *commerceMockPay) { p.RequestID = "short" },
+		func(p *commerceMockPay) { p.RequestID = strings.Repeat("x", 129) },
 	} {
 		payment := testPayment()
 		edit(&payment)
@@ -205,6 +218,33 @@ func TestRecordPaymentRejectsNonMockChannelBeforeAnyRequest(t *testing.T) {
 	case got := <-received:
 		t.Fatalf("非法付款不该发出任何请求,却发出了 %s %s", got.method, got.path)
 	default:
+	}
+}
+
+func TestProbeAmountOverrideUsesOnlyNewMockPathAndPreservesOriginal(t *testing.T) {
+	server, received := newCapturingMall(t, func(w http.ResponseWriter, _ []byte) {
+		w.WriteHeader(http.StatusBadRequest)
+		_, _ = w.Write([]byte(`{"error":"mock命令字段非法"}`))
+	})
+	payer, err := newCommerceMockPayer(server.URL, "payment-adapter", testCommercePaymentSecret)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var denied *commerceHTTPError
+	if err := payer.ProbeAmountOverride(context.Background(), testPayment(), 601); !errors.As(err, &denied) || denied.Status != 400 {
+		t.Fatalf("金额覆盖必须以400反例返回: %v", err)
+	}
+	got := <-received
+	if got.path != "/internal/mock/pay" {
+		t.Fatal("反例不能退回旧付款事实接口")
+	}
+	var fields map[string]json.RawMessage
+	if err := json.Unmarshal(got.body, &fields); err != nil || len(fields) != 3 || string(fields["amountMinor"]) != "601" {
+		t.Fatal("反例必须在两个原字段上只追加金额覆盖")
+	}
+	var original commerceMockPay
+	if err := json.Unmarshal(got.body, &original); err != nil || original != testPayment() {
+		t.Fatal("金额反例改动了原订单或请求号")
 	}
 }
 

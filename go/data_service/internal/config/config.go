@@ -13,6 +13,8 @@ import (
 
 type Config struct {
 	zrpc.RpcServerConf
+	// 仅隔离的历史MySQL/Redis工具夹具可显式开启；dev也默认全球SQL，不因Mode=dev自动降级。
+	LegacyNonGlobal  bool `json:",optional"`
 	MappingRedis     redis.RedisConf
 	Regions          []RegionConfig
 	DevRedis         DevRedisConfig `json:",optional"`
@@ -146,6 +148,8 @@ func (c AccountDirectoryConfig) MustLeaveGuild() bool {
 type RoleTradeSQLProofConfig struct {
 	Enabled           bool     `json:",optional"`
 	AllowedStorageIDs []uint32 `json:",optional"`
+	// 与go/db已有独立库白名单共源；空值使用DB_ALLOWED_DATABASES。没有配置绝不按Regions/当前Zone推导。
+	AllowedDatabasesEnv string `json:",optional"`
 }
 
 func (c AccountDirectoryConfig) MaxRoles() int {
@@ -955,6 +959,7 @@ type RedisClusterConfig struct {
 }
 
 type SnapshotMySQLConfig struct {
+	RequireTiDB bool   `json:",optional"`
 	Host        string `json:",default=127.0.0.1:3306"`
 	User        string `json:",default=appuser"`
 	Password    string `json:",default=apppass123"`

@@ -34,7 +34,7 @@ final class CommerceFixture implements AutoCloseable {
             JdbcDataSource h2 = new JdbcDataSource(); h2.setURL(jdbcUrl); source = h2;
             props.setRunMode("test"); props.setRequireTidb(false);
         } else {
-            if (!endpoint.matches("jdbc:mysql://(127\\.0\\.0\\.1|localhost):4000/?")) { throw new IllegalArgumentException("真实 TiDB 测试仅接受 loopback:4000 且不得指定已有数据库"); }
+            OwnedTiDbFixture.endpoint(endpoint);
             database = "mall_it_" + UUID.randomUUID().toString().replace("-", "");
             System.out.println("TiDB 隔离测试库：" + database);
             createDatabase();
@@ -87,7 +87,7 @@ final class CommerceFixture implements AutoCloseable {
         java.util.Properties values = new java.util.Properties();
         values.setProperty("user", System.getenv().getOrDefault("COMMERCE_IT_TIDB_USER", "root")); values.setProperty("password", System.getenv().getOrDefault("COMMERCE_IT_TIDB_PASSWORD", ""));
         values.setProperty("connectTimeout", "3000"); values.setProperty("socketTimeout", "30000"); values.setProperty("useSSL", "false");
-        return DriverManager.getConnection(endpoint.replaceAll("/$", "") + "/", values);
+        return OwnedTiDbFixture.admin(endpoint, values);
     }
     private void createDatabase() {
         requireTestDatabase();

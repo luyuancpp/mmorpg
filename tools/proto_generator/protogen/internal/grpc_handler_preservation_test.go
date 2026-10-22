@@ -71,7 +71,7 @@ func TestGrpcServiceHandler_NewBattleSkeleton(t *testing.T) {
 	if strings.Contains(cpp, "in_loop") || strings.Contains(cpp, "post_dispatch") {
 		t.Fatal("新骨架不得再生成旧的 in_loop / post_dispatch 段")
 	}
-	for _, name := range []string{"DestroyBattle", "RemoveObserver"} {
+	for _, name := range []string{"DestroyBattle"} {
 		assertGrpcPreservedOnce(t, header, "using "+name+"Call = GrpcUnaryCall<::"+name+"Request, ::Empty>;", "Empty 响应调用类型")
 		assertGrpcPreservedOnce(t, header, "static void Handle"+name+"(const ::"+name+"Request* request);", "Empty 响应委托声明")
 		assertGrpcPreservedOnce(t, cpp, "[](const ::"+name+"Request* request, ::Empty* /*response*/) { Handle"+name+"(request); });", "Empty 响应委托调用")
@@ -79,7 +79,7 @@ func TestGrpcServiceHandler_NewBattleSkeleton(t *testing.T) {
 			t.Fatalf("Empty 响应不能被传给 Handle%s", name)
 		}
 	}
-	for _, name := range []string{"QueryBattleCreation", "CreateBattle", "AddObserver", "IssueBattleTicket"} {
+	for _, name := range []string{"QueryObserver", "QueryBattleCreation", "CreateBattle", "AddObserver", "RemoveObserver", "IssueBattleTicket"} {
 		assertGrpcPreservedOnce(t, header, "using "+name+"Call = GrpcUnaryCall<::"+name+"Request, ::"+name+"Response>;", "带响应调用类型")
 		assertGrpcPreservedOnce(t, cpp, name+"Call::Create(std::move(serverCall), &Handle"+name+");", "带响应委托不带类名前缀")
 	}
@@ -962,11 +962,11 @@ func grpcWorkspaceRoot(t *testing.T) string {
 func buildBattleGrpcPreservationMethods() RPCMethods {
 	fd := &descriptorpb.FileDescriptorProto{Name: proto.String("proto/battle/battle_node.proto")}
 	svc := &descriptorpb.ServiceDescriptorProto{Name: proto.String("BattleNode")}
-	names := []string{"QueryBattleCreation", "CreateBattle", "DestroyBattle", "AddObserver", "RemoveObserver", "IssueBattleTicket"}
+	names := []string{"QueryObserver", "QueryBattleCreation", "CreateBattle", "DestroyBattle", "AddObserver", "RemoveObserver", "IssueBattleTicket"}
 	methods := make(RPCMethods, 0, len(names))
 	for _, name := range names {
 		response := "." + name + "Response"
-		if name == "DestroyBattle" || name == "RemoveObserver" {
+		if name == "DestroyBattle" {
 			response = ".Empty"
 		}
 		methods = append(methods, &MethodInfo{

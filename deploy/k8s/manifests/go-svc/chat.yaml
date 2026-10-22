@@ -1,4 +1,4 @@
-# chat:全局聊天 v1(WORLD 全服唯一世界频道 + PRIVATE 私聊;历史 = 7 天 / 200 条尽力而为窗口)。
+# chat:全局聊天，历史窗口、永久原请求回执与限速均由同域TiDB权威决定。
 #
 # **全局池,只部署到 mmorpg-infra namespace 一次,不进任何 zone namespace。**
 # 世界频道本就全服唯一(chat:{world}:log),私聊 key 只含两端 player_id,不含 zone;客户端经
@@ -35,8 +35,8 @@ metadata:
     app: chat
     tier: go-svc
 spec:
-  # 多实例安全:实例无状态 —— 历史写入是一条 Lua(LPUSH+LTRIM+EXPIRE)、幂等是 SET NX、限速是 INCR+EXPIRE,
-  # 全是单 key 原子操作,不需要实例间协调;node_id 由 etcd CAS 分配(go/shared/noderegistry),路由服随机挑。
+  # 多实例共用SQL原件与原角色P锁；旧Redis快照不参与历史、幂等或限速选择。
+  # node_id仍由etcd CAS分配，所有实例的不可变SQL策略必须相同。
   # replicas>=2 是「容错不降级」的最低冗余。注意崩溃切换窗口 = ConfigMap 的 LeaseTTL:
   # 路由服 PickRandom 不看连接状态,死实例的注册 key 在租约到期前仍会被挑中。
   replicas: 2
@@ -68,6 +68,14 @@ spec:
           image: PLACEHOLDER_IMAGE
           imagePullPolicy: PLACEHOLDER_PULL_POLICY
           env:
+            # 两个DSN必须同GlobalAuthorityTiDBHost事务域、库名mmorpg_chat；不同账号分别承担运行与DDL。
+            # 值由运维在外部Secret预置，脚本不回显或写入ConfigMap。
+            - name: CHAT_AUTHORITY_DSN
+              valueFrom:
+                secretKeyRef: {name: chat-authority-secrets, key: runtime-dsn, optional: false}
+            - name: LOGIN_REDIS_PASSWORD
+              valueFrom:
+                secretKeyRef: {name: redis-auth, key: password, optional: true}
             - name: GOLANG_PROTOBUF_REGISTRATION_CONFLICT
               value: warn
             # C++ 约定注册(ChatNodeService.rpc)写进 NodeInfo 的对外 IP(chat.go advertisedHost 优先读它):

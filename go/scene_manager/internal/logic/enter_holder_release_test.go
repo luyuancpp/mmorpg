@@ -346,8 +346,8 @@ func TestEnterScene_LoginReleaseSkippedWhenChainContextDone(t *testing.T) {
 	assert.Equal(t, before+1, enterHolderReleaseCount(t, "chain_gone"))
 }
 
-// 运维回滚开关:LeaveSceneHolderReleaseWaitSeconds < 0 关掉整份释放协议,登录撞门也不请。
-func TestEnterScene_LoginReleaseDisabledBySwitch(t *testing.T) {
+// 旧负预算配置不能关掉安全恢复：最新登录撞门仍请原持有者按原会话释放。
+func TestEnterScene_NegativeWaitBudgetStillRequestsHolderRelease(t *testing.T) {
 	sc, mr := newTestSvcCtxWithWorldScenes(t)
 	sc.Config.LeaveSceneHolderReleaseWaitSeconds = -1
 	const (
@@ -357,12 +357,12 @@ func TestEnterScene_LoginReleaseDisabledBySwitch(t *testing.T) {
 	)
 	enterHolderReleaseSeed(t, sc, mr, playerID, holderScene, targetScene, enterHolderReleaseZombie)
 	requested := installEnterHolderReleaseRecorder(t, nil)
-	before := enterHolderReleaseCount(t, "disabled")
+	before := enterHolderReleaseCount(t, "delivered")
 
 	resp, err := NewEnterSceneLogic(context.Background(), sc).EnterScene(enterHolderReleaseLogin(playerID, targetScene))
 	requireHandoffRejectedUnchanged(t, sc, mr, playerID, resp, err, enterHolderReleaseZombie)
-	assert.Empty(t, requested())
-	assert.Equal(t, before+1, enterHolderReleaseCount(t, "disabled"))
+	assert.Len(t, requested(), 1)
+	assert.Equal(t, before+1, enterHolderReleaseCount(t, "delivered"))
 }
 
 // 持有节点不可达 / 超时:照回 18、什么都不改,计 failed;下一次重登再请。

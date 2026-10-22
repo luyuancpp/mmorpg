@@ -824,6 +824,7 @@ constexpr ExitCause kAllExitCauses[] = {
     ExitCause::kSceneDrain,
     ExitCause::kIdentityConflict,
     ExitCause::kReleasedByTransfer,
+    ExitCause::kRoleTradeFrozen,
 };
 static_assert(std::size(kAllExitCauses) == player_exit::kExitCauseCount, "新增退出原因时补进这张表,并补 Merge 用例");
 } // namespace
@@ -859,7 +860,7 @@ TEST(ExitPersistCause, NamesCoverEveryValue)
     EXPECT_STREQ(player_exit::ExitCauseName(ExitCause::kCount), "?") << "越界不能读出数组外";
 }
 
-TEST(ExitPersistCause, MergeSuppressesOnlyForIdentityConflictOrUnspecified)
+TEST(ExitPersistCause, MergeSuppressesOnlyForIdentityConflictUnspecifiedOrRoleTradeFrozen)
 {
     for (const auto first : kAllExitCauses)
     {
@@ -869,7 +870,8 @@ TEST(ExitPersistCause, MergeSuppressesOnlyForIdentityConflictOrUnspecified)
             intent.cause = first;
             player_exit::MergeExitCause(intent, incoming, /*devBypassSuppressesTransfer=*/false);
             const bool expectSuppressed =
-                incoming == ExitCause::kIdentityConflict || incoming == ExitCause::kUnspecified;
+                incoming == ExitCause::kIdentityConflict || incoming == ExitCause::kUnspecified ||
+                incoming == ExitCause::kRoleTradeFrozen;
             EXPECT_EQ(intent.releaseMarkSuppressed, expectSuppressed)
                 << "first=" << player_exit::ExitCauseName(first) << " incoming=" << player_exit::ExitCauseName(incoming);
             EXPECT_EQ(intent.cause, first) << "合并不改第一次的原因";
@@ -888,6 +890,38 @@ TEST(ExitPersistCause, ReleasedByTransferSuppressesOnlyUnderDevBypass)
     devBypass.cause = ExitCause::kClientDisconnect;
     player_exit::MergeExitCause(devBypass, ExitCause::kReleasedByTransfer, /*devBypassSuppressesTransfer=*/true);
     EXPECT_TRUE(devBypass.releaseMarkSuppressed);
+}
+
+TEST(ExitPersistCause, RoleTradeFrozenSuppressesReleaseAndPreservesFirstCause)
+{
+    for (const bool devBypass : {false, true})
+    {
+        for (const auto first : kAllExitCauses)
+        {
+            PlayerExitIntentComp intent;
+            intent.cause = first;
+            player_exit::MergeExitCause(intent, ExitCause::kRoleTradeFrozen, devBypass);
+            ASSERT_TRUE(intent.releaseMarkSuppressed);
+            EXPECT_EQ(intent.suppressedBy, ExitCause::kRoleTradeFrozen);
+            EXPECT_EQ(intent.cause, first) << "交易冻结不能改写第一次退出的原因";
+            EXPECT_FALSE(intent.clientDisconnected) << "交易冻结不是客户端断线";
+
+            player_exit::MergeExitCause(intent, ExitCause::kIdentityConflict, devBypass);
+            player_exit::MergeExitCause(intent, ExitCause::kClientDisconnect, devBypass);
+            EXPECT_TRUE(intent.releaseMarkSuppressed) << "后续退出不能恢复冻结角色的释放标记";
+            EXPECT_EQ(intent.suppressedBy, ExitCause::kRoleTradeFrozen) << "保留第一次压制来源";
+            EXPECT_EQ(intent.cause, first);
+            EXPECT_TRUE(intent.clientDisconnected) << "后续真实断线仍须记录";
+        }
+    }
+
+    PlayerExitIntentComp alreadySuppressed;
+    alreadySuppressed.cause = ExitCause::kClientDisconnect;
+    player_exit::MergeExitCause(alreadySuppressed, ExitCause::kIdentityConflict, false);
+    player_exit::MergeExitCause(alreadySuppressed, ExitCause::kRoleTradeFrozen, false);
+    EXPECT_TRUE(alreadySuppressed.releaseMarkSuppressed);
+    EXPECT_EQ(alreadySuppressed.suppressedBy, ExitCause::kIdentityConflict);
+    EXPECT_EQ(alreadySuppressed.cause, ExitCause::kClientDisconnect);
 }
 
 TEST(ExitPersistCause, SuppressionIsSticky)

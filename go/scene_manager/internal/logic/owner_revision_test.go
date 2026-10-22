@@ -24,6 +24,7 @@ func TestEnterSceneMissingOwnerRevisionRejectsBeforeDependencies(t *testing.T) {
 
 func TestEnterSceneOwnerRevisionIsAuthorizationFingerprintAndOriginalRoute(t *testing.T) {
 	sc, mr := newTestSvcCtxWithWorldScenes(t)
+	sc.RoleDirectory = testRoleDirectory(17)
 	captured := capturingKafkaWriter(sc)
 	const sceneID = uint64(77401)
 	seedSceneOnNode(mr, testZoneId, sceneID, "10", "0")
@@ -43,6 +44,7 @@ func TestEnterSceneOwnerRevisionIsAuthorizationFingerprintAndOriginalRoute(t *te
 	require.Zero(t, replayed.ErrorCode)
 	require.Len(t, *captured, 1)
 	retry.OwnerRevision++
+	sc.RoleDirectory = testRoleDirectory(18)
 	denied, err := NewEnterSceneLogic(context.Background(), sc).EnterScene(retry)
 	require.NoError(t, err)
 	require.Equal(t, constants.ErrEnterSceneIdempotencyConflict, denied.ErrorCode)

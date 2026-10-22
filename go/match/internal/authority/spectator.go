@@ -161,6 +161,12 @@ func (s *Store) SpectatorIntent(ctx context.Context, player uint64, request *pb.
 		}
 		return prior, tx.Commit()
 	}
+	if err = s.requireMatchEntryTx(ctx, tx, []*pb.MatchAuthorityTicketRecord{actor}, nil); err != nil {
+		return nil, err
+	}
+	if err = s.requireIdleMatchTicketsTx(ctx, tx, []*pb.MatchAuthorityTicketRecord{actor}); err != nil {
+		return nil, err
+	}
 	if head != "" {
 		hh, hl, _ := joinRequestParts(head)
 		old, err := readSpectatorIntent(ctx, tx, player, hh, hl)

@@ -9,6 +9,7 @@
 #include "core/type_alias/player_session_type_alias.h"
 #include "engine/core/type_define/player_guid_comp.h"
 #include "player/system/player_lifecycle.h"
+#include "player/system/player_scene.h"
 #include "player/system/role_admission_system.h"
 #include "battle/system/player_battle.h"
 #include "player/comp/player_frozen_comp.h"
@@ -37,8 +38,11 @@ protected:
         scene = tlsEcs.sceneRegistry.create();
         tlsEcs.sceneRegistry.emplace<SceneInfoComp>(scene).set_scene_id(kScene);
         Admission::Dependencies dependencies;
-        dependencies.now = [this] { return now; };
-        dependencies.localNode = [] { return Admission::LocalNode{"01234567-89ab-cdef-0123-456789abcdef", "91", 3}; };
+        dependencies.now = [this] { ++clockReads; return now; };
+        dependencies.localNode = [this] {
+            ++localNodeReads;
+            return Admission::LocalNode{"01234567-89ab-cdef-0123-456789abcdef", "91", 3};
+        };
         dependencies.registerAdmission = [this](auto request, auto reply) {
             registers.push_back(std::move(request)); registerReplies.push_back(std::move(reply)); return true;
         };
@@ -58,6 +62,9 @@ protected:
         dependencies.reject = [this](Guid player, uint32_t) { EXPECT_TRUE(player == 0 || player == kPlayer); ++rejections; };
         dependencies.hasPendingLoad = [this](Guid) { return pendingLoad; };
         scope = std::make_unique<Admission::ScopedDependencies>(std::move(dependencies));
+        ASSERT_EQ(scene, PlayerSceneSystem::FindSceneById(kScene)) << "夹具场景必须能被生产查找入口解析";
+        ASSERT_EQ(kSuccess, PlayerSceneSystem::CheckEnterScene(kPlayer, scene));
+        ASSERT_TRUE(enter_fence::Admits(PlayerLifecycleSystem::JudgeEnter(kPlayer, 91, 9)));
     }
     void TearDown() override {
         RemoveEntity();
@@ -73,9 +80,36 @@ protected:
         context.ownerRevision = kRevision; context.ownerEpoch = 8; context.loginGeneration = 9;
         return context;
     }
-    void Enter() { Admission::RequestEnter(kPlayer, Context()); }
+    void Enter() {
+        const auto context = Context();
+        const auto found = PlayerSceneSystem::FindSceneById(context.enterInfo.scene_id());
+        const auto player = tlsEcs.GetPlayer(kPlayer);
+        const auto allowed = player == entt::null ? PlayerSceneSystem::CheckEnterScene(kPlayer, found)
+            : PlayerSceneSystem::CheckEnterScene(player, found);
+        const auto verdict = PlayerLifecycleSystem::JudgeEnter(kPlayer, context.enterInfo.session_id(), context.loginGeneration);
+        std::ostringstream details;
+        details << "scene_found=" << (found == scene) << " scene_allowed=" << allowed
+            << " expected_success=" << kSuccess << " enter_fence=" << enter_fence::VerdictName(verdict)
+            << " revision=" << context.ownerRevision << " epoch=" << context.ownerEpoch
+            << " login=" << context.loginGeneration << " session=" << context.enterInfo.session_id()
+            << " node_reads=" << localNodeReads << " clock_reads=" << clockReads;
+        lastEnterPreconditions = details.str();
+        ASSERT_EQ(scene, found) << lastEnterPreconditions;
+        ASSERT_EQ(kSuccess, allowed) << lastEnterPreconditions;
+        ASSERT_TRUE(enter_fence::Admits(verdict)) << lastEnterPreconditions;
+        const bool first = registers.empty() && rejections == 0;
+        const auto beforeNodeReads = localNodeReads;
+        Admission::RequestEnter(kPlayer, context);
+        ASSERT_GT(localNodeReads, beforeNodeReads) << "必须调用当前ScopedDependencies的原节点提供者；" << lastEnterPreconditions;
+        if (first) {
+            ASSERT_EQ(1u, registers.size()) << "完整前置条件后的首次登记不能立即拒绝；" << lastEnterPreconditions
+                << " node_reads_after=" << localNodeReads << " clock_reads_after=" << clockReads
+                << " rejections=" << rejections;
+        }
+    }
     void CompleteRegister(size_t index, bool ok = true, uint64_t closed = 0) {
-        ASSERT_LT(index, registerReplies.size());
+        ASSERT_LT(index, registerReplies.size()) << lastEnterPreconditions;
+        ASSERT_LT(index, registers.size()) << lastEnterPreconditions;
         data_service::RegisterRoleAdmissionResponse reply;
         *reply.mutable_identity() = registers[index].identity();
         reply.set_closed_through(closed);
@@ -124,6 +158,8 @@ protected:
     std::vector<std::function<void(std::optional<Admission::SqlAck>)>> sqlReplies;
     std::vector<PlayerEnterContext> activated;
     uint32_t freezes{0}, rejections{0};
+    uint32_t localNodeReads{0}, clockReads{0};
+    std::string lastEnterPreconditions;
     bool pendingLoad{false};
 };
 
@@ -138,8 +174,8 @@ TEST_F(RoleAdmissionTest, LiveBattleFinishesBeforeTradeFreezesOrUnloadsThePlayer
 }
 
 TEST_F(RoleAdmissionTest, AcceptedTradeSealRejectsNewBattleBeforeDrainCompletes) {
-    Enter();
-    CompleteRegister(0);
+    ASSERT_NO_FATAL_FAILURE(Enter());
+    ASSERT_NO_FATAL_FAILURE(CompleteRegister(0));
     AddEntity();
     ASSERT_TRUE(Admission::Seal(SealFor()));
     ASSERT_FALSE(tlsEcs.actorRegistry.any_of<PlayerFrozenComp>(entity));
@@ -173,15 +209,16 @@ TEST_F(RoleAdmissionTest, MissingIdentityAndSceneFailBeforeRegistration) {
 }
 
 TEST_F(RoleAdmissionTest, UnknownRegisterReplaysOriginalAndNeverActivatesBeforeConfirmation) {
-    Enter();
+    ASSERT_NO_FATAL_FAILURE(Enter());
     ASSERT_EQ(1u, registers.size());
     const auto generation = registers.front().identity().generation();
     EXPECT_NE(0u, generation); EXPECT_TRUE(activated.empty());
     EXPECT_FALSE(Admission::Allows(kPlayer, generation, kRevision));
-    CompleteRegister(0, false); Tick();
+    ASSERT_NO_FATAL_FAILURE(CompleteRegister(0, false));
+    Tick();
     ASSERT_EQ(2u, registers.size());
     EXPECT_EQ(registers[0].SerializeAsString(), registers[1].SerializeAsString());
-    CompleteRegister(1);
+    ASSERT_NO_FATAL_FAILURE(CompleteRegister(1));
     ASSERT_EQ(1u, activated.size());
     EXPECT_TRUE(Admission::Allows(kPlayer, generation, kRevision));
     EXPECT_FALSE(Admission::Allows(kPlayer, 0, kRevision));
@@ -191,37 +228,43 @@ TEST_F(RoleAdmissionTest, UnknownRegisterReplaysOriginalAndNeverActivatesBeforeC
 }
 
 TEST_F(RoleAdmissionTest, UnknownRegisterDoesNotChangeGenerationWhenAnotherRouteArrives) {
-    Enter(); Enter();
+    ASSERT_NO_FATAL_FAILURE(Enter());
+    ASSERT_NO_FATAL_FAILURE(Enter());
     EXPECT_EQ(1u, registers.size()); EXPECT_EQ(0u, rejections);
     auto changed = Context(); changed.ownerRevision += 1;
     Admission::RequestEnter(kPlayer, changed);
     EXPECT_EQ(1u, registers.size()); EXPECT_EQ(1u, rejections);
-    CompleteRegister(0);
+    ASSERT_NO_FATAL_FAILURE(CompleteRegister(0));
     EXPECT_EQ(1u, activated.size());
 }
 
 TEST_F(RoleAdmissionTest, ThreeFailedAttemptsStopWithoutActivation) {
-    Enter(); CompleteRegister(0, false); Tick();
-    CompleteRegister(1, false); Tick(); CompleteRegister(2, false);
+    ASSERT_NO_FATAL_FAILURE(Enter());
+    ASSERT_NO_FATAL_FAILURE(CompleteRegister(0, false));
+    Tick();
+    ASSERT_NO_FATAL_FAILURE(CompleteRegister(1, false));
+    Tick();
+    ASSERT_NO_FATAL_FAILURE(CompleteRegister(2, false));
     Tick();
     EXPECT_EQ(3u, registers.size()); EXPECT_EQ(1u, rejections); EXPECT_TRUE(activated.empty());
 }
 
 TEST_F(RoleAdmissionTest, LateSuccessAfterDeadlineCannotActivateEvenBeforeTick) {
-    Enter(); now += 16s;
-    CompleteRegister(0);
+    ASSERT_NO_FATAL_FAILURE(Enter());
+    now += 16s;
+    ASSERT_NO_FATAL_FAILURE(CompleteRegister(0));
     EXPECT_TRUE(activated.empty()); EXPECT_EQ(1u, rejections);
 }
 
 TEST_F(RoleAdmissionTest, ClosedThroughInRegisterReplyNeverGrantsThatGeneration) {
-    Enter();
-    CompleteRegister(0, true, registers[0].identity().generation());
+    ASSERT_NO_FATAL_FAILURE(Enter());
+    ASSERT_NO_FATAL_FAILURE(CompleteRegister(0, true, registers[0].identity().generation()));
     EXPECT_TRUE(activated.empty());
     EXPECT_FALSE(Admission::Allows(kPlayer, registers[0].identity().generation(), kRevision));
 }
 
 TEST_F(RoleAdmissionTest, CallbackFromDestroyedScopeCannotMutateRestoredThreadState) {
-    Enter();
+    ASSERT_NO_FATAL_FAILURE(Enter());
     auto callback = std::move(registerReplies.front());
     data_service::RegisterRoleAdmissionResponse reply;
     *reply.mutable_identity() = registers.front().identity();
@@ -232,7 +275,9 @@ TEST_F(RoleAdmissionTest, CallbackFromDestroyedScopeCannotMutateRestoredThreadSt
 }
 
 TEST_F(RoleAdmissionTest, DrainWaitsForEntityCallbacksAndActualForcedSave) {
-    Enter(); CompleteRegister(0); AddEntity();
+    ASSERT_NO_FATAL_FAILURE(Enter());
+    ASSERT_NO_FATAL_FAILURE(CompleteRegister(0));
+    AddEntity();
     Admission::ObserveSave(kPlayer, 8, 2);
     Admission::BeginCallback(kPlayer);
     ASSERT_TRUE(Admission::Seal(SealFor()));
@@ -252,7 +297,8 @@ TEST_F(RoleAdmissionTest, DrainWaitsForEntityCallbacksAndActualForcedSave) {
 }
 
 TEST_F(RoleAdmissionTest, StrictAckNeedsExactBothRowsAndCompleteUint64Version) {
-    Enter(); CompleteRegister(0);
+    ASSERT_NO_FATAL_FAILURE(Enter());
+    ASSERT_NO_FATAL_FAILURE(CompleteRegister(0));
     constexpr uint64_t seq = UINT64_MAX;
     Admission::ObserveSave(kPlayer, 8, seq);
     ASSERT_TRUE(Admission::Seal(SealFor()));
@@ -270,7 +316,9 @@ TEST_F(RoleAdmissionTest, StrictAckNeedsExactBothRowsAndCompleteUint64Version) {
 }
 
 TEST_F(RoleAdmissionTest, LateLoadCannotActivateAndItsOriginalFenceRaisesDrainFloor) {
-    Enter(); CompleteRegister(0);
+    ASSERT_NO_FATAL_FAILURE(Enter());
+    ASSERT_NO_FATAL_FAILURE(CompleteRegister(0));
+    ASSERT_EQ(1u, activated.size());
     auto context = activated.back();
     context.inheritClear.outstandingReplies = 1;
     PlayerLifecycleSystem::GetPendingEnterMap()[kPlayer] = context;
@@ -300,13 +348,16 @@ TEST_F(RoleAdmissionTest, LateLoadCannotActivateAndItsOriginalFenceRaisesDrainFl
 }
 
 TEST_F(RoleAdmissionTest, OldHolderSealDuringUnconfirmedNewRegisterStillFreezesOriginal) {
-    Enter(); CompleteRegister(0); AddEntity();
-    Enter(); ASSERT_EQ(2u, registers.size());
+    ASSERT_NO_FATAL_FAILURE(Enter());
+    ASSERT_NO_FATAL_FAILURE(CompleteRegister(0));
+    AddEntity();
+    ASSERT_NO_FATAL_FAILURE(Enter());
+    ASSERT_EQ(2u, registers.size());
     const auto oldSeal = SealFor();
     ASSERT_TRUE(Admission::Seal(oldSeal));
     EXPECT_TRUE(Admission::IsSealed(kPlayer));
     EXPECT_EQ(1u, freezes);
-    CompleteRegister(1, false);
+    ASSERT_NO_FATAL_FAILURE(CompleteRegister(1, false));
     EXPECT_EQ(1u, activated.size());
     Admission::ObserveTradeSaveQueued(kPlayer, 8, 2); RemoveEntity(); Tick();
     ASSERT_EQ(1u, sqlReplies.size()); Sql(0, 8, 2); Tick();
@@ -314,8 +365,9 @@ TEST_F(RoleAdmissionTest, OldHolderSealDuringUnconfirmedNewRegisterStillFreezesO
     EXPECT_EQ(oldSeal.SerializeAsString(), acks[0].seal().SerializeAsString());
     auto ack = std::move(ackReplies[0]); ack(true);
 
-    Enter(); ASSERT_EQ(3u, registers.size());
-    CompleteRegister(2, true, oldSeal.through_generation());
+    ASSERT_NO_FATAL_FAILURE(Enter());
+    ASSERT_EQ(3u, registers.size());
+    ASSERT_NO_FATAL_FAILURE(CompleteRegister(2, true, oldSeal.through_generation()));
     const auto current = registers[2].identity().generation();
     ASSERT_TRUE(Admission::Allows(kPlayer, current, kRevision));
     EXPECT_FALSE(Admission::IsSealed(kPlayer));
@@ -326,21 +378,25 @@ TEST_F(RoleAdmissionTest, OldHolderSealDuringUnconfirmedNewRegisterStillFreezesO
 }
 
 TEST_F(RoleAdmissionTest, CloseKeepsHistoricalFloorAndClosedAuthorizationNeverReactivates) {
-    Enter(); CompleteRegister(0);
+    ASSERT_NO_FATAL_FAILURE(Enter());
+    ASSERT_NO_FATAL_FAILURE(CompleteRegister(0));
     Admission::ObserveSave(kPlayer, 8, 12); Tick();
     ASSERT_EQ(1u, closes.size());
     data_service::CloseRoleAdmissionsResponse reply;
     reply.set_closed_through(closes[0].through_generation());
     auto close = std::move(closeReplies[0]); close(true, &reply);
     EXPECT_FALSE(Admission::Allows(kPlayer, closes[0].through_generation(), kRevision));
-    Enter(); CompleteRegister(1, true, reply.closed_through());
+    ASSERT_NO_FATAL_FAILURE(Enter());
+    ASSERT_NO_FATAL_FAILURE(CompleteRegister(1, true, reply.closed_through()));
     Admission::ObserveSave(kPlayer, 0, 0); Tick();
     ASSERT_EQ(2u, closes.size());
     EXPECT_EQ(8u, closes[1].required_owner_epoch()); EXPECT_EQ(12u, closes[1].required_save_seq());
 }
 
 TEST_F(RoleAdmissionTest, HolderCapturedBeforeCloseStillReceivesListingAckAfterClose) {
-    Enter(); CompleteRegister(0); Tick();
+    ASSERT_NO_FATAL_FAILURE(Enter());
+    ASSERT_NO_FATAL_FAILURE(CompleteRegister(0));
+    Tick();
     ASSERT_EQ(1u, closes.size());
     data_service::CloseRoleAdmissionsResponse reply;
     reply.set_closed_through(closes[0].through_generation());
@@ -350,11 +406,13 @@ TEST_F(RoleAdmissionTest, HolderCapturedBeforeCloseStillReceivesListingAckAfterC
 }
 
 TEST_F(RoleAdmissionTest, FailedAckRetriesExactOriginalAndCannotOpenAdmission) {
-    Enter(); CompleteRegister(0);
+    ASSERT_NO_FATAL_FAILURE(Enter());
+    ASSERT_NO_FATAL_FAILURE(CompleteRegister(0));
     ASSERT_TRUE(Admission::Seal(SealFor()));
     ASSERT_EQ(1u, acks.size());
     auto failed = std::move(ackReplies[0]); failed(false);
-    Enter(); EXPECT_EQ(1u, registers.size()); EXPECT_EQ(1u, rejections);
+    ASSERT_NO_FATAL_FAILURE(Enter());
+    EXPECT_EQ(1u, registers.size()); EXPECT_EQ(1u, rejections);
     Tick(); ASSERT_EQ(2u, acks.size());
     EXPECT_EQ(acks[0].SerializeAsString(), acks[1].SerializeAsString());
     auto completed = std::move(ackReplies[1]); completed(true);

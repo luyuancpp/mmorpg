@@ -32,11 +32,15 @@ import (
 // TestRankMailChainFixture 仅供跨模块整链测试的独立子进程装配真实邮件服务。
 // 随机库的创建和删除归父进程；本进程既不伪造邮件来源，也不写资产终态。
 func TestRankMailChainFixture(t *testing.T) {
-	if os.Getenv("RANK_MAIL_CHAIN_FIXTURE") != "mail" || os.Getenv("RANK_MAIL_CHAIN_IT_TIDB") != "127.0.0.1:4000" {
+	if os.Getenv("RANK_MAIL_CHAIN_FIXTURE") != "mail" {
 		t.Skip("仅供本机 TiDB 排行到邮件整链子进程")
 	}
+	address := os.Getenv("RANK_MAIL_CHAIN_IT_TIDB")
+	if err := mailMainFixtureEndpoint(address); err != nil {
+		t.Fatal(err)
+	}
 	database := os.Getenv("RANK_MAIL_CHAIN_DATABASE")
-	if !regexp.MustCompile(`^rank_mail_chain_[a-z0-9_]+$`).MatchString(database) || len(database) > 64 {
+	if !regexp.MustCompile(`^rank_mail_chain_[a-f0-9]{16}_mail$`).MatchString(database) {
 		t.Fatal("整链随机库名无效")
 	}
 	secret := strings.TrimSpace(os.Getenv("RANK_MAIL_CHAIN_SECRET"))
@@ -49,7 +53,7 @@ func TestRankMailChainFixture(t *testing.T) {
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), 90*time.Second)
 	defer cancel()
-	db, err := authoritysql.Open(ctx, "root@tcp(127.0.0.1:4000)/"+database, database, true, 8)
+	db, err := authoritysql.Open(ctx, "root@tcp("+address+")/"+database, database, true, 8)
 	if err != nil {
 		t.Fatalf("打开邮件强读连接: %v", err)
 	}

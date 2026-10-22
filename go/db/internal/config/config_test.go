@@ -79,8 +79,8 @@ type placementHolder struct {
 	Placement PlacementConfig `json:"Placement,optional"`
 }
 
-// 整段缺省必须等价于 AllowStoreFamilies=true、Required=false(player-storage-placement.md §6.1 / §6.2):
-// go-zero 对整段 optional 且未出现的嵌套结构不回填内层 default,零值本身必须就是这个语义。
+// 字段零值保留旧解码形状，全球Config启动另由ValidateGlobalAuthority拒绝缺失门禁；
+// 不用default/Normalize把显式false静默变true，历史形状仅在显式LegacyNonGlobal中可启动。
 func TestPlacementBlockMissingMeansDefaults(t *testing.T) {
 	var h placementHolder
 	if err := conf.LoadFromYamlBytes([]byte("Name: db.rpc\n"), &h); err != nil {
@@ -155,7 +155,7 @@ func TestPlacementRedisBlockRequiresHosts(t *testing.T) {
 	}
 }
 
-// etc/db.yaml 的示例段必须能被解析,且写出的就是缺省语义(段名 / 键名写错会静默保持零值)。
+// etc/db.yaml必须能解析且显式写出全球默认，不能靠Normalize掩盖漏键。
 func TestEtcYamlPlacementBlockMatchesDefaults(t *testing.T) {
 	var c Config
 	if err := conf.Load("../../etc/db.yaml", &c); err != nil {
@@ -174,7 +174,7 @@ func TestEtcYamlPlacementBlockMatchesDefaults(t *testing.T) {
 	if c.Placement.AllowStoreFamilies == nil {
 		t.Fatal("etc/db.yaml must spell out AllowStoreFamilies so the example documents the key")
 	}
-	if !c.Placement.StoreFamiliesAllowed() || c.Placement.Required {
+	if !c.Placement.StoreFamiliesAllowed() || !c.Placement.Required {
 		t.Fatalf("etc/db.yaml must ship the default semantics, got families=%v required=%v",
 			c.Placement.StoreFamiliesAllowed(), c.Placement.Required)
 	}
@@ -342,7 +342,7 @@ func TestPlacementRouteReadyIntervalValidate(t *testing.T) {
 		{interval: -1, normalize: false, wantErr: true},
 	} {
 		for _, require := range []bool{false, true} {
-			c := Config{}
+			c := legacyConfigForTest()
 			c.Placement.RequireRouteReady = require
 			c.Placement.RouteReadyGateIntervalMs = tc.interval
 			if tc.normalize {
@@ -363,22 +363,22 @@ func TestPlacementRouteReadyIntervalValidate(t *testing.T) {
 	}
 }
 
-// etc/db.yaml 必须把两个新键写出来(键名写错会静默保持零值),而且写的就是缺省语义:开关关、间隔 1000。
+// etc/db.yaml必须显式写ready门禁开、间隔1000；键名写错不能静默退回旧MGET。
 func TestEtcYamlPlacementRouteReadyKeys(t *testing.T) {
 	raw, err := os.ReadFile("../../etc/db.yaml")
 	if err != nil {
 		t.Fatalf("read etc/db.yaml: %v", err)
 	}
 	text := strings.ReplaceAll(string(raw), "\r\n", "\n")
-	if !strings.Contains(text, "\n  RequireRouteReady: false\n") {
-		t.Fatal("etc/db.yaml must spell out Placement.RequireRouteReady: false")
+	if !strings.Contains(text, "\n  RequireRouteReady: true\n") {
+		t.Fatal("全球etc/db.yaml必须显式Placement.RequireRouteReady: true")
 	}
 	var c Config
 	if err := conf.LoadFromYamlBytes([]byte(text), &c); err != nil {
 		t.Fatalf("load etc/db.yaml: %v", err)
 	}
-	if c.Placement.RequireRouteReady {
-		t.Fatal("etc/db.yaml must ship Placement.RequireRouteReady=false")
+	if !c.Placement.RequireRouteReady {
+		t.Fatal("全球etc/db.yaml必须保持Placement.RequireRouteReady=true")
 	}
 	if c.Placement.RouteReadyGateIntervalMs != DefaultPlacementRouteReadyGateIntervalMs {
 		t.Fatalf("etc/db.yaml must spell out Placement.RouteReadyGateIntervalMs=%d before Normalize, got %d",
@@ -668,7 +668,7 @@ func loadRedisClient(t *testing.T, yaml string) Config {
 	if err := conf.LoadFromYamlBytes([]byte(yaml), &h); err != nil {
 		t.Fatalf("load: %v", err)
 	}
-	c := Config{}
+	c := globalConfigForTest()
 	c.ServerConfig.RedisClient = h.ServerConfig.RedisClient
 	return c
 }
@@ -752,7 +752,7 @@ func intPtr(v int) *int { return &v }
 // 每一项写错都拒启,错误文本点名键;边界值放行。
 func TestConfigValidateRejects(t *testing.T) {
 	base := func() Config {
-		c := Config{}
+		c := globalConfigForTest()
 		c.Normalize()
 		return c
 	}

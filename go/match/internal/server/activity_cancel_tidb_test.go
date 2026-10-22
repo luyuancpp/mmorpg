@@ -3,7 +3,9 @@ package server
 import (
 	"context"
 	"database/sql"
+	"net"
 	"os"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -30,13 +32,23 @@ func TestTiDBActivityCancellationRPCSignsOriginalReceiptAndBlocksLateStart(t *te
 		}
 		t.Skip("未配置独占match取消TiDB")
 	}
-	require.Equal(t, "127.0.0.1:4000", addr)
+	host, portText, err := net.SplitHostPort(addr)
+	require.NoError(t, err)
+	ip := net.ParseIP(host)
+	require.NotNil(t, ip)
+	require.True(t, ip.IsLoopback())
+	port, err := strconv.ParseUint(portText, 10, 16)
+	require.NoError(t, err)
+	require.NotZero(t, port)
 	cfg := mysql.NewConfig()
 	cfg.Net = "tcp"
 	cfg.Addr = addr
 	cfg.User = "root"
 	admin, err := sql.Open("mysql", cfg.FormatDSN())
 	require.NoError(t, err)
+	var engine string
+	require.NoError(t, admin.QueryRow("SELECT VERSION()").Scan(&engine))
+	require.Contains(t, strings.ToLower(engine), "tidb")
 	schema := "match_cancel_it_" + strings.ReplaceAll(uuid.NewString(), "-", "")
 	_, err = admin.Exec("CREATE DATABASE `" + schema + "`")
 	require.NoError(t, err)
