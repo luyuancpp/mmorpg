@@ -187,6 +187,8 @@ message BagAllData {
   // those are compile-time constants today, but a player may have
   // unlocked extra slots via gameplay (Bag::Unlock); persisting per-
   // player capacity preserves that progression.
+  // 下标 ≥ 本版本 kBagTypeCount 的项是更新版本加的包类型的容量:旧版本必须原样携带、原样写回,
+  // 不得截断(docs/design/mixed-version-persist-field-protection.md §12,第 5 批)。
   repeated uint32 capacities = 2;
 
   // Transient runtime bags (event bags / per-pet bags). Empty for most

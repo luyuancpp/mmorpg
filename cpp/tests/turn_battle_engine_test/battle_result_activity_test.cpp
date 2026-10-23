@@ -369,8 +369,8 @@ TEST(BattleResultCommit, FailedStagingUsesMonotonicBoundedBackoff)
     turnbattle::ResultCommit commit("same-bytes", StagingMembers());
     auto current = turnbattle::ResultCommit::Clock::time_point{};
     const uint32_t delays[]{1, 2, 4, 8, 16, 30, 30};
-    // 这里只看退避,轮次必须还没到上限(上限见 StagingStopsAtRoundCapWithoutReleasingResult)。
-    ASSERT_LT(std::size(delays), static_cast<std::size_t>(turnbattle::kMaxStagingRounds));
+    // 这里只看快速阶段退避；低频阶段与总跨度分别由后续用例验证。
+    ASSERT_LT(std::size(delays), static_cast<std::size_t>(turnbattle::kFastStagingRounds));
     for (const auto seconds : delays)
     {
         const auto attempt = commit.BeginStaging(current);
@@ -413,30 +413,72 @@ TEST(BattleResultCommit, StagingRetryRewritesOnlyMembersWithoutConfirmation)
     EXPECT_TRUE(commit.CanSend(start + std::chrono::seconds(3)));
 }
 
-// 审计 r2-battle#4(同文 §3.4)。修复前落库轮次没有上限,持续 ERROR 时房间永久滞留并反复重写。
-// 修复后最多 kMaxStagingRounds 轮;到上限不再开新轮,也不放行发送(放弃落库直接发结果会退回 social-match-battle#2),
-// 已落定的成员不因用尽回到待写集合。
-TEST(BattleResultCommit, StagingStopsAtRoundCapWithoutReleasingResult)
+// 快速阶段失败不会直接丢弃落库；第24轮之后转为5分钟一次，仍只重写未确认成员。
+TEST(BattleResultCommit, StagingContinuesWithSlowRetriesAfterFastRounds)
 {
     turnbattle::ResultCommit commit("result", StagingMembers());
     auto current = turnbattle::ResultCommit::Clock::time_point{};
-    for (uint32_t round = 1; round <= turnbattle::kMaxStagingRounds; ++round)
+    EXPECT_EQ(turnbattle::kFastStagingRounds, 24u);
+    for (uint32_t round = 1; round <= turnbattle::kFastStagingRounds; ++round)
     {
-        EXPECT_FALSE(commit.StagingExhausted()) << "round " << round;
+        EXPECT_FALSE(commit.ExhaustStagingIfOverdue(current));
         const auto attempt = commit.BeginStaging(current);
         ASSERT_NE(attempt, 0u) << "round " << round;
-        // 第 1 轮 92 落定,此后 93 一直失败
         EXPECT_FALSE(commit.FinishStaging(attempt, round == 1 ? std::set<uint64_t>{92} : std::set<uint64_t>{}, current));
-        current += std::chrono::seconds(30);  // 不短于封顶退避
+        if (round < turnbattle::kFastStagingRounds) current += std::chrono::seconds(30);
     }
-    EXPECT_TRUE(commit.StagingExhausted());
-    EXPECT_EQ(commit.StagingFailures(), turnbattle::kMaxStagingRounds);
+    EXPECT_EQ(commit.StagingFailures(), turnbattle::kFastStagingRounds);
+    EXPECT_FALSE(commit.StagingExhausted());
     EXPECT_EQ(commit.UnstagedMembers(), (std::set<uint64_t>{93}));
-    const auto later = current + std::chrono::hours(24);
+    EXPECT_EQ(commit.BeginStaging(current + turnbattle::kSlowStagingRetryInterval - std::chrono::milliseconds(1)), 0u);
+    current += turnbattle::kSlowStagingRetryInterval;
+    const auto slowAttempt = commit.BeginStaging(current);
+    ASSERT_NE(slowAttempt, 0u);
+    EXPECT_FALSE(commit.FinishStaging(slowAttempt, {}, current));
+    EXPECT_EQ(commit.StagingFailures(), turnbattle::kFastStagingRounds + 1);
+    EXPECT_FALSE(commit.StagingExhausted());
+    EXPECT_EQ(commit.UnstagedMembers(), (std::set<uint64_t>{93}));
+    EXPECT_FALSE(commit.PersonalSettlementsDurable());
+    EXPECT_FALSE(commit.CanSend(current));
+}
+
+// 审计r2-battle#4的现行契约：6小时总跨度到期才停止，终局仍未知，已确认成员不得复活。
+TEST(BattleResultCommit, StagingStopsAtTotalSpanWithoutReleasingResult)
+{
+    turnbattle::ResultCommit commit("result", StagingMembers());
+    const auto start = turnbattle::ResultCommit::Clock::time_point{};
+    const auto attempt = commit.BeginStaging(start);
+    ASSERT_NE(attempt, 0u);
+    EXPECT_FALSE(commit.FinishStaging(attempt, {92}, start));
+    EXPECT_FALSE(commit.ExhaustStagingIfOverdue(start + turnbattle::kMaxStagingSpan - std::chrono::milliseconds(1)));
+    EXPECT_EQ(commit.BeginStaging(start + turnbattle::kMaxStagingSpan), 0u);
+    EXPECT_FALSE(commit.StagingExhausted());  // 开轮拒绝不代替一次性耗尽通知。
+    EXPECT_TRUE(commit.ExhaustStagingIfOverdue(start + turnbattle::kMaxStagingSpan));
+    EXPECT_TRUE(commit.StagingExhausted());
+    EXPECT_FALSE(commit.ExhaustStagingIfOverdue(start + turnbattle::kMaxStagingSpan + std::chrono::milliseconds(1)));
+    EXPECT_EQ(commit.StagingFailures(), 1u);
+    EXPECT_EQ(commit.UnstagedMembers(), (std::set<uint64_t>{93}));
+    const auto later = start + std::chrono::hours(24);
     EXPECT_EQ(commit.BeginStaging(later), 0u);
     EXPECT_FALSE(commit.PersonalSettlementsDurable());
     EXPECT_FALSE(commit.CanSend(later));
     EXPECT_FALSE(commit.Begin(1, later));
+}
+
+// Redis一直不可用时调用方只问跨度、不发落库轮；单调截止仍必须生效，无需真实等待。
+TEST(BattleResultCommit, StagingSpanExpiresWithoutOpeningRedisRounds)
+{
+    turnbattle::ResultCommit commit("result", StagingMembers());
+    const auto start = turnbattle::ResultCommit::Clock::time_point{};
+    EXPECT_FALSE(commit.ExhaustStagingIfOverdue(start));
+    EXPECT_FALSE(commit.ExhaustStagingIfOverdue(start + turnbattle::kMaxStagingSpan - std::chrono::milliseconds(1)));
+    EXPECT_TRUE(commit.ExhaustStagingIfOverdue(start + turnbattle::kMaxStagingSpan));
+    EXPECT_EQ(commit.StagingFailures(), 0u);
+    EXPECT_EQ(commit.UnstagedMembers(), StagingMembers());
+    EXPECT_EQ(commit.BeginStaging(start + turnbattle::kMaxStagingSpan), 0u);
+    EXPECT_FALSE(commit.PersonalSettlementsDurable());
+    EXPECT_FALSE(commit.CanSend(start + turnbattle::kMaxStagingSpan));
+    EXPECT_FALSE(commit.Begin(1, start + turnbattle::kMaxStagingSpan));
 }
 
 // 过期轮次与重复回调不改状态:不移出成员、不计失败、不放行。

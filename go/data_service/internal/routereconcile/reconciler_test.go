@@ -375,7 +375,9 @@ type fakeCache struct {
 	kv      map[string]string
 	// readyWrongType:就绪标记键在但不是 string。
 	readyWrongType bool
-	pushes         [][]uint64
+	// 水位键错误类型与 Redis MGET 的缺席返回分开记录。
+	watermarkWrongType bool
+	pushes             [][]uint64
 	// pushHook 在 Push 判定之前调(持着 c.mu:只许直接改 c.kv / c.id,不许调 fakeCache 的方法)。
 	pushHook func(c *fakeCache, rows []store.RouteRow)
 	forced   map[uint64]PushOutcome
@@ -468,12 +470,15 @@ func (c *fakeCache) ReadControl(context.Context) (Control, error) {
 		return Control{}, c.probeEr
 	}
 	ptr := func(k string) *string {
+		if k == placement.RouteWatermarkKey && c.watermarkWrongType {
+			return nil
+		}
 		if v, ok := c.kv[k]; ok {
 			return &v
 		}
 		return nil
 	}
-	return Control{Ready: ptr(placement.RouteReadyKey), ReadyWrongType: c.readyWrongType, Warm: ptr(placement.RouteWarmKey), Watermark: ptr(placement.RouteWatermarkKey)}, nil
+	return Control{Ready: ptr(placement.RouteReadyKey), ReadyWrongType: c.readyWrongType, Warm: ptr(placement.RouteWarmKey), Watermark: ptr(placement.RouteWatermarkKey), WatermarkWrongType: c.watermarkWrongType}, nil
 }
 
 func (c *fakeCache) SelfCheck(context.Context) (placement.RouteReadyRead, error) {
@@ -553,6 +558,16 @@ func (c *fakeCache) DeleteReadyWrongType(context.Context) error {
 	c.record("DeleteReadyWrongType")
 	c.readyWrongType = false
 	delete(c.kv, placement.RouteReadyKey)
+	return nil
+}
+
+// 与正式 RedisCache 相同：调用方先判错误类型，此方法本身无条件 DEL。
+func (c *fakeCache) DeleteWatermarkWrongType(context.Context) error {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	c.record("DeleteWatermarkWrongType")
+	c.watermarkWrongType = false
+	delete(c.kv, placement.RouteWatermarkKey)
 	return nil
 }
 
@@ -1310,6 +1325,32 @@ func TestWatermarkKeyAdvancedMonotonicallyAfterCommit(t *testing.T) {
 	}
 	if wk, _ := h.c.get(placement.RouteWatermarkKey); wk != newer {
 		t.Fatalf("a newer-format watermark key must be left untouched, got %q", wk)
+	}
+	if n := h.c.count("DeleteWatermarkWrongType"); n != 0 {
+		t.Fatalf("正常和新版格式的水位不应进入错误类型删除分支，调用次数=%d", n)
+	}
+}
+
+func TestWatermarkWrongTypeIsDeletedAndRebuiltByReconciler(t *testing.T) {
+	h := newHarness(t, false, nil)
+	h.c.watermarkWrongType = true
+	h.c.set(placement.RouteWatermarkKey, "错误类型占位")
+	h.mustTick(metrics.RouteReconcileTickOK)
+	if n := h.c.count("DeleteWatermarkWrongType"); n != 1 {
+		t.Fatalf("错误类型水位应由 Reconciler 删除一次，调用次数=%d", n)
+	}
+	ctl, err := h.c.ReadControl(h.ctx)
+	want := watermarkFor(t, testGen, 1_000_000)
+	if err != nil || ctl.WatermarkWrongType || ctl.Watermark == nil || *ctl.Watermark != want {
+		t.Fatalf("错误类型删除后应从已提交库水位重建：control=%+v err=%v", ctl, err)
+	}
+	if req := h.lastAdvance(); req.WatermarkKey != nil {
+		t.Fatalf("错误类型的水位不得作为回档判定证据：%+v", req.WatermarkKey)
+	}
+	h.st.addNow(5_000)
+	h.mustTick(metrics.RouteReconcileTickOK)
+	if n := h.c.count("DeleteWatermarkWrongType"); n != 1 {
+		t.Fatalf("重建后的正常水位不得重复删除，调用次数=%d", n)
 	}
 }
 

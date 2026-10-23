@@ -484,6 +484,6 @@ func isGeneratedRobotRpcSource(content []byte) bool {
 	if len(head) > 256 {
 		head = head[:256]
 	}
-	text := strings.TrimPrefix(strings.ReplaceAll(string(head), "\r", ""), "﻿")
+	text := strings.TrimPrefix(strings.ReplaceAll(string(head), "\r", ""), "\uFEFF")
 	return strings.HasPrefix(text, robotRpcSourceMarker)
 }

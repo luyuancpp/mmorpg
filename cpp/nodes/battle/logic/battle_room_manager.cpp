@@ -1667,14 +1667,21 @@ void BattleRoomManager::OnPersonalSettlementsStaged(const uint64_t battleId, con
         }
         return;
     }
-    // 轮次用尽(审计 r2-battle#4):不再开新轮,也不放弃落库直接发结果(那会退回 social-match-battle#2)。
+    RetireExhaustedStaging(*room);
+}
+
+void BattleRoomManager::RetireExhaustedStaging(BattleRoom &room)
+{
+    const auto battleId = room.battleId;
+    const auto &commit = *room.resultCommit;
+    // 总跨度用尽(审计 r2-battle#4):不再开新轮,也不放弃落库直接发结果(那会退回 social-match-battle#2)。
     // 终局保持未知:房间移出 resultRooms_ 不再 pump,但留在房间表里 —— 结果不发、DestroyBattle 不作废、
     // 新行动照旧拒绝,直到停机 AbortAllRooms(说明见头文件 AbortAllRooms)。只在移出那一刻响一次。
     if (commit.StagingExhausted() && resultRooms_.erase(battleId) != 0)
     {
         LOG_ERROR << "metric=battle_personal_settlement_staging_exhausted battle_id=" << battleId
                   << " rounds=" << commit.StagingFailures()
-                  << " members=" << room->personalSettlementPayloads.size()
+                  << " members=" << room.personalSettlementPayloads.size()
                   << " unstaged=" << commit.UnstagedMembers().size()
                   << ";terminal remains unknown,result not published,room retained until node shutdown";
         for (const auto playerId : commit.UnstagedMembers())

@@ -72,7 +72,7 @@ func TestSchemaGenRestoreAcceptsAndClearsWriterFields(t *testing.T) {
 		fields, err := r.Redis.HGetAll(context.Background(), savebarrier.Key(7)).Result()
 		require.NoError(t, err)
 		require.Equal(t, map[string]string{"pending": version, "player_database": version, "player_database_1": version,
-			"schema_gen": "9"}, fields)
+			"schema_gen": "4"}, fields)
 	}
 	require.Zero(t, store.commits)
 }

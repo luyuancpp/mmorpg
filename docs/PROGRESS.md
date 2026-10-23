@@ -15466,3 +15466,17 @@ Friend原随机自有MySQL库五CLI真实创建F18DCC2C…；原空口令guard/�
 - Go 5360 去重路径只读审计发现实际新增 shared/savebarrier 与多个服务变更；传递包图保守影响九模块、35 普通目标。生成器当前源 125→127，包含 9 改、5 新、3 删；既有生成输出字节相同不代表当前生成门禁闭合。正式 gen-run 等 C++ 释放生成写窗口，不能并发改其编译输入。
 - 独立 Java 原静态观察将六个缓存路径报缺，后续 .NET 实际逐文件读取 SHA 全等，原时间未变、复制次数 0；纠正原件 9A6B849D56965E7B8A681A5DC2DD42D709687009A632567B920BE529DF5A1149，保留原观察且不猜原因。PARITY.md 的他人最新追加保留；17 个 JAR 与已记录工具保持原 SHA。新 epoch 协议、六工具 javac、剩 13 外测/413 展开项及 33 进程业务仍待。
 - Java 对应 0.1.0-SNAPSHOT；本条不代表两版一致性与双区故障已验收。最终全部结果须再追加，整体仍未完成。
+## 2026-10-23：全球同服续跑的正式生成与新 epoch 强会话（整体仍未完成）
+
+- 保留主仓最新 `7a23b4fe`、独立 Java `73de4efd` 及客户端 CurrentMaps；没有覆盖他人代码，没有 commit/push/tag。负责人已明确授权接手两版刷新令牌家族接线；实现与验证仍在进行。
+- 当前生成器完整回归 352 PASS、0 FAIL、0 test SKIP，正规 proto-gen-build 与 no-unity proto-gen-run 均实际退出 0；源、守护段、工程、账本首终核对通过，C++ 生成输出无变化。原件 SHA 分别为 `6BB35172...`、`16D3F06A...`、`46BE7F53...`，完整路径见精简审核入口第 7 节。三处实际 BOM 改为等价转义、一处负例分号边界对齐，原断言与原红灯保留。
+- 独立 Java 六个验收工具 javac 实际通过（`996E63B2...`，仅原 18 个 JAR 的 API）；最新 Discovery 单模块 clean install 实际通过（`7E9AB427...`，186 PASS、117 原外部 SKIP，不能视为真库）。新 Login 流程尚待完整编译与 Redis 验证。
+- 新 epoch 基础设施 21 条协议只读命令全 0（`FC7C2F60...`）；强会话 S1 原用例实际 1 PASS、0 SKIP，4 条物理连接各 7 设置、随机库清理（`EE453B97...`）；后继九 CID 身份核对仍为该 epoch（`449364EA...`）。没有降号段水位、清他人数据或重置 offset。
+- C++ 当前完整构建此前被未知新 IDE 后台门禁中止，不能计通过；受影响 Go 普通验证、Java 剩余 13 外测及两版 33/36 角色双区故障验收仍未全部闭合。审核细节与待验清单继续维护在 `docs/handoff/global-economy-claude-review-20261022.md`，不以源码完成或测试总数替代最终验收。
+## 2026-10-23：最新 C++ 构建与两版令牌专项闭合，真库继续
+
+- C++ 最新完整构建 118 条原生命令全部退出 0，所属进程清理与证据错误为 0；1868 源、150 库、32 EXE 核对通过（`6F688A9D...`）。当前 26 个测试 EXE 共 2407 PASS、0 FAIL/SKIP，另 2 个原有 disabled；附加路由入口另列 69/140 PASS，不重复合入 unique 总数（`03BC1885...`）。补三工程实际构建与 fresh Strict 后继亦通过（`4DFC6526...`）；原缺失声明、旧轮数测试和 scope 元数据失败原件全部保留。补三测试与互通仍须后续实际结果。
+- Go 登录令牌家族最终 miniredis 44 PASS、0 FAIL/SKIP（`FA312E7B...`）；真实 Redis 的原父项及 null 裁剪、三类 PERSIST 损坏子项合计 5 PASS、0 FAIL/SKIP（`B3E4217B...`）。独立 Java 最终 Login 构建 332 PASS、37 外部 SKIP（`A297D2EE...`），其中家族 23 项已在真实 Redis 全部 PASS、0 FAIL/ERROR/SKIP（`C5B033D4...`）；其余 14 项按各自证据核对，不冒全清零。
+- Go data_service 旧替身接口漏接已修，完整 Unit 1653 PASS、90 外部 SKIP，Vet/RuntimeBuild 通过；db 旧恢复断言与最新 SQL 最小 schema 世代合同同步后，完整 Unit/Vet/RuntimeBuild 后继通过，原失败保留。受影响其他服务普通回归和专项仍在执行。
+- 独立 Java 首个剩余 Chat3 真 TiDB 阶段实际得到三个 SQL 错误（`FD483EFC...`）：正式 PlayerRouteAuthority 使用的共享锁语法在当前 TiDB 不可执行，尚未进入业务断言。已授权显式 TiDB 排他锁方言、保 MySQL/H2 原合同、禁止 noop；新 Common 普通构建和原 Chat3/Data17 真锁回归待实际结果。meta/zone 排他锁可能串行化写入口，不作无限容量或横向吞吐不变承诺。
+- 仅在他人最新源上做必要修复；未覆盖客户端 CurrentMaps、未 commit/push/tag。剩余 SQL 外测、两版 33/36 角色双区及真实资产故障恢复未全闭合，整体仍未完成；完整实际路径、SHA 与审核细节继续维护在 `docs/handoff/global-economy-claude-review-20261022.md`。

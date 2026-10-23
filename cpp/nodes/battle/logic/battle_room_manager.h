@@ -329,10 +329,12 @@ private:
     void StagePersonalSettlements(BattleRoom &room, turnbattle::ResultCommit::Clock::time_point now);
     // 一轮落库的回复全部到齐。settledMembers = 本轮拿到确定结论的成员(StageVerdict 前三种)。
     // 房间已不在(停机清房)或轮次过期时丢弃;已写下的 pending 留给 scene 裁决。
-    // 全部落定:删本局落库标记(fire-and-forget)。轮次用尽(turnbattle::kMaxStagingRounds,审计 r2-battle#4):
+    // 全部落定:删本局落库标记(fire-and-forget)。总跨度用尽(turnbattle::kMaxStagingSpan,审计 r2-battle#4):
     // 打一条 metric=battle_personal_settlement_staging_exhausted,房间移出 resultRooms_ 不再 pump,
     // 但**保留在房间表里**(终局未知:结果不发、DestroyBattle 不作废、新行动照旧拒绝),直到停机 AbortAllRooms。
     void OnPersonalSettlementsStaged(uint64_t battleId, uint64_t attempt, std::set<uint64_t> settledMembers);
+    // 总跨度用尽时只摘除驱动并告警一次，房间与未知终局保留至关机。
+    void RetireExhaustedStaging(BattleRoom &room);
 
     void BroadcastTurnResult(const BattleRoom &room, const ::TurnResultS2C &result);
 
